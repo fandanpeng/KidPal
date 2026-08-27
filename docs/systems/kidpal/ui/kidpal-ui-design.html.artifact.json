@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "kidpal-ui-design.html",
+  "entry": "kidpal-ui-design.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-27T07:08:26.293Z",
+  "updatedAt": "2026-08-27T07:08:26.293Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_doc": [
+    "KidPal (ESP32) scope-map · 治理档 1（spec 治理）净版。",
+    "自 AInativecompany 迁移骨架，清空原仓业务记账（Tier-2 schema 克隆体 / K9 / K1 / S1-S8），",
+    "按 KidPal 实况重填：实现面待定（动工前由 human 登记进 builders 段 allow）、契约面 docs/contracts/**、",
+    "vendor 面 ESP32-S3-RLCD-4.2-Demo/** 只读。",
+    "档 2 升级时补 dev-loop agents 段（builder/fixer/acceptance-author/verifier/integrator）与测试闸。",
+    "",
+    "规则：",
+    "  - deny 命中 -> 拦截；allow 非空且未命中 -> 拦截（白名单语义）；allow 空且 deny 未命中 -> 放行。",
+    "  - 未登记 agent 不受 per-agent 约束（仍受 universal + settings deny）。"
+  ],
+  "universal": {
+    "_doc": [
+      "对所有会话生效的结构红线（enforce-scope.mjs universal 段）。",
+      "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。"
+    ],
+    "denyCreate": ["contracts/**"],
+    "bashDenyWrite": ["docs/contracts/**", ".claude/**"],
+    "_bashDenyWrite_doc": "Bash 重定向写契约面与强制层 = 硬红线。审查者提示句会提及 .claude/taskpackages/changes/dev 等本仓尚不存在的目录——无害，留作档 2 升级时自然启用。",
+    "docsTopLevel": {
+      "allowFiles": [
+        "docs/DEV-GOVERNANCE.md",
+        "docs/ARCH-REVIEW-QUEUE.md",
+        "docs/CONTRACT-DECISION-QUEUE.md",
+        "docs/glossary.md"
+      ],
+      "allowDirs": [
+        "docs/contracts",
+        "docs/systems",
+        "docs/templates",
+        "docs/archive"
+      ]
+    }
+  },
+  "agents": {
+    "_doc": [
+      "档 1 只登记 review-loop + architect 链。dev-loop 角色（builder 等）升档 2 时按迁移指南 §4.2 补。"
+    ],
+    "architect": {
+      "allow": [
+        "docs/systems/**", "docs/contracts/**", "changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**",
+        ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        ".claude/agents/architect.md", ".claude/agents/architect-reviewer.md", ".claude/agents/review-moderator.md",
+        ".claude/agents/scenario-author.md", ".claude/agents/challenger.md", ".claude/agents/defender.md", ".claude/agents/adjudicator.md",
+        ".claude/agents/landing-verifier.md",
+        ".claude/scope-map.json", ".claude/*.settings.json", ".claude/hooks/**", ".claude/scripts/**",
+        ".claude/settings.json",
+        "AGENTS.md", "CLAUDE.md", "docs/DEV-GOVERNANCE.md"
+      ]
+    },
+    "review-moderator": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**", "docs/systems/**", "docs/contracts/**"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "AGENTS.md", "CLAUDE.md"]
+    },
+    "scenario-author": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+    },
+    "challenger": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+    },
+    "defender": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+    },
+    "adjudicator": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/systems/**", "docs/contracts/**", "docs/DEV-GOVERNANCE.md"]
+    },
+    "architect-reviewer": {
+      "allow": [],
+      "deny": ["**"]
+    },
+    "landing-verifier": {
+      "allow": ["changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**"],
+      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+    }
+  }
+}

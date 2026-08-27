@@ -1,7 +1,7 @@
 # KidPal 端云接口契约（E1 统一响应格式 + B1 课表 MD 结构）
 
 > 与 OpenClaw 对齐用。定义 OpenClaw 如何返回"语音 + 屏幕显示指令"，以及课表 MD 的存储结构。
-> 配合 spec.md 3.0.2（D3 笔顺格式已定稿）使用。
+> 配合 [systems/kidpal/spec.md](../systems/kidpal/spec.md) §3.0.2（D3 笔顺格式已定稿）使用。
 
 ---
 

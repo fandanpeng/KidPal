@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_doc": [
+    "架构/治理 review loop（对抗 review）专用设置，只在跑 review loop 时显式加载：",
+    "  claude --settings .claude/review-loop.settings.json --agent review-moderator",
+    "deny 把契约面 docs/contracts/** 冻结为只读（触契约走 architect-reviewer + 人类契约门）；",
+    "PreToolUse 钩子按 .claude/scope-map.json 强制每个 review agent 的可写边界；",
+    "Bash push-main 保护防直推主干；Bash 分支 enforce-scope 拦 shell 重定向写契约/强制层。",
+    "与原仓区别：本仓档 1 无 dev-loop，无 supervisor-gate Stop 钩子（无合并门机器）。"
+  ],
+  "permissions": {
+    "deny": [
+      "Edit(./docs/contracts/**)",
+      "Write(./docs/contracts/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/deny-main-push.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-scope.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-scope.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}

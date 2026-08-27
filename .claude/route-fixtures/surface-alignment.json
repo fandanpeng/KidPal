@@ -1,0 +1,25 @@
+{
+  "_doc": "Cross-surface alignment manifest — KidPal (ESP32) 档1 净版。Owner: architect; changes require governed G2 review. 只登记档1 已迁 agent 的 writeScope（与 scope-map 对齐）；dev-loop 角色升档2 时按迁移指南补。",
+  "version": 1,
+  "exemptions": { "agents": [] },
+  "writeScope": {
+    "architect": {
+      "allow": ["docs/systems/**", "docs/contracts/**", "changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"],
+      "exemptions": [],
+      "lastReviewed": "2026-08-27",
+      "rationale": "Draft/judge only; canonical landing is main-thread packet-bound. G1/G3 self-deny lives in scope-map deny carve-out."
+    },
+    "review-moderator": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", "docs/systems/**", "docs/contracts/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "scenario-author": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "challenger": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "defender": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "adjudicator": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "architect-reviewer": { "_readOnly": true, "lastReviewed": "2026-08-27" },
+    "landing-verifier": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." }
+  },
+  "criticalDenySet": {
+    "settingsFile": ".claude/review-loop.settings.json",
+    "requiredDenyPatterns": ["docs/contracts/**"]
+  },
+  "routeFixtureExemptions": { "agents": [] }
+}

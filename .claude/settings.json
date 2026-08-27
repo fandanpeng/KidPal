@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_doc": [
+    "KidPal 项目级常驻设置。只放对所有会话生效的【结构红线】钩子。",
+    "review-loop 的严格 per-agent 边界在 .claude/review-loop.settings.json，只在跑 review loop 时加载。",
+    "dev-loop.settings.json 未迁（档 2）。",
+    "enforce-scope.mjs 同时实现 universal（本文件触发）与 per-agent（loop settings 触发）两段；幂等无副作用。",
+    "permissions.allow 只收可复用通配条目；一次性命令由会话临时授权承载。"
+  ],
+  "permissions": {
+    "allow": [
+      "mcp__codebase-memory-mcp__*",
+      "Bash(node .claude/scripts/*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git stash *)",
+      "Bash(git reset *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git ls-tree *)",
+      "Bash(git check-ignore *)",
+      "Bash(git rev-list *)",
+      "Bash(git worktree *)",
+      "Bash(python3 -c *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/deny-main-push.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/commit-safety.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-scope.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-scope.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": []
+  }
+}

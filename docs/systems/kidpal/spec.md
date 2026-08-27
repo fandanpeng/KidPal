@@ -130,7 +130,7 @@
 | # | 功能 | 说明 |
 |---|---|---|
 | E1 | **统一响应格式** | OpenClaw 在回复中嵌入"屏幕显示指令"（如 markdown 里藏 JSON block），shim 解析分发给设备 |
-| E2 | **显示指令** | 见 [docs/interface-contract.md](docs/interface-contract.md)：`{view, data}`，view=char/schedule/story_list/story_text/text/home/control |
+| E2 | **显示指令** | 见 [docs/contracts/interface-contract.md](../../contracts/interface-contract.md)：`{view, data}`，view=char/schedule/story_list/story_text/text/home/control |
 | E3 | **提醒下发** | OpenClaw cron 写提醒 → shim `/v1/alerts` → 设备轮询获取 |
 
 ---
@@ -164,13 +164,13 @@
 - **SVG path 解析**：路径含 M/Q/L/Z（二次贝塞尔）。板子端用轻量解析器把贝塞尔离散成点，LVGL `lv_canvas` 逐点绘制，或简化为折线逼近（1bpp 下视觉差异小）。
 - **1bpp 光栅化**：矢量轮廓 scanline 填充成黑白位图，逐笔叠加显示。
 
-#### 🔵 E1 统一响应格式（已出草案，见 [docs/interface-contract.md](docs/interface-contract.md)）
+#### 🔵 E1 统一响应格式（已出草案，见 [docs/contracts/interface-contract.md](../../contracts/interface-contract.md)）
 核心思路：OpenClaw `/v1/chat/completions` 返回纯文本，约定在回复末尾用 ` ```display ` 代码块嵌入显示指令 JSON，shim 切分两路——正文送 TTS 播放，display JSON 下发板子渲染。
 - 顶层：`{view, data, speech_hint?}`，`view` 决定板子切哪页。
 - view 类型：`char`(查字/接D3) / `schedule`(课表) / `story_list` / `story_text` / `text`(纯文本) / `home`(回首页) / `control`(控制:end_session等)。
 - 对 OpenClaw 要求：system prompt 约束 DeepSeek 始终按此格式回复（需实测格式遵循度）。
 
-#### 🔵 B1 课表 MD 结构（已出草案，见 [docs/interface-contract.md](docs/interface-contract.md)）
+#### 🔵 B1 课表 MD 结构（已出草案，见 [docs/contracts/interface-contract.md](../../contracts/interface-contract.md)）
 `schedule.md` = YAML frontmatter（提醒提前量/时区/孩子名）+ Markdown 表格：
 - **每周固定课表**（星期/时间/课程/地点/备注）
 - **一次性安排**（日期/时间/事项/地点/备注）
@@ -362,7 +362,7 @@ DeepSeek 直接读 MD 按"今天星期几/当前时间"筛选查询；cron 定�
 | `POST /v1/tts` | 端→shim | 文字 → edge-tts → 返回语音（mp3/Opus） |
 | `GET /v1/alerts` | 端→shim | 设备轮询课表提醒（OpenClaw cron 写文件，shim 读出下发） |
 
-> 业务接口（课表 CRUD、故事、查字）**全部不需要**——由 OpenClaw 完整 agent 经 `/v1/chat/completions` 统一处理，结果通过 display 指令下发。详细契约见 [docs/interface-contract.md](docs/interface-contract.md)。
+> 业务接口（课表 CRUD、故事、查字）**全部不需要**——由 OpenClaw 完整 agent 经 `/v1/chat/completions` 统一处理，结果通过 display 指令下发。详细契约见 [docs/contracts/interface-contract.md](../../contracts/interface-contract.md)。
 
 ### 6.2 设备↔shim 显示指令（E1）
 OpenClaw 回复末尾 ` ```display ` 块嵌入 JSON，`view` 决定板子切哪页渲染：
@@ -421,7 +421,7 @@ OpenClaw 回复末尾 ` ```display ` 块嵌入 JSON，`view` 决定板子切哪�
 已定：OpenClaw编排层+板子终端、基于小智二次开发、薄桥shim服务端、OpenClaw自带OpenAI API、本地AEC/VAD/喊停+云端语义、按一下启动会话(60s超时)、语音喊停MVP必做、便携电池为主、ASR/TTS放OpenClaw机器(whisper+edge-tts)、OpenClaw+DeepSeek大脑、课表/故事存MD、笔顺D3格式定稿(makemeahanzi)板子只渲染、家长端录课表、4页循环、首页=时间+日程+温湿度、屏幕与3键确认、ECS公网已通。✅
 
 待细化（按优先级）：
-- **【已出草案，待OpenClaw确认】2个格式**：② 统一响应JSON(E1：` ```display ` 块嵌入显示指令) ③ 课表MD结构(B1)。详见 [docs/interface-contract.md](docs/interface-contract.md)。~~① 笔顺D3~~ 已定稿。
+- **【已出草案，待OpenClaw确认】2个格式**：② 统一响应JSON(E1：` ```display ` 块嵌入显示指令) ③ 课表MD结构(B1)。详见 [docs/contracts/interface-contract.md](../../contracts/interface-contract.md)。~~① 笔顺D3~~ 已定稿。
 - **【待OpenClaw装】ASR/TTS**：faster-whisper + edge-tts 是否装好；ECS 配置（CPU/内存）能否同时扛 whisper+DeepSeek+edge-tts+网关。
 - **安全**：wss+TLS（Caddy反代）给设备端口；安全组收敛（18789仅必要IP，设备端口另开）；设备级token。
 - **小智后端对接**：设备端"服务器地址/token"配置入口定位，改成指向我们 shim 端口（非18789）。
