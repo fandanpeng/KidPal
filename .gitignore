@@ -1,0 +1,26 @@
+# 构建产物
+build/
+*.o
+*.obj
+*.elf
+*.bin
+*.map
+*.a
+*.d
+
+# 压缩包与安装包
+*.zip
+*.exe
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 大体积库（按需保留，先不纳入版本控制）
+ESP32-S3-RLCD-4.2-Demo/01_Arduino/libraries/lvgl8/
+ESP32-S3-RLCD-4.2-Demo/01_Arduino/libraries/lvgl9/
