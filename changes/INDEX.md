@@ -14,4 +14,4 @@ _（无）_
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | — |
+| [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |

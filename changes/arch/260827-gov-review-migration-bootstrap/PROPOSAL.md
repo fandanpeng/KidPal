@@ -1,7 +1,7 @@
 # PROPOSAL · 治理体系迁移引导批（档 1）
 
 - **changeId**: 260827-gov-review-migration-bootstrap
-- **Status**: LANDED-UNREVIEWED（主线程按 human 指示「档1 开始往过搬」直接落地；本提案为事后记账，非 frozen-in-advance——原仓 Track B 七步不适用于迁移动作本身，见下「流程豁免说明」）
+- **Status**: LANDED-UNREVIEWED（commit 9d62625，2026-08-27）（主线程按 human 指示「档1 开始往过搬」直接落地；本提案为事后记账，非 frozen-in-advance——原仓 Track B 七步不适用于迁移动作本身，见下「流程豁免说明」）
 - **Date**: 2026-08-27
 
 ## 背景与目标
