@@ -8,6 +8,11 @@ build/
 *.a
 *.d
 
+# ESP-IDF 依赖拉取产物（idf_component.yml 声明,首次构建自动下载,可再生）
+managed_components/
+dependencies.lock
+sdkconfig.old
+
 # 压缩包与安装包
 *.zip
 *.exe
