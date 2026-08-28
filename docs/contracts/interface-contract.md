@@ -81,6 +81,7 @@ OpenClaw 回复文本（示例）
 {
   "view": "story_list",
   "data": {
+    "total": 3,
     "items": [
       { "id": "2026-08-20-xiaotuzi", "title": "小兔子找朋友", "date": "08-20" },
       { "id": "2026-08-25-yonggan", "title": "勇敢的小明", "date": "08-25" }
@@ -89,6 +90,9 @@ OpenClaw 回复文本（示例）
 }
 ```
 板子行为：切到 P3 故事页，显示标题列表，KEY 选择。
+
+- **`total`**（可选，整数）：孩子已录故事总数 = 故事果计数，由云端计算下发。板子据此渲染 P3 右上角故事果计数器（×N）与盖章帧「第 N 颗」（S-F2.1/S-F2.4）。**缺省时板子回退用 `items.length`**（向后兼容）。注意 `total` 是 stories 全集计数，若 `items` 分页/截断，不得以 `items.length` 顶替 `total` 作正式数据源。
+- （契约变更记录：2026-08-29 经契约门批准新增 `total`，additive 可选字段，见 changes/arch/260829-arch-review-kidpal-spec-stories。）
 
 #### ④ `story_text` —— 故事正文（回放/刚存好）
 ```json

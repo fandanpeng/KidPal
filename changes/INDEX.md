@@ -10,8 +10,9 @@
 
 _（无）_
 
-## arch (1)
+## arch (2)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | — |
 | [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |

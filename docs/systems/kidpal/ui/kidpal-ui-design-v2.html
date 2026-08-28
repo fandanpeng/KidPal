@@ -614,10 +614,11 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <h3 style="font-family:var(--f-disp);font-weight:400;font-size:24px">全局按键手势约定</h3>
       <table class="spec-table gest-table" data-od-id="gesture-table"><thead>
         <tr><th style="width:auto">按键</th><th style="width:auto">全局行为</th><th style="width:auto">页内特例</th></tr></thead><tbody>
-        <tr><td><span class="kd">KEY</span> 短按</td><td>启动／结束语音会话；确认；打断播报</td><td>P2 问课程 · P3 选故事／停录音 · P4 播笔顺</td></tr>
+        <tr><td><span class="kd">KEY</span> 短按</td><td>启动／结束语音会话；确认；打断播报</td><td>P2 问课程 · P3 列表光标下移 · P3 阅读念给我听 · P4 播／重播笔顺</td></tr>
+        <tr><td><span class="kd">KEY</span> 双击<!-- 【新增·2026-08-29】human 裁定 M2 --></td><td>无全局语义</td><td>P3 列表进入阅读／播放选中</td></tr>
         <tr><td><span class="kd">BOOT</span> 短按</td><td>P1→P2→P3→P4 循环翻页</td><td>所有页面一致</td></tr>
-        <tr><td><span class="kd">BOOT</span> 长按</td><td>无全局语义</td><td>P2 今天⇄明天切换（也可直接说「明天的课」）</td></tr>
-        <tr><td><span class="kd">KEY</span> 长按</td><td>预留，暂不定义</td><td>P4 查下一个字的候选触发</td></tr>
+        <tr><td><span class="kd">BOOT</span> 长按</td><td>无全局语义</td><td>P2 今天⇄明天切换（也可直接说「明天的课」）· P3 阅读翻下一屏</td></tr>
+        <tr><td><span class="kd">KEY</span> 长按</td><td>回首页<!-- 【修订·2026-08-29】原为「预留/P4查下一个字」，human 裁定 B1 改为回首页；查下一个字走语音 --></td><td>所有页面一致</td></tr>
         <tr><td><span class="kd">PWR</span></td><td>开关机（不入界面流程）</td><td>—</td></tr>
       </tbody></table>
       <p style="font-size:13.5px;margin-top:10px;font-weight:500">与项目既定的两键手势模型保持一致；无 tab 键、无触控，一切「下一步」都走这两颗键或者嘴。</p>
@@ -793,7 +794,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
             <svg style="width:54px;margin-top:6px" viewBox="0 0 48 14"><use href="#ic-wave"/></svg>
           </div>
           <span style="right:12px;top:14px;display:inline-flex;align-items:center"><span class="kd">BOOT</span><span class="kcap-note">长按→明天</span></span>
-          <!-- 列表：当前课反白 -->
+          <!-- 列表：当前课反白 【已废弃·2026-08-29】「当前课反白高亮」功能已砍（设备主场景在家），以 spec §4 S-F1.2 两态圆点为准，本画面该高亮仅为砍前残留 -->
           <div style="left:14px;top:60px;right:14px;display:flex;flex-direction:column;gap:5px">
             <div style="display:flex;align-items:center;gap:9px;border-bottom:2.5px dotted #000;padding:5px 4px">
               <i style="width:11px;height:11px;border:2.5px solid #000;border-radius:50%;flex:none"></i>
@@ -811,7 +812,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
               <i style="width:11px;height:11px;background:#fff;border:2.5px solid #fff;border-radius:50%;flex:none"></i>
               <b style="font-family:var(--f-num);font-weight:800;font-size:17px;width:52px">10:10</b>
               <b style="font-size:19px;font-weight:900">美术</b>
-              <span style="font-size:12px;font-weight:900;margin-left:auto;border:2px solid #fff;border-radius:999px;padding:0 8px">现在上</span>
+              <span style="font-size:12px;font-weight:900;margin-left:auto;border:2px solid #fff;border-radius:999px;padding:0 8px">现在上<!-- 【已废弃】当前课指示已砍，以 spec S-F1.2 为准 --></span>
             </div>
             <div style="display:flex;align-items:center;gap:9px;padding:6px 4px">
               <i style="width:11px;height:11px;background:#000;border-radius:50%;flex:none"></i>
@@ -833,7 +834,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <aside class="rail">
         <ul class="pts frm-sm" data-od-id="p2-notes">
           <li><b>圆点语言</b>：空心＝还没上／已上完，实心＝待上，反白行＝正在上——不需要灰色也能读出三种状态</li>
-          <li><b>当前课反白</b>：整套系统唯一的反转强调块，微倾 −1° 让它像老师刚用粉笔圈出来</li>
+          <li><b>当前课反白【已废弃·2026-08-29】</b>：此特性已砍（设备主场景在家），以 spec §4 S-F1.2 两态圆点为准；<s>整套系统唯一的反转强调块，微倾 −1° 让它像老师刚用粉笔圈出来</s></li>
           <li><b>钢琴课带星标</b>：跟 P1 的「接下来」呼应——跨页面的叙事连续性</li>
           <li>明天切换见 03 节手势表的交换演示；切过去时每行都换成空心点</li>
           <li>点 [KEY] 用问的不用找：「小伴，我下节课在哪？」——答案用播报给出</li>
@@ -877,7 +878,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <div class="pgbuts">
             <span class="cell"><span class="kd">KEY</span>选故事</span>
             <div class="pgdots"><i></i><i></i><i class="on"></i><i></i></div>
-            <span class="cell"><svg style="width:14px" viewBox="0 0 48 48"><use href="#ic-book"/></svg>听<span class="kd">BOOT</span></span>
+            <span class="cell"><svg style="width:14px" viewBox="0 0 48 48"><use href="#ic-book"/></svg>读<span class="kd">KEY</span><span class="kcap-note">双击</span><!-- 【修订·2026-08-29】原为「听 BOOT」，M2 裁定 P3 列表→阅读=KEY 双击；BOOT 短按专职翻页 --></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="P3 画布缩放"/><output class="zoom-val">1.7×</output></label>
@@ -915,6 +916,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
             <b style="font-family:var(--f-disp);font-weight:400;font-size:22px">会飞的鲸鱼</b>
             <svg style="width:44px;margin-top:4px" viewBox="0 0 48 14"><use href="#ic-wave"/></svg>
           </div>
+<!-- 【已废弃·2026-08-29】下文「飞」字反白高亮已砍（生字标注需契约字段，价值不足抵复杂度），以 spec §4 S-F2.3 为准：阅读态问生字走语音，不自动高亮 -->
           <p style="left:16px;right:16px;top:54px;font-size:13.5px;line-height:1.72;font-weight:500;margin:0">从前有一头小鲸鱼，它一直想去天上看看。有一天它深吸一口气，竟然真的<span style="display:inline-block;background:#000;color:#fff;border-radius:7px;padding:0 7px;transform:rotate(-2deg)">飞</span>了起来。云朵在它的肚皮下面打滚，星星跟它玩捉迷藏。飞着飞着，小鲸鱼有点想家了……</p>
           <div style="left:16px;bottom:52px;display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:900">
             <span class="frm-sm" style="display:inline-flex;align-items:center;gap:5px;padding:1px 8px"><svg style="width:14px" viewBox="0 0 48 48"><use href="#ic-penhand"/></svg>遇到生字？点着问<span class="kd" style="height:22px;font-size:11px">KEY</span></span>
@@ -925,7 +927,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
             <span class="cell"><span class="kd">KEY</span>念给我听</span>
           </div>
         </div></div></div></div>
-        <figcaption>子状态② 阅读正文：生字反白高亮，手势与全局约定不打架</figcaption>
+        <figcaption>子状态② 阅读正文：标题+正文+翻屏，手势与全局约定不打架。<b>【已废弃·2026-08-29】</b>图中「飞」字反白为砍前示意——生字自动高亮已砍，以 spec §4 S-F2.3 为准（问生字走语音）</figcaption>
       </figure>
     </div>
 
@@ -998,7 +1000,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <div class="pgbuts">
             <span class="cell"><span class="kd">KEY</span>播笔顺</span>
             <div class="pgdots"><i></i><i></i><i></i><i class="on"></i></div>
-            <span class="cell">下一个<span class="kd">KEY</span><span class="kcap-note">长按</span></span>
+            <span class="cell">回首页<span class="kd">KEY</span><span class="kcap-note">长按</span><!-- 【修订·2026-08-29】原为「下一个 KEY长按」，B1 裁定 KEY长按=回首页；查下一个字走语音 --></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="P4 画布缩放"/><output class="zoom-val">1.7×</output></label>
