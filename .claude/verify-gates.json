@@ -1,0 +1,84 @@
+{
+  "_doc": [
+    "Verifier 跑的确定性闸门，按顺序执行。scoped 相位遇到第一个失败即停并产出 ErrorEnvelope；final 相位遇红不停、跑完全闸产出全红清单。",
+    "由 .claude/hooks/verify.mjs 读取执行。命令在仓库根（或当前 worktree 根）运行。",
+    "KidPal/ESP32 档 2：自源仓 9 闸按本仓双实现面（firmware/ ESP-IDF C/C++ + server/ FastAPI pytest）重写。",
+    "栈绑定的 prisma/tsc 闸已按 §3 P3/P4 映射或诚实降级（见各闸注），不是照抄。",
+    "",
+    "闸门分三类（见 .claude/references/dev-loop.md）：",
+    "  结构闸（必要非充分）：firmware-build / contract-lint —— 编不过/契约漂移直接红。",
+    "  功能闸（对故事负责）：acceptance / unit —— 必须断言真实结果，禁止“没报错就算过”。",
+    "  安全闸（按 TaskPackage 启用）：securityReviewRequired=true 时必须记录安全证据。",
+    "kind=structural|functional|governance|security 仅用于分类与 ErrorEnvelope 的 category 映射。",
+    "",
+    "timing 字段：",
+    "  scoped = 每轮 verifier 都跑（结构闸 + 受影响子集功能闸）。",
+    "  full = 仅终审 merge-readiness 跑一次（全量功能套件）。",
+    "  默认 timing=scoped（未标则每轮跑，fail-safe）。",
+    "",
+    "降级与缺口（诚实记账，非假绿）：",
+    "  - schema 闸（源仓 prisma-validate）：本仓无 Prisma，等价物 = firmware-build（ESP-IDF 编译即固件结构闸）",
+    "    + contract-lint（markdown 契约结构闸）。数据模型漂移由契约面 + 人工 spec↔contract 对账担纲",
+    "    （档 1 已降级，ARQ-260827-contract-mech-gate-gap 追踪机械补位时机）。",
+    "  - firmware on-target 验收需实机/qemu：acceptance 闸担保「有验收文件 ⇒ 有验收入口」不静默跳过，",
+    "    不担保实机已过；实机验收由 acceptance 相位人工/台架触发并落 verifier-evidence。",
+    "  - types 闸：server 面 Python 无强制类型闸；如需，后续可加 mypy（当前未启用，记为缺口）。"
+  ],
+  "gates": [
+    {
+      "id": "taskpackage-required",
+      "kind": "governance",
+      "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "firmware-build",
+      "kind": "structural",
+      "cmd": "node .claude/scripts/firmware-build-check.mjs",
+      "timing": "scoped",
+      "_doc": "ESP32 等价源仓 schema+types 闸：ESP-IDF 固件编译（idf.py build）即固件结构/类型闸。脚本对 idf.py 缺失 fail-open（开发机无工具链不红），有工具链则真编译。"
+    },
+    {
+      "id": "contract-lint",
+      "kind": "structural",
+      "cmd": "node .claude/scripts/contract-lint.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "acceptance-coverage",
+      "kind": "functional",
+      "cmd": "node .claude/scripts/acceptance-coverage-check.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "mutation-check",
+      "kind": "functional",
+      "cmd": "node .claude/scripts/mutation-check.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "docs-sync",
+      "kind": "governance",
+      "cmd": "node .claude/scripts/docs-sync-check.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "security",
+      "kind": "security",
+      "cmd": "node .claude/scripts/security-check.mjs",
+      "timing": "scoped"
+    },
+    {
+      "id": "unit",
+      "kind": "functional",
+      "cmd": "node .claude/scripts/unit-run-check.mjs",
+      "timing": "full"
+    },
+    {
+      "id": "acceptance",
+      "kind": "functional",
+      "cmd": "node .claude/scripts/acceptance-run-check.mjs",
+      "timing": "full"
+    }
+  ]
+}

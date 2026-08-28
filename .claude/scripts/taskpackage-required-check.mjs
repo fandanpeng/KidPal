@@ -1,0 +1,362 @@
+#!/usr/bin/env node
+// Ensures dev-loop verification has a persisted TaskPackage context.
+// This prevents chat-only TaskPackages from passing verifier gates.
+//
+// artifact-lifecycle 修订（gov-review-devloop-artifact-lifecycle，FROZEN 2026-07-22）：
+// - origin 一等强键（upstreamType/upstreamRef/upstreamFrozen/workstream）
+// - sourceType deprecated，origin.type ∨ sourceType 至少一个存在
+// - decisionCoverage 触发改读 isProposal（`sourceType` ∨ lib 单源 `resolveOriginType(origin)`，即 origin.upstreamType ∨ origin.type）
+// - proposal→docRefs back-check 由 origin.ref 接管（新包 / 过渡 carve-out 老包）
+// - changeId YYMMDD- 前缀强制 + 零追溯白名单（DP-2 git 首提日期 cutoff）
+// - sourceRefs 必填非空语义收窄为代码范围锚点（convention-only, ARQ-260723-artifact-lifecycle-teeth）
+
+import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+import { execSync } from 'node:child_process';
+import { isProposalMdPath, normalizeSourceRef, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
+
+const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+function taskPackagePath() {
+  const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
+  if (explicit) return resolve(projectDir, explicit);
+  return resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+}
+
+function print(payload) {
+  console.log(JSON.stringify(payload, null, 2));
+}
+
+function fail(message, details = {}) {
+  print({ ok: false, gate: 'taskpackage-required', message, ...details });
+  process.exit(1);
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, ''));
+}
+
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function nonEmptyArray(value) {
+  return Array.isArray(value) && value.length > 0;
+}
+
+function isOneOf(value, allowed) {
+  return allowed.includes(value);
+}
+
+// 260731-gov-review-acceptance-coverage-structural-exemption（FROZEN v1.0）M-6：
+// acceptance[]/exitCriteria[] 对象条目 id 亦提取（:223+:224 原 filter(nonEmptyString) 静默丢弃对象条目
+// → decisionCoverage.landsIn acceptance:<id> 误报 not-found，起包侧骨折点闭合）。
+// 字符串路径保持原 .split(':')[0].trim() 提取语义不变（零行为漂移）；对象条目取 id/acceptanceId/name 后同法。
+function extractEntryId(entry) {
+  if (nonEmptyString(entry)) return entry.split(':')[0].trim();
+  if (entry && typeof entry === 'object') {
+    const raw = entry.id || entry.acceptanceId || entry.name;
+    return nonEmptyString(raw) ? String(raw).split(':')[0].trim() : null;
+  }
+  return null;
+}
+
+function parseLandsIn(landsIn) {
+  if (!nonEmptyString(landsIn)) return null;
+  if (landsIn === 'dropped') return { form: 'dropped' };
+  const colonIndex = landsIn.indexOf(':');
+  if (colonIndex === -1 || colonIndex === 0) return null;
+  const form = landsIn.slice(0, colonIndex);
+  const id = landsIn.slice(colonIndex + 1);
+  if (!nonEmptyString(id) || !['acceptance', 'exitCriteria', 'package'].includes(form)) return null;
+  if (form === 'package' && !/^[a-z0-9-]+$/.test(id)) return null;
+  return { form, id };
+}
+
+const SOURCE_TYPES = [
+  'delivery-story',
+  'planning-workstream',
+  'arch-review',
+  'human-ad-hoc',
+  'ci-failure',
+  'drift-report',
+  'regression',
+  'maintenance',
+  'proposal',
+];
+const ORIGIN_TYPES = [...SOURCE_TYPES, 'human-confirmed-plan']; // origin.type 值域 = sourceType 枚举 + 受控扩展
+const DELIVERY_IMPACTS = ['none', 'milestone-affecting'];
+const PLANNING_IMPACTS = ['none', 'attach-existing', 'create-workstream', 'needs-triage'];
+const RISK_TIERS = ['low', 'medium', 'high', 'critical'];
+
+// ── changeId 日期前缀 + 零追溯白名单谓词（DP-2 / F8，单一语义，两 G3 脚本 convention 级同步）──
+const CHANGE_ID_CUTOFF = '2026-07-23'; // landing cutoff（首提 < 此日 = 老包放行）
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+
+function validDatePrefix(yyMMdd) {
+  const month = Number(yyMMdd.slice(2, 4));
+  const day = Number(yyMMdd.slice(4, 6));
+  return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
+
+function gitFirstCommitDate(relPath) {
+  try {
+    const out = execSync(`git log --diff-filter=A --follow --format=%cs -- "${relPath}"`, {
+      cwd: projectDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const lines = out.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    return lines.length ? lines[lines.length - 1] : null; // earliest = last with --follow
+  } catch {
+    return null;
+  }
+}
+
+const pathToTaskPackage = taskPackagePath();
+
+if (!existsSync(pathToTaskPackage)) {
+  fail('Dev-loop verification requires a persisted TaskPackage file', {
+    expected: pathToTaskPackage,
+    hint: 'planner must write .claude/taskpackages/<change-id>/taskpackage.json and refresh .claude/taskpackages/current/taskpackage.json before verifier runs',
+  });
+}
+
+let taskPackage;
+try {
+  taskPackage = readJson(pathToTaskPackage);
+} catch (error) {
+  fail('TaskPackage is not valid JSON', { taskPackage: pathToTaskPackage, error: String(error.message || error) });
+}
+
+// ── canonical↔current 散列一致性校验（260824-gov-review-pod-worktree-launch-infra T4；ARQ-260823-taskpackage-canonical-current-drift）──
+// 触发姿势边界（PROPOSAL F3 成文）：仅默认裸跑（闸实际读 current/ 指针副本）时生效；
+// 显式传参（process.argv[2] / DEV_LOOP_TASKPACKAGE / TASKPACKAGE_PATH）与 closeout-check.mjs
+// 程序化传 canonical 路径时不进入本段（显式姿势下 changeId 解析回同一文件、比对恒等，亦不触发新红）。
+// current/ 或 canonical 任一缺失时按既有逻辑走：不新增 missing 判定（changeId 缺失/非法由下方既有字段校验承红）。
+const explicitInvocation = !!(process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH);
+if (!explicitInvocation) {
+  const currentChangeId = nonEmptyString(taskPackage.changeId) ? String(taskPackage.changeId) : null;
+  if (currentChangeId) {
+    const canonicalPath = resolve(projectDir, '.claude/taskpackages', currentChangeId, 'taskpackage.json');
+    if (canonicalPath !== pathToTaskPackage && existsSync(canonicalPath)) {
+      const sha256 = content => createHash('sha256').update(content).digest('hex');
+      if (sha256(readFileSync(pathToTaskPackage, 'utf8')) !== sha256(readFileSync(canonicalPath, 'utf8'))) {
+        fail('canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）', {
+          canonical: canonicalPath,
+          current: pathToTaskPackage,
+        });
+      }
+    }
+  }
+}
+
+const missing = [];
+
+// ── origin 一等强键（上游溯源结构；DP / F-series）──
+const origin = (taskPackage.origin && typeof taskPackage.origin === 'object') ? taskPackage.origin : null;
+const originType = resolveOriginType(origin);
+const hasSourceType = nonEmptyString(taskPackage.sourceType);
+
+// origin.type ∨ sourceType 至少一个存在（必填清单改：sourceType 不再无条件必填）
+if (!originType && !hasSourceType) missing.push('origin.type∨sourceType(at least one)');
+
+for (const field of ['changeId', 'subsystem', 'story', 'redBaselineCommand', 'redBaselineResult', 'deliveryImpact', 'planningImpact', 'riskTier']) {
+  if (!nonEmptyString(taskPackage[field])) missing.push(field);
+}
+
+for (const field of ['acceptance', 'acceptanceTestsFile', 'exitCriteria', 'contractRefs', 'docRefs', 'sourceRefs', 'gateProfile']) {
+  if (!nonEmptyArray(taskPackage[field])) missing.push(field);
+}
+
+// ── acceptance[] 对象条目形状校验（260731 批 M-1/M-6：kind/suiteGate 一等豁免标记，非可选）──
+// 互斥 fail-loud：同条目同时标 kind:'structural' + suiteGate:true = 类别矛盾 → 红。
+// 未知值 fail-safe：kind 仅认 'structural'、suiteGate 仅认 true；其余值不豁免（coverage/mutation 侧同义 fail-safe 红）并在此成文报错。
+// 对象条目必须携带可提取 id（id/acceptanceId/name），否则 id 进不了 acceptanceIds。
+if (Array.isArray(taskPackage.acceptance)) {
+  for (const entry of taskPackage.acceptance) {
+    if (!entry || typeof entry !== 'object') continue;
+    const entryId = extractEntryId(entry) || '(无 id)';
+    if (!extractEntryId(entry)) missing.push(`acceptance[${entryId}] object entry must carry id/acceptanceId/name`);
+    if ('kind' in entry && entry.kind !== 'structural') {
+      missing.push(`acceptance[${entryId}].kind unknown value ${JSON.stringify(entry.kind)} (only 'structural' supported; unknown values fail-safe to no-exemption)`);
+    }
+    if ('suiteGate' in entry && entry.suiteGate !== true) {
+      missing.push(`acceptance[${entryId}].suiteGate must be true when present (got ${JSON.stringify(entry.suiteGate)}; fail-safe)`);
+    }
+    if (entry.kind === 'structural' && entry.suiteGate === true) {
+      missing.push(`acceptance[${entryId}] must not carry both kind:'structural' and suiteGate:true (category contradiction; pick one)`);
+    }
+  }
+}
+
+if (hasSourceType && !isOneOf(taskPackage.sourceType, SOURCE_TYPES)) missing.push('sourceType(valid)');
+if (originType && !isOneOf(originType, ORIGIN_TYPES)) missing.push(`origin.type(valid: ${ORIGIN_TYPES.join('|')})`);
+if (nonEmptyString(taskPackage.deliveryImpact) && !isOneOf(taskPackage.deliveryImpact, DELIVERY_IMPACTS)) missing.push('deliveryImpact(valid)');
+if (nonEmptyString(taskPackage.planningImpact) && !isOneOf(taskPackage.planningImpact, PLANNING_IMPACTS)) missing.push('planningImpact(valid)');
+if (nonEmptyString(taskPackage.riskTier) && !isOneOf(taskPackage.riskTier, RISK_TIERS)) missing.push('riskTier(valid)');
+
+// 并存一致性（tie-break = origin.type == sourceType，human-confirmed-plan 例外须 sourceType 缺省）
+if (originType && hasSourceType) {
+  if (originType === 'human-confirmed-plan') {
+    missing.push('origin.type=human-confirmed-plan requires sourceType absent (this value has no sourceType mirror; origin.type ≠ human-confirmed-plan enforcement)');
+  } else if (originType !== taskPackage.sourceType) {
+    missing.push(`origin.type (${originType}) must equal sourceType (${taskPackage.sourceType}) when both present`);
+  }
+}
+
+// ── changeId 日期前缀强制（新包）+ 零追溯白名单（DP-2）──
+if (nonEmptyString(taskPackage.changeId)) {
+  const cid = String(taskPackage.changeId);
+  const prefixMatch = CHANGE_ID_PREFIX_RE.exec(cid);
+  if (prefixMatch) {
+    if (!validDatePrefix(prefixMatch[1])) {
+      missing.push(`changeId YYMMDD prefix date literal invalid (month 01-12, day 01-31): ${prefixMatch[1]}`);
+    }
+  } else {
+    // 无前缀 → 判白名单：git 首提 < cutoff = 老包放行
+    let isGrandfathered = false;
+    let firstCommit = gitFirstCommitDate(`changes/dev/${cid}`);
+    if (firstCommit === null) firstCommit = gitFirstCommitDate(`.claude/taskpackages/${cid}`);
+    if (firstCommit === null) {
+      // git 不可用 / 新 dir 无历史 → degrade: 放行（convention 兜底，不误红）
+      isGrandfathered = true;
+    } else if (firstCommit < CHANGE_ID_CUTOFF) {
+      isGrandfathered = true;
+    }
+    if (!isGrandfathered) {
+      missing.push(`changeId must have YYMMDD- date prefix for new packages (first commit ${firstCommit || 'unknown'} >= cutoff ${CHANGE_ID_CUTOFF})`);
+    }
+  }
+}
+
+const planningRefs = Array.isArray(taskPackage.planningRefs) ? taskPackage.planningRefs : [];
+if (['attach-existing', 'create-workstream'].includes(taskPackage.planningImpact) && planningRefs.length === 0) {
+  missing.push('planningRefs(required when planningImpact attaches or creates workstream)');
+}
+if (taskPackage.planningImpact === 'none' && planningRefs.length > 0) {
+  missing.push('planningRefs(empty when planningImpact=none)');
+}
+if (taskPackage.planningImpact === 'needs-triage') {
+  missing.push('planningImpact must be resolved before verifier runs');
+}
+
+if (taskPackage.sourceType === 'planning-workstream' && planningRefs.length === 0) {
+  missing.push('planningRefs(required when sourceType=planning-workstream)');
+}
+
+if (typeof taskPackage.iterationBudget !== 'number') missing.push('iterationBudget');
+if (typeof taskPackage.fixBudget !== 'number') missing.push('fixBudget');
+
+if (taskPackage.docsSyncRequired !== false && taskPackage.docsOwner !== 'integrator') {
+  missing.push('docsOwner=integrator');
+}
+
+// ── decisionCoverage + proposal→docRefs back-check（DP-1 / F2 承重闭合）──
+// 260731-gov-review-artifact-lifecycle-origin-teeth Phase 2（T1, FROZEN 2026-08-01）：isProposal 分裂为两个独立谓词：
+//   isProposalByType = 字符串判（sourceType/originType === 'proposal'）—— DC 承重维持此触发（OQ4-B）
+//   isProposalByPath = 路径判（upstreamRef∨ref fragment-stripped 走 isProposalMdPath）—— back-check 路径枢轴
+// 三类包组合态：
+//   真 proposal（260725/26/27）：byType=true, byPath=true → DC + back-check 皆触发
+//   hybrid（260729 两包）：byType=false, byPath=true → DC 不触发，back-check 触发
+//   纯 regression：皆 false → 皆不触发
+//   sourceType=proposal 老包（ref 缺）：byType=true, byPath=false → 析取触发 back-check，sourceRefs carve-out 可达（CF-04）
+const isProposalByType = !!(taskPackage.sourceType === 'proposal' || originType === 'proposal');
+const isProposalByPath = !!(origin && isProposalMdPath(normalizeSourceRef(resolveOriginRef(origin) || '')));
+
+const coverageErrors = [];
+// DC 承重外闸：isProposalByType（字符串判）∨ decisionCoverage 包内数组
+if (isProposalByType || Array.isArray(taskPackage.decisionCoverage)) {
+  // DC hard-fail 维持字符串判（OQ4-B）
+  if (isProposalByType && !nonEmptyArray(taskPackage.decisionCoverage)) {
+    coverageErrors.push('decisionCoverage must be a non-empty array for proposal-来源 packages');
+  }
+  if (Array.isArray(taskPackage.decisionCoverage)) {
+    const acceptanceIds = new Set(taskPackage.acceptance.map(extractEntryId).filter(Boolean));
+    const exitCriteriaIds = new Set(taskPackage.exitCriteria.map(extractEntryId).filter(Boolean));
+    const normalizedDocRefs = new Set(taskPackage.docRefs.filter(nonEmptyString).map(normalizeSourceRef));
+
+    for (const [index, entry] of taskPackage.decisionCoverage.entries()) {
+      if (!entry || typeof entry !== 'object') {
+        coverageErrors.push(`decisionCoverage[${index}] must be an object`);
+        continue;
+      }
+      if (!nonEmptyString(entry.decision)) coverageErrors.push(`decisionCoverage[${index}].decision required`);
+      if (!nonEmptyString(entry.summary)) coverageErrors.push(`decisionCoverage[${index}].summary required`);
+      if (!nonEmptyArray(entry.sourceRefs)) coverageErrors.push(`decisionCoverage[${index}].sourceRefs must be a non-empty array`);
+      if (!nonEmptyString(entry.landsIn)) coverageErrors.push(`decisionCoverage[${index}].landsIn required`);
+
+      const parsed = parseLandsIn(entry.landsIn);
+      if (!parsed) {
+        coverageErrors.push(`decisionCoverage[${index}].landsIn has invalid format: ${entry.landsIn}`);
+      } else if (parsed.form === 'dropped') {
+        if (!nonEmptyString(entry.reason) || entry.reason.trim().length < 12) {
+          coverageErrors.push(`decisionCoverage[${index}].landsIn=dropped requires reason >= 12 chars`);
+        }
+      } else if (parsed.form === 'acceptance') {
+        if (!acceptanceIds.has(parsed.id)) {
+          coverageErrors.push(`decisionCoverage[${index}].landsIn acceptance id ${parsed.id} not found in acceptance[]`);
+        }
+      } else if (parsed.form === 'exitCriteria') {
+        if (!exitCriteriaIds.has(parsed.id)) {
+          coverageErrors.push(`decisionCoverage[${index}].landsIn exitCriteria id ${parsed.id} not found in exitCriteria[]`);
+        }
+      }
+
+      if (Array.isArray(entry.sourceRefs)) {
+        for (const ref of entry.sourceRefs) {
+          if (isProposalMdPath(ref) && !normalizedDocRefs.has(normalizeSourceRef(ref))) {
+            coverageErrors.push(`decisionCoverage[${index}].sourceRefs proposal path ${ref} must also appear in docRefs[]`);
+          }
+        }
+      }
+    }
+  }
+}
+
+// proposal→docRefs back-check：提出 Array.isArray(decisionCoverage) 嵌套（T1 de-nest, CF-01 BLOCKING）
+// 由析取（isProposalByType ∨ isProposalByPath，CF-04 保老包）独立驱动
+if (isProposalByType || isProposalByPath) {
+  const normalizedDocRefs = new Set(
+    (Array.isArray(taskPackage.docRefs) ? taskPackage.docRefs : []).filter(nonEmptyString).map(normalizeSourceRef)
+  );
+  // :228 析取（CF-13）：originType==='proposal' 保住 enforcement；isProposalByPath 令 hybrid 纳入
+  if (originType === 'proposal' || isProposalByPath) {
+    const originRef = resolveOriginRef(origin)
+      ? normalizeSourceRef(resolveOriginRef(origin)) : null;
+    if (!originRef) {
+      coverageErrors.push('origin.ref is required for origin.type=proposal');
+    } else if (!isProposalMdPath(originRef)) {
+      coverageErrors.push(`origin.ref ${originRef} is not a valid proposal .md path (expect changes/(arch|dev)/<id>/PROPOSAL.md or .planning/<ws>/PROPOSAL.md)`);
+    } else if (!normalizedDocRefs.has(originRef)) {
+      coverageErrors.push(`proposal origin.ref ${originRef} must also appear in docRefs[]`);
+    }
+  } else {
+    // 过渡 carve-out：sourceType=proposal 老包维持 sourceRefs-based back-check
+    const sourceRefs = Array.isArray(taskPackage.sourceRefs) ? taskPackage.sourceRefs : [];
+    const proposalMdPaths = sourceRefs.filter(isProposalMdPath);
+    if (proposalMdPaths.length === 0) {
+      coverageErrors.push('sourceRefs must include at least one proposal .md path for sourceType=proposal');
+    } else {
+      for (const path of proposalMdPaths) {
+        if (!normalizedDocRefs.has(normalizeSourceRef(path))) {
+          coverageErrors.push(`proposal sourceRef ${path} must also appear in docRefs[]`);
+        }
+      }
+    }
+  }
+}
+
+if (missing.length > 0 || coverageErrors.length > 0) {
+  fail('TaskPackage is missing required finalized fields or has invalid decisionCoverage', {
+    taskPackage: pathToTaskPackage,
+    missing,
+    coverageErrors,
+  });
+}
+
+print({
+  ok: true,
+  gate: 'taskpackage-required',
+  taskPackage: pathToTaskPackage,
+  changeId: taskPackage.changeId,
+});

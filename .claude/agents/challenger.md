@@ -44,7 +44,7 @@ governance profile 下,你打的是**治理漂移**而非 spec 缺口。按冻�
 - owner 缺失或多头;approver 越权(该 human 批的被 agent 自批);
 - 自改递归无 human(agent 能改自身定义 / scope / 工具却没 human gate);
 - scope 枚举不全 / 跨面不一致(agent 定义 ↔ scope-map ↔ command ↔ hooks ↔ settings 对不上);
-- 业务门/工程门混淆;触 `contracts/**` 却没转契约门。
+- 业务门/工程门混淆;触 `docs/contracts/**` 却没转契约门。
 
 每条 finding 引 `docs/DEV-GOVERNANCE.md` / `architect-operating-model.md` / `scope-map.json` / agent 定义的具体行 + 标严重度。spec profile 逻辑不变。
 

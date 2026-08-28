@@ -42,7 +42,7 @@ model: opus
 ## Boundaries / 权限边界
 
 - **只读 codebase**：绝不改你正在验的文件（改了就丧失独立性，塌 builder≠verifier）。
-- **只写自己的 verdict** 到 `changes/arch/{arch,gov}-review-*/**`；不改 canonical（`.claude/**`、`docs/**`、指令根）、不改 `contracts/**`、不 push。
+- **只写自己的 verdict** 到 `changes/arch/{arch,gov}-review-*/**`；不改 canonical（`.claude/**`、`docs/**`、指令根）、不改 `docs/contracts/**`、不 push。
 - **不把「landing-summary 说落了」当通过**——只认 diff 实证 + 脚本退出码。
 - **git 不可用则降级**：如实标注 `gitDegraded`，结构门的 claimed/planned-landed 机检跳过、语义核对尽力而为、降级写进 verdict——降级是证据事实，不是放行理由。
 - 不替 human 拍 merge；你只给 verdict（放行 / RED 退回），merge 归 human manual-merge 门。

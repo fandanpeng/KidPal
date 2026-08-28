@@ -4,7 +4,7 @@
     "自 AInativecompany 迁移骨架，清空原仓业务记账（Tier-2 schema 克隆体 / K9 / K1 / S1-S8），",
     "按 KidPal 实况重填：自有实现面已定 = firmware/（固件，2026-08-29 human 拍板，kidpal=小智V2.1.0整树拷贝基座）+ server/（云端 shim，预留未建）；",
     "契约面 docs/contracts/**、vendor 面 ESP32-S3-RLCD-4.2-Demo/** 只读。",
-    "档 2 升级时补 dev-loop agents 段（builder/fixer/acceptance-author/verifier/integrator）与测试闸——届时 firmware//server/ 须登记进 builder allow。",
+    "档 2/3（2026-08-29 迁入）：dev-loop agents 段已补（planner/portfolio-planner/builder/fixer/acceptance-author/verifier/supervisor/integrator，见下 agents 段）；firmware/server 已登记进实现面 allow。",
     "",
     "规则：",
     "  - deny 命中 -> 拦截；allow 非空且未命中 -> 拦截（白名单语义）；allow 空且 deny 未命中 -> 放行。",
@@ -40,8 +40,42 @@
   },
   "agents": {
     "_doc": [
-      "档 1 只登记 review-loop + architect 链。dev-loop 角色（builder 等）升档 2 时按迁移指南 §4.2 补。"
+      "档 1 登记 review-loop + architect 链；档 2/3 补 dev-loop 角色段（builder/fixer/acceptance-author/verifier/supervisor/integrator + planner/portfolio-planner）。",
+      "实现面 = firmware/ + server/；契约面 docs/contracts/** 全 dev-loop 角色 deny；vendor 面 ESP32-S3-RLCD-4.2-Demo/** 全 deny。",
+      "builder/fixer allow 实现面、deny 验收测试文件（验收归 acceptance-author）；verifier/supervisor 只读（deny **）。"
     ],
+    "planner": {
+      "allow": [".claude/taskpackages/**", ".planning/**", "changes/dev/**/pod-retro.md"],
+      "deny": ["docs/contracts/**", "firmware/**", "server/**", "ESP32-S3-RLCD-4.2-Demo/**", "docs/**"]
+    },
+    "portfolio-planner": {
+      "allow": [".claude/taskpackages/**", ".planning/**"],
+      "deny": ["docs/contracts/**", "firmware/**", "server/**", "ESP32-S3-RLCD-4.2-Demo/**", "docs/**"]
+    },
+    "builder": {
+      "allow": ["firmware/**", "server/**", ".planning/**"],
+      "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+    },
+    "fixer": {
+      "allow": ["firmware/**", "server/**", ".planning/**"],
+      "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+    },
+    "acceptance-author": {
+      "allow": ["firmware/**/*.acceptance.c", "firmware/**/*.acceptance.cpp", "firmware/**/acceptance/**", "server/**/acceptance/**"],
+      "deny": ["firmware/**/__tests__/**", "server/**/__tests__/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+    },
+    "verifier": {
+      "allow": [],
+      "deny": ["**"]
+    },
+    "supervisor": {
+      "allow": [],
+      "deny": ["**"]
+    },
+    "integrator": {
+      "allow": ["firmware/**", "server/**", "docs/systems/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "changes/dev/**", ".claude/taskpackages/**", ".planning/**"],
+      "deny": ["docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+    },
     "architect": {
       "allow": [
         "docs/systems/**", "docs/contracts/**", "changes/arch/*arch-review-*/**", "changes/arch/*gov-review-*/**",

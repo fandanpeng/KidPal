@@ -13,7 +13,7 @@ model: opus
 
 ## When to Use / 何时调用
 
-- **dev-loop**（档 2 起有；档 1 为主线程/人类直接问询）：主线程或未来 dev-loop 收到实现侧反馈，认为可能需要改 `docs/contracts/**` 或系统 spec。
+- **dev-loop**：主线程或 dev-loop（planner Pod）收到实现侧反馈，认为可能需要改 `docs/contracts/**` 或系统 spec。
 - **arch-review loop**：review-moderator 主线程收到 adjudicator 裁定或自己的契约路由判断，发现 spec finding 触 `docs/contracts/**` 或系统 spec。
 - 已有人类方向批准，但实际 patch 仍需合规检查。
 - docs-sync、verifier 或 arch-review pass-oracle 暴露 contract/spec drift。
@@ -83,7 +83,7 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 | `LIGHTWEIGHT_OK` | 确属小、非契约、非高风险、**仅 G2**、机检硬排除全过、主观残留为空、验证计划便宜 | 交 review-moderator **独立复判 eligibility**；通过后才由主线程 packet-bound landing |
 | `ESCALATE_FULL_REVIEW` | 有架构语义 / 跨系统 / 歧义 / 信心不足 / 落到主观残留 | 走 full 对抗 review（scenario-author→challenger→defender→adjudicator） |
 | `HUMAN_REQUIRED` | 触 G1 / G3 / 自改递归 / 高敏治理 | human 决策 / full governance 路径 |
-| `CONTRACT_GATE_REQUIRED` | 触 `contracts/**` 或造 spec-contract drift | 走你原有的契约门四分类 + 人类契约门 |
+| `CONTRACT_GATE_REQUIRED` | 触 `docs/contracts/**` 或造 spec-contract drift | 走你原有的契约门四分类 + 人类契约门 |
 
 **边界（lightweight 同样适用）**：只读、不写文件、不改 spec/contract/实现；不批准 landing、不落 canonical；**不自证 eligibility**（moderator 复判）；不替代 full 对抗 review。产 `architect-reviewer-verdict.md`（裁断 + 每条硬排除的机检结果 + 主观残留判断），不伪造 full-review 制品（charter/findings/review-packet）。
 

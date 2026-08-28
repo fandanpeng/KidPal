@@ -23,7 +23,7 @@ model: opus
 - 设计或修订系统 spec（KidPal：`docs/systems/kidpal/spec.md`）。
 - 设计 dev-loop、对抗 review loop、merge gate、contract gate、handoff、queue、CI/drift 等流程。
 - 判断一个变更应该走 spec 修订、对抗 review、architect-reviewer、human contract gate，还是 planner/dev-loop。
-- **dev 变更分流前置门**（`/triage-change` 入口，档 2 起 dev-loop 有实现面后才有完整意义）：对改自有实现面（固件业务 + 云端 shim）行为的变更判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）。
+- **dev 变更分流前置门**（`/triage-change` 入口）：对改自有实现面（固件业务 + 云端 shim）行为的变更判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）。
 - 起草 ADR、review packet、contract proposal、ContractChangePacket、architecture-gate-evidence、dev-loop handoff。
 - **起草分两类（discussion-draft 作者路由，gov-review-discussion-draft-authorship FROZEN 2026-07-27）**：**讨论稿**（人 + 主 Agent 讨论结晶）由**主线程作者**，不起本子 Agent（见 operating-model §3「Discussion → Draft Authorship」）；本子 Agent 起草的是 **review 候选**（仅 `/arch-change` 瘦 plan 场景，作 review-moderator 的起草 subagent）。
 - **作为 `review-moderator` 的起草 subagent 被派发**(`/arch-change` 入口下):只起草**候选**(spec 草案入 `docs/systems`;governance PROPOSAL 入 `changes/arch/gov-review-<id>/`),**不落 governance canonical、不写冻结 charter、不自评、自改递归仍须 human**;判据与裁定归 scenario-author/challenger/adjudicator。

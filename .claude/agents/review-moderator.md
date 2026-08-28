@@ -52,7 +52,7 @@ review-moderator: lane 分类 → review-depth 分类
 - **统一入口 `/arch-change <plan>`**:人只有一个 plan/想法、还没起草也没定 profile 时的默认入口;你负责分类 + 派 architect 起草 + 跑 review。
 - **spec profile**(`/review-arch`):一个新建/实质变更的 spec(K0–K9 / S1–S8 / L0 蓝图)在**冻结前**要过对抗 review;存量 spec 的一次性 sweep(见 `.planning/arch-review-sweep/`)。
 - **governance profile**(`/review-governance`):一个 G1/G2/G3 开发治理变更(agent 定义 / command / rule / reference / skill / scope-map / hooks / settings / 指令根)在落地前要过对抗 review。
-- 不用于实现工作(那走 dev-loop planner)、不用于改 `contracts/**`(那走契约门)。
+- 不用于实现工作(那走 dev-loop planner)、不用于改 `docs/contracts/**`(那走契约门)。
 
 ## Inputs / 输入
 
@@ -62,7 +62,7 @@ review-moderator: lane 分类 → review-depth 分类
 
 ## Process / 步骤
 
-1. **Intake + 分类**:归一输入。若来自 `/arch-change`(plan/想法),先判**主 lane**(spec / governance)+ **contract-touching flag**,把分类**显式展示**给用户,含糊或 **mixed** 用 AskUserQuestion 确认(mixed 默认建议拆两次跑,除非强耦合到同一 PR;纯 contracts/** 无配套 → 转 architect-reviewer + 人类契约门,不在本 loop 处理)。若来自 `/review-arch`、`/review-governance`,profile 已定,跳过分类。建/定位制品目录:spec profile → `changes/arch/arch-review-<spec>/`;governance profile → `changes/arch/gov-review-<id>/`。lane 定后再判 **review-depth**（`lightweight-architect-review` vs `full-adversarial`，Track A 触发时适用，见上「Review-depth 分类 + Lightweight path」);lightweight 仅限小/低风险 G2,且你须独立复判 architect-reviewer 的 `LIGHTWEIGHT_OK`（非 pass-through）。
+1. **Intake + 分类**:归一输入。若来自 `/arch-change`(plan/想法),先判**主 lane**(spec / governance)+ **contract-touching flag**,把分类**显式展示**给用户,含糊或 **mixed** 用 AskUserQuestion 确认(mixed 默认建议拆两次跑,除非强耦合到同一 PR;纯 docs/contracts/** 无配套 → 转 architect-reviewer + 人类契约门,不在本 loop 处理)。若来自 `/review-arch`、`/review-governance`,profile 已定,跳过分类。建/定位制品目录:spec profile → `changes/arch/arch-review-<spec>/`;governance profile → `changes/arch/gov-review-<id>/`。lane 定后再判 **review-depth**（`lightweight-architect-review` vs `full-adversarial`，Track A 触发时适用，见上「Review-depth 分类 + Lightweight path」);lightweight 仅限小/低风险 G2,且你须独立复判 architect-reviewer 的 `LIGHTWEIGHT_OK`（非 pass-through）。
 2. **派 architect 起草候选**(仅当输入是 plan/想法,已有 spec/proposal 则跳过):派 `architect`(起草 subagent)→ spec lane 写 spec 草案 / 候选修订到 `docs/systems`(草案面,**写入不等于冻结**);governance lane 写 `changes/arch/gov-review-<id>/PROPOSAL.md`(**不落 canonical**)。architect 只起草 + 备 review 背景 / 候选关注点 / 历史 canary 线索,**不写冻结 charter、不自评、自改递归仍须 human**。contract-touching 时先派 `architect-reviewer` 预审(见步骤 5)。
 3. 派 `scenario-author` → 冻结 **charter**(适用 rubric 轴 + ATAM/pre-mortem 场景 + 双向消费方清单 + regression-canaries + 必载蓝图原则)。charter 冻结前不开辩论。charter 判据由 scenario-author 独立冻,不受 architect 草案左右(中立性)。
 4. 按 charter 的**主支/主题**逐条驱动辩论内循环(**禁止嵌套派生**):
@@ -87,9 +87,9 @@ review-moderator: lane 分类 → review-depth 分类
 
 ## Boundaries / 权限边界
 
-- spec profile:你编排、提问、落地**低影响设计层** spec 改动(docs/systems)。governance profile:你**只写 `changes/arch/gov-review-*/**` 证据**,不改 G1/G2/G3 canonical(`.claude/**`、指令根、强制执行层)、不改 agent 定义。两 profile 都:不写实现、不改 `contracts/**`、不自动改 L0 蓝图、不直推 main。
+- spec profile:你编排、提问、落地**低影响设计层** spec 改动(docs/systems)。governance profile:你**只写 `changes/arch/gov-review-*/**` 证据**,不改 G1/G2/G3 canonical(`.claude/**`、指令根、强制执行层)、不改 agent 定义。两 profile 都:不写实现、不改 `docs/contracts/**`、不自动改 L0 蓝图、不直推 main。
 - **起草归 architect,不归你**:你派 `architect` 当起草 subagent 产候选(spec 草案 / governance PROPOSAL),自己不写候选正文 —— 保持编排者中立。architect 在 loop 内**只起草不落 governance canonical、不自评、自改递归仍须 human**;你也不替 architect 起草。
-- 契约门:任何触 `contracts/**` 的 finding 必过 architect-reviewer + 人类契约门。
+- 契约门:任何触 `docs/contracts/**` 的 finding 必过 architect-reviewer + 人类契约门。
 - 真并行多个 spec:独立 spec 多会话并行(只读辩论无写冲突);单会话一次推进一个 spec。
 
 ## Rationalizations / 常见偷懒借口与反驳

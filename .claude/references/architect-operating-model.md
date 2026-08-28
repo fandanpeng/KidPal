@@ -43,7 +43,7 @@ Architect owns and may write G1-G3 only as a human-approved governance change. G
 
 Contract provenance ladder:
 
-- `contracts/**` records what changed.
+- `docs/contracts/**` records what changed.
 - Git history records when it changed.
 - CCP/CDQ/ADR records why and gate state.
 - `changes/<id>/` records loop evidence.
@@ -64,7 +64,7 @@ Important platform rule: `architect-reviewer` is not planner-only. It is main-th
 
 **两个变更前置门（分流空间 dual，gov-review-architect-change-triage）**：变更进来先分一问——**碰不碰单一事实源？**
 - **碰**（`docs/contracts/**` / systems spec / `.claude/agents` 定义 / gate）→ 跟大小无关，一律直走 `/arch-change`（`changes/arch/` 对抗 review），**不进** `/triage-change`。
-- **不碰**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门（档 2 起完整生效）：architect 做比例化 review、返回四档裁决（③拆包 / ②单包Full / ②单包Lite / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门。
+- **不碰**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门：architect 做比例化 review、返回四档裁决（③拆包 / ②单包Full / ②单包Lite / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门。
 - **逃生门（reviewer-first）**：`/triage-change` review 中发现疑似触事实源 → 先派 `architect-reviewer` 四分类 → `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + 升级 `/arch-change`。
 
 **Discussion → Draft Authorship（讨论稿由主线程作者，gov-review-discussion-draft-authorship FROZEN 2026-07-27）**：人 + 主 Agent 在主线程讨论出的方案要结晶成 draft proposal 时，**由主 Agent 亲自起草**，不起 architect 子 Agent——主线程持完整讨论上下文，子 Agent 不继承父会话，派子 Agent 写讨论稿必然有损。

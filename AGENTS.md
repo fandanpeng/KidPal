@@ -1,6 +1,6 @@
-# AI Native Company Agent Instructions（ESP32/KidPal · 治理档 1）
+# AI Native Company Agent Instructions（ESP32/KidPal · 治理档 1+2+3）
 
-> **迁移注记**：本仓治理体系自 `c:\AI\AInativecompany` 迁移，按 `docs/templates/GOVERNANCE-MIGRATION-GUIDE.md` 的**档 1 = Spec 治理**裁剪。已迁：arch-review 对抗链、契约门、Track B 治理路由、scope 闸、deny-main-push。未迁（升档 2 再补）：dev-loop 全链（builder/verifier/integrator/supervisor）、测试闸、portfolio 编排。
+> **迁移注记**：本仓治理体系自 `c:\AI\AInativecompany` 迁移，按 `docs/templates/GOVERNANCE-MIGRATION-GUIDE.md` 分档裁剪。**档 1 = Spec 治理**（arch-review 对抗链、契约门、Track B 治理路由、scope 闸、deny-main-push）2026-08-27 迁入；**档 2 = dev-loop 全链**（planner / acceptance-author / builder / fixer / verifier / integrator / supervisor + 测试闸）与**档 3 = portfolio 编排**（portfolio-planner / worktree / merge token / pod-coordination）2026-08-29 迁入（迁移批 `changes/arch/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面 firmware/server 重写）。
 
 ## 实现面与 vendor 面约定
 
@@ -17,7 +17,7 @@
 2. architect 评审循环至 GREEN（只读 canonical、只写评审记录；影响目标效果的打回项升级 human）；
 3. 主线程凭「立项 ack + GREEN」标 FROZEN；
 4. 主线程 packet-bound 落地（landing-manifest 绑定）+ 写 landing summary；
-5. 主线程派 landing-verifier 独立核验——结构门脚本本仓未迁，核验降级为逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
+5. 主线程派 landing-verifier 独立核验——结构门 `landing-fidelity-check.mjs` + 逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
 6. 补写 retro report 闭环（骨架 `docs/templates/retro.template.md`）——趁热写、先于合并；
 7. human 经 PR / 可回滚路径合并入 main。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `changes/INDEX.md`。
 
@@ -28,7 +28,7 @@
 
 ## Hard Rules
 
-- 主 AI 不直改自有实现面做正式工作。档 1 期间 dev-loop 未建，实现动作仅限 human 明确说跳过流程的一次性操作，且须诚实记录「跳过流程」。
+- 主 AI 不直改自有实现面做正式工作——实现动作走 dev-loop（planner Pod 派 acceptance-author → builder → verifier↔fixer → integrator → supervisor）；唯一例外 = human 明确说跳过流程的一次性操作，且须诚实记录「跳过流程」。
 - **契约冻结**：任何会话不得用 Write/Edit/Bash 重定向写 `docs/contracts/**`，改动走 architect-reviewer 四分类 + 人类契约门。
 - Completion 不凭解释宣布——治理变更完成 = landing 完成 + landing-verifier 绿 + retro 齐。
 - After `git add`, verify with `git diff --cached --stat` before committing. 历史记录类文件一律 append，不覆盖既有行。

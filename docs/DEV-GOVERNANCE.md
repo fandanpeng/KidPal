@@ -1,6 +1,6 @@
 # 开发域治理（DEV-GOVERNANCE）：设计思想与实现
 
-> **迁移注记（2026-08-27）**：本文件自 `c:\AI\AInativecompany` 迁移，按 KidPal 实况适配——契约面 = `docs/contracts/**`（单文件 markdown 协议），dev-loop / portfolio / 测试闸属**档 2 未迁**（本文件保留原文骨架并逐处标注，升档时启用）。结构参考 = `.claude/rules/repo-structure.net-template.md`（原仓模板，含本仓未建面）。流程正文在各 operational 文档；契约 SSOT 永远是 [docs/contracts/**](contracts/)；术语表暂缺，建立时补。
+> **迁移注记（2026-08-27 档 1；2026-08-29 档 2/3）**：本文件自 `c:\AI\AInativecompany` 迁移，按 KidPal 实况适配——契约面 = `docs/contracts/**`（单文件 markdown 协议）。档 1（spec 治理：arch-review 对抗链 + 契约门 + Track B）2026-08-27 迁入；档 2（dev-loop 全链 + 测试闸）与档 3（portfolio 编排）2026-08-29 迁入（迁移批 `changes/arch/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面重写）。结构参考 = `.claude/rules/repo-structure.net-template.md`（原仓模板，含本仓未建面）。流程正文在各 operational 文档；契约 SSOT 永远是 [docs/contracts/**](contracts/)；术语表暂缺，建立时补。
 > 本文件讲清开发域治理**按什么思想设计、如何在本仓实现**。
 > **怎么读本文**：想了解 → 上篇 §1–§4；想改东西 → §7 速查；想改治理本身 → §6 → §4 治理变更 → §5。
 > **贯穿铁律**：审批在前、改动在后（前置门）；证据入库，聊天结论不结门；冲突按 authority ladder **停下路由**、不静默选择——`docs/contracts/**` > canonical spec > 治理规则 > gate evidence > queues > `changes/` > transcripts。
@@ -39,13 +39,13 @@
 
 | 敏捷团队角色 | 本仓实现 | 干什么 |
 |---|---|---|
-| RTE（Release Train Engineer） | `portfolio-planner`（档 2 迁入） | 把里程碑 / 倡议拆成排好序、带依赖的 TaskPackage；跨 Pod 调度（WIP limit / merge order / merge token） |
-| Scrum Master | `planner`（档 2 迁入） | 单 Pod 循环编排：验收 → 开发 → 测试↔修复 → 集成 → retro → 合并门 |
-| AC 撰写（PO 侧） | `acceptance-author`（档 2 迁入） | 把需求写成红基线验收测试，覆盖每条 sourceRef |
-| 开发 | `builder` / `fixer`（档 2 迁入） | 实现 / 修红 |
-| 测试 / QA | `verifier`（档 2 迁入） | 确定性核验，退出码说话 |
-| 集成 / 发布 | `integrator` / merge executor（档 2 迁入） | docs-sync + 全量 e2e + closeout；合并只走 PR、可回滚 |
-| 合并把关（release gate） | `supervisor`（档 2 迁入） | 证据可信 + 风险分级放行；高危升级 human |
+| RTE（Release Train Engineer） | `portfolio-planner` | 把里程碑 / 倡议拆成排好序、带依赖的 TaskPackage；跨 Pod 调度（WIP limit / merge order / merge token） |
+| Scrum Master | `planner` | 单 Pod 循环编排：验收 → 开发 → 测试↔修复 → 集成 → retro → 合并门 |
+| AC 撰写（PO 侧） | `acceptance-author` | 把需求写成红基线验收测试，覆盖每条 sourceRef |
+| 开发 | `builder` / `fixer` | 实现 / 修红 |
+| 测试 / QA | `verifier` | 确定性核验，退出码说话 |
+| 集成 / 发布 | `integrator` / merge executor | docs-sync + 全量 e2e + closeout；合并只走 PR、可回滚 |
+| 合并把关（release gate） | `supervisor` | 证据可信 + 风险分级放行；高危升级 human |
 | 设计评审会 | `scenario-author` / `challenger` / `defender` / `adjudicator` / `review-moderator` | 冻判据 → 红队挑战 → 答辩 → 裁决；主持编排 |
 | 首席架构师 | `architect` | 起草 spec / 治理候选；开发治理 owner |
 | 架构评审 | `architect-reviewer` | 契约四分类 + review-depth 裁断 |
@@ -63,7 +63,7 @@
 
 思想②的制度族：凡是机械可判的检查，我们**不写成 agent，写成制度**——脚本、hook、配置。制度不疲劳、不看情面、每次都执行。
 
-- **承重 = 机器硬拦，违反即拦**：契约面冻结（review-loop 整毯冻结 `docs/contracts/**`）、docs 顶层白名单、影子目录禁令、直推主干拦截、逐 agent 写边界。（档 2 迁入后另有：收口门、verify-gates 脚本链。）
+- **承重 = 机器硬拦，违反即拦**：契约面冻结（review-loop 整毯冻结 `docs/contracts/**`）、docs 顶层白名单、影子目录禁令、直推主干拦截、逐 agent 写边界、收口门、verify-gates 脚本链。
 - **灵活 = 判断 + 就近引导**：apps 内部实现、Tier-2 私有模型、文档内容本身。
 
 强制点清单的 SSOT 是 [scope-map.json](../.claude/scope-map.json) 与 [repo-structure.md](../.claude/rules/repo-structure.md)；agent / 制度文件的撰写纪律见 [authoring-agents-skills.md](../.claude/rules/authoring-agents-skills.md)、[prompt-authoring.md](../.claude/rules/prompt-authoring.md)。
@@ -131,7 +131,7 @@ flowchart LR
     ARQ -.->|改进定义| PP
 ```
 
-- **对象 / 触发**：自有实现面（固件业务 + 云端 shim，动工前由 human 登记进 scope-map）实现（feature / bugfix / 重构 / 测试修复 / 实现侧 docs-sync）。**【档 2 未迁】**
+- **对象 / 触发**：自有实现面（固件业务 + 云端 shim，动工前由 human 登记进 scope-map）实现（feature / bugfix / 重构 / 测试修复 / 实现侧 docs-sync）。
 - **怎么做**：⓪ 开工前 `/triage-change` 比例化分档（拆包 / Full / Lite / 直接修）→ ① RTE 拆包调度 → ② planner 带单 Pod：acceptance-author（红基线）→ builder → verifier↔fixer → integrator（docs-sync + 全量 e2e + closeout）→ planner 收尾（pod-retro）→ supervisor 合并门 → merge executor 走 PR → ③ `/loop-retro` 周期性跨 Pod 复盘提共性 → 治理类进 ARQ、回流 ① intake，构成**自改进回路**。疑似触契约 → architect-reviewer 兜底。
 - **证据**：`.claude/taskpackages/<id>/`（execution ledger）+ `changes/dev/<id>/`（closeout audit）。详见 [dev-loop-operating-system.md](../.claude/references/dev-loop-operating-system.md) · [dev-loop.md](../.claude/references/dev-loop.md) · [change-triage.md](../.claude/references/change-triage.md)。
 
@@ -196,7 +196,7 @@ flowchart TD
 - **lightweight-architect-review**（**Track A 触发时适用**）= 「对抗 review 人类拍板」的具名 depth 子道（**Track A · G 层路由**的一档）：仅小/低风险 G2；eligibility 判定与边界见 §6 退役后常态规则段 + [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」。
 - **Track B 轻路径** = **常驻默认路由（通用化）**：一切治理 / spec 变更默认走 Track B 七步闭环（见 §4 治理变更 + [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」）；Track A = 升级判据触发的休眠红队（判据：触 `docs/contracts/**` / 跨系统结构性变更 / 评审 3 轮熔断 / 自愿声明红队）。非第 7 工程门（`ARQ-260731-fastpath-protocol-codify` FROZEN；2026-08-02 永久化见 `changes/arch/260802-gov-review-track-b-permanentize/PROPOSAL.md`）。
 - **UI design-review BLOCKING** = 经 integrator 写入 Review Packet、由既有 supervisor 合并门消费；severity 阶梯是既有 BLOCKING/SHOULD/NIT 阶梯的解释，不是新轴（见 [code-review-gate.md](../.claude/references/code-review-gate.md)）。
-- **`/triage-change`** = bootstrap 期临时信任门（相位化信任模型自原仓移植），非第 7 个工程门、非业务门，不进本清单；其路由裁决的人类确认触点是门内触点（见 [change-triage.md](../.claude/references/change-triage.md)）。【档 2 起 dev-loop 有实现面后才完整生效】
+- **`/triage-change`** = bootstrap 期临时信任门（相位化信任模型自原仓移植），非第 7 个工程门、非业务门，不进本清单；其路由裁决的人类确认触点是门内触点（见 [change-triage.md](../.claude/references/change-triage.md)）。
 - **closeout 硬化** = 既有 verifier 闸族 `closeout-check` 门内加项：Q5 已裁 warn；教育期四轮观测 pod-retro 自律率 0/3 → 3/3 → 4/4 → 6/6、干净样本 13/13，human 裁 2026-08-25 **维持 warn、零文本改动**（ARQ-111 已结；升 blocking 须修订已冻结 C-07、同 profile full-adversarial + human，触发条件 = 出现非窗口期 pod-retro 缺写实例时重新登记评估）。
 - **commit-before-launch launch 前置门** = launch 编排的**结构性前置条件**（制度族机械检查 `git cat-file -e <base-ref>:<path>`，对偶 `taskpackage-required-check.mjs` 起包结构闸），**非第 7 工程门**、非业务门，不进本清单；其 launch 拒止是机械结构校验（判者退出码），非 human judgment 门（governance `ARQ-260729-portfolio-handoff-failclosed` FROZEN v1.0 / F-01·F-10；机制见 [pod-coordination.md §2b](../.claude/references/pod-coordination.md)）。
 - **机械 supervisor-verdict 闸** = 「supervisor 合并门」（行 2）的**承载形态变更**，非第 7 工程门（P-5 六门不变式据守）：supervisor agent 2026-07-25 退役后，合并门放行裁决由机械闸 `supervisor-verdict-gate.mjs` 产出（riskTier 从 git diff 重派生 + 证据完整度消费 bearing facts）、Stop 钩子 `supervisor-gate-check.mjs` 第二方验 provenance（`mechanicalSupervisorGate`）+ 从 immutable 输入重算核对（FIX-6）。判据列字面「低/中自动放行」是恢复已成文门力度（J10），非新增。**显式反转前序 human-ruled 裁决**：本闸反转 `gov-review-supervisor-provenance-strength`（FROZEN HUMAN-APPROVED 2026-07-25 冻 `supervisorAgentDispatched===true` required）——supervisor 退役后该钉法不可满足（260729:19-20 planner 诚实拒伪造实证），H7 human 批准反转 2026-07-30（见 [decision-packet](../changes/arch/260730-gov-review-verdict-bearing-dual/decision-packet.md) §6）。
@@ -239,7 +239,7 @@ flowchart TD
 | 系统 spec（KidPal：`docs/systems/kidpal/spec.md`） | 治理路由（Track B 默认）；跨系统结构性变更 / 声明红队 → `/arch-change`（Track A spec profile 对抗 review） | 低影响 moderator；高影响 / 跨系统 / deadlock / 触契约 → human |
 | L0 蓝图 | Track A 语境（= 跨系统结构性变更，命中升级判据②）；备改法交人类，不自动落地 | human |
 | 系统级 UI 蓝图 / UIUX·OpenDesign 治理 | `/arch-change` governance profile 携带 UIUX 轴集（非第三 profile、非新工程门；系统级 brief 由 `uiux-designer` 起草候选，moderator dispatch 尚未接线） | human（跨系统 / 主流程 / IA / 品牌）；局部低风险可 loop 落 |
-| 自有实现面（固件 / shim） | `/triage-change` 比例化四档 → reviewed plan → Dev Loop OS【档 2 未迁，暂为人类授权一次性操作】 | supervisor 合并门【档 2】 |
+| 自有实现面（固件 / shim） | `/triage-change` 比例化四档 → reviewed plan → Dev Loop OS | supervisor 合并门 |
 | agent 定义 | 治理变更（Track B 默认）；被改 agent 不得自改或找人代改 | **human** |
 | command / reference / rule / skill | 治理变更（Track B 默认） | human |
 | scope-map / settings / verify-gates / hook / script | 治理变更（Track B 默认，高敏） | human |

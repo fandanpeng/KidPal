@@ -30,4 +30,4 @@ idf.py -p <PORT> flash monitor
 
 - 本目录是**自有实现面**（已登记 `.claude/scope-map.json` owned 段），可写。
 - vendor 面 `ESP32-S3-RLCD-4.2-Demo/` **只读**——要改它承载的行为，一律在本目录 overlay 做。
-- 档 1 期间 dev-loop 未建，主线程正式实现动作须 human 明确跳过流程并诚实记录；档 2 起实现走 dev-loop。
+- 实现动作走 dev-loop（主 AI 不直改本面）：planner Pod 派 acceptance-author → builder → verifier↔fixer → integrator → supervisor；唯一例外 = human 明确跳过流程的一次性操作，须诚实记录。
