@@ -1,0 +1,103 @@
+{
+  "changeId": "260829-hardware-validation",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "物理冒烟与端到端真机验收：按键手感 / 双麦 / RTC 断电续航 / 低电 / RLCD 真屏观感 + 全功能端到端真机，把 B 段在电脑上验过的能力放到真实硬件上确认。",
+  "redBaselineCommand": "烧录集成固件到板子做物理冒烟（手工 device 验收清单）：按键/双麦/RTC 断电/低电/RLCD 观感逐项 + 全功能端到端",
+  "redBaselineResult": "红：B 段功能（包 2~8）在 host/PC 验过但未在真机整合验证；硬件强绑定子能力（RTC 走时、SHTC3 直读、麦克风采音）host 段未验——真机端到端未跑通。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "HWV-A1",
+      "kind": "structural"
+    },
+    "HWV-A2: 按键手感实测：KEY/BOOT 单击/双击/长按在真机上响应正确（消抖、职责分离符合 §4.0）",
+    "HWV-A3: 双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）",
+    "HWV-A4: RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）",
+    "HWV-A5: 低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收",
+    "HWV-A6: 全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/hardware_validation.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "HWV-E1",
+      "kind": "structural"
+    },
+    "HWV-E2: device 验收以真机实测证据（烧录日志 + 逐项勾验记录）落盘，非模拟",
+    "HWV-E3: 显式兜底验收「4 页循环翻页」跨页端到端整合（PROPOSAL §7 留根：host 阶段无专包认领）",
+    "HWV-E4: AEC 语音喊停实测不在本包（归包 9a 单独隔离），本包只做物理冒烟 + 端到端"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§2",
+    "docs/systems/kidpal/spec.md#§5.4"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§2",
+    "docs/systems/kidpal/spec.md#§5.4",
+    "9b"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 8,
+  "docsOwner": "integrator",
+  "mergeOrder": 11,
+  "dependsOn": [
+    "260829-voice-roundtrip",
+    "260829-session-logic",
+    "260829-char-stroke",
+    "260829-home-p1",
+    "260829-schedule-p2",
+    "260829-schedule-reminder",
+    "260829-story-p3"
+  ],
+  "testHost": "device",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包9b",
+      "summary": "物理冒烟：按键手感/双麦/RTC 断电续航/低电/RLCD 真屏观感 + 全功能端到端真机，device 验收。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:HWV-A6"
+    },
+    {
+      "decision": "PROPOSAL-§7-跨页翻页兜底",
+      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式由包 9b（全功能端到端真机）兜底验收。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "exitCriteria:HWV-E3"
+    },
+    {
+      "decision": "PROPOSAL-§3-硬件殿后汇总",
+      "summary": "硬件强绑定子能力（包 5 RTC/SHTC3 直读、包 8 麦克风采音）host 段只测布局/逻辑，真实硬件读取统一殿后 9b 验收。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
+      ],
+      "landsIn": "acceptance:HWV-A4"
+    }
+  ]
+}

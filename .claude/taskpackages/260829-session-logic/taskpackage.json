@@ -1,0 +1,97 @@
+{
+  "changeId": "260829-session-logic",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware",
+  "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。",
+  "redBaselineCommand": "跑 firmware host 状态机单测（linux target，依赖包 0 基建），覆盖会话状态转移 + 按键手势解析",
+  "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "state-machine",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "SES-A1",
+      "kind": "structural"
+    },
+    "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
+    "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
+    "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
+    "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
+    "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/session_logic.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "SES-E1",
+      "kind": "structural"
+    },
+    "SES-E2: 本包只做按键手势解析纯逻辑 + 会话状态机；「4 页循环翻页」跨页端到端整合不在本包，显式由包 9b（全功能端到端真机）兜底验收（PROPOSAL §7 留根）",
+    "SES-E3: PWR 为硬件电源键、固件不可读，不入交互状态机——此约束在状态机设计中体现并注释"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§4.0",
+    "docs/systems/kidpal/spec.md#§5.3"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§4.0",
+    "docs/systems/kidpal/spec.md#§5.3",
+    "3"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 5,
+  "dependsOn": [
+    "260829-host-test-infra"
+  ],
+  "testHost": "host",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包3",
+      "summary": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分），host 状态转移测试。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:SES-A2"
+    },
+    {
+      "decision": "spec-§5.2-会话模型",
+      "summary": "按一下 KEY 启动会话（≈唤醒词体验）、免提连续对话、60s 超时/说拜拜/再按键结束；本地状态机基于小智 ToggleChatState 改。",
+      "sourceRefs": [
+        "docs/systems/kidpal/spec.md#§5.2"
+      ],
+      "landsIn": "acceptance:SES-A3"
+    },
+    {
+      "decision": "PROPOSAL-§7-跨页翻页归属",
+      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式声明由包 9b 兜底验收；包 3 只做页内/全局手势解析纯逻辑。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "exitCriteria:SES-E2"
+    }
+  ]
+}

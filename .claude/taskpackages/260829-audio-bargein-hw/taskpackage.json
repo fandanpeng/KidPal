@@ -1,0 +1,98 @@
+{
+  "changeId": "260829-audio-bargein-hw",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware",
+  "story": "AEC 语音喊停实测调阈值（最大技术风险，隔离成片）：AI 播放中本地 AEC+VAD 检测到人声立即停播并聆听，需真实声学环境反复实测调阈值；KEY 单击打断兜底 100% 可靠先行验证。",
+  "redBaselineCommand": "烧录固件到板子在真实声学环境实测 AEC 喊停（手工 device 实测）：播放中孩子开口，验证立即停播 + 不同音量/混响下的误触发/漏触发率",
+  "redBaselineResult": "红：AEC 喊停阈值未在真实声学环境标定，音量过大/混响强时误触发或漏触发（spec §5.2 自标最大不确定点）——行为不可靠。本包把它调到可用。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "state-machine",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "BRG-A1",
+      "kind": "structural"
+    },
+    "BRG-A2: KEY 单击打断兜底 100% 可靠先行验证：任何播放态下 KEY 单击立即停播",
+    "BRG-A3: AEC 喊停行为定义成立：AI 播放中孩子一开口（不管说什么），本地 AEC+VAD 检测到人声盖过播放声即立即停播并聆听（不等云端）",
+    "BRG-A4: 多档音量/混响条件下实测调阈值，误触发率与漏触发率达到可用人范围（记录实测数据）",
+    "BRG-A5: 停播后把孩子这段送云端 ASR 判意图（『别讲了』→确认停止 /『不对，是勇敢的勇』→纠正重答）链路真机走通"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/audio_bargein_hw.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "BRG-E1",
+      "kind": "structural"
+    },
+    "BRG-E2: 实测数据（各档音量/混响下的误触发/漏触发记录 + 调定阈值）落盘，非模拟——电脑模拟不出真实声学，本包必须真机",
+    "BRG-E3: 本包是最可能反复返工的包，单独隔离成片（PROPOSAL §3）；排在 9b 后，因喊停依赖完整链路先真机就位",
+    "BRG-E4: 电脑模拟阶段不宣称 AEC 已验——host/PC 不可模拟真实声学，验收以真机实测为准"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§5.2",
+    "docs/systems/kidpal/spec.md#§3.2"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§5.2",
+    "docs/systems/kidpal/spec.md#§3.2",
+    "9a"
+  ],
+  "iterationBudget": 5,
+  "fixBudget": 10,
+  "docsOwner": "integrator",
+  "mergeOrder": 12,
+  "dependsOn": [
+    "260829-voice-roundtrip",
+    "260829-hardware-validation"
+  ],
+  "testHost": "device",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包9a",
+      "summary": "AEC 语音喊停实测调阈值（最大技术风险，隔离成片；KEY 单击打断兜底 100% 可靠先行验证），device 实测。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:BRG-A3"
+    },
+    {
+      "decision": "spec-§5.2-喊停必做",
+      "summary": "语音喊停 MVP 必做：本地 AEC+VAD 停播不依赖云端取消；KEY 单击打断兜底 100% 可靠；依赖 AEC 效果需实测调阈值（最大不确定点）。",
+      "sourceRefs": [
+        "docs/systems/kidpal/spec.md#§5.2"
+      ],
+      "landsIn": "acceptance:BRG-A2"
+    },
+    {
+      "decision": "review-F3-1-riskTier",
+      "summary": "9a riskTier 经 human 裁定由 critical 改 high——『最大技术风险』是实现不确定性高，不等于 riskTier 的 critical 档（按爆炸半径/不可逆性分级）。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/review.md#F3-1"
+      ],
+      "landsIn": "exitCriteria:BRG-E3"
+    }
+  ]
+}

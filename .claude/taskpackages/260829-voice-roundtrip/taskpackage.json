@@ -1,0 +1,102 @@
+{
+  "changeId": "260829-voice-roundtrip",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "语音回环完整化 + E1 display 切分下发：完整语音会话链路（聆听→云端→播报）跑通，且 shim 把 OpenClaw 回复末尾的 ```display 块切出——正文送 TTS 播放、display JSON 下发板子渲染对应 view 页。",
+  "redBaselineCommand": "cd server && pytest tests/test_voice_roundtrip.acceptance.py -q；host 侧跑 firmware display 切分/渲染单测",
+  "redBaselineResult": "红：shim 尚无 ```display 块切分逻辑、固件无 display JSON→view 渲染分发——目标验收测试文件尚不存在，pytest/host 编译收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "real-db",
+    "state-machine",
+    "test-quality",
+    "docs-sync"
+  ],
+  "contractBlocked": "依赖契约待 OpenClaw 确认点 1（interface-contract.md §待确认点 1：DeepSeek 按 system prompt 稳定输出 ```display 块的格式遵循度，需实测）。launch 前须 human 确认该点已解决，或定降级预案（如 shim 端对缺失/畸形 display 块回退为纯文本 view=text 兜底）。本包只消费契约，不在 Pod 内改 docs/contracts/**。",
+  "acceptance": [
+    {
+      "id": "VRT-A1",
+      "kind": "structural"
+    },
+    "VRT-A2: shim 正确切分 OpenClaw 回复——```display 之前的正文进 TTS 路、```display 块内 JSON 进 display 下发路，二者不串",
+    "VRT-A3: display JSON 解析出 view/data，view ∈ {char,schedule,story_list,story_text,text,home,control} 时板子切到对应渲染路径",
+    "VRT-A4: 正文经 TTS 合成语音并由（模拟/打桩）播放路返回，与 display 下发并行不阻塞",
+    "VRT-A5: display 块缺失或畸形时按降级预案回退（不崩溃、不空屏），回退路径有断言"
+  ],
+  "acceptanceTestsFile": [
+    "server/tests/test_voice_roundtrip.acceptance.py"
+  ],
+  "exitCriteria": [
+    {
+      "id": "VRT-E1",
+      "kind": "structural"
+    },
+    "VRT-E2: hybrid 测试——server 侧 PC pytest（挂打桩 OpenClaw）验切分/转发，firmware 侧 host 单测验 display JSON→view 分发，两面证据齐",
+    "VRT-E3: 本包是包 4/5/6/8 的公共底座（语音回环 + E1 切分），mergeOrder 4"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§3.0.2",
+    "docs/systems/kidpal/spec.md#§6.2",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§6.2",
+    "docs/contracts/interface-contract.md#§一",
+    "2"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 4,
+  "dependsOn": [
+    "260829-smoke-e2e",
+    "260829-host-test-infra",
+    "260829-shim-skeleton"
+  ],
+  "testHost": "hybrid",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包2",
+      "summary": "语音回环完整化 + E1 display 切分下发（正文→TTS、display JSON→板渲染），hybrid（host+PC）测试。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:VRT-A2"
+    },
+    {
+      "decision": "contract-§一-E1",
+      "summary": "E1 统一响应格式：OpenClaw 回复末尾 ```display 块嵌入显示指令，shim 切分两路——正文送 TTS、display JSON 下发板子渲染。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§一"
+      ],
+      "landsIn": "acceptance:VRT-A3"
+    },
+    {
+      "decision": "contract-待确认点1",
+      "summary": "DeepSeek display 格式遵循度为契约待确认点 1，本包 contractBlocked——launch 前需 human 确认或定降级预案（缺失/畸形 display 块回退纯文本）。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
+      ],
+      "landsIn": "acceptance:VRT-A5"
+    }
+  ]
+}

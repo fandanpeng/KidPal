@@ -1,0 +1,47 @@
+{
+  "workstream": "kidpal-mvp",
+  "source": ".planning/kidpal-mvp/PROPOSAL.md",
+  "upstreamFrozen": "sha1:256fa5dcf67b599b",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-08-29",
+  "_doc": [
+    "workstream 级 decisionCoverage：spec §4 全部 story → 承载包 + acceptance id 的映射。",
+    "11 个 TaskPackage 的 acceptance 并集须覆盖 spec §4 全部 story（含 §4.0 共享底座）+ §6 接口 + §7 已定决策中可由固件/shim 承载者。",
+    "S-F2.5（云端润色）为可选项、MVP 后置，合法 dropped 留根——不进任何包的必做验收。",
+    "upstreamFrozen 注：本 pin 为对当前 PROPOSAL.md 落盘字节实测的 raw-content sha1；PROPOSAL 文头自记 pin（sha1:dba9aa5baffbc658）与落盘字节不符（文件未提交、疑冻结后重存），已按文头『以本 FROZEN 版落盘内容为准』取实测值，并上报 human。"
+  ],
+  "storyCoverage": [
+    { "story": "S-F1.1", "title": "常显首页看现在几点+接下来干嘛", "packages": ["260829-home-p1"], "acceptanceIds": ["P1-A2", "P1-A3", "P1-A4", "P1-A5"], "hardwareDeferredTo": "260829-hardware-validation" },
+    { "story": "S-F1.2", "title": "课表页看今天/明天的课", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A3", "P2-A4"] },
+    { "story": "S-F1.3", "title": "语音问课表", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A5"] },
+    { "story": "S-F1.4", "title": "课表到点提醒", "packages": ["260829-schedule-reminder"], "acceptanceIds": ["RMD-A2", "RMD-A3", "RMD-A4", "RMD-A5", "RMD-A6"] },
+    { "story": "S-F1.5", "title": "家长录入课表", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A6"] },
+    { "story": "S-F2.1", "title": "看我的故事列表", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A2", "P3-A3"] },
+    { "story": "S-F2.2", "title": "一键录故事", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A4"], "hardwareDeferredTo": "260829-hardware-validation" },
+    { "story": "S-F2.3", "title": "回看/回听故事", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A5"] },
+    { "story": "S-F2.4", "title": "故事保存成就盖章", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A6"] },
+    { "story": "S-F2.5", "title": "云端润色故事（可选）", "packages": [], "landsIn": "dropped", "reason": "risk-accepted: 2026-08-29 human 裁定 S-F2.5 为可选、MVP 后置，不进本 workstream 必做验收；若做则单开 Lite 包（PROPOSAL §7 留根）。" },
+    { "story": "S-F3.1", "title": "语音查字并看笔顺演示", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A2", "CHR-A5", "CHR-A7"] },
+    { "story": "S-F3.2", "title": "看拼音/笔画/部首/组词", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A6"] },
+    { "story": "S-F3.3", "title": "笔顺演示控制（重播/下一个）", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A5"] },
+    { "story": "S-§4.0", "title": "共享底座：语音会话生命周期 + 按键手势", "packages": ["260829-session-logic", "260829-voice-roundtrip"], "acceptanceIds": ["SES-A2", "SES-A3", "SES-A4", "SES-A5", "SES-A6", "VRT-A2"] },
+    { "story": "S-§6-接口", "title": "shim 四接口 + E1 display 切分", "packages": ["260829-shim-skeleton", "260829-voice-roundtrip"], "acceptanceIds": ["SHM-A2", "SHM-A3", "SHM-A4", "SHM-A5", "SHM-A6", "VRT-A3", "VRT-A4"] },
+    { "story": "S-冒烟", "title": "架构可行性冒烟（tracer bullet）", "packages": ["260829-smoke-e2e"], "acceptanceIds": ["SMK-A2", "SMK-A3", "SMK-A4"] },
+    { "story": "S-基建", "title": "host 测试基建", "packages": ["260829-host-test-infra"], "acceptanceIds": ["INF-A2", "INF-A3", "INF-A4"] },
+    { "story": "S-硬件验收", "title": "物理冒烟 + 全功能端到端真机", "packages": ["260829-hardware-validation"], "acceptanceIds": ["HWV-A2", "HWV-A3", "HWV-A4", "HWV-A5", "HWV-A6"] },
+    { "story": "S-喊停", "title": "AEC 语音喊停实测调阈值", "packages": ["260829-audio-bargein-hw"], "acceptanceIds": ["BRG-A2", "BRG-A3", "BRG-A4", "BRG-A5"] }
+  ],
+  "crossPackageIntegration": [
+    {
+      "topic": "4 页循环 BOOT 翻页跨页端到端整合",
+      "note": "host 阶段无专包认领（包 3 只做按键手势解析纯逻辑），显式由 260829-hardware-validation 兜底验收（PROPOSAL §7 留根）。",
+      "carriedBy": "260829-hardware-validation",
+      "acceptanceId": "HWV-A6"
+    }
+  ],
+  "contractBlockedPackages": [
+    { "changeId": "260829-voice-roundtrip", "pendingPoint": "契约待确认点 1：DeepSeek display 格式遵循度", "fallback": "shim 端对缺失/畸形 display 块回退纯文本 view=text 兜底" },
+    { "changeId": "260829-schedule-p2", "pendingPoint": "契约待确认点 2：课表 MD 解析/改写适配", "fallback": "launch 前 human 确认或定降级预案" },
+    { "changeId": "260829-schedule-reminder", "pendingPoint": "契约待确认点 3：提醒 cron 可行性", "fallback": "RTC 本地提醒兜底先行、云端 cron 链路待确认后补" }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "changeId": "260829-home-p1",
+  "rigor": "lite",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware",
+  "story": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，孩子瞟一眼就知道现在几点、待会干嘛、屋里冷暖。",
+  "redBaselineCommand": "跑 firmware host 首页布局/逻辑单测（依赖包 0 基建 + 包 2 display 下发），含 SDL 版面模拟",
+  "redBaselineResult": "红：首页版面布局、今日日程缓存渲染、低电打盹态均未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "types",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "P1-A1",
+      "kind": "structural"
+    },
+    "P1-A2: P1 首页渲染超大时间（冒号=眨眼双点 4.4s 一眨）+ 日期星期 + 温度/湿度图标 + 电量",
+    "P1-A3: 今日有待办时『接下来』卡渲染 反白标签牌（时间+课程名）+ 倒计时贴纸 + 次日项",
+    "P1-A4: 电量≤阈值时切 state-sleepy 打盹态（pose-sleep + 电池图形每秒闪），充电即叫醒",
+    "P1-A5: 优先级冲突时布局保 时间 > 接下来 > 温湿度"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/home_p1.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "P1-E1",
+      "kind": "structural"
+    },
+    "P1-E2: RTC 走时 + SHTC3 温湿度直读是硬件强绑定子能力，host 段只测布局/逻辑，真实硬件读取显式殿后包 9b device 验收（PROPOSAL §3 留根）",
+    "P1-E3: 今日日程数据经包 2 的 display 下发缓存消费，不在本包重复实现下发链路"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§4.1"
+  ],
+  "sourceRefs": [
+    "S-F1.1",
+    "docs/systems/kidpal/spec.md#§5.5",
+    "5"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "docsOwner": "integrator",
+  "mergeOrder": 7,
+  "dependsOn": [
+    "260829-host-test-infra",
+    "260829-voice-roundtrip"
+  ],
+  "testHost": "host+SDL",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包5",
+      "summary": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，host + SDL 版面。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:P1-A2"
+    },
+    {
+      "decision": "spec-§5.1-常显信息牌",
+      "summary": "设备首先是常显信息牌（时间+今日日程+温湿度+电量），90% 时间常显；优先级 时间>接下来>温湿度。",
+      "sourceRefs": [
+        "docs/systems/kidpal/spec.md#§5.1"
+      ],
+      "landsIn": "acceptance:P1-A5"
+    },
+    {
+      "decision": "PROPOSAL-§3-硬件殿后",
+      "summary": "包 5 的 RTC 走时 + SHTC3 温湿度直读为硬件强绑定子能力，host 段只测布局/逻辑，真实硬件读取殿后 9b。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
+      ],
+      "landsIn": "exitCriteria:P1-E2"
+    }
+  ]
+}

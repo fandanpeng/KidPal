@@ -1,0 +1,91 @@
+{
+  "changeId": "260829-host-test-infra",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware",
+  "story": "host 测试基建（先行包）：为 ESP-IDF 工程搭建 linux target 单测骨架 + LVGL SDL 屏幕模拟 + host 测试目录约定，让后续所有纯逻辑包能脱离硬件在电脑上跑测试。",
+  "redBaselineCommand": "在 firmware/kidpal 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
+  "redBaselineResult": "红：2026-08-29 实测 firmware/kidpal/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "test-quality",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "INF-A1",
+      "kind": "structural"
+    },
+    "INF-A2: firmware/kidpal 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
+    "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
+    "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/host_infra_smoke.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "INF-E1",
+      "kind": "structural"
+    },
+    "INF-E2: 实测并记录小智工程哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device——这是本包自身验收内容，不预判结论，结果落进 host 测试目录约定文档",
+    "INF-E3: 基建是后续包 2/3/4/5/6/8 的公共依赖，mergeOrder 2（仅次于 S）以减少跨 Pod 冲突面"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§5"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§5.1",
+    "0"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 2,
+  "dependsOn": [],
+  "testHost": "基建自身",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§5-OQ2",
+      "summary": "human 裁定测试策略走 (A) 先搭 host 基建（包 0），让 B 段 9 包全程电脑跑、不碰板子。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+      ],
+      "landsIn": "acceptance:INF-A2"
+    },
+    {
+      "decision": "PROPOSAL-§1-测试分层",
+      "summary": "纯逻辑（状态机/display解析/课表筛选/贝塞尔/坐标变换）脱离硬件可测，靠 ESP-IDF host-based 单测（linux target）+ LVGL SDL 屏幕模拟。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§1"
+      ],
+      "landsIn": "acceptance:INF-A3"
+    },
+    {
+      "decision": "PROPOSAL-§7-linux-target兼容性",
+      "summary": "host 基建的 ESP-IDF linux target 兼容性不预判结论：哪些模块可 host 编译、哪些只能 device 是包 0 自身验收内容。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "exitCriteria:INF-E2"
+    }
+  ]
+}

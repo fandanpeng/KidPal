@@ -1,0 +1,91 @@
+{
+  "changeId": "260829-shim-skeleton",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "server",
+  "story": "shim 完整化：在包 S 的最小 shim 上补全四接口 POST /v1/asr、/v1/chat、/v1/tts、GET /v1/alerts + 设备鉴权 + OpenClaw loopback 转发，形成可承载后续所有业务的完整薄桥。",
+  "redBaselineCommand": "cd server && pytest tests/test_shim_skeleton.acceptance.py -q",
+  "redBaselineResult": "红：包 S 只建最小转发，四接口未齐、设备鉴权未实现、/v1/alerts 未实现——目标验收测试文件尚不存在，pytest 收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "real-db",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "SHM-A1",
+      "kind": "structural"
+    },
+    "SHM-A2: POST /v1/asr 接收音频并返回转写文字（可挂打桩 faster-whisper）",
+    "SHM-A3: POST /v1/chat 转发文字到 OpenClaw /v1/chat/completions（loopback）并返回 回复正文 + display 显示指令 JSON 两路",
+    "SHM-A4: POST /v1/tts 接收文字并返回语音（可挂打桩 edge-tts）",
+    "SHM-A5: GET /v1/alerts 读出 OpenClaw cron 写入的提醒文件并下发，下发后清除已读项",
+    "SHM-A6: 四个接口均要求设备 token 鉴权，无 token/错 token 返回 401；真 token 只经 loopback 在内网用，不出内网"
+  ],
+  "acceptanceTestsFile": [
+    "server/tests/test_shim_skeleton.acceptance.py"
+  ],
+  "exitCriteria": [
+    {
+      "id": "SHM-E1",
+      "kind": "structural"
+    },
+    "SHM-E2: 不重复造——在包 S 的最小 shim 上补全，shim 保持薄（~200 行级），不含任何业务逻辑（课表/故事/查字 CRUD 零自研）",
+    "SHM-E3: 设备鉴权通过 security 闸全轴（含 ai-cost/ai-output 轴注记），鉴权证据落盘"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§3.0.0",
+    "docs/systems/kidpal/spec.md#§6.1",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§6.1",
+    "docs/contracts/interface-contract.md#§一",
+    "1"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 3,
+  "dependsOn": [
+    "260829-smoke-e2e"
+  ],
+  "testHost": "host",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包1",
+      "summary": "shim 完整化 = 四接口 + 设备鉴权 + OpenClaw loopback 转发，在 S 的最小 shim 上补全（不重复造）。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "exitCriteria:SHM-E2"
+    },
+    {
+      "decision": "spec-§3.0.0-薄桥",
+      "summary": "服务端 = 薄桥 shim（FastAPI ~200 行，唯一公网入口），只做 ASR/TTS HTTP 口子 + 设备鉴权 + 提醒轮询；业务网关/CRUD/意图层零自研。",
+      "sourceRefs": [
+        "docs/systems/kidpal/spec.md#§3.0.0"
+      ],
+      "landsIn": "acceptance:SHM-A6"
+    }
+  ]
+}

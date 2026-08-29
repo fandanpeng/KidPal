@@ -1,0 +1,101 @@
+{
+  "changeId": "260829-schedule-reminder",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "课表提醒：OpenClaw cron 到点写提醒 → shim /v1/alerts → 设备轮询取 → 提醒弹窗；断网时基于 RTC 的本地提醒兜底（离线红线），让孩子不会迟到。",
+  "redBaselineCommand": "跑 firmware host 提醒触发逻辑单测（依赖包 0）+ server 侧 /v1/alerts cron 链路 pytest（依赖包 1/6）",
+  "redBaselineResult": "红：cron 提醒触发、/v1/alerts 下发、提醒弹窗渲染、RTC 断网兜底均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "real-db",
+    "scheduler",
+    "state-machine",
+    "test-quality",
+    "docs-sync"
+  ],
+  "contractBlocked": "依赖契约待 OpenClaw 确认点 3（interface-contract.md §待确认点 3：OpenClaw 是否有定时任务能力跑提醒 cron，或需用系统 cron + 脚本）。launch 前须 human 确认该点已解决，或定降级预案（如先上「RTC 本地提醒兜底」、云端 cron 链路待确认后补）。本包只消费契约三（提醒文件结构），不在 Pod 内改 docs/contracts/**。",
+  "acceptance": [
+    {
+      "id": "RMD-A1",
+      "kind": "structural"
+    },
+    "RMD-A2: 提醒触发逻辑正确：按契约 B1 frontmatter 的 remind_before_min 提前量，到点前 N 分钟触发",
+    "RMD-A3: 提醒弹窗渲染：整屏压 d50 网点聚焦 + pose-jump + 大字事项 + 时间地点 + 提示音（state-reminder）",
+    "RMD-A4: 弹窗中 KEY 关闭回当前页、BOOT 照常翻页不被打断",
+    "RMD-A5: 断网时基于 RTC 的本地提醒兜底触发（离线降级红线）",
+    "RMD-A6: 契约三下发的提醒（view:text）被板子按本地提醒弹窗模板渲染成富弹窗（非纯字幕）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/schedule_reminder.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "RMD-E1",
+      "kind": "structural"
+    },
+    "RMD-E2: host 测提醒触发逻辑（含断网 RTC 兜底分支）；云端 cron→/v1/alerts 链路 PC pytest；真实提醒音效/亮屏殿后 9b",
+    "RMD-E3: 主链路依赖契约待确认点 3（cron 可行性），若 launch 时未确认则按降级预案先行 RTC 本地兜底并记录",
+    "RMD-E4: 不重复造课表数据——消费包 6 的课表 MD 链路，本包只做提醒触发与弹窗"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§4.1",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "S-F1.4",
+    "docs/contracts/interface-contract.md#§三",
+    "7"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 9,
+  "dependsOn": [
+    "260829-schedule-p2"
+  ],
+  "testHost": "host",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包7",
+      "summary": "课表提醒：cron→/v1/alerts→提醒弹窗 + RTC 断网兜底（离线红线），host 提醒触发逻辑。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:RMD-A2"
+    },
+    {
+      "decision": "spec-§4-S-F1.4",
+      "summary": "课表到点提醒：云为主（cron→alerts→轮询）、RTC 为降级（断网本地提醒兜底，离线红线）；弹窗富渲染非纯字幕。",
+      "sourceRefs": [
+        "docs/systems/kidpal/spec.md#§4.1"
+      ],
+      "landsIn": "acceptance:RMD-A5"
+    },
+    {
+      "decision": "contract-待确认点3",
+      "summary": "提醒 cron 可行性为契约待确认点 3，本包 contractBlocked——launch 前需 human 确认或定降级预案（RTC 本地兜底先行）。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
+      ],
+      "landsIn": "exitCriteria:RMD-E3"
+    }
+  ]
+}

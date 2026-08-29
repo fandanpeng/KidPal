@@ -1,0 +1,85 @@
+{
+  "changeId": "260829-smoke-e2e",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "架构可行性冒烟（tracer bullet）：最小 shim（能转发即可）+ 最小固件（KEY→ASR→OpenClaw→TTS→喇叭出声 + 屏显一行字）+ 配网指向 shim，只证「设备↔shim↔OpenClaw」三层链路串通，零业务。",
+  "redBaselineCommand": "烧录最小固件到板子并触发一次 KEY 会话（手工 device 冒烟）；当前 server/ 未建、firmware 未指向 shim，链路必然不通",
+  "redBaselineResult": "红：server/ 目录不存在（无 shim 可指向）；固件未配置指向自建 shim；按键无响应/无声，链路不通。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "SMK-A1",
+      "kind": "structural"
+    },
+    "SMK-A2: 设备配网指向自建 shim（非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志",
+    "SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）",
+    "SMK-A4: 回复文字或占位串在屏幕上显示至少一行"
+  ],
+  "acceptanceTestsFile": [
+    "server/tests/test_smoke_e2e.acceptance.py"
+  ],
+  "exitCriteria": [
+    {
+      "id": "SMK-E1",
+      "kind": "structural"
+    },
+    "SMK-E2: 冒烟结果以烧录日志 + 一次往返的请求/响应证据落盘（device 实测，非模拟），证据路径记入 closeout",
+    "SMK-E3: 本包只做联通、零业务；任何业务逻辑（课表/故事/查字）显式不在本包范围"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§3.0.0",
+    "docs/systems/kidpal/spec.md#§6.1"
+  ],
+  "sourceRefs": [
+    "docs/systems/kidpal/spec.md#§3.0.0",
+    "docs/systems/kidpal/spec.md#§6.1",
+    "S"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 1,
+  "dependsOn": [],
+  "testHost": "device",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包S",
+      "summary": "加 tracer-bullet 冒烟批：最小量先烧一次板子证明板↔shim↔OpenClaw 架构可行，是 B 段投开发量的前置通行证。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:SMK-A3"
+    },
+    {
+      "decision": "PROPOSAL-§5-OQ3",
+      "summary": "human 裁定加 tracer-bullet 冒烟批（包 S 先行烧板证架构），S 只做联通、零业务、量最小。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+      ],
+      "landsIn": "exitCriteria:SMK-E3"
+    }
+  ]
+}

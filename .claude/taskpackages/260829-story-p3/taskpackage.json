@@ -1,0 +1,110 @@
+{
+  "changeId": "260829-story-p3",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），让孩子把想到的故事留下来、还能重温。",
+  "redBaselineCommand": "跑 firmware host 故事列表/阅读渲染单测（依赖包 0）+ server 侧故事归档/列表下发 pytest（依赖包 1）",
+  "redBaselineResult": "红：故事列表渲染、录制上传归档、回看/回听、成就盖章均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "real-db",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "P3-A1",
+      "kind": "structural"
+    },
+    "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
+    "P3-A3: KEY 短按光标下移选择、KEY 双击进入阅读态",
+    "P3-A4: 录制上传归档：说『我要讲故事』进录音态（REC 闪点+大时长+声波），按 KEY 停止上传云端 ASR 转写归档 stories/*.md",
+    "P3-A5: 回看/回听：阅读态渲染标题+正文滚动（story_text），BOOT 长按翻下一屏、KEY 朗读正文（TTS）",
+    "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/kidpal/main/test/story_p3.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "P3-E1",
+      "kind": "structural"
+    },
+    "P3-E2: host 测列表/阅读/盖章渲染 + PC 云端测归档/列表下发，两面证据齐；麦克风采音为硬件强绑定子能力，真实采音显式殿后包 9b（PROPOSAL §3 留根）",
+    "P3-E3: S-F2.5 云端润色为可选项、MVP 后置，不进本包必做验收（PROPOSAL §7 留根）",
+    "P3-E4: 不做阅读态「生字反白高亮」（2026-08-29 human 裁定，需 story_text 增生字标注字段、价值不抵复杂度）；阅读态问生字走语音跳 P4"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/systems/kidpal/spec.md#§4.2",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "S-F2.1",
+    "S-F2.2",
+    "S-F2.3",
+    "S-F2.4",
+    "docs/contracts/interface-contract.md#§一",
+    "8"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 10,
+  "dependsOn": [
+    "260829-host-test-infra",
+    "260829-shim-skeleton"
+  ],
+  "testHost": "host+PC云端",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包8",
+      "summary": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），host + PC 云端。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:P3-A2"
+    },
+    {
+      "decision": "contract-§一-story_list-total",
+      "summary": "story_list 契约 total 字段 = 故事果计数（云端计算下发），缺省回退 items.length；P3 计数器与盖章帧『第 N 颗』据此渲染并严格同步。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§一"
+      ],
+      "landsIn": "acceptance:P3-A6"
+    },
+    {
+      "decision": "PROPOSAL-§7-S-F2.5留根",
+      "summary": "S-F2.5 云端润色为可选、MVP 后置，不进本 workstream 必做验收；若做则单开 Lite 包。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "exitCriteria:P3-E3"
+    },
+    {
+      "decision": "PROPOSAL-§3-麦克风采音殿后",
+      "summary": "包 8 的麦克风采音为硬件强绑定子能力，host 段只测布局/逻辑，真实采音殿后 9b。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
+      ],
+      "landsIn": "exitCriteria:P3-E2"
+    }
+  ]
+}
