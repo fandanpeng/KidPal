@@ -36,9 +36,19 @@
 
 ## CodebaseMemory 使用纪律
 
-- 本仓当前**未建** CodebaseMemory 图索引（ESP-IDF/C++ 支持度待评估）。未建期间，「trace before edit」降级为 Grep + 人工影响面说明，如实记录降级即可——降级是证据事实，不是违规。
-- 将来建索引时项目名必须等于目录名 `ESP32`，否则图工具 project not found。
-- vendor 面（`ESP32-S3-RLCD-4.2-Demo/`）将来也不入图索引，避免第三方代码淹没调用图。
+本仓及各 vendor 子工程均已建 CodebaseMemory 图索引（moderate 模式，2026-08-30）。「trace before edit」用 `search_graph` / `trace_path` / `get_architecture` / `search_code` 等图工具，project 参数填下表项目名全称；查不到再降级 Grep。
+
+| 范围 | 图索引项目名 | 节点/边 | 覆盖内容 | 排除 |
+|------|--------------|---------|----------|------|
+| 本仓主索引 | `ESP32` | 7387 / 25556 | `firmware/kidpal` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
+| vendor·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | 27194 / 151089 | Arduino 示例、LVGL8/9 库 | — |
+| vendor·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | 11492 / 33758 | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
+| vendor·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 7170 / 23818 | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
+| vendor·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 2 / 1 | 固件相关（内容极少） | — |
+
+- 主索引项目名固定为 `ESP32`（= 目录名），改名会导致图工具 project not found。
+- vendor 索引不并入主索引，避免第三方代码淹没调用图；vendor 面只读，不直接改。
+- 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。
 
 ## 输出标准（人与工件统一）
 
