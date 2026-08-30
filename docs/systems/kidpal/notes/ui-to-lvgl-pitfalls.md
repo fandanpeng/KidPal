@@ -119,12 +119,58 @@
   ```
 - 默认大字号只到 40 左右，48 是关闭的，直接用会报 `undeclared identifier`。
 
+## 7.5 真机字体方案：小智的 SPIFFS .bin 字库（调查结果）
+
+> 证据来源：XiaoZhiCode V2.1.0（`ESP32-S3-RLCD-4.2-Demo/03_XiaoZhi/XiaoZhiCode_V2.1.0/`），已建 CodebaseMemory 图索引（项目名 `xiaozhi-rlcd`）。
+
+### 方案本质
+小智**不用 FreeType，也不把字库编进固件**，而是第三条路：
+1. 离线用 LVGL 官方 `lv_font_conv` 把**阿里巴巴普惠体（PuHui）**转成 `.bin` 位图字库：
+   - 正文：`font_puhui_14_1` / `font_puhui_basic_14_1` / `font_puhui_common_20_4`（命名规律 = `puhui_尺寸_bpp`，1 单色、4 灰度抗锯齿）。
+   - 图标：`font_awesome_14_1`（FontAwesome 图标字，图标当字符显示）。
+2. 转好的 `.bin` 通过 `scripts/spiffs_assets/build.py` 打进 SPIFFS 资源分区（`assets.bin`），和唤醒模型、emoji 图片一起。
+3. 运行时 `main/assets.cc` 从 SPIFFS 读取 `.bin`，用 `LvglCBinFont` 包装 `cbin_font_create(data)` 生成 `lv_font_t*`，挂到主题上。
+
+### 关键代码位置
+| 文件 | 作用 |
+|------|------|
+| `main/CMakeLists.txt` | 定义 `BUILTIN_TEXT_FONT`/`BUILTIN_ICON_FONT` 宏（如 `font_puhui_14_1`） |
+| `main/display/lvgl_display/lvgl_font.h` | `LvglBuiltInFont`（编译期）/`LvglCBinFont`（运行时 .bin）两类封装 |
+| `main/display/lvgl_display/lvgl_font.cc` | `LvglCBinFont` 调 `cbin_font_create(uint8_t* data)` |
+| `main/assets.cc` | 从 SPIFFS assets 读 `.bin`，失败打 `Failed to load fonts.bin` |
+| `main/display/lcd_display.cc` / `oled_display.cc` | 把 text/icon font 挂到 light/dark theme |
+| `scripts/spiffs_assets/build.py` | 打包 `.bin` 进 assets |
+
+### 为什么适合 KidPal
+- 这块屏是 RLCD 反射屏：低功耗、刷新慢、CPU/RAM 预算紧。
+- `.bin` 位图直接加载到内存，省掉 FreeType 栅格化的 CPU/RAM 开销。
+- 不编进固件，Flash 占用灵活，可随 UI 迭代换字库。
+- 图标单独一套 FontAwesome 字体，电池/WiFi/静音等图标"打一个字"即可，不用画图片。
+
+### KidPal 落地方案（推荐）
+1. **模拟器阶段（现在）**：继续用 FreeType + 系统字体，改 UI 最快。
+2. **上真机阶段**：切换为小智同款方案：
+   - 把 P1–P4 所有文案的字符提取成去重集合；
+   - 用 `lv_font_conv` 生成 PuHui 子集 `.bin`（正文 + 图标分开）；
+   - 放 SPIFFS 资源分区，运行时加载；
+   - 预留 `LvglCBinFont` 封装或参考其结构。
+3. 该方案和笔顺 JSON、课表 MD 一样走资源分区，保持统一。
+
+### 完整方案对比（按 MCU 场景排序）
+| 方案 | 做法 | 优点 | 缺点 | 适合 |
+|------|------|------|------|------|
+| ① 编译期位图子集 | `lv_font_conv` → C 数组编进固件 | 最快、零运行时开销 | 中文全字库几 MB，只能转子集 | 文字固定的界面 |
+| ② 外部文件位图（**小智同款**） | `lv_font_conv` → `.bin`，运行时 SPIFFS 加载 | 不编固件、可随时换、现成位图 | 占 RAM 装缓存、仍要离线转子集 | **KidPal 推荐** |
+| ③ FreeType 矢量 | 运行时加载 `.ttf` | 任意字号、字形全 | RAM/CPU 开销大，真机慎用 | PC 模拟器快速预览 |
+| ④ TinyTTF 轻量矢量 | `LV_USE_TINY_TTF` | 矢量但比 FreeType 轻 | 功能弱于 FreeType | 想要矢量但 RAM 紧张 |
+| ⑤ imgfont 图片字体 | 每个字符一张图片 | 彩色/emoji/艺术字 | 不是真文字，排版麻烦 | emoji、小伴表情 |
+
 ## 8. 后续待补
 
 - [ ] 多页面切换（P2 课表 / P3 故事 / P4 查字）的实现方式。
 - [ ] 网点纹理（d50/d25/d12）在 LVGL 中如何用 canvas/图片/自定义绘制模拟。
 - [ ] SVG 吉祥物精确移植方案（canvas vs image vs vector）。
-- [ ] 真机 ESP32-S3 上 FreeType 内存占用评估与字体裁剪/字库方案。
+- [ ] 真机字体子集生成脚本：从 P1–P4 文案提取字符 → `lv_font_conv` 参数 → `.bin` 输出 → SPIFFS 打包（参考小智 `scripts/spiffs_assets/build.py`）。
 - [ ] 设计稿中手绘不规则圆角（border-radius 非对称）在 LVGL 中的实现策略。
 
 ## 9. 关键文件清单

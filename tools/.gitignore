@@ -1,0 +1,29 @@
+# LVGL PC simulator 工程：只保留我们修改/新增的文件，第三方库与构建产物不入库
+simulator/LvglPlatform/
+simulator/Output/
+simulator/Documents/
+simulator/Lvgl.Build.Tasks/
+simulator/LvglProjectFileUpdater/
+simulator/LvglWindows/
+simulator/LvglWindowsDesktopApplication/
+simulator/*.slnx
+simulator/*.cmd
+simulator/*.proj
+simulator/*.props
+simulator/*.png
+simulator/*.json
+simulator/LICENSE
+simulator/README.md
+
+# 构建产物
+simulator/**/*.exe
+simulator/**/*.ilk
+simulator/**/*.pdb
+simulator/**/*.idb
+simulator/**/*.res
+simulator/**/*.recipe
+simulator/**/*.tlog/
+
+# 字体文件太大，不入库
+simulator/**/*.ttf
+simulator/**/*.ttc
