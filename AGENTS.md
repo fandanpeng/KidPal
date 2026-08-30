@@ -1,15 +1,13 @@
-# AI Native Company Agent Instructions（KidPal · 治理档 1+2+3）
+# KidPal Agent Instructions
 
-> **迁移注记**：本仓治理体系自 `c:\AI\AInativecompany` 迁移，按 `docs/templates/GOVERNANCE-MIGRATION-GUIDE.md` 分档裁剪。**档 1 = Spec 治理**（arch-review 对抗链、契约门、Track B 治理路由、scope 闸、deny-main-push）2026-08-27 迁入；**档 2 = dev-loop 全链**（planner / acceptance-author / builder / fixer / verifier / integrator / supervisor + 测试闸）与**档 3 = portfolio 编排**（portfolio-planner / worktree / merge token / pod-coordination）2026-08-29 迁入（迁移批 `changes/arch/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面 firmware/server 重写）。
+## 自有代码与参考代码
 
-## 实现面与 vendor 面约定
-
-- **自有实现面** = 固件业务代码 + 云端 shim 代码。具体根目录（候选：`firmware/`、`server/`，或沿用小智工程内 overlay 布局）在动工前由 human 定夺并登记进 `.claude/scope-map.json`——定之前按「未登记实现面」处理，不做机械强制。
-- **vendor 面** = `ESP32-S3-RLCD-4.2-Demo/`（官方 Demo + 小智 V2.1.0 源码）。所有 agent 对它只读；需要改它承载的行为时，在自己的 overlay 里做，不直接改 vendor 树。
+- **自有代码** = 固件业务代码 + 云端 shim 代码。具体根目录（候选：`firmware/`、`server/`，或沿用小智工程内 overlay 布局）在动工前由 human 定夺并登记进 `.claude/scope-map.json`——定之前按「未登记实现面」处理，不做机械强制。
+- **参考代码** = `ESP32-S3-RLCD-4.2-Demo/`（官方 Demo + 小智 V2.1.0 源码），是第三方源码，只作参考、不在版本控制内。所有 agent 对它只读；要实现它承载的行为时，在自有代码里重写，不直接改参考树。
 - **系统 spec 面** = `docs/spec.md`（项目 = KidPal，docs 平铺、不再套 `systems/<sys>/` 层）。
 - **契约面** = `docs/contracts/**`（单一事实源 [interface-contract.md](docs/contracts/interface-contract.md)：笔顺 JSON / display 统一响应块 / 课表 MD 结构 / shim API）。契约改动走 architect-reviewer 四分类 + 人类契约门。
 
-## 治理路由（Track B 常驻默认 + Track A 判据升级 · 自 AInativecompany 2026-08-27 移植）
+## 治理路由（Track B 常驻默认 + Track A 判据升级）
 
 治理 / spec 变更默认走 **Track B 常驻轻路径**——七步闭环：
 
@@ -36,18 +34,18 @@
 
 ## CodebaseMemory 使用纪律
 
-本仓及各 vendor 子工程均已建 CodebaseMemory 图索引（moderate 模式，2026-08-30）。「trace before edit」用 `search_graph` / `trace_path` / `get_architecture` / `search_code` 等图工具，project 参数填下表项目名全称；查不到再降级 Grep。
+本仓自有代码及各参考工程均已建 CodebaseMemory 图索引（moderate 模式）。「trace before edit」用 `search_graph` / `trace_path` / `get_architecture` / `search_code` 等图工具，project 参数填下表项目名全称；查不到再降级 Grep。
 
-| 范围 | 图索引项目名 | 节点/边 | 覆盖内容 | 排除 |
-|------|--------------|---------|----------|------|
-| 本仓主索引 | `KidPal` | 7387 / 25556 | `firmware` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
-| vendor·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | 27194 / 151089 | Arduino 示例、LVGL8/9 库 | — |
-| vendor·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | 11492 / 33758 | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
-| vendor·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 7170 / 23818 | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
-| vendor·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 2 / 1 | 固件相关（内容极少） | — |
+| 范围 | 图索引项目名 | 覆盖内容 | 排除 |
+|------|--------------|----------|------|
+| 本仓主索引 | `KidPal` | `firmware` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
+| 参考·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | Arduino 示例、LVGL8/9 库 | — |
+| 参考·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
+| 参考·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
+| 参考·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 固件相关（内容极少） | — |
 
-- 主索引项目名固定为 `KidPal`（2026-08-30 自 `ESP32` 改名，重建索引后生效），改名会导致图工具 project not found。
-- vendor 索引不并入主索引，避免第三方代码淹没调用图；vendor 面只读，不直接改。
+- 主索引项目名固定为 `KidPal`，改名会导致图工具 project not found。
+- 参考代码的索引不并入主索引，避免第三方代码淹没调用图；参考代码只读，不直接改。
 - 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。
 
 ## 输出标准（人与工件统一）
