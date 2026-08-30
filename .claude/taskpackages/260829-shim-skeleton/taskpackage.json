@@ -53,12 +53,12 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/systems/kidpal/spec.md#§3.0.0",
-    "docs/systems/kidpal/spec.md#§6.1",
+    "docs/kidpal/spec.md#§3.0.0",
+    "docs/kidpal/spec.md#§6.1",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
-    "docs/systems/kidpal/spec.md#§6.1",
+    "docs/kidpal/spec.md#§6.1",
     "docs/contracts/interface-contract.md#§一",
     "1"
   ],
@@ -83,7 +83,7 @@
       "decision": "spec-§3.0.0-薄桥",
       "summary": "服务端 = 薄桥 shim（FastAPI ~200 行，唯一公网入口），只做 ASR/TTS HTTP 口子 + 设备鉴权 + 提醒轮询；业务网关/CRUD/意图层零自研。",
       "sourceRefs": [
-        "docs/systems/kidpal/spec.md#§3.0.0"
+        "docs/kidpal/spec.md#§3.0.0"
       ],
       "landsIn": "acceptance:SHM-A6"
     }

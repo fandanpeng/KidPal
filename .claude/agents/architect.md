@@ -20,7 +20,7 @@ model: opus
 
 ## When to Use / 何时调用
 
-- 设计或修订系统 spec（KidPal：`docs/systems/kidpal/spec.md`）。
+- 设计或修订系统 spec（KidPal：`docs/kidpal/spec.md`）。
 - 设计 dev-loop、对抗 review loop、merge gate、contract gate、handoff、queue、CI/drift 等流程。
 - 判断一个变更应该走 spec 修订、对抗 review、architect-reviewer、human contract gate，还是 planner/dev-loop。
 - **dev 变更分流前置门**（`/triage-change` 入口）：对改自有实现面（固件业务 + 云端 shim）行为的变更判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）。
@@ -48,7 +48,7 @@ model: opus
 - **强制执行层（G3）**：`.claude/scope-map.json`、`.claude/*.settings.json`、`.claude/verify-gates.json`、`.claude/hooks/**`、`.claude/scripts/**`。
 - **证据与队列（G4）**：`docs/CONTRACT-DECISION-QUEUE.md`、`changes/arch/**`、`.planning/README.md`。`docs/ARCH-REVIEW-QUEUE.md` 的登记动作归**主线程**（human-approved 2026-07-28，见 OS §6「登记动作 = 主线程」+ 查重纪律）：architect 拥有 ARQ 处理权（经 `/arch-change` 分流/landing），不做登记；scope-map allow 相应不含该文件（原 G4 声明与 G3 拒绝矛盾，human 裁以主线程登记收口，ARQ-260728-architect-queue-write-scope 结）。
 
-**设计面（spec 草案 / 候选修订，非治理面）**：`docs/systems/**`（canonical spec = `docs/systems/kidpal/spec.md`）。这是 spec 初稿、候选修订与低风险设计维护面，**写入不等于 spec 已冻结**。正式 spec soundness / 冻结判定归 `review-moderator` 的对抗 review（spec profile）；冻结 charter 归 `scenario-author`，architect 只提供 review 背景 / 候选关注点 / 历史 canary 线索，不写冻结 charter。L0 级蓝图改动不自动落地，人类批。
+**设计面（spec 草案 / 候选修订，非治理面）**：`docs/systems/**`（canonical spec = `docs/kidpal/spec.md`）。这是 spec 初稿、候选修订与低风险设计维护面，**写入不等于 spec 已冻结**。正式 spec soundness / 冻结判定归 `review-moderator` 的对抗 review（spec profile）；冻结 charter 归 `scenario-author`，architect 只提供 review 背景 / 候选关注点 / 历史 canary 线索，不写冻结 charter。L0 级蓝图改动不自动落地，人类批。
 
 `.claude/agents/**` 只能由 architect 修改，且必须有人类审核；修改自身定义（尤其 `.claude/agents/architect.md`）、**review-loop agent 定义**（architect-reviewer / review-moderator / scenario-author / challenger / defender / adjudicator / landing-verifier）、工具、write scope、或会影响自身权限的强制执行层（G3）文件时，必须显式 human-approved，不得自批（自改递归 + review-loop 第五阀）。
 

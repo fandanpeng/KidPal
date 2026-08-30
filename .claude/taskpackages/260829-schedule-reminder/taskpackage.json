@@ -56,7 +56,7 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/systems/kidpal/spec.md#§4.1",
+    "docs/kidpal/spec.md#§4.1",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
@@ -85,7 +85,7 @@
       "decision": "spec-§4-S-F1.4",
       "summary": "课表到点提醒：云为主（cron→alerts→轮询）、RTC 为降级（断网本地提醒兜底，离线红线）；弹窗富渲染非纯字幕。",
       "sourceRefs": [
-        "docs/systems/kidpal/spec.md#§4.1"
+        "docs/kidpal/spec.md#§4.1"
       ],
       "landsIn": "acceptance:RMD-A5"
     },

@@ -11,7 +11,7 @@
 - `changes/arch/260829-arch-review-kidpal-spec-stories/PROPOSAL.md`(§2-T2 提议 diff、§4 OQ-2′ 裁定)
 - `changes/arch/260829-arch-review-kidpal-spec-stories/CONTRACT-CHANGE-PACKET.md`(architect-reviewer 四分类预审)
 - `docs/contracts/interface-contract.md`(改前 §1.3 ③ 现状:仅 items)
-- `docs/systems/kidpal/spec.md` §4(S-F2.1 计数器 ×N / S-F2.4 第 N 颗——total 的需求源)
+- `docs/kidpal/spec.md` §4(S-F2.1 计数器 ×N / S-F2.4 第 N 颗——total 的需求源)
 
 ## 3. Architect-Reviewer Classification（四分类预审）
 | 变更面 | 分类 | 理由(详 CONTRACT-CHANGE-PACKET.md) |

@@ -52,12 +52,12 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/systems/kidpal/spec.md#§4.0",
-    "docs/systems/kidpal/spec.md#§5.3"
+    "docs/kidpal/spec.md#§4.0",
+    "docs/kidpal/spec.md#§5.3"
   ],
   "sourceRefs": [
-    "docs/systems/kidpal/spec.md#§4.0",
-    "docs/systems/kidpal/spec.md#§5.3",
+    "docs/kidpal/spec.md#§4.0",
+    "docs/kidpal/spec.md#§5.3",
     "3"
   ],
   "iterationBudget": 3,
@@ -81,7 +81,7 @@
       "decision": "spec-§5.2-会话模型",
       "summary": "按一下 KEY 启动会话（≈唤醒词体验）、免提连续对话、60s 超时/说拜拜/再按键结束；本地状态机基于小智 ToggleChatState 改。",
       "sourceRefs": [
-        "docs/systems/kidpal/spec.md#§5.2"
+        "docs/kidpal/spec.md#§5.2"
       ],
       "landsIn": "acceptance:SES-A3"
     },

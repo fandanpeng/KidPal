@@ -1,6 +1,6 @@
 # 评审记录 R2 · architect（spec story / T1 主审，增量复审）
 
-> 评审对象：`docs/systems/kidpal/spec.md` §4 + §5.3/§5.4/§5.6 与 `ui/kidpal-ui-design-v2.html` 的 R1 打回项修复。
+> 评审对象：`docs/kidpal/spec.md` §4 + §5.3/§5.4/§5.6 与 `ui/kidpal-ui-design-v2.html` 的 R1 打回项修复。
 > 性质：**增量复审**——只核 R1 七条打回项是否修复，并防修复引入新问题；不全面重审。
 > human 三项已并入裁定：B1（KEY 长按=回首页，P4 查下一个字走语音）、M2（P3 列表→阅读=KEY 双击）、m5（改设计稿加废弃标注，设计稿纳入 landing-manifest）。
 > 证据基准：`spec.md` / `ui/kidpal-ui-design-v2.html` / `contracts/interface-contract.md`，file:line 逐字引用。

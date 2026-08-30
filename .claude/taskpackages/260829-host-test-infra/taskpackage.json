@@ -50,10 +50,10 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/systems/kidpal/spec.md#§5"
+    "docs/kidpal/spec.md#§5"
   ],
   "sourceRefs": [
-    "docs/systems/kidpal/spec.md#§5.1",
+    "docs/kidpal/spec.md#§5.1",
     "0"
   ],
   "iterationBudget": 4,

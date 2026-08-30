@@ -54,7 +54,7 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/systems/kidpal/spec.md#§4.1",
+    "docs/kidpal/spec.md#§4.1",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
@@ -94,7 +94,7 @@
       "decision": "spec-§4-砍当前课反白",
       "summary": "已砍 P2「当前课反白高亮」（2026-08-29 human 裁定），课表页只承担看安排、不承担现在进行指示。",
       "sourceRefs": [
-        "docs/systems/kidpal/spec.md#§4.1"
+        "docs/kidpal/spec.md#§4.1"
       ],
       "landsIn": "exitCriteria:P2-E3"
     },

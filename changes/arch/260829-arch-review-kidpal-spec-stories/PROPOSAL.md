@@ -11,9 +11,9 @@
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行已在场（见下）。判官随 GREEN 结论核对，缺项打回。
 
 ```landing-manifest
-docs/systems/kidpal/spec.md
+docs/kidpal/spec.md
 docs/contracts/interface-contract.md
-docs/systems/kidpal/ui/kidpal-ui-design-v2.html
+docs/kidpal/ui/kidpal-ui-design-v2.html
 ```
 
 > landing-manifest 变更说明：初版不含设计稿（原非目标「不改设计稿」）；R1 评审 m5 经 human 裁定「改设计稿加废弃标注」，范围扩大纳入设计稿（仅加废弃标注 HTML 注释/figcaption，不动样式结构）。2026-08-29 记录。
@@ -51,7 +51,7 @@ docs/systems/kidpal/ui/kidpal-ui-design-v2.html
 
 ### T1 · spec §4 重写为「功能需求 → 用户 Story（与 UI 设计稿 v2 对齐）」
 
-**改什么**：`docs/systems/kidpal/spec.md` 第 4 节整节替换。
+**改什么**：`docs/kidpal/spec.md` 第 4 节整节替换。
 
 **怎么改**：
 1. 新增 **§4.0 共享底座**：语音会话生命周期 7 状态（聆听/思考/播报/喊停/提醒/低电/页点）+ 全局按键手势表，每条钉 UI 锚点 + 端云职责，各 story 复用不重复。
@@ -65,7 +65,7 @@ docs/systems/kidpal/ui/kidpal-ui-design-v2.html
 - **S-F2.3 砍「生字自动反白高亮」**：阅读态 KEY 专职「念给我听」，问生字走语音；注明砍掉理由。
 - **提醒端云归属**：S-F1.4 改「云为主、RTC 为降级」，挂契约待确认点 3，补 text→富弹窗映射说明。
 
-**目标文件**：改 `docs/systems/kidpal/spec.md`（§4 整节替换；其余章节不动）。
+**目标文件**：改 `docs/kidpal/spec.md`（§4 整节替换；其余章节不动）。
 
 ### T2 · 契约 `story_list.data` 加 additive 字段 `total`
 
@@ -96,9 +96,9 @@ docs/systems/kidpal/ui/kidpal-ui-design-v2.html
 
 | 面 | 文件 | 类别 | 说明 |
 |---|---|---|---|
-| 系统 spec 面 | `docs/systems/kidpal/spec.md` | G2（改） | §4 整节替换，其余章节不动 |
+| 系统 spec 面 | `docs/kidpal/spec.md` | G2（改） | §4 整节替换，其余章节不动 |
 | 契约面 | `docs/contracts/interface-contract.md` | **契约门（additive）** | 仅 §1.3 ③ story_list.data 加 `total` 可选字段；零删改、零 breaking |
-| UI 设计稿 | `docs/systems/kidpal/ui/kidpal-ui-design-v2.html` | 未触 | 仅引用其 `data-od-id` 锚点 |
+| UI 设计稿 | `docs/kidpal/ui/kidpal-ui-design-v2.html` | 未触 | 仅引用其 `data-od-id` 锚点 |
 | 实现面 | `firmware/`、`server/` | 未触 | 本批纯文档 + 一契约字段 |
 | 治理机制 | `.claude/**`、`AGENTS.md` 等 | 未触 | 非本批 |
 

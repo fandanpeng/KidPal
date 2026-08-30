@@ -1,6 +1,6 @@
 # 评审记录 R1 · architect（spec story / T1 主审）
 
-> 评审对象：`docs/systems/kidpal/spec.md` §4 重写（T1）+ 其与契约（T2）的对齐关系。
+> 评审对象：`docs/kidpal/spec.md` §4 重写（T1）+ 其与契约（T2）的对齐关系。
 > 视角：内部一致性、UI 锚点真实性、与他章一致性、契约对齐（不审契约 diff 本身）、可验收性、覆盖完整性。
 > 证据基准：`spec.md` / `ui/kidpal-ui-design-v2.html` / `contracts/interface-contract.md`，file:line 逐字引用。
 > 结论：**打回**（含 1 项 BLOCKER、若干 MAJOR/MINOR；BLOCKER 升级 human）。
