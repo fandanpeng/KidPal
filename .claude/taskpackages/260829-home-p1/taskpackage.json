@@ -35,7 +35,7 @@
     "P1-A5: 优先级冲突时布局保 时间 > 接下来 > 温湿度"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/home_p1.acceptance.c"
+    "firmware/main/test/home_p1.acceptance.c"
   ],
   "exitCriteria": [
     {

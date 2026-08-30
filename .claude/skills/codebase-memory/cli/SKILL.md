@@ -12,7 +12,7 @@ All commands use `codebase-memory-mcp cli <tool> <args>`.
 ### index_repository — Build or refresh the index
 
 ```bash
-codebase-memory-mcp cli index_repository '{"repo_path":"C:/AI/ESP32","mode":"full"}'
+codebase-memory-mcp cli index_repository '{"repo_path":"C:/AI/KidPal","mode":"full"}'
 ```
 
 Modes:
@@ -33,13 +33,13 @@ Returns each project with node/edge counts, git info, and database size.
 ### index_status — Check if a project is indexed
 
 ```bash
-codebase-memory-mcp cli index_status '{"project":"ESP32"}'
+codebase-memory-mcp cli index_status '{"project":"KidPal"}'
 ```
 
 ### delete_project — Remove a project from the index
 
 ```bash
-codebase-memory-mcp cli delete_project '{"project":"ESP32"}'
+codebase-memory-mcp cli delete_project '{"project":"KidPal"}'
 ```
 
 ## Configuration

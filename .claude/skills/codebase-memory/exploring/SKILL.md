@@ -41,8 +41,8 @@ trace_path({function_name: "buildDisplayJson", direction: "inbound"})
 **get_code_snippet** — read source for a specific symbol:
 
 ```
-get_code_snippet({qualified_name: "ESP32.server.shim.main.app.route.chat.POST"})
-→ Full source of the POST handler（本仓建索引后，qualified_name 前缀 = 项目名 ESP32）
+get_code_snippet({qualified_name: "KidPal.server.shim.main.app.route.chat.POST"})
+→ Full source of the POST handler（本仓建索引后，qualified_name 前缀 = 项目名 KidPal）
 ```
 
 **get_architecture** — project structure in one call:
@@ -61,6 +61,6 @@ get_architecture({aspects: ["overview"]})
 2. trace_path({function_name: "buildDisplayJson", direction: "both"})
    → callers: chat_handler
    → callees: makeahanzi_lookup, ...
-3. get_code_snippet({qualified_name: "ESP32...buildDisplayJson"})
+3. get_code_snippet({qualified_name: "KidPal...buildDisplayJson"})
    → Read actual implementation
 ```

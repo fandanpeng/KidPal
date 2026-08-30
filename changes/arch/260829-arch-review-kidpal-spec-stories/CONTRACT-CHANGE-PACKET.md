@@ -81,7 +81,7 @@
 - **additive / breaking**：纯 **additive、非 breaking**。新增可选字段，零删除、零改名、零类型变更。
 - **向后兼容**：**兼容**。旧固件/OpenClaw 不读 `total` 时按既有逻辑跑；新固件在 `total` 缺省时回退 `items.length`（由契约字段说明显式授权此回退）。无强制双侧同步升级窗口。
 - **消费方**：
-  - 固件 `firmware/kidpal`：读 `story_list.data.total` 渲染 P3 右上角计数器与盖章帧「第 N 颗」；字段缺省时回退 `items.length`。可选读取，不解耦即可上线。
+  - 固件 `firmware`：读 `story_list.data.total` 渲染 P3 右上角计数器与盖章帧「第 N 颗」；字段缺省时回退 `items.length`。可选读取，不解耦即可上线。
   - 服务端 shim / OpenClaw：生成 `story_list` 时由 stories 元数据补 `total`（云端算）。shim 只是透传 display JSON，无需为 `total` 改 shim 逻辑本身。
 - **迁移 / 数据风险**：**无**。无持久化格式变更、无数据库、无既有样本失效。对已跑通的 D3 笔顺链路（makemeahanzi）零影响——本变更不触 `char` view。
 - **需同步的文档**：
@@ -104,6 +104,6 @@
 
 | 消费方 | 角色 | 对 `total` 的关系 |
 |---|---|---|
-| 固件 `firmware/kidpal` | 渲染端 | 可选读取；渲染 P3 计数器 + 盖章帧「第 N 颗」；缺省回退 `items.length` |
+| 固件 `firmware` | 渲染端 | 可选读取；渲染 P3 计数器 + 盖章帧「第 N 颗」；缺省回退 `items.length` |
 | 服务端 shim | 透传薄桥 | 无感知；display JSON 原样转发，无需改 shim |
 | OpenClaw | 生成端 | 由 stories 元数据计算 `total`，在 `story_list` display 块内下发 |

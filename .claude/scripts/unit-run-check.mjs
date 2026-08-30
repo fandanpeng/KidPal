@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// unit-run-check.mjs — 承重功能闸 `unit` 的 cmd（G3 强制层），KidPal/ESP32 档 2 重写。
+// unit-run-check.mjs — 承重功能闸 `unit` 的 cmd（G3 强制层），KidPal 档 2 重写。
 //
 // 源仓（pnpm/vitest 单体）版治的是「pnpm -r run test:unit 部分覆盖静默假绿」——≥1 包定义
 // test:unit 即跑那部分、静默跳过其余。本仓无 pnpm workspace，该假绿形态不成立；但等价风险仍在：

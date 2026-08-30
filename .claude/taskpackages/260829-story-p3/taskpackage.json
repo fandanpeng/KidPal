@@ -37,7 +37,7 @@
     "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/story_p3.acceptance.c"
+    "firmware/main/test/story_p3.acceptance.c"
   ],
   "exitCriteria": [
     {

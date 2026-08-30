@@ -398,7 +398,7 @@ const QUICK_CHECK_IDS = ['types', 'schema', 'contract-lint', 'acceptance'];
 // F4 字面 test oracle（非执行源）：自检断言「读源→选 id→保序」结果恒等于此，
 // 守 verify-gates.json 自身漂移（ARQ-097 真病根）。不可改成对 verify-gates.json 自比（那恒真）。
 const EXPECTED_QUICK_CHECK_CMDS = [
-  // ESP32：无 tsc / prisma 等价物——结构闸走 idf.py build（固件编译即类型闸），契约闸走 contract-lint（本仓契约面 docs/contracts/** 的 markdown 协议检查脚本，档 2 新写）。
+  // 本仓：无 tsc / prisma 等价物——结构闸走 idf.py build（固件编译即类型闸），契约闸走 contract-lint（本仓契约面 docs/contracts/** 的 markdown 协议检查脚本，档 2 新写）。
   'node .claude/scripts/contract-lint.mjs',
   'node .claude/scripts/acceptance-run-check.mjs',
 ];

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// contract-lint.mjs — 承重结构闸 `contract-lint`（G3 强制层），KidPal/ESP32 档 2 新写。
+// contract-lint.mjs — 承重结构闸 `contract-lint`（G3 强制层），KidPal 档 2 新写。
 //
 // 源仓（TS 契约包）版 lint contracts/schema/** 的 TypeScript 契约。本仓契约面 = 单文件 markdown
 // 协议（docs/contracts/interface-contract.md：笔顺 JSON D3 / display 块 E1 / 课表 MD B1 / shim API），

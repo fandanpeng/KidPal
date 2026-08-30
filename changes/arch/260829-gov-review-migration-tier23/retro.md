@@ -20,10 +20,10 @@
 
 1. **自检电池是栈耦合重灾区，比脚本本体深**：supervisor-verdict-gate 的 69 例自检电池写死了
    apps/s1、prisma.lead.deleteMany、DROP TABLE。脚本逻辑改完不算完——电池不改则全红，改电池
-   必须逐例想清楚「这一例在原栈测什么轴、在新栈对应什么」。ESP32 的 real-DB 信号（prisma.findMany）
+   必须逐例想清楚「这一例在原栈测什么轴、在新栈对应什么」。本仓的 real-DB 信号（prisma.findMany）
    在固件面的对偶是「硬件副作用 + FreeRTOS 内核对象 + Unity 断言」。
 2. **源仓「核心面」≠ 新仓「核心面」，core 闭集要重划**：源仓 core = `packages/core`（共享内核，
-   少有人碰）；ESP32 若把 `firmware/main` 当 core 面，则它恰是开发热循环，每个自检例都落进去
+   少有人碰）；本仓若把 `firmware/main` 当 core 面，则它恰是开发热循环，每个自检例都落进去
    触发 high，69 例里 14 例假红。修法 = core 闭集收窄到真·承重窄面（契约/分区表/sdkconfig/boards），
    把热循环 `firmware/main` 放出 core。这是「宁滥勿漏」与「防过严」的张力在固件仓的具体形态。
 3. **contract-lint 无法照搬**：TS schema lint 的「类型级一致性」在 markdown 契约面上不存在等价物。

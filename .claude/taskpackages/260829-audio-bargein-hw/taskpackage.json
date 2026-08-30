@@ -36,7 +36,7 @@
     "BRG-A5: 停播后把孩子这段送云端 ASR 判意图（『别讲了』→确认停止 /『不对，是勇敢的勇』→纠正重答）链路真机走通"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/audio_bargein_hw.acceptance.c"
+    "firmware/main/test/audio_bargein_hw.acceptance.c"
   ],
   "exitCriteria": [
     {

@@ -14,7 +14,7 @@
 
 **目标效果一句话**：把 spec §4 的全部 story（F1 课表 / F2 故事 / F3 查字 + §4.0 共享底座）拆成一组**排好序、带依赖、模拟优先、硬件殿后**的可并行 TaskPackage，先用最小量烧一次板子证明「板↔shim↔OpenClaw」架构可行，再在电脑上完成主体开发，最后殿后烧板子做声学与物理验收。
 
-**现状差距**：spec 与契约已就绪，但没有任何开发包拆分；固件基座（`firmware/kidpal` = 小智 V2.1.0 整树拷贝）无 host 测试基建、无 linux target 配置、无测试目录（2026-08-29 实测：`ls firmware/kidpal/main/` 无 test*，`grep linux sdkconfig.defaults*` 无命中）；`server/`（shim）预留未建。
+**现状差距**：spec 与契约已就绪，但没有任何开发包拆分；固件基座（`firmware` = 小智 V2.1.0 整树拷贝）无 host 测试基建、无 linux target 配置、无测试目录（2026-08-29 实测：`ls firmware/main/` 无 test*，`grep linux sdkconfig.defaults*` 无命中）；`server/`（shim）预留未建。
 
 **非目标（本批不做）**：
 - 不改 `docs/contracts/**` 任何契约（各包只消费契约；疑似契约变更走 architect-reviewer + 人类契约门）。

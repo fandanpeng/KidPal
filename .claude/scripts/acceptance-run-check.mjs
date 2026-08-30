@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// acceptance-run-check.mjs — 承重功能闸 `acceptance` 的 cmd（G3 强制层），KidPal/ESP32 档 2 重写。
+// acceptance-run-check.mjs — 承重功能闸 `acceptance` 的 cmd（G3 强制层），KidPal 档 2 重写。
 //
 // 源仓（pnpm/vitest 单体）版治「pnpm -r run test:acceptance 部分覆盖静默假绿」：盘上含
 // `.acceptance.` infix 文件的包必须接 test:acceptance script，否则 pnpm 静默跳过 → 假绿。

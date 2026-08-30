@@ -6,7 +6,7 @@
 
 ## 背景与目标
 
-把 `c:\AI\AInativecompany` 沉淀的开发治理体系迁入本仓（KidPal / ESP32），按 [GOVERNANCE-MIGRATION-GUIDE.md](../../../docs/templates/GOVERNANCE-MIGRATION-GUIDE.md) 的**档 1 = Spec 治理**裁剪。项目当前处 spec v0.1 草稿期、代码未写，先启用 arch-review 对抗链 + 契约门 + Track B 治理路由，供 spec 冻结前 review 使用。
+把 `c:\AI\AInativecompany` 沉淀的开发治理体系迁入本仓（KidPal），按 [GOVERNANCE-MIGRATION-GUIDE.md](../../../docs/templates/GOVERNANCE-MIGRATION-GUIDE.md) 的**档 1 = Spec 治理**裁剪。项目当前处 spec v0.1 草稿期、代码未写，先启用 arch-review 对抗链 + 契约门 + Track B 治理路由，供 spec 冻结前 review 使用。
 
 ## 已落地清单
 
@@ -15,7 +15,7 @@
 - `.claude/commands/`：arch-change / review-arch / review-governance
 - `.claude/skills/brainstorming/`
 - `.claude/references/`：arch-review-protocol / arch-review-rubric / arch-scenarios / architect-operating-model / architecture-decisions / change-triage / contract-change-evidence / plain-file-handoff / track-b-judge-brief / track-b-verifier-brief
-- `.claude/rules/`：contracts.md（ESP32 重写）/ authoring-agents-skills / prompt-authoring
+- `.claude/rules/`：contracts.md（本仓重写）/ authoring-agents-skills / prompt-authoring
 
 **G3 强制层（3 hooks + 6 scripts + fixtures + configs）**
 - `.claude/hooks/`：enforce-scope / deny-main-push / commit-safety（已验证对栈零绑定）

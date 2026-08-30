@@ -3,7 +3,7 @@
 > 迁移批（元级动作）。建立 dev-loop / portfolio 治理机器本身的动作无法走七步闭环（机器尚不存在），
 > 沿袭档 1（260827-gov-review-migration-bootstrap）先例：human 一句授权即落地依据，落地后补记账，
 > Status 标 **LANDED-UNREVIEWED**，首个常规批次恢复标准 Track B 流程。
-> 授权来源：human 指令「ESP32 spec已经完成review，你把档2，档3 也迁移过去」（2026-08-29）。
+> 授权来源：human 指令「KidPal spec已经完成review，你把档2，档3 也迁移过去」（2026-08-29）。
 
 ## 状态
 

@@ -71,7 +71,7 @@ function isCodeSurface(toolInput, projectDir) {
   }
   const typeStr = typeof ti.type === 'string' ? ti.type.toLowerCase() : '';
   if (['md', 'markdown', 'txt', 'text'].includes(typeStr)) return false;
-  // 路径白名单：firmware/**、server/**、docs/contracts/**（ESP32 实现面 + 契约面）
+  // 路径白名单：firmware/**、server/**、docs/contracts/**（实现面 + 契约面）
   for (const s of signals) {
     const p = s.replace(/\\/g, '/');
     if (/(^|\/)(firmware|server|docs\/contracts)(\/|$)/.test(p)) return true;

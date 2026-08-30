@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// firmware-build-check.mjs — 承重结构闸 `firmware-build`（G3 强制层），KidPal/ESP32 档 2 新写。
+// firmware-build-check.mjs — 承重结构闸 `firmware-build`（G3 强制层），KidPal 档 2 新写。
 //
 // 等价源仓 schema+types 双闸：ESP-IDF 固件「能编译过」即固件侧的结构/类型闸（C/C++ 编译器检类型、
 // 链接器检符号、idf.py 检组件依赖）。本仓无 Prisma/tsc，这是固件面最贴近的结构判据。

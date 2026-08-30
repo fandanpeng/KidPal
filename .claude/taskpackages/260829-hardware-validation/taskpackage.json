@@ -36,7 +36,7 @@
     "HWV-A6: 全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/hardware_validation.acceptance.c"
+    "firmware/main/test/hardware_validation.acceptance.c"
   ],
   "exitCriteria": [
     {

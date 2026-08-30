@@ -37,7 +37,7 @@
     "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/session_logic.acceptance.c"
+    "firmware/main/test/session_logic.acceptance.c"
   ],
   "exitCriteria": [
     {

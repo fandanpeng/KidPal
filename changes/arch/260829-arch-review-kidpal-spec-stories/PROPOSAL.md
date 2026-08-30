@@ -102,7 +102,7 @@ docs/ui/kidpal-ui-design-v2.html
 | 实现面 | `firmware/`、`server/` | 未触 | 本批纯文档 + 一契约字段 |
 | 治理机制 | `.claude/**`、`AGENTS.md` 等 | 未触 | 非本批 |
 
-消费方：固件 `firmware/kidpal`（读 story_list.total 渲染果子计数；旧固件不读该字段则回退 items.length，向后兼容）、服务端 `server/shim` 与 OpenClaw（生成 story_list 时补 total）、后续开发以 story 为验收依据。
+消费方：固件 `firmware`（读 story_list.total 渲染果子计数；旧固件不读该字段则回退 items.length，向后兼容）、服务端 `server/shim` 与 OpenClaw（生成 story_list 时补 total）、后续开发以 story 为验收依据。
 
 ## 4. human 取舍点（OQ）— 全部已裁
 

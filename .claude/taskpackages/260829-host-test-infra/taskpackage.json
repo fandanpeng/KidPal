@@ -11,8 +11,8 @@
   },
   "subsystem": "firmware",
   "story": "host 测试基建（先行包）：为 ESP-IDF 工程搭建 linux target 单测骨架 + LVGL SDL 屏幕模拟 + host 测试目录约定，让后续所有纯逻辑包能脱离硬件在电脑上跑测试。",
-  "redBaselineCommand": "在 firmware/kidpal 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
-  "redBaselineResult": "红：2026-08-29 实测 firmware/kidpal/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。",
+  "redBaselineCommand": "在 firmware 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
+  "redBaselineResult": "红：2026-08-29 实测 firmware/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -30,12 +30,12 @@
       "id": "INF-A1",
       "kind": "structural"
     },
-    "INF-A2: firmware/kidpal 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
+    "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
     "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
     "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/host_infra_smoke.acceptance.c"
+    "firmware/main/test/host_infra_smoke.acceptance.c"
   ],
   "exitCriteria": [
     {

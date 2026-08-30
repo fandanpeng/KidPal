@@ -88,7 +88,7 @@ function effectiveTier(diffTier, declaredRaw) {
 //   content 轴归因（260803-critical-content-fp T2，判据不变、投影精度收敛）：perFile 归因覆盖全部 paths 时，
 //   逐文件只扫生产面文件 diff 段、跳过测试/制品面排除闭集（ARTIFACT_TEST_EXCLUDE_PATH_RES，两轴共享单源）；归因失败回退全量 body 扫描 = 现状（向严单调）。
 const CRITICAL_PATH_PATTERNS = [
-  /(^|\/)docs\/contracts\//,      // 契约面（ESP32 等价物：docs/contracts/**）
+  /(^|\/)docs\/contracts\//,      // 契约面（等价物：docs/contracts/**）
   /(^|\/)partitions?\.csv$/i,       // ESP-IDF 分区表（分区结构变更）
   /(^|\/)sdkconfig(\.\w+)?$/i,     // sdkconfig（编译配置，决定可引脚/特性）
 ];
@@ -213,7 +213,7 @@ function isArtifactTestExcluded(path) {
 function distinctAppSystems(paths) {
   const set = new Set();
   for (const p of paths) {
-    // ESP32 实现面顶层系统段：firmware/<board|main|...> 与 server/<sub>——取第二段作系统标识
+    // 实现面顶层系统段：firmware/<board|main|...> 与 server/<sub>——取第二段作系统标识
     const m = /^(?:firmware|server)\/([^/]+)/.exec(p);
     if (m) set.add(m[1]);
   }
@@ -609,7 +609,7 @@ function selfCheck() {
   const ok = (cond, label) => { if (cond) pass += 1; else { failCount += 1; console.error(`FAIL [${label}]`); } };
   const identity = (f) => ({ changeId: f.changeId, phase: f.phase, round: f.round, invocationId: f.invocationId });
 
-  // critical 闭集各模式 → critical（删数据闭集 + 契约/分区表路径，ESP32 化）
+  // critical 闭集各模式 → critical（删数据闭集 + 契约/分区表路径，本仓化）
   ok(deriveDiffTier(['docs/contracts/interface-contract.md'], '', {}).tier === 'critical', 'critical-contracts-path');
   ok(deriveDiffTier(['firmware/partitions.csv'], '', {}).tier === 'critical', 'critical-partition-table-path');
   ok(deriveDiffTier(['firmware/sdkconfig'], '', {}).tier === 'critical', 'critical-sdkconfig-path');

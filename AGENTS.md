@@ -1,4 +1,4 @@
-# AI Native Company Agent Instructions（ESP32/KidPal · 治理档 1+2+3）
+# AI Native Company Agent Instructions（KidPal · 治理档 1+2+3）
 
 > **迁移注记**：本仓治理体系自 `c:\AI\AInativecompany` 迁移，按 `docs/templates/GOVERNANCE-MIGRATION-GUIDE.md` 分档裁剪。**档 1 = Spec 治理**（arch-review 对抗链、契约门、Track B 治理路由、scope 闸、deny-main-push）2026-08-27 迁入；**档 2 = dev-loop 全链**（planner / acceptance-author / builder / fixer / verifier / integrator / supervisor + 测试闸）与**档 3 = portfolio 编排**（portfolio-planner / worktree / merge token / pod-coordination）2026-08-29 迁入（迁移批 `changes/arch/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面 firmware/server 重写）。
 
@@ -40,13 +40,13 @@
 
 | 范围 | 图索引项目名 | 节点/边 | 覆盖内容 | 排除 |
 |------|--------------|---------|----------|------|
-| 本仓主索引 | `ESP32` | 7387 / 25556 | `firmware/kidpal` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
+| 本仓主索引 | `KidPal` | 7387 / 25556 | `firmware` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
 | vendor·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | 27194 / 151089 | Arduino 示例、LVGL8/9 库 | — |
 | vendor·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | 11492 / 33758 | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
 | vendor·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 7170 / 23818 | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
 | vendor·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 2 / 1 | 固件相关（内容极少） | — |
 
-- 主索引项目名固定为 `ESP32`（= 目录名），改名会导致图工具 project not found。
+- 主索引项目名固定为 `KidPal`（2026-08-30 自 `ESP32` 改名，重建索引后生效），改名会导致图工具 project not found。
 - vendor 索引不并入主索引，避免第三方代码淹没调用图；vendor 面只读，不直接改。
 - 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。
 

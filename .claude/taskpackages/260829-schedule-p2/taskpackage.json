@@ -38,7 +38,7 @@
     "P2-A6: 家长录入链路：经约定通道录入『每周三 16:30 英语培训』→ 写入 schedule.md → 能被查询/渲染正确消费"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/schedule_p2.acceptance.c"
+    "firmware/main/test/schedule_p2.acceptance.c"
   ],
   "exitCriteria": [
     {

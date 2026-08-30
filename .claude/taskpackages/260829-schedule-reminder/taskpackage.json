@@ -40,7 +40,7 @@
     "RMD-A6: 契约三下发的提醒（view:text）被板子按本地提醒弹窗模板渲染成富弹窗（非纯字幕）"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/schedule_reminder.acceptance.c"
+    "firmware/main/test/schedule_reminder.acceptance.c"
   ],
   "exitCriteria": [
     {

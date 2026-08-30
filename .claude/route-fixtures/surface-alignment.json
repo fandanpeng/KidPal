@@ -1,5 +1,5 @@
 {
-  "_doc": "Cross-surface alignment manifest — KidPal (ESP32) 档1 净版。Owner: architect; changes require governed G2 review. 只登记档1 已迁 agent 的 writeScope（与 scope-map 对齐）；dev-loop 角色升档2 时按迁移指南补。",
+  "_doc": "Cross-surface alignment manifest — KidPal 档1 净版。Owner: architect; changes require governed G2 review. 只登记档1 已迁 agent 的 writeScope（与 scope-map 对齐）；dev-loop 角色升档2 时按迁移指南补。",
   "version": 1,
   "exemptions": { "agents": [] },
   "writeScope": {

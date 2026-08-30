@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// worktree env bootstrap（KidPal/ESP32 档 3：Pod worktree 冷启动等价化）。
+// worktree env bootstrap（KidPal 档 3：Pod worktree 冷启动等价化）。
 //
-// 一行调用完成新 worktree 冷启动的确定性动作（ESP32 化，源仓 pnpm/prisma 三步在此映射为）：
+// 一行调用完成新 worktree 冷启动的确定性动作（本仓化，源仓 pnpm/prisma 三步在此映射为）：
 //   ① 从主 checkout 镜像 gitignored `.env`（根级 + `server/shim/.env`）到当前 worktree——
 //      git worktree 不迁移 gitignored 文件；目标已存在则跳过不覆盖（密钥文件 safety-first）。
 //   ② 固件面配置探测：若 worktree 内有 sdkconfig 缺失而主 checkout 有，则镜像之（板级/特性配置，

@@ -2,7 +2,7 @@
   "_doc": [
     "Verifier 跑的确定性闸门，按顺序执行。scoped 相位遇到第一个失败即停并产出 ErrorEnvelope；final 相位遇红不停、跑完全闸产出全红清单。",
     "由 .claude/hooks/verify.mjs 读取执行。命令在仓库根（或当前 worktree 根）运行。",
-    "KidPal/ESP32 档 2：自源仓 9 闸按本仓双实现面（firmware/ ESP-IDF C/C++ + server/ FastAPI pytest）重写。",
+    "KidPal 档 2：自源仓 9 闸按本仓双实现面（firmware/ ESP-IDF C/C++ + server/ FastAPI pytest）重写。",
     "栈绑定的 prisma/tsc 闸已按 §3 P3/P4 映射或诚实降级（见各闸注），不是照抄。",
     "",
     "闸门分三类（见 .claude/references/dev-loop.md）：",
@@ -36,7 +36,7 @@
       "kind": "structural",
       "cmd": "node .claude/scripts/firmware-build-check.mjs",
       "timing": "scoped",
-      "_doc": "ESP32 等价源仓 schema+types 闸：ESP-IDF 固件编译（idf.py build）即固件结构/类型闸。脚本对 idf.py 缺失 fail-open（开发机无工具链不红），有工具链则真编译。"
+      "_doc": "本仓等价源仓 schema+types 闸：ESP-IDF 固件编译（idf.py build）即固件结构/类型闸。脚本对 idf.py 缺失 fail-open（开发机无工具链不红），有工具链则真编译。"
     },
     {
       "id": "contract-lint",

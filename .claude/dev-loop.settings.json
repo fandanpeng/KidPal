@@ -4,7 +4,7 @@
     "开发期自治循环（dev-loop）专用设置，不是默认 settings.json。",
     "只在跑循环时显式加载，避免污染平时的交互式会话：",
     "  claude --settings .claude/dev-loop.settings.json --agent planner",
-    "KidPal/ESP32 档 2：契约面 = docs/contracts/**（单文件 markdown 协议），dev-loop 内硬冻。",
+    "KidPal 档 2：契约面 = docs/contracts/**（单文件 markdown 协议），dev-loop 内硬冻。",
     "改契约 → planner 停下走 architect-reviewer + ARQ + 人工门（Track B / 契约门，见 docs/DEV-GOVERNANCE.md）。",
     "deny 用 settings.deny 硬冻（Claude Code 内核层，钩子盖不过）+ enforce-scope per-agent deny 双保险。",
     "PreToolUse 钩子按 .claude/scope-map.json 强制每个 agent 的可写路径边界。",

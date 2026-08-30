@@ -110,7 +110,7 @@ env["PATH"] = os.pathsep.join(tool_dirs + [env.get("PATH", "")])
 subprocess.run(
     [venv_python, os.path.join(idf_path, "tools", "idf.py"), "build"],
     env=env,
-    cwd=r"C:\AI\ESP32\firmware\kidpal",
+    cwd=r"C:\AI\ESP32\firmware",
     check=True,
 )
 ```
@@ -120,8 +120,8 @@ subprocess.run(
 After build completes, confirm artifacts exist:
 
 ```powershell
-Test-Path C:\AI\ESP32\firmware\kidpal\build\kidpal.bin
-Test-Path C:\AI\ESP32\firmware\kidpal\build\kidpal.elf
+Test-Path C:\AI\ESP32\firmware\build\kidpal.bin
+Test-Path C:\AI\ESP32\firmware\build\kidpal.elf
 ```
 
 ## Common errors and fixes
@@ -137,4 +137,4 @@ Test-Path C:\AI\ESP32\firmware\kidpal\build\kidpal.elf
 
 - ESP-IDF installed at `C:\esp\v5.5.1\esp-idf`.
 - Tools under `C:\Users\<user>\.espressif`.
-- Build artifacts under `firmware/kidpal/build/`.
+- Build artifacts under `firmware/build/`.

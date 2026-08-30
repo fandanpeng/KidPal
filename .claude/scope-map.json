@@ -1,6 +1,6 @@
 {
   "_doc": [
-    "KidPal (ESP32) scope-map · 治理档 1（spec 治理）净版。",
+    "KidPal scope-map · 治理档 1（spec 治理）净版。",
     "自 AInativecompany 迁移骨架，清空原仓业务记账（Tier-2 schema 克隆体 / K9 / K1 / S1-S8），",
     "按 KidPal 实况重填：自有实现面已定 = firmware/（固件，2026-08-29 human 拍板，kidpal=小智V2.1.0整树拷贝基座）+ server/（云端 shim，预留未建）；",
     "契约面 docs/contracts/**、vendor 面 ESP32-S3-RLCD-4.2-Demo/** 只读。",
@@ -12,7 +12,7 @@
   ],
   "owned": {
     "_doc": "自有实现面登记（2026-08-29 human 拍板）。档 1 期间主线程一次性落地操作在此进行并诚实记录；档 2 建 dev-loop 后须把这两路径登记进 builder allow。",
-    "firmware/": "固件实现面。firmware/kidpal = 小智 V2.1.0 整树拷贝基座，板级 overlay 在 main/boards/waveshare-s3-rlcd-4.2/，业务 UI/会话改动在此之上做。",
+    "firmware/": "固件实现面。firmware = 小智 V2.1.0 整树拷贝基座，板级 overlay 在 main/boards/waveshare-s3-rlcd-4.2/，业务 UI/会话改动在此之上做。",
     "server/": "云端实现面。薄桥 shim（FastAPI）等，本轮未建，预留。"
   },
   "universal": {

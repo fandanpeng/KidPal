@@ -38,7 +38,7 @@
     "CHR-A7: 教学字体红线——米字格示范字用标准规范字形（横平竖直、不抖不斜、无 tilt），仅伴随文字可用可爱体"
   ],
   "acceptanceTestsFile": [
-    "firmware/kidpal/main/test/char_stroke.acceptance.c"
+    "firmware/main/test/char_stroke.acceptance.c"
   ],
   "exitCriteria": [
     {
