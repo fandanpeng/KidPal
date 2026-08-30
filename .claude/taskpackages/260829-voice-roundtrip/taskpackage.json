@@ -54,12 +54,12 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/kidpal/spec.md#§3.0.2",
-    "docs/kidpal/spec.md#§6.2",
+    "docs/spec.md#§3.0.2",
+    "docs/spec.md#§6.2",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
-    "docs/kidpal/spec.md#§6.2",
+    "docs/spec.md#§6.2",
     "docs/contracts/interface-contract.md#§一",
     "2"
   ],

@@ -16,15 +16,15 @@
 
 ## A. landing-manifest 完备性 —— PASS
 
-landing-manifest 声明三文件：`docs/kidpal/spec.md`、`docs/contracts/interface-contract.md`、`docs/kidpal/ui/kidpal-ui-design-v2.html`。
+landing-manifest 声明三文件：`docs/spec.md`、`docs/contracts/interface-contract.md`、`docs/ui/kidpal-ui-design-v2.html`。
 
 实测 `git status --short` 改动集（剔除任务书声明的非本批：`.claude/scope-map.json`、`.gitignore`、`changes/INDEX.md`、`firmware/`、`docs/CONTRACT-DECISION-QUEUE.md`、本包 `changes/arch/260829-*` 制品）：
 
 | 本批仓内文件 | 在 manifest | diff 实证 |
 |---|---|---|
-| `docs/kidpal/spec.md` | ✓ | `git diff` 命中（§4 整节 + §5.3/5.4/5.6），hunk 定位 247/456/469/489 |
+| `docs/spec.md` | ✓ | `git diff` 命中（§4 整节 + §5.3/5.4/5.6），hunk 定位 247/456/469/489 |
 | `docs/contracts/interface-contract.md` | ✓ | `git diff` 命中，+4 行全在 §1.3 ③ story_list |
-| `docs/kidpal/ui/kidpal-ui-design-v2.html` | ✓ | `git diff` 命中，20 行注释/figcaption/手势表文案 |
+| `docs/ui/kidpal-ui-design-v2.html` | ✓ | `git diff` 命中，20 行注释/figcaption/手势表文案 |
 
 - 漏改：无（manifest 三文件全部有真实 diff 对应）。
 - 多改：无（本批仓内改动恰为 manifest 三文件；其余改动均属任务书明确排除的更早框架批次或本包制品）。

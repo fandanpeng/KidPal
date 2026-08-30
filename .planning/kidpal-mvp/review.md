@@ -3,7 +3,7 @@
 > **review 性质**：dev 侧分流单轮 review（`.claude/references/change-triage.md` §3，非对抗红队）。
 > **reviewer**：architect（子 agent，只读+审，写域零扩张——本件由主线程依 architect 同会话 return 落盘）。
 > **被审件**：`.planning/kidpal-mvp/PROPOSAL.md` DRAFT v0.1（2026-08-29）。
-> **交叉核对源**：`docs/kidpal/spec.md`、`docs/contracts/interface-contract.md`、`.claude/references/task-intake-and-slicing.md`。
+> **交叉核对源**：`docs/spec.md`、`docs/contracts/interface-contract.md`、`.claude/references/task-intake-and-slicing.md`。
 
 ---
 

@@ -236,7 +236,7 @@ flowchart TD
 | 我想改... | 入口 | 批准 |
 |---|---|---|
 | `docs/contracts/**` | `architect-reviewer` 四分类 → 契约门（配套 spec 同 PR 原子落地） | 人类契约门 |
-| 系统 spec（KidPal：`docs/kidpal/spec.md`） | 治理路由（Track B 默认）；跨系统结构性变更 / 声明红队 → `/arch-change`（Track A spec profile 对抗 review） | 低影响 moderator；高影响 / 跨系统 / deadlock / 触契约 → human |
+| 系统 spec（KidPal：`docs/spec.md`） | 治理路由（Track B 默认）；跨系统结构性变更 / 声明红队 → `/arch-change`（Track A spec profile 对抗 review） | 低影响 moderator；高影响 / 跨系统 / deadlock / 触契约 → human |
 | L0 蓝图 | Track A 语境（= 跨系统结构性变更，命中升级判据②）；备改法交人类，不自动落地 | human |
 | 系统级 UI 蓝图 / UIUX·OpenDesign 治理 | `/arch-change` governance profile 携带 UIUX 轴集（非第三 profile、非新工程门；系统级 brief 由 `uiux-designer` 起草候选，moderator dispatch 尚未接线） | human（跨系统 / 主流程 / IA / 品牌）；局部低风险可 loop 落 |
 | 自有实现面（固件 / shim） | `/triage-change` 比例化四档 → reviewed plan → Dev Loop OS | supervisor 合并门 |

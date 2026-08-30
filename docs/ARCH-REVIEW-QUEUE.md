@@ -28,7 +28,7 @@
 
 | ID | 严重度 | title | 未结原因 | 处理时机 | 来源 |
 |---|---|---|---|---|---|
-| ARQ-260827-tier1-boot-review | SHOULD | KidPal spec v0.1 + interface-contract 走首次对抗 review（spec 冻结前置门） | 项目现处 spec 草稿期，`docs/kidpal/spec.md` 与 `docs/contracts/interface-contract.md` 均未经对抗 review；冻结前须过一轮（档 1 主用途即此）。review 时顺带裁定三个契约草案标记（E1 display 块、B1 课表 MD）是否达冻结级。 | human 说开始审 spec 时（建议入口 /arch-change 或 /review-arch） | 治理迁移（2026-08-27）首个登记项 |
+| ARQ-260827-tier1-boot-review | SHOULD | KidPal spec v0.1 + interface-contract 走首次对抗 review（spec 冻结前置门） | 项目现处 spec 草稿期，`docs/spec.md` 与 `docs/contracts/interface-contract.md` 均未经对抗 review；冻结前须过一轮（档 1 主用途即此）。review 时顺带裁定三个契约草案标记（E1 display 块、B1 课表 MD）是否达冻结级。 | human 说开始审 spec 时（建议入口 /arch-change 或 /review-arch） | 治理迁移（2026-08-27）首个登记项 |
 
 ### 1.3 Accepted-risk watchlist
 

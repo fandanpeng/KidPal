@@ -1,6 +1,6 @@
 # 评审记录 R3 · architect（spec story / T1 主审，增量复审）
 
-> 评审对象：`docs/kidpal/ui/kidpal-ui-design-v2.html` 设计稿侧五处收口（R2 唯一剩余打回项 B1 + 连带 N2② M2 设计稿残留）。
+> 评审对象：`docs/ui/kidpal-ui-design-v2.html` 设计稿侧五处收口（R2 唯一剩余打回项 B1 + 连带 N2② M2 设计稿残留）。
 > 性质：**增量复审**——只核 R2 打回项（设计稿侧 KEY 长按 / P3 进入阅读手势未收口）是否补齐，并防新引入矛盾；不全面重审。R1/R2 上下文见同目录 review-r1-architect.md / review-r2-architect.md。
 > human 裁定（沿用）：B1（KEY 长按=回首页，P4 查下一个字走语音）、M2（P3 列表→阅读/回听=KEY 双击）。
 > 证据基准：`ui/kidpal-ui-design-v2.html` × `spec.md` §4.0（spec.md:270-281），file:line 逐字引用。

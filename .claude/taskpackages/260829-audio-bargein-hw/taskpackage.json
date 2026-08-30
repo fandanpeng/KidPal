@@ -52,12 +52,12 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/kidpal/spec.md#§5.2",
-    "docs/kidpal/spec.md#§3.2"
+    "docs/spec.md#§5.2",
+    "docs/spec.md#§3.2"
   ],
   "sourceRefs": [
-    "docs/kidpal/spec.md#§5.2",
-    "docs/kidpal/spec.md#§3.2",
+    "docs/spec.md#§5.2",
+    "docs/spec.md#§3.2",
     "9a"
   ],
   "iterationBudget": 5,
@@ -82,7 +82,7 @@
       "decision": "spec-§5.2-喊停必做",
       "summary": "语音喊停 MVP 必做：本地 AEC+VAD 停播不依赖云端取消；KEY 单击打断兜底 100% 可靠；依赖 AEC 效果需实测调阈值（最大不确定点）。",
       "sourceRefs": [
-        "docs/kidpal/spec.md#§5.2"
+        "docs/spec.md#§5.2"
       ],
       "landsIn": "acceptance:BRG-A2"
     },

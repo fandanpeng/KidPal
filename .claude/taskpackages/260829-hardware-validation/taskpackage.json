@@ -52,12 +52,12 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/kidpal/spec.md#§2",
-    "docs/kidpal/spec.md#§5.4"
+    "docs/spec.md#§2",
+    "docs/spec.md#§5.4"
   ],
   "sourceRefs": [
-    "docs/kidpal/spec.md#§2",
-    "docs/kidpal/spec.md#§5.4",
+    "docs/spec.md#§2",
+    "docs/spec.md#§5.4",
     "9b"
   ],
   "iterationBudget": 4,

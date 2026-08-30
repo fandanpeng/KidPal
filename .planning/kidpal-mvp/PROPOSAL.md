@@ -4,7 +4,7 @@
 > **frozen pin**：`sha1:256fa5dcf67b599b`（raw-content 行尾归一化算法，task-intake-and-slicing.md:53）。**自指规避**：pin 钉的是冻结定稿内容，不落本文件文头（写进来即改内容、pin 必漂移）；权威 pin 以 12 包 `origin.upstreamFrozen` 与 review.md 记录为准，本行仅为人读留痕、非机判基准。
 > **workstream**：`.planning/kidpal-mvp/`
 > **来源**：人类指令「portfolio planner 给 spec 拆开发包」，经三轮对齐收口（切分轴=能力竖切、测试策略=模拟优先硬件殿后、加 tracer-bullet 冒烟批、WIP=3）。
-> **单一事实源**：[spec.md](../../docs/kidpal/spec.md)（功能/story）+ [interface-contract.md](../../docs/contracts/interface-contract.md)（E1/B1/D3/提醒三契约，已冻结）。
+> **单一事实源**：[spec.md](../../docs/spec.md)（功能/story）+ [interface-contract.md](../../docs/contracts/interface-contract.md)（E1/B1/D3/提醒三契约，已冻结）。
 > **riskTier**：本 workstream 整体 high（跨 firmware+server 双实现面、含声学包 9a 与多状态机/跨系统包）；各包 tier 见 §2 表。
 > **本件性质**：大 feature 拆包设计权威（change-triage 档③），非 Track B 治理批——故无 landing-manifest/packet-binding 字段；落地 = portfolio-planner 依本件落 11 个 TaskPackage，非主线程 packet-bound。
 

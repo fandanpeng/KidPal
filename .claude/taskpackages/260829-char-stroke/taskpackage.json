@@ -53,8 +53,8 @@
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/kidpal/spec.md#§3.0.2",
-    "docs/kidpal/spec.md#§4.3",
+    "docs/spec.md#§3.0.2",
+    "docs/spec.md#§4.3",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
@@ -86,7 +86,7 @@
       "decision": "spec-§7-决策12",
       "summary": "D3 笔顺格式定稿 makemeahanzi（strokes SVG path + medians 骨架点），板子只渲染（LVGL + 逐笔动画）。",
       "sourceRefs": [
-        "docs/kidpal/spec.md#§3.0.2"
+        "docs/spec.md#§3.0.2"
       ],
       "landsIn": "acceptance:CHR-A3"
     },
@@ -94,7 +94,7 @@
       "decision": "spec-§5.6-教学字体红线",
       "summary": "查字页米字格示范字必须标准规范字体（思源黑体/楷体），禁手写趣味体/抖动/倾斜——孩子会照写。",
       "sourceRefs": [
-        "docs/kidpal/spec.md#§5.6"
+        "docs/spec.md#§5.6"
       ],
       "landsIn": "acceptance:CHR-A7"
     }

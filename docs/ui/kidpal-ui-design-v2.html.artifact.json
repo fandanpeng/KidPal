@@ -1,8 +1,8 @@
 {
   "version": 1,
   "kind": "html",
-  "title": "docs/kidpal/ui/kidpal-ui-design-v2.html",
-  "entry": "docs/kidpal/ui/kidpal-ui-design-v2.html",
+  "title": "docs/ui/kidpal-ui-design-v2.html",
+  "entry": "docs/ui/kidpal-ui-design-v2.html",
   "renderer": "html",
   "status": "complete",
   "exports": [
