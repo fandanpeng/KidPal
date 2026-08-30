@@ -30,5 +30,8 @@ Thumbs.db
 ESP32-S3-RLCD-4.2-Demo/01_Arduino/libraries/lvgl8/
 ESP32-S3-RLCD-4.2-Demo/01_Arduino/libraries/lvgl9/
 
+# Vendor 参考工程整体不入版本控制（仅本地参考 + codebase-memory 图索引）
+ESP32-S3-RLCD-4.2-Demo/
+
 # OpenDesign 工具本地缓存（非治理工件）
 .od-skills/
