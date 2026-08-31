@@ -95,6 +95,20 @@ function decide(input) {
   return { ok: true, reason: null, violations: [] };
 }
 
+// host 用例判据：文件是否标 live（live on-target 验收不 auto-run，对偶固件 on-target「只结构闸」）。
+function fileHasLiveMark(absPath) {
+  try {
+    return /@pytest\.mark\.live|pytestmark\s*=\s*pytest\.mark\.live/.test(readFileSync(absPath, 'utf8'));
+  } catch {
+    return false; // 读不到按 host 处理（fail-safe 向严：宁 auto-run 也不静默跳过未知）
+  }
+}
+
+// pytest 是否可运行：未装 fail-open（对偶 firmware idf.py 缺失 fail-open）。
+function pytestAvailable() {
+  try { execSync('python -m pytest --version', { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
 function collectReal(root) {
   const fwDir = join(root, 'firmware');
   const serverDir = join(root, 'server');
@@ -163,14 +177,20 @@ if (isMain() && !process.argv.includes('--self-check')) {
     fail('真空绿：以下面存在 unit 测试文件却无对应 runner 证据（有测试而无真跑 = 静默假绿）',
       { reason: verdict.reason, violations: verdict.violations });
   }
-  print({ ok: true, gate: 'unit', phase: 'oracle-pass', surfaces: { firmwareUnitFiles: real.fwUnitFiles.length, serverPytestFiles: real.pyTestFiles.length } });
-  // 执行器：仅 server 面 pytest 在闸内真跑（快、host）。固件 host 单测需 linux target 构建，耗时，
-  // 由 full 相位 / 人工触发 idf.py，本闸不强制在每次合并跑实机/仿真。
+  // 执行器：仅 server 面 host-fast pytest 在闸内真跑；live on-target（@pytest.mark.live，如 cloud-link 验收）
+  // 与固件 on-target 同待遇——只结构闸、不 auto-run。pytest 未装 fail-open（对偶 firmware idf.py 缺失）。
   if (real.pyHasRunner && real.pyTestFiles.length > 0) {
-    try {
-      execSync('python -m pytest -q', { cwd: join(projectDir, 'server'), stdio: 'inherit' });
-    } catch (err) {
-      process.exit(typeof err.status === 'number' ? err.status : 1);
+    const hostFiles = real.pyTestFiles.filter((f) => !fileHasLiveMark(join(projectDir, 'server', f)));
+    if (hostFiles.length === 0) {
+      print({ ok: true, gate: 'unit', phase: 'executor-skipped', reason: 'live-only on-target tests（@pytest.mark.live，手动触发）' });
+    } else if (!pytestAvailable()) {
+      print({ ok: true, gate: 'unit', phase: 'executor-skipped', reason: 'pytest 未安装（fail-open）' });
+    } else {
+      try {
+        execSync(`python -m pytest -q ${hostFiles.join(' ')}`, { cwd: join(projectDir, 'server'), stdio: 'inherit' });
+      } catch (err) {
+        process.exit(typeof err.status === 'number' ? err.status : 1);
+      }
     }
   }
 }

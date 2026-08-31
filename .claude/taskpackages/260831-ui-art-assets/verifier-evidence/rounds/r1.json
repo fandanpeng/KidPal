@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260831-ui-art-assets",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "434c5865-2109-4ef6-99d6-6daa666796ae",
+  "startedAt": "2026-08-31T19:32:16.096Z",
+  "completedAt": "2026-08-31T19:32:16.521Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 234,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal\\\\.claude\\\\taskpackages\\\\260831-ui-art-assets\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "a99849e37429",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1788204736502-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal\\\\.claude\\\\taskpackages\\\\260831-ui-art-assets\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n"
+  }
+}

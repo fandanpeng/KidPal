@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260831-ui-art-assets",
+  "phase": "scoped",
+  "round": 2,
+  "invocationId": "c631d52b-895b-4eac-8f6d-6dfd078646f5",
+  "startedAt": "2026-08-31T19:36:50.781Z",
+  "completedAt": "2026-08-31T19:36:51.763Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 215,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260831-ui-art-assets\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 229,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 169,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"warnings\": [\n    \"contract-link-broken:相对链接目标不存在 ../systems/kidpal/spec.md\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 188,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"acceptance-coverage\",\n  \"message\": \"Acceptance test file has no recognizable assertion\",\n  \"file\": \"tools/asset-pipeline/tests/test_art_assets.acceptance.md\"\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "eddfb3329170",
+    "failingStep": "acceptance-coverage",
+    "message": "gate acceptance-coverage failed (exit 1)",
+    "cmd": "node .claude/scripts/acceptance-coverage-check.mjs",
+    "logFile": ".claude/verify-logs/1788205011747-acceptance-coverage.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"acceptance-coverage\",\n  \"message\": \"Acceptance test file has no recognizable assertion\",\n  \"file\": \"tools/asset-pipeline/tests/test_art_assets.acceptance.md\"\n}\n"
+  }
+}

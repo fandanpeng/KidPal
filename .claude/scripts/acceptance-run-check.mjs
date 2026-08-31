@@ -92,6 +92,20 @@ function decide(input) {
   return { ok: true, reason: null, violations: [] };
 }
 
+// host 用例判据：文件是否标 live（live on-target 验收不 auto-run，对偶固件 on-target「只结构闸」）。
+function fileHasLiveMark(absPath) {
+  try {
+    return /@pytest\.mark\.live|pytestmark\s*=\s*pytest\.mark\.live/.test(readFileSync(absPath, 'utf8'));
+  } catch {
+    return false; // 读不到按 host 处理（fail-safe 向严：宁 auto-run 也不静默跳过未知）
+  }
+}
+
+// pytest 是否可运行：未装 fail-open（对偶 firmware idf.py 缺失 fail-open）。
+function pytestAvailable() {
+  try { execSync('python -m pytest --version', { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
 function collectReal(root) {
   const fwDir = join(root, 'firmware');
   const serverDir = join(root, 'server');
@@ -159,12 +173,20 @@ if (isMain() && !process.argv.includes('--self-check')) {
     surfaces: { firmwareAcceptanceFiles: real.fwAccFiles.length, serverAcceptanceFiles: real.pyAccFiles.length },
     note: '固件 on-target 验收需实机/qemu，由 acceptance 相位人工/台架触发并落 verifier-evidence；本闸担保不静默跳过，不担保实机已过。',
   });
-  // 执行器：仅 server 面 pytest acceptance 在闸内真跑（host、快）。固件 on-target 验收不在此自动跑。
+  // 执行器：仅 server 面 host-fast 的 pytest acceptance 在闸内真跑；live on-target（@pytest.mark.live，如 cloud-link 验收）
+  // 与固件 on-target 同待遇——只结构闸、不 auto-run（merge/CI 无 SSH/凭据，auto-run 必假红）。pytest 未装也 fail-open。
   if (real.pyHasRunner && real.pyAccFiles.length > 0) {
-    try {
-      execSync('python -m pytest -q acceptance/', { cwd: join(projectDir, 'server'), stdio: 'inherit' });
-    } catch (err) {
-      process.exit(typeof err.status === 'number' ? err.status : 1);
+    const hostFiles = real.pyAccFiles.filter((f) => !fileHasLiveMark(join(projectDir, 'server', f)));
+    if (hostFiles.length === 0) {
+      print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'live-only on-target acceptance（@pytest.mark.live，手动触发；对偶固件 on-target 结构闸）' });
+    } else if (!pytestAvailable()) {
+      print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'pytest 未安装（fail-open，对偶 firmware idf.py 缺失）' });
+    } else {
+      try {
+        execSync(`python -m pytest -q ${hostFiles.join(' ')}`, { cwd: join(projectDir, 'server'), stdio: 'inherit' });
+      } catch (err) {
+        process.exit(typeof err.status === 'number' ? err.status : 1);
+      }
     }
   }
 }

@@ -1,0 +1,3 @@
+# KidPal cloud shim 本机验收/测试依赖（dev-only，不进 ECS 运行时 venv）。
+# 冻结验收 server/acceptance/test_cloud_link.acceptance.py 由 pytest 收集运行（需 SSH+env）。
+pytest>=8.0

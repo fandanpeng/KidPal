@@ -1,0 +1,116 @@
+{
+  "changeId": "260831-ui-art-assets",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-validation/PROPOSAL.md",
+    "upstreamFrozen": "sha1:pending",
+    "workstream": "kidpal-validation"
+  },
+  "subsystem": "tools",
+  "story": "UI 美术资产管线全量验证：把 V2 设计稿里昨天没验的美术元素全部经资产管线出图——吉祥物其余 6 姿态、手绘不规则框族 9 宫格、元素倾斜烘资产、三档网点平铺、全图标族、站酷快乐体授权+栅格、Baloo 2 动态时间 imgfont，并核算资产总量对 SPIFFS 分区预算。产出 V3 设计稿（实现导向）的可行性输入。",
+  "redBaselineCommand": "ls tools/simulator/LvglWindowsSimulator/assets/png/ && grep -c 'LV_COLOR_FORMAT_RGB565' tools/simulator/LvglWindowsSimulator/assets/assets.c",
+  "redBaselineResult": "红（2026-08-31 实测）：assets/png 仅 8 枚（pose_daily/doodle_star/doodle_cloud/drop_baby/ic_batt_32/ic_bell_13/thermo_man/time_10_24）——吉祥物其余 6 姿态、手绘框族、三档网点、印章、全图标族、动态时间 imgfont 全部未出图；站酷快乐体授权未核。本包把美术元素全量出图做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-validation/",
+    "docs/notes/feature-inventory.md"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "types",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "UAA-A1",
+      "kind": "structural"
+    },
+    "UAA-A2(B1): 吉祥物 7 姿态（pose-daily/listen/think/talk/record/sleep/jump）全量栅格化出图，模拟器渲染造型按 OQ-3(a) 目测达标",
+    "UAA-A3(B2): 手绘不规则圆角框族出 3–4 种 9 宫格可拉伸资产，运行时按尺寸拉伸角部不变形（昨天没验，本包核心）",
+    "UAA-A4(B3): 元素倾斜烘进资产——贴纸微倾（±1–2°）与成就印章大倾（-8°）各出样，目测 1bpp 锯齿可接受；-8° 是重点风险须单列结论",
+    "UAA-A5(B4): 三档网点 d50/d25/d12 出 4×4 平铺贴图资产，平铺接缝不可见、密度观感达标（昨天没验）",
+    "UAA-A6(B5): 全图标族 14 枚出齐，FontAwesome 图标字 vs imgfont 二选一落定并记录取舍",
+    "UAA-A7(B6): 站酷快乐体——①核「免费商用」授权原文留证存档；②子集化栅格出样字目测可读",
+    "UAA-A8(B7): Baloo 2 动态时间——数字 0–9 + 冒号 imgfont 出图，等宽数字表格线对齐（昨天只验了静态整块 time_10_24）",
+    "UAA-A9(B8): 资产总量 vs SPIFFS 分区预算核算——4 页全量+7姿态+框族+字体 RGB565 总字节估算对分区表，出预算报告并判定是否必须上 I1"
+  ],
+  "acceptanceTestsFile": [
+    "tools/asset-pipeline/tests/test_art_assets.acceptance.md"
+  ],
+  "exitCriteria": [
+    {
+      "id": "UAA-E1",
+      "kind": "structural"
+    },
+    "UAA-E2: 全部资产经「设计稿 SVG 唯一母版 → gen_assets.mjs 抽取 → 栅格化 → RGB565」管线产出，保留 flatten 先于阈值化、use 链内联、字体替身三处既有修复",
+    "UAA-E3: 观感验收一律以 1bpp 阈值化 PNG 为准（不对真彩截图下结论）",
+    "UAA-E4: 产出《UI 资产可行性报告》（含 B8 预算结论 + 各元素可行/不可行+备选），连同全量资产与渲染截图落 changes/dev/260831-ui-art-assets/，作为 V3 设计稿输入"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-validation/PROPOSAL.md",
+    "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md",
+    "docs/notes/feature-inventory.md",
+    "docs/notes/ui-implementation-strategy.md",
+    "docs/ui/kidpal-ui-design-v2.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md"
+  ],
+  "sourceRefs": [
+    "docs/notes/ui-implementation-strategy.md#§2",
+    "docs/notes/feature-inventory.md#§1.3",
+    "docs/ui/kidpal-ui-design-v2.html"
+  ],
+  "iterationBudget": 5,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包文档产物 = changes/dev/260831-ui-art-assets/ 可行性报告 + 预算报告（E4 出口）；docs/notes 状态翻转归收口后独立 wrap-up sync（A/C 收尾同款处理）。",
+  "mutationRequired": false,
+  "mutationSkipReason": "资产生成包无源码 mutation 语义：验收机判脚本 verify_art_assets.mjs 对逐资产缺失/尺寸/密度/求和对账敏感（移除任一即红），敏感证据以静态声明承载，不模拟 mutation。",
+  "mergeOrder": 3,
+  "dependsOn": [
+    "260831-simulator-lvgl-align"
+  ],
+  "testHost": "host+SDL",
+  "decisionCoverage": [
+    {
+      "decision": "strategy-§2.2-美术元素资产化",
+      "summary": "吉祥物七姿态、手绘框族、三档网点、涂鸦点缀、印章全部离线从设计稿 SVG 栅格化为位图资产，运行时 lv_image 渲染。",
+      "sourceRefs": [
+        "docs/notes/ui-implementation-strategy.md#§2"
+      ],
+      "landsIn": "acceptance:UAA-A2(B1)"
+    },
+    {
+      "decision": "OQ-1a-倾斜烘进资产",
+      "summary": "倾斜是风格资产不是动态行为，栅格化时直接烘进资产，运行时零成本。",
+      "sourceRefs": [
+        "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-1"
+      ],
+      "landsIn": "acceptance:UAA-A4(B3)"
+    },
+    {
+      "decision": "OQ-2a-框族9宫格资产化",
+      "summary": "手绘框族离线渲染成 9 宫格可拉伸框图，全站统一 3–4 种框型，运行时按尺寸拉伸角部不变形。",
+      "sourceRefs": [
+        "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-2"
+      ],
+      "landsIn": "acceptance:UAA-A3(B2)"
+    },
+    {
+      "decision": "strategy-§4-资产总量盯防",
+      "summary": "RGB565 资产 2 字节/像素，大图资产须盯总量；资产总尺寸预算与 SPIFFS 分区表核对进验收。",
+      "sourceRefs": [
+        "docs/notes/ui-implementation-strategy.md#§4"
+      ],
+      "landsIn": "acceptance:UAA-A9(B8)"
+    }
+  ]
+}

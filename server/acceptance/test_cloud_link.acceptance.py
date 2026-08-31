@@ -50,6 +50,13 @@ import re
 import subprocess
 import sys
 import unittest
+
+try:
+    import pytest
+    pytestmark = pytest.mark.live  # live on-target：需 SSH 到 ECS，merge/CI 环境不可 auto-run
+except ImportError:
+    pytestmark = None  # 无 pytest 环境下 standalone unittest 直跑不受影响
+
 from pathlib import Path
 
 # --------------------------------------------------------------------------- #

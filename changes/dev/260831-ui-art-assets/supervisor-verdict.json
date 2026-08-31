@@ -1,0 +1,69 @@
+{
+  "verdict": "APPROVE",
+  "riskTier": "medium",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-08-31T23:35:35.268Z",
+  "changeId": "260831-ui-art-assets",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "APPROVE",
+    "riskTier": "medium",
+    "reasons": [
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:medium",
+      "adjudicate:low/med∧evidence-complete→APPROVE(restore-auto-merge)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "low",
+      "declaredTier": "medium",
+      "effectiveTier": "medium",
+      "ambiguous": false,
+      "diffReasons": [
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 5,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "low",
+        "declaredTier": "medium",
+        "effectiveTier": "medium",
+        "ambiguous": false,
+        "diffReasons": [
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260831-ui-art-assets/verifier-evidence/rounds/r5.json",
+        "bearingFactOk": true,
+        "completedRounds": 5,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260831-ui-art-assets/docs-delta.md",
+          "changes/dev/260831-ui-art-assets/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788204736502-taskpackage-required.log",
+      ".claude/verify-logs/1788205011747-acceptance-coverage.log",
+      ".claude/verify-logs/1788206584260-unit.log",
+      ".claude/verify-logs/1788206584573-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260831-ui-art-assets/verifier-evidence/rounds/r5.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260831-ui-art-assets/docs-delta.md",
+      "changes/dev/260831-ui-art-assets/review-packet.md"
+    ]
+  }
+}
