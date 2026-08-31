@@ -28,13 +28,16 @@
         "docs/DEV-GOVERNANCE.md",
         "docs/ARCH-REVIEW-QUEUE.md",
         "docs/CONTRACT-DECISION-QUEUE.md",
-        "docs/glossary.md"
+        "docs/glossary.md",
+        "docs/spec.md"
       ],
       "allowDirs": [
         "docs/contracts",
         "docs/systems",
         "docs/templates",
-        "docs/archive"
+        "docs/archive",
+        "docs/notes",
+        "docs/ui"
       ]
     }
   },

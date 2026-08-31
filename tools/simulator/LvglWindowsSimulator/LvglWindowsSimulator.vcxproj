@@ -4228,6 +4228,8 @@
     </ClCompile>
     <ClCompile Include="LvglWindowsSimulator.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)kidpal_ui.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)assets/assets.c" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)assets/assets.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\LvglPlatform\freetype\.clang-format" />

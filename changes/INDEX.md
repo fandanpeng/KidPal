@@ -14,5 +14,6 @@ _（无）_
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260830-arch-review-ui-impl-strategy](../changes/arch/260830-arch-review-ui-impl-strategy/) | 2026-08-30 | frozen | — |
 | [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | — |
 | [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |

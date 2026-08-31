@@ -35,3 +35,7 @@ ESP32-S3-RLCD-4.2-Demo/
 
 # OpenDesign 工具本地缓存（非治理工件）
 .od-skills/
+
+# KidPal 工具面产物
+tools/asset-pipeline/node_modules/
+tools/simulator/Output/
