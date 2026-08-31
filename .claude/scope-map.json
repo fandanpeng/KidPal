@@ -11,9 +11,10 @@
     "  - 未登记 agent 不受 per-agent 约束（仍受 universal + settings deny）。"
   ],
   "owned": {
-    "_doc": "自有实现面登记（2026-08-29 human 拍板）。档 1 期间主线程一次性落地操作在此进行并诚实记录；档 2 建 dev-loop 后须把这两路径登记进 builder allow。",
+    "_doc": "自有实现面登记（2026-08-29 human 拍板 firmware/server；2026-08-31 human 拍板 tools/）。档 1 期间主线程一次性落地操作在此进行并诚实记录；档 2 建 dev-loop 后须把这些路径登记进 builder allow。",
     "firmware/": "固件实现面。firmware = 小智 V2.1.0 整树拷贝基座，板级 overlay 在 main/boards/waveshare-s3-rlcd-4.2/，业务 UI/会话改动在此之上做。",
-    "server/": "云端实现面。薄桥 shim（FastAPI）等，本轮未建，预留。"
+    "server/": "云端实现面。薄桥 shim（FastAPI）等，本轮未建，预留。",
+    "tools/": "工具实现面（2026-08-31 human 拍板）。tools/asset-pipeline（资产管线 gen_assets.mjs 等）+ tools/simulator（LVGL 模拟器）。前几轮自写、非 vendor 参考代码。"
   },
   "universal": {
     "_doc": [
@@ -55,15 +56,15 @@
       "deny": ["docs/contracts/**", "firmware/**", "server/**", "ESP32-S3-RLCD-4.2-Demo/**", "docs/**"]
     },
     "builder": {
-      "allow": ["firmware/**", "server/**", ".planning/**"],
+      "allow": ["firmware/**", "server/**", "tools/**", ".planning/**"],
       "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "fixer": {
-      "allow": ["firmware/**", "server/**", ".planning/**"],
+      "allow": ["firmware/**", "server/**", "tools/**", ".planning/**"],
       "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "acceptance-author": {
-      "allow": ["firmware/**/*.acceptance.c", "firmware/**/*.acceptance.cpp", "firmware/**/acceptance/**", "server/**/acceptance/**"],
+      "allow": ["firmware/**/*.acceptance.c", "firmware/**/*.acceptance.cpp", "firmware/**/acceptance/**", "server/**/acceptance/**", "tools/**"],
       "deny": ["firmware/**/__tests__/**", "server/**/__tests__/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "verifier": {
