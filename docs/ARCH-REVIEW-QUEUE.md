@@ -38,11 +38,14 @@
 | ARQ-260827-contract-mech-gate-gap | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 原仓 `arch-spec-contract-check.mjs` 深绑多文件 Prisma contracts 结构，不适用单文件 MD 契约面，未迁。pass-oracle 第 4 关在本仓降级为人工核对，须如实记录「机械门缺失」，不得虚报已机检。将来契约面复杂化（出现第二份契约文件或字段级 drift 高发）时写一个针对 markdown 契约表的一致性检查脚本补位。 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 | 治理迁移决策记录（2026-08-27，MIGRATION-NOTES §已知缺口） |
 | ARQ-260831-simulator-lvgl-version-drift | SHOULD | 模拟器 LVGL 版本与固件错位（9.5 vs 9.3）是常驻风险，且 9.5 渲染行为存在实测差异 | 模拟器工程是独立拷贝（LVGL 9.5.0），固件锁 `~9.3.0`，未对齐。实战已证实差异不止 API 层面：9.5 软件渲染的 I1 索引图像路径绕过调色板（`lv_draw_sw_blend_to_argb8888.c` 的 `i1_image_blend` 把位图当 alpha/灰度直接混色，调色板仅经 bin-decoder 对文件源走 `decode_indexed_line` 生效）——「模拟器结论不直接当真机结论」必须作为纪律执行，双端同资产验证不可省。每次固件升 LVGL 组件锁，模拟器须同步；建议在未来 simulator 相关包落地时把版本对齐做成构建期校验。 | simulator 相关 dev-loop 包立项 / 固件 LVGL 组件锁变更 | 260830-arch-review-ui-impl-strategy（PROPOSAL §2 T3 + §8.2-V1） |
 | ARQ-260831-simulator-truecolor-vs-1bpp | COULD | 模拟器（真彩灰度）与真机（1bpp 阈值化）的显色差异是第二类失真 | 同一张 UI 在模拟器上细线/小字可读（FreeType 灰度抗锯齿），阈值化后可能糊掉（实测设计稿 12–16px 文字阈值化后明显糊边）。建议 simulator 包顺手做「画布快照阈值化 PNG」一键自查，验收图一律以阈值化版本为准；真机字体子集化时 16px 以下 CJK 的字号下限需实测。 | simulator 相关 dev-loop 包立项 / 真机字体子集化任务 | 260830-arch-review-ui-impl-strategy（PROPOSAL §2 T3 + §8.2-V6） |
-| ARQ-260831-cross-surface-check-missing | SHOULD | landing-fidelity-check 的 cross-surface 子门（GAR-001）子脚本未随迁出，结构门末段不可用 | `.claude/scripts/landing-fidelity-check.mjs:324` 调用 `.claude/scripts/cross-surface-check.mjs`，该文件在治理迁移时未迁入本仓，凡 diff 面含 `.claude/scope-map.json`/agents/settings/scripts/hooks 的 landing 都会以 MODULE_NOT_FOUND 红掉末段（前置断言不受影响）。要么从原仓补迁该脚本，要么裁剪/降级该触发；迁前 landing-verifier 须人肉覆盖该子门判面。 | 下一个含 .claude 面改动的治理批之前 | 260830-arch-review-ui-impl-strategy（landing-verdict §7 + retro F5） |
-| ARQ-260831-docs-top-level-registry-gap | SHOULD | docs 平铺后 scope-map docsTopLevel 白名单未系统性对账，repo-structure.md 骨架缺失 | 260830 批 landing 时发现 `docs/spec.md`/`docs/notes/`/`docs/ui` 已在 git 中存在却未登记进 universal.docsTopLevel（白名单拦截 landing 写入）；当批只做最小补登。残留：①其余 docs 面路径未全面对账；②enforce-scope 报错文案引用的 `.claude/rules/repo-structure.md` 骨架文档不存在，登记流程缺第二落点。建议立治理包做全面对账 + 建册。 | 下一个 docs 面新增类别出现之前 / 或治理维护窗口 | 260830-arch-review-ui-impl-strategy（landing-summary §2 + retro F4） |
 
 ---
 
 ## 2. 已结索引
 
 > 已结项按统一格式追加在此（ID / title / evidence），证据链接指向 `changes/arch/**`。
+
+| ID | title | 已结日期 | evidence |
+|---|---|---|---|
+| ARQ-260831-cross-surface-check-missing | landing-fidelity-check 的 cross-surface 子门子脚本未随迁出 | 2026-08-31 | human 指示直修（项目初期不走 review）：子门裁剪为「脚本在场才跑」，`landing-fidelity-check.mjs` GAR-001 段已加 existsSync 守卫与实况注记；若将来 dev-loop 面（route-fixtures / dev-loop.settings.json）迁齐，从原仓补迁 `cross-surface-check.mjs` 即自动恢复启用。 |
+| ARQ-260831-docs-top-level-registry-gap | docs 平铺后 scope-map docsTopLevel 白名单未系统性对账，repo-structure.md 骨架缺失 | 2026-08-31 | human 指示直修：scope-map `allowDirs` 按 docs 实况对账（去掉不存在的 `docs/systems`，实况六面齐备）；新建 `.claude/rules/repo-structure.md` 骨架（结构单一事实源，docs 根白名单与 scope-map 双向锚定）。 |

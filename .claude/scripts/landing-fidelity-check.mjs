@@ -311,6 +311,10 @@ if (errors.length > 0) {
 }
 
 // --- Cross-surface alignment gate (GAR-001) ---
+// 本仓实况（2026-08-31）：cross-surface-check.mjs 未自原仓迁入（其输入面 route-fixtures/
+// 与 dev-loop.settings.json 本仓均不存在），子门降级为「脚本在场才跑」。原仓全量版见
+// c:\AI\AInativecompany\.claude\scripts\cross-surface-check.mjs；若将来 dev-loop 面迁齐，
+// 把脚本补迁回本目录即自动恢复启用。登记：ARQ-260831-cross-surface-check-missing（已结）。
 const shouldRunCrossSurface = [...changed].some(
   (file) =>
     file.startsWith('.claude/agents/') ||
@@ -320,8 +324,8 @@ const shouldRunCrossSurface = [...changed].some(
     file.startsWith('.claude/scripts/') ||
     file.startsWith('.claude/hooks/'),
 );
-if (shouldRunCrossSurface) {
-  const crossSurfaceScript = resolve(projectDir, '.claude/scripts/cross-surface-check.mjs');
+const crossSurfaceScript = resolve(projectDir, '.claude/scripts/cross-surface-check.mjs');
+if (shouldRunCrossSurface && existsSync(crossSurfaceScript)) {
   const result = spawnSync(process.execPath, [crossSurfaceScript, '--json'], {
     cwd: projectDir,
     encoding: 'utf8',

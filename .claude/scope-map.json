@@ -33,7 +33,6 @@
       ],
       "allowDirs": [
         "docs/contracts",
-        "docs/systems",
         "docs/templates",
         "docs/archive",
         "docs/notes",
