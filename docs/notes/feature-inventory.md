@@ -5,6 +5,8 @@
 > 依据：设计稿 v2（`docs/ui/kidpal-ui-design-v2.html`）、实现策略（[ui-implementation-strategy.md](ui-implementation-strategy.md)）、踩坑记录（[ui-to-lvgl-pitfalls.md](ui-to-lvgl-pitfalls.md)）、spec §4/§7、契约（[interface-contract.md](../contracts/interface-contract.md)）、2026-08-31 对阿里云 ECS（8.137.91.16）的现场盘点。
 > 分级口径：**✅ 已打通/已验证**（跑过、有实证）· **🟢 可行待实现**（路线已定、无技术悬念，只差做）· **🟡 需验证**（路线有方向但有未实证的风险点，必须先验）· **🔴 高风险/存疑**（可能走不通，需备选方案）。
 
+> **更新 2026-09-01**：功能支撑验证批首二包已落地——TP-A（260831-cloud-link-bringup）打通 OpenClaw 云端链路（下方 OC-5..11 → ✅），TP-C（260831-simulator-lvgl-align）把模拟器对齐固件 9.3.x（§1.5 版本对齐/快照自查/实验代码正式化 → ✅）。本表相关行已翻转；OC-12..15、I1 真机、资产预算、16px CJK 仍待后续包。
+
 ---
 
 ## 一、UI 方面：设计元素逐点可行性
@@ -61,10 +63,10 @@
 | 设计稿 SVG → 位图资产脚本（`tools/asset-pipeline/gen_assets.mjs`） | ✅ | 昨天跑通，8 枚资产一次出齐；三大坑（flatten/use 链/字体替身）已修 |
 | 资产格式：RGB565 直出 | ✅ | 昨天实证 9.5 下 I1 调色板被绕过会糊版，RGB565 双端一致 |
 | **I1 格式在真机 9.3 + SPIFFS 文件源路径可用性** | 🟡 | RGB565 占 Flash 是 I1 的 16 倍（P1 一套已 96KB，大时间字块独占 55KB）。**I1 若能用可回收 16 倍空间**——9.3 bin-decoder `decode_indexed_line` 路径未在真机验证 |
-| **模拟器 LVGL 9.5 vs 固件 9.3 版本对齐** | 🟡 | 昨天全部验证在 9.5 上做的，**9.3 一个都没验**。"9.5 过 ≠ 9.3 无坑"已被 I1 事件实证 |
-| **1bpp 阈值化快照自查**（模拟器真彩 → 真机黑白观感校准） | 🟢 | `snapshot_timer` 已在实验代码里，正式化即可 |
+| **模拟器 LVGL 9.5 vs 固件 9.3 版本对齐** | ✅ | 已由 260831-simulator-lvgl-align 落地：模拟器降到 9.3.x 与固件同版（`lv_version.h` 三号一致 + MSBuild 编译通过），「9.5 过 ≠ 9.3 无坑」的错位已消除 |
+| **1bpp 阈值化快照自查**（模拟器真彩 → 真机黑白观感校准） | ✅ | 已正式化（260831-simulator-lvgl-align SLA-A4）：`snapshot_timer` 收编为 `kidpal_snapshot` 工具，验收图一律以阈值化 PNG 为准 |
 | 资产总量 vs SPIFFS 分区预算 | 🟡 | P1 已 96KB；4 页全量 + 7 姿态 + 框族 + 字体的总预算**未核算** |
-| 实验代码正式化（`kidpal_ui.c`/`gen_assets.mjs` 由 dev-loop 接管重写） | 🟢 | 昨天是跳过流程的一次性验证，须防实验代码沉淀为事实标准（策略 §8.4 留根） |
+| 实验代码正式化（`kidpal_ui.c`/`gen_assets.mjs` 由 dev-loop 接管重写） | ✅ | 已由 260831-simulator-lvgl-align 接管正式化（SLA-A6：kidpal_ui.c / gen_assets.mjs / vcxproj 资产挂接），实验代码不再沉淀为事实标准 |
 
 ### 1.6 UI 可行性小结（给 V3 设计的三句话）
 
@@ -87,17 +89,17 @@
 | ✅ OC-3 | **定时能力（cron）** | `openclaw cron list` 在场且能跑（heartbeat、memory-dreaming、skill-review 等 4 个 job 在册，还有一个 95 天前的 `class-reminder` 历史 job）——**B3 提醒写文件的调度底座可用** |
 | ✅ OC-4 | **DeepSeek 意图理解/多轮对话** | OpenClaw agent 自带能力（spec 决策 11）；agent `main` 在册 |
 
-### 2.2 待验证 / 待装（🟡 每条都卡一条验收）
+### 2.2 验证结果（TP-A 260831-cloud-link-bringup 已验 OC-5..11 标 ✅；OC-12..15 仍待验证 🟡）
 
 | # | 功能 | 现状（2026-08-31 实测） | 要验什么 |
 |---|---|---|---|
-| 🟡 OC-5 | **OpenAI 兼容端点 `POST /v1/chat/completions`** | **当前 404（未开启）** | 开启后能否返回、能否挂 system prompt |
-| 🟡 OC-6 | **DeepSeek 按格式输出 ` ```display ` 块**（契约 E1 命脉） | 未实测 | 格式遵循度——这是整个 E1 契约的命门，契约"待确认点 1" |
-| 🟡 OC-7 | **shim 薄桥（FastAPI `/v1/asr /v1/chat /v1/tts /v1/alerts`）** | **不存在**（`server/` 预留未建，ECS 上无 shim 进程） | 从零建；先在本机/ECS 起一个最小版 |
-| 🟡 OC-8 | **ASR faster-whisper** | **未装**（无 pip 包、无命令；系统 Python 仅 3.6.8，whisper 需 ≥3.8） | 能否装上 + CPU 推理速度（中文短句延迟） |
-| 🟡 OC-9 | **TTS edge-tts** | **未装** | 能否装上 + 出 mp3 + 童声音色（晓晓/云希） |
-| 🟡 OC-10 | **ECS 算力**（whisper+DeepSeek+edge-tts+网关同机） | 未核 | spec 待办 4——CPU/内存是否扛得住（直接影响 whisper 用哪个模型档） |
-| 🟡 OC-11 | **OpenClaw 读/写 schedule.md**（B1 课表结构消费） | 契约草案已出，未实测 | DeepSeek 能否按"今天星期几/当前时间"正确筛选（契约待确认点 2） |
+| ✅ OC-5 | **OpenAI 兼容端点 `POST /v1/chat/completions`** | 已开通（TP-A）：`gateway.http.endpoints.chatCompletions.enabled=true`，端点从 404 变为正常 completion、可挂 system prompt | ✅ 已验（正常返回） |
+| ✅ OC-6 | **DeepSeek 按格式输出 ` ```display ` 块**（契约 E1 命脉） | 已实测（TP-A）：挂契约 §1.6 system prompt 连发 12 条，` ```display ` 块出现率 + JSON 可解析率 12/12（occ 1.0 / parse 1.0），char/schedule/story_list/story_text/text 全覆盖 | ✅ 12/12（E1 双通道方案成立、无需换切分） |
+| ✅ OC-7 | **shim 薄桥（FastAPI `/v1/asr /v1/chat /v1/tts /v1/alerts`）** | 已建（TP-A）：`server/shim.py` 起 `/v1/chat` 一路（文字→OpenClaw→切分正文/display→正文送 TTS→回 `{audio, display}`）跑通；asr/tts 独立口 + alerts 留 stub | ✅ 全路径跑通 |
+| ✅ OC-8 | **ASR faster-whisper** | 已装（TP-A）：另建 venv（Py3.11）装 faster-whisper，tiny 档中文短句转写正确，延迟约 0.85–1.92s | ✅ 已验（tiny 档可用） |
+| ✅ OC-9 | **TTS edge-tts** | 已装（TP-A）：edge-tts 出童声 mp3（晓晓音色）可播放 | ✅ 已验（童声 mp3 可播） |
+| ✅ OC-10 | **ECS 算力**（whisper+DeepSeek+edge-tts+网关同机） | 已核（TP-A）：ECS 2 核 / 1870MB，whisper+DeepSeek+edge-tts+网关同机只扛得住 whisper **tiny** 档（base/small 内存不够） | ✅ 已核（只能 tiny 档） |
+| ✅ OC-11 | **OpenClaw 读/写 schedule.md**（B1 课表结构消费） | 已实测（TP-A）：DeepSeek 按知识库 `schedule.md` 正确筛选「今天下午」课程，答复正确并吐 `view:schedule` | ✅ 已验（B1 课表消费正确） |
 | 🟡 OC-12 | **cron 到点写 `alerts/pending.json` → shim 读出**（B3 提醒链路） | cron 底座在（OC-3），但"扫课表→写提醒文件"的 job 未配 | 端到端：cron 触发→写文件→shim `/v1/alerts` 出队 |
 | 🟡 OC-13 | **故事归档 stories/*.md + 起标题/润色**（C1/C2） | 未实测 | DeepSeek 写文件 + 自动起标题 |
 | 🟡 OC-14 | **故事列表/回放经 display 下发**（C3/C4） | 未实测 | `story_list`/`story_text` view 下发（依赖 OC-6） |

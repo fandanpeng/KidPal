@@ -2,13 +2,13 @@
 
 > 记录人：Claude Code
 > 日期：2026-08-30
-> 关联：KidPal P1 home 页面 / LVGL v9.5.0 Windows PC simulator / ESP32-S3-RLCD-4.2（400×300 横屏）
+> 关联：KidPal P1 home 页面 / LVGL v9.3.x Windows PC simulator（原 9.5.0，2026-08-31 由 260831-simulator-lvgl-align 降到 9.3.x 对齐固件）/ ESP32-S3-RLCD-4.2（400×300 横屏）
 > 状态：初稿，待后续页面经验补充后再沉淀为 skill
 
 ## 1. 环境/项目基础
 
 ### 1.1 模拟器工程来源
-- 使用 `lvgl/lv_port_pc_visual_studio`（LVGL v9.5.0）。
+- 使用 `lvgl/lv_port_pc_visual_studio`（原 LVGL v9.5.0，2026-08-31 已由 260831-simulator-lvgl-align 降到 v9.3.x 与固件同版）。
 - 复制到本仓 `tools/simulator/`，不要直接改原始仓库。
 - 主入口是 `LvglWindowsSimulator/LvglWindowsSimulator.cpp`。
 

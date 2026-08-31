@@ -56,6 +56,7 @@
   ],
   "docRefs": [
     ".planning/kidpal-validation/PROPOSAL.md",
+    "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md",
     "docs/notes/feature-inventory.md",
     "docs/notes/ui-implementation-strategy.md",
     "docs/ui/kidpal-ui-design-v2.html",
@@ -81,7 +82,7 @@
       "sourceRefs": [
         "docs/notes/ui-implementation-strategy.md#§2"
       ],
-      "landsIn": "acceptance:UAA-A2"
+      "landsIn": "acceptance:UAA-A2(B1)"
     },
     {
       "decision": "OQ-1a-倾斜烘进资产",
@@ -89,7 +90,7 @@
       "sourceRefs": [
         "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-1"
       ],
-      "landsIn": "acceptance:UAA-A4"
+      "landsIn": "acceptance:UAA-A4(B3)"
     },
     {
       "decision": "OQ-2a-框族9宫格资产化",
@@ -97,7 +98,7 @@
       "sourceRefs": [
         "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-2"
       ],
-      "landsIn": "acceptance:UAA-A3"
+      "landsIn": "acceptance:UAA-A3(B2)"
     },
     {
       "decision": "strategy-§4-资产总量盯防",
@@ -105,7 +106,7 @@
       "sourceRefs": [
         "docs/notes/ui-implementation-strategy.md#§4"
       ],
-      "landsIn": "acceptance:UAA-A9"
+      "landsIn": "acceptance:UAA-A9(B8)"
     }
   ]
 }

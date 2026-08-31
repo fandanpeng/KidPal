@@ -3,7 +3,7 @@
 #include "assets/assets.h"
 #include "lvgl/lvgl.h"
 
-/* KidPal P1 home — 「LVGL 骨架 + 预栅格化 1bpp 资产」双层方案实战版 (260830-arch-review-ui-impl-strategy)
+/* KidPal P1 home — 「LVGL 骨架 + 预栅格化 RGB565 资产」双层方案实战版 (260830-arch-review-ui-impl-strategy)
  * 骨架: 文本/键帽/页点/反白/列表线走 LVGL 控件
  * 资产: 吉祥物/涂鸦/温度计小人/水滴宝宝/电池/铃铛 全部 lv_image(RGB565 位图, 倾斜已烘进资产)
  */
