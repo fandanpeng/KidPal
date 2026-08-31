@@ -1,0 +1,3 @@
+# 运行期验收产物（display 合规统计 / whisper 转写 / ECS 算力快照）
+# 由冻结验收 test_cloud_link.acceptance.py 逐次落盘、可再生，不入版本控制。
+_artifacts/

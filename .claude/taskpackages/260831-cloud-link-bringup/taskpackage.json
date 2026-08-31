@@ -41,7 +41,7 @@
     "CLB-A8(OC-11): 写一份符合契约 B1 的 schedule.md，问『今天下午有什么课』，DeepSeek 答复正确且 display 块含 view:schedule"
   ],
   "acceptanceTestsFile": [
-    "server/tests/test_cloud_link.acceptance.py"
+    "server/acceptance/test_cloud_link.acceptance.py"
   ],
   "exitCriteria": [
     {
@@ -88,7 +88,7 @@
       "sourceRefs": [
         "docs/contracts/interface-contract.md#§一"
       ],
-      "landsIn": "acceptance:CLB-A3"
+      "landsIn": "acceptance:CLB-A3(OC-6)"
     },
     {
       "decision": "inventory-OC6-命门",
@@ -96,7 +96,7 @@
       "sourceRefs": [
         "docs/notes/feature-inventory.md#§2.3"
       ],
-      "landsIn": "acceptance:CLB-A3"
+      "landsIn": "acceptance:CLB-A3(OC-6)"
     }
   ]
 }

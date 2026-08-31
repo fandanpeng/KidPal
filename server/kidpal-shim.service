@@ -1,0 +1,32 @@
+# systemd unit for the KidPal cloud shim (thin bridge).
+# Installed on the ECS at /etc/systemd/system/kidpal-shim.service.
+#
+# Binds loopback only (127.0.0.1:8080) — the frozen acceptance probes it there.
+# The real OpenClaw operator token is passed via OPENCLAW_TOKEN (restricted
+# EnvironmentFile below) and is used ONLY on the loopback forward, never egressed.
+# SHIM_DEVICE_TOKEN is the weak device-facing token; leave empty for validation,
+# set a random value in production to require Authorization: Bearer on /v1/*.
+
+[Unit]
+Description=KidPal cloud shim (thin bridge over OpenClaw)
+After=network-online.target openclaw-gateway.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/kidpal/shim
+Environment=PATH=/opt/kidpal/venv/bin:/usr/local/bin:/usr/bin
+Environment=OPENCLAW_BASE=http://127.0.0.1:18789
+Environment=OPENCLAW_MODEL=openclaw/default
+Environment=OPENCLAW_WORKSPACE=/root/.openclaw/workspace/kidpal
+Environment=CLB_WHISPER_MODEL=/opt/kidpal/models/faster-whisper-tiny
+Environment=SHIM_DEVICE_TOKEN=
+EnvironmentFile=-/opt/kidpal/shim/secrets.env
+ExecStart=/opt/kidpal/venv/bin/uvicorn shim:app --host 127.0.0.1 --port 8080
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+# KidPal cloud shim runtime deps (installed into /opt/kidpal/venv on the ECS).
+# Pinned to the versions actually validated on 2026-08-31.
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+httpx==0.28.1
+edge-tts==7.2.8
+faster-whisper==1.2.1
