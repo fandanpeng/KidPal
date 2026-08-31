@@ -47,7 +47,9 @@
     "SLA-E2: 模拟器窗口固定 400×300（踩坑 §1.2 已做，回归确认）",
     "SLA-E3: 产出对齐后的模拟器工程 + 正式化的资产管线脚本 + P1 在 9.3 的回归截图（阈值化版），落 changes/dev/260831-simulator-lvgl-align/"
   ],
-  "contractRefs": [],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "docRefs": [
     ".planning/kidpal-validation/PROPOSAL.md",
     "docs/notes/feature-inventory.md",

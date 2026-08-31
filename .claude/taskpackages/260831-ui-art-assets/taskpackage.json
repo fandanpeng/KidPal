@@ -51,7 +51,9 @@
     "UAA-E3: 观感验收一律以 1bpp 阈值化 PNG 为准（不对真彩截图下结论）",
     "UAA-E4: 产出《UI 资产可行性报告》（含 B8 预算结论 + 各元素可行/不可行+备选），连同全量资产与渲染截图落 changes/dev/260831-ui-art-assets/，作为 V3 设计稿输入"
   ],
-  "contractRefs": [],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "docRefs": [
     ".planning/kidpal-validation/PROPOSAL.md",
     "docs/notes/feature-inventory.md",
