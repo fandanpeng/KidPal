@@ -1,6 +1,6 @@
 # Code Review Gate Reference
 
-integrator 在合并门前产出 Review Packet。它先供 supervisor 自动复核；高风险、critical 或 ESCALATE 时再供人类 review。Review Packet 不替代契约门，也不允许跳过 PR/revertable path。
+integrator 在合并门前产出 Review Packet。它先供 supervisor 自动复核；高风险、critical 或 ESCALATE 时再供人类 review。Review Packet 不替代契约门，也不允许跳过可回滚路径（本地 merge 或 PR）。
 
 ## Severity
 

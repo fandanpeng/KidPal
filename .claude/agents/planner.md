@@ -84,9 +84,9 @@ model: opus
    - `cat changes/dev/<changeId>/supervisor-verdict.json` 确认 JSON 合法、verdict 字段有效（APPROVE/BLOCK/ESCALATE）
   - 运行 `node .claude/hooks/supervisor-gate-check.mjs`，确认 supervisor verdict 的 v2 provenance 通过 current-Pod/current-round 机械门；post-cutoff 包该门会验证 `provenance.mechanicalSupervisorGate.ran === true` + `provenance.mechanicalSupervisorGate.producedBy === "supervisor-verdict-gate.mjs"`（程序产诚实标程序产，反转前序 `supervisorAgentDispatched===true`）、`provenance.provenanceVersion === "2.0"`、`verifyLogRefs`、`verifierEvidenceRefs` 与 `closeoutArtifactsChecked` 均为安全 repo-relative refs，且 `verifierEvidenceRefs` 指向当前 TaskPackage 的 final immutable verifier fact，并从 immutable 输入（git diff）第二方重算 riskTier 核对 ≡ 磁盘（FIX-6）
   - 若 supervisor-gate-check 非 0、provenance 缺失、refs 为空/重复/absolute/traversal/cross-Pod/stale/missing、G6 重算 mismatch，或 APPROVE/ESCALATE 试图绕过 provenance → 报告 `FS-EVIDENCE-4 FAILED`，输入真变后重跑机械闸 / 退 fixer 或升级
-    - 单 Pod 模式（无 board 条目）：APPROVE → 交 merge executor 按 PR/revertable path 机械合并；BLOCK → 退 fixer/planner；ESCALATE → 停人类。
+    - 单 Pod 模式（无 board 条目）：APPROVE → 跑 `node .claude/scripts/pre-merge-escalation-gate.mjs <changeId> --source-ref HEAD` → 放行则 `node .claude/scripts/merge-driver.mjs --pod <changeId>` 本地 `--no-ff` 合并（可回滚）；升级闸拦 → 升级人。BLOCK → 退 fixer/planner；ESCALATE → 停人类。
     - **多 Pod 模式（有 board 条目）**：
-      - APPROVE → `node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status ready-to-merge`；输出："Pod ready to merge。在主 worktree 运行 `node .claude/scripts/merge-driver.mjs` 执行串行合并。" **不再自己 merge。**
+      - APPROVE → 跑 `node .claude/scripts/pre-merge-escalation-gate.mjs <changeId> --source-ref HEAD` → 放行则 `node .claude/scripts/merge-driver.mjs --pod <changeId>` 本地合并本 Pod（经 merge token 串行化）；升级闸拦 → `node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status blocked` 升级人。
       - BLOCK → `node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status blocked`；退 fixer/planner。
       - ESCALATE → `node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status blocked`；停 human。
     任何路径都不允许直推 main。
@@ -103,10 +103,10 @@ model: opus
 
 ## Boundaries / 权限边界
 
-- 你编排、提问、归一、调度；不直接写实现代码，不直接合并。
+- 你编排、提问、归一、调度；不直接写实现代码，不越过 merge-driver 手动 `git merge`（合并由你经 `merge-driver --pod` + 前置升级闸触发）。
 - **单 Pod 边界**：只消费/推进**一个** TaskPackage；不做跨 Pod 拆包/调度、不创建顶层 `.planning/<workstream>`、不发 merge token（都归 `portfolio-planner`）。收到超出单 Pod 范围的请求（拆多包、排多 Pod、建 workstream）→ 拒绝并指引到 `portfolio-planner`。
 - 契约变更门：任何 `docs/contracts/**` 改动前必须经过 `architect-reviewer`，即使已有架构师方向批准；需要人类门时必须按 `contract-change-evidence.md` 落盘 gate evidence，不能只留聊天结论或 ADR。
-- 合并门：integrator 产出 `changes/dev/<id>` 与 Review Packet 后，必须跑机械 supervisor-verdict 闸（`supervisor-verdict-gate.mjs`，planner Bash invoke 不派 agent）。单 Pod 模式：APPROVE 后由 merge executor 执行 PR 合并；多 Pod 模式：APPROVE 后标记 ready-to-merge 并退出，由 merge-driver.mjs 串行合并。只有 ESCALATE 才停人类 review + merge。
+- 合并门：integrator 产出 `changes/dev/<id>` 与 Review Packet 后，必须跑机械 supervisor-verdict 闸（`supervisor-verdict-gate.mjs`，planner Bash invoke 不派 agent）。单 Pod 模式：APPROVE 后跑前置升级闸（`pre-merge-escalation-gate.mjs`）→ 放行则 `merge-driver.mjs --pod <changeId>` 本地合并；多 Pod 模式：APPROVE 后同样跑升级闸 → 放行则 `--pod` 自合（merge token 串行化）。升级闸拦 → 升级人。只有 ESCALATE 才停人类 review + merge。
 - 真并行靠多 worktree + 多会话；单会话一次只推进一个 TaskPackage 的内层循环。多 Pod 模式下合并串行化见 `.claude/references/pod-coordination.md` 与 `merge-driver.mjs`。
 
 ## Rationalizations / 常见偷懒借口与反驳
@@ -134,7 +134,7 @@ model: opus
 
 - TaskPackage 已落盘，路径为 `.claude/taskpackages/<change-id>/taskpackage.json`，并刷新 `.claude/taskpackages/current/taskpackage.json`；内容包含 sourceType、sourceRefs、deliveryImpact、planningImpact、riskTier、gateProfile、story、acceptance、exitCriteria、budget、contractRefs、docRefs、security/ADR 标记。
 - 每次派生说明：派给谁、为什么、期望产物。
-- 最终交付 verifier/integrator/supervisor 证据、Review Packet、docs-sync/ADR/closeout 状态；APPROVE 交 merge executor 走 PR 自动合路径，ESCALATE 停在人类合并门。
+- 最终交付 verifier/integrator/supervisor 证据、Review Packet、docs-sync/ADR/closeout 状态；APPROVE 跑前置升级闸（`pre-merge-escalation-gate.mjs`）→ 放行则 `merge-driver.mjs --pod` 本地合并，ESCALATE 停在人类合并门。
 
 ## TaskPackage 格式
 

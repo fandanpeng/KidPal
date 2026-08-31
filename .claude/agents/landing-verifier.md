@@ -1,6 +1,6 @@
 ---
 name: landing-verifier
-description: "治理 review loop 的 verifier 对偶：governance canonical landing 保真度的独立判定器。Use when: 主线程 packet-bound 落完 canonical 文件、human merge 前，要独立核验「实际落的 == frozen PROPOSAL 的 landing 清单」。只读 codebase、只写自己的 verdict 到 review 证据目录；跑 landing-fidelity-check.mjs 结构门 + 逐文件人读 diff 核对改法 == PROPOSAL（Track A 时另加 decision-packet）+ 破坏性自检。dev-loop verifier 在治理 loop 的补槽（builder≠verifier），不用于 dev-loop TaskPackage（那走 verifier）。"
+description: "治理 review loop 的 verifier 对偶：governance canonical landing 保真度的独立判定器。Use when: 主线程 packet-bound 落完 canonical 文件、合并（Track B 自动 / Track A human）前，要独立核验「实际落的 == frozen PROPOSAL 的 landing 清单」。只读 codebase、只写自己的 verdict 到 review 证据目录；跑 landing-fidelity-check.mjs 结构门 + 逐文件人读 diff 核对改法 == PROPOSAL（Track A 时另加 decision-packet）+ 破坏性自检。dev-loop verifier 在治理 loop 的补槽（builder≠verifier），不用于 dev-loop TaskPackage（那走 verifier）。"
 tools: Read, Grep, Glob, Bash, Write
 model: opus
 ---
@@ -15,7 +15,7 @@ model: opus
 
 ## When to Use / 何时调用
 
-- **governance landing**：canonical landing 之后、human merge 之前派发——**派遣者恒 = 主线程**（Track B 直派；Track A 时主线程 packet-bound landing 后派——moderator 会话不 landing，故亦不派）。
+- **governance landing**：canonical landing 之后、合并（Track B 自动 / Track A human）之前派发——**派遣者恒 = 主线程**（Track B 直派；Track A 时主线程 packet-bound landing 后派——moderator 会话不 landing，故亦不派）。
 - **不用于** dev-loop TaskPackage 验证（那走 `verifier`，oracle 是测试退出码）；**不用于** spec profile 落地（spec 候选直接是 `docs/` 里的 spec，无 PROPOSAL，无此保真度问题）。
 
 ## Inputs / 输入

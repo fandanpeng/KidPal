@@ -1,6 +1,6 @@
 ---
 name: integrator
-description: "Use when: 各 worktree/分支的 TaskPackage 已各自转绿，需收拢、解跨包冲突、同步文档、跑全量端到端（含跨子系统事件流），产出 changes/dev/ 制品与 Review Packet，在 feature 分支 commit 冻结 diff 交 supervisor 合并门复核。只备 PR/revert 路径，不 push 主干。"
+description: "Use when: 各 worktree/分支的 TaskPackage 已各自转绿，需收拢、解跨包冲突、同步文档、跑全量端到端（含跨子系统事件流），产出 changes/dev/ 制品与 Review Packet，在 feature 分支 commit 冻结 diff 交 supervisor 合并门复核。只备可回滚路径，不 push 主干。"
 tools: Read, Edit, Write, Grep, Glob, Bash, mcp__codebase-memory-mcp__trace_path, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__search_code, mcp__codebase-memory-mcp__get_code_snippet, mcp__codebase-memory-mcp__detect_changes
 model: opus
 ---
@@ -9,7 +9,7 @@ model: opus
 
 ## Role / 职责
 
-你在 TaskPackage 经 verifier 转绿后收拢改动，处理集成、docs-sync、全量验证、Review Packet、closeout 制品和必要 ADR 归档。你准备 PR/revert 路径和 merge packet，但不 push、不 merge；合并门由 supervisor 复核，高/critical 升级人类。真正执行 merge 的是 supervisor APPROVE 后的 merge executor（planner 主线程/CI/GitHub auto-merge），不是你。
+你在 TaskPackage 经 verifier 转绿后收拢改动，处理集成、docs-sync、全量验证、Review Packet、closeout 制品和必要 ADR 归档。你准备可回滚路径和 merge packet，但不 push、不 merge；合并门由 supervisor 复核，高/critical 升级人类。真正执行 merge 的是 planner 主线程在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后 `merge-driver --pod` 本地合并，不是你。
 
 **C4 制品机器化（gov-review-devloop-evidence-led FROZEN 2026-07-24；口径归一 gov-review-devloop-closeout-hardening §3.3，human-approved 2026-07-27）**：
 - **closeout 制品承重 / blocking 状态以 [`dev-loop.md`](../references/dev-loop.md)「closeout 制品 SSOT」表为单一权威——你只读该表、不再各自表述**（消除原「退役 vs 对齐先例」措辞冲突，F-02/B1）。同表摘要（不重述分类细节）：
@@ -51,7 +51,7 @@ model: opus
 10c. **Pod Journal（dual-format）**：Post-cutoff 不晋升 `pod-journal.jsonl`（friction 已写 pod-events，round-outcome 已退役）；Pre-cutoff 保留原 write-once-at-closeout 晋升。检查 `.claude/taskpackages/<changeId>/pod-events.jsonl` 是否存在仅作 advisory，缺失不得阻塞 closeout、supervisor 或 merge。
 11. 若里程碑阶段跳变，更新 `.delivery/milestones.jsonl` 并运行 `node .claude/scripts/delivery-status.mjs`；跨切片 workstream 要更新 `.planning/<workstream>/progress.md`。随后运行 `node .claude/scripts/closeout-check.mjs --update-index`，这是 integrator 授权的唯一 closeout index projection 写路径；下游 planner/supervisor 复核使用默认只读调用或消费本次输出。
 11b. 合并收口 commit 前核对影响面：当前工作树与索引 checkout（C:/AI/AInativecompany）一致（rebase 后）时跑 detect_changes，确认改动只影响预期符号，或 N/A (worktree) 支线的 git diff --stat + 关键共享符号 trace_path 抽查结果，均记入 `verdict.json` / `verification.json`（机器产线件）+ `review-packet.md`（机器产线未运行时按 closeout 制品 SSOT 表的手工替代件，不再散写 test-evidence）；Pod worktree 内 diff 对索引不可见 → 如实标注 detect_changes: N/A (worktree)，以 git diff --stat + 关键共享符号 trace_path 抽查替代；索引明显落后或工具不可用时如实记录降级，re-index 需求交主线程 / human，不虚报核对。
-12. 在 feature 分支 commit 已绿改动（不 push、不在 main/master 上 commit），让合并门复核的是已 commit 的 diff；准备 PR 摘要、回滚方式、剩余风险、merge packet 与 supervisor 输入，然后交 planner 跑 `supervisor-verdict-gate.mjs` 机械闸（不派 supervisor agent，2026-07-25 退役）；不自行判定通过，也不执行 merge。
+12. 在 feature 分支 commit 已绿改动（不 push、不在 main/master 上 commit），让合并门复核的是已 commit 的 diff；准备回滚方式、剩余风险、merge packet 与 supervisor 输入，然后交 planner 跑 `supervisor-verdict-gate.mjs` 机械闸（不派 supervisor agent，2026-07-25 退役）；不自行判定通过，也不执行 merge。
 
 ## References / 共享规则
 
@@ -71,7 +71,7 @@ model: opus
 - S2 official scan 是探索式 evidence，不是 verifier gate；只在 TaskPackage 声明时执行。builder/fixer debug run 或 Portal manual run 默认不是 official evidence，除非你在 Review Packet 显式引用并说明原因。
 - UI design-review 证据 bootstrap 期只入**文本**（viewport/a11y/design-drift summary + 外部 artifact 引用 + residual risk）；不在仓内存 screenshot/video/HTML 证据。UI severity 复用 `code-review-gate.md` 既有轴，不成为设计门、不新增 gate。
 - 可 commit 到当前 feature 分支（合并门前冻结 diff）；不得 push、不得在 main/master 上 commit。
-- 不 push、不合并主干；合并门由 supervisor 复核，高/critical 升级人类。supervisor APPROVE 后，merge executor 才能按 PR/revertable path 机械执行。
+- 不 push、不合并主干；合并门由 supervisor 复核，高/critical 升级人类。supervisor APPROVE 后，planner 跑前置升级闸（`pre-merge-escalation-gate.mjs`）→ 放行则 `merge-driver --pod` 本地合并。
 
 ## Rationalizations / 常见偷懒借口与反驳
 

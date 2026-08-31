@@ -67,11 +67,11 @@ Pod 报「我 ready」= 写自己的 `devloop/pods/<change-id>.json`；reconcile
 
 - supervisor 是 **per-Pod**：每个 Pod 到合并门各跑一次；不是某 Pod 独占、也不是全局合并器。
 - **Pod 内交付闭环**：每个 Pod 在自己的 worktree 内跑完 acceptance→builder→verifier↔fixer→integrator→**supervisor**。supervisor APPROVE 后才标 `ready-to-merge`。
-- **合并门被 merge-driver 串行化**：N 个 Pod 并行开发、各自闭环；Human 在主 worktree 运行 `node .claude/scripts/merge-driver.mjs`，按 mergeOrder 逐个对 ready-to-merge Pod 执行 rebase→quick-check→merge。
+- **合并门被 merge-driver 串行化**：N 个 Pod 并行开发、各自闭环；planner 在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后自动触发 `node .claude/scripts/merge-driver.mjs --pod <changeId>`，按 mergeOrder 逐个对 ready-to-merge Pod 执行 rebase→quick-check→merge。
 - 顺序由 portfolio-planner 定（依赖序、触共享文件/契约面者优先、冲突面最小化）；它只**排序 + 初始化 board**，不替 supervisor 判过/不过。
 - **正确性关键**：merge-driver 在 merge 前 **rebase 到解析出的最新合并基线**（本地 main 优先，origin/main 领先时切 origin/main——含已落地前序 Pod），并跑 quick-check（firmware-build + contract-lint + acceptance）抓 rebase 后集成问题。supervisor 已在 Pod 内复核过 closeout 制品；quick-check 是 rebase 后的补充验证。
 - 跨 Pod 冲突在 **merge-driver 的 rebase+quick-check** 处暴露解决。rebase 冲突 → blocked（人工介入）；quick-check 失败 → 重试一次，仍失败 → blocked。
-- gate 权在 supervisor（APPROVE/BLOCK/ESCALATE），落地走 merge-driver 的 PR/revertable path；portfolio-planner 不 merge、不越 gate。
+- gate 权在 supervisor（APPROVE/BLOCK/ESCALATE），落地走 merge-driver 的本地 --no-ff 可回滚路径；portfolio-planner 不 merge、不越 gate。
 
 > 一句话：**并行开发、各自闭环，串行合并；portfolio-planner 定序并初始化 board，planner 跑到 supervisor APPROVE 标 ready，merge-driver 逐个 rebase+quick-check+merge，谁都不能并行直落 main。**
 
@@ -80,7 +80,7 @@ Pod 报「我 ready」= 写自己的 `devloop/pods/<change-id>.json`；reconcile
 planner（Pod 内单会话）**不轮询、不等待**：
 
 1. planner 在自己的 worktree 内跑完 acceptance→builder→verifier↔fixer→integrator→**supervisor**。supervisor APPROVE → 写 `pods/<change-id>.json` 状态 `ready-to-merge` → **退出**（不自己进合并门、不自旋）。
-2. merge token 的**消费者是 merge-driver（`node .claude/scripts/merge-driver.mjs`）**，由 Human 在主 worktree 手动运行。merge-driver 启动时**无条件 reconcile** 获取最新 board：
+2. merge token 的**消费者是 merge-driver（`node .claude/scripts/merge-driver.mjs`）**，由 planner 自动触发（单 Pod `--pod`，经前置升级闸放行）。merge-driver 启动时**无条件 reconcile** 获取最新 board：
    - 从 `ready-to-merge` 的 Pod 里按 merge order 选第一个 → 该 Pod 持有 token。
    - 对当前 holder Pod：读 `pods/<change-id>.json` 的 `worktreePath` 定位 worktree → rebase → quick-check → merge → 标 `merged`。
 3. 该 Pod merged → reconcile 清空 `mergeToken.holder` → 下一轮选下一个（直至无 ready Pod）。

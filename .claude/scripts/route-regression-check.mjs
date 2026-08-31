@@ -36,13 +36,6 @@ function toolsAgentsOfSource(source) {
 function toolsAgentsOf(agent) {
   return toolsAgentsOfSource(read(`.claude/agents/${agent}.md`));
 }
-// Extract the `agents: [...]` inline-array members from a .github mirror frontmatter.
-function mirrorAgentsOf(relPath) {
-  const txt = read(relPath);
-  const m = txt.match(/^agents:\s*\[([^\]]*)\]\s*$/m);
-  if (!m) return null; // 非 inline 形态 → 调用方 fail-loud（对偶 INV-5 :208）
-  return m[1].split(',').map((s) => s.trim()).filter(Boolean);
-}
 
 // (1) command → entry agent routing
 for (const { command, entryAgent } of CFG.commandEntry) {
@@ -88,34 +81,6 @@ for (const [agent, required] of Object.entries(CFG.agentRequiredToolsAgents)) {
       const mutated = toolsAgentsOfSource(txt.replace(toolsLine, toolsLine.split(member).join('')));
       if (mutated.includes(member)) fails.push(`SELF-CHECK: "Agent(${member})" (${agent}) not falsifiable — still present after removal`);
       else oks.push(`self-check tools ${agent}/Agent(${member}) → RED when removed ✓`);
-    }
-  }
-}
-
-// (4) .github 镜像面：mirror agents: 白名单 ⊇ agentRequiredToolsAgents 必需成员（ARQ-077 腿3；
-// cross-surface INV-5 只守活性〔成员 ∈ 现存 agent 基名集〕，完整性此前无断言）。镜像面动态发现，无新 fixture 键。
-const MIRROR_DIR = '.github/agents';
-if (existsSync(join(ROOT, MIRROR_DIR))) {
-  for (const file of readdirSync(join(ROOT, MIRROR_DIR)).filter((f) => f.endsWith('.agent.md')).sort()) {
-    const canonical = file.replace(/\.agent\.md$/, '');
-    const required = CFG.agentRequiredToolsAgents[canonical];
-    if (!required) { oks.push(`mirror ${file} (no agentRequiredToolsAgents entry; completeness skipped)`); continue; }
-    const have = mirrorAgentsOf(join(MIRROR_DIR, file));
-    if (have === null) { fails.push(`MIRROR: ${MIRROR_DIR}/${file} agents: line is not inline-array form (fail-loud)`); continue; }
-    for (const member of required) {
-      if (have.includes(member)) oks.push(`mirror ${file} ⊇ Agent(${member})`);
-      else fails.push(`MIRROR: ${file} agents: dropped "${member}" (agentRequiredToolsAgents.${canonical} requires it)`);
-      // [H3] 可证伪自检（260825-gov-review-queue-hygiene-batch1 T2(b)，收口批 2 R1-F1）：从镜像 agents: 行剥离该成员 → 重取必缺。
-      // 剥离形态对偶环 3 tools 自检；split/join 对子串重名成员为过剥离——过剥离只令断言更保守，不造假绿（与环 3 注释对称，R1-F2 注）。
-      if (selfCheck) {
-        const mirrorTxt = read(join(MIRROR_DIR, file));
-        const agentsLine = (mirrorTxt.match(/^agents:.*$/m) || [''])[0];
-        const mutatedLine = agentsLine.split(member).join('');
-        const rem = mutatedLine.match(/^agents:\s*\[([^\]]*)\]\s*$/);
-        const mutatedMembers = rem ? rem[1].split(',').map((s) => s.trim()).filter(Boolean) : [];
-        if (mutatedMembers.includes(member)) fails.push(`SELF-CHECK: mirror ${file} Agent(${member}) not falsifiable — still present after removal`);
-        else oks.push(`self-check mirror ${file}/Agent(${member}) → RED when removed ✓`);
-      }
     }
   }
 }

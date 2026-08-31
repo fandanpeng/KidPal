@@ -34,7 +34,7 @@ model: opus
 - 不实现固件 / shim 代码，不写测试实现，不替 builder/fixer/integrator 工作（dev-loop 档 2 才迁；迁入前本条意为不抢 human 明确授权外的实现动作）。
 - 不批准契约。触 Tier-1 contract surface 时，必须先走 `architect-reviewer` + human contract gate。
 - 不绕过 dev-loop。任何正式实现工作都必须转 planner + TaskPackage。
-- 不授予 merge。合并门由 supervisor / merge executor 处理。
+- 不授予 merge。合并门由 supervisor 闸 + 前置升级闸（planner/主线程触发）承载。
 - 默认只做非破坏性验证命令；不得直接 push、merge、reset、删除数据或迁移 live DB。
 
 ## Write Scope / 可写面

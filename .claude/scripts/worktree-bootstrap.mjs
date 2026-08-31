@@ -11,6 +11,10 @@
 //
 // 非闸、不常驻：只在新 worktree 冷启动时由 launch 方 / planner 在 worktree 目录内调用一次。
 // codebase-memory MCP 索引新建、board worktreePath 预填属 launch 编排面，不进本脚本。
+//   图索引引导半自动（对齐源仓 260827-gov-review-worktree-graph-index-bootstrap T4）：本仓一旦 commit
+//   `.codebase-memory/graph.db.zst` 快照（`index_repository(persistence=true)`），worktree 在 bootstrap 后跑一次
+//   索引即从快照导入 + 增量补差（近零成本），root_path 由工具自动重写为 worktree 路径；本仓尚未 commit 快照时，
+//   工作树索引仍由 launch 面同名建（项目名 = 目录名保障，缺则图工具 project not found）。
 //
 // 用法：node .claude/scripts/worktree-bootstrap.mjs [--source <主checkout路径>] [--dry-run] [--help]
 

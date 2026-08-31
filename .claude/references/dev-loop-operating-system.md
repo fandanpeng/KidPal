@@ -54,7 +54,7 @@ inputs: .delivery milestone / .planning workstream / arch-review handoff / drift
        verifier 每轮: scoped（结构闸 + 受影响子集功能闸 + 污染组）
        verifier 终审: full（全量 monorepo 功能套件一次，merge-readiness）
        supervisor APPROVE → 标 ready-to-merge
-  -> merge-driver (human 在主 worktree 手动运行一次)
+  -> merge-driver (planner 在 supervisor APPROVE + 前置升级闸放行后自动触发，单 Pod 用 --pod)
        按 mergeOrder 串行消费 ready-to-merge Pod：
          拿 token → rebase 到当前 main → quick-check → merge → 释放 token → 下一个
        下一个 Pod 必须 rebase 到含上一个 Pod 的新 main，再进门
@@ -157,7 +157,7 @@ cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)�
 - **运行时协调态**（board + merge token + 各 Pod 状态）放**所有 linked worktree 共享的 git common dir**（`$(git rev-parse --git-common-dir)/devloop/`），**不入版本控制**。
 - **拆包交接可见性（commit-before-launch + launch 前置门，pod-coordination §2b）**：portfolio-planner 拆包产物（tracked 耐久制品 `.planning/<ws>/**` + `.claude/taskpackages/<changeId>/**`，**不含 board**）须先 commit 到专用 base ref 再 launch；launch 前 `git cat-file -e` 校验基准 ref 含 check 集（taskpackage+PROPOSAL blocking / decision-coverage warn），缺失拒绝 launch（对偶 planner.md Step 1 intake 权威消费 + fail-closed）。
 - **耐久证据**入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；legacy 兼容 session-digest / loop-health / loop-metrics / pod-journal。落 `changes/dev/<change-id>/` 与 `.claude/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
-- **并行开发、串行合并**：N 个 Pod 并行开发、各自闭环（含 integrator+supervisor）。supervisor APPROVE 后标 ready-to-merge。merge-driver.mjs（human 手动触发）按 mergeOrder 逐个：拿 token → rebase 到当前 main → quick-check → merge → 释放 token。supervisor 在 Pod 内把关（APPROVE/BLOCK/ESCALATE），merge-driver 执行机械合并（PR/revertable path）。谁都不能并行直落 main。
+- **并行开发、串行合并**：N 个 Pod 并行开发、各自闭环（含 integrator+supervisor）。supervisor APPROVE 后标 ready-to-merge。merge-driver.mjs（planner 自动触发，单 Pod --pod）按 mergeOrder 逐个：拿 token → rebase 到当前 main → quick-check → merge → 释放 token。supervisor 在 Pod 内把关（APPROVE/BLOCK/ESCALATE），merge-driver 执行机械合并（本地 --no-ff 可回滚）。谁都不能并行直落 main。
 
 ## 相关
 

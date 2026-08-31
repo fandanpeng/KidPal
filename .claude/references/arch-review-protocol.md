@@ -58,7 +58,9 @@ lane 分类之后，`/arch-change` 再判 **review-depth**（**Track A 触发时
 4. 主线程 **packet-bound 落地**（G1/G2/G3 全落，landing-manifest 绑定，落地后不可回改 PROPOSAL）+ 写 `architect-landing-summary.md`；
 5. 主线程派 **landing-verifier** 独立核验（逐文件 diff + `landing-fidelity-check.mjs`）→ 绿；
 6. 主线程补写 **retro report**（骨架见 `docs/templates/retro.template.md`）于提案目录——landing-verifier 绿后**趁热**写、先于合并完成，retro 不含合并锚（合并落点由 `changes/INDEX.md` `mergedInMain` 列经 `changes-index.mjs` 机械现推承担）；
-7. human 经 **PR / 可回滚路径**合并入 main。
+7. 主线程跑前置升级闸（`pre-merge-escalation-gate.mjs`，含 off-main 校验），放行 → 自动合并本地 main（`--no-ff` 可回滚，remote push 仍 human）；升级闸拦 → 升级人。
+
+> **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起）**：Track B 的 human 触点 = 立项 ack（前端对齐：需求/方向/量级）；merge 恒由主线程在前置升级闸放行后自动落本地 main，remote 同步仍 human。升级闸只重算 merge 期仍可机判的例外（契约面 diff / off-main / escalation 未 resolve / riskTier high-critical / supervisor APPROVE provenance / architect GREEN 机锚）；跨系统结构性变更、声明红队、自改递归属**路由期**裁决，在 merge 前已引走人，不做 merge 期重算。
 
 **制品 4 件**：PROPOSAL + architect-landing-summary + landing-verdict + retro。
 

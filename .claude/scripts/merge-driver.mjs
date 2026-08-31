@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Merge Driver — merge token 的消费者（canonical consumer of the merge token）。
-// Human 在所有 Pod 的 supervisor APPROVE + ready-to-merge 后，在主 worktree 手动运行一次。
+// 由 planner（dev-loop 单 Pod，--pod <changeId>）或主线程（Track B）在 supervisor APPROVE / architect GREEN
+//   + 前置升级闸（pre-merge-escalation-gate.mjs）放行后自动触发；仍支持人工 CLI 手动运行。
 // 串行化：按 mergeOrder 逐个 rebase → quick-check → merge → 释放 token → 下一个。
 //
 // owner=architect, approver=human (G3 script, see DEV-GOVERNANCE.md §6)
@@ -605,17 +606,37 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
     return false;
   }
 
-  // Step 1: 标记 merging
-  log(`${changeId}: marking merging`);
-  if (!DRY_RUN) setPod(projectDir, { changeId, status: 'merging' });
-
-  // Step 2: 找 worktree
+  // Step 1: 找 worktree（先于标记 merging，供前置升级闸取源 ref）
   const wt = findWorktree(pod, projectDir);
   if (!wt) {
     errorExit(`${changeId}: cannot locate worktree. Set worktreePath in pod file or create worktree.`);
   }
   log(`${changeId}: worktree at ${wt}`);
   warnWorktreeGateDivergence(wt, quickChecks); // ARQ-097 D1：主仓 canonical + worktree 分歧高声 warn
+
+  // Step 1b: 前置升级闸（合并前必经；命中 → blocked 升级人，不 rebase、不 merge）
+  log(`${changeId}: running pre-merge escalation gate...`);
+  if (!DRY_RUN) {
+    try {
+      execFileSync(
+        'node',
+        [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir],
+        { cwd: wt, encoding: 'utf8', stdio: 'pipe' },
+      );
+      log(`${changeId}: escalation gate PASS`);
+    } catch (err) {
+      const out = `${err.stdout || ''}${err.stderr || ''}`;
+      warn(`${changeId}: escalation gate BLOCK:\n${out.split('\n').slice(-12).join('\n')}`);
+      setPod(projectDir, { changeId, status: 'blocked' });
+      return false;
+    }
+  } else {
+    log(`${changeId}: escalation gate skipped (DRY RUN)`);
+  }
+
+  // Step 1c: 标记 merging
+  log(`${changeId}: marking merging`);
+  if (!DRY_RUN) setPod(projectDir, { changeId, status: 'merging' });
 
   // Step 3: fetch + rebase
   log(`${changeId}: fetching origin...`);

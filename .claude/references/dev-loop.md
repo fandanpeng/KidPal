@@ -57,9 +57,9 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
   ├─ 派生 builder             单包边界内实现 + 单元测试
   ├─ 内层循环（主线程驱动，非嵌套）：
   │     跑 verify.mjs  →  红则派生 fixer  →  再跑 verify.mjs  →  …直到绿/超预算
-   ├─ 派生 integrator          docs-sync + 全量 e2e + changes/dev/ 制品 + 备 PR
+   ├─ 派生 integrator          docs-sync + 全量 e2e + changes/dev/ 制品 + 备可回滚路径
    ├─ planner 收尾（pod-retro） 第一人称热记忆；integrator closeout 之后、supervisor gate 之前（post-cutoff closeout 完整性条件，Q5=warn）
-   └─ 跑机械 supervisor-verdict 闸  合并门复核（supervisor-verdict-gate.mjs，planner invoke 不派 agent）；低/中风险+证据完整机器 APPROVE 授权 merge executor，高/critical 升级人类
+   └─ 跑机械 supervisor-verdict 闸  合并门复核（supervisor-verdict-gate.mjs，planner invoke 不派 agent）；低/中风险+证据完整机器 APPROVE 授权 planner 本地合并（前置升级闸放行后），高/critical 升级人类
 ```
 
 `verifier↔fixer` 的内层循环由**主线程逐轮 invoke `verify.mjs`**实现，不是 verifier 自行调用 fixer
@@ -77,7 +77,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 | `scope-map.json` | 每个 agent 的可写路径边界（allow/deny glob）。 |
 | `verify-gates.json` | verifier 执行的有序闸门（结构闸 + 功能闸）。 |
 | `hooks/enforce-scope.mjs` | PreToolUse 钩子：按 scope-map 物理拦截越界写入（Node，跨平台）。 |
-| `hooks/deny-main-push.mjs` | PreToolUse 钩子：禁止直接 `git push` 到 main/master，强制 PR/revertable path。 |
+| `hooks/deny-main-push.mjs` | PreToolUse 钩子：禁止直接 `git push` 到 main/master；合并走可回滚路径。 |
 | `hooks/supervisor-gate-check.mjs` | Stop 钩子：integrator closeout 后主线程收尾前必须有 supervisor 裁断（post-cutoff 验 `mechanicalSupervisorGate` provenance + 从 immutable 输入第二方重算 riskTier）。 |
 | `hooks/supervisor-verdict-gate.mjs` | 机械 supervisor-verdict 闸（planner Bash invoke，非 Stop 钩子）：从 git diff 重派生 riskTier（dev-loop:235 投影）+ 消费 bearing facts（validateFactObject 单源 fail-loud）产 APPROVE/BLOCK/ESCALATE，脚本 fs-write write-once `supervisor-verdict.json`。 |
 | `hooks/verify.mjs` | 确定性验证执行器：按 verify-gates 跑闸门，产出与 K6 对齐的 ErrorEnvelope。 |
@@ -100,8 +100,8 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
    Reviewer 的职责不限于首次审批：对已批准方向的落地 patch，它验证字段/命名/约束/Tier 分类是否与裁决一致（合规检查）；
    对新请求，它判断是升级人工门还是实现侧可自行解决。只有 reviewer 返回 COMPLIANT，planner 才能提交契约改动。
    若 reviewer 返回 NON_COMPLIANT，planner 停下，把差距交给人类架构师。
-2. **supervisor 合并门**：integrator 在 feature 分支 commit 已绿改动并备 PR/revertable path，不 push、不合并主干。合并门裁决由**机械闸 `supervisor-verdict-gate.mjs`** 产出（planner invoke，不派 supervisor agent——2026-07-25 退役）：从 git diff 机械重派生 riskTier（:235 投影）+ 消费 bearing facts 判证据完整度，产 APPROVE/BLOCK/ESCALATE。APPROVE 只是授权 merge executor，BLOCK 退 fixer/planner，ESCALATE 停人类。高/critical（core.*/跨系统/全 mock/安全轴 → high；docs/contracts/**/迁移/删数据 → critical）升级人类；critical/契约/迁移/删数据仍走人类 + architect gate。Stop 钩子 `supervisor-gate-check.mjs` 第二方验 provenance（mechanicalSupervisorGate）+ 从 immutable 输入重算核对（FIX-6）。直接 push main/master 由 hook 拦截。
-3. **merge executor（机械执行者）**：不是 review 角色，可以是 planner 主线程、CI 或 GitHub auto-merge。它只在 `supervisor-verdict.json` 为 APPROVE 或人类批准后执行 PR 合并路径：push feature branch、创建/更新 PR、启用 auto-merge 或合并 PR；不得直接 push main/master，不得覆盖 supervisor/human 裁断。
+2. **supervisor 合并门**：integrator 在 feature 分支 commit 已绿改动并备可回滚路径，不 push、不合并主干。合并门裁决由**机械闸 `supervisor-verdict-gate.mjs`** 产出（planner invoke，不派 supervisor agent——2026-07-25 退役）：从 git diff 机械重派生 riskTier（:235 投影）+ 消费 bearing facts 判证据完整度，产 APPROVE/BLOCK/ESCALATE。APPROVE 只是授权 planner 本地合并（前置升级闸放行后），BLOCK 退 fixer/planner，ESCALATE 停人类。高/critical（core.*/跨系统/全 mock/安全轴 → high；docs/contracts/**/迁移/删数据 → critical）升级人类；critical/契约/迁移/删数据仍走人类 + architect gate。Stop 钩子 `supervisor-gate-check.mjs` 第二方验 provenance（mechanicalSupervisorGate）+ 从 immutable 输入重算核对（FIX-6）。直接 push main/master 由 hook 拦截。
+3. **merge executor（机械执行者）**：不是 review 角色 = planner 主线程。它只在 `supervisor-verdict.json` 为 APPROVE 且前置升级闸（`pre-merge-escalation-gate.mjs`）放行后执行本地合并：`merge-driver --pod` 本地 `--no-ff` 合并；**不 push、不建/更 PR、不 auto-merge remote**；不得直接 push main/master，不得覆盖 supervisor/human 裁断。
 
 **防空过（让「做完」对故事负责）**
 1. **验收先行且冻结**：`acceptance-author` 在 builder 之前把故事翻译成可执行验收测试，
@@ -249,7 +249,7 @@ integrator 在 supervisor 合并门前必须产出 Review Packet，辅助 superv
 
 ### 抽检
 
-supervisor 自动放行的是低/中风险变更。人类不逐单卡住这些变更，但每个统计周期按 **10% 且不少于 3 单** 做事后抽检，用来校准机械闸；发现漏判，下周期升到 **25%**；连续 2 个周期无漏判可降到 **5%**。高风险和 critical 不抽检，直接升级。**抽检执行主体 + 载体 + 计数（FIX-9，与 auto-merge 恢复同批成文）**：执行主体 = loop-retro cadence（周期机械触发）；机械载体 = loop-metrics `terminalOutcome` 枚举 verdict=APPROVE 包（`loop-metrics.mjs:322/:347`）；确定性抽样 = `hash(diff) mod N`（supervisor-gate-check:11 R10 lineage）取 10% 且 ≥3 → human 复核质量层；计数 = loop-retro cadence + GC5 式增量计数（漏判→25%，连续 2 周期无漏判→5%）。
+supervisor 自动放行的是低/中风险变更。人类不逐单卡住这些变更，但每个统计周期按 **10% 且不少于 3 单** 做事后抽检，用来校准机械闸；发现漏判，下周期升到 **25%**；连续 2 个周期无漏判可降到 **5%**。高风险和 critical 不抽检，直接升级。**抽检执行主体 + 载体 + 计数（FIX-9，auto-merge 随 260831-gov-review-auto-merge-local-main 落地即恢复）**：执行主体 = loop-retro cadence（周期机械触发）；机械载体 = loop-metrics `terminalOutcome` 枚举 verdict=APPROVE 包（`loop-metrics.mjs:322/:347`）；确定性抽样 = `hash(diff) mod N`（supervisor-gate-check:11 R10 lineage）取 10% 且 ≥3 → human 复核质量层；计数 = loop-retro cadence + GC5 式增量计数（漏判→25%，连续 2 周期无漏判→5%）。
 
 ### ADR / 决策归档
 

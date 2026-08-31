@@ -10,7 +10,7 @@
 ## 2. 风险升级（supervisor 决定，照 nextAction 做）
 | verdict | junior 动作 |
 |---|---|
-| APPROVE | 交 merge executor 走 PR，不直推 main |
+| APPROVE | planner 前置升级闸放行后 `--pod` 本地合并，不直推 main |
 | BLOCK + 补证据/补测试/改实现 | 退 fixer，单 gate 修，回 verifier；同一 changeId 连续 2 轮 BLOCK 未转绿 → 熔断升级（ESCALATE），不外环硬磕 |
 | ESCALATE | 停，交人类；碰 core.*/契约/迁移/删数据必升 |
 
