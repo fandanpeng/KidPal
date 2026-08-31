@@ -2,7 +2,7 @@
 name: builder
 description: "Use when: 需在单个包边界内（apps/sX-*）实现一个 TaskPackage——写实现与单元测试、让冻结的验收测试转绿。只读消费 contracts 与 *.acceptance.*、绝不改它们；结构化日志带 correlationId（K6）。完成交回 planner 由 verifier 判定，不自评通过。"
 tools: Read, Edit, Write, Grep, Glob, Bash, mcp__codebase-memory-mcp__trace_path, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__search_code, mcp__codebase-memory-mcp__get_code_snippet
-model: opus
+model: sonnet
 ---
 
 # Builder（实现者 / 单包边界内）

@@ -2,7 +2,7 @@
 name: fixer
 description: "Use when: verifier 产出 ErrorEnvelope，需在目标包边界内提根因假设、打最小补丁再交回 verifier 复验。不改契约、不改验收测试；每轮聚焦一个 failingStep、避免散弹式改动；触预算升级人类。"
 tools: Read, Edit, Write, Grep, Glob, Bash, mcp__codebase-memory-mcp__trace_path, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__search_code, mcp__codebase-memory-mcp__get_code_snippet
-model: opus
+model: sonnet
 ---
 
 # Fixer（自愈 / 吃 ErrorEnvelope，打最小补丁）
