@@ -70,6 +70,10 @@
   "iterationBudget": 5,
   "fixBudget": 6,
   "docsOwner": "integrator",
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包文档产物 = changes/dev/260831-ui-art-assets/ 可行性报告 + 预算报告（E4 出口）；docs/notes 状态翻转归收口后独立 wrap-up sync（A/C 收尾同款处理）。",
+  "mutationRequired": false,
+  "mutationSkipReason": "资产生成包无源码 mutation 语义：验收机判脚本 verify_art_assets.mjs 对逐资产缺失/尺寸/密度/求和对账敏感（移除任一即红），敏感证据以静态声明承载，不模拟 mutation。",
   "mergeOrder": 3,
   "dependsOn": [
     "260831-simulator-lvgl-align"

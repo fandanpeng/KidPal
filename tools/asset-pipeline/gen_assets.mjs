@@ -1,15 +1,20 @@
-// KidPal asset rasterizer — 从设计稿 HTML 内嵌 SVG 抽取元素 → sharp 栅格化 → 阈值化 PNG + LVGL C 数组
-// Owner: tools/asset-pipeline（dev-loop, TaskPackage 260831-simulator-lvgl-align 接管正式化）。
+// KidPal asset rasterizer — 从设计稿 HTML 内嵌 SVG/CSS 抽取元素 → sharp 栅格化 → 阈值化 PNG + LVGL C 数组
+// Owner: tools/asset-pipeline（dev-loop, TaskPackage 260831-ui-art-assets 接管全量艺术资产）。
 // 用法: node gen_assets.mjs <design.html> <outDir>
-// 产物: outDir/assets.c / assets.h (LVGL lv_image_dsc_t 数组, CF=RGB565) + outDir/png/*.png (阈值化,人工核对/回归对照用)。
+// 产物:
+//   outDir/assets.c / assets.h (LVGL lv_image_dsc_t 数组, CF=RGB565)
+//   outDir/png/*.png                                 (阈值化 PNG, 人工核对/回归对照用)
+//   outDir/9slice/<frame>.json + <frame>_<slice>.png (框族 9 宫格切片产物 + 元数据)
 // 注意: assets.c / assets.h 为「生成勿手改」——改本脚本重跑即可再生；不得手改已生成文件后提交。
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import sharp from 'sharp';
+import { createHash } from 'crypto';
 
 const [htmlPath, outDir] = process.argv.slice(2);
 if (!htmlPath || !outDir) { console.error('usage: node gen_assets.mjs <design.html> <outDir>'); process.exit(1); }
 const html = readFileSync(htmlPath, 'utf8');
 mkdirSync(outDir + '/png', { recursive: true });
+mkdirSync(outDir + '/9slice', { recursive: true });
 
 // 亮度阈值单一源(与真机/模拟器阈值一致性): 值 = 127, 与
 //   firmware/sdkconfig            CONFIG_LV_DRAW_SW_I1_LUM_THRESHOLD=127
@@ -28,40 +33,42 @@ const symbols = {};
 for (const m of html.matchAll(/<symbol id="([^"]+)" viewBox="([^"]+)">([\s\S]*?)<\/symbol>/g)) {
   symbols[m[1]] = { viewBox: m[2], body: m[3] };
 }
-console.log('symbols found:', Object.keys(symbols).join(', '));
+console.log('symbols found:', Object.keys(symbols).length);
 
 // ── 2. 内联 P1 页面独有 SVG（温度计小人/水滴宝宝，不在 symbol 库里）──
-// 从 canvas-p1 抓带 viewBox 的内联 <svg ...><g>...</g></svg>，按 viewBox 尺寸归类
 const inlineSvgs = [];
 for (const m of html.matchAll(/<svg class="(tilt\d+r?)" style="left:(\d+)px;top:(\d+)px;width:(\d+)px(?:;height:(\d+)px)?" viewBox="([^"]+)"><g>([\s\S]*?)<\/g><\/svg>/g)) {
   inlineSvgs.push({ tilt: m[1], x: +m[2], y: +m[3], w: +m[4], h: m[5] ? +m[5] : null, viewBox: m[6], body: m[7] });
 }
-// 命名: 64x96 = 温度计, 56x88 = 水滴宝宝
 const inlineNamed = { '64 96': 'thermo-man', '56 88': 'drop-baby' };
 
 function wrapSvg(viewBox, body, extraDefs = true) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${extraDefs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
 }
 
-// href="#xxx" 在独立 SVG 里需要 xmlns:xlink 或 svg2 href——sharp/libvips 支持 <use href>,
-// 但 defs 必须在同一文档内,已随 wrapSvg 注入。cheekdots 等 g id 在 defs 里。
+// svgUse(): symbol 内容内联（不嵌套 <use href="#id">，libvips 对 use→symbol→use→defs 的间接层解析不稳）。
+// defs 随文档注入；symbol body 内部对 #mp-head 等 defs 的 <use> 引用落在同一文档内、可解析。
+function svgUse(id) {
+  const s = symbols[id];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${s.viewBox}"><defs>${defs}</defs>${s.body}</svg>`;
+}
 
-// ── 3. 栅格化 + 1bpp 阈值 + 打包 ──
-async function rasterize(name, svgStr, targetW, targetH, rotateDeg = 0) {
+// ── 3. 栅格化核心：rotate 先于 flatten(防透明误判黑) + 1bpp 阈值 + RGB565 打包 ──
+// flatten 在 greyscale/阈值判定之前（保留既有修复 E2-2）：SVG 无底色即透明——不 flatten 时透明像素 RGB=0
+// 会被阈值误判为黑(整版全黑)。
+async function renderGreyscale(svgStr, w, h, rotateDeg = 0) {
   let img = sharp(Buffer.from(svgStr), { density: 300 });
-  const meta0 = await img.metadata();
-  img = img.resize(targetW, targetH, { fit: 'fill' });
+  img = img.resize(w, h, { fit: 'fill' });
   if (rotateDeg) {
-    // OQ-1(a): 倾斜烘进资产——离线旋转后阈值化,锯齿离线可见可控
+    // OQ-1(a): 倾斜烘进资产——离线旋转后阈值化,锯齿离线可见可控（rotate 在 flatten 之前）。
     img = img.rotate(rotateDeg, { background: { r: 255, g: 255, b: 255, alpha: 1 } });
   }
   const { data, info } = await img.flatten({ background: '#ffffff' }).greyscale().raw().toBuffer({ resolveWithObject: true });
-  const w = info.width, h = info.height;
-  // 阈值化 + 直出 RGB565(2字节/像素): 白=0xffff 黑=0x0000, 低字节在前
-  // flatten: SVG 无底色即透明——不 flatten 时透明像素 RGB=0, 会被阈值误判为黑(整版全黑)
-  // 不产 I1 的原因: LVGL 9.5 软件渲染路径直接处理 I1 时绕过调色板(把位图当 alpha/灰度),
-  // 仅 bin-decoder 对「文件源」走 decode_indexed_line 才查表——RGB565 双端行为一致,免去 I1 各坑
-  // (调色板绕过 / stride 4 对齐 / 数据区头部 8 字节调色板等)。
+  return { data, w: info.width, h: info.height };
+}
+
+// 灰度 raw → RGB565(2字节/像素: 白=0xffff 黑=0x0000 低字节在前) + 阈值化 PNG 三通道数据
+function packRgb565(data, w, h) {
   const stride = w * 2;
   const packed = Buffer.alloc(stride * h);
   const pngData = Buffer.alloc(w * h * 3);
@@ -75,55 +82,297 @@ async function rasterize(name, svgStr, targetW, targetH, rotateDeg = 0) {
       const o3 = (y * w + x) * 3; pngData[o3] = c; pngData[o3 + 1] = c; pngData[o3 + 2] = c;
     }
   }
-  await sharp(pngData, { raw: { width: w, height: h, channels: 3 } }).png().toFile(`${outDir}/png/${name}.png`);
-  return { name, w, h, packed, stride };
+  return { packed, stride, pngData };
 }
 
-// ── 4. 资产清单（P1 用）──
-// 尺寸按设计稿 canvas-p1 的 style 像素值;倾斜按设计稿 tilt class
-const jobs = [];
-// 吉祥物日常姿态: 设计稿 96x96 @ left:8 top:172, tilt1 = -1deg
-jobs.push(['pose_daily_96', svgUse('pose-daily'), 96, 96, -1]);
-// 涂鸦星: 26px @ bob(无旋转), 云 52px
-jobs.push(['doodle_star_26', svgUse('ic-star'), 26, 26, 0]);
-jobs.push(['doodle_cloud_52', svgUse('ic-cloud'), 52, 52, 0]);
-// 温度计小人 40x66 tilt1(-1), 水滴宝宝 30x50 tilt2r(+2)
+async function writeThresholdPng(path, pngData, w, h) {
+  await sharp(pngData, { raw: { width: w, height: h, channels: 3 } }).png().toFile(path);
+}
+
+// ── 4. 手绘框族：CSS 八值 border-radius → SVG 父本 ──
+// 母版 = 设计稿 CSS class（非 symbol）：.frm / .frm-sm / .frm-flat。从八值不对称圆角构造 SVG path。
+const HAND_R = { tl: [255, 15], tr: [15, 225], br: [225, 15], bl: [15, 255] };      // --hand-r
+const HAND_R_SM = { tl: [125, 14], tr: [12, 135], br: [145, 12], bl: [14, 125] };   // --hand-r-sm
+
+// CSS border-radius 比例缩放（radii 之和超 box 尺寸时整体按 f 缩小）
+function scaleRadii(W, H, r) {
+  const f = Math.min(
+    W / (r.tl[0] + r.tr[0]), W / (r.bl[0] + r.br[0]),
+    H / (r.tl[1] + r.bl[1]), H / (r.tr[1] + r.br[1]), 1);
+  return { tl: [r.tl[0] * f, r.tl[1] * f], tr: [r.tr[0] * f, r.tr[1] * f], br: [r.br[0] * f, r.br[1] * f], bl: [r.bl[0] * f, r.bl[1] * f] };
+}
+// 整框 path（顺时针，四角椭圆弧 sweep=1）
+function framePath(W, H, r, inset) {
+  const x0 = inset, y0 = inset, x1 = W - inset, y1 = H - inset;
+  const { tl, tr, br, bl } = r;
+  return `M ${x0 + tl[0]} ${y0}` +
+    ` L ${x1 - tr[0]} ${y0}` +
+    ` A ${tr[0]} ${tr[1]} 0 0 1 ${x1} ${y0 + tr[1]}` +
+    ` L ${x1} ${y1 - br[1]}` +
+    ` A ${br[0]} ${br[1]} 0 0 1 ${x1 - br[0]} ${y1}` +
+    ` L ${x0 + bl[0]} ${y1}` +
+    ` A ${bl[0]} ${bl[1]} 0 0 1 ${x0} ${y1 - bl[1]}` +
+    ` L ${x0} ${y0 + tl[1]}` +
+    ` A ${tl[0]} ${tl[1]} 0 0 1 ${x0 + tl[0]} ${y0}` +
+    ` Z`;
+}
+// .frm-flat 仅底 3px 实线 + 半径：底边两端的圆角上卷（近似，sweep=0 外凸）
+function flatPath(W, H, r, inset) {
+  const x0 = inset, y1 = H - inset;
+  const { br, bl } = r;
+  return `M ${x0} ${y1 - bl[1]}` +
+    ` A ${bl[0]} ${bl[1]} 0 0 0 ${x0 + bl[0]} ${y1}` +
+    ` L ${W - inset - br[0]} ${y1}` +
+    ` A ${br[0]} ${br[1]} 0 0 0 ${W - inset} ${y1 - br[1]}`;
+}
+function frameSvg(W, H, radiiSpec, flat) {
+  const r = scaleRadii(W, H, radiiSpec);
+  const inset = 2; // 3px stroke 中心内缩 1.5，取 2 留滑边
+  const d = flat ? flatPath(W, H, r, inset) : framePath(W, H, r, inset);
+  const cap = flat ? ' stroke-linecap="round"' : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="none" stroke="#000" stroke-width="3"${cap}/></svg>`;
+}
+
+// ── 5. 三档网点：CSS data-uri SVG → 4×4 平铺贴图（4px 格防缩糊）──
+// 母版 = CSS 内嵌 data:image/svg+xml 的 <circle cx=2 cy=2 r=1.6/1.13/0.79>（非 symbol）。
+// 4×4 直接栅格化会因中心采样把 d50/d25 都塌成 2×2、d12 塌成空白；改为超采样取覆盖 + Bayer 4×4 有序抖动，
+// 得到忠实的 50%/25%/12% 网屏占比（每枚仍严格 4×4）。
+const BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+const DOT_EXTRACT = {
+  d50: /\.d50\{background-image:url\("data:image\/svg\+xml,([^"]+)"\)\}/,
+  d25: /\.d25\{background-image:url\("data:image\/svg\+xml,([^"]+)"\)\}/,
+  d12: /\.d12\{background-image:url\("data:image\/svg\+xml,([^"]+)"\)\}/,
+};
+function decodeDot(cls) {
+  const m = html.match(DOT_EXTRACT[cls]);
+  if (!m) return null;
+  return decodeURIComponent(m[1]);
+}
+async function renderDot4x4(cls) {
+  const svg = decodeDot(cls);
+  const SS = 64;
+  const { data } = await sharp(Buffer.from(svg), { density: 300 }).resize(SS, SS, { fit: 'fill' }).flatten({ background: '#ffffff' }).greyscale().raw().toBuffer({ resolveWithObject: true });
+  const block = SS / 4;
+  const cov = new Array(16);
+  for (let by = 0; by < 4; by++) for (let bx = 0; bx < 4; bx++) {
+    let b = 0;
+    for (let yy = 0; yy < block; yy++) for (let xx = 0; xx < block; xx++) if (data[(by * block + yy) * SS + (bx * block + xx)] < LUM_THRESHOLD) b++;
+    cov[by * 4 + bx] = b / (block * block);
+  }
+  const w = 4, h = 4;
+  const pngData = Buffer.alloc(w * h * 3);
+  const packed = Buffer.alloc(w * 2 * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const black = cov[y * 4 + x] * 16 > BAYER4[y][x];
+    const c = black ? 0 : 255;
+    const o3 = (y * w + x) * 3; pngData[o3] = c; pngData[o3 + 1] = c; pngData[o3 + 2] = c;
+    const o2 = y * (w * 2) + x * 2; packed[o2] = black ? 0 : 255; packed[o2 + 1] = black ? 0 : 255;
+  }
+  return { packed, stride: w * 2, pngData, w, h };
+}
+
+// ── 6. 框族 9 宫格切分（4 角 + 4 边 + 1 中心）──
+function make9Slice(name, W, H, raw, c) {
+  const slices = [
+    { id: 'tl', x: 0, y: 0, w: c, h: c, stretch: false },
+    { id: 'top', x: c, y: 0, w: W - 2 * c, h: c, stretch: 'x' },
+    { id: 'tr', x: W - c, y: 0, w: c, h: c, stretch: false },
+    { id: 'left', x: 0, y: c, w: c, h: H - 2 * c, stretch: 'y' },
+    { id: 'center', x: c, y: c, w: W - 2 * c, h: H - 2 * c, stretch: 'both' },
+    { id: 'right', x: W - c, y: c, w: c, h: H - 2 * c, stretch: 'y' },
+    { id: 'bl', x: 0, y: H - c, w: c, h: c, stretch: false },
+    { id: 'bottom', x: c, y: H - c, w: W - 2 * c, h: c, stretch: 'x' },
+    { id: 'br', x: W - c, y: H - c, w: c, h: c, stretch: false },
+  ];
+  const files = [];
+  for (const s of slices) {
+    const buf = Buffer.alloc(s.w * s.h * 3);
+    for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+      const black = raw[(s.y + y) * W + (s.x + x)] < LUM_THRESHOLD;
+      const ccol = black ? 0 : 255;
+      const o3 = (y * s.w + x) * 3; buf[o3] = ccol; buf[o3 + 1] = ccol; buf[o3 + 2] = ccol;
+    }
+    files.push({ id: s.id, buf, w: s.w, h: s.h });
+  }
+  const meta = { name, base: { w: W, h: H }, corner: c, note: 'stretch=false 角片不变形；边片沿单轴、中心片沿两轴拉伸', slices };
+  return { files, meta };
+}
+
+// ── 7. 字体：Baloo 2 以 @font-face data-uri 内嵌（真体）；ZCOOL KuaiLe 依赖 per-user 安装（真体）──
+// 字体替身坑（E2-3/docs）：librsvg 对 ZCOOL(full 1.5MB) 的 @font-face data-uri 被静默忽略、回落系统字体，
+// 对 Baloo 2 的 @font-face data-uri 生效。故 ZCOOL 走「本机已按 per-user 安装 ZCOOL KuaiLe → font-family 按名解析真体」
+// 并在下方 doFontVerdict() 对「真体 vs 替身」做出机判并记录；Baloo 走内嵌 data-uri 保证不依赖本机环境。
+function tryFont(path) { try { return readFileSync(path); } catch { return null; } }
+const zcoolTtf = tryFont(new URL('./fonts/ZCOOLKuaiLe-Regular.ttf', import.meta.url));
+const balooTtf = tryFont(new URL('./fonts/Baloo2-800.ttf', import.meta.url));
+const balooB64 = balooTtf ? balooTtf.toString('base64') : '';
+const BALOO_STYLE = balooB64
+  ? `<style>@font-face{font-family:'B2';src:url(data:font/ttf;base64,${balooB64}) format('truetype')}</style>`
+  : '';
+
+async function renderGreyscaleHashed(svgStr, w, h) {
+  const { data } = await renderGreyscale(svgStr, w, h);
+  return { data, w, h, hash: createHash('md5').update(data).digest('hex').slice(0, 12) };
+}
+// 机判「真体 vs 替身」：与已知回落字体(Microsoft YaHei)渲染结果比对，不同 → 真体生效。
+async function doFontVerdict(usedSvg, family) {
+  const fallback = usedSvg.replace(/font-family="[^"]*"/, `font-family="Microsoft YaHei"`);
+  const a = await renderGreyscaleHashed(usedSvg, 300, 60);
+  const b = await renderGreyscaleHashed(fallback, 300, 60);
+  const real = a.hash !== b.hash;
+  console.log(`FONTVERDICT ${family}: ${real ? 'REAL (differs from Microsoft YaHei fallback)' : 'SUBSTITUTE (== fallback)'}`);
+  return real;
+}
+
+// ── 8. imgfont 字glyph 定位（等宽箱体 + 基线对齐）──
+// 数字 0-9 固定 baseline 底对齐；冒号按 bbox 垂直居中于数字中线。
+function bboxOf(bit, w, h) {
+  let x0 = w, y0 = h, x1 = -1, y1 = -1, any = false;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (bit[y * w + x]) {
+    any = true; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return any ? { x0, y0, x1, y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, h: y1 - y0 + 1, w: x1 - x0 + 1 } : null;
+}
+function recenter(raw, W, H, boxW, boxH, mode) {
+  const bit = new Array(W * H);
+  for (let i = 0; i < W * H; i++) bit[i] = raw[i] < LUM_THRESHOLD;
+  const bb = bboxOf(bit, W, H);
+  const out = Buffer.alloc(boxW * boxH, 255);
+  if (!bb) return out;
+  const dx = Math.round(boxW / 2 - bb.cx);
+  const dy = mode === 'center' ? Math.round(boxH / 2 - bb.cy) : (boxH - 14 - (bb.y1 + 1)); // baseline: 墨底固定在 boxH-14
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const nx = x + dx, ny = y + dy;
+    if (!bit[y * W + x] || nx < 0 || ny < 0 || nx >= boxW || ny >= boxH) continue;
+    out[ny * boxW + nx] = 0;
+  }
+  return out;
+}
+
+// ── 9. 资产清单 ──
+const jobs = []; // {name, svg(w=null→dot/raw), w, h, rotate, kind, extra}
+
+// 吉祥物七姿态：同族同尺寸 96×96，0°（姿态族中性；-1° 倾斜是 P1 摆放层关注点，不烘进姿态族）。
+// pose_daily 由旧 98×98(-1°) 重新中立化为 96×96(0°)，保证七姿态逐枚同尺寸防跳位。
+for (const id of ['daily', 'listen', 'think', 'talk', 'record', 'sleep', 'jump']) {
+  jobs.push({ name: `pose_${id}_96`, svg: svgUse(`pose-${id}`), w: 96, h: 96, rotate: 0, kind: 'svg' });
+}
+// 全图标族 14 枚：「48 盒」统一 48×48；ic-wave 波浪线 48×14 特例（非正方形）。
+for (const id of ['apple', 'book', 'mic', 'drop', 'thermo', 'bell', 'batt', 'mag', 'star', 'cloud', 'penhand', 'note', 'moon']) {
+  jobs.push({ name: `ic_${id}_48`, svg: svgUse(`ic-${id}`), w: 48, h: 48, rotate: 0, kind: 'svg' });
+}
+jobs.push({ name: 'ic_wave_48', svg: svgUse('ic-wave'), w: 48, h: 14, rotate: 0, kind: 'svg' });
+
+// 框族整框（RGB565 参考整图 + 9 宫格切分父本）：frm 大框 / frm-sm 小框 / frm-flat 底框, 角片 24px。
+const FRAMES = [
+  { name: 'frm_236_236', W: 236, H: 236, spec: HAND_R, flat: false },
+  { name: 'frm_sm_160_120', W: 160, H: 120, spec: HAND_R_SM, flat: false },
+  { name: 'frm_flat_240_96', W: 240, H: 96, spec: HAND_R_SM, flat: true },
+];
+for (const f of FRAMES) jobs.push({
+  name: f.name, svg: frameSvg(f.W, f.H, f.spec, f.flat), w: f.W, h: f.H, rotate: 0, kind: 'frame', frame: f,
+});
+
+// 三档网点 4×4（超采样覆盖 + Bayer 抖动）
+for (const cls of ['d50', 'd25', 'd12']) jobs.push({ name: cls, kind: 'dot', cls });
+
+// 成就印章 -8°（128×128 双圈：4px 实线外圈 + inset 6px 2.5px 虚线内圈，-8° 斜盖）
+{
+  const stampSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">` +
+    `<circle cx="64" cy="64" r="62" fill="none" stroke="#000" stroke-width="4"/>` +
+    `<circle cx="64" cy="64" r="54" fill="none" stroke="#000" stroke-width="2.5" stroke-dasharray="5 5"/>` +
+    `<text x="64" y="58" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="24" fill="#000">故事徽章</text>` +
+    `<text x="64" y="84" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="18" fill="#000">第 3 颗</text>` +
+    `<text x="64" y="106" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="18" fill="#000">已入册</text>` +
+    `</svg>`;
+  jobs.push({ name: 'stamp_seal_r8', svg: stampSvg, w: 128, h: 128, rotate: -8, kind: 'svg' });
+}
+
+// 站酷快乐体样字（标题 30px 档，「我的故事 该上课啦」）
+{
+  const zcoolSample = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 52"><text x="8" y="40" font-family="ZCOOL KuaiLe" font-size="30" fill="#000">我的故事 该上课啦</text></svg>`;
+  jobs.push({ name: 'font_zcool_30', svg: zcoolSample, w: 300, h: 52, rotate: 0, kind: 'zcool', fontVerdictSvg: zcoolSample });
+}
+
+// Baloo 2 动态时间 imgfont：数字 0-9 + 冒号，11 枚等宽箱体 48×64，真体(B2 @font-face)。
+{
+  const IMG_W = 48, IMG_H = 64;
+  for (let d = 0; d <= 9; d++) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${IMG_W} ${IMG_H}">${BALOO_STYLE}<text x="24" y="52" text-anchor="middle" font-family="B2" font-weight="800" font-size="54" fill="#000">${d}</text></svg>`;
+    jobs.push({ name: `imgfont_digit_${d}`, svg, w: IMG_W, h: IMG_H, rotate: 0, kind: 'glyph', glyphMode: 'baseline' });
+  }
+  const colonSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${IMG_W} ${IMG_H}">${BALOO_STYLE}<text x="24" y="52" text-anchor="middle" font-family="B2" font-weight="800" font-size="54" fill="#000">:</text></svg>`;
+  jobs.push({ name: 'imgfont_colon', svg: colonSvg, w: IMG_W, h: IMG_H, rotate: 0, kind: 'glyph', glyphMode: 'center', balooSvg: colonSvg });
+  // 一笔 imgfont 字体判据样本（数字 8）
+  jobs[jobs.length - 1].fontVerdictSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 64">${BALOO_STYLE}<text x="24" y="52" text-anchor="middle" font-family="B2" font-weight="800" font-size="54" fill="#000">8</text></svg>`;
+}
+
+// P1 既有 8 枚（保留，不删）：pose_daily 已在上方中立化重烘；其余 7 枚原样保留。
+jobs.push({ name: 'doodle_star_26', svg: svgUse('ic-star'), w: 26, h: 26, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'doodle_cloud_52', svg: svgUse('ic-cloud'), w: 52, h: 52, rotate: 0, kind: 'svg' });
 for (const s of inlineSvgs) {
   const key = s.viewBox.split(' ').slice(2).join(' ');
   const nm = inlineNamed[key];
   if (nm) {
     const deg = s.tilt === 'tilt1' ? -1 : s.tilt === 'tilt2r' ? 2 : 0;
-    jobs.push([nm.replace(/-/g, '_'), wrapSvg(s.viewBox, `<g>${s.body}</g>`, true), s.w, s.h, deg]);
+    jobs.push({ name: nm.replace(/-/g, '_'), svg: wrapSvg(s.viewBox, `<g>${s.body}</g>`, true), w: s.w, h: s.h, rotate: deg, kind: 'svg' });
   }
 }
-// 大时间数字 10:24 —— 设计稿 110px 屏上约 96px、letter-spacing -3px、整体 -1° 倾斜。
-// 文字栅格化资产: 消除原生标签行距/基线与冒号对齐问题; 数字内容变化时重跑本脚本(固件端计划 imgfont)
-jobs.push(['time_10_24',
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 108"><text x="122" y="86" text-anchor="middle" font-family="'Segoe UI','Arial Rounded MT Bold',sans-serif" font-weight="700" font-size="96" letter-spacing="-3" fill="#000">10  24</text></svg>`,
-  244, 108, -1]);
-// 电池图标 32x26(设计稿 48 盒缩到 32 宽)
-jobs.push(['ic_batt_32', svgUse('ic-batt'), 32, 26, 0]);
-// 铃铛小图标 13px(倒计时贴纸用)
-jobs.push(['ic_bell_13', svgUse('ic-bell'), 13, 13, 0]);
+// 大时间字块 10:24（P1 既有，-1° 倾斜整块，保留）
+jobs.push({ name: 'time_10_24', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 108"><text x="122" y="86" text-anchor="middle" font-family="'Segoe UI','Arial Rounded MT Bold',sans-serif" font-weight="700" font-size="96" letter-spacing="-3" fill="#000">10  24</text></svg>`, w: 244, h: 108, rotate: -1, kind: 'svg' });
+jobs.push({ name: 'ic_batt_32', svg: svgUse('ic-batt'), w: 32, h: 26, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_bell_13', svg: svgUse('ic-bell'), w: 13, h: 13, rotate: 0, kind: 'svg' });
 
-function svgUse(id) {
-  const s = symbols[id];
-  // symbol 内容内联（不嵌套 <use href="#id">，libvips 对 use→symbol→use→defs 的间接层解析不稳）
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${s.viewBox}"><defs>${defs}</defs>${s.body}</svg>`;
-}
-
+// ── 10. 主循环：栅格化 → 阈值 → 打包/切片 → 落盘 ──
 const results = [];
-for (const [name, svg, w, h, deg] of jobs) {
+let fontVerdictJobs = [];
+for (const j of jobs) {
   try {
-    const r = await rasterize(name, svg, w, h, deg);
-    results.push(r);
-    console.log(`OK ${name} ${r.w}x${r.h} rot=${deg} bytes=${r.packed.length}`);
+    if (j.kind === 'dot') {
+      const r = await renderDot4x4(j.cls);
+      await writeThresholdPng(`${outDir}/png/${j.name}.png`, r.pngData, r.w, r.h);
+      results.push({ name: j.name, w: r.w, h: r.h, packed: r.packed, stride: r.stride });
+      console.log(`OK ${j.name} ${r.w}x${r.h} (dot 4x4)`);
+      continue;
+    }
+    const g = await renderGreyscale(j.svg, j.w, j.h, j.rotate);
+    if (j.kind === 'frame') {
+      // 整框 + 9 宫格切片双出
+      const pk = packRgb565(g.data, g.w, g.h);
+      await writeThresholdPng(`${outDir}/png/${j.name}.png`, pk.pngData, g.w, g.h);
+      results.push({ name: j.name, w: g.w, h: g.h, packed: pk.packed, stride: pk.stride });
+      const s9 = make9Slice(j.frame.name, g.w, g.h, g.data, 24);
+      for (const f of s9.files) await writeThresholdPng(`${outDir}/9slice/${j.frame.name}_${f.id}.png`, f.buf, f.w, f.h);
+      writeFileSync(`${outDir}/9slice/${j.frame.name}.json`, JSON.stringify(s9.meta, null, 2));
+      console.log(`OK ${j.name} ${g.w}x${g.h} 9slice(9片, corner=24)`);
+      continue;
+    }
+    if (j.kind === 'glyph') {
+      const g2 = await renderGreyscale(j.svg, j.w, j.h, 0);
+      const recentered = recenter(g2.data, g2.w, g2.h, j.w, j.h, j.glyphMode);
+      const pk = packRgb565(recentered, j.w, j.h);
+      await writeThresholdPng(`${outDir}/png/${j.name}.png`, pk.pngData, j.w, j.h);
+      results.push({ name: j.name, w: j.w, h: j.h, packed: pk.packed, stride: pk.stride });
+      console.log(`OK ${j.name} ${j.w}x${j.h} (glyph ${j.glyphMode})`);
+      if (j.fontVerdictSvg) fontVerdictJobs.push({ svg: j.fontVerdictSvg, family: 'Baloo 2 (imgfont @font-face)' });
+      continue;
+    }
+    const pk = packRgb565(g.data, g.w, g.h);
+    await writeThresholdPng(`${outDir}/png/${j.name}.png`, pk.pngData, g.w, g.h);
+    results.push({ name: j.name, w: g.w, h: g.h, packed: pk.packed, stride: pk.stride });
+    console.log(`OK ${j.name} ${g.w}x${g.h} rot=${j.rotate} bytes=${pk.packed.length}`);
+    if (j.kind === 'zcool' && j.fontVerdictSvg) fontVerdictJobs.push({ svg: j.fontVerdictSvg, family: 'ZCOOL KuaiLe (样字)' });
   } catch (e) {
-    console.error(`FAIL ${name}: ${e.message}`);
+    console.error(`FAIL ${j.name}: ${e.message}`);
   }
 }
 
-// ── 5. 生成 C 文件（LVGL 9 image descriptor, LV_COLOR_FORMAT_RGB565）──
+// 字体真体/替身机判（不影响产物，只落 verdict 进报告消费）
+for (const fv of fontVerdictJobs) {
+  try { await doFontVerdict(fv.svg, fv.family); } catch (e) { console.error(`FONTVERDICT FAIL: ${e.message}`); }
+}
+
+// ── 11. 生成 C 文件（LVGL 9 image descriptor, LV_COLOR_FORMAT_RGB565）──
 let c = `/* Auto-generated by tools/asset-pipeline/gen_assets.mjs — 勿手改 */\n#include "assets.h"\n\n`;
 let h = `/* Auto-generated by tools/asset-pipeline/gen_assets.mjs — 勿手改 */\n/* All lv_image_dsc_t below: LV_COLOR_FORMAT_RGB565 (.cf 定义见 assets.c)。 */\n#pragma once\n#include "lvgl/lvgl.h"\n\n`;
 for (const r of results) {
@@ -131,8 +380,7 @@ for (const r of results) {
   for (let i = 0; i < r.packed.length; i += 12) {
     c += '  ' + Array.from(r.packed.slice(i, i + 12)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(',') + ',\n';
   }
-  const stride = r.stride;
-  c += `};\nconst lv_image_dsc_t ${r.name} = {\n  .header = { .magic = LV_IMAGE_HEADER_MAGIC, .cf = LV_COLOR_FORMAT_RGB565, .flags = 0, .w = ${r.w}, .h = ${r.h}, .stride = ${stride} },\n  .data_size = ${r.packed.length},\n  .data = ${r.name}_map,\n};\n\n`;
+  c += `};\nconst lv_image_dsc_t ${r.name} = {\n  .header = { .magic = LV_IMAGE_HEADER_MAGIC, .cf = LV_COLOR_FORMAT_RGB565, .flags = 0, .w = ${r.w}, .h = ${r.h}, .stride = ${r.stride} },\n  .data_size = ${r.packed.length},\n  .data = ${r.name}_map,\n};\n\n`;
   h += `extern const lv_image_dsc_t ${r.name}; /* LV_COLOR_FORMAT_RGB565 */\n`;
 }
 writeFileSync(outDir + '/assets.c', c);
