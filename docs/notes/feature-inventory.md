@@ -5,7 +5,7 @@
 > 依据：设计稿 v2（`docs/ui/kidpal-ui-design-v2.html`）、实现策略（[ui-implementation-strategy.md](ui-implementation-strategy.md)）、踩坑记录（[ui-to-lvgl-pitfalls.md](ui-to-lvgl-pitfalls.md)）、spec §4/§7、契约（[interface-contract.md](../contracts/interface-contract.md)）、2026-08-31 对阿里云 ECS（8.137.91.16）的现场盘点。
 > 分级口径：**✅ 已打通/已验证**（跑过、有实证）· **🟢 可行待实现**（路线已定、无技术悬念，只差做）· **🟡 需验证**（路线有方向但有未实证的风险点，必须先验）· **🔴 高风险/存疑**（可能走不通，需备选方案）。
 
-> **更新 2026-09-01**：功能支撑验证批首二包已落地——TP-A（260831-cloud-link-bringup）打通 OpenClaw 云端链路（下方 OC-5..11 → ✅），TP-C（260831-simulator-lvgl-align）把模拟器对齐固件 9.3.x（§1.5 版本对齐/快照自查/实验代码正式化 → ✅）。本表相关行已翻转；OC-12..15、I1 真机、资产预算、16px CJK 仍待后续包。
+> **更新 2026-09-01（TP-B）**：功能支撑验证批三包全部落地——TP-A（260831-cloud-link-bringup）打通 OpenClaw 云端链路，TP-C（260831-simulator-lvgl-align）把模拟器对齐固件 9.3.x，TP-B（260831-ui-art-assets）把 V2 美术元素全量出图 + 预算核算。本表 §1.2/§1.3/§1.5 相关行已翻 ✅；仍待后续 = OC-12..15 云端业务、I1 真机可用性、真机字体子集化、16px CJK 真机可读性。
 
 ---
 
@@ -26,9 +26,9 @@
 
 | 功能点 | 设计稿锚点 | 分级 | 说明 |
 |---|---|---|---|
-| 首页超大时间（约 110px，Baloo 2 ExtraBold 风） | `font-num` | 🟡 | **昨天已以"整块预渲染位图资产"方式验证静态版**（`time_10_24` 246×112）。但**动态时间**须走 imgfont（数字 0–9 + 冒号动画）或逐位换资产——**imgfont 在 9.3 的渲染质量未验**，且真机须装实际 Baloo 2 子集重烘（PC 上是用 Segoe UI Bold 替身出的图） |
+| 首页超大时间（约 110px，Baloo 2 ExtraBold 风） | `font-num` | ✅ | 已由 TP-B 出动态 imgfont：数字 0–9 + 冒号共 11 枚等宽箱体（48×64）、基线对齐，真体 FONTVERDICT REAL。真机仍须以 Baloo 2 ExtraBold 子集重烘（测试件替身出图已记录口径） |
 | 冒号眨眼动画（4.4s 一眨） | `canvas-p1` | ✅ | 昨天已用原生定时器验证（`colon_blink_timer`） |
-| 标题可爱字体：**站酷快乐体 ZCOOL KuaiLe** | `font-title`/`font-disp` | 🟡 | 昨天未验证。两点：① **授权**须核"免费商用"原文；② 子集化栅格效果未验 |
+| 标题可爱字体：**站酷快乐体 ZCOOL KuaiLe** | `font-title`/`font-disp` | ✅ | 已由 TP-B 落档：SIL OFL 1.1 授权原文存 `tools/asset-pipeline/fonts/OFL-ZCOOLKuaiLe.txt`（免费商用/可内嵌/可子集化 + 改名禁则逐字引用）；标题样字 `font_zcool_30` 子集化栅格非空白（FONTVERDICT REAL，per-user 装字宿主依赖已记录） |
 | 正文/拼音伴随可爱字体 | `font-body` | 🟢 | 走同一字体管线；拼音声调字符须确认子集覆盖 |
 | **P4 米字格示范字 = 标准规范字体红线**（思源黑体/楷体，横平竖直、禁可爱体） | `canvas-p4` | 🟢 | spec §5.6 已立红线； makemeahanzi 字形本身即标准字形，D3 数据直用即可 |
 | 小字号 CJK（9–16px）在 1bpp 可读性 | 各页 | 🟡 | 实战 V6：12–16px 细字阈值化后糊边。**16px 以下 CJK 真机可读性未实测**——直接决定设计稿能用多小的字 |
@@ -37,13 +37,13 @@
 
 | 功能点 | 设计稿锚点 | 分级 | 说明 |
 |---|---|---|---|
-| 吉祥物「小伴」七姿态（Hello Kitty 风贝塞尔 SVG） | `pose-daily/listen/think/talk/record/sleep/jump` | 🟡 | **昨天只验证了 `pose-daily` 一枚**（98×98 达标）；**其余 6 姿态栅格化未跑**。管线三坑已解（flatten/use 链/字体替身），但 7 姿态全量出图未做 |
-| **手绘不规则圆角框族**（八值不对称 `border-radius`，`.frm/.frm-sm`） | `redlines` 框族 | 🟡 | **昨天没验**（user 点名）。方案已定：9 宫格可拉伸框资产（OQ-2a），全站统一 3–4 种框型；**尚未出第一张框资产** |
-| **元素倾斜 ±1–2°**（`.tilt1/tilt2`，每屏 ≤3 处） | `.tilt*` | 🟡 | **昨天只把倾斜烘进了大时间字块（-1°）**；其余倾斜元素（贴纸、选中项微倾、印章 -8°）**未逐一烘**。方案已定（OQ-1a 烘进资产），但"手绘框+倾斜"叠加观感未验 |
-| 三档网点纹理 d50/d25/d12（4px 格点阵） | `.d50/.d25/.d12` | 🟡 | **昨天没验**。方案已定：4×4 平铺贴图资产；平铺接缝/密度观感未验 |
+| 吉祥物「小伴」七姿态（Hello Kitty 风贝塞尔 SVG） | `pose-daily/listen/think/talk/record/sleep/jump` | ✅ | 已由 TP-B 全量栅格化 7 姿态 96×96（同族同尺寸防跳位，pose_daily 中立化 0°）；造型保真归 human 目测 OQ-3(a) |
+| **手绘不规则圆角框族**（八值不对称 `border-radius`，`.frm/.frm-sm`） | `redlines` 框族 | ✅ | 已由 TP-B 出 3 框型（`.frm/.frm-sm/.frm-flat`）9 宫格切分（4 角+4 边+1 中心、角片 stretch=false），拼回原始尺寸逐像素 diff=0；255px 大半径角的 24px 角片忠实性留 human 目测裁定（review-packet finding #3） |
+| **元素倾斜 ±1–2°**（`.tilt1/tilt2`，每屏 ≤3 处） | `.tilt*` | ✅ | 已由 TP-B 烘入：贴纸微倾（thermo_man -1°、drop_baby +2°）+ 印章 -8°（128→145 扩展、rotate 先于 flatten 真烘入）；-8° 锯齿单列结论归 human 目测 |
+| 三档网点纹理 d50/d25/d12（4px 格点阵） | `.d50/.d25/.d12` | ✅ | 已由 TP-B 出 3 枚精确 4×4 平铺贴图，密度 d50(56%)>d25(25%)>d12(13%)、2×2 平铺周期性成立；密度观感归 human 目测 |
 | 涂鸦点缀（星/云/波浪线） | `sec-icons` 涂鸦 | ✅ | 昨天已出 `doodle_star_26` / `doodle_cloud_52` 两枚 |
-| 成就印章（双圈外实内虚、斜盖 -8°） | `comp-stamp`/`p3-stamp-frame` | 🟡 | 未验；倾斜 -8° 较大，1bpp 下锯齿风险高于 ±2° 微倾 |
-| 图标家族（14 枚，FontAwesome 式或 imgfont） | `sec-icons` | 🟡 | 昨天只出了电池/铃铛 2 枚；全家族 14 枚未出。小智同款 FontAwesome 图标字是备选路线 |
+| 成就印章（双圈外实内虚、斜盖 -8°） | `comp-stamp`/`p3-stamp-frame` | ✅ | 已由 TP-B 出 `stamp_seal_r8` 145×145（外实内虚双圈 + 中心文字 + -8° 烘入），黑占比 16.4%；-8° 内圈 2.5px 虚线断口/糊连是目测重点（review-packet finding #5） |
+| 图标家族（14 枚，FontAwesome 式或 imgfont） | `sec-icons` | ✅ | 已由 TP-B 全量出 14 枚（13 枚 48×48 + ic_wave 48×14 特例）；取舍落定 = 离线位图资产，FontAwesome 图标字留真机 Flash 优化备选（report 已记录） |
 
 ### 1.4 动画与状态演出
 
@@ -65,14 +65,14 @@
 | **I1 格式在真机 9.3 + SPIFFS 文件源路径可用性** | 🟡 | RGB565 占 Flash 是 I1 的 16 倍（P1 一套已 96KB，大时间字块独占 55KB）。**I1 若能用可回收 16 倍空间**——9.3 bin-decoder `decode_indexed_line` 路径未在真机验证 |
 | **模拟器 LVGL 9.5 vs 固件 9.3 版本对齐** | ✅ | 已由 260831-simulator-lvgl-align 落地：模拟器降到 9.3.x 与固件同版（`lv_version.h` 三号一致 + MSBuild 编译通过），「9.5 过 ≠ 9.3 无坑」的错位已消除 |
 | **1bpp 阈值化快照自查**（模拟器真彩 → 真机黑白观感校准） | ✅ | 已正式化（260831-simulator-lvgl-align SLA-A4）：`snapshot_timer` 收编为 `kidpal_snapshot` 工具，验收图一律以阈值化 PNG 为准 |
-| 资产总量 vs SPIFFS 分区预算 | 🟡 | P1 已 96KB；4 页全量 + 7 姿态 + 框族 + 字体的总预算**未核算** |
+| 资产总量 vs SPIFFS 分区预算 | ✅ | 已由 TP-B 核算：47 资产 RGB565 总量 599,698 字节 vs SPIFFS assets 分区 8M，margin 54.1%，**不触发 I1**；P4 笔顺字盘（保守整帧 ~3.1MB）是唯一逼近预算项，V3 前须锁笔形 3 态复用打包策略 |
 | 实验代码正式化（`kidpal_ui.c`/`gen_assets.mjs` 由 dev-loop 接管重写） | ✅ | 已由 260831-simulator-lvgl-align 接管正式化（SLA-A6：kidpal_ui.c / gen_assets.mjs / vcxproj 资产挂接），实验代码不再沉淀为事实标准 |
 
 ### 1.6 UI 可行性小结（给 V3 设计的三句话）
 
-1. **昨天真正验过的只有 P1 一页的 8 枚静态资产 + 眨眼动画**——吉祥物其余 6 姿态、手绘框族、网点、全图标族、印章、动态时间字体，**全都还停留在"方案已定但未出图"**。
-2. **昨天没验的元素，方案上没有一个是"做不到"的**——全是"资产化管线能覆盖，但还没跑/没验真机观感"。**没有 🔴 级（走不通）项**；最高风险是 🟡 级的「I1 空间回收」和「16px 以下 CJK 真机可读性」——这两个直接决定 V3 能用多密的排版。
-3. **V3 设计的核心约束因此是**：① 倾斜/手绘框/网点全部预设为"烘进资产"，不留运行时绘制的幻想；② 字号下限等真机实测后再锁；③ 美术资产总量要对着 SPIFFS 分区预算设计，不是无限贴图。
+1. **TP-B 已把 V2 设计稿的全部美术元素经资产管线出图并机判转绿**——吉祥物 7 姿态、手绘框族 9 宫格、三档网点、全图标族、印章 -8°、动态时间 imgfont、站酷快乐体授权，**不再有"方案已定但未出图"的项**；造型/锯齿/接缝等观感保真归 human 对阈值化 PNG 目测 OQ-3(a)。
+2. **已验元素里没有 🔴 级（走不通）项，也没有"做不到"项**——资产化管线全数覆盖；剩余 🟡 是「I1 空间回收（真机）」和「16px 以下 CJK 真机可读性」两条，仍待真机联调期验证。
+3. **V3 设计的核心约束不变但更实**：① 倾斜/手绘框/网点全部烘进资产（已实证）；② 框族 255px 大半径角的 9 宫格角片忠实性、-8° 印章内圈虚线观感，需 human 目测裁定后锁 V3 框/印章规格；③ 预算已实（599,698 字节 vs 8M 不超），但 P4 笔顺字盘 ~3.1MB 须先锁打包策略再定 V3 字盘形态。
 
 ---
 

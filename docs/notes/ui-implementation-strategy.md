@@ -70,7 +70,7 @@
 - PSRAM 实测占用：LVGL draw buffer 240,000 字节（单缓冲 `LV_DISPLAY_RENDER_MODE_PARTIAL` 整块 PSRAM 驻留）+ RLCD 帧缓冲 15,000 字节 + `PixelIndexLUT`（uint16_t）240,000 字节 + `PixelBitLUT`（uint8_t）120,000 字节。
 - ThorVG 矢量渲染真机默认关闭（sdkconfig `CONFIG_LV_USE_VECTOR_GRAPHIC`/`CONFIG_LV_USE_THORVG` 均未设置）——「画复杂图形」的唯一低成本方式就是预栅格化资产。
 - 动画区（眨眼冒号、声波条、笔顺步进）局部重绘，吉祥物/框族静态资产不参与高频 invalidation。
-- RGB565 资产 Flash 占用按 2 字节/像素估算：实测 P1 全套 8 资产约 96KB，其中大时间字块 55KB——**大图资产须盯总量**，I1 化或缩小栅格尺寸是执行期优化位。资产总尺寸预算与 SPIFFS 分区表核对进 dev-loop 验收。
+- RGB565 资产 Flash 占用按 2 字节/像素估算：实测 P1 全套 8 资产约 96KB，其中大时间字块 55KB。**已核算（TP-B 260831-ui-art-assets）**：全量 47 资产 599,698 字节 vs SPIFFS assets 分区 8M，margin 54.1%、不触发 I1；P4 笔顺字盘（保守整帧 ~3.1MB）是唯一逼近预算项，V3 前须锁「笔形 3 态叠加复用 + 米字格单份背景」打包策略。I1 化仍留真机优化位。
 
 ## 5. 分阶段路线
 
