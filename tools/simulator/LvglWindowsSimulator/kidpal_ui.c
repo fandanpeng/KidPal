@@ -1,10 +1,7 @@
 #include "kidpal_ui.h"
+#include "kidpal_snapshot.h"
 #include "assets/assets.h"
 #include "lvgl/lvgl.h"
-#include "lvgl/src/libs/lodepng/lodepng.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <windows.h>
 
 /* KidPal P1 home — 「LVGL 骨架 + 预栅格化 1bpp 资产」双层方案实战版 (260830-arch-review-ui-impl-strategy)
  * 骨架: 文本/键帽/页点/反白/列表线走 LVGL 控件
@@ -12,7 +9,6 @@
  */
 
 static void colon_blink_timer(lv_timer_t* timer);
-static void snapshot_timer(lv_timer_t* t);
 
 static lv_obj_t* g_colon_top = NULL;
 static lv_obj_t* g_colon_btm = NULL;
@@ -48,7 +44,7 @@ static lv_obj_t* label_at(lv_obj_t* parent, const char* text, int32_t x, int32_t
     return l;
 }
 
-/* 资产渲染: 管线直出 RGB565 图像(见 gen_assets.mjs 注释——LVGL 9.5 软件渲染的 I1 路径
+/* 资产渲染: 管线直出 RGB565 图像(见 gen_assets.mjs 注释——LVGL 软件渲染的 I1 路径
  * 绕过调色板,把位图当 alpha/灰度,仅 bin-decoder 对文件源才查表;RGB565 双端行为一致)。
  * 直接 lv_image_set_src 即可,无需转换。 */
 
@@ -215,24 +211,7 @@ void kidpal_ui_create(lv_obj_t* parent)
     label_at(parent, "45%", 252, 212, g_num_21);
 
     /* ── 小伴趴场(资产, -1° 已烘入) ── */
-    {
-        lv_obj_t* im = lv_image_create(parent);
-        lv_image_set_src(im, &pose_daily_96);
-        lv_obj_set_pos(im, 8, 172);
-        lv_obj_invalidate(im);
-        lv_refr_now(NULL);
-        lv_draw_buf_t* snap = lv_snapshot_take(im, LV_COLOR_FORMAT_ARGB8888);
-        if (snap) {
-            unsigned char* png = NULL; size_t pngsz = 0;
-            if (!lodepng_encode32(&png, &pngsz, (const unsigned char*)snap->data,
-                                  snap->header.w, snap->header.h)) {
-                FILE* f = fopen("C:/tmp/dbg_mascot.png", "wb");
-                if (f) { fwrite(png, 1, pngsz, f); fclose(f); }
-            }
-            free(png);
-            lv_draw_buf_destroy(snap);
-        }
-    }
+    img_at(parent, &pose_daily_96, 8, 172);
 
     /* ── 底部键帽提示条: 38px 通栏贴底 ── */
     lv_obj_t* bar = lv_obj_create(parent);
@@ -265,24 +244,6 @@ void kidpal_ui_create(lv_obj_t* parent)
     label_at(parent, "翻页", 300, 271, g_cjk16);
     keycap_at(parent, "BOOT", 342, 268);
 
-    /* ── 开发期画布快照: 启动后把 400x300 屏幕存成 PNG 供人工核对 ── */
-    lv_timer_create(snapshot_timer, 1500, NULL);
-}
-
-static void snapshot_timer(lv_timer_t* t)
-{
-    (void)t;
-    lv_obj_t* scr = lv_screen_active();
-    lv_draw_buf_t* snap = lv_snapshot_take(scr, LV_COLOR_FORMAT_ARGB8888);
-    if (!snap) return;
-    unsigned char* png = NULL; size_t pngsz = 0;
-    unsigned err = lodepng_encode32(&png, &pngsz,
-        (const unsigned char*)snap->data, snap->header.w, snap->header.h);
-    if (!err) {
-        FILE* f = fopen("C:/tmp/sim_canvas.png", "wb");
-        if (f) { fwrite(png, 1, pngsz, f); fclose(f); }
-    }
-    free(png);
-    lv_draw_buf_destroy(snap);
-    PostQuitMessage(0);   /* 截完即退，便于脚本化 */
+    /* ── 1bpp 阈值化快照: 一键截当前屏幕 → 阈值化 PNG → 退出(正式工具 kidpal_snapshot.c) ── */
+    kidpal_snapshot_schedule();
 }
