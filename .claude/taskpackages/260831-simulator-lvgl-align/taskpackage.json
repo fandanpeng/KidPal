@@ -1,0 +1,94 @@
+{
+  "changeId": "260831-simulator-lvgl-align",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-validation/PROPOSAL.md",
+    "upstreamFrozen": "sha1:pending",
+    "workstream": "kidpal-validation"
+  },
+  "subsystem": "tools",
+  "story": "模拟器地基对齐：把 LVGL PC 模拟器从 9.5.0 降级/锁定到与固件同版 9.3.x，lv_conf.h 以固件 sdkconfig 为基准对齐，把 1bpp 阈值化快照自查正式化，并让昨天在 9.5 上达标的 P1 在 9.3 下回归——让「模拟器验证结论 ≈ 真机结论」重新成立，作为 UI 资产全量验证（TP-B）的前置。",
+  "redBaselineCommand": "grep -E 'LVGL_VERSION_(MAJOR|MINOR|PATCH)' tools/simulator/LvglPlatform/lvgl/lv_version.h",
+  "redBaselineResult": "红（2026-08-31 实测）：lv_version.h = 9.5.0，固件 firmware/main/idf_component.yml 锁 ~9.3.0、dependencies.lock 实测 9.3.0——版本错位。昨天 P1 验证全部在 9.5 上做，9.3 一个都没验，且 9.5 软件渲染 I1 调色板被绕过的实测差异证明「9.5 过 ≠ 9.3 无坑」。本包把模拟器对齐到 9.3。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-validation/",
+    "docs/notes/feature-inventory.md"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "types",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "SLA-A1",
+      "kind": "structural"
+    },
+    "SLA-A2: 模拟器 LVGL 降级/锁定到 9.3.x，工程编译跑通，lv_version.h 三个版本号 = 9.3.x",
+    "SLA-A3: lv_conf.h 以固件 sdkconfig 的 LVGL 配置为基准对齐（ThorVG 关、单色阈值一致、FreeType 栈 ≥32KB）",
+    "SLA-A4: 1bpp 阈值化快照一键自查正式化——把实验代码的 snapshot_timer 收编为正式工具，验收图一律以阈值化 PNG 版本为准",
+    "SLA-A5: P1 现有 8 资产（pose_daily/doodle_star/doodle_cloud/thermo_man/drop_baby/ic_batt/ic_bell/time_10_24）在 9.3 下渲染无回归，重点盯 I1/调色板行为差异是否复现",
+    "SLA-A6: 实验代码正式化——kidpal_ui.c / gen_assets.mjs / vcxproj 资产挂接由本包接管重写或正式化，防实验代码沉淀为事实标准（策略 §8.4 留根）"
+  ],
+  "acceptanceTestsFile": [
+    "tools/simulator/tests/test_lvgl_align.acceptance.md"
+  ],
+  "exitCriteria": [
+    {
+      "id": "SLA-E1",
+      "kind": "structural"
+    },
+    "SLA-E2: 模拟器窗口固定 400×300（踩坑 §1.2 已做，回归确认）",
+    "SLA-E3: 产出对齐后的模拟器工程 + 正式化的资产管线脚本 + P1 在 9.3 的回归截图（阈值化版），落 changes/dev/260831-simulator-lvgl-align/"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    ".planning/kidpal-validation/PROPOSAL.md",
+    "docs/notes/feature-inventory.md",
+    "docs/notes/ui-implementation-strategy.md",
+    "docs/notes/ui-to-lvgl-pitfalls.md"
+  ],
+  "sourceRefs": [
+    "docs/notes/ui-implementation-strategy.md#§3",
+    "docs/notes/ui-to-lvgl-pitfalls.md",
+    "docs/notes/feature-inventory.md#§1.5"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 5,
+  "docsOwner": "integrator",
+  "mergeOrder": 2,
+  "dependsOn": [],
+  "testHost": "host+SDL",
+  "decisionCoverage": [
+    {
+      "decision": "strategy-§3-版本对齐",
+      "summary": "模拟器 LVGL 降级/锁定到 9.3.x 与固件同版；lv_conf.h 以固件 sdkconfig 为基准对齐；加 1bpp 滤镜/阈值化快照验证手段。",
+      "sourceRefs": [
+        "docs/notes/ui-implementation-strategy.md#§3"
+      ],
+      "landsIn": "acceptance:SLA-A2"
+    },
+    {
+      "decision": "strategy-§8.4-实验代码接管",
+      "summary": "模拟器实验代码（kidpal_ui.c/gen_assets.mjs/vcxproj 挂接）由 simulator 包接管重写或正式化，避免沉淀为事实标准。",
+      "sourceRefs": [
+        "docs/notes/ui-implementation-strategy.md#§6"
+      ],
+      "landsIn": "acceptance:SLA-A6"
+    },
+    {
+      "decision": "ARQ-260831-simulator-lvgl-version-drift",
+      "summary": "模拟器↔固件 LVGL 版本对齐的构建期校验是常驻风险，本包顺手做版本对齐。",
+      "sourceRefs": [
+        "docs/ARCH-REVIEW-QUEUE.md#ARQ-260831-simulator-lvgl-version-drift"
+      ],
+      "landsIn": "acceptance:SLA-A2"
+    }
+  ]
+}

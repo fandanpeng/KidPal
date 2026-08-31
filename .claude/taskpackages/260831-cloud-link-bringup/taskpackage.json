@@ -1,0 +1,102 @@
+{
+  "changeId": "260831-cloud-link-bringup",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-validation/PROPOSAL.md",
+    "upstreamFrozen": "sha1:pending",
+    "workstream": "kidpal-validation"
+  },
+  "subsystem": "server",
+  "story": "OpenClaw 云端链路打通验证：开启 OpenAI 兼容端点，实测 DeepSeek 按契约 E1 吐 display 块的格式遵循度（命门），在 ECS 装齐 faster-whisper 与 edge-tts，起最小 shim 跑通「文字→OpenClaw→正文+display→TTS」最小闭环，并验证 DeepSeek 消费课表 schedule.md。",
+  "redBaselineCommand": "python /c/tmp/ssh_helper.py \"curl -s -m5 http://127.0.0.1:18789/v1/chat/completions -X POST -H 'Content-Type: application/json' -d '{}' -w '%{http_code}'; which edge-tts; pip3 list 2>/dev/null | grep -iE 'whisper|edge'\"",
+  "redBaselineResult": "红（2026-08-31 实盘已确认）：/v1/chat/completions 返回 404（端点未开启）；edge-tts 与 faster-whisper 均未安装（which 无结果、pip3 list 无命中）；系统 Python 仅 3.6.8；server/ 目录预留未建、无 shim 进程。本包把最小闭环做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-validation/",
+    "docs/notes/feature-inventory.md"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "real-db",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "CLB-A1",
+      "kind": "structural"
+    },
+    "CLB-A2(OC-5): 开启 OpenClaw OpenAI 兼容端点后，POST /v1/chat/completions 由 404 变为返回正常 completion（带 choices[].message.content）",
+    "CLB-A3(OC-6): 挂契约 §1.6 system prompt，连发 ≥10 条覆盖 char/schedule/story_list/text 的问询，统计 ```display 块出现率 + 块内 JSON 可解析率，两者均 ≥9/10；失败样本逐条落盘记录",
+    "CLB-A4(OC-10): 实测 ECS CPU/内存占用，出算力结论，判定 faster-whisper 可用模型档（tiny/base/small）",
+    "CLB-A5(OC-8): 装上 faster-whisper（先解决 Python≥3.8：3.6.8 装不上则升级或另建 venv/conda），对一段中文短句录音输出正确文字并记录延迟",
+    "CLB-A6(OC-9): 装上 edge-tts，生成晓晓或云希音色的中文 mp3，文件非空可播放",
+    "CLB-A7(OC-7): server/ 起最小 shim，POST /v1/chat 一路跑通——收文字→转发 OpenClaw /v1/chat/completions（loopback）→正则切分正文/display→正文送 /v1/tts→回 {audio, display} 两路；/v1/asr、/v1/tts 独立口、/v1/alerts 可留 stub",
+    "CLB-A8(OC-11): 写一份符合契约 B1 的 schedule.md，问『今天下午有什么课』，DeepSeek 答复正确且 display 块含 view:schedule"
+  ],
+  "acceptanceTestsFile": [
+    "server/tests/test_cloud_link.acceptance.py"
+  ],
+  "exitCriteria": [
+    {
+      "id": "CLB-E1",
+      "kind": "structural"
+    },
+    "CLB-E2: shim 保持薄（~200 行级），只承载 ASR/TTS HTTP 口子 + 设备鉴权 + 提醒轮询转发，业务网关/CRUD/意图层零自研",
+    "CLB-E3: 真 OpenClaw token 只经 loopback 在内网用、不出内网；设备侧用弱权限 token；鉴权证据落盘",
+    "CLB-E4: 产出《云端链路验证报告》——各验收通过率、display 失败样本、whisper 模型档结论、ECS 算力结论，落 changes/dev/260831-cloud-link-bringup/"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-validation/PROPOSAL.md",
+    "docs/notes/feature-inventory.md",
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.1",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "docs/spec.md#§3.0.0",
+    "docs/contracts/interface-contract.md#§一",
+    "docs/notes/feature-inventory.md#§二"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 1,
+  "dependsOn": [],
+  "testHost": "ecs",
+  "decisionCoverage": [
+    {
+      "decision": "spec-§3.0.0-薄桥",
+      "summary": "服务端 = 薄桥 shim（FastAPI ~200 行，唯一公网入口）+ OpenClaw 自带 OpenAI 兼容 API；业务网关/CRUD/意图层零自研。",
+      "sourceRefs": [
+        "docs/spec.md#§3.0.0"
+      ],
+      "landsIn": "exitCriteria:CLB-E2"
+    },
+    {
+      "decision": "contract-E1-display块",
+      "summary": "OpenClaw 回复末尾用 ```display 代码块嵌入显示指令 JSON，shim 正则切分两路——正文送 TTS、display 下发板子。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§一"
+      ],
+      "landsIn": "acceptance:CLB-A3"
+    },
+    {
+      "decision": "inventory-OC6-命门",
+      "summary": "DeepSeek display 格式遵循度是 E1 契约的单点命门，须最先实测；不通则换切分方案。",
+      "sourceRefs": [
+        "docs/notes/feature-inventory.md#§2.3"
+      ],
+      "landsIn": "acceptance:CLB-A3"
+    }
+  ]
+}
