@@ -104,6 +104,9 @@ dependencies:
     rules:
     - if: target in [esp32s3, esp32c5]
 
+  # Helix fixed-point mp3 decoder for the downlink smoke leg (/v1/chat -> mp3 -> speaker).
+  chmorgan/esp-libhelix-mp3: ^1.0.3
+
   ## Required IDF version
   idf:
     version: '>=5.4.0'

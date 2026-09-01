@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260829-smoke-e2e",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "26e941f5-07d9-4f19-b95f-fd3c437fc04d",
+  "startedAt": "2026-09-01T16:27:04.193Z",
+  "completedAt": "2026-09-01T16:27:04.841Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 162,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-smoke-e2e\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260829-smoke-e2e\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 147,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 110,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"warnings\": [\n    \"contract-link-broken:相对链接目标不存在 ../systems/kidpal/spec.md\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 115,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"acceptance-coverage\",\n  \"message\": \"Acceptance test file has no recognizable assertion\",\n  \"file\": \"server/acceptance/test_smoke_e2e.acceptance.py\"\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "eddfb3329170",
+    "failingStep": "acceptance-coverage",
+    "message": "gate acceptance-coverage failed (exit 1)",
+    "cmd": "node .claude/scripts/acceptance-coverage-check.mjs",
+    "logFile": ".claude/verify-logs/1788280024830-acceptance-coverage.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"acceptance-coverage\",\n  \"message\": \"Acceptance test file has no recognizable assertion\",\n  \"file\": \"server/acceptance/test_smoke_e2e.acceptance.py\"\n}\n"
+  }
+}

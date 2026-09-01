@@ -73,7 +73,14 @@ function shortAcceptanceRef(fullId) {
 function hasRealAssertion(content) {
   return /\bexpect\s*\(/.test(content)
     || /\bassert\s*[.(]/.test(content)
-    || /\.to(?:Be|Equal|Have|Contain|Match|Throw)/.test(content);
+    || /\.to(?:Be|Equal|Have|Contain|Match|Throw)/.test(content)
+    // 260902 Pod S 一次性最小热修（human 拍板授权跳过流程，诚实记录于
+    // 260829-smoke-e2e/pod-events.jsonl human-decision 0faa3a03；escalation 8bb97fb8）：
+    // 补 Python 断言识别。原实现仅 JS 风格模式，Python unittest 冻结验收（实质满含
+    // 真断言）被误判「无可识别断言」。纯追加，既有模式与门义（拦空壳验收）不改。
+    || /\.assert[A-Z]\w*\s*\(/.test(content) // unittest/pytest: self.assertTrue/In/Equal(...)
+    || /(?:^|\n)\s*assert\s+\S/m.test(content) // 裸 assert 语句（行首锚定，避 prose 误报）
+    || /\.fail\s*\(/.test(content); // self.fail(...) / pytest.fail(...)
 }
 
 function isShallowStatusOnly(content) {

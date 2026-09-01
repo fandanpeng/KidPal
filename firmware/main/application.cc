@@ -5,6 +5,7 @@
 #include "audio_codec.h"
 #include "mqtt_protocol.h"
 #include "websocket_protocol.h"
+#include "shim_protocol.h"
 #include "assets/lang_config.h"
 #include "mcp_server.h"
 #include "assets.h"
@@ -323,8 +324,12 @@ void Application::ActivationTask() {
     // Check for new assets version
     CheckAssetsVersion();
 
-    // Check for new firmware version
+    #if !CONFIG_USE_SHIM_PROTOCOL
+    // Check for new firmware version + official OTA activation (tenclass backend).
+    // The shim tracer bullet has no official backend: skip this so the device
+    // reaches InitializeProtocol() directly and never contacts the OTA endpoint.
     CheckNewVersion();
+#endif
 
     // Initialize the protocol
     InitializeProtocol();
@@ -473,6 +478,11 @@ void Application::InitializeProtocol() {
 
     display->SetStatus(Lang::Strings::LOADING_PROTOCOL);
 
+#if CONFIG_USE_SHIM_PROTOCOL
+    // Tracer-bullet device leg: HTTP shim request/response (KEY→mic→shim→LLM→speaker).
+    ESP_LOGI(TAG, "Shim protocol selected, base=%s", CONFIG_SHIM_BASE);
+    protocol_ = std::make_unique<ShimProtocol>();
+#else
     if (ota_->HasMqttConfig()) {
         protocol_ = std::make_unique<MqttProtocol>();
     } else if (ota_->HasWebsocketConfig()) {
@@ -481,6 +491,7 @@ void Application::InitializeProtocol() {
         ESP_LOGW(TAG, "No protocol specified in the OTA config, using MQTT");
         protocol_ = std::make_unique<MqttProtocol>();
     }
+#endif
 
     protocol_->OnConnected([this]() {
         DismissAlert();

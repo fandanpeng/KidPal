@@ -1,0 +1,71 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-01T18:41:48.513Z",
+  "changeId": "260829-smoke-e2e",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=.gitignore,main,acceptance,shim.py",
+      "security-axis-diff:auth",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=.gitignore,main,acceptance,shim.py",
+        "security-axis-diff:auth"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 6,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=.gitignore,main,acceptance,shim.py",
+          "security-axis-diff:auth"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-smoke-e2e/verifier-evidence/rounds/r6.json",
+        "bearingFactOk": true,
+        "completedRounds": 6,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-smoke-e2e/docs-delta.md",
+          "changes/dev/260829-smoke-e2e/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788280024830-acceptance-coverage.log",
+      ".claude/verify-logs/1788280736433-mutation-check.log",
+      ".claude/verify-logs/1788286773771-docs-sync.log",
+      ".claude/verify-logs/1788286903108-security.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-smoke-e2e/verifier-evidence/rounds/r6.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-smoke-e2e/docs-delta.md",
+      "changes/dev/260829-smoke-e2e/review-packet.md"
+    ]
+  }
+}

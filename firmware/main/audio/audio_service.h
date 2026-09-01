@@ -106,6 +106,9 @@ public:
     bool PushPacketToDecodeQueue(std::unique_ptr<AudioStreamPacket> packet, bool wait = false);
     std::unique_ptr<AudioStreamPacket> PopPacketFromSendQueue();
     void PlaySound(const std::string_view& sound);
+    // Decode a raw mp3 payload (shim downlink) and enqueue PCM for the speaker.
+    // Blocks with backpressure until all decoded frames are queued.
+    bool PlayMp3(const std::vector<uint8_t>& mp3);
     bool ReadAudioData(std::vector<int16_t>& data, int sample_rate, int samples);
     void ResetDecoder();
     void SetModelsList(srmodel_list_t* models_list);
