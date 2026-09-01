@@ -6,7 +6,7 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
@@ -25,7 +25,6 @@
     "test-quality",
     "docs-sync"
   ],
-  "contractBlocked": "依赖契约待 OpenClaw 确认点 2（interface-contract.md §待确认点 2：课表 MD 结构是否满足 OpenClaw/DeepSeek 的解析与改写，尤其「每周固定 + 一次性」两类）。launch 前须 human 确认该点已解决，或定降级预案。本包只消费契约 B1，不在 Pod 内改 docs/contracts/**。",
   "acceptance": [
     {
       "id": "P2-A1",
@@ -99,8 +98,8 @@
       "landsIn": "exitCriteria:P2-E3"
     },
     {
-      "decision": "contract-待确认点2",
-      "summary": "课表 MD 解析为契约待确认点 2，本包 contractBlocked——launch 前需 human 确认或定降级预案。",
+      "decision": "contract-待确认点2-已实证解除",
+      "summary": "课表 MD 解析（原待确认点 2）已由验证批实证解决（OC-11：DeepSeek 按 B1 正确筛选＋吐 view:schedule），本包 contractBlocked 解除。",
       "sourceRefs": [
         "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
       ],

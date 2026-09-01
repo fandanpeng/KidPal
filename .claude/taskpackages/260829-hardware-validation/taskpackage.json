@@ -6,7 +6,7 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
@@ -33,7 +33,9 @@
     "HWV-A3: 双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）",
     "HWV-A4: RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）",
     "HWV-A5: 低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收",
-    "HWV-A6: 全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通"
+    "HWV-A6: 全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通 + 换皮后 UI（包 U 集成后）",
+    "HWV-A7: 16px 以下 CJK 在 1bpp 真机可读性实测（直接决定 V3 字号下限）",
+    "HWV-A8: 前光确认（反射屏暗处可见性，spec §5.6 待确认项）"
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/hardware_validation.acceptance.c"
@@ -63,7 +65,7 @@
   "iterationBudget": 4,
   "fixBudget": 8,
   "docsOwner": "integrator",
-  "mergeOrder": 11,
+  "mergeOrder": 12,
   "dependsOn": [
     "260829-voice-roundtrip",
     "260829-session-logic",
@@ -71,7 +73,8 @@
     "260829-home-p1",
     "260829-schedule-p2",
     "260829-schedule-reminder",
-    "260829-story-p3"
+    "260829-story-p3",
+    "260901-ui-art-integration"
   ],
   "testHost": "device",
   "decisionCoverage": [
@@ -93,11 +96,19 @@
     },
     {
       "decision": "PROPOSAL-§3-硬件殿后汇总",
-      "summary": "硬件强绑定子能力（包 5 RTC/SHTC3 直读、包 8 麦克风采音）host 段只测布局/逻辑，真实硬件读取统一殿后 9b 验收。",
+      "summary": "硬件强绑定子能力（包 5 RTC/SHTC3 直读、包 8 麦克风采音、包 U SPIFFS 真机文件源路径/1bpp 观感/16px CJK/前光）host 段只测布局/逻辑，真实硬件读取统一殿后 9b 验收。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§3"
       ],
       "landsIn": "acceptance:HWV-A4"
+    },
+    {
+      "decision": "PROPOSAL-§7-9b新增两条真机验收",
+      "summary": "9b 补两条真机验收（C3）：16px 以下 CJK 1bpp 真机可读性（定 V3 字号下限）+ 前光确认。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "acceptance:HWV-A7"
     }
   ]
 }

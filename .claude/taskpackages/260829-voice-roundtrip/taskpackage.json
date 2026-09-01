@@ -6,7 +6,7 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
@@ -27,7 +27,6 @@
     "test-quality",
     "docs-sync"
   ],
-  "contractBlocked": "依赖契约待 OpenClaw 确认点 1（interface-contract.md §待确认点 1：DeepSeek 按 system prompt 稳定输出 ```display 块的格式遵循度，需实测）。launch 前须 human 确认该点已解决，或定降级预案（如 shim 端对缺失/畸形 display 块回退为纯文本 view=text 兜底）。本包只消费契约，不在 Pod 内改 docs/contracts/**。",
   "acceptance": [
     {
       "id": "VRT-A1",
@@ -91,8 +90,8 @@
       "landsIn": "acceptance:VRT-A3"
     },
     {
-      "decision": "contract-待确认点1",
-      "summary": "DeepSeek display 格式遵循度为契约待确认点 1，本包 contractBlocked——launch 前需 human 确认或定降级预案（缺失/畸形 display 块回退纯文本）。",
+      "decision": "contract-待确认点1-已实证解除",
+      "summary": "DeepSeek display 格式遵循度（原待确认点 1）已由验证批实证解决（12/12、失败样本 0），本包 contractBlocked 解除；保留 VRT-A5 的缺失/畸形 display 块回退兜底。",
       "sourceRefs": [
         "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
       ],

@@ -6,7 +6,7 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware",

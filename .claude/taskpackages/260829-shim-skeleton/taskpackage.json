@@ -6,13 +6,13 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "server",
-  "story": "shim 完整化：在包 S 的最小 shim 上补全四接口 POST /v1/asr、/v1/chat、/v1/tts、GET /v1/alerts + 设备鉴权 + OpenClaw loopback 转发，形成可承载后续所有业务的完整薄桥。",
+  "story": "shim 完整化（起点前移 C3）：在验证批已并入 main 的 server/shim.py（/v1/chat 已通、asr/tts/alerts 为 stub）上补全四接口 POST /v1/asr、/v1/chat、/v1/tts、GET /v1/alerts + 设备鉴权 + OpenClaw loopback 转发，形成可承载后续所有业务的完整薄桥。launch 前置闸：先处置 ARQ-260901-shim-api-contract-gap（shim /v1/* 字段信封 schema 未入契约，走契约门四分类）。",
   "redBaselineCommand": "cd server && pytest tests/test_shim_skeleton.acceptance.py -q",
-  "redBaselineResult": "红：包 S 只建最小转发，四接口未齐、设备鉴权未实现、/v1/alerts 未实现——目标验收测试文件尚不存在，pytest 收集即失败。本包把它做到绿。",
+  "redBaselineResult": "红：验证批 shim 只有 /v1/chat 通、asr/tts/alerts 为 stub，四接口未齐、设备鉴权未实现——目标验收测试文件尚不存在，pytest 收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -45,7 +45,7 @@
       "id": "SHM-E1",
       "kind": "structural"
     },
-    "SHM-E2: 不重复造——在包 S 的最小 shim 上补全，shim 保持薄（~200 行级），不含任何业务逻辑（课表/故事/查字 CRUD 零自研）",
+    "SHM-E2: 不重复造——在验证批 server/shim.py 上补全（起点前移），shim 保持薄（~200 行级），不含任何业务逻辑（课表/故事/查字 CRUD 零自研）",
     "SHM-E3: 设备鉴权通过 security 闸全轴（含 ai-cost/ai-output 轴注记），鉴权证据落盘"
   ],
   "contractRefs": [
@@ -73,7 +73,7 @@
   "decisionCoverage": [
     {
       "decision": "PROPOSAL-§2-包1",
-      "summary": "shim 完整化 = 四接口 + 设备鉴权 + OpenClaw loopback 转发，在 S 的最小 shim 上补全（不重复造）。",
+      "summary": "shim 完整化 = 四接口 + 设备鉴权 + OpenClaw loopback 转发，在验证批 server/shim.py 上补全（起点前移 C3，不重复造）。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],

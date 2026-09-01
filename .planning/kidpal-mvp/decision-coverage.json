@@ -1,14 +1,16 @@
 {
   "workstream": "kidpal-mvp",
   "source": ".planning/kidpal-mvp/PROPOSAL.md",
-  "upstreamFrozen": "sha1:256fa5dcf67b599b",
+  "upstreamFrozen": "sha1:500df090a227865e",
   "generatedBy": "portfolio-planner",
   "generatedAt": "2026-08-29",
+  "updatedAt": "2026-09-01",
   "_doc": [
     "workstream 级 decisionCoverage：spec §4 全部 story → 承载包 + acceptance id 的映射。",
-    "11 个 TaskPackage 的 acceptance 并集须覆盖 spec §4 全部 story（含 §4.0 共享底座）+ §6 接口 + §7 已定决策中可由固件/shim 承载者。",
+    "13 个 TaskPackage 的 acceptance 并集须覆盖 spec §4 全部 story（含 §4.0 共享底座）+ §6 接口 + §7 已定决策中可由固件/shim 承载者 + §5.6/§5.7 UI 美术层（新包 U 承载）。",
     "S-F2.5（云端润色）为可选项、MVP 后置，合法 dropped 留根——不进任何包的必做验收。",
-    "upstreamFrozen 注：本 pin 为对当前 PROPOSAL.md 落盘字节实测的 raw-content sha1；PROPOSAL 文头自记 pin（sha1:dba9aa5baffbc658）与落盘字节不符（文件未提交、疑冻结后重存），已按文头『以本 FROZEN 版落盘内容为准』取实测值，并上报 human。"
+    "v0.3 更新（2026-09-01）：新增 U（260901-ui-art-integration）承载 UI 美术层；契约待确认点 1/2 实证解除（包 2/6 contractBlocked 移除）、点 3 维持（包 7）。",
+    "upstreamFrozen 注：本 pin 为对 v0.3 FROZEN PROPOSAL.md 落盘字节实测的 raw-content sha1。"
   ],
   "storyCoverage": [
     { "story": "S-F1.1", "title": "常显首页看现在几点+接下来干嘛", "packages": ["260829-home-p1"], "acceptanceIds": ["P1-A2", "P1-A3", "P1-A4", "P1-A5"], "hardwareDeferredTo": "260829-hardware-validation" },
@@ -29,7 +31,8 @@
     { "story": "S-冒烟", "title": "架构可行性冒烟（tracer bullet）", "packages": ["260829-smoke-e2e"], "acceptanceIds": ["SMK-A2", "SMK-A3", "SMK-A4"] },
     { "story": "S-基建", "title": "host 测试基建", "packages": ["260829-host-test-infra"], "acceptanceIds": ["INF-A2", "INF-A3", "INF-A4"] },
     { "story": "S-硬件验收", "title": "物理冒烟 + 全功能端到端真机", "packages": ["260829-hardware-validation"], "acceptanceIds": ["HWV-A2", "HWV-A3", "HWV-A4", "HWV-A5", "HWV-A6"] },
-    { "story": "S-喊停", "title": "AEC 语音喊停实测调阈值", "packages": ["260829-audio-bargein-hw"], "acceptanceIds": ["BRG-A2", "BRG-A3", "BRG-A4", "BRG-A5"] }
+    { "story": "S-喊停", "title": "AEC 语音喊停实测调阈值", "packages": ["260829-audio-bargein-hw"], "acceptanceIds": ["BRG-A2", "BRG-A3", "BRG-A4", "BRG-A5"] },
+    { "story": "S-UI美术层", "title": "美术资产集成（V3 资产落地 + 统一换皮）", "packages": ["260901-ui-art-integration"], "acceptanceIds": ["ART-A2", "ART-A3", "ART-A4", "ART-A5", "ART-A6", "ART-A7"], "hardwareDeferredTo": "260829-hardware-validation" }
   ],
   "crossPackageIntegration": [
     {
@@ -40,8 +43,6 @@
     }
   ],
   "contractBlockedPackages": [
-    { "changeId": "260829-voice-roundtrip", "pendingPoint": "契约待确认点 1：DeepSeek display 格式遵循度", "fallback": "shim 端对缺失/畸形 display 块回退纯文本 view=text 兜底" },
-    { "changeId": "260829-schedule-p2", "pendingPoint": "契约待确认点 2：课表 MD 解析/改写适配", "fallback": "launch 前 human 确认或定降级预案" },
     { "changeId": "260829-schedule-reminder", "pendingPoint": "契约待确认点 3：提醒 cron 可行性", "fallback": "RTC 本地提醒兜底先行、云端 cron 链路待确认后补" }
   ]
 }

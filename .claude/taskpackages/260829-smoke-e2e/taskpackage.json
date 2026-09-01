@@ -6,13 +6,13 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:256fa5dcf67b599b",
+    "upstreamFrozen": "sha1:500df090a227865e",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "架构可行性冒烟（tracer bullet）：最小 shim（能转发即可）+ 最小固件（KEY→ASR→OpenClaw→TTS→喇叭出声 + 屏显一行字）+ 配网指向 shim，只证「设备↔shim↔OpenClaw」三层链路串通，零业务。",
-  "redBaselineCommand": "烧录最小固件到板子并触发一次 KEY 会话（手工 device 冒烟）；当前 server/ 未建、firmware 未指向 shim，链路必然不通",
-  "redBaselineResult": "红：server/ 目录不存在（无 shim 可指向）；固件未配置指向自建 shim；按键无响应/无声，链路不通。本包把它做到绿。",
+  "story": "架构可行性冒烟（tracer bullet，缩域 C3）：复用验证批已并入 main 的 server/shim.py（不自建 shim），只做设备侧闭环——KEY→麦克风→shim→TTS→喇叭出声 + 屏显一行字 + 配网指向 shim，只证「设备↔shim↔OpenClaw」三层链路串通，零业务。",
+  "redBaselineCommand": "烧录最小固件到板子并触发一次 KEY 会话（手工 device 冒烟）；shim 已就绪（验证批 server/shim.py），但 firmware 未指向 shim、设备侧闭环未走通",
+  "redBaselineResult": "红：固件未配置指向 shim、设备侧闭环（KEY→麦→shim→TTS→喇叭）未走通——按键无响应/无声。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -30,7 +30,7 @@
       "id": "SMK-A1",
       "kind": "structural"
     },
-    "SMK-A2: 设备配网指向自建 shim（非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志",
+    "SMK-A2: 设备配网指向 shim（复用验证批 server/shim.py，非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志",
     "SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）",
     "SMK-A4: 回复文字或占位串在屏幕上显示至少一行"
   ],
@@ -67,7 +67,7 @@
   "decisionCoverage": [
     {
       "decision": "PROPOSAL-§2-包S",
-      "summary": "加 tracer-bullet 冒烟批：最小量先烧一次板子证明板↔shim↔OpenClaw 架构可行，是 B 段投开发量的前置通行证。",
+      "summary": "加 tracer-bullet 冒烟批（缩域 C3）：复用验证批 server/shim.py、只做设备侧闭环，最小量先烧一次板子证明板↔shim↔OpenClaw 架构可行，是 B 段投开发量的前置通行证。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
