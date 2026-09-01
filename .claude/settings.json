@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_doc": [
     "KidPal 项目级常驻设置。只放对所有会话生效的【结构红线】钩子。",
+    "钩子分三档 settings 文件注册，审计钩子在场性须三处并查、不可只看本文件：本 settings.json=所有会话常驻（结构红线 + advisory injector）；dev-loop.settings.json=仅 dev-loop Pod 会话加载（portfolio-sync PostToolUse、supervisor-gate-check Stop——Stop 合并门钩子刻意不入常驻、以免每次交互收尾都触发）；review-loop.settings.json=仅对抗 review 会话加载（per-agent 边界）。",
     "review-loop 的严格 per-agent 边界在 .claude/review-loop.settings.json，只在跑 review loop 时加载。",
-    "dev-loop.settings.json 未迁（档 2）。",
     "enforce-scope.mjs 同时实现 universal（本文件触发）与 per-agent（loop settings 触发）两段；幂等无副作用。",
     "permissions.allow 只收可复用通配条目；一次性命令由会话临时授权承载。"
   ],
@@ -45,6 +45,10 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-scope.mjs\""
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/suggest-codebase-memory.mjs\""
           }
         ]
       },
@@ -65,6 +69,15 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/planning-sync.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/suggest-codebase-memory.mjs\""
           }
         ]
       }
