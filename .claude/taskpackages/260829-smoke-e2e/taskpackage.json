@@ -35,7 +35,7 @@
     "SMK-A4: 回复文字或占位串在屏幕上显示至少一行"
   ],
   "acceptanceTestsFile": [
-    "server/tests/test_smoke_e2e.acceptance.py"
+    "server/acceptance/test_smoke_e2e.acceptance.py"
   ],
   "exitCriteria": [
     {
@@ -60,10 +60,16 @@
   ],
   "iterationBudget": 4,
   "fixBudget": 6,
+  "supervisorBlockBudget": 2,
   "docsOwner": "integrator",
+  "docsSyncRequired": true,
   "mergeOrder": 1,
   "dependsOn": [],
   "testHost": "device",
+  "requiredLayers": [
+    "device-smoke",
+    "server-integration"
+  ],
   "decisionCoverage": [
     {
       "decision": "PROPOSAL-§2-包S",
@@ -81,5 +87,22 @@
       ],
       "landsIn": "exitCriteria:SMK-E3"
     }
-  ]
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "public-exposure-and-device-token",
+    "secrets-not-in-firmware",
+    "loopback-only-openclaw-forward"
+  ],
+  "adrRequired": true,
+  "s2ExploratoryRequired": false,
+  "s2ExploratoryReason": null,
+  "s2ExploratoryGoals": [],
+  "uiuxRequired": false,
+  "uiuxLevel": 0,
+  "notes": "intake（planner，2026-09-01）：① portfolio handoff 三处全命中、pin sha1:500df090a227865e 机械验证一致，权威字段（sourceType/origin/rigor/riskTier/gateProfile/decisionCoverage）原样消费、未重归一；multi-pod 模式，已 portfolio-reconcile --set-pod running。② 契约判定=纯消费无需改契约：shim 四端点（/v1/chat /v1/asr /v1/tts /v1/alerts）已随 260831-cloud-link-bringup 并入 main 且为 TP-A 冻结验收实证；字段信封 schema 未入契约是已登记 ARQ-260901-shim-api-contract-gap（本包不触发、不新增字段）。③ 路径修正（intake checklist C5）：portfolio 原 acceptanceTestsFile=server/tests/ 不在 acceptance-author allow 面（scope-map 只许 server/**/acceptance/**），已改 server/acceptance/test_smoke_e2e.acceptance.py。④ live 纪律（ARQ-260901-g3-server-live-acceptance）：涉 ECS SSH 的 server 面断言标 @pytest.mark.live，device 面为手工冒烟证据制——两闸 auto-run 不得假红。⑤ 音频格式决策（spec §6.3 待定，本包落地事实）：设备上行 WAV（PCM16 16kHz mono，faster-whisper 可解），下行 MP3（edge-tts 产物，/v1/chat 响应已含 audio）——设备侧需 mp3 解码（小智音频管线是 Opus，builder 须在固件侧补 mp3 播放路径，这是本包固件侧主要工作量之一）。⑥ 部署拓扑（spec §7 决策 4/5 已定）：shim 与 OpenClaw 同 ECS（8.137.91.16），loopback 调 OpenClaw；device 冒烟需 shim 公网可达（安全组开端口 + SHIM_DEVICE_TOKEN 置强随机值）——验证用途，对偶 ARQ-260901-openclaw-chatcompletions-public watchlist，安全证据须落包。⑦ 硬件实况（2026-09-01 主线程实测）：ESP32-S3 rev v0.2 / 16MB flash / 8MB PSRAM / COM5（USB-Serial-JTAG）；板子当前为出厂固件 03_FactoryProgram（烧录将覆盖）；板级 overlay 只接了 BOOT(GPIO0)→ToggleChatState，spec 的 KEY 键位由 builder 查参考树（只读）确认后接线。⑧ ADR 要点：设备侧弃小智 websocket/mqtt 协议、用最小 HTTP shim 协议（MVP 同步 HTTP，spec §3.0.0 已定架构，ADR 记录实现形态）。⑨ OpenClaw 前置（live 阶段）：/v1/chat/completions 已启用（TP-A 实证）、kidpal workspace 存在；live 前复验网关在跑。"
 }

@@ -1,116 +1,108 @@
 {
-  "changeId": "260831-ui-art-assets",
+  "changeId": "260829-smoke-e2e",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
-    "upstreamRef": ".planning/kidpal-validation/PROPOSAL.md",
-    "upstreamFrozen": "sha1:pending",
-    "workstream": "kidpal-validation"
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:500df090a227865e",
+    "workstream": "kidpal-mvp"
   },
-  "subsystem": "tools",
-  "story": "UI 美术资产管线全量验证：把 V2 设计稿里昨天没验的美术元素全部经资产管线出图——吉祥物其余 6 姿态、手绘不规则框族 9 宫格、元素倾斜烘资产、三档网点平铺、全图标族、站酷快乐体授权+栅格、Baloo 2 动态时间 imgfont，并核算资产总量对 SPIFFS 分区预算。产出 V3 设计稿（实现导向）的可行性输入。",
-  "redBaselineCommand": "ls tools/simulator/LvglWindowsSimulator/assets/png/ && grep -c 'LV_COLOR_FORMAT_RGB565' tools/simulator/LvglWindowsSimulator/assets/assets.c",
-  "redBaselineResult": "红（2026-08-31 实测）：assets/png 仅 8 枚（pose_daily/doodle_star/doodle_cloud/drop_baby/ic_batt_32/ic_bell_13/thermo_man/time_10_24）——吉祥物其余 6 姿态、手绘框族、三档网点、印章、全图标族、动态时间 imgfont 全部未出图；站酷快乐体授权未核。本包把美术元素全量出图做到绿。",
+  "subsystem": "firmware+server",
+  "story": "架构可行性冒烟（tracer bullet，缩域 C3）：复用验证批已并入 main 的 server/shim.py（不自建 shim），只做设备侧闭环——KEY→麦克风→shim→TTS→喇叭出声 + 屏显一行字 + 配网指向 shim，只证「设备↔shim↔OpenClaw」三层链路串通，零业务。",
+  "redBaselineCommand": "烧录最小固件到板子并触发一次 KEY 会话（手工 device 冒烟）；shim 已就绪（验证批 server/shim.py），但 firmware 未指向 shim、设备侧闭环未走通",
+  "redBaselineResult": "红：固件未配置指向 shim、设备侧闭环（KEY→麦→shim→TTS→喇叭）未走通——按键无响应/无声。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
-    ".planning/kidpal-validation/",
-    "docs/notes/feature-inventory.md"
+    ".planning/kidpal-mvp/"
   ],
-  "riskTier": "medium",
+  "riskTier": "high",
   "gateProfile": [
     "types",
-    "test-quality",
+    "security",
+    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "UAA-A1",
+      "id": "SMK-A1",
       "kind": "structural"
     },
-    "UAA-A2(B1): 吉祥物 7 姿态（pose-daily/listen/think/talk/record/sleep/jump）全量栅格化出图，模拟器渲染造型按 OQ-3(a) 目测达标",
-    "UAA-A3(B2): 手绘不规则圆角框族出 3–4 种 9 宫格可拉伸资产，运行时按尺寸拉伸角部不变形（昨天没验，本包核心）",
-    "UAA-A4(B3): 元素倾斜烘进资产——贴纸微倾（±1–2°）与成就印章大倾（-8°）各出样，目测 1bpp 锯齿可接受；-8° 是重点风险须单列结论",
-    "UAA-A5(B4): 三档网点 d50/d25/d12 出 4×4 平铺贴图资产，平铺接缝不可见、密度观感达标（昨天没验）",
-    "UAA-A6(B5): 全图标族 14 枚出齐，FontAwesome 图标字 vs imgfont 二选一落定并记录取舍",
-    "UAA-A7(B6): 站酷快乐体——①核「免费商用」授权原文留证存档；②子集化栅格出样字目测可读",
-    "UAA-A8(B7): Baloo 2 动态时间——数字 0–9 + 冒号 imgfont 出图，等宽数字表格线对齐（昨天只验了静态整块 time_10_24）",
-    "UAA-A9(B8): 资产总量 vs SPIFFS 分区预算核算——4 页全量+7姿态+框族+字体 RGB565 总字节估算对分区表，出预算报告并判定是否必须上 I1"
+    "SMK-A2: 设备配网指向 shim（复用验证批 server/shim.py，非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志",
+    "SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）",
+    "SMK-A4: 回复文字或占位串在屏幕上显示至少一行"
   ],
   "acceptanceTestsFile": [
-    "tools/asset-pipeline/tests/test_art_assets.acceptance.md"
+    "server/acceptance/test_smoke_e2e.acceptance.py"
   ],
   "exitCriteria": [
     {
-      "id": "UAA-E1",
+      "id": "SMK-E1",
       "kind": "structural"
     },
-    "UAA-E2: 全部资产经「设计稿 SVG 唯一母版 → gen_assets.mjs 抽取 → 栅格化 → RGB565」管线产出，保留 flatten 先于阈值化、use 链内联、字体替身三处既有修复",
-    "UAA-E3: 观感验收一律以 1bpp 阈值化 PNG 为准（不对真彩截图下结论）",
-    "UAA-E4: 产出《UI 资产可行性报告》（含 B8 预算结论 + 各元素可行/不可行+备选），连同全量资产与渲染截图落 changes/dev/260831-ui-art-assets/，作为 V3 设计稿输入"
+    "SMK-E2: 冒烟结果以烧录日志 + 一次往返的请求/响应证据落盘（device 实测，非模拟），证据路径记入 closeout",
+    "SMK-E3: 本包只做联通、零业务；任何业务逻辑（课表/故事/查字）显式不在本包范围"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    ".planning/kidpal-validation/PROPOSAL.md",
-    "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md",
-    "docs/notes/feature-inventory.md",
-    "docs/notes/ui-implementation-strategy.md",
-    "docs/ui/kidpal-ui-design-v2.html",
-    "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.1"
   ],
   "sourceRefs": [
-    "docs/notes/ui-implementation-strategy.md#§2",
-    "docs/notes/feature-inventory.md#§1.3",
-    "docs/ui/kidpal-ui-design-v2.html"
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.1",
+    "S"
   ],
-  "iterationBudget": 5,
+  "iterationBudget": 4,
   "fixBudget": 6,
+  "supervisorBlockBudget": 2,
   "docsOwner": "integrator",
-  "docsSyncRequired": false,
-  "docsSyncReason": "本包文档产物 = changes/dev/260831-ui-art-assets/ 可行性报告 + 预算报告（E4 出口）；docs/notes 状态翻转归收口后独立 wrap-up sync（A/C 收尾同款处理）。",
-  "mutationRequired": false,
-  "mutationSkipReason": "资产生成包无源码 mutation 语义：验收机判脚本 verify_art_assets.mjs 对逐资产缺失/尺寸/密度/求和对账敏感（移除任一即红），敏感证据以静态声明承载，不模拟 mutation。",
-  "mergeOrder": 3,
-  "dependsOn": [
-    "260831-simulator-lvgl-align"
+  "docsSyncRequired": true,
+  "mergeOrder": 1,
+  "dependsOn": [],
+  "testHost": "device",
+  "requiredLayers": [
+    "device-smoke",
+    "server-integration"
   ],
-  "testHost": "host+SDL",
   "decisionCoverage": [
     {
-      "decision": "strategy-§2.2-美术元素资产化",
-      "summary": "吉祥物七姿态、手绘框族、三档网点、涂鸦点缀、印章全部离线从设计稿 SVG 栅格化为位图资产，运行时 lv_image 渲染。",
+      "decision": "PROPOSAL-§2-包S",
+      "summary": "加 tracer-bullet 冒烟批（缩域 C3）：复用验证批 server/shim.py、只做设备侧闭环，最小量先烧一次板子证明板↔shim↔OpenClaw 架构可行，是 B 段投开发量的前置通行证。",
       "sourceRefs": [
-        "docs/notes/ui-implementation-strategy.md#§2"
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:UAA-A2(B1)"
+      "landsIn": "acceptance:SMK-A3"
     },
     {
-      "decision": "OQ-1a-倾斜烘进资产",
-      "summary": "倾斜是风格资产不是动态行为，栅格化时直接烘进资产，运行时零成本。",
+      "decision": "PROPOSAL-§5-OQ3",
+      "summary": "human 裁定加 tracer-bullet 冒烟批（包 S 先行烧板证架构），S 只做联通、零业务、量最小。",
       "sourceRefs": [
-        "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-1"
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
       ],
-      "landsIn": "acceptance:UAA-A4(B3)"
-    },
-    {
-      "decision": "OQ-2a-框族9宫格资产化",
-      "summary": "手绘框族离线渲染成 9 宫格可拉伸框图，全站统一 3–4 种框型，运行时按尺寸拉伸角部不变形。",
-      "sourceRefs": [
-        "changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md#OQ-2"
-      ],
-      "landsIn": "acceptance:UAA-A3(B2)"
-    },
-    {
-      "decision": "strategy-§4-资产总量盯防",
-      "summary": "RGB565 资产 2 字节/像素，大图资产须盯总量；资产总尺寸预算与 SPIFFS 分区表核对进验收。",
-      "sourceRefs": [
-        "docs/notes/ui-implementation-strategy.md#§4"
-      ],
-      "landsIn": "acceptance:UAA-A9(B8)"
+      "landsIn": "exitCriteria:SMK-E3"
     }
-  ]
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "public-exposure-and-device-token",
+    "secrets-not-in-firmware",
+    "loopback-only-openclaw-forward"
+  ],
+  "adrRequired": true,
+  "s2ExploratoryRequired": false,
+  "s2ExploratoryReason": null,
+  "s2ExploratoryGoals": [],
+  "uiuxRequired": false,
+  "uiuxLevel": 0,
+  "notes": "intake（planner，2026-09-01）：① portfolio handoff 三处全命中、pin sha1:500df090a227865e 机械验证一致，权威字段（sourceType/origin/rigor/riskTier/gateProfile/decisionCoverage）原样消费、未重归一；multi-pod 模式，已 portfolio-reconcile --set-pod running。② 契约判定=纯消费无需改契约：shim 四端点（/v1/chat /v1/asr /v1/tts /v1/alerts）已随 260831-cloud-link-bringup 并入 main 且为 TP-A 冻结验收实证；字段信封 schema 未入契约是已登记 ARQ-260901-shim-api-contract-gap（本包不触发、不新增字段）。③ 路径修正（intake checklist C5）：portfolio 原 acceptanceTestsFile=server/tests/ 不在 acceptance-author allow 面（scope-map 只许 server/**/acceptance/**），已改 server/acceptance/test_smoke_e2e.acceptance.py。④ live 纪律（ARQ-260901-g3-server-live-acceptance）：涉 ECS SSH 的 server 面断言标 @pytest.mark.live，device 面为手工冒烟证据制——两闸 auto-run 不得假红。⑤ 音频格式决策（spec §6.3 待定，本包落地事实）：设备上行 WAV（PCM16 16kHz mono，faster-whisper 可解），下行 MP3（edge-tts 产物，/v1/chat 响应已含 audio）——设备侧需 mp3 解码（小智音频管线是 Opus，builder 须在固件侧补 mp3 播放路径，这是本包固件侧主要工作量之一）。⑥ 部署拓扑（spec §7 决策 4/5 已定）：shim 与 OpenClaw 同 ECS（8.137.91.16），loopback 调 OpenClaw；device 冒烟需 shim 公网可达（安全组开端口 + SHIM_DEVICE_TOKEN 置强随机值）——验证用途，对偶 ARQ-260901-openclaw-chatcompletions-public watchlist，安全证据须落包。⑦ 硬件实况（2026-09-01 主线程实测）：ESP32-S3 rev v0.2 / 16MB flash / 8MB PSRAM / COM5（USB-Serial-JTAG）；板子当前为出厂固件 03_FactoryProgram（烧录将覆盖）；板级 overlay 只接了 BOOT(GPIO0)→ToggleChatState，spec 的 KEY 键位由 builder 查参考树（只读）确认后接线。⑧ ADR 要点：设备侧弃小智 websocket/mqtt 协议、用最小 HTTP shim 协议（MVP 同步 HTTP，spec §3.0.0 已定架构，ADR 记录实现形态）。⑨ OpenClaw 前置（live 阶段）：/v1/chat/completions 已启用（TP-A 实证）、kidpal workspace 存在；live 前复验网关在跑。"
 }
