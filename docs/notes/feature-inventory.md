@@ -5,7 +5,7 @@
 > 依据：设计稿 v2（`docs/ui/kidpal-ui-design-v2.html`）、实现策略（[ui-implementation-strategy.md](ui-implementation-strategy.md)）、踩坑记录（[ui-to-lvgl-pitfalls.md](ui-to-lvgl-pitfalls.md)）、spec §4/§7、契约（[interface-contract.md](../contracts/interface-contract.md)）、2026-08-31 对阿里云 ECS（8.137.91.16）的现场盘点。
 > 分级口径：**✅ 已打通/已验证**（跑过、有实证）· **🟢 可行待实现**（路线已定、无技术悬念，只差做）· **🟡 需验证**（路线有方向但有未实证的风险点，必须先验）· **🔴 高风险/存疑**（可能走不通，需备选方案）。
 
-> **更新 2026-09-01（TP-B）**：功能支撑验证批三包全部落地——TP-A（260831-cloud-link-bringup）打通 OpenClaw 云端链路，TP-C（260831-simulator-lvgl-align）把模拟器对齐固件 9.3.x，TP-B（260831-ui-art-assets）把 V2 美术元素全量出图 + 预算核算。本表 §1.2/§1.3/§1.5 相关行已翻 ✅；仍待后续 = OC-12..15 云端业务、I1 真机可用性、真机字体子集化、16px CJK 真机可读性。
+> **更新 2026-09-01（TP-B）**：功能支撑验证批三包全部落地——TP-A（260831-cloud-link-bringup）打通 OpenClaw 云端链路，TP-C（260831-simulator-lvgl-align）把模拟器对齐固件 9.3.x，TP-B（260831-ui-art-assets）把 V2 美术元素全量出图 + 预算核算。本表 §1.2/§1.3/§1.5 相关行已翻 ✅；仍待后续 = OC-12..15 云端业务、I1 真机可用性、真机字体子集化、16px CJK 真机可读性。**本表是逐点分级底稿；三包收口后的批级最终结论（V3 设计输入 ＋ 云端链路打通证明）汇总在 [validation-batch-conclusion.md](validation-batch-conclusion.md)。**
 
 ---
 
@@ -105,11 +105,13 @@
 | 🟡 OC-14 | **故事列表/回放经 display 下发**（C3/C4） | 未实测 | `story_list`/`story_text` view 下发（依赖 OC-6） |
 | 🟡 OC-15 | **家长经 QQ 录课表**（B4） | 未配置 | QQ 通道接入 + 解析改写 schedule.md |
 
-### 2.3 对接小结（三句话）
+### 2.3 对接小结（三句话·验证批收口后 2026-09-01）
 
-1. **"已打通"今天只有 4 条**：网关在跑、D3 字库在位、cron 底座可用、DeepSeek 对话自带。**shim / ASR / TTS / OpenAI 端点这四块 MVP 必经之路上一块都还没有。**
-2. **最大的单点命门是 OC-6**（DeepSeek 能不能稳定吐 ` ```display ` 块）——它不通，E1 整个"语音+屏幕双路"设计就要换切分方案。应排进验证包第一批。
-3. **次风险是 OC-8 的 Python 3.6.8**——faster-whisper 要求 ≥3.8，装不上就要先解决 Python 环境，这可能比装 whisper 本身更费时。
+> 本批结论汇总件见 [validation-batch-conclusion.md](validation-batch-conclusion.md)（《V3 设计输入结论》＋《云端 MVP 链路打通证明》）。以下三句是收口后实况，取代 2026-08-31 立项时的旧判断。
+
+1. **MVP 链路主线七块（OC-5..11）TP-A 已全部打通并复验 ✅**：OpenAI 兼容端点、display 格式遵循、whisper/edge-tts 装上出声出字、最小 shim `/v1/chat` 一路、schedule.md 消费——立项时"一块都没有"的四块（端点/shim/ASR/TTS）现全就位；Python 3.6.8 卡点已另建 venv（3.11）解决。
+2. **最大命门 OC-6 已排除**：DeepSeek 稳定吐 ` ```display ` 块实测 **12/12**（可解析率 1.0、失败样本 0），E1「语音＋屏幕双路」方案成立、无需换切分。次风险也从"whisper 装不上"转移到**新暴露的头号延迟：char 查询冷启动 ~109s**（M2 须上流式/异步＋字库缓存）。
+3. **待验已从"通不通"收窄到"业务续作＋真机"**：OC-12..15（cron 提醒链路 / 故事归档 / 故事下发 / 家长录课表）仍 🟡；真机项（I1、16px CJK、字盘打包）见上结论档 §5/§6。
 
 ---
 

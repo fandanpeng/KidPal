@@ -1,9 +1,9 @@
 ---
 workstream: KidPal 功能支撑验证批
 slug: kidpal-validation
-status: active
+status: done
 opened: 2026-08-31
-closed:
+closed: 2026-09-01
 summary: 把 spec/UI 设计稿里待验证项逐个跑出可机判/可目测结论，产 V3 设计输入与云端 MVP 链路打通证明
 owner: portfolio-planner
 area: systems
