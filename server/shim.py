@@ -29,7 +29,7 @@ from typing import Optional
 
 import edge_tts
 import httpx
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -85,12 +85,15 @@ def require_device(authorization: Optional[str] = Header(default=None)):
     """Device-facing weak-token gate. Disabled unless SHIM_DEVICE_TOKEN is set."""
     if not SHIM_DEVICE_TOKEN:
         return  # validation mode (frozen acceptance has no shim-auth header path)
+    # NOTE: must raise HTTPException (not return a Response) — a dependency's return
+    # value is swallowed as the injected param value and does NOT short-circuit the
+    # route; raising HTTPException does (FastAPI handles it as the real response).
     if not authorization or not authorization.startswith("Bearer "):
-        return JSONResponse(status_code=401, content=err_env(
+        raise HTTPException(status_code=401, detail=err_env(
             "auth", "shim.missing-device-token", "require_device",
             "missing device bearer token"))
     if authorization[len("Bearer "):] != SHIM_DEVICE_TOKEN:
-        return JSONResponse(status_code=401, content=err_env(
+        raise HTTPException(status_code=401, detail=err_env(
             "auth", "shim.bad-device-token", "require_device",
             "invalid device bearer token"))
     return None

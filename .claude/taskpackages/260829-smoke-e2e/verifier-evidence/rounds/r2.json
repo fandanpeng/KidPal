@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260829-smoke-e2e",
+  "phase": "scoped",
+  "round": 2,
+  "invocationId": "3788af3d-387f-444c-9a2a-9374e3b41985",
+  "startedAt": "2026-09-01T16:38:55.641Z",
+  "completedAt": "2026-09-01T16:38:56.446Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 164,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-smoke-e2e\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260829-smoke-e2e\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 157,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 129,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"warnings\": [\n    \"contract-link-broken:相对链接目标不存在 ../systems/kidpal/spec.md\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 128,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"acceptance-coverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-smoke-e2e\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"acceptance\": [\n    \"SMK-A1\",\n    \"SMK-A2\",\n    \"SMK-A3\",\n    \"SMK-A4\"\n  ],\n  \"structural\": [\n    \"SMK-A1\"\n  ],\n  \"suiteGates\": [],\n  \"files\": [\n    \"server/acceptance/test_smoke_e2e.acceptance.py\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage passed"
+    },
+    {
+      "id": "mutation-check",
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 129,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"Mutation evidence is missing or insensitive for some acceptance ids\",\n  \"missingSensitive\": [\n    \"SMK-A2: 设备配网指向 shim（复用验证批 server/shim.py，非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志\",\n    \"SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）\",\n    \"SMK-A4: 回复文字或占位串在屏幕上显示至少一行\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "mutation-check failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "9caec329a546",
+    "failingStep": "mutation-check",
+    "message": "gate mutation-check failed (exit 1)",
+    "cmd": "node .claude/scripts/mutation-check.mjs",
+    "logFile": ".claude/verify-logs/1788280736433-mutation-check.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"Mutation evidence is missing or insensitive for some acceptance ids\",\n  \"missingSensitive\": [\n    \"SMK-A2: 设备配网指向 shim（复用验证批 server/shim.py，非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志\",\n    \"SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）\",\n    \"SMK-A4: 回复文字或占位串在屏幕上显示至少一行\"\n  ]\n}\n"
+  }
+}

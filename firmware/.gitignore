@@ -17,3 +17,7 @@ main/mmap_generate_emoji.h
 *.bin
 mmap_generate_*.h
 .clangd
+
+# KidPal smoke NVS provisioning (contains wifi password + device token — never commit)
+smoke_nvs.csv
+smoke_nvs.bin

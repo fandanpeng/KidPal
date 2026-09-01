@@ -11,8 +11,8 @@
   },
   "subsystem": "firmware+server",
   "story": "架构可行性冒烟（tracer bullet，缩域 C3）：复用验证批已并入 main 的 server/shim.py（不自建 shim），只做设备侧闭环——KEY→麦克风→shim→TTS→喇叭出声 + 屏显一行字 + 配网指向 shim，只证「设备↔shim↔OpenClaw」三层链路串通，零业务。",
-  "redBaselineCommand": "烧录最小固件到板子并触发一次 KEY 会话（手工 device 冒烟）；shim 已就绪（验证批 server/shim.py），但 firmware 未指向 shim、设备侧闭环未走通",
-  "redBaselineResult": "红：固件未配置指向 shim、设备侧闭环（KEY→麦→shim→TTS→喇叭）未走通——按键无响应/无声。本包把它做到绿。",
+  "redBaselineCommand": "python server/acceptance/test_smoke_e2e.acceptance.py（结构面，2026-09-01 acceptance-author 落盘后实测；live 面以 SMOKE_RUN_LIVE=1 门控、冻结不 auto-run，ARQ-260901-g3-server-live-acceptance；device 物理冒烟（烧录 + KEY 会话）为手工段，证据落盘 _artifacts/smoke-e2e/）",
+  "redBaselineResult": "RED（exit 1，10 tests / 7 RED / 3 GREEN，2026-09-01 实测，与冻结判定逐条吻合）：A1a/A1b protocols/ 无 shim/http 协议源文件且未进 CMakeLists SOURCES；A2+ 固件无 shim 配网承载（无 shim/shim_base/device_token）；A3 音频管线无 mp3 解码路径（Opus-only）；A3/A4/E2 物理冒烟证据（burn.log、shim.access.log、roundtrip.json、screen.md）全缺；E1c shim 未进 build。GREEN 守卫成立并保持：A2− 固件无 18789/openclaw、E1a esp32s3、E1b 16m.csv、E3 零业务、boundary 空文本 400 静态接缝、固件无硬编码 token、shim mp3 下行接缝。每个 RED 对应本包待补的真实缺失行为，无环境/依赖/测试错误假红。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -63,6 +63,7 @@
   "supervisorBlockBudget": 2,
   "docsOwner": "integrator",
   "docsSyncRequired": true,
+  "docsNoChangeReason": "docRefs 为上游/上下文引用：.planning/kidpal-mvp/PROPOSAL.md 受 upstreamFrozen sha1:500df090a227865e pin 约束（禁改，防 UPSTREAM_DRIFT）；docs/spec.md 为章节锚点引用。行为验收由冻结验收文件 server/acceptance/test_smoke_e2e.acceptance.py 承载（coverage marker 已经受 acceptance-coverage 闸与 4 条 mutation 敏感性实证）；canonical docs-sync 制品（docs-delta/ADR/ARQ 归档）在 integrator closeout 相位落地，docsOwner=integrator。",
   "mergeOrder": 1,
   "dependsOn": [],
   "testHost": "device",
@@ -88,9 +89,59 @@
       "landsIn": "exitCriteria:SMK-E3"
     }
   ],
-  "mutationRequired": true,
+  "mutationRequired": false,
+  "mutationSkipReason": "human 特殊放行（事件 c2682f8c）：SMK-A2/A3 四条敏感性已实证执行并记录于 mutationEvidence.perAcceptance（留作审计）；SMK-A4 屏显敏感性依赖声学硬件真显，按人裁豁免、由下游声学包（260829-voice-roundtrip）硬件到位后实证。",
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "SMK-A2: 设备配网指向 shim（复用验证批 server/shim.py，非 OpenClaw 18789 直连），shim 收到设备请求并有访问日志",
+        "sensitive": true,
+        "result": "turned red（双变体）→ 复归干净（git status 逐字节一致），红因归属正确，非假红非空过",
+        "executedBy": "builder（阶段二 campaign，dispatch aef7e029c9bd041f7）",
+        "executedAt": "2026-09-02",
+        "mutations": [
+          {
+            "id": "M-A2.1",
+            "kind": "forbidden-injection",
+            "change": "shim_protocol.cc 顶部临时注入一行 openclaw 直连注释（模拟设备绕过 shim 直连 OpenClaw 的违约实现）",
+            "observed": "test_a2_provision_points_to_shim_base_not_openclaw FAIL：AssertionError: Lists differ: ['openclaw'] != []（禁词守卫命中）",
+            "revert": "删除注释行；复跑回 7 GREEN / 3 RED 基线"
+          },
+          {
+            "id": "M-A2.2",
+            "kind": "carrier-removal",
+            "change": "临时移除固件全部 shim 配网承载：shim_protocol.cc/h 改名 .mutbak、Kconfig.projbuild 删 USE_SHIM_PROTOCOL/SHIM_BASE/SHIM_DEVICE_TOKEN/SHIM_CAPTURE_MS 四项、CMakeLists 删 protocols/shim_protocol.cc SOURCES 行",
+            "observed": "test_a2 FAIL：AssertionError: [] is not true : SMK-A2 RED: no shim-endpoint provisioning carrier found（回红基线 A2+ 原状；a1/e1 联动红，符合基线态）",
+            "revert": "逐文件精确还原；复跑回 7 GREEN / 3 RED 基线"
+          }
+        ],
+        "note": "SMK-A2 的 live 齿（shim 收到设备请求 + 访问日志）敏感性归物理冒烟段：设备未触达 shim 时 test_a2_live_shim_receives_device_request 的 journalctl 检查红"
+      },
+      {
+        "acceptanceId": "SMK-A3: 按下 KEY 后音频经 shim /v1/asr 转文字、经 /v1/chat 到 OpenClaw 拿到回复、经 /v1/tts 合成语音并由扬声器出声（端到端一次往返成功）",
+        "sensitive": true,
+        "result": "turned red（双变体）→ 复归干净（含 server/shim.py diff 为空），红因归属正确，无归属混淆",
+        "executedBy": "builder（阶段二 campaign，dispatch aef7e029c9bd041f7）",
+        "executedAt": "2026-09-02",
+        "mutations": [
+          {
+            "id": "M-A3.1",
+            "kind": "device-decode-path-removal",
+            "change": "临时移除设备侧 mp3 解码路径：mp3_decoder.cc/h 改名 .mutbak、CMakeLists 删 audio/mp3_decoder.cc SOURCES 行、idf_component.yml 删 esp-libhelix-mp3 行、audio_service 的 PlayMp3→PlayPcmDown 并清尽 audio/ 语料 mp3/helix 字样",
+            "observed": "test_a3_mp3_decode_path_exists FAIL：AssertionError: [] is not true : SMK-A3 RED: the firmware audio pipeline has no MP3 decode path (Opus-only)（命中设备侧断言；shim.py 接缝未动，无混淆）",
+            "revert": "逐文件精确还原（缩进无残留）；复跑回 7 GREEN / 3 RED 基线"
+          },
+          {
+            "id": "M-A3.2",
+            "kind": "seam-drift",
+            "change": "server/shim.py 临时全量 mp3→oga（TTS 下行不再产 mp3，模拟下行格式冻结接缝漂移）",
+            "observed": "test_a3_mp3_decode_path_exists FAIL：AssertionError: 'mp3' not found : SMK-A3 RED (seam drift): server/shim.py no longer synthesises mp3 for the downlink（命中第二条接缝断言）",
+            "revert": "oga→mp3 全量还原；复跑回基线且 git diff -- server/shim.py 为空"
+          }
+        ],
+        "note": "SMK-A3 的物理往返齿（KEY→麦→asr→chat→TTS→喇叭）与设备证据齿敏感性归物理冒烟段：roundtrip.json 证据断言（asr.text/display.view/tts.audio_bytes/mp3 魔数）对往返任一环节断裂红"
+      }
+    ]
   },
   "securityReviewRequired": true,
   "securityAxes": [
@@ -98,11 +149,12 @@
     "secrets-not-in-firmware",
     "loopback-only-openclaw-forward"
   ],
+  "securityEvidence": "逐轴实证（2026-09-01/02 冒烟窗口）：【public-exposure-and-device-token】临时公网暴露经 human 批准（事件 dbc9b310），缓解 = 强随机设备 token（64-hex，ECS 机上生成、写入 /opt/kidpal/shim/secrets.env 权限 600）门控 /v1/*；fixer 修复 require_device 门穿透（return JSONResponse 不短路 → raise HTTPException）后 ECS 真机复验：无 token → 401 且零 OpenClaw 转发、错误 token → 401、带 token 空文本 → 400；冻结验收 test_live_shim_unauthorized_without_token 绿。【secrets-not-in-firmware】固件源码与镜像零 token：test_security_no_hardcoded_device_token_in_firmware 绿、构建产物实证 CONFIG_SHIM_DEVICE_TOKEN 为空、token 仅经 NVS 分区注入设备（smoke_nvs.csv/bin 均 gitignore 不入库）；无麦冒烟会话以真实 token 通过公网 401 门（/v1/asr 200）。【loopback-only-openclaw-forward】OPENCLAW_TOKEN 仅存 ECS 本机、仅经 127.0.0.1:18789 loopback 转发（shim.py openclaw_completion）；固件语料零 18789/openclaw（SMK-A2− 绿 + 激活门旁路后镜像死代码消除，tenclass/xiaozhi.me 字符串归零）；设备只触达 shim。残余风险：对偶 TP-A finding #1（桥的 operator 权限暴露），冒烟窗口以强 token 缓解，生产形态须回锁；收口后 ECS 暴露面回收到 loopback + 安全组关闭。",
   "adrRequired": true,
   "s2ExploratoryRequired": false,
   "s2ExploratoryReason": null,
   "s2ExploratoryGoals": [],
   "uiuxRequired": false,
   "uiuxLevel": 0,
-  "notes": "intake（planner，2026-09-01）：① portfolio handoff 三处全命中、pin sha1:500df090a227865e 机械验证一致，权威字段（sourceType/origin/rigor/riskTier/gateProfile/decisionCoverage）原样消费、未重归一；multi-pod 模式，已 portfolio-reconcile --set-pod running。② 契约判定=纯消费无需改契约：shim 四端点（/v1/chat /v1/asr /v1/tts /v1/alerts）已随 260831-cloud-link-bringup 并入 main 且为 TP-A 冻结验收实证；字段信封 schema 未入契约是已登记 ARQ-260901-shim-api-contract-gap（本包不触发、不新增字段）。③ 路径修正（intake checklist C5）：portfolio 原 acceptanceTestsFile=server/tests/ 不在 acceptance-author allow 面（scope-map 只许 server/**/acceptance/**），已改 server/acceptance/test_smoke_e2e.acceptance.py。④ live 纪律（ARQ-260901-g3-server-live-acceptance）：涉 ECS SSH 的 server 面断言标 @pytest.mark.live，device 面为手工冒烟证据制——两闸 auto-run 不得假红。⑤ 音频格式决策（spec §6.3 待定，本包落地事实）：设备上行 WAV（PCM16 16kHz mono，faster-whisper 可解），下行 MP3（edge-tts 产物，/v1/chat 响应已含 audio）——设备侧需 mp3 解码（小智音频管线是 Opus，builder 须在固件侧补 mp3 播放路径，这是本包固件侧主要工作量之一）。⑥ 部署拓扑（spec §7 决策 4/5 已定）：shim 与 OpenClaw 同 ECS（8.137.91.16），loopback 调 OpenClaw；device 冒烟需 shim 公网可达（安全组开端口 + SHIM_DEVICE_TOKEN 置强随机值）——验证用途，对偶 ARQ-260901-openclaw-chatcompletions-public watchlist，安全证据须落包。⑦ 硬件实况（2026-09-01 主线程实测）：ESP32-S3 rev v0.2 / 16MB flash / 8MB PSRAM / COM5（USB-Serial-JTAG）；板子当前为出厂固件 03_FactoryProgram（烧录将覆盖）；板级 overlay 只接了 BOOT(GPIO0)→ToggleChatState，spec 的 KEY 键位由 builder 查参考树（只读）确认后接线。⑧ ADR 要点：设备侧弃小智 websocket/mqtt 协议、用最小 HTTP shim 协议（MVP 同步 HTTP，spec §3.0.0 已定架构，ADR 记录实现形态）。⑨ OpenClaw 前置（live 阶段）：/v1/chat/completions 已启用（TP-A 实证）、kidpal workspace 存在；live 前复验网关在跑。"
+  "notes": "intake（planner，2026-09-01）：① portfolio handoff 三处全命中、pin sha1:500df090a227865e 机械验证一致，权威字段（sourceType/origin/rigor/riskTier/gateProfile/decisionCoverage）原样消费、未重归一；multi-pod 模式，已 portfolio-reconcile --set-pod running。② 契约判定=纯消费无需改契约：shim 四端点（/v1/chat /v1/asr /v1/tts /v1/alerts）已随 260831-cloud-link-bringup 并入 main 且为 TP-A 冻结验收实证；字段信封 schema 未入契约是已登记 ARQ-260901-shim-api-contract-gap（本包不触发、不新增字段）。③ 路径修正（intake checklist C5）：portfolio 原 acceptanceTestsFile=server/tests/ 不在 acceptance-author allow 面（scope-map 只许 server/**/acceptance/**），已改 server/acceptance/test_smoke_e2e.acceptance.py。④ live 纪律（ARQ-260901-g3-server-live-acceptance）：涉 ECS SSH 的 server 面断言标 @pytest.mark.live，device 面为手工冒烟证据制——两闸 auto-run 不得假红。⑤ 音频格式决策（spec §6.3 待定，本包落地事实）：设备上行 WAV（PCM16 16kHz mono，faster-whisper 可解），下行 MP3（edge-tts 产物，/v1/chat 响应已含 audio）——设备侧需 mp3 解码（小智音频管线是 Opus，builder 须在固件侧补 mp3 播放路径，这是本包固件侧主要工作量之一）。⑥ 部署拓扑（spec §7 决策 4/5 已定）：shim 与 OpenClaw 同 ECS（8.137.91.16），loopback 调 OpenClaw；device 冒烟需 shim 公网可达（安全组开端口 + SHIM_DEVICE_TOKEN 置强随机值）——验证用途，对偶 ARQ-260901-openclaw-chatcompletions-public watchlist，安全证据须落包。⑦ 硬件实况（2026-09-01 主线程实测）：ESP32-S3 rev v0.2 / 16MB flash / 8MB PSRAM / COM5（USB-Serial-JTAG）；板子当前为出厂固件 03_FactoryProgram（烧录将覆盖）；板级 overlay 只接了 BOOT(GPIO0)→ToggleChatState，spec 的 KEY 键位由 builder 查参考树（只读）确认后接线。⑧ ADR 要点：设备侧弃小智 websocket/mqtt 协议、用最小 HTTP shim 协议（MVP 同步 HTTP，spec §3.0.0 已定架构，ADR 记录实现形态）。⑨ OpenClaw 前置（live 阶段）：/v1/chat/completions 已启用（TP-A 实证）、kidpal workspace 存在；live 前复验网关在跑。⑩（planner，2026-09-01 续跑会话）acceptance-author 权威落盘 server/acceptance/test_smoke_e2e.acceptance.py 一次成功——锚点修复路线（在 worktree 重开会话）实证有效，写入钩子不再把 worktree 判成越界。结构面红基线实测：10 tests / 7 RED / 3 GREEN / exit 1，与冻结判定逐条吻合，无假红（A10 成立）。⑪ 验收未决点裁定（handoff §2）：a) SHIM_DEVICE_TOKEN 在 live 部署阶段置强随机值（注⑥既定；验收自适应，置位后 401 断言成硬闸）；b) SMK-A2 live 断言假定 systemd unit kidpal-shim，仓内已有 server/kidpal-shim.service，live 阶段照此部署；若日志形态变更须回 acceptance-author 调断言命令（验收归属，builder/fixer 不得改）；c) E1 绿牙（基座 overlay + 16m 分区表）维持不动。⑫ worktree 实况补记：firmware/sdkconfig 被 gitignore 不在 worktree（主仓那份是 bread-compact 板型）——builder 须 set-target esp32s3 重新生成并置 CONFIG_BOARD_TYPE_WAVESHARE_S3_RLCD_4_2=y；IDF 构建走重建的 c:/tmp/idf_run.py（实测 ESP-IDF v5.5.1）。⑬（planner，2026-09-02 冒烟部署实测）发现并路由缺陷：server/shim.py require_device 门穿透——无 token 请求在 token 置位下仍直通 OpenClaw（deps 用 return JSONResponse 不短路，实测 journalctl 完整聊天轮）；已派 fixer 修复（改强制 401 阻断），修复验证前安全组不放行公网。该缺陷同时否定 TP-A 报告『无 token → 401』实测结论，收口时记入 retro/ARQ。⑭（human 裁定，2026-09-02，事件 c2682f8c）特殊放行收口：本包为下游多包依赖底座，除真实声学往返外已全部实证——结构面 8 GREEN、live 5/5（含 401 硬闸与真实 edge-tts→asr→chat→mp3 往返）、mutation 4 条（A2/A3）、物理段烧录/配网/联网/公网会话/屏显全证。**未测面（豁免，硬件到位后由下游声学包实证）**：真实录音往返（roundtrip.json）、SMK-A4 回复文字形态屏显、A4 mutation 演示。风险接受：声学往返未经端到端验证即合并。"
 }
