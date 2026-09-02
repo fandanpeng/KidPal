@@ -1,0 +1,5 @@
+# CodebaseMemory 主索引排除规则（恢复并更新 AGENTS.md「CodebaseMemory 使用纪律」表的实况：
+# 主索引覆盖 = firmware 自有固件 + server 云端 shim；docs/、tools/（含 LVGL 模拟器）、build/、
+# managed_components/ 不入图。build/ 与 managed_components/ 已由 .gitignore 覆盖，此处显式补齐其余项。）
+docs/
+tools/

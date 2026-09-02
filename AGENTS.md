@@ -40,7 +40,7 @@
 
 | 范围 | 图索引项目名 | 覆盖内容 | 排除 |
 |------|--------------|----------|------|
-| 本仓主索引 | `KidPal` | `firmware` 自有固件 | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/` |
+| 本仓主索引 | `KidPal` | `firmware` 自有固件 + `server/` 云端 shim | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/`（排除规则落 `.cbmignore` + `.gitignore`） |
 | 参考·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | Arduino 示例、LVGL8/9 库 | — |
 | 参考·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
 | 参考·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
