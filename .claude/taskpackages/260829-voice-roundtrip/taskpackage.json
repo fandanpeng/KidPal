@@ -6,13 +6,13 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "语音回环完整化 + E1 display 切分下发：完整语音会话链路（聆听→云端→播报）跑通，且 shim 把 OpenClaw 回复末尾的 ```display 块切出——正文送 TTS 播放、display JSON 下发板子渲染对应 view 页。",
-  "redBaselineCommand": "cd server && pytest tests/test_voice_roundtrip.acceptance.py -q；host 侧跑 firmware display 切分/渲染单测",
-  "redBaselineResult": "红：shim 尚无 ```display 块切分逻辑、固件无 display JSON→view 渲染分发——目标验收测试文件尚不存在，pytest/host 编译收集即失败。本包把它做到绿。",
+  "story": "方向 B 语音回环 + display 消费链路（v0.4 重写）：设备流式语音会话跑通（stt/tts 消息状态机 + 句级播放 + 文字同步上屏）+ display mcp 消费端（view 路由：text 全文上屏滚动 / home / control end_session·stop_speaking）+ display 格式遵循度复验（契约待确认点 1，统计性口径——方向 B 明示不复用 12/12 旧结论；G 只做机械校验、复验归本包）+ 网关兜底设备侧消费与验收（安抚句/错误兜底「网络出小差了」/格式不遵循降级显示；生成逻辑归 G）+ abort 消息 + OpenClaw 基础 system prompt（E1 遵循 + F4 三句纪律 + 儿童化）+ F4/S-F4.1 通用问答承载。",
+  "redBaselineCommand": "firmware host 单测（display mcp 消费/view 路由/text 滚动）+ server 侧链路测试 + live 遵循度复验（@pytest.mark.live 口径）",
+  "redBaselineResult": "红：固件无 mcp kidpal/display 消费面、无 text 全文滚动渲染、无 abort 发送路径；OpenClaw system prompt 未按方向 B 约定——验收测试文件尚不存在，收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -32,70 +32,92 @@
       "id": "VRT-A1",
       "kind": "structural"
     },
-    "VRT-A2: shim 正确切分 OpenClaw 回复——```display 之前的正文进 TTS 路、```display 块内 JSON 进 display 下发路，二者不串",
-    "VRT-A3: display JSON 解析出 view/data，view ∈ {char,schedule,story_list,story_text,text,home,control} 时板子切到对应渲染路径",
-    "VRT-A4: 正文经 TTS 合成语音并由（模拟/打桩）播放路返回，与 display 下发并行不阻塞",
-    "VRT-A5: display 块缺失或畸形时按降级预案回退（不崩溃、不空屏），回退路径有断言"
+    "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
+    "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
+    "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
+    "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
+    "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
+    "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）"
   ],
   "acceptanceTestsFile": [
-    "server/tests/test_voice_roundtrip.acceptance.py"
+    "firmware/main/test/voice_roundtrip_b.acceptance.c",
+    "server/tests/test_voice_roundtrip_b.acceptance.py"
   ],
   "exitCriteria": [
     {
       "id": "VRT-E1",
       "kind": "structural"
     },
-    "VRT-E2: hybrid 测试——server 侧 PC pytest（挂打桩 OpenClaw）验切分/转发，firmware 侧 host 单测验 display JSON→view 分发，两面证据齐",
-    "VRT-E3: 本包是包 4/5/6/8 的公共底座（语音回环 + E1 切分），mergeOrder 4"
+    "VRT-E2: hybrid 测试——firmware 侧 host 单测（view 路由/滚动/状态机）+ server 侧链路测试 + live 遵循度复验（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）",
+    "VRT-E3: 本包是包 4/5/6/8 的公共消费底座（display view 路由 + 语音回环），mergeOrder 5",
+    "VRT-E4: OpenClaw 基础 system prompt 版本化落盘（E1 遵循 + F4 三句纪律 + 儿童化），供包 4（char 扩展）与包 7（提醒备注解析约定）增量扩展"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§3.0.2",
-    "docs/spec.md#§6.2",
-    "docs/contracts/interface-contract.md"
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§4.4",
+    "docs/spec.md#§6.1",
+    "docs/contracts/interface-contract.md#§一",
+    "docs/contracts/interface-contract.md#§四"
   ],
   "sourceRefs": [
-    "docs/spec.md#§6.2",
-    "docs/contracts/interface-contract.md#§一",
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§4.4",
+    "docs/contracts/interface-contract.md#§四",
     "2"
   ],
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 4,
+  "mergeOrder": 5,
   "dependsOn": [
-    "260829-smoke-e2e",
-    "260829-host-test-infra",
-    "260829-shim-skeleton"
+    "260903-device-ws-switch",
+    "260829-host-test-infra"
   ],
   "testHost": "hybrid",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包2",
-      "summary": "语音回环完整化 + E1 display 切分下发（正文→TTS、display JSON→板渲染），hybrid（host+PC）测试。",
+      "decision": "PROPOSAL-v0.4-§2-包2",
+      "summary": "方向 B 重写：流式语音回环 + display mcp 消费端 + 遵循度复验 + 兜底消费 + abort + F4 承载；hybrid 测试。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
       "landsIn": "acceptance:VRT-A2"
     },
     {
-      "decision": "contract-§一-E1",
-      "summary": "E1 统一响应格式：OpenClaw 回复末尾 ```display 块嵌入显示指令，shim 切分两路——正文送 TTS、display JSON 下发板子渲染。",
+      "decision": "contract-§一-E1-mcp承载",
+      "summary": "display 指令经 mcp kidpal/display 下发（网关机械校验后），设备按 view 渲染；小智原生 alert/custom 弃用。",
       "sourceRefs": [
         "docs/contracts/interface-contract.md#§一"
       ],
       "landsIn": "acceptance:VRT-A3"
     },
     {
-      "decision": "contract-待确认点1-已实证解除",
-      "summary": "DeepSeek display 格式遵循度（原待确认点 1）已由验证批实证解决（12/12、失败样本 0），本包 contractBlocked 解除；保留 VRT-A5 的缺失/畸形 display 块回退兜底。",
+      "decision": "contract-待确认点1-方向B复验",
+      "summary": "格式遵循度方向 B 网关切分路径不复用 12/12 旧结论、须复验——归本包验收（统计性），失败包内 resolve 不 gate。",
       "sourceRefs": [
         "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
       ],
+      "landsIn": "acceptance:VRT-A4"
+    },
+    {
+      "decision": "spec-§4.0-错误兜底行-消费侧",
+      "summary": "安抚句/「网络出小差了」/格式不遵循降级的设备侧消费与验收归本包；生成逻辑归 G（F2 归属裁定）。",
+      "sourceRefs": [
+        "docs/spec.md#§4.0"
+      ],
       "landsIn": "acceptance:VRT-A5"
+    },
+    {
+      "decision": "spec-§4.4-S-F4.1",
+      "summary": "通用问答：意图分类含闲聊/百科、三句纪律生成端约束、全文上屏滚动（human 裁定否摘要）、超限按有处理的失败模式（V32）。",
+      "sourceRefs": [
+        "docs/spec.md#§4.4"
+      ],
+      "landsIn": "acceptance:VRT-A7"
     }
   ]
 }

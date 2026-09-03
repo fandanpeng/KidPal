@@ -6,7 +6,7 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
@@ -69,7 +69,7 @@
   "iterationBudget": 4,
   "fixBudget": 6,
   "docsOwner": "integrator",
-  "mergeOrder": 6,
+  "mergeOrder": 7,
   "dependsOn": [
     "260829-host-test-infra",
     "260829-voice-roundtrip"

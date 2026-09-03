@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware",
-  "story": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，孩子瞟一眼就知道现在几点、待会干嘛、屋里冷暖。",
+  "story": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，孩子瞟一眼就知道现在几点、待会干嘛、屋里冷暖。（v0.4 小调：刷新三触发换 WS 语义 = 连接建立/每日 0:00 跨天/新建日程即时推〔决策 26〕；「接下来」分组呈现消费，producer = 包 6 OpenClaw 侧分组计算——周中学校课合并「上学」取首节、培训班/一次性逐项。）",
   "redBaselineCommand": "跑 firmware host 首页布局/逻辑单测（依赖包 0 基建 + 包 2 display 下发），含 SDL 版面模拟",
   "redBaselineResult": "红：首页版面布局、今日日程缓存渲染、低电打盹态均未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
@@ -60,7 +60,7 @@
   "iterationBudget": 3,
   "fixBudget": 4,
   "docsOwner": "integrator",
-  "mergeOrder": 7,
+  "mergeOrder": 8,
   "dependsOn": [
     "260829-host-test-infra",
     "260829-voice-roundtrip"

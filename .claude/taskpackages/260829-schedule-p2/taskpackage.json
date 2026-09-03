@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "课表页：今天/明天渲染 + 语音问课表滚动定位 + 家长录入→可消费链路（契约 B1 课表 MD），让孩子翻到课表页就知道书包该背什么。",
+  "story": "课表页：今天/明天渲染 + 语音问课表滚动定位 + 家长录入→可消费链路（契约 B1 课表 MD），让孩子翻到课表页就知道书包该背什么。（v0.4 小调：录入通道 = QQ 主〔OpenClaw 自改写即时触发三档重算 + P1 即时推，V22〕+ 直改 MD 副〔无即时推〕；「接下来」OpenClaw 侧分组计算 = 决策 26 producer；B1 表体零变更、remind_before_min 已标废止不消费。）",
   "redBaselineCommand": "跑 firmware host 课表筛选/渲染单测（依赖包 0）+ server 侧课表 MD 解析/下发 pytest（依赖包 1）",
   "redBaselineResult": "红：课表 MD 解析、今天/明天筛选、P2 渲染、语音问课表滚动定位、家长录入消费链路均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
@@ -66,10 +66,10 @@
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 8,
+  "mergeOrder": 9,
   "dependsOn": [
     "260829-host-test-infra",
-    "260829-shim-skeleton"
+    "260829-voice-roundtrip"
   ],
   "testHost": "host+PC云端",
   "decisionCoverage": [

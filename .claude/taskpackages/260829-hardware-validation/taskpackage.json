@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "物理冒烟与端到端真机验收：按键手感 / 双麦 / RTC 断电续航 / 低电 / RLCD 真屏观感 + 全功能端到端真机，把 B 段在电脑上验过的能力放到真实硬件上确认。",
+  "story": "物理冒烟与端到端真机验收：按键手感 / 双麦 / RTC 断电续航 / 低电 / RLCD 真屏观感 + 全功能端到端真机，把 B 段在电脑上验过的能力放到真实硬件上确认。（v0.4 新增：实机续航基准 = 决策 21 DEFER 三要素承载〔触发点在此、预警阈值、owner 是本包〕+ 常驻 WS 连接功耗观察 + 证书真实设备握手冒烟。）",
   "redBaselineCommand": "烧录集成固件到板子做物理冒烟（手工 device 验收清单）：按键/双麦/RTC 断电/低电/RLCD 观感逐项 + 全功能端到端",
   "redBaselineResult": "红：B 段功能（包 2~8）在 host/PC 验过但未在真机整合验证；硬件强绑定子能力（RTC 走时、SHTC3 直读、麦克风采音）host 段未验——真机端到端未跑通。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
@@ -65,7 +65,7 @@
   "iterationBudget": 4,
   "fixBudget": 8,
   "docsOwner": "integrator",
-  "mergeOrder": 12,
+  "mergeOrder": 13,
   "dependsOn": [
     "260829-voice-roundtrip",
     "260829-session-logic",

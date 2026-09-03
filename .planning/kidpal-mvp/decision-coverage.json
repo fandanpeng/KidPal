@@ -1,37 +1,39 @@
 {
   "workstream": "kidpal-mvp",
   "source": ".planning/kidpal-mvp/PROPOSAL.md",
-  "upstreamFrozen": "sha1:500df090a227865e",
+  "upstreamFrozen": "sha1:88a5bdb83abdd867",
   "generatedBy": "portfolio-planner",
   "generatedAt": "2026-08-29",
-  "updatedAt": "2026-09-01",
+  "updatedAt": "2026-09-03",
   "_doc": [
     "workstream 级 decisionCoverage：spec §4 全部 story → 承载包 + acceptance id 的映射。",
-    "13 个 TaskPackage 的 acceptance 并集须覆盖 spec §4 全部 story（含 §4.0 共享底座）+ §6 接口 + §7 已定决策中可由固件/shim 承载者 + §5.6/§5.7 UI 美术层（新包 U 承载）。",
+    "15 包（13 live + S merged + 1 abandoned）的 acceptance 并集须覆盖 spec v0.2 全部 story（含 §4.0 共享底座 + §4.4 F4）+ §6.1 协议剖面 + §7 决策 18–28 中可由固件/服务端承载者 + §5.6/§5.7 UI 美术层（U 承载）。",
     "S-F2.5（云端润色）为可选项、MVP 后置，合法 dropped 留根——不进任何包的必做验收。",
-    "v0.3 更新（2026-09-01）：新增 U（260901-ui-art-integration）承载 UI 美术层；契约待确认点 1/2 实证解除（包 2/6 contractBlocked 移除）、点 3 维持（包 7）。",
-    "upstreamFrozen 注：本 pin 为对 v0.3 FROZEN PROPOSAL.md 落盘字节实测的 raw-content sha1。"
+    "v0.4 更新（2026-09-03，方向 B 重切，human 盖冻结）：新增 260903-gateway-directionB（G）/ 260903-device-ws-switch（WS）承载协议剖面与安全面；260829-voice-roundtrip 重写承载 F4/S-F4.1 与遵循度复验；260829-schedule-reminder 重写（推送语义，contractBlocked 解除）；260829-shim-skeleton abandoned（OQ-R2，能力并入 G/WS）；网关兜底生成归 G、消费验收归包 2（review F2）；决策 26 分组呈现 producer 归包 6、消费归包 5（review F3）；V10→WS / V11→G / V27→G(+2)。",
+    "upstreamFrozen 注：本 pin 为对 v0.4 FROZEN PROPOSAL.md 落盘字节实测的 raw-content sha1（LF 归一化）。"
   ],
   "storyCoverage": [
-    { "story": "S-F1.1", "title": "常显首页看现在几点+接下来干嘛", "packages": ["260829-home-p1"], "acceptanceIds": ["P1-A2", "P1-A3", "P1-A4", "P1-A5"], "hardwareDeferredTo": "260829-hardware-validation" },
+    { "story": "S-F1.1", "title": "常显首页看现在几点+接下来干嘛", "packages": ["260829-home-p1"], "acceptanceIds": ["P1-A2", "P1-A3", "P1-A4", "P1-A5"], "hardwareDeferredTo": "260829-hardware-validation", "v04note": "刷新三触发换 WS 语义 + 「接下来」分组消费（producer = 260829-schedule-p2，决策 26）" },
     { "story": "S-F1.2", "title": "课表页看今天/明天的课", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A3", "P2-A4"] },
     { "story": "S-F1.3", "title": "语音问课表", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A5"] },
-    { "story": "S-F1.4", "title": "课表到点提醒", "packages": ["260829-schedule-reminder"], "acceptanceIds": ["RMD-A2", "RMD-A3", "RMD-A4", "RMD-A5", "RMD-A6"] },
-    { "story": "S-F1.5", "title": "家长录入课表", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A6"] },
+    { "story": "S-F1.4", "title": "日程提醒（区块范围 + 三段阶梯 + 服务端推送）", "packages": ["260829-schedule-reminder"], "acceptanceIds": ["RMD-A2", "RMD-A3", "RMD-A4", "RMD-A5", "RMD-A6", "RMD-A7", "RMD-A8"] },
+    { "story": "S-F1.5", "title": "家长录入课表", "packages": ["260829-schedule-p2"], "acceptanceIds": ["P2-A6"], "v04note": "通道 = QQ 主（OpenClaw 自改写即时重算+即时推）+ 直改 MD 副（V22）" },
     { "story": "S-F2.1", "title": "看我的故事列表", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A2", "P3-A3"] },
-    { "story": "S-F2.2", "title": "一键录故事", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A4"], "hardwareDeferredTo": "260829-hardware-validation" },
+    { "story": "S-F2.2", "title": "一键录故事", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A4"], "hardwareDeferredTo": "260829-hardware-validation", "v04note": "manual 聆听模式 + start_recording + 网关累积 + 显式回退路径（V31，决策 25）" },
     { "story": "S-F2.3", "title": "回看/回听故事", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A5"] },
     { "story": "S-F2.4", "title": "故事保存成就盖章", "packages": ["260829-story-p3"], "acceptanceIds": ["P3-A6"] },
     { "story": "S-F2.5", "title": "云端润色故事（可选）", "packages": [], "landsIn": "dropped", "reason": "risk-accepted: 2026-08-29 human 裁定 S-F2.5 为可选、MVP 后置，不进本 workstream 必做验收；若做则单开 Lite 包（PROPOSAL §7 留根）。" },
     { "story": "S-F3.1", "title": "语音查字并看笔顺演示", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A2", "CHR-A5", "CHR-A7"] },
     { "story": "S-F3.2", "title": "看拼音/笔画/部首/组词", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A6"] },
     { "story": "S-F3.3", "title": "笔顺演示控制（重播/下一个）", "packages": ["260829-char-stroke"], "acceptanceIds": ["CHR-A5"] },
-    { "story": "S-§4.0", "title": "共享底座：语音会话生命周期 + 按键手势", "packages": ["260829-session-logic", "260829-voice-roundtrip"], "acceptanceIds": ["SES-A2", "SES-A3", "SES-A4", "SES-A5", "SES-A6", "VRT-A2"] },
-    { "story": "S-§6-接口", "title": "shim 四接口 + E1 display 切分", "packages": ["260829-shim-skeleton", "260829-voice-roundtrip"], "acceptanceIds": ["SHM-A2", "SHM-A3", "SHM-A4", "SHM-A5", "SHM-A6", "VRT-A3", "VRT-A4"] },
-    { "story": "S-冒烟", "title": "架构可行性冒烟（tracer bullet）", "packages": ["260829-smoke-e2e"], "acceptanceIds": ["SMK-A2", "SMK-A3", "SMK-A4"] },
+    { "story": "S-F4.1", "title": "通用问答（全文上屏滚动 + 三句纪律）", "packages": ["260829-voice-roundtrip"], "acceptanceIds": ["VRT-A7"], "v04note": "v0.2 新增功能；承载归包 2（OQ-R3，human 裁 2026-09-03）；超限按有处理的失败模式（V32，G 生成/2 验收）" },
+    { "story": "S-§4.0", "title": "共享底座：语音会话生命周期 + 按键手势 + 错误兜底", "packages": ["260829-session-logic", "260829-voice-roundtrip", "260903-gateway-directionB"], "acceptanceIds": ["SES-A2", "SES-A3", "SES-A4", "SES-A5", "SES-A6", "VRT-A2", "GWA-A7"], "v04note": "错误兜底生成侧（4s 安抚句定时器/「网络出小差了」/V32 截断）归 G，消费与验收归包 2（review F2）" },
+    { "story": "S-§6.1-协议剖面", "title": "方向 B 端云协议剖面（hello/Opus 帧/stt/tts/abort/mcp）", "packages": ["260903-gateway-directionB", "260903-device-ws-switch", "260829-voice-roundtrip"], "acceptanceIds": ["GWA-A2", "GWA-A4", "GWA-A5", "GWA-A6", "WSA-A2", "WSA-A4", "VRT-A2", "VRT-A3", "VRT-A6"], "v04note": "取代 v0.3 的「S-§6-接口（shim 四接口）」行——HTTP 信封作废，契约 §四为事实源" },
+    { "story": "S-安全面", "title": "方向 B 安全与证书面（强制鉴权/自签证书/18789）", "packages": ["260903-gateway-directionB", "260903-device-ws-switch"], "acceptanceIds": ["GWA-A3", "GWA-A9", "WSA-A3"], "v04note": "决策 22：强制鉴权（token 未设=拒）+ 共享单 token（V26 human 裁）+ 证书 ≥10 年（V25）+ 18789 硬前置（V28）；dev-loop handoff V10→WS、V11→G、V27→G(+2 消费)" },
+    { "story": "S-冒烟", "title": "架构可行性冒烟（tracer bullet）", "packages": ["260829-smoke-e2e"], "acceptanceIds": ["SMK-A2", "SMK-A3", "SMK-A4"], "v04note": "HTTP 形态已 merged；方向 B 新冒烟 = G+WS 对（WSA-A4 首链）" },
     { "story": "S-基建", "title": "host 测试基建", "packages": ["260829-host-test-infra"], "acceptanceIds": ["INF-A2", "INF-A3", "INF-A4"] },
-    { "story": "S-硬件验收", "title": "物理冒烟 + 全功能端到端真机", "packages": ["260829-hardware-validation"], "acceptanceIds": ["HWV-A2", "HWV-A3", "HWV-A4", "HWV-A5", "HWV-A6"] },
-    { "story": "S-喊停", "title": "AEC 语音喊停实测调阈值", "packages": ["260829-audio-bargein-hw"], "acceptanceIds": ["BRG-A2", "BRG-A3", "BRG-A4", "BRG-A5"] },
+    { "story": "S-硬件验收", "title": "物理冒烟 + 全功能端到端真机 + 续航基线", "packages": ["260829-hardware-validation"], "acceptanceIds": ["HWV-A2", "HWV-A3", "HWV-A4", "HWV-A5", "HWV-A6", "HWV-A7", "HWV-A8"], "v04note": "v0.4 新增：实机续航基准（决策 21 DEFER 三要素承载）+ 常驻 WS 功耗观察 + 证书握手冒烟——新断言 id 待本包 acceptance-author 立项时分配" },
+    { "story": "S-喊停", "title": "AEC 语音喊停实测调阈值", "packages": ["260829-audio-bargein-hw"], "acceptanceIds": ["BRG-A2", "BRG-A3", "BRG-A4", "BRG-A5"], "v04note": "v0.4 补 abort 消息补充通道验证" },
     { "story": "S-UI美术层", "title": "美术资产集成（V3 资产落地 + 统一换皮）", "packages": ["260901-ui-art-integration"], "acceptanceIds": ["ART-A2", "ART-A3", "ART-A4", "ART-A5", "ART-A6", "ART-A7"], "hardwareDeferredTo": "260829-hardware-validation" }
   ],
   "crossPackageIntegration": [
@@ -40,9 +42,25 @@
       "note": "host 阶段无专包认领（包 3 只做按键手势解析纯逻辑），显式由 260829-hardware-validation 兜底验收（PROPOSAL §7 留根）。",
       "carriedBy": "260829-hardware-validation",
       "acceptanceId": "HWV-A6"
+    },
+    {
+      "topic": "网关侧共享底座与业务扩展",
+      "note": "G（mergeOrder 3）先并；包 7 提醒投递模块与包 8 网关累积模块均为 G 网关代码的 additive 扩展（PROPOSAL §3/§4）。",
+      "carriedBy": "260903-gateway-directionB",
+      "acceptanceId": "GWA-E4"
+    },
+    {
+      "topic": "决策 26「接下来」分组呈现跨包数据流",
+      "note": "producer = 260829-schedule-p2（OpenClaw 侧分组计算，与 QQ 自改写即时推同源）；消费 = 260829-home-p1（渲染分组结果）（review F3 归属裁定）。",
+      "carriedBy": "260829-schedule-p2",
+      "acceptanceId": "P2 系列（立项时分配分组计算断言）"
+    },
+    {
+      "topic": "HTTP 台阶退役的冻结验收处置",
+      "note": "WS 包退役 shim.py 撞 Pod S 与 TP-A 两份冻结验收——acceptance-author 标 superseded（理由 = spec §3.0.0 台阶退役），断言语义零变更（PROPOSAL §4 行为碰撞型）。",
+      "carriedBy": "260903-device-ws-switch",
+      "acceptanceId": "WSA-A7"
     }
   ],
-  "contractBlockedPackages": [
-    { "changeId": "260829-schedule-reminder", "pendingPoint": "契约待确认点 3：提醒 cron 可行性", "fallback": "RTC 本地提醒兜底先行、云端 cron 链路待确认后补" }
-  ]
+  "contractBlockedPackages": []
 }

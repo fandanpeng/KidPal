@@ -119,3 +119,57 @@ architect（单轮 review）2026-08-29：GREEN，附 7 条建议级修正。F3-1
 ## sign-off
 
 architect（单轮 dev-side review）2026-09-01：**GREEN，附 10 条建议级修正（全文本级，主线程回灌即可，无回问 human 项）**。U 切片合法性、U=high、包 1 dependsOn S、C1 薄桥红线四项均确认判断（非打回）。主线程回灌后可盖 FROZEN；盖时钉标准 pin（`sha1:<16hex>`），并同步 §6 的 12→13 decision-coverage 映射（含 F5 两点）与 §8 评审记录。
+
+---
+
+## v0.4 单轮 dev-side review（architect，2026-09-03）
+
+> 性质：dev 侧分流单轮 review（非对抗红队）。对象 = `.planning/kidpal-mvp/PROPOSAL-v0.4-draft.md`。交叉核对源 = `docs/spec.md`（v0.2 FROZEN）、`docs/contracts/interface-contract.md`（方向 B 版）、`changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json`、FROZEN `PROPOSAL.md`（v0.3）、`decision-coverage.json`、`progress.md`、`docs/ARCH-REVIEW-QUEUE.md`、Pod S / TP-A / TP-B / TP-C 四份 taskpackage.json 与 `server/acceptance/` 冻结验收面。
+> reviewer：architect（子 agent，只读+审，写域零扩张——本件由主线程依 architect 同会话 return 落盘）。
+
+### 总结论
+
+**GREEN-with-fixes（无阻断级、无回问 human 项；8 条建议级修正，主线程回灌后即可 human 盖冻结）。**
+
+重切骨架正确：依赖 DAG 无环、mergeOrder 拓扑有序（G=3 早于全部服务端扩展包 7/8；2=5 早于消费者 4/5/6/8）、关键路径「G→WS→2→6→7→U→9b→9a」计 **8 级成立**（8 节点，较 v0.3 的 7 级 +1 归因正确 = tracer-bullet 拆成 G/WS 串行对）。故事覆盖完备：S-F1.1~F1.5 / F2.1~F2.4 / F3.1~F3.3 / **S-F4.1**（→包 2）/ §4.0 共享底座（→包 3 + 包 2）全部有主；§6.1 协议剖面闭合（hello→G/WS、stt/tts→2、abort→2+9a、mcp display→G+2、mcp alert→G+7、listen/ping→WS 原生）；`dev-loop-handoff` V10→WS / V11→G / V27→G（+2 消费端）映射正确；**contractBlocked=空 断言成立**（待确认点 3 已实证销账、点 1 复验放包 2 验收而不 gate 妥当、点 2 传输无关结论沿用）。G/WS 均为合法切片（G 为服务端基建切片、类比包 0 的 L0/internal-service 例外，其"独立验证"=部署+鉴权+首验探针而非用户故事）。
+
+8 条建议级修正集中在「计数一致性」与「归属/接缝精度」两类，无一伤切片骨架。
+
+### 维度速览
+
+| 维度 | 结论 |
+|---|---|
+| A 覆盖性 | 完备；F2（网关侧兜底逻辑归属）、F3（决策 26 分组 producer）两条归属澄清 |
+| B DAG/mergeOrder | 无环、拓扑有序、8 级关键路径成立；无修正 |
+| C 切片合法性 | G/WS 合法；F4（包 1 承接映射漏名 loopback） |
+| D 风险/门 | 门簇完备；F6（前置门③ ASR 误标）、F7（display 复验双写）两条精度 |
+| E 冲突面 | 常量互斥型断言成立；F5（TP-A 冻结面漏列） |
+| F 交接 | F8（ESCALATE merge 缺口留根提示）；其余留根已覆盖 cert-deadlock/multiturn-continuity/401 复核注 |
+| G 可执行性 | G 偏大但内聚（tracer-bullet），不主张拆；包 2 为 B 段最大包，建议明确子验收里程碑 |
+
+### Findings 明细（8 条，全建议级）
+
+1. **F1（计数 off-by-one，需冻前钉死）**：§2 标题写「14 包：12 live + S merged + 1 abandoned」，但 §2 表实有 **15 行**——13 live（0/G/WS/2/3/4/5/6/8/7/U/9a/9b）+ S merged + 1 abandoned；§6「12 live 包内容更新」「落 14 pod」同错。这是 v0.2「文头 11 包 vs 盘上 12」同款（progress.md 已记先例）。改法：标题改「15 包：13 live + S merged + 1 abandoned」，§6 改「13 live / 落 15 pod」，§0「11 包保留」对账为「12 保留 + 1 作废 + 2 新建 = 15」（注意 2/7 重写是保留的子集、"保留/作废/新建"与"重写/小调"是两个正交口径，建议只留一套计数），decision-coverage 映射与 board 计数同步。
+
+2. **F2（网关侧兜底逻辑归属模糊）**：spec §4.0 明确 4s 安抚句是「流式链路实现归属：网关定时器」、错误兜底与 V32 超句截断分屏均为「网关处理」（服务端）。但本稿 G 只列「安抚句/『网络出小差了』兜底**配置**」（仅字符串），包 2 列「网关兜底**消费端**」（消费端=设备侧）——三者中谁写网关侧定时器/错误捕获/截断代码未落包。改法：二选一并明示——(a) 把 4s 定时器、错误兜底生成、V32 截断分屏都归 G（与 V27 机械校验同处网关 push 面、同批 gate）；或 (b) 显式扩包 2 云侧范围、把「消费端」改名为「网关兜底生成 + 设备消费」并在 dependsOn 注明依赖 G。不落在「G 只配字符串、2 只消费、生成逻辑无主」的缝里。
+
+3. **F3（决策 26 分组呈现 producer 落包未明）**：包 5（home-p1）标「板」、只做「分组呈现**消费**」，但「分组由 OpenClaw 算好」的编排侧（周中学校课合并「上学」取首节、培训班/一次性逐项）没显式落包。改法：把该 OpenClaw 侧 computation 显式落到包 6（schedule OpenClaw 侧，与「QQ 自改写即时推」同源）或包 2（基础 system prompt 扩展）；否则 producer 无主。
+
+4. **F4（包 1 承接映射漏名 OpenClaw loopback）**：原包 1 范围 = 四接口补全 + 设备鉴权 + **OpenClaw loopback 转发**。承接映射写了「设备鉴权→G」「四接口→方向 B 协议剖面」「alerts 出队→7」，但 loopback 转发未点名。改法：补「OpenClaw loopback 转发 → G（provider `type:openai` 接 OpenClaw、真 token 不出内网）」，防歧义。
+
+5. **F5（行为碰撞型漏列 TP-A 冻结验收面）**：行为碰撞型只列 Pod S。但 TP-A（260831-cloud-link-bringup）的冻结验收 `server/acceptance/test_cloud_link.acceptance.py` 同样承载 HTTP shim 形状断言（CLB-A7「server 起最小 shim，POST /v1/chat 一路跑通」，CLB-E2「shim 保持薄 ~200 行、承载 ASR/TTS HTTP 口子」），且与 Pod S 共享 `server/shim.py`（正是 WS 退役对象）——WS 归档 shim.py 后该文件若再跑会红。改法：把 TP-A 冻结验收纳入行为碰撞型扫描，与 shim.py 归档同批做退役/supersede 处置（或明示方向 B 退役吞并之）。已核实 TP-B（tools/asset-pipeline，资产）与 TP-C（tools/simulator，LVGL）不载 shim/HTTP 形状、不撞。
+
+6. **F6（G 前置门③ ASR 开通误标为门）**：§4「G launch 前置门簇」③写「阿里云 ASR 开通（部署期动作，G 内部步骤，非外部门）」自相矛盾——既是"前置门"又自述"G 内部步骤、非外部门"。改法：把③移出"前置门簇"、保留为 G 范围项（G 已列「ASR 阿里云云端开通与首验终选」）；前置门簇只留①②两项真外部门/人批门（① 18789 硬前置、② cert-deadlock 人批）。
+
+7. **F7（display 遵循度复验双写，边界未明）**：「display 遵循度复验**基础**」（G）与「display 格式遵循度复验（契约待确认点 1）」（包 2）并存，未说明分工。改法：明示 G = 切分 + 机械校验基建（V27 确定性单测）、包 2 = 真 OpenClaw 遵循度复验（统计性 9/10 口径）+ 消费端；避免两包各假设对方做复验。这同时把 D 轴「待确认点 1 复验放包 2 验收而不 gate」坐实为妥当——契约已冻结、复验是实证非确认，包 2 owner system prompt + 复验，失败在包内 resolve，不该 gate-block。
+
+8. **F8（ESCALATE merge 缺口留根提示）**：G/WS 均 high + 跨系统 + 安全轴，merge 时大概率再次命中 supervisor-verdict-gate 判 ESCALATE；ARQ-260902-escalate-merge-no-human-path 未结（human 批准的 ESCALATE 无机械合并路径）。改法：§7 留根补一条「G/WS merge 前确认 human 批准路径就绪」，其余既有留根（cert-deadlock、multiturn、401 复核注）已覆盖到位，无漏。
+
+### 补充确认（非发现、仅销账）
+
+- V18（滞留弹窗顶替）在 S-F1.4 弹窗形态为行为细则，包 7 scope 已含「驻留弹窗 + 排队逐个弹」，建议落地时在 acceptance 补 V18 顶替断言（建议级、可随 F 级一并回灌，不单列）。
+- V26 共享 token（G 服务端 constant-time 比对 + WS 配网生成写入）、V28 18789、V31 录音回退、决策 21 功耗 DEFER（9b 三要素）、决策 25 故事流式（包 8 manual 聆听 + 网关累积）、决策 27 提醒播报（包 7 三件套 + speech 预合成）均已正确落包；V29 出网记账系 human 接受性记账、非实现项，无包属正确。
+
+### sign-off
+
+architect（单轮 dev-side review）2026-09-03：**GREEN-with-fixes，8 条建议级修正（无阻断级、无回问 human 项）**。F1（计数）建议冻前钉死，其余 7 条为归属/接缝精度，主线程回灌后可 human 盖冻结；盖时同步 §6 的 board/decision-coverage 计数（随 F1 校正）与 §8 评审记录。

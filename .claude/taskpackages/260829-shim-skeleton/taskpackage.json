@@ -87,5 +87,21 @@
       ],
       "landsIn": "acceptance:SHM-A6"
     }
-  ]
+  ],
+  "abandoned": "2026-09-03",
+  "abandonment": {
+    "date": "2026-09-03",
+    "decisionRef": ".planning/kidpal-mvp/PROPOSAL.md#§5-OQ-R2（human 裁，2026-09-03）",
+    "reason": "HTTP shim 完整化方向被方向 B（spec v0.2 FROZEN 决策 18/§3.0.0）整体作废：唯一公网入口 = 官方小智服务端网关。",
+    "carriedBy": [
+      "260903-gateway-directionB",
+      "260903-device-ws-switch"
+    ],
+    "mapping": {
+      "设备鉴权": "260903-gateway-directionB（V11）",
+      "四接口": "方向 B 协议剖面（G 配置 + WS 消费）",
+      "alerts 出队": "260829-schedule-reminder（契约 §三推送语义重写）",
+      "OpenClaw loopback 转发": "260903-gateway-directionB（provider type:openai 接 OpenClaw、真 token 不出内网）"
+    }
+  }
 }

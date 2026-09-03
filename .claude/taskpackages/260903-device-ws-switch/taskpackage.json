@@ -1,0 +1,118 @@
+{
+  "changeId": "260903-device-ws-switch",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "设备切 WS + 方向 B 冒烟（tracer-bullet 设备片）：配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活 + 自签证书加载与 pinning（V10，CA 嵌入固件）+ WS 握手 Bearer + 方向 B 首链冒烟（KEY→流式 ASR→OpenClaw→流式 TTS 播放 + 文字上屏，证明「设备⇄网关⇄OpenClaw」方向 B 形态串通）+ HTTP 台阶退役（固件侧 ShimProtocol/mp3_decoder/PlayMp3 死代码消除、ECS shim 服务停 + 8080 安全组关闭、server/shim.py 归档记录）+ Pod S/TP-A 冻结验收 supersede 处置（acceptance-author 执行，断言语义零变更）。",
+  "redBaselineCommand": "firmware 编译 + 真机烧录冒烟（对偶 Pod S 纪律）；ECS 收尾断言见 WSA-A6",
+  "redBaselineResult": "红：固件仍指 HTTP shim（Pod S 形态），无自签证书加载路径、无 websocket NVS 直写入口——方向 B 首链不存在。本包把它切到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "state-machine",
+    "test-quality",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "WSA-A1",
+      "kind": "structural"
+    },
+    "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
+    "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
+    "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
+    "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
+    "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
+    "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/device_ws_switch.acceptance.c"
+  ],
+  "exitCriteria": [
+    {
+      "id": "WSA-E1",
+      "kind": "structural"
+    },
+    "WSA-E2: 真机冒烟证据落盘（对偶 Pod S 收口纪律：烧录/配网/链路证据齐）",
+    "WSA-E3: 本包 mergeOrder 4；包 2（语音回环 + display 消费）依赖本包就绪"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.3",
+    "docs/contracts/interface-contract.md#§四",
+    "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json"
+  ],
+  "sourceRefs": [
+    "docs/spec.md#§6.3",
+    "docs/contracts/interface-contract.md#§四",
+    "WS"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 4,
+  "dependsOn": [
+    "260903-gateway-directionB"
+  ],
+  "testHost": "device + live",
+  "decisionCoverage": [
+    {
+      "decision": "handoff-V10-证书加载面",
+      "summary": "固件 SSL 层证书加载 + 自签 CA pinning（esp_ssl cacert_pem/cert_pem 加载路径）。",
+      "sourceRefs": [
+        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V10"
+      ],
+      "landsIn": "acceptance:WSA-A3"
+    },
+    {
+      "decision": "spec-§6.3-配网直写NVS",
+      "summary": "设备服务器地址入口 = 配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活；自建 OTA 应答端点留二期。",
+      "sourceRefs": [
+        "docs/spec.md#§6.3"
+      ],
+      "landsIn": "acceptance:WSA-A2"
+    },
+    {
+      "decision": "spec-决策22-设备侧鉴权",
+      "summary": "WS 握手 Bearer 带设备弱 token；共享 token 配网时生成写入（≥128-bit 随机）。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策22"
+      ],
+      "landsIn": "acceptance:WSA-A2"
+    },
+    {
+      "decision": "spec-§3.0.0-迁移与既有资产",
+      "summary": "Pod S 的同步 HTTP 链路为架构验证台阶，方向 B 落地后退役；其安全发现（401 门纪律、设备 token 纪律）沿用。",
+      "sourceRefs": [
+        "docs/spec.md#§3.0.0"
+      ],
+      "landsIn": "acceptance:WSA-A5"
+    },
+    {
+      "decision": "PROPOSAL-v0.4-OQ-R4",
+      "summary": "shim 退役相位 = WS 包内同批（8080 暴露面早关 + 冻结验收一次 supersede 清完）。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+      ],
+      "landsIn": "acceptance:WSA-A6"
+    }
+  ]
+}

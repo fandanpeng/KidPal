@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware",
-  "story": "AEC 语音喊停实测调阈值（最大技术风险，隔离成片）：AI 播放中本地 AEC+VAD 检测到人声立即停播并聆听，需真实声学环境反复实测调阈值；KEY 单击打断兜底 100% 可靠先行验证。",
+  "story": "AEC 语音喊停实测调阈值（最大技术风险，隔离成片）：AI 播放中本地 AEC+VAD 检测到人声立即停播并聆听，需真实声学环境反复实测调阈值；KEY 单击打断兜底 100% 可靠先行验证。（v0.4 小调：补 abort 消息补充通道验证——云端取消生成省算力，不改本地 AEC+VAD 即时停播的主地位。）",
   "redBaselineCommand": "烧录固件到板子在真实声学环境实测 AEC 喊停（手工 device 实测）：播放中孩子开口，验证立即停播 + 不同音量/混响下的误触发/漏触发率",
   "redBaselineResult": "红：AEC 喊停阈值未在真实声学环境标定，音量过大/混响强时误触发或漏触发（spec §5.2 自标最大不确定点）——行为不可靠。本包把它调到可用。",
   "deliveryImpact": "milestone-affecting",
@@ -63,7 +63,7 @@
   "iterationBudget": 5,
   "fixBudget": 10,
   "docsOwner": "integrator",
-  "mergeOrder": 13,
+  "mergeOrder": 14,
   "dependsOn": [
     "260829-voice-roundtrip",
     "260829-hardware-validation"
