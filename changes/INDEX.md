@@ -14,6 +14,8 @@ _（无）_
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
+| [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | — |
 | [260830-arch-review-ui-impl-strategy](../changes/arch/260830-arch-review-ui-impl-strategy/) | 2026-08-30 | frozen | yes |
 | [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | — |
 | [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "sourceType": "arch-review",
+  "reviewId": "260902-arch-review-kidpal-spec-v0.2",
+  "findings": [
+    {
+      "findingId": "V10",
+      "sourceRefs": [
+        "docs/spec.md:554",
+        "docs/spec.md:584",
+        "firmware/managed_components/78__esp-ml307/src/esp/esp_ssl.cc:34",
+        "firmware/main/application.cc (web_socket TLS 建连，无证书加载/pinning)"
+      ],
+      "severity": "SHOULD",
+      "riskTier": "high",
+      "gateProfile": ["code-review", "acceptance", "security"],
+      "affectedSurfaces": ["firmware/main/protocols (TLS/SSL 证书加载与自签 pinning)", "server (小智服务端部署，wss 握手证书侧)"],
+      "blockingDecisions": [
+        "V08：契约门四题（方向 B 协议剖面待 human 批准）——协议剖面/鉴权节未批前证书加载承载形状未锁",
+        "V25：证书到期死局拍板（OTA 未建前到期 accept-as-risk vs OTA 提前；有效期年限定夺）"
+      ],
+      "suggestedTaskPackages": [
+        "方向 B 落地包（重切片后）：固件 SSL 层证书加载 + 自签 CA pinning，随 260829-shim-skeleton 后继重切"
+      ],
+      "planningRecommendation": "attach-existing",
+      "deliveryImpact": "milestone-affecting",
+      "acceptanceRefs": [
+        "docs/spec.md:554/584（wss + 自签长期证书、CA 嵌入固件、换证需重烧）",
+        "CONTRACT-CHANGE-PACKET-v2-directionB.md §四 协议剖面鉴权节"
+      ],
+      "verificationHints": [
+        "esp_ssl.cc 新增 cacert_pem/cert_pem 加载路径 + 自签 pinning 断言",
+        "wss 握手真机链路证书校验/换证重烧冒烟"
+      ]
+    },
+    {
+      "findingId": "V11",
+      "sourceRefs": [
+        "docs/spec.md:552",
+        "docs/spec.md:584",
+        "docs/spec.md:91",
+        "spec-rereview-input-streaming-validation.md §3（官方 Python 版协议覆盖，未证原生强制 Bearer 鉴权）"
+      ],
+      "severity": "SHOULD",
+      "riskTier": "high",
+      "gateProfile": ["code-review", "acceptance", "security"],
+      "affectedSurfaces": ["server (官方 xiaozhi-esp32-server 鉴权承载 / 可能第 3 个补丁)", "firmware/main (WS 握手 Bearer 发送侧)"],
+      "blockingDecisions": [
+        "V08：契约门四题第③题（强制鉴权 + 出队语义待 human 确认）",
+        "V26：设备 token 每设备-vs-共享 + 熵强度拍板"
+      ],
+      "suggestedTaskPackages": [
+        "方向 B 落地包（重切片后）：服务端强制鉴权验证 + 若上游默认放行则自写 patch 实现「token 未设 = 拒绝」"
+      ],
+      "planningRecommendation": "attach-existing",
+      "deliveryImpact": "milestone-affecting",
+      "acceptanceRefs": [
+        "docs/spec.md:552（token 未设 = 拒绝服务，不留 validation-mode 后门）",
+        "ARQ-260902-shim-401-gate-bypass（历史 401 门穿透教训，要求机械短路语义）"
+      ],
+      "verificationHints": [
+        "官方 Python 版 WS 握手原生是否强制 Bearer 鉴权实测",
+        "无 token → 拒绝、错 token → 拒绝、带 token 空文本 → 400 三条复验"
+      ]
+    },
+    {
+      "findingId": "V27",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md:139",
+        "server/shim.py:121-132（split_display 仅 json.loads，无 view 白名单/大小为校验）",
+        "docs/spec.md:546-547",
+        "docs/spec.md:168-171"
+      ],
+      "severity": "SHOULD",
+      "riskTier": "high",
+      "gateProfile": ["code-review", "acceptance", "security"],
+      "affectedSurfaces": ["server (小智服务端 push helper 入站校验落点，spec:91)", "firmware/main (display JSON 盲渲染面)"],
+      "blockingDecisions": [
+        "V08：契约门四题（方向 B 协议剖面待批，display 经 mcp kidpal/display 承载形状未锁）",
+        "V30：内容安全姿态拍板（机械过滤层 vs system-prompt 即足，若卜加机械层则校验点合并设计）"
+      ],
+      "suggestedTaskPackages": [
+        "方向 B 落地包（重切片后）：push helper 机械 schema 校验（view 白名单 + data shape/size 上限 + 脏 JSON 拒绝，回退 text 或丢弃）"
+      ],
+      "planningRecommendation": "attach-existing",
+      "deliveryImpact": "milestone-affecting",
+      "acceptanceRefs": [
+        "charter §6 必载 DNA#7（zod 结构化输出，经 schema 校验才下发）",
+        "docs/spec.md S-F4.1:434（格式不遵循 = 失败模式，非仅遵循度缺陷）"
+      ],
+      "verificationHints": [
+        "对伪造 control/end_session 与畸形 view/超大 data 的拒绝路径单测",
+        "view ∈ 白名单 + data shape/size 上限机检冒烟"
+      ]
+    }
+  ]
+}

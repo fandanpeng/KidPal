@@ -1,7 +1,8 @@
 # KidPal 端云接口契约（E1 统一响应格式 + B1 课表 MD 结构）
 
 > 与 OpenClaw 对齐用。定义 OpenClaw 如何返回"语音 + 屏幕显示指令"，以及课表 MD 的存储结构。
-> 配合 [systems/kidpal/spec.md](../systems/kidpal/spec.md) §3.0.2（D3 笔顺格式已定稿）使用。
+> 配合 [docs/spec.md](../spec.md) §3.0.2（D3 笔顺格式已定稿）使用。
+> **方向 B 修订（2026-09-03 生效）**：端云通信转 WebSocket + Opus 流式（小智协议剖面，见 §四）；提醒由轮询改推送（§三重写）；本修订经契约门四题 human 批准（CDQ-260902，2026-09-03）+ spec v0.2 首次对抗审（260902-arch-review-kidpal-spec-v0.2）同 PR 原子落地。修订前 HTTP 形态信封草案存档：`changes/arch/260902-arch-review-shim-api-field-envelope/CONTRACT-CHANGE-PACKET.v1-http-field-envelope.superseded.md`。
 
 ---
 
@@ -10,23 +11,23 @@
 ### 1.1 核心思路
 
 OpenClaw 的 `POST /v1/chat/completions` 返回纯文本。为让板子同时获得"要念的话"和"要显示的内容"，约定：
-**OpenClaw 在回复文本末尾，用一个特殊 fenced block 嵌入结构化显示指令**，薄桥 shim 负责切分成两路：
+**OpenClaw 在回复文本末尾，用一个特殊 fenced block 嵌入结构化显示指令**，流式网关负责切分成两路：
 
 ```
 OpenClaw 回复文本（示例）
 ─────────────────────────────
 "勇"字这样写，一共 9 笔，跟着我一笔一画写哦！    ← 语音部分（送 TTS）
 
-```display                                          ← 显示指令（shim 提取，不念出来）
+```display                                          ← 显示指令（网关提取，不念出来）
 { ...结构化JSON... }
 ```
 ─────────────────────────────
 ```
 
-- **语音部分**（` ```display ` 之前的正文）→ shim 送 `/v1/tts` → mp3 → 设备播放
-- **显示指令**（` ```display ` 块内 JSON）→ shim 提取 → 通过设备通道下发 → 板子渲染
+- **语音部分**（` ```display ` 之前的正文）→ 网关送 TTS（edge-tts）→ 句级流水线（LLM token 流→句切分→TTS）→ 下行 Opus 帧 → 设备播放
+- **显示指令**（` ```display ` 块内 JSON）→ 网关提取并机械校验 → 经 `mcp` kidpal/display 工具调用下发 → 板子渲染
 
-> 为什么用 ` ```display ` 而不是别的： fenced code block 是 Markdown 标准，DeepSeek 生成稳定；`display` 作为语言标记，shim 用正则即可可靠切分，且不会误伤正文里的其他内容。
+> 为什么用 ` ```display ` 而不是别的： fenced code block 是 Markdown 标准，DeepSeek 生成稳定；`display` 作为语言标记，网关用正则即可可靠切分，且不会误伤正文里的其他内容。
 
 ### 1.2 display 指令顶层结构
 
@@ -52,7 +53,7 @@ OpenClaw 回复文本（示例）
     "radical": "力",
     "strokeCount": 9,
     "strokes": ["M 547 677 Q ...", "..."],
-    "medians": [[[547, 677], ...], ...],
+    "medians": [[[547, 677], [547, 500], ...], "..."],
     "structure": "⿱甬力",
     "meaning": "勇敢；有胆量",
     "words": ["勇敢", "勇气"]
@@ -114,7 +115,7 @@ OpenClaw 回复文本（示例）
   "data": { "text": "现在是上午10点24分，今天天气不错。" }
 }
 ```
-板子行为：在当前页/首页临时显示这段文字（字幕式），主要信息靠 TTS。
+板子行为：在当前页/首页临时显示这段文字（全文上屏滚动，见 spec S-F4.1），主要信息靠 TTS。
 
 #### ⑥ `home` —— 回首页（无显示内容或结束）
 ```json
@@ -132,14 +133,15 @@ OpenClaw 回复文本（示例）
 |---|---|---|
 | `end_session` | 孩子说"拜拜/不用了" | 结束会话，回首页常显 |
 | `stop_speaking` | 孩子说"别讲了"（云端确认） | （MVP 主要靠本地喊停，此为云端补充确认） |
+| `start_recording` | 孩子说"我要讲故事"（云端判意图） | 网关切该会话为累积态（不按句送对话）、设备切 REC 录音演出（manual 聆听模式）；误判回退路径见 spec S-F2.2（2026-09-03 新增，方向 B 故事录入流式） |
 
-### 1.5 shim 的职责（薄，~200行内）
+### 1.5 网关的职责（薄，零自研业务逻辑红线不变）
 
-1. 收到设备 `/v1/chat` 的文字 → 转发 OpenClaw `/v1/chat/completions`
-2. 拿到回复文本 → 用正则切出 ` ```display ` 块
-3. 正文送 TTS → 音频回设备（小智协议 `tts` + Opus）
-4. display JSON 经设备通道下发（小智协议 `mcp` 或自定义消息）→ 板子渲染
-5. display JSON 里的 `view` 让板子知道切哪页
+1. 承接设备会话：wss 常驻连接，握手 `Authorization: Bearer <device-token>` 强制鉴权（**token 未设 = 拒绝服务**，不留 validation-mode 后门）。
+2. 上行：Opus 帧 → 服务端 VAD 切句 → 云 ASR → 文字 → 转发 OpenClaw（OpenAI 兼容端点，流式）。
+3. 切分与校验：拿到回复文本用正则切出 ` ```display ` 块，**机械 schema 校验**（view ∈ 白名单 char/schedule/story_list/story_text/text/home/control、data shape/大小上限、脏 JSON 拒绝并降级友好提示）。
+4. 正文送 TTS（edge-tts）→ 句级流水线 → 下行 Opus 帧；display JSON 经 `mcp` kidpal/display 工具调用下发（小智原生 alert/custom 通道弃用）。
+5. 提醒定时推送：`mcp` kidpal/alert，送达/出队语义见 §三。
 
 ### 1.6 对 OpenClaw 的要求（system prompt 约束）
 
@@ -161,7 +163,7 @@ OpenClaw 回复文本（示例）
 ---
 child: 小明
 timezone: Asia/Shanghai
-remind_before_min: 15        # 默认提前15分钟提醒
+remind_before_min: 15        # ⚠️ 已废止（legacy，不再消费）——提前量提醒被三档阶梯取代（2026-09-03 契约门裁定标废止，见 §三）
 ---
 
 # 小明的课表
@@ -186,40 +188,54 @@ remind_before_min: 15        # 默认提前15分钟提醒
 ````
 
 ### 2.3 字段说明与解析规则
-- **frontmatter**：`remind_before_min` 提醒提前量；`child/timezone` 元信息。
+- **frontmatter**：`child/timezone` 元信息；`remind_before_min` **已废止、不再消费**（2026-09-03 契约门裁定，保留字段为历史可读）。
 - **每周固定课表**：`星期` 取 周一~周日；`时间` 用 `HH:MM-HH:MM` 或 `HH:MM`。查询"今天/明天有什么课"时按星期匹配。
-- **一次性安排**：`日期` 用 `YYYY-MM-DD`，过期自动忽略（或归档）。
+- **一次性安排**：`日期` 用 `YYYY-MM-DD`，过期自动忽略（查询按当前时间过滤；MVP 不归档，增长治理留后续）。
 - **学校课程表**：可选区块，孩子问"今天第几节什么课"时用。
 - **DeepSeek 解析**：直接读 MD，按"今天星期几/当前时间"筛选，生成自然语言答复 + `schedule` 显示指令。
-- **提醒**：OpenClaw 的 cron 定时扫这两个表，到点前 `remind_before_min` 分钟生成提醒，写入提醒文件（shim `/v1/alerts` 读出）。
+- **提醒（2026-09-03 更新）**：见 §三——OpenClaw cron 算三档时刻写 `alerts/pending.json`，网关到点经 `mcp` kidpal/alert 推送、渲染回执出队；提前量模型（`remind_before_min`）废止。
+- **备注列**：携带内容（如"带画具"）复用备注列承载，"备注里哪部分算要带的"由 OpenClaw system prompt 约定（2026-09-02 定，表格主体零变更）。
 
 ### 2.4 录入方式
-- 家长通过 QQ 对 OpenClaw 说"每周六上午10点加一节美术班"→ OpenClaw 解析并改写此 MD。
-- 或家长直接编辑此文件。
+- 家长通过 QQ 对 OpenClaw 说"每周六上午10点加一节美术班"→ OpenClaw 解析并改写此 MD（主通道，自知改写、即时触发三档重算与推送）。
+- 或家长直接编辑此文件（副通道，无即时推，靠下次连接/每日跨天兜底刷新）。
 
 ---
 
-## 三、提醒文件结构（配套 B3，供 shim /v1/alerts）
+## 三、提醒推送与出队语义（配套 B3，2026-09-03 方向 B 重写，取代原「提醒文件 + 轮询读到即清」）
 
-OpenClaw cron 到点写入（如 `alerts/pending.json`）：
+OpenClaw cron 按课表算三档时刻并写 `alerts/pending.json`（同机共享文件，交网关）；网关 push helper 轮询到点、经 **mcp 工具调用 `kidpal/alert`**（JSON-RPC tools/call）推送，载荷形状：
+
 ```json
-{
-  "alerts": [
-    {
-      "id": "2026-08-27-1400-gangqin",
-      "fire_at": "2026-08-27T13:45:00+08:00",
-      "title": "钢琴课提醒",
-      "speech": "还有15分钟就要上钢琴课啦，记得带琴谱哦！",
-      "view": { "view": "text", "data": { "text": "14:00 钢琴课（琴行）" } }
-    }
-  ]
-}
+{ "id": "<reminder-instance-id>", "fire_at": "ISO8601+08:00",
+  "title": "明日美术课", "speech": "明天美术课，别忘了带画具！",
+  "view": { "view": "text", "data": { "text": "…" } } }
 ```
-设备轮询 `/v1/alerts` → shim 读到并清除已下发项 → 设备亮屏显示 + TTS 播报。
+
+- **`id`** = 确定性散列（schedule 条目 + 档位 + 事件日期），OpenClaw cron 首次生成、**跨重推/重算不变**（重算复用、不重生成）。
+- **`speech`** = 排程时预合成的 TTS 文案，音频随推送下发（走下行 Opus/tts 通道）；合成失败/超时 → 降级「仅弹窗+提示音」、不阻塞投递。
+- 设备收到 → id 记入易失 known-id 集（幂等去重、屏蔽重复入队）→ 排队 → 渲染 `state-reminder` 富弹窗（**新固件面**，小智原生 alert 处理器不适用、通道弃用）→ **渲染完成回 JSON-RPC 回执**（渲染即确认、即出队）。
+- **重试到确认**：网关 60 秒超时未收回执即重推，单档上限 3 次，不做重连即重推；过期仍未送达 = 静默作废不补发（儿童产品不追催）。
+- 原「设备轮询 `/v1/alerts` → shim 读到并清除已下发项」形态**废止**（HTTP 轮询端点随 Pod S 台阶退役，见 spec §3.0.0「迁移与既有资产」）。
+
+---
+
+## 四、端云协议剖面（小智协议消息子集，2026-09-03 新增，方向 B）
+
+> 传输层：wss 常驻连接（自签证书 ≥10 年有效期，见 spec 决策 22）；设备鉴权强制（握手 `Authorization: Bearer <device-token>`，token 未设 = 拒绝服务）。本节为格式事实源，spec §6.1 是通道概览。
+
+- **hello 握手**：设备自报 `{format:"opus", sample_rate:16000, channels:1, frame_duration:60}`；服务端回 `session_id` + `audio_params`（下行采样率/帧长，默认 24000/60，设备按需重采样）。
+- **Opus 二进制帧**：上行 16kHz/60ms 单声道（BinaryProtocol v2/v3）；下行 24kHz 协商。
+- **`stt`/`tts` 状态消息**（云→端）：`stt` 识别文字上屏；`tts` start/sentence_start（带同步文字）/stop 播报状态机。
+- **`abort` 消息**（端→云）：喊停/打断 → 云端取消生成（本地 AEC+VAD 即时停播仍是主地位）。
+- **`mcp` 工具调用**（云→端）：两种载荷——`kidpal/display`（载 E1 display JSON，view 白名单见 §1.3；网关下发前机械 schema 校验）与 `kidpal/alert`（载 §三 提醒条目）；设备 JSON-RPC 回执 = 送达确认（提醒出队 ack）。小智原生 alert/custom 通道**弃用**。
+- **`llm`/`system` 消息**：小智原生——`llm`（emotion）本项目 UI 重做不消费（弃用）；`system`（reboot）留二期 OTA。
+- **会话连续性承载**：`type:openai` 接入默认无状态；多轮连续性承载方案（网关侧状态 vs 每轮透传历史）以**部署期首验**定案（两轮追问连续性探针；失败 → 网关适配传会话标识/历史，或 A4 连续追问降级单轮问答并记账，ARQ-260902-multiturn-continuity）。
+- **provider 配置硬约束**：对 OpenClaw 的流式请求**禁带 `max_tokens`**（实测触发 agent incomplete-turn 报错）。
 
 ---
 
 ## 待 OpenClaw 确认点
-1. 能否稳定按 system prompt 输出 ` ```display ` 块（DeepSeek 格式遵循度，需实测）。
+1. 能否稳定按 system prompt 输出 ` ```display ` 块（DeepSeek 格式遵循度，需实测；方向 B 网关切分路径不复用 v0.1 HTTP 期的 12/12 旧结论，须复验）。
 2. 课表 MD 结构是否满足它的解析/改写（尤其"每周固定 + 一次性"两类）。
-3. 提醒 cron 的可行性（OpenClaw 是否有定时任务能力，或用系统 cron + 脚本）。
+3. 提醒 cron 的可行性：✅ 已实证（2026-09-02，OpenClaw 原生 cron 在跑、`cron --message` 可定时触发 agent 回合；已有 class-reminder 类任务运行记录）。
