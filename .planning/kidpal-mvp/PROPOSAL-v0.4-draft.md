@@ -1,6 +1,6 @@
-# PROPOSAL · kidpal-mvp 开发包重切（方向 B · workstream 设计权威）
+# PROPOSAL · kidpal-mvp 开发包重切（方向 B · workstream 设计权威 · v0.4 重切稿）
 
-> **状态：DRAFT v0.4 · 2026-09-03 · 待 architect 单轮 dev-side review → human 盖冻结**
+> **状态：已冻结归档**（2026-09-03 正文并入 `.planning/kidpal-mvp/PROPOSAL.md` FROZEN v0.4，pin `sha1:88a5bdb83abdd867`；OQ-R1~R4 裁定与评审记录随并入正文）。本稿保留作修订审计留痕，非权威——权威以 PROPOSAL.md 为准。
 > **重切触发**：`docs/spec.md` v0.2 FROZEN（2026-09-03）§8 V33 pin——「本 spec 冻结即触发 portfolio 重切，owner = portfolio-planner，相位 = 紧随冻结」。本件即该 pin 的执行。
 > **上游权威**：[spec.md](../../docs/spec.md) v0.2 FROZEN（功能/story，含新增 §4.4 F4）+ [interface-contract.md](../../docs/contracts/interface-contract.md) 方向 B 重写版（E1/B1/D3 + §三推送重写 + §四端云协议剖面，2026-09-03 原子落地）。
 > **workstream**：`.planning/kidpal-mvp/`
