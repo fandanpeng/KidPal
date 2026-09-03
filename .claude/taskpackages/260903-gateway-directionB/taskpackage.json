@@ -1,0 +1,151 @@
+{
+  "changeId": "260903-gateway-directionB",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "server",
+  "story": "方向 B 流式网关 bring-up（tracer-bullet 服务端片）：官方 xinnan-tech/xiaozhi-esp32-server 部署到 ECS（部署源 /opt/kidpal/xiaozhi-esp32-server，MIT）+ provider 适配（LLM type:openai 接 OpenClaw【流式请求禁带 max_tokens】、TTS=edge-tts、ASR=阿里云云端开通与首验终选）+ 强制设备鉴权（V11：token 未设=拒绝服务、机械短路语义、constant-time 比对）+ ```display 切分与机械 schema 校验（V27：view 白名单 + data shape/大小上限 + 脏 JSON 拒绝降级）+ mcp 中转基建（kidpal/display 与 kidpal/alert 传输 + JSON-RPC 回执）+ 网关兜底逻辑生成（4s 安抚句定时器 / 错误兜底「网络出小差了」结束当轮 / V32 超句截断分屏）+ 部署期首验（V21 多轮连续性探针定承载方案 / V23 ASR 流式+VAD 兼容性终选）+ 自签证书签发（≥10 年 + 轮换脚本 + 到期告警，V25）。",
+  "redBaselineCommand": "cd server && pytest tests/test_gateway_directionB.acceptance.py -q；ECS live 面按 @pytest.mark.live 口径（不 auto-run）",
+  "redBaselineResult": "红：ECS 上 xiaozhi-esp32-server 未部署（仅克隆在 /opt/kidpal/）、无 provider 配置、无 kidpal mcp 中转、无鉴权强制——验收测试文件尚不存在，收集即失败。本包把它部署配置到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "security",
+    "test-quality",
+    "evidence-integrity",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "GWA-A1",
+      "kind": "structural"
+    },
+    "GWA-A2: xiaozhi-esp32-server 在 ECS 部署并运行，wss 端口设备侧可达（部署源 /opt/kidpal/xiaozhi-esp32-server）",
+    "GWA-A3: 强制设备鉴权——无 token → 拒绝、错 token → 拒绝、token 未设 = 拒绝服务不留 validation-mode 后门；机械短路语义（非仅条件分支），历史教训 = ARQ-260902-shim-401-gate-bypass；共享 token constant-time 比对（决策 22 / V11 / V26）",
+    "GWA-A4: provider 链路通——LLM type:openai 流式接 OpenClaw（流式请求禁带 max_tokens，实测坑已钉契约 §四）、TTS edge-tts 下行、阿里云云 ASR 上行（开通 + V23 首验终选：候选流式 + VAD 切句兼容性实测，不达标按决策 19 降级链处置）",
+    "GWA-A5: ```display 切分 + 机械 schema 校验——view ∈ 白名单（char/schedule/story_list/story_text/text/home/control）、data shape/大小上限、脏 JSON 拒绝并降级友好提示；确定性单测覆盖伪造 control/end_session 与畸形 view/超大 data（V27）",
+    "GWA-A6: mcp 中转基建——kidpal/display 与 kidpal/alert 两种载荷经 JSON-RPC tools/call 下发、设备回执回传闭环（小智原生 alert/custom 通道弃用，决策 23）",
+    "GWA-A7: 网关兜底逻辑生成——4s 安抚句定时器（LLM 首 token 超 4 秒先推固定安抚句）/ 云端任一环节失败 = 「网络出小差了，等一会儿再试试吧」+ text 视图结束当轮 / 答案超 3 句按有处理的失败模式截断分屏（V32）；设备侧消费验收归包 2",
+    "GWA-A8: 部署期首验双探针——V21 两轮追问连续性探针（通过 → A4 成立；失败 → 网关适配传会话标识/历史立项，或降级单轮并记账，ARQ-260902-multiturn-continuity）；V23 ASR 终选结论落盘",
+    "GWA-A9: 自签证书签发——有效期 ≥10 年 + 轮换机械脚本 + 到期前告警（V25；ARQ-260902-cert-lifecycle-deadlock 处置定夺为 launch 前置门）"
+  ],
+  "acceptanceTestsFile": [
+    "server/tests/test_gateway_directionB.acceptance.py"
+  ],
+  "exitCriteria": [
+    {
+      "id": "GWA-E1",
+      "kind": "structural"
+    },
+    "GWA-E2: ECS live 验收按 ARQ-260901-g3-server-live-acceptance 口径（@pytest.mark.live、不 auto-run）；部署证据落 changes/dev/",
+    "GWA-E3: launch 前置门簇核销记录——① 18789 锁 127.0.0.1（V28 硬前置，安全组/防火墙操作 + 部署期断言）② ARQ-260902-cert-lifecycle-deadlock 处置定夺（accept-as-risk 记账或 OTA 提前）",
+    "GWA-E4: 本包是服务端共享底座（包 7 提醒投递 / 包 8 网关累积均为本包网关代码的 additive 扩展），mergeOrder 3 先并减冲突面"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.1",
+    "docs/contracts/interface-contract.md#§四",
+    "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json"
+  ],
+  "sourceRefs": [
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.1",
+    "docs/contracts/interface-contract.md#§四",
+    "G"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 3,
+  "dependsOn": [],
+  "testHost": "PC pytest + ECS live",
+  "decisionCoverage": [
+    {
+      "decision": "spec-决策18-服务端实现形态",
+      "summary": "官方 Python 版小智服务端 + 适配插件（LLM type:openai 接 OpenClaw / TTS edge-tts / ASR 阿里云云端 / 自写仅 push helper 与提醒推送）。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策18"
+      ],
+      "landsIn": "acceptance:GWA-A2"
+    },
+    {
+      "decision": "spec-决策22-传输安全与鉴权",
+      "summary": "强制设备鉴权（token 未设=拒绝）+ 共享单 token（≥128-bit、constant-time）+ 18789 锁 127.0.0.1 硬前置 + wss 自签证书 ≥10 年。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策22"
+      ],
+      "landsIn": "acceptance:GWA-A3"
+    },
+    {
+      "decision": "spec-决策19-ASR云优先",
+      "summary": "阿里云云 ASR 前期（开通 + 首验终选），兜底 = 扩容切本地 SenseVoice；V23 补降级触发（云 ASR 流式与 VAD 切句不兼容）。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策19"
+      ],
+      "landsIn": "acceptance:GWA-A4"
+    },
+    {
+      "decision": "contract-§四-provider硬约束",
+      "summary": "对 OpenClaw 的流式请求禁带 max_tokens（实测触发 agent incomplete-turn 报错）。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§四"
+      ],
+      "landsIn": "acceptance:GWA-A4"
+    },
+    {
+      "decision": "handoff-V27-display机械校验",
+      "summary": "网关侧机械 schema 校验：view 白名单 + data shape/大小上限 + 脏 JSON 拒绝，回退 text 或丢弃。",
+      "sourceRefs": [
+        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V27"
+      ],
+      "landsIn": "acceptance:GWA-A5"
+    },
+    {
+      "decision": "spec-决策23-协议载体",
+      "summary": "display 与提醒统一走 mcp 工具调用（kidpal/display、kidpal/alert），设备 JSON-RPC 回执 = 送达确认；小智原生 alert/custom 弃用。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策23"
+      ],
+      "landsIn": "acceptance:GWA-A6"
+    },
+    {
+      "decision": "spec-§4.0-错误兜底行-生成侧",
+      "summary": "4s 安抚句（网关定时器）/ 错误兜底「网络出小差了」/ V32 超句截断分屏的网关侧生成逻辑归本包；设备侧消费验收归包 2。",
+      "sourceRefs": [
+        "docs/spec.md#§4.0"
+      ],
+      "landsIn": "acceptance:GWA-A7"
+    },
+    {
+      "decision": "handoff-V21-多轮连续性首验",
+      "summary": "部署期第一件事 = 两轮追问连续性探针；承载方案（网关侧状态 vs 每轮透传历史）随首验定案。",
+      "sourceRefs": [
+        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V21"
+      ],
+      "landsIn": "acceptance:GWA-A8"
+    },
+    {
+      "decision": "handoff-V25-证书十年期",
+      "summary": "自签证书 ≥10 年有效期 + 轮换机械脚本 + 到期前告警；ARQ-260902-cert-lifecycle-deadlock launch 前置。",
+      "sourceRefs": [
+        "changes/arch/260902-arch-review-kidpal-spec-v0.2/adjudications.md#V25"
+      ],
+      "landsIn": "acceptance:GWA-A9"
+    }
+  ]
+}

@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware",
-  "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。",
+  "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。（v0.4 注：会话状态机预留包 8 的 manual 聆听/录音模式接合面——start_recording 切入累积态的设备侧状态归本包定义。）",
   "redBaselineCommand": "跑 firmware host 状态机单测（linux target，依赖包 0 基建），覆盖会话状态转移 + 按键手势解析",
   "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
@@ -63,7 +63,7 @@
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 5,
+  "mergeOrder": 6,
   "dependsOn": [
     "260829-host-test-infra"
   ],

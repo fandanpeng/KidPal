@@ -6,13 +6,13 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "课表提醒：OpenClaw cron 到点写提醒 → shim /v1/alerts → 设备轮询取 → 提醒弹窗；断网时基于 RTC 的本地提醒兜底（离线红线），让孩子不会迟到。",
-  "redBaselineCommand": "跑 firmware host 提醒触发逻辑单测（依赖包 0）+ server 侧 /v1/alerts cron 链路 pytest（依赖包 1/6）",
-  "redBaselineResult": "红：cron 提醒触发、/v1/alerts 下发、提醒弹窗渲染、RTC 断网兜底均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
+  "story": "日程提醒全链路（v0.4 重写 + contractBlocked 解除，契约待确认点 3 已实证）：按区块范围（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排）+ 三段阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻配在 OpenClaw 侧、纯服务端配置永不烧板子）。脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id（确定性散列，跨重推/重算不变）写 alerts/pending.json、speech 排程时预合成；网关提醒投递（每分钟轮询到点经 mcp kidpal/alert 推送、重试到确认 60s×3、不做重连即重推、过期静默作废）；设备弹窗三件套（提示音 + TTS 读文案 + 驻留弹窗，排队逐个弹、滞留弹窗顶替（V18）、渲染即回执出队、易失 known-id 幂等去重、KEY 关闭/BOOT 关闭翻页）；断网无提醒（离线红线，决策 24）。",
+  "redBaselineCommand": "firmware host 提醒状态机单测（依赖包 0）+ server 侧提醒投递模块测试 + OpenClaw cron 排程 live 验收（@pytest.mark.live 口径）",
+  "redBaselineResult": "红：无三档排程、无 pending.json 交接、无网关提醒投递、无 state-reminder 富弹窗与回执出队——验收测试文件尚不存在，收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -24,32 +24,35 @@
     "real-db",
     "scheduler",
     "state-machine",
+    "security",
     "test-quality",
     "docs-sync"
   ],
-  "contractBlocked": "依赖契约待 OpenClaw 确认点 3（interface-contract.md §待确认点 3：OpenClaw 是否有定时任务能力跑提醒 cron，或需用系统 cron + 脚本）。launch 前须 human 确认该点已解决，或定降级预案（如先上「RTC 本地提醒兜底」、云端 cron 链路待确认后补）。本包只消费契约三（提醒文件结构），不在 Pod 内改 docs/contracts/**。",
   "acceptance": [
     {
       "id": "RMD-A1",
       "kind": "structural"
     },
-    "RMD-A2: 提醒触发逻辑正确：按契约 B1 frontmatter 的 remind_before_min 提前量，到点前 N 分钟触发",
-    "RMD-A3: 提醒弹窗渲染：整屏压 d50 网点聚焦 + pose-jump + 大字事项 + 时间地点 + 提示音（state-reminder）",
-    "RMD-A4: 弹窗中 KEY 关闭回当前页、BOOT 照常翻页不被打断",
-    "RMD-A5: 断网时基于 RTC 的本地提醒兜底触发（离线降级红线）",
-    "RMD-A6: 契约三下发的提醒（view:text）被板子按本地提醒弹窗模板渲染成富弹窗（非纯字幕）"
+    "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+    "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+    "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+    "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+    "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+    "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+    "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/schedule_reminder.acceptance.c"
+    "firmware/main/test/schedule_reminder_b.acceptance.c",
+    "server/tests/test_reminder_push.acceptance.py"
   ],
   "exitCriteria": [
     {
       "id": "RMD-E1",
       "kind": "structural"
     },
-    "RMD-E2: host 测提醒触发逻辑（含断网 RTC 兜底分支）；云端 cron→/v1/alerts 链路 PC pytest；真实提醒音效/亮屏殿后 9b",
-    "RMD-E3: 主链路依赖契约待确认点 3（cron 可行性），若 launch 时未确认则按降级预案先行 RTC 本地兜底并记录",
-    "RMD-E4: 不重复造课表数据——消费包 6 的课表 MD 链路，本包只做提醒触发与弹窗"
+    "RMD-E2: host 测排程/去重/回执状态机 + 网关投递重试逻辑；OpenClaw cron 与推送链路 live 验收（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）；真实提醒音效/亮屏殿后 9b",
+    "RMD-E3: 服务端提醒投递模块 = G 网关代码的 additive 扩展（G mergeOrder 3 先并）；消费包 6 的课表数据链路，不重复造数据",
+    "RMD-E4: contractBlocked 解除记录——契约待确认点 3 已实证（2026-09-02，OpenClaw 原生 cron 在跑、class-reminder 先例、契约 §待确认点 3 标已实证）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -57,7 +60,7 @@
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
     "docs/spec.md#§4.1",
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md#§三"
   ],
   "sourceRefs": [
     "S-F1.4",
@@ -67,35 +70,51 @@
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 9,
+  "mergeOrder": 11,
   "dependsOn": [
     "260829-schedule-p2"
   ],
-  "testHost": "host",
+  "testHost": "host + live",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包7",
-      "summary": "课表提醒：cron→/v1/alerts→提醒弹窗 + RTC 断网兜底（离线红线），host 提醒触发逻辑。",
+      "decision": "spec-决策20-提醒模型",
+      "summary": "按区块判范围 + 三段阶梯（20:30/07:45/事前15分，OpenClaw 侧配置）+ 定时器 = OpenClaw 原生 cron + 脑算网关推 + 重试到确认 + 渲染即确认出队。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+        "docs/spec.md#§7-决策20"
       ],
       "landsIn": "acceptance:RMD-A2"
     },
     {
-      "decision": "spec-§4-S-F1.4",
-      "summary": "课表到点提醒：云为主（cron→alerts→轮询）、RTC 为降级（断网本地提醒兜底，离线红线）；弹窗富渲染非纯字幕。",
+      "decision": "spec-决策27-提醒主动播报",
+      "summary": "提醒到达 = 提示音 + TTS 读文案 + 弹窗驻留三件套；alert 载荷带 speech、排程时预合成（V20 解耦）。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策27"
+      ],
+      "landsIn": "acceptance:RMD-A3"
+    },
+    {
+      "decision": "contract-§三-推送语义",
+      "summary": "mcp kidpal/alert 推送、载荷形状、幂等 id、渲染回执出队、重试到确认 60s×3、过期静默作废；原轮询形态废止。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§三"
+      ],
+      "landsIn": "acceptance:RMD-A4"
+    },
+    {
+      "decision": "spec-决策24-离线边界",
+      "summary": "断网无提醒、设备不缓存事项（哑终端纯洁性）；离线兜底验收撤回；提醒易失 id 集合只驻 RAM（介质禁令）。",
+      "sourceRefs": [
+        "docs/spec.md#§7-决策24"
+      ],
+      "landsIn": "acceptance:RMD-A7"
+    },
+    {
+      "decision": "spec-S-F1.4-V18-滞留弹窗顶替",
+      "summary": "已渲染但永未按键的滞留弹窗在事件时刻过后允许被后续提醒顶替显示（早已出队、顶替非追加送达）。",
       "sourceRefs": [
         "docs/spec.md#§4.1"
       ],
       "landsIn": "acceptance:RMD-A5"
-    },
-    {
-      "decision": "contract-待确认点3",
-      "summary": "提醒 cron 可行性为契约待确认点 3，本包 contractBlocked——launch 前需 human 确认或定降级预案（RTC 本地兜底先行）。",
-      "sourceRefs": [
-        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
-      ],
-      "landsIn": "exitCriteria:RMD-E3"
     }
   ]
 }

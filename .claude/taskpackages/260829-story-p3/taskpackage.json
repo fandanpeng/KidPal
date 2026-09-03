@@ -6,11 +6,11 @@
     "type": "planning-workstream",
     "upstreamType": "planning-workstream",
     "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:500df090a227865e",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），让孩子把想到的故事留下来、还能重温。",
+  "story": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），让孩子把想到的故事留下来、还能重温。（v0.4 服务端扩：录制 = manual 聆听模式 + E1 control start_recording + 网关累积〔不按句送对话，停录整段转写归档〕+ 显式回退路径〔录音中 KEY 长按取消/「讲错啦」回闲聊、停录 10 秒内「重录」、漏判「刚才那段是故事」挽回，V31〕。）",
   "redBaselineCommand": "跑 firmware host 故事列表/阅读渲染单测（依赖包 0）+ server 侧故事归档/列表下发 pytest（依赖包 1）",
   "redBaselineResult": "红：故事列表渲染、录制上传归档、回看/回听、成就盖章均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
@@ -70,7 +70,7 @@
   "mergeOrder": 10,
   "dependsOn": [
     "260829-host-test-infra",
-    "260829-shim-skeleton"
+    "260829-voice-roundtrip"
   ],
   "testHost": "host+PC云端",
   "decisionCoverage": [
