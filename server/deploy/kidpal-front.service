@@ -1,0 +1,34 @@
+# systemd unit: KidPal direction-B wss TLS gateway FRONT (assembles server/gateway/*).
+# Installed on the ECS at /etc/systemd/system/kidpal-front.service.
+#
+# Serves the PUBLIC device leg: wss //0.0.0.0:8000 with TLS (self-signed >=10y cert,
+# GWA-A9, at /opt/kidpal/xiaozhi-esp32-server/cert/server.{pem,key}). Forces device auth
+# at the WS upgrade (Bearer, token 未设 = 拒绝服务, constant-time via gateway.auth) and
+# serves POST /command (empty text -> 400). Forwards authenticated streams to the engine
+# container's plain ws loopback leg (127.0.0.1:8010/xiaozhi/v1/).
+#
+# Build source: server/gateway/front/front_app.py (deployed copy under /opt/kidpal/front).
+# Device token (>=22 chars) comes from secrets.env (chmod 600).
+
+[Unit]
+Description=KidPal direction-B wss TLS gateway front
+After=network-online.target xiaozhi-container.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/kidpal/front
+Environment=PATH=/opt/kidpal/venv/bin:/usr/local/bin:/usr/bin
+Environment=KIDPAL_ENGINE_WS=ws://127.0.0.1:8010/xiaozhi/v1/
+EnvironmentFile=-/opt/kidpal/xiaozhi-esp32-server/deploy/secrets.env
+ExecStart=/opt/kidpal/venv/bin/uvicorn front.front_app:app \
+  --host 0.0.0.0 --port 8000 \
+  --ssl-certfile /opt/kidpal/xiaozhi-esp32-server/cert/server.pem \
+  --ssl-keyfile  /opt/kidpal/xiaozhi-esp32-server/cert/server.key
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -92,7 +92,7 @@ const RISK_TIERS = ['low', 'medium', 'high', 'critical'];
 
 // ── changeId 日期前缀 + 零追溯白名单谓词（DP-2 / F8，单一语义，两 G3 脚本 convention 级同步）──
 const CHANGE_ID_CUTOFF = '2026-07-23'; // landing cutoff（首提 < 此日 = 老包放行）
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function validDatePrefix(yyMMdd) {
   const month = Number(yyMMdd.slice(2, 4));

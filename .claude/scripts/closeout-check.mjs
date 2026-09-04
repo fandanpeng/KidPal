@@ -86,7 +86,7 @@ function nonEmptyString(value) {
 // devloop-artifact-check.mjs / hooks/supervisor-gate-check.mjs，禁各自另造（CHANGE_ID_CUTOFF 同值 '2026-07-23'）。
 // 两层谓词（v0.3 据 F-03 统一措辞）：① 前缀比较为主（isPostCutoff，对齐 :225）；② 无前缀包走 gitFirstCommitDate 白名单。
 const CHANGE_ID_CUTOFF = '2026-07-23';
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 // F-13 loop-retro 触发阈值（pending+waiting 合计；默认值，Q2 终裁前 provisional——或日历兜底如双周）。
 const RETRO_TRIGGER_THRESHOLD = 3;
 

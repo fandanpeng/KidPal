@@ -9,6 +9,7 @@
 ## dev (0)
 
 _（无）_
+| [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
 ## arch (2)
 

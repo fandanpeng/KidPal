@@ -68,3 +68,10 @@
 - **机械落地完成**：① PROPOSAL.md 正文替换为 v0.4（状态 FROZEN v0.4、OQ 裁定留痕）；② 15 包 pin 全量钉入 + mergeOrder 重排（G=3、WS=4、2=5、3=6、4=7、5=8、6=9、8=10、7=11、U=12、9b=13、9a=14）+ dependsOn 更新（2/6/8 改指 WS/2）；③ taskpackage：包 2/7 全文重写、G/WS 新建（260903- 前缀）、包 1 作废记录（承接映射四项）、6 包范围补注（3/5/6/8/9a/9b）；④ decision-coverage.json 升 v0.4（S-F4.1→包 2、§6.1 协议剖面+安全面→G+WS、兜底生成→G/消费→2、决策 26 分组 producer→包 6、contractBlocked→空、新增三条 crossPackageIntegration）；⑤ board 15 pod（S merged / 1 abandoned / 13 queued，WIP=3）。
 - **交路执行（human 授权）**：原子落地制品（spec v0.2/契约重写/ARQ/CDQ/门证据）commit 入 main → 建 `planning/kidpal-mvp-base-v0.4` commit 重切产物 → base 并入 main（PROPOSAL v0.4 在 main 生效）。
 - **launch 就绪**：G（260903-gateway-directionB）+ 0（host-test-infra，worktree 自新 base 重建）并行起跑；WS 等 G 绿。**G launch 前置门簇**：① 18789 锁 127.0.0.1（human/ECS 操作 + 部署期断言）② ARQ-260902-cert-lifecycle-deadlock 处置定夺（human）。包 4 闸 A（契约 §1.6 预审）与 U 的 V3 设计稿约束维持。
+
+## 2026-09-05 G 包（260903-gateway-directionB）dev-loop closeout（integrator 收口记）
+
+- **收口**：方向 B 重切后首包、服务端共享底座（mergeOrder 3）dev loop 完成、verifier 终审 final round 4 九闸全绿（evidence `r4.json`，`verifier-evidence-check` factOk:true）。closeout 制品（docs-delta / review-packet）+ 4 件证据（v21 / v23 / deploy / cert-lifecycle-accept-risk）晋升 `changes/dev/260903-gateway-directionB/`；`server/deploy/README.md` 补 deployment-facing 指引（GATEWAY_DEPLOY_DIR / secrets 管理）。
+- **治理追认**：ARQ-260902-cert-lifecycle-deadlock 迁 §1.3 watchlist（human 2026-09-04 accept-as-risk）；新增 ARQ-260904-gate-regex-uppercase-changeid（闸正则大写热修后审）与 ARQ-260904-v23-asr-swap-quota-recheck（token-plan 配额 2026-09-07 14:19 UTC 后补验 + 引擎 ASR provider 换型拍板）。
+- **live 待办（human 外因，不阻塞结构面）**：公网 0.0.0.0:8000 绑定授权、阿里云 ASR 凭据/token-plan 配额、引擎 ASR provider 换型拍板。
+- 下一步：WS（260903-device-ws-switch）等 G 绿后 launch（关键路径 G→WS）。

@@ -15,7 +15,7 @@ import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 // ── changeId 解析：复用 closeout-check.mjs 的 CHANGE_ID_PREFIX_RE / stripPrefix / validDatePrefix（DP-F11 / M-A10）──
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function validDatePrefix(yyMMdd) {
   const month = Number(yyMMdd.slice(2, 4));
