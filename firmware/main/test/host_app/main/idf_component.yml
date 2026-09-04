@@ -1,0 +1,8 @@
+## IDF Component Manager Manifest — host test app (linux target only).
+# Only LVGL is needed here. The xiaozhi device tree is intentionally absent: host
+# tests (pure logic + LVGL software-render seam) do not touch ESP-SR AFE, LCD
+# drivers, ML307, codecs or boards — see the INF-E2 host-vs-device compile matrix.
+dependencies:
+  lvgl/lvgl: ~9.3.0
+  idf:
+    version: '>=5.4.0'
