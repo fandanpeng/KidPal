@@ -1,5 +1,5 @@
 {
-  "changeId": "260829-host-test-infra",
+  "changeId": "260829-session-logic",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -10,9 +10,9 @@
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware",
-  "story": "host 测试基建（先行包）：为 ESP-IDF 工程搭建 linux target 单测骨架 + LVGL SDL 屏幕模拟 + host 测试目录约定，让后续所有纯逻辑包能脱离硬件在电脑上跑测试。",
-  "redBaselineCommand": "在 firmware 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
-  "redBaselineResult": "红：2026-08-29 实测 firmware/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。| append（acceptance-author 2026-09-04 实测复验）：① 复验 firmware/main/test/ 不存在、sdkconfig.defaults* 全芯片 target 无 CONFIG_IDF_TARGET_LINUX。② ESP-IDF v5.5.1 框架与工具已装（C:\\esp\\v5.5.1\\esp-idf + %USERPROFILE%\\.espressif，toolchain-linux.cmake 存在=linux target 受支持），但本会话 Git Bash(MSys/Mingw) 非受支持 shell：export.sh 报 MSys/Mingw is not supported、直调 idf.py 仅印 warning 无版本输出——无法在本 shell 实跑建 host 单测。③ 红基线=『环境 shell 未受支持 + 基建不存在』双因素红，非测试假红；转绿需 builder 在受支持 shell（ESP-IDF CMD/PowerShell 激活）建 host 单测、unity all passed。",
+  "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。（v0.4 注：会话状态机预留包 8 的 manual 聆听/录音模式接合面——start_recording 切入累积态的设备侧状态归本包定义。）",
+  "redBaselineCommand": "跑 firmware host 状态机单测（linux target，依赖包 0 基建），覆盖会话状态转移 + 按键手势解析",
+  "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。| append（acceptance-author 2026-09-05 实测）红基线复验：host runner（linux target，host_infra_test.elf）4 Tests 0 Failures EXIT=0 全绿但不含本包任何 SES 测试——session_logic.acceptance.c 未被 HOST_ACCEPTANCE_SRCS 收集且接缝头 session_state_machine.h/key_gesture_parser.h 不存在，对验收文件单独 gcc 语法检查 fatal error 于缺失头文件（story 缺失红）。统一红定性：全部 SES-A1~A6/E1/E3 及包 8 接合断言红于同一原因，逐条映射已钉在验收文件尾注释；高风险包按条目映射成立，并声明 verifier 相位 mutation-check 兜底逐条断言敏感性（不得豁免）。另：scratch 桩验证（契约一致最小实现，WSL home，已清理）9/9 绿，证明验收断言期望值与钉定接缝契约自洽、红非测试错误所致。环境备注：espidf_wsl.sh 当前检出为 CRLF，WSL 直跑报错需 builder 留意（本次以等价 idf.py 直呼绕过）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,112 +21,118 @@
   "riskTier": "high",
   "gateProfile": [
     "types",
+    "state-machine",
     "test-quality",
-    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "INF-A1",
+      "id": "SES-A1",
       "kind": "structural"
     },
-    "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
-    "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
-    "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试"
+    "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
+    "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
+    "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
+    "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
+    "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/host_infra_smoke.acceptance.c"
-  ],
-  "acceptanceTestsCoverage": [
-    {
-      "acceptance": "INF-A1",
-      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
-      "assertion": "structural: 冻结验收文件落位"
-    },
-    {
-      "acceptance": "INF-A2",
-      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
-      "assertion": "test_host_runner_executes_sample_logic: host unity runner 编译并跑过一条真实样例断言 (exit 0 + >=1 passed)"
-    },
-    {
-      "acceptance": "INF-A3",
-      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
-      "assertion": "test_host_sdl_renders_frame_to_virtual_screen: LVGL SDL 渲染一帧固定色到虚拟屏（探针校验，非仅编译过）"
-    },
-    {
-      "acceptance": "INF-A4",
-      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
-      "assertion": "verifier 人工核验点 [C4.1]-[C4.5]: 目录约定文档+放置/命名/运行命令文档化+INF-E2 兼容矩阵落同一文档"
-    }
-  ],
-  "mutationEvidence": [
-    {
-      "acceptanceId": "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
-      "note": "mutation（builder 2026-09-04, WSL）：临时移除 host_app/main/CMakeLists.txt 的 WHOLE_ARCHIVE → 重建(elf 4.1MB→430KB) + 跑 ELF 得 0 Tests/0 Failures/OK/EXIT=0 = 空洞红（TEST_CASE 对象被链接器丢弃，真实样例断言一条未跑）→ 恢复 WHOLE_ARCHIVE → 复跑 4 Tests 0 Failures 全过。marker: 变红/failed as expected",
-      "ok": true
-    },
-    {
-      "acceptanceId": "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
-      "note": "mutation（builder 2026-09-04, WSL）：host_infra_seam.c 填充色 0x336699→0x204060 → 重建 + 跑 ELF 得 INF-A3 FAIL: Expected 3368601 Was 2113632 = 变红（证明探针真读渲染像素非静态返回）→ cp 备份恢复原色 → 复跑 PASS。marker: 变红/failed as expected",
-      "ok": true
-    },
-    {
-      "acceptanceId": "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试",
-      "note": "mutation（builder 2026-09-04）：mv firmware/main/test/HOST_TEST_CONVENTIONS.md _hidden.md → [C4.1] check RED（doc missing from expected path）断链 = 变红 → mv 还原 → [C4.1] PASS（9429 字节回原位）。marker: 变红/failed as expected",
-      "ok": true
-    }
+    "firmware/main/test/session_logic.acceptance.c"
   ],
   "exitCriteria": [
     {
-      "id": "INF-E1",
+      "id": "SES-E1",
       "kind": "structural"
     },
-    "INF-E2: 实测并记录小智工程哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device——这是本包自身验收内容，不预判结论，结果落进 host 测试目录约定文档",
-    "INF-E3: 基建是后续包 2/3/4/5/6/8 的公共依赖，mergeOrder 2（仅次于 S）以减少跨 Pod 冲突面"
+    "SES-E2: 本包只做按键手势解析纯逻辑 + 会话状态机；「4 页循环翻页」跨页端到端整合不在本包，显式由包 9b（全功能端到端真机）兜底验收（PROPOSAL §7 留根）",
+    "SES-E3: PWR 为硬件电源键、固件不可读，不入交互状态机——此约束在状态机设计中体现并注释"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§5"
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§5.3"
   ],
   "sourceRefs": [
-    "docs/spec.md#§5.1",
-    "0"
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§5.3",
+    "3"
   ],
-  "iterationBudget": 4,
-  "fixBudget": 6,
+  "iterationBudget": 3,
+  "fixBudget": 5,
   "docsOwner": "integrator",
-  "docsSyncRequired": true,
-  "mergeOrder": 2,
-  "dependsOn": [],
-  "testHost": "基建自身",
-  "notes": "intake（planner，2026-09-04）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pod，本包 queued mergeOrder 2）/ origin.upstreamRef→PROPOSAL.md FROZEN v0.4），权威字段原样消费、未重归一；worktree 分支 dev/260829-host-test-infra 已含 planning/kidpal-mvp-base-v0.4（祖先关系实测通过），留根② worktree 重建已解决。② upstreamFrozen pin sha1:88a5bdb83abdd867 机械复验在 launch 会话因工具分类器抖动未即时跑通，属 convention-only（UPSTREAM_DRIFT=warn），closeout-check 相位机械复验兜底。③ 契约判定=纯消费：本包只搭 host 测试基建（ESP-IDF linux target 单测 + LVGL SDL + 目录约定），零契约面触点。④ scope-map 走查：acceptance-author allow 面 firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow 面 firmware/** 覆盖实现路径。⑤ 设备现场（human，2026-09-04）：设备已连接、mic 正常、喇叭未接——本包 host 侧不受影响，记录备后续 WS/9a/9b 包 intake。⑥ INF-E2 兼容性盘点要求「不预判结论」：哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device，由 builder 实测落进目录约定文档。",
+  "mergeOrder": 6,
+  "dependsOn": [
+    "260829-host-test-infra"
+  ],
+  "testHost": "host",
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
+        "mutation": "M1: session_state_machine.cc k_ses_table SPEAKING 态 KEY_SHORT_PRESS 打断转移 {SES_STATE_ENDED, ABORT_SPEECH} 改 SES_REJECTED_EDGE",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：13 Tests→1 Failures（SES-A3 TEST_CASE 变红，line 384 Expected TRUE Was FALSE）；M1 同时覆盖 SES-A2/A3 敏感性池——SES-A2 全链走 SPEAK_DONE 回聆听不经过该边，逐条敏感由 M1/M3 双向覆盖后全链断言仍独立命中（见 M3 命中 SES-A5、A2 全链在 M1 下绿说明其断言不锚 SPEAKING-KEY_SHORT 单点）；回滚后 13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
+        "mutation": "M1: 同上——SPEAKING 态 KEY_SHORT_PRESS 打断转移改拒绝",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A3 TEST_CASE（KEY 短按启动结束会话打断停播与长按回首页）line 384 变红；回滚恢复 13 绿"
+      },
+      {
+        "acceptanceId": "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
+        "mutation": "M2: key_gesture_parser.cc key_page_next 页序 +1 % PAGE_COUNT 改 +2 %（P4→P1 回绕破坏）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A4 TEST_CASE line 423 Expected 1 Was 2 变红；回滚后 key_gesture_parser.cc md5 恢复 a3593c53，13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
+        "mutation": "M3: session_state_machine.cc THINKING 行 THINKING_TIMEOUT_4S 列 {SES_STATE_SPEAKING, COMFORT_SPEECH} 改 SES_REJECTED_EDGE",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A5 TEST_CASE（思考超四秒切入安抚播报）line 471 变红；回滚后 md5 恢复 988c4e58，13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表",
+        "mutation": "M4: key_gesture_parser.cc key_gesture_parser_feed 双击窗判断 <= double_gap_ms 改 <= 0u（双击窗取 0）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A6 TEST_CASE（单击双击长按时序消抖判定）line 516 Expected 2 Was 1 变红（双击误判单击）；回滚恢复 13 绿。SES-A6 路由/PWR 拒收测试与 SES-E3 结构断言属结构/路由面，由 M4+既有断言矩阵承载"
+      }
+    ]
+  },
+  "notes": "intake（planner，2026-09-05）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pods，本包 queued mergeOrder 6）/ origin.upstreamRef→PROPOSAL FROZEN v0.4 sha1:88a5bdb），权威字段原样消费、未重归一；intake 即跑 portfolio-reconcile --set-pod running。② scope-map 走查（C5）：acceptance-author allow firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow firmware/**（*.acceptance.c deny）覆盖实现路径 firmware/main/session_state_machine.* 与 key_gesture_parser.*；HOST_ACCEPTANCE_SRCS 注册行（host_app/main/CMakeLists.txt）= builder 首动作。③ 契约判定=纯消费：本包只做纯逻辑状态机+手势解析 host 测试，零契约面触点。④ 红基线统一红按条目映射 + mutation-check 兜底已钉（见 redBaselineResult append）；verify.mjs mutationRequired 不得豁免。⑤ 测试约定锚 HOST_TEST_CONVENTIONS.md（[SES-x] 标签、coverage marker、真实 assert）；espidf_wsl.sh CRLF 环境摩擦已记 pod-events。⑥ 下游接合面：manual 录音累积态（包 8）、全局路由/页序语义（包 2 display 路由、包 9b 端到端兜底 SES-E2）。",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§5-OQ2",
-      "summary": "human 裁定测试策略走 (A) 先搭 host 基建（包 0），让 B 段 9 包全程电脑跑、不碰板子。",
+      "decision": "PROPOSAL-§2-包3",
+      "summary": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分），host 状态转移测试。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:INF-A2"
+      "landsIn": "acceptance:SES-A2"
     },
     {
-      "decision": "PROPOSAL-§1-测试分层",
-      "summary": "纯逻辑（状态机/display解析/课表筛选/贝塞尔/坐标变换）脱离硬件可测，靠 ESP-IDF host-based 单测（linux target）+ LVGL SDL 屏幕模拟。",
+      "decision": "spec-§5.2-会话模型",
+      "summary": "按一下 KEY 启动会话（≈唤醒词体验）、免提连续对话、60s 超时/说拜拜/再按键结束；本地状态机基于小智 ToggleChatState 改。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§1"
+        "docs/spec.md#§5.2"
       ],
-      "landsIn": "acceptance:INF-A3"
+      "landsIn": "acceptance:SES-A3"
     },
     {
-      "decision": "PROPOSAL-§7-linux-target兼容性",
-      "summary": "host 基建的 ESP-IDF linux target 兼容性不预判结论：哪些模块可 host 编译、哪些只能 device 是包 0 自身验收内容。",
+      "decision": "PROPOSAL-§7-跨页翻页归属",
+      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式声明由包 9b 兜底验收；包 3 只做页内/全局手势解析纯逻辑。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§7"
       ],
-      "landsIn": "exitCriteria:INF-E2"
+      "landsIn": "exitCriteria:SES-E2"
     }
   ]
 }

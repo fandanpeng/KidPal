@@ -36,6 +36,9 @@ set(SOURCES "audio/audio_codec.cc"
             "ota.cc"
             "settings.cc"
             "device_state_machine.cc"
+            # 会话状态机 + KEY/BOOT 按键手势解析（纯逻辑，包 3；host 单测同源）
+            "session_state_machine.cc"
+            "key_gesture_parser.cc"
             "assets.cc"
             "main.cc"
             )

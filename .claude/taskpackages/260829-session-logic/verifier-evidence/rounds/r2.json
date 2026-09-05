@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260829-session-logic",
+  "phase": "scoped",
+  "round": 2,
+  "invocationId": "7a8c87c0-82f0-40a8-a355-c0f68cb1a5dc",
+  "startedAt": "2026-09-05T12:14:54.043Z",
+  "completedAt": "2026-09-05T12:14:54.988Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 169,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-session-logic\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260829-session-logic\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 182,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 148,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"contract\": \"docs/contracts/interface-contract.md\"\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 150,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"acceptance-coverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-session-logic\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"acceptance\": [\n    \"SES-A1\",\n    \"SES-A2\",\n    \"SES-A3\",\n    \"SES-A4\",\n    \"SES-A5\",\n    \"SES-A6\"\n  ],\n  \"structural\": [\n    \"SES-A1\"\n  ],\n  \"suiteGates\": [],\n  \"files\": [\n    \"firmware/main/test/session_logic.acceptance.c\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage passed"
+    },
+    {
+      "id": "mutation-check",
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 153,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"TaskPackage must include mutationEvidence for each functional acceptance id\",\n  \"functionalAcceptance\": [\n    \"SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝\",\n    \"SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）\",\n    \"SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话\",\n    \"SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言\",\n    \"SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "mutation-check failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "d7c4c2bf47b1",
+    "failingStep": "mutation-check",
+    "message": "gate mutation-check failed (exit 1)",
+    "cmd": "node .claude/scripts/mutation-check.mjs",
+    "logFile": ".claude/verify-logs/1788610494971-mutation-check.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"TaskPackage must include mutationEvidence for each functional acceptance id\",\n  \"functionalAcceptance\": [\n    \"SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝\",\n    \"SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）\",\n    \"SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话\",\n    \"SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言\",\n    \"SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表\"\n  ]\n}\n"
+  }
+}
