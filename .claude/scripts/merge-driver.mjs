@@ -755,12 +755,24 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
       if (branch === 'main' || branch === 'master') {
         warn(`${changeId}: already on ${branch}, skipping git merge`);
       } else {
-        // Checkout main in the worktree, merge the feature branch
+        // Hot-fix #2（human 裁定 2026-09-05 延伸：merge-driver 须适配本地 worktree 拓扑，pod-events 85667b2a 同裁）：
+        // worktree 场景下 main 由主 checkout 持有，本 worktree checkout main 会被 git 拒绝——
+        // 改为定位持有 main 的 worktree，在那里执行 merge（等价语义：merge --no-ff 进本地 main）。
+        let mergeCwd = wt;
+        try {
+          const wtList = execSync('git worktree list --porcelain', { cwd: wt, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+          for (const block of wtList.split('\n\n')) {
+            const lines = block.split('\n');
+            const wpath = (lines.find((l) => l.startsWith('worktree ')) || '').replace(/^worktree /, '');
+            const wbranch = (lines.find((l) => l.startsWith('branch ')) || '').replace(/^branch /, '');
+            if (wpath && wbranch === 'refs/heads/main') { mergeCwd = wpath; break; }
+          }
+        } catch { /* fall back to wt */ }
         // T2（OQ3=(a)）：人批合并时凭据强制进 merge commit message（对齐 Pod S 手工合并留痕形态）
         const mergeMsg = `Merge ${changeId} (merge-driver)${HUMAN_APPROVAL_REF ? ` human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}`;
         try {
-          execSync(`git checkout main && git merge --no-ff ${branch} -m "${mergeMsg}"`, {
-            cwd: wt,
+          execSync(`git merge --no-ff ${branch} -m "${mergeMsg}"`, {
+            cwd: mergeCwd,
             encoding: 'utf8',
             stdio: 'pipe',
           });
@@ -769,11 +781,8 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
           warn(`${changeId}: git merge failed: ${merr.split('\n').slice(-5).join('\n')}`);
           warn(`${changeId}: aborting merge and marking blocked. Resolve conflicts manually.`);
           try {
-            execSync('git merge --abort', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
+            execSync('git merge --abort', { cwd: mergeCwd, encoding: 'utf8', stdio: 'pipe' });
           } catch { /* no merge in progress */ }
-          try {
-            execSync('git checkout -', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
-          } catch { /* already on branch */ }
           setPod(projectDir, { changeId, status: 'blocked' });
           return false;
         }
