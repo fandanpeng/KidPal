@@ -100,7 +100,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
    Reviewer 的职责不限于首次审批：对已批准方向的落地 patch，它验证字段/命名/约束/Tier 分类是否与裁决一致（合规检查）；
    对新请求，它判断是升级人工门还是实现侧可自行解决。只有 reviewer 返回 COMPLIANT，planner 才能提交契约改动。
    若 reviewer 返回 NON_COMPLIANT，planner 停下，把差距交给人类架构师。
-2. **supervisor 合并门**：integrator 在 feature 分支 commit 已绿改动并备可回滚路径，不 push、不合并主干。合并门裁决由**机械闸 `supervisor-verdict-gate.mjs`** 产出（planner invoke，不派 supervisor agent——2026-07-25 退役）：从 git diff 机械重派生 riskTier（:235 投影）+ 消费 bearing facts 判证据完整度，产 APPROVE/BLOCK/ESCALATE。APPROVE 只是授权 planner 本地合并（前置升级闸放行后），BLOCK 退 fixer/planner，ESCALATE 停人类。高/critical（core.*/跨系统/全 mock/安全轴 → high；docs/contracts/**/迁移/删数据 → critical）升级人类；critical/契约/迁移/删数据仍走人类 + architect gate。Stop 钩子 `supervisor-gate-check.mjs` 第二方验 provenance（mechanicalSupervisorGate）+ 从 immutable 输入重算核对（FIX-6）。直接 push main/master 由 hook 拦截。
+2. **supervisor 合并门**：integrator 在 feature 分支 commit 已绿改动并备可回滚路径，不 push、不合并主干。合并门裁决由**机械闸 `supervisor-verdict-gate.mjs`** 产出（planner invoke，不派 supervisor agent——2026-07-25 退役）：从 git diff 机械重派生 riskTier（:235 投影）+ 消费 bearing facts 判证据完整度，产 APPROVE/BLOCK/ESCALATE。APPROVE 只是授权 planner 本地合并（前置升级闸放行后），BLOCK 退 fixer/planner，ESCALATE 停人类；人批后机械路径见 planner.md 合并门段（`--human-approval-ref`）。高/critical（core.*/跨系统/全 mock/安全轴 → high；docs/contracts/**/迁移/删数据 → critical）升级人类；critical/契约/迁移/删数据仍走人类 + architect gate。Stop 钩子 `supervisor-gate-check.mjs` 第二方验 provenance（mechanicalSupervisorGate）+ 从 immutable 输入重算核对（FIX-6）。直接 push main/master 由 hook 拦截。
 3. **merge executor（机械执行者）**：不是 review 角色 = planner 主线程。它只在 `supervisor-verdict.json` 为 APPROVE 且前置升级闸（`pre-merge-escalation-gate.mjs`）放行后执行本地合并：`merge-driver --pod` 本地 `--no-ff` 合并；**不 push、不建/更 PR、不 auto-merge remote**；不得直接 push main/master，不得覆盖 supervisor/human 裁断。
 
 **防空过（让「做完」对故事负责）**

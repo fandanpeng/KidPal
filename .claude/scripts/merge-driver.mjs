@@ -11,6 +11,7 @@
 //   node .claude/scripts/merge-driver.mjs --dry-run       # 仅打印操作序列，不执行
 //   node .claude/scripts/merge-driver.mjs --pod <changeId> # 只 merge 指定 Pod（调试用）
 //   node .claude/scripts/merge-driver.mjs --human-approved-exemption <ref>  # acceptance 门红时按人类裁决豁免（须 existing-red-inventory.md 存在非空，仅豁免 acceptance 门）
+//   node .claude/scripts/merge-driver.mjs --pod <changeId> --human-approval-ref <eventId>  # ESCALATE 人批合并：透传给前置升级闸核验 pod-events 人批事件，凭据进 merge commit message
 //
 // 环境变量：
 //   DEVLOOP_TOKEN_TTL_SEC       同 portfolio-reconcile.mjs（默认 1800）
@@ -40,6 +41,11 @@ const SINGLE_POD = (() => {
 const HUMAN_EXEMPTION = (() => {
   const idx = process.argv.indexOf('--human-approved-exemption');
   return idx >= 0 ? process.argv[idx + 1] : null;
+})();
+// T2（260904-gov-review-escalate-merge-approval）：ESCALATE 人批合并凭据，透传给前置升级闸核验
+const HUMAN_APPROVAL_REF = (() => {
+  const idx = process.argv.indexOf('--human-approval-ref');
+  return idx >= 0 ? process.argv[idx + 1] ?? null : null;
 })();
 
 function log(msg) {
@@ -615,15 +621,18 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   warnWorktreeGateDivergence(wt, quickChecks); // ARQ-097 D1：主仓 canonical + worktree 分歧高声 warn
 
   // Step 1b: 前置升级闸（合并前必经；命中 → blocked 升级人，不 rebase、不 merge）
+  // T2：--human-approval-ref 非空时透传，升级闸核验 pod-events 人批事件后可放行 ESCALATE 包（260904-gov-review-escalate-merge-approval）
   log(`${changeId}: running pre-merge escalation gate...`);
   if (!DRY_RUN) {
     try {
+      const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir];
+      if (HUMAN_APPROVAL_REF) gateArgs.push('--human-approval-ref', HUMAN_APPROVAL_REF);
       execFileSync(
         'node',
-        [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir],
+        gateArgs,
         { cwd: wt, encoding: 'utf8', stdio: 'pipe' },
       );
-      log(`${changeId}: escalation gate PASS`);
+      log(`${changeId}: escalation gate PASS${HUMAN_APPROVAL_REF ? ` (human-approval-ref=${HUMAN_APPROVAL_REF})` : ''}`);
     } catch (err) {
       const out = `${err.stdout || ''}${err.stderr || ''}`;
       warn(`${changeId}: escalation gate BLOCK:\n${out.split('\n').slice(-12).join('\n')}`);
@@ -727,8 +736,10 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
         warn(`${changeId}: already on ${branch}, skipping git merge`);
       } else {
         // Checkout main in the worktree, merge the feature branch
+        // T2（OQ3=(a)）：人批合并时凭据强制进 merge commit message（对齐 Pod S 手工合并留痕形态）
+        const mergeMsg = `Merge ${changeId} (merge-driver)${HUMAN_APPROVAL_REF ? ` human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}`;
         try {
-          execSync(`git checkout main && git merge --no-ff ${branch} -m "Merge ${changeId} (merge-driver)"`, {
+          execSync(`git checkout main && git merge --no-ff ${branch} -m "${mergeMsg}"`, {
             cwd: wt,
             encoding: 'utf8',
             stdio: 'pipe',
