@@ -13,6 +13,11 @@
 # file outside the component source dir is fine here: this is a test-only project.
 set(HOST_ACCEPTANCE_SRCS
     "../../host_infra_smoke.acceptance.c"
+    # 包 3 (260829-session-logic)：冻结验收 + 被测纯逻辑实现（seam 头在 firmware/main/，
+    # 相对 host_app/main 为 ../../../）。
+    "../../session_logic.acceptance.c"
+    "../../../session_state_machine.cc"
+    "../../../key_gesture_parser.cc"
     "seam_bounds.test.c"
 )
 

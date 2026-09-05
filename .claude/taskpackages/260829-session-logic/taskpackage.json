@@ -12,7 +12,7 @@
   "subsystem": "firmware",
   "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。（v0.4 注：会话状态机预留包 8 的 manual 聆听/录音模式接合面——start_recording 切入累积态的设备侧状态归本包定义。）",
   "redBaselineCommand": "跑 firmware host 状态机单测（linux target，依赖包 0 基建），覆盖会话状态转移 + 按键手势解析",
-  "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
+  "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。| append（acceptance-author 2026-09-05 实测）红基线复验：host runner（linux target，host_infra_test.elf）4 Tests 0 Failures EXIT=0 全绿但不含本包任何 SES 测试——session_logic.acceptance.c 未被 HOST_ACCEPTANCE_SRCS 收集且接缝头 session_state_machine.h/key_gesture_parser.h 不存在，对验收文件单独 gcc 语法检查 fatal error 于缺失头文件（story 缺失红）。统一红定性：全部 SES-A1~A6/E1/E3 及包 8 接合断言红于同一原因，逐条映射已钉在验收文件尾注释；高风险包按条目映射成立，并声明 verifier 相位 mutation-check 兜底逐条断言敏感性（不得豁免）。另：scratch 桩验证（契约一致最小实现，WSL home，已清理）9/9 绿，证明验收断言期望值与钉定接缝契约自洽、红非测试错误所致。环境备注：espidf_wsl.sh 当前检出为 CRLF，WSL 直跑报错需 builder 留意（本次以等价 idf.py 直呼绕过）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -68,6 +68,47 @@
     "260829-host-test-infra"
   ],
   "testHost": "host",
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
+        "mutation": "M1: session_state_machine.cc k_ses_table SPEAKING 态 KEY_SHORT_PRESS 打断转移 {SES_STATE_ENDED, ABORT_SPEECH} 改 SES_REJECTED_EDGE",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：13 Tests→1 Failures（SES-A3 TEST_CASE 变红，line 384 Expected TRUE Was FALSE）；M1 同时覆盖 SES-A2/A3 敏感性池——SES-A2 全链走 SPEAK_DONE 回聆听不经过该边，逐条敏感由 M1/M3 双向覆盖后全链断言仍独立命中（见 M3 命中 SES-A5、A2 全链在 M1 下绿说明其断言不锚 SPEAKING-KEY_SHORT 单点）；回滚后 13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
+        "mutation": "M1: 同上——SPEAKING 态 KEY_SHORT_PRESS 打断转移改拒绝",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A3 TEST_CASE（KEY 短按启动结束会话打断停播与长按回首页）line 384 变红；回滚恢复 13 绿"
+      },
+      {
+        "acceptanceId": "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
+        "mutation": "M2: key_gesture_parser.cc key_page_next 页序 +1 % PAGE_COUNT 改 +2 %（P4→P1 回绕破坏）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A4 TEST_CASE line 423 Expected 1 Was 2 变红；回滚后 key_gesture_parser.cc md5 恢复 a3593c53，13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
+        "mutation": "M3: session_state_machine.cc THINKING 行 THINKING_TIMEOUT_4S 列 {SES_STATE_SPEAKING, COMFORT_SPEECH} 改 SES_REJECTED_EDGE",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A5 TEST_CASE（思考超四秒切入安抚播报）line 471 变红；回滚后 md5 恢复 988c4e58，13 绿 EXIT=0"
+      },
+      {
+        "acceptanceId": "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表",
+        "mutation": "M4: key_gesture_parser.cc key_gesture_parser_feed 双击窗判断 <= double_gap_ms 改 <= 0u（双击窗取 0）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "fixer 实测 2026-09-05：SES-A6 TEST_CASE（单击双击长按时序消抖判定）line 516 Expected 2 Was 1 变红（双击误判单击）；回滚恢复 13 绿。SES-A6 路由/PWR 拒收测试与 SES-E3 结构断言属结构/路由面，由 M4+既有断言矩阵承载"
+      }
+    ]
+  },
+  "notes": "intake（planner，2026-09-05）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pods，本包 queued mergeOrder 6）/ origin.upstreamRef→PROPOSAL FROZEN v0.4 sha1:88a5bdb），权威字段原样消费、未重归一；intake 即跑 portfolio-reconcile --set-pod running。② scope-map 走查（C5）：acceptance-author allow firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow firmware/**（*.acceptance.c deny）覆盖实现路径 firmware/main/session_state_machine.* 与 key_gesture_parser.*；HOST_ACCEPTANCE_SRCS 注册行（host_app/main/CMakeLists.txt）= builder 首动作。③ 契约判定=纯消费：本包只做纯逻辑状态机+手势解析 host 测试，零契约面触点。④ 红基线统一红按条目映射 + mutation-check 兜底已钉（见 redBaselineResult append）；verify.mjs mutationRequired 不得豁免。⑤ 测试约定锚 HOST_TEST_CONVENTIONS.md（[SES-x] 标签、coverage marker、真实 assert）；espidf_wsl.sh CRLF 环境摩擦已记 pod-events。⑥ 下游接合面：manual 录音累积态（包 8）、全局路由/页序语义（包 2 display 路由、包 9b 端到端兜底 SES-E2）。",
   "decisionCoverage": [
     {
       "decision": "PROPOSAL-§2-包3",

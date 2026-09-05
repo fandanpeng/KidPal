@@ -95,3 +95,9 @@
 - board `--set-pod` 预填完毕（queued + worktreePath）；launch prompt 文件两份落 `.git/devloop/launch/`（WS 含 intake 必办：Pod S + TP-A 冻结验收 supersede 由 acceptance-author 处置；包 3 纯 host 口径）。**待 human 自跑 launch 命令**（headless 形态沿用 260902 记录的交付方式）。
 - **图索引漏建追因与热修（同日，human 指示「记录 ARQ、直接热修」）**：追因 = 主线程照抄 Pod 0 旧 launch prompt 的过期降级注记（建索引前旧文）而未验 `list_projects` 地面真值，叠加约定只存脚本注释（commit ed63d0c 纯文档层）+ rules 行「本仓尚未 commit 快照，索引用主索引」措辞误导。**热修（一次性跳过治理批、如实记录）**：`repo-structure.md` `.codebase-memory/` 行消歧——worktree 专属图索引定为 launch 面必办（同名建、不得降级读文件、引旧 prompt 先例前须验地面真值）。**ARQ 登记**：`ARQ-260905-worktree-graph-index-rules`（SHOULD，§1.2，追认手续 + 后审载体：是否加轻机械提醒，先例 ARQ-260904-gate-regex-uppercase-changeid「一次性热修后审」）。
 - **快照 artifact 入仓（同日，human 指示「彻底解决」）**：根因坐实 = 本仓从未生成/commit `.codebase-memory/` 快照，每个 worktree 只能从头全量建图。`index_repository(persistence=true, moderate)` 生成快照（16168 节点 / 39534 边，压缩 6.2MB，钉在 main 85cc0c6）+ 工具自写 `.gitattributes`（`binary merge=ours` 防二进制冲突），commit **b7aa3df** 入 main。自此 worktree 准备 = bootstrap 后跑一次索引即从快照导入 + 增量补差（近零成本）；launch 面必办性质不变（仍须跑那一次）。rules 行同步更新（删「尚未 commit」过时句）。注：persistence 运行按路径派生刷新的是既有重名项目 `C-AI-KidPal`（在册早于本次运行，非新建），主索引 `KidPal` 项目名不变。
+
+## 2026-09-05 包 3（260829-session-logic）dev-loop closeout（integrator 收口记）
+
+- **收口**：会话状态机 + KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑，mergeOrder 6，riskTier high）dev loop 完成：verifier r3 scoped 绿 + r4 final 九闸全绿（evidence `r4.json`，invocation `f991bafb-c80f-4536-a5f9-70ca00355ece`；`verifier-evidence-check` factOk:true EXIT=0；r1 acceptance-coverage 红 → r2 mutation-check 红 → r3/r4 绿收敛）。host runner 13 Tests 0 Failures EXIT=0（9 个 SES TEST_CASE + 包 0 既有 4 测试）；mutation M1~M4 四点破坏→变红→回滚全实证。closeout 制品（docs-delta「无需改」判定 + review-packet）晋升 `changes/dev/260829-session-logic/`。
+- **留根**：SES-E2 跨页端到端整合归包 9b 兜底（PROPOSAL §7 计划内留根）；on-target 编译/真机验收同归 9b（本包闸 firmware-build degraded=host 单测包，非假绿）；espidf_wsl.sh CRLF 环境摩擦记 pod-events（NIT）。
+- 下一步：supervisor 机械闸裁断 → planner 前置升级闸 → 本地合并；关键路径后续 WS→2→6→7→U→9b。

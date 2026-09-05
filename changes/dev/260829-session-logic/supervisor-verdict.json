@@ -1,0 +1,67 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-05T12:34:11.347Z",
+  "changeId": "260829-session-logic",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:high",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "low",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "low",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-session-logic/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-session-logic/docs-delta.md",
+          "changes/dev/260829-session-logic/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788610144375-acceptance-coverage.log",
+      ".claude/verify-logs/1788610494971-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-session-logic/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-session-logic/docs-delta.md",
+      "changes/dev/260829-session-logic/review-packet.md"
+    ]
+  }
+}
