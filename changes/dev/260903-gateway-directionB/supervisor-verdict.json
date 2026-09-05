@@ -1,0 +1,69 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-04T23:44:10.943Z",
+  "changeId": "260903-gateway-directionB",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=acceptance,deploy,evidence,gateway",
+      "security-axis-path:server/gateway/auth.py",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=acceptance,deploy,evidence,gateway",
+        "security-axis-path:server/gateway/auth.py"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=acceptance,deploy,evidence,gateway",
+          "security-axis-path:server/gateway/auth.py"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260903-gateway-directionB/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260903-gateway-directionB/docs-delta.md",
+          "changes/dev/260903-gateway-directionB/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788536446303-mutation-check.log",
+      ".claude/verify-logs/1788539555449-docs-sync.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260903-gateway-directionB/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260903-gateway-directionB/docs-delta.md",
+      "changes/dev/260903-gateway-directionB/review-packet.md"
+    ]
+  }
+}
