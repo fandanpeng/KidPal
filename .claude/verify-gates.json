@@ -22,7 +22,10 @@
     "    （档 1 已降级，ARQ-260827-contract-mech-gate-gap 追踪机械补位时机）。",
     "  - firmware on-target 验收需实机/qemu：acceptance 闸担保「有验收文件 ⇒ 有验收入口」不静默跳过，",
     "    不担保实机已过；实机验收由 acceptance 相位人工/台架触发并落 verifier-evidence。",
-    "  - types 闸：server 面 Python 无强制类型闸；如需，后续可加 mypy（当前未启用，记为缺口）。"
+    "  - types 闸：server 面 Python 无强制类型闸；如需，后续可加 mypy（当前未启用，记为缺口）。",
+    "  - merge-driver quick-check 冒烟子集 = contract-lint + acceptance 两门（260905 对齐，",
+    "    merge-driver QUICK_CHECK_IDS 单源消费）；firmware-build 有意不入冒烟（分钟级 + fail-open），",
+    "    由 verifier scoped 相位承担；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
   ],
   "gates": [
     {
