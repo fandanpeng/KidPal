@@ -213,21 +213,18 @@ function findPodsRecordPath(projectDir, changeId) {
 
 /** 从磁盘组 ctx（live path）。 */
 function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
+  const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
   const devDir = join(projectDir, 'changes', 'dev', changeId);
   const archDir = join(projectDir, 'changes', 'arch', changeId);
   const hasDev = existsSync(devDir);
   const hasArch = existsSync(archDir);
   const kind = hasArch ? 'gov' : hasDev ? 'devloop' : 'unknown';
 
-  const source = sourceRef || revParse((c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' }), 'HEAD');
+  const source = sourceRef || revParse(execFn, 'HEAD');
 
   const supervisorVerdict = readSupervisorVerdict(projectDir, changeId);
   const govAnchors = kind === 'gov' ? readGovAnchors(projectDir, changeId) : null;
-  const contractsDiff = hasContractsDiff(
-    (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' }),
-    source,
-    'main',
-  );
+  const contractsDiff = hasContractsDiff(execFn, source, 'main');
   const podsRecordPath = findPodsRecordPath(projectDir, changeId);
   const blocked = (() => {
     if (!podsRecordPath) return false;
@@ -245,6 +242,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     changeId,
     source,
     kind,
+    execFn, // 热修（ARQ-260905-escalation-gate-live-execfn-gap，human 批 2026-09-05）：evaluate 的 off-main 判定依赖它，此前 buildCtx 漏带 → live 恒 fail-closed
     supervisorVerdict,
     govAnchors,
     contractsDiff,

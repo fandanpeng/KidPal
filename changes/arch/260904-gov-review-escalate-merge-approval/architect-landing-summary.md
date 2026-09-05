@@ -56,5 +56,7 @@ manifest 外零落地：`supervisor-verdict-gate.mjs`（判级逻辑）、`docs/
 
 - 2026-09-04 human 立项 ack + OQ1–OQ3 全裁 (a)。
 - 2026-09-05 architect R1「需修订」（F1/F2 census 打回）→ 主线程修订 → R2 **GREEN**（PROPOSAL §7）→ 主线程凭「立项 ack + GREEN」标 **FROZEN**，packet-binding 生效；`changes-index.mjs --upsert` 钉 frozen。
-- 2026-09-05 主线程 packet-bound 落地 T1–T4（本 summary §1 清单）→ 验证集重放（§2）→ 本 summary 写就，交 landing-verifier 独立核验（Track B 步骤 5）。
+- 2026-09-05 主线程 packet-bound 落地 T1–T4（本 summary §1 清单）→ 验证集重放（§2）→ 本 summary 写就，交 landing-verifier 独立核验（Track B 步骤 5）→ **landing-verifier GREEN**。
+- 2026-09-05 T4.6 已执行（ARQ 移已结 + 两条新 ARQ 登记）+ retro 写就 + 包 commit 至 `gov/260904-escalate-merge-approval`（84ef6eb）。
+- 2026-09-05 合并门前闸校准（如实记录，非 landing 内容）：① 状态行按机器锚正则格式补版本号（FROZEN → FROZEN v1.0，满足 `readGovAnchors` `/^\*\*状态：FROZEN v\d+\.\d+/`）；② 合并门被存量缺陷 `ARQ-260905-escalation-gate-live-execfn-gap` 拦（off-main 恒 fail-closed），human 拍板**同一批热修**（2026-09-05，先例 ARQ-260904-gate-regex-uppercase-changeid）——buildCtx 补 `execFn` 字段一行修，复验 self-check 18/18 + V4 重放 off-main 恢复真判（Pod S 分支正确出 `source-on-main`、本批分支正确无 off-main 理由）→ ARQ 标已结；③ 发现第二处机器锚格式问题：`readGovAnchors` frozen 正则要求行首 `**状态：FROZEN vX.Y`，而本仓 PROPOSAL 惯用 `> ` 引用前缀——即该机锚在本仓从未命中过任何实际 PROPOSAL（含已合并的 260830 批），本批状态行去掉前缀适配之；此为闸脚本侧格式与仓内文档形态的既有错位，登记观察、不扩修。
 - 待办（verifier 绿后）：T4.6 ARQ 移已结 + 索引钉行 → retro（步骤 6）→ 前置升级闸（gov 档，FROZEN+GREEN+landing-verdict 机锚）放行 → 自动合并本地 main（步骤 7，可回滚；remote push 留 human）。

@@ -1,6 +1,6 @@
 # PROPOSAL · 260904-gov-review-escalate-merge-approval
 
-> **状态：FROZEN · 2026-09-05 · 已立项（human 立项 ack 2026-09-04 + §4 OQ1–OQ3 全裁 (a)）；R1「需修订」（F1/F2）已修订 → R2（2026-09-05）GREEN。主线程凭「立项 ack + GREEN」标 FROZEN，packet-binding 自本标记起生效**
+**状态：FROZEN v1.0 · 2026-09-05 · 已立项（human 立项 ack 2026-09-04 + §4 OQ1–OQ3 全裁 (a)）；R1「需修订」（F1/F2）已修订 → R2（2026-09-05）GREEN。主线程凭「立项 ack + GREEN」标 FROZEN，packet-binding 自本标记起生效。本行行首无引用前缀是为命中升级闸 readGovAnchors 机锚正则（`/^\*\*状态：FROZEN v\d+\.\d+/m`）**
 > **承载 ARQ**：`ARQ-260902-escalate-merge-no-human-path`（单根全收：闸无人批输入口 + planner 规程断线两个缺口一次补齐；其余 ARQ 不碰）。
 > **review 轨**：Track B 常驻轻路径（SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。不触契约面、非跨系统结构变更，无升级判据命中。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T4）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
