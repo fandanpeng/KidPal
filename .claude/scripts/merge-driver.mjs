@@ -655,12 +655,27 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // Step 3: fetch + rebase
   log(`${changeId}: fetching origin...`);
   if (!DRY_RUN) {
-    try {
-      execSync('git fetch origin', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
-    } catch (err) {
-      warn(`${changeId}: git fetch failed: ${(err.stderr || '')}`);
-      setPod(projectDir, { changeId, status: 'blocked' });
-      return false;
+    // Hot-fix（human 裁定 2026-09-05，pod-events 85667b2a）：本地开发 worktree/branch 不保证有远端——
+    // 无 origin remote 时跳过 fetch（不再 fail-closed），rebase 目标由 resolveRebaseTargetLive 的
+    // 「本地 main 优先、单缺降级存活 ref」语义兜底（ARQ-260820），fetch 缺席不改变目标解析结果。
+    const hasOrigin = (() => {
+      try {
+        execSync('git remote get-url origin', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+    if (hasOrigin) {
+      try {
+        execSync('git fetch origin', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
+      } catch (err) {
+        warn(`${changeId}: git fetch failed: ${(err.stderr || '')}`);
+        setPod(projectDir, { changeId, status: 'blocked' });
+        return false;
+      }
+    } else {
+      log(`${changeId}: no origin remote — skip fetch (local-only worktree), rebase target falls back to local main`);
     }
 
     // ARQ-260820：rebase 目标改「解析最新基线 ref」（本地 main 优先、origin 领先切 origin、单缺降级存活 ref、分叉/俱缺 fail-closed）。
