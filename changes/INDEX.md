@@ -20,6 +20,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | frozen | — |
 | [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | yes |
 | [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
 | [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | — |

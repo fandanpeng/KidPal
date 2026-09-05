@@ -397,13 +397,18 @@ function findWorktree(pod, projectDir) {
   return null;
 }
 
-// Quick-check gates: structural + acceptance（rebase 后冒烟闸）。
+// Quick-check gates: contract-lint + acceptance（rebase 后冒烟闸）。
 // ARQ-097 收敛：命令不再硬编码，改从 verify-gates.json（主仓 canonical 源）按显式 id 表取——
-// 单一源、保当前执行序、保四门冒烟子集（全量门套已由 verifier 于 ready-to-merge 前跑，不可误扩全门）。
-const QUICK_CHECK_IDS = ['types', 'schema', 'contract-lint', 'acceptance'];
+// 单一源、保当前执行序、保冒烟子集（全量门套已由 verifier 于 ready-to-merge 前跑，不可误扩全门）。
+// 260905 对齐（260905-gov-review-verify-gates-align T1，OQ1=(a) 两门案）：QUICK_CHECK_IDS 由源仓
+// 4 门残留（types/schema/contract-lint/acceptance）改为本仓 2 门——firmware-build（types+schema 折算物）
+// 有意不入冒烟：真跑 idf.py build 分钟级不「quick」、无工具链 fail-open、verifier scoped 相位已承担；
+// 冒烟保留「契约结构 + 验收入口」两个快门。
+const QUICK_CHECK_IDS = ['contract-lint', 'acceptance'];
 
 // F4 字面 test oracle（非执行源）：自检断言「读源→选 id→保序」结果恒等于此，
 // 守 verify-gates.json 自身漂移（ARQ-097 真病根）。不可改成对 verify-gates.json 自比（那恒真）。
+// 260905 对齐：QUICK_CHECK_IDS 由源仓 4 门残留改为本仓 2 门，本 oracle（迁移时即 2 条）未动。
 const EXPECTED_QUICK_CHECK_CMDS = [
   // 本仓：无 tsc / prisma 等价物——结构闸走 idf.py build（固件编译即类型闸），契约闸走 contract-lint（本仓契约面 docs/contracts/** 的 markdown 协议检查脚本，档 2 新写）。
   'node .claude/scripts/contract-lint.mjs',
@@ -684,7 +689,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
 
   // Step 4: quick check（rebase 冲突 → blocked; quick-check 失败 → 重试一次，再失败 → blocked）
   // 豁免例外（ARQ-260823-red-exemption T1）：acceptance 门红 + --human-approved-exemption <ref> + existing-red-inventory.md 存在非空
-  // → 按人类裁决放行该门（其余 types/schema/contract-lint 已过、照拦）；制品不在场或非 acceptance 门红 → 不豁免。
+  // → 按人类裁决放行该门（其余 contract-lint 已过、照拦；260905 对齐两门案）；制品不在场或非 acceptance 门红 → 不豁免。
   let qcOk = false;
   for (let attempt = 0; attempt <= RETRY_MAX; attempt++) {
     if (attempt > 0) log(`${changeId}: quick-check retry ${attempt}/${RETRY_MAX}`);
@@ -701,7 +706,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
       }
       if (exemptByHuman) {
         log(`${changeId}: human-approved exemption (ref=${HUMAN_EXEMPTION}) — acceptance gate red + existing-red-inventory.md present; proceeding on human ruling`);
-        warn(`${changeId}: acceptance gate exempted by human ruling (ref=${HUMAN_EXEMPTION}) — types/schema/contract-lint already passed and remain enforced`);
+        warn(`${changeId}: acceptance gate exempted by human ruling (ref=${HUMAN_EXEMPTION}) — contract-lint already passed and remain enforced`);
         qcOk = true;
         break;
       }

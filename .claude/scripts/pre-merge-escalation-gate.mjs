@@ -111,7 +111,7 @@ function readGovAnchors(dir, changeId) {
   const landingVerdictPath = join(dir, 'changes', 'arch', changeId, 'landing-verdict.md');
   if (!existsSync(proposalPath)) return null;
   const text = readFileSync(proposalPath, 'utf8');
-  const frozen = /^\*\*状态：FROZEN v\d+\.\d+/m.test(text);
+  const frozen = /^[>\s]*\*\*状态：FROZEN v\d+\.\d+/m.test(text); // 260905 T4：容忍 `> ` 引用前缀，与行首形态双命中（既有错位归位，260905-gov-review-verify-gates-align）
   // §7 含判官 GREEN verdict：宽松匹配「GREEN」且「verdict」同段（拒绝仅 history 提及 GREEN）
   const green = /verdict[：:]\s*GREEN|结论[：:]\s*GREEN|GREEN/gi.test(text);
   const landingVerdict = existsSync(landingVerdictPath);
