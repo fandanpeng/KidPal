@@ -77,3 +77,11 @@
 - **live 待办（human 外因，不阻塞结构面）**：公网 0.0.0.0:8000 绑定授权、阿里云 ASR 凭据/token-plan 配额、引擎 ASR provider 换型拍板。
 - 下一步：WS（260903-device-ws-switch）等 G 绿后 launch（关键路径 G→WS）。
 - **合并补记（planner，2026-09-05）**：G 包 supervisor 机械闸判 ESCALATE（high：跨系统 + 安全轴 auth.py），human 批准合并（pod-events `escalate-merge-approved`，事件 56750137），按 Pod S 先例一次性手工 `--no-ff` 合并入 main——ARQ-260902-escalate-merge-no-human-path 第二次实例，其治理修复 PROPOSAL（260904-gov-review-escalate-merge-approval）已在主 checkout 立项待审。
+
+## 2026-09-02 Pod S（260829-smoke-e2e）收口补记（smoke-e2e worktree 未落盘遗留，2026-09-05 归位）
+
+### 收口（同日）
+- 特殊放行收口完成：豁免字段落盘（mutationSkipReason/docsNoChangeReason/securityEvidence）→ scoped r5 绿、final r6 绿 → integrator 收口（changes/dev 制品 + ADR + 3 条 ARQ，commit a53da2f）→ pod-retro → supervisor-verdict=ESCALATE（high：跨系统+安全轴，机械判据正确）→ **human 批准合并**（事件 86c73079）→ 本地 --no-ff 合并（e33278d，人批一次性操作：机械闸无 human-批准入口，已登记 ARQ-260902-escalate-merge-no-human-path 并跟进合并 53731c6）。
+- 面板：260829-smoke-e2e = merged（mergeOrder 1 完成，下游 12 包底座就位）。
+- ECS 暴露面已回收（0.0.0.0 → 127.0.0.1:8080）；**待 human：阿里云安全组关闭 8080 放行**。
+- 遗留：真实声学往返（roundtrip.json）由下游 260829-voice-roundtrip 硬件到位后实证；届时先轮换设备 token（冒烟窗口值已部分留痕）。
