@@ -62,6 +62,10 @@ function hasFwAcceptanceRunner(fwDir) {
   for (const f of ['run_acceptance.sh', 'run_acceptance.py']) {
     if (existsSync(join(fwDir, f))) return true;
   }
+  // 260904（human 授权直改，afd31ac 先例）：`.acceptance.c` 冻结验收由 INF-A4 新约定 runner
+  //   main/test/host_app/ 执行（ELF 实体跑 host_infra_smoke.acceptance.c），以 host_app sdkconfig.defaults 判据。
+  const hostAppSdk = join(fwDir, 'main', 'test', 'host_app', 'sdkconfig.defaults');
+  if (existsSync(hostAppSdk) && /CONFIG_IDF_TARGET_LINUX=y/.test(readFileSync(hostAppSdk, 'utf8'))) return true;
   return false;
 }
 

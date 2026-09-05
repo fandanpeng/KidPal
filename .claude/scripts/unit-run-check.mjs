@@ -76,6 +76,10 @@ function hasFwUnitRunner(fwDir) {
   // 约定：firmware/host_test/ 目录或 sdkconfig.ci.linux / CMakeLists 提及 linux target。
   if (existsSync(join(fwDir, 'host_test'))) return true;
   if (existsSync(join(fwDir, 'sdkconfig.ci.linux'))) return true;
+  // 260904（human 授权直改，afd31ac 先例）：INF-A4 新约定 main/test/host_app/ 为可执行 linux-target runner，
+  //   以 host_app 组件 sdkconfig.defaults 含 CONFIG_IDF_TARGET_LINUX=y 为判据。下游 host 包照 INF-A4 挂测试。
+  const hostAppSdk = join(fwDir, 'main', 'test', 'host_app', 'sdkconfig.defaults');
+  if (existsSync(hostAppSdk) && /CONFIG_IDF_TARGET_LINUX=y/.test(readFileSync(hostAppSdk, 'utf8'))) return true;
   return false;
 }
 
