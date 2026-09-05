@@ -1,0 +1,67 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "critical",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-05T05:06:48.676Z",
+  "changeId": "260829-host-test-infra",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "critical",
+    "reasons": [
+      "critical-path:firmware/main/test/host_app/sdkconfig.defaults",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "critical",
+      "declaredTier": "high",
+      "effectiveTier": "critical",
+      "ambiguous": false,
+      "diffReasons": [
+        "critical-path:firmware/main/test/host_app/sdkconfig.defaults"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "critical",
+        "declaredTier": "high",
+        "effectiveTier": "critical",
+        "ambiguous": false,
+        "diffReasons": [
+          "critical-path:firmware/main/test/host_app/sdkconfig.defaults"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-host-test-infra/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-host-test-infra/docs-delta.md",
+          "changes/dev/260829-host-test-infra/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788538515958-mutation-check.log",
+      ".claude/verify-logs/1788564891314-unit.log",
+      ".claude/verify-logs/1788564891517-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-host-test-infra/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-host-test-infra/docs-delta.md",
+      "changes/dev/260829-host-test-infra/review-packet.md"
+    ]
+  }
+}
