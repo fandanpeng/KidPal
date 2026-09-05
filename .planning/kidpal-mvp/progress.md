@@ -85,3 +85,13 @@
 - 面板：260829-smoke-e2e = merged（mergeOrder 1 完成，下游 12 包底座就位）。
 - ECS 暴露面已回收（0.0.0.0 → 127.0.0.1:8080）；**待 human：阿里云安全组关闭 8080 放行**。
 - 遗留：真实声学往返（roundtrip.json）由下游 260829-voice-roundtrip 硬件到位后实证；届时先轮换设备 token（冒烟窗口值已部分留痕）。
+
+## 2026-09-05 下一批 launch 面准备（主线程记，0/G merged 后）
+
+- 调度判定：G（mergeOrder 3）+ 0（mergeOrder 2）已并入 main（047b89d / d99af50）→ 按 PROPOSAL §3 规则下一批 = **WS（260903-device-ws-switch，等 G✓）+ 包 3（260829-session-logic，等 0✓）**，WIP=3 内两 Pod 并行。
+- launch 前置门：`portfolio-reconcile.mjs --check-launch --base-ref main` 两包全绿（taskpackage + PROPOSAL + decision-coverage 均在基准）。
+- **环境等价化完成**：worktree `C:/AI/KidPal-pod-device-ws-switch`（branch `dev/260903-device-ws-switch`）+ `C:/AI/KidPal-pod-session-logic`（branch `dev/260829-session-logic`），base 均 = main 85cc0c6；firmware/sdkconfig + dependencies.lock 镜像、managed_components junction 指主 checkout（共享缓存，主 checkout 当前为空、首次 build 由 component manager 填充）、worktree-bootstrap.mjs 各跑过（.env 面源不存在、按设计跳过）。
+- **专属图索引已建**：`C-AI-KidPal-pod-device-ws-switch` / `C-AI-KidPal-pod-session-logic`（moderate 模式，8983 节点 / 3.0 万边级，与主索引同口径排除）——纠正本轮中途口径：worktree 应建专属图索引（先例 = pod-gateway-directionB / pod-host-test-infra），非降级读文件。
+- board `--set-pod` 预填完毕（queued + worktreePath）；launch prompt 文件两份落 `.git/devloop/launch/`（WS 含 intake 必办：Pod S + TP-A 冻结验收 supersede 由 acceptance-author 处置；包 3 纯 host 口径）。**待 human 自跑 launch 命令**（headless 形态沿用 260902 记录的交付方式）。
+- **图索引漏建追因与热修（同日，human 指示「记录 ARQ、直接热修」）**：追因 = 主线程照抄 Pod 0 旧 launch prompt 的过期降级注记（建索引前旧文）而未验 `list_projects` 地面真值，叠加约定只存脚本注释（commit ed63d0c 纯文档层）+ rules 行「本仓尚未 commit 快照，索引用主索引」措辞误导。**热修（一次性跳过治理批、如实记录）**：`repo-structure.md` `.codebase-memory/` 行消歧——worktree 专属图索引定为 launch 面必办（同名建、不得降级读文件、引旧 prompt 先例前须验地面真值）。**ARQ 登记**：`ARQ-260905-worktree-graph-index-rules`（SHOULD，§1.2，追认手续 + 后审载体：是否加轻机械提醒，先例 ARQ-260904-gate-regex-uppercase-changeid「一次性热修后审」）。
+- **快照 artifact 入仓（同日，human 指示「彻底解决」）**：根因坐实 = 本仓从未生成/commit `.codebase-memory/` 快照，每个 worktree 只能从头全量建图。`index_repository(persistence=true, moderate)` 生成快照（16168 节点 / 39534 边，压缩 6.2MB，钉在 main 85cc0c6）+ 工具自写 `.gitattributes`（`binary merge=ours` 防二进制冲突），commit **b7aa3df** 入 main。自此 worktree 准备 = bootstrap 后跑一次索引即从快照导入 + 增量补差（近零成本）；launch 面必办性质不变（仍须跑那一次）。rules 行同步更新（删「尚未 commit」过时句）。注：persistence 运行按路径派生刷新的是既有重名项目 `C-AI-KidPal`（在册早于本次运行，非新建），主索引 `KidPal` 项目名不变。
