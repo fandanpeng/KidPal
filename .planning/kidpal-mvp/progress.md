@@ -69,3 +69,11 @@
 - **交路执行（human 授权）**：原子落地制品（spec v0.2/契约重写/ARQ/CDQ/门证据）commit 入 main → 建 `planning/kidpal-mvp-base-v0.4` commit 重切产物 → base 并入 main（PROPOSAL v0.4 在 main 生效）。
 - **launch 就绪**：G（260903-gateway-directionB）+ 0（host-test-infra，worktree 自新 base 重建）并行起跑；WS 等 G 绿。**G launch 前置门簇**：① 18789 锁 127.0.0.1（human/ECS 操作 + 部署期断言）② ARQ-260902-cert-lifecycle-deadlock 处置定夺（human）。包 4 闸 A（契约 §1.6 预审）与 U 的 V3 设计稿约束维持。
 - **G 前置门簇②销账（2026-09-03，human 拍板）**：ARQ-260902-cert-lifecycle-deadlock = **accept-as-risk**（≥10 年有效期 V25 已把到期推出产品生命周期；轮换脚本 + 到期告警由 GWA-A9 承载实现）；ARQ 移已结索引（commit `89b648f`）。G 前置门簇余 ① 18789 锁（部署前执行 + GWA-E3 断言）。
+
+## 2026-09-05 G 包（260903-gateway-directionB）dev-loop closeout（integrator 收口记）
+
+- **收口**：方向 B 重切后首包、服务端共享底座（mergeOrder 3）dev loop 完成、verifier 终审 final round 4 九闸全绿（evidence `r4.json`，`verifier-evidence-check` factOk:true）。closeout 制品（docs-delta / review-packet）+ 4 件证据（v21 / v23 / deploy / cert-lifecycle-accept-risk）晋升 `changes/dev/260903-gateway-directionB/`；`server/deploy/README.md` 补 deployment-facing 指引（GATEWAY_DEPLOY_DIR / secrets 管理）。
+- **治理追认**：ARQ-260902-cert-lifecycle-deadlock 迁 §1.3 watchlist（human 2026-09-04 accept-as-risk）；新增 ARQ-260904-gate-regex-uppercase-changeid（闸正则大写热修后审）与 ARQ-260904-v23-asr-swap-quota-recheck（token-plan 配额 2026-09-07 14:19 UTC 后补验 + 引擎 ASR provider 换型拍板）。
+- **live 待办（human 外因，不阻塞结构面）**：公网 0.0.0.0:8000 绑定授权、阿里云 ASR 凭据/token-plan 配额、引擎 ASR provider 换型拍板。
+- 下一步：WS（260903-device-ws-switch）等 G 绿后 launch（关键路径 G→WS）。
+- **合并补记（planner，2026-09-05）**：G 包 supervisor 机械闸判 ESCALATE（high：跨系统 + 安全轴 auth.py），human 批准合并（pod-events `escalate-merge-approved`，事件 56750137），按 Pod S 先例一次性手工 `--no-ff` 合并入 main——ARQ-260902-escalate-merge-no-human-path 第二次实例，其治理修复 PROPOSAL（260904-gov-review-escalate-merge-approval）已在主 checkout 立项待审。

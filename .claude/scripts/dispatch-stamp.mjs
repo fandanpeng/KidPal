@@ -28,7 +28,7 @@ import { EVENTS_SCHEMA_CUTOFF, appendPodEvent } from './pod-events-append.mjs';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function flagVal(name) {
   const i = process.argv.indexOf(name);

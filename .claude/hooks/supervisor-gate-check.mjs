@@ -55,7 +55,7 @@ const VERDICT_VALUES = new Set(['APPROVE', 'BLOCK', 'ESCALATE']);
 // convention 级同步清单 = 四文件：closeout-check.mjs / taskpackage-required-check.mjs /
 // devloop-artifact-check.mjs / hooks/supervisor-gate-check.mjs（本文件），禁各自另造（CHANGE_ID_CUTOFF 同值）。
 const CHANGE_ID_CUTOFF = '2026-07-23';
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function isPostCutoff(changeId) {
   const m = CHANGE_ID_PREFIX_RE.exec(String(changeId));

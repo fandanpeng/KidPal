@@ -1,0 +1,40 @@
+# systemd unit: KidPal direction-B streaming gateway (official xiaozhi-esp32-server).
+# Installed on the ECS at /etc/systemd/system/xiaozhi.service (GWA-A2 / GWA-E3).
+#
+# Deployment source: /opt/kidpal/xiaozhi-esp32-server (xinnan-tech/xiaozhi-esp32-server,
+# MIT) — server code lives under main/xiaozhi-server/ of that clone; boot is `python app.py`
+# (its own WebSocketServer on port 8000 + SimpleHttpServer on 8003).
+#
+# Device leg: the official server serves plain WS on 8000. WSS (TLS) on 8000 is provided by
+# the KidPal gateway FRONT (TLS-terminating reverse proxy composing server/gateway/*: forced
+# device auth on the handshake, mcp display/alert relay, 4s-soothing + error fallback). The
+# gateway front is the remaining live bring-up work — the engine below carries the streaming
+# core. The >=10y self-signed cert for that front is at cert/server.pem (GWA-A9).
+#
+# Provider overrides (LLM type:openai->OpenClaw loopback 127.0.0.1:18789, TTS=edge-tts,
+# ASR=阿里云云端 aliyun_stream) live in data/.config.yaml rendered from
+# server/deploy/provider.config.yaml + secrets.env by apply-xiaozhi-overlay.sh.
+#
+# 18789 lock (V28): OpenClaw brain bound to 127.0.0.1:18789 ONLY; applied on ECS
+# (openclaw.json gateway.bind = loopback). Asserted live via ss (never *:18789).
+
+[Unit]
+Description=KidPal streaming gateway engine (xiaozhi-esp32-server, direction B)
+After=network-online.target openclaw-gateway.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server
+Environment=PATH=/opt/kidpal/venv/bin:/usr/local/bin:/usr/bin
+# Device-auth strong shared token (>=22 chars, 决策22). token 未设 = 拒绝服务.
+Environment=KIDPAL_DEVICE_TOKEN=
+EnvironmentFile=-/opt/kidpal/xiaozhi-esp32-server/deploy/secrets.env
+ExecStart=/opt/kidpal/venv/bin/python app.py
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

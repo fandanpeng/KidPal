@@ -1,0 +1,47 @@
+# KidPal direction-B engine container topology (official xiaozhi-esp32-server image).
+#
+# The OFFICIAL image pre-builds the full heavy dependency closure (python:3.10-slim +
+# libopus/ffmpeg + pip requirements incl. torch/funasr/sherpa/vosk/...) — this removes the
+# from-source boot blocker (app.py auto-imports all function plugins).
+#
+#   image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest
+#           (China mirror of ghcr.io/... — reachable from the Aliyun ECS; fall back to
+#            ghcr.io/... if the mirror is unreachable)
+#
+# Engine stays UNPATCHED in the container (zero engine side patches). Config overlay
+# (data/.config.yaml) and data/config/models dirs are volume-mounted so keys stay out of
+# the image layer and data persists across container recreation.
+#
+# The engine's plain ws:8000 is published to the HOST on LOOPBACK 127.0.0.1:8010 — the
+# device-facing PUBLIC wss:8000 is served by the TLS FRONT (server/gateway/front), which
+# terminates TLS + forces device auth and forwards to this loopback plain-ws leg.
+# (Live A2/A3 probe the front's public 8000; the engine stays internal.)
+
+version: "3"
+services:
+  xiaozhi-esp32-server:
+    image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest
+    container_name: xiaozhi-esp32-server
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - TZ=Asia/Shanghai
+    extra_hosts:
+      # container->host LLM brain (OpenClaw on host loopback 18789, V28 lock). Inside the
+      # container 127.0.0.1 is the container, so the LLM base_url uses host.docker.internal.
+      - "host.docker.internal:host-gateway"
+    ports:
+      # engine plain ws leg -> host LOOPBACK only (front is the public wss entry)
+      - "127.0.0.1:8010:8000"
+    volumes:
+      # config overlay (data/.config.yaml) + persistence origin
+      - ./xiaozhi-docker-data:/opt/xiaozhi-esp32-server/data
+      # model assets for local/cloud fallback (large, mounted read-mostly)
+      - /opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server/models:/opt/xiaozhi-esp32-server/models
+    # logging drives the container health check used by the systemd unit
+    healthcheck:
+      test: ["CMD-SHELL", "ss -tln 2>/dev/null | grep -q :8000 || netstat -tln 2>/dev/null | grep -q :8000"]
+      interval: 15s
+      timeout: 5s
+      retries: 5

@@ -1,0 +1,32 @@
+# systemd unit: KidPal direction-B engine CONTAINER (official xiaozhi-esp32-server Docker).
+# Installed on the ECS at /etc/systemd/system/xiaozhi-container.service.
+#
+# Pulls + runs server/deploy/docker-compose.yml (official image, overlay/data volume
+# mounts, engine plain ws:8000 published to host LOOPBACK 127.0.0.1:8010). The engine is
+# run UNPATCHED inside the container. The device-facing wss:8000 is served by the TLS
+# FRONT (kidpal-front.service) which terminates TLS + forces device auth and forwards to
+# this loopback plain-ws leg.
+#
+# Requires docker + compose plugin on the ECS (checked = docker 26.1.4, compose v2.27.1).
+# If docker itself is unavailable, this unit must not silently fake a running engine.
+
+[Unit]
+Description=KidPal direction-B engine (official xiaozhi-esp32-server container)
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+WorkingDirectory=/opt/kidpal/xiaozhi-esp32-server/deploy
+Environment=PATH=/usr/local/bin:/usr/bin:/usr/sbin
+EnvironmentFile=-/opt/kidpal/xiaozhi-esp32-server/deploy/secrets.env
+ExecStart=/usr/bin/docker compose -f /opt/kidpal/xiaozhi-esp32-server/deploy/docker-compose.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f /opt/kidpal/xiaozhi-esp32-server/deploy/docker-compose.yml down
+# oneshot exec is not long-running; health is monitored separately.
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

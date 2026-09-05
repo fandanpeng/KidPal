@@ -1,0 +1,43 @@
+# KidPal direction-B gateway provider declarations (GWA-A4 / 决策18 / 决策19).
+#
+# This file is the machine-readable *declaration* of the three required provider
+# families, rendered onto the ECS xiaozhi-esp32-server config overlay
+# (data/.config.yaml under /opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server)
+# at deploy time by server/deploy/apply-xiaozhi-overlay.sh. Credentials are injected
+# from server/deploy/secrets.env at render time — never hard-coded here.
+#
+# Contract §四 / V9 hard constraint: the streaming request to OpenClaw MUST NOT carry
+# max_tokens (实测触发 agent incomplete-turn). see provider.openclaw_stream_request.
+
+gateway:
+  name: "xiaozhi"                       # systemd unit name (GATEWAY_SERVICE)
+  deploy_source: "/opt/kidpal/xiaozhi-esp32-server"
+  wss_port: 8000                        # device leg (wss://<ecs>:8000/xiaozhi/v1/)
+  # 18789 锁 127.0.0.1 (V28 硬前置): OpenClaw brain loopback-only.
+  openclaw_loopback: "http://127.0.0.1:18789"
+  openclaw_loopback_lock: "127.0.0.1:18789"
+  wss_cert: "/opt/kidpal/xiaozhi-esp32-server/cert/server.pem"
+  wss_key: "/opt/kidpal/xiaozhi-esp32-server/cert/server.key"
+
+providers:
+  llm:
+    family: "llm"
+    provider: "openai"                  # type:openai 流式接 OpenClaw
+    target: "openclaw"                  # OpenClaw OpenAI-compatible endpoint
+    base_url: "http://127.0.0.1:18789"  # loopback (V28)
+    model: "openclaw/default"
+    stream: true
+    forbid_max_tokens: true             # 契约 §四 / V9 硬约束
+  tts:
+    family: "tts"
+    provider: "edge-tts"                # edge-tts 下行 (venv 3.11 已装 edge-tts 7.2.8)
+    voice: "zh-CN-XiaoxiaoNeural"
+  asr:
+    family: "asr"
+    provider: "aliyun"                  # 阿里云云 ASR (决策19 云优先; V23 终选/降级链见 evidence)
+    candidate_stream: true              # 候选流式 + VAD 切句兼容性实测 (V23)
+    api_key_env: "DASHSCOPE_API_KEY"
+    appkey_env: "ALIYUN_ASR_APPKEY"
+    token_env: "ALIYUN_ASR_TOKEN"
+    # 若凭据不可得: live ASR 标缺口升级 (human 待办), 结构面按可声明形状实现, 不伪造.
+    downgrade_chain: ["fun_asr-server -> sensevoice", "aliyun_nonsream", "aliyun_stream"]

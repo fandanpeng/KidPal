@@ -162,7 +162,7 @@ export function readRetroLedger(projectDir) {
     .filter(Boolean);
 }
 
-const CHANGE_ID_PREFIX_RE_LHR = /^(\d{6})-[a-z0-9-]+$/;
+const CHANGE_ID_PREFIX_RE_LHR = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function isPostEventsCutoff(changeId) {
   const m = CHANGE_ID_PREFIX_RE_LHR.exec(String(changeId));
