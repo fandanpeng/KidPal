@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "85cc0c6146494e9541119d360dd85eb5d597395e",
-    "indexed_at": "2026-09-05T10:29:42Z",
+    "commit": "85b5af0f5dca635f3d23c73ba76e74a1cc8c3a94",
+    "indexed_at": "2026-09-05T10:42:24Z",
     "project": "C-AI-KidPal",
     "nodes": 16168,
     "edges": 39534,
     "original_size": 33751040,
-    "compressed_size": 6459400,
+    "compressed_size": 6481469,
     "compression_level": 3
 }
