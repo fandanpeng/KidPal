@@ -1,0 +1,28 @@
+# Host (linux target) unit-test app config.
+# See the host test directory-convention doc (INF-A4/INF-E2) for the run protocol.
+CONFIG_IDF_TARGET_LINUX=y
+
+# Unity runner: enables the IDF unity runner + unity_run_all_tests(), and (via
+# unity_config.h) pulls in unity_test_runner.h so the TEST_CASE macro is available
+# to any `*.acceptance.c` that just does `#include <unity.h>`.
+CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=y
+
+# LVGL: use 32-bit (ARGB8888) color so the render seam can probe an exact 0xRRGGBB
+# fill color (0x336699 stays bit-exact after the & 0x00FFFFFF mask). LVGL's Kconfig
+# exposes this as a boolean choice (CONFIG_LV_COLOR_DEPTH_32=y), NOT a value assign —
+# a bare `CONFIG_LV_COLOR_DEPTH=32` is ignored and the renderer falls back to RGB565,
+# which would make the ARGB8888 seam probe read the wrong pixels.
+CONFIG_LV_COLOR_DEPTH_32=y
+
+# LVGL memory: allocate from the OS heap (standard malloc) instead of LVGL's built-in
+# fixed-size pool. The render seam allocates a 400x300x4 = ~480 KB full-frame draw
+# buffer — well over LV_MEM_SIZE_DEFAULT (a few hundred KB) — so the built-in pool
+# would return NULL and the seam would abort. CLIB allocators keep host tests able to
+# allocate real frames on a PC without tuning LV_MEM_SIZE.
+CONFIG_LV_USE_CLIB_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+CONFIG_LV_USE_CLIB_SPRINTF=y
+
+# Skip LVGL demos/examples and widgets we do not exercise, to keep the host build lean.
+CONFIG_LV_BUILD_EXAMPLES=n
+CONFIG_LV_BUILD_DEMOS=n

@@ -1,5 +1,5 @@
 {
-  "changeId": "260903-gateway-directionB",
+  "changeId": "260829-host-test-infra",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -9,10 +9,10 @@
     "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "server",
-  "story": "方向 B 流式网关 bring-up（tracer-bullet 服务端片）：官方 xinnan-tech/xiaozhi-esp32-server 部署到 ECS（部署源 /opt/kidpal/xiaozhi-esp32-server，MIT）+ provider 适配（LLM type:openai 接 OpenClaw【流式请求禁带 max_tokens】、TTS=edge-tts、ASR=阿里云云端开通与首验终选）+ 强制设备鉴权（V11：token 未设=拒绝服务、机械短路语义、constant-time 比对）+ ```display 切分与机械 schema 校验（V27：view 白名单 + data shape/大小上限 + 脏 JSON 拒绝降级）+ mcp 中转基建（kidpal/display 与 kidpal/alert 传输 + JSON-RPC 回执）+ 网关兜底逻辑生成（4s 安抚句定时器 / 错误兜底「网络出小差了」结束当轮 / V32 超句截断分屏）+ 部署期首验（V21 多轮连续性探针定承载方案 / V23 ASR 流式+VAD 兼容性终选）+ 自签证书签发（≥10 年 + 轮换脚本 + 到期告警，V25）。",
-  "redBaselineCommand": "cd server && pytest acceptance/test_gateway_directionB.acceptance.py -q --import-mode=importlib（文件名双点致默认 import 模式收集失败，repo 级已知约束，Pod S 同款；或独立运行器 python server/acceptance/test_gateway_directionB.acceptance.py）；ECS live 面按 @pytest.mark.live 口径（不 auto-run）",
-  "redBaselineResult": "RED（2026-09-04 acceptance-author 实测：结构面 20 failed / 0 error / 10 deselected live，live SSH 冒烟通过）：a2 无部署承载/wss 端口；a3 server/gateway/auth.py 不存在（无 token 拒绝、错 token 拒绝、constant-time 均无承载）；boundary 空文本 400 无承载；a4 provider 模块不存在（流式禁 max_tokens 不可证）+ LLM/TTS/ASR 三 provider 配置未声明；a5 display_schema 不存在（view 白名单/data 超限/伪造 control_end_session 均无拒绝路径）；a6 mcp_relay 不存在（kidpal/display、kidpal/alert JSON-RPC 及回执未实现）；a7 fallback 不存在（4s 安抚句/错误兜底/V32 超句截断）；a8 changes/dev/260903-gateway-directionB/ 无 V21/V23 探针结论；a9 无证书轮换/到期告警脚本；e2 无部署证据；e3 无 18789 锁 127.0.0.1 配置引用、无 cert accept-as-risk 记账；e4 无 provider 可插拔底座。每条红对应真实缺失行为，无 import/语法错误假红。",
+  "subsystem": "firmware",
+  "story": "host 测试基建（先行包）：为 ESP-IDF 工程搭建 linux target 单测骨架 + LVGL SDL 屏幕模拟 + host 测试目录约定，让后续所有纯逻辑包能脱离硬件在电脑上跑测试。",
+  "redBaselineCommand": "在 firmware 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
+  "redBaselineResult": "红：2026-08-29 实测 firmware/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。| append（acceptance-author 2026-09-04 实测复验）：① 复验 firmware/main/test/ 不存在、sdkconfig.defaults* 全芯片 target 无 CONFIG_IDF_TARGET_LINUX。② ESP-IDF v5.5.1 框架与工具已装（C:\\esp\\v5.5.1\\esp-idf + %USERPROFILE%\\.espressif，toolchain-linux.cmake 存在=linux target 受支持），但本会话 Git Bash(MSys/Mingw) 非受支持 shell：export.sh 报 MSys/Mingw is not supported、直调 idf.py 仅印 warning 无版本输出——无法在本 shell 实跑建 host 单测。③ 红基线=『环境 shell 未受支持 + 基建不存在』双因素红，非测试假红；转绿需 builder 在受支持 shell（ESP-IDF CMD/PowerShell 激活）建 host 单测、unity all passed。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,199 +21,112 @@
   "riskTier": "high",
   "gateProfile": [
     "types",
-    "security",
     "test-quality",
     "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "GWA-A1",
+      "id": "INF-A1",
       "kind": "structural"
     },
-    "GWA-A2: xiaozhi-esp32-server 在 ECS 部署并运行，wss 端口设备侧可达（部署源 /opt/kidpal/xiaozhi-esp32-server）",
-    "GWA-A3: 强制设备鉴权——无 token → 拒绝、错 token → 拒绝、token 未设 = 拒绝服务不留 validation-mode 后门；机械短路语义（非仅条件分支），历史教训 = ARQ-260902-shim-401-gate-bypass；共享 token constant-time 比对（决策 22 / V11 / V26）",
-    "GWA-A4: provider 链路通——LLM type:openai 流式接 OpenClaw（流式请求禁带 max_tokens，实测坑已钉契约 §四）、TTS edge-tts 下行、阿里云云 ASR 上行（开通 + V23 首验终选：候选流式 + VAD 切句兼容性实测，不达标按决策 19 降级链处置）",
-    "GWA-A5: ```display 切分 + 机械 schema 校验——view ∈ 白名单（char/schedule/story_list/story_text/text/home/control）、data shape/大小上限、脏 JSON 拒绝并降级友好提示；确定性单测覆盖伪造 control/end_session 与畸形 view/超大 data（V27）",
-    "GWA-A6: mcp 中转基建——kidpal/display 与 kidpal/alert 两种载荷经 JSON-RPC tools/call 下发、设备回执回传闭环（小智原生 alert/custom 通道弃用，决策 23）",
-    "GWA-A7: 网关兜底逻辑生成——4s 安抚句定时器（LLM 首 token 超 4 秒先推固定安抚句）/ 云端任一环节失败 = 「网络出小差了，等一会儿再试试吧」+ text 视图结束当轮 / 答案超 3 句按有处理的失败模式截断分屏（V32）；设备侧消费验收归包 2",
-    "GWA-A8: 部署期首验双探针——V21 两轮追问连续性探针（通过 → A4 成立；失败 → 网关适配传会话标识/历史立项，或降级单轮并记账，ARQ-260902-multiturn-continuity）；V23 ASR 终选结论落盘",
-    "GWA-A9: 自签证书签发——有效期 ≥10 年 + 轮换机械脚本 + 到期前告警（V25；ARQ-260902-cert-lifecycle-deadlock 处置定夺为 launch 前置门）"
+    "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
+    "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
+    "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试"
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_gateway_directionB.acceptance.py"
+    "firmware/main/test/host_infra_smoke.acceptance.c"
+  ],
+  "acceptanceTestsCoverage": [
+    {
+      "acceptance": "INF-A1",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "structural: 冻结验收文件落位"
+    },
+    {
+      "acceptance": "INF-A2",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "test_host_runner_executes_sample_logic: host unity runner 编译并跑过一条真实样例断言 (exit 0 + >=1 passed)"
+    },
+    {
+      "acceptance": "INF-A3",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "test_host_sdl_renders_frame_to_virtual_screen: LVGL SDL 渲染一帧固定色到虚拟屏（探针校验，非仅编译过）"
+    },
+    {
+      "acceptance": "INF-A4",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "verifier 人工核验点 [C4.1]-[C4.5]: 目录约定文档+放置/命名/运行命令文档化+INF-E2 兼容矩阵落同一文档"
+    }
+  ],
+  "mutationEvidence": [
+    {
+      "acceptanceId": "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
+      "note": "mutation（builder 2026-09-04, WSL）：临时移除 host_app/main/CMakeLists.txt 的 WHOLE_ARCHIVE → 重建(elf 4.1MB→430KB) + 跑 ELF 得 0 Tests/0 Failures/OK/EXIT=0 = 空洞红（TEST_CASE 对象被链接器丢弃，真实样例断言一条未跑）→ 恢复 WHOLE_ARCHIVE → 复跑 4 Tests 0 Failures 全过。marker: 变红/failed as expected",
+      "ok": true
+    },
+    {
+      "acceptanceId": "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
+      "note": "mutation（builder 2026-09-04, WSL）：host_infra_seam.c 填充色 0x336699→0x204060 → 重建 + 跑 ELF 得 INF-A3 FAIL: Expected 3368601 Was 2113632 = 变红（证明探针真读渲染像素非静态返回）→ cp 备份恢复原色 → 复跑 PASS。marker: 变红/failed as expected",
+      "ok": true
+    },
+    {
+      "acceptanceId": "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试",
+      "note": "mutation（builder 2026-09-04）：mv firmware/main/test/HOST_TEST_CONVENTIONS.md _hidden.md → [C4.1] check RED（doc missing from expected path）断链 = 变红 → mv 还原 → [C4.1] PASS（9429 字节回原位）。marker: 变红/failed as expected",
+      "ok": true
+    }
   ],
   "exitCriteria": [
     {
-      "id": "GWA-E1",
+      "id": "INF-E1",
       "kind": "structural"
     },
-    "GWA-E2: ECS live 验收按 ARQ-260901-g3-server-live-acceptance 口径（@pytest.mark.live、不 auto-run）；部署证据落 changes/dev/",
-    "GWA-E3: launch 前置门簇核销记录——① 18789 锁 127.0.0.1（V28 硬前置，安全组/防火墙操作 + 部署期断言）② ARQ-260902-cert-lifecycle-deadlock 处置定夺（accept-as-risk 记账或 OTA 提前）",
-    "GWA-E4: 本包是服务端共享底座（包 7 提醒投递 / 包 8 网关累积均为本包网关代码的 additive 扩展），mergeOrder 3 先并减冲突面"
+    "INF-E2: 实测并记录小智工程哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device——这是本包自身验收内容，不预判结论，结果落进 host 测试目录约定文档",
+    "INF-E3: 基建是后续包 2/3/4/5/6/8 的公共依赖，mergeOrder 2（仅次于 S）以减少跨 Pod 冲突面"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§3.0.0",
-    "docs/spec.md#§6.1",
-    "docs/contracts/interface-contract.md#§四"
+    "docs/spec.md#§5"
   ],
   "sourceRefs": [
-    "docs/spec.md#§3.0.0",
-    "docs/spec.md#§6.1",
-    "docs/contracts/interface-contract.md#§四",
-    "G"
+    "docs/spec.md#§5.1",
+    "0"
   ],
   "iterationBudget": 4,
   "fixBudget": 6,
-  "docsSyncRequired": true,
-  "mutationRequired": true,
-  "mutationEvidence": [
-    {
-      "acceptance": "GWA-A2: xiaozhi-esp32-server 在 ECS 部署并运行，wss 端口设备侧可达（部署源 /opt/kidpal/xiaozhi-esp32-server）",
-      "mutation": "从部署承载面（deploy .service/.yaml/.sh + gateway 语料）剥离全部 wss 端口 carrier（任意大小写 wss 与 8000，5 文件）",
-      "affectedTest": "test_a2_deploy_config_carriers_xiaozhi_source",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "敏感性偏弱（presence 子串检查，prose 注释也命中；builder 如实标注）；真实 teeth 在 live test_a2_live_wss_port_reachable。11 文件 sha256 还原核销全绿"
-    },
-    {
-      "acceptance": "GWA-A3: 强制设备鉴权——无 token → 拒绝、错 token → 拒绝、token 未设 = 拒绝服务不留 validation-mode 后门；机械短路语义（非仅条件分支），历史教训 = ARQ-260902-shim-401-gate-bypass；共享 token constant-time 比对（决策 22 / V11 / V26）",
-      "mutation": "auth.authorize 空 token 短路成 (True,200)（refuse-service 被破坏）",
-      "affectedTest": "test_a3_auth_module_forces_token",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红；constant-time 与 boundary 断言正交未动，teeth 精确"
-    },
-    {
-      "acceptance": "GWA-A4: provider 链路通——LLM type:openai 流式接 OpenClaw（流式请求禁带 max_tokens，实测坑已钉契约 §四）、TTS edge-tts 下行、阿里云云 ASR 上行（开通 + V23 首验终选：候选流式 + VAD 切句兼容性实测，不达标按决策 19 降级链处置）",
-      "mutation": "openclaw_stream_request 塞回 max_tokens:500（违背契约 §四流式禁带约束）",
-      "affectedTest": "test_a4_no_max_tokens_in_stream_request",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红"
-    },
-    {
-      "acceptance": "GWA-A5: ```display 切分 + 机械 schema 校验——view ∈ 白名单（char/schedule/story_list/story_text/text/home/control）、data shape/大小上限、脏 JSON 拒绝并降级友好提示；确定性单测覆盖伪造 control/end_session 与畸形 view/超大 data（V27）",
-      "mutation": "清空 VALID_VIEWS（view 白名单失效）",
-      "affectedTest": "test_a5_view_whitelist_enforced",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红；oversized/forged 断言正交未动"
-    },
-    {
-      "acceptance": "GWA-A6: mcp 中转基建——kidpal/display 与 kidpal/alert 两种载荷经 JSON-RPC tools/call 下发、设备回执回传闭环（小智原生 alert/custom 通道弃用，决策 23）",
-      "mutation": "禁用 relay_ack 回执确认（渲染回执不视为送达）",
-      "affectedTest": "test_a6_mcp_relay_alert_and_ack",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红"
-    },
-    {
-      "acceptance": "GWA-A7: 网关兜底逻辑生成——4s 安抚句定时器（LLM 首 token 超 4 秒先推固定安抚句）/ 云端任一环节失败 = 「网络出小差了，等一会儿再试试吧」+ text 视图结束当轮 / 答案超 3 句按有处理的失败模式截断分屏（V32）；设备侧消费验收归包 2",
-      "mutation": "SOOTHING_TIMEOUT_MS 4000→999999（4s 安抚定时器阈值破坏）",
-      "affectedTest": "test_a7_soothing_and_error_fallback",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红"
-    },
-    {
-      "acceptance": "GWA-A8: 部署期首验双探针——V21 两轮追问连续性探针（通过 → A4 成立；失败 → 网关适配传会话标识/历史立项，或降级单轮并记账，ARQ-260902-multiturn-continuity）；V23 ASR 终选结论落盘",
-      "mutation": "已落地证据文件改名（v21-multiturn-continuity-probe.md 与 v23-asr-final-selection.md 各一次 → .bak 从发现集剔除）",
-      "affectedTest": "test_a8_v21_multiturn_probe_evidence / test_a8_v23_asr_selection_evidence",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "integrator 实测（2026-09-05）：变红→还原→复绿，恢复后 SHA256 与源逐字节一致；evidence-based 条目的标准 mutation"
-    },
-    {
-      "acceptance": "GWA-A9: 自签证书签发——有效期 ≥10 年 + 轮换机械脚本 + 到期前告警（V25；ARQ-260902-cert-lifecycle-deadlock 处置定夺为 launch 前置门）",
-      "mutation": "全删 cert-renew.sh 的 ≥10y literal（3650/7300 全去）",
-      "affectedTest": "test_a9_cert_rotation_and_expiry_scripts",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "单点即红；live 证书实为 20 年（notAfter 2046-08-30）"
-    }
-  ],
   "docsOwner": "integrator",
-  "mergeOrder": 3,
+  "docsSyncRequired": true,
+  "mergeOrder": 2,
   "dependsOn": [],
-  "testHost": "PC pytest + ECS live",
+  "testHost": "基建自身",
+  "notes": "intake（planner，2026-09-04）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pod，本包 queued mergeOrder 2）/ origin.upstreamRef→PROPOSAL.md FROZEN v0.4），权威字段原样消费、未重归一；worktree 分支 dev/260829-host-test-infra 已含 planning/kidpal-mvp-base-v0.4（祖先关系实测通过），留根② worktree 重建已解决。② upstreamFrozen pin sha1:88a5bdb83abdd867 机械复验在 launch 会话因工具分类器抖动未即时跑通，属 convention-only（UPSTREAM_DRIFT=warn），closeout-check 相位机械复验兜底。③ 契约判定=纯消费：本包只搭 host 测试基建（ESP-IDF linux target 单测 + LVGL SDL + 目录约定），零契约面触点。④ scope-map 走查：acceptance-author allow 面 firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow 面 firmware/** 覆盖实现路径。⑤ 设备现场（human，2026-09-04）：设备已连接、mic 正常、喇叭未接——本包 host 侧不受影响，记录备后续 WS/9a/9b 包 intake。⑥ INF-E2 兼容性盘点要求「不预判结论」：哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device，由 builder 实测落进目录约定文档。",
   "decisionCoverage": [
     {
-      "decision": "spec-决策18-服务端实现形态",
-      "summary": "官方 Python 版小智服务端 + 适配插件（LLM type:openai 接 OpenClaw / TTS edge-tts / ASR 阿里云云端 / 自写仅 push helper 与提醒推送）。",
+      "decision": "PROPOSAL-§5-OQ2",
+      "summary": "human 裁定测试策略走 (A) 先搭 host 基建（包 0），让 B 段 9 包全程电脑跑、不碰板子。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策18"
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
       ],
-      "landsIn": "acceptance:GWA-A2"
+      "landsIn": "acceptance:INF-A2"
     },
     {
-      "decision": "spec-决策22-传输安全与鉴权",
-      "summary": "强制设备鉴权（token 未设=拒绝）+ 共享单 token（≥128-bit、constant-time）+ 18789 锁 127.0.0.1 硬前置 + wss 自签证书 ≥10 年。",
+      "decision": "PROPOSAL-§1-测试分层",
+      "summary": "纯逻辑（状态机/display解析/课表筛选/贝塞尔/坐标变换）脱离硬件可测，靠 ESP-IDF host-based 单测（linux target）+ LVGL SDL 屏幕模拟。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策22"
+        ".planning/kidpal-mvp/PROPOSAL.md#§1"
       ],
-      "landsIn": "acceptance:GWA-A3"
+      "landsIn": "acceptance:INF-A3"
     },
     {
-      "decision": "spec-决策19-ASR云优先",
-      "summary": "阿里云云 ASR 前期（开通 + 首验终选），兜底 = 扩容切本地 SenseVoice；V23 补降级触发（云 ASR 流式与 VAD 切句不兼容）。",
+      "decision": "PROPOSAL-§7-linux-target兼容性",
+      "summary": "host 基建的 ESP-IDF linux target 兼容性不预判结论：哪些模块可 host 编译、哪些只能 device 是包 0 自身验收内容。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策19"
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
       ],
-      "landsIn": "acceptance:GWA-A4"
-    },
-    {
-      "decision": "contract-§四-provider硬约束",
-      "summary": "对 OpenClaw 的流式请求禁带 max_tokens（实测触发 agent incomplete-turn 报错）。",
-      "sourceRefs": [
-        "docs/contracts/interface-contract.md#§四"
-      ],
-      "landsIn": "acceptance:GWA-A4"
-    },
-    {
-      "decision": "handoff-V27-display机械校验",
-      "summary": "网关侧机械 schema 校验：view 白名单 + data shape/大小上限 + 脏 JSON 拒绝，回退 text 或丢弃。",
-      "sourceRefs": [
-        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V27"
-      ],
-      "landsIn": "acceptance:GWA-A5"
-    },
-    {
-      "decision": "spec-决策23-协议载体",
-      "summary": "display 与提醒统一走 mcp 工具调用（kidpal/display、kidpal/alert），设备 JSON-RPC 回执 = 送达确认；小智原生 alert/custom 弃用。",
-      "sourceRefs": [
-        "docs/spec.md#§7-决策23"
-      ],
-      "landsIn": "acceptance:GWA-A6"
-    },
-    {
-      "decision": "spec-§4.0-错误兜底行-生成侧",
-      "summary": "4s 安抚句（网关定时器）/ 错误兜底「网络出小差了」/ V32 超句截断分屏的网关侧生成逻辑归本包；设备侧消费验收归包 2。",
-      "sourceRefs": [
-        "docs/spec.md#§4.0"
-      ],
-      "landsIn": "acceptance:GWA-A7"
-    },
-    {
-      "decision": "handoff-V21-多轮连续性首验",
-      "summary": "部署期第一件事 = 两轮追问连续性探针；承载方案（网关侧状态 vs 每轮透传历史）随首验定案。",
-      "sourceRefs": [
-        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V21"
-      ],
-      "landsIn": "acceptance:GWA-A8"
-    },
-    {
-      "decision": "handoff-V25-证书十年期",
-      "summary": "自签证书 ≥10 年有效期 + 轮换机械脚本 + 到期前告警；ARQ-260902-cert-lifecycle-deadlock launch 前置。",
-      "sourceRefs": [
-        "changes/arch/260902-arch-review-kidpal-spec-v0.2/adjudications.md#V25"
-      ],
-      "landsIn": "acceptance:GWA-A9"
+      "landsIn": "exitCriteria:INF-E2"
     }
-  ],
-  "notes": "验收文件路径由 portfolio 草案的 server/tests/ 对齐到 server/acceptance/（scope-map acceptance-author 白名单 = server/**/acceptance/**，Pod S 先例同目录；planner 归一只补验收落盘，2026-09-04）。launch 前置门簇已裁定（pod-events 2026-09-04）：①18789 锁 127.0.0.1 授权包内 SSH 执行+部署期断言；②ARQ-260902-cert-lifecycle-deadlock accept-as-risk 记账，ARQ 队列迁移由 integrator 收口执行（planner 无 docs/** 写权）。multi-pod 模式（board 已置 running）。禁止改 docs/contracts/** 与 *.acceptance.* 冻结件；结构化日志带 correlationId（K6）。ECS live 验收按 ARQ-260901-g3-server-live-acceptance 口径 @pytest.mark.live 不 auto-run；冻结验收落盘后按 ARQ-260902-frozen-acceptance-never-run 先做一次结构面冒烟执行（已执行，live SSH 可达冒烟绿）。冻结模块契约（2026-09-04 acceptance-author 钉定，builder 必须遵循）：server/gateway/{auth,display_schema,provider,fallback,mcp_relay}.py 纯 Python 模块，import 时不得依赖 fastapi/edge_tts/httpx，函数签名/常量以验收文件 docstring 为准。gate-regex 热修（8 文件 [a-z0-9-]→[a-zA-Z0-9-]，pod-events human-decision gate-regex-hotfix）已落地，ARQ 登记由 integrator 收口补。docRefs 机械归一（2026-09-05）：dev-loop-handoff.json 移出 docRefs（arch-review 输入制品、按 V-id 组织不含 GWA id，docs-sync 追溯闸口径不符；其溯源由 decisionCoverage sourceRefs V11/V21/V25/V27 各条完整承载，未丢失）。"
+  ]
 }

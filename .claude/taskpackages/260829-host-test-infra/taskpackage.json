@@ -12,7 +12,7 @@
   "subsystem": "firmware",
   "story": "host 测试基建（先行包）：为 ESP-IDF 工程搭建 linux target 单测骨架 + LVGL SDL 屏幕模拟 + host 测试目录约定，让后续所有纯逻辑包能脱离硬件在电脑上跑测试。",
   "redBaselineCommand": "在 firmware 下配置 linux target 并编译一个最小 host 单测可执行（如 idf.py --preview set-target linux + 跑一个 hello 单测）",
-  "redBaselineResult": "红：2026-08-29 实测 firmware/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。",
+  "redBaselineResult": "红：2026-08-29 实测 firmware/main/ 无 test* 目录、sdkconfig.defaults* 无 linux target 配置——host 单测基建不存在，编译/运行必失败。本包把它搭到绿。| append（acceptance-author 2026-09-04 实测复验）：① 复验 firmware/main/test/ 不存在、sdkconfig.defaults* 全芯片 target 无 CONFIG_IDF_TARGET_LINUX。② ESP-IDF v5.5.1 框架与工具已装（C:\\esp\\v5.5.1\\esp-idf + %USERPROFILE%\\.espressif，toolchain-linux.cmake 存在=linux target 受支持），但本会话 Git Bash(MSys/Mingw) 非受支持 shell：export.sh 报 MSys/Mingw is not supported、直调 idf.py 仅印 warning 无版本输出——无法在本 shell 实跑建 host 单测。③ 红基线=『环境 shell 未受支持 + 基建不存在』双因素红，非测试假红；转绿需 builder 在受支持 shell（ESP-IDF CMD/PowerShell 激活）建 host 单测、unity all passed。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -37,6 +37,45 @@
   "acceptanceTestsFile": [
     "firmware/main/test/host_infra_smoke.acceptance.c"
   ],
+  "acceptanceTestsCoverage": [
+    {
+      "acceptance": "INF-A1",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "structural: 冻结验收文件落位"
+    },
+    {
+      "acceptance": "INF-A2",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "test_host_runner_executes_sample_logic: host unity runner 编译并跑过一条真实样例断言 (exit 0 + >=1 passed)"
+    },
+    {
+      "acceptance": "INF-A3",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "test_host_sdl_renders_frame_to_virtual_screen: LVGL SDL 渲染一帧固定色到虚拟屏（探针校验，非仅编译过）"
+    },
+    {
+      "acceptance": "INF-A4",
+      "testFile": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "assertion": "verifier 人工核验点 [C4.1]-[C4.5]: 目录约定文档+放置/命名/运行命令文档化+INF-E2 兼容矩阵落同一文档"
+    }
+  ],
+  "mutationEvidence": [
+    {
+      "acceptanceId": "INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过",
+      "note": "mutation（builder 2026-09-04, WSL）：临时移除 host_app/main/CMakeLists.txt 的 WHOLE_ARCHIVE → 重建(elf 4.1MB→430KB) + 跑 ELF 得 0 Tests/0 Failures/OK/EXIT=0 = 空洞红（TEST_CASE 对象被链接器丢弃，真实样例断言一条未跑）→ 恢复 WHOLE_ARCHIVE → 复跑 4 Tests 0 Failures 全过。marker: 变红/failed as expected",
+      "ok": true
+    },
+    {
+      "acceptanceId": "INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）",
+      "note": "mutation（builder 2026-09-04, WSL）：host_infra_seam.c 填充色 0x336699→0x204060 → 重建 + 跑 ELF 得 INF-A3 FAIL: Expected 3368601 Was 2113632 = 变红（证明探针真读渲染像素非静态返回）→ cp 备份恢复原色 → 复跑 PASS。marker: 变红/failed as expected",
+      "ok": true
+    },
+    {
+      "acceptanceId": "INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试",
+      "note": "mutation（builder 2026-09-04）：mv firmware/main/test/HOST_TEST_CONVENTIONS.md _hidden.md → [C4.1] check RED（doc missing from expected path）断链 = 变红 → mv 还原 → [C4.1] PASS（9429 字节回原位）。marker: 变红/failed as expected",
+      "ok": true
+    }
+  ],
   "exitCriteria": [
     {
       "id": "INF-E1",
@@ -59,9 +98,11 @@
   "iterationBudget": 4,
   "fixBudget": 6,
   "docsOwner": "integrator",
+  "docsSyncRequired": true,
   "mergeOrder": 2,
   "dependsOn": [],
   "testHost": "基建自身",
+  "notes": "intake（planner，2026-09-04）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pod，本包 queued mergeOrder 2）/ origin.upstreamRef→PROPOSAL.md FROZEN v0.4），权威字段原样消费、未重归一；worktree 分支 dev/260829-host-test-infra 已含 planning/kidpal-mvp-base-v0.4（祖先关系实测通过），留根② worktree 重建已解决。② upstreamFrozen pin sha1:88a5bdb83abdd867 机械复验在 launch 会话因工具分类器抖动未即时跑通，属 convention-only（UPSTREAM_DRIFT=warn），closeout-check 相位机械复验兜底。③ 契约判定=纯消费：本包只搭 host 测试基建（ESP-IDF linux target 单测 + LVGL SDL + 目录约定），零契约面触点。④ scope-map 走查：acceptance-author allow 面 firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow 面 firmware/** 覆盖实现路径。⑤ 设备现场（human，2026-09-04）：设备已连接、mic 正常、喇叭未接——本包 host 侧不受影响，记录备后续 WS/9a/9b 包 intake。⑥ INF-E2 兼容性盘点要求「不预判结论」：哪些模块（含 ESP-SR AFE 等硬绑定芯片组件）可 host 编译、哪些只能 device，由 builder 实测落进目录约定文档。",
   "decisionCoverage": [
     {
       "decision": "PROPOSAL-§5-OQ2",

@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260829-host-test-infra",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "36c33cc1-d778-40a2-b32a-403adc15b97e",
+  "startedAt": "2026-09-04T16:15:15.015Z",
+  "completedAt": "2026-09-04T16:15:15.972Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 187,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"c:\\\\AI\\\\KidPal-pod-host-test-infra\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260829-host-test-infra\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 178,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 148,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"contract\": \"docs/contracts/interface-contract.md\"\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 146,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"acceptance-coverage\",\n  \"taskPackage\": \"c:\\\\AI\\\\KidPal-pod-host-test-infra\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"acceptance\": [\n    \"INF-A1\",\n    \"INF-A2\",\n    \"INF-A3\",\n    \"INF-A4\"\n  ],\n  \"structural\": [\n    \"INF-A1\"\n  ],\n  \"suiteGates\": [],\n  \"files\": [\n    \"firmware/main/test/host_infra_smoke.acceptance.c\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage passed"
+    },
+    {
+      "id": "mutation-check",
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 151,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"TaskPackage must include mutationEvidence for each functional acceptance id\",\n  \"functionalAcceptance\": [\n    \"INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过\",\n    \"INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）\",\n    \"INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "mutation-check failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "cee1b190be49",
+    "failingStep": "mutation-check",
+    "message": "gate mutation-check failed (exit 1)",
+    "cmd": "node .claude/scripts/mutation-check.mjs",
+    "logFile": ".claude/verify-logs/1788538515958-mutation-check.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"TaskPackage must include mutationEvidence for each functional acceptance id\",\n  \"functionalAcceptance\": [\n    \"INF-A2: firmware 可用 linux target 编译出一个本机可执行的 host 单测 runner，且至少一个样例断言通过\",\n    \"INF-A3: LVGL SDL 后端可在 PC 上启动并渲染一帧到虚拟屏（屏幕模拟可用）\",\n    \"INF-A4: host 测试目录约定落地（测试文件放置位置 + 命名约定 + 运行命令文档化），后续包可照此挂测试\"\n  ]\n}\n"
+  }
+}
