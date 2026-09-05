@@ -12,7 +12,7 @@
 |---|---|
 | APPROVE | planner 前置升级闸放行后 `--pod` 本地合并，不直推 main |
 | BLOCK + 补证据/补测试/改实现 | 退 fixer，单 gate 修，回 verifier；同一 changeId 连续 2 轮 BLOCK 未转绿 → 熔断升级（ESCALATE），不外环硬磕 |
-| ESCALATE | 停，交人类；碰 core.*/契约/迁移/删数据必升 |
+| ESCALATE | 停，交人类；碰 core.*/契约/迁移/删数据必升。人批后走 `merge-driver --human-approval-ref`（见 planner.md 合并门段） |
 
 ## 3. verifier 反复红
 - 同 fingerprint 连续 2 轮 或 触 fixBudget=3 → 熔断升级，不硬磕

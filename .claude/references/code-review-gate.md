@@ -86,4 +86,4 @@ integrator 在合并门前产出 Review Packet。它先供 supervisor 自动复�
 - Human decision needed:
 ```
 
-任何 BLOCKING finding 都必须让 integrator 停在合并门前，交回 planner、fixer 或人类。supervisor APPROVE 才能继续自动合并路径；ESCALATE 才进入人类合并门。
+任何 BLOCKING finding 都必须让 integrator 停在合并门前，交回 planner、fixer 或人类。supervisor APPROVE 才能继续自动合并路径；ESCALATE 才进入人类合并门。人批后机械路径见 planner.md 合并门段（`--human-approval-ref`）。

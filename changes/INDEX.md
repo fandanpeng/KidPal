@@ -6,17 +6,24 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (0)
+## dev (5)
 
-_（无）_
-| [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| changeId | 日期 | origin.ref | 状态 | workstream |
+|---|---|---|---|---|
+| [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
+| [260831-cloud-link-bringup](../changes/dev/260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
+| [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
+| [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
+| [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 
-## arch (2)
+## arch (7)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | — |
 | [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
 | [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | — |
 | [260830-arch-review-ui-impl-strategy](../changes/arch/260830-arch-review-ui-impl-strategy/) | 2026-08-30 | frozen | yes |
 | [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | — |
+| [260829-gov-review-migration-tier23](../changes/arch/260829-gov-review-migration-tier23/) | 2026-08-29 | draft | — |
 | [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |

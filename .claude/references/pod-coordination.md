@@ -96,7 +96,7 @@ planner（Pod 内单会话）**不轮询、不等待**：
 | reconcile 选中一个 ready Pod | `holder=<id>`, `grantedAt=now` |
 | supervisor **APPROVE** → merged | `holder=null`（释放，选下一个） |
 | supervisor **BLOCK** | **立即释放 `holder=null`**；Pod 回 fixer，`ready-to-merge`→`blocked`，修好再 `ready-to-merge` 重新排队。**token 不在 fixer 循环期间被占用**（防自锁）。 |
-| supervisor **ESCALATE** | `holder=null` 释放；Pod 挂 `blocked`（等人类），不占 token。 |
+| supervisor **ESCALATE** | `holder=null` 释放；Pod 挂 `blocked`（等人类），不占 token。人批后重占 token 走 merge-driver 人批路径（`--human-approval-ref`，见 planner.md 合并门段）。 |
 | holder Pod **崩溃/abandon**（`grantedAt` 超 TTL 且 `pods/<id>.json` 未推进 / mtime 陈旧） | reconcile **回收** `holder=null` + 标 `abandoned`，升一条告警。 |
 
 > 防饿死：被 BLOCK 退回 fixer 的 Pod 修好重新 `ready-to-merge` 时**保持原 merge-order 位次**（不排队尾），避免新 Pod 持续插队导致旧 Pod 饿死。TTL 须 > 正常 rebase→integrator→supervisor 合并门时长（避免误判回收）；因 ESCALATE 已立即释放 token，不存在「持 token 等人类慢审」的长窗口。
