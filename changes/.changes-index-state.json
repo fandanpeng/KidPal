@@ -10,5 +10,9 @@
   "260904-gov-review-escalate-merge-approval": {
     "date": "2026-09-04",
     "mergedInMain": "yes"
+  },
+  "260905-gov-review-verify-gates-align": {
+    "date": "2026-09-05",
+    "mergedInMain": "yes"
   }
 }
