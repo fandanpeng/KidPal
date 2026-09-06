@@ -25,7 +25,7 @@
 |---|---|---|---|
 | [260906-gov-review-architect-loop-advisory](../changes/arch/260906-gov-review-architect-loop-advisory/) | 2026-09-06 | landed | yes |
 | [260906-gov-review-arq-governance-batch](../changes/arch/260906-gov-review-arq-governance-batch/) | 2026-09-06 | landed | yes |
-| [260906-gov-review-index-status-truth-source](../changes/arch/260906-gov-review-index-status-truth-source/) | 2026-09-06 | frozen | — |
+| [260906-gov-review-index-status-truth-source](../changes/arch/260906-gov-review-index-status-truth-source/) | 2026-09-06 | landed | yes |
 | [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | landed | yes |
 | [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | yes |
 | [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
