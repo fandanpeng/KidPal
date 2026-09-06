@@ -98,3 +98,7 @@
 ## decisionCoverage 残险（landsIn=dropped / risk-accepted）
 
 - 无：本包 `taskpackage.json.decisionCoverage` 三条均 `landsIn` 到 `exitCriteria/acceptance`（spec-§3.0.0-薄桥 → CLB-E2；contract-E1-display块 → CLB-A3；inventory-OC6-命门 → CLB-A3），无 `dropped`/`risk-accepted` 条目。
+
+## 真实性复核注（append-only，T9，260906-gov-review-arq-governance-batch，ARQ-260902-shim-401-gate-bypass）
+
+**本节为后置追加，不改上文任何结论的当时记录价值；上文「无 token → 401」相关结论以本节为准作废。** 本包 review 期所载「无 token → 401」结论系验证批未跑机械轮、未经真机复验得出，已被 260903-device-ws-switch（WS）包证伪并修复——根因 = shim `require_device` 鉴权短路缺陷（无 token 请求未被 401 拦截即进入转发链）。WS 包真机复验结论（生产复测在册）：**无 token → 401 零转发 / 错 token → 401 / 带 token 空文本 → 400**。下游引用鉴权行为时引 WS 包复验结论，勿引本包原始结论。

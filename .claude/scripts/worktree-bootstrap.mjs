@@ -11,10 +11,11 @@
 //
 // 非闸、不常驻：只在新 worktree 冷启动时由 launch 方 / planner 在 worktree 目录内调用一次。
 // codebase-memory MCP 索引新建、board worktreePath 预填属 launch 编排面，不进本脚本。
-//   图索引引导半自动（对齐源仓 260827-gov-review-worktree-graph-index-bootstrap T4）：本仓一旦 commit
-//   `.codebase-memory/graph.db.zst` 快照（`index_repository(persistence=true)`），worktree 在 bootstrap 后跑一次
-//   索引即从快照导入 + 增量补差（近零成本），root_path 由工具自动重写为 worktree 路径；本仓尚未 commit 快照时，
-//   工作树索引仍由 launch 面同名建（项目名 = 目录名保障，缺则图工具 project not found）。
+//   图索引引导（对齐源仓 260827-gov-review-worktree-graph-index-bootstrap T4；2026-09-05 快照已入仓 b7aa3df）：
+//   worktree 专属图索引 = launch 面必办（ARQ-260905-worktree-graph-index-rules，规则见 .claude/rules/repo-structure.md
+//   `.codebase-memory/` 行）——bootstrap 后跑一次 `index_repository(repo_path=<worktree>)` 即从仓内快照导入 +
+//   增量补差（近零成本），root_path 由工具自动重写为 worktree 路径；不得降级「无专属图索引、读文件」，
+//   建前先 `list_projects` 核既有项目在册状态。
 //
 // 用法：node .claude/scripts/worktree-bootstrap.mjs [--source <主checkout路径>] [--dry-run] [--help]
 
@@ -144,3 +145,4 @@ if (existsSync(shimReq)) {
 }
 
 console.log(opts.dryRun ? 'dry-run 完成：未落盘、未执行安装。' : 'worktree bootstrap 完成：配置镜像 + shim 依赖就绪。');
+console.log('下一步（launch 面必办）：为 worktree 建专属图索引 index_repository(repo_path=<worktree>)——先 list_projects 核既有项目，不得降级读文件（规则见 .claude/rules/repo-structure.md .codebase-memory/ 行；ARQ-260905-worktree-graph-index-rules）。');

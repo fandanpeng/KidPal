@@ -25,10 +25,9 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EVENTS_SCHEMA_CUTOFF, appendPodEvent } from './pod-events-append.mjs';
+import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function flagVal(name) {
   const i = process.argv.indexOf(name);

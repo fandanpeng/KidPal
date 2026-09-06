@@ -259,3 +259,24 @@ flowchart TD
 - **新系统创建的 `.claude` 扩充**：新增 K/S 系统时 agent 克隆体、scope-map、hook 的扩充流程。
 - **`.claude/**` 一致性机械门**：agent 定义 ↔ scope-map ↔ command 引用的一致性检查。**已分批部分落地**（批次 1 / 批次 2 / 腿 6 launch 可达性 `--check-launch`）；剩余子项与消费方链见 [ARCH-REVIEW-QUEUE.md](ARCH-REVIEW-QUEUE.md) ARQ-077。
 - **uiux-designer 系统级 brief 的 moderator dispatch 接线**：起草者已定（`uiux-designer`），dispatch 尚未接线。
+
+## 验收测试纪律
+
+> 成文：260906-gov-review-arq-governance-batch（FROZEN v1.0，Track B）；承载 ARQ-260901-g3-server-live-acceptance / ARQ-260906-live-acceptance-real-path / ARQ-260902-frozen-acceptance-never-run。unit-run-check.mjs / acceptance-run-check.mjs 行内注释与本节同名互指。
+
+### 1. server 验收 host/live 两态
+
+server 面验收分两态：
+
+- **host-fast**：可在本机/CI 快速执行的 pytest。unit/acceptance 两闸执行器在闸内真跑。
+- **live on-target**：需 SSH 上 ECS / 真机 / 外网凭据的验收，以 `@pytest.mark.live` 标记。两闸执行器只走结构闸、**不 auto-run**（merge/CI 环境无 SSH/凭据，auto-run 必假红；对偶固件 on-target 只结构闸）——live 验收由 acceptance 相位人工/台架触发并落 verifier-evidence。
+
+**pytest-not-installed 语义**：host-fast 路径下 pytest 未安装 = fail-open 跳过并 warn（对偶 firmware idf.py 缺失），**不是**绿灯依据——闸担保「不静默跳过」，不担保「实机已过」。
+
+### 2. probe ≠ exercise（live 验收必须真跑一遍真实链路）
+
+跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），**只探测可达不算 live 验收**。验收起草（acceptance-author）与核验（verifier）两级遵守。教训实证：G 包 live 验收当年只探端口可达，六个真实链路缺陷（websockets 版本不兼容、缺 device-id 头透传、TTS type 拼写、OpenClaw base_url 缺 `/v1`、容器 loopback 不可达、Intent 拒绝）全递延到 WS 包真机冒烟才连环爆（ARQ-260906-live-acceptance-real-path）。
+
+### 3. 冻结即冒烟（线束通道 error 为零）
+
+冻结验收落盘时，acceptance-author 当场执行一次线束冒烟：live 面真连一次 SSH 可达性、线束助手（连接/读写/payload）真调一次、pytest 收集零错误。判据 = **执行通道 error 为零**（error ≠ failure：收集错/夹具崩/线束异常 = 线束缺陷，当场修）；断言 failure 是冻结相位的设计态（实现未建、红基线），不阻塞冻结。为什么只冒烟线束、不要求断言转绿：历史病灶（`_ssh` 解包、payload 撞命令行上限）全部落在线束层、**不需要被测实现存在**就会炸（TP-A 与 smoke-e2e 两度实证，ARQ-260902-frozen-acceptance-never-run）。

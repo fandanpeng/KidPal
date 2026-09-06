@@ -33,6 +33,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 // FIX-6 第二方重算复用机械闸的 riskTier 派生纯函数（单一机械源，dev-loop:244 投影；防 canonical↔hook 漂移 RC-7②）。
 // import 不触发本目录 supervisor-verdict-gate.mjs 的 main()（其 isMain() 守卫，对偶 verifier-evidence-check:526）。
 import { deriveDiffTier, collectGitDiff } from './supervisor-verdict-gate.mjs';
+import { CHANGE_ID_PREFIX_RE } from '../scripts/lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 
 const defaultProjectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -55,7 +56,6 @@ const VERDICT_VALUES = new Set(['APPROVE', 'BLOCK', 'ESCALATE']);
 // convention 级同步清单 = 四文件：closeout-check.mjs / taskpackage-required-check.mjs /
 // devloop-artifact-check.mjs / hooks/supervisor-gate-check.mjs（本文件），禁各自另造（CHANGE_ID_CUTOFF 同值）。
 const CHANGE_ID_CUTOFF = '2026-07-23';
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function isPostCutoff(changeId) {
   const m = CHANGE_ID_PREFIX_RE.exec(String(changeId));

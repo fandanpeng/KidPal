@@ -10,26 +10,28 @@
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行已按硬项 2a 在场。
 
 ```landing-manifest
-.claude/scripts/lib/changeid-shared.mjs（新增，T1）
-.claude/scripts/closeout-check.mjs（改，T1）
-.claude/scripts/devloop-artifact-check.mjs（改，T1）
-.claude/scripts/dispatch-stamp.mjs（改，T1）
-.claude/scripts/journal-append.mjs（改，T1）
-.claude/scripts/loop-health-report.mjs（改，T1）
-.claude/scripts/loop-metrics.mjs（改，T1）
-.claude/scripts/taskpackage-required-check.mjs（改，T1）
-.claude/hooks/supervisor-gate-check.mjs（改，T1）
-.claude/scripts/acceptance-coverage-check.mjs（改，T2）
-.claude/scripts/unit-run-check.mjs（改，T3）
-.claude/scripts/acceptance-run-check.mjs（改，T3）
-.claude/scripts/worktree-bootstrap.mjs（改，T4）
-.claude/scripts/merge-driver.mjs（改，T5+T6）
-.gitattributes（新增，T7）
-docs/DEV-GOVERNANCE.md（改，T3+T8）
-.claude/agents/acceptance-author.md（改，T8）
-changes/dev/260831-cloud-link-bringup/review-packet.md（改，T9 append-only）
-docs/ARCH-REVIEW-QUEUE.md（改，T10：十项移 §2 已结索引，landing 后随 verdict 执行）
+.claude/scripts/lib/changeid-shared.mjs
+.claude/scripts/closeout-check.mjs
+.claude/scripts/devloop-artifact-check.mjs
+.claude/scripts/dispatch-stamp.mjs
+.claude/scripts/journal-append.mjs
+.claude/scripts/loop-health-report.mjs
+.claude/scripts/loop-metrics.mjs
+.claude/scripts/taskpackage-required-check.mjs
+.claude/hooks/supervisor-gate-check.mjs
+.claude/scripts/acceptance-coverage-check.mjs
+.claude/scripts/unit-run-check.mjs
+.claude/scripts/acceptance-run-check.mjs
+.claude/scripts/worktree-bootstrap.mjs
+.claude/scripts/merge-driver.mjs
+.gitattributes
+docs/DEV-GOVERNANCE.md
+.claude/agents/acceptance-author.md
+changes/dev/260831-cloud-link-bringup/review-packet.md
+docs/ARCH-REVIEW-QUEUE.md
 ```
+
+> manifest 注：19 路径 = T1–T10 §2 目标文件锚并集（T1 含 lib 单源 + 8 消费方；T5/T6 共锚 merge-driver.mjs）；`docs/ARCH-REVIEW-QUEUE.md` 的 T10 随 verdict 执行，属预期状态。
 
 ---
 
@@ -63,37 +65,57 @@ docs/ARCH-REVIEW-QUEUE.md（改，T10：十项移 §2 已结索引，landing 后
 
 ## 2. 改法（T1…T10）
 
-**T1 · changeId 正则收敛单源（ARQ-260904-gate-regex-uppercase-changeid）**。新建 `.claude/scripts/lib/changeid-shared.mjs`，导出 `CHANGE_ID_PREFIX_RE` 与 changeId 前缀校验函数（承 ARQ-097「短 id 提取收敛单源」先例：`lib/acceptance-id-shared.mjs` / `lib/governance-gate-shared.mjs` 同款形态）；8 处本地拷贝全部改为 import、本地 const 删除；同步改写 `loop-metrics.mjs:17` 注释——现称「复用 closeout-check.mjs 的 CHANGE_ID_PREFIX_RE / stripPrefix / validDatePrefix」与实况不符（三者皆本地拷贝，R1-F7），收敛后指向 `lib/changeid-shared.mjs` 单源，并注明 `stripPrefix`/`validDatePrefix` 仍留本地拷贝、是否二轮收敛留后续（本批不收，防范围蠕变）。为什么这样改：直接消灭「8 拷贝漂移」根因，本次大写误判即该类漂移的实例；不新立闸（verify-gates 两门案不动），固化靠单源 + 下述自检。
+### T1 · changeId 正则收敛单源（ARQ-260904-gate-regex-uppercase-changeid）
+
+新建 `.claude/scripts/lib/changeid-shared.mjs`，导出 `CHANGE_ID_PREFIX_RE` 与 changeId 前缀校验函数（承 ARQ-097「短 id 提取收敛单源」先例：`lib/acceptance-id-shared.mjs` / `lib/governance-gate-shared.mjs` 同款形态）；8 处本地拷贝全部改为 import、本地 const 删除；同步改写 `loop-metrics.mjs:17` 注释——现称「复用 closeout-check.mjs 的 CHANGE_ID_PREFIX_RE / stripPrefix / validDatePrefix」与实况不符（三者皆本地拷贝，R1-F7），收敛后指向 `lib/changeid-shared.mjs` 单源，并注明 `stripPrefix`/`validDatePrefix` 仍留本地拷贝、是否二轮收敛留后续（本批不收，防范围蠕变）。为什么这样改：直接消灭「8 拷贝漂移」根因，本次大写误判即该类漂移的实例；不新立闸（verify-gates 两门案不动），固化靠单源 + 下述自检。
 目标文件：`.claude/scripts/lib/changeid-shared.mjs`（新增）；`.claude/scripts/closeout-check.mjs`、`.claude/scripts/devloop-artifact-check.mjs`、`.claude/scripts/dispatch-stamp.mjs`、`.claude/scripts/journal-append.mjs`、`.claude/scripts/loop-health-report.mjs`、`.claude/scripts/loop-metrics.mjs`、`.claude/scripts/taskpackage-required-check.mjs`、`.claude/hooks/supervisor-gate-check.mjs`（各删本地 const、改 import；loop-health-report 的 `CHANGE_ID_PREFIX_RE_LHR` 别名一并消除）。
 
-**T1b · 收敛自检**。`lib/changeid-shared.mjs` 自带 `--self-check`：混合大小写正例（`260903-gateway-directionB`）必命中、纯小写正例必命中、反例（`260903-Gateway_DirectionB` 含下划线 / 无日期前缀）必不命中。为什么：把「门须接受混合大小写 changeId」从热修追认固化为可机判断言。
-目标文件：同 T1（自检内嵌新模块）。
+**T1b · 收敛自检**（T1 子项）。`lib/changeid-shared.mjs` 自带 `--self-check`：混合大小写正例（`260903-gateway-directionB`）必命中、纯小写正例必命中、反例（`260903-Gateway_DirectionB` 含下划线 / 无日期前缀）必不命中。为什么：把「门须接受混合大小写 changeId」从热修追认固化为可机判断言。
+目标文件：无（整裁腿，自检内嵌 T1 新模块，不入锚集）。
 
-**T2 · acceptance-coverage Python 断言识别固化（ARQ-260902-acceptance-coverage-python-assert）**。给 `acceptance-coverage-check.mjs` 新增 `--self-check`（该脚本现无自检入口，R1 实证）：正例两支——Python unittest 风格（`self.assertIn(`）必识别、行首裸 `assert` 必识别；反例两支钉死 **prose 形态**——`# 断言风格说明：assertEqual 须在测试内调用`（注释 prose）、`"本次 assert 校验未通过"`（字符串 prose，均不含调用形态 assert 子串）必不识别；空文件必报「无可识别断言」。**已知边界显式声明（R1-F4 收束，不扩面）**：现行 `hasRealAssertion` 是纯正则、不剥注释/字符串，凡调用形态字样（如字符串 `"assert(x)"`、注释 `# self.assertIn(a, b)`）会被命中为「有真断言」——这是既有实现语义，本批不改（要剥注释 = 门语义变更，须另行走治理批 + human）；自检反例只覆盖 prose 形态，如实标注边界防误判「自检万能」。行为零变更，只加自检。为什么：该热修同样是无单源断言识别的补丁形态，自检防回腐。
+### T2 · acceptance-coverage Python 断言识别固化（ARQ-260902-acceptance-coverage-python-assert）
+
+给 `acceptance-coverage-check.mjs` 新增 `--self-check`（该脚本现无自检入口，R1 实证）：正例两支——Python unittest 风格（`self.assertIn(`）必识别、行首裸 `assert` 必识别；反例两支钉死 **prose 形态**——`# 断言风格说明：assertEqual 须在测试内调用`（注释 prose）、`"本次 assert 校验未通过"`（字符串 prose，均不含调用形态 assert 子串）必不识别；空文件必报「无可识别断言」。**已知边界显式声明（R1-F4 收束，不扩面）**：现行 `hasRealAssertion` 是纯正则、不剥注释/字符串，凡调用形态字样（如字符串 `"assert(x)"`、注释 `# self.assertIn(a, b)`）会被命中为「有真断言」——这是既有实现语义，本批不改（要剥注释 = 门语义变更，须另行走治理批 + human）；自检反例只覆盖 prose 形态，如实标注边界防误判「自检万能」。行为零变更，只加自检。为什么：该热修同样是无单源断言识别的补丁形态，自检防回腐。
 目标文件：`.claude/scripts/acceptance-coverage-check.mjs`（改）。
 
-**T3 · server 验收 host/live 约定正式化（ARQ-260901-g3-server-live-acceptance）**。行为零变更，两处成文：① `docs/DEV-GOVERNANCE.md` 新增 **`## 验收测试纪律`** 节（**节名 FROZEN 前钉死**，T8 与 acceptance-author def 引用同一名，R1-F11）：server 面验收分 host-fast 与 live on-target 两态；live 态以 `@pytest.mark.live` 标记、unit/acceptance 两闸执行器只结构闸不 auto-run（对偶固件 on-target）；pytest-not-installed 在 host-fast 路径按 fail-open 跳过并 warn（明示语义，当前行为即此，成文防误「修复」）；② `unit-run-check.mjs:184-185` / `acceptance-run-check.mjs:180-181` 行内注释补「`## 验收测试纪律`（docs/DEV-GOVERNANCE.md）」节名指针（R1-F5 修正：脚本无 `_doc` 字段——`_doc` 在 verify-gates.json、本批不动——注释中亦无「暂用约定」字样，改法 = 补指针非改措辞）。为什么：触发条件已出现（第三个 live 验收需求在用行内注释级约定），约定此前只活在两闸脚本的行内注释里。
+### T3 · server 验收 host/live 约定正式化（ARQ-260901-g3-server-live-acceptance）
+
+行为零变更，两处成文：① `docs/DEV-GOVERNANCE.md` 新增 **`## 验收测试纪律`** 节（**节名 FROZEN 前钉死**，T8 与 acceptance-author def 引用同一名，R1-F11）：server 面验收分 host-fast 与 live on-target 两态；live 态以 `@pytest.mark.live` 标记、unit/acceptance 两闸执行器只结构闸不 auto-run（对偶固件 on-target）；pytest-not-installed 在 host-fast 路径按 fail-open 跳过并 warn（明示语义，当前行为即此，成文防误「修复」）；② `unit-run-check.mjs:184-185` / `acceptance-run-check.mjs:180-181` 行内注释补「`## 验收测试纪律`（docs/DEV-GOVERNANCE.md）」节名指针（R1-F5 修正：脚本无 `_doc` 字段——`_doc` 在 verify-gates.json、本批不动——注释中亦无「暂用约定」字样，改法 = 补指针非改措辞）。为什么：触发条件已出现（第三个 live 验收需求在用行内注释级约定），约定此前只活在两闸脚本的行内注释里。
 目标文件：`.claude/scripts/unit-run-check.mjs`（改）、`.claude/scripts/acceptance-run-check.mjs`（改）、`docs/DEV-GOVERNANCE.md`（改）。
 
-**T4 · worktree-bootstrap 图索引运行时提醒（ARQ-260905-worktree-graph-index-rules 残余）**。`worktree-bootstrap.mjs` 完成输出末尾追加一行提醒：「下一步（launch 面必办）：为 worktree 建专属图索引 `index_repository(repo_path=<worktree>)`；先 `list_projects` 核既有项目，不得降级读文件（规则见 .claude/rules/repo-structure.md `.codebase-memory/` 行）」；顺手刷新 `:14-17` 头注释——「本仓尚未 commit 快照」句已陈旧（快照 b7aa3df 2026-09-05 已入仓，R1-F12），按实况改为「快照已入仓，bootstrap 后跑一次 `index_repository(repo_path=<worktree>)` 即从快照导入 + 增量补差」。为什么：约定本体在 rules 已消歧，但 bootstrap 是 launch 面必经动作、却无产出面提醒——加一行输出是最便宜的机械提醒，不新立闸。旧 launch prompt 文件的过期降级注记不在本批清扫（属 `.git/devloop/launch/` 历史件，随下次 launch prompt 重写自然更替，留根登记）。
+### T4 · worktree-bootstrap 图索引运行时提醒（ARQ-260905-worktree-graph-index-rules 残余）
+
+`worktree-bootstrap.mjs` 完成输出末尾追加一行提醒：「下一步（launch 面必办）：为 worktree 建专属图索引 `index_repository(repo_path=<worktree>)`；先 `list_projects` 核既有项目，不得降级读文件（规则见 .claude/rules/repo-structure.md `.codebase-memory/` 行）」；顺手刷新 `:14-17` 头注释——「本仓尚未 commit 快照」句已陈旧（快照 b7aa3df 2026-09-05 已入仓，R1-F12），按实况改为「快照已入仓，bootstrap 后跑一次 `index_repository(repo_path=<worktree>)` 即从快照导入 + 增量补差」。为什么：约定本体在 rules 已消歧，但 bootstrap 是 launch 面必经动作、却无产出面提醒——加一行输出是最便宜的机械提醒，不新立闸。旧 launch prompt 文件的过期降级注记不在本批清扫（属 `.git/devloop/launch/` 历史件，随下次 launch prompt 重写自然更替，留根登记）。
 目标文件：`.claude/scripts/worktree-bootstrap.mjs`（改）。
 
-**T5 · merge-driver 自检补 worktree 拓扑覆盖（ARQ-260905-merge-driver-worktree-topology 残余）**。merge-driver 新增 `--self-check-worktree-topology`：以临时 git 仓库夹具（脚本自建、跑完即删）断言两步语义——① 无 origin remote 时 fetch 步跳过、rebase 目标解析仍落本地 main（不 fail-closed）；② `git worktree list --porcelain` 解析能正确定位持有 main 的 worktree。为什么：这两步是 2026-09-05 human 裁定热修的核心语义，现拓扑分支无用例，self-check 假绿空间属实（本次 fail 模式已有两次执行实证）。
+### T5 · merge-driver 自检补 worktree 拓扑覆盖（ARQ-260905-merge-driver-worktree-topology 残余）
+
+merge-driver 新增 `--self-check-worktree-topology`：以临时 git 仓库夹具（脚本自建、跑完即删）断言两步语义——① 无 origin remote 时 fetch 步跳过、rebase 目标解析仍落本地 main（不 fail-closed）；② `git worktree list --porcelain` 解析能正确定位持有 main 的 worktree。为什么：这两步是 2026-09-05 human 裁定热修的核心语义，现拓扑分支无用例，self-check 假绿空间属实（本次 fail 模式已有两次执行实证）。
 目标文件：`.claude/scripts/merge-driver.mjs`（改）。
 
-**T6 · merge-driver 对 `.codebase-memory/` 漂移自动 skip-worktree（ARQ-260906-live-graph-dirty-blocks-merge 根治）**。merge-driver 在 rebase 步（Pod worktree 内）与 merge 步（main 持有者 worktree 内）之前，对 `CODEBASE_MEMORY_DIRTY_PATHS = ['.codebase-memory/graph.db.zst', '.codebase-memory/artifact.json']` 幂等执行 `git update-index --skip-worktree`（先 `ls-files -v` 查标记、已设则跳过），成功路径 stderr 留痕一行；不 unset（活索引器持续重写，unset 即复发）。**DRY_RUN 交互钉死（R1-F9）**：该步只动本地 index 标记、不改历史、幂等可重入，故**置于 `if (!DRY_RUN)` 守卫之外、DRY_RUN 下照常执行并留痕**——§5.8 的 dry-run 验证路径因此可真实覆盖该步，不空转。为什么选此形态承 OQ1。根治后人工权宜撤除：`git update-index --no-skip-worktree` 两文件后重设一次（由本批验证步骤执行，验证自动重设生效）。`.gitattributes` 的 `binary merge=ours` 保留不动（仍消二进制冲突）。
+### T6 · merge-driver 对 `.codebase-memory/` 漂移自动 skip-worktree（ARQ-260906-live-graph-dirty-blocks-merge 根治）
+
+merge-driver 在 rebase 步（Pod worktree 内）与 merge 步（main 持有者 worktree 内）之前，对 `CODEBASE_MEMORY_DIRTY_PATHS = ['.codebase-memory/graph.db.zst', '.codebase-memory/artifact.json']` 幂等执行 `git update-index --skip-worktree`（先 `ls-files -v` 查标记、已设则跳过），成功路径 stderr 留痕一行；不 unset（活索引器持续重写，unset 即复发）。**DRY_RUN 交互钉死（R1-F9）**：该步只动本地 index 标记、不改历史、幂等可重入，故**置于 `if (!DRY_RUN)` 守卫之外、DRY_RUN 下照常执行并留痕**——§5.8 的 dry-run 验证路径因此可真实覆盖该步，不空转。为什么选此形态承 OQ1。根治后人工权宜撤除：`git update-index --no-skip-worktree` 两文件后重设一次（由本批验证步骤执行，验证自动重设生效）。`.gitattributes` 的 `binary merge=ours` 保留不动（仍消二进制冲突）。
 目标文件：`.claude/scripts/merge-driver.mjs`（改）。
 
-**T7 · 根级 `.gitattributes` 钉 `*.sh text eol=lf`（ARQ-260906-shell-scripts-lf-gitattributes）**。新建根级 `.gitattributes`（首行 `*.sh text eol=lf`，唯一规则）；步骤序列按 git 机制钉死（R1-F1 修正——`git add --renormalize` 只按新属性重算 index、**不改工作树字节**，必须补显式刷新步）：① 属性文件入库 → ② `git add --renormalize .`（重算 index，五件 `.sh` index 实测已是 LF、此步幂等无 diff）→ ③ `git checkout -- '*.sh'`（按新 index 把工作树五件从 CRLF 刷新回 LF）。为什么：从 checkout 侧消灭 CRLF，WSL bash 直读直跑；属性入库后对全部克隆者/提交者一致生效，不依赖个人 autocrlf 配置。范围克制在 `*.sh`（仓内 Python 走 ECS/SSH 执行不踩本地工作树，不扩面）。附记（R1 已排除两疑点）：根级属性只含 `*.sh` 一行时 renormalize 对其他后缀零效果、不触发无关 diff；`.codebase-memory/.gitattributes`（merge=ours）作用于其子树路径，与根级 `*.sh` 规则无路径交集、共存无冲突。
-目标文件：`.gitattributes`（新增）。
+### T7 · 根级 `.gitattributes` 钉 `*.sh text eol=lf`（ARQ-260906-shell-scripts-lf-gitattributes）
 
-**T8 · 验收纪律两条成文（ARQ-260906-live-acceptance-real-path + ARQ-260902-frozen-acceptance-never-run）**。`docs/DEV-GOVERNANCE.md` 的 **`## 验收测试纪律`** 节（节名同 T3 钉死）新增两条分目，并在 `acceptance-author.md` agent def 行内引用（OQ3=(b)）：① **probe ≠ exercise**——跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），只探测可达不算 live 验收；② **冻结即冒烟**——冻结验收落盘时 acceptance-author 当场执行一次线束冒烟：live 面真连一次 SSH 可达性、线束助手（连接/读写/payload）真调一次、pytest 收集零错误。判据 = **执行通道 error 为零**（error ≠ failure：收集错/夹具崩/线束异常是线束缺陷，当场修）；断言 failure 是冻结相位的设计态（实现未建、红基线），不阻塞冻结。为什么这样定界：历史病灶（`_ssh` 解包、payload 上限）全部落在线束层、**不需要被测实现存在**就会炸，冒烟对象 = 线束通道而非断言转绿；「跑必然失败」的误解由 E/F 二分消解。两形态各有两度实证（见 §1 问题类 D），包 2 起草验收前必须成文；agent def 引用让起草 agent 不经 planner 中转也可见。
+新建根级 `.gitattributes`（首行 `*.sh text eol=lf`，唯一规则）；步骤序列按 git 机制钉死（R1-F1 修正——`git add --renormalize` 只按新属性重算 index、**不改工作树字节**，必须补显式刷新步）：① 属性文件入库 → ② `git add --renormalize .`（重算 index，五件 `.sh` index 实测已是 LF、此步幂等无 diff）→ ③ `git checkout -- '*.sh'`（按新 index 把工作树五件从 CRLF 刷新回 LF）。为什么：从 checkout 侧消灭 CRLF，WSL bash 直读直跑；属性入库后对全部克隆者/提交者一致生效，不依赖个人 autocrlf 配置。范围克制在 `*.sh`（仓内 Python 走 ECS/SSH 执行不踩本地工作树，不扩面）。附记（R1 已排除两疑点）：根级属性只含 `*.sh` 一行时 renormalize 对其他后缀零效果、不触发无关 diff；`.codebase-memory/.gitattributes`（merge=ours）作用于其子树路径，与根级 `*.sh` 规则无路径交集、共存无冲突。
+目标文件：无（整裁腿——真实落点 = 仓根 `.gitattributes` 新增，系机械门 CANONICAL_TEST 不识的仓根点文件形态〔首见〕，锚行以整裁腿登记、文件直列 manifest、人读 diff 担纲；gate 缺口另行登记 ARQ，见 landing-summary §3 插曲 5）。
+
+### T8 · 验收纪律两条成文（ARQ-260906-live-acceptance-real-path + ARQ-260902-frozen-acceptance-never-run）
+
+`docs/DEV-GOVERNANCE.md` 的 **`## 验收测试纪律`** 节（节名同 T3 钉死）新增两条分目，并在 `acceptance-author.md` agent def 行内引用（OQ3=(b)）：① **probe ≠ exercise**——跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），只探测可达不算 live 验收；② **冻结即冒烟**——冻结验收落盘时 acceptance-author 当场执行一次线束冒烟：live 面真连一次 SSH 可达性、线束助手（连接/读写/payload）真调一次、pytest 收集零错误。判据 = **执行通道 error 为零**（error ≠ failure：收集错/夹具崩/线束异常是线束缺陷，当场修）；断言 failure 是冻结相位的设计态（实现未建、红基线），不阻塞冻结。为什么这样定界：历史病灶（`_ssh` 解包、payload 上限）全部落在线束层、**不需要被测实现存在**就会炸，冒烟对象 = 线束通道而非断言转绿；「跑必然失败」的误解由 E/F 二分消解。两形态各有两度实证（见 §1 问题类 D），包 2 起草验收前必须成文；agent def 引用让起草 agent 不经 planner 中转也可见。
 目标文件：`docs/DEV-GOVERNANCE.md`（改）、`.claude/agents/acceptance-author.md`（改，只加两条纪律引用 + T3 host/live 节名指针，不改其既有职责/工具面结构）。
 
-**T9 · TP-A 收口制品补真实性复核注（ARQ-260902-shim-401-gate-bypass）**。`changes/dev/260831-cloud-link-bringup/review-packet.md` **append-only** 追加一段复核注：原「无 token → 401」结论系验证批未跑机械轮、未经真机复验，已被 WS 包证伪并修复（`require_device` 短路缺陷），以 WS 包复验结论（无 token→401 零转发 / 错 token→401 / 带 token 空文本→400）为准。为什么：历史制品的失效结论要原位标注，防下游引用错源；append-only 不动既有行。
-目标文件：`changes/dev/260831-cloud-link-bringup/review-packet.md`（改，append-only）。
+### T9 · TP-A 收口制品补真实性复核注（ARQ-260902-shim-401-gate-bypass）
 
-**T10 · ARQ 队列结项（T1–T9 landing 后随 verdict 执行）**。`docs/ARCH-REVIEW-QUEUE.md`：本批十项移 §2 已结索引（**实况分布 R1-F2 修正**：§1.2 移 7 行 = gate-regex-uppercase / worktree-graph-index-rules / merge-driver-worktree-topology / live-graph-dirty-blocks-merge / shell-scripts-lf-gitattributes / live-acceptance-real-path / frozen-acceptance-never-run；§1.3 移 3 行 = g3-server-live-acceptance / acceptance-coverage-python-assert / shim-401-gate-bypass），§2 按统一格式各加一行（ID / title / landing 日期 / evidence 指向本 change 目录）。为什么：Completion 定义 = landing 完成 + landing-verifier 绿 + retro 齐（AGENTS.md）；ARQ 已结规则 = human 批准且 landing 完成即移 §2。
+`changes/dev/260831-cloud-link-bringup/review-packet.md` **append-only** 追加一段复核注：原「无 token → 401」结论系验证批未跑机械轮、未经真机复验，已被 WS 包证伪并修复（`require_device` 短路缺陷），以 WS 包复验结论（无 token→401 零转发 / 错 token→401 / 带 token 空文本→400）为准。为什么：历史制品的失效结论要原位标注，防下游引用错源；append-only 不动既有行。
+目标文件：无（整裁腿——真实落点 = `changes/dev/260831-cloud-link-bringup/review-packet.md` append-only 追加，系机械门 CANONICAL_TEST 不识的 `changes/**` 形态〔首见〕，锚行以整裁腿登记、文件直列 manifest、人读 diff 担纲；gate 缺口与 T7 同一条 ARQ，见 landing-summary §3 插曲 5）。
+
+### T10 · ARQ 队列结项（T1–T9 landing 后随 verdict 执行）
+
+`docs/ARCH-REVIEW-QUEUE.md`：本批十项移 §2 已结索引（**实况分布 R1-F2 修正**：§1.2 移 7 行 = gate-regex-uppercase / worktree-graph-index-rules / merge-driver-worktree-topology / live-graph-dirty-blocks-merge / shell-scripts-lf-gitattributes / live-acceptance-real-path / frozen-acceptance-never-run；§1.3 移 3 行 = g3-server-live-acceptance / acceptance-coverage-python-assert / shim-401-gate-bypass），§2 按统一格式各加一行（ID / title / landing 日期 / evidence 指向本 change 目录）。为什么：Completion 定义 = landing 完成 + landing-verifier 绿 + retro 齐（AGENTS.md）；ARQ 已结规则 = human 批准且 landing 完成即移 §2。
 目标文件：`docs/ARCH-REVIEW-QUEUE.md`（改）。
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）

@@ -183,6 +183,7 @@ if (isMain() && !process.argv.includes('--self-check')) {
   }
   // 执行器：仅 server 面 host-fast pytest 在闸内真跑；live on-target（@pytest.mark.live，如 cloud-link 验收）
   // 与固件 on-target 同待遇——只结构闸、不 auto-run。pytest 未装 fail-open（对偶 firmware idf.py 缺失）。
+  // 约定成文：docs/DEV-GOVERNANCE.md「## 验收测试纪律」§1（260906-gov-review-arq-governance-batch T3）。
   if (real.pyHasRunner && real.pyTestFiles.length > 0) {
     const hostFiles = real.pyTestFiles.filter((f) => !fileHasLiveMark(join(projectDir, 'server', f)));
     if (hostFiles.length === 0) {
