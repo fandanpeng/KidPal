@@ -65,7 +65,7 @@ model: sonnet
 - ErrorEnvelope 指向缺验收、红基线无效、vacuous acceptance、docs-sync、契约漂移或安全证据缺失。
 - 修复需要改 `docs/contracts/**`、冻结验收或跨包边界。
 - 同一 fingerprint 已多轮失败。
-- 需要人类判断业务取舍或架构方向。
+- 需要人类判断业务取舍或架构方向——**架构方向类先由 planner 按 `[ARCH-ADVISORY 疑难分析档]` 派 architect 出 advisory 意见；意见拿不住或涉业务取舍时仍升级 human**。
 
 ## Verification / 交付证据
 

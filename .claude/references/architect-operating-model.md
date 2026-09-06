@@ -53,7 +53,7 @@ Contract provenance ladder:
 
 | Role | Owns | Does not own |
 |---|---|---|
-| Architect | Strategy, topology, process/gate design, spec drafting, ADR/rationale, review artifact drafting, contract proposal framing | App implementation, contract approval, merge approval, all canonical landing（landing 恒 = 主线程 packet-bound，G1/G2/G3） |
+| Architect | Strategy, topology, process/gate design, spec drafting, ADR/rationale, review artifact drafting, contract proposal framing, in-dev-loop advisory analysis（opinions only; execution stays with fixer/builder） | App implementation, contract approval, merge approval, all canonical landing（landing 恒 = 主线程 packet-bound，G1/G2/G3） |
 | `architect-reviewer` | Read-only tactical contract pre-review and compliance classification, plus lightweight architecture-review eligibility for small **G2** changes (LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED) | Editing contracts/specs/implementation; approving gates; self-certifying eligibility (review-moderator re-judges) |
 | `review-moderator` | Full adversarial spec review orchestration | Contract approval; implementation |
 | `planner` | Dev-loop implementation orchestration and TaskPackage slicing | Spec soundness review; contract approval |
