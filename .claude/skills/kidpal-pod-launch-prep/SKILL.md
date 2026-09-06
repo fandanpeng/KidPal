@@ -85,16 +85,16 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 写 `.git/devloop/launch/prompt-<changeId>.txt`（**在 git common dir，不入版本控制**）。模板要素（抄 `.git/devloop/launch/prompt-260903-device-ws-switch.txt` 骨架）：
 
-- launch-argument 形状声明 + headless planner 身份；Step 1 handoff 探测三处（taskpackage / PROPOSAL 定位 / pods json → `--set-pod running`）。
+- launch-argument 形状声明 + planner 身份 + **运行形态**：默认 human 在 VS Code 交互会话起（AskUserQuestion 可用、升级走正常 ruling）；headless 无人值守为备选形态（AskUserQuestion 不可用 → 严格非交互 fail-closed：pending-human-ruling.md + needs-triage）。Step 1 handoff 探测三处（taskpackage / PROPOSAL 定位 / pods json → `--set-pod running`）。
 - 本包定位：mergeOrder、dependsOn（标清哪些已 merged）、PROPOSAL §4 共享面/碰撞面条款、spec/契约锚点。
 - 环境既成事实：IDF 通路 `python c:\tmp\idf_run.py`（丢失按 pod-s-handoff/README.md §3.1 重写）、sdkconfig/deps/软链/图索引项目名、上游 merged 面（server/gateway 等）、ECS 访问 `c:\tmp\ssh_helper.py`、live 拓扑指针（ops skill `kidpal-ecs-gateway`）。
 - **上一批收口留根的 live 偏差逐条移入 intake 评估**（构成 blockingDecision → fail-closed 上报，不静默推进；先例：Intent:nointent 待 OpenClaw tools 修复、ASR 终选凭据未裁定）。
-- 纪律提醒：非交互 fail-closed（pending-human-ruling.md + needs-triage）、契约/验收冻结面、pod-events 实时 append、合并只走 merge-driver 本地 --no-ff、不直推 main 不 push。
+- 纪律提醒：运行形态对应的 fail-closed 口径、契约/验收冻结面、pod-events 实时 append、合并只走 merge-driver 本地 --no-ff、不直推 main 不 push。
 
 ### 8. 记录与交接
 
 - progress.md 追加段：调度判定、门结果、环境事实、遗留 human 项（该文件 append-only，不覆盖旧行）。
-- 向 human 交付：每包一条自跑 launch 命令（headless 形态沿用既有交付方式），附本批遗留待 human 裁定项清单。
+- 向 human 交付：每包一份 launch prompt（human 在对应 worktree 的 VS Code 会话自跑；headless 命令形态为备选）。
 
 ## 坑（实测代价换来的）
 

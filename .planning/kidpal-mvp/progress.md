@@ -122,3 +122,4 @@
 - 本批准备过程同步沉淀为 ops skill（`.claude/skills/kidpal-pod-launch-prep/`，human 指示）——跳过治理批的一次性 authoring，如实记录于此。
 - **ASR 终选销账（同日，human 裁定）**：WS 收口遗留「ASR 终选凭据/型号裁定」闭环——终选 = **aliyun_stream + ali SK**，凭据 human 已给、WS 包 live 实测可用。launch prompt 已同步修订（该条移出待裁定偏差、不再构成包 2 blockingDecision）；token-plan 配额 2026-09-07 14:19 UTC 后补验仍归 ARQ-260904-v23-asr-swap-quota-recheck 既有跟踪。余留 live 偏差仅 Intent:nointent 一条（OpenClaw tools 修复后回开）。
 - **更正（同日，紧随上条）**：human 澄清——ASR 终选 = **Qwen3ASRFlash**（qwen3_asr_flash + dashscope SK，即 human 所给 ali SK，Qwen 属阿里系）；live 引擎配置本就是终选形态，无需切换。上一条所写的「aliyun_stream」系误记，以此条为准；launch prompt 已同步改正。V23 旧表述「aliyun_stream 终选」与本次拍板存在记录漂移，是否走治理批修订 PROPOSAL/spec 措辞归 human 裁。
+- **launch 形态修订（同日，human 指示）**：包 2 launch 自 headless 无人值守改为 **human 在 VS Code 交互会话自跑**（prompt 全文作启动输入）——AskUserQuestion 可用，升级走正常 ruling（pod-events 留痕）替代非交互 fail-closed；skill `kidpal-pod-launch-prep` 模板同步改为「VS Code 交互默认、headless 备选」。
