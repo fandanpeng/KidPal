@@ -1,5 +1,4 @@
 #include "audio_service.h"
-#include "mp3_decoder.h"
 #include <esp_log.h>
 #include <cstring>
 #include <algorithm>
@@ -619,49 +618,6 @@ void AudioService::PlaySound(const std::string_view& ogg) {
 
         offset = body_off + body_size;
     }
-}
-
-bool AudioService::PlayMp3(const std::vector<uint8_t>& mp3) {
-    Mp3Decoder decoder;
-    std::vector<int16_t> pcm;
-    int mp3_sample_rate = 0;
-    int mp3_channels = 0;
-    if (!decoder.Decode(mp3, pcm, mp3_sample_rate, mp3_channels)) {
-        ESP_LOGE(TAG, "Failed to decode mp3");
-        return false;
-    }
-    ESP_LOGI(TAG, "mp3 decoded: %d Hz, %d ch, %zu samples", mp3_sample_rate, mp3_channels,
-             pcm.size());
-
-    // Resample to the codec output rate when the mp3 sample rate differs.
-    if (mp3_sample_rate != codec_->output_sample_rate()) {
-        output_resampler_.Configure(mp3_sample_rate, codec_->output_sample_rate());
-        std::vector<int16_t> resampled(
-            output_resampler_.GetOutputSamples(static_cast<int>(pcm.size())));
-        output_resampler_.Process(pcm.data(), static_cast<int>(pcm.size()), resampled.data());
-        pcm = std::move(resampled);
-    }
-
-    // Feed the speaker codec via the playback queue in bounded 60 ms chunks so
-    // the whole clip does not sit in RAM at once.
-    const size_t chunk_samples = static_cast<size_t>(codec_->output_sample_rate()) * 60 / 1000;
-    size_t offset = 0;
-    while (offset < pcm.size()) {
-        size_t n = std::min(chunk_samples, pcm.size() - offset);
-        auto task = std::make_unique<AudioTask>();
-        task->type = kAudioTaskTypeDecodeToPlaybackQueue;
-        task->timestamp = 0;
-        task->pcm.assign(pcm.begin() + offset, pcm.begin() + offset + n);
-
-        std::unique_lock<std::mutex> lock(audio_queue_mutex_);
-        audio_queue_cv_.wait(lock, [this]() {
-            return audio_playback_queue_.size() < MAX_PLAYBACK_TASKS_IN_QUEUE;
-        });
-        audio_playback_queue_.push_back(std::move(task));
-        audio_queue_cv_.notify_all();
-        offset += n;
-    }
-    return true;
 }
 
 bool AudioService::IsIdle() {

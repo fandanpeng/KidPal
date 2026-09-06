@@ -5,7 +5,8 @@
 #include "audio_codec.h"
 #include "mqtt_protocol.h"
 #include "websocket_protocol.h"
-#include "shim_protocol.h"
+#include "provisioning/ws_provision.h"
+#include "certs/ws_tls_ca.h"
 #include "assets/lang_config.h"
 #include "mcp_server.h"
 #include "assets.h"
@@ -321,17 +322,16 @@ void Application::ActivationTask() {
     // Create OTA object for activation process
     ota_ = std::make_unique<Ota>();
 
+    // 短路激活 (spec §6.3, device_ws_switch WSA-A2): 设备服务器地址入口 = 配网直写
+    // NVS namespace "websocket" (url/token/version), 不走 OTA 应答端点、不拉
+    // 版本、不轮询激活码 —— 自建 OTA 应答端点留二期。token 缺失时由配网直写入口生成
+    // 写入 (决策22: 配网时 CSPRNG 生成 >=128-bit 随机)。
+    WsProvision::EnsureWebsocketToken();
+
     // Check for new assets version
     CheckAssetsVersion();
 
-    #if !CONFIG_USE_SHIM_PROTOCOL
-    // Check for new firmware version + official OTA activation (tenclass backend).
-    // The shim tracer bullet has no official backend: skip this so the device
-    // reaches InitializeProtocol() directly and never contacts the OTA endpoint.
-    CheckNewVersion();
-#endif
-
-    // Initialize the protocol
+    // Initialize the protocol (方向 B: 短路激活后直选 WS, 见 InitializeProtocol)
     InitializeProtocol();
 
     // Signal completion to main loop
@@ -396,81 +396,6 @@ void Application::CheckAssetsVersion() {
     display->SetEmotion("microchip_ai");
 }
 
-void Application::CheckNewVersion() {
-    const int MAX_RETRY = 10;
-    int retry_count = 0;
-    int retry_delay = 10; // Initial retry delay in seconds
-
-    auto& board = Board::GetInstance();
-    while (true) {
-        auto display = board.GetDisplay();
-        display->SetStatus(Lang::Strings::CHECKING_NEW_VERSION);
-
-        esp_err_t err = ota_->CheckVersion();
-        if (err != ESP_OK) {
-            retry_count++;
-            if (retry_count >= MAX_RETRY) {
-                ESP_LOGE(TAG, "Too many retries, exit version check");
-                return;
-            }
-
-            char error_message[128];
-            snprintf(error_message, sizeof(error_message), "code=%d, url=%s", err, ota_->GetCheckVersionUrl().c_str());
-            char buffer[256];
-            snprintf(buffer, sizeof(buffer), Lang::Strings::CHECK_NEW_VERSION_FAILED, retry_delay, error_message);
-            Alert(Lang::Strings::ERROR, buffer, "cloud_slash", Lang::Sounds::OGG_EXCLAMATION);
-
-            ESP_LOGW(TAG, "Check new version failed, retry in %d seconds (%d/%d)", retry_delay, retry_count, MAX_RETRY);
-            for (int i = 0; i < retry_delay; i++) {
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                if (GetDeviceState() == kDeviceStateIdle) {
-                    break;
-                }
-            }
-            retry_delay *= 2; // Double the retry delay
-            continue;
-        }
-        retry_count = 0;
-        retry_delay = 10; // Reset retry delay
-
-        if (ota_->HasNewVersion()) {
-            if (UpgradeFirmware(ota_->GetFirmwareUrl(), ota_->GetFirmwareVersion())) {
-                return; // This line will never be reached after reboot
-            }
-            // If upgrade failed, continue to normal operation
-        }
-
-        // No new version, mark the current version as valid
-        ota_->MarkCurrentVersionValid();
-        if (!ota_->HasActivationCode() && !ota_->HasActivationChallenge()) {
-            // Exit the loop if done checking new version
-            break;
-        }
-
-        display->SetStatus(Lang::Strings::ACTIVATION);
-        // Activation code is shown to the user and waiting for the user to input
-        if (ota_->HasActivationCode()) {
-            ShowActivationCode(ota_->GetActivationCode(), ota_->GetActivationMessage());
-        }
-
-        // This will block the loop until the activation is done or timeout
-        for (int i = 0; i < 10; ++i) {
-            ESP_LOGI(TAG, "Activating... %d/%d", i + 1, 10);
-            esp_err_t err = ota_->Activate();
-            if (err == ESP_OK) {
-                break;
-            } else if (err == ESP_ERR_TIMEOUT) {
-                vTaskDelay(pdMS_TO_TICKS(3000));
-            } else {
-                vTaskDelay(pdMS_TO_TICKS(10000));
-            }
-            if (GetDeviceState() == kDeviceStateIdle) {
-                break;
-            }
-        }
-    }
-}
-
 void Application::InitializeProtocol() {
     auto& board = Board::GetInstance();
     auto display = board.GetDisplay();
@@ -478,20 +403,15 @@ void Application::InitializeProtocol() {
 
     display->SetStatus(Lang::Strings::LOADING_PROTOCOL);
 
-#if CONFIG_USE_SHIM_PROTOCOL
-    // Tracer-bullet device leg: HTTP shim request/response (KEY→mic→shim→LLM→speaker).
-    ESP_LOGI(TAG, "Shim protocol selected, base=%s", CONFIG_SHIM_BASE);
-    protocol_ = std::make_unique<ShimProtocol>();
-#else
-    if (ota_->HasMqttConfig()) {
-        protocol_ = std::make_unique<MqttProtocol>();
-    } else if (ota_->HasWebsocketConfig()) {
-        protocol_ = std::make_unique<WebsocketProtocol>();
-    } else {
-        ESP_LOGW(TAG, "No protocol specified in the OTA config, using MQTT");
-        protocol_ = std::make_unique<MqttProtocol>();
-    }
-#endif
+    // 方向 B (spec §6.3, device_ws_switch WSA-A1/A2): 短路激活后直选 WebSocket (小智
+    // 原生 WS+Opus 管线)。服务器地址入口 = 配网直写 NVS namespace "websocket"
+    // (url/token/version), 不再以 OTA 应答配置决定协议。MQTT 分支
+    // 保留可编译但非冒烟默认路径。
+    protocol_ = std::make_unique<WebsocketProtocol>();
+
+    // 自签 CA pinning (V10): 校验 cacert 加载面已接通; 真实握手证书校验由
+    // websocket_protocol.cc 建连路径承载 (协议层, 见 ws_tls_ca)。
+    ws_tls_ca::VerifyCacertConfigured();
 
     protocol_->OnConnected([this]() {
         DismissAlert();
@@ -614,36 +534,6 @@ void Application::InitializeProtocol() {
     });
     
     protocol_->Start();
-}
-
-void Application::ShowActivationCode(const std::string& code, const std::string& message) {
-    struct digit_sound {
-        char digit;
-        const std::string_view& sound;
-    };
-    static const std::array<digit_sound, 10> digit_sounds{{
-        digit_sound{'0', Lang::Sounds::OGG_0},
-        digit_sound{'1', Lang::Sounds::OGG_1}, 
-        digit_sound{'2', Lang::Sounds::OGG_2},
-        digit_sound{'3', Lang::Sounds::OGG_3},
-        digit_sound{'4', Lang::Sounds::OGG_4},
-        digit_sound{'5', Lang::Sounds::OGG_5},
-        digit_sound{'6', Lang::Sounds::OGG_6},
-        digit_sound{'7', Lang::Sounds::OGG_7},
-        digit_sound{'8', Lang::Sounds::OGG_8},
-        digit_sound{'9', Lang::Sounds::OGG_9}
-    }};
-
-    // This sentence uses 9KB of SRAM, so we need to wait for it to finish
-    Alert(Lang::Strings::ACTIVATION, message.c_str(), "link", Lang::Sounds::OGG_ACTIVATION);
-
-    for (const auto& digit : code) {
-        auto it = std::find_if(digit_sounds.begin(), digit_sounds.end(),
-            [digit](const digit_sound& ds) { return ds.digit == digit; });
-        if (it != digit_sounds.end()) {
-            audio_service_.PlaySound(it->sound);
-        }
-    }
 }
 
 void Application::Alert(const char* status, const char* message, const char* emotion, const std::string_view& sound) {

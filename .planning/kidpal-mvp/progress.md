@@ -101,3 +101,13 @@
 - **收口**：会话状态机 + KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑，mergeOrder 6，riskTier high）dev loop 完成：verifier r3 scoped 绿 + r4 final 九闸全绿（evidence `r4.json`，invocation `f991bafb-c80f-4536-a5f9-70ca00355ece`；`verifier-evidence-check` factOk:true EXIT=0；r1 acceptance-coverage 红 → r2 mutation-check 红 → r3/r4 绿收敛）。host runner 13 Tests 0 Failures EXIT=0（9 个 SES TEST_CASE + 包 0 既有 4 测试）；mutation M1~M4 四点破坏→变红→回滚全实证。closeout 制品（docs-delta「无需改」判定 + review-packet）晋升 `changes/dev/260829-session-logic/`。
 - **留根**：SES-E2 跨页端到端整合归包 9b 兜底（PROPOSAL §7 计划内留根）；on-target 编译/真机验收同归 9b（本包闸 firmware-build degraded=host 单测包，非假绿）；espidf_wsl.sh CRLF 环境摩擦记 pod-events（NIT）。
 - 下一步：supervisor 机械闸裁断 → planner 前置升级闸 → 本地合并；关键路径后续 WS→2→6→7→U→9b。
+
+## 2026-09-06 WS 包（260903-device-ws-switch）dev-loop closeout（integrator 收口记）
+
+- **收口**：方向 B 设备侧切换包（mergeOrder 4，dependsOn=G）dev loop 完成、verifier 终审 final round 4 九闸全绿（evidence `verifier-evidence/rounds/r4.json`，ok:true / observedGateExit 0）。设备从 Pod S 同步 HTTP shim 形态切到「配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活 + 自签 CA pinning（V10）+ WS 握手 Bearer + 原生 WS+Opus 流式」，并退役 HTTP 台阶（固件 shim_protocol/mp3_decoder/PlayMp3 死代码消除 + tenclass 激活门字符串归零、`server/shim.py` ARCHIVED 归档、ECS shim 停服 + 8080 安全组关闭、Pod S/TP-A 冻结验收标 superseded）。
+- **验收实证**：host_app linux-target ELF（builder 接线 device_ws_switch.acceptance.c + ws_provision.test.cpp）**15 Tests 0 Failures / exit 0**（红基线演进 8T6F → 15T2F → 15/0，纪律留痕 red-baseline-summary.md）；live 方向 B 冒烟 2026-09-06 真机串通（设备⇄wss:8000 front⇄引擎⇄OpenClaw，ASR→LLM→流式 TTS + stt 文字上屏，多轮），证据本地-only 落 `server/acceptance/_artifacts/device-ws-switch/`（by design gitignore）。
+- **human 授权验收修订**：WSA-A4 齿 3 证据形态改认（permessage-deflate 压缩致 wire 字面量 stt/tts/sentence_start 不在日志；改认本栈真实标记 识别文本/语音生成成功/SentenceType，session_id 字面保留，四协议事实仍全强制）——acceptance-author 执行、证据形态改革非降严格度。
+- **live 偏差（留 retro，均必要）**：引擎 Intent:nointent（OpenClaw 拒 tools 数组）、ASR 用 qwen3_asr_flash + dashscope key（非 V23 终选 aliyun_stream，凭据未就位）、TTS type:edge、引擎 network_mode:host、front websockets v17 兼容 + 设备头透传。
+- **closeout 制品**：docs-delta + review-packet 晋升 `changes/dev/260903-device-ws-switch/`；`server/deploy/README.md` docs-sync 同步 network_mode host 拓扑（本包 live 重切引入的漂移）。
+- **了账**：Pod S 遗留「待 human：阿里云安全组关闭 8080 放行」由本包 WSA-A6 承接关闭（证据 ecs-teardown-evidence.md）。
+- **待 human / 下游**：ASR 终选凭据/型号裁定（aliyun_stream vs qwen3_asr_flash）；OpenClaw tools 修复后回开 Intent/tool-calling；`feature-inventory.md` OC-7 行（已退役 shim）+ 设备侧能力清单更新（docs/notes 超出 integrator 写面，留主线程）。**下一步**：supervisor 机械闸 + 前置升级闸 → 人批后本地合并 main；包 2（语音回环 + display 消费，mergeOrder 5）依赖本包就绪（WSA-E3）。

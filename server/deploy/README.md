@@ -16,8 +16,8 @@ KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.
 ```
 
 - **引擎腿**：官方 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest`（China mirror；拉不到退 `ghcr.io/...`）。容器零引擎侧补丁；`data/.config.yaml` overlay + models 卷挂载，keys 不入镜像层、数据跨重建持久。
-- **传输腿**：引擎 plain ws:8000 仅发布到宿主 **LOOPBACK 127.0.0.1:8010**（`docker-compose.yml`）；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。
-- **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；容器内经 `host.docker.internal:18789` 达宿主。
+- **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `changes/dev/260903-device-ws-switch/`。）
+- **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；`network_mode: host` 下容器经**真 loopback `127.0.0.1:18789`** 直达宿主 OpenClaw（原 `host.docker.internal:18789` 网桥随 host 模式移除，260903-device-ws-switch live）。
 
 ## 关键环境变量
 

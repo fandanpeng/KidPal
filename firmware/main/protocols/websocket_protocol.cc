@@ -3,10 +3,13 @@
 #include "system_info.h"
 #include "application.h"
 #include "settings.h"
+#include "certs/ws_tls_ca.h"
 
 #include <cstring>
+#include <new>
 #include <cJSON.h>
 #include <esp_log.h>
+#include <esp_heap_caps.h>
 #include <arpa/inet.h>
 #include "assets/lang_config.h"
 
@@ -112,36 +115,67 @@ bool WebsocketProtocol::OpenAudioChannel() {
         if (binary) {
             if (on_incoming_audio_ != nullptr) {
                 if (version_ == 2) {
+                    if (len < sizeof(BinaryProtocol2)) {
+                        ESP_LOGE(TAG, "WS v2 frame too short: len=%u < %u", (unsigned)len, (unsigned)sizeof(BinaryProtocol2));
+                        return;
+                    }
                     BinaryProtocol2* bp2 = (BinaryProtocol2*)data;
                     bp2->version = ntohs(bp2->version);
                     bp2->type = ntohs(bp2->type);
                     bp2->timestamp = ntohl(bp2->timestamp);
                     bp2->payload_size = ntohl(bp2->payload_size);
                     auto payload = (uint8_t*)bp2->payload;
-                    on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
-                        .sample_rate = server_sample_rate_,
-                        .frame_duration = server_frame_duration_,
-                        .timestamp = bp2->timestamp,
-                        .payload = std::vector<uint8_t>(payload, payload + bp2->payload_size)
-                    }));
+                    if (bp2->payload_size > len - sizeof(BinaryProtocol2)) {
+                        ESP_LOGE(TAG, "WS v2 frame payload_size invalid: %u > %u (len=%u)", bp2->payload_size, (unsigned)(len - sizeof(BinaryProtocol2)), (unsigned)len);
+                        return;
+                    }
+                    try {
+                        on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
+                            .sample_rate = server_sample_rate_,
+                            .frame_duration = server_frame_duration_,
+                            .timestamp = bp2->timestamp,
+                            .payload = std::vector<uint8_t>(payload, payload + bp2->payload_size)
+                        }));
+                    } catch (const std::bad_alloc&) {
+                        ESP_LOGE(TAG, "WS v2 OOM: payload_size=%u free_heap=%u", bp2->payload_size, (unsigned)esp_get_free_heap_size());
+                        return;
+                    }
                 } else if (version_ == 3) {
+                    if (len < sizeof(BinaryProtocol3)) {
+                        ESP_LOGE(TAG, "WS v3 frame too short: len=%u < %u", (unsigned)len, (unsigned)sizeof(BinaryProtocol3));
+                        return;
+                    }
                     BinaryProtocol3* bp3 = (BinaryProtocol3*)data;
                     bp3->type = bp3->type;
                     bp3->payload_size = ntohs(bp3->payload_size);
                     auto payload = (uint8_t*)bp3->payload;
-                    on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
-                        .sample_rate = server_sample_rate_,
-                        .frame_duration = server_frame_duration_,
-                        .timestamp = 0,
-                        .payload = std::vector<uint8_t>(payload, payload + bp3->payload_size)
-                    }));
+                    if (bp3->payload_size > len - sizeof(BinaryProtocol3)) {
+                        ESP_LOGE(TAG, "WS v3 frame payload_size invalid: %u > %u (len=%u)", bp3->payload_size, (unsigned)(len - sizeof(BinaryProtocol3)), (unsigned)len);
+                        return;
+                    }
+                    try {
+                        on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
+                            .sample_rate = server_sample_rate_,
+                            .frame_duration = server_frame_duration_,
+                            .timestamp = 0,
+                            .payload = std::vector<uint8_t>(payload, payload + bp3->payload_size)
+                        }));
+                    } catch (const std::bad_alloc&) {
+                        ESP_LOGE(TAG, "WS v3 OOM: payload_size=%u free_heap=%u", bp3->payload_size, (unsigned)esp_get_free_heap_size());
+                        return;
+                    }
                 } else {
-                    on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
-                        .sample_rate = server_sample_rate_,
-                        .frame_duration = server_frame_duration_,
-                        .timestamp = 0,
-                        .payload = std::vector<uint8_t>((uint8_t*)data, (uint8_t*)data + len)
-                    }));
+                    try {
+                        on_incoming_audio_(std::make_unique<AudioStreamPacket>(AudioStreamPacket{
+                            .sample_rate = server_sample_rate_,
+                            .frame_duration = server_frame_duration_,
+                            .timestamp = 0,
+                            .payload = std::vector<uint8_t>((uint8_t*)data, (uint8_t*)data + len)
+                        }));
+                    } catch (const std::bad_alloc&) {
+                        ESP_LOGE(TAG, "WS raw OOM: len=%u free_heap=%u", (unsigned)len, (unsigned)esp_get_free_heap_size());
+                        return;
+                    }
                 }
             }
         } else {
@@ -172,6 +206,9 @@ bool WebsocketProtocol::OpenAudioChannel() {
     });
 
     ESP_LOGI(TAG, "Connecting to websocket server: %s with version: %d", url.c_str(), version_);
+    // 自签 CA pinning (V10): 开启证书校验 —— cacert 已经 mbedtls custom cert bundle
+    // 收进 esp_crt_bundle_attach 信任面 (certs/kidpal_ca.pem)。wss 握手按嵌入 CA 校验。
+    ws_tls_ca::VerifyCacertConfigured();
     if (!websocket_->Connect(url.c_str())) {
         ESP_LOGE(TAG, "Failed to connect to websocket server, code=%d", websocket_->GetLastError());
         SetError(Lang::Strings::SERVER_NOT_CONNECTED);

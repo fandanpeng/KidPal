@@ -2,42 +2,11 @@ menu "Xiaozhi Assistant"
 
 config OTA_URL
     string "Default OTA URL"
-    default "https://api.tenclass.net/xiaozhi/ota/"
-    help
-        The application will access this URL to check for new firmwares and server address.
-
-config USE_SHIM_PROTOCOL
-    bool "Use KidPal HTTP shim protocol (tracer bullet)"
-    default n
-    help
-        Replace xiaozhi mqtt/websocket streaming with the synchronous HTTP shim
-        protocol (server/shim.py): KEY -> mic -> /v1/asr -> /v1/chat -> mp3 ->
-        speaker. This is connectivity-only; no business logic is carried here.
-
-config SHIM_BASE
-    string "KidPal shim base URL"
     default ""
     help
-        Base URL of the KidPal cloud shim (server/shim.py). Provisioned at build
-        time. Runtime override via NVS namespace "shim" key "shim_base" takes
-        precedence. The device reaches only the shim endpoint, never the upstream
-        language-model service or its port.
-
-config SHIM_DEVICE_TOKEN
-    string "KidPal shim device bearer token (provision-time)"
-    default ""
-    help
-        Device bearer token sent as "Authorization: Bearer <token>" against /v1/*.
-        Empty means the shim runs in validation mode (no auth). Inject a strong
-        random value at provisioning time; never commit a real token into firmware.
-
-config SHIM_CAPTURE_MS
-    int "KidPal smoke mic capture window (ms)"
-    default 3000
-    range 1000 10000
-    help
-        How long the smoke firmware captures uplink audio before POSTing it to
-        /v1/asr and continuing the round-trip.
+        OTA 版本/配置拉取地址。方向 B (spec §6.3 短路激活) 后默认留空: 设备服务器
+        地址入口 = 配网直写 NVS (namespace "websocket"), 不再从 OTA 应答拉取;
+        自建 OTA 应答端点留二期。
 
 choice
     prompt "Flash Assets"
