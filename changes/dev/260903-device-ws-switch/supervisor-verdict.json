@@ -1,0 +1,69 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-06T02:37:11.557Z",
+  "changeId": "260903-device-ws-switch",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=main,acceptance,deploy,gateway,shim.py",
+      "security-axis-diff:auth",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=main,acceptance,deploy,gateway,shim.py",
+        "security-axis-diff:auth"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=main,acceptance,deploy,gateway,shim.py",
+          "security-axis-diff:auth"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260903-device-ws-switch/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260903-device-ws-switch/docs-delta.md",
+          "changes/dev/260903-device-ws-switch/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788610950188-mutation-check.log",
+      ".claude/verify-logs/1788614235340-docs-sync.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260903-device-ws-switch/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260903-device-ws-switch/docs-delta.md",
+      "changes/dev/260903-device-ws-switch/review-packet.md"
+    ]
+  }
+}
