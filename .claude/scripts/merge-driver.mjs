@@ -21,12 +21,15 @@
 import {
   existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
   readFileSync,
   rmdirSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
-import { join, resolve, basename } from 'node:path';
+import { dirname, join, resolve, basename } from 'node:path';
+import { tmpdir } from 'node:os';
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { setPod, reconcile } from './portfolio-reconcile.mjs';
 import { computeRetroScope } from './loop-health-report.mjs';
@@ -544,6 +547,35 @@ function resolveRebaseTargetLive(cwd) {
   });
 }
 
+// ---- Worktree 拓扑两步（T5 提取，ARQ-260905-merge-driver-worktree-topology）----
+// 2026-09-05 human 裁定热修的核心语义，原内联于 processPod；提取为具名函数后，
+// 主流程与 --self-check-worktree-topology 共用同一实现（self-check 不再复述逻辑，防假绿）。
+
+// fetch 步谓词：有 origin remote 才 fetch。无 origin = 本地-only worktree → 跳过（不 fail-closed）。
+function hasOriginRemote(cwd) {
+  try {
+    execSync('git remote get-url origin', { cwd, encoding: 'utf8', stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 定位持有 refs/heads/main 的 worktree 路径（git worktree list --porcelain 解析）。
+// 无主 / 解析失败 → null（调用方回退原 cwd）。语义同原内联实现（含 try/catch 回退）。
+function findMainHolderWorktree(cwd) {
+  try {
+    const wtList = execSync('git worktree list --porcelain', { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    for (const block of wtList.split('\n\n')) {
+      const lines = block.split('\n');
+      const wpath = (lines.find((l) => l.startsWith('worktree ')) || '').replace(/^worktree /, '');
+      const wbranch = (lines.find((l) => l.startsWith('branch ')) || '').replace(/^branch /, '');
+      if (wpath && wbranch === 'refs/heads/main') return wpath;
+    }
+  } catch { /* 解析失败：回退 */ }
+  return null;
+}
+
 // 自检：六分岔全覆盖（两俱存×3 + 单缺×2 + 俱缺×1）。驱动 resolveRebaseTarget 纯逻辑（注入假 git）。
 function runRebaseTargetSelfCheck() {
   let pass = 0;
@@ -608,6 +640,95 @@ function runRebaseTargetSelfCheck() {
   if (fail > 0) process.exit(1);
 }
 
+// 自检（T5，ARQ-260905-merge-driver-worktree-topology）：临时 git 仓库夹具（脚本自建、跑完即删）
+// 断言拓扑两步语义——① 无 origin remote 时 fetch 步跳过（谓词为 false）且 rebase 目标解析仍落本地 main
+// （不 fail-closed；有 origin 时谓词翻转）；② git worktree list --porcelain 解析能正确定位持有 main 的 worktree
+// （从 feature worktree 找 = 主夹具路径；从主夹具找 = 自身）。驱动主流程同一实现 hasOriginRemote /
+// findMainHolderWorktree / resolveRebaseTargetLive，非复述逻辑。
+function runWorktreeTopologySelfCheck() {
+  let pass = 0;
+  let fail = 0;
+  const check = (condition, message) => {
+    if (condition) {
+      pass++;
+    } else {
+      fail++;
+      process.stderr.write(`[merge-driver] worktree-topology self-check FAIL: ${message}\n`);
+    }
+  };
+  const tmp = mkdtempSync(join(tmpdir(), 'md-wt-topo-'));
+  const featureWt = join(dirname(tmp), `${basename(tmp)}-feature`);
+  // git worktree list --porcelain 输出正斜杠路径（Windows 实测 C:/...），node path 为反斜杠——比对前归一。
+  const norm = (p) => (p || '').replace(/\\/g, '/');
+  const run = (cmd, cwd) => execSync(cmd, { cwd, encoding: 'utf8', stdio: 'pipe' });
+  try {
+    run('git init', tmp);
+    run('git symbolic-ref HEAD refs/heads/main', tmp); // 不依赖 init.defaultBranch 配置
+    run('git -c user.name=selfcheck -c user.email=selfcheck@local commit --allow-empty -m init', tmp);
+
+    // ① 无 origin：fetch 跳过谓词 false + 目标解析落本地 main（不 fail-closed；origin 缺失 reason=origin-missing 单缺降级语义）。
+    check(hasOriginRemote(tmp) === false, 'no-origin repo must report hasOriginRemote=false (fetch-skip predicate)');
+    const t1 = resolveRebaseTargetLive(tmp);
+    check(t1.ok && t1.ref === 'main' && (t1.reason === 'local' || t1.reason === 'origin-missing'),
+      `no-origin rebase target must resolve to local main (got ok=${t1.ok} ref=${t1.ref} reason=${t1.reason})`);
+    // ①b 有 origin（仅 add 不 fetch）：谓词翻转 → fetch 步将执行。
+    run('git remote add origin https://example.invalid/selfcheck.git', tmp);
+    check(hasOriginRemote(tmp) === true, 'origin-present repo must report hasOriginRemote=true');
+
+    // ② linked worktree 持 feature 分支，主夹具持 main：从 feature wt 定位主夹具。
+    run(`git worktree add "${featureWt}" -b feature`, tmp);
+    check(norm(findMainHolderWorktree(featureWt)) === norm(tmp), 'main holder from feature worktree must be the main checkout');
+    check(norm(findMainHolderWorktree(tmp)) === norm(tmp), 'main holder from main checkout must be itself');
+  } catch (err) {
+    fail++;
+    const detail = `${err.stderr || err.message || err}`.trim().split('\n').slice(-3).join(' ');
+    process.stderr.write(`[merge-driver] worktree-topology self-check FAIL: fixture error: ${detail}\n`);
+  } finally {
+    try { execSync(`git worktree remove --force "${featureWt}"`, { cwd: tmp, encoding: 'utf8', stdio: 'pipe' }); } catch { /* 已删或不存在 */ }
+    try { rmSync(featureWt, { recursive: true, force: true }); } catch { /* 临时残留 advisory */ }
+    try { rmSync(tmp, { recursive: true, force: true }); } catch { /* 临时残留 advisory */ }
+  }
+  process.stdout.write(`${JSON.stringify({ selfCheck: 'merge-driver-worktree-topology', pass, fail, total: pass + fail, ok: fail === 0 })}\n`);
+  if (fail > 0) process.exit(1);
+}
+
+// ---- T6（260906-gov-review-arq-governance-batch，ARQ-260906-live-graph-dirty-blocks-merge 根治）----
+// 活图索引器（主 checkout + 各 worktree 专属进程）持续重写这两件被跟踪文件，git 树常驻脏，
+// rebase/merge 步无条件 fail-closed。白名单固定两件（非模式匹配），幂等设 skip-worktree、永不 unset
+//（unset 即复发）。只动本地 index 标记、不改历史、幂等可重入 → 置于 if (!DRY_RUN) 守卫之外
+//（R1-F9 钉死：DRY_RUN 下照常执行并留痕，dry-run 验证路径真实覆盖该步）。
+const CODEBASE_MEMORY_DIRTY_PATHS = ['.codebase-memory/graph.db.zst', '.codebase-memory/artifact.json'];
+
+// 对 cwd 仓库幂等设 skip-worktree：先 ls-files -v 查标记（首字母 s/S = 已设），已设跳过。
+// 成功路径 stderr 留痕一行；ls-files / update-index 失败走 warn advisory——不阻塞合并（修复型助手，
+// 非门语义变更）。ls-files -v 大小写因 git 版本而异（S/s 均算已设），故按小写判等。
+function ensureSkipWorktree(cwd, changeId) {
+  let listed;
+  try {
+    listed = execSync(`git ls-files -v -- ${CODEBASE_MEMORY_DIRTY_PATHS.join(' ')}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (err) {
+    warn(`${changeId}: skip-worktree 前置 ls-files 失败（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
+    return;
+  }
+  const flagged = new Set();
+  for (const line of listed.split(/\r?\n/)) {
+    const m = /^([A-Za-z?]) +(.+)$/.exec(line);
+    if (m && m[1].toLowerCase() === 's') flagged.add(m[2]);
+  }
+  let setCount = 0;
+  let already = 0;
+  for (const p of CODEBASE_MEMORY_DIRTY_PATHS) {
+    if (flagged.has(p)) { already++; continue; } // 已设 skip-worktree → 幂等跳过
+    try {
+      execSync(`git update-index --skip-worktree -- ${p}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      setCount++;
+    } catch (err) {
+      warn(`${changeId}: skip-worktree set failed for ${p}（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
+    }
+  }
+  process.stderr.write(`[merge-driver] ${changeId}: skip-worktree ensured in ${cwd} — ${setCount} set, ${already} already flagged (live graph drift guard, ARQ-260906)\n`);
+}
+
 
 // 处理一个 Pod 的 merge 操作。返回 true=成功 merged，false=跳过或失败。
 function processPod(changeId, devloopDir, projectDir, quickChecks) {
@@ -653,19 +774,15 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   if (!DRY_RUN) setPod(projectDir, { changeId, status: 'merging' });
 
   // Step 3: fetch + rebase
+  // T6：rebase 步（Pod worktree 内）之前幂等设 skip-worktree——置于 if (!DRY_RUN) 守卫之外（R1-F9）。
+  ensureSkipWorktree(wt, changeId);
   log(`${changeId}: fetching origin...`);
   if (!DRY_RUN) {
     // Hot-fix（human 裁定 2026-09-05，pod-events 85667b2a）：本地开发 worktree/branch 不保证有远端——
     // 无 origin remote 时跳过 fetch（不再 fail-closed），rebase 目标由 resolveRebaseTargetLive 的
     // 「本地 main 优先、单缺降级存活 ref」语义兜底（ARQ-260820），fetch 缺席不改变目标解析结果。
-    const hasOrigin = (() => {
-      try {
-        execSync('git remote get-url origin', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
-        return true;
-      } catch {
-        return false;
-      }
-    })();
+    // 谓词 hasOriginRemote 为 T5 提取的具名实现（self-check 共用）。
+    const hasOrigin = hasOriginRemote(wt);
     if (hasOrigin) {
       try {
         execSync('git fetch origin', { cwd: wt, encoding: 'utf8', stdio: 'pipe' });
@@ -748,6 +865,12 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
 
   // Step 5: git merge
   log(`${changeId}: merging to main...`);
+  // merge 步在「持有 main 的 worktree」内执行（Hot-fix #2，见下）。T6：对该 worktree 幂等设
+  // skip-worktree，先于守卫外执行（R1-F9：该步只动本地 index 标记、不改历史，DRY_RUN 下照常执行并留痕）。
+  // mergeCwd 解析本身只读（git worktree list），DRY_RUN 下无害。findMainHolderWorktree 为 T5 提取的
+  // 具名实现（self-check 共用）；无主 / 解析失败回退 wt。
+  const mergeCwd = findMainHolderWorktree(wt) || wt;
+  ensureSkipWorktree(mergeCwd, changeId);
   if (!DRY_RUN) {
     try {
       // Get the current branch name, then merge it into main
@@ -758,16 +881,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
         // Hot-fix #2（human 裁定 2026-09-05 延伸：merge-driver 须适配本地 worktree 拓扑，pod-events 85667b2a 同裁）：
         // worktree 场景下 main 由主 checkout 持有，本 worktree checkout main 会被 git 拒绝——
         // 改为定位持有 main 的 worktree，在那里执行 merge（等价语义：merge --no-ff 进本地 main）。
-        let mergeCwd = wt;
-        try {
-          const wtList = execSync('git worktree list --porcelain', { cwd: wt, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-          for (const block of wtList.split('\n\n')) {
-            const lines = block.split('\n');
-            const wpath = (lines.find((l) => l.startsWith('worktree ')) || '').replace(/^worktree /, '');
-            const wbranch = (lines.find((l) => l.startsWith('branch ')) || '').replace(/^branch /, '');
-            if (wpath && wbranch === 'refs/heads/main') { mergeCwd = wpath; break; }
-          }
-        } catch { /* fall back to wt */ }
+        // mergeCwd 已在守卫外解析（见 Step 5 开头），此处不再重复解析。
         // T2（OQ3=(a)）：人批合并时凭据强制进 merge commit message（对齐 Pod S 手工合并留痕形态）
         const mergeMsg = `Merge ${changeId} (merge-driver)${HUMAN_APPROVAL_REF ? ` human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}`;
         try {
@@ -831,6 +945,10 @@ function main() {
   }
   if (process.argv.includes('--self-check-rebase-target')) {
     runRebaseTargetSelfCheck();
+    return;
+  }
+  if (process.argv.includes('--self-check-worktree-topology')) {
+    runWorktreeTopologySelfCheck();
     return;
   }
   const quickChecks = buildQuickChecks(projectDir); // ARQ-097：verify-gates.json 单源

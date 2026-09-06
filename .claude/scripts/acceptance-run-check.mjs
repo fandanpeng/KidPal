@@ -179,6 +179,7 @@ if (isMain() && !process.argv.includes('--self-check')) {
   });
   // 执行器：仅 server 面 host-fast 的 pytest acceptance 在闸内真跑；live on-target（@pytest.mark.live，如 cloud-link 验收）
   // 与固件 on-target 同待遇——只结构闸、不 auto-run（merge/CI 无 SSH/凭据，auto-run 必假红）。pytest 未装也 fail-open。
+  // 约定成文：docs/DEV-GOVERNANCE.md「## 验收测试纪律」§1（260906-gov-review-arq-governance-batch T3）。
   if (real.pyHasRunner && real.pyAccFiles.length > 0) {
     const hostFiles = real.pyAccFiles.filter((f) => !fileHasLiveMark(join(projectDir, 'server', f)));
     if (hostFiles.length === 0) {

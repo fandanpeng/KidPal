@@ -1,0 +1,6 @@
+# 钉死 shell 脚本 LF 换行（T7，260906-gov-review-arq-governance-batch，ARQ-260906-shell-scripts-lf-gitattributes）。
+# 实况（2026-09-06 实测）：五件 *.sh 入库侧已是 LF，病灶在 Windows checkout 换行转换（autocrlf 漂移）
+# 把工作树文件转成 CRLF、WSL bash 读到即 $'\r': command not found。eol=lf 从 checkout 侧消灭 CRLF，
+# 对全部克隆者/提交者一致生效。范围克制在 *.sh（仓内 Python 走 ECS/SSH 执行，不踩本地工作树）。
+# 与 .codebase-memory/.gitattributes（binary merge=ours）路径无交集，共存无冲突。
+*.sh text eol=lf

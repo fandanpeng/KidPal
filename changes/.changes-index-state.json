@@ -14,5 +14,9 @@
   "260905-gov-review-verify-gates-align": {
     "date": "2026-09-05",
     "mergedInMain": "yes"
+  },
+  "260906-gov-review-arq-governance-batch": {
+    "date": "2026-09-06",
+    "mergedInMain": "no"
   }
 }

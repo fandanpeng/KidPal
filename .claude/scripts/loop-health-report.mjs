@@ -23,6 +23,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
+import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch），原 _LHR 别名消除
 
 // R5 (gov-review-devloop-evidence-led, FROZEN 2026-07-24):
 //   - C4 retired test-evidence.md, final-summary.md (replaced by verdict.json + verification.json machine evidence)
@@ -162,10 +163,8 @@ export function readRetroLedger(projectDir) {
     .filter(Boolean);
 }
 
-const CHANGE_ID_PREFIX_RE_LHR = /^(\d{6})-[a-zA-Z0-9-]+$/;
-
 function isPostEventsCutoff(changeId) {
-  const m = CHANGE_ID_PREFIX_RE_LHR.exec(String(changeId));
+  const m = CHANGE_ID_PREFIX_RE.exec(String(changeId));
   if (!m) return false;
   return m[1] >= EVENTS_SCHEMA_CUTOFF.replace(/-/g, '').slice(2);
 }

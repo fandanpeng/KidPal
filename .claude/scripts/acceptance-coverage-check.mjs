@@ -92,6 +92,37 @@ function isShallowStatusOnly(content) {
   return !hasBehaviorEvidence;
 }
 
+// T2 自检（260906-gov-review-arq-governance-batch，ARQ-260902-acceptance-coverage-python-assert）：
+// 固化 260902 Python 断言识别三支热修，正反例钉死防回腐。
+// 已知边界（R1-F4 收束，如实声明）：hasRealAssertion 是纯正则、不剥注释/字符串——调用形态 assert 字样
+// （如字符串 "assert(x)"、注释 # self.assertIn(a, b)）会被命中为「有真断言」，此为既有实现语义、本批不改
+// （要剥注释 = 门语义变更，须另行走治理批 + human）。反例因此只钉 prose 形态。
+function runSelfCheck() {
+  const cases = [
+    { name: 'python-unittest-positive', content: 'def test_x(self):\n    self.assertIn(b, a)\n', expect: true },
+    { name: 'python-bare-assert-positive', content: 'def test_y():\n    assert resp.status_code == 200\n', expect: true },
+    { name: 'prose-comment-negative', content: '# 断言风格说明：assertEqual 须在测试内调用\n', expect: false },
+    { name: 'prose-string-negative', content: 'msg = "本次 assert 校验未通过"\n', expect: false },
+    { name: 'empty-negative', content: '', expect: false },
+  ];
+  let pass = 0;
+  const failures = [];
+  for (const c of cases) {
+    const got = hasRealAssertion(c.content);
+    if (got === c.expect) pass += 1;
+    else failures.push({ name: c.name, expect: c.expect, got });
+  }
+  const result = { selfCheck: 'acceptance-coverage-python-assert', pass, fail: failures.length, total: cases.length, ok: failures.length === 0 };
+  if (failures.length > 0) result.failures = failures;
+  return result;
+}
+
+if (process.argv.includes('--self-check')) {
+  const result = runSelfCheck();
+  print(result);
+  process.exit(result.ok ? 0 : 1);
+}
+
 const pathToTaskPackage = taskPackagePath();
 if (!pathToTaskPackage) {
   print({ ok: true, gate: 'acceptance-coverage', skipped: true, reason: 'no TaskPackage context' });

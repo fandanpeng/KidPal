@@ -32,6 +32,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { isProposalMdPath, normalizeSourceRef, resolveOriginFrozen, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
+import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -67,7 +68,6 @@ const ORIGIN_TYPES = [...SOURCE_TYPES, 'human-confirmed-plan'];
 
 // ── changeId 日期前缀 + 零追溯白名单（DP-2 / F8，单一语义，与 closeout-check.mjs 共享同一谓词）──
 const CHANGE_ID_CUTOFF = '2026-07-23'; // landing cutoff（首提 < 此日 = 老包放行）
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
 
 function validDatePrefix(yyMMdd) {
   const month = Number(yyMMdd.slice(2, 4));

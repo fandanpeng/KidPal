@@ -11,11 +11,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
+import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-// ── changeId 解析：复用 closeout-check.mjs 的 CHANGE_ID_PREFIX_RE / stripPrefix / validDatePrefix（DP-F11 / M-A10）──
-const CHANGE_ID_PREFIX_RE = /^(\d{6})-[a-zA-Z0-9-]+$/;
+// ── changeId 解析：CHANGE_ID_PREFIX_RE 自 lib/changeid-shared.mjs 单源导入（DP-F11 / M-A10）；
+//    stripPrefix / validDatePrefix 仍本地（R1-F7 边界声明，二轮收敛留后续治理批）──
 
 function validDatePrefix(yyMMdd) {
   const month = Number(yyMMdd.slice(2, 4));
