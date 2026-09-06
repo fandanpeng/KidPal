@@ -6,21 +6,24 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (5)
+## dev (8)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 | [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 | [260831-cloud-link-bringup](../changes/dev/260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
 | [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
 | [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
+| [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
+| [260829-session-logic](../changes/dev/260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
-| [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
-## arch (7)
+## arch (10)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260906-gov-review-architect-loop-advisory](../changes/arch/260906-gov-review-architect-loop-advisory/) | 2026-09-06 | frozen | yes |
 | [260906-gov-review-arq-governance-batch](../changes/arch/260906-gov-review-arq-governance-batch/) | 2026-09-06 | frozen | yes |
 | [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | frozen | yes |
 | [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | yes |
