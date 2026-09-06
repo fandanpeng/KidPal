@@ -111,3 +111,14 @@
 - **closeout 制品**：docs-delta + review-packet 晋升 `changes/dev/260903-device-ws-switch/`；`server/deploy/README.md` docs-sync 同步 network_mode host 拓扑（本包 live 重切引入的漂移）。
 - **了账**：Pod S 遗留「待 human：阿里云安全组关闭 8080 放行」由本包 WSA-A6 承接关闭（证据 ecs-teardown-evidence.md）。
 - **待 human / 下游**：ASR 终选凭据/型号裁定（aliyun_stream vs qwen3_asr_flash）；OpenClaw tools 修复后回开 Intent/tool-calling；`feature-inventory.md` OC-7 行（已退役 shim）+ 设备侧能力清单更新（docs/notes 超出 integrator 写面，留主线程）。**下一步**：supervisor 机械闸 + 前置升级闸 → 人批后本地合并 main；包 2（语音回环 + display 消费，mergeOrder 5）依赖本包就绪（WSA-E3）。
+
+## 2026-09-06 下一批 launch 面准备（主线程记，WS merged 后）
+
+- 调度判定：WS（mergeOrder 4）今已并入 main → 按 PROPOSAL §3「0 绿且 WS 绿 → 2」下一批 = **包 2（260829-voice-roundtrip，mergeOrder 5）单包**——其余 queued 包（4/5/6/8=char-stroke/home-p1/schedule-p2/story-p3）dependsOn 全含 voice-roundtrip，依赖未就绪；WIP=3 无包可填（上一批 3 个 worktree 均已 merged，mergeToken.holder=none）。
+- launch 前置门：`portfolio-reconcile.mjs --check-launch 260829-voice-roundtrip --base-ref main` 绿（taskpackage + PROPOSAL + decision-coverage 均在基准）。
+- **环境等价化完成**：worktree `C:/AI/KidPal-pod-voice-roundtrip`（branch `dev/260829-voice-roundtrip`，base = main ad1611c）；firmware/sdkconfig + dependencies.lock 镜像、managed_components 软链指主 checkout（共享缓存）、worktree-bootstrap.mjs 跑过（.env 面源不存在、按设计跳过）。
+- **专属图索引已建**：`C-AI-KidPal-pod-voice-roundtrip`（moderate + persistence，自 main 快照导入，9193 节点 / 3.1 万边）——launch 面必办性质不变（ARQ-260905 规则钉死）。
+- board `--set-pod` 预填完毕（queued + worktreePath）；launch prompt 落 `.git/devloop/launch/prompt-260829-voice-roundtrip.txt`（含 WS 收口 live 偏差两条移入 intake 评估：Intent:nointent 待 OpenClaw tools 修复 / ASR 终选凭据未裁定——构成 blockingDecision 则 fail-closed，不静默推进）。**待 human 自跑 launch 命令**（headless 形态沿用 260905 记录的交付方式）。
+- 本批准备过程同步沉淀为 ops skill（`.claude/skills/kidpal-pod-launch-prep/`，human 指示）——跳过治理批的一次性 authoring，如实记录于此。
+- **ASR 终选销账（同日，human 裁定）**：WS 收口遗留「ASR 终选凭据/型号裁定」闭环——终选 = **aliyun_stream + ali SK**，凭据 human 已给、WS 包 live 实测可用。launch prompt 已同步修订（该条移出待裁定偏差、不再构成包 2 blockingDecision）；token-plan 配额 2026-09-07 14:19 UTC 后补验仍归 ARQ-260904-v23-asr-swap-quota-recheck 既有跟踪。余留 live 偏差仅 Intent:nointent 一条（OpenClaw tools 修复后回开）。
+- **更正（同日，紧随上条）**：human 澄清——ASR 终选 = **Qwen3ASRFlash**（qwen3_asr_flash + dashscope SK，即 human 所给 ali SK，Qwen 属阿里系）；live 引擎配置本就是终选形态，无需切换。上一条所写的「aliyun_stream」系误记，以此条为准；launch prompt 已同步改正。V23 旧表述「aliyun_stream 终选」与本次拍板存在记录漂移，是否走治理批修订 PROPOSAL/spec 措辞归 human 裁。
