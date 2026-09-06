@@ -15,6 +15,7 @@
 | [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
 | [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
+| [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
 ## arch (7)
 

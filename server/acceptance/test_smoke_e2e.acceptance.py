@@ -1,5 +1,12 @@
 """Frozen acceptance tests for TaskPackage 260829-smoke-e2e (subsystem: firmware+server).
 
+SUPERSEDED (2026-09-05, acceptance-author): superseded-by = 260903-device-ws-switch
+(firmware/main/test/device_ws_switch.acceptance.c, coverage WSA-A7). Reason = spec
+docs/spec.md §3.0.0「迁移与既有资产」台阶退役条款 — 方向 B（WS+Opus 流式）落地后，
+Pod S 同步 HTTP 台阶（四端点 + WAV 上行/MP3 下行）退役；其安全发现（401 门纪律、
+设备 token 纪律）沿用。断言语义零变更、测试 id 与 coverage map 不动，仅本归属状态
+注记为新增内容。
+
 Nature: hybrid tracer-bullet smoke acceptance.
   - STRUCTURAL / FILE / EVIDENCE assertions run on the author/build machine with no
     SSH and no device — they are the red baseline's load-bearing teeth ("auto" face).

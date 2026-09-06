@@ -1,5 +1,5 @@
 {
-  "changeId": "260829-session-logic",
+  "changeId": "260903-device-ws-switch",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -9,10 +9,10 @@
     "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "firmware",
-  "story": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分）：基于小智 ToggleChatState 改，KEY 主司会话、BOOT 主司翻页。（v0.4 注：会话状态机预留包 8 的 manual 聆听/录音模式接合面——start_recording 切入累积态的设备侧状态归本包定义。）",
-  "redBaselineCommand": "跑 firmware host 状态机单测（linux target，依赖包 0 基建），覆盖会话状态转移 + 按键手势解析",
-  "redBaselineResult": "红：会话状态机与全局按键手势解析逻辑未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。| append（acceptance-author 2026-09-05 实测）红基线复验：host runner（linux target，host_infra_test.elf）4 Tests 0 Failures EXIT=0 全绿但不含本包任何 SES 测试——session_logic.acceptance.c 未被 HOST_ACCEPTANCE_SRCS 收集且接缝头 session_state_machine.h/key_gesture_parser.h 不存在，对验收文件单独 gcc 语法检查 fatal error 于缺失头文件（story 缺失红）。统一红定性：全部 SES-A1~A6/E1/E3 及包 8 接合断言红于同一原因，逐条映射已钉在验收文件尾注释；高风险包按条目映射成立，并声明 verifier 相位 mutation-check 兜底逐条断言敏感性（不得豁免）。另：scratch 桩验证（契约一致最小实现，WSL home，已清理）9/9 绿，证明验收断言期望值与钉定接缝契约自洽、红非测试错误所致。环境备注：espidf_wsl.sh 当前检出为 CRLF，WSL 直跑报错需 builder 留意（本次以等价 idf.py 直呼绕过）。",
+  "subsystem": "firmware+server",
+  "story": "设备切 WS + 方向 B 冒烟（tracer-bullet 设备片）：配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活 + 自签证书加载与 pinning（V10，CA 嵌入固件）+ WS 握手 Bearer + 方向 B 首链冒烟（KEY→流式 ASR→OpenClaw→流式 TTS 播放 + 文字上屏，证明「设备⇄网关⇄OpenClaw」方向 B 形态串通）+ HTTP 台阶退役（固件侧 ShimProtocol/mp3_decoder/PlayMp3 死代码消除、ECS shim 服务停 + 8080 安全组关闭、server/shim.py 归档记录）+ Pod S/TP-A 冻结验收 supersede 处置（acceptance-author 执行，断言语义零变更）。",
+  "redBaselineCommand": "firmware 编译 + 真机烧录冒烟（对偶 Pod S 纪律）；ECS 收尾断言见 WSA-A6",
+  "redBaselineResult": "红：固件仍指 HTTP shim（Pod S 形态），无自签证书加载路径、无 websocket NVS 直写入口——方向 B 首链不存在。本包把它切到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,118 +21,149 @@
   "riskTier": "high",
   "gateProfile": [
     "types",
+    "security",
     "state-machine",
     "test-quality",
+    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "SES-A1",
+      "id": "WSA-A1",
       "kind": "structural"
     },
-    "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
-    "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
-    "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
-    "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
-    "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表"
+    "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
+    "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
+    "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
+    "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
+    "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
+    "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/session_logic.acceptance.c"
+    "firmware/main/test/device_ws_switch.acceptance.c"
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
+      "mutation": "ws_provision.cc 配网 CSPRNG 换 memset(0xAB) 常量并移除 esp_random 符号（writer 目录零取熵调用点）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A2 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点即红（exit 3）。fixer probe 同轮暴露旧齿 dangling-include 假绿洞（裸 include 可撑绿）→ acceptance-author 收紧为调用点级断言 esp_fill_random(/esp_random( （修订记录在冻结文件头注）；新齿下本 mutation（调用点被移除）按 call-site 扫描语义构造性必红，假绿洞闭合。还原 sha256 与基线一致"
+    },
+    {
+      "acceptance": "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
+      "mutation": "kidpal_ca.pem 改名移出树（.pem/.crt 扫描面清空）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A3 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点即红（CA 在树/缺牙即红，exit 3）；cacert 加载路径齿与 WS 建连接线齿正交未触。还原 sha256 一致"
+    },
+    {
+      "acceptance": "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
+      "mutation": "三态取证：合成证据四件套（flash.log/provision.log/smoke-roundtrip.log/screen1.png，带 MUTATION PROBE 标记）就位 → GREEN；删 smoke-roundtrip.log 的 tts sentence_start 行 → RED；还原后清场 → 回基线红（flash.log 缺失）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A4 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环，证据齿非空；合成件全带 probe 标记、清场后 sha256 全扫零残留"
+    },
+    {
+      "acceptance": "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
+      "mutation": "application.cc（激活面 5 文件之一）塞回一处 tenclass 字符串",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A5 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点回填即红（exit 3）；ShimProtocol/mp3_decoder/USE_SHIM_PROTOCOL 等其余死代码齿独立未触。还原后 grep tenclass 计数 = 0，sha256 一致"
+    },
+    {
+      "acceptance": "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
+      "mutation": "三态取证：合成 ecs-teardown-evidence.md（带 MUTATION PROBE 标记）就位 → 齿1 过、红因推进到齿2；删证据内安全组标记 → RED（无 security-group closure 记录）；清场 → 回齿1 缺失红",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A6 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "A6 三齿：齿1 证据齿敏感性已证；齿2（shim.py 墓碑）齿3（changes/ 归档记录）为未落地实现责任，已由 builder round2（墓碑）+ planner（changes/dev/260903-device-ws-switch/shim-archive-record.md）落地；齿3 扫描面 first-match 缺陷（adjudications.md 遮蔽 dev 记录件）由 acceptance-author 改 wsa_scan_tree_both 双针修复，双针命中且仅命中本包记录件（旁证实证）。终态齿1 = live 相位证据待落红"
+    },
+    {
+      "acceptance": "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态",
+      "mutation": "test_cloud_link.acceptance.py 头注 SUPERSEDED 标记改拼写变体 SUPERSEDE-X（10 字符 token 消失）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A7 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "标记消失即红（首试 SUPERSEDED_X 仍含子串未红，改为彻底消失才红——探针自身校验了齿精度）。probe 只动注记行、还原到 probe 前 working-tree 字节（sha256 一致，git diff 相对 HEAD 仅剩 acceptance-author 合法注记）"
+    }
   ],
   "exitCriteria": [
     {
-      "id": "SES-E1",
+      "id": "WSA-E1",
       "kind": "structural"
     },
-    "SES-E2: 本包只做按键手势解析纯逻辑 + 会话状态机；「4 页循环翻页」跨页端到端整合不在本包，显式由包 9b（全功能端到端真机）兜底验收（PROPOSAL §7 留根）",
-    "SES-E3: PWR 为硬件电源键、固件不可读，不入交互状态机——此约束在状态机设计中体现并注释"
+    "WSA-E2: 真机冒烟证据落盘（对偶 Pod S 收口纪律：烧录/配网/链路证据齐）",
+    "WSA-E3: 本包 mergeOrder 4；包 2（语音回环 + display 消费）依赖本包就绪"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§4.0",
-    "docs/spec.md#§5.3"
+    "docs/spec.md#§3.0.0",
+    "docs/spec.md#§6.3",
+    "docs/contracts/interface-contract.md#§四",
+    "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json"
   ],
+  "docsNoChangeReason": "docRefs 均为本包只读消费的上游权威（PROPOSAL v0.4 / spec §3.0.0+§6.3 / 契约 §四 / dev-loop-handoff V10），先于本包存在且冻结，其内容不含本包 acceptance id 属预期；V10→WSA-A3 等决策映射由 decisionCoverage.landsIn 字段承载、非 docRefs 内容职责。本包不改 spec/契约（PROPOSAL 非目标条款），canonical 文档同步由 integrator docs-delta 收口。",
   "sourceRefs": [
-    "docs/spec.md#§4.0",
-    "docs/spec.md#§5.3",
-    "3"
+    "docs/spec.md#§6.3",
+    "docs/contracts/interface-contract.md#§四",
+    "WS"
   ],
-  "iterationBudget": 3,
-  "fixBudget": 5,
+  "iterationBudget": 4,
+  "fixBudget": 6,
   "docsOwner": "integrator",
-  "mergeOrder": 6,
+  "mergeOrder": 4,
   "dependsOn": [
-    "260829-host-test-infra"
+    "260903-gateway-directionB"
   ],
-  "testHost": "host",
-  "mutationRequired": true,
-  "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "SES-A2: 状态机覆盖 聆听→思考→播报→（超时 60s|结束意图|再按键）→结束回首页 全部转移，非法转移被拒绝",
-        "mutation": "M1: session_state_machine.cc k_ses_table SPEAKING 态 KEY_SHORT_PRESS 打断转移 {SES_STATE_ENDED, ABORT_SPEECH} 改 SES_REJECTED_EDGE",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "fixer 实测 2026-09-05：13 Tests→1 Failures（SES-A3 TEST_CASE 变红，line 384 Expected TRUE Was FALSE）；M1 同时覆盖 SES-A2/A3 敏感性池——SES-A2 全链走 SPEAK_DONE 回聆听不经过该边，逐条敏感由 M1/M3 双向覆盖后全链断言仍独立命中（见 M3 命中 SES-A5、A2 全链在 M1 下绿说明其断言不锚 SPEAKING-KEY_SHORT 单点）；回滚后 13 绿 EXIT=0"
-      },
-      {
-        "acceptanceId": "SES-A3: KEY 短按 = 启动/结束会话 + 对话中打断停播；KEY 长按 = 回首页（全局一致）",
-        "mutation": "M1: 同上——SPEAKING 态 KEY_SHORT_PRESS 打断转移改拒绝",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "fixer 实测 2026-09-05：SES-A3 TEST_CASE（KEY 短按启动结束会话打断停播与长按回首页）line 384 变红；回滚恢复 13 绿"
-      },
-      {
-        "acceptanceId": "SES-A4: BOOT 短按 = P1→P2→P3→P4 循环翻页；对话中 BOOT 也可结束会话",
-        "mutation": "M2: key_gesture_parser.cc key_page_next 页序 +1 % PAGE_COUNT 改 +2 %（P4→P1 回绕破坏）",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "fixer 实测 2026-09-05：SES-A4 TEST_CASE line 423 Expected 1 Was 2 变红；回滚后 key_gesture_parser.cc md5 恢复 a3593c53，13 绿 EXIT=0"
-      },
-      {
-        "acceptanceId": "SES-A5: 思考中超 4 秒先开口安抚（不冷场）这一状态行为有转移断言",
-        "mutation": "M3: session_state_machine.cc THINKING 行 THINKING_TIMEOUT_4S 列 {SES_STATE_SPEAKING, COMFORT_SPEECH} 改 SES_REJECTED_EDGE",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "fixer 实测 2026-09-05：SES-A5 TEST_CASE（思考超四秒切入安抚播报）line 471 变红；回滚后 md5 恢复 988c4e58，13 绿 EXIT=0"
-      },
-      {
-        "acceptanceId": "SES-A6: 按键手势解析对 单击/双击/长按 消抖正确，KEY/BOOT 职责分离（KEY 会话、BOOT 翻页）符合 §4.0 手势表",
-        "mutation": "M4: key_gesture_parser.cc key_gesture_parser_feed 双击窗判断 <= double_gap_ms 改 <= 0u（双击窗取 0）",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "fixer 实测 2026-09-05：SES-A6 TEST_CASE（单击双击长按时序消抖判定）line 516 Expected 2 Was 1 变红（双击误判单击）；回滚恢复 13 绿。SES-A6 路由/PWR 拒收测试与 SES-E3 结构断言属结构/路由面，由 M4+既有断言矩阵承载"
-      }
-    ]
-  },
-  "notes": "intake（planner，2026-09-05）：① portfolio handoff 三处全命中（taskpackage / devloop board（15 pods，本包 queued mergeOrder 6）/ origin.upstreamRef→PROPOSAL FROZEN v0.4 sha1:88a5bdb），权威字段原样消费、未重归一；intake 即跑 portfolio-reconcile --set-pod running。② scope-map 走查（C5）：acceptance-author allow firmware/**/*.acceptance.c 覆盖 acceptanceTestsFile；builder/fixer allow firmware/**（*.acceptance.c deny）覆盖实现路径 firmware/main/session_state_machine.* 与 key_gesture_parser.*；HOST_ACCEPTANCE_SRCS 注册行（host_app/main/CMakeLists.txt）= builder 首动作。③ 契约判定=纯消费：本包只做纯逻辑状态机+手势解析 host 测试，零契约面触点。④ 红基线统一红按条目映射 + mutation-check 兜底已钉（见 redBaselineResult append）；verify.mjs mutationRequired 不得豁免。⑤ 测试约定锚 HOST_TEST_CONVENTIONS.md（[SES-x] 标签、coverage marker、真实 assert）；espidf_wsl.sh CRLF 环境摩擦已记 pod-events。⑥ 下游接合面：manual 录音累积态（包 8）、全局路由/页序语义（包 2 display 路由、包 9b 端到端兜底 SES-E2）。",
+  "testHost": "device + live",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包3",
-      "summary": "会话状态机（聆听/思考/播报/超时/结束）+ KEY/BOOT 全局按键手势解析（§4.0/§5.3 纯逻辑部分），host 状态转移测试。",
+      "decision": "handoff-V10-证书加载面",
+      "summary": "固件 SSL 层证书加载 + 自签 CA pinning（esp_ssl cacert_pem/cert_pem 加载路径）。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V10"
       ],
-      "landsIn": "acceptance:SES-A2"
+      "landsIn": "acceptance:WSA-A3"
     },
     {
-      "decision": "spec-§5.2-会话模型",
-      "summary": "按一下 KEY 启动会话（≈唤醒词体验）、免提连续对话、60s 超时/说拜拜/再按键结束；本地状态机基于小智 ToggleChatState 改。",
+      "decision": "spec-§6.3-配网直写NVS",
+      "summary": "设备服务器地址入口 = 配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活；自建 OTA 应答端点留二期。",
       "sourceRefs": [
-        "docs/spec.md#§5.2"
+        "docs/spec.md#§6.3"
       ],
-      "landsIn": "acceptance:SES-A3"
+      "landsIn": "acceptance:WSA-A2"
     },
     {
-      "decision": "PROPOSAL-§7-跨页翻页归属",
-      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式声明由包 9b 兜底验收；包 3 只做页内/全局手势解析纯逻辑。",
+      "decision": "spec-决策22-设备侧鉴权",
+      "summary": "WS 握手 Bearer 带设备弱 token；共享 token 配网时生成写入（≥128-bit 随机）。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+        "docs/spec.md#§7-决策22"
       ],
-      "landsIn": "exitCriteria:SES-E2"
+      "landsIn": "acceptance:WSA-A2"
+    },
+    {
+      "decision": "spec-§3.0.0-迁移与既有资产",
+      "summary": "Pod S 的同步 HTTP 链路为架构验证台阶，方向 B 落地后退役；其安全发现（401 门纪律、设备 token 纪律）沿用。",
+      "sourceRefs": [
+        "docs/spec.md#§3.0.0"
+      ],
+      "landsIn": "acceptance:WSA-A5"
+    },
+    {
+      "decision": "PROPOSAL-v0.4-OQ-R4",
+      "summary": "shim 退役相位 = WS 包内同批（8080 暴露面早关 + 冻结验收一次 supersede 清完）。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+      ],
+      "landsIn": "acceptance:WSA-A6"
     }
   ]
 }

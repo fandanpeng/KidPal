@@ -18,7 +18,9 @@ set(HOST_ACCEPTANCE_SRCS
     "../../session_logic.acceptance.c"
     "../../../session_state_machine.cc"
     "../../../key_gesture_parser.cc"
+    "../../device_ws_switch.acceptance.c"
     "seam_bounds.test.c"
+    "../../ws_provision.test.cpp"
 )
 
 idf_component_register(

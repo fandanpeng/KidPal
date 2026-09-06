@@ -137,8 +137,19 @@ async def ws_gateway(websocket: WebSocket):
     # best-effort forward to the engine's plain ws (loopback). If the engine is not up,
     # we close the client gracefully rather than error-spam.
     try:
-        import websockets
-        async with websockets.client.connect(ENGINE_WS, open_timeout=10) as upstream:
+        # pass the device's whitelist headers to the engine: it requires device-id
+        # (websocket_server.py:83) and honours authorization / protocol-version / client-id.
+        # case-insensitive match, preserve original value, token erased from logs.
+        _ALLOWED_HEADERS = ("authorization", "device-id", "client-id", "protocol-version")
+        hdrs = {h: v for h, v in websocket.headers.items() if h.lower() in _ALLOWED_HEADERS}
+        try:
+            from websockets.asyncio.client import connect as ws_connect  # websockets >= 13
+            headers_kwarg = "additional_headers"
+        except ImportError:  # legacy websockets (< 13)
+            from websockets import client as _ws_legacy_client
+            ws_connect = _ws_legacy_client.connect
+            headers_kwarg = "extra_headers"
+        async with ws_connect(ENGINE_WS, open_timeout=10, **{headers_kwarg: hdrs}) as upstream:
             async def client_to_upstream():
                 try:
                     while True:

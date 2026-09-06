@@ -15,6 +15,23 @@ Boundary controls (security-hardening): device bearer token (weak, env-gated),
 loopback-only bind, real OpenClaw token injected ONLY on loopback forward.
 """
 
+# --------------------------------------------------------------------------- #
+# ARCHIVED — KidPal HTTP shim retired (台阶退役, 2026-09-05)
+#
+# This file is ARCHIVED (历史记录类处置, 保留可考古; 不删除、不改代码逻辑 —— 仅此头注)。
+#
+# 退役理由:
+#   - spec §3.0.0「迁移与既有资产」: Pod S 的同步 HTTP 四端点 (shim) 为架构验证台阶,
+#     方向 B 落地后退役。
+#   - 决策 18 / OQ-R4: HTTP shim (server/shim.py) 退役相位 = 方向 B (WS 包) 同批;
+#     设备唯一公网入口收敛为自建小智网关 (server/gateway/, 决策 18)。
+#
+# 承接指针 (successor): 方向 B 网关 `server/gateway/` (auth.py/provider.py/
+# mcp_relay.py) + 设备侧 WS 直连 (firmware WS+Opus 原生管线, Bearer 弱 token 握手)。
+#
+# 待办 (live 相位, 本包 WSA-A6 齿1): ECS shim 服务停止 + 8080 安全组关闭, 证据落盘
+# `server/acceptance/_artifacts/device-ws-switch/ecs-teardown-evidence.md`。
+# --------------------------------------------------------------------------- #
 from __future__ import annotations
 
 import base64

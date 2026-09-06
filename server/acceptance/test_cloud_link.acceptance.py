@@ -1,5 +1,11 @@
 """Frozen acceptance tests for TaskPackage 260831-cloud-link-bringup (subsystem: server).
 
+SUPERSEDED (2026-09-05, acceptance-author): superseded-by = 260903-device-ws-switch
+(firmware/main/test/device_ws_switch.acceptance.c, coverage WSA-A7). Reason = spec
+docs/spec.md §3.0.0「迁移与既有资产」台阶退役条款 — 方向 B（WS+Opus 流式）落地后，
+HTTP 台阶（shim 四端点）退役。断言语义零变更、测试 id 与 coverage map 不动，仅本
+归属状态注记为新增内容。
+
 Nature: LIVE production-ECS acceptance. These tests run on the author/build machine,
 SSH into the KidPal OpenClaw box (8.137.91.16) via /c/tmp/ssh_helper.py, and assert
 REAL remote results — HTTP status codes, JSON parseability, non-empty audio, display-block

@@ -42,6 +42,56 @@
   "acceptanceTestsFile": [
     "firmware/main/test/device_ws_switch.acceptance.c"
   ],
+  "mutationEvidence": [
+    {
+      "acceptance": "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
+      "mutation": "ws_provision.cc 配网 CSPRNG 换 memset(0xAB) 常量并移除 esp_random 符号（writer 目录零取熵调用点）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A2 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点即红（exit 3）。fixer probe 同轮暴露旧齿 dangling-include 假绿洞（裸 include 可撑绿）→ acceptance-author 收紧为调用点级断言 esp_fill_random(/esp_random( （修订记录在冻结文件头注）；新齿下本 mutation（调用点被移除）按 call-site 扫描语义构造性必红，假绿洞闭合。还原 sha256 与基线一致"
+    },
+    {
+      "acceptance": "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
+      "mutation": "kidpal_ca.pem 改名移出树（.pem/.crt 扫描面清空）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A3 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点即红（CA 在树/缺牙即红，exit 3）；cacert 加载路径齿与 WS 建连接线齿正交未触。还原 sha256 一致"
+    },
+    {
+      "acceptance": "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
+      "mutation": "三态取证：合成证据四件套（flash.log/provision.log/smoke-roundtrip.log/screen1.png，带 MUTATION PROBE 标记）就位 → GREEN；删 smoke-roundtrip.log 的 tts sentence_start 行 → RED；还原后清场 → 回基线红（flash.log 缺失）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A4 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环，证据齿非空；合成件全带 probe 标记、清场后 sha256 全扫零残留"
+    },
+    {
+      "acceptance": "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
+      "mutation": "application.cc（激活面 5 文件之一）塞回一处 tenclass 字符串",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A5 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "单点回填即红（exit 3）；ShimProtocol/mp3_decoder/USE_SHIM_PROTOCOL 等其余死代码齿独立未触。还原后 grep tenclass 计数 = 0，sha256 一致"
+    },
+    {
+      "acceptance": "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
+      "mutation": "三态取证：合成 ecs-teardown-evidence.md（带 MUTATION PROBE 标记）就位 → 齿1 过、红因推进到齿2；删证据内安全组标记 → RED（无 security-group closure 记录）；清场 → 回齿1 缺失红",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A6 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "A6 三齿：齿1 证据齿敏感性已证；齿2（shim.py 墓碑）齿3（changes/ 归档记录）为未落地实现责任，已由 builder round2（墓碑）+ planner（changes/dev/260903-device-ws-switch/shim-archive-record.md）落地；齿3 扫描面 first-match 缺陷（adjudications.md 遮蔽 dev 记录件）由 acceptance-author 改 wsa_scan_tree_both 双针修复，双针命中且仅命中本包记录件（旁证实证）。终态齿1 = live 相位证据待落红"
+    },
+    {
+      "acceptance": "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态",
+      "mutation": "test_cloud_link.acceptance.py 头注 SUPERSEDED 标记改拼写变体 SUPERSEDE-X（10 字符 token 消失）",
+      "affectedTest": "device_ws_switch.acceptance.c WSA-A7 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "标记消失即红（首试 SUPERSEDED_X 仍含子串未红，改为彻底消失才红——探针自身校验了齿精度）。probe 只动注记行、还原到 probe 前 working-tree 字节（sha256 一致，git diff 相对 HEAD 仅剩 acceptance-author 合法注记）"
+    }
+  ],
   "exitCriteria": [
     {
       "id": "WSA-E1",
@@ -60,6 +110,7 @@
     "docs/contracts/interface-contract.md#§四",
     "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json"
   ],
+  "docsNoChangeReason": "docRefs 均为本包只读消费的上游权威（PROPOSAL v0.4 / spec §3.0.0+§6.3 / 契约 §四 / dev-loop-handoff V10），先于本包存在且冻结，其内容不含本包 acceptance id 属预期；V10→WSA-A3 等决策映射由 decisionCoverage.landsIn 字段承载、非 docRefs 内容职责。本包不改 spec/契约（PROPOSAL 非目标条款），canonical 文档同步由 integrator docs-delta 收口。",
   "sourceRefs": [
     "docs/spec.md#§6.3",
     "docs/contracts/interface-contract.md#§四",
