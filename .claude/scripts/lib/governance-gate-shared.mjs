@@ -19,6 +19,7 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { CHANGE_ID_PREFIX_RE } from './changeid-shared.mjs';
 
 // 治理面 canonical 路径（G1 指令根 / G2 角色流程定义 / G3 强制层 / .planning 设计权威）。
 export const TARGET_PATTERNS = [
@@ -31,6 +32,24 @@ export const TARGET_PATTERNS = [
 ];
 
 export const CANONICAL_TEST = /^(?:\.claude\/|docs\/|\.planning\/|README\.md|AGENTS\.md|CLAUDE\.md)/;
+
+// closeout 收口制品谓词单源（260906-gov-review-index-status-truth-source T1，FROZEN 2026-09-06）：
+//   消费方 = closeout-check.mjs（承重闸，本批具名导入替换本地拷贝）+ changes-index.mjs collectDev（INDEX dev 状态推导）。
+//   防漂移钉死：清单值与判定逻辑只此一份；改清单 = 同时改变闸行为与投影语义，须经治理批。
+// CHANGE_ID_CUTOFF 自 closeout-check.mjs 本地常量收敛（按符号名引用，不引行号——同批 T3 删常量后行号即漂）；
+//   该处头注自列「禁各自另造」约定副本共 4 处（本批收敛其一；余 3 副本本批不动，见 §6 留根）。
+export const CHANGE_ID_CUTOFF = '2026-07-23';
+
+export function isPostCutoffChangeId(changeId) {
+  return CHANGE_ID_PREFIX_RE.test(String(changeId))
+    && String(changeId).slice(0, 6) >= CHANGE_ID_CUTOFF.replace(/-/g, '').slice(2);
+}
+
+export function closeoutRequiredFiles(changeId) {
+  return isPostCutoffChangeId(changeId)
+    ? ['docs-delta.md', 'review-packet.md']
+    : ['taskpackage.json', 'docs-delta.md', 'review-packet.md'];
+}
 
 // B1：状态值主导词。顺序保持 AWAITING → 主导词 → 否定 → FROZEN 真值（F-IMPL-1：否定检查必须在主导词 false-return 之后）。
 export function isFrozen(proposalText) {

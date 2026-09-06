@@ -10,22 +10,23 @@
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
-| [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
-| [260831-cloud-link-bringup](../changes/dev/260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
-| [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
-| [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | open | kidpal-validation |
-| [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
-| [260829-session-logic](../changes/dev/260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
-| [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
+| [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260831-cloud-link-bringup](../changes/dev/260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
+| [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
+| [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
+| [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-session-logic](../changes/dev/260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
-## arch (10)
+## arch (11)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260906-gov-review-architect-loop-advisory](../changes/arch/260906-gov-review-architect-loop-advisory/) | 2026-09-06 | frozen | yes |
-| [260906-gov-review-arq-governance-batch](../changes/arch/260906-gov-review-arq-governance-batch/) | 2026-09-06 | frozen | yes |
-| [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | frozen | yes |
+| [260906-gov-review-architect-loop-advisory](../changes/arch/260906-gov-review-architect-loop-advisory/) | 2026-09-06 | landed | yes |
+| [260906-gov-review-arq-governance-batch](../changes/arch/260906-gov-review-arq-governance-batch/) | 2026-09-06 | landed | yes |
+| [260906-gov-review-index-status-truth-source](../changes/arch/260906-gov-review-index-status-truth-source/) | 2026-09-06 | frozen | — |
+| [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | landed | yes |
 | [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | yes |
 | [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
 | [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | — |

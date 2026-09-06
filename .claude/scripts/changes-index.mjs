@@ -20,7 +20,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync
 import { resolve, join, basename } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { resolveOriginRef, isFrozen } from './lib/governance-gate-shared.mjs';
+import { resolveOriginRef, isFrozen, closeoutRequiredFiles } from './lib/governance-gate-shared.mjs';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -112,6 +112,15 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/\|/g, '\\|');
 }
 
+// dev 状态推导（260906-gov-review-index-status-truth-source T2，替代 R5 判据）：
+//   closed = closeoutRequiredFiles(changeId) 全在场（与 closeout-check 承重闸同 predicate，lib 单源）。
+//   R5 判据（verification.json/verdict.json 在场）作废——该两件按 closeout-hardening SSOT 为 advisory、永不晋升包目录，
+//   对全包恒 false（ARQ-260906-index-rebuild-dev-status-drift 病灶）；sv 值/在场均不可作判据（§1 证据④⑤）。
+export function deriveDevClosed(dir, changeId) {
+  return closeoutRequiredFiles(changeId).every((f) => existsSync(join(dir, f)));
+}
+// collectDev 内：const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
+
 // 收 dev dirs（changes/dev/*/ 子目录，changeId 形状，可能含 closeout 制品）。
 function collectDev() {
   const root = resolve(projectDir, 'changes', 'dev');
@@ -132,11 +141,7 @@ function collectDev() {
       } catch { /* 非 JSON 或缺 origin */ }
     }
     const date = parseChangeIdDate(name.name) || gitFirstCommitDate(`changes/dev/${name.name}`);
-// R5 (gov-review-devloop-evidence-led, FROZEN 2026-07-24):
-//   - C4 retired final-summary.md → status determination switched to verification.json
-
-    const hasVerdict = existsSync(join(dir, 'verification.json')) || existsSync(join(dir, 'verdict.json'));
-    const status = hasVerdict ? 'closed' : 'open';
+    const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
     items.push({ changeId: name.name, date, lane: 'dev', originRef, status, workstream: originWorkstream });
   }
   return items;
@@ -149,7 +154,7 @@ function collectDev() {
 //   ③ 都不命中 → 非 landed（fail-closed：宁漏标不错标，漏标由人工 adjudication 兜底）。
 // 新批强制规范 verdict 行（`> verdict: PASS/GREEN`）→ 100% 走 ②。旧批发散散文（「转绿记录」「验收通过」等叙事）不强行机械解析（太脆），归 ①。
 const VERDICT_STATUS_RE = /^\s*(?:>+\s*)?(?:\*{0,2})\s*(?:verdict|总判|总判定|结论|复验结论|判定)\s*(?:\*{0,2})\s*[:：=]\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)\b/i;
-const VERDICT_HEADING_RE = /^#{1,4}\s*(?:verdict|总判|总判定|结论|复验结论)\s*[:：]?\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)?\b/i;
+const VERDICT_HEADING_RE = /^#{1,4}\s*(?:\d{1,3}[.、]\s*)?(?:verdict|总判|总判定|结论|复验结论)\s*[:：]?\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)?\b/i;
 function deriveLanded(dir, cached) {
   if ((cached && cached.landed === true) || LANDED_ADJUDICATION[basename(dir)] === true) return true; // ① 人工 adjudication 钉死
   const vp = join(dir, 'landing-verdict.md');
@@ -171,6 +176,10 @@ function deriveLanded(dir, cached) {
         const b = /^\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)\b/.exec(line);
         if (b) { finalToken = b[1].toUpperCase(); pendingHeading = false; }
       }
+      // JSON 行锚（260906-gov-review-index-status-truth-source T2②）：机器 JSON 块 "verdict": "TOKEN" 是 verifier 程序化产出、
+      // 行文漂移度最低的第二锚；行末取（后出者胜），与既有锚冲突时以机器锚为终。
+      const j = /"verdict"\s*:\s*"(PASS|GREEN|RED|FAIL|BLOCK)"/.exec(line);
+      if (j) { finalToken = j[1].toUpperCase(); pendingHeading = false; }
     }
     return finalToken === 'PASS' || finalToken === 'GREEN';
   } catch {
@@ -401,6 +410,28 @@ function selfCheck() {
   if (f4) { t('landed: 最终 verdict=RED → 非 landed', deriveLanded(f4, {}), false); rmFix(f4); }
   t('landed: 人工 adjudication 兜底（缓存 landed=true）', deriveLanded(resolve(osTmp, 'nonexistent-dir'), { landed: true }), true);
   t('landed: 无 landing-verdict → 非 landed', deriveLanded(resolve(osTmp, 'nonexistent-dir'), {}), false);
+  // 编号标题 + 加粗散文 / JSON 行锚（260906-gov-review-index-status-truth-source T2② + T4；3 实况 arch 批翻判回归夹具）
+  const f5 = mkFix('e', ['## 7. Verdict', '', '**GREEN** — 实际落地 == FROZEN PROPOSAL v1.0 的 landing 清单']);
+  if (f5) { t('landed: 编号标题 + 加粗散文 GREEN → true（260905/260906 实况格式回归）', deriveLanded(f5, {}), true); rmFix(f5); }
+  const f6 = mkFix('f', ['{"ok": true, "changeId": "x", "verdict": "GREEN"}']);
+  if (f6) { t('landed: JSON 行锚 "verdict": "GREEN" → true', deriveLanded(f6, {}), true); rmFix(f6); }
+  const f7 = mkFix('g', ['## 7. Verdict', '', '**RED** — 未通过']);
+  if (f7) { t('landed: 编号标题 + 加粗散文 RED → false', deriveLanded(f7, {}), false); rmFix(f7); }
+  // dev 收口谓词（260906-gov-review-index-status-truth-source T2/T4；显式夹具非空输入，防真空绿）
+  const mkDevFix = (id, files) => {
+    const d = resolve(osTmp, 'changes-index-selfcheck-dev-' + id);
+    try {
+      mkdirSync(d, { recursive: true });
+      for (const f of files) writeFileSync(join(d, f), 'x', 'utf8');
+      return d;
+    } catch { return null; }
+  };
+  const dv1 = mkDevFix('a', ['docs-delta.md', 'review-packet.md']);
+  if (dv1) { t('dev: post-cutoff 收口两件全在场 → closed', deriveDevClosed(dv1, '260906-x'), true); rmFix(dv1); }
+  const dv2 = mkDevFix('b', ['docs-delta.md']);
+  if (dv2) { t('dev: 缺 review-packet.md → open', deriveDevClosed(dv2, '260906-x'), false); rmFix(dv2); }
+  const dv3 = mkDevFix('c', ['docs-delta.md', 'review-packet.md']);
+  if (dv3) { t('dev: pre-cutoff 缺 taskpackage.json → open', deriveDevClosed(dv3, '260101-x'), false); rmFix(dv3); }
   // 日期前缀解析
   t('date: YYMMDD- 前缀解析', parseChangeIdDate('260823-gov-review-x'), '2026-08-23');
   t('date: 无前缀 → 空', parseChangeIdDate('gov-review-foo'), '');

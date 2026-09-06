@@ -35,7 +35,7 @@ import { createHash } from 'node:crypto';
 import { checkStatus } from './delivery-status.mjs';
 import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
 import { computeRetroScope } from './loop-health-report.mjs';
-import { computeFrozenPin, isFrozen, isProposalMdPath, normalizeSourceRef, resolveOriginFrozen, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
+import { computeFrozenPin, isFrozen, isProposalMdPath, normalizeSourceRef, resolveOriginFrozen, resolveOriginRef, resolveOriginType, CHANGE_ID_CUTOFF, isPostCutoffChangeId, closeoutRequiredFiles } from './lib/governance-gate-shared.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -83,10 +83,10 @@ function nonEmptyString(value) {
 }
 
 // ── changeId 日期前缀 + 零追溯白名单谓词（DP-2 / F8，单一语义）──
-// cutoff 谓词单源（F-03）：convention 级同步清单 = 四文件——closeout-check.mjs（本文件）/ taskpackage-required-check.mjs /
-// devloop-artifact-check.mjs / hooks/supervisor-gate-check.mjs，禁各自另造（CHANGE_ID_CUTOFF 同值 '2026-07-23'）。
+// cutoff 谓词单源（F-03 → 260906-gov-review-index-status-truth-source T3 收敛 lib）：CHANGE_ID_CUTOFF / isPostCutoffChangeId /
+// closeoutRequiredFiles 自 lib/governance-gate-shared.mjs 具名导入（单源，禁本地另造）。余 3 处历史副本
+//（taskpackage-required-check.mjs / devloop-artifact-check.mjs / hooks/supervisor-gate-check.mjs）归机械替换小批，见该批 §6 留根。
 // 两层谓词（v0.3 据 F-03 统一措辞）：① 前缀比较为主（isPostCutoff，对齐 :225）；② 无前缀包走 gitFirstCommitDate 白名单。
-const CHANGE_ID_CUTOFF = '2026-07-23';
 // F-13 loop-retro 触发阈值（pending+waiting 合计；默认值，Q2 终裁前 provisional——或日历兜底如双周）。
 const RETRO_TRIGGER_THRESHOLD = 3;
 
@@ -257,12 +257,10 @@ if (!changeDir) fail('changes/dev/<changeId> folder is missing', { changeId, exp
 
 // Post-cutoff packages no longer require taskpackage.json in changes/dev/ (gov-review-taskpkg-lifecycle).
 // TaskPackage is resolved from .claude/taskpackages/<id>/ for post-cutoff packages.
-const isPostCutoff = hasPrefix && String(changeId).slice(0, 6) >= CHANGE_ID_CUTOFF.replace(/-/g, '').slice(2);
+const isPostCutoff = isPostCutoffChangeId(changeId);
 // Post-EVENTS_SCHEMA_CUTOFF: session-digest/loop-health/loop-metrics retired (Package B)
 const isPostEventsCutoff = hasPrefix && String(changeId).slice(0, 6) >= EVENTS_SCHEMA_CUTOFF.replace(/-/g, '').slice(2);
-const requiredFiles = isPostCutoff
-  ? ['docs-delta.md', 'review-packet.md']
-  : ['taskpackage.json', 'docs-delta.md', 'review-packet.md'];
+const requiredFiles = closeoutRequiredFiles(changeId);
 const machineEvidenceFiles = ['verdict.json', 'verification.json'];
 const missing = requiredFiles.filter((file) => !existsSync(resolve(changeDir, file)));
 if (missing.length > 0) fail('changes/dev/<changeId> is missing standard closeout artifacts', { changeId, missing });
