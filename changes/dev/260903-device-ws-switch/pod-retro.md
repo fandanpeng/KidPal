@@ -40,3 +40,9 @@ human 这包介入次次关键：dashscope key 直接解锁 ASR（G 一直没拿
 - A4 证据形态改革（human 拍板「验收改认已有证据」）：human-decision 事件 `2a53a2f8`。
 - 五项 live 偏差（Intent nointent / qwen3_asr_flash 用 dashscope 而非 aliyun_stream / TTS edge / 引擎 network_mode host / 前置 websockets v17 + 头透传）：已记入 review-packet，供 supervisor 闸与下游包参考。
 - NVS 页面魔数假阳性：ops 教训，落 skill（kidpal-nvs-ops），本包不升级。
+
+## 收口后补记：合并相位自己又踩三个坑（2026-09-06，人批合并后补）
+
+- **合并工具本身在 main 上演进时，Pod 分支自带的副本可能是旧的**。我分支岔出于 merge-driver worktree 拓扑热修（ARQ-260905）之前，自带旧版会在本 worktree `checkout main` 被 git 拒（main 由主 checkout 持有）。解法 = 改用 main 上已修好的 merge-driver.mjs 跑（它定位持有 main 的 worktree 在彼处 `--no-ff`）。教训：跑合并门前先比对「我分支的闸脚本 vs main 的闸脚本」，别默认分支里的就是新的。
+- **后台图索引器会把合并通道撞断（环境级、每包复发）**。CodebaseMemory 后台索引器持续重写 worktree 内被 git 跟踪的 `.codebase-memory/graph.db.zst`，git 树永远脏，`git rebase`/`git merge` 因 unstaged changes fail-closed——`merge=ours` 只决冲突内容、管不到「rebase 要净树」这层。本次靠给两个 worktree 设 `skip-worktree` 权宜放行，已立 `ARQ-260906-live-graph-dirty-blocks-merge` 追根治。这不是本包内容问题，是「活进程写被跟踪缓存文件」的结构性摩擦。
+- **跨 Pod rebase 冲突是机械并集，不吓人**。与已并的 session-logic 交叉 5 处：两个 `current/` 投影取最新活跃包（本包），`progress.md`/`.planning/INDEX.md`/`host_app/CMakeLists.txt` 三处做并集（两包内容都保留，历史记录只增不改）。多 Pod 在同一份 CMakeLists/INDEX 上叠加是常态，rebase 时耐心解并集即可。
