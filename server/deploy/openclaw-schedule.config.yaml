@@ -1,0 +1,11 @@
+# KidPal 课表 producer 配置 (TaskPackage 260829-schedule-p2, 决策 26 / S-F1.1)
+
+# 本文件是课表 producer（OpenClaw 侧）的 repo 可测配置载体，随 server/deploy
+# overlay 上 ECS（与 openclaw-system-prompt.v2.md 同目录渲染面）。
+#
+# 契约 §二 B1 学校课程表**无时刻列**（表体零变更）：P1「接下来」分组把周中白天
+# 学校课合并成一项「XX:XX 上学」时，首节时刻 = producer 显式入参 school_start
+# （见 server/gateway/schedule.py::group_upcoming）。改本配置即时生效、永不需烧板子
+# （纯服务端配置，同三档提醒时刻口径）。
+
+school_start: "08:00"   # 学校课程表首节时刻（周中合并「上学」项用；周六/周日不合并）
