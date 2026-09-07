@@ -54,7 +54,7 @@ model: opus
 7. 派 `acceptance-author` 写冻结验收并确认红基线。
 8. Finalize TaskPackage：验收文件、coverage marker、红基线、docs/security 标记缺一不可；把最终版重新写回 `<change-id>/taskpackage.json` 与 `current/taskpackage.json`。缺落盘记录不得派 builder。
 9. 派 `builder` 在目标包内实现 + 单元测试。
-   **[MODEL-TIER，gov-review-agent-model-tiering FROZEN 2026-08-31]** builder/fixer frontmatter 默认 `model: sonnet`；派重头形态（新子系统首次实现 / 验收面从零钉 / 首次全量复验）时派发显式带 `model: opus` 升档，例行形态沿用默认。派发期覆盖已实测生效（260831 PROPOSAL §5-5）；dispatch-stamp 若可得须补记实际生效模型。
+   **[MODEL-TIER，gov-review-agent-model-tiering FROZEN 2026-08-31]** builder/fixer frontmatter 默认 `model: sonnet`；派重头形态（新子系统首次实现 / 验收面从零钉 / 首次全量复验）时派发显式带 `model: opus` 升档，例行形态沿用默认。派发期覆盖已实测生效（260831 PROPOSAL §5-5）；dispatch-stamp 若可得须补记实际生效模型。**升档覆盖仅限 builder/fixer；architect 派发恒不带 model 覆盖（见 10b ARCH-ADVISORY 档，frontmatter `model: fable` 默认档生效；机械兜底 = agent-model-guard hook）。**
    **[DISPATCH-STAMP]** 每次 `Agent()` 派发收工后，调用 dispatch-stamp.mjs 记 harness 回传值。**Post-cutoff (>= EVENTS_SCHEMA_CUTOFF 250725)**：`node .claude/scripts/dispatch-stamp.mjs --dispatch-id <id> --actor <name> --phase <phase> --duration-ms <ms> --tool-uses <n> --terminal-status <status> --token-status exact|unavailable [--token-input <n>] [--token-output <n>] [--token-cache-read <n>] [--token-cache-write <n>] [--token-total <n>] [--token-source harness] [--token-reason <reason>]` → 写 `dispatch-completed` 事件到 `.claude/taskpackages/<id>/pod-events.jsonl`（不写 dispatch-log.jsonl）。**Pre-cutoff**：legacy `--tokens <n>` 仍可用 → 写 dispatch-log.jsonl。脚本无 TaskPackage 上下文时自动跳过（exit 0）。Token 政策：harness 不报时 `--token-status unavailable`，**绝不传 0 充数**。
    **[FS-EVIDENCE-1]** builder 返回后，必须执行：
    - `git diff --stat --name-only` 确认 diff 非空、变更文件在 TaskPackage.subsystem 声明的路径内
