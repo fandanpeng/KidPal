@@ -1,11 +1,11 @@
 # PROPOSAL · 260907-gov-review-arq-governance-batch-2
 
-> **状态：DRAFT v0.1 · 2026-09-07 · 待 human 立项 ack + OQ 三题裁断**
+> **状态：DRAFT v0.2 · 2026-09-07 · OQ 三题已裁（OQ1=(a) / OQ2=(a) / OQ3=human 自裁「放 docs 根目录、和 spec 同级」→ 落 `docs/ADR.md` 单文件决策日志）· 待 human 立项 ack**
 > **承载 ARQ**：`ARQ-260906-lfc-canonical-anchor-gap`、`ARQ-260906-lfc-verbatim-crlf-citation-gap`、`ARQ-260907-renormalize-clears-skip-worktree`、`ARQ-260907-frozen-acceptance-compile-baseline`、`ARQ-260907-taskpackage-format-expectations-frontload`、`ARQ-260907-friction-event-payload-schema`、`ARQ-260907-integrator-adr-canonical-location`（七项一批清结，前例 `260906-gov-review-arq-governance-batch`；另折入该批 retro §4 建议 1 的模板钉死项）。不关的根：五项非 governance ARQ（multiturn-continuity / p4-stroke-dasharray / v23-asr-swap / protocol-version-pinned / nvs-csv-wifi）留队列不动，见 §6。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T8）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
 > **riskTier**：low（四件闸/聚合脚本改动均有自检或真数据重放兜底；成文两件行为保持；agent def 只加引用行）。
-> **review profile**：G2+G3（触面 = `.claude/scripts/**` 四件 G3 闸/聚合脚本 + `docs/DEV-GOVERNANCE.md` / `docs/templates/**` G2 成文 + 四 agent def 引用行（human OQ2 前置）+ scope-map/repo-structure（OQ3 条件锚））；G1/契约面为零。
+> **review profile**：G2+G3（触面 = `.claude/scripts/**` 四件 G3 闸/聚合脚本 + `docs/DEV-GOVERNANCE.md` / `docs/templates/**` / `docs/ADR.md` G2 成文 + scope-map/repo-structure 结构边界（T7）+ 四 agent def 引用行（OQ2=(a) 已裁））；G1/契约面为零。
 >
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
 
@@ -16,13 +16,16 @@
 .claude/scripts/pod-events-aggregate.mjs
 docs/DEV-GOVERNANCE.md
 docs/templates/PROPOSAL.template.md
+docs/ADR.md
+.claude/scope-map.json
+.claude/rules/repo-structure.md
 .claude/agents/acceptance-author.md
 .claude/agents/planner.md
 .claude/agents/portfolio-planner.md
 .claude/agents/builder.md
 ```
 
-> manifest 注：T7（ADR canonical 落点）为 OQ3 条件锚——裁 (a) 时追加 `.claude/scope-map.json` + `.claude/rules/repo-structure.md` 两行，裁 (b) 时改落 `docs/DEV-GOVERNANCE.md`（已在册），裁 (c) 时 T7 整体撤出。T4/T5/T6 的 agent def 引用行为 OQ2 条件锚——裁 (b) 时四件 agent def 行撤出。DRAFT 期围栏块按 OQ 全裁 (a) 的满配形态预填，FROZEN 前按裁断裁剪。
+> manifest 注：OQ 已全裁——OQ1=(a) 八项全收、OQ2=(a) 四件 agent def 引用行批准、OQ3=human 自裁 ADR 落 `docs/ADR.md`（docs 根、与 spec 同级）。T7 三件（docs/ADR.md 新增 + scope-map + repo-structure）由条件锚转常设锚，围栏块为满配形态，FROZEN 前人工复核与 §2 并集一致。
 
 ## 0. 想实现的效果与差距
 
@@ -104,11 +107,18 @@ docs/templates/PROPOSAL.template.md
 
 目标文件：`docs/DEV-GOVERNANCE.md`、`.claude/agents/planner.md`、`.claude/agents/portfolio-planner.md`、`.claude/agents/builder.md`、`.claude/agents/acceptance-author.md`（后四件 OQ2 条件锚）。
 
-### T7 · ADR canonical 落点（OQ3 条件项）
+### T7 · ADR canonical 落点：docs 根单文件决策日志（human OQ3 自裁）
 
-OQ3 裁 (a)（新 `docs/adr/` 目录）：`scope-map.json` `universal.docsTopLevel` 加 `adr/`、architect/integrator 角色 allow 面加 `docs/adr/**` 写槽；`repo-structure.md` 顶层地图加行（`docs/adr/` = ADR/rationale canonical，architect 产出、integrator 可写）；DEV-GOVERNANCE 入口速查补一句。裁 (b)（维持现状）：DEV-GOVERNANCE 成文惯例——integrator 落 `changes/dev/<changeId>/`，主线程收口晋升时迁 `docs/notes/`，`docs/notes/` 写权限维持主线程。裁 (c)：T7 整体撤出，ARQ 留队列。为什么交 human：scope-map 角色编制变更是结构边界动作（repo-structure.md「有意识动作」条款），且落点选择是 discoverability vs 结构克制的取舍。
+human 2026-09-07 自裁「放 docs 根目录、和 spec 同级」→ 落 **`docs/ADR.md` 单文件决策日志**（与 `spec.md` / `DEV-GOVERNANCE.md` / `ARCH-REVIEW-QUEUE.md` 同级的平铺注册表形态，承本仓单文件 markdown 惯例；不建 `docs/adr/` 子目录）。落地四件：
 
-目标文件（条件）：`.claude/scope-map.json`、`.claude/rules/repo-structure.md`、`docs/DEV-GOVERNANCE.md`（裁 (a) 前两件 + 后一件；裁 (b) 仅后一件）。
+1. **新增 `docs/ADR.md`**：头节声明性质（架构决策记录 = 「选了什么 / 为什么 / 放弃了哪些备选」的长期留档，区别于 `changes/**` 过程证据与 `docs/notes/` 经验记录）+ 条目格式约定（每条 = 编号 ADR-NNN / 日期 / 决策一句话 / 理由 / 备选与放弃原因 / 关联 change 或制品锚；append-only，不覆盖既有条目）。骨架入库时不预填任何决策条目（存量散落的决策不做考古搬迁，自新决策起生效——留根见 §6）。
+2. **`.claude/scope-map.json`**：`universal.docsTopLevel` 白名单加 `ADR.md`；integrator 角色 allow 面加 `docs/ADR.md` 写槽（dev-loop 收口时落新增条目）。
+3. **`.claude/rules/repo-structure.md`**：docs 根白名单文件列表加 `ADR.md`（与 scope-map 双向锚定，enforce-scope 机判一致）；顶层地图 `docs/` 根行说明同步。
+4. **`docs/DEV-GOVERNANCE.md`** 入口速查或角色编制节补一句指针（integrator 收口产 ADR 条目 → `docs/ADR.md`）。
+
+为什么交 human 且采纳自裁结果：scope-map 角色编制与 docs 根白名单都是结构边界动作（repo-structure.md「有意识动作」条款）；human 选 docs 根平铺而非子目录，与本仓契约/队列注册表的单文件惯例一致。
+
+目标文件：`docs/ADR.md`（新增）、`.claude/scope-map.json`、`.claude/rules/repo-structure.md`、`docs/DEV-GOVERNANCE.md`。
 
 ### T8 · PROPOSAL 模板钉死机械门可辨形态
 
@@ -127,16 +137,17 @@ OQ3 裁 (a)（新 `docs/adr/` 目录）：`scope-map.json` `universal.docsTopLev
 | 治理成文 | `docs/DEV-GOVERNANCE.md` | G2 | T4/T5/T6/T7 四节新增/扩写；行为保持（成文面） |
 | 模板 | `docs/templates/PROPOSAL.template.md` | G2 | T8 硬项 2a 段末追加两句 |
 | agent def | `.claude/agents/{acceptance-author,planner,portfolio-planner,builder}.md` | agent def | T4/T5/T6 引用行（各 +1 行 References，OQ2 条件锚；human 批准前置） |
-| 结构边界（条件） | `.claude/scope-map.json`、`.claude/rules/repo-structure.md` | G2 | 仅 OQ3 裁 (a) 时触发 |
+| 结构边界 | `.claude/scope-map.json`、`.claude/rules/repo-structure.md` | G2 | T7：docsTopLevel 加 `ADR.md` + integrator allow 写槽 + repo-structure 白名单行（OQ3 已裁，常设锚） |
+| ADR 日志 | `docs/ADR.md` | G2 | T7 新增骨架（性质声明 + 条目格式约定，零决策条目预填）；writer = integrator（收口）+ architect（治理批） |
 | 未触 | `docs/contracts/**`、`docs/spec.md`、`firmware/**`、`server/**`、`.claude/settings*.json`、`verify-gates.json` | 未触 | 本批零触点（§0 非目标） |
 
 **【硬项 1b 预跑】** T1 判定 pattern（ANCHORABLE_TEST）全仓预跑：以 `git ls-files` 全列表过新正则，census 仓根点文件（预期 `.gitattributes`、`.claude` 例外形态核对）与 `changes/**` 命中量，输出进 landing-summary。T2 归一 pattern 全仓无面（运行时双侧归一，无扫描面）。T4 告警 pattern 预跑 = §5 V4 真数据重放。
 
 ## 4. human 取舍点（OQ）
 
-- **OQ1 · 批次范围**：(a) T1–T8 八项全收（推荐——七 ARQ + 模板钉死同根同批，前例 260906 批十项一批先例，分批徒增评审开销）；(b) 收 T1–T6 + T8、T7（ADR 落点）留队列（若想隔离结构边界变更）；(c) 只收机械件 T1–T4（闸侧自洽批，成文面留下批）。
-- **OQ2 · agent def 引用行授权**：T4/T5/T6 涉四件 agent def 各 +1 行 References 引用（承 260906 批 OQ3=(b)「agent def 只加引用、职责/工具面结构零改动」human 已批先例）：(a) 批准（推荐——起草 agent 不经 planner 中转直接可见期望，回派税的根在 agent 侧视野）；(b) 只成文 DEV-GOVERNANCE、不动 agent def（期望可见性降级，回派风险残留）。
-- **OQ3 · ADR canonical 落点**：(a) 新 `docs/adr/` 目录（推荐——ADR/rationale 是跨包复用的架构决策面，散落 `changes/dev/` 发现性差；scope-map + repo-structure 双登记一次到位）；(b) 维持 `changes/dev/` 落 + 主线程晋升迁移惯例成文（零结构变更，发现性债保留）；(c) 本批不裁、T7 撤出。
+- **OQ1 · 批次范围**：(a) T1–T8 八项全收（推荐——七 ARQ + 模板钉死同根同批，前例 260906 批十项一批先例，分批徒增评审开销）；(b) 收 T1–T6 + T8、T7（ADR 落点）留队列（若想隔离结构边界变更）；(c) 只收机械件 T1–T4（闸侧自洽批，成文面留下批）。**裁断：human 2026-09-07 裁 (a)。**
+- **OQ2 · agent def 引用行授权**：T4/T5/T6 涉四件 agent def 各 +1 行 References 引用（承 260906 批 OQ3=(b)「agent def 只加引用、职责/工具面结构零改动」human 已批先例）：(a) 批准（推荐——起草 agent 不经 planner 中转直接可见期望，回派税的根在 agent 侧视野）；(b) 只成文 DEV-GOVERNANCE、不动 agent def（期望可见性降级，回派风险残留）。**裁断：human 2026-09-07 裁 (a)。**
+- **OQ3 · ADR canonical 落点**：(a) 新 `docs/adr/` 目录；(b) 维持 `changes/dev/` 落 + 主线程晋升迁移惯例成文；(c) 本批不裁。**裁断：human 2026-09-07 经「ADR 是什么」名词澄清后自裁第三案——「放 docs 根目录、和 spec 同级」→ 落 `docs/ADR.md` 单文件决策日志（T7 按此改写，见 §2 T7）。**
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
@@ -144,10 +155,11 @@ OQ3 裁 (a)（新 `docs/adr/` 目录）：`scope-map.json` `universal.docsTopLev
 - **V2** T1 预跑 census：`git ls-files | node -e "<ANCHORABLE_TEST 过滤>"` → 仓根点文件 + `changes/**` 命中清单在册（landing-summary 附命令与输出）。
 - **V3** T3 自检：`node .claude/scripts/merge-driver.mjs --self-check-worktree-topology` → `pass:6 fail:0 ok:true`（原 5 断言 + 内容级还原新断言）；既有四自检（retro-advisory / quick-checks / detect-changes / rebase-target）全 ok 不回退。
 - **V4** T4 真数据重放：对 `.git/devloop/pods/` 现存事件跑 `pod-events-aggregate.mjs` → 260829-voice-roundtrip fb2c70c9 / 55a43813 与 260903-device-ws-switch 非标键两条全部命中 malformedFrictions（重放先断言输入非空——真空绿规约）。
-- **V5** T5/T6/T7 成文核验：DEV-GOVERNANCE 新节标题 grep 在场；T7 裁断对应落点文件 grep 在场。
-- **V6** `node --check` 对四件 .mjs 全过。
-- **V7** landing 后结构门 `node .claude/scripts/landing-fidelity-check.mjs changes/arch/260907-gov-review-arq-governance-batch-2` → 锚集 ≡ manifest（本批落点全部 canonical/ANCHORABLE 可机辨——T1 自证）；verbatim advisory 零 missing（CRLF 归一自证——§2 围栏块如有）。
-- **V8** agent def 引用行核验（OQ2 裁 a 时）：四件 def diff 各恰 +1 行、职责/工具面结构零改动。
+- **V5** T4/T5/T6/T7 成文核验：DEV-GOVERNANCE 新节标题 grep 在场；`docs/ADR.md` 骨架在场（性质声明 + 条目格式约定）；`scope-map.json` `docsTopLevel` 含 `ADR.md`；`repo-structure.md` 白名单行在场。
+- **V6** T7 机检一致性：enforce-scope 对 `docs/ADR.md` 的 integrator 写槽放行冒烟（或以 scope-map JSON 有效性 + 双向锚定 grep 核验代替，如实记录所用口径）。
+- **V7** `node --check` 对四件 .mjs 全过。
+- **V8** landing 后结构门 `node .claude/scripts/landing-fidelity-check.mjs changes/arch/260907-gov-review-arq-governance-batch-2` → 锚集 ≡ manifest（本批落点全部 canonical/ANCHORABLE 可机辨——T1 自证）；verbatim advisory 零 missing（CRLF 归一自证——§2 围栏块如有）。
+- **V9** agent def 引用行核验（OQ2 裁 a 时）：四件 def diff 各恰 +1 行、职责/工具面结构零改动。
 
 ## 6. 留根清单
 
