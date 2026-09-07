@@ -158,3 +158,14 @@
 - **builder 偏差载明**：group_upcoming「上学」项进行中语义（自 school_start 起至当日下一事项开始前，满足全部冻结断言，schedule.py docstring 注记）；`is_tomorrow` = title 含「明天」设备侧最小判定（minimal 注记钉升级路径）；HOST_ACCEPTANCE_SRCS 顺序与 runner 执行序关系（CMakeLists 注释钉明）。
 - **留根**：P2-A6 live 真录一轮 + ECS 部署/live 冒烟殿后（operator/9b 口径）；host_app_main.c 退出码缺陷（39T2F exit 0）建议后续包升级；mutation tighten-only 三齿归 acceptance-author；prompt v1→v2 切换（v1 在世可 diff，VRT 既有验收不受影响）。
 - **下一步**：supervisor 机械闸裁断 → planner 前置升级闸 → merge-driver 本地合并；后续包 4/5/8 依赖本包 display 路由扩展（mergeOrder 9 先于其消费）。
+
+## 2026-09-08 下一批 launch 面准备（主线程记，char-stroke/home-p1/schedule-p2 均合并后）
+
+- 调度判定：上一批三包（char-stroke 7 / home-p1 8 / schedule-p2 9）均已并入 main（577c69a）→ queued 包依赖盘点：story-p3(10) dependsOn 0+2 均已 merged、schedule-reminder(11) dependsOn 6 已 merged；ui-art-integration(12) 等 story-p3 + schedule-reminder + V3 设计稿前置（ART-E4）、hardware-validation(13)/audio-bargein-hw(14) 更靠后。按 PROPOSAL §3「6 就绪 → 7；2 就绪后 4/5/6/8 入并行池（WIP=3 限流）」+ mergeOrder 升序，本批 = **260829-story-p3 + 260829-schedule-reminder 双 Pod 并行（WIP=2 占用）**，依赖图说了算不硬凑。
+- launch 前置门：两包 `--check-launch --base-ref main` 全绿（blocking/warn 均空）。
+- **环境等价化完成**：worktree `C:/AI/KidPal-pod-story-p3` / `C:/AI/KidPal-pod-schedule-reminder`（branch dev/260829-*，base = main 577c69a）；firmware/sdkconfig + dependencies.lock 镜像、managed_components git bash `ln -s` 软链指主 checkout（原生 python isdir 两包全 True）、worktree-bootstrap.mjs 跑过（.env / shim 面源不存在，按设计跳过）。
+- **专属图索引已建**：`C-AI-KidPal-pod-story-p3`（10421 节点/33411 边）、`C-AI-KidPal-pod-schedule-reminder`（10421/33280）——均 moderate + persistence，nodes/edges == expected；skipped 0，parse_partial 51 文件/项目（音频 codec 等既有信号，较上批 44 略增，best-effort 如实记录）。
+- board `--set-pod` 预填完毕（两包 queued + worktreePath；mergeToken.holder=none）。
+- launch prompt 两份落 `.git/devloop/launch/prompt-260829-{story-p3,schedule-reminder}.txt`（VS Code 交互会话形态，human 自跑；headless fail-closed 备选）。intake 必办移入：story-p3 闸 A 契约 §一 E1 control 预审（v0.4 服务端扩若触契约措辞）+ 生字反白已裁不重开 + 麦克风采音殿后 9b；schedule-reminder 范围红线（G 网关 additive、消费包 6 课表数据链路不重写、B1 表体零变更走 prompt 约定备注）+ live 验收不 auto-run。两包均带 Intent:nointent 偏差评估（ARQ-260907-openclaw-tools-rejection-rootcause，受阻即 blockingDecision fail-closed；schedule-reminder 注记 schedule-p2 QQ 录入自改写通道已 live 实证可用）+ char_cache ~19MB 网关 memory pressure 遗留评估（char-stroke 遗留风险 §8.3）。两包均载 char-stroke pod-retro 固化教训：外部世界断言须真记录抽样 + fixture ≥1 条真形状；部署生成器先探测目标形态。
+- 上游已知红钉入口径：main host_app ELF 的 WSA-A4/A6 证据齿 2 红（本地-only 证据从未入仓）为本批红基线/mutation 判读的既有背景，勿误判自引入。
+- **待 human 自跑 launch**：两份 prompt 分别在对应 worktree 的 VS Code 会话作启动输入。
