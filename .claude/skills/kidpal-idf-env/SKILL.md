@@ -32,6 +32,22 @@ cd firmware && "C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/p
 ```
 Board target: WAVESHARE_S3_RLCD_4_2 (see `firmware/main/sdkconfig`).
 
+### The `esp_idf_monitor` false-positive trap (hit by 3+ pods, 260829-char-stroke 实证)
+Symptom: `python c:/tmp/idf_run.py build` dies with `No module named 'esp_idf_monitor'` +
+"venv is corrupted" hint. **Misdiagnosis magnet**: it looks like a broken/incomplete IDF venv
+(builders have "fixed" it by reinstalling tools or declaring the env broken — both wrong).
+Root cause: `idf_run.py` execs idf.py with **`sys.executable`** — the python you invoke the
+wrapper WITH. Plain `python` in Git Bash resolves to the system python (no IDF packages);
+the IDF venv itself is fine (`esp_idf_monitor` is present in it).
+- **Anti-pattern**: `python c:/tmp/idf_run.py ...` (bare `python`).
+- **Fix**: always invoke the wrapper with the venv python (exact command above); wrapper
+  inherits whatever python launched it.
+- Sanity check if unsure: `"$IDFPY" -c "import esp_idf_monitor"` → should print nothing (ok).
+- Two more invocation rules from the same pod: (1) run **from `firmware/`** — idf.py needs
+  the project CMakeLists in cwd (bare `c:/tmp/idf_run.py build` from repo root fails with
+  "CMakeLists.txt not found in project directory"); (2) this is the **device target** path
+  only — host acceptance runs go through WSL `espidf_wsl.sh` ([C4.4] below), never mix.
+
 ## WSL + CRLF shell-script trap (host acceptance runs under WSL)
 Repo shell scripts checked out on Windows may carry **CRLF** line endings; WSL bash then dies with `$'\r': command not found`. Do NOT edit the repo file in place — generate an LF temp copy and run that:
 ```
