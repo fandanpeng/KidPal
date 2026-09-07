@@ -149,3 +149,12 @@
 - **closeout 制品**：docs-delta + review-packet 晋升 `changes/dev/260829-home-p1/`；docs-sync 判定 = spec §4.1/§5.1 与契约零变更（实现面落地，行为已在冻结口径内，无漂移）。
 - **留根**：P1-E2 RTC 走时 + SHTC3 直读殿后包 9b device 验收（打盹阈值默认 15，9b owns 调定）；P1-A3「接下来」分组呈现 = 消费面，producer 接线归包 6（inject seam 生产调用方 + 三刷新触发产生端；设备渲染 verbatim 不重算分组，Intent:nointent NOT-BLOCKED）；渲染区域矩形 = 布局在位钉，纯审美留 design review。
 - **下一步**：supervisor 机械闸裁断 → planner 前置升级闸 → 本地合并；后继包向 HOST_ACCEPTANCE_SRCS 增源时保持 host_infra_smoke LAST（boundary 齿注册序守卫），host ELF mutation 判读失败计数相对 43T2F 基线。
+
+## 2026-09-07 包 6（260829-schedule-p2）dev-loop closeout（integrator 收口记）
+
+- **收口**：课表页 今天/明天渲染 + 语音问课表滚动定位 + 家长录入→可消费链路（契约 B1，mergeOrder 9，riskTier high，双面）dev loop 完成、verifier **final r3 九闸全绿**（evidence `verifier-evidence/rounds/r3.json`，invocation `c4d9e6f0-2a3b-4c8d-9e1f-0a4b6c8d2e59`，ok:true / observedGateExit 0；`verifier-evidence-check` factOk:true EXIT=0；r1 mutation-check 红（无执行证据）→ mutation 矩阵 16 点取证 → r2/r3 绿收敛）。firmware-build 闸 degraded（idf.py 本机不可用，设备树真编译归 9b，非假绿）。
+- **验收实证（integrator 本机复跑）**：python **12 passed 1 skipped**（live 机械闸）；C host runner **39 Tests 2 Failures**——schedule 7 TEST_CASE 全 PASS，2 失败 = WSA-A4/A6 先行红（本地-only gitignore 证据落 WS 包 worktree，非本包面）；红基线 C 6T5F / py 10F2P1S 红全落缺失行为 → 本包做绿。mutation 16 变异 = 12 敏感转红 + 3 不敏感（齿粒度局限如实记录）+ 1 变异点空缺（parse 无状态无缓存面，stale-cache 归 A6 live 承载）。
+- **closeout 制品**：docs-delta（spec/契约零改动判定 + 无需更新理由）+ review-packet（无 BLOCKING，SHOULD→已登记 host runner 退出码缺陷一条）晋升 `changes/dev/260829-schedule-p2/`。
+- **builder 偏差载明**：group_upcoming「上学」项进行中语义（自 school_start 起至当日下一事项开始前，满足全部冻结断言，schedule.py docstring 注记）；`is_tomorrow` = title 含「明天」设备侧最小判定（minimal 注记钉升级路径）；HOST_ACCEPTANCE_SRCS 顺序与 runner 执行序关系（CMakeLists 注释钉明）。
+- **留根**：P2-A6 live 真录一轮 + ECS 部署/live 冒烟殿后（operator/9b 口径）；host_app_main.c 退出码缺陷（39T2F exit 0）建议后续包升级；mutation tighten-only 三齿归 acceptance-author；prompt v1→v2 切换（v1 在世可 diff，VRT 既有验收不受影响）。
+- **下一步**：supervisor 机械闸裁断 → planner 前置升级闸 → merge-driver 本地合并；后续包 4/5/8 依赖本包 display 路由扩展（mergeOrder 9 先于其消费）。
