@@ -28,6 +28,10 @@ set(SOURCES "audio/audio_codec.cc"
             # display view 路由共享底座 (方向 B, 包 260829-voice-roundtrip; 包 4/5/6/8 消费)
             # 纯逻辑无芯片依赖 -> host_app linux target 同源 (firmware/main/test/host_app/main/CMakeLists.txt)
             "display/view_router.c"
+            # P1 首页常显信息牌 (包 260829-home-p1): 冻结离线契约 + 帧构建, 纯逻辑无芯片
+            # 依赖 -> host_app linux target 同源 (display/home_p1.c 自持弱渲染缝, 真机
+            # LVGL 节点集成殿后)
+            "display/home_p1.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"

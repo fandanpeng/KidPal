@@ -37,6 +37,40 @@
   "acceptanceTestsFile": [
     "firmware/main/test/home_p1.acceptance.c"
   ],
+  "mutationEvidence": [
+    {
+      "acceptance": "P1-A2: P1 首页渲染超大时间（冒号=眨眼双点 4.4s 一眨）+ 日期星期 + 温度/湿度图标 + 电量",
+      "mutation": "行为级变异 kidpal_home_p1_blink_visible 相位翻转（(tick%period)<on_window 改 >，MUTATION PROBE P1-A2 标注）→ host_app ELF 重编运行 P1-A2 blink 逻辑齿 + P1-A2 render 齿 + P1-A4 render 齿（电池闪同款函数）三红（43T6F）；还原重编回绿（43T2F，仅余上游 WSA 证据齿）。还原 sha256 与基线一致（home_p1.c ba237cfe85268469）",
+      "affectedTest": "home_p1.acceptance.c P1-A2 blink + P1-A2 render TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "诚实留痕：首试常量位移 4400→4410 未转红（采样相位未越界，周期常量齿对 10ms 位移不敏感），改行为级相位翻转才真红——探针粒度教训已记录"
+    },
+    {
+      "acceptance": "P1-A3: 今日有待办时『接下来』卡渲染 反白标签牌（时间+课程名）+ 倒计时贴纸 + 次日项",
+      "mutation": "kidpal_home_p1_countdown 最近项选择变异（start < best_start 改 >，取最远未来项）→ P1-A3 countdown 齿红（43T4F，断言乱序数组须选最小未来时刻 14:00=index 1）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A3 countdown TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）"
+    },
+    {
+      "acceptance": "P1-A4: 电量≤阈值时切 state-sleepy 打盹态（pose-sleep + 电池图形每秒闪），充电即叫醒",
+      "mutation": "kidpal_home_p1_doze_state 充电语义反转（charging==1 返回 1 打盹而非 0 叫醒）→ P1-A4 doze 逻辑齿（阈值处充电必须叫醒）+ P1-A4 render 齿（充电中电池区不得闪灭）双红（43T5F）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A4 doze + P1-A4 render TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）"
+    },
+    {
+      "acceptance": "P1-A5: 优先级冲突时布局保 时间 > 接下来 > 温湿度",
+      "mutation": "kidpal_home_p1_layout_resolve 优先级位标反转（时间槽误标 HP1_ELEM_BIT_TH）→ P1-A5 layout 齿红（43T4F，无冲突布局必须三元素全在位）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A5 layout TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）；四探针均 host_app 独立工程增量构建（-B build_hp1）走 espidf_wsl.sh，末次终验从仓根跑 ELF"
+    }
+  ],
   "exitCriteria": [
     {
       "id": "P1-E1",

@@ -1,0 +1,63 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-07T13:43:37.480Z",
+  "changeId": "260829-home-p1",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=.gitignore,main",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "medium",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=.gitignore,main"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 1,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "medium",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=.gitignore,main"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-home-p1/verifier-evidence/rounds/r1.json",
+        "bearingFactOk": true,
+        "completedRounds": 1,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-home-p1/docs-delta.md",
+          "changes/dev/260829-home-p1/review-packet.md"
+        ],
+        "verifyLogsPresent": false,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-home-p1/verifier-evidence/rounds/r1.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-home-p1/docs-delta.md",
+      "changes/dev/260829-home-p1/review-packet.md"
+    ]
+  }
+}

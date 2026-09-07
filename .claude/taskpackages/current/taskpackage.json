@@ -1,17 +1,18 @@
 {
-  "changeId": "260907-g-relay-fix",
+  "changeId": "260829-home-p1",
   "rigor": "lite",
-  "sourceType": "regression",
+  "sourceType": "planning-workstream",
   "origin": {
-    "type": "regression",
-    "upstreamType": "regression",
-    "upstreamRef": "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1",
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "server",
-  "story": "G 包（260903-gateway-directionB）live relay 缺陷修复（回包）：front ws 代理路径接管 LLM 文本流——剥离 ```display fence（TTS/文字同步面不再混入）、剥离出的 display JSON 经 display_schema 机械校验后以 kidpal/display JSON-RPC tools/call 下发设备（回执 relay_ack 闭环），打通 display text 视图面与设备翻屏语义（用户「翻不回上一页」根因）。当前 front_app.py 仅在 /command、/dryrun 演示路径装配模块，真正 ws 代理路径零文本接管——缺陷本体。",
-  "redBaselineCommand": "cd server && python -m pytest acceptance/test_g_relay_fix.acceptance.py -q --import-mode=importlib（live 面按 @pytest.mark.live 不 auto-run，需真机冒烟；E1 断言内嵌独立 runner 复跑 G 包既有验收）",
-  "redBaselineResult": "RED（2026-09-07 acceptance-author 实测：结构面 9 failed / 1 passed / 3 live skipped，无 import/语法假红）：a1 红 = pump_* 在 front_app 源中 0 次出现（ws 代理路径零接线，缺陷本体）；a2×4 红 = strip_display_fences 不存在；a3×3 红 = build_display_tool_calls / pump_upstream_to_client 不存在；a4 红 = on_device_receipt 不存在；1 绿 = E1 回归守卫（应绿）。E1 基线：test_gateway_directionB.acceptance.py 结构面 20 passed / 10 live skipped 全绿。",
+  "subsystem": "firmware",
+  "story": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，孩子瞟一眼就知道现在几点、待会干嘛、屋里冷暖。（v0.4 小调：刷新三触发换 WS 语义 = 连接建立/每日 0:00 跨天/新建日程即时推〔决策 26〕；「接下来」分组呈现消费，producer = 包 6 OpenClaw 侧分组计算——周中学校课合并「上学」取首节、培训班/一次性逐项。）",
+  "redBaselineCommand": "跑 firmware host 首页布局/逻辑单测（依赖包 0 基建 + 包 2 display 下发），含 SDL 版面模拟",
+  "redBaselineResult": "红：首页版面布局、今日日程缓存渲染、低电打盹态均未实现——目标 host 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,108 +22,108 @@
   "gateProfile": [
     "types",
     "test-quality",
-    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "GRF-A1",
+      "id": "P1-A1",
       "kind": "structural"
     },
-    "GRF-A2: fence 剥离——front 对引擎下行文本帧剥离 ```display fence 后再转发（设备收到的 TTS/文字同步文本零 fence 残留；剥离出的 display JSON 交后续处理）",
-    "GRF-A3: display 机械校验 + relay 下发——剥离出的 display JSON 经 display_schema 校验（view 白名单/data shape/大小上限，V27 语义），通过者构造 kidpal/display JSON-RPC tools/call 下发设备，不合规拒绝并降级友好提示（不静默）",
-    "GRF-A4: 回执闭环——设备渲染回执经 relay_ack 处理为送达确认（决策 23：渲染即确认出队语义由设备侧承载，front 只消费回执不重发语义不变）",
-    "GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）"
+    "P1-A2: P1 首页渲染超大时间（冒号=眨眼双点 4.4s 一眨）+ 日期星期 + 温度/湿度图标 + 电量",
+    "P1-A3: 今日有待办时『接下来』卡渲染 反白标签牌（时间+课程名）+ 倒计时贴纸 + 次日项",
+    "P1-A4: 电量≤阈值时切 state-sleepy 打盹态（pose-sleep + 电池图形每秒闪），充电即叫醒",
+    "P1-A5: 优先级冲突时布局保 时间 > 接下来 > 温湿度"
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_g_relay_fix.acceptance.py"
+    "firmware/main/test/home_p1.acceptance.c"
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "P1-A2: P1 首页渲染超大时间（冒号=眨眼双点 4.4s 一眨）+ 日期星期 + 温度/湿度图标 + 电量",
+      "mutation": "行为级变异 kidpal_home_p1_blink_visible 相位翻转（(tick%period)<on_window 改 >，MUTATION PROBE P1-A2 标注）→ host_app ELF 重编运行 P1-A2 blink 逻辑齿 + P1-A2 render 齿 + P1-A4 render 齿（电池闪同款函数）三红（43T6F）；还原重编回绿（43T2F，仅余上游 WSA 证据齿）。还原 sha256 与基线一致（home_p1.c ba237cfe85268469）",
+      "affectedTest": "home_p1.acceptance.c P1-A2 blink + P1-A2 render TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "诚实留痕：首试常量位移 4400→4410 未转红（采样相位未越界，周期常量齿对 10ms 位移不敏感），改行为级相位翻转才真红——探针粒度教训已记录"
+    },
+    {
+      "acceptance": "P1-A3: 今日有待办时『接下来』卡渲染 反白标签牌（时间+课程名）+ 倒计时贴纸 + 次日项",
+      "mutation": "kidpal_home_p1_countdown 最近项选择变异（start < best_start 改 >，取最远未来项）→ P1-A3 countdown 齿红（43T4F，断言乱序数组须选最小未来时刻 14:00=index 1）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A3 countdown TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）"
+    },
+    {
+      "acceptance": "P1-A4: 电量≤阈值时切 state-sleepy 打盹态（pose-sleep + 电池图形每秒闪），充电即叫醒",
+      "mutation": "kidpal_home_p1_doze_state 充电语义反转（charging==1 返回 1 打盹而非 0 叫醒）→ P1-A4 doze 逻辑齿（阈值处充电必须叫醒）+ P1-A4 render 齿（充电中电池区不得闪灭）双红（43T5F）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A4 doze + P1-A4 render TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）"
+    },
+    {
+      "acceptance": "P1-A5: 优先级冲突时布局保 时间 > 接下来 > 温湿度",
+      "mutation": "kidpal_home_p1_layout_resolve 优先级位标反转（时间槽误标 HP1_ELEM_BIT_TH）→ P1-A5 layout 齿红（43T4F，无冲突布局必须三元素全在位）；还原重编回绿",
+      "affectedTest": "home_p1.acceptance.c P1-A5 layout TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 与基线一致（home_p1.c ba237cfe85268469）；四探针均 host_app 独立工程增量构建（-B build_hp1）走 espidf_wsl.sh，末次终验从仓根跑 ELF"
+    }
   ],
   "exitCriteria": [
-    "GRF-E1: 既有验收不回归——server/acceptance/test_gateway_directionB.acceptance.py 结构面保持全绿（G 包行为不被本修复破坏）",
-    "GRF-E2: live 待真机冒烟核销（human 已在用设备，修复后一轮冒烟即证），live 证据落 changes/dev/260907-g-relay-fix/"
+    {
+      "id": "P1-E1",
+      "kind": "structural"
+    },
+    "P1-E2: RTC 走时 + SHTC3 温湿度直读是硬件强绑定子能力，host 段只测布局/逻辑，真实硬件读取显式殿后包 9b device 验收（PROPOSAL §3 留根）",
+    "P1-E3: 今日日程数据经包 2 的 display 下发缓存消费，不在本包重复实现下发链路"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "changes/dev/260829-voice-roundtrip/review-packet.md",
-    "docs/contracts/interface-contract.md#§1.5",
-    "docs/contracts/interface-contract.md#§三"
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/spec.md#§4.1"
   ],
   "sourceRefs": [
-    "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1",
-    "changes/dev/260829-voice-roundtrip/roundtrip-live-evidence.md",
-    "docs/contracts/interface-contract.md#§1.5",
-    "docs/contracts/interface-contract.md#§三"
+    "S-F1.1",
+    "docs/spec.md#§5.5",
+    "5"
   ],
-  "iterationBudget": 2,
-  "fixBudget": 3,
-  "supervisorBlockBudget": 2,
-  "docsSyncRequired": true,
+  "iterationBudget": 3,
+  "fixBudget": 4,
   "docsOwner": "integrator",
-  "mergeOrder": 15,
-  "dependsOn": [],
-  "testHost": "PC pytest + 真机 live 冒烟",
+  "mergeOrder": 8,
+  "dependsOn": [
+    "260829-host-test-infra",
+    "260829-voice-roundtrip"
+  ],
+  "testHost": "host+SDL",
   "decisionCoverage": [
     {
-      "decision": "contract-§1.5-网关职责收敛",
-      "summary": "display 切分与机械校验是网关（front）职责——live 中该职责未落到 ws 代理路径，本修复即履职。",
+      "decision": "PROPOSAL-§2-包5",
+      "summary": "首页常显信息牌：RTC 时间 + SHTC3 温湿度 + 今日日程下发缓存 + 低电打盹，host + SDL 版面。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§1.5"
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:GRF-A2"
+      "landsIn": "acceptance:P1-A2"
     },
     {
-      "decision": "contract-V27-display机械校验",
-      "summary": "view 白名单 + data shape/大小上限 + 脏 JSON 拒绝降级，剥离后的 display JSON 必须过校验才下发。",
+      "decision": "spec-§5.1-常显信息牌",
+      "summary": "设备首先是常显信息牌（时间+今日日程+温湿度+电量），90% 时间常显；优先级 时间>接下来>温湿度。",
       "sourceRefs": [
-        "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1"
+        "docs/spec.md#§5.1"
       ],
-      "landsIn": "acceptance:GRF-A3"
+      "landsIn": "acceptance:P1-A5"
     },
     {
-      "decision": "spec-决策23-mcp载体",
-      "summary": "display 统一走 mcp 工具调用（kidpal/display），设备 JSON-RPC 回执 = 送达确认；front 发起不改变该语义。",
+      "decision": "PROPOSAL-§3-硬件殿后",
+      "summary": "包 5 的 RTC 走时 + SHTC3 温湿度直读为硬件强绑定子能力，host 段只测布局/逻辑，真实硬件读取殿后 9b。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§三"
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
       ],
-      "landsIn": "acceptance:GRF-A4"
+      "landsIn": "exitCriteria:P1-E2"
     }
-  ],
-  "mutationRequired": true,
-  "mutationEvidence": [
-    {
-      "acceptance": "GRF-A2: fence 剥离——front 对引擎下行文本帧剥离 ```display fence 后再转发（设备收到的 TTS/文字同步文本零 fence 残留；剥离出的 display JSON 交后续处理）",
-      "mutation": "_DISPLAY_FENCE_RE 改为永不匹配正则（blocks 恒空、speech 保留原文 → fence 漏进播报面）",
-      "affectedTest": "test_a2_strip_display_fences_canonical_block / test_a2_strip_display_fences_multiple_and_inline_opener / test_a2_strip_display_fences_dirty_bodies_still_stripped / test_a3_pump_upstream_takes_over_text_stream（连带）",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "transport-revision 版重跑（2026-09-07）：4 red 覆盖 strip 全语义 + pump 文本面连带；sha256 9ec1e3fb… 还原核验一致"
-    },
-    {
-      "acceptance": "GRF-A3: display 机械校验 + relay 下发——剥离出的 display JSON 经 display_schema 校验（view 白名单/data shape/大小上限，V27 语义），通过者构造 kidpal/display JSON-RPC tools/call 下发设备，不合规拒绝并降级友好提示（不静默）",
-      "mutation": "build_display_tool_calls 末尾改 return []（静默丢块）",
-      "affectedTest": "test_a3_display_tool_calls_envelope_for_valid_block / test_a3_display_tool_calls_downgrades_invalid_not_silent / test_a3_pump_side_channel_blocks_relayed / test_a3_pump_upstream_takes_over_text_stream",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "transport-revision 版重跑（2026-09-07）：4 red（信封数断言全灭含侧通道 pump，对静默丢块敏感性更高）；sha256 还原核验一致"
-    },
-    {
-      "acceptance": "GRF-A4: 回执闭环——设备渲染回执经 relay_ack 处理为送达确认（决策 23：渲染即确认出队语义由设备侧承载，front 只消费回执不重发语义不变）",
-      "mutation": "on_device_receipt 改恒返回 (False, None)",
-      "affectedTest": "test_a4_device_receipt_relay_ack_consumption",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "transport-revision 版重跑（2026-09-07）：1 red 且失败点精确命中新增 mcp 解包样本（payload 载 {\"jsonrpc\" 回执, 数字 id 172001}）；sha256 还原核验一致"
-    },
-    {
-      "acceptance": "GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）",
-      "mutation": "live 证据文件改名（changes/dev/260907-g-relay-fix/live-smoke-evidence.md → .bak，从 _require_evidence 发现集剔除）",
-      "affectedTest": "test_a5_live_engine_patch_marker_in_log / test_a5_live_fence_not_in_broadcast / test_a5_live_kidpal_display_tools_call_dispatched / test_a5_live_display_text_view_triggered",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "integrator 实测（2026-09-07，RUN_LIVE=1 -m live 口径）：4 passed → 证据改名后 4 failed（GRF-A5/E2 RED 断言）→ 改回复绿；evidence-based 条目的标准 mutation"
-    }
-  ],
-  "notes": "处置形态（G 回包 vs 独立包）待 portfolio 追认——human 2026-09-07 指令「归 260903-gateway-directionB 修复、形态留 portfolio 裁」，本包以新建 Lite 包承载并如实标注；mergeOrder 15 占位、portfolio 可重排。关键现状约束：live 引擎 Intent:nointent（OpenClaw 拒 tools 数组，WS 包 SHOULD #2）——relay 由 front 发起、不依赖 LLM tool calling；将来 OpenClaw tools 修复回开 Intent 后引擎侧可能自行 tool-call，front 侧 relay 需幂等/去重意识（实现注记，不阻塞本包）。设备侧 kidpal/display 工具注册已由包 2 live 实证可用。禁改 docs/contracts/** 与 *.acceptance.* 冻结件；live 面按 ARQ-260901-g3-server-live-acceptance 口径不 auto-run。"
+  ]
 }
