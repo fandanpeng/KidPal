@@ -46,6 +46,10 @@ set(HOST_ACCEPTANCE_SRCS
     # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
     "../../char_stroke.acceptance.c"
     "../../../display/char_stroke.c"
+    # 包 260829-story-p3 (P3 故事页)：冻结验收 + 被测纯逻辑/纯 LVGL 实现 (story_page 强
+    # 符号覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
+    "../../story_p3.acceptance.c"
+    "../../../display/story_page.c"
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )

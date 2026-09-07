@@ -79,7 +79,9 @@
     "scopePromptV3": "服务端交付大概率含 openclaw-system-prompt v3 增量（story producer 扩展：『我要讲故事』→control/start_recording 意图 + 停录归档起标题 + V31 回退判断），版本化落盘 .v3、overlay 渲染切换、历史可 diff，遵『验收所测=生产所用』复验纪律。这是 deploy 面制品、不触 docs/contracts/**（§1.4 已冻结 start_recording action、v2 prompt:42 枚举已含）。",
     "intakeC5_scopeMap": "已核 .claude/scope-map.json：builder/fixer allow firmware/**+server/**+tools/**+planning（deny *.acceptance.c + **/acceptance/** + 契约/vendor）；acceptance-author allow firmware/**/*.acceptance.c + server/**/acceptance/**；host runner CMakeLists（firmware/main/test/host_app/main/CMakeLists.txt）非 acceptance 面、builder 可写登记 HOST_ACCEPTANCE_SRCS。目标面全覆盖、无需新增 scope-map 登记。",
     "architectReviewerVerdict": "NO_CONTRACT_CHANGE",
-    "architectReviewerEventRef": "见 pod-events dispatch-completed(actor=architect-reviewer)"
+    "architectReviewerEventRef": "见 pod-events dispatch-completed(actor=architect-reviewer)",
+    "executionEvidence": "第一方真跑证据（planner 亲执，2026-09-08）——verifier 的 unit/acceptance 两闸按设计为结构闸（fact 明载 executor-skipped『不担保实机已过』、firmware-build degraded『idf.py 不可用』），故真执行证据在此承载：(1) C host ELF **从仓库根**跑 = 68 Tests 2 Failures，本包 8 齿（A1@865/A2@970/A3@1134/A4@1229/A5@1429/A6@1611/render@1770/boundary@1929）**全 PASS**，2 红逐条确为 WSA-A4(flash.log 缺失)/WSA-A6(ecs-teardown-evidence.md 缺失) 本地-only 证据地板；(2) PY pytest acceptance/test_story_p3.acceptance.py = **20 passed, 1 skipped**（skip=live 机械闸，采音殿后 9b）；(3) **设备 target idf.py build 第一方真跑 = Project build complete RC=0、xiaozhi.bin 0x2b63e0 bytes（31% free）**——story_page.c + mcp_server.cc（含 case4 lambda 破口修复 + case5/6 新增）真编并链进 ESP32 目标，即 notes.preExistingMainDefect 所载 main 设备构建红在本分支已治愈，firmware-build 降级门得实证补强；(4) mutation 敏感性见 mutationEvidence 6 条（基线 68T2F→合变 68T7F 逐齿归因 + PY 全量恰 1 红），story_page.c/story.py sha256 均核验回基线 051b9c7a/1748e15f。",
+    "crossPackageVersionCollision": "planner 全量 server 套复跑发现本包 prompt forward-bump(v2→v3) 撞红已 merged 包 char-stroke 冻结 green-guard CHR-E3（字面 .v2 接入断言，基线绿→实现后红，实测 f5309c7 基线 26 红不含、实现后 9 红含；另 8 红=smoke_e2e 7 superseded HTTP 台阶 + vrt A4 既有证据地板、与本包无关）。本包 story 冻结验收含 test_prompt_carrier_v3_landed_and_wired（要求 v3）↔ char-stroke 要求 v2 字面，两条 oracle 版本字面互斥。v3 逐字携带 char C1(13)+v2基座(32)=char 行为被继承、仅字面陈旧。escalation 80deedcb → human 裁 c54bbcde=重指版本无关 → acceptance-author 重指 CHR-E3（当前接线版文件存在+携带 char C1 锚点，非恒绿）。通用病灶另登 ARQ-260908-versioned-guard-version-literal-coupling（Track A）。"
   },
   "dependsOn": [
     "260829-host-test-infra",
@@ -118,6 +120,68 @@
         ".planning/kidpal-mvp/PROPOSAL.md#§3"
       ],
       "landsIn": "exitCriteria:P3-E2"
+    }
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
+      "face": "PY",
+      "file": "server/gateway/story.py",
+      "mutation": "list_stories 以页切片的 items.length 顶替全集计数：return data {\"total\": total} 改 {\"total\": len(items)}（契约 §一 story_list 硬约束反面缺陷：分页/截断时把子集当全集下发）",
+      "affectedTest": "test_a2_list_total_is_full_set_not_page_slice（pytest -k a2 单跑红；全量跑恰此 1 红、无连带）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原核验 sha256 1748e15f00ad1bd2… == 基线。本 id 云侧齿敏感。"
+    },
+    {
+      "acceptance": "P3-A3: KEY 短按光标下移选择、KEY 双击进入阅读态",
+      "face": "C",
+      "file": "firmware/main/display/story_page.c",
+      "mutation": "列表光标去回绕（D1）：v->cursor = (v->cursor+1) % v->count 改 (v->cursor+1 < v->count ? v->cursor+1 : v->cursor)（到底不再回首行）",
+      "affectedTest": "story_p3.acceptance.c P3-A3 TEST_CASE（区间起始 :1134）内 :1162 断言红 = 到底回绕齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原核验 sha256 051b9c7a… == 基线（与其余 3 处 C 变异同批施加、按 TEST_CASE 名逐齿归因，各红落各自 id 区间、无串扰）。"
+    },
+    {
+      "acceptance": "P3-A4: 录制上传归档：说『我要讲故事』进录音态（REC 闪点+大时长+声波），按 KEY 停止上传云端 ASR 转写归档 stories/*.md",
+      "face": "C",
+      "file": "firmware/main/display/story_page.c",
+      "mutation": "start_recording 动作永不匹配：on_control 的 if (ctrl_action == 2) /*VRT_CTRL_START_RECORDING*/ 改 == 99（control 帧到达不切录音态，视图零改动）",
+      "affectedTest": "story_p3.acceptance.c P3-A4 TEST_CASE（区间起始 :1229）内 :1246 断言红 = 进录音态/REC 演出齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原核验 sha256 051b9c7a… == 基线。同批 render 齿 :1880 连带红（录音态画面差异被破），进一步证渲染面敏感。"
+    },
+    {
+      "acceptance": "P3-A5: 回看/回听：阅读态渲染标题+正文滚动（story_text），BOOT 长按翻下一屏、KEY 朗读正文（TTS）",
+      "face": "C",
+      "file": "firmware/main/display/story_page.c",
+      "mutation": "阅读态底部屏数指示逐字被改：#define KSTORY_SCREEN_FMT \"第 %d 屏 · 共 %d 屏\" 的中点分隔符改斜杠（\" · \" -> \" / \"）",
+      "affectedTest": "story_p3.acceptance.c P3-A5 TEST_CASE（区间起始 :1429）内 :1502 断言红 = 逐字屏数文案齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原核验 sha256 051b9c7a… == 基线。"
+    },
+    {
+      "acceptance": "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步",
+      "face": "C",
+      "file": "firmware/main/display/story_page.c",
+      "mutation": "盖章斜角几何被改：#define KSTORY_STAMP_ANGLE_DECI (-80) 改 (0)（-8 度变正放）",
+      "affectedTest": "story_p3.acceptance.c P3-A6 TEST_CASE（区间起始 :1611）内 :1638 断言红 = 冻结几何 {rings=2,inner_dashed=1,angle_deci=-80,hold_ms=800} 齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原核验 sha256 051b9c7a… == 基线。"
+    },
+    {
+      "acceptance": "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
+      "face": "C",
+      "file": "firmware/main/display/story_page.c",
+      "mutation": "（同批合变观测）4 处 C 变异一并施加后，P3-A2..A6 真帧渲染齿 :1880 亦转红（反白/×N/翻页/录音·盖章四态画面互异断言失效）",
+      "affectedTest": "story_p3.acceptance.c render TEST_CASE（:1770 起始）内 :1880",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "基线 68 Tests 2 Failures -> 合变 68 Tests 7 Failures（2 地板 + 5 story 齿），逐齿按 TEST_CASE 名归因；全部还原后重建复跑回 68T2F。"
     }
   ]
 }

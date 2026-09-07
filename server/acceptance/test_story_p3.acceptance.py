@@ -274,12 +274,19 @@ def _code_files_referring(needles, *, exclude_self=True):
 
 
 def _ts(day: str, hour: int = 0, minute: int = 0, second: float = 0.0):
-    """Deterministic injected clock (the frozen contract takes explicit `now`)."""
+    """Deterministic injected clock (the frozen contract takes explicit `now`).
+
+    入参做进位归一：把 day 零点 + (hour,minute,second) 偏移量用 timedelta 表达,
+    使 second/minute 允许 >=60 (如 second=60 表「停录后 60 秒」), 而不会让
+    datetime(..., second=60) 在**实参求值阶段** ValueError 抛崩 (那是线束崩溃、
+    非被测行为缺失, 任何实现都规避不了)。既有 0..59 范围内的全部调用结果
+    逐字不变 —— 只修时钟构造, 不碰任何断言、阈值或语义。
+    """
     import datetime as _dt
 
     d = _dt.date.fromisoformat(day)
-    return _dt.datetime(d.year, d.month, d.day, hour, minute, int(second),
-                        int((second % 1) * 1_000_000))
+    offset = hour * 3600 + minute * 60 + float(second)
+    return _dt.datetime(d.year, d.month, d.day) + _dt.timedelta(seconds=offset)
 
 
 class _TmpDir:
