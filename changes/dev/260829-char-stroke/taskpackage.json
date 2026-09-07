@@ -1,0 +1,187 @@
+{
+  "changeId": "260829-char-stroke",
+  "rigor": "full",
+  "sourceType": "planning-workstream",
+  "origin": {
+    "type": "planning-workstream",
+    "upstreamType": "planning-workstream",
+    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
+    "upstreamFrozen": "sha1:88a5bdb83abdd867",
+    "workstream": "kidpal-mvp"
+  },
+  "subsystem": "firmware+server",
+  "story": "查生字：消费笔顺 JSON（契约 D3，makemeahanzi）→ 贝塞尔离散 + 1024→400×300 坐标变换 + 1bpp 光栅 + 米字格渲染 + 逐笔动画 + 右栏速查卡，把「勇怎么写」一笔一笔教给孩子。云侧范围扩充（C1）：服务端静态字库查表拼装 D3 块 + 目标字表预热 + LRU 缓存，LLM 只出意图＋字（不再逐 token 复述坐标 JSON），char 查询 109s→5 秒档。launch 前置闸：契约 §1.6 措辞走 architect-reviewer 四分类预审。",
+  "redBaselineCommand": "跑 firmware host 渲染纯函数单测（贝塞尔离散/坐标变换/光栅化，依赖包 0 基建）+ server 侧字库查表拼装 PC 单测 + char 延迟 live 验收",
+  "redBaselineResult": "红：笔顺 JSON 消费、贝塞尔离散、坐标变换、1bpp 光栅、米字格渲染、逐笔动画均未实现；服务端静态字库查表拼装未建（当前走 DeepSeek 逐 token 复述、char 查询 109s）——目标 host/PC 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "types",
+    "real-db",
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    {
+      "id": "CHR-A1",
+      "kind": "structural"
+    },
+    "CHR-A2: 消费契约 D3 笔顺 JSON（strokes SVG path + medians 骨架点），正确解析 M/Q/L/Z 二次贝塞尔并离散成点",
+    "CHR-A3: 坐标变换 1024×1024 → 400×300 正确（含 Y 轴朝下翻转 + 字形偏上偏移），输出落在屏内",
+    "CHR-A4: 1bpp 光栅化把矢量轮廓 scanline 填充成黑白位图，逐笔叠加显示",
+    "CHR-A5: 米字格内逐笔动画演示：每笔 950ms 步进、演完一轮歇 2 秒重来；笔顺三态（已写实心黑/当前笔白衬边+握笔小手/未写虚线点链 6px 点距）",
+    "CHR-A6: 右栏速查卡渲染：拼音带声调 + 共 N 画 + 进度珠 + 第 X 笔·共 N 笔 + 部首 + 组词",
+    "CHR-A7: 教学字体红线——米字格示范字用标准规范字形（横平竖直、不抖不斜、无 tilt），仅伴随文字可用可爱体",
+    "CHR-A8: 服务端静态字库查表拼装 D3 块（数据源 makemeahanzi，挂 OpenClaw 侧）逐字对照数据源正确，LLM 只出意图＋字、不复述坐标 JSON",
+    "CHR-A9: 目标字表预热 + LRU 缓存生效；char 查询端到端延迟达 5 秒档（对真 ECS/OpenClaw 实测，按 live 口径不 auto-run）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/char_stroke.acceptance.c",
+    "server/acceptance/test_char_stroke.acceptance.py"
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "CHR-A2: 消费契约 D3 笔顺 JSON（strokes SVG path + medians 骨架点），正确解析 M/Q/L/Z 二次贝塞尔并离散成点",
+      "mutation": "char_stroke.c cs_bezier_t 二次贝塞尔 y 项系数 2.0f→1.0f（控制点权重减半）→ host ELF CHR-A2 曲线拟合齿红（max_y 出 [450,517] 区间）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A2 bezier max_y 区间断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）。诚实注记：首探误打 x 项系数未红（fixture 只测 max_y，x 系数不敏感属测试几何正常），改打 y 项即红——齿对『控制点被当折线/直线』真敏感"
+    },
+    {
+      "acceptance": "CHR-A3: 坐标变换 1024×1024 → 400×300 正确（含 Y 轴朝下翻转 + 字形偏上偏移），输出落在屏内",
+      "mutation": "char_stroke.c kidpal_char_transform Y 翻转移除（(SRC-y)→y）→ host ELF CHR-A3 红（Y 严格递减 + 域中心偏上断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A3 坐标变换 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A4: 1bpp 光栅化把矢量轮廓 scanline 填充成黑白位图，逐笔叠加显示",
+      "mutation": "char_stroke.c cs_raster_row even-odd 配对步进 k+=2→k++（自交多边形中心被误填）→ host ELF CHR-A4 红（五角星单调用中心洞 (16,16)==0 断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A4 even-odd 挖洞断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）。附：raster no-op 变异（早 return 0 跳过填充循环）同样触发 CHR-A4——填充路径双敏感"
+    },
+    {
+      "acceptance": "CHR-A5: 米字格内逐笔动画演示：每笔 950ms 步进、演完一轮歇 2 秒重来；笔顺三态（已写实心黑/当前笔白衬边+握笔小手/未写虚线点链 6px 点距）",
+      "mutation": "char_stroke.c CS_STROKE_MS 950→940 → host ELF CHR-A5 红（950ms 步进边界断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A5 动画状态机 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A6: 右栏速查卡渲染：拼音带声调 + 共 N 画 + 进度珠 + 第 X 笔·共 N 笔 + 部首 + 组词",
+      "mutation": "char_stroke.c kidpal_char_card_build 进度措辞『第 X 笔·共 N 笔』间隔符·移除 → host ELF CHR-A6 红（progress 逐字断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A6 速查卡数据装配 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A7: 教学字体红线——米字格示范字用标准规范字形（横平竖直、不抖不斜、无 tilt），仅伴随文字可用可爱体",
+      "mutation": "char_page.cc 光栅路径注入 lv_obj_set_style_transform_angle（示范字倾斜）→ host ELF CHR-A7 红（光栅路径零 tilt 结构齿）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A7 教学/字体红线 structural TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（6bdee31f）。诚实注记：齿 1（≥2 文件引用 kidpal_char_raster_stroke(）对『调用者改名』不敏感——char_stroke.h 函数声明也计入引用数（定义+声明=2 恒绿）；齿 1 的『真实调用点』语义被声明稀释，已如实记录，收紧建议（排除 .h 声明或另用调用点标记）留 acceptance-author tighten-only 阶段"
+    },
+    {
+      "acceptance": "CHR-A8: 服务端静态字库查表拼装 D3 块（数据源 makemeahanzi，挂 OpenClaw 侧）逐字对照数据源正确，LLM 只出意图＋字、不复述坐标 JSON",
+      "mutation": "char_stroke_lib.py assemble_char strokeCount 回显 +1（逐字段对照破坏）→ pytest test_a8_assembly_product_matches_source 红",
+      "affectedTest": "test_char_stroke.acceptance.py test_a8_assembly_product_matches_source",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（1186b8d8）。诚实注记：首探 pinyin 顿号→+号 join 未红（fixture 单音字，join 不敏感属测试数据正常），改打逐字段对照必查的 strokeCount 即红"
+    },
+    {
+      "acceptance": "CHR-A9: 目标字表预热 + LRU 缓存生效；char 查询端到端延迟达 5 秒档（对真 ECS/OpenClaw 实测，按 live 口径不 auto-run）",
+      "mutation": "char_stroke_lib.py CharLruCache.put 淘汰分支 pass 化（eviction 失效）→ pytest test_a9_lru_and_warmup_semantics 红",
+      "affectedTest": "test_char_stroke.acceptance.py test_a9_lru_and_warmup_semantics",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（1186b8d8）。A9 的 live 端到端 5 秒档断言为 @live 不 auto-run，live 证据另行采集"
+    }
+  ],
+  "exitCriteria": [
+    {
+      "id": "CHR-E1",
+      "kind": "structural"
+    },
+    "CHR-E2: 渲染纯函数（贝塞尔/坐标变换/光栅）全部 host 可测并覆盖；真实屏幕观感（RLCD）显式殿后包 9b device 验收",
+    "CHR-E3: 只消费契约 D3，不改 makemeahanzi 数据源、不改契约；静态字库挂 OpenClaw 侧、绝不入 shim（守 §1.5 薄桥红线）；契约 §1.6 措辞变更在 launch 前走 architect-reviewer 四分类预审"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/kidpal-mvp/PROPOSAL.md",
+    "docs/spec.md#§3.0.2",
+    "docs/spec.md#§4.3",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    "S-F3.1",
+    "S-F3.2",
+    "S-F3.3",
+    "docs/contracts/interface-contract.md#§一",
+    "4"
+  ],
+  "iterationBudget": 4,
+  "fixBudget": 6,
+  "docsOwner": "integrator",
+  "mergeOrder": 7,
+  "dependsOn": [
+    "260829-host-test-infra",
+    "260829-voice-roundtrip"
+  ],
+  "testHost": "hybrid",
+  "decisionCoverage": [
+    {
+      "decision": "PROPOSAL-§2-包4",
+      "summary": "查生字：笔顺 JSON（D3）消费 + 贝塞尔离散 + 1024→400×300 坐标变换 + 1bpp 光栅 + 米字格渲染 + 逐笔动画 + 右栏速查。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+      ],
+      "landsIn": "acceptance:CHR-A2"
+    },
+    {
+      "decision": "spec-§7-决策12",
+      "summary": "D3 笔顺格式定稿 makemeahanzi（strokes SVG path + medians 骨架点），板子只渲染（LVGL + 逐笔动画）。",
+      "sourceRefs": [
+        "docs/spec.md#§3.0.2"
+      ],
+      "landsIn": "acceptance:CHR-A3"
+    },
+    {
+      "decision": "spec-§5.6-教学字体红线",
+      "summary": "查字页米字格示范字必须标准规范字体（思源黑体/楷体），禁手写趣味体/抖动/倾斜——孩子会照写。",
+      "sourceRefs": [
+        "docs/spec.md#§5.6"
+      ],
+      "landsIn": "acceptance:CHR-A7"
+    },
+    {
+      "decision": "PROPOSAL-§5-C1-char延迟修法",
+      "summary": "char 查询 109s 修法（human 2026-09-01 拍板）：服务端静态字库查表拼装 + 目标字表预热 + LRU，LLM 只出意图＋字，挂 OpenClaw 侧绝不入 shim；109s→5 秒档。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+      ],
+      "landsIn": "acceptance:CHR-A8"
+    },
+    {
+      "decision": "PROPOSAL-§7-闸A-契约1.6预审",
+      "summary": "闸 A（C1）：契约 §1.6 system prompt 对 char 数据生成方式的约束需随静态字库方案调整，包 4 launch 前走 architect-reviewer 四分类预审（E1/D3 格式本身不变）。",
+      "sourceRefs": [
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+      ],
+      "landsIn": "exitCriteria:CHR-E3"
+    }
+  ]
+}

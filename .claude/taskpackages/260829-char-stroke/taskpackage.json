@@ -40,7 +40,74 @@
     "CHR-A9: 目标字表预热 + LRU 缓存生效；char 查询端到端延迟达 5 秒档（对真 ECS/OpenClaw 实测，按 live 口径不 auto-run）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/char_stroke.acceptance.c"
+    "firmware/main/test/char_stroke.acceptance.c",
+    "server/acceptance/test_char_stroke.acceptance.py"
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "CHR-A2: 消费契约 D3 笔顺 JSON（strokes SVG path + medians 骨架点），正确解析 M/Q/L/Z 二次贝塞尔并离散成点",
+      "mutation": "char_stroke.c cs_bezier_t 二次贝塞尔 y 项系数 2.0f→1.0f（控制点权重减半）→ host ELF CHR-A2 曲线拟合齿红（max_y 出 [450,517] 区间）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A2 bezier max_y 区间断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）。诚实注记：首探误打 x 项系数未红（fixture 只测 max_y，x 系数不敏感属测试几何正常），改打 y 项即红——齿对『控制点被当折线/直线』真敏感"
+    },
+    {
+      "acceptance": "CHR-A3: 坐标变换 1024×1024 → 400×300 正确（含 Y 轴朝下翻转 + 字形偏上偏移），输出落在屏内",
+      "mutation": "char_stroke.c kidpal_char_transform Y 翻转移除（(SRC-y)→y）→ host ELF CHR-A3 红（Y 严格递减 + 域中心偏上断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A3 坐标变换 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A4: 1bpp 光栅化把矢量轮廓 scanline 填充成黑白位图，逐笔叠加显示",
+      "mutation": "char_stroke.c cs_raster_row even-odd 配对步进 k+=2→k++（自交多边形中心被误填）→ host ELF CHR-A4 红（五角星单调用中心洞 (16,16)==0 断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A4 even-odd 挖洞断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）。附：raster no-op 变异（早 return 0 跳过填充循环）同样触发 CHR-A4——填充路径双敏感"
+    },
+    {
+      "acceptance": "CHR-A5: 米字格内逐笔动画演示：每笔 950ms 步进、演完一轮歇 2 秒重来；笔顺三态（已写实心黑/当前笔白衬边+握笔小手/未写虚线点链 6px 点距）",
+      "mutation": "char_stroke.c CS_STROKE_MS 950→940 → host ELF CHR-A5 红（950ms 步进边界断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A5 动画状态机 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A6: 右栏速查卡渲染：拼音带声调 + 共 N 画 + 进度珠 + 第 X 笔·共 N 笔 + 部首 + 组词",
+      "mutation": "char_stroke.c kidpal_char_card_build 进度措辞『第 X 笔·共 N 笔』间隔符·移除 → host ELF CHR-A6 红（progress 逐字断言）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A6 速查卡数据装配 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（9f36451f）"
+    },
+    {
+      "acceptance": "CHR-A7: 教学字体红线——米字格示范字用标准规范字形（横平竖直、不抖不斜、无 tilt），仅伴随文字可用可爱体",
+      "mutation": "char_page.cc 光栅路径注入 lv_obj_set_style_transform_angle（示范字倾斜）→ host ELF CHR-A7 红（光栅路径零 tilt 结构齿）",
+      "affectedTest": "char_stroke.acceptance.c CHR-A7 教学/字体红线 structural TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（6bdee31f）。诚实注记：齿 1（≥2 文件引用 kidpal_char_raster_stroke(）对『调用者改名』不敏感——char_stroke.h 函数声明也计入引用数（定义+声明=2 恒绿）；齿 1 的『真实调用点』语义被声明稀释，已如实记录，收紧建议（排除 .h 声明或另用调用点标记）留 acceptance-author tighten-only 阶段"
+    },
+    {
+      "acceptance": "CHR-A8: 服务端静态字库查表拼装 D3 块（数据源 makemeahanzi，挂 OpenClaw 侧）逐字对照数据源正确，LLM 只出意图＋字、不复述坐标 JSON",
+      "mutation": "char_stroke_lib.py assemble_char strokeCount 回显 +1（逐字段对照破坏）→ pytest test_a8_assembly_product_matches_source 红",
+      "affectedTest": "test_char_stroke.acceptance.py test_a8_assembly_product_matches_source",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（1186b8d8）。诚实注记：首探 pinyin 顿号→+号 join 未红（fixture 单音字，join 不敏感属测试数据正常），改打逐字段对照必查的 strokeCount 即红"
+    },
+    {
+      "acceptance": "CHR-A9: 目标字表预热 + LRU 缓存生效；char 查询端到端延迟达 5 秒档（对真 ECS/OpenClaw 实测，按 live 口径不 auto-run）",
+      "mutation": "char_stroke_lib.py CharLruCache.put 淘汰分支 pass 化（eviction 失效）→ pytest test_a9_lru_and_warmup_semantics 红",
+      "affectedTest": "test_char_stroke.acceptance.py test_a9_lru_and_warmup_semantics",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（1186b8d8）。A9 的 live 端到端 5 秒档断言为 @live 不 auto-run，live 证据另行采集"
+    }
   ],
   "exitCriteria": [
     {

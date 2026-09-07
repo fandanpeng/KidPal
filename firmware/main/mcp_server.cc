@@ -20,6 +20,8 @@
 #include "lvgl_display.h"
 #include "display/view_router.h"
 #include "display/schedule_page.h"
+#include "display/char_stroke.h"   /* 查生字 P4 (包 260829-char-stroke): 缺字段防御降级门 */
+#include "display/char_page.h"     /* 查生字 P4 LVGL 页 (设备侧) */
 
 #define TAG "MCP"
 
@@ -212,6 +214,22 @@ void McpServer::AddCommonTools() {
                             title, items, n, is_tomorrow, now_str.c_str(), locate_row);
                         ESP_LOGI(TAG, "schedule_render corr_id=%s items=%d drawn=%d",
                                  corr_id, n, drawn);
+                case 3: { /* VRT_ROUTE_CHAR —— 查生字 P4 (包 260829-char-stroke, 本包
+                             additive 补 case 3, 只消费不改 view_router 数值码). */
+                    cJSON_AddStringToObject(ack, "route", "char");
+                    std::string char_data = data;
+                    /* 缺字段防御降级门 (闸 A 包内裁定): 必需键六件不全 -> 降级提示、
+                     * 不盲渲染、不崩 (对齐 view_router UNKNOWN 语义)。 */
+                    if (kidpal_char_data_validate(char_data.c_str()) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        cJSON_AddStringToObject(ack, "degrade_reason",
+                            "char data missing required keys (char/pinyin/radical/"
+                            "strokeCount/strokes/medians)");
+                        break;
+                    }
+                    /* 通过校验 -> 切 P4 页喂数据 (LVGL 主线程延迟执行) */
+                    app.Schedule([char_data]() {
+                        kidpal_char_page_show(char_data.c_str());
                     });
                     break;
                 }
