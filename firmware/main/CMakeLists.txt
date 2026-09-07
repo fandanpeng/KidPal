@@ -32,6 +32,10 @@ set(SOURCES "audio/audio_codec.cc"
             # 依赖 -> host_app linux target 同源 (display/home_p1.c 自持弱渲染缝, 真机
             # LVGL 节点集成殿后)
             "display/home_p1.c"
+            # P2 课表页消费面 (方向 B, 包 260829-schedule-p2): 冻结离线契约 5 函数
+            # (schedule_page.c / schedule_page.h, 建议家 display/; 纯逻辑+纯 LVGL ->
+            # host 单测同源, 见 firmware/main/test/schedule_p2.acceptance.c)
+            "display/schedule_page.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"

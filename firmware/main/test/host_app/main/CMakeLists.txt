@@ -16,8 +16,16 @@ set(HOST_ACCEPTANCE_SRCS
     # registers TEST_CASE on `main` in reverse link order) so its `boundary` tooth — which
     # asserts the seam exposes the NOT_RENDERED sentinel (-1) "before any frame is flushed"
     # — runs against a FRESH process, before any render-producing test (incl. this package's
-    # home_p1 render teeth) flushes a frame. Keeping boundary first is the package-0 guard
-    # it needs (it cannot pass after any prior render in the process).
+    # home_p1 / schedule_p2 render teeth) flushes a frame. Keeping boundary first is the
+    # package-0 guard it needs (it cannot pass after any prior render in the process).
+    # 包 260829-schedule-p2 (方向 B) 置于列表最前：host runner 实测执行序 = 列表
+    # 逆序 (后注册先跑)，schedule 的 LVGL 真帧渲染测试须在 host_infra_smoke 的
+    # nothing-rendered 边界齿之后执行，否则缝的 rendered 态会误红该守卫。
+    "../../schedule_p2.acceptance.c"
+    # 被测实现（5 个 frozen offline contract 函数 + 纯 LVGL 渲染面 -> lvgl include
+    # 由本组件 REQUIRES lvgl 提供；P2-A3 render 齿由本接线兑现真跑）。
+    # 相对 host_app/main 为 ../../../。
+    "../../../display/schedule_page.c"
     # 包 3 (260829-session-logic)：冻结验收 + 被测纯逻辑实现（seam 头在 firmware/main/，
     # 相对 host_app/main 为 ../../../）。
     "../../session_logic.acceptance.c"
