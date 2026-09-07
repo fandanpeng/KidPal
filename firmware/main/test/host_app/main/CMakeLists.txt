@@ -42,6 +42,10 @@ set(HOST_ACCEPTANCE_SRCS
     # weak 哨兵; 渲染缝 additive 在 host_infra_seam.c）。
     "../../home_p1.acceptance.c"
     "../../../display/home_p1.c"
+    # 包 260829-char-stroke (查生字 P4)：冻结验收 + 被测纯逻辑实现 (char_stroke 强符号
+    # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
+    "../../char_stroke.acceptance.c"
+    "../../../display/char_stroke.c"
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -51,7 +55,7 @@ idf_component_register(
         "host_app_main.c"
         "host_infra_seam.c"
         ${HOST_ACCEPTANCE_SRCS}
-    INCLUDE_DIRS "."
+    INCLUDE_DIRS "." "../../../display"  # ../../../display: __has_include("char_stroke.h") 契约头探针
     REQUIRES unity lvgl
     # Force every TEST_CASE object into the final link. A unity TEST_CASE registers
     # itself via a constructor; if the owning .o is an unreferenced archive member the
