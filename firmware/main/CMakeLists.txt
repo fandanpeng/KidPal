@@ -25,6 +25,9 @@ set(SOURCES "audio/audio_codec.cc"
             "display/lvgl_display/gif/gifdec.c"
             "display/lvgl_display/jpg/image_to_jpeg.cpp"
             "display/lvgl_display/jpg/jpeg_to_image.c"
+            # display view 路由共享底座 (方向 B, 包 260829-voice-roundtrip; 包 4/5/6/8 消费)
+            # 纯逻辑无芯片依赖 -> host_app linux target 同源 (firmware/main/test/host_app/main/CMakeLists.txt)
+            "display/view_router.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
