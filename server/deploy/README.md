@@ -11,13 +11,35 @@ KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.
  TLS FRONT  server/gateway/front  （公网 8000，终结 TLS + 强制设备鉴权）
      │  plain ws -> LOOPBACK 127.0.0.1:8010
      ▼
- 容器引擎  xiaozhi-esp32-server（官方镜像，零补丁）
+ 容器引擎  xiaozhi-esp32-server（官方镜像 + engine-patch 部署副本补丁）
      │  LLM type:openai -> OpenClaw（host loopback 18789，V28 锁）
 ```
 
-- **引擎腿**：官方 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest`（China mirror；拉不到退 `ghcr.io/...`）。容器零引擎侧补丁；`data/.config.yaml` overlay + models 卷挂载，keys 不入镜像层、数据跨重建持久。
+- **引擎腿**：官方 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest`（China mirror；拉不到退 `ghcr.io/...`）。容器镜像本体无改；display fence 剥离补丁以**部署副本 bind-mount** 形态覆盖镜像内 `core/`（见下节「引擎部署副本补丁」）。`data/.config.yaml` overlay + models 卷挂载，keys 不入镜像层、数据跨重建持久。
 - **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `changes/dev/260903-device-ws-switch/`。）
 - **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；`network_mode: host` 下容器经**真 loopback `127.0.0.1:18789`** 直达宿主 OpenClaw（原 `host.docker.internal:18789` 网桥随 host 模式移除，260903-device-ws-switch live）。
+
+## 引擎部署副本补丁（engine-patch · 260907-g-relay-fix）
+
+方向 B 的 display fence 剥离以「引擎为主剥离、front 为校验/relay 权威」分工落地（TaskPackage `260907-g-relay-fix`，human 批准首例部署副本代码补丁，pod-events decision `engine-patch-approval` 事件 `37469170`）。补丁形态：官方镜像不动，`server/deploy/engine-patch/` 下两个部署副本文件经 `docker-compose.yml` bind-mount 原位覆盖镜像内 `core/`：
+
+| 仓库文件（宿主） | 容器内落点 | 内容 |
+|---|---|---|
+| `server/deploy/engine-patch/connection.py` | `/opt/xiaozhi-esp32-server/core/connection.py` | 0.9.6 部署副本改：LLM 流式累积段（`tts_text_queue` 入队前）接 fence 状态机；对话历史 `dialogue.put` 收剥离前原文；连接建立时打补丁标记行 |
+| `server/deploy/engine-patch/kidpal_display_strip.py` | `/opt/xiaozhi-esp32-server/core/kidpal_display_strip.py` | 纯 Python fence 状态机（流式 `feed()`/`finish()`），剥离出的 display 原始载荷经 `kidpal_display_blocks` 侧通道哑管道透传 front |
+
+front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 → `display_schema` 机械校验（脏块降级友好提示，不静默）→ 逐块以 `{"type":"mcp","payload":<kidpal/display tools/call>}` mcp 帧下发设备。
+
+### 核验方式（每次部署/重启后应做）
+
+1. **启动标记行**：`docker logs xiaozhi-esp32-server 2>&1 | grep "kidpal display-strip patch active"`——补丁后的 `connection.py` 在**每次设备建连**时打一行该标记；有标记 = bind-mount 的补丁副本在容器内真实运行（排除陈旧容器假绿）。标记行缺失即补丁未生效（见漂移告警）。
+2. **bind-mount 在位**：`docker inspect xiaozhi-esp32-server --format '{{json .Mounts}}'` 应含上表两个宿主→`core/` 映射。
+
+### 漂移告警语义
+
+- **标记行缺失 = 补丁丢失或未装载**：镜像更新/重建后若 compose 卷映射被改动或部署副本文件不在位，容器会静默回退到镜像原生 `connection.py`（fence 重新混入播报文本、display relay 断链）——唯一的机械报警锚就是标记行不再出现，等价于 live 缺陷回归，应立即对照本节排查。
+- **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
+- 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
 ## 关键环境变量
 

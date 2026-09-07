@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260907-g-relay-fix",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "a7b1cb5f-b6c7-4424-9fc8-4576e0855f83",
+  "startedAt": "2026-09-07T04:32:54.648Z",
+  "completedAt": "2026-09-07T04:32:55.634Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 205,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-gateway-directionB\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260907-g-relay-fix\"\n}\n",
+      "stderr": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 190,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"skip\": false,\n  \"degraded\": true,\n  \"reason\": \"idf.py 不可用：固件编译未在本机核验（降级放行，非假绿）\"\n}\n",
+      "stderr": "",
+      "summary": "firmware-build passed"
+    },
+    {
+      "id": "contract-lint",
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 142,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"contract-lint\",\n  \"contract\": \"docs/contracts/interface-contract.md\"\n}\n",
+      "stderr": "",
+      "summary": "contract-lint passed"
+    },
+    {
+      "id": "acceptance-coverage",
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 139,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"acceptance-coverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-gateway-directionB\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"acceptance\": [\n    \"GRF-A1\",\n    \"GRF-A2\",\n    \"GRF-A3\",\n    \"GRF-A4\",\n    \"GRF-A5\"\n  ],\n  \"structural\": [\n    \"GRF-A1\"\n  ],\n  \"suiteGates\": [],\n  \"files\": [\n    \"server/acceptance/test_g_relay_fix.acceptance.py\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "acceptance-coverage passed"
+    },
+    {
+      "id": "mutation-check",
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 143,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"Mutation evidence is missing or insensitive for some acceptance ids\",\n  \"missingSensitive\": [\n    \"GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）\"\n  ]\n}\n",
+      "stderr": "",
+      "summary": "mutation-check failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "ai-output",
+    "fingerprint": "fe72cf141926",
+    "failingStep": "mutation-check",
+    "message": "gate mutation-check failed (exit 1)",
+    "cmd": "node .claude/scripts/mutation-check.mjs",
+    "logFile": ".claude/verify-logs/1788755575622-mutation-check.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"mutation-check\",\n  \"message\": \"Mutation evidence is missing or insensitive for some acceptance ids\",\n  \"missingSensitive\": [\n    \"GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）\"\n  ]\n}\n"
+  }
+}

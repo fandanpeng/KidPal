@@ -1,173 +1,128 @@
 {
-  "changeId": "260829-voice-roundtrip",
-  "rigor": "full",
-  "sourceType": "planning-workstream",
+  "changeId": "260907-g-relay-fix",
+  "rigor": "lite",
+  "sourceType": "regression",
   "origin": {
-    "type": "planning-workstream",
-    "upstreamType": "planning-workstream",
-    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:88a5bdb83abdd867",
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "firmware+server",
-  "story": "方向 B 语音回环 + display 消费链路（v0.4 重写）：设备流式语音会话跑通（stt/tts 消息状态机 + 句级播放 + 文字同步上屏）+ display mcp 消费端（view 路由：text 全文上屏滚动 / home / control end_session·stop_speaking）+ display 格式遵循度复验（契约待确认点 1，统计性口径——方向 B 明示不复用 12/12 旧结论；G 只做机械校验、复验归本包）+ 网关兜底设备侧消费与验收（安抚句/错误兜底「网络出小差了」/格式不遵循降级显示；生成逻辑归 G）+ abort 消息 + OpenClaw 基础 system prompt（E1 遵循 + F4 三句纪律 + 儿童化）+ F4/S-F4.1 通用问答承载。",
-  "redBaselineCommand": "firmware host 单测（display mcp 消费/view 路由/text 滚动）+ server 侧链路测试 + live 遵循度复验（@pytest.mark.live 口径）",
-  "redBaselineResult": "红：固件无 mcp kidpal/display 消费面、无 text 全文滚动渲染；OpenClaw system prompt 未按方向 B 约定——验收测试文件尚不存在，收集即失败。本包把它做到绿。【冻结红基线实测 2026-09-07，acceptance-author，详见 red-baseline-summary.md】C 侧（host_app linux ELF 经 stub runner）：8 Tests 5 Failures exit=5——RED: A1（无路由模块/未接线/无会话调用点/无降级）、A3×2（frozen contract weak 哨兵：view 路由 + text 分页）、A5（兜底消费面缺）、A2/E2 live 冒烟证据齿（evidence-based）；GREEN 守卫: A2 状态机原生缝、A6 abort 原生缝、boundary。python 侧（pytest acceptance/ --import-mode=importlib）：5 failed 3 passed 3 skipped（live 由新增 conftest 机械 skip）——RED: a4 复验记录缺、a6 云端取消证据缺、a7/e4 system prompt 未落盘未接线；GREEN 守卫: a2 孪生、a3 信封、a5 fallback 对齐。勘误：原「无 abort 发送路径」不实——protocol.cc SendAbortSpeaking + 4 打断调用点原生在世，A6 真缺口 = 云端取消生成证据（python 齿）+ 9a 真机实测。live 显式试跑红在 system prompt 缺失（探针首断言）。",
+  "subsystem": "server",
+  "story": "G 包（260903-gateway-directionB）live relay 缺陷修复（回包）：front ws 代理路径接管 LLM 文本流——剥离 ```display fence（TTS/文字同步面不再混入）、剥离出的 display JSON 经 display_schema 机械校验后以 kidpal/display JSON-RPC tools/call 下发设备（回执 relay_ack 闭环），打通 display text 视图面与设备翻屏语义（用户「翻不回上一页」根因）。当前 front_app.py 仅在 /command、/dryrun 演示路径装配模块，真正 ws 代理路径零文本接管——缺陷本体。",
+  "redBaselineCommand": "cd server && python -m pytest acceptance/test_g_relay_fix.acceptance.py -q --import-mode=importlib（live 面按 @pytest.mark.live 不 auto-run，需真机冒烟；E1 断言内嵌独立 runner 复跑 G 包既有验收）",
+  "redBaselineResult": "RED（2026-09-07 acceptance-author 实测：结构面 9 failed / 1 passed / 3 live skipped，无 import/语法假红）：a1 红 = pump_* 在 front_app 源中 0 次出现（ws 代理路径零接线，缺陷本体）；a2×4 红 = strip_display_fences 不存在；a3×3 红 = build_display_tool_calls / pump_upstream_to_client 不存在；a4 红 = on_device_receipt 不存在；1 绿 = E1 回归守卫（应绿）。E1 基线：test_gateway_directionB.acceptance.py 结构面 20 passed / 10 live skipped 全绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
     ".planning/kidpal-mvp/"
   ],
-  "riskTier": "high",
+  "riskTier": "medium",
   "gateProfile": [
     "types",
-    "security",
-    "real-db",
-    "state-machine",
     "test-quality",
+    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "VRT-A1",
+      "id": "GRF-A1",
       "kind": "structural"
     },
-    "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
-    "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
-    "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
-    "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
-    "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
-    "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）"
+    "GRF-A2: fence 剥离——front 对引擎下行文本帧剥离 ```display fence 后再转发（设备收到的 TTS/文字同步文本零 fence 残留；剥离出的 display JSON 交后续处理）",
+    "GRF-A3: display 机械校验 + relay 下发——剥离出的 display JSON 经 display_schema 校验（view 白名单/data shape/大小上限，V27 语义），通过者构造 kidpal/display JSON-RPC tools/call 下发设备，不合规拒绝并降级友好提示（不静默）",
+    "GRF-A4: 回执闭环——设备渲染回执经 relay_ack 处理为送达确认（决策 23：渲染即确认出队语义由设备侧承载，front 只消费回执不重发语义不变）",
+    "GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/voice_roundtrip_b.acceptance.c",
-    "server/acceptance/test_voice_roundtrip_b.acceptance.py"
-  ],
-  "mutationEvidence": [
-    {
-      "acceptance": "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
-      "mutation": "证据齿三态探针：roundtrip-live-evidence.md 全局移除事实5标记词（文字同步/state-speaking/上屏）→ C 侧 VRT-A2/E2 evidence TEST_CASE 红（32T1F）；还原后回绿 32T0F。live 冒烟证据本体 = 真机两轮会话（fa104e0c 多轮回环 + 4aebae34 abort），planner 2026-09-07 采集",
-      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A2/E2 evidence TEST_CASE",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环（WSA-A4 先例口径）。还原 sha256 与基线一致（7eec7174）。诚实注记：单点移除事实5标题不红（齿为文件级标记搜索、他处仍有命中词），全量移除才红——齿的粒度为文件级五组标记，已如实记录"
-    },
-    {
-      "acceptance": "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
-      "mutation": "view_router.c text 路由错置为 VRT_ROUTE_HOME（MUTATION PROBE A3 标注）→ host_app ELF 重编译运行 VRT-A3（view 路由行为）+ VRT-A5（兜底共享 text 面）双红（32T2F）；还原重编译回绿 32T0F",
-      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A3 view 路由行为 TEST_CASE",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "weak-symbol frozen contract 强定义被变异 → 行为齿真执行真红。还原 sha256 一致（420267b6）。操作勘误留痕：首次误用 idf_run.py build（设备 target）跑出陈旧 ELF 假绿，改走 espidf_wsl.sh host_app 独立工程后变异正确转红——host 齿只认 host_app 通路"
-    },
-    {
-      "acceptance": "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
-      "mutation": "a4-adherence-samples.md 移除全部「- 处置:」行 → test_a4_adherence_recheck_evidence_record 红（1 failed）；还原回绿。live 统计本体 = 冻结 harness 对真 OpenClaw 8 样本（RUN_LIVE=1，OPENCLAW_TOKEN 经 ECS 配置取用不落 transcript）",
-      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a4_adherence_recheck_evidence_record",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "复验记录 8/8 PASS（首跑 0/8 全空回复 = loopback 401 探针通路问题非遵循度结论，样本作废重跑，planner 观察补记入样本文件）。还原 sha256 一致（744300b1）"
-    },
-    {
-      "acceptance": "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
-      "mutation": "view_router.c 白名单外 UNKNOWN 降级改直通 VRT_ROUTE_TEXT（MUTATION PROBE A5 标注）→ host_app ELF 重编译运行 VRT-A5（格式不遵循降级须独立 UNKNOWN 路由）+ VRT-A3（白名单外须降级）双红（32T2F）；还原重编译回绿 32T0F",
-      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A5 网关兜底设备侧消费 TEST_CASE",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "降级混流即红（V27 绝不盲渲染语义真执行）。还原 sha256 一致（420267b6）"
-    },
-    {
-      "acceptance": "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
-      "mutation": "application.cc 四处 AbortSpeaking( 调用点整行删除（计数 6→2）→ VRT-A6 红（32T1F「call sites < 3」）；git checkout 还原回绿 32T0F。云端取消半 = 真机 abort 实证（会话 4aebae34：设备 Abort speaking 与引擎收到abort消息同秒、该轮后续零 TTS 产出）",
-      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A6 abort 发送路径 TEST_CASE",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "诚实注记：注释式探针（4 处改注释）不红——计数齿为纯文本子串扫描、注释行仍含 AbortSpeaking( 且阈值 3 宽容单点缺失；升级为删除式变异才红。齿能红已证实，粒度局限如实记录。还原 sha256 一致（20b535b0）"
-    },
-    {
-      "acceptance": "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）",
-      "mutation": "openclaw-system-prompt.v1.md 删除全部含「三句」行 → test_a7_system_prompt_f4_discipline_offline 红（1 failed）；还原回绿。live 半 = 冻结 harness 直连 OpenClaw 探针（天为什么是蓝色的？）绿；fixer 注入引擎 live 配置后 所测=生产所用 成立",
-      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a7_system_prompt_f4_discipline_offline",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原 sha256 一致（e28f9eb7）。live 注入验证：引擎容器 data/.config.yaml prompt 键 = 版本化文件全文（87 行），重启后探针回复含 display fence + 3 句口语 + text view"
-    }
+    "server/acceptance/test_g_relay_fix.acceptance.py"
   ],
   "exitCriteria": [
-    {
-      "id": "VRT-E1",
-      "kind": "structural"
-    },
-    "VRT-E2: hybrid 测试——firmware 侧 host 单测（view 路由/滚动/状态机）+ server 侧链路测试 + live 遵循度复验（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）",
-    "VRT-E3: 本包是包 4/5/6/8 的公共消费底座（display view 路由 + 语音回环），mergeOrder 5",
-    "VRT-E4: OpenClaw 基础 system prompt 版本化落盘（E1 遵循 + F4 三句纪律 + 儿童化），供包 4（char 扩展）与包 7（提醒备注解析约定）增量扩展"
+    "GRF-E1: 既有验收不回归——server/acceptance/test_gateway_directionB.acceptance.py 结构面保持全绿（G 包行为不被本修复破坏）",
+    "GRF-E2: live 待真机冒烟核销（human 已在用设备，修复后一轮冒烟即证），live 证据落 changes/dev/260907-g-relay-fix/"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§4.0",
-    "docs/spec.md#§4.4",
-    "docs/spec.md#§6.1",
-    "docs/contracts/interface-contract.md#§一",
-    "docs/contracts/interface-contract.md#§四"
+    "changes/dev/260829-voice-roundtrip/review-packet.md",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§三"
   ],
   "sourceRefs": [
-    "docs/spec.md#§4.0",
-    "docs/spec.md#§4.4",
-    "docs/contracts/interface-contract.md#§四",
-    "2"
+    "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1",
+    "changes/dev/260829-voice-roundtrip/roundtrip-live-evidence.md",
+    "docs/contracts/interface-contract.md#§1.5",
+    "docs/contracts/interface-contract.md#§三"
   ],
-  "iterationBudget": 3,
-  "fixBudget": 5,
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "mergeOrder": 5,
-  "dependsOn": [
-    "260903-device-ws-switch",
-    "260829-host-test-infra"
-  ],
-  "testHost": "hybrid",
+  "mergeOrder": 15,
+  "dependsOn": [],
+  "testHost": "PC pytest + 真机 live 冒烟",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-v0.4-§2-包2",
-      "summary": "方向 B 重写：流式语音回环 + display mcp 消费端 + 遵循度复验 + 兜底消费 + abort + F4 承载；hybrid 测试。",
+      "decision": "contract-§1.5-网关职责收敛",
+      "summary": "display 切分与机械校验是网关（front）职责——live 中该职责未落到 ws 代理路径，本修复即履职。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+        "docs/contracts/interface-contract.md#§1.5"
       ],
-      "landsIn": "acceptance:VRT-A2"
+      "landsIn": "acceptance:GRF-A2"
     },
     {
-      "decision": "contract-§一-E1-mcp承载",
-      "summary": "display 指令经 mcp kidpal/display 下发（网关机械校验后），设备按 view 渲染；小智原生 alert/custom 弃用。",
+      "decision": "contract-V27-display机械校验",
+      "summary": "view 白名单 + data shape/大小上限 + 脏 JSON 拒绝降级，剥离后的 display JSON 必须过校验才下发。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§一"
+        "changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1"
       ],
-      "landsIn": "acceptance:VRT-A3"
+      "landsIn": "acceptance:GRF-A3"
     },
     {
-      "decision": "contract-待确认点1-方向B复验",
-      "summary": "格式遵循度方向 B 网关切分路径不复用 12/12 旧结论、须复验——归本包验收（统计性），失败包内 resolve 不 gate。",
+      "decision": "spec-决策23-mcp载体",
+      "summary": "display 统一走 mcp 工具调用（kidpal/display），设备 JSON-RPC 回执 = 送达确认；front 发起不改变该语义。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
+        "docs/contracts/interface-contract.md#§三"
       ],
-      "landsIn": "acceptance:VRT-A4"
-    },
-    {
-      "decision": "spec-§4.0-错误兜底行-消费侧",
-      "summary": "安抚句/「网络出小差了」/格式不遵循降级的设备侧消费与验收归本包；生成逻辑归 G（F2 归属裁定）。",
-      "sourceRefs": [
-        "docs/spec.md#§4.0"
-      ],
-      "landsIn": "acceptance:VRT-A5"
-    },
-    {
-      "decision": "spec-§4.4-S-F4.1",
-      "summary": "通用问答：意图分类含闲聊/百科、三句纪律生成端约束、全文上屏滚动（human 裁定否摘要）、超限按有处理的失败模式（V32）。",
-      "sourceRefs": [
-        "docs/spec.md#§4.4"
-      ],
-      "landsIn": "acceptance:VRT-A7"
+      "landsIn": "acceptance:GRF-A4"
     }
-  ]
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": [
+    {
+      "acceptance": "GRF-A2: fence 剥离——front 对引擎下行文本帧剥离 ```display fence 后再转发（设备收到的 TTS/文字同步文本零 fence 残留；剥离出的 display JSON 交后续处理）",
+      "mutation": "_DISPLAY_FENCE_RE 改为永不匹配正则（blocks 恒空、speech 保留原文 → fence 漏进播报面）",
+      "affectedTest": "test_a2_strip_display_fences_canonical_block / test_a2_strip_display_fences_multiple_and_inline_opener / test_a2_strip_display_fences_dirty_bodies_still_stripped / test_a3_pump_upstream_takes_over_text_stream（连带）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "transport-revision 版重跑（2026-09-07）：4 red 覆盖 strip 全语义 + pump 文本面连带；sha256 9ec1e3fb… 还原核验一致"
+    },
+    {
+      "acceptance": "GRF-A3: display 机械校验 + relay 下发——剥离出的 display JSON 经 display_schema 校验（view 白名单/data shape/大小上限，V27 语义），通过者构造 kidpal/display JSON-RPC tools/call 下发设备，不合规拒绝并降级友好提示（不静默）",
+      "mutation": "build_display_tool_calls 末尾改 return []（静默丢块）",
+      "affectedTest": "test_a3_display_tool_calls_envelope_for_valid_block / test_a3_display_tool_calls_downgrades_invalid_not_silent / test_a3_pump_side_channel_blocks_relayed / test_a3_pump_upstream_takes_over_text_stream",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "transport-revision 版重跑（2026-09-07）：4 red（信封数断言全灭含侧通道 pump，对静默丢块敏感性更高）；sha256 还原核验一致"
+    },
+    {
+      "acceptance": "GRF-A4: 回执闭环——设备渲染回执经 relay_ack 处理为送达确认（决策 23：渲染即确认出队语义由设备侧承载，front 只消费回执不重发语义不变）",
+      "mutation": "on_device_receipt 改恒返回 (False, None)",
+      "affectedTest": "test_a4_device_receipt_relay_ack_consumption",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "transport-revision 版重跑（2026-09-07）：1 red 且失败点精确命中新增 mcp 解包样本（payload 载 {\"jsonrpc\" 回执, 数字 id 172001}）；sha256 还原核验一致"
+    },
+    {
+      "acceptance": "GRF-A5: live 实证——真机一轮会话：设备串口/引擎日志证 fence 不再混入播报、kidpal/display tools/call 实际下发、display text 视图触发（@pytest.mark.live，不 auto-run）",
+      "mutation": "live 证据文件改名（changes/dev/260907-g-relay-fix/live-smoke-evidence.md → .bak，从 _require_evidence 发现集剔除）",
+      "affectedTest": "test_a5_live_engine_patch_marker_in_log / test_a5_live_fence_not_in_broadcast / test_a5_live_kidpal_display_tools_call_dispatched / test_a5_live_display_text_view_triggered",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "integrator 实测（2026-09-07，RUN_LIVE=1 -m live 口径）：4 passed → 证据改名后 4 failed（GRF-A5/E2 RED 断言）→ 改回复绿；evidence-based 条目的标准 mutation"
+    }
+  ],
+  "notes": "处置形态（G 回包 vs 独立包）待 portfolio 追认——human 2026-09-07 指令「归 260903-gateway-directionB 修复、形态留 portfolio 裁」，本包以新建 Lite 包承载并如实标注；mergeOrder 15 占位、portfolio 可重排。关键现状约束：live 引擎 Intent:nointent（OpenClaw 拒 tools 数组，WS 包 SHOULD #2）——relay 由 front 发起、不依赖 LLM tool calling；将来 OpenClaw tools 修复回开 Intent 后引擎侧可能自行 tool-call，front 侧 relay 需幂等/去重意识（实现注记，不阻塞本包）。设备侧 kidpal/display 工具注册已由包 2 live 实证可用。禁改 docs/contracts/** 与 *.acceptance.* 冻结件；live 面按 ARQ-260901-g3-server-live-acceptance 口径不 auto-run。"
 }

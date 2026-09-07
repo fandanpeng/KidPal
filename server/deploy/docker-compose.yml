@@ -42,6 +42,11 @@ services:
       - ./xiaozhi-docker-data:/opt/xiaozhi-esp32-server/data
       # model assets for local/cloud fallback (large, mounted read-mostly)
       - /opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server/models:/opt/xiaozhi-esp32-server/models
+      # engine-patch (方案 A, pod-events engine-patch-approval): overlay the fence-strip
+      # deploy copy over the image's core/ — kidpal_display_strip (pure state machine) and
+      # the patched connection.py bind-mounted in place of the stock originals.
+      - ./engine-patch/kidpal_display_strip.py:/opt/xiaozhi-esp32-server/core/kidpal_display_strip.py
+      - ./engine-patch/connection.py:/opt/xiaozhi-esp32-server/core/connection.py
     # logging drives the container health check used by the systemd unit
     healthcheck:
       test: ["CMD-SHELL", "ss -tln 2>/dev/null | grep -q 127.0.0.1:8010 || netstat -tln 2>/dev/null | grep -q 127.0.0.1:8010"]
