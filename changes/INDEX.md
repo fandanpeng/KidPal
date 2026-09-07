@@ -6,7 +6,7 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (8)
+## dev (9)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
@@ -18,6 +18,7 @@
 | [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-session-logic](../changes/dev/260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-voice-roundtrip](../changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
 ## arch (11)
 

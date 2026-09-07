@@ -17,8 +17,28 @@
 #include "settings.h"
 #include "lvgl_theme.h"
 #include "lvgl_display.h"
+#include "display/view_router.h"
 
 #define TAG "MCP"
+
+/* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
+ * 取不到/非字符串 -> 空串 (调用方按降级或空内容处理, 不崩)。 */
+static std::string mcp_json_get_string(const std::string& json, const char* key) {
+    if (json.empty()) {
+        return std::string();
+    }
+    cJSON *root = cJSON_Parse(json.c_str());
+    if (root == nullptr) {
+        return std::string();
+    }
+    std::string out;
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    if (cJSON_IsString(item)) {
+        out = item->valuestring;
+    }
+    cJSON_Delete(root);
+    return out;
+}
 
 McpServer::McpServer() {
 }
@@ -76,6 +96,78 @@ void McpServer::AddCommonTools() {
                 return true;
             });
     }
+
+    // kidpal/display (方向 B, 包 260829-voice-roundtrip): E1 display 消费端。
+    // 网关经 mcp JSON-RPC tools/call 下发 (契约 §四 mcp 工具调用 / §1.5-4)，载荷形状
+    // {"view":…,"data":{…}}。view 经共享底座 kidpal_display_route 路由到对应渲染面；
+    // 白名单外/NULL view -> UNKNOWN 独立降级路径，绝不盲渲染 (V27/§4.0)。工具回调返回
+    // cJSON 结果，McpTool::Call 序列化成 JSON-RPC result -> 送达确认 (对齐 relay_ack)。
+    AddTool("kidpal/display",
+        "Render an E1 display payload issued by the KidPal gateway on this board. "
+        "The payload carries a view (char/schedule/story_list/story_text/text/home/"
+        "control whitelist) and optional data; the board routes it to the matching "
+        "display face, applies control actions, and returns a delivery acknowledgement.",
+        PropertyList({
+            Property("view", kPropertyTypeString),
+            Property("data", kPropertyTypeString, std::string(""))
+        }),
+        [](const PropertyList& arguments) -> ReturnValue {
+            std::string view = arguments["view"].value<std::string>();
+            std::string data = arguments["data"].value<std::string>();
+            int route = kidpal_display_route(view.c_str());
+            auto& app = Application::GetInstance();
+
+            cJSON *ack = cJSON_CreateObject();
+            switch (route) {
+                case 0: /* VRT_ROUTE_TEXT —— 全文上屏 (滚动/翻屏由显示阅读面承载, 分页
+                         逻辑 kidpal_display_text_page_count; S-F4.1 否摘要) */
+                    cJSON_AddStringToObject(ack, "route", "text");
+                    {
+                        std::string text = mcp_json_get_string(data, "text");
+                        auto display = Board::GetInstance().GetDisplay();
+                        app.Schedule([display, text]() {
+                            display->SetChatMessage("assistant", text.c_str());
+                        });
+                    }
+                    break;
+                case 1: /* VRT_ROUTE_HOME —— 回 P1 首页常显 */
+                    cJSON_AddStringToObject(ack, "route", "home");
+                    {
+                        auto display = Board::GetInstance().GetDisplay();
+                        app.Schedule([display]() {
+                            display->SetChatMessage("system", "");
+                        });
+                    }
+                    break;
+                case 2: { /* VRT_ROUTE_CONTROL —— 契约 §1.4 动作执行 */
+                    cJSON_AddStringToObject(ack, "route", "control");
+                    std::string action = mcp_json_get_string(data, "action");
+                    int a = kidpal_display_control_action(action.c_str());
+                    cJSON_AddStringToObject(ack, "action", action.c_str());
+                    switch (a) {
+                        case 0: /* end_session —— 结束会话回首页 (本地停播主地位不变) */
+                            app.AbortSpeaking(kAbortReasonNone);
+                            break;
+                        case 1: /* stop_speaking —— 云端确认停播补充 */
+                            app.AbortSpeaking(kAbortReasonNone);
+                            break;
+                        case 2: /* start_recording —— 包 8 录音接合 (manual 聆听, stub) */
+                            app.StartListening();
+                            break;
+                        default: /* 未知 action -> 降级, 不执行 */
+                            cJSON_AddBoolToObject(ack, "degrade", true);
+                            break;
+                    }
+                    break;
+                }
+                default: /* VRT_ROUTE_UNKNOWN —— 白名单外 view 的独立降级路径 */
+                    cJSON_AddStringToObject(ack, "route", "unknown");
+                    cJSON_AddBoolToObject(ack, "degrade", true);
+                    cJSON_AddStringToObject(ack, "unknown_view", view.c_str());
+                    break;
+            }
+            return ack; /* cJSON* -> McpTool::Call 序列化为 result(送达确认) 回执 */
+        });
 
 #ifdef HAVE_LVGL
     auto display = board.GetDisplay();
@@ -535,6 +627,18 @@ void McpServer::DoToolCall(int id, const std::string& tool_name, const cJSON* to
                 } else if (argument.type() == kPropertyTypeString && cJSON_IsString(value)) {
                     argument.set_value<std::string>(value->valuestring);
                     found = true;
+                } else if (argument.type() == kPropertyTypeString &&
+                           (cJSON_IsObject(value) || cJSON_IsArray(value))) {
+                    /* E1 display 载荷的嵌套 data 是 JSON 对象 (如 {"view":"text","data":
+                     * {"text":"…"}})。对声明为 string 型的属性, 把对象/数组序列化后
+                     * 整体传入, 让 kidpal/display 消费端自行解析 (无对象的原生小智工具
+                     * 不受影响; 该分支仅对 string 型属性 + 对象/数组参数触发)。 */
+                    char *dumped = cJSON_PrintUnformatted(value);
+                    if (dumped != nullptr) {
+                        argument.set_value<std::string>(dumped);
+                        cJSON_free(dumped);
+                        found = true;
+                    }
                 }
             }
 

@@ -21,6 +21,10 @@ set(HOST_ACCEPTANCE_SRCS
     "../../device_ws_switch.acceptance.c"
     "seam_bounds.test.c"
     "../../ws_provision.test.cpp"
+    # 包 260829-voice-roundtrip (方向 B)：冻结验收 + 被测纯逻辑实现（view_router 强符号
+    # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../）。
+    "../../voice_roundtrip_b.acceptance.c"
+    "../../../display/view_router.c"
 )
 
 idf_component_register(

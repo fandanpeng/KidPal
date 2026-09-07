@@ -12,7 +12,7 @@
   "subsystem": "firmware+server",
   "story": "方向 B 语音回环 + display 消费链路（v0.4 重写）：设备流式语音会话跑通（stt/tts 消息状态机 + 句级播放 + 文字同步上屏）+ display mcp 消费端（view 路由：text 全文上屏滚动 / home / control end_session·stop_speaking）+ display 格式遵循度复验（契约待确认点 1，统计性口径——方向 B 明示不复用 12/12 旧结论；G 只做机械校验、复验归本包）+ 网关兜底设备侧消费与验收（安抚句/错误兜底「网络出小差了」/格式不遵循降级显示；生成逻辑归 G）+ abort 消息 + OpenClaw 基础 system prompt（E1 遵循 + F4 三句纪律 + 儿童化）+ F4/S-F4.1 通用问答承载。",
   "redBaselineCommand": "firmware host 单测（display mcp 消费/view 路由/text 滚动）+ server 侧链路测试 + live 遵循度复验（@pytest.mark.live 口径）",
-  "redBaselineResult": "红：固件无 mcp kidpal/display 消费面、无 text 全文滚动渲染、无 abort 发送路径；OpenClaw system prompt 未按方向 B 约定——验收测试文件尚不存在，收集即失败。本包把它做到绿。",
+  "redBaselineResult": "红：固件无 mcp kidpal/display 消费面、无 text 全文滚动渲染；OpenClaw system prompt 未按方向 B 约定——验收测试文件尚不存在，收集即失败。本包把它做到绿。【冻结红基线实测 2026-09-07，acceptance-author，详见 red-baseline-summary.md】C 侧（host_app linux ELF 经 stub runner）：8 Tests 5 Failures exit=5——RED: A1（无路由模块/未接线/无会话调用点/无降级）、A3×2（frozen contract weak 哨兵：view 路由 + text 分页）、A5（兜底消费面缺）、A2/E2 live 冒烟证据齿（evidence-based）；GREEN 守卫: A2 状态机原生缝、A6 abort 原生缝、boundary。python 侧（pytest acceptance/ --import-mode=importlib）：5 failed 3 passed 3 skipped（live 由新增 conftest 机械 skip）——RED: a4 复验记录缺、a6 云端取消证据缺、a7/e4 system prompt 未落盘未接线；GREEN 守卫: a2 孪生、a3 信封、a5 fallback 对齐。勘误：原「无 abort 发送路径」不实——protocol.cc SendAbortSpeaking + 4 打断调用点原生在世，A6 真缺口 = 云端取消生成证据（python 齿）+ 9a 真机实测。live 显式试跑红在 system prompt 缺失（探针首断言）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -41,7 +41,57 @@
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/voice_roundtrip_b.acceptance.c",
-    "server/tests/test_voice_roundtrip_b.acceptance.py"
+    "server/acceptance/test_voice_roundtrip_b.acceptance.py"
+  ],
+  "mutationEvidence": [
+    {
+      "acceptance": "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
+      "mutation": "证据齿三态探针：roundtrip-live-evidence.md 全局移除事实5标记词（文字同步/state-speaking/上屏）→ C 侧 VRT-A2/E2 evidence TEST_CASE 红（32T1F）；还原后回绿 32T0F。live 冒烟证据本体 = 真机两轮会话（fa104e0c 多轮回环 + 4aebae34 abort），planner 2026-09-07 采集",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A2/E2 evidence TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环（WSA-A4 先例口径）。还原 sha256 与基线一致（7eec7174）。诚实注记：单点移除事实5标题不红（齿为文件级标记搜索、他处仍有命中词），全量移除才红——齿的粒度为文件级五组标记，已如实记录"
+    },
+    {
+      "acceptance": "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
+      "mutation": "view_router.c text 路由错置为 VRT_ROUTE_HOME（MUTATION PROBE A3 标注）→ host_app ELF 重编译运行 VRT-A3（view 路由行为）+ VRT-A5（兜底共享 text 面）双红（32T2F）；还原重编译回绿 32T0F",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A3 view 路由行为 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "weak-symbol frozen contract 强定义被变异 → 行为齿真执行真红。还原 sha256 一致（420267b6）。操作勘误留痕：首次误用 idf_run.py build（设备 target）跑出陈旧 ELF 假绿，改走 espidf_wsl.sh host_app 独立工程后变异正确转红——host 齿只认 host_app 通路"
+    },
+    {
+      "acceptance": "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
+      "mutation": "a4-adherence-samples.md 移除全部「- 处置:」行 → test_a4_adherence_recheck_evidence_record 红（1 failed）；还原回绿。live 统计本体 = 冻结 harness 对真 OpenClaw 8 样本（RUN_LIVE=1，OPENCLAW_TOKEN 经 ECS 配置取用不落 transcript）",
+      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a4_adherence_recheck_evidence_record",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "复验记录 8/8 PASS（首跑 0/8 全空回复 = loopback 401 探针通路问题非遵循度结论，样本作废重跑，planner 观察补记入样本文件）。还原 sha256 一致（744300b1）"
+    },
+    {
+      "acceptance": "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
+      "mutation": "view_router.c 白名单外 UNKNOWN 降级改直通 VRT_ROUTE_TEXT（MUTATION PROBE A5 标注）→ host_app ELF 重编译运行 VRT-A5（格式不遵循降级须独立 UNKNOWN 路由）+ VRT-A3（白名单外须降级）双红（32T2F）；还原重编译回绿 32T0F",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A5 网关兜底设备侧消费 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "降级混流即红（V27 绝不盲渲染语义真执行）。还原 sha256 一致（420267b6）"
+    },
+    {
+      "acceptance": "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
+      "mutation": "application.cc 四处 AbortSpeaking( 调用点整行删除（计数 6→2）→ VRT-A6 红（32T1F「call sites < 3」）；git checkout 还原回绿 32T0F。云端取消半 = 真机 abort 实证（会话 4aebae34：设备 Abort speaking 与引擎收到abort消息同秒、该轮后续零 TTS 产出）",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A6 abort 发送路径 TEST_CASE",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "诚实注记：注释式探针（4 处改注释）不红——计数齿为纯文本子串扫描、注释行仍含 AbortSpeaking( 且阈值 3 宽容单点缺失；升级为删除式变异才红。齿能红已证实，粒度局限如实记录。还原 sha256 一致（20b535b0）"
+    },
+    {
+      "acceptance": "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）",
+      "mutation": "openclaw-system-prompt.v1.md 删除全部含「三句」行 → test_a7_system_prompt_f4_discipline_offline 红（1 failed）；还原回绿。live 半 = 冻结 harness 直连 OpenClaw 探针（天为什么是蓝色的？）绿；fixer 注入引擎 live 配置后 所测=生产所用 成立",
+      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a7_system_prompt_f4_discipline_offline",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原 sha256 一致（e28f9eb7）。live 注入验证：引擎容器 data/.config.yaml prompt 键 = 版本化文件全文（87 行），重启后探针回复含 display fence + 3 句口语 + text view"
+    }
   ],
   "exitCriteria": [
     {

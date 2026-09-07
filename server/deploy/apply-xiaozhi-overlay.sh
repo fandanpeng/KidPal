@@ -3,7 +3,7 @@
 #
 # Reads server/deploy/provider.config.yaml (frozen declarations) + server/deploy/secrets.env
 # (credentials, chmod 600) and emits the official xiaozhi-esp32-server overlay file
-# (/opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server/data/.config.yaml). The overlay
+# (/opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/.config.yaml). The overlay
 # mechanism is upstream's documented way to override config.yaml without editing the
 # repo file (secrets stay out of the clone; merges stay clean).
 #
@@ -19,8 +19,8 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-XSROOT="${XIAOZHI_ROOT:-/opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server}"
-DATA_DIR="$XSROOT/data"
+XSROOT="${XIAOZHI_ROOT:-/opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data}"
+DATA_DIR="$XSROOT"
 OVERLAY="$DATA_DIR/.config.yaml"
 
 # clip the device token from the secrets file if not in env.
@@ -83,3 +83,27 @@ ASR:
 EOF
 echo "rendered $OVERLAY"
 ls -la "$OVERLAY"
+
+# OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
+# 同一冻结版本化文件 = live 探针 (VRT-A4/A7) 的唯一 prompt 源, 保证「验收所测=生产所用」。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v1.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v1.md"
+if [ -f "$PROMPT_SRC" ]; then
+  cp "$PROMPT_SRC" "$PROMPT_DST"
+  echo "rendered openclaw-system-prompt -> $PROMPT_DST"
+  # 将全部 prompt 作为顶层 `prompt: |` literal block 注入 .config.yaml (替代 base config.yaml
+  # 第 203 行小智默认台湾腔人设)。prompt 是顶层键 (merge_configs deep-merge 覆盖、connection.py
+  # 以 config["prompt"] 取用)。markdown 含反引号, 不能放进上面未加引号的 <<EOF, 故在此追加。
+  # 注: 只在 .config.yaml 不存在 prompt 键时注入, 避免重复渲染叠加。
+  if ! grep -q '^prompt:' "$OVERLAY" 2>/dev/null; then
+    {
+      printf '\nprompt: |\n'
+      sed 's/^/  /' "$PROMPT_SRC"
+    } >> "$OVERLAY"
+    echo "rendered prompt: literal block -> $OVERLAY"
+  else
+    echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
+  fi
+else
+  echo "WARN: openclaw-system-prompt.v1.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+fi

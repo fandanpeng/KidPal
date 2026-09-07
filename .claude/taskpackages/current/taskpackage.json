@@ -1,5 +1,5 @@
 {
-  "changeId": "260903-device-ws-switch",
+  "changeId": "260829-voice-roundtrip",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -10,9 +10,9 @@
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "设备切 WS + 方向 B 冒烟（tracer-bullet 设备片）：配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活 + 自签证书加载与 pinning（V10，CA 嵌入固件）+ WS 握手 Bearer + 方向 B 首链冒烟（KEY→流式 ASR→OpenClaw→流式 TTS 播放 + 文字上屏，证明「设备⇄网关⇄OpenClaw」方向 B 形态串通）+ HTTP 台阶退役（固件侧 ShimProtocol/mp3_decoder/PlayMp3 死代码消除、ECS shim 服务停 + 8080 安全组关闭、server/shim.py 归档记录）+ Pod S/TP-A 冻结验收 supersede 处置（acceptance-author 执行，断言语义零变更）。",
-  "redBaselineCommand": "firmware 编译 + 真机烧录冒烟（对偶 Pod S 纪律）；ECS 收尾断言见 WSA-A6",
-  "redBaselineResult": "红：固件仍指 HTTP shim（Pod S 形态），无自签证书加载路径、无 websocket NVS 直写入口——方向 B 首链不存在。本包把它切到绿。",
+  "story": "方向 B 语音回环 + display 消费链路（v0.4 重写）：设备流式语音会话跑通（stt/tts 消息状态机 + 句级播放 + 文字同步上屏）+ display mcp 消费端（view 路由：text 全文上屏滚动 / home / control end_session·stop_speaking）+ display 格式遵循度复验（契约待确认点 1，统计性口径——方向 B 明示不复用 12/12 旧结论；G 只做机械校验、复验归本包）+ 网关兜底设备侧消费与验收（安抚句/错误兜底「网络出小差了」/格式不遵循降级显示；生成逻辑归 G）+ abort 消息 + OpenClaw 基础 system prompt（E1 遵循 + F4 三句纪律 + 儿童化）+ F4/S-F4.1 通用问答承载。",
+  "redBaselineCommand": "firmware host 单测（display mcp 消费/view 路由/text 滚动）+ server 侧链路测试 + live 遵循度复验（@pytest.mark.live 口径）",
+  "redBaselineResult": "红：固件无 mcp kidpal/display 消费面、无 text 全文滚动渲染；OpenClaw system prompt 未按方向 B 约定——验收测试文件尚不存在，收集即失败。本包把它做到绿。【冻结红基线实测 2026-09-07，acceptance-author，详见 red-baseline-summary.md】C 侧（host_app linux ELF 经 stub runner）：8 Tests 5 Failures exit=5——RED: A1（无路由模块/未接线/无会话调用点/无降级）、A3×2（frozen contract weak 哨兵：view 路由 + text 分页）、A5（兜底消费面缺）、A2/E2 live 冒烟证据齿（evidence-based）；GREEN 守卫: A2 状态机原生缝、A6 abort 原生缝、boundary。python 侧（pytest acceptance/ --import-mode=importlib）：5 failed 3 passed 3 skipped（live 由新增 conftest 机械 skip）——RED: a4 复验记录缺、a6 云端取消证据缺、a7/e4 system prompt 未落盘未接线；GREEN 守卫: a2 孪生、a3 信封、a5 fallback 对齐。勘误：原「无 abort 发送路径」不实——protocol.cc SendAbortSpeaking + 4 打断调用点原生在世，A6 真缺口 = 云端取消生成证据（python 齿）+ 9a 真机实测。live 显式试跑红在 system prompt 缺失（探针首断言）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -22,148 +22,152 @@
   "gateProfile": [
     "types",
     "security",
+    "real-db",
     "state-machine",
     "test-quality",
-    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "WSA-A1",
+      "id": "VRT-A1",
       "kind": "structural"
     },
-    "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
-    "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
-    "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
-    "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
-    "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
-    "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态"
+    "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
+    "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
+    "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
+    "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
+    "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
+    "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/device_ws_switch.acceptance.c"
+    "firmware/main/test/voice_roundtrip_b.acceptance.c",
+    "server/acceptance/test_voice_roundtrip_b.acceptance.py"
   ],
   "mutationEvidence": [
     {
-      "acceptance": "WSA-A2: 配网直写 NVS——websocket 命名空间（url/token/version）+ 短路激活（绕开小智默认激活门），设备指向自建网关",
-      "mutation": "ws_provision.cc 配网 CSPRNG 换 memset(0xAB) 常量并移除 esp_random 符号（writer 目录零取熵调用点）",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A2 TEST_CASE",
+      "acceptance": "VRT-A2: 流式语音回环——stt 识别文字上屏、tts start/sentence_start（带同步文字）/stop 播报状态机正确，句级播放与文字同步上屏（state-speaking）",
+      "mutation": "证据齿三态探针：roundtrip-live-evidence.md 全局移除事实5标记词（文字同步/state-speaking/上屏）→ C 侧 VRT-A2/E2 evidence TEST_CASE 红（32T1F）；还原后回绿 32T0F。live 冒烟证据本体 = 真机两轮会话（fa104e0c 多轮回环 + 4aebae34 abort），planner 2026-09-07 采集",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A2/E2 evidence TEST_CASE",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "单点即红（exit 3）。fixer probe 同轮暴露旧齿 dangling-include 假绿洞（裸 include 可撑绿）→ acceptance-author 收紧为调用点级断言 esp_fill_random(/esp_random( （修订记录在冻结文件头注）；新齿下本 mutation（调用点被移除）按 call-site 扫描语义构造性必红，假绿洞闭合。还原 sha256 与基线一致"
+      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环（WSA-A4 先例口径）。还原 sha256 与基线一致（7eec7174）。诚实注记：单点移除事实5标题不红（齿为文件级标记搜索、他处仍有命中词），全量移除才红——齿的粒度为文件级五组标记，已如实记录"
     },
     {
-      "acceptance": "WSA-A3: wss 证书加载与 pinning——自签 CA 嵌入固件、握手证书校验通过（V10：esp_ssl 证书加载路径 + pinning 断言）",
-      "mutation": "kidpal_ca.pem 改名移出树（.pem/.crt 扫描面清空）",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A3 TEST_CASE",
+      "acceptance": "VRT-A3: display mcp 消费端——kidpal/display 工具调用载荷按 view 路由：text 全文上屏滚动（超屏高滚动，BOOT 长按翻屏沿用 P3 阅读态习惯）/ home 回首页 / control end_session·stop_speaking 正确执行",
+      "mutation": "view_router.c text 路由错置为 VRT_ROUTE_HOME（MUTATION PROBE A3 标注）→ host_app ELF 重编译运行 VRT-A3（view 路由行为）+ VRT-A5（兜底共享 text 面）双红（32T2F）；还原重编译回绿 32T0F",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A3 view 路由行为 TEST_CASE",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "单点即红（CA 在树/缺牙即红，exit 3）；cacert 加载路径齿与 WS 建连接线齿正交未触。还原 sha256 一致"
+      "notes": "weak-symbol frozen contract 强定义被变异 → 行为齿真执行真红。还原 sha256 一致（420267b6）。操作勘误留痕：首次误用 idf_run.py build（设备 target）跑出陈旧 ELF 假绿，改走 espidf_wsl.sh host_app 独立工程后变异正确转红——host 齿只认 host_app 通路"
     },
     {
-      "acceptance": "WSA-A4: 方向 B 首链冒烟——真机一轮流式语音往返（上行 Opus→ASR→OpenClaw→流式 TTS 下行播放）+ stt 文字上屏；链路证据对偶 Pod S live 纪律",
-      "mutation": "三态取证：合成证据四件套（flash.log/provision.log/smoke-roundtrip.log/screen1.png，带 MUTATION PROBE 标记）就位 → GREEN；删 smoke-roundtrip.log 的 tts sentence_start 行 → RED；还原后清场 → 回基线红（flash.log 缺失）",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A4 TEST_CASE",
+      "acceptance": "VRT-A4: display 格式遵循度复验（契约待确认点 1）——方向 B 网关切分路径不复用 HTTP 期 12/12 旧结论，对真 OpenClaw 统计性复验（含失败样本处置记录）；遵循度缺陷 = 失败模式非仅记录（S-F4.1 验收对齐）",
+      "mutation": "a4-adherence-samples.md 移除全部「- 处置:」行 → test_a4_adherence_recheck_evidence_record 红（1 failed）；还原回绿。live 统计本体 = 冻结 harness 对真 OpenClaw 8 样本（RUN_LIVE=1，OPENCLAW_TOKEN 经 ECS 配置取用不落 transcript）",
+      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a4_adherence_recheck_evidence_record",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "缺失即红/满足断言形状即绿/破坏载体即红三态闭环，证据齿非空；合成件全带 probe 标记、清场后 sha256 全扫零残留"
+      "notes": "复验记录 8/8 PASS（首跑 0/8 全空回复 = loopback 401 探针通路问题非遵循度结论，样本作废重跑，planner 观察补记入样本文件）。还原 sha256 一致（744300b1）"
     },
     {
-      "acceptance": "WSA-A5: 固件侧 HTTP 台阶退役——ShimProtocol/mp3_decoder/PlayMp3 死代码消除、tenclass/xiaozhi.me 激活门字符串归零（沿用 Pod S 编译期旁路纪律），编译通过",
-      "mutation": "application.cc（激活面 5 文件之一）塞回一处 tenclass 字符串",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A5 TEST_CASE",
+      "acceptance": "VRT-A5: 网关兜底设备侧消费——4s 安抚句到达即播、错误兜底「网络出小差了，等一会儿再试试吧」+ text 视图当轮结束、格式不遵循降级友好提示；生成逻辑在 G（本包只验设备侧消费与显示）",
+      "mutation": "view_router.c 白名单外 UNKNOWN 降级改直通 VRT_ROUTE_TEXT（MUTATION PROBE A5 标注）→ host_app ELF 重编译运行 VRT-A5（格式不遵循降级须独立 UNKNOWN 路由）+ VRT-A3（白名单外须降级）双红（32T2F）；还原重编译回绿 32T0F",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A5 网关兜底设备侧消费 TEST_CASE",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "单点回填即红（exit 3）；ShimProtocol/mp3_decoder/USE_SHIM_PROTOCOL 等其余死代码齿独立未触。还原后 grep tenclass 计数 = 0，sha256 一致"
+      "notes": "降级混流即红（V27 绝不盲渲染语义真执行）。还原 sha256 一致（420267b6）"
     },
     {
-      "acceptance": "WSA-A6: 安全收尾——ECS shim 服务停 + 8080 安全组关闭断言（Pod S 暴露面回收）+ server/shim.py 归档记录",
-      "mutation": "三态取证：合成 ecs-teardown-evidence.md（带 MUTATION PROBE 标记）就位 → 齿1 过、红因推进到齿2；删证据内安全组标记 → RED（无 security-group closure 记录）；清场 → 回齿1 缺失红",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A6 TEST_CASE",
+      "acceptance": "VRT-A6: abort 消息——喊停/打断时设备发 abort、云端取消生成（本地 AEC+VAD 即时停播主地位不变，9a 实测）",
+      "mutation": "application.cc 四处 AbortSpeaking( 调用点整行删除（计数 6→2）→ VRT-A6 红（32T1F「call sites < 3」）；git checkout 还原回绿 32T0F。云端取消半 = 真机 abort 实证（会话 4aebae34：设备 Abort speaking 与引擎收到abort消息同秒、该轮后续零 TTS 产出）",
+      "affectedTest": "voice_roundtrip_b.acceptance.c VRT-A6 abort 发送路径 TEST_CASE",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "A6 三齿：齿1 证据齿敏感性已证；齿2（shim.py 墓碑）齿3（changes/ 归档记录）为未落地实现责任，已由 builder round2（墓碑）+ planner（changes/dev/260903-device-ws-switch/shim-archive-record.md）落地；齿3 扫描面 first-match 缺陷（adjudications.md 遮蔽 dev 记录件）由 acceptance-author 改 wsa_scan_tree_both 双针修复，双针命中且仅命中本包记录件（旁证实证）。终态齿1 = live 相位证据待落红"
+      "notes": "诚实注记：注释式探针（4 处改注释）不红——计数齿为纯文本子串扫描、注释行仍含 AbortSpeaking( 且阈值 3 宽容单点缺失；升级为删除式变异才红。齿能红已证实，粒度局限如实记录。还原 sha256 一致（20b535b0）"
     },
     {
-      "acceptance": "WSA-A7: Pod S（260829-smoke-e2e）与 TP-A（260831-cloud-link-bringup）冻结验收标 superseded——acceptance-author 执行，理由 = spec §3.0.0「迁移与既有资产」台阶退役条款，断言语义零变更、只改归属状态",
-      "mutation": "test_cloud_link.acceptance.py 头注 SUPERSEDED 标记改拼写变体 SUPERSEDE-X（10 字符 token 消失）",
-      "affectedTest": "device_ws_switch.acceptance.c WSA-A7 TEST_CASE",
+      "acceptance": "VRT-A7: F4/S-F4.1 通用问答——对话态问百科/闲聊，答案播报 + 全文上屏滚动看完；答案纪律（口语化、3 句以内、儿童化）由本包 owner 的 system prompt 钉死，超限按有处理的失败模式（网关截断/分屏，G 生成、本包验收）",
+      "mutation": "openclaw-system-prompt.v1.md 删除全部含「三句」行 → test_a7_system_prompt_f4_discipline_offline 红（1 failed）；还原回绿。live 半 = 冻结 harness 直连 OpenClaw 探针（天为什么是蓝色的？）绿；fixer 注入引擎 live 配置后 所测=生产所用 成立",
+      "affectedTest": "server/acceptance/test_voice_roundtrip_b.acceptance.py::test_a7_system_prompt_f4_discipline_offline",
       "turnedRed": true,
       "sensitive": true,
-      "notes": "标记消失即红（首试 SUPERSEDED_X 仍含子串未红，改为彻底消失才红——探针自身校验了齿精度）。probe 只动注记行、还原到 probe 前 working-tree 字节（sha256 一致，git diff 相对 HEAD 仅剩 acceptance-author 合法注记）"
+      "notes": "还原 sha256 一致（e28f9eb7）。live 注入验证：引擎容器 data/.config.yaml prompt 键 = 版本化文件全文（87 行），重启后探针回复含 display fence + 3 句口语 + text view"
     }
   ],
   "exitCriteria": [
     {
-      "id": "WSA-E1",
+      "id": "VRT-E1",
       "kind": "structural"
     },
-    "WSA-E2: 真机冒烟证据落盘（对偶 Pod S 收口纪律：烧录/配网/链路证据齐）",
-    "WSA-E3: 本包 mergeOrder 4；包 2（语音回环 + display 消费）依赖本包就绪"
+    "VRT-E2: hybrid 测试——firmware 侧 host 单测（view 路由/滚动/状态机）+ server 侧链路测试 + live 遵循度复验（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）",
+    "VRT-E3: 本包是包 4/5/6/8 的公共消费底座（display view 路由 + 语音回环），mergeOrder 5",
+    "VRT-E4: OpenClaw 基础 system prompt 版本化落盘（E1 遵循 + F4 三句纪律 + 儿童化），供包 4（char 扩展）与包 7（提醒备注解析约定）增量扩展"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§3.0.0",
-    "docs/spec.md#§6.3",
-    "docs/contracts/interface-contract.md#§四",
-    "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json"
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§4.4",
+    "docs/spec.md#§6.1",
+    "docs/contracts/interface-contract.md#§一",
+    "docs/contracts/interface-contract.md#§四"
   ],
-  "docsNoChangeReason": "docRefs 均为本包只读消费的上游权威（PROPOSAL v0.4 / spec §3.0.0+§6.3 / 契约 §四 / dev-loop-handoff V10），先于本包存在且冻结，其内容不含本包 acceptance id 属预期；V10→WSA-A3 等决策映射由 decisionCoverage.landsIn 字段承载、非 docRefs 内容职责。本包不改 spec/契约（PROPOSAL 非目标条款），canonical 文档同步由 integrator docs-delta 收口。",
   "sourceRefs": [
-    "docs/spec.md#§6.3",
+    "docs/spec.md#§4.0",
+    "docs/spec.md#§4.4",
     "docs/contracts/interface-contract.md#§四",
-    "WS"
+    "2"
   ],
-  "iterationBudget": 4,
-  "fixBudget": 6,
+  "iterationBudget": 3,
+  "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 4,
+  "mergeOrder": 5,
   "dependsOn": [
-    "260903-gateway-directionB"
+    "260903-device-ws-switch",
+    "260829-host-test-infra"
   ],
-  "testHost": "device + live",
+  "testHost": "hybrid",
   "decisionCoverage": [
     {
-      "decision": "handoff-V10-证书加载面",
-      "summary": "固件 SSL 层证书加载 + 自签 CA pinning（esp_ssl cacert_pem/cert_pem 加载路径）。",
+      "decision": "PROPOSAL-v0.4-§2-包2",
+      "summary": "方向 B 重写：流式语音回环 + display mcp 消费端 + 遵循度复验 + 兜底消费 + abort + F4 承载；hybrid 测试。",
       "sourceRefs": [
-        "changes/arch/260902-arch-review-kidpal-spec-v0.2/dev-loop-handoff.json#V10"
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:WSA-A3"
+      "landsIn": "acceptance:VRT-A2"
     },
     {
-      "decision": "spec-§6.3-配网直写NVS",
-      "summary": "设备服务器地址入口 = 配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活；自建 OTA 应答端点留二期。",
+      "decision": "contract-§一-E1-mcp承载",
+      "summary": "display 指令经 mcp kidpal/display 下发（网关机械校验后），设备按 view 渲染；小智原生 alert/custom 弃用。",
       "sourceRefs": [
-        "docs/spec.md#§6.3"
+        "docs/contracts/interface-contract.md#§一"
       ],
-      "landsIn": "acceptance:WSA-A2"
+      "landsIn": "acceptance:VRT-A3"
     },
     {
-      "decision": "spec-决策22-设备侧鉴权",
-      "summary": "WS 握手 Bearer 带设备弱 token；共享 token 配网时生成写入（≥128-bit 随机）。",
+      "decision": "contract-待确认点1-方向B复验",
+      "summary": "格式遵循度方向 B 网关切分路径不复用 12/12 旧结论、须复验——归本包验收（统计性），失败包内 resolve 不 gate。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策22"
+        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
       ],
-      "landsIn": "acceptance:WSA-A2"
+      "landsIn": "acceptance:VRT-A4"
     },
     {
-      "decision": "spec-§3.0.0-迁移与既有资产",
-      "summary": "Pod S 的同步 HTTP 链路为架构验证台阶，方向 B 落地后退役；其安全发现（401 门纪律、设备 token 纪律）沿用。",
+      "decision": "spec-§4.0-错误兜底行-消费侧",
+      "summary": "安抚句/「网络出小差了」/格式不遵循降级的设备侧消费与验收归本包；生成逻辑归 G（F2 归属裁定）。",
       "sourceRefs": [
-        "docs/spec.md#§3.0.0"
+        "docs/spec.md#§4.0"
       ],
-      "landsIn": "acceptance:WSA-A5"
+      "landsIn": "acceptance:VRT-A5"
     },
     {
-      "decision": "PROPOSAL-v0.4-OQ-R4",
-      "summary": "shim 退役相位 = WS 包内同批（8080 暴露面早关 + 冻结验收一次 supersede 清完）。",
+      "decision": "spec-§4.4-S-F4.1",
+      "summary": "通用问答：意图分类含闲聊/百科、三句纪律生成端约束、全文上屏滚动（human 裁定否摘要）、超限按有处理的失败模式（V32）。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§5"
+        "docs/spec.md#§4.4"
       ],
-      "landsIn": "acceptance:WSA-A6"
+      "landsIn": "acceptance:VRT-A7"
     }
   ]
 }

@@ -2,7 +2,7 @@
 #
 # This file is the machine-readable *declaration* of the three required provider
 # families, rendered onto the ECS xiaozhi-esp32-server config overlay
-# (data/.config.yaml under /opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server)
+# (data/.config.yaml under /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data)
 # at deploy time by server/deploy/apply-xiaozhi-overlay.sh. Credentials are injected
 # from server/deploy/secrets.env at render time — never hard-coded here.
 #
@@ -18,6 +18,17 @@ gateway:
   openclaw_loopback_lock: "127.0.0.1:18789"
   wss_cert: "/opt/kidpal/xiaozhi-esp32-server/cert/server.pem"
   wss_key: "/opt/kidpal/xiaozhi-esp32-server/cert/server.key"
+
+# OpenClaw brain system prompt (VRT-E4 / VRT-A7). 本文件是 OpenClaw 大脑的
+# system prompt 唯一生成来源，随 overlay 上 ECS 并作为 live 遵循度/问答探针
+# (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
+# apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2 切换即换。
+system_prompt:
+  artifact: "openclaw-system-prompt.v1.md"   # 冻结版本化文件 (see docs dir 注释)
+  source: "../deploy/openclaw-system-prompt.v1.md"
+  deploy_target: "openclaw-system-prompt.v1.md"   # ECS data/ 下的渲染目标名
+  # 结构: 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6) + F4 三句纪律
+  # (三句以内/口语化/儿童化 8-12 岁) + 7 view 白名单 + 增量扩展区 (包 4 char / 包 7 提醒).
 
 providers:
   llm:
