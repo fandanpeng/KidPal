@@ -78,7 +78,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：planner.md:96 条款已经这么承诺，本 T 只补缺失实现；机械链向严（核验失败不放行、无 ref 不豁免），不引入新自由度。
 
-**目标文件：`.claude/scripts/merge-driver.mjs`**（改）
+目标文件：`.claude/scripts/merge-driver.mjs`（改）
 
 ### T2 · merge-driver Step 0 治理面自动收口（白名单 auto-commit）
 
@@ -86,7 +86,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：P2 根因 = 流程产出的收尾制品无人 commit。让 driver 收口比让 planner 记得（runbook 条款）更机械——照文档顺序走的 Pod 从「必踩」变「无感」。白名单收窄到本 Pod 治理面，防止误吞他源变更。
 
-**目标文件：`.claude/scripts/merge-driver.mjs`**（改）
+目标文件：`.claude/scripts/merge-driver.mjs`（改）
 
 ### T3 · 投影冲突 --theirs 特判
 
@@ -94,7 +94,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：P3 根因 = 结构性必现 + 解法恒定。语义上「被合并包赢」无分叉，机械特判安全；不 untrack current/（OQ3 备选案，动 verify-gates 读取面、riskTier 升，不取）。
 
-**目标文件：`.claude/scripts/merge-driver.mjs`**（改）
+目标文件：`.claude/scripts/merge-driver.mjs`（改）
 
 ### T4 · progress.md 标 merge=union
 
@@ -102,7 +102,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：P4 根因纯机械。union 驱动对「双方同区段改动」会交错保留双方行——progress.md 的 append-only 纪律（AGENTS.md Hard Rules「历史记录类文件一律 append」）保证输入形状安全；若未来出现同区段非 append 改写，责任在违反纪律的写入方，union 是该纪律下的正确默认。
 
-**目标文件：`.gitattributes`**（改）
+目标文件：`.gitattributes`（改）
 
 ### T5 · pod-coordination.md 补 merge 冲突消解 runbook + post-merge 簿记口径
 
@@ -110,7 +110,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：摩擦的处置手段目前全靠会话记忆；runbook 把「流程外知识」变「文档内知识」。G2 面纯文档，无行为变更。
 
-**目标文件：`.claude/references/pod-coordination.md`**（改）
+目标文件：`.claude/references/pod-coordination.md`（改）
 
 ### T6 · merge-driver 合并完成即落 main 簿记（merged 事件行进 main，分支可删）
 
@@ -118,7 +118,7 @@ node .claude/scripts/merge-driver.mjs --pod 260829-schedule-p2 --human-approval-
 
 为什么：merged 事件是跨 Pod 审计锚点，feature 分支可能删除、main 必须自持（human 复议裁定，2026-09-07）；driver 本就在持有 main 的 worktree 执行合并（mergeCwd = findMainHolderWorktree，Step 5 既有实现），顺势落簿记零额外前提——原 OQ2(b)「时序耦合差」异议只对 planner 手动补做成立，对 driver 机械做不成立。home-p1 `46d99b5` / schedule-p2 `7717eea` 的 pod-events 部分由此机械化，不再依赖会话记得。
 
-**目标文件：`.claude/scripts/merge-driver.mjs`**（改）
+目标文件：`.claude/scripts/merge-driver.mjs`（改）
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 

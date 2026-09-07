@@ -3,6 +3,15 @@
 > **性质**：Track B 常驻轻路径治理批（G2+G3）· packet-bound landing
 > **packet**：FROZEN PROPOSAL（[PROPOSAL.md](PROPOSAL.md)，R2=GREEN）+ landing-manifest 三路径 + 本 summary
 > **分支**：`dev/260907-gov-review-merge-friction`（自 main 切出）
+> **packet-binding**：packet-id = 本 PROPOSAL §2 改法集（T1–T6）+ §5 验证集；被批 review id = 260907-gov-review-merge-friction（R2=GREEN，凭据见 PROPOSAL Status 行）
+
+```landing-manifest
+.claude/scripts/merge-driver.mjs
+.gitattributes
+.claude/references/pod-coordination.md
+```
+
+---
 
 ## 落地清单（≡ PROPOSAL §2 改法集 T1–T6）
 

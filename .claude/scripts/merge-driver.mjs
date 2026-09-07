@@ -854,6 +854,7 @@ function tryResolveProjectionConflicts(wt, changeId) {
       execFileSync('git', ['add', '--', f], { cwd: wt, stdio: ['ignore', 'pipe', 'pipe'] });
     }
     warn(`${changeId}: 投影冲突特判 --theirs（被合并包赢，round ${round}）: ${conflicts.join(', ')}`);
+    lastProjectionResolution = `投影冲突 --theirs ×${conflicts.length}（round ${round}）`;
     try {
       execSync('git rebase --continue', {
         cwd: wt,
@@ -869,6 +870,9 @@ function tryResolveProjectionConflicts(wt, changeId) {
   warn(`${changeId}: 投影冲突循环消解超出轮次上限（${PROJECTION_CONFLICT_MAX_ROUNDS}），按不可解处理`);
   return false;
 }
+
+// 投影冲突消解留痕（T6 payload 冲突消解摘要成分，本批 D2）：tryResolveProjectionConflicts 写、step5bBookkeeping 读。
+let lastProjectionResolution = null;
 
 // ---- Step 5b 具名实现（T6，260907-gov-review-merge-friction · OQ2 终裁 (c)）----
 // merged 事件行落 main 簿记：merge 已成事实 → 簿记失败一律 advisory warn，绝不 errorExit / 未捕获抛出
@@ -891,7 +895,7 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
       actor: 'merge-driver',
       source: 'merge-driver',
       payload: {
-        summary: `merge-driver Step 5b 簿记：main tip ${mergeSha.slice(0, 12)}（${mode || (SINGLE_POD ? 'single' : 'board')} 模式）${HUMAN_APPROVAL_REF ? `；human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}`,
+        summary: `merge-driver Step 5b 簿记：main tip ${mergeSha.slice(0, 12)}（${mode || (SINGLE_POD ? 'single' : 'board')} 模式）${HUMAN_APPROVAL_REF ? `；human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}${lastProjectionResolution ? `；${lastProjectionResolution}` : ''}`,
       },
     };
     appendFileSync(evAbs, `${JSON.stringify(event)}\n`, 'utf8');
