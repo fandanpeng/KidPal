@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "ec4851bd32bb9b20a248b977ed93efd836b1303f",
-    "indexed_at": "2026-09-07T15:15:23Z",
-    "project": "C-AI-KidPal-pod-char-stroke",
-    "nodes": 17279,
-    "edges": 41355,
-    "original_size": 42401792,
-    "compressed_size": 6978035,
+    "commit": "bc0951f636ac05aa4fd7ec343b546ff369a110fc",
+    "indexed_at": "2026-09-07T17:34:09Z",
+    "project": "C-AI-KidPal-pod-story-p3",
+    "nodes": 17858,
+    "edges": 42723,
+    "original_size": 42729472,
+    "compressed_size": 7273013,
     "compression_level": 3
 }

@@ -37,7 +37,8 @@
     "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/story_p3.acceptance.c"
+    "firmware/main/test/story_p3.acceptance.c",
+    "server/acceptance/test_story_p3.acceptance.py"
   ],
   "exitCriteria": [
     {
@@ -68,6 +69,18 @@
   "fixBudget": 5,
   "docsOwner": "integrator",
   "mergeOrder": 10,
+  "notes": {
+    "gateA_contractPrereview": "闸 A architect-reviewer 判 ④ NO_CONTRACT_CHANGE，六项全数无需改（start_recording §1.4:136 / story_list.total §一:95 CLOSED / story_text:98 / §四 manual 聆听:223 / stories*.md 非契约面 / V31 回退四条全落 spec+实现），零契约改动放行，不升级人。对齐 char-stroke 闸 A ④ 先例。两条诚实留记（不预改冻结契约）：① §四 listen start/stop 若 human 求枚举完备性属 ① 随 spec 文档补全、非阻塞；② 盖章 save-time 的 N 现可在契约内解（板子 P3 持 total→本地 total+1 出盖章→story_list 刷新对齐，S-F2.4 严格同步），仅当 builder 判 N 必须云端保存响应权威值才触发 story_text 增 total 的 ① 契约触点——builder 实现期观察。",
+    "blockingDecision_intentsPath": "① OpenClaw tools 拒收（ARQ-260907）判「不受阻」：本包『我要讲故事→start_recording』意图与『刚才那段是故事』挽回走『OpenClaw 出 ```display 块纯文本→front 截获校验→mcp 下发设备』通道（front_app.py SIDE_CHANNEL + build_display_tool_calls），不依赖 LLM tool-calling，已被 char-stroke/schedule-p2/g-relay-fix 三包 merged 实测跑通；且本包冻结面 testHost=host+PC、P3-E2 明示麦克风采音殿后 9b——live 端到端意图不在冻结验收内。不 fail-closed，已如实上报判读。",
+    "blockingDecision_memoryPressure": "③ char_cache 19MB 内存压力（char-stroke 遗留风险 §8.3）判「不受阻」：P3 网关累积仅持『近 N 句转写 + 进行中转写』KB 级文本缓冲，非常驻大数据集。**builder 硬约束**：累积缓冲有界（N 句/字节上限、仅活动会话生命周期内持有），勿在网关同一进程面再叠大常驻缓存。② 三句口语纪律 v2 已落定 no-trigger，本包不重开。",
+    "knownRedFloor": "main 的 host_app ELF 有 **2 个既有失败 = WSA-A4/A6**（flash.log / ecs-teardown-evidence.md 为本地-only gitignore 证据、main 本身即红，先例 home-p1 43T2F / schedule-p2 39T2F）。**判读口径（acceptance-author 实测更正）**：本包红基线与 mutation 失败计数须相对此 2 红地板；**ELF 必须从仓库根跑**——从 firmware/main/test/host_app/ 跑会得 3 红（第 3 红是既有 voice_roundtrip_b VRT-A2 证据齿对 cwd 敏感，非本包引入）。本包冻结文件扫描齿一律前缀 root、与 cwd 无关。接线前期望 60T2F；只加验收未加实现 68T9F（2 地板+7 本包）；全绿期望 68T2F。HOST_ACCEPTANCE_SRCS 增源须保 host_infra_smoke LAST（boundary 齿注册序守卫）。",
+    "preExistingMainDefect": "acceptance-author intake 期发现、planner 亲验：firmware/main/mcp_server.cc HEAD 语法不完整——case 4:(schedule, :212) 的 app.Schedule(lambda) 缺 `});`+break+}，case 3:(char)/default 整个嵌进 lambda 体（case 标签非 switch 内=设备 target 必编译红）。归因 f2a67dd（char-stroke 落地）复用后三行闭合、git diff f2a67dd HEAD 该文件空=落地即破随 merge 入 main；char-stroke 自记 firmware-build(降级) 设备构建门未拦、host runner 不编此文件故各包 host 验收未见。**归属裁定（planner ruling）= 本包 builder 界内最小修复**：P3-A1 冻结验收本就要求在同 switch 补 case 5/6（STORY_LIST/STORY_TEXT ack），破口上无法动刀，闭合该 lambda 属编辑区内必经 3 行修复（不越界不重构），builder 修后须真跑设备 idf.py build 证绿、不得降级静默跳过（本缺陷教训即降级门放红）。修复事实+设备构建门教训由 integrator docs-sync/ARQ 面另论，pod-events 留痕。",
+    "acceptanceFreeze": "acceptance-author 双件已冻结实测红（C 8 齿/PY 21 项含 1 live skip；C gcc 独立编 BUILD_EXIT=0、stub 7T6F、真实底座混链仍 6F 且 control(start_recording) 守卫真执行 PASS；PY 18F/2P/1skip 收集零错误）。红全落缺失行为非伪红。builder 须兑现的冻结契约清单见 red-baseline 摘要 §4 + 验收文件头 FROZEN OFFLINE CONTRACT 块（C 14 函数/类型/常量 + PY story.py 五入口 + prompt v3 + overlay PROMPT_SRC 与 provider artifact/source 两面同切 v3）。三处冻结相位决策 D1(列表光标回绕 vs 阅读末屏钳制) D2(录音不预推计数) D3(盖章 N 本地推→刷新以云端 total 权威覆盖；若改判 N 取云端保存响应权威值=触 story_text 增 total 的①契约触点、须停并回 planner 重走契约门)——builder 按冻结断言原样兑现，改语义须经 planner 重派。",
+    "scopePromptV3": "服务端交付大概率含 openclaw-system-prompt v3 增量（story producer 扩展：『我要讲故事』→control/start_recording 意图 + 停录归档起标题 + V31 回退判断），版本化落盘 .v3、overlay 渲染切换、历史可 diff，遵『验收所测=生产所用』复验纪律。这是 deploy 面制品、不触 docs/contracts/**（§1.4 已冻结 start_recording action、v2 prompt:42 枚举已含）。",
+    "intakeC5_scopeMap": "已核 .claude/scope-map.json：builder/fixer allow firmware/**+server/**+tools/**+planning（deny *.acceptance.c + **/acceptance/** + 契约/vendor）；acceptance-author allow firmware/**/*.acceptance.c + server/**/acceptance/**；host runner CMakeLists（firmware/main/test/host_app/main/CMakeLists.txt）非 acceptance 面、builder 可写登记 HOST_ACCEPTANCE_SRCS。目标面全覆盖、无需新增 scope-map 登记。",
+    "architectReviewerVerdict": "NO_CONTRACT_CHANGE",
+    "architectReviewerEventRef": "见 pod-events dispatch-completed(actor=architect-reviewer)"
+  },
   "dependsOn": [
     "260829-host-test-infra",
     "260829-voice-roundtrip"

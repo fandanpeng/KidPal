@@ -1,5 +1,5 @@
 {
-  "changeId": "260829-schedule-p2",
+  "changeId": "260829-story-p3",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -10,9 +10,9 @@
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "课表页：今天/明天渲染 + 语音问课表滚动定位 + 家长录入→可消费链路（契约 B1 课表 MD），让孩子翻到课表页就知道书包该背什么。（v0.4 小调：录入通道 = QQ 主〔OpenClaw 自改写即时触发三档重算 + P1 即时推，V22〕+ 直改 MD 副〔无即时推〕；「接下来」OpenClaw 侧分组计算 = 决策 26 producer；B1 表体零变更、remind_before_min 已标废止不消费。）",
-  "redBaselineCommand": "跑 firmware host 课表筛选/渲染单测（依赖包 0）+ server 侧课表 MD 解析/下发 pytest（依赖包 1）",
-  "redBaselineResult": "已冻结实测红（2026-09-07 acceptance-author 两侧实跑）：C 侧 6 Tests 5 Failures exit=5（weak 哨兵红在行为缺失：解析/两态/手势/定位契约未实现 + P2-A1 装配齿全缺；P2-A3 render 齿为 lvgl 接线相位性缺席，builder 接线进 host runner 时兑现）；python 侧 10 failed, 2 passed, 1 skipped（schedule.py 模块缺失，B1 解析/筛选/分组/录入消费/remind_before_min 不变式全无承载；2 绿 = 设计态守卫，1 skip = live 机械闸）。红全落缺失行为，无伪红。本包把它做到绿。",
+  "story": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），让孩子把想到的故事留下来、还能重温。（v0.4 服务端扩：录制 = manual 聆听模式 + E1 control start_recording + 网关累积〔不按句送对话，停录整段转写归档〕+ 显式回退路径〔录音中 KEY 长按取消/「讲错啦」回闲聊、停录 10 秒内「重录」、漏判「刚才那段是故事」挽回，V31〕。）",
+  "redBaselineCommand": "跑 firmware host 故事列表/阅读渲染单测（依赖包 0）+ server 侧故事归档/列表下发 pytest（依赖包 1）",
+  "redBaselineResult": "红：故事列表渲染、录制上传归档、回看/回听、成就盖章均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -27,47 +27,60 @@
   ],
   "acceptance": [
     {
-      "id": "P2-A1",
+      "id": "P3-A1",
       "kind": "structural"
     },
-    "P2-A2: 解析契约 B1 课表 MD（每周固定 + 一次性安排），按『今天星期几/当前时间』正确筛选",
-    "P2-A3: P2 课表页渲染 今天/明天 列表：每行 = 圆点 + 时间 + 课程名 + 地点，圆点两态（空心=已上完/明天、实心=待上）",
-    "P2-A4: BOOT 长按切 今天⇄明天，标题弹跳切换、切明天时圆点全变空心",
-    "P2-A5: 语音问课表（如『今天下午有什么课』）→ 播报答复 + display 指令切 P2 并滚动定位到相关课程行（可加星标呼应，不新增反白高亮态）",
-    "P2-A6: 家长录入链路：经约定通道录入『每周三 16:30 英语培训』→ 写入 schedule.md → 能被查询/渲染正确消费"
+    "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
+    "P3-A3: KEY 短按光标下移选择、KEY 双击进入阅读态",
+    "P3-A4: 录制上传归档：说『我要讲故事』进录音态（REC 闪点+大时长+声波），按 KEY 停止上传云端 ASR 转写归档 stories/*.md",
+    "P3-A5: 回看/回听：阅读态渲染标题+正文滚动（story_text），BOOT 长按翻下一屏、KEY 朗读正文（TTS）",
+    "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/schedule_p2.acceptance.c",
-    "server/acceptance/test_schedule_p2.acceptance.py"
+    "firmware/main/test/story_p3.acceptance.c",
+    "server/acceptance/test_story_p3.acceptance.py"
   ],
   "exitCriteria": [
     {
-      "id": "P2-E1",
+      "id": "P3-E1",
       "kind": "structural"
     },
-    "P2-E2: host 测筛选逻辑 + PC 云端测解析/下发，两面证据齐；真实屏幕观感殿后 9b",
-    "P2-E3: 不做「当前课反白高亮」（2026-08-29 human 裁定，主场景在家、价值低）；课表页只承担「看安排」",
-    "P2-E4: 课表提醒触发逻辑不在本包（归包 7）；本包只到「录入→可消费 + 渲染 + 语音问」"
+    "P3-E2: host 测列表/阅读/盖章渲染 + PC 云端测归档/列表下发，两面证据齐；麦克风采音为硬件强绑定子能力，真实采音显式殿后包 9b（PROPOSAL §3 留根）",
+    "P3-E3: S-F2.5 云端润色为可选项、MVP 后置，不进本包必做验收（PROPOSAL §7 留根）",
+    "P3-E4: 不做阅读态「生字反白高亮」（2026-08-29 human 裁定，需 story_text 增生字标注字段、价值不抵复杂度）；阅读态问生字走语音跳 P4"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§4.1",
+    "docs/spec.md#§4.2",
     "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
-    "S-F1.2",
-    "S-F1.3",
-    "S-F1.5",
-    "docs/contracts/interface-contract.md#§二",
-    "6"
+    "S-F2.1",
+    "S-F2.2",
+    "S-F2.3",
+    "S-F2.4",
+    "docs/contracts/interface-contract.md#§一",
+    "8"
   ],
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 9,
+  "mergeOrder": 10,
+  "notes": {
+    "gateA_contractPrereview": "闸 A architect-reviewer 判 ④ NO_CONTRACT_CHANGE，六项全数无需改（start_recording §1.4:136 / story_list.total §一:95 CLOSED / story_text:98 / §四 manual 聆听:223 / stories*.md 非契约面 / V31 回退四条全落 spec+实现），零契约改动放行，不升级人。对齐 char-stroke 闸 A ④ 先例。两条诚实留记（不预改冻结契约）：① §四 listen start/stop 若 human 求枚举完备性属 ① 随 spec 文档补全、非阻塞；② 盖章 save-time 的 N 现可在契约内解（板子 P3 持 total→本地 total+1 出盖章→story_list 刷新对齐，S-F2.4 严格同步），仅当 builder 判 N 必须云端保存响应权威值才触发 story_text 增 total 的 ① 契约触点——builder 实现期观察。",
+    "blockingDecision_intentsPath": "① OpenClaw tools 拒收（ARQ-260907）判「不受阻」：本包『我要讲故事→start_recording』意图与『刚才那段是故事』挽回走『OpenClaw 出 ```display 块纯文本→front 截获校验→mcp 下发设备』通道（front_app.py SIDE_CHANNEL + build_display_tool_calls），不依赖 LLM tool-calling，已被 char-stroke/schedule-p2/g-relay-fix 三包 merged 实测跑通；且本包冻结面 testHost=host+PC、P3-E2 明示麦克风采音殿后 9b——live 端到端意图不在冻结验收内。不 fail-closed，已如实上报判读。",
+    "blockingDecision_memoryPressure": "③ char_cache 19MB 内存压力（char-stroke 遗留风险 §8.3）判「不受阻」：P3 网关累积仅持『近 N 句转写 + 进行中转写』KB 级文本缓冲，非常驻大数据集。**builder 硬约束**：累积缓冲有界（N 句/字节上限、仅活动会话生命周期内持有），勿在网关同一进程面再叠大常驻缓存。② 三句口语纪律 v2 已落定 no-trigger，本包不重开。",
+    "knownRedFloor": "main 的 host_app ELF 有 **2 个既有失败 = WSA-A4/A6**（flash.log / ecs-teardown-evidence.md 为本地-only gitignore 证据、main 本身即红，先例 home-p1 43T2F / schedule-p2 39T2F）。**判读口径（acceptance-author 实测更正）**：本包红基线与 mutation 失败计数须相对此 2 红地板；**ELF 必须从仓库根跑**——从 firmware/main/test/host_app/ 跑会得 3 红（第 3 红是既有 voice_roundtrip_b VRT-A2 证据齿对 cwd 敏感，非本包引入）。本包冻结文件扫描齿一律前缀 root、与 cwd 无关。接线前期望 60T2F；只加验收未加实现 68T9F（2 地板+7 本包）；全绿期望 68T2F。HOST_ACCEPTANCE_SRCS 增源须保 host_infra_smoke LAST（boundary 齿注册序守卫）。",
+    "preExistingMainDefect": "acceptance-author intake 期发现、planner 亲验：firmware/main/mcp_server.cc HEAD 语法不完整——case 4:(schedule, :212) 的 app.Schedule(lambda) 缺 `});`+break+}，case 3:(char)/default 整个嵌进 lambda 体（case 标签非 switch 内=设备 target 必编译红）。归因 f2a67dd（char-stroke 落地）复用后三行闭合、git diff f2a67dd HEAD 该文件空=落地即破随 merge 入 main；char-stroke 自记 firmware-build(降级) 设备构建门未拦、host runner 不编此文件故各包 host 验收未见。**归属裁定（planner ruling）= 本包 builder 界内最小修复**：P3-A1 冻结验收本就要求在同 switch 补 case 5/6（STORY_LIST/STORY_TEXT ack），破口上无法动刀，闭合该 lambda 属编辑区内必经 3 行修复（不越界不重构），builder 修后须真跑设备 idf.py build 证绿、不得降级静默跳过（本缺陷教训即降级门放红）。修复事实+设备构建门教训由 integrator docs-sync/ARQ 面另论，pod-events 留痕。",
+    "acceptanceFreeze": "acceptance-author 双件已冻结实测红（C 8 齿/PY 21 项含 1 live skip；C gcc 独立编 BUILD_EXIT=0、stub 7T6F、真实底座混链仍 6F 且 control(start_recording) 守卫真执行 PASS；PY 18F/2P/1skip 收集零错误）。红全落缺失行为非伪红。builder 须兑现的冻结契约清单见 red-baseline 摘要 §4 + 验收文件头 FROZEN OFFLINE CONTRACT 块（C 14 函数/类型/常量 + PY story.py 五入口 + prompt v3 + overlay PROMPT_SRC 与 provider artifact/source 两面同切 v3）。三处冻结相位决策 D1(列表光标回绕 vs 阅读末屏钳制) D2(录音不预推计数) D3(盖章 N 本地推→刷新以云端 total 权威覆盖；若改判 N 取云端保存响应权威值=触 story_text 增 total 的①契约触点、须停并回 planner 重走契约门)——builder 按冻结断言原样兑现，改语义须经 planner 重派。",
+    "scopePromptV3": "服务端交付大概率含 openclaw-system-prompt v3 增量（story producer 扩展：『我要讲故事』→control/start_recording 意图 + 停录归档起标题 + V31 回退判断），版本化落盘 .v3、overlay 渲染切换、历史可 diff，遵『验收所测=生产所用』复验纪律。这是 deploy 面制品、不触 docs/contracts/**（§1.4 已冻结 start_recording action、v2 prompt:42 枚举已含）。",
+    "intakeC5_scopeMap": "已核 .claude/scope-map.json：builder/fixer allow firmware/**+server/**+tools/**+planning（deny *.acceptance.c + **/acceptance/** + 契约/vendor）；acceptance-author allow firmware/**/*.acceptance.c + server/**/acceptance/**；host runner CMakeLists（firmware/main/test/host_app/main/CMakeLists.txt）非 acceptance 面、builder 可写登记 HOST_ACCEPTANCE_SRCS。目标面全覆盖、无需新增 scope-map 登记。",
+    "architectReviewerVerdict": "NO_CONTRACT_CHANGE",
+    "architectReviewerEventRef": "见 pod-events dispatch-completed(actor=architect-reviewer)"
+  },
   "dependsOn": [
     "260829-host-test-infra",
     "260829-voice-roundtrip"
@@ -75,57 +88,36 @@
   "testHost": "host+PC云端",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包6",
-      "summary": "课表页：今天/明天渲染 + 语音问课表滚动定位 + 家长录入→可消费链路（B1），host 筛选逻辑 + PC 云端。",
+      "decision": "PROPOSAL-§2-包8",
+      "summary": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），host + PC 云端。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:P2-A2"
+      "landsIn": "acceptance:P3-A2"
     },
     {
-      "decision": "contract-§二-B1",
-      "summary": "B1 课表 MD 结构（每周固定 + 一次性两类），DeepSeek 读 MD 按当前时间筛选查询 + 生成 schedule 显示指令。",
+      "decision": "contract-§一-story_list-total",
+      "summary": "story_list 契约 total 字段 = 故事果计数（云端计算下发），缺省回退 items.length；P3 计数器与盖章帧『第 N 颗』据此渲染并严格同步。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§二"
+        "docs/contracts/interface-contract.md#§一"
       ],
-      "landsIn": "acceptance:P2-A2"
+      "landsIn": "acceptance:P3-A6"
     },
     {
-      "decision": "spec-§4-砍当前课反白",
-      "summary": "已砍 P2「当前课反白高亮」（2026-08-29 human 裁定），课表页只承担看安排、不承担现在进行指示。",
+      "decision": "PROPOSAL-§7-S-F2.5留根",
+      "summary": "S-F2.5 云端润色为可选、MVP 后置，不进本 workstream 必做验收；若做则单开 Lite 包。",
       "sourceRefs": [
-        "docs/spec.md#§4.1"
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
       ],
-      "landsIn": "exitCriteria:P2-E3"
+      "landsIn": "exitCriteria:P3-E3"
     },
     {
-      "decision": "contract-待确认点2-已实证解除",
-      "summary": "课表 MD 解析（原待确认点 2）已由验证批实证解决（OC-11：DeepSeek 按 B1 正确筛选＋吐 view:schedule），本包 contractBlocked 解除。",
+      "decision": "PROPOSAL-§3-麦克风采音殿后",
+      "summary": "包 8 的麦克风采音为硬件强绑定子能力，host 段只测布局/逻辑，真实采音殿后 9b。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§待 OpenClaw 确认点"
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
       ],
-      "landsIn": "exitCriteria:P2-E1"
+      "landsIn": "exitCriteria:P3-E2"
     }
-  ],
-  "mutationEvidence": {
-    "perAcceptance": [
-      { "acceptance": "P2-A1", "mutation": "移除 firmware/main/CMakeLists.txt schedule_page 条目（整块删除 display/schedule_page.c SRCS 行 + 装配注释）。C host runner 观测：39 Tests 4 Failures（基线 3 红之外新增 1 红），schedule 7 齿中仅 A1 转红；还原后复跑回绿（最终全量重建 39 Tests 3 Failures，仅先行红）", "affectedTest": "schedule p2: P2 课表页消费面装配结构 (P2-A1) — tooth 2 模块未编入设备构建 (schedule_p2.acceptance.c:534)", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 4103d25c… == 基线。扫描齿为运行时读工作树，无需重编译即可观测。" },
-      { "acceptance": "P2-A1", "mutation": "删 mcp_server.cc schedule 路由 ack 分支（case 4 VRT_ROUTE_SCHEDULE 整块移除，schedule view 落 default 降级）。C host runner 观测：39 Tests 4 Failures（新增 1 红）；还原后回绿", "affectedTest": "schedule p2: P2 课表页消费面装配结构 (P2-A1) — tooth 3 mcp_server.cc 无 \"schedule\" 路由 ack (schedule_p2.acceptance.c:540)", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 f9c3e9c7… == 基线。扫描齿运行时观测，无需重编译。" },
-      { "acceptance": "P2-A1", "mutation": "删消费调用点（仅移除 mcp_server.cc 中 kidpal_schedule_page_render( 的调用，保留路由 ack）。C host runner 观测：39 Tests 3 Failures——与基线持平，不红", "affectedTest": "无（齿不敏感）", "turnedRed": false, "sensitive": false, "notes": "齿粒度局限（如实记录）：tooth 4 needle 'kidpal_schedule_page_render(' 以文件为粒度计数（要求 >= 2 文件），schedule_page.h 的声明 + schedule_page.c 的定义即满足 2 文件，删除唯一消费调用点后齿仍绿——「定义但从不调用」场景实际不被该齿捕获。建议 acceptance-author 后续收紧（如区分声明/定义/调用形态，tighten-only）。已还原 sha256 f9c3e9c7… == 基线。" },
-      { "acceptance": "P2-A2: 解析契约 B1 课表 MD（每周固定 + 一次性安排），按『今天星期几/当前时间』正确筛选", "mutation": "weekday 映射错移（周一→周二）：_WEEKDAY_TOKENS 中 周一:1 改 周一:2。pytest 观测：5 failed, 7 passed, 1 skipped；还原后 12 passed, 1 skipped 回绿", "affectedTest": "test_a2_parse_b1_three_blocks / test_a2_filter_today_tomorrow_weekday_and_expired_ignored / test_a2_time_filter_items_after / test_decision26_grouping_school_merged_and_individual / test_decision26_grouping_upcoming_rules（5 齿联红）", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 66656f87… == 基线（server/gateway/schedule.py）。" },
-      { "acceptance": "P2-A2: 解析契约 B1 课表 MD（每周固定 + 一次性安排），按『今天星期几/当前时间』正确筛选", "mutation": "过期日期改 <= 匹配：items_for_date 一次性安排 row['date'] == date_iso 改 <=。pytest 观测：2 failed, 10 passed；还原后回绿", "affectedTest": "test_a2_filter_today_tomorrow_weekday_and_expired_ignored（过期开学报到/牙医复诊泄漏进后续日期）/ test_a2_time_filter_items_after", "turnedRed": true, "sensitive": true, "notes": "契约 §2.3 过期自动忽略的行为齿有效。还原核验 sha256 66656f87… == 基线。" },
-      { "acceptance": "P2-A2: 解析契约 B1 课表 MD（每周固定 + 一次性安排），按『今天星期几/当前时间』正确筛选", "mutation": "脏行改静默跳过（去 ValueError）：cell 数不匹配改 continue + 三类行解析包 try/except ValueError 静默丢。pytest 观测：1 failed, 11 passed；还原后回绿", "affectedTest": "test_a2_parse_rejects_malformed_rows（列数错位/周九/坏日期三断言全部失去 ValueError）", "turnedRed": true, "sensitive": true, "notes": "「脏行大声拒绝、绝不静默丢行」齿有效。还原核验 sha256 66656f87… == 基线。" },
-      { "acceptance": "P2-A3: P2 课表页渲染 今天/明天 列表：每行 = 圆点 + 时间 + 课程名 + 地点，圆点两态（空心=已上完/明天、实心=待上）", "mutation": "dot_state 硬编码空心（提前 return 0）。C host runner 观测：39 Tests 5 Failures（新增 2 红：行为齿 + 真帧像素齿双红）；还原后全量重建复跑回绿", "affectedTest": "schedule p2: 圆点两态——空心=已上完/明天, 实心=待上 (P2-A3) (schedule_p2.acceptance.c:688) + schedule p2: P2 页渲染面真帧——行绘制 + 两态可见差异 (P2-A3/A4 render) (schedule_p2.acceptance.c:916, 今天实心 vs 明天全空心帧像素相同)", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 67fa4166… == 基线。行为齿与 LVGL 真帧采样齿同时转红，圆点两态语义在纯逻辑与渲染面双层被钉。" },
-      { "acceptance": "P2-A3: P2 课表页渲染 今天/明天 列表：每行 = 圆点 + 时间 + 课程名 + 地点，圆点两态（空心=已上完/明天、实心=待上）", "mutation": "items_for_date 去 stable sort（移除 out.sort(key=time)）。pytest 观测：12 passed, 1 skipped——不红", "affectedTest": "无（齿不敏感）", "turnedRed": false, "sensitive": false, "notes": "齿粒度局限（如实记录）：冻结验收全部按日查询断言均为单元素列表（周一/周二/周三/周六 + A6 录入后周三），同刻多项的排序不可观测；「stable: weekly block order before onetime block order at equal time」是冻结契约要求但无齿承载。建议 acceptance-author 后补同刻双项排序断言（tighten-only）。已还原 sha256 66656f87… == 基线。" },
-      { "acceptance": "P2-A4: BOOT 长按切 今天⇄明天，标题弹跳切换、切明天时圆点全变空心", "mutation": "toggle 改由 BOOT CLICK 触发（page_input 的 KEY_GESTURE_LONG_PRESS 改 CLICK）。C host runner 观测：39 Tests 4 Failures；还原后回绿", "affectedTest": "schedule p2: BOOT 长按切 今天⇄明天, 其余手势不吞 (P2-A4) — BOOT 长按未切换 (schedule_p2.acceptance.c:734)", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 67fa4166… == 基线（schedule_page.c）。" },
-      { "acceptance": "P2-A4: BOOT 长按切 今天⇄明天，标题弹跳切换、切明天时圆点全变空心", "mutation": "吞 KEY 长按（page_input 对 KEY+LONG_PRESS 也返回切换）。C host runner 观测：39 Tests 4 Failures；还原后回绿", "affectedTest": "schedule p2: BOOT 长按切 今天⇄明天, 其余手势不吞 (P2-A4) — KEY 长按 (全局回首页) 不得被页内吞 (schedule_p2.acceptance.c:745)", "turnedRed": true, "sensitive": true, "notes": "「全局层语义不被页内吞」守卫齿有效。还原核验 sha256 67fa4166… == 基线。" },
-      { "acceptance": "P2-A5: 语音问课表（如『今天下午有什么课』）→ 播报答复 + display 指令切 P2 并滚动定位到相关课程行（可加星标呼应，不新增反白高亮态）", "mutation": "locate 改子串模糊匹配（strcmp → strstr）。C host runner 观测：39 Tests 3 Failures——与基线持平，不红", "affectedTest": "无（齿不敏感）", "turnedRed": false, "sensitive": false, "notes": "齿粒度局限（如实记录）：冻结测试数据中不存在「查询词为另一行 time/name 子串」的反例配对（如『钢琴课』非『英语培训』的子串），全部 5 个定位断言在子串匹配下仍通过——「EXACT 匹配、不做子串模糊」的精确性仅由缺失的反例数据承载。建议 acceptance-author 后补子串反例（tighten-only）。已还原 sha256 67fa4166… == 基线。" },
-      { "acceptance": "P2-A5: 语音问课表（如『今天下午有什么课』）→ 播报答复 + display 指令切 P2 并滚动定位到相关课程行（可加星标呼应，不新增反白高亮态）", "mutation": "只按 name 忽略 time（time_ok 恒真）。C host runner 观测：39 Tests 4 Failures；还原后回绿", "affectedTest": "schedule p2: 语音问课表滚动定位 + 路由续接 (P2-A5) — time+name 必须双匹配 (schedule_p2.acceptance.c:799)", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 67fa4166… == 基线。" },
-      { "acceptance": "P2-A6: 家长录入链路：经约定通道录入『每周三 16:30 英语培训』→ 写入 schedule.md → 能被查询/渲染正确消费", "mutation": "parse 缓存不重读文件：parse_schedule_md 加按内容 memoize 且改写不失效缓存。pytest 观测：12 passed, 1 skipped——不红", "affectedTest": "无（齿不敏感/变异点空缺）", "turnedRed": false, "sensitive": false, "notes": "诚实注记：本实现 parse_schedule_md 为无状态 str→dict 纯函数（无文件读取、无缓存面），「缓存不重读」变异点在本实现形状下不存在活体；示范性变异证明冻结 offline 套件对其不可观测——A6 链路测试自行重读文件内容再 parse（内容变 → cache miss），消费端 stale-cache 缺陷要靠 A6 live 真录一轮（QQ 录入→OpenClaw 自改写→即时重算→问课消费, operator 殿后）承载。已还原 sha256 66656f87… == 基线。" },
-      { "acceptance": "P2-A6: 家长录入链路：经约定通道录入『每周三 16:30 英语培训』→ 写入 schedule.md → 能被查询/渲染正确消费", "mutation": "group_upcoming 丢英语培训项（weekly 候选整类剔除出分组）。pytest 观测：3 failed, 9 passed；还原后回绿", "affectedTest": "test_a6_entry_write_consume_chain（录入的英语培训从决策 26 分组消失）/ test_decision26_grouping_school_merged_and_individual / test_decision26_grouping_upcoming_rules", "turnedRed": true, "sensitive": true, "notes": "「QQ 录入与『接下来』同源（决策 26 producer, V22）」齿有效。还原核验 sha256 66656f87… == 基线。" },
-      { "acceptance": "P2-A6: 家长录入链路：经约定通道录入『每周三 16:30 英语培训』→ 写入 schedule.md → 能被查询/渲染正确消费", "mutation": "prompt 载荷改就地改 v1 不落 v2：撤走 openclaw-system-prompt.v2.md + apply-xiaozhi-overlay.sh / provider.config.yaml / OPENCLAW_SYSTEM_PROMPT_CARRIER 三文件还原 HEAD（v1 引用）。pytest 观测：1 failed, 11 passed；还原后回绿", "affectedTest": "test_a6_prompt_carrier_v2_landed_and_wired（v2 文件缺失 + wiring 不引用 v2 双断言同红）", "turnedRed": true, "sensitive": true, "notes": "还原核验 sha256 ×4 全一致：openclaw-system-prompt.v2.md 6deba3e0… / apply-xiaozhi-overlay.sh 0eb8ed95… / provider.config.yaml c216096a… / OPENCLAW_SYSTEM_PROMPT_CARRIER 8eed9345… == 基线。" },
-      { "acceptance": "P2-E4: 课表提醒触发逻辑不在本包（归包 7）；本包只到「录入→可消费 + 渲染 + 语音问」", "mutation": "parser 把 remind_before_min 读进模型（frontmatter 捕获并 surface 进模型 dict）。pytest 观测：1 failed, 11 passed；还原后回绿", "affectedTest": "test_e4_remind_before_min_not_consumed（改字段值改变 parse 模型 + 模型键外露双断言）", "turnedRed": true, "sensitive": true, "notes": "「废止字段不消费（2026-09-03 契约门裁定）」行为不变式齿有效。还原核验 sha256 66656f87… == 基线。P2-E4 为 exitCriteria 非 acceptance 数组成员、mutation-check 不检，本条为 planner 自愿留痕的等价证据。" }
-    ]
-  },
-  "notes": "intake 核对（C5）：builder/fixer allow=firmware/**+server/**+tools/** 覆盖目标面；*.acceptance.* 全角色 deny（builder 只读，修复归 acceptance-author 且断言语义零变更）。red-baseline 摘要：firmware/main/test/acceptance/red-baseline/schedule-p2-red-baseline-summary.md。C 侧 frozen offline contract 5 函数建议家 firmware/main/display/schedule_page.{c,h}；python 侧 frozen contract = server/gateway/schedule.py（载荷过真实 gateway.display_schema.validate_display 门）。producer 口径：学校课程表无时刻列，分组首节时刻 = producer 显式入参 school_start（B1 表体零变更，载体由 builder 落 OpenClaw 侧配置）；星标 = 设备侧渲染标志画在定位行，不进 display data 形状。OpenClaw system prompt 扩展走 .v2 版本化落盘（不改 v1）。multi-pod additive 纪律：G 网关代码面 additive、勿重排他人文件结构。blockingDecision（Intent:nointent）已裁 NOT-BLOCKED，pod-events eventId add1139d。"
+  ]
 }
