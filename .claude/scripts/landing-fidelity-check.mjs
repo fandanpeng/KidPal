@@ -84,8 +84,10 @@ function checkCitationAnchors(proposalText, projectDir) {
     const abs = resolve(projectDir, relPath);
     if (!existsSync(abs)) {
       // T2（260907 批）：裸文件名引用前缀重解析——候选前缀依次试探，命中即消警并留痕（resolvedByPrefix 进观察列，不静默）。
+      // 260907 热修（human 批准一次性跳过治理批，追认载体 = ARQ-260907-lfc-citation-docs-prefix）：候选域补 `docs/`——
+      // 裸 docs 文件名引据（如 `DEV-GOVERNANCE.md:280`）实存而报 file-not-exist（verifier 观察 4②）。
       let resolvedBy = null;
-      for (const prefix of ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/']) {
+      for (const prefix of ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/', 'docs/']) {
         if (existsSync(resolve(projectDir, prefix + relPath))) { resolvedBy = prefix; break; }
       }
       if (resolvedBy) { resolved.push({ citation, resolvedAs: `${resolvedBy}${relPath}:${line}` }); continue; }
@@ -126,6 +128,15 @@ function runCitationAnchorsSelfCheck() {
   check('prefix-resolved 数', prefixRes.resolved.length, 1);
   check('prefix-resolved 解析形态', prefixRes.resolved[0] && prefixRes.resolved[0].resolvedAs, '.claude/scripts/lib/fixture.mjs:2');
   check('prefix 零 problems', prefixRes.problems.length, 0);
+  // 260907 热修自检：docs/ 裸名前缀重解析（ARQ-260907-lfc-citation-docs-prefix）
+  const docsDir = mkdtempSync(join(tmpdir(), 'cit-docs-'));
+  mkdirSync(join(docsDir, 'docs'), { recursive: true });
+  writeFileSync(join(docsDir, 'docs', 'GOV.md'), 'a\nb\nc\n', 'utf8');
+  const docsRes = checkCitationAnchors('见 `GOV.md:2`（裸 docs 文件名，应经 docs/ 前缀解析命中）。', docsDir);
+  rmSync(docsDir, { recursive: true, force: true });
+  check('docs-prefix-resolved 数', docsRes.resolved.length, 1);
+  check('docs-prefix 解析形态', docsRes.resolved[0] && docsRes.resolved[0].resolvedAs, 'docs/GOV.md:2');
+  check('docs-prefix 零 problems', docsRes.problems.length, 0);
   console.log(JSON.stringify({ selfCheck: 'citation-anchors', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
