@@ -134,15 +134,32 @@ function aggregateEscalations(events) {
 function aggregateFriction(events) {
   const frictions = events.filter(e => e.eventType === 'friction');
   const byType = {};
+  // T4（260907-gov-review-arq-governance-batch-2，ARQ-260907-friction-event-payload-schema）：
+  // 残缺 friction 事件显式告警列——payload 空对象 / 缺 frictionType / 缺 summary 三判据，命中即入列
+  //（含 changeId + eventId 侧定位）。既有 unknown 兜底保留（非标键仍归 unknown，残缺件同时出现在
+  // malformedFrictions——告警与归档双轨），不再对空 payload 静默吞过（loop-retro GC3 实证：55a43813
+  // 空 payload 内容机器侧不可恢复 = 实际证据丢失）。
+  const malformedFrictions = [];
 
   for (const f of frictions) {
     const ft = (f.payload && f.payload.frictionType) || 'unknown';
     byType[ft] = (byType[ft] || 0) + 1;
+    const payload = f.payload && typeof f.payload === 'object' && !Array.isArray(f.payload) ? f.payload : null;
+    const missing = [];
+    if (!payload || Object.keys(payload).length === 0) missing.push('empty-payload');
+    else {
+      if (!payload.frictionType) missing.push('missing-frictionType');
+      if (!payload.summary) missing.push('missing-summary');
+    }
+    if (missing.length > 0) {
+      malformedFrictions.push({ eventId: f.eventId || f.id || null, ts: f.ts || f.timestamp || null, missing });
+    }
   }
 
   return {
     total: frictions.length,
     byType,
+    malformedFrictions,
   };
 }
 

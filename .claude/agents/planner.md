@@ -105,6 +105,8 @@ model: opus
 - `.claude/references/code-review-gate.md`
 - `.claude/references/architecture-decisions.md`
 - `.claude/references/contract-change-evidence.md`
+- `docs/DEV-GOVERNANCE.md`「## friction 事件最小 schema」（T4，260907 批）：friction 落账 `frictionType` + `summary` 必填、空 payload = 落账缺陷、当次交互内随手记不攒收口。
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：起包五条前置清单（mutationEvidence 骨架 / 断言格式 / 验收 ID 禁括号 / 降级声明前置 / 新约定包闸判据自查），Draft TaskPackage 阶段落实。
 
 ## Boundaries / 权限边界
 

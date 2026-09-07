@@ -42,6 +42,8 @@ model: opus
 - `.claude/references/observability-k6.md`
 - `.claude/references/dev-loop.md`（§3 变更制品：acceptance vs exitCriteria 编写惯例 + A10 红判读）
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」（T3/T8，260906-gov-review-arq-governance-batch；起草 live/host 验收前必读）：§1 server host/live 两态约定（`@pytest.mark.live` 执行器不自动跑）；§2 **probe ≠ exercise**——跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），只探测可达不算 live 验收；§3 **冻结即冒烟**——冻结落盘时当场执行一次线束冒烟（live 面真连 SSH、线束助手真调一次、pytest 收集零错误），判据 = 执行通道 error 为零（error ≠ failure：断言 failure 是冻结相位的设计态红基线，不阻塞冻结）。
+- `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」§4（T5，260907 批）：**C 类冻结验收实编**——C 类验收文件落盘时当场实编一次（编译通道 error 为零），红基线明示「验收文件本身可编译」；与 §3 冻结即冒烟并列不互替。
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：验收断言写机器可识别形态 + coverage 标记随测试名、验收 ID 禁括号后缀（起包清单五条中的②③）。
 
 ## Boundaries / 权限边界
 

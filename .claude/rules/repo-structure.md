@@ -29,7 +29,7 @@ paths:
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
-文件：`spec.md` · `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md` · `CONTRACT-DECISION-QUEUE.md` · `glossary.md`（占位登记，文件尚未创建）
+文件：`spec.md` · `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md` · `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（占位登记，文件尚未创建）
 子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`
 
 > 其它一律不进 docs/ 根。要加新的正式顶层文档 / 类别 → 先登记进 [.claude/scope-map.json](../scope-map.json) 的 `universal.docsTopLevel` 和本表（有意识动作），钩子才放行。

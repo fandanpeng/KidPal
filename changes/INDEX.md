@@ -25,7 +25,7 @@
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
 | [260907-gov-review-architect-dispatch-model-override](../changes/arch/260907-gov-review-architect-dispatch-model-override/) | 2026-09-07 | frozen | yes |
-| [260907-gov-review-arq-governance-batch-2](../changes/arch/260907-gov-review-arq-governance-batch-2/) | 2026-09-07 | draft | — |
+| [260907-gov-review-arq-governance-batch-2](../changes/arch/260907-gov-review-arq-governance-batch-2/) | 2026-09-07 | landed | yes |
 | [260906-gov-review-architect-loop-advisory](../changes/arch/260906-gov-review-architect-loop-advisory/) | 2026-09-06 | landed | yes |
 | [260906-gov-review-arq-governance-batch](../changes/arch/260906-gov-review-arq-governance-batch/) | 2026-09-06 | landed | yes |
 | [260906-gov-review-index-status-truth-source](../changes/arch/260906-gov-review-index-status-truth-source/) | 2026-09-06 | landed | yes |

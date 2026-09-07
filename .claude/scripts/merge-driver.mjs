@@ -679,6 +679,27 @@ function runWorktreeTopologySelfCheck() {
     run(`git worktree add "${featureWt}" -b feature`, tmp);
     check(norm(findMainHolderWorktree(featureWt)) === norm(tmp), 'main holder from feature worktree must be the main checkout');
     check(norm(findMainHolderWorktree(tmp)) === norm(tmp), 'main holder from main checkout must be itself');
+
+    // ③ T3（260907 批）：ensureGraphCacheSynced 内容级还原两形态——worktree 漂移（包 2 合并实证）+ staged 漂移（renormalize 实况）。
+    const gdir = join(tmp, '.codebase-memory');
+    mkdirSync(gdir, { recursive: true });
+    writeFileSync(join(gdir, 'graph.db.zst'), 'head-snapshot-graph', 'utf8');
+    writeFileSync(join(gdir, 'artifact.json'), '{"head":true}', 'utf8');
+    run('git add .codebase-memory', tmp);
+    run('git -c user.name=selfcheck -c user.email=selfcheck@local commit -m graph', tmp);
+    // 形态一：worktree 内容漂移 + 旗标在册 → 还原内容 + 复旗标
+    writeFileSync(join(gdir, 'graph.db.zst'), 'drifted-by-indexer', 'utf8');
+    run('git update-index --skip-worktree .codebase-memory/graph.db.zst .codebase-memory/artifact.json', tmp);
+    ensureGraphCacheSynced(tmp, 'selfcheck');
+    check(readFileSync(join(gdir, 'graph.db.zst'), 'utf8') === 'head-snapshot-graph', 'worktree content drift must be restored to HEAD snapshot');
+    check(/^[Ss] \.codebase-memory\/graph\.db\.zst$/m.test(run('git ls-files -v .codebase-memory', tmp)), 'skip-worktree flag must be re-set after content-drift sync');
+    // 形态二：staged 漂移（renormalize 实况 = 旗标清 + 内容入 staging）→ index+worktree 双还原、净树
+    run('git update-index --no-skip-worktree .codebase-memory/graph.db.zst .codebase-memory/artifact.json', tmp);
+    writeFileSync(join(gdir, 'artifact.json'), '{"drifted":true}', 'utf8');
+    run('git add .codebase-memory/artifact.json', tmp);
+    ensureGraphCacheSynced(tmp, 'selfcheck');
+    check(run('git status --porcelain', tmp).trim() === '', 'staged drift must be cleared (index+worktree both back to HEAD)');
+    check(/^[Ss] \.codebase-memory\/artifact\.json$/m.test(run('git ls-files -v .codebase-memory', tmp)), 'skip-worktree flag must be re-set after staged-drift sync');
   } catch (err) {
     fail++;
     const detail = `${err.stderr || err.message || err}`.trim().split('\n').slice(-3).join(' ');
@@ -697,17 +718,27 @@ function runWorktreeTopologySelfCheck() {
 // rebase/merge 步无条件 fail-closed。白名单固定两件（非模式匹配），幂等设 skip-worktree、永不 unset
 //（unset 即复发）。只动本地 index 标记、不改历史、幂等可重入 → 置于 if (!DRY_RUN) 守卫之外
 //（R1-F9 钉死：DRY_RUN 下照常执行并留痕，dry-run 验证路径真实覆盖该步）。
+// ---- T3（260907-gov-review-arq-governance-batch-2，ARQ-260907-renormalize-clears-skip-worktree 根治）----
+// 升内容级（ensureGraphCacheSynced）：260829-voice-roundtrip 合并实证——旗标完好（S 在、
+// `0 set, 2 already flagged`）仍被挡：图索引自动刷新使两件内容与 HEAD 漂移，rebase 内部 checkout 按真实
+// 字节比对拒绝（skip-worktree 不豁免内容比对）。幂等三拍：① S 在册先 no-skip-worktree；② `git checkout HEAD --`
+// 还原内容（index 与工作树双还原——裸 `checkout --` 只还原 worktree←index，覆盖不了 renormalize 把内容
+// 带入 staging 的实况，R1-F2）；③ 复设 skip-worktree。图缓存自刷新、无数据丢失面。stderr 留痕
+// `N content-restored, M flag-only`，失败 advisory-only。**操作序注记**：`git add --renormalize .` 会清
+// skip-worktree 旗标（同 ARQ 证据一）——凡跑 renormalize 后依赖本函数幂等复位，旗标与内容（含 staging）双兜底。
+// 另：rebase 中断会在 rebase-merge/done 堆积重复 pick，手动续 rebase 须先清 todo（`git rebase --abort` 或
+// 编辑 .git/rebase-merge/done），本脚本不改 rebase 逻辑本体。
 const CODEBASE_MEMORY_DIRTY_PATHS = ['.codebase-memory/graph.db.zst', '.codebase-memory/artifact.json'];
 
-// 对 cwd 仓库幂等设 skip-worktree：先 ls-files -v 查标记（首字母 s/S = 已设），已设跳过。
-// 成功路径 stderr 留痕一行；ls-files / update-index 失败走 warn advisory——不阻塞合并（修复型助手，
+// 对 cwd 仓库幂等同步两件活图缓存到 HEAD 快照并复设 skip-worktree（T3 内容级语义）。
+// 成功路径 stderr 留痕一行；ls-files / update-index / checkout 失败走 warn advisory——不阻塞合并（修复型助手，
 // 非门语义变更）。ls-files -v 大小写因 git 版本而异（S/s 均算已设），故按小写判等。
-function ensureSkipWorktree(cwd, changeId) {
+function ensureGraphCacheSynced(cwd, changeId) {
   let listed;
   try {
     listed = execSync(`git ls-files -v -- ${CODEBASE_MEMORY_DIRTY_PATHS.join(' ')}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (err) {
-    warn(`${changeId}: skip-worktree 前置 ls-files 失败（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
+    warn(`${changeId}: 活图同步前置 ls-files 失败（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
     return;
   }
   const flagged = new Set();
@@ -715,18 +746,30 @@ function ensureSkipWorktree(cwd, changeId) {
     const m = /^([A-Za-z?]) +(.+)$/.exec(line);
     if (m && m[1].toLowerCase() === 's') flagged.add(m[2]);
   }
-  let setCount = 0;
-  let already = 0;
+  let restoredCount = 0;
+  let flagOnlyCount = 0;
   for (const p of CODEBASE_MEMORY_DIRTY_PATHS) {
-    if (flagged.has(p)) { already++; continue; } // 已设 skip-worktree → 幂等跳过
+    const wasFlagged = flagged.has(p);
+    try {
+      if (wasFlagged) {
+        // ① 撤旗标——skip-worktree 在册时 checkout/update-index 对该路径的常规操作被 git 忽略，须先撤
+        execSync(`git update-index --no-skip-worktree -- ${p}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      }
+      // ② 内容级还原（HEAD 快照，index + worktree 双面）
+      execSync(`git checkout HEAD -- ${p}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      restoredCount++;
+      if (!wasFlagged) flagOnlyCount++;
+    } catch (err) {
+      warn(`${changeId}: 活图缓存还原失败 ${p}（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
+    }
+    // ③ 复旗标（无论②成败——旗标是常驻态，两件恒保持 S；失败时 git 自身的脏树门仍兜底 fail-closed）
     try {
       execSync(`git update-index --skip-worktree -- ${p}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-      setCount++;
     } catch (err) {
-      warn(`${changeId}: skip-worktree set failed for ${p}（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
+      warn(`${changeId}: skip-worktree 复位失败 ${p}（advisory，不阻塞合并）：${`${err.stderr || ''}`.trim().split('\n').slice(-3).join(' ')}`);
     }
   }
-  process.stderr.write(`[merge-driver] ${changeId}: skip-worktree ensured in ${cwd} — ${setCount} set, ${already} already flagged (live graph drift guard, ARQ-260906)\n`);
+  process.stderr.write(`[merge-driver] ${changeId}: graph cache synced in ${cwd} — ${restoredCount} content-restored, ${flagOnlyCount} flag-only (live graph drift guard, ARQ-260906 + 260907 T3)\n`);
 }
 
 
@@ -775,7 +818,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
 
   // Step 3: fetch + rebase
   // T6：rebase 步（Pod worktree 内）之前幂等设 skip-worktree——置于 if (!DRY_RUN) 守卫之外（R1-F9）。
-  ensureSkipWorktree(wt, changeId);
+  ensureGraphCacheSynced(wt, changeId);
   log(`${changeId}: fetching origin...`);
   if (!DRY_RUN) {
     // Hot-fix（human 裁定 2026-09-05，pod-events 85667b2a）：本地开发 worktree/branch 不保证有远端——
@@ -870,7 +913,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // mergeCwd 解析本身只读（git worktree list），DRY_RUN 下无害。findMainHolderWorktree 为 T5 提取的
   // 具名实现（self-check 共用）；无主 / 解析失败回退 wt。
   const mergeCwd = findMainHolderWorktree(wt) || wt;
-  ensureSkipWorktree(mergeCwd, changeId);
+  ensureGraphCacheSynced(mergeCwd, changeId);
   if (!DRY_RUN) {
     try {
       // Get the current branch name, then merge it into main

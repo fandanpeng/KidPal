@@ -30,7 +30,8 @@
         "docs/ARCH-REVIEW-QUEUE.md",
         "docs/CONTRACT-DECISION-QUEUE.md",
         "docs/glossary.md",
-        "docs/spec.md"
+        "docs/spec.md",
+        "docs/ADR.md"
       ],
       "allowDirs": [
         "docs/contracts",
@@ -76,7 +77,7 @@
       "deny": ["**"]
     },
     "integrator": {
-      "allow": ["firmware/**", "server/**", "docs/systems/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "changes/dev/**", ".claude/taskpackages/**", ".planning/**"],
+      "allow": ["firmware/**", "server/**", "docs/systems/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/ADR.md", "changes/dev/**", ".claude/taskpackages/**", ".planning/**"],
       "deny": ["docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "architect": {
