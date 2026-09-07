@@ -24,11 +24,12 @@ gateway:
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
 # apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v1.md"   # 冻结版本化文件 (see docs dir 注释)
-  source: "../deploy/openclaw-system-prompt.v1.md"
-  deploy_target: "openclaw-system-prompt.v1.md"   # ECS data/ 下的渲染目标名
+  artifact: "openclaw-system-prompt.v2.md"   # 当前版本化文件 (260829-schedule-p2 起; v1 不改可 diff)
+  source: "../deploy/openclaw-system-prompt.v2.md"
+  deploy_target: "openclaw-system-prompt.v2.md"   # ECS data/ 下的渲染目标名
   # 结构: 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6) + F4 三句纪律
-  # (三句以内/口语化/儿童化 8-12 岁) + 7 view 白名单 + 增量扩展区 (包 4 char / 包 7 提醒).
+  # (三句以内/口语化/儿童化 8-12 岁) + 7 view 白名单 + 增量扩展区 (包 4 char / 包 7 提醒)
+  # + 课表 producer 扩展 (v2 新增: 决策 26 分组 + QQ 录入改写约定).
 
 providers:
   llm:

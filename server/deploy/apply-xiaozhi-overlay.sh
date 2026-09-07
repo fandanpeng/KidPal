@@ -85,9 +85,11 @@ echo "rendered $OVERLAY"
 ls -la "$OVERLAY"
 
 # OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
-# 同一冻结版本化文件 = live 探针 (VRT-A4/A7) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v1.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v1.md"
+# 版本化文件 = live 探针 (VRT-A4/A7) 的唯一 prompt 源, 保证「验收所测=生产所用」。
+# 260829-schedule-p2 起 overlay 渲染源切换 v2 (v1 基础结构逐字并入 v2 + 课表 producer
+# 扩展; v1 文件不改可 diff, 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v2.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v2.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -105,5 +107,5 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v1.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: openclaw-system-prompt.v2.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi

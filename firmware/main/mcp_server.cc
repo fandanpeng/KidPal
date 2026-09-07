@@ -8,6 +8,7 @@
 #include <esp_app_desc.h>
 #include <algorithm>
 #include <cstring>
+#include <ctime>
 #include <esp_pthread.h>
 
 #include "application.h"
@@ -18,6 +19,7 @@
 #include "lvgl_theme.h"
 #include "lvgl_display.h"
 #include "display/view_router.h"
+#include "display/schedule_page.h"
 
 #define TAG "MCP"
 
@@ -158,6 +160,59 @@ void McpServer::AddCommonTools() {
                             cJSON_AddBoolToObject(ack, "degrade", true);
                             break;
                     }
+                    break;
+                }
+                case 4: { /* VRT_ROUTE_SCHEDULE —— P2 课表页 (契约 §1.3 ②, 包
+                           * 260829-schedule-p2)。解析 data {"title","items":[…]}：
+                           * 成功 -> kidpal_schedule_page_render 渲染面真画 (标题
+                           * 弹跳/圆点两态/行列表)；解析失败 -> 显式降级 (友好提示,
+                           * 绝不盲渲染, V27 / spec §4.0)。 */
+                    cJSON_AddStringToObject(ack, "route", "schedule");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    char title[64];
+                    kidpal_schedule_item_t items[16];
+                    int n = kidpal_schedule_parse(data.c_str(), title, sizeof(title),
+                                                  items, 16);
+                    if (n < 0) {
+                        /* 降级：schedule data 畸形/缺字段 -> 友好提示, 不盲渲染 */
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=schedule corr_id=%s items=0 degrade=true", corr_id);
+                        auto display = Board::GetInstance().GetDisplay();
+                        app.Schedule([display]() {
+                            display->SetChatMessage("system", "课表数据有点问题，稍后再试试");
+                        });
+                        break;
+                    }
+                    /* 明天视图判定 (P2-A4 全空心前提)：契约 data 形状零变更、无
+                     * is_tomorrow 字段 —— producer 在 title 语义里携带, 设备侧按
+                     * title 含「明天」做最小判定 (minimal, 升级路径=producer 显式
+                     * 约定 title 词汇表, 不动 data 形状)。 */
+                    int is_tomorrow = (strstr(title, "明天") != nullptr) ? 1 : 0;
+                    int locate_row = -1; /* 语音问课表定位行由语音消费路径经
+                                          * kidpal_schedule_locate 续接, 默认无星标 */
+                    /* 设备当前 HH:MM (圆点两态判定; RTC 未同步时按 00:00 全实心降级) */
+                    char now_hhmm[8] = "00:00";
+                    {
+                        time_t now_t = time(nullptr);
+                        struct tm tm_now;
+                        if (localtime_r(&now_t, &tm_now) != nullptr) {
+                            snprintf(now_hhmm, sizeof(now_hhmm), "%02d:%02d",
+                                     tm_now.tm_hour, tm_now.tm_min);
+                        }
+                    }
+                    cJSON_AddNumberToObject(ack, "items", n);
+                    ESP_LOGI(TAG, "display_dispatch view=schedule corr_id=%s items=%d is_tomorrow=%d degrade=false",
+                             corr_id, n, is_tomorrow);
+                    auto display = Board::GetInstance().GetDisplay();
+                    std::string now_str = now_hhmm;
+                    app.Schedule([display, title, items, n, is_tomorrow, now_str, locate_row, corr_id]() {
+                        int drawn = kidpal_schedule_page_render(
+                            title, items, n, is_tomorrow, now_str.c_str(), locate_row);
+                        ESP_LOGI(TAG, "schedule_render corr_id=%s items=%d drawn=%d",
+                                 corr_id, n, drawn);
+                    });
                     break;
                 }
                 default: /* VRT_ROUTE_UNKNOWN —— 白名单外 view 的独立降级路径 */
