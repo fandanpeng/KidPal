@@ -4,3 +4,9 @@
 # 对全部克隆者/提交者一致生效。范围克制在 *.sh（仓内 Python 走 ECS/SSH 执行，不踩本地工作树）。
 # 与 .codebase-memory/.gitattributes（binary merge=ours）路径无交集，共存无冲突。
 *.sh text eol=lf
+
+# progress.md append-only 纪律 EOF 竞合（T4，260907-gov-review-merge-friction，P4）：
+# 双 Pod 近距合并双方都在文件尾部 append，git 无法自动解、每 Pod 手动 union 消解；
+# append-only 纪律（AGENTS.md Hard Rules「历史记录类文件一律 append」）下 union 双侧保留即正解。
+# 与上方 *.sh eol=lf 条目及 .codebase-memory/.gitattributes（binary merge=ours）无路径交集。
+.planning/kidpal-mvp/progress.md merge=union

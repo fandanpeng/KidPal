@@ -115,6 +115,26 @@ v1 决定（加便宜档）：
 
 **毕业条件（量化，任一满足即评估升级）**：并行 Pod 稳定 ≥3、或 merge 频率 ≥2/day、或出现 ≥1 次「会话结束后无人 reconcile 导致 Pod 卡 >TTL」的实测事件。升级只换触发器（同一个 `portfolio-reconcile.mjs`），不改数据结构。owner=architect（随 loop-health 复盘评估）。
 
+## 10. merge 冲突消解 runbook + post-merge 簿记口径（260907-gov-review-merge-friction T5）
+
+### 10a. merge 冲突消解 runbook
+
+merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 流程内消解，**不绕任何闸**——闸在 Step 1b，重跑时照走）：
+
+1. 在 Pod worktree 手动重放：`git rebase <target.ref>`（target = driver 当时输出的 rebase target）；
+2. 逐冲突消解——current/ 投影冲突（`taskpackage.json` / `verdict.json`）恒取被合并 Pod 侧（rebase 语境 `--theirs`）；progress.md 已配 union 自动保留双侧；其余文件（如 CMakeLists additive）人工按语义消解并核对兼容性（先例：b7df3ab 双保留解）；
+3. `GIT_EDITOR=true git rebase --continue`（免交互），循环至 rebase 完成；
+4. `portfolio-reconcile.mjs --set-pod <id> --status ready-to-merge` 重置状态；
+5. 重跑 `merge-driver.mjs --pod <id> --human-approval-ref <eventId>`（ESCALATE 包凭据不变，仍有效）。
+
+人批后首跑 no-op（blocked 未消解）不应再出现：driver 入口对 `--pod X + --human-approval-ref` 且 X=blocked 自动核验消解（Step 1b 同路径，核验失败 fail-closed 保持 blocked）。
+
+### 10b. post-merge 簿记落点口径
+
+- **pod-events 的 merge-completed 事件**：merge-driver Step 5b 机械落 main（合并现场单文件 pathspec commit）——main 自持、feature 分支可删，planner 无需手动补（home-p1 `46d99b5` / schedule-p2 `7717eea` 的手动簿记由此机械化）。簿记失败为 advisory warn、不阻塞合并链。
+- **changes/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。
+- **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`.claude/taskpackages/<pod-id>/**` + `changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
+
 ## 相关
 
 - [`dev-loop-operating-system.md`](dev-loop-operating-system.md)
