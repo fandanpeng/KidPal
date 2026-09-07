@@ -130,3 +130,13 @@
 - **closeout 制品**：docs-delta + review-packet 晋升 `changes/dev/260829-voice-roundtrip/`；docs-sync 判定 = spec/契约零触碰（只读消费，无漂移）；prompt 版本化落盘 `server/deploy/openclaw-system-prompt.v1.md` + 接线（apply-xiaozhi-overlay.sh 真 mount 路径修复 + prompt 渲染，「所测 = 生产所用」成立）。
 - **留根**：display 端到端 relay 缺口归 G 包 live 集成修复（引擎未剥离 fence 混入播报文本 + 无 tools/call 中转下发，用户所见全文来自文字同步面、翻屏语义未触发）——建议登记 ARQ；A4 sample 1 口语 4 句超三句纪律（非 gate，V32 机械兜底已 landed，包 4 prompt 增量收紧）；sdkconfig 机器本地文件 launch 摩擦已由 ops skill 记载。
 - **下一步**：supervisor 机械闸裁断 → planner 前置升级闸 → 本地合并；本包 = 包 4/5/6/8 的 display 路由共享底座（VRT-E3），mergeOrder 5 先于其扩展包。
+
+## 2026-09-07 下一批 launch 面准备（主线程记，g-relay-fix merged 后）
+
+- 调度判定：g-relay-fix（260907-g-relay-fix，mergeOrder 15）今日并入 main（ec4851b）→ queued 包依赖盘点：char-stroke(7)/home-p1(8)/schedule-p2(9)/story-p3(10) dependsOn 全就绪（0+2 均merged），schedule-reminder(11) 等 schedule-p2、ui-art-integration(12)/hardware-validation(13)/audio-bargein-hw(14) 等页面包。按 mergeOrder 升序 + WIP=3，本批 = **260829-char-stroke + 260829-home-p1 + 260829-schedule-p2 三 Pod 并行**，story-p3 就绪排下一槽（首槽释放后按同规则补位），依赖图说了算不硬凑。
+- launch 前置门：三包 `--check-launch --base-ref main` 全绿（blocking/warn 均空）。
+- **环境等价化完成**：worktree `C:/AI/KidPal-pod-char-stroke` / `-home-p1` / `-schedule-p2`（branch dev/260829-*，base = main ec4851b）；firmware/sdkconfig + dependencies.lock 镜像、managed_components git bash `ln -s` 软链指主 checkout（原生 python isdir 三包全 True）、worktree-bootstrap.mjs 跑过（.env / shim 面源不存在，按设计跳过）。
+- **专属图索引已建**：`C-AI-KidPal-pod-char-stroke`（9714 节点/31974 边）、`C-AI-KidPal-pod-home-p1`（9714/31782）、`C-AI-KidPal-pod-schedule-p2`（9714/31834）——均 moderate + persistence，nodes/edges == expected；skipped 0，parse_partial 44 文件/项目（音频 codec 等既有信号，best-effort 如实记录）。
+- board `--set-pod` 预填完毕（三包 queued + worktreePath；mergeToken.holder=none）。
+- launch prompt 三份落 `.git/devloop/launch/prompt-260829-{char-stroke,home-p1,schedule-p2}.txt`（VS Code 交互会话形态，human 自跑；headless fail-closed 备选）。intake 必办移入：char-stroke 闸 A 契约 §1.6 预审 + 口语三句纪律 prompt 增量收紧（包 2 收口留根）；home-p1「接下来」消费/生产分工（producer = schedule-p2 决策 26）；schedule-p2 范围红线（提醒归包 7、反白已裁）+ home-p1 producer 对接同步。三包均带 Intent:nointent 偏差评估（ARQ-260907-openclaw-tools-rejection-rootcause，受阻即 blockingDecision fail-closed）；ASR v23-recheck 已结项（human 裁免测·换 key）、display relay 缺口已由 g-relay-fix 修复，不再构成偏差。
+- **待 human 自跑 launch**：三份 prompt 分别在对应 worktree 的 VS Code 会话作启动输入。
