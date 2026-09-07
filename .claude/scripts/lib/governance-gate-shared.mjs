@@ -33,6 +33,12 @@ export const TARGET_PATTERNS = [
 
 export const CANONICAL_TEST = /^(?:\.claude\/|docs\/|\.planning\/|README\.md|AGENTS\.md|CLAUDE\.md)/;
 
+// ANCHORABLE_TEST（260907-gov-review-arq-governance-batch-2 T1，FROZEN 2026-09-07）：
+// §2 锚提取专用形态 = CANONICAL_TEST ∪ 仓根点文件（`.` 开头无内斜杠的单段文件名）∪ `changes/` 前缀。
+// 消费方 = 本文件 :386 锚过滤一处；changedNotInProposal 检测面（landing-fidelity-check.mjs:367）维持
+// CANONICAL_TEST 不动——检测向严、锚提取向宽，两职责分离（R1-F8 消费点核对：全仓 CANONICAL_TEST 仅此两处）。
+export const ANCHORABLE_TEST = /^(?:\.claude\/|docs\/|\.planning\/|README\.md|AGENTS\.md|CLAUDE\.md|\.[A-Za-z0-9_-]+$|changes\/)/;
+
 // closeout 收口制品谓词单源（260906-gov-review-index-status-truth-source T1，FROZEN 2026-09-06）：
 //   消费方 = closeout-check.mjs（承重闸，本批具名导入替换本地拷贝）+ changes-index.mjs collectDev（INDEX dev 状态推导）。
 //   防漂移钉死：清单值与判定逻辑只此一份；改清单 = 同时改变闸行为与投影语义，须经治理批。
@@ -381,9 +387,10 @@ export function parseSection2AnchorLists(text) {
         problems.push(`歧义锚：${entry.label} 「目标文件：」行无 backtick 包裹路径（锚行格式 = 路径须 backtick 包裹，向严按缺锚处理）`);
         continue;
       }
-      // B7 第二变体 T1(a) · 路径形状过滤：只认 canonical 路径形态；内联代码 token（裸标识符 / --flag CLI / 函数名）不入锚集、
-      // 不参与歧义锚与或锚判定，仅作注记文本（腿6 批 PROPOSAL.md:104 实证）。
-      const canonical = matches.filter((m) => CANONICAL_TEST.test(m[1].trim()));
+      // B7 第二变体 T1(a) · 路径形状过滤：只认锚可辨路径形态（T1，260907 批：改用 ANCHORABLE_TEST——
+      // 认仓根点文件与 changes/ 制品形态，承 260906 批 T7/T9 整裁腿缺口根治）；内联代码 token（裸标识符 / --flag CLI /
+      // 函数名）不入锚集、不参与歧义锚与或锚判定，仅作注记文本（腿6 批 PROPOSAL.md:104 实证）。
+      const canonical = matches.filter((m) => ANCHORABLE_TEST.test(m[1].trim()));
       // T1(b) · 歧义锚兜底口径：过滤后仍零 canonical 路径 → 作者写错锚（全行只写内联代码、无一条真路径）→ fail-loud，
       // 不得因「有 backtick」就静默吞过。
       if (canonical.length === 0) {
@@ -495,6 +502,16 @@ export function runSection2AnchorSelfCheck() {
   const allInline = ['## 2. 改法', '### T1 · 全内联代码示例', '目标文件：见 `checkLaunchReachability` 实现。', '## 3.'].join('\n');
   const allInlineRes = parseSection2AnchorLists(allInline);
   ok(allInlineRes.problems.some((p) => p.includes('歧义锚')), 'all-inline-code-ambiguous-anchor');
+
+  // T1（260907 批）自检：ANCHORABLE_TEST 两新形态——仓根点文件锚 + changes/ 制品锚，各一正例（均须入并集、零 problems）
+  const dotfile = ['## 2. 改法', '### T1 · 仓根点文件锚示例', '改法正文。', '目标文件：`.gitattributes`（新增）。', '## 3.'].join('\n');
+  const dotRes = parseSection2AnchorLists(dotfile);
+  ok(dotRes.problems.length === 0, 'dotfile-anchor-no-problems');
+  ok(JSON.stringify(dotRes.union) === JSON.stringify(['.gitattributes']), 'dotfile-anchor-union');
+  const changesPath = ['## 2. 改法', '### T1 · changes 制品锚示例', '改法正文。', '目标文件：`changes/dev/260831-cloud-link-bringup/review-packet.md`（改：追加复核注）。', '## 3.'].join('\n');
+  const chRes = parseSection2AnchorLists(changesPath);
+  ok(chRes.problems.length === 0, 'changes-anchor-no-problems');
+  ok(JSON.stringify(chRes.union) === JSON.stringify(['changes/dev/260831-cloud-link-bringup/review-packet.md']), 'changes-anchor-union');
 
   console.log(JSON.stringify({ selfCheck: 'section2Anchors', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);

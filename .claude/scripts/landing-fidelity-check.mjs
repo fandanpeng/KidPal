@@ -27,7 +27,7 @@
 // （一行一个 canonical 路径，authoring 格式契约见 architect-operating-model §5）。
 // B2 fail-loud：任一侧无该块 → 显式 RED（格式不合格），不再正则兜底。
 
-import { existsSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { basename, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync, spawnSync } from 'node:child_process';
@@ -71,6 +71,7 @@ const CITATION_RE = /`([^\s`]*\.(?:mjs|md|json):\d+)`/g;
 function checkCitationAnchors(proposalText, projectDir) {
   const checked = [];
   const problems = [];
+  const resolved = [];
   const re = new RegExp(CITATION_RE.source, 'g');
   let m;
   while ((m = re.exec(proposalText)) !== null) {
@@ -81,13 +82,21 @@ function checkCitationAnchors(proposalText, projectDir) {
     const relPath = mm[1];
     const line = parseInt(mm[2], 10);
     const abs = resolve(projectDir, relPath);
-    if (!existsSync(abs)) { problems.push({ citation, reason: 'file-not-exist' }); continue; }
+    if (!existsSync(abs)) {
+      // T2（260907 批）：裸文件名引用前缀重解析——候选前缀依次试探，命中即消警并留痕（resolvedByPrefix 进观察列，不静默）。
+      let resolvedBy = null;
+      for (const prefix of ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/']) {
+        if (existsSync(resolve(projectDir, prefix + relPath))) { resolvedBy = prefix; break; }
+      }
+      if (resolvedBy) { resolved.push({ citation, resolvedAs: `${resolvedBy}${relPath}:${line}` }); continue; }
+      problems.push({ citation, reason: 'file-not-exist' }); continue;
+    }
     let lineCount = 0;
     try { lineCount = readFileSync(abs, 'utf8').split('\n').length; }
     catch { problems.push({ citation, reason: 'file-unreadable' }); continue; }
     if (line > lineCount) problems.push({ citation, reason: `line-out-of-range（line ${line} > ${lineCount}）` });
   }
-  return { checked, problems };
+  return { checked, problems, resolved };
 }
 
 // 纯逻辑自检（四例，真空绿：夹具非空、断言 checked/problems 精确计数）。临时夹具文件 → 例后清理。
@@ -107,6 +116,16 @@ function runCitationAnchorsSelfCheck() {
   rmSync(fixtureDir, { recursive: true, force: true });
   check('checked 数（v0.3:2 不提取）', checked.length, 3);
   check('problems 数（越界 + 不存在）', problems.length, 2);
+  // T2（260907 批）前缀重解析自检：裸文件名引用 + .claude/scripts/lib/ 夹具 → resolved 非空、零 problems
+  const prefixDir = mkdtempSync(join(tmpdir(), 'cit-prefix-'));
+  mkdirSync(join(prefixDir, '.claude', 'scripts', 'lib'), { recursive: true });
+  writeFileSync(join(prefixDir, '.claude', 'scripts', 'lib', 'fixture.mjs'), 'a\nb\nc\n', 'utf8');
+  const prefixText = '见 `fixture.mjs:2`（裸文件名，应经前缀解析命中）。';
+  const prefixRes = checkCitationAnchors(prefixText, prefixDir);
+  rmSync(prefixDir, { recursive: true, force: true });
+  check('prefix-resolved 数', prefixRes.resolved.length, 1);
+  check('prefix-resolved 解析形态', prefixRes.resolved[0] && prefixRes.resolved[0].resolvedAs, '.claude/scripts/lib/fixture.mjs:2');
+  check('prefix 零 problems', prefixRes.problems.length, 0);
   console.log(JSON.stringify({ selfCheck: 'citation-anchors', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
@@ -151,7 +170,10 @@ function checkVerbatimQuotes(proposalText, projectDir, targetFiles) {
       if (!existsSync(abs)) continue;
       let content;
       try { content = readFileSync(abs, 'utf8'); } catch { continue; }
-      if (content.includes(block)) { found = true; break; }
+      // T2（260907 批）：双侧行尾归一后比对——仓内 .mjs 工作树全量 CRLF（autocrlf 实况）、PROPOSAL 经 Write 落盘 LF，
+      // 逐字节 includes 必假（260906-gov-review-index-status-truth-source 批 2 条 advisory 假失配实证）。
+      const norm = (s) => s.replace(/\r\n/g, '\n');
+      if (norm(content).includes(norm(block))) { found = true; break; }
     }
     checked.push(block);
     if (!found) missing.push({ block: block.trim().slice(0, 120), reason: 'not-found-verbatim-in-any-target' });
@@ -176,6 +198,13 @@ function runVerbatimQuotesSelfCheck() {
   check('verbatim-drift-missing', driftRes.missing.length, 1);
   const noFenceRes = checkVerbatimQuotes('# t\n## 2. 改法\n无代码块。\n## 3.', fixtureDir, ['target.mjs']);
   check('verbatim-no-fence-checked', noFenceRes.checked.length, 0);
+  // T2（260907 批）CRLF 自检：LF 围栏块 × CRLF 目标文件 → 归一后命中（归一前必假，防回归）
+  const crlfTarget = mkdtempSync(join(tmpdir(), 'vq-crlf-'));
+  writeFileSync(join(crlfTarget, 'target.cjs'), `prefix\r\n${block.replace(/\n/g, '\r\n')}\r\nsuffix\r\n`, 'utf8');
+  const crlfRes = checkVerbatimQuotes(proposal, crlfTarget, ['target.cjs']);
+  check('verbatim-crlf-missing', crlfRes.missing.length, 0);
+  check('verbatim-crlf-checked', crlfRes.checked.length, 1);
+  rmSync(crlfTarget, { recursive: true, force: true });
   rmSync(fixtureDir, { recursive: true, force: true });
   console.log(JSON.stringify({ selfCheck: 'verbatim-quotes', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
@@ -357,8 +386,8 @@ const lintDescriptionsAdvisory = (() => {
 })();
 
 // --- 引据锚点观察列（260826-gov-review-claude-consistency-batch3 T1，advisory-only）---
-const { checked: citationChecked, problems: citationProblems } = checkCitationAnchors(proposalText, projectDir);
-const citationAnchorAdvisory = { checked: citationChecked.length, problems: citationProblems };
+const { checked: citationChecked, problems: citationProblems, resolved: citationResolved } = checkCitationAnchors(proposalText, projectDir);
+const citationAnchorAdvisory = { checked: citationChecked.length, problems: citationProblems, resolvedByPrefix: citationResolved };
 
 // --- §2 钉死引号块逐字对账观察列（260826-gov-review-g3-infra-convergence T2，advisory-only）---
 const verbatimQuoteAdvisory = checkVerbatimQuotes(proposalText, projectDir, [...proposalTargets]);

@@ -55,6 +55,7 @@ model: opus
 - `.claude/references/pod-coordination.md`
 - `.claude/references/task-intake-and-slicing.md`
 - `.claude/references/architecture-decisions.md`
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：拆包草案预填 mutationEvidence 骨架、降级声明前置字段等五条前置清单。
 
 ## Boundaries / 权限边界
 

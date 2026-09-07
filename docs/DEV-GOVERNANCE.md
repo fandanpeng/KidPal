@@ -246,6 +246,7 @@ flowchart TD
 | command / reference / rule / skill | 治理变更（Track B 默认） | human |
 | scope-map / settings / verify-gates / hook / script | 治理变更（Track B 默认，高敏） | human |
 | README / AGENTS / CLAUDE / 治理文档 / 蓝图 | 治理变更（Track B 默认；L0 蓝图见上行 Track A 语境） | human |
+| `docs/ADR.md`（架构决策记录） | integrator 收口落新增条目 / 主线程治理批落条目；条目格式与 append-only 约定见该文件头（T7，260907 批，human 裁 docs 根平铺） | 对应流程 |
 | `changes/arch/**`、`changes/dev/**`、ARQ、CDQ | 按来源流程记账 | 对应流程 |
 
 > **统一入口**：治理 / spec 变更**默认 = Track B**（主线程起草 PROPOSAL 走起，见 §4 治理变更）；命中升级判据或声明红队 → `/arch-change <plan>`（Track A：先分类 spec / governance / mixed〔contract-touching 是横切 flag，命中转 architect-reviewer 与契约门；纯 `docs/contracts/**` 直走契约门〕，再派 architect 起草、路由进对应 profile）。
@@ -280,3 +281,23 @@ server 面验收分两态：
 ### 3. 冻结即冒烟（线束通道 error 为零）
 
 冻结验收落盘时，acceptance-author 当场执行一次线束冒烟：live 面真连一次 SSH 可达性、线束助手（连接/读写/payload）真调一次、pytest 收集零错误。判据 = **执行通道 error 为零**（error ≠ failure：收集错/夹具崩/线束异常 = 线束缺陷，当场修）；断言 failure 是冻结相位的设计态（实现未建、红基线），不阻塞冻结。为什么只冒烟线束、不要求断言转绿：历史病灶（`_ssh` 解包、payload 撞命令行上限）全部落在线束层、**不需要被测实现存在**就会炸（TP-A 与 smoke-e2e 两度实证，ARQ-260902-frozen-acceptance-never-run）。
+
+### 4. C 类冻结验收实编（编译通道 error 为零）
+
+C 类（固件/结构面）冻结验收文件落盘时，acceptance-author 当场实编一次该验收文件本身（C 编译器过一遍），判据 = **编译通道 error 为零**。红基线对结构/基建类包明示「验收文件本身可编译」：§3 的线束冒烟清单（SSH/线束助手/pytest 收集）不含编译通道，C 验收的语法缺陷（宏参数形态、复合字面量分组等）只有实编才暴露——260829-host-test-infra 实证：`host_infra_smoke.acceptance.c` 宏参编译错误到 builder 首实编才爆、退回 acceptance-author 返工（ARQ-260907-frozen-acceptance-compile-baseline）。§3 管执行通道、§4 管编译通道，两者并列不互替。
+
+## 起包格式期望前置（planner / portfolio-planner / acceptance-author / builder 四方）
+
+> 成文：260907-gov-review-arq-governance-batch-2（T6）；承载 ARQ-260907-taskpackage-format-expectations-frontload。格式期望只活在闸的判定代码里、起草侧零成文 = 靠闸红反推再回派（跨 4 包 5 子项实证）。五条前置清单：
+
+1. **mutationEvidence 骨架**：Draft TaskPackage 必须带 mutationEvidence 字段骨架（空骨架也行，字段必须在场）——portfolio 起草不带骨架，mutation-check 闸红一轮再回派补（260903-gateway-directionB / 260829-session-logic 两度实证）。
+2. **验收断言格式期望**：acceptance 面写机器可识别断言形态（acceptance-coverage-check 可认的断言风格）+ coverage 标记随测试名——markdown prose 断言会被判「无可识别断言」回派补写（260831-ui-art-assets 实证，回派补 31 条）。
+3. **验收 ID 禁括号后缀**：acceptanceRef 形态为 `Sx-Ay` 等 kebab 短横形态，禁 `(B#)` 类括号后缀——括号破坏闸正则 `\b` 词边界匹配，标记被迫写尾随下划线丑形态（同包卡点 3）。
+4. **降级声明前置**：资产/规划类包对 mutation / docs-sync 的降级声明（不适用 + 理由）在 Draft TaskPackage 阶段写字段，不等到 verifier 红才补（同包卡点 4）。
+5. **新约定包同步闸判据自查**：建新约定（新目录、新测试通路等）的包，dispatch 时同步查相关机械闸的判定口径——闸判据滞后到全量终审才发现 = vacuous-green 风险（260829-host-test-infra 实证）。
+
+## friction 事件最小 schema（dev-loop 记账）
+
+> 成文：260907-gov-review-arq-governance-batch-2（T4）；承载 ARQ-260907-friction-event-payload-schema。聚合告警面 = `pod-events-aggregate.mjs` `friction.malformedFrictions` 列（残缺事件显式点名，不再静默归 unknown）。
+
+pod-events 的 friction 事件 payload 最小 schema：**`frictionType` + `summary` 必填**（frictionType 用既有关键词形态，summary 一句话讲清现象）；附加细节允许扩展键（非标键会被聚合归 unknown——用扩展键时仍须带齐两个必填件）。**空 payload `{}` = 落账缺陷**：内容机器侧不可恢复即实际证据丢失（260829-voice-roundtrip 两条空 payload 实证，其一内容只能从 commit message 追回、另一条彻底丢失）。落账时点 = 摩擦发生的当次交互内（planner / 主线程随手记），不攒到收口补记。

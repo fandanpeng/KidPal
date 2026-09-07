@@ -43,6 +43,7 @@ model: sonnet
 - `.claude/references/minimal-implementation.md`
 - `.claude/references/observability-k6.md`
 - `.claude/references/security-hardening.md`
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：消费 Draft TaskPackage 的 mutationEvidence 骨架与验收 ID 形态（禁括号后缀），勿靠闸红反推格式。
 
 ## Boundaries / 权限边界
 
