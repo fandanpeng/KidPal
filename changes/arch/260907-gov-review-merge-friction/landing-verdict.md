@@ -71,3 +71,28 @@ landing-summary 引 packet = FROZEN PROPOSAL（R2=GREEN）+ landing-manifest 三
 **RED**——唯一阻断项 D1（summary 制品名不符 frozen packet 与门脚本要求，结构门红）。语义面三 manifest 文件逐条核对全部落地 == 冻结改法（R1 六项打回修正 F-1/F-3/F-4/F-5/F-6 逐一在 diff 实证），验证集亲跑全绿，破坏性自检无发现，仅 D2 一项非阻断 payload 成分缺项。
 
 **放行条件**：主线程完成 D1（改名 `architect-landing-summary.md` + 结构门复跑绿）后方可进合并门；D2 建议同轮处理或如实留痕。本 verdict 不批准合并——合并门归 human。
+
+## R2 · 2026-09-07 · landing-verifier（退回修复复验，终局）
+
+**复核对象**：修复 commit `c518928`（同分支 `dev/260907-gov-review-merge-friction`），针对 R1 RED 两项偏差逐项核销。
+
+**结构门复跑（核验人亲跑）——绿**：
+
+```
+node .claude/scripts/landing-fidelity-check.mjs changes/arch/260907-gov-review-merge-friction main
+→ {"ok":true, frozen:true, packetBinding:true,
+   proposalTargets == summaryTargets == [merge-driver.mjs, .gitattributes, pod-coordination.md],
+   unauthorized:[], claimedNotLanded:[], plannedNotLanded:[], gitDegraded:false}
+```
+
+D1 核销：`git mv` 改名 `architect-landing-summary.md`（diffstat 以 rename 记 `...ing-summary.md => architect-landing-summary.md`），头部补 packet-binding 行（packet-id 字面引用 + 被批 review id = 260907-gov-review-merge-friction）+ 双侧 ```landing-manifest``` 围栏块（三路径全等）。advisory 面 `changedCanonicalNotInProposal` 所列 260829-char-stroke 五件为工作树内另一 Pod 的 untracked 文件，非本批 landing 面，不构成本批 scope creep。
+
+D2 核销：merge-driver 仅 +3/-1 行——模块级 `lastProjectionResolution` 留痕（`tryResolveProjectionConflicts` 消解成功轮写入 `投影冲突 --theirs ×N（round N）`，`step5bBookkeeping` payload summary 尾部条件拼接），T6 payload 现含冻结文所列三成分全数（main tip sha / human-approval-ref / 冲突消解摘要）；无冲突时留痕为 null、不拼接，语义自然。`node --check` 亲跑过；`--self-check-merge-friction` 亲跑复绿（10/10）。
+
+顺带改动核销：PROPOSAL §2 六处锚行去粗体（`**目标文件：` → `目标文件：`，行首锚正则要求）——改法文本逐行零变化，纯格式修正以过结构门锚提取，如实留痕于 commit message；frozen 语义未动。
+
+**R1 语义结论承继**：c518928 未触三 manifest 文件的 T1–T6 实现主体（merge-driver 仅 D2 一行扩展），R1 逐 T 核对结论、验证集全绿记录、破坏性自检结论全部承继有效；`git diff c9f743e..c518928` 范围核对仅四文件（summary 改名 / PROPOSAL 锚行 / merge-driver 一行扩展 / 本 verdict R1 段入册），无新增私货。
+
+## 终局结论
+
+**绿（GREEN）**——实际落地 == frozen PROPOSAL landing 清单（T1–T6 全落、R1 六项判官修正 F-1/F-3/F-4/F-5/F-6 实证在位、R1 两项偏差 D1/D2 已核销），结构门 ok:true，验证集亲跑全绿（六自检 + route-regression 28 ok），破坏性自检无发现，landing 范围 ⊆ 被批 packet 零超出。**放行建议：可进合并门**（合并拍板仍归 human manual-merge 门；PROPOSAL §5 第 8 项「下一个真实 Pod merge 段一次跑成」为行为级最终权重，随合并后首例 Pod 观测）。
