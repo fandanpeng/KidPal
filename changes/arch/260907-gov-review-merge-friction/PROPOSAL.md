@@ -1,6 +1,6 @@
 # PROPOSAL · 260907-gov-review-merge-friction
 
-> **状态：FROZEN · 2026-09-07 · R2=GREEN（凭据自冻，授权记本行：human 立项 ack 2026-09-07「同意立项」+ architect R2 GREEN + human 裁 OQ1=(a)/OQ2 终裁 (c)/OQ3=(a)）**（packet = 本 FROZEN PROPOSAL + landing-manifest 三路径 + architect-landing-summary；landing 走主线程 packet-bound，GREEN 不豁免任何落地门——landing-verifier 独立核验、retro、前置升级闸照走）。
+> **状态：FROZEN v1.0 · 2026-09-07 · R2=GREEN（凭据自冻，授权记本行：human 立项 ack 2026-09-07「同意立项」+ architect R2 GREEN + human 裁 OQ1=(a)/OQ2 终裁 (c)/OQ3=(a)）**（packet = 本 FROZEN PROPOSAL + landing-manifest 三路径 + architect-landing-summary；landing 走主线程 packet-bound，GREEN 不豁免任何落地门——landing-verifier 独立核验、retro、前置升级闸照走）。
 > **承载 ARQ**：`ARQ-260907-merge-driver-approval-state-desync` + `ARQ-260907-merge-closeout-bookkeeping-gap`（同批根治，两条根因同属 merge 段机械面）；**不承载** `ARQ-260907-escalation-cross-system-overfire`（判据语义变更走 Track A，见 §6 留根指针）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T6）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
