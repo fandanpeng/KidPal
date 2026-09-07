@@ -1,0 +1,65 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-07T14:02:54.194Z",
+  "changeId": "260829-schedule-p2",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=main,acceptance,deploy,gateway",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=main,acceptance,deploy,gateway"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 3,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=main,acceptance,deploy,gateway"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-schedule-p2/verifier-evidence/rounds/r3.json",
+        "bearingFactOk": true,
+        "completedRounds": 3,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-schedule-p2/docs-delta.md",
+          "changes/dev/260829-schedule-p2/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788784261265-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-schedule-p2/verifier-evidence/rounds/r3.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-schedule-p2/docs-delta.md",
+      "changes/dev/260829-schedule-p2/review-packet.md"
+    ]
+  }
+}
