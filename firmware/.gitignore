@@ -20,3 +20,8 @@ mmap_generate_*.h
 # KidPal smoke NVS provisioning (contains wifi password + device token — never commit)
 smoke_nvs.csv
 smoke_nvs.bin
+
+# KidPal host_app 独立工程增量构建目录（mutation 探针用，可再生）
+main/test/host_app/build_hp1/
+# host_app 机器本地生成 sdkconfig（由 sdkconfig.defaults 再生）
+main/test/host_app/sdkconfig

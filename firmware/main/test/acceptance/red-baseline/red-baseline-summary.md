@@ -112,3 +112,88 @@ python 收集零错误、断言全落在缺失行为上）。
    `firmware/main/display/view_router.(c|cc)`（C linkage, 无芯片依赖），数值码与
    语义以 C 验收文件头注为准——builder 唯一被迫接受的是这三个函数签名, 换取
    「行为真执行」的验收强度（G 包 python frozen-contract 先例的 C 对偶）。
+
+---
+---
+
+# HP1 红基线判定摘要（TaskPackage 260829-home-p1 · acceptance-author 2026-09-07 实测）
+
+（本节按 append 纪律追加，上文 VRT 段零改动。）
+
+冻结验收文件：`firmware/main/test/home_p1.acceptance.c`（weak-symbol frozen
+offline contract 模式，照 VRT 先例；taskpackage `acceptanceTestsFile` 钉的路径，
+无落位偏差）。冻结契约 = `firmware/main/display/home_p1.c/h` 的 11 个纯逻辑
+函数（数值码与语义冻结在验收文件头注），builder 落地强定义后 weak 哨兵 -2 被
+覆盖、真逻辑被测。
+
+## C 侧红基线（命令与实跑）
+
+冻结验收文件的闸上 runner 判据 = host_app linux-target ELF（[C4.4]），但接线属
+builder。本次用边界内脚手架（本目录 `unity.h` stub + `runner.c`，同 VRT；另加
+`seam_stub.c` = host_infra 渲染缝最小替身，因裸 gcc 脚手架不编 LVGL）把**同一份
+冻结验收文件**在 WSL Ubuntu-24.04 编成原生 Linux ELF 当场执行：
+
+```
+cd firmware/main/test/acceptance/red-baseline
+gcc -std=c11 -Wall -Wextra -I. -o /mnt/c/tmp/hp1_red_runner \
+    ../../home_p1.acceptance.c ../../../display/view_router.c seam_stub.c runner.c
+    # BUILD_CLEAN（零告警；view_router.c 显式链入 = guard 齿真执行包 2 强符号）
+cd <repo root>
+wsl -d Ubuntu-24.04 -- /mnt/c/tmp/hp1_red_runner   # 退出码 = 失败 TEST_CASE 数
+```
+
+实测：**11 Tests 10 Failures，ELF 退出码 = 10**。退出码按「直取 argv 形态」
+单独核实（`wsl -- <elf>` 后 Windows 侧 `$?` = 10，与报告行 10 Failures 一致；
+`bash -c` 包装下 `echo $?` 恒 0 已复现为 wsl.exe 参数重组伪影，勿用作判据）。
+
+判读要点（冻结纪律：红必须红在真实行为缺失）：
+- 全部行为齿红在 weak 哨兵 -2「frozen contract NOT implemented」或装配齿红在
+  「模块不存在/未编入 CMakeLists」——不是编译/链接错误（BUILD_CLEAN 佐证）。
+- guard 齿绿：包 2 view_router 冻结契约（home→1 / schedule→4 / text→0 /
+  NULL→-1）经强符号真执行不回归；契约 §1.3 canary 在世；模块纯净性扫描在模块
+  未落地时平凡绿（落地后为强守卫）。
+
+### 逐条判定
+
+| TEST_CASE | 判定 | 红因（各自真实缺失行为, 2026-09-07 实测） |
+|---|---|---|
+| P1-A1/P1-E1（验收文件在世 + 模块装配结构, structural） | **RED** | 齿 1/2 绿（验收文件在世于钉定路径 + 头注 builder duty 标记在位）；齿 3/4 红——firmware/main 无任何文件实现 frozen contract（`kidpal_home_p1_schedule_inject(` 零命中）、home_p1.c 未编入 firmware/main/CMakeLists.txt（装配缺失） |
+| P1-E3/E2（路由底座不回归 + 契约 canary + 模块纯净性, guard） | GREEN（守卫, 必须保持绿） | 包 2 view_router 冻结契约强符号真执行全对（home/schedule/text/NULL）；契约 §1.3 home anchor 在世；纯净性扫描平凡绿（模块未落地） |
+| P1-A3/E3（日程缓存 inject/读取 verbatim + 防御） | **RED** | frozen contract 未实现（weak 哨兵）——分组结果注入/verbatim 消费（设备不重算分组）/次日预告/整体替换/「今日无待办」清空/容量与形状防御全部缺失 |
+| P1-E3（跨 0:00 日滚动） | **RED** | `kidpal_home_p1_day_rollover` 未实现——刷新三触发的设备半（跨天清缓存+更新日键）缺失（另两触发产生端归 producer/网关, 头注留根） |
+| P1-A3（倒计时贴纸） | **RED** | `kidpal_home_p1_countdown` 未实现——最近未开始项选择/「3 个半小时」数值半/全过期无贴纸边界缺失 |
+| P1-A2（眨眼冒号相位） | **RED** | `kidpal_home_p1_blink_visible` 未实现——4.4s 眨眼周期/1s 电池闪同款相位/周期灭窗唯一性缺失 |
+| P1-A4（低电打盹判定） | **RED** | `kidpal_home_p1_doze_state` 未实现——阈值相对行为/充电叫醒覆盖缺失（阈值默认 15 已钉, 9b owns 调定） |
+| P1-A5（布局优先级解析） | **RED** | `kidpal_home_p1_layout_resolve` 未实现——时间>接下来>温湿度贪心序/冲突时温湿度让位（隐藏）语义缺失 |
+| P1-A2（P1 版面在位 + 冒号眨眼墨水差） | **RED** | `kidpal_home_p1_set_state`/`kidpal_home_p1_render_frame` 未实现（weak 哨兵）——P1 首页渲染面不存在，大时间/日期/温湿度/电量区域在位与眨眼墨水差无从执行 |
+| P1-A3（接下来卡/贴纸/次日预告在位 + 空边界） | **RED** | 同上（渲染面缺失）——分组卡/倒计时贴纸/次日预告区域在位与「无待办全空」「全开始无贴纸」边界缺失 |
+| P1-A4（打盹电池每秒闪 + 充电叫醒） | **RED** | 同上（渲染面缺失）——state-sleepy 电池闪墨水相位与充电覆盖渲染缺失 |
+
+## 红的构成一句话
+
+**红 = 10 条齿对当前 story 缺失行为成立（home_p1 纯逻辑模块 + P1 首页渲染面全
+部未实现：日程缓存 verbatim 消费/跨天滚动/倒计时贴纸/眨眼相位/低电打盹/布局
+优先级/版面在位）；1 条 guard 齿绿（包 2 view_router 底座 + 契约 canary 必须
+保持绿）。本包把它切到绿。** 无一红因是编译/链接错误（BUILD_CLEAN），全部红因
+落在 weak 哨兵或装配缺失的真实行为上。
+
+## 降级与留痕记录（诚实边界）
+
+1. **闸 runner 未接线**：`HOST_ACCEPTANCE_SRCS` 与 firmware/main/CMakeLists.txt
+   接线属 builder（验收文件头 BUILDER DUTY 清单 1–5 条）；本次红以 stub runner
+   执行同一文件得出，断言行为与闸上一致；builder 接线后 verifier 应在 host_app
+   ELF 上复跑（转绿期望 = 全 TEST_CASE PASS + EXIT=0，并把
+   `../../../display/home_p1.c` 一并编入 HOST_ACCEPTANCE_SRCS 使强符号覆盖
+   weak 默认）。
+2. **渲染缝替身**：`seam_stub.c`（本目录, 非冻结件）只为裸 gcc 脚手架供链；闸上
+   用真 `host_app/main/host_infra_seam.c`（LVGL 软离屏渲染）。渲染齿在 stub 下
+   红于渲染入口哨兵（远早于像素探针），替身内容不会掩盖任何红。
+3. **红因精度修正一次（冻结前）**：P1-A4 render 齿初版在 `set_state` 哨兵检查前
+   直接断言 `==0`，红因措辞不精确；冻结前补哨兵前置检查（断言语义不变），复跑
+   确认红因统一为「frozen contract NOT implemented」。此后断言语义冻结不再改。
+4. **taskpackage 字段不动**：`redBaselineResult` 为 planner 责任面，本摘要只落
+   实测记录。
+5. **统一红说明（acceptance-evidence 纪律）**：7 条行为齿共享「模块未实现」这一
+   缺失原因，统一红对逐条断言敏感性零信息——上表已按条目给出各齿对应的缺失
+   行为映射，转绿后 verifier 须做 mutation check（破坏一个真实行为期待变红），
+   不得豁免。

@@ -12,7 +12,12 @@
 # level up from this component dir) — single source of truth, never copied. A source
 # file outside the component source dir is fine here: this is a test-only project.
 set(HOST_ACCEPTANCE_SRCS
-    "../../host_infra_smoke.acceptance.c"
+    # host_infra_smoke.acceptance.c is listed LAST (registered first at runtime, unity
+    # registers TEST_CASE on `main` in reverse link order) so its `boundary` tooth — which
+    # asserts the seam exposes the NOT_RENDERED sentinel (-1) "before any frame is flushed"
+    # — runs against a FRESH process, before any render-producing test (incl. this package's
+    # home_p1 render teeth) flushes a frame. Keeping boundary first is the package-0 guard
+    # it needs (it cannot pass after any prior render in the process).
     # 包 3 (260829-session-logic)：冻结验收 + 被测纯逻辑实现（seam 头在 firmware/main/，
     # 相对 host_app/main 为 ../../../）。
     "../../session_logic.acceptance.c"
@@ -25,6 +30,12 @@ set(HOST_ACCEPTANCE_SRCS
     # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../）。
     "../../voice_roundtrip_b.acceptance.c"
     "../../../display/view_router.c"
+    # 包 260829-home-p1 (首页常显信息牌)：冻结验收 + 被测纯逻辑实现（home_p1 强符号覆盖
+    # weak 哨兵; 渲染缝 additive 在 host_infra_seam.c）。
+    "../../home_p1.acceptance.c"
+    "../../../display/home_p1.c"
+    # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
+    "../../host_infra_smoke.acceptance.c"
 )
 
 idf_component_register(

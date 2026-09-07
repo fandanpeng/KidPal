@@ -124,3 +124,24 @@ int32_t host_infra_read_pixel(int x, int y)
     }
     return (int32_t)s_fb[(uint32_t)y * SEAM_FRAME_W + (uint32_t)x];
 }
+
+/* ============================================================================
+ * additive P1 渲染入口 (TaskPackage 260829-home-p1) —— 不改任何既有断言行为。
+ *
+ * home_p1.c (纯逻辑, device 亦可编) 以自身 weak 默认定义同名符号; 本文件以强符号
+ * 覆盖之, 把 home_p1 构建好的 ARGB8888 一帧打印到可探针帧缓冲 s_fb 并置 rendered,
+ * 使 host_infra_read_pixel 能探针 P1 首页版面 (布局钉区域墨水在位)。
+ * 包 0 冻结断言 (host_infra_smoke.acceptance.c) 只关住 host_infra_render_frame /
+ * host_infra_read_pixel 自身——本新增函数不影响其语义, 每次渲染都是整帧覆盖。
+ * ========================================================================== */
+int host_infra_render_p1_frame(const uint32_t *argb, int w, int h)
+{
+    if (argb == NULL || w != SEAM_FRAME_W || h != SEAM_FRAME_H) {
+        return -1;
+    }
+    for (int i = 0; i < SEAM_FRAME_W * SEAM_FRAME_H; i++) {
+        s_fb[i] = argb[i] & 0x00FFFFFFu; /* drop alpha, 与 seam_flush_cb 同口径 */
+    }
+    s_rendered = true;
+    return 0; /* 0 == a P1 frame was flushed */
+}
