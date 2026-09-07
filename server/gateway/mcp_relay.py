@@ -35,10 +35,25 @@ def corr_id() -> str:
     return uuid.uuid4().hex
 
 
+# Device wire fact (firmware mcp_server.cc:473): the JSON-RPC `id` MUST be a NUMBER
+# (cJSON_IsNumber) — uuid hex strings are rejected "Invalid id".  Display relay ids are
+# numeric (ms-timestamp + monotonic tag).  (alert_tool_call keeps its own deterministic
+# reminder-id override below — the numeric-ification of that id belongs to the reminder-side
+# package, NOT pinned in this transport round.)
+_display_id_seq = 0
+
+
+def _next_numeric_id() -> int:
+    """A unique numeric JSON-RPC id (ms timestamp + in-process monotonic tag)."""
+    global _display_id_seq
+    _display_id_seq += 1
+    return int(time.time() * 1000) * 1000 + (_display_id_seq % 1000)
+
+
 def _tool_call(tool: str, arguments) -> dict:
     """Build one JSON-RPC 2.0 tools/call envelope for the device leg."""
     return {
-        "id": uuid.uuid4().hex,
+        "id": _next_numeric_id(),
         "jsonrpc": JSONRPC,
         "method": METHOD_TOOLS_CALL,
         "params": {"name": tool, "arguments": arguments},

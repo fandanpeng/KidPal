@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "8c1cba3aa2fbc536e99cced4117f029fd9c0728b",
-    "indexed_at": "2026-09-07T08:29:42Z",
-    "project": "C-AI-KidPal",
-    "nodes": 16791,
-    "edges": 40296,
-    "original_size": 25821184,
-    "compressed_size": 4595766,
-    "compression_level": 9
+    "commit": "af2219d6c3e31f4b49041062c955a9d01162c3fd",
+    "indexed_at": "2026-09-07T07:15:24Z",
+    "project": "C-AI-KidPal-pod-gateway-directionB",
+    "nodes": 16805,
+    "edges": 40577,
+    "original_size": 43712512,
+    "compressed_size": 6783978,
+    "compression_level": 3
 }

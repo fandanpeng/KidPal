@@ -1,0 +1,70 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-07T07:19:01.813Z",
+  "changeId": "260907-g-relay-fix",
+  "originType": "regression",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=acceptance,deploy,gateway",
+      "security-axis-diff:auth",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "medium",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=acceptance,deploy,gateway",
+        "security-axis-diff:auth"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 3,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "medium",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=acceptance,deploy,gateway",
+          "security-axis-diff:auth"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260907-g-relay-fix/verifier-evidence/rounds/r3.json",
+        "bearingFactOk": true,
+        "completedRounds": 3,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260907-g-relay-fix/docs-delta.md",
+          "changes/dev/260907-g-relay-fix/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "regression"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788536446303-mutation-check.log",
+      ".claude/verify-logs/1788539555449-docs-sync.log",
+      ".claude/verify-logs/1788755575622-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260907-g-relay-fix/verifier-evidence/rounds/r3.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260907-g-relay-fix/docs-delta.md",
+      "changes/dev/260907-g-relay-fix/review-packet.md"
+    ]
+  }
+}
