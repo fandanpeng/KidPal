@@ -1,0 +1,65 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-07T03:30:39.429Z",
+  "changeId": "260829-voice-roundtrip",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=main,acceptance,deploy",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=main,acceptance,deploy"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 1,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=main,acceptance,deploy"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-voice-roundtrip/verifier-evidence/rounds/r1.json",
+        "bearingFactOk": true,
+        "completedRounds": 1,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-voice-roundtrip/docs-delta.md",
+          "changes/dev/260829-voice-roundtrip/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788742392575-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-voice-roundtrip/verifier-evidence/rounds/r1.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-voice-roundtrip/docs-delta.md",
+      "changes/dev/260829-voice-roundtrip/review-packet.md"
+    ]
+  }
+}
