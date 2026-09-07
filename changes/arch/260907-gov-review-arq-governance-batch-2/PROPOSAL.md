@@ -1,6 +1,6 @@
 # PROPOSAL · 260907-gov-review-arq-governance-batch-2
 
-> **状态：DRAFT v0.3 · 2026-09-07 · R1 NEEDS-REVISION（F1–F5 修订级 + F6–F11 NIT）已修订 · human 已裁 OQ1=(a) / OQ2=(a) / OQ3=human 自裁 ADR 落 docs/ADR.md 单文件日志 · 待 R2 复验**
+> **状态：FROZEN v1.0 · 2026-09-07 · 凭据 = human 立项 ack（「开始review吧」）+ OQ 三题裁断（OQ1=(a) / OQ2=(a) / OQ3=human 自裁 docs/ADR.md 单文件日志）+ architect R1 NEEDS-REVISION → 主线程修订 → R2 GREEN（N1–N3 NIT 已按判官限定范围折入，无设计变更）**
 > **承载 ARQ**：`ARQ-260906-lfc-canonical-anchor-gap`、`ARQ-260906-lfc-verbatim-crlf-citation-gap`、`ARQ-260907-renormalize-clears-skip-worktree`、`ARQ-260907-frozen-acceptance-compile-baseline`、`ARQ-260907-taskpackage-format-expectations-frontload`、`ARQ-260907-friction-event-payload-schema`、`ARQ-260907-integrator-adr-canonical-location`（七项一批清结，前例 `260906-gov-review-arq-governance-batch`；另折入该批 retro §4 建议 1 的模板钉死项）。不关的根：五项非 governance ARQ（multiturn-continuity / p4-stroke-dasharray / v23-asr-swap / protocol-version-pinned / nvs-csv-wifi）留队列不动，见 §6。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T8）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -73,9 +73,9 @@ docs/ADR.md
 
 ### T1 · landing-fidelity 锚形态拓宽：新增 ANCHORABLE_TEST 与 CANONICAL_TEST 分离
 
-`governance-gate-shared.mjs` 新增导出常量 `ANCHORABLE_TEST`（锚提取专用）：形态 = 既有 `CANONICAL_TEST` ∪ 仓根点文件（`.` 开头单段文件名，如 `.gitattributes`）∪ `changes/` 前缀路径。`.claude/scripts/landing-fidelity-check.mjs:386` 锚提取过滤处 `CANONICAL_TEST.test(...)` 改用 `ANCHORABLE_TEST.test(...)`。**`CANONICAL_TEST` 本体与 `changedNotInProposal` 检测面（`landing-fidelity-check.mjs:367`）维持不动**——防把治理 landing 期 `changes/**` 制品常规写入误报成 changed-not-in-proposal（检测面向严、锚提取向宽，两职责分离）。为什么这样改：T7/T9 类落点（仓根点文件、changes 制品复核注）是合法治理落点，锚提取必须能机辨；而 changed-not-in-proposal 是「未申报改动」检测，扩面会引入新假阳，不在本批诉求内。`runSection2AnchorSelfCheck` 补两形态用例（仓根点文件锚、changes/** 锚各一正例）。
+`governance-gate-shared.mjs` 新增导出常量 `ANCHORABLE_TEST`（锚提取专用）：形态 = 既有 `CANONICAL_TEST` ∪ 仓根点文件（`.` 开头单段文件名，如 `.gitattributes`）∪ `changes/` 前缀路径。`.claude/scripts/lib/governance-gate-shared.mjs:386` 锚提取过滤处（N2 归属核准：该行在 gate-shared 本体，经导入被 landing-fidelity-check 调用）`CANONICAL_TEST.test(...)` 改用 `ANCHORABLE_TEST.test(...)`。**`CANONICAL_TEST` 本体与 `changedNotInProposal` 检测面（`landing-fidelity-check.mjs:367`）维持不动**——防把治理 landing 期 `changes/**` 制品常规写入误报成 changed-not-in-proposal（检测面向严、锚提取向宽，两职责分离）。为什么这样改：T7/T9 类落点（仓根点文件、changes 制品复核注）是合法治理落点，锚提取必须能机辨；而 changed-not-in-proposal 是「未申报改动」检测，扩面会引入新假阳，不在本批诉求内。`runSection2AnchorSelfCheck` 补两形态用例（仓根点文件锚、changes/** 锚各一正例）。
 
-目标文件：`.claude/scripts/lib/governance-gate-shared.mjs`（ANCHORABLE_TEST 新增）、`.claude/scripts/landing-fidelity-check.mjs`（:386 过滤切换 + 自检用例）。
+目标文件：`.claude/scripts/lib/governance-gate-shared.mjs`（ANCHORABLE_TEST 新增 + :386 过滤切换）、`.claude/scripts/landing-fidelity-check.mjs`（自检用例扩展）。
 
 ### T2 · verbatim 对账 CRLF 归一 + citation 前缀补全
 
@@ -91,7 +91,7 @@ docs/ADR.md
 
 ### T4 · friction 事件最小 schema：聚合器显式告警 + 成文
 
-`pod-events-aggregate.mjs` `aggregateFriction`（:135 起）增加残缺事件显式列 `malformedFrictions`：payload 空对象 / 缺 `frictionType` / 缺 `summary` 三判据，命中即入列（含 changeId + eventType 侧定位信息），不静默归 unknown；既有 `unknown` 兜底保留（非标键仍归 unknown，但残缺件同时出现在 malformedFrictions 列——告警与归档双轨）。无 self-check 入口（该脚本现无自检），验证走真数据重放：对 `.git/devloop/pods/` 现存 pod-events 跑聚合，断言 260829-voice-roundtrip 的 fb2c70c9 / 55a43813 与 260903-device-ws-switch 非标键两条全部入列（§5 V4）。schema 成文进 `docs/DEV-GOVERNANCE.md`（「friction 事件最小 schema」小节：`frictionType` + `summary` 必填、附加细节允许扩展键、空 payload = 落账缺陷）。planner def 引用行（OQ2 条件锚）。
+`pod-events-aggregate.mjs` `aggregateFriction`（:135 起）增加残缺事件显式列 `malformedFrictions`：payload 空对象 / 缺 `frictionType` / 缺 `summary` 三判据，命中即入列（含 changeId + eventType 侧定位信息），不静默归 unknown；既有 `unknown` 兜底保留（非标键仍归 unknown，但残缺件同时出现在 malformedFrictions 列——告警与归档双轨）。无 self-check 入口（该脚本现无自检），验证走真数据重放：`--change-id` 逐包跑聚合（入口 = `.claude/taskpackages/<id>/pod-events.jsonl`，同 V4），断言 260829-voice-roundtrip 的 fb2c70c9 / 55a43813 与 260903-device-ws-switch 非标键两条全部入列（§5 V4）。schema 成文进 `docs/DEV-GOVERNANCE.md`（「friction 事件最小 schema」小节：`frictionType` + `summary` 必填、附加细节允许扩展键、空 payload = 落账缺陷）。planner def 引用行（OQ2=(a) 已裁）。
 
 目标文件：`.claude/scripts/pod-events-aggregate.mjs`、`docs/DEV-GOVERNANCE.md`、`.claude/agents/planner.md`（引用行，OQ2=(a) 已裁）。
 
@@ -103,7 +103,7 @@ docs/ADR.md
 
 ### T6 · 起包格式期望前置清单
 
-`docs/DEV-GOVERNANCE.md` 新节「起包格式期望前置」（验收测试纪律旁），五子项一一对应 ARQ 行五证据：① Draft TaskPackage 带 mutationEvidence 骨架（空骨架也行，字段必须在场）；② acceptance 断言格式期望（机器可识别断言形态 + coverage 标记随测试名）写进 acceptance-author 派发默认；③ 验收 ID 禁括号后缀（`(B#)` 形态破坏 `\b` 匹配）；④ 资产/规划类包 mutation/docs-sync 降级声明在 Draft 阶段写字段；⑤ 新约定包 dispatch 时同步查相关机械闸判据。planner / portfolio-planner / builder / acceptance-author 四 agent def 各加一行 References 引用（OQ2 条件锚）。为什么：格式期望只活在闸代码里、起草侧零成文，4 包 5 子项同型红是结构性回派税。
+`docs/DEV-GOVERNANCE.md` 新节「起包格式期望前置」（验收测试纪律旁），五子项一一对应 ARQ 行五证据：① Draft TaskPackage 带 mutationEvidence 骨架（空骨架也行，字段必须在场）；② acceptance 断言格式期望（机器可识别断言形态 + coverage 标记随测试名）写进 acceptance-author 派发默认；③ 验收 ID 禁括号后缀（`(B#)` 形态破坏 `\b` 匹配）；④ 资产/规划类包 mutation/docs-sync 降级声明在 Draft 阶段写字段；⑤ 新约定包 dispatch 时同步查相关机械闸判据。planner / portfolio-planner / builder / acceptance-author 四 agent def 各加一行 References 引用（OQ2=(a) 已裁）。为什么：格式期望只活在闸代码里、起草侧零成文，4 包 5 子项同型红是结构性回派税。
 
 目标文件：`docs/DEV-GOVERNANCE.md`、`.claude/agents/planner.md`、`.claude/agents/portfolio-planner.md`、`.claude/agents/builder.md`、`.claude/agents/acceptance-author.md`（后四件引用行，OQ2=(a) 已裁；planner 在 T4/T6 各 +1 共 +2，acceptance-author 在 T5/T6 各 +1 共 +2）。
 
@@ -130,7 +130,7 @@ human 2026-09-07 自裁「放 docs 根目录、和 spec 同级」→ 落 **`docs
 
 | 面 | 文件 | 类别 | 说明 |
 |---|---|---|---|
-| 闸共享库 | `.claude/scripts/lib/governance-gate-shared.mjs` | G3 | T1 新增导出；消费方 = landing-fidelity-check 两处（:386 锚提取切换、:367 changedNotInProposal 面不动）；全仓 CANONICAL_TEST 仅此两消费点，proposal-consolidation-check 不消费（R1-F8 全消费点核对） |
+| 闸共享库 | `.claude/scripts/lib/governance-gate-shared.mjs` | G3 | T1 新增导出；消费方两处 = gate-shared 本体 :386 锚提取（切 ANCHORABLE_TEST）+ landing-fidelity-check.mjs:367 changedNotInProposal（CANONICAL_TEST 不动）；全仓 CANONICAL_TEST 仅此两消费点，proposal-consolidation-check 不消费（R1-F8 全消费点核对） |
 | 结构闸 | `.claude/scripts/landing-fidelity-check.mjs` | G3 | T1/T2：锚过滤切换、verbatim 归一、citation 前缀补全、自检三处扩展；advisory 列结构不变（problems 字段追加字段，消费方 = landing-verifier 人读） |
 | 合并通道 | `.claude/scripts/merge-driver.mjs` | G3 | T3：ensureGraphCacheSynced 替换 ensureSkipWorktree（两调用点语义升级，还原覆盖 worktree+staging 双面）；自检扩展；既有五自检不回退 |
 | 聚合器 | `.claude/scripts/pod-events-aggregate.mjs` | G3 | T4：aggregateFriction 加 malformedFrictions 列；消费方 = loop-retro / 主线程人读，纯增量字段 |
@@ -199,3 +199,27 @@ human 2026-09-07 自裁「放 docs 根目录、和 spec 同级」→ 落 **`docs
 **OQ 裁断落稿一致性**：OQ1=(a) 八项全收 → §2 T1–T8 齐；OQ3 → T7 docs/ADR.md 单文件日志四件落法齐；OQ2=(a) → manifest 满配含四件 agent def，但锚行注记未随裁断更新（F1）——裁断与 manifest 一致、与 §2 锚行形态不一致。
 
 **verdict：NEEDS-REVISION（打回修订）**——F1–F5 五条 NEEDS-REVISION 级 finding 在册（F1 为最重：机械门自证必假红；F2 为 T3 技术方案对宣称覆盖场景不成立）。修订后请回 R2，R1 只复验 F1–F5 改正与 F6–F11 顺手项，不重开全量评审。
+
+### R2（2026-09-07 · architect 判官 · Track B · verdict: GREEN）
+
+**判官身份声明**：R2 由同一 architect 判官续审（R1–R3 同判官），对 v0.3（分支 gov/260907-arq-governance-batch-2，commit 55abc92）只做 R1 承诺范围复验——F1–F5 消解核验 + F6–F11 落稿抽验 + 结构硬条款全量重放；不重开全量评审、不落地任何改法、未跑任何会变更工作树的命令。
+
+**F1–F5 消解核验（逐条）**：
+
+- **F1 消解**。T4/T5/T6 锚行注记已改无条件形态（「（引用行，OQ2=(a) 已裁）」「（后四件引用行，OQ2=(a) 已裁；…）」），按 `parseSection2AnchorLists`（`governance-gate-shared.mjs:410` 附近）规则对新锚行逐行机械重放：八条「目标文件：」行的路径后注记均不含「条件 / 或 / 迁出」触发词，canonical 路径分隔全为「、」，13 件全部入并集——锚并集 = manifest = 13 件，V8 对账消解。T6 锚行并补了 planner/acceptance-author 跨 T 计数（各 +2），与 §3 表、V9 三处一致。
+- **F2 消解**。T3 第②拍改 `git checkout HEAD -- <path>` 且明写「index 与工作树双还原」并给出理由（裸 checkout -- 只还原 worktree ← index）；头注释改「旗标与内容（含 staging）双兜底」；自检补 staged 漂移用例（改内容 + `git add` 入 staging，断言还原后 staging 与 HEAD 一致）；V3 相应改 `pass:7`（原 5 + 内容级 + staged 漂移）。修订后的 git 语义核验成立：checkout HEAD -- 同时覆盖 index 与 worktree，覆盖 renormalize 残留已入 staging 的实况，幂等（内容已一致时为 no-op）。
+- **F3 消解**。V4 改 `--change-id <id>` 逐包跑，输入面如实写 `.claude/taskpackages/<id>/pod-events.jsonl`（脚本 :157 实况），两包断言 + 两包跑通不崩 + 真空绿规约（输入存在非空前置断言）；四条残缺事件断言与 R1 亲验原文一致（fb2c70c9/55a43813 payload `{}`、b2d0d32c/05957d1c 非标键）。遗留一处正文残留见 N1。
+- **F4 消解**。V9 改逐件计数（acceptance-author +2 / planner +2 / portfolio-planner +1 / builder +1，合计 +6）；§3 agent def 行与 T6 锚行注记同口径三处一致。
+- **F5 消解**。§3 ADR 行 writer 收窄为「integrator（收口）+ 主线程（治理批 landing）」并明示 architect 不入 allow 面、治理批条目由主线程 landing 代落——与「landing 恒主线程」常态规则及 architect 白名单语义自洽，采纳 R1 倾向案 ②。
+
+**F6–F11 落稿抽验**：F6（§1 引用改 :154 且标注「R1-F6 行号核准」）✓；F7（§3 结构边界行改 G3/G2 分列，scope-map 标 G3）✓；F8（§3 gate-shared 行改「全仓 CANONICAL_TEST 仅此两消费点，proposal-consolidation-check 不消费」）✓，唯行号归属措辞残留见 N2；F9（T2 前缀候选补 `.claude/scripts/lib/`，且给出理由）✓；F10（T7 scope-map 写法改 `docs/ADR.md` 全路径并标注「enforce-scope 按全路径判定」，repo-structure 侧裸名各自照现行形态）✓；F11（census 证据落 §3 硬项 1b 段：三件仓根点文件 + changes/ 126 条 + 日期 2026-09-07，引 R1 判官代跑数据）✓。
+
+**结构硬条款重放**：landing-manifest 围栏块 13 行裸路径在场、packet-id 行在场、§2 八个 T 锚清单 backtick 齐、锚并集 ≡ manifest（F1 重放结论）；§2 无围栏代码块 → verbatim 对账零对象，V8 的「如有」口径成立；非目标声明（契约面 / spec / verify-gates / 实现面零触点）与 §2 改法核对无违；review profile G2+G3 与 §3 分列一致。
+
+**R2 新增 NIT（残留措辞，不阻塞 GREEN，建议主线程 FROZEN 时顺手折入、不越此三句范围）**：
+
+- **N1**：§2 T4 正文仍写「对 `.git/devloop/pods/` 现存 pod-events 跑聚合」——F3 的旧路径残留半处（V4 已改正、正文未同步）。V4 为执行口径，无机械影响；建议同句改为「对现存 pod-events 逐包跑 `--change-id` 聚合」。
+- **N2**：§3 gate-shared 行「消费方 = landing-fidelity-check 两处（:386 锚提取切换、:367 changedNotInProposal 面不动）」行号归属模糊——:386 在 `governance-gate-shared.mjs` 本体（parseSection2AnchorLists 内，经导入被 landing-fidelity-check 调用），:367 才在 landing-fidelity-check.mjs。实质结论（仅两消费点、:367 不动、consolidation-check 不消费）无误，纯措辞。
+- **N3**：§2 T4/T6 正文各余一处「（OQ2 条件锚）」字样（T4 尾句、T6「四 agent def 各加一行 References 引用（OQ2 条件锚）」）——锚行本体已全部改无条件，正文措辞残留；T6「各加一行」指 T6 自身贡献，与 +2 计数不矛盾但易误读，可顺手改「各加一行（OQ2=(a) 已裁）」。
+
+**verdict：GREEN（可冻结）**——R1 F1–F5 全部消解、F6–F11 全部落稿；新增 N1–N3 三条均为纯措辞残留（无语义/机械影响），承 260906 批「R2 GREEN、NIT 在册」先例记录在案，主线程标 FROZEN 时可折入且不越上述三句范围。折入后 packet 内容 = 本 v0.3 + N1–N3 措辞修正，无其它新增设计。
