@@ -307,6 +307,15 @@ async def pump_client_to_upstream(websocket, upstream) -> list:
     upstream.send() UNCHANGED (决策23: 代理语义, front 只消费回执、不重发), consumes device
     JSON-RPC render receipts via on_device_receipt, and returns the list of receipt ids
     consumed as delivery acks. Client disconnect (WebSocketDisconnect / RuntimeError) ends.
+
+    ⚠ 语义钉行（260829-schedule-reminder 收口，review-packet Findings「acked_ids 含受理帧」）：
+    本列表由 gateway.mcp_relay.relay_ack 的**宽容**判据产生（result 非空即算 acked，该函数语义
+    是 display/通用回执的冻结面、本包一字未动），因此 `kidpal/alert` 工具回调的**同步受理帧**
+    （设备回 "ack": false，只代表「已收到/已入队」）也会被计进 acked_ids —— **acked_ids 不等于
+    送达确认**。提醒档位的送达确认只有一条路：reminders.alert_receipt_id（严格判据 result.ack
+    is True，设备面唯一来源是渲染完成后的 McpServer::EmitRenderReceipt）→ _queue_alert_receipt
+    → run_alert_poll_once 里 consume_receipts 出队。日后若要消费「已送达」语义，MUST 走
+    drain_alert_receipts()/alert_dispatcher()，不得改读本列表（当前本列表无消费方）。
     """
     acked_ids = []
     try:
