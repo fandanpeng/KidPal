@@ -210,25 +210,11 @@ function isArtifactTestExcluded(path) {
   return false;
 }
 
-function distinctAppSystems(paths) {
-  const set = new Set();
-  for (const p of paths) {
-    // 实现面顶层系统段：firmware/<board|main|...> 与 server/<sub>——取第二段作系统标识
-    const m = /^(?:firmware|server)\/([^/]+)/.exec(p);
-    if (m) set.add(m[1]);
-  }
-  return [...set];
-}
-
-// 跨系统（dev-loop:244，FIX-2）：diff 跨多个实现面顶层段（firmware/server 第二段） ∨ taskpackage subsystem 多值。
-function isCrossSystem(paths, tp) {
-  const systems = distinctAppSystems(paths);
-  if (systems.length > 1) return { hit: true, reason: `cross-system:impl=${systems.join(',')}` };
-  const sub = tp && tp.subsystem;
-  if (Array.isArray(sub) && sub.length > 1) return { hit: true, reason: `cross-system:subsystem=${sub.join(',')}` };
-  if (typeof sub === 'string' && sub.includes(',')) return { hit: true, reason: `cross-system:subsystem=${sub}` };
-  return { hit: false };
-}
+// 跨系统轴退役（260908-gov-review-escalation-conflict-ladder T1，human 终裁 B1 修法 + OQ4）：
+// 目录面启发式（原按 firmware/server 第二段数系统数 + subsystem 多值判定）对双面板 Pod 恒真
+// （home-p1 误报实证），isCrossSystem 与其 distinctAppSystems 前置一并摘除；
+// 真跨系统保护改由升级闸 parallelOverlapProbe 的并行相交面探测承担（判据换轴，pod-coordination.md §10d 分级路由）。
+// verdict 的 APPROVE/BLOCK 语义与证据完整度判定不动；riskTier 派生保留其余轴（core.* / 全 mock / 安全轴）。
 
 function isCoreStar(paths) {
   for (const p of paths) {
@@ -282,7 +268,7 @@ function isAllMock(paths, content) {
 function classifyHigh(paths, content, tp, perFile) {
   const reasons = [];
   const core = isCoreStar(paths); if (core.hit) reasons.push(core.reason);
-  const cross = isCrossSystem(paths, tp); if (cross.hit) reasons.push(cross.reason);
+  // cross 轴已退役（260908 批 T1，判据换轴）：真跨系统保护归升级闸并行相交面探测（§10d）
   const mock = isAllMock(paths, content); if (mock.hit) reasons.push(mock.reason);
   const sec = securityAxisTriggered(paths, content, tp, perFile); if (sec.hit) reasons.push(sec.reason);
   return { hit: reasons.length > 0, reasons };
@@ -619,13 +605,14 @@ function selfCheck() {
   ok(deriveDiffTier(['firmware/main/flash.c'], 'esp_flash_erase_region(0, size)', {}).tier === 'critical', 'critical-flash-erase');
   ok(deriveDiffTier(['server/shim/store.py'], 'nvs_flash_erase()', {}).tier === 'critical', 'critical-nvs-erase');
 
-  // high 闭集（core 面 + 跨系统 + 全 mock + 安全轴）
+  // high 闭集（core 面 + 全 mock + 安全轴；跨系统轴退役见 classifyHigh 注——保护归升级闸相交探测）
   // 契约路径同时命中 critical 闭集与 high core 面——critical 先检、宁滥勿漏 → critical（向严）。
   ok(deriveDiffTier(['docs/contracts/interface-contract.md'], '', {}).tier === 'critical', 'critical-docs-contracts-dominates');
   ok(deriveDiffTier(['firmware/boards/board_x/board.c'], '', {}).tier === 'high', 'high-firmware-boards');
   ok(deriveDiffTier(['firmware/main/board_config.c'], '', {}).tier === 'low', 'low-firmware-main-plain');
-  ok(deriveDiffTier(['firmware/main/a.c', 'server/shim/b.py'], '', {}).tier === 'high', 'high-cross-system-diff');
-  ok(deriveDiffTier(['firmware/main/a.c'], '', { subsystem: ['firmware/main', 'server/shim'] }).tier === 'high', 'high-cross-system-subsystem');
+  // 退役轴回归夹具（260908 批 V1）：原目录面跨系统两例改判 low——目录面启发式退役、真跨系统保护归相交探测
+  ok(deriveDiffTier(['firmware/main/a.c', 'server/shim/b.py'], '', {}).tier === 'low', 'retired-impl-axis-diff-now-low');
+  ok(deriveDiffTier(['firmware/main/a.c'], '', { subsystem: ['firmware/main', 'server/shim'] }).tier === 'low', 'retired-impl-axis-subsystem-now-low');
   ok(deriveDiffTier(['firmware/main/a.test.c'], 'expect(result).toBe(1)', {}).tier === 'high', 'high-all-mock');
   ok(deriveDiffTier(['firmware/main/auth.c'], 'login auth handler', {}).tier === 'high', 'high-security-axis-diff');
   ok(deriveDiffTier(['firmware/main/a.c'], '', { securityReviewRequired: true }).tier === 'high', 'high-security-axis-declared');
@@ -635,7 +622,7 @@ function selfCheck() {
   ok(deriveDiffTier(['firmware/main/x.c'], 'AuthSession shape reference in docs', {}).tier === 'low', 'fp-authsession-reference-not-hit');
   ok(deriveDiffTier(['firmware/main/x.c'], 'Co-Authored-By: Claude <noreply@anthropic.com>', {}).tier === 'low', 'fp-co-authored-by-not-hit');
   ok(deriveDiffTier(['firmware/main/x.c'], 'security-axis-diff:auth', {}).tier === 'low', 'fp-gate-reason-string-not-hit');
-  ok(deriveDiffTier(['firmware/main/x.c'], 'cross-system 2 impl + auth-axis heuristic', {}).tier === 'low', 'fp-auth-axis-meta-not-hit');
+  ok(deriveDiffTier(['firmware/main/x.c'], '跨系统 2 impl + auth-axis heuristic', {}).tier === 'low', 'fp-auth-axis-meta-not-hit');
   ok(deriveDiffTier(['firmware/main/x.c'], '"authority":"bearing"', {}).tier === 'low', 'fp-authority-bearing-field-not-hit');
   // 向严正例：paths 承重 + OAuth 族 content 覆盖
   ok(deriveDiffTier(['firmware/main/reset_password.c'], '', {}).tier === 'high', 'security-path-password-hit');

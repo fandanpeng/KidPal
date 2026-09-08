@@ -164,6 +164,19 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 
 **单一权威互指注记（B-0）**：本节为版本化制品消解口径单一权威；merge-driver 特判指引文案与 integrator.md 消解段为引用方，改本节口径须同批核两引用。
 
+## 10d. 并行相交面分级路由 + 取舍判据（260908 批 ladder，ARQ-260907-escalation-cross-system-overfire 判据换轴）
+
+升级闸 `parallelOverlapProbe`（只读 merge-base 交集 + merge-tree 实撞，`--probe-out` 落 overlap-probe.json）按裁决深度分级；**cross-system 目录面启发式已退役**（对双面板 Pod 恒真，home-p1 误报实证），真跨系统保护由本节路由承担：
+
+| 梯级 | 情形 | 裁决者 | 通道 |
+|---|---|---|---|
+| ① | 零相交（与 main 含同批已并 Pod） | 机械放行（driver rebase + quick-check 照走） | — |
+| ② | 相交·无取舍 | 机械（不升人） | git 自并 + **双方冻结件 + 全档复跑**（对端红纪律）；实撞与探测不一致 → 存疑向严升 ③ |
+| ③ | 相交·有取舍（同 hunk 语义单元相撞） | **architect 消解评审**（建议即地板，不落地） | gate BLOCK `parallel-overlap-tier3`，升级件带相交清单 + 双方 diff；派发失败/超时 → 直接 ④ |
+| ④ | architect 判不了 / 齿红 / 需动语义 | **escalate human** | 升级件带逐文件相交清单 + 双方版本正文 + architect 意见 + 消解选项；人批走既有 `--human-approval-ref` |
+
+**取舍机判判据**：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（git rebase 可自动并；`.vN` 载体不同段 / append 类按此判）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值 / 同锚互斥断言 / 版本字面互斥——后者复用 260908 批 guard-class wiring 判据）；**已登记 §10c 登记表形态的版本化制品 add/add 恒归 ②**（复用 merge-driver 特判并集），未登记形态归 ③（补集不变式 fail-closed）。判不了 = 存疑向严升 ③。
+
 ## 相关
 
 - [`dev-loop-operating-system.md`](dev-loop-operating-system.md)

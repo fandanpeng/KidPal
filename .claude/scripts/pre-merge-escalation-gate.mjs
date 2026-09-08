@@ -26,7 +26,7 @@
 // 退出码：0 放行 / 1 命中（BLOCK）/ 2 用法错。
 
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveHumanApproval } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）
@@ -158,6 +158,50 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
 }
 
 /**
+ * T1（260908-gov-review-escalation-conflict-ladder）：并行相交面探测（只读，判据换轴的机械件）。
+ * intersectingFiles = 双方相对 merge-base 的改动文件交集；conflictedFiles = merge-tree 实撞集；
+ * addAddFiles = 双侧新增相撞子集。分级路由（pod-coordination.md §10d）：
+ *   零相交 → tier 'no-overlap'（① 放行）；实撞全部为已登记版本化制品形态 → 'union-safe'（② 不升人，
+ *   走 runbook 并集 + 双方齿复跑）；其余实撞 / 探测失败 → 'tradeoff'（③ architect 消解评审，闸 BLOCK）。
+ * 版本化制品形态兜底正则与 merge-driver VERSIONED_ARTIFACT_RE 同形——lib 收编留根（本批不改 lib，双源留根注记）。
+ * execFn 可注入（self-check）；探测任何异常 → { probed:false, tier:'tradeoff' }（fail-closed，绝不误放行）。
+ */
+export const VERSIONED_ARTIFACT_RE_LOCAL = /\.v[0-9]+\.md$/; // 与 merge-driver 同形，lib 收编留根
+
+export function parallelOverlapProbe(execFn, source, target) {
+  try {
+    const base = execFn(`git merge-base ${target} ${source}`).trim();
+    const srcFiles = execFn(`git diff --name-only ${base} ${source}`).split('\n').map((s) => s.trim()).filter(Boolean);
+    const tgtFiles = execFn(`git diff --name-only ${base} ${target}`).split('\n').map((s) => s.trim()).filter(Boolean);
+    const srcSet = new Set(srcFiles);
+    const intersectingFiles = tgtFiles.filter((f) => srcSet.has(f));
+    let conflictedFiles = [];
+    try {
+      const mt = execFn(`git merge-tree --write-tree --name-only ${source} ${target}`);
+      conflictedFiles = mt.split('\n').slice(1).map((s) => s.trim()).filter(Boolean); // 首行 = tree oid
+    } catch (err) {
+      const out = `${err.stdout || ''}`;
+      conflictedFiles = out.split('\n').slice(1).map((s) => s.trim()).filter(Boolean); // exit 1 = 有冲突，stdout 仍带清单
+    }
+    // 噪声滤清（V3 实测：--name-only 输出混 informational 行）——实撞文件必 ⊆ 双方改动交集
+    conflictedFiles = [...new Set(conflictedFiles)].filter((f) => intersectingFiles.includes(f));
+    // add/add 判定：conflicted ∩ 双侧新增（merge-base 中不存在）
+    const addAddFiles = conflictedFiles.filter((f) => {
+      try { execFn(`git cat-file -e ${base}:${f}`); return false; } catch { return true; }
+    });
+    const tier = (() => {
+      if (!intersectingFiles.length) return 'no-overlap';
+      if (!conflictedFiles.length) return 'union-safe'; // 相交但可自动并（不同 hunk git 自并）
+      if (conflictedFiles.every((f) => VERSIONED_ARTIFACT_RE_LOCAL.test(f))) return 'union-safe'; // S1 carve-out：已登记形态 → ②
+      return 'tradeoff';
+    })();
+    return { probed: true, tier, intersectingFiles, conflictedFiles, addAddFiles };
+  } catch (err) {
+    return { probed: false, tier: 'tradeoff', error: `${err.message || err}`.slice(0, 200), intersectingFiles: [], conflictedFiles: [], addAddFiles: [] };
+  }
+}
+
+/**
  * 主判：给定可注入上下文，产 { blocked, reasons[] }。
  * ctx = { execFn, changeId, source, kind: 'devloop'|'gov'|'unknown',
  *         supervisorVerdict, govAnchors, contractsDiff: boolean }
@@ -209,6 +253,14 @@ export function evaluate(ctx) {
   if (approval && !approval.ok) push(`human-approval 核验失败：${approval.reason}`);
 
   if (ctx.kind === 'devloop') {
+    // T1/T2（260908 批）：并行相交面分级路由——tradeoff（③ 级）BLOCK 交 architect 消解评审；
+    // no-overlap / union-safe 不升人（② 级走 runbook 并集 + 双方齿复跑；探测失败已 fail-closed 归 tradeoff）。
+    if (ctx.overlap?.tier === 'tradeoff') {
+      const detail = ctx.overlap.probed
+        ? `实撞 ${ctx.overlap.conflictedFiles.length} 件（${ctx.overlap.conflictedFiles.slice(0, 5).join(', ')}${ctx.overlap.conflictedFiles.length > 5 ? ' 等' : ''}）`
+        : `探测失败（${ctx.overlap.error || 'unknown'}）`;
+      push(`parallel-overlap-tier3：并行 Pod 相交有取舍，需 architect 消解评审（pod-coordination.md §10d）——${detail}`);
+    }
     // dev-loop 档 4：riskTier（人批豁免成立时放行）
     const riskTier = ctx.supervisorVerdict?.riskTier;
     if ((riskTier === 'high' || riskTier === 'critical') && !escalateExempt) {
@@ -274,6 +326,8 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     ? resolveHumanApproval(projectDir, changeId, humanApprovalRef, { podsRecordPath })
     : null;
   const contractFindings = contractFindingsAccounted(projectDir, changeId, { podsRecordPath }); // T5（260908 批）
+  // T1（260908 批）：并行相交面探测（dev-loop 档；source = 源 ref，target = main）
+  const overlap = parallelOverlapProbe(execFn, source, 'main');
 
   return {
     changeId,
@@ -288,6 +342,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     escalationUnresolved: false, // pod-events 聚合待接入；现 false（升级闸 v1 只覆盖 blocked 态 + 显式判定）
     humanApproval, // T1：--human-approval-ref 核验结果；未带 flag 为 null
     contractFindings, // T5（260908 批）：契约类 hard-violation 台账核验结果
+    overlap, // T1（260908 批）：并行相交面探测结果（分级路由见 pod-coordination §10d）
   };
 }
 
@@ -314,6 +369,7 @@ function selfCheck() {
     escalationUnresolved: false,
     humanApproval: null, // T1：--human-approval-ref 核验结果
     contractFindings: { present: false, accounted: true, hits: [] }, // T5：默认不在场 → 放行
+    overlap: { probed: true, tier: 'no-overlap', intersectingFiles: [], conflictedFiles: [], addAddFiles: [] }, // T1：默认零相交 → 放行
     ...over,
   });
 
@@ -380,6 +436,24 @@ function selfCheck() {
   // 3) 在案 + human defer 锚（accounted:true）→ 放行
   cases.push({ name: 'contract-findings-defer-anchored-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/spec.md'] } })).blocked, got: '' });
 
+  // T1 并行相交面分级路由 4 例（260908 批 ladder；human 追认 Track B + 继续落地后落地；真空绿规约：fixture 非空——文件清单构造非空）
+  // 1) ② 级：实撞全部为已登记版本化制品形态 → union-safe，不升人（runbook 并集 + 双方齿复跑）
+  cases.push({
+    name: 'overlap-union-safe-pass',
+    ok: !evaluate(mkCtx({ overlap: { probed: true, tier: 'union-safe', intersectingFiles: ['server/deploy/openclaw-system-prompt.v3.md', 'server/deploy/provider.config.yaml'], conflictedFiles: ['server/deploy/openclaw-system-prompt.v3.md'], addAddFiles: ['server/deploy/openclaw-system-prompt.v3.md'] } })).blocked,
+    got: '',
+  });
+  // 2) ③ 级：同 hunk 相撞（非登记形态）→ BLOCK 点名 architect 消解评审
+  expect('overlap-tradeoff-block', { overlap: { probed: true, tier: 'tradeoff', intersectingFiles: ['firmware/main/display/ui.c'], conflictedFiles: ['firmware/main/display/ui.c'], addAddFiles: [] } }, true, 'parallel-overlap-tier3');
+  // 3) 探测失败 → fail-closed 归 ③ BLOCK
+  expect('overlap-probe-fail-block', { overlap: { probed: false, tier: 'tradeoff', error: 'merge-base failed' } }, true, 'parallel-overlap-tier3');
+  // 4) ① 级：零相交 → 放行（默认 mkCtx 即此形态，显式复证）
+  cases.push({
+    name: 'overlap-no-overlap-pass',
+    ok: !evaluate(mkCtx({ overlap: { probed: true, tier: 'no-overlap', intersectingFiles: [], conflictedFiles: [], addAddFiles: [] } })).blocked,
+    got: '',
+  });
+
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'pre-merge-escalation-gate', pass: cases.length - fail.length, fail: fail.length, total: cases.length, ok: fail.length === 0, failures: fail.length ? fail : undefined })}\n`,
@@ -415,6 +489,10 @@ const humanApprovalRef = (() => {
   const i = args.indexOf('--human-approval-ref');
   return i >= 0 ? args[i + 1] ?? null : null;
 })();
+const probeOutPath = (() => {
+  const i = args.indexOf('--probe-out');
+  return i >= 0 ? args[i + 1] ?? null : null;
+})(); // T3（260908 批 ladder）：探测面 JSON 制品落盘路径（显式文件传递，非 stdout 解析——R1-S2）
 
 if (humanApprovalRef !== null && (humanApprovalRef.startsWith('--') || humanApprovalRef === '')) {
   process.stderr.write('[pre-merge-escalation-gate] FATAL: --human-approval-ref 需要一个 <eventId> 参数\n');
@@ -436,6 +514,15 @@ if (humanApprovalRef && (ctx.kind === 'gov' || ctx.kind === 'unknown')) {
 }
 
 const result = evaluate(ctx);
+
+// T3（260908 批 ladder）：探测面制品落盘——PASS 与 BLOCK 两态都落（升级件内容面消费），失败 advisory 不改退出码
+if (probeOutPath) {
+  try {
+    writeFileSync(probeOutPath, JSON.stringify({ changeId, kind: ctx.kind, source: ctx.source, overlap: ctx.overlap }, null, 2), 'utf8');
+  } catch (err) {
+    process.stderr.write(`[pre-merge-escalation-gate] WARN: --probe-out 落盘失败（advisory）：${err.message}\n`);
+  }
+}
 
 if (result.blocked) {
   process.stderr.write(`[pre-merge-escalation-gate] BLOCK (changeId=${changeId}, kind=${ctx.kind}):\n`);

@@ -880,6 +880,9 @@ function tryResolveProjectionConflicts(wt, changeId) {
 // 投影冲突消解留痕（T6 payload 冲突消解摘要成分，本批 D2）：tryResolveProjectionConflicts 写、step5bBookkeeping 读。
 let lastProjectionResolution = null;
 
+// T4（260908 批 ladder）：并行相交面探测结果留痕（Step 1b 读 overlap-probe.json、rebase 分流与 Step 5b payload 消费）。
+let lastOverlapProbe = null;
+
 // ---- T1（260908-gov-review-merge-chain-hardening）：版本化制品 add/add 特判 + LF 归一 + 回退分支修复 ----
 // 纯 helper（stdout 进、结果出；self-check 可测，V1-①②③）。补集不变式（A-7 已裁）：特判只 widen 指引文案、
 // 不 widen 放行——登记表外新形态（无 .vN 后缀的版本化物，如 engine-patch）不命中正则 → 退回通用 blocked fail-closed。
@@ -955,7 +958,7 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
       actor: 'merge-driver',
       source: 'merge-driver',
       payload: {
-        summary: `merge-driver Step 5b 簿记：main tip ${mergeSha.slice(0, 12)}（${mode || (SINGLE_POD ? 'single' : 'board')} 模式）${HUMAN_APPROVAL_REF ? `；human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}${lastProjectionResolution ? `；${lastProjectionResolution}` : ''}`,
+        summary: `merge-driver Step 5b 簿记：main tip ${mergeSha.slice(0, 12)}（${mode || (SINGLE_POD ? 'single' : 'board')} 模式）${HUMAN_APPROVAL_REF ? `；human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}${lastProjectionResolution ? `；${lastProjectionResolution}` : ''}${lastOverlapProbe && lastOverlapProbe.intersectingFiles?.length ? `；并行相交面=${lastOverlapProbe.tier}×${lastOverlapProbe.intersectingFiles.length}件` : ''}`,
       },
     };
     appendFileSync(evAbs, `${JSON.stringify(event)}\n`, 'utf8');
@@ -1229,6 +1232,7 @@ function runMergeFrictionSelfCheck() {
 
 // 处理一个 Pod 的 merge 操作。返回 true=成功 merged，false=跳过或失败。
 function processPod(changeId, devloopDir, projectDir, quickChecks) {
+  lastOverlapProbe = null; // T4（260908 批 ladder）：逐 Pod 隔离（board 模式多 Pod 串行防串扰）
   const pod = readPod(devloopDir, changeId);
   if (!pod) {
     warn(`Pod ${changeId} not found in devloop/pods/; skipping`);
@@ -1246,9 +1250,11 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // Step 1b: 前置升级闸（合并前必经；命中 → blocked 升级人，不 rebase、不 merge）
   // T2：--human-approval-ref 非空时透传，升级闸核验 pod-events 人批事件后可放行 ESCALATE 包（260904-gov-review-escalate-merge-approval）
   log(`${changeId}: running pre-merge escalation gate...`);
+  // T4（260908 批 ladder）：探测面制品路径——gate --probe-out 落 taskpackage 目录（Step 0 白名单内），Step 1b 后读取
+  const overlapProbePath = join(wt, '.claude', 'taskpackages', changeId, 'overlap-probe.json');
   if (!DRY_RUN) {
     try {
-      const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir];
+      const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir, '--probe-out', overlapProbePath];
       if (HUMAN_APPROVAL_REF) gateArgs.push('--human-approval-ref', HUMAN_APPROVAL_REF);
       execFileSync(
         'node',
@@ -1256,6 +1262,15 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
         { cwd: wt, encoding: 'utf8', stdio: 'pipe' },
       );
       log(`${changeId}: escalation gate PASS${HUMAN_APPROVAL_REF ? ` (human-approval-ref=${HUMAN_APPROVAL_REF})` : ''}`);
+      // T4（260908 批 ladder）：读取探测面制品（gate --probe-out 落盘；读不到/解析失败 = 无探测面，走既有链不额外放行）
+      try {
+        if (existsSync(overlapProbePath)) {
+          lastOverlapProbe = JSON.parse(readFileSync(overlapProbePath, 'utf8'))?.overlap || null;
+          if (lastOverlapProbe && lastOverlapProbe.intersectingFiles?.length) {
+            log(`${changeId}: 并行相交面 ${lastOverlapProbe.tier}（${lastOverlapProbe.intersectingFiles.length} 件）——② 级齿复跑义务在 quick-check 全档，实撞不一致则升 ③`);
+          }
+        }
+      } catch { lastOverlapProbe = null; }
     } catch (err) {
       const out = `${err.stdout || ''}${err.stderr || ''}`;
       warn(`${changeId}: escalation gate BLOCK:\n${out.split('\n').slice(-12).join('\n')}`);
@@ -1325,6 +1340,10 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
         try { execSync('git rebase --abort', { cwd: wt, encoding: 'utf8', stdio: 'pipe' }); } catch { /* race: nothing to abort */ }
         if (versionedAddAdd) {
           warn(`${changeId}: 版本化制品 add/add 冲突（${versionedAddAdd.join(', ')}）：${VERSIONED_ADD_ADD_GUIDANCE}`);
+        }
+        // T4（260908 批 ladder）：预探测与实撞不一致 → 存疑向严升 ③（fail-closed，交 architect 消解评审）
+        if (lastOverlapProbe && lastOverlapProbe.tier === 'no-overlap') {
+          warn(`${changeId}: 预探测 ${lastOverlapProbe.tier} 与 rebase 实撞不一致——存疑向严升 ③（pod-coordination.md §10d），blocked 交 architect 消解评审`);
         }
         setPod(projectDir, { changeId, status: 'blocked' });
         return false;
