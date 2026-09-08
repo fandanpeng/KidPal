@@ -41,6 +41,68 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 - **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
 - 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
+## OpenClaw system prompt 版本化接线（现状 = v3）
+
+脑腿的 system prompt 按「版本化落盘 + overlay 渲染切换 + 历史可 diff」惯例演进，声明件 =
+`OPENCLAW_SYSTEM_PROMPT_CARRIER`。**当前被接线的那一版 = `openclaw-system-prompt.v3.md`**（160 行，
+由 TaskPackage `260829-story-p3` 从 v2 forward-bump）。
+
+| 版本 | 行数 | 承载 | 状态 |
+|---|---|---|---|
+| `.v1.md` | 69 | E1 两部分结构 + F4 三句纪律 + 儿童化 + 7 view 白名单 + 增量扩展区（`260829-voice-roundtrip` / VRT-E4） | 不改，共存可 diff |
+| `.v2.md` | 114 | v1 基座逐字并入 + 课表 producer（决策 26 分组 + QQ 录入改写约定，`260829-schedule-p2` / P2-A6）+ char C1 最小块纪律（`260829-char-stroke` / CHR-E3） | 不改，共存可 diff |
+| `.v3.md` | 160 | v2 基座逐字并入 + **故事 producer 扩展**（`260829-story-p3`）：判「我要讲故事」→ `control/start_recording`、停录整段转写起 ≤12 字标题出 `story_text`（恰 id/title/text 三键、无生字标注位 P3-E4）、`story_list.total` 全集计数、V31 四条回退判断（取消 / 重录 / 漏判挽回 / 讲错回退）、归档落盘归云侧网关而 LLM 一回合不读写文件（契约 §1.4 / S-F2.1..S-F2.5） | **当前接线版** |
+
+v3 相对 v2 的逐字承载（CR 归一后实测）：102 行原样保留、58 行新增、12 行改动全部是文件头
+版本标注与「课表 producer 扩展」小节标题的版本字样（无行为语义删改）——即 char C1 与课表
+producer 两面的行为被 v3 完整继承，仅版本号自述前移。
+
+**接线不变式：渲染面 == 声明面 == 被测面**。同一切换必须同时改两处并保持一致：
+
+- 渲染面：`apply-xiaozhi-overlay.sh` 的 `PROMPT_SRC` / `PROMPT_DST`（拷进 ECS
+  `GATEWAY_DEPLOY_DIR/data/`，与 `.config.yaml` 同目录，并注入 overlay 顶层 `prompt:` 键）；
+- 声明面：`provider.config.yaml` 的 `system_prompt.artifact` / `source` / `deploy_target` 三键。
+
+机械承载 = 冻结验收 `test_story_p3.acceptance.py::test_prompt_carrier_v3_landed_and_wired`
+（解析 `PROMPT_SRC` 得出版本号 → 断言 ≥3 → 断言该版文件落盘非空且含故事/V31/归档三组指令 →
+断言 `provider.config.yaml` 含同名文件）与已重指为版本无关的
+`test_char_stroke.acceptance.py::test_e3_prompt_v2_wired_into_deploy`（两面各解析出被接线的
+`vN` 文件名 → 两面集合相等 → 该版文件存在且非空 → 正文逐字携带 char C1 锚点）。后者显式
+**不认** deploy 目录里的散文提及与 carrier 前瞻注记，只认两面结构化指向——这是版本化制品守卫
+应取的形状。
+
+### 已知版本字面漂移（本包未修，归 ARQ-260908）
+
+`docs/ARCH-REVIEW-QUEUE.md` 的 `ARQ-260908-versioned-guard-version-literal-coupling`（Track A，
+owner=architect + acceptance-author）登记了「语义耦合在版本字面文件名上」这一通用病灶。carrier
+切到 v3 后的实测现状，改本节或 bump v4 前须知道：
+
+- **live 探针仍钉旧版字面**：`test_voice_roundtrip_b.acceptance.py:116 SYSTEM_PROMPT_PATH =
+  openclaw-system-prompt.v1.md`（VRT-A4 / VRT-A7 live 用它作 prompt 源）与
+  `test_char_stroke.acceptance.py:144 PROMPT_V2_PATH`（CHR-A8 / CHR-A9 live 用它作 prompt 源）。
+  被接线版为 v3 时这两组 live 齿属「所测 ≠ 生产所用」；本仓无 live 环境，它们由 conftest 机械
+  skip、不 gate 任何合并判据，故本包未扩改（重指无法实证），随该 ARQ 一并版本无关化。
+- **P2-A6 已成为假绿**：`test_schedule_p2.acceptance.py:583-586` 的「wiring 引用 v2」判据把语料取
+  成 `DEPLOY_DIR.rglob("*")` **全部文件**、needle 是完整字面 `openclaw-system-prompt.v2.md`；该字面
+  现仅由 `.v2.md` 文件自述头 + `openclaw-schedule.config.yaml:4` 注记 + 本 carrier 历史句维持，
+  与被接线的真实渲染源（已 v3）无关——断言仍绿但已不再检验它声称检验的东西。建议按上面
+  story/CHR-E3 的两面解析形状重指（同归该 ARQ，勿在本包动冻结文件）。
+- **不受本次 bump 影响的守卫**：VRT-E4（`test_e4_system_prompt_wired_into_deploy_overlay`）needle
+  是不带版本后缀的裸名 `openclaw-system-prompt`，且语料限 `suffix == ""` 的无扩展名文件（即本
+  carrier），故它天然版本无关、继续有效——这是 forward-bump 时唯一不必担心的那条。
+
+### v3 上 ECS 的动作序（本包只产制品，未执行上线）
+
+本包交付的是**仓库侧部署制品 + 接线**；把 v3 推到 ECS 属后续部署触发，不在本包冻结验收面内
+（live 端到端意图与真实采音殿后 `9b`，见 P3-E2）。执行时按下列顺序，且任一步失败即停：
+
+1. `bash server/deploy/apply-xiaozhi-overlay.sh`（渲染 v3 到 ECS `data/` + 注入 overlay `prompt:` 键）；
+2. 重启 `openclaw-gateway`（prompt 生效面）与 `kidpal-front`（`gateway/story.py` 新模块 + front 侧
+   `control/start_recording` 旁路消费在此装载；stories 归档目录由 `KIDPAL_STORIES_DIR` 决定，
+   缺省 `/opt/kidpal/stories`）；
+3. 复跑版本无关守卫：`cd server && python -m pytest acceptance/test_char_stroke.acceptance.py
+   acceptance/test_story_p3.acceptance.py -q --import-mode=importlib`（offline 段应全绿，live 段机械 skip）。
+
 ## 关键环境变量
 
 | 变量 | 含义 | 典型值 / 说明 |
