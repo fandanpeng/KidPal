@@ -148,6 +148,9 @@ Coverage map (acceptanceRef / exitCriteria / decisionCoverage -> test):
   P3-E3 (润色后置) + 契约零改动    -> test_boundary_contract_surface_untouched
   P3-E2 (两面证据 + 既有验收回归)  -> test_e2_existing_directionb_acceptance_green
   live (不 auto-run, 机械闸 skip)  -> StoryP3LiveAcceptance.test_live_story_roundtrip_evidence
+        证据只认 changes/dev/260829-story-p3/live-evidence/ 内操作者投递的实测产物
+        (= live-roundtrip.json 结构化记录六键齐 + 含 ASR 段的 *.log); closeout 散文
+        (docs-delta/review-packet/pod-retro) 不构成语料 (integrator F3 假绿实证)。
 
 Red baseline (freeze state, 2026-09-08 acceptance-author 实测): server/gateway has
 NO story module — 每条 offline 齿红在「冻结离线契约未实现 / producer 载体未落盘」
@@ -296,6 +299,15 @@ def _ts(day: str, hour: int = 0, minute: int = 0, second: float = 0.0):
     d = _dt.date.fromisoformat(day)
     offset = hour * 3600 + minute * 60 + float(second)
     return _dt.datetime(d.year, d.month, d.day) + _dt.timedelta(seconds=offset)
+
+
+def _is_int(value) -> bool:
+    """真正的整数 (排除 bool — Python 里 True/False 也是 int 子类)。"""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_int_ge1(value) -> bool:
+    return _is_int(value) and value >= 1
 
 
 class _TmpDir:
@@ -966,58 +978,172 @@ class StoryP3OfflineAcceptance(unittest.TestCase):
 class StoryP3LiveAcceptance(unittest.TestCase):
     """live evidence teeth: the real round trip (真说「我要讲故事」→ 真采音上行 →
     停录 → 云端整段转写归档 → 列表/盖章真出现) cannot be scripted here. 证据落
-    changes/dev/260829-story-p3/ (operator-produced)。
+    **changes/dev/260829-story-p3/live-evidence/** (operator-produced, 专用子目录)。
     probe ≠ exercise 纪律: 必须真走一轮端到端并记录事实, 只探测网关可达不算 (DEV-GOVERNANCE
     §2)。麦克风采音本身是硬件强绑定子能力 — P3-E2 显式殿后包 9b; 本齿在**本包台架相位
-    或 9b 相位**执行并核销, 不参与冻结红基线计数 (机械闸 skip)。"""
+    或 9b 相位**执行并回填, 不参与冻结红基线计数 (机械闸 skip)。
+
+    改判缘由 (2026-09-08, integrator 五轴 review finding F3; 本 Pod 决策链: integrator
+    抓出 → planner 源码复核坐实 → 续派 acceptance-author tighten): 原齿语料取
+    `changes/dev/260829-story-p3/` **整个 closeout 目录**并 rglob .md/.log/.txt/.json,
+    而 closeout 的 docs-delta.md / review-packet.md 天然写满全部 needle → **任何如实
+    描述本包的散文都能让它绿** (integrator 两次实测复现假绿: 放红基线副本 = 1 passed;
+    撤副本只留 packet = 又 1 passed, 全程零真采音零真归档)。本齿因此收紧为
+    ①语料收窄到专用证据子目录 + ②要求**事实形状** (结构化 `*.live-roundtrip.json`
+    键齐且取值合法 + 至少一份含 ASR 段的 `*.log`), 四事实语义与失败反证全部保留,
+    且改为优先由结构化记录承载。方向 = 改严, 未放松任何阈值。"""
 
     maxDiff = None
 
     if _HAS_PYTEST:
         pytestmark = pytest.mark.live
 
-    def _evidence_corpus(self):
+    def _live_files(self):
+        """专用证据子目录内的实测产物清单 (closeout 散文不在此目录, 天然不构成语料)。"""
         if not LIVE_EVIDENCE_DIR.is_dir():
-            return None
+            return []
+        return [p for p in sorted(LIVE_EVIDENCE_DIR.rglob("*")) if p.is_file()]
+
+    @staticmethod
+    def _text_of(files):
         parts = []
-        for p in sorted(LIVE_EVIDENCE_DIR.rglob("*")):
-            if p.is_file() and p.suffix in (".md", ".log", ".txt", ".json"):
-                try:
-                    parts.append(p.read_text(encoding="utf-8", errors="replace"))
-                except OSError:
-                    continue
-        return "\n".join(parts) if parts else None
+        for p in files:
+            try:
+                parts.append(p.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                continue
+        return "\n".join(parts)
 
     def test_live_story_roundtrip_evidence(self):
-        """coverage: P3-A4/A6 live — 四事实: 意图→start_recording 下发 / 真采音整段
-        转写归档 stories/*.md / 列表回读含新故事 / 盖章帧真出现。"""
-        corpus = self._evidence_corpus()
+        """coverage: P3-A4/A6 live — 四事实由**结构化记录 + 原始日志**承载:
+        意图→start_recording 下发 / 真采音整段转写归档 stories/*.md / 列表回读含新故事
+        (total_after>=1) / 盖章帧真出现且 N 与计数同步 (stamp_index == total_after)。
+        缺结构化记录、形状不合、outcome 非 success、无 ASR 日志段 → 红。
+        投递口径（与原失败反证一致）: live-evidence 目录内**每一份**记录都必须是成功轮,
+        混投失败轮即红——试错过程的失败记录归 pod-retro/pod-events, 不归证据目录。"""
+        import datetime as _dt  # noqa: PLC0415 — 仅本齿用于校 observed_at ISO8601
+
+        files = self._live_files()
         self.assertTrue(
-            corpus,
-            "P3-A4 live RED: no live evidence 落盘 under changes/dev/260829-story-p3/ — "
-            "真录一轮（说「我要讲故事」→录→停→归档→回看/盖章）的证据必须先落盘, "
-            "四事实齿据此核销 (probe ≠ exercise; 采音殿后 9b 时由 9b 相位执行并回填)。")
-        fact_intent = ("我要讲故事", "start_recording")
-        self.assertTrue(any(m in corpus for m in fact_intent),
+            files,
+            "P3-A4 live RED: 证据目录空/不存在 — 只认 "
+            "changes/dev/260829-story-p3/live-evidence/ 内的实测产物 "
+            f"(现存: {[str(p) for p in files]}); 真录一轮（说「我要讲故事」→录→停→归档→"
+            "回看/盖章）的证据必须先投递, 四事实齿据此核销 (probe ≠ exercise; 采音殿后 "
+            "9b 时由 9b 相位执行并回填)。closeout 目录里的散文 (docs-delta/review-packet/"
+            "pod-retro) **不算**证据 — F3 实证它曾两次假绿。")
+
+        # ① 结构化事实记录必须存在 (缺 = 红: 正是 prose 反证 — 只剩 .md/.log 不构成事实)
+        record_files = [p for p in files if p.match(LIVE_RECORD_GLOB)]
+        self.assertTrue(
+            record_files,
+            "P3-A4 live RED: live-evidence 内无 *.live-roundtrip.json 结构化记录 "
+            f"(只有 {[sorted({p.suffix for p in files})]}) — 散文/日志文本不构成事实"
+            "形状: 任何描述本包的 .md 都能喂满关键词 (integrator F3 复现的两类假绿), "
+            "故必须有一份可机验的观测记录。")
+
+        parsed = []
+        for p in record_files:
+            try:
+                obj = json.loads(p.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as e:
+                self.fail(f"P3-A4 live RED: {p.name} 不是可读的合法 JSON ({e!r}) — "
+                          "证据件损坏必须显式修, 不得静默跳过 (静默跳过 = 假绿通道)。")
+            self.assertIsInstance(
+                obj, dict,
+                f"P3-A4 live RED: {p.name} 顶层不是 JSON object — 观测记录形状不符。")
+            parsed.append((p, obj))
+
+        good = []
+        for p, obj in parsed:
+            missing = [k for k in LIVE_RECORD_KEYS if k not in obj]
+            self.assertFalse(
+                missing,
+                f"P3-A4 live RED: {p.name} 缺键 {missing} — 观测记录须含 "
+                f"{list(LIVE_RECORD_KEYS)} (observed_at/intent_action/archived_story_id/"
+                "story_list_total_after/stamp_index/outcome 六件齐, 少一件即不可机验)。")
+            observed_at = str(obj["observed_at"])
+            try:
+                _iso = _dt.datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+            except ValueError:
+                self.fail(f"P3-A4 live RED: {p.name}.observed_at={observed_at!r} 不是 "
+                          "ISO8601 时刻 — 无法证明这是一次真实发生的观测而非补记。")
+            self.assertTrue(
+                obj["intent_action"] == "start_recording",
+                f"P3-A4 live RED: {p.name}.intent_action={obj['intent_action']!r} != "
+                "'start_recording' — 事实① (孩子说「我要讲故事」→ 云端判意图下发 "
+                "control/start_recording) 未被结构化承载 (契约 §1.4 / S-F2.2)。")
+            story_id = str(obj["archived_story_id"])
+            self.assertRegex(
+                story_id, LIVE_STORY_ID_RE,
+                f"P3-A4 live RED: {p.name}.archived_story_id={story_id!r} 不合 "
+                "'<YYYY-MM-DD>-<slug>' 形状 — 即真 stories/*.md 的文件名形状, 事实③ "
+                "(停录整段转写归档落盘) 的机器可验承载 (S-F2.2)。")
+            self.assertTrue(
+                _is_int_ge1(obj["story_list_total_after"]),
+                f"P3-A4 live RED: {p.name}.story_list_total_after="
+                f"{obj['story_list_total_after']!r} 须为 >=1 的整数 — 事实③' (列表回读"
+                "真的出现了这颗) 缺失; 0 意味着归档没进 story_list。")
+            self.assertTrue(
+                _is_int(obj["stamp_index"]),
+                f"P3-A4 live RED: {p.name}.stamp_index={obj['stamp_index']!r} 须为整数。")
+            self.assertEqual(
+                obj["stamp_index"], obj["story_list_total_after"],
+                f"P3-A6 live RED: {p.name} stamp_index={obj['stamp_index']!r} != "
+                f"story_list_total_after={obj['story_list_total_after']!r} — 盖章「第 N 颗」"
+                "与 P3 故事果计数器必须严格同步 (S-F2.4 / 闸 A 留记①: 本地推 → 刷新以"
+                "云端 total 对齐); 不等即同步不变式在真链路上破了。")
+            self.assertEqual(
+                obj["outcome"], "success",
+                f"P3-A4 live RED: {p.name}.outcome={obj['outcome']!r} != 'success' — "
+                "本轮结果非成功, 不得按通过核销 (失败必须显式, 不静默)。")
+            if obj["outcome"] == "success":
+                good.append((p, obj, _iso))
+
+        self.assertTrue(
+            good,
+            "P3-A4 live RED: 没有任何一份 outcome=='success' 的合格观测记录 — "
+            "真录一轮未成功或未回填。")
+
+        # ② 至少一份原始日志件含 ASR 段 (真上行/识别的旁证, 非纯转述)
+        logs = [p for p in files if p.suffix == ".log" and p.match(LIVE_LOG_GLOB)]
+        self.assertTrue(
+            logs,
+            "P3-A4 live RED: live-evidence 内无 *.log 原始日志件 — 只有转述没有原始件, "
+            "无法证明真采音/真 ASR 走过一遍 (probe ≠ exercise)。")
+        log_text = self._text_of(logs)
+        self.assertTrue(
+            any(m in log_text for m in ("ASR", "asr", "stt", "转写")),
+            "P3-A4 live RED: 日志里没有 ASR/转写段标记 — 事实② (停录后云端整段转写) "
+            "缺原始件承载, 仅有 JSON 自陈不足以核销。")
+
+        # ③ 四事实的关键词承载 (语料已收窄到 live-evidence, 不再被 closeout 散文满足)
+        corpus = self._text_of(files)
+        self.assertTrue(any(m in corpus for m in ("我要讲故事", "start_recording")),
                         "P3-A4 live RED: evidence does not record the intent -> "
                         "control/start_recording fact (① 意图下发事实缺失).")
-        fact_asr = ("转写", "ASR", "asr", "stt")
-        self.assertTrue(any(m in corpus for m in fact_asr),
+        self.assertTrue(any(m in corpus for m in ("转写", "ASR", "asr", "stt")),
                         "P3-A4 live RED: evidence does not record the 整段转写 fact "
                         "(② 停录后云端转写事实缺失).")
-        fact_archive = ("stories", ".md", "归档")
-        self.assertTrue(all(m in corpus for m in fact_archive),
+        self.assertTrue(all(m in corpus for m in ("stories", ".md", "归档")),
                         "P3-A4 live RED: evidence does not record the stories/*.md "
                         "归档落盘 fact (③ 归档事实缺失).")
-        fact_stamp = ("徽章", "盖章", "story_list")
-        self.assertTrue(any(m in corpus for m in fact_stamp),
+        self.assertTrue(any(m in corpus for m in ("徽章", "盖章", "story_list")),
                         "P3-A6 live RED: evidence does not record the 列表回读/盖章帧 "
                         "fact (④ N 同步与盖章演出事实缺失).")
+
+        # ④ 失败反证 (保留) — 观测记录里显式失败, 或文本里出现失败措辞, 都不得通过
         for marker in ("归档失败", "未收到", "识别为空", "列表不更新", "无徽章"):
             self.assertNotIn(
                 marker, corpus,
                 f"P3-A4 live RED: evidence records a FAILURE outcome ({marker!r}) — "
                 "录制→归档→回看链路存在真实缺陷, 不得按通过交付.")
+        for p, obj, _iso in good:
+            self.assertIsNone(
+                obj.get("failure_mode"),
+                f"P3-A4 live RED: {p.name} 记 outcome=success 却带 "
+                f"failure_mode={obj.get('failure_mode')!r} — 证据自相矛盾 (既成功又记着"
+                "失败模式), 不得按通过核销。")
 
 
 if __name__ == "__main__":
