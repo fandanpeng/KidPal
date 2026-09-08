@@ -42,5 +42,9 @@
   "260908-gov-review-merge-chain-hardening": {
     "date": "2026-09-08",
     "mergedInMain": "yes"
+  },
+  "260908-gov-review-escalation-conflict-ladder": {
+    "date": "2026-09-08",
+    "mergedInMain": "yes"
   }
 }
