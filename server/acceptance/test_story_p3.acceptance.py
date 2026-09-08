@@ -186,7 +186,16 @@ STORY_MODULE = SERVER / "gateway" / "story.py"
 DEPLOY_DIR = SERVER / "deploy"
 OVERLAY_WIRING = DEPLOY_DIR / "apply-xiaozhi-overlay.sh"
 PROVIDER_DECLARE = DEPLOY_DIR / "provider.config.yaml"
-LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-story-p3"
+# live 证据**专用子目录**（不是 closeout 目录本身）：closeout 里的 docs-delta.md /
+# review-packet.md / pod-retro.md 天然写满「我要讲故事 / start_recording / 转写 /
+# stories / .md / 徽章 / 盖章」这些 needle, 任何如实描述本包的散文都能喂绿证据齿
+# (integrator review finding F3 实证两次假绿)。故语料只认操作者投递到本目录的实测产物。
+LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-story-p3" / "live-evidence"
+LIVE_RECORD_GLOB = "*.live-roundtrip.json"   # 结构化事实记录 (缺 = 红)
+LIVE_LOG_GLOB = "*.log"                      # 原始日志件 (含 ASR 段)
+LIVE_STORY_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$")  # 真 stories/ 文件名形状
+LIVE_RECORD_KEYS = ("observed_at", "intent_action", "archived_story_id",
+                    "story_list_total_after", "stamp_index", "outcome")
 
 # 冻结契约入口符号 (structural 齿: 定义 + 服务路径消费)
 STORY_ENTRY_NEEDLES = ("StoryAccumulator(", "gateway.story import", ".story import")
