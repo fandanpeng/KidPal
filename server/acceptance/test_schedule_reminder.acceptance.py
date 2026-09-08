@@ -222,6 +222,9 @@ Coverage map (acceptanceRef / exitCriteria / decisionCoverage -> test method):
         -> test_a8_bring_from_note_and_semantic_override
         -> test_a8_semantic_artifact_schema_and_degrade
         -> test_a8_prompt_carrier_v3_landed_and_wired (约定文本存在性, carrier 齿)
+        -> test_a8_prompt_carrier_v3_reminder_section_anchors (tighten ADD 2026-09-08:
+           carrier 齿收紧为「只认提醒面专有锚 + 段落级结构锚」，闭合 .v3 版本化槽位
+           add/add 冲突下单边丢弃本包约定时的假绿 —— 详见文件尾 REVISION LOG)
         -> test_a8_b1_table_body_zero_change_reuses_package6_parser
   RMD-E2 (两面证据 + 既有冻结验收不回归)
         -> test_e2_existing_frozen_acceptance_suites_green
@@ -1423,6 +1426,103 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
                       "RMD-A8 RED: server/deploy 从未引用 v3 载体 — overlay 渲染未切到 v3"
                       "（验收所测 != 生产所用）。")
 
+    def test_a8_prompt_carrier_v3_reminder_section_anchors(self):
+        """coverage: RMD-A8 / 裁定一 — carrier 齿收紧：只认**提醒面专有锚**，且锚必须落在
+        「提醒…约定」这一节内部（段落存在 + 段内含语义规则），不认与课表面共享的宽词。
+
+        tighten ADD 理由（2026-09-08 integrator 跨包合并探测发现；planner 亲跑
+        `git merge-tree --write-tree HEAD main` 复核）：并行包 story-p3 与本包抢同一个
+        `openclaw-system-prompt.`**`v3`** 槽位 = add/add 冲突（本包侧 181 行提醒约定 vs
+        main 侧 160 行故事 producer 扩展）。main 那份只把「包 7 — 提醒备注解析约定」写成
+        增量扩展区里的 2 行**占位**（约定正文缺席），而旧 carrier 齿
+        (test_a8_prompt_carrier_v3_landed_and_wired) 的 needle「备注」「学校课程表」是
+        课表面与提醒面**共享的宽词**（main 版分别命中 3 / 2 次）—— 于是「合并取 main 版 =
+        本包提醒约定静默消失」这个最可能的失败模式下旧齿仍 PASS = 假绿。
+        本齿改为**内容驱动**：把载体按 ##/###/#### 切成小节，对每一节检查必需项，要求
+        至少有一节全项齐备（缺哪一项都写进红因）——必需项 = (a) 实质篇幅（占位标题级过不了）、
+        (b) 三个与确定性脚本**有契约关系**的硬锚 entry_key / bring / speech（改了直接断链，
+        不会被散文润色弄红）、(c) 四条语义规则组各自命中其一（判定口径 / 区块范围 / 反发明 /
+        语义产物，用 OR 组而非整句措辞以抗日后修订）、(d) 三档档位名 night+前晚 /
+        morning+早档 / soon+临期 **三条同时**在场、(e) 三个区块名都出现在**同一节内**
+        （不再依赖全文宽词命中）。选节按内容而非标题措辞，故标题改名或换级别都不会误红。
+        合并三种消解的期望：取本包版 / 取并集 -> 绿；取 main 版（单边丢弃）-> 红；
+        另测「本包版但提醒小节标题被改名」-> 绿（脆断言自查）。
+        钉的是 RMD-A8 已声明的原意图（「备注里哪部分算要带的」由 OpenClaw system prompt 约定），
+        不新增 acceptance id、不改行为定义。
+        """
+        import re  # noqa: PLC0415  局部导入，不改本档既有 import 面
+        txt = _read_text(PROMPT_CARRIER_V3)
+        self.assertTrue(txt.strip(),
+                        "RMD-A8 RED: v3 载体不可读或为空 — 提醒约定正文无从定位。")
+        lines = txt.split("\n")
+
+        def _level(ln: str) -> int:
+            m = re.match(r"^(#+)\s", ln)
+            return len(m.group(1)) if m else 0
+
+        def _sections():
+            """每个 ##/###/#### 标题 -> (标题行, 该节正文直到下一个同级或更高级标题)。"""
+            for i, ln in enumerate(lines):
+                lvl = _level(ln)
+                if not 2 <= lvl <= 4:
+                    continue
+                j = i + 1
+                while j < len(lines):
+                    l2 = _level(lines[j])
+                    if l2 and l2 <= lvl:
+                        break
+                    j += 1
+                yield ln.strip(), "\n".join(lines[i + 1:j])
+
+        LADDER_GROUPS = (("night/前晚", ("night", "前晚")),
+                         ("morning/早档", ("morning", "早档")),
+                         ("soon/临期", ("soon", "临期")))
+        BLOCKS = ("学校课程表", "每周固定课表", "一次性安排")
+        HARD_ANCHORS = (
+            ("entry_key", "语义产物的键必须与脚本 entry_key 算法逐字对齐（裁定一分层锚）"),
+            ("bring", "备注判定结果必须以 bring 数组交给脚本（RMD-A8 携带内容的承载点）"),
+            ("speech", "给孩子的文案必须以 speech 字段产出（契约 §三 speech 字段的来源）"),
+        )
+        RULE_GROUPS = (
+            (("要带", "携带"), "「备注里哪部分算要带的」判定口径"),
+            (("不提醒", "不生成"), "按区块判范围（学校课程表区块不提醒）"),
+            (("凭空", "严禁", "不得编造", "不要自己发明"), "备注为空时不得凭空发明要带物"),
+            (("语义",), "语义中间产物是 agent 的产出物（裁定一混合分层）"),
+        )
+
+        def _unmet(body: str) -> list:
+            """该节正文缺哪些必需项 —— 缺一即计入，最终必须为空。"""
+            u = []
+            if len(body.strip()) < 400:
+                u.append(f"实质篇幅（现 {len(body.strip())} 字符 < 400 = 占位标题级，"
+                         "约定正文缺席）")
+            for anchor, why in HARD_ANCHORS:
+                if anchor not in body:
+                    u.append(f"硬锚 {anchor!r}（{why}）")
+            for alts, rule in RULE_GROUPS:
+                if not any(a in body for a in alts):
+                    u.append(f"「{rule}」规则（候选措辞 {alts} 在小节内全部未命中）")
+            miss = [n for n, keys in LADDER_GROUPS if not any(k in body for k in keys)]
+            if miss:
+                u.append(f"档位取向说明 {miss}（三段阶梯决策 20）")
+            for block in BLOCKS:
+                if block not in body:
+                    u.append(f"本节内的区块范围「{block}」")
+            return u
+
+        scored = sorted(((len(_unmet(b)), h, b) for h, b in _sections()), key=lambda t: t[0])
+        if not scored:
+            self.fail("RMD-A8 RED: v3 载体内没有任何 ##/###/#### 小节 — 承载体结构不可识别，"
+                      "提醒备注解析约定更无从谈起。")
+        n_unmet, best_head, best_body = scored[0]
+        self.assertEqual(
+            n_unmet, 0,
+            "RMD-A8 RED: v3 载体内**没有任何一节**齐备提醒备注解析约定的必需项 —— 最接近的"
+            f"一节是 {best_head!r}，仍缺：{ _unmet(best_body) }。典型失败形态 = 跨包合并取了"
+            "兄弟包的 .v3 版（提醒约定只在增量扩展区留一行占位标题），本包 181 行约定正文"
+            "静默消失；旧 carrier 齿靠「备注」「学校课程表」这类课表面共享宽词命中，看不见"
+            "这种缺失（本齿改为只认提醒面专有锚 + 段落级结构锚，标题改名/换级别都不误红）。")
+
     def test_a8_b1_table_body_zero_change_reuses_package6_parser(self):
         """coverage: RMD-A8 / RMD-E3 — B1 表格主体零变更、课表解析复用包 6 不重写。"""
         lib, err = _rem_lib()
@@ -1678,4 +1778,19 @@ if __name__ == "__main__":
 #               且仅 builder 的非冻结单测（commit 503e022）在挡，无冻结保护。钉的是 RMD-A3
 #               与裁定二已声明的同一意图，不新增 acceptance id、不改行为定义；不碰音频/
 #               真机时序（属已冻结的 test_a3_live_* + 9b 面）。无既有断言被删除或修改。
+#   2026-09-08  tighten-only ADD: one extra carrier-conformance test method
+#               test_a8_prompt_carrier_v3_reminder_section_anchors — 按内容切节，要求
+#               至少一节齐备提醒面专有锚（entry_key / bring / speech 三硬锚 + 四条语义
+#               规则组 + 三档取向 + 三个区块名同节内 + 实质篇幅），缺一即红。
+#               Reason: integrator 跨包合并探测发现的第二例 oracle 缺陷（触发源非 mutation
+#               批次）—— 并行包 story-p3 与本包抢同一个 openclaw-system-prompt.v3 版本化
+#               槽位 = add/add 冲突，main 侧那份只把「包 7 — 提醒备注解析约定」写成 2 行
+#               占位；旧 carrier 齿的 needle「备注」「学校课程表」是与课表面共享的宽词
+#               （main 版命中 3 / 2 次），故「合并取 main 版 = 本包 181 行约定静默消失」
+#               这一最可能失败模式下旧齿仍 PASS = 假绿，保护不了 RMD-A8 所钉决策。
+#               自证：仓外临时副本重放四种消解 + 八个逐锚/逐组删除变体（共 12 例）——
+#               main-only 旧 PASS/新 FAIL（假绿复现并闭合）、union 双绿（不惩罚正确消解）、
+#               标题改名绿（抗润色）、单删任一硬锚或整组删任一规则措辞均红、仅留一个同义词
+#               绿。不新增 acceptance id、不改行为定义；旧 carrier 齿一字未动（保留作
+#               「载体在世 + 装载接线」的既有半）。
 # --------------------------------------------------------------------------- #

@@ -451,3 +451,83 @@ cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test
   （C 侧 unity 无 python nodeid，建议以 `文件::TEST_CASE 标题` 记账；标题含唯一子串 `RMD-A5 tighten`）
 - 补 2（`_deliver_alert_now` 断引擎腿）→
   `server/acceptance/test_schedule_reminder.acceptance.py::ScheduleReminderOfflineAcceptance::test_a3_front_poll_injects_speech_into_engine_leg`
+
+## 8. 第四单：carrier 宽词假绿收紧（2026-09-08，触发源 = integrator 跨包合并探测）
+
+同源缺陷、不同触发点：`.v3` 版本化槽位被并行包 story-p3 与本包抢（add/add 冲突）。
+旧 carrier 齿 `test_a8_prompt_carrier_v3_landed_and_wired` 的两个 needle（「备注」「学校课程表」）
+是**课表面与提醒面共享的宽词** —— 实测 main 那份 160 行版本里分别命中 3 / 2 次，
+而它把「包 7 — 提醒备注解析约定」只写成增量扩展区里的 2 行占位标题（正文缺席）。
+于是「合并取 main 版 = 本包 181 行提醒约定静默消失」这一最可能失败模式下旧齿仍 PASS = 假绿。
+
+### 8.1 新齿（python 档，纯 ADD）
+
+`server/acceptance/test_schedule_reminder.acceptance.py::ScheduleReminderOfflineAcceptance
+::test_a8_prompt_carrier_v3_reminder_section_anchors`
+
+机制 = **内容驱动选节**（不按标题措辞定位，故标题改名/换级别都不误红）：把载体按
+`##`/`###`/`####` 切成小节，对每节算「未满足必需项」清单，取最小者并要求其为空。必需项：
+
+| 类 | 项 |
+|---|---|
+| 篇幅 | 小节正文 >= 400 字符（占位标题级过不了） |
+| 硬锚（与确定性脚本有契约关系，非散文措辞） | `entry_key` / `bring` / `speech` |
+| 语义规则组（每组 OR 候选措辞，抗润色） | 判定口径（要带/携带）· 区块范围（不提醒/不生成）· 反发明（凭空/严禁/不得编造/不要自己发明）· 语义产物（语义） |
+| 三档取向 | `night`+前晚 / `morning`+早档 / `soon`+临期 **三条同时**在场 |
+| 区块范围 | 学校课程表 / 每周固定课表 / 一次性安排 三词都在**同一节内** |
+
+### 8.2 自证 = 重放当初暴露 vacuity 的场景（仓外临时副本，工作树零反例残留）
+
+旧齿 = `test_a8_prompt_carrier_v3_landed_and_wired`（一字未动，保留作「载体在世 + 装载接线」半）：
+
+| 变体 | 旧齿 | 新齿 |
+|---|---|---|
+| ours（本包版 181 行） | PASS | PASS |
+| **main-only（单边丢弃本包约定）** | **PASS ← 假绿复现** | **FAIL ← 闭合** |
+| union（双方并集） | PASS | PASS（不惩罚正确消解） |
+| 本包版 + 提醒小节标题改名 | PASS | PASS（脆断言自查） |
+| 单删 `entry_key` / `bring` / `speech` 任一模 | PASS | FAIL ×3（缺一即红） |
+| 整组删「要带/携带」「不提醒/不生成」「凭空/严禁/不得编造/不要自己发明」 | PASS | FAIL ×3 |
+| 删档位取向 `soon`+`临期` | PASS | FAIL |
+| 只删一个同义词（保留 `不生成`） | PASS | PASS（润色容忍，符合设计） |
+
+main-only 红因实写：`v3 载体内没有任何一节齐备提醒备注解析约定的必需项 —— 最接近的一节是
+'### 家长 QQ 录入约定'，仍缺：实质篇幅…硬锚 'entry_key'…`（= 精确指向被丢弃的那一侧）。
+
+### 8.3 同源审计答复（point 4：同一 needle 模式是否还在别处）
+
+逐项审了两份冻结件的全部 needle：
+
+- **有同类缺陷 1 处，已按同法收紧**：C 档 RMD-A1 tooth 7 的降级标记判据带
+  `|| strstr(buf, "-1")` 逃逸支 —— 实测 `reminder_page.c` 里 `-1` 出现 **47 次**（每个防御
+  分支都 return -1），且全树有 **136 个** `.c/.cc/.h` 文件「含 -1 但不含任何显式降级标记」，
+  即该支恒真 = 与 carrier 宽词同一类无鉴别力。新齿
+  `schedule_reminder_b.acceptance.c::提醒模块显式降级标记具名化 (RMD-A1 tighten)` 去掉该逃逸：
+  只认 降级/degrade/fallback/友好提示 四种**显式**措辞任一（钉的仍是同一 V27 意图，
+  不新增 acceptance id）。谓词实测：真模块 True（当下即绿，实现已含 12 处标记）→
+  剥掉全部标记后 False（会咬），而旧 `-1` 支两种情况都 True（证明它看不见）。
+  旧 tooth 未改（tighten-only 不可删），逃逸口因此只是「不再单独足够」。
+- **无同类缺陷**：`test_e4_contract_point3_evidenced_and_poll_form_retired` 的 needle
+  「已实证」在 `docs/contracts/interface-contract.md` 内**恰好只出现 1 次**（就是待确认点 3
+  那一行），不是宽词；且 `docs/**` 不是多包抢的版本化槽位，无 add/add 单边丢弃面。
+  `kidpal/alert`(4) / `重试到确认`(spec 2) 属「记录在世」守卫而非唯一性归因，风险等级不同，未动。
+- 其余 needle 均为本包专有符号或包有文件名（`kidpal_reminder_receive(`、`kidpal/alert`、
+  `reminder_page.c` basename、`openclaw-reminder.config.yaml`），无跨包共享面。
+  负向齿（`schedule.md` / `pending.json` / `"20:30"`）方向相反（偏严不偏松），不属本缺陷类。
+
+### 8.4 复跑实测（第四单后）
+
+```
+cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py
+    → 35 passed, 5 skipped（0 failed）；--collect-only → 40 tests，零收集错误
+cd server && python -m pytest -q --import-mode=importlib
+    → 8 failed, 136 passed, 40 skipped        # 既有 8 红一条未动，且逐条同名：
+                                              #   test_smoke_e2e ×7（包 S 退役架构面）
+                                              #   + test_voice_roundtrip_b::test_a4_adherence_recheck_evidence_record ×1
+node .claude/scripts/acceptance-coverage-check.mjs <实况路径副本>
+    → ok:true | RMD-A1..A8 全在册 | structural ["RMD-A1"]
+cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash espidf_wsl.sh build   # 无 -T main
+    → rc=0, error: 0
+    → ./build/host_infra_test.elf → 78 Tests / 3 Failures（既有三红未变；本包 13 齿全 :PASS）
+git diff --numstat（两份冻结件）= 52 / 0 与 115 / 0；git diff -U0 删除行计数 = 0（invariant 1 成立）
+```

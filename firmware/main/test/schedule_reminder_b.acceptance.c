@@ -229,6 +229,10 @@
  *   coverage: RMD-A8 (契约零变更边界) + scanner 自检 (防假绿)
  *                -> test boundary (提醒载荷内嵌 view 只能用 §1.3 白名单, 设备不得发明
  *                   "reminder" view -> VRT_ROUTE_UNKNOWN; 扫描器四态自检 + 计数器校验)
+ *   coverage: RMD-A1/A2 (tighten ADD 2026-09-08, 同源审计)
+ *             -> test RMD-A1-tighten-degrade-marker (提醒模块必须带**显式**降级标记
+ *                降级/degrade/fallback/友好提示; 补既有 structural 齿 "-1" 逃逸口的无鉴别力
+ *                —— 与 .v3 carrier 宽词齿同一类假绿, 见文件尾 REVISION LOG)
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.2]/[C4.4]):
  *   0) builder wiring: add "../../schedule_reminder_b.acceptance.c" AND the reminder page
@@ -1495,6 +1499,43 @@ TEST_CASE("schedule reminder b: 扫描器自检 + 不发明 view 契约零变更
 }
 
 /* -------------------------------------------------------------------------- *
+ * RMD-A1/A2 tighten ADD（2026-09-08 第四单同源审计）— 显式降级标记「具名化」
+ * 既有 RMD-A1 tooth 7 的判据是 降级 || degrade || strstr("-1")：第三支是无鉴别力的逃逸口
+ * —— 实测被测模块 reminder_page.c 里 "-1" 出现 47 次（每个防御分支都 return -1），该支
+ * 恒真，等于「任何会返回负数的 C 文件都算带降级语义」= 与 carrier 宽词齿同一类假绿。
+ * 本齿只钉那条 tooth 当初声明的同一件事（解析失败 = 显式降级而非盲渲染，V27 / spec §4.0），
+ * 但去掉 "-1" 逃逸：提醒模块内必须出现**显式**降级标记（降级 / degrade / fallback / 友好提示
+ * 四种措辞任一），即四种全缺席才红。实现侧现已满足（实测 11 处显式标记）→ 本齿当下即绿；
+ * 日后若有人把降级注释/日志措辞删光只留 return -1，本齿咬。
+ * 不新增 acceptance id、不改行为定义（tighten-only）。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("schedule reminder b: 提醒模块显式降级标记具名化 (RMD-A1 tighten)",
+          "[schedule_reminder][RMD-A1][RMD-A2][structural]")
+{
+    char hit[KRM_MAX_PATH];
+    char *buf;
+    int n;
+
+    KRM_REQUIRE_ROOT();
+    n = krm_scan_count("firmware/main/display", "kidpal_reminder_receive(", 0, hit, sizeof(hit));
+    if (n == 0) {
+        n = krm_scan_count("firmware/main", "kidpal_reminder_receive(", 0, hit, sizeof(hit));
+    }
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        "KRM-A1 tighten RED(infra): 定位不到提醒模块，无法核显式降级标记");
+    buf = krm_read(hit, NULL);
+    TEST_ASSERT_NOT_NULL_MESSAGE(buf, "KRM-A1 tighten RED(infra): 提醒模块不可读");
+    TEST_ASSERT_TRUE_MESSAGE(
+        krm_contains(buf, "降级") || krm_contains_ci(buf, "degrade") ||
+            krm_contains_ci(buf, "fallback") || krm_contains(buf, "友好提示"),
+        "KRM-A1 tighten RED: 提醒模块内没有任何**显式**降级语义标记（降级 / degrade / fallback /"
+        " 友好提示 四种措辞全部缺席）— 契约 §三 + V27 要求畸形 alert 载荷走显式降级路径、"
+        "绝不盲入队盲渲染；既有结构齿的 -1 逃逸支对这种缺失不敏感（任何返回负数的 C 文件都命中），"
+        "本齿按同一声明意图把它具名化补上。");
+    free(buf);
+}
+
+/* -------------------------------------------------------------------------- *
  * RMD-A5 render face — host-runner-only LVGL 软渲染真帧冒烟（渲染面证据;
  * 真实屏幕观感/网点疏密/pose 动画细节殿后 9b + 设计 review, 不钉脆断言）。
  * 机制: 先经包 0 冻结渲染缝 host_infra_render_frame() 初始化 LVGL 离屏显示并置
@@ -1713,4 +1754,15 @@ TEST_CASE("schedule reminder b: 渲染面先清屏具名化——B 后不残留 
  *               (plus a repeat-render count and a frame-equality assertion). No existing
  *               assertion removed or modified; no new acceptance id, no behaviour
  *               re-definition.
+ *   2026-09-08  tighten-only ADD (同源审计, 第四单): one extra structural TEST_CASE
+ *               "提醒模块显式降级标记具名化 (RMD-A1 tighten)" — requires an EXPLICIT
+ *               degrade marker (降级 / degrade / fallback / 友好提示) inside the reminder
+ *               module. Reason: same oracle-defect family as the carrier-tooth false
+ *               green integrator found on the .v3 slot — the existing RMD-A1 tooth 7
+ *               accepts strstr("-1") as an alternative, which is undiscriminating
+ *               (reminder_page.c returns -1 from 47 defensive branches, so the branch is
+ *               permanently true and the tooth can never fail on a missing degrade path).
+ *               This ADD keeps the same declared intent (V27 / spec §4.0 畸形载荷显式降级
+ *               而非盲渲染), removes no assertion, adds no acceptance id, and is already
+ *               satisfied by the landed implementation (11 explicit markers).
  * --------------------------------------------------------------------------- */
