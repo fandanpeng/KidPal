@@ -10,9 +10,9 @@
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "日程提醒全链路（v0.4 重写 + contractBlocked 解除，契约待确认点 3 已实证）：按区块范围（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排）+ 三段阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻配在 OpenClaw 侧、纯服务端配置永不烧板子）。脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id（确定性散列，跨重推/重算不变）写 alerts/pending.json、speech 排程时预合成；网关提醒投递（每分钟轮询到点经 mcp kidpal/alert 推送、重试到确认 60s×3、不做重连即重推、过期静默作废）；设备弹窗三件套（提示音 + TTS 读文案 + 驻留弹窗，排队逐个弹、滞留弹窗顶替（V18）、渲染即回执出队、易失 known-id 幂等去重、KEY 关闭/BOOT 关闭翻页）；断网无提醒（离线红线，决策 24）。",
-  "redBaselineCommand": "firmware host 提醒状态机单测（依赖包 0）+ server 侧提醒投递模块测试 + OpenClaw cron 排程 live 验收（@pytest.mark.live 口径）",
-  "redBaselineResult": "红：无三档排程、无 pending.json 交接、无网关提醒投递、无 state-reminder 富弹窗与回执出队——验收测试文件尚不存在，收集即失败。本包把它做到绿。",
+  "story": "日程提醒全链路（v0.4 重写 + contractBlocked 解除，契约待确认点 3 已实证）：按区块范围（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排）+ 三段阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻配在 OpenClaw 侧、纯服务端配置永不烧板子）。脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id（确定性散列，跨重推/重算不变）写 alerts/pending.json、speech 排程时预合成；网关提醒投递（每分钟轮询到点经 mcp kidpal/alert 推送、重试到确认 60s×3、不做重连即重推、过期静默作废）；设备弹窗三件套（提示音 + TTS 读文案 + 驻留弹窗，排队逐个弹、滞留弹窗顶替（V18）、渲染即回执出队、易失 known-id 幂等去重、KEY 关闭/BOOT 关闭翻页）；断网无提醒（离线红线，决策 24，设备不缓存）。",
+  "redBaselineCommand": "三通道逐条：① C 侧新增齿独立 ELF（包 6/char-stroke 同位先例目录含 runner.c/seam_stub.c/unity.h）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra 编译 schedule_reminder_b.acceptance.c + 跑原生 ELF；② C 侧既有基线：wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build 后 cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（注意 host_app 独立工程 idf.py 不接受 -T main）；③ server 侧点名命令（闸不 auto-run，见 notes 闸面实况）：cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py（全档对照同上去掉文件名）；live 通道：RUN_LIVE=1 同上 -k live",
+  "redBaselineResult": "红（planner 与 acceptance-author 双方实测、非推理）：① C 侧本包新增齿 BUILD_CLEAN 零告警 + **10 Tests 8 Failures**（2 绿 = 必须保持绿的守卫齿）；② host ELF 既有基线 **60 Tests 3 Failures 不变**（VRT-A2/E2 + WSA-A6 + WSA-A4 三条 [evidence] 齿，本地-only gitignore 证据从未入仓 → main 本身即红；先例 home-p1 43T2F / schedule-p2 39T2F，本批增至 3F）——本包新增齿与既有 3 红的判读口径见 notes；③ server 点名 **30 failed / 3 passed / 5 skipped**（--collect-only 37 tests 零收集错误），全档对照 **38 failed / 67 passed / 40 skipped** = 既有 8 红（smoke_e2e 7 + vrt 证据齿 1，全在 live-marked 文件内、包 S 退役架构面）+ 本包 30 新红 + 3 守卫绿 + 5 skip，逐条对账闭合；④ RUN_LIVE=1 下 5 条 live 齿全部执行且因证据未落盘 FAILED、零 error（冻结即冒烟判据达成）。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -43,7 +43,7 @@
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/schedule_reminder_b.acceptance.c",
-    "server/tests/test_reminder_push.acceptance.py"
+    "server/acceptance/test_schedule_reminder.acceptance.py"
   ],
   "exitCriteria": [
     {
@@ -75,6 +75,16 @@
     "260829-schedule-p2"
   ],
   "testHost": "host + live",
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "docsSyncRequired": true,
+  "securityReviewRequired": true,
+  "securityReviewNotes": "本包安全面四处，逐处对应冻结齿：① pending.json = 另一进程（OpenClaw 侧脚本）写的跨进程输入，front 必须机械校验后才投递（validate_alert_entry 齿，脏条目拒绝并留日志、不盲投）；② 有界性 = ECS 实测 available 941MB 但 Swap 已用 535MB（char-stroke 留根风险 3 同进程面），故 MAX_PENDING / MAX_TRACKED / KRM_QUEUE_CAP=8 / KRM_KNOWN_CAP=32 全部钉为冻结常量，超限走淘汰不涨内存；③ 决策 24 介质禁令 = 提醒易失 known-id 集与队列只驻 RAM，禁落 NVS/SD/Flash，设备面有结构性守卫齿；④ 投递通道复用方向 B 既有强制设备鉴权（token 未设 = refuse-service，包 WS 已并），本包不新增公网入口、不新增未鉴权端点，alerts 路径经 KIDPAL_ALERTS_DIR/KIDPAL_PENDING_JSON 可配且禁止硬编 /root/.openclaw/**。真机时序与音频面殿后 9b。",
+  "adrRequired": true,
+  "adrNotes": "两条 human 裁定属架构级决策、需入 docs/ADR.md（integrator 写权内）：① 生产侧混合分层（pod-events acaef302）；② 提醒语音借引擎 speak_txt 既有音频链、front 不自建合成与 opus 编码（pod-events 09359e74）。",
   "decisionCoverage": [
     {
       "decision": "spec-决策20-提醒模型",
@@ -86,7 +96,7 @@
     },
     {
       "decision": "spec-决策27-提醒主动播报",
-      "summary": "提醒到达 = 提示音 + TTS 读文案 + 弹窗驻留三件套；alert 载荷带 speech、排程时预合成（V20 解耦）。",
+      "summary": "提醒到达 = 提示音 + TTS 读文案 + 弹窗驻留三件套；alert 载荷带 speech、排程时预合成（V20 解耦）。本包按裁定二落地为「到点借引擎 speak_txt 既有链出音」，V20「预合成存缓存」半边的口径差已在 notes 与裁决事件中记明。",
       "sourceRefs": [
         "docs/spec.md#§7-决策27"
       ],
@@ -116,5 +126,9 @@
       ],
       "landsIn": "acceptance:RMD-A5"
     }
-  ]
+  ],
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "notes": "【C5 intake 核对（scope-map）】acceptance-author allow = firmware/**/*.acceptance.c + server/**/acceptance/**（覆盖两份冻结件）；builder/fixer allow = firmware/** + server/** + tools/** + .planning/**，覆盖全部落点（display/reminder_page.{c,h}、mcp_server.cc、test/host_app/main/CMakeLists.txt、gateway/reminders.py、deploy/openclaw-patch/reminder_schedule_lib.py、deploy/openclaw-reminder.config.yaml、deploy/openclaw-system-prompt.v3.md、front/front_app.py）；deny 面正含 *.acceptance.* 与 docs/contracts/**（builder 只读消费，缺陷修复归 acceptance-author 且断言语义零变更）；docs/spec.md 不在 integrator allow（本包无 spec 漂移要修，§4.1 即权威）。无冲突声明。\n\n【两条 human 裁定（验收与实现的输入，eventId 为凭）】① acaef302-9ddc-4508-b5d3-94023e050f43 = 生产侧**混合分层**：三档时刻算术（时间串 17:30-18:30 解析、跨天映射、事前15分减法、已过档跳过）+ 幂等 id 确定性散列 + pending.json 原子写 = 确定性 python 脚本（server/deploy/openclaw-patch/reminder_schedule_lib.py，warm_char_cache.py 同形态先例），由 OpenClaw cron --command 载荷执行（live 实测 cron add 支持 --command/--every/--cron+--tz/--declaration-key）；语义判断（备注里哪部分算要带的）与孩子文案 = OpenClaw agent 回合按 system prompt 增量产出、写入脚本消费的中间产物。② 09359e74-005b-45bb-9535-69e19c14ee04 = 提醒语音**借引擎既有音频链**：front 到点向引擎腿注入内部指令，由引擎现成入口 core/handle/intentHandler.py:233 speak_txt(conn,text) 走既有 edge-tts provider + 已 live 实证 opus 下行链出音；front 不自建合成、不做 mp3→opus 编码、不自注入二进制帧；降级路径必钉（合成/播报失败或超时 → 仅弹窗+提示音继续投递）。V20「预合成存缓存」半边在此裁定下不可离线钉，离线面只钉三件可机判事实（speech 逐字进注入指令 / 缺 speech 仍必达且引擎腿零注入 / 设备 render_actions 恒含 SHOW|TONE）——此为 spec 措辞与裁定的口径差，非契约差。\n\n【闸面实况两条（判读承重，勿误读）】(a) acceptance-run-check.mjs 与 unit-run-check.mjs 的 fileHasLiveMark 判据 = 文件内出现**任一** live 标记即**整档**排除 auto-run，仓内现有 8/8（含本包新档）全部 executor-skipped，两条闸的 ok:true 只担保「不静默跳过」、**不担保本包验收跑过**，真跑证据只由点名命令承载；(b) 闸内执行器跑的是裸 python -m pytest -q（无 --import-mode=importlib），若新增不含任何 live 标记的 test 文件会因档间 import 触发收集期 ModuleNotFoundError 当场红闸 → 本包保持含 live 齿形态，且**不动 server/pytest.ini**（共享面，并行包 story-p3 亦可能触）。(c) verify.mjs 按 .claude/taskpackages/current/taskpackage.json 解析 TaskPackage，Finalize 必须刷新该投影（本包已刷；不刷会拿上一个包 schedule-p2 做判定 = 静默假绿，属本仓既有共享投影缺陷，ARQ-260907-merge-closeout-bookkeeping-gap 在册）。\n\n【上游既有缺陷（非本包引入，本包顺带修，必须留痕）】main 的**设备构建自 char-stroke merge 起即坏**：firmware/main/mcp_server.cc 里 char-stroke 的 18 行 additive 插入把 case 3: 开在 case 4 (VRT_ROUTE_SCHEDULE) 的 app.Schedule([...]) lambda **体内**，原收尾三行 });/break;/} 被挪去关 case 3，case 4 的 lambda 从此不闭合 = C++ 语法非法（planner 亲核：git diff 205faa8 HEAD -- mcp_server.cc = 0 removed / 18 added，插入位置即病因；205faa8 版本完好）。host ELF 是独立工程不编该文件故未暴露；承重闸 firmware-build-check.mjs（idf.py build）必红。本包 builder 接 kidpal/alert 时在同一文件补回那三行，验收已钉独立守卫齿 RMD-A1 guard（实测 RED）。根因（merge 后无人复跑设备构建 = 闸间隙）由本包 pod-retro 提报、走 gov 面 ARQ，不在本包内自行改治理。\n\n【对端事实（ECS 只读实测抽样，fixture 依据）】真 schedule.md（/root/.openclaw/workspace/kidpal/schedule.md，549B）只有「## 每周固定课表」一节、无「学校课程表」也无「一次性安排」区块、时间列形如 19:00-20:00、备注列 7 行全空、frontmatter 仍留已废止 remind_before_min: 15 → 离线 fixture 按此真形状造，断言缺区块不崩 + remind_before_min 不消费 + 三档时刻只从 openclaw-reminder.config.yaml 读。cron 实况 4 条 status=ok 含 class-reminder-0529 先例（完整记录已抽样：payload.kind=systemEvent + schedule{kind:cron,expr,tz:Asia/Shanghai} + sessionTarget=main + wakeMode=now + lastDurationMs=30）；旧 jobs.json 已带 .migrated 后缀。设备回执真形状 {\"type\":\"mcp\",\"payload\":{\"jsonrpc\":\"2.0\",\"id\":<number>,\"result\":…}}；设备 mcp 层仅认数字 id（cJSON_IsNumber 实测在 mcp_server.cc:546，launch 面写的 473 是 AddTool 定义处），§三 业务 id 是字符串 → 本包负责 JSON-RPC id 数字化（mcp_relay.alert_tool_call 注记明示此活归本包），且不改 relay_ack 冻结语义。部署实态：kidpal-front.service User=root、WorkingDirectory=/opt/kidpal/front（gateway/ + front/ 两包 = server/gateway 落地副本）、单 uvicorn 进程；alerts/ 与 pending.json 当前不存在 → read_pending 缺文件安静返回 ([], [])、路径 env 可配。\n\n【设备面新建 + 渲染即回执落点】设备面零既有 alert 消费（grep 亲核）→ state-reminder 弹窗/排队/known-id 去重/渲染回执全新建，建议家 firmware/main/display/reminder_page.{c,h}（纯 C + 自带极简 JSON，schedule_page.c 同形态）。mcp_server.h:50 ReturnValue = variant<bool,int,string,cJSON*,ImageContent*> **无 promise 分支**，DoToolCall 尾部 app.Schedule([...]{ ReplyResult(id, Call(args)); }) 为同步自动回复 → 「接收时不回执、渲染完成才回执」要靠 ReplyResult(id,…) 独立延后调用（内部走 Application::SendMcpMessage，application.cc:906）；离线面钉四态与「何时才允许发回执」的决策表，不把 C++ 线程时序硬编成断言。共享面 additive：view_router 7 view 白名单与 VRT_ROUTE_* 数值码不动（提醒弹窗与首页/P2 叠加以其为准）、key_gesture_parser（KEY/BOOT × CLICK/DOUBLE_CLICK/LONG_PRESS + key_route_global）与 KRM_KEY_*/KRM_ACT_* 接缝消费包 3 手势面、不重写包 6 B1 解析（RMD-E3）。\n\n【实现注记（builder 必读，两处 planner/author 权限外）】① firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 需加 \"../../schedule_reminder_b.acceptance.c\" 与 \"../../../display/reminder_page.c\"，**必须加在 \"../../host_infra_smoke.acceptance.c\" 之前、保持后者末位**（包 0 boundary 齿依赖进程内最先跑，上游 launch 指令明文要求）；② alerts 交接路径禁止硬编 /root/.openclaw/**，走 KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON。冻结 offline contract 符号清单以两份 *.acceptance.* 文件头为准（builder 只读、改不动）。"
 }
