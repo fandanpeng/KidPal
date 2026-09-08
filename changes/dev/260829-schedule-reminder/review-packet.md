@@ -195,3 +195,66 @@ TaskPackage 未声明 `s2ExploratoryRequired` / `s2ExploratoryGoals` ⇒ 本相�
 2. 本分支已含 main 全部祖先（tip `c85e5ca`）⇒ merge-driver Step 3 rebase = no-op、Step 5 `--no-ff` 直接可过；planner 侧仍须跑 supervisor 机械闸 + 前置升级闸，**integrator 未合并、未 push**。
 3. `59a8561` 的三行修复在集成树上与 main 的同一修复已自然合一（无双份，实测 `mcp_server.cc:462-464` 唯一），RMD-A1 guard 齿在集成树 PASS。
 4. 首版登记的其余残余**全部仍然有效**（数字以本附段为准）：设备构建证据 = A.3 第 1 行真编（闸仍恒 `degraded:true`）；live 5 齿未跑 + 9b 真机观感；`acked_ids` 已加语义钉行但**行为未变**（消费方仍不得用它当送达确认）；V20 措辞口径差走 `ec77d40a` 治理面热修、与本包合并互不阻塞——**该改法目前只在 pod-events，`docs/CONTRACT-DECISION-QUEUE.md` 尚无对应行**（此即新 ARQ 面 B 的实况证据）；4096 字节上界与「槽不存 `view_json`」取舍；`MAX_TRACKED` 单点不敏感 = 正当冗余；闸内裸 pytest 执行器与 `.acceptance.py` 命名制的脆弱性。
+
+---
+
+# 附段 B · 形态改判：线性 rebase 重做（附段 A 的 merge 形态与 merge-driver 不兼容，已废弃）
+
+> **判错归属 = 我（integrator）**：附段 A.1 用 `git merge-base --is-ancestor main HEAD` 为真推出「driver Step 3 会成 no-op」，该前提只保证**合并语义**安全、**不保证 rebase 重放**无事。planner 侧实况 = driver 跑出 `Rebasing (1/17)` ⇒ fail-closed（`rebase --abort` + 置 blocked），main 未动、无损；留痕 pod-events `a0a4f270`（friction）。真因：`merge-driver.mjs:1197` 跑的是朴素 `git rebase main`，而分支内含 merge commit 时 `main..HEAD` = 全部本包提交逐个重放（driver 日志实测 `dropping 59a8561 patch already upstream` + 在 `aad6dba` 撞冲突）。⇒ 「集成期用 rebase 还是 merge」不是风格选择，是**驱动契约**问题，已作为新事实并写进 `ARQ-260908-pod-integration-no-legitimate-executor` 行内。
+> 附段 A 的全部**消解规则与内容**仍然有效（并集 v3、carrier 取 main 前言并保 ARQ 注记、三面同批指 v3、双档全留且 smoke 末位、投影取本包、docs append 全留），本节只是把承载形态换成线性历史；附段 A 的 hash 引用以本节 B.3 映射表为准。
+
+## B.1 执行与硬不变式
+
+1. `git rebase main`（18 步），逐停按预登记规则消解：
+   - 停 2/18（`aad6dba`）6 处冲突：`server/deploy/openclaw-system-prompt.v3.md`（add/add）+ `OPENCLAW_SYSTEM_PROMPT_CARRIER` + `apply-xiaozhi-overlay.sh` + `provider.config.yaml` → 逐路径取**已核验并集态 blob**（即附段 A.2 第 1-3 条的同一内容，未用 `--ours/--theirs` 单边）；`host_app/main/CMakeLists.txt` → 双档全留且 `host_infra_smoke.acceptance.c` 末位（实测与并集态 blob **逐字节相同**）；`front_app.py` → 两侧 additive 接线都留（取并集态 blob，`acked_ids` docstring 不混入）。
+   - 停 6/18（`85f9afa`）与后续 `current/{taskpackage,verdict}.json`：取本包侧（`--theirs` 在被重放语境即本包），并核 `current/taskpackage.json` 与 canonical **sha256 逐字节相同**（实测同为 `363b8fdf45d3…` / 46051B / 433 CRLF —— 两侧同物化路径故一致，未再现附段 A.4 的闸红）。
+   - 停 9/18 与后续（`docs/ADR.md` / `docs/ARCH-REVIEW-QUEUE.md`）：EOF append 全留不重排（ADR 现 ADR-001→002→003；ARQ 七条 `ARQ-260908-*` 并存）。
+2. **硬不变式（不可让项）达成证据**：
+   - `git diff backup/integrated-tip-cb3a0f6 HEAD` 输出行数 = **0**（树逐字节等于已核验并集态；`backup/integrated-tip-cb3a0f6` = 并集态真实 tip，比 planner 命名的 `backup/integrated-union-1bad3e7` 多一条 friction 留痕行）。
+   - `git diff backup/integrated-union-1bad3e7 HEAD --stat` = `1 file changed, 1 insertion(+)`，内容恰为 pod-events 的 `a0a4f270` friction 留痕一行（即 planner 命名 backup 之后新追加的那条），**非内容回归**。
+   - `git diff --check` = 无冲突标记、无空白错误；`git rev-list --merges --count main..HEAD` = **0**（分支已线性）；`git rebase main` 再跑一次 = `Current branch dev/260829-schedule-reminder is up to date.`（⇒ driver Step 3 从此是**真** no-op）。
+   - 并集版复核：`server/deploy/openclaw-system-prompt.v3.md` 内提醒侧与故事侧锚点同现（实测两类锚合计命中 7 次），240 行。
+3. 首次 rebase 完成后曾有 5 处**纯次序/行尾/工具缓存**差异（`host_app/main/CMakeLists.txt` 两包块先后、`docs/ADR.md` 空行数、`progress.md` 段落 append 先后、`.codebase-memory` 两件 merge 时按 `merge=ours` 保旧缓存）。已在 `9aadb9b` 一并对齐并逐条写明理由；对齐前先把 `host_app` 块次序改回并集态，是因为 unity 注册序 = 列表逆序、执行序影响两包齿的相对跑序，不任取。
+
+## B.2 线性化后的复跑（与附段 A.3 同基线，全部本机实跑）
+
+| 面 | 结果 |
+|---|---|
+| 设备真编 | `Project build complete`；`error:` / `warning:` 计数 0；`xiaozhi.bin 0x2b8b30`、`Smallest app partition 0x3f0000`、`0x1374d0 bytes (31%) free`；`reminder_page.c.obj` + `story_page.c.obj` + `mcp_server.cc.obj` 真编 |
+| python | 本包 **35 passed / 5 skipped**；story-p3 **20 passed / 1 skipped**；全档 **8 failed / 156 passed / 41 skipped**（8 = 既有红同名单，两包零新增红） |
+| host ELF（从 `firmware/main/test/host_app/` 跑，重编 `[4/6]…[6/6] Done`） | **86 Tests / 3 Failures / 0 Ignored**；红集仍 `voice_roundtrip_b.acceptance.c:878` / `device_ws_switch.acceptance.c:830` / `:663`；本包 **13 验收齿 + 5 单测齿**、story **8 齿**全 `:PASS` |
+| 五闸 | `taskpackage-required-check` EXIT=0（`ok:true`）；`contract-lint` EXIT=0；`unit-run-check` EXIT=0（`37 passed in 0.20s`）；`acceptance-run-check` EXIT=0（`oracle-pass`，firmwareAcceptanceFiles **9** / server 9）；`closeout-check`（默认只读，未传 `--update-index`）EXIT=0（advisories = machine evidence advisory-only + loop-retro 阈值） |
+| verifier fact | 集成树 final **r4** 已由 planner 入册（提交 `5170cde`；rebase 后新 hash），integrator 复跑 `verifier-evidence-check.mjs --phase final --round 4` → `{"ok":true,"factOk":true,"observedGateExit":0,"phase":"final","round":4}`，即 r3 的「证据对应半边树」缺口已闭合，本包承重 fact 现取 **r4** |
+
+## B.3 旧 hash → 新 hash 对照（rebase 改写全部 hash；旧对象仍可从两个 backup 分支与 reflog 复原）
+
+| 旧（并集态 / merge 形态） | 新（线性） | 提交 |
+|---|---|---|
+| `59a8561` | —（无对应，rebase 自动 drop：`patch contents already upstream`，main 已含 story-p3 `90204c2` 的同三行修复） | fix(firmware): 补回 mcp_server.cc case 4 收尾三行 |
+| `aad6dba` | `f3305b5` | feat(firmware+server): 全链路 |
+| `81749b1` | `66904f4` | test(acceptance): 冻结件与红基线入库 |
+| `7c6d7c5` | `a167498` | test(acceptance): 修冻结件两处自身缺陷 |
+| `503e022` | `f9e8ed9` | test(server): 自带单测加固 |
+| `85f9afa` | `102c026` | chore(devloop): mutation 证据 37 条 |
+| `7ab2d47` | `6cee439` | test(acceptance): tighten-only 补两齿 |
+| `339fec3` | `82e24e7` | chore(devloop): final r3 证据入册 |
+| `04739e4` | `c131fda` | docs(devloop): integrator 收口（首版制品） |
+| `a54e692` | `87cf4b5` | chore(devloop): 收口留痕 + 两桩升级 |
+| `a53a6ff` | `c3479fa` | test(acceptance): tighten-only 第四单（新 carrier 齿） |
+| `51390c1` | `f0e1451` | chore(devloop): human 两裁定入册 + pod-retro 代提 |
+| `f664695` | `5170cde` | chore(devloop): 集成树 final **r4** 证据入册 |
+| `44ded5c` | —（无对应；merge commit 被线性化，其消解内容分布于新 `f3305b5` 与新 `9aadb9b`） | Merge main into 分支（已废弃形态） |
+| `747cb7a` | `bc41956` | docs(front): `acked_ids` docstring 钉行（仍是独立提交） |
+| `3f3d531` | `8b0c5c3` | docs(devloop): 附段 A + ARQ 登记 |
+| `d712a08` | `9821b79` | chore(devloop): supervisor ESCALATE + human approve |
+| `1bad3e7` | `00df6a5` | chore(devloop): supervisor-verdict.json 补提交 |
+| `cb3a0f6` | `4960566` | chore(devloop): 形态判错 friction 留痕 |
+| —（新） | `9aadb9b` | fix(devloop): 线性化后 5 处纯次序/缓存差异对齐（当前 tip） |
+
+**悬空引用清单（待 planner 更新到合并门材料）**：`taskpackage.json` 的 `mutationEvidence._meta` / `notes`、本 packet 附段 A、`docs/ARCH-REVIEW-QUEUE.md` 四条 `ARQ-260908-*` 行、`.planning/kidpal-mvp/progress.md` 包 7 段与集成更正段，均按旧 hash 书写（`59a8561` / `aad6dba` / `81749b1` / `7c6d7c5` / `503e022` / `85f9afa` / `7ab2d47` / `339fec3` / `44ded5c` / `747cb7a` / `3f3d531`）。旧对象在 `backup/integrated-tip-cb3a0f6`、`backup/integrated-union-1bad3e7`、`backup/pre-integration-260829-schedule-reminder` 三分支与 reflog 中仍可达（gc 前），故引用非失效而是**需换号**；本表即为换号依据，integrator 未回改这些行（append-only 纪律 + 属他角色撰写面）。
+
+## B.4 合并门须知（终版，取代 A.5 第 2 条）
+
+1. 分支已**线性**、`main` 为其祖先、`git rebase main` 自证 `up to date` ⇒ planner 直接跑 `merge-driver --pod` 即可（Step 3 no-op、Step 4 quick-check、Step 5 `--no-ff`）。integrator 未合并、未 push。
+2. 承重 fact = **r4**（集成树），`r3` 保留作本包单独面证据；两枚 fact 的 `phase/outcome/provenance` 均在场。
+3. 残余项与 A.5 第 3-4 条一致（设备构建靠真编；`acked_ids` 语义钉行不改行为；V20 措辞待治理面；live 5 齿 + 9b；4096 取舍；`MAX_TRACKED` 正当冗余；闸内裸 pytest 脆弱性；四条 260908 ARQ + 本附段新写的形态事实待 architect 判）。
