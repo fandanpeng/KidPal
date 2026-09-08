@@ -85,3 +85,38 @@ $ node .claude/scripts/landing-fidelity-check.mjs changes/arch/260908-gov-review
 - **最重发现**：V4 验证项从 summary §2 执行记录表静默消失且 1b 未申报——改法本体（probe-out JSON 制品 = 逐文件相交清单的机械基底；BLOCK reason 带实撞清单 detail；DEV-GOVERNANCE 句钉 human 触点语义）已忠实落地，缺的是防回退夹具与如实申报，修复成本极低（§0 条件 1-3）。
 - **残余留根（不阻塞，随条件 1 申报后归档）**：(a) 冻结 T3/V4 的「双方版本正文摘录锚 / ④ 级 architect 意见槽 / 消解选项」无机械生产者（意见产自 ③ 评审后、无组装代码），§10d ③/④ 行以 runbook prose 承载升级件全规格、gate 只供数据基底——建议冻结层追认该降档并留根；(b) probe 在 buildCtx 对 gov 档也无条件执行（结果 devloop 档才消费）——只读无副作用，纯效率观察；(c) overlap-probe.json 由 Step 1b 落盘后在本 invocation 内不提交，依赖下次 Step 0 白名单收口自愈——卫生观察；(d) union-safe 预测与 rebase 实撞的其它不一致形态（非 no-overlap）无显式 warn——冻结 T4 括注只钉 no-overlap 例，落地按字面。
 - 五条件修毕（summary 补申报 + gate 一条断言）后由主线程重跑结构门并交 verifier 复核转绿；merge 决定恒归 human 门。
+
+---
+
+## 7. 终态复核（2026-09-08 · 修复 commit `ebba9b0` 后）
+
+> 复核对象 = 修复 commit `ebba9b0`（RED 三前提逐条修复）。verifier 独立动作：重读修复 diff 全量、复跑 gate 自检与结构门。verdict 更新为 **GREEN**。
+
+### 7.0 Verdict：**GREEN（放行建议；merge 决定恒归 human 门）**
+
+三前提逐条复核：
+
+| # | 前提 | 复核实证 | 裁定 |
+|---|---|---|---|
+| 1 | summary §2 补 V4 行 + 如实申报降档 | V4 行新增：逐文件相交清单宿主 = overlap-probe.json（形状断言钉电池）；「双方版本正文摘录锚 / architect 意见槽」如实申报为 ③/④ 流程面字段、本批无独立机械宿主/schema，三层承载（probe-out 形状断言 + DEV-GOVERNANCE 义务句 + §10d 升级件表）写明，schema 化留观测后批；V2 行同步更正（20 例零新增、代码路径亲核承载、不再冒充已测——1b-2 重写后「payload 断言代测」失实表述已消除） | 满足 |
+| 2 | gate 自检补升级件内容断言 | `overlap-probeout-payload-keys-ok`（selfCheck 26/26，verifier 独立复跑确认；+1 例 = 25→26）：断言 probe-out JSON 四键（intersectingFiles/conflictedFiles/addAddFiles/tier）序列化形状 + 实撞字面在场。**性质注记**：该断言为契约文档级（夹具内本地构造 JSON，未接线真实 `--probe-out` 写盘路径或 `parallelOverlapProbe` 导出输出）——真实输出形状已由本 verifier §5 六态探针独立证实一致；接线级断言建议后续动 gate 的批顺带补（残余 c） | 满足（附性质注记） |
+| 3 | 1b 补两条申报 | 1b-④（V1 第五例 gate 级宿主缺位，宿主随 B1 迁 hook / §10d prose 承载）+ 1b-⑤（登记表 authority 档未机械化、正则兜底从严方向差，登记表机械化留观测后批）两条申报在案 | 满足（附残余 b） |
+
+冻结层追认：PROPOSAL 新增 §9（V4 降档 + 宿主迁移追认，追认范围 = 验证项降档与宿主迁移、不改任何改法语义；追认链 = human「继续落地」指令 + verifier 条件链）——§0 条件 1 的冻结层追认要件兑现。修复 commit 文件面 = gate 自检 +8 行 / PROPOSAL §9 / summary 申报更正 / verdict 归档，无新夹带、无改法语义改动。
+
+### 7.1 复跑记录（修复态）
+
+- gate `--self-check`：**26/26 ok:true**（25→26，新例 overlap-probeout-payload-keys-ok 计入并通过）。
+- 结构门 `landing-fidelity-check.mjs <dir> 4c38ba9`：**ok:true**（unauthorized / claimedNotLanded / plannedNotLanded 全空）——§9 追认节入 PROPOSAL 不触 §2 锚集与 manifest。
+- 其余自检未受修复影响（修复 diff 仅触 gate 自检块 + 两制品文件）。
+
+### 7.2 残余观察（不阻塞，留档）
+
+- **a**：1b-④ 对「V1 第五例」的指称与冻结文本有差——冻结 V1 第五例为「③ 派发不可用 → ④」，1b-④ 写作「cross-system 目录面不再触发升级（home-p1 形态夹具）」（该形态实际对应 V1 的 hook battery 改写项，宿主迁 hook 正确）；「③ 派发不可用 → ④」本身的宿主缺位由 §10d ③ 行 fallback 句 prose 承载（substance 在案）。建议下批 retro 或下次动 summary 时顺手订正指称。
+- **b**：1b-③ 修订后称留根注记在「gate 代码头注 + PROPOSAL §6 留根」——§6 留根清单实无正则双源条目（verifier grep 证实），引用仍悬空一笔；gate 代码头注注记真实在案。
+- **c**：`overlap-probeout-payload-keys-ok` 为契约文档级断言（见 7.0 条件 2 注记），建议后续批把断言接线到导出的 `parallelOverlapProbe` 真实输出或 probe-out 写盘函数。
+- **d**：RED verdict §6 残余 (b)(c)(d)（gov 档 probe 无条件执行、overlap-probe.json 依赖下次 Step 0 白名单收口自愈、union-safe 其它不一致形态无显式 warn）维持留根观测，不阻塞。
+
+### 7.3 终态结论
+
+三前提全部满足、gate 自检 26/26 与结构门 ok:true 复跑确认、V4 降档获 §9 冻结层追认、申报链诚实闭环（V2 失实表述已更正、1b 增至五条）。**landing 保真度判定 GREEN，放行建议成立；合并归 human 门。**本批流程正面记录：landing 顺序（先实跑结构门后写 summary）与 RED 修复响应均吸收了 merge-chain-hardening 批 verifier 教训，验证项静默缺失问题本批以「申报 + 追认 + 补断言」方式闭环。
