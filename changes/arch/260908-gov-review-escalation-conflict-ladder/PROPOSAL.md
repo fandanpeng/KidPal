@@ -1,8 +1,8 @@
 # PROPOSAL · 260908-gov-review-escalation-conflict-ladder
 
-> **状态：DRAFT v0.1 · 2026-09-08 · 主线程起草完毕，待 human 立项 ack（ack 后走 Track A 对抗评审——本批改升级闸判据语义，ARQ 自评 full-adversarial + human，human 立项讨论中已确认方向并三级细化）**
-> **承载 ARQ**：`ARQ-260907-escalation-cross-system-overfire`（主承载，判据换轴）。来源链 = ARQ 原文两条候选（①收紧目录计数 ②接受恒批）经 human 2026-09-08 立项讨论**双双否弃**，裁出第三方向：「冲突核对面做实了，要不要人批不重要」——判据从「目录面启发式」换轴为「并行相交面可核性」，并三级细化（见 §0）。姊妹面：本批 T5 CDQ 核验行同文件（`pre-merge-escalation-gate.mjs`）已随 260908-gov-review-merge-chain-hardening 落地合并（main `5eaf610`），无并发编辑冲突。
-> **review 轨**：Track A full-adversarial + human（改升级闸判据语义 = gate 语义变更 + 「取舍机判判据」存真设计分叉——ARQ 原文同款自评，本批不降档）。
+> **状态：DRAFT v0.1 · 2026-09-08 · 主线程起草完毕；human 立项 ack 已获（2026-09-08 AskUserQuestion：ack 进评审 + OQ2=③ 级 architect 建议即地板 + OQ4=接受相交探测承担真跨系统保护 + 质询 review 轨「有那么复杂吗」→ 主线程复判改 Track B，见下行）。ack 后走 architect 评审循环至 GREEN。**
+> **review 轨**：**Track B 常驻轻路径（v0.1 原自评 Track A 作废，human 质询后主线程复判降档）**。降档归因如实记录：①「真设计分叉」已被 human 立项裁定消费（三级梯 = human 2026-09-08 讨论裁定 + OQ2/OQ4 同场裁）；②gate 面实为**门内判据改造 + cross-system 组成项退役**，非新增/删除工程门——先例 = 260908 批 T5 CDQ 核验行（A-2 裁「门内加项」，Track B 以 gate 事实声明承载）+ merge-friction 批 Step 0。Track B 三要件核对：契约面零触 / 无未决设计分叉 / 改动面全有机械夹具（V1/V2/V6 回放）。gate 事实如实声明：T1 判据换轴 + T4 分流 = gate 语义改造，交判官复核；判官若认定仍有未决分叉可打回升 Track A。
+> **承载 ARQ**：`ARQ-260907-escalation-cross-system-overfire`（主承载，判据换轴）。来源链 = ARQ 原文两条候选（①收紧目录计数 ②接受恒批）经 human 2026-09-08 立项讨论**双双否弃**，裁出第三方向：「冲突核对面做实了，要不要人批不重要」——判据从「目录面启发式」换轴为「并行相交面可核性」，三级梯见 §0。姊妹面：本批 T5 CDQ 核验行同文件（`pre-merge-escalation-gate.mjs`）已随 260908-gov-review-merge-chain-hardening 落地合并（main `5eaf610`），无并发编辑冲突。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T5）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
 > **riskTier**：medium（一句话证成：升级门是合并链的守门判据，换轴错向会把真跨系统变更放进来自动合并——但新判据的每一级都以「机械可核证据」为放行前置、fail-closed 默认与既有链一致，且①级零相交自动放行等于 merge-driver rebase+quick-check 本来就在做的事的提前显式化，无新增放行集）。
 > **review profile**：G2+G3（触面 = pod-coordination.md / DEV-GOVERNANCE 治理注 G2 + pre-merge-escalation-gate.mjs / merge-driver.mjs G3；契约面为零）。
