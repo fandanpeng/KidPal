@@ -123,9 +123,17 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 
 1. 在 Pod worktree 手动重放：`git rebase <target.ref>`（target = driver 当时输出的 rebase target）；
 2. 逐冲突消解——current/ 投影冲突（`taskpackage.json` / `verdict.json`）恒取被合并 Pod 侧（rebase 语境 `--theirs`）；progress.md 已配 union 自动保留双侧；其余文件（如 CMakeLists additive）人工按语义消解并核对兼容性（先例：b7df3ab 双保留解）；
-3. `GIT_EDITOR=true git rebase --continue`（免交互），循环至 rebase 完成；
+3. `git rebase --continue`（循环至 rebase 完成；前置 = 消解开始前在 Pod worktree 一次性 `git config core.editor true`，使素形 continue 免交互且命中 settings ask 前缀——`GIT_EDITOR=true` 环境前缀形态不命中 `Bash(git rebase:*)` 前缀、不弹窗，禁用；`git -c core.editor=true` 同理不命中，须 config 落盘形态）；
 4. `portfolio-reconcile.mjs --set-pod <id> --status ready-to-merge` 重置状态；
 5. 重跑 `merge-driver.mjs --pod <id> --human-approval-ref <eventId>`（ESCALATE 包凭据不变，仍有效）。
+
+**消解纪律五条（260908 批补，与上五步配套）**：
+
+1. **形态钉死**：Pod 分支集成一律 rebase 形态、**禁在 Pod 分支引入 merge commit**——Pod 分支内含「并 main」的 merge commit 与 merge-driver 的朴素 `git rebase main` 结构性不兼容（260829-schedule-reminder 实测：`Rebasing (1/17)` → 撞冲突 → abort + blocked，合并 fail-closed 无损但空转；线性化后同命令 up to date）。
+2. **graph 缓存**：`.codebase-memory/{graph.db.zst,artifact.json}`（`merge=ours`）内容漂移会让 merge/rebase 起手中止——调 merge-driver 命名导出的 `ensureGraphCacheSynced`（三拍：no-skip-worktree → `git checkout HEAD --` → 复旗标），不自行复刻。
+3. **current/ 投影**：恒取被并包侧且**归一 LF**——`core.autocrlf=true` 会把 `git checkout --ours/--theirs` 物化成 CRLF，而 `taskpackage-required-check.mjs:143` 用 sha256 逐字节比对 canonical ↔ current，CRLF 即翻红；merge-driver 投影特判已内置 LF 归一（260908 批）。
+4. **消解完成后复跑**：**双方**冻结件（本包 + 对端包）+ 全档 pytest + host ELF（文档命令位）+ 设备真编 + 九闸脚本并回报实测数字——只跑本包档不算完成，对端红漏检是实测陷阱（消解副作用只在对端冻结齿上显形，260829 实测）。
+5. **版本化制品 add/add**：禁 `--ours`/`--theirs` 单边消解——单边会让被丢正文一侧的 needle 齿偶然命中而假绿；消解 = 取并集 + 复跑双方 carrier 齿并留 exit code；槽位预约与登记表见 §10c。
 
 人批后首跑 no-op（blocked 未消解）不应再出现：driver 入口对 `--pod X + --human-approval-ref` 且 X=blocked 自动核验消解（Step 1b 同路径，核验失败 fail-closed 保持 blocked）。
 
@@ -134,6 +142,27 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 - **pod-events 的 merge-completed 事件**：merge-driver Step 5b 机械落 main（合并现场单文件 pathspec commit）——main 自持、feature 分支可删，planner 无需手动补（home-p1 `46d99b5` / schedule-p2 `7717eea` 的手动簿记由此机械化）。簿记失败为 advisory warn、不阻塞合并链。
 - **changes/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。
 - **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`.claude/taskpackages/<pod-id>/**` + `changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
+
+## 10c. 版本化制品 `.vN` 槽位预约与登记表（260908 批，A-7/B-2/B-0 已裁）
+
+**槽位预约机制**：Pod launch 时在 pod-events 记 `versioned-artifact-claim: <path>@vN`（自由事件型）；后到 Pod 见在先 claim 即从 **vN+1** 起编，或主动等待前包合并后重取基线——把「谁占哪一版」从两包各自看 deploy 目录猜，变成机械可查。
+
+**双源关系（A-7 已裁）**：本登记表为 **authority**、`*.v[0-9]+.md` 形态正则为兜底——不一致时赢家 = 登记表；正则角色 = merge-driver 版本化制品 add/add 特判命中集的形态兜底，登记表外新形态（无 `.vN` 后缀的版本化物，如 engine-patch）退回通用 blocked fail-closed（补集不变式：特判只 widen 指引文案、不 widen 放行）。
+
+**登记表（初始清单 = 实测超集，F9 修向）**：
+
+| 路径形态 | 类别 | 说明 |
+|---|---|---|
+| `server/deploy/openclaw-system-prompt.vN.md` | prompt 载体 | 当前唯一带 `.vN` 后缀的版本化物（v1/v2/v3 在册） |
+| `server/deploy/engine-patch/**` | 引擎部署副本补丁 | add/add 时退通用 blocked（正则不命中、登记表兜住指引语义） |
+| `server/deploy/openclaw-patch/**` | 引擎部署副本补丁 | 同上 |
+| `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` | 无扩展名 carrier | 无 `.vN` 后缀，特判正则不命中、登记表兜住 |
+| `server/deploy/provider.config.yaml` | 接线面配置 | bump 时 add/add 风险面 |
+| `server/deploy/apply-xiaozhi-overlay.sh` | 接线面脚本 | bump 时 add/add 风险面 |
+
+**维护三句（B-2）**：owner = 批主线程（触碰登记表所列形态的批 landing 时随批更新）；更新触发 = 批版本化制品路径集与登记表 diff 非空；vN 回收 = 不做机械回收、槽位由 forward-bump 语义由后版覆盖（实测需要再另行立项）。
+
+**单一权威互指注记（B-0）**：本节为版本化制品消解口径单一权威；merge-driver 特判指引文案与 integrator.md 消解段为引用方，改本节口径须同批核两引用。
 
 ## 相关
 

@@ -28,6 +28,8 @@
 import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { resolveHumanApproval } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
@@ -68,42 +70,8 @@ function readSupervisorVerdict(dir, changeId) {
   }
 }
 
-/**
- * 核验 ESCALATE 人批事件（T1，260904-gov-review-escalate-merge-approval；OQ1=(a)）：
- * 读 <dir>/.claude/taskpackages/<changeId>/pod-events.jsonl，不在场时回退 pods 记录
- * （deps.podsRecordPath，由调用方解好 git common dir）里 worktreePath 下同路径。
- * 找 eventId 命中记录，五要素全过才 ok：eventType/actor/payload.decision/changeId/schemaVersion。
- * 任一不符 → { ok:false, reason:<点名哪要素不符> }（fail-closed）。readText 可注入，self-check 可测。
- */
-export function resolveHumanApproval(dir, changeId, eventId, deps = {}) {
-  const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
-  if (!eventId) return { ok: false, reason: 'eventId 缺失' };
-  let raw = readText(join(dir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl'));
-  if (raw === null && deps.podsRecordPath) {
-    // 合并前事件可能只在 worktree 侧落盘：经 pods 记录 worktreePath 回退
-    try {
-      const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
-      if (wt) raw = readText(join(wt, '.claude', 'taskpackages', changeId, 'pod-events.jsonl'));
-    } catch { /* 回退失败按不在场处理 */ }
-  }
-  if (raw === null) return { ok: false, reason: 'pod-events.jsonl 不在场（主仓与 worktree 回退均未找到）' };
-  let hit = null;
-  for (const line of raw.split('\n')) {
-    const t = line.trim();
-    if (!t) continue;
-    try {
-      const rec = JSON.parse(t);
-      if (rec?.eventId === eventId) { hit = rec; break; }
-    } catch { continue; }
-  }
-  if (!hit) return { ok: false, reason: `eventId=${eventId} 不在 pod-events 中` };
-  if (hit.eventType !== 'human-decision') return { ok: false, reason: `eventType=${hit.eventType}（应为 human-decision）` };
-  if (hit.actor !== 'human') return { ok: false, reason: `actor=${hit.actor}（应为 human）` };
-  if (hit.payload?.decision !== 'approve-escalated-merge') return { ok: false, reason: `payload.decision=${hit.payload?.decision}（应为 approve-escalated-merge）` };
-  if (hit.changeId !== changeId) return { ok: false, reason: `changeId=${hit.changeId}（应为本 changeId ${changeId}）` };
-  if (hit.schemaVersion !== 1) return { ok: false, reason: `schemaVersion=${hit.schemaVersion}（应为 1）` };
-  return { ok: true, reason: 'human-approval verified' };
-}
+// resolveHumanApproval 已迁 lib/governance-gate-shared.mjs（T6，260908 批 B8 并入）——本文件具名导入。
+// 五要素人批事件核验（approve-escalated-merge）；T5 defer/accept-risk 锚核验复用同函数、decision 参数化。
 
 /** 读治理 PROPOSAL §7 与 Status 行 + landing-verdict（Track B 档）。 */
 function readGovAnchors(dir, changeId) {
@@ -126,6 +94,67 @@ function hasContractsDiff(execFn, source, target) {
   } catch {
     return false;
   }
+}
+
+/**
+ * T5（260908-gov-review-merge-chain-hardening，A-2 已裁：门内加项；A-8 已裁：放行方向——只拦可识别形态）：
+ * 契约/治理 canonical 改动「交回→在册」机械核验。扫描 review-packet Findings 表行：
+ * 行含字面 `| hard-violation |` 且行含 `docs/contracts/**` 或 `docs/spec.md` 字面（B-4 写作侧对齐：
+ * integrator.md findings 约定要求 Basis 以该两前缀起引；未匹配形态放行，不把自由 prose 写作变假红）→
+ * 视为「契约类 hard-violation 在案」。在案者 MUST 二选一核销：
+ *   a) docs/CONTRACT-DECISION-QUEUE.md 含本 changeId 字面（对应 CDQ 行）；
+ *   b) pod-events 有 human-decision 事件 payload.decision ∈ {defer-contract-change, accept-risk}
+ *      且 changeId 匹配（B-6 锚格式，复用五要素事件形状）。
+ * 返回 { present, accounted, hits:[findingLine 摘录] }。readText/cdqText 可注入，self-check 可测。
+ */
+export function contractFindingsAccounted(dir, changeId, deps = {}) {
+  const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
+  const readPacketText = () => {
+    let t = readText(join(dir, 'changes', 'dev', changeId, 'review-packet.md'));
+    if (t === null) t = readText(join(dir, '.claude', 'taskpackages', changeId, 'review-packet.md'));
+    if (t === null && deps.podsRecordPath) {
+      try {
+        const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
+        if (wt) t = readText(join(wt, 'changes', 'dev', changeId, 'review-packet.md')) ?? readText(join(wt, '.claude', 'taskpackages', changeId, 'review-packet.md'));
+      } catch { /* worktree 回退失败按不在场处理 */ }
+    }
+    return t;
+  };
+  const packetText = readPacketText();
+  if (packetText === null) return { present: false, accounted: true, hits: [] };
+  const hits = packetText
+    .split('\n')
+    .filter((l) => l.includes('hard-violation') && (l.includes('docs/contracts/**') || l.includes('docs/spec.md')));
+  if (hits.length === 0) return { present: false, accounted: true, hits: [] };
+  const cdqText = readText(join(dir, 'docs', 'CONTRACT-DECISION-QUEUE.md'));
+  const cdqHasRow = cdqText !== null && cdqText.includes(changeId);
+  const deferAnchored = (() => {
+    const raw =
+      readText(join(dir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl')) ??
+      (deps.podsRecordPath
+        ? (() => {
+            try {
+              const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
+              return wt ? readText(join(wt, '.claude', 'taskpackages', changeId, 'pod-events.jsonl')) : null;
+            } catch { return null; }
+          })()
+        : null);
+    if (raw === null) return false;
+    return raw.split('\n').some((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      try {
+        const rec = JSON.parse(t);
+        return (
+          rec?.eventType === 'human-decision' &&
+          rec?.actor === 'human' &&
+          rec?.changeId === changeId &&
+          (rec?.payload?.decision === 'defer-contract-change' || rec?.payload?.decision === 'accept-risk')
+        );
+      } catch { return false; }
+    });
+  })();
+  return { present: true, accounted: cdqHasRow || deferAnchored, hits };
 }
 
 /**
@@ -168,6 +197,13 @@ export function evaluate(ctx) {
   // 通用 3：escalation 未 resolve / blocked（blocked 仅在人批豁免成立时视同 resolve，OQ2=(a)）
   if (ctx.blocked && !escalateExempt) push('change 处 blocked 态（未 resolve）');
   if (ctx.escalationUnresolved) push('存在未 resolve 的 agent-escalation 事件');
+
+  // 通用 4（T5，260908 批门内加项）：契约类 hard-violation「交回→在册」核验。
+  // 只拦可识别形态（A-8 放行方向）：Findings 行含 hard-violation + docs/contracts/**|docs/spec.md 字面起引，
+  // 且 CDQ 无对应行、pod-events 无 human defer/accept-risk 锚 → BLOCK；未匹配 / packet 不在场 → 放行。
+  if (ctx.contractFindings?.present && !ctx.contractFindings.accounted) {
+    push(`contract-findings-unaccounted：review-packet 有 ${ctx.contractFindings.hits.length} 条 hard-violation 且 Basis 引 docs/contracts/**|docs/spec.md，但 CONTRACT-DECISION-QUEUE 无对应行且无 human defer/accept-risk 锚（260908 批 T5）`);
+  }
 
   // 人批 flag fail-closed：给了 flag 但核验不过 → BLOCK 且点名失败项
   if (approval && !approval.ok) push(`human-approval 核验失败：${approval.reason}`);
@@ -237,6 +273,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const humanApproval = humanApprovalRef
     ? resolveHumanApproval(projectDir, changeId, humanApprovalRef, { podsRecordPath })
     : null;
+  const contractFindings = contractFindingsAccounted(projectDir, changeId, { podsRecordPath }); // T5（260908 批）
 
   return {
     changeId,
@@ -250,6 +287,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     blocked,
     escalationUnresolved: false, // pod-events 聚合待接入；现 false（升级闸 v1 只覆盖 blocked 态 + 显式判定）
     humanApproval, // T1：--human-approval-ref 核验结果；未带 flag 为 null
+    contractFindings, // T5（260908 批）：契约类 hard-violation 台账核验结果
   };
 }
 
@@ -275,6 +313,7 @@ function selfCheck() {
     blocked: false,
     escalationUnresolved: false,
     humanApproval: null, // T1：--human-approval-ref 核验结果
+    contractFindings: { present: false, accounted: true, hits: [] }, // T5：默认不在场 → 放行
     ...over,
   });
 
@@ -333,6 +372,14 @@ function selfCheck() {
   // 8) provenance 缺失永不豁免
   expect('escalate-provenance-missing-not-waived', { supervisorVerdict: { verdict: 'ESCALATE', riskTier: 'high', provenance: null }, humanApproval: { ok: true, reason: 'human-approval verified' } }, true, 'provenance');
 
+  // T5 契约台账核验 3 例（260908 批；真空绿规约：fixture 非空断言先行——present 值由 contractFindingsAccounted 真实扫描产出的形状构造）
+  // 1) 在案 + 无 CDQ 行无 defer 锚 → BLOCK 点名
+  expect('contract-findings-unaccounted-block', { contractFindings: { present: true, accounted: false, hits: ['| SHOULD | hard-violation | contract | ... | docs/contracts/** §三 speech | 交回 CDQ |'] } }, true, 'contract-findings-unaccounted');
+  // 2) 在案 + CDQ 行在场（accounted:true）→ 放行
+  cases.push({ name: 'contract-findings-cdq-accounted-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/contracts/**'] } })).blocked, got: '' });
+  // 3) 在案 + human defer 锚（accounted:true）→ 放行
+  cases.push({ name: 'contract-findings-defer-anchored-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/spec.md'] } })).blocked, got: '' });
+
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'pre-merge-escalation-gate', pass: cases.length - fail.length, fail: fail.length, total: cases.length, ok: fail.length === 0, failures: fail.length ? fail : undefined })}\n`,
@@ -340,7 +387,16 @@ function selfCheck() {
   process.exit(fail.length ? 1 : 0);
 }
 
-// ---- 入口 ----
+// ---- 入口（T6，260908 批：import.meta 守卫——被 import 时不执行 CLI，可导入库 / 可执行脚本分离）----
+function isDirectRun() {
+  try {
+    return !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectRun()) {
 if (process.argv.includes('--self-check')) {
   selfCheck();
 }
@@ -391,3 +447,4 @@ if (result.blocked) {
 const approvalNote = humanApprovalRef ? ` — human-approval verified (eventId=${humanApprovalRef})` : '';
 process.stdout.write(`[pre-merge-escalation-gate] PASS (changeId=${changeId}, kind=${ctx.kind})${approvalNote} — 无例外命中，可交给 merge-driver。\n`);
 process.exit(0);
+} // end isDirectRun()

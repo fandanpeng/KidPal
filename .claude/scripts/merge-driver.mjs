@@ -36,6 +36,7 @@ import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { setPod, reconcile } from './portfolio-reconcile.mjs';
 import { computeRetroScope } from './loop-health-report.mjs';
 import { shouldFireAdvisory } from './retro-staleness-check.mjs';
+import { resolveHumanApproval } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源 import，approvalRefUnlock 解锁预核不再 spawn 全闸（N5 已裁选项 2）
 
 const RETRY_MAX = Number(process.env.MERGE_DRIVER_RETRY_MAX || 1);
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -735,7 +736,9 @@ const CODEBASE_MEMORY_DIRTY_PATHS = ['.codebase-memory/graph.db.zst', '.codebase
 // 对 cwd 仓库幂等同步两件活图缓存到 HEAD 快照并复设 skip-worktree（T3 内容级语义）。
 // 成功路径 stderr 留痕一行；ls-files / update-index / checkout 失败走 warn advisory——不阻塞合并（修复型助手，
 // 非门语义变更）。ls-files -v 大小写因 git 版本而异（S/s 均算已设），故按小写判等。
-function ensureGraphCacheSynced(cwd, changeId) {
+// T1-3（260908 批）：命名导出——pod-coordination.md §10a 消解纪律五条-2 与 integrator.md 消解段引用之，
+// 人工/integrator 消解不再复刻三拍。
+export function ensureGraphCacheSynced(cwd, changeId) {
   let listed;
   try {
     listed = execSync(`git ls-files -v -- ${CODEBASE_MEMORY_DIRTY_PATHS.join(' ')}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -851,6 +854,9 @@ function tryResolveProjectionConflicts(wt, changeId) {
     }
     for (const f of conflicts) {
       execFileSync('git', ['checkout', '--theirs', '--', f], { cwd: wt, stdio: ['ignore', 'pipe', 'pipe'] }); // rebase 语境 theirs = 被重放的 Pod 侧
+      // T1-2（260908 批）：物化后归一 LF——core.autocrlf=true 会把 checkout 物化成 CRLF，
+      // taskpackage-required-check.mjs:143 sha256 逐字节比对 canonical ↔ current，CRLF 即翻红（陷阱 a）。
+      normalizeLfFile(join(wt, ...f.split('/')));
       execFileSync('git', ['add', '--', f], { cwd: wt, stdio: ['ignore', 'pipe', 'pipe'] });
     }
     warn(`${changeId}: 投影冲突特判 --theirs（被合并包赢，round ${round}）: ${conflicts.join(', ')}`);
@@ -873,6 +879,60 @@ function tryResolveProjectionConflicts(wt, changeId) {
 
 // 投影冲突消解留痕（T6 payload 冲突消解摘要成分，本批 D2）：tryResolveProjectionConflicts 写、step5bBookkeeping 读。
 let lastProjectionResolution = null;
+
+// ---- T1（260908-gov-review-merge-chain-hardening）：版本化制品 add/add 特判 + LF 归一 + 回退分支修复 ----
+// 纯 helper（stdout 进、结果出；self-check 可测，V1-①②③）。补集不变式（A-7 已裁）：特判只 widen 指引文案、
+// 不 widen 放行——登记表外新形态（无 .vN 后缀的版本化物，如 engine-patch）不命中正则 → 退回通用 blocked fail-closed。
+
+/** 版本化制品形态兜底正则（pod-coordination.md §10c 登记表为 authority，此正则只兜 .vN.md 形态）。 */
+export const VERSIONED_ARTIFACT_RE = /\.v[0-9]+\.md$/;
+
+/**
+ * 从 `git status --porcelain` 输出检测版本化制品 add/add 冲突（状态码 AA 双侧新增）。
+ * 返回命中路径数组；无命中（含 UU/其它状态码、非 .vN.md 形态）返回 null。
+ * 注意：engine-patch 类登记表内但无 .vN 后缀的形态**不**命中（登记表兜语义、正则只兜后缀形态）。
+ */
+export function detectVersionedAddAdd(statusOut) {
+  if (!statusOut) return null;
+  const hits = statusOut
+    .split('\n')
+    .filter((l) => l.startsWith('AA '))
+    .map((l) => l.slice(3).trim())
+    .filter((p) => VERSIONED_ARTIFACT_RE.test(p));
+  return hits.length ? hits : null;
+}
+
+/** CRLF → LF 归一（字符串版，纯函数）。 */
+export function normalizeLf(s) {
+  return s.replace(/\r\n/g, '\n');
+}
+
+/** 文件版 LF 归一（T1-2：投影 checkout 物化后调用，防 sha256 逐字节比对翻红）。 */
+function normalizeLfFile(absPath) {
+  try {
+    const content = readFileSync(absPath, 'utf8');
+    const normalized = normalizeLf(content);
+    if (normalized !== content) writeFileSync(absPath, normalized, 'utf8');
+  } catch (err) {
+    // 归一失败不吞冲突消解主流程——交由后续 sha256 承重闸报红（fail-closed 于下游门）
+    warn(`投影物化 LF 归一失败（交由 taskpackage-required-check 承重闸兜底）：${err.message}`);
+  }
+}
+
+/**
+ * A-3（260908 批已裁：维持两形、只改豁免路径回退分支）：approvalRefUnlock 的 worktree 解析。
+ * findWorktree 失败返回 null——**不回退主仓**（旧 `|| projectDir` 回退会让下游 source-ref 在 main
+ * 求值 → off-main BLOCK 恒空转）；调用方对 null 显式 errorExit（与 Step 1b 同款 fail-closed）。
+ */
+export function resolveUnlockWorktree(tp, projectDir) {
+  return findWorktree(tp, projectDir) || null;
+}
+
+/** 版本化制品 add/add 显式指引文案（T1-1：与通用 blocked 消息区分，指向 §10c runbook）。 */
+export const VERSIONED_ADD_ADD_GUIDANCE =
+  '版本化制品 add/add——禁 --ours/--theirs 单边消解（丢正文侧可能被 needle 齿偶然命中而假绿），' +
+  '消解 = 取并集 + 复跑双方 carrier 齿并留 exit code（pod-coordination.md §10c / §10a 消解纪律五条-5）；' +
+  '消解规则预登记 + human 授权事件在场后按 runbook 走。';
 
 // ---- Step 5b 具名实现（T6，260907-gov-review-merge-friction · OQ2 终裁 (c)）----
 // merged 事件行落 main 簿记：merge 已成事实 → 簿记失败一律 advisory warn，绝不 errorExit / 未捕获抛出
@@ -907,18 +967,24 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
   }
 }
 
-// ---- 人批豁免消解（T1，260907-gov-review-merge-friction）——兑现 planner.md:96 OQ2=(a) 既有承诺 ----
-// 单 Pod 模式 + --human-approval-ref 且目标 Pod 状态 = blocked：以同 Step 1b 透传路径 spawn 前置升级闸
-// 核验人批事件（gate 脚本顶层直跑故不可 import，spawn 即「同 Step 1b 透传路径」的字面复用）。
-// 核验通过 → setPod(ready-to-merge) + reconcile + 刷新内存 board 视图（R1-F1：freshBoard 快照不回写，
-// 漏此步则 T1 仍 no-op）；核验失败 fail-closed 保持 blocked 并报因。runner/refreshBoard 可注入供 self-check。
+// ---- 人批豁免消解（T1，260907-gov-review-merge-friction；T6 重写，260908-gov-review-merge-chain-hardening）----
+// 兑现 planner.md:96 OQ2=(a) 既有承诺。260908 批两处改：
+//   ① T6/N5（已裁选项 2）：解锁预核 spawn 全闸 → import resolveHumanApproval 单源五要素事件核验——
+//      全闸由同 invocation 的 processPod Step 1b 无条件重跑背书，端到端「没有全闸放行就没有 merge」不变式零变化；
+//   ② T1-4/A-3（已裁）：worktree 解析失败显式 errorExit，删除 `|| projectDir` 静默回退主仓分支
+//      （回退会让 --source-ref HEAD 在 main 求值 → off-main BLOCK 恒空转）。
+// 核验通过 → setPod(ready-to-merge) + reconcile + 刷新内存 board 视图（R1-F1）；失败 fail-closed 保持 blocked。
+// runner/probe 可注入供 self-check（五要素核验本体归 gate/lib 自检管辖，此处测解锁机制）。
 function approvalRefUnlock(projectDir, board, { changeId, humanRef, runner, refreshBoard, reconcileFn = reconcile, warnFn = warn } = {}) {
   const tp = (board.pods || []).find((p) => p.changeId === changeId);
   if (!tp || tp.status !== 'blocked') return 'not-applicable';
   const runGate = runner || (() => {
-    const probeWt = findWorktree(tp, projectDir) || projectDir;
-    const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir, '--human-approval-ref', humanRef];
-    execFileSync('node', gateArgs, { cwd: probeWt, encoding: 'utf8', stdio: 'pipe' });
+    const wt = resolveUnlockWorktree(tp, projectDir);
+    if (!wt) errorExit(`${changeId}: approvalRefUnlock 无法解析 Pod worktree（worktreePath 缺失或不存在）——不回退主仓，fail-closed（A-3 已裁）`);
+    const podsRecordPath = join(projectDir, '.git', 'devloop', 'pods', `${changeId}.json`);
+    const r = resolveHumanApproval(projectDir, changeId, humanRef, { podsRecordPath });
+    if (!r.ok) throw new Error(`五要素核验失败：${r.reason}`);
+    log(`${changeId}: approval-ref 五要素核验 OK（T6 import 路径；全闸由 Step 1b 同 invocation 背书）`);
   });
   try {
     runGate();
@@ -1105,6 +1171,31 @@ function runMergeFrictionSelfCheck() {
     }
   }
 
+  // ---- T7（260908-gov-review-merge-chain-hardening）：版本化 add/add 特判 + LF 归一 + 回退分支消除（V1-①②③）----
+  {
+    const st7 = [
+      'AA server/deploy/openclaw-system-prompt.v3.md',
+      'UU .claude/taskpackages/current/taskpackage.json',
+      '?? stray.txt',
+    ].join('\n');
+    assert('T7a 版本化 add/add 检出（AA + .vN.md 形态）',
+      JSON.stringify(detectVersionedAddAdd(st7)) === JSON.stringify(['server/deploy/openclaw-system-prompt.v3.md']),
+      `got=${JSON.stringify(detectVersionedAddAdd(st7))}`);
+    assert('T7b 补集不变式：非 .vN 形态不检出（engine-patch 类退通用 blocked，非特判非放行）',
+      detectVersionedAddAdd('AA server/deploy/engine-patch/connection.py') === null,
+      `got=${JSON.stringify(detectVersionedAddAdd('AA server/deploy/engine-patch/connection.py'))}`);
+    assert('T7c UU（内容冲突，非 add/add）不检出',
+      detectVersionedAddAdd('AA x\nUU server/deploy/openclaw-system-prompt.v3.md') === null);
+    assert('T7d 空输入不检出', detectVersionedAddAdd('') === null);
+    assert('T7e LF 归一（CRLF→LF，\\r 单独保留）', normalizeLf('a\r\nb\rc\n') === 'a\nb\rc\n');
+    // A-3（已裁）：approvalRefUnlock worktree 解析失败 → null，不回退主仓（旧 `|| projectDir` 分支消除）
+    const repo7 = mkRepo('t7');
+    assert('T7f 回退分支消除：无 worktreePath 且无匹配 worktree → null（不落主仓）',
+      resolveUnlockWorktree({ changeId: 'x' }, repo7) === null);
+    assert('T7g 指引文案非空（显式指引 ≠ 通用 blocked 文案的前提）',
+      typeof VERSIONED_ADD_ADD_GUIDANCE === 'string' && VERSIONED_ADD_ADD_GUIDANCE.includes('并集') && VERSIONED_ADD_ADD_GUIDANCE.includes('§10c'));
+  }
+
   const pass = results.filter((r) => r.pass).length;
   const fail = results.length - pass;
   results.forEach((r) => {
@@ -1202,7 +1293,16 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
         const stderr = err.stderr || '';
         warn(`${changeId}: rebase conflict — aborting rebase`);
         log(`${changeId}: ${stderr.split('\n').slice(-10).join('\n')}`);
+        // T1-1（260908 批）：abort 前检测版本化制品 add/add（conflict 态 abort 后消失）；
+        // 命中 → 显式并集指引（区别于通用 blocked 消息）；未命中（含 engine-patch 类）→ 通用 blocked，补集不变式。
+        let versionedAddAdd = null;
+        try {
+          versionedAddAdd = detectVersionedAddAdd(execSync('git status --porcelain', { cwd: wt, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+        } catch { /* 探测失败按通用 blocked 路径 */ }
         try { execSync('git rebase --abort', { cwd: wt, encoding: 'utf8', stdio: 'pipe' }); } catch { /* race: nothing to abort */ }
+        if (versionedAddAdd) {
+          warn(`${changeId}: 版本化制品 add/add 冲突（${versionedAddAdd.join(', ')}）：${VERSIONED_ADD_ADD_GUIDANCE}`);
+        }
         setPod(projectDir, { changeId, status: 'blocked' });
         return false;
       }
@@ -1285,9 +1385,17 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
           const merr = mergeErr.stderr || '';
           warn(`${changeId}: git merge failed: ${merr.split('\n').slice(-5).join('\n')}`);
           warn(`${changeId}: aborting merge and marking blocked. Resolve conflicts manually.`);
+          // T1-1（260908 批）：abort 前检测版本化制品 add/add，命中 → 显式并集指引（同 rebase 侧）。
+          let versionedAddAdd = null;
+          try {
+            versionedAddAdd = detectVersionedAddAdd(execSync('git status --porcelain', { cwd: mergeCwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+          } catch { /* 探测失败按通用 blocked 路径 */ }
           try {
             execSync('git merge --abort', { cwd: mergeCwd, encoding: 'utf8', stdio: 'pipe' });
           } catch { /* no merge in progress */ }
+          if (versionedAddAdd) {
+            warn(`${changeId}: 版本化制品 add/add 冲突（${versionedAddAdd.join(', ')}）：${VERSIONED_ADD_ADD_GUIDANCE}`);
+          }
           setPod(projectDir, { changeId, status: 'blocked' });
           return false;
         }

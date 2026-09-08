@@ -29,7 +29,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260908-gov-review-merge-chain-hardening](../changes/arch/260908-gov-review-merge-chain-hardening/) | 2026-09-08 | draft | — |
+| [260908-gov-review-merge-chain-hardening](../changes/arch/260908-gov-review-merge-chain-hardening/) | 2026-09-08 | frozen | no |
 | [260908-gov-review-human-deputy-shadow](../changes/arch/260908-gov-review-human-deputy-shadow/) | 2026-09-08 | draft | — |
 | [260908-gov-review-input-surface-frontload](../changes/arch/260908-gov-review-input-surface-frontload/) | 2026-09-08 | draft | — |
 | [260907-gov-review-architect-dispatch-model-override](../changes/arch/260907-gov-review-architect-dispatch-model-override/) | 2026-09-07 | frozen | yes |

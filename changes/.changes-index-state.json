@@ -38,5 +38,9 @@
   "260907-gov-review-merge-friction": {
     "date": "2026-09-07",
     "mergedInMain": "yes"
+  },
+  "260908-gov-review-merge-chain-hardening": {
+    "date": "2026-09-08",
+    "mergedInMain": "no"
   }
 }

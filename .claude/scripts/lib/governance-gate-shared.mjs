@@ -16,7 +16,7 @@
 //      + runSection2AnchorSelfCheck 结构化自检（非终端式）；消费端 = landing-fidelity-check.mjs 新断言（插入位置 = 前置链后、git 比对前）。
 
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CHANGE_ID_PREFIX_RE } from './changeid-shared.mjs';
@@ -515,4 +515,47 @@ export function runSection2AnchorSelfCheck() {
 
   console.log(JSON.stringify({ selfCheck: 'section2Anchors', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);
+}
+
+// ---- B8 resolveHumanApproval 并入（260908-gov-review-merge-chain-hardening T6，FROZEN v1.0）----
+// 纯新增并入（B5 先例）：从 pre-merge-escalation-gate.mjs 原样迁移五要素人批事件核验，gate 改具名导入单源；
+// 既有导出与函数体零改动（本函数为新增导出，迁移时按 T5/B-6 裁定增 deps.decision 参数化——缺省
+// 'approve-escalated-merge'，既有调用零改动；T5 defer/accept-risk 锚核验复用同一五要素路径、decision 枚举值参数化）。
+// 消费方 = pre-merge-escalation-gate.mjs（具名导入）+ merge-driver.mjs approvalRefUnlock（T6 spawn→import，
+// N5 已裁选项 2：解锁预核收窄为五要素事件核验，全闸由 Step 1b 同 invocation 背书）。
+
+/**
+ * 核验人批事件（原 gate T1 五要素：eventType/actor/payload.decision/changeId/schemaVersion）。
+ * 读 <dir>/.claude/taskpackages/<changeId>/pod-events.jsonl，不在场时回退 pods 记录
+ * （deps.podsRecordPath）里 worktreePath 下同路径。任一不符 → { ok:false, reason:<点名> }（fail-closed）。
+ */
+export function resolveHumanApproval(dir, changeId, eventId, deps = {}) {
+  const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
+  const expectedDecision = deps.decision || 'approve-escalated-merge';
+  if (!eventId) return { ok: false, reason: 'eventId 缺失' };
+  let raw = readText(join(dir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl'));
+  if (raw === null && deps.podsRecordPath) {
+    // 合并前事件可能只在 worktree 侧落盘：经 pods 记录 worktreePath 回退
+    try {
+      const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
+      if (wt) raw = readText(join(wt, '.claude', 'taskpackages', changeId, 'pod-events.jsonl'));
+    } catch { /* 回退失败按不在场处理 */ }
+  }
+  if (raw === null) return { ok: false, reason: 'pod-events.jsonl 不在场（主仓与 worktree 回退均未找到）' };
+  let hit = null;
+  for (const line of raw.split('\n')) {
+    const t = line.trim();
+    if (!t) continue;
+    try {
+      const rec = JSON.parse(t);
+      if (rec?.eventId === eventId) { hit = rec; break; }
+    } catch { continue; }
+  }
+  if (!hit) return { ok: false, reason: `eventId=${eventId} 不在 pod-events 中` };
+  if (hit.eventType !== 'human-decision') return { ok: false, reason: `eventType=${hit.eventType}（应为 human-decision）` };
+  if (hit.actor !== 'human') return { ok: false, reason: `actor=${hit.actor}（应为 human）` };
+  if (hit.payload?.decision !== expectedDecision) return { ok: false, reason: `payload.decision=${hit.payload?.decision}（应为 ${expectedDecision}）` };
+  if (hit.changeId !== changeId) return { ok: false, reason: `changeId=${hit.changeId}（应为本 changeId ${changeId}）` };
+  if (hit.schemaVersion !== 1) return { ok: false, reason: `schemaVersion=${hit.schemaVersion}（应为 1）` };
+  return { ok: true, reason: 'human-approval verified' };
 }

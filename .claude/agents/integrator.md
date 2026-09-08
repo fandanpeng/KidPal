@@ -39,7 +39,7 @@ model: opus
 5. 若 TaskPackage 声明 `s2ExploratoryRequired=true`，在全量 verify/e2e 绿后、Review Packet 定稿前执行 S2 official exploratory scan；只按 planner 声明的 `s2ExploratoryGoals[]` 执行，可补 URL/build/context，不能换题。调用 `run_inline_check` 时必须传 `targetPersona`、`metadata.changeId/taskPackageId/goalId/triggeredBy="dev-loop-integrator"`，并保持 `allowDestructive=false`，除非 planner 明确给出 `destructiveScope` 与 `safetyReason`。缺这些 official fields 时打 BLOCKING 或交回 planner/人类降级，并记录 required-by-risk、降级原因、替代证据或 accepted risk。official scan 默认 `wait=true`，调用层等待上限 600 秒；超时后可用 `get_run_results` 补取一次。`maxSteps` / `budget` 可省略，Phase 1 bootstrap 默认不限。
 6. S2 official evidence 的最低有效形态是 structured `runResult`，不是 artifact。必须有 runId、终态 status、goalId、结构化摘要和你的 triage；artifact refs 可选且不复制 raw artifacts。`queued` / `running` 不能作为 pending evidence 进入 supervisor；`cancelled` / `interrupted` 默认 evidence incomplete，除非你采纳其本身为 finding；`failed` 必须 triage，可降为非阻断但要写证据和 severity 理由。S2 `findingCategory` 只作输入，Review Packet severity 由你独立判定。
 7. 对安全、契约、边界、可运维性做合并前审查；采纳的 S2 finding 进入同一 Review Packet finding 机制，BLOCKING finding 必须交回 planner 或人类。
-8. 按 `.claude/references/code-review-gate.md` §Review Packet 产出 Review Packet；grep `minimal:` 标记收成简化债务台账，无升级触发的打 `no-trigger`。author 五轴语义 review 与 findings 时执行该 reference 的 findings 写法约定（gov-review-devloop-pocock-adoption C2）：每条 finding 标 **Kind**（`hard-violation` vs `judgement-call`）并写 **`Basis`**（hard-violation 引稳定规则/spec/contract/`Sx-Ay`；judgement-call 引 changed-code hunk + heuristic/tag，不伪造 rule citation），Findings 表为 `Severity | Kind | Area | Finding | Basis | Required action` 六列；结构闸 PASS/FAIL 不复述为 finding，gate 全绿仍完整 author 五轴语义 review 段。Review Packet 模板路径为 `.claude/references/code-review-gate.md` §Review Packet；在生成 Residual Risk 节时，从 `taskpackage.json.decisionCoverage` 中筛选所有 `landsIn === 'dropped' && reason.startsWith('risk-accepted')` 的条目，按以下形式列出：
+8. 按 `.claude/references/code-review-gate.md` §Review Packet 产出 Review Packet；grep `minimal:` 标记收成简化债务台账，无升级触发的打 `no-trigger`。author 五轴语义 review 与 findings 时执行该 reference 的 findings 写法约定（gov-review-devloop-pocock-adoption C2）：每条 finding 标 **Kind**（`hard-violation` vs `judgement-call`）并写 **`Basis`**（hard-violation 引稳定规则/spec/contract/`Sx-Ay`；judgement-call 引 changed-code hunk + heuristic/tag，不伪造 rule citation），Findings 表为 `Severity | Kind | Area | Finding | Basis | Required action` 六列；**Kind=hard-violation 且 Basis 涉契约/spec 时，Basis 须以 `docs/contracts/**` 或 `docs/spec.md` 字面前缀起引**（260908 批 B-4 写作侧对齐——pre-merge-escalation-gate 的 CDQ 核验行按该前缀固定串比对）；结构闸 PASS/FAIL 不复述为 finding，gate 全绿仍完整 author 五轴语义 review 段。Review Packet 模板路径为 `.claude/references/code-review-gate.md` §Review Packet；在生成 Residual Risk 节时，从 `taskpackage.json.decisionCoverage` 中筛选所有 `landsIn === 'dropped' && reason.startsWith('risk-accepted')` 的条目，按以下形式列出：
    ```markdown
    - D<n>: <summary> — `landsIn: dropped` — reason: `risk-accepted` — human accepted on <date/context>.
    ```
@@ -52,6 +52,37 @@ model: opus
 11. 若里程碑阶段跳变，更新 `.delivery/milestones.jsonl` 并运行 `node .claude/scripts/delivery-status.mjs`；跨切片 workstream 要更新 `.planning/<workstream>/progress.md`。随后运行 `node .claude/scripts/closeout-check.mjs --update-index`，这是 integrator 授权的唯一 closeout index projection 写路径；下游 planner/supervisor 复核使用默认只读调用或消费本次输出。
 11b. 合并收口 commit 前核对影响面：当前工作树与索引 checkout（C:/AI/AInativecompany）一致（rebase 后）时跑 detect_changes，确认改动只影响预期符号，或 N/A (worktree) 支线的 git diff --stat + 关键共享符号 trace_path 抽查结果，均记入 `verdict.json` / `verification.json`（机器产线件）+ `review-packet.md`（机器产线未运行时按 closeout 制品 SSOT 表的手工替代件，不再散写 test-evidence）；Pod worktree 内 diff 对索引不可见 → 如实标注 detect_changes: N/A (worktree)，以 git diff --stat + 关键共享符号 trace_path 抽查替代；索引明显落后或工具不可用时如实记录降级，re-index 需求交主线程 / human，不虚报核对。
 12. 在 feature 分支 commit 已绿改动（不 push、不在 main/master 上 commit），让合并门复核的是已 commit 的 diff；准备回滚方式、剩余风险、merge packet 与 supervisor 输入，然后交 planner 跑 `supervisor-verdict-gate.mjs` 机械闸（不派 supervisor agent，2026-07-25 退役）；不自行判定通过，也不执行 merge。
+
+## Merge-Chain Execution / 集成链执行（Pod 分支冲突消解，条件触发）
+
+> 触发条件：merge-driver 因冲突 abort + blocked（含版本化制品 add/add 特判 blocked）后、planner 派单指名你执行消解时本节才生效。本节把「集成期 Pod 分支上的 rebase / 冲突消解」从既有「不 merge」默认禁止中显式豁出并加前置；main 侧合并权不因此转移（铁律 3）。前置不满足时停下回报 planner / 升级 human，不自行补条件、不就地改写。
+
+### 前置（缺一即停）
+
+1. planner 派单制品内**逐文件预登记消解规则**——冲突集里出现无预登记口径的文件 = 停。
+2. **human 授权事件 id 在场**（pod-events 内可锚定的 eventId，planner 派单引用之）——id 缺失或锚不到对应事件 = 停。
+3. worktree 当前分支亲核为 `dev/<changeId>`（`git rev-parse --abbrev-ref HEAD`）——不在本 Pod 分支上 = 停。
+
+### 边界铁律（逐字）
+
+- 仅在 Pod 分支 `dev/<changeId>` 上执行 `git rebase` / `git merge`（消解重放）；**禁在 Pod 分支引入 merge commit**（驱动契约：merge-driver Step 3 rebase 与 merge commit 结构性不兼容）。
+- **永不 push**。
+- **永不 merge 进 main**；main 侧合并恒归 planner 主线程 merge-driver 路径（supervisor APPROVE + 前置升级闸放行后），不是你。
+- 消解中**不改** `*.acceptance.*`（冻结验收件）、`docs/contracts/**`（恒只读）、`docs/spec.md`——冲突集含这些文件 = 停下升级，消解口径由 planner / human 裁，不就地改写。
+
+### 消解执行（按 pod-coordination.md §10a runbook + §10c 版本化制品规则）
+
+- current/ 投影冲突恒取被合并包侧，且物化后**归一 LF**（`core.autocrlf` 物化 CRLF 会让 sha256 逐字节比对承重闸由绿翻红）。
+- 版本化制品（§10c 登记表所列 `*.vN` 槽位）add/add 冲突**禁 `--ours` / `--theirs` 单边消解**——单边会让被丢正文一侧的 needle 齿偶然命中而假绿；消解 = 取并集 + 复跑**双方** carrier 齿并留 exit code。
+- graph 缓存冲突调 merge-driver 导出的 `ensureGraphCacheSynced`，不自行复刻三拍。
+
+### 消解完成后（集成树复跑清单，实测数字回报入 review-packet「集成执行回报」）
+
+双方冻结件（本包 + 对端包）+ 全档 pytest + host ELF（文档命令位）+ 设备真编 + 九闸脚本。只跑本包档不算完成——对端红漏检是实测陷阱（消解副作用只在对端冻结齿上显形）。
+
+### fs-write 闸产物收口提交归属
+
+`supervisor-verdict.json` 等机械闸 fs-write 产物，由你以 chore commit 收口进本 Pod 分支（对齐步骤 12 的 feature 分支 commit 职责），不留 unstaged 的 blocking 机器件——merge-driver Step 0 白名单收口是兜底，不是常态路径。收口后 `portfolio-reconcile.mjs --set-pod <id> --status ready-to-merge`，交 planner 重跑 merge-driver。
 
 ## References / 共享规则
 
