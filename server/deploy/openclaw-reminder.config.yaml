@@ -1,0 +1,22 @@
+# KidPal 提醒三档阶梯配置 (TaskPackage 260829-schedule-reminder, 决策 20 / S-F1.4)
+
+# 本文件是三段阶梯时刻的**家**：纯服务端配置，随 server/deploy overlay 上 ECS（与
+# openclaw-schedule.config.yaml 同目录渲染面），由 OpenClaw 侧 cron 载荷脚本
+# server/deploy/openclaw-patch/reminder_schedule_lib.py 的 load_ladder_config 读取。
+#
+# 契约与红线（spec S-F1.4 明写、C 孪生档 RMD-A7 齿负向钉死）：
+#   - 三档时刻**不进契约 B1**、**永不进固件**（改时刻即时生效、不需要烧板子）；
+#   - 提前量只从这里读；课表 frontmatter 的 remind_before_min 已废止不消费
+#     （契约 §2.3，2026-09-03 契约门裁定），本文件是它的唯一替代源；
+#   - MVP 不做逐项覆盖（将来家长要可调再议入 frontmatter，走契约门）。
+#
+# 缺文件/坏值不停摆：load_ladder_config 逐项回退到 reminder_schedule_lib.
+# DEFAULT_LADDER_CONFIG（与本文件三档常量一致），未知键忽略不进生效配置。
+
+night_at: "20:30"      # ① 前一天晚上：提醒次日要带的东西，提前准备
+morning_at: "07:45"    # ② 当天早上：今天什么时间干什么
+before_min: 15         # ③ 事项开始前 15 分钟：临期提醒（跨小时减法由脚本算术承担）
+
+# 重算节奏（OpenClaw 原生 cron 承载，非排程算术；live 相位在册任务与本文口径对齐）：
+# cron 每 15 分钟定期重算 + 家长 QQ 录入即时触发重算（决策 20 / V16 预排粒度）。
+recompute_every_min: 15

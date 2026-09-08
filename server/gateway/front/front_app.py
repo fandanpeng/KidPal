@@ -28,10 +28,13 @@ env: XIAOZHI_DEVICE_TOKEN (>=22 chars; unset => refuse-service), KIDPAL_ENGINE_W
 from __future__ import annotations
 
 import asyncio
+import collections
 import json
 import logging
 import os
 import re
+import time
+from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI, Header, Request, WebSocket, WebSocketDisconnect, HTTPException
@@ -43,7 +46,9 @@ from gateway import display_schema as gw_display
 from gateway import mcp_relay as gw_mcp
 from gateway import fallback as gw_fallback
 from gateway import provider as gw_provider
+from gateway import reminders as gw_reminders
 from gateway import story as gw_story
+
 
 app = FastAPI(title="KidPal direction-B streaming gateway front")
 
@@ -302,6 +307,15 @@ async def pump_client_to_upstream(websocket, upstream) -> list:
     upstream.send() UNCHANGED (决策23: 代理语义, front 只消费回执、不重发), consumes device
     JSON-RPC render receipts via on_device_receipt, and returns the list of receipt ids
     consumed as delivery acks. Client disconnect (WebSocketDisconnect / RuntimeError) ends.
+
+    ⚠ 语义钉行（260829-schedule-reminder 收口，review-packet Findings「acked_ids 含受理帧」）：
+    本列表由 gateway.mcp_relay.relay_ack 的**宽容**判据产生（result 非空即算 acked，该函数语义
+    是 display/通用回执的冻结面、本包一字未动），因此 `kidpal/alert` 工具回调的**同步受理帧**
+    （设备回 "ack": false，只代表「已收到/已入队」）也会被计进 acked_ids —— **acked_ids 不等于
+    送达确认**。提醒档位的送达确认只有一条路：reminders.alert_receipt_id（严格判据 result.ack
+    is True，设备面唯一来源是渲染完成后的 McpServer::EmitRenderReceipt）→ _queue_alert_receipt
+    → run_alert_poll_once 里 consume_receipts 出队。日后若要消费「已送达」语义，MUST 走
+    drain_alert_receipts()/alert_dispatcher()，不得改读本列表（当前本列表无消费方）。
     """
     acked_ids = []
     try:
@@ -319,6 +333,12 @@ async def pump_client_to_upstream(websocket, upstream) -> list:
                 acked, rid = on_device_receipt(text)
                 if acked:
                     acked_ids.append(rid)
+                # additive (包 260829-schedule-reminder): 提醒档位只认**渲染回执**
+                # (result.ack === true)，设备对 kidpal/alert 的同步 accepted 受理帧不算
+                # 送达确认 —— 渲染即确认、即出队（契约 §三 / RMD-A6）。队列有界。
+                alert_receipt = gw_reminders.alert_receipt_id(text)
+                if alert_receipt is not None:
+                    _queue_alert_receipt(alert_receipt)
     except (WebSocketDisconnect, RuntimeError):  # device leg closed — normal teardown.
         pass
     return acked_ids
@@ -339,6 +359,148 @@ def on_device_receipt(message) -> tuple[bool, object]:
             and isinstance(message.get("payload"), dict)):
         message = message["payload"]  # unwrap the device wire frame before relay_ack
     return gw_mcp.relay_ack(message)
+
+
+# --- 提醒投递面接线 (TaskPackage 260829-schedule-reminder / RMD-A4 A6 A7) ----------
+# 网关 push helper：每分钟读 alerts/pending.json -> 机械校验 + 到点判定 -> 经 mcp
+# kidpal/alert 推给当前在线设备腿；60 秒未收渲染回执重推、单档上限 3 次、不做重连即重推、
+# 超出重试窗口静默作废不补发（状态机在 gateway/reminders.AlertDispatcher，本文件只接线）。
+# 设备渲染回执经 consume_receipts 接回出队方 —— 这条线补的就是 g-relay-fix 留下的
+# 「acked_ids 目前无人消费、未接出队方」缺口。语音按裁定二向引擎腿注入 kidpal_speak，
+# front 不自建合成、不做 mp3→opus 编码、不注入二进制音频帧（设备腿 send_bytes 恒空）。
+# 有界性（ECS available 941MB / Swap used 535MB 同机还有引擎与模型）：交接路径 env 可配、
+# 回执缓冲与投递记账都被 MAX_* 卡住、无在线设备时不排队攒历史。
+
+ALERT_LEG_CAP = 8                       # 同时登记的（设备腿, 引擎腿）对数上界
+_alert_dispatcher = None
+_alert_receipts = collections.deque(maxlen=gw_reminders.MAX_TRACKED)
+_alert_legs: list = []
+_alert_loop_task = None
+_alert_delivery_tasks: set = set()
+
+
+def _entry_from_envelope(envelope, business_id) -> dict:
+    """从 kidpal/alert 信封还原 §三 条目（wire 上 view 是 JSON 字符串 -> 解回对象）。
+
+    只依赖信封本身，不在模块里另建条目缓存（少一处会漂移的状态）；view 解不动时退回
+    title 的 text 视图，仍过 display_schema 白名单。"""
+    args = ((envelope or {}).get("params") or {}).get("arguments") or {}
+    view = args.get("view")
+    if isinstance(view, str):
+        try:
+            view = json.loads(view)
+        except (TypeError, ValueError):
+            view = None
+    if not isinstance(view, dict):
+        view = {"view": "text", "data": {"text": str(args.get("title") or "")}}
+    return {
+        "id": args.get("id") or business_id,
+        "fire_at": args.get("fire_at"),
+        "title": args.get("title"),
+        "speech": args.get("speech") or "",
+        "view": view,
+    }
+
+
+def _deliver_alert_now(business_id, envelope) -> None:
+    """AlertDispatcher 的 sink：把一档提醒真投到当前在线的两腿（设备腿 mcp 帧 + 引擎腿注入）。
+
+    无在线设备腿 = 本轮不投递（不在 front 里排队攒历史）：dispatcher 按 60s×3 重试窗口
+    继续尝试，窗口耗尽即静默作废（决策 24 断网无提醒；不追催）。"""
+    legs = list(_alert_legs)
+    if not legs:
+        log.warning("alert_skip corr_id=%s reason=no_online_device pushed=false", business_id)
+        return
+    entry = _entry_from_envelope(envelope, business_id)
+    for device_ws, engine_ws in legs:
+        try:
+            task = asyncio.create_task(
+                gw_reminders.deliver_alert(entry, device_ws, engine_ws))
+        except RuntimeError:  # 无运行中的事件循环（离线装载场合）—— 记账仍在，投递跳过
+            log.warning("alert_defer corr_id=%s reason=no_running_loop", business_id)
+            return
+        _alert_delivery_tasks.add(task)
+        task.add_done_callback(_alert_delivery_tasks.discard)
+
+
+def alert_dispatcher():
+    """提醒投递状态机单例（进程内一份，记账有界）。"""
+    global _alert_dispatcher
+    if _alert_dispatcher is None:
+        _alert_dispatcher = gw_reminders.AlertDispatcher(sink=_deliver_alert_now)
+    return _alert_dispatcher
+
+
+def _queue_alert_receipt(rid) -> None:
+    """设备渲染回执入队（deque(maxlen=MAX_TRACKED)：满则丢最旧，绝不无界增长）。"""
+    _alert_receipts.append(rid)
+
+
+def drain_alert_receipts() -> list:
+    out = list(_alert_receipts)
+    _alert_receipts.clear()
+    return out
+
+
+def _register_alert_legs(device_ws, engine_ws) -> None:
+    while len(_alert_legs) >= ALERT_LEG_CAP:
+        _alert_legs.pop(0)      # 超出上界丢最旧一条腿（同机单设备实态；有界性优先）
+        log.warning("alert_leg_overflow cap=%d dropped=oldest_leg", ALERT_LEG_CAP)
+    _alert_legs.append((device_ws, engine_ws))
+
+
+def _unregister_alert_legs(device_ws) -> None:
+    for pair in list(_alert_legs):
+        if pair[0] is device_ws:
+            _alert_legs.remove(pair)
+
+
+async def run_alert_poll_once(now_epoch=None) -> dict:
+    """一轮投递闭环：读 pending（按分钟）-> 先接出队回执 -> 到点判定并推送。
+
+    先消费回执再 tick：上一分钟内渲染完成的档位不再被本轮重推（重复弹窗根除）。
+    返回可观测计数供探针/日志归因（K6 correlationId = 业务 id / batch）。"""
+    stamp = datetime.fromtimestamp(
+        time.time() if now_epoch is None else float(now_epoch)).astimezone()
+    now_iso = stamp.isoformat(timespec="seconds")
+    entries, rejected = gw_reminders.read_pending(gw_reminders.pending_path(), now_iso)
+    dispatcher = alert_dispatcher()
+    acked = gw_reminders.consume_receipts(dispatcher, drain_alert_receipts())
+    pushed = dispatcher.tick(entries, now_iso)
+    if rejected:
+        log.warning("alert_pending_rejected corr_id=batch count=%d first=%s",
+                    len(rejected), rejected[0])
+    log.info("alert_poll corr_id=batch pending=%d rejected=%d pushed=%d acked=%d tracked=%d",
+             len(entries), len(rejected), len(pushed), len(acked), dispatcher.tracked_count())
+    return {"pending": len(entries), "rejected": len(rejected), "pushed": pushed,
+            "acked": acked, "tracked": dispatcher.tracked_count()}
+
+
+async def reminder_poll_loop() -> None:
+    """每分钟轮询到点推送（节拍对齐整分钟；单轮异常绝不杀死循环）。"""
+    try:
+        await run_alert_poll_once()          # 起轮先跑一次：避免刚连上就错过整分钟点
+    except Exception as e:  # noqa: BLE001
+        log.warning("alert_poll_error err=%s", type(e).__name__)
+    while True:
+        try:
+            await asyncio.sleep(gw_reminders.next_poll_delay(time.time()))
+            await run_alert_poll_once()
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:  # noqa: BLE001 — 提醒投递不得因单轮异常停摆
+            log.warning("alert_poll_error err=%s", type(e).__name__)
+
+
+def _ensure_alert_loop() -> None:
+    """首个已鉴权设备连接建立时起轮询任务（进程内只跑一份；无设备时不空转）。"""
+    global _alert_loop_task
+    if _alert_loop_task is not None and not _alert_loop_task.done():
+        return
+    try:
+        _alert_loop_task = asyncio.create_task(reminder_poll_loop())
+    except RuntimeError:  # 无运行中事件循环（离线装载）
+        _alert_loop_task = None
 
 
 @app.websocket("/{path:path}")
@@ -376,7 +538,14 @@ async def ws_gateway(websocket: WebSocket):
             # device->engine forwards receipts unchanged and consumes them as delivery acks.
             pump_up = asyncio.create_task(pump_upstream_to_client(upstream, websocket))
             pump_dn = asyncio.create_task(pump_client_to_upstream(websocket, upstream))
-            await asyncio.gather(pump_up, pump_dn)
+            # 提醒投递面（包 260829-schedule-reminder）：两条腿都在的这段时间登记为投递目标并
+            # 起每分钟轮询（到点经 kidpal/alert 推送 + 渲染回执接出队方）；断开即摘除、不攒历史。
+            _register_alert_legs(websocket, upstream)
+            _ensure_alert_loop()
+            try:
+                await asyncio.gather(pump_up, pump_dn)
+            finally:
+                _unregister_alert_legs(websocket)
     except Exception as e:  # noqa: BLE001
         log.info("ws forward not available (engine down?): %s", type(e).__name__)
         await websocket.close(code=1011)

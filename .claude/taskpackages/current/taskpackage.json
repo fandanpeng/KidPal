@@ -1,5 +1,5 @@
 {
-  "changeId": "260829-story-p3",
+  "changeId": "260829-schedule-reminder",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -10,9 +10,9 @@
     "workstream": "kidpal-mvp"
   },
   "subsystem": "firmware+server",
-  "story": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），让孩子把想到的故事留下来、还能重温。（v0.4 服务端扩：录制 = manual 聆听模式 + E1 control start_recording + 网关累积〔不按句送对话，停录整段转写归档〕+ 显式回退路径〔录音中 KEY 长按取消/「讲错啦」回闲聊、停录 10 秒内「重录」、漏判「刚才那段是故事」挽回，V31〕。）",
-  "redBaselineCommand": "跑 firmware host 故事列表/阅读渲染单测（依赖包 0）+ server 侧故事归档/列表下发 pytest（依赖包 1）",
-  "redBaselineResult": "红：故事列表渲染、录制上传归档、回看/回听、成就盖章均未实现——目标验收测试文件尚不存在，编译/收集即失败。本包把它做到绿。",
+  "story": "日程提醒全链路（v0.4 重写 + contractBlocked 解除，契约待确认点 3 已实证）：按区块范围（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排）+ 三段阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻配在 OpenClaw 侧、纯服务端配置永不烧板子）。脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id（确定性散列，跨重推/重算不变）写 alerts/pending.json、speech 排程时预合成；网关提醒投递（每分钟轮询到点经 mcp kidpal/alert 推送、重试到确认 60s×3、不做重连即重推、过期静默作废）；设备弹窗三件套（提示音 + TTS 读文案 + 驻留弹窗，排队逐个弹、滞留弹窗顶替（V18）、渲染即回执出队、易失 known-id 幂等去重、KEY 关闭/BOOT 关闭翻页）；断网无提醒（离线红线，决策 24，设备不缓存）。",
+  "redBaselineCommand": "三通道逐条：① C 侧新增齿独立 ELF（包 6/char-stroke 同位先例目录含 runner.c/seam_stub.c/unity.h）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra 编译 schedule_reminder_b.acceptance.c + 跑原生 ELF；② C 侧既有基线：wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build 后 cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（注意 host_app 独立工程 idf.py 不接受 -T main）；③ server 侧点名命令（闸不 auto-run，见 notes 闸面实况）：cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py（全档对照同上去掉文件名）；live 通道：RUN_LIVE=1 同上 -k live",
+  "redBaselineResult": "红（planner 与 acceptance-author 双方实测、非推理）：① C 侧本包新增齿 BUILD_CLEAN 零告警 + **10 Tests 8 Failures**（2 绿 = 必须保持绿的守卫齿）；② host ELF 既有基线 **60 Tests 3 Failures 不变**（VRT-A2/E2 + WSA-A6 + WSA-A4 三条 [evidence] 齿，本地-only gitignore 证据从未入仓 → main 本身即红；先例 home-p1 43T2F / schedule-p2 39T2F，本批增至 3F）——本包新增齿与既有 3 红的判读口径见 notes；③ server 点名 **30 failed / 3 passed / 5 skipped**（--collect-only 37 tests 零收集错误），全档对照 **38 failed / 67 passed / 40 skipped** = 既有 8 红（smoke_e2e 7 + vrt 证据齿 1，全在 live-marked 文件内、包 S 退役架构面）+ 本包 30 新红 + 3 守卫绿 + 5 skip，逐条对账闭合；④ RUN_LIVE=1 下 5 条 live 齿全部执行且因证据未落盘 FAILED、零 error（冻结即冒烟判据达成）。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -22,168 +22,412 @@
   "gateProfile": [
     "types",
     "real-db",
+    "scheduler",
+    "state-machine",
+    "security",
     "test-quality",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "P3-A1",
+      "id": "RMD-A1",
       "kind": "structural"
     },
-    "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
-    "P3-A3: KEY 短按光标下移选择、KEY 双击进入阅读态",
-    "P3-A4: 录制上传归档：说『我要讲故事』进录音态（REC 闪点+大时长+声波），按 KEY 停止上传云端 ASR 转写归档 stories/*.md",
-    "P3-A5: 回看/回听：阅读态渲染标题+正文滚动（story_text），BOOT 长按翻下一屏、KEY 朗读正文（TTS）",
-    "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步"
+    "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+    "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+    "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+    "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+    "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+    "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+    "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/story_p3.acceptance.c",
-    "server/acceptance/test_story_p3.acceptance.py"
+    "firmware/main/test/schedule_reminder_b.acceptance.c",
+    "server/acceptance/test_schedule_reminder.acceptance.py"
   ],
   "exitCriteria": [
     {
-      "id": "P3-E1",
+      "id": "RMD-E1",
       "kind": "structural"
     },
-    "P3-E2: host 测列表/阅读/盖章渲染 + PC 云端测归档/列表下发，两面证据齐；麦克风采音为硬件强绑定子能力，真实采音显式殿后包 9b（PROPOSAL §3 留根）",
-    "P3-E3: S-F2.5 云端润色为可选项、MVP 后置，不进本包必做验收（PROPOSAL §7 留根）",
-    "P3-E4: 不做阅读态「生字反白高亮」（2026-08-29 human 裁定，需 story_text 增生字标注字段、价值不抵复杂度）；阅读态问生字走语音跳 P4"
+    "RMD-E2: host 测排程/去重/回执状态机 + 网关投递重试逻辑；OpenClaw cron 与推送链路 live 验收（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）；真实提醒音效/亮屏殿后 9b",
+    "RMD-E3: 服务端提醒投递模块 = G 网关代码的 additive 扩展（G mergeOrder 3 先并）；消费包 6 的课表数据链路，不重复造数据",
+    "RMD-E4: contractBlocked 解除记录——契约待确认点 3 已实证（2026-09-02，OpenClaw 原生 cron 在跑、class-reminder 先例、契约 §待确认点 3 标已实证）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§4.2",
-    "docs/contracts/interface-contract.md"
+    "docs/spec.md#§4.1",
+    "docs/contracts/interface-contract.md#§三"
   ],
   "sourceRefs": [
-    "S-F2.1",
-    "S-F2.2",
-    "S-F2.3",
-    "S-F2.4",
-    "docs/contracts/interface-contract.md#§一",
-    "8"
+    "S-F1.4",
+    "docs/contracts/interface-contract.md#§三",
+    "7"
   ],
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 10,
-  "notes": {
-    "gateA_contractPrereview": "闸 A architect-reviewer 判 ④ NO_CONTRACT_CHANGE，六项全数无需改（start_recording §1.4:136 / story_list.total §一:95 CLOSED / story_text:98 / §四 manual 聆听:223 / stories*.md 非契约面 / V31 回退四条全落 spec+实现），零契约改动放行，不升级人。对齐 char-stroke 闸 A ④ 先例。两条诚实留记（不预改冻结契约）：① §四 listen start/stop 若 human 求枚举完备性属 ① 随 spec 文档补全、非阻塞；② 盖章 save-time 的 N 现可在契约内解（板子 P3 持 total→本地 total+1 出盖章→story_list 刷新对齐，S-F2.4 严格同步），仅当 builder 判 N 必须云端保存响应权威值才触发 story_text 增 total 的 ① 契约触点——builder 实现期观察。",
-    "blockingDecision_intentsPath": "① OpenClaw tools 拒收（ARQ-260907）判「不受阻」：本包『我要讲故事→start_recording』意图与『刚才那段是故事』挽回走『OpenClaw 出 ```display 块纯文本→front 截获校验→mcp 下发设备』通道（front_app.py SIDE_CHANNEL + build_display_tool_calls），不依赖 LLM tool-calling，已被 char-stroke/schedule-p2/g-relay-fix 三包 merged 实测跑通；且本包冻结面 testHost=host+PC、P3-E2 明示麦克风采音殿后 9b——live 端到端意图不在冻结验收内。不 fail-closed，已如实上报判读。",
-    "blockingDecision_memoryPressure": "③ char_cache 19MB 内存压力（char-stroke 遗留风险 §8.3）判「不受阻」：P3 网关累积仅持『近 N 句转写 + 进行中转写』KB 级文本缓冲，非常驻大数据集。**builder 硬约束**：累积缓冲有界（N 句/字节上限、仅活动会话生命周期内持有），勿在网关同一进程面再叠大常驻缓存。② 三句口语纪律 v2 已落定 no-trigger，本包不重开。",
-    "knownRedFloor": "main 的 host_app ELF 有 **2 个既有失败 = WSA-A4/A6**（flash.log / ecs-teardown-evidence.md 为本地-only gitignore 证据、main 本身即红，先例 home-p1 43T2F / schedule-p2 39T2F）。**判读口径（acceptance-author 实测更正）**：本包红基线与 mutation 失败计数须相对此 2 红地板；**ELF 必须从仓库根跑**——从 firmware/main/test/host_app/ 跑会得 3 红（第 3 红是既有 voice_roundtrip_b VRT-A2 证据齿对 cwd 敏感，非本包引入）。本包冻结文件扫描齿一律前缀 root、与 cwd 无关。接线前期望 60T2F；只加验收未加实现 68T9F（2 地板+7 本包）；全绿期望 68T2F。HOST_ACCEPTANCE_SRCS 增源须保 host_infra_smoke LAST（boundary 齿注册序守卫）。",
-    "preExistingMainDefect": "acceptance-author intake 期发现、planner 亲验：firmware/main/mcp_server.cc HEAD 语法不完整——case 4:(schedule, :212) 的 app.Schedule(lambda) 缺 `});`+break+}，case 3:(char)/default 整个嵌进 lambda 体（case 标签非 switch 内=设备 target 必编译红）。归因 f2a67dd（char-stroke 落地）复用后三行闭合、git diff f2a67dd HEAD 该文件空=落地即破随 merge 入 main；char-stroke 自记 firmware-build(降级) 设备构建门未拦、host runner 不编此文件故各包 host 验收未见。**归属裁定（planner ruling）= 本包 builder 界内最小修复**：P3-A1 冻结验收本就要求在同 switch 补 case 5/6（STORY_LIST/STORY_TEXT ack），破口上无法动刀，闭合该 lambda 属编辑区内必经 3 行修复（不越界不重构），builder 修后须真跑设备 idf.py build 证绿、不得降级静默跳过（本缺陷教训即降级门放红）。修复事实+设备构建门教训由 integrator docs-sync/ARQ 面另论，pod-events 留痕。",
-    "acceptanceFreeze": "acceptance-author 双件已冻结实测红（C 8 齿/PY 21 项含 1 live skip；C gcc 独立编 BUILD_EXIT=0、stub 7T6F、真实底座混链仍 6F 且 control(start_recording) 守卫真执行 PASS；PY 18F/2P/1skip 收集零错误）。红全落缺失行为非伪红。builder 须兑现的冻结契约清单见 red-baseline 摘要 §4 + 验收文件头 FROZEN OFFLINE CONTRACT 块（C 14 函数/类型/常量 + PY story.py 五入口 + prompt v3 + overlay PROMPT_SRC 与 provider artifact/source 两面同切 v3）。三处冻结相位决策 D1(列表光标回绕 vs 阅读末屏钳制) D2(录音不预推计数) D3(盖章 N 本地推→刷新以云端 total 权威覆盖；若改判 N 取云端保存响应权威值=触 story_text 增 total 的①契约触点、须停并回 planner 重走契约门)——builder 按冻结断言原样兑现，改语义须经 planner 重派。",
-    "scopePromptV3": "服务端交付大概率含 openclaw-system-prompt v3 增量（story producer 扩展：『我要讲故事』→control/start_recording 意图 + 停录归档起标题 + V31 回退判断），版本化落盘 .v3、overlay 渲染切换、历史可 diff，遵『验收所测=生产所用』复验纪律。这是 deploy 面制品、不触 docs/contracts/**（§1.4 已冻结 start_recording action、v2 prompt:42 枚举已含）。",
-    "intakeC5_scopeMap": "已核 .claude/scope-map.json：builder/fixer allow firmware/**+server/**+tools/**+planning（deny *.acceptance.c + **/acceptance/** + 契约/vendor）；acceptance-author allow firmware/**/*.acceptance.c + server/**/acceptance/**；host runner CMakeLists（firmware/main/test/host_app/main/CMakeLists.txt）非 acceptance 面、builder 可写登记 HOST_ACCEPTANCE_SRCS。目标面全覆盖、无需新增 scope-map 登记。",
-    "architectReviewerVerdict": "NO_CONTRACT_CHANGE",
-    "architectReviewerEventRef": "见 pod-events dispatch-completed(actor=architect-reviewer)",
-    "executionEvidence": "第一方真跑证据（planner 亲执，2026-09-08）——verifier 的 unit/acceptance 两闸按设计为结构闸（fact 明载 executor-skipped『不担保实机已过』、firmware-build degraded『idf.py 不可用』），故真执行证据在此承载：(1) C host ELF **从仓库根**跑 = 68 Tests 2 Failures，本包 8 齿（A1@865/A2@970/A3@1134/A4@1229/A5@1429/A6@1611/render@1770/boundary@1929）**全 PASS**，2 红逐条确为 WSA-A4(flash.log 缺失)/WSA-A6(ecs-teardown-evidence.md 缺失) 本地-only 证据地板；(2) PY pytest acceptance/test_story_p3.acceptance.py = **20 passed, 1 skipped**（skip=live 机械闸，采音殿后 9b）；(3) **设备 target idf.py build 第一方真跑 = Project build complete RC=0、xiaozhi.bin 0x2b63e0 bytes（31% free）**——story_page.c + mcp_server.cc（含 case4 lambda 破口修复 + case5/6 新增）真编并链进 ESP32 目标，即 notes.preExistingMainDefect 所载 main 设备构建红在本分支已治愈，firmware-build 降级门得实证补强；(4) mutation 敏感性见 mutationEvidence 6 条（基线 68T2F→合变 68T7F 逐齿归因 + PY 全量恰 1 红），story_page.c/story.py sha256 均核验回基线 051b9c7a/1748e15f。",
-    "crossPackageVersionCollision": "planner 全量 server 套复跑发现本包 prompt forward-bump(v2→v3) 撞红已 merged 包 char-stroke 冻结 green-guard CHR-E3（字面 .v2 接入断言，基线绿→实现后红，实测 f5309c7 基线 26 红不含、实现后 9 红含；另 8 红=smoke_e2e 7 superseded HTTP 台阶 + vrt A4 既有证据地板、与本包无关）。本包 story 冻结验收含 test_prompt_carrier_v3_landed_and_wired（要求 v3）↔ char-stroke 要求 v2 字面，两条 oracle 版本字面互斥。v3 逐字携带 char C1(13)+v2基座(32)=char 行为被继承、仅字面陈旧。escalation 80deedcb → human 裁 c54bbcde=重指版本无关 → acceptance-author 重指 CHR-E3（当前接线版文件存在+携带 char C1 锚点，非恒绿）。通用病灶另登 ARQ-260908-versioned-guard-version-literal-coupling（Track A）。",
-    "integratorFindings": "integrator 五轴 review 交回 6 finding（Review Packet §9）：F1 SHOULD=main mcp 破口本包治愈+门根 ARQ-260908-firmware-build-degraded-gate；F2 SHOULD=live 面版本字面耦合(a8/a9)入 ARQ-260908（+ integrator 再补 schedule P2-A6 假绿、vrt B v1 两同型，已并证）；F3 SHOULD【本包已当场修】=test_live_story_roundtrip_evidence 语料原设在本包 closeout 目录致 prose 假绿（integrator 两次实测复现、planner 源码确认），派 acceptance-author tighten：语料收窄至 live-evidence/ 子目录 + 要求结构化事实形状（observed_at/intent_action/archived_story_id 形状/story_list_total_after/stamp_index/outcome）+ JSON/log 缺则红；保持 @pytest.mark.live（采音仍殿后 9b、P3-E2 不变）。F4 SHOULD【9b 前处置】=prompt v3 令 LLM 逐字复述整段转写并回填其拿不到的 id，而真算 id/落盘的 story.py story_text()/list_stories() 生产零调用（front 仅 .start()）——同 char-stroke『LLM 复述 bulk 致 109s』病灶（其以出口自动拼装根治）；9b 前定『网关落盘后用 story_text(record) 组块、模型只出 title』vs 维持现状（属 v3.1 或措辞修订）。F7 FYI【非违约、留根】=设备页内输入面(_page_input/_on_saved/_rec_tick/_stamp_spec)与云侧停录归档触发均无生产调用者，与已 merged schedule-p2 kidpal_schedule_page_input 同型、在 P3-E2 声明证据面内（A1 齿仅要求被服务路径引用）；只读 AC 文本易误判设备今日即可响应，9b 设备整合时统一接线。F5 NIT=正文 4000 字/64KB/2048B 三处上限不一、设备 ksy_put 静默截断或留半截 UTF-8 尾（属冻结明许 safe-truncate 形状）。F6 NIT【9b 前处置】=front session_id=conn-{id(websocket)} 地址可复用+断连不 pop → 跨会话串味风险，live 接线前改唯一会话键 + 断开清理。另：ADR-001（版本化制品接线不变式 渲染==声明==被测）已落 docs/ADR.md，交 supervisor 可驳。",
-    "liveEvidenceHandoff9b": "F3 已当场 tighten（acceptance-author，方向=改严、零 offline 断言/阈值变更、live 齿仍 @pytest.mark.live 机械 skip、P3-E2 采音殿后 9b 口径不变）：live 齿语料从 closeout 目录本身收窄至 changes/dev/260829-story-p3/live-evidence/，并要求事实形状。**9b/台架核销必须投三件套否则撞新形状红**：① live-evidence/*.live-roundtrip.json 六键（observed_at=ISO8601、intent_action==start_recording、archived_story_id 合 ^d{4}-d{2}-d{2}-[a-z0-9-]+$、story_list_total_after>=1 整数、stamp_index==total_after 钉 P3-A6 N 同步、outcome==success）② live-evidence/*.log 含 ASR/转写段 ③ 观测说明文本承载四事实叙述。约束：live-evidence/ 内每一份记录须为成功轮（混投失败轮即红，失败归 pod-retro/pod-events），此为改严方向、planner 已确认不放宽。integrator 复现的 prose 假绿（旧逻辑喂 36KB 纯 closeout 散文=绿）现由新齿咬红（15 项反向自证全命中含 bool 冒充/损坏 JSON/自相矛盾 outcome）。"
-  },
+  "mergeOrder": 11,
   "dependsOn": [
-    "260829-host-test-infra",
-    "260829-voice-roundtrip"
+    "260829-schedule-p2"
   ],
-  "testHost": "host+PC云端",
+  "testHost": "host + live",
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "docsSyncRequired": true,
+  "securityReviewRequired": true,
+  "securityReviewNotes": "本包安全面四处，逐处对应冻结齿：① pending.json = 另一进程（OpenClaw 侧脚本）写的跨进程输入，front 必须机械校验后才投递（validate_alert_entry 齿，脏条目拒绝并留日志、不盲投）；② 有界性 = ECS 实测 available 941MB 但 Swap 已用 535MB（char-stroke 留根风险 3 同进程面），故 MAX_PENDING / MAX_TRACKED / KRM_QUEUE_CAP=8 / KRM_KNOWN_CAP=32 全部钉为冻结常量，超限走淘汰不涨内存；③ 决策 24 介质禁令 = 提醒易失 known-id 集与队列只驻 RAM，禁落 NVS/SD/Flash，设备面有结构性守卫齿；④ 投递通道复用方向 B 既有强制设备鉴权（token 未设 = refuse-service，包 WS 已并），本包不新增公网入口、不新增未鉴权端点，alerts 路径经 KIDPAL_ALERTS_DIR/KIDPAL_PENDING_JSON 可配且禁止硬编 /root/.openclaw/**。真机时序与音频面殿后 9b。",
+  "adrRequired": true,
+  "adrNotes": "两条 human 裁定属架构级决策、需入 docs/ADR.md（integrator 写权内）：① 生产侧混合分层（pod-events acaef302）；② 提醒语音借引擎 speak_txt 既有音频链、front 不自建合成与 opus 编码（pod-events 09359e74）。",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包8",
-      "summary": "故事：列表 + 录制上传归档 + 回看/回听 + 成就盖章（story_list/story_text 契约），host + PC 云端。",
+      "decision": "spec-决策20-提醒模型",
+      "summary": "按区块判范围 + 三段阶梯（20:30/07:45/事前15分，OpenClaw 侧配置）+ 定时器 = OpenClaw 原生 cron + 脑算网关推 + 重试到确认 + 渲染即确认出队。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+        "docs/spec.md#§7-决策20"
       ],
-      "landsIn": "acceptance:P3-A2"
+      "landsIn": "acceptance:RMD-A2"
     },
     {
-      "decision": "contract-§一-story_list-total",
-      "summary": "story_list 契约 total 字段 = 故事果计数（云端计算下发），缺省回退 items.length；P3 计数器与盖章帧『第 N 颗』据此渲染并严格同步。",
+      "decision": "spec-决策27-提醒主动播报",
+      "summary": "提醒到达 = 提示音 + TTS 读文案 + 弹窗驻留三件套；alert 载荷带 speech、排程时预合成（V20 解耦）。本包按裁定二落地为「到点借引擎 speak_txt 既有链出音」，V20「预合成存缓存」半边的口径差已在 notes 与裁决事件中记明。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§一"
+        "docs/spec.md#§7-决策27"
       ],
-      "landsIn": "acceptance:P3-A6"
+      "landsIn": "acceptance:RMD-A3"
     },
     {
-      "decision": "PROPOSAL-§7-S-F2.5留根",
-      "summary": "S-F2.5 云端润色为可选、MVP 后置，不进本 workstream 必做验收；若做则单开 Lite 包。",
+      "decision": "contract-§三-推送语义",
+      "summary": "mcp kidpal/alert 推送、载荷形状、幂等 id、渲染回执出队、重试到确认 60s×3、过期静默作废；原轮询形态废止。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+        "docs/contracts/interface-contract.md#§三"
       ],
-      "landsIn": "exitCriteria:P3-E3"
+      "landsIn": "acceptance:RMD-A4"
     },
     {
-      "decision": "PROPOSAL-§3-麦克风采音殿后",
-      "summary": "包 8 的麦克风采音为硬件强绑定子能力，host 段只测布局/逻辑，真实采音殿后 9b。",
+      "decision": "spec-决策24-离线边界",
+      "summary": "断网无提醒、设备不缓存事项（哑终端纯洁性）；离线兜底验收撤回；提醒易失 id 集合只驻 RAM（介质禁令）。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§3"
+        "docs/spec.md#§7-决策24"
       ],
-      "landsIn": "exitCriteria:P3-E2"
+      "landsIn": "acceptance:RMD-A7"
+    },
+    {
+      "decision": "spec-S-F1.4-V18-滞留弹窗顶替",
+      "summary": "已渲染但永未按键的滞留弹窗在事件时刻过后允许被后续提醒顶替显示（早已出队、顶替非追加送达）。",
+      "sourceRefs": [
+        "docs/spec.md#§4.1"
+      ],
+      "landsIn": "acceptance:RMD-A5"
     }
   ],
-  "mutationEvidence": [
-    {
-      "acceptance": "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
-      "face": "PY",
-      "file": "server/gateway/story.py",
-      "mutation": "list_stories 以页切片的 items.length 顶替全集计数：return data {\"total\": total} 改 {\"total\": len(items)}（契约 §一 story_list 硬约束反面缺陷：分页/截断时把子集当全集下发）",
-      "affectedTest": "test_a2_list_total_is_full_set_not_page_slice（pytest -k a2 单跑红；全量跑恰此 1 红、无连带）",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原核验 sha256 1748e15f00ad1bd2… == 基线。本 id 云侧齿敏感。"
-    },
-    {
-      "acceptance": "P3-A3: KEY 短按光标下移选择、KEY 双击进入阅读态",
-      "face": "C",
-      "file": "firmware/main/display/story_page.c",
-      "mutation": "列表光标去回绕（D1）：v->cursor = (v->cursor+1) % v->count 改 (v->cursor+1 < v->count ? v->cursor+1 : v->cursor)（到底不再回首行）",
-      "affectedTest": "story_p3.acceptance.c P3-A3 TEST_CASE（区间起始 :1134）内 :1162 断言红 = 到底回绕齿",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原核验 sha256 051b9c7a… == 基线（与其余 3 处 C 变异同批施加、按 TEST_CASE 名逐齿归因，各红落各自 id 区间、无串扰）。"
-    },
-    {
-      "acceptance": "P3-A4: 录制上传归档：说『我要讲故事』进录音态（REC 闪点+大时长+声波），按 KEY 停止上传云端 ASR 转写归档 stories/*.md",
-      "face": "C",
-      "file": "firmware/main/display/story_page.c",
-      "mutation": "start_recording 动作永不匹配：on_control 的 if (ctrl_action == 2) /*VRT_CTRL_START_RECORDING*/ 改 == 99（control 帧到达不切录音态，视图零改动）",
-      "affectedTest": "story_p3.acceptance.c P3-A4 TEST_CASE（区间起始 :1229）内 :1246 断言红 = 进录音态/REC 演出齿",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原核验 sha256 051b9c7a… == 基线。同批 render 齿 :1880 连带红（录音态画面差异被破），进一步证渲染面敏感。"
-    },
-    {
-      "acceptance": "P3-A5: 回看/回听：阅读态渲染标题+正文滚动（story_text），BOOT 长按翻下一屏、KEY 朗读正文（TTS）",
-      "face": "C",
-      "file": "firmware/main/display/story_page.c",
-      "mutation": "阅读态底部屏数指示逐字被改：#define KSTORY_SCREEN_FMT \"第 %d 屏 · 共 %d 屏\" 的中点分隔符改斜杠（\" · \" -> \" / \"）",
-      "affectedTest": "story_p3.acceptance.c P3-A5 TEST_CASE（区间起始 :1429）内 :1502 断言红 = 逐字屏数文案齿",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原核验 sha256 051b9c7a… == 基线。"
-    },
-    {
-      "acceptance": "P3-A6: 成就盖章帧：保存成功那一瞬双圈印章（外实内虚、斜盖 -8°）+『故事徽章·第 N 颗已入册』+ pose-jump 定格 0.8s，N 与 P3 计数严格同步",
-      "face": "C",
-      "file": "firmware/main/display/story_page.c",
-      "mutation": "盖章斜角几何被改：#define KSTORY_STAMP_ANGLE_DECI (-80) 改 (0)（-8 度变正放）",
-      "affectedTest": "story_p3.acceptance.c P3-A6 TEST_CASE（区间起始 :1611）内 :1638 断言红 = 冻结几何 {rings=2,inner_dashed=1,angle_deci=-80,hold_ms=800} 齿",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原核验 sha256 051b9c7a… == 基线。"
-    },
-    {
-      "acceptance": "P3-A2: P3 故事页渲染列表（story_list）：标题 + 右上角故事果计数器（×N，用契约 total 字段，缺省回退 items.length）+ 每条故事果图标/标题/日期",
-      "face": "C",
-      "file": "firmware/main/display/story_page.c",
-      "mutation": "（同批合变观测）4 处 C 变异一并施加后，P3-A2..A6 真帧渲染齿 :1880 亦转红（反白/×N/翻页/录音·盖章四态画面互异断言失效）",
-      "affectedTest": "story_p3.acceptance.c render TEST_CASE（:1770 起始）内 :1880",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "基线 68 Tests 2 Failures -> 合变 68 Tests 7 Failures（2 地板 + 5 story 齿），逐齿按 TEST_CASE 名归因；全部还原后重建复跑回 68T2F。"
-    }
-  ]
+  "mutationEvidence": {
+    "_meta": "执行者=builder（planner 对 firmware/**+server/** 为 deny，mutation-check 文件头明写 actual mutation 由 verifier/fixer workflow 执行）；37 条记录实载（builder 报告头自称 40、分项相加 34，以本清单为准）；每条附变异前/还原后 sha256 同值对，全批 restore failures=[]，收尾 git status --porcelain -- firmware server tools 为空。C 面观测全程固定 cwd=firmware/main/test/host_app（既有红基线 3 条口径）。 后续：两条 insensitive（A3 front 引擎腿注入、A5 渲染先清屏）经 planner 采纳 architect advisory 后由 acceptance-author 做 tighten-only 补齿闭环（纯 additive、重放原变异自证新齿咬），已由 sensitive:false 翻 true；保持 insensitive 的仅余 1 条 = MAX_TRACKED 单点淘汰（与 MAX_PENDING 互为冗余，配对「双闸同除」记录证明有界性作为属性被钉），属正当不敏感而非缺口。governance 后续：tighten-only 成文规则登记为 ARQ（DEV-GOVERNANCE §验收测试纪律 §5，owner=architect），先例 7 份冻结件自带 REVISION LOG tighten-only 页脚 + device_ws_switch.acceptance.c:89 已执行过。",
+    "perAcceptance": [
+      {
+        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+        "mutation": "reminder_schedule_lib.reminder_id 散列输入去掉「档位」维度：f\"{key}␟{ladder}␟{event_date}\" → f\"{key}␟{event_date}\"（三档同 id）",
+        "affectedTest": "test_a2_idempotent_id_stable_across_recompute (acceptance/test_schedule_reminder.acceptance.py:653, len({i_night,i_morn,i_other,i_next})==4)；连带 :537/:698/:610 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "sha(reminder_schedule_lib.py) e3e20b6de5d00d85 == 还原同值；还原后 33 passed。幂等 id 三维度独立性真被钉。"
+      },
+      {
+        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+        "mutation": "plan_reminders 已过档跳过判定失效：if fire <= now_local → if False and ...",
+        "affectedTest": "test_a2_past_ladders_skipped (:633)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "该齿独立捕获（只它红=判定唯一来源）。sha 同值，还原后 33 passed。"
+      },
+      {
+        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+        "mutation": "一次性安排范围精确匹配改 <=：str(row['date']) == day.isoformat() → <=（过期项重复生成）",
+        "affectedTest": "test_a2_weekly_repeats_and_onetime_scope (:610, assertFalse 含「牙医」)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "契约 §2.3 过期自动忽略被真钉。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
+        "mutation": "_rows_in_scope 追加对 model['school'] 区块生成档位（按区块判范围失效）",
+        "affectedTest": "test_a2_block_scope_school_block_never_reminds (:592, assertNotIn 语文/数学/自习)；同批含 test_a8_b1_table_body_zero_change_reuses_package6_parser:1249 共 13 齿红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "负向范围齿力度充分。sha 同值，还原后 33 passed。"
+      },
+      {
+        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+        "mutation": "build_speech_injection 丢 speech 原文：\"text\": speech → \"text\": \"\"",
+        "affectedTest": "test_a3_speech_injection_frame (:816, assertEqual(frame['text'], ALERT_CANONICAL['speech']))",
+        "turnedRed": true,
+        "sensitive": true,
+        "sha": "reminders.py 033f56865b4c93a7 == 同值",
+        "notes": "还原后 33 passed。"
+      },
+      {
+        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+        "mutation": "缺 speech 不再降级为不注入：(not isinstance(speech,str) or not speech.strip()) → and False",
+        "affectedTest": "test_a3_speech_missing_still_delivers (:838, assertIsNone(build_speech_injection) + upstream_frames==[])",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "V20 降级面反向钉住。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+        "mutation": "语音缺失连弹窗帧一起丢：build_alert_frames 返回 (device_frames if injection is not None else [], upstream)",
+        "affectedTest": "test_a3_speech_missing_still_delivers (:838, assertEqual(len(device_frames),1))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「弹窗必达、语音是增强」的不对称性有齿。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+        "mutation": "设备三件套语音动作位摘除：reminder_page.c 删 actions |= KRM_ACT_SPEAK",
+        "affectedTest": "schedule_reminder_b.acceptance.c:946 (act & KRM_ACT_SPEAK)!=0；自带单测 reminder_page.test.c:279 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "cwd=host_app 观测 76 Tests/5 Failures（基线 3 + 本变异 2）。sha(reminder_page.c) a5b1d0281c6528b6 == 同值。"
+      },
+      {
+        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
+        "mutation": "front 不再向引擎腿注入：_deliver_alert_now 的 deliver_alert(entry, device_ws, engine_ws) → (..., device_ws, None)",
+        "affectedTest": "test_a3_front_poll_injects_speech_into_engine_leg (server/acceptance/test_schedule_reminder.acceptance.py:957)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异 _deliver_alert_now 引擎腿置 None 时：新齿 FAIL（0!=1 两腿条数对账）、同档其余 33 离线齿全绿（含 needle 齿 :1266 仍绿 = 证明确是覆盖空洞而非重复覆盖）。REVISION LOG 已 append（Reason 载明）；front_app.py 还原 sha256 fc8c50a947dddb10… 逐字同值。补齿动机 = mutation 跑出的 vacuity（acceptance-evidence.md:29 定义），执行者 acceptance-author（作者权，scope-map allow 无「冻结后」时间锁），planner 独立核实纯 additive（git diff -U0 removed 计数 0，C +101/0、py +200/0）。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "到点判定闭区间改开区间：due_entries 的 if fire > now_sec → if fire >= now_sec",
+        "affectedTest": "test_a4_poll_alignment_and_due_predicate (:968)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "sha 同值，还原后 33 passed。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "嵌套 view 不再字符串化：arguments['view']=json.dumps(view) → view（对象直发设备）",
+        "affectedTest": "test_a4_alert_envelope_wire_shape (:897, assertIsInstance(args['view'], str) + round-trip)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "设备 Property 三型限制落点被钉。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "传输 id 改非确定：alert_jsonrpc_id 的 sha256 派生 → os.urandom(32)",
+        "affectedTest": "test_a4_numeric_jsonrpc_id_deterministic_and_in_int_range (:926) + test_a4_receipt_dequeues_and_is_idempotent:1032 + test_a4_retry_to_ack_60s_x3_then_void:990",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "跨重推/跨进程重启同一性由三齿共钉。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "重算交来的同 id 条目重置重试预算：tick 内在 now < next_retry_at 判定前插 slot.attempts = 0",
+        "affectedTest": "test_a4_same_id_repush_reuses_ids_and_budget (:1072, assertEqual(attempts,2)) + :990",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "渲染回执不再出队：on_receipt 的 slot.state='acked' → pass",
+        "affectedTest": "test_a4_receipt_dequeues_and_is_idempotent (:1032)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "渲染即确认、即出队在网关侧收口有齿。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "轮询节拍常量改值：POLL_INTERVAL_SEC 60 → 300",
+        "affectedTest": "test_a4_poll_alignment_and_due_predicate (:968, assertEqual(POLL_INTERVAL_SEC,60) + 90→30 对齐)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "每分钟节拍的常量与算法同齿钉住。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "mcp_relay.alert_tool_call 退回把 §三 字符串业务 id 当 JSON-RPC 传输 id：env['id']=entry['id']",
+        "affectedTest": "test_a4_relay_alert_tool_call_numeric_id (:948, assertIsInstance(relay_env['id'], int))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "本包从 mcp_relay 接管数字化的独立齿有效（设备 cJSON_IsNumber 断点回归防线）。sha(mcp_relay.py) b2b8b66bdab17720 == 同值。"
+      },
+      {
+        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
+        "mutation": "设备侧「接收即回执」：raise_next 弹出即置 rendered=1/armed=1（绕过真渲染完成）",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1233 四态决策表齿（RMD-A6 名）要求 raise_next 后 may_emit_receipt==0；reminder_page.test.c:179 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 原样归在 RMD-A4（红齿名属 A6 组）；跨 A4/A6 语义，保留其归因不擅改。cwd=host_app 76/5。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "may_emit_receipt 判定门恒开：if (!has_shown || !rendered || !armed) → if (0)",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1224 四态决策表齿（空状态即允许发回执）；reminder_page.test.c:233 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "本包最承重的设备侧决策表被真钉。cwd=host_app 76/5。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "known-id 集不记账：删 krm_copy_str(s->known[slot], KRM_CAP_ID, id)",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1264（同 id 重推须 RECEIVED、queue_count 仍 1、known_count 仍 1）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "cwd=host_app 76/4。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "队列深度上界去掉：if (s->q_len >= KRM_QUEUE_CAP) → if (0)",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1089（queue_count <= KRM_QUEUE_CAP，RMD-A5 名）；reminder_page.test.c:194/:218 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "有界性在设备侧由具名齿咬住（越界写风险）。cwd=host_app 76/6。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "非法载荷静默吞：tick 的 reject 分支 self._emit(bid,'reject',…) → pass",
+        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertIn('reject', events.action))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "审计面（K6 归因）有齿。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "投递前机械校验被绕过：ok, reason = validate_alert_entry(entry) → True, 'ok'（盲转发脏条目）",
+        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertEqual(pushed, []))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "跨进程输入必检（安全面①）有齿。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "单点去掉投递记账有界淘汰：_bounded_remember 的 if self._track_count() > MAX_TRACKED → if False",
+        "affectedTest": "无（该单点不敏感）",
+        "turnedRed": false,
+        "sensitive": false,
+        "notes": "不敏感发现如实报：MAX_PENDING（每轮读取上界）与 MAX_TRACKED（超限淘汰）互为冗余，单去掉任一道 tracked_count 仍 ≤256、齿咬不到；配下一条「双闸同除去转红」证明有界性作为属性确被钉，钉点是两道闸的合取而非淘汰本身。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "成对去掉两道有界闸（tick 的 [:MAX_PENDING] 切片 + _bounded_remember 的 MAX_TRACKED 淘汰）",
+        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertLessEqual(tracked_count(), MAX_TRACKED))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "与上一条配套。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
+        "mutation": "重复回执幂等失效：on_receipt 的 if slot.state=='acked' 早退分支 → if False",
+        "affectedTest": "test_a4_receipt_dequeues_and_is_idempotent (:1032, assertEqual(consume_receipts(d,[bid]), []))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "幂等出队有齿（红在 A4 齿名下）。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+        "mutation": "去掉「推送时点判定作废」：tick 首见即超窗分支 if now_sec - fire_sec > void_window → if False",
+        "affectedTest": "test_a7_expired_while_offline_is_voided_not_backfilled (:1137, pushed==[] + state void + events ['void'])",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "sha 同值，还原后 33 passed。"
+      },
+      {
+        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+        "mutation": "重连即补推：on_ws_connected 从恒 [] 改为返回在途 pushing 档位",
+        "affectedTest": "test_a4_reconnect_does_not_repump (:1058)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「不做重连即重推」有齿（齿名在 A4 组，coverage map 亦归 A7）。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+        "mutation": "固件面出现本地事项源字面：reminder_page.c 加一行含 schedule.md 的注释探针",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1412 boundary 齿（scan_count('firmware/main','schedule.md')==0）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "决策 24 介质禁令的结构性那半成立——负向扫描齿真的会咬。cwd=host_app 76/4。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
+        "mutation": "三档时刻字面被烧进固件：reminder_page.c 加 #define KRM_LADDER_NIGHT \"20:30\"",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1428 boundary 齿（\"20:30\" 零命中）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「纯服务端配置、永不烧板子」有负向齿。cwd=host_app 76/4。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+        "mutation": "BOOT 单击关闭弹窗但不再翻页：*page_out = key_page_next(current) → *page_out = current",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1134（P1 的 BOOT 关闭须到 P2）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "与包 3 页序底座的接缝有齿。cwd=host_app 76/4。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+        "mutation": "弹窗层不再裁决 KEY 单击：if (key==KEY_ID_KEY && g==KEY_GESTURE_CLICK) → if (0)",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1047 + :1118 + :1308；reminder_page.test.c:234 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "一次变异咬 3 个冻结齿 + 1 单测齿，跨 RMD-A5/A6 联动。cwd=host_app 76/7。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+        "mutation": "去掉 V18 顶替门：if (shown.rendered && now_min >= krm_event_minutes(shown) && q_len>0) → if (q_len>0)",
+        "affectedTest": "schedule_reminder_b.acceptance.c:1021（事件时刻之前就被顶替）；reminder_page.test.c:180/:251 同红",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「未渲染不替换、事件未到不替换」两半都咬。cwd=host_app 76/6。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
+        "mutation": "渲染面不再先清活动屏：kidpal_reminder_page_render 删 lv_obj_clean(scr)（对象逐帧累积）",
+        "affectedTest": "渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten) (firmware/main/test/schedule_reminder_b.acceptance.c:1640, 标签 [schedule_reminder][RMD-A5][render])",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异删 reminder_page.c:1088 lv_obj_clean(scr) 时：新齿 FAIL（ELF 77T/4F，唯一新红恰是它）、既有 accum==0 齿（现 :1596）及其余 11 本包齿全 GREEN（正是原 vacuity）。补法改道说明：planner 原处方为「不同高度/偏移载荷的像素对比」，作者读实现后指出卡片几何由 KRM_CARD_* 常量决定与载荷无关、且每帧整屏白底+压层+不透明白卡会盖住残留，像素版会成第二条空齿 → 改钉「场景对象残留」层（B 单独 vs A→B 子对象数相等 + 重复渲染不增长 + alone_n>0 防空实现假绿），像素断言保留作意图登记（几何日后随载荷变化即自动获得鉴别力）；钉的仍是 RMD-A5 已声明的「不叠屏」，无新 acceptance id、无行为定义改动。reminder_page.c 还原 sha256 a5b1d0281c6528b6… 同值、hash-object == HEAD blob 8e693c1f…（工作树  M 为 autocrlf stat 伪影，内容零差）。cwd=host_app 观测 77/3。"
+      },
+      {
+        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
+        "mutation": "个别坏语义条目连坐整档：load_semantic 单条目丢弃的 continue → return None, reason",
+        "affectedTest": "test_a8_semantic_artifact_schema_and_degrade (:1194, assertIsNone(err2) + assertIn('k1', sem2))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "降级粒度=单条目被钉（裁定一授权面）。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
+        "mutation": "空备注被凭空发明要带物：bring_items 的 return [text] if text else [] → else ['水壶']",
+        "affectedTest": "test_a8_bring_from_note_and_semantic_override (:1158, assertEqual(bring_items('',None),[])) + test_a2_real_ecs_schedule_shape:787",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「绝不凭空发明」有齿，真 ECS 缺备注形状那齿同批红。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
+        "mutation": "忽略语义产物的 bring 列表：bring = _clean_str_list(semantic_entry.get('bring')) → bring = []",
+        "affectedTest": "test_a8_bring_from_note_and_semantic_override (:1158, assertEqual(..., ['琴谱','压泥板']) + assertIn('压泥板', speech))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "「语义优先于机械兜底」这条链有齿（云侧判断不被白做）。sha 同值。"
+      },
+      {
+        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
+        "mutation": "配置面失控：load_ladder_config 的「未知键忽略」改为 cfg[key]=value",
+        "affectedTest": "test_boundary_bad_semantic_and_bad_config_inputs_degrade (:1329, assertNotIn('unknown_key', cfg))",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "三档配置载体的坏输入清洗有齿。sha 同值，还原后 33 passed。"
+      }
+    ]
+  },
+  "notes": "【C5 intake 核对（scope-map）】acceptance-author allow = firmware/**/*.acceptance.c + server/**/acceptance/**（覆盖两份冻结件）；builder/fixer allow = firmware/** + server/** + tools/** + .planning/**，覆盖全部落点（display/reminder_page.{c,h}、mcp_server.cc、test/host_app/main/CMakeLists.txt、gateway/reminders.py、deploy/openclaw-patch/reminder_schedule_lib.py、deploy/openclaw-reminder.config.yaml、deploy/openclaw-system-prompt.v3.md、front/front_app.py）；deny 面正含 *.acceptance.* 与 docs/contracts/**（builder 只读消费，缺陷修复归 acceptance-author 且断言语义零变更）；docs/spec.md 不在 integrator allow（本包无 spec 漂移要修，§4.1 即权威）。无冲突声明。\n\n【两条 human 裁定（验收与实现的输入，eventId 为凭）】① acaef302-9ddc-4508-b5d3-94023e050f43 = 生产侧**混合分层**：三档时刻算术（时间串 17:30-18:30 解析、跨天映射、事前15分减法、已过档跳过）+ 幂等 id 确定性散列 + pending.json 原子写 = 确定性 python 脚本（server/deploy/openclaw-patch/reminder_schedule_lib.py，warm_char_cache.py 同形态先例），由 OpenClaw cron --command 载荷执行（live 实测 cron add 支持 --command/--every/--cron+--tz/--declaration-key）；语义判断（备注里哪部分算要带的）与孩子文案 = OpenClaw agent 回合按 system prompt 增量产出、写入脚本消费的中间产物。② 09359e74-005b-45bb-9535-69e19c14ee04 = 提醒语音**借引擎既有音频链**：front 到点向引擎腿注入内部指令，由引擎现成入口 core/handle/intentHandler.py:233 speak_txt(conn,text) 走既有 edge-tts provider + 已 live 实证 opus 下行链出音；front 不自建合成、不做 mp3→opus 编码、不自注入二进制帧；降级路径必钉（合成/播报失败或超时 → 仅弹窗+提示音继续投递）。V20「预合成存缓存」半边在此裁定下不可离线钉，离线面只钉三件可机判事实（speech 逐字进注入指令 / 缺 speech 仍必达且引擎腿零注入 / 设备 render_actions 恒含 SHOW|TONE）——此为 spec 措辞与裁定的口径差，非契约差。\n\n【闸面实况两条（判读承重，勿误读）】(a) acceptance-run-check.mjs 与 unit-run-check.mjs 的 fileHasLiveMark 判据 = 文件内出现**任一** live 标记即**整档**排除 auto-run，仓内现有 8/8（含本包新档）全部 executor-skipped，两条闸的 ok:true 只担保「不静默跳过」、**不担保本包验收跑过**，真跑证据只由点名命令承载；(b) 闸内执行器跑的是裸 python -m pytest -q（无 --import-mode=importlib），若新增不含任何 live 标记的 test 文件会因档间 import 触发收集期 ModuleNotFoundError 当场红闸 → 本包保持含 live 齿形态，且**不动 server/pytest.ini**（共享面，并行包 story-p3 亦可能触）。(c) verify.mjs 按 .claude/taskpackages/current/taskpackage.json 解析 TaskPackage，Finalize 必须刷新该投影（本包已刷；不刷会拿上一个包 schedule-p2 做判定 = 静默假绿，属本仓既有共享投影缺陷，ARQ-260907-merge-closeout-bookkeeping-gap 在册）。\n\n【上游既有缺陷（非本包引入，本包顺带修，必须留痕）】main 的**设备构建自 char-stroke merge 起即坏**：firmware/main/mcp_server.cc 里 char-stroke 的 18 行 additive 插入把 case 3: 开在 case 4 (VRT_ROUTE_SCHEDULE) 的 app.Schedule([...]) lambda **体内**，原收尾三行 });/break;/} 被挪去关 case 3，case 4 的 lambda 从此不闭合 = C++ 语法非法（planner 亲核：git diff 205faa8 HEAD -- mcp_server.cc = 0 removed / 18 added，插入位置即病因；205faa8 版本完好）。host ELF 是独立工程不编该文件故未暴露；承重闸 firmware-build-check.mjs（idf.py build）必红。本包 builder 接 kidpal/alert 时在同一文件补回那三行，验收已钉独立守卫齿 RMD-A1 guard（实测 RED）。根因（merge 后无人复跑设备构建 = 闸间隙）由本包 pod-retro 提报、走 gov 面 ARQ，不在本包内自行改治理。\n\n【对端事实（ECS 只读实测抽样，fixture 依据）】真 schedule.md（/root/.openclaw/workspace/kidpal/schedule.md，549B）只有「## 每周固定课表」一节、无「学校课程表」也无「一次性安排」区块、时间列形如 19:00-20:00、备注列 7 行全空、frontmatter 仍留已废止 remind_before_min: 15 → 离线 fixture 按此真形状造，断言缺区块不崩 + remind_before_min 不消费 + 三档时刻只从 openclaw-reminder.config.yaml 读。cron 实况 4 条 status=ok 含 class-reminder-0529 先例（完整记录已抽样：payload.kind=systemEvent + schedule{kind:cron,expr,tz:Asia/Shanghai} + sessionTarget=main + wakeMode=now + lastDurationMs=30）；旧 jobs.json 已带 .migrated 后缀。设备回执真形状 {\"type\":\"mcp\",\"payload\":{\"jsonrpc\":\"2.0\",\"id\":<number>,\"result\":…}}；设备 mcp 层仅认数字 id（cJSON_IsNumber 实测在 mcp_server.cc:546，launch 面写的 473 是 AddTool 定义处），§三 业务 id 是字符串 → 本包负责 JSON-RPC id 数字化（mcp_relay.alert_tool_call 注记明示此活归本包），且不改 relay_ack 冻结语义。部署实态：kidpal-front.service User=root、WorkingDirectory=/opt/kidpal/front（gateway/ + front/ 两包 = server/gateway 落地副本）、单 uvicorn 进程；alerts/ 与 pending.json 当前不存在 → read_pending 缺文件安静返回 ([], [])、路径 env 可配。\n\n【设备面新建 + 渲染即回执落点】设备面零既有 alert 消费（grep 亲核）→ state-reminder 弹窗/排队/known-id 去重/渲染回执全新建，建议家 firmware/main/display/reminder_page.{c,h}（纯 C + 自带极简 JSON，schedule_page.c 同形态）。mcp_server.h:50 ReturnValue = variant<bool,int,string,cJSON*,ImageContent*> **无 promise 分支**，DoToolCall 尾部 app.Schedule([...]{ ReplyResult(id, Call(args)); }) 为同步自动回复 → 「接收时不回执、渲染完成才回执」要靠 ReplyResult(id,…) 独立延后调用（内部走 Application::SendMcpMessage，application.cc:906）；离线面钉四态与「何时才允许发回执」的决策表，不把 C++ 线程时序硬编成断言。共享面 additive：view_router 7 view 白名单与 VRT_ROUTE_* 数值码不动（提醒弹窗与首页/P2 叠加以其为准）、key_gesture_parser（KEY/BOOT × CLICK/DOUBLE_CLICK/LONG_PRESS + key_route_global）与 KRM_KEY_*/KRM_ACT_* 接缝消费包 3 手势面、不重写包 6 B1 解析（RMD-E3）。\n\n【实现注记（builder 必读，两处 planner/author 权限外）】① firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 需加 \"../../schedule_reminder_b.acceptance.c\" 与 \"../../../display/reminder_page.c\"，**必须加在 \"../../host_infra_smoke.acceptance.c\" 之前、保持后者末位**（包 0 boundary 齿依赖进程内最先跑，上游 launch 指令明文要求）；② alerts 交接路径禁止硬编 /root/.openclaw/**，走 KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON。冻结 offline contract 符号清单以两份 *.acceptance.* 文件头为准（builder 只读、改不动）。"
 }

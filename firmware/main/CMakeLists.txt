@@ -44,6 +44,12 @@ set(SOURCES "audio/audio_codec.cc"
             # char_stroke.c 纯逻辑无芯片依赖 -> host_app linux target 同源 (甲烷线接线在 host_app)。
             "display/char_stroke.c"
             "display/char_page.cc"
+            # 提醒弹窗消费面 (包 260829-schedule-reminder): 冻结离线契约 kidpal_alert_parse /
+            # kidpal_fire_at_minutes / kidpal_reminder_* 状态机 + 纯 LVGL 富弹窗渲染
+            # (reminder_page.c / reminder_page.h, 建议家 display/; 纯 C + 自足极简 JSON ->
+            # host_app linux target 同源, 见 firmware/main/test/schedule_reminder_b.acceptance.c;
+            # 介质禁令: known-id 集与队列定长驻 RAM, 零持久层/零动态分配)
+            "display/reminder_page.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
