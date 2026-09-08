@@ -128,7 +128,7 @@
     }
   ],
   "mutationEvidence": {
-    "_meta": "执行者=builder（planner 对 firmware/**+server/** 为 deny，mutation-check 文件头明写 actual mutation 由 verifier/fixer workflow 执行）；37 条记录实载（builder 报告头自称 40、分项相加 34，以本清单为准）；每条附变异前/还原后 sha256 同值对，全批 restore failures=[]，收尾 git status --porcelain -- firmware server tools 为空。C 面观测全程固定 cwd=firmware/main/test/host_app（既有红基线 3 条口径）。",
+    "_meta": "执行者=builder（planner 对 firmware/**+server/** 为 deny，mutation-check 文件头明写 actual mutation 由 verifier/fixer workflow 执行）；37 条记录实载（builder 报告头自称 40、分项相加 34，以本清单为准）；每条附变异前/还原后 sha256 同值对，全批 restore failures=[]，收尾 git status --porcelain -- firmware server tools 为空。C 面观测全程固定 cwd=firmware/main/test/host_app（既有红基线 3 条口径）。 后续：两条 insensitive（A3 front 引擎腿注入、A5 渲染先清屏）经 planner 采纳 architect advisory 后由 acceptance-author 做 tighten-only 补齿闭环（纯 additive、重放原变异自证新齿咬），已由 sensitive:false 翻 true；保持 insensitive 的仅余 1 条 = MAX_TRACKED 单点淘汰（与 MAX_PENDING 互为冗余，配对「双闸同除」记录证明有界性作为属性被钉），属正当不敏感而非缺口。governance 后续：tighten-only 成文规则登记为 ARQ（DEV-GOVERNANCE §验收测试纪律 §5，owner=architect），先例 7 份冻结件自带 REVISION LOG tighten-only 页脚 + device_ws_switch.acceptance.c:89 已执行过。",
     "perAcceptance": [
       {
         "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
@@ -198,10 +198,10 @@
       {
         "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
         "mutation": "front 不再向引擎腿注入：_deliver_alert_now 的 deliver_alert(entry, device_ws, engine_ws) → (..., device_ws, None)",
-        "affectedTest": "无（冻结验收不敏感）；加固后自带单测 test_one_poll_cycle_pushes_and_receipt_dequeues (server/tests/test_reminder_units.py) 转红",
-        "turnedRed": false,
-        "sensitive": false,
-        "notes": "不敏感发现（如实归因）：RMD-A3 语音半边在冻结面只钉到纯函数层（build_speech_injection/build_alert_frames/deliver_alert 三处变异均有咬），front_app 侧只有源码 needle 齿 test_a4_front_wires_delivery_and_receipt_dequeue:1089、无行为覆盖 → front 拿错腿/不拿腿不被冻结面捕获。缓解：自带单测已加固（原 all(...) 对空列表 vacuous 通过 → 改判 len(injections)==len(pushed) 且 text 非空，commit 503e022）；建议后续在 live 齿/引擎认领日志面补真跑断言。sha(front_app.py) fc8c50a947dddb10 == 同值。"
+        "affectedTest": "test_a3_front_poll_injects_speech_into_engine_leg (server/acceptance/test_schedule_reminder.acceptance.py:957)",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异 _deliver_alert_now 引擎腿置 None 时：新齿 FAIL（0!=1 两腿条数对账）、同档其余 33 离线齿全绿（含 needle 齿 :1266 仍绿 = 证明确是覆盖空洞而非重复覆盖）。REVISION LOG 已 append（Reason 载明）；front_app.py 还原 sha256 fc8c50a947dddb10… 逐字同值。补齿动机 = mutation 跑出的 vacuity（acceptance-evidence.md:29 定义），执行者 acceptance-author（作者权，scope-map allow 无「冻结后」时间锁），planner 独立核实纯 additive（git diff -U0 removed 计数 0，C +101/0、py +200/0）。"
       },
       {
         "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
@@ -390,10 +390,10 @@
       {
         "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
         "mutation": "渲染面不再先清活动屏：kidpal_reminder_page_render 删 lv_obj_clean(scr)（对象逐帧累积）",
-        "affectedTest": "无（具名齿不敏感）",
-        "turnedRed": false,
-        "sensitive": false,
-        "notes": "不敏感发现：:1537 的 accum==0「重渲染不叠屏」齿在去掉清屏后仍绿——同一载荷以同坐标重画、不透明白底卡先覆盖整屏，采样网格逐位相同，该齿只能观测「像素不累积」这一结果、无法区分实现路径（不同尺寸/偏移载荷才会暴露）。行为本身仍正确，但「先清屏」不具名齿；builder 建议 acceptance-author 用两段不同高度内容做重渲染对比来收紧（属其判定，未动冻结件）。cwd=host_app 76/3（与基线持平）。sha 同值。"
+        "affectedTest": "渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten) (firmware/main/test/schedule_reminder_b.acceptance.c:1640, 标签 [schedule_reminder][RMD-A5][render])",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异删 reminder_page.c:1088 lv_obj_clean(scr) 时：新齿 FAIL（ELF 77T/4F，唯一新红恰是它）、既有 accum==0 齿（现 :1596）及其余 11 本包齿全 GREEN（正是原 vacuity）。补法改道说明：planner 原处方为「不同高度/偏移载荷的像素对比」，作者读实现后指出卡片几何由 KRM_CARD_* 常量决定与载荷无关、且每帧整屏白底+压层+不透明白卡会盖住残留，像素版会成第二条空齿 → 改钉「场景对象残留」层（B 单独 vs A→B 子对象数相等 + 重复渲染不增长 + alone_n>0 防空实现假绿），像素断言保留作意图登记（几何日后随载荷变化即自动获得鉴别力）；钉的仍是 RMD-A5 已声明的「不叠屏」，无新 acceptance id、无行为定义改动。reminder_page.c 还原 sha256 a5b1d0281c6528b6… 同值、hash-object == HEAD blob 8e693c1f…（工作树  M 为 autocrlf stat 伪影，内容零差）。cwd=host_app 观测 77/3。"
       },
       {
         "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",

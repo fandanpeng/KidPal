@@ -218,6 +218,11 @@
  *                渲染真帧: 画到屏上 + 两个不同事项真帧可见差异 + 重渲染不叠屏 +
  *                NULL/非法不崩) — 需 lvgl include path, 独立红基线 stub 编译时被编译排除,
  *                其红态在 builder 接线进 host runner 时兑现 (文件头注记, 如实记录)
+ *   coverage: RMD-A5 (不叠屏 = 「先清屏」对象级具名化, tighten ADD 2026-09-08)
+ *             -> test RMD-A5-render-tighten (host-runner-only: 测试自建纯净基线后对比
+ *                「只渲染 B」与「先渲染 A 再渲染 B」的活动屏子对象数 + 重复渲染不增长 +
+ *                两路径最终帧一致; 钉同一既有意图, 不新增行为定义 — 补 mutation
+ *                sensitive:false 缺口, 详见文件尾 REVISION LOG)
  *   coverage: RMD-A7 (断网无提醒 = 设备不缓存事项) -> test RMD-A7 (设备零本地事项源:
  *                不读 schedule.md / 不读 pending.json / 不读语义产物 + 三档阶梯常量
  *                (20:30 / 07:45 / remind_before_min) 永不进固件面 = 纯服务端配置永不烧板子)
@@ -1607,9 +1612,105 @@ TEST_CASE("schedule reminder b: 提醒弹窗渲染面真帧——压屏聚焦 + 
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * RMD-A5 render — tighten 补齿（2026-09-08 mutation 暴露的覆盖缺口）
+ * 「先清屏」具名化：B 渲染完成后，活动屏上**不得残留 A 的场景对象**。
+ *
+ * 为什么这条与上面 :1591 的 accum==0 齿不重复：那条齿用**同一载荷、同一几何**重渲染，
+ * 观测到的是「像素不累积」这个结果；而被测渲染面每帧都先画整屏白底 + 整屏 50% 压层 +
+ * 不透明白卡（reminder_page.c KRM_CARD_* 几何与载荷无关），所以哪怕漏掉 lv_obj_clean，
+ * 上一帧的残留对象也被本帧的不透明层完全盖住 —— 像素级看不出差别（mutation
+ * 「删 lv_obj_clean」时 :1591 齿仍绿 = 该缺口）。本齿因此把「不叠屏」钉在**场景对象残留**
+ * 这一层（同一声明意图 RMD-A5「新提醒排队逐个弹、不叠屏」，不新增行为定义）：
+ * 由测试自己建立纯净基线（与被测实现的清屏动作无关），再用「只渲染 B」与
+ * 「先渲染 A 再渲染 B」两条路径对比活动屏子对象数 —— 漏清屏时第二条路径多出 A 的全部对象。
+ * 最后附一条像素级一致性断言：它在本变异下仍绿（如上所述被不透明层掩盖），作用是
+ * 把「A 的可见内容不得残留」这一意图也钉在案上，并在几何日后随载荷变化时（渲染面
+ * 头注记的升级路径 = 接中文字库与 pose 位图资源）自动获得鉴别力。
+ * 本齿只用既有缝与采样手法（host_infra_render_frame / krm_sample_grid），不引入
+ * 任何依赖 LVGL 渲染时序的断言：子对象数是 lv_obj_clean 之后的纯同步读数。
+ * ------------------------------------------------------------------------ */
+static uint32_t krm_scr_children(void)
+{
+    lv_obj_t *scr = lv_screen_active();
+
+    return (scr != NULL) ? lv_obj_get_child_count(scr) : 0u;
+}
+
+TEST_CASE("schedule reminder b: 渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten)",
+          "[schedule_reminder][RMD-A5][render]")
+{
+    static int32_t frame_b_alone[KRM_GRID_W * KRM_GRID_H];
+    static int32_t frame_b_after_a[KRM_GRID_W * KRM_GRID_H];
+    kidpal_alert_t a, b;
+    uint32_t alone_n = 0, seq_n = 0, repeat_n = 0;
+    int i, diff = 0;
+
+    /* 包 0 冻结渲染缝: 初始化 + rendered 态。 */
+    TEST_ASSERT_TRUE_MESSAGE(host_infra_render_frame() == 0,
+        "KRM-A5 tighten RED(infra): host_infra_render_frame failed — 包 0 渲染缝不在世");
+
+    /* A 与 B 故意走**不同的绘制支路**：A 有 speech（三件套全画）、B 无 speech
+     * （仅弹窗支路）；标题一长一短。两支路的对象集不同，残留探针才更严。 */
+    krm_fill(&a, "rmd-residue-a", "2026-09-09T16:15:00+08:00", "16:30 有钢琴课，别忘了带琴谱！");
+    snprintf(a.title, sizeof(a.title), "钢琴课 16:30 · 带琴谱 · 琴行");
+    krm_fill(&b, "rmd-residue-b", "2026-09-08T20:30:00+08:00", "");
+    snprintf(b.title, sizeof(b.title), "美术班");
+
+    /* --- 路径 1（基线）：测试自建纯净屏上只渲染 B ------------------------------ */
+    lv_obj_clean(lv_screen_active());
+    krm_render_and_sample(&b, frame_b_alone);
+    alone_n = krm_scr_children();
+    TEST_ASSERT_TRUE_MESSAGE(alone_n > 0,
+        "KRM-A5 tighten RED: 只渲染 B 之后活动屏子对象数为 0 — 渲染面什么都没画，"
+        "本齿的对比基线不成立（防空实现假绿）");
+
+    /* --- 路径 2（对照）：同一纯净起点，先渲染 A 再渲染 B ----------------------- */
+    lv_obj_clean(lv_screen_active());
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_page_render(&a) == 1,
+        "KRM-A5 tighten RED: 残留探针的前置渲染 A 未成功");
+    krm_render_and_sample(&b, frame_b_after_a);
+    seq_n = krm_scr_children();
+    TEST_ASSERT_TRUE_MESSAGE(seq_n == alone_n,
+        "KRM-A5 tighten RED: 渲染 B 之后活动屏仍带着 A 的残留对象 — 「先清屏」缺失即"
+        "场景对象累积（排队逐个弹「不叠屏」的对象级不变式被破, spec S-F1.4 / RMD-A5）。"
+        " B-only 与 A→B 两条路径的子对象数必须相等。");
+
+    /* --- 再弹一次同一提醒：数量仍不得增长（关掉当前弹下一个时的同一不变式）------ */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_page_render(&b) == 1,
+        "KRM-A5 tighten RED: 重复渲染 B 未成功");
+    repeat_n = krm_scr_children();
+    TEST_ASSERT_TRUE_MESSAGE(repeat_n == alone_n,
+        "KRM-A5 tighten RED: 重复渲染同一提醒使场景对象数增长 — 渲染面未先清活动屏");
+
+    /* --- 画面级：两条路径的最终帧必须一致（A 的可见内容不残留）------------------ */
+    for (i = 0; i < KRM_GRID_W * KRM_GRID_H; i++) {
+        if (frame_b_alone[i] != frame_b_after_a[i]) {
+            diff++;
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(diff == 0,
+        "KRM-A5 tighten RED: A→B 路径的最终帧与「只渲染 B」的基线帧不一致 — 上一弹窗的内容"
+        "残留到了本弹窗画面上（不叠屏的像素级证据, RMD-A5）");
+}
+
 #endif /* KRM_HAVE_LVGL */
 
 /* --------------------------------------------------------------------------- *
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-08  initial freeze (acceptance-author, TaskPackage 260829-schedule-reminder).
+ *   2026-09-08  tighten-only ADD: one extra host-runner render TEST_CASE
+ *               "渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten)" —
+ *               pins the SAME declared RMD-A5 intent (排队逐个弹、不叠屏) at the
+ *               scene-object-residue level. Reason: mutation evidence sensitive:false —
+ *               deleting lv_obj_clean(scr) in reminder_page.c kept the existing
+ *               accum==0 tooth GREEN, because that tooth re-renders the same payload at
+ *               the same geometry and every frame repaints an opaque full-screen white
+ *               base + 50% dim + opaque card, so stale objects are pixel-masked (the
+ *               card geometry is payload-independent, so no payload choice can expose
+ *               the residue in pixels). New tooth builds its own pristine baseline and
+ *               compares child-object counts of "render B alone" vs "render A then B"
+ *               (plus a repeat-render count and a frame-equality assertion). No existing
+ *               assertion removed or modified; no new acceptance id, no behaviour
+ *               re-definition.
  * --------------------------------------------------------------------------- */

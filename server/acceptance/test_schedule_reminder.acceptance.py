@@ -197,6 +197,9 @@ Coverage map (acceptanceRef / exitCriteria / decisionCoverage -> test method):
         -> test_a3_speech_missing_still_delivers
         -> test_a3_alert_leg_emits_no_binary_frames
         -> test_a3_engine_patch_carrier_accepts_injection (structural carrier)
+        -> test_a3_front_poll_injects_speech_into_engine_leg (tighten ADD 2026-09-08:
+           离线跑 front 一轮投递周期，两腿条数对账钉「引擎腿注入真发生」+ 无 speech 对照；
+           补 mutation sensitive:false 缺口 —— 详见文件尾 REVISION LOG)
         -> test_a3_live_tts_and_popup_timing_evidence (live, 真机音频时序殿后 9b)
   RMD-A4 (载荷形状 + 数字 id + 轮询到点 + 重试到确认 60s×3 + 过期作废 + 回执接出队)
         -> test_a4_alert_envelope_wire_shape
@@ -413,6 +416,63 @@ def _gw():
 def _callable(mod, name: str):
     fn = getattr(mod, name, None)
     return fn if callable(fn) else None
+
+
+def _ensure_fastapi_stub() -> None:
+    """让 front_app 在无 fastapi 的机器上仍可离线装载（tighten ADD 2026-09-08 配套）。
+
+    异常类必须是**真类**，否则 front 里的 `except (WebSocketDisconnect, RuntimeError)`
+    在桩下失效；其余属性给宽容 Mock。（与 test_g_relay_fix.acceptance.py 同款桩，
+    本档自带一份，不跨档依赖。）"""
+    from types import ModuleType  # noqa: PLC0415
+    from unittest.mock import Mock  # noqa: PLC0415
+    try:
+        import fastapi  # noqa: F401
+        return
+    except ImportError:
+        pass
+
+    class _Permissive(ModuleType):
+        def __getattr__(self, name):  # noqa: D105
+            return Mock()
+
+    if "fastapi" not in sys.modules:
+        stub = _Permissive("fastapi")
+        stub.WebSocketDisconnect = type("WebSocketDisconnect", (Exception,), {})
+        stub.HTTPException = type("HTTPException", (Exception,), {})
+        sys.modules["fastapi"] = stub
+    if "fastapi.responses" not in sys.modules:
+        sys.modules["fastapi.responses"] = _Permissive("fastapi.responses")
+
+
+_front_cache: object = None
+
+
+def _load_front_app():
+    """Import server/gateway/front/front_app.py by path, offline.
+
+    Returns (module|None, err).  Missing/unimportable = a RED for missing behaviour
+    (self.fail at the call site), never a collection crash."""
+    global _front_cache
+    if _front_cache is not None:
+        return _front_cache
+    if not FRONT_APP.is_file():
+        return None, ("server/gateway/front/front_app.py missing — 网关 ws 代理/提醒投递"
+                      "接线面不在世。")
+    _ensure_fastapi_stub()
+    if str(SERVER) not in sys.path:
+        sys.path.insert(0, str(SERVER))
+    try:
+        spec = importlib.util.spec_from_file_location("kidpal_front_app_rmd", FRONT_APP)
+        if spec is None or spec.loader is None:
+            return None, "front_app.py not loadable"
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _front_cache = (mod, None)
+        return _front_cache
+    except Exception as e:  # noqa: BLE001 — an import error here is a RED, not a crash
+        return None, (f"front_app.py failed to import: {e!r}. 冻结口径：该模块必须"
+                      "导入期零网络 I/O，验收可离线装载。")
 
 
 def _sched():
@@ -892,6 +952,123 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
                       "RMD-A3 RED: 引擎补丁未引用既有出音入口 speak_txt"
                       "（core/handle/intentHandler.py:233 speak_txt(conn, text)）——"
                       "「复用现成 edge-tts + opus 下行链」没有落点。")
+
+    # --- RMD-A3 tighten ADD: front→引擎腿注入的离线行为齿（mutation 暴露的覆盖缺口） ----
+    def test_a3_front_poll_injects_speech_into_engine_leg(self):
+        """coverage: RMD-A3 — 真跑 front 的**一轮投递周期**（run_alert_poll_once）+ 假设备腿
+        与假引擎腿双 sink，断言「有 speech 的档位 → 引擎腿收到恰一条 kidpal_speak 注入、
+        text 非空且等于载荷 speech、注入条数与本周期推送条数相等」；对照「无 speech 的档位 →
+        设备腿仍必达一条 mcp 帧、引擎腿零注入」。
+
+        tighten ADD 理由（2026-09-08 mutation 证据 sensitive:false）：变异把
+        front_app._deliver_alert_now 的 deliver_alert(entry, device_ws, engine_ws) 改成
+        (…, device_ws, None)（语音永不外发）时，本冻结档原先只有数源码字符串的 needle 齿
+        （test_a4_front_wires_delivery_and_receipt_dequeue）不敏感 —— 只有从**两腿条数对账**
+        才看得见这条腿静默断开。钉的仍是 RMD-A3 与裁定二已声明的意图（借引擎既有音频链、
+        弹窗必达、语音是引擎腿注入），不新增行为定义。
+        边界：不断言任何音频/真机时序（那是 test_a3_live_tts_* + 9b 殿后面）；不断言 front
+        内部私有符号形状 —— 断言全部落在我方假腿收到的**对端可观察帧**上（_register_alert_legs
+        / _unregister_alert_legs 只用作接线 setup，并在 finally 里注销避免污染兄弟齿）。
+        """
+        from datetime import datetime  # noqa: PLC0415  局部导入，不改本档既有 import 面
+        front, err = _load_front_app()
+        if front is None:
+            self.fail("RMD-A3 RED: " + err)
+        gw, err = _gw()
+        if gw is None:
+            self.fail("RMD-A3 RED: " + err)
+
+        epoch = 1788941700                        # 2026-09-09T16:15:00+08:00
+        # 用与 front 内部同一个表达式生成 now_iso，使 fire_at == now（闭区间算到点、
+        # 且绝不落在 VOID_WINDOW 之外），任何本机时区下都成立。
+        now_iso = datetime.fromtimestamp(epoch).astimezone().isoformat(timespec="seconds")
+        speech_text = "16:30 有钢琴课，别忘了带琴谱！"
+        with_speech = {"id": "rmd-front-a", "fire_at": now_iso, "title": "钢琴课 16:30 开始前",
+                       "speech": speech_text,
+                       "view": {"view": "text", "data": {"text": "16:30 钢琴课 @琴行"}}}
+        no_speech = {"id": "rmd-front-b", "fire_at": now_iso, "title": "美术班 10:00 开始前",
+                     "speech": "",
+                     "view": {"view": "text", "data": {"text": "10:00 美术班 @少年宫"}}}
+        for entry in (with_speech, no_speech):
+            ok, reason = gw.validate_alert_entry(entry)
+            self.assertTrue(ok, f"RMD-A3 RED fixture: 探针条目未过本包 §三 机械校验 ({reason})")
+
+        def _mcp_alert_frames(sent_text):
+            out = []
+            for f in _parsed(sent_text):
+                payload = f.get("payload") if isinstance(f, dict) else None
+                if (isinstance(f, dict) and f.get("type") == "mcp" and isinstance(payload, dict)
+                        and (payload.get("params") or {}).get("name") == "kidpal/alert"):
+                    out.append(payload)
+            return out
+
+        def _injection_frames(sent):
+            return [f for f in _parsed(sent) if isinstance(f, dict)
+                    and f.get("type") == SPEECH_INJECTION_TYPE]
+
+        async def _one_cycle(entry):
+            """一轮周期：写 pending -> 登记两条假腿 -> 跑 run_alert_poll_once -> 收帧。"""
+            with _TmpDir() as d:
+                path = d / PENDING_NAME
+                path.write_text(json.dumps({"version": 1, "generated_at": now_iso,
+                                            "alerts": [entry]}, ensure_ascii=False),
+                                encoding="utf-8")
+                device, engine = _FakeDevice(), _FakeUpstream()
+                old = os.environ.get("KIDPAL_PENDING_JSON")
+                os.environ["KIDPAL_PENDING_JSON"] = str(path)
+                front._register_alert_legs(device, engine)
+                try:
+                    res = await front.run_alert_poll_once(now_epoch=epoch)
+                    for _ in range(24):   # 放 sink 内 create_task 的投递任务跑完（无睡眠、确定性）
+                        await asyncio.sleep(0)
+                finally:
+                    front._unregister_alert_legs(device)
+                    if old is None:
+                        os.environ.pop("KIDPAL_PENDING_JSON", None)
+                    else:
+                        os.environ["KIDPAL_PENDING_JSON"] = old
+                return res, device, engine
+
+        # ============ 有 speech：引擎腿必须真收到注入（断这条腿 = 本齿的存在理由）========
+        res, device, engine = asyncio.run(_one_cycle(with_speech))
+        self.assertEqual(res["pushed"], [with_speech["id"]],
+                         f"RMD-A3 RED: 本轮未把到点档位推出去 (pushed={res['pushed']!r}) — "
+                         "两腿对账的前置不成立。")
+        alerts = _mcp_alert_frames(device.sent_text)
+        injections = _injection_frames(engine.sent)
+        self.assertEqual(len(alerts), 1,
+                         f"RMD-A3 RED: 设备腿 kidpal/alert mcp 帧数 {len(alerts)} != 1 — "
+                         "弹窗必达面（RMD-A3/V20）不成立。")
+        self.assertEqual(len(injections), len(res["pushed"]),
+         "RMD-A3 RED: 引擎腿注入条数 != 本周期推送条数 —— front→引擎腿这一腿静默断开：语音"
+                         "永不外发，孩子不看屏也能听得到的那条链就断了（裁定二「借引擎既有"
+                         "音频链」的落点）。needle 型齿看不见这个缺陷，只有两腿条数对账能看见。")
+        self.assertEqual(len(injections), 1,
+                         f"RMD-A3 RED: 引擎腿注入帧数 {len(injections)} != 1: {engine.sent!r}")
+        self.assertEqual(injections[0].get("text"), speech_text,
+                         f"RMD-A3 RED: 注入指令的 text 不等于载荷 speech 原文: "
+                         f"{injections[0]!r} — TTS 读文案的来源被改写。")
+        self.assertTrue(str(injections[0].get("text", "")).strip(),
+                        "RMD-A3 RED: 注入指令 text 为空（空文案外发 = 播报面静默失效）。")
+        self.assertEqual(alerts[0]["params"]["arguments"]["id"], with_speech["id"],
+                         "RMD-A3 RED(infra): 设备帧的 §三 业务 id 不符（去重锚漂移）。")
+        self.assertEqual(device.sent_bytes, [],
+                         "RMD-A3 RED: 走 front 投递周期后设备腿出现二进制帧 — 裁定二红线"
+                         "（front 不自己注入音频帧），本齿从端到端再钉一次。")
+        self.assertFalse([f for f in _parsed(device.sent_text) if isinstance(f, dict)
+                          and f.get("type") == SPEECH_INJECTION_TYPE],
+                         f"RMD-A3 RED: {SPEECH_INJECTION_TYPE} 内部指令漏进设备腿（引擎内部"
+                         "传输面不得外泄，设备按 Unknown type 丢弃）。")
+
+        # ============ 对照：无 speech 的设备腿必达 + 引擎腿零注入 =========================
+        res2, device2, engine2 = asyncio.run(_one_cycle(no_speech))
+        self.assertEqual(res2["pushed"], [no_speech["id"]],
+                         "RMD-A3 RED: 无 speech 的档位被拒绝投递 — 语音是可选增强。")
+        self.assertEqual(len(_mcp_alert_frames(device2.sent_text)), 1,
+                         "RMD-A3 RED: speech 缺省时弹窗投递不再必达（V20 降级不阻塞）。")
+        self.assertEqual(_injection_frames(engine2.sent), [],
+                         f"RMD-A3 RED: speech 为空仍向引擎腿注入 — 降级应是「仅弹窗+提示音」，"
+                         f"而不是外发一条空 {SPEECH_INJECTION_TYPE}。")
 
     # --- RMD-A4 --------------------------------------------------------------
     def test_a4_alert_envelope_wire_shape(self):
@@ -1479,3 +1656,26 @@ if __name__ == "__main__":
         suite.addTests(loader.loadTestsFromTestCase(ScheduleReminderLiveAcceptance))
     runner = unittest.TextTestRunner(verbosity=2)
     sys.exit(0 if runner.run(suite).wasSuccessful() else 1)
+
+
+# --------------------------------------------------------------------------- #
+# REVISION LOG (acceptance-author only; tighten-only discipline):
+#   2026-09-08  initial freeze (acceptance-author, TaskPackage 260829-schedule-reminder).
+#   2026-09-08  冻结件自身两处缺陷修复（planner 回派、断言语义零变更）：钢琴课三档期望簇
+#               的参考周次（now 是周二，09-07 周次三档全已过并与 past-skip 齿互斥，按
+#               spec §4.1 + 决策 20 取 next occurrence 09-13/09-14，牵动 3 齿）；
+#               test_a4_retry_to_ack_* 一齿内 sink 采集形状与自身解包冲突（拆 pushed/envs
+#               两个采集器）。Reason: fixture/collection 缺陷由 planner 独立核实，非实现
+#               缺陷；未删齿、未放宽、被钉关系（前一天 20:30 / 当天 07:45 / 事前 15 分；
+#               60s×3 后 void 与审计轨迹）逐字不变。
+#   2026-09-08  tighten-only ADD: one extra offline test method
+#               test_a3_front_poll_injects_speech_into_engine_leg（配套 _load_front_app
+#               + _ensure_fastapi_stub 装载器）—— 真跑 front 一轮投递周期，用假设备腿/
+#               假引擎腿对账「推送条数 == 引擎腿注入条数」并加无 speech 对照。
+#               Reason: mutation evidence sensitive:false —— 变异把 _deliver_alert_now 的
+#               deliver_alert(entry, device_ws, engine_ws) 改成 (…, device_ws, None)
+#               （语音永不外发）时本档不敏感，原先只有数源码字符串的 needle 齿守着这条腿，
+#               且仅 builder 的非冻结单测（commit 503e022）在挡，无冻结保护。钉的是 RMD-A3
+#               与裁定二已声明的同一意图，不新增 acceptance id、不改行为定义；不碰音频/
+#               真机时序（属已冻结的 test_a3_live_* + 9b 面）。无既有断言被删除或修改。
+# --------------------------------------------------------------------------- #

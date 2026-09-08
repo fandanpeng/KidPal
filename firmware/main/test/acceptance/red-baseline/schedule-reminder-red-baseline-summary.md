@@ -363,3 +363,91 @@ node .claude/scripts/acceptance-coverage-check.mjs <实况路径副本>
 wsl ... ./build/host_infra_test.elf
     → 76 Tests / 3 Failures（三条既有 [evidence] 红不变；本包 11 个 C 齿全 PASS）
 ```
+
+## 7. tighten-only 补齿记录（2026-09-08 第三单：两条 mutation `sensitive:false` → true）
+
+来源 = mutation 跑出的两处覆盖缺口（builder 执行变异、planner 独立归因、architect advisory
+确认本仓 tighten-only 既成纪律、human 知情）。两份冻结件**纯 additive**：
+`git diff --numstat` = `101 / 0`（C 档）与 `200 / 0`（python 档），
+`git diff -U0 | grep -c '^-[^-]'` = **0**（零删除行、零修改行，既有断言一字未动）。
+
+### 7.1 补 1（RMD-A5，设备渲染面「先清屏」具名化）
+
+新齿：`firmware/main/test/schedule_reminder_b.acceptance.c:1640`
+`TEST_CASE("schedule reminder b: 渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten)",
+"[schedule_reminder][RMD-A5][render]")`（host-runner-only，在 `#ifdef KRM_HAVE_LVGL` 内）。
+
+设计要点（为何不是原教「A 独占区域回到背景」的像素齿）：读实现后确认
+`reminder_page.c` 的卡片几何（`KRM_CARD_*_PCT`）**与载荷无关**，且每帧先画整屏白底 +
+整屏 50% 压层 + 不透明白卡 —— 漏掉 `lv_obj_clean` 时上一帧残留对象被本帧不透明层
+**完全盖住**，任何载荷组合都造不出「A 独占而 B 不复画」的像素区域。故像素版仍是空齿。
+本齿把 RMD-A5 已声明的同一意图（新提醒排队逐个弹、**不叠屏**）钉在**场景对象残留**层：
+
+1. 测试自己 `lv_obj_clean` 建纯净基线（与被测实现的清屏动作无关），只渲染 B → 记子对象数 `alone_n`，并断言 `alone_n > 0`（防空实现假绿）；
+2. 同一起点先渲染 A 再渲染 B → 断言子对象数 `== alone_n`（漏清屏 = 多出 A 的全部对象 → 咬）；
+3. 再渲染一次同一提醒 → 数量仍 `== alone_n`（重复弹出不累积对象）；
+4. 附一条最终帧像素一致性断言（本变异下按上述原因仍绿；作用是把「A 的可见内容不残留」也钉在案上，并在渲染面日后按头注记升级路径接中文字库/pose 位图、几何随载荷变化时自动获得鉴别力）。
+
+A 与 B 故意走**不同绘制支路**（A 有 speech = 三件套全画；B 无 speech = 仅弹窗支路；标题一长一短），
+残留探针更严。只用既有缝与采样手法（`host_infra_render_frame` / `krm_sample_grid`），
+子对象数是 `lv_obj_clean` 之后的纯同步读数，不含任何 LVGL 渲染时序依赖。
+
+### 7.2 补 2（RMD-A3，front→引擎腿注入的离线行为齿）
+
+新齿：`server/acceptance/test_schedule_reminder.acceptance.py:957`
+`ScheduleReminderOfflineAcceptance::test_a3_front_poll_injects_speech_into_engine_leg`
+（配套新增装载器 `_load_front_app` + `_ensure_fastapi_stub`，本机 fastapi 实测缺席需桩；
+异常类用真类以保证 front 内 `except (WebSocketDisconnect, RuntimeError)` 在桩下仍有效）。
+
+真跑 front 一轮投递周期 `run_alert_poll_once(now_epoch=...)`，假设备腿 / 假引擎腿双 sink 收帧后
+按**对端可观察事实**断言（`_register_alert_legs` / `_unregister_alert_legs` 只作 setup，
+finally 注销避免污染兄弟齿；不断 front 内部私有符号形状）：
+
+- 有 speech：`pushed == [业务 id]` → 设备腿恰 1 条 `kidpal/alert` mcp 帧、引擎腿注入条数
+  **== 本周期推送条数** 且恰 1 条、`text` 等于载荷 speech 原文且非空、
+  `device.sent_bytes == []`（裁定二红线端到端再钉一次）、设备腿内不得混入 `kidpal_speak`；
+- 无 speech 对照：设备腿仍恰 1 条（必达）、引擎腿**零**注入（降级 ≠ 外发空文案）。
+
+不断言任何音频 / 真机时序（属已冻结的 `test_a3_live_tts_and_popup_timing_evidence` + 9b 殿后面）。
+
+### 7.3 变异自证表（用当初暴露 vacuity 的原变异，非另造）
+
+| 变异（原样重放） | 新齿 | 既有齿 | 还原 |
+|---|---|---|---|
+| `front_app._deliver_alert_now`: `deliver_alert(entry, device_ws, engine_ws)` → `(…, device_ws, None)`（语音永不外发） | `test_a3_front_poll_injects_speech_into_engine_leg` → **FAIL**（`0 != 1`，两腿条数对账） | 同档其余 **33 个离线齿全绿**，含不敏感的 needle 齿 `test_a4_front_wires_delivery_and_receipt_dequeue`(L1266) → **仍 GREEN** | `git checkout` 还原，`front_app.py` sha256 `fc8c50a9…29257` **逐字同值** |
+| `reminder_page.c:1088` 删 `lv_obj_clean(scr);` | `…(RMD-A5 tighten)`（L1640）→ **FAIL**（ELF 77T/**4**F，唯一新红恰是它） | 既有像素齿 `accum == 0`(L1596) 及其余 11 个本包齿 → **全 GREEN**（正是要补的 vacuity） | 还原后 `reminder_page.c` sha256 `a5b1d028…2f4c39` **同值**、`git diff` 内容零行、ELF 重编回 77T/**3**F |
+
+`git diff --numstat` 复核变异期间均为 `1 / 1`（单行、可逆），两条变异均已彻底撤除。
+
+**还原注记（诚实）**：本仓 `core.autocrlf=true`，`git checkout --` 会把工作树重新物化成 CRLF，
+而 builder 提交前的工作树字节是 LF（`reminder_page.c`  sha256 由 `a5b1d028…` 短暂变
+`0852b80b…`）。已按 `git hash-object`（`8e693c1f…` == HEAD blob）与 `git diff` 内容零行
+双证后把该文件转回 LF-only，现 sha256 与变异前**逐字节同值**；`git status` 对该文件仍显
+` M` 只是 CRLF/LF 的 stat 伪影（`git diff --stat` 内**不含**该文件、零内容行），
+非我留下的实现改动。
+
+### 7.4 补齿后复跑（实测）
+
+```
+cd server && python -m pytest -q --import-mode=importlib --collect-only acceptance/test_schedule_reminder.acceptance.py
+    → 39 tests collected（零收集错误）
+cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py
+    → 34 passed, 5 skipped（0 failed）
+cd server && python -m pytest -q --import-mode=importlib
+    → 8 failed, 135 passed, 40 skipped        # 既有 8 红一条未动
+node .claude/scripts/acceptance-coverage-check.mjs <实况路径副本>
+    → ok:true, acceptance RMD-A1..A8 全在册, structural ["RMD-A1"]
+cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash espidf_wsl.sh build   # 未用 -T main
+    → rc=0, error: 计数 0
+cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf
+    → 77 Tests / 3 Failures（既有三红 VRT-A2 / WSA-A6 / WSA-A4 一条未变 2、未变 4）
+      本包 12 个验收齿全部 :PASS（原 11 + 本单新增 1）
+```
+
+### 7.5 回写 TaskPackage.mutationEvidence 用的 affectedTest 名
+
+- 补 1（`reminder_page.c` 删 `lv_obj_clean`）→
+  `firmware/main/test/schedule_reminder_b.acceptance.c::[schedule_reminder][RMD-A5][render]::渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten)`
+  （C 侧 unity 无 python nodeid，建议以 `文件::TEST_CASE 标题` 记账；标题含唯一子串 `RMD-A5 tighten`）
+- 补 2（`_deliver_alert_now` 断引擎腿）→
+  `server/acceptance/test_schedule_reminder.acceptance.py::ScheduleReminderOfflineAcceptance::test_a3_front_poll_injects_speech_into_engine_leg`
