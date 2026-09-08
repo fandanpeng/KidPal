@@ -1,8 +1,8 @@
 # PROPOSAL · 260908-gov-review-merge-chain-hardening
 
-> **状态：DRAFT v0.1 · 2026-09-08 · 主线程起草完毕，待 human 立项 ack（ack 后送 architect 评审循环）**
-> **承载 ARQ**：`ARQ-260908-pod-integration-no-legitimate-executor`（主承载，面 A 全量 + 面 B 核验行）+ `ARQ-260908-versioned-artifact-slot-collision`（主承载）+ `ARQ-260907-gate-lib-script-separation`（顺带承载，OQ2 裁是否随批）。**销账簿记（不在本批改法内）**：`ARQ-260907-merge-closeout-bookkeeping-gap` 与 `ARQ-260907-merge-driver-approval-state-desync` 经 2026-09-08 主线程核销确认已被 `260907-gov-review-merge-friction` 批完整落地（merge-driver.mjs T1 `approvalRefUnlock` :915 / T2 Step 0 收口 :777 / T3 投影特判 :828 / T4 `progress.md merge=union`；pod-coordination.md §10 runbook + 簿记口径；五自检 T1/T2/T3/T4/T6 在册），队列 §1 两行属销账滞后，本批随 landing 结移 §2。**明确不入本批**：`ARQ-260907-escalation-cross-system-overfire`（自评 Track A full-adversarial + human，升级闸判据语义变更，入口 `/arch-change`，见 §4 OQ4）；`ARQ-260908-versioned-guard-version-literal-coupling`（自评 Track A，与本批 slot-collision 互补——本批治「槽位可并发占用 + 消解机械面」，该条治「守卫耦合版本字面」的规约面，是否并批立项见 OQ1）；非 merge 的三条新增闸面 ARQ（tighten-only-unwritten / gate-pytest-import-mode-incompat / known-red-count-no-mechanical-source）留下一批治理批，本批不夹带。
-> **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。升级判据核对：不触 `docs/contracts/**`（契约面为零）、非跨系统结构性变更（治理/流程机械面单侧）→ 不升 Track A。**如实申报两处判据适用存疑点供判官复核改判**：① integrator.md 正文新增「merge-chain execution」节是否触 lightweight 硬排除的 self-def 面（ARQ 原文自标待判，本批不自裁）；② T6 闸内新核验行 = gate 语义/新增判据 = gate 事实，Track B 三要件①的「gate 事实」通道可否吃下（先例：merge-friction 批 Step 0 自动 commit 同型声明获判官放行），判官若认定属真设计分叉请打回升 Track A。
+> **状态：DRAFT v0.2 · 2026-09-08 · human 立项 ack 已获（AskUserQuestion 四裁：ack 进评审 / OQ1=并批走 Track A / OQ2=随批 / OQ4=merge 批后即启 escalation Track A）；review 轨按 OQ1 裁断升 Track A，入口 `/arch-change`（review-moderator 编排）**
+> **承载 ARQ**：`ARQ-260908-pod-integration-no-legitimate-executor`（主承载，面 A 全量 + 面 B 核验行）+ `ARQ-260908-versioned-artifact-slot-collision`（主承载）+ **`ARQ-260908-versioned-guard-version-literal-coupling`（OQ1 裁并批入内，T7 规约面）** + `ARQ-260907-gate-lib-script-separation`（OQ2 裁随批，T6 确认在批）。**销账簿记（不在本批改法内）**：`ARQ-260907-merge-closeout-bookkeeping-gap` 与 `ARQ-260907-merge-driver-approval-state-desync` 经 2026-09-08 主线程核销确认已被 `260907-gov-review-merge-friction` 批完整落地（merge-driver.mjs T1 `approvalRefUnlock` :915 / T2 Step 0 收口 :777 / T3 投影特判 :828 / T4 `progress.md merge=union`；pod-coordination.md §10 runbook + 簿记口径；五自检 T1/T2/T3/T4/T6 在册），队列 §1 两行属销账滞后，本批随 landing 结移 §2。**明确不入本批**：`ARQ-260907-escalation-cross-system-overfire`（自评 Track A full-adversarial + human，升级闸判据语义变更，入口 `/arch-change`，见 §4 OQ4）；`ARQ-260908-versioned-guard-version-literal-coupling`（自评 Track A，与本批 slot-collision 互补——本批治「槽位可并发占用 + 消解机械面」，该条治「守卫耦合版本字面」的规约面，是否并批立项见 OQ1）；非 merge 的三条新增闸面 ARQ（tighten-only-unwritten / gate-pytest-import-mode-incompat / known-red-count-no-mechanical-source）留下一批治理批，本批不夹带。
+> **review 轨**：**Track A full-adversarial + human（OQ1 human 2026-09-08 裁并批升级；原自评 Track B 作废）**。入口 `/arch-change`（review-moderator 编排：scenario-author 冻 charter → challenger↔defender 辩论 → adjudicator 裁定 → decision packet 交 human 拍板 → 主线程 packet-bound landing + landing-verifier）。升级归因如实记录：versioned-guard ARQ 并批后触「闸判据/规约落点」真设计分叉面扩大，human 拍板整批走 full。**两处判据适用存疑点仍申报判官复核**：① integrator.md 正文新增「merge-chain execution」节是否触 self-def 硬排除；② T6 闸内新核验行 = gate 事实，判官复核归档。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T6）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
 > **riskTier**：medium（一句话证成：本批全部落在合并机械链与集成执行面——承载的是「每次并行批必现、已实际导致一次 human 一次性授权 + 流程外绕行」的病根，不修则下批并行 Pod 的 merge 段照付全款；但改动面全部有 fail-closed 默认与五自检护栏，downside bounded）。
 > **review profile**：G2+G3（触面 = integrator.md / pod-coordination.md G2 + merge-driver.mjs / pre-merge-escalation-gate.mjs / dev-loop.settings.json / lib 新文件 G3；契约面为零）。
@@ -92,11 +92,17 @@ ARQ-260907-gate-lib-script-separation（260907-gov-review-merge-friction retro F
 
 目标文件：`.claude/scripts/pre-merge-escalation-gate.mjs`
 
-### T6 · gate 可导入库分离（顺带，OQ2 裁是否随批）
+### T6 · gate 可导入库分离（OQ2 human 裁随批，确认在批）
 
 gate 五要素核验共享函数（`resolveHumanApproval` 等）提取至 `.claude/scripts/lib/governance-gate-shared.mjs`（既有先例同名 lib），gate 薄壳化 + `import.meta` 守卫；merge-driver T1 的 spawn 复用改为 import（消双跑 + 语义耦合字面复用）。gate 判定语义零变更（纯结构重构），自检夹具双路径复跑钉住等价。
 
 目标文件：`.claude/scripts/pre-merge-escalation-gate.mjs`、`.claude/scripts/lib/governance-gate-shared.mjs`（新增）、`.claude/scripts/merge-driver.mjs`
+
+### T7 · 版本化制品 green-guard 撰写约定（OQ1 裁并批承载 versioned-guard ARQ；规约面骨架，正文归 architect 评审循环细化）
+
+按 ARQ-260908-versioned-guard-version-literal-coupling 候选改法落两条：① **版本无关接线守卫约定**成文——「版本化制品的接线类 green-guard 必须：解析当前被接线/渲染的那一版文件 → 断言该文件确实存在（防孤儿）→ 断言其正文逐字携带本包语义锚点（防未来版丢内容）；禁在断言里硬写版本字面文件名」，落点候选 = `.claude/references/acceptance-evidence.md`「必要证据」段 / `task-intake-and-slicing.md` 验收断言格式段 / `docs/DEV-GOVERNANCE.md` 验收测试纪律节（三选一归评审期裁）；② **全仓既有字面耦合守卫清点**随批执行：`grep -rn "openclaw-system-prompt.v[0-9]"` 于验收断言字面处逐条判「接线守卫（该版本无关化）vs 落盘/措辞守卫（钉死某版合理）」——在册待判实例：char-stroke CHR-E3 已首例重指（human 裁 `c54bbcde`）、schedule_p2 P2-A6 `:583-586` 现属假绿、voice_roundtrip VRT `:116` 钉 `.v1`、live 齿 `PROMPT_V2_PATH` 常量（:618/:657）；反例免误改：`VRT-E4`（裸名 + 无扩展名 carrier，天然版本无关）。③ **既有守卫重指**触他人冻结件 → 逐件 human 授权，本批只登记清单与规约、不预批任何冻结件改动（与 §0 非目标同款纪律）。工程门判据侧（architect-reviewer 预审/verifier 增列「字面版本耦合」检查）是否设门归评审期裁。
+
+目标文件：三选一规约落点（评审期定）+ `docs/ARCH-REVIEW-QUEUE.md`（versioned-guard 行销账，随批 landing）
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 
@@ -107,7 +113,8 @@ gate 五要素核验共享函数（`resolveHumanApproval` 等）提取至 `.clau
 | agent def | `.claude/agents/integrator.md` | G2 新节（self-def 存疑点，判官复核） | integrator 集成段；planner 派单 |
 | dev-loop 平台设置 | `.claude/dev-loop.settings.json` | G3 条件化条目 | harness 权限层 |
 | 升级闸 | `.claude/scripts/pre-merge-escalation-gate.mjs` | G3 新核验行（gate 事实） | 合并门前置；CDQ 台账（只读消费） |
-| 共享 lib | `.claude/scripts/lib/governance-gate-shared.mjs` | G3 新增（OQ2） | gate / merge-driver 双消费 |
+| 共享 lib | `.claude/scripts/lib/governance-gate-shared.mjs` | G3 新增（OQ2 已裁随批） | gate / merge-driver 双消费 |
+| 版本守卫规约（T7） | 落点三选一待评审期裁（acceptance-evidence.md / task-intake-and-slicing.md / DEV-GOVERNANCE.md）+ 既有守卫重指清单在册 | G2 成文 + 他人冻结件重指逐件 human 授权（不预批） | acceptance-author 撰写约定；verifier/architect-reviewer 判据侧是否设门归评审期裁 |
 | 契约面 | `docs/contracts/**` | **未触（零）** | — |
 | `docs/spec.md` / CDQ | — | **未触（零写权）** | T5 只读核验 |
 | pod-events schema | — | **未触** | `versioned-artifact-claim` 用自由事件型 |
@@ -119,10 +126,10 @@ gate 五要素核验共享函数（`resolveHumanApproval` 等）提取至 `.clau
 
 ## 4. human 取舍点（OQ）
 
-- **OQ1 · versioned-guard-version-literal-coupling（Track A）是否并批立项**：(a) **分批（推荐）**——本批 Track B 治机械面（槽位预约 + add/add 特判 + 双包齿复跑纪律），该条按其自评走 full-adversarial 治规约面（版本无关 green-guard 撰写约定 + 闸判据）；两侧互补不重复，硬并批会把 Track B 批拖进 full 评审。(b) 并批走 Track A——一次立项省一轮，但本批六条改法跟着全套对抗评审。
-- **OQ2 · gate-lib-script-separation 是否随批**：(a) **随批（推荐）**——本批本就动 gate 与 merge-driver，T6 纯结构重构、判零语义变更，顺带消掉 spawn 双跑；COULD 级排期也吻合「下次动 scripts 承重闸脚本的治理批」。(b) 留下批——本批改法面已 6 条，缩圈控风险。
-- **OQ3 · T4 settings 条件化 git 的严格档**：(a) **ask（推荐）**——条件满足弹 ask、human 逐次快批，机械层留痕且不豁免人批语义；(b) 条件 allow——集成段全自动但 human 授权事件 id 必须 pre-registered（表达力受 hooks 条件匹配能力限制，评审期核实）；(c) deny + runbook——最严但回到「逐次人工放行」现状。
-- **OQ4 · escalation-cross-system-overfire（Track A）启动时机**：本批不承载，但升级门橡皮图章化在并行批加密后会持续磨损 human 注意力——(a) 本批立项 ack 后紧接着开 `/arch-change` Track A 批（推荐，趁证据新鲜）；(b) 等 /loop-retro cadence 携更多误报样本再开；(c) human 明示接受「双面板恒批」为设计意图记 watchlist（ARQ 建议②的备选出口）。
+- **OQ1 · versioned-guard-version-literal-coupling（Track A）是否并批立项**：(a) 分批；(b) 并批走 Track A。—— **human 2026-09-08 裁 (b)**：并批，整批升 Track A，T7 承载。
+- **OQ2 · gate-lib-script-separation 是否随批**：(a) 随批；(b) 留下批。—— **human 2026-09-08 裁 (a)**：随批，T6 确认在批。
+- **OQ3 · T4 settings 条件化 git 的严格档**：(a) ask（推荐）；(b) 条件 allow；(c) deny + runbook。—— **未裁，归评审期/decision packet**（head 判定需 hooks 表达力核实，先随批进评审）。
+- **OQ4 · escalation-cross-system-overfire（Track A）启动时机**：(a) merge 批 ack 后即启；(b) 攒样本后再开；(c) 接受恒批记 watchlist。—— **human 2026-09-08 裁 (a)**：本批 ack 后即启，单独 Track A 批另行立项（不并入本批改法面）。
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
@@ -135,8 +142,7 @@ gate 五要素核验共享函数（`resolveHumanApproval` 等）提取至 `.clau
 
 ## 6. 留根清单
 
-- **versioned-guard-version-literal-coupling 规约批**（OQ1 若分批）：版本无关 green-guard 撰写约定落点 + 全仓 `openclaw-system-prompt.v[0-9]` 断言字面清点（含 VRT-E4 反例免误改清单）+ live 齿 `PROMPT_V2_PATH` 重指——归 Track A 批。
-- **escalation-cross-system-overfire**（OQ4）：升级闸 cross-system 判据收紧 vs 接受恒批，归 `/arch-change` Track A。
+- **escalation-cross-system-overfire Track A 批**（OQ4 裁本批 ack 后即启）：升级闸 cross-system 判据收紧 vs 接受恒批，另行立项走 `/arch-change`，不占本批改法面。
 - **pass-oracle 第 4 关完整兜底**：T5 只补 dev-loop 侧核验，spec↔contract 全量机械门仍缺（ARQ-260827-contract-mech-gate-gap 主体未销）。
 - **HOST_ACCEPTANCE_SRCS 顺序承重根治**：seam reset() + boundary 齿自建新鲜 seam，属固件测试基建，归 dev-loop 包承接（closeout-bookkeeping ARQ 的「结构性根治另线」原文保留）。
 - **pod-events `versioned-artifact-claim` 事件型收编**：自由事件型先跑，schema 最小校验留观测后批（friction-event-payload-schema ARQ 同族）。
