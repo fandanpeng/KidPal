@@ -73,6 +73,14 @@
 | `docs/ARCH-REVIEW-QUEUE.md` | §1.2 表尾 append 四条 governance 建议条目（owner=architect，**不自我批准、不开 TaskPackage、不改 canonical 规则文本**）：`ARQ-260908-tighten-only-unwritten` / `ARQ-260908-versioned-artifact-slot-collision` / `ARQ-260908-gate-pytest-import-mode-incompat` / `ARQ-260908-known-red-count-no-mechanical-source` | 与 main 上 story-p3 新增的两条（`ARQ-260908-versioned-guard-version-literal-coupling` / `ARQ-260908-firmware-build-degraded-gate`）同表同位 ⇒ rebase 时预计冲突，消解 = 六条全留。**设备构建闸降级一条本包未重复登记**（main 在册条已覆盖「恒降级 + merge/CI 设 `VERIFY_FW_BUILD_REQUIRED=1`」，本包只在其覆盖面上补新事实，见 review-packet Findings #5）。 |
 | `.planning/kidpal-mvp/progress.md` | append「2026-09-08 包 7 dev-loop closeout」一段（既有行零改动） | 两侧 EOF append ⇒ 预计冲突；`merge=union` 建议已在册（ARQ-260907-merge-closeout-bookkeeping-gap ③）。 |
 
+### C-6 本文件的 §C-5 预测之实测回填（2026-09-08 集成执行后，凭据 pod-events `dc9a5c15`）
+
+上表三条「预计冲突」已全部落地，实况与本包集成后的文档面状态如下（细节见 `review-packet.md` 附段 A.2）：
+
+- `docs/ADR.md` 与 `docs/ARCH-REVIEW-QUEUE.md` = **确实冲突**，按「全留不重排」消解：ADR 现为 ADR-001（story-p3）→ ADR-002/003（本包）按编号升序并存，本包编号未动；ARQ §1.2 现为 main 两条（story-p3 的 versioned-guard / firmware-build-degraded）+ 本包四条 + 集成后新登记的 `ARQ-260908-pod-integration-no-legitimate-executor`，共七条同表并存。
+- `.planning/kidpal-mvp/progress.md` = **未冲突**（ort 把两侧 EOF append 自动合并干净）⇒ ARQ-260907-merge-closeout-bookkeeping-gap 对「progress.md 必冲突」这一具体断言偏保守，作为事实差记入本包 review-packet §Integration Probe，不改该 ARQ 其它结论。
+- 文档面新增两处与集成相关的登记：`review-packet.md` 附段 A（十文件逐条消解 + 集成树五组实测新基线：host ELF **86T/3F**、本包点名 **35P/5S**、全档 **8F/156P/41S**、`xiaozhi.bin 0x2b8b30` 余 31%）+ §A.4 三陷阱（CRLF 破承重闸 sha 比对 / graph 缓存挡 merge / 必须复跑双方冻结件）。**本包 canonical 面结论不变**：契约与 spec 仍零改动（`git diff main...HEAD -- docs/contracts docs/spec.md` = 0 行），§C-3 登记的 V20 措辞口径差按 human 裁定 `ec77d40a` 改法 A′ 走治理面热修、与本包合并互不阻塞——**该改法在 `docs/CONTRACT-DECISION-QUEUE.md` 至今无对应行**（实测 CDQ 仍只 2 条数据行），此即新 ARQ 面 B 的实况证据。
+
 ## D. 机器可核据（integrator 本机实跑，2026-09-08，HEAD = `339fec3`，工作树未动）
 
 ```

@@ -3,6 +3,7 @@
 > integrator 产出 · 2026-09-08 · 分支 `dev/260829-schedule-reminder`（base = main `bc0951f`；本 packet 复测时的分支顶点 = `339fec3`，收拢提交在其后一件，故本文件内不写自身 commit hash——见 §Commit 冻结）。供 supervisor 合并门复核。
 > 交付本体：孩子到点被提醒这件事第一次全链路成立——OpenClaw 侧确定性脚本按区块判范围算三档阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻纯服务端配置）、幂等 id 散列写 `alerts/pending.json`；网关每分钟读到点经 `mcp kidpal/alert` 推送、60 秒未收回执重推（单档 3 次上限）、过期静默作废；设备端 state-reminder 富弹窗（提示音 + 排队逐个弹 + V18 滞留顶替 + 渲染完成才回执）；语音按裁定二借引擎既有音频链出音。
 > **合并门必读**：本包与**已并入 main 的并行包 story-p3（mergeOrder 10）存在真实冲突面**，其中 `server/deploy/openclaw-system-prompt.v3.md` 是 add/add 且**两种单边消解都不安全**（实测数据见 §Integration Probe）。这是本 packet 唯一的 BLOCKING 项，且它不是本包代码缺陷，而是合并相位的消解决策。
+> **状态更新（2026-09-08 附段 A）**：该 BLOCKING 已由 integrator 在 human 一次性授权（pod-events `dc9a5c15`）下按**并集**在本分支消解完毕（merge 提交 `44ded5c`），并在集成树复跑五组实测（设备真编 / 两包点名 / 全档 / host ELF 新基线 86T-3F / 三闸 + carrier 齿双向）。首版正文所有数字均为「并 main 之前」的本包面截面，保留作历史；集成后口径以 **§附段 A** 为准。
 
 ## Change Size
 
@@ -17,6 +18,8 @@
 - Split recommendation: **不再拆**——排程/投递/渲染三面由契约 §三 载荷形状与「渲染即确认」状态机钉死，拆开任一面都出现中间态红。但**合并必须与 story-p3 的已并面做冲突消解**（见 §Integration Probe），拆包解决不了这个冲突。
 
 ## Verification Evidence
+
+> **读前须知**：本节与下面各节的全部数字 = **并 main 之前**、在本包单独面（HEAD `339fec3` / `a53a6ff`）实测的截面，作为「本包自身交付质量」的证据保留原样；并入 main（含 story-p3）之后的**集成树新基线**见文末 **§附段 A.3**（host ELF 由 77T/3F 变 **86T/3F**、python 点名由 34P/5S 变 **35P/5S**、全档由 8F/135P/40S 变 **8F/156P/41S**、`xiaozhi.bin` 由 `0x2b6e90` 变 `0x2b8b30`、分区余量仍 31%）。两处不互相覆盖：承重 fact r3 的闸面结果对应前者，合并门的集成安全对应后者。
 
 - **Structural + functional gates（承重 fact）**：final round 3 九闸全绿、`ok:true`、`observedGateExit 0`、`authority:"bearing"`、`producedBy:"verify.mjs"`，invocationId `73476b97-f17e-44b5-9090-7c07f42ce7ca`，`startedAt 2026-09-08T04:28:11.545Z / completedAt 04:28:14.409Z` — `.claude/taskpackages/260829-schedule-reminder/verifier-evidence/rounds/r3.json`。
   integrator 复核：`node .claude/scripts/verifier-evidence-check.mjs --change-id 260829-schedule-reminder --phase final --round 3 --invocation-id 73476b97-…` → `{"ok":true,"factOk":true,"observedGateExit":0,"phase":"final","round":3}` **EXIT=0**（本机实跑）。
@@ -132,3 +135,63 @@ TaskPackage 未声明 `s2ExploratoryRequired` / `s2ExploratoryGoals` ⇒ 本相�
 3. `59a8561`（三行修复）在 main 已被 story-p3 落过 → rebase 时弃重复，RMD-A1 guard 齿仍在世可继续守。
 4. 残余四条硬事实要读：闸降级（#2）、`acked_ids` 误用陷阱（#3）、4096 取舍（#4/5）、V20 口径差待契约门（#2 findings）。
 5. live 5 齿 + 9b 真机面未跑（本 loop 按 ARQ-260901-g3 不 auto-run），部署 runbook 载体在 `DEPLOY-RUNBOOK.md §8`。
+
+---
+
+# 附段 A · 集成执行回报（2026-09-08 追加；human 一次性授权后由 integrator 执行）
+
+> 触发 = 本 packet 首版登记的那条 BLOCKING（`.v3` 槽位 add/add）与「本分支落后 main 13 提交」这一事实。
+> **授权凭据**：pod-events `dc9a5c15-4e5b-41d2-9a3d-…`（「让 integrator 处理吧」——范围窄化到：在 Pod 分支上与 main tip 集成 + 按 planner **预登记规则**消解 10 条冲突 + 集成树三面复跑 + 本附段 + 登一条 ARQ；**不含**合并进 main、**不含** push）。同批 `ec77d40a-…`（契约 §三 `speech` 措辞改法 **A′ 现在就热修、本包不等**，走治理面；故本包实现与冻结件全程未触 `docs/contracts/**` 与 `docs/spec.md`）。
+> 本 packet 首版正文（§Verification Evidence 至 §合并门须知）保持原样作**历史截面**（其数字均为并 main 之前在本包单独面上实测）；凡「合并相位待办」类条目已在相位内执行完毕，处置与本附段冲突时**以本附段为准**。
+
+## A.1 形态选择：merge，不是 rebase（读 merge-driver 实况后定）
+
+读 `.claude/scripts/merge-driver.mjs`：Step 3 = 在 Pod worktree 内 `git rebase <解析基线>`（`:1197`；冲突时只对 `current/` 投影特判 `git checkout --theirs`（`:853`），混合冲突集即整体 `rebase --abort` + `blocked`，特判不部分生效）；Step 4 = quick-check（contract-lint + acceptance 两门，firmware-build 有意不入冒烟）；Step 5 = 在**持有 main 的 worktree** 内 `git merge --no-ff <branch>`（`:1276-1290`）。
+
+⇒ 取 **`git merge main`（把 main 并入 Pod 分支）**。理由三条：① 并入后 main 成为本分支祖先，merge-driver 的 Step 3 退化为**恒真 no-op**（无提交可重放、无冲突可撞），Step 4 直接在已集成树上跑，Step 5 照常产出合并提交——即「安全 no-op 或已知可过」的目标态；② rebase 要逐条重放 9 个提交，同一 `v3` / 三处接线文件会在多轮里反复撞冲突且中间态不可验证；③ rebase 会改写全部提交 hash，而 review-packet / taskpackage `mutationEvidence` / pod-events 里已写死的 `59a8561`…`339fec3` 引用将集体失效。代价 = 分支历史含一个 merge 提交；已核实**无任何门要求 Pod 分支线性**（`pre-merge-escalation-gate.mjs:53` 与 `merge-driver.mjs:548` 只以 `git merge-base --is-ancestor` 判祖先/off-main）。
+
+回滚路径：集成前顶点已钉分支 `backup/pre-integration-260829-schedule-reminder` → `a53a6ff`；合并提交在 feature 分支上，main 零暴露。
+
+## A.2 十条冲突的实际消解（逐条对预登记规则，未现场裁量）
+
+| # | 冲突文件 | 实际消解 |
+|---|---|---|
+| 1 | `server/deploy/openclaw-system-prompt.v3.md`（**add/add**，5 块） | **并集**：以 main 版为基（故事 producer 扩展段 + V31 四条回退全留），把本包「包 7 — 提醒备注解析约定」段（`entry_key`/`bring`/`speech` 硬锚 + 判定口径 + 三档取向 + 三区块）插回「增量扩展区」之下，硬约束两条并存（讲故事 / 提醒语义回合），标题改「并集版」，文首补并集成因注记（含 pod-events 凭据 + 本包新齿名 + 两条 ARQ 指针）。结果 240 行。**未用** `--ours`/`--theirs` 单边。 |
+| 2 | `OPENCLAW_SYSTEM_PROMPT_CARRIER` | 前言「把 `openclaw-system-prompt.v3.md` 拷到 ECS」**取 main 侧**（本侧陈旧句自动并入、未手工保留）；**main 侧那段 live 探针字面耦合 ARQ 注记逐字保留**，含「**重指前请勿把本行改回无条件表述**」；本包只并入 `reminder_config` 声明行、v1→v2→v3 历史版本行与并集成因说明。 |
+| 3 | `apply-xiaozhi-overlay.sh` + `provider.config.yaml` | 三处同批指 v3：渲染面 `PROMPT_SRC`（`:99`）、声明面三键 `artifact`/`source`/`deploy_target`（`:27-29`）、载体前言——皆指同一在场非空文件；`bash -n server/deploy/apply-xiaozhi-overlay.sh` 通过；本包提醒配置渲染段（`REMINDER_CFG` + 铺 `reminder_schedule_lib.py`）并入。 |
+| 4 | `firmware/main/test/host_app/main/CMakeLists.txt` | 双方验收档**全留**（`schedule_reminder_b.acceptance.c` + `reminder_page.c` + `reminder_page.test.c` + `story_p3.acceptance.c` + `story_page.c`），`../../host_infra_smoke.acceptance.c` **保持末位**（包 0 boundary 齿「进程内最先跑」红线）。 |
+| 5 | `firmware/main/mcp_server.cc` / `firmware/main/CMakeLists.txt` | ort 自动合并干净。实测 case 4 收尾三行 `});` / `break;` / `}` **仅一份**（`mcp_server.cc:462-464`）⇒ 本包 `59a8561` 与 story-p3 `90204c2` 的重复修复未叠加（= 规则「弃重复保 main」）；RMD-A1 guard 齿在集成树实测 PASS，继续守该不变式。 |
+| 6 | `server/gateway/front/front_app.py` | 两侧 additive 接线都留（`from gateway import reminders as gw_reminders` + `from gateway import story as gw_story`）。`acked_ids` 的「含受理帧、非送达确认」语义钉行**另起独立提交 `747cb7a`**，未混进消解提交（architect 令）。 |
+| 7 | `docs/ADR.md` / `docs/ARCH-REVIEW-QUEUE.md` / `.planning/kidpal-mvp/progress.md` / `changes/INDEX.md` | EOF append **全留不重排**：ADR = main 的 ADR-001 + 本包 ADR-002/003（按编号升序，编号未动）；ARQ §1.2 = main 两行（story-p3）+ 本包四行 + 本附段新登记一行；`progress.md` 与 `changes/INDEX.md` 由 ort 自动合并干净。 |
+| 8 | `.claude/taskpackages/current/{taskpackage,verdict}.json` | 取**本包**（`changeId = 260829-schedule-reminder`、`verdict.phase = final` / `ok = true`）。属「最后写者赢」投影，在册 **ARQ-260907-merge-closeout-bookkeeping-gap** 的既定行为，本条不新增主张。**其副作用见 A.4 第 1 条（承重闸一度翻红）**。 |
+
+## A.3 集成树五组实测（全部本机实跑；**新基线数以本表为准**）
+
+| # | 面 | 命令（显式路径） | 实测结果 |
+|---|---|---|---|
+| 1 | **设备真编**（`firmware-build` 闸本机恒 `degraded:true`，不可当凭据） | `cd firmware && "C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe" c:/tmp/idf_run.py build`（先 `touch` `firmware/main/display/reminder_page.c` `firmware/main/mcp_server.cc` `firmware/main/display/story_page.c` 强制真编） | `Project build complete`；日志内 **`error:` 计数 0 / `warning:` 计数 0**；真编可见 `[1/12] … display/reminder_page.c.obj`、`[5/12] … display/story_page.c.obj`、`[6/12] … mcp_server.cc.obj`；`xiaozhi.bin binary size 0x2b8b30 bytes. Smallest app partition is 0x3f0000 bytes. 0x1374d0 bytes (31%) free.`（本包单独面为 `0x2b6e90` ⇒ 并 story_page 后 +0x1CA0 字节，余量比例仍 **31%**） |
+| 2 | **python 点名 + 全档** | `cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py`；同法 `acceptance/test_story_p3.acceptance.py`；再全档 | 本包 **35 passed / 5 skipped**（第三单 `a53a6ff` 补一齿 ⇒ 34→35）；story-p3 **20 passed / 1 skipped**；全档 **8 failed / 156 passed / 41 skipped**，8 条**逐条**= 既有红同名单（`test_smoke_e2e.acceptance.py` 7 条 + `test_voice_roundtrip_b.acceptance.py::test_a4_adherence_recheck_evidence_record` 1 条）⇒ **两包零新增红** |
+| 3 | **host ELF**（**必从 `firmware/main/test/host_app/` 目录跑**；仓库根会假绿一条） | 先 `wsl -d Ubuntu-24.04 -- bash espidf_wsl.sh build`（本工作树独立工程，不用 `-T main`）→ 再 `wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` | 重编 `[1/4]…[4/4] Done`（新入链 `story_page.c.o` + `story_p3.acceptance.c.o`）；**新基线 = 86 Tests / 3 Failures / 0 Ignored**（77 → 86 = story 8 齿 + 本包第三单 1 齿）；三条失败**逐条同前且仅前三**：`voice_roundtrip_b.acceptance.c:878`(VRT-A2/E2) / `device_ws_switch.acceptance.c:830`(WSA-A6) / `:663`(WSA-A4)；本包 **13 验收齿全 `:PASS`** + 5 自带单测齿全 `:PASS`；story 8 齿全 `:PASS` |
+| 4 | **闸复跑** | `node .claude/scripts/unit-run-check.mjs` / `acceptance-run-check.mjs` / `closeout-check.mjs`（**未传** `--update-index`）；另逐跑承重闸 | unit：`37 passed in 0.17s` **EXIT=0**；acceptance：`{"ok":true,"phase":"executor-skipped","reason":"live-only on-target acceptance（@pytest.mark.live，手动触发；对偶固件 on-target 结构闸）"}` **EXIT=0**；closeout：`ok:true` + `requiredFiles:[docs-delta.md, review-packet.md]` + 两条 advisory（machine evidence advisory-only；loop-retro 6 pending + 2 waiting = 8 ≥ 3，发起责任=主线程）+ `indexProjection:"skipped-read-only"` **EXIT=0**；`taskpackage-required` / `contract-lint` / `acceptance-coverage`（RMD-A1..A8） / `mutation-check`（37 条） / `docs-sync` / `security` / `firmware-build`（仍 `degraded:true`，由本表第 1 行取代）逐闸 EXIT=0 |
+| 5 | **carrier 齿双向验证（并集为正解的硬证）** | 点名两包 + 前序包 carrier 相关齿 | **7 齿全绿**：本包旧齿 `test_a8_prompt_carrier_v3_landed_and_wired` + 新齿 `test_a8_prompt_carrier_v3_reminder_section_anchors`（第三单所加、内容驱动选节）= 2 passed；story 版本无关齿 `test_story_p3.acceptance.py::test_prompt_carrier_v3_landed_and_wired` = 1 passed；char-stroke CHR-E3 与 schedule-p2 carrier 相关 = 4 passed。**反向对照**（第三单 `a53a6ff` §8.2 表载）：同一旧齿对 main-only 版本 **PASS = 假绿**、对新齿 **FAIL** ⇒ 本附段拒单边、取并集的直接依据 |
+
+## A.4 消解过程实测的三处陷阱（已处置；治理吸收见新登 ARQ）
+
+1. **`git checkout --ours` 把 `current/` 投影物化成 CRLF ⇒ 承重闸翻红**：`git checkout --ours -- .claude/taskpackages/current/taskpackage.json` 在 `core.autocrlf=true` 下写出 CRLF（实测 433 个 CRLF、46051 字节 vs canonical 45618，差恰 433 行尾），而 `taskpackage-required-check.mjs:143` 以 **sha256 逐字节**比对 canonical ↔ current ⇒ 该承重闸由 `ok:true` 翻 **`ok:false /「canonical 与 current/ 指针副本不一致」`（EXIT=1）**。处置 = 按 canonical 字节重写 `current/taskpackage.json` 并把 `current/verdict.json` 归一 LF（投影本应等价 canonical，非内容改动），复跑 `ok:true / EXIT=0`。**merge-driver 的 T3 投影特判走同一 `git checkout --theirs` 机制（`:853`），同理会踩**——其现有自检夹具未覆盖行尾维度。
+2. **`.codebase-memory/` 两件先挡后放**：首次 merge 被 `error: Your local changes to the following files would be overwritten by merge: .codebase-memory/graph.db.zst` 中止；处置 = 复刻 merge-driver 内部 helper 的三拍（`--no-skip-worktree` → `git checkout HEAD --` → 复置 `--skip-worktree`），该 helper（`ensureGraphCacheSynced`）**未导出**，人工/integrator 消解只能自行复刻。
+3. **消解后必须重跑「对端」冻结件，否则只见半边绿**：只跑本包点名命令会得到「全绿」错觉——story 侧 carrier 齿是从 `PROMPT_SRC` 解析版本号再断言声明面的版本无关形状，对 `provider.config.yaml` 的注释改写敏感。处置 = 集成树上两包点名 + 全档一起跑（A.3 第 2 行），以「双方零新增红」为终态判据。
+
+## A.5 本附段后的新提交与合并门须知（更新版）
+
+| 提交 | 内容 |
+|---|---|
+| `51390c1` | human 两条裁定入册（pod-events append `dc9a5c15` / `ec77d40a`）+ planner 的 `changes/dev/260829-schedule-reminder/pod-retro.md` 代提（非 integrator 撰写，随提交入分支） |
+| `44ded5c` | **Merge main（`c85e5ca`，含 story-p3 `8f51a95`）into 本分支**——A.2 十条消解；`acked_ids` docstring 未混入 |
+| `747cb7a` | `pump_client_to_upstream` docstring 钉「acked_ids 含受理帧、非送达确认」语义行（独立小提交；零行为改动，前后同为 35P/5S 与 8F/156P/41S） |
+| 本附段所在提交 | review-packet 附段 A + 新登 `ARQ-260908-pod-integration-no-legitimate-executor` + `current/` 投影 LF 归一（A.4 第 1 条处置） |
+
+**合并门须知（更新版，取代首版「合并门须知」的待办语义）**：
+1. 首版那条 BLOCKING（`.v3` 槽位 add/add）**已在本分支按并集消解完毕**，不再是待办；两版扩展段同居一文件，双方 carrier 齿在集成树实测全绿（A.3 第 5 行）。
+2. 本分支已含 main 全部祖先（tip `c85e5ca`）⇒ merge-driver Step 3 rebase = no-op、Step 5 `--no-ff` 直接可过；planner 侧仍须跑 supervisor 机械闸 + 前置升级闸，**integrator 未合并、未 push**。
+3. `59a8561` 的三行修复在集成树上与 main 的同一修复已自然合一（无双份，实测 `mcp_server.cc:462-464` 唯一），RMD-A1 guard 齿在集成树 PASS。
+4. 首版登记的其余残余**全部仍然有效**（数字以本附段为准）：设备构建证据 = A.3 第 1 行真编（闸仍恒 `degraded:true`）；live 5 齿未跑 + 9b 真机观感；`acked_ids` 已加语义钉行但**行为未变**（消费方仍不得用它当送达确认）；V20 措辞口径差走 `ec77d40a` 治理面热修、与本包合并互不阻塞——**该改法目前只在 pod-events，`docs/CONTRACT-DECISION-QUEUE.md` 尚无对应行**（此即新 ARQ 面 B 的实况证据）；4096 字节上界与「槽不存 `view_json`」取舍；`MAX_TRACKED` 单点不敏感 = 正当冗余；闸内裸 pytest 执行器与 `.acceptance.py` 命名制的脆弱性。
