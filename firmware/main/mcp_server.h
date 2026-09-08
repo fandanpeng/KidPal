@@ -325,6 +325,10 @@ public:
     void AddUserOnlyTool(const std::string& name, const std::string& description, const PropertyList& properties, std::function<ReturnValue(const PropertyList&)> callback);
     void ParseMessage(const cJSON* json);
     void ParseMessage(const std::string& message);
+    /* 提醒队列驱动（契约 §三 / 包 260829-schedule-reminder）：public 因为驱动源既包括
+     * kidpal/alert 工具回调延后的 Schedule，也包括 LVGL drain timer 回调（关掉当前弹窗
+     * 后自动弹下一个 / V18 事件已过时的滞留弹窗顶替）。 */
+    void RaiseReminderQueue();
 
 private:
     McpServer();
@@ -337,6 +341,17 @@ private:
 
     void GetToolsList(int id, const std::string& cursor, bool list_user_only_tools);
     void DoToolCall(int id, const std::string& tool_name, const cJSON* tool_arguments);
+
+    /* ---- kidpal/alert (契约 §三 提醒推送 / 包 260829-schedule-reminder) ----------
+     * 工具回调签名只带 PropertyList、拿不到本次 JSON-RPC 传输 id，而「渲染完成才回执」
+     * 必须用同一个数字 id 独立回复（§三 渲染即确认、即出队）。故 DoToolCall 在调用工具
+     * 前把 id 记进 pending_call_id_（同任务同步读，无竞态），回调经此取用。其它工具的
+     * 同步自动回复形状与 ack 结构零改动。 */
+    ReturnValue HandleAlertCall(const PropertyList& arguments);
+    /* 渲染回执唯一出口：先过 kidpal_reminder_may_emit_receipt 判定门，再 ReplyResult */
+    void EmitRenderReceipt(const std::string& business_id);
+
+    int pending_call_id_ = -1;
 
     std::vector<McpTool*> tools_;
 };

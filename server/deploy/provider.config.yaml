@@ -22,11 +22,19 @@ gateway:
 # OpenClaw brain system prompt (VRT-E4 / VRT-A7). 本文件是 OpenClaw 大脑的
 # system prompt 唯一生成来源，随 overlay 上 ECS 并作为 live 遵循度/问答探针
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
-# apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2 切换即换。
+# apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2/.v3 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v3.md"   # 当前版本化文件 (260829-story-p3; v1/v2 不改可 diff)
+  artifact: "openclaw-system-prompt.v3.md"   # 当前版本化文件 (并集版: 260829-story-p3 故事 producer 扩展 + 260829-schedule-reminder 包 7 提醒备注解析约定; 历史 v1/v2 不改可 diff)
   source: "../deploy/openclaw-system-prompt.v3.md"
   deploy_target: "openclaw-system-prompt.v3.md"   # ECS data/ 下的渲染目标名
+  # 演进: openclaw-system-prompt.v1.md (基座) → openclaw-system-prompt.v2.md (+课表 producer
+  # + char C1) → openclaw-system-prompt.v3.md (+故事 producer 扩展, 并入本包包 7 提醒备注解析
+  # 约定成并集版——两并行包曾各写一份 v3 抢同槽位，按 human 授权 pod-events dc9a5c15 取并集；
+  # 槽位预约规则见 ARQ-260908-versioned-artifact-slot-collision)。历史版本文件一律不改。
+  # 三处接线（本声明面 / apply-xiaozhi-overlay.sh 渲染面 / OPENCLAW_SYSTEM_PROMPT_CARRIER
+  # 载体前言）同批指 v3 且指向同一在场非空文件；两面一致性由 ADR-001 与 story P3/CHR-E3
+  # 版本无关守卫机检，包 7 提醒段内容由 test_a8_prompt_carrier_v3_reminder_section_anchors 钉。
+
   # 结构: 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6) + F4 三句纪律
   # (三句以内/口语化/儿童化 8-12 岁, v2 收紧为显式句数上限计数) + 7 view 白名单
   # + 增量扩展区 (包 4 char / 包 7 提醒) + 课表 producer 扩展 (决策 26 分组 + QQ 录入
@@ -34,6 +42,18 @@ system_prompt:
   # 复述 strokes/medians 坐标, 完整 D3 由查字工具在回复出口自动拼装) + 故事 producer
   # 扩展 (v3: 判「我要讲故事」→ control/start_recording / 停录整段转写起标题出 story_text
   # 三键无生字 / story_list.total 全集计数 / V31 四条回退判断 / 归档落盘归云侧网关)。
+
+# 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2 / 决策 20): 时刻的家在**服务端**，
+# 纯配置不进契约 B1、不进固件（改时刻即时生效、永不烧板子）。消费方 = OpenClaw cron 载荷
+# 脚本 server/deploy/openclaw-patch/reminder_schedule_lib.py::load_ladder_config；渲染面 =
+# apply-xiaozhi-overlay.sh（与 prompt 同批上 ECS）；缺文件回退脚本内 DEFAULT_LADDER_CONFIG。
+reminder_config:
+  artifact: "openclaw-reminder.config.yaml"
+  source: "../deploy/openclaw-reminder.config.yaml"
+  ladder: {night_at: "20:30", morning_at: "07:45", before_min: 15}
+  handoff: "alerts/pending.json"      # 同机交接（env 可配 KIDPAL_ALERTS_DIR/KIDPAL_PENDING_JSON）
+  consumer: "openclaw-patch/reminder_schedule_lib.py"   # 三档算术 + 幂等 id + 原子写
+  deliverer: "gateway/reminders.py"                     # 每分钟轮询 + 重试到确认 60s×3 + 静默作废
 
 providers:
   llm:

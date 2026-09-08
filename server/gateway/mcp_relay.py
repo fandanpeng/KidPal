@@ -17,8 +17,10 @@ Aligns with contract §四 mcp 工具调用 + §三 (提醒 JSON-RPC 回执 = �
 
 from __future__ import annotations
 
+import importlib.util
 import json  # noqa: F401
 import logging
+import os
 import time
 import uuid
 
@@ -30,16 +32,50 @@ JSONRPC = "2.0"
 METHOD_TOOLS_CALL = "tools/call"
 
 
+_reminders_cache = None
+
+
+def _reminders_module():
+    """懒取提醒投递模块（gateway/reminders.py）—— 信封形状与传输 id 算法的单一事实源。
+
+    先按包导入（生产：front 以 server/ 为工作目录跑 uvicorn），退回按本文件同级路径加载，
+    这样本模块被离线按路径单独导入时（GWA-A6 的装载方式）也不依赖包上下文；两条路加载的
+    都是同一份 reminders.py，不分叉第二套算法。加载不了返回 None（调用方退回通用信封）。
+    """
+    global _reminders_cache
+    if _reminders_cache is not None:
+        return _reminders_cache
+    try:
+        from gateway import reminders as rm
+        _reminders_cache = rm
+        return rm
+    except ImportError:
+        pass
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reminders.py")
+    if not os.path.isfile(path):
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("kidpal_gateway_reminders", path)
+        if spec is None or spec.loader is None:
+            return None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception:  # noqa: BLE001 — 可选依赖缺失时退回通用信封，绝不让 relay 层崩
+        return None
+    _reminders_cache = module
+    return module
+
+
 def corr_id() -> str:
     """A Correlation-Id for the request path (K6 structured logging)."""
     return uuid.uuid4().hex
 
 
-# Device wire fact (firmware mcp_server.cc:473): the JSON-RPC `id` MUST be a NUMBER
-# (cJSON_IsNumber) — uuid hex strings are rejected "Invalid id".  Display relay ids are
-# numeric (ms-timestamp + monotonic tag).  (alert_tool_call keeps its own deterministic
-# reminder-id override below — the numeric-ification of that id belongs to the reminder-side
-# package, NOT pinned in this transport round.)
+# Device wire fact (firmware mcp_server.cc ParseMessage / cJSON_IsNumber): the JSON-RPC
+# `id` MUST be a NUMBER — uuid/hex strings are rejected "Invalid id".  Display relay ids are
+# numeric (ms-timestamp + monotonic tag).  alert_tool_call delegates to reminders'
+# build_alert_envelope (包 260829-schedule-reminder 已落地该数字化: 确定性派生 +
+# arguments.id 保留 §三 字符串业务 id)。
 _display_id_seq = 0
 
 
@@ -68,15 +104,18 @@ def display_tool_call(payload) -> dict:
 def alert_tool_call(payload) -> dict:
     """Relay a §三 提醒条目 to the board via kidpal/alert tools/call.
 
-    Reuses the reminder's deterministic `id` (contract §三: id = 确定性散列, 跨重推
-    不变) as the JSON-RPC id so the device receipt maps back to the same reminder for
-    iddempotent dedupe + 渲染回执出队. Falls back to a fresh uuid if payload carries none.
+    本包的传输面收口（上游明文把「alert 传输 id 数字化」划归包 7）：§三 业务幂等 id 是
+    **字符串**、必须留在 arguments.id 供设备易失去重，而设备 mcp 层只认**数字** JSON-RPC
+    id（mcp_server.cc ParseMessage 的 cJSON_IsNumber 判据，字符串 id 被整条按 Invalid id
+    拒收 —— g-relay-fix 二轮冒烟实证过的断点）。信封形状与派生算法的单一事实源 =
+    gateway/reminders.build_alert_envelope（同机同源，不分叉第二套）；reminders 不可达的
+    极端离线装载场合退回通用 _tool_call（display 路径与 relay_ack 冻结语义一律不动）。
     """
-    rid = (payload or {}).get("id")
-    call = _tool_call(TOOL_ALERT, payload)
-    if rid:
-        call["id"] = rid
-    return call
+    reminders = _reminders_module()
+    entry = dict(payload) if isinstance(payload, dict) else {}
+    if reminders is not None:
+        return reminders.build_alert_envelope(entry)
+    return _tool_call(TOOL_ALERT, entry)
 
 
 def relay_ack(jsonrpc_message) -> tuple[bool, object]:

@@ -50,6 +50,15 @@ set(HOST_ACCEPTANCE_SRCS
     # 符号覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
     "../../story_p3.acceptance.c"
     "../../../display/story_page.c"
+    # 包 260829-schedule-reminder (提醒弹窗消费面)：冻结验收 + 被测纯 C 实现
+    # (reminder_page 强符号覆盖 weak 哨兵的关键——不编入则冻结离线契约仍红;
+    #  相对 host_app/main 为 ../../../; 提示音缝在本模块内是弱默认, 设备侧强定义在
+    #  mcp_server.cc, host 不参与)。
+    "../../schedule_reminder_b.acceptance.c"
+    "../../../display/reminder_page.c"
+    # 包 260829-schedule-reminder 自带单测（非冻结件）：fire_at 日历/偏移边界、UTF-8 码点
+    # 安全截断、known-id 集满淘汰保护驻留/排队项、满队列 FIFO 与 V18 顶替顺序。
+    "../../reminder_page.test.c"
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )

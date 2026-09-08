@@ -127,3 +127,83 @@ grep -c "KidPal C1" $TARGET || echo "marker cleared (回滚成功)"
   ECS 不回写 repo（只应用制品）。所有 dist 侧文件改动以 `.c1.bak` 留档。
 - 生产引擎是流式：缺流式出口 = 真机查字只读最小块 → 设备侧 `kidpal_char_data_validate`
   防御降级（友好提示、不盲渲染、不崩），不会崩，但查字不可用 —— 所以 runbook 强调双出口。
+---
+
+## 8. 包 7 提醒三档 cron（260829-schedule-reminder，本包只落载体；真跑属 live 相位人工批准）
+
+> 混合分层（裁定一 eventId acaef302-9ddc-4508-b5d3-94023e050f43）：**时刻算术 + 幂等 id +
+> pending.json 原子写 = 确定性脚本** `reminder_schedule_lib.py`（本目录，`warm_char_cache.py`
+> 同形态先例）由 cron 的 `--command` 载荷执行；**备注里哪部分算要带的 + 给孩子的文案 =
+> OpenClaw agent 回合**按 `server/deploy/openclaw-system-prompt.v3.md` 的「包 7 提醒备注解析
+> 约定」产出语义中间产物，供脚本消费。脚本对缺/坏语义输入降级继续排程（机械兜底文案）。
+
+### 8.1 前置（planner 2026-09-08 只读实测已核）
+
+```bash
+openclaw cron list | head -40      # 原生 cron 在跑：4 条 status=ok，含 class-reminder-0529 先例
+python3 -c "import gateway.schedule" 2>/dev/null || echo "需要 KIDPAL_SERVER_DIR 指向 /opt/kidpal/front"
+ls /opt/kidpal/front/gateway/schedule.py   # 包 6 B1 解析器（提醒只消费、不改）
+ls /root/.openclaw/workspace/kidpal/schedule.md  # 真身 549B：只有「每周固定课表」、备注全空
+```
+交接目录当前**不存在**（planner 实测），故 `read_pending` 缺文件安静返回空是**正常态**，
+首帧由 cron 写入后才有条目。路径一律 env 可配，禁止硬编 `/root/.openclaw/**`。
+
+### 8.2 铺脚本 + 配置（幂等，repo → ECS）
+
+```bash
+cd server/deploy && bash apply-xiaozhi-overlay.sh   # 渲染 v3 prompt + openclaw-reminder.config.yaml
+# 脚本与配置的目标目录（与 pending.json 同机）：
+export KIDPAL_OPENCLAW_SCRIPT_DIR=/opt/kidpal/openclaw-patch
+export KIDPAL_ALERTS_DIR=/opt/kidpal/alerts         # cron 写、front 读的交接目录（同机）
+mkdir -p "$KIDPAL_ALERTS_DIR"
+```
+
+### 8.3 注册 cron（定期重算 + 录入即时触发）
+
+```bash
+# 定期：每 15 分钟重算三档（已过去的档位由脚本自动跳过，幂等 id 复用不重生成）
+openclaw cron add \
+  --name kidpal-reminder-plan \
+  --every 15m \
+  --command "KIDPAL_SERVER_DIR=/opt/kidpal/front \
+KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md \
+KIDPAL_ALERTS_DIR=/opt/kidpal/alerts \
+KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json \
+python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+# 即时：家长 QQ 录入 → OpenClaw 自改写 schedule.md 后，同一 --command 载荷再跑一次
+#   （cron 支持 --command 载荷已在 class-reminder-0529 先例实测；语义产物由 agent 回合写
+#    semantic.json，脚本按 entry_key 挂载，缺文件=机械兜底不丢提醒）
+openclaw cron list   # 期望新增一条，state.lastRunStatus=ok
+```
+
+### 8.4 前端投递侧（同机 uvicorn，无需额外进程）
+
+`server/gateway/front/front_app.py` 在首个已鉴权设备连接建立时起**每分钟轮询**（对齐整
+分钟），读 `KIDPAL_PENDING_JSON`（默认 `$KIDPAL_ALERTS_DIR/pending.json`）→ 机械校验 →
+到点经 mcp `kidpal/alert` 推设备腿 + 向引擎腿注入 `kidpal_speak`（裁定二：出音走引擎既有
+edge-tts + opus 下行链，front 不自建合成、不编码、不注入二进制帧）→ 等设备**渲染回执**，
+60 秒未收重推、单档 3 次上限、超出窗口静默作废不补发、不做重连即重推。
+
+```bash
+systemctl show -p Environment kidpal-front.service   # 需含 KIDPAL_ALERTS_DIR / KIDPAL_SERVER_DIR
+journalctl -u kidpal-front.service -o cat --since "-2 min" | grep -E "alert_poll|alert_deliver|alert_ack|alert_void"
+```
+
+### 8.5 live 验收（殿后人工批准相位，本 loop 不执行）
+
+```bash
+cd server && RUN_LIVE=1 python -m pytest -q --import-mode=importlib \
+  acceptance/test_schedule_reminder.acceptance.py -k live
+```
+五事实（L1 cron 真在册且真跑过 / L2 pending.json 真形状 / L3 真推到设备 / L4 真渲染回执
+出队 / L5 真大模型语义产物）落盘 `changes/dev/260829-schedule-reminder/`；证据内不得出现
+`Invalid id` / `Unknown message type` / 推送失败 / 排程失败 字样（probe ≠ exercise）。
+真实提醒音效与弹窗并发时序、屏上网点观感殿后 9b。
+
+### 8.6 回滚
+
+```bash
+openclaw cron remove --name kidpal-reminder-plan
+rm -f /opt/kidpal/alerts/pending.json          # 投递侧下一分钟自然读空（缺文件安静）
+# 三档配置与 prompt 回 v2：apply-xiaozhi-overlay.sh 里 PROMPT_SRC 改回 v2 一行即可
+```

@@ -86,10 +86,16 @@ ls -la "$OVERLAY"
 
 # OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-# 260829-schedule-p2 + 260829-char-stroke 起 overlay 渲染源 = v2；260829-story-p3 起切 v3
-# (v2 基座逐字并入 v3 + 故事 producer 扩展：我要讲故事→start_recording / 停录整段转写起
-# 标题出 story_text / V31 四条回退判断 / 归档归云侧一回合不读写文件；v1/v2 不改可 diff,
-# 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER)。
+# 演进史 (历史版本文件一律不改、可 diff; 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER):
+#   v1 = 260829-voice-roundtrip 基座 (两部分结构 + 7 view 白名单 + 三句纪律 + 硬约束)
+#   v2 = openclaw-system-prompt.v2.md (260829-schedule-p2 + 260829-char-stroke: 课表 producer
+#        扩展 + char C1 最小块/出口拼装)
+#   v3 = 当前渲染源，**两包并集版** (260829-story-p3 故事 producer 扩展：我要讲故事→
+#        start_recording / 停录整段转写起标题出 story_text / V31 四条回退判断 / 归档归云侧
+#        一回合不读写文件；260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定：备注列
+#        携带物判定 + entry_key 对齐 + 三档范围 + cron 回合与对话回合职责分界)。
+#        并集成因 = 两并行包各写一份 .v3 抢同槽位 (add/add)，按 human 授权 pod-events
+#        dc9a5c15 取并集；槽位预约规则见 ARQ-260908-versioned-artifact-slot-collision。
 PROMPT_SRC="$HERE/openclaw-system-prompt.v3.md"
 PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v3.md"
 if [ -f "$PROMPT_SRC" ]; then
@@ -110,4 +116,27 @@ if [ -f "$PROMPT_SRC" ]; then
   fi
 else
   echo "WARN: openclaw-system-prompt.v3.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+fi
+
+# 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,
+# 随本 overlay 一起上 ECS，由 OpenClaw cron 载荷脚本
+# (openclaw-patch/reminder_schedule_lib.py::load_ladder_config) 读取。改时刻即时生效、
+# 永不需烧板子（固件侧零引用 = C 孪生档 RMD-A7 齿负向钉死；不进契约 B1）。
+# 缺文件不停摆（脚本回退 DEFAULT_LADDER_CONFIG），但「落盘 ≠ 孤儿」——本行渲染即接线。
+REMINDER_CFG="$HERE/openclaw-reminder.config.yaml"
+if [ -f "$REMINDER_CFG" ]; then
+  cp "$REMINDER_CFG" "$DATA_DIR/openclaw-reminder.config.yaml"
+  echo "rendered openclaw-reminder.config.yaml -> $DATA_DIR/"
+  # 提醒排程脚本随 openclaw-patch 一起铺到 OpenClaw 侧可读目录，供 cron --command 调用。
+  # 路径全部 env 可配（KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON / KIDPAL_SEMANTIC_JSON /
+  # KIDPAL_REMINDER_CONFIG / KIDPAL_SERVER_DIR）—— 禁止硬编 /root/.openclaw/**。
+  for script in reminder_schedule_lib.py; do
+    if [ -f "$HERE/openclaw-patch/$script" ]; then
+      mkdir -p "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}"
+      cp "$HERE/openclaw-patch/$script" "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/$script"
+      echo "staged $script -> ${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/"
+    fi
+  done
+else
+  echo "WARN: openclaw-reminder.config.yaml not found at $REMINDER_CFG — 三档时刻没有渲染面 (RMD-A2)" >&2
 fi

@@ -56,6 +56,14 @@ from core.kidpal_display_strip import DisplayFenceStateMachine  # noqa: E402
 # transport; the front is the display_schema validation / kidpal/display relay authority).
 KIDPAL_DISPLAY_BLOCKS = "kidpal_display_blocks"
 
+# KidPal 提醒语音注入指令类型 (TaskPackage 260829-schedule-reminder / 裁定二
+# eventId 09359e74-005b-45bb-9535-69e19c14ee04): front 到点向引擎腿注入
+# {"type":"kidpal_speak","text":<§三 speech 原文>}，由本文件认领并转调引擎**既有**出音
+# 入口 core/handle/intentHandler.py::speak_txt(conn, text) —— 复用现成 edge-tts provider
+# 与已 live 实证的下行 opus 音频链出音。front 侧不自建合成、不做 mp3→opus 编码、不注入
+# 二进制音频帧（设备腿 send_bytes 恒空），出音全部走这条既有链。
+KIDPAL_SPEAK_TYPE = "kidpal_speak"
+
 
 TAG = __name__
 
@@ -352,6 +360,35 @@ class ConnectionHandler:
 
             asyncio.create_task(check_bind_device(self))
 
+    async def _kidpal_try_speak(self, message) -> bool:
+        """认领 front 注入的提醒语音指令（裁定二：借引擎既有音频链出音）。
+
+        命中 {"type":"kidpal_speak","text":…} -> 转调既有入口
+        core/handle/intentHandler.py::speak_txt(conn, text) 出音并返回 True（本条已消费：
+        它是**引擎内部指令**，绝不能再当成孩子说的话进 ASR/LLM）。空文案 = 已认领但不
+        播报（提醒的降级形态：弹窗 + 提示音仍由设备侧必达）。出音失败只记日志不抛：
+        提醒投递不得被语音拖住（V20「弹窗+提示音必达，语音为可选增强」）。
+        """
+        try:
+            obj = json.loads(message)
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(obj, dict) or obj.get("type") != KIDPAL_SPEAK_TYPE:
+            return False
+        text = obj.get("text")
+        if not isinstance(text, str) or not text.strip():
+            self.logger.bind(tag=TAG).info(
+                "kidpal_speak 无文案，跳过播报（降级：仅弹窗+提示音）")
+            return True
+        try:
+            from core.handle.intentHandler import speak_txt
+
+            await speak_txt(self, text.strip())
+        except Exception as speak_error:  # noqa: BLE001 — 出音失败不影响提醒送达
+            self.logger.bind(tag=TAG).error(
+                f"kidpal_speak 播报注入失败: {speak_error} (提醒降级：弹窗+提示音仍必达)")
+        return True
+
     async def _route_message(self, message):
         """消息路由"""
         # 检查是否已经获取到真实的绑定状态
@@ -373,6 +410,9 @@ class ConnectionHandler:
         # 不需要绑定，继续处理消息
 
         if isinstance(message, str):
+            # 提醒语音内部指令先被认领（裁定二），其余文本仍走原生 handleTextMessage
+            if await self._kidpal_try_speak(message):
+                return
             await handleTextMessage(self, message)
         elif isinstance(message, bytes):
             if self.vad is None or self.asr is None:

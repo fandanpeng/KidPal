@@ -23,6 +23,9 @@
 #include "display/story_page.h"  /* 故事 P3 (包 260829-story-p3): 列表/阅读/录音/盖章消费面 */
 #include "display/char_stroke.h"   /* 查生字 P4 (包 260829-char-stroke): 缺字段防御降级门 */
 #include "display/char_page.h"     /* 查生字 P4 LVGL 页 (设备侧) */
+#include "display/reminder_page.h" /* 提醒弹窗消费面 (包 260829-schedule-reminder):
+                                    * kidpal/alert 载荷解析 + 四态状态机 + 富弹窗渲染 */
+#include "assets/lang_config.h"    /* Lang::Sounds::OGG_POPUP —— 三件套的提示音音源 */
 
 #define TAG "MCP"
 
@@ -64,6 +67,222 @@ McpServer::~McpServer() {
     }
     tools_.clear();
 }
+
+/* -------------------------------------------------------------------------- *
+ * kidpal/alert 设备接线 (TaskPackage 260829-schedule-reminder, 契约 §三 提醒推送 /
+ * §四 mcp 工具调用, spec S-F1.4, 决策 20·23·24·27)。
+ *
+ * 四态解耦在设备侧的落点（RMD-A6「接收不回执、渲染完成才回执」）：
+ *   ① 工具回调只做「解析 -> 入易失 known-id 集 + 排队」，并回一个**明确不表示送达**的
+ *      accepted 结果（"ack": false）—— DoToolCall 的同步自动回复形状因此零改动；
+ *   ② 渲染完成时才经 McpServer::ReplyResult(rpc_id, …) 独立发出携带 "ack": true 的
+ *      JSON-RPC 回执（= 契约 §三「渲染即确认、即出队」），发出前必过
+ *      kidpal_reminder_may_emit_receipt 判定门；
+ *   ③ 同 id 重推两态分处：排队未渲染 -> 幂等屏蔽（不入队、不回执）；已渲染驻留 ->
+ *      当场补回回执（回执在途丢失时网关重推是唯一收敛路径，重复弹窗必须根除）。
+ * 全部状态变更都发生在主循环任务（Schedule 回调 + LVGL timer），彼此无竞态。
+ * ------------------------------------------------------------------------ */
+
+/* 三件套的提示音一半：覆盖 reminder_page.c 的弱默认缝（host runner 无声源 -> 静默）。
+ * 音源 = 小智既有弹窗音效（先例 application.cc: audio_service_.PlaySound(OGG_POPUP)）。 */
+void kidpal_reminder_play_popup_tone(void) {
+    Application::GetInstance().PlaySound(Lang::Sounds::OGG_POPUP);
+}
+
+namespace {
+
+/* 业务 id -> JSON-RPC 传输数字 id 的关联表：定长环形、零增长（设备侧有界性同 KRM_*）。
+ * 渲染回执必须带**同一数字 id**（§三 业务 id 是字符串、设备 mcp 层只认数字 id：
+ * ParseMessage 的 cJSON_IsNumber 判据），而排队项在稍后才弹出、届时手上没有那次调用
+ * 的 id —— 故到达时记一次。回执同时携带 reminder_id，即使表被冲掉也能按业务 id 归位
+ * （网关 consume_receipts 数字 id 与业务 id 都收）。 */
+constexpr int kAlertTagCap = 16;
+struct AlertTag {
+    char id[KRM_CAP_ID];
+    int rpc_id;
+};
+AlertTag g_alert_tags[kAlertTagCap];
+int g_alert_tag_next = 0;
+lv_timer_t *g_alert_drain_timer = nullptr;
+
+void AlertTagRemember(const std::string& business_id, int rpc_id) {
+    if (rpc_id <= 0) {
+        return; /* 无有效传输 id 可记（回执仍有 reminder_id 可归位） */
+    }
+    for (auto& tag : g_alert_tags) {
+        if (tag.rpc_id > 0 && std::string(tag.id) == business_id) {
+            tag.rpc_id = rpc_id; /* 重推：原地刷新为最新在途 id */
+            return;
+        }
+    }
+    auto& slot = g_alert_tags[g_alert_tag_next];
+    g_alert_tag_next = (g_alert_tag_next + 1) % kAlertTagCap;
+    size_t n = business_id.size();
+    if (n >= sizeof(slot.id)) {
+        n = sizeof(slot.id) - 1; /* 业务 id 上界 40 (§三 与设备 kidpal_alert_t.id 同界) */
+    }
+    memcpy(slot.id, business_id.data(), n);
+    slot.id[n] = '\0';
+    slot.rpc_id = rpc_id;
+}
+
+int AlertTagLookup(const std::string& business_id) {
+    for (const auto& tag : g_alert_tags) {
+        if (tag.rpc_id > 0 && business_id == tag.id) {
+            return tag.rpc_id;
+        }
+    }
+    return -1;
+}
+
+/* 设备当前整分钟数（V18 顶替判定的时间基）。RTC 未同步时 ~0 -> 事件时刻视为未到，
+ * 队列只由「弹窗关闭/新提醒到达」驱动（无超时驻留本就是安全侧降级）。 */
+long long AlertNowMinutes() {
+    return static_cast<long long>(::time(nullptr)) / 60;
+}
+
+void AlertDrainTimerCb(lv_timer_t* timer) {
+    (void)timer;
+    /* 关掉当前弹窗后自动弹下一个（排队逐个弹）+ V18 事件已过时的滞留弹窗顶替。
+     * 只做 raise 判定，不含任何弹窗超时（驻留到按键的语义不变）。 */
+    McpServer::GetInstance().RaiseReminderQueue();
+}
+
+/* 把 kidpal/alert 的五个 string 属性重组成 arguments JSON 串，交回冻结契约解析器
+ * kidpal_alert_parse 做**单源**校验：PropertyList 层只保证类型，不保证 id/title 非空
+ * 与 fire_at 可解析（畸形载荷必须按 §三 显式降级而非盲投递）。 */
+std::string AlertArgsJson(const PropertyList& arguments) {
+    cJSON* root = cJSON_CreateObject();
+    if (root == nullptr) {
+        return std::string();
+    }
+    cJSON_AddItemToObject(root, "id",
+        cJSON_CreateString(arguments["id"].value<std::string>().c_str()));
+    cJSON_AddItemToObject(root, "fire_at",
+        cJSON_CreateString(arguments["fire_at"].value<std::string>().c_str()));
+    cJSON_AddItemToObject(root, "title",
+        cJSON_CreateString(arguments["title"].value<std::string>().c_str()));
+    cJSON_AddItemToObject(root, "speech",
+        cJSON_CreateString(arguments["speech"].value<std::string>().c_str()));
+    cJSON_AddItemToObject(root, "view",
+        cJSON_CreateString(arguments["view"].value<std::string>().c_str()));
+    char* dumped = cJSON_PrintUnformatted(root);
+    std::string out = (dumped != nullptr) ? std::string(dumped) : std::string();
+    if (dumped != nullptr) {
+        cJSON_free(dumped);
+    }
+    cJSON_Delete(root);
+    return out;
+}
+
+} // namespace
+
+ReturnValue McpServer::HandleAlertCall(const PropertyList& arguments) {
+    kidpal_reminder_t* state = kidpal_reminder_default();
+    kidpal_alert_t alert;
+    cJSON* ack = cJSON_CreateObject();
+    std::string args_json = AlertArgsJson(arguments);
+
+    if (kidpal_alert_parse(args_json.c_str(), &alert) != 0) {
+        /* 降级：畸形 / 缺 id / 缺 title / fire_at 不可解析 -> 不入队、不盲渲染 (V27) */
+        cJSON_AddStringToObject(ack, "state", "rejected");
+        cJSON_AddBoolToObject(ack, "degrade", true);
+        cJSON_AddBoolToObject(ack, "ack", false);
+        ESP_LOGW(TAG, "alert_dispatch corr_id=unparsed state=rejected degrade=true queue=0");
+        return ack;
+    }
+
+    std::string business_id = alert.id;
+    AlertTagRemember(business_id, pending_call_id_);
+    int landed = kidpal_reminder_receive(state, &alert);
+
+    /* 本次工具回复只报「已受理」，绝不代表送达（"ack": false）——送达确认走渲染回执 */
+    cJSON_AddStringToObject(ack, "state",
+        landed == KRM_STATE_QUEUED ? "queued" : (landed == KRM_STATE_RENDERED ? "residency_rearmed" : "deduped"));
+    cJSON_AddStringToObject(ack, "reminder_id", business_id.c_str());
+    cJSON_AddBoolToObject(ack, "ack", false);
+    cJSON_AddNumberToObject(ack, "queue", kidpal_reminder_queue_count(state));
+    cJSON_AddNumberToObject(ack, "known", kidpal_reminder_known_count(state));
+    ESP_LOGI(TAG, "alert_dispatch corr_id=%s state=%d queue=%d known=%d degrade=false",
+             business_id.c_str(), landed, kidpal_reminder_queue_count(state),
+             kidpal_reminder_known_count(state));
+
+    if (landed == KRM_STATE_RENDERED) {
+        /* 重推命中已渲染驻留弹窗 -> 立即补回回执（不再弹窗、不再入队） */
+        EmitRenderReceipt(business_id);
+    }
+
+    /* 弹窗真画在 LVGL 主线程下一个轮次（渲染完成才回执；排队时若有弹窗驻留则不叠屏） */
+    Application::GetInstance().Schedule([this]() {
+        RaiseReminderQueue();
+    });
+    return ack;
+}
+
+void McpServer::RaiseReminderQueue() {
+    kidpal_reminder_t* state = kidpal_reminder_default();
+    kidpal_alert_t shown;
+
+    int raised = kidpal_reminder_raise_next(state, AlertNowMinutes());
+    if (raised <= 0) {
+        return; /* 无可弹 / 驻留未渲染或事件时刻未到 -> 不替换、不叠屏 */
+    }
+    if (kidpal_reminder_shown_alert(state, &shown) != 1) {
+        return;
+    }
+    if (kidpal_reminder_page_render(&shown) != 1) {
+        /* 渲染未成 -> 不发回执，交由网关 60s 重推收敛（不假装送达） */
+        ESP_LOGW(TAG, "alert_render corr_id=%s drawn=false degrade=true", shown.id);
+        return;
+    }
+    if (g_alert_drain_timer == nullptr) {
+        /* 首次有提醒到达才建驱动 timer（1s 轮询 raise 判定；无常驻定时器开销） */
+        g_alert_drain_timer = lv_timer_create(AlertDrainTimerCb, 1000, nullptr);
+    }
+    ESP_LOGI(TAG, "alert_render corr_id=%s raised=%d actions=%d tone=ogg_popup speak_leg=engine",
+             shown.id, raised, kidpal_reminder_render_actions(&shown));
+    /* 语音一半不在设备侧：服务端到点向引擎腿注入 kidpal_speak，借引擎既有
+     * edge-tts + opus 下行链出音（裁定二）；设备只画「小伴在说」形态并出提示音。 */
+    EmitRenderReceipt(std::string(shown.id));
+}
+
+void McpServer::EmitRenderReceipt(const std::string& business_id) {
+    kidpal_reminder_t* state = kidpal_reminder_default();
+
+    /* 渲染才允许回执的唯一判定门：不开则一条送达确认都不发（RMD-A6） */
+    if (kidpal_reminder_may_emit_receipt(state) != 1) {
+        return;
+    }
+    if (kidpal_reminder_mark_acked(state, business_id.c_str()) != 1) {
+        return; /* 未渲染不得确认、已确认不得二次确认（一 id 一回执） */
+    }
+
+    cJSON* result = cJSON_CreateObject();
+    cJSON* content = cJSON_CreateArray();
+    cJSON* text = cJSON_CreateObject();
+    cJSON_AddStringToObject(text, "type", "text");
+    cJSON_AddStringToObject(text, "text", "reminder rendered");
+    cJSON_AddItemToArray(content, text);
+    cJSON_AddItemToObject(result, "content", content);
+    cJSON_AddBoolToObject(result, "isError", false);
+    cJSON_AddBoolToObject(result, "ack", true);           /* 送达确认主判据 (relay_ack) */
+    cJSON_AddBoolToObject(result, "rendered", true);
+    cJSON_AddStringToObject(result, "reminder_id", business_id.c_str());
+
+    char* dumped = cJSON_PrintUnformatted(result);
+    int rpc_id = AlertTagLookup(business_id);
+    if (rpc_id <= 0) {
+        rpc_id = (pending_call_id_ > 0) ? pending_call_id_ : 0; /* 兜底：数字 id 仅传输关联 */
+    }
+    if (dumped != nullptr) {
+        ReplyResult(rpc_id, dumped); /* -> Application::SendMcpMessage，独立于同步自动回复 */
+        cJSON_free(dumped);
+    }
+    cJSON_Delete(result);
+    ESP_LOGI(TAG, "alert_receipt corr_id=%s rpc_id=%d ack=true dequeued=true",
+             business_id.c_str(), rpc_id);
+}
+
 
 void McpServer::AddCommonTools() {
     // *Important* To speed up the response time, we add the common tools to the beginning of
@@ -340,6 +559,31 @@ void McpServer::AddCommonTools() {
                     break;
             }
             return ack; /* cJSON* -> McpTool::Call 序列化为 result(送达确认) 回执 */
+        });
+
+    /* kidpal/alert (契约 §三 提醒推送 / §四 mcp 工具调用, 决策 23·27, 包
+     * 260829-schedule-reminder): 网关 push helper 到点推送一条提醒档位。载荷
+     * {id, fire_at, title, speech, view}；设备 mcp Property 仅 bool/int/string 三型
+     * (mcp_server.h)，故 §三 嵌套的 view 显示块以 **JSON 字符串** 承载 —— 与
+     * kidpal/display 的 data 字符串化同一纪律。
+     * 送达语义（RMD-A6 四态解耦）：本回调只「解析 + 入易失 known-id 集 + 排队」并回
+     * accepted（"ack": false）；渲染完成的回执由 HandleAlertCall/RaiseReminderQueue 经
+     * McpServer::ReplyResult 独立延后发出（"ack": true = relay_ack 的送达确认）。
+     * 畸形载荷 = 显式降级、不入队、不盲渲染 (V27)。 */
+    AddTool("kidpal/alert",
+        "Deliver one KidPal schedule reminder slot (three-ladder alert) to this board. "
+        "The board dedupes by the business id, queues it, raises a resident state-reminder "
+        "popup (prompt tone + big item text + time line) and answers with a render receipt "
+        "that dequeues the slot; the gateway retries to that receipt and silently voids expiry.",
+        PropertyList({
+            Property("id", kPropertyTypeString),
+            Property("fire_at", kPropertyTypeString),
+            Property("title", kPropertyTypeString),
+            Property("speech", kPropertyTypeString, std::string("")),
+            Property("view", kPropertyTypeString, std::string(""))
+        }),
+        [this](const PropertyList& arguments) -> ReturnValue {
+            return HandleAlertCall(arguments);
         });
 
 #ifdef HAVE_LVGL
@@ -830,6 +1074,10 @@ void McpServer::DoToolCall(int id, const std::string& tool_name, const cJSON* to
     // Use main thread to call the tool
     auto& app = Application::GetInstance();
     app.Schedule([this, id, tool_iter, arguments = std::move(arguments)]() {
+        /* kidpal/alert 的「渲染完成才回执」需要在工具回调里拿到本次 JSON-RPC 传输 id
+         * （回调签名只有 PropertyList，无 id 通道）：在 Call 之前记下它，回调同步读取
+         * （同一主循环任务内，无竞态）。其余工具的同步自动回复与 ack 形状零改动。 */
+        pending_call_id_ = id;
         try {
             ReplyResult(id, (*tool_iter)->Call(arguments));
         } catch (const std::exception& e) {
