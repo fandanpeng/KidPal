@@ -453,6 +453,14 @@ function selfCheck() {
     ok: !evaluate(mkCtx({ overlap: { probed: true, tier: 'no-overlap', intersectingFiles: [], conflictedFiles: [], addAddFiles: [] } })).blocked,
     got: '',
   });
+  // 5) V4 升级件内容宿主断言（260908 批 ladder 转绿补件）：probe-out JSON 形状必载相交清单/实撞集/双新增/tier 四键——
+  // 升级件宿主 = overlap-probe.json（③④ 级的逐文件清单消费源），断言其序列化形状防回退
+  {
+    const v4Overlap = { probed: true, tier: 'tradeoff', intersectingFiles: ['a.c', 'b.c'], conflictedFiles: ['b.c'], addAddFiles: [] };
+    const v4Json = JSON.stringify({ changeId: 'x', kind: 'devloop', overlap: v4Overlap });
+    const v4KeysOk = ['"intersectingFiles"', '"conflictedFiles"', '"addAddFiles"', '"tier"'].every((k) => v4Json.includes(k)) && v4Json.includes('"b.c"');
+    cases.push({ name: 'overlap-probeout-payload-keys-ok', ok: v4KeysOk, got: v4Json.slice(0, 80) });
+  }
 
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(

@@ -157,3 +157,7 @@ DEV-GOVERNANCE §6 例外升级拍板段内（landing 通道段，「前端对�
 ## 8. Review 定稿记录（2026-09-08 · 判官机械回灌 v0.2）
 
 v0.1 → v0.2 = 判官（architect）按 R1 九条 findings + human 三裁（B1 修法 / OQ1 / OQ3）机械回灌，逐条落位对照见 `architect-review-r1.md` R2 节闭合表；confirmed delta 对照源 = `decision-packet.md`。R2 = GREEN（0 BLOCKING / 0 SHOULD / 0 COULD）。作者≠判官保障链：R2 闭合性核对 + landing-verifier 独立核验（后续既定门）。落点六路径与 manifest 围栏块逐字一致。
+
+## 9. 冻结层追认（2026-09-08，landing-verifier RED 转绿条件）
+
+V4「升级件内容面」降档追认：③/④ 级升级件的「双方版本正文摘录锚 / architect 意见槽」无独立机械宿主/schema（③ 意见 = 派发 architect 产、④ 内容 = planner 组装），本批以「overlap-probe.json 形状断言（gate 自检 overlap-probeout-payload-keys-ok）+ DEV-GOVERNANCE 内容义务句 + §10d 升级件表」三层承载；schema 化留观测后批。V1 第五例机械宿主随 B1 修正归 hook 自检（retired-impl-axis 夹具）。追认人 = human（「继续落地」指令 2026-09-08 + verifier 条件链）；追认范围 = 验证项降档与宿主迁移，不改任何改法语义。
