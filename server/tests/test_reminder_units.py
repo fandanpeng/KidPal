@@ -582,8 +582,11 @@ class FrontPollOnceIntegration(unittest.TestCase):
         self.assertTrue(all(f.get("type") == "mcp" for f in frames))
         self.assertTrue(all(f["payload"]["params"]["name"] == "kidpal/alert" for f in frames))
         self.assertTrue(all(isinstance(f["payload"]["id"], int) for f in frames))
+        # 有 speech 的档位必须真的向引擎腿注入（空列表不得 vacuous 通过）
         injections = [json.loads(m) for m in self.engine.sent]
-        self.assertTrue(all(i.get("type") == "kidpal_speak" for i in injections))
+        self.assertEqual(len(injections), len(report["pushed"]))
+        self.assertTrue(all(i.get("type") == "kidpal_speak" and i.get("text")
+                            for i in injections))
 
         # 设备渲染回执（"ack": true + reminder_id）-> 只走渲染回执通道出队
         numeric = frames[0]["payload"]["id"]
