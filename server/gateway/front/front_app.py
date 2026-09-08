@@ -43,6 +43,7 @@ from gateway import display_schema as gw_display
 from gateway import mcp_relay as gw_mcp
 from gateway import fallback as gw_fallback
 from gateway import provider as gw_provider
+from gateway import story as gw_story
 
 app = FastAPI(title="KidPal direction-B streaming gateway front")
 
@@ -56,6 +57,33 @@ ENGINE_WS = os.environ.get("KIDPAL_ENGINE_WS", "ws://127.0.0.1:8010/xiaozhi/v1/"
 # (drives them through display_schema + kidpal/display tools/call) and never forwards the
 # engine-internal raw frame to the device.
 SIDE_CHANNEL_TYPE = "kidpal_display_blocks"
+
+# --- P3 故事 manual 聆听累积态 + 整段转写归档（契约 §1.4 start_recording / P3-A4）------
+# front 见 relay 的 control/start_recording -> 把该连接会话切累积态（不按句送对话）；
+# 停录整段转写经 gateway.story.archive_story 落盘。真实采音殿后 9b (P3-E2)，此处承载
+# 云侧累积/归档的接线点。StoryAccumulator 构造不触碰文件系统（import 期零磁盘副作用）。
+STORIES_DIR = os.environ.get("KIDPAL_STORIES_DIR", "/opt/kidpal/stories")
+_story_acc = None
+
+
+def _get_story_acc():
+    global _story_acc
+    if _story_acc is None:
+        _story_acc = gw_story.StoryAccumulator(STORIES_DIR)
+    return _story_acc
+
+
+def _story_route_display_payload(session_id, payload) -> None:
+    """旁路消费（不改 wire 输出）：control/start_recording -> 该会话切累积态。
+
+    停录 -> 整段归档由上层（停录事件 / 真 ASR 上行殿后 9b）驱动
+    _get_story_acc().stop(session_id, ...) -> archive_story 落盘 stories/<id>.md。"""
+    if not session_id or not isinstance(payload, dict):
+        return
+    data = payload.get("data")
+    if (payload.get("view") == "control" and isinstance(data, dict)
+            and data.get("action") == "start_recording"):
+        _get_story_acc().start(session_id)
 
 
 def _bearer(header: Optional[str]) -> str:
@@ -196,12 +224,22 @@ def build_display_tool_calls(blocks: list) -> list:
     return calls
 
 
-async def _relay_display_blocks_to_device(blocks: list, websocket) -> None:
+async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=None) -> None:
     """Send each display relay envelope toward the device as its OWN
     {"type":"mcp","payload":<envelope>} frame (firmware application.cc:492 routes ONLY
     type=mcp into McpServer::ParseMessage; :532 drops every other type — the deprecated
-    display_relay wrapper ended exactly there).  多块多帧, no batching."""
-    for envelope in build_display_tool_calls(blocks):
+    display_relay wrapper ended exactly there).  多块多帧, no batching.
+
+    session_id (additive, P3-A4): 若给定，旁路消费 control/start_recording 把该会话切
+    累积态（契约 §1.4）；wire 输出不变（决策23: front 只消费不重发）。"""
+    for block in blocks:
+        if session_id is not None:
+            try:
+                _story_route_display_payload(
+                    session_id, json.loads(block) if isinstance(block, str) else block)
+            except (TypeError, ValueError):
+                pass  # 脏块仍照常经 build_display_tool_calls 降级，旁路消费忽略
+        envelope = build_display_tool_calls([block])[0]
         await websocket.send_text(
             json.dumps({"type": "mcp", "payload": envelope},
                        ensure_ascii=False, default=str)
@@ -219,6 +257,7 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
     build_display_tool_calls (a small wrapper text frame makes the envelopes discoverable).
     Frames without a text field (hello, state, ...) forward verbatim.
     """
+    session_id = f"conn-{id(websocket)}"  # 连接作用域会话键（P3-A4 累积态路由用）
     try:
         async for frame in upstream:
             if isinstance(frame, bytes):
@@ -236,7 +275,8 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
                 # raw blocks through the same relay chain.
-                await _relay_display_blocks_to_device(obj.get("blocks") or [], websocket)
+                await _relay_display_blocks_to_device(obj.get("blocks") or [], websocket,
+                                                      session_id)
                 continue
             text_field = obj.get("text") if isinstance(obj, dict) else None
             if isinstance(text_field, str):
@@ -249,7 +289,7 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
                 relay["text"] = speech
                 await websocket.send_text(json.dumps(relay, ensure_ascii=False))
                 # …and each display envelope to the device as its own mcp frame.
-                await _relay_display_blocks_to_device(blocks, websocket)
+                await _relay_display_blocks_to_device(blocks, websocket, session_id)
             else:
                 await websocket.send_text(frame)  # no text field (hello/state): verbatim
     except Exception:  # noqa: BLE001 — proxy teardown ends the pump gracefully.

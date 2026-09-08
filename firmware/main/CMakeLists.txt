@@ -36,6 +36,10 @@ set(SOURCES "audio/audio_codec.cc"
             # (schedule_page.c / schedule_page.h, 建议家 display/; 纯逻辑+纯 LVGL ->
             # host 单测同源, 见 firmware/main/test/schedule_p2.acceptance.c)
             "display/schedule_page.c"
+            # P3 故事页消费面 (包 260829-story-p3): 冻结离线契约 14 函数 + 纯 LVGL 渲染面。
+            # story_page.c / story_page.h (家 display/; 纯逻辑+纯 LVGL -> host 单测同源,
+            # 见 firmware/main/test/story_p3.acceptance.c)。
+            "display/story_page.c"
             # 查生字 P4 (包 260829-char-stroke): 光栅契约纯逻辑模块 + LVGL 查字页。
             # char_stroke.c 纯逻辑无芯片依赖 -> host_app linux target 同源 (甲烷线接线在 host_app)。
             "display/char_stroke.c"

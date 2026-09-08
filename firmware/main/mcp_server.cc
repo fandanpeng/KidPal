@@ -20,10 +20,21 @@
 #include "lvgl_display.h"
 #include "display/view_router.h"
 #include "display/schedule_page.h"
+#include "display/story_page.h"  /* 故事 P3 (包 260829-story-p3): 列表/阅读/录音/盖章消费面 */
 #include "display/char_stroke.h"   /* 查生字 P4 (包 260829-char-stroke): 缺字段防御降级门 */
 #include "display/char_page.h"     /* 查生字 P4 LVGL 页 (设备侧) */
 
 #define TAG "MCP"
+
+/* P3 故事页设备消费面状态 (包 260829-story-p3)。MCP 工具回调在主线程串行执行
+ * (DoToolCall -> app.Schedule)，故此处单例视图无并发竞态；story_list/story_text
+ * 装载视图，start_recording 通过 kidpal_story_on_control 切录音态。零外部依赖，
+ * 纯 story_page.c 冻结契约函数驱动。 */
+namespace {
+kidpal_story_view_t g_story_view = {};
+kidpal_story_list_t g_story_list = {};
+kidpal_story_text_t g_story_text = {};
+}  // namespace
 
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
  * 取不到/非字符串 -> 空串 (调用方按降级或空内容处理, 不崩)。 */
@@ -155,9 +166,24 @@ void McpServer::AddCommonTools() {
                         case 1: /* stop_speaking —— 云端确认停播补充 */
                             app.AbortSpeaking(kAbortReasonNone);
                             break;
-                        case 2: /* start_recording —— 包 8 录音接合 (manual 聆听, stub) */
+                        case 2: { /* start_recording —— 契约 §1.4: 网关切累积态 -> 设备
+                                   * 进 P3 录音态 (manual 聆听)。真实采音殿后 9b (P3-E2);
+                                   * 此处消费页态切换 + 驱动录音态演出渲染 (additive)。 */
+                            int consumed = kidpal_story_on_control(&g_story_view,
+                                                                   VRT_CTRL_START_RECORDING);
+                            ESP_LOGI(TAG, "control start_recording story_consumed=%d page=%d",
+                                     consumed, g_story_view.page);
                             app.StartListening();
+                            if (consumed == 1) {
+                                kidpal_story_view_t rec_snapshot = g_story_view;
+                                kidpal_story_list_t list_snapshot = g_story_list;
+                                app.Schedule([rec_snapshot, list_snapshot]() {
+                                    kidpal_story_page_render(&rec_snapshot, &list_snapshot,
+                                                             &g_story_text);
+                                });
+                            }
                             break;
+                        }
                         default: /* 未知 action -> 降级, 不执行 */
                             cJSON_AddBoolToObject(ack, "degrade", true);
                             break;
@@ -214,6 +240,9 @@ void McpServer::AddCommonTools() {
                             title, items, n, is_tomorrow, now_str.c_str(), locate_row);
                         ESP_LOGI(TAG, "schedule_render corr_id=%s items=%d drawn=%d",
                                  corr_id, n, drawn);
+                    });
+                    break;
+                }
                 case 3: { /* VRT_ROUTE_CHAR —— 查生字 P4 (包 260829-char-stroke, 本包
                              additive 补 case 3, 只消费不改 view_router 数值码). */
                     cJSON_AddStringToObject(ack, "route", "char");
@@ -231,6 +260,77 @@ void McpServer::AddCommonTools() {
                     app.Schedule([char_data]() {
                         kidpal_char_page_show(char_data.c_str());
                     });
+                    break;
+                }
+                case VRT_ROUTE_STORY_LIST: { /* VRT_ROUTE_STORY_LIST —— P3 故事列表页
+                    * (契约 §1.3 ③, 包 260829-story-p3)。解析 data {"total","items":[…]}：
+                    * 成功 -> view_init + kidpal_story_page_render 渲染面真画 (标题/×N 计数/
+                    * 行列表/反白光标)；解析失败 (-1) -> 显式降级 (友好提示, 绝不盲渲染,
+                    * V27 / spec §4.0，与 schedule 同纪律)。 */
+                    cJSON_AddStringToObject(ack, "route", "story_list");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    kidpal_story_list_t parsed = {};
+                    int items_n = kidpal_story_list_parse(data.c_str(), &parsed);
+                    if (items_n < 0) {
+                        /* 降级：story_list data 畸形/缺字段/越界 -> 友好提示, 不盲渲染 */
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=story_list corr_id=%s items=0 degrade=true", corr_id);
+                        auto display = Board::GetInstance().GetDisplay();
+                        app.Schedule([display]() {
+                            display->SetChatMessage("system", "故事列表有点问题，稍后再试试");
+                        });
+                        break;
+                    }
+                    kidpal_story_view_init(&g_story_view, &parsed);
+                    g_story_list = parsed;
+                    cJSON_AddNumberToObject(ack, "items", items_n);
+                    cJSON_AddNumberToObject(ack, "counter", kidpal_story_counter(&parsed));
+                    ESP_LOGI(TAG, "story_list_dispatch corr_id=%s items=%d counter=%d degrade=false",
+                             corr_id, items_n, kidpal_story_counter(&parsed));
+                    {
+                        kidpal_story_view_t view_snapshot = g_story_view;
+                        kidpal_story_list_t list_snapshot = g_story_list;
+                        app.Schedule([view_snapshot, list_snapshot]() {
+                            kidpal_story_page_render(&view_snapshot, &list_snapshot,
+                                                     &g_story_text);
+                        });
+                    }
+                    break;
+                }
+                case VRT_ROUTE_STORY_TEXT: { /* VRT_ROUTE_STORY_TEXT —— P3 回看/回听阅读态
+                    * (契约 §1.3 ④, spec S-F2.3)。解析 data {"id","title","text"} ->
+                    * open_reader 分页 (全文不丢) + kidpal_story_page_render 阅读面真画;
+                    * 生字反白高亮已裁不消费 (P3-E4)。解析失败 -> 显式降级, 绝不盲渲染。 */
+                    cJSON_AddStringToObject(ack, "route", "story_text");
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    kidpal_story_text_t parsed = {};
+                    if (kidpal_story_text_parse(data.c_str(), &parsed) != 0) {
+                        cJSON_AddBoolToObject(ack, "degrade", true);
+                        ESP_LOGW(TAG, "display_dispatch view=story_text corr_id=%s degrade=true", corr_id);
+                        auto display = Board::GetInstance().GetDisplay();
+                        app.Schedule([display]() {
+                            display->SetChatMessage("system", "这个故事暂时打不开，稍后再试试");
+                        });
+                        break;
+                    }
+                    g_story_text = parsed;
+                    {
+                        /* 阅读态分页行高按设备 400x300 最小估算 (minimal: 真实分栏观感
+                         * 殿后 9b)；counter/列表态字段从当前视图快照续用。 */
+                        kidpal_story_view_t reader_view = g_story_view;
+                        (void)kidpal_story_open_reader(&reader_view, &parsed, 4);
+                        cJSON_AddNumberToObject(ack, "screens", reader_view.screens);
+                        ESP_LOGI(TAG, "story_text_dispatch corr_id=%s screens=%d degrade=false",
+                                 corr_id, reader_view.screens);
+                        kidpal_story_list_t list_snapshot = g_story_list;
+                        app.Schedule([reader_view, list_snapshot, parsed]() {
+                            kidpal_story_page_render(&reader_view, &list_snapshot, &parsed);
+                        });
+                    }
                     break;
                 }
                 default: /* VRT_ROUTE_UNKNOWN —— 白名单外 view 的独立降级路径 */

@@ -86,11 +86,12 @@ ls -la "$OVERLAY"
 
 # OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-# 260829-schedule-p2 + 260829-char-stroke 起 overlay 渲染源 = v2 (v1 基础结构逐字并入
-# v2 + 课表 producer 扩展 + char C1 最小块/出口拼装扩展; v1 文件不改可 diff, 声明见
-# OPENCLAW_SYSTEM_PROMPT_CARRIER)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v2.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v2.md"
+# 260829-schedule-p2 + 260829-char-stroke 起 overlay 渲染源 = v2；260829-story-p3 起切 v3
+# (v2 基座逐字并入 v3 + 故事 producer 扩展：我要讲故事→start_recording / 停录整段转写起
+# 标题出 story_text / V31 四条回退判断 / 归档归云侧一回合不读写文件；v1/v2 不改可 diff,
+# 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v3.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v3.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -108,5 +109,5 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v2.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: openclaw-system-prompt.v3.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi

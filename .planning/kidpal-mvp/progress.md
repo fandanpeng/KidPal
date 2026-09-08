@@ -176,3 +176,13 @@
 - 两本批 worktree（story-p3 / schedule-reminder）已 fast-forward 同步 main bc0951f（含 0c2a669）。
 - 两份 launch prompt 的「IDF 构建通路」环境事实段同步修订：firmware/ cwd 要求、双形态可用（canonical = venv python）、esp_idf_monitor 报错 = 旧签名勿误诊、设备编译与 WSL host 验收通路勿混。
 - 既有批注「char_page.cc 须在 verify 环境实编一次确认（LVGL 9.3 真头已逐 API 核对）」属 char-stroke 收口遗留口径，随包已合并，落 pod-events/verify-runs 跟踪，不入本批面。
+## 260829-story-p3（包 8）dev-loop 收口进展（2026-09-08，planner 主线程）
+- **闭环相位**：intake（闸 A=④零契约改动 + 三条 blockingDecision 判读入账）→ acceptance-author 双面冻结（C 8 齿 / PY 21 项）+ 实测红基线 → builder(opus) 双面实现 → verifier↔fixer（scoped r1 + final r3 全绿，零 fixer 轮）→ integrator 收口（三闸一手复验 + Review Packet + docs-sync + ADR-001）。当前 verifier-green，待 supervisor-verdict-gate → 前置升级闸 → merge-driver（mergeOrder 10，走 --human-approval-ref）。
+- **交付面**：新增 `display/story_page.{c,h}`（14 冻结契约函数）+ `server/gateway/story.py`（5 入口含 StoryAccumulator 有界缓冲）+ `openclaw-system-prompt.v3.md`（v2 基座逐字保留 + 故事 producer）；编辑 mcp_server.cc（补 case5/6 + control start_recording）+ 两处 CMakeLists + front 累积接入 + overlay/provider/CARRIER 两面同切 v3。
+- **顺带治愈 main 一处既有红**：`mcp_server.cc` case4 lambda 未闭合（char-stroke f2a67dd 落地即破、设备 target 编译红，随其降级的 firmware-build 门混入 main，host runner 不编此文件故各包 host 验收未见）——builder 界内闭合修复 + 主线程第一方 `idf.py build` RC=0 证绿。
+- **执行证据（planner/integrator 一手，非闸担保）**：C host ELF 从仓库根 68T2F（本包 8 齿全绿、2 红=WSA-A4/A6 既有本地证据地板）；PY story 20P/1skip、全量 server 套 8失败/84通过/36跳过（8 恰=既有地板、integrator 另做 main bc0951f 对照实验逐 ID 相同→零新红）；真实变异 6 证据入 mutationEvidence。
+- **两处冻结验收自身缺陷由 acceptance-author tighten 修（断言语义零变更）**：① `_ts` 时钟构造进位归一（second=60 求值期崩，1100 组合法域等价比对）；② integrator 五轴抓出 live 齿 `test_live_story_roundtrip_evidence` 语料设在本包 closeout 目录致 prose 假绿（两次实测复现），tighten 为语料收窄 live-evidence/ 子目录 + 要求结构化事实形状。
+- **跨包 forward-bump 治理**：prompt v2→v3 撞红 char-stroke 版本字面 green-guard CHR-E3（基线绿→实现后红），human 裁（c54bbcde）重指为版本无关（当前接线版存在+渲染==声明一致+携带 char C1 锚点，捕获面净增、反向 8/8）；姊妹齿 test_e3_prompt_v2_landed_with_discipline 未动。
+- **登记两 ARQ**：ARQ-260908-versioned-guard-version-literal-coupling（版本化制品 green-guard 应版本无关；含 char a8/a9 + schedule P2-A6 假绿 + vrt B v1 四实例清点）+ ARQ-260908-firmware-build-degraded-gate（门只探裸 idf.py、本仓走 venv+wrapper 致恒 degraded，已致一次 main 设备红）。
+- **9b 前处置项（Review Packet §9 留根，非本包违约）**：F4 prompt↔代码分工（LLM 复述整段转写 vs 出口组块，同 char-stroke 109s 病灶）、F6 front session_id 地址复用跨会话串味、F7 设备页内输入/云侧归档触发零生产调用者（同 merged schedule-p2 型、在 P3-E2 证据面内）。
+- 提交链 f5309c7(验收)→f7c82d4(实现)→419bdee(ARQ)→82b060c(integrator 收口)。

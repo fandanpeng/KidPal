@@ -3,16 +3,23 @@
 本文件是 deploy overlay 对 `openclaw-system-prompt` 版本化 artifact 的**显式接线声明**，
 使「落盘 ≠ 孤儿文件」这一链路可被冻结验收 `test_e4_system_prompt_wired_into_deploy_overlay`
 （其 corpus 只读本目录**无扩展名**文件）机械断言。真实渲染由同名外壳脚本
-`apply-xiaozhi-overlay.sh` 完成（把 `openclaw-system-prompt.v1.md` 拷到 ECS
+`apply-xiaozhi-overlay.sh` 完成（把 `openclaw-system-prompt.v3.md` 拷到 ECS
 `data/` 与 `.config.yaml` 同目录）。
 
-- artifact（生成唯一来源）：`openclaw-system-prompt.v2.md`（当前冻结版本化文件，
-  v2；260829-schedule-p2 起在 v1 基础结构上追加课表 producer 扩展——决策 26 分组
-  + QQ 录入改写约定，v1 文件不改、可 diff）
+- artifact（生成唯一来源）：`openclaw-system-prompt.v3.md`（当前冻结版本化文件，
+  v3；260829-story-p3 起在 v2 基础结构上追加故事 producer 扩展——我要讲故事→
+  start_recording / 停录整段转写起标题出 story_text / V31 四条回退 / story_list.total
+  全集计数，v1/v2 文件不改、可 diff）
 - 声明面：`provider.config.yaml`（`system_prompt.deploy_target`）
-- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v2.md`）
-- 消费面：live 遵循度复验（VRT-A4）/ 通用问答（VRT-A7）探针以该版本化文件为唯一
-  prompt 源，保证「验收所测 = 生产所用」。
+- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v3.md`）
+- 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
+  生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉
+  `openclaw-system-prompt.v1.md`、CHR-A8/A9 仍钉 `.v2.md`，即 live 面所测版本落后于
+  本声明版本。该版本字面耦合已登记 `docs/ARCH-REVIEW-QUEUE.md`
+  ARQ-260908-versioned-guard-version-literal-coupling（owner=architect+acceptance-author），
+  重指前请勿把本行改回无条件表述。offline 机械守卫侧：VRT-E4 用不带版本号的裸名 needle，
+  CHR-E3 与 story P3 载体齿已改为解析渲染/声明两面得出版本再断言，均不受字面漂移影响。
 
 后缀版本演进：.v2 以 `openclaw-system-prompt.v2.md` 新落盘、overlay 渲染切换（已
-切换），本声明与渲染脚本同步更新引用即可，历史版本可 diff。
+切换）；.v3（260829-story-p3）以 `openclaw-system-prompt.v3.md` 新落盘、overlay 渲染切换
+（已切换），本声明与渲染脚本同步更新引用即可，历史版本可 diff。

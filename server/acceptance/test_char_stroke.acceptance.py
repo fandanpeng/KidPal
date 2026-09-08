@@ -25,7 +25,12 @@ Coverage map (acceptanceRef / exitCriteria -> test method):
         -> test_a9_live_char_latency_5s_band           [live]
   CHR-E3 (静态字库挂 OpenClaw 侧绝不入 shim; §1.5 薄桥; prompt v2)
         -> test_e3_prompt_v2_landed_with_discipline    [offline; RED today]
-        -> test_e3_prompt_v2_wired_into_deploy         [offline; RED today]
+        -> test_e3_current_prompt_wired_and_carries_char_c1
+                                                       [offline green-guard; 原
+                                                       test_e3_prompt_v2_wired_into_deploy,
+                                                       2026-09-08 版本字面 -> 版本无关
+                                                       接线+内容守卫, human 决策 c54bbcde
+                                                       / 升级单 80deedcb]
         -> test_e3_gateway_thin_bridge_untouched       [offline green-guard]
   闸 A additive 纪律 (MVP 不动网关 display_schema, 板子侧防御降级)
         -> test_gate_a_display_schema_untouched        [offline green-guard]
@@ -459,20 +464,80 @@ class CharStrokeOfflineAcceptance(unittest.TestCase):
             "CHR-E3 RED: v2 无收紧措辞 — 包 2 留根 (A4 sample 1 口语 4 句超三句)"
             "要求 v2 比 v1 更硬, 仅重复 v1 措辞不构成收紧.")
 
-    def test_e3_prompt_v2_wired_into_deploy(self):
-        """coverage: CHR-E3 — 落盘 ≠ 孤儿文件: v2 必须接入真渲染/声明面——overlay
-        渲染脚本 (apply-xiaozhi-overlay.sh: 把版本化 prompt 拷到 ECS data/, 现指
-        v1) 或声明面 (provider.config.yaml system_prompt 三键) 至少其一引用 v2。
-        OPENCLAW_SYSTEM_PROMPT_CARRIER 声明文件里的前瞻注记提及「.v2 将来落盘」
-        不算接线 (red baseline 假绿实证, 故齿收窄到渲染/声明面)。"""
+    def test_e3_current_prompt_wired_and_carries_char_c1(self):
+        """coverage: CHR-E3 — 落盘 ≠ 孤儿文件 + 「验收所测 = 生产所用」的**版本无关**守卫:
+        从渲染面 (apply-xiaozhi-overlay.sh 的 PROMPT_SRC) 与声明面
+        (provider.config.yaml system_prompt.artifact|source|deploy_target) 解析出
+        **当前真正被接线的那一版** prompt 文件名, 然后三重断言:
+          ① 两面至少其一解析出版本化文件名 (整条接线被删 = 孤儿 = 红);
+          ② 该版本文件在 server/deploy/ **确实落盘** (声明了却没落盘 = 红 — 原缺陷
+             捕获力完整保留), 且渲染面与声明面指向**同一版** (两面分叉 = 生产所用
+             与被测所载不是同一块 = 红);
+          ③ 该**当前接线版文件的正文**逐字携带 char C1 段落锚点
+             (「最小意图块」/「禁自生成」+strokes+medians/「查字工具」) —— 未来任何
+             一版把 char C1 弄丢, 本守卫照样转红 (这才是 CHR-E3 真正要防的东西)。
+        OPENCLAW_SYSTEM_PROMPT_CARRIER 声明文件里的前瞻注记不算接线 (red baseline
+        假绿实证, 故齿仍只认渲染面/声明面两处结构化指向)。
+
+        改判缘由 (2026-09-08; human 决策 c54bbcde-582f-42c2-a337-5260f890a799 /
+        升级单 80deedcb-1ea8-4550-b1fa-f20c2f0376d7): 原齿断言「deploy 两面引用字面
+        openclaw-system-prompt.v2」, 与后继包把 carrier 正常 forward-bump 到 vN
+        (260829-story-p3 指 v3) 必然撞出**假红**。CHR-E3 的语义保重面从来不是「版本号
+        必须等于 2」, 而是「被接线的那一版存在、两面一致、且内含本包 char C1 纪律」,
+        故把版本字面替换为版本无关的接线解析 + 内容锚点。v2 自身的落盘与措辞纪律仍由
+        姊妹齿 test_e3_prompt_v2_landed_with_discipline 原样钉死, 未放宽。"""
         render_src = _read_text(DEPLOY_DIR / "apply-xiaozhi-overlay.sh")
         decl_src = _read_text(DEPLOY_DIR / "provider.config.yaml")
+
+        # ① 解析两面各自指向的版本化文件名 (只认结构化指向, 不认散文提及)
+        rendered = re.findall(
+            r'PROMPT_SRC\s*=.*?(openclaw-system-prompt\.v\d+\.md)', render_src)
+        declared = re.findall(
+            r'(?:artifact|source|deploy_target)\s*:\s*"[^"]*'
+            r'(openclaw-system-prompt\.v\d+\.md)', decl_src)
+        wired = rendered + declared
         self.assertTrue(
-            "openclaw-system-prompt.v2" in render_src or
-            "openclaw-system-prompt.v2" in decl_src,
-            "CHR-E3 RED: v2 未接入任何渲染/声明面 — apply-xiaozhi-overlay.sh 仍只渲染 "
-            "v1 且 provider.config.yaml 未声明 v2; 落盘即孤儿文件, live 探针所测 (v2) "
-            "≠ 生产所用 (E4 先例; 真接线 = overlay 渲染切换或声明面更新).")
+            wired,
+            "CHR-E3 RED: 没有任何渲染/声明面结构化指向版本化 prompt — "
+            "apply-xiaozhi-overlay.sh 无 PROMPT_SRC=openclaw-system-prompt.vN.md, "
+            "provider.config.yaml system_prompt 三键也未指向版本化文件; prompt 落盘即"
+            "孤儿文件, live 探针所测 ≠ 生产所用 (E4 先例; 真接线 = overlay 渲染切换或"
+            "声明面更新).")
+
+        # ② 两面一致 + 被指向的那一版确实落盘 (声明了却没有 = 孤儿, 原缺陷捕获力)
+        self.assertEqual(
+            set(rendered), set(declared),
+            f"CHR-E3 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
+            "不同版本 — 两面分叉时 ECS 实际渲染的 prompt 与声明/被测的不是同一块 "
+            "(「验收所测 = 生产所用」断裂).")
+        for name in sorted(set(wired)):
+            path = DEPLOY_DIR / name
+            self.assertTrue(
+                path.is_file(),
+                f"CHR-E3 RED: 被接线的 {name} 在 server/deploy/ 未落盘 — 两面都指它, "
+                "overlay 渲染时静默 WARN, 生产用的是旧版/空版 (孤儿声明).")
+            self.assertTrue(
+                _read_text(path).strip(),
+                f"CHR-E3 RED: 被接线的 {name} 是空文件 — 接线到空 prompt 等于没接线.")
+
+        # ③ 当前接线版正文必须逐字携带 char C1 锚点 (版本无关的内容承载守卫)
+        for name in sorted(set(wired)):
+            body = _read_text(DEPLOY_DIR / name)
+            self.assertIn(
+                "最小意图块", body,
+                f"CHR-E3 RED: 当前接线的 {name} 丢了「最小意图块」 — char C1 机制"
+                "(LLM 只出最小意图块、不整块复述 D3) 的措辞承载被删, 生产端会退回"
+                "自生成坐标 (CHR-A8 生成端约束失守).")
+            self.assertTrue(
+                _contains_any(body, ["禁自生成", "禁止", "不得", "严禁", "不要自己"]) and
+                "strokes" in body and "medians" in body,
+                f"CHR-E3 RED: 当前接线的 {name} 丢了「禁自生成/复述 strokes·medians」"
+                "纪律 — v2 定的坐标数据禁令必须被后续每一版逐字继承, 丢了即 LLM 复述"
+                "9574 字坐标的回归通道 (机制 B 的立论前提).")
+            self.assertTrue(
+                _contains_any(body, ["查字工具", "查库", "拼装", "查表"]),
+                f"CHR-E3 RED: 当前接线的 {name} 未对齐查表拼装机制 — 完整 D3 由谁产出"
+                "未约定 (工具侧拼装是 C1 的另一半).")
 
     # --- CHR-E3 / 闸 A green-guards (must stay green) ------------------------------
     def test_e3_gateway_thin_bridge_untouched(self):
