@@ -102,20 +102,28 @@ C 类冻结验收实编」判据达成。
 重渲染帧完全相同（先清活动屏 = 不叠屏）、NULL/无 id 返回 -1 不崩。网点疏密与 pose 动画
 细节属设计 review，未钉成脆断言。
 
-### 2.3 host ELF 相对基线（接线前 = 接线后同一判据）
+### 2.3 host ELF 相对基线（冻结相位 + builder 落地后各测一次）
 
-`firmware/main/test/host_app/build/host_infra_test.elf`（planner 后台首跑产物，本包未改
-`CMakeLists.txt`）实跑 **60 Tests / 3 Failures**，与 planner 260908 更正一致：
+**冻结相位**（`firmware/main/test/host_app/build/host_infra_test.elf` = planner 后台首跑产物，
+本包未改 `CMakeLists.txt`）：实跑 **60 Tests / 3 Failures**，与 planner 260908 更正一致：
 `voice_roundtrip_b.acceptance.c:878` VRT-A2/E2、`device_ws_switch.acceptance.c:830` WSA-A6、
 `device_ws_switch.acceptance.c:663` WSA-A4——三条全是 `[evidence]` 族，本地-only gitignore
 证据从未入仓 → main 本身即红。**判读 = 3 条既有红不变 + 本包新增齿按 2.1 节全红。**
+
+**builder 落地后复测**（本包 11 齿 + reminder_page.test.c 5 齿已注册进 runner）：
+实跑 **76 Tests / 3 Failures**，且逐条核对三条失败**正是上述 VRT-A2 / WSA-A6 / WSA-A4 一条未动**。
+60→76 = 本包 11 个验收齿（全部 `:PASS`，含独立 stub 编译被排除的 RMD-A5 render 真帧齿、
+以及 RMD-A1 guard 上游装配完整性齿）+ builder 自带 5 个单测齿。
+**口径校正**：builder 收工报「76T/2F、VRT-A2 已转绿」是误读——VRT-A2 证据齿并未转绿，
+实况 3 Failures（planner 重跑同结论）。后续一律以 **3 条既有红** 为准；
+`firmware-build-check` 侧的 `mcp_server.cc` 语法缺陷已由本包 builder 补回（RMD-A1 guard 齿转绿佐证）。
 
 ## 3. python 侧红基线（命令与实跑）
 
 ```
 cd server && python -m py_compile acceptance/test_schedule_reminder.acceptance.py   # COMPILE_CLEAN
 cd server && python -m pytest -q --import-mode=importlib --collect-only acceptance/test_schedule_reminder.acceptance.py
-    → 37 tests collected in 0.02s        # 收集零错误（§3 冻结即冒烟 / §4 C 类实编）
+    → 38 tests collected in 0.01s        # 收集零错误（§3 冻结即冒烟 / §4 C 类实编）
 cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py
     → 30 failed, 3 passed, 5 skipped (3.12s)
 cd server && python -m pytest -q --import-mode=importlib           # 全档
@@ -126,6 +134,11 @@ cd server && python -m pytest -q --import-mode=importlib           # 全档
 证据齿，全在 live-marked 文件内、属包 S 退役架构面）。落本包两档后
 **38 / 67 / 40 = 8 条既有红不变 + 本包 30 条新红 + 3 条守卫绿 + 5 条 live skip**，
 逐条对账闭合、无第三条来源的漂移。
+
+**builder 落地后复测（2026-09-08，含本摘要第 6 节的冻结件自身缺陷修复）**：
+点名命令 → **33 passed / 5 skipped / 0 failed**；全档 → **8 failed / 134 passed / 40 skipped**
+—— 8 条既有红（smoke_e2e 7 + vrt 证据齿 1）一条未动，本包 33 个离线齿全绿、5 个 live 齿仍被
+机械 skip（等 `changes/dev/260829-schedule-reminder/` 真跑证据落盘后由点名命令放行）。
 
 ### 3.1 30 条红的分组（每条对应哪个 RMD-Ax 与哪个缺失行为）
 
@@ -201,7 +214,7 @@ schedule_p2 三档独立复跑 exit 0，实测本包落盘时全部 rc=0）、
 
 ## 5. 必须回报 planner 的事项
 
-### 5.1 上游既有缺陷（非本包缺失、阻塞设备构建）
+### 5.1 上游既有缺陷（非本包缺失、曾阻塞设备构建）——已闭环
 
 `firmware/main/mcp_server.cc` 的 `kidpal/display` case 4（`VRT_ROUTE_SCHEDULE`）内
 `app.Schedule([...]() { kidpal_schedule_page_render(...) ...` **lambda 闭合被丢**：
@@ -209,8 +222,9 @@ schedule_p2 三档独立复跑 exit 0，实测本包落盘时全部 rc=0）、
 （260829-char-stroke）之后直接接 `case 3:` —— `case` 标签落进 lambda 体内，C++ 语法不合法，
 `idf.py build`（即 `firmware-build-check.mjs` 承重闸）必红。已实测 git 双版本对证。
 影响面：设备构建 + 任何 on-target 验收；**不影响 host ELF**（host_app 独立工程不编 `mcp_server.cc`）。
-本包把它钉成独立可机判守卫齿（`RMD-A1 guard`，实测 RED），建议 planner 二选一：
-① 派 fixer 单独补回三行；② 让本包 builder 在接 `kidpal/alert` 时顺手补回（它本来要改这个文件）。
+本包把它钉成独立可机判守卫齿（`RMD-A1 guard`，冻结相位实测 RED）。
+**闭环状态**：采②路径——本包 builder 在接 `kidpal/alert` 时补回该三行，守卫齿在
+76T/3F 复测中转绿。
 
 ### 5.2 契约无需改动（无闸 A 触发项），但两条推导需 planner 背书
 
@@ -233,10 +247,13 @@ schedule_p2 三档独立复跑 exit 0，实测本包落盘时全部 rc=0）、
 1. `firmware/main/test/host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS` 注册
    不在 acceptance-author 可写面（允许面 = `firmware/**/*.acceptance.{c,cpp}` +
    `firmware/**/acceptance/**` + `server/**/acceptance/**` + `tools/**`，enforce-scope 钩子实测）。
-   builder 需加两行：`"../../schedule_reminder_b.acceptance.c"` 与提醒实现源
+   需加两行：`"../../schedule_reminder_b.acceptance.c"` 与提醒实现源
    `../../../display/reminder_page.c`，**必须加在 `"../../host_infra_smoke.acceptance.c"` 之前**
    （该条必须保持列末位：包 0 的 nothing-rendered 边界齿依赖进程内最先执行，实测执行序 =
    列表逆序）。冻结件头已写明同一要求。
+   **已完成状态**：builder 落了 L53（本冻结件）、L54（`reminder_page.c`）、
+   L57（自带单测 `reminder_page.test.c`），`host_infra_smoke.acceptance.c` 仍在**末位** L59 ——
+   相对顺序红线未破（76T/3F 实测中包 0 边界齿 PASS）。
 2. 交接目录：ECS 上 `alerts/` 与 `pending.json` 当前**不存在**（planner 实测），故
    `read_pending` 对缺文件必须安静返回 `([], [])`（已钉），路径本身经
    `KIDPAL_ALERTS_DIR` / `KIDPAL_PENDING_JSON` 可配（`pending_path()` 齿已钉）——
@@ -268,3 +285,81 @@ schedule_p2 三档独立复跑 exit 0，实测本包落盘时全部 rc=0）、
 - decisionCoverage 反查：五条决策全部有断言承载、无 dropped 条目——
   决策20→RMD-A2 组、决策27→RMD-A3 组、契约§三推送语义→RMD-A4 组、决策24→RMD-A7 组 +
   C 档 RMD-A6/A7 易失齿、V18→C 档 RMD-A5 顶替齿（python 档不重复钉，映射见两档文件头）。
+
+## 6. 冻结件自身缺陷修复记录（2026-09-08 planner 回派，acceptance-author 修）
+
+builder 实现落地后点名命令剩 4 条残红，planner 独立核实为**本冻结件（python 档）自身两处缺陷**，
+非实现缺陷。按「验收件只有 acceptance-author 能改」的纪律由本角色修复，
+**断言语义零变更**为硬红线：只改 fixture 参考日期与采集形状，未删齿、未放宽、未迁就实现。
+
+### 6.1 缺陷一 = 钢琴课期望簇落在「已过的那一周」（牵动 3 齿）
+
+根因：`now = "2026-09-08T07:00:00+08:00"` 是**周二**（日历真值 09-07=周一、09-08=周二，
+`date.fromisoformat('2026-09-08').isoweekday()==2` 独立核实），而钢琴课是「周一 16:30」——
+我原来期望的 `09-06T20:30 / 09-07T07:45 / 09-07T16:15` 三档**全部早于自身 now**，
+与同档 `test_a2_past_ladders_skipped`（已过档位一个都不发）直接互斥：
+任何单调的「fire_at ≤ now 即不产出」规则不可能同时满足两齿。builder 按 spec §4.1
+「已过去的档位自动跳过」+ 决策 20「每周固定项每周重复生成」产出**下一次 occurrence**，正确。
+
+改动（`server/acceptance/test_schedule_reminder.acceptance.py`）：
+
+| 位置 | 改法 |
+|---|---|
+| `test_a2_three_ladder_arithmetic` L561-566 | 钢琴课期望簇 → `09-13T20:30 / 09-14T07:45 / 09-14T16:15`；并在齿内加 8 行注记（now=周二、09-07 周次三档全已过、按决策 20 取 next occurrence、**显式写明「不要改回 09-06/09-07，否则与本档 past-skip 齿无共同解」**）；顺手清掉头前一条语义混乱的旧注释 |
+| `test_a2_ladder_times_come_from_config_not_code` L716-721 | 同簇按配置变体 bump → `09-13T19:45 / 09-14T06:30 / 09-14T16:00`（16:30 − 30min），加同款注记 |
+| `test_a8_bring_from_note_and_semantic_override` L1163-1164 | 前晚档过滤日期 `2026-09-06T20:30` → `2026-09-13T20:30`，加注记 |
+
+**零语义变更的自证（不是抄实现输出，是独立推导后与实现互验）**：
+用与 builder 无关的一小段 `datetime` 脚本从「周一 16:30 + 三条阶梯关系」正向推 next occurrence：
+`event day = 2026-09-14 Mon` → night `2026-09-13T20:30+08:00` / morning `2026-09-14T07:45+08:00` /
+soon `2026-09-14T16:15+08:00`，且反证上一周次三档 `[09-06T20:30, 09-07T07:45, 09-07T16:15]`
+全部 `<= now` → 应被跳过。推导结果与修复后的期望逐字相同，builder 实现亦与之相同（三齿转绿）。
+本齿钉的仍是那三条关系：**前晚档 = 事件日前一天 20:30**、**早档 = 事件日当天 07:45**、
+**临期档 = 开始时刻 − 15 分钟 = 16:15**，只是参考日落在正确的周。
+
+修复后的齿仍具鉴别力（三条扰动探针实测，防「改成实现输出=空断言」）：
+
+| 探针 | 结果 | 含义 |
+|---|---|---|
+| 期望 = `09-13T20:30 / 09-14T07:45 / 09-14T16:15` | **MATCH** | 关系钉得准 |
+| 临期档扰动为 `16:16`（+1min） | **不匹配** | 15 分钟减法被真钉住 |
+| 前晚档扰动为事件日当天 `09-14T20:30`（丢跨天映射） | **不匹配** | 「事件日前一天」映射被真钉住 |
+| 旧期望（`09-06/09-07` 簇） | **不匹配** | 旧期望确属错误、不是等价写法 |
+
+同齿内 英语培训(周三→09-09) 与 美术班(周六→09-12) 两组期望**未动**（本就一致）——
+这也是「不是一次性把全部期望改成实现输出」的反证：改动只落在唯一参考周错的那一个条目上。
+`test_a2_past_ladders_skipped`（与旧期望互斥的那条）**未改**，仍作为「不得产出已过档位」的守卫在位。
+
+### 6.2 缺陷二 = a4 该齿 sink 采集形状与自身解包冲突
+
+根因：`test_a4_retry_to_ack_60s_x3_then_void` 用 `sink=lambda i, e: pushed.append(i)` 只存业务 id
+字符串，却在下一行 `[i for i, _ in pushed]`、尾部 `[e for _, e in pushed]` 按二元组解包
+→ `ValueError: too many values to unpack`（采集形状自相矛盾，不是实现问题）。
+同文件其余 a4 齿要求 `pushed == [业务 id]`，故多数形态（sink 签名 `(id, envelope)`、
+列表存业务 id）才是本包既定制式。
+
+改动（同一齿内）：
+
+| 位置 | 改法 |
+|---|---|
+| L985-996 | 拆成两个采集器：`pushed`（业务 id 序列，与兄弟齿同形）+ `envs`（每次推送的 JSON-RPC 信封序列），sink 改为具名 `_sink(bid, envelope)` 同时 append 两者；首个断言由 `[i for i,_ in pushed] == [id]` 改为 `pushed == [id]`（等价、不再 unpack） |
+| L1013-1021 | 删掉错误的 `envs = [e for _, e in pushed]` 重绑定，直接用 `_sink` 采集到的 `envs`；补一条 `len(envs) == 3` 的采集自洽断言（中性，不改变被钉行为） |
+
+被钉的四条事实**一条未松**：`attempts()` 依次 1→3；`len(pushed)` 在 60s 内不增、
+60/120s 各 +1、180s 后仍为 3；`state_of() == "void"`；审计轨迹精确等于
+`["push","push","push","void"]`；三次推送的传输数字 id 集合大小为 1、`arguments.id`
+业务 id 集合恰为 `{rmd-3f2a1b9c4d5e6f70}`。builder 自带单测
+`test_retry_to_ack_sequence_is_bounded_and_audited` 从行为侧钉同一事实，可作旁证。
+
+### 6.3 修复后复跑（实测，非推理）
+
+```
+cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py
+    → 33 passed, 5 skipped（0 failed）
+cd server && python -m pytest -q --import-mode=importlib
+    → 8 failed, 134 passed, 40 skipped        # 8 条既有红一条未动
+node .claude/scripts/acceptance-coverage-check.mjs <实况路径副本>
+    → ok:true, acceptance RMD-A1..A8 全在册, structural ["RMD-A1"]
+wsl ... ./build/host_infra_test.elf
+    → 76 Tests / 3 Failures（三条既有 [evidence] 红不变；本包 11 个 C 齿全 PASS）
+```

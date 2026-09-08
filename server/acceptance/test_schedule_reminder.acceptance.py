@@ -542,7 +542,13 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
             self.fail("RMD-A2 RED: " + err)
         sc = _sched()
         model = sc.parse_schedule_md(B1_CANONICAL)
-        # now 早于全部三档的参考点：2026-09-08T07:00+08（周一 16:30 英语? 周一是钢琴课）
+        # 参考点 now = 2026-09-08T07:00+08（**周二**，日历真值：09-07=周一、09-08=周二）。
+        # 钢琴课是「周一 16:30」，其 09-07 那一周次的前晚/早/临期三档相对 now 全部已过去，
+        # 按 spec §4.1「已过去的档位自动跳过」+ 决策 20 每周重复，本齿期望的是**下一次
+        # occurrence（周一 2026-09-14）**的三档簇。★不要把它改回 09-06/09-07：那会与同档
+        # test_a2_past_ladders_skipped（已过档位一个都不发）直接互斥，两齿无共同解。
+        # 本齿真正钉的三条关系与周次无关：前晚档 = **事件日前一天** 20:30（09-13 是 09-14 的
+        # 前一天）、早档 = 事件日当天 07:45、临期档 = 事件开始 16:30 - 15min = 16:15。
         entries = lib.plan_reminders(model, "2026-09-08T07:00:00+08:00")
         self.assertIsInstance(entries, list, "RMD-A2 RED: plan_reminders must return a list.")
         by = {}
@@ -557,13 +563,15 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
         flat = sorted(e["fire_at"] for e in entries)
         self.assertTrue(flat, "RMD-A2 RED: no reminder planned for a week that has 钢琴课(周一) "
                               "and 开学报到(周三 09-16)? — 见逐档断言。")
-        # 周一 16:30-17:30 钢琴课：三档 = 09-06 20:30 / 09-07 07:45 / 09-07 16:15
+        # 周一 16:30-17:30 钢琴课 · 下一次 occurrence(09-14)：三档 = 09-13 20:30 /
+        # 09-14 07:45 / 09-14 16:15
         piano = [e for e in entries if "钢琴课" in e["title"]]
         self.assertEqual(
             sorted(e["fire_at"] for e in piano),
-            ["2026-09-06T20:30:00+08:00", "2026-09-07T07:45:00+08:00",
-             "2026-09-07T16:15:00+08:00"],
-            f"RMD-A2 RED: 钢琴课(周一 16:30) 三档时刻错: {[e['fire_at'] for e in piano]!r} — "
+            ["2026-09-13T20:30:00+08:00", "2026-09-14T07:45:00+08:00",
+             "2026-09-14T16:15:00+08:00"],
+            f"RMD-A2 RED: 钢琴课(周一 16:30 · next occurrence 09-14) 三档时刻错: "
+            f"{[e['fire_at'] for e in piano]!r} — "
             "前晚档必须映射到**事件日前一天** 20:30、早档当天 07:45、临期档 16:30-15min=16:15。")
         # 周三 19:00 英语培训：soon 档 = 18:45（跨小时的减法）
         english = [e for e in entries if "英语培训" in e["title"]]
@@ -705,10 +713,13 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
                              f"RMD-A2 RED: before_min 必须是 int 且从载体读: {cfg!r}")
             piano = [e for e in lib.plan_reminders(model, "2026-09-08T07:00:00+08:00", config=cfg)
                      if "钢琴课" in e["title"]]
+            # 钢琴课 next occurrence = 周一 09-14（09-07 那一周次三档全已过并跳过，理由见
+            # test_a2_three_ladder_arithmetic 注记）：前晚 09-13T19:45 / 当天 06:30 /
+            # 临期 16:30-30min = 16:00。
             self.assertEqual(
                 sorted(e["fire_at"] for e in piano),
-                ["2026-09-06T19:45:00+08:00", "2026-09-07T06:30:00+08:00",
-                 "2026-09-07T16:00:00+08:00"],
+                ["2026-09-13T19:45:00+08:00", "2026-09-14T06:30:00+08:00",
+                 "2026-09-14T16:00:00+08:00"],
                 f"RMD-A2 RED: 配置改成 19:45/06:30/30min 后排程没跟着变: "
                 f"{[e['fire_at'] for e in piano]!r} — 「改时刻即时生效」不成立。")
         # 缺配置载体不得停摆（回退默认，与 spec 常量一致）
@@ -982,11 +993,17 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
         gw, err = _gw()
         if gw is None:
             self.fail("RMD-A4 RED: " + err)
-        pushed = []
-        d = gw.AlertDispatcher(sink=lambda i, e: pushed.append(i))
+        # sink 契约 = (业务 id, 传输信封)；本齿分别采集两者，避免用同一个列表既装 id 又装元组。
+        pushed = []          # 业务 id 序列（与同文件其它 a4 齿同形）
+        envs = []            # 每次推送实际下发的 JSON-RPC 信封序列
+        def _sink(bid, envelope):
+            pushed.append(bid)
+            envs.append(envelope)
+
+        d = gw.AlertDispatcher(sink=_sink)
         t0 = ALERT_CANONICAL["fire_at"]                      # 16:15 到点
         d.tick([ALERT_CANONICAL], t0)
-        self.assertEqual([i for i, _ in pushed], [ALERT_CANONICAL["id"]],
+        self.assertEqual(pushed, [ALERT_CANONICAL["id"]],
                          "RMD-A4 RED: 到点未推送。")
         self.assertEqual(d.attempts(ALERT_CANONICAL["id"]), 1)
         d.tick([ALERT_CANONICAL], "2026-09-09T16:15:30+08:00")
@@ -1004,8 +1021,9 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
         acts = [ev["action"] for ev in d.events]
         self.assertEqual(acts, ["push", "push", "push", "void"],
                          f"RMD-A4 RED: 投递审计轨迹错: {acts!r} — 每次推送/作废必须留痕。")
-        # 重推必须复用同一业务 id 与同一传输 id（幂等）
-        envs = [e for _, e in pushed]
+        # 重推必须复用同一业务 id 与同一传输 id（幂等）—— envs 由 _sink 直接采集
+        self.assertEqual(len(envs), 3,
+                         f"RMD-A4 RED: 三次推送的信封采集数 {len(envs)} != 3 — 采集自洽性。")
         self.assertEqual(len({e["id"] for e in envs}), 1,
                          "RMD-A4 RED: 重推换了传输 id — 设备侧无法把它认成同一条。")
         args_ids = {e["params"]["arguments"]["id"] for e in envs}
@@ -1146,8 +1164,11 @@ class ScheduleReminderOfflineAcceptance(unittest.TestCase):
         sc = _sched()
         model = sc.parse_schedule_md(B1_CANONICAL)
         entries = lib.plan_reminders(model, "2026-09-08T07:00:00+08:00")
+        # 钢琴课 = 周一 16:30；now = 周二 09-08T07:00 → 09-07 那一周次三档全已过并跳过，
+        # 前晚档落在**下一次 occurrence（周一 09-14）的前一天** = 2026-09-13T20:30。
+        # （与 test_a2_three_ladder_arithmetic 同口径，理由见彼处注记。）
         night = [e for e in entries
-                 if "钢琴课" in e["title"] and e["fire_at"] == "2026-09-06T20:30:00+08:00"]
+                 if "钢琴课" in e["title"] and e["fire_at"] == "2026-09-13T20:30:00+08:00"]
         self.assertTrue(night, "RMD-A8 RED: 没排到钢琴课的前晚档。")
         self.assertIn("带琴谱", night[0]["speech"] + night[0]["title"],
                       "RMD-A8 RED: 前晚（带物）档的兜底文案没有携带备注内容 — 携带内容由备注"
