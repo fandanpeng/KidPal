@@ -103,3 +103,62 @@ $ node .claude/scripts/landing-fidelity-check.mjs changes/arch/260908-gov-review
 - 本 verdict 唯一产出物；verifier 未改任何被审文件（c:\tmp 下临时核对目录为只读复制件，用后可弃）。
 - 结构门两处证据包装偏差（文件名 / manifest 块 / packet-id token）+ 冻结稿 T3 锚行「或锚未决」为门字面 RED 直接原因；冻结稿锚行修正须冻结层（human/architect）追认，verifier 不代改。
 - 语义保真总评：**8 路径改法全部按冻结条款落位，T3 节逐字零偏差，无私货、无破坏性改动**——RED 限于证据包装与验证集补齐，不涉重开设计；五项 GREEN 条件完成后由主线程重跑 `landing-fidelity-check.mjs`（应 ok:true）并交 verifier 复核，merge 决定恒归 human 门。
+
+---
+
+## 7. 终态复核（2026-09-08 · 修复 commit `aa6ffd9` 后）
+
+> 复核对象 = 修复 commit `aa6ffd9`（RED 五前提逐条修复）。本轮 verifier 独立动作：重读修复 diff 全量、重跑结构门与自检、独立核 T8c 结构性前提。verdict 更新为 **GREEN**。
+
+### 7.0 Verdict：**GREEN（放行建议；merge 决定恒归 human 门）**
+
+五条转绿前提逐条复核：
+
+| # | 前提 | 复核实证 | 裁定 |
+|---|---|---|---|
+| 1 | summary 制品归位 + manifest 块 + packet-id | `landing-summary.md → architect-landing-summary.md`（git mv）；新增 `packet-id = 260908-gov-review-merge-chain-hardening §2 改法集（T1–T7）+ §5 验证集` 行；```landing-manifest``` 围栏块 8 路径与 PROPOSAL 逐字一致 | 满足 |
+| 2 | PROPOSAL T3 锚行或锚修正 | 括注内两路径去 backtick 转散文（含「格式注记…verdict 转绿五前提之追认 2026-09-08」留痕）；落地正文零改动；锚并集现 8/8（结构门 proposalTargets = summaryTargets = 8，无锚问题） | 满足（附残余观察 a） |
+| 3 | V1-② sha256 夹具 + V2-④ N5 背书夹具 | T8a（:1201-1206）：真实 CRLF 文件经 `normalizeLfFile` 归一后与 LF canonical 做 sha256 逐字节相等断言；T8b/c（:1207-1219）：独立临时仓 unlock→ready-to-merge→BLOCK 回落 blocked 自纠可落。merge-friction 自检 20/20（verifier 独立复跑确认），其余五套自检复跑零回退（3/3、16/16、7/7、9/9） | 满足（附残余观察 b） |
+| 4 | 措辞守卫掉字 | acceptance-evidence.md:12 「措辞守（」→「措辞守卫（」，A.2 逐字恢复 | 满足 |
+| 5 | 队列 §2 表头换位 | desync 结移行移至 `\|---\|` 分隔行之后，与 closeout 行同侧，markdown 表格结构恢复 | 满足 |
+
+### 7.1 结构门实跑输出（修复态，baseRef=af0ac8e，原样）
+
+```
+{
+  "ok": true,
+  "gate": "landing-fidelity",
+  "reviewDir": "changes/arch/260908-gov-review-merge-chain-hardening",
+  "baseRef": "af0ac8e",
+  "frozen": true,
+  "packetBinding": true,
+  "proposalTargets": [ 8 路径 = manifest 全集 ],
+  "summaryTargets":   [ 同上，8/8 相等 ],
+  "unauthorized": [],
+  "claimedNotLanded": [],
+  "plannedNotLanded": [],
+  "gitDegraded": false,
+  "citationAnchorAdvisory": { "checked": 1, "problems": [], "resolvedByPrefix": ["taskpackage-required-check.mjs:143 → .claude/scripts/…"] },
+  "verbatimQuoteAdvisory": { "missing": [ "T4 ask JSON 块 not-found-verbatim（缩进形态差，advisory-only）" ] },
+  "advisory": { "changedCanonicalNotInProposal": [] }
+}
+---exit=0
+```
+
+advisory 三条均不阻塞：verbatim missing = 冻结 T4 的 ask 块在 settings 内嵌缩进与 PROPOSAL 顶层缩进不同所致（同族格式 advisory；ask 两形逐字在场已由 `-cF` = 1/1 独立证实）；citation resolvedByPrefix 为消警留痕；lint-descriptions 对 `landing-verifier.md` 的 over-length 警告与本批落地无关（warning-level、agent def 自身）。
+
+### 7.2 T8 夹具定性（verifier 独立判断）
+
+- **T8a 判：满足 V1-② 冻结断言实质**。文件级 `normalizeLfFile` + sha256 逐字节相等两要素齐；autocrlf 场景以「CRLF 物化产物直接入夹具」等价模拟（未真跑 `core.autocrlf=true` 的 checkout 往返），达冻结「canonical ↔ current sha256 相等」断言之实质，可接受。
+- **T8b/c 判：机制级夹具成立，背书链由结构性亲核补足**。T8b 以真实临时仓 + pod 文件复证 unlock→ready 机制；T8c 机证 ready→blocked 回落自纠可落。Step 1b 无条件全闸调用（无 unlock 旁路）为代码形状事实——verifier 本轮独立亲核（merge-driver.mjs:1246 Step 1b 注释「合并前必经」+ :1251 全闸 spawn 在 processPod 主流程、approvalRefUnlock 无跳过 Step 1b 的路径），与 decision-packet N5 adjudicator 亲核（:1136-1150）双重背书。端到端「真 gate 对 off-main 夹具 BLOCK」未复现，属机制级与端到端级的残差，不阻塞（结构性不变式已双亲核 + 机制级夹具在案）。
+
+### 7.3 残余观察（不阻塞，留档不入转绿条件）
+
+- **a**：PROPOSAL T3 锚行修正时括注散文把 `docs/contracts/**` 误写为 `docs/contracts**`（少一斜杠，aa6ffd9 引入）。纯 prose 笔误、解析器不提取、权威匹配形态在 integrator.md:42 与 gate 注释（均正确）；建议随下一批治理批顺手订正。
+- **b**：T8b 沿 T1a 先例注入 runner，真实 `resolveHumanApproval` 五要素路径由 gate 自检 + verifier 五态探针（§5）覆盖；如后续批动 unlock 路径，建议把真实五要素调用纳入夹具。
+- **c**：V1-④ `ensureGraphCacheSynced` 导出可 import 探针未落（导出在案 :741 静态可证）；merge-driver 无 import 守卫使 import 级探针不可行，属门判据与脚本形态的既有张力，留根观测。
+- **d**：结构门本轮才首次全绿——本批落地线程当时只跑 proposal-consolidation-check 未跑 landing-fidelity-check 的流程缺口，建议入下批 retro（landing 步骤清单应含结构门实跑）。
+
+### 7.4 终态结论
+
+五前提全部满足、结构门 ok:true（baseRef=af0ac8e）、验证集独立复跑全绿（merge-driver 六套 + T8 = 20/20、gate 21/21、lib 探针、七消费方名册、V4 全套、T5 五态探针）、语义保真复确认（修复 diff 仅触五前提对应面，无新夹带；aa6ffd9 文件清单 = summary 改名 + PROPOSAL 锚行 + merge-driver T8 + 掉字 + 表头 + verdict 归档 + graph 缓存非 canonical 件）。**landing 保真度判定 GREEN，放行建议成立；合并（Track A human 门）与后续 Track A escalation 批启动归 human。**
