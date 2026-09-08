@@ -1,0 +1,66 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-08T00:31:11.132Z",
+  "changeId": "260829-story-p3",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "cross-system:impl=main,acceptance,deploy,gateway",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "cross-system:impl=main,acceptance,deploy,gateway"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "cross-system:impl=main,acceptance,deploy,gateway"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-story-p3/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-story-p3/docs-delta.md",
+          "changes/dev/260829-story-p3/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788806909320-mutation-check.log",
+      ".claude/verify-logs/1788806922046-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-story-p3/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-story-p3/docs-delta.md",
+      "changes/dev/260829-story-p3/review-packet.md"
+    ]
+  }
+}
