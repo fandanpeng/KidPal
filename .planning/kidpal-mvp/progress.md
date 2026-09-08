@@ -169,3 +169,10 @@
 - launch prompt 两份落 `.git/devloop/launch/prompt-260829-{story-p3,schedule-reminder}.txt`（VS Code 交互会话形态，human 自跑；headless fail-closed 备选）。intake 必办移入：story-p3 闸 A 契约 §一 E1 control 预审（v0.4 服务端扩若触契约措辞）+ 生字反白已裁不重开 + 麦克风采音殿后 9b；schedule-reminder 范围红线（G 网关 additive、消费包 6 课表数据链路不重写、B1 表体零变更走 prompt 约定备注）+ live 验收不 auto-run。两包均带 Intent:nointent 偏差评估（ARQ-260907-openclaw-tools-rejection-rootcause，受阻即 blockingDecision fail-closed；schedule-reminder 注记 schedule-p2 QQ 录入自改写通道已 live 实证可用）+ char_cache ~19MB 网关 memory pressure 遗留评估（char-stroke 遗留风险 §8.3）。两包均载 char-stroke pod-retro 固化教训：外部世界断言须真记录抽样 + fixture ≥1 条真形状；部署生成器先探测目标形态。
 - 上游已知红钉入口径：main host_app ELF 的 WSA-A4/A6 证据齿 2 红（本地-only 证据从未入仓）为本批红基线/mutation 判读的既有背景，勿误判自引入。
 - **待 human 自跑 launch**：两份 prompt 分别在对应 worktree 的 VS Code 会话作启动输入。
+
+## 2026-09-08 本批 launch 面后续修订（主线程记，idf_run.py wrapper 自守卫落地后）
+
+- char-stroke 实证的环境坑收口（main 0c2a669）：c:\tmp\idf_run.py wrapper 加非 venv python 自动 re-exec 自守卫（仓外文件，双 worktree 全局共享自动受益）；pod-s-handoff README §3.1 补 venv python 绑定 + firmware/ cwd 要求；skill kidpal-idf-env 增 esp_idf_monitor 假阳性陷阱节。
+- 两本批 worktree（story-p3 / schedule-reminder）已 fast-forward 同步 main bc0951f（含 0c2a669）。
+- 两份 launch prompt 的「IDF 构建通路」环境事实段同步修订：firmware/ cwd 要求、双形态可用（canonical = venv python）、esp_idf_monitor 报错 = 旧签名勿误诊、设备编译与 WSL host 验收通路勿混。
+- 既有批注「char_page.cc 须在 verify 环境实编一次确认（LVGL 9.3 真头已逐 API 核对）」属 char-stroke 收口遗留口径，随包已合并，落 pod-events/verify-runs 跟踪，不入本批面。
