@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "ec4851bd32bb9b20a248b977ed93efd836b1303f",
-    "indexed_at": "2026-09-07T15:15:23Z",
-    "project": "C-AI-KidPal-pod-char-stroke",
-    "nodes": 17279,
-    "edges": 41355,
-    "original_size": 42401792,
-    "compressed_size": 6978035,
+    "commit": "812a99bb8c84b8f7d07adc97cd64c99a02da889f",
+    "indexed_at": "2026-09-08T13:40:56Z",
+    "project": "C-AI-KidPal-gov",
+    "nodes": 18763,
+    "edges": 45254,
+    "original_size": 41222144,
+    "compressed_size": 7777996,
     "compression_level": 3
 }

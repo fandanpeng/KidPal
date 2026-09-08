@@ -80,7 +80,7 @@ ARQ-260907-gate-lib-script-separation（260907-gov-review-merge-friction retro F
 
 正文新增一节，边界钉死（原文写入 def）：**仅 Pod 分支**（分支名匹配 `dev/<changeId>`）、**永不 push**、**永不 merge 进 main**（main 侧合并恒归 planner 主线程 merge-driver 路径——与既有 :12/:74 语义一致，本节是把「集成期 Pod 分支上的 rebase/冲突消解」从默认禁止里显式豁出并加前置）、不改 `*.acceptance.*` / `docs/contracts/**` / `docs/spec.md`、**消解规则必须预登记**（planner 派单逐文件写死 + human 授权事件 id 在场，缺一即停并回报）、集成树验证回报义务（T2 ④ 同款清单）。fs-write 类闸产物（supervisor-verdict.json）的收口提交归属一并写入本节（并证二③）。**定稿正文（整节原样可落）见附录 A.1**——A-1 判据先例四条件核验通过：frontmatter 零改动 / write scope 零变更 / 权限语义为显式豁出且带可机判的 fail-closed 前置 / authority 零转移，不触 lightweight 硬排除判据字面。
 
-目标文件：`.claude/agents/integrator.md`（含 B-4 写作侧对齐：:42 Findings 写作约定补一句「Kind=hard-violation 且 Basis 涉契约/spec 时，Basis 须以 `docs/contracts/**` 或 `docs/spec.md` 字面前缀起引」——A-8 同场裁，零新增文件）
+目标文件：`.claude/agents/integrator.md`（含 B-4 写作侧对齐：:42 Findings 写作约定补一句「Kind=hard-violation 且 Basis 涉契约/spec 时，Basis 须以 docs/contracts** 或 docs/spec.md 字面前缀起引（格式注记：此括注为散文提及、非锚行——landing-fidelity 或锚判据修正，verdict 转绿五前提之追认 2026-09-08）」——A-8 同场裁，零新增文件）
 
 ### T4 · dev-loop.settings.json ask 条目（G3，A-4/OQ3 已裁形态 (a) ask + N3 互洽修法）
 

@@ -9,7 +9,7 @@
 - UI 验收必须断言状态变化与具体内容，例如列表新增、详情跳转、错误态呈现；不能只断言页面能打开。
 - AI 功能验收必须捕获工具调用、校验工具参数、校验作用域约束（如只读 scope 不得调用 mutating 工具），并确认响应没有编造工具结果。
 - 错误路径至少覆盖一个边界/权限/无效输入场景。
-- 版本化制品（`*.vN` 落盘物，如 `server/deploy/openclaw-system-prompt.vN.md`、engine-patch、overlay 配置）的**接线类 green-guard 必须版本无关**，三步：① 解析当前被接线 / 渲染的那一版文件名——从结构化指向读（渲染面如 `apply-xiaozhi-overlay.sh` 的 `PROMPT_SRC`、声明面如 `provider.config.yaml` 的 `system_prompt.artifact|source|deploy_target`），不从目录猜；② 断言该文件确实落盘（防孤儿）；③ 断言其正文逐字携带本包语义锚点（防未来版丢内容）。**禁在接线类断言里硬写版本字面文件名**：前序包 forward-bump 后字面陈旧，守卫要么假红（断言字面陈旧非行为破损、需 human ruling 才放行），要么假绿（needle 在别的版本正文里偶然命中，丢正文侧静默报绿——schedule-reminder 实测先例）。**落盘 / 措辞类守卫钉死某版合理**（如断言某版基座结构、措辞收紧），撰写时以固定 token 注释标注类别 `<!-- guard-class: wiring | landing | wording -->`，与接线类区分（guard-class token = 接线 / 落盘措辞二分的类别判据）。重指母版 = `test_e3_current_prompt_wired_and_carries_char_c1`（human 裁 `c54bbcde`）；清点范围 = 全仓 grep `openclaw-system-prompt.v[0-9]` 于验收断言字面处逐条判「接线守卫（该版本无关化）vs 落盘 / 措辞守（钉死某版合理）」。
+- 版本化制品（`*.vN` 落盘物，如 `server/deploy/openclaw-system-prompt.vN.md`、engine-patch、overlay 配置）的**接线类 green-guard 必须版本无关**，三步：① 解析当前被接线 / 渲染的那一版文件名——从结构化指向读（渲染面如 `apply-xiaozhi-overlay.sh` 的 `PROMPT_SRC`、声明面如 `provider.config.yaml` 的 `system_prompt.artifact|source|deploy_target`），不从目录猜；② 断言该文件确实落盘（防孤儿）；③ 断言其正文逐字携带本包语义锚点（防未来版丢内容）。**禁在接线类断言里硬写版本字面文件名**：前序包 forward-bump 后字面陈旧，守卫要么假红（断言字面陈旧非行为破损、需 human ruling 才放行），要么假绿（needle 在别的版本正文里偶然命中，丢正文侧静默报绿——schedule-reminder 实测先例）。**落盘 / 措辞类守卫钉死某版合理**（如断言某版基座结构、措辞收紧），撰写时以固定 token 注释标注类别 `<!-- guard-class: wiring | landing | wording -->`，与接线类区分（guard-class token = 接线 / 落盘措辞二分的类别判据）。重指母版 = `test_e3_current_prompt_wired_and_carries_char_c1`（human 裁 `c54bbcde`）；清点范围 = 全仓 grep `openclaw-system-prompt.v[0-9]` 于验收断言字面处逐条判「接线守卫（该版本无关化）vs 落盘 / 措辞守卫（钉死某版合理）」。
 
 ## UI 验收 vs 设计 review
 

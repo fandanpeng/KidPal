@@ -31,7 +31,7 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { setPod, reconcile } from './portfolio-reconcile.mjs';
 import { computeRetroScope } from './loop-health-report.mjs';
@@ -1194,6 +1194,29 @@ function runMergeFrictionSelfCheck() {
       resolveUnlockWorktree({ changeId: 'x' }, repo7) === null);
     assert('T7g 指引文案非空（显式指引 ≠ 通用 blocked 文案的前提）',
       typeof VERSIONED_ADD_ADD_GUIDANCE === 'string' && VERSIONED_ADD_ADD_GUIDANCE.includes('并集') && VERSIONED_ADD_ADD_GUIDANCE.includes('§10c'));
+
+    // ---- T8（260908 批 verdict 转绿补件：V1-② 行尾 sha256 夹具 + V2-④ N5 背书机制夹具）----
+    // V1-②：normalizeLfFile 归一后文件字节 == LF canonical ⇒ sha256 逐字节相等（autocrlf 陷阱 a 的机械等价）。
+    const repo8 = mkRepo('t8');
+    const f8 = join(repo8, 'crlf-projection.json');
+    writeFileSync(f8, 'line1\r\nline2\r\n', 'utf8');
+    normalizeLfFile(f8);
+    const after8 = readFileSync(f8, 'utf8');
+    assert('T8a 行尾归一：CRLF 文件归一后字节 == LF canonical（sha256 逐字节相等）',
+      after8 === 'line1\nline2\n' && createHash('sha256').update(after8).digest('hex') === createHash('sha256').update('line1\nline2\n').digest('hex'));
+    // V2-④（N5 已裁选项 2）：解锁→ready 瞬态 + Step 1b BLOCK 回落 blocked 自纠。
+    // Step 1b 背书为结构性（processPod 对 Step 1b 无条件调用、无 unlock 旁路——代码形状亲核）；本夹具机证 board
+    // 状态面自愈：unlock 置 ready 后被 BLOCK 回落 blocked，瞬态不自锁。
+    const board8 = { pods: [{ changeId: '260908-t8r', status: 'blocked' }] };
+    const r8 = approvalRefUnlock(repo8, board8, { changeId: '260908-t8r', humanRef: 'self-check-event', runner: () => {}, warnFn: () => {} });
+    const podPath8 = join(repo8, '.git', 'devloop', 'pods', '260908-t8r.json');
+    const ready8 = existsSync(podPath8) && JSON.parse(readFileSync(podPath8, 'utf8')).status === 'ready-to-merge';
+    assert('T8b unlock 五要素核验过 → ready-to-merge（独立仓复证 T1a 机制）', r8 === 'unlocked' && ready8);
+    if (ready8) {
+      setPod(repo8, { changeId: '260908-t8r', status: 'blocked' }); // 模拟 Step 1b BLOCK 回落（结构性无条件调用点唯一，亲核在案）
+      const blocked8 = JSON.parse(readFileSync(podPath8, 'utf8')).status === 'blocked';
+      assert('T8c N5 背书回落：ready→blocked 自纠可落（Step 1b BLOCK 后 board 状态自愈，瞬态不自锁）', blocked8);
+    }
   }
 
   const pass = results.filter((r) => r.pass).length;

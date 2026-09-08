@@ -1,6 +1,26 @@
 # architect-landing-summary · 260908-gov-review-merge-chain-hardening
 
 > 主线程 packet-bound landing 执行回报（2026-09-08）。蓝本 = FROZEN v1.0 PROPOSAL（`af0ac8e`）+ 附录 A 逐字正文；落点 = 8 manifest 路径；落地 commit = `b89bf33`。
+> packet-id = 260908-gov-review-merge-chain-hardening §2 改法集（T1–T7）+ §5 验证集（同 PROPOSAL packet-binding 行）。
+
+```landing-manifest
+.claude/scripts/merge-driver.mjs
+.claude/scripts/lib/governance-gate-shared.mjs
+.claude/scripts/pre-merge-escalation-gate.mjs
+.claude/references/pod-coordination.md
+.claude/references/acceptance-evidence.md
+.claude/agents/integrator.md
+.claude/dev-loop.settings.json
+docs/ARCH-REVIEW-QUEUE.md
+```
+
+## 0. verdict 转绿修复记录（2026-09-08，landing-verdict RED 五条件逐条）
+
+1. 制品名归位（landing-summary.md → architect-landing-summary.md，git mv）+ 本 manifest 围栏块 + packet-id 行补齐。
+2. PROPOSAL T3 锚行或锚 fail-loud：括注内 `docs/contracts/**` / `docs/spec.md` backtick 去 backtick 转散文提及（冻结层格式修正——verifier 列为转绿条件追认；落地正文零改动）。
+3. V1-② 行尾 sha256 夹具 + V2-④ N5 背书夹具补齐 = merge-driver 自检 T8a/T8b/T8c（20/20 全绿；Step 1b 背书结构性注记在自检注释）。
+4. acceptance-evidence.md:12 掉字修复（「措辞守卫」补「卫」）。
+5. 队列 §2 结移行插断表头修复（行/分隔符换位）。
 
 ## 1. 落点对照（manifest 8/8）
 
@@ -30,7 +50,7 @@
 
 | 项 | 结果 |
 |---|---|
-| V1 merge-driver 六自检 | 六套全绿：retro-advisory 3/3、quick-checks 对齐、detect-changes 16/16、rebase-target 7/7、worktree-topology 9/9、merge-friction 17/17（11 旧 + T7 段 7 新：T7a-g） |
+| V1 merge-driver 自检 | 七套全绿：retro-advisory 3/3、quick-checks 对齐、detect-changes 16/16、rebase-target 7/7、worktree-topology 9/9、merge-friction **20/20**（11 旧 + T7 段 7 新 T7a-g + T8 转绿补件 3 新 T8a-c） |
 | V2 gate 自检 + lib | gate 21/21（18 旧 + T5 两态 3 新）；lib import probe OK（顶层零副作用）+ `process.argv` 零命中（V2-② 辅断言） |
 | V2-③ 七消费方名册 | landing-fidelity-check / proposal-consolidation-check / closeout-check / taskpackage-required-check / devloop-artifact-check / changes-index / portfolio-reconcile 七套 --self-check 全绿；名册复跑零回退（N2 名册六改七） |
 | V3 settings ask 探针 | ask 两形在 settings 逐字在场（V4 同款 -cF 断言）；「授权事件在场」条件语义机械层不判（T3 正文纪律承载，A-4 已裁） |
