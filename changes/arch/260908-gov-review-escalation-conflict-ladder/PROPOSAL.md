@@ -61,22 +61,32 @@ ESCALATE 弹给人的一行 `cross-system:...` 摘要不含：相交文件清单
 
 `pre-merge-escalation-gate.mjs` 增 `parallelOverlapProbe(ctx)`：ready 判定时对 Pod 源分支跑**只读** `git merge-tree --write-tree <source> <target-main>`（先例 = schedule-reminder review-packet §Integration Probe 同款只读形态；精确化：`--write-tree` 不动工作树/refs，但向 ODB 写 dangling tree/blob 对象、GC 可回收），产出 `{intersectingFiles: [], addAddFiles: [], conflictedHunks: []}`；可选参 `--probe-out <path>` 落 JSON 探测面制品（传递契约见 T4）。探测失败 fail-closed（视为有相交，走 ③ 级）——不放行、不误并。**cross-system 目录计数判据同批退役**——物理宿主 = `supervisor-verdict-gate.mjs` 的 `isCrossSystem`（:224-231，经 classifyHigh → deriveDiffTier → riskTier=high → ESCALATE；R1 亲核：pre-merge gate 六条例外内本无 cross-system 组成项，v0.1「六条例外的 cross-system 组成项」表述有误、在此改述），退役实现 = 该 riskTier 派生轴摘除 cross-system 组成、保留其余轴（core.\*/all-mock/security-axis）；FIX-6 第二方重算（supervisor-gate-check.mjs :35/:759 import 同模块纯函数）单源自动一致、不须单独改。pre-merge-escalation-gate 六条例外（契约面 / off-main / blocked / riskTier / provenance / gov GREEN 锚）逐字不动，canary 承诺。
 
+
+目标文件：`.claude/hooks/supervisor-verdict-gate.mjs`、`.claude/scripts/pre-merge-escalation-gate.mjs`
 ### T2 · 取舍判据成文 + 分级路由（G3+G2）
 
 「无取舍 / 有取舍」机判判据钉进 pod-coordination.md §10d（新节，v0.1 候选交 charter 期冻结）：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（机判：双方版本对同文件 diff 的 hunk 区间不相交；`.vN` 载体不同段 / append 类按此判；**add/add carve-out**：版本化制品 add/add 已登记 §10c 登记表形态 → ② 级（复用 260908 批特判 + 并集指引，预裁定无取舍），未登记形态 → 判不了 → ③ 级，fail-closed 对齐 A-7 补集不变式）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值、同锚互斥断言、版本字面互斥——版本字面互斥复用 260908 批 guard-class wiring 判据）；**判不了 = 存疑向严升 ③ 级 architect**。分级路由：零相交 → ① 放行；无取舍 → ②（不升人，走 runbook 自动并集 + 双方齿复跑，齿红即升 ③）；有取舍 → ③ architect review（升级件带相交清单 + 双方 diff，architect 出消解建议，**不落地**——落地恒归 runbook 执行面）；③ 判不了 / 齿红 / 需动语义 → ④ escalate human（升级件带逐文件清单 + 双方版本正文 + architect 意见 + 消解选项）。**③ 派发 fallback**：③ 级 architect 派发不可用（派发失败 / 超时 / 无消费方）→ 直接 ④ escalate human（fail-closed，防 ③ 悬空退化盲批）。
 
+
+目标文件：`.claude/references/pod-coordination.md`
 ### T3 · 升级件内容面（G2）
 
 supervisor-verdict ESCALATE 与闸 BLOCK 的输出统一增「并行相交面」段：对面 Pod 标识、逐文件相交清单、双方版本正文摘录锚、architect 意见（③ 级产出）、消解选项。human 批的是**消解方案**而非放行仪式；批后凭据走既有 `--human-approval-ref` 通道（零改动）。③ 级 architect 派发失败 / 超时 → 升级件直接落 ④ human 形态（§10d 同款 fail-closed fallback）。
 
+
+目标文件：`.claude/scripts/pre-merge-escalation-gate.mjs`（--probe-out 制品面）、`docs/DEV-GOVERNANCE.md`
 ### T4 · merge-driver 消费探测结果（G3）
 
 **传递契约（S2）**：gate 以可选参 `--probe-out <path>` 落 JSON 探测面制品（显式文件、非 stdout 解析——merge-driver Step 1b 以子进程跑闸、成功时丢弃 stdout 的现状不改，传递面走文件）。processPod 的 rebase 冲突路径复用该探测结果分流：② 级走既有投影特判 / 版本化制品并集指引（260908 批已落）+ 双方齿复跑；③④ 级按升级件走。rebase 实撞冲突与预探测结论不一致时（探测说无取舍、rebase 实撞）→ 存疑向严升 ③，fail-closed。
 
+
+目标文件：`.claude/scripts/merge-driver.mjs`
 ### T5 · DEV-GOVERNANCE 治理注 + 队列销账（G2/G4）
 
 DEV-GOVERNANCE §6 例外升级拍板段内（landing 通道段，「前端对齐 + 例外反选」为段内短语、非独立节）补一句：例外升级拍板的升级件必含并行相交面内容（分级路由见 pod-coordination §10d）——human 触点语义从「盲批放行」改述为「裁消解方案」，不新增 human 触点；manifest 已含 docs/DEV-GOVERNANCE.md、零增改。队列 `ARQ-260907-escalation-cross-system-overfire` 行随 landing 结移 §2。
 
+
+目标文件：`docs/DEV-GOVERNANCE.md`、`docs/ARCH-REVIEW-QUEUE.md`
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 
 | 面 | 文件 | 类别 | 说明（消费方） |
