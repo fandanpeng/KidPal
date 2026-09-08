@@ -8,6 +8,7 @@
 （尚无条目——存量散落的决策不做考古搬迁，自 260907 批 landing 起新决策按本格式登记。）
 
 ## ADR-001 · 版本化部署制品的接线不变式：渲染面 == 声明面 == 被测面，且守卫必须版本无关
+
 - **日期**：2026-09-08（TaskPackage `260829-story-p3` 收口；决策本体由 human 于同批裁定，pod-events 决策事件 `c54bbcde-582f-42c2-a337-5260f890a799`，升级单 `80deedcb-1ea8-4550-b1fa-f20c2f0376d7`）
 - **决策**：任何以 `.vN` 文件形态版本化落盘的部署制品（当前实例：`server/deploy/openclaw-system-prompt.vN.md`），其「已接线」类冻结守卫必须满足两条：① 守卫从**结构化指向**解析出「当前被接线的那一版」，而不是把版本字面文件名写进断言；② 解析出的渲染面（`apply-xiaozhi-overlay.sh` 的 `PROMPT_SRC`）与声明面（`provider.config.yaml` 的 `system_prompt.{artifact,source,deploy_target}`）必须**集合相等**，且该版文件确实落盘非空、正文逐字携带历史各包的语义锚点。散文提及与前瞻注记**不算**接线。
 - **理由**：本包把 prompt 从 v2 forward-bump 到 v3，撞上已 merged 包 char-stroke 的字面断言（要求 `.v2` 被引用）由绿转红——而 v3 逐字继承了 char C1 段落（实测锚点 13 命中 + v2 基座 32 命中），行为完好、只有版本字样变了。两条冻结 oracle 在同一 deploy 面上互斥，不可能同时为真，只能靠一次 human ruling 解开。若沿用字面耦合形状，v4/v5 及每个动版本化制品的包都会复发同款假红 + 同款升级。更坏的一面是「反向失效」：把语料取成整个目录全文 grep 版本字面的守卫（`test_schedule_p2.acceptance.py:583-586` 现状）在 bump 后**仍绿**，因为它靠被引用文件自己的头注和无关散文维持——守卫声称检验「渲染源已切到 vN」而实际什么都没检验，谎报比报红更贵。本不变式的落点是「什么被生产所用」这一事实本身，而非某个版本号字符串。
@@ -15,12 +16,15 @@
 - **关联**：`docs/ARCH-REVIEW-QUEUE.md` ARQ-260908-versioned-guard-version-literal-coupling（把本不变式写入 acceptance-author 撰写约定 + 是否设机检门 = 待裁的落地动作，owner=architect+acceptance-author+human）；范例形状 = `server/acceptance/test_story_p3.acceptance.py::test_prompt_carrier_v3_landed_and_wired`（版本 ≥N 容忍 + 两面同指）与 `server/acceptance/test_char_stroke.acceptance.py::test_e3_prompt_v2_wired_into_deploy`（版本无关重指后形态，含两面相等与内容锚点）；载体声明 = `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER`；现状与漂移清单 = `server/deploy/README.md`「OpenClaw system prompt 版本化接线（现状 = v3）」节；过程证据 = `changes/dev/260829-story-p3/review-packet.md` §6。
 
 ## ADR-002 · 日程提醒生产侧采「混合分层」：时刻算术与幂等 id 交确定性脚本，语义判断与文案交 agent 回合
+
 - **日期**：2026-09-08（TaskPackage `260829-schedule-reminder` 收口；决策本体由 human 裁定，pod-events `human-decision` 事件 `acaef302-9ddc-4508-b5d3-94023e050f43`）
 - **决策**：三档阶梯提醒的**生产侧**分两层，边界按「可机判性」切。① **确定性 python 脚本层**（`server/deploy/openclaw-patch/reminder_schedule_lib.py`，`warm_char_cache.py` 同形态先例）承载全部可离线硬断言的工作：时间串（`17:30-18:30`）解析、按星期/日期落位、跨天映射（前晚档 = 事件日 −1 天）、事前 N 分钟减法、已过去档位跳过、幂等 id 确定性散列（条目 + 档位 + 事件日期）、`alerts/pending.json` 原子写、跨进程条目的机械 schema 校验与坏输入降级；由 **OpenClaw 原生 cron 的 `--command` 载荷**执行（每 15 分钟定期重算 + 家长 QQ 录入即时触发）。② **OpenClaw agent 回合层**承载语义判断与孩子文案：「备注列里哪部分算要带的东西」「念给孩子听的一句话」按 `openclaw-system-prompt.vN.md` 的约定增量产出，写成脚本消费的**语义中间产物**（`semantic.json`，形状 `{entry_key: {title?, speech?, bring?}}`）。脚本对缺/坏语义输入降级继续排程（机械兜底文案，缺备注绝不凭空发明带物）。
 - **理由**：让 LLM 做时区算术与哈希不可靠——同一失败形态在 260829-char-stroke 已实证过（离线面全绿、live 面必红）。把算术与哈希收进确定性脚本还有第二重收益：**high 风险包的验收强度得以保全**——三档时刻关系、幂等 id 的三维独立性、过期跳过、原子写这些都能在本机 host 测试里真跑真断言（本包 RMD-A2 的 4 条变异全部转红即其证据），live 面因此可以诚实收缩为「cron 真在跑 + 文件真被写」两条事实，而不是拿一次不稳定的端到端去赌全部正确性。语义那一半反过来**不该**假装能离线验：大模型输出无法被断言锁死，只钉「产物 schema + 约定文本承载 + 对坏输入的降级」。
 - **备选与放弃原因**：① **全交 agent 回合**（cron 只发一句 prompt，时刻/id/写文件都由模型产出）——放弃：算术与哈希不可靠，且离线可机判的证据全部退化成 live 抽查，high 包承担不起；② **全交确定性脚本**（含判断备注里哪部分要带）——放弃：那是语义任务，规则化必然误判，且 spec S-F1.4 明写「『备注里哪部分算要带的』由 OpenClaw system prompt 约定钉死」；③ **把三档算术放进 G 网关**（front 自己算档位）——放弃：违反「脑算网关推、网关恒薄」（决策 20）与 RMD-E3 的 additive 纪律，且时刻的家要在服务端配置侧可即时改（放进网关会诱导把常量搬进代码）；④ **让固件承担判定**——直接撞决策 24 哑终端纯洁性（设备零本地事项源由负向扫描齿钉死）。
 - **关联**：spec §4.1 S-F1.4（三段阶梯 / V15 幂等 id / V16 预排粒度）与决策 20；契约 `docs/contracts/interface-contract.md` §三（本决策不改契约）；证据 = `.claude/taskpackages/260829-schedule-reminder/taskpackage.json` 的 `notes`【两条 human 裁定】段与 `mutationEvidence`（RMD-A2 四条）+ `changes/dev/260829-schedule-reminder/review-packet.md`。
+
 ## ADR-003 · 提醒语音借引擎既有音频链（`speak_txt`）出音；front 不自建合成、不做 opus 编码、不注入二进制音频帧
+
 - **日期**：2026-09-08（TaskPackage `260829-schedule-reminder` 收口；决策本体由 human 裁定，pod-events `human-decision` 事件 `09359e74-005b-45bb-9535-69e19c14ee04`）
 - **决策**：提醒到达的三件套（提示音 + TTS 读文案 + 弹窗驻留）中，**语音一半的出音通路 = 借引擎既有音频链**：front 到点向**引擎腿**注入一条内部指令 `{"type":"kidpal_speak","text":<契约 §三 speech 原文>}`，由引擎部署副本认领（`server/deploy/engine-patch/connection.py::_kidpal_try_speak`）并转调引擎现成入口 `core/handle/intentHandler.py::speak_txt(conn, text)`，走既有 edge-tts provider 与已 live 实证的 Opus 下行音频链出音。front 侧**不自建 TTS 合成、不做 mp3→opus 编码、不自己向设备腿注入二进制音频帧**（设备腿 `send_bytes` 恒空 = 可机判红线，被冻结齿 `test_a3_alert_leg_emits_no_binary_frames` 钉住）。降级路径同批钉死：文案缺失 / 注入失败 / 出音异常 → **弹窗 + 提示音仍必达、投递不阻塞**（V20 不对称性：语音是可选增强）。
 - **理由**：① 音频链路上「能不能出声」的难点（opus 编码、下行帧序、设备端解码与播放）引擎侧已全部解决并被 260829-voice-roundtrip live 实证过，front 再造一套是**重复实现 + 新失败面**；② 方向 B 的架构定位是「网关恒薄」（决策 23），在 front 里挂 TTS provider 与 opus 编码器会把网关养成第二个大脑；③ 注入内部指令的形态让「提醒播报」与「孩子对话」在引擎里走同一出口，天然继承打断/并发语义，无需在 front 侧另建会话状态；④ 可机判红线清晰（设备腿零二进制帧），裁定本身因此可被验收测试守住而不是靠口头承诺。
