@@ -50,6 +50,10 @@ set(SOURCES "audio/audio_codec.cc"
             # host_app linux target 同源, 见 firmware/main/test/schedule_reminder_b.acceptance.c;
             # 介质禁令: known-id 集与队列定长驻 RAM, 零持久层/零动态分配)
             "display/reminder_page.c"
+            # 美术资产共享层 (包 260901-ui-art-integration): 冻结离线契约 9 函数 (asset
+            # loader + 渲染原语), 纯逻辑零芯片依赖 -> host_app linux target 同源 (接线在
+            # host_app); 设备侧 esp spiffs VFS 注册放芯片装配层, 本模块只收 mount root。
+            "display/art_assets.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
@@ -967,4 +971,17 @@ if ("${size}" AND "${offset}")
     endif()
 else()
     message(STATUS "Assets partition not found, using v1 partition table")
+endif()
+
+# U 包 (260901-ui-art-integration) assets 分区 SPIFFS 镜像接线 (BUILDER DUTY 3)。
+# 落地面 = firmware/main/assets/spiffs_root/（47 枚 KAP1 闭集，见
+# firmware/main/test/ui_art_integration.acceptance.c 的 artt_expected[] 表）。
+# 既有 CONFIG_FLASH_DEFAULT_ASSETS / CONFIG_FLASH_CUSTOM_ASSETS 已用
+# esptool_py_flash_to_partition 烧此 assets 分区（不同二进制格式）——为不静默双写，
+# 此处仅在两者均未启用时才以此目录接管 assets 分区为 SPIFFS 镜像；并存冲突已上报
+# planner 裁定，未静默双写。真机 SPIFFS 烧录殿后 9b。
+if("${size}" AND "${offset}" AND
+   NOT CONFIG_FLASH_DEFAULT_ASSETS AND NOT CONFIG_FLASH_CUSTOM_ASSETS)
+    spiffs_create_partition_image(assets FLASH_IN_PROJECT
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/spiffs_root")
 endif()

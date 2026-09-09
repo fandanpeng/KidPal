@@ -11,8 +11,8 @@
   },
   "subsystem": "firmware+tools",
   "story": "美术资产集成（新增 C2）：固件侧资产管线落成（SPIFFS assets 分区 + 1bpp 位图/imgfont/9-slice/抖动网点加载）+ V3 美术资产本体落地（吉祥物 7 姿态/手绘框族/网点/图标族/字体）+ 各 UI 面统一接入换皮。跨页共享资源层切片（非技术层横切），殿后于页面包、不反锁页面；V3 设计稿为前置输入。",
-  "redBaselineCommand": "跑 host+SDL 资产加载/渲染验收（依赖包 0 host 基建 + LVGL SDL）+ V3 资产管线出图结果落盘核验",
-  "redBaselineResult": "红：固件侧 SPIFFS assets 分区 + 1bpp/imgfont/9-slice/抖动网点加载基建未建；V3 美术资产本体未落地固件；各 UI 面仍是占位资产未换皮——目标 host+SDL 验收测试文件尚不存在，编译收集即失败。本包把它做到绿。",
+  "redBaselineCommand": "cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -DKIDPAL_ART_RB_STUB -I. -o /tmp/art_red_runner ../../ui_art_integration.acceptance.c seam_stub.c runner.c && cd <仓根> && /tmp/art_red_runner（红基线 runner 实编通道，见 firmware/main/test/acceptance/red-baseline/red-baseline-summary.md §U）",
+  "redBaselineResult": "红（2026-09-09 实测，acceptance-author）：11 Tests / 10 Failures / 1 stub-skip，退出码 10。红形态 = ① 结构缺位：kidpal_art_load 全树零命中 + 双 CMakeLists 未接线 + 六页渲染面零 art_assets 引用；② weak 哨兵：art_assets 冻结契约 9 函数未实现（-2 哨兵）。口径勘误：launch 预言「文件尚不存在→编译收集即失败」不成立——文件未接线故不参与 host 收集，编译通道零错误，真红形态为 stub 实跑 10 红。上游基线（判读相对值，非本包责任）：server pytest 8 failed/119 passed、host ELF 86/3 Failures（VRT-A2/WSA-A6/WSA-A4）。本包把它做到绿（相对红基线新增绿、不新增红）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -110,6 +110,129 @@
         ".planning/kidpal-mvp/PROPOSAL.md#§4"
       ],
       "landsIn": "acceptance:ART-A7"
+    }
+  ],
+  "crossEnd": {
+    "note": "crossEnd 申报（260908-gov-review-input-surface-frontload T3，2026-09-09 planner 填）。口径 = 本包冻结契约触及的跨边界对端符号：① art_assets 冻结契约 9 函数（验收文件头注冻结，builder 实现侧）；② 资产管线出图对端（KAP1/RGB565 产物形状，验收断言打到其落盘结果）；③ 六页渲染面消费接线点（A6 换皮接线，additive 接入）。存疑向严填 counterparts，不填 exempt。",
+    "counterparts": [
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_mount"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_load"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_pixel"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_glyph"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_glyph_advance"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_render_asset"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_nine_slice"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_dots"
+      },
+      {
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_time"
+      },
+      {
+        "path": "tools/asset-pipeline/gen_assets.mjs",
+        "symbol": "KAP1/RGB565 出图产物形状（资产管线出图结果落盘核验对端）"
+      },
+      {
+        "path": "tools/asset-pipeline/verify_art_assets.mjs",
+        "symbol": "v3 母版指针（v3 稿溯源对端）"
+      },
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      },
+      {
+        "path": "firmware/main/display/char_stroke.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      },
+      {
+        "path": "firmware/main/display/home_p1.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      },
+      {
+        "path": "firmware/main/display/schedule_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+      }
+    ]
+  },
+  "mutationEvidence": [
+    {
+      "acceptance": "ART-A2: 固件侧 SPIFFS assets 分区 + 1bpp 位图加载管线落成（host 可测），资产从分区按路径加载并渲染",
+      "mutation": "art_assets.c kidpal_art_load 的 KAP1 magic 门取反（有效 magic 记为非法，== 判退）→ host ELF ART-A2 render 齿红（'rendering the real pose asset failed'，根因 = 全资产加载失败）",
+      "affectedTest": "ui_art_integration.acceptance.c test 6 render_asset 逐像素比对主体齿 + test 2 KAP1 解码（同根因加载失败）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿（2 = 上游 device-evidence 红 WSA-A6/WSA-A4 非本包）。诚实注记：invert-magic 单点同时使 loader/render/landing 全阵红，取 render 齿作 ART-A2 承载已足够"
+    },
+    {
+      "acceptance": "ART-A3: imgfont 加载（Baloo 2 动态时间数字，同字形逐字符变化）",
+      "mutation": "art_assets.c kidpal_art_glyph_advance 步进 48→40（越出冻结 [48,96]）→ host ELF ART-A3 imgfont 齿红（'glyph advance 40 outside [48,96]'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 5 advance 步进区间断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A4: 9-slice 手绘框族渲染 + 抖动网点（d50/d25/d12）渲染",
+      "mutation": "art_assets.c 9-slice 顶部条 row 映射钉到 C 行（角片垂直失真）→ host ELF ART-A4 nineslice 齿红（'9-slice corner tl pixel distorted'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 7 四 24px 角片逐像素不变形断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A5: V3 美术资产本体落地（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2 字体），经资产管线出图并落地",
+      "mutation": "firmware/main/assets/spiffs_root 将 pose_daily_96.bin 改名 pose_daily_96.bin.bak → host ELF ART-A5 双齿红（test 3 'landing asset load failed (first: pose_daily_96.bin)' + test 4 'non-whitelisted file pose_daily_96.bin.bak'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 3 47 枚逐枚对账 + test 4 闭集枚举/B8 白名单",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "改名还原为 pose_daily_96.bin 后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A6: 各 UI 面（包 2/4/5/6/7/8 的渲染面）统一接入换皮",
+      "mutation": "schedule_page.c 移除 '#include art_assets.h' 行 → host ELF ART-A6 wiring 齿红（'schedule_page.c does not consume the shared asset layer (no art_assets.h include / kidpal_art_* call)'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 10 六页渲染面消费面静态齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "include 行还原后 pristine 重测 97/2 全绿。诚实注记：首探只把 include 行注释、仍残留 art_assets.h 字面量未红；全删字面量才红——齿对『接线标记实际消失』敏感，需字面量彻底移除"
+    },
+    {
+      "acceptance": "ART-A7: 换皮后各页面 host 回归（布局/逻辑不破）一条，独立于 9b 真机观感",
+      "mutation": "view_router.c kidpal_display_route('home') 路由码劫持 1→0 → host ELF ART-A7 regression 齿红（'view_router \"home\" route broken'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 11 包 2 路由抽查（kidpal_display_route『home』== 1）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "路由码还原为 VRT_ROUTE_HOME 后 pristine 重测 97/2 全绿。说明：在自家换皮触及的 view_router.c 上探边，证明 ART-A7 回归守卫对页面契约被换皮误改真敏感"
     }
   ]
 }
