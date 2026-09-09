@@ -12,6 +12,7 @@
  */
 
 #include "view_router.h"
+#include "art_assets.h"
 #include <string.h>
 
 int kidpal_display_route(const char *view)

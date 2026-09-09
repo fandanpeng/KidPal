@@ -18,6 +18,7 @@
  * 渲染入口，不改包 0 冻结断言（host_infra_smoke.acceptance.c 保持绿）。
  */
 #include "home_p1.h"
+#include "art_assets.h"
 #include <string.h>
 #include <stdint.h>
 #include <stddef.h>

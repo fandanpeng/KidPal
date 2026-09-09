@@ -2,7 +2,7 @@
 # Compiles:
 #   - host_app_main.c              -> linux entry (app_main) that auto-runs all tests, exit code = failures.
 #   - host_infra_seam.c            -> the LVGL software-render seam host_infra_render_frame / host_infra_read_pixel.
-#   - ../../host_infra_smoke.acceptance.c -> the FROZEN acceptance file consumed as host tests.
+#   - the host smoke acceptance file (host_infra_smoke) -> the FROZEN acceptance file consumed as host tests.
 #
 # Convention: later logic packages drop their own `*.acceptance.c` (and any test .c)
 # into firmware/main/test/ (or a per-module <subsystem>/test dir); add each such file
@@ -12,7 +12,7 @@
 # level up from this component dir) — single source of truth, never copied. A source
 # file outside the component source dir is fine here: this is a test-only project.
 set(HOST_ACCEPTANCE_SRCS
-    # host_infra_smoke.acceptance.c is listed LAST (registered first at runtime, unity
+    # The host smoke acceptance is listed LAST (registered first at runtime, unity
     # registers TEST_CASE on `main` in reverse link order) so its `boundary` tooth — which
     # asserts the seam exposes the NOT_RENDERED sentinel (-1) "before any frame is flushed"
     # — runs against a FRESH process, before any render-producing test (incl. this package's
@@ -59,6 +59,12 @@ set(HOST_ACCEPTANCE_SRCS
     # 符号覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
     "../../story_p3.acceptance.c"
     "../../../display/story_page.c"
+    # 包 260901-ui-art-integration (包子 U)：冻结验收 + 被测纯逻辑资产层 (art_assets 强
+    # 符号覆盖 weak 哨兵——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
+    # **必须置于 host smoke acceptance 之前**（smoke 保持列表末位 = 最先执行，
+    # 包 0 boundary 齿注册序守卫; 验收 test 1 结构齿 6 校验此序）。
+    "../../ui_art_integration.acceptance.c"
+    "../../../display/art_assets.c"
 
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"

@@ -16,6 +16,7 @@
 
 #include "schedule_page.h"
 
+#include "art_assets.h"
 #include <string.h>
 
 #include "lvgl.h"

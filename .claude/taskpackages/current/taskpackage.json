@@ -1,5 +1,5 @@
 {
-  "changeId": "260829-schedule-reminder",
+  "changeId": "260901-ui-art-integration",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -9,10 +9,10 @@
     "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "firmware+server",
-  "story": "日程提醒全链路（v0.4 重写 + contractBlocked 解除，契约待确认点 3 已实证）：按区块范围（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排）+ 三段阶梯（20:30 带物 / 07:45 日程 / 事前 15 分钟，时刻配在 OpenClaw 侧、纯服务端配置永不烧板子）。脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id（确定性散列，跨重推/重算不变）写 alerts/pending.json、speech 排程时预合成；网关提醒投递（每分钟轮询到点经 mcp kidpal/alert 推送、重试到确认 60s×3、不做重连即重推、过期静默作废）；设备弹窗三件套（提示音 + TTS 读文案 + 驻留弹窗，排队逐个弹、滞留弹窗顶替（V18）、渲染即回执出队、易失 known-id 幂等去重、KEY 关闭/BOOT 关闭翻页）；断网无提醒（离线红线，决策 24，设备不缓存）。",
-  "redBaselineCommand": "三通道逐条：① C 侧新增齿独立 ELF（包 6/char-stroke 同位先例目录含 runner.c/seam_stub.c/unity.h）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra 编译 schedule_reminder_b.acceptance.c + 跑原生 ELF；② C 侧既有基线：wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build 后 cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf（注意 host_app 独立工程 idf.py 不接受 -T main）；③ server 侧点名命令（闸不 auto-run，见 notes 闸面实况）：cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py（全档对照同上去掉文件名）；live 通道：RUN_LIVE=1 同上 -k live",
-  "redBaselineResult": "红（planner 与 acceptance-author 双方实测、非推理）：① C 侧本包新增齿 BUILD_CLEAN 零告警 + **10 Tests 8 Failures**（2 绿 = 必须保持绿的守卫齿）；② host ELF 既有基线 **60 Tests 3 Failures 不变**（VRT-A2/E2 + WSA-A6 + WSA-A4 三条 [evidence] 齿，本地-only gitignore 证据从未入仓 → main 本身即红；先例 home-p1 43T2F / schedule-p2 39T2F，本批增至 3F）——本包新增齿与既有 3 红的判读口径见 notes；③ server 点名 **30 failed / 3 passed / 5 skipped**（--collect-only 37 tests 零收集错误），全档对照 **38 failed / 67 passed / 40 skipped** = 既有 8 红（smoke_e2e 7 + vrt 证据齿 1，全在 live-marked 文件内、包 S 退役架构面）+ 本包 30 新红 + 3 守卫绿 + 5 skip，逐条对账闭合；④ RUN_LIVE=1 下 5 条 live 齿全部执行且因证据未落盘 FAILED、零 error（冻结即冒烟判据达成）。本包把它做到绿。",
+  "subsystem": "firmware+tools",
+  "story": "美术资产集成（新增 C2）：固件侧资产管线落成（SPIFFS assets 分区 + 1bpp 位图/imgfont/9-slice/抖动网点加载）+ V3 美术资产本体落地（吉祥物 7 姿态/手绘框族/网点/图标族/字体）+ 各 UI 面统一接入换皮。跨页共享资源层切片（非技术层横切），殿后于页面包、不反锁页面；V3 设计稿为前置输入。",
+  "redBaselineCommand": "cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -DKIDPAL_ART_RB_STUB -I. -o /tmp/art_red_runner ../../ui_art_integration.acceptance.c seam_stub.c runner.c && cd <仓根> && /tmp/art_red_runner（红基线 runner 实编通道，见 firmware/main/test/acceptance/red-baseline/red-baseline-summary.md §U）",
+  "redBaselineResult": "红（2026-09-09 实测，acceptance-author）：11 Tests / 10 Failures / 1 stub-skip，退出码 10。红形态 = ① 结构缺位：kidpal_art_load 全树零命中 + 双 CMakeLists 未接线 + 六页渲染面零 art_assets 引用；② weak 哨兵：art_assets 冻结契约 9 函数未实现（-2 哨兵）。口径勘误：launch 预言「文件尚不存在→编译收集即失败」不成立——文件未接线故不参与 host 收集，编译通道零错误，真红形态为 stub 实跑 10 红。上游基线（判读相对值，非本包责任）：server pytest 8 failed/119 passed、host ELF 86/3 Failures（VRT-A2/WSA-A6/WSA-A4）。本包把它做到绿（相对红基线新增绿、不新增红）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,413 +21,218 @@
   "riskTier": "high",
   "gateProfile": [
     "types",
-    "real-db",
-    "scheduler",
-    "state-machine",
-    "security",
     "test-quality",
+    "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "RMD-A1",
+      "id": "ART-A1",
       "kind": "structural"
     },
-    "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
-    "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-    "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-    "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
-    "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-    "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
-    "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）"
+    "ART-A2: 固件侧 SPIFFS assets 分区 + 1bpp 位图加载管线落成（host 可测），资产从分区按路径加载并渲染",
+    "ART-A3: imgfont 加载（Baloo 2 动态时间数字，同字形逐字符变化）",
+    "ART-A4: 9-slice 手绘框族渲染 + 抖动网点（d50/d25/d12）渲染",
+    "ART-A5: V3 美术资产本体落地（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2 字体），经资产管线出图并落地",
+    "ART-A6: 各 UI 面（包 2/4/5/6/7/8 的渲染面）统一接入换皮",
+    "ART-A7: 换皮后各页面 host 回归（布局/逻辑不破）一条，独立于 9b 真机观感"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/schedule_reminder_b.acceptance.c",
-    "server/acceptance/test_schedule_reminder.acceptance.py"
+    "firmware/main/test/ui_art_integration.acceptance.c"
   ],
   "exitCriteria": [
     {
-      "id": "RMD-E1",
+      "id": "ART-E1",
       "kind": "structural"
     },
-    "RMD-E2: host 测排程/去重/回执状态机 + 网关投递重试逻辑；OpenClaw cron 与推送链路 live 验收（按 ARQ-260901-g3-server-live-acceptance 口径，不 auto-run）；真实提醒音效/亮屏殿后 9b",
-    "RMD-E3: 服务端提醒投递模块 = G 网关代码的 additive 扩展（G mergeOrder 3 先并）；消费包 6 的课表数据链路，不重复造数据",
-    "RMD-E4: contractBlocked 解除记录——契约待确认点 3 已实证（2026-09-02，OpenClaw 原生 cron 在跑、class-reminder 先例、契约 §待确认点 3 标已实证）"
+    "ART-E2: host+SDL 验证资产加载/渲染；SPIFFS 真机文件源路径 + 1bpp 真机观感 + 16px 以下 CJK 真机可读性 + 前光确认，显式殿后 9b",
+    "ART-E3: 不 supersede 页面包既有验收——换皮验收独立成 U acceptance，页面原验收由 9b 真机端到端复验为附加通道",
+    "ART-E4: V3 设计稿为前置输入，未出则本包不得 launch"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§4.1",
-    "docs/contracts/interface-contract.md#§三"
+    "docs/spec.md#§5.6",
+    "docs/spec.md#§5.7",
+    "docs/notes/validation-batch-conclusion.md"
   ],
   "sourceRefs": [
-    "S-F1.4",
-    "docs/contracts/interface-contract.md#§三",
-    "7"
+    "docs/spec.md#§5.6",
+    "docs/spec.md#§5.7",
+    "docs/notes/validation-batch-conclusion.md",
+    "U"
   ],
   "iterationBudget": 3,
   "fixBudget": 5,
   "docsOwner": "integrator",
-  "mergeOrder": 11,
+  "mergeOrder": 12,
   "dependsOn": [
-    "260829-schedule-p2"
+    "260829-host-test-infra",
+    "260829-voice-roundtrip",
+    "260829-char-stroke",
+    "260829-home-p1",
+    "260829-schedule-p2",
+    "260829-schedule-reminder",
+    "260829-story-p3"
   ],
-  "testHost": "host + live",
-  "requiredLayers": [
-    "unit",
-    "acceptance-offline",
-    "live-manual"
-  ],
-  "docsSyncRequired": true,
-  "securityReviewRequired": true,
-  "securityReviewNotes": "本包安全面四处，逐处对应冻结齿：① pending.json = 另一进程（OpenClaw 侧脚本）写的跨进程输入，front 必须机械校验后才投递（validate_alert_entry 齿，脏条目拒绝并留日志、不盲投）；② 有界性 = ECS 实测 available 941MB 但 Swap 已用 535MB（char-stroke 留根风险 3 同进程面），故 MAX_PENDING / MAX_TRACKED / KRM_QUEUE_CAP=8 / KRM_KNOWN_CAP=32 全部钉为冻结常量，超限走淘汰不涨内存；③ 决策 24 介质禁令 = 提醒易失 known-id 集与队列只驻 RAM，禁落 NVS/SD/Flash，设备面有结构性守卫齿；④ 投递通道复用方向 B 既有强制设备鉴权（token 未设 = refuse-service，包 WS 已并），本包不新增公网入口、不新增未鉴权端点，alerts 路径经 KIDPAL_ALERTS_DIR/KIDPAL_PENDING_JSON 可配且禁止硬编 /root/.openclaw/**。真机时序与音频面殿后 9b。",
-  "adrRequired": true,
-  "adrNotes": "两条 human 裁定属架构级决策、需入 docs/ADR.md（integrator 写权内）：① 生产侧混合分层（pod-events acaef302）；② 提醒语音借引擎 speak_txt 既有音频链、front 不自建合成与 opus 编码（pod-events 09359e74）。",
+  "testHost": "host+SDL",
   "decisionCoverage": [
     {
-      "decision": "spec-决策20-提醒模型",
-      "summary": "按区块判范围 + 三段阶梯（20:30/07:45/事前15分，OpenClaw 侧配置）+ 定时器 = OpenClaw 原生 cron + 脑算网关推 + 重试到确认 + 渲染即确认出队。",
+      "decision": "PROPOSAL-§2-包U",
+      "summary": "美术资产集成（新增 C2）：固件侧资产管线落成 + V3 美术资产本体落地 + 各 UI 面统一换皮，host+SDL + device 观感殿后 9b。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策20"
+        ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:RMD-A2"
+      "landsIn": "acceptance:ART-A2"
     },
     {
-      "decision": "spec-决策27-提醒主动播报",
-      "summary": "提醒到达 = 提示音 + TTS 读文案 + 弹窗驻留三件套；alert 载荷带 speech、排程时预合成（V20 解耦）。本包按裁定二落地为「到点借引擎 speak_txt 既有链出音」，V20「预合成存缓存」半边的口径差已在 notes 与裁决事件中记明。",
+      "decision": "spec-§7-决策17-美术资产管线",
+      "summary": "美术元素走预栅格化 1bpp 资产（§5.7），图标族取舍落定 = 离线位图资产、imgfont 只留给动态时间数字。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策27"
+        "docs/spec.md#§5.7"
       ],
-      "landsIn": "acceptance:RMD-A3"
+      "landsIn": "acceptance:ART-A3"
     },
     {
-      "decision": "contract-§三-推送语义",
-      "summary": "mcp kidpal/alert 推送、载荷形状、幂等 id、渲染回执出队、重试到确认 60s×3、过期静默作废；原轮询形态废止。",
+      "decision": "spec-§5.6-教学字体红线（资产侧）",
+      "summary": "米字格示范字须标准规范字形（禁手写/抖动/倾斜）——字体资产侧确认标准字体与可爱体共存，红线约束由包 4（渲染侧，主）落实。",
       "sourceRefs": [
-        "docs/contracts/interface-contract.md#§三"
+        "docs/spec.md#§5.6"
       ],
-      "landsIn": "acceptance:RMD-A4"
+      "landsIn": "exitCriteria:ART-E3"
     },
     {
-      "decision": "spec-决策24-离线边界",
-      "summary": "断网无提醒、设备不缓存事项（哑终端纯洁性）；离线兜底验收撤回；提醒易失 id 集合只驻 RAM（介质禁令）。",
+      "decision": "PROPOSAL-§4-行为碰撞型",
+      "summary": "U 换皮不得 supersede 页面包既有验收——换皮验收独立成 U acceptance，含「换皮后各页面 host 回归」一条。",
       "sourceRefs": [
-        "docs/spec.md#§7-决策24"
+        ".planning/kidpal-mvp/PROPOSAL.md#§4"
       ],
-      "landsIn": "acceptance:RMD-A7"
-    },
-    {
-      "decision": "spec-S-F1.4-V18-滞留弹窗顶替",
-      "summary": "已渲染但永未按键的滞留弹窗在事件时刻过后允许被后续提醒顶替显示（早已出队、顶替非追加送达）。",
-      "sourceRefs": [
-        "docs/spec.md#§4.1"
-      ],
-      "landsIn": "acceptance:RMD-A5"
+      "landsIn": "acceptance:ART-A7"
     }
   ],
-  "mutationEvidence": {
-    "_meta": "执行者=builder（planner 对 firmware/**+server/** 为 deny，mutation-check 文件头明写 actual mutation 由 verifier/fixer workflow 执行）；37 条记录实载（builder 报告头自称 40、分项相加 34，以本清单为准）；每条附变异前/还原后 sha256 同值对，全批 restore failures=[]，收尾 git status --porcelain -- firmware server tools 为空。C 面观测全程固定 cwd=firmware/main/test/host_app（既有红基线 3 条口径）。 后续：两条 insensitive（A3 front 引擎腿注入、A5 渲染先清屏）经 planner 采纳 architect advisory 后由 acceptance-author 做 tighten-only 补齿闭环（纯 additive、重放原变异自证新齿咬），已由 sensitive:false 翻 true；保持 insensitive 的仅余 1 条 = MAX_TRACKED 单点淘汰（与 MAX_PENDING 互为冗余，配对「双闸同除」记录证明有界性作为属性被钉），属正当不敏感而非缺口。governance 后续：tighten-only 成文规则登记为 ARQ（DEV-GOVERNANCE §验收测试纪律 §5，owner=architect），先例 7 份冻结件自带 REVISION LOG tighten-only 页脚 + device_ws_switch.acceptance.c:89 已执行过。",
-    "perAcceptance": [
+  "crossEnd": {
+    "note": "crossEnd 申报（260908-gov-review-input-surface-frontload T3，2026-09-09 planner 填）。口径 = 本包冻结契约触及的跨边界对端符号：① art_assets 冻结契约 9 函数（验收文件头注冻结，builder 实现侧）；② 资产管线出图对端（KAP1/RGB565 产物形状，验收断言打到其落盘结果）；③ 六页渲染面消费接线点（A6 换皮接线，additive 接入）。存疑向严填 counterparts，不填 exempt。",
+    "counterparts": [
       {
-        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
-        "mutation": "reminder_schedule_lib.reminder_id 散列输入去掉「档位」维度：f\"{key}␟{ladder}␟{event_date}\" → f\"{key}␟{event_date}\"（三档同 id）",
-        "affectedTest": "test_a2_idempotent_id_stable_across_recompute (acceptance/test_schedule_reminder.acceptance.py:653, len({i_night,i_morn,i_other,i_next})==4)；连带 :537/:698/:610 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "sha(reminder_schedule_lib.py) e3e20b6de5d00d85 == 还原同值；还原后 33 passed。幂等 id 三维度独立性真被钉。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_mount"
       },
       {
-        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
-        "mutation": "plan_reminders 已过档跳过判定失效：if fire <= now_local → if False and ...",
-        "affectedTest": "test_a2_past_ladders_skipped (:633)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "该齿独立捕获（只它红=判定唯一来源）。sha 同值，还原后 33 passed。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_load"
       },
       {
-        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
-        "mutation": "一次性安排范围精确匹配改 <=：str(row['date']) == day.isoformat() → <=（过期项重复生成）",
-        "affectedTest": "test_a2_weekly_repeats_and_onetime_scope (:610, assertFalse 含「牙医」)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "契约 §2.3 过期自动忽略被真钉。sha 同值。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_pixel"
       },
       {
-        "acceptance": "RMD-A2: OpenClaw cron 三档排程——按区块范围判（学校课程表区块不提醒；每周固定课表区块每周重复生成 + 一次性安排），三档时刻（20:30/07:45/事前 15 分钟）从 OpenClaw 侧提醒配置读、已过去档位跳过；幂等 id = 确定性散列（条目+档位+事件日期），重算复用不重生成；写 alerts/pending.json",
-        "mutation": "_rows_in_scope 追加对 model['school'] 区块生成档位（按区块判范围失效）",
-        "affectedTest": "test_a2_block_scope_school_block_never_reminds (:592, assertNotIn 语文/数学/自习)；同批含 test_a8_b1_table_body_zero_change_reuses_package6_parser:1249 共 13 齿红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "负向范围齿力度充分。sha 同值，还原后 33 passed。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_glyph"
       },
       {
-        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-        "mutation": "build_speech_injection 丢 speech 原文：\"text\": speech → \"text\": \"\"",
-        "affectedTest": "test_a3_speech_injection_frame (:816, assertEqual(frame['text'], ALERT_CANONICAL['speech']))",
-        "turnedRed": true,
-        "sensitive": true,
-        "sha": "reminders.py 033f56865b4c93a7 == 同值",
-        "notes": "还原后 33 passed。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_glyph_advance"
       },
       {
-        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-        "mutation": "缺 speech 不再降级为不注入：(not isinstance(speech,str) or not speech.strip()) → and False",
-        "affectedTest": "test_a3_speech_missing_still_delivers (:838, assertIsNone(build_speech_injection) + upstream_frames==[])",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "V20 降级面反向钉住。sha 同值。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_render_asset"
       },
       {
-        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-        "mutation": "语音缺失连弹窗帧一起丢：build_alert_frames 返回 (device_frames if injection is not None else [], upstream)",
-        "affectedTest": "test_a3_speech_missing_still_delivers (:838, assertEqual(len(device_frames),1))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「弹窗必达、语音是增强」的不对称性有齿。sha 同值。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_nine_slice"
       },
       {
-        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-        "mutation": "设备三件套语音动作位摘除：reminder_page.c 删 actions |= KRM_ACT_SPEAK",
-        "affectedTest": "schedule_reminder_b.acceptance.c:946 (act & KRM_ACT_SPEAK)!=0；自带单测 reminder_page.test.c:279 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "cwd=host_app 观测 76 Tests/5 Failures（基线 3 + 本变异 2）。sha(reminder_page.c) a5b1d0281c6528b6 == 同值。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_dots"
       },
       {
-        "acceptance": "RMD-A3: speech 排程时预合成存缓存、到点随推送下发；合成失败/超时降级「仅弹窗+提示音」不阻塞投递（弹窗+提示音必达，语音为可选增强）",
-        "mutation": "front 不再向引擎腿注入：_deliver_alert_now 的 deliver_alert(entry, device_ws, engine_ws) → (..., device_ws, None)",
-        "affectedTest": "test_a3_front_poll_injects_speech_into_engine_leg (server/acceptance/test_schedule_reminder.acceptance.py:957)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异 _deliver_alert_now 引擎腿置 None 时：新齿 FAIL（0!=1 两腿条数对账）、同档其余 33 离线齿全绿（含 needle 齿 :1266 仍绿 = 证明确是覆盖空洞而非重复覆盖）。REVISION LOG 已 append（Reason 载明）；front_app.py 还原 sha256 fc8c50a947dddb10… 逐字同值。补齿动机 = mutation 跑出的 vacuity（acceptance-evidence.md:29 定义），执行者 acceptance-author（作者权，scope-map allow 无「冻结后」时间锁），planner 独立核实纯 additive（git diff -U0 removed 计数 0，C +101/0、py +200/0）。"
+        "path": "firmware/main/display/art_assets.h",
+        "symbol": "kidpal_art_draw_time"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "到点判定闭区间改开区间：due_entries 的 if fire > now_sec → if fire >= now_sec",
-        "affectedTest": "test_a4_poll_alignment_and_due_predicate (:968)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "sha 同值，还原后 33 passed。"
+        "path": "tools/asset-pipeline/gen_assets.mjs",
+        "symbol": "KAP1/RGB565 出图产物形状（资产管线出图结果落盘核验对端）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "嵌套 view 不再字符串化：arguments['view']=json.dumps(view) → view（对象直发设备）",
-        "affectedTest": "test_a4_alert_envelope_wire_shape (:897, assertIsInstance(args['view'], str) + round-trip)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "设备 Property 三型限制落点被钉。sha 同值。"
+        "path": "tools/asset-pipeline/verify_art_assets.mjs",
+        "symbol": "v3 母版指针（v3 稿溯源对端）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "传输 id 改非确定：alert_jsonrpc_id 的 sha256 派生 → os.urandom(32)",
-        "affectedTest": "test_a4_numeric_jsonrpc_id_deterministic_and_in_int_range (:926) + test_a4_receipt_dequeues_and_is_idempotent:1032 + test_a4_retry_to_ack_60s_x3_then_void:990",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "跨重推/跨进程重启同一性由三齿共钉。sha 同值。"
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "重算交来的同 id 条目重置重试预算：tick 内在 now < next_retry_at 判定前插 slot.attempts = 0",
-        "affectedTest": "test_a4_same_id_repush_reuses_ids_and_budget (:1072, assertEqual(attempts,2)) + :990",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "sha 同值。"
+        "path": "firmware/main/display/char_stroke.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "渲染回执不再出队：on_receipt 的 slot.state='acked' → pass",
-        "affectedTest": "test_a4_receipt_dequeues_and_is_idempotent (:1032)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "渲染即确认、即出队在网关侧收口有齿。sha 同值。"
+        "path": "firmware/main/display/home_p1.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "轮询节拍常量改值：POLL_INTERVAL_SEC 60 → 300",
-        "affectedTest": "test_a4_poll_alignment_and_due_predicate (:968, assertEqual(POLL_INTERVAL_SEC,60) + 90→30 对齐)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "每分钟节拍的常量与算法同齿钉住。sha 同值。"
+        "path": "firmware/main/display/schedule_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "mcp_relay.alert_tool_call 退回把 §三 字符串业务 id 当 JSON-RPC 传输 id：env['id']=entry['id']",
-        "affectedTest": "test_a4_relay_alert_tool_call_numeric_id (:948, assertIsInstance(relay_env['id'], int))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "本包从 mcp_relay 接管数字化的独立齿有效（设备 cJSON_IsNumber 断点回归防线）。sha(mcp_relay.py) b2b8b66bdab17720 == 同值。"
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       },
       {
-        "acceptance": "RMD-A4: 网关提醒投递——每分钟轮询 pending.json、到点经 mcp kidpal/alert 推送（载荷 {id, fire_at, title, speech, view}）；重试到确认：60 秒超时未收回执重推、单档上限 3 次、不做重连即重推、过期静默作废不补发",
-        "mutation": "设备侧「接收即回执」：raise_next 弹出即置 rendered=1/armed=1（绕过真渲染完成）",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1233 四态决策表齿（RMD-A6 名）要求 raise_next 后 may_emit_receipt==0；reminder_page.test.c:179 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "builder 原样归在 RMD-A4（红齿名属 A6 组）；跨 A4/A6 语义，保留其归因不擅改。cwd=host_app 76/5。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "may_emit_receipt 判定门恒开：if (!has_shown || !rendered || !armed) → if (0)",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1224 四态决策表齿（空状态即允许发回执）；reminder_page.test.c:233 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "本包最承重的设备侧决策表被真钉。cwd=host_app 76/5。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "known-id 集不记账：删 krm_copy_str(s->known[slot], KRM_CAP_ID, id)",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1264（同 id 重推须 RECEIVED、queue_count 仍 1、known_count 仍 1）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "cwd=host_app 76/4。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "队列深度上界去掉：if (s->q_len >= KRM_QUEUE_CAP) → if (0)",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1089（queue_count <= KRM_QUEUE_CAP，RMD-A5 名）；reminder_page.test.c:194/:218 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "有界性在设备侧由具名齿咬住（越界写风险）。cwd=host_app 76/6。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "非法载荷静默吞：tick 的 reject 分支 self._emit(bid,'reject',…) → pass",
-        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertIn('reject', events.action))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "审计面（K6 归因）有齿。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "投递前机械校验被绕过：ok, reason = validate_alert_entry(entry) → True, 'ok'（盲转发脏条目）",
-        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertEqual(pushed, []))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "跨进程输入必检（安全面①）有齿。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "单点去掉投递记账有界淘汰：_bounded_remember 的 if self._track_count() > MAX_TRACKED → if False",
-        "affectedTest": "无（该单点不敏感）",
-        "turnedRed": false,
-        "sensitive": false,
-        "notes": "不敏感发现如实报：MAX_PENDING（每轮读取上界）与 MAX_TRACKED（超限淘汰）互为冗余，单去掉任一道 tracked_count 仍 ≤256、齿咬不到；配下一条「双闸同除去转红」证明有界性作为属性确被钉，钉点是两道闸的合取而非淘汰本身。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "成对去掉两道有界闸（tick 的 [:MAX_PENDING] 切片 + _bounded_remember 的 MAX_TRACKED 淘汰）",
-        "affectedTest": "test_a6_gateway_dedupe_audit_and_bounded_cache (:1109, assertLessEqual(tracked_count(), MAX_TRACKED))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "与上一条配套。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A6: 解耦四态送达语义——幂等去重 = 接收即入易失 known-id 集（屏蔽重复入队）；回执出队 = 渲染完成即发（渲染即确认）；同 id 重推两态分处（已渲染补回回执、排队未渲染不重复入队）",
-        "mutation": "重复回执幂等失效：on_receipt 的 if slot.state=='acked' 早退分支 → if False",
-        "affectedTest": "test_a4_receipt_dequeues_and_is_idempotent (:1032, assertEqual(consume_receipts(d,[bid]), []))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "幂等出队有齿（红在 A4 齿名下）。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
-        "mutation": "去掉「推送时点判定作废」：tick 首见即超窗分支 if now_sec - fire_sec > void_window → if False",
-        "affectedTest": "test_a7_expired_while_offline_is_voided_not_backfilled (:1137, pushed==[] + state void + events ['void'])",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "sha 同值，还原后 33 passed。"
-      },
-      {
-        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
-        "mutation": "重连即补推：on_ws_connected 从恒 [] 改为返回在途 pushing 档位",
-        "affectedTest": "test_a4_reconnect_does_not_repump (:1058)",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「不做重连即重推」有齿（齿名在 A4 组，coverage map 亦归 A7）。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
-        "mutation": "固件面出现本地事项源字面：reminder_page.c 加一行含 schedule.md 的注释探针",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1412 boundary 齿（scan_count('firmware/main','schedule.md')==0）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "决策 24 介质禁令的结构性那半成立——负向扫描齿真的会咬。cwd=host_app 76/4。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A7: 断网无提醒——设备不缓存事项（哑终端纯洁性，决策 24），离线期间未送达档位网关推送时点判定作废",
-        "mutation": "三档时刻字面被烧进固件：reminder_page.c 加 #define KRM_LADDER_NIGHT \"20:30\"",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1428 boundary 齿（\"20:30\" 零命中）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「纯服务端配置、永不烧板子」有负向齿。cwd=host_app 76/4。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
-        "mutation": "BOOT 单击关闭弹窗但不再翻页：*page_out = key_page_next(current) → *page_out = current",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1134（P1 的 BOOT 关闭须到 P2）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "与包 3 页序底座的接缝有齿。cwd=host_app 76/4。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
-        "mutation": "弹窗层不再裁决 KEY 单击：if (key==KEY_ID_KEY && g==KEY_GESTURE_CLICK) → if (0)",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1047 + :1118 + :1308；reminder_page.test.c:234 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "一次变异咬 3 个冻结齿 + 1 单测齿，跨 RMD-A5/A6 联动。cwd=host_app 76/7。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
-        "mutation": "去掉 V18 顶替门：if (shown.rendered && now_min >= krm_event_minutes(shown) && q_len>0) → if (q_len>0)",
-        "affectedTest": "schedule_reminder_b.acceptance.c:1021（事件时刻之前就被顶替）；reminder_page.test.c:180/:251 同红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「未渲染不替换、事件未到不替换」两半都咬。cwd=host_app 76/6。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A5: 设备弹窗三件套——提示音 + TTS 读文案 + 整屏压 d50 网点 pose-jump 富弹窗驻留（无超时）；KEY 关闭回当前页、BOOT 关闭照常翻页；新提醒排队逐个弹、不叠屏；滞留弹窗在事件时刻过后允许被后续提醒顶替（V18）",
-        "mutation": "渲染面不再先清活动屏：kidpal_reminder_page_render 删 lv_obj_clean(scr)（对象逐帧累积）",
-        "affectedTest": "渲染面先清屏具名化——B 后不残留 A 的场景对象 (RMD-A5 tighten) (firmware/main/test/schedule_reminder_b.acceptance.c:1640, 标签 [schedule_reminder][RMD-A5][render])",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "[原记 insensitive → 已由 tighten-only 补齿闭环] 原变异删 reminder_page.c:1088 lv_obj_clean(scr) 时：新齿 FAIL（ELF 77T/4F，唯一新红恰是它）、既有 accum==0 齿（现 :1596）及其余 11 本包齿全 GREEN（正是原 vacuity）。补法改道说明：planner 原处方为「不同高度/偏移载荷的像素对比」，作者读实现后指出卡片几何由 KRM_CARD_* 常量决定与载荷无关、且每帧整屏白底+压层+不透明白卡会盖住残留，像素版会成第二条空齿 → 改钉「场景对象残留」层（B 单独 vs A→B 子对象数相等 + 重复渲染不增长 + alone_n>0 防空实现假绿），像素断言保留作意图登记（几何日后随载荷变化即自动获得鉴别力）；钉的仍是 RMD-A5 已声明的「不叠屏」，无新 acceptance id、无行为定义改动。reminder_page.c 还原 sha256 a5b1d0281c6528b6… 同值、hash-object == HEAD blob 8e693c1f…（工作树  M 为 autocrlf stat 伪影，内容零差）。cwd=host_app 观测 77/3。"
-      },
-      {
-        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
-        "mutation": "个别坏语义条目连坐整档：load_semantic 单条目丢弃的 continue → return None, reason",
-        "affectedTest": "test_a8_semantic_artifact_schema_and_degrade (:1194, assertIsNone(err2) + assertIn('k1', sem2))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "降级粒度=单条目被钉（裁定一授权面）。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
-        "mutation": "空备注被凭空发明要带物：bring_items 的 return [text] if text else [] → else ['水壶']",
-        "affectedTest": "test_a8_bring_from_note_and_semantic_override (:1158, assertEqual(bring_items('',None),[])) + test_a2_real_ecs_schedule_shape:787",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「绝不凭空发明」有齿，真 ECS 缺备注形状那齿同批红。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
-        "mutation": "忽略语义产物的 bring 列表：bring = _clean_str_list(semantic_entry.get('bring')) → bring = []",
-        "affectedTest": "test_a8_bring_from_note_and_semantic_override (:1158, assertEqual(..., ['琴谱','压泥板']) + assertIn('压泥板', speech))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "「语义优先于机械兜底」这条链有齿（云侧判断不被白做）。sha 同值。"
-      },
-      {
-        "acceptance": "RMD-A8: 携带内容（含老师通知类带物）走课表备注列承载，「备注里哪部分算要带的」由 OpenClaw system prompt 约定（契约 B1 表格主体零变更；remind_before_min 已标废止不消费）",
-        "mutation": "配置面失控：load_ladder_config 的「未知键忽略」改为 cfg[key]=value",
-        "affectedTest": "test_boundary_bad_semantic_and_bad_config_inputs_degrade (:1329, assertNotIn('unknown_key', cfg))",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "三档配置载体的坏输入清洗有齿。sha 同值，还原后 33 passed。"
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
       }
     ]
   },
-  "notes": "【C5 intake 核对（scope-map）】acceptance-author allow = firmware/**/*.acceptance.c + server/**/acceptance/**（覆盖两份冻结件）；builder/fixer allow = firmware/** + server/** + tools/** + .planning/**，覆盖全部落点（display/reminder_page.{c,h}、mcp_server.cc、test/host_app/main/CMakeLists.txt、gateway/reminders.py、deploy/openclaw-patch/reminder_schedule_lib.py、deploy/openclaw-reminder.config.yaml、deploy/openclaw-system-prompt.v3.md、front/front_app.py）；deny 面正含 *.acceptance.* 与 docs/contracts/**（builder 只读消费，缺陷修复归 acceptance-author 且断言语义零变更）；docs/spec.md 不在 integrator allow（本包无 spec 漂移要修，§4.1 即权威）。无冲突声明。\n\n【两条 human 裁定（验收与实现的输入，eventId 为凭）】① acaef302-9ddc-4508-b5d3-94023e050f43 = 生产侧**混合分层**：三档时刻算术（时间串 17:30-18:30 解析、跨天映射、事前15分减法、已过档跳过）+ 幂等 id 确定性散列 + pending.json 原子写 = 确定性 python 脚本（server/deploy/openclaw-patch/reminder_schedule_lib.py，warm_char_cache.py 同形态先例），由 OpenClaw cron --command 载荷执行（live 实测 cron add 支持 --command/--every/--cron+--tz/--declaration-key）；语义判断（备注里哪部分算要带的）与孩子文案 = OpenClaw agent 回合按 system prompt 增量产出、写入脚本消费的中间产物。② 09359e74-005b-45bb-9535-69e19c14ee04 = 提醒语音**借引擎既有音频链**：front 到点向引擎腿注入内部指令，由引擎现成入口 core/handle/intentHandler.py:233 speak_txt(conn,text) 走既有 edge-tts provider + 已 live 实证 opus 下行链出音；front 不自建合成、不做 mp3→opus 编码、不自注入二进制帧；降级路径必钉（合成/播报失败或超时 → 仅弹窗+提示音继续投递）。V20「预合成存缓存」半边在此裁定下不可离线钉，离线面只钉三件可机判事实（speech 逐字进注入指令 / 缺 speech 仍必达且引擎腿零注入 / 设备 render_actions 恒含 SHOW|TONE）——此为 spec 措辞与裁定的口径差，非契约差。\n\n【闸面实况两条（判读承重，勿误读）】(a) acceptance-run-check.mjs 与 unit-run-check.mjs 的 fileHasLiveMark 判据 = 文件内出现**任一** live 标记即**整档**排除 auto-run，仓内现有 8/8（含本包新档）全部 executor-skipped，两条闸的 ok:true 只担保「不静默跳过」、**不担保本包验收跑过**，真跑证据只由点名命令承载；(b) 闸内执行器跑的是裸 python -m pytest -q（无 --import-mode=importlib），若新增不含任何 live 标记的 test 文件会因档间 import 触发收集期 ModuleNotFoundError 当场红闸 → 本包保持含 live 齿形态，且**不动 server/pytest.ini**（共享面，并行包 story-p3 亦可能触）。(c) verify.mjs 按 .claude/taskpackages/current/taskpackage.json 解析 TaskPackage，Finalize 必须刷新该投影（本包已刷；不刷会拿上一个包 schedule-p2 做判定 = 静默假绿，属本仓既有共享投影缺陷，ARQ-260907-merge-closeout-bookkeeping-gap 在册）。\n\n【上游既有缺陷（非本包引入，本包顺带修，必须留痕）】main 的**设备构建自 char-stroke merge 起即坏**：firmware/main/mcp_server.cc 里 char-stroke 的 18 行 additive 插入把 case 3: 开在 case 4 (VRT_ROUTE_SCHEDULE) 的 app.Schedule([...]) lambda **体内**，原收尾三行 });/break;/} 被挪去关 case 3，case 4 的 lambda 从此不闭合 = C++ 语法非法（planner 亲核：git diff 205faa8 HEAD -- mcp_server.cc = 0 removed / 18 added，插入位置即病因；205faa8 版本完好）。host ELF 是独立工程不编该文件故未暴露；承重闸 firmware-build-check.mjs（idf.py build）必红。本包 builder 接 kidpal/alert 时在同一文件补回那三行，验收已钉独立守卫齿 RMD-A1 guard（实测 RED）。根因（merge 后无人复跑设备构建 = 闸间隙）由本包 pod-retro 提报、走 gov 面 ARQ，不在本包内自行改治理。\n\n【对端事实（ECS 只读实测抽样，fixture 依据）】真 schedule.md（/root/.openclaw/workspace/kidpal/schedule.md，549B）只有「## 每周固定课表」一节、无「学校课程表」也无「一次性安排」区块、时间列形如 19:00-20:00、备注列 7 行全空、frontmatter 仍留已废止 remind_before_min: 15 → 离线 fixture 按此真形状造，断言缺区块不崩 + remind_before_min 不消费 + 三档时刻只从 openclaw-reminder.config.yaml 读。cron 实况 4 条 status=ok 含 class-reminder-0529 先例（完整记录已抽样：payload.kind=systemEvent + schedule{kind:cron,expr,tz:Asia/Shanghai} + sessionTarget=main + wakeMode=now + lastDurationMs=30）；旧 jobs.json 已带 .migrated 后缀。设备回执真形状 {\"type\":\"mcp\",\"payload\":{\"jsonrpc\":\"2.0\",\"id\":<number>,\"result\":…}}；设备 mcp 层仅认数字 id（cJSON_IsNumber 实测在 mcp_server.cc:546，launch 面写的 473 是 AddTool 定义处），§三 业务 id 是字符串 → 本包负责 JSON-RPC id 数字化（mcp_relay.alert_tool_call 注记明示此活归本包），且不改 relay_ack 冻结语义。部署实态：kidpal-front.service User=root、WorkingDirectory=/opt/kidpal/front（gateway/ + front/ 两包 = server/gateway 落地副本）、单 uvicorn 进程；alerts/ 与 pending.json 当前不存在 → read_pending 缺文件安静返回 ([], [])、路径 env 可配。\n\n【设备面新建 + 渲染即回执落点】设备面零既有 alert 消费（grep 亲核）→ state-reminder 弹窗/排队/known-id 去重/渲染回执全新建，建议家 firmware/main/display/reminder_page.{c,h}（纯 C + 自带极简 JSON，schedule_page.c 同形态）。mcp_server.h:50 ReturnValue = variant<bool,int,string,cJSON*,ImageContent*> **无 promise 分支**，DoToolCall 尾部 app.Schedule([...]{ ReplyResult(id, Call(args)); }) 为同步自动回复 → 「接收时不回执、渲染完成才回执」要靠 ReplyResult(id,…) 独立延后调用（内部走 Application::SendMcpMessage，application.cc:906）；离线面钉四态与「何时才允许发回执」的决策表，不把 C++ 线程时序硬编成断言。共享面 additive：view_router 7 view 白名单与 VRT_ROUTE_* 数值码不动（提醒弹窗与首页/P2 叠加以其为准）、key_gesture_parser（KEY/BOOT × CLICK/DOUBLE_CLICK/LONG_PRESS + key_route_global）与 KRM_KEY_*/KRM_ACT_* 接缝消费包 3 手势面、不重写包 6 B1 解析（RMD-E3）。\n\n【实现注记（builder 必读，两处 planner/author 权限外）】① firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 需加 \"../../schedule_reminder_b.acceptance.c\" 与 \"../../../display/reminder_page.c\"，**必须加在 \"../../host_infra_smoke.acceptance.c\" 之前、保持后者末位**（包 0 boundary 齿依赖进程内最先跑，上游 launch 指令明文要求）；② alerts 交接路径禁止硬编 /root/.openclaw/**，走 KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON。冻结 offline contract 符号清单以两份 *.acceptance.* 文件头为准（builder 只读、改不动）。"
+  "mutationEvidence": [
+    {
+      "acceptance": "ART-A2: 固件侧 SPIFFS assets 分区 + 1bpp 位图加载管线落成（host 可测），资产从分区按路径加载并渲染",
+      "mutation": "art_assets.c kidpal_art_load 的 KAP1 magic 门取反（有效 magic 记为非法，== 判退）→ host ELF ART-A2 render 齿红（'rendering the real pose asset failed'，根因 = 全资产加载失败）",
+      "affectedTest": "ui_art_integration.acceptance.c test 6 render_asset 逐像素比对主体齿 + test 2 KAP1 解码（同根因加载失败）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿（2 = 上游 device-evidence 红 WSA-A6/WSA-A4 非本包）。诚实注记：invert-magic 单点同时使 loader/render/landing 全阵红，取 render 齿作 ART-A2 承载已足够"
+    },
+    {
+      "acceptance": "ART-A3: imgfont 加载（Baloo 2 动态时间数字，同字形逐字符变化）",
+      "mutation": "art_assets.c kidpal_art_glyph_advance 步进 48→40（越出冻结 [48,96]）→ host ELF ART-A3 imgfont 齿红（'glyph advance 40 outside [48,96]'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 5 advance 步进区间断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A4: 9-slice 手绘框族渲染 + 抖动网点（d50/d25/d12）渲染",
+      "mutation": "art_assets.c 9-slice 顶部条 row 映射钉到 C 行（角片垂直失真）→ host ELF ART-A4 nineslice 齿红（'9-slice corner tl pixel distorted'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 7 四 24px 角片逐像素不变形断言",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "还原后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A5: V3 美术资产本体落地（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2 字体），经资产管线出图并落地",
+      "mutation": "firmware/main/assets/spiffs_root 将 pose_daily_96.bin 改名 pose_daily_96.bin.bak → host ELF ART-A5 双齿红（test 3 'landing asset load failed (first: pose_daily_96.bin)' + test 4 'non-whitelisted file pose_daily_96.bin.bak'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 3 47 枚逐枚对账 + test 4 闭集枚举/B8 白名单",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "改名还原为 pose_daily_96.bin 后 pristine 重测 97/2 全绿"
+    },
+    {
+      "acceptance": "ART-A6: 各 UI 面（包 2/4/5/6/7/8 的渲染面）统一接入换皮",
+      "mutation": "schedule_page.c 移除 '#include art_assets.h' 行 → host ELF ART-A6 wiring 齿红（'schedule_page.c does not consume the shared asset layer (no art_assets.h include / kidpal_art_* call)'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 10 六页渲染面消费面静态齿",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "include 行还原后 pristine 重测 97/2 全绿。诚实注记：首探只把 include 行注释、仍残留 art_assets.h 字面量未红；全删字面量才红——齿对『接线标记实际消失』敏感，需字面量彻底移除"
+    },
+    {
+      "acceptance": "ART-A7: 换皮后各页面 host 回归（布局/逻辑不破）一条，独立于 9b 真机观感",
+      "mutation": "view_router.c kidpal_display_route('home') 路由码劫持 1→0 → host ELF ART-A7 regression 齿红（'view_router \"home\" route broken'）",
+      "affectedTest": "ui_art_integration.acceptance.c test 11 包 2 路由抽查（kidpal_display_route『home』== 1）",
+      "turnedRed": true,
+      "sensitive": true,
+      "notes": "路由码还原为 VRT_ROUTE_HOME 后 pristine 重测 97/2 全绿。说明：在自家换皮触及的 view_router.c 上探边，证明 ART-A7 回归守卫对页面契约被换皮误改真敏感"
+    }
+  ]
 }

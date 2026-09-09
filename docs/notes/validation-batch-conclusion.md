@@ -66,3 +66,15 @@ V2 设计稿里"方案已定但没出图"的美术元素**全部走资产管线�
 ## 7. 契约面处置
 
 本批**零触契约面** `docs/contracts/**`。验证暴露两处需正式定稿的缺口，均已登记走契约/治理门、未在本批直改：shim `/v1/*` 字段信封 schema 未入契约 §九（ARQ-260901-shim-api-contract-gap）、G3 闸 server 面 host/live 区分规范待 architect 固化（ARQ-260901-g3-server-live-acceptance）。
+
+## 8. 美术资产集成（U 包 260901-ui-art-integration）验收锚点
+
+> 2026-09-09 integrator closeout 按 append 纪律追加，上文各节零改动。
+
+本 notes 的 TP-B UI 可行性结论（§2：双层方案成立、无 🔴 级项、预算不超）与 §6 真机留根项，对应美术资产集成 U 包的冻结验收（`firmware/main/test/ui_art_integration.acceptance.c`，docRef 锚点）逐项落位如下：
+
+- **ART-A5 资产出图落地**：§2「全部走资产管线出图并机判转绿」的资产本体经 V3 设计稿定稿后落地为 `firmware/main/assets/spiffs_root/` 47 枚闭集（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2）。
+- **ART-A2~A4 固件侧管线**：§2 双层方案中「预栅格化位图资产扛美术」的固件承载半——SPIFFS assets 分区 + 1bpp 位图加载（ART-A2）、imgfont 动态时间数字（ART-A3，对应 §4 第 2 条「imgfont 只留给动态时间数字」取舍）、9-slice 手绘框族 + 抖动网点 d50/d25/d12（ART-A4）。ART-A1 为装配结构齿。
+- **ART-A6 六页换皮**：各 UI 渲染面统一接入共享资产层（消费 §4 第 2 条「倾斜/手绘框/网点全部烘进离线资产，运行时零成本」的落地面）。
+- **ART-A7 host 回归**：换皮后各页面 host 回归（布局/逻辑不破），独立于真机观感通道。
+- **殿后项对应**：§6 第 1/2 条真机留根（I1 真机文件源路径、16px 以下 CJK 1bpp 真机可读性）+ SPIFFS 真机文件源路径与真机观感，归 9b（ART-E2 显式殿后，本包 host+SDL 通道不覆盖）。

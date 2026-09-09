@@ -1,0 +1,75 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-09T12:52:26.354Z",
+  "changeId": "260901-ui-art-integration",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:.claude/taskpackages/260901-ui-art-integration/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:.claude/taskpackages/260901-ui-art-integration/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 3,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:.claude/taskpackages/260901-ui-art-integration/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r3.json",
+        "bearingFactOk": true,
+        "completedRounds": 3,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260901-ui-art-integration/docs-delta.md",
+          "changes/dev/260901-ui-art-integration/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788951502301-taskpackage-required.log",
+      ".claude/verify-logs/1788951541463-mutation-check.log",
+      ".claude/verify-logs/1788951719717-docs-sync.log",
+      ".claude/verify-logs/1788952106138-docs-sync.log",
+      ".claude/verify-logs/1788952573148-docs-sync.log",
+      ".claude/verify-logs/1788952582438-unit.log",
+      ".claude/verify-logs/1788952589291-acceptance.log",
+      ".claude/verify-logs/1788953351219-unit.log",
+      ".claude/verify-logs/1788953358393-acceptance.log",
+      ".claude/verify-logs/1788953723649-unit.log",
+      ".claude/verify-logs/1788953730514-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r3.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260901-ui-art-integration/docs-delta.md",
+      "changes/dev/260901-ui-art-integration/review-packet.md"
+    ]
+  }
+}

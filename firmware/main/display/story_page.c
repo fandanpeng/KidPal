@@ -16,6 +16,7 @@
 
 #include "story_page.h"
 
+#include "art_assets.h"
 #include <stdio.h>
 #include <string.h>
 

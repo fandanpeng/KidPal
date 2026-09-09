@@ -55,6 +55,16 @@ test below is RED right now for its own missing-behaviour reason, and MUST NOT t
 until the builder lands the device-side HTTP shim protocol + mp3 play path + provisioning,
 the operator runs the physical smoke, and the evidence files are落盘.
 
+SUPERSEDED-DISPOSAL (2026-09-09 合并链定向处置批, acceptance-author, human 授权
+pod-events eventId=2dd4498d-68db-448f-ac72-5e90d1cad0ad): 方向 A（设备 HTTP shim）
+架构已由 260903-device-ws-switch 退役取代（spec docs/spec.md §3.0.0「迁移与既有资产」
+台阶退役条款 + §7 决策 9/18; 归档记录 changes/dev/260903-device-ws-switch/
+shim-archive-record.md）。据此：架构过时齿（SMK-A1/A2/A3-mp3/E1）标 skip；
+证据齿中 SMK-A3-roundtrip / SMK-E2 因 roundtrip.json 从未落盘（设备完整往返未发生
+即被方向 B 取代, 不可回补）标 skip；SMK-A4 由回收的 screen.md 实证据承载（不 skip）。
+被标 skip 的测试断言本体逐字保留于 skipTest 之后（不可达），测试 id 与 coverage map
+不动，供未来重新启用判定。逐字引用见模块常量 _SUPERSEDED_DISPOSAL 注释块。
+
 Audio format freeze (taskpackage note ⑤): device uplink WAV PCM16 16kHz mono (faster-whisper
 可解), downlink MP3 (edge-tts output). SMK-A3's "TTS 合成" is carried by /v1/chat's internal
 TTS leg (contract §1.1: 正文 -> shim 送 TTS -> mp3 -> 设备); the device does NOT separately
@@ -106,6 +116,35 @@ EVIDENCE_FILES = ["burn.log", "shim.access.log", "roundtrip.json", "screen.md"]
 MP3_MAGIC = (b"\xff\xfb", b"\xff\xf3", b"ID3", b"\xff\xf2")
 VALID_VIEWS = {"char", "schedule", "story_list", "story_text", "text", "home", "control"}
 
+# --------------------------------------------------------------------------- #
+# SUPERSEDED 处置常量（2026-09-09 合并链定向处置批, human 授权, pod-events
+# eventId=2dd4498d-68db-448f-ac72-5e90d1cad0ad）。
+#
+# 退役依据（逐字引用）:
+#   - spec docs/spec.md §3.0.0「迁移与既有资产」台阶退役条款: 「Pod S
+#     （260829-smoke-e2e）的同步 HTTP 链路（四端点 + WAV 上行/MP3 下行）为架构验证
+#     台阶（live 5/5 实证），方向 B 落地后退役；其安全发现（401 门穿透与修复、
+#     设备 token 纪律）沿用。」
+#   - spec docs/spec.md §7 决策 4 注记: 「⚠️ 已被决策 9/18 取代：方向 B 转官方
+#     小智服务端网关，HTTP shim 退役为已验证台阶（spec §3.0.0「迁移与既有资产」）。」
+#     （决策 9 = 端云通信 WebSocket + Opus 流式（方向 B）；决策 18 = 服务端实现
+#     形态 = 官方 Python 版小智服务端网关。）
+#   - 归档记录: changes/dev/260903-device-ws-switch/shim-archive-record.md
+#     （「处置：归档（archived）——文件保留在原路径，头部加 ARCHIVED 墓碑注记；
+#     代码逻辑零改动」。）
+#
+# 被 skip 的测试: 断言本体逐字保留于 skipTest 调用之后（运行不可达），零删除；
+# 测试 id 与 coverage map 不动；重新启用判定材料 = 本注释块 + 上列三处引用。
+# --------------------------------------------------------------------------- #
+_SUPERSEDED_DISPOSAL = (
+    "SUPERSEDED (2026-09-09 合并链定向处置, human 授权 eventId="
+    "2dd4498d-68db-448f-ac72-5e90d1cad0ad): 方向 A（设备 HTTP shim）架构已由 "
+    "260903-device-ws-switch 退役取代 — spec docs/spec.md §3.0.0「迁移与既有资产」"
+    "台阶退役条款 + §7 决策 9/18（「已被决策 9/18 取代：方向 B 转官方小智服务端网关，"
+    "HTTP shim 退役为已验证台阶」）; 归档记录 changes/dev/260903-device-ws-switch/"
+    "shim-archive-record.md。断言本体保留于 skip 之后（不可达），供未来重新启用判定。"
+)
+
 
 def _read_text(path: Path) -> str:
     try:
@@ -141,7 +180,18 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
     maxDiff = None
 
     def test_a1_device_http_shim_protocol_exists(self):
-        """coverage: SMK-A1 — the firmware carries a device-side HTTP shim protocol."""
+        """coverage: SMK-A1 — the firmware carries a device-side HTTP shim protocol.
+
+        SKIP (2026-09-09 合并链定向处置): 方向 A 架构齿。设备唯一公网入口已收敛为
+        网关 wss（决策 18 + OQ-R4），设备侧 HTTP shim protocol 不再进 build 是
+        方向 B 的正确形态而非缺失。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-A1 特注: 设备侧 HTTP shim protocol 已不存在且不再进 build，"
+              "属方向 B 正确形态（设备唯一公网入口 = 网关 wss, 决策 18）。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         has_shim_file = False
         has_http_file = False
         for name in ("shim", "http"):
@@ -165,7 +215,20 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
         )
 
     def test_a2_provision_points_to_shim_base_not_openclaw(self):
-        """coverage: SMK-A2 — 配网指向 shim（复用 server/shim.py），不直连 OpenClaw 18789."""
+        """coverage: SMK-A2 — 配网指向 shim（复用 server/shim.py），不直连 OpenClaw 18789.
+
+        SKIP (2026-09-09 合并链定向处置): 方向 A 架构齿。红齿 = 固件 corpus 无
+        shim token（配网不再指向 HTTP shim base）；forbidden 齿（18789/openclaw
+        直连检查）现行通过。设备配网已改为 WS 命名空间直写 NVS（spec §9 决策 23:
+        「配网直写 NVS（websocket 命名空间 url/token/version）+ 短路激活」）。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-A2 特注: 配网不再指向 HTTP shim base（设备配网 = websocket "
+              "命名空间直写 NVS, spec §9 决策 23）; forbidden 齿（18789/openclaw）"
+              "现行通过。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         blobs = [_read_text(FIRMWARE_MAIN / "ota.cc"),
                  _read_text(FIRMWARE_MAIN / "Kconfig.projbuild"),
                  _read_text(FIRMWARE_MAIN / "CMakeLists.txt")]
@@ -193,7 +256,22 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
         )
 
     def test_a3_mp3_decode_path_exists(self):
-        """coverage: SMK-A3 (device leg) — 下行 MP3 必须可解码再送喇叭."""
+        """coverage: SMK-A3 (device leg) — 下行 MP3 必须可解码再送喇叭.
+
+        SKIP (2026-09-09 合并链定向处置): 方向 A 架构齿。方向 B 下行 = WS+Opus
+        流式（决策 9），设备音频管线无 MP3 解码路径是正确形态而非缺失。
+        seam 齿核实记录: _read_text(SERVER_SHIM) 对归档 shim.py 的现行为 = 文件
+        仍原路径存在（shim-archive-record.md: 归档 = 原路径保留 + ARCHIVED 墓碑
+        注记、代码逻辑零改动），read 正常、断言现通过——但该通过属空转脆性依赖
+        （shim.py 一旦迁移即读空失败），随本 skip 一并解除。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-A3-mp3 特注: 设备下行 = WS+Opus 流式（决策 9），MP3 解码路径"
+              "不存在是方向 B 正确形态; shim.py seam 齿因归档文件原路径保留而空转"
+              "通过，随 skip 解除该脆性依赖。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         blobs = [_read_text(FIRMWARE_MAIN / "CMakeLists.txt"),
                  _read_text(FIRMWARE_MAIN / "idf_component.yml")]
         for p in _files_under(FIRMWARE_MAIN / "audio", ".cc"):
@@ -217,7 +295,17 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
         )
 
     def test_e1_build_structure(self):
-        """coverage: SMK-E1 — 冒烟固件的 build/flash 结构针对目标硬件 (esp32s3/16MB/8MB PSRAM)."""
+        """coverage: SMK-E1 — 冒烟固件的 build/flash 结构针对目标硬件 (esp32s3/16MB/8MB PSRAM).
+
+        SKIP (2026-09-09 合并链定向处置): 仅 CMakeLists 齿（protocols/shim|http）
+        红，属方向 A 架构齿; esp32s3 板目标齿与 16m.csv 分区齿现行通过（本次核实）。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-E1 特注: 红齿仅 CMakeLists 不含 protocols/shim|http（方向 B "
+              "正确形态）; esp32s3/16m.csv 两齿现行通过。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         cfg = _read_text(BOARD_OVERLAY / "config.json")
         self.assertIn("esp32s3", cfg,
                       "SMK-E1 RED: board overlay target is not esp32s3.")
@@ -248,7 +336,20 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
         )
 
     def test_e2_evidence_directory_structure(self):
-        """coverage: SMK-E2 — 烧录日志 + 一次往返证据落盘，证据目录结构承接 closeout."""
+        """coverage: SMK-E2 — 烧录日志 + 一次往返证据落盘，证据目录结构承接 closeout.
+
+        SKIP (2026-09-09 合并链定向处置): 四件证据中 burn.log / shim.access.log /
+        screen.md 为 2026-09-02 真实冒烟产物（处置清单: 由 builder 自 pod-smoke-e2e
+        worktree 回收至 SMOKE_ARTIFACT_DIR），但 roundtrip.json 从未落盘（不可回补,
+        同 SMK-A3-roundtrip 特注）——断言原子性要求四件齐全，故整体 skip。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-E2 特注: burn.log/shim.access.log/screen.md 为 2026-09-02 "
+              "真实冒烟产物（builder 回收至 SMOKE_ARTIFACT_DIR, 处置清单在案），"
+              "roundtrip.json 从未落盘不可回补，断言原子性要求四件齐全故整体 skip。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         missing, empty = [], []
         for name in EVIDENCE_FILES:
             p = SMOKE_ARTIFACT_DIR / name
@@ -274,7 +375,22 @@ class SmokeE2EStructuralAcceptance(unittest.TestCase):
                         "SMK-E2 RED: shim.access.log does not record any /v1/* route.")
 
     def test_a3_device_roundtrip_evidence(self):
-        """coverage: SMK-A3 — 一次往返（KEY→麦→/v1/asr→/v1/chat→TTS→喇叭）证据合格."""
+        """coverage: SMK-A3 — 一次往返（KEY→麦→/v1/asr→/v1/chat→TTS→喇叭）证据合格.
+
+        SKIP (2026-09-09 合并链定向处置): 证据不可回补齿。roundtrip.json 从未
+        落盘——2026-09-02 物理冒烟（pod-smoke-e2e worktree _artifacts/smoke-e2e）
+        中 ASR 对静音输入返回空文本、设备侧按冻结逻辑短路，完整设备往返未发生即被
+        方向 B 取代（screen.md 屏显记录在案）。方向 B 的设备语音回环证据由
+        260829-voice-roundtrip（roundtrip-live-evidence.md）与 260903-device-ws-switch
+        承载。
+        """
+        self.skipTest(
+            _SUPERSEDED_DISPOSAL
+            + " SMK-A3-roundtrip 特注: roundtrip.json 从未落盘（2026-09-02 ASR 空"
+              "文本短路, 完整设备往返未发生即被方向 B 取代），证据不可回补; 方向 B "
+              "回环证据由 260829-voice-roundtrip / 260903-device-ws-switch 承载。"
+        )
+        # ---- 断言本体（保留原文, skip 后不可达） ----
         path = SMOKE_ARTIFACT_DIR / "roundtrip.json"
         if not path.is_file():
             self.fail(f"SMK-A3 RED: {path} missing — no one-roundtrip evidence落盘.")

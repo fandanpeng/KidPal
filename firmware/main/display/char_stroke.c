@@ -11,6 +11,7 @@
  */
 
 #include "char_stroke.h"
+#include "art_assets.h"
 
 #include <ctype.h>
 #include <math.h>

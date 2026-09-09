@@ -145,3 +145,22 @@ int host_infra_render_p1_frame(const uint32_t *argb, int w, int h)
     s_rendered = true;
     return 0; /* 0 == a P1 frame was flushed */
 }
+
+/* ============================================================================
+ * additive 美术资产渲染缝 (TaskPackage 260901-ui-art-integration, 包子 U) ——
+ * art_assets.c 以弱默认定义同名符号; 本文件以强符号覆盖之, 把 art_assets 组合的
+ * 400x300 ARGB 整帧打印到可探针帧缓冲并置 rendered, 使 host_infra_read_pixel 能
+ * 探针资产渲染齿 (render_asset / 9-slice / 网点 / 动态时间)。纯 additive: 不改
+ * host_infra_render_frame / host_infra_read_pixel 自身语义 (ART-A6 换皮用缝交付)。
+ * ========================================================================== */
+int art_render_blit_frame(const uint32_t *argb, int w, int h)
+{
+    if (argb == NULL || w != SEAM_FRAME_W || h != SEAM_FRAME_H) {
+        return -1;
+    }
+    for (int i = 0; i < SEAM_FRAME_W * SEAM_FRAME_H; i++) {
+        s_fb[i] = argb[i] & 0x00FFFFFFu;
+    }
+    s_rendered = true;
+    return 0;
+}

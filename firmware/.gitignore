@@ -14,6 +14,10 @@ main/mmap_generate_emoji.h
 .cache
 *.pyc
 *.bin
+# U 包（260901-ui-art-integration）assets 分区 KAP1 落地（47 枚闭集白名单）——必须入库
+# （acceptance test 3/4 运行时读盘对账 + 设备 SPIFFS 烧录源），不被全联通配 *.bin 吞掉。
+!main/assets/spiffs_root/
+!main/assets/spiffs_root/*.bin
 mmap_generate_*.h
 .clangd
 

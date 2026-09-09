@@ -197,3 +197,87 @@ wsl -d Ubuntu-24.04 -- /mnt/c/tmp/hp1_red_runner   # 退出码 = 失败 TEST_CAS
    缺失原因，统一红对逐条断言敏感性零信息——上表已按条目给出各齿对应的缺失
    行为映射，转绿后 verifier 须做 mutation check（破坏一个真实行为期待变红），
    不得豁免。
+
+---
+---
+
+# U 包红基线判定摘要（TaskPackage 260901-ui-art-integration · acceptance-author 2026-09-09 实测）
+
+（本节按 append 纪律追加，上文 VRT/HP1 段零改动。）
+
+冻结验收文件：`firmware/main/test/ui_art_integration.acceptance.c`（weak-symbol
+frozen offline contract 模式，照 HP1 先例；taskpackage `acceptanceTestsFile` 钉的
+路径，无落位偏差）。冻结契约 = `firmware/main/display/art_assets.(c|h)` 的 9 个
+资产层函数（mount/load/pixel/glyph/glyph_advance + 4 个 LVGL 渲染原语）+ KAP1
+SPIFFS 资产文件格式 + `firmware/main/assets/spiffs_root/` 47 枚闭集落地面（命名/
+尺寸 = 上游管线产物描述符 2026-09-09 逐枚实测采样）。
+
+## C 侧红基线（命令与实跑）
+
+冻结验收文件的闸上 runner 判据 = host_app linux-target ELF（[C4.4]），但接线属
+builder。本次用边界内脚手架（本目录 `unity.h` stub + `runner.c` + `seam_stub.c`，
+同 HP1）把**同一份冻结验收文件**在 WSL Ubuntu-24.04 编成原生 Linux ELF 当场执行：
+
+```
+cd firmware/main/test/acceptance/red-baseline
+gcc -std=c11 -Wall -Wextra -DKIDPAL_ART_RB_STUB -I. -o /tmp/art_red_runner \
+    ../../ui_art_integration.acceptance.c seam_stub.c runner.c   # BUILD_CLEAN（零告警）
+cd <repo root>
+/tmp/art_red_runner    # 直取 argv 形态实测退出码
+```
+
+实测：**11 Tests 10 Failures，ELF 退出码 = 10**（退出码经直取 argv 形态单独核实；
+`bash -c` 包装 / pipeline 掩蔽下 `$?` 读数失真，沿用 VRT/HP1 已记录的判读纪律）。
+
+判读要点（冻结纪律：红必须红在真实行为缺失）：
+- 全部行为齿红在 weak 哨兵 -2「frozen contract NOT implemented」或装配/接线齿红在
+  「模块不存在 / SPIFFS 落地面缺失 / HOST_ACCEPTANCE_SRCS 未接线」——不是编译/链接
+  错误（BUILD_CLEAN 佐证）。
+- 在世守卫绿：验收文件在世于钉定路径、头注 BUILDER DUTY 标记、分区表 assets 行
+  （data/spiffs, 0x800000, 8M）、v3 母版指针（verify_art_assets.mjs）+ 蝴蝶结裁定
+  注记（v3 稿 mp-head）+ 裁定快照（pose_daily_bow_3x.png）、契约 canary。
+- ART-A7 回归齿在 stub harness 按设计 skip（页面包未链入，`-DKIDPAL_ART_RB_STUB`
+  才放行 skip；官方 runner 上 = 硬断言，skip 通道关闭）。
+
+### 逐条判定
+
+| TEST_CASE | 判定 | 红因（各自真实缺失行为, 2026-09-09 实测） |
+|---|---|---|
+| ART-A2 structural（装配 + SPIFFS 分区面 + 接线序） | **RED** | 齿 1/2/3/7 绿（文件在世 + duty 标记 + 分区 CSV canary + 契约 canary）；齿 4/5/6 红——firmware/main 无任何文件实现 frozen contract（`kidpal_art_load(` 零命中）、art_assets.c 未编入设备 CMakeLists、spiffs_root 未接线、host_app HOST_ACCEPTANCE_SRCS 未接线（含 smoke 末位序守卫） |
+| ART-A2（mount/load + KAP1 fixture 解码 + 防御） | **RED** | frozen contract 未实现（weak 哨兵）——SPIFFS 按路径加载 / KAP1 双 format 解码 / 1bpp MSB-first 与阈值化像素语义 / 坏 magic·截断·中间灰·NULL 防御全部缺失 |
+| ART-A5（47 枚闭集落地 + 真实落盘尺寸） | **RED** | `kidpal_art_mount`/`kidpal_art_load` 未实现——V3 资产本体落地面（firmware/main/assets/spiffs_root/）不存在，47 枚对账无从执行 |
+| ART-A5（v3 溯源 + 姿态族互异 + B8 闭集红线） | **RED** | 溯源锚三齿 + B8 char_stroke 静态齿绿（在世守卫）；行为半红在 loader 哨兵——落地集闭集枚举与 7 姿态两两互异（占位复制检测）无法执行 |
+| ART-A3（imgfont 字形族等宽 + 逐字符互异 + 防御） | **RED** | `kidpal_art_glyph` 未实现——Baloo 2 动态时间 11 枚等宽箱体查取/逐字符变化缺失 |
+| ART-A2 render（真姿态资产逐像素比对） | **RED** | `kidpal_art_render_asset` 未实现——1bpp 位图经渲染缝的 1:1 渲染面缺失 |
+| ART-A4 render（9-slice 24px 角片不变形 + 边框连续） | **RED** | `kidpal_art_draw_nine_slice` 未实现——手绘框族 9 宫格拉伸渲染缺失（v3 定稿裁定①的渲染承载） |
+| ART-A4 render（网点 4px 平铺周期 + d50>d25>d12） | **RED** | `kidpal_art_draw_dots` 未实现——三档抖动网点渲染缺失 |
+| ART-A3 render（动态时间逐字符单元格比对） | **RED** | `kidpal_art_draw_time` 未实现——imgfont 组合渲染缺失 |
+| ART-A6（六页渲染面统一消费共享资产层） | **RED** | view_router.c / char_stroke.c / home_p1.c / schedule_page.c / reminder_page.c / story_page.c 均无 art_assets.h include 或 kidpal_art_* 调用——换皮未接入 |
+| ART-A7（换皮后六包冻结契约抽查） | skip（stub harness 按设计）/ 官方 runner 硬断言 | 页面包冻结契约为 MUST-STAY-GREEN 守卫；stub 下未链入按 skip 记录并打印，官方 runner 上 skip 通道关闭（NULL 链接 = 硬红） |
+
+## 红的构成一句话
+
+**红 = 10 条齿对当前 story 缺失行为成立（art_assets 资产层 + SPIFFS 落地面 +
+渲染原语 + 六页换皮全部未建）；1 条回归齿 stub-skip（官方 runner 硬断言）；全部
+在世守卫绿。本包把它切到绿。** 无一红因是编译/链接错误（BUILD_CLEAN），全部红因
+落在 weak 哨兵或装配/落地面缺失的真实行为上。
+
+## 降级与留痕记录（诚实边界）
+
+1. **闸 runner 未接线**：HOST_ACCEPTANCE_SRCS 与设备 CMakeLists 接线属 builder
+   （验收文件头 BUILDER DUTY 1–8 条）；本次红以 stub runner 执行同一文件得出，
+   断言行为与闸上一致；builder 接线后 verifier 应在 host_app ELF 上复跑（转绿期望
+   = 全 TEST_CASE PASS + EXIT=0，并把 `../../../display/art_assets.c` 一并编入
+   HOST_ACCEPTANCE_SRCS 使强符号覆盖 weak 默认；转绿后 mutation check 不得豁免——
+   10 条行为齿共享「模块未实现」缺失原因，统一红无逐条敏感性信息，映射见上表）。
+2. **渲染缝替身**：`seam_stub.c` 只为裸 gcc 脚手架供链；渲染齿在 stub 下红于
+   `kidpal_art_mount`/render 哨兵（远早于像素探针），替身内容不会掩盖任何红。
+3. **launch 红基线口径勘误**：TaskPackage `redBaselineCommand` 预言「目标 host+SDL
+   验收测试文件尚不存在，编译收集即失败」——实测形态不同：文件尚未入 host 构建
+   （未接线 = 不参与收集），真红形态 = 本摘要的 stub 实跑 10 红（结构性缺位 +
+   哨兵），编译/收集通道零错误（BUILD_CLEAN）。记录在案，redBaselineResult 由
+   planner 按 launch 实测修正口径。
+4. **上游管线脚注（非本包红因）**：`tools/asset-pipeline/gen_assets.mjs` 的母版
+   经 CLI 参 design.html 传入、无硬编码；`verify_art_assets.mjs` 的 HTML/ASSETS
+   常量为绝对路径指主 worktree（C:/AI/KidPal/...）——v3 指针在世（本包溯源齿
+   钉的就是它），但跨 worktree 复跑机判需注意路径语义。
