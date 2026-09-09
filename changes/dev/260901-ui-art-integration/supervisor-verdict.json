@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-09-09T11:36:01.405Z",
+  "ts": "2026-09-09T12:52:26.354Z",
   "changeId": "260901-ui-art-integration",
   "originType": "planning-workstream",
   "adjudication": {
@@ -22,8 +22,8 @@
         "security-axis-path:.claude/taskpackages/260901-ui-art-integration/input-brief-acceptance-author.md"
       ]
     },
-    "circuitBreakerCompletedRounds": 2,
-    "evidenceComplete": false
+    "circuitBreakerCompletedRounds": 3,
+    "evidenceComplete": true
   },
   "provenance": {
     "provenanceVersion": "2.0",
@@ -40,9 +40,9 @@
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r2.json",
-        "bearingFactOk": false,
-        "completedRounds": 2,
+        "bearingFactRef": ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r3.json",
+        "bearingFactOk": true,
+        "completedRounds": 3,
         "closeoutArtifactsChecked": [
           "changes/dev/260901-ui-art-integration/docs-delta.md",
           "changes/dev/260901-ui-art-integration/review-packet.md"
@@ -65,7 +65,7 @@
       ".claude/verify-logs/1788953730514-acceptance.log"
     ],
     "verifierEvidenceRefs": [
-      ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r2.json"
+      ".claude/taskpackages/260901-ui-art-integration/verifier-evidence/rounds/r3.json"
     ],
     "closeoutArtifactsChecked": [
       "changes/dev/260901-ui-art-integration/docs-delta.md",
