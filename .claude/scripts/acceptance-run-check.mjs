@@ -96,18 +96,41 @@ function decide(input) {
   return { ok: true, reason: null, violations: [] };
 }
 
-// host 用例判据：文件是否标 live（live on-target 验收不 auto-run，对偶固件 on-target「只结构闸」）。
+// live 标记统计（报告用；260909 T1 起不再是排除判据——排除改由 pytest `-m "not live"` 条目级筛）。
 function fileHasLiveMark(absPath) {
   try {
     return /@pytest\.mark\.live|pytestmark\s*=\s*pytest\.mark\.live/.test(readFileSync(absPath, 'utf8'));
   } catch {
-    return false; // 读不到按 host 处理（fail-safe 向严：宁 auto-run 也不静默跳过未知）
+    return false; // 读不到按无标记计（仅统计用途；执行面不再有「一标记全屏蔽」路径）
   }
 }
 
-// pytest 是否可运行：未装 fail-open（对偶 firmware idf.py 缺失 fail-open）。
+// pytest 是否可运行：未装 fail-open（对偶 firmware 工具链缺失降级）。
 function pytestAvailable() {
   try { execSync('python -m pytest --version', { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
+// 条目级两态收集（260909-gov-review-gate-truthfulness T1+T2）：`-m "not live"` 由 pytest 按标记筛除
+// live 面，`--import-mode=importlib` 与包 redBaselineCommand 同源（点分 .acceptance.py 文件名在默认
+// prepend 模式下必收集失败）。返回 { structuralCollected, liveDeselected }；收集异常（import 错误等，
+// exit 非 0/5）返回 null → 交真实执行暴露，不向噪也不掩错。
+function pytestCollectNotLive(files) {
+  const cmd = `python -m pytest -q --collect-only --import-mode=importlib -m "not live" ${files.join(' ')}`;
+  try {
+    const out = execSync(cmd, { cwd: join(projectDir, 'server'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return parseCollectSummary(out);
+  } catch (err) {
+    if (err.status === 5) return parseCollectSummary(`${err.stdout || ''}\n${err.stderr || ''}`);
+    return null;
+  }
+}
+
+// -q --collect-only 摘要形态（2026-09-09 实测）：混合件「14/18 tests collected (4 deselected)」；
+// 全 deselect「no tests collected (18 deselected)」（exit 0）。判据 = collected 数字，不接受没报错就算过。
+function parseCollectSummary(out) {
+  const deselected = (out.match(/(\d+) deselected/) || [])[1];
+  const m = out.match(/(\d+)\/(\d+) tests? collected/) || out.match(/(\d+) tests? collected/);
+  return { structuralCollected: m ? Number(m[1]) : 0, liveDeselected: deselected ? Number(deselected) : 0 };
 }
 
 function collectReal(root) {
@@ -139,6 +162,12 @@ function runSelfCheck() {
 
   ok('state5-fw-glob', FW_ACC_RE.test('stroke.acceptance.c') && !FW_ACC_RE.test('stroke.c') && !FW_ACC_RE.test('stroke.test.c'));
   ok('state5-py-glob', PY_ACC_RE.test('acceptance/test_shim_api.py') && !PY_ACC_RE.test('test_store.py') && !PY_ACC_RE.test('shim/test_api.py'));
+
+  // 260909 T1：条目级筛选摘要解析（判据 = collected/deselected 数字；实盘真跑断言由验证集 V2 承载）。
+  const mix = parseCollectSummary('14/18 tests collected (4 deselected) in 0.06s');
+  ok('mixed-file-structural-runs', mix.structuralCollected === 14 && mix.liveDeselected === 4);
+  const allLive = parseCollectSummary('no tests collected (18 deselected) in 0.05s');
+  ok('all-live-deselected-reported', allLive.structuralCollected === 0 && allLive.liveDeselected === 18);
 
   try {
     const real = collectReal(projectDir);
@@ -177,20 +206,34 @@ if (isMain() && !process.argv.includes('--self-check')) {
     surfaces: { firmwareAcceptanceFiles: real.fwAccFiles.length, serverAcceptanceFiles: real.pyAccFiles.length },
     note: '固件 on-target 验收需实机/qemu，由 acceptance 相位人工/台架触发并落 verifier-evidence；本闸担保不静默跳过，不担保实机已过。',
   });
-  // 执行器：仅 server 面 host-fast 的 pytest acceptance 在闸内真跑；live on-target（@pytest.mark.live，如 cloud-link 验收）
-  // 与固件 on-target 同待遇——只结构闸、不 auto-run（merge/CI 无 SSH/凭据，auto-run 必假红）。pytest 未装也 fail-open。
-  // 约定成文：docs/DEV-GOVERNANCE.md「## 验收测试纪律」§1（260906-gov-review-arq-governance-batch T3）。
+  // 执行器（260909-gov-review-gate-truthfulness T1+T2）：server 面 host 验收在闸内真跑；host/live 两态
+  // 在**条目级**判——`-m "not live"` 由 pytest 按标记筛除 live 面（@pytest.mark.live，实机/on-target 不
+  // auto-run，对偶固件 on-target 结构闸），禁按文件级标记整份排除（病灶实录：server/acceptance/ 9/9
+  // 混合件曾被文件级判据整份放行）。执行口径与包 redBaselineCommand 同源（--import-mode=importlib）。
+  // 全为 live 面由执行结果给出：collect 后 0 条可跑 → 显式 allLiveDeselected（非静默 skip）。
+  // pytest 未装 fail-open。约定成文：docs/DEV-GOVERNANCE.md「## 验收测试纪律」§1。
   if (real.pyHasRunner && real.pyAccFiles.length > 0) {
-    const hostFiles = real.pyAccFiles.filter((f) => !fileHasLiveMark(join(projectDir, 'server', f)));
-    if (hostFiles.length === 0) {
-      print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'live-only on-target acceptance（@pytest.mark.live，手动触发；对偶固件 on-target 结构闸）' });
-    } else if (!pytestAvailable()) {
-      print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'pytest 未安装（fail-open，对偶 firmware idf.py 缺失）' });
+    if (!pytestAvailable()) {
+      print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'pytest 未安装（fail-open，对偶 firmware 工具链缺失降级）' });
     } else {
-      try {
-        execSync(`python -m pytest -q ${hostFiles.join(' ')}`, { cwd: join(projectDir, 'server'), stdio: 'inherit' });
-      } catch (err) {
-        process.exit(typeof err.status === 'number' ? err.status : 1);
+      const files = real.pyAccFiles;
+      const filesWithLiveMark = files.filter((f) => fileHasLiveMark(join(projectDir, 'server', f))).length;
+      const collect = pytestCollectNotLive(files);
+      if (collect && collect.structuralCollected === 0) {
+        print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', allLiveDeselected: true,
+          structuralCollected: 0, liveDeselected: collect.liveDeselected, filesWithLiveMark: `${filesWithLiveMark}/${files.length}`,
+          reason: `全部为 live 面（-m "not live" 后 0 条可跑，deselected ${collect.liveDeselected} 条；live on-target 手动触发）` });
+      } else {
+        if (collect) {
+          print({ ok: true, gate: 'acceptance', phase: 'executor-run',
+            structuralCollected: collect.structuralCollected, liveDeselected: collect.liveDeselected,
+            filesWithLiveMark: `${filesWithLiveMark}/${files.length}` });
+        }
+        try {
+          execSync(`python -m pytest -q --import-mode=importlib -m "not live" ${files.join(' ')}`, { cwd: join(projectDir, 'server'), stdio: 'inherit' });
+        } catch (err) {
+          process.exit(typeof err.status === 'number' ? err.status : 1);
+        }
       }
     }
   }

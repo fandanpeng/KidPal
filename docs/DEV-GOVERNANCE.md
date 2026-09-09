@@ -274,6 +274,8 @@ server 面验收分两态：
 
 **pytest-not-installed 语义**：host-fast 路径下 pytest 未安装 = fail-open 跳过并 warn（对偶 firmware idf.py 缺失），**不是**绿灯依据——闸担保「不静默跳过」，不担保「实机已过」。
 
+**两态在条目/类级判**（260909-gov-review-gate-truthfulness T1c/T4）：闸内以 `pytest -m "not live"` 执行，禁按文件级标记整份排除（实测病灶：`server/acceptance/` 9/9 混合件曾被文件级判据整份放行）；一文件内混排两态合法，全为 live 面时闸须显式报 `allLiveDeselected` 而非静默 skip。闸「没跑成」（degraded / executor-skipped / allLiveDeselected）由 verify.mjs 上收为 round evidence 的机器可判字段 `notExecuted`；**`notExecuted` 非零时 verifier 报告必须逐条点名**（该字段不当第二道门、不改 ok 判定——可见性义务，机械消费另批）。
+
 ### 2. probe ≠ exercise（live 验收必须真跑一遍真实链路）
 
 跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），**只探测可达不算 live 验收**。验收起草（acceptance-author）与核验（verifier）两级遵守。教训实证：G 包 live 验收当年只探端口可达，六个真实链路缺陷（websockets 版本不兼容、缺 device-id 头透传、TTS type 拼写、OpenClaw base_url 缺 `/v1`、容器 loopback 不可达、Intent 拒绝）全递延到 WS 包真机冒烟才连环爆（ARQ-260906-live-acceptance-real-path）。

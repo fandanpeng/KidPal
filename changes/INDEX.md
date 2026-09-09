@@ -6,7 +6,7 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (14)
+## dev (15)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
@@ -20,20 +20,21 @@
 | [260829-home-p1](../changes/dev/260829-home-p1/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-schedule-p2](../changes/dev/260829-schedule-p2/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-schedule-reminder](../changes/dev/260829-schedule-reminder/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-session-logic](../changes/dev/260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](../changes/dev/260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](../changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
-## arch (14)
+## arch (19)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | frozen | yes |
+| [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | frozen | no |
 | [260908-gov-review-escalation-conflict-ladder](../changes/arch/260908-gov-review-escalation-conflict-ladder/) | 2026-09-08 | frozen | yes |
-| [260908-gov-review-merge-chain-hardening](../changes/arch/260908-gov-review-merge-chain-hardening/) | 2026-09-08 | frozen | yes |
-| [260908-gov-review-human-deputy-shadow](../changes/arch/260908-gov-review-human-deputy-shadow/) | 2026-09-08 | draft | — |
+| [260908-gov-review-human-deputy-shadow](../changes/arch/260908-gov-review-human-deputy-shadow/) | 2026-09-08 | draft | yes |
 | [260908-gov-review-input-surface-frontload](../changes/arch/260908-gov-review-input-surface-frontload/) | 2026-09-08 | landed | yes |
+| [260908-gov-review-merge-chain-hardening](../changes/arch/260908-gov-review-merge-chain-hardening/) | 2026-09-08 | frozen | yes |
 | [260907-gov-review-architect-dispatch-model-override](../changes/arch/260907-gov-review-architect-dispatch-model-override/) | 2026-09-07 | frozen | yes |
 | [260907-gov-review-arq-governance-batch-2](../changes/arch/260907-gov-review-arq-governance-batch-2/) | 2026-09-07 | landed | yes |
 | [260907-gov-review-merge-friction](../changes/arch/260907-gov-review-merge-friction/) | 2026-09-07 | frozen | yes |
@@ -42,9 +43,9 @@
 | [260906-gov-review-index-status-truth-source](../changes/arch/260906-gov-review-index-status-truth-source/) | 2026-09-06 | landed | yes |
 | [260905-gov-review-verify-gates-align](../changes/arch/260905-gov-review-verify-gates-align/) | 2026-09-05 | landed | yes |
 | [260904-gov-review-escalate-merge-approval](../changes/arch/260904-gov-review-escalate-merge-approval/) | 2026-09-04 | frozen | yes |
-| [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | — |
-| [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | — |
+| [260902-arch-review-kidpal-spec-v0.2](../changes/arch/260902-arch-review-kidpal-spec-v0.2/) | 2026-09-02 | draft | yes |
+| [260902-arch-review-shim-api-field-envelope](../changes/arch/260902-arch-review-shim-api-field-envelope/) | 2026-09-02 | draft | yes |
 | [260830-arch-review-ui-impl-strategy](../changes/arch/260830-arch-review-ui-impl-strategy/) | 2026-08-30 | frozen | yes |
-| [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | — |
-| [260829-gov-review-migration-tier23](../changes/arch/260829-gov-review-migration-tier23/) | 2026-08-29 | draft | — |
-| [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | no |
+| [260829-arch-review-kidpal-spec-stories](../changes/arch/260829-arch-review-kidpal-spec-stories/) | 2026-08-29 | landed | yes |
+| [260829-gov-review-migration-tier23](../changes/arch/260829-gov-review-migration-tier23/) | 2026-08-29 | draft | yes |
+| [260827-gov-review-migration-bootstrap](../changes/arch/260827-gov-review-migration-bootstrap/) | 2026-08-27 | draft | yes |

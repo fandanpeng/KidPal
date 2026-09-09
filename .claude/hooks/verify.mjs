@@ -152,6 +152,30 @@ function writeGateLog(gate, output) {
   return `.claude/verify-logs/${fileName}`;
 }
 
+// 260909-gov-review-gate-truthfulness T4：闸「没跑」状态从闸 stdout 解析上收为机器可判字段。
+// 判据 = 闸输出含 degraded:true ∨ phase:"executor-skipped" ∨ allLiveDeselected:true。
+// 效力边界（DP-D4 同型）：只产字段、不改本轮 ok 判定、不改 merge 放行——让上游与仪表盘能判；
+// 机械消费（supervisor / pre-merge 读它）按 OQ4=(b) 留下一批。verifier 报告点名义务成文于
+// docs/DEV-GOVERNANCE.md「## 验收测试纪律」§1。
+function liftNotExecuted(stdout) {
+  const degraded = /"degraded":\s*true/.test(stdout);
+  const skipped = /"phase":\s*"executor-skipped"/.test(stdout);
+  const allLive = /"allLiveDeselected":\s*true/.test(stdout);
+  if (!degraded && !skipped && !allLive) return { notExecuted: false, notExecutedReason: '' };
+  const m = stdout.match(/"reason":\s*"([^"\n]{0,300})/);
+  return {
+    notExecuted: true,
+    notExecutedReason: (m && m[1]) || (degraded ? 'degraded' : allLive ? 'allLiveDeselected' : 'executor-skipped'),
+  };
+}
+
+// 汇总层：gatesNotExecuted / gatesRun。round fact 顶层键白名单封闭（verifier-evidence-check 零改动），
+// 故汇总落 verdict.json + child payload；round fact 内经 results[].notExecuted 承载（逐闸可判）。
+function summarizeNotExecuted(results) {
+  const gatesNotExecuted = results.filter((r) => r.notExecuted).map((r) => r.gate || r.id);
+  return { gatesNotExecuted, gatesRun: results.length - gatesNotExecuted.length };
+}
+
 function runGateChild() {
   const cfg = loadGates();
   const results = [];
@@ -183,6 +207,7 @@ function runGateChild() {
       timing: gate.timing || 'scoped',
       stdout,
       stderr,
+      ...liftNotExecuted(stdout),
       summary: truncateUtf8(ok ? `${gate.id} passed` : `${gate.id} failed`, LIMITS.perResultSummaryBytes),
     });
 
@@ -214,11 +239,11 @@ function runGateChild() {
     // final 相位有红：error = 首红 ErrorEnvelope（validateFactObject 要求 fact.error 为对象，保形）；
     // errors[] = 全红清单——仅 child stdout 瞬态（validateFactObject allowed 集无 errors 键），
     // 全红清单唯一持久载体 = results[]（+ verify-runs.jsonl 投影）。FROZEN v1.0 OQ-4=(a)/F7(iii)。
-    console.log(JSON.stringify({ ok: false, results, error: failures[0], errors: failures, phase }, null, 2));
+    console.log(JSON.stringify({ ok: false, results, error: failures[0], errors: failures, phase, ...summarizeNotExecuted(results) }, null, 2));
     process.exit(1);
   }
 
-  console.log(JSON.stringify({ ok: true, results, error: null, phase }, null, 2));
+  console.log(JSON.stringify({ ok: true, results, error: null, phase, ...summarizeNotExecuted(results) }, null, 2));
   process.exit(0);
 }
 
@@ -248,8 +273,8 @@ function runLegacy() {
   const child = runGateChildProcess(phase);
   const payload = parseChildPayload(child);
   persistVerifyRuns(payload.results || [], 'verifier-round', 'verifier');
-  writeVerdictJson(payload.results || [], !!payload.ok, payload.error || null, phase, { legacyNonBearing: true });
-  console.log(JSON.stringify({ ok: !!payload.ok, results: payload.results || [], error: payload.error || null, phase }, null, 2));
+  writeVerdictJson(payload.results || [], !!payload.ok, payload.error || null, phase, { legacyNonBearing: true, ...summarizeNotExecuted(payload.results || []) });
+  console.log(JSON.stringify({ ok: !!payload.ok, results: payload.results || [], error: payload.error || null, phase, ...summarizeNotExecuted(payload.results || []) }, null, 2));
   process.exit(child.status === 0 ? 0 : 1);
 }
 
@@ -341,6 +366,7 @@ function runBearing() {
       evidenceRef: paths.evidenceRef,
       observedGateExit: fact.observedGateExit,
       legacyNonBearing: false,
+      ...summarizeNotExecuted(fact.results),
     });
   } catch {
     // Non-bearing projection/observability cannot change published 0/1.

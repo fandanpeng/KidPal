@@ -13,7 +13,8 @@
 //
 // arch 状态机（260823-gov-review-arq-queue-restructure，Track B R2 GREEN）：
 //   draft → frozen → landed（终态）。frozen 复用 lib isFrozen（状态行非全文）；
-//   landed = landing-verdict.md 在场且最终 verdict ∈ {PASS, GREEN}；已合 main = git branch --contains <首提交> 含本地 main。
+//   landed = landing-verdict.md 在场且最终 verdict ∈ {PASS, GREEN}；已合 main = 目录**末提交**被本地 main 包含
+//   （260909-gov-review-gate-truthfulness T6：旧判据用首提交，draft 入册即被误报 mergedInMain=yes）。
 //   状态全 immutable/单调收敛 → 一次算完钉死；已算结果缓存进 .changes-index-state.json 供零 fork 复用。
 
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
@@ -78,6 +79,22 @@ function gitFirstCommitSha(relPath) {
   }
 }
 
+// 目录末提交（260909 T6）：mergedInMain 的语义 =「该批全部制品已并入 main」，须看末提交而非首提交。
+function gitLastCommitSha(relPath) {
+  try {
+    return execSync(`git log -1 --format=%H -- "${relPath}"`, {
+      cwd: projectDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+// mergedInMain 派生单源（260909 T6，upsertArchRow 与 backfill 两路同调——防派生判据双源分叉）。
+function dirMergedInMain(relPath) {
+  return gitContainedInMain(gitLastCommitSha(relPath));
+}
+
 function gitCommitDate(sha) {
   try {
     return execSync(`git show -s --format=%cs ${sha}`, { cwd: projectDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -86,7 +103,8 @@ function gitCommitDate(sha) {
   }
 }
 
-// 已合 main（immutable）：目录首提交被本地 main 包含。前提 = 合 main 动作完成后跑一次（R1-F3）；本地 main 假定单调不回退。
+// 已合 main（immutable）：目录**末提交**被本地 main 包含（260909 T6 前为首提交，语义 =「全部制品已并入」）。
+// 前提 = 合 main 动作完成后跑一次（R1-F3）；本地 main 假定单调不回退。
 function gitContainedInMain(sha) {
   if (!sha) return '';
   try {
@@ -323,9 +341,8 @@ function upsertArchRow(indexPath, id, cache) {
   }
   if (!existsSync(indexPath)) return { ok: false, error: 'changes/INDEX.md absent — run full rebuild first' };
   const entry = computeArchEntry(id, cache);
-  // 已合 main 是 immutable：现推并钉进缓存（前提 = 合 main 完成后跑本 upsert，R1-F3）
-  const sha = gitFirstCommitSha(`changes/arch/${id}`);
-  const merged = gitContainedInMain(sha);
+  // 已合 main：按目录末提交现推并钉进缓存（260909 T6；前提 = 合 main 完成后跑本 upsert，R1-F3）
+  const merged = dirMergedInMain(`changes/arch/${id}`);
   if (merged) { entry.mergedInMain = merged; cache[id] = { ...(cache[id] || {}), date: entry.date, mergedInMain: merged }; }
   const newRow = `| [${esc(entry.changeId)}](../changes/arch/${entry.changeId}/) | ${entry.date || '—'} | ${esc(entry.status)} | ${esc(entry.mergedInMain) || '—'} |`;
 
@@ -367,7 +384,7 @@ function backfill() {
   for (const name of names) {
     const sha = gitFirstCommitSha(`changes/arch/${name}`);
     const date = parseChangeIdDate(name) || (sha ? gitCommitDate(sha) : '');
-    const merged = gitContainedInMain(sha);
+    const merged = dirMergedInMain(`changes/arch/${name}`);
     const landed = deriveLanded(join(root, name), cache[name]);
     if (landed) landedCount++;
     cache[name] = { date, mergedInMain: merged, landed };

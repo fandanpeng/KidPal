@@ -40,6 +40,16 @@ node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-re
 
 blocking 非空即停——回 portfolio-planner 补 commit，不绕过。
 
+**「上游已知红」计数（260909-gov-review-gate-truthfulness T5）**：机械来源 = 现跑命令，禁手写散文（存量反例：`260829-story-p3/taskpackage.json` 的 knownRedFloor 手写段）。闸已按条目级两态真跑（`-m "not live"`），launch 前在**仓根**跑：
+
+```
+python -m pytest -q --import-mode=importlib -m "not live" "<repo 绝对路径>/server/acceptance"
+```
+
+- 用**绝对路径**调（与 `git -C` 同法消 cwd 敏感）；取末行 summary（如 `8 failed, 119 passed, 41 deselected`）的 failed 数即上游已知红基线；固件 host 面另数 `firmware/main/test/host_app` 的 ELF 产物/证据（同用绝对路径）。
+- 输出落 handoff 制品 = 本 skill §8 的 progress.md 追加一行（计数 + 命令 + 日期，append-only）；taskpackage 的 `knownRedFloor` 字段**引用该行**而非手写数字。
+- 已知红 ≠ 本包红：launch prompt 里标清基线数字，Pod 首轮 verifier 见红先对基线（新增红才是本包责任）；基线本身的消解走独立批，不塞给被 launch 的包。
+
 ### 3. worktree + branch
 
 ```
@@ -87,7 +97,7 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 - launch-argument 形状声明 + planner 身份 + **运行形态**：默认 human 在 VS Code 交互会话起（AskUserQuestion 可用、升级走正常 ruling）；headless 无人值守为备选形态（AskUserQuestion 不可用 → 严格非交互 fail-closed：pending-human-ruling.md + needs-triage）。Step 1 handoff 探测三处（taskpackage / PROPOSAL 定位 / pods json → `--set-pod running`）。
 - 本包定位：mergeOrder、dependsOn（标清哪些已 merged）、PROPOSAL §4 共享面/碰撞面条款、spec/契约锚点。
-- 环境既成事实：IDF 通路 `python c:\tmp\idf_run.py`（丢失按 pod-s-handoff/README.md §3.1 重写）、sdkconfig/deps/软链/图索引项目名、上游 merged 面（server/gateway 等）、ECS 访问 `c:\tmp\ssh_helper.py`、live 拓扑指针（ops skill `kidpal-ecs-gateway`）。
+- 环境既成事实：IDF 通路 `python c:\tmp\idf_run.py`（丢失按 pod-s-handoff/README.md §3.1 重写）、sdkconfig/deps/软链/图索引项目名、上游 merged 面（server/gateway 等）、ECS 访问 `c:\tmp\ssh_helper.py`、live 拓扑指针（ops skill `kidpal-ecs-gateway`）。① **固件严格模式默认开**（260909 T3/T5，OQ1=(b)）：launch prompt 环境段注入 `VERIFY_FW_BUILD_REQUIRED=1`——firmware-build 闸双路探测（PATH idf.py ∨ venv python + `c:/tmp/idf_run.py` wrapper）不通即红；显式关闭须在 prompt 留痕理由。② **260908 批 input-brief 机制接入**：builder/验收起草前跑 `node .claude/scripts/brief-inputs.mjs --change-id <id> --role acceptance-author` / `--role builder` 取输入面；`crossEnd` 判断先补——判不了向严填 `counterparts`，**不填 `exempt`**。③ C 侧遗留指针（只登记不改码，自有实现面走 dev-loop）：`firmware/main/test/**.acceptance.c` 读 `changes/dev/**` 证据按相对路径、root 定位吃 cwd（`voice_roundtrip_b.acceptance.c:878` 类），消解归 dev-loop 包，见 260909-gov-review-gate-truthfulness §6 留根。
 - **上一批收口留根的 live 偏差逐条移入 intake 评估**（构成 blockingDecision → fail-closed 上报，不静默推进；先例：Intent:nointent 待 OpenClaw tools 修复、ASR 终选凭据未裁定）。
 - 纪律提醒：运行形态对应的 fail-closed 口径、契约/验收冻结面、pod-events 实时 append、合并只走 merge-driver 本地 --no-ff、不直推 main 不 push。
 
