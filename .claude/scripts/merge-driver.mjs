@@ -1398,12 +1398,14 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
 
   // Step 5: git merge
   log(`${changeId}: merging to main...`);
-  // merge 步在「持有 main 的 worktree」内执行（Hot-fix #2，见下）。T6：对该 worktree 幂等设
-  // skip-worktree，先于守卫外执行（R1-F9：该步只动本地 index 标记、不改历史，DRY_RUN 下照常执行并留痕）。
+  // merge 步在「持有 main 的 worktree」内执行（Hot-fix #2，见下）。
+  // 260909 收窄（human 一次性授权直落，ARQ-260909-graph-cache-snapshot-direction）：main 持有 worktree
+  // 不再跑 ensureGraphCacheSynced——快照捕获点 = main 主 worktree，须保持普通跟踪态（S 在册时 git add
+  // 忽略这两件，快照捕获不了）。前提实测（c:/tmp 沙盒）：Pod rebase 后树内携带 main 当前快照，merge
+  // 不触这两件，脏 live 文件不拦 merge；Pod 私带快照 commit 的残余面转 fail-loud 脏树 abort，人工解。
   // mergeCwd 解析本身只读（git worktree list），DRY_RUN 下无害。findMainHolderWorktree 为 T5 提取的
   // 具名实现（self-check 共用）；无主 / 解析失败回退 wt。
   const mergeCwd = findMainHolderWorktree(wt) || wt;
-  ensureGraphCacheSynced(mergeCwd, changeId);
   if (!DRY_RUN) {
     try {
       // Get the current branch name, then merge it into main
