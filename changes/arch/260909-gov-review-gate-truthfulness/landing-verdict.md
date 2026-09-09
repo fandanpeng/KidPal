@@ -62,3 +62,4 @@
 3. **状态缓存时序**：`.changes-index-state.json` 本批 `landed:false` 待本 verdict 入册后由下一次 upsert/backfill 推导翻转（机制固有）。
 4. **acceptance 闸现恒红 8 条**（D3/V7 已申报，预期向严；断言本体消解走 dev-loop/独立批）。
 5. **格式契约可见性**（更新）：B2 双侧含块 + A9 packet-binding 引述 + B7 锚行行首形态三条格式契约曾只活在门脚本错误消息里——本批 PROPOSAL §8 教训在册已建议写入 `docs/templates/PROPOSAL.template.md` 与结构字段硬条款段，**建议 retro 闭环确认该建议被下批承接**。
+{"verdict": "GREEN", "changeId": "260909-gov-review-gate-truthfulness", "note": "终态机器锚，补 ok:true（GREEN）标题行形态未被 deriveLanded 识别的解析缺口"}
