@@ -66,7 +66,7 @@
   },
   "260909-gov-review-gate-truthfulness": {
     "date": "2026-09-09",
-    "mergedInMain": "no",
+    "mergedInMain": "yes",
     "landed": false
   },
   "260829-arch-review-kidpal-spec-stories": {

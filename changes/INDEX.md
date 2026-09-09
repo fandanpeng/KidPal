@@ -30,7 +30,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | frozen | no |
+| [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | frozen | yes |
 | [260908-gov-review-escalation-conflict-ladder](../changes/arch/260908-gov-review-escalation-conflict-ladder/) | 2026-09-08 | frozen | yes |
 | [260908-gov-review-human-deputy-shadow](../changes/arch/260908-gov-review-human-deputy-shadow/) | 2026-09-08 | draft | yes |
 | [260908-gov-review-input-surface-frontload](../changes/arch/260908-gov-review-input-surface-frontload/) | 2026-09-08 | landed | yes |
