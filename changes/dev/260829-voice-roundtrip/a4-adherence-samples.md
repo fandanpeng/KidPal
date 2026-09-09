@@ -41,3 +41,9 @@
 
 - 首轮 live 探针（无 OPENCLAW_TOKEN）8/8 空回复 = 探针通路问题（OpenClaw loopback 401），**非遵循度结论**，该轮样本作废；带 token 重跑 8/8 PASS 为生效轮。
 - sample 1 口语部分实测 4 句 > 三句纪律（S-F4.1）——a4 齿统计口径（fence+view）判 PASS，三句纪律断言归 a7 live 齿（本轮独立探针通过）。该超限观察按失败模式登记：生成端约束的偶发漂移，处理 = 网关 V32 截断/分屏（G 已 landed，机械兜底）+ 包 4 system prompt 增量扩展时可收紧措辞。非 gate 项（契约待确认点 1 = 统计复验归本包、失败包内 resolve）。
+
+- 处置: sample 1 口语部分三句纪律超限（4 句 > 3）已按失败模式处置——生成端约束
+  偶发漂移, 机械兜底 = 网关 V32 截断/分屏（G 已 landed, 有处理的失败模式）, 生成端
+  收紧 = 包 4 system prompt 增量扩展时落实; 非 gate 项（契约待确认点 1 = 失败包内
+  resolve）。本行 = 2026-09-09 对 2026-09-07 planner 观察已录处置的形式化登记
+  （合并链定向处置批, human 授权 eventId=2dd4498d-68db-448f-ac72-5e90d1cad0ad）。
