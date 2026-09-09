@@ -1,6 +1,17 @@
 # architect-landing-summary · 260909-gov-review-gate-truthfulness
 
-> 主线程 packet-bound landing 执行记录（2026-09-09）。packet = FROZEN PROPOSAL v1.0（§2 T1–T7 + §5 V1–V7）+ landing-manifest（8 行）+ 本文件。判官 GREEN = R2（architect-review-r1.md R2 节）。
+> 主线程 packet-bound landing 执行记录（2026-09-09）。packet-id = 本批 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集（V1–V7）（同 FROZEN PROPOSAL :7 packet-binding 行）；被批 review id = 260909-gov-review-gate-truthfulness。packet = FROZEN PROPOSAL v1.0 + landing-manifest（8 行，下栏）+ 本文件。判官 GREEN = R2（architect-review-r1.md R2 节）。
+
+```landing-manifest
+.claude/scripts/acceptance-run-check.mjs
+.claude/scripts/unit-run-check.mjs
+.claude/scripts/firmware-build-check.mjs
+.claude/hooks/verify.mjs
+.claude/skills/kidpal-pod-launch-prep/SKILL.md
+.claude/scripts/changes-index.mjs
+.claude/references/arch-review-protocol.md
+docs/DEV-GOVERNANCE.md
+```
 
 ## 1. 落点对照（manifest 8/8）
 

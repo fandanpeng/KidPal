@@ -147,7 +147,9 @@ python -m pytest -q --collect-only --import-mode=importlib acceptance/...accepta
 2. **降级不再是静默 `ok:true`**：`degraded` 分支输出补 `{ ok: true, degraded: true, buildAttempted: false, toolchainProbes: [...], strictModeEnv: 'VERIFY_FW_BUILD_REQUIRED unset' }`（把「为什么没跑」变字段，供 T4 上收与 OQ1 裁断消费）。
 3. `required`（`:70`）判据保留，**新增默认策略按 OQ1 裁断落**：(a) Pod 环境默认严格 → 本行改为 `required !== '0'`（默认严格，显式关）；(b) 维持显式开启但由 T5 在 launch 面钉上环境变量。本批按 OQ1=(b) 起草（launch 面钉 env + 降级显式记账），若 human 选 (a) 则本条与 §5 V3 同步改。
 
-对应 P4。目标文件：`.claude/scripts/firmware-build-check.mjs`
+对应 P4。
+
+目标文件：`.claude/scripts/firmware-build-check.mjs`
 
 ### T4 · 降级/放行状态上收为 round evidence 的机器可判字段
 
@@ -155,7 +157,9 @@ python -m pytest -q --collect-only --import-mode=importlib acceptance/...accepta
 
 效力边界（**绝不当第二道门，DP-D4 同型**）：本字段**不改本轮 ok 判定**、不改 merge 放行；它做的是「让上游与仪表盘能判」。真正的机械消费（supervisor-verdict / pre-merge 闸读它）按 **OQ4** 决定是否本批内做，默认留下一批。**verifier 报告义务成文**：`notExecuted` 非零时，verifier 报告必须逐条点名（此句落 T1c 同节的 DEV-GOVERNANCE 追加段，避免再造无人读的散文）。
 
-对应 P4 的「降级零机器可判面」。目标文件：`.claude/hooks/verify.mjs`、`docs/DEV-GOVERNANCE.md`（与 T1c 同文件同节，合并一条 landing 指令）
+对应 P4 的「降级零机器可判面」。
+
+目标文件：`.claude/hooks/verify.mjs`、`docs/DEV-GOVERNANCE.md`（与 T1c 同文件同节，合并一条 landing 指令）
 
 ### T5 · launch 面「上游已知红」机械来源 + root 定位不吃 cwd + 新机制接入两句
 
@@ -165,13 +169,17 @@ python -m pytest -q --collect-only --import-mode=importlib acceptance/...accepta
 2. **环境既成事实**段（现含 IDF 通路 `python c:\tmp\idf_run.py` 与「丢失按 pod-s-handoff/README.md §3.1 重写」）补两条：① `VERIFY_FW_BUILD_REQUIRED=1` 的注入位置（按 OQ1=(b)）；② 260908 批新机制接入两句——`node .claude/scripts/brief-inputs.mjs --change-id <id> --role acceptance-author` / `--role builder` 与「先补 `crossEnd` 判断（判不了向严填 counterparts，不填 exempt）」。
 3. 该 skill 的 C 侧相对路径 root 根因（`voice_roundtrip_b.acceptance.c:878` 类齿读 `changes/dev/**` 证据文件）**只写指针不改码**（自有实现面 → dev-loop，§6 留根）。
 
-对应 P1/P5 的 launch 侧。目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`
+对应 P1/P5 的 launch 侧。
+
+目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`
 
 ### T6 · `mergedInMain` 派生判据改「批次末 commit 是否已在 main」+ 与 status 解耦
 
 `.claude/scripts/changes-index.mjs`：`gitContainedInMain(sha)` 的入参从**首 commit** 改为**该批次目录的最新 commit**（`git log -1 --format=%H -- changes/arch/<id>/`），语义 = 「本批全部制品已并入 main」。派生点实测为**两处**（R1-S1 更正：初稿误认「`--upsert` 与全量 `collectArch` 两路」——`computeArchEntry:219` 只读缓存不派生）：`upsertArchRow:327-328` 与 `backfill():368-370` 平行重复同一入参逻辑，两处同改，并把「目录末 commit 解析 + ancestry 判定」抽成单函数供两处调用，消灭平行重复（本批 §1 P5 的教训即派生判据双源）。同文件两处旧语义注释同步更新：`:16`「已合 main = git branch --contains <首提交>」与 `:89`「目录首提交被本地 main 包含」。**缓存重钉**：`.changes-index-state.json` 把 mergedInMain 当 immutable 钉死（`:326` 注释自承），旧语义钉值不会自动重推——landing 后跑一次 `--backfill` 按新语义重钉（落 §5 V6 一步；实测当前无活体错钉残留，机制缺口成文于此）。另：**status 与 mergedInMain 不再互相暗示**——`landed` 仍由制品齐推，但 `mergedInMain` 只认末 commit ancestry；未合并但目录已在 main 的中间态如实显示为 `frozen | no`。
 
-对应 P5 第一条。目标文件：`.claude/scripts/changes-index.mjs`
+对应 P5 第一条。
+
+目标文件：`.claude/scripts/changes-index.mjs`
 
 ### T7 · gov 批落 main 合并形态口径收口（三处文本一致化）
 
@@ -270,3 +278,12 @@ python -m pytest -q --collect-only --import-mode=importlib acceptance/...accepta
 **降档与自指维持 R1 结论**：Track B 成立、力度足额（升级判据零命中）；自指面不升 human（理由见 R1 段，v0.3 未改变该面任何前提）。
 
 **GREEN 前置核对 ✓**：landing-manifest 围栏块在场（`:13-22`，8 行 = T1–T7 目标文件精确闭合）+ packet-id 行在场（`:7`）。可交主线程凭「立项 ack + GREEN」标 FROZEN。
+
+## 8. 冻结层追认（2026-09-09，landing-fidelity fail-loud 触发）
+
+landing 后 landing-fidelity-check.mjs 结构门 RED 两条格式项，主线程按 260908 批 §9 先例修格式、零语义改动，追认人 = human（随本批 merge 前确认）：
+
+1. **§2 锚行拆行**：T3/T4/T5/T6 四条「对应 Px。目标文件：`…`」连写行拆为两行（「目标文件：」独立行起头）——landing-fidelity B7 锚清单解析只认行首形态（`governance-gate-shared.mjs` parseSection2AnchorLists），连写形态被 fail-loud 判缺锚。改法集、目标文件集、manifest 三者零变动。
+2. **landing-summary 补块**：补 `landing-manifest` 围栏块（8 行，与 PROPOSAL :13-22 逐字一致）+ packet-binding 引述行（packet-id + 被批 review id，A9）——B2/A9 格式契约（260908 批双侧含块先例）。本条只动 summary 证据件，不触 canonical。
+
+**教训在册**（ retro 承载）：B2 双侧含块 + A9 packet-binding 引述 + B7 锚行行首形态三条格式契约只活在门脚本错误消息里、未进 PROPOSAL 模板/硬条款文本——「格式契约双向可见性」缺口，建议下批把三条写进 `docs/templates/PROPOSAL.template.md` 与本批 §10 结构字段硬条款段。
