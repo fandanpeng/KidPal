@@ -11,7 +11,7 @@ const NINE = ASSETS + '/9slice';
 const PIPE = 'C:/AI/KidPal/tools/asset-pipeline';
 const REPORT = PIPE + '/report';
 const GEN = PIPE + '/gen_assets.mjs';
-const HTML = 'C:/AI/KidPal/docs/ui/kidpal-ui-design-v2.html';
+const HTML = 'C:/AI/KidPal/docs/ui/kidpal-ui-design-v3.html';
 
 const results = [];
 function check(id, ok, detail) { results.push({ id, ok, detail }); }
