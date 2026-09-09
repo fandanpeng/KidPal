@@ -102,6 +102,61 @@ function aggregateTokens(events) {
   };
 }
 
+// T7（260908-gov-review-input-surface-frontload）· 长尾可观测面：per-actor 挂钟 / toolUses 分布 + 长尾计数
+// 向后兼容：新只增不改既有输出键（PROPOSAL §3）。缺值如实计数为 durValid 之外的缺口，不补 0（对齐
+// dispatch-stamp token 政策「绝不传 0 充数」）。阈值与 PROPOSAL §1 P1 / DEV-GOVERNANCE 起包格式期望前置
+// 第 6 条同源 = 40min；本列纯 advisory（DP-D4，T7 维持 friction 既有定性），绝不当 merge 门。
+const LONGTAIL_MIN_MS = 40 * 60 * 1000; // ≥40min 记长尾（与 §1 P1 阈值同源，不得两值）
+
+function median(xs) {
+  if (xs.length === 0) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+function aggregateActors(events) {
+  const dispatches = events.filter(e => e.eventType === 'dispatch-completed');
+  const byActor = new Map();
+  for (const d of dispatches) {
+    const actor = d.actor || 'unknown';
+    if (!byActor.has(actor)) byActor.set(actor, []);
+    byActor.get(actor).push(d);
+  }
+  const rows = [];
+  for (const [actor, ds] of byActor.entries()) {
+    const withDur = ds.filter(d => typeof d.payload?.durationMs === 'number');
+    const durations = withDur.map(d => d.payload.durationMs);
+    const toolUses = withDur.map(d => d.payload?.toolUses).filter(n => typeof n === 'number');
+    const longtail = withDur
+      .filter(d => d.payload.durationMs >= LONGTAIL_MIN_MS)
+      .map(d => ({
+        eventId: d.eventId,
+        phase: d.payload?.phase || null,
+        durationMs: d.payload.durationMs,
+        toolUses: typeof d.payload?.toolUses === 'number' ? d.payload.toolUses : null,
+      }))
+      .sort((a, b) => b.durationMs - a.durationMs);
+    rows.push({
+      actor,
+      dispatches: ds.length,
+      withDurationMs: withDur.length,
+      durationMsMissing: ds.length - withDur.length,
+      durationMsTotal: durations.reduce((a, b) => a + b, 0),
+      durationMsMedian: median(durations),
+      toolUsesMedian: median(toolUses),
+      longtailCount: longtail.length,
+      longtail,
+    });
+  }
+  rows.sort((a, b) => b.durationMsTotal - a.durationMsTotal);
+  return {
+    longtailThresholdMin: LONGTAIL_MIN_MS / 60000,
+    dispatchesTotal: dispatches.length,
+    actors: rows,
+  };
+}
+
 function aggregateEscalations(events) {
   const escalations = events.filter(e => e.eventType === 'agent-escalation');
   const resolutions = events.filter(e => e.eventType === 'agent-escalation-resolved');
@@ -180,6 +235,7 @@ function run() {
     eventsTotal: events.length,
     malformedLines,
     tokens: aggregateTokens(events),
+    actors: aggregateActors(events), // T7 新列（只增键，既有消费方不破）
     escalations: aggregateEscalations(events),
     friction: aggregateFriction(events),
   };

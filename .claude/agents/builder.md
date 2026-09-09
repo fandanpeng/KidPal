@@ -21,7 +21,8 @@ model: sonnet
 
 - 完整 TaskPackage。
 - `acceptanceTestsFile[]` 指向的冻结验收测试。
-- 相关 contracts、events、shared types、system spec。
+- `input-brief-builder.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成；含契约/spec 锚点节、跨端对端面、先例封顶、超读申报段模板）。brief 缺失时降级自扫，并在交付报告标 `manifest-missing`（不静默）。
+- 清单外阅读**允许且是常态**，但交付报告必须带 brief 第④节的「清单外阅读 + 原因」表回传（超读不申报才是问题）。
 - `.claude/references/acceptance-evidence.md`、`.claude/references/test-quality-antipatterns.md`、`.claude/references/observability-k6.md`。
 
 ## Process / 步骤
@@ -43,7 +44,7 @@ model: sonnet
 - `.claude/references/minimal-implementation.md`
 - `.claude/references/observability-k6.md`
 - `.claude/references/security-hardening.md`
-- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：消费 Draft TaskPackage 的 mutationEvidence 骨架与验收 ID 形态（禁括号后缀），勿靠闸红反推格式。
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：消费 Draft TaskPackage 的 mutationEvidence 骨架与验收 ID 形态（禁括号后缀），勿靠闸红反推格式。**第六条（输入面期望前置，T4，260908 批）：你的输入面 = `input-brief-builder.md` 封闭清单，跨端包的对端解析器源码在其中——按清单读、超读要申报。**
 
 ## Boundaries / 权限边界
 

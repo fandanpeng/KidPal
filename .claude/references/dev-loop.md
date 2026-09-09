@@ -86,9 +86,10 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 | `references/*.md` | 共享工作流知识：任务 intake 与切片、验收证据、测试反模式、ErrorEnvelope、K6 可观测性、安全闸、Review Packet、ADR。 |
 | `scripts/arch-review-handoff-check.mjs` | arch-review 收口检查：有实现侧 confirmed finding 时必须有 `dev-loop-handoff.json`。 |
 | `scripts/dispatch-stamp.mjs` | `--token-status exact|unavailable` + 可选 input/output/cache/total/source/reason；post-cutoff 只写 pod-events `dispatch-completed`，pre-cutoff 保留 legacy `--tokens` + dispatch-log。 |
+| `scripts/brief-inputs.mjs` | 派发输入面封闭化（260908-gov-review-input-surface-frontload T2）：读 taskpackage 的 refs + `crossEnd`，产 `input-brief-<role>.md`（锚点节定位 / 跨端对端面 / 先例封顶 3 / 超读申报模板）。**planner Step 7 前置一次产双份**；对端 symbol 解析失败 fail-loud 不产空锚；`--dry-run` / `--self-check` 供验证。只读派生、不抽契约正文。 |
 | `scripts/journal-append.mjs` | Post-cutoff friction 重定向 pod-events、round-outcome 丢弃；pre-cutoff 保留 pod-journal。 |
 | `scripts/pod-events-append.mjs` | pod-events v1 共享 envelope writer；导出唯一 `EVENTS_SCHEMA_CUTOFF`，校验闭集 eventType 并生成 UUID。 |
-| `scripts/pod-events-aggregate.mjs` | new-format on-demand 聚合 exact token coverage、escalation 与 friction；malformed 行 fail-open 跳过。 |
+| `scripts/pod-events-aggregate.mjs` | new-format on-demand 聚合 exact token coverage、escalation 与 friction；malformed 行 fail-open 跳过。**T7（260908 批）加 `actors` 列**：per-actor 挂钟合计/中位、toolUses 中位、长尾（≥40min）计数与 eventId 明细 + 缺值如实计数（不补 0）；纯 advisory，`/loop-retro` 直接消费。只增键、既有输出键不破。 |
 | `scripts/loop-metrics.mjs` | Post-cutoff 从 pod-events + verifier-evidence on-demand 输出且不提交文件；pre-cutoff 保留 legacy loop-metrics.json。 |
 
 ---
@@ -131,6 +132,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审全量闸仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
 - `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk。
+- `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**生成时点 = planner Step 7 派发前一次产双份**，Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。
 - `loop-metrics.json` / `pod-journal.jsonl`：post-cutoff 退役、不提交；pre-cutoff 保留原生产、晋升与读取兼容。

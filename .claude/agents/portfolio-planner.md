@@ -55,7 +55,7 @@ model: opus
 - `.claude/references/pod-coordination.md`
 - `.claude/references/task-intake-and-slicing.md`
 - `.claude/references/architecture-decisions.md`
-- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：拆包草案预填 mutationEvidence 骨架、降级声明前置字段等五条前置清单。
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：拆包草案预填 mutationEvidence 骨架、`crossEnd` 骨架、降级声明前置字段等六条前置清单。**`crossEnd` 骨架与 `input-brief` 同源——你预填的 `counterparts`（或 exempt 理由）即 planner Step 7 生成 brief 第②路的输入**（T4，260908-gov-review-input-surface-frontload：起草侧不带，闸红回派）。
 
 ## Boundaries / 权限边界
 

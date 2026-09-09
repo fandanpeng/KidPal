@@ -9,10 +9,14 @@
 // - proposal→docRefs back-check 由 origin.ref 接管（新包 / 过渡 carve-out 老包）
 // - changeId YYMMDD- 前缀强制 + 零追溯白名单（DP-2 git 首提日期 cutoff）
 // - sourceRefs 必填非空语义收窄为代码范围锚点（convention-only, ARQ-260723-artifact-lifecycle-teeth）
+// crossEnd + input-brief 承重（260908-gov-review-input-surface-frontload T3，FROZEN v1.0）：
+// - crossEnd 申报字段：Draft 空骨架必在；finalize 态 counterparts 非空 ∨ exempt ≥12 字符 二选一，双缺红点名
+// - finalize 态两份 input-brief-<role>.md 必在场（生成时点 = planner Step 7 前置一次产双份）
+// - 零追溯 = 已 merge 历史包（本闸只读 current taskpackage）；在飞包一次性过渡补救见 PROPOSAL T3「过渡注记」
 
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { isProposalMdPath, normalizeSourceRef, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
@@ -342,6 +346,49 @@ if (isProposalByType || isProposalByPath) {
           coverageErrors.push(`proposal sourceRef ${path} must also appear in docRefs[]`);
         }
       }
+    }
+  }
+}
+
+// ── crossEnd 申报 + input-brief 在场（260908-gov-review-input-surface-frontload T3；扩判定向严）──
+// 三条：① 字段在场性（Draft 空骨架放行，同 mutationEvidence 条 = DEV-GOVERNANCE 起包格式期望前置第 1/6 条）；
+// ② finalize 态二选一（counterparts 非空，每条含 path+symbol ∨ exempt 非空理由 ≥12 字符）；
+// ③ finalize 态两份 input-brief 在场。
+// finalize 代理 = `acceptanceTestsFile` 非空，系既有约定（本闸上方对七数组无条件必填 + planner Step 8 同义）：
+// Draft 态本闸恒红、绿态仅 finalize 可达，故 ②③ 的分支条件恒有定义（PROPOSAL R1/E 节确认自洽）。
+const CROSS_END_EXEMPT_MIN_CHARS = 12; // 对齐本闸 landsIn=dropped 的 reason 地板（防空破折号混关）
+const crossEnd = (taskPackage.crossEnd && typeof taskPackage.crossEnd === 'object') ? taskPackage.crossEnd : null;
+if (!crossEnd) {
+  missing.push('crossEnd(骨架必在: {counterparts:[], exempt?:string}；空 counterparts 的骨架也算在场)');
+} else if (!Array.isArray(crossEnd.counterparts)) {
+  missing.push('crossEnd.counterparts(must be an array; empty skeleton allowed at Draft)');
+}
+
+const isFinalizedState = nonEmptyArray(taskPackage.acceptanceTestsFile);
+if (isFinalizedState && crossEnd) {
+  const counterparts = Array.isArray(crossEnd.counterparts) ? crossEnd.counterparts : [];
+  for (const [i, entry] of counterparts.entries()) {
+    const p = (entry && typeof entry === 'object') ? entry.path : null;
+    const s = (entry && typeof entry === 'object') ? entry.symbol : null;
+    if (!nonEmptyString(p) || !nonEmptyString(s)) {
+      missing.push(`crossEnd.counterparts[${i}] must carry non-empty path + symbol`);
+    }
+  }
+  const exempt = nonEmptyString(crossEnd.exempt) ? String(crossEnd.exempt).trim() : null;
+  if (exempt !== null && exempt.length < CROSS_END_EXEMPT_MIN_CHARS) {
+    missing.push(`crossEnd.exempt used as the not-applicable branch must be >= ${CROSS_END_EXEMPT_MIN_CHARS} chars (got ${exempt.length}); same floor as decisionCoverage landsIn=dropped reason`);
+  }
+  if (counterparts.length === 0 && exempt === null) {
+    missing.push('crossEnd at finalize requires ONE OF: non-empty counterparts[] (each {path,symbol}) OR non-empty exempt reason — both missing；判断不了按存疑向严填 counterparts 而非 exempt（DEV-GOVERNANCE 起包格式期望前置 第 6 条）');
+  }
+}
+
+if (isFinalizedState) {
+  const tpDir = dirname(pathToTaskPackage);
+  for (const role of ['acceptance-author', 'builder']) {
+    const briefPath = join(tpDir, `input-brief-${role}.md`);
+    if (!existsSync(briefPath)) {
+      missing.push(`input-brief-${role}.md(not in taskpackage dir — planner Step 7 前置一次产双份: node .claude/scripts/brief-inputs.mjs --change-id ${taskPackage.changeId || '<id>'} --role ${role})`);
     }
   }
 }

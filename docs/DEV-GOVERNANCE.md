@@ -288,13 +288,14 @@ C 类（固件/结构面）冻结验收文件落盘时，acceptance-author 当�
 
 ## 起包格式期望前置（planner / portfolio-planner / acceptance-author / builder 四方）
 
-> 成文：260907-gov-review-arq-governance-batch-2（T6）；承载 ARQ-260907-taskpackage-format-expectations-frontload。格式期望只活在闸的判定代码里、起草侧零成文 = 靠闸红反推再回派（跨 4 包 5 子项实证）。五条前置清单：
+> 成文：260907-gov-review-arq-governance-batch-2（T6）；承载 ARQ-260907-taskpackage-format-expectations-frontload。格式期望只活在闸的判定代码里、起草侧零成文 = 靠闸红反推再回派（跨 4 包 5 子项实证）。六条前置清单：
 
 1. **mutationEvidence 骨架**：Draft TaskPackage 必须带 mutationEvidence 字段骨架（空骨架也行，字段必须在场）——portfolio 起草不带骨架，mutation-check 闸红一轮再回派补（260903-gateway-directionB / 260829-session-logic 两度实证）。
 2. **验收断言格式期望**：acceptance 面写机器可识别断言形态（acceptance-coverage-check 可认的断言风格）+ coverage 标记随测试名——markdown prose 断言会被判「无可识别断言」回派补写（260831-ui-art-assets 实证，回派补 31 条）。
 3. **验收 ID 禁括号后缀**：acceptanceRef 形态为 `Sx-Ay` 等 kebab 短横形态，禁 `(B#)` 类括号后缀——括号破坏闸正则 `\b` 词边界匹配，标记被迫写尾随下划线丑形态（同包卡点 3）。
 4. **降级声明前置**：资产/规划类包对 mutation / docs-sync 的降级声明（不适用 + 理由）在 Draft TaskPackage 阶段写字段，不等到 verifier 红才补（同包卡点 4）。
 5. **新约定包同步闸判据自查**：建新约定（新目录、新测试通路等）的包，dispatch 时同步查相关机械闸的判定口径——闸判据滞后到全量终审才发现 = vacuous-green 风险（260829-host-test-infra 实证）。
+6. **输入面期望前置（input-brief + 超读申报 + crossEnd）**：派发的输入面必须是**起包期派生的封闭清单**，不是子 agent 每次自扫。三件一体：① planner 在 Step 7 派发前用 `.claude/scripts/brief-inputs.mjs` **一次产双份** input-brief（`input-brief-acceptance-author.md` / `input-brief-builder.md`，从 TaskPackage refs + `crossEnd` 派生：契约/spec 锚点节定位 + 跨端对端面 + 同 subsystem 先例封顶 3 个），派发 prompt 只引用 brief 文件路径与纪律一句、**不转抄清单正文**（防双源漂移）；② 子 agent 清单外阅读**允许且是常态**，但交付报告必须列「清单外阅读 + 原因」段——**超读是常态动作，不申报才是问题**（把申报做成硬门槛只会逼出隐瞒、让仪表盘失去意义）；③ `crossEnd` 申报字段 Draft 必在（空骨架也行，同第 1 条）+ finalize 时 `counterparts` 非空（每条含 path+symbol，本批限自有实现面）**或** `exempt` 写明理由（≥12 字符，同本闸 `landsIn=dropped` 判据）二选一，双缺 = 闸红点名（与第 1/4 条同型）。跨端性是设计判断不是可推导属性——subsystem 单面标签的包可以业务实跨端，故走申报 + 留痕而非硬谓词。成文：260908-gov-review-input-surface-frontload；实证：`260829-story-p3/pod-retro.md:11`「把 spec/契约/先例读了个遍」stall 案 + `260907-g-relay-fix` 自创 `display_relay` 帧离线全绿、真机被固件 `Unknown message type` 拒案（其 pod-retro「下次改进 1」即本条第 ②③ 件的前身）。
 
 ## friction 事件最小 schema（dev-loop 记账）
 
