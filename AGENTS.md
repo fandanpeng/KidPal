@@ -50,6 +50,7 @@
 - 主索引项目名固定为 `KidPal`，改名会导致图工具 project not found。
 - 参考代码的索引不并入主索引，避免第三方代码淹没调用图；参考代码只读，不直接改。
 - 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。
+- `.codebase-memory/artifact.json` 与 `graph.db.zst` 是 indexer 持续自刷新的机器再生面：常驻脏 = 常态，不追交、不 stage、不 stash、不 checkout 还原（2026-09-09 human 裁：主/gov 两个长期 worktree 均不设 skip-worktree，保持脏可见；合并冲突已由 `.codebase-memory/.gitattributes` 的 `merge=ours` 免除）。快照刷进 main 的节奏 = 偶发、主线程执行、独立 commit（先例 d4df9da），不与其它改动混提。
 
 ## 输出标准（人与工件统一）
 

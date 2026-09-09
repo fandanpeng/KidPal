@@ -9,7 +9,7 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
 
 ## 前置
 
-- 工作树干净（`git status` 无未提交改动；有则先 commit/stash，别带着脏树合并）。
+- 工作树干净（`git status` 无未提交改动；有则先 commit/stash，别带着脏树合并）。**例外（2026-09-09 human 一次性授权直落）**：`.codebase-memory/artifact.json` 与 `graph.db.zst` 常驻脏 = 常态（indexer 自刷新的机器再生面，约定不追交、别硬清），不计入本条清洁度判据；合并冲突已由 `.codebase-memory/.gitattributes` 的 `merge=ours` 免除——看到它们脏不要 stage、不要 stash、不要 checkout 还原。
 - 合并方向与授权明确：本 skill 只执行**已被批准的**本地合并（supervisor APPROVE / architect GREEN 或 human 批准后的本地合并动作面）；未批准的合并不做。
 
 ## 步骤（每步有可检查终点）
