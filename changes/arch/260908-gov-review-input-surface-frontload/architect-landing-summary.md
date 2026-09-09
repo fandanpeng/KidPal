@@ -81,3 +81,10 @@ docs/DEV-GOVERNANCE.md
 | **D4** | 冻结 PROPOSAL 内的**行锚**在 landing 后位移（`planner.md:109→110`、`acceptance-author.md:46→47`、`builder.md:46→47`、`dev-loop.md:229→231`） | **不回改冻结文本**（落地后不可回改）。教训回流：后续治理件引用自家 canonical 时应改**短语锚**（引文 + 定位谓词）而非行号——正是本批对 T2② 行号快照语义同一条纪律的作者版复现，随 retro 上交 |
 
 **边界声明**：合并门与前置升级闸非本 summary / 非 verdict 权限；本批按 Track B 第 6（retro 趁热）→ 第 7 步（前置升级闸放行后自动落本地 main，remote push 仍 human）序列继续。
+
+## 6. landing 后补记（2026-09-09，合并完成之后）
+
+| # | 追加改动 | 授权与流程诚实声明 |
+|---|---|---|
+| **E1** | `.claude/references/dev-loop.md` 的 `input-brief-<role>.md` 注册条补一句：**「不晋升到 `changes/dev/`」**（与 post-cutoff `taskpackage.json` 同构） | 系本批 §5/D 组留白（T6 只注册了文件、未写晋升口径）。**human 2026-09-09 直接裁「收口，不晋升」**。**跳过评审环**：该件为单句成文澄清、零新机制、零改闸，未再走 Track B 七步与判官轮——按 AGENTS.md「human 明确指示的一次性操作 + 诚实记录跳过流程」执行，记录在此不假装走过门。落点在 manifest 内文件，故对已完成的 landing-verdict 无失效影响（verdict 核的是 packet 改法，本句是 packet 留白的收口而非新增改法） |
+| **E2** | 无 canonical 改动，仅登记事实：`260831-cloud-link-bringup` / `260831-simulator-lvgl-align` / `260831-ui-art-assets` 三包**不在 pod board 上**（有 taskpackage.json、无 board 记录），human 2026-09-09 定性 = **早期验证包、不入 MVP 打包**，不追溯、不补登、不清理（其目录留存备查，`changes-index --stale-report` 若点名按该定性标注保留理由即可） | 判断归 human，此处仅如实登记定性来源；无文件动作 |
