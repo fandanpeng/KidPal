@@ -34,6 +34,7 @@ import logging
 import os
 import re
 import time
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -89,6 +90,44 @@ def _story_route_display_payload(session_id, payload) -> None:
     if (payload.get("view") == "control" and isinstance(data, dict)
             and data.get("action") == "start_recording"):
         _get_story_acc().start(session_id)
+
+
+def _story_feed_from_stt(session_id, obj) -> None:
+    """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7)：引擎回带的 ASR 上行 stt 帧
+    (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，供停录时整段归档。
+    仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。"""
+    if not session_id or not isinstance(obj, dict):
+        return
+    if obj.get("type") != "stt":
+        return
+    text = obj.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return
+    acc = _get_story_acc()
+    if acc.routing(session_id) != "accumulate":
+        return
+    acc.feed(session_id, text)
+
+
+def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
+    """云侧停录归档接线 (包 9b HWV-A10/A12)：设备「聆听停止」上行帧 (listen/state=stop,
+    手动录完一段叙述的自然信号) 命中累积态时 -> StoryAccumulator.stop 整段归档
+    (内部经 archive_story 落盘 stories/<id>.md)，返回记录供上层以 story_text(record)
+    组块下发正文 (F4 分工：正文由网关下发、设备盖章/回看消费由 story_p3 冻结)。
+    非累积态 / 累积为空 -> None（V31 边界，不编造归档、不写空故事）。"""
+    if not session_id or not isinstance(obj, dict):
+        return None
+    if not (obj.get("type") == "listen" and obj.get("state") == "stop"):
+        return None
+    acc = _get_story_acc()
+    if acc.routing(session_id) != "accumulate":
+        return None
+    rec = acc.stop(session_id)
+    if rec is None:
+        log.warning("story_stop corr_id=%s archived=false reason=empty_accum", session_id)
+        return None
+    log.info("story_stop corr_id=%s archived=true id=%s", session_id, rec.get("id"))
+    return rec
 
 
 def _bearer(header: Optional[str]) -> str:
@@ -251,7 +290,7 @@ async def _relay_display_blocks_to_device(blocks: list, websocket, session_id=No
         )
 
 
-async def pump_upstream_to_client(upstream, websocket) -> None:
+async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
     """Engine->device leg of the ws proxy WITH takeover (this is the defect body).
 
     upstream is an async-iterable of frames (str|bytes, websockets-client shape); the device
@@ -261,8 +300,11 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
     block is relayed toward the device as a kidpal/display tools/call envelope from
     build_display_tool_calls (a small wrapper text frame makes the envelopes discoverable).
     Frames without a text field (hello, state, ...) forward verbatim.
+
+    session_id 由 ws_gateway 生成（每连接一个不可复用的 uuid 键；P3-A4 累积态路由 + 包 9b
+    F6 弃用 websocket 对象地址（CPython id）复用），两条腿共享同一键以贯穿 start/feed/stop/cancel。
+    默认 None = 无连接会话（旁路故事 feed/stop 接线不触发），保 g-relay-fix 冻结的 2-arg 调用契约不破。
     """
-    session_id = f"conn-{id(websocket)}"  # 连接作用域会话键（P3-A4 累积态路由用）
     try:
         async for frame in upstream:
             if isinstance(frame, bytes):
@@ -276,6 +318,8 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
             if not isinstance(obj, dict):
                 await websocket.send_text(frame)  # non-object JSON: forward verbatim
                 continue
+            # 云侧累积接线 (包 9b HWV-A10): ASR 上行 stt 帧命中累积态则喂缓冲（旁路消费，转发不变）。
+            _story_feed_from_stt(session_id, obj)
             if obj.get("type") == SIDE_CHANNEL_TYPE:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
@@ -301,7 +345,7 @@ async def pump_upstream_to_client(upstream, websocket) -> None:
         pass
 
 
-async def pump_client_to_upstream(websocket, upstream) -> list:
+async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
     """Device->engine leg: reads starlette-style dict messages via await websocket.receive()
     ({"type": "websocket.receive", "text"/"bytes": ...}), forwards every frame to
     upstream.send() UNCHANGED (决策23: 代理语义, front 只消费回执、不重发), consumes device
@@ -330,6 +374,19 @@ async def pump_client_to_upstream(websocket, upstream) -> list:
             else:
                 text = msg.get("text", "")
                 await upstream.send(text)
+                # 云侧停录归档接线 (包 9b HWV-A10/A12)：旁路消费设备 listen/stop 上行帧
+                # （转发不变，决策23）——命中累积态则 StoryAccumulator.stop 整段归档，并把
+                # 归档正文以 story_text(record) 组块下发给设备（F4 分工：正文由网关 story_text
+                # 下发，设备盖章/回看在 story_p3 冻结消费）。单帧单发（每停录至多一次），
+                # 与下行泵各发独立完整 ASGI 消息、不拆帧。
+                try:
+                    up_obj = json.loads(text)
+                except (TypeError, ValueError):
+                    up_obj = None
+                rec = _story_stop_on_listen_stop(session_id, up_obj)
+                if rec is not None:
+                    await _relay_display_blocks_to_device(
+                        [json.dumps(gw_story.story_text(rec), ensure_ascii=False)], websocket)
                 acked, rid = on_device_receipt(text)
                 if acked:
                     acked_ids.append(rid)
@@ -517,6 +574,10 @@ async def ws_gateway(websocket: WebSocket):
         log.warning("ws handshake rejected (auth) — no accept")
         return
     await websocket.accept()
+    # 包 9b HWV-A11 (F6): 每连接一个**不可复用**会话键（uuid4）——弃用 websocket 对象地址作键
+    # （CPython id, 连接关闭后地址可复用 -> StoryAccumulator 会话跨连接串味）。
+    # 两条腿共享此键，贯穿 start/feed/stop/cancel 的整条故事累积链路。
+    session_id = f"sess-{uuid.uuid4().hex}"
     # best-effort forward to the engine's plain ws (loopback). If the engine is not up,
     # we close the client gracefully rather than error-spam.
     try:
@@ -536,8 +597,8 @@ async def ws_gateway(websocket: WebSocket):
             # both proxy legs now run through the takeover pumps (text-face interception):
             # engine->device strips ```display fences + relays kidpal/display tools/call;
             # device->engine forwards receipts unchanged and consumes them as delivery acks.
-            pump_up = asyncio.create_task(pump_upstream_to_client(upstream, websocket))
-            pump_dn = asyncio.create_task(pump_client_to_upstream(websocket, upstream))
+            pump_up = asyncio.create_task(pump_upstream_to_client(upstream, websocket, session_id))
+            pump_dn = asyncio.create_task(pump_client_to_upstream(websocket, upstream, session_id))
             # 提醒投递面（包 260829-schedule-reminder）：两条腿都在的这段时间登记为投递目标并
             # 起每分钟轮询（到点经 kidpal/alert 推送 + 渲染回执接出队方）；断开即摘除、不攒历史。
             _register_alert_legs(websocket, upstream)
@@ -546,6 +607,14 @@ async def ws_gateway(websocket: WebSocket):
                 await asyncio.gather(pump_up, pump_dn)
             finally:
                 _unregister_alert_legs(websocket)
+                # 包 9b HWV-A11 (F6): 断开钩子释放该连接的累积会话（StoryAccumulator.cancel
+                # pop 会话态）——常驻网关下「未停录即断开」的会话不得泄漏累积缓冲。cancel 对
+                # 不存在 / 已停录会话幂等返回 False，无副作用。
+                try:
+                    _get_story_acc().cancel(session_id, reason="ws_disconnect")
+                except Exception as e:  # noqa: BLE001 — 清理钩子绝不影响断开收尾
+                    log.warning("story_session_teardown corr_id=%s err=%s",
+                                session_id, type(e).__name__)
     except Exception as e:  # noqa: BLE001
         log.info("ws forward not available (engine down?): %s", type(e).__name__)
         await websocket.close(code=1011)

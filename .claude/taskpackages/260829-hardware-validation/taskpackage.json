@@ -29,16 +29,85 @@
       "id": "HWV-A1",
       "kind": "structural"
     },
-    "HWV-A2: 按键手感实测：KEY/BOOT 单击/双击/长按在真机上响应正确（消抖、职责分离符合 §4.0）",
-    "HWV-A3: 双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）",
-    "HWV-A4: RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）",
-    "HWV-A5: 低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收",
-    "HWV-A6: 全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通 + 换皮后 UI（包 U 集成后）",
-    "HWV-A7: 16px 以下 CJK 在 1bpp 真机可读性实测（直接决定 V3 字号下限）",
-    "HWV-A8: 前光确认（反射屏暗处可见性，spec §5.6 待确认项）"
+    {
+      "id": "HWV-A2",
+      "kind": "structural",
+      "summary": "按键手感实测：KEY/BOOT 单击/双击/长按在真机上响应正确（消抖、职责分离符合 §4.0）"
+    },
+    {
+      "id": "HWV-A3",
+      "kind": "structural",
+      "summary": "双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）"
+    },
+    {
+      "id": "HWV-A4",
+      "kind": "structural",
+      "summary": "RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）"
+    },
+    {
+      "id": "HWV-A5",
+      "kind": "structural",
+      "summary": "低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收"
+    },
+    {
+      "id": "HWV-A6",
+      "kind": "structural",
+      "summary": "全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通 + 换皮后 UI（包 U 集成后）"
+    },
+    {
+      "id": "HWV-A7",
+      "kind": "structural",
+      "summary": "16px 以下 CJK 在 1bpp 真机可读性实测（直接决定 V3 字号下限）"
+    },
+    {
+      "id": "HWV-A8",
+      "kind": "structural",
+      "summary": "前光确认（反射屏暗处可见性，spec §5.6 待确认项）"
+    },
+    {
+      "id": "HWV-A9",
+      "kind": "structural",
+      "summary": "F2 设备侧页内输入生产接线：story_page input/on_saved/rec_tick/stamp_spec 落盘且被生产路径调用≥1（human 裁「扩界接线」）"
+    },
+    {
+      "id": "HWV-A10",
+      "kind": "structural",
+      "summary": "F2 云侧停录归档生产接线：front_app 驱动 feed/stop，网关生产面 archive_story 有到达面"
+    },
+    {
+      "id": "HWV-A11",
+      "kind": "structural",
+      "summary": "F6 会话键不可复用（弃 id(websocket)）+ WS 断开钩子 pop 会话"
+    },
+    {
+      "id": "HWV-A12",
+      "kind": "structural",
+      "summary": "F4 分工修正：网关 story_text(record) 组块下发 + 接线 prompt 无「回填」、模型一回合只出 title"
+    },
+    {
+      "id": "HWV-A13",
+      "kind": "structural",
+      "summary": "实机续航基准（决策 21 三要素：触发点本包/预警阈值/owner）实测数据落盘"
+    },
+    {
+      "id": "HWV-A14",
+      "kind": "structural",
+      "summary": "常驻 WS 连接功耗观察（常连 vs 断连对比）实测数据落盘"
+    },
+    {
+      "id": "HWV-A15",
+      "kind": "structural",
+      "summary": "证书真实设备握手冒烟（CA pinning 真机首连）实测落盘"
+    },
+    {
+      "id": "HWV-A16",
+      "kind": "structural",
+      "summary": "ECS 部署真落（DEPLOY-RUNBOOK §8）+ 包 7 留根 live 五齿 L1-L5 真跑一轮 evidence 交班"
+    }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/hardware_validation.acceptance.c"
+    "firmware/main/test/hardware_validation.acceptance.c",
+    "server/acceptance/test_story_wiring.acceptance.py"
   ],
   "exitCriteria": [
     {
@@ -110,5 +179,130 @@
       ],
       "landsIn": "acceptance:HWV-A7"
     }
-  ]
+  ],
+  "crossEnd": {
+    "note": "crossEnd 申报（存疑向严填 counterparts，不填 exempt）。本包 = device 真机端到端验收，冻结验收 hardware_validation.acceptance.c 的 live 齿触及设备⇄服务端边界对端符号——WS 首链 / display 下发 / story 回看 / 提醒推送 / ASR 上行 / story 归档触发。symbol = 源文件内逐字出现的真实标识符（brief-inputs resolveSymbolRange 按子串解析）。",
+    "counterparts": [
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "ws_gateway"
+      },
+      {
+        "path": "server/gateway/auth.py",
+        "symbol": "authorize"
+      },
+      {
+        "path": "firmware/main/protocols/websocket_protocol.cc",
+        "symbol": "WebsocketProtocol"
+      },
+      {
+        "path": "firmware/main/certs/ws_tls_ca.cc",
+        "symbol": "VerifyCacertConfigured"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "build_display_tool_calls"
+      },
+      {
+        "path": "server/gateway/mcp_relay.py",
+        "symbol": "display_tool_call"
+      },
+      {
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
+      },
+      {
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_route"
+      },
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "list_stories"
+      },
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "story_text"
+      },
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "StoryAccumulator"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_list_parse"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_text_parse"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_open_reader"
+      },
+      {
+        "path": "server/gateway/reminders.py",
+        "symbol": "build_alert_envelope"
+      },
+      {
+        "path": "server/gateway/reminders.py",
+        "symbol": "AlertDispatcher"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
+        "symbol": "plan_reminders"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
+        "symbol": "write_pending_atomic"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_alert_parse"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_receive"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "pump_client_to_upstream"
+      },
+      {
+        "path": "firmware/main/application.cc",
+        "symbol": "InitializeProtocol"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_story_route_display_payload"
+      },
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "archive_story"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_page_input"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_on_saved"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_rec_tick"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_stamp_spec"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_on_control"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "DoToolCall"
+      }
+    ]
+  }
 }

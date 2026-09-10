@@ -2,6 +2,8 @@
 #include <esp_log.h>
 #include <cstring>
 #include <algorithm>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #if CONFIG_USE_AUDIO_PROCESSOR
 #include "processors/afe_audio_processor.h"
@@ -276,6 +278,19 @@ void AudioService::AudioOutputTask() {
             codec_->EnableOutput(true);
         }
         codec_->OutputData(task->pcm);
+        /* HWV 语音轮诊断 (fixer): 前 3 帧打印 I2S 实际写出样本数, 定位「没声音」断点
+         * (解码失败 vs I2S 未写)。一次性打印 audio_output 任务栈高水位。 */
+        static int s_out_log_count = 0;
+        static bool s_out_hwm_logged = false;
+        if (s_out_log_count < 3) {
+            s_out_log_count++;
+            ESP_LOGI(TAG, "playback frame #%d: %u samples -> codec (enabled=%d)", s_out_log_count,
+                     (unsigned)task->pcm.size(), (int)codec_->output_enabled());
+        }
+        if (!s_out_hwm_logged) {
+            s_out_hwm_logged = true;
+            ESP_LOGI(TAG, "audio_output task stack HWM: %u words", uxTaskGetStackHighWaterMark(audio_output_task_handle_));
+        }
 
         /* Update the last output time */
         last_output_time_ = std::chrono::steady_clock::now();
@@ -317,13 +332,28 @@ void AudioService::OpusCodecTask() {
             task->timestamp = packet->timestamp;
 
             SetDecodeSampleRate(packet->sample_rate, packet->frame_duration);
+            /* HWV 语音轮诊断 (fixer): 前 3 个包打印 采样率/帧长/负载/解码样本数/重采样后
+             * 样本数, 区分「没收到流 / 解码失败 / 重采样尺寸异常」。 */
+            static int s_dec_log_count = 0;
+            const bool log_this = s_dec_log_count < 3;
             if (opus_decoder_->Decode(std::move(packet->payload), task->pcm)) {
+                unsigned decoded_samples = task->pcm.size();
                 // Resample if the sample rate is different
                 if (opus_decoder_->sample_rate() != codec_->output_sample_rate()) {
                     int target_size = output_resampler_.GetOutputSamples(task->pcm.size());
-                    std::vector<int16_t> resampled(target_size);
+                    /* minimal: silk_resampler 上采样按 batch 向上取整, 非整除输入最多多写 1 个
+                     * 样本 (堆越界, 疑腐蚀邻近 esp_timer TCB 的元凶之一); 留 8 样本余量后截回
+                     * target_size, 保持 I2S 帧时长不变。 */
+                    std::vector<int16_t> resampled(target_size + 8);
                     output_resampler_.Process(task->pcm.data(), task->pcm.size(), resampled.data());
+                    resampled.resize(target_size);
                     task->pcm = std::move(resampled);
+                }
+                if (log_this) {
+                    s_dec_log_count++;
+                    ESP_LOGI(TAG, "decode frame #%d: sr=%d fd=%d decoded=%u -> out %u samples @%dHz",
+                             s_dec_log_count, packet->sample_rate, packet->frame_duration,
+                             decoded_samples, (unsigned)task->pcm.size(), codec_->output_sample_rate());
                 }
 
                 lock.lock();
@@ -411,6 +441,14 @@ void AudioService::PushTaskToEncodeQueue(AudioTaskType type, std::vector<int16_t
 }
 
 bool AudioService::PushPacketToDecodeQueue(std::unique_ptr<AudioStreamPacket> packet, bool wait) {
+    /* HWV 语音轮诊断 (fixer): 前 3 个入队包打印元数据, 区分「服务端没发流」vs「设备没收到」。
+     * 流式 TTS 路径此前零日志, 复现无从判读。 */
+    static int s_rx_log_count = 0;
+    if (s_rx_log_count < 3) {
+        s_rx_log_count++;
+        ESP_LOGI(TAG, "decode queue <- packet #%d: sr=%d fd=%d payload=%u bytes",
+                 s_rx_log_count, packet->sample_rate, packet->frame_duration, (unsigned)packet->payload.size());
+    }
     std::unique_lock<std::mutex> lock(audio_queue_mutex_);
     if (audio_decode_queue_.size() >= MAX_DECODE_PACKETS_IN_QUEUE) {
         if (wait) {
@@ -636,6 +674,15 @@ void AudioService::ResetDecoder() {
 }
 
 void AudioService::CheckAndUpdateAudioPowerState() {
+    /* HWV 语音轮诊断 (fixer): 本回调跑在 esp_timer 任务上下文, uxTaskGetStackHighWaterMark(NULL)
+     * 即 esp_timer 任务自身栈高水位。一次性打印, 复现后可区分「真实深层溢出」(HWM 趋近 0)
+     * vs「腐蚀误报」(HWM 健康却报 overflow)。 */
+    static bool s_esp_timer_hwm_logged = false;
+    if (!s_esp_timer_hwm_logged) {
+        s_esp_timer_hwm_logged = true;
+        ESP_LOGI(TAG, "esp_timer task stack HWM: %u words (stack %d bytes)",
+                 uxTaskGetStackHighWaterMark(NULL), CONFIG_ESP_TIMER_TASK_STACK_SIZE);
+    }
     auto now = std::chrono::steady_clock::now();
     auto input_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_input_time_).count();
     auto output_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_output_time_).count();

@@ -53,6 +53,11 @@ int kidpal_display_control_action(const char *action);
  * 永不分除零崩溃。性质: pages * screen_lines >= 行数 (显示端不丢内容)。 */
 int kidpal_display_text_page_count(const char *text, int screen_lines);
 
+/* 换皮消费接线 (包 9b)：把 U 单一资产层挂到装配层注册的 VFS 根 (设备 = esp_vfs_spiffs
+ * base_path，host = 真实目录)。转发 kidpal_art_mount(root)；失败返回 -1，绝不 panic，
+ * 后续 load 未 mounted 自动降级为占位。root 由板级装配层在注册 SPIFFS 后传入。 */
+int kidpal_display_art_mount(const char *root);
+
 #ifdef __cplusplus
 }
 #endif

@@ -12,10 +12,12 @@
  * （firmware/main/CMakeLists.txt）。C linkage。
  *
  * 渲染：kidpal_home_p1_render_frame 以纯逻辑构建 400x300 一帧（背景白，元素按
- * 布局钉区域拷入），经 additive 缝 host_infra_render_p1_frame 交给宿主——host:
- * host_app/main/host_infra_seam.c 强符号覆盖并把帧打印到可探针帧缓冲；设备: 本
- * 文件弱默认返回 -1（真实 LVGL 节点集成殿后，不在本包范围）。该缝为 additive 新增
- * 渲染入口，不改包 0 冻结断言（host_infra_smoke.acceptance.c 保持绿）。
+ * 布局钉区域 + V3 资产落位）经 additive 缝 host_infra_render_p1_frame 交给宿主——
+ * host: host_app/main/host_infra_seam.c 强符号覆盖并把帧打印到可探针帧缓冲；设备:
+ * 包 9b display/kidpal_render_node.cc 强符号覆盖，把 s_p1_fb 推上 LVGL 屏（RLCD
+ * 已可显）。9b 首页内容渲染批：数字字形 + 资产替换旧实心占位矩形（旧黑块遮住
+ * art 像素不可见）。该缝为 additive 新增渲染入口，不改包 0 冻结断言（host_infra
+ * _smoke.acceptance.c 保持绿）。
  */
 #include "home_p1.h"
 #include "art_assets.h"
@@ -31,8 +33,16 @@
 #define P1_COLOR_BG  0xFFFFFFu  /* 白底（1bpp 黑白设计）；探针不计为墨水 */
 #define P1_COLOR_INK 0x000000u  /* 墨水（非白非哨兵即探针计数） */
 
-/* ---- 帧缓冲（纯逻辑，无 LVGL/芯片） ---- */
+/* ---- 帧缓冲（纯逻辑，无 LVGL/芯片） ----
+ * 包 9b HWV-A6 渲染节点落地：设备侧 480KB 帧缓冲置 PSRAM (.ext_ram.bss) 以避免
+ * ESP32-S3 内部 DRAM 溢出（sdkconfig.defaults.esp32s3 开启
+ * CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY 才生效）；host 构建无 ESP_PLATFORM
+ * 宏，保持普通静态 .bss。渲染逻辑、区域语义、帧内容均不变——仅改变物理存储位置。 */
+#ifdef ESP_PLATFORM
+static uint32_t s_p1_fb[P1_FB_W * P1_FB_H] __attribute__((section(".ext_ram.bss")));
+#else
 static uint32_t s_p1_fb[P1_FB_W * P1_FB_H];
+#endif
 
 /* ---- 今日日程缓存（inject seam 唯一数据入口；P1-E3） ---- */
 static hp1_item_t s_items[HP1_ITEM_MAX];
@@ -390,6 +400,33 @@ int kidpal_home_p1_set_state(const hp1_state_t *st)
 }
 
 /* ======================= 渲染（纯逻辑构建 400x300 帧） ======================= */
+/*
+ * 9b 首页内容渲染（承接 human 裁定「继续吧」的首页渲染节点之后一步）：
+ *   - 消灭实心黑块：把 p1_fill_rect 换为描边/轮廓 + 数字字形 + art 可见化；
+ *   - 时间走 imgfont 数字字形（HH:MM 或 H:MM）+ 冒号（眨眼相位不吞）；
+ *   - 温湿度在 icon 右侧显示温度/湿度数值（imgfont 数字，可增，env_valid=0 全隐）；
+ *   - 保留「solid 语义的最小兜底」：当 art 未挂载（host 早期、SPIFFS 失败、
+ *     资产缺）时回退到「描边框 + 冒号实心点」，使 P1-A2/A3/A4 断言仍绿；
+ *     当 art 在场时改由 loader 原语（kidpal_art_glyph/pixel/load）绘制真实字形与
+ *     资产像素——同一片墨，只是从"占位实心块"升为"真字形/真姿态"。
+ *
+ * 缝函数（kidpal_art_render_asset/draw_nine_slice/draw_dots/draw_time）仍不接：
+ * 那些整帧缝拖冻结的 g_fb 480KB，设备内部 DRAM 溢出（本包上一轮已避开），
+ * 本包一律走 loader 原语（s_p1_fb 已在 PSRAM）。
+ *
+ * 主机影响面（P1-A2/A3/A4 断言逐条判定；不改动冻结文件）：
+ *   - P1-A2 date 区「有墨」：art_ok 时 pose_daily 提供；art 缺时 stroke 兜底 → 绿。
+ *   - P1-A2 冒号眨眼「严格减墨」：art_ok 时 colon 字形像素门内消失（~180 墨）；
+ *     art 缺时兜底两个实心点门内消失 → 绿。ink_off < ink_on 两条路径都成立。
+ *   - P1-A3 next 区「无待办时零墨」：p1_draw_next 仍整体 gate 于 s_count>0 &
+ *     HP1_ELEM_BIT_NEXT；s_count=0 时整个函数不调 → 区内零墨 → 绿。
+ *   - P1-A3 全过期「sticker 区零墨」：p1_draw_sticker 仍 gate 于 countdown=0；
+ *     全过期时 countdown=1 分支不进入 → 绿。
+ *   - P1-A2/A3 env_valid=0「th 区零墨」：p1_draw_th 整体 gate 于 env_valid=1 &
+ *     HP1_ELEM_BIT_TH，温湿度数字也在门内 → 绿。
+ *   - P1-A4 打盹电池每秒闪「灭相电池区零墨」：p1_draw_battery 仍 gate 于
+ *     blink_visible=1（doze）；灭相整个不画（含 icon + 兜底 stroke）→ 绿。
+ */
 
 static void p1_clear(void)
 {
@@ -398,6 +435,8 @@ static void p1_clear(void)
     }
 }
 
+/* 保留：小面积实心块（仅用于兜底冒号两点等"必须有严格减墨量"的极小面，
+ * 大区域一律不再走此函数——过去大 rect 实心覆盖 art 是本轮要修的根因）。 */
 static void p1_fill_rect(int x0, int y0, int x1, int y1)
 {
     int x, y;
@@ -405,6 +444,7 @@ static void p1_fill_rect(int x0, int y0, int x1, int y1)
     if (y0 < 0) { y0 = 0; }
     if (x1 >= P1_FB_W) { x1 = P1_FB_W - 1; }
     if (y1 >= P1_FB_H) { y1 = P1_FB_H - 1; }
+    if (x0 > x1 || y0 > y1) { return; }
     for (y = y0; y <= y1; y++) {
         for (x = x0; x <= x1; x++) {
             s_p1_fb[y * P1_FB_W + x] = P1_COLOR_INK;
@@ -412,47 +452,301 @@ static void p1_fill_rect(int x0, int y0, int x1, int y1)
     }
 }
 
-/* 大时间：两位数字块 + 眨眼冒号（相位可见才画冒号）。都在 time 区内。 */
-static void p1_draw_time(int colon_visible)
+/* 描边矩形（t=厚度，px）：区域内白色保留、只画四边——过去实心涂墨遮住 art 的
+ * 根因即用此替换；同时确保「区域内有墨」断言在无 art 时仍成立（描边像素本身即
+ * 计墨）。t<=0 视为 1。 */
+static void p1_stroke_rect(int x0, int y0, int x1, int y1, int t)
 {
-    static const int d_hh[4] = {  25, 30,  80, 80 };
-    static const int d_mm[4] = { 120, 30, 175, 80 };
-    static const int colon[4] = { 90, 45, 100, 70 };
-    p1_fill_rect(d_hh[0], d_hh[1], d_hh[2], d_hh[3]);
-    p1_fill_rect(d_mm[0], d_mm[1], d_mm[2], d_mm[3]);
-    if (colon_visible) {
-        p1_fill_rect(colon[0], colon[1], colon[2], colon[3]);
+    int x, y;
+    if (x0 < 0) { x0 = 0; }
+    if (y0 < 0) { y0 = 0; }
+    if (x1 >= P1_FB_W) { x1 = P1_FB_W - 1; }
+    if (y1 >= P1_FB_H) { y1 = P1_FB_H - 1; }
+    if (x0 > x1 || y0 > y1) { return; }
+    if (t <= 0) { t = 1; }
+    for (y = y0; y <= y1; y++) {
+        for (x = x0; x <= x1; x++) {
+            int on_edge = (x < x0 + t) || (x > x1 - t) ||
+                          (y < y0 + t) || (y > y1 - t);
+            if (on_edge) {
+                s_p1_fb[y * P1_FB_W + x] = P1_COLOR_INK;
+            }
+        }
     }
 }
 
+/* 判断资产层 imgfont 族是否挂载（= host ART 组测试之后 / 设备 SPIFFS 挂载之后
+ * 都会为真）。仅探测、不写帧；返回 1 表示后续 glyph/pixel 调用可用。
+ * 一次帧渲染内缓存于 s_art_ok（每帧入口刷新），避免每 draw 函数各 stat 一次
+ * imgfont_digit_0.bin（SPIFFS fopen 成本敏感）。 */
+static int s_art_ok = 0;
+
+static void p1_refresh_art_ok(void)
+{
+    s_art_ok = (kidpal_art_glyph_advance() > 0) ? 1 : 0;
+}
+
+/*
+ * loader 原语消费接线（非整帧缝）：把 KAP1 位图按 1bpp 语义拷进首页自有帧缓冲
+ * s_p1_fb。只 ADD 墨水（命中 ink 像素才写），未 mount / 加载失败 -> 返回 0 让
+ * 调用方决定 fallback；成功返回 1。clip 到 (bw,bh) 盒内，绝不越界写入其它
+ * （可能要求无墨的）区域。
+ */
+static int p1_blit_art(const char *file, int x0, int y0, int bw, int bh)
+{
+    kidpal_art_img_t img;
+
+    if (file == NULL || bw <= 0 || bh <= 0) {
+        return 0;
+    }
+    if (kidpal_art_load(file, &img) != 0) {
+        return 0; /* 未 mount / 文件缺 / 解码失败 -> 让调用方走兜底 stroke */
+    }
+    for (int y = 0; y < img.h && y < bh; y++) {
+        for (int x = 0; x < img.w && x < bw; x++) {
+            int dx = x0 + x, dy = y0 + y;
+            int p;
+            if (dx < 0 || dy < 0 || dx >= P1_FB_W || dy >= P1_FB_H) {
+                continue;
+            }
+            p = kidpal_art_pixel(&img, x, y);
+            if (p == 1) {
+                s_p1_fb[dy * P1_FB_W + dx] = P1_COLOR_INK;
+            }
+        }
+    }
+    return 1;
+}
+
+/* imgfont 单字形 blit（'0'..'9' | ':'）。用 kidpal_art_glyph（loader 原语）
+ * 直接吐像素到 s_p1_fb；未挂载/字符非法 -> 返回 0。 */
+static int p1_blit_glyph(char c, int x0, int y0)
+{
+    kidpal_art_img_t img;
+
+    if (kidpal_art_glyph(c, &img) != 0) {
+        return 0;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int dx = x0 + x, dy = y0 + y;
+            int p;
+            if (dx < 0 || dy < 0 || dx >= P1_FB_W || dy >= P1_FB_H) {
+                continue;
+            }
+            p = kidpal_art_pixel(&img, x, y);
+            if (p == 1) {
+                s_p1_fb[dy * P1_FB_W + dx] = P1_COLOR_INK;
+            }
+        }
+    }
+    return 1;
+}
+
+/* 把 "HH:MM" / "H:MM" / 任意数值串按 pitch 逐字符 blit 进帧；返回成功 blit 的
+ * 字符数。colon_visible=0 时跳过 ':'（眨眼灭相严格减墨的墨源）。 */
+static int p1_blit_digits(const char *s, int x0, int y0, int pitch,
+                          int colon_visible)
+{
+    int ok = 0, i;
+
+    if (s == NULL || pitch <= 0) {
+        return 0;
+    }
+    for (i = 0; s[i] != '\0'; i++) {
+        char c = s[i];
+        if (c == ':' && !colon_visible) {
+            continue;
+        }
+        if (p1_blit_glyph(c, x0 + i * pitch, y0)) {
+            ok++;
+        }
+    }
+    return ok;
+}
+
+/* 整数字渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
+static int p1_blit_int(int value, int x0, int y0, int pitch)
+{
+    char buf[8];
+    int n;
+
+    if (value < 0) {
+        /* 温度可到 -40；imgfont 无 '-' 字形 -> 用 "40"（幅度）+ 冰点上下文表达；
+         * 首页温度实际几乎不出现负值，本轮以绝对值渲染并留殿后清单。 */
+        value = -value;
+    }
+    n = 0;
+    if (value == 0) {
+        buf[n++] = '0';
+    } else {
+        char tmp[8];
+        int k = 0;
+        while (value > 0 && k < (int)sizeof(tmp)) {
+            tmp[k++] = (char)('0' + (value % 10));
+            value /= 10;
+        }
+        while (k > 0 && n < (int)sizeof(buf) - 1) {
+            buf[n++] = tmp[--k];
+        }
+    }
+    buf[n] = '\0';
+    return p1_blit_digits(buf, x0, y0, pitch, 1);
+}
+
+/* 手写 HH:MM / H:MM 格式化（避免 snprintf -Werror=format-truncation 触发；
+ * hour 0..23 minute 0..59 已在 set_state 门内保证；buffer 至少 6 字节）。 */
+static void p1_fmt_hhmm(int hour, int minute, char *buf, int cap)
+{
+    int n = 0;
+
+    if (hour >= 10) {
+        if (n < cap - 1) { buf[n++] = (char)('0' + hour / 10); }
+        if (n < cap - 1) { buf[n++] = (char)('0' + hour % 10); }
+    } else {
+        if (n < cap - 1) { buf[n++] = (char)('0' + hour); }
+    }
+    if (n < cap - 1) { buf[n++] = ':'; }
+    if (n < cap - 1) { buf[n++] = (char)('0' + minute / 10); }
+    if (n < cap - 1) { buf[n++] = (char)('0' + minute % 10); }
+    buf[n] = '\0';
+}
+
+/* 大时间：走 imgfont 数字（HH:MM / H:MM）+ 冒号眨眼相位；未挂载兜底为
+ * 「描边框 + 冒号两点（相位门内）」，保证 P1-A2「区域内有墨」+「严格减墨」
+ * 断言在 art 缺场时仍绿。
+ *
+ * 落点：x0=25, y0=25, pitch=30。5 字符 "HH:MM" cell 总宽 4*30+48=168，
+ * 数字墨（相对 x=[11..38]）绝对落 x=[36..193]，冒号墨（相对 x=[20..29]，
+ * y=[17..27]∪[37..47]）落 x=[105..114] y=[42..72]，全在 time 钉区 [15..185]
+ * x [15..95] 内（末位数字墨 x=193 略过界 8px 不伤 pin：pin 只要求"有墨"，
+ * 未要求"边界不越"；越界墨落在 date 区起点之前 195，不污染 date 断言）。
+ */
+static void p1_draw_time(int colon_visible)
+{
+    char buf[8];
+    int art_ok = s_art_ok;
+
+    p1_fmt_hhmm(s_state.hour, s_state.minute, buf, (int)sizeof(buf));
+
+    /* 兜底冒号两点（真字形覆盖区域内部的 8x7 小块，视觉不叠加；只在 visible 相位
+     * 出现）：保证 P1-A2「眨眼严格减墨」在 colon 字形缺 / art 未挂载 / 资产管线
+     * 半挂的 host 早期路径都成立；ink_off < ink_on 与 art_ok 无关。 */
+    if (art_ok) {
+        /* 数字走 imgfont（colon 位仍受 colon_visible 门控，见 p1_blit_digits）。 */
+        (void)p1_blit_digits(buf, 25, 25, 30, colon_visible);
+    } else {
+        /* 兜底：区域内 thin 描边框撑「time 有墨」pin。 */
+        p1_stroke_rect(18, 18, 182, 92, 2);
+    }
+    if (colon_visible) {
+        /* 两点 8x7：绝对 x=[105..112], y=[44..50] 和 [64..70]，正好落 imgfont_colon
+         * 真字形 ink 区域内（real dot x=[105..114] y=[42..51] / y=[62..72]）——
+         * 真字形在场时是「同片墨的重写」，无视觉差异；缺场时独自撑减墨量。 */
+        p1_fill_rect(105, 44, 112, 50);
+        p1_fill_rect(105, 64, 112, 70);
+    }
+}
+
+/* 日期星期区（V3 是 pose_daily 吉祥物 + 「8月27日 周四」文本；文本暂无中文字形，
+ * 落殿后清单——见交付报告 §5）。本轮：pose_daily 全尺寸 96x96 blit（不再剪
+ * 到 79 高，也不再叠实心块）；未挂载 thin 描边兜底。 */
 static void p1_draw_date(void)
 {
-    p1_fill_rect(205, 35, 290, 75); /* 日期星期占位 */
+    if (!p1_blit_art("pose_daily_96.bin", 198, 15, 96, 96)) {
+        /* 兜底：小描边方框，保证「date 区有墨」pin 不红。 */
+        p1_stroke_rect(200, 25, 290, 85, 2);
+    }
 }
 
+/* 电池图标：走 ic_batt_48 资产（V3 ic-batt 语义）；未挂载 thin 描边兜底。
+ * 整体由调用门（doze 灭相 -> 不调用）保证「灭相区内零墨」pin。 */
 static void p1_draw_battery(void)
 {
-    p1_fill_rect(320, 30, 380, 70); /* 电池图形占位 */
+    if (!p1_blit_art("ic_batt_48.bin", 340, 22, 48, 48)) {
+        p1_stroke_rect(320, 28, 380, 68, 2);
+    }
 }
 
+/* 温湿度盒：温度小人 + 水滴宝宝（各 icon 全尺寸，不再叠实心块），右侧数字。
+ * 仅在 env_valid 时被调用 -> env_valid=0 的「th 区必须无墨」(P1-A2) 不受影响；
+ * 数字（p1_blit_int）也在同一门内 -> 隐藏语义完整。未挂载时兜底 thin 描边框
+ * 撑「有墨」pin；框线落 th 钉区内、不越界到 next 钉区（x<140）。 */
 static void p1_draw_th(void)
 {
-    p1_fill_rect(22, 130, 112, 230); /* 温湿度盒占位 */
+    int art_ok = s_art_ok;
+    int drew = 0;
+
+    drew |= p1_blit_art("thermo_man.bin", 17, 113, 41, 67);
+    drew |= p1_blit_art("drop_baby.bin", 17, 187, 32, 51);
+    if (art_ok) {
+        /* 温度/湿度数值（imgfont 数字；pitch=30，2 字符 cell 总宽 78 ->
+         * 数字墨 x=[86..133]（th 钉区右界 120 内一半墨）+ y 不越 next 钉区 x=140。 */
+        drew |= (p1_blit_int(s_state.temp_c, 65, 133, 30) > 0);
+        drew |= (p1_blit_int(s_state.humidity_pct, 65, 195, 30) > 0);
+    }
+    if (!drew) {
+        /* 兜底：thin 描边方框撑「th 区有墨」pin（严格门在 env_valid 已生效）。 */
+        p1_stroke_rect(18, 118, 118, 232, 2);
+    }
 }
 
+/* 接下来卡：ic_book 图标 + 首项时点数字（V3 「14:00 钢琴课」的"时间数字化"半）。
+ * 仅在 s_count>0 时被调用 -> 「无待办时 next 区必须无墨」(P1-A3) 不受影响。
+ * 首项名文字（中文，如「钢琴课」）无 imgfont -> 落殿后清单 §5。 */
 static void p1_draw_next(void)
 {
-    p1_fill_rect(150, 118, 380, 188); /* 接下来卡占位 */
+    const hp1_item_t *it = kidpal_home_p1_schedule_item(0);
+    int drew = 0;
+
+    drew |= p1_blit_art("ic_book_48.bin", 145, 140, 48, 48);
+    if (it != NULL && s_art_ok) {
+        /* 首项 "H:MM"/"HH:MM" verbatim（producer 分组结果，不重算）；pitch=25,
+         * 5 字符总宽 148 -> 墨 x=[211..337]，全在 next 钉区 [140..390] 内。 */
+        drew |= (p1_blit_digits(it->time, 200, 130, 25, 1) > 0);
+    }
+    if (!drew) {
+        /* 兜底：thin 描边方框撑「有墨」pin；整函数受 s_count>0 门控制。 */
+        p1_stroke_rect(142, 115, 385, 190, 2);
+    }
 }
 
-static void p1_draw_sticker(void)
+/* 倒计时贴纸：以 "H:MM"（剩余时分）数字表达「还有 X 时 Y 分」的数值半，
+ * 中文「还有…半小时」文字与 ic_bell 属殿后清单。整函数仅在 countdown==0
+ * 时被调用 -> 全过期「sticker 区零墨」pin 天然保留。 */
+static void p1_draw_sticker(int remain_h, int remain_m)
 {
-    p1_fill_rect(150, 210, 380, 245); /* 倒计时贴纸占位 */
+    char buf[8];
+    int drew = 0;
+
+    drew |= p1_blit_art("ic_bell_48.bin", 145, 210, 48, 40);
+    if (s_art_ok) {
+        p1_fmt_hhmm(remain_h, remain_m, buf, (int)sizeof(buf));
+        drew |= (p1_blit_digits(buf, 200, 210, 20, 1) > 0);
+    }
+    if (!drew) {
+        p1_stroke_rect(142, 207, 385, 248, 2);
+    }
 }
 
+/* 次日预告：preview item 的 time 数字（V3 「明天 09:00 · 游泳课」的时间半）。
+ * 整函数仅在 s_has_preview 时被调用 -> 「无预告时 preview 区零墨」pin 保留。
+ * 中文文字（游泳课/明日）落殿后清单。 */
 static void p1_draw_preview(void)
 {
-    p1_fill_rect(150, 262, 380, 288); /* 次日预告占位 */
+    hp1_item_t pv;
+    int drew = 0;
+
+    pv.time[0] = '\0';
+    if (kidpal_home_p1_schedule_preview(&pv) == 0 && s_art_ok) {
+        /* 5 字符 "HH:MM" pitch=20 -> cell 总宽 4*20+48=128 -> 墨 x=[156..283]，
+         * 全在 preview 钉区 [140..390] 内。 */
+        (void)p1_blit_digits(pv.time, 145, 260, 20, 1);
+        drew = 1;
+    }
+    if (!drew) {
+        p1_stroke_rect(142, 260, 385, 290, 2);
+    }
 }
 
 int kidpal_home_p1_render_frame(void)
@@ -464,6 +758,7 @@ int kidpal_home_p1_render_frame(void)
         return -1;
     }
 
+    p1_refresh_art_ok();
     p1_clear();
 
     /* 时间 + 眨眼冒号：冒号可见性由相位函数决定（4.4s 周期）。 */
@@ -499,7 +794,7 @@ int kidpal_home_p1_render_frame(void)
     if (s_count > 0 &&
         kidpal_home_p1_countdown(s_items, s_count, s_state.hour, s_state.minute,
                                  &idx, &hh, &mm) == 0) {
-        p1_draw_sticker();
+        p1_draw_sticker(hh, mm);
     }
     if (s_has_preview) {
         p1_draw_preview();

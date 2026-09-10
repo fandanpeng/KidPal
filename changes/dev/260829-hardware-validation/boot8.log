@@ -1,0 +1,133 @@
+I (212) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (212) button: IoT Button Version: 4.1.7
+I (222) BoxAudioCodec: Duplex channels created
+I (222) ES8311: Work in Slave mode
+I (232) ES7210: Work in Slave mode
+I (242) ES7210: Enable ES7210_INPUT_MIC1
+I (242) ES7210: Enable ES7210_INPUT_MIC2
+I (242) ES7210: Enable ES7210_INPUT_MIC3
+I (252) ES7210: Enable ES7210_INPUT_MIC4
+I (252) ES7210: Enable TDM mode
+I (252) BoxAudioCodec: BoxAudioDevice initialized
+I (252) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-252 ok rtc=19:45:31
+I (272) waveshare_rlcd_4_2: shtc3 corr_id=kdp-252 ok temp_c=26.99 rh_pct=47.5
+I (272) MCP: Add tool: self.disp.network
+I (272) Display: Power management not supported
+I (272) CustomDisplay: Initialize SPI
+I (582) CustomDisplay: Initialize LVGL library
+I (582) LVGL: Starting LVGL task
+I (592) CustomDisplay: RLCD init
+I (1172) CustomDisplay: ui start
+I (1212) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1212) waveshare_rlcd_4_2: art layer mounted at /art
+I (1212) kidpal_rn: KidPal render node initialized (4-page RLCD driver)
+I (1322) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=1052
+I (1322) StateMachine: State: unknown -> starting
+I (1322) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1332) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1332) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1342) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1352) ES7210: Bits 16
+I (1352) ES7210: Enable ES7210_INPUT_MIC1
+I (1362) ES7210: Enable ES7210_INPUT_MIC2
+I (1362) ES7210: Enable ES7210_INPUT_MIC3
+I (1362) ES7210: Enable ES7210_INPUT_MIC4
+I (1372) ES7210: Enable TDM mode
+I (1372) ES7210: Unmuted
+I (1372) Adev_Codec: Open codec device OK
+I (1372) AudioCodec: Set input enable to true
+I (1382) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1382) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1392) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1412) Adev_Codec: Open codec device OK
+I (1412) AudioCodec: Set output enable to true
+I (1412) AudioCodec: Audio codec started
+I (1412) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1422) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1432) MCP: Add tool: self.get_device_status
+I (1432) MCP: Add tool: self.audio_speaker.set_volume
+I (1432) MCP: Add tool: kidpal/display
+I (1442) MCP: Add tool: kidpal/alert
+I (1442) MCP: Add tool: self.screen.set_theme
+I (1442) MCP: Add tool: self.get_system_info [user]
+I (1452) MCP: Add tool: self.reboot [user]
+I (1452) MCP: Add tool: self.upgrade_firmware [user]
+I (1462) MCP: Add tool: self.screen.get_info [user]
+I (1462) MCP: Add tool: self.screen.snapshot [user]
+I (1472) MCP: Add tool: self.screen.preview_image [user]
+I (1472) Assets: The storage free size is 21824 KB
+I (1482) Assets: The partition size is 8192 KB
+I (1632) Assets: The checksum calculation time is 149 ms
+I (1632) MCP: Add tool: self.assets.set_download_url [user]
+I (1632) WifiManager: Initializing...
+I (1632) pp: pp rom version: e7ae62f
+I (1642) net80211: net80211 rom version: e7ae62f
+I (1652) wifi:wifi driver task: 3fce5d40, prio:23, stack:6144, core=0
+I (1652) wifi:wifi firmware version: 14da9b7
+I (1652) wifi:wifi certification version: v7.0
+I (1662) wifi:config NVS flash: disabled
+I (1662) wifi:config nano formatting: enabled
+I (1662) wifi:Init data frame dynamic rx buffer num: 6
+I (1672) wifi:Init dynamic rx mgmt buffer num: 5
+I (1672) wifi:Init management short buffer num: 32
+I (1682) wifi:Init dynamic tx buffer num: 32
+I (1682) wifi:Init static tx FG buffer num: 2
+I (1692) wifi:Init static rx buffer size: 1600
+I (1692) wifi:Init static rx buffer num: 3
+I (1692) wifi:Init dynamic rx buffer num: 6
+I (1702) wifi_init: rx ba win: 3
+I (1702) wifi_init: accept mbox: 6
+I (1702) wifi_init: tcpip mbox: 16
+I (1712) wifi_init: udp mbox: 6
+I (1712) wifi_init: tcp mbox: 6
+I (1712) wifi_init: tcp tx win: 5760
+I (1722) wifi_init: tcp rx win: 5760
+I (1722) wifi_init: tcp mss: 1440
+I (1722) WifiManager: Initialized
+I (1732) WifiBoard: Starting WiFi connection attempt
+I (1732) WifiManager: Starting station
+I (1732) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (1772) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (1772) wifi:enable tsf
+I (1772) WifiBoard: WiFi scanning
+I (4182) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -51, Channel: 11, Authmode: 3
+I (4182) WifiBoard: WiFi connecting to 701
+W (4182) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (5472) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (5472) wifi:state: init -> auth (0xb0)
+I (5492) wifi:state: auth -> assoc (0x0)
+I (5502) wifi:state: assoc -> run (0x10)
+I (5522) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (5522) wifi:security: WPA2-PSK, phy: bgn, rssi: -51
+I (5522) wifi:pm start, type: 1
+
+I (5522) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (5532) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (5542) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (5562) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (6752) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (6752) WifiStation: Got IP: 192.168.3.36
+I (6752) WifiBoard: Connected to WiFi: 701
+I (6752) Application: Network connected
+I (6752) StateMachine: State: starting -> activating
+create static modelsI (6762) MODEL_LOADER: Successfully load srmodels
+I (6762) Assets: Refreshing display theme...
+I (6772) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (7062) Application: Activation done
+I (7062) SystemInfo: free sram: 105535 minimal sram: 96647
+I (7062) StateMachine: State: activating -> idle
+I (7062) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (7072) AudioService: Resampling audio from 16000 to 24000
+I (7072) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (7082) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (7092) wifi:Set ps type: 2, coexist: 0
+
+I (7092) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (7102) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (7182) AFE: AFE Version: (1MIC_V250121)
+I (7182) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (7192) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (7202) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (16652) SystemInfo: free sram: 82111 minimal sram: 70427
+W (18632) Display: System time is not set, tm_year: 70

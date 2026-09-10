@@ -643,6 +643,60 @@ static void ksp_title_bounce_anim_cb(void *var, int32_t v)
     lv_obj_set_y((lv_obj_t *)var, v);
 }
 
+/*
+ * 换皮消费接线 (包 9b HWV-A6)：把 U 单一资产层的吉祥物姿态经 loader 原语
+ * (kidpal_art_load + kidpal_art_pixel) 合成为一枚 LVGL lv_image (ARGB8888：
+ * 墨=不透明黑 0xFF000000 / 纸及非阈值化=透明 0x00000000)，叠加在课表右下空白区
+ * (spec §5.5「每页至少露一面」)。选 load+pixel→lv_image 而非整帧 render/draw 缝：
+ * 本页正文是活 LVGL 控件，整帧替换会与文字互相覆盖；lv_image 经既有 LVGL->面板
+ * flush 即刻真机可见。落点避开圆点两态 (KSP_DOT_X=6)、分隔线 (y<=118) 与列文本
+ * (y<=90) —— 对 P2-A3 的 diff/暗色/非均匀采样断言零干扰（姿态只增暗色、且今/明
+ * 两帧恒同不改变圆点差异）。未 mount / 加载失败 / malloc 失败 -> 静默跳过，页面
+ * 回既有版面 (best-effort，绝不 panic)。姿态常量，故 lv_malloc 一次并缓存复用。
+ */
+#define KSP_POSE_MAX 96
+static lv_image_dsc_t s_ksp_pose_dsc;
+static uint32_t      *s_ksp_pose_px  = NULL;
+static int            s_ksp_pose_st  = 0; /* 0=未试 1=可用 2=不可用 */
+
+static int ksp_pose_image_ready(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_ksp_pose_st == 2) {
+        return 0;
+    }
+    if (s_ksp_pose_st == 1) {
+        return 1;
+    }
+    if (kidpal_art_load("pose_daily_96.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > KSP_POSE_MAX || img.h > KSP_POSE_MAX) {
+        s_ksp_pose_st = 2;
+        return 0;
+    }
+    s_ksp_pose_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (s_ksp_pose_px == NULL) {
+        s_ksp_pose_st = 2;
+        return 0;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_ksp_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_ksp_pose_dsc, 0, sizeof(s_ksp_pose_dsc));
+    s_ksp_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_ksp_pose_dsc.header.w      = img.w;
+    s_ksp_pose_dsc.header.h      = img.h;
+    s_ksp_pose_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_ksp_pose_dsc.data          = (const uint8_t *)s_ksp_pose_px;
+    s_ksp_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_ksp_pose_st = 1;
+    return 1;
+}
+
+
 int kidpal_schedule_page_render(const char *title,
                                 const kidpal_schedule_item_t *items, int n,
                                 int is_tomorrow, const char *now_hhmm,
@@ -737,6 +791,14 @@ int kidpal_schedule_page_render(const char *title,
         lv_obj_set_pos(sep, 12, y + 38);
         lv_obj_set_style_bg_color(sep, lv_color_hex(KSP_COLOR_SEP), 0);
         lv_obj_set_style_bg_opa(sep, LV_OPA_COVER, 0);
+    }
+
+    /* 换皮：吉祥物每日姿态叠右下空白区（避开圆点/分隔线/列文本）。best-effort。 */
+    if (ksp_pose_image_ready()) {
+        lv_obj_t *pose = lv_image_create(scr);
+        lv_image_set_src(pose, &s_ksp_pose_dsc);
+        lv_obj_set_pos(pose, LV_HOR_RES - KSP_POSE_MAX - 4,
+                       LV_VER_RES - KSP_POSE_MAX - 6);
     }
 
     return n;

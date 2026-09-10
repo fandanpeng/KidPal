@@ -23,6 +23,12 @@
 #define AUDIO_CODEC_ES8311_ADDR  ES8311_CODEC_DEFAULT_ADDR
 #define AUDIO_CODEC_ES7210_ADDR  ES7210_CODEC_DEFAULT_ADDR
 
+/* 包 9b HWV-A4 (spec §2 硬件盘点): RTC(PCF85063, I2C 独立备用电池走时) + 温湿度
+ * (SHTC3) 挂在同一 I2C 主机 (ESP32_I2C_HOST / SDA=13 / SCL=14)。7-bit 地址：
+ * PCF85063 = 0x51, SHTC3 = 0x70（板级绑定见 .cc 的 InitializeSensors 真实读路径）。 */
+#define RTC_PCF85063_I2C_ADDR    0x51
+#define SHTC3_I2C_ADDR           0x70
+
 #define BOOT_BUTTON_GPIO        GPIO_NUM_0
 
 

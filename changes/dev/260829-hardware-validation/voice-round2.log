@@ -1,0 +1,444 @@
+W (95642) Display: System time is not set, tm_year: 70
+W (96622) Display: System time is not set, tm_year: 70
+I (96622) SystemInfo: free sram: 75923 minimal sram: 63527
+W (97642) Display: System time is not set, tm_year: 70
+W (98622) Display: System time is not set, tm_year: 70
+W (99642) Display: System time is not set, tm_year: 70
+W (100622) Display: System time is not set, tm_year: 70
+W (101642) Display: System time is not set, tm_year: 70
+W (102612) Display: System time is not set, tm_year: 70
+I (103632) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (103632) StateMachine: State: idle -> connecting
+I (103632) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (103642) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (109472) esp-x509-crt-bundle: Certificate validated
+I (112482) WS: Session ID: 78eba971-c755-4877-a27f-b06672a92288
+I (112482) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (112482) wifi:Set ps type: 0, coexist: 0
+
+W (112492) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (112502) StateMachine: State: connecting -> listening
+I (112512) AFE: AFE Version: (1MIC_V250121)
+I (112512) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (112522) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (112522) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (116752) Application: >> 讲个故事
+I (116762) StateMachine: State: listening -> speaking
+I (126422) SystemInfo: free sram: 63683 minimal sram: 55663
+I (127822) MCP: story_text_dispatch corr_id=kdp-127822 screens=3 degrade=false
+
+***ERROR*** A stack overflow in task main has been detected.
+
+
+Backtrace: 0x40386255:0x3fcbe980 0x4038621d:0x3fcbe9a0 0x40387152:0x3fcbe9c0 0x4038866a:0x3fcbea40 0x40387258:0x3fcbea60 0x4038724e:0x00000000 |<-CORRUPTED
+
+
+
+
+ELF file SHA256: ca59ab88f
+
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x403863c9
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2e70
+entry 0x403c8908
+I (34) octal_psram: vendor id    : 0x0d (AP)
+I (34) octal_psram: dev id       : 0x02 (generation 3)
+I (35) octal_psram: density      : 0x03 (64 Mbit)
+I (36) octal_psram: good-die     : 0x01 (Pass)
+I (40) octal_psram: Latency      : 0x01 (Fixed)
+I (45) octal_psram: VCC          : 0x01 (3V)
+I (49) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (54) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (58) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (68) octal_psram: DriveStrength: 0x00 (1/1)
+I (73) MSPI Timing: PSRAM timing tuning index: 5
+I (76) esp_psram: Found 8MB PSRAM device
+I (80) esp_psram: Speed: 80MHz
+I (83) cpu_start: Multicore app
+I (105) cpu_start: Pro cpu start user code
+I (105) cpu_start: cpu freq: 240000000 Hz
+I (105) app_init: Application information:
+I (105) app_init: Project name:     xiaozhi
+I (109) app_init: App version:      2.1.0
+I (113) app_init: Compile time:     Sep 10 2026 15:23:32
+I (118) app_init: ELF file SHA256:  ca59ab88f...
+I (122) app_init: ESP-IDF:          v5.5.1-dirty
+I (126) efuse_init: Min chip rev:     v0.0
+I (130) efuse_init: Max chip rev:     v0.99
+I (134) efuse_init: Chip rev:         v0.2
+I (138) heap_init: Initializing. RAM available for dynamic allocation:
+I (144) heap_init: At 3FCB9338 len 000303D8 (192 KiB): RAM
+I (149) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (154) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (160) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (165) esp_psram: Adding pool of 7709K of PSRAM memory to heap allocator
+I (172) spi_flash: detected chip: generic
+I (175) spi_flash: flash io: qio
+I (179) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (185) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (191) main_task: Started on CPU0
+I (201) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (201) main_task: Calling app_main()
+I (211) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (211) button: IoT Button Version: 4.1.7
+I (221) BoxAudioCodec: Duplex channels created
+I (221) ES8311: Work in Slave mode
+I (231) ES7210: Work in Slave mode
+I (241) ES7210: Enable ES7210_INPUT_MIC1
+I (241) ES7210: Enable ES7210_INPUT_MIC2
+I (241) ES7210: Enable ES7210_INPUT_MIC3
+I (251) ES7210: Enable ES7210_INPUT_MIC4
+I (251) ES7210: Enable TDM mode
+I (251) BoxAudioCodec: BoxAudioDevice initialized
+I (251) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-251 ok rtc=20:48:21
+I (271) waveshare_rlcd_4_2: shtc3 corr_id=kdp-251 ok temp_c=28.52 rh_pct=46.5
+I (271) MCP: Add tool: self.disp.network
+I (271) Display: Power management not supported
+I (271) CustomDisplay: Initialize SPI
+I (581) CustomDisplay: Initialize LVGL library
+I (581) LVGL: Starting LVGL task
+I (591) CustomDisplay: RLCD init
+I (1171) CustomDisplay: ui start
+I (1211) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1211) waveshare_rlcd_4_2: art layer mounted at /art
+I (1211) kidpal_rn: KidPal render node initialized (4-page RLCD driver)
+I (1321) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=1052
+I (1321) StateMachine: State: unknown -> starting
+I (1321) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1321) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1331) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1341) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1341) ES7210: Bits 16
+I (1351) ES7210: Enable ES7210_INPUT_MIC1
+I (1351) ES7210: Enable ES7210_INPUT_MIC2
+I (1361) ES7210: Enable ES7210_INPUT_MIC3
+I (1361) ES7210: Enable ES7210_INPUT_MIC4
+I (1361) ES7210: Enable TDM mode
+I (1371) ES7210: Unmuted
+I (1371) Adev_Codec: Open codec device OK
+I (1371) AudioCodec: Set input enable to true
+I (1371) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1381) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1381) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1401) Adev_Codec: Open codec device OK
+I (1401) AudioCodec: Set output enable to true
+I (1401) AudioCodec: Audio codec started
+I (1411) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1411) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1421) MCP: Add tool: self.get_device_status
+I (1431) MCP: Add tool: self.audio_speaker.set_volume
+I (1431) MCP: Add tool: kidpal/display
+I (1441) MCP: Add tool: kidpal/alert
+I (1441) MCP: Add tool: self.screen.set_theme
+I (1441) MCP: Add tool: self.get_system_info [user]
+I (1451) MCP: Add tool: self.reboot [user]
+I (1451) MCP: Add tool: self.upgrade_firmware [user]
+I (1461) MCP: Add tool: self.screen.get_info [user]
+I (1461) MCP: Add tool: self.screen.snapshot [user]
+I (1461) MCP: Add tool: self.screen.preview_image [user]
+I (1471) Assets: The storage free size is 21824 KB
+I (1471) Assets: The partition size is 8192 KB
+I (1631) Assets: The checksum calculation time is 149 ms
+I (1631) MCP: Add tool: self.assets.set_download_url [user]
+I (1631) WifiManager: Initializing...
+I (1631) pp: pp rom version: e7ae62f
+I (1631) net80211: net80211 rom version: e7ae62f
+I (1651) wifi:wifi driver task: 3fce7758, prio:23, stack:6144, core=0
+I (1651) wifi:wifi firmware version: 14da9b7
+I (1651) wifi:wifi certification version: v7.0
+I (1651) wifi:config NVS flash: disabled
+I (1661) wifi:config nano formatting: enabled
+I (1661) wifi:Init data frame dynamic rx buffer num: 6
+I (1671) wifi:Init dynamic rx mgmt buffer num: 5
+I (1671) wifi:Init management short buffer num: 32
+I (1671) wifi:Init dynamic tx buffer num: 32
+I (1681) wifi:Init static tx FG buffer num: 2
+I (1681) wifi:Init static rx buffer size: 1600
+I (1691) wifi:Init static rx buffer num: 3
+I (1691) wifi:Init dynamic rx buffer num: 6
+I (1701) wifi_init: rx ba win: 3
+I (1701) wifi_init: accept mbox: 6
+I (1701) wifi_init: tcpip mbox: 16
+I (1701) wifi_init: udp mbox: 6
+I (1711) wifi_init: tcp mbox: 6
+I (1711) wifi_init: tcp tx win: 5760
+I (1711) wifi_init: tcp rx win: 5760
+I (1721) wifi_init: tcp mss: 1440
+I (1721) WifiManager: Initialized
+I (1721) WifiBoard: Starting WiFi connection attempt
+I (1731) WifiManager: Starting station
+I (1731) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (1771) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(0)
+I (1791) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (1791) wifi:enable tsf
+I (1791) WifiBoard: WiFi scanning
+I (2421) AudioService: esp_timer task stack HWM: 7256 words (stack 8192 bytes)
+I (4201) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -70, Channel: 11, Authmode: 3
+I (4201) WifiBoard: WiFi connecting to 701
+W (4511) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (5791) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (5791) wifi:state: init -> auth (0xb0)
+I (5801) wifi:state: auth -> assoc (0x0)
+I (5821) wifi:state: assoc -> run (0x10)
+I (5841) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (5841) wifi:security: WPA2-PSK, phy: bgn, rssi: -55
+I (5841) wifi:pm start, type: 1
+
+I (5851) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (5851) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (5871) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (5921) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (6931) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (6931) WifiStation: Got IP: 192.168.3.36
+I (6931) WifiBoard: Connected to WiFi: 701
+I (6931) Application: Network connected
+I (6931) StateMachine: State: starting -> activating
+create static modelsI (6941) MODEL_LOADER: Successfully load srmodels
+I (6941) Assets: Refreshing display theme...
+I (6951) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (6961) Application: Activation done
+I (7151) SystemInfo: free sram: 98483 minimal sram: 89623
+I (7151) StateMachine: State: activating -> idle
+I (7251) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (7251) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (7251) AudioService: Resampling audio from 16000 to 24000
+I (7261) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (7271) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7271) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (7281) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (7291) AudioService: audio_output task stack HWM: 2660 words
+I (7301) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7301) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (7311) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7321) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (7331) wifi:Set ps type: 2, coexist: 0
+
+I (7341) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (7401) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+I (7591) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (7601) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (7681) AFE: AFE Version: (1MIC_V250121)
+I (7681) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (7691) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (7701) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (16691) SystemInfo: free sram: 75167 minimal sram: 63851
+W (18681) Display: System time is not set, tm_year: 70
+W (19701) Display: System time is not set, tm_year: 70
+W (20691) Display: System time is not set, tm_year: 70
+W (21661) Display: System time is not set, tm_year: 70
+W (22681) Display: System time is not set, tm_year: 70
+I (23431) I2S_IF: Pending out channel for in channel running
+I (23431) AudioCodec: Set output enable to false
+W (23671) Display: System time is not set, tm_year: 70
+W (24701) Display: System time is not set, tm_year: 70
+W (25691) Display: System time is not set, tm_year: 70
+W (26671) Display: System time is not set, tm_year: 70
+I (26681) SystemInfo: free sram: 75643 minimal sram: 63851
+W (27701) Display: System time is not set, tm_year: 70
+W (28691) Display: System time is not set, tm_year: 70
+W (29661) Display: System time is not set, tm_year: 70
+W (30681) Display: System time is not set, tm_year: 70
+W (31671) Display: System time is not set, tm_year: 70
+W (32691) Display: System time is not set, tm_year: 70
+W (33661) Display: System time is not set, tm_year: 70
+W (34681) Display: System time is not set, tm_year: 70
+W (35671) Display: System time is not set, tm_year: 70
+W (36691) Display: System time is not set, tm_year: 70
+I (36691) SystemInfo: free sram: 75127 minimal sram: 63851
+W (37661) Display: System time is not set, tm_year: 70
+W (38681) Display: System time is not set, tm_year: 70
+W (39661) Display: System time is not set, tm_year: 70
+W (40691) Display: System time is not set, tm_year: 70
+W (41661) Display: System time is not set, tm_year: 70
+W (42681) Display: System time is not set, tm_year: 70
+W (43661) Display: System time is not set, tm_year: 70
+W (44691) Display: System time is not set, tm_year: 70
+W (45661) Display: System time is not set, tm_year: 70
+W (46681) Display: System time is not set, tm_year: 70
+I (46681) SystemInfo: free sram: 75643 minimal sram: 63851
+W (47671) Display: System time is not set, tm_year: 70
+W (48691) Display: System time is not set, tm_year: 70
+W (49661) Display: System time is not set, tm_year: 70
+W (50681) Display: System time is not set, tm_year: 70
+W (51671) Display: System time is not set, tm_year: 70
+W (52691) Display: System time is not set, tm_year: 70
+W (53671) Display: System time is not set, tm_year: 70
+W (54681) Display: System time is not set, tm_year: 70
+W (55671) Display: System time is not set, tm_year: 70
+W (56691) Display: System time is not set, tm_year: 70
+I (56691) SystemInfo: free sram: 75127 minimal sram: 63851
+W (57661) Display: System time is not set, tm_year: 70
+W (58681) Display: System time is not set, tm_year: 70
+W (59671) Display: System time is not set, tm_year: 70
+W (60691) Display: System time is not set, tm_year: 70
+W (61661) Display: System time is not set, tm_year: 70
+W (62681) Display: System time is not set, tm_year: 70
+W (63671) Display: System time is not set, tm_year: 70
+W (64691) Display: System time is not set, tm_year: 70
+W (65661) Display: System time is not set, tm_year: 70
+W (66681) Display: System time is not set, tm_year: 70
+I (66681) SystemInfo: free sram: 75643 minimal sram: 63851
+W (67671) Display: System time is not set, tm_year: 70
+W (68691) Display: System time is not set, tm_year: 70
+W (69661) Display: System time is not set, tm_year: 70
+W (70681) Display: System time is not set, tm_year: 70
+W (71671) Display: System time is not set, tm_year: 70
+W (72691) Display: System time is not set, tm_year: 70
+W (73661) Display: System time is not set, tm_year: 70
+W (74681) Display: System time is not set, tm_year: 70
+W (75701) Display: System time is not set, tm_year: 70
+W (76691) Display: System time is not set, tm_year: 70
+I (76691) SystemInfo: free sram: 75127 minimal sram: 63851
+W (77661) Display: System time is not set, tm_year: 70
+W (78681) Display: System time is not set, tm_year: 70
+W (79661) Display: System time is not set, tm_year: 70
+W (80691) Display: System time is not set, tm_year: 70
+W (81661) Display: System time is not set, tm_year: 70
+W (82681) Display: System time is not set, tm_year: 70
+W (83661) Display: System time is not set, tm_year: 70
+W (84691) Display: System time is not set, tm_year: 70
+W (85661) Display: System time is not set, tm_year: 70
+W (86681) Display: System time is not set, tm_year: 70
+I (86681) SystemInfo: free sram: 75643 minimal sram: 63851
+W (87661) Display: System time is not set, tm_year: 70
+W (88691) Display: System time is not set, tm_year: 70
+W (89661) Display: System time is not set, tm_year: 70
+W (90681) Display: System time is not set, tm_year: 70
+W (91671) Display: System time is not set, tm_year: 70
+W (92691) Display: System time is not set, tm_year: 70
+W (93671) Display: System time is not set, tm_year: 70
+W (94691) Display: System time is not set, tm_year: 70
+W (95681) Display: System time is not set, tm_year: 70
+W (96671) Display: System time is not set, tm_year: 70
+I (96671) SystemInfo: free sram: 75127 minimal sram: 63851
+W (97701) Display: System time is not set, tm_year: 70
+W (98681) Display: System time is not set, tm_year: 70
+W (99671) Display: System time is not set, tm_year: 70
+W (100691) Display: System time is not set, tm_year: 70
+W (101661) Display: System time is not set, tm_year: 70
+W (102681) Display: System time is not set, tm_year: 70
+W (103671) Display: System time is not set, tm_year: 70
+W (104691) Display: System time is not set, tm_year: 70
+W (105671) Display: System time is not set, tm_year: 70
+W (106691) Display: System time is not set, tm_year: 70
+I (106691) SystemInfo: free sram: 75127 minimal sram: 63851
+W (107671) Display: System time is not set, tm_year: 70
+W (108701) Display: System time is not set, tm_year: 70
+W (109691) Display: System time is not set, tm_year: 70
+W (110681) Display: System time is not set, tm_year: 70
+W (111701) Display: System time is not set, tm_year: 70
+W (112691) Display: System time is not set, tm_year: 70
+W (113661) Display: System time is not set, tm_year: 70
+W (114681) Display: System time is not set, tm_year: 70
+W (115671) Display: System time is not set, tm_year: 70
+W (116691) Display: System time is not set, tm_year: 70
+I (116691) SystemInfo: free sram: 75643 minimal sram: 63851
+W (117661) Display: System time is not set, tm_year: 70
+W (118681) Display: System time is not set, tm_year: 70
+W (119671) Display: System time is not set, tm_year: 70
+W (120691) Display: System time is not set, tm_year: 70
+W (121661) Display: System time is not set, tm_year: 70
+W (122681) Display: System time is not set, tm_year: 70
+W (123661) Display: System time is not set, tm_year: 70
+W (124691) Display: System time is not set, tm_year: 70
+W (125661) Display: System time is not set, tm_year: 70
+W (126681) Display: System time is not set, tm_year: 70
+I (126681) SystemInfo: free sram: 75155 minimal sram: 63851
+W (127661) Display: System time is not set, tm_year: 70
+W (128691) Display: System time is not set, tm_year: 70
+W (129661) Display: System time is not set, tm_year: 70
+W (130681) Display: System time is not set, tm_year: 70
+W (131671) Display: System time is not set, tm_year: 70
+W (132691) Display: System time is not set, tm_year: 70
+W (133681) Display: System time is not set, tm_year: 70
+W (134691) Display: System time is not set, tm_year: 70
+W (135681) Display: System time is not set, tm_year: 70
+W (136671) Display: System time is not set, tm_year: 70
+I (136671) SystemInfo: free sram: 75671 minimal sram: 63851
+W (137701) Display: System time is not set, tm_year: 70
+W (138681) Display: System time is not set, tm_year: 70
+W (139671) Display: System time is not set, tm_year: 70
+W (140701) Display: System time is not set, tm_year: 70
+W (141691) Display: System time is not set, tm_year: 70
+W (142681) Display: System time is not set, tm_year: 70
+W (143701) Display: System time is not set, tm_year: 70
+W (144691) Display: System time is not set, tm_year: 70
+W (145661) Display: System time is not set, tm_year: 70
+W (146681) Display: System time is not set, tm_year: 70
+I (146681) SystemInfo: free sram: 75155 minimal sram: 63851
+W (147671) Display: System time is not set, tm_year: 70
+W (148691) Display: System time is not set, tm_year: 70
+W (149661) Display: System time is not set, tm_year: 70
+W (150681) Display: System time is not set, tm_year: 70
+W (151671) Display: System time is not set, tm_year: 70
+W (152691) Display: System time is not set, tm_year: 70
+W (153661) Display: System time is not set, tm_year: 70
+W (154681) Display: System time is not set, tm_year: 70
+W (155671) Display: System time is not set, tm_year: 70
+W (156691) Display: System time is not set, tm_year: 70
+I (156691) SystemInfo: free sram: 75671 minimal sram: 63851
+W (157661) Display: System time is not set, tm_year: 70
+W (158681) Display: System time is not set, tm_year: 70
+W (159701) Display: System time is not set, tm_year: 70
+W (160691) Display: System time is not set, tm_year: 70
+W (161661) Display: System time is not set, tm_year: 70
+W (162681) Display: System time is not set, tm_year: 70
+W (163671) Display: System time is not set, tm_year: 70
+W (164691) Display: System time is not set, tm_year: 70
+W (165661) Display: System time is not set, tm_year: 70
+W (166681) Display: System time is not set, tm_year: 70
+I (166681) SystemInfo: free sram: 75155 minimal sram: 63851
+W (167661) Display: System time is not set, tm_year: 70
+W (168691) Display: System time is not set, tm_year: 70
+W (169661) Display: System time is not set, tm_year: 70
+W (170681) Display: System time is not set, tm_year: 70
+W (171661) Display: System time is not set, tm_year: 70
+W (172691) Display: System time is not set, tm_year: 70
+W (173671) Display: System time is not set, tm_year: 70
+W (174691) Display: System time is not set, tm_year: 70
+W (175671) Display: System time is not set, tm_year: 70
+W (176701) Display: System time is not set, tm_year: 70
+I (176701) SystemInfo: free sram: 75671 minimal sram: 63851
+W (177691) Display: System time is not set, tm_year: 70
+W (178681) Display: System time is not set, tm_year: 70
+W (179701) Display: System time is not set, tm_year: 70
+W (180691) Display: System time is not set, tm_year: 70
+W (181671) Display: System time is not set, tm_year: 70
+W (182691) Display: System time is not set, tm_year: 70
+W (183671) Display: System time is not set, tm_year: 70
+W (184701) Display: System time is not set, tm_year: 70
+W (185691) Display: System time is not set, tm_year: 70
+W (186681) Display: System time is not set, tm_year: 70
+I (186681) SystemInfo: free sram: 75671 minimal sram: 63851
+W (187701) Display: System time is not set, tm_year: 70
+W (188691) Display: System time is not set, tm_year: 70
+W (189661) Display: System time is not set, tm_year: 70
+W (190681) Display: System time is not set, tm_year: 70
+W (191671) Display: System time is not set, tm_year: 70
+W (192691) Display: System time is not set, tm_year: 70
+W (193661) Display: System time is not set, tm_year: 70
+W (194681) Display: System time is not set, tm_year: 70
+W (195671) Display: System time is not set, tm_year: 70
+W (196691) Display: System time is not set, tm_year: 70
+I (196691) SystemInfo: free sram: 75155 minimal sram: 63851
+W (197661) Display: System time is not set, tm_year: 70
+W (198681) Display: System time is not set, tm_year: 70
+W (199671) Display: System time is not set, tm_year: 70
+W (200691) Display: System time is not set, tm_year: 70
+W (201671) Display: System time is not set, tm_year: 70
+W (202681) Display: System time is not set, tm_year: 70
+W (203671) Display: System time is not set, tm_year: 70
+W (204691) Display: System time is not set, tm_year: 70
+W (205671) Display: System time is not set, tm_year: 70
+W (206681) Display: System time is not set, tm_year: 70
+I (206681) SystemInfo: free sram: 75671 minimal sram: 63851
+W (207671) Display: System time is not set, tm_year: 70

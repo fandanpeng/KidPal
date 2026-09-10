@@ -90,14 +90,15 @@ ls -la "$OVERLAY"
 #   v1 = 260829-voice-roundtrip 基座 (两部分结构 + 7 view 白名单 + 三句纪律 + 硬约束)
 #   v2 = openclaw-system-prompt.v2.md (260829-schedule-p2 + 260829-char-stroke: 课表 producer
 #        扩展 + char C1 最小块/出口拼装)
-#   v3 = 当前渲染源，**两包并集版** (260829-story-p3 故事 producer 扩展：我要讲故事→
-#        start_recording / 停录整段转写起标题出 story_text / V31 四条回退判断 / 归档归云侧
-#        一回合不读写文件；260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定：备注列
-#        携带物判定 + entry_key 对齐 + 三档范围 + cron 回合与对话回合职责分界)。
-#        并集成因 = 两并行包各写一份 .v3 抢同槽位 (add/add)，按 human 授权 pod-events
-#        dc9a5c15 取并集；槽位预约规则见 ARQ-260908-versioned-artifact-slot-collision。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v3.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v3.md"
+#   v3 = openclaw-system-prompt.v3.md (两包并集版: 260829-story-p3 故事 producer 扩展 +
+#        260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定；两并行包各写一份 .v3 抢同槽位
+#        (add/add)，按 human 授权 pod-events dc9a5c15 取并集；槽位预约规则见
+#        ARQ-260908-versioned-artifact-slot-collision)。
+#   v4 = openclaw-system-prompt.v4.md (当前渲染源; 260829-hardware-validation F4 分工修正:
+#        删模型「回填整段正文」缺陷表述、改为一回合只起 title、story_text 正文+id 由网关下发;
+#        v3 及其下 v1/v2 基座语义逐字保留、可 diff)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v4.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v4.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -115,7 +116,7 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v3.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: openclaw-system-prompt.v4.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
 # 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,

@@ -7,8 +7,10 @@
 #include <esp_log.h>
 #include <esp_app_desc.h>
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <esp_pthread.h>
 
 #include "application.h"
@@ -25,6 +27,7 @@
 #include "display/char_page.h"     /* 查生字 P4 LVGL 页 (设备侧) */
 #include "display/reminder_page.h" /* 提醒弹窗消费面 (包 260829-schedule-reminder):
                                     * kidpal/alert 载荷解析 + 四态状态机 + 富弹窗渲染 */
+#include "display/kidpal_render_node.h" /* 包 9b HWV-A6: 设备渲染节点 show_home/cycle/cache */
 #include "assets/lang_config.h"    /* Lang::Sounds::OGG_POPUP —— 三件套的提示音音源 */
 
 #define TAG "MCP"
@@ -32,11 +35,100 @@
 /* P3 故事页设备消费面状态 (包 260829-story-p3)。MCP 工具回调在主线程串行执行
  * (DoToolCall -> app.Schedule)，故此处单例视图无并发竞态；story_list/story_text
  * 装载视图，start_recording 通过 kidpal_story_on_control 切录音态。零外部依赖，
- * 纯 story_page.c 冻结契约函数驱动。 */
+ * 纯 story_page.c 冻结契约函数驱动。
+ *
+ * ── ssl_receive 栈纪律（包 260829-hardware-validation 真机语音轮 2 修复，勿回退）──
+ * kidpal/display / kidpal/alert 这些 MCP 工具回调**同步**跑在 esp-ml307 接收任务上
+ * （managed_components/78__esp-ml307/src/esp/esp_ssl.cc:62 `xTaskCreate(...,
+ *  "ssl_receive", 4096, ...)` —— 第三方件，栈不可抬）。整条链
+ * ReceiveTask → esp_tls recv → HttpClient → WebSocket → Application::OnIncomingJson
+ * → McpServer::ParseMessage → DoToolCall → 本回调，全部叠在这 4096 字节里。
+ * 因此：**禁止在本文件的路由回调链上新增大栈缓冲**（含把大结构体按值捕获进
+ * Schedule 闭包前先在栈上落一份），大对象一律 make_unique / make_shared 堆分配。
+ * 参考尺寸：kidpal_story_text_t 2208B、kidpal_story_list_t 2824B、
+ * kidpal_story_view_t 108B、kidpal_alert_t 488B（≤1KB，可留栈）。
+ * 旧实现同时压 2208B(parsed) + 2208B(parse 内局部缓冲) ≥ 4.4KB → 溢出踩进邻接任务栈，
+ * 复位报「A stack overflow in task main / esp_timer」且 backtrace 腐蚀（跨任务腐蚀症状）。 */
 namespace {
 kidpal_story_view_t g_story_view = {};
 kidpal_story_list_t g_story_list = {};
 kidpal_story_text_t g_story_text = {};
+}  // namespace
+
+/* -------------------------------------------------------------------------- *
+ * P3 故事页生产接线辅助 (包 260829-story-p3 §9 F7 殿后 / 包 9b HWV-A9 承接)。
+ * 录音态演出 tick 的 LVGL 定时器 + 页态重渲染 + 页内输入动作码。story_page.h 是
+ * 冻结头、未导出 KSA_ACT_*，此处按冻结验收 story_p3 与 story_page.c:740-748 的
+ * 文档化数值码本地镜像一份（升级路径 = story_page.h 一旦导出即转用之；双源风险由
+ * 本注释钉明，页内输入动作语义的**单源**仍在冻结实现 kidpal_story_page_input 内）。
+ * LVGL 定时器在 LVGL 主处理任务回调（= Schedule 目标线程），与 g_story_* 单例无竞态
+ * （对偶 AlertDrainTimer 既有约定）。
+ * ------------------------------------------------------------------------ */
+namespace {
+enum {
+    kStoryActGlobal       = -2, /* 页不拥有该手势 -> 交回全局路由层 */
+    kStoryActDegrade      = -3, /* 越界键位/NULL -> 降级、视图零改动 */
+    kStoryActNone         = 0,  /* 无副作用 */
+    kStoryActCursorNext   = 1,  /* 列表光标移动 */
+    kStoryActOpenReader   = 2,  /* 进阅读态 */
+    kStoryActPageTurn     = 3,  /* 阅读态翻屏 */
+    kStoryActTtsRead      = 4,  /* 朗读请求（声学殿后 9b，仅计数） */
+    kStoryActStopRecord   = 5,  /* 停录 -> 归档请求（archive_pend++ 由冻结实现置位） */
+    kStoryActCancelRecord = 6,  /* 录音中取消 -> 丢弃、不归档 */
+};
+
+/* 录音态演出驱动：page==RECORDING 期间每 ~100ms 用冻结 kidpal_story_rec_tick 就地推
+ * elapsed/闪点/声波并重绘；一旦离开录音态即自删（无常驻定时器开销）。 */
+lv_timer_t* g_story_rec_timer = nullptr;
+uint32_t    g_story_rec_start_ms = 0;
+
+/* 故事页三态快照（列表视图 + 列表载荷 + 正文载荷）打包成**一个堆对象**。
+ * 尺寸：view 108B + list 2824B + text 2208B ≈ 5.1KB —— 绝不可作栈对象（见本文件
+ * 头「ssl_receive 栈纪律」注）；Schedule 闭包按 shared_ptr 捕获，渲染线程侧读快照。 */
+struct StorySnapshot {
+    kidpal_story_view_t v;
+    kidpal_story_list_t l;
+    kidpal_story_text_t t;
+};
+
+void ScheduleStoryRender() {
+    auto snap = std::make_shared<StorySnapshot>();
+    snap->v = g_story_view;
+    snap->l = g_story_list;
+    snap->t = g_story_text;
+    Application::GetInstance().Schedule([snap]() {
+        /* 崩溃修复（包 260829-hardware-validation）：服务端推送页面渲染必须夹在
+         * begin/end 之间 → 画到 s_kidpal_scr + 持 LVGL 锁，避免 clean 聊天屏致
+         * SetStatus 悬空崩溃，并消除与 LVGL 任务的竞态。 */
+        kidpal_render_node_begin_page();
+        kidpal_story_page_render(&snap->v, &snap->l, &snap->t);
+        /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。 */
+        kidpal_render_node_cache_story(&snap->v, &snap->l, &snap->t);
+        kidpal_render_node_end_page();
+    });
+}
+
+void StoryRecTimerCb(lv_timer_t* timer) {
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        lv_timer_delete(timer); /* 录音态结束 -> 自删, 绝不常驻 */
+        g_story_rec_timer = nullptr;
+        return;
+    }
+    uint32_t elapsed = lv_tick_get() - g_story_rec_start_ms;
+    int flash = 0;
+    int wave = 0;
+    if (kidpal_story_rec_tick(&g_story_view, elapsed, &flash, &wave) == 0) {
+        kidpal_story_page_render(&g_story_view, &g_story_list, &g_story_text);
+    }
+}
+
+void StartStoryRecTimer() {
+    if (g_story_rec_timer != nullptr) {
+        return; /* 幂等: 网关重试 start_recording 不得重置孩子已录时长/重复建 timer */
+    }
+    g_story_rec_start_ms = lv_tick_get();
+    g_story_rec_timer = lv_timer_create(StoryRecTimerCb, 100, nullptr);
+}
 }  // namespace
 
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
@@ -230,7 +322,16 @@ void McpServer::RaiseReminderQueue() {
     if (kidpal_reminder_shown_alert(state, &shown) != 1) {
         return;
     }
-    if (kidpal_reminder_page_render(&shown) != 1) {
+    /* 崩溃修复（包 260829-hardware-validation）：提醒弹窗渲染与故事/课表同族——
+     * kidpal_reminder_page_render 走 lv_screen_active()+lv_obj_clean()。语音轮若恰
+     * 有提醒到点，clean 聊天屏会销毁 xiaozhi status_label_ → SetStatus 悬空崩溃。
+     * 夹 begin/end 令其画到 s_kidpal_scr 并持锁；pin 使驻留弹窗不被 tick 抢回。
+     * 本函数有两个调用上下文（main-task Schedule / LVGL 定时器 AlertDrainTimerCb），
+     * esp_lvgl_port 锁为递归互斥量，同任务嵌套 take 安全、give 平衡。 */
+    kidpal_render_node_begin_page();
+    int alert_drawn = kidpal_reminder_page_render(&shown);
+    kidpal_render_node_end_page();
+    if (alert_drawn != 1) {
         /* 渲染未成 -> 不发回执，交由网关 60s 重推收敛（不假装送达） */
         ESP_LOGW(TAG, "alert_render corr_id=%s drawn=false degrade=true", shown.id);
         return;
@@ -283,6 +384,38 @@ void McpServer::EmitRenderReceipt(const std::string& business_id) {
              business_id.c_str(), rpc_id);
 }
 
+
+bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
+    /* 页内特例优先消费 (spec §4.0「页内特例」列)：把 KEY/BOOT 手势交进冻结消费面
+     * kidpal_story_page_input，按其返回动作码驱动页态。页不拥有该手势 (GLOBAL/NONE/
+     * DEGRADE) -> 返回 false，交回全局路由层 (翻页/会话切换语义不变)。 */
+    int act = kidpal_story_page_input(&g_story_view, key, g);
+    switch (act) {
+        case kStoryActStopRecord:
+            /* 停录: 冻结实现已置 archive_pend++ 并把页态切回 LIST、rec_seconds 定格;
+             * 演出 tick 的 LVGL timer 在下个回调发现已非 RECORDING -> 自删。回列表渲染。 */
+            ESP_LOGI(TAG, "story_key stop_rec archive_pend=%d", g_story_view.archive_pend);
+            ScheduleStoryRender();
+            return true;
+        case kStoryActCancelRecord:
+            /* 录音中取消 -> 丢弃、不归档 (V31)。回列表渲染。 */
+            ESP_LOGI(TAG, "story_key cancel_rec cancel_count=%d", g_story_view.cancel_count);
+            ScheduleStoryRender();
+            return true;
+        case kStoryActCursorNext:
+        case kStoryActOpenReader:
+        case kStoryActPageTurn:
+            ScheduleStoryRender();
+            return true;
+        case kStoryActTtsRead:
+            /* 朗读请求 (声学殿后 9b): 冻结实现已递增 tts_requests; 此处不外呼播报,
+             * 页态不变 -> 不做无副作用重渲染。 */
+            return true;
+        default:
+            /* kStoryActGlobal / kStoryActNone / kStoryActDegrade -> 交回全局路由。 */
+            return false;
+    }
+}
 
 void McpServer::AddCommonTools() {
     // *Important* To speed up the response time, we add the common tools to the beginning of
@@ -366,12 +499,11 @@ void McpServer::AddCommonTools() {
                     break;
                 case 1: /* VRT_ROUTE_HOME —— 回 P1 首页常显 */
                     cJSON_AddStringToObject(ack, "route", "home");
-                    {
-                        auto display = Board::GetInstance().GetDisplay();
-                        app.Schedule([display]() {
-                            display->SetChatMessage("system", "");
-                        });
-                    }
+                    /* 包 9b HWV-A6: 渲染节点落地后，home 路由改推首页帧至 RLCD。
+                     * 旧行为（SetChatMessage 空串）仅清 xiaozhi 对话区，不显示 KidPal 首页。 */
+                    app.Schedule([]() {
+                        kidpal_render_node_show_home();
+                    });
                     break;
                 case 2: { /* VRT_ROUTE_CONTROL —— 契约 §1.4 动作执行 */
                     cJSON_AddStringToObject(ack, "route", "control");
@@ -394,12 +526,10 @@ void McpServer::AddCommonTools() {
                                      consumed, g_story_view.page);
                             app.StartListening();
                             if (consumed == 1) {
-                                kidpal_story_view_t rec_snapshot = g_story_view;
-                                kidpal_story_list_t list_snapshot = g_story_list;
-                                app.Schedule([rec_snapshot, list_snapshot]() {
-                                    kidpal_story_page_render(&rec_snapshot, &list_snapshot,
-                                                             &g_story_text);
-                                });
+                                /* 进录音态 -> 首帧渲染 + 起演出 tick 驱动（显示循环侧真实
+                                 * 消费 kidpal_story_rec_tick, 录音「正在录」可观察; HWV-A9）。 */
+                                ScheduleStoryRender();
+                                StartStoryRecTimer();
                             }
                             break;
                         }
@@ -419,9 +549,11 @@ void McpServer::AddCommonTools() {
                     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
                     char title[64];
-                    kidpal_schedule_item_t items[16];
+                    /* items[16] = 16 × 112B = 1792B（含 Schedule 闭包按值捕获的再一份
+                     * = 3.5KB 峰值）→ 上堆，理由见本文件头「ssl_receive 栈纪律」。 */
+                    auto items = std::make_shared<std::array<kidpal_schedule_item_t, 16>>();
                     int n = kidpal_schedule_parse(data.c_str(), title, sizeof(title),
-                                                  items, 16);
+                                                  items->data(), 16);
                     if (n < 0) {
                         /* 降级：schedule data 畸形/缺字段 -> 友好提示, 不盲渲染 */
                         cJSON_AddBoolToObject(ack, "degrade", true);
@@ -455,10 +587,14 @@ void McpServer::AddCommonTools() {
                     auto display = Board::GetInstance().GetDisplay();
                     std::string now_str = now_hhmm;
                     app.Schedule([display, title, items, n, is_tomorrow, now_str, locate_row, corr_id]() {
+                        kidpal_render_node_begin_page();
                         int drawn = kidpal_schedule_page_render(
-                            title, items, n, is_tomorrow, now_str.c_str(), locate_row);
+                            title, items->data(), n, is_tomorrow, now_str.c_str(), locate_row);
                         ESP_LOGI(TAG, "schedule_render corr_id=%s items=%d drawn=%d",
                                  corr_id, n, drawn);
+                        /* 包 9b HWV-A6: 缓存课表至渲染节点，供 BOOT 双按翻页 cycle_next 读取。 */
+                        kidpal_render_node_cache_schedule(title, items->data(), n, is_tomorrow, now_str.c_str());
+                        kidpal_render_node_end_page();
                     });
                     break;
                 }
@@ -477,7 +613,19 @@ void McpServer::AddCommonTools() {
                     }
                     /* 通过校验 -> 切 P4 页喂数据 (LVGL 主线程延迟执行) */
                     app.Schedule([char_data]() {
+                        /* 崩溃修复（包 260829-hardware-validation）：char 页经
+                         * kidpal_char_page_show 自建独立屏（lv_obj_create(NULL)+
+                         * lv_screen_load(自己的屏)），不 lv_screen_active()+clean 活动
+                         * 屏，故天然免疫 SetStatus 悬空崩溃（不触碰 s_chat_scr）。
+                         * 仍夹 begin/end：begin_page 补上 LVGL 锁消除与 LVGL 任务的
+                         * 竞态，随后 char_page_show 用自己的屏 lv_screen_load 覆盖
+                         * begin_page 临时加载的 s_kidpal_scr（净显示 = char 页）。 */
+                        kidpal_render_node_begin_page();
                         kidpal_char_page_show(char_data.c_str());
+                        /* 包 9b HWV-A6: 缓存笔顺 JSON 与有效标志，
+                         * 供 BOOT 双按 cycle_next 重新停靠 CHAR 页时渲染。 */
+                        kidpal_render_node_cache_char_data(char_data.c_str());
+                        kidpal_render_node_end_page();
                     });
                     break;
                 }
@@ -490,8 +638,10 @@ void McpServer::AddCommonTools() {
                     char corr_id[24];
                     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-                    kidpal_story_list_t parsed = {};
-                    int items_n = kidpal_story_list_parse(data.c_str(), &parsed);
+                    /* kidpal_story_list_t = 2824B → 堆分配（ssl_receive 4096B 栈纪律，
+                     * 见本文件头注）。make_unique<T>() 值初始化 = 旧写法的 `= {}` 清零。 */
+                    auto parsed = std::make_unique<kidpal_story_list_t>();
+                    int items_n = kidpal_story_list_parse(data.c_str(), parsed.get());
                     if (items_n < 0) {
                         /* 降级：story_list data 畸形/缺字段/越界 -> 友好提示, 不盲渲染 */
                         cJSON_AddBoolToObject(ack, "degrade", true);
@@ -502,18 +652,21 @@ void McpServer::AddCommonTools() {
                         });
                         break;
                     }
-                    kidpal_story_view_init(&g_story_view, &parsed);
-                    g_story_list = parsed;
+                    kidpal_story_view_init(&g_story_view, parsed.get());
+                    g_story_list = *parsed;
                     cJSON_AddNumberToObject(ack, "items", items_n);
-                    cJSON_AddNumberToObject(ack, "counter", kidpal_story_counter(&parsed));
+                    cJSON_AddNumberToObject(ack, "counter", kidpal_story_counter(parsed.get()));
                     ESP_LOGI(TAG, "story_list_dispatch corr_id=%s items=%d counter=%d degrade=false",
-                             corr_id, items_n, kidpal_story_counter(&parsed));
+                             corr_id, items_n, kidpal_story_counter(parsed.get()));
                     {
-                        kidpal_story_view_t view_snapshot = g_story_view;
-                        kidpal_story_list_t list_snapshot = g_story_list;
+                        kidpal_story_view_t view_snapshot = g_story_view;   /* 108B，留栈 */
+                        /* 列表快照 2824B 上堆后按 shared_ptr 捕获（闭包可拷贝）。 */
+                        auto list_snapshot = std::make_shared<kidpal_story_list_t>(g_story_list);
                         app.Schedule([view_snapshot, list_snapshot]() {
-                            kidpal_story_page_render(&view_snapshot, &list_snapshot,
+                            kidpal_render_node_begin_page();
+                            kidpal_story_page_render(&view_snapshot, list_snapshot.get(),
                                                      &g_story_text);
+                            kidpal_render_node_end_page();
                         });
                     }
                     break;
@@ -526,8 +679,10 @@ void McpServer::AddCommonTools() {
                     char corr_id[24];
                     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-                    kidpal_story_text_t parsed = {};
-                    if (kidpal_story_text_parse(data.c_str(), &parsed) != 0) {
+                    /* kidpal_story_text_t = 2208B → 堆分配：本路由正是真机语音轮 2 栈
+                     * 溢发的现场（ssl_receive 4096B 栈纪律，见本文件头注）。 */
+                    auto parsed = std::make_unique<kidpal_story_text_t>();
+                    if (kidpal_story_text_parse(data.c_str(), parsed.get()) != 0) {
                         cJSON_AddBoolToObject(ack, "degrade", true);
                         ESP_LOGW(TAG, "display_dispatch view=story_text corr_id=%s degrade=true", corr_id);
                         auto display = Board::GetInstance().GetDisplay();
@@ -536,18 +691,54 @@ void McpServer::AddCommonTools() {
                         });
                         break;
                     }
-                    g_story_text = parsed;
+                    g_story_text = *parsed;
                     {
+                        /* 「上传成功那一瞬 -> 盖章帧」生产触发 (S-F2.2/S-F2.4, HWV-A9)：
+                         * 孩子停录时页内输入 (kidpal_story_page_input STOP_RECORD) 把
+                         * archive_pend 置位；网关侧停录归档成功后把整段正文以
+                         * story_text(record) 组块回传 (本包 front_app .stop -> story_text
+                         * 云侧接线)，设备在此收到这条「刚入册」正文即盖章。仅在停录待确认
+                         * (archive_pend>0) 且 id 与最近一次盖章不同 (幂等，防 mcp 回执重试
+                         * 重复发徽章) 时触发；否则 (回看既有故事) 照常进阅读态。 */
+                        int fresh_save =
+                            (g_story_view.archive_pend > 0) && parsed->id[0] != '\0' &&
+                            std::strcmp(parsed->id, g_story_view.last_saved_id) != 0;
+                        if (fresh_save) {
+                            if (kidpal_story_on_saved(&g_story_view, parsed->id) == 0) {
+                                if (g_story_view.archive_pend > 0) {
+                                    g_story_view.archive_pend--; /* 消费一次待归档请求 */
+                                }
+                                cJSON_AddStringToObject(ack, "stamp", parsed->id);
+                                ESP_LOGI(TAG, "story_saved_stamp corr_id=%s id=%s stamp_index=%d",
+                                         corr_id, parsed->id, g_story_view.stamp_index);
+                                kidpal_story_view_t stamp_view = g_story_view; /* 108B，留栈 */
+                                /* Schedule 闭包需可拷贝 -> unique_ptr 转 shared_ptr 捕获；
+                                 * 列表快照同样上堆（2824B 不再落栈）。 */
+                                std::shared_ptr<kidpal_story_text_t> stamp_text = std::move(parsed);
+                                auto stamp_list = std::make_shared<kidpal_story_list_t>(g_story_list);
+                                app.Schedule([stamp_view, stamp_list, stamp_text]() {
+                                    kidpal_render_node_begin_page();
+                                    kidpal_story_page_render(&stamp_view, stamp_list.get(),
+                                                             stamp_text.get());
+                                    kidpal_render_node_end_page();
+                                });
+                            }
+                            break;
+                        }
                         /* 阅读态分页行高按设备 400x300 最小估算 (minimal: 真实分栏观感
                          * 殿后 9b)；counter/列表态字段从当前视图快照续用。 */
                         kidpal_story_view_t reader_view = g_story_view;
-                        (void)kidpal_story_open_reader(&reader_view, &parsed, 4);
+                        (void)kidpal_story_open_reader(&reader_view, parsed.get(), 4);
                         cJSON_AddNumberToObject(ack, "screens", reader_view.screens);
                         ESP_LOGI(TAG, "story_text_dispatch corr_id=%s screens=%d degrade=false",
                                  corr_id, reader_view.screens);
-                        kidpal_story_list_t list_snapshot = g_story_list;
-                        app.Schedule([reader_view, list_snapshot, parsed]() {
-                            kidpal_story_page_render(&reader_view, &list_snapshot, &parsed);
+                        std::shared_ptr<kidpal_story_text_t> reader_text = std::move(parsed);
+                        auto list_snapshot = std::make_shared<kidpal_story_list_t>(g_story_list);
+                        app.Schedule([reader_view, list_snapshot, reader_text]() {
+                            kidpal_render_node_begin_page();
+                            kidpal_story_page_render(&reader_view, list_snapshot.get(),
+                                                     reader_text.get());
+                            kidpal_render_node_end_page();
                         });
                     }
                     break;

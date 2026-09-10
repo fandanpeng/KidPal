@@ -13,6 +13,10 @@
 
 #include <cJSON.h>
 
+/* P3 故事页页内输入特例（包 260829-story-p3 冻结契约）按键手势类型；
+ * HandleStoryKey 的入参形态（KEY/BOOT 键位 + 单击/双击/长按手势）。 */
+#include "key_gesture_parser.h"
+
 class ImageContent {
 private:
     std::string encoded_data_;
@@ -329,6 +333,14 @@ public:
      * kidpal/alert 工具回调延后的 Schedule，也包括 LVGL drain timer 回调（关掉当前弹窗
      * 后自动弹下一个 / V18 事件已过时的滞留弹窗顶替）。 */
     void RaiseReminderQueue();
+
+    /* P3 故事页页内输入特例生产接线（包 260829-story-p3 §9 F7 殿后 / 包 9b HWV-A9 承接）：
+     * 设备按键路由层把一个 KEY/BOOT 手势交进故事视图消费面 kidpal_story_page_input，并按
+     * 返回动作码驱动页态（光标/进阅读/翻屏/停录/取消 -> 重渲染；朗读 -> 计数；页不拥有 ->
+     * 交回全局层）。返回 true=故事页已消费该手势、false=交回全局路由（翻页/会话切换不变）。
+     * MCP 控制面是 g_story_view 单例的持有者与 control/start_recording 的既有消费者，故
+     * 页内输入的分派落在此处（冻结验收 hardware_validation「mcp 消费」许可接线点）。 */
+    bool HandleStoryKey(key_id_t key, key_gesture_t g);
 
 private:
     McpServer();

@@ -1,0 +1,260 @@
+W (597666) Display: System time is not set, tm_year: 70
+W (598656) Display: System time is not set, tm_year: 70
+W (599646) Display: System time is not set, tm_year: 70
+W (600676) Display: System time is not set, tm_year: 70
+W (601666) Display: System time is not set, tm_year: 70
+W (602656) Display: System time is not set, tm_year: 70
+W (603646) Display: System time is not set, tm_year: 70
+W (604666) Display: System time is not set, tm_year: 70
+W (605646) Display: System time is not set, tm_year: 70
+I (605976) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (605976) StateMachine: State: idle -> connecting
+I (605976) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (605986) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (608196) esp-x509-crt-bundle: Certificate validated
+I (611206) WS: Session ID: 13fc0070-348c-4397-87ec-3b5875ad78c2
+I (611206) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (611206) wifi:Set ps type: 0, coexist: 0
+
+W (611216) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (611216) StateMachine: State: connecting -> listening
+I (611226) AFE: AFE Version: (1MIC_V250121)
+I (611226) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (611236) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (611246) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (615096) Application: >> 讲个故事吧
+I (615096) StateMachine: State: listening -> speaking
+I (624446) SystemInfo: free sram: 69779 minimal sram: 62507
+
+***ERROR*** A stack overflow in task esp_timer has been detected.
+
+
+Backtrace: 0x40386255:0x3fcbb760 0x4038621d:0x3fcbb780 0x40387152:0x3fcbb7a0 0x4038866a:0x3fcbb820 0x40387258:0x3fcbb840 0x4038724e:0x3fcbb860 0x4210b2b2:0x00060923 |<-CORRUPTED
+
+
+
+
+ELF file SHA256: e0af4d952
+
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x403863c9
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2e70
+entry 0x403c8908
+I (34) octal_psram: vendor id    : 0x0d (AP)
+I (34) octal_psram: dev id       : 0x02 (generation 3)
+I (34) octal_psram: density      : 0x03 (64 Mbit)
+I (36) octal_psram: good-die     : 0x01 (Pass)
+I (40) octal_psram: Latency      : 0x01 (Fixed)
+I (45) octal_psram: VCC          : 0x01 (3V)
+I (49) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (53) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (58) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (68) octal_psram: DriveStrength: 0x00 (1/1)
+I (72) MSPI Timing: PSRAM timing tuning index: 5
+I (76) esp_psram: Found 8MB PSRAM device
+I (80) esp_psram: Speed: 80MHz
+I (83) cpu_start: Multicore app
+I (105) cpu_start: Pro cpu start user code
+I (105) cpu_start: cpu freq: 240000000 Hz
+I (105) app_init: Application information:
+I (105) app_init: Project name:     xiaozhi
+I (109) app_init: App version:      2.1.0
+I (112) app_init: Compile time:     Sep 10 2026 12:10:11
+I (117) app_init: ELF file SHA256:  e0af4d952...
+I (122) app_init: ESP-IDF:          v5.5.1-dirty
+I (126) efuse_init: Min chip rev:     v0.0
+I (130) efuse_init: Max chip rev:     v0.99
+I (134) efuse_init: Chip rev:         v0.2
+I (138) heap_init: Initializing. RAM available for dynamic allocation:
+I (144) heap_init: At 3FCB9320 len 000303F0 (192 KiB): RAM
+I (149) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (154) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (160) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (165) esp_psram: Adding pool of 7709K of PSRAM memory to heap allocator
+I (172) spi_flash: detected chip: generic
+I (175) spi_flash: flash io: qio
+I (179) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (184) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (191) main_task: Started on CPU0
+I (201) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (201) main_task: Calling app_main()
+I (211) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (211) button: IoT Button Version: 4.1.7
+I (221) BoxAudioCodec: Duplex channels created
+I (221) ES8311: Work in Slave mode
+I (231) ES7210: Work in Slave mode
+I (241) ES7210: Enable ES7210_INPUT_MIC1
+I (241) ES7210: Enable ES7210_INPUT_MIC2
+I (241) ES7210: Enable ES7210_INPUT_MIC3
+I (251) ES7210: Enable ES7210_INPUT_MIC4
+I (251) ES7210: Enable TDM mode
+I (251) BoxAudioCodec: BoxAudioDevice initialized
+I (251) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-251 ok rtc=19:59:25
+I (271) waveshare_rlcd_4_2: shtc3 corr_id=kdp-251 ok temp_c=29.72 rh_pct=66.1
+I (271) MCP: Add tool: self.disp.network
+I (271) Display: Power management not supported
+I (271) CustomDisplay: Initialize SPI
+I (581) CustomDisplay: Initialize LVGL library
+I (581) LVGL: Starting LVGL task
+I (591) CustomDisplay: RLCD init
+I (1171) CustomDisplay: ui start
+I (1211) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1211) waveshare_rlcd_4_2: art layer mounted at /art
+I (1211) kidpal_rn: KidPal render node initialized (4-page RLCD driver)
+I (1341) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=1052
+I (1341) StateMachine: State: unknown -> starting
+I (1341) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1351) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1361) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1361) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1371) ES7210: Bits 16
+I (1381) ES7210: Enable ES7210_INPUT_MIC1
+I (1381) ES7210: Enable ES7210_INPUT_MIC2
+I (1381) ES7210: Enable ES7210_INPUT_MIC3
+I (1381) ES7210: Enable ES7210_INPUT_MIC4
+I (1391) ES7210: Enable TDM mode
+I (1391) ES7210: Unmuted
+I (1391) Adev_Codec: Open codec device OK
+I (1391) AudioCodec: Set input enable to true
+I (1401) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1401) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1411) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1431) Adev_Codec: Open codec device OK
+I (1431) AudioCodec: Set output enable to true
+I (1431) AudioCodec: Audio codec started
+I (1431) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1441) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1451) MCP: Add tool: self.get_device_status
+I (1451) MCP: Add tool: self.audio_speaker.set_volume
+I (1461) MCP: Add tool: kidpal/display
+I (1461) MCP: Add tool: kidpal/alert
+I (1461) MCP: Add tool: self.screen.set_theme
+I (1471) MCP: Add tool: self.get_system_info [user]
+I (1471) MCP: Add tool: self.reboot [user]
+I (1471) MCP: Add tool: self.upgrade_firmware [user]
+I (1481) MCP: Add tool: self.screen.get_info [user]
+I (1481) MCP: Add tool: self.screen.snapshot [user]
+I (1491) MCP: Add tool: self.screen.preview_image [user]
+I (1491) Assets: The storage free size is 21824 KB
+I (1501) Assets: The partition size is 8192 KB
+I (1651) Assets: The checksum calculation time is 149 ms
+I (1651) MCP: Add tool: self.assets.set_download_url [user]
+I (1651) WifiManager: Initializing...
+I (1661) pp: pp rom version: e7ae62f
+I (1661) net80211: net80211 rom version: e7ae62f
+I (1671) wifi:wifi driver task: 3fce5d40, prio:23, stack:6144, core=0
+I (1671) wifi:wifi firmware version: 14da9b7
+I (1671) wifi:wifi certification version: v7.0
+I (1681) wifi:config NVS flash: disabled
+I (1681) wifi:config nano formatting: enabled
+I (1681) wifi:Init data frame dynamic rx buffer num: 6
+I (1691) wifi:Init dynamic rx mgmt buffer num: 5
+I (1691) wifi:Init management short buffer num: 32
+I (1701) wifi:Init dynamic tx buffer num: 32
+I (1701) wifi:Init static tx FG buffer num: 2
+I (1711) wifi:Init static rx buffer size: 1600
+I (1711) wifi:Init static rx buffer num: 3
+I (1711) wifi:Init dynamic rx buffer num: 6
+I (1721) wifi_init: rx ba win: 3
+I (1721) wifi_init: accept mbox: 6
+I (1721) wifi_init: tcpip mbox: 16
+I (1731) wifi_init: udp mbox: 6
+I (1731) wifi_init: tcp mbox: 6
+I (1731) wifi_init: tcp tx win: 5760
+I (1741) wifi_init: tcp rx win: 5760
+I (1741) wifi_init: tcp mss: 1440
+I (1741) WifiManager: Initialized
+I (1751) WifiBoard: Starting WiFi connection attempt
+I (1751) WifiManager: Starting station
+I (1761) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (1791) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (1791) wifi:enable tsf
+I (1801) WifiBoard: WiFi scanning
+I (4201) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -54, Channel: 11, Authmode: 3
+I (4201) WifiBoard: WiFi connecting to 701
+I (4301) WifiBoard: EnterWifiConfigMode called
+I (4501) WifiManager: Stopping station
+I (4501) WifiStation: Stopping WiFi station
+W (4501) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+E (4511) wifi:sta is connecting, cannot stop scan process
+I (4511) wifi:flush txq
+I (4511) wifi:stop sw txq
+I (4511) wifi:lmac stop hw txq
+I (4521) WifiManager: Station stopped
+W (4521) WifiBoard: WiFi disconnected
+I (4521) StateMachine: State: starting -> wifi_configuring
+I (4531) WifiManager: Starting config AP
+I (4531) DnsServer: Starting DNS server
+I (4541) wifi:Set ps type: 0, coexist: 0
+
+I (4541) wifi:mode : sta (58:e6:c5:72:0c:bc) + softAP (58:e6:c5:72:0c:bd)
+I (4551) wifi:enable tsf
+I (4551) wifi:Total power save buffer number: 16
+I (4551) wifi:Init max length of beacon: 752/752
+I (4561) wifi:Init max length of beacon: 752/752
+I (4561) WifiConfigurationAp: Access Point started with SSID Xiaozhi-0CBD
+I (4571) esp_netif_lwip: DHCP server started on interface WIFI_AP_DEF with IP: 192.168.4.1
+I (4571) WifiConfigurationAp: Web server started
+I (4581) WifiBoard: WiFi config mode entered
+W (4591) Application: Alert [gear] 配网模式: 手机连接热点 Xiaozhi-0CBD，浏览器访问 http://192.168.4.1
+I (4601) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (4601) AudioService: Resampling audio from 16000 to 24000
+I (4611) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (13501) SystemInfo: free sram: 95195 minimal sram: 90131
+I (15451) AudioCodec: Set input enable to false
+I (21531) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (21531) AudioService: Enabling audio testing
+E (21531) i2s_common: i2s_channel_disable(1218): the channel has not been enabled yet
+I (21531) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (21541) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (21551) StateMachine: State: wifi_configuring -> audio_testing
+I (21551) ES7210: Bits 16
+I (21561) ES7210: Enable ES7210_INPUT_MIC1
+I (21561) ES7210: Enable ES7210_INPUT_MIC2
+I (21571) ES7210: Enable ES7210_INPUT_MIC3
+I (21571) ES7210: Enable ES7210_INPUT_MIC4
+I (21571) ES7210: Enable TDM mode
+I (21581) ES7210: Unmuted
+I (21581) Adev_Codec: Open codec device OK
+I (21581) AudioCodec: Set input enable to true
+I (22251) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=22052
+I (22251) kidpal_rn: voice ended -> restore KidPal home
+I (22531) I2S_IF: Pending out channel for in channel running
+I (22531) AudioCodec: Set output enable to false
+I (24721) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (24721) AudioService: Disabling audio testing
+I (24721) I2S_IF: Mode 0 need extend bits 64 to 32
+I (24731) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (24731) StateMachine: State: audio_testing -> wifi_configuring
+I (24731) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (24761) Adev_Codec: Open codec device OK
+I (24761) AudioCodec: Set output enable to true
+I (25271) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=25072
+I (25271) kidpal_rn: voice ended -> restore KidPal home
+I (29591) AudioService: Enabling audio testing
+I (29591) StateMachine: State: wifi_configuring -> audio_testing
+I (29591) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (30291) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=30082
+I (30291) kidpal_rn: voice ended -> restore KidPal home
+I (39451) SystemInfo: free sram: 73431 minimal sram: 72839
+W (39501) AudioService: Audio testing queue is full, stopping audio testing
+I (39501) AudioService: Disabling audio testing
+I (47451) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (47451) AudioService: Disabling audio testing
+I (47451) StateMachine: State: audio_testing -> wifi_configuring
+I (47531) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=47332
+I (47531) kidpal_rn: voice ended -> restore KidPal home
+I (54731) AudioCodec: Set input enable to false
+I (57451) SystemInfo: free sram: 94275 minimal sram: 72383
+I (62731) AudioCodec: Set output enable to false
+I (67451) SystemInfo: free sram: 95291 minimal sram: 72383
+I (77451) SystemInfo: free sram: 95291 minimal sram: 72383
+I (87451) SystemInfo: free sram: 95279 minimal sram: 72383
