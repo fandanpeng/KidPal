@@ -608,6 +608,19 @@ int kidpal_story_counter(const kidpal_story_list_t *list)
 
 /* -------------------------------------------------------------------------- *
  * kidpal_story_text_parse — P3-A5 (契约 §1.3 ④)
+ *
+ * 栈纪律（包 260829-hardware-validation 真机语音轮 2 修复，勿回退）：本函数被
+ * mcp kidpal/display 的 story_text 路由直接调用，整条链跑在 esp-ml307 的
+ * `ssl_receive` 任务上（managed_components/78__esp-ml307/src/esp/esp_ssl.cc:62
+ * xTaskCreate 栈 = 4096 字节，第三方件不可抬）。故此处**直接解析进 out**（out 由
+ * 调用方提供、本就是同一块 sizeof(kidpal_story_text_t)=2208B 内存），不再另设等大的
+ * id/title/text 局部缓冲——旧写法在同一条 4096B 栈上叠出 2208+2208 ≥ 4.4KB，即
+ * 「A stack overflow in task main / esp_timer」跨任务腐蚀复现的净根因。
+ * **禁止在本链新增大栈缓冲；大对象一律堆分配。**
+ *
+ * 语义与旧实现逐字等价（safe-truncate / 恒 NUL 结尾 / id·text 必为 string / 畸形
+ * 返回 -1 / 尾部垃圾检查）；唯一差别：失败路径 (-1) 下 out 可能被部分写入而非保持
+ * 原值——调用方拿到 -1 必须走显式降级、绝不消费 out（与本文件头降级纪律一致）。
  * ------------------------------------------------------------------------ */
 
 int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
@@ -615,16 +628,14 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
     ksy_cursor c;
     int has_id = 0;
     int has_text = 0;
-    char id_buf[64];
-    char title_buf[96];
-    char text_buf[2048];
 
     if (data_json == NULL || out == NULL) {
         return -1;
     }
-    id_buf[0] = '\0';
-    title_buf[0] = '\0';
-    text_buf[0] = '\0';
+    /* 三字段就地初始化（缺 title 容错为 ""），解析直接写入 out 的对应成员。 */
+    out->id[0] = '\0';
+    out->title[0] = '\0';
+    out->text[0] = '\0';
 
     c.s = data_json;
     c.pos = 0;
@@ -655,7 +666,7 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
             if (ksy_peek(&c) != '"') {
                 return -1; /* id 必为 string（回听键, render-critical） */
             }
-            if (!ksy_string(&c, id_buf, sizeof(id_buf))) {
+            if (!ksy_string(&c, out->id, sizeof(out->id))) {
                 return -1;
             }
             has_id = 1;
@@ -663,7 +674,7 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
             if (ksy_peek(&c) != '"') {
                 return -1; /* text 必为 string（正文, render-critical） */
             }
-            if (!ksy_string(&c, text_buf, sizeof(text_buf))) {
+            if (!ksy_string(&c, out->text, sizeof(out->text))) {
                 return -1;
             }
             has_text = 1;
@@ -671,7 +682,7 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
             if (ksy_peek(&c) != '"') {
                 return -1; /* title 若出现须为 string（缺省才容错为 ""） */
             }
-            if (!ksy_string(&c, title_buf, sizeof(title_buf))) {
+            if (!ksy_string(&c, out->title, sizeof(out->title))) {
                 return -1;
             }
         } else {
@@ -699,9 +710,8 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
     if (!has_id || !has_text) {
         return -1; /* id/text 是 render-critical 必带字段 */
     }
-    ksy_copy_str(out->id, sizeof(out->id), id_buf);
-    ksy_copy_str(out->title, sizeof(out->title), title_buf); /* 缺 title -> "" */
-    ksy_copy_str(out->text, sizeof(out->text), text_buf);
+    /* out->id / out->title / out->text 已由 ksy_string 就地 safe-truncate + NUL
+     * 终止写入（缺 title 保持上文的 "" 初始化）；无中段缓冲、无二次拷贝。 */
     return 0;
 }
 
@@ -1057,6 +1067,58 @@ static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t co
     lv_obj_set_style_text_color(l, lv_color_hex(color), 0);
 }
 
+/*
+ * 换皮消费接线 (包 9b HWV-A6)：盖章帧「pose-jump 定格」(spec S-F2.4 / p3-stamp 三件套
+ * 「双圈印章 + 文案 + pose-jump」) 的真机位图接入。经 U 单一资产层 loader
+ * (kidpal_art_load + kidpal_art_pixel) 把 pose_jump_96 KAP1 合成成一枚 ARGB8888
+ * lv_image_dsc (墨=不透明黑 / 纸及非阈值化=透明)，返回其描述符；不可用则 NULL。
+ * 单槽 loader 缓存在本函数内即时拷进自建像素缓冲后即释放引用，故与其它页的 reload 无冲突。
+ * 只画在 STAMP 页右下角 (rings 收在 x<270、文案 y=190 之左) 的确定空白区，几何与载荷无关，
+ * 不改 story_p3 盖章齿 (该齿只断言 stamp != recording)；未 mount / 加载失败 -> NULL,
+ * 页面回既有矢量双圈印章 + 文案 (best-effort 降级, 不崩)。
+ */
+#define KSTORY_POSE_MAX 96
+static lv_image_dsc_t s_kstory_pose_dsc;
+static uint32_t      *s_kstory_pose_px = NULL;
+static int            s_kstory_pose_st = 0; /* 0=未试 1=可用 2=不可用 */
+
+static const lv_image_dsc_t *kstory_pose_jump_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_kstory_pose_st == 2) {
+        return NULL;
+    }
+    if (s_kstory_pose_st == 1) {
+        return &s_kstory_pose_dsc;
+    }
+    if (kidpal_art_load("pose_jump_96.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > KSTORY_POSE_MAX || img.h > KSTORY_POSE_MAX) {
+        s_kstory_pose_st = 2;
+        return NULL;
+    }
+    s_kstory_pose_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (s_kstory_pose_px == NULL) {
+        s_kstory_pose_st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_kstory_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_kstory_pose_dsc, 0, sizeof(s_kstory_pose_dsc));
+    s_kstory_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_kstory_pose_dsc.header.w      = img.w;
+    s_kstory_pose_dsc.header.h      = img.h;
+    s_kstory_pose_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_kstory_pose_dsc.data          = (const uint8_t *)s_kstory_pose_px;
+    s_kstory_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_kstory_pose_st = 1;
+    return &s_kstory_pose_dsc;
+}
+
 int kidpal_story_page_render(const kidpal_story_view_t *v,
                              const kidpal_story_list_t *list,
                              const kidpal_story_text_t *story)
@@ -1178,31 +1240,57 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         }
         case KSTORY_PAGE_STAMP: {
             char txt[64];
+            kidpal_story_stamp_spec_t spec;
+            int r;
+            int rot;
             lv_obj_t *ring;
-            /* 双圈印章（外实内虚的几何由 stamp_spec 冻结；绘制按 1bpp 圆环）。 */
-            ring = lv_obj_create(scr);
-            lv_obj_remove_style_all(ring);
-            lv_obj_set_size(ring, 140, 140);
-            lv_obj_set_pos(ring, LV_HOR_RES / 2 - 70, 40);
-            lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
-            lv_obj_set_style_border_width(ring, 6, 0);
-            lv_obj_set_style_border_color(ring, lv_color_hex(KSY_COLOR_INK), 0);
-            lv_obj_set_style_border_opa(ring, LV_OPA_COVER, 0);
-            lv_obj_set_style_bg_opa(ring, LV_OPA_TRANSP, 0);
-            {
-                lv_obj_t *ring2 = lv_obj_create(scr);
-                lv_obj_remove_style_all(ring2);
-                lv_obj_set_size(ring2, 108, 108);
-                lv_obj_set_pos(ring2, LV_HOR_RES / 2 - 54, 56);
-                lv_obj_set_style_radius(ring2, LV_RADIUS_CIRCLE, 0);
-                lv_obj_set_style_border_width(ring2, 2, 0);
-                lv_obj_set_style_border_color(ring2, lv_color_hex(KSY_COLOR_INK), 0);
-                lv_obj_set_style_border_opa(ring2, LV_OPA_COVER, 0);
-                lv_obj_set_style_bg_opa(ring2, LV_OPA_TRANSP, 0);
+            /* 盖章几何单源 = 冻结契约 kidpal_story_stamp_spec（rings / 斜盖角 / 内虚 /
+             * 定格时长）。渲染面必须经此消费，不得在绘制处硬编码第二套几何
+             * （渲染↔契约漂移 = 双源风险；spec S-F2.4；HWV-A9 生产接线齿）。 */
+            if (kidpal_story_stamp_spec(&spec) != 0) {
+                /* 防御（out 恒合法 -> 不触发）：兜底取冻结常量，绝不用第二处魔法数。 */
+                spec.rings = 2;
+                spec.inner_dashed = 1;
+                spec.angle_deci = KSTORY_STAMP_ANGLE_DECI;
+                spec.hold_ms = KSTORY_STAMP_HOLD_MS;
             }
+            rot = ((spec.angle_deci % 3600) + 3600) % 3600; /* LVGL9 rotation 单位 0.1°，负角归一 */
+            for (r = 0; r < spec.rings && r < 2; r++) {
+                /* 双圈印章：外圈实线、内圈按 spec.inner_dashed 取细线变体（1bpp 圆环）。 */
+                int is_inner = (r == spec.rings - 1);
+                int sz = is_inner ? 108 : 140;
+                ring = lv_obj_create(scr);
+                lv_obj_remove_style_all(ring);
+                lv_obj_set_size(ring, sz, sz);
+                lv_obj_set_pos(ring, LV_HOR_RES / 2 - sz / 2, 40 + (is_inner ? 16 : 0));
+                lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
+                lv_obj_set_style_border_width(ring, (is_inner && spec.inner_dashed) ? 2 : 6, 0);
+                lv_obj_set_style_border_color(ring, lv_color_hex(KSY_COLOR_INK), 0);
+                lv_obj_set_style_border_opa(ring, LV_OPA_COVER, 0);
+                lv_obj_set_style_bg_opa(ring, LV_OPA_TRANSP, 0);
+                /* 斜盖 -8°（spec.angle_deci=-80 -> rotation=-80 单位 0.1°）绕圈心。 */
+                lv_obj_set_style_transform_pivot_x(ring, sz / 2, 0);
+                lv_obj_set_style_transform_pivot_y(ring, sz / 2, 0);
+                lv_obj_set_style_transform_rotation(ring, rot, 0);
+            }
+            /* minimal: 内圈真实虚线（border dash pattern）在本 LVGL9 无 obj 便捷 setter，
+             * 暂以线宽变体表意「外实内虚」，1bpp 网点虚线观感 + hold_ms 定格时长由显示
+             * 循环/真机观感殿后 9b（几何数值 rings/angle_deci/inner_dashed 已单源消费）。 */
             /* 盖章文案（N 与计数器同步不变式）。 */
             if (kidpal_story_stamp_text(v, txt, sizeof(txt)) == 0) {
                 ksy_label(scr, txt, LV_HOR_RES / 2 - 90, 190, KSY_COLOR_TEXT);
+            }
+            /* pose-jump 定格位图 (p3-stamp 三件套之一, spec S-F2.4)：经资产层 loader
+             * 合成、右下角确定空白区 (rings 收在 x<270、文案 y=190 之左 -> 不遮不变量)。
+             * 不可用时静默降级, 双圈 + 文案仍在。 */
+            {
+                const lv_image_dsc_t *pd = kstory_pose_jump_dsc();
+                if (pd != NULL) {
+                    lv_obj_t *pi = lv_image_create(scr);
+                    lv_image_set_src(pi, pd);
+                    lv_obj_set_pos(pi, LV_HOR_RES - (int)pd->header.w - 8,
+                                   LV_VER_RES - (int)pd->header.h - 8);
+                }
             }
             break;
         }

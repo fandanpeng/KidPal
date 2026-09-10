@@ -54,6 +54,10 @@ set(SOURCES "audio/audio_codec.cc"
             # loader + 渲染原语), 纯逻辑零芯片依赖 -> host_app linux target 同源 (接线在
             # host_app); 设备侧 esp spiffs VFS 注册放芯片装配层, 本模块只收 mount root。
             "display/art_assets.c"
+            # 设备渲染节点 (包 9b HWV-A6 收口): host_infra_render_p1_frame 强符号 +
+            # 4 页 LVGL 屏驱动 (KidPal 专属 s_kidpal_scr)，与 xiaozhi SetupUI 共存。
+            # 不进入 host 构建 (host_app CMakeLists 不含本文件，与 char_page.cc 同理)。
+            "display/kidpal_render_node.cc"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
@@ -973,15 +977,16 @@ else()
     message(STATUS "Assets partition not found, using v1 partition table")
 endif()
 
-# U 包 (260901-ui-art-integration) assets 分区 SPIFFS 镜像接线 (BUILDER DUTY 3)。
-# 落地面 = firmware/main/assets/spiffs_root/（47 枚 KAP1 闭集，见
-# firmware/main/test/ui_art_integration.acceptance.c 的 artt_expected[] 表）。
-# 既有 CONFIG_FLASH_DEFAULT_ASSETS / CONFIG_FLASH_CUSTOM_ASSETS 已用
-# esptool_py_flash_to_partition 烧此 assets 分区（不同二进制格式）——为不静默双写，
-# 此处仅在两者均未启用时才以此目录接管 assets 分区为 SPIFFS 镜像；并存冲突已上报
-# planner 裁定，未静默双写。真机 SPIFFS 烧录殿后 9b。
-if("${size}" AND "${offset}" AND
-   NOT CONFIG_FLASH_DEFAULT_ASSETS AND NOT CONFIG_FLASH_CUSTOM_ASSETS)
-    spiffs_create_partition_image(assets FLASH_IN_PROJECT
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/spiffs_root")
+# 包 9b (260829-hardware-validation) ART-E2 收口：KAP1 美术资产落地为独立 SPIFFS 分区
+# `art`（分区表 firmware/partitions/v2/16m.csv 新增 art,data,spiffs,0x780000,0x80000）。
+# 不写 assets——assets 归 CONFIG_FLASH_DEFAULT_ASSETS 的 mmap 镜像（字体/声音/P1 现网
+# 资源，二进制格式不同，不可双写）。此规则始终生效（写独立 art 分区，无并存冲突），
+# 去掉旧「NOT CONFIG_FLASH_DEFAULT_ASSETS」互斥休眠门。spiffs_create_partition_image
+# 依 IDF 签名 <partition> <base_dir> [FLASH_IN_PROJECT] 生成 build/art.bin（spiffsgen），
+# FLASH_IN_PROJECT 令其接进 flash 目标（esptool 烧至 0x780000）。单一源目录
+# firmware/main/assets/spiffs_root/（47 枚 KAP1 闭集，见 ui_art_integration ART-A2
+# artt_expected[]）不重造。设备侧 boards/waveshare-s3-rlcd-4.2 的 InitializeArt 以
+# esp_vfs_spiffs_register(base_path="/art", partition_label="art") 注册 VFS 供 loader 取用。
+if("${size}" AND "${offset}")
+    spiffs_create_partition_image(art "${CMAKE_CURRENT_SOURCE_DIR}/assets/spiffs_root" FLASH_IN_PROJECT)
 endif()

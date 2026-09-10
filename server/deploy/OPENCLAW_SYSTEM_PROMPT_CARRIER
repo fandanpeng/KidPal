@@ -3,15 +3,18 @@
 本文件是 deploy overlay 对 `openclaw-system-prompt` 版本化 artifact 的**显式接线声明**，
 使「落盘 ≠ 孤儿文件」这一链路可被冻结验收 `test_e4_system_prompt_wired_into_deploy_overlay`
 （其 corpus 只读本目录**无扩展名**文件）机械断言。真实渲染由同名外壳脚本
-`apply-xiaozhi-overlay.sh` 完成（把 `openclaw-system-prompt.v3.md` 拷到 ECS
+`apply-xiaozhi-overlay.sh` 完成（把 `openclaw-system-prompt.v4.md` 拷到 ECS
 `data/` 与 `.config.yaml` 同目录）。
 
-- artifact（生成唯一来源）：`openclaw-system-prompt.v3.md`（当前冻结版本化文件，
-  v3；**并集版**——260829-story-p3 起在 v2 基础结构上追加故事 producer 扩展（我要讲故事→
-  start_recording / 停录整段转写起标题出 story_text / V31 四条回退 / story_list.total
-  全集计数），260829-schedule-reminder 包 7 / RMD-A8 起在同一 v3 上把「包 7 — 提醒备注解析
-  约定」占位展开为正式约定（备注列携带物判定 + entry_key 对齐 + 三档范围 + cron 回合与对话
-  回合职责分界）；两包扩展段并存，v1/v2 文件不改、可 diff。
+- artifact（生成唯一来源）：`openclaw-system-prompt.v4.md`（当前冻结版本化文件，v4）。
+  v4 = 在 v3 并集版之上叠加 260829-hardware-validation 的 **F4 故事分工修正**：故事停录
+  回合里模型**一回合只起一个 ≤12 字中文标题（title）**，`story_text` 的整段正文（text）与
+  id 一律由云侧网关 `story.py`（`archive_story` 落盘 → `story_text` 组块）填充并下发；删去
+  旧版让模型逐字搬运整段转写正文的缺陷表述。**v3 及其下 v1/v2 基座语义逐字保留、可 diff。**
+  （v3 并集版沿革：260829-story-p3 故事 producer 扩展〔我要讲故事→start_recording /
+  停录起标题出 story_text / V31 四条回退 / story_list.total 全集计数〕+ 260829-schedule-reminder
+  包 7 / RMD-A8 提醒备注解析约定〔备注列携带物判定 + entry_key 对齐 + 三档范围 + cron/对话
+  回合职责分界〕，两包扩展段并存。）
   （并集成因 = 两并行包各写了一份 `.v3.md` 抢同一槽位，add/add 冲突；按 human 授权
   pod-events `dc9a5c15` 与 planner 预登记规则取并集而非单边——单边取 main 会让包 7 约定
   静默消失且旧 carrier 齿仍绿。同包新齿
@@ -19,10 +22,11 @@
   ARQ-260908-versioned-artifact-slot-collision。）
 - 历史版本：`openclaw-system-prompt.v1.md`（260829-voice-roundtrip 基座）→
   `openclaw-system-prompt.v2.md`（260829-schedule-p2 + 260829-char-stroke 合并版）→
-  `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版）
+  `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版）→
+  `openclaw-system-prompt.v4.md`（260829-hardware-validation：F4 故事分工修正，v3 基座逐字保留）
 - 声明面：`provider.config.yaml`（`system_prompt.deploy_target` + 同文件的
   `reminder_config` 三档阶梯配置声明）
-- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v3.md`；
+- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v4.md`；
   同批渲染 `openclaw-reminder.config.yaml` 并铺 `openclaw-patch/reminder_schedule_lib.py`）
 - 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
   生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉

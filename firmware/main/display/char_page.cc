@@ -17,6 +17,7 @@
 #include "char_page.h"
 
 #include "char_stroke.h"
+#include "art_assets.h"
 
 #include <cJSON.h>
 #include <lvgl.h>
@@ -309,6 +310,78 @@ static void charpage_timer_cb(lv_timer_t *timer)
     (void)phase;
 }
 
+/* ------------------------------------------------------------------------- *
+ * 换皮消费接线 (包 9b HWV-A6)：P4 田字格大框 (frm_236_236) 真机位图接入。
+ *
+ * char_page.cc 是设备装配面（非 host 编译），故这里的 loader 消费不影响 host 端
+ * char_stroke 纯逻辑齿，也不触发 U B8 逐笔演示守卫（B8 只扫 char_stroke.c）。
+ * 经 U 单一资产层 loader (kidpal_art_load + kidpal_art_pixel) 把田字格大框 KAP1 合
+ * 成一枚 ARGB8888 lv_image_dsc（墨=不透明黑、纸/非阈值化=透明），叠在米字格画布外圈
+ * 作静态 chrome —— 示范字本身仍走 kidpal_char_raster_stroke 数据光栅路径（教学字体
+ * 红线 CHR-A7：绝不以整帧预烘焙位图替换逐笔演示）。未 mount / 加载失败 -> 静默降级，
+ * 画布既有灰边框 + 米字格引导线仍在。
+ *
+ * 为何 P4 的资产消费落在此 .cc 装配面而非 char_stroke.c：char_stroke.c 是 U 冻结的纯
+ * 逻辑合约，B8 守卫禁止其引 loader；而参数化整帧缝 (draw_nine_slice/draw_dots) 会把
+ * art_assets.c 的整帧 g_fb[400x300] (~480KB 静态) 拖进设备 .dram0.bss（且设备端该缝
+ * 为弱默认 no-op，真机渲染节点殿后本包）——直接撑爆 ESP32-S3 内部 RAM。故 P4 只走
+ * loader→lv_image 的设备真实通路，既消费单一资产层、又不引整帧 g_fb。
+ * ------------------------------------------------------------------------ */
+#define CHARPAGE_FRAME_W 236
+static lv_image_dsc_t s_cp_frame_dsc;
+static uint32_t      *s_cp_frame_px = NULL;
+static int            s_cp_frame_st = 0; /* 0=未试 1=可用 2=不可用 */
+
+static const lv_image_dsc_t *charpage_art_frame_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_cp_frame_st == 2) {
+        return NULL;
+    }
+    if (s_cp_frame_st == 1) {
+        return &s_cp_frame_dsc;
+    }
+    if (kidpal_art_load("frm_236_236.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > CHARPAGE_FRAME_W || img.h > CHARPAGE_FRAME_W) {
+        s_cp_frame_st = 2;
+        return NULL;
+    }
+    s_cp_frame_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (s_cp_frame_px == NULL) {
+        s_cp_frame_st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_cp_frame_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_cp_frame_dsc, 0, sizeof(s_cp_frame_dsc));
+    s_cp_frame_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_cp_frame_dsc.header.w      = img.w;
+    s_cp_frame_dsc.header.h      = img.h;
+    s_cp_frame_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_cp_frame_dsc.data          = (const uint8_t *)s_cp_frame_px;
+    s_cp_frame_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_cp_frame_st = 1;
+    return &s_cp_frame_dsc;
+}
+
+static void charpage_art_overlay(void)
+{
+    const lv_image_dsc_t *fr = charpage_art_frame_dsc();
+
+    if (fr != NULL) {
+        /* 框住米字格画布 (canvas: x 4..212 / y 8..216)；236 框锚 (0,4) 完整入屏。
+         * 后建于 canvas -> z 序在上，透明内芯只显外圈墨边（框）不遮示范字。 */
+        lv_obj_t *fim = lv_image_create(g_page.scr);
+        lv_image_set_src(fim, fr);
+        lv_obj_set_pos(fim, 0, 4);
+    }
+}
+
 void kidpal_char_page_replay(void)
 {
     g_page.elapsed_ms = 0; /* KEY 短按重播: 从第一笔重新逐笔 (S-F3.3) */
@@ -363,6 +436,9 @@ void kidpal_char_page_show(const char *data_json)
         charpage_draw_grid(CHARPAGE_CANVAS_SIZE);
         charpage_render_frame(-1, 0);
     }
+
+    /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
+    charpage_art_overlay();
 
     /* 右栏速查卡: 拼音带声调 + 共 N 画 + 进度 + 部首 + 组词 (数据面委托
      * kidpal_char_card_build 装配语义, 页面呈现) */

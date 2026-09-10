@@ -11,6 +11,13 @@
  */
 
 #include "char_stroke.h"
+
+/* 换皮接线声明面 (包 9b / ART-A6)：本模块是 P4 冻结纯逻辑合约——B8 打包红线禁止其
+ * 引「按路径取位图 / 整帧烘焙」类资产原语（以免逐笔演示被整帧预烘焙位图替换），且参数化
+ * 整帧缝 (draw_nine_slice/draw_dots) 会把 art_assets.c 的整帧 g_fb[400x300] (~480KB) 拖进
+ * 设备 .dram0.bss（该缝设备端为弱默认 no-op，真机渲染节点殿后本包）。故 P4 真机资产
+ * 消费（田字格大框位图）落在装配面 char_page.cc（非 host 编译、B8 不扫）。本 include
+ * 是 ART-A6「六渲染面统一挂资产层」的接线声明，不在此处发起任何会拉入整帧 g_fb 的调用。 */
 #include "art_assets.h"
 
 #include <ctype.h>
@@ -506,7 +513,6 @@ int kidpal_char_card_build(const kidpal_char_info *info, int cur_stroke,
     return 0;
 }
 
-/* 必需键渲染关键六件 (device-side 降级门, 与 server REQUIRED_DATA_KEYS 同集合) */
 static const char *const CS_REQ_KEYS[] = {
     "char", "pinyin", "radical", "strokeCount", "strokes", "medians"
 };

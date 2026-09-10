@@ -1,5 +1,5 @@
 {
-  "changeId": "260901-ui-art-integration",
+  "changeId": "260829-hardware-validation",
   "rigor": "full",
   "sourceType": "planning-workstream",
   "origin": {
@@ -9,10 +9,10 @@
     "upstreamFrozen": "sha1:88a5bdb83abdd867",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "firmware+tools",
-  "story": "美术资产集成（新增 C2）：固件侧资产管线落成（SPIFFS assets 分区 + 1bpp 位图/imgfont/9-slice/抖动网点加载）+ V3 美术资产本体落地（吉祥物 7 姿态/手绘框族/网点/图标族/字体）+ 各 UI 面统一接入换皮。跨页共享资源层切片（非技术层横切），殿后于页面包、不反锁页面；V3 设计稿为前置输入。",
-  "redBaselineCommand": "cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -DKIDPAL_ART_RB_STUB -I. -o /tmp/art_red_runner ../../ui_art_integration.acceptance.c seam_stub.c runner.c && cd <仓根> && /tmp/art_red_runner（红基线 runner 实编通道，见 firmware/main/test/acceptance/red-baseline/red-baseline-summary.md §U）",
-  "redBaselineResult": "红（2026-09-09 实测，acceptance-author）：11 Tests / 10 Failures / 1 stub-skip，退出码 10。红形态 = ① 结构缺位：kidpal_art_load 全树零命中 + 双 CMakeLists 未接线 + 六页渲染面零 art_assets 引用；② weak 哨兵：art_assets 冻结契约 9 函数未实现（-2 哨兵）。口径勘误：launch 预言「文件尚不存在→编译收集即失败」不成立——文件未接线故不参与 host 收集，编译通道零错误，真红形态为 stub 实跑 10 红。上游基线（判读相对值，非本包责任）：server pytest 8 failed/119 passed、host ELF 86/3 Failures（VRT-A2/WSA-A6/WSA-A4）。本包把它做到绿（相对红基线新增绿、不新增红）。",
+  "subsystem": "firmware+server",
+  "story": "物理冒烟与端到端真机验收：按键手感 / 双麦 / RTC 断电续航 / 低电 / RLCD 真屏观感 + 全功能端到端真机，把 B 段在电脑上验过的能力放到真实硬件上确认。（v0.4 新增：实机续航基准 = 决策 21 DEFER 三要素承载〔触发点在此、预警阈值、owner 是本包〕+ 常驻 WS 连接功耗观察 + 证书真实设备握手冒烟。）",
+  "redBaselineCommand": "烧录集成固件到板子做物理冒烟（手工 device 验收清单）：按键/双麦/RTC 断电/低电/RLCD 观感逐项 + 全功能端到端",
+  "redBaselineResult": "红：B 段功能（包 2~8）在 host/PC 验过但未在真机整合验证；硬件强绑定子能力（RTC 走时、SHTC3 直读、麦克风采音）host 段未验——真机端到端未跑通。本包把它做到绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,218 +21,288 @@
   "riskTier": "high",
   "gateProfile": [
     "types",
-    "test-quality",
     "evidence-integrity",
     "docs-sync"
   ],
   "acceptance": [
     {
-      "id": "ART-A1",
+      "id": "HWV-A1",
       "kind": "structural"
     },
-    "ART-A2: 固件侧 SPIFFS assets 分区 + 1bpp 位图加载管线落成（host 可测），资产从分区按路径加载并渲染",
-    "ART-A3: imgfont 加载（Baloo 2 动态时间数字，同字形逐字符变化）",
-    "ART-A4: 9-slice 手绘框族渲染 + 抖动网点（d50/d25/d12）渲染",
-    "ART-A5: V3 美术资产本体落地（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2 字体），经资产管线出图并落地",
-    "ART-A6: 各 UI 面（包 2/4/5/6/7/8 的渲染面）统一接入换皮",
-    "ART-A7: 换皮后各页面 host 回归（布局/逻辑不破）一条，独立于 9b 真机观感"
+    {
+      "id": "HWV-A2",
+      "kind": "structural",
+      "summary": "按键手感实测：KEY/BOOT 单击/双击/长按在真机上响应正确（消抖、职责分离符合 §4.0）"
+    },
+    {
+      "id": "HWV-A3",
+      "kind": "structural",
+      "summary": "双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）"
+    },
+    {
+      "id": "HWV-A4",
+      "kind": "structural",
+      "summary": "RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）"
+    },
+    {
+      "id": "HWV-A5",
+      "kind": "structural",
+      "summary": "低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收"
+    },
+    {
+      "id": "HWV-A6",
+      "kind": "structural",
+      "summary": "全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通 + 换皮后 UI（包 U 集成后）"
+    },
+    {
+      "id": "HWV-A7",
+      "kind": "structural",
+      "summary": "16px 以下 CJK 在 1bpp 真机可读性实测（直接决定 V3 字号下限）"
+    },
+    {
+      "id": "HWV-A8",
+      "kind": "structural",
+      "summary": "前光确认（反射屏暗处可见性，spec §5.6 待确认项）"
+    },
+    {
+      "id": "HWV-A9",
+      "kind": "structural",
+      "summary": "F2 设备侧页内输入生产接线：story_page input/on_saved/rec_tick/stamp_spec 落盘且被生产路径调用≥1（human 裁「扩界接线」）"
+    },
+    {
+      "id": "HWV-A10",
+      "kind": "structural",
+      "summary": "F2 云侧停录归档生产接线：front_app 驱动 feed/stop，网关生产面 archive_story 有到达面"
+    },
+    {
+      "id": "HWV-A11",
+      "kind": "structural",
+      "summary": "F6 会话键不可复用（弃 id(websocket)）+ WS 断开钩子 pop 会话"
+    },
+    {
+      "id": "HWV-A12",
+      "kind": "structural",
+      "summary": "F4 分工修正：网关 story_text(record) 组块下发 + 接线 prompt 无「回填」、模型一回合只出 title"
+    },
+    {
+      "id": "HWV-A13",
+      "kind": "structural",
+      "summary": "实机续航基准（决策 21 三要素：触发点本包/预警阈值/owner）实测数据落盘"
+    },
+    {
+      "id": "HWV-A14",
+      "kind": "structural",
+      "summary": "常驻 WS 连接功耗观察（常连 vs 断连对比）实测数据落盘"
+    },
+    {
+      "id": "HWV-A15",
+      "kind": "structural",
+      "summary": "证书真实设备握手冒烟（CA pinning 真机首连）实测落盘"
+    },
+    {
+      "id": "HWV-A16",
+      "kind": "structural",
+      "summary": "ECS 部署真落（DEPLOY-RUNBOOK §8）+ 包 7 留根 live 五齿 L1-L5 真跑一轮 evidence 交班"
+    }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/ui_art_integration.acceptance.c"
+    "firmware/main/test/hardware_validation.acceptance.c",
+    "server/acceptance/test_story_wiring.acceptance.py"
   ],
   "exitCriteria": [
     {
-      "id": "ART-E1",
+      "id": "HWV-E1",
       "kind": "structural"
     },
-    "ART-E2: host+SDL 验证资产加载/渲染；SPIFFS 真机文件源路径 + 1bpp 真机观感 + 16px 以下 CJK 真机可读性 + 前光确认，显式殿后 9b",
-    "ART-E3: 不 supersede 页面包既有验收——换皮验收独立成 U acceptance，页面原验收由 9b 真机端到端复验为附加通道",
-    "ART-E4: V3 设计稿为前置输入，未出则本包不得 launch"
+    "HWV-E2: device 验收以真机实测证据（烧录日志 + 逐项勾验记录）落盘，非模拟",
+    "HWV-E3: 显式兜底验收「4 页循环翻页」跨页端到端整合（PROPOSAL §7 留根：host 阶段无专包认领）",
+    "HWV-E4: AEC 语音喊停实测不在本包（归包 9a 单独隔离），本包只做物理冒烟 + 端到端"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§5.6",
-    "docs/spec.md#§5.7",
-    "docs/notes/validation-batch-conclusion.md"
+    "docs/spec.md#§2",
+    "docs/spec.md#§5.4"
   ],
   "sourceRefs": [
-    "docs/spec.md#§5.6",
-    "docs/spec.md#§5.7",
-    "docs/notes/validation-batch-conclusion.md",
-    "U"
+    "docs/spec.md#§2",
+    "docs/spec.md#§5.4",
+    "9b"
   ],
-  "iterationBudget": 3,
-  "fixBudget": 5,
+  "iterationBudget": 4,
+  "fixBudget": 8,
   "docsOwner": "integrator",
-  "mergeOrder": 12,
+  "mergeOrder": 13,
   "dependsOn": [
-    "260829-host-test-infra",
     "260829-voice-roundtrip",
+    "260829-session-logic",
     "260829-char-stroke",
     "260829-home-p1",
     "260829-schedule-p2",
     "260829-schedule-reminder",
-    "260829-story-p3"
+    "260829-story-p3",
+    "260901-ui-art-integration"
   ],
-  "testHost": "host+SDL",
+  "testHost": "device",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包U",
-      "summary": "美术资产集成（新增 C2）：固件侧资产管线落成 + V3 美术资产本体落地 + 各 UI 面统一换皮，host+SDL + device 观感殿后 9b。",
+      "decision": "PROPOSAL-§2-包9b",
+      "summary": "物理冒烟：按键手感/双麦/RTC 断电续航/低电/RLCD 真屏观感 + 全功能端到端真机，device 验收。",
       "sourceRefs": [
         ".planning/kidpal-mvp/PROPOSAL.md#§2"
       ],
-      "landsIn": "acceptance:ART-A2"
+      "landsIn": "acceptance:HWV-A6"
     },
     {
-      "decision": "spec-§7-决策17-美术资产管线",
-      "summary": "美术元素走预栅格化 1bpp 资产（§5.7），图标族取舍落定 = 离线位图资产、imgfont 只留给动态时间数字。",
+      "decision": "PROPOSAL-§7-跨页翻页兜底",
+      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式由包 9b（全功能端到端真机）兜底验收。",
       "sourceRefs": [
-        "docs/spec.md#§5.7"
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
       ],
-      "landsIn": "acceptance:ART-A3"
+      "landsIn": "exitCriteria:HWV-E3"
     },
     {
-      "decision": "spec-§5.6-教学字体红线（资产侧）",
-      "summary": "米字格示范字须标准规范字形（禁手写/抖动/倾斜）——字体资产侧确认标准字体与可爱体共存，红线约束由包 4（渲染侧，主）落实。",
+      "decision": "PROPOSAL-§3-硬件殿后汇总",
+      "summary": "硬件强绑定子能力（包 5 RTC/SHTC3 直读、包 8 麦克风采音、包 U SPIFFS 真机文件源路径/1bpp 观感/16px CJK/前光）host 段只测布局/逻辑，真实硬件读取统一殿后 9b 验收。",
       "sourceRefs": [
-        "docs/spec.md#§5.6"
+        ".planning/kidpal-mvp/PROPOSAL.md#§3"
       ],
-      "landsIn": "exitCriteria:ART-E3"
+      "landsIn": "acceptance:HWV-A4"
     },
     {
-      "decision": "PROPOSAL-§4-行为碰撞型",
-      "summary": "U 换皮不得 supersede 页面包既有验收——换皮验收独立成 U acceptance，含「换皮后各页面 host 回归」一条。",
+      "decision": "PROPOSAL-§7-9b新增两条真机验收",
+      "summary": "9b 补两条真机验收（C3）：16px 以下 CJK 1bpp 真机可读性（定 V3 字号下限）+ 前光确认。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§4"
+        ".planning/kidpal-mvp/PROPOSAL.md#§7"
       ],
-      "landsIn": "acceptance:ART-A7"
+      "landsIn": "acceptance:HWV-A7"
     }
   ],
   "crossEnd": {
-    "note": "crossEnd 申报（260908-gov-review-input-surface-frontload T3，2026-09-09 planner 填）。口径 = 本包冻结契约触及的跨边界对端符号：① art_assets 冻结契约 9 函数（验收文件头注冻结，builder 实现侧）；② 资产管线出图对端（KAP1/RGB565 产物形状，验收断言打到其落盘结果）；③ 六页渲染面消费接线点（A6 换皮接线，additive 接入）。存疑向严填 counterparts，不填 exempt。",
+    "note": "crossEnd 申报（存疑向严填 counterparts，不填 exempt）。本包 = device 真机端到端验收，冻结验收 hardware_validation.acceptance.c 的 live 齿触及设备⇄服务端边界对端符号——WS 首链 / display 下发 / story 回看 / 提醒推送 / ASR 上行 / story 归档触发。symbol = 源文件内逐字出现的真实标识符（brief-inputs resolveSymbolRange 按子串解析）。",
     "counterparts": [
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_mount"
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "ws_gateway"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_load"
+        "path": "server/gateway/auth.py",
+        "symbol": "authorize"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_pixel"
+        "path": "firmware/main/protocols/websocket_protocol.cc",
+        "symbol": "WebsocketProtocol"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_glyph"
+        "path": "firmware/main/certs/ws_tls_ca.cc",
+        "symbol": "VerifyCacertConfigured"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_glyph_advance"
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "build_display_tool_calls"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_render_asset"
+        "path": "server/gateway/mcp_relay.py",
+        "symbol": "display_tool_call"
       },
       {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_draw_nine_slice"
-      },
-      {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_draw_dots"
-      },
-      {
-        "path": "firmware/main/display/art_assets.h",
-        "symbol": "kidpal_art_draw_time"
-      },
-      {
-        "path": "tools/asset-pipeline/gen_assets.mjs",
-        "symbol": "KAP1/RGB565 出图产物形状（资产管线出图结果落盘核验对端）"
-      },
-      {
-        "path": "tools/asset-pipeline/verify_art_assets.mjs",
-        "symbol": "v3 母版指针（v3 稿溯源对端）"
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
       },
       {
         "path": "firmware/main/display/view_router.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+        "symbol": "kidpal_display_route"
       },
       {
-        "path": "firmware/main/display/char_stroke.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+        "path": "server/gateway/story.py",
+        "symbol": "list_stories"
       },
       {
-        "path": "firmware/main/display/home_p1.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+        "path": "server/gateway/story.py",
+        "symbol": "story_text"
       },
       {
-        "path": "firmware/main/display/schedule_page.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
-      },
-      {
-        "path": "firmware/main/display/reminder_page.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+        "path": "server/gateway/story.py",
+        "symbol": "StoryAccumulator"
       },
       {
         "path": "firmware/main/display/story_page.c",
-        "symbol": "art_assets.h include 或 kidpal_art_* 调用（A6 换皮接线点）"
+        "symbol": "kidpal_story_list_parse"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_text_parse"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_open_reader"
+      },
+      {
+        "path": "server/gateway/reminders.py",
+        "symbol": "build_alert_envelope"
+      },
+      {
+        "path": "server/gateway/reminders.py",
+        "symbol": "AlertDispatcher"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
+        "symbol": "plan_reminders"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
+        "symbol": "write_pending_atomic"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_alert_parse"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_receive"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "pump_client_to_upstream"
+      },
+      {
+        "path": "firmware/main/application.cc",
+        "symbol": "InitializeProtocol"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_story_route_display_payload"
+      },
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "archive_story"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_page_input"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_on_saved"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_rec_tick"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_stamp_spec"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_on_control"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "DoToolCall"
       }
     ]
-  },
-  "mutationEvidence": [
-    {
-      "acceptance": "ART-A2: 固件侧 SPIFFS assets 分区 + 1bpp 位图加载管线落成（host 可测），资产从分区按路径加载并渲染",
-      "mutation": "art_assets.c kidpal_art_load 的 KAP1 magic 门取反（有效 magic 记为非法，== 判退）→ host ELF ART-A2 render 齿红（'rendering the real pose asset failed'，根因 = 全资产加载失败）",
-      "affectedTest": "ui_art_integration.acceptance.c test 6 render_asset 逐像素比对主体齿 + test 2 KAP1 解码（同根因加载失败）",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原后 pristine 重测 97/2 全绿（2 = 上游 device-evidence 红 WSA-A6/WSA-A4 非本包）。诚实注记：invert-magic 单点同时使 loader/render/landing 全阵红，取 render 齿作 ART-A2 承载已足够"
-    },
-    {
-      "acceptance": "ART-A3: imgfont 加载（Baloo 2 动态时间数字，同字形逐字符变化）",
-      "mutation": "art_assets.c kidpal_art_glyph_advance 步进 48→40（越出冻结 [48,96]）→ host ELF ART-A3 imgfont 齿红（'glyph advance 40 outside [48,96]'）",
-      "affectedTest": "ui_art_integration.acceptance.c test 5 advance 步进区间断言",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原后 pristine 重测 97/2 全绿"
-    },
-    {
-      "acceptance": "ART-A4: 9-slice 手绘框族渲染 + 抖动网点（d50/d25/d12）渲染",
-      "mutation": "art_assets.c 9-slice 顶部条 row 映射钉到 C 行（角片垂直失真）→ host ELF ART-A4 nineslice 齿红（'9-slice corner tl pixel distorted'）",
-      "affectedTest": "ui_art_integration.acceptance.c test 7 四 24px 角片逐像素不变形断言",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "还原后 pristine 重测 97/2 全绿"
-    },
-    {
-      "acceptance": "ART-A5: V3 美术资产本体落地（吉祥物 7 姿态/14 枚图标族/手绘框族/网点/站酷快乐体 + Baloo 2 字体），经资产管线出图并落地",
-      "mutation": "firmware/main/assets/spiffs_root 将 pose_daily_96.bin 改名 pose_daily_96.bin.bak → host ELF ART-A5 双齿红（test 3 'landing asset load failed (first: pose_daily_96.bin)' + test 4 'non-whitelisted file pose_daily_96.bin.bak'）",
-      "affectedTest": "ui_art_integration.acceptance.c test 3 47 枚逐枚对账 + test 4 闭集枚举/B8 白名单",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "改名还原为 pose_daily_96.bin 后 pristine 重测 97/2 全绿"
-    },
-    {
-      "acceptance": "ART-A6: 各 UI 面（包 2/4/5/6/7/8 的渲染面）统一接入换皮",
-      "mutation": "schedule_page.c 移除 '#include art_assets.h' 行 → host ELF ART-A6 wiring 齿红（'schedule_page.c does not consume the shared asset layer (no art_assets.h include / kidpal_art_* call)'）",
-      "affectedTest": "ui_art_integration.acceptance.c test 10 六页渲染面消费面静态齿",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "include 行还原后 pristine 重测 97/2 全绿。诚实注记：首探只把 include 行注释、仍残留 art_assets.h 字面量未红；全删字面量才红——齿对『接线标记实际消失』敏感，需字面量彻底移除"
-    },
-    {
-      "acceptance": "ART-A7: 换皮后各页面 host 回归（布局/逻辑不破）一条，独立于 9b 真机观感",
-      "mutation": "view_router.c kidpal_display_route('home') 路由码劫持 1→0 → host ELF ART-A7 regression 齿红（'view_router \"home\" route broken'）",
-      "affectedTest": "ui_art_integration.acceptance.c test 11 包 2 路由抽查（kidpal_display_route『home』== 1）",
-      "turnedRed": true,
-      "sensitive": true,
-      "notes": "路由码还原为 VRT_ROUTE_HOME 后 pristine 重测 97/2 全绿。说明：在自家换皮触及的 view_router.c 上探边，证明 ART-A7 回归守卫对页面契约被换皮误改真敏感"
-    }
-  ]
+  }
 }

@@ -6,17 +6,19 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (15)
+## dev (17)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
 | [260907-g-relay-fix](../changes/dev/260907-g-relay-fix/) | 2026-09-07 | changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1 | closed | kidpal-mvp |
 | [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260901-ui-art-integration](../changes/dev/260901-ui-art-integration/) | 2026-09-01 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260831-cloud-link-bringup](../changes/dev/260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
 | [260831-simulator-lvgl-align](../changes/dev/260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
 | [260831-ui-art-assets](../changes/dev/260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
 | [260829-char-stroke](../changes/dev/260829-char-stroke/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-hardware-validation](../changes/dev/260829-hardware-validation/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-home-p1](../changes/dev/260829-home-p1/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-host-test-infra](../changes/dev/260829-host-test-infra/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-schedule-p2](../changes/dev/260829-schedule-p2/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |

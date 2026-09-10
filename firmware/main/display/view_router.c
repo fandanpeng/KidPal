@@ -15,6 +15,21 @@
 #include "art_assets.h"
 #include <string.h>
 
+/* ---- 换皮消费接线殿后 (包 9b HWV-A6)：单一资产层挂载入口 ----
+ *
+ * kidpal_art_mount 是纯逻辑 (对 root 做 opendir，成功置内部 mounted 态)，本身
+ * 零芯片依赖、host 可编。真正把 KAP1 位图放到设备可读文件系统的步骤是
+ * esp_vfs_spiffs_register(分区 -> VFS base_path)，那一步属芯片装配层 (板级 .cc)
+ * ——见 art_assets.h 头注「设备侧 SPIFFS VFS 注册放芯片装配层、不进本模块」。
+ * 本函数只做「装配层把某个 VFS 根挂进资产层」这一动作，失败返回 -1 且**绝不 panic**：
+ * 后续 kidpal_art_load 在未 mounted 时自动返回 -1，各页降级回占位矩形 (best-effort)。
+ * 默认根 = 装配层约定路径；由板级在注册 SPIFFS 后调用（可传不同 root 供 host 测试注入）。
+ */
+int kidpal_display_art_mount(const char *root)
+{
+    return kidpal_art_mount(root);
+}
+
 int kidpal_display_route(const char *view)
 {
     /* NULL 防御：不崩、归降级路径 (V27 / 契约 §1.3 白名单之外即降级)。 */

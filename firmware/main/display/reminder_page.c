@@ -1052,6 +1052,56 @@ static void krm_pose_jump(lv_obj_t *parent, int32_t x, int32_t y, int32_t size)
     lv_obj_set_style_bg_opa(body, LV_OPA_COVER, 0);
 }
 
+/*
+ * 换皮消费接线 (包 9b HWV-A6)：真·吉祥物姿态位图接入。经资产层 loader
+ * (kidpal_art_load + kidpal_art_pixel) 把 pose_jump_96 KAP1 合成成一枚 ARGB8888
+ * lv_image_dsc (墨=不透明黑 / 纸及非阈值化=透明)，返回其描述符；不可用则 NULL。
+ * 弹窗左上角既有 krm_pose_jump 矢量占位（payload 无关、恒同），本位图叠加于同位
+ * 同尺寸 -> 不遮大字（卡右）、不压时间行（卡下），故 RMD-A5 的 diff（标题/时间随
+ * 载荷变）与 accum==0（重渲染恒同）两齿都不受影响；几何只依赖 payload 无关的
+ * card 尺寸 -> 确定性。未 mount / 加载失败 -> NULL，页面回矢量占位。
+ *
+ * 介质禁令 (RMD-A6/A7, 决策 24 哑终端纯洁性)：本模块「零动态分配、定长有界 RAM」。
+ * 故位图缓冲用编译期定长静态数组承载（pose 盒上界 KRM_POSE_BOX=96，96*96 像素），
+ * 绝不走堆。仅首次加载成功时填充一次、之后作为 lv_image 只读数据源长期驻留。
+ */
+#define KRM_POSE_BOX 96
+static lv_image_dsc_t s_krm_pose_dsc;
+static uint32_t       s_krm_pose_buf[KRM_POSE_BOX * KRM_POSE_BOX]; /* 定长、非堆 */
+static int            s_krm_pose_st = 0; /* 0=未试 1=可用 2=不可用 */
+
+static const lv_image_dsc_t *krm_pose_jump_bitmap_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_krm_pose_st == 2) {
+        return NULL;
+    }
+    if (s_krm_pose_st == 1) {
+        return &s_krm_pose_dsc;
+    }
+    if (kidpal_art_load("pose_jump_96.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > KRM_POSE_BOX || img.h > KRM_POSE_BOX) {
+        s_krm_pose_st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_krm_pose_buf[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_krm_pose_dsc, 0, sizeof(s_krm_pose_dsc));
+    s_krm_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_krm_pose_dsc.header.w      = img.w;
+    s_krm_pose_dsc.header.h      = img.h;
+    s_krm_pose_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_krm_pose_dsc.data          = (const uint8_t *)s_krm_pose_buf;
+    s_krm_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_krm_pose_st = 1;
+    return &s_krm_pose_dsc;
+}
+
 int kidpal_reminder_page_render(const kidpal_alert_t *a)
 {
     lv_obj_t *scr;
@@ -1112,6 +1162,25 @@ int kidpal_reminder_page_render(const kidpal_alert_t *a)
             pose = 24;
         }
         krm_pose_jump(card, 6, 6, pose);
+
+        /* 换皮消费接线 (包 9b HWV-A6)：真机把 pose_jump_96 KAP1 位图叠在矢量占位同位
+         * 同尺寸 (左上角、边长 pose)。几何只吃 payload 无关的 card_h -> 确定性；标题
+         * 在其右 (step 4 x=card_h/3+8)、时间在其下 (step 5 y=card_h*5/8)，均不被遮挡 ->
+         * RMD-A5 diff（随载荷变）与 accum==0（重渲染恒同）两齿不变。未 mount / 加载
+         * 失败 -> helper 返 NULL，保留矢量占位（best-effort 降级，不崩）。 */
+        {
+            const lv_image_dsc_t *pd = krm_pose_jump_bitmap_dsc();
+            if (pd != NULL) {
+                lv_obj_t *pi = lv_image_create(card);
+                lv_image_set_src(pi, pd);
+                lv_obj_set_pos(pi, 6, 6);
+                int32_t sc = (int32_t)((pose * 256) / pd->header.w);
+                lv_obj_set_style_transform_scale_x(pi, sc, 0);
+                lv_obj_set_style_transform_scale_y(pi, sc, 0);
+                lv_obj_set_style_transform_pivot_x(pi, 0, 0);
+                lv_obj_set_style_transform_pivot_y(pi, 0, 0);
+            }
+        }
     }
 
     /* 4) 大字事项（title，含要带的东西）—— 200% 缩放 = 「大字」；LVGL 9.3

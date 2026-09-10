@@ -1,0 +1,367 @@
+W (17632) Display: System time is not set, tm_year: 70
+W (18652) Display: System time is not set, tm_year: 70
+W (19642) Display: System time is not set, tm_year: 70
+W (20662) Display: System time is not set, tm_year: 70
+W (21652) Display: System time is not set, tm_year: 70
+W (22642) Display: System time is not set, tm_year: 70
+I (23462) I2S_IF: Pending out channel for in channel running
+I (23462) AudioCodec: Set output enable to false
+W (23672) Display: System time is not set, tm_year: 70
+W (24662) Display: System time is not set, tm_year: 70
+W (25652) Display: System time is not set, tm_year: 70
+W (26642) Display: System time is not set, tm_year: 70
+I (26642) SystemInfo: free sram: 75271 minimal sram: 63255
+W (27662) Display: System time is not set, tm_year: 70
+W (28652) Display: System time is not set, tm_year: 70
+W (29632) Display: System time is not set, tm_year: 70
+W (30642) Display: System time is not set, tm_year: 70
+W (31662) Display: System time is not set, tm_year: 70
+I (31872) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (31872) StateMachine: State: idle -> connecting
+I (31872) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (31882) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+E (41902) esp-tls: [sock=54] select() timeout
+E (41902) esp-tls: Failed to open new connection
+E (41902) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (41902) WebSocket: Failed to connect to server
+E (41912) WS: Failed to connect to websocket server, code=32774
+I (41912) StateMachine: State: connecting -> idle
+W (41922) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (41932) I2S_IF: Mode 0 need extend bits 64 to 32
+I (41932) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (41932) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (41962) Adev_Codec: Open codec device OK
+I (41962) AudioCodec: Set output enable to true
+I (41962) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (42442) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=42232
+I (42442) kidpal_rn: voice ended -> restore KidPal home
+I (44802) StateMachine: State: idle -> connecting
+I (44812) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (44812) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (45362) kidpal_rn: voice active -> show xiaozhi SetupUI (yield KidPal)
+E (54832) esp-tls: [sock=54] select() timeout
+E (54832) esp-tls: Failed to open new connection
+E (54832) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (54832) WebSocket: Failed to connect to server
+E (54842) WS: Failed to connect to websocket server, code=32774
+I (54842) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (54852) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (54852) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (54862) StateMachine: State: connecting -> idle
+W (54872) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (54872) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (54892) StateMachine: State: idle -> connecting
+I (54892) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (54892) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (56352) esp-x509-crt-bundle: Certificate validated
+I (58382) WS: Session ID: 66d8529e-deda-40f3-ad2b-2d0f88c3c548
+I (58382) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (58382) wifi:Set ps type: 0, coexist: 0
+
+W (58382) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (58392) StateMachine: State: connecting -> listening
+I (58402) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (58402) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (58412) AFE: AFE Version: (1MIC_V250121)
+I (58412) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (58422) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (58432) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+E (58442) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (58442) esp-tls-mbedtls: read error :-0x004C
+E (58442) EspSsl: SSL receive failed: -76
+I (58452) WS: Websocket disconnected
+I (58452) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (58462) wifi:Set ps type: 2, coexist: 0
+
+I (58462) StateMachine: State: listening -> idle
+I (61052) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (61052) StateMachine: State: idle -> connecting
+I (61052) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (61062) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (61212) esp-x509-crt-bundle: Certificate validated
+I (61982) WS: Session ID: 4a3c27a8-1dd1-46de-9ede-1ce5e3af4a4f
+I (61982) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (61982) wifi:Set ps type: 0, coexist: 0
+
+W (61982) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (61992) StateMachine: State: connecting -> listening
+I (67942) Application: >> 能给我讲个故事吗？
+I (67942) StateMachine: State: listening -> speaking
+I (70932) I2S_IF: Pending out channel for in channel running
+I (70942) AudioCodec: Set output enable to false
+I (77462) SystemInfo: free sram: 63079 minimal sram: 55511
+I (87462) SystemInfo: free sram: 62451 minimal sram: 53319
+I (96772) MCP: story_text_dispatch corr_id=kdp-96772 screens=1 degrade=false
+I (97462) SystemInfo: free sram: 65091 minimal sram: 53319
+I (98752) Application: << 好啊，那我给你讲个《月亮上的小灯笼》吧。有只小萤火虫，总嫌自己那点光太弱，直到一个夜晚
+I (99922) I2S_IF: Mode 0 need extend bits 64 to 32
+I (99922) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (99922) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (99942) Adev_Codec: Open codec device OK
+I (99952) AudioCodec: Set output enable to true
+I (107462) SystemInfo: free sram: 63767 minimal sram: 53123
+I (108682) Application: << 它遇见了一只迷路的小蜗牛。想接着听吗？
+I (113482) StateMachine: State: speaking -> listening
+Guru Meditation Error: Core  0 panic'ed (LoadProhibited). Exception was unhandled.
+
+Core  0 register dump:
+PC      : 0x4038cc01  PS      : 0x00060d33  A0      : 0x8038ca71  A1      : 0x3fcbeb30
+A2      : 0x3c328af0  A3      : 0x3c406054  A4      : 0x00060920  A5      : 0x00060923
+A6      : 0x00210015  A7      : 0x3c40604c  A8      : 0x001a0027  A9      : 0x001a0026
+A10     : 0xfffffffc  A11     : 0x00000002  A12     : 0x3c406054  A13     : 0x00060d23
+A14     : 0x3fceb378  A15     : 0x0000cdcd  SAR     : 0x00000011  EXCCAUSE: 0x0000001c
+EXCVADDR: 0x00210019  LBEG    : 0x400556d5  LEND    : 0x400556e5  LCOUNT  : 0xfffffffd
+
+
+Backtrace: 0x4038cbfe:0x3fcbeb30 0x4038ca6e:0x3fcbeb50 0x4037a01b:0x3fcbeb70 0x4038de89:0x3fcbeb90 0x420cde59:0x3fcbebb0 0x420cdfc9:0x3fcbebd0 0x420d400f:0x3fcbebf0 0x4200e34d:0x3fcbec10 0x4201e153:0x3fcbec40 0x4201fd96:0x3fcbec60 0x4202235d:0x3fcbecf0 0x421c7a87:0x3fcbed10
+
+
+
+
+ELF file SHA256: b26ba654d
+
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x403863c9
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2e70
+entry 0x403c8908
+I (34) octal_psram: vendor id    : 0x0d (AP)
+I (34) octal_psram: dev id       : 0x02 (generation 3)
+I (34) octal_psram: density      : 0x03 (64 Mbit)
+I (36) octal_psram: good-die     : 0x01 (Pass)
+I (40) octal_psram: Latency      : 0x01 (Fixed)
+I (44) octal_psram: VCC          : 0x01 (3V)
+I (48) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (53) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (58) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (68) octal_psram: DriveStrength: 0x00 (1/1)
+I (72) MSPI Timing: PSRAM timing tuning index: 5
+I (76) esp_psram: Found 8MB PSRAM device
+I (80) esp_psram: Speed: 80MHz
+I (83) cpu_start: Multicore app
+I (105) cpu_start: Pro cpu start user code
+I (105) cpu_start: cpu freq: 240000000 Hz
+I (105) app_init: Application information:
+I (105) app_init: Project name:     xiaozhi
+I (109) app_init: App version:      2.1.0
+I (112) app_init: Compile time:     Sep 10 2026 15:23:32
+I (117) app_init: ELF file SHA256:  b26ba654d...
+I (122) app_init: ESP-IDF:          v5.5.1-dirty
+I (126) efuse_init: Min chip rev:     v0.0
+I (130) efuse_init: Max chip rev:     v0.99
+I (134) efuse_init: Chip rev:         v0.2
+I (138) heap_init: Initializing. RAM available for dynamic allocation:
+I (144) heap_init: At 3FCB9338 len 000303D8 (192 KiB): RAM
+I (149) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (154) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (160) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (165) esp_psram: Adding pool of 7709K of PSRAM memory to heap allocator
+I (172) spi_flash: detected chip: generic
+I (175) spi_flash: flash io: qio
+I (179) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (184) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (191) main_task: Started on CPU0
+I (201) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (201) main_task: Calling app_main()
+I (211) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (211) button: IoT Button Version: 4.1.7
+I (221) BoxAudioCodec: Duplex channels created
+I (221) ES8311: Work in Slave mode
+I (231) ES7210: Work in Slave mode
+I (241) ES7210: Enable ES7210_INPUT_MIC1
+I (241) ES7210: Enable ES7210_INPUT_MIC2
+I (241) ES7210: Enable ES7210_INPUT_MIC3
+I (251) ES7210: Enable ES7210_INPUT_MIC4
+I (251) ES7210: Enable TDM mode
+I (251) BoxAudioCodec: BoxAudioDevice initialized
+I (251) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-251 ok rtc=22:31:43
+I (271) waveshare_rlcd_4_2: shtc3 corr_id=kdp-251 ok temp_c=28.98 rh_pct=46.3
+I (271) MCP: Add tool: self.disp.network
+I (271) Display: Power management not supported
+I (271) CustomDisplay: Initialize SPI
+I (581) CustomDisplay: Initialize LVGL library
+I (581) LVGL: Starting LVGL task
+I (591) CustomDisplay: RLCD init
+I (1171) CustomDisplay: ui start
+I (1211) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1211) waveshare_rlcd_4_2: art layer mounted at /art
+I (1211) kidpal_rn: KidPal render node initialized (4-page RLCD driver)
+I (1361) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=1052
+I (1361) StateMachine: State: unknown -> starting
+I (1361) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1371) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1381) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1381) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1391) ES7210: Bits 16
+I (1401) ES7210: Enable ES7210_INPUT_MIC1
+I (1401) ES7210: Enable ES7210_INPUT_MIC2
+I (1401) ES7210: Enable ES7210_INPUT_MIC3
+I (1411) ES7210: Enable ES7210_INPUT_MIC4
+I (1411) ES7210: Enable TDM mode
+I (1411) ES7210: Unmuted
+I (1411) Adev_Codec: Open codec device OK
+I (1421) AudioCodec: Set input enable to true
+I (1421) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1421) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1431) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1451) Adev_Codec: Open codec device OK
+I (1451) AudioCodec: Set output enable to true
+I (1451) AudioCodec: Audio codec started
+I (1451) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1461) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1471) MCP: Add tool: self.get_device_status
+I (1471) MCP: Add tool: self.audio_speaker.set_volume
+I (1481) MCP: Add tool: kidpal/display
+I (1481) MCP: Add tool: kidpal/alert
+I (1481) MCP: Add tool: self.screen.set_theme
+I (1491) MCP: Add tool: self.get_system_info [user]
+I (1491) MCP: Add tool: self.reboot [user]
+I (1501) MCP: Add tool: self.upgrade_firmware [user]
+I (1501) MCP: Add tool: self.screen.get_info [user]
+I (1511) MCP: Add tool: self.screen.snapshot [user]
+I (1511) MCP: Add tool: self.screen.preview_image [user]
+I (1511) Assets: The storage free size is 21824 KB
+I (1521) Assets: The partition size is 8192 KB
+I (1671) Assets: The checksum calculation time is 149 ms
+I (1671) MCP: Add tool: self.assets.set_download_url [user]
+I (1671) WifiManager: Initializing...
+I (1961) pp: pp rom version: e7ae62f
+I (1961) net80211: net80211 rom version: e7ae62f
+I (1971) wifi:wifi driver task: 3fce77e4, prio:23, stack:6144, core=0
+I (1971) wifi:wifi firmware version: 14da9b7
+I (1971) wifi:wifi certification version: v7.0
+I (1971) wifi:config NVS flash: disabled
+I (1971) wifi:config nano formatting: enabled
+I (1981) wifi:Init data frame dynamic rx buffer num: 6
+I (1981) wifi:Init dynamic rx mgmt buffer num: 5
+I (1991) wifi:Init management short buffer num: 32
+I (1991) wifi:Init dynamic tx buffer num: 32
+I (1991) wifi:Init static tx FG buffer num: 2
+I (2001) wifi:Init static rx buffer size: 1600
+I (2001) wifi:Init static rx buffer num: 3
+I (2011) wifi:Init dynamic rx buffer num: 6
+I (2011) wifi_init: rx ba win: 3
+I (2011) wifi_init: accept mbox: 6
+I (2021) wifi_init: tcpip mbox: 16
+I (2021) wifi_init: udp mbox: 6
+I (2021) wifi_init: tcp mbox: 6
+I (2021) wifi_init: tcp tx win: 5760
+I (2031) wifi_init: tcp rx win: 5760
+I (2031) wifi_init: tcp mss: 1440
+I (2031) WifiManager: Initialized
+I (2041) WifiBoard: Starting WiFi connection attempt
+I (2041) WifiManager: Starting station
+I (2051) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (2081) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (2081) wifi:enable tsf
+I (2081) WifiBoard: WiFi scanning
+I (2471) AudioService: esp_timer task stack HWM: 7256 words (stack 8192 bytes)
+I (4491) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -51, Channel: 11, Authmode: 3
+I (4491) WifiBoard: WiFi connecting to 701
+W (4531) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (5811) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (5811) wifi:state: init -> auth (0xb0)
+I (5821) wifi:state: auth -> assoc (0x0)
+I (5831) wifi:state: assoc -> run (0x10)
+I (5851) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (5851) wifi:security: WPA2-PSK, phy: bgn, rssi: -49
+I (5861) wifi:pm start, type: 1
+
+I (5861) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (5871) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (5891) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (5901) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (6961) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (6961) WifiStation: Got IP: 192.168.3.36
+I (6961) WifiBoard: Connected to WiFi: 701
+I (6961) Application: Network connected
+I (6961) StateMachine: State: starting -> activating
+create static modelsI (6971) MODEL_LOADER: Successfully load srmodels
+I (6981) Assets: Refreshing display theme...
+I (6981) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (7271) Application: Activation done
+I (7271) SystemInfo: free sram: 98715 minimal sram: 89619
+I (7271) StateMachine: State: activating -> idle
+I (7271) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (7281) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (7291) AudioService: Resampling audio from 16000 to 24000
+I (7291) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (7301) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7311) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (7311) AudioService: audio_output task stack HWM: 2680 words
+I (7611) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (7621) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7621) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (7621) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (7641) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7641) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (7651) wifi:Set ps type: 2, coexist: 0
+
+I (7651) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (7661) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+I (7681) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (7741) AFE: AFE Version: (1MIC_V250121)
+I (7741) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (7751) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (7761) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (12711) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (12711) StateMachine: State: idle -> connecting
+I (12721) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (12721) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (13981) esp-x509-crt-bundle: Certificate validated
+I (14421) WS: Session ID: 08cb682d-8274-4def-a967-a87b3adfb638
+I (14431) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (14431) wifi:Set ps type: 0, coexist: 0
+
+W (14431) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (14441) StateMachine: State: connecting -> listening
+I (14451) AFE: AFE Version: (1MIC_V250121)
+I (14451) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (14461) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (14461) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+E (14471) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (14481) esp-tls-mbedtls: read error :-0x004C
+E (14481) EspSsl: SSL receive failed: -76
+I (14481) WS: Websocket disconnected
+I (14491) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (14501) wifi:Set ps type: 2, coexist: 0
+
+I (14501) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (14511) StateMachine: State: listening -> idle
+I (15361) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=15162
+I (15361) kidpal_rn: voice ended -> restore KidPal home
+I (17061) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (17061) StateMachine: State: idle -> connecting
+I (17061) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (17061) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (17221) esp-x509-crt-bundle: Certificate validated
+I (18011) WS: Session ID: f9e032d9-2378-4807-a075-9da9a0bbd264
+I (18011) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (18011) wifi:Set ps type: 0, coexist: 0
+
+W (18021) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (18031) StateMachine: State: connecting -> listening
+I (22491) Application: >> 继续刚才的故事
+I (22491) StateMachine: State: listening -> speaking
+I (24471) I2S_IF: Pending out channel for in channel running
+I (24471) AudioCodec: Set output enable to false
+I (32471) SystemInfo: free sram: 62811 minimal sram: 55355
+I (42471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (52471) SystemInfo: free sram: 63211 minimal sram: 53363
+I (62471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (72471) SystemInfo: free sram: 63211 minimal sram: 53363
+I (82471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (92471) SystemInfo: free sram: 63211 minimal sram: 53363
+I (102471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (112471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (122471) SystemInfo: free sram: 62695 minimal sram: 53363
+I (132471) SystemInfo: free sram: 62723 minimal sram: 53363
+I (142471) SystemInfo: free sram: 63451 minimal sram: 53363

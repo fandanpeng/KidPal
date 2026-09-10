@@ -59,12 +59,23 @@ set(HOST_ACCEPTANCE_SRCS
     # 符号覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
     "../../story_p3.acceptance.c"
     "../../../display/story_page.c"
+    # 包 260907-hardware-validation (包 9b) 真机语音轮 2 修复自带守卫（非冻结件, [C4.3]
+    # 普通 .test.c）：钉 ssl_receive 4096B 栈预算的结构尺寸 + 树级扫描「大栈缓冲不得回潮」
+    # + 就地解析语义。相对 host_app/main 为 ../../。
+    "../../story_page_stack.test.c"
     # 包 260901-ui-art-integration (包子 U)：冻结验收 + 被测纯逻辑资产层 (art_assets 强
     # 符号覆盖 weak 哨兵——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
     # **必须置于 host smoke acceptance 之前**（smoke 保持列表末位 = 最先执行，
     # 包 0 boundary 齿注册序守卫; 验收 test 1 结构齿 6 校验此序）。
     "../../ui_art_integration.acceptance.c"
     "../../../display/art_assets.c"
+
+    # 包 260907-hardware-validation (包 9b)：冻结验收（纯树级结构齿, 自身只依赖
+    # unity + 标准 C, 无新增被测符号链接——运行时以文本读工作树断言 F2 接线 /
+    # RTC·SHTC3 driver 绑定 / 守卫, 见文件头 Run protocol）。**必须置于 host smoke
+    # acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary 齿注册序守卫; 本包
+    # 验收 test 4 tooth 1 校验此序）。相对 host_app/main 为 ../../。
+    "../../hardware_validation.acceptance.c"
 
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"

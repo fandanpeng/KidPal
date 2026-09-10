@@ -1,0 +1,65 @@
+I (215) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-215 ok rtc=18:52:21
+E (225) i2c.master: I2C transaction timeout detected
+E (225) i2c.master: s_i2c_synchronous_transaction(945): I2C transaction failed
+E (225) i2c.master: i2c_master_receive(1268): I2C transaction failed
+W (235) waveshare_rlcd_4_2: shtc3 read err=ESP_ERR_INVALID_STATE
+W (245) waveshare_rlcd_4_2: shtc3 corr_id=kdp-215 read_deferred
+I (245) MCP: Add tool: self.disp.network
+I (245) Display: Power management not supported
+I (255) CustomDisplay: Initialize SPI
+I (565) CustomDisplay: Initialize LVGL library
+I (565) LVGL: Starting LVGL task
+I (565) CustomDisplay: RLCD init
+I (1145) CustomDisplay: ui start
+I (1155) StateMachine: State: unknown -> starting
+I (1155) BoxAudioCodec: Duplex channels created
+E (11155) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (11155) task_wdt:  - IDLE0 (CPU 0)
+E (11155) task_wdt: Tasks currently running:
+E (11155) task_wdt: CPU 0: main
+E (11155) task_wdt: CPU 1: IDLE1
+E (11155) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x420E942F:0x3FCA64B0 0x4037C561:0x3FCA64E0 0x421BB3A3:0x3FCB5EC0 0x421BB59A:0x3FCB5EF0 0x421BB65A:0x3FCB5F30 0x421BC12E:0x3FCB5F60 0x421BC20D:0x3FCB6010 0x4205A4DD:0x3FCB6050 0x4219808D:0x3FCB6080 0x4205B411:0x3FCB60B0 0x4205BB1E:0x3FCB60E0 0x4200C1A6:0x3FCB6110 0x4202316A:0x3FCB61A0 0x4201C729:0x3FCB61E0 0x42020691:0x3FCB6270 0x421C0833:0x3FCB6290
+
+E (21155) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (21155) task_wdt:  - IDLE0 (CPU 0)
+E (21155) task_wdt: Tasks currently running:
+E (21155) task_wdt: CPU 0: main
+E (21155) task_wdt: CPU 1: IDLE1
+E (21155) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x420E942F:0x3FCA64B0 0x4037C561:0x3FCA64E0 0x421BB3A3:0x3FCB5EC0 0x421BB59A:0x3FCB5EF0 0x421BB65A:0x3FCB5F30 0x421BC12E:0x3FCB5F60 0x421BC20D:0x3FCB6010 0x4205A4DD:0x3FCB6050 0x4219808D:0x3FCB6080 0x4205B411:0x3FCB60B0 0x4205BB1E:0x3FCB60E0 0x4200C1A6:0x3FCB6110 0x4202316A:0x3FCB61A0 0x4201C729:0x3FCB61E0 0x42020691:0x3FCB6270 0x421C0833:0x3FCB6290
+
+E (31155) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (31155) task_wdt:  - IDLE0 (CPU 0)
+E (31155) task_wdt: Tasks currently running:
+E (31155) task_wdt: CPU 0: main
+E (31155) task_wdt: CPU 1: IDLE1
+E (31155) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x420E942F:0x3FCA64B0 0x4037C561:0x3FCA64E0 0x421BB3A3:0x3FCB5EC0 0x421BB59A:0x3FCB5EF0 0x421BB65A:0x3FCB5F30 0x421BC12E:0x3FCB5F60 0x421BC20D:0x3FCB6010 0x4205A4DD:0x3FCB6050 0x4219808D:0x3FCB6080 0x4205B411:0x3FCB60B0 0x4205BB1E:0x3FCB60E0 0x4200C1A6:0x3FCB6110 0x4202316A:0x3FCB61A0 0x4201C729:0x3FCB61E0 0x42020691:0x3FCB6270 0x421C0833:0x3FCB6290
+
+E (41155) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (41155) task_wdt:  - IDLE0 (CPU 0)
+E (41155) task_wdt: Tasks currently running:
+E (41155) task_wdt: CPU 0: main
+E (41155) task_wdt: CPU 1: IDLE1
+E (41155) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x420E942F:0x3FCA64B0 0x4037C561:0x3FCA64E0 0x421BB3A3:0x3FCB5EC0 0x421BB59A:0x3FCB5EF0 0x421BB65A:0x3FCB5F30 0x421BC12E:0x3FCB5F60 0x421BC20D:0x3FCB6010 0x4205A4DD:0x3FCB6050 0x4219808D:0x3FCB6080 0x4205B411:0x3FCB60B0 0x4205BB1E:0x3FCB60E0 0x4200C1A6:0x3FCB6110 0x4202316A:0x3FCB61A0 0x4201C729:0x3FCB61E0 0x42020691:0x3FCB6270 0x421C0833:0x3FCB6290
+
+E (51155) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (51155) task_wdt:  - IDLE0 (CPU 0)
+E (51155) task_wdt: Tasks currently running:
+E (51155) task_wdt: CPU 0: main
+E (51155) task_wdt: CPU 1: IDLE1
+E (51155) task_wdt: Print CPU 0 (current core) backtrace
+
+
+Backtrace: 0x420E942F:0x3FCA64B0 0x4037C561:0x3FCA64E0 0x421BB3A3:0x3FCB5EC0 0x421BB59A:0x3FCB5EF0 0x421BB65A:0x3FCB5F30 0x421BC12E:0x3FCB5F60 0x421BC20D:0x3FCB6010 0x4205A4DD:0x3FCB6050 0x4219808D:0x3FCB6080 0x4205B411:0x3FCB60B0 0x4205BB1E:0x3FCB60E0 0x4200C1A6:0x3FCB6110 0x4202316A:0x3FCB61A0 0x4201C729:0x3FCB61E0 0x42020691:0x3FCB6270 0x421C0833:0x3FCB6290
+

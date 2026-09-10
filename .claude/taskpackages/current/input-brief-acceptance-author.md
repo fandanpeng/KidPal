@@ -1,9 +1,9 @@
-# input-brief · acceptance-author · 260901-ui-art-integration
+# input-brief · acceptance-author · 260829-hardware-validation
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-09T07:47:55.804Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> 来源 TaskPackage: `.claude/taskpackages/260901-ui-art-integration/taskpackage.json` · subsystem: firmware+tools · rigor: full
+> generated-at: 2026-09-09T14:22:22.867Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `.claude/taskpackages/260829-hardware-validation/taskpackage.json` · subsystem: firmware+server · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
@@ -11,10 +11,9 @@
 |---|---|---|---|---|
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `.planning/kidpal-mvp/PROPOSAL.md` | — | 无锚点（整文件） | — | bare |
-| `docs/spec.md` | `§5.6` | 5.6 UI 风格 | 524 | ok |
-| `docs/spec.md` | `§5.7` | 5.7 UI 实现策略 | 532 | ok |
-| `docs/notes/validation-batch-conclusion.md` | — | 无锚点（整文件） | — | bare |
-| `U` | — | （文件不存在） | — | missing |
+| `docs/spec.md` | `§2` | 2. 硬件能力盘点（依据本地官方 Demo 实测确认） | 20 | ok |
+| `docs/spec.md` | `§5.4` | 5.4 页面结构（4 页循环） | 497 | ok |
+| `9b` | — | （文件不存在） | — | missing |
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
@@ -24,7 +23,7 @@
 
 | 先例包 | 冻结验收文件 |
 |---|---|
-| 260831-ui-art-assets | `tools/asset-pipeline/tests/test_art_assets.acceptance.md` |
+| 260901-ui-art-integration | `firmware/main/test/ui_art_integration.acceptance.c` |
 | 260829-char-stroke | `firmware/main/test/char_stroke.acceptance.c` · `server/acceptance/test_char_stroke.acceptance.py` |
 | 260829-schedule-reminder | `firmware/main/test/schedule_reminder_b.acceptance.c` · `server/acceptance/test_schedule_reminder.acceptance.py` |
 
