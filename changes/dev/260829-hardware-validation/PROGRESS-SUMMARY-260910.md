@@ -122,7 +122,28 @@
   `kidpal_render_node.cc:362`（无该标记）。修法二选一：render_node 侧补真实标记，或
   acceptance-author 修齿 first-match 歧义（不自行喂哨兵让红消失）。
 
-## 五、当前固件状态
+## 五、晚间链路梳理新增问题（2026-09-10，详见同目录 VOICE-ROUND-FLOW-260910.md）
+
+主线程对「语音轮端到端」逐文件梳理 + 自 review 后新增，均有代码证据：
+
+1. **故事录音云侧归档双断链（功能不可达，高危）**：①全固件无 `StopListening()`
+   调用方 → `listen state=stop` 发不出（front 归档只认此帧）；②manual 录音期间
+   引擎不出 stt 帧 → front 累积缓冲恒空，即使修①归档也拿空转写。待 F2-1 真机戳实。
+2. **设备 UI 三屏主权混乱（架构根因）**：s_chat_scr / s_kidpal_scr / char 独立屏 +
+   两套 UI 体系，前台靠 3 标志 + 1s tick 对账；回答文本写在被 pin 覆盖的聊天屏；
+   当日三个崩溃（悬空指针/clean 聊天屏/栈溢出同族）的结构性土壤。
+3. **显示滞后语音 1–3s**：display 块等 LLM 全流 finish() 才发侧通道。
+4. **首音时延 ≈3–6s**：VAD 尾点 1s（min_silence_duration_ms 默认值）+ 整句非流式
+   ASR + LLM 首 token + EdgeTTS 整段合成四段串行；固件/front 非瓶颈。
+5. **spec↔实现键位漂移**：spec §4.0/§5.3 设计 KEY 主司对话 + BOOT 主司翻页两键
+   分工；实现仅接 BOOT（单击对话/双击翻页），KEY(GPIO18) 未接，KEY 依附的页内
+   特例（回首页/光标/播笔顺/弹窗关闭）全部悬空。
+6. **轮间驻留反直觉**：auto 轮答完回 Listening 不回 Idle，页 pin 与首页交还的
+   结局随是否有 display 块随机。
+
+问题合并排序与分批处理由主线程与 human 逐项确定后另行登记。
+
+## 六、当前固件状态
 
 - 分支 `dev/260829-hardware-validation`，最后烧录 bin = `xiaozhi.bin 0x2c2060`（2,891,872 B），
   app 分区余 20%，设备语音轮 + 故事显示 0 崩溃。
