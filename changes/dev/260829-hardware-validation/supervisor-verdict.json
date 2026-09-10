@@ -1,0 +1,65 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "critical",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-10T15:27:06.936Z",
+  "changeId": "260829-hardware-validation",
+  "originType": "planning-workstream",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "critical",
+    "reasons": [
+      "critical-path:firmware/sdkconfig",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "critical",
+      "declaredTier": "high",
+      "effectiveTier": "critical",
+      "ambiguous": false,
+      "diffReasons": [
+        "critical-path:firmware/sdkconfig"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 1,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "critical",
+        "declaredTier": "high",
+        "effectiveTier": "critical",
+        "ambiguous": false,
+        "diffReasons": [
+          "critical-path:firmware/sdkconfig"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260829-hardware-validation/verifier-evidence/rounds/r1.json",
+        "bearingFactOk": true,
+        "completedRounds": 1,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260829-hardware-validation/docs-delta.md",
+          "changes/dev/260829-hardware-validation/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "planning-workstream"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1788973848724-taskpackage-required.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260829-hardware-validation/verifier-evidence/rounds/r1.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260829-hardware-validation/docs-delta.md",
+      "changes/dev/260829-hardware-validation/review-packet.md"
+    ]
+  }
+}
