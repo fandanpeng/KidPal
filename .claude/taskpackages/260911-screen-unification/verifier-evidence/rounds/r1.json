@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260911-screen-unification",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "82b9e9e8-b8e7-4704-86de-65739b5e2428",
+  "startedAt": "2026-09-11T10:39:00.748Z",
+  "completedAt": "2026-09-11T10:39:01.075Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 176,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal-pod-screen-unification\\\\.claude\\\\taskpackages\\\\260911-screen-unification\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal-pod-screen-unification\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n",
+      "stderr": "",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "bf20e2048c1f",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1789123141061-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal-pod-screen-unification\\\\.claude\\\\taskpackages\\\\260911-screen-unification\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal-pod-screen-unification\\\\.claude\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n"
+  }
+}

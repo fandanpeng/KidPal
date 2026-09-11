@@ -13,7 +13,7 @@
   "subsystem": "firmware",
   "story": "PKG-2 归一屏（核心包，OQ1=纯 B 已裁）：小智聊天控件（状态栏/表情/气泡，SetupUI 建立面）迁为 KidPal 屏（s_kidpal_scr）常驻 layer，聊天内容任何页可见；s_page_pinned/s_chat_overlay/s_current_page 三标志 + 1s tick 轮询对账整体退役（竞态窗口 1s 与当日三崩溃的结构性土壤）；char 独立屏并入 s_kidpal_scr 体系（review F7）；alert/reminder 前台优先级进 layer 管理（review F8）；回答驻留副产品（OQ3=c：清除时机=下次交互随 layer 管理顺带定，不独立立项）；layer 管理即前台 owner 单一权威（仲裁器显式化，方向 A 状态机内核收编于此）。验证：SetupUI 建立面 + 全部写屏路径 host 矩阵回归（review F6 全额生效）+ 真机语音轮/推送页/提醒并发场景。",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量：story_p3 8 齿 / schedule_p2 全齿 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3 齿——F6 矩阵基线）；intake 时 acceptance-author 复核红基线记录（三标志符号级残留齿基线红）",
-  "redBaselineResult": "现状（review F1 证据 + 2026-09-11 复核）：kidpal_render_node.cc L58/L63/L75 三标志在位、1s tick 对账在位（L181/L193 活跃路径）、s_chat_scr/char 独立屏并存——三标志退役机制齿与 char 并屏齿在基线上必红，红基线成立。",
+  "redBaselineResult": "现状（review F1 证据 + 2026-09-11 复核）：kidpal_render_node.cc L58/L63/L75 三标志在位、1s tick 对账在位（L181/L193 活跃路径）、s_chat_scr/char 独立屏并存——三标志退役机制齿与 char 并屏齿在基线上必红，红基线成立。2026-09-11 前台优先级语义按方案A修订（SU-RULING-01, human-deputy 代裁，deviation=false）：SERVER_PAGE(3→4) > VOICE(4→3)，回答期间服务端推送页前台可见；修订后复跑红基线——C 类实编 0 error 0 warning，7 Tests / 6 Failures（结构齿 s1/s2/s3 仍红、行为齿 b1/b2/b3 红在 weak 哨兵、守卫 s4 绿），红基线判据不变、仍成立。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -29,13 +29,13 @@
   "acceptance": [
     "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
     "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
-    "SU-A3: char 独立屏并入 s_kidpal_scr 体系（review F7）；char_stroke 冻结齿复跑绿",
+    { "id": "SU-A3: char 独立屏并入 s_kidpal_scr 体系（review F7）；char_stroke 冻结齿复跑绿", "kind": "structural" },
     "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
     "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
-    "SU-A6: host 矩阵回归——全量既有冻结齿（story_p3 8 / schedule_p2 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3）复跑绿；渲染路径重构致齿红仅 acceptance-author 留痕修订（断言语义不放松）",
+    { "id": "SU-A6: host 矩阵回归——全量既有冻结齿（story_p3 8 / schedule_p2 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3）复跑绿；渲染路径重构致齿红仅 acceptance-author 留痕修订（断言语义不放松）", "suiteGate": true },
     "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
-    "SU-A8: 真机并发场景（human 持板）——语音轮+推送页并发、提醒恰在语音轮到点 0 复位 0 崩溃（当日三崩溃同族）；证据落 changes/dev/260911-screen-unification/",
-    "SU-A9: host runner 终跑全绿 exit 0"
+    { "id": "SU-A8: 真机并发场景（human 持板）——语音轮+推送页并发、提醒恰在语音轮到点 0 复位 0 崩溃（当日三崩溃同族）；证据落 changes/dev/260911-screen-unification/", "kind": "structural" },
+    { "id": "SU-A9: host runner 终跑全绿 exit 0", "suiteGate": true }
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/screen_unification.acceptance.c"
@@ -69,6 +69,7 @@
   "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
+  "docsSyncReason": "无实现侧文档同步需求：spec 零修订（SPEC-1 本批不触发，OQ3=c 无独立会话语义变更）、docs/contracts/** 零触碰（SU-E3 冻结面零越界）；实现仅改 firmware 显示层结构/归属与 device 装配接线，不产生 docs 面变更。",
   "mergeOrder": 19,
   "dependsOn": [],
   "testHost": "host runner（WSL linux target，全量矩阵）+ 真机并发场景轮（human 持板）",
@@ -140,14 +141,52 @@
     }
   ],
   "mutationRequired": true,
-  "mutationEvidence": [],
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
+        "mutation": "kidpal_layer_push 升序插入比较符 '>' 反转为 '<'（按优先级降序入栈，top 变最低优先级层，破坏单一权威的优先级裁决）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "TEST_CASE 'screen unification: layer 前台优先级表进出序 + 单一权威 (SU-A2/SU-A4)' [behavioral] 变红于首个优先级断言 'SU-A2/A4 RED: VOICE must front over LOCAL_PAGE'。全量 111 Tests / 5 Failures = 3 在册红(WSA-A6/WSA-A4/P2-A1) + 本 mutant 新增 2 红(b1+b3)。"
+      },
+      {
+        "acceptanceId": "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
+        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（提醒弹窗 REMINDER>VOICE 与其余优先级边共用同一比较符，一并被破坏）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "与 SU-A2 共享同一 mutant M1（不重复构建）。b1 是 [SU-A2][SU-A4] 联合行为齿，M1 令 b1 于 'VOICE must front over LOCAL_PAGE' 处红（b1 内 REMINDER>VOICE 断言受同一插入比较符支配，SU-A4 对 M1 真实敏感）。全量 111/5。"
+      },
+      {
+        "acceptanceId": "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
+        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（语音轮→服务端回答页的前台归属被反转，回答期间 SERVER_PAGE 不再盖过 VOICE）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "与 SU-A2/SU-A4 共享同一 mutant M1。TEST_CASE 'screen unification: 语音轮→回答驻留→回首页 前台归属 (SU-A5/SU-A7)' [behavioral] 变红于 'SU-A7 RED: 语音回答期间服务端页须前台可见'。全量 111/5。"
+      },
+      {
+        "acceptanceId": "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
+        "mutation": "kidpal_layer_chat_target 返回值由 KIDPAL_LAYER_CHAT(1) 改为 KIDPAL_LAYER_LOCAL_PAGE(2)（聊天内容落点不再恒指向常驻聊天 layer，屏幕落点漂移）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于首个落点断言 'SU-A1 RED: chat content target is not the resident chat layer (got 2)'。全量 111/4 = 3 在册红 + 本 mutant 新增 1 红。"
+      },
+      {
+        "acceptanceId": "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
+        "mutation": "kidpal_layer_chat_clear_event 的 NEW_VOICE/KEY_PRESS 分支由 return 1 改为 return 0（下次交互不再清除聊天，OQ3=c 清除时机语义被破坏）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于清除时机断言 'SU-A5 RED: NEW_VOICE must clear chat'（其前 ANSWER_END/PAGE_SWITCH 断言仍绿，证明齿区分驻留与清除）。全量 111/4。"
+      }
+    ]
+  },
   "crossEnd": {
     "counterparts": [
       { "path": "firmware/main/application.cc", "symbol": "SetChatMessage" },
       { "path": "firmware/main/application.cc", "symbol": "SetStatus" },
       { "path": "firmware/main/application.cc", "symbol": "SetEmotion" },
-      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "s_chat_overlay" },
-      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "s_page_pinned" }
+      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_show_chat" },
+      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_begin_page" }
     ],
     "exempt": ""
   },

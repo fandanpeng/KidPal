@@ -1,24 +1,40 @@
 /*
- * kidpal_render_node.cc — 设备渲染节点（包 9b HWV-A6 收口）
+ * kidpal_render_node.cc — 设备渲染节点（包 260911-screen-unification 归一屏收口）
  *
  * 职责：
  *  1. 提供 host_infra_render_p1_frame 强符号覆盖，把 P1 首页 400×300 ARGB 帧
  *     通过 LVGL XRGB8888 图像渲染至 RLCD。
- *  2. 管理一个专属于 KidPal 的 LVGL 屏（s_kidpal_scr），与 xiaozhi chat UI
- *     （SetupUI 屏）共存——「KidPal 是主屏，语音可覆盖」。
- *  3. 阶段 B：BOOT 双按翻页（home→char→schedule→story→home）。
- *  4. 崩溃修复（包 260829-hardware-validation）：服务端推送页面渲染必须经
- *     begin_page()/end_page() 夹钳，只画到 s_kidpal_scr 并持 LVGL 锁、pin 防抢；
- *     禁止直接 lv_screen_active() 渲染——语音轮期间活动屏是聊天屏 s_chat_scr，
- *     clean 它会销毁 xiaozhi 的 status_label_ 等控件，致 SetStatus 悬空崩溃。
+ *  2. 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（把原先三散同行标志 +
+ *     1s tick 轮询对账整体退役）。
+ *     layer 栈按优先级表裁决「谁在前台」：配网(6) > 提醒(5) > 服务端推送页(4) >
+ *     语音轮(3) > 本地浏览页(2)，聊天 layer(1) 常驻非栈成员。push/pop 语义见
+ *     display/kidpal_layer.(c|h) 与冻结验收 screen_unification.acceptance.c。
+ *  3. 单物理屏时序说明（归一屏 SU-RULING-02 方案1，聊天控件物理 reparent 已随本包落地）：
+ *     - xiaozhi LcdDisplay::SetupUI() 在 LcdDisplay 构造期把聊天/表情/状态控件建在
+ *       LVGL 默认首屏上，此刻 s_kidpal_scr 尚未创建（先 SetupUI 后 render_node_init）。
+ *       KidPal 板装配层（waveshare-s3-rlcd-4.2.cc）在 render_node_init 前调
+ *       LcdDisplay::KidPalReparentChatToLayer(lv_layer_top())，把聊天 chrome
+ *       reparent 到常驻顶层 layer（非屏、恒浮于活动屏之上），聊天内容任何页可见；
+ *       整屏不透明背景 container_ 留在原默认首屏（该屏此后不再加载、不再渲染）。
+ *     - s_kidpal_scr（lv_obj_create(NULL)）= KidPal 各类内容页的唯一天花板，也是
+ *       display/ 下唯一被 lv_screen_load 的顶层屏（真单物理屏不变式）。
+ *  4. 阶段 B：BOOT 双按翻页（home→char→schedule→story→home），翻页 = 本地浏览层
+ *     生命周期（清 transient，回 LOCAL_PAGE 基层）。
+ *  5. 崩溃修复（包 260829-hardware-validation）语义保留：服务端推送页面渲染必须经
+ *     begin_page()/end_page() 夹钳——begin_page 把 SERVER_PAGE(或 REMINDER) 推入
+ *     layer 栈、持 LVGL 锁、把活动屏切到 s_kidpal_scr；页面渲染函数内部
+ *     lv_screen_active()+lv_obj_clean() 只清 s_kidpal_scr，绝不触碰聊天层视觉控件
+ *     （聊天 chrome 已 reparent 到 lv_layer_top，根除「clean 聊天屏致 status_label_
+ *     悬空」同族崩溃）。
  *
  * DRAM 约束：s_p1_fb (480KB) 已通过 CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
- * 置于 PSRAM；本文件不新增任何大静态缓冲。
+ * 置于 PSRAM；本文件不新增任何大静态缓冲。layer 栈为 8*int+int，零堆。
  *
- * 线程约束：show_home() / cycle_next() 在 main app task（Schedule）或 CustomBoard
- * 构造期调用，持有 lvgl_port_lock。tick() 从 LVGL 定时器（esp_lvgl_port task）
- * 调用，锁已由 esp_lvgl_port 持有。host_infra_render_p1_frame 由
- * kidpal_home_p1_render_frame() 在 show_home()/tick() 的锁上下文中同步调用。
+ * 线程约束：show_home() / show_chat() / voice_begin() / voice_end() / begin_page() /
+ * cycle_next() 在 main app task（Schedule）或 CustomBoard 构造期调用，持有
+ * lvgl_port_lock（递归互斥量）。tick() 从 LVGL 定时器（esp_lvgl_port task）调用，
+ * 锁已由 esp_lvgl_port 持有。host_infra_render_p1_frame 由
+ * kidpal_home_p1_render_frame() 在锁上下文中同步调用。
  */
 #include "kidpal_render_node.h"
 
@@ -26,7 +42,7 @@
 #include "schedule_page.h"
 #include "story_page.h"
 #include "char_page.h"
-#include "application.h" /* 回归修复: tick 读 GetDeviceState() 判语音态，交还/切回 SetupUI */
+#include "kidpal_layer.h"
 
 #include <esp_log.h>
 #include <esp_timer.h>
@@ -44,26 +60,15 @@ static const char *RN_TAG = "kidpal_rn";
  * 渲染节点内部状态（全部小量，不新增大静态缓冲）
  * ---------------------------------------------------------------------- */
 
-/* KidPal 专属 LVGL 屏（persistent，只在 init 时创建一次，之后复用）。 */
+/* 前台 layer 栈（前台 owner 单一权威，取代原先三个分散的覆盖/pin/当前页标志）。 */
+static kidpal_layer_stack_t s_layer_stack;
+
+/* KidPal 专属 LVGL 屏（persistent，只在 init 时创建一次，之后复用）。
+ * display/ 下唯一的顶层屏创建点（lv_obj_create(NULL)）——归一屏单屏不变式。 */
 static lv_obj_t *s_kidpal_scr = NULL;
 
-/* xiaozhi SetupUI 屏（回归修复 包 9b HWV-A6 fix）。
- * LcdDisplay::SetupUI() 把聊天/表情/状态控件全部建在它运行时的
- * lv_screen_active()（LVGL 默认首屏）上。render_node_init 在建 s_kidpal_scr
- * 之前捕获该屏为 s_chat_scr，之后不再复制其控件，只在语音态把它切回前台。 */
-static lv_obj_t *s_chat_scr = NULL;
-
-/* 当前是否处于「SetupUI 覆盖 KidPal」态（true = 聊天屏在前台）。
- * 用于 tick 状态对账的去重，避免每秒重复 lv_screen_load 造成重绘。 */
-static bool s_chat_overlay = false;
-
-/* 服务端推送页面是否占据前台（崩溃修复 包 260829-hardware-validation）。
- * begin_page() 置位；tick 检测新一轮语音（Connecting）或 cycle_next 手动翻页时
- * 清除。pin 期间 tick 不把活动屏抢回聊天屏，孩子得以读完推送页面。 */
-static bool s_page_pinned = false;
-
-/* 首页图像控件（每次 show_home() 重建，因为切到 schedule/story 时
- * lv_obj_clean(s_kidpal_scr) 会销毁它）。 */
+/* 首页图像控件（每次重建，因为切到 schedule/story 时 lv_obj_clean(s_kidpal_scr)
+ * 会销毁它）。仅当本地首页为前台 owner 时由 tick 重渲动画。 */
 static lv_obj_t *s_kidpal_img = NULL;
 
 /* P1 帧 LVGL 图像描述符（s_p1_dsc.data 由 host_infra_render_p1_frame 强符号
@@ -71,8 +76,10 @@ static lv_obj_t *s_kidpal_img = NULL;
  * 因此 s_p1_dsc 必须在整个屏幕生命周期内保持存活。 */
 static lv_image_dsc_t s_p1_dsc;
 
-/* 当前显示页（阶段 B cycle 状态）。 */
-static kidpal_page_id_t s_current_page = KP_PAGE_HOME;
+/* 当前本地浏览页（阶段 B cycle 状态：翻到 char/schedule/story 时仍停在 LOCAL_PAGE
+ * 层，只是换了页内内容）。区别于前台 owner——前台 owner 由 layer 栈 top() 单一裁决，
+ * 本变量只记录「LOCAL_PAGE 基层当前画的是哪一页」，供 tick 首页动画判据与翻页步进。 */
+static kidpal_page_id_t s_local_page = KP_PAGE_HOME;
 
 /* 注入状态。 */
 static int s_rtc_hour     = 0;
@@ -83,7 +90,8 @@ static int s_humidity_pct = 0;
 static int s_battery_pct  = 100; /* 保守初始值（无 ADC 读数时使用） */
 static int s_charging     = 0;
 
-/* 动画 LVGL 定时器（在 init 中创建，每 RN_TICK_MS 触发一次）。 */
+/* 动画 LVGL 定时器（在 init 中创建，每 RN_TICK_MS 触发一次）。仅重渲首页动画帧，
+ * 不做任何前台/语音对账（对账已由事件驱动 layer push/pop 接管）。 */
 static lv_timer_t *s_tick_timer = NULL;
 static const uint32_t RN_TICK_MS = 1000;
 
@@ -143,126 +151,25 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
 }
 
 /* -------------------------------------------------------------------------
- * 公开 API
+ * 内部辅助（均须在 lvgl_port_lock 持有下调用）
  * ---------------------------------------------------------------------- */
 
-void kidpal_render_node_init(void)
+/* 归一屏后只有 s_kidpal_scr 一个前台屏：聊天 chrome 已 reparent 到 lv_layer_top（恒
+ * 浮于活动屏之上、任何页可见），无需因 VOICE 前台切屏。本函数仅保证 s_kidpal_scr 是
+ * 活动屏——前台归属由 layer 栈单一裁决，内容页归属由各 push/pop 路径的页面渲染承接。 */
+static void rn_reconcile_foreground_locked(void)
 {
     if (s_kidpal_scr != NULL) {
-        return; /* 幂等 */
+        lv_screen_load(s_kidpal_scr);
     }
-    lvgl_port_lock(0);
-
-    /* 回归修复: 在创建/加载 s_kidpal_scr 之前，捕获当前活动屏 = SetupUI 屏
-     * （LcdDisplay::SetupUI 已把聊天/表情/状态控件建在此屏上）。此后语音态可
-     * lv_screen_load(s_chat_scr) 把 SetupUI 切回前台，让「聆听」表情可见。 */
-    s_chat_scr = lv_screen_active();
-
-    /* 创建专属屏（lv_obj_create(NULL) = 新建一屏，不与任何父对象绑定）。 */
-    s_kidpal_scr = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(s_kidpal_scr, lv_color_white(), 0);
-    lv_obj_set_style_bg_opa(s_kidpal_scr, LV_OPA_COVER, 0);
-    lv_obj_set_style_pad_all(s_kidpal_scr, 0, 0);
-    lv_obj_clear_flag(s_kidpal_scr, LV_OBJ_FLAG_SCROLLABLE);
-
-    /* 动画 tick 定时器（在 LVGL 任务上下文触发，锁已持有）。 */
-    s_tick_timer = lv_timer_create(
-        [](lv_timer_t *t) {
-            (void)t;
-
-            auto state = Application::GetInstance().GetDeviceState();
-
-            /* --- 服务端推送页面 pin（崩溃修复 包 260829-hardware-validation）---
-             * pin 期间前台是服务端页面（故事/课表），既不能被「voice→聊天屏」抢回，
-             * 也不必做首页动画重渲（当前内容非首页，且 s_kidpal_img 可能已被
-             * 页面渲染的 lv_obj_clean 销毁）。仅当检测到新一轮语音开始（Connecting）
-             * 时清 pin，让本轮后续对账照常（若服务端不推页面则回聊天 UI；若推则
-             * begin_page 重新置 pin）。 */
-            if (s_page_pinned) {
-                if (state == kDeviceStateConnecting) {
-                    s_page_pinned = false;
-                    ESP_LOGI(RN_TAG, "new voice round -> clear page pin");
-                } else {
-                    return; /* 服务端页面保持前台，本轮不自动让位 */
-                }
-            }
-
-            /* --- 状态对账（回归修复 包 9b HWV-A6 fix）---
-             * 语音活跃（Connecting/Listening/Speaking）→ 把 SetupUI 切到前台；
-             * 语音结束回到 Idle → 把 KidPal 屏交还前台（回首页常显）。
-             * 用 s_chat_overlay 去重，只在跃变时 lv_screen_load，避免每秒重绘。 */
-            bool voice = false;
-            switch (state) {
-                case kDeviceStateConnecting:
-                case kDeviceStateListening:
-                case kDeviceStateSpeaking:
-                    voice = true;
-                    break;
-                default:
-                    break;
-            }
-            if (voice && !s_chat_overlay && s_chat_scr != NULL) {
-                lv_screen_load(s_chat_scr);
-                s_chat_overlay = true;
-                ESP_LOGI(RN_TAG, "voice active -> show xiaozhi SetupUI (yield KidPal)");
-            } else if (!voice && s_chat_overlay) {
-                /* 会话结束：回首页常显（重建首页帧再切前台）。 */
-                s_chat_overlay = false;
-                lvgl_port_unlock();
-                kidpal_render_node_show_home();
-                lvgl_port_lock(0);
-                ESP_LOGI(RN_TAG, "voice ended -> restore KidPal home");
-            }
-
-            /* --- 首页动画重渲（冒号/电池闪烁）：仅当首页在前台且未被覆盖 --- */
-            if (s_current_page != KP_PAGE_HOME || s_kidpal_img == NULL || s_chat_overlay) {
-                return;
-            }
-            hp1_state_t st = {};
-            st.hour        = s_rtc_hour;
-            st.minute      = s_rtc_minute;
-            st.env_valid   = s_env_valid;
-            st.temp_c      = s_temp_c;
-            st.humidity_pct = s_humidity_pct;
-            st.battery_pct = s_battery_pct;
-            st.charging    = s_charging;
-            st.tick_ms     = static_cast<int>(esp_timer_get_time() / 1000);
-            kidpal_home_p1_set_state(&st);
-            kidpal_home_p1_render_frame();
-        },
-        RN_TICK_MS,
-        NULL
-    );
-
-    lvgl_port_unlock();
-    ESP_LOGI(RN_TAG, "KidPal render node initialized (4-page RLCD driver)");
 }
 
-void kidpal_render_node_inject_rtc(int hour, int minute)
+/* 重建并渲染首页 P1 帧，再把它切到前台。s_kidpal_scr 必须已存在。 */
+static void rn_render_home_locked(void)
 {
-    if (hour   >= 0 && hour   <= 23) { s_rtc_hour   = hour;   }
-    if (minute >= 0 && minute <= 59) { s_rtc_minute = minute; }
-}
-
-void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
-{
-    s_env_valid    = (env_valid == 1) ? 1 : 0;
-    if (temp_c      >= -40 && temp_c      <= 60)  { s_temp_c       = temp_c;       }
-    if (humidity_pct >=  0 && humidity_pct <= 100) { s_humidity_pct = humidity_pct; }
-}
-
-void kidpal_render_node_show_home(void)
-{
-    lvgl_port_lock(0);
-
-    if (s_kidpal_scr == NULL) {
-        lvgl_port_unlock();
-        ESP_LOGW(RN_TAG, "show_home called before init, skipping");
-        return;
-    }
-
-    /* 清屏，准备首页（若从 schedule/story 切回，图像控件已被 clean 销毁）。 */
+    /* 清屏重建（若从 schedule/story 切回，图像控件已被 clean 销毁）。 */
     lv_obj_clean(s_kidpal_scr);
+    s_kidpal_img = NULL;
 
     /* 重建全屏图像控件（400×300 XRGB8888，描述符在 host_infra_render_p1_frame 中填充）。 */
     s_kidpal_img = lv_image_create(s_kidpal_scr);
@@ -291,43 +198,162 @@ void kidpal_render_node_show_home(void)
 
     /* 把 KidPal 屏切到前台。 */
     lv_screen_load(s_kidpal_scr);
-    s_current_page = KP_PAGE_HOME;
-    s_chat_overlay = false; /* 首页在前台，非聊天覆盖态 */
+    s_local_page = KP_PAGE_HOME;
 
-    lvgl_port_unlock();
-
-    ESP_LOGI(RN_TAG, "KidPal render node pushing home 400x300 render_rc=%d state_rc=%d tick=%d",
+    ESP_LOGI(RN_TAG, "render home 400x300 render_rc=%d state_rc=%d tick=%d",
              render_rc, state_rc, st.tick_ms);
 }
 
 /* -------------------------------------------------------------------------
- * 回归修复（包 9b HWV-A6 fix）：语音态把 SetupUI 切回前台。
+ * 公开 API
+ * ---------------------------------------------------------------------- */
+
+void kidpal_render_node_init(void)
+{
+    if (s_kidpal_scr != NULL) {
+        return; /* 幂等 */
+    }
+    lvgl_port_lock(0);
+
+    /* 聊天 chrome 已由 KidPal 板装配层在 init 前 reparent 到 lv_layer_top()（常驻聊天
+     * layer，SU-RULING-02 单物理屏）；本模块只创建并持有唯一前台屏 s_kidpal_scr。 */
+
+    /* 创建专属屏（lv_obj_create(NULL) = 新建一屏，不与任何父对象绑定）。
+     * display/ 下唯一的顶层屏创建点（归一屏单屏不变式，char 页已并入此体系）。 */
+    s_kidpal_scr = lv_obj_create(NULL);
+    lv_obj_set_style_bg_color(s_kidpal_scr, lv_color_white(), 0);
+    lv_obj_set_style_bg_opa(s_kidpal_scr, LV_OPA_COVER, 0);
+    lv_obj_set_style_pad_all(s_kidpal_scr, 0, 0);
+    lv_obj_clear_flag(s_kidpal_scr, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 动画 tick 定时器（在 LVGL 任务上下文触发，锁已持有）。仅重渲首页动画帧；
+     * 前台/语音对账已由事件驱动 layer push/pop 接管（不再轮询 GetDeviceState）。 */
+    s_tick_timer = lv_timer_create(
+        [](lv_timer_t *t) {
+            (void)t;
+            kidpal_render_node_tick();
+        },
+        RN_TICK_MS,
+        NULL
+    );
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "KidPal render node initialized (unified screen + layer stack)");
+}
+
+void kidpal_render_node_inject_rtc(int hour, int minute)
+{
+    if (hour   >= 0 && hour   <= 23) { s_rtc_hour   = hour;   }
+    if (minute >= 0 && minute <= 59) { s_rtc_minute = minute; }
+}
+
+void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
+{
+    s_env_valid    = (env_valid == 1) ? 1 : 0;
+    if (temp_c      >= -40 && temp_c      <= 60)  { s_temp_c       = temp_c;       }
+    if (humidity_pct >=  0 && humidity_pct <= 100) { s_humidity_pct = humidity_pct; }
+}
+
+void kidpal_render_node_show_home(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        ESP_LOGW(RN_TAG, "show_home called before init, skipping");
+        return;
+    }
+
+    /* 回首页 = 前台回到本地浏览基层：出掉一切 transient 上层，基层 LOCAL_PAGE 独留。 */
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+
+    rn_render_home_locked();
+
+    lvgl_port_unlock();
+
+    ESP_LOGI(RN_TAG, "show_home: LOCAL_PAGE front (layer top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+/* -------------------------------------------------------------------------
+ * 语音轮 / 聊天层前台（layer 栈事件驱动，取代原 1s tick 状态对账）。
  * ---------------------------------------------------------------------- */
 void kidpal_render_node_show_chat(void)
 {
     lvgl_port_lock(0);
 
-    if (s_chat_scr == NULL) {
-        lvgl_port_unlock();
-        ESP_LOGW(RN_TAG, "show_chat: SetupUI screen not captured, skipping");
-        return;
+    /* 聊天内容落点恒 = 常驻聊天 layer（CHAT），非独立聊天屏（回答后屏幕落点确定）。
+     * 本函数只把聆听/回答聊天面按下前台规则置前：推 VOICE 层，若服务端内容页在更上层
+     * 则内容页保持前台、语音不拦内容页（SU-RULING-01 方案A）。 */
+    if (kidpal_layer_chat_target() != KIDPAL_LAYER_CHAT) {
+        ESP_LOGW(RN_TAG, "chat content target drifted from resident chat layer");
     }
-    lv_screen_load(s_chat_scr);
-    s_chat_overlay = true;
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_VOICE);
+    rn_reconcile_foreground_locked();
 
     lvgl_port_unlock();
-    ESP_LOGI(RN_TAG, "KidPal render node yielding to xiaozhi SetupUI (voice)");
+    ESP_LOGI(RN_TAG, "show_chat: VOICE layer push (top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+void kidpal_render_node_voice_begin(void)
+{
+    lvgl_port_lock(0);
+
+    /* 新语音轮开始 = 清除上一轮驻留的 transient（服务端回答页 / 提醒），再推 VOICE 层。
+     * push 幂等 + 按优先级插入，故多次触发（Connecting 与按键预置）安全。 */
+    int had_server = kidpal_layer_has(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE) == 1;
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_VOICE);
+
+    /* 单物理屏内容回落：上一轮服务端回答页（课表/故事/查字）曾画在 s_kidpal_scr 上，
+     * 清层后须把物理内容页从「服务端页」落回本地首页（否则聊天 chrome 迁 top layer 后，
+     * 旧服务端页会留在唯一前台屏上、与「新语音轮清除驻留」矛盾）。聊天 chrome 在
+     * lv_layer_top 不受影响，聆听级表情/状态仍恒可见。 */
+    if (had_server && s_kidpal_scr != NULL) {
+        rn_render_home_locked();
+    } else {
+        rn_reconcile_foreground_locked();
+    }
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "voice_begin: new round (top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+void kidpal_render_node_voice_end(void)
+{
+    lvgl_port_lock(0);
+
+    if (kidpal_layer_has(&s_layer_stack, KIDPAL_LAYER_VOICE) != 1) {
+        lvgl_port_unlock();
+        return; /* 本无语音层（非语音轮结束）——不触发回首页重建 */
+    }
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
+
+    if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE) {
+        /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。 */
+        if (s_kidpal_scr != NULL) {
+            rn_render_home_locked();
+        }
+    } else {
+        /* 服务端回答页驻留前台（OQ3=c：回答后屏幕落点确定、非随机回退；语音不拦内容页）。 */
+        rn_reconcile_foreground_locked();
+    }
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "voice_end: top=%d", kidpal_layer_top(&s_layer_stack));
 }
 
 /* -------------------------------------------------------------------------
- * 崩溃修复（包 260829-hardware-validation）：服务端推送页面渲染的持锁夹钳。
- *
- * 服务端推送页面（故事列表/阅读/盖章、课表）渲染函数内部走 lv_screen_active()
- * + lv_obj_clean() 取当前活动屏重建整页。若不预先把活动屏切到 s_kidpal_scr，
- * 语音轮期间活动屏是 xiaozhi 聊天屏 s_chat_scr，clean 它会销毁 status_label_
- * 等控件，LvglDisplay 成员指针失同步 → SetStatus 悬空 → lv_free 垃圾指针崩溃。
- * begin_page 先 load s_kidpal_scr，令后续渲染 clean 的是 KidPal 专属屏（安全，
- * 每次重建）；同时持锁消除与 LVGL 任务的竞态，置 pin 使 tick 不抢回聊天屏。
+ * 服务端推送页面渲染的持锁夹钳（崩溃修复 包 260829-hardware-validation 语义保留，
+ * 前台推进 layer 栈）。begin_page 推 SERVER_PAGE，begin_reminder 推 REMINDER（更高，
+ * F8：提醒恰在语音轮到点也置前、不崩）；二者都持锁 + 切活动屏到 s_kidpal_scr，
+ * 配对 end_page 释放锁。
  * ---------------------------------------------------------------------- */
 void kidpal_render_node_begin_page(void)
 {
@@ -337,10 +363,11 @@ void kidpal_render_node_begin_page(void)
         /* 未 init：保持持锁状态交调用方 end_page 释放，渲染函数自行降级。 */
         return;
     }
+    /* 服务端内容页接管前台：提醒让位，推 SERVER_PAGE（> VOICE，回答期间内容页可见）。 */
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
     /* 把活动屏切到 KidPal 专属屏，令页面渲染的 lv_screen_active() 取到此屏。 */
     lv_screen_load(s_kidpal_scr);
-    s_chat_overlay = false; /* 服务端页面在前台，非聊天覆盖态 */
-    s_page_pinned  = true;  /* 防 tick 把页面抢回聊天屏 */
 }
 
 void kidpal_render_node_end_page(void)
@@ -348,17 +375,69 @@ void kidpal_render_node_end_page(void)
     lvgl_port_unlock();
 }
 
+void kidpal_render_node_begin_reminder(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        return;
+    }
+    /* 提醒弹窗进 layer 优先级表最高层之一（REMINDER > VOICE/SERVER_PAGE）：恰在语音轮
+     * 到点也置前、不崩（review F8 架构修复）。 */
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_REMINDER);
+    lv_screen_load(s_kidpal_scr);
+}
+
 /* -------------------------------------------------------------------------
- * 阶段 B：BOOT 双按翻页
+ * 配网 layer（SU-A2 残项补全）：配网 = 前台优先级最高层（PROVISION=6），配网进/退由
+ * WifiBoard 配网模式进/退事件驱动。两个入口各自纯进/纯退、独立持锁释放（进在按钮任务 /
+ * 网络回调任务、退在 WifiManager 事件回调，跨任务不成对调用，故不像 begin_page/end_page
+ * 那样配锁）。
+ * ---------------------------------------------------------------------- */
+void kidpal_render_node_begin_provision(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        /* 非 KidPal 归一屏板（render_node 未 init）或未初始化：纯 no-op（layer 栈仅存于
+         * KidPal 渲染节点，其它板无单屏体系）。 */
+        lvgl_port_unlock();
+        return;
+    }
+    /* 配网进 layer 优先级表最高层：PROVISION(6) > REMINDER(5) > SERVER_PAGE(4) >
+     * VOICE(3) > LOCAL_PAGE(2)。幂等去重，重复进入安全。 */
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_PROVISION);
+    lv_screen_load(s_kidpal_scr);
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "begin_provision: PROVISION push (top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+void kidpal_render_node_end_provision(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+    /* 配网退 layer：不在场 pop 返回 -1（no-op），按优先级表回落。 */
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_PROVISION);
+    rn_reconcile_foreground_locked();
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "end_provision: PROVISION pop (top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+/* -------------------------------------------------------------------------
+ * 阶段 B：BOOT 双按翻页（本地浏览层生命周期）
  * ---------------------------------------------------------------------- */
 
 void kidpal_render_node_cycle_next(void)
 {
     lvgl_port_lock(0);
-
-    /* 手动翻页 = 用户主动接管导航（崩溃修复 包 260829-hardware-validation）。
-     * 解除服务端页面 pin，此后 tick 恢复正常状态对账。 */
-    s_page_pinned = false;
 
     if (s_kidpal_scr == NULL) {
         lvgl_port_unlock();
@@ -366,17 +445,22 @@ void kidpal_render_node_cycle_next(void)
         return;
     }
 
+    /* 手动翻页 = 用户主动接管导航：清 transient 前台（服务端页/提醒/语音），回到本地
+     * 浏览基层。 */
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+
     kidpal_page_id_t next = static_cast<kidpal_page_id_t>(
-        (static_cast<int>(s_current_page) + 1) % KP_PAGE_COUNT);
+        (static_cast<int>(s_local_page) + 1) % KP_PAGE_COUNT);
 
     lv_obj_clean(s_kidpal_scr);
-    /* 手动翻页 = 用户主动回到 KidPal 浏览态，清聊天覆盖标志。 */
-    s_chat_overlay = false;
+    s_kidpal_img = NULL; /* clean 已销毁，避免悬垂 */
 
     switch (next) {
         case KP_PAGE_HOME: {
-            /* show_home() 自己拿锁，这里已在锁内，直接内联渲染逻辑。
-             * （s_kidpal_scr 已由上方 lv_obj_clean 清空，不必二次 clean。） */
+            /* show_home 内联逻辑；s_kidpal_scr 已 clean，不必二次 clean。 */
             s_kidpal_img = lv_image_create(s_kidpal_scr);
             lv_obj_set_size(s_kidpal_img, 400, 300);
             lv_obj_set_pos(s_kidpal_img, 0, 0);
@@ -392,25 +476,23 @@ void kidpal_render_node_cycle_next(void)
             kidpal_home_p1_set_state(&st);
             kidpal_home_p1_render_frame();
             lv_screen_load(s_kidpal_scr);
-            s_current_page = KP_PAGE_HOME;
+            s_local_page = KP_PAGE_HOME;
             ESP_LOGI(RN_TAG, "cycle -> HOME (P1)");
             break;
         }
         case KP_PAGE_CHAR: {
-            /* 有缓存笔顺数据时 kidpal_char_page_show() 创建独立屏并加载；
-             * 无数据时在 s_kidpal_scr 上画"等待数据"占位（cycle_next 仍停靠 CHAR）。 */
+            /* 查生字页已并入 s_kidpal_scr 体系（归一屏单屏不变式）：kidpal_char_page_show
+             * 在活动屏（= s_kidpal_scr）上清屏并绘制，不再自建独立屏。 */
+            lv_screen_load(s_kidpal_scr);
             if (s_has_char_data && !s_char_json.empty()) {
                 kidpal_char_page_show(s_char_json.c_str());
-                /* kidpal_char_page_show 内部调用 lv_screen_load(自己的屏)，
-                 * s_kidpal_scr 不再是活动屏。下次 cycle_next 再加载。 */
             } else {
-                lv_screen_load(s_kidpal_scr);
                 lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
                 lv_label_set_text(lbl, "查生字 · 等待数据");
                 lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
                 lv_obj_center(lbl);
             }
-            s_current_page = KP_PAGE_CHAR;
+            s_local_page = KP_PAGE_CHAR;
             ESP_LOGI(RN_TAG, "cycle -> CHAR (P4) has_data=%d", s_has_char_data ? 1 : 0);
             break;
         }
@@ -426,19 +508,19 @@ void kidpal_render_node_cycle_next(void)
                 s_sched_now,
                 -1 /* locate_row: -1 = 不定位，静态展示 */
             );
-            s_current_page = KP_PAGE_SCHEDULE;
+            s_local_page = KP_PAGE_SCHEDULE;
             ESP_LOGI(RN_TAG, "cycle -> SCHEDULE (P2) n=%d", s_sched_n);
             break;
         }
         case KP_PAGE_STORY: {
             lv_screen_load(s_kidpal_scr);
             kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
-            s_current_page = KP_PAGE_STORY;
+            s_local_page = KP_PAGE_STORY;
             ESP_LOGI(RN_TAG, "cycle -> STORY (P3) count=%d", s_story_list.count);
             break;
         }
         default:
-            s_current_page = KP_PAGE_HOME;
+            s_local_page = KP_PAGE_HOME;
             break;
     }
 
@@ -447,15 +529,17 @@ void kidpal_render_node_cycle_next(void)
 
 int kidpal_render_node_get_page(void)
 {
-    return static_cast<int>(s_current_page);
+    return static_cast<int>(s_local_page);
 }
 
 void kidpal_render_node_tick(void)
 {
-    /* 仅在 HOME 页且图像控件存活时触发。
-     * 由 LVGL 定时器（esp_lvgl_port task）调用，锁已持有。
-     * 此处仅重渲 s_p1_fb，不重建控件，不调用 lv_screen_load。 */
-    if (s_current_page != KP_PAGE_HOME || s_kidpal_img == NULL) {
+    /* 首页动画重渲（冒号/电池闪烁）：仅当本地首页是前台 owner 且图像控件存活时触发。
+     * 由 LVGL 定时器（esp_lvgl_port task）调用，锁已持有。前台归属由 layer 栈
+     * top() 单一裁决（服务端页/提醒/语音等更上层在场时不重渲首页，也不会误触
+     * 已被页面渲染 clean 销毁的 s_kidpal_img）。此处不存在轮询 GetDeviceState 对账。 */
+    if (s_local_page != KP_PAGE_HOME || s_kidpal_img == NULL ||
+        kidpal_layer_top(&s_layer_stack) != KIDPAL_LAYER_LOCAL_PAGE) {
         return;
     }
     hp1_state_t st = {};

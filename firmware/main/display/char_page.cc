@@ -36,7 +36,7 @@
 
 /* 单页状态 (设备同一时刻只有查生字一页, 静态单例足够且 additive 不动底座) */
 struct CharPageState {
-    lv_obj_t *scr;
+    lv_obj_t *panel;           /* 查生字页面板：活动屏（s_kidpal_scr）上的一层，不自建屏 */
     lv_obj_t *canvas;
     lv_obj_t *char_label;        /* 大字 */
     lv_obj_t *pinyin_label;
@@ -376,7 +376,7 @@ static void charpage_art_overlay(void)
     if (fr != NULL) {
         /* 框住米字格画布 (canvas: x 4..212 / y 8..216)；236 框锚 (0,4) 完整入屏。
          * 后建于 canvas -> z 序在上，透明内芯只显外圈墨边（框）不遮示范字。 */
-        lv_obj_t *fim = lv_image_create(g_page.scr);
+        lv_obj_t *fim = lv_image_create(g_page.panel);
         lv_image_set_src(fim, fr);
         lv_obj_set_pos(fim, 0, 4);
     }
@@ -400,9 +400,9 @@ void kidpal_char_page_show(const char *data_json)
         return;
     }
 
-    if (g_page.scr != NULL) {
-        lv_obj_delete(g_page.scr);
-        g_page.scr = NULL;
+    if (g_page.panel != NULL) {
+        lv_obj_delete(g_page.panel);
+        g_page.panel = NULL;
         g_page.canvas = NULL;
         charpage_free_state();
         memset(&g_page, 0, sizeof(g_page));
@@ -414,10 +414,26 @@ void kidpal_char_page_show(const char *data_json)
         return;
     }
 
-    /* 全屏白底页面 */
-    g_page.scr = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(g_page.scr, lv_color_make(0xff, 0xff, 0xff), 0);
-    lv_screen_load(g_page.scr);
+    /* 查生字页已并入 s_kidpal_scr 体系（归一屏单屏不变式）：作为活动屏上的一层/一页
+     * 绘制，不自建独立屏。取活动屏并先清空（与 schedule/story 渲染同款先清后画，
+     * 幂等、重渲染绝不与上一帧叠加）；活动屏由调用方保证 = s_kidpal_scr（mcp_server
+     * char 路由经 begin_page 切屏，cycle_next 则显式加载 s_kidpal_scr）。 */
+    lv_obj_t *host = lv_screen_active();
+    if (host == NULL) {
+        ESP_LOGW(CHARPAGE_TAG, "no active screen — degrade, no blind render");
+        return;
+    }
+    lv_obj_clean(host);
+
+    /* 全屏白底页面板（挂在活动屏上，作为一层；不新建顶层屏）。 */
+    g_page.panel = lv_obj_create(host);
+    lv_obj_set_size(g_page.panel, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_style_bg_color(g_page.panel, lv_color_make(0xff, 0xff, 0xff), 0);
+    lv_obj_set_style_bg_opa(g_page.panel, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(g_page.panel, 0, 0);
+    lv_obj_set_style_pad_all(g_page.panel, 0, 0);
+    lv_obj_set_style_border_width(g_page.panel, 0, 0);
+    lv_obj_clear_flag(g_page.panel, LV_OBJ_FLAG_SCROLLABLE);
 
     /* 米字格大字盘 (左, ~208px) */
     g_page.canvas_buf = (lv_color_t *)malloc(sizeof(lv_color_t) *
@@ -425,7 +441,7 @@ void kidpal_char_page_show(const char *data_json)
                                              (size_t)CHARPAGE_CANVAS_SIZE);
     g_page.rast = (uint8_t *)calloc(1, (size_t)((CHARPAGE_CANVAS_SIZE + 7) / 8) *
                                            (size_t)CHARPAGE_CANVAS_SIZE);
-    g_page.canvas = lv_canvas_create(g_page.scr);
+    g_page.canvas = lv_canvas_create(g_page.panel);
     lv_obj_set_pos(g_page.canvas, 4, 8);
     lv_obj_set_style_border_width(g_page.canvas, 1, 0);
     lv_obj_set_style_border_color(g_page.canvas, lv_color_make(0xbb, 0xbb, 0xbb), 0);
@@ -468,7 +484,7 @@ void kidpal_char_page_show(const char *data_json)
         memset(&card, 0, sizeof(card));
         kidpal_char_card_build(&info_o, -1, &card); /* 初始写完定格 或 首笔, 页内再更新 */
 
-        lv_obj_t *cardlabel = lv_label_create(g_page.scr);
+        lv_obj_t *cardlabel = lv_label_create(g_page.panel);
         lv_obj_set_pos(cardlabel, 228, 8);
         char buf[256];
         snprintf(buf, sizeof(buf), "%s\n%s\n%s", card.pinyin, card.stroke_total,
@@ -479,7 +495,7 @@ void kidpal_char_page_show(const char *data_json)
     }
 
     /* 底部提示条 (占位, 语义: 演示中) */
-    g_page.hint_label = lv_label_create(g_page.scr);
+    g_page.hint_label = lv_label_create(g_page.panel);
     lv_obj_set_pos(g_page.hint_label, 0, 280);
     lv_label_set_text(g_page.hint_label, "跟随笔画一笔一画描红");
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);

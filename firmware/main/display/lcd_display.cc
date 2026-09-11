@@ -1184,13 +1184,43 @@ void LcdDisplay::SetTheme(Theme* theme) {
 void LcdDisplay::SetHideSubtitle(bool hide) {
     DisplayLockGuard lock(this);
     hide_subtitle_ = hide;
-    
+
     // Immediately update UI visibility based on the setting
     if (bottom_bar_ != nullptr) {
         if (hide) {
             lv_obj_add_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_remove_flag(bottom_bar_, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
+void LcdDisplay::KidPalReparentChatToLayer(lv_obj_t* parent) {
+    DisplayLockGuard lock(this);
+    if (parent == nullptr) {
+        return;
+    }
+
+    /* 归一屏（包 260911-screen-unification SU-RULING-02 单物理屏）：
+     * SetupUI 把聊天 chrome 建在 LVGL 默认首屏上。把「状态栏 / 表情 / 气泡 / 预览图 /
+     * 低电量弹窗」这些顶层聊天控件迁到常驻 parent（top layer，非屏），使聊天内容任何页
+     * 可见、且页面渲染的 lv_obj_clean(lv_screen_active()) 绝不触碰它们（根除 clean 聊天
+     * 屏致 status_label_ 悬空同族崩溃）。container_ 是整屏不透明背景，留在原默认屏——
+     * 该屏此后不再被加载、不再渲染，KidPal 页从底下透出。
+     *
+     * 只迁顶层控件子树：表情的 emoji_label_/emoji_image_ 在非 WeChat 布局下挂在
+     * emoji_box_ 下，随 emoji_box_ 一并迁移，不单独重挂（保持其居中坐标语义）。 */
+    lv_obj_t* chat_top[] = {
+        top_bar_,
+        status_bar_,
+        bottom_bar_,
+        emoji_box_,
+        preview_image_,
+        low_battery_popup_,
+    };
+    for (lv_obj_t* obj : chat_top) {
+        if (obj != nullptr && lv_obj_get_parent(obj) != parent) {
+            lv_obj_set_parent(obj, parent);
         }
     }
 }

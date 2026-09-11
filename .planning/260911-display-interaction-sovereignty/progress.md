@@ -126,3 +126,18 @@
   PASS 后再呈批（interim 行已回写，终局待批准实裁）。裁断经 ruling-260911-screen-unification-03.txt
   回传：SU-A8 轮 = KR-A5 同模式（agent 烧录 COM5 + 串口捕获、human 持板、PASS 裁定权归 human；
   本 build 无 KEY 接线、BOOT 仍旧过渡语义，「两键一致」子项归 SU-A7 并后复跑不在本轮）。
+
+## 2026-09-11 · integrator closeout（PKG-2 归一屏 260911-screen-unification）
+
+- 封包阶段：builder 实现 + fixer mutation 证据完成，verifier scoped 轮 r4 全绿（7 闸）、
+  final 轮 r5 红在 unit/acceptance 两闸，唯一红 = SMK-A4（server smoke-e2e screen.md
+  缺失，owner=260829-smoke-e2e，非本包）。
+- integrator 全量复跑：host ELF 111 Tests / 3 Failures（3 在册红 WSA-A6:830 / WSA-A4:663 /
+  P2-A1:571，本包 7 齿全绿）；server pytest 125 passed / 1 failed（SMK-A4）/ 6 skipped /
+  45 deselected；设备 IDF 构建 exit 0。
+- closeout 制品落 `changes/dev/260911-screen-unification/`：docs-delta.md（blocking）、
+  review-packet.md（blocking）、existing-red-inventory.md（非 blocking）。
+- SU-A8 真机持板（语音轮+推送页并发、提醒恰在语音轮到点 0 复位 0 崩溃）标注 pending-human，
+  非 host 齿、integrator 不代跑。
+- 下一步：feature 分支 commit 冻结 diff → supervisor 合并门（机械闸 supervisor-verdict-gate，
+  riskTier=high 升级人类复核）。

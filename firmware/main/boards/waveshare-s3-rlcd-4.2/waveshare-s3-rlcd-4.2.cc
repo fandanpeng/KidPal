@@ -378,6 +378,13 @@ public:
         InitializeTools();
         InitializeLcdDisplay();
         InitializeArt();
+        /* 归一屏（包 260911-screen-unification SU-RULING-02 单物理屏）：
+         * CustomLcdDisplay 构造期 SetupUI() 已把聊天 chrome（状态栏/表情/气泡）建在
+         * LVGL 默认首屏上。此处把它们 reparent 到常驻顶层 layer（lv_layer_top，非屏、
+         * 恒浮于活动屏之上），此后 display/ 只有 s_kidpal_scr 一个前台屏被加载，聊天
+         * 内容任何页可见。必须在 kidpal_render_node_init() 之前：init 创建并首载
+         * s_kidpal_scr，把原默认首屏留在后面不再加载。 */
+        display_->KidPalReparentChatToLayer(lv_layer_top());
         /* 包 9b HWV-A6: 渲染节点在 LVGL 与 art SPIFFS 均就绪后初始化。
          * init() 创建 s_kidpal_scr（不渲染，无 I/O）；inject 注入开机 RTC/温湿度；
          * show_home() 渲染首页 P1 帧并加载到 RLCD。 */

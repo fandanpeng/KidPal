@@ -1,0 +1,116 @@
+I (59485) SystemInfo: free sram: 63111 minimal sram: 55331
+I (69485) SystemInfo: free sram: 63023 minimal sram: 53567
+I (79485) SystemInfo: free sram: 63003 minimal sram: 53567
+I (89485) SystemInfo: free sram: 62671 minimal sram: 53331
+I (99485) SystemInfo: free sram: 62963 minimal sram: 53331
+I (109485) SystemInfo: free sram: 63027 minimal sram: 53331
+I (119485) SystemInfo: free sram: 63003 minimal sram: 53331
+I (129485) SystemInfo: free sram: 63063 minimal sram: 53331
+I (139485) SystemInfo: free sram: 63031 minimal sram: 53331
+I (149485) SystemInfo: free sram: 63043 minimal sram: 53331
+I (159485) SystemInfo: free sram: 63211 minimal sram: 53331
+I (160885) StateMachine: State: listening -> speaking
+I (169455) Application: << 时间过得真快，好像才刚刚聊得起劲，转眼就要跟你说再见啦。今晚跟你说的每一句话，我都会好好收着；
+I (169645) I2S_IF: Mode 0 need extend bits 64 to 32
+I (169645) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (169645) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (169665) Adev_Codec: Open codec device OK
+I (169665) AudioCodec: Set output enable to true
+I (170485) SystemInfo: free sram: 61123 minimal sram: 53331
+I (179245) Application: << 你回房间前，记得盖好小被子，做个甜甜的梦。想我了就随时来喊一声，我一直在这儿等着你呀
+I (180485) SystemInfo: free sram: 61511 minimal sram: 53331
+I (188785) StateMachine: State: speaking -> listening
+I (188815) WS: Websocket disconnected
+I (188815) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (188815) wifi:Set ps type: 2, coexist: 0
+
+I (188815) StateMachine: State: listening -> idle
+I (188855) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=188653
+I (188855) kidpal_rn: voice_end: top=2
+I (191805) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (191805) StateMachine: State: idle -> connecting
+E (191805) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (191815) esp-tls-mbedtls: read error :-0x004C
+E (191815) EspSsl: SSL receive failed: -76
+I (191825) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (191825) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (193065) esp-x509-crt-bundle: Certificate validated
+I (193475) WS: Session ID: bd4b66bd-edb8-425b-89a4-670071f92c42
+I (193475) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (193485) wifi:Set ps type: 0, coexist: 0
+
+W (193485) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (193495) StateMachine: State: connecting -> listening
+I (199285) Application: >> 明天有什么课程？
+I (199295) StateMachine: State: listening -> speaking
+I (204655) I2S_IF: Pending out channel for in channel running
+I (204655) AudioCodec: Set output enable to false
+I (208485) SystemInfo: free sram: 63039 minimal sram: 53331
+I (209565) MCP: display_dispatch view=schedule corr_id=kdp-209565 items=1 is_tomorrow=1 degrade=false
+I (209575) MCP: schedule_render corr_id=kdp-209565 items=1 drawn=1
+I (211115) Application: << 明天是周六，上午十点到十一点半有武术班，在武馆，别的课都放假啦
+I (211335) I2S_IF: Mode 0 need extend bits 64 to 32
+I (211335) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (211335) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (211355) Adev_Codec: Open codec device OK
+I (211355) AudioCodec: Set output enable to true
+I (217805) Application: << 记得穿好运动鞋，早点出门哦
+I (218495) SystemInfo: free sram: 59991 minimal sram: 53331
+I (221465) StateMachine: State: speaking -> listening
+I (230485) SystemInfo: free sram: 61215 minimal sram: 53331
+I (231855) kidpal_rn: show_chat: VOICE layer push (top=4)
+E (231855) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (231855) esp-tls-mbedtls: read error :-0x004C
+E (231855) EspSsl: SSL receive failed: -76
+I (231855) WS: Websocket disconnected
+I (231865) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (231865) wifi:Set ps type: 2, coexist: 0
+
+I (231875) StateMachine: State: listening -> idle
+I (231875) kidpal_rn: voice_end: top=4
+I (237335) I2S_IF: Pending out channel for in channel running
+I (237335) AudioCodec: Set output enable to false
+I (240075) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (241485) SystemInfo: free sram: 69063 minimal sram: 53331
+W (242485) Display: System time is not set, tm_year: 70
+I (243215) kidpal_rn: cycle -> SCHEDULE (P2) n=1
+W (243845) Display: System time is not set, tm_year: 70
+W (244485) Display: System time is not set, tm_year: 70
+W (245485) Display: System time is not set, tm_year: 70
+I (246245) kidpal_rn: cycle -> STORY (P3) count=0
+W (246485) Display: System time is not set, tm_year: 70
+W (247495) Display: System time is not set, tm_year: 70
+W (248485) Display: System time is not set, tm_year: 70
+W (249485) Display: System time is not set, tm_year: 70
+W (250485) Display: System time is not set, tm_year: 70
+I (250895) kidpal_rn: cycle -> HOME (P1)
+W (251495) Display: System time is not set, tm_year: 70
+I (251495) SystemInfo: free sram: 68663 minimal sram: 53331
+I (252425) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (252425) StateMachine: State: idle -> connecting
+I (252425) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (252435) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (252575) esp-x509-crt-bundle: Certificate validated
+I (252995) WS: Session ID: 1562c6d2-cc89-413b-9ad9-5f80db6c78f9
+I (252995) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (252995) wifi:Set ps type: 0, coexist: 0
+
+W (253005) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (253015) StateMachine: State: connecting -> listening
+I (256515) Application: >> 没事儿
+I (256515) StateMachine: State: listening -> speaking
+I (262265) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=262054
+I (262265) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (263545) Application: << 好～那我就在这儿待着，想看故事
+I (263755) I2S_IF: Mode 0 need extend bits 64 to 32
+I (263755) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (263755) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (263775) Adev_Codec: Open codec device OK
+I (263775) AudioCodec: Set output enable to true
+I (266485) SystemInfo: free sram: 61767 minimal sram: 53331
+I (266975) Application: << 查个字，或者随便聊聊，随时喊我就行
+I (271545) StateMachine: State: speaking -> listening
+I (281485) SystemInfo: free sram: 61515 minimal sram: 53271
+I (286755) I2S_IF: Pending out channel for in channel running
+I (286755) AudioCodec: Set output enable to false
+I (291485) SystemInfo: free sram: 61855 minimal sram: 53271

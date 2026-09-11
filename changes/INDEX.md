@@ -31,6 +31,7 @@
 | [260911-ecs-deploy-convergence](../changes/dev/260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
 
 | [260911-key-route-a1](../changes/dev/260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
+| [260911-screen-unification](../changes/dev/260911-screen-unification/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 
 ## arch (19)
 
