@@ -11,10 +11,11 @@
 #   * server.auth.enabled = true, allowed_devices = [] (force shared bearer token, 决策22)
 #   * selected_module.LLM = OpenClawOpenAI  -> type:openai, base_url 127.0.0.1:18789 (V28)
 #       NO max_tokens in the streaming request (契约 §四 / V9 hard constraint)
-#   * selected_module.TTS = EdgeTTS (edge-tts zh-CN-XiaoxiaoNeural)
-#   * selected_module.ASR = AliyunStreamASR (类型 aliyun_stream, 流式 + VAD 切句, V23)
-#       credentials injected from env; if unset the structural shape is still declared,
-#       live ASR is a known credential gap -> escalate (human 待办). Never forged.
+#   * selected_module.TTS = EdgeTTS (edge zh-CN-XiaoxiaoNeural)
+#   * selected_module.ASR = Qwen3ASRFlash (qwen3-asr-flash, DashScope 流式; human 2026-09-06 终选,
+#       spec §A1 双候选之一). credentials injected from env (DASHSCOPE_API_KEY); if unset the
+#       structural shape is still declared, live ASR is a known credential gap ->
+#       escalate (human 待办). Never forged.
 #
 set -euo pipefail
 
@@ -27,14 +28,12 @@ OVERLAY="$DATA_DIR/.config.yaml"
 # Device token: strong shared bearer token (决策22 >=22 chars). Empty => refuse to render.
 DEVICE_TOKEN="${XIAOZHI_DEVICE_TOKEN:-}"
 OPENCLAW_TOKEN="${OPENCLAW_TOKEN:-}"
-ALIYUN_ASR_APPKEY="${ALIYUN_ASR_APPKEY:-}"
-ALIYUN_ASR_TOKEN="${ALIYUN_ASR_TOKEN:-}"
+DASHSCOPE_API_KEY="${DASHSCOPE_API_KEY:-}"
 SECRETS="${XIAOZHI_SECRETS:-$HERE/secrets.env}"
 if [ -f "$SECRETS" ]; then
   [ -z "$DEVICE_TOKEN" ]    && DEVICE_TOKEN="$(grep -E '^XIAOZHI_DEVICE_TOKEN=' "$SECRETS" | head -1 | cut -d= -f2- | tr -d '"' || true)"
   [ -z "$OPENCLAW_TOKEN" ]  && OPENCLAW_TOKEN="$(grep -E '^OPENCLAW_TOKEN=' "$SECRETS" | head -1 | cut -d= -f2- | tr -d '"' || true)"
-  [ -z "$ALIYUN_ASR_APPKEY" ] && ALIYUN_ASR_APPKEY="$(grep -E '^ALIYUN_ASR_APPKEY=' "$SECRETS" | head -1 | cut -d= -f2- | tr -d '"' || true)"
-  [ -z "$ALIYUN_ASR_TOKEN" ]  && ALIYUN_ASR_TOKEN="$(grep -E '^ALIYUN_ASR_TOKEN=' "$SECRETS" | head -1 | cut -d= -f2- | tr -d '"' || true)"
+  [ -z "$DASHSCOPE_API_KEY" ] && DASHSCOPE_API_KEY="$(grep -E '^DASHSCOPE_API_KEY=' "$SECRETS" | head -1 | cut -d= -f2- | tr -d '"' || true)"
 fi
 
 # device token present => render a secure overlay. token 未设 = 拒绝服务 (决策22/V11/V26).
@@ -53,33 +52,29 @@ server:
   auth:
     enabled: true
     allowed_devices: []   # no whitelist: every device must present a correct shared bearer token
+  ip: 127.0.0.1
+  port: 8010
 selected_module:
   LLM: OpenClawOpenAI
   VLLM: OpenClawOpenAI
   TTS: EdgeTTS
-  ASR: AliyunStreamASR     # 阿里云云 ASR (决策19 云优先; V23 候选流式 + VAD 切句)
+  ASR: Qwen3ASRFlash     # DashScope 流式 (human 2026-09-06 终选; spec §A1 双候选之一)
   Memory: nomem
-  Intent: function_call
+  Intent: nointent
 LLM:
   OpenClawOpenAI:
     # type:openai 流式接 OpenClaw (决策18 / 契约 §四)
     type: openai
-    base_url: http://127.0.0.1:18789   # OpenClaw loopback (V28 18789 锁 127.0.0.1)
+    base_url: http://127.0.0.1:18789/v1   # OpenClaw loopback (V28 18789 锁 127.0.0.1)
     model_name: openclaw/default
     api_key: "$OPENCLAW_TOKEN"
     # NOTE: stream 请求禁带 max_tokens (契约 §四 / V9) — enforced by provider.openclaw_stream_request
 TTS:
   EdgeTTS:
-    type: edge-tts
+    type: edge
     voice: zh-CN-XiaoxiaoNeural
 ASR:
-  AliyunStreamASR:
-    type: aliyun_stream
-    appkey: "$ALIYUN_ASR_APPKEY"
-    token: "$ALIYUN_ASR_TOKEN"
-    host: nls-gateway-cn-shanghai.aliyuncs.com
-    max_sentence_silence: 800          # VAD 切句 (V23 候选)
-    # 若 appkey/token 为空 => live ASR 标缺口 (human 待办), 结构面按声明形状实现, 不伪造
+  Qwen3ASRFlash: {api_key: "$DASHSCOPE_API_KEY", model_name: qwen3-asr-flash, type: qwen3_asr_flash}
 EOF
 echo "rendered $OVERLAY"
 ls -la "$OVERLAY"

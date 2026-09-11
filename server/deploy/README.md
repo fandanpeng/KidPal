@@ -120,7 +120,7 @@ owner=architect + acceptance-author）登记了「语义耦合在版本字面文
 - `apply-xiaozhi-overlay.sh` 渲染 `data/.config.yaml` 时从 `secrets.env` 注入，**绝不硬编码**、不进镜像层。
 - **设备共享单 token**（决策 22）：≥22 字符 / ≥128-bit，`auth.authorize` constant-time 比对；**token 未设 = 拒绝服务**（不留 validation-mode 后门）。
 - `OPENCLAW_TOKEN`：brain loopback token（与 `server/shim.py` 共用，shim 随 WS 包退役）。
-- 阿里云云 ASR 凭据（决策 19 云优先 / V23）：`DASHSCOPE_API_KEY` / `ALIYUN_ASR_APPKEY` / `ALIYUN_ASR_TOKEN` 留空 = live ASR 已标注为 known credential gap（human 待办），结构面仍按可声明形状实现，不伪造绿。
+- 云端 ASR 凭据（决策 19 云优先 / V23；终选 Qwen3ASRFlash，human 2026-09-06）：`DASHSCOPE_API_KEY` 留空 = live ASR 已标注为 known credential gap（human 待办），结构面仍按可声明形状实现，不伪造绿。
 - 本仓 grep 复查零泄漏：`sk-sp-` / 真 token 值全部只出在 ECS `secrets.env`(600)，git 树内无可回显值。
 
 ## 证书与轮换（GWA-A9 / ARQ-260902-cert-lifecycle-deadlock）

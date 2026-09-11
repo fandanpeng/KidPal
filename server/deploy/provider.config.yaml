@@ -74,10 +74,12 @@ providers:
     voice: "zh-CN-XiaoxiaoNeural"
   asr:
     family: "asr"
-    provider: "aliyun"                  # 阿里云云 ASR (决策19 云优先; V23 终选/降级链见 evidence)
-    candidate_stream: true              # 候选流式 + VAD 切句兼容性实测 (V23)
-    api_key_env: "DASHSCOPE_API_KEY"
-    appkey_env: "ALIYUN_ASR_APPKEY"
-    token_env: "ALIYUN_ASR_TOKEN"
+    provider: "qwen3_asr_flash"        # Qwen3ASRFlash, DashScope 流式 — human 2026-09-06 ASR 终选
+                                       # (spec §A1 双候选之一; 决策19 云优先; V23 降级链见下)
+    candidate_stream: true             # 候选流式 + VAD 切句兼容性实测 (V23)
+    api_key_env: "DASHSCOPE_API_KEY"   # DashScope 流式 ASR 凭据 (secrets.env 已用该名)
+    model_name: "qwen3-asr-flash"
+    # 定谳指针 (S0.3): human 2026-09-06 ASR 终选 Qwen3ASRFlash; 2026-09-11 S0.3 D5/D6 裁决
+    # pod-events b22e2019/d41a2f74 (auth.enabled 恢复声明终态 true; 补渲 server.ip/port)。
     # 若凭据不可得: live ASR 标缺口升级 (human 待办), 结构面按可声明形状实现, 不伪造.
     downgrade_chain: ["fun_asr-server -> sensevoice", "aliyun_nonsream", "aliyun_stream"]
