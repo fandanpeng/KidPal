@@ -8,7 +8,8 @@
 # repo file (secrets stay out of the clone; merges stay clean).
 #
 # Rendered pieces (matching actual xiaozhi config.yaml provider-block schema):
-#   * server.auth.enabled = true, allowed_devices = [] (force shared bearer token, 决策22)
+#   * server.auth.enabled = false (引擎层 auth 与 HMAC 动态签名机制绑死、与决策22 静态 token
+#       不相容; token 强制在 front 层承载 — 260903 架构; 260911 human 裁 pod-events f9322b9c)
 #   * selected_module.LLM = OpenClawOpenAI  -> type:openai, base_url 127.0.0.1:18789 (V28)
 #       NO max_tokens in the streaming request (契约 §四 / V9 hard constraint)
 #   * selected_module.TTS = EdgeTTS (edge zh-CN-XiaoxiaoNeural)
@@ -50,8 +51,10 @@ cat > "$OVERLAY" <<EOF
 # provider render source: server/deploy/provider.config.yaml. creds from server/deploy/secrets.env
 server:
   auth:
-    enabled: true
-    allowed_devices: []   # no whitelist: every device must present a correct shared bearer token
+    # 引擎层 auth 关：引擎 auth=HMAC 动态签名（core/auth.py AuthManager），与决策22 静态
+    # 共享 token 不相容（front 层强制 token 已承载，260903 架构；260911 human 裁 pod-events f9322b9c）
+    enabled: false
+    allowed_devices: []   # 保留键形（引擎 auth 关；front 层承载 static shared bearer token 决策22）
   ip: 127.0.0.1
   port: 8010
 selected_module:
