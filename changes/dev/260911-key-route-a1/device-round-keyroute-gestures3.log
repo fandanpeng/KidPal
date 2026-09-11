@@ -1,0 +1,717 @@
+W (567435) Display: System time is not set, tm_year: 70
+W (568445) Display: System time is not set, tm_year: 70
+W (569435) Display: System time is not set, tm_year: 70
+W (570435) Display: System time is not set, tm_year: 70
+W (571435) Display: System time is not set, tm_year: 70
+W (572445) Display: System time is not set, tm_year: 70
+W (573435) Display: System time is not set, tm_year: 70
+W (574435) Display: System time is not set, tm_year: 70
+W (575435) Display: System time is not set, tm_year: 70
+I (575435) SystemInfo: free sram: 69171 minimal sram: 53211
+W (576445) Display: System time is not set, tm_year: 70
+W (577435) Display: System time is not set, tm_year: 70
+W (578435) Display: System time is not set, tm_year: 70
+W (579435) Display: System time is not set, tm_year: 70
+W (580445) Display: System time is not set, tm_year: 70
+W (581435) Display: System time is not set, tm_year: 70
+W (582435) Display: System time is not set, tm_year: 70
+W (583435) Display: System time is not set, tm_year: 70
+W (584445) Display: System time is not set, tm_year: 70
+W (585435) Display: System time is not set, tm_year: 70
+I (585435) SystemInfo: free sram: 68655 minimal sram: 53211
+W (586435) Display: System time is not set, tm_year: 70
+W (587435) Display: System time is not set, tm_year: 70
+W (588445) Display: System time is not set, tm_year: 70
+I (589215) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-589215 action=1
+I (589215) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+I (589215) StateMachine: State: idle -> connecting
+I (589225) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (589235) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (590145) esp-x509-crt-bundle: Certificate validated
+I (590545) WS: Session ID: bbcb4917-ebaf-4e69-90fb-e6fc3a273773
+I (590555) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (590555) wifi:Set ps type: 0, coexist: 0
+
+W (590555) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (590565) StateMachine: State: connecting -> listening
+I (594365) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (595125) Application: >> 明天星期几？
+I (595135) StateMachine: State: listening -> speaking
+I (604435) SystemInfo: free sram: 62759 minimal sram: 53211
+I (607945) Application: << 明天是星期六呀，周末来啦
+I (608115) I2S_IF: Mode 0 need extend bits 64 to 32
+I (608125) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (608125) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (608155) Adev_Codec: Open codec device OK
+I (608155) AudioCodec: Set output enable to true
+I (610875) Application: << 可以睡个小懒觉，做点自己喜欢的事
+I (614435) SystemInfo: free sram: 61135 minimal sram: 53211
+I (615015) StateMachine: State: speaking -> listening
+I (616385) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-616385 key=0 gesture=1
+I (616655) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-616655 key=0 gesture=2
+I (621985) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-621985 key=0 gesture=2
+I (624435) SystemInfo: free sram: 62511 minimal sram: 53211
+I (627795) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-627795 action=2
+I (627835) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=627628
+I (627955) kidpal_rn: voice active -> show xiaozhi SetupUI (yield KidPal)
+I (630125) I2S_IF: Pending out channel for in channel running
+I (630125) AudioCodec: Set output enable to false
+I (630815) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-630815 key=0 gesture=3
+I (634125) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-634125 action=2
+I (634165) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=633958
+I (634445) SystemInfo: free sram: 62411 minimal sram: 53211
+I (634975) kidpal_rn: voice active -> show xiaozhi SetupUI (yield KidPal)
+I (636475) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-636475 key=0 gesture=3
+I (638605) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-638605 action=1
+I (638605) kidpal_rn: KidPal render node yielding to xiaozhi SetupUI (voice)
+E (638605) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (638605) esp-tls-mbedtls: read error :-0x004C
+E (638615) EspSsl: SSL receive failed: -76
+I (638615) WS: Websocket disconnected
+I (638625) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (638625) wifi:Set ps type: 2, coexist: 0
+
+I (638635) StateMachine: State: listening -> idle
+I (639045) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=638842
+I (639045) kidpal_rn: voice ended -> restore KidPal home
+I (648465) SystemInfo: free sram: 69099 minimal sram: 53211
+W (649455) Display: System time is not set, tm_year: 70
+I (650055) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-650055 key=1 gesture=1
+I (650235) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-650235 action=3
+I (650455) kidpal_rn: cycle -> CHAR (P4) has_data=0
+W (650455) Display: System time is not set, tm_year: 70
+W (651435) Display: System time is not set, tm_year: 70
+W (652435) Display: System time is not set, tm_year: 70
+W (653435) Display: System time is not set, tm_year: 70
+W (654435) Display: System time is not set, tm_year: 70
+W (655435) Display: System time is not set, tm_year: 70
+W (656435) Display: System time is not set, tm_year: 70
+I (657255) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-657255 action=2
+I (657295) kidpal_rn: KidPal render node pushing home 400x300 render_rc=0 state_rc=0 tick=657083
+W (657435) Display: System time is not set, tm_year: 70
+W (658615) Display: System time is not set, tm_year: 70
+I (658615) SystemInfo: free sram: 68567 minimal sram: 53211
+I (659035) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-659035 key=0 gesture=3
+W (659605) Display: System time is not set, tm_year: 70
+W (660635) Display: System time is not set, tm_year: 70
+W (661615) Display: System time is not set, tm_year: 70
+W (662615) Display: System time is not set, tm_year: 70
+W (663605) Display: System time is not set, tm_year: 70
+W (664635) Display: System time is not set, tm_year: 70
+W (665685) Display: System time is not set, tm_year: 70
+W (666685) Display: System time is not set, tm_year: 70
+W (667675) Display: System time is not set, tm_year: 70
+I (667865) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-667865 key=1 gesture=3
+W (668665) Display: System time is not set, tm_year: 70
+I (668665) SystemInfo: free sram: 69083 minimal sram: 53211
+W (669655) Display: System time is not set, tm_year: 70
+W (670705) Display: System time is not set, tm_year: 70
+W (671745) Display: System time is not set, tm_year: 70
+W (672795) Display: System time is not set, tm_year: 70
+W (673785) Display: System time is not set, tm_year: 70
+W (674775) Display: System time is not set, tm_year: 70
+I (675095) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-675095 key=1 gesture=2
+W (675765) Display: System time is not set, tm_year: 70
+I (675805) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-675805 key=1 gesture=2
+I (676475) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-676475 key=1 gesture=2
+W (676765) Display: System time is not set, tm_year: 70
+I (677115) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-677115 key=1 gesture=2
+W (677755) Display: System time is not set, tm_year: 70
+W (678805) Display: System time is not set, tm_year: 70
+I (678805) SystemInfo: free sram: 68567 minimal sram: 53211
+W (679855) Display: System time is not set, tm_year: 70
+W (680435) Display: System time is not set, tm_year: 70
+W (681435) Display: System time is not set, tm_year: 70
+W (682865) Display: System time is not set, tm_year: 70
+W (683865) Display: System time is not set, tm_year: 70
+W (684855) Display: System time is not set, tm_year: 70
+W (685435) Display: System time is not set, tm_year: 70
+W (686435) Display: System time is not set, tm_year: 70
+W (687435) Display: System time is not set, tm_year: 70
+W (688435) Display: System time is not set, tm_year: 70
+I (688435) SystemInfo: free sram: 69083 minimal sram: 53211
+I (688925) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-688925 key=1 gesture=1
+I (689105) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-689105 action=3
+I (689105) kidpal_rn: cycle -> CHAR (P4) has_data=0
+W (689435) Display: System time is not set, tm_year: 70
+W (690435) Display: System time is not set, tm_year: 70
+W (691435) Display: System time is not set, tm_year: 70
+W (692435) Display: System time is not set, tm_year: 70
+I (693365) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-693365 key=1 gesture=1
+W (693435) Display: System time is not set, tm_year: 70
+I (693555) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-693555 action=3
+I (693555) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+W (694435) Display: System time is not set, tm_year: 70
+W (695435) Display: System time is not set, tm_year: 70
+I (695525) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-695525 key=1 gesture=1
+I (695715) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-695715 action=3
+I (695725) kidpal_rn: cycle -> STORY (P3) count=0
+W (696435) Display: System time is not set, tm_year: 70
+W (697435) Display: System time is not set, tm_year: 70
+W (698435) Display: System time is not set, tm_year: 70
+I (698435) SystemInfo: free sram: 67839 minimal sram: 53211
+W (699435) Display: System time is not set, tm_year: 70
+W (700435) Display: System time is not set, tm_year: 70
+I (700885) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-700885 key=1 gesture=1
+I (701065) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-701065 action=3
+I (701115) kidpal_rn: cycle -> HOME (P1)
+I (701355) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-701355 key=1 gesture=1
+W (701435) Display: System time is not set, tm_year: 70
+I (701535) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-701535 action=3
+I (701535) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (701865) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-701865 key=1 gesture=1
+I (702055) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-702055 action=3
+I (702055) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (702385) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-702385 key=1 gesture=1
+W (702435) Display: System time is not set, tm_year: 70
+I (702575) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-702575 action=3
+I (702575) kidpal_rn: cycle -> STORY (P3) count=0
+I (702935) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-702935 key=1 gesture=1
+I (703115) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-703115 action=3
+I (703165) kidpal_rn: cycle -> HOME (P1)
+W (703435) Display: System time is not set, tm_year: 70
+W (704435) Display: System time is not set, tm_year: 70
+W (705435) Display: System time is not set, tm_year: 70
+W (706435) Display: System time is not set, tm_year: 70
+I (706665) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-706665 key=1 gesture=1
+I (706845) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-706845 action=3
+I (707175) kidpal_rn: cycle -> CHAR (P4) has_data=0
+W (707435) Display: System time is not set, tm_year: 70
+I (707625) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-707625 key=1 gesture=1
+I (707815) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-707815 action=3
+I (708105) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (708135) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-708135 key=1 gesture=1
+I (708325) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-708325 action=3
+I (708495) kidpal_rn: cycle -> STORY (P3) count=0
+W (708495) Display: System time is not set, tm_year: 70
+I (708495) SystemInfo: free sram: 68355 minimal sram: 53211
+I (708715) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-708715 key=1 gesture=1
+I (708895) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-708895 action=3
+I (708945) kidpal_rn: cycle -> HOME (P1)
+I (709205) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-709205 key=1 gesture=1
+I (709395) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-709395 action=3
+I (709395) kidpal_rn: cycle -> CHAR (P4) has_data=0
+W (709435) Display: System time is not set, tm_year: 70
+I (709575) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-709575 key=1 gesture=1
+I (709765) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-709765 action=3
+I (709775) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (710025) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-710025 key=1 gesture=1
+I (710215) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-710215 action=3
+I (710325) kidpal_rn: cycle -> STORY (P3) count=0
+I (710465) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-710465 key=1 gesture=1
+I (710645) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-710645 action=3
+W (710715) Display: System time is not set, tm_year: 70
+I (710765) kidpal_rn: cycle -> HOME (P1)
+I (710835) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-710835 key=1 gesture=1
+I (711015) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-711015 action=3
+I (711165) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-711165 key=1 gesture=2
+I (711165) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (711355) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-711355 action=3
+I (711545) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+W (711545) Display: System time is not set, tm_year: 70
+W (712435) Display: System time is not set, tm_year: 70
+W (713435) Display: System time is not set, tm_year: 70
+W (714435) Display: System time is not set, tm_year: 70
+W (715435) Display: System time is not set, tm_year: 70
+I (716105) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-716105 action=3
+I (716105) kidpal_rn: cycle -> STORY (P3) count=0
+W (716615) Display: System time is not set, tm_year: 70
+W (717435) Display: System time is not set, tm_year: 70
+W (718435) Display: System time is not set, tm_year: 70
+I (718435) SystemInfo: free sram: 67855 minimal sram: 53211
+I (718515) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-718515 key=1 gesture=1
+I (718705) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-718705 action=3
+I (718745) kidpal_rn: cycle -> HOME (P1)
+W (719685) Display: System time is not set, tm_year: 70
+W (720685) Display: System time is not set, tm_year: 70
+W (721655) Display: System time is not set, tm_year: 70
+W (722645) Display: System time is not set, tm_year: 70
+W (723685) Display: System time is not set, tm_year: 70
+W (724675) Display: System time is not set, tm_year: 70
+W (725655) Display: System time is not set, tm_year: 70
+W (726645) Display: System time is not set, tm_year: 70
+W (727675) Display: System time is not set, tm_year: 70
+W (728665) Display: System time is not set, tm_year: 70
+I (728665) SystemInfo: free sram: 69095 minimal sram: 53211
+W (729655) Display: System time is not set, tm_year: 70
+W (730695) Display: System time is not set, tm_year: 70
+W (731735) Display: System time is not set, tm_year: 70
+W (732725) Display: System time is not set, tm_year: 70
+W (733715) Display: System time is not set, tm_year: 70
+W (734705) Display: System time is not set, tm_year: 70
+W (735695) Display: System time is not set, tm_year: 70
+W (736725) Display: System time is not set, tm_year: 70
+W (737715) Display: System time is not set, tm_year: 70
+W (738705) Display: System time is not set, tm_year: 70
+I (738705) SystemInfo: free sram: 68579 minimal sram: 53211
+W (739735) Display: System time is not set, tm_year: 70
+W (740775) Display: System time is not set, tm_year: 70
+W (741755) Display: System time is not set, tm_year: 70
+W (742745) Display: System time is not set, tm_year: 70
+W (743785) Display: System time is not set, tm_year: 70
+W (744775) Display: System time is not set, tm_year: 70
+W (745755) Display: System time is not set, tm_year: 70
+W (746745) Display: System time is not set, tm_year: 70
+W (747785) Display: System time is not set, tm_year: 70
+W (748775) Display: System time is not set, tm_year: 70
+I (748775) SystemInfo: free sram: 69095 minimal sram: 53211
+W (749765) Display: System time is not set, tm_year: 70
+W (750745) Display: System time is not set, tm_year: 70
+W (751785) Display: System time is not set, tm_year: 70
+W (752775) Display: System time is not set, tm_year: 70
+W (753755) Display: System time is not set, tm_year: 70
+W (754745) Display: System time is not set, tm_year: 70
+W (755785) Display: System time is not set, tm_year: 70
+W (756785) Display: System time is not set, tm_year: 70
+W (757775) Display: System time is not set, tm_year: 70
+W (758765) Display: System time is not set, tm_year: 70
+I (758765) SystemInfo: free sram: 68579 minimal sram: 53211
+W (759765) Display: System time is not set, tm_year: 70
+W (760765) Display: System time is not set, tm_year: 70
+W (761745) Display: System time is not set, tm_year: 70
+W (762785) Display: System time is not set, tm_year: 70
+W (763785) Display: System time is not set, tm_year: 70
+W (764775) Display: System time is not set, tm_year: 70
+W (765765) Display: System time is not set, tm_year: 70
+W (766755) Display: System time is not set, tm_year: 70
+W (767805) Display: System time is not set, tm_year: 70
+W (768845) Display: System time is not set, tm_year: 70
+I (768845) SystemInfo: free sram: 68815 minimal sram: 53211
+W (769435) Display: System time is not set, tm_year: 70
+W (770435) Display: System time is not set, tm_year: 70
+W (771855) Display: System time is not set, tm_year: 70
+W (772855) Display: System time is not set, tm_year: 70
+W (773435) Display: System time is not set, tm_year: 70
+W (774435) Display: System time is not set, tm_year: 70
+W (775435) Display: System time is not set, tm_year: 70
+W (776435) Display: System time is not set, tm_year: 70
+W (777435) Display: System time is not set, tm_year: 70
+W (778435) Display: System time is not set, tm_year: 70
+I (778435) SystemInfo: free sram: 69331 minimal sram: 53211
+W (779435) Display: System time is not set, tm_year: 70
+W (780435) Display: System time is not set, tm_year: 70
+W (781435) Display: System time is not set, tm_year: 70
+W (782435) Display: System time is not set, tm_year: 70
+W (783435) Display: System time is not set, tm_year: 70
+W (784435) Display: System time is not set, tm_year: 70
+W (785435) Display: System time is not set, tm_year: 70
+W (786435) Display: System time is not set, tm_year: 70
+W (787435) Display: System time is not set, tm_year: 70
+W (788435) Display: System time is not set, tm_year: 70
+I (788435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (789435) Display: System time is not set, tm_year: 70
+W (790435) Display: System time is not set, tm_year: 70
+W (791435) Display: System time is not set, tm_year: 70
+W (792435) Display: System time is not set, tm_year: 70
+W (793435) Display: System time is not set, tm_year: 70
+W (794435) Display: System time is not set, tm_year: 70
+W (795435) Display: System time is not set, tm_year: 70
+W (796435) Display: System time is not set, tm_year: 70
+W (797435) Display: System time is not set, tm_year: 70
+W (798435) Display: System time is not set, tm_year: 70
+I (798435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (799435) Display: System time is not set, tm_year: 70
+W (800435) Display: System time is not set, tm_year: 70
+W (801435) Display: System time is not set, tm_year: 70
+W (802435) Display: System time is not set, tm_year: 70
+W (803435) Display: System time is not set, tm_year: 70
+W (804435) Display: System time is not set, tm_year: 70
+W (805435) Display: System time is not set, tm_year: 70
+W (806435) Display: System time is not set, tm_year: 70
+W (807435) Display: System time is not set, tm_year: 70
+W (808435) Display: System time is not set, tm_year: 70
+I (808435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (809435) Display: System time is not set, tm_year: 70
+W (810435) Display: System time is not set, tm_year: 70
+W (811435) Display: System time is not set, tm_year: 70
+W (812435) Display: System time is not set, tm_year: 70
+W (813435) Display: System time is not set, tm_year: 70
+W (814435) Display: System time is not set, tm_year: 70
+W (815435) Display: System time is not set, tm_year: 70
+W (816435) Display: System time is not set, tm_year: 70
+W (817435) Display: System time is not set, tm_year: 70
+W (818435) Display: System time is not set, tm_year: 70
+I (818435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (819435) Display: System time is not set, tm_year: 70
+W (820435) Display: System time is not set, tm_year: 70
+W (821435) Display: System time is not set, tm_year: 70
+W (822435) Display: System time is not set, tm_year: 70
+W (823435) Display: System time is not set, tm_year: 70
+W (824435) Display: System time is not set, tm_year: 70
+W (825435) Display: System time is not set, tm_year: 70
+W (826435) Display: System time is not set, tm_year: 70
+W (827435) Display: System time is not set, tm_year: 70
+W (828435) Display: System time is not set, tm_year: 70
+I (828435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (829435) Display: System time is not set, tm_year: 70
+W (830435) Display: System time is not set, tm_year: 70
+W (831435) Display: System time is not set, tm_year: 70
+W (832435) Display: System time is not set, tm_year: 70
+W (833435) Display: System time is not set, tm_year: 70
+W (834435) Display: System time is not set, tm_year: 70
+W (835435) Display: System time is not set, tm_year: 70
+W (836435) Display: System time is not set, tm_year: 70
+W (837435) Display: System time is not set, tm_year: 70
+W (838435) Display: System time is not set, tm_year: 70
+I (838435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (839435) Display: System time is not set, tm_year: 70
+W (840435) Display: System time is not set, tm_year: 70
+W (841435) Display: System time is not set, tm_year: 70
+W (842435) Display: System time is not set, tm_year: 70
+W (843435) Display: System time is not set, tm_year: 70
+W (844435) Display: System time is not set, tm_year: 70
+W (845435) Display: System time is not set, tm_year: 70
+W (846435) Display: System time is not set, tm_year: 70
+W (847435) Display: System time is not set, tm_year: 70
+W (848435) Display: System time is not set, tm_year: 70
+I (848435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (849435) Display: System time is not set, tm_year: 70
+W (850435) Display: System time is not set, tm_year: 70
+W (851435) Display: System time is not set, tm_year: 70
+W (852435) Display: System time is not set, tm_year: 70
+W (853435) Display: System time is not set, tm_year: 70
+W (854435) Display: System time is not set, tm_year: 70
+W (855435) Display: System time is not set, tm_year: 70
+W (856435) Display: System time is not set, tm_year: 70
+W (857435) Display: System time is not set, tm_year: 70
+W (858435) Display: System time is not set, tm_year: 70
+I (858435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (859435) Display: System time is not set, tm_year: 70
+W (860435) Display: System time is not set, tm_year: 70
+W (861435) Display: System time is not set, tm_year: 70
+W (862435) Display: System time is not set, tm_year: 70
+W (863435) Display: System time is not set, tm_year: 70
+W (864435) Display: System time is not set, tm_year: 70
+W (865435) Display: System time is not set, tm_year: 70
+W (866435) Display: System time is not set, tm_year: 70
+W (867435) Display: System time is not set, tm_year: 70
+W (868435) Display: System time is not set, tm_year: 70
+I (868435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (869435) Display: System time is not set, tm_year: 70
+W (870435) Display: System time is not set, tm_year: 70
+W (871435) Display: System time is not set, tm_year: 70
+W (872435) Display: System time is not set, tm_year: 70
+W (873435) Display: System time is not set, tm_year: 70
+W (874435) Display: System time is not set, tm_year: 70
+W (875435) Display: System time is not set, tm_year: 70
+W (876435) Display: System time is not set, tm_year: 70
+W (877435) Display: System time is not set, tm_year: 70
+W (878435) Display: System time is not set, tm_year: 70
+I (878435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (879435) Display: System time is not set, tm_year: 70
+W (880435) Display: System time is not set, tm_year: 70
+W (881445) Display: System time is not set, tm_year: 70
+W (882485) Display: System time is not set, tm_year: 70
+W (883475) Display: System time is not set, tm_year: 70
+W (884465) Display: System time is not set, tm_year: 70
+W (885455) Display: System time is not set, tm_year: 70
+W (886455) Display: System time is not set, tm_year: 70
+W (887505) Display: System time is not set, tm_year: 70
+W (888545) Display: System time is not set, tm_year: 70
+I (888545) SystemInfo: free sram: 69335 minimal sram: 53211
+W (889595) Display: System time is not set, tm_year: 70
+W (890585) Display: System time is not set, tm_year: 70
+W (891575) Display: System time is not set, tm_year: 70
+W (892565) Display: System time is not set, tm_year: 70
+W (893555) Display: System time is not set, tm_year: 70
+W (894545) Display: System time is not set, tm_year: 70
+W (895575) Display: System time is not set, tm_year: 70
+W (896565) Display: System time is not set, tm_year: 70
+W (897555) Display: System time is not set, tm_year: 70
+W (898545) Display: System time is not set, tm_year: 70
+I (898545) SystemInfo: free sram: 68819 minimal sram: 53211
+W (899575) Display: System time is not set, tm_year: 70
+W (900565) Display: System time is not set, tm_year: 70
+W (901555) Display: System time is not set, tm_year: 70
+W (902545) Display: System time is not set, tm_year: 70
+W (903585) Display: System time is not set, tm_year: 70
+W (904565) Display: System time is not set, tm_year: 70
+W (905555) Display: System time is not set, tm_year: 70
+W (906545) Display: System time is not set, tm_year: 70
+W (907575) Display: System time is not set, tm_year: 70
+W (908565) Display: System time is not set, tm_year: 70
+I (908565) SystemInfo: free sram: 68819 minimal sram: 53211
+W (909555) Display: System time is not set, tm_year: 70
+W (910585) Display: System time is not set, tm_year: 70
+W (911625) Display: System time is not set, tm_year: 70
+W (912615) Display: System time is not set, tm_year: 70
+W (913595) Display: System time is not set, tm_year: 70
+W (914645) Display: System time is not set, tm_year: 70
+W (915635) Display: System time is not set, tm_year: 70
+W (916625) Display: System time is not set, tm_year: 70
+W (917615) Display: System time is not set, tm_year: 70
+W (918605) Display: System time is not set, tm_year: 70
+I (918605) SystemInfo: free sram: 69335 minimal sram: 53211
+W (919605) Display: System time is not set, tm_year: 70
+W (920635) Display: System time is not set, tm_year: 70
+W (921685) Display: System time is not set, tm_year: 70
+W (922685) Display: System time is not set, tm_year: 70
+W (923665) Display: System time is not set, tm_year: 70
+W (924665) Display: System time is not set, tm_year: 70
+W (925655) Display: System time is not set, tm_year: 70
+W (926705) Display: System time is not set, tm_year: 70
+W (927735) Display: System time is not set, tm_year: 70
+W (928775) Display: System time is not set, tm_year: 70
+I (928775) SystemInfo: free sram: 68819 minimal sram: 53211
+W (929765) Display: System time is not set, tm_year: 70
+W (930765) Display: System time is not set, tm_year: 70
+W (931765) Display: System time is not set, tm_year: 70
+W (932765) Display: System time is not set, tm_year: 70
+W (933755) Display: System time is not set, tm_year: 70
+W (934805) Display: System time is not set, tm_year: 70
+W (935845) Display: System time is not set, tm_year: 70
+W (936435) Display: System time is not set, tm_year: 70
+W (937435) Display: System time is not set, tm_year: 70
+W (938435) Display: System time is not set, tm_year: 70
+I (938435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (939865) Display: System time is not set, tm_year: 70
+W (940855) Display: System time is not set, tm_year: 70
+W (941435) Display: System time is not set, tm_year: 70
+W (942435) Display: System time is not set, tm_year: 70
+W (943435) Display: System time is not set, tm_year: 70
+W (944435) Display: System time is not set, tm_year: 70
+W (945435) Display: System time is not set, tm_year: 70
+W (946435) Display: System time is not set, tm_year: 70
+W (947435) Display: System time is not set, tm_year: 70
+W (948435) Display: System time is not set, tm_year: 70
+I (948435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (949435) Display: System time is not set, tm_year: 70
+W (950435) Display: System time is not set, tm_year: 70
+W (951435) Display: System time is not set, tm_year: 70
+W (952435) Display: System time is not set, tm_year: 70
+W (953435) Display: System time is not set, tm_year: 70
+W (954435) Display: System time is not set, tm_year: 70
+W (955435) Display: System time is not set, tm_year: 70
+W (956435) Display: System time is not set, tm_year: 70
+W (957435) Display: System time is not set, tm_year: 70
+W (958435) Display: System time is not set, tm_year: 70
+I (958435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (959435) Display: System time is not set, tm_year: 70
+W (960435) Display: System time is not set, tm_year: 70
+W (961435) Display: System time is not set, tm_year: 70
+W (962435) Display: System time is not set, tm_year: 70
+W (963435) Display: System time is not set, tm_year: 70
+W (964435) Display: System time is not set, tm_year: 70
+W (965435) Display: System time is not set, tm_year: 70
+W (966435) Display: System time is not set, tm_year: 70
+W (967435) Display: System time is not set, tm_year: 70
+W (968435) Display: System time is not set, tm_year: 70
+I (968435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (969435) Display: System time is not set, tm_year: 70
+W (970435) Display: System time is not set, tm_year: 70
+W (971435) Display: System time is not set, tm_year: 70
+W (972435) Display: System time is not set, tm_year: 70
+W (973435) Display: System time is not set, tm_year: 70
+W (974435) Display: System time is not set, tm_year: 70
+W (975435) Display: System time is not set, tm_year: 70
+W (976435) Display: System time is not set, tm_year: 70
+W (977435) Display: System time is not set, tm_year: 70
+W (978435) Display: System time is not set, tm_year: 70
+I (978435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (979435) Display: System time is not set, tm_year: 70
+W (980435) Display: System time is not set, tm_year: 70
+W (981435) Display: System time is not set, tm_year: 70
+W (982435) Display: System time is not set, tm_year: 70
+W (983435) Display: System time is not set, tm_year: 70
+W (984435) Display: System time is not set, tm_year: 70
+W (985435) Display: System time is not set, tm_year: 70
+W (986435) Display: System time is not set, tm_year: 70
+W (987435) Display: System time is not set, tm_year: 70
+W (988435) Display: System time is not set, tm_year: 70
+I (988435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (989435) Display: System time is not set, tm_year: 70
+W (990435) Display: System time is not set, tm_year: 70
+W (991435) Display: System time is not set, tm_year: 70
+W (992435) Display: System time is not set, tm_year: 70
+W (993435) Display: System time is not set, tm_year: 70
+W (994435) Display: System time is not set, tm_year: 70
+W (995435) Display: System time is not set, tm_year: 70
+W (996435) Display: System time is not set, tm_year: 70
+W (997435) Display: System time is not set, tm_year: 70
+W (998435) Display: System time is not set, tm_year: 70
+I (998435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (999435) Display: System time is not set, tm_year: 70
+W (1000435) Display: System time is not set, tm_year: 70
+W (1001435) Display: System time is not set, tm_year: 70
+W (1002435) Display: System time is not set, tm_year: 70
+W (1003435) Display: System time is not set, tm_year: 70
+W (1004435) Display: System time is not set, tm_year: 70
+W (1005455) Display: System time is not set, tm_year: 70
+W (1006495) Display: System time is not set, tm_year: 70
+W (1007535) Display: System time is not set, tm_year: 70
+W (1008525) Display: System time is not set, tm_year: 70
+I (1008525) SystemInfo: free sram: 69335 minimal sram: 53211
+W (1009525) Display: System time is not set, tm_year: 70
+W (1010525) Display: System time is not set, tm_year: 70
+W (1011515) Display: System time is not set, tm_year: 70
+W (1012495) Display: System time is not set, tm_year: 70
+W (1013535) Display: System time is not set, tm_year: 70
+W (1014535) Display: System time is not set, tm_year: 70
+W (1015515) Display: System time is not set, tm_year: 70
+W (1016495) Display: System time is not set, tm_year: 70
+W (1017525) Display: System time is not set, tm_year: 70
+W (1018525) Display: System time is not set, tm_year: 70
+I (1018525) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1019505) Display: System time is not set, tm_year: 70
+W (1020495) Display: System time is not set, tm_year: 70
+W (1021525) Display: System time is not set, tm_year: 70
+W (1022515) Display: System time is not set, tm_year: 70
+W (1023515) Display: System time is not set, tm_year: 70
+W (1024495) Display: System time is not set, tm_year: 70
+W (1025525) Display: System time is not set, tm_year: 70
+W (1026515) Display: System time is not set, tm_year: 70
+W (1027505) Display: System time is not set, tm_year: 70
+W (1028535) Display: System time is not set, tm_year: 70
+I (1028535) SystemInfo: free sram: 69335 minimal sram: 53211
+W (1029575) Display: System time is not set, tm_year: 70
+W (1030555) Display: System time is not set, tm_year: 70
+W (1031545) Display: System time is not set, tm_year: 70
+W (1032585) Display: System time is not set, tm_year: 70
+W (1033565) Display: System time is not set, tm_year: 70
+W (1034545) Display: System time is not set, tm_year: 70
+W (1035575) Display: System time is not set, tm_year: 70
+W (1036565) Display: System time is not set, tm_year: 70
+W (1037555) Display: System time is not set, tm_year: 70
+W (1038545) Display: System time is not set, tm_year: 70
+I (1038545) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1039575) Display: System time is not set, tm_year: 70
+W (1040565) Display: System time is not set, tm_year: 70
+W (1041555) Display: System time is not set, tm_year: 70
+W (1042545) Display: System time is not set, tm_year: 70
+W (1043575) Display: System time is not set, tm_year: 70
+W (1044565) Display: System time is not set, tm_year: 70
+W (1045565) Display: System time is not set, tm_year: 70
+W (1046555) Display: System time is not set, tm_year: 70
+W (1047595) Display: System time is not set, tm_year: 70
+W (1048635) Display: System time is not set, tm_year: 70
+I (1048635) SystemInfo: free sram: 69335 minimal sram: 53211
+W (1049625) Display: System time is not set, tm_year: 70
+W (1050615) Display: System time is not set, tm_year: 70
+W (1051605) Display: System time is not set, tm_year: 70
+W (1052645) Display: System time is not set, tm_year: 70
+W (1053685) Display: System time is not set, tm_year: 70
+W (1054695) Display: System time is not set, tm_year: 70
+W (1055675) Display: System time is not set, tm_year: 70
+W (1056665) Display: System time is not set, tm_year: 70
+W (1057655) Display: System time is not set, tm_year: 70
+W (1058645) Display: System time is not set, tm_year: 70
+I (1058645) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1059695) Display: System time is not set, tm_year: 70
+W (1060685) Display: System time is not set, tm_year: 70
+W (1061685) Display: System time is not set, tm_year: 70
+W (1062685) Display: System time is not set, tm_year: 70
+W (1063675) Display: System time is not set, tm_year: 70
+W (1064665) Display: System time is not set, tm_year: 70
+W (1065655) Display: System time is not set, tm_year: 70
+W (1066695) Display: System time is not set, tm_year: 70
+W (1067735) Display: System time is not set, tm_year: 70
+W (1068725) Display: System time is not set, tm_year: 70
+I (1068725) SystemInfo: free sram: 69299 minimal sram: 53211
+W (1069715) Display: System time is not set, tm_year: 70
+W (1070705) Display: System time is not set, tm_year: 70
+W (1071735) Display: System time is not set, tm_year: 70
+W (1072775) Display: System time is not set, tm_year: 70
+W (1073755) Display: System time is not set, tm_year: 70
+W (1074745) Display: System time is not set, tm_year: 70
+W (1075785) Display: System time is not set, tm_year: 70
+W (1076775) Display: System time is not set, tm_year: 70
+W (1077755) Display: System time is not set, tm_year: 70
+W (1078735) Display: System time is not set, tm_year: 70
+I (1078735) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1079765) Display: System time is not set, tm_year: 70
+W (1080755) Display: System time is not set, tm_year: 70
+W (1081745) Display: System time is not set, tm_year: 70
+W (1082775) Display: System time is not set, tm_year: 70
+W (1083765) Display: System time is not set, tm_year: 70
+W (1084765) Display: System time is not set, tm_year: 70
+W (1085745) Display: System time is not set, tm_year: 70
+W (1086775) Display: System time is not set, tm_year: 70
+W (1087765) Display: System time is not set, tm_year: 70
+W (1088755) Display: System time is not set, tm_year: 70
+I (1088755) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1089745) Display: System time is not set, tm_year: 70
+W (1090775) Display: System time is not set, tm_year: 70
+W (1091765) Display: System time is not set, tm_year: 70
+W (1092755) Display: System time is not set, tm_year: 70
+W (1093745) Display: System time is not set, tm_year: 70
+W (1094775) Display: System time is not set, tm_year: 70
+W (1095765) Display: System time is not set, tm_year: 70
+W (1096765) Display: System time is not set, tm_year: 70
+W (1097755) Display: System time is not set, tm_year: 70
+W (1098805) Display: System time is not set, tm_year: 70
+I (1098805) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1099835) Display: System time is not set, tm_year: 70
+W (1100435) Display: System time is not set, tm_year: 70
+W (1101435) Display: System time is not set, tm_year: 70
+W (1102435) Display: System time is not set, tm_year: 70
+W (1103865) Display: System time is not set, tm_year: 70
+W (1104855) Display: System time is not set, tm_year: 70
+W (1105435) Display: System time is not set, tm_year: 70
+W (1106435) Display: System time is not set, tm_year: 70
+W (1107435) Display: System time is not set, tm_year: 70
+W (1108435) Display: System time is not set, tm_year: 70
+I (1108435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1109435) Display: System time is not set, tm_year: 70
+W (1110435) Display: System time is not set, tm_year: 70
+W (1111435) Display: System time is not set, tm_year: 70
+W (1112435) Display: System time is not set, tm_year: 70
+W (1113435) Display: System time is not set, tm_year: 70
+W (1114435) Display: System time is not set, tm_year: 70
+W (1115435) Display: System time is not set, tm_year: 70
+W (1116435) Display: System time is not set, tm_year: 70
+W (1117435) Display: System time is not set, tm_year: 70
+W (1118435) Display: System time is not set, tm_year: 70
+I (1118435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (1119435) Display: System time is not set, tm_year: 70
+W (1120435) Display: System time is not set, tm_year: 70
+W (1121435) Display: System time is not set, tm_year: 70
+W (1122435) Display: System time is not set, tm_year: 70
+W (1123435) Display: System time is not set, tm_year: 70
+W (1124435) Display: System time is not set, tm_year: 70
+W (1125435) Display: System time is not set, tm_year: 70
+W (1126435) Display: System time is not set, tm_year: 70
+W (1127435) Display: System time is not set, tm_year: 70
+W (1128435) Display: System time is not set, tm_year: 70
+I (1128435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1129435) Display: System time is not set, tm_year: 70
+W (1130435) Display: System time is not set, tm_year: 70
+W (1131435) Display: System time is not set, tm_year: 70
+W (1132435) Display: System time is not set, tm_year: 70
+W (1133435) Display: System time is not set, tm_year: 70
+W (1134435) Display: System time is not set, tm_year: 70
+W (1135435) Display: System time is not set, tm_year: 70
+W (1136435) Display: System time is not set, tm_year: 70
+W (1137435) Display: System time is not set, tm_year: 70
+W (1138435) Display: System time is not set, tm_year: 70
+I (1138435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1139435) Display: System time is not set, tm_year: 70
+W (1140435) Display: System time is not set, tm_year: 70
+W (1141435) Display: System time is not set, tm_year: 70
+W (1142435) Display: System time is not set, tm_year: 70
+W (1143435) Display: System time is not set, tm_year: 70
+W (1144435) Display: System time is not set, tm_year: 70
+W (1145435) Display: System time is not set, tm_year: 70
+W (1146435) Display: System time is not set, tm_year: 70
+W (1147435) Display: System time is not set, tm_year: 70
+W (1148435) Display: System time is not set, tm_year: 70
+I (1148435) SystemInfo: free sram: 69335 minimal sram: 53211
+W (1149435) Display: System time is not set, tm_year: 70
+W (1150435) Display: System time is not set, tm_year: 70
+W (1151435) Display: System time is not set, tm_year: 70
+W (1152435) Display: System time is not set, tm_year: 70
+W (1153435) Display: System time is not set, tm_year: 70
+W (1154435) Display: System time is not set, tm_year: 70
+W (1155435) Display: System time is not set, tm_year: 70
+W (1156435) Display: System time is not set, tm_year: 70
+W (1157435) Display: System time is not set, tm_year: 70
+W (1158435) Display: System time is not set, tm_year: 70
+I (1158435) SystemInfo: free sram: 68819 minimal sram: 53211
+W (1159435) Display: System time is not set, tm_year: 70
+W (1160435) Display: System time is not set, tm_year: 70
+W (1161435) Display: System time is not set, tm_year: 70
+W (1162435) Display: System time is not set, tm_year: 70
+W (1163435) Display: System time is not set, tm_year: 70
+W (1164435) Display: System time is not set, tm_year: 70
+W (1165435) Display: System time is not set, tm_year: 70
+W (1166485) Display: System time is not set, tm_year: 70
+W (1167475) Display: System time is not set, tm_year: 70

@@ -12,7 +12,7 @@
   "subsystem": "firmware",
   "story": "PKG-1 键位路线落地（OQ4=A，A1 全局层先行）：板级 KEY(GPIO18) 接线（iot_button 三手势注册，消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180）→ 喂已冻结的 key_gesture_parser（设备侧首次接线，现状零调用）→ 全局路由表落地（KEY 单击=对话、KEY 长按=回首页）→ BOOT 回归「主司翻页」（单击翻页，去对话化）。页内特例（P2/P3/P4/提醒弹窗）= A2 随后另立项，不在本包。GPIO18 电平/上拉真机确认为验收项（悬空风险）。本包是 ARQ-260911-cross-package-behavior-owner-gap 的首用试金石：KEY 接线端到端 owner 显式登记归本包，机制级齿防 BOOT≈KEY 行为等价假绿。",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线 + 新增 key_route_a1.acceptance.c 机制齿在基线上判红：接线缺失/parser 喂入缺失/路由表缺失）；intake 时 acceptance-author 复核红基线记录",
-  "redBaselineResult": "现状（ARQ-260911 证据，2026-09-11 复核）：git log -S \"GPIO_NUM_18\" 全固件零命中、key_gesture_parser_feed 设备侧零调用（仅宿主 session_logic.acceptance.c 命中）、板级仅 boot_button_（waveshare-s3-rlcd-4.2.cc L45/L276）——新齿对现状必红，红基线成立。",
+  "redBaselineResult": "现状（ARQ-260911 证据，2026-09-11 复核）：git log -S \"GPIO_NUM_18\" 全固件零命中、key_gesture_parser_feed 设备侧零调用（仅宿主 session_logic.acceptance.c 命中）、板级仅 boot_button_（waveshare-s3-rlcd-4.2.cc L45/L276）——新齿对现状必红，红基线成立。 | append（acceptance-author 2026-09-11 实测 + planner 判读裁定）：双通道红基线成立。① 既有 host runner 全量基线实跑（WSL linux target 新编 569/569 链接，cwd=firmware/main/test/host_app，root 经 .. 上溯与仓根同构）：104 Tests / 4 Failures / 0 Ignored，exit 4；四条红 = WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，全部在册既存红（WSA/P2 见 launch 口径注记 + existing-red-inventory R2/R3；VRT-A2/E2 = existing-red-inventory R4，owner=260829-voice-roundtrip，local-only 证据族）。launch 口径「104/3 @ d087fb7」漏列 VRT-A2/E2 一条（该注记在主 worktree progress.md 为未提交项、本 worktree 不可见；两 worktree 证据文件 tracked 内容一致，红在两处同态）——planner 裁定：本包有效基线 = 104/4，四条均先存跨包红非本包责任，本包责任 = 超出基线的新增红；基线消解走独立批不塞本包。② 新齿红（key_route_a1.acceptance.c，5 TEST_CASE 机制级 tree-scan 齿）：C 类冻结验收实编 gcc -std=c11 -Wall -Wextra -fsyntax-only EXIT=0（0 error 0 warning，验收文件本身可编译）；scratch 桩实跑（WSL 临时目录，用后已清理不入仓）5 Tests / 5 Failures，每红对应真实接线缺失——KR-A1 KEY_BUTTON_GPIO→GPIO_NUM_18 零命中、KR-A2 key_gesture_parser_feed(& 设备侧零调用、KR-A3 key_route_global(KEY_ID_KEY 零调用、KR-A4 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK) 仍在板级（去对话化未做）、KR-A6 未注册 HOST_ACCEPTANCE_SRCS；解析性红定性 grep 实证 GPIO_NUM_18 板级全零。环境备注：host_app/build 首次 set-target linux 遭非 CMake 目录态拒 fullclean（exit 2），rm -rf build 后成功（记录在案非 blocker）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -29,7 +29,7 @@
     "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
     "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
     "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
-    "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/",
+    { "id": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/", "kind": "structural" },
     "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）"
   ],
   "acceptanceTestsFile": [
@@ -61,6 +61,7 @@
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件板级接线 + host 验收注册（config.h / waveshare-s3-rlcd-4.2.cc / host_app CMakeLists），零 docs 面改动：spec §4.0/§5.3 零修订（OQ4=A 已裁，KR-E2 由冻结齿 canary 钉住）、契约面只读、无新增约定文档面；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
   "mergeOrder": 18,
   "dependsOn": [],
   "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板，GPIO18 电平/三手势）",
@@ -114,7 +115,52 @@
     }
   ],
   "mutationRequired": true,
-  "mutationEvidence": [],
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
+        "mutation": "config.h KEY_BUTTON_GPIO GPIO_NUM_18 → GPIO_NUM_17（单点）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：key_route_a1 KR-A1 TEST_CASE tooth 1 红（KR-A1 RED: config.h 未定义 KEY_BUTTON_GPIO -> GPIO_NUM_18）；还原复跑绿（109 Tests / 4 Failures = 基线四条在册）。单点变异即破板级 GPIO 钉死齿。"
+      },
+      {
+        "acceptanceId": "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
+        "mutation": "板级 .cc 全部 key_gesture_parser_feed(& → key_gesture_parser_feed_stub(&（4 处）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A2 TEST_CASE tooth 1 红（key_gesture_parser_feed(& referenced by 0 file(s)）——证「设备侧悬空」根因被钉死；还原复跑绿。session_logic 全齿保持绿 = 冻结纯逻辑零改动机械证明。"
+      },
+      {
+        "acceptanceId": "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
+        "mutation": "板级 .cc GLOBAL_ACT_SESSION_TOGGLE → GLOBAL_ACT_SESSION_STUB（3 处）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A3 TEST_CASE tooth 3 红（GLOBAL_ACT_SESSION_TOGGLE 仅 2 文件——无设备侧 dispatch 消费）；还原复跑绿。教训记录：首次尝试变异名 _TOGGLE_X 因 strstr 仍子串命中而不红——变异命名不得保留原字面为子串。"
+      },
+      {
+        "acceptanceId": "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
+        "mutation": "boot_button_.OnClick 恢复 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK)（回退去对话化）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A4 TEST_CASE tooth 1 负向齿红（BOOT 单击仍挂在 HandleStoryKey(...CLICK) 对话/故事路径）；还原复跑绿。去对话化若被回退负向齿必红；既有 BOOT 齿零新增红（109/4 = 基线四条在册）。"
+      },
+      {
+        "acceptanceId": "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）",
+        "mutation": "host_app/main/CMakeLists.txt 删除 \"../../key_route_a1.acceptance.c\" 注册行",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A6 TEST_CASE tooth 1 红（key_route_a1.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS）；还原复跑绿。KR-A6 exit-0 字面判读见 notes planner finalize append ②（有效基线 104/4 在册既存红下，终跑判据 = 相对基线零新增红 + 本包齿全绿，实测 109/4）。"
+      },
+      {
+        "acceptanceId": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/",
+        "mutation": "无 host 变异面——human 持板 device-round 项（非代码可测），acceptance 条目已标 kind:structural（一等豁免通道，先例 260829-hardware-validation 全 structural）；冻结齿明文不承载 KR-A5。",
+        "result": "not applicable (structural, device-round human evidence)",
+        "sensitive": false,
+        "note": "planner 登记 2026-09-11：GPIO18 接线敏感性由 KR-A1 mutation 实测承载（GPIO_NUM_18→17 即红）；KR-A5 真机证据门 = changes/dev/260911-key-route-a1/ 持板轮日志（active_high 实参回填冻结），device-round 相位执行，不以 host mutation 伪造。"
+      }
+    ]
+  },
   "crossEnd": {
     "counterparts": [
       { "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc", "symbol": "boot_button_" },
@@ -122,5 +168,5 @@
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-1 预判）。装配型包按 ARQ-260911-split-package-implementation-prose-gap 分级判据豁免包级 plan.md（改法由 PROPOSAL §2.4 已裁机制 + review F2/F9 证据直接承载，单文件面接线，无铁律约束新增）。硬件不确定性：GPIO18 电平/上拉悬空风险真机确认列 KR-A5（human 持板）。与 PKG-2 并行开发（独立文件面），merge order 本包先（18）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。禁改 docs/contracts/** 与 docs/spec.md（SPEC-1 不触发）。"
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-1 预判）。装配型包按 ARQ-260911-split-package-implementation-prose-gap 分级判据豁免包级 plan.md（改法由 PROPOSAL §2.4 已裁机制 + review F2/F9 证据直接承载，单文件面接线，无铁律约束新增）。硬件不确定性：GPIO18 电平/上拉悬空风险真机确认列 KR-A5（human 持板）。与 PKG-2 并行开发（独立文件面），merge order 本包先（18）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。禁改 docs/contracts/** 与 docs/spec.md（SPEC-1 不触发）。 | planner finalize append（2026-09-11）：① KR-A5 acceptance 条目转对象形 {id, kind:'structural'}——human 持板 device-round 项无 host 代码可测面（冻结齿头注明文不承载），形状标注、id 文本语义零变更；豁免通道 = acceptance-id-shared 一等对象标记（先例 260829-hardware-validation 全 structural），接线敏感性由 KR-A1 mutation 实测承载。② KR-A6「终跑全绿 exit 0」判读 = 相对有效基线零新增红 + 本包新齿全绿：基线四条在册既存红（WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，见 redBaselineResult planner 裁定）非本包责任、launch 明令基线消解走独立批，字面 exit 0 在基线纪律下不可达；实测 109 Tests / 4 Failures（+5 新齿全绿）。该判读随 review-packet / supervisor-verdict 呈 human 合并门知情。③ mutationEvidence.perAcceptance 已由 planner 依 builder 实测报告落账（KR-A1~A4/A6 sensitive=true，KR-A5 N/A sensitive=false）。"
 }

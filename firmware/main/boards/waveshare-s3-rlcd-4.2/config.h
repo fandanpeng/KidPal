@@ -30,6 +30,10 @@
 #define SHTC3_I2C_ADDR           0x70
 
 #define BOOT_BUTTON_GPIO        GPIO_NUM_0
+/* 包 260911-key-route-a1 (spec §4.0/§5.3 两键分工): KEY(GPIO18) 主司对话, 与 BOOT(GPIO0)
+ * 主司翻页分脚不抢占。GPIO18 有效电平 = 低（GP18_Active 0，板级键 button_ 构造
+ * active_high=false；KR-A5 human 持板真机确认后回填/冻结）。 */
+#define KEY_BUTTON_GPIO         GPIO_NUM_18
 
 
 #define RLCD_DC_PIN    GPIO_NUM_5  

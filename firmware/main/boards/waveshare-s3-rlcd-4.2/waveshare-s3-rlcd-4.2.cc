@@ -16,6 +16,8 @@
 #include "lvgl.h"
 #include "custom_lcd_display.h"
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6 渲染节点 */
+#include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
+#include "sdkconfig.h"          /* CONFIG_BUTTON_* 按键消抖/长按窗参数 */
 
 #define TAG "waveshare_rlcd_4_2"
 
@@ -35,6 +37,64 @@
  * (2) 任一传感器读失败即复位总线; (3) 传感器读排在 codec 初始化之后。 */
 #define HWV_SENSOR_I2C_TIMEOUT_MS 200
 
+/* -------------------------------------------------------------------------- *
+ * 包 260911-key-route-a1：冻结全局路由表（key_gesture_parser.h）的设备侧 dispatch
+ * 消费点。路由输出（GLOBAL_ACT_*）在此唯一映射至应用动作；手势->动作的权威判定单一
+ * 落在 key_route_global，设备侧不另造一套手势语义（ARQ-260911 防 BOOT≈KEY 假绿）。
+ * ------------------------------------------------------------------------ */
+
+static uint32_t keya_now_ms(void)
+{
+    return static_cast<uint32_t>(esp_log_timestamp());
+}
+
+/* 冻结路由输出 -> 应用动作 dispatch（GLOBAL_ACT_SESSION_TOGGLE / HOME / PAGE_NEXT 三
+ * 枚举在此被设备侧消费）。LVGL 屏切换统一经 Application::Schedule 回 main app task，
+ * 与既有 BOOT 单击 show_chat 先例同任务上下文。 */
+static void keya_dispatch_global_action(global_action_t act)
+{
+    auto& app = Application::GetInstance();
+    if (act != GLOBAL_ACT_NONE) {
+        char corr_id[24];
+        snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        ESP_LOGI(TAG, "key_route_dispatch corr_id=%s action=%d", corr_id, static_cast<int>(act));
+    }
+    switch (act) {
+    case GLOBAL_ACT_SESSION_TOGGLE:
+        /* KEY 单击=发起对话：先把 xiaozhi SetupUI（聆听/表情/状态）切回前台保语音态可见，
+         * 再切换会话（语义与现 BOOT 单击 ToggleChatState 严格一致，包 9b HWV-A6 fix）。 */
+        app.Schedule([]() { kidpal_render_node_show_chat(); });
+        app.ToggleChatState();
+        break;
+    case GLOBAL_ACT_HOME:
+        /* KEY 长按=回首页（所有页面一致，路由无页面入参的全局层语义）。 */
+        app.Schedule([]() { kidpal_render_node_show_home(); });
+        break;
+    case GLOBAL_ACT_PAGE_NEXT:
+        /* BOOT 单击=翻页（P1->P2->P3->P4 循环，冻结路由表 KEY_ID_BOOT+CLICK 恒产此动作）。 */
+        app.Schedule([]() { kidpal_render_node_cycle_next(); });
+        break;
+    default:
+        break;
+    }
+}
+
+/* 冻结解析器（key_gesture_parser）设备侧产出手势的一致性观测日志（K6 结构化 + corr_id）。
+ * parser 输出不在此 dispatch——dispatch 唯一落在 iot_button 手势回调（避免 iot_button
+ * 短按窗 180ms 与 parser 双击窗 350ms 在单击/双击消歧时序上的分歧导致重复触发）。 */
+static void keya_log_gesture(key_id_t key, key_gesture_t g)
+{
+    if (g == KEY_GESTURE_NONE) {
+        return;
+    }
+    char corr_id[24];
+    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ESP_LOGI(TAG, "key_gesture_parser corr_id=%s key=%d gesture=%d", corr_id,
+             static_cast<int>(key), static_cast<int>(g));
+}
+
 class CustomBoard : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
@@ -43,6 +103,11 @@ private:
     i2c_master_dev_handle_t pcf85063_dev_ = nullptr;
     i2c_master_dev_handle_t shtc3_dev_ = nullptr;
     Button boot_button_;
+    /* 包 260911-key-route-a1：KEY(GPIO18) 主司对话，与 boot_button_(GPIO0 主司翻页) 并列。
+     * 冻结解析器实例（单实例单键，key_gesture_parser.h）：KEY/BOOT 各一，喂 raw 边沿。 */
+    Button key_button_;
+    key_gesture_parser_t boot_gesture_;
+    key_gesture_parser_t key_gesture_;
     CustomLcdDisplay *display_;
     adc_oneshot_unit_handle_t adc1_handle;
     adc_cali_handle_t cali_handle;
@@ -181,46 +246,68 @@ private:
     }
 
     void InitializeButtons() {
+        /* 冻结解析器（key_gesture_parser）设备侧首次接线：KEY/BOOT 两实例各一。parser 配置
+         * 取 iot_button 实际时序（消抖 = DEBOUNCE_TICKS*PERIOD = 2*5=10ms、长按 =
+         * CONFIG_BUTTON_LONG_PRESS_TIME_MS=1500、双击窗沿用冻结 session_logic 基准 350ms），
+         * 使冻结纯逻辑在设备侧产出手势与物理按键语义一致。 */
+        key_gesture_config_t key_cfg = {};
+        key_cfg.debounce_ms = CONFIG_BUTTON_DEBOUNCE_TICKS * CONFIG_BUTTON_PERIOD_TIME_MS;
+        key_cfg.click_max_ms = CONFIG_BUTTON_LONG_PRESS_TIME_MS;
+        key_cfg.double_gap_ms = 350u;
+        key_gesture_parser_init(&boot_gesture_, &key_cfg);
+        key_gesture_parser_init(&key_gesture_, &key_cfg);
+
+        /* raw 电平边沿喂入（OnPressDown/OnPressUp 已在 iot_button 消抖后触发）：KEY 边沿喂
+         * KEY_ID_KEY、BOOT 边沿喂 KEY_ID_BOOT。parser 产出仅作一致性观测（keya_log_gesture，
+         * K6 corr_id 日志），手势->动作 dispatch 唯一落在下方 iot_button 手势回调，避免
+         * iot_button 短按窗(180ms) 与 parser 双击窗(350ms) 消歧时序分歧导致重复触发。 */
+        boot_button_.OnPressDown([this]() {
+            (void)key_gesture_parser_feed(&boot_gesture_, KEY_ID_BOOT, keya_now_ms(), 1);
+        });
+        boot_button_.OnPressUp([this]() {
+            key_gesture_t g = key_gesture_parser_feed(&boot_gesture_, KEY_ID_BOOT, keya_now_ms(), 0);
+            keya_log_gesture(KEY_ID_BOOT, g);
+        });
+        key_button_.OnPressDown([this]() {
+            (void)key_gesture_parser_feed(&key_gesture_, KEY_ID_KEY, keya_now_ms(), 1);
+        });
+        key_button_.OnPressUp([this]() {
+            key_gesture_t g = key_gesture_parser_feed(&key_gesture_, KEY_ID_KEY, keya_now_ms(), 0);
+            keya_log_gesture(KEY_ID_KEY, g);
+        });
+
+        /* BOOT 单击（去对话化，KR-A4）：不再走 ToggleChatState / show_chat / 故事键单击。
+         * 经冻结路由 key_route_global(KEY_ID_BOOT, CLICK) 产出 GLOBAL_ACT_PAGE_NEXT -> 翻页
+         * （冻结路由表已证 KEY_ID_BOOT+CLICK 恒 PAGE_NEXT、永非 SESSION_TOGGLE，接线即强制
+         * 去对话化）。开机 starting 态进配网分支保留原位（最小改动、勿引入新行为；spec §5.3
+         * 「BOOT 长按=配网」与现状「BOOT 单击 starting 态=配网」的既有漂移冻结齿未钉，零触碰）。 */
         boot_button_.OnClick([this]() {
             auto& app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
                 return;
             }
-            /* 包 9b HWV-A9 (F2 设备侧页内输入生产接线): BOOT 单击先交故事页内输入消费面
-             * kidpal_story_page_input。冻结契约里故事页不拥有 BOOT 单击 (LIST/REC/STAMP
-             * 单击、READER 单击均回 GLOBAL -> HandleStoryKey 返回 false), 故交回既有全局
-             * 动作 ToggleChatState, 会话切换语义严格不变。 */
-            if (!McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK)) {
-                /* 回归修复 (包 9b HWV-A6 fix): 单击进入语音交互前，先把 xiaozhi SetupUI
-                 * 切回前台。启动时渲染节点把 KidPal 首页 lv_screen_load 到前台，若语音期间
-                 * 不交还 SetupUI，用户看不到「聆听」表情/状态，会反复点击——第二次点击命中
-                 * Listening 态会 CloseAudioChannel，导致引擎侧只见一个空会话超时→告别
-                 * （即真机反馈的「单击无变化、无 ASR」根因）。用 Schedule 让 LVGL 屏切换在
-                 * main app task 执行（与既有 UI 操作同任务，避免按钮回调线程直接碰 LVGL）。
-                 * ToggleChatState 语义（冻结）不变，仅额外保证语音态可见。 */
-                app.Schedule([]() { kidpal_render_node_show_chat(); });
-                app.ToggleChatState();
-            }
+            keya_dispatch_global_action(key_route_global(KEY_ID_BOOT, KEY_GESTURE_CLICK));
         });
-        /* BOOT 长按: 此板仅 BOOT 单物理键、全局层未占 BOOT 长按语义, 优先交故事阅读态翻屏
-         * (READER 多屏 -> PAGE_TURN, 返回 true, 真机可翻正文); 其余页返回 false, 与此前
-         * 「BOOT 长按无任何处理」的旧行为一致。 */
+        /* BOOT 长按: 故事阅读态翻屏（P3 页内特例，KR-E1 零触碰红线，接缝原样保留）。 */
         boot_button_.OnLongPress([this]() {
             McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS);
         });
-        /* 包 9b HWV-A6 阶段 B: BOOT 双按 = KidPal 4 页翻页（home→char→schedule→story→home）。
-         * 关键澄清（本次回归排查实证 esp_button iot_button.c 状态机）：BUTTON_SINGLE_CLICK 与
-         * BUTTON_DOUBLE_CLICK 由 btn->repeat 计数互斥分流（repeat==1 走单击、repeat==2 走双击），
-         * 注册 OnDoubleClick 不会「吞掉」或额外延迟 OnClick；单击的 ~180ms 触发窗口
-         * （CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180 / CONFIG_BUTTON_PERIOD_TIME_MS=5=36 tick）是
-         * 库固有行为，本包之前既有、非 OnDoubleClick 引入。真机「单击无 ASR」根因是语音态屏幕
-         * 被 KidPal 首页盖住（见上 OnClick 注释），已由本回归修复交还 SetupUI 解决。
-         * 长按（1500ms，独立于 repeat 分流）不受影响。走 Schedule 与 MCP 工具同任务上下文。 */
-        boot_button_.OnDoubleClick([]() {
-            Application::GetInstance().Schedule([]() {
-                kidpal_render_node_cycle_next();
-            });
+        /* BOOT 双击既有一键过渡接线（OnDoubleClick->cycle_next）已移除：冻结路由表 BOOT
+         * DOUBLE_CLICK = GLOBAL_ACT_NONE 无语义，且 BOOT 单击已主司翻页、双击过渡冗余；
+         * 无任何冻结验收齿钉该过渡（regression-safe，判断详见交付报告）。 */
+
+        /* KEY 单击 = 发起对话（路由 GLOBAL_ACT_SESSION_TOGGLE）。 */
+        key_button_.OnClick([]() {
+            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_CLICK));
+        });
+        /* KEY 双击：注册接缝（KR-A1 三手势全注册），全局层无语义（路由 GLOBAL_ACT_NONE）。 */
+        key_button_.OnDoubleClick([]() {
+            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK));
+        });
+        /* KEY 长按 = 回首页（路由 GLOBAL_ACT_HOME，所有页面一致）。 */
+        key_button_.OnLongPress([]() {
+            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS));
         });
     }
 
@@ -273,7 +360,13 @@ private:
     }
 
 public:
-    CustomBoard() : boot_button_(BOOT_BUTTON_GPIO) {
+    CustomBoard() : boot_button_(BOOT_BUTTON_GPIO),
+                    key_button_(KEY_BUTTON_GPIO, false, 0, CONFIG_BUTTON_SHORT_PRESS_TIME_MS, false) {
+        /* key_button_ 构造参数（接缝契约钉死）：
+         *   KEY_BUTTON_GPIO = GPIO18；active_high=false（GP18_Active 0 = 低有效，
+         *   KR-A5 human 持板真机确认后回填/冻结）；long_press_time=0（沿用 boot_button_）；
+         *   short_press_time = CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180（消抖复用，与 BOOT 一致，
+         *   KR-A1 不另设短按窗）；enable_power_save=false。 */
         InitializeI2c();
         /* 启动回归修复 (顺序层): 先在干净总线上把音频 codec (ES8311/ES7210) 建起来
          * (GetAudioCodec 构造 static BoxAudioCodec, 走 es8311_open 的 I2C 事务), 再跑
