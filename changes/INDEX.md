@@ -6,10 +6,13 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (17)
+## dev (20)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260911-ecs-deploy-convergence](../changes/dev/260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
+| [260911-key-route-a1](../changes/dev/260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
+| [260911-screen-unification](../changes/dev/260911-screen-unification/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260907-g-relay-fix](../changes/dev/260907-g-relay-fix/) | 2026-09-07 | changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1 | closed | kidpal-mvp |
 | [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260903-gateway-directionB](../changes/dev/260903-gateway-directionB/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
@@ -27,11 +30,6 @@
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](../changes/dev/260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](../changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-
-| [260911-ecs-deploy-convergence](../changes/dev/260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
-
-| [260911-key-route-a1](../changes/dev/260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
-| [260911-screen-unification](../changes/dev/260911-screen-unification/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 
 ## arch (19)
 
