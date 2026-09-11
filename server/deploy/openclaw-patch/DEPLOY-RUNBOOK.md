@@ -131,6 +131,10 @@ grep -c "KidPal C1" $TARGET || echo "marker cleared (回滚成功)"
 
 ## 8. 包 7 提醒三档 cron（260829-schedule-reminder，本包只落载体；真跑属 live 相位人工批准）
 
+> 覆盖指针：本节 §8.2-8.4 的部署执行由 260911-ecs-deploy-convergence 包承载（acceptance
+> ECS-A4 = cron 在册 + lastRunStatus=ok + kidpal-front.service env；ECS-A5 = live 五齿
+> L1-L5 证据交班，证据落 changes/dev/260829-schedule-reminder/）。
+
 > 混合分层（裁定一 eventId acaef302-9ddc-4508-b5d3-94023e050f43）：**时刻算术 + 幂等 id +
 > pending.json 原子写 = 确定性脚本** `reminder_schedule_lib.py`（本目录，`warm_char_cache.py`
 > 同形态先例）由 cron 的 `--command` 载荷执行；**备注里哪部分算要带的 + 给孩子的文案 =

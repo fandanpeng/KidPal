@@ -1,18 +1,18 @@
 {
-  "changeId": "260829-hardware-validation",
+  "changeId": "260911-ecs-deploy-convergence",
   "rigor": "full",
-  "sourceType": "planning-workstream",
+  "sourceType": "drift-report",
   "origin": {
-    "type": "planning-workstream",
-    "upstreamType": "planning-workstream",
-    "upstreamRef": ".planning/kidpal-mvp/PROPOSAL.md",
-    "upstreamFrozen": "sha1:88a5bdb83abdd867",
+    "type": "drift-report",
+    "upstreamType": "drift-report",
+    "upstreamRef": "changes/dev/260829-hardware-validation/review-packet.md#F3",
     "workstream": "kidpal-mvp"
   },
-  "subsystem": "firmware+server",
-  "story": "物理冒烟与端到端真机验收：按键手感 / 双麦 / RTC 断电续航 / 低电 / RLCD 真屏观感 + 全功能端到端真机，把 B 段在电脑上验过的能力放到真实硬件上确认。（v0.4 新增：实机续航基准 = 决策 21 DEFER 三要素承载〔触发点在此、预警阈值、owner 是本包〕+ 常驻 WS 连接功耗观察 + 证书真实设备握手冒烟。）",
-  "redBaselineCommand": "烧录集成固件到板子做物理冒烟（手工 device 验收清单）：按键/双麦/RTC 断电/低电/RLCD 观感逐项 + 全功能端到端",
-  "redBaselineResult": "红：B 段功能（包 2~8）在 host/PC 验过但未在真机整合验证；硬件强绑定子能力（RTC 走时、SHTC3 直读、麦克风采音）host 段未验——真机端到端未跑通。本包把它做到绿。",
+  "planRef": ".claude/taskpackages/260911-ecs-deploy-convergence/plan.md",
+  "subsystem": "server",
+  "story": "批次① ECS 部署收敛：#1 overlay 部署漂移修复——apply-xiaozhi-overlay.sh 渲染输出与 ECS live 逐行 diff 后全量对齐（实读确认 ≥4 处漂移：ASR AliyunStreamASR→Qwen3ASRFlash、Intent function_call→nointent、base_url 缺 /v1、TTS type edge-tts→edge；现在直接跑脚本会覆盖 live 断语音）+ #2 提醒 cron §8 部署（reminder_schedule_lib + kidpal-reminder-plan 15m cron + kidpal-front.service env）+ live 五齿 L1-L5 evidence 交班 + #13 host 证据回收（WSA-A4 flash.log 制品归位 / WSA-A6 当日真探针 8080+安全组）+ prompt v4 上 ECS（review-packet §12 残余 7，验收所测=生产所用）。",
+  "redBaselineCommand": "结构面基线（预期全绿=冻结齿不回归）：cd server && python -m pytest acceptance/test_gateway_directionB.acceptance.py acceptance/test_char_stroke.acceptance.py acceptance/test_story_p3.acceptance.py acceptance/test_story_wiring.acceptance.py -q --import-mode=importlib（live 项由 conftest.py 机械 skip，不 auto-run）|| S0.2 渲染 diff（依赖顺序：先 S0.1 产出 live 备份 <live-backup-path> 才可执行）：rm -rf /c/tmp/ecs-conv-render && mkdir -p /c/tmp/ecs-conv-render && XIAOZHI_ROOT=/c/tmp/ecs-conv-render XIAOZHI_DEVICE_TOKEN=\"stub-render-token-local-baseline-000000\" XIAOZHI_SECRETS=/c/tmp/nonexistent-secrets.env bash server/deploy/apply-xiaozhi-overlay.sh && diff -u <live-backup-path> /c/tmp/ecs-conv-render/.config.yaml > changes/dev/260911-ecs-deploy-convergence/s0.2-render-delta.txt（stub token + 不存在 secrets 路径防真实凭据入证据件）",
+  "redBaselineResult": "双轨确认（2026-09-11）：① 结构面聚焦套实跑 53 passed / 18 skipped / 0 failed（18 skip = conftest 机械闸对 live 项设计态 skip，非 failure）——冻结齿不回归基线绿；② 漂移本体红由 architect triage 实读 + planner S0.2 渲染 diff 实测双重确认：apply-xiaozhi-overlay.sh:60 ASR=AliyunStreamASR（live=Qwen3ASRFlash）、:62 Intent=function_call（live=nointent）、:67 base_url 缺 /v1、:73 TTS type=edge-tts（live=edge）；另枚举 D5/D6 已经 human S0.3 定谳（pod-events b22e2019/d41a2f74）：D5 auth.enabled 恢复声明终态 true（live false 为调试残留）；D6 脚本补渲 server.ip:127.0.0.1 / port:8010（260903 内网收敛拓扑，front_app.py:60 ENGINE_WS 内段反代，安全组不动）；prompt v1→v4 = 唯一预期 delta。跑脚本即覆盖 live 断语音。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -20,289 +20,119 @@
   ],
   "riskTier": "high",
   "gateProfile": [
-    "types",
-    "evidence-integrity",
-    "docs-sync"
+    "live-deploy",
+    "evidence-recovery"
   ],
   "acceptance": [
     {
-      "id": "HWV-A1",
-      "kind": "structural"
+      "id": "ECS-A1",
+      "kind": "structural",
+      "summary": "漂移全量对齐——修复后 apply-xiaozhi-overlay.sh 渲染到临时目录与 live 备份 diff = 零意外 delta（prompt v4 切换为唯一预期 delta）；对齐面以 S0.2 渲染 diff 权威枚举为准，不限于点名四处"
     },
     {
-      "id": "HWV-A2",
+      "id": "ECS-A2",
       "kind": "structural",
-      "summary": "按键手感实测：KEY/BOOT 单击/双击/长按在真机上响应正确（消抖、职责分离符合 §4.0）"
+      "summary": "冻结齿不回归——聚焦 server 验收套（test_gateway_directionB 离线齿 + CHR-E3 + P3-A4 + test_story_wiring）全绿；GWA-A4 live 齿口径（ASR 命中 aliyun|dashscope|qwen3 任一 + 禁 max_tokens）维持合规"
     },
     {
-      "id": "HWV-A3",
+      "id": "ECS-A3",
       "kind": "structural",
-      "summary": "双麦采音实测：录音清晰、可上传 ASR 转写（包 8 麦克风采音殿后项在此真机验）"
+      "summary": "live 部署核验——部署窗口（human 在场）apply 后引擎容器重载，live config 四 provider 全对 + prompt 键指向 v4 + 一轮完整语音端到端 0 断链"
     },
     {
-      "id": "HWV-A4",
+      "id": "ECS-A4",
       "kind": "structural",
-      "summary": "RTC 走时 + 断电续航实测：断电后 RTC 保持走时（包 5 RTC 殿后项）；SHTC3 温湿度真机直读正确（包 5 殿后项）"
+      "summary": "提醒 cron §8 落地——openclaw cron list 新增 kidpal-reminder-plan 且 state.lastRunStatus=ok；kidpal-front.service env 含 KIDPAL_ALERTS_DIR/KIDPAL_SERVER_DIR + poller 日志 alert_poll 心跳"
     },
     {
-      "id": "HWV-A5",
+      "id": "ECS-A5",
       "kind": "structural",
-      "summary": "低电打盹真机触发 + RLCD 真屏观感（对比度/可视角度/刷新）验收"
+      "summary": "live 五齿 L1-L5 evidence 齐（device-acceptance-checklist 表 C：L1 cron list / L2 pending.json 对照契约 §三 / L3 L4 设备推送+渲染回执（human 持板）/ L5 语义产物），证据落 changes/dev/260829-schedule-reminder/，无 probe≠exercise 字样（@pytest.mark.live 口径，不 auto-run）"
     },
     {
-      "id": "HWV-A6",
+      "id": "ECS-A6",
       "kind": "structural",
-      "summary": "全功能端到端真机：4 页循环翻页整合（包 3 留根的跨页端到端在此兜底验收）+ 各 story 主流程真机走通 + 换皮后 UI（包 U 集成后）"
+      "summary": "WSA-A4/A6 证据回收——flash.log（188 处真实烧录标记）归位 server/acceptance/_artifacts/device-ws-switch/；ecs-teardown-evidence.md 为当日真只读探针（8080 连接期望 refused/timeout + 安全组规则），若 8080 实际仍开则停包升级 human（live 安全洞）；host runner 复跑两齿转绿（P2-A1 first-match 歧义红不在本包范围，不喂哨兵）"
     },
     {
-      "id": "HWV-A7",
+      "id": "ECS-A7",
       "kind": "structural",
-      "summary": "16px 以下 CJK 在 1bpp 真机可读性实测（直接决定 V3 字号下限）"
-    },
-    {
-      "id": "HWV-A8",
-      "kind": "structural",
-      "summary": "前光确认（反射屏暗处可见性，spec §5.6 待确认项）"
-    },
-    {
-      "id": "HWV-A9",
-      "kind": "structural",
-      "summary": "F2 设备侧页内输入生产接线：story_page input/on_saved/rec_tick/stamp_spec 落盘且被生产路径调用≥1（human 裁「扩界接线」）"
-    },
-    {
-      "id": "HWV-A10",
-      "kind": "structural",
-      "summary": "F2 云侧停录归档生产接线：front_app 驱动 feed/stop，网关生产面 archive_story 有到达面"
-    },
-    {
-      "id": "HWV-A11",
-      "kind": "structural",
-      "summary": "F6 会话键不可复用（弃 id(websocket)）+ WS 断开钩子 pop 会话"
-    },
-    {
-      "id": "HWV-A12",
-      "kind": "structural",
-      "summary": "F4 分工修正：网关 story_text(record) 组块下发 + 接线 prompt 无「回填」、模型一回合只出 title"
-    },
-    {
-      "id": "HWV-A13",
-      "kind": "structural",
-      "summary": "实机续航基准（决策 21 三要素：触发点本包/预警阈值/owner）实测数据落盘"
-    },
-    {
-      "id": "HWV-A14",
-      "kind": "structural",
-      "summary": "常驻 WS 连接功耗观察（常连 vs 断连对比）实测数据落盘"
-    },
-    {
-      "id": "HWV-A15",
-      "kind": "structural",
-      "summary": "证书真实设备握手冒烟（CA pinning 真机首连）实测落盘"
-    },
-    {
-      "id": "HWV-A16",
-      "kind": "structural",
-      "summary": "ECS 部署真落（DEPLOY-RUNBOOK §8）+ 包 7 留根 live 五齿 L1-L5 真跑一轮 evidence 交班"
+      "summary": "回滚就绪——live .config.yaml 带时间戳备份（ECS+本地双份）可还原 + openclaw cron remove 演练路径写进包证据"
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/hardware_validation.acceptance.c",
-    "server/acceptance/test_story_wiring.acceptance.py"
+    "server/acceptance/test_gateway_directionB.acceptance.py",
+    "server/acceptance/test_char_stroke.acceptance.py",
+    "server/acceptance/test_story_p3.acceptance.py",
+    "server/acceptance/test_story_wiring.acceptance.py",
+    "firmware/main/test/device_ws_switch.acceptance.c"
   ],
   "exitCriteria": [
-    {
-      "id": "HWV-E1",
-      "kind": "structural"
-    },
-    "HWV-E2: device 验收以真机实测证据（烧录日志 + 逐项勾验记录）落盘，非模拟",
-    "HWV-E3: 显式兜底验收「4 页循环翻页」跨页端到端整合（PROPOSAL §7 留根：host 阶段无专包认领）",
-    "HWV-E4: AEC 语音喊停实测不在本包（归包 9a 单独隔离），本包只做物理冒烟 + 端到端"
+    "ECS-E1: 验收 1-3 全绿（渲染 diff 零意外 delta + 聚焦套不回归 + live 部署核验过）",
+    "ECS-E2: L1-L5 + WSA-A4/A6 证据落盘且含真实标记；host runner WSA 两齿复跑转绿",
+    "ECS-E3: 回滚路径演练记录在包证据；冻结面（docs/contracts/**、*.acceptance.*、managed_components/**）git 零触碰"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md#§三"
   ],
   "docRefs": [
-    ".planning/kidpal-mvp/PROPOSAL.md",
-    "docs/spec.md#§2",
-    "docs/spec.md#§5.4"
+    "changes/dev/260829-hardware-validation/review-packet.md",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md#§8",
+    "server/deploy/provider.config.yaml",
+    ".claude/taskpackages/260829-hardware-validation/device-acceptance-checklist.md"
   ],
   "sourceRefs": [
-    "docs/spec.md#§2",
-    "docs/spec.md#§5.4",
-    "9b"
+    "changes/dev/260829-hardware-validation/review-packet.md#F3",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
+    "server/deploy/apply-xiaozhi-overlay.sh:60",
+    "server/deploy/apply-xiaozhi-overlay.sh:62",
+    "server/deploy/apply-xiaozhi-overlay.sh:67",
+    "server/deploy/apply-xiaozhi-overlay.sh:73"
   ],
-  "iterationBudget": 4,
-  "fixBudget": 8,
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "mergeOrder": 13,
-  "dependsOn": [
-    "260829-voice-roundtrip",
-    "260829-session-logic",
-    "260829-char-stroke",
-    "260829-home-p1",
-    "260829-schedule-p2",
-    "260829-schedule-reminder",
-    "260829-story-p3",
-    "260901-ui-art-integration"
-  ],
-  "testHost": "device",
+  "mergeOrder": 16,
+  "dependsOn": [],
+  "testHost": "PC pytest（结构面）+ ECS live（部署窗口，human 在场）+ 真机（L3/L4，human 持板）",
   "decisionCoverage": [
     {
-      "decision": "PROPOSAL-§2-包9b",
-      "summary": "物理冒烟：按键手感/双麦/RTC 断电续航/低电/RLCD 真屏观感 + 全功能端到端真机，device 验收。",
+      "decision": "human-20260906-ASR终选Qwen3ASRFlash",
+      "summary": "ASR 终选已裁定 Qwen3ASRFlash（live 实况与 spec §A1 双候选一致），overlay 声明面对齐该终态；Intent=nointent 与 spec §A3 OpenClaw 自带相容。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§2"
+        "server/deploy/provider.config.yaml",
+        "docs/spec.md#§A1"
       ],
-      "landsIn": "acceptance:HWV-A6"
+      "landsIn": "acceptance:ECS-A1"
     },
     {
-      "decision": "PROPOSAL-§7-跨页翻页兜底",
-      "summary": "「4 页循环 BOOT 翻页」跨页端到端整合 host 阶段无专包认领，显式由包 9b（全功能端到端真机）兜底验收。",
+      "decision": "contract-§三-alerts-pending形状",
+      "summary": "L2 齿按契约 §三 alerts/pending.json 形状对照，只读引用不改契约。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§7"
+        "docs/contracts/interface-contract.md#§三"
       ],
-      "landsIn": "exitCriteria:HWV-E3"
+      "landsIn": "acceptance:ECS-A5"
     },
     {
-      "decision": "PROPOSAL-§3-硬件殿后汇总",
-      "summary": "硬件强绑定子能力（包 5 RTC/SHTC3 直读、包 8 麦克风采音、包 U SPIFFS 真机文件源路径/1bpp 观感/16px CJK/前光）host 段只测布局/逻辑，真实硬件读取统一殿后 9b 验收。",
+      "decision": "ARQ-260901-g3-server-live-acceptance",
+      "summary": "live 面标记不 auto-run；live 证据在部署窗口/持板窗口由 human 在场产出，验收所测=生产所用。",
       "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§3"
+        "docs/ARCH-REVIEW-QUEUE.md"
       ],
-      "landsIn": "acceptance:HWV-A4"
-    },
-    {
-      "decision": "PROPOSAL-§7-9b新增两条真机验收",
-      "summary": "9b 补两条真机验收（C3）：16px 以下 CJK 1bpp 真机可读性（定 V3 字号下限）+ 前光确认。",
-      "sourceRefs": [
-        ".planning/kidpal-mvp/PROPOSAL.md#§7"
-      ],
-      "landsIn": "acceptance:HWV-A7"
+      "landsIn": "acceptance:ECS-A3"
     }
   ],
+  "mutationRequired": false,
+  "mutationEvidence": [],
   "crossEnd": {
-    "note": "crossEnd 申报（存疑向严填 counterparts，不填 exempt）。本包 = device 真机端到端验收，冻结验收 hardware_validation.acceptance.c 的 live 齿触及设备⇄服务端边界对端符号——WS 首链 / display 下发 / story 回看 / 提醒推送 / ASR 上行 / story 归档触发。symbol = 源文件内逐字出现的真实标识符（brief-inputs resolveSymbolRange 按子串解析）。",
-    "counterparts": [
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "ws_gateway"
-      },
-      {
-        "path": "server/gateway/auth.py",
-        "symbol": "authorize"
-      },
-      {
-        "path": "firmware/main/protocols/websocket_protocol.cc",
-        "symbol": "WebsocketProtocol"
-      },
-      {
-        "path": "firmware/main/certs/ws_tls_ca.cc",
-        "symbol": "VerifyCacertConfigured"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "build_display_tool_calls"
-      },
-      {
-        "path": "server/gateway/mcp_relay.py",
-        "symbol": "display_tool_call"
-      },
-      {
-        "path": "server/gateway/display_schema.py",
-        "symbol": "validate_display"
-      },
-      {
-        "path": "firmware/main/display/view_router.c",
-        "symbol": "kidpal_display_route"
-      },
-      {
-        "path": "server/gateway/story.py",
-        "symbol": "list_stories"
-      },
-      {
-        "path": "server/gateway/story.py",
-        "symbol": "story_text"
-      },
-      {
-        "path": "server/gateway/story.py",
-        "symbol": "StoryAccumulator"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_list_parse"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_text_parse"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_open_reader"
-      },
-      {
-        "path": "server/gateway/reminders.py",
-        "symbol": "build_alert_envelope"
-      },
-      {
-        "path": "server/gateway/reminders.py",
-        "symbol": "AlertDispatcher"
-      },
-      {
-        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
-        "symbol": "plan_reminders"
-      },
-      {
-        "path": "server/deploy/openclaw-patch/reminder_schedule_lib.py",
-        "symbol": "write_pending_atomic"
-      },
-      {
-        "path": "firmware/main/display/reminder_page.c",
-        "symbol": "kidpal_alert_parse"
-      },
-      {
-        "path": "firmware/main/display/reminder_page.c",
-        "symbol": "kidpal_reminder_receive"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "pump_client_to_upstream"
-      },
-      {
-        "path": "firmware/main/application.cc",
-        "symbol": "InitializeProtocol"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_story_route_display_payload"
-      },
-      {
-        "path": "server/gateway/story.py",
-        "symbol": "archive_story"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_page_input"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_on_saved"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_rec_tick"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_stamp_spec"
-      },
-      {
-        "path": "firmware/main/display/story_page.c",
-        "symbol": "kidpal_story_on_control"
-      },
-      {
-        "path": "firmware/main/mcp_server.cc",
-        "symbol": "DoToolCall"
-      }
-    ]
-  }
+    "note": "crossEnd exempt 申报：本包零新写验收齿（acceptanceTestsFile 全为既有冻结件，归各自主包的 crossEnd 申报承载）；本包自己的验收 = ①渲染 diff 证据（server/deploy 脚本输出 vs live 备份，纯文件对比）②live 部署核验/cron 在册（运维面，evidence-based 非符号断言）③既有冻结齿复跑（跨端符号断言已在原包 crossEnd 登记，本包不新增对端符号引用）。无新跨端断言符号 → exempt。",
+    "exempt": "无新增跨端验收齿；复用的冻结齿 crossEnd 归原包（260903-gateway-directionB / 260829-char-stroke / 260829-story-p3 / 260829-schedule-reminder / 260903-device-ws-switch）申报。",
+    "counterparts": []
+  },
+  "notes": "triage 2026-09-11：architect 判②单包 Full（riskTier=high），human 触点①已确认。riskTier=high 照常触发 supervisor 升级人类——预期非异常。执行纪律：阶段 0 只读勘察先于一切改动；per-delta 人工定谳防固化调试临时态（来历不明 delta 逐条问 human）；任何 delta 合理化需改 spec/契约 → 逃生门停转 /arch-change。WSA-A6 必须当日真探针不得倒填。本包不碰 P2-A1 齿歧义（归批次③渲染批）。mergeOrder 16 占位、portfolio 可重排。禁改 docs/contracts/** 与 *.acceptance.* 冻结件。S0.3 定谳终表（2026-09-11，pod-events b22e2019/d41a2f74）：D1 ASR→Qwen3ASRFlash（{api_key: $DASHSCOPE_API_KEY, model_name: qwen3-asr-flash, type: qwen3_asr_flash}，schema 以 live 备份为权威源；secrets.env 已有 DASHSCOPE_API_KEY，ALIYUN_ASR_APPKEY/TOKEN 淘汰移除）；D2 Intent→nointent；D3 base_url 补 /v1；D4 TTS type→edge；D5 server.auth.enabled 渲染 true（维持脚本现状，live 恢复声明终态）；D6 补渲 server.ip:127.0.0.1 / port:8010；D7 prompt v1→v4 唯一预期 delta。证据件一律脱敏凭据（acceptance-author qualityNote）。 verifier r1 acceptance-coverage 红后的形态修正：acceptance 由字符串转对象条目 kind=structural（260731 一等豁免通道，镜像 260829-hardware-validation 先例 16 条全 structural 同闸通过；本包 architect triage 即证据型口径 gateProfile=live-deploy/evidence-recovery，各条 summary 保留原断言语义不弱化）。 D5 二次纠偏（S2.3 冒烟失败，human 裁 pod-events f9322b9c）：引擎 auth.enabled 渲染面回 false——引擎 auth 是 HMAC 动态签名机制（core/auth.py），与决策22 静态 token（front 层强制）不相容；安全边界=loopback 8010 + front 强制。原「恢复 true」裁决作废；ECS-A3 live 核验以 auth=false 态为口径。",
+  "mutationSkipReason": "证据型部署收敛包：断言载体 = 渲染 diff 证据文件 / live 部署窗口人工核验 / 既有冻结齿复跑（齿归原包、其 mutation 证据在原包承载），本包零新写测试逻辑面，无可 mutation 测试的新断言（architect triage gateProfile=live-deploy/evidence-recovery，mutationRequired=false 立项即裁定）。"
 }
