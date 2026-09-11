@@ -1,0 +1,133 @@
+{
+  "changeId": "260911-display-first-m1",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
+    "workstream": "260911-display-interaction-sovereignty"
+  },
+  "planRef": ".claude/taskpackages/260911-display-first-m1/plan.md",
+  "subsystem": "server+firmware",
+  "story": "PKG-4 显示先行 M1（OQ2=M1 已裁）：引擎补丁 kidpal_display_strip.py 把「块闭合」从 finish() 提前到 feed() 内（状态机已支持块级闭合检测，加闭合回调/发射 API）——display 页上屏提前 1–3s；冻结离线契约（feed/finish 语义）修订走 acceptance-author；front 时序复核（逐块中继 × 提前发射新时序的幂等/顺序/回执）；设备侧语音中渲染（消费 PKG-2 归一屏 layer 仲裁规则）。前置 = PKG-2 渲染规则（mergeOrder 19）+ 批次① overlay 漂移修复 260911-ecs-deploy-convergence（mergeOrder 16，部署窗口须走修正后 apply-xiaozhi-overlay.sh）。M3 变体禁止（契约 §1.1 逐字冲突）；M1 初判不改 E1 契约设备面，开工前 reviewer-first 复核。",
+  "redBaselineCommand": "cd server && python -m pytest acceptance/test_g_relay_fix.acceptance.py -v（冻结验收基线）+ kidpal_display_strip.py 冻结离线契约齿复跑；新时序齿（块闭合提前发射）在基线上判红；intake 时 acceptance-author 复核红基线记录",
+  "redBaselineResult": "现状（PROPOSAL §1.2 证据 + 2026-09-11 复核）：connection.py:1442-1456 块发射在 finish() 之后——feed() 内块闭合即发射的时序齿在基线上必红，红基线成立。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/260911-display-interaction-sovereignty/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "frozen-acceptance-revision",
+    "device-round",
+    "contract-drift"
+  ],
+  "acceptance": [
+    "DF-A1: strip machine API 扩展——kidpal_display_strip.py feed() 内块级闭合即发射（闭合回调/发射 API，additive）；冻结离线契约修订走 acceptance-author 留痕（语义不放松）；离线契约齿全绿",
+    "DF-A2: 冻结验收必触——server/acceptance/test_g_relay_fix.acceptance.py 经 acceptance-author 修订留痕后全绿；重放暴露 vacuity 的原变异自证（如适用）",
+    "DF-A3: 时延实测——真机「单击问课表」display 页上屏不晚于 TTS 首段后 0.5s（kidpal-live-smoke-debug 三日志源按 correlationId 对齐）；证据落 changes/dev/260911-display-first-m1/",
+    "DF-A4: 设备侧语音中渲染——display 块中途到达按 PKG-2 layer 仲裁规则渲染（语音轮页可见聊天 layer 同步更新）；与 PKG-2 合并基线复跑其冻结齿绿",
+    "DF-A5: 部署合规——部署窗口走修正后 apply-xiaozhi-overlay.sh（批次①已并）；engine-patch 在位核验（启动标记行 + docker inspect Mounts）；front 时序复核结论在案",
+    "DF-A6: workstream 收口真机轮（human 持板）——§5 五条收口标准并集对账（本包承载上屏时延项，其余复核各 owner 包已验项）"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_g_relay_fix.acceptance.py"
+  ],
+  "exitCriteria": [
+    "DF-E1: 契约复核在案——开工前 reviewer-first 复核 M1 不改 E1 契约设备面（结论落 evidence）；M3 禁采全程有效；复核推翻初判 → 停走 architect-reviewer 四分类 + human 契约门",
+    "DF-E2: 依赖锁兑现——阶段 3 前 PKG-2（260911-screen-unification）渲染规则已并入；阶段 4 前批次①（260911-ecs-deploy-convergence）已合并",
+    "DF-E3: 冻结件修订留痕齐——kidpal_display_strip.py 离线契约 + test_g_relay_fix.acceptance.py 仅 acceptance-author 修订、REVISION LOG 齐、断言语义不放松"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    ".planning/260911-display-interaction-sovereignty/review.md",
+    ".planning/260911-display-interaction-sovereignty/decision-coverage.json",
+    "docs/ARCH-REVIEW-QUEUE.md",
+    "docs/contracts/interface-contract.md"
+  ],
+  "sourceRefs": [
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§5",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7",
+    ".planning/260911-display-interaction-sovereignty/review.md#F3",
+    ".planning/260911-display-interaction-sovereignty/review.md#F5"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 4,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "mergeOrder": 20,
+  "dependsOn": [
+    "260911-screen-unification",
+    "260911-ecs-deploy-convergence"
+  ],
+  "testHost": "server pytest（冻结验收 + 离线契约齿）+ 真机时延实测/收口轮（human 持板，live ECS 环境）",
+  "decisionCoverage": [
+    {
+      "decision": "OQ2-显示先行=M1围栏闭合即发",
+      "summary": "human 2026-09-11 触点②裁 M1：引擎补丁把「块闭合」从 finish() 提前到 feed() 内（闭合回调/发射 API）；M2 不单列（M1 推论）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "acceptance:DF-A1"
+    },
+    {
+      "decision": "OQ2-M3-禁采",
+      "summary": "M3（prompt 改块前置）与契约 §1.1「在回复文本末尾嵌入」逐字冲突——本包任何阶段禁止采用；若要走必须先过 architect-reviewer 四分类 + human 契约门。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:DF-E1"
+    },
+    {
+      "decision": "冻结验收面-M1必触test_g_relay_fix",
+      "summary": "server/acceptance/test_g_relay_fix.acceptance.py 必触——dev-loop acceptance-author 权限内修订（留痕、不豁免验证）；kidpal_display_strip.py 冻结离线契约同步扩展（PROPOSAL §7 申报）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "acceptance:DF-A2"
+    },
+    {
+      "decision": "reviewer-first-契约复核（§7）",
+      "summary": "M1 初判不改 E1 契约设备面（时序契约未钉板）——PKG-4 开工前 reviewer-first 复核一次，结论落 evidence；推翻初判则逃生门。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7", ".planning/260911-display-interaction-sovereignty/review.md#F3"],
+      "landsIn": "exitCriteria:DF-E1"
+    },
+    {
+      "decision": "PKG-4-部署前置=批次①overlay修复",
+      "summary": "部署窗口必须走修正后的 apply-xiaozhi-overlay.sh——批次① 260911-ecs-deploy-convergence 为硬前置（review F5：先跑断语音）；engine-patch 在位核验不跳过。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/review.md#F5"],
+      "landsIn": "acceptance:DF-A5"
+    },
+    {
+      "decision": "workstream级收口标准（§5）",
+      "summary": "真机一轮「单击问课表」五条收口标准并集对账——本包承载上屏时延（不晚于 TTS 首段后 0.5s）+ 真机收口轮 owner（末位包）；屏幕落点/两键/崩溃同族复核各 owner 包已验项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§5"],
+      "landsIn": "acceptance:DF-A3"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "workstream 级真机收口轮（§5 五条）",
+      "owner": "260911-display-first-m1",
+      "note": "末位包（mergeOrder 20）真机轮统一对账五条收口标准并集；两键行为（PKG-1 语义/PKG-2 回归）、屏幕落点与崩溃同族（PKG-2）、上屏时延（本包）在收口轮复核并集。"
+    },
+    {
+      "behavior": "设备侧语音中渲染消费 PKG-2 仲裁规则",
+      "owner": "260911-display-first-m1",
+      "note": "渲染规则 owner = 260911-screen-unification；本包 dependsOn 锁定其先并（19），阶段 3 才可进——依赖锁在 DF-E2。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": [],
+  "crossEnd": {
+    "counterparts": [
+      { "path": "server/gateway/mcp_relay.py", "symbol": "TOOL_DISPLAY" },
+      { "path": "server/deploy/engine-patch/connection.py", "symbol": "DisplayFenceStateMachine" },
+      { "path": "server/deploy/engine-patch/kidpal_display_strip.py", "symbol": "feed" }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-4 预判）。跨系统包（引擎部署副本 + front relay + 固件渲染消费）按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法取舍跨系统 + 冻结件修订 + 部署纪律铁律）。contract preflight 申报：契约触面 = M1 初判不改 E1 设备面但开工前 reviewer-first 复核必做（DF-E1）；M3 变体若被提出 → 立即停走 architect-reviewer 四分类 + human 契约门。行为碰撞型预警：test_g_relay_fix.acceptance.py 必触（已申报 workstream launchPreconditions，走 acceptance-author 不带冲突进 launch）。dependsOn 双锁：260911-screen-unification（渲染规则）+ 260911-ecs-deploy-convergence（批次① overlay 修复，mergeOrder 16）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。"
+}

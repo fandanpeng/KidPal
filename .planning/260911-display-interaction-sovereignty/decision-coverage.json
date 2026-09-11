@@ -1,0 +1,145 @@
+{
+  "workstream": "260911-display-interaction-sovereignty",
+  "source": ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+  "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
+  "frozenBlobSha": "26138dba",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-09-11",
+  "updatedAt": "2026-09-11",
+  "_doc": [
+    "workstream 级 decisionCoverage：FROZEN PROPOSAL v1.0（grilling 四 OQ 已裁）决策集 → 承载包 + acceptance/exitCriteria 映射。",
+    "本次拆 PKG-1 / PKG-2 / PKG-4 三包（PKG-3 回答驻留已随 OQ3=c 撤销不立项）；N 包 acceptance 并集须覆盖 proposal 决策集 + §5 workstream 收口标准。",
+    "A2（KEY 页内特例）human 裁「随后」，无既存包承载——显式登记为 deferred 待立项，非 dropped。",
+    "upstreamFrozen 注：raw-content sha1（LF 归一化）对 FROZEN v1.0 PROPOSAL.md 落盘字节实测；frozenBlobSha 为 git blob sha（commit 8a06d0c 引用形态）。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "OQ1-三屏主权=纯B归一屏",
+      "summary": "human 2026-09-11 触点②裁：不经 A 中间站直选终态 B——小智聊天控件迁 KidPal 屏 layer、三标志/tick 退役、char 并屏、SetupUI 建立面 + 全部写屏路径 host 矩阵回归（review F6 全额生效）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.1", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "package:260911-screen-unification",
+      "packageAcceptance": ["SU-A1", "SU-A2", "SU-A3"]
+    },
+    {
+      "decision": "OQ2-显示先行=M1围栏闭合即发",
+      "summary": "human 裁 M1：引擎补丁把「块闭合」从 finish() 提前到 feed() 内（闭合回调/发射 API）；M2 不单列（M1 推论）、M3 禁采（契约 §1.1 逐字冲突）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "package:260911-display-first-m1",
+      "packageAcceptance": ["DF-A1", "DF-A3"]
+    },
+    {
+      "decision": "OQ2-M3-禁采",
+      "summary": "M3（prompt 改块前置）与契约 §1.1「在回复文本末尾嵌入」逐字冲突，本批禁止在 dev-loop 内自行采用；若要走必须先过 architect-reviewer 四分类 + human 契约门。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:DF-E1"
+    },
+    {
+      "decision": "OQ3-回答驻留=(c)随归一屏自然成立",
+      "summary": "human 裁 (c)：不单独设计驻留页/定时器；聊天内容为 KidPal 屏常驻 layer，回答说完文字天然留屏，清除时机（下次交互：新语音轮/按键）并入 B 方案 layer 管理顺带定。PKG-3 撤销不立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.3", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4"],
+      "landsIn": "package:260911-screen-unification",
+      "packageAcceptance": ["SU-A5"]
+    },
+    {
+      "decision": "OQ4-键位路线=A补接KEY·A1全局层先行",
+      "summary": "human 裁路线 A：补接 KEY(GPIO18) 落地 spec 两键分工、A1 全局层（KEY 对话/回首页 + BOOT 回归翻页）先行，A2 页内特例随后；GPIO18 电平/上拉真机确认列 PKG-1 验收项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "package:260911-key-route-a1",
+      "packageAcceptance": ["KR-A1", "KR-A3", "KR-A4", "KR-A5"]
+    },
+    {
+      "decision": "OQ4-A2-页内特例随后（deferred 待立项）",
+      "summary": "KEY 页内特例（P2 问课程 / P3 光标+双击进阅读 / P3 念给我听 / P4 播笔顺 / KEY 长按回首页页内化 / 提醒弹窗 KEY 关闭）human 裁「随后」——A1 落地后另行立项，本次不进任何包、非 dropped。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "deferred",
+      "reason": "human 2026-09-11 触点②裁 A1 先行、A2 随后；A2 承载包待 A1 合并后按实况立项（deferred 非 dropped）。"
+    },
+    {
+      "decision": "SPEC-1-本批不触发（spec 零修订）",
+      "summary": "OQ4=A（spec 零修订）、OQ3=c（无独立会话语义变更）——docs/spec.md §4.0/§5.3 本批不动；实现中发现与 spec 冲突走逃生门（Track B spec-lane，/arch-change 判级，human 冻结），不预先立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:KR-E2",
+      "note": "PKG-1/PKG-2 各自 exitCriteria 复述该纪律。"
+    },
+    {
+      "decision": "冻结验收面-M1必触test_g_relay_fix",
+      "summary": "server/acceptance/test_g_relay_fix.acceptance.py 的 feed/finish 语义必触 M1——dev-loop acceptance-author 权限内修订（留痕 + 不豁免验证），kidpal_display_strip.py 冻结离线契约同步扩展。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "package:260911-display-first-m1",
+      "packageAcceptance": ["DF-A1", "DF-A2"]
+    },
+    {
+      "decision": "PKG-4-部署前置=批次①overlay修复",
+      "summary": "PKG-4 部署窗口必须走修正后的 apply-xiaozhi-overlay.sh——批次① 260911-ecs-deploy-convergence（mergeOrder 16）为其硬前置（review F5）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/review.md#F5"],
+      "landsIn": "package:260911-display-first-m1",
+      "packageAcceptance": ["DF-A5"]
+    },
+    {
+      "decision": "跨包KEY接线owner=PKG-1（ARQ-260911试金石）",
+      "summary": "KEY(GPIO18) 板级接线 + key_gesture_parser_feed 设备侧喂入 + 全局路由端到端 owner 显式登记 = 260911-key-route-a1；「KEY 长按=回首页」导航动作面与 PKG-2 归一屏相交——路由语义 owner 归 PKG-1，PKG-2 保两键行为回归（验收显式含）。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§1.4"],
+      "landsIn": "package:260911-key-route-a1",
+      "packageAcceptance": ["KR-A1", "KR-A2", "KR-A3"]
+    },
+    {
+      "decision": "核心包包级plan.md（ARQ-260911-prose-gap首用）",
+      "summary": "PKG-2（核心包）与 PKG-4（跨系统改法取舍）产包级 plan.md + planRef；PKG-1 装配型按分级判据豁免。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-split-package-implementation-prose-gap"],
+      "landsIn": "package:260911-screen-unification",
+      "note": "落点 .claude/taskpackages/260911-screen-unification/plan.md 与 .claude/taskpackages/260911-display-first-m1/plan.md。"
+    },
+    {
+      "decision": "非目标-观感面归批次③",
+      "summary": "字体子集补字、V3 换肤、故事页排版、课表数据填充不在本 workstream——归 260911-render-pages（批次③，mergeOrder 落锁 21 在本批之后）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§0"],
+      "landsIn": "package:260911-render-pages"
+    },
+    {
+      "decision": "非目标-时延#8/故事#3/ECS#1",
+      "summary": "首音时延四段优化（#8）归时延实验线；故事归档双断链（#3）归批次④；ECS overlay 漂移（#1）归批次①（仅作 PKG-4 前置）——本 workstream 均不承载。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§0"],
+      "landsIn": "dropped",
+      "reason": "risk-accepted: human 2026-09-11 PROPOSAL §0 非目标裁定的跨批次分工，各归既定批次/实验线，非本批丢弃。"
+    },
+    {
+      "decision": "workstream级收口标准（§5）",
+      "summary": "真机一轮「单击问课表」：display 页上屏不晚于 TTS 首段后 0.5s（PKG-4 承载）+ 回答结束后屏幕落点确定（PKG-2 承载）+ 两键行为与裁定路线一致（PKG-1 定语义、PKG-2 回归）+ 当日三崩溃同族场景 0 复位 0 崩溃（PKG-2 承载）；时延实测 kidpal-live-smoke-debug 三日志源按 correlationId 对齐。真机收口轮 owner = 末位包 260911-display-first-m1。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§5"],
+      "landsIn": "package:260911-display-first-m1",
+      "packageAcceptance": ["DF-A3", "DF-A4"]
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "KEY(GPIO18) 接线 + parser 喂入 + 全局路由端到端",
+      "owner": "260911-key-route-a1",
+      "note": "ARQ-260911-cross-package-behavior-owner-gap 首用试金石：包 3 session-logic 只做 host 纯逻辑（SES-E2/E3），板级接线历史掉缝（GPIO_NUM_18 全固件零命中、key_gesture_parser_feed 设备侧零调用）——本批起端到端 owner 归 PKG-1 独占，机制级齿（符号级断言）防 BOOT≈KEY 行为等价假绿。",
+      "carriedBy": "260911-key-route-a1"
+    },
+    {
+      "topic": "KEY 长按=回首页的导航动作面",
+      "owner": "260911-key-route-a1",
+      "note": "路由表语义 owner = PKG-1；PKG-2 归一屏重构显示面/页面体系时必须保两键行为与裁定路线一致（SU-A7 显式含）——PKG-1 先并（18），PKG-2 后并（19）时回归 KEY/BOOT 路由。",
+      "carriedBy": "260911-screen-unification"
+    },
+    {
+      "topic": "回答驻留与清除时机",
+      "owner": "260911-screen-unification",
+      "note": "OQ3=c——驻留随 layer 管理自然成立，清除时机（下次交互）owner = PKG-2；无独立包。",
+      "carriedBy": "260911-screen-unification"
+    },
+    {
+      "topic": "workstream 级真机收口轮（§5 五条）",
+      "owner": "260911-display-first-m1",
+      "note": "末位包真机轮统一对账五条收口标准；两键行为/驻留落点/崩溃同族由各 owner 包先行真机验收，收口轮复核并集。",
+      "carriedBy": "260911-display-first-m1"
+    }
+  ],
+  "contractBlockedPackages": [],
+  "launchPreconditions": [
+    "F-03 commit-before-launch：拆包产物（.planning/260911-display-interaction-sovereignty/** + .claude/taskpackages/260911-{key-route-a1,screen-unification,display-first-m1}/**）已 commit 到专用 base ref（非 main）",
+    "PKG-4 额外前置：260911-ecs-deploy-convergence（批次①，mergeOrder 16）合并后才可起 Pod",
+    "跨包冻结面扫描已做（launch 前预警义务）：未发现常量互斥型冲突；行为碰撞型 = PKG-4 必触 test_g_relay_fix.acceptance.py（已申报走 acceptance-author）+ PKG-2 可能触渲染类冻结齿（story_p3/ui_art_integration 路径敏感，走 acceptance-author 留痕修订）"
+  ]
+}

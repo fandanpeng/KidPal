@@ -64,7 +64,7 @@
   "supervisorBlockBudget": 2,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "mergeOrder": 17,
+  "mergeOrder": 21,
   "dependsOn": [],
   "testHost": "host runner（WSL linux target）+ 真机观感轮（human 持板）",
   "decisionCoverage": [
