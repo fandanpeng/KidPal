@@ -1,0 +1,69 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-11T11:56:50.334Z",
+  "changeId": "260911-screen-unification",
+  "originType": "proposal",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:.claude/taskpackages/260911-screen-unification/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:.claude/taskpackages/260911-screen-unification/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 5,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:.claude/taskpackages/260911-screen-unification/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260911-screen-unification/verifier-evidence/rounds/r5.json",
+        "bearingFactOk": false,
+        "completedRounds": 5,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260911-screen-unification/docs-delta.md",
+          "changes/dev/260911-screen-unification/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "proposal"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789123141061-taskpackage-required.log",
+      ".claude/verify-logs/1789123353996-mutation-check.log",
+      ".claude/verify-logs/1789126015432-docs-sync.log",
+      ".claude/verify-logs/1789126225484-unit.log",
+      ".claude/verify-logs/1789126231726-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260911-screen-unification/verifier-evidence/rounds/r5.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260911-screen-unification/docs-delta.md",
+      "changes/dev/260911-screen-unification/review-packet.md"
+    ]
+  }
+}
