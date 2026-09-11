@@ -1,0 +1,126 @@
+{
+  "changeId": "260911-key-route-a1",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
+    "workstream": "260911-display-interaction-sovereignty"
+  },
+  "subsystem": "firmware",
+  "story": "PKG-1 键位路线落地（OQ4=A，A1 全局层先行）：板级 KEY(GPIO18) 接线（iot_button 三手势注册，消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180）→ 喂已冻结的 key_gesture_parser（设备侧首次接线，现状零调用）→ 全局路由表落地（KEY 单击=对话、KEY 长按=回首页）→ BOOT 回归「主司翻页」（单击翻页，去对话化）。页内特例（P2/P3/P4/提醒弹窗）= A2 随后另立项，不在本包。GPIO18 电平/上拉真机确认为验收项（悬空风险）。本包是 ARQ-260911-cross-package-behavior-owner-gap 的首用试金石：KEY 接线端到端 owner 显式登记归本包，机制级齿防 BOOT≈KEY 行为等价假绿。",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线 + 新增 key_route_a1.acceptance.c 机制齿在基线上判红：接线缺失/parser 喂入缺失/路由表缺失）；intake 时 acceptance-author 复核红基线记录",
+  "redBaselineResult": "现状（ARQ-260911 证据，2026-09-11 复核）：git log -S \"GPIO_NUM_18\" 全固件零命中、key_gesture_parser_feed 设备侧零调用（仅宿主 session_logic.acceptance.c 命中）、板级仅 boot_button_（waveshare-s3-rlcd-4.2.cc L45/L276）——新齿对现状必红，红基线成立。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/260911-display-interaction-sovereignty/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "host-teeth",
+    "device-round",
+    "state-machine"
+  ],
+  "acceptance": [
+    "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
+    "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
+    "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
+    "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
+    "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/",
+    "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/key_route_a1.acceptance.c"
+  ],
+  "exitCriteria": [
+    "KR-E1: A1 范围纪律——页内特例（P2 问课程 / P3 光标+双击进阅读 / P3 念给我听 / P4 播笔顺 / 提醒弹窗 KEY 关闭）零触碰，A2 留根待后续包立项（human 裁随后）",
+    "KR-E2: spec 零修订——OQ4=A 裁定下 docs/spec.md §4.0/§5.3 不动；实现中发现与 spec 冲突走逃生门（Track B spec-lane），不预先立项",
+    "KR-E3: 真机证据齐（KR-A5 持板轮日志/照片）+ 逃生门零触发记录"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    ".planning/260911-display-interaction-sovereignty/review.md",
+    ".planning/260911-display-interaction-sovereignty/decision-coverage.json",
+    "docs/ARCH-REVIEW-QUEUE.md",
+    "changes/dev/260829-hardware-validation/VOICE-ROUND-FLOW-260910.md"
+  ],
+  "sourceRefs": [
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4",
+    ".planning/260911-display-interaction-sovereignty/review.md#F2",
+    ".planning/260911-display-interaction-sovereignty/review.md#F9",
+    "docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "mergeOrder": 18,
+  "dependsOn": [],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板，GPIO18 电平/三手势）",
+  "decisionCoverage": [
+    {
+      "decision": "OQ4-键位路线=A补接KEY·A1全局层先行",
+      "summary": "human 2026-09-11 触点②裁路线 A：补接 KEY 落地 spec 两键分工、A1 全局层先行；GPIO18 真机确认列本包验收项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "acceptance:KR-A1"
+    },
+    {
+      "decision": "OQ4-A2-页内特例随后",
+      "summary": "页内特例接线量不小，human 裁 A2 随后——本包显式零触碰并留根，A1 合并后按实况另行立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4"],
+      "landsIn": "exitCriteria:KR-E1"
+    },
+    {
+      "decision": "accept-risk-d9e0f1a2-KEY路线悬置",
+      "summary": "human 2026-09-10 留交互批次定路线的 accept-risk 锚，由 OQ4 裁决承接——KEY 接线从悬空转落地。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§1.4"],
+      "landsIn": "acceptance:KR-A1"
+    },
+    {
+      "decision": "跨包KEY接线owner=本包（ARQ试金石）",
+      "summary": "KEY(GPIO18) 接线 + parser 喂入 + 全局路由端到端 owner 显式登记 = 260911-key-route-a1；机制级齿（KR-A1/KR-A2）兑现「机制断言优先」——防五包历史 BOOT≈KEY 行为等价假绿复发。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"],
+      "landsIn": "acceptance:KR-A2"
+    },
+    {
+      "decision": "SPEC-1-本批不触发",
+      "summary": "OQ4=A 裁定 spec 零修订；实现中发现与 spec §4.0/§5.3 冲突走逃生门（Track B spec-lane），不预先立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:KR-E2"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "KEY(GPIO18) 板级接线 + key_gesture_parser_feed 设备侧喂入 + 全局路由端到端",
+      "owner": "260911-key-route-a1",
+      "note": "ARQ-260911-cross-package-behavior-owner-gap 首用试金石：包 3 session-logic 只做 host 纯逻辑（SES-E2/E3），板级接线历史掉缝（GPIO_NUM_18 全固件零命中、parser 设备侧零调用）——本批起 owner 归本包独占，杜绝再掉包间缝隙。"
+    },
+    {
+      "behavior": "BOOT 回归翻页（单击翻页、去对话化）",
+      "owner": "260911-key-route-a1",
+      "note": "BOOT 键现有一键过渡方案（单击对话/双击翻页/长按故事翻屏）由本包改造回归 spec §4.0 主司翻页；既有 BOOT 行为齿回归责任在本包。"
+    },
+    {
+      "behavior": "KEY 长按=回首页的导航动作面（与 PKG-2 归一屏相交）",
+      "owner": "260911-key-route-a1",
+      "note": "路由表语义 owner = 本包；PKG-2（260911-screen-unification）重构显示面/页面体系时必须保两键行为与裁定路线一致（其 SU-A7 显式含）——本包先并（mergeOrder 18），PKG-2 后并（19）时回归 KEY/BOOT 路由。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": [],
+  "crossEnd": {
+    "counterparts": [
+      { "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc", "symbol": "boot_button_" },
+      { "path": "firmware/main/key_gesture_parser.cc", "symbol": "key_gesture_parser_feed" }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-1 预判）。装配型包按 ARQ-260911-split-package-implementation-prose-gap 分级判据豁免包级 plan.md（改法由 PROPOSAL §2.4 已裁机制 + review F2/F9 证据直接承载，单文件面接线，无铁律约束新增）。硬件不确定性：GPIO18 电平/上拉悬空风险真机确认列 KR-A5（human 持板）。与 PKG-2 并行开发（独立文件面），merge order 本包先（18）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。禁改 docs/contracts/** 与 docs/spec.md（SPEC-1 不触发）。"
+}
