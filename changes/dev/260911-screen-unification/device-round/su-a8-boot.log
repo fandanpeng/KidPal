@@ -1,0 +1,283 @@
+I (222) BoxAudioCodec: Duplex channels created
+I (222) ES8311: Work in Slave mode
+I (232) ES7210: Work in Slave mode
+I (242) ES7210: Enable ES7210_INPUT_MIC1
+I (242) ES7210: Enable ES7210_INPUT_MIC2
+I (242) ES7210: Enable ES7210_INPUT_MIC3
+I (252) ES7210: Enable ES7210_INPUT_MIC4
+I (252) ES7210: Enable TDM mode
+I (252) BoxAudioCodec: BoxAudioDevice initialized
+I (252) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-252 ok rtc=02:23:12
+I (272) waveshare_rlcd_4_2: shtc3 corr_id=kdp-252 ok temp_c=23.90 rh_pct=58.9
+I (272) MCP: Add tool: self.disp.network
+I (272) Display: Power management not supported
+I (272) CustomDisplay: Initialize SPI
+I (582) CustomDisplay: Initialize LVGL library
+I (582) LVGL: Starting LVGL task
+I (592) CustomDisplay: RLCD init
+I (1172) CustomDisplay: ui start
+I (1212) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1212) waveshare_rlcd_4_2: art layer mounted at /art
+I (1212) kidpal_rn: KidPal render node initialized (unified screen + layer stack)
+I (1322) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1053
+I (1322) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (1322) StateMachine: State: unknown -> starting
+I (1322) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1332) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1332) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1342) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1352) ES7210: Bits 16
+I (1362) ES7210: Enable ES7210_INPUT_MIC1
+I (1362) ES7210: Enable ES7210_INPUT_MIC2
+I (1362) ES7210: Enable ES7210_INPUT_MIC3
+I (1362) ES7210: Enable ES7210_INPUT_MIC4
+I (1372) ES7210: Enable TDM mode
+I (1372) ES7210: Unmuted
+I (1372) Adev_Codec: Open codec device OK
+I (1372) AudioCodec: Set input enable to true
+I (1382) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1382) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1392) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1412) Adev_Codec: Open codec device OK
+I (1412) AudioCodec: Set output enable to true
+I (1412) AudioCodec: Audio codec started
+I (1412) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1422) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1432) MCP: Add tool: self.get_device_status
+I (1432) MCP: Add tool: self.audio_speaker.set_volume
+I (1442) MCP: Add tool: kidpal/display
+I (1442) MCP: Add tool: kidpal/alert
+I (1442) MCP: Add tool: self.screen.set_theme
+I (1452) MCP: Add tool: self.get_system_info [user]
+I (1452) MCP: Add tool: self.reboot [user]
+I (1452) MCP: Add tool: self.upgrade_firmware [user]
+I (1462) MCP: Add tool: self.screen.get_info [user]
+I (1462) MCP: Add tool: self.screen.snapshot [user]
+I (1472) MCP: Add tool: self.screen.preview_image [user]
+I (1472) Assets: The storage free size is 21824 KB
+I (1482) Assets: The partition size is 8192 KB
+I (1632) Assets: The checksum calculation time is 149 ms
+I (1632) MCP: Add tool: self.assets.set_download_url [user]
+I (1632) WifiManager: Initializing...
+I (1642) pp: pp rom version: e7ae62f
+I (1642) net80211: net80211 rom version: e7ae62f
+I (1652) wifi:wifi driver task: 3fce7808, prio:23, stack:6144, core=0
+I (1652) wifi:wifi firmware version: 14da9b7
+I (1652) wifi:wifi certification version: v7.0
+I (1662) wifi:config NVS flash: disabled
+I (1662) wifi:config nano formatting: enabled
+I (1662) wifi:Init data frame dynamic rx buffer num: 6
+I (1672) wifi:Init dynamic rx mgmt buffer num: 5
+I (1672) wifi:Init management short buffer num: 32
+I (1682) wifi:Init dynamic tx buffer num: 32
+I (1682) wifi:Init static tx FG buffer num: 2
+I (1692) wifi:Init static rx buffer size: 1600
+I (1692) wifi:Init static rx buffer num: 3
+I (1692) wifi:Init dynamic rx buffer num: 6
+I (1702) wifi_init: rx ba win: 3
+I (1702) wifi_init: accept mbox: 6
+I (1702) wifi_init: tcpip mbox: 16
+I (1712) wifi_init: udp mbox: 6
+I (1712) wifi_init: tcp mbox: 6
+I (1712) wifi_init: tcp tx win: 5760
+I (1722) wifi_init: tcp rx win: 5760
+I (1722) wifi_init: tcp mss: 1440
+I (1722) WifiManager: Initialized
+I (1732) WifiBoard: Starting WiFi connection attempt
+I (1732) WifiManager: Starting station
+I (1732) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (1772) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(0)
+I (1792) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (1792) wifi:enable tsf
+I (1792) WifiBoard: WiFi scanning
+I (2432) AudioService: esp_timer task stack HWM: 7248 words (stack 8192 bytes)
+I (4202) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -76, Channel: 11, Authmode: 3
+I (4202) WifiBoard: WiFi connecting to 701
+W (4202) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (5492) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (5492) wifi:state: init -> auth (0xb0)
+I (5522) wifi:state: auth -> assoc (0x0)
+I (5532) wifi:state: assoc -> run (0x10)
+I (5562) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (5562) wifi:security: WPA2-PSK, phy: bgn, rssi: -75
+I (5562) wifi:pm start, type: 1
+
+I (5562) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (5572) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (5592) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (5612) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (6632) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (6632) WifiStation: Got IP: 192.168.3.36
+I (6632) WifiBoard: Connected to WiFi: 701
+I (6632) Application: Network connected
+I (6632) StateMachine: State: starting -> activating
+create static modelsI (6642) MODEL_LOADER: Successfully load srmodels
+I (6642) Assets: Refreshing display theme...
+I (6652) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (6662) Application: Activation done
+I (6672) SystemInfo: free sram: 90031 minimal sram: 89739
+I (6672) StateMachine: State: activating -> idle
+I (6682) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (6682) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (6692) AudioService: Resampling audio from 16000 to 24000
+I (6692) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (6712) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6712) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (6722) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (6722) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (6722) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6732) AudioService: audio_output task stack HWM: 2660 words
+I (6752) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6732) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (6762) wifi:Set ps type: 2, coexist: 0
+
+I (6772) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (6772) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+I (6782) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (6842) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (6862) AFE: AFE Version: (1MIC_V250121)
+I (6862) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (6872) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (6882) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (16692) SystemInfo: free sram: 75239 minimal sram: 63291
+W (17672) Display: System time is not set, tm_year: 70
+W (18712) Display: System time is not set, tm_year: 70
+W (19702) Display: System time is not set, tm_year: 70
+W (20692) Display: System time is not set, tm_year: 70
+W (21672) Display: System time is not set, tm_year: 70
+W (22712) Display: System time is not set, tm_year: 70
+I (23432) I2S_IF: Pending out channel for in channel running
+I (23432) AudioCodec: Set output enable to false
+W (23702) Display: System time is not set, tm_year: 70
+W (24692) Display: System time is not set, tm_year: 70
+W (25682) Display: System time is not set, tm_year: 70
+W (26722) Display: System time is not set, tm_year: 70
+I (26722) SystemInfo: free sram: 75715 minimal sram: 63291
+W (27752) Display: System time is not set, tm_year: 70
+I (28282) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (28282) StateMachine: State: idle -> connecting
+I (28282) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (28292) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+E (38312) esp-tls: [sock=54] select() timeout
+E (38312) esp-tls: Failed to open new connection
+E (38312) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (38312) WebSocket: Failed to connect to server
+E (38312) WS: Failed to connect to websocket server, code=32774
+I (38322) StateMachine: State: connecting -> idle
+W (38332) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (38332) I2S_IF: Mode 0 need extend bits 64 to 32
+I (38342) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (38342) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (38362) Adev_Codec: Open codec device OK
+I (38362) AudioCodec: Set output enable to true
+I (38362) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (38432) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=38219
+I (38842) kidpal_rn: voice_end: top=2
+I (38842) StateMachine: State: idle -> connecting
+I (38842) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (38842) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+W (46742) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46772) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46802) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46832) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46862) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46902) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46922) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46952) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (46982) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47012) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47052) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47082) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47112) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47142) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47172) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47212) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47242) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47272) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47302) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47332) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47372) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47402) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47432) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47462) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47492) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47542) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47572) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47602) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47632) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47662) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47702) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47732) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47762) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47792) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47822) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47862) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47892) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47922) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47942) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (47972) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48012) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48042) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48072) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48102) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48132) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48172) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48202) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48232) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48262) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48292) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48332) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48362) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48392) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48422) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48452) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48492) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48532) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48562) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48592) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48622) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48662) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48692) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48722) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48752) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48782) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48822) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48852) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48882) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48912) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+E (48912) esp-tls: [sock=54] select() timeout
+E (48922) esp-tls: Failed to open new connection
+E (48922) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (48932) WebSocket: Failed to connect to server
+W (48942) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+E (48942) WS: Failed to connect to websocket server, code=32774
+I (48952) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (48952) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (48962) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (48962) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (48972) StateMachine: State: connecting -> idle
+W (48972) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+W (48982) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (48992) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+W (49012) AFE: Ringbuffer of AFE(FEED) is full, Please use fetch() to read data to avoid data loss or overwriting
+I (49082) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=48843
+I (49082) kidpal_rn: voice_end: top=2
+I (49082) StateMachine: State: idle -> connecting
+I (49102) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (49102) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (58122) esp-x509-crt-bundle: Certificate validated
+I (58542) WS: Session ID: d1307514-0504-4213-bba2-6094f9af104e
+I (58542) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (58542) wifi:Set ps type: 0, coexist: 0
+
+W (58552) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (58562) StateMachine: State: connecting -> listening
+I (58562) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (58582) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (58582) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (58582) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (58592) AFE: AFE Version: (1MIC_V250121)
+I (58592) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (58602) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (58612) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512

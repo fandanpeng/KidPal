@@ -134,3 +134,36 @@ gate 全绿后仍已完整执行下方五轴语义 review，未发现需整改�
 | 12 | 配网退 `end_provision` | 配网成功 / 退出 | PROVISION pop，按优先级回落 |
 | 13 | 手动翻页 `cycle_next` | BOOT 双按（home→char→schedule→story） | 清 transient + LOCAL_PAGE 基层 |
 | 14 | 聊天 chrome 物理 reparent `KidPalReparentChatToLayer` | 板装配 init 前 | 迁 lv_layer_top（单屏时序：先 reparent 后 init） |
+---
+
+## SU-A8 真机轮补段（2026-09-11 23:23，human 裁定 PASS）
+
+> ruling-260911-screen-unification-03 裁断①②驱动：真机并发轮于本会话执行完毕，
+> Residual Risk 段「SU-A8 真机持板证据尚未产生（pending-human）」**已闭环**。
+
+- **证据件**：`device-round-record.md`（完整时间线 + 断言逐项对账 + human 观察逐字 +
+  复位归因）+ `device-round/` 五份串口日志（烧录启动核验 / 轮A 语音+SERVER_PAGE 并发 /
+  轮B1 设备离线档位作废 / 轮B2 正式轮提醒落入）。front journalctl 与 pending.json
+  服务端互证（`alert_deliver delivered=True` ⇄ 设备 `alert_render raised=1`，
+  corr_id `rmd-ea23943ea7a727da35837222` 两侧一致）。
+- **断言结果**：语音轮+推送页并发 ✅；提醒恰在语音轮窗口落入 ✅（VOICE 层活跃+会话
+  在线时 REMINDER>VOICE 仲裁成立，落入时为 listening 待话非语句中途，human 裁定接受）；
+  0 复位 0 崩溃 ✅（两段捕获 uptime 连续单调、崩溃标记 0 命中；三次窗口外重启与捕获
+  脚本关串口时刻精确吻合=工具伪影，首次归因 human 答「不确定」如实记录）；回答落点
+  确定（OQ3=c）✅；push 幂等去重冻结契约真机加测 ✅（front 60s 重推 → 设备 known=1
+  去重不重弹不崩）。两键行为一致子项**不在本轮**（ruling-03 边界，归并后 SU-A7 以
+  PKG-1 基线复跑收口）。
+- **deputy 裁定真机对照**：SU-RULING-01（SERVER_PAGE>VOICE，回答期间内容页可见）与
+  SU-RULING-02（聊天 chrome 单物理屏常驻、跨页恒可见）均按冻结字面在真机实证；human
+  知悉笑脸跨页为设计行为并接受。
+- **新观察项（非本轮红，交班去处已成文）**：①提醒弹窗字体超出框→观感面批次③
+  `260911-render-pages`；②human 未听到播报 vs 日志 TTS 管线激活 15.5s→workstream
+  收口 `260911-display-first-m1` 归音频面 owner；③`lvgl_display.cc:135` idle 时钟
+  警告每秒刷屏（上游模式+SNTP 未同步）→观感/平台面；④设备渲染回执未达 front→已知
+  「L4 回执面」live 发现同族复现（260911-ecs-deploy-convergence 交班项，非本包新增）。
+- **human PASS 裁定理由（逐字）**：「这个功能上一个包也测试过，我还担心你们合并会有
+  冲突」——本轮证明归一屏归并未引入提醒/推送面冲突回归。pod-events 裁定事件
+  `76dcbd1f-104f-4011-b6ab-bf45bcedb36d`。
+- **批准链路**：按 ruling-03 裁断②，PASS 后组装合并批准包（本补段 + SU-A8 证据件 +
+  `existing-red-inventory.md` 现状）呈 human 亲裁；批准事件落 pod-events 后方跑
+  merge-driver。
