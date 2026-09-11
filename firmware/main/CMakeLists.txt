@@ -54,9 +54,14 @@ set(SOURCES "audio/audio_codec.cc"
             # loader + 渲染原语), 纯逻辑零芯片依赖 -> host_app linux target 同源 (接线在
             # host_app); 设备侧 esp spiffs VFS 注册放芯片装配层, 本模块只收 mount root。
             "display/art_assets.c"
-            # 设备渲染节点 (包 9b HWV-A6 收口): host_infra_render_p1_frame 强符号 +
-            # 4 页 LVGL 屏驱动 (KidPal 专属 s_kidpal_scr)，与 xiaozhi SetupUI 共存。
-            # 不进入 host 构建 (host_app CMakeLists 不含本文件，与 char_page.cc 同理)。
+            # 前台 layer 栈管理单一权威 (包 260911-screen-unification): 冻结离线契约
+            # 纯逻辑模块, host_app linux target 与设备树同源 (接线见 host_app CMakeLists)。
+            "display/kidpal_layer.c"
+            # 设备渲染节点 (包 9b HWV-A6 收口 + 包 260911-screen-unification 归一屏):
+            # host_infra_render_p1_frame 强符号 + 4 页 LVGL 屏驱动 (KidPal 专属 s_kidpal_scr,
+            # display/ 唯一被 lv_screen_load 的前台屏；xiaozhi 聊天 chrome 已 reparent 到
+            # lv_layer_top 由板装配层触发)。不进入 host 构建 (host_app CMakeLists 不含本文件，
+            # 与 char_page.cc 同理)。
             "display/kidpal_render_node.cc"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"

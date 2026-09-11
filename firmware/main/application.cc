@@ -11,6 +11,10 @@
 #include "mcp_server.h"
 #include "assets.h"
 #include "settings.h"
+/* 归一屏（包 260911-screen-unification）：前台归属 = display/kidpal_layer layer 栈
+ * 单一权威；本文件在状态跃迁处事件驱动语音层进出 + 聊天层驻留清除时机（OQ3=c）。 */
+#include "display/kidpal_layer.h"
+#include "display/kidpal_render_node.h"
 
 #include <cstring>
 #include <esp_log.h>
@@ -710,11 +714,20 @@ void Application::HandleStateChangedEvent() {
             display->SetEmotion("neutral");
             audio_service_.EnableVoiceProcessing(false);
             audio_service_.EnableWakeWordDetection(true);
+            /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
+             * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
+            kidpal_render_node_voice_end();
             break;
         case kDeviceStateConnecting:
             display->SetStatus(Lang::Strings::CONNECTING);
             display->SetEmotion("neutral");
-            display->SetChatMessage("system", "");
+            /* 驻留清除时机 (OQ3=c, 由 layer 管理冻结语义): 新语音轮 -> 清聊天内容。
+             * 回答结束/页面切换不清（聊天内容任何页可见，回答天然留屏）。 */
+            if (kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE)) {
+                display->SetChatMessage("system", "");
+            }
+            /* 新语音轮开始 -> 清上一轮驻留 transient + 推 VOICE 前台层（事件驱动）。 */
+            kidpal_render_node_voice_begin();
             break;
         case kDeviceStateListening:
             display->SetStatus(Lang::Strings::LISTENING);

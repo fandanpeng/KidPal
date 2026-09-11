@@ -53,9 +53,16 @@ public:
 
     // Add theme switching function
     virtual void SetTheme(Theme* theme) override;
-    
+
     // Set whether to hide chat messages/subtitles
     void SetHideSubtitle(bool hide);
+
+    // KidPal 归一屏（包 260911-screen-unification SU-RULING-02 单物理屏）：
+    // 把 SetupUI 建立在 LVGL 默认屏上的聊天 chrome（状态栏 / 表情 / 气泡 / 低电量弹窗）
+    // 迁到常驻 parent（调用方传 lv_layer_top()，恒浮于活动屏之上、非屏）。整屏不透明
+    // 背景 container_ 留在原默认屏（该屏此后不再被加载、不再渲染），让 KidPal 页透出、
+    // 聊天内容任何页可见。控件指针不失效（lv_obj_set_parent 只改树不销毁对象）。
+    void KidPalReparentChatToLayer(lv_obj_t* parent);
 };
 
 // SPI LCD display

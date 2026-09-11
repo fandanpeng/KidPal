@@ -322,13 +322,15 @@ void McpServer::RaiseReminderQueue() {
     if (kidpal_reminder_shown_alert(state, &shown) != 1) {
         return;
     }
-    /* 崩溃修复（包 260829-hardware-validation）：提醒弹窗渲染与故事/课表同族——
-     * kidpal_reminder_page_render 走 lv_screen_active()+lv_obj_clean()。语音轮若恰
-     * 有提醒到点，clean 聊天屏会销毁 xiaozhi status_label_ → SetStatus 悬空崩溃。
-     * 夹 begin/end 令其画到 s_kidpal_scr 并持锁；pin 使驻留弹窗不被 tick 抢回。
+    /* 崩溃修复（包 260829-hardware-validation 语义保留）+ 提醒前台优先级（review F8，
+     * 归一屏）：提醒弹窗渲染与故事/课表同族——kidpal_reminder_page_render 走
+     * lv_screen_active()+lv_obj_clean()。语音轮若恰有提醒到点，clean 聊天层视觉控件会
+     * 销毁 xiaozhi status_label_ → SetStatus 悬空崩溃。夹 begin_reminder/end 令其画到
+     * s_kidpal_scr 并持锁，且把 REMINDER 推入前台 layer 栈（REMINDER > VOICE/SERVER，
+     * 提醒恰在语音轮到点也置前、不崩——同族崩溃已修症状未修架构，此处修架构）。
      * 本函数有两个调用上下文（main-task Schedule / LVGL 定时器 AlertDrainTimerCb），
      * esp_lvgl_port 锁为递归互斥量，同任务嵌套 take 安全、give 平衡。 */
-    kidpal_render_node_begin_page();
+    kidpal_render_node_begin_reminder();
     int alert_drawn = kidpal_reminder_page_render(&shown);
     kidpal_render_node_end_page();
     if (alert_drawn != 1) {
@@ -613,13 +615,13 @@ void McpServer::AddCommonTools() {
                     }
                     /* 通过校验 -> 切 P4 页喂数据 (LVGL 主线程延迟执行) */
                     app.Schedule([char_data]() {
-                        /* 崩溃修复（包 260829-hardware-validation）：char 页经
-                         * kidpal_char_page_show 自建独立屏（lv_obj_create(NULL)+
-                         * lv_screen_load(自己的屏)），不 lv_screen_active()+clean 活动
-                         * 屏，故天然免疫 SetStatus 悬空崩溃（不触碰 s_chat_scr）。
-                         * 仍夹 begin/end：begin_page 补上 LVGL 锁消除与 LVGL 任务的
-                         * 竞态，随后 char_page_show 用自己的屏 lv_screen_load 覆盖
-                         * begin_page 临时加载的 s_kidpal_scr（净显示 = char 页）。 */
+                        /* 崩溃修复（包 260829-hardware-validation 语义保留 / 归一屏）：
+                         * char 页已并入 s_kidpal_scr 体系——kidpal_char_page_show 在活动屏
+                         * 上清屏并绘制（先清后画、不自建独立屏），不触碰聊天层视觉控件，
+                         * 天然免疫 SetStatus 悬空崩溃。
+                         * 仍夹 begin/end：begin_page 把 SERVER_PAGE 推入 layer 栈 + 持 LVGL
+                         * 锁消除与 LVGL 任务竞态 + 切活动屏到 s_kidpal_scr，随后 char_page_show
+                         * 直接画在 s_kidpal_scr 上（净显示 = char 页）。 */
                         kidpal_render_node_begin_page();
                         kidpal_char_page_show(char_data.c_str());
                         /* 包 9b HWV-A6: 缓存笔顺 JSON 与有效标志，

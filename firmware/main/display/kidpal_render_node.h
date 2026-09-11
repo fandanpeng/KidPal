@@ -1,12 +1,14 @@
 /*
- * kidpal_render_node.h — 设备渲染节点（包 9b HWV-A6 收口）
+ * kidpal_render_node.h — 设备渲染节点（包 260911-screen-unification 归一屏收口）
  *
  * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 4 页 BOOT 双按翻页驱动。
- * 阶段 A：启动后显示首页帧 + 成功日志。
  * 阶段 B：BOOT 双按 → home→char→schedule→story→home 循环。
+ * 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（取代原三散标志 + 1s tick 对账）：
+ * 语音轮页(3) / 服务端推送页(4) / 本地浏览页(2) / 提醒弹窗(5) / 配网(6) 按优先级表
+ * 由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
  *
  * 实现文件（kidpal_render_node.cc）是设备专属（不进入 host 构建），
- * 在此头声明 C linkage 供 board .cc 和 mcp_server.cc 调用。
+ * 在此头声明 C linkage 供 board .cc / application.cc / mcp_server.cc 调用。
  */
 #ifndef KIDPAL_RENDER_NODE_H_
 #define KIDPAL_RENDER_NODE_H_
@@ -18,66 +20,89 @@
 extern "C" {
 #endif
 
-/* 页枚举（与 cycle_next() 的步进顺序对应）。 */
+/* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。 */
 typedef enum {
     KP_PAGE_HOME     = 0,  /* P1 首页常显（400×300 XRGB8888 → RLCD）*/
-    KP_PAGE_CHAR     = 1,  /* P4 查生字（需服务端下发笔顺数据；无数据则跳过）*/
+    KP_PAGE_CHAR     = 1,  /* P4 查生字（需服务端下发笔顺数据；无数据则停靠占位）*/
     KP_PAGE_SCHEDULE = 2,  /* P2 课表页 */
     KP_PAGE_STORY    = 3,  /* P3 故事列表页 */
     KP_PAGE_COUNT    = 4
 } kidpal_page_id_t;
 
 /*
- * 初始化渲染节点。必须在 CustomLcdDisplay 构造完成后（LVGL 已初始化）调用。
- * 只调用一次；重复调用是幂等的。
+ * 初始化渲染节点。必须在 CustomLcdDisplay 构造完成后（LVGL 已初始化）、且聊天 chrome
+ * 已由板装配层 reparent 到 lv_layer_top() 之后调用（板装配层在 init 前调
+ * LcdDisplay::KidPalReparentChatToLayer）。只调用一次；重复调用是幂等的。创建
+ * display/ 下唯一的顶层屏（s_kidpal_scr）。
  */
 void kidpal_render_node_init(void);
 
 /*
- * 显示首页 P1。注入当前 RTC/温湿度/电量状态，调用 kidpal_home_p1_render_frame()
- * 填充 s_p1_fb（PSRAM），通过 host_infra_render_p1_frame 强符号把帧交付 LVGL，
- * 最后 lv_screen_load() 把 KidPal 专属屏切到前台。
- *
- * 线程约束：在 main app task（Schedule 回调）或 CustomBoard 构造期调用均可；
- * 函数内部持 lvgl_port_lock，调用方无需预先加锁。
+ * 显示首页 P1：出掉一切 transient 上层，凝为本地浏览基层 LOCAL_PAGE，然后渲染首页
+ * 帧 + 切前台。线程约束：内部持 lvgl_port_lock，调用方无需预加锁。
  */
 void kidpal_render_node_show_home(void);
 
 /*
- * 把 xiaozhi SetupUI 屏（聆听/表情/状态）切回前台（回归修复 包 9b HWV-A6 fix）。
- * 语音交互期间 KidPal 首页不得盖住 SetupUI，否则用户看不到「聆听」态、
- * 会反复单击反而把音频通道开→关（引擎侧只见空会话超时）。
- * show_chat() 内部持 lvgl_port_lock，调用方无需预加锁；可安全在 main app task
- * （Schedule 回调）中调用。语音会话自然结束回到 Idle 后，渲染节点的 tick 定时器
- * 会把屏幕交还 KidPal 页（见 kidpal_render_node.cc 状态对账）。
+ * 把语音/聆听聊天面置前：推 VOICE 层并按下前台规则收盾物理屏。若服务端内容页在更上层
+ * （SERVER_PAGE > VOICE），内容页保持前台、语音不拦内容页（SU-RULING-01 方案A）。
+ * 内部持 lvgl_port_lock，调用方无需预加锁。按键触发新会话前先置前以免「聆听」不可见。
  */
 void kidpal_render_node_show_chat(void);
 
 /*
- * 服务端推送页面渲染的持锁夹钳（崩溃修复 包 260829-hardware-validation）。
+ * 新语音轮开始（对应设备状态进入 Connecting）：清除上一轮驻留 transient（服务端回答页/
+ * 提醒）并推 VOICE 层。幂等（push 幂等去重），可在按键预置与状态事件处重复调用。
+ * 设备侧由 application.cc HandleStateChangedEvent 在 kDeviceStateConnecting 驱动，
+ * 取代原 1s tick 轮询 GetDeviceState 对账。
+ */
+void kidpal_render_node_voice_begin(void);
+
+/*
+ * 语音轮结束（对应设备状态回到 Idle）：若栈中并无 VOICE 层则 no-op；否则出栈 VOICE，
+ * 无服务端页驻留时回首页常显，有服务端回答页驻留时保持其前台（OQ3=c 回答驻留）。
+ * 设备侧由 application.cc HandleStateChangedEvent 在 kDeviceStateIdle 驱动。
+ */
+void kidpal_render_node_voice_end(void);
+
+/*
+ * 服务端推送页面渲染的持锁夹钳（崩溃修复 包 260829-hardware-validation 语义保留）。
  *
- * 根因：语音轮期间活动屏是 xiaozhi SetupUI 屏（s_chat_scr），若服务端页面渲染
- * 函数（kidpal_story_page_render / kidpal_schedule_page_render）就地
- * lv_screen_active() 取到该屏并 lv_obj_clean()，会连同 xiaozhi 的 status_label_
- * 等子控件一并销毁，而 LvglDisplay::SetStatus 仍持该成员指针 → 状态跃迁时
- * lv_label_set_text(悬空) → lv_free 垃圾指针 → LoadProhibited 崩溃。且这些渲染
- * 在 main 任务裸调 lv_*，与 LVGL 任务竞态。
- *
- * 修法则：所有服务端推送页面渲染**必须**夹在 begin_page()/end_page() 之间——
- * begin_page() 持 lvgl_port_lock、把活动屏切到 KidPal 专属屏 s_kidpal_scr（后续
- * 渲染函数 lv_screen_active() 即取到此屏，clean 只清它、绝不碰 s_chat_scr）、
- * 清聊天覆盖标志、并置 s_page_pinned（使 tick 在 pin 期间不把页面抢回聊天屏）；
- * end_page() 释放锁。调用方在 Application::Schedule 闭包内、页面渲染前后成对调用。
+ * begin_page()：持 lvgl_port_lock、把 SERVER_PAGE 推入 layer 栈（使服务端内容页置前）、
+ * 把活动屏切到 KidPal 专属屏 s_kidpal_scr（后续渲染函数 lv_screen_active() 即取到此屏，
+ * clean 只清它、绝不碰聊天层视觉控件）；end_page() 释放锁。调用方在 Application::Schedule
+ * 闭包内、页面渲染前后成对调用。
  *
  * 线程约束：二者均在 main app task（Schedule 闭包）调用；begin_page 内部取锁，
- * 调用方不得已持有 LVGL 锁（否则递归死锁——例如不得在 LVGL 定时器回调内调用）。
+ * 调用方不得已持有 LVGL 锁（否则递归死锁——不得在 LVGL 定时器回调内调用）。
  */
 void kidpal_render_node_begin_page(void);
 void kidpal_render_node_end_page(void);
 
 /*
- * BOOT 双按翻页。依次推进 home→char→schedule→story→home。
- * CHAR 页在无笔顺数据时自动跳过（进入下一轮）。
+ * 提醒弹窗渲染的持锁夹钳：持锁 + 把 REMINDER 推入 layer 栈（REMINDER > VOICE/SERVER_PAGE，
+ * review F8 架构修复——提醒恰在语音轮到点也置前、不崩），切活动屏到 s_kidpal_scr。
+ * 与 end_page() 配对释放锁。设备侧由 mcp_server.cc RaiseReminderQueue 调用。
+ */
+void kidpal_render_node_begin_reminder(void);
+
+/*
+ * 配网进 layer 优先级表最高层（PROVISION=6，SU-A2 残项补全）：推 PROVISION + 收盾物理屏。
+ * 配网进/退由 WifiBoard 配网模式进/退事件驱动（waveshare-s3-rlcd-4.2 板
+ * EnterWifiConfigMode / StartWifiConfigMode 与 WifiManager 事件回调）。独立持锁释放，
+ * 跨任务不成对调用（不像 begin_page/end_page 配锁）。
+ */
+void kidpal_render_node_begin_provision(void);
+
+/*
+ * 配网退 layer：出栈 PROVISION，前台按优先级表回落。与 begin_provision() 呼对，
+ * 各自独立持锁释放。
+ */
+void kidpal_render_node_end_provision(void);
+
+/*
+ * BOOT 双按翻页。依次推进 home→char→schedule→story→home（本地浏览层生命周期，
+ * 出掉一切 transient 上层）。CHAR 页已并入 s_kidpal_scr 体系（不再自建独立屏）。
  */
 void kidpal_render_node_cycle_next(void);
 
@@ -95,13 +120,15 @@ void kidpal_render_node_inject_rtc(int hour, int minute);
 void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct);
 
 /*
- * 返回当前显示页（kidpal_page_id_t）。用于外部判断是否处于 KidPal 模式。
+ * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，
+ * 前台 owner 由 layer 栈 top() 单一裁决。
  */
 int kidpal_render_node_get_page(void);
 
 /*
- * 更新动画 tick 并重渲当前帧（调用方在 LVGL 定时器中按 4.4s 周期调用）。
- * 仅当当前页为 HOME 时才触发重渲，其他页无副作用。
+ * 更新动画 tick 并重渲当前帧（由 LVGL 定时器 in init 创建，1s 周期调用）。
+ * 仅当本地首页为前台 owner（layer top == LOCAL_PAGE）时重渲动画，其它页无副作用；
+ * 不含任何前台/语音轮询对账（对账已由事件驱动 layer push/pop 接管）。
  */
 void kidpal_render_node_tick(void);
 

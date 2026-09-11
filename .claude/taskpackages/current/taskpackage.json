@@ -1,5 +1,5 @@
 {
-  "changeId": "260911-key-route-a1",
+  "changeId": "260911-screen-unification",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -9,10 +9,11 @@
     "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
     "workstream": "260911-display-interaction-sovereignty"
   },
+  "planRef": ".claude/taskpackages/260911-screen-unification/plan.md",
   "subsystem": "firmware",
-  "story": "PKG-1 键位路线落地（OQ4=A，A1 全局层先行）：板级 KEY(GPIO18) 接线（iot_button 三手势注册，消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180）→ 喂已冻结的 key_gesture_parser（设备侧首次接线，现状零调用）→ 全局路由表落地（KEY 单击=对话、KEY 长按=回首页）→ BOOT 回归「主司翻页」（单击翻页，去对话化）。页内特例（P2/P3/P4/提醒弹窗）= A2 随后另立项，不在本包。GPIO18 电平/上拉真机确认为验收项（悬空风险）。本包是 ARQ-260911-cross-package-behavior-owner-gap 的首用试金石：KEY 接线端到端 owner 显式登记归本包，机制级齿防 BOOT≈KEY 行为等价假绿。",
-  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线 + 新增 key_route_a1.acceptance.c 机制齿在基线上判红：接线缺失/parser 喂入缺失/路由表缺失）；intake 时 acceptance-author 复核红基线记录",
-  "redBaselineResult": "现状（ARQ-260911 证据，2026-09-11 复核）：git log -S \"GPIO_NUM_18\" 全固件零命中、key_gesture_parser_feed 设备侧零调用（仅宿主 session_logic.acceptance.c 命中）、板级仅 boot_button_（waveshare-s3-rlcd-4.2.cc L45/L276）——新齿对现状必红，红基线成立。 | append（acceptance-author 2026-09-11 实测 + planner 判读裁定）：双通道红基线成立。① 既有 host runner 全量基线实跑（WSL linux target 新编 569/569 链接，cwd=firmware/main/test/host_app，root 经 .. 上溯与仓根同构）：104 Tests / 4 Failures / 0 Ignored，exit 4；四条红 = WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，全部在册既存红（WSA/P2 见 launch 口径注记 + existing-red-inventory R2/R3；VRT-A2/E2 = existing-red-inventory R4，owner=260829-voice-roundtrip，local-only 证据族）。launch 口径「104/3 @ d087fb7」漏列 VRT-A2/E2 一条（该注记在主 worktree progress.md 为未提交项、本 worktree 不可见；两 worktree 证据文件 tracked 内容一致，红在两处同态）——planner 裁定：本包有效基线 = 104/4，四条均先存跨包红非本包责任，本包责任 = 超出基线的新增红；基线消解走独立批不塞本包。② 新齿红（key_route_a1.acceptance.c，5 TEST_CASE 机制级 tree-scan 齿）：C 类冻结验收实编 gcc -std=c11 -Wall -Wextra -fsyntax-only EXIT=0（0 error 0 warning，验收文件本身可编译）；scratch 桩实跑（WSL 临时目录，用后已清理不入仓）5 Tests / 5 Failures，每红对应真实接线缺失——KR-A1 KEY_BUTTON_GPIO→GPIO_NUM_18 零命中、KR-A2 key_gesture_parser_feed(& 设备侧零调用、KR-A3 key_route_global(KEY_ID_KEY 零调用、KR-A4 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK) 仍在板级（去对话化未做）、KR-A6 未注册 HOST_ACCEPTANCE_SRCS；解析性红定性 grep 实证 GPIO_NUM_18 板级全零。环境备注：host_app/build 首次 set-target linux 遭非 CMake 目录态拒 fullclean（exit 2），rm -rf build 后成功（记录在案非 blocker）。",
+  "story": "PKG-2 归一屏（核心包，OQ1=纯 B 已裁）：小智聊天控件（状态栏/表情/气泡，SetupUI 建立面）迁为 KidPal 屏（s_kidpal_scr）常驻 layer，聊天内容任何页可见；s_page_pinned/s_chat_overlay/s_current_page 三标志 + 1s tick 轮询对账整体退役（竞态窗口 1s 与当日三崩溃的结构性土壤）；char 独立屏并入 s_kidpal_scr 体系（review F7）；alert/reminder 前台优先级进 layer 管理（review F8）；回答驻留副产品（OQ3=c：清除时机=下次交互随 layer 管理顺带定，不独立立项）；layer 管理即前台 owner 单一权威（仲裁器显式化，方向 A 状态机内核收编于此）。验证：SetupUI 建立面 + 全部写屏路径 host 矩阵回归（review F6 全额生效）+ 真机语音轮/推送页/提醒并发场景。",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量：story_p3 8 齿 / schedule_p2 全齿 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3 齿——F6 矩阵基线）；intake 时 acceptance-author 复核红基线记录（三标志符号级残留齿基线红）",
+  "redBaselineResult": "现状（review F1 证据 + 2026-09-11 复核）：kidpal_render_node.cc L58/L63/L75 三标志在位、1s tick 对账在位（L181/L193 活跃路径）、s_chat_scr/char 独立屏并存——三标志退役机制齿与 char 并屏齿在基线上必红，红基线成立。2026-09-11 前台优先级语义按方案A修订（SU-RULING-01, human-deputy 代裁，deviation=false）：SERVER_PAGE(3→4) > VOICE(4→3)，回答期间服务端推送页前台可见；修订后复跑红基线——C 类实编 0 error 0 warning，7 Tests / 6 Failures（结构齿 s1/s2/s3 仍红、行为齿 b1/b2/b3 红在 weak 哨兵、守卫 s4 绿），红基线判据不变、仍成立。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,24 +22,29 @@
   "riskTier": "high",
   "gateProfile": [
     "host-teeth",
+    "state-machine",
     "device-round",
-    "state-machine"
+    "frozen-acceptance-revision"
   ],
   "acceptance": [
-    "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
-    "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
-    "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
-    "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
-    { "id": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/", "kind": "structural" },
-    "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）"
+    "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
+    "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
+    { "id": "SU-A3: char 独立屏并入 s_kidpal_scr 体系（review F7）；char_stroke 冻结齿复跑绿", "kind": "structural" },
+    "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
+    "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
+    { "id": "SU-A6: host 矩阵回归——全量既有冻结齿（story_p3 8 / schedule_p2 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3）复跑绿；渲染路径重构致齿红仅 acceptance-author 留痕修订（断言语义不放松）", "suiteGate": true },
+    "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
+    { "id": "SU-A8: 真机并发场景（human 持板）——语音轮+推送页并发、提醒恰在语音轮到点 0 复位 0 崩溃（当日三崩溃同族）；证据落 changes/dev/260911-screen-unification/", "kind": "structural" },
+    { "id": "SU-A9: host runner 终跑全绿 exit 0", "suiteGate": true }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/key_route_a1.acceptance.c"
+    "firmware/main/test/screen_unification.acceptance.c"
   ],
   "exitCriteria": [
-    "KR-E1: A1 范围纪律——页内特例（P2 问课程 / P3 光标+双击进阅读 / P3 念给我听 / P4 播笔顺 / 提醒弹窗 KEY 关闭）零触碰，A2 留根待后续包立项（human 裁随后）",
-    "KR-E2: spec 零修订——OQ4=A 裁定下 docs/spec.md §4.0/§5.3 不动；实现中发现与 spec 冲突走逃生门（Track B spec-lane），不预先立项",
-    "KR-E3: 真机证据齐（KR-A5 持板轮日志/照片）+ 逃生门零触发记录"
+    "SU-E1: 驻留裁定兑现记录——OQ3=c 无独立立项（无新页/定时器），清除时机定义在案（plan.md 阶段 4）",
+    "SU-E2: 观感边界纪律——字体子集/换肤/排版零触碰（批次③ 260911-render-pages，mergeOrder 21 在本包后）",
+    "SU-E3: 冻结面零越界——docs/contracts/**、managed_components/** git 零触碰；spec 零修订（SPEC-1 不触发，冲突走逃生门）；*.acceptance.* 仅 acceptance-author 留痕修订",
+    "SU-E4: 阶段 0 host 矩阵清单落包 evidence（全部写屏路径 × 触发源 × 现行标志交互）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -48,125 +54,141 @@
     ".planning/260911-display-interaction-sovereignty/review.md",
     ".planning/260911-display-interaction-sovereignty/decision-coverage.json",
     "docs/ARCH-REVIEW-QUEUE.md",
-    "changes/dev/260829-hardware-validation/VOICE-ROUND-FLOW-260910.md"
+    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
   ],
   "sourceRefs": [
-    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.1",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.3",
     ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4",
-    ".planning/260911-display-interaction-sovereignty/review.md#F2",
-    ".planning/260911-display-interaction-sovereignty/review.md#F9",
-    "docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"
+    ".planning/260911-display-interaction-sovereignty/review.md#F6",
+    ".planning/260911-display-interaction-sovereignty/review.md#F7",
+    ".planning/260911-display-interaction-sovereignty/review.md#F8",
+    "docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-split-package-implementation-prose-gap"
   ],
-  "iterationBudget": 2,
-  "fixBudget": 3,
+  "iterationBudget": 3,
+  "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsSyncReason": "本包为固件板级接线 + host 验收注册（config.h / waveshare-s3-rlcd-4.2.cc / host_app CMakeLists），零 docs 面改动：spec §4.0/§5.3 零修订（OQ4=A 已裁，KR-E2 由冻结齿 canary 钉住）、契约面只读、无新增约定文档面；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
-  "mergeOrder": 18,
+  "docsSyncReason": "无实现侧文档同步需求：spec 零修订（SPEC-1 本批不触发，OQ3=c 无独立会话语义变更）、docs/contracts/** 零触碰（SU-E3 冻结面零越界）；实现仅改 firmware 显示层结构/归属与 device 装配接线，不产生 docs 面变更。",
+  "mergeOrder": 19,
   "dependsOn": [],
-  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板，GPIO18 电平/三手势）",
+  "testHost": "host runner（WSL linux target，全量矩阵）+ 真机并发场景轮（human 持板）",
   "decisionCoverage": [
     {
-      "decision": "OQ4-键位路线=A补接KEY·A1全局层先行",
-      "summary": "human 2026-09-11 触点②裁路线 A：补接 KEY 落地 spec 两键分工、A1 全局层先行；GPIO18 真机确认列本包验收项。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
-      "landsIn": "acceptance:KR-A1"
+      "decision": "OQ1-三屏主权=纯B归一屏",
+      "summary": "human 2026-09-11 触点②裁纯 B（不经 A 中间站直选终态）：聊天控件迁 layer、三标志/tick 退役、SetupUI 建立面 + 全部写屏路径 host 矩阵回归（F6 全额生效）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.1", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "acceptance:SU-A1"
     },
     {
-      "decision": "OQ4-A2-页内特例随后",
-      "summary": "页内特例接线量不小，human 裁 A2 随后——本包显式零触碰并留根，A1 合并后按实况另行立项。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4"],
-      "landsIn": "exitCriteria:KR-E1"
+      "decision": "仲裁器显式化（方向A内核收编）",
+      "summary": "layer 管理即前台 owner 单一权威——原方向 A 的状态机内核收编于 layer 栈优先级管理，不另建状态机对象（PROPOSAL §4 PKG-2 条目）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4"],
+      "landsIn": "acceptance:SU-A2"
     },
     {
-      "decision": "accept-risk-d9e0f1a2-KEY路线悬置",
-      "summary": "human 2026-09-10 留交互批次定路线的 accept-risk 锚，由 OQ4 裁决承接——KEY 接线从悬空转落地。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§1.4"],
-      "landsIn": "acceptance:KR-A1"
+      "decision": "char独立屏并入（review F7）",
+      "summary": "char 独立屏并入 s_kidpal_scr 体系，纳入 PKG-2 验收（review F7，render_node.cc L399-416 自证同族结构）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/review.md#F7"],
+      "landsIn": "acceptance:SU-A3"
     },
     {
-      "decision": "跨包KEY接线owner=本包（ARQ试金石）",
-      "summary": "KEY(GPIO18) 接线 + parser 喂入 + 全局路由端到端 owner 显式登记 = 260911-key-route-a1；机制级齿（KR-A1/KR-A2）兑现「机制断言优先」——防五包历史 BOOT≈KEY 行为等价假绿复发。",
-      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"],
-      "landsIn": "acceptance:KR-A2"
+      "decision": "alert/reminder优先级进仲裁器（review F8）",
+      "summary": "提醒弹窗进 layer 优先级表——同族崩溃已修症状未修架构，本包修架构。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/review.md#F8"],
+      "landsIn": "acceptance:SU-A4"
+    },
+    {
+      "decision": "OQ3-回答驻留=(c)随归一屏自然成立",
+      "summary": "human 裁 (c)：不单独设计驻留页/定时器；清除时机（下次交互：新语音轮/按键）并入 B 方案 layer 管理顺带定。PKG-3 撤销不立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.3", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4"],
+      "landsIn": "acceptance:SU-A5"
+    },
+    {
+      "decision": "两键行为保回归（跨包，PKG-1 定语义）",
+      "summary": "KEY 路由语义 owner = 260911-key-route-a1（mergeOrder 18 先并）；本包重构显示面/页面体系时必须保两键行为与裁定路线一致——KEY 长按=回首页导航动作面的回归责任在本包验收。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap", ".planning/260911-display-interaction-sovereignty/decision-coverage.json"],
+      "landsIn": "acceptance:SU-A7"
+    },
+    {
+      "decision": "非目标-观感面归批次③",
+      "summary": "字体子集补字、V3 换肤、故事页排版、课表数据填充不在本包——归 260911-render-pages（批次③）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§0"],
+      "landsIn": "package:260911-render-pages"
     },
     {
       "decision": "SPEC-1-本批不触发",
-      "summary": "OQ4=A 裁定 spec 零修订；实现中发现与 spec §4.0/§5.3 冲突走逃生门（Track B spec-lane），不预先立项。",
+      "summary": "OQ3=c 无独立会话语义变更、spec §5.3 零修订；实现中发现冲突走逃生门（Track B spec-lane），不预先立项。",
       "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
-      "landsIn": "exitCriteria:KR-E2"
+      "landsIn": "exitCriteria:SU-E3"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "behavior": "KEY(GPIO18) 板级接线 + key_gesture_parser_feed 设备侧喂入 + 全局路由端到端",
-      "owner": "260911-key-route-a1",
-      "note": "ARQ-260911-cross-package-behavior-owner-gap 首用试金石：包 3 session-logic 只做 host 纯逻辑（SES-E2/E3），板级接线历史掉缝（GPIO_NUM_18 全固件零命中、parser 设备侧零调用）——本批起 owner 归本包独占，杜绝再掉包间缝隙。"
+      "behavior": "回答驻留与清除时机",
+      "owner": "260911-screen-unification",
+      "note": "OQ3=c——驻留随 layer 管理自然成立，清除时机（下次交互）owner = 本包；无独立包（PKG-3 撤销）。"
     },
     {
-      "behavior": "BOOT 回归翻页（单击翻页、去对话化）",
-      "owner": "260911-key-route-a1",
-      "note": "BOOT 键现有一键过渡方案（单击对话/双击翻页/长按故事翻屏）由本包改造回归 spec §4.0 主司翻页；既有 BOOT 行为齿回归责任在本包。"
+      "behavior": "两键行为在归一屏后仍与裁定路线一致",
+      "owner": "260911-screen-unification",
+      "note": "PKG-1（260911-key-route-a1）定路由语义 owner；本包重构显示面时保 KEY/BOOT 行为回归（SU-A7 显式含）——KEY 长按=回首页的导航动作面是两包交点，语义归 PKG-1、回归归本包。"
     },
     {
-      "behavior": "KEY 长按=回首页的导航动作面（与 PKG-2 归一屏相交）",
-      "owner": "260911-key-route-a1",
-      "note": "路由表语义 owner = 本包；PKG-2（260911-screen-unification）重构显示面/页面体系时必须保两键行为与裁定路线一致（其 SU-A7 显式含）——本包先并（mergeOrder 18），PKG-2 后并（19）时回归 KEY/BOOT 路由。"
+      "behavior": "与批次③ 260911-render-pages 同文件面（kidpal_render_node.cc / 渲染路径）",
+      "owner": "260911-screen-unification",
+      "note": "本包先并（mergeOrder 19）、③后并（落锁 21，②先③后 human 已裁）——③ rebase 到本包重构后的渲染路径；观感面 owner 归 ③，本包零触碰。"
     }
   ],
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
-        "mutation": "config.h KEY_BUTTON_GPIO GPIO_NUM_18 → GPIO_NUM_17（单点）",
+        "acceptanceId": "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
+        "mutation": "kidpal_layer_push 升序插入比较符 '>' 反转为 '<'（按优先级降序入栈，top 变最低优先级层，破坏单一权威的优先级裁决）",
         "result": "turned red",
         "sensitive": true,
-        "note": "builder 实测 2026-09-11：key_route_a1 KR-A1 TEST_CASE tooth 1 红（KR-A1 RED: config.h 未定义 KEY_BUTTON_GPIO -> GPIO_NUM_18）；还原复跑绿（109 Tests / 4 Failures = 基线四条在册）。单点变异即破板级 GPIO 钉死齿。"
+        "note": "TEST_CASE 'screen unification: layer 前台优先级表进出序 + 单一权威 (SU-A2/SU-A4)' [behavioral] 变红于首个优先级断言 'SU-A2/A4 RED: VOICE must front over LOCAL_PAGE'。全量 111 Tests / 5 Failures = 3 在册红(WSA-A6/WSA-A4/P2-A1) + 本 mutant 新增 2 红(b1+b3)。"
       },
       {
-        "acceptanceId": "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
-        "mutation": "板级 .cc 全部 key_gesture_parser_feed(& → key_gesture_parser_feed_stub(&（4 处）",
+        "acceptanceId": "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
+        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（提醒弹窗 REMINDER>VOICE 与其余优先级边共用同一比较符，一并被破坏）",
         "result": "turned red",
         "sensitive": true,
-        "note": "builder 实测 2026-09-11：KR-A2 TEST_CASE tooth 1 红（key_gesture_parser_feed(& referenced by 0 file(s)）——证「设备侧悬空」根因被钉死；还原复跑绿。session_logic 全齿保持绿 = 冻结纯逻辑零改动机械证明。"
+        "note": "与 SU-A2 共享同一 mutant M1（不重复构建）。b1 是 [SU-A2][SU-A4] 联合行为齿，M1 令 b1 于 'VOICE must front over LOCAL_PAGE' 处红（b1 内 REMINDER>VOICE 断言受同一插入比较符支配，SU-A4 对 M1 真实敏感）。全量 111/5。"
       },
       {
-        "acceptanceId": "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
-        "mutation": "板级 .cc GLOBAL_ACT_SESSION_TOGGLE → GLOBAL_ACT_SESSION_STUB（3 处）",
+        "acceptanceId": "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
+        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（语音轮→服务端回答页的前台归属被反转，回答期间 SERVER_PAGE 不再盖过 VOICE）",
         "result": "turned red",
         "sensitive": true,
-        "note": "builder 实测 2026-09-11：KR-A3 TEST_CASE tooth 3 红（GLOBAL_ACT_SESSION_TOGGLE 仅 2 文件——无设备侧 dispatch 消费）；还原复跑绿。教训记录：首次尝试变异名 _TOGGLE_X 因 strstr 仍子串命中而不红——变异命名不得保留原字面为子串。"
+        "note": "与 SU-A2/SU-A4 共享同一 mutant M1。TEST_CASE 'screen unification: 语音轮→回答驻留→回首页 前台归属 (SU-A5/SU-A7)' [behavioral] 变红于 'SU-A7 RED: 语音回答期间服务端页须前台可见'。全量 111/5。"
       },
       {
-        "acceptanceId": "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
-        "mutation": "boot_button_.OnClick 恢复 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK)（回退去对话化）",
+        "acceptanceId": "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
+        "mutation": "kidpal_layer_chat_target 返回值由 KIDPAL_LAYER_CHAT(1) 改为 KIDPAL_LAYER_LOCAL_PAGE(2)（聊天内容落点不再恒指向常驻聊天 layer，屏幕落点漂移）",
         "result": "turned red",
         "sensitive": true,
-        "note": "builder 实测 2026-09-11：KR-A4 TEST_CASE tooth 1 负向齿红（BOOT 单击仍挂在 HandleStoryKey(...CLICK) 对话/故事路径）；还原复跑绿。去对话化若被回退负向齿必红；既有 BOOT 齿零新增红（109/4 = 基线四条在册）。"
+        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于首个落点断言 'SU-A1 RED: chat content target is not the resident chat layer (got 2)'。全量 111/4 = 3 在册红 + 本 mutant 新增 1 红。"
       },
       {
-        "acceptanceId": "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）",
-        "mutation": "host_app/main/CMakeLists.txt 删除 \"../../key_route_a1.acceptance.c\" 注册行",
+        "acceptanceId": "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
+        "mutation": "kidpal_layer_chat_clear_event 的 NEW_VOICE/KEY_PRESS 分支由 return 1 改为 return 0（下次交互不再清除聊天，OQ3=c 清除时机语义被破坏）",
         "result": "turned red",
         "sensitive": true,
-        "note": "builder 实测 2026-09-11：KR-A6 TEST_CASE tooth 1 红（key_route_a1.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS）；还原复跑绿。KR-A6 exit-0 字面判读见 notes planner finalize append ②（有效基线 104/4 在册既存红下，终跑判据 = 相对基线零新增红 + 本包齿全绿，实测 109/4）。"
-      },
-      {
-        "acceptanceId": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/",
-        "mutation": "无 host 变异面——human 持板 device-round 项（非代码可测），acceptance 条目已标 kind:structural（一等豁免通道，先例 260829-hardware-validation 全 structural）；冻结齿明文不承载 KR-A5。",
-        "result": "not applicable (structural, device-round human evidence)",
-        "sensitive": false,
-        "note": "planner 登记 2026-09-11：GPIO18 接线敏感性由 KR-A1 mutation 实测承载（GPIO_NUM_18→17 即红）；KR-A5 真机证据门 = changes/dev/260911-key-route-a1/ 持板轮日志（active_high 实参回填冻结），device-round 相位执行，不以 host mutation 伪造。"
+        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于清除时机断言 'SU-A5 RED: NEW_VOICE must clear chat'（其前 ANSWER_END/PAGE_SWITCH 断言仍绿，证明齿区分驻留与清除）。全量 111/4。"
       }
     ]
   },
   "crossEnd": {
     "counterparts": [
-      { "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc", "symbol": "boot_button_" },
-      { "path": "firmware/main/key_gesture_parser.cc", "symbol": "key_gesture_parser_feed" }
+      { "path": "firmware/main/application.cc", "symbol": "SetChatMessage" },
+      { "path": "firmware/main/application.cc", "symbol": "SetStatus" },
+      { "path": "firmware/main/application.cc", "symbol": "SetEmotion" },
+      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_show_chat" },
+      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_begin_page" }
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-1 预判）。装配型包按 ARQ-260911-split-package-implementation-prose-gap 分级判据豁免包级 plan.md（改法由 PROPOSAL §2.4 已裁机制 + review F2/F9 证据直接承载，单文件面接线，无铁律约束新增）。硬件不确定性：GPIO18 电平/上拉悬空风险真机确认列 KR-A5（human 持板）。与 PKG-2 并行开发（独立文件面），merge order 本包先（18）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。禁改 docs/contracts/** 与 docs/spec.md（SPEC-1 不触发）。 | planner finalize append（2026-09-11）：① KR-A5 acceptance 条目转对象形 {id, kind:'structural'}——human 持板 device-round 项无 host 代码可测面（冻结齿头注明文不承载），形状标注、id 文本语义零变更；豁免通道 = acceptance-id-shared 一等对象标记（先例 260829-hardware-validation 全 structural），接线敏感性由 KR-A1 mutation 实测承载。② KR-A6「终跑全绿 exit 0」判读 = 相对有效基线零新增红 + 本包新齿全绿：基线四条在册既存红（WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，见 redBaselineResult planner 裁定）非本包责任、launch 明令基线消解走独立批，字面 exit 0 在基线纪律下不可达；实测 109 Tests / 4 Failures（+5 新齿全绿）。该判读随 review-packet / supervisor-verdict 呈 human 合并门知情。③ mutationEvidence.perAcceptance 已由 planner 依 builder 实测报告落账（KR-A1~A4/A6 sensitive=true，KR-A5 N/A sensitive=false）。"
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-2 预判）。核心包按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法非显然 + 跨多文件 + 铁律约束三轴全中）——planRef 指向 sibling plan.md，planner intake 只读消费、改需留痕。riskTier=high（UI 状态机轴 + 真机崩溃结构性面 + 冻结齿修订面）；「实现包禁 Lite」单向守卫（PROPOSAL frontmatter）——rigor=full。与 PKG-1 并行开发，merge order 19（PKG-1 先并以缩 KEY/BOOT 回归窗口）。行为碰撞型预警：渲染类冻结齿（story_p3/ui_art_integration）路径敏感，重构后红的齿走 acceptance-author 留痕修订（不带冲突进 launch，已申报 workstream decision-coverage launchPreconditions）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。"
 }

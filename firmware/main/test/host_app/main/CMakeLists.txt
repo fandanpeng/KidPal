@@ -84,6 +84,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
     "../../key_route_a1.acceptance.c"
 
+    # 包 260911-screen-unification (PKG-2 归一屏)：冻结验收 + 被测纯逻辑前台 layer 栈
+    # (kidpal_layer.c 强符号覆盖 weak 哨兵——不编入则冻结离线契约仍红; 相对 host_app/
+    # main 为 ../../../)。**必须置于 host smoke acceptance 之前**（smoke 保持末位 =
+    # 最先执行, 包 0 boundary 齿注册序守卫; 验收 test s2 结构齿校验此序）。
+    "../../screen_unification.acceptance.c"
+    "../../../display/kidpal_layer.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )

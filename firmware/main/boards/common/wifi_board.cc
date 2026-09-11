@@ -17,6 +17,10 @@
 #include <wifi_station.h>
 #include <ssid_manager.h>
 #include "afsk_demod.h"
+/* 归一屏（包 260911-screen-unification SU-A2 残项补全）：配网进/退前台 layer 优先级表
+ * 最高层 PROVISION 的设备侧接线。仅 KidPal 归一屏板会实际生效（其它板 render_node 未
+ * init -> begin/end_provision 幂等 no-op），不改变本文件以外的 wifi 语义。 */
+#include "display/kidpal_render_node.h"
 #ifdef CONFIG_USE_ESP_BLUFI_WIFI_PROVISIONING
 #include "blufi.h"
 #endif
@@ -113,7 +117,12 @@ void WifiBoard::OnNetworkEvent(NetworkEvent event, const std::string& data) {
             // make sure blufi resources has been released
             Blufi::GetInstance().deinit();
 #endif
-            in_config_mode_ = false;
+            if (in_config_mode_) {
+                /* 归一屏（SU-A2 残项）：配网成功连上 -> 配网退 layer（真转出才退，避免普通
+                 * 重连误退。pop 不在场时 -1 no-op）。 */
+                in_config_mode_ = false;
+                kidpal_render_node_end_provision();
+            }
             ESP_LOGI(TAG, "Connected to WiFi: %s", data.c_str());
             break;
         case NetworkEvent::Scanning:
@@ -131,7 +140,11 @@ void WifiBoard::OnNetworkEvent(NetworkEvent event, const std::string& data) {
             break;
         case NetworkEvent::WifiConfigModeExit:
             ESP_LOGI(TAG, "WiFi config mode exited");
-            in_config_mode_ = false;
+            if (in_config_mode_) {
+                /* 归一屏（SU-A2 残项）：配网结束 -> 配网退 layer，前台按优先级表回落。 */
+                in_config_mode_ = false;
+                kidpal_render_node_end_provision();
+            }
             // Try to connect with the new credentials
             TryWifiConnect();
             break;
@@ -161,6 +174,9 @@ void WifiBoard::StartWifiConfigMode() {
     in_config_mode_ = true;
     // Transition to wifi configuring state
     Application::GetInstance().SetDeviceState(kDeviceStateWifiConfiguring);
+    /* 归一屏（SU-A2 残项）：配网进前台 layer 优先级表最高层 PROVISION（幂等推入，重复进入
+     * 安全）。非 KidPal 板 render_node 未 init -> begin_provision 内部 no-op。 */
+    kidpal_render_node_begin_provision();
 #ifdef CONFIG_USE_HOTSPOT_WIFI_PROVISIONING
     auto& wifi_manager = WifiManager::GetInstance();
 
