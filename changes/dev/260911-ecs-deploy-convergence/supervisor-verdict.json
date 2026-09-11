@@ -1,0 +1,69 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-11T04:36:55.978Z",
+  "changeId": "260911-ecs-deploy-convergence",
+  "originType": "drift-report",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:.claude/taskpackages/260911-ecs-deploy-convergence/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:.claude/taskpackages/260911-ecs-deploy-convergence/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 6,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:.claude/taskpackages/260911-ecs-deploy-convergence/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260911-ecs-deploy-convergence/verifier-evidence/rounds/r6.json",
+        "bearingFactOk": false,
+        "completedRounds": 6,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260911-ecs-deploy-convergence/docs-delta.md",
+          "changes/dev/260911-ecs-deploy-convergence/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "drift-report"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789092324124-acceptance-coverage.log",
+      ".claude/verify-logs/1789092680593-mutation-check.log",
+      ".claude/verify-logs/1789092759755-docs-sync.log",
+      ".claude/verify-logs/1789101338000-unit.log",
+      ".claude/verify-logs/1789101345169-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260911-ecs-deploy-convergence/verifier-evidence/rounds/r6.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260911-ecs-deploy-convergence/docs-delta.md",
+      "changes/dev/260911-ecs-deploy-convergence/review-packet.md"
+    ]
+  }
+}

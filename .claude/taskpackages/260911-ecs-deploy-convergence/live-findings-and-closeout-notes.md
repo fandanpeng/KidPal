@@ -25,3 +25,6 @@
 - 安全组 8080 规则状态在 ECS 管理面确认并回填（agent 权限面外，先例 shim-archive-record.md:22）。
 - L4 回执面 / kidpal_speak bug / 休眠连接设计三项 finding 的产品与技术裁量。
 - 测试条目「部署核验测试提醒」已无用，下次编辑课表时可删（schedule.md「一次性安排」行）。
+
+## 补记 · verifier final 轮（r6）
+final 相位全量闸 `unit`/`acceptance` 红，唯一失败 = `test_smoke_e2e.acceptance.py::test_a4_display_line_evidence`（SMK-A4：server/acceptance/_artifacts/smoke-e2e/screen.md 缺失）。属 260829-smoke-e2e 包证据件先行红、与本包零相关，留红如案不伪造（unit 162 passed / acceptance 125 passed）。注：scoped 7 闸 + final 新增两闸中本包自身面全绿，唯一红为跨包证据件缺口。
