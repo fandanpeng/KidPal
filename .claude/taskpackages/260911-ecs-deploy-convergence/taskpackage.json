@@ -1,0 +1,109 @@
+{
+  "changeId": "260911-ecs-deploy-convergence",
+  "rigor": "full",
+  "sourceType": "drift-report",
+  "origin": {
+    "type": "drift-report",
+    "upstreamType": "drift-report",
+    "upstreamRef": "changes/dev/260829-hardware-validation/review-packet.md#F3",
+    "workstream": "kidpal-mvp"
+  },
+  "planRef": ".claude/taskpackages/260911-ecs-deploy-convergence/plan.md",
+  "subsystem": "server",
+  "story": "批次① ECS 部署收敛：#1 overlay 部署漂移修复——apply-xiaozhi-overlay.sh 渲染输出与 ECS live 逐行 diff 后全量对齐（实读确认 ≥4 处漂移：ASR AliyunStreamASR→Qwen3ASRFlash、Intent function_call→nointent、base_url 缺 /v1、TTS type edge-tts→edge；现在直接跑脚本会覆盖 live 断语音）+ #2 提醒 cron §8 部署（reminder_schedule_lib + kidpal-reminder-plan 15m cron + kidpal-front.service env）+ live 五齿 L1-L5 evidence 交班 + #13 host 证据回收（WSA-A4 flash.log 制品归位 / WSA-A6 当日真探针 8080+安全组）+ prompt v4 上 ECS（review-packet §12 残余 7，验收所测=生产所用）。",
+  "redBaselineCommand": "待 intake 时 acceptance-author 钉死（预期形态：聚焦 server 验收套 cd server && python -m pytest acceptance/test_gateway_directionB.acceptance.py acceptance/test_char_stroke.acceptance.py acceptance/test_story_p3.acceptance.py -q --import-mode=importlib 结构面全绿基线 + 漂移枚举 diff 证据 S0.2；live 齿按 @pytest.mark.live 不 auto-run）",
+  "redBaselineResult": "漂移本体已实读确认（architect triage 2026-09-11）：apply-xiaozhi-overlay.sh:60 ASR=AliyunStreamASR、:62 Intent=function_call、:67 base_url 缺 /v1（provider.config.yaml:65 记 live 260906 教训）、:73 TTS type=edge-tts（provider.config.yaml:71-73 记 live 260905 教训「不支持的TTS类型」）；跑即覆盖 live 断语音。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "live-deploy",
+    "evidence-recovery"
+  ],
+  "acceptance": [
+    "ECS-A1: 漂移全量对齐——修复后 apply-xiaozhi-overlay.sh 渲染到临时目录与 live 备份 diff = 零意外 delta（prompt v4 切换为唯一预期 delta）；对齐面以 S0.2 渲染 diff 权威枚举为准，不限于点名四处",
+    "ECS-A2: 冻结齿不回归——聚焦 server 验收套（test_gateway_directionB 离线齿 + CHR-E3 + P3-A4 + test_story_wiring）全绿；GWA-A4 live 齿口径（ASR 命中 aliyun|dashscope|qwen3 任一 + 禁 max_tokens）维持合规",
+    "ECS-A3: live 部署核验——部署窗口（human 在场）apply 后引擎容器重载，live config 四 provider 全对 + prompt 键指向 v4 + 一轮完整语音端到端 0 断链",
+    "ECS-A4: 提醒 cron §8 落地——openclaw cron list 新增 kidpal-reminder-plan 且 state.lastRunStatus=ok；kidpal-front.service env 含 KIDPAL_ALERTS_DIR/KIDPAL_SERVER_DIR + poller 日志 alert_poll 心跳",
+    "ECS-A5: live 五齿 L1-L5 evidence 齐（device-acceptance-checklist 表 C：L1 cron list / L2 pending.json 对照契约 §三 / L3 L4 设备推送+渲染回执（human 持板）/ L5 语义产物），证据落 changes/dev/260829-schedule-reminder/，无 probe≠exercise 字样（@pytest.mark.live 口径，不 auto-run）",
+    "ECS-A6: WSA-A4/A6 证据回收——flash.log（188 处真实烧录标记）归位 server/acceptance/_artifacts/device-ws-switch/；ecs-teardown-evidence.md 为当日真只读探针（8080 连接期望 refused/timeout + 安全组规则），若 8080 实际仍开则停包升级 human（live 安全洞）；host runner 复跑两齿转绿（P2-A1 first-match 歧义红不在本包范围，不喂哨兵）",
+    "ECS-A7: 回滚就绪——live .config.yaml 带时间戳备份（ECS+本地双份）可还原 + openclaw cron remove 演练路径写进包证据"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_gateway_directionB.acceptance.py",
+    "server/acceptance/test_char_stroke.acceptance.py",
+    "server/acceptance/test_story_p3.acceptance.py",
+    "server/acceptance/test_story_wiring.acceptance.py",
+    "firmware/main/test/device_ws_switch.acceptance.c"
+  ],
+  "exitCriteria": [
+    "ECS-E1: 验收 1-3 全绿（渲染 diff 零意外 delta + 聚焦套不回归 + live 部署核验过）",
+    "ECS-E2: L1-L5 + WSA-A4/A6 证据落盘且含真实标记；host runner WSA 两齿复跑转绿",
+    "ECS-E3: 回滚路径演练记录在包证据；冻结面（docs/contracts/**、*.acceptance.*、managed_components/**）git 零触碰"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§三"
+  ],
+  "docRefs": [
+    "changes/dev/260829-hardware-validation/review-packet.md",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md#§8",
+    "server/deploy/provider.config.yaml",
+    ".claude/taskpackages/260829-hardware-validation/device-acceptance-checklist.md"
+  ],
+  "sourceRefs": [
+    "changes/dev/260829-hardware-validation/review-packet.md#F3",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
+    "server/deploy/apply-xiaozhi-overlay.sh:60",
+    "server/deploy/apply-xiaozhi-overlay.sh:62",
+    "server/deploy/apply-xiaozhi-overlay.sh:67",
+    "server/deploy/apply-xiaozhi-overlay.sh:73"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "mergeOrder": 16,
+  "dependsOn": [],
+  "testHost": "PC pytest（结构面）+ ECS live（部署窗口，human 在场）+ 真机（L3/L4，human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "human-20260906-ASR终选Qwen3ASRFlash",
+      "summary": "ASR 终选已裁定 Qwen3ASRFlash（live 实况与 spec §A1 双候选一致），overlay 声明面对齐该终态；Intent=nointent 与 spec §A3 OpenClaw 自带相容。",
+      "sourceRefs": [
+        "server/deploy/provider.config.yaml",
+        "docs/spec.md#§A1"
+      ],
+      "landsIn": "acceptance:ECS-A1"
+    },
+    {
+      "decision": "contract-§三-alerts-pending形状",
+      "summary": "L2 齿按契约 §三 alerts/pending.json 形状对照，只读引用不改契约。",
+      "sourceRefs": [
+        "docs/contracts/interface-contract.md#§三"
+      ],
+      "landsIn": "acceptance:ECS-A5"
+    },
+    {
+      "decision": "ARQ-260901-g3-server-live-acceptance",
+      "summary": "live 面标记不 auto-run；live 证据在部署窗口/持板窗口由 human 在场产出，验收所测=生产所用。",
+      "sourceRefs": [
+        "docs/ARCH-REVIEW-QUEUE.md"
+      ],
+      "landsIn": "acceptance:ECS-A3"
+    }
+  ],
+  "mutationRequired": false,
+  "mutationEvidence": [],
+  "crossEnd": {
+    "note": "crossEnd exempt 申报：本包零新写验收齿（acceptanceTestsFile 全为既有冻结件，归各自主包的 crossEnd 申报承载）；本包自己的验收 = ①渲染 diff 证据（server/deploy 脚本输出 vs live 备份，纯文件对比）②live 部署核验/cron 在册（运维面，evidence-based 非符号断言）③既有冻结齿复跑（跨端符号断言已在原包 crossEnd 登记，本包不新增对端符号引用）。无新跨端断言符号 → exempt。",
+    "exempt": "无新增跨端验收齿；复用的冻结齿 crossEnd 归原包（260903-gateway-directionB / 260829-char-stroke / 260829-story-p3 / 260829-schedule-reminder / 260903-device-ws-switch）申报。",
+    "counterparts": []
+  },
+  "notes": "triage 2026-09-11：architect 判②单包 Full（riskTier=high），human 触点①已确认。riskTier=high 照常触发 supervisor 升级人类——预期非异常。执行纪律：阶段 0 只读勘察先于一切改动；per-delta 人工定谳防固化调试临时态（来历不明 delta 逐条问 human）；任何 delta 合理化需改 spec/契约 → 逃生门停转 /arch-change。WSA-A6 必须当日真探针不得倒填。本包不碰 P2-A1 齿歧义（归批次③渲染批）。mergeOrder 16 占位、portfolio 可重排。禁改 docs/contracts/** 与 *.acceptance.* 冻结件。"
+}
