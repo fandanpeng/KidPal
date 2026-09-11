@@ -184,5 +184,18 @@
 | ④ | **故事断链修复**（Full，等判据） | #3 双断链收敛 | 跨固件+front+引擎，修法二选一需 F2-1 真机判据 | **前置：#14 持板时跑 F2-1** |
 | 流程 | 时延实验（#8）：配置实验非代码包，随批次①后进行，若上流式 ASR 再立 provider 包；物理验收（#14）：human 持板操作，随时穿插；loop-retro：closeout 触发阈值 10≥3，主线程 cadence 责任 | | | |
 
-**总排序**：① → ②/③（②③无共享文件冲突可前后接续，merge-driver 串行合并）→ ④；
-每个包走 `/triage-change` 四档判定 + human 确认后立项。
+**总排序**：① → ② → ③ → ④；每个包走 `/triage-change` 四档判定 + human 确认后立项。
+（2026-09-11 修正：原「②③无共享文件冲突可前后接续」经 architect triage 核查**不完全
+成立**——③ 的课表数据链与 #9 screen_lines 接线与 ② 重构面（kidpal_render_node.cc /
+mcp_server.cc）同文件，锁定 **② 先 ③ 后**。）
+
+**立项落盘登记（2026-09-11，/triage-change 全批次过完）**：
+
+- **批次①** = `taskpackages/260911-ecs-deploy-convergence/`（②单包 Full / riskTier=high，
+  human 触点①已确认，planner `/build-feature` 可开工）。
+- **批次②** = `.planning/260911-display-interaction-sovereignty/`（③大 feature，
+  PROPOSAL DRAFT v0.1 + review.md；**freezeState: pending-human**——待 human FROZEN
+  + grilling OQ1 三屏方向 / OQ2 显示机制 / OQ3 驻留形态 / OQ4 键位路线 后才拆实现包）。
+- **批次③** = `taskpackages/260911-render-pages/`（②单包 Full / riskTier=medium，
+  human 触点①已确认含 P2-A1 方案 B 修法与 ② 先 ③ 后；开工顺位在批次②后）。
+- **批次④**：不立项，等 F2-1 真机判据（#14 持板时顺带戳实）。

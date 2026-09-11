@@ -1,0 +1,113 @@
+{
+  "changeId": "260911-render-pages",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "workstream": "kidpal-mvp"
+  },
+  "planRef": ".claude/taskpackages/260911-render-pages/plan.md",
+  "subsystem": "firmware",
+  "story": "批次③ 渲染观感殿后：#9 故事页排版（ksy_label 不设宽不 wrap 横向裁切 + READER 画全文不消费 screens 分页；冻结验收头注 ⑤ 本要求当前屏正文，本项=兑现冻结契约既述行为非语义变更）+ #10 字体（正文 font_puhui_basic_14_1 普惠小子集缺字「猬」；font_zcool_30.bin 是位图样张非可用 CJK 字体，设计字体上正文需 U 包管线新产资产，先协商边界）+ #11 课表页（数据链真因未定，先勘察 producer→mcp 路由→render_node 缓存全链）+ #12 P2-A1 恒红齿修复（schedule_p2.acceptance.c 齿 6 first-match 定位歧义，acceptance-author tightly-only 修齿，方案 B，否决补哨兵标记）。",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量：story_p3 8 齿 / schedule_p2 全齿 / story_page_stack 3 齿 / ui_art_integration 闭集齿）；intake 时 acceptance-author 复核红基线记录（P2-A1 恒红 + 排版缺陷现状）",
+  "redBaselineResult": "P2-A1 恒红（schedule_p2.acceptance.c 齿 6 first-match 恒命中先行轮新增 kidpal_render_node.cc:362 无 lv_anim|弹跳 标记；真定义处 schedule_page.c:733-741 实含 lv_anim，齿意图未被实现回归破坏）；#9 排版缺陷真机实证（PROGRESS-SUMMARY §四A：正文单行裁切「小刺猬」只剩「小刺」+ 下方大片空白）；#10 缺字真机实证（「猬」渲染空白，font_zcool_30.bin 为 300×52 KAP1 位图样张）。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    ".planning/kidpal-mvp/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "host-teeth",
+    "device-round",
+    "frozen-acceptance-revision"
+  ],
+  "acceptance": [
+    "RP-A1: P2-A1 齿修复——schedule_p2.acceptance.c 齿 6 改定位定义文件后断言 lv_anim|弹跳，齿语义不变不放松断言（tightly-only + REVISION LOG），host runner 转绿且其余齿不绊倒；禁止 render_node 补哨兵标记（方案 A）",
+    "RP-A2: 故事页排版——READER 分支按 screens 切片只画当前屏（指针/偏移进 story->text 遵守 4096B 栈纪律），标题/正文标签设宽度 + LV_LABEL_LONG_WRAP 消横向裁切，分页行高单源 KSTORY_READER_LINES_PER_SCREEN（story_page.h additive-only）；story_p3 8 齿 + story_page_stack 3 齿全绿",
+    "RP-A3: 课表页——按数据链勘察根因修复（固件缓存/接线或 server producer 面），真机课表页见真实条目；schedule_p2 全齿绿",
+    "RP-A4: 字体——按 S0.1 决策落地正文选型与缺字策略（fallback 或扩子集），「猬」等抽样字渲染可见证据；若动 spiffs_root 则 ui_art_integration 闭集齿复跑绿（U 闭集修订走 acceptance-author + 跨包留痕）；若裁定需 U 管线新产字体资产且工作量独立，该子项拆出另立项（触发器条款）",
+    "RP-A5: 真机观感轮（human 持板）——故事正文换行完整可见（含「猬」）+ BOOT 长按翻页逐屏正文 + 课表页真实内容 + HWV-A7 顺带核验，证据落 changes/dev/260911-render-pages/",
+    "RP-A6: 冻结面零越界——docs/contracts/**、managed_components/** git 零触碰；*.acceptance.* 仅 acceptance-author 两处留痕修订（P2-A1 齿 + 若需 U 闭集）REVISION LOG 齐；story_page.h 冻结头 additive-only",
+    "RP-A7: host runner 终跑全绿 exit 0（全量既有齿无回归）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/schedule_p2.acceptance.c",
+    "firmware/main/test/story_p3.acceptance.c",
+    "firmware/main/test/story_page_stack.test.c",
+    "firmware/main/test/ui_art_integration.acceptance.c"
+  ],
+  "exitCriteria": [
+    "RP-E1: 验收 1-2 全绿（host runner 全齿 + 字体决策记录在案）",
+    "RP-E2: 真机观感证据齐（RP-A5 持板轮日志/照片）",
+    "RP-E3: 冻结面零越界（RP-A6）+ 栈纪律保绿（story_page_stack 3 齿）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四D",
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "changes/dev/260829-hardware-validation/review-packet.md",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md"
+  ],
+  "sourceRefs": [
+    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
+    "changes/dev/260829-hardware-validation/review-packet.md#F5",
+    "changes/dev/260829-hardware-validation/review-packet.md#F2"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "mergeOrder": 17,
+  "dependsOn": [],
+  "testHost": "host runner（WSL linux target）+ 真机观感轮（human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "human-20260911-P2A1修法方案B",
+      "summary": "P2-A1 恒红齿修法裁定方案 B：acceptance-author 修 first-match 定位歧义（tightly-only + REVISION LOG），否决方案 A（render_node 补哨兵标记）。",
+      "sourceRefs": [
+        ".claude/taskpackages/260911-render-pages/plan.md#阶段1"
+      ],
+      "landsIn": "acceptance:RP-A1"
+    },
+    {
+      "decision": "human-20260911-批次②先③后",
+      "summary": "接续顺序锁定批次②（260911-display-interaction-sovereignty）先行、本包后——#11 数据链与 #9 screen_lines 接线与 ② 重构面（kidpal_render_node.cc/mcp_server.cc）同文件；mergeOrder 17 为占位，portfolio-planner 排序时落锁。",
+      "sourceRefs": [
+        ".planning/260911-display-interaction-sovereignty/PROPOSAL.md"
+      ],
+      "landsIn": "exitCriteria:RP-E1"
+    },
+    {
+      "decision": "U包资产闭集B8红线",
+      "summary": "spiffs_root 新落文件即违 ui_art_integration.acceptance.c B8 闭集齿（47 枚白名单）；新字体资产走 U 闭集修订（acceptance-author + 跨包留痕）或规避（managed_components/编译内置）。",
+      "sourceRefs": [
+        "firmware/main/test/ui_art_integration.acceptance.c"
+      ],
+      "landsIn": "acceptance:RP-A4"
+    },
+    {
+      "decision": "story链栈纪律4096B",
+      "summary": "story 链跑在 esp-ml307 ssl_receive 4096B 栈上：排版实现禁止新增大栈缓冲，正文切片指针/偏移进 story->text，大对象堆分配；story_page_stack 3 齿防回归。",
+      "sourceRefs": [
+        "firmware/main/display/story_page.c",
+        "firmware/main/test/story_page_stack.test.c"
+      ],
+      "landsIn": "acceptance:RP-A2"
+    }
+  ],
+  "mutationRequired": false,
+  "mutationEvidence": [],
+  "crossEnd": {
+    "note": "crossEnd exempt 申报：本包零新写验收齿（acceptanceTestsFile 全为既有冻结件，归各自主包 crossEnd 申报承载）；本包自己的验收 = host runner 既有齿复跑（跨端符号断言已在原包登记）+ 真机观感轮 evidence-based 非符号断言 + #12 齿定位歧义修订（同文件内断言，无对端符号新增）。无新跨端断言符号 → exempt。",
+    "exempt": "无新增跨端验收齿；复用的冻结齿 crossEnd 归原包（260829-schedule-p2 / 260829-story-p3 / 260831-ui-art-integration / 260829-hardware-validation 栈纪律齿）申报。",
+    "counterparts": []
+  },
+  "notes": "triage 2026-09-11：architect 判②单包 Full（riskTier=medium / sourceType=regression），human 触点①已确认（含 #12 方案 B 修法 + ② 先 ③ 后接续顺序）。执行纪律：阶段 1 齿修复先行（恒红污染全批验证信号）；S0.1 字体决策是 human 触点②（选型 + 缺字处置 + 设计字体去留），若需 U 管线新产资产且工作量独立则拆出另立项；S0.2 数据链勘察后若根因在云侧 producer 则本包扩 server 面、若需改契约则逃生门停。input-brief 双份由 planner /build-feature Step 7 产出。禁改 docs/contracts/** 与 managed_components/**；*.acceptance.* 仅本包明示两处 acceptance-author 留痕修订。"
+}
