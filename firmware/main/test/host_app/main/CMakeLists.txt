@@ -77,6 +77,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 验收 test 4 tooth 1 校验此序）。相对 host_app/main 为 ../../。
     "../../hardware_validation.acceptance.c"
 
+    # 包 260911-key-route-a1 (键位路线落地 PKG-1)：冻结验收（纯树级结构齿, 自身只依赖
+    # unity + 标准 C, 无新增被测符号链接——运行时以文本读工作树断言板级 KEY GPIO 注册 /
+    # parser 喂入 / 路由 dispatch / BOOT 去对话化, 见文件头 Run protocol）。
+    # **必须置于 host smoke acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
+    "../../key_route_a1.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )

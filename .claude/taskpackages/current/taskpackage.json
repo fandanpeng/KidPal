@@ -1,138 +1,172 @@
 {
-  "changeId": "260911-ecs-deploy-convergence",
+  "changeId": "260911-key-route-a1",
   "rigor": "full",
-  "sourceType": "drift-report",
+  "sourceType": "proposal",
   "origin": {
-    "type": "drift-report",
-    "upstreamType": "drift-report",
-    "upstreamRef": "changes/dev/260829-hardware-validation/review-packet.md#F3",
-    "workstream": "kidpal-mvp"
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
+    "workstream": "260911-display-interaction-sovereignty"
   },
-  "planRef": ".claude/taskpackages/260911-ecs-deploy-convergence/plan.md",
-  "subsystem": "server",
-  "story": "批次① ECS 部署收敛：#1 overlay 部署漂移修复——apply-xiaozhi-overlay.sh 渲染输出与 ECS live 逐行 diff 后全量对齐（实读确认 ≥4 处漂移：ASR AliyunStreamASR→Qwen3ASRFlash、Intent function_call→nointent、base_url 缺 /v1、TTS type edge-tts→edge；现在直接跑脚本会覆盖 live 断语音）+ #2 提醒 cron §8 部署（reminder_schedule_lib + kidpal-reminder-plan 15m cron + kidpal-front.service env）+ live 五齿 L1-L5 evidence 交班 + #13 host 证据回收（WSA-A4 flash.log 制品归位 / WSA-A6 当日真探针 8080+安全组）+ prompt v4 上 ECS（review-packet §12 残余 7，验收所测=生产所用）。",
-  "redBaselineCommand": "结构面基线（预期全绿=冻结齿不回归）：cd server && python -m pytest acceptance/test_gateway_directionB.acceptance.py acceptance/test_char_stroke.acceptance.py acceptance/test_story_p3.acceptance.py acceptance/test_story_wiring.acceptance.py -q --import-mode=importlib（live 项由 conftest.py 机械 skip，不 auto-run）|| S0.2 渲染 diff（依赖顺序：先 S0.1 产出 live 备份 <live-backup-path> 才可执行）：rm -rf /c/tmp/ecs-conv-render && mkdir -p /c/tmp/ecs-conv-render && XIAOZHI_ROOT=/c/tmp/ecs-conv-render XIAOZHI_DEVICE_TOKEN=\"stub-render-token-local-baseline-000000\" XIAOZHI_SECRETS=/c/tmp/nonexistent-secrets.env bash server/deploy/apply-xiaozhi-overlay.sh && diff -u <live-backup-path> /c/tmp/ecs-conv-render/.config.yaml > changes/dev/260911-ecs-deploy-convergence/s0.2-render-delta.txt（stub token + 不存在 secrets 路径防真实凭据入证据件）",
-  "redBaselineResult": "双轨确认（2026-09-11）：① 结构面聚焦套实跑 53 passed / 18 skipped / 0 failed（18 skip = conftest 机械闸对 live 项设计态 skip，非 failure）——冻结齿不回归基线绿；② 漂移本体红由 architect triage 实读 + planner S0.2 渲染 diff 实测双重确认：apply-xiaozhi-overlay.sh:60 ASR=AliyunStreamASR（live=Qwen3ASRFlash）、:62 Intent=function_call（live=nointent）、:67 base_url 缺 /v1、:73 TTS type=edge-tts（live=edge）；另枚举 D5/D6 已经 human S0.3 定谳（pod-events b22e2019/d41a2f74）：D5 auth.enabled 恢复声明终态 true（live false 为调试残留）；D6 脚本补渲 server.ip:127.0.0.1 / port:8010（260903 内网收敛拓扑，front_app.py:60 ENGINE_WS 内段反代，安全组不动）；prompt v1→v4 = 唯一预期 delta。跑脚本即覆盖 live 断语音。",
+  "subsystem": "firmware",
+  "story": "PKG-1 键位路线落地（OQ4=A，A1 全局层先行）：板级 KEY(GPIO18) 接线（iot_button 三手势注册，消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180）→ 喂已冻结的 key_gesture_parser（设备侧首次接线，现状零调用）→ 全局路由表落地（KEY 单击=对话、KEY 长按=回首页）→ BOOT 回归「主司翻页」（单击翻页，去对话化）。页内特例（P2/P3/P4/提醒弹窗）= A2 随后另立项，不在本包。GPIO18 电平/上拉真机确认为验收项（悬空风险）。本包是 ARQ-260911-cross-package-behavior-owner-gap 的首用试金石：KEY 接线端到端 owner 显式登记归本包，机制级齿防 BOOT≈KEY 行为等价假绿。",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线 + 新增 key_route_a1.acceptance.c 机制齿在基线上判红：接线缺失/parser 喂入缺失/路由表缺失）；intake 时 acceptance-author 复核红基线记录",
+  "redBaselineResult": "现状（ARQ-260911 证据，2026-09-11 复核）：git log -S \"GPIO_NUM_18\" 全固件零命中、key_gesture_parser_feed 设备侧零调用（仅宿主 session_logic.acceptance.c 命中）、板级仅 boot_button_（waveshare-s3-rlcd-4.2.cc L45/L276）——新齿对现状必红，红基线成立。 | append（acceptance-author 2026-09-11 实测 + planner 判读裁定）：双通道红基线成立。① 既有 host runner 全量基线实跑（WSL linux target 新编 569/569 链接，cwd=firmware/main/test/host_app，root 经 .. 上溯与仓根同构）：104 Tests / 4 Failures / 0 Ignored，exit 4；四条红 = WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，全部在册既存红（WSA/P2 见 launch 口径注记 + existing-red-inventory R2/R3；VRT-A2/E2 = existing-red-inventory R4，owner=260829-voice-roundtrip，local-only 证据族）。launch 口径「104/3 @ d087fb7」漏列 VRT-A2/E2 一条（该注记在主 worktree progress.md 为未提交项、本 worktree 不可见；两 worktree 证据文件 tracked 内容一致，红在两处同态）——planner 裁定：本包有效基线 = 104/4，四条均先存跨包红非本包责任，本包责任 = 超出基线的新增红；基线消解走独立批不塞本包。② 新齿红（key_route_a1.acceptance.c，5 TEST_CASE 机制级 tree-scan 齿）：C 类冻结验收实编 gcc -std=c11 -Wall -Wextra -fsyntax-only EXIT=0（0 error 0 warning，验收文件本身可编译）；scratch 桩实跑（WSL 临时目录，用后已清理不入仓）5 Tests / 5 Failures，每红对应真实接线缺失——KR-A1 KEY_BUTTON_GPIO→GPIO_NUM_18 零命中、KR-A2 key_gesture_parser_feed(& 设备侧零调用、KR-A3 key_route_global(KEY_ID_KEY 零调用、KR-A4 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK) 仍在板级（去对话化未做）、KR-A6 未注册 HOST_ACCEPTANCE_SRCS；解析性红定性 grep 实证 GPIO_NUM_18 板级全零。环境备注：host_app/build 首次 set-target linux 遭非 CMake 目录态拒 fullclean（exit 2），rm -rf build 后成功（记录在案非 blocker）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
-    ".planning/kidpal-mvp/"
+    ".planning/260911-display-interaction-sovereignty/"
   ],
   "riskTier": "high",
   "gateProfile": [
-    "live-deploy",
-    "evidence-recovery"
+    "host-teeth",
+    "device-round",
+    "state-machine"
   ],
   "acceptance": [
-    {
-      "id": "ECS-A1",
-      "kind": "structural",
-      "summary": "漂移全量对齐——修复后 apply-xiaozhi-overlay.sh 渲染到临时目录与 live 备份 diff = 零意外 delta（prompt v4 切换为唯一预期 delta）；对齐面以 S0.2 渲染 diff 权威枚举为准，不限于点名四处"
-    },
-    {
-      "id": "ECS-A2",
-      "kind": "structural",
-      "summary": "冻结齿不回归——聚焦 server 验收套（test_gateway_directionB 离线齿 + CHR-E3 + P3-A4 + test_story_wiring）全绿；GWA-A4 live 齿口径（ASR 命中 aliyun|dashscope|qwen3 任一 + 禁 max_tokens）维持合规"
-    },
-    {
-      "id": "ECS-A3",
-      "kind": "structural",
-      "summary": "live 部署核验——部署窗口（human 在场）apply 后引擎容器重载，live config 四 provider 全对 + prompt 键指向 v4 + 一轮完整语音端到端 0 断链"
-    },
-    {
-      "id": "ECS-A4",
-      "kind": "structural",
-      "summary": "提醒 cron §8 落地——openclaw cron list 新增 kidpal-reminder-plan 且 state.lastRunStatus=ok；kidpal-front.service env 含 KIDPAL_ALERTS_DIR/KIDPAL_SERVER_DIR + poller 日志 alert_poll 心跳"
-    },
-    {
-      "id": "ECS-A5",
-      "kind": "structural",
-      "summary": "live 五齿 L1-L5 evidence 齐（device-acceptance-checklist 表 C：L1 cron list / L2 pending.json 对照契约 §三 / L3 L4 设备推送+渲染回执（human 持板）/ L5 语义产物），证据落 changes/dev/260829-schedule-reminder/，无 probe≠exercise 字样（@pytest.mark.live 口径，不 auto-run）"
-    },
-    {
-      "id": "ECS-A6",
-      "kind": "structural",
-      "summary": "WSA-A4/A6 证据回收——flash.log（188 处真实烧录标记）归位 server/acceptance/_artifacts/device-ws-switch/；ecs-teardown-evidence.md 为当日真只读探针（8080 连接期望 refused/timeout + 安全组规则），若 8080 实际仍开则停包升级 human（live 安全洞）；host runner 复跑两齿转绿（P2-A1 first-match 歧义红不在本包范围，不喂哨兵）"
-    },
-    {
-      "id": "ECS-A7",
-      "kind": "structural",
-      "summary": "回滚就绪——live .config.yaml 带时间戳备份（ECS+本地双份）可还原 + openclaw cron remove 演练路径写进包证据"
-    }
+    "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
+    "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
+    "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
+    "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
+    { "id": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/", "kind": "structural" },
+    "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）"
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_gateway_directionB.acceptance.py",
-    "server/acceptance/test_char_stroke.acceptance.py",
-    "server/acceptance/test_story_p3.acceptance.py",
-    "server/acceptance/test_story_wiring.acceptance.py",
-    "firmware/main/test/device_ws_switch.acceptance.c"
+    "firmware/main/test/key_route_a1.acceptance.c"
   ],
   "exitCriteria": [
-    "ECS-E1: 验收 1-3 全绿（渲染 diff 零意外 delta + 聚焦套不回归 + live 部署核验过）",
-    "ECS-E2: L1-L5 + WSA-A4/A6 证据落盘且含真实标记；host runner WSA 两齿复跑转绿",
-    "ECS-E3: 回滚路径演练记录在包证据；冻结面（docs/contracts/**、*.acceptance.*、managed_components/**）git 零触碰"
+    "KR-E1: A1 范围纪律——页内特例（P2 问课程 / P3 光标+双击进阅读 / P3 念给我听 / P4 播笔顺 / 提醒弹窗 KEY 关闭）零触碰，A2 留根待后续包立项（human 裁随后）",
+    "KR-E2: spec 零修订——OQ4=A 裁定下 docs/spec.md §4.0/§5.3 不动；实现中发现与 spec 冲突走逃生门（Track B spec-lane），不预先立项",
+    "KR-E3: 真机证据齐（KR-A5 持板轮日志/照片）+ 逃生门零触发记录"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md#§三"
+    "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "changes/dev/260829-hardware-validation/review-packet.md",
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
-    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md#§8",
-    "server/deploy/provider.config.yaml",
-    ".claude/taskpackages/260829-hardware-validation/device-acceptance-checklist.md"
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    ".planning/260911-display-interaction-sovereignty/review.md",
+    ".planning/260911-display-interaction-sovereignty/decision-coverage.json",
+    "docs/ARCH-REVIEW-QUEUE.md",
+    "changes/dev/260829-hardware-validation/VOICE-ROUND-FLOW-260910.md"
   ],
   "sourceRefs": [
-    "changes/dev/260829-hardware-validation/review-packet.md#F3",
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四C",
-    "server/deploy/apply-xiaozhi-overlay.sh:60",
-    "server/deploy/apply-xiaozhi-overlay.sh:62",
-    "server/deploy/apply-xiaozhi-overlay.sh:67",
-    "server/deploy/apply-xiaozhi-overlay.sh:73"
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4",
+    ".planning/260911-display-interaction-sovereignty/review.md#F2",
+    ".planning/260911-display-interaction-sovereignty/review.md#F9",
+    "docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
-  "docsSyncRequired": true,
-  "docsOwner": "integrator",
-  "mergeOrder": 16,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件板级接线 + host 验收注册（config.h / waveshare-s3-rlcd-4.2.cc / host_app CMakeLists），零 docs 面改动：spec §4.0/§5.3 零修订（OQ4=A 已裁，KR-E2 由冻结齿 canary 钉住）、契约面只读、无新增约定文档面；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 18,
   "dependsOn": [],
-  "testHost": "PC pytest（结构面）+ ECS live（部署窗口，human 在场）+ 真机（L3/L4，human 持板）",
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板，GPIO18 电平/三手势）",
   "decisionCoverage": [
     {
-      "decision": "human-20260906-ASR终选Qwen3ASRFlash",
-      "summary": "ASR 终选已裁定 Qwen3ASRFlash（live 实况与 spec §A1 双候选一致），overlay 声明面对齐该终态；Intent=nointent 与 spec §A3 OpenClaw 自带相容。",
-      "sourceRefs": [
-        "server/deploy/provider.config.yaml",
-        "docs/spec.md#§A1"
-      ],
-      "landsIn": "acceptance:ECS-A1"
+      "decision": "OQ4-键位路线=A补接KEY·A1全局层先行",
+      "summary": "human 2026-09-11 触点②裁路线 A：补接 KEY 落地 spec 两键分工、A1 全局层先行；GPIO18 真机确认列本包验收项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "acceptance:KR-A1"
     },
     {
-      "decision": "contract-§三-alerts-pending形状",
-      "summary": "L2 齿按契约 §三 alerts/pending.json 形状对照，只读引用不改契约。",
-      "sourceRefs": [
-        "docs/contracts/interface-contract.md#§三"
-      ],
-      "landsIn": "acceptance:ECS-A5"
+      "decision": "OQ4-A2-页内特例随后",
+      "summary": "页内特例接线量不小，human 裁 A2 随后——本包显式零触碰并留根，A1 合并后按实况另行立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.4"],
+      "landsIn": "exitCriteria:KR-E1"
     },
     {
-      "decision": "ARQ-260901-g3-server-live-acceptance",
-      "summary": "live 面标记不 auto-run；live 证据在部署窗口/持板窗口由 human 在场产出，验收所测=生产所用。",
-      "sourceRefs": [
-        "docs/ARCH-REVIEW-QUEUE.md"
-      ],
-      "landsIn": "acceptance:ECS-A3"
+      "decision": "accept-risk-d9e0f1a2-KEY路线悬置",
+      "summary": "human 2026-09-10 留交互批次定路线的 accept-risk 锚，由 OQ4 裁决承接——KEY 接线从悬空转落地。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§1.4"],
+      "landsIn": "acceptance:KR-A1"
+    },
+    {
+      "decision": "跨包KEY接线owner=本包（ARQ试金石）",
+      "summary": "KEY(GPIO18) 接线 + parser 喂入 + 全局路由端到端 owner 显式登记 = 260911-key-route-a1；机制级齿（KR-A1/KR-A2）兑现「机制断言优先」——防五包历史 BOOT≈KEY 行为等价假绿复发。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"],
+      "landsIn": "acceptance:KR-A2"
+    },
+    {
+      "decision": "SPEC-1-本批不触发",
+      "summary": "OQ4=A 裁定 spec 零修订；实现中发现与 spec §4.0/§5.3 冲突走逃生门（Track B spec-lane），不预先立项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:KR-E2"
     }
   ],
-  "mutationRequired": false,
-  "mutationEvidence": [],
-  "crossEnd": {
-    "note": "crossEnd exempt 申报：本包零新写验收齿（acceptanceTestsFile 全为既有冻结件，归各自主包的 crossEnd 申报承载）；本包自己的验收 = ①渲染 diff 证据（server/deploy 脚本输出 vs live 备份，纯文件对比）②live 部署核验/cron 在册（运维面，evidence-based 非符号断言）③既有冻结齿复跑（跨端符号断言已在原包 crossEnd 登记，本包不新增对端符号引用）。无新跨端断言符号 → exempt。",
-    "exempt": "无新增跨端验收齿；复用的冻结齿 crossEnd 归原包（260903-gateway-directionB / 260829-char-stroke / 260829-story-p3 / 260829-schedule-reminder / 260903-device-ws-switch）申报。",
-    "counterparts": []
+  "crossPackageBehaviors": [
+    {
+      "behavior": "KEY(GPIO18) 板级接线 + key_gesture_parser_feed 设备侧喂入 + 全局路由端到端",
+      "owner": "260911-key-route-a1",
+      "note": "ARQ-260911-cross-package-behavior-owner-gap 首用试金石：包 3 session-logic 只做 host 纯逻辑（SES-E2/E3），板级接线历史掉缝（GPIO_NUM_18 全固件零命中、parser 设备侧零调用）——本批起 owner 归本包独占，杜绝再掉包间缝隙。"
+    },
+    {
+      "behavior": "BOOT 回归翻页（单击翻页、去对话化）",
+      "owner": "260911-key-route-a1",
+      "note": "BOOT 键现有一键过渡方案（单击对话/双击翻页/长按故事翻屏）由本包改造回归 spec §4.0 主司翻页；既有 BOOT 行为齿回归责任在本包。"
+    },
+    {
+      "behavior": "KEY 长按=回首页的导航动作面（与 PKG-2 归一屏相交）",
+      "owner": "260911-key-route-a1",
+      "note": "路由表语义 owner = 本包；PKG-2（260911-screen-unification）重构显示面/页面体系时必须保两键行为与裁定路线一致（其 SU-A7 显式含）——本包先并（mergeOrder 18），PKG-2 后并（19）时回归 KEY/BOOT 路由。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "KR-A1: 板级 KEY 接线机制齿——waveshare-s3-rlcd-4.2 板级文件注册 GPIO18 按键（iot_button，三手势 short_press/double_click/long_press 全注册），消抖参数复用 CONFIG_BUTTON_SHORT_PRESS_TIME_MS=180；机制级（符号/接线级）断言而非行为级，杜绝「BOOT≈KEY 行为等价」假绿（ARQ-260911-tooth-strength 教训）",
+        "mutation": "config.h KEY_BUTTON_GPIO GPIO_NUM_18 → GPIO_NUM_17（单点）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：key_route_a1 KR-A1 TEST_CASE tooth 1 红（KR-A1 RED: config.h 未定义 KEY_BUTTON_GPIO -> GPIO_NUM_18）；还原复跑绿（109 Tests / 4 Failures = 基线四条在册）。单点变异即破板级 GPIO 钉死齿。"
+      },
+      {
+        "acceptanceId": "KR-A2: parser 喂入机制齿——板级按键事件经 key_gesture_parser_feed 喂入（冻结纯逻辑首次上设备），手势产出语义与 session_logic 冻结齿一致；session_logic.acceptance.c 全齿复跑绿（纯逻辑零改动）",
+        "mutation": "板级 .cc 全部 key_gesture_parser_feed(& → key_gesture_parser_feed_stub(&（4 处）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A2 TEST_CASE tooth 1 红（key_gesture_parser_feed(& referenced by 0 file(s)）——证「设备侧悬空」根因被钉死；还原复跑绿。session_logic 全齿保持绿 = 冻结纯逻辑零改动机械证明。"
+      },
+      {
+        "acceptanceId": "KR-A3: 全局路由表——KEY 单击=发起对话（语音轮启动，语义与现 BOOT 单击对话一致）、KEY 长按=回首页；host 齿覆盖路由表全分支",
+        "mutation": "板级 .cc GLOBAL_ACT_SESSION_TOGGLE → GLOBAL_ACT_SESSION_STUB（3 处）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A3 TEST_CASE tooth 3 红（GLOBAL_ACT_SESSION_TOGGLE 仅 2 文件——无设备侧 dispatch 消费）；还原复跑绿。教训记录：首次尝试变异名 _TOGGLE_X 因 strstr 仍子串命中而不红——变异命名不得保留原字面为子串。"
+      },
+      {
+        "acceptanceId": "KR-A4: BOOT 回归翻页——BOOT 单击=翻页（主司翻页，去对话化）；既有 BOOT 行为相关齿不回归",
+        "mutation": "boot_button_.OnClick 恢复 HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK)（回退去对话化）",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A4 TEST_CASE tooth 1 负向齿红（BOOT 单击仍挂在 HandleStoryKey(...CLICK) 对话/故事路径）；还原复跑绿。去对话化若被回退负向齿必红；既有 BOOT 齿零新增红（109/4 = 基线四条在册）。"
+      },
+      {
+        "acceptanceId": "KR-A6: host runner 终跑全绿 exit 0（全量既有齿无回归）",
+        "mutation": "host_app/main/CMakeLists.txt 删除 \"../../key_route_a1.acceptance.c\" 注册行",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "builder 实测 2026-09-11：KR-A6 TEST_CASE tooth 1 红（key_route_a1.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS）；还原复跑绿。KR-A6 exit-0 字面判读见 notes planner finalize append ②（有效基线 104/4 在册既存红下，终跑判据 = 相对基线零新增红 + 本包齿全绿，实测 109/4）。"
+      },
+      {
+        "acceptanceId": "KR-A5: GPIO18 真机确认（human 持板）——KEY 三手势真机可达、电平/上拉确认（悬空风险销账），HWV-A2 顺带核验；证据落 changes/dev/260911-key-route-a1/",
+        "mutation": "无 host 变异面——human 持板 device-round 项（非代码可测），acceptance 条目已标 kind:structural（一等豁免通道，先例 260829-hardware-validation 全 structural）；冻结齿明文不承载 KR-A5。",
+        "result": "not applicable (structural, device-round human evidence)",
+        "sensitive": false,
+        "note": "planner 登记 2026-09-11：GPIO18 接线敏感性由 KR-A1 mutation 实测承载（GPIO_NUM_18→17 即红）；KR-A5 真机证据门 = changes/dev/260911-key-route-a1/ 持板轮日志（active_high 实参回填冻结），device-round 相位执行，不以 host mutation 伪造。"
+      }
+    ]
   },
-  "notes": "triage 2026-09-11：architect 判②单包 Full（riskTier=high），human 触点①已确认。riskTier=high 照常触发 supervisor 升级人类——预期非异常。执行纪律：阶段 0 只读勘察先于一切改动；per-delta 人工定谳防固化调试临时态（来历不明 delta 逐条问 human）；任何 delta 合理化需改 spec/契约 → 逃生门停转 /arch-change。WSA-A6 必须当日真探针不得倒填。本包不碰 P2-A1 齿歧义（归批次③渲染批）。mergeOrder 16 占位、portfolio 可重排。禁改 docs/contracts/** 与 *.acceptance.* 冻结件。S0.3 定谳终表（2026-09-11，pod-events b22e2019/d41a2f74）：D1 ASR→Qwen3ASRFlash（{api_key: $DASHSCOPE_API_KEY, model_name: qwen3-asr-flash, type: qwen3_asr_flash}，schema 以 live 备份为权威源；secrets.env 已有 DASHSCOPE_API_KEY，ALIYUN_ASR_APPKEY/TOKEN 淘汰移除）；D2 Intent→nointent；D3 base_url 补 /v1；D4 TTS type→edge；D5 server.auth.enabled 渲染 true（维持脚本现状，live 恢复声明终态）；D6 补渲 server.ip:127.0.0.1 / port:8010；D7 prompt v1→v4 唯一预期 delta。证据件一律脱敏凭据（acceptance-author qualityNote）。 verifier r1 acceptance-coverage 红后的形态修正：acceptance 由字符串转对象条目 kind=structural（260731 一等豁免通道，镜像 260829-hardware-validation 先例 16 条全 structural 同闸通过；本包 architect triage 即证据型口径 gateProfile=live-deploy/evidence-recovery，各条 summary 保留原断言语义不弱化）。 D5 二次纠偏（S2.3 冒烟失败，human 裁 pod-events f9322b9c）：引擎 auth.enabled 渲染面回 false——引擎 auth 是 HMAC 动态签名机制（core/auth.py），与决策22 静态 token（front 层强制）不相容；安全边界=loopback 8010 + front 强制。原「恢复 true」裁决作废；ECS-A3 live 核验以 auth=false 态为口径。",
-  "mutationSkipReason": "证据型部署收敛包：断言载体 = 渲染 diff 证据文件 / live 部署窗口人工核验 / 既有冻结齿复跑（齿归原包、其 mutation 证据在原包承载），本包零新写测试逻辑面，无可 mutation 测试的新断言（architect triage gateProfile=live-deploy/evidence-recovery，mutationRequired=false 立项即裁定）。"
+  "crossEnd": {
+    "counterparts": [
+      { "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc", "symbol": "boot_button_" },
+      { "path": "firmware/main/key_gesture_parser.cc", "symbol": "key_gesture_parser_feed" }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-1 预判）。装配型包按 ARQ-260911-split-package-implementation-prose-gap 分级判据豁免包级 plan.md（改法由 PROPOSAL §2.4 已裁机制 + review F2/F9 证据直接承载，单文件面接线，无铁律约束新增）。硬件不确定性：GPIO18 电平/上拉悬空风险真机确认列 KR-A5（human 持板）。与 PKG-2 并行开发（独立文件面），merge order 本包先（18）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。禁改 docs/contracts/** 与 docs/spec.md（SPEC-1 不触发）。 | planner finalize append（2026-09-11）：① KR-A5 acceptance 条目转对象形 {id, kind:'structural'}——human 持板 device-round 项无 host 代码可测面（冻结齿头注明文不承载），形状标注、id 文本语义零变更；豁免通道 = acceptance-id-shared 一等对象标记（先例 260829-hardware-validation 全 structural），接线敏感性由 KR-A1 mutation 实测承载。② KR-A6「终跑全绿 exit 0」判读 = 相对有效基线零新增红 + 本包新齿全绿：基线四条在册既存红（WSA-A6:830 / WSA-A4:663 / P2-A1:571 / VRT-A2·E2:878，见 redBaselineResult planner 裁定）非本包责任、launch 明令基线消解走独立批，字面 exit 0 在基线纪律下不可达；实测 109 Tests / 4 Failures（+5 新齿全绿）。该判读随 review-packet / supervisor-verdict 呈 human 合并门知情。③ mutationEvidence.perAcceptance 已由 planner 依 builder 实测报告落账（KR-A1~A4/A6 sensitive=true，KR-A5 N/A sensitive=false）。"
 }
