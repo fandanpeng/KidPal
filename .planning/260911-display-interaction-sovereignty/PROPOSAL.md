@@ -5,7 +5,7 @@ date: 2026-09-11
 tier: 3            # /triage-change 四档：③大 feature 拆包
 sourceType: proposal
 riskTier: high     # 触 UI 状态机轴 + 真机崩溃结构性面；单向守卫：实现包禁 Lite
-freezeState: pending-human
+freezeState: frozen   # v1.0 · 2026-09-11 human 触点② grilling 四 OQ 已裁（记录见 §3），本件自此为拆包权威
 reviewed-by: architect（/triage-change 批次②分流 review，2026-09-11）
 sourceRefs:
   - changes/dev/260829-hardware-validation/VOICE-ROUND-FLOW-260910.md
@@ -15,8 +15,8 @@ sourceRefs:
 
 # PROPOSAL · 设备显示与交互主权包
 
-> 状态：DRAFT v0.1 · 2026-09-11 · 设计先行稿（方案空间点到、不下最终设计结论，
-> human grilling 裁定取舍点后由 portfolio-planner 拆实现包）。
+> 状态：FROZEN v1.0 · 2026-09-11 · grilling 四 OQ 已裁（2026-09-11 human 触点②，
+> 裁决记录见 §3，主线程逐字落盘）；本件自此为拆包权威，portfolio-planner 依 §4 预判拆实现包。
 > 承载：PROGRESS-SUMMARY §七.1 遗留 #4/#5/#6/#7 四项。
 > review 轨：本件是 dev workstream 设计权威（.planning 通道，/triage-change ③档），
 > 非治理/spec 变更；触 spec/契约的子项见 §7 申报，各走各的门。
@@ -67,6 +67,8 @@ sourceRefs:
 - 倾向（供参考，非结论）：A 是 B 的可行中间站且独立可验收；若 grilling 确认
   「回答文本必须与页面同屏可见」为硬需求，则 B 是终态、A 是它的第一步——两方向
   在「仲裁器显式化 + char 并屏」这一步重合，该步无返工风险。
+- **裁定（human 2026-09-11 触点②）**：**纯 B 归一屏**——不经 A 中间站，直选终态。
+  review F6 波及面（SetupUI 建立面 + 全部写屏路径的 host 矩阵回归）全额生效。
 
 ### 2.2 显示先行（#5，机制候选 → OQ2）
 
@@ -80,6 +82,9 @@ sourceRefs:
   文本末尾嵌入」冲突，若要走必须先过 architect-reviewer 四分类 + human 契约门。
 - 初判：M1 不改 E1 契约设备面（view schema / mcp 信封 / 白名单不变，时序契约
   未钉板）；PKG-4 开工前 reviewer-first 复核一次（见 §7）。
+- **裁定（human 2026-09-11 触点②）**：**M1 围栏闭合即发**。grilling 时澄清了
+  「烧板日志从 0x8000 写起」是 ESP32 flash 布局（bootloader@0x0 / 分区表@0x8000 /
+  app@0x10000），与本机制无关。
 
 ### 2.3 回答驻留（#6 → OQ3）
 
@@ -88,6 +93,9 @@ sourceRefs:
 后回首页；(c) 方向 B 下聊天 layer 与页面 layer 叠放，驻留自然成立。与 2.1 方向
 强耦合，grilling 一并裁。注意与 spec §5.3「说完自动/手动结束回首页」的表述对账：
 定案若改「轮 vs 会话」边界语义，spec 修订走 Track B（§7）。
+- **裁定（human 2026-09-11 触点②）**：**(c) 随 OQ1=B 自然成立**——不单独设计
+  驻留页/定时器；聊天内容已是 KidPal 屏常驻 layer，回答说完文字天然留在屏上，
+  清除时机（下次交互：新语音轮/按键）并入 B 方案 layer 管理顺带定。
 
 ### 2.4 键位路线（#7 → OQ4，human 已锚的取舍点）
 
@@ -105,34 +113,39 @@ sourceRefs:
 - 倾向：A。理由：纯逻辑已冻结全绿、硬件 Demo 已证 KEY 三手势可行、B 省下的
   工作量会以「交互面永久缩水 + spec 漂移常态化」偿还。可分期：A1（KEY 全局
   层：对话/回首页 + BOOT 回归翻页）先行，A2（页内特例）随后。
+- **裁定（human 2026-09-11 触点②）**：**路线 A，A1 全局层先行**（A2 页内特例
+  随后）。GPIO18 电平/上拉真机确认列 PKG-1 验收项。
 
-## 3. human 取舍点（OQ，grilling 逐条裁）
+## 3. human 取舍点（OQ grilling · 已裁，2026-09-11 触点②）
 
-- **OQ1 三屏主权方向**：A 仲裁器 / B 归一屏 / A→B 分步。推荐 A→B 分步（重合步
-  无返工风险），理由一句话：先杀竞态土壤再谈归一，每步独立可验收。
-- **OQ2 显示先行机制**：M1 围栏闭合即发 / M3 prompt 块前置（后者须契约门）。
-  推荐 M1，理由：改动小且不触契约设备面。
-- **OQ3 回答驻留形态**：(a) last-answer 页驻留 / (b) 驻留 N 秒回首页 / (c) 随
-  OQ1=B 自然成立。与 OQ1 联裁。
-- **OQ4 键位路线**：A 补接 KEY（可分 A1/A2 两期）/ B spec 过渡修订。推荐 A。
-  （human 2026-09-10 已锚此取舍点归本批。）
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 三屏主权方向 | **纯 B 归一屏** | 非推荐位 A→B，human 直选终态；review F6 波及面全额生效 |
+| OQ2 显示先行机制 | **M1 围栏闭合即发** | M3 不采（契约 §1.1 逐字冲突、必走契约门）；解释后确认 |
+| OQ3 回答驻留形态 | **(c) 随 OQ1=B 自然成立** | 驻留不独立立项；清除时机并入 B 方案 layer 管理 |
+| OQ4 键位路线 | **A 补接 KEY，A1 全局层先行** | A2 页内特例随后；GPIO18 真机确认列 PKG-1 验收 |
+
+> 裁决人 = human（AskUserQuestion 触点②，2026-09-11）；主线程逐字落盘，未改动裁决语义。
 
 ## 4. 拆包预判与依赖序（供 portfolio-planner intake）
 
 - **PKG-1 键位路线落地**（若 OQ4=A1）：板级 KEY 接线 + parser 喂入 + 全局路由 +
   BOOT 回归翻页。独立文件面，可与 PKG-2 并行。验证：宿主齿（复用
   session_logic 面板）+ 真机（HWV-A2 顺带）。
-- **PKG-2 显示仲裁器 / 归一第一步**（核心包，前置 = OQ1 裁定）：显式前台 owner
-  状态机 + tick 对账退役（或降级为看门狗）+ char 并屏 + alert/reminder 优先级。
-  验证：host 矩阵回归 + 真机语音轮/推送页/提醒并发场景。
-- **PKG-3 回答驻留**（前置 = PKG-2）：last-answer 落点 + Listening/Idle 驻留
-  语义。验证：真机观感。
-- **PKG-4 显示先行 M1**（前置 = PKG-2 仲裁规则 + **批次① overlay 漂移修复**）：
-  strip machine API 扩展 + 冻结齿修订（acceptance-author）+ front 时序复核 +
-  设备语音中渲染。部署窗口须走修正后的 apply-xiaozhi-overlay.sh。
-- **SPEC-1（并行/前置，Track B spec-lane，不属本 dev workstream）**：OQ4=B 时的
-  键位过渡修订；OQ3 定案与 spec §5.3/§4.0 冲突时的会话语义钉板。
-- 总序：grilling 裁 OQ →（SPEC-1 如需）→ PKG-2 → PKG-3 → PKG-4；PKG-1 并行。
+- **PKG-2 归一屏（核心包，OQ1=纯 B 已裁）**：小智聊天控件迁 KidPal 屏 layer +
+  tick/overlay/pin 标志体系退役 + char 并屏 + alert/reminder 优先级 + 驻留副产品
+  （OQ3=c：清除时机随 layer 管理顺带定）+ **仲裁器显式化**（B 的 layer 管理本身
+  就是前台 owner 的单一权威，原方向 A 的状态机内核收编于此）。验证：host 矩阵
+  回归 + 真机语音轮/推送页/提醒并发场景。
+- **PKG-3 ~~回答驻留~~（撤销，2026-09-11 OQ3=c）**：驻留随 PKG-2 的 layer 管理
+  自然成立，不独立立项。
+- **PKG-4 显示先行 M1**（OQ2=M1 已裁；前置 = PKG-2 渲染规则 + **批次① overlay
+  漂移修复**）：strip machine API 扩展（块闭合即发射）+ 冻结齿修订
+  （acceptance-author）+ front 时序复核 + 设备语音中渲染。部署窗口须走修正后的
+  apply-xiaozhi-overlay.sh。
+- **SPEC-1：本批不触发**——OQ4=A（spec 零修订）、OQ3=c 无独立会话语义变更。
+  若实现中发现与 spec §5.3/§4.0 冲突，走逃生门（§7），不预先立项。
+- 总序：PKG-1（A1 全局层）∥ PKG-2（归一屏）→ PKG-4（M1 显示先行）。
 
 ## 5. 验证面（workstream 级）
 
@@ -150,7 +163,8 @@ kidpal-live-smoke-debug 三日志源按 correlationId 对齐）、回答结束�
 
 ## 7. 事实源 / 契约触面申报（逃生门，本 PROPOSAL 不批以下任何一项）
 
-- spec 面（docs/spec.md §4.0/§5.3）：OQ4=B 或 OQ3 语义钉板触发 → Track B
+- spec 面（docs/spec.md §4.0/§5.3）：OQ4 已裁 A（spec 零修订）、OQ3 已裁 c
+  （无独立会话语义变更）——SPEC-1 本批不触发；实现中发现冲突 → Track B
   spec-lane（/arch-change 判级），human 冻结。
 - 契约面（docs/contracts/interface-contract.md）：仅 M3 变体触发 →
   architect-reviewer 四分类 + human 契约门。M1 初判无需改契约，PKG-4 开工前
