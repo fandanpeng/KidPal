@@ -55,3 +55,17 @@ F9 [INFO] 路线 A 可复用冻结纯逻辑；GPIO18 悬空电平真机确认列
 - human 2026-09-11 确认 ③大 feature 裁决（AskUserQuestion，选项「确认 ③大 feature」）。
 - PROPOSAL 保持 freezeState: pending-human——human FROZEN（触点②）+ grilling OQ1-4
   后方可交 portfolio-planner 拆包。
+
+## 触点②结果（主线程记录，2026-09-11）
+
+- grilling 四 OQ 已裁（AskUserQuestion，两轮——首轮 OQ2/OQ3 human 要求解释后重裁）：
+  **OQ1 = 纯 B 归一屏**（非本 review 倾向 A→B，human 直选终态；F6 波及面全额生效）、
+  **OQ2 = M1 围栏闭合即发**、**OQ3 = (c) 随 OQ1=B 自然成立**、**OQ4 = A 补接 KEY，
+  A1 全局层先行**。
+- 裁决语义影响：F1 设计先行约束以「方案空间 + OQ 裁定」形态闭环；F4（OQ3 与
+  spec §5.3 语义模糊）随 OQ3=c 不触发独立 spec 修订，冲突时走逃生门；F5（PKG-4
+  部署硬依赖批次①）保留并写入 PROPOSAL §4 PKG-4 前置。
+- PROPOSAL 已升 **FROZEN v1.0**（frontmatter freezeState: frozen；裁决记录见
+  PROPOSAL §3，主线程逐字落盘）。portfolio-planner 可拆包，首用试金石 =
+  ARQ-260911-cross-package-behavior-owner-gap（KEY 接线 owner 登记）与
+  ARQ-260911-split-package-implementation-prose-gap（核心包 PKG-2 产包级 plan.md）。

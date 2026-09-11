@@ -1,6 +1,6 @@
 # .planning Index
 
-> 自动生成（hook：编辑 .planning/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-09-08。
+> 自动生成（hook：编辑 .planning/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-09-11。
 
 ## Active (1)
 
