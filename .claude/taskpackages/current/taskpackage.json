@@ -1,5 +1,5 @@
 {
-  "changeId": "260911-screen-unification",
+  "changeId": "260911-display-first-m1",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -9,11 +9,11 @@
     "upstreamFrozen": "sha1:cd10d1903ac6bb1a",
     "workstream": "260911-display-interaction-sovereignty"
   },
-  "planRef": ".claude/taskpackages/260911-screen-unification/plan.md",
-  "subsystem": "firmware",
-  "story": "PKG-2 归一屏（核心包，OQ1=纯 B 已裁）：小智聊天控件（状态栏/表情/气泡，SetupUI 建立面）迁为 KidPal 屏（s_kidpal_scr）常驻 layer，聊天内容任何页可见；s_page_pinned/s_chat_overlay/s_current_page 三标志 + 1s tick 轮询对账整体退役（竞态窗口 1s 与当日三崩溃的结构性土壤）；char 独立屏并入 s_kidpal_scr 体系（review F7）；alert/reminder 前台优先级进 layer 管理（review F8）；回答驻留副产品（OQ3=c：清除时机=下次交互随 layer 管理顺带定，不独立立项）；layer 管理即前台 owner 单一权威（仲裁器显式化，方向 A 状态机内核收编于此）。验证：SetupUI 建立面 + 全部写屏路径 host 矩阵回归（review F6 全额生效）+ 真机语音轮/推送页/提醒并发场景。",
-  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量：story_p3 8 齿 / schedule_p2 全齿 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3 齿——F6 矩阵基线）；intake 时 acceptance-author 复核红基线记录（三标志符号级残留齿基线红）",
-  "redBaselineResult": "现状（review F1 证据 + 2026-09-11 复核）：kidpal_render_node.cc L58/L63/L75 三标志在位、1s tick 对账在位（L181/L193 活跃路径）、s_chat_scr/char 独立屏并存——三标志退役机制齿与 char 并屏齿在基线上必红，红基线成立。2026-09-11 前台优先级语义按方案A修订（SU-RULING-01, human-deputy 代裁，deviation=false）：SERVER_PAGE(3→4) > VOICE(4→3)，回答期间服务端推送页前台可见；修订后复跑红基线——C 类实编 0 error 0 warning，7 Tests / 6 Failures（结构齿 s1/s2/s3 仍红、行为齿 b1/b2/b3 红在 weak 哨兵、守卫 s4 绿），红基线判据不变、仍成立。",
+  "planRef": ".claude/taskpackages/260911-display-first-m1/plan.md",
+  "subsystem": "server+firmware",
+  "story": "PKG-4 显示先行 M1（OQ2=M1 已裁）：引擎补丁 kidpal_display_strip.py 把「块闭合」从 finish() 提前到 feed() 内（状态机已支持块级闭合检测，加闭合回调/发射 API）——display 页上屏提前 1–3s；冻结离线契约（feed/finish 语义）修订走 acceptance-author；front 时序复核（逐块中继 × 提前发射新时序的幂等/顺序/回执）；设备侧语音中渲染（消费 PKG-2 归一屏 layer 仲裁规则）。前置 = PKG-2 渲染规则（mergeOrder 19）+ 批次① overlay 漂移修复 260911-ecs-deploy-convergence（mergeOrder 16，部署窗口须走修正后 apply-xiaozhi-overlay.sh）。M3 变体禁止（契约 §1.1 逐字冲突）；M1 初判不改 E1 契约设备面，开工前 reviewer-first 复核。",
+  "redBaselineCommand": "cd server && python -m pytest --import-mode=importlib acceptance/test_g_relay_fix.acceptance.py -v（--import-mode=importlib 必须：文件名两点默认 prepend 收集报 ModuleNotFoundError，conftest.py:11-12 G 包先例在注）",
+  "redBaselineResult": "acceptance-author 冻结轮实测（2026-09-12）：6 failed / 14 passed / 4 skipped，收集零 error。既有 GRF 14 齿全绿（修订语义不放松自证）；M1 新 6 齿全红，收敛为两个真实缺失行为：(a) kidpal_display_strip.DisplayFenceStateMachine 闭合回调 API（on_block_closed 构造注入）未实现（5 红）；(b) connection.py 闭合回调接线不存在、块发射仍在 finish() 之后（1 红）——与 PROPOSAL §1.2 根因一致，红基线成立。4 skipped = GRF-A5 live 齿 conftest 机械 skip（夜间不执行 live，待明早真机轮）。原拆包期判读（留档）：connection.py:1442-1456 块发射在 finish() 之后——feed() 内块闭合即发射的时序齿在基线上必红。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,30 +21,25 @@
   ],
   "riskTier": "high",
   "gateProfile": [
-    "host-teeth",
-    "state-machine",
+    "frozen-acceptance-revision",
     "device-round",
-    "frozen-acceptance-revision"
+    "contract-drift"
   ],
   "acceptance": [
-    "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
-    "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
-    { "id": "SU-A3: char 独立屏并入 s_kidpal_scr 体系（review F7）；char_stroke 冻结齿复跑绿", "kind": "structural" },
-    "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
-    "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
-    { "id": "SU-A6: host 矩阵回归——全量既有冻结齿（story_p3 8 / schedule_p2 / home_p1 / char_stroke / session_logic / ui_art_integration 闭集 / story_page_stack 3）复跑绿；渲染路径重构致齿红仅 acceptance-author 留痕修订（断言语义不放松）", "suiteGate": true },
-    "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
-    { "id": "SU-A8: 真机并发场景（human 持板）——语音轮+推送页并发、提醒恰在语音轮到点 0 复位 0 崩溃（当日三崩溃同族）；证据落 changes/dev/260911-screen-unification/", "kind": "structural" },
-    { "id": "SU-A9: host runner 终跑全绿 exit 0", "suiteGate": true }
+    "DF-A1: strip machine API 扩展——kidpal_display_strip.py feed() 内块级闭合即发射（闭合回调/发射 API，additive）；冻结离线契约修订走 acceptance-author 留痕（语义不放松）；离线契约齿全绿",
+    "DF-A2: 冻结验收必触——server/acceptance/test_g_relay_fix.acceptance.py 经 acceptance-author 修订留痕后全绿；重放暴露 vacuity 的原变异自证（如适用）",
+    {"id": "DF-A3: 时延实测——真机「单击问课表」display 页上屏不晚于 TTS 首段后 0.5s（kidpal-live-smoke-debug 三日志源按 correlationId 对齐）；证据落 changes/dev/260911-display-first-m1/", "kind": "structural"},
+    {"id": "DF-A4: 设备侧语音中渲染——display 块中途到达按 PKG-2 layer 仲裁规则渲染（语音轮页可见聊天 layer 同步更新）；与 PKG-2 合并基线复跑其冻结齿绿", "kind": "structural"},
+    {"id": "DF-A5: 部署合规——部署窗口走修正后 apply-xiaozhi-overlay.sh（批次①已并）；engine-patch 在位核验（启动标记行 + docker inspect Mounts）；front 时序复核结论在案", "kind": "structural"},
+    {"id": "DF-A6: workstream 收口真机轮（human 持板）——§5 五条收口标准并集对账（本包承载上屏时延项，其余复核各 owner 包已验项）", "kind": "structural"}
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/screen_unification.acceptance.c"
+    "server/acceptance/test_g_relay_fix.acceptance.py"
   ],
   "exitCriteria": [
-    "SU-E1: 驻留裁定兑现记录——OQ3=c 无独立立项（无新页/定时器），清除时机定义在案（plan.md 阶段 4）",
-    "SU-E2: 观感边界纪律——字体子集/换肤/排版零触碰（批次③ 260911-render-pages，mergeOrder 21 在本包后）",
-    "SU-E3: 冻结面零越界——docs/contracts/**、managed_components/** git 零触碰；spec 零修订（SPEC-1 不触发，冲突走逃生门）；*.acceptance.* 仅 acceptance-author 留痕修订",
-    "SU-E4: 阶段 0 host 矩阵清单落包 evidence（全部写屏路径 × 触发源 × 现行标志交互）"
+    "DF-E1: 契约复核在案——开工前 reviewer-first 复核 M1 不改 E1 契约设备面（结论落 evidence）；M3 禁采全程有效；复核推翻初判 → 停走 architect-reviewer 四分类 + human 契约门",
+    "DF-E2: 依赖锁兑现——阶段 3 前 PKG-2（260911-screen-unification）渲染规则已并入；阶段 4 前批次①（260911-ecs-deploy-convergence）已合并",
+    "DF-E3: 冻结件修订留痕齐——kidpal_display_strip.py 离线契约 + test_g_relay_fix.acceptance.py 仅 acceptance-author 修订、REVISION LOG 齐、断言语义不放松"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -54,141 +49,103 @@
     ".planning/260911-display-interaction-sovereignty/review.md",
     ".planning/260911-display-interaction-sovereignty/decision-coverage.json",
     "docs/ARCH-REVIEW-QUEUE.md",
-    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
+    "docs/contracts/interface-contract.md"
   ],
   "sourceRefs": [
-    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.1",
-    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.3",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2",
     ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4",
-    ".planning/260911-display-interaction-sovereignty/review.md#F6",
-    ".planning/260911-display-interaction-sovereignty/review.md#F7",
-    ".planning/260911-display-interaction-sovereignty/review.md#F8",
-    "docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-split-package-implementation-prose-gap"
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§5",
+    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7",
+    ".planning/260911-display-interaction-sovereignty/review.md#F3",
+    ".planning/260911-display-interaction-sovereignty/review.md#F5"
   ],
   "iterationBudget": 3,
   "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsSyncReason": "无实现侧文档同步需求：spec 零修订（SPEC-1 本批不触发，OQ3=c 无独立会话语义变更）、docs/contracts/** 零触碰（SU-E3 冻结面零越界）；实现仅改 firmware 显示层结构/归属与 device 装配接线，不产生 docs 面变更。",
-  "mergeOrder": 19,
-  "dependsOn": [],
-  "testHost": "host runner（WSL linux target，全量矩阵）+ 真机并发场景轮（human 持板）",
+  "docsSyncReason": "无实现侧文档同步需求：spec 零修订（OQ2=M1 只改引擎内部 block 发射时机，不触 spec §4.0/§5.3）、docs/contracts/** 零触碰（DF-E1 契约复核 CONFIRM_NO_CONTRACT_CHANGE）；实现仅改 server/deploy/engine-patch 内部面（strip machine 闭合回调 API + connection 接线），front/固件复核零代码变更，不产生 docs 面变更。",
+  "mergeOrder": 20,
+  "dependsOn": [
+    "260911-screen-unification",
+    "260911-ecs-deploy-convergence"
+  ],
+  "testHost": "server pytest（冻结验收 + 离线契约齿）+ 真机时延实测/收口轮（human 持板，live ECS 环境）",
   "decisionCoverage": [
     {
-      "decision": "OQ1-三屏主权=纯B归一屏",
-      "summary": "human 2026-09-11 触点②裁纯 B（不经 A 中间站直选终态）：聊天控件迁 layer、三标志/tick 退役、SetupUI 建立面 + 全部写屏路径 host 矩阵回归（F6 全额生效）。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.1", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
-      "landsIn": "acceptance:SU-A1"
+      "decision": "OQ2-显示先行=M1围栏闭合即发",
+      "summary": "human 2026-09-11 触点②裁 M1：引擎补丁把「块闭合」从 finish() 提前到 feed() 内（闭合回调/发射 API）；M2 不单列（M1 推论）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§3"],
+      "landsIn": "acceptance:DF-A1"
     },
     {
-      "decision": "仲裁器显式化（方向A内核收编）",
-      "summary": "layer 管理即前台 owner 单一权威——原方向 A 的状态机内核收编于 layer 栈优先级管理，不另建状态机对象（PROPOSAL §4 PKG-2 条目）。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4"],
-      "landsIn": "acceptance:SU-A2"
+      "decision": "OQ2-M3-禁采",
+      "summary": "M3（prompt 改块前置）与契约 §1.1「在回复文本末尾嵌入」逐字冲突——本包任何阶段禁止采用；若要走必须先过 architect-reviewer 四分类 + human 契约门。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "exitCriteria:DF-E1"
     },
     {
-      "decision": "char独立屏并入（review F7）",
-      "summary": "char 独立屏并入 s_kidpal_scr 体系，纳入 PKG-2 验收（review F7，render_node.cc L399-416 自证同族结构）。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/review.md#F7"],
-      "landsIn": "acceptance:SU-A3"
+      "decision": "冻结验收面-M1必触test_g_relay_fix",
+      "summary": "server/acceptance/test_g_relay_fix.acceptance.py 必触——dev-loop acceptance-author 权限内修订（留痕、不豁免验证）；kidpal_display_strip.py 冻结离线契约同步扩展（PROPOSAL §7 申报）。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
+      "landsIn": "acceptance:DF-A2"
     },
     {
-      "decision": "alert/reminder优先级进仲裁器（review F8）",
-      "summary": "提醒弹窗进 layer 优先级表——同族崩溃已修症状未修架构，本包修架构。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/review.md#F8"],
-      "landsIn": "acceptance:SU-A4"
+      "decision": "reviewer-first-契约复核（§7）",
+      "summary": "M1 初判不改 E1 契约设备面（时序契约未钉板）——PKG-4 开工前 reviewer-first 复核一次，结论落 evidence；推翻初判则逃生门。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.2", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7", ".planning/260911-display-interaction-sovereignty/review.md#F3"],
+      "landsIn": "exitCriteria:DF-E1"
     },
     {
-      "decision": "OQ3-回答驻留=(c)随归一屏自然成立",
-      "summary": "human 裁 (c)：不单独设计驻留页/定时器；清除时机（下次交互：新语音轮/按键）并入 B 方案 layer 管理顺带定。PKG-3 撤销不立项。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§2.3", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4"],
-      "landsIn": "acceptance:SU-A5"
+      "decision": "PKG-4-部署前置=批次①overlay修复",
+      "summary": "部署窗口必须走修正后的 apply-xiaozhi-overlay.sh——批次① 260911-ecs-deploy-convergence 为硬前置（review F5：先跑断语音）；engine-patch 在位核验不跳过。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/review.md#F5"],
+      "landsIn": "acceptance:DF-A5"
     },
     {
-      "decision": "两键行为保回归（跨包，PKG-1 定语义）",
-      "summary": "KEY 路由语义 owner = 260911-key-route-a1（mergeOrder 18 先并）；本包重构显示面/页面体系时必须保两键行为与裁定路线一致——KEY 长按=回首页导航动作面的回归责任在本包验收。",
-      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap", ".planning/260911-display-interaction-sovereignty/decision-coverage.json"],
-      "landsIn": "acceptance:SU-A7"
-    },
-    {
-      "decision": "非目标-观感面归批次③",
-      "summary": "字体子集补字、V3 换肤、故事页排版、课表数据填充不在本包——归 260911-render-pages（批次③）。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§0"],
-      "landsIn": "package:260911-render-pages"
-    },
-    {
-      "decision": "SPEC-1-本批不触发",
-      "summary": "OQ3=c 无独立会话语义变更、spec §5.3 零修订；实现中发现冲突走逃生门（Track B spec-lane），不预先立项。",
-      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§4", ".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§7"],
-      "landsIn": "exitCriteria:SU-E3"
+      "decision": "workstream级收口标准（§5）",
+      "summary": "真机一轮「单击问课表」五条收口标准并集对账——本包承载上屏时延（不晚于 TTS 首段后 0.5s）+ 真机收口轮 owner（末位包）；屏幕落点/两键/崩溃同族复核各 owner 包已验项。",
+      "sourceRefs": [".planning/260911-display-interaction-sovereignty/PROPOSAL.md#§5"],
+      "landsIn": "acceptance:DF-A3"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "behavior": "回答驻留与清除时机",
-      "owner": "260911-screen-unification",
-      "note": "OQ3=c——驻留随 layer 管理自然成立，清除时机（下次交互）owner = 本包；无独立包（PKG-3 撤销）。"
+      "behavior": "workstream 级真机收口轮（§5 五条）",
+      "owner": "260911-display-first-m1",
+      "note": "末位包（mergeOrder 20）真机轮统一对账五条收口标准并集；两键行为（PKG-1 语义/PKG-2 回归）、屏幕落点与崩溃同族（PKG-2）、上屏时延（本包）在收口轮复核并集。"
     },
     {
-      "behavior": "两键行为在归一屏后仍与裁定路线一致",
-      "owner": "260911-screen-unification",
-      "note": "PKG-1（260911-key-route-a1）定路由语义 owner；本包重构显示面时保 KEY/BOOT 行为回归（SU-A7 显式含）——KEY 长按=回首页的导航动作面是两包交点，语义归 PKG-1、回归归本包。"
-    },
-    {
-      "behavior": "与批次③ 260911-render-pages 同文件面（kidpal_render_node.cc / 渲染路径）",
-      "owner": "260911-screen-unification",
-      "note": "本包先并（mergeOrder 19）、③后并（落锁 21，②先③后 human 已裁）——③ rebase 到本包重构后的渲染路径；观感面 owner 归 ③，本包零触碰。"
+      "behavior": "设备侧语音中渲染消费 PKG-2 仲裁规则",
+      "owner": "260911-display-first-m1",
+      "note": "渲染规则 owner = 260911-screen-unification；本包 dependsOn 锁定其先并（19），阶段 3 才可进——依赖锁在 DF-E2。"
     }
   ],
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "SU-A2: 三标志/tick 退役——s_page_pinned/s_chat_overlay/s_current_page 与 1s tick 轮询对账代码路径移除，机制齿做符号级零残留断言；前台归属由 layer 栈管理单一权威（语音轮页/服务端推送页/本地浏览页/提醒弹窗/配网按优先级表进出）",
-        "mutation": "kidpal_layer_push 升序插入比较符 '>' 反转为 '<'（按优先级降序入栈，top 变最低优先级层，破坏单一权威的优先级裁决）",
+        "acceptanceId": "DF-A2: 冻结验收必触——server/acceptance/test_g_relay_fix.acceptance.py 经 acceptance-author 修订留痕后全绿；重放暴露 vacuity 的原变异自证（如适用）",
+        "mutation": "acceptance-author 冻结轮自证 Mutation A（deferred emission）：假实现接受 on_block_closed 但把发射推迟到 finish()——复刻「API 在但早发没做」缺陷类",
         "result": "turned red",
         "sensitive": true,
-        "note": "TEST_CASE 'screen unification: layer 前台优先级表进出序 + 单一权威 (SU-A2/SU-A4)' [behavioral] 变红于首个优先级断言 'SU-A2/A4 RED: VOICE must front over LOCAL_PAGE'。全量 111 Tests / 5 Failures = 3 在册红(WSA-A6/WSA-A4/P2-A1) + 本 mutant 新增 2 红(b1+b3)。"
+        "note": "phase=acceptance-freeze vacuity 自证（非 builder 面 mutant）：test_m1_closure_callback_api_present 绿（仅 API 在场桩）、test_m1_feed_emits_closed_block_immediately 红——「closer 到达那次 feed() 内即发射」时序被真实钉住。实现面 mutant 证据待 builder/verifier 阶段补登。"
       },
       {
-        "acceptanceId": "SU-A4: alert/reminder 前台优先级进 layer 管理（review F8）——提醒恰在语音轮到点不崩、弹窗优先级正确；host 齿覆盖优先级表分支",
-        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（提醒弹窗 REMINDER>VOICE 与其余优先级边共用同一比较符，一并被破坏）",
+        "acceptanceId": "DF-A1: strip machine API 扩展——kidpal_display_strip.py feed() 内块级闭合即发射（闭合回调/发射 API，additive）；冻结离线契约修订走 acceptance-author 留痕（语义不放松）；离线契约齿全绿",
+        "mutation": "acceptance-author 冻结轮自证 Mutation B（markers-kept payload）：假实现按正确时机在 feed 内发射，但载荷保留 ```display 包裹",
         "result": "turned red",
         "sensitive": true,
-        "note": "与 SU-A2 共享同一 mutant M1（不重复构建）。b1 是 [SU-A2][SU-A4] 联合行为齿，M1 令 b1 于 'VOICE must front over LOCAL_PAGE' 处红（b1 内 REMINDER>VOICE 断言受同一插入比较符支配，SU-A4 对 M1 真实敏感）。全量 111/5。"
-      },
-      {
-        "acceptanceId": "SU-A7: 两键行为保回归——PKG-1（260911-key-route-a1）定的路由语义（KEY 单击=对话、KEY 长按=回首页、BOOT 单击=翻页）在归一屏重构后原样成立",
-        "mutation": "同 M1：kidpal_layer_push 插入比较符 '>' 反转为 '<'（语音轮→服务端回答页的前台归属被反转，回答期间 SERVER_PAGE 不再盖过 VOICE）",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "与 SU-A2/SU-A4 共享同一 mutant M1。TEST_CASE 'screen unification: 语音轮→回答驻留→回首页 前台归属 (SU-A5/SU-A7)' [behavioral] 变红于 'SU-A7 RED: 语音回答期间服务端页须前台可见'。全量 111/5。"
-      },
-      {
-        "acceptanceId": "SU-A1: 聊天 layer 化——状态栏/表情/气泡在 s_kidpal_scr 上为常驻 layer（z 序叠放、页面切换不清聊天），SetChatMessage/SetStatus/SetEmotion 全部落点改写 layer API，s_chat_scr 独立屏退役；host 齿 + 真机证据",
-        "mutation": "kidpal_layer_chat_target 返回值由 KIDPAL_LAYER_CHAT(1) 改为 KIDPAL_LAYER_LOCAL_PAGE(2)（聊天内容落点不再恒指向常驻聊天 layer，屏幕落点漂移）",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于首个落点断言 'SU-A1 RED: chat content target is not the resident chat layer (got 2)'。全量 111/4 = 3 在册红 + 本 mutant 新增 1 红。"
-      },
-      {
-        "acceptanceId": "SU-A5: 回答驻留（OQ3=c）——回答结束后聊天 layer 常驻可见、屏幕落点确定（非随机）；清除时机=下次交互（新语音轮/任意按键）由 layer 管理定义并齿证；无新驻留页/定时器",
-        "mutation": "kidpal_layer_chat_clear_event 的 NEW_VOICE/KEY_PRESS 分支由 return 1 改为 return 0（下次交互不再清除聊天，OQ3=c 清除时机语义被破坏）",
-        "result": "turned red",
-        "sensitive": true,
-        "note": "TEST_CASE 'screen unification: 聊天 layer 落点 + 驻留清除时机 (SU-A1/SU-A5)' [behavioral] 变红于清除时机断言 'SU-A5 RED: NEW_VOICE must clear chat'（其前 ANSWER_END/PAGE_SWITCH 断言仍绿，证明齿区分驻留与清除）。全量 111/4。"
+        "note": "phase=acceptance-freeze vacuity 自证：test_m1_feed_emits_closed_block_immediately 与 test_m1_multiple_blocks_emitted_in_order 双双红（0 error）——载荷裸化/顺序断言非空过。变异命名纪律遵守：on_block_closed 变异 = 直接移除/换名，未以原字面为子串（KR-A3 教训）。"
       }
     ]
   },
   "crossEnd": {
     "counterparts": [
-      { "path": "firmware/main/application.cc", "symbol": "SetChatMessage" },
-      { "path": "firmware/main/application.cc", "symbol": "SetStatus" },
-      { "path": "firmware/main/application.cc", "symbol": "SetEmotion" },
-      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_show_chat" },
-      { "path": "firmware/main/display/kidpal_render_node.cc", "symbol": "kidpal_render_node_begin_page" }
+      { "path": "server/gateway/mcp_relay.py", "symbol": "display_tool_call" },
+      { "path": "server/deploy/engine-patch/connection.py", "symbol": "DisplayFenceStateMachine" },
+      { "path": "server/deploy/engine-patch/kidpal_display_strip.py", "symbol": "feed" }
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-2 预判）。核心包按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法非显然 + 跨多文件 + 铁律约束三轴全中）——planRef 指向 sibling plan.md，planner intake 只读消费、改需留痕。riskTier=high（UI 状态机轴 + 真机崩溃结构性面 + 冻结齿修订面）；「实现包禁 Lite」单向守卫（PROPOSAL frontmatter）——rigor=full。与 PKG-1 并行开发，merge order 19（PKG-1 先并以缩 KEY/BOOT 回归窗口）。行为碰撞型预警：渲染类冻结齿（story_p3/ui_art_integration）路径敏感，重构后红的齿走 acceptance-author 留痕修订（不带冲突进 launch，已申报 workstream decision-coverage launchPreconditions）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。"
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-4 预判）。跨系统包（引擎部署副本 + front relay + 固件渲染消费）按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法取舍跨系统 + 冻结件修订 + 部署纪律铁律）。contract preflight 申报：契约触面 = M1 初判不改 E1 设备面但开工前 reviewer-first 复核必做（DF-E1）；M3 变体若被提出 → 立即停走 architect-reviewer 四分类 + human 契约门。行为碰撞型预警：test_g_relay_fix.acceptance.py 必触（已申报 workstream launchPreconditions，走 acceptance-author 不带冲突进 launch）。dependsOn 双锁：260911-screen-unification（渲染规则）+ 260911-ecs-deploy-convergence（批次① overlay 修复，mergeOrder 16）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。【planner intake 2026-09-12 留痕两条】(1) crossEnd counterparts[0] symbol 由 TOOL_DISPLAY 修为 display_tool_call（mcp_relay.py:99，TOOL_DISPLAY 信封的真实构造/中继函数）——原 symbol 是模块级常量赋值（:29），brief-inputs.mjs symbol 正则（后随字符限 [\\w:(]）不命中 fail-loud；语义指同一对端面。(2) DF-E3「仅 acceptance-author 修订」的 scope-map 落地解释（C5 核对结论）：acceptance-author 物理可写面 = server/**/acceptance/**（enforce-scope per-agent allow），不含 server/deploy/engine-patch/**——故 kidpal_display_strip.py 的契约语义修订权/裁决/REVISION LOG 留痕归 acceptance-author（落在 test_g_relay_fix.acceptance.py 修订头部，声明 additive 语义扩展边界），物理 API 扩展实现由 builder 按已声明边界落（plan.md §2.1 阶段 1「acceptance-author 先行修冻结齿语义边界 + builder 落地」原文一致）；builder/fixer 不得自行变更冻结语义，违者 = DF-E3 红。"
 }

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "260911-display-first-m1",
+  "finalRound": 5,
+  "phase": "final",
+  "invocationId": "da096ccb-165e-47a9-8027-46d95990e790",
+  "evidenceRef": ".claude/taskpackages/260911-display-first-m1/verifier-evidence/rounds/r5.json",
+  "factValidated": true,
+  "factOk": false,
+  "observedGateExit": 1,
+  "gatesRun": 9,
+  "gatesPassed": [
+    "taskpackage-required",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security"
+  ],
+  "gatesFailed": [
+    "unit",
+    "acceptance"
+  ],
+  "failedSource": "cross-package existing red SMK-A4 (test_smoke_e2e.acceptance.py:422; server/acceptance/_artifacts/smoke-e2e/screen.md missing; owner=260829-smoke-e2e) — not introduced by this change",
+  "packageOwnSurface": "green (scoped 7 gates + 6 new teeth red-baseline 6-failed -> 20-passed, mutation 2 sensitive-turned-red, DF-E1 CONFIRM_NO_CONTRACT_CHANGE)",
+  "structuralPendingHumanDeviceRound": ["DF-A3", "DF-A5", "DF-A6"],
+  "docsContractSpecDelta": "none (docs/contracts/**, docs/spec.md untouched; front/firmware zero diff)"
+}

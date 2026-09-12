@@ -15,6 +15,13 @@ Frozen offline contract (see server/acceptance/test_g_relay_fix.acceptance.py):
                                          #   body lands in blocks instead; blocks carry ALL
                                          #   raw fence payload strings, in order, WITHOUT the
                                          #   ``` markers (closed and unclosed alike)
+    __init__(on_block_closed=None) -> None  # M1 display-first (additive): optional closure
+        #   callback Optional[Callable[[str], None]]; None (default) = byte-for-byte the
+        #   pre-M1 behaviour.  When set, the machine fires it synchronously: once per fence
+        #   the moment its closer ``` is consumed inside feed(), and once in finish() for a
+        #   still-unclosed fence.  Invariant (one full stream): the callback payload sequence
+        #   == finish().blocks, same order and set — the callback is the sole emission channel
+        #   and finish().blocks is an observation mirror only (never double-emit a block).
     display_blocks_message(blocks) -> dict  # {"type": "kidpal_display_blocks",
                                             #  "blocks": [...raw strings...]} 哑管道零校验
 """
@@ -44,12 +51,14 @@ class DisplayFenceStateMachine:
     the speech tail (宁静默不念 JSON).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, on_block_closed=None) -> None:
         self._state = "normal"   # normal | tag | fence
         self._blocks: "list[str]" = []
         self._body: "list[str]" = []
         self._pending = ""       # unresolved suffix carried across feed() calls
         self._tag_partial = ""
+        # M1 display-first: optional closure callback (None = pre-M1 behaviour, byte-identical).
+        self._on_block_closed = on_block_closed
 
     # -- public API -----------------------------------------------------------
     def feed(self, delta: str) -> str:
@@ -98,27 +107,36 @@ class DisplayFenceStateMachine:
                     text = ""
                     break
                 self._body.append(text[:idx])         # raw body up to the closer
-                self._blocks.append("".join(self._body))  # close the fence block
+                block = "".join(self._body)
+                self._blocks.append(block)            # observation mirror (finish().blocks)
                 self._body = []
                 self._state = "normal"
+                if self._on_block_closed is not None:
+                    self._on_block_closed(block)      # M1: emit synchronously at closure
                 text = text[idx + len(_CLOSE):]
         return "".join(out)
 
     def finish(self) -> "tuple[str, list[str]]":
         """End of stream: return (tail_speech, blocks).  A still-unclosed fence's raw body
-        goes to blocks (NEVER read aloud); trailing partial opener backticks are dropped."""
+        goes to blocks (NEVER read aloud); trailing partial opener backticks are dropped.
+        M1 display-first: an unclosed fence also fires on_block_closed exactly once here."""
         tail = ""
+        block = None
         if self._state == "fence" and self._pending:
             keep = self._trailing_backticks(self._pending)
             body = self._pending[: -keep] if (1 <= keep < len(_CLOSE)) else self._pending
-            self._blocks.append("".join(self._body) + body)
+            block = "".join(self._body) + body
+            self._blocks.append(block)
             self._body = []
             self._pending = ""
         elif self._state == "fence" and not self._pending and self._body:
             # unclosed body already parked in self._body (no pending tail)
-            self._blocks.append("".join(self._body))
+            block = "".join(self._body)
+            self._blocks.append(block)
             self._body = []
         self._state = "normal"
+        if block is not None and self._on_block_closed is not None:
+            self._on_block_closed(block)              # emit unclosed tail exactly once (M1)
         return tail, self._blocks
 
     # -- helpers ---------------------------------------------------------------

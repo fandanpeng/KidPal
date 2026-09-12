@@ -1165,7 +1165,17 @@ class ConnectionHandler:
 
         response_message = []
         # single-point strip machine for this turn (TTS delta + response_message shared)
-        strip_machine = DisplayFenceStateMachine()
+        def _emit_display_block(block: str) -> None:
+            # M1 display-first: a closed fence fires the moment its closer ``` is consumed
+            # inside feed() (and the unclosed tail in finish()) — NOT deferred to the
+            # end-of-stream finish().  Single emission path: finish().blocks is only the
+            # observation mirror, we never re-emit it here (每条块恰发一次).
+            side_msg = kidpal_display_strip.display_blocks_message([block])
+            asyncio.run_coroutine_threadsafe(
+                self.websocket.send(json.dumps(side_msg, ensure_ascii=False)), self.loop
+            )
+
+        strip_machine = DisplayFenceStateMachine(on_block_closed=_emit_display_block)
         original_chunks = []   # pre-strip original reply text (fences kept) for dialogue
 
         try:
@@ -1441,8 +1451,9 @@ class ConnectionHandler:
             original_streamed_text = "".join(original_chunks)
             self._kidpal_original_reply(original_streamed_text)
 
-        # 流结束：未闭合 fence 宁静默不入 TTS；已闭合+未闭合裸载荷投侧通道给 front
-        tail_speech, display_blocks = strip_machine.finish()
+        # 流结束：未闭合 fence 宁静默不入 TTS；其裸载荷已在 finish() 内由 on_block_closed
+        # 发射（M1 display-first）。finish().blocks 仅作观察镜像，此处不再重复发射侧通道。
+        tail_speech, _display_blocks = strip_machine.finish()
         if tail_speech:
             self.tts.tts_text_queue.put(
                 TTSMessageDTO(
@@ -1451,11 +1462,6 @@ class ConnectionHandler:
                     content_type=ContentType.TEXT,
                     content_detail=tail_speech,
                 )
-            )
-        if display_blocks:
-            side_msg = kidpal_display_strip.display_blocks_message(display_blocks)
-            asyncio.run_coroutine_threadsafe(
-                self.websocket.send(json.dumps(side_msg, ensure_ascii=False)), self.loop
             )
 
         if depth == 0:
