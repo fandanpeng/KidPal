@@ -181,10 +181,71 @@ decisionCoverage landing (TaskPackage 260907-g-relay-fix):
   (no dropped / risk-accepted entries)
 """
 
+# --------------------------------------------------------------------------- #
+# REVISION LOG — test_g_relay_fix.acceptance.py（本文件首次修订）               #
+# --------------------------------------------------------------------------- #
+# 2026-09-12 · changeId=260911-display-first-m1（PKG-4 显示先行 M1）
+# 修订者 = acceptance-author。本文件由 260907-g-relay-fix 包冻结，本次为 M1「围栏
+# 闭合即发」做 additive 时序扩展修订。逐条修订声明 + 语义不放松自证：
+#
+#  [1] additive——新增 class DisplayFirstM1Acceptance（DF-A1/DF-A2 新齿），钉
+#      kidpal_display_strip.DisplayFenceStateMachine 的闭合回调 API + connection.py
+#      接线 + finish() 语义保全。既有 GRelayFixStructuralAcceptance /
+#      GRelayFixLiveAcceptance 全部齿一字未动（语义零放松）。
+#      语义不放松自证：下列既有齿断言语义逐字保持——test_a2_engine_strip_state_
+#      machine_semantics 的 feed/finish 语义（feed 直通保延迟、闭合摘除、未闭合宁静默
+#      不念 JSON、多块顺序/裸载荷/无 ``` 标记、display_blocks_message 哑管道成形）、
+#      test_a2_strip_display_fences_* 四条（front 纵深防御）、GRF-A3 信封/wire/降级、
+#      GRF-A4 回执、GRF-E1 回归。M1 后 finish() 仍返回 (tail_speech, blocks)、blocks
+#      仍按序承载全部裸载荷字符串（含未闭合尾块）、不含 ``` 标记；on_block_closed 是
+#      新增发射信道，不改 feed()/finish() 签名与返回语义。
+#
+#  [2] kidpal_display_strip.py 冻结离线契约的 additive 语义扩展边界（builder 按此物理
+#      实现并落码；语义裁决与 REVISION LOG 归 acceptance-author，实现落码面
+#      server/deploy/engine-patch/** 归 builder——两者不交叉，见 taskpackage notes
+#      DF-E3 scope-map 落地解释）：
+#        class DisplayFenceStateMachine:
+#            def __init__(self, on_block_closed=None) -> None:
+#                on_block_closed: Optional[Callable[[str], None]]，默认 None（无回调 =
+#                与 M1 前完全一致，向后兼容；既有齿 sm_cls() 零参数构造继续成立）。
+#                事件边界：
+#                  - feed() 内 fence 闭合（closer ``` 被消费）的瞬间，同步调用一次
+#                    on_block_closed(block)；block = 裸载荷字符串（无 ``` 标记；
+#                    language tag + 一个前导换行已剥除，与 finish().blocks 每条 body
+#                    逐字节同形）；
+#                  - 流末仍未闭合的 fence：在 finish() 内同步调用一次 on_block_closed
+#                    一次（仍宁静默不念，其裸 body 照旧进 finish().blocks）；
+#                  - 不变量：一次完整流（finish() 已调）后，on_block_closed 触发的载荷
+#                    序列 == finish().blocks（同序同集）——发射信道唯一（回调），
+#                    finish().blocks 只作观察镜像，实现不得双发（closed 块逐个在 feed
+#                    内早发、unclosed 尾在 finish 发，每条块恰发射一次）。
+#            feed(delta: str) -> str              # 签名/语义不改
+#            finish() -> (tail_speech, blocks)    # 签名/语义不改
+#        单点原则保持：feed/finish/回调同属一个 DisplayFenceStateMachine 实例（不建
+#        第二状态机）；模块仍纯 Python、离线可 import、零引擎依赖。
+#
+#  [3] DF-A4（设备侧语音中渲染）承载映射——判断：已承载于 PKG-2 冻结齿，本包不新钉
+#      host 齿。设备侧「display 块中途到达按 PKG-2 layer 仲裁规则渲染」由已并入 base
+#      的 260911-screen-unification 冻结齿承载：
+#        - firmware/main/test/screen_unification.acceptance.c test b1（标签 [SU-A2]
+#          [SU-A4]，L616）钉「SERVER_PAGE(4) 盖过 VOICE(3)——回答期间服务端页前台可见、
+#          语音不拦内容页（SU-RULING-01 方案A）+ 聊天 layer 常驻」；
+#        - 同文件 test b3（[SU-A5][SU-A7]，L787）钉「语音轮→回答驻留→回首页前台归属」；
+#        - 同文件 test s2（[SU-A1]，L893）钉「kidpal_layer_ 前缀 >= 3 文件消费者 wiring
+#          + kidpal_layer.c 编入设备构建」。
+#        仲裁规则与到达早晚无关（M1 只改引擎侧发射时机，设备规则同一套），「中途到达」
+#        =「提前到达」，无新行为面需钉。设备侧落地接线已随 PKG-2 并入 base：
+#        kidpal_render_node.cc:358-371（begin_page 推 SERVER_PAGE，前台盖过 VOICE）、
+#        :302-326（voice_begin 清上轮驻留后推 VOICE、聊天 chrome 恒可见）。DF-A4 后半
+#        「与 PKG-2 合并基线复跑其冻结齿绿」= 阶段 3 跨包回归动作（builder/verifier 按
+#        screen_unification.acceptance.c 头注 run protocol 复跑全绿），非本文件新齿。
+# --------------------------------------------------------------------------- #
+
 from __future__ import annotations
 
 import asyncio
 import importlib.util
+import inspect
 import json
 import os
 import re
@@ -1125,6 +1186,183 @@ class GRelayFixStructuralAcceptance(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# DF-A1 / DF-A2 — M1「围栏闭合即发」additive 时序齿（260911-display-first-m1）  #
+# --------------------------------------------------------------------------- #
+
+class DisplayFirstM1Acceptance(unittest.TestCase):
+    """M1 (display-first) additive timing teeth: the engine fence state machine emits
+    a display block AT its closure inside feed() — not deferred to finish() — via the
+    new on_block_closed callback.  Primary evidence = behavioural exercise of the pure
+    module (real payloads, order, call count, speech-face cleanliness); the engine
+    deploy-copy wiring tooth is auxiliary/structural (same precedent as the GRF-A2
+    carrier tooth — connection.py cannot be import-tested offline)."""
+
+    maxDiff = None
+
+    @staticmethod
+    def _sm_class():
+        mod, err = _load_engine_strip_module()
+        if mod is None:
+            raise AssertionError("DF-A1 RED: " + err)
+        sm_cls = getattr(mod, "DisplayFenceStateMachine", None)
+        if not callable(sm_cls):
+            raise AssertionError("DF-A1 RED: kidpal_display_strip.DisplayFenceStateMachine missing.")
+        return sm_cls
+
+    @staticmethod
+    def _accepts_callback(sm_cls):
+        try:
+            sig = inspect.signature(sm_cls.__init__)
+        except (TypeError, ValueError):
+            return False
+        return "on_block_closed" in sig.parameters
+
+    @staticmethod
+    def _make_sm(sm_cls, on_block_closed):
+        """Construct the machine with the closure callback; return (sm|None, err)."""
+        try:
+            return sm_cls(on_block_closed=on_block_closed), None
+        except TypeError as e:
+            return None, (f"DisplayFenceStateMachine(on_block_closed=...) not accepted: {e!r}. "
+                          "DF-A1 要求 feed() 内块级闭合即发射的闭合回调 API（构造注入 "
+                          "on_block_closed(block)，additive）——该行为现状不存在（M1 未实现）。")
+
+    def test_m1_closure_callback_api_present(self):
+        """coverage: DF-A1 — DisplayFenceStateMachine 暴露 on_block_closed 闭合回调构造参数."""
+        sm_cls = self._sm_class()
+        self.assertTrue(
+            self._accepts_callback(sm_cls),
+            "DF-A1 RED: DisplayFenceStateMachine.__init__ 不接受 on_block_closed 参数——"
+            "块闭合回调 API 未实现（M1「feed() 内块级闭合即发射」的前提，additive 语义边界见"
+            "本文件 REVISION LOG [2]）。",
+        )
+
+    def test_m1_feed_emits_closed_block_immediately(self):
+        """coverage: DF-A1 — fence 跨 delta 闭合瞬间（closer ``` 到达的那个 feed()），同步
+        触发回调恰一次、载荷裸化（无 ``` 标记/无 tag），播报面照旧零 fence 残留."""
+        sm_cls = self._sm_class()
+        fired = []
+        sm, err = self._make_sm(sm_cls, fired.append)
+        if sm is None:
+            self.fail("DF-A1 RED: " + err)
+
+        speech_parts = []
+        for delta in _SM_DELTAS_CLOSED:
+            speech_parts.append(sm.feed(delta))
+            if delta == "```":
+                self.assertEqual(
+                    len(fired), 1,
+                    "DF-A1 RED: 闭合回调未在 closer ``` 到达的那次 feed() 内同步触发——"
+                    "块闭合仍被推迟到 finish()（M1 早发缺失）。",
+                )
+        tail, blocks = sm.finish()
+        speech = "".join(speech_parts) + tail
+
+        self.assertEqual(speech, _SM_EXPECTED_SPEECH_CLOSED,
+                         "DF-A1 RED: 加回调后播报面被改动（语义放松）。")
+        self.assertNotIn("```", speech, "DF-A1 RED: fence 残留混入播报。")
+        self.assertNotIn("卡片内容", speech, "DF-A1 RED: fence body 泄进播报。")
+        self.assertEqual(len(fired), 1,
+                         f"DF-A1 RED: 期望恰 1 次闭合回调，得 {len(fired)} 次: {fired!r}.")
+        payload = fired[0]
+        self.assertNotIn("```", payload, "DF-A1 RED: 回调载荷仍带 ``` 标记（未裸化）。")
+        self.assertEqual(json.loads(payload), {"view": "text", "data": {"text": "卡片内容"}},
+                         "DF-A1 RED: 回调载荷非裸载荷——须与 finish().blocks 同形、可 json.loads.")
+        self.assertEqual(fired, blocks,
+                         "DF-A1 RED: 回调序列 != finish().blocks（发射信道与观察镜像漂移，"
+                         "闭块被双发或乱序）。")
+
+    def test_m1_multiple_blocks_emitted_in_order(self):
+        """coverage: DF-A1 — 两个闭合 fence 依文本次序各触发一次回调，载荷逐块对应、裸化."""
+        sm_cls = self._sm_class()
+        fired = []
+        sm, err = self._make_sm(sm_cls, fired.append)
+        if sm is None:
+            self.fail("DF-A1 RED: " + err)
+        for delta in (_SM_DELTAS_CLOSED[:-1]
+                      + ["再见啦。第二段。```display\n" + json.dumps(_PAYLOAD_2, ensure_ascii=False)
+                         + "\n```\n完啦。"]):
+            sm.feed(delta)
+        _tail, blocks = sm.finish()
+        self.assertEqual(len(fired), 2,
+                         f"DF-A1 RED: 两个闭合块应触发 2 次回调，得 {len(fired)} 次: {fired!r}.")
+        self.assertNotIn("```", fired[0], "DF-A1 RED: 第一块回调载荷未裸化（带 ``` 标记）.")
+        self.assertNotIn("```", fired[1], "DF-A1 RED: 第二块回调载荷未裸化（带 ``` 标记）.")
+        self.assertEqual(json.loads(fired[0]), {"view": "text", "data": {"text": "卡片内容"}},
+                         "DF-A1 RED: 第一块回调载荷错乱.")
+        self.assertEqual(json.loads(fired[1]), _PAYLOAD_2,
+                         "DF-A1 RED: 第二块回调载荷错乱.")
+        self.assertEqual(fired, blocks,
+                         "DF-A1 RED: 多块回调序列与 finish().blocks 不同序（顺序语义破坏）.")
+
+    def test_m1_unclosed_tail_emitted_exactly_once_at_finish(self):
+        """coverage: DF-A1 — 流末 unclosed fence 在 feed() 期间绝不发射，finish() 内恰发射一次，
+        裸 body 照旧宁静默不念、照旧进 finish().blocks."""
+        sm_cls = self._sm_class()
+        fired = []
+        sm, err = self._make_sm(sm_cls, fired.append)
+        if sm is None:
+            self.fail("DF-A1 RED: " + err)
+        speech_parts = []
+        for delta in _SM_DELTAS_UNCLOSED:
+            speech_parts.append(sm.feed(delta))
+            self.assertEqual(fired, [],
+                             "DF-A1 RED: unclosed fence 在 feed() 期间被提前发射——闭合前不得发射。")
+        tail, blocks = sm.finish()
+        speech = "".join(speech_parts) + tail
+        self.assertIn("开始讲。", speech, "DF-A1 RED: fence 前正文丢失.")
+        self.assertNotIn("```", speech, "DF-A1 RED: unclosed fence 泄进播报.")
+        self.assertNotIn("没讲完的卡", speech, "DF-A1 RED: unclosed body 泄进播报.")
+        self.assertEqual(len(fired), 1,
+                         f"DF-A1 RED: unclosed tail 应在 finish() 内恰触发一次回调, 得 "
+                         f"{len(fired)} 次: {fired!r}.")
+        self.assertIn("没讲完的卡", fired[0], "DF-A1 RED: unclosed 裸 body 未进回调载荷.")
+        self.assertIn("片内容", fired[0], "DF-A1 RED: unclosed 裸 body 不完整（被截断发射）.")
+        self.assertNotIn("```", fired[0], "DF-A1 RED: unclosed 回调载荷仍带 ``` 标记.")
+        self.assertEqual(fired, blocks,
+                         "DF-A1 RED: unclosed 回调 != finish().blocks（观察镜像漂移）.")
+
+    def test_m1_finish_semantics_preserved_with_callback(self):
+        """coverage: DF-A2 — 加回调后 finish() 语义不放松：仍返回 (tail_speech, blocks)、
+        blocks 按序承载全部裸载荷（闭合与未闭合同列、无 ``` 标记），与 M1 前（无回调）同形."""
+        sm_cls = self._sm_class()
+        fired = []
+        sm, err = self._make_sm(sm_cls, fired.append)
+        if sm is None:
+            self.fail("DF-A2 RED: " + err)
+        for delta in (_SM_DELTAS_CLOSED[:-1]
+                      + ["再见啦。第二段。```display\n" + json.dumps(_PAYLOAD_2, ensure_ascii=False)
+                         + "\n```\n完啦。",
+                         "结尾有个没收尾的。```display\n" + '{"view":"text","data":{"text":"没讲完',
+                         "的尾巴"]):
+            sm.feed(delta)
+        tail, blocks = sm.finish()
+        self.assertEqual(len(blocks), 3,
+                         f"DF-A2 RED: finish().blocks 应为 3 条（闭合2 + 未闭合1），得 {blocks!r}.")
+        for b in blocks:
+            self.assertNotIn("```", b, "DF-A2 RED: blocks 出现 ``` 标记（裸载荷语义放松）.")
+        self.assertEqual(json.loads(blocks[0]), {"view": "text", "data": {"text": "卡片内容"}},
+                         "DF-A2 RED: blocks[0] 载荷错乱.")
+        self.assertEqual(json.loads(blocks[1]), _PAYLOAD_2, "DF-A2 RED: blocks[1] 载荷错乱.")
+        self.assertIn("没讲完", blocks[2], "DF-A2 RED: 未闭合尾块未进 finish().blocks.")
+        self.assertIn("尾巴", blocks[2], "DF-A2 RED: 未闭合尾块不完整.")
+        self.assertEqual(fired, blocks,
+                         "DF-A2 RED: 回调序列 != finish().blocks——发射/观察信道不一致"
+                         "（闭合块被双发或只发一遍的语义被改）。")
+
+    def test_m1_connection_wires_closure_callback_into_stream(self):
+        """coverage: DF-A1 — 引擎部署副本 connection.py 把闭合回调接线进流循环（结构面辅助齿，
+        行为主齿在上；connection.py 自带引擎依赖不可离线 import，同 GRF-A2 carrier 先例）."""
+        src = _read_text(ENGINE_PATCH_CONNECTION)
+        self.assertIn(
+            "on_block_closed", src,
+            "DF-A1 RED: connection.py 未引用 on_block_closed 闭合回调——feed() 内块闭合即发射"
+            "的引擎接线缺失（builder 须把闭合回调接到侧通道 kidpal_display_blocks 发射，使闭合"
+            "块不等 finish() 即发）。",
+        )
+
+
+# --------------------------------------------------------------------------- #
 # GRF-A5 live face — 真机一轮会话的日志证据断言（不 auto-run，ARQ-260901-g3）      #
 # --------------------------------------------------------------------------- #
 
@@ -1254,6 +1492,7 @@ class GRelayFixLiveAcceptance(unittest.TestCase):
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(GRelayFixStructuralAcceptance)
+    suite.addTests(loader.loadTestsFromTestCase(DisplayFirstM1Acceptance))
     if os.environ.get("GRF_RUN_LIVE") == "1":
         suite.addTests(loader.loadTestsFromTestCase(GRelayFixLiveAcceptance))
     runner = unittest.TextTestRunner(verbosity=2)

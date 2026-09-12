@@ -12,8 +12,8 @@
   "planRef": ".claude/taskpackages/260911-display-first-m1/plan.md",
   "subsystem": "server+firmware",
   "story": "PKG-4 显示先行 M1（OQ2=M1 已裁）：引擎补丁 kidpal_display_strip.py 把「块闭合」从 finish() 提前到 feed() 内（状态机已支持块级闭合检测，加闭合回调/发射 API）——display 页上屏提前 1–3s；冻结离线契约（feed/finish 语义）修订走 acceptance-author；front 时序复核（逐块中继 × 提前发射新时序的幂等/顺序/回执）；设备侧语音中渲染（消费 PKG-2 归一屏 layer 仲裁规则）。前置 = PKG-2 渲染规则（mergeOrder 19）+ 批次① overlay 漂移修复 260911-ecs-deploy-convergence（mergeOrder 16，部署窗口须走修正后 apply-xiaozhi-overlay.sh）。M3 变体禁止（契约 §1.1 逐字冲突）；M1 初判不改 E1 契约设备面，开工前 reviewer-first 复核。",
-  "redBaselineCommand": "cd server && python -m pytest acceptance/test_g_relay_fix.acceptance.py -v（冻结验收基线）+ kidpal_display_strip.py 冻结离线契约齿复跑；新时序齿（块闭合提前发射）在基线上判红；intake 时 acceptance-author 复核红基线记录",
-  "redBaselineResult": "现状（PROPOSAL §1.2 证据 + 2026-09-11 复核）：connection.py:1442-1456 块发射在 finish() 之后——feed() 内块闭合即发射的时序齿在基线上必红，红基线成立。",
+  "redBaselineCommand": "cd server && python -m pytest --import-mode=importlib acceptance/test_g_relay_fix.acceptance.py -v（--import-mode=importlib 必须：文件名两点默认 prepend 收集报 ModuleNotFoundError，conftest.py:11-12 G 包先例在注）",
+  "redBaselineResult": "acceptance-author 冻结轮实测（2026-09-12）：6 failed / 14 passed / 4 skipped，收集零 error。既有 GRF 14 齿全绿（修订语义不放松自证）；M1 新 6 齿全红，收敛为两个真实缺失行为：(a) kidpal_display_strip.DisplayFenceStateMachine 闭合回调 API（on_block_closed 构造注入）未实现（5 红）；(b) connection.py 闭合回调接线不存在、块发射仍在 finish() 之后（1 红）——与 PROPOSAL §1.2 根因一致，红基线成立。4 skipped = GRF-A5 live 齿 conftest 机械 skip（夜间不执行 live，待明早真机轮）。原拆包期判读（留档）：connection.py:1442-1456 块发射在 finish() 之后——feed() 内块闭合即发射的时序齿在基线上必红。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -28,10 +28,10 @@
   "acceptance": [
     "DF-A1: strip machine API 扩展——kidpal_display_strip.py feed() 内块级闭合即发射（闭合回调/发射 API，additive）；冻结离线契约修订走 acceptance-author 留痕（语义不放松）；离线契约齿全绿",
     "DF-A2: 冻结验收必触——server/acceptance/test_g_relay_fix.acceptance.py 经 acceptance-author 修订留痕后全绿；重放暴露 vacuity 的原变异自证（如适用）",
-    "DF-A3: 时延实测——真机「单击问课表」display 页上屏不晚于 TTS 首段后 0.5s（kidpal-live-smoke-debug 三日志源按 correlationId 对齐）；证据落 changes/dev/260911-display-first-m1/",
-    "DF-A4: 设备侧语音中渲染——display 块中途到达按 PKG-2 layer 仲裁规则渲染（语音轮页可见聊天 layer 同步更新）；与 PKG-2 合并基线复跑其冻结齿绿",
-    "DF-A5: 部署合规——部署窗口走修正后 apply-xiaozhi-overlay.sh（批次①已并）；engine-patch 在位核验（启动标记行 + docker inspect Mounts）；front 时序复核结论在案",
-    "DF-A6: workstream 收口真机轮（human 持板）——§5 五条收口标准并集对账（本包承载上屏时延项，其余复核各 owner 包已验项）"
+    {"id": "DF-A3: 时延实测——真机「单击问课表」display 页上屏不晚于 TTS 首段后 0.5s（kidpal-live-smoke-debug 三日志源按 correlationId 对齐）；证据落 changes/dev/260911-display-first-m1/", "kind": "structural"},
+    {"id": "DF-A4: 设备侧语音中渲染——display 块中途到达按 PKG-2 layer 仲裁规则渲染（语音轮页可见聊天 layer 同步更新）；与 PKG-2 合并基线复跑其冻结齿绿", "kind": "structural"},
+    {"id": "DF-A5: 部署合规——部署窗口走修正后 apply-xiaozhi-overlay.sh（批次①已并）；engine-patch 在位核验（启动标记行 + docker inspect Mounts）；front 时序复核结论在案", "kind": "structural"},
+    {"id": "DF-A6: workstream 收口真机轮（human 持板）——§5 五条收口标准并集对账（本包承载上屏时延项，其余复核各 owner 包已验项）", "kind": "structural"}
   ],
   "acceptanceTestsFile": [
     "server/acceptance/test_g_relay_fix.acceptance.py"
@@ -63,6 +63,7 @@
   "fixBudget": 4,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
+  "docsSyncReason": "无实现侧文档同步需求：spec 零修订（OQ2=M1 只改引擎内部 block 发射时机，不触 spec §4.0/§5.3）、docs/contracts/** 零触碰（DF-E1 契约复核 CONFIRM_NO_CONTRACT_CHANGE）；实现仅改 server/deploy/engine-patch 内部面（strip machine 闭合回调 API + connection 接线），front/固件复核零代码变更，不产生 docs 面变更。",
   "mergeOrder": 20,
   "dependsOn": [
     "260911-screen-unification",
@@ -120,14 +121,31 @@
     }
   ],
   "mutationRequired": true,
-  "mutationEvidence": [],
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "DF-A2: 冻结验收必触——server/acceptance/test_g_relay_fix.acceptance.py 经 acceptance-author 修订留痕后全绿；重放暴露 vacuity 的原变异自证（如适用）",
+        "mutation": "acceptance-author 冻结轮自证 Mutation A（deferred emission）：假实现接受 on_block_closed 但把发射推迟到 finish()——复刻「API 在但早发没做」缺陷类",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "phase=acceptance-freeze vacuity 自证（非 builder 面 mutant）：test_m1_closure_callback_api_present 绿（仅 API 在场桩）、test_m1_feed_emits_closed_block_immediately 红——「closer 到达那次 feed() 内即发射」时序被真实钉住。实现面 mutant 证据待 builder/verifier 阶段补登。"
+      },
+      {
+        "acceptanceId": "DF-A1: strip machine API 扩展——kidpal_display_strip.py feed() 内块级闭合即发射（闭合回调/发射 API，additive）；冻结离线契约修订走 acceptance-author 留痕（语义不放松）；离线契约齿全绿",
+        "mutation": "acceptance-author 冻结轮自证 Mutation B（markers-kept payload）：假实现按正确时机在 feed 内发射，但载荷保留 ```display 包裹",
+        "result": "turned red",
+        "sensitive": true,
+        "note": "phase=acceptance-freeze vacuity 自证：test_m1_feed_emits_closed_block_immediately 与 test_m1_multiple_blocks_emitted_in_order 双双红（0 error）——载荷裸化/顺序断言非空过。变异命名纪律遵守：on_block_closed 变异 = 直接移除/换名，未以原字面为子串（KR-A3 教训）。"
+      }
+    ]
+  },
   "crossEnd": {
     "counterparts": [
-      { "path": "server/gateway/mcp_relay.py", "symbol": "TOOL_DISPLAY" },
+      { "path": "server/gateway/mcp_relay.py", "symbol": "display_tool_call" },
       { "path": "server/deploy/engine-patch/connection.py", "symbol": "DisplayFenceStateMachine" },
       { "path": "server/deploy/engine-patch/kidpal_display_strip.py", "symbol": "feed" }
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-4 预判）。跨系统包（引擎部署副本 + front relay + 固件渲染消费）按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法取舍跨系统 + 冻结件修订 + 部署纪律铁律）。contract preflight 申报：契约触面 = M1 初判不改 E1 设备面但开工前 reviewer-first 复核必做（DF-E1）；M3 变体若被提出 → 立即停走 architect-reviewer 四分类 + human 契约门。行为碰撞型预警：test_g_relay_fix.acceptance.py 必触（已申报 workstream launchPreconditions，走 acceptance-author 不带冲突进 launch）。dependsOn 双锁：260911-screen-unification（渲染规则）+ 260911-ecs-deploy-convergence（批次① overlay 修复，mergeOrder 16）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。"
+  "notes": "拆包 2026-09-11 portfolio-planner（PROPOSAL §4 PKG-4 预判）。跨系统包（引擎部署副本 + front relay + 固件渲染消费）按 ARQ-260911-split-package-implementation-prose-gap 分级判据产包级 plan.md（改法取舍跨系统 + 冻结件修订 + 部署纪律铁律）。contract preflight 申报：契约触面 = M1 初判不改 E1 设备面但开工前 reviewer-first 复核必做（DF-E1）；M3 变体若被提出 → 立即停走 architect-reviewer 四分类 + human 契约门。行为碰撞型预警：test_g_relay_fix.acceptance.py 必触（已申报 workstream launchPreconditions，走 acceptance-author 不带冲突进 launch）。dependsOn 双锁：260911-screen-unification（渲染规则）+ 260911-ecs-deploy-convergence（批次① overlay 修复，mergeOrder 16）。input-brief 由 planner intake 经 brief-inputs.mjs 产出，crossEnd counterparts 即 brief 第②路对端面输入。【planner intake 2026-09-12 留痕两条】(1) crossEnd counterparts[0] symbol 由 TOOL_DISPLAY 修为 display_tool_call（mcp_relay.py:99，TOOL_DISPLAY 信封的真实构造/中继函数）——原 symbol 是模块级常量赋值（:29），brief-inputs.mjs symbol 正则（后随字符限 [\\w:(]）不命中 fail-loud；语义指同一对端面。(2) DF-E3「仅 acceptance-author 修订」的 scope-map 落地解释（C5 核对结论）：acceptance-author 物理可写面 = server/**/acceptance/**（enforce-scope per-agent allow），不含 server/deploy/engine-patch/**——故 kidpal_display_strip.py 的契约语义修订权/裁决/REVISION LOG 留痕归 acceptance-author（落在 test_g_relay_fix.acceptance.py 修订头部，声明 additive 语义扩展边界），物理 API 扩展实现由 builder 按已声明边界落（plan.md §2.1 阶段 1「acceptance-author 先行修冻结齿语义边界 + builder 落地」原文一致）；builder/fixer 不得自行变更冻结语义，违者 = DF-E3 红。"
 }

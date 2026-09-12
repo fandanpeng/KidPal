@@ -1,0 +1,72 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-12T03:29:21.544Z",
+  "changeId": "260911-display-first-m1",
+  "originType": "proposal",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+      "security-axis-path:.claude/taskpackages/260911-display-first-m1/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+        "security-axis-path:.claude/taskpackages/260911-display-first-m1/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 5,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+          "security-axis-path:.claude/taskpackages/260911-display-first-m1/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260911-display-first-m1/verifier-evidence/rounds/r5.json",
+        "bearingFactOk": false,
+        "completedRounds": 5,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260911-display-first-m1/docs-delta.md",
+          "changes/dev/260911-display-first-m1/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "proposal"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789172538183-acceptance-coverage.log",
+      ".claude/verify-logs/1789172793580-mutation-check.log",
+      ".claude/verify-logs/1789182350682-docs-sync.log",
+      ".claude/verify-logs/1789182525670-unit.log",
+      ".claude/verify-logs/1789182532183-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260911-display-first-m1/verifier-evidence/rounds/r5.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260911-display-first-m1/docs-delta.md",
+      "changes/dev/260911-display-first-m1/review-packet.md"
+    ]
+  }
+}
