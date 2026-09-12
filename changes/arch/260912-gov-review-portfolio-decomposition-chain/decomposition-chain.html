@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案 v0.4</title>
+<title>拆包→执行链 · 治理方案草案 v0.5</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -84,8 +84,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案（v0.4）</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.4，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案草案（v0.5）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.5，讨论中）</div>
 
   <div class="chain">
 
@@ -100,7 +100,7 @@
         <ul>
           <li><b>① 要达成什么</b> <span class="tag new">硬项</span>——业务目的清单，每条可观察判据；来源随分型：整改引缺陷证据 / 新建引 spec story（不改语义只加判据）</li>
           <li><b>② 现在在哪</b>——新建型：现状盘点 + 能力差距（「还没建」≠「坏了」）；整改型：问题 + 证据锚 + 根因（<b>「问题与根因」仅此形态合法</b>）；重构型：结构痛点</li>
-          <li><b>③ 怎么走</b>——方案空间 + OQ 裁定，<b>每条裁定标注 spec 关系</b> <span class="tag new">硬项</span>：within-spec（spec 已定，只选路径，引条款号）/ 需修订（要改 spec 语义 → 先过 spec 修订流程，spec 改完才生效）/ spec 未载 → 留根登记</li>
+          <li><b>③ 怎么走</b>——方案空间 + OQ 裁定，<b>每条裁定标注 spec 关系</b> <span class="tag new">硬项</span>：within-spec（spec 已定，只选路径，引条款号）/ 需修订（要改 spec 语义 → 先过 spec 修订流程，<b>spec 改完前受影响包不得 launch</b>）/ spec 未载 → 留根登记</li>
           <li>非目标 + 契约 / spec 触面申报</li>
           <li><s>§4 拆包预判</s><span class="tag hot">降级</span>→ 只作意图提示，不再当拆包权威</li>
         </ul>

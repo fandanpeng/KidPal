@@ -1,9 +1,10 @@
 # PROPOSAL · 260912-gov-review-portfolio-decomposition-chain
 
-> **状态：DRAFT v0.4 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
+> **状态：DRAFT v0.5 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
 > **v0.1→v0.2 修订**（human 五点反馈，260912）：① workstream 效果目标升级为业务目的清单硬项；② 方案空间裁定增 spec 关系标注（两源以 spec 为权威）；③ 锚 2 核对者改 planner（agent）、非 human；④ merge 后 portfolio-planner 例行唤起改为状态机械渲染 + 事件驱动唤起；⑤ 移除 deputy 预裁参考（未定型实验，human 指示不作设计依据）。
 > **v0.2→v0.3 修订**（260912 human 确认）：⑥ 「下一包 launch 唤起」收窄撤销——常规 ready 由 reconcile 机械计算 + human 照常点火（现行流程不变），**绿路径上 portfolio-planner 沉默**；其再出场条件收窄为「调度异常时由 human 唤起重裁」（锚 3 deviation 影响后续包 / 依赖与实际不符 / WIP·mergeOrder 需重排）。
 > **v0.3→v0.4 修订**（260912 human 确认）：⑦ workstream PROPOSAL 内容硬项重钉为「**通用三问 + 分型**」——① 要达成什么（业务目的清单）② 现在在哪（随 workType 三子形，「问题与根因」仅整改型合法）③ 怎么走（方案空间 + 裁定）；frontmatter 增 `workType`（可混合、按业务目的逐条标）。替换 v0.2 隐含的整改型通用骨架（260911 系整改型形态，不具通用性）。
+> **v0.4→v0.5 修订**（260912 human 确认）：⑧ `需修订` 类裁定的执行语义钉死为**受影响包的硬 launch 依赖**——spec 修订未冻结（review + human 冻结落地），承载该裁定的包不得 launch；依赖粒度 = 包（经 decision-coverage 映射登记 launchPreconditions，非整 workstream 陪等）；spec 修订在 PROPOSAL 冻结后尽早并行发起（在受影响包关键路径上）。堵死「包先跑、spec 事后补」。
 > **承载 ARQ**：T2 承接并收紧 ARQ-260911-split-package-implementation-prose-gap（落地后结清该条）；T3 checklist 消化 ARQ-260911-cross-package-behavior-owner-gap 的拆包期判据（该 ARQ 派单侧义务保留）；与 ARQ-260911-tooth-strength-below-contract / ARQ-260911-verdict-uncovered-surface 相邻不重叠。
 > **review 轨**：Track B 常驻轻路径（governance profile）。
 > **riskTier**: low-medium（新增制品义务 + 人读流程门，不改任何既有机械闸判定语义、不触契约面）。
@@ -54,7 +55,7 @@ PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / �
 - **第一问 · 要达成什么**——业务目的清单：枚举式、每条含可观察判据（人能看到/听到/按到什么），禁一句概括了事（R4 MVP 实证：目标句写成拆包动作自述，业务效果无处落纸）。清单是 roadmap 每包效果段的**唯一上游源**。每条目的来源随分型：整改型引缺陷证据，新建型引 spec story（只加判据、不改语义）。
 - **第二问 · 现在在哪**——形态随 workType 分三子形：**新建型** = 现状盘点（已就绪基础、可复用资产、前置批次状态）+ 差距 = 目标能力 − 现状（「还没建」，非「坏了」）；**整改型** = 问题行为 + 证据锚（file:line / 实测）+ 根因——「问题与根因」标题仅此形态合法；**重构型** = 结构性痛点证据 + 为什么现在动。现状盘点即 RTE 拆包的原料输入（供给 R1/R4 的缺口面）。
 - **第三问 · 怎么走**——方案空间 + OQ 裁定 + 非目标 + 逃生门申报。
-- **方案空间裁定标注 spec 关系**：PROPOSAL §方案空间每条裁定必须带标注，写明它与 spec 的关系是三种里的哪一种——`within-spec`（spec 已定此语义，裁定只选实现路径，不动语义——标注时引 spec 条款号）/ `需修订`（裁定要改 spec 已钉死的语义 → **必须先走 spec 修订流程**：Track B `/arch-change` → 对抗 review → human 冻结；spec 改完这条裁定才生效，**不得在 PROPOSAL 内自冻成第二事实源**）/ `spec-silent`（spec 未载此事——留根登记，由门 1 或收口定是否补进 spec）。两源并存时的权威序恒为：**spec = 行为语义权威，PROPOSAL = 路径选择记录**——260911 批 §7 申报机制（OQ4=A 判 spec 零修订、OQ3=c 判无语义变更）是本标注的先例形态，本项将其升格为逐条硬项。
+- **方案空间裁定标注 spec 关系**：PROPOSAL §方案空间每条裁定必须带标注，写明它与 spec 的关系是三种里的哪一种——`within-spec`（spec 已定此语义，裁定只选实现路径，不动语义——标注时引 spec 条款号）/ `需修订`（裁定要改 spec 已钉死的语义 → **必须先走 spec 修订流程**：Track B `/arch-change` → 对抗 review → human 冻结；spec 改完这条裁定才生效，**不得在 PROPOSAL 内自冻成第二事实源**。**执行语义 = 受影响包的硬 launch 依赖**：spec 修订未冻结，承载该裁定的包不得 launch——依赖登记到该包 `launchPreconditions`（粒度 = 包，经 decision-coverage 映射，非整 workstream 陪等；先例形态：260911 PKG-4 前置挂批次① overlay 修复）；spec 修订在 PROPOSAL 冻结后尽早并行发起，与拆包 / 门 1 / 其它包执行同时进行。堵死「包先跑、spec 事后补」）/ `spec-silent`（spec 未载此事——留根登记，由门 1 或收口定是否补进 spec）。两源并存时的权威序恒为：**spec = 行为语义权威，PROPOSAL = 路径选择记录**——260911 批 §7 申报机制（OQ4=A 判 spec 零修订、OQ3=c 判无语义变更）是本标注的先例形态，本项将其升格为逐条硬项。
 - **workType 往下游传**：整改型必有红基线（有既有行为可红）、门 1 侧重「根因 ↔ 改法」对得上；新建型无红基线、门 1 侧重切片与覆盖；重构型门 1 侧重结构性质可验收。
 
 **roadmap 模板**：新增 `docs/templates/WORKSTREAM-ROADMAP.template.md`，固定节：① workstream 效果目标与现状差距（引用投影自 PROPOSAL §0 的业务目的清单，不复制）；② 列车图（依赖 + 批次，由 render-roadmap.mjs 从 taskpackage.json 的 dependsOn/mergeOrder 机械渲染，人工禁改该节）；③ 每包条目——changeId、mergeOrder、一段「完成后人能看到什么」的业务效果（**人只写机器写不出的这一段**，从 workstream 业务目的清单分解而来）、demo 证据形态（模拟器截图 / host runner 输出 / 串口日志 / 真机轮；真机轮配额默认仅核心包）、达成状态（pending / achieved / deviation+裁定锚，由脚本从 board/merge 状态机械渲染）；④ 非目标与批次归属。新增 `.claude/scripts/render-roadmap.mjs`（读 workstream 下 taskpackage JSON 集 → 产出 mermaid 依赖图块 + 达成状态渲染，含 `--self-check`）。`task-intake-and-slicing.md` 补注记：PROPOSAL §拆包预判降级为意图提示，拆包权威 = 四件套经门 1 冻结。
@@ -69,7 +70,7 @@ PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / �
 
 ### T3 · 拆包 review 门（门 1）
 
-拆包四件套齐备（roadmap.md + taskpackage.json × N + plan.md × N + decision-coverage.json）后、commit-before-launch 前，插一道 architect 轻量 review：固定 checklist 五项——① 切片逻辑（按行为切还是按页面/问题切，图上见，偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额仅核心包）。checklist 侧重随 workType 分流（T1 workType 下传：整改型核根因↔改法 + 红基线在位；新建型核切片与覆盖）。GREEN 后 human 过目切法（立项 ack 的组成部分：**方向 + 切法一次前端对齐**——切法自此有票），方可 commit-before-launch。checklist 落 `task-intake-and-slicing.md` 新节，`portfolio-planner.md` Step 6 前插「门 1」步骤引用。存疑向严：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
+拆包四件套齐备（roadmap.md + taskpackage.json × N + plan.md × N + decision-coverage.json）后、commit-before-launch 前，插一道 architect 轻量 review：固定 checklist 五项——① 切片逻辑（按行为切还是按页面/问题切，图上见，偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额仅核心包）。checklist 侧重随 workType 分流（T1 workType 下传：整改型核根因↔改法 + 红基线在位；新建型核切片与覆盖）。`需修订` 类裁定的 spec 修订 = 受影响包 launch 前置依赖（见 T1），由 check-launch 核验「spec 修订已冻结」才放行 launch。GREEN 后 human 过目切法（立项 ack 的组成部分：**方向 + 切法一次前端对齐**——切法自此有票），方可 commit-before-launch。checklist 落 `task-intake-and-slicing.md` 新节，`portfolio-planner.md` Step 6 前插「门 1」步骤引用。存疑向严：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
 
 **目标文件**：`.claude/agents/portfolio-planner.md`（改）、`.claude/references/task-intake-and-slicing.md`（改）
 
