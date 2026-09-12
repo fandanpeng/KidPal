@@ -1,7 +1,8 @@
 # PROPOSAL · 260912-gov-review-portfolio-decomposition-chain
 
-> **状态：DRAFT v0.2 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
+> **状态：DRAFT v0.3 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
 > **v0.1→v0.2 修订**（human 五点反馈，260912）：① workstream 效果目标升级为业务目的清单硬项；② 方案空间裁定增 spec 关系标注（两源以 spec 为权威）；③ 锚 2 核对者改 planner（agent）、非 human；④ merge 后 portfolio-planner 例行唤起改为状态机械渲染 + 事件驱动唤起；⑤ 移除 deputy 预裁参考（未定型实验，human 指示不作设计依据）。
+> **v0.2→v0.3 修订**（260912 human 确认）：⑥ 「下一包 launch 唤起」收窄撤销——常规 ready 由 reconcile 机械计算 + human 照常点火（现行流程不变），**绿路径上 portfolio-planner 沉默**；其再出场条件收窄为「调度异常时由 human 唤起重裁」（锚 3 deviation 影响后续包 / 依赖与实际不符 / WIP·mergeOrder 需重排）。
 > **承载 ARQ**：T2 承接并收紧 ARQ-260911-split-package-implementation-prose-gap（落地后结清该条）；T3 checklist 消化 ARQ-260911-cross-package-behavior-owner-gap 的拆包期判据（该 ARQ 派单侧义务保留）；与 ARQ-260911-tooth-strength-below-contract / ARQ-260911-verdict-uncovered-surface 相邻不重叠。
 > **review 轨**：Track B 常驻轻路径（governance profile）。
 > **riskTier**: low-medium（新增制品义务 + 人读流程门，不改任何既有机械闸判定语义、不触契约面）。
@@ -72,7 +73,7 @@ PROPOSAL（.planning 通道）只管「为什么、裁了什么」，维持冻�
 
 - **锚 2 · 验收方向核**：acceptance 冻结后、builder 动工前，**planner（agent）**对照 roadmap.md 本包效果段核一遍验收方向一致——核对者是 planner 而非 human（验收语义方向不是 human 能逐条核清的，260912 human 反馈裁定），planner 持有 roadmap 效果段原文与派发上下文，且核对对象是 acceptance-author 的产出而非自己的，角色不冲突；对不上或存疑 → 升 architect 复核，仍不清 → 走既有升级链。`planner.md` intake 流程补条款；派 acceptance-author 的 brief 必须携带 roadmap 本包效果段（pod-retro 教训 2 的稳定落点）。
 - **锚 3 · demo 对账**：包收口（integrator review-packet / supervisor 消费）必含 demo 对账行——demo 证据（形态按 roadmap 拆包时定的）+ 与本包效果段的一致性结论；不一致 = 走既有 escalation 通道就地升裁（裁断记 pod-events、roadmap 状态标 deviation+裁定锚），禁攒到集成夜。升级通道的具体形态不在本批定义（deputy 影子预裁系未定型实验，260912 human 指示不作为设计依据）。`pod-coordination.md` 补约定。
-- **列车视角**：roadmap 达成状态由 render-roadmap.mjs 从 board/merge 状态 + 锚 3 对账记录**机械渲染**（包 merge 即 achieved、有 deviation 记录即标注），**不做 per-merge 例行唤起**——与 roadmap 的匹配判断已在锚 3 于合并前完成，不后置到 merge 之后。portfolio-planner 仅两类事件被唤起：① 锚 3 记 deviation 且需裁断或改 roadmap 时；② 下一包 launch 决策时（本就需调度动作）。
+- **列车视角**：roadmap 达成状态由 render-roadmap.mjs 从 board/merge 状态 + 锚 3 对账记录**机械渲染**（包 merge 即 achieved、有 deviation 记录即标注）；**下一包 ready 由 reconcile 机械计算**（依赖已满足 + WIP 未满 + mergeOrder 最靠前），human 照常点火（worktree add + 起 planner，现行流程不变）——**绿路径上 portfolio-planner 沉默，不 per-merge、不 per-launch 例行出场**；与 roadmap 的匹配判断已在锚 3 于合并前完成，不后置到 merge 之后。portfolio-planner 仅在**调度异常**时由 human 唤起重裁：锚 3 deviation 影响后续包（依赖它的包是否照原计划跑）、依赖关系与实际不符、WIP / mergeOrder 需重排。
 
 **目标文件**：`.claude/agents/planner.md`（改）、`.claude/references/pod-coordination.md`（改）
 

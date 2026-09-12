@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案 v0.2</title>
+<title>拆包→执行链 · 治理方案草案 v0.3</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -84,8 +84,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案（v0.2）</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.2，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案草案（v0.3）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.3，讨论中）</div>
 
   <div class="chain">
 
@@ -159,13 +159,15 @@
 
   <!-- 闭环 -->
   <div class="loopband">
-    <b>闭环（列车视角）</b>——匹配判断在锚 3（合并前）完成，merge 后只做状态与调度：
+    <b>闭环（列车视角）</b>——匹配判断在锚 3（合并前）完成；绿路径上 RTE 沉默，列车靠 board + 脚本自己跑：
     <div class="steps">
       <span class="chip">包 merge</span><span class="ar">→</span>
-      <span class="chip machine">render-roadmap.mjs 机械渲染达成状态（merge = achieved / deviation 有记录）——无 agent 例行唤起</span><span class="ar">→</span>
-      <span class="chip">下一包 launch（portfolio-planner 事件驱动唤起之二）</span>
+      <span class="chip machine">状态机械渲染（render-roadmap：merge = achieved / deviation 标注）</span><span class="ar">→</span>
+      <span class="chip machine">reconcile 机械算下一包 ready（依赖满足 + WIP 未满 + mergeOrder 最靠前）</span><span class="ar">→</span>
+      <span class="chip">human 照常点火下一包（现行流程不变，RTE 不出场）</span><span class="ar">→</span>
+      <span class="chip">全列 achieved → workstream 收口轮</span>
     </div>
-    <div class="tail">portfolio-planner 仅两类事件被唤起：① 锚 3 记 deviation 且需裁断或改 roadmap；② 下一包 launch 决策。全列 achieved → workstream 收口轮。</div>
+    <div class="tail">portfolio-planner 仅在<b>调度异常</b>时由 human 唤起重裁：锚 3 deviation 影响后续包 / 依赖关系与实际不符 / WIP·mergeOrder 需重排。</div>
   </div>
 
   <!-- 失败映射 -->
