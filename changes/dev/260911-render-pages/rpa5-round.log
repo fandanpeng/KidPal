@@ -1,0 +1,116 @@
+I (61252) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-612I (105142) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-105142 key=0 gesture=1
+I (105322) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-105322 action=1
+I (105602) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (107942) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-107942 key=0 gesture=1
+I (108132) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-108132 action=1
+I (108132) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (109612) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-109612 key=0 gesture=1
+I (109902) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-109902 key=0 gesture=2
+I (112432) SystemInfo: free sram: 64055 minimal sram: 54251
+I (122432) SystemInfo: free sram: 63523 minimal sram: 54251
+I (125622) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-125622 action=1
+I (125622) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (126862) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-126862 key=1 gesture=1
+I (127052) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-127052 action=3
+I (127052) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (128172) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-128172 key=1 gesture=1
+I (128352) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-128352 action=3
+I (128352) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (130822) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-130822 key=1 gesture=1
+I (131002) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-131002 action=3
+I (131002) kidpal_rn: cycle -> STORY (P3) count=0
+I (132432) SystemInfo: free sram: 64543 minimal sram: 54251
+I (132952) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-132952 key=1 gesture=1
+I (133142) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-133142 action=3
+I (133182) kidpal_rn: cycle -> HOME (P1)
+I (135482) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-135482 key=0 gesture=1
+I (135672) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-135672 action=1
+I (135942) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (140522) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-140522 key=0 gesture=1
+I (140702) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-140702 action=1
+I (140702) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (142432) SystemInfo: free sram: 62911 minimal sram: 54251
+I (152432) SystemInfo: free sram: 62451 minimal sram: 54251
+I (162432) SystemInfo: free sram: 63711 minimal sram: 54251
+I (172432) SystemInfo: free sram: 63391 minimal sram: 54251
+I (173882) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-173882 key=1 gesture=1
+I (174072) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-174072 action=3
+I (174072) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (182432) SystemInfo: free sram: 63115 minimal sram: 54251
+I (192432) SystemInfo: free sram: 64775 minimal sram: 54251
+I (202432) SystemInfo: free sram: 63911 minimal sram: 54251
+I (212432) SystemInfo: free sram: 63071 minimal sram: 54251
+I (222432) SystemInfo: free sram: 63239 minimal sram: 54251
+I (228812) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-228812 key=1 gesture=1
+I (228992) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-228992 action=3
+I (228992) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (232432) SystemInfo: free sram: 64731 minimal sram: 54251
+I (242432) SystemInfo: free sram: 62851 minimal sram: 54251
+I (252432) SystemInfo: free sram: 62711 minimal sram: 54251
+I (252892) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-252892 key=1 gesture=1
+I (253082) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-253082 action=3
+I (253092) kidpal_rn: cycle -> STORY (P3) count=0
+I (262432) SystemInfo: free sram: 62651 minimal sram: 54251
+I (272432) SystemInfo: free sram: 63227 minimal sram: 54251
+I (278212) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-278212 key=1 gesture=1
+I (278392) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-278392 action=3
+I (278432) kidpal_rn: cycle -> HOME (P1)
+I (282432) SystemInfo: free sram: 63311 minimal sram: 54251
+I (292542) SystemInfo: free sram: 62915 minimal sram: 54251
+I (302622) SystemInfo: free sram: 62415 minimal sram: 54251
+I (312432) SystemInfo: free sram: 62403 minimal sram: 54251
+I (322432) SystemInfo: free sram: 63059 minimal sram: 54251
+I (332432) SystemInfo: free sram: 62059 minimal sram: 54251
+I (342432) SystemInfo: free sram: 63619 minimal sram: 54251
+I (352432) SystemInfo: free sram: 63999 minimal sram: 54251
+I (362432) SystemInfo: free sram: 62843 minimal sram: 54251
+I (372432) SystemInfo: free sram: 62635 minimal sram: 54251
+I (382432) SystemInfo: free sram: 62871 minimal sram: 54251
+I (392432) SystemInfo: free sram: 62647 minimal sram: 54251
+I (402432) SystemInfo: free sram: 63427 minimal sram: 54251
+I (412432) SystemInfo: free sram: 63975 minimal sram: 54251
+I (422442) SystemInfo: free sram: 61879 minimal sram: 54251
+I (432642) SystemInfo: free sram: 62211 minimal sram: 54251
+I (442772) SystemInfo: free sram: 63235 minimal sram: 54251
+I (452432) SystemInfo: free sram: 64183 minimal sram: 54251
+I (462432) SystemInfo: free sram: 63411 minimal sram: 54251
+I (472432) SystemInfo: free sram: 63563 minimal sram: 54251
+I (482432) SystemInfo: free sram: 63295 minimal sram: 54251
+I (492432) SystemInfo: free sram: 62223 minimal sram: 54251
+I (502432) SystemInfo: free sram: 62475 minimal sram: 54251
+I (512432) SystemInfo: free sram: 62219 minimal sram: 54251
+I (522432) SystemInfo: free sram: 61775 minimal sram: 54251
+I (532432) SystemInfo: free sram: 62483 minimal sram: 54251
+I (542492) SystemInfo: free sram: 62371 minimal sram: 54251
+I (552572) SystemInfo: free sram: 61775 minimal sram: 54251
+I (562652) SystemInfo: free sram: 62831 minimal sram: 54251
+I (572682) SystemInfo: free sram: 63623 minimal sram: 54251
+I (582722) SystemInfo: free sram: 62703 minimal sram: 54251
+I (592712) SystemInfo: free sram: 63491 minimal sram: 54251
+I (602722) SystemInfo: free sram: 64479 minimal sram: 54251
+I (612432) SystemInfo: free sram: 64167 minimal sram: 54251
+I (622432) SystemInfo: free sram: 64067 minimal sram: 54251
+I (632432) SystemInfo: free sram: 63463 minimal sram: 54251
+I (642432) SystemInfo: free sram: 62291 minimal sram: 54251
+I (652432) SystemInfo: free sram: 61835 minimal sram: 53927
+I (662432) SystemInfo: free sram: 64039 minimal sram: 53927
+I (672432) SystemInfo: free sram: 62443 minimal sram: 53927
+I (682432) SystemInfo: free sram: 62675 minimal sram: 44455
+I (692432) SystemInfo: free sram: 63911 minimal sram: 44455
+I (702432) SystemInfo: free sram: 64519 minimal sram: 44455
+I (712532) SystemInfo: free sram: 64447 minimal sram: 44455
+I (722602) SystemInfo: free sram: 63451 minimal sram: 44455
+I (732682) SystemInfo: free sram: 63259 minimal sram: 44455
+I (742702) SystemInfo: free sram: 64443 minimal sram: 44455
+I (752432) SystemInfo: free sram: 62635 minimal sram: 44455
+I (762432) SystemInfo: free sram: 62563 minimal sram: 44455
+I (772432) SystemInfo: free sram: 64939 minimal sram: 44455
+I (782432) SystemInfo: free sram: 64767 minimal sram: 44455
+I (792432) SystemInfo: free sram: 64239 minimal sram: 44455
+I (802432) SystemInfo: free sram: 62247 minimal sram: 44455
+I (812432) SystemInfo: free sram: 63923 minimal sram: 44455
+I (822452) SystemInfo: free sram: 63687 minimal sram: 44455
+I (832472) SystemInfo: free sram: 63243 minimal sram: 44455
+I (842532) SystemInfo: free sram: 64299 minimal sram: 44455
+I (852642) SystemInfo: free sram: 61859 minimal sram: 44455
+I (862672) SystemInfo: free sram: 62939 minimal sram: 44455
