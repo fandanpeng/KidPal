@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案 v0.5</title>
+<title>拆包→执行链 · 治理方案草案 v0.6</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -84,8 +84,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案（v0.5）</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.5，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案草案（v0.6）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.6，讨论中）</div>
 
   <div class="chain">
 
@@ -93,7 +93,7 @@
     <div class="card c1">
       <div class="stepno">第 ① 步 · 立项</div>
       <h2>PROPOSAL（主线程起草 + human grilling）</h2>
-      <div class="actor">主线程起草 → human 裁 OQ → <b>architect 分流 review</b>（/triage-change，已有，不动）→ 冻结</div>
+      <div class="actor"><b>主线程</b>按 WORKSTREAM-PROPOSAL.template 起草（输入常为人机讨论产物）→ human 裁 OQ → <b>architect 分流 review</b>（/triage-change，已有）→ 冻结</div>
       <div class="role"><b>角色：三问 + 裁定 · 冻结后不动</b>frontmatter 标 workType（new-capability / remediation / refactor，可混合、按业务目的逐条标）。</div>
       <div class="art">
         <div class="fname">.planning/&lt;ws&gt;/PROPOSAL.md = 通用三问 + 分型：</div>
@@ -114,7 +114,7 @@
     <div class="card c2">
       <div class="stepno">第 ② 步 · 拆包</div>
       <h2>portfolio-planner（RTE）拆包</h2>
-      <div class="actor">输入 = 冻结 PROPOSAL（+ 图索引只读探查）</div>
+      <div class="actor">输入 = 冻结 PROPOSAL → <b>intake 核模板符合性</b>（缺业务目的清单 / workType / spec 标注 → fail-closed 打回，不猜不代写）+ 图索引只读探查</div>
       <div class="role"><b>角色：把裁决变成列车计划</b>一次拆包产出「四件套」，缺一不齐不得交 launch。</div>
       <div class="art">
         <div class="fname">拆包四件套：</div>

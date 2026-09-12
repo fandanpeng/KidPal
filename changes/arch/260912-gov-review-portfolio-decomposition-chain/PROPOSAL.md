@@ -1,10 +1,11 @@
 # PROPOSAL · 260912-gov-review-portfolio-decomposition-chain
 
-> **状态：DRAFT v0.5 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
+> **状态：DRAFT v0.6 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
 > **v0.1→v0.2 修订**（human 五点反馈，260912）：① workstream 效果目标升级为业务目的清单硬项；② 方案空间裁定增 spec 关系标注（两源以 spec 为权威）；③ 锚 2 核对者改 planner（agent）、非 human；④ merge 后 portfolio-planner 例行唤起改为状态机械渲染 + 事件驱动唤起；⑤ 移除 deputy 预裁参考（未定型实验，human 指示不作设计依据）。
 > **v0.2→v0.3 修订**（260912 human 确认）：⑥ 「下一包 launch 唤起」收窄撤销——常规 ready 由 reconcile 机械计算 + human 照常点火（现行流程不变），**绿路径上 portfolio-planner 沉默**；其再出场条件收窄为「调度异常时由 human 唤起重裁」（锚 3 deviation 影响后续包 / 依赖与实际不符 / WIP·mergeOrder 需重排）。
 > **v0.3→v0.4 修订**（260912 human 确认）：⑦ workstream PROPOSAL 内容硬项重钉为「**通用三问 + 分型**」——① 要达成什么（业务目的清单）② 现在在哪（随 workType 三子形，「问题与根因」仅整改型合法）③ 怎么走（方案空间 + 裁定）；frontmatter 增 `workType`（可混合、按业务目的逐条标）。替换 v0.2 隐含的整改型通用骨架（260911 系整改型形态，不具通用性）。
 > **v0.4→v0.5 修订**（260912 human 确认）：⑧ `需修订` 类裁定的执行语义钉死为**受影响包的硬 launch 依赖**——spec 修订未冻结（review + human 冻结落地），承载该裁定的包不得 launch；依赖粒度 = 包（经 decision-coverage 映射登记 launchPreconditions，非整 workstream 陪等）；spec 修订在 PROPOSAL 冻结后尽早并行发起（在受影响包关键路径上）。堵死「包先跑、spec 事后补」。
+> **v0.5→v0.6 修订**（260912 human 指示 + 纠正）：⑨ workstream PROPOSAL **模板化**——新增 `docs/templates/WORKSTREAM-PROPOSAL.template.md`（三问 + 分型成模板）。**起草方 = 主线程**（输入常为 human 与主线程讨论的产物，起草权不转移至 portfolio-planner——260912 human 纠正，避免下游写上游输入的倒置）；portfolio-planner **intake 增模板符合性核验**（缺业务目的清单 / workType / spec 关系标注 → fail-closed 打回，不猜不代写）。/triage-change ③档起草 PROPOSAL 时按本模板。
 > **承载 ARQ**：T2 承接并收紧 ARQ-260911-split-package-implementation-prose-gap（落地后结清该条）；T3 checklist 消化 ARQ-260911-cross-package-behavior-owner-gap 的拆包期判据（该 ARQ 派单侧义务保留）；与 ARQ-260911-tooth-strength-below-contract / ARQ-260911-verdict-uncovered-surface 相邻不重叠。
 > **review 轨**：Track B 常驻轻路径（governance profile）。
 > **riskTier**: low-medium（新增制品义务 + 人读流程门，不改任何既有机械闸判定语义、不触契约面）。
@@ -12,12 +13,14 @@
 > 配套流程图：`decomposition-chain.html`（本目录内，随批入库——260912 human 指示）。
 
 ```landing-manifest
+docs/templates/WORKSTREAM-PROPOSAL.template.md
 docs/templates/WORKSTREAM-ROADMAP.template.md
 .claude/scripts/render-roadmap.mjs
 .claude/agents/portfolio-planner.md
 .claude/agents/planner.md
 .claude/references/task-intake-and-slicing.md
 .claude/references/pod-coordination.md
+.claude/skills/triage-change/SKILL.md
 ```
 
 ---
@@ -50,7 +53,9 @@ docs/templates/WORKSTREAM-ROADMAP.template.md
 
 PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / 现在在哪 / 怎么走），维持冻结；「列车怎么跑、走到哪了」独立为活文档 roadmap.md，落 `.planning/<workstream>/roadmap.md`。
 
-**workstream PROPOSAL 内容硬项 = 通用三问 + 分型**（落 `task-intake-and-slicing.md`，/triage-change 起草侧执行；frontmatter 增 `workType: new-capability / remediation / refactor`，可混合——按业务目的逐条标新建/整改，混合是常态先例：260911 = 三个整改目的 + A2 新建）：
+**workstream PROPOSAL 内容硬项 = 通用三问 + 分型**（**落新模板 `docs/templates/WORKSTREAM-PROPOSAL.template.md`**；`task-intake-and-slicing.md` 注记引用；frontmatter 增 `workType: new-capability / remediation / refactor`，可混合——按业务目的逐条标新建/整改，混合是常态先例：260911 = 三个整改目的 + A2 新建）：
+
+- **起草方与 intake 核验（v0.6 human 指示 + 纠正）**：**起草方 = 主线程**（/triage-change ③档路径）——输入常为 human 与主线程讨论的产物（260912 本批 retro 即实例形态），主线程按模板起草 → human grilling（AskUserQuestion 裁 OQ）→ architect 分流 review → FROZEN，起草权不转移至 portfolio-planner（下游写上游输入是倒置）。**portfolio-planner intake 增模板符合性核验**：业务目的清单 / workType / spec 关系标注缺失或不合规 → fail-closed 打回主线程补齐，不猜、不代写。
 
 - **第一问 · 要达成什么**——业务目的清单：枚举式、每条含可观察判据（人能看到/听到/按到什么），禁一句概括了事（R4 MVP 实证：目标句写成拆包动作自述，业务效果无处落纸）。清单是 roadmap 每包效果段的**唯一上游源**。每条目的来源随分型：整改型引缺陷证据，新建型引 spec story（只加判据、不改语义）。
 - **第二问 · 现在在哪**——形态随 workType 分三子形：**新建型** = 现状盘点（已就绪基础、可复用资产、前置批次状态）+ 差距 = 目标能力 − 现状（「还没建」，非「坏了」）；**整改型** = 问题行为 + 证据锚（file:line / 实测）+ 根因——「问题与根因」标题仅此形态合法；**重构型** = 结构性痛点证据 + 为什么现在动。现状盘点即 RTE 拆包的原料输入（供给 R1/R4 的缺口面）。
@@ -60,7 +65,7 @@ PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / �
 
 **roadmap 模板**：新增 `docs/templates/WORKSTREAM-ROADMAP.template.md`，固定节：① workstream 效果目标与现状差距（引用投影自 PROPOSAL §0 的业务目的清单，不复制）；② 列车图（依赖 + 批次，由 render-roadmap.mjs 从 taskpackage.json 的 dependsOn/mergeOrder 机械渲染，人工禁改该节）；③ 每包条目——changeId、mergeOrder、一段「完成后人能看到什么」的业务效果（**人只写机器写不出的这一段**，从 workstream 业务目的清单分解而来）、demo 证据形态（模拟器截图 / host runner 输出 / 串口日志 / 真机轮；真机轮配额默认仅核心包）、达成状态（pending / achieved / deviation+裁定锚，由脚本从 board/merge 状态机械渲染）；④ 非目标与批次归属。新增 `.claude/scripts/render-roadmap.mjs`（读 workstream 下 taskpackage JSON 集 → 产出 mermaid 依赖图块 + 达成状态渲染，含 `--self-check`）。`task-intake-and-slicing.md` 补注记：PROPOSAL §拆包预判降级为意图提示，拆包权威 = 四件套经门 1 冻结。
 
-**目标文件**：`docs/templates/WORKSTREAM-ROADMAP.template.md`（新增）、`.claude/scripts/render-roadmap.mjs`（新增）、`.claude/references/task-intake-and-slicing.md`（改）
+**目标文件**：`docs/templates/WORKSTREAM-PROPOSAL.template.md`（新增）、`docs/templates/WORKSTREAM-ROADMAP.template.md`（新增）、`.claude/scripts/render-roadmap.mjs`（新增）、`.claude/references/task-intake-and-slicing.md`（改）、`.claude/skills/triage-change/SKILL.md`（改，③档起草按模板）、`.claude/agents/portfolio-planner.md`（改，Step 1 intake 增模板符合性核验）
 
 ### T2 · plan.md 全量义务（收紧 ARQ-260911-split-package-implementation-prose-gap）
 
@@ -86,12 +91,14 @@ PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / �
 
 | 面 | 文件 | 类别 | 说明 |
 |---|---|---|---|
+| 模板 | docs/templates/WORKSTREAM-PROPOSAL.template.md | 新增（G2） | 三问 + 分型骨架；消费方：主线程（起草）、human grilling、portfolio-planner（intake 核验）、门 1 判官 |
 | 模板 | docs/templates/WORKSTREAM-ROADMAP.template.md | 新增（G2） | 消费方：portfolio-planner（产）、门 1 判官 + human（审）、planner/acceptance-author（锚） |
 | 脚本 | .claude/scripts/render-roadmap.mjs | 新增（G3） | advisory 生成器非门；消费方：portfolio-planner、roadmap 复核 |
-| agent def 正文 | .claude/agents/portfolio-planner.md | G2 | Step 4 全量条款 + Step 6 前门 1 步骤；不动 frontmatter（authoring 纪律逐字段隔离） |
+| agent def 正文 | .claude/agents/portfolio-planner.md | G2 | Step 1 intake 增模板符合性核验（fail-closed）+ Step 4 全量条款 + Step 6 前门 1 步骤；不动 frontmatter（authoring 纪律逐字段隔离） |
 | agent def 正文 | .claude/agents/planner.md | G2 | 锚 2 条款 + brief 携带效果段义务；不动 frontmatter |
-| reference | .claude/references/task-intake-and-slicing.md | G2 | 双轨注记 + planRef ③路径注记 + 门 1 checklist 新节 |
-| reference | .claude/references/pod-coordination.md | G2 | 锚 3 demo 对账约定 + reconcile 再唤起 + deputy 预裁成文化 |
+| reference | .claude/references/task-intake-and-slicing.md | G2 | 双轨注记 + 模板引用 + planRef ③路径注记 + 门 1 checklist 新节 |
+| reference | .claude/references/pod-coordination.md | G2 | 锚 3 demo 对账约定 + reconcile 再唤起 + 偏差升级走既有 escalation 通道 |
+| skill | .claude/skills/triage-change/SKILL.md | G2 | ③档起草 PROPOSAL 按 WORKSTREAM-PROPOSAL.template.md |
 
 ## 4. human 取舍点（OQ）
 
@@ -100,6 +107,7 @@ PROPOSAL（.planning 通道）只管「三问 + 裁定」（要达成什么 / �
 | OQ1 门 1 深度 | (a) architect 轻量 checklist review；(b) 完整对抗 review（challenger↔defender） | (a) | 一次派发 vs 每 workstream 一场重流程；存疑向严升级通道已有，「拆包是方向性决策」可支持 (b)，取决于愿为方向错误付多少保险费 |
 | OQ2 demo 对账消费 | (a) human 每包过一眼（约五分钟/包）；(b) planner 产对账、human 仅核心包必看 + 抽查 | (a) | show demo 的价值在有人真看；全交 agent 会退化成又一层绿灯 |
 | OQ3 plan.md 豁免 | (a) 全取消；(b) 保留极窄例外（装配型自证 + 门 1 复核） | (a) | 豁免判断即拆包 agent 判断，判错裸奔（本批 PKG-1 误豁免实例在册）；装配型包 plan.md 约十行，成本可付 |
+| OQ4 门 1 加入后，冻结前 architect 分流 review 去留 | (a) 保留独立 review（起草 → grilling → architect 审 → 冻结）；(b) 并入门 1（拆包后一次审 PROPOSAL 意图 + 切法） | (a) | 260911 的 F6/F7/F8 均为冻结前 review 喂进 PROPOSAL 的实质改进——裁定冻结前有 architect 对抗，价值已证；(b) 省一次派发，但裁定冻结后再翻案成本高、且门 1 责任面过载 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
