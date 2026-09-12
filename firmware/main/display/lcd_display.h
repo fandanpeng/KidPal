@@ -48,8 +48,12 @@ protected:
 public:
     ~LcdDisplay();
     virtual void SetEmotion(const char* emotion) override;
-    virtual void SetChatMessage(const char* role, const char* content) override; 
+    virtual void SetChatMessage(const char* role, const char* content) override;
     virtual void SetPreviewImage(std::unique_ptr<LvglImage> image) override;
+    /* 五态演出 (包 260911-render-pages RP-A9): 重载 SetStatus 把设备态 (聆听/播报)
+     * 映射为语音轮场景, 经 kidpal_voice_state_look 驱动姿态 + 键帽条 + 气泡。additive,
+     * 显式调基类并追加五态内容侧面。 */
+    virtual void SetStatus(const char* status) override;
 
     // Add theme switching function
     virtual void SetTheme(Theme* theme) override;

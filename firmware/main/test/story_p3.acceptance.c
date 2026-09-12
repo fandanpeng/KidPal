@@ -305,6 +305,11 @@
  *             固件零「润色/polish」引用; 生字反白高亮已裁: 零高亮态/零 story_text
  *             扩展字段消费; 归档落盘归云: 固件零 stories/ 引用; 扫描器自检防假绿;
  *             设备不直连 OpenClaw/18789; 契约 §1.4 start_recording 到达面在世)
+ *   coverage: RP-A2/F2 (TaskPackage 260911-render-pages, REVISION LOG 2026-09-12)
+ *             -> test F2 (READER 当前屏正文切片机制——非全文直画; 冻结头注 ⑤ 兑现)
+ *   coverage: RP-A2/F5 (TaskPackage 260911-render-pages, REVISION LOG 2026-09-12)
+ *             -> test F5 (渲染切片 = 指针/偏移进 story->text + 大栈缓冲禁词守卫;
+ *             切片契约 kidpal_story_reader_slice, story_page.h additive-only)
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.2]/[C4.4]):
  *   0) builder wiring: add BOTH lines to HOST_ACCEPTANCE_SRCS in
@@ -547,6 +552,19 @@ __attribute__((weak)) int kidpal_story_page_render(const kidpal_story_view_t *v,
 {
     (void)v; (void)list; (void)story;
     return KSTORY_UNIMPLEMENTED;
+}
+
+/* F5 切片契约（REVISION LOG 2026-09-12, RP-A2/F5; story_page.h additive-only 增补）:
+ * READER 渲染切片单源——返回指向 st->text 内部（指针/偏移, 不复制）的第 screen 屏
+ * 正文切片, 长度经 out_len 回传（out_len 可为 NULL）。实现禁止大栈中转缓冲
+ * （ssl_receive 4096B 栈纪律, story_page_stack 守卫同源）。weak 默认 NULL = 未实现。 */
+__attribute__((weak)) const char *kidpal_story_reader_slice(const kidpal_story_text_t *st,
+                                                            int screen,
+                                                            int lines_per_screen,
+                                                            int *out_len)
+{
+    (void)st; (void)screen; (void)lines_per_screen; (void)out_len;
+    return NULL;
 }
 
 /* 包 2 / 包 3 的真实强符号（host runner 里由 view_router.c / session_state_machine.cc /
@@ -1721,6 +1739,120 @@ TEST_CASE("story p3: 盖章帧双圈/-8°/0.8s + 文案 N 与计数器严格同�
         "KSTORY-A6 RED: BOOT 长按 on the stamp frame must not turn pages");
 }
 
+/* F5 有界窗口子串判定（REVISION LOG 2026-09-12 第二条修订——冻结验收自身冲突
+ * 修正）：切片 = 指针/偏移进 story->text（不复制、无 NUL 终止保证），「某行不在
+ * 本屏切片」只能按 out_len 窗口内有界 memcmp 判，不得对指针裸 strstr（会扫过窗口
+ * 边界命中全文尾部——旧判据与指针/偏移契约自相矛盾, 任何符合契约的实现都不可
+ * 满足）。返回 1 = 窗口内命中 needle。 */
+static int kstory_window_contains(const char *p, int len, const char *needle)
+{
+    size_t n;
+    size_t i;
+
+    assert(p != NULL && needle != NULL); /* logic guard */
+    if (len <= 0) {
+        return 0;
+    }
+    n = strlen(needle);
+    if (n == 0) {
+        return 1;
+    }
+    for (i = 0; i + n <= (size_t)len; i++) {
+        if (memcmp(p + i, needle, n) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* -------------------------------------------------------------------------- *
+ * P3-A5/F5 — 渲染切片缓冲尺寸/栈齿（RP-A2/F5, REVISION LOG 2026-09-12 新产）。
+ * story_page_stack.test.c 现只锁解析链（char text_buf[2048] 回潮 + 就地解析语义）;
+ * 本齿锁**渲染切片面**: 切片 = 指针/偏移进 story->text（不复制全文）+ 实现不新增
+ * 大栈缓冲（ssl_receive 4096B 栈纪律, story_page_stack S1/S2 同源纪律的渲染侧延伸）。
+ * 注: 原拟落点 firmware/main/test/story_page_stack.test.c 为普通 .test.c, 超出
+ * acceptance-author 写域（scope 闸拒绝）, 故按 RP-A2 新产齿授权落本冻结文件。
+ * RED today: 切片契约未实现（weak 默认 NULL）+ story_page.c 零切片助手引用。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("story p3: READER 渲染切片 = 指针/偏移进 story->text + 无大栈缓冲 (P3-A5/F5)",
+          "[story_p3][P3-A5][F5][slice][linux]")
+{
+    kidpal_story_text_t *st;
+    const char *p;
+    int len = -1;
+
+    /* --- A. 行为半: 切片契约（指针/偏移语义, 边界/防御） --- */
+    st = (kidpal_story_text_t *)malloc(sizeof(*st));
+    assert(st != NULL); /* logic guard: 齿自身遵守堆分配纪律 */
+    memset(st, 0, sizeof(*st));
+    snprintf(st->id, sizeof(st->id), "f5");
+    snprintf(st->text, sizeof(st->text), "%s", KSTORY_TEXT_TEN_LINES);
+
+    p = kidpal_story_reader_slice(st, 0, 4, &len);
+    TEST_ASSERT_NOT_NULL_MESSAGE(p,
+        "KSTORY-F5 RED: kidpal_story_reader_slice unimplemented (weak 默认 NULL) — "
+        "渲染切片契约未落地 (builder must implement per story_p3.acceptance.c "
+        "REVISION LOG 2026-09-12 / story_page.h additive-only 增补)");
+    TEST_ASSERT_TRUE_MESSAGE(p >= st->text && p < st->text + sizeof(st->text),
+        "KSTORY-F5 RED: slice(0) pointer outside st->text — 切片必须是进 story->text "
+        "的指针/偏移, 不得另立存储（RP-A2 指针/偏移红线）");
+    TEST_ASSERT_TRUE_MESSAGE(len > 0, "KSTORY-F5 RED: slice(0) length must be > 0");
+    TEST_ASSERT_TRUE_MESSAGE(strncmp(p, "第一行", 9) == 0,
+        "KSTORY-F5 RED: slice(0) must start at the first line — 切片偏移错位");
+    /* 「末行不在本屏」按 out_len 有界窗口判（REVISION LOG 2026-09-12 第二条修订
+     * ——冻结验收自身冲突修正）：旧判据对 p 裸 strstr("第十行")，而切片是指针/
+     * 偏移进 story->text（不复制、无 NUL 终止保证），strstr 从 p 扫到串尾必然
+     * 越过窗口命中全文尾部的「第十行」——任何符合指针/偏移契约的实现都不可满足
+     * （自相矛盾齿）。修法 = out_len 窗口内有界 memcmp：切片退化回全文直画时
+     * 窗口必然覆盖全文 → 判据仍然红，收紧方向不变。 */
+    TEST_ASSERT_TRUE_MESSAGE(!kstory_window_contains(p, len, "第十行"),
+        "KSTORY-F5 RED: slice(0) window carries the LAST line — 切片退化回全文直画 "
+        "(F2 同判据, 渲染侧双保险)");
+
+    /* 第 2/3 屏: 偏移单调推进（每屏 4 行: 屏 1 起于第五行、屏 2 起于第九行）。 */
+    p = kidpal_story_reader_slice(st, 1, 4, &len);
+    TEST_ASSERT_TRUE_MESSAGE(p != NULL && strncmp(p, "第五行", 9) == 0,
+        "KSTORY-F5 RED: slice(1) must start at line 5 — 每屏 4 行切片偏移错误");
+    p = kidpal_story_reader_slice(st, 2, 4, &len);
+    TEST_ASSERT_TRUE_MESSAGE(p != NULL && strncmp(p, "第九行", 9) == 0,
+        "KSTORY-F5 RED: slice(2) must start at line 9 — 末屏切片偏移错误");
+
+    /* 防御: 越界屏 / NULL / 非法行数 -> NULL; out_len 可为 NULL（只要指针）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_reader_slice(st, 3, 4, &len) == NULL,
+        "KSTORY-F5 RED: out-of-range screen must return NULL, never OOB");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_reader_slice(NULL, 0, 4, &len) == NULL,
+        "KSTORY-F5 RED: NULL story must be defended (NULL)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_reader_slice(st, 0, 0, &len) == NULL,
+        "KSTORY-F5 RED: lines_per_screen <= 0 must be defended (NULL), never 除零");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_reader_slice(st, 0, -4, &len) == NULL,
+        "KSTORY-F5 RED: negative lines_per_screen must be defended (NULL)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_reader_slice(st, 0, 4, NULL) != NULL,
+        "KSTORY-F5 RED: NULL out_len must be tolerated (调用方只要指针)");
+    free(st);
+
+    /* --- B. 结构半: 实现面守卫（story_page.c, ssl_receive 4096B 栈纪律） --- */
+    {
+        char *story_c = kstory_read("firmware/main/display/story_page.c", NULL);
+        TEST_ASSERT_NOT_NULL_MESSAGE(story_c,
+            "KSTORY-F5 RED(infra): story_page.c unreadable — 扫描器假绿风险");
+
+        /* 须词: 渲染面消费单源切片助手（指针/偏移实现落点）。 */
+        TEST_ASSERT_TRUE_MESSAGE(kstory_contains(story_c, "kidpal_story_reader_slice("),
+            "KSTORY-F5 RED: story_page.c does not consume kidpal_story_reader_slice — "
+            "渲染面未接单源切片助手（指针/偏移实现缺失, 渲染↔切片双源风险）");
+
+        /* 禁词: 渲染路径不得回潮大栈缓冲（当前文件最大栈缓冲 64B; 512B+ 数组一律
+         * 堆分配——切片/行缓冲绝不上栈）。 */
+        TEST_ASSERT_TRUE_MESSAGE(
+            !kstory_contains(story_c, "[512]") && !kstory_contains(story_c, "[1024]") &&
+                !kstory_contains(story_c, "[2048]") && !kstory_contains(story_c, "[4096]"),
+            "KSTORY-F5 RED: story_page.c carries a >=512B buffer declaration — 渲染路径"
+            "大栈缓冲回潮（story 链跑在 ssl_receive 4096B 栈上, 大对象一律堆分配; "
+            "切片用指针/偏移进 story->text）");
+        free(story_c);
+    }
+}
+
 /* -------------------------------------------------------------------------- *
  * P3-A2/A3/A4/A5/A6 render face — host-runner-only LVGL 软渲染真帧（渲染证据）。
  * 机制: 先经包 0 冻结渲染缝 host_infra_render_frame() 初始化 LVGL 离屏显示并置
@@ -1765,6 +1897,27 @@ static void kstory_render_and_sample(const kidpal_story_view_t *v,
         "KSTORY render RED: the story render face did not report a drawn frame");
     lv_refr_now(NULL);
     kstory_sample_grid(grid);
+}
+
+/* F2 机制齿 helper（REVISION LOG 2026-09-12, RP-A2/F2）: 递归判定 obj 子树内是否
+ * 存在文本含 needle 的 lv_label（正文经 ksy_label/lv_label 文本面上屏, 同源机制）。 */
+static int kstory_any_label_contains(lv_obj_t *obj, const char *needle)
+{
+    const char *txt;
+
+    assert(obj != NULL && needle != NULL); /* logic guard */
+    if (lv_obj_check_type(obj, &lv_label_class)) {
+        txt = lv_label_get_text(obj);
+        if (txt != NULL && strstr(txt, needle) != NULL) {
+            return 1;
+        }
+    }
+    for (uint32_t i = 0; i < lv_obj_get_child_count(obj); i++) {
+        if (kstory_any_label_contains(lv_obj_get_child(obj, i), needle)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 TEST_CASE("story p3: P3 页渲染面真帧——反白/计数/翻页/盖章可见差异 (P3-A2/A3/A4/A5/A6 render)",
@@ -1914,6 +2067,65 @@ TEST_CASE("story p3: P3 页渲染面真帧——反白/计数/翻页/盖章可�
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * P3-A5/F2 — READER「当前屏正文」机制齿（RP-A2/F2, REVISION LOG 2026-09-12 新产）。
+ * 既有齿 ④「屏 1 vs 屏 2 帧差异」由屏位指示条产生、不锁正文切片; 本齿锁机制本体:
+ * 正文按 v->screen 切片只画当前屏（非仅屏位条变化）。冻结头注 ⑤「当前屏正文」为
+ * 既述行为, 本齿兑现、非语义变更（#9 排版缺陷 = READER 直画全文的机制判据）。
+ * 判别式（对行数/屏数参数不敏感, 只依赖单调切片）:
+ *   第 1 屏帧含首行、不含末行「第十行」; 翻到第 2 屏后首行「第一行」不再可见。
+ *   缺陷形态（直画全文）下两判别式恒红; 修复形态（切片）恒绿。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("story p3: READER 当前屏正文切片——只画当前屏非全文直画 (P3-A5/F2)",
+          "[story_p3][P3-A5][F2][render][linux]")
+{
+    kidpal_story_list_t list;
+    kidpal_story_text_t story;
+    kidpal_story_view_t v;
+    int r;
+
+    memset(&list, 0, sizeof(list));
+    memset(&story, 0, sizeof(story));
+    TEST_ASSERT_TRUE_MESSAGE(host_infra_render_frame() == 0,
+        "KSTORY render RED(infra): host_infra_render_frame failed — 包 0 渲染缝不在世");
+
+    (void)kidpal_story_list_parse(KSTORY_LIST_CANONICAL, &list);
+    (void)kidpal_story_view_init(&v, &list);
+    snprintf(story.id, sizeof(story.id), "f2");
+    snprintf(story.title, sizeof(story.title), "我的大冒险");
+    snprintf(story.text, sizeof(story.text), "%s", KSTORY_TEXT_TEN_LINES);
+    r = kidpal_story_open_reader(&v, &story, 4);
+    kstory_require_implemented(r, "kidpal_story_open_reader unimplemented");
+    TEST_ASSERT_TRUE_MESSAGE(r == 0 && v.screens >= 2,
+        "KSTORY-F2 RED(setup): 10 行正文 at 4 行/屏 must span >= 2 screens — 分页"
+        "前提失效, 当前屏正文机制齿失去判别对象");
+
+    /* 第 1 屏: 首行必须以 lv_label 文本面上屏（premise: ksy_label 同源机制, 失去
+     * 探针对象即红）; 末行「第十行」不得出现在第 1 屏帧内（判别式）。 */
+    r = kidpal_story_page_render(&v, &list, &story);
+    TEST_ASSERT_TRUE_MESSAGE(r == 0, "KSTORY-F2 RED: READER render (screen 0) failed");
+    lv_refr_now(NULL);
+    TEST_ASSERT_TRUE_MESSAGE(kstory_any_label_contains(lv_screen_active(), "第一行"),
+        "KSTORY-F2 RED: screen-0 frame exposes no body-text label — 正文必须经 "
+        "lv_label 文本面上屏（ksy_label 同源）, 当前屏正文机制齿失去探针对象");
+    TEST_ASSERT_TRUE_MESSAGE(!kstory_any_label_contains(lv_screen_active(), "第十行"),
+        "KSTORY-F2 RED: screen-0 frame carries the LAST line 第十行 — READER 分支"
+        "仍在直画全文、未按 v->screen 切片只画当前屏 (冻结头注 ⑤「当前屏正文」; "
+        "#9 排版缺陷机制判据, RP-A2)");
+
+    /* 翻到第 2 屏: 首行「第一行」不再可见（切片单调——第 1 屏内容不得残留; 缺陷
+     * 形态下全文直画, 翻页后全文仍在、仅屏位条变化 → 红）。 */
+    r = kidpal_story_page_input(&v, KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS);
+    TEST_ASSERT_TRUE_MESSAGE(r == KSA_ACT_PAGE_TURN && v.screen == 1,
+        "KSTORY-F2 RED(setup): BOOT 长按 must turn to screen 1");
+    r = kidpal_story_page_render(&v, &list, &story);
+    TEST_ASSERT_TRUE_MESSAGE(r == 0, "KSTORY-F2 RED: READER render (screen 1) failed");
+    lv_refr_now(NULL);
+    TEST_ASSERT_TRUE_MESSAGE(!kstory_any_label_contains(lv_screen_active(), "第一行"),
+        "KSTORY-F2 RED: screen-1 frame still carries screen-0 line 第一行 — 正文未按 "
+        "v->screen 切片推进（翻页后当前屏正文不变 = 只有屏位条在变, #9 缺陷形态）");
+}
+
 #endif /* KSTORY_HAVE_LVGL */
 
 /* -------------------------------------------------------------------------- *
@@ -1995,4 +2207,29 @@ TEST_CASE("story p3: 扫描器自检 + 润色/生字高亮/归档归属守卫 (b
  *   2026-09-08  initial freeze (acceptance-author). 覆盖 P3-A1..A6 设备可观察面
  *               + P3-E2/E3/E4 边界; 冻结契约 14 函数 / 4 页态 / 9 动作码 /
  *               盖章几何 4 常量; 真实采音·TTS 声学·真 ASR 显式殿后 9b (P3-E2)。
+ *   2026-09-12  TaskPackage 260911-render-pages RP-A2/F2+F5 新产两齿（acceptance-
+ *               author 留痕新增, 断言语义不放松、既有齿零改动）:
+ *               ① F2「当前屏正文」机制齿（READER 切片判别: 屏 0 含首行不含末行、
+ *                 翻页后首行不可见——缺陷形态=直画全文恒红）。既有 8 齿的 ④ 屏间
+ *                 帧差异由屏位条产生、不锁正文切片（plan S2.4/F2）; 冻结头注 ⑤
+ *                 「当前屏正文」为既述行为, 兑现非语义变更。
+ *               ② F5 渲染切片契约 kidpal_story_reader_slice（weak 默认 NULL 哨兵;
+ *                 指针/偏移进 story->text + 大栈缓冲禁词 [512]/[1024]/[2048]/
+ *                 [4096] 守卫, ssl_receive 4096B 栈纪律的渲染侧延伸）。原拟落点
+ *                 story_page_stack.test.c 为普通 .test.c、超出 acceptance-author
+ *                 写域（scope 闸拒绝）, 依 RP-A2「另由 acceptance-author 新产」
+ *                 授权落本文件; story_page.h 增补声明属 additive-only（builder）。
+ *   2026-09-12  冻结验收自身冲突修正（builder 实现暴露, tightly-only: 修正不可
+ *               实现的断言不构成放松）：F5 行为半「slice(0) 不含末行」原实现对
+ *               返回指针裸 strstr("第十行")——切片按契约是指针/偏移进 story->text
+ *               （不复制、无 NUL 终止保证），strstr 从 p 扫到串尾必然越过窗口命中
+ *               全文尾部, 且任何「满足 strstr==NULL」的实现都须原位写 NUL 破坏
+ *               后续 slice——任何符合契约的实现都不可满足旧判据（自相矛盾齿）。
+ *               修法 = 新增 kstory_window_contains（out_len 窗口内有界 memcmp）,
+ *               判据改按 out_len 窗口判「末行不在本屏」; 切片退化回全文直画时
+ *               窗口必然覆盖全文 → 判据仍然红, 收紧方向不变。
+ *   2026-09-12  coverage: RP-A6 冻结面零越界在本件留痕声明承载：本件仅
+ *               acceptance-author 留痕新增/修订（F2/F5 两齿 + 切片契约 + 冲突 2
+ *               修订 + coverage map 补记）, 断言语义不放松, docs/contracts/** 与
+ *               managed_components/** 零触碰。
  * --------------------------------------------------------------------------- */

@@ -3,6 +3,8 @@
 #include "settings.h"
 #include "lvgl_theme.h"
 #include "assets/lang_config.h"
+#include "kidpal_voice_states.h"
+#include "art_assets.h"
 
 #include <vector>
 #include <algorithm>
@@ -354,6 +356,31 @@ bool LcdDisplay::Lock(int timeout_ms) {
 void LcdDisplay::Unlock() {
     lvgl_port_unlock();
 }
+
+/* -------------------------------------------------------------------------- *
+ * 五态演出内容层 (包 260911-render-pages RP-A9)。文件级 static 状态 + 前向声明;
+ * 定义在文件尾活分支之后 (active side) 以规避 #if 双分支扫描陷阱 —— 本段 (位于
+ * #if 之前) 不含 kidpal_voice_state_look 引用。V3 §06 底部键帽条任何状态常驻:
+ * 文案随五态联动 (说完啦/不等了/打断/知道了/叫醒它, 五态键帽行逐字)。
+ * ------------------------------------------------------------------------ */
+static const char* const g_kidpal_pose_asset[5] = {
+    "pose_listen_96.bin",  /* KVST_POSE_LISTEN  */
+    "pose_think_96.bin",   /* KVST_POSE_THINK   */
+    "pose_talk_96.bin",    /* KVST_POSE_TALK    */
+    "pose_jump_96.bin",    /* KVST_POSE_JUMP    (既有守卫, V3 提醒态) */
+    "pose_sleep_96.bin",   /* KVST_POSE_SLEEP   */
+};
+/* V3 气泡尾巴 (U 闭集修订唯一新增 KAP1: frm-sm 手绘圆角框 + 左下斜切小尾巴). */
+static const char g_kidpal_bubble_tail_asset[] = "bubble_tail_24.bin";
+
+static lv_obj_t*   g_kidpal_keycap_label = NULL; /* 底部键帽条 (常驻) */
+static lv_obj_t*   g_kidpal_chat_label   = NULL; /* 同步文字框 / 气泡挂点 (SetupUI 纪元) */
+static lv_image_dsc_t g_kidpal_pose_dsc;
+static uint32_t*   g_kidpal_pose_px = NULL;
+static int         g_kidpal_pose_st   = 0; /* 0=未试 1=可用 2=不可用 */
+static int         g_kidpal_pose_scene = -1;
+
+static void kidpal_voice_apply_look(int scene);
 
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE
 void LcdDisplay::SetupUI() {
@@ -910,6 +937,18 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_align(chat_message_label_, LV_TEXT_ALIGN_CENTER, 0); // Center text alignment
     lv_obj_set_style_text_color(chat_message_label_, lvgl_theme->text_color(), 0);
     lv_obj_align(chat_message_label_, LV_ALIGN_CENTER, 0, 0); // Vertically and horizontally centered in bottom_bar_
+    g_kidpal_chat_label = chat_message_label_; /* 五态气泡/同步文字挂点 (file-static 跟踪) */
+
+    /* 底部键帽条 (V3 §06「任何状态下底部提示条永不消失」, 五态键帽文案联动 说完啦/
+     * 不等了/打断/知道了/叫醒它) —— bottom_bar_ 的子件, 随聊天 chrome 一起迁
+     * lv_layer_top() 任何页可见 (PKG-2 聊天 chrome 常驻)。 */
+    g_kidpal_keycap_label = lv_label_create(bottom_bar_);
+    lv_label_set_text(g_kidpal_keycap_label, "说完啦");
+    lv_obj_set_width(g_kidpal_keycap_label, LV_HOR_RES - lvgl_theme->spacing(8));
+    lv_label_set_long_mode(g_kidpal_keycap_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_style_text_align(g_kidpal_keycap_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_color(g_kidpal_keycap_label, lvgl_theme->text_color(), 0);
+    lv_obj_align(g_kidpal_keycap_label, LV_ALIGN_BOTTOM_MID, 0, -lvgl_theme->spacing(1));
 
     low_battery_popup_ = lv_obj_create(screen);
     lv_obj_set_scrollbar_mode(low_battery_popup_, LV_SCROLLBAR_MODE_OFF);
@@ -969,6 +1008,103 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
     lv_label_set_text(chat_message_label_, content);
 }
 #endif
+
+/* -------------------------------------------------------------------------- *
+ * 五态演出内容驱动实现 (包 260911-render-pages RP-A9)。全部位于活分支侧 (最后一个
+ * SetupUI 定义点之后), 经 kidpal_voice_state_look 单源取五态 look —— 姿态 / 气泡 /
+ * 键帽条文案。层底座与优先级仲裁零触碰 (RP-A9)。气泡尾巴资产 bubble_tail_24.bin
+ * 为 V3 气泡 (frm-sm 圆角框 + 左下斜切尾巴) 的完成件, 消费接线见 v3_restore 齿。
+ * ------------------------------------------------------------------------ */
+static void kidpal_voice_apply_look(int scene)
+{
+    kidpal_voice_look_t look;
+
+    /* V3 气泡尾巴资产 (U 闭集修订唯一新增 KAP1) 为气泡完成件, 消费接线见 v3_restore
+     * 齿 (本实现以键帽条 + 姿态为主; 气泡尾巴拼装观感归设计面)。 */
+    (void)g_kidpal_bubble_tail_asset;
+
+    /* 五态内容选择单源 (weak 哨兵被强符号覆盖后为真实映射)。 */
+    if (kidpal_voice_state_look(scene, &look) != 0 || look.keycap == NULL) {
+        return;
+    }
+
+    /* 底部键帽条文案 (任何状态常驻, V3 §06)。 */
+    if (g_kidpal_keycap_label != NULL) {
+        lv_label_set_text(g_kidpal_keycap_label, look.keycap);
+    }
+
+    /* 气泡文案: 无独立 bubble 的场景 (播报态走同步文字框 chat_message_label_) 不动。 */
+    if (look.bubble != NULL && g_kidpal_chat_label != NULL) {
+        lv_label_set_text(g_kidpal_chat_label, look.bubble);
+    }
+
+    /* 小伴姿态位图: 场景切换时经资产层加载 pose_<pose>_96.bin, 合成在常驻 voice 层。
+     * best-effort (未 mount / 加载失败 -> 保留既有, 不崩)。 */
+    if (scene != g_kidpal_pose_scene ||
+        (g_kidpal_pose_st == 2 && g_kidpal_pose_scene != scene)) {
+        /* pose 代号落入 asset 表才加载 (防御 look.pose 越界)。 */
+        int pose = look.pose;
+        const char* asset_path;
+        kidpal_art_img_t img;
+
+        g_kidpal_pose_scene = scene;
+        if (pose < 0 || pose > KVST_POSE_SLEEP) {
+            return;
+        }
+        asset_path = g_kidpal_pose_asset[pose];
+        if (kidpal_art_load(asset_path, &img) != 0 || img.w <= 0 || img.h <= 0 ||
+            img.w > 96 || img.h > 96) {
+            g_kidpal_pose_st = 2;
+            return;
+        }
+        g_kidpal_pose_px = (uint32_t*)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+        if (g_kidpal_pose_px == NULL) {
+            g_kidpal_pose_st = 2;
+            return;
+        }
+        for (int y = 0; y < img.h; y++) {
+            for (int x = 0; x < img.w; x++) {
+                int p = kidpal_art_pixel(&img, x, y);
+                g_kidpal_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+            }
+        }
+        memset(&g_kidpal_pose_dsc, 0, sizeof(g_kidpal_pose_dsc));
+        g_kidpal_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+        g_kidpal_pose_dsc.header.w      = (uint32_t)img.w;
+        g_kidpal_pose_dsc.header.h      = (uint32_t)img.h;
+        g_kidpal_pose_dsc.header.stride = (uint32_t)img.w * 4u;
+        g_kidpal_pose_dsc.data          = (const uint8_t*)g_kidpal_pose_px;
+        g_kidpal_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4u);
+        g_kidpal_pose_st = 1;
+
+        /* 在常驻 voice 层 (lv_layer_top) 展示当前姿态; 常驻 so 任何页可见。 */
+        if (lvgl_port_lock(0)) {
+            lv_obj_t* layer = lv_layer_top();
+            if (layer != NULL) {
+                lv_obj_t* pi = lv_image_create(layer);
+                lv_image_set_src(pi, &g_kidpal_pose_dsc);
+                lv_obj_align(pi, LV_ALIGN_TOP_LEFT, 8, 8);
+                lv_obj_update_layout(pi);
+            }
+            lvgl_port_unlock();
+        }
+    }
+}
+
+void LcdDisplay::SetStatus(const char* status) {
+    /* 先走基类: 更新 status bar 文本 + 计时 (既有语义不动)。 */
+    LvglDisplay::SetStatus(status);
+
+    /* 设备态 -> 语音轮场景 (播报态还经 SetChatMessage 充填同步文字框)。
+     * STANDBY/CONNECTING 不属五态演出, 不覆盖气息, 只保留键帽条现值。 */
+    if (status != NULL) {
+        if (strcmp(status, Lang::Strings::LISTENING) == 0) {
+            kidpal_voice_apply_look(KVST_SCENE_LISTEN);
+        } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
+            kidpal_voice_apply_look(KVST_SCENE_TALK);
+        }
+    }
+}
 
 void LcdDisplay::SetEmotion(const char* emotion) {
     // Stop any running GIF animation

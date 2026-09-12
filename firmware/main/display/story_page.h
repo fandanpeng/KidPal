@@ -104,6 +104,20 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                              const kidpal_story_list_t *list,
                              const kidpal_story_text_t *story);
 
+/* ---- ⑤ 渲染切片 (RP-A2/F5, TaskPackage 260911-render-pages, additive-only 增补) ----
+ * 阅读态 (READER) 渲染切片单源: 返回指向 st->text 内部 (指针/偏移, 不复制) 的第
+ * screen 屏正文切片, 长度经 out_len 回传 (可为 NULL)。实现禁止大栈中转缓冲
+ * (ssl_receive 4096B 栈纪律, story_page_stack 守卫同源)。越界屏/NULL story/
+ * lines_per_screen<=0 -> NULL (防御, 绝不 OOB)。 */
+
+/* 分页行高单源 (替换 mcp_server.cc open_reader 硬编码 4 的「最小估算」): 400x300
+ * 版面、正文 14px 行高、content 区约 200px 高 @ 每自然行可折 ~2 视觉行 -> ~4
+ * 自然行/屏, 与既有设备分页行为一致。切片按 '\n' 自然行计 (open_reader 同性质)。 */
+#define KSTORY_READER_LINES_PER_SCREEN 4
+
+const char *kidpal_story_reader_slice(const kidpal_story_text_t *st, int screen,
+                                      int lines_per_screen, int *out_len);
+
 #ifdef __cplusplus
 }
 #endif

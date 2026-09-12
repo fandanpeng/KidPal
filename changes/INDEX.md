@@ -30,6 +30,7 @@
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](../changes/dev/260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](../changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260911-render-pages](../changes/dev/260911-render-pages/) | 2026-09-11 | changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七 | closed | kidpal-mvp |
 
 ## arch (19)
 

@@ -113,6 +113,13 @@ date: 2026-09-11
   树，五态齿红基线按「机制优先」写、符号名 rebase 时校正；**F4 机制**：reminder_page.c
   现状压暗是 LV_OPA_50（非 d50 网点），换 d50 = 真实观感变更，走活控件平铺合成机制
   （load+pixel→ARGB8888→lv_image，schedule_page.c 已用该机制），非整帧 art seam（设备 no-op）。
+- **planner intake 补记（2026-09-12，architect 扩包预审 GREEN-WITH-ITEMS，见
+  arch-review-expansion.md §C/§D.5）**：S0.2 的 F6 条件复核条款**已解除**——
+  260911-ecs-deploy-convergence 已 closed 并合并（merge 16a47bd），早于本包 base 83a6e66；
+  若根因在云侧 producer，本包按 notes 既定申报扩 server 面（subsystem firmware+server）即可，
+  无需再复核 dependsOn/mergeOrder。S0.3 补充：PKG-2 合并带入七条结构不变式（arch-review-
+  expansion.md §B.2，五态/换皮代码必须布防；chat_top[] 数组 = chrome 成员边界、允许内容级
+  同步），五态落点清单由 intake 勘察产出后落包 evidence。
 
 ## 阶段 1 · #12 P2-A1 齿修复（acceptance-author，先行——它红着会污染全批验证信号）
 

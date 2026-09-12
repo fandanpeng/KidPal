@@ -696,6 +696,53 @@ static int ksp_pose_image_ready(void)
     return 1;
 }
 
+/* -------------------------------------------------------------------------- *
+ * 换皮网点弱底纹 (包 260911-render-pages RP-A8)：把三档网点之一 d50 (4x4, 单元 4px)
+ * 合成为 ARGB8888 tile, 经 bg_image_tiled 在 `bg` 上平铺成课表页弱底纹。四类用途
+ * 白名单「弱底纹」, 单屏面积 4px 格稀疏 (V3 §07)。未 mount/失败 -> NULL (best-effort)。
+ * ------------------------------------------------------------------------ */
+#define KSP_DOTS_MAX 16
+static lv_image_dsc_t s_ksp_dots_dsc;
+static uint32_t      *s_ksp_dots_px  = NULL;
+static int            s_ksp_dots_st  = 0; /* 0=未试 1=可用 2=不可用 */
+
+static const lv_image_dsc_t *ksp_dots_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_ksp_dots_st == 2) {
+        return NULL;
+    }
+    if (s_ksp_dots_st == 1) {
+        return &s_ksp_dots_dsc;
+    }
+    if (kidpal_art_load("d50.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > KSP_DOTS_MAX || img.h > KSP_DOTS_MAX) {
+        s_ksp_dots_st = 2;
+        return NULL;
+    }
+    s_ksp_dots_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (s_ksp_dots_px == NULL) {
+        s_ksp_dots_st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_ksp_dots_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_ksp_dots_dsc, 0, sizeof(s_ksp_dots_dsc));
+    s_ksp_dots_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_ksp_dots_dsc.header.w      = img.w;
+    s_ksp_dots_dsc.header.h      = img.h;
+    s_ksp_dots_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_ksp_dots_dsc.data          = (const uint8_t *)s_ksp_dots_px;
+    s_ksp_dots_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_ksp_dots_st = 1;
+    return &s_ksp_dots_dsc;
+}
+
 
 int kidpal_schedule_page_render(const char *title,
                                 const kidpal_schedule_item_t *items, int n,
@@ -723,6 +770,24 @@ int kidpal_schedule_page_render(const char *title,
     lv_obj_set_style_bg_color(bg, lv_color_hex(KSP_COLOR_BG), 0);
     lv_obj_set_style_bg_opa(bg, LV_OPA_COVER, 0);
     lv_obj_clear_flag(bg, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 换皮 (包 260911-render-pages RP-A8): 手绘框族 frm_ (frm_236_236 / frm_sm_160_120 /
+     * frm_flat_240_96 9 宫格) 铺开 + d50 网点弱底纹。LVGL 骨架与动态文本语义保留
+     * (冻结齿不锁布局, 真实观感归 RP-A5 真机轮)。d50 平铺为弱底纹, 姿态在右下叠加。
+     *
+     * V3 字体接线 (RP-A4/S0.1, S0.1 决策件 font-decision-s01.md): 正文/标题/数字三
+     * 字体经 SPIFFS 非 KAP1 独立落地 fonts_root (冻结路径): font_body.bin (GB2312
+     * 全集正文) / font_title_zcool.bin (站酷快乐体标题) / font_num_baloo.bin (Baloo 2
+     * 数字) —— 由设备字体加载器 lv_font_load 从 fonts_root 取, 标题→font_title_zcool,
+     * 时间→font_num_baloo, 正文→font_body; V3 字号阶梯 (30 标题 / 44 时间) 落位。
+     * host runner 无 SPIFFS 字体挂载, 该加载在设备真机轮 (RP-A5) 验证。 */
+    {
+        const lv_image_dsc_t *dots = ksp_dots_dsc();
+        if (dots != NULL) {
+            lv_obj_set_style_bg_image_src(bg, dots, 0);
+            lv_obj_set_style_bg_image_tiled(bg, true, 0);
+        }
+    }
 
     /* 标题逐字上屏 + P2-A4 弹跳切换动画（lv_anim） */
     lv_obj_t *title_label = lv_label_create(scr);

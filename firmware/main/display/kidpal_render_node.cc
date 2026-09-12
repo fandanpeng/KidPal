@@ -500,14 +500,27 @@ void kidpal_render_node_cycle_next(void)
             /* 把 s_kidpal_scr 设为活动屏，schedule_page_render 在 lv_screen_active()
              * 上清屏并绘制。 */
             lv_screen_load(s_kidpal_scr);
-            kidpal_schedule_page_render(
-                s_sched_title,
-                s_sched_n > 0 ? s_sched_items : NULL,
-                s_sched_n,
-                s_sched_is_tomorrow,
-                s_sched_now,
-                -1 /* locate_row: -1 = 不定位，静态展示 */
-            );
+            if (s_sched_n <= 0) {
+                /* #11 数据链根因 (R-S0.2): 缓存仅在语音查询过课表后才填充; 孩子 BOOT
+                 * 翻页切来时可能本开机未查询 -> n=0 空壳页。改画友好空态 (居中提示),
+                 * 不再渲染空壳页; 语音查询路径 (mcp case 4) 不动。 */
+                lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
+                lv_label_set_text(lbl, "还没有课表数据，问我『我的课表』吧");
+                lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
+                lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+                lv_obj_set_width(lbl, 380);
+                lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
+                lv_obj_center(lbl);
+            } else {
+                kidpal_schedule_page_render(
+                    s_sched_title,
+                    s_sched_n > 0 ? s_sched_items : NULL,
+                    s_sched_n,
+                    s_sched_is_tomorrow,
+                    s_sched_now,
+                    -1 /* locate_row: -1 = 不定位，静态展示 */
+                );
+            }
             s_local_page = KP_PAGE_SCHEDULE;
             ESP_LOGI(RN_TAG, "cycle -> SCHEDULE (P2) n=%d", s_sched_n);
             break;
