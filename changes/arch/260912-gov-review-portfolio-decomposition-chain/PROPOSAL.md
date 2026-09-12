@@ -1,0 +1,114 @@
+# PROPOSAL · 260912-gov-review-portfolio-decomposition-chain
+
+> **状态：DRAFT v0.2 · 2026-09-12 · 讨论中**（260912 拆包→执行链 retro 对话起草，human 未立项 ack、architect 未评审——按治理路由，立项 ack 前本件仅供讨论，不驱动任何落地）。
+> **v0.1→v0.2 修订**（human 五点反馈，260912）：① workstream 效果目标升级为业务目的清单硬项；② 方案空间裁定增 spec 关系标注（两源以 spec 为权威）；③ 锚 2 核对者改 planner（agent）、非 human；④ merge 后 portfolio-planner 例行唤起改为状态机械渲染 + 事件驱动唤起；⑤ 移除 deputy 预裁参考（未定型实验，human 指示不作设计依据）。
+> **承载 ARQ**：T2 承接并收紧 ARQ-260911-split-package-implementation-prose-gap（落地后结清该条）；T3 checklist 消化 ARQ-260911-cross-package-behavior-owner-gap 的拆包期判据（该 ARQ 派单侧义务保留）；与 ARQ-260911-tooth-strength-below-contract / ARQ-260911-verdict-uncovered-surface 相邻不重叠。
+> **review 轨**：Track B 常驻轻路径（governance profile）。
+> **riskTier**: low-medium（新增制品义务 + 人读流程门，不改任何既有机械闸判定语义、不触契约面）。
+> **review profile**: G2（agent def 正文 + references + 模板）+ G3（新增 render-roadmap.mjs，advisory 生成器非门）。
+> 配套流程图：`decomposition-chain.html`（本目录内，随批入库——260912 human 指示）。
+
+```landing-manifest
+docs/templates/WORKSTREAM-ROADMAP.template.md
+.claude/scripts/render-roadmap.mjs
+.claude/agents/portfolio-planner.md
+.claude/agents/planner.md
+.claude/references/task-intake-and-slicing.md
+.claude/references/pod-coordination.md
+```
+
+---
+
+## 0. 想实现的效果与差距
+
+目标效果：portfolio-planner 拆出的每个 TaskPackage，**方向在落地前受审、包级设计耐久在案、Pod 执行全程有意图锚可依、每包完成有可见的业务效果对账**——「拆错方向、写到最后集成夜才爆」不再可能无声发生。
+
+现状差距（对应 §1 四根因）：
+
+1. 拆包产物（taskpackage × N + decision-coverage + mergeOrder + plan.md）无任何独立 review，直接 commit-before-launch；
+2. 包级实施方案（plan.md）本批才首用且带豁免判据，MVP 全量 19/19 缺位；
+3. 每包业务效果目标（「完成后人能看到什么」）无耐久载体，验收意图由 acceptance-author 在 Pod 内现造，本批造错过一次（SU-RULING-01）；
+4. workstream 无活体 roadmap，拆包者离场后无人持有列车视角，整体效果只在末位包收口轮重新有人看。
+
+**非目标**（防 scope creep）：模型档位策略——挂起（260912 human 裁后移，待按 pod retro 的返工轮次/token 数据按档位统计后另行定夺；统计前注意 ARQ-260909-dispatch-stamp-telemetry-gaps 的 token 口径缺口）；门 1 的机械化为 launch 前置闸——现阶段为人读 + checklist，不新建 PreToolUse 闸；260911 批次回溯补件——自下批 workstream 起适用。
+
+## 1. 问题与根因（地面真值）
+
+1. **切法无票（R1）**：workstream 方向经 grilling 由 human 逐条裁定，但切包方案随 PROPOSAL §4「拆包预判」一并冻结、未经任何裁断——260911 grilling 四 OQ 全是方案空间选择题，无一问「这么切包你认不认」。实况：MVP 19 包按页面/技术层切（home_p1 / schedule_p2 / story_p3 / session-logic / host-test-infra / shim-skeleton，目录名实录），260911 批按问题切（问题 #4 → PKG-2，致单包承载五条收口标准中的四条，plan.md 内再切阶段 0–5 自救）——两代切法均非按行为垂直切片，portfolio-planner.md 垂直切片原则在场但无任何环节检查。MVP 跨包掉缝（KEY 端到端无人接线、殿后 9b 转手漏列、故事归档三段各自绿拼起来不可达）系此根因的结构性后果（RETRO-VERIFICATION-GAP-260911 §二）。
+2. **拆包无审（R2）**：review 发生在拆包**前**（/triage-change 对 PROPOSAL 的分流 review，260911 批 F1–F9），拆包产物本身零门——产完即 commit-before-launch。本批两次核心语义偏差（SU-RULING-01 验收优先级钉反、SU-RULING-02 只交付机制未做物理 reparent）均靠 planner 事后逐字读冻结验收 + 屏幕模型代码才抓出（pod-retro §这一轮最深的体感）。
+3. **包级设计缺位（R3）**：2026-09-12 全量机械清点（命令：python 遍历 `.claude/taskpackages/` 25 目录，核 plan.md 文件与 taskpackage.json planRef 字段）：**21 无 plan.md**；MVP 期 19 包（260829 批 12 + 260831/260901/260903 批 6 + 260907-g-relay-fix，sourceType = planning-workstream / regression）plan.md 与 planRef **双双缺位，无一例外**；有 plan.md 的 4 包全部产自 2026-09-11（②单包路径 2 + ③拆包 ARQ 首用 2）。本批 PKG-1（key-route-a1）被「装配型豁免」判掉，而它恰是跨包行为 owner 承载包——豁免判断本身是拆包 agent 的判断，判错即裸奔。
+4. **执行无锚（R4）**：无 roadmap、无包级 demo 判据、拆包者 episodic 离场后无常驻列车视角；执行中偏差无预挂裁断通道。**且效果锚从源头无源可引**：workstream 效果目标本身退化为一句话——MVP v0.4 §0「目标效果一句话」实文 =「把 spec §4 全部 story 拆成一组排好序、带依赖、可并行的 TaskPackage」，即**拆包动作的自述而非业务效果**（孩子能做什么、看到什么，一处未落纸）；260911 批 §0 虽好一档（「听得见的答案、看得见的落点、按得动的按键」），但仍是一句概括、未枚举成可逐条 demo 的业务目的清单。
+
+## 2. 改法（T1…T4）
+
+> 总形：一条「意图钉死 → 方向受审 → 执行对锚 → 完成对账」的链。门 1 治 R1+R2，T2 治 R3，锚 2/锚 3 治 R4。
+
+### T1 · 制品双轨分离：PROPOSAL 回归裁决记录，新增 workstream roadmap 活文档
+
+PROPOSAL（.planning 通道）只管「为什么、裁了什么」，维持冻结；「列车怎么跑、走到哪了」独立为活文档 roadmap.md，落 `.planning/<workstream>/roadmap.md`。
+
+**workstream PROPOSAL 内容硬项**（落 `task-intake-and-slicing.md`，/triage-change 起草侧执行）：
+
+- **效果目标 = 业务目的清单**：枚举式、每条含可观察判据（人能看到/听到/按到什么），禁一句概括了事。清单是 roadmap 每包效果段的**唯一上游源**——无清单则包级效果锚无源可引（R4 MVP 实证）。
+- **方案空间裁定标注 spec 关系**：PROPOSAL §方案空间每条裁定必须带标注——`within-spec`（引 spec 条款号，实现不动语义）/ `需修订 → Track B spec-lane 逃生门`（裁定改了 spec 钉死的语义时，必须过 spec 修订才能生效，**不得在 PROPOSAL 内自冻成第二事实源**）/ `spec-silent`（spec 未载，留根申报是否补 spec）。两源并存时的权威序恒为：**spec = 行为语义权威，PROPOSAL = 路径选择记录**——260911 批 §7 申报机制（OQ4=A 判 spec 零修订、OQ3=c 判无语义变更）是本标注的先例形态，本项将其升格为逐条硬项。
+
+**roadmap 模板**：新增 `docs/templates/WORKSTREAM-ROADMAP.template.md`，固定节：① workstream 效果目标与现状差距（引用投影自 PROPOSAL §0 的业务目的清单，不复制）；② 列车图（依赖 + 批次，由 render-roadmap.mjs 从 taskpackage.json 的 dependsOn/mergeOrder 机械渲染，人工禁改该节）；③ 每包条目——changeId、mergeOrder、一段「完成后人能看到什么」的业务效果（**人只写机器写不出的这一段**，从 workstream 业务目的清单分解而来）、demo 证据形态（模拟器截图 / host runner 输出 / 串口日志 / 真机轮；真机轮配额默认仅核心包）、达成状态（pending / achieved / deviation+裁定锚，由脚本从 board/merge 状态机械渲染）；④ 非目标与批次归属。新增 `.claude/scripts/render-roadmap.mjs`（读 workstream 下 taskpackage JSON 集 → 产出 mermaid 依赖图块 + 达成状态渲染，含 `--self-check`）。`task-intake-and-slicing.md` 补注记：PROPOSAL §拆包预判降级为意图提示，拆包权威 = 四件套经门 1 冻结。
+
+**目标文件**：`docs/templates/WORKSTREAM-ROADMAP.template.md`（新增）、`.claude/scripts/render-roadmap.mjs`（新增）、`.claude/references/task-intake-and-slicing.md`（改）
+
+### T2 · plan.md 全量义务（收紧 ARQ-260911-split-package-implementation-prose-gap）
+
+每个 TaskPackage 拆包时必备 `.claude/taskpackages/<changeId>/plan.md`，taskpackage.json `planRef` 指向；「装配型豁免」取消（豁免范围按 §4 OQ3 裁定）。plan.md 骨架：根因摘录（锚 PROPOSAL §1）、改法取舍、阶段划分、铁律约束、demo 证据形态复述（与 roadmap 一致）。`portfolio-planner.md` Step 4 补全量条款，`task-intake-and-slicing.md` planRef 节同步。
+
+**目标文件**：`.claude/agents/portfolio-planner.md`（改）、`.claude/references/task-intake-and-slicing.md`（改）
+
+### T3 · 拆包 review 门（门 1）
+
+拆包四件套齐备（roadmap.md + taskpackage.json × N + plan.md × N + decision-coverage.json）后、commit-before-launch 前，插一道 architect 轻量 review：固定 checklist 五项——① 切片逻辑（按行为切还是按页面/问题切，图上见，偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额仅核心包）。GREEN 后 human 过目切法（立项 ack 的组成部分：**方向 + 切法一次前端对齐**——切法自此有票），方可 commit-before-launch。checklist 落 `task-intake-and-slicing.md` 新节，`portfolio-planner.md` Step 6 前插「门 1」步骤引用。存疑向严：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
+
+**目标文件**：`.claude/agents/portfolio-planner.md`（改）、`.claude/references/task-intake-and-slicing.md`（改）
+
+### T4 · Pod 内两锚：验收方向核（锚 2）+ demo 对账（锚 3）
+
+- **锚 2 · 验收方向核**：acceptance 冻结后、builder 动工前，**planner（agent）**对照 roadmap.md 本包效果段核一遍验收方向一致——核对者是 planner 而非 human（验收语义方向不是 human 能逐条核清的，260912 human 反馈裁定），planner 持有 roadmap 效果段原文与派发上下文，且核对对象是 acceptance-author 的产出而非自己的，角色不冲突；对不上或存疑 → 升 architect 复核，仍不清 → 走既有升级链。`planner.md` intake 流程补条款；派 acceptance-author 的 brief 必须携带 roadmap 本包效果段（pod-retro 教训 2 的稳定落点）。
+- **锚 3 · demo 对账**：包收口（integrator review-packet / supervisor 消费）必含 demo 对账行——demo 证据（形态按 roadmap 拆包时定的）+ 与本包效果段的一致性结论；不一致 = 走既有 escalation 通道就地升裁（裁断记 pod-events、roadmap 状态标 deviation+裁定锚），禁攒到集成夜。升级通道的具体形态不在本批定义（deputy 影子预裁系未定型实验，260912 human 指示不作为设计依据）。`pod-coordination.md` 补约定。
+- **列车视角**：roadmap 达成状态由 render-roadmap.mjs 从 board/merge 状态 + 锚 3 对账记录**机械渲染**（包 merge 即 achieved、有 deviation 记录即标注），**不做 per-merge 例行唤起**——与 roadmap 的匹配判断已在锚 3 于合并前完成，不后置到 merge 之后。portfolio-planner 仅两类事件被唤起：① 锚 3 记 deviation 且需裁断或改 roadmap 时；② 下一包 launch 决策时（本就需调度动作）。
+
+**目标文件**：`.claude/agents/planner.md`（改）、`.claude/references/pod-coordination.md`（改）
+
+## 3. 影响面 sweep 分类（UNCLASSIFIED=0）
+
+| 面 | 文件 | 类别 | 说明 |
+|---|---|---|---|
+| 模板 | docs/templates/WORKSTREAM-ROADMAP.template.md | 新增（G2） | 消费方：portfolio-planner（产）、门 1 判官 + human（审）、planner/acceptance-author（锚） |
+| 脚本 | .claude/scripts/render-roadmap.mjs | 新增（G3） | advisory 生成器非门；消费方：portfolio-planner、roadmap 复核 |
+| agent def 正文 | .claude/agents/portfolio-planner.md | G2 | Step 4 全量条款 + Step 6 前门 1 步骤；不动 frontmatter（authoring 纪律逐字段隔离） |
+| agent def 正文 | .claude/agents/planner.md | G2 | 锚 2 条款 + brief 携带效果段义务；不动 frontmatter |
+| reference | .claude/references/task-intake-and-slicing.md | G2 | 双轨注记 + planRef ③路径注记 + 门 1 checklist 新节 |
+| reference | .claude/references/pod-coordination.md | G2 | 锚 3 demo 对账约定 + reconcile 再唤起 + deputy 预裁成文化 |
+
+## 4. human 取舍点（OQ）
+
+| OQ | 选项 | 推荐 | 理由 |
+|---|---|---|---|
+| OQ1 门 1 深度 | (a) architect 轻量 checklist review；(b) 完整对抗 review（challenger↔defender） | (a) | 一次派发 vs 每 workstream 一场重流程；存疑向严升级通道已有，「拆包是方向性决策」可支持 (b)，取决于愿为方向错误付多少保险费 |
+| OQ2 demo 对账消费 | (a) human 每包过一眼（约五分钟/包）；(b) planner 产对账、human 仅核心包必看 + 抽查 | (a) | show demo 的价值在有人真看；全交 agent 会退化成又一层绿灯 |
+| OQ3 plan.md 豁免 | (a) 全取消；(b) 保留极窄例外（装配型自证 + 门 1 复核） | (a) | 豁免判断即拆包 agent 判断，判错裸奔（本批 PKG-1 误豁免实例在册）；装配型包 plan.md 约十行，成本可付 |
+
+## 5. 验证集（landing 前机械前置 + landing 后核验）
+
+1. `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` 复跑绿（agent def 正文改动后）。
+2. `node .claude/scripts/render-roadmap.mjs --self-check` 绿；对 260911-display-interaction-sovereignty 实跑：产出依赖图与 decision-coverage.json 包集一致（3 包 + 1 批次①前置），达成状态可从 board/merge 状态渲染。
+3. 回溯演练（真阳性检查，一次性）：以门 1 checklist 核 260911 拆包产物，应点名 key-route-a1 缺 plan.md（T2 命中）与 PKG-2 单包承载 4/5 收口标准（T3 切片逻辑项命中）——判据 = 本批已发生的真实缺陷能被新门拦住。
+4. WORKSTREAM-ROADMAP.template.md 存在且含业务目的清单硬项节；task-intake-and-slicing.md 含 spec 关系标注约定；portfolio-planner.md / planner.md 引用行在位（route-regression 必留信号核对）。
+
+## 6. 留根清单
+
+- 模型档位策略：挂起（260912 human 裁后移）；待按 pod-events / verify-runs 的返工轮次 + token 数据按档位统计后定夺。
+- 门 1 机械化为 launch 前置闸：若人读 + checklist 反复漏检再机械化（先例：check-launch 门）。
+- 260911 批次不回溯补 roadmap（自下批适用）。
+- ARQ 结清关系：T2 落地后结清 ARQ-260911-split-package-implementation-prose-gap；ARQ-260911-cross-package-behavior-owner-gap 拆包期判据由 T3 checklist 消化、派单侧义务保留该条在册。
+
+## 7. 评审记录
+
+（判官 append-only 区；主线程不预判结论。）

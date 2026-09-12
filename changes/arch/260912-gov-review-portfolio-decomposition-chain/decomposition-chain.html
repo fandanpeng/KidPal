@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拆包→执行链 · 治理方案草案 v0.2</title>
+<style>
+  :root{
+    --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
+    --c1:#3b5bdb; --c1-soft:#edf1fd;      /* 第①步 PROPOSAL */
+    --c2:#0c8599; --c2-soft:#e6f4f7;      /* 第②步 拆包 */
+    --c3:#b8641d; --c3-soft:#fdf1e7;      /* 第③步 planner */
+    --gate:#2f9e44; --gate-soft:#ebfbee;  /* 门/锚 */
+    --warn:#c92a2a; --warn-soft:#fff0f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;padding:28px 20px 40px}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:var(--ink-soft);font-size:13px;margin-bottom:22px}
+  .sub code{background:#e9edf5;padding:1px 6px;border-radius:4px;font-size:12px}
+
+  .chain{display:grid;grid-template-columns:1fr 34px 1.15fr 34px 1.15fr;align-items:stretch;gap:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(26,34,51,.06)}
+  .card.c1{border-top:4px solid var(--c1)} .card.c2{border-top:4px solid var(--c2)} .card.c3{border-top:4px solid var(--c3)}
+  .stepno{font-size:11px;font-weight:700;letter-spacing:.08em}
+  .c1 .stepno{color:var(--c1)} .c2 .stepno{color:var(--c2)} .c3 .stepno{color:var(--c3)}
+  .card h2{font-size:16px}
+  .actor{font-size:12px;color:var(--ink-soft)}
+  .actor b{color:var(--ink)}
+
+  .art{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fbfcfe}
+  .art .fname{font-weight:700;font-size:12.5px}
+  .art ul{margin:4px 0 0 16px;padding:0}
+  .art li{margin:1.5px 0;font-size:12.5px;color:#2c3654}
+  .art .note{margin-top:5px;font-size:11.5px;color:#8a6100;background:#fff8e8;border-radius:6px;padding:4px 8px}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:6px;vertical-align:1px}
+  .tag.new{background:#fff4d6;color:#8a6100;border:1px solid #f1d488}
+  .tag.hot{background:#ffe9e9;color:#a61e1e;border:1px solid #f3b8b8}
+  .tag.frozen{background:#e9edf5;color:#4a5568;border:1px solid var(--line)}
+
+  .role{font-size:12px;border-radius:8px;padding:7px 10px}
+  .c1 .role{background:var(--c1-soft)} .c2 .role{background:var(--c2-soft)} .c3 .role{background:var(--c3-soft)}
+  .role b{display:block;font-size:12.5px;margin-bottom:1px}
+
+  .gate{border:2px solid var(--gate);background:var(--gate-soft);border-radius:10px;padding:9px 11px}
+  .gate .gname{font-weight:800;color:#1e7a33;font-size:13px}
+  .gate ol{margin:4px 0 0 17px;font-size:12.5px;color:#22543d}
+  .gate li{margin:1px 0}
+  .gate .who{font-size:11.5px;color:#2f6b3c;margin-top:5px;border-top:1px dashed #b7e0bf;padding-top:4px}
+
+  .flow{list-style:none;margin:0;padding:0;font-size:12.5px}
+  .flow li{padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:#fbfcfe;margin-bottom:6px}
+  .flow li b{font-size:12.5px}
+  .anchor{border:2px solid var(--gate);background:var(--gate-soft)}
+  .anchor b{color:#1e7a33}
+  .anchor .detail{display:block;font-size:11.5px;color:#22543d;margin-top:1px}
+
+  .arrowcol{display:flex;align-items:center;justify-content:center;color:#9aa4b8;font-size:22px;font-weight:700}
+
+  .loopband{margin-top:16px;border:1px dashed #8a94a8;border-radius:10px;background:#f0f3f9;padding:10px 14px;font-size:12.5px;color:#39435c}
+  .loopband b{color:var(--ink)}
+  .loopband .steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px}
+  .loopband .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 11px;font-size:12px;white-space:nowrap}
+  .loopband .chip.machine{background:#eef7f0;border-color:#b7e0bf}
+  .loopband .ar{color:#8a94a8}
+  .loopband .tail{margin-top:6px;font-size:12px;color:#4a5568}
+
+  .hits{margin-top:18px}
+  .hits h3{font-size:14px;margin-bottom:8px}
+  .hits h3 span{font-weight:400;color:var(--ink-soft);font-size:12px}
+  .hitsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .hit{border-radius:10px;padding:10px 12px;font-size:12.5px;border:1px solid var(--line);background:#fff}
+  .hit .g{font-weight:800;font-size:12.5px;color:#1e7a33;margin-bottom:2px}
+  .hit .f{color:#a61e1e}
+  .hit .f b{display:block;font-size:12.5px}
+
+  @media (max-width:1000px){
+    .chain{grid-template-columns:1fr}
+    .arrowcol{transform:rotate(90deg);padding:2px 0}
+    .hitsgrid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>拆包 → 执行链 · 治理方案草案（v0.2）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.2，讨论中）</div>
+
+  <div class="chain">
+
+    <!-- 第①步 -->
+    <div class="card c1">
+      <div class="stepno">第 ① 步 · 立项</div>
+      <h2>PROPOSAL（主线程起草 + human grilling）</h2>
+      <div class="actor">主线程起草 → human 裁 OQ → <b>architect 分流 review</b>（/triage-change，已有，不动）→ 冻结</div>
+      <div class="role"><b>角色：裁决记录 · 冻结后不动</b>只回答「为什么改、人裁了什么」。切包怎么切不归它管。</div>
+      <div class="art">
+        <div class="fname">.planning/&lt;ws&gt;/PROPOSAL.md 包含：</div>
+        <ul>
+          <li><b>业务目的清单</b> <span class="tag new">v0.2 硬项</span>——枚举式、每条含可观察判据（人能看到/听到/按到什么），禁一句概括</li>
+          <li>问题与根因（file:line 证据锚）</li>
+          <li>方案空间 + OQ 裁定，<b>每条裁定标注 spec 关系</b> <span class="tag new">v0.2 硬项</span>：within-spec（引条款号）/ 需修订 → Track B 逃生门 / spec 未载 → 留根申报</li>
+          <li>契约 / spec 触面申报（逃生门）</li>
+          <li>留根清单（不做的归哪批）</li>
+          <li><s>§4 拆包预判</s><span class="tag hot">降级</span>→ 只作意图提示，不再当拆包权威</li>
+        </ul>
+        <div class="note">两源权威序：spec = 行为语义权威，PROPOSAL = 路径选择记录——裁定改 spec 钉死的语义必过 spec 修订，不得在 PROPOSAL 内自冻成第二事实源。（MVP 教训：目标句写的是「把 story 拆成包」这个动作本身，业务效果一处未落纸）</div>
+      </div>
+    </div>
+
+    <div class="arrowcol">→</div>
+
+    <!-- 第②步 -->
+    <div class="card c2">
+      <div class="stepno">第 ② 步 · 拆包</div>
+      <h2>portfolio-planner（RTE）拆包</h2>
+      <div class="actor">输入 = 冻结 PROPOSAL（+ 图索引只读探查）</div>
+      <div class="role"><b>角色：把裁决变成列车计划</b>一次拆包产出「四件套」，缺一不齐不得交 launch。</div>
+      <div class="art">
+        <div class="fname">拆包四件套：</div>
+        <ul>
+          <li><b>roadmap.md</b> <span class="tag new">新增·活文档</span>——业务目的清单分解到包、列车图（机械渲染）、每包「完成后人能看到什么」、demo 证据形态、达成状态</li>
+          <li><b>taskpackage.json × N</b> <span class="tag frozen">已有</span>——机器骨架（dependsOn / mergeOrder / acceptance）</li>
+          <li><b>plan.md × N</b> <span class="tag hot">收紧</span>——每包必备初步设计，装配型豁免取消（MVP 19/19 缺位的根治）</li>
+          <li><b>decision-coverage.json</b> <span class="tag frozen">已有</span>——决策 → 包 → 验收，机器对账</li>
+        </ul>
+      </div>
+      <div class="gate">
+        <div class="gname">门 1 · 拆包 review（新增，GREEN 才 commit-before-launch）</div>
+        <ol>
+          <li>切片逻辑：按行为切还是按页/按问题切？图上见，偏离须有显式理由</li>
+          <li>依赖序 + WIP 合理性</li>
+          <li>decision-coverage 完备（含跨包行为 owner）</li>
+          <li>每包意图与 PROPOSAL 冻结裁定一致</li>
+          <li>demo 证据形态可行（真机轮配额仅核心包）</li>
+        </ol>
+        <div class="who">architect 轻量 review（OQ1 可裁改对抗档）→ GREEN 后 <b>human 过目切法</b>——方向 + 切法一次前端对齐，切法自此有票</div>
+      </div>
+    </div>
+
+    <div class="arrowcol">→</div>
+
+    <!-- 第③步 -->
+    <div class="card c3">
+      <div class="stepno">第 ③ 步 · Pod 内执行</div>
+      <h2>planner（单 Pod 开发循环）</h2>
+      <div class="actor">拿到并消费：<b>plan.md</b>（只读，包级设计）+ <b>roadmap 本包效果段</b>（意图锚）+ taskpackage.json 骨架 + 冻结 PROPOSAL</div>
+      <ul class="flow">
+        <li><b>派 acceptance-author</b>——brief 必须携带 roadmap 本包效果段（「回答期间图表前台可见」这类可观察不变式的稳定落点）</li>
+        <li class="anchor"><b>锚 2 · 验收方向核（新增）</b><b>planner（agent）</b>在 acceptance 冻结后、builder 动工前，对照 roadmap 效果段核验收方向<span class="detail">对不上 / 存疑 → 升 architect 复核；human 只在升级链终点出场</span></li>
+        <li><b>builder → verifier ↔ fixer</b>（内循环，不动）</li>
+        <li><b>integrator 收口</b></li>
+        <li class="anchor"><b>锚 3 · demo 对账（新增）</b>收口必含 demo 证据（形态拆包时已定）+ 与效果段的一致性结论<span class="detail">对不上 → 走既有 escalation 通道就地升裁，禁攒到集成夜</span></li>
+        <li><b>supervisor 合并门 → merge-driver 合并</b>（已有，不动）</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 闭环 -->
+  <div class="loopband">
+    <b>闭环（列车视角）</b>——匹配判断在锚 3（合并前）完成，merge 后只做状态与调度：
+    <div class="steps">
+      <span class="chip">包 merge</span><span class="ar">→</span>
+      <span class="chip machine">render-roadmap.mjs 机械渲染达成状态（merge = achieved / deviation 有记录）——无 agent 例行唤起</span><span class="ar">→</span>
+      <span class="chip">下一包 launch（portfolio-planner 事件驱动唤起之二）</span>
+    </div>
+    <div class="tail">portfolio-planner 仅两类事件被唤起：① 锚 3 记 deviation 且需裁断或改 roadmap；② 下一包 launch 决策。全列 achieved → workstream 收口轮。</div>
+  </div>
+
+  <!-- 失败映射 -->
+  <div class="hits">
+    <h3>每道门 / 锚对应本批与 MVP 真实发生的哪次失败 <span>（判据：已发生的缺陷能被新门拦住）</span></h3>
+    <div class="hitsgrid">
+      <div class="hit">
+        <div class="g">门 1 · 拆包 review</div>
+        <div class="f"><b>MVP 跨包掉缝</b>KEY 端到端无人接线、殿后 9b 转手漏列、故事归档三段各自绿——切片逻辑 + 跨包 owner 检查项直接命中</div>
+      </div>
+      <div class="hit">
+        <div class="g">锚 2 · 验收方向核</div>
+        <div class="f"><b>SU-RULING-01</b>acceptance-author 把前台优先级钉反（语音盖服务端页）——builder 动工前对效果段一核即拦，无需事后逐字读代码</div>
+      </div>
+      <div class="hit">
+        <div class="g">锚 3 · demo 对账</div>
+        <div class="f"><b>SU-RULING-02 + 集成夜爆雷</b>只交付 layer 机制、聊天屏仍双物理屏并存——「聊天内容任何页可见」的效果对账当场翻红，不必等真机轮</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
