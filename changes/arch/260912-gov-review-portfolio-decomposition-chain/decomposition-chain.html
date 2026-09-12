@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案 v0.3</title>
+<title>拆包→执行链 · 治理方案草案 v0.4</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -84,8 +84,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案（v0.3）</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.3，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案草案（v0.4）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.4，讨论中）</div>
 
   <div class="chain">
 
@@ -94,18 +94,17 @@
       <div class="stepno">第 ① 步 · 立项</div>
       <h2>PROPOSAL（主线程起草 + human grilling）</h2>
       <div class="actor">主线程起草 → human 裁 OQ → <b>architect 分流 review</b>（/triage-change，已有，不动）→ 冻结</div>
-      <div class="role"><b>角色：裁决记录 · 冻结后不动</b>只回答「为什么改、人裁了什么」。切包怎么切不归它管。</div>
+      <div class="role"><b>角色：三问 + 裁定 · 冻结后不动</b>frontmatter 标 workType（new-capability / remediation / refactor，可混合、按业务目的逐条标）。</div>
       <div class="art">
-        <div class="fname">.planning/&lt;ws&gt;/PROPOSAL.md 包含：</div>
+        <div class="fname">.planning/&lt;ws&gt;/PROPOSAL.md = 通用三问 + 分型：</div>
         <ul>
-          <li><b>业务目的清单</b> <span class="tag new">v0.2 硬项</span>——枚举式、每条含可观察判据（人能看到/听到/按到什么），禁一句概括</li>
-          <li>问题与根因（file:line 证据锚）</li>
-          <li>方案空间 + OQ 裁定，<b>每条裁定标注 spec 关系</b> <span class="tag new">v0.2 硬项</span>：within-spec（引条款号）/ 需修订 → Track B 逃生门 / spec 未载 → 留根申报</li>
-          <li>契约 / spec 触面申报（逃生门）</li>
-          <li>留根清单（不做的归哪批）</li>
+          <li><b>① 要达成什么</b> <span class="tag new">硬项</span>——业务目的清单，每条可观察判据；来源随分型：整改引缺陷证据 / 新建引 spec story（不改语义只加判据）</li>
+          <li><b>② 现在在哪</b>——新建型：现状盘点 + 能力差距（「还没建」≠「坏了」）；整改型：问题 + 证据锚 + 根因（<b>「问题与根因」仅此形态合法</b>）；重构型：结构痛点</li>
+          <li><b>③ 怎么走</b>——方案空间 + OQ 裁定，<b>每条裁定标注 spec 关系</b> <span class="tag new">硬项</span>：within-spec（引条款号）/ 需修订 → Track B 逃生门 / spec 未载 → 留根申报</li>
+          <li>非目标 + 契约 / spec 触面申报（逃生门）</li>
           <li><s>§4 拆包预判</s><span class="tag hot">降级</span>→ 只作意图提示，不再当拆包权威</li>
         </ul>
-        <div class="note">两源权威序：spec = 行为语义权威，PROPOSAL = 路径选择记录——裁定改 spec 钉死的语义必过 spec 修订，不得在 PROPOSAL 内自冻成第二事实源。（MVP 教训：目标句写的是「把 story 拆成包」这个动作本身，业务效果一处未落纸）</div>
+        <div class="note">两源权威序：spec = 行为语义权威，PROPOSAL = 路径选择记录——裁定改 spec 钉死的语义必过 spec 修订，不得自冻成第二事实源。（MVP 教训：新建型的目标句写成「把 story 拆成包」这个动作本身，业务效果一处未落纸——① 的硬项由此来；260911 全整改所以「问题与根因」成立，但形态不通用）</div>
       </div>
     </div>
 
