@@ -1,5 +1,7 @@
 # docs-delta — 260911-render-pages（批次③ 渲染观感 + V3 整屏还原双轨）
 
+> **追记（2026-09-12 收口刷新，真机轮 RP-A5 四轮 fixer + human PASS 后）**：本窗口 docs 面增量**仅一条** = `docs/ARCH-REVIEW-QUEUE.md` +2 行（**ARQ-260912-host-werror-comment-acceptance-gap** 登记，SHOULD；fixer 轮披露、非 integrator 落笔）。`docs/contracts/**` / `docs/spec.md` 维持零触碰（r6 contract-lint PASS + `git diff --name-only` 空输出实测）；docs/notes 无新锚点需求（真机轮收口未引入新 docRef）。前窗清单（§A-§D）全部维持有效、不重述。
+
 > integrator docs-sync 结果清单 · 2026-09-12 · 分支 `dev/260911-render-pages`（base = main，HEAD = `83a6e66`）。
 > 性质：固件观感/还原双轨包（subsystem=firmware，rigor=full，riskTier=high，gateProfile=host-teeth/device-round/frozen-acceptance-revision，mergeOrder 21）。
 > `docsSyncRequired=true` + `docsOwner=integrator`。r5 docs-sync 闸 `ok:true`。**核心结论：canonical 面（`docs/contracts/**`、`docs/spec.md`）与 docs/notes 零 integrator 改动**——docs/notes 锚点由主线程先行落盘（本相位无 docs/notes 写权，enforce-scope 机判拦截、未绕过）；本包 docs 增量 = 主线程锚点 1 处 + 证据件清单（changes/dev/ 同目录）。

@@ -111,6 +111,27 @@ static kidpal_story_text_t s_story_text = {};
 static bool        s_has_char_data = false;
 static std::string s_char_json;   /* 动态分配，不占 .bss；mcp_server cache_char_data 填充 */
 
+/* ------------------------------------------------------------------------- *
+ * 五态 chrome 显隐的前台维度桥 (RP-A5 r3/r4)：姿态/气泡仅当 VOICE 层为前台层时显示，
+ * 任何内容页（SERVER_PAGE 答案 / REMINDER / LOCAL_PAGE 浏览）前台时隐藏—— chrome
+ * 常驻 lv_layer_top 恒浮于活动屏之上，层栈只裁决前台屏，显隐第二维须由前台切换
+ * 点事件驱动。本模块各调用点均已持 lvgl_port_lock（见文件头线程约束），桥内递归
+ * 取锁无害。
+ * r4 修正: 经 lcd_display.cc 的 C 桥 + SetupUI 登记的 self 指针取 display,
+ * 绝不经 Board::GetInstance() —— boot 期 render_node_init 跑在 CustomBoard 构造
+ * 期内, 函数内 static 单例重入会 __cxa_guard 永久阻塞 (r3 真机开机挂死根因)。
+ * s_kidpal_scr==NULL（未 init / 非 KidPal 归一屏板）时不作为。
+ * ---------------------------------------------------------------------- */
+extern "C" void kidpal_lcd_voice_chrome_front(int front);
+
+static void rn_voice_chrome_front_locked(void)
+{
+    if (s_kidpal_scr == NULL) {
+        return;
+    }
+    kidpal_lcd_voice_chrome_front(kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE);
+}
+
 /* -------------------------------------------------------------------------
  * 强符号覆盖：host_infra_render_p1_frame（home_p1.c 中的弱默认为 -1）
  *
@@ -271,6 +292,7 @@ void kidpal_render_node_show_home(void)
     kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
 
     rn_render_home_locked();
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
 
@@ -293,6 +315,7 @@ void kidpal_render_node_show_chat(void)
     }
     kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_VOICE);
     rn_reconcile_foreground_locked();
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
     ESP_LOGI(RN_TAG, "show_chat: VOICE layer push (top=%d)",
@@ -319,6 +342,7 @@ void kidpal_render_node_voice_begin(void)
     } else {
         rn_reconcile_foreground_locked();
     }
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
     ESP_LOGI(RN_TAG, "voice_begin: new round (top=%d)",
@@ -344,6 +368,7 @@ void kidpal_render_node_voice_end(void)
         /* 服务端回答页驻留前台（OQ3=c：回答后屏幕落点确定、非随机回退；语音不拦内容页）。 */
         rn_reconcile_foreground_locked();
     }
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
     ESP_LOGI(RN_TAG, "voice_end: top=%d", kidpal_layer_top(&s_layer_stack));
@@ -368,6 +393,8 @@ void kidpal_render_node_begin_page(void)
     kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
     /* 把活动屏切到 KidPal 专属屏，令页面渲染的 lv_screen_active() 取到此屏。 */
     lv_screen_load(s_kidpal_scr);
+    /* 答案页接管前台：五态姿态/气泡退隐（chrome 显隐前台维度）。 */
+    rn_voice_chrome_front_locked();
 }
 
 void kidpal_render_node_end_page(void)
@@ -386,6 +413,8 @@ void kidpal_render_node_begin_reminder(void)
      * 到点也置前、不崩（review F8 架构修复）。 */
     kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_REMINDER);
     lv_screen_load(s_kidpal_scr);
+    /* 提醒置前：五态姿态/气泡退隐。 */
+    rn_voice_chrome_front_locked();
 }
 
 /* -------------------------------------------------------------------------
@@ -425,6 +454,7 @@ void kidpal_render_node_end_provision(void)
     /* 配网退 layer：不在场 pop 返回 -1（no-op），按优先级表回落。 */
     kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_PROVISION);
     rn_reconcile_foreground_locked();
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
     ESP_LOGI(RN_TAG, "end_provision: PROVISION pop (top=%d)",
@@ -527,7 +557,21 @@ void kidpal_render_node_cycle_next(void)
         }
         case KP_PAGE_STORY: {
             lv_screen_load(s_kidpal_scr);
-            kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
+            if (s_story_list.count <= 0) {
+                /* #11 数据链根因同族 (R-S0.2, schedule 空态同款): 故事缓存仅在语音
+                 * 查询过故事后才填充; BOOT 翻页切来时可能本开机未查询 -> count=0
+                 * 空壳页。改画友好空态 (居中提示), 不再渲染空壳页; 语音查询路径
+                 * 不动。 */
+                lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
+                lv_label_set_text(lbl, "还没有故事，说『我要讲故事』开录吧");
+                lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
+                lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+                lv_obj_set_width(lbl, 380);
+                lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
+                lv_obj_center(lbl);
+            } else {
+                kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
+            }
             s_local_page = KP_PAGE_STORY;
             ESP_LOGI(RN_TAG, "cycle -> STORY (P3) count=%d", s_story_list.count);
             break;
@@ -536,6 +580,9 @@ void kidpal_render_node_cycle_next(void)
             s_local_page = KP_PAGE_HOME;
             break;
     }
+
+    /* 浏览页前台：五态姿态/气泡退隐（chrome 显隐前台维度）。 */
+    rn_voice_chrome_front_locked();
 
     lvgl_port_unlock();
 }

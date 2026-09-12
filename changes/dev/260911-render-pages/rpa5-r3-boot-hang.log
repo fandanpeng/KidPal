@@ -1,0 +1,21 @@
+I (222) ES8311: Work in Slave mode
+I (232) ES7210: Work in Slave mode
+I (242) ES7210: Enable ES7210_INPUT_MIC1
+I (242) ES7210: Enable ES7210_INPUT_MIC2
+I (242) ES7210: Enable ES7210_INPUT_MIC3
+I (252) ES7210: Enable ES7210_INPUT_MIC4
+I (252) ES7210: Enable TDM mode
+I (252) BoxAudioCodec: BoxAudioDevice initialized
+I (252) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-252 ok rtc=01:28:49
+I (272) waveshare_rlcd_4_2: shtc3 corr_id=kdp-252 ok temp_c=29.48 rh_pct=48.3
+I (272) MCP: Add tool: self.disp.network
+I (272) Display: Power management not supported
+I (272) CustomDisplay: Initialize SPI
+I (582) CustomDisplay: Initialize LVGL library
+I (582) LVGL: Starting LVGL task
+I (592) CustomDisplay: RLCD init
+I (1172) CustomDisplay: ui start
+I (1212) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1212) waveshare_rlcd_4_2: art layer mounted at /art
+I (1212) kidpal_rn: KidPal render node initialized (unified screen + layer stack)
+I (1342) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1054

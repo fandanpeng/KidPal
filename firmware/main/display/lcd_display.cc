@@ -375,12 +375,22 @@ static const char g_kidpal_bubble_tail_asset[] = "bubble_tail_24.bin";
 
 static lv_obj_t*   g_kidpal_keycap_label = NULL; /* 底部键帽条 (常驻) */
 static lv_obj_t*   g_kidpal_chat_label   = NULL; /* 同步文字框 / 气泡挂点 (SetupUI 纪元) */
+static lv_obj_t*   g_kidpal_pose_parent  = NULL; /* 姿态图父容器 = SetupUI 活分支表情区 (SetupUI 纪元) */
+static lv_obj_t*   g_kidpal_pose_img     = NULL; /* 姿态图对象 (场景切换重建, 旧件必删) */
+static lv_obj_t*   g_kidpal_emoji_label  = NULL; /* 笑脸 label (SetupUI 纪元, 中部显隐纪律用) */
+static lv_obj_t*   g_kidpal_emoji_image  = NULL; /* 表情图 (SetupUI 纪元, 中部显隐纪律用) */
+static int         g_kidpal_mid_mode     = 0; /* chrome 中部显隐: 0=未接管 1=五态演出 2=idle 清空 */
+static int         g_kidpal_voice_front  = 0; /* VOICE 层是否前台 (render_node 桥写入; 姿态显隐第二维) */
+static LcdDisplay* s_kidpal_lcd_self     = NULL; /* self 注册 (RP-A5 r4): 前台维度桥不得经
+    Board::GetInstance() —— boot 期 render_node_init 跑在 CustomBoard 构造期内, 函数内
+    static 单例重入会 __cxa_guard 永久阻塞 (r3 真机砖机根因)。SetupUI 构造期登记 this。 */
 static lv_image_dsc_t g_kidpal_pose_dsc;
 static uint32_t*   g_kidpal_pose_px = NULL;
 static int         g_kidpal_pose_st   = 0; /* 0=未试 1=可用 2=不可用 */
 static int         g_kidpal_pose_scene = -1;
 
 static void kidpal_voice_apply_look(int scene);
+static void kidpal_chrome_mid_sync_locked(void);
 
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE
 void LcdDisplay::SetupUI() {
@@ -950,6 +960,14 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_color(g_kidpal_keycap_label, lvgl_theme->text_color(), 0);
     lv_obj_align(g_kidpal_keycap_label, LV_ALIGN_BOTTOM_MID, 0, -lvgl_theme->spacing(1));
 
+    /* 五态姿态图父容器 = 表情区 emoji_box_ (xiaozhi 聊天 chrome 一员, 随 chrome
+     * reparent 常驻聊天层): 姿态挂进 chrome 子树而非裸挂 lv_layer_top(), 归
+     * PKG-2 聊天 chrome 生命周期管辖 (RP-A5 修复; 真机「每页出猫 / 叠首页时间」
+     * 根因 = 裸挂 top layer 绕过层仲裁 + 旧图不删堆叠)。 */
+    g_kidpal_pose_parent = emoji_box_;
+    g_kidpal_emoji_label = emoji_label_;
+    g_kidpal_emoji_image = emoji_image_;
+
     low_battery_popup_ = lv_obj_create(screen);
     lv_obj_set_scrollbar_mode(low_battery_popup_, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_size(low_battery_popup_, LV_HOR_RES * 0.9, text_font->line_height * 2);
@@ -962,6 +980,10 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_text_color(low_battery_label_, lv_color_white(), 0);
     lv_obj_center(low_battery_label_);
     lv_obj_add_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
+
+    /* self 注册 (RP-A5 r4): render_node 前台维度桥取 display 用, 不经
+     * Board::GetInstance() (boot 期单例重入死锁根因)。 */
+    s_kidpal_lcd_self = this;
 }
 
 void LcdDisplay::SetPreviewImage(std::unique_ptr<LvglImage> image) {
@@ -1018,6 +1040,9 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
 static void kidpal_voice_apply_look(int scene)
 {
     kidpal_voice_look_t look;
+    uint32_t* new_px = NULL;
+    int       new_w = 0, new_h = 0;
+    int       need_pose = 0;
 
     /* V3 气泡尾巴资产 (U 闭集修订唯一新增 KAP1) 为气泡完成件, 消费接线见 v3_restore
      * 齿 (本实现以键帽条 + 姿态为主; 气泡尾巴拼装观感归设计面)。 */
@@ -1025,6 +1050,48 @@ static void kidpal_voice_apply_look(int scene)
 
     /* 五态内容选择单源 (weak 哨兵被强符号覆盖后为真实映射)。 */
     if (kidpal_voice_state_look(scene, &look) != 0 || look.keycap == NULL) {
+        return;
+    }
+
+    /* 演出活跃期: 姿态顶替笑脸位 (chrome 中部显隐纪律, RP-A5 r2)。 */
+    g_kidpal_mid_mode = 1;
+
+    /* 姿态资产加载 + 像素合成不占 LVGL 锁 (文件 IO / 堆分配), 先备好新缓冲;
+     * 锁内只做对象树操作。按场景一次性尝试 (g_kidpal_pose_scene 先行登记),
+     * 同场景加载失败不每帧重读资产。 */
+    if (scene != g_kidpal_pose_scene) {
+        int pose = look.pose;
+        g_kidpal_pose_scene = scene;
+        need_pose = 1;
+        if (pose >= 0 && pose <= KVST_POSE_SLEEP) {
+            kidpal_art_img_t img;
+            if (kidpal_art_load(g_kidpal_pose_asset[pose], &img) == 0 &&
+                img.w > 0 && img.h > 0 && img.w <= 96 && img.h <= 96) {
+                new_px = (uint32_t*)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+                if (new_px != NULL) {
+                    for (int y = 0; y < img.h; y++) {
+                        for (int x = 0; x < img.w; x++) {
+                            int p = kidpal_art_pixel(&img, x, y);
+                            new_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+                        }
+                    }
+                    new_w = img.w;
+                    new_h = img.h;
+                }
+            }
+        }
+    }
+
+    /* LVGL 锁内: 键帽条 / 气泡文案 + 姿态图对象切换全部在锁内执行 (锁外调
+     * lv_label_set_text / lv_image_* = 主任务与 LVGL 任务并发触对象树, 堆/链表
+     * 腐蚀殃及 TLS/WS 路径——RP-A5 真机轮上行音频零帧根因)。基类
+     * LvglDisplay::SetStatus 的 DisplayLockGuard 已在基类返回时释放, 此处取锁
+     * 无嵌套死锁。 */
+    if (!lvgl_port_lock(30000)) {
+        if (new_px != NULL) {
+            lv_free(new_px);
+        }
+        ESP_LOGE(TAG, "kidpal_voice_apply_look: acquire lvgl lock timeout (scene=%d)", scene);
         return;
     }
 
@@ -1038,55 +1105,92 @@ static void kidpal_voice_apply_look(int scene)
         lv_label_set_text(g_kidpal_chat_label, look.bubble);
     }
 
-    /* 小伴姿态位图: 场景切换时经资产层加载 pose_<pose>_96.bin, 合成在常驻 voice 层。
-     * best-effort (未 mount / 加载失败 -> 保留既有, 不崩)。 */
-    if (scene != g_kidpal_pose_scene ||
-        (g_kidpal_pose_st == 2 && g_kidpal_pose_scene != scene)) {
-        /* pose 代号落入 asset 表才加载 (防御 look.pose 越界)。 */
-        int pose = look.pose;
-        const char* asset_path;
-        kidpal_art_img_t img;
+    if (need_pose) {
+        /* 场景切换: 旧姿态图对象与旧像素缓冲一并回收, 再按新缓冲重建 —— 杜绝
+         * 每次切换漏 36KB + 旧图永不删 (真机「两只猫咪」即此因)。 */
+        if (g_kidpal_pose_img != NULL) {
+            lv_obj_del(g_kidpal_pose_img);
+            g_kidpal_pose_img = NULL;
+        }
+        if (g_kidpal_pose_px != NULL) {
+            lv_free(g_kidpal_pose_px);
+            g_kidpal_pose_px = NULL;
+        }
+        if (new_px != NULL && g_kidpal_pose_parent != NULL) {
+            /* 挂聊天 chrome 表情区容器 (SetupUI 活分支 emoji_box_): 归 xiaozhi
+             * 聊天 chrome 子树与常驻聊天层生命周期管辖, 不再裸挂 lv_layer_top()
+             * 绕过 PKG-2 层仲裁; 姿态落情绪位 (居中), 不再压首页时间。 */
+            memset(&g_kidpal_pose_dsc, 0, sizeof(g_kidpal_pose_dsc));
+            g_kidpal_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+            g_kidpal_pose_dsc.header.w      = (uint32_t)new_w;
+            g_kidpal_pose_dsc.header.h      = (uint32_t)new_h;
+            g_kidpal_pose_dsc.header.stride = (uint32_t)new_w * 4u;
+            g_kidpal_pose_dsc.data          = (const uint8_t*)new_px;
+            g_kidpal_pose_dsc.data_size     = (uint32_t)(new_w * new_h * 4u);
+            g_kidpal_pose_px = new_px;
+            new_px = NULL;
+            g_kidpal_pose_img = lv_image_create(g_kidpal_pose_parent);
+            lv_image_set_src(g_kidpal_pose_img, &g_kidpal_pose_dsc);
+            lv_obj_center(g_kidpal_pose_img);
+            g_kidpal_pose_st = 1;
+        } else {
+            /* 资产缺失 / 父容器未就绪: 本轮无姿态 (旧件已回收), 场景再变时重试。 */
+            if (new_px != NULL) {
+                lv_free(new_px);
+                new_px = NULL;
+            }
+            g_kidpal_pose_st = 2;
+        }
+    }
 
-        g_kidpal_pose_scene = scene;
-        if (pose < 0 || pose > KVST_POSE_SLEEP) {
-            return;
+    /* chrome 中部显隐重断言 (本函数只在 LISTENING/SPEAKING 路径被调, mode=1)。 */
+    kidpal_chrome_mid_sync_locked();
+
+    lvgl_port_unlock();
+}
+
+/* -------------------------------------------------------------------------- *
+ * chrome 中部显隐纪律 (RP-A5 r2 真机轮: 语音猫与笑脸叠罗汉 / 笑脸悬浮每一页)。
+ * PKG-2 归一屏下聊天 chrome 常驻 lv_layer_top、恒浮于活动屏之上, 层栈只裁决前台
+ * 屏——姿态与笑脸的显隐必须由内容面自管:
+ *   mode=1 五态演出活跃 (LISTENING/SPEAKING): 笑脸 (label+image) 隐 —— 姿态顶替
+ *          笑脸位, 二者不得同框; 姿态显示还需 g_kidpal_voice_front=1 (VOICE 层
+ *          前台), 内容页 (答案/提醒/浏览) 前台时演出进行中姿态也不浮出;
+ *   mode=2 idle (STANDBY): 姿态与笑脸都隐 —— chrome 中部无任何图形, 页面干净;
+ *   mode=0 未接管: boot/connecting 等, SetEmotion 自管不动。
+ * 键帽条与聊天文本 (chat_message_label_) 任何状态不动 (V3 §06 / PKG-2 语义)。
+ * 显隐只切 LV_OBJ_FLAG_HIDDEN, 对象与缓冲复用不重建 (round 1 泄漏纪律不破)。
+ * 调用方必须已持 LVGL 锁。
+ * ------------------------------------------------------------------------ */
+static void kidpal_chrome_mid_sync_locked(void)
+{
+    if (g_kidpal_mid_mode == 1) {
+        if (g_kidpal_emoji_label != NULL) {
+            lv_obj_add_flag(g_kidpal_emoji_label, LV_OBJ_FLAG_HIDDEN);
         }
-        asset_path = g_kidpal_pose_asset[pose];
-        if (kidpal_art_load(asset_path, &img) != 0 || img.w <= 0 || img.h <= 0 ||
-            img.w > 96 || img.h > 96) {
-            g_kidpal_pose_st = 2;
-            return;
+        if (g_kidpal_emoji_image != NULL) {
+            lv_obj_add_flag(g_kidpal_emoji_image, LV_OBJ_FLAG_HIDDEN);
         }
-        g_kidpal_pose_px = (uint32_t*)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
-        if (g_kidpal_pose_px == NULL) {
-            g_kidpal_pose_st = 2;
-            return;
-        }
-        for (int y = 0; y < img.h; y++) {
-            for (int x = 0; x < img.w; x++) {
-                int p = kidpal_art_pixel(&img, x, y);
-                g_kidpal_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        /* 姿态显示需两条件同时成立: 五态演出活跃 (mode=1, SetStatus 驱动) 且
+         * VOICE 层为前台层 (g_kidpal_voice_front, render_node 前台切换桥驱动)。
+         * 内容页 (答案/提醒/浏览页) 前台时演出进行中也不得浮出 (RP-A5 r3:
+         * 「课表答案页显示时猫咪在中间」)。 */
+        if (g_kidpal_pose_img != NULL) {
+            if (g_kidpal_voice_front) {
+                lv_obj_remove_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
             }
         }
-        memset(&g_kidpal_pose_dsc, 0, sizeof(g_kidpal_pose_dsc));
-        g_kidpal_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
-        g_kidpal_pose_dsc.header.w      = (uint32_t)img.w;
-        g_kidpal_pose_dsc.header.h      = (uint32_t)img.h;
-        g_kidpal_pose_dsc.header.stride = (uint32_t)img.w * 4u;
-        g_kidpal_pose_dsc.data          = (const uint8_t*)g_kidpal_pose_px;
-        g_kidpal_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4u);
-        g_kidpal_pose_st = 1;
-
-        /* 在常驻 voice 层 (lv_layer_top) 展示当前姿态; 常驻 so 任何页可见。 */
-        if (lvgl_port_lock(0)) {
-            lv_obj_t* layer = lv_layer_top();
-            if (layer != NULL) {
-                lv_obj_t* pi = lv_image_create(layer);
-                lv_image_set_src(pi, &g_kidpal_pose_dsc);
-                lv_obj_align(pi, LV_ALIGN_TOP_LEFT, 8, 8);
-                lv_obj_update_layout(pi);
-            }
-            lvgl_port_unlock();
+    } else if (g_kidpal_mid_mode == 2) {
+        if (g_kidpal_emoji_label != NULL) {
+            lv_obj_add_flag(g_kidpal_emoji_label, LV_OBJ_FLAG_HIDDEN);
+        }
+        if (g_kidpal_emoji_image != NULL) {
+            lv_obj_add_flag(g_kidpal_emoji_image, LV_OBJ_FLAG_HIDDEN);
+        }
+        if (g_kidpal_pose_img != NULL) {
+            lv_obj_add_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
         }
     }
 }
@@ -1102,6 +1206,15 @@ void LcdDisplay::SetStatus(const char* status) {
             kidpal_voice_apply_look(KVST_SCENE_LISTEN);
         } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
             kidpal_voice_apply_look(KVST_SCENE_TALK);
+        } else if (strcmp(status, Lang::Strings::STANDBY) == 0) {
+            /* idle 进入: chrome 中部清空 —— 姿态与笑脸都隐 (复用既有对象,
+             * 显隐切换零重建), 键帽条/聊天文本留屏 (RP-A5 r2)。基类计时语义
+             * 已先完成, 此处自取自放锁, 无嵌套。 */
+            g_kidpal_mid_mode = 2;
+            if (lvgl_port_lock(30000)) {
+                kidpal_chrome_mid_sync_locked();
+                lvgl_port_unlock();
+            }
         }
     }
 }
@@ -1127,6 +1240,10 @@ void LcdDisplay::SetEmotion(const char* emotion) {
             lv_label_set_text(emoji_label_, utf8);
             lv_obj_add_flag(emoji_image_, LV_OBJ_FLAG_HIDDEN);
             lv_obj_remove_flag(emoji_label_, LV_OBJ_FLAG_HIDDEN);
+            /* 中部显隐纪律重断言 (RP-A5 r2): 演出活跃/idle 期笑脸不得复现。 */
+            if (g_kidpal_mid_mode != 0) {
+                kidpal_chrome_mid_sync_locked();
+            }
         }
         return;
     }
@@ -1173,6 +1290,12 @@ void LcdDisplay::SetEmotion(const char* emotion) {
         lv_obj_add_flag(emoji_label_, LV_OBJ_FLAG_HIDDEN);
     }
 #endif
+
+    /* chrome 中部显隐纪律 (RP-A5 r2): 状态机先 SetStatus 后 SetEmotion —— 五态
+     * 演出活跃/idle 期笑脸不得借 SetEmotion 复现; 在其自管逻辑之后重断言显隐。 */
+    if (g_kidpal_mid_mode != 0) {
+        kidpal_chrome_mid_sync_locked();
+    }
 }
 
 void LcdDisplay::SetTheme(Theme* theme) {
@@ -1359,4 +1482,28 @@ void LcdDisplay::KidPalReparentChatToLayer(lv_obj_t* parent) {
             lv_obj_set_parent(obj, parent);
         }
     }
+}
+
+void LcdDisplay::KidPalVoiceChromeFront(bool voice_front) {
+    /* render_node 前台切换点调用, 调用方已持 lvgl 锁 (递归互斥量, 此处重取无害;
+     * 亦兼容未来未持锁调用方)。只翻前台维度标志并重断言中部显隐 —— 「armed &&
+     * front」两条件与: SetStatus(LISTENING) 在语音轮中反复触发时, apply_look 的
+     * sync 也不会在内容页前台把姿态重新显示出来。键帽条/聊天文本不动。 */
+    g_kidpal_voice_front = voice_front ? 1 : 0;
+    if (lvgl_port_lock(30000)) {
+        kidpal_chrome_mid_sync_locked();
+        lvgl_port_unlock();
+    }
+}
+
+/* C 桥 (RP-A5 r4): render_node (C++ 但不同编译单元) 经本接口驱动前台维度显隐。
+ * 取 display 走 SetupUI 登记的 self 指针, NULL 守卫 (未构造/非 KidPal 板) 直接
+ * 返回 —— 绝不经 Board::GetInstance() (boot 期 render_node_init 跑在 CustomBoard
+ * 构造期内, 函数内 static 单例重入 __cxa_guard 永久阻塞 = r3 真机砖机根因)。 */
+extern "C" void kidpal_lcd_voice_chrome_front(int front)
+{
+    if (s_kidpal_lcd_self == NULL) {
+        return;
+    }
+    s_kidpal_lcd_self->KidPalVoiceChromeFront(front != 0);
 }

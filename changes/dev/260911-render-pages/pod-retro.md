@@ -28,3 +28,10 @@ label: 第一人称热记忆（不复述机器事实——tokens/gates/rounds/ve
 
 - 无 agent-escalation 事件——全程未触发升级桥，human 触点只有 S0.1 字体决策一次（ AskUserQuestion 两轮，第一轮是概念澄清、第二轮实裁）。
 - loop-retro 阈值触达（15 ≥ 3）advisory 在案，发起责任归主线程（非本 Pod 内闭环动作，勿忘）。
+
+## 真机轮 RP-A5 教训（2026-09-12 追加 · 四轮 fixer 收敛后）
+
+- **① host runner 不编译设备面文件，host 绿 ≠ 能开机。** lcd_display.cc / kidpal_render_node.cc 这类设备面代码不在 host_app target 里，host 全绿对它们是结构性失明——r3 的 boot 死锁（`Board::GetInstance()` 在板卡构造期重入 `__cxa_guard`）编译期零信号，是烧录后才现形的。开机冒烟（烧录后走到 activating→idle 的 serial 一瞥）已立为必经步，不再等真机轮全量才撞墙。
+- **② 冻结齿被注释文本糊绿 = 齿强度自检缺一环。** v3_restore 齿 6 以文本出现为满足，`schedule_page.c` 一段注释里恰好含关键词，齿就绿了——三字体零运行时接线这件事，齿面全程无信号，最后靠 human 肉眼「界面还是老的」戳破。教训：文本匹配齿要防「注释即满足」（注释豁免或结构锚定），冻结多文件齿时加一道「新齿会不会被注释/字符串偶然满足」的自检。
+- **③ `Board::GetInstance()` 在板卡构造期重入 = boot 死锁，设备面代码取 display 一律自注册。** 函数内 static 单例在首次调用方尚未返回时重入，`__cxa_guard` 永久阻塞，boot 无声挂死（serial 停在 show_home 前一行，无 panic 无看门狗吠）。定例：render_node 等板卡构造期就会跑到的代码，取 display 走 SetupUI 自注册的 C 桥（`kidpal_lcd_voice_chrome_front` 先例），绝不回调单例。
+- 另记：human 决策拆包（RP-A4 字体运行时接线拆后续包）是真机轮暴露齿强度缺陷后的干净处置——本包先收口、接线 + 真机腿后续包一并兑现，比在本包尾巴上追加改动稳。

@@ -697,9 +697,11 @@ static int ksp_pose_image_ready(void)
 }
 
 /* -------------------------------------------------------------------------- *
- * 换皮网点弱底纹 (包 260911-render-pages RP-A8)：把三档网点之一 d50 (4x4, 单元 4px)
- * 合成为 ARGB8888 tile, 经 bg_image_tiled 在 `bg` 上平铺成课表页弱底纹。四类用途
- * 白名单「弱底纹」, 单屏面积 4px 格稀疏 (V3 §07)。未 mount/失败 -> NULL (best-effort)。
+ * 换皮网点弱底纹 (包 260911-render-pages RP-A8)：把三档网点之一 d12 (4x4, 单元 4px,
+ * 三档中最稀疏档) 合成为 ARGB8888 tile, 经 bg_image_tiled 在 `bg` 上平铺成课表页
+ * 弱底纹 (V3 :451 vs-card / :512 姿态舞台同档)。d50 为设计唯一半调压暗档 (弹窗
+ * 背后整屏压暗, 仅 reminder_page.c 消费), 不作页面底纹 (RP-A5 r3 真机轮: d50 整页
+ * 平铺呈「很多黑点」)。未 mount/失败 -> NULL (best-effort)。
  * ------------------------------------------------------------------------ */
 #define KSP_DOTS_MAX 16
 static lv_image_dsc_t s_ksp_dots_dsc;
@@ -716,7 +718,7 @@ static const lv_image_dsc_t *ksp_dots_dsc(void)
     if (s_ksp_dots_st == 1) {
         return &s_ksp_dots_dsc;
     }
-    if (kidpal_art_load("d50.bin", &img) != 0 ||
+    if (kidpal_art_load("d12.bin", &img) != 0 ||
         img.w <= 0 || img.h <= 0 || img.w > KSP_DOTS_MAX || img.h > KSP_DOTS_MAX) {
         s_ksp_dots_st = 2;
         return NULL;
