@@ -102,6 +102,8 @@ story 底稿对账：story-rewrite-draft.md（human 过目稿）vs 落地 requir
 
 ## 结论
 
+> verdict: GREEN（条件放行，条件 1/2 见上节，merge 归 human 门）
+
 **GREEN（ok:true，条件放行）**——首轮两个格式拦阻已修并复验属实；结构门唯一剩余红经独立裁定 = **已登记闸解析盲点假红**（非实质对账失败）；语义保真维持首轮全绿结论。两个条件项归 human 在 merge 门追认（Track B 第七步本就有 human 出场点，不额外加门）：
 
 - **条件 1（human 追认）**：PROPOSAL「落地后不可回改」条款的核验期格式修复例外（6 行去强调符，零内容变更）。
