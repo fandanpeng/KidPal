@@ -1,9 +1,9 @@
 ---
 workstream: kidpal-mvp 开发包拆分与并行开发
 slug: kidpal-mvp
-status: active
+status: done
 opened: 2026-08-29
-closed:
+closed: 2026-09-13
 summary: 把 spec §4 全部 story 拆成排序带依赖的 TaskPackage，模拟优先硬件殿后，先烧板证明板↔shim↔OpenClaw 可行再做主体开发
 owner: portfolio-planner
 area: systems

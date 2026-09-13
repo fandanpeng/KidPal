@@ -183,3 +183,4 @@
   ② DF-A3 时延实测 + DF-A6 workstream 收口真机轮需 live ECS + human 持板（含 SU-A7 两键一致
   复跑；§5 五条收口标准并集对账，本包 = 末位 owner）；③ audio-bargein-hw 是否另窗口穿插 launch
   由 human 定；④ render-pages（批次③）待 PKG-4 并后再备 launch 面。
+- **2026-09-13 收口归档（human 定向）**：PKG-1 key-route-a1 / PKG-2 screen-unification / PKG-4 display-first-m1 + 批次③ render-pages 全部闭环合并（render-pages merged 5958026）。workstream 目标（归一屏 / 显示先行 / 回答驻留 / 键位路线）已交付；随 spec 拆分旧批一并归档，后续演进归 phase 2 新结构。

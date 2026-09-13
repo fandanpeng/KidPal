@@ -1,9 +1,9 @@
 ---
 workstream: 设备显示与交互主权包（三屏主权收口 + 显示先行 + 回答驻留 + 键位路线）
 slug: 260911-display-interaction-sovereignty
-status: active
+status: done
 opened: 2026-09-11
-closed:
+closed: 2026-09-13
 summary: 落地 PROGRESS-SUMMARY §七.1 遗留 #4/#5/#6/#7 四项——三屏归一屏（OQ1=纯B）、显示先行 M1（OQ2）、回答驻留随归一屏自然成立（OQ3=c）、KEY 键位路线 A A1 全局层先行（OQ4）
 owner: portfolio-planner
 area: systems
