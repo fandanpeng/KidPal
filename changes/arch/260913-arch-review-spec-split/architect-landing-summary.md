@@ -1,6 +1,27 @@
 # architect-landing-summary · 260913-arch-review-spec-split
 
-> landing 执行记录（2026-09-13，主线程 packet-bound）。packet = FROZEN v1.1 PROPOSAL §2（T1–T6）+ §5 验证集；manifest 18 行终稿。
+> landing 执行记录（2026-09-13，主线程 packet-bound）。packet-id = FROZEN v1.1 PROPOSAL §2（T1–T6）+ §5 验证集；manifest 18 行终稿。
+
+```landing-manifest
+docs/requirements.md
+docs/architecture.md
+docs/archive/spec.md
+docs/CONTRACT-DECISION-QUEUE.md
+docs/DEV-GOVERNANCE.md
+docs/notes/ui-implementation-strategy.md
+AGENTS.md
+.claude/commands/arch-change.md
+.claude/scope-map.json
+.claude/rules/repo-structure.md
+.claude/agents/architect.md
+.claude/agents/architect-reviewer.md
+.claude/agents/integrator.md
+.claude/scripts/spec-anchor-check.mjs
+.claude/scripts/pre-merge-escalation-gate.mjs
+.claude/skills/write-story/SKILL.md
+.delivery/milestones.jsonl
+.delivery/delivery-workspace.json
+```
 
 ## 1. manifest 18 行逐条对账
 
@@ -57,6 +78,10 @@
 
 architecture.md §5.1 决策 28 条 verbatim 迁入，仅两处内部自引用机械改指（语义不变）：决策 4「spec §3.0.0」→「本文件 §2.2」；决策 17「（§5.7）」→「（本文件 §3.1）」。story 引用（S-Fx.y）指向 requirements.md。
 
+补记（landing-verifier 核验期抓出的未申报微偏差，2026-09-13 补登）：决策 20/25 文末各增一句导航指针「机制细节见 §2.9/§2.10」——纯指针、无语义改动，初版本节漏申报，属实补记。
+
+补记 2（2026-09-13，结构门修复期）：① 本目录 `PROPOSAL.md` §2 六处锚行由 `**目标文件**：` 加粗形态归一为裸 `目标文件：`（landing-fidelity-check 的 §2 锚解析只认裸形态，加粗形态六个 T 全部报「缺锚清单」假红；零内容/路径变更，纯格式归一，git diff 可证）。**注：PROPOSAL 头部自钉「落地后 PROPOSAL 不可回改」，本次为核验期格式修复例外，如实登记待 human 追认**；② 结构门第二层暴露 `ANCHORABLE_TEST`（governance-gate-shared.mjs:40）不识 `.delivery/**` 路径形态——本批是首个把 `.delivery/` 两件落进 manifest 的批次，并集 16 ≡ manifest 18 − 2 精确失配、其余检查全绿，纯解析盲点。已挂 ARQ-260913-lfc-anchorable-delivery-gap，修闸归下一治理批，本批闭环待 human 例外拍板。
+
 ## 5. 验证结果（§5 验证集逐条）
 
 1. **时序前置**：.planning 旧批已归档（ef257fa，landing 前一日完成）✓
@@ -75,3 +100,4 @@ architecture.md §5.1 决策 28 条 verbatim 迁入，仅两处内部自引用�
 - 冻结验收件 canary 翻红 + schedule_reminder:1561 直读 + 契约 :4 断链：挂 CDQ-260913-spec-split-fallout，处置归 phase 2 验收基线重建（建议：新 canary 统一重钉 + 旧断言改指/退役一个动作完成）。
 - S-F3.1/3.2 🟡 + NFR-PERF-2 🟡 + NFR-READ-1 🟡 → phase 2 立项输入（查字链路 live 修复 + 延迟优化 + 字号烧板对照）。
 - 设计稿 v2/v3 内 spec 引用各 1 处：v4 迭代时顺带改（§6 留根）。
+- 结构门盲点（ARQ-260913-lfc-anchorable-delivery-gap）：landing-fidelity §2 锚对账不识 `.delivery/**` 锚形态，本批 manifest 含 .delivery 两件 → 闸报对账失配（唯一剩余红，其余全绿）；修闸归下一治理批，本批待 human 例外拍板。

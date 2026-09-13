@@ -103,7 +103,7 @@ AGENTS.md
 
 **新增四 · story 五件结构（2026-09-13 human 裁，OQ-5=(b)）**：每条 story = 五件固定顺序——① User Story 原文（作为/我希望/以便，业务框架强制）→ ② 验收标准 AC（Given/When/Then，正常+边界+异常至少各一；**AC 编号 = dev-loop 验收齿的回引对账点**，拆包链消费）→ ③ 线框引用（WF-Fx-NN + 标注点交叉引用，线框实体随 feature 节）→ ④ 补充规则（字段校验/权限/数据口径/埋点/文案，无则写「无」；数据**格式**权威在契约层，此处只写需求口径不复制格式）→ ⑤ 锚行（UI/支撑/可行性，同新增一）。撰写纪律与模板 SSOT = T6 write-story skill；本文件头部「UI 锚规则块」保持锚规则 SSOT，skill 只指针引用不复制。
 
-**目标文件**：`docs/requirements.md`（新增）。
+目标文件：`docs/requirements.md`（新增）。
 
 ### T2 · 新建 docs/architecture.md（架构面 SSOT）
 
@@ -111,7 +111,7 @@ AGENTS.md
 
 **锚稳定规则**：小节编号发布后视为稳定标识；改编号 = 有意识地同步改锚（T3 机检抓悬空）。对契约的引用保持指 `docs/contracts/interface-contract.md` 不变。
 
-**目标文件**：`docs/architecture.md`（新增）。
+目标文件：`docs/architecture.md`（新增）。
 
 ### T3 · 锚定机检脚本 .claude/scripts/spec-anchor-check.mjs
 
@@ -119,13 +119,13 @@ AGENTS.md
 
 拦阻强度：先手动 / review 时跑，不挂 hook 硬拦（YAGNI；强度升级留 OQ-4）。
 
-**目标文件**：`.claude/scripts/spec-anchor-check.mjs`（新增）。
+目标文件：`.claude/scripts/spec-anchor-check.mjs`（新增）。
 
 ### T4 · docs 白名单与结构规则登记
 
 `.claude/scope-map.json` 的 `universal.docsTopLevel` 登记 `requirements.md`、`architecture.md`，移除 `spec.md`；`.claude/rules/repo-structure.md` 同步改写「spec 唯一在 docs/spec.md」行为两文件规则（两处必须一致，enforce-scope 钩子按 scope-map 机判——这是治理明文的「有意识动作」）。
 
-**目标文件**：`.claude/scope-map.json`（改）、`.claude/rules/repo-structure.md`（改）。
+目标文件：`.claude/scope-map.json`（改）、`.claude/rules/repo-structure.md`（改）。
 
 ### T5 · live 引用改指 + spec.md 归档（不删）
 
@@ -143,13 +143,13 @@ AGENTS.md
 
 **已知机械后果（诚实登记，不在本 packet 处置）**：spec.md 归档后，①冻结验收件的 spec 存在性 canary 断言（KR-E2/SUNU 系）将**真实翻红**、`test_schedule_reminder.acceptance.py` 直读将 FileNotFoundError——这是本变更治理授权下的已知环境红，landing 时登记进 CDQ、处置归 phase 2 验收基线重建；②escalation-gate 字面集若漏改 = CDQ 核验对新路径漏拦——故 (b) 项改法与归档**同一 commit 原子落地**。
 
-**目标文件**：`docs/archive/spec.md`（迁入）、`docs/CONTRACT-DECISION-QUEUE.md`（挂账登记）、`docs/DEV-GOVERNANCE.md`（G1）、`docs/notes/ui-implementation-strategy.md`、`AGENTS.md`（G1）、`.claude/commands/arch-change.md`、`.claude/agents/architect.md`（自改递归）、`.claude/agents/architect-reviewer.md`（自改递归）、`.claude/agents/integrator.md`（自改递归，闸联动）、`.claude/scripts/pre-merge-escalation-gate.mjs`（G3 联动）、`.delivery/milestones.jsonl`（SSOT 源改指，R3-F12）、`.delivery/delivery-workspace.json`（权威指针改指，R3-F12）；`.delivery/STATUS.md` 为派生重生成副产物（不手改、不入 manifest 独立项）；census 已跑，改指集即全集、无「待定扩列」。
+目标文件：`docs/archive/spec.md`（迁入）、`docs/CONTRACT-DECISION-QUEUE.md`（挂账登记）、`docs/DEV-GOVERNANCE.md`（G1）、`docs/notes/ui-implementation-strategy.md`、`AGENTS.md`（G1）、`.claude/commands/arch-change.md`、`.claude/agents/architect.md`（自改递归）、`.claude/agents/architect-reviewer.md`（自改递归）、`.claude/agents/integrator.md`（自改递归，闸联动）、`.claude/scripts/pre-merge-escalation-gate.mjs`（G3 联动）、`.delivery/milestones.jsonl`（SSOT 源改指，R3-F12）、`.delivery/delivery-workspace.json`（权威指针改指，R3-F12）；`.delivery/STATUS.md` 为派生重生成副产物（不手改、不入 manifest 独立项）；census 已跑，改指集即全集、无「待定扩列」。
 
 ### T6 · 新增 write-story skill（story 撰写纪律常驻载体）
 
 新增 `.claude/skills/write-story/SKILL.md`——「story 怎么写」的统一守门，治 §1 P1 根因②（story 转写无规则约束、业务框架丢失）。内容 = 本目录 `write-story-skill-draft.md`（human 2026-09-13 审定「可以」）：五件结构模板（User Story 原文 / AC 三段式 / 线框引用 / 补充规则 / 锚行）+ 六条撰写纪律（业务框架强制、机制词禁令、AC 业务可读且作验收齿回引对账点、可行性诚实、改 story = 改需求·编号不回收、NFR 回引）+ 完稿自检清单 + 边界指针（拆包转写规则归 260912 拆包链；锚规则 SSOT 在 requirements.md 头部，skill 不复制）。description 遵守 authoring 纪律（when-to-use + 边界，description lint / route-regression 告警级机检适用）。不单独先落的原因：skill 引 requirements.md 头部规则块作 SSOT，单独先落 = 悬空引用；折入本批原子落地（human 2026-09-13 裁）。
 
-**目标文件**：`.claude/skills/write-story/SKILL.md`（新增）。
+目标文件：`.claude/skills/write-story/SKILL.md`（新增）。
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 

@@ -23,6 +23,7 @@
 
 | ID | 严重度 | title | 未结原因 | 处理时机 | 来源 |
 |---|---|---|---|---|---|
+| ARQ-260913-lfc-anchorable-delivery-gap | SHOULD | landing-fidelity §2 锚对账的 ANCHORABLE_TEST 不识 `.delivery/**` 路径形态——含 .delivery 目标的 manifest 恒报对账失配（解析盲点假红） | `governance-gate-shared.mjs:40` ANCHORABLE_TEST 白名单认 `.claude/`、`docs/`、`.planning/`、`changes/` 与仓根点文件，独缺 `.delivery/`；260913-arch-review-spec-split 是首个把 `.delivery/` 两件（milestones.jsonl / delivery-workspace.json）落进 manifest 的批次，实测并集 16 ≡ manifest 18 − 2 精确失配、结构门其余检查全绿——纯解析盲点非实质对账失败。附带发现：同批 PROPOSAL §2 锚行误用 `**目标文件**：` 加粗形态（解析器只认裸 `目标文件：`），已格式归一修复（零内容变更，PROPOSAL「落地后不可回改」条款的核验期例外，待 human 追认） | ① 本批闭环：human 例外拍板（闸红 = 解析盲点，§2 锚对账实质经判官 R4/R6 逐条人工成立）；② 修闸：ANCHORABLE_TEST 增 `.delivery/` 形态，归下一治理批 | 260913-arch-review-spec-split（landing 核验期结构门实测） |
 _（无——ARQ-260902-shim-boundary-open-questions 已结移 §2；ARQ-260902-cert-lifecycle-deadlock 双重落位：决策闭环记录在 §2 已结（human 2026-09-03 裁 accept-as-risk，launch 前置门簇②销账），持续监控面在 §1.3 watchlist（human 2026-09-04 G 包 launch 复裁同向，证据 `changes/dev/260903-gateway-directionB/cert-lifecycle-accept-risk.md`））_
 
 ### 1.2 Deferred / forcing-function
