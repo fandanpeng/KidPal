@@ -14,7 +14,7 @@ paths:
 |---|---|---|---|
 | `docs/contracts/**` | 契约门 | 笔顺 JSON / display 响应块 / 课表 MD / shim API 的权威定义（单一事实源 interface-contract.md） | 任何会话直改（改动走 architect-reviewer 四分类 + human 契约门）；在根级新建 `contracts/**`（影子目录） |
 | `docs/` 根 | 主线程（治理批 landing） | 仅白名单内的正式顶层文档（见下） | 在 `docs/` 根新建白名单外文件 |
-| `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 唯一在 `docs/spec.md`） |
+| `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
 | `docs/ui/` | 设计 | UI 设计稿与 brief：kidpal-ui-design HTML、UIUX-DESIGN-BRIEF、brand-spec | 把设计稿当实现代码改（设计稿是资产管线的母版） |
 | `docs/templates/` | 治理 | PROPOSAL / retro 等治理制品骨架 | — |
 | `docs/archive/` | 治理 | 已结项归档（如 ARCH-REVIEW-QUEUE.closed.md） | 把未结项塞进去 |
@@ -29,8 +29,8 @@ paths:
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
-文件：`spec.md` · `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md` · `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（占位登记，文件尚未创建）
-子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`
+文件：`requirements.md`（需求面 SSOT）· `architecture.md`（架构面 SSOT）· `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md` · `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（占位登记，文件尚未创建）
+子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）
 
 > 其它一律不进 docs/ 根。要加新的正式顶层文档 / 类别 → 先登记进 [.claude/scope-map.json](../scope-map.json) 的 `universal.docsTopLevel` 和本表（有意识动作），钩子才放行。
 

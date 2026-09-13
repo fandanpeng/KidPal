@@ -99,14 +99,19 @@ function hasContractsDiff(execFn, source, target) {
 /**
  * T5（260908-gov-review-merge-chain-hardening，A-2 已裁：门内加项；A-8 已裁：放行方向——只拦可识别形态）：
  * 契约/治理 canonical 改动「交回→在册」机械核验。扫描 review-packet Findings 表行：
- * 行含字面 `| hard-violation |` 且行含 `docs/contracts/**` 或 `docs/spec.md` 字面（B-4 写作侧对齐：
- * integrator.md findings 约定要求 Basis 以该两前缀起引；未匹配形态放行，不把自由 prose 写作变假红）→
+ * 行含字面 `| hard-violation |` 且行含 CONTRACT_SPEC_LITERALS 任一字面（B-4 写作侧对齐：
+ * integrator.md findings 约定要求 Basis 以该前缀集起引；未匹配形态放行，不把自由 prose 写作变假红）→
  * 视为「契约类 hard-violation 在案」。在案者 MUST 二选一核销：
  *   a) docs/CONTRACT-DECISION-QUEUE.md 含本 changeId 字面（对应 CDQ 行）；
  *   b) pod-events 有 human-decision 事件 payload.decision ∈ {defer-contract-change, accept-risk}
  *      且 changeId 匹配（B-6 锚格式，复用五要素事件形状）。
  * 返回 { present, accounted, hits:[findingLine 摘录] }。readText/cdqText 可注入，self-check 可测。
  */
+// 字面集（260913-arch-review-spec-split 扩展：spec.md 拆分为 requirements.md + architecture.md 并归档）——
+// 与 integrator.md Basis 前缀写作约定同批联动改（只改一边 = 闸与约定脱钩）；
+// docs/spec.md 保留在集内：归档件，历史 findings 的 Basis 仍用它起引。
+export const CONTRACT_SPEC_LITERALS = ['docs/contracts/**', 'docs/spec.md', 'docs/requirements.md', 'docs/architecture.md'];
+
 export function contractFindingsAccounted(dir, changeId, deps = {}) {
   const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
   const readPacketText = () => {
@@ -124,7 +129,7 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
   if (packetText === null) return { present: false, accounted: true, hits: [] };
   const hits = packetText
     .split('\n')
-    .filter((l) => l.includes('hard-violation') && (l.includes('docs/contracts/**') || l.includes('docs/spec.md')));
+    .filter((l) => l.includes('hard-violation') && CONTRACT_SPEC_LITERALS.some((lit) => l.includes(lit)));
   if (hits.length === 0) return { present: false, accounted: true, hits: [] };
   const cdqText = readText(join(dir, 'docs', 'CONTRACT-DECISION-QUEUE.md'));
   const cdqHasRow = cdqText !== null && cdqText.includes(changeId);
@@ -243,10 +248,10 @@ export function evaluate(ctx) {
   if (ctx.escalationUnresolved) push('存在未 resolve 的 agent-escalation 事件');
 
   // 通用 4（T5，260908 批门内加项）：契约类 hard-violation「交回→在册」核验。
-  // 只拦可识别形态（A-8 放行方向）：Findings 行含 hard-violation + docs/contracts/**|docs/spec.md 字面起引，
+  // 只拦可识别形态（A-8 放行方向）：Findings 行含 hard-violation + CONTRACT_SPEC_LITERALS 任一字面起引，
   // 且 CDQ 无对应行、pod-events 无 human defer/accept-risk 锚 → BLOCK；未匹配 / packet 不在场 → 放行。
   if (ctx.contractFindings?.present && !ctx.contractFindings.accounted) {
-    push(`contract-findings-unaccounted：review-packet 有 ${ctx.contractFindings.hits.length} 条 hard-violation 且 Basis 引 docs/contracts/**|docs/spec.md，但 CONTRACT-DECISION-QUEUE 无对应行且无 human defer/accept-risk 锚（260908 批 T5）`);
+    push(`contract-findings-unaccounted：review-packet 有 ${ctx.contractFindings.hits.length} 条 hard-violation 且 Basis 引 docs/contracts/**|docs/spec.md|docs/requirements.md|docs/architecture.md，但 CONTRACT-DECISION-QUEUE 无对应行且无 human defer/accept-risk 锚（260908 批 T5；字面集 260913 批扩展）`);
   }
 
   // 人批 flag fail-closed：给了 flag 但核验不过 → BLOCK 且点名失败项
@@ -435,6 +440,27 @@ function selfCheck() {
   cases.push({ name: 'contract-findings-cdq-accounted-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/contracts/**'] } })).blocked, got: '' });
   // 3) 在案 + human defer 锚（accounted:true）→ 放行
   cases.push({ name: 'contract-findings-defer-anchored-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/spec.md'] } })).blocked, got: '' });
+
+  // T5 字面集扩展 4 例（260913-arch-review-spec-split：spec.md 拆分 + 归档；真实扫 contractFindingsAccounted，注入 readText fixture）
+  const mkReadText = (packetLine, cdqText) => (p) => {
+    if (p.includes('review-packet.md')) return `| SHOULD | hard-violation | contract | x | ${packetLine} | 交回 CDQ |\n`;
+    if (p.includes('CONTRACT-DECISION-QUEUE')) return cdqText;
+    return null; // pod-events 不在场 → 无 defer 锚
+  };
+  {
+    // 1) 新路径 docs/requirements.md → 在案，CDQ 无行 → unaccounted
+    const r = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/requirements.md §3', '# CDQ\n') });
+    cases.push({ name: 'literal-requirements-detected', ok: r.present === true && r.accounted === false, got: JSON.stringify(r) });
+    // 2) 新路径 docs/architecture.md + CDQ 有本 changeId 行 → accounted
+    const r2 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/architecture.md §5', '# CDQ\nchg-1 挂账行\n') });
+    cases.push({ name: 'literal-architecture-cdq-accounted', ok: r2.present === true && r2.accounted === true, got: JSON.stringify(r2) });
+    // 3) 归档件 docs/spec.md 字面保留（历史 findings 兼容）→ 在案
+    const r3 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/spec.md §4', '# CDQ\n') });
+    cases.push({ name: 'literal-archived-spec-still-detected', ok: r3.present === true && r3.accounted === false, got: JSON.stringify(r3) });
+    // 4) 非字面集路径（docs/notes/...）→ 不在案，放行（A-8 放行方向不回退）
+    const r4 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/notes/foo.md', '# CDQ\n') });
+    cases.push({ name: 'literal-noncontract-path-not-present', ok: r4.present === false && r4.accounted === true, got: JSON.stringify(r4) });
+  }
 
   // T1 并行相交面分级路由 4 例（260908 批 ladder；human 追认 Track B + 继续落地后落地；真空绿规约：fixture 非空——文件清单构造非空）
   // 1) ② 级：实撞全部为已登记版本化制品形态 → union-safe，不升人（runbook 并集 + 双方齿复跑）

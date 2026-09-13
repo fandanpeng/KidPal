@@ -3,7 +3,7 @@
     "KidPal 交付 Workspace 绑定元数据（治理迁移净版，非 S5 dogfood）。",
     "单一事实源 = milestones.jsonl（里程碑基线，state 由人/integrator 随 dev-loop closeout 维护）；",
     "STATUS.md 由 .claude/scripts/delivery-status.mjs 从 milestones.jsonl 生成，只读派生、勿手改。",
-    "里程碑定义权威 = docs/spec.md §8（M0-M6）。"
+    "里程碑定义权威 = docs/requirements.md §6 路线图（M0-M6）。"
   ],
   "project": {
     "id": "kidpal",

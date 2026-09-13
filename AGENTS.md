@@ -4,7 +4,7 @@
 
 - **自有代码** = 固件业务代码 + 云端 shim 代码。具体根目录（候选：`firmware/`、`server/`，或沿用小智工程内 overlay 布局）在动工前由 human 定夺并登记进 `.claude/scope-map.json`——定之前按「未登记实现面」处理，不做机械强制。
 - **参考代码** = `ESP32-S3-RLCD-4.2-Demo/`（官方 Demo + 小智 V2.1.0 源码），是第三方源码，只作参考、不在版本控制内。所有 agent 对它只读；要实现它承载的行为时，在自有代码里重写，不直接改参考树。
-- **系统 spec 面** = `docs/spec.md`（项目 = KidPal，docs 平铺、不再套 `systems/<sys>/` 层）。
+- **系统 spec 面** = `docs/requirements.md`（需求：产品是什么）+ `docs/architecture.md`（架构：怎么造），两文件互相锚定（项目 = KidPal，docs 平铺、不再套 `systems/<sys>/` 层；2026-09-13 前为单文件 `docs/spec.md`，已归档 `docs/archive/spec.md`）。
 - **契约面** = `docs/contracts/**`（单一事实源 [interface-contract.md](docs/contracts/interface-contract.md)：笔顺 JSON / display 统一响应块 / 课表 MD 结构 / shim API）。契约改动走 architect-reviewer 四分类 + 人类契约门。
 
 ## 治理路由（Track B 常驻默认 + Track A 判据升级）

@@ -30,7 +30,8 @@
         "docs/ARCH-REVIEW-QUEUE.md",
         "docs/CONTRACT-DECISION-QUEUE.md",
         "docs/glossary.md",
-        "docs/spec.md",
+        "docs/requirements.md",
+        "docs/architecture.md",
         "docs/ADR.md"
       ],
       "allowDirs": [
