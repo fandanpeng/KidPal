@@ -38,7 +38,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260913-arch-review-spec-split](../changes/arch/260913-arch-review-spec-split/) | 2026-09-13 | frozen | — |
+| [260913-arch-review-spec-split](../changes/arch/260913-arch-review-spec-split/) | 2026-09-13 | frozen | yes |
 | [260912-gov-review-portfolio-decomposition-chain](../changes/arch/260912-gov-review-portfolio-decomposition-chain/) | 2026-09-12 | draft | — |
 | [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | landed | yes |
 | [260908-gov-review-escalation-conflict-ladder](../changes/arch/260908-gov-review-escalation-conflict-ladder/) | 2026-09-08 | frozen | yes |

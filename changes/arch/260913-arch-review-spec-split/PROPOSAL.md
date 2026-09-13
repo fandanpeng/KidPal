@@ -1,11 +1,11 @@
 # PROPOSAL · 260913-arch-review-spec-split
 
-> **状态：FROZEN v1.0 · 2026-09-13 · 凭据 = human 立项 ack（2026-09-13「交 /arch-change」）+ architect R4 GREEN（§7 评审记录，附 F15-a/b 建议级修正已回灌）+ human 裁 OQ 全集（OQ-1 归档 / OQ-2 逐条过目 / OQ-3 待定迁入 / OQ-4 先手动跑，2026-09-13）；landing 时序 = 待 .planning 旧批收尾归档后执行（human 定：今天 review 完不 landing）；landing-manifest 即终稿 17 行，落地后 PROPOSAL 不可回改**
+> **状态：FROZEN v1.1 · 2026-09-13 · 凭据 = human 立项 ack（2026-09-13「交 /arch-change」）+ architect R4 GREEN（v1.0 基线）+ architect R6 GREEN（v0.5 重开 delta：story 按五件模板重写 + T6 write-story skill + manifest 18 行；R5 打回 F16/F17 全闭环）+ human 裁 OQ-1~5 全集；§5 #1 时序前置已兑现（.planning 旧批归档 ef257fa）；可行性终标完成（OQ-2，本目录 feasibility-initial-marking.md）；landing-manifest 即终稿 18 行，落地后 PROPOSAL 不可回改**
 > **承载 ARQ**：无（新立项；与 260912-gov-review-portfolio-decomposition-chain 为并行耦合关系，见 §6 留根）。
 > **review 轨**：Track B 常驻轻路径（预判：不触契约本体、非跨系统结构变更；最终分类由 review-moderator 判）。
-> **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T5）+ §5 验证集。
+> **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T6）+ §5 验证集。
 > **riskTier**：low-medium（行为零变更、docs 层重排 + 机检脚本新增；但触 FROZEN spec 的上游权威迁移与 docs 白名单，闸向严）。
-> **review profile**：spec profile 为主 + governance 配套强耦合同 packet（human 2026-09-13 裁单 packet 原子跑）；触面 = docs/spec.md 拓扑 + **G1 指令根**（AGENTS.md:7、docs/DEV-GOVERNANCE.md:241，human 知情批准）+ **G3 强制层**（scope-map docsTopLevel、pre-merge-escalation-gate.mjs 字面核验集扩展——census 实证）+ **agent 定义自改递归**（architect.md、architect-reviewer.md、integrator.md，human 知情批准，F6 裁 (a)）；契约面触面为零——契约本体不动，:4 断链挂账 CDQ（F2 裁 (a)）。
+> **review profile**：spec profile 为主 + governance 配套强耦合同 packet（human 2026-09-13 裁单 packet 原子跑）；触面 = docs/spec.md 拓扑 + **G1 指令根**（AGENTS.md:7、docs/DEV-GOVERNANCE.md:241，human 知情批准）+ **G3 强制层**（scope-map docsTopLevel、pre-merge-escalation-gate.mjs 字面核验集扩展——census 实证）+ **agent 定义自改递归**（architect.md、architect-reviewer.md、integrator.md，human 知情批准，F6 裁 (a)）+ **G2 治理面新增**（.claude/skills/write-story/SKILL.md，human 2026-09-13 裁折入本批）；契约面触面为零——契约本体不动，:4 断链挂账 CDQ（F2 裁 (a)）。
 >
 > **结构字段硬条款**：landing-manifest 为草案，最终清单以 FROZEN 为准；GREEN 前必须在场，判官核对。
 
@@ -25,6 +25,7 @@ AGENTS.md
 .claude/agents/integrator.md
 .claude/scripts/spec-anchor-check.mjs
 .claude/scripts/pre-merge-escalation-gate.mjs
+.claude/skills/write-story/SKILL.md
 .delivery/milestones.jsonl
 .delivery/delivery-workspace.json
 ```
@@ -64,16 +65,16 @@ AGENTS.md
 
 **根因**：这些是孩子/家长可感知的产品质量（快不快、断网行不行、安全不安全、续航多久），按边界原则属需求面，但现无 ID、无量化阈值单列、无锚，全混在技术决策与 story 验收行里。
 
-## 2. 改法（T1…T5）
+## 2. 改法（T1…T6）
 
 ### T1 · 新建 docs/requirements.md（需求面 SSOT）
 
 **内容迁移与新结构**（自 spec.md；2026-09-13 human 三点修订并入——线框随 story、Epic 层级、Infra 命名）：
 
-- **头部**：已砍声明区（现 spec.md:256 声明区原样带走 = 两处反白高亮砍项；S-F2.5 云端润色现为 :394 标题「（可选）」标注、kidpal-mvp PROPOSAL 已记 dropped——迁入时转为已砍清单新条目，不占用 story 编号位）+ UI 锚规则块 + 互链 architecture.md——导航由两文件头部互链承担。
+- **头部**：已砍声明区（现 spec.md:256 声明区原样带走 = 两处反白高亮砍项；S-F2.5 云端润色现为 :394 标题「（可选）」标注、kidpal-mvp PROPOSAL 已记 dropped——迁入时转为已砍清单新条目，不占用 story 编号位；**2026-09-13 human 过目裁定新增砍项两件：NFR-PWR-1 续航阈值、NFR-READ-2 暗光可用性**，终标记录见本目录 feasibility-initial-marking.md D 节）+ UI 锚规则块 + 互链 architecture.md——导航由两文件头部互链承担。
 - **§1 背景与产品定位**：原 §1 + 原 §5.1 设备定位并入。
 - **§2 共享底座**：原 §4.0 + 并入原 §5.2 语音交互模型 / §5.3 按键定义 / §5.4 页面结构——现 spec 里 §4.0 与 §5.2/5.3 的状态表、按键表本就重复，拆分正好合并去重。
-- **§3 需求主体（Epic > Feature > Story 三层）**：Epic（史诗）= 产品/阶段级目标（E1 = MVP「会说话的显示器」，二期另立），带目的陈述、不直接带锚，锚由 story 聚合上报；Feature = F1–F4 编号保留，**每节 = feature 说明 + 页面线框 + story 列表**——线框随 feature 走，但**源库存如实**：原 §5.5 实存仅 P1 首页线框一件（:512–522，归 F1 节），P2–P4 线框是 :530 自证的「待补」项——迁入时在对应 feature 节挂「线框待补（归设计稿迭代）」占位标，不虚构库存；Story = S-Fx.y 不变，锚行在这一级。
+- **§3 需求主体（Epic > Feature > Story 三层）**：Epic（史诗）= 产品/阶段级目标（E1 = MVP「会说话的显示器」，二期另立），带目的陈述、不直接带锚，锚由 story 聚合上报；Feature = F1–F4 编号保留，**每节 = feature 说明 + 页面线框 + story 列表**——线框随 feature 走，但**源库存如实**：原 §5.5 实存仅 P1 首页线框一件（:512–522，归 F1 节），P2–P4 线框是 :530 自证的「待补」项——迁入时在对应 feature 节挂「线框待补（归设计稿迭代）」占位标，不虚构库存；Story = S-Fx.y 不变，锚行在这一级；**story 迁移 = 按 T6 write-story 五件模板重写（2026-09-13 human 裁，OQ-5=(b)，非 verbatim 搬迁）**：story 原文业务框架句（「作为…我希望…以便…」）自 spec verbatim 保留，AC（Given/When/Then，正常+边界+异常）由主线程从 spec 既有验收表述与包闭环证据补写、**human 逐条过目后落文件**（沿用 OQ-2 纪律），补充规则/线框引用按模板槽位填（无则写「无」/「线框待补」）；重写中的实质变更（如 S-F3.3 收窄、story 表述与实测冲突处）逐条列「story 变更注记」进 landing-summary 供 human 复核。
 - **§4 体验与视觉风格**：原 §5.6（吉祥物/趣味性/教学字体红线/暗光）——跨 story 的产品视觉定义；**字体类需求（如「标题用站酷快乐体」）住这里**，其技术支撑锚指 architecture.md「UI 实现策略」节（字体转 .bin + SPIFFS 资产管道）。
 - **§5 NFR 章**（见下「新增三」）。
 - **§6 路线图**：原 §8 改名。
@@ -83,7 +84,7 @@ AGENTS.md
 - **支撑**：`arch §x.y` 列表，指向 architecture.md 真实小节；
 - **可行性**：三态之一——✅已实证（有实测/红基线证据）｜🟡设计可行·待实证｜🔴当前架构撑不住。
 - **🔴 挂账纪律**：标 🔴 的 story 必须在同行情引用开放问题或 ARQ 编号，不许静默存在；处置路径 = 立项讨论（改需求或改架构），Pod 无权自裁。
-- **初始标定规则**（迁移期）：从现有证据推导，不新造判断——spec 已标「实测可行」的（如 OpenClaw cron 调度）→ ✅；标「待部署验证」的（ASR 流式兼容性、多轮会话连续性）→ 🟡；🔴 迁移时预计为零。**逐条标定清单（每条带证据行号）经 human 逐条过目后方可落文件**（OQ-2 裁，2026-09-13：逐条 human 过目，非主线程自标后复核）。
+- **初始标定规则**（迁移期）：从现有证据推导，不新造判断——spec 已标「实测可行」的（如 OpenClaw cron 调度）→ ✅；标「待部署验证」的（ASR 流式兼容性、多轮会话连续性）→ 🟡；🔴 迁移时预计为零。**逐条标定清单（每条带证据行号）经 human 逐条过目后方可落文件**（OQ-2 裁，2026-09-13：逐条 human 过目，非主线程自标后复核）。**已执行完毕（2026-09-13）**：清单 = 本目录 `feasibility-initial-marking.md`，human 逐条过目终标——S-F1.3 / S-F1.5 升 ✅（human 实测记忆定案）；S-F3.1 / S-F3.2 降 🟡（human 口述 live 查字链路当前不可跑，host 包闭环 ≠ live 实证）；S-F3.3 收窄为「重播」单义 ✅、「语音查下一个字（指代解析）」移出挂需求类开放问题；NFR-PERF-2 🟡 保留待优化；NFR-SEC-1 ✅（十年期证书在用视同通过）；NFR-READ-1 🟡（验证方式 human 定 = 专用烧板字号对照页）；NFR-PWR-1 / NFR-READ-2 砍（入已砍清单）。
 
 **新增二 · UI 锚规则块**（文件头部明文，执行者抬头可见）：
 1. **粒度**：锚「舞台」——页面画布（`canvas-pX`）与会话状态（`state-*`）；不锚「道具」——图标/字体/组件级资产（`icon-library`/`font-*`/`comp-*`）由设计与实现侧引用，story 不挂。
@@ -98,7 +99,9 @@ AGENTS.md
 - **每条带四件**：量化阈值、验证方式（怎么实测、owner 谁）、支撑锚（`arch §x.y`）、可行性三态（与 story 同套）。
 - **与 story 的关系**：story 内散落的 NFR 表述（4 秒安抚、断网无提醒）保留为该 NFR 在具体场景的具体化，并回引 NFR ID；同一约束全仓只定义一次。
 - **边界**：NFR 只管「产品必须做到什么」；技术实现约束（介质禁令 V4、证书形态、provider 禁带 max_tokens）归 architecture.md。
-- **迁移纪律**：现 spec 未拍死数值的阈值（如续航阈值）原样带「待定」标，不在拆分里夹带新决策。
+- **迁移纪律**：现 spec 未拍死数值的阈值（如续航阈值）原样带「待定」标，不在拆分里夹带新决策。（2026-09-13 补注：续航阈值已被 human 过目裁定砍掉——NFR-PWR-1 入已砍清单，本条纪律对其余「待定」项继续有效。）
+
+**新增四 · story 五件结构（2026-09-13 human 裁，OQ-5=(b)）**：每条 story = 五件固定顺序——① User Story 原文（作为/我希望/以便，业务框架强制）→ ② 验收标准 AC（Given/When/Then，正常+边界+异常至少各一；**AC 编号 = dev-loop 验收齿的回引对账点**，拆包链消费）→ ③ 线框引用（WF-Fx-NN + 标注点交叉引用，线框实体随 feature 节）→ ④ 补充规则（字段校验/权限/数据口径/埋点/文案，无则写「无」；数据**格式**权威在契约层，此处只写需求口径不复制格式）→ ⑤ 锚行（UI/支撑/可行性，同新增一）。撰写纪律与模板 SSOT = T6 write-story skill；本文件头部「UI 锚规则块」保持锚规则 SSOT，skill 只指针引用不复制。
 
 **目标文件**：`docs/requirements.md`（新增）。
 
@@ -142,6 +145,12 @@ AGENTS.md
 
 **目标文件**：`docs/archive/spec.md`（迁入）、`docs/CONTRACT-DECISION-QUEUE.md`（挂账登记）、`docs/DEV-GOVERNANCE.md`（G1）、`docs/notes/ui-implementation-strategy.md`、`AGENTS.md`（G1）、`.claude/commands/arch-change.md`、`.claude/agents/architect.md`（自改递归）、`.claude/agents/architect-reviewer.md`（自改递归）、`.claude/agents/integrator.md`（自改递归，闸联动）、`.claude/scripts/pre-merge-escalation-gate.mjs`（G3 联动）、`.delivery/milestones.jsonl`（SSOT 源改指，R3-F12）、`.delivery/delivery-workspace.json`（权威指针改指，R3-F12）；`.delivery/STATUS.md` 为派生重生成副产物（不手改、不入 manifest 独立项）；census 已跑，改指集即全集、无「待定扩列」。
 
+### T6 · 新增 write-story skill（story 撰写纪律常驻载体）
+
+新增 `.claude/skills/write-story/SKILL.md`——「story 怎么写」的统一守门，治 §1 P1 根因②（story 转写无规则约束、业务框架丢失）。内容 = 本目录 `write-story-skill-draft.md`（human 2026-09-13 审定「可以」）：五件结构模板（User Story 原文 / AC 三段式 / 线框引用 / 补充规则 / 锚行）+ 六条撰写纪律（业务框架强制、机制词禁令、AC 业务可读且作验收齿回引对账点、可行性诚实、改 story = 改需求·编号不回收、NFR 回引）+ 完稿自检清单 + 边界指针（拆包转写规则归 260912 拆包链；锚规则 SSOT 在 requirements.md 头部，skill 不复制）。description 遵守 authoring 纪律（when-to-use + 边界，description lint / route-regression 告警级机检适用）。不单独先落的原因：skill 引 requirements.md 头部规则块作 SSOT，单独先落 = 悬空引用；折入本批原子落地（human 2026-09-13 裁）。
+
+**目标文件**：`.claude/skills/write-story/SKILL.md`（新增）。
+
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 
 | 面 | 文件 | 类别 | 说明 |
@@ -151,6 +160,7 @@ AGENTS.md
 | 治理机判面 | .claude/scope-map.json | G3 强制层 | docsTopLevel 白名单登记两件、移除 spec.md，与 repo-structure 两处一致 |
 | 治理文档 | .claude/rules/repo-structure.md | G2 | 「spec 唯一在 docs/spec.md」行改写为两文件规则 |
 | 治理脚本 | .claude/scripts/spec-anchor-check.mjs | 新增（G3 面、无拦阻 hook） | 锚检 + 反向视图 + 设计稿 id diff |
+| 治理 skill | .claude/skills/write-story/SKILL.md | 新增（G2 治理面，OQ-5=(b)） | story 撰写纪律常驻载体（T6）；landing 后写/改/审 story 的统一入口 |
 | 指令根 | AGENTS.md:7 | **G1** | 「spec 面 = docs/spec.md」行改指（human 知情批准，F6 裁 (a)） |
 | 指令根 | docs/DEV-GOVERNANCE.md:241 | **G1** | 治理路由表「系统 spec」行改指（census 实证新增） |
 | G3 强制层 | .claude/scripts/pre-merge-escalation-gate.mjs | **G3** | CDQ 核验字面集扩展（spec.md→+requirements.md+architecture.md），与 integrator.md:42 写作约定同批联动（census 实证新增） |
@@ -188,6 +198,7 @@ AGENTS.md
 | OQ-2 | 初始可行性标定授权 | (a) 主线程按「现有证据推导」规则初标 + 逐条清单进 landing-summary 供 human 复核 / (b) 逐条 human 过目后再落 | **已定（2026-09-13 human）= (b) 逐条 human 过目**——主线程备逐条标定清单（每条带证据行号），human 过目后方落文件（T1 初始标定规则已同步） |
 | OQ-3 | NFR 未拍数值的阈值（如续航） | (a) 原样带「待定」标迁入 / (b) 本次顺带拍数值 | **已定（2026-09-13 human）= (a)**——拆分不夹带新决策，数值拍板走后续立项 |
 | OQ-4 | 机检脚本拦阻强度 | (a) 先手动/review 时跑 / (b) 挂 hook 硬拦 | **已定（2026-09-13 human）= (a)**——YAGNI，跑出误报率后再议升级 |
+| OQ-5 | story 迁移形态 + write-story skill 归属 | (a) verbatim 搬迁，模板只约束将来 / (b) 迁移即按五件模板重写 + skill 折入本批原子落地 | **已定（2026-09-13 human）= (b)**——「这次迁移就要把 story 按新要求写，landing 时发现 story 有问题就改；phase 2 相当于重新开始」。skill 不单独先落：其引用 requirements.md 头部规则块作 SSOT，先落 = 悬空引用 |
 
 （区外已定项，不再裁：边界划分、story 级锚 + 机检、UI 锚规则、NFR 独立成章、符合度归 phase-2——均经 2026-09-12/13 brainstorming 逐点裁定。）
 
@@ -202,11 +213,14 @@ DRAFT 期列骨架，GREEN 前补命令与预期全文：
 5. `node .claude/scripts/changes-index.mjs --upsert 260913-arch-review-spec-split` 单行钉进 INDEX（DRAFT 期已执行一次，状态转移时再 upsert）。
 6. **escalation-gate 改后回归**：`.claude/scripts/pre-merge-escalation-gate.mjs` 字面集扩展后，其内嵌 contract-findings 用例（:437 区域）须含新路径形态且全绿——自检入口形态（`--self-check` 或等价）landing 时按脚本 `--help`/源码实况核实后执行，未实测不虚构入口名；integrator.md:42 写作约定与闸字面集的一致性人工比对。
 7. **`.delivery/` 重生成核验**：milestones.jsonl / delivery-workspace.json 改指后重跑 delivery-status.mjs（入口形态 landing 时按脚本实况核实），STATUS.md 重生成且 ref 链指向 requirements.md，无 spec.md 残留。
-8. landing-verifier 独立核验：`landing-fidelity-check.mjs` 结构门 + 逐文件人读 diff 核对落地 == 本 PROPOSAL（重点：迁移内容零丢失——两新文件节集合 ∪ 已砍声明区 ∪ 「已结不迁」逐条清单 ≡ spec.md 九节全集）。
+8. landing-verifier 独立核验：`landing-fidelity-check.mjs` 结构门 + 逐文件人读 diff 核对落地 == 本 PROPOSAL。零丢失核验方程（OQ-5=(b) 后改写）：**两新文件节集合 ∪ 已砍清单（原声明区两件 + S-F2.5 转砍条目 + 过目新砍两件 NFR-PWR-1/NFR-READ-2） ∪ 「已结不迁」逐条清单 ∪ story 重写变更注记清单 ≡ spec.md 九节全集**——story 正文按五件模板重写，业务框架句须对 spec 原文 verbatim 可溯，实质变更逐条有注记（landing-summary 承载）。
+9. **story 五件结构核验（OQ-5 配套）**：landing 前主线程按 T6 模板重写 13 条活跃 story + 底座（spec story ID 全集 14 减已砍 S-F2.5 = 13，R5-F16 判官实测口径），**human 逐条过目重写稿**（同 OQ-2 纪律）后落文件；landing 后人读核验每条 story 五件齐（原文/AC/线框/补充规则/锚行）、AC 编号在场、机制词零残留（抽查：cron/散列/幂等/JSON/预合成 等词在 story 正文区零命中）。
+10. **skill 卫生**：`.claude/skills/write-story/SKILL.md` 落地后跑 `node .claude/scripts/lint-descriptions.mjs` 与 `node .claude/scripts/route-regression-check.mjs` 仍绿（告警级，exit 0，但输出无新增点名）。
 
 ## 6. 留根清单
 
-- **包级 story 内嵌规则**（「TaskPackage story 字段必须内嵌业务 story 原文」）：归 260912-gov-review-portfolio-decomposition-chain session。**交接点（本变更提供）**：story 锚点格式 = requirements.md 里稳定的 `S-Fx.y` 编号 + 节标题锚；那边规则消费此锚，两边并行不阻塞。
+- **包级 story 内嵌规则**（「TaskPackage story 字段必须内嵌业务 story 原文」）：归 260912-gov-review-portfolio-decomposition-chain session。**交接点（本变更提供）**：story 锚点格式 = requirements.md 里稳定的 `S-Fx.y` 编号 + 节标题锚；**OQ-5 后追加：AC 编号（S-Fx.y 内 AC1/AC2…）= 拆包验收齿的回引对账点**（write-story skill 纪律第 3 条已立此约定，那边规则消费此锚 + AC 号，两边并行不阻塞）。
+- **phase 2 基线声明（OQ-5 配套）**：phase 2 的符合度审计与重新拆包以**本批重写后的 story 全集**为基线（human 2026-09-13：「phase 2 相当于重新开始，并不是已经冻结掉的」）；重写前的 spec.md story 文本只作归档溯源，不作基线。
 - **实现符合度审计**：归 phase-2 workstream PROPOSAL（一次性「story × 现状 × 处置：保留/重修/重切」审计表），本变更不落。
 - **NFR 阈值数值拍板**（续航等「待定」项）：后续立项。
 - **机检脚本 hook 硬拦升级**：跑出误报率后经 OQ 再议。
@@ -349,3 +363,56 @@ DRAFT 期列骨架，GREEN 前补命令与预期全文：
 **GREEN 范围声明**：本 GREEN 覆盖 packet-id = 本 PROPOSAL §2 改法集（T1–T5）+ §5 验证集（v0.4 现态）；后续流程 = human 裁 OQ-2/3/4 → 主线程标 FROZEN（凭据 = 立项 ack + 本 R4 GREEN + human 裁 OQ 结果；F15-a/b 回灌建议随 FROZEN 一并完成）→ 明日 `.planning` 旧批归档后按 §5 #1 时序断言 landing。FROZEN 后 manifest 即终稿（17 行），landing  fidelity 按 §5 #7 逐文件核验。
 
 **R4 亲核清单（2026-09-13 实测/实读）**：① manifest 17 行 ↔ §2 各 T 锚清单逐一对账；② §3 命中清单 ↔ 判官 R1/R3 两次独立 grep census 逐类对账（含本次新抽查 smoke_e2e:5/:60/:124/:128/:142、cloud_link:5 逐行属实）；③ `repo-structure.md:17/:32`、`scope-map.json:33` 行号亲核属实（:17 = docs/notes 行「spec 唯一」、:32 = 白名单文件清单、:33 = allowFiles 的 "docs/spec.md"）；④ T5 .delivery 块（:137）与 §5 #7（:204）亲读，SSOT 改源 / 派生不手改 / 入口不虚构三纪律在文；⑤ rg 行为实测三连（命中 + check-ignore exit=1 + ls-files 全追踪，附 .ignore/.rgignore/.gitignore 排查）——F15-a 证伪基座。
+
+### R5 · 2026-09-13 · architect
+
+**结论：打回（窄幅，两项均机械可修、无升级 human 项）**。本轮只审 delta（Status 重开凭据 / T1 重写语义 + 新增四 / T6 新增节 / manifest +1 / §3 skill 行 / §4 OQ-5 / §5 #8 改写 + #9/#10 新增 / §6 两段追加），R1–R4 已闭环面未重开。delta 的方向、互引一致性与模板硬项全部成立；五件模板与 T1 既有裁定零矛盾；T6「不单独先落」论证属实；§5 #8 新方程机械可判性成立。但有两处事实失真：§5 #9 验证集内的 story 计数常量错误（F16，同类先例 = R1-F4 源清点不实）、feasibility 终标文件自述状态与 T1「已执行完毕」定位矛盾（F17）。修完可直接 R6 直判。
+
+**逐项核验结果（delta 清单 1–5 对账）**：
+
+1. **Status 行重开凭据 ✓**：ef257fa 实存——`git show` 核实 = kidpal-mvp + 260911-display-interaction-sovereignty 整体移入 `.planning/_archive/2026`，commit message 自证为 §5 #1 时序前置；feasibility-initial-marking.md 实存；「v1.0 凭据对未变部分继续有效」与 §7 R1–R4 记录在案一致。
+2. **T1 §3 重写语义 ✓**：:77「按 T6 write-story 五件模板重写 + human 逐条过目」与 §4 OQ-5=(b)（:201）、§5 #9 人读核验、§6 phase 2 基线声明（:223）四处一致；业务框架句 verbatim 保留 + AC 补写 + 实质变更注记进 landing-summary 的三段分工明确。
+3. **头部已砍声明区增列 ✓**：T1 :74 增列 NFR-PWR-1 / NFR-READ-2 与 feasibility D 节（S-F2.5 / NFR-PWR-1 / NFR-READ-2 三行带砍因）一致；spec.md:256 声明区实测仍为两处反白高亮（与 R1 亲核 13 承袭一致）。
+4. **T1 初始标定「已执行完毕」补记 ↔ feasibility 终标表 ✓**：八项裁定逐条对账全符——S-F1.3 / S-F1.5 升 ✅、S-F3.1 / S-F3.2 降 🟡（live 查字不可跑）、S-F3.3 收窄为「重播」单义 ✅ + 指代解析半条挂需求类开放问题、NFR-PERF-2 🟡 保留、NFR-SEC-1 ✅（十年期证书）、NFR-READ-1 🟡（烧板对照页）、NFR-PWR-1 / NFR-READ-2 砍；🔴 终态为零，与「预计为零」不冲突。（文件自身状态行陈旧另列 F17。）
+5. **T1 新增四 五件结构 ✓**：五件顺序（User Story 原文 → AC → 线框引用 → 补充规则 → 锚行）与 skill 草案模板（:16–32）逐件一致；「模板 SSOT = T6、锚规则 SSOT 留本文件头部、skill 只指针引用」与草案「锚行规则（SSOT 指针，不复制）」节（:47–49）互证；「无则写『无』/『线框待补』」槽位措辞两侧一致。
+6. **五件模板 vs T1 既有裁定零矛盾 ✓**：锚行三件（草案 :31 = UI/支撑/可行性）；NFR 回引（草案纪律 6，与 T1 新增三「同一约束全仓只定义一次」闭环）；线框随 feature 节 + 待补占位（草案 :27/:36，与 T1 §3 源库存如实一致）；UI 锚规则六条（草案 :49 枚举六条与 T1 新增二一一对应，指针不复制）。一条新增软约束见建议 S2。
+7. **T6 节 ✓**：六条纪律枚举与草案撰写纪律逐条一致；「不单独先落 = 防悬空引用」论证成立——草案 :47–49 明引 requirements.md 头部「UI 锚规则块」作 SSOT、description（:9）引 docs/requirements.md，该文件 T1 落地前不存在，单独先落确为悬空；边界指针（拆包转写归 260912 拆包链 / 架构归 architecture.md / 契约走契约门）与 §6 交接点一致；description 含 when-to-use + 边界，符合 authoring 纪律声明。
+8. **manifest ≡ §2 并集（18 行）✓**：逐行对账 T1×1 + T2×1 + T3×1 + T4×2 + T5×12 + T6×1 = 18，一行一裸路径、无括注；`.claude/skills/write-story/SKILL.md` 实测不存在（新增成立）；§3 表新增 skill 行（G2 治理面分类）与 scope-map 治理分层一致。
+9. **§5 #8 新核验方程机械可判 ✓**：左式四操作数均为可枚举清单（两新文件节集合 / 已砍清单 2+3 项 / 已结不迁清单 / 重写变更注记清单），紧随句给出操作判据——业务框架句对 spec 原文 verbatim 可溯（字符串可核）、实质变更逐条有注记（清单对账）——landing-verifier 可照判。注记：第四操作数实为偏差覆盖层而非节级覆盖操作数（story 的节级覆盖仍由「两新文件节集合」承担，重写不改变节归属），方程字面略松但操作定义由紧随句承载，不影响可判性；措辞对齐建议见 S3。
+10. **§5 #9 / #10 新增 ✓（#9 含一处错误常量 → F16）**：#9 形式齐备（五件人读核验 + AC 编号在场 + 机制词抽查），抽查词集（cron/散列/幂等/JSON/预合成）为草案纪律 2 禁令词表子集 ✓；#10 两脚本 `lint-descriptions.mjs` / `route-regression-check.mjs` 实测存在 ✓。
+11. **§6 两段追加 ✓**：AC 回引对账点与草案纪律 3（「AC 号就是 story 与验收测试之间的对账点」）互引一致；phase 2 基线声明与 Status 行、OQ-5 裁语录一致。
+12. **模板硬项 ✓**：`### T6 · …` 标题形态合规；T6 锚清单（目标文件行）在场；manifest 围栏块一行一裸路径。
+
+**新打回项**：
+
+**F16 · story / NFR 计数失真（机械可修，不升级）**。判官实测 spec.md story ID 全集 = 14（S-F1.1–1.5、S-F2.1–2.5、S-F3.1–3.3、S-F4.1，grep 全量枚举），减已砍 S-F2.5 = **活跃 13 条**；feasibility 表 A 实列 13 story 行 + 底座 1 行（表本身正确）。三处计数与实况/自表不符：a) **§5 #9「重写 15 条 story + 底座」**——验证集内的错误常量，landing-verifier 照 15 核验必与现实（13）对不上，这是本项列入打回而非建议级的理由（验证集常量，同 R1-F4 源清点不实同类）；b) feasibility A 节头「15 条 + 底座 1 条」同源错误；c) feasibility B 节头「6 域 6 条」与自身表不符（表列 7 条、跨 5 域：PERF×2 / SEC×2 / OFF / SAFE / READ；PWR 域随 PWR-1 砍而空）。修法：三处计数改与表/实况一致。
+
+**F17 · feasibility 文件自述状态陈旧，与 T1「已执行完毕·终标」定位矛盾（机械可修，不升级）**。文件标题行仍写「待 human 逐条过目」；C.1 仍写「S-F3.3 唯一待定……human 定夺；若选整砍……」——而表 A 的 S-F3.3 行已记「✅（human 裁 2026-09-13 收窄）」、C.2「已裁回顾」未收 S-F3.3。T1 :87 把本文件定位为终标记录（「已执行完毕」「终标」），文件自述却停在「待过目 + 一待定」中间态；本文件将作 landing 制品归档，中间态自述会误导 landing-verifier 对终标结果的核读。修法：标题改终标态、C.1 结案（S-F3.3 收窄裁定移入已裁回顾）、footer 流程注记改过去式或保留为归档说明。
+
+**建议级修正（不阻断；建议 re-FREEZE 前随 F16/F17 一并回灌）**：
+
+- **S1 · §2 标题「改法（T1…T5）」未随 T6 更新**——packet-binding 行（:6）已写「T1–T6」，标题区间宜一致化为（T1…T6）。
+- **S2 · skill 模板行「UI = `canvas-pX`（0–3 个，舞台粒度）」的 0–3 量化约束不见于 T1 锚规则六条 SSOT**——属 human 已审定草案内的新增经验值，与六条不矛盾，但建议注明为经验上限（或后续归入 SSOT），防两本账。
+- **S3 · §5 #8「新砍三件」与 T1「新增砍项两件」措辞错位**——方程括号内已显式枚举三件（S-F2.5 为迁移期转换条目、PWR-1/READ-2 为 2026-09-13 过目新增），机械可判不受影响；建议对齐为「声明区两件 + 迁移期已砍清单新增三件」防核读者误判。
+- **S4 · skill 草案示例（S-F1.4）的 UI 锚 `state-reminder-popup` 在 v3 设计稿不存在**——实测 v3 实存 `state-reminder`（无 `-popup`）；示例已对 arch 编号作了占位声明，UI 锚无同等声明，与 skill 自立的「锚必须可解析」纪律形成反差。建议示例改用实存 id 或补占位注记（human 已审定草案，此改动属文字级，landing 前随批确认即可）。
+
+**R5 亲核清单（2026-09-13 实测/实读）**：① spec.md story ID 全量枚举（`grep -oE 'S-F[0-9]+\.[0-9]+' | sort -u`，14 ID、活跃 13）+ §4 标题行逐一比对；② feasibility-initial-marking.md 全表亲读，A/B/D 节与 T1 :87 补记八项逐条对账；③ write-story-skill-draft.md 全文亲读，与 T1 新增四 / T6 逐槽位对账（五件顺序、纪律六条、边界指针、SSOT 指针、完稿自检七项；示例 S-F1.4 原文与 spec.md:318 逐字一致 ✓）；④ manifest 18 行 ↔ §2 各 T 目标文件逐一对账（T5 12 件不变 + T6 新增 1）；⑤ `.claude/scripts/lint-descriptions.mjs`、`route-regression-check.mjs` 存在实测，`spec-anchor-check.mjs` 与 `.claude/skills/write-story/` 不存在实测（新增成立）；⑥ `git show ef257fa` 实读（旧批归档、§5 #1 前置兑现属实）；⑦ v3 设计稿 `data-od-id` 定向抽查（`state-reminder` 实存、`state-reminder-popup` 不存在，全量 61 件承袭 R1 亲核 7）；⑧ spec.md:256 声明区亲读（两处反白高亮，承袭 R1 亲核 13 复核一致）。
+
+修完 F16/F17（三处计数 + 状态行结案，纯机械）可直接 R6 直判 GREEN。
+
+### R6 · 2026-09-13 · architect
+
+**结论：GREEN**。R5 两项打回（F16/F17）与四项建议级修正（S1–S4）全部核实闭环，无残留、无新增问题。R1–R5 已确认面（设计自洽、manifest ≡ §2 并集、census 闭合、验证集其余项、模板硬项）在 v0.5 修复后维持。
+
+**R5 处置对账（逐条核验）**：
+
+- **F16 ✓ 三处全修**：a) §5 #9 现为「重写 13 条活跃 story + 底座（spec story ID 全集 14 减已砍 S-F2.5 = 13，R5-F16 判官实测口径）」——与判官实测一致且带口径 attribution；b) feasibility A 节头现「13 条活跃 + 底座 1 条；S-F2.5 已砍见 D 节」✓；c) B 节头现「5 域 7 条」✓（与表 PERF×2/SEC×2/OFF/SAFE/READ = 5 域 7 行相符）。三文件残留 grep（`15 条`/`6 域 6 条`）零命中（仅本评审记录内的历史引述，append-only 属正常）。
+- **F17 ✓ 闭环**：feasibility 标题现「可行性终标清单（human 逐条过目完毕 · 2026-09-13 · landing 制品）」；头部 blockquote 改流程已走完（含「🔴 终标为零」）；C 节整节改写为「过目裁定记录（全部定案，无残余待定）」，S-F3.3 收窄定案在案、升降定案八项齐、落地联动两条保留；footer 改终标口吻。与 T1 :87「已执行完毕·终标」定位一致。「待 human 逐条过目」/「唯一待定」残留 grep 零命中（评审记录引述除外）。
+- **S1 ✓**：§2 标题现「改法（T1…T6）」，与 packet-binding 行（:6）一致。
+- **S2 ✓**：skill 草案模板锚行补注「0–3 个为本 skill 新增经验上限——超出先自问是否锚了『道具』或 story 该拆，非六条 SSOT 既有条款」——经验值属性注明且给了使用指引，两本账风险消解。
+- **S3 ✓**：§5 #8 砍项枚举现「原声明区两件 + S-F2.5 转砍条目 + 过目新砍两件 NFR-PWR-1/NFR-READ-2」，与 T1 头部「新增砍项两件」口径一致，已砍清单总数 2+1+2 = 5 与 feasibility D 节三行 + 声明区两件对得上。
+- **S4 ✓**：skill 草案示例锚改 `state-reminder` 并注「v3 设计稿实存 id」——判官独立实测 v3:1100 `data-od-id="state-reminder"` 逐字属实。
+
+**GREEN 范围声明**：本 GREEN 覆盖 packet-id = 本 PROPOSAL §2 改法集（T1–T6）+ §5 验证集（v0.5 现态，含 OQ-5=(b) 重写语义、T6 skill 折入、18 行 manifest）。后续流程 = 主线程凭「立项 ack + R4 GREEN（v1.0 基线）+ 本 R6 GREEN（重开 delta）+ OQ-1~5 全裁定」标 re-FREEZE（FROZEN 后 manifest 18 行即终稿）；landing 时序仍受 §5 #1 前置约束（已兑现，ef257fa）；landing 制品含 feasibility-initial-marking.md（终标清单）与 story 重写变更注记清单（landing-summary 承载，§5 #8 方程第四操作数）。
+
+**R6 亲核清单（2026-09-13 实测/实读）**：① §5 #8/#9 修订文亲读（:216–217）；② feasibility 标题、头部 blockquote、A/B 节头、C 节整节、footer 亲读；③ skill 草案模板锚行（:31 区域）与示例锚行（:87 区域）亲读；④ §2 标题（:68）亲读；⑤ 三文件残留 grep（`15 条` / `6 域 6 条` / `待 human 逐条过目` / `唯一待定`）——仅 §7 评审记录内历史引述命中；⑥ v3 设计稿 `state-reminder` 实测（:1100，S4 独立复核，不依赖起草方口径）。
