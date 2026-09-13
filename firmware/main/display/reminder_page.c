@@ -1102,6 +1102,49 @@ static const lv_image_dsc_t *krm_pose_jump_bitmap_dsc(void)
     return &s_krm_pose_dsc;
 }
 
+/* -------------------------------------------------------------------------- *
+ * 提醒态整屏压暗 (包 260911-render-pages RP-A9/F4)：用 d50 网点资产 (B8 闭集, 4px 格,
+ * 单屏稀疏) 合成 ARGB8888 tile, 供弹窗外整屏平铺压暗 —— 常规位深偏移的半透明填充
+ * 退役, 改 d50 网点合成 (注释与实现一致)。未 mount/失败 -> NULL (best-effort, 页面
+ * 回浅底)。
+ * ------------------------------------------------------------------------ */
+#define KRM_DOTS_MAX 16
+static lv_image_dsc_t s_krm_dots_dsc;
+static uint32_t       s_krm_dots_px[KRM_DOTS_MAX * KRM_DOTS_MAX]; /* 定长、非堆 (RMD-A6 禁令) */
+static int            s_krm_dots_st  = 0; /* 0=未试 1=可用 2=不可用 */
+
+static const lv_image_dsc_t *krm_d50_overlay_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_krm_dots_st == 2) {
+        return NULL;
+    }
+    if (s_krm_dots_st == 1) {
+        return &s_krm_dots_dsc;
+    }
+    if (kidpal_art_load("d50.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > KRM_DOTS_MAX || img.h > KRM_DOTS_MAX) {
+        s_krm_dots_st = 2;
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_krm_dots_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_krm_dots_dsc, 0, sizeof(s_krm_dots_dsc));
+    s_krm_dots_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_krm_dots_dsc.header.w      = img.w;
+    s_krm_dots_dsc.header.h      = img.h;
+    s_krm_dots_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_krm_dots_dsc.data          = (const uint8_t *)s_krm_dots_px;
+    s_krm_dots_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_krm_dots_st = 1;
+    return &s_krm_dots_dsc;
+}
+
 int kidpal_reminder_page_render(const kidpal_alert_t *a)
 {
     lv_obj_t *scr;
@@ -1139,9 +1182,23 @@ int kidpal_reminder_page_render(const kidpal_alert_t *a)
     lv_obj_clean(scr);
     lv_obj_set_style_pad_all(scr, 0, 0);
 
-    /* 1) 白底 + 整屏压：d50 网点聚焦（RLCD 上「压」= 灰底，弹窗卡片是唯一亮区） */
+    /* 1) 白底 + 整屏压：d50 网点聚焦（V3 §06「整屏压 50% 网点强制聚焦」; F4: d50
+     *    网点合成, 替代常规位深半透明填充）。弹窗卡片随后覆盖为唯一亮区。 */
     krm_fill_rect(scr, 0, 0, w, h, KRM_COLOR_BG, LV_OPA_COVER);
-    krm_fill_rect(scr, 0, 0, w, h, KRM_COLOR_INK, LV_OPA_50);
+    {
+        const lv_image_dsc_t *dots = krm_d50_overlay_dsc();
+        lv_obj_t *dim = lv_obj_create(scr);
+        lv_obj_remove_style_all(dim);
+        lv_obj_set_size(dim, w, h);
+        lv_obj_set_pos(dim, 0, 0);
+        lv_obj_set_style_bg_opa(dim, LV_OPA_COVER, 0);
+        lv_obj_set_style_bg_color(dim, lv_color_hex(KRM_COLOR_BG), 0);
+        if (dots != NULL) {
+            lv_obj_set_style_bg_image_src(dim, dots, 0);
+            lv_obj_set_style_bg_image_tiled(dim, true, 0);
+        }
+        lv_obj_clear_flag(dim, LV_OBJ_FLAG_SCROLLABLE);
+    }
 
     /* 2) 弹窗卡片 */
     card_x = w * KRM_CARD_X_PCT / 100;

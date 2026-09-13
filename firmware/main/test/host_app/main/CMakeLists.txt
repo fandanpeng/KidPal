@@ -91,6 +91,20 @@ set(HOST_ACCEPTANCE_SRCS
     "../../screen_unification.acceptance.c"
     "../../../display/kidpal_layer.c"
 
+    # 包 260911-render-pages (批次③ V3 整屏还原 + 五态演出): 冻结验收 v3_restore
+    # (五态纯逻辑契约 6 齿 + 页面换皮框族/字体分型/提醒压暗等) + 被测纯逻辑五态内容
+    # 选择模块 (kidpal_voice_states.c 强符号覆盖 weak 哨兵——不编入则冻结离线契约仍红;
+    # 相对 host_app/main 为 ../../../)。**必须置于 host smoke acceptance 之前**（smoke
+    # 保持列表末位 = 最先执行, 包 0 boundary 齿注册序守卫; v3_restore 无渲染齿, 不影响
+    # 该守卫）。
+    "../../v3_restore.acceptance.c"
+    "../../../display/kidpal_voice_states.c"
+
+    # happy_flow_capture.test.c (human 一次性授权截图轮, 2026-09-13): Happy Flow 各页
+    # host 真渲染 -> 渲染缝 additive BMP 落盘缝。普通 .test.c 非冻结件。置于 smoke 之前
+    # （执行序 = 列表逆序: 包 0 boundary 齿仍最先跑, 本文件随后, 既有齿不受扰动）。
+    "../../happy_flow_capture.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -109,3 +123,14 @@ idf_component_register(
     # actually registers and runs every frozen TEST_CASE (non-vacuous host runner).
     WHOLE_ARCHIVE
 )
+
+# 测试专用组件编译豁免 (仅 host test infra, 不进设备构建): 冻结验收件 v3_restore
+# (包 260911-render-pages) 首次编入 host -Werror 时, 其带动态字段的诊断消息触
+# -Wformat-truncation (FM 模式: vsnprintf 进静态缓冲, %s 未知长度指针的良性告警;
+# 验收件冻结不可改)。此处仅把该告警降为非错误 (仍显示), 不削弱其它更危险的
+# -Werror 检查 (test-only 组件, 与设备构建无关)。
+# 第二条豁免 (2026-09-13 全量重配时暴露): 多个冻结验收件的 REVISION LOG 注释携带
+# 路径字面量 `docs/contracts/**` / `managed_components/**` —— GCC -Wcomment 对块
+# 注释内的 `/*` 报警, 属注释体文字、非嵌套注释语法错。冻结件不可改, 仅把
+# -Wcomment 降为非错误 (仍显示), 语义零影响。
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation -Wno-error=comment)

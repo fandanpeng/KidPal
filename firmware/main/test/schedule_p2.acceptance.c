@@ -102,6 +102,12 @@
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef / exitCriteria / sourceRef -> test):
+ *   coverage: RP-A1 (TaskPackage 260911-render-pages, 2026-09-12 留痕修订承载)
+ *             -> test P2-A1 齿 6（first-match → 定义签名消歧, REVISION LOG 2026-09-12;
+ *             禁 render_node 补哨兵）
+ *   coverage: RP-A3 (TaskPackage 260911-render-pages 课表页数据链: 实现面 =
+ *             kidpal_render_node.cc cycle_next 空态 + schedule_page.c 接线;
+ *             本文件 schedule_p2 全齿 = 其 host 侧验收承载, 全齿绿即承载兑现)
  *   coverage: P2-A1  structural (+S-F1.2 契约 §1.3 ② 消费面) -> test P2-A1
  *               (P2 课表页消费面装配: schedule 页模块存在于设备树 + 编入设备构建
  *               CMakeLists + mcp_server kidpal/display 的 schedule 路由 case 真正
@@ -464,6 +470,95 @@ static int ksp_scan_count(const char *rel_dir, const char *needle, int ci,
     return ksp_count_files_with_needle(abs, rel_dir, needle, ci, first_hit, cap, 0);
 }
 
+/* 消歧扫描（REVISION LOG 2026-09-12, RP-A1 方案 B）：统计「内容含 needle1（必需）
+ * 且含 alt1|alt2|alt3 至少其一」的文件数 —— 把 first-match 定位收敛到「定义签名
+ * 文件族」，消费调用点/哨兵文件不再能代表定义模块。alt 允许 NULL（跳过）。
+ * 齿语义不变：标记集合与原断言逐字一致（择一满足），仅定位收紧。 */
+static int ksp_count_files_with_needle_alt(const char *abs_dir, const char *rel_prefix,
+                                           const char *needle1, const char *alt1,
+                                           const char *alt2, const char *alt3,
+                                           char *first_hit, size_t cap, int depth)
+{
+    DIR *d;
+    struct dirent *e;
+    int count = 0;
+
+    if (depth > 10) {
+        return 0;
+    }
+    d = opendir(abs_dir);
+    if (d == NULL) {
+        return 0;
+    }
+    while ((e = readdir(d)) != NULL) {
+        char abs_next[KSP_MAX_PATH];
+        char rel_next[KSP_MAX_PATH];
+        struct stat st;
+
+        if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0 ||
+            ksp_is_skipped_dir(e->d_name)) {
+            continue;
+        }
+        snprintf(abs_next, sizeof(abs_next), "%s/%s", abs_dir, e->d_name);
+        if (rel_prefix[0] != '\0') {
+            snprintf(rel_next, sizeof(rel_next), "%s/%s", rel_prefix, e->d_name);
+        } else {
+            snprintf(rel_next, sizeof(rel_next), "%s", e->d_name);
+        }
+        if (stat(abs_next, &st) != 0) {
+            continue;
+        }
+        if (S_ISDIR(st.st_mode)) {
+            count += ksp_count_files_with_needle_alt(abs_next, rel_next, needle1,
+                                                     alt1, alt2, alt3,
+                                                     first_hit, cap, depth + 1);
+        } else if (S_ISREG(st.st_mode)) {
+            if ((unsigned long long)st.st_size > KSP_MAX_READ) {
+                continue;
+            }
+            FILE *f = fopen(abs_next, "rb");
+            if (f == NULL) {
+                continue;
+            }
+            char *buf = (char *)malloc((size_t)st.st_size + 1);
+            assert(buf != NULL);
+            if (fread(buf, 1, (size_t)st.st_size, f) == (size_t)st.st_size) {
+                buf[st.st_size] = '\0';
+                int m = ksp_contains(buf, needle1) &&
+                        ((alt1 != NULL && ksp_contains(buf, alt1)) ||
+                         (alt2 != NULL && ksp_contains(buf, alt2)) ||
+                         (alt3 != NULL && ksp_contains(buf, alt3)));
+                if (m) {
+                    if (count == 0 && first_hit != NULL) {
+                        snprintf(first_hit, cap, "%s", rel_next);
+                    }
+                    count++;
+                }
+            }
+            free(buf);
+            fclose(f);
+        }
+    }
+    closedir(d);
+    return count;
+}
+
+static int ksp_scan_count_alt(const char *rel_dir, const char *needle1,
+                              const char *alt1, const char *alt2, const char *alt3,
+                              char *first_hit, size_t cap)
+{
+    char abs[KSP_MAX_PATH];
+
+    if (first_hit != NULL && cap > 0) {
+        first_hit[0] = '\0';
+    }
+    if (!ksp_rel(abs, sizeof(abs), rel_dir) || !ksp_is_dir(abs)) {
+        return 0;
+    }
+    return ksp_count_files_with_needle_alt(abs, rel_dir, needle1, alt1, alt2, alt3,
+                                           first_hit, cap, 0);
+}
+
 #define KSP_REQUIRE_ROOT() TEST_ASSERT_TRUE_MESSAGE(ksp_locate_root(), \
     "KSP RED(infra): repo root not located from cwd — run the ELF from the repo root " \
     "or from firmware/main/test/host_app (see HOST_TEST_CONVENTIONS.md [C4.4])")
@@ -548,31 +643,44 @@ TEST_CASE("schedule p2: P2 课表页消费面装配结构 (P2-A1)", "[schedule][
         "KSP-A1 RED: kidpal_schedule_page_render is defined but never called — P2 渲染"
         "面未接入 mcp 消费链路（仅定义不调用不算接入）");
 
-    /* tooth 5: 解析失败 = 显式降级语义标记（绝不盲渲染, V27 纪律在 data 形状上） */
+    /* tooth 5: 解析失败 = 显式降级语义标记（绝不盲渲染, V27 纪律在 data 形状上）
+     * REVISION LOG 2026-09-12 (RP-A1 顺检 tighten)：定位由 first-match（齿 1 扫描
+     * "kidpal_schedule_parse(" 的首个命中文件——消费调用点 mcp_server.cc /
+     * kidpal_render_node.cc 可先行命中，其 "-1" 字面量碰巧满足本齿）收敛到定义签名
+     * "int kidpal_schedule_parse("（display/schedule_page.{c,h} 定义文件族，消费
+     * 调用点 "int n = kidpal_schedule_parse(" 无 int 紧邻前缀不命中）。断言不放松：
+     * 降级|degrade|-1 三标记择一维持原样，仅定位收紧。 */
     {
-        char *buf = ksp_read(hit, NULL);
-        TEST_ASSERT_NOT_NULL_MESSAGE(buf, "KSP-A1 RED: schedule page file unreadable");
-        TEST_ASSERT_TRUE_MESSAGE(
-            ksp_contains(buf, "降级") || ksp_contains_ci(buf, "degrade") ||
-            strstr(buf, "-1") != NULL,
-            "KSP-A1 RED: the schedule page module carries no parse-degrade semantic "
-            "marker — 解析失败必须显式降级而非盲渲染 (V27 / spec §4.0)");
-        free(buf);
+        char def_hit[KSP_MAX_PATH];
+        int n_def = ksp_scan_count_alt("firmware/main", "int kidpal_schedule_parse(",
+                                       "降级", "degrade", "-1", def_hit, sizeof(def_hit));
+        TEST_ASSERT_TRUE_MESSAGE(n_def >= 1,
+            "KSP-A1 RED: the schedule page definition module carries no parse-degrade "
+            "semantic marker — 解析失败必须显式降级而非盲渲染 (V27 / spec §4.0)");
+        (void)def_hit;
     }
 
-    /* tooth 6: P2-A4 标题弹跳动画面存在于渲染模块（lv_anim） */
+    /* tooth 6: P2-A4 标题弹跳动画面存在于渲染定义文件（lv_anim）
+     * REVISION LOG 2026-09-12 (RP-A1, human 方案 B, tightly-only)：原实现 first-match
+     * 取 "kidpal_schedule_page_render(" 的首个命中文件——先行轮新增的消费调用点
+     * firmware/main/display/kidpal_render_node.cc（readdir 序恒先行命中）缺
+     * lv_anim|弹跳 标记，使本齿恒红（P2-A1 在册红, 见 260911-screen-unification /
+     * 260911-display-first-m1 existing-red-inventory）；真定义文件
+     * firmware/main/display/schedule_page.c（标题弹跳 lv_anim_t 块）实含 lv_anim，
+     * 齿意图未被实现回归破坏，属扫描器定位歧义而非真实回归。修法（断言不放松）：
+     * 定位收敛到定义签名 "int kidpal_schedule_page_render("（display/schedule_page.h
+     * 声明 + schedule_page.c 定义命中；消费调用点 "int drawn = kidpal_schedule_page_"
+     * "render(" 无 int 紧邻前缀不命中），要求定义文件族至少其一含 lv_anim|弹跳。
+     * 禁在 kidpal_render_node.cc 补哨兵标记（方案 A 被 human 否决——喂哨兵只会把红
+     * 藏进不含动画的文件）。 */
     {
-        char render_hit[KSP_MAX_PATH];
-        char *buf;
-        (void)ksp_scan_count("firmware/main", "kidpal_schedule_page_render(", 0,
-                             render_hit, sizeof(render_hit));
-        buf = ksp_read(render_hit, NULL);
-        TEST_ASSERT_NOT_NULL_MESSAGE(buf, "KSP-A1 RED: render module unreadable");
-        TEST_ASSERT_TRUE_MESSAGE(
-            ksp_contains(buf, "lv_anim") || strstr(buf, "弹跳") != NULL,
-            "KSP-A1 RED: the render module carries no title bounce animation face "
+        char def_hit[KSP_MAX_PATH];
+        int n_def = ksp_scan_count_alt("firmware/main", "int kidpal_schedule_page_render(",
+                                       "lv_anim", "弹跳", NULL, def_hit, sizeof(def_hit));
+        TEST_ASSERT_TRUE_MESSAGE(n_def >= 1,
+            "KSP-A1 RED: the render definition module carries no title bounce animation face "
             "(lv_anim) — P2-A4 标题弹跳切换缺失 (S-F1.2)");
-        free(buf);
+        (void)def_hit;
     }
 
     /* guards (must stay green): 包 2 路由底座在世, 路由续接不回退 */
@@ -978,4 +1086,20 @@ TEST_CASE("schedule p2: 扫描器自检 + remind_before_min/提醒范围守卫 (
 /* --------------------------------------------------------------------------- *
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-07  initial freeze (acceptance-author).
+ *   2026-09-12  RP-A1 (TaskPackage 260911-render-pages; human 2026-09-11 裁定方案 B,
+ *               tightly-only)：P2-A1 齿 5/6 first-match 定位歧义修复。事实：齿 6 原
+ *               first-match 取 "kidpal_schedule_page_render(" 首个命中文件，先行轮
+ *               新增的消费调用点 kidpal_render_node.cc 恒先行命中且无 lv_anim|弹跳
+ *               标记 → 恒红（在册红 P2-A1:571，owner=本包）；真定义文件
+ *               display/schedule_page.c 实含 lv_anim（标题弹跳 lv_anim_t 块），齿
+ *               意图未被实现回归破坏，属扫描器定位歧义。修法：新增 ksp_scan_count_alt
+ *               消歧扫描（needle1 必需 + alt 择一，标记集合与原断言逐字一致），齿 6
+ *               定位收敛到定义签名 "int kidpal_schedule_page_render(" 的文件族要求
+ *               至少其一含 lv_anim|弹跳；齿 5 同型 first-match 顺检收紧到定义签名
+ *               "int kidpal_schedule_parse(" 文件族（原三标记 降级|degrade|-1 择一
+ *               维持）。断言语义不放松；禁 render_node 补哨兵（方案 A 否决）。
+ *   2026-09-12  coverage: RP-A6 冻结面零越界在本件留痕声明承载：本件仅
+ *               acceptance-author 留痕修订（上上条所记齿 5/6 消歧 + 本 coverage
+ *               map 补记），断言语义不放松，docs/contracts/** 与
+ *               managed_components/** 零触碰。
  * --------------------------------------------------------------------------- */

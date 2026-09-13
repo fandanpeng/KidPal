@@ -126,6 +126,71 @@ int32_t host_infra_read_pixel(int x, int y)
 }
 
 /* ============================================================================
+ * additive 截图缝 (human 一次性授权 2026-09-13, happy-flow 截图记录) —— 不改任何
+ * 既有断言行为。把当前帧缓冲 s_fb 原样写成 24-bit BMP（BMP 底行在前，逐行翻好转
+ * 换；像素 0xRRGGBB 直接落 BGR 字节序）。没有帧时返回 -1（不凭空造帧）；落盘失败
+ * （目录不存在等）返回 -2，由调用方决定是否断言。纯 additive：不影响 render/read
+ * 语义与既有齿。
+ * ========================================================================== */
+#include <stdio.h>
+
+int host_infra_dump_bmp(const char *path)
+{
+    if (path == NULL || !s_rendered) {
+        return -1;
+    }
+
+    /* 24-bit BMP: 14B file header + 40B info header + 底行在前的 BGR 像素,
+     * 每行 4 字节对齐（400*3=1200 恰好对齐, 无 padding）。 */
+    enum { ROW_BYTES = SEAM_FRAME_W * 3 }; /* 1200, 编译期常量, 4 对齐 */
+    const uint32_t data_size = (uint32_t)ROW_BYTES * SEAM_FRAME_H;
+    const uint32_t file_size = 14 + 40 + data_size;
+    uint8_t hdr[54];
+    uint32_t u32;
+    uint16_t u16;
+    int32_t s32;
+    FILE *f;
+    int y;
+
+    memset(hdr, 0, sizeof(hdr));
+    hdr[0] = 'B'; hdr[1] = 'M';
+    u32 = file_size;        memcpy(&hdr[2], &u32, 4);
+    u32 = 54;               memcpy(&hdr[10], &u32, 4);   /* pixel data offset */
+    u32 = 40;               memcpy(&hdr[14], &u32, 4);   /* info header size */
+    s32 = SEAM_FRAME_W;     memcpy(&hdr[18], &s32, 4);
+    s32 = SEAM_FRAME_H;     memcpy(&hdr[22], &s32, 4);
+    u16 = 1;                memcpy(&hdr[26], &u16, 2);   /* planes */
+    u16 = 24;               memcpy(&hdr[28], &u16, 2);   /* bpp */
+    u32 = 0;                memcpy(&hdr[30], &u32, 4);   /* BI_RGB */
+    u32 = data_size;        memcpy(&hdr[34], &u32, 4);
+
+    f = fopen(path, "wb");
+    if (f == NULL) {
+        return -2;
+    }
+    if (fwrite(hdr, 1, sizeof(hdr), f) != sizeof(hdr)) {
+        fclose(f);
+        return -2;
+    }
+    for (y = SEAM_FRAME_H - 1; y >= 0; y--) {
+        uint8_t row[ROW_BYTES];
+        int x;
+        for (x = 0; x < SEAM_FRAME_W; x++) {
+            uint32_t px = s_fb[(uint32_t)y * SEAM_FRAME_W + (uint32_t)x] & 0xFFFFFFu;
+            row[x * 3 + 0] = (uint8_t)(px & 0xFFu);         /* B */
+            row[x * 3 + 1] = (uint8_t)((px >> 8) & 0xFFu);  /* G */
+            row[x * 3 + 2] = (uint8_t)((px >> 16) & 0xFFu); /* R */
+        }
+        if (fwrite(row, 1, (size_t)ROW_BYTES, f) != (size_t)ROW_BYTES) {
+            fclose(f);
+            return -2;
+        }
+    }
+    fclose(f);
+    return 0;
+}
+
+/* ============================================================================
  * additive P1 渲染入口 (TaskPackage 260829-home-p1) —— 不改任何既有断言行为。
  *
  * home_p1.c (纯逻辑, device 亦可编) 以自身 weak 默认定义同名符号; 本文件以强符号

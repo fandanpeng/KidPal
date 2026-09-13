@@ -727,10 +727,12 @@ void McpServer::AddCommonTools() {
                             }
                             break;
                         }
-                        /* 阅读态分页行高按设备 400x300 最小估算 (minimal: 真实分栏观感
-                         * 殿后 9b)；counter/列表态字段从当前视图快照续用。 */
+                        /* 阅读态分页行高单源 (KSTORY_READER_LINES_PER_SCREEN, 包
+                         * 260911-render-pages RP-A2; 替代原硬编码 4 的最小估算)。
+                         * counter/列表态字段从当前视图快照续用。 */
                         kidpal_story_view_t reader_view = g_story_view;
-                        (void)kidpal_story_open_reader(&reader_view, parsed.get(), 4);
+                        (void)kidpal_story_open_reader(&reader_view, parsed.get(),
+                                                       KSTORY_READER_LINES_PER_SCREEN);
                         cJSON_AddNumberToObject(ack, "screens", reader_view.screens);
                         ESP_LOGI(TAG, "story_text_dispatch corr_id=%s screens=%d degrade=false",
                                  corr_id, reader_view.screens);

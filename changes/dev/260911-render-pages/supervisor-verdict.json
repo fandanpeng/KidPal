@@ -1,0 +1,73 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-12T15:52:01.233Z",
+  "changeId": "260911-render-pages",
+  "originType": "regression",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:.claude/taskpackages/260911-render-pages/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:.claude/taskpackages/260911-render-pages/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 6,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:.claude/taskpackages/260911-render-pages/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": ".claude/taskpackages/260911-render-pages/verifier-evidence/rounds/r6.json",
+        "bearingFactOk": false,
+        "completedRounds": 6,
+        "closeoutArtifactsChecked": [
+          "changes/dev/260911-render-pages/docs-delta.md",
+          "changes/dev/260911-render-pages/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "regression"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789205187444-acceptance-coverage.log",
+      ".claude/verify-logs/1789205463581-mutation-check.log",
+      ".claude/verify-logs/1789205524564-docs-sync.log",
+      ".claude/verify-logs/1789205786165-unit.log",
+      ".claude/verify-logs/1789205798627-acceptance.log",
+      ".claude/verify-logs/1789227068413-unit.log",
+      ".claude/verify-logs/1789227074820-acceptance.log",
+      ".claude/verify-logs/1789227411171-unit.log",
+      ".claude/verify-logs/1789227417839-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      ".claude/taskpackages/260911-render-pages/verifier-evidence/rounds/r6.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "changes/dev/260911-render-pages/docs-delta.md",
+      "changes/dev/260911-render-pages/review-packet.md"
+    ]
+  }
+}

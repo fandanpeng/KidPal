@@ -23,6 +23,16 @@ CONFIG_LV_USE_CLIB_MALLOC=y
 CONFIG_LV_USE_CLIB_STRING=y
 CONFIG_LV_USE_CLIB_SPRINTF=y
 
+# CJK font for host screenshots: compile in the full-coverage Source Han Sans SC 14
+# CJK font so CJK labels (课表/故事/提醒等页面正文) render fully in captures — the
+# built-in SimSun is only a ~1000-radical subset (partial tofu). ~1 MB of font data is
+# irrelevant for a PC host test app; device pages use the V3 font assets (fonts_root)
+# via SPIFFS, so this has zero device impact. (LVGL 9.3's `LV_FONT_DEFAULT_*` Kconfig
+# choice has no lv_conf mapping — the capture driver sets the font at runtime on the
+# active screen instead, see happy_flow_capture.test.c hfc_seam_init.)
+# Note: changing this requires deleting the generated sdkconfig to re-apply defaults.
+CONFIG_LV_FONT_SOURCE_HAN_SANS_SC_14_CJK=y
+
 # Skip LVGL demos/examples and widgets we do not exercise, to keep the host build lean.
 CONFIG_LV_BUILD_EXAMPLES=n
 CONFIG_LV_BUILD_DEMOS=n

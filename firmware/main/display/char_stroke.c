@@ -486,6 +486,9 @@ int kidpal_char_dash_dot_pitch(void)
 int kidpal_char_card_build(const kidpal_char_info *info, int cur_stroke,
                            kidpal_char_card *out)
 {
+    /* 换皮 (包 260911-render-pages RP-A10/RP-A8): 米字格大框单份背景 = frm_236_236
+     * (B8 打包策略: 笔形 3 态叠加复用 + 米字格单份背景, 禁逐笔逐态整帧), 由渲染侧
+     * (char_page) 经 B8 闭集 frm_ 资产族铺开; 本模块为查字数据面, 观感归 RP-A5 真机轮。 */
     if (info == NULL || out == NULL ||
         info->pinyin == NULL || info->radical == NULL || info->words == NULL) {
         return -1;

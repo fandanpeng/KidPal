@@ -29,7 +29,7 @@
  *   蝴蝶结的**像素级造型观感归 design review / 9b 真机**，本文件只钉可机判近似
  *   （v3 母版溯源 + 裁定快照在世 + 7 姿态逐枚互异）。
  * - ④ B8 字盘打包策略锁定「笔形 3 态叠加复用 + 米字格单份背景」（禁逐笔逐态整帧，
- *   保守预估 ~3.1MB 顶预算）——承载齿 = 落地资产集 == 47 枚闭环白名单（无任何
+ *   保守预估 ~3.1MB 顶预算）——承载齿 = 落地资产集 == 48 枚闭环白名单（无任何
  *   逐笔/逐态烘焙帧的容身位）+ P4 米字格大框单份背景 = frm_236_236（236×236，
  *   与 v3 稿 P4 .frm 236×236 同源）。
  * - ⑤ 字号下限留根：16px 以下 CJK 1bpp 真机可读性归包 9b（HWV-A7，ARQ-
@@ -68,7 +68,8 @@
  *   --- 落地面（冻结路径与命名） ---
  *   SPIFFS 落地根 = firmware/main/assets/spiffs_root/（设备 = 该目录树烧进
  *   partitions/v2/16m.csv 的 assets 分区 [data/spiffs, 0x800000, 8M]；host = loader
- *   的 root 直读此目录）。平铺 47 枚 .bin，文件名 = 上游管线资产名 + ".bin"
+ *   的 root 直读此目录）。平铺 48 枚 .bin（原 47 枚 + bubble_tail_24, REVISION LOG
+ *   2026-09-12），文件名 = 上游管线资产名 + ".bin"
  *   （pose_daily_96.bin / ic_wave_48.bin / d50.bin / frm_236_236.bin /
  *   imgfont_digit_3.bin / ...，闭集白名单见 artt_expected[] 表）。
  *
@@ -158,7 +159,7 @@
  *   coverage: ART-A3  render    -> test 9 (动态时间逐字符单元格比对)
  *   coverage: ART-A4  render    -> test 7 (9-slice 24px 角片逐像素不变形 + 边框连续)
  *                                  + test 8 (网点 4px 平铺周期 + d50>d25>d12 密度)
- *   coverage: ART-A5  landing   -> test 3 (47 枚闭集落地 + 真实落盘尺寸逐枚对账)
+ *   coverage: ART-A5  landing   -> test 3 (48 枚闭集落地 + 真实落盘尺寸逐枚对账)
  *                                  + test 4 (v3 母版溯源 + 蝴蝶结裁定快照在世 +
  *                                  7 姿态逐枚互异 + B8 打包红线)
  *   coverage: ART-A6  wiring    -> test 10 (包 2/4/5/6/7/8 六页渲染面统一消费共享
@@ -177,7 +178,7 @@
  *   1) firmware/main/display/art_assets.c + art_assets.h 实现上述 frozen contract
  *      （C linkage、零芯片依赖、数值码/语义以本文件为准；kidpal_art_img_t 形状须
  *      与本文件完全一致；设备侧 esp_spiffs VFS 注册放芯片装配层、不进本模块）。
- *   2) SPIFFS 落地面：firmware/main/assets/spiffs_root/ 平铺 47 枚 .bin（KAP1 冻结
+ *   2) SPIFFS 落地面：firmware/main/assets/spiffs_root/ 平铺 48 枚 .bin（KAP1 冻结
  *      格式），由上游管线产物（tools/simulator/LvglWindowsSimulator/assets/ 的
  *      assets.c RGB565 数据 + 9slice 元数据）转换生成（转换脚本落点 builder 定，
  *      建议随 tools/asset-pipeline/ 扩展，保持单一母版纪律）。
@@ -201,7 +202,8 @@
  *      布局钉区域在位语义必须保持（ART-E3）。
  *   7) 模块纯净性（E2/E3 红线）：art_assets.c/h 不得出现 mcp/websocket/wss 下发
  *      链路词与 esp_spiffs/driver/i2c/driver/spi 芯片直读词（guard 齿会扫）。
- *   8) B8 红线：落地资产集 == 47 枚闭集白名单；不得新增逐笔/逐态烘焙帧（结构齿 4
+ *   8) B8 红线：落地资产集 == 48 枚闭集白名单（原 47 + bubble_tail_24, 2026-09-12
+ *      闭集修订）；不得新增逐笔/逐态烘焙帧（结构齿 4
  *      按闭集枚举机判）；P4 米字格大框单份背景 = frm_236_236 经 9-slice 绘制。
  *
  * RED baseline（2026-09-09 acceptance-author 实测，见
@@ -223,6 +225,19 @@
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-09  initial freeze (acceptance-author).
+ *   2026-09-12  U 闭集修订（TaskPackage 260911-render-pages RP-A4/F1, S0.1 决策件
+ *               font-decision-s01.md「气泡尾巴」行 + 跨包留痕）: 白名单 47→48,
+ *               唯一新增 KAP1 = bubble_tail_24.bin（24×24, V3 §06 气泡「手绘圆角框
+ *               ＋左下斜切小尾巴」; 消费接线由 v3_restore.acceptance.c RP-A9 齿
+ *               承载）。计数叙述同步 47→48（test 3/4 消息串、BUILDER DUTY 2/8、
+ *               B8 红线注记）; 断言机制零改动（ARTT_EXPECTED_N 自动随表）。字体
+ *               资产 NOT 并入本闭集（lv_font_conv 产物非 KAP1, 独立 fonts_root
+ *               落地, 分型齿在 v3_restore.acceptance.c）; 压暗用既有 d50 网点
+ *               资产, 零新增。
+ *   2026-09-12  coverage: RP-A6 冻结面零越界在本件留痕声明承载：本件仅
+ *               acceptance-author 留痕修订（U 闭集 47→48 条目 + 计数叙述同步 +
+ *               本条）, 断言机制零改动, docs/contracts/** 与
+ *               managed_components/** 零触碰。
  * --------------------------------------------------------------------------- */
 
 /* mkdtemp (POSIX 2008) — linux-target host runner 与红基线 stub 编译均为 glibc。 */
@@ -649,10 +664,12 @@ static int artt_snap(const kidpal_art_img_t *img, uint8_t *out)
 }
 
 /* -------------------------------------------------------------------------- *
- * V3 资产闭集白名单（47 枚，真实落盘尺寸 = 2026-09-09 自
- * tools/simulator/LvglWindowsSimulator/assets/assets.c 描述符逐枚实测采样；
- * 命名 = 上游管线资产名 + ".bin"）。此表即 ART-A5 落地对账基准 + B8 打包红线
- * 的闭集（表外任何落地文件 = 违规）。
+ * V3 资产闭集白名单（48 枚 = 原 47 枚 + bubble_tail_24（REVISION LOG 2026-09-12,
+ * 260911-render-pages U 闭集修订: V3 气泡尾巴, 唯一新增 KAP1; S0.1 决策件
+ * font-decision-s01.md「气泡尾巴 | KAP1 闭集修订（唯一新增 KAP1）」行承载）,
+ * 真实落盘尺寸 = 2026-09-09 自 tools/simulator/LvglWindowsSimulator/assets/
+ * assets.c 描述符逐枚实测采样；命名 = 上游管线资产名 + ".bin"）。此表即 ART-A5
+ * 落地对账基准 + B8 打包红线的闭集（表外任何落地文件 = 违规）。
  * ------------------------------------------------------------------------ */
 typedef struct {
     const char *name;
@@ -688,6 +705,10 @@ static const artt_expect_t artt_expected[] = {
     { "frm_236_236.bin",     236, 236 },
     { "frm_sm_160_120.bin",  160, 120 },
     { "frm_flat_240_96.bin", 240, 96 },
+    /* V3 气泡尾巴（REVISION LOG 2026-09-12 260911-render-pages 闭集修订: 唯一新增
+     * KAP1; frm-sm 手绘圆角框 + 左下斜切小尾巴, V3 §06 气泡规格; 消费接线由
+     * v3_restore.acceptance.c RP-A9 齿承载） */
+    { "bubble_tail_24.bin",  24, 24 },
     /* 抖动网点 3（4px 格防糊红线） */
     { "d50.bin",  4, 4 },
     { "d25.bin",  4, 4 },
@@ -1031,13 +1052,13 @@ TEST_CASE("art u: mount/加载路径语义 + KAP1 离线 fixture 解码 + 防御
 }
 
 /* -------------------------------------------------------------------------- *
- * Test 3 — ART-A5: V3 资产本体 47 枚闭集落地 + 真实落盘尺寸逐枚对账。
- *   落地根 = firmware/main/assets/spiffs_root/（冻结路径）；47 枚命名/尺寸 =
+ * Test 3 — ART-A5: V3 资产本体 48 枚闭集落地 + 真实落盘尺寸逐枚对账。
+ *   落地根 = firmware/main/assets/spiffs_root/（冻结路径）；48 枚命名/尺寸 =
  *   上游管线产物描述符实测采样（真记录字段抽样冻结进 artt_expected[]）。
  *   逐枚: load 成功 + w/h 精确 + format 合法 + data 非空 + 非空白（0 < 墨 < 全图）。
  * RED today: 模块未实现（weak 哨兵）；实现后若落地面缺失，红在「落地根不存在」。
  * ------------------------------------------------------------------------ */
-TEST_CASE("art u: V3 资产本体 47 枚落地 + 真实落盘尺寸 (ART-A5)",
+TEST_CASE("art u: V3 资产本体 48 枚落地 + 真实落盘尺寸 (ART-A5)",
           "[art_u][ART-A5][landing]")
 {
     char root[ARTT_MAX_PATH];
@@ -1128,7 +1149,7 @@ TEST_CASE("art u: V3 资产本体 47 枚落地 + 真实落盘尺寸 (ART-A5)",
     }
     TEST_ASSERT_TRUE_FM(!miss_root,
         "ART-A5 RED: landing asset load failed (first: %s) — 落地面缺枚/缺文件 "
-        "(47 枚闭集必须全量落地, ART-A5)",
+        "(48 枚闭集必须全量落地, ART-A5)",
         first_problem[0] ? first_problem : "?");
     TEST_ASSERT_TRUE_FM(!miss_dim,
         "ART-A5 RED: landing asset dims/format mismatch against the sampled "
@@ -1200,7 +1221,7 @@ TEST_CASE("art u: v3 母版溯源闭环 + 姿态族逐枚互异 + B8 打包红�
         }
     }
 
-    /* 落地集闭集枚举：目录平铺 .bin == 47 枚白名单，无表外文件（B8 无容身位）
+    /* 落地集闭集枚举：目录平铺 .bin == 48 枚白名单，无表外文件（B8 无容身位）
      * + 7 姿态逐枚互异（换姿态族真差异; 同位同形的像素级观感归 design review/9b） */
     TEST_ASSERT_TRUE_FM(artt_landing_path(root, sizeof(root)),
         "ART RED(infra): repo root not located");
@@ -1241,7 +1262,7 @@ TEST_CASE("art u: v3 母版溯源闭环 + 姿态族逐枚互异 + B8 打包红�
                 closedir(d);
                 TEST_ASSERT_TRUE_FM(foreign == 0,
                     "ART-A5 RED(B8): landing root contains non-whitelisted file \"%s\" — "
-                    "落地资产集必须 == 47 枚闭集白名单（禁逐笔逐态整帧烘焙, 表外零容身）",
+                    "落地资产集必须 == 48 枚闭集白名单（禁逐笔逐态整帧烘焙, 表外零容身）",
                     foreign_name[0] ? foreign_name : "?");
                 TEST_ASSERT_TRUE_FM(found == (int)ARTT_EXPECTED_N,
                     "ART-A5 RED(B8): landing whitelist hit count = %d, expected %d — "

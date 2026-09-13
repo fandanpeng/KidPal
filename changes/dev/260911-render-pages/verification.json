@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "260911-render-pages",
+  "finalRound": 6,
+  "phase": "final",
+  "invocationId": "180e8b70-aca2-440e-ba5e-e2390bd7c41c",
+  "evidenceRef": ".claude/taskpackages/260911-render-pages/verifier-evidence/rounds/r6.json",
+  "factValidated": true,
+  "factOk": false,
+  "observedGateExit": 1,
+  "gatesRun": 9,
+  "gatesPassed": [
+    "taskpackage-required",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security"
+  ],
+  "gatesFailed": [
+    "unit",
+    "acceptance"
+  ],
+  "failedSource": "cross-package existing red SMK-A4 (test_smoke_e2e.acceptance.py:422; server/acceptance/_artifacts/smoke-e2e/screen.md missing; owner=260829-smoke-e2e) — not introduced by this change; same red and disposition as precedent PKG-4 merge night and prior r5",
+  "packageOwnSurface": "green (scoped 7 gates all OK; firmware-build real compile of fixer r1-r4 terminal tree xiaozhi.bin 0x2c3920, 20% app partition free; own teeth 37/37 per host-runner leg; frozen-surface zero breach this window)",
+  "hostRunnerFull": "124 Tests / 2 Failures / 0 Ignored — both = in-registry cross-package reds (WSA-A6:830, WSA-A4:663); VRT-A2·E2 green when run from repo root; in-registry P2-A1 resolved out of failure list by RP-A1 tooth fix. Planner-attested (verifier device-round window); run requires fixer-round EXTRA_CFLAGS='-Wno-error=comment' cached in host_app/build/build.ninja (ARQ-260912)",
+  "deviceRound": "RP-A5 first attempt FAIL (zero uplink opus frames, engine 3-min timeout; visual chaos) -> fixer r1 (lock discipline rewrite, emoji_box_ mount, leak zeroing; voice restored) -> r2 (five-state visibility + story empty state) -> r3 (d12 dots + front-hiding; introduced boot deadlock via Board::GetInstance() re-entry) -> r4 (self-registered C bridge kidpal_lcd_voice_chrome_front; boot smoke pass + full device round green: two complete voice rounds, voice_end top=4 dwell, SCHEDULE n=7 items=7 drawn=7) -> human visual verdict PASS 2026-09-12 (five checks all ok). Evidence: changes/dev/260911-render-pages/rpa5-{boot,round,r1-voice-restored,r2-visibility,r3-boot-hang,r4-boot-smoke,r4-device-round}.log",
+  "structuralPendingHumanDeviceRound": [],
+  "docsContractSpecDelta": "none (docs/contracts/**, docs/spec.md zero touch, r6 contract-lint PASS + git empty-output verified); only docs/ change this window = docs/ARCH-REVIEW-QUEUE.md +2 lines (ARQ-260912 registration, non-integrator author)",
+  "humanDecisions": [
+    "RP-A4 three-font runtime wiring (lv_font_load) split to follow-up package; this package closes first; RP-A4 device leg (猬猾狸 sampling visible) recorded as residual (pod-events 52833536, 2026-09-12)",
+    "device-round visual verdict PASS (pod-events ee11264c, 2026-09-12)"
+  ],
+  "registeredInfraDebt": [
+    "ARQ-260912-host-werror-comment-acceptance-gap (SHOULD): frozen acceptance comments containing docs/contracts/** sequences trigger host -Werror=comment; EXTRA_CFLAGS workaround cached in host_app/build/build.ninja, needs re-application after fullclean",
+    "tooth-strength defect: v3_restore tooth 6 masked green by comment text (schedule_page.c:779-782); acceptance-author REVISION LOG留痕; tooth-strength self-check hardening to governance batch"
+  ],
+  "verifierEvidenceCheck": "exit 0, factOk:false but evidence valid (same shape as precedent PKG-4 final and prior r5)",
+  "priorFactSuperseded": "r5 (invocationId 7f3c2a41-9b6e-4d58-a1c2-84e0d7b91f30, 2026-09-12T09:36Z) attested the pre-fixer tree (xiaozhi.bin 0x2c35b0); superseded by r6 for the committed terminal tree"
+}

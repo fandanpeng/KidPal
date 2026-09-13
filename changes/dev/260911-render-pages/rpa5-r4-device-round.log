@@ -1,0 +1,488 @@
+W (60483) Display: System time is not set, tm_year: 70
+W (61483) Display: System time is not set, tm_year: 70
+W (62483) Display: System time is not set, tm_year: 70
+W (63483) Display: System time is not set, tm_year: 70
+W (64483) Display: System time is not set, tm_year: 70
+W (65483) Display: System time is not set, tm_year: 70
+W (66483) Display: System time is not set, tm_year: 70
+I (66483) SystemInfo: free sram: 73931 minimal sram: 50399
+W (67483) Display: System time is not set, tm_year: 70
+I (67533) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-67533 action=1
+I (67533) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (67533) StateMachine: State: idle -> connecting
+I (67533) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (67543) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (73023) esp-x509-crt-bundle: Certificate validated
+I (76033) WS: Session ID: d045addc-e4cf-4960-9675-4491ac799aa5
+I (76033) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (76043) wifi:Set ps type: 0, coexist: 0
+
+W (76043) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (76053) StateMachine: State: connecting -> listening
+I (76073) AFE: AFE Version: (1MIC_V250121)
+I (76073) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (76073) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (76083) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (76373) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-76373 key=0 gesture=1
+I (76553) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-76553 action=1
+I (76553) kidpal_rn: show_chat: VOICE layer push (top=3)
+E (76553) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (76563) esp-tls-mbedtls: read error :-0x004C
+E (76563) EspSsl: SSL receive failed: -76
+I (76563) WS: Websocket disconnected
+I (76573) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (76573) wifi:Set ps type: 2, coexist: 0
+
+I (76583) StateMachine: State: listening -> idle
+I (76723) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=76426
+I (76723) kidpal_rn: voice_end: top=2
+I (86483) SystemInfo: free sram: 66955 minimal sram: 50399
+W (87483) Display: System time is not set, tm_year: 70
+W (88483) Display: System time is not set, tm_year: 70
+I (89273) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-89273 key=0 gesture=1
+I (89463) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-89463 action=1
+I (89463) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (89463) StateMachine: State: idle -> connecting
+I (89463) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (89473) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (89643) esp-x509-crt-bundle: Certificate validated
+I (90113) WS: Session ID: 2e96d51d-218c-4f83-9966-213578b9d726
+I (90113) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (90113) wifi:Set ps type: 0, coexist: 0
+
+W (90113) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (90133) StateMachine: State: connecting -> listening
+I (98383) Application: >> 星期一有什么课？
+I (98383) StateMachine: State: listening -> speaking
+I (107483) SystemInfo: free sram: 61131 minimal sram: 47063
+I (117483) SystemInfo: free sram: 60503 minimal sram: 47063
+I (127483) SystemInfo: free sram: 61027 minimal sram: 47063
+I (136433) MCP: display_dispatch view=schedule corr_id=kdp-136433 items=7 is_tomorrow=0 degrade=false
+I (136503) MCP: schedule_render corr_id=kdp-136433 items=7 drawn=7
+I (137763) SystemInfo: free sram: 52487 minimal sram: 47063
+I (137913) Application: << 星期一的课是这样
+I (139113) I2S_IF: Mode 0 need extend bits 64 to 32
+I (139113) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (139113) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (139143) Adev_Codec: Open codec device OK
+I (139143) AudioCodec: Set output enable to true
+I (140973) Application: << 白天在学校有语文、数学、足球、科学、班队会（实践活动）和语文六节课；晚上 19:00–20:00 还有英语培训，在新东方。Source: kidpal/schedule.md（学校课程表 周一 行、每周固定课表 周一 19:00-20:00 英语培训@新东方）
+I (147483) SystemInfo: free sram: 51759 minimal sram: 46339
+I (157483) SystemInfo: free sram: 52271 minimal sram: 46339
+I (164323) StateMachine: State: speaking -> listening
+I (173483) SystemInfo: free sram: 52491 minimal sram: 46339
+I (178623) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-178623 key=1 gesture=2
+I (180123) I2S_IF: Pending out channel for in channel running
+I (180123) AudioCodec: Set output enable to false
+I (183023) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-183023 key=1 gesture=1
+I (183483) SystemInfo: free sram: 52471 minimal sram: 46339
+I (185863) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-185863 key=1 gesture=1
+I (186173) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-186173 key=1 gesture=2
+I (190483) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-190483 key=0 gesture=1
+I (190673) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-190673 action=1
+I (190673) kidpal_rn: show_chat: VOICE layer push (top=4)
+E (190673) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (190673) esp-tls-mbedtls: read error :-0x004C
+E (190683) EspSsl: SSL receive failed: -76
+I (190683) WS: Websocket disconnected
+I (190683) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (190693) wifi:Set ps type: 2, coexist: 0
+
+I (190703) StateMachine: State: listening -> idle
+I (190703) kidpal_rn: voice_end: top=4
+I (199183) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-199183 key=0 gesture=1
+I (199463) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-199463 key=0 gesture=2
+I (200483) SystemInfo: free sram: 59251 minimal sram: 46339
+W (201483) Display: System time is not set, tm_year: 70
+W (202483) Display: System time is not set, tm_year: 70
+W (203483) Display: System time is not set, tm_year: 70
+W (204483) Display: System time is not set, tm_year: 70
+W (205483) Display: System time is not set, tm_year: 70
+I (206363) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-206363 key=1 gesture=2
+W (206483) Display: System time is not set, tm_year: 70
+W (207483) Display: System time is not set, tm_year: 70
+W (208483) Display: System time is not set, tm_year: 70
+I (208773) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-208773 key=1 gesture=2
+W (209483) Display: System time is not set, tm_year: 70
+I (209713) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-209713 key=0 gesture=2
+W (210483) Display: System time is not set, tm_year: 70
+I (210483) SystemInfo: free sram: 59767 minimal sram: 46339
+W (211483) Display: System time is not set, tm_year: 70
+I (211603) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-211603 action=2
+I (211743) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=211433
+I (211743) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (212053) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-212053 key=0 gesture=3
+W (212483) Display: System time is not set, tm_year: 70
+W (213513) Display: System time is not set, tm_year: 70
+W (214553) Display: System time is not set, tm_year: 70
+W (215543) Display: System time is not set, tm_year: 70
+W (216573) Display: System time is not set, tm_year: 70
+I (216673) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-216673 action=3
+I (216673) kidpal_rn: cycle -> CHAR (P4) has_data=0
+W (217543) Display: System time is not set, tm_year: 70
+W (218483) Display: System time is not set, tm_year: 70
+I (218593) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-218593 key=1 gesture=1
+I (218773) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-218773 action=3
+I (218783) kidpal_rn: cycle -> SCHEDULE (P2) n=7
+W (219623) Display: System time is not set, tm_year: 70
+W (220483) Display: System time is not set, tm_year: 70
+I (220483) SystemInfo: free sram: 59303 minimal sram: 46339
+W (221483) Display: System time is not set, tm_year: 70
+W (222483) Display: System time is not set, tm_year: 70
+W (223483) Display: System time is not set, tm_year: 70
+W (224483) Display: System time is not set, tm_year: 70
+W (225483) Display: System time is not set, tm_year: 70
+W (226483) Display: System time is not set, tm_year: 70
+W (227483) Display: System time is not set, tm_year: 70
+W (228483) Display: System time is not set, tm_year: 70
+W (229483) Display: System time is not set, tm_year: 70
+W (230483) Display: System time is not set, tm_year: 70
+I (230483) SystemInfo: free sram: 59823 minimal sram: 46339
+W (231483) Display: System time is not set, tm_year: 70
+W (232483) Display: System time is not set, tm_year: 70
+I (233123) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-233123 key=1 gesture=1
+I (233313) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-233313 action=3
+I (233313) kidpal_rn: cycle -> STORY (P3) count=0
+W (233483) Display: System time is not set, tm_year: 70
+W (234693) Display: System time is not set, tm_year: 70
+W (235483) Display: System time is not set, tm_year: 70
+W (236483) Display: System time is not set, tm_year: 70
+W (237483) Display: System time is not set, tm_year: 70
+W (238483) Display: System time is not set, tm_year: 70
+W (239483) Display: System time is not set, tm_year: 70
+W (240483) Display: System time is not set, tm_year: 70
+I (240483) SystemInfo: free sram: 66639 minimal sram: 46339
+W (241483) Display: System time is not set, tm_year: 70
+I (241963) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-241963 key=1 gesture=1
+I (242143) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-242143 action=3
+I (242193) kidpal_rn: cycle -> HOME (P1)
+W (242813) Display: System time is not set, tm_year: 70
+W (243843) Display: System time is not set, tm_year: 70
+I (244263) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-244263 action=1
+I (244263) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (244263) StateMachine: State: idle -> connecting
+I (244273) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (244283) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (250783) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-250783 key=0 gesture=1
+I (250963) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-250963 action=1
+I (251203) esp-x509-crt-bundle: Certificate validated
+I (255243) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (255243) wifi:<ba-del>idx:1, tid:6
+I (255243) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (259333) WS: Session ID: e19275b9-f67b-4040-9b39-f7a18fcbc264
+I (259333) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (259333) wifi:Set ps type: 0, coexist: 0
+
+W (259343) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (259353) StateMachine: State: connecting -> listening
+E (259353) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (259363) esp-tls-mbedtls: read error :-0x004C
+E (259363) EspSsl: SSL receive failed: -76
+I (259363) WS: Websocket disconnected
+I (259373) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (259383) wifi:Set ps type: 2, coexist: 0
+
+I (259383) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (259383) StateMachine: State: listening -> idle
+I (259433) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=259225
+I (259433) kidpal_rn: voice_end: top=2
+I (265263) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-265263 key=0 gesture=1
+I (265443) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-265443 action=1
+I (265443) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (265443) StateMachine: State: idle -> connecting
+I (265453) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (265453) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (267703) esp-x509-crt-bundle: Certificate validated
+I (268163) WS: Session ID: 3c997d2e-f2c7-454e-9697-a54e21ef4b7a
+I (268163) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (268163) wifi:Set ps type: 0, coexist: 0
+
+W (268163) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (268183) StateMachine: State: connecting -> listening
+I (275273) Application: >> 我要讲故事
+I (275273) StateMachine: State: listening -> speaking
+I (281723) MCP: control start_recording story_consumed=1 page=2
+I (281733) Application: Abort speaking
+I (281733) StateMachine: State: speaking -> listening
+I (291533) SystemInfo: free sram: 58595 minimal sram: 46339
+I (301763) SystemInfo: free sram: 57919 minimal sram: 46339
+I (311703) SystemInfo: free sram: 58571 minimal sram: 46339
+I (312413) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-312413 key=1 gesture=1
+I (312603) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-312603 action=3
+I (312673) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (315083) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-315083 key=0 gesture=1
+I (315263) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-315263 action=1
+E (315543) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (315543) esp-tls-mbedtls: read error :-0x004C
+E (315543) EspSsl: SSL receive failed: -76
+I (315553) WS: Websocket disconnected
+I (315553) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (315563) wifi:Set ps type: 2, coexist: 0
+
+I (315863) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (315863) StateMachine: State: listening -> idle
+W (315863) Display: System time is not set, tm_year: 70
+I (315993) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=315699
+Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x421b5214  PS      : 0x00060b30  A0      : 0x820c3fb2  A1      : 0x3fcd52a0
+A2      : 0x0000012c  A3      : 0x3fcb9fa0  A4      : 0x00000010  A5      : 0x3fcb9fa0
+A6      : 0x00000190  A7      : 0x3fcd3970  A8      : 0x0000012c  A9      : 0x3fcd5000
+A10     : 0x3fceaf78  A11     : 0x00000000  A12     : 0x00000010  A13     : 0x3c3c2ba8
+A14     : 0x00000000  A15     : 0x3fceaf78  SAR     : 0x00000000  EXCCAUSE: 0x0000001c
+EXCVADDR: 0x00000130  LBEG    : 0x400570e8  LEND    : 0x400570f3  LCOUNT  : 0x00000000
+
+
+Backtrace: 0x421b5211:0x3fcd52a0 0x420c3faf:0x3fcd52c0 0x420bf498:0x3fcd52e0 0x420bf51d:0x3fcd5310 0x420d3f89:0x3fcd5340 0x42015d21:0x3fcd5390 0x420110f3:0x3fcd53b0 0x420164c7:0x3fcd5430 0x420164cf:0x3fcd5470 0x420cec0a:0x3fcd5490 0x420b9534:0x3fcd54c0
+
+
+
+
+ELF file SHA256: 04ac2ef48
+
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x420633da
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2e70
+entry 0x403c8908
+I (35) octal_psram: vendor id    : 0x0d (AP)
+I (35) octal_psram: dev id       : 0x02 (generation 3)
+I (35) octal_psram: density      : 0x03 (64 Mbit)
+I (37) octal_psram: good-die     : 0x01 (Pass)
+I (41) octal_psram: Latency      : 0x01 (Fixed)
+I (45) octal_psram: VCC          : 0x01 (3V)
+I (49) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (54) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (59) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (69) octal_psram: DriveStrength: 0x00 (1/1)
+I (73) MSPI Timing: PSRAM timing tuning index: 5
+I (77) esp_psram: Found 8MB PSRAM device
+I (81) esp_psram: Speed: 80MHz
+I (84) cpu_start: Multicore app
+I (106) cpu_start: Pro cpu start user code
+I (106) cpu_start: cpu freq: 240000000 Hz
+I (106) app_init: Application information:
+I (106) app_init: Project name:     xiaozhi
+I (110) app_init: App version:      2.1.0
+I (113) app_init: Compile time:     Sep 12 2026 16:48:58
+I (118) app_init: ELF file SHA256:  04ac2ef48...
+I (123) app_init: ESP-IDF:          GIT-NOTFOUND
+I (127) efuse_init: Min chip rev:     v0.0
+I (131) efuse_init: Max chip rev:     v0.99
+I (135) efuse_init: Chip rev:         v0.2
+I (139) heap_init: Initializing. RAM available for dynamic allocation:
+I (145) heap_init: At 3FCB97F0 len 0002FF20 (191 KiB): RAM
+I (150) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (155) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (160) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (166) esp_psram: Adding pool of 7709K of PSRAM memory to heap allocator
+I (173) spi_flash: detected chip: generic
+I (176) spi_flash: flash io: qio
+I (180) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (185) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (192) main_task: Started on CPU0
+I (202) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (202) main_task: Calling app_main()
+I (212) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (212) button: IoT Button Version: 4.1.7
+I (222) BoxAudioCodec: Duplex channels created
+I (222) ES8311: Work in Slave mode
+I (232) ES7210: Work in Slave mode
+I (242) ES7210: Enable ES7210_INPUT_MIC1
+I (242) ES7210: Enable ES7210_INPUT_MIC2
+I (242) ES7210: Enable ES7210_INPUT_MIC3
+I (252) ES7210: Enable ES7210_INPUT_MIC4
+I (252) ES7210: Enable TDM mode
+I (252) BoxAudioCodec: BoxAudioDevice initialized
+I (252) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-252 ok rtc=01:46:43
+I (272) waveshare_rlcd_4_2: shtc3 corr_id=kdp-252 ok temp_c=31.72 rh_pct=48.4
+I (272) MCP: Add tool: self.disp.network
+I (272) Display: Power management not supported
+I (272) CustomDisplay: Initialize SPI
+I (582) CustomDisplay: Initialize LVGL library
+I (582) LVGL: Starting LVGL task
+I (592) CustomDisplay: RLCD init
+I (1172) CustomDisplay: ui start
+I (1212) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1212) waveshare_rlcd_4_2: art layer mounted at /art
+I (1212) kidpal_rn: KidPal render node initialized (unified screen + layer stack)
+I (1322) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1054
+I (1322) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (1322) StateMachine: State: unknown -> starting
+I (1332) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (1332) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (1342) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (1342) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (1352) ES7210: Bits 16
+I (1362) ES7210: Enable ES7210_INPUT_MIC1
+I (1362) ES7210: Enable ES7210_INPUT_MIC2
+I (1372) ES7210: Enable ES7210_INPUT_MIC3
+I (1372) ES7210: Enable ES7210_INPUT_MIC4
+I (1372) ES7210: Enable TDM mode
+I (1382) ES7210: Unmuted
+I (1382) Adev_Codec: Open codec device OK
+I (1382) AudioCodec: Set input enable to true
+I (1382) I2S_IF: Mode 0 need extend bits 64 to 32
+I (1392) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (1392) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (1412) Adev_Codec: Open codec device OK
+I (1412) AudioCodec: Set output enable to true
+I (1412) AudioCodec: Audio codec started
+I (1412) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1422) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (1432) MCP: Add tool: self.get_device_status
+I (1432) MCP: Add tool: self.audio_speaker.set_volume
+I (1442) MCP: Add tool: kidpal/display
+I (1442) MCP: Add tool: kidpal/alert
+I (1452) MCP: Add tool: self.screen.set_theme
+I (1452) MCP: Add tool: self.get_system_info [user]
+I (1462) MCP: Add tool: self.reboot [user]
+I (1462) MCP: Add tool: self.upgrade_firmware [user]
+I (1462) MCP: Add tool: self.screen.get_info [user]
+I (1472) MCP: Add tool: self.screen.snapshot [user]
+I (1472) MCP: Add tool: self.screen.preview_image [user]
+I (1482) Assets: The storage free size is 21824 KB
+I (1482) Assets: The partition size is 8192 KB
+I (1642) Assets: The checksum calculation time is 149 ms
+I (1642) MCP: Add tool: self.assets.set_download_url [user]
+I (1642) WifiManager: Initializing...
+I (1642) pp: pp rom version: e7ae62f
+I (1642) net80211: net80211 rom version: e7ae62f
+I (1662) wifi:wifi driver task: 3fce7fa0, prio:23, stack:6144, core=0
+I (1662) wifi:wifi firmware version: 14da9b7
+I (1662) wifi:wifi certification version: v7.0
+I (1662) wifi:config NVS flash: disabled
+I (1662) wifi:config nano formatting: enabled
+I (1672) wifi:Init data frame dynamic rx buffer num: 6
+I (1672) wifi:Init dynamic rx mgmt buffer num: 5
+I (1682) wifi:Init management short buffer num: 32
+I (1682) wifi:Init dynamic tx buffer num: 32
+I (1692) wifi:Init static tx FG buffer num: 2
+I (1692) wifi:Init static rx buffer size: 1600
+I (1692) wifi:Init static rx buffer num: 3
+I (1702) wifi:Init dynamic rx buffer num: 6
+I (1702) wifi_init: rx ba win: 3
+I (1712) wifi_init: accept mbox: 6
+I (1712) wifi_init: tcpip mbox: 16
+I (1712) wifi_init: udp mbox: 6
+I (1712) wifi_init: tcp mbox: 6
+I (1722) wifi_init: tcp tx win: 5760
+I (1722) wifi_init: tcp rx win: 5760
+I (1722) wifi_init: tcp mss: 1440
+I (1732) WifiManager: Initialized
+I (1732) WifiBoard: Starting WiFi connection attempt
+I (1732) WifiManager: Starting station
+I (1742) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (1782) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (1782) wifi:enable tsf
+I (1782) WifiBoard: WiFi scanning
+I (2432) AudioService: esp_timer task stack HWM: 7248 words (stack 8192 bytes)
+I (4192) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -76, Channel: 11, Authmode: 3
+I (4192) WifiBoard: WiFi connecting to 701
+W (4192) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (5482) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (5482) wifi:state: init -> auth (0xb0)
+I (5492) wifi:state: auth -> assoc (0x0)
+I (5502) wifi:state: assoc -> run (0x10)
+I (5532) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (5532) wifi:security: WPA2-PSK, phy: bgn, rssi: -76
+I (5532) wifi:pm start, type: 1
+
+I (5532) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (5542) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (5562) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (5572) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (6612) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (6612) WifiStation: Got IP: 192.168.3.36
+I (6612) WifiBoard: Connected to WiFi: 701
+I (6612) Application: Network connected
+I (6612) StateMachine: State: starting -> activating
+create static modelsI (6622) MODEL_LOADER: Successfully load srmodels
+I (6622) Assets: Refreshing display theme...
+I (6632) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (6642) Application: Activation done
+I (6652) SystemInfo: free sram: 88259 minimal sram: 83407
+I (6652) StateMachine: State: activating -> idle
+I (6662) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (6662) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (6672) AudioService: Resampling audio from 16000 to 24000
+I (6672) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (6692) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6692) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (6702) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (6712) AudioService: audio_output task stack HWM: 2656 words
+I (6712) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6722) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (6732) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (6732) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (6732) wifi:Set ps type: 2, coexist: 0
+
+I (6752) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (6752) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+I (6762) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (6822) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (6842) AFE: AFE Version: (1MIC_V250121)
+I (6842) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (6852) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (6862) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (8842) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (11212) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-11212 action=3
+I (11212) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (12652) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-12652 key=1 gesture=1
+I (12842) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-12842 action=3
+I (12852) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+I (14662) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-14662 key=1 gesture=1
+I (14852) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-14852 action=3
+I (14852) kidpal_rn: cycle -> STORY (P3) count=0
+I (16432) SystemInfo: free sram: 73243 minimal sram: 65443
+I (17232) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-17232 key=1 gesture=1
+I (17422) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-17422 action=3
+I (17472) kidpal_rn: cycle -> HOME (P1)
+W (17472) Display: System time is not set, tm_year: 70
+W (18432) Display: System time is not set, tm_year: 70
+I (19332) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-19332 action=1
+I (19332) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (19332) StateMachine: State: idle -> connecting
+I (19332) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (19342) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (23442) I2S_IF: Pending out channel for in channel running
+I (23442) AudioCodec: Set output enable to false
+E (29372) esp-tls: [sock=54] select() timeout
+E (29372) esp-tls: Failed to open new connection
+E (29372) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (29372) WebSocket: Failed to connect to server
+E (29372) WS: Failed to connect to websocket server, code=32774
+I (29382) StateMachine: State: connecting -> idle
+W (29392) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (29392) I2S_IF: Mode 0 need extend bits 64 to 32
+I (29402) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (29402) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (29422) Adev_Codec: Open codec device OK
+I (29422) AudioCodec: Set output enable to true
+I (29422) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (29492) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=29266
+I (29492) kidpal_rn: voice_end: top=2
+I (36032) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-36032 key=1 gesture=1
+I (36212) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-36212 action=3
+I (36212) kidpal_rn: cycle -> CHAR (P4) has_data=0
+I (38432) SystemInfo: free sram: 71647 minimal sram: 65087
+I (38752) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-38752 key=1 gesture=1
+I (38932) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-38932 action=3
+I (38932) kidpal_rn: cycle -> SCHEDULE (P2) n=0
+W (40432) Display: System time is not set, tm_year: 70
+I (41172) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-41172 key=1 gesture=1
+I (41362) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-41362 action=3
+I (41362) kidpal_rn: cycle -> STORY (P3) count=0
+W (41432) Display: System time is not set, tm_year: 70
+W (42432) Display: System time is not set, tm_year: 70
+W (43432) Display: System time is not set, tm_year: 70
+W (44432) Display: System time is not set, tm_year: 70

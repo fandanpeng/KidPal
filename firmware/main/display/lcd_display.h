@@ -48,8 +48,12 @@ protected:
 public:
     ~LcdDisplay();
     virtual void SetEmotion(const char* emotion) override;
-    virtual void SetChatMessage(const char* role, const char* content) override; 
+    virtual void SetChatMessage(const char* role, const char* content) override;
     virtual void SetPreviewImage(std::unique_ptr<LvglImage> image) override;
+    /* 五态演出 (包 260911-render-pages RP-A9): 重载 SetStatus 把设备态 (聆听/播报)
+     * 映射为语音轮场景, 经 kidpal_voice_state_look 驱动姿态 + 键帽条 + 气泡。additive,
+     * 显式调基类并追加五态内容侧面。 */
+    virtual void SetStatus(const char* status) override;
 
     // Add theme switching function
     virtual void SetTheme(Theme* theme) override;
@@ -63,6 +67,12 @@ public:
     // 背景 container_ 留在原默认屏（该屏此后不再被加载、不再渲染），让 KidPal 页透出、
     // 聊天内容任何页可见。控件指针不失效（lv_obj_set_parent 只改树不销毁对象）。
     void KidPalReparentChatToLayer(lv_obj_t* parent);
+
+    /* 五态 chrome 显隐的前台维度 (RP-A5 r3): VOICE 层为前台层时姿态/气泡可见,
+     * 任何内容页 (SERVER_PAGE 答案 / REMINDER / LOCAL_PAGE 浏览) 前台时隐藏。
+     * kidpal_render_node 在前台切换点调用 (调用方已持 lvgl 锁, 递归互斥量)。
+     * 键帽条与聊天文本 (PKG-2 任何页可见语义) 不受此开关影响。 */
+    void KidPalVoiceChromeFront(bool voice_front);
 };
 
 // SPI LCD display

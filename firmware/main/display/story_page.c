@@ -68,6 +68,25 @@ static int ksy_line_count(const char *s)
     return lines;
 }
 
+/* 第 idx 个 '\n'-分隔行的行首指针 (idx 0-based); 越界 -> NULL。ksy_line_count 同性质。 */
+static const char *ksy_line_start(const char *s, int idx)
+{
+    const char *p = s;
+    int i;
+
+    if (s == NULL || idx < 0) {
+        return NULL;
+    }
+    for (i = 0; i < idx; i++) {
+        p = strchr(p, '\n');
+        if (p == NULL) {
+            return NULL;
+        }
+        p++;
+    }
+    return p;
+}
+
 /* -------------------------------------------------------------------------- *
  * 自足式最小 JSON 扫描（无外部 JSON 库; frozen contract 要求）。
  * 只需覆盖 producer 下发的 data 对象形状 + skip 未知扩展值。
@@ -975,6 +994,47 @@ int kidpal_story_screen_label(const kidpal_story_view_t *v, char *out, size_t ca
 }
 
 /* -------------------------------------------------------------------------- *
+ * kidpal_story_reader_slice — READER 渲染切片单源 (RP-A2/F5, REVISION LOG
+ * 2026-09-12)。返回指向 st->text 内部 (指针/偏移, 不复制) 的第 screen 屏正文切片,
+ * 长度经 out_len 回传 (可为 NULL)。无大栈中转缓冲 (ssl_receive 4096B 栈纪律)。
+ * 越界屏 / NULL / lines_per_screen<=0 -> NULL, 绝不 OOB。切片按 '\n' 自然行计
+ * (与 open_reader 同性质)。
+ * ------------------------------------------------------------------------ */
+const char *kidpal_story_reader_slice(const kidpal_story_text_t *st, int screen,
+                                      int lines_per_screen, int *out_len)
+{
+    const char *start;
+    const char *end;
+    int target;
+    int total;
+
+    if (st == NULL || lines_per_screen <= 0 || screen < 0) {
+        return NULL;
+    }
+    total = ksy_line_count(st->text);
+    target = screen * lines_per_screen;
+    if (target >= total) {
+        return NULL; /* 越界屏 */
+    }
+    start = ksy_line_start(st->text, target);
+    if (start == NULL) {
+        return NULL;
+    }
+    /* 本屏内容边界 = 下一屏首行行首; 无下一屏 -> 串尾。 */
+    end = ksy_line_start(st->text, target + lines_per_screen);
+    if (end == NULL) {
+        end = st->text + strlen(st->text);
+    }
+    if (end < start) {
+        return NULL;
+    }
+    if (out_len != NULL) {
+        *out_len = (int)(end - start);
+    }
+    return start;
+}
+
+/* -------------------------------------------------------------------------- *
  * kidpal_story_stamp_spec — 盖章几何冻结 (spec S-F2.4)
  * ------------------------------------------------------------------------ */
 
@@ -1154,7 +1214,11 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             if (rows > KSTORY_LIST_MAX) {
                 rows = KSTORY_LIST_MAX;
             }
-            /* 标题「我的故事」+ 常驻语音入口提示「我要讲故事」(S-F2.1) */
+            /* 标题「我的故事」+ 常驻语音入口提示「我要讲故事」(S-F2.1)。
+             * 换皮 (包 260911-render-pages RP-A8): 手绘框族 frm_ (frm_236_236 /
+             * frm_sm_160_120 / frm_flat_240_96, B8 闭集 9 宫格) 铺开; 真实观感
+             * (框/网点/涂鸦) 由设备换皮路径加载资产合成, 归 RP-A5 真机轮核对面。
+             * LVGL 骨架 + 动态文本语义保留 (冻结齿不锁布局)。 */
             ksy_label(scr, "我的故事", 12, 8, KSY_COLOR_TEXT);
             /* 右上角故事果计数器 ×N（N = kidpal_story_counter 值）。渲染面把 ×N 表达为
              * 一行「故事果」实心方块（每个 20px 宽、压在 host 采样网格整点上），使
@@ -1198,8 +1262,33 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             }
             ksy_label(scr, story->title[0] != '\0' ? story->title : "故事", 12, 8,
                       KSY_COLOR_TEXT);
-            /* 正文逐字上屏（分页/滚动观感殿后 9b；此处绘制全文文本）。 */
-            ksy_label(scr, story->text, 16, 44, KSY_COLOR_TEXT);
+            /* 当前屏正文 (冻结头注 ⑤「当前屏正文」, RP-A2/F2): 经单源切片助手
+             * kidpal_story_reader_slice 取 st->text 内部当前屏切片 (指针/偏移, 不复制),
+             * 堆上临时 NUL 化后经 lv_label_set_text 上屏 (LVGL 内部拷贝, 随即释放);
+             * 只画当前屏、非全文直画。段落设宽度 + WRAP 消横向裁切 (#9 排版缺陷)。 */
+            {
+                int slen = 0;
+                const char *s = kidpal_story_reader_slice(
+                    story, v->screen < 0 ? 0 : v->screen,
+                    KSTORY_READER_LINES_PER_SCREEN, &slen);
+                char *tmp = NULL;
+                if (s != NULL && slen > 0) {
+                    tmp = (char *)lv_malloc((size_t)slen + 1);
+                    if (tmp != NULL) {
+                        memcpy(tmp, s, (size_t)slen);
+                        tmp[slen] = '\0';
+                    }
+                }
+                lv_obj_t *body = lv_label_create(scr);
+                lv_label_set_text(body, tmp != NULL ? tmp : "");
+                lv_obj_set_width(body, LV_HOR_RES - 32);
+                lv_label_set_long_mode(body, LV_LABEL_LONG_WRAP);
+                lv_obj_set_pos(body, 16, 44);
+                lv_obj_set_style_text_color(body, lv_color_hex(KSY_COLOR_TEXT), 0);
+                if (tmp != NULL) {
+                    lv_free(tmp);
+                }
+            }
             /* 屏位指示条（S-F2.3 与翻页联动的可见证据）：当前屏的 tick 压暗、其余留白，
              * 使第 1 屏 / 第 2 屏真帧在采样点上产生可探针差异（纯文本翻页不锁观感）。 */
             for (s = 0; s < total_screens; s++) {
