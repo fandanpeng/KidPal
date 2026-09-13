@@ -25,7 +25,7 @@ argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "�
    - **逃生门（reviewer-first）**：review 中发现疑似触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类** → `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + 停、升级 `changes/arch/`（本门无权批准这些）。
 3. **人类触点①（确认/改判路由）**：用 AskUserQuestion 呈现 architect 的四档裁决，人类一句话确认或改判（如 Lite→Full）。**落盘前必须过这一关**——Lite/Full 是安全相关判断，architect 误判需人类 backstop。
 4. **主线程落盘（只搬运 architect 的 reviewed plan + 裁决，不改内容）**：按确认后的档位把 reviewed plan 落进它的家：
-   - **③大 feature** → `.planning/<ws>/PROPOSAL.md`（+ `review.md`），frontmatter `freezeState: pending-human`。`.planning/<ws>/` 由你（人类/主线程）创建——这是「设计权威落家」（对 ARQ-065/066 RTE 集权的有意放宽，见 change-triage.md §F4）；portfolio-planner 后续拆包时才建调度态。
+   - **③大 feature** → `.planning/<ws>/PROPOSAL.md`（+ `review.md`），frontmatter `freezeState: pending-human`。**按 `docs/templates/WORKSTREAM-PROPOSAL.template.md`（三问 + 分型模板）起草**——业务目的清单 / `workType` 数组 / spec 关系标注三项硬项缺失，会在 portfolio-planner intake 被 fail-closed 打回（260912 拆包链 T1）。`.planning/<ws>/` 由你（人类/主线程）创建——这是「设计权威落家」（对 ARQ-065/066 RTE 集权的有意放宽，见 change-triage.md §F4）；portfolio-planner 后续拆包时才建调度态。
    - **②单包** → `taskpackages/<id>/plan.md`，frontmatter 含 `rigor`/`riskTier`/`sourceType`/`reviewed-by`/`date`。**建包时按 `task-intake-and-slicing.md` §§ origin/changeId 创建 taskpackage.json + 填入 origin（`upstreamType`/`upstreamRef`/`upstreamFrozen`/`workstream`）+ 注入 `YYMMDD-` 日期前缀 changeId + 写 `planRef` 指回 sibling `plan.md`**（建包方职责经 reference 下达、经既有委派链承接；gov-review-devloop-artifact-lifecycle DP-5）。
    - **①直接修** → 不落盘（地板：不改 apps 行为 / 人类明确跳过）。
 5. **人类触点②（仅大 feature，冻结）**：人类盖 FROZEN（版本/sha）。**作者≠判官：architect 不能自冻**（scope 机器兜住——architect allow 不含 `.planning`）。portfolio-planner 只拆 FROZEN 的 PROPOSAL。

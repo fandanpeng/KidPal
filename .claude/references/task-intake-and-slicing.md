@@ -105,7 +105,7 @@ Use one of:
 
 `sourceRefs` is an array of stable, grep-able refs from the source system:
 
-- Delivery/spec: `S1-A1`, `K7-P0`, `docs/systems/S1-leads/spec.md:S1-A1`
+- Delivery/spec: `S-F1.4`（story 级）、`S-F1.4-AC3`（AC 级复合句法，见「story 锚点引用与转写」节）、`docs/requirements.md:S-F1.4`
 - Architecture review: `ARQ-063`, `D-A1`, `F3`, `ARQ-063-C1`
 - Human ad-hoc: `TEMP-YYYY-MM-DD-short-slug`
 - CI/drift: `CI-types-2026-07-05`, `DRIFT-D6-CREATE-TABLE-IN-TEST`
@@ -217,11 +217,48 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **不可省**（守 dev-loop 铁律）：`changeId` / `rigor` / `sourceType` / `sourceRefs` / `riskTier` / `gateProfile` / `story` / `planRef` / `acceptance`（含红基线）/ `exitCriteria` / `crossEnd` 骨架（T5，260908-gov-review-input-surface-frontload：动机包本身即 Lite，Lite 豁免这条就等于放过动机案例）/ `scope` / 合并门。
 - **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、S2/design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。
 - **`crossEnd` 字段级定义（T5，260908-gov-review-input-surface-frontload）**：形状 = 对象 `{ "counterparts": [ { "path": "...", "symbol": "..." } ], "exempt": "<可选，不适用理由>" }`。**Draft 态：字段必须在场，空骨架 `{"counterparts": []}` 也算在场**（同 mutationEvidence 条）。**finalize 态（`acceptanceTestsFile` 非空）：`counterparts` 非空（每条含 path+symbol）∨ `exempt` 非空理由，二选一，双缺 = 闸红点名**；用作不适用分支时 **`exempt` 长度地板 ≥12 字符**（对齐闸内 `decisionCoverage.landsIn=dropped` 的 reason 地板，防「—」混关）——起草侧就要看到地板，否则短 exempt 撞闸红再反推，正是本清单要消灭的形态。**语义**：跨端性是设计判断、不是可推导属性（实测反例 `260907-g-relay-fix` 标 `subsystem=server`、全字段零 firmware 路径，却在改设备侧要解的帧），故走申报 + 留痕而非硬谓词；**判断不了按存疑向严填 counterparts，不填 exempt**。**本批覆盖档 = 自有实现面消费方**（`firmware/**`、`server/**`，`{path,symbol}` 可被 `brief-inputs.mjs` grep 解析；解析不到 = 脚本 fail-loud 非零退出、不静默产空锚）；只读参考树与无源码黑盒消费方（OpenClaw 引擎、物理声/显）两档 **留 ARQ 未覆盖**，越界填法脚本给 advisory。**advisory（非门）**：包 refs 引契约 wire 节（`interface-contract.md` 的 §1.5/§三/§四，常量单源在 `brief-inputs.mjs`）而 `counterparts` 空且无 exempt → stderr WARN 提示 planner 复核。消费方 = `brief-inputs.mjs` 第②路展开成对端面必读清单 + `taskpackage-required-check.mjs` 判定。
-- **`planRef` 指向 sibling `plan.md`**：taskpackage.json 是机器解析的，reviewed plan 是长 prose，prose 归 markdown（与验收是 sibling `.acceptance.spec.ts`、由 `acceptanceTestsFile` 引用同模式）。plan.md 是 `/triage-change` 分流门 architect 审过的，planner **只读消费、改需留痕**。
+- **`planRef` 指向 sibling `plan.md`**：taskpackage.json 是机器解析的，reviewed plan 是长 prose，prose 归 markdown（与验收是 sibling `.acceptance.spec.ts`、由 `acceptanceTestsFile` 引用同模式）。plan.md 是 `/triage-change` 分流门 architect 审过的，planner **只读消费、改需留痕**。**③拆包路径下 plan.md = 全量义务**（「装配型豁免」已全取消），骨架与门 1 checklist 见下文「拆包链」节。
 
 **riskTier 优先于 rigor（单向守卫）—— convention-only（F1 / Q1-A）**：设计意图是单向校验——若信号说"这是 Full 级"（security 轴 / 迁移 / 跨包 / core.* / 触契约）而 `rigor:"lite"` → 应强制升 Full。**但该机器守卫当前不落地**（`taskpackage-required-check.mjs` 本批只扩 `isProposalMdPath`，不含 riskTier-overrides-rigor 校验，记 ARQ 后续 G3）；landing 时靠**两层人工**兜底：① `/triage-change` 人类触点①确认/改判路由；② supervisor 对 riskTier=high 仍升级人类。判断归 architect（写进裁决 rationale）。
 
 **decisionCoverage 与 rigor 的关系（F2）**：`sourceType=proposal` 的包——**包括 Lite**——`decisionCoverage` 必填不豁免。「Lite 省 decisionCoverage」仅适用于非 proposal 的 bug 类小改动（regression/ci-failure/drift-report，无 proposal 决策集）。G3 `taskpackage-required-check.mjs` 对 `sourceType==='proposal'` 强制 decisionCoverage 必填，与本节一致。
+
+## 拆包链：workstream 双轨制品、门 1、story 转写（260912-gov-review-portfolio-decomposition-chain FROZEN v1.0）
+
+### 双轨制品与拆包权威
+
+- workstream **PROPOSAL**（`.planning/<ws>/PROPOSAL.md`，模板 [`WORKSTREAM-PROPOSAL.template.md`](../../docs/templates/WORKSTREAM-PROPOSAL.template.md)）= **裁决记录**（三问 + 裁定），冻结后不改；**roadmap**（`.planning/<ws>/roadmap.md`，模板 [`WORKSTREAM-ROADMAP.template.md`](../../docs/templates/WORKSTREAM-ROADMAP.template.md)）= **活文档**（效果对账 + 列车图投影）。
+- PROPOSAL §拆包预判 = **意图提示、非权威**；拆包权威 = 四件套（`roadmap.md` + `taskpackage.json` × N + `plan.md` × N + `decision-coverage.json`）经**门 1** 冻结 + human 过目切法。
+- **职责划界（防第二事实源）**：`task_plan.md` frontmatter 维持 `planning-index.mjs` 机器索引源地位，`progress.md` 维持进度记录，roadmap **只投影不裁决**——包集与达成状态的权威恒 = board + taskpackage JSON。roadmap ② 节（列车图）由 `.claude/scripts/render-roadmap.mjs` 机械渲染、人工禁改。
+
+### plan.md 全量义务
+
+- 每个 TaskPackage 拆包时必备 `.claude/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
+- plan.md 骨架：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 改法取舍 + 阶段划分 + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。
+
+### story 锚点引用与转写
+
+- story 在 plan.md / taskpackage 中**只以锚点引用出现**：`S-Fx.y · <标题>`（可选带 AC 号集）。**不内嵌原文、不改写、不复述语义**；story 语义权威 = `docs/requirements.md` 现文。
+- taskpackage `story` 字段承**锚点引用**，技术描述归 plan.md（治 260829 期 story 字段写成技术方案的真实翻车——write-story 纪律 1 反例在册）。
+- **AC 级回引复合句法（全仓首钉）**：`S-Fx.y-AC<n>`（如 `S-F1.4-AC3`）——验收齿 / `sourceRefs` 的 AC 粒度回引按此形态填。
+- **句法分工注记**：prose 锚点引用形态的权威 = skill `write-story`（其 description「拆包引用 story 的合法形态以本 skill 为准」管 prose 层）；AC 粒度机器引用的复合 token 句法 = **本节首钉**（write-story 边界节已把「TaskPackage 怎么承载/转写 story」委派拆包链治理）。两句并存、各管一层，不互为违规依据。
+- **换新边界**：`acceptance[]` 保持**本地 id 形态**（如 `KR-A1`、`SU-A3`），`S-Fx.y-AC<n>` 只出现在 `sourceRefs` / 验收齿回引位——防「acceptance id = story AC 号」混淆。
+- **两道 intake 机查（fail-closed，执行方 = portfolio-planner Step 1）**：① 引用的 story 编号不得命中 `docs/requirements.md`「已砍清单」节（按节名定位，位置随 spec 演进）；② 可行性 = 🔴 的 story 须先有立项处置记录（write-story 🔴 挂账纪律：Pod 无权自裁）。命中即打回主线程补齐，不猜、不代写。
+
+### 门 1（拆包 review 门）checklist
+
+四件套齐备后、commit-before-launch 前，一道 **architect 轻量 checklist review**（OQ1=(a)：轻量、非完整对抗）。
+
+- **派发形态**：human / 主线程派 architect（只读审 + 返回裁决、零写入 canonical）。portfolio-planner frontmatter 无 `Agent()` **也不加**（authoring 纪律）——其 Step 6 前以 AskUserQuestion 请 human 发起门 1，随后**停等**，不绕行。
+- **checklist 五项**：① 切片逻辑（按行为切还是按页面/问题切，图上见；偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额默认仅核心包）。
+- **workType 分流**：整改型核根因↔改法 + 红基线在位；新建型核切片与覆盖；重构型核结构性质可验收。
+- **裁决耐久记录**：verdict + checklist 逐项结论 + 派发/裁决时点 append 到 `.planning/<ws>/review.md`「门 1」节——GREEN 不得只留在聊天。
+- **存疑向严**：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
+
+### launchPreconditions（canonical 定义）
+
+- **落点** = workstream `.planning/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。条目 = 前置描述，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。
+- **核验 = convention + 人读**（260913 human 裁 M-1）：launch 执行者（human 点火前）人工核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**不改 `portfolio-reconcile.mjs --check-launch` 既有判定语义**；机械齿（脚本读 launchPreconditions）另登 ARQ 留根，人读反复漏检再机械化。
 
 ## UIUX Depth Ladder and Optional TaskPackage Fields
 

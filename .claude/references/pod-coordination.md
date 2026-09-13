@@ -35,7 +35,8 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
   - `taskpackage.json`（`.claude/taskpackages/<changeId>/taskpackage.json`）= **blocking**
   - PROPOSAL（`origin.upstreamRef` 解析）= **blocking**
   - `decision-coverage.json`（`.planning/<ws>/decision-coverage.json`）= **warn**
-- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:Sx-Ay` 等锚点，复用不新造）；PROPOSAL 路径**双路解析** `.planning/<ws>` ∨ `changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
+- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `.planning/<ws>` ∨ `changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
+- **`launchPreconditions` 核验 = convention + 人读（本门不含机械齿，260912 拆包链 M-1，260913 human 裁）**：`--check-launch` 的机械 check 集**不读** workstream `decision-coverage.json` 顶层 `launchPreconditions`；该面由 **launch 执行者（human 点火前）人工核**——逐条核前置是否满足，其中 `需修订` 类 spec 裁定按落点二分核对应文件已冻结（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。未满足 → 承载包不得 launch（粒度 = 包，非整 workstream 陪等）。canonical 定义见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「launchPreconditions」节；机械齿（脚本读该键）另登 ARQ 留根，人读反复漏检再机械化——**本门判定语义不变**。
 - **board 不入 check 集**：board/token 恒在 git common dir（§2）、不入版本控制，其可见性由 common dir 给、不靠 commit；board 失同步由 planner intake-reconcile 修。
 - 缺失（blocking 项）→ **拒绝 launch**，报「拆包产物未 commit 到基准 ref」，回 portfolio-planner 补 commit（对偶 planner.md F-09 needs-triage 默认出口）。
 
@@ -176,6 +177,16 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 | ④ | architect 判不了 / 齿红 / 需动语义 | **escalate human** | 升级件带逐文件相交清单 + 双方版本正文 + architect 意见 + 消解选项；人批走既有 `--human-approval-ref` |
 
 **取舍机判判据**：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（git rebase 可自动并；`.vN` 载体不同段 / append 类按此判）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值 / 同锚互斥断言 / 版本字面互斥——后者复用 260908 批 guard-class wiring 判据）；**已登记 §10c 登记表形态的版本化制品 add/add 恒归 ②**（复用 merge-driver 特判并集），未登记形态归 ③（补集不变式 fail-closed）。判不了 = 存疑向严升 ③。
+
+## 11. 锚 3 · demo 对账与 roadmap 达成状态（260912-gov-review-portfolio-decomposition-chain T4，FROZEN v1.0）
+
+**demo 对账行（包收口必含）**：integrator 的 review-packet / supervisor-verdict 闸消费面必含一行 demo 对账 = **demo 证据**（形态按 `roadmap.md` ③ 节本包拆包时定的：模拟器截图 / host runner 输出 / 串口日志 / 真机轮）+ **与本包效果段的一致性结论**。义务的生产者可达性由 **planner Step 11 派 integrator 的 dispatch prompt 显式携带**（与锚 2 brief 携带效果段同构，派发侧传递；integrator.md 不因此改）。
+
+**不一致 = 就地升裁，禁攒到集成夜**：走既有 escalation 通道（`agent-escalation` → 需要人则 ESCALATE 停 human），不新设通道。human 裁断后 planner 落一条 pod-events 事件——**既有事件型** `human-decision` + `payload.decision="anchor3-deviation-ruling"`、append 姿势 `--actor human`（eventId 即裁定锚；eventType 是 `pod-events-append.mjs` 机械闭集，不扩闭集，沿 `approve-escalated-merge` 先例形态）。roadmap 达成状态由 `render-roadmap.mjs` 按该区分值渲染为 `deviation（裁定锚 <eventId>）`。
+
+**绿路径上 portfolio-planner 沉默**：常规「下一包 ready」由 `portfolio-reconcile.mjs` 机械计算（依赖已满足 + WIP 未满 + mergeOrder 最靠前），human 照常点火（`git worktree add` + 起 planner，现行流程不变）；与 roadmap 的匹配判断已在锚 3 于**合并前**完成，不后置到 merge 之后。roadmap 达成状态刷新时机 = 包 merge 后由 human 合并簿记顺跑一次 `node .claude/scripts/render-roadmap.mjs --workstream <slug> --write-into .planning/<ws>/roadmap.md`（全量重算、幂等），门 1 与收口相位亦可调用。
+
+**portfolio-planner 再出场条件（收窄）** = 仅**调度异常**时由 human 唤起重裁：① 锚 3 deviation 影响后续包（依赖它的包是否照原计划跑）；② 依赖关系与实际不符；③ WIP / mergeOrder 需重排。不 per-merge、不 per-launch 例行出场。
 
 ## 相关
 

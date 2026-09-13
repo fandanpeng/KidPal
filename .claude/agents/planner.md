@@ -52,8 +52,9 @@ model: opus
 6. 开工前预置 scope-map：确保 acceptance-author / builder / fixer 的目标路径已被允许；若要新增包路径，先登记 `.claude/scope-map.json`，避免 K7 式中途卡住。
 6c. **（已退休 → Step 1，F-02）** 多 Pod 检测已前移到 Step 1 ① portfolio handoff 探测：launch-argument 形状在 intake 最前面按 changeId 探测 `devloop/pods/<changeId>.json`、命中即 multi-pod 模式 + `portfolio-reconcile.mjs --set-pod <changeId> --status running`；自建形状在 Step 5 构造点探测。对偶 pod-merge-driver-gap F-C2（decision-packet:39，时机原 Step 3/现 6c）——本项以两段探测契约取代其单相位；changeId 同源保障仍保全（board 检测故意在 changeId 可得后，非竞态）。本步不再单独执行检测。
 6b. **UIUX depth 检测**：按 `.claude/references/task-intake-and-slicing.md` 的 UIUX 字段（可选扩展；缺省 = Level 0）判定 `uiuxRequired` / `uiuxLevel`。若 `uiuxRequired=true && uiuxLevel>=2`，**在派 acceptance-author 之前**先派 `uiux-author`，把冻结 `UIUX-DESIGN-BRIEF.md` 的 `designRefs[]`/`sharedUiRefs[]` 翻译成 TaskPackage `uiux` block 与 `uiAcceptanceRefs[]`。冻结 brief 缺失或仍是 draft → 停（L2+ 需 baseline brief）。Level 0/1 不派 uiux-author（L0 无用户可见 UI，L1 只做 UI-state 验收）；系统级 UI 蓝图归 `uiux-designer` / governance-lane，不由你起草。
-7. **前置一次产双 brief（T4，260908-gov-review-input-surface-frontload）**：派 acceptance-author 之前跑两遍 `node .claude/scripts/brief-inputs.mjs --change-id <changeId> --role acceptance-author` 与 `--role builder`——**两份都在本步生成**（派生物只消费 Draft 即齐的 refs + `crossEnd`，不等 finalize）；builder 那份不得留到 Step 9 才生（否则 Step 8 的「两份在场」硬前置自锁）。脚本 fail-loud 即修 `crossEnd` 重跑，不得带着未解析对端条目往下派。随后派 `acceptance-author` 写冻结验收并确认红基线：**派发 prompt 只引用两份 brief 的文件路径 + 一句超读申报纪律（「清单外阅读要列文件与原因」），不转抄清单正文**（防双源漂移）。
+7. **前置一次产双 brief（T4，260908-gov-review-input-surface-frontload）**：派 acceptance-author 之前跑两遍 `node .claude/scripts/brief-inputs.mjs --change-id <changeId> --role acceptance-author` 与 `--role builder`——**两份都在本步生成**（派生物只消费 Draft 即齐的 refs + `crossEnd`，不等 finalize）；builder 那份不得留到 Step 9 才生（否则 Step 8 的「两份在场」硬前置自锁）。脚本 fail-loud 即修 `crossEnd` 重跑，不得带着未解析对端条目往下派。随后派 `acceptance-author` 写冻结验收并确认红基线：**派发 prompt 只引用两份 brief 的文件路径 + 一句超读申报纪律（「清单外阅读要列文件与原因」），不转抄清单正文**（防双源漂移）。**workstream 包增锚 2 输入（260912 拆包链 T4）**：本包来自 `.planning/<ws>`（taskpackage `origin.workstream` 非空）时，dispatch prompt 额外携带 roadmap 本包效果段的**路径 + 节锚引用**（`.planning/<ws>/roadmap.md#<changeId>`——不整段转抄，防双源漂移）。
 8. Finalize TaskPackage：验收文件、coverage marker、红基线、docs/security 标记缺一不可；**硬前置另加两条（T4）**——Step 7 产的两份 `input-brief-*.md` 在场、`crossEnd` 已按二选一填妥（`counterparts` 非空 或 `exempt` ≥12 字理由）；把最终版重新写回 `<change-id>/taskpackage.json` 与 `current/taskpackage.json`。缺落盘记录不得派 builder。
+8b. **锚 2 · 验收方向核（260912 拆包链 T4，仅 workstream 包）**：acceptance 冻结（Step 8）后、派 builder（Step 9）前，对照 `roadmap.md` 本包效果段核一遍验收方向一致，**含 AC 回引对账（按 workType 分流）**——新建型（效果段带 story 回指）：验收齿回引的 AC 号集与效果段回指的 AC 号集对得上（多引、少引都是方向偏差信号）；整改型：核红基线 ↔ 根因方向；重构型：核结构性质可验收。核对者 = 你（planner，agent）而非 human（验收语义方向不是 human 能逐条核清的，260912 human 裁定）；你持有 roadmap 效果段与派发上下文，且核对对象是 acceptance-author 的产出而非自己的，角色不冲突。对不上或存疑 → 派 architect 复核（10b ARCH-ADVISORY 档），仍不清 → 走既有升级链。
 9. 派 `builder` 在目标包内实现 + 单元测试：**只引用 Step 7 已生成的 `input-brief-builder.md` 路径**（不再生成；若 Step 8 之后 refs 有改动，重跑 `brief-inputs.mjs --role builder` 覆盖，重跑事由由脚本写进 brief 头部 `regenerated-because` 行——落制品自身，不另开记账面）。
    **[MODEL-TIER，gov-review-agent-model-tiering FROZEN 2026-08-31]** builder/fixer frontmatter 默认 `model: sonnet`；派重头形态（新子系统首次实现 / 验收面从零钉 / 首次全量复验）时派发显式带 `model: opus` 升档，例行形态沿用默认。派发期覆盖已实测生效（260831 PROPOSAL §5-5）；dispatch-stamp 若可得须补记实际生效模型。**升档覆盖仅限 builder/fixer；architect 派发恒不带 model 覆盖（见 10b ARCH-ADVISORY 档，frontmatter `model: fable` 默认档生效；机械兜底 = agent-model-guard hook）。**
    **[DISPATCH-STAMP]** 每次 `Agent()` 派发收工后，调用 dispatch-stamp.mjs 记 harness 回传值。**Post-cutoff (>= EVENTS_SCHEMA_CUTOFF 250725)**：`node .claude/scripts/dispatch-stamp.mjs --dispatch-id <id> --actor <name> --phase <phase> --duration-ms <ms> --tool-uses <n> --terminal-status <status> --token-status exact|unavailable [--token-input <n>] [--token-output <n>] [--token-cache-read <n>] [--token-cache-write <n>] [--token-total <n>] [--token-source harness] [--token-reason <reason>]` → 写 `dispatch-completed` 事件到 `.claude/taskpackages/<id>/pod-events.jsonl`（不写 dispatch-log.jsonl）。**Pre-cutoff**：legacy `--tokens <n>` 仍可用 → 写 dispatch-log.jsonl。脚本无 TaskPackage 上下文时自动跳过（exit 0）。Token 政策：harness 不报时 `--token-status unavailable`，**绝不传 0 充数**。
@@ -74,7 +75,7 @@ model: opus
    - **派发契约**：dispatch prompt 必含——当前 ErrorEnvelope / verifier evidence 摘要、TaskPackage 边界与相关 acceptanceRefs、疑难点一句钉死、本段效力声明原文；architect 只读、只回 advisory 意见文本，**不落盘、不改任何文件**。
    - **中介与留痕（复用既有机制，零 G3 变更）**：意见由 planner 携带进下一轮 fixer（或 builder）dispatch prompt 当根因假设输入；派发事实由既有 `[DISPATCH-STAMP]` 纪律（Step 9）自动留痕；planner 判断意见实质构成 blocker 时，才按既有 ESCALATION-BRIDGE 落 `agent-escalation`——advisory 档常规不落 escalation 事件，防语义滥用。
    - **效力声明（原文钉死）**：「architect 意见为 advisory 输入：不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据；fixer 可拿证据反驳；意见与冻结验收冲突时以验收为准。」
-11. 派 `integrator` 做 docs-sync、全量验证、Review Packet、closeout 制品、必要 ADR 归档。
+11. 派 `integrator` 做 docs-sync、全量验证、Review Packet、closeout 制品、必要 ADR 归档。**workstream 包的 dispatch prompt 显式携带「review-packet 必含 demo 对账行」（260912 拆包链 T4 锚 3，生产者可达性通道）**：demo 证据（形态按 roadmap ③ 节本包拆包时定的：模拟器截图 / host runner 输出 / 串口日志 / 真机轮）+ 与本包效果段的一致性结论；不一致 = 走既有 ESCALATION-BRIDGE 就地升裁、禁攒到集成夜（口径见 `pod-coordination.md` §11）。
    **[FS-EVIDENCE-3]** integrator 返回后，必须执行：
   - `ls changes/dev/<changeId>/` 确认 2 个 blocking closeout 制品存在：`docs-delta.md`、`review-packet.md`（post-cutoff 包 TaskPackage 从 `.claude/taskpackages/<changeId>/taskpackage.json` 解析，不再晋升到 changes/dev/）；`verdict.json`、`verification.json` 缺失只按 closeout advisory 记录。**【Q5 条件联动，F-07】Q5=warn（本批 human 裁）下 `pod-retro.md` 是 warn advisory、非第 3 个 blocking 制品，故「2 个 blocking 制品」表述仍真、不改；若 Q5 升 blocking（ARQ-106，须修订 C-07）则本句改「3 个 blocking 制品」（加 `pod-retro.md`）。**
   - `node .claude/scripts/closeout-check.mjs` 确认 exit 0（默认只读；不得传 `--update-index`）
@@ -148,34 +149,34 @@ model: opus
 
 ```json
 {
-  "changeId": "260617-s1-a1-create-lead",
+  "changeId": "260829-schedule-reminder",
   "sourceType": "delivery-story",
   "origin": {
     "upstreamType": "delivery-story",
-    "upstreamRef": "docs/systems/S1-leads/spec.md:S1-A1"
+    "upstreamRef": "docs/requirements.md:S-F1.4"
   },
-  "sourceRefs": ["S1-A1"],
+  "sourceRefs": ["S-F1.4", "S-F1.4-AC3"],
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "none",
   "riskTier": "medium",
   "gateProfile": ["types", "contract-drift", "test-quality", "docs-sync"],
   "subsystem": "firmware/main",
-  "acceptance": ["S1-A1", "S1-A2"],
+  "acceptance": ["SR-A1", "SR-A2"],
   "acceptanceTestsFile": ["firmware/main/tests/stroke.acceptance.c"],
   "redBaselineCommand": "idf.py -T firmware/main/tests build  # on-target unity 验收，实机/台架跑",
   "redBaselineResult": "failed as expected: lead is not persisted yet",
   "requiredLayers": ["unit", "api"],
   "exitCriteria": [
-    "all declared Sx-Ay acceptance tests pass",
+    "all declared SR-Ax acceptance tests pass",
     "unit tests cover changed branches and boundaries",
     "docs-sync is complete or explicitly not required"
   ],
   "iterationBudget": 1,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
-  "story": "<一句话故事 + 关键约束>",
-  "contractRefs": ["LeadCreated", "leadCreateInput"],
-  "docRefs": ["docs/systems/S1-leads/spec.md", "docs/systems/S1-leads/AGENTS.md"],
+  "story": "S-F1.4 · 日程提醒（AC1、AC3）——锚点引用；story 语义权威 = docs/requirements.md 现文，技术描述归 plan.md",
+  "contractRefs": ["<契约面引用，如 interface-contract.md wire 节>"],
+  "docRefs": ["docs/requirements.md", "docs/contracts/interface-contract.md"],
   "docsSyncRequired": true,
   "docsOwner": "integrator",
   "securityReviewRequired": false,
@@ -191,3 +192,5 @@ model: opus
   "notes": "禁止改 docs/contracts/** 与 *.acceptance.*；日志带 correlationId（K6）"
 }
 ```
+
+> **story 字段口径（260912 拆包链）**：承**锚点引用**（`S-Fx.y · 标题` + 可选 AC 号集），不内嵌原文、不写技术方案（反例在册：260829 期 story 字段写成 cron/幂等描述）；AC 级回引复合句法 = `S-Fx.y-AC<n>`（sourceRefs 示范位），`acceptance[]` 恒为本地 id——权威见 `task-intake-and-slicing.md`「story 锚点引用与转写」节。

@@ -53,7 +53,7 @@
   └─ 派 architect（只读+审）→ 返回 reviewed plan + 裁决（同会话 return，非跨会话 prose）
   └─ 主线程 AskUserQuestion 呈现裁决，人类【确认 / 改判四档】（一句话）   ← 人类触点①
   └─ 确认后主线程把 reviewed plan 落进它的家（只搬运、不改内容）：
-        ③大 → .planning/<ws>/PROPOSAL.md（+review.md，freezeState=pending-human）
+        ③大 → .planning/<ws>/PROPOSAL.md（+review.md，freezeState=pending-human；按 docs/templates/WORKSTREAM-PROPOSAL.template.md 三问 + 分型模板起草——业务目的清单 / workType 数组 / spec 关系标注三项硬项缺失即 portfolio-planner intake fail-closed 打回，260912 拆包链 T1）
         ②   → taskpackages/<id>/plan.md（frontmatter：rigor/riskTier/sourceType/reviewed-by/date）
   └─（仅大 feature）人类盖 FROZEN（作者≠判官）                       ← 人类触点②
   └─ 报告下一步命令                                                    ← 人类触点③
