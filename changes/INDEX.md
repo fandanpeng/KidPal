@@ -6,12 +6,15 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (20)
+## dev (23)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260913-happy-flow-host-capture](../changes/dev/260913-happy-flow-host-capture/) | 2026-09-13 | — | open | — |
+| [260911-display-first-m1](../changes/dev/260911-display-first-m1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260911-ecs-deploy-convergence](../changes/dev/260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
 | [260911-key-route-a1](../changes/dev/260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
+| [260911-render-pages](../changes/dev/260911-render-pages/) | 2026-09-11 | changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七 | closed | kidpal-mvp |
 | [260911-screen-unification](../changes/dev/260911-screen-unification/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260907-g-relay-fix](../changes/dev/260907-g-relay-fix/) | 2026-09-07 | changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1 | closed | kidpal-mvp |
 | [260903-device-ws-switch](../changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
@@ -30,12 +33,12 @@
 | [260829-smoke-e2e](../changes/dev/260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](../changes/dev/260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](../changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [260911-render-pages](../changes/dev/260911-render-pages/) | 2026-09-11 | changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七 | closed | kidpal-mvp |
 
-## arch (19)
+## arch (20)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260912-gov-review-portfolio-decomposition-chain](../changes/arch/260912-gov-review-portfolio-decomposition-chain/) | 2026-09-12 | draft | — |
 | [260909-gov-review-gate-truthfulness](../changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | landed | yes |
 | [260908-gov-review-escalation-conflict-ladder](../changes/arch/260908-gov-review-escalation-conflict-ladder/) | 2026-09-08 | frozen | yes |
 | [260908-gov-review-human-deputy-shadow](../changes/arch/260908-gov-review-human-deputy-shadow/) | 2026-09-08 | draft | yes |

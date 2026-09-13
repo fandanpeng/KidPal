@@ -148,3 +148,94 @@ manifest 事实，不臆测。
 列以组件 manifest 的 target 规则 + host 构建组件集实测双证据记录。包 0 未逐一对每个 device 模块
 强行在 linux 下单独编译（那等于重搭设备树，超出本包范围），但「host 构建组件集里没有它们」这一
 点已由本次 build 的 `Components:` 实测直接证明。
+
+## Host 整帧截图办法（HOST CAPTURE，2026-09-13 起各 pod 通用）
+
+> 动机与首用：human 一次性授权把 Happy Flow 各页在 host 真渲染后整帧落盘存档
+> （`changes/dev/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
+> 任何 pod 想给「host 可渲染的页面/控件」留截图证据，照此办理，不必重新趟坑。
+> 参考实现 = `firmware/main/test/happy_flow_capture.test.c`（普通 `.test.c`，非冻结件）。
+
+### 能力面：渲染缝的落盘入口
+
+- `int host_infra_dump_bmp(const char *path)`（`host_infra_seam.c`，additive）：把当前帧缓冲
+  整帧写成 24-bit BMP（400×300，底行在前，BGR 字节序）。返回 0 成功；`-1` = 无渲染帧或
+  path 为 NULL；`-2` = 落盘失败（fopen/写失败，errno 有值可供诊断）。
+- 置 `rendered` 态的途径：`host_infra_render_frame()`（0x336699 整帧，兼做缝初始化）、
+  `host_infra_render_p1_frame(argb,w,h)`、`art_render_blit_frame(argb,w,h)`（整帧覆盖）。
+  **注意**：页面自己调 `lv_refr_now(NULL)` 触发的 flush **不**置 rendered 态（flush 回调不写
+  该标志）——所以截图测试起手必须先调一次 `host_infra_render_frame()`，否则 dump 返回 -1。
+
+### 写截图测试的模板（六条）
+
+1. 整个文件包 `#if defined(CONFIG_IDF_TARGET_LINUX)` 守卫。
+2. env 门控：`getenv("KIDPAL_CAPTURE_DIR")`，未设时只验证渲染契约返回值、不落盘——host runner
+   的全量默认跑不被截图依赖绑架，CI 不挂。
+3. 起手：`host_infra_render_frame()` 初始化缝并置 rendered → 把 CJK 字体设到 active screen
+   （子对象继承，见「字体现实」节）→ 调页面契约渲染函数 → `lv_refr_now(NULL)` → dump。
+4. 自建控件/大缓冲用 `static`（栈纪律）；布局类像素合成用
+   `lv_draw_buf_create` + `lv_canvas_set_draw_buf`（LVGL 管对齐）。
+5. 执行序纪律：runner 执行序 = `HOST_ACCEPTANCE_SRCS` 列表**逆序**（后注册先跑），smoke 保持
+   列表末位（最先执行）。你的用例若跟在别的页面用例之后，起手 `lv_obj_clean(lv_screen_active())`
+   + `lv_refr_now(NULL)` 对齐「页面渲染自带先清屏」的纪律，避免前一页残留混入截图。
+6. 零残留齿避让：不要在测试文件里出现 `s_chat_overlay` / `s_page_pinned` /
+   `s_current_page` / `s_chat_scr` / `s_voice_ui_scr` / `remind_before_min` /
+   `port 18789` 等被树级扫描禁用的字符串；不要在测试文件里调用
+   `kidpal_story_page_input` / `kidpal_story_on_saved` / `kidpal_story_rec_tick`（驱动
+   view 状态用直接写字段）。`FILE_COUNT` 类齿是 min_n 下界，新增消费文件安全。
+
+### 接线
+
+在 `firmware/main/test/host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS` 里加一行相对
+路径（如 `"../../my_capture.test.c"`），置于 smoke 条目之前即可；执行序影响见上条 5。
+
+### 跑起来：WSL 单条命令配方（含三个坑的解法）
+
+```bash
+# 编译（从仓库根）
+wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build
+
+# 跑 + 转换 + 归档，必须在**一条** wsl 调用里做完（坑 2）
+wsl -d Ubuntu-24.04 -- bash -c 'rm -rf /tmp/cap && mkdir -p /tmp/cap \
+  && cd /mnt/c/<repo>/firmware/main/test/host_app \
+  && env KIDPAL_CAPTURE_DIR=/tmp/cap ./build/host_infra_test.elf \
+  && python3 -c "from PIL import Image; import glob; \
+       [Image.open(f).save(f[:-4]+chr(46)+chr(112)+chr(110)+chr(103)) \
+        for f in sorted(glob.glob(chr(47)+chr(116)+chr(109)+chr(112)+chr(47)+chr(99)+chr(97)+chr(112)+chr(47)+chr(42)+chr(46)+chr(98)+chr(109)+chr(112)))]" \
+  && cp /tmp/cap/*.png /mnt/c/<changes 目标目录>/'
+```
+
+三个坑（均已实测踩过）：
+
+1. **ELF 的 fopen 不认 `/mnt/c/...` 绝对路径**（ESP-IDF linux target 的 libc/VFS 行为，ENOENT），
+   相对路径与 WSL 原生路径正常 → 捕获目录用 `/tmp/...`，转换完 `cp` 回 `/mnt/c`（cp 是 WSL
+   shell 做的，不受此限）。
+2. **`/tmp` 在多条自动化 shell 调用间不保留**（每次调用独立命名空间）→ 跑、转换、拷贝必须在
+   同一条命令里完成。
+3. **某些自动化 shell 会吞掉 `$变量`/`*.bmp` 展开** → 配方里全用字面路径；python 侧用
+   `chr()` 拼 `/*.bmp`、`.png` 是防展开被吞的保险写法。人在普通终端里可直接写 glob 字面量。
+   （WSL 侧另需 `python3-pil`：`sudo apt install python3-pil`，或用 ffmpeg 逐张转。）
+
+### 字体现实（读图须知，勿再踩坑）
+
+- LVGL 9.3 的 Kconfig `LV_FONT_DEFAULT_*` choice 在 `lv_conf_internal.h` **无映射**（死配置），
+  设了不生效。正确做法：运行时 `lv_obj_set_style_text_font(lv_screen_active(), &font, 0)`，
+  子对象继承。
+- 内置 SimSun 16 / Source Han Sans SC 14 CJK 都是**部分子集**（约 1000–3000 字）；琴/勇/钢/
+  刺猬 等次常用字缺字 → 截图里是豆腐块。host_app `sdkconfig.defaults` 已选覆盖更大的
+  Source Han 14（改后需删掉生成的 `sdkconfig` 才会重配生效）。这是**已知未收口项**：host 截图
+  的字形永远不等于真机（Kconfig 无 `LV_USE_BINFONT`，设备 font_body.bin 的 GB2312 全量
+  SPIFFS 加载器 host 不可复现）。
+- 因此 host 截图的证据边界 = 版面几何、控件在位、资产落点、两态差异**真实可信**；字形观感
+  **不代表真机**，真机字形终审归设备/模拟器轮。
+
+### 已知边界与排错
+
+- 整帧覆盖式 `art_render_blit_frame` 会擦掉 LVGL 控件——要「像素合成 + LVGL 控件」同帧，用
+  `lv_canvas` + `lv_draw_buf_create`（实测可行）；裸 `lv_image_dsc_t` 指向自建 static 缓冲
+  在 host 9.3.0 实测**不绘制**（无报错日志），勿用。
+- 依赖 art 资产的页面先 `kidpal_art_mount("<repo>/firmware/main/assets/spiffs_root")`。
+- 若 clean build 报冻结验收件 `-Werror=comment`（REVISION LOG 注释携带路径字面量触发）：
+  已知历史问题，豁免已落在 `host_app/main/CMakeLists.txt`（2026-09-13，`-Wno-error=comment`，
+  冻结件不动）。
+- BMP 需转 PNG 存档（PIL 或 ffmpeg）；BMP 本身可直接被多数看图工具打开。

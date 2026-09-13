@@ -100,6 +100,11 @@ set(HOST_ACCEPTANCE_SRCS
     "../../v3_restore.acceptance.c"
     "../../../display/kidpal_voice_states.c"
 
+    # happy_flow_capture.test.c (human 一次性授权截图轮, 2026-09-13): Happy Flow 各页
+    # host 真渲染 -> 渲染缝 additive BMP 落盘缝。普通 .test.c 非冻结件。置于 smoke 之前
+    # （执行序 = 列表逆序: 包 0 boundary 齿仍最先跑, 本文件随后, 既有齿不受扰动）。
+    "../../happy_flow_capture.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -124,4 +129,8 @@ idf_component_register(
 # -Wformat-truncation (FM 模式: vsnprintf 进静态缓冲, %s 未知长度指针的良性告警;
 # 验收件冻结不可改)。此处仅把该告警降为非错误 (仍显示), 不削弱其它更危险的
 # -Werror 检查 (test-only 组件, 与设备构建无关)。
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation)
+# 第二条豁免 (2026-09-13 全量重配时暴露): 多个冻结验收件的 REVISION LOG 注释携带
+# 路径字面量 `docs/contracts/**` / `managed_components/**` —— GCC -Wcomment 对块
+# 注释内的 `/*` 报警, 属注释体文字、非嵌套注释语法错。冻结件不可改, 仅把
+# -Wcomment 降为非错误 (仍显示), 语义零影响。
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation -Wno-error=comment)
