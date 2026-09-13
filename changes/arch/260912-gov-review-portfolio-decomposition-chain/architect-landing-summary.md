@@ -1,6 +1,19 @@
-# Landing Summary · 260912-gov-review-portfolio-decomposition-chain
+# Architect Landing Summary · 260912-gov-review-portfolio-decomposition-chain
 
-> FROZEN v1.0（commit 12d23a2）packet-bound 落地。主线程单通道落地（Track B 第 4 步）；landing 清单 = PROPOSAL ```landing-manifest``` 9 文件，零越界（见 landing-verifier verdict）。
+> **packet-id** = FROZEN PROPOSAL `260912-gov-review-portfolio-decomposition-chain`（v1.0，commit 12d23a2）§2 改法集（T1–T4，含 ⑯–㉘ 修订行）+ §5 验证集。packet = FROZEN PROPOSAL + 下记 landing-manifest + 本 architect-landing-summary。被批 review id = `260912-gov-review-portfolio-decomposition-chain`（Track B governance profile；architect 评审轨迹 R1 打回 17 条 → R2 打回 6 条 → R3 GREEN，见 PROPOSAL §7）。landing commit = c9a43c7。
+> FROZEN v1.0 packet-bound 落地。主线程单通道落地（Track B 第 4 步）；landing 清单 = 下记 landing-manifest 9 文件，零越界（见 landing-verdict.md）。
+
+```landing-manifest
+docs/templates/WORKSTREAM-PROPOSAL.template.md
+docs/templates/WORKSTREAM-ROADMAP.template.md
+.claude/scripts/render-roadmap.mjs
+.claude/agents/portfolio-planner.md
+.claude/agents/planner.md
+.claude/references/task-intake-and-slicing.md
+.claude/references/pod-coordination.md
+.claude/references/change-triage.md
+.claude/commands/triage-change.md
+```
 
 ## 落地内容（按 manifest 逐件）
 

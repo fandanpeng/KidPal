@@ -97,5 +97,9 @@
   "260913-arch-review-spec-split": {
     "date": "2026-09-13",
     "mergedInMain": "yes"
+  },
+  "260912-gov-review-portfolio-decomposition-chain": {
+    "date": "2026-09-12",
+    "mergedInMain": "no"
   }
 }
