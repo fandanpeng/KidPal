@@ -1,5 +1,7 @@
-# CodebaseMemory 主索引排除规则（恢复并更新 AGENTS.md「CodebaseMemory 使用纪律」表的实况：
+# CodebaseMemory 主索引排除规则（与 AGENTS.md「CodebaseMemory 使用纪律」表保持一致：
 # 主索引覆盖 = firmware 自有固件 + server 云端 shim；docs/、tools/（含 LVGL 模拟器）、build/、
-# managed_components/ 不入图。build/ 与 managed_components/ 已由 .gitignore 覆盖，此处显式补齐其余项。）
+# managed_components/ 不入图。build/ 与 managed_components/ 已由 .gitignore 覆盖，此处显式补齐其余项。
+# .claude/ 整目录被工具内置 skip-list 硬排除、此处取反无效；hooks/ 与 scripts/ 改以独立项目
+# `KidPal-claude`（索引根 = .claude，控噪规则见 .claude/.cbmignore）入图——2026-09-13 human 裁定。）
 docs/
 tools/

@@ -46,9 +46,11 @@
 | 参考·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
 | 参考·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 固件相关（内容极少） | — |
 | 参考·XiaoZhiServer | `ESP32-S3-RLCD-4.2-Demo-05_XiaoZhiServer` | 小智官方 Python 服务端 `xiaozhi-esp32-server`（流式网关参考实现，MIT；2026-09-02 定向 B 后克隆，部署源在 ECS `/opt/kidpal/xiaozhi-esp32-server`） | — |
+| 治理机检 | `KidPal-claude` | `.claude/hooks` + `.claude/scripts`（治理钩子与机检脚本，2026-09-13 human 裁定入图） | `.claude` 其余内容（agents/skills/rules/taskpackages/settings 等，控噪规则落 `.claude/.cbmignore`） |
 
 - 主索引项目名固定为 `KidPal`，改名会导致图工具 project not found。
 - 参考代码的索引不并入主索引，避免第三方代码淹没调用图；参考代码只读，不直接改。
+- `.claude` 整目录被工具内置 skip-list 硬排除（`.cbmignore` 取反压不过根级硬排除）；`KidPal-claude` 项目以 `.claude` 为索引根独立建项绕开，内部 `scripts/` 再靠 `.claude/.cbmignore` 的 `!scripts` 取反放行（「scripts」目录名在同层级 skip-list、可被取反覆盖）。该项目 `persistence=false`——不入 `.codebase-memory` 快照流，本地重建即可。
 - 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。
 - `.codebase-memory/artifact.json` 与 `graph.db.zst` 是 indexer 持续自刷新的机器再生面：常驻脏 = 常态，不追交、不 stage、不 stash、不 checkout 还原；合并冲突已由 `.codebase-memory/.gitattributes` 的 `merge=ours` 免除。**快照流向（2026-09-09 human 裁）**：源 = main——偶发、主线程在主 worktree（`C:/AI/KidPal`，普通跟踪态、不设 skip-worktree）直接 add 这两件 + 独立 commit 上 main，不与其它改动混提；分发 = gov 经 main→gov 回同步 merge、Pod 经 rebase + merge-driver 内容还原（Pod worktree 的 skip-worktree 由 merge-driver 幂等维持，勿手动撤）。gov worktree 不设 skip-worktree，脏可见。gov/pod 分支**禁止私带快照 commit**——`merge=ours` 保执行合并的本方，私带会在回同步时挤掉 main 的新快照、ff 回传时静默顶掉。唯一「checkout 还原」例外 = main→gov 回同步 merge 前的定点还原（见 merge-to-main skill，丢弃的只是可再生漂移）。
 
