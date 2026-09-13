@@ -1,6 +1,6 @@
 ---
 name: write-story
-description: 写/改/审 docs/requirements.md 的 story（S-Fx.y）时用——五件结构模板、业务框架强制、AC 三段式、线框/锚行接缝、已砍纪律。拆包时「包内必须内嵌 story 原文」的转写规则不归本 skill（归拆包链治理），但拆包引用的 story 格式以本 skill 为准。
+description: 写/改/审 docs/requirements.md 的 story（S-Fx.y）时用——五件结构模板、业务框架强制、AC 三段式、线框/锚行接缝、已砍纪律。拆包转写规则不归本 skill（归拆包链治理），但拆包引用 story 的合法形态以本 skill 为准（锚点引用 = ID + 标题，可选 AC 号集）。
 ---
 
 # write-story · KidPal story 撰写纪律
@@ -33,7 +33,7 @@ Story 是需求面的最小承重单元。它回答「产品是什么」，永�
 
 1. **业务框架强制**：story 原文必须「作为…我希望…以便…」三件齐。反例（真实，260829-schedule-reminder 包 story 字段）：「脑算网关推：OpenClaw cron（每 15 分钟定期重算 + QQ 录入即时触发）算三档时刻、幂等 id…」——这是技术方案，不是 story；对应真 story 是「作为孩子，我希望…设备提前主动提醒我，以便不丢三落四」。
 2. **机制词禁令**：story 正文（原文 + AC + 补充规则）禁出现实现机制词——cron、散列、幂等、JSON、预合成、WebSocket、API、字段名。写到「怎么做」就停笔，搬去 architecture.md 或补充规则的「数据口径」（口径 = 需求语义，如「『今天』按本地日期零点切换」；格式权威在契约层，不复制）。
-3. **AC 是业务可读的验收**：Given/When/Then 用人话写孩子/家长可感知的画面，覆盖正常 + 边界 + 异常；dev-loop 拆包时验收齿（Sx-Ay 形态）逐条回引 AC 号——AC 号就是 story 与验收测试之间的对账点。
+3. **AC 是业务可读的验收**：Given/When/Then 用人话写孩子/家长可感知的画面，覆盖正常 + 边界 + 异常；AC 号（AC1、AC2…）就是 story 与验收测试之间的对账点，拆包侧按 AC 号引用（合法形态见「边界」节）。
 4. **可行性诚实**：✅ = 有实测留档/包闭环证据；🟡 = 设计可行但关键环节未实测；🔴 = 当前架构撑不住。**🔴 必须同行挂开放问题或 ARQ 编号**，不许静默存在（Pod 无权自裁，处置 = 立项讨论）。
 5. **改 story = 改需求**：编号不回收；砍掉的 story 进 requirements.md 文末「已砍清单」（§8）并注明砍因与日期，不物理删除编号。
 6. **NFR 回引**：story 内涉及的量化质量要求（延迟、断网、字号…）写成「具体场景的具体化 + 回引 NFR-ID」，同一约束全仓只在 NFR 章（requirements.md §5）定义一次。
@@ -61,10 +61,12 @@ Story 是需求面的最小承重单元。它回答「产品是什么」，永�
 
 ## 边界（不归本 skill）
 
-- 拆包时「TaskPackage 必须内嵌 story 原文 + 验收齿回引 AC 号」的转写规则 → 拆包链治理（260912-gov-review-portfolio-decomposition-chain）。
+- TaskPackage 怎么承载/转写 story（含验收齿如何挂接）→ 拆包链治理（260912-gov-review-portfolio-decomposition-chain）；本 skill 只钉拆包侧引用 story 的合法形态：**锚点引用 = `S-Fx.y · 标题`，可选带 AC 号集（如 S-F1.4 · 日程提醒 / AC1、AC3）——不内嵌原文、不改写、不复述语义**。
 - 架构怎么支撑 story → architecture.md；契约格式 → docs/contracts/**（契约门）。
 
-## 模板应用例（S-F1.4，与 requirements.md 现文一致）
+## 模板应用例（S-F1.4，仅格式示例）
+
+例文是五件结构 + 锚行写法的格式示意，内容可能滞后于 requirements.md 现文——语义一律以 requirements.md 现文为准，本例不随 spec 改动同步。
 
 ```markdown
 ##### S-F1.4 · 日程提醒
