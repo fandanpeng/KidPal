@@ -47,4 +47,4 @@
 - 设计稿 v2/v3 内 spec 引用各 1 处 → v4 迭代顺带改。
 - spec-anchor-check 拦阻强度升级（挂 hook）→ 跑出误报率后再议（OQ-4）。
 - show-me 图（show-me-spec-split.html）仍是 v1.0 形态标注（manifest 17 行/明日 landing）——与 v1.1 实况（18 行、当日 landing）有漂移，如需分发应更新（未更新，如实登记）。
-- 核验期补发（2026-09-13，retro 落盘后）：① landing-summary 缺 ```landing-manifest 围栏块 + packet-id 字面（B2/A9 格式项，verifier 首轮 RED 唯一拦阻）——教训同 F3 族：制品格式契约要靠机检跑一遍再交付，不靠人读自查；② 结构门第二层暴露两盲点：PROPOSAL §2 锚行加粗形态不解析（已格式归一，PROPOSAL「落地后不可回改」例外待 human 追认）+ ANCHORABLE_TEST 不识 `.delivery/**`（ARQ-260913-lfc-anchorable-delivery-gap，本批闭环待 human 例外拍板）。
+- 核验期补发（2026-09-13，retro 落盘后）：① landing-summary 缺 ```landing-manifest 围栏块 + packet-id 字面（B2/A9 格式项，verifier 首轮 RED 唯一拦阻）——教训同 F3 族：制品格式契约要靠机检跑一遍再交付，不靠人读自查；② 结构门第二层暴露两盲点：PROPOSAL §2 锚行加粗形态不解析（已格式归一，PROPOSAL「落地后不可回改」例外）+ ANCHORABLE_TEST 不识 `.delivery/**`（ARQ-260913-lfc-anchorable-delivery-gap）。**两例外 human 2026-09-13 均已点头（格式修复追认 + 本批例外放行），修闸归下一治理批。**
