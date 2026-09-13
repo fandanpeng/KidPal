@@ -1,35 +1,9 @@
 # KidPal 需求（requirements）——「产品是什么」的单一事实源
 
-> 自 `docs/spec.md`（v0.2 FROZEN）拆分落地（2026-09-13，`260913-arch-review-spec-split`，Track B FROZEN v1.1）；spec 原件归档于 [archive/spec.md](archive/spec.md)，仅作溯源、不作基线。
-> 「怎么造」见 [architecture.md](architecture.md)（互链对偶文件）；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）。
+> 自 `docs/spec.md`（v0.2 FROZEN）拆分落地（2026-09-13，`260913-arch-review-spec-split`）；spec 原件归档于 [archive/spec.md](archive/spec.md)，仅作溯源、不作基线。
+> 「怎么造」见 [architecture.md](architecture.md)（互链对偶文件）；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）；story 撰写与锚定纪律见 skill `write-story`。
 > 目标用户：8–12 岁小朋友。形态：ESP32-S3-RLCD-4.2 作 Client 端，云端（Aliyun + OpenClaw）作服务端大脑。400×300 黑白 1bpp RLCD 的显示约束贯穿全部 UI 定义。
-
-## 已砍清单（编号不回收，记录砍因与日期）
-
-| 项 | 砍因 | 日期 |
-|---|---|---|
-| P2 课表页「当前课反白高亮」 | 设备主场景在家（孩子上课时不在设备旁），价值低；课表页只承担「看安排」，不承担「现在进行」指示 | 2026-08-29 human 裁 |
-| P3 阅读态「生字反白高亮」 | 需契约 story_text 增生字标注字段，价值不足以抵复杂度；问生字走语音 | 2026-08-29 human 裁 |
-| S-F2.5 云端润色故事 | 原 spec 标「（可选）」，2026-09-13 拆分过目时确认不迁入 | 2026-09-13 human 裁 |
-| NFR-PWR-1 续航阈值 | human：「取消掉，不管了」 | 2026-09-13 human 裁 |
-| NFR-READ-2 暗光可用性 | human：「不要」 | 2026-09-13 human 裁 |
-
-> 设计稿中被砍特性的对应画面为砍前残留，不作为实现依据（已在设计稿相应处加废弃标注）。
-
-## UI 锚规则块（story 与设计稿的锚定纪律）
-
-1. **粒度**：锚「舞台」——页面画布（`canvas-pX`）与会话状态（`state-*`）；不锚「道具」——图标/字体/组件级资产（`icon-library`/`font-*`/`comp-*`）由设计与实现侧引用，story 不挂。
-2. **共享**：跨 story 的状态链在共享底座（§2）钉一次，story 引「共享底座」不重复罗列。
-3. **例外**：组件本身是 story 的验收对象时才单锚（如成就盖章 `comp-stamp`）。
-4. **指向**：本节引用指「docs/ui/ 现行设计稿」语义，版本更迭只改本行一处；当前 = [kidpal-ui-design-v3.html](ui/kidpal-ui-design-v3.html)。
-5. **设计稿锚稳定规约**：`data-od-id` 是约定不是保证——id 只增不随便改，改名/删除 = 有意识的锚维护动作，改设计稿者负责同步本文件引用；出新版设计稿时跑 `node .claude/scripts/spec-anchor-check.mjs --diff-ids <旧设计稿> <新设计稿>`，被 story 引用而消失的 id 必须显式处置（同步改锚或恢复 id），不许静默断。
-6. **机检**：每个 UI 锚必须解析到现行设计稿真实存在的 `data-od-id`——`node .claude/scripts/spec-anchor-check.mjs`。
-
-## Story 锚行与撰写纪律（指针）
-
-- 每条 story 末尾的锚行 = 三件：**UI**（设计稿舞台锚）、**支撑**（`arch §x.y`，指向 [architecture.md](architecture.md) 真实小节）、**可行性**三态（✅ 已实证 ｜ 🟡 设计可行·待实证 ｜ 🔴 当前架构撑不住）。
-- **🔴 挂账纪律**：标 🔴 必须在同行挂开放问题或 ARQ 编号，不许静默存在；处置路径 = 立项讨论（改需求或改架构），Pod 无权自裁。
-- 写/改/审 story 的五件结构与撰写纪律 → skill `write-story`（`.claude/skills/write-story/SKILL.md`）。
+> 当前版本 **v1.2**；版本历史与逐次变更见文末 §9「变更记录」。
 
 ---
 
@@ -270,7 +244,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 
 **线框**：线框待补（归设计稿迭代）。
 **补充规则**：无。
-**锚**：UI = `p3-stamp-frame` + `comp-stamp`（组件为验收对象，规则 3 例外单锚） ｜ 支撑 = arch §3.1（UI 实现策略·盖章演出渲染，板） ｜ 可行性 = ✅
+**锚**：UI = `p3-stamp-frame` + `comp-stamp`（组件为验收对象，write-story 锚行规则 3 例外单锚） ｜ 支撑 = arch §3.1（UI 实现策略·盖章演出渲染，板） ｜ 可行性 = ✅
 
 #### F3 查生字
 
@@ -413,3 +387,28 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 2. **温湿度云端记录**：SHTC3 本地直读放首页（已定）；是否云端记录/给家长看——待定。
 3. **家长管控形态**：儿童隐私主体已定（出网三路径记账 = NFR-SEC-2；内容安全姿态 = NFR-SAFE-1）；残余 = 家长管控形态（随小程序后置）。配网与设备绑定流程留实现期。
 4. **线框待补**：P2 课表 / P3 故事 / P4 查字的细化线框与状态机（归设计稿迭代；各 feature 节已挂占位标）。
+
+---
+
+## 8. 已砍清单（编号不回收，记录砍因与日期）
+
+| 项 | 砍因 | 日期 |
+|---|---|---|
+| P2 课表页「当前课反白高亮」 | 设备主场景在家（孩子上课时不在设备旁），价值低；课表页只承担「看安排」，不承担「现在进行」指示 | 2026-08-29 human 裁 |
+| P3 阅读态「生字反白高亮」 | 需契约 story_text 增生字标注字段，价值不足以抵复杂度；问生字走语音 | 2026-08-29 human 裁 |
+| S-F2.5 云端润色故事 | 原 spec 标「（可选）」，2026-09-13 拆分过目时确认不迁入 | 2026-09-13 human 裁 |
+| NFR-PWR-1 续航阈值 | human：「取消掉，不管了」 | 2026-09-13 human 裁 |
+| NFR-READ-2 暗光可用性 | human：「不要」 | 2026-09-13 human 裁 |
+
+> 设计稿中被砍特性的对应画面为砍前残留，不作为实现依据（已在设计稿相应处加废弃标注）。
+
+---
+
+## 9. 变更记录（版本管理）
+
+> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——版本号、日期、改了什么、依据。story 增删改、NFR 变动、砍项、结构重排必须有行；纯勘误也记（标「勘误」）。行只追加、不覆盖既有行。逐次详情可溯 changes/arch/** 对应制品。
+
+| 版本 | 日期 | 变更 | 依据 |
+|---|---|---|---|
+| v1.2 | 2026-09-13 | phase 2 需求梳理起步·结构重排：UI 锚规则与 story 锚行撰写纪律移出本文件（SSOT 归 skill `write-story`）；已砍清单自文件头部移至文末 §8；新增本变更记录节。story 正文、NFR、开放问题零语义改动。 | human 直改指示（一次性跳过 Track B，如实记录；phase 2 重新定基线语境） |
+| v1.1 | 2026-09-13 | 自 docs/spec.md（v0.2 FROZEN）拆分落地为独立需求文件：13 条 story 按五件模板重写、NFR 四件结构、共享底座整编、Epic E1（F1–F4）定界、已砍清单随迁（5 件）。 | `260913-arch-review-spec-split`（Track B FROZEN v1.1；四件制品见 changes/arch/260913-arch-review-spec-split/） |

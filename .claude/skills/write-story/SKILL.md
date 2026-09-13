@@ -22,7 +22,7 @@ Story 是需求面的最小承重单元。它回答「产品是什么」，永�
 
 **补充规则**：字段校验 / 权限 / 数据口径 / 埋点 / 文案（无则写「无」）
 
-**锚**：UI = `canvas-pX`（舞台粒度；0–3 个为本 skill 新增经验上限——超出先自问是否锚了「道具」或 story 该拆，非六条 SSOT 既有条款）｜ 支撑 = arch §x.y ｜ 可行性 = ✅/🟡/🔴
+**锚**：UI = `canvas-pX`（舞台粒度；0–3 个为本 skill 新增经验上限——超出先自问是否锚了「道具」或 story 该拆，非锚行规则六条既有条款）｜ 支撑 = arch §x.y ｜ 可行性 = ✅/🟡/🔴
 ```
 
 - **ID**：`S-Fx.y`——F = Feature 编号，y = feature 内序号；发布后稳定，不回收、不复用。
@@ -35,12 +35,19 @@ Story 是需求面的最小承重单元。它回答「产品是什么」，永�
 2. **机制词禁令**：story 正文（原文 + AC + 补充规则）禁出现实现机制词——cron、散列、幂等、JSON、预合成、WebSocket、API、字段名。写到「怎么做」就停笔，搬去 architecture.md 或补充规则的「数据口径」（口径 = 需求语义，如「『今天』按本地日期零点切换」；格式权威在契约层，不复制）。
 3. **AC 是业务可读的验收**：Given/When/Then 用人话写孩子/家长可感知的画面，覆盖正常 + 边界 + 异常；dev-loop 拆包时验收齿（Sx-Ay 形态）逐条回引 AC 号——AC 号就是 story 与验收测试之间的对账点。
 4. **可行性诚实**：✅ = 有实测留档/包闭环证据；🟡 = 设计可行但关键环节未实测；🔴 = 当前架构撑不住。**🔴 必须同行挂开放问题或 ARQ 编号**，不许静默存在（Pod 无权自裁，处置 = 立项讨论）。
-5. **改 story = 改需求**：编号不回收；砍掉的 story 进 requirements.md 文件头部「已砍清单」并注明砍因与日期，不物理删除编号。
+5. **改 story = 改需求**：编号不回收；砍掉的 story 进 requirements.md 文末「已砍清单」（§8）并注明砍因与日期，不物理删除编号。
 6. **NFR 回引**：story 内涉及的量化质量要求（延迟、断网、字号…）写成「具体场景的具体化 + 回引 NFR-ID」，同一约束全仓只在 NFR 章（requirements.md §5）定义一次。
 
-## 锚行规则（SSOT 指针，不复制）
+## 锚行规则（本 skill 为 SSOT；2026-09-13 自 requirements.md 文件头部迁入）
 
-UI 锚六条规则（舞台粒度 / 共享底座钉一次 / 组件例外 / 指现行设计稿 / id 稳定规约 / 机检）的 SSOT = requirements.md 文件头部「UI 锚规则块」；支撑锚目标 = architecture.md 真实小节。写完跑 `node .claude/scripts/spec-anchor-check.mjs` 验锚可解析。
+锚行三件 = **UI**（设计稿舞台锚）+ **支撑**（`arch §x.y`，指向 architecture.md 真实小节，小节编号发布后稳定）+ **可行性**三态（✅ 已实证 ｜ 🟡 设计可行·待实证 ｜ 🔴 当前架构撑不住）。UI 锚六条：
+
+1. **粒度**：锚「舞台」——页面画布（`canvas-pX`）与会话状态（`state-*`）；不锚「道具」——图标/字体/组件级资产（`icon-library`/`font-*`/`comp-*`）由设计与实现侧引用，story 不挂。
+2. **共享**：跨 story 的状态链在 requirements.md 共享底座（§2）钉一次，story 引「共享底座」不重复罗列。
+3. **例外**：组件本身是 story 的验收对象时才单锚（如成就盖章 `comp-stamp`）。
+4. **指向**：锚引用指「docs/ui/ 现行设计稿」语义，版本更迭只改本行一处；当前 = [kidpal-ui-design-v3.html](../../docs/ui/kidpal-ui-design-v3.html)。
+5. **设计稿锚稳定规约**：`data-od-id` 是约定不是保证——id 只增不随便改，改名/删除 = 有意识的锚维护动作，改设计稿者负责同步 story 引用；出新版设计稿时跑 `node .claude/scripts/spec-anchor-check.mjs --diff-ids <旧设计稿> <新设计稿>`，被 story 引用而消失的 id 必须显式处置（同步改锚或恢复 id），不许静默断。
+6. **机检**：每个 UI 锚必须解析到现行设计稿真实存在的 `data-od-id`——`node .claude/scripts/spec-anchor-check.mjs`。
 
 ## 完稿自检（写完逐条过）
 

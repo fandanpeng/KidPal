@@ -7,7 +7,7 @@
 //   ③ 可行性 🔴 必须同行挂开放问题/ARQ 引用。
 // --reverse：反向视图（arch 小节 → 引用它的 story/NFR/底座清单）。反向视图只由本脚本生成，不手写双向维护。
 // --diff-ids <旧设计稿> <新设计稿>：两版 data-od-id 全量 diff（设计稿迭代断锚前置检查，
-//   配合 requirements.md 头部「UI 锚规则块」第 5 条；被 story 引用而消失的 id 显式点名）。
+//   配合 write-story skill「锚行规则」第 5 条；被 story 引用而消失的 id 显式点名）。
 //
 // 拦阻强度：手动 / review 时跑（OQ-4 裁 (a)），不挂 hook。
 // 真空绿规约：先断言两文件非空 + story 计数 > 0 + 锚行计数 > 0，再谈检查通过。
