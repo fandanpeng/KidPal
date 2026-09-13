@@ -178,7 +178,7 @@
 | # | 功能 | 说明 |
 |---|---|---|
 | B1 | **课表存储** | 用 MD 文件存（如 `schedule.md`），结构化：课程名/时间/周期(每周几)/地点/备注 |
-| B2 | **课表查询** | 孩子问"今天下午有什么课"→读 MD 按当前时间筛选→自然语言答复 |
+| B2 | **课表查询** | 孩子问"今天下午有什么课"→读 MD 按当前时间筛选→自然语言答复。⚠️ 2026-09-14 requirements v1.19：答复走**问答框**（共享底座播报态），**不嵌回课表页**（「帮我显示课表」才切页）；P2 课表页改**一周总览网格**（周一~周日 × 上午/下午/晚上，格内逐节列课程名）——网格内容由云端按课表 MD 三区块算好下发（「学校课程表」区块供给逐节科目名、每周固定课表供给课外课、一次性安排带 ※ 临时标记），display 响应块需承载整周网格数据 |
 | B3 | **日程提醒** | 按区块范围：「学校课程表」区块不提醒；「每周固定课表」区块（培训班，每周重复生成）+ 一次性安排提醒：三段阶梯（前晚带物/当日早上日程/事前 15 分钟）→ 服务端定时经 WS **推送 `mcp` kidpal/alert 工具**（不再轮询）；渲染即确认出队、过期静默作废。机制详见 §2.9；需求口径见 requirements.md S-F1.4 |
 | B4 | **课表录入** | 家长通过 QQ/直接改 MD 录入，OpenClaw 解析存入 schedule.md（通道口径 = requirements.md S-F1.5） |
 
@@ -264,7 +264,7 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 
 各页（首页/课表/故事/查字）布局、提醒弹窗、长文滚动等渲染均走本节 LVGL 控件面；页面结构与键位的产品定义见 requirements.md §2。字体类需求（requirements.md §4）的技术支撑 = 本节资产管道（`lv_font_conv` → SPIFFS `.bin`）。
 
-**语音轮演出**（需求侧现存四态：聆听/思考/播报/提醒；**低电演出 2026-09-13 已砍**，`KVST_SCENE_LOWBATT` 场景码留在冻结闭集内不再驱动、数值不得偏移，低电信号只剩首页辅助条电池图标每秒闪）：场景码与内容映射已冻结并验收（`kidpal_voice_states`，场景→姿态/气泡/键帽条单源），但**「状态 → 渲染」接线不全 = Phase 1 修复项**——活侧 `LcdDisplay::SetStatus` 仅映射 LISTENING/SPEAKING/STANDBY 三态，`KVST_SCENE_THINK` 与 `KVST_SCENE_LOWBATT` 均零调用者、`lang_config` 无 thinking 状态文案，且小智 DeviceState 枚举本无 thinking 态；会话状态机虽有 `SES_STATE_THINKING`（边 = `LISTENING --UTT_START--> THINKING`）但未接渲染路径。故思考页真机不弹。需求侧已定进入时机 = **孩子说完这一句**（切句完成/上行结束，requirements.md §2.2 思考中行），与现有 `UTT_START`（开口）边语义不一致，接线时一并对齐。
+**语音轮演出**（需求侧现存四态：聆听/思考/播报/提醒；**低电演出 2026-09-13 已砍**，`KVST_SCENE_LOWBATT` 场景码留在冻结闭集内不再驱动、数值不得偏移，低电信号只剩首页辅助条电池图标每秒闪）：场景码与内容映射已冻结并验收（`kidpal_voice_states`，场景→姿态/气泡/键帽条单源），但**「状态 → 渲染」接线不全 = Phase 1 修复项**——活侧 `LcdDisplay::SetStatus` 仅映射 LISTENING/SPEAKING/STANDBY 三态，`KVST_SCENE_THINK` 与 `KVST_SCENE_LOWBATT` 均零调用者、`lang_config` 无 thinking 状态文案，且小智 DeviceState 枚举本无 thinking 态；会话状态机虽有 `SES_STATE_THINKING`（边 = `LISTENING --UTT_START--> THINKING`）但未接渲染路径。故思考页真机不弹。需求侧已定进入时机 = **孩子说完这一句**（切句完成/上行结束，requirements.md §2.2 思考中行），与现有 `UTT_START`（开口）边语义不一致，接线时一并对齐。版式通则（2026-09-14 requirements v1.24）：**聆听/思考/播报/提醒四态同一版式骨架 = 左小伴（各态 pose）· 右内容区**（WF-B-01~04），渲染面可按一个参数化模板实现四态，不为单一态做特别设计。
 
 **底部键帽条 `comp-keybar`（三槽：左 KEY 提示 · 中 4 页点 · 右 BOOT 提示）**：条体已常驻（`bottom_bar_` 挂在基座 screen、非任何单页所有，故覆盖层盖不掉；实测 min-height 48px，设计规格 38px），但**内部只实现了单个居中 label**（文案随态联动，冻结映射见 `kidpal_voice_states.c`）——**三槽布局、4 点页面指示器、BOOT 提示、`[KEY]`/`[BOOT]` 键帽图形均未实现 = Phase 1 修复项**。需求侧已定：条常驻、**中槽页点仅 P1–P4 主页面显示，覆盖层不显示页点**而左右槽照常（requirements.md §2.2）；规格权威 = brand-spec「姿态规则」+ 设计稿 v3 §06。
 
