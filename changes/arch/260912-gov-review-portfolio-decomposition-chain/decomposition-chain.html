@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案 v0.6</title>
+<title>拆包→执行链 · 治理方案草案 v0.7</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -30,6 +30,7 @@
   .actor b{color:var(--ink)}
 
   .art{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fbfcfe}
+  .art.rules{background:var(--c2-soft);border-color:#b9dde5}
   .art .fname{font-weight:700;font-size:12.5px}
   .art ul{margin:4px 0 0 16px;padding:0}
   .art li{margin:1.5px 0;font-size:12.5px;color:#2c3654}
@@ -84,8 +85,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案（v0.6）</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.6，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案草案（v0.7）</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.6 + 拆包规则组提案，规则组待 human 确认）</div>
 
   <div class="chain">
 
@@ -116,11 +117,20 @@
       <h2>portfolio-planner（RTE）拆包</h2>
       <div class="actor">输入 = 冻结 PROPOSAL → <b>intake 核模板符合性</b>（缺业务目的清单 / workType / spec 标注 → fail-closed 打回，不猜不代写）+ 图索引只读探查</div>
       <div class="role"><b>角色：把裁决变成列车计划</b>一次拆包产出「四件套」，缺一不齐不得交 launch。</div>
+      <div class="art rules">
+        <div class="fname">拆包规则组（v0.7 提案 · 待 human 确认）：</div>
+        <ul>
+          <li><b>元规则 · demo 点</b>——每包必提名一个「看得见、摸得着」的东西，三形态：<b>行为</b>（业务包：孩子/家长能看到听到按到）/ <b>示踪弹</b>（基建包：载着一件最小真货跑通一趟——「建好了」不算，「能用」才算）/ <b>回归 + 结构齿</b>（重构包：老行为全绿 + 新结构性质被一条齿钉住）</li>
+          <li><b>切缝</b>——默认沿<b>行为缝</b>切（行为是纵向的，文件/系统/Pod 是横向的，掉缝都发生在横切处）；横切（技术层 / 系统段）合法但须付费：① 带示踪弹 ② 服务的业务包在 dependsOn 点名它；跨缝行为显式 owner</li>
+          <li><b>粒度上限</b>——一个包 = 一个 demo 点；多个结果共享热文件时按序三选：抽缝包先行（先冻接口）→ 串行 mergeOrder → 一个包 + 阶段级 demo 点</li>
+          <li><b>粒度下限</b>——包价值 &gt; Pod 固定开销（worktree / 图索引 / integrator / supervisor / merge）；说不清「我的 demo 点 + 我挡掉的阻塞」就合回去</li>
+        </ul>
+      </div>
       <div class="art">
         <div class="fname">拆包四件套：</div>
         <ul>
-          <li><b>roadmap.md</b> <span class="tag new">新增·活文档</span>——业务目的清单分解到包、列车图（机械渲染）、每包「完成后人能看到什么」、demo 证据形态、达成状态</li>
-          <li><b>taskpackage.json × N</b> <span class="tag frozen">已有</span>——机器骨架（dependsOn / mergeOrder / acceptance）</li>
+          <li><b>roadmap.md</b> <span class="tag new">新增·活文档</span>——业务目的清单分解到包、列车图（机械渲染）、每包「完成后人能看到什么」+ <b>demo 点（三形态）</b>、达成状态</li>
+          <li><b>taskpackage.json × N</b> <span class="tag frozen">已有</span>——机器骨架（dependsOn / mergeOrder / acceptance）+ packageKind + demo 点声明</li>
           <li><b>plan.md × N</b> <span class="tag hot">收紧</span>——每包必备初步设计，装配型豁免取消（MVP 19/19 缺位的根治）</li>
           <li><b>decision-coverage.json</b> <span class="tag frozen">已有</span>——决策 → 包 → 验收，机器对账</li>
         </ul>
@@ -128,10 +138,10 @@
       <div class="gate">
         <div class="gname">门 1 · 拆包 review（新增，GREEN 才 commit-before-launch）</div>
         <ol>
-          <li>切片逻辑：按行为切还是按页/按问题切？图上见，偏离须有显式理由</li>
+          <li>切片逻辑：按规则组判——行为缝 / 横切付费 / 粒度上下限，图上见</li>
           <li>依赖序 + WIP 合理性</li>
           <li>decision-coverage 完备（含跨包行为 owner）</li>
-          <li>每包意图与 PROPOSAL 冻结裁定一致</li>
+          <li>每包意图与 PROPOSAL 冻结裁定一致 + demo 点三形态在位</li>
           <li>demo 证据形态可行（真机轮配额仅核心包）</li>
         </ol>
         <div class="who">architect 轻量 review（OQ1 可裁改对抗档）→ GREEN 后 <b>human 过目切法</b>——方向 + 切法一次前端对齐，切法自此有票</div>
@@ -171,7 +181,7 @@
 
   <!-- 失败映射 -->
   <div class="hits">
-    <h3>每道门 / 锚对应本批与 MVP 真实发生的哪次失败 <span>（判据：已发生的缺陷能被新门拦住）</span></h3>
+    <h3>每道门 / 锚 / 规则对应真实发生的哪次失败 <span>（判据：已发生的缺陷能被新门拦住）</span></h3>
     <div class="hitsgrid">
       <div class="hit">
         <div class="g">门 1 · 拆包 review</div>
@@ -184,6 +194,18 @@
       <div class="hit">
         <div class="g">锚 3 · demo 对账</div>
         <div class="f"><b>SU-RULING-02 + 集成夜爆雷</b>只交付 layer 机制、聊天屏仍双物理屏并存——「聊天内容任何页可见」的效果对账当场翻红，不必等真机轮</div>
+      </div>
+      <div class="hit">
+        <div class="g">元规则 · 示踪弹</div>
+        <div class="f"><b>MVP 基建包绿灯假象</b>host-test-infra / shim-skeleton「建成」即收工——第一颗真实载荷从没跑过，「建好了」与「能用」之间的缝无人把守</div>
+      </div>
+      <div class="hit">
+        <div class="g">粒度上限 · 一个包一个 demo 点</div>
+        <div class="f"><b>PKG-2 过大</b>一包承载 4/5 收口标准，plan.md 只能切阶段 0–5 自救、无阶段级 demo 点——偏差拖到集成夜才爆</div>
+      </div>
+      <div class="hit">
+        <div class="g">粒度下限 + 殿后清单</div>
+        <div class="f"><b>9b 殿后掉包</b>低于下限的碎片包（MVP 19 包之一），转手时无人接——说不清「demo 点 + 挡掉的阻塞」的包不该被拆出来</div>
       </div>
     </div>
   </div>

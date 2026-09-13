@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>spec 拆分设计 · FROZEN v1.0（含评审期变更标注）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Segoe UI","Microsoft YaHei",sans-serif; background:#f6f7f9; color:#2b2f36; padding:28px; line-height:1.55; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:#6b7280; font-size:13px; margin-bottom:14px; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:20px; font-size:12.5px; }
+  .row { display:flex; gap:18px; align-items:stretch; margin-bottom:18px; flex-wrap:wrap; }
+  .card { background:#fff; border:1px solid #e3e6ea; border-radius:10px; padding:16px 18px; flex:1; min-width:280px; }
+  .card.wide { flex-basis:100%; }
+  h3 { font-size:15px; margin-bottom:8px; }
+  .tag { display:inline-block; font-size:11px; padding:1px 8px; border-radius:10px; margin-left:6px; vertical-align:middle; font-weight:normal; }
+  .req { border-top:4px solid #3b82f6; }
+  .arch { border-top:4px solid #8b5cf6; }
+  .old { border-top:4px solid #9ca3af; }
+  ul { padding-left:18px; font-size:13px; }
+  li { margin-bottom:3px; }
+  .mono { font-family:Consolas,monospace; font-size:12px; background:#f1f3f5; padding:0 5px; border-radius:4px; }
+  .anchor-line { display:flex; gap:10px; align-items:center; margin:6px 0; font-size:13px; flex-wrap:wrap; }
+  .pill { font-size:12px; padding:2px 10px; border-radius:12px; white-space:nowrap; }
+  .p-blue { background:#dbeafe; color:#1d4ed8; }
+  .p-purple { background:#ede9fe; color:#6d28d9; }
+  .p-green { background:#dcfce7; color:#15803d; }
+  .p-amber { background:#fef3c7; color:#b45309; }
+  .p-red { background:#fee2e2; color:#b91c1c; }
+  .p-gray { background:#e5e7eb; color:#4b5563; }
+  /* 变更标记 */
+  .chg-add { background:#f0fdf4; border-left:3px solid #22c55e; padding:1px 6px; }
+  .chg-mod { background:#fffbeb; border-left:3px solid #f59e0b; padding:1px 6px; }
+  .chg-del { color:#9ca3af; text-decoration:line-through; }
+  .strike { color:#9ca3af; text-decoration:line-through; }
+  .badge-add { background:#dcfce7; color:#15803d; }
+  .badge-mod { background:#fef3c7; color:#b45309; }
+  .badge-del { background:#fee2e2; color:#b91c1c; }
+  .flow { display:flex; align-items:center; gap:0; flex-wrap:wrap; }
+  .step { background:#fff; border:1px solid #e3e6ea; border-radius:10px; padding:10px 16px; font-size:13px; text-align:center; }
+  .step b { display:block; font-size:13px; }
+  .step small { color:#6b7280; }
+  .step.done { border:1px solid #86efac; background:#f0fdf4; }
+  .step.now { border:2px solid #3b82f6; box-shadow:0 0 0 3px #dbeafe; }
+  .step.todo { border-style:dashed; }
+  .conn { font-size:20px; color:#9ca3af; padding:0 8px; }
+  .lane { border:1.5px dashed #d1d5db; border-radius:10px; padding:10px 14px; font-size:12.5px; color:#4b5563; margin-top:10px; background:#fafafa; }
+  .rule { font-size:13px; margin:4px 0; }
+  table.mini { border-collapse:collapse; font-size:12.5px; width:100%; }
+  table.mini th, table.mini td { border:1px solid #e3e6ea; padding:4px 8px; text-align:left; vertical-align:top; }
+  table.mini th { background:#f6f7f9; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:900px){ .grid2 { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<h1>spec 拆分设计 · FROZEN v1.0</h1>
+<div class="sub">260913-arch-review-spec-split · Track B 四轮评审收口 · landing-manifest 17 行终稿 · landing 待明日 .planning 归档后执行</div>
+
+<div class="legend">
+  <span class="pill p-green">🟢 评审期新增 / human 裁定</span>
+  <span class="pill p-amber">🟡 评审期变更</span>
+  <span class="pill p-red">🔴 评审期废弃 / 移除</span>
+  <span class="pill p-gray">⚪ 原设计未变</span>
+</div>
+
+<!-- ① 拆分 -->
+<div class="row">
+  <div class="card old" style="flex:1;min-width:260px;">
+    <h3>docs/spec.md <span class="tag badge-mod">🟡 删除 → 归档</span></h3>
+    <ul>
+      <li>去向 <span class="chg-mod">改为移入 <span class="mono">docs/archive/spec.md</span>（human F3 裁）</span>——旧批 .planning 带老 spec 引用语境一起归档，新结构全新启用</li>
+      <li><span class="chg-add">🟢 §6.3「待定/已定跟踪」七条：已实测闭环项（配网 NVS、ASR 首验）标「已结」不迁入、随归档消亡；仍开放项进 architecture.md 技术开放问题</span></li>
+      <li class="strike">原方案：直接删除（git 历史保留）</li>
+    </ul>
+  </div>
+  <div class="card req" style="flex:1.2;min-width:280px;">
+    <h3>docs/requirements.md <span class="tag p-blue">产品是什么</span></h3>
+    <ul>
+      <li>⚪ §1 背景与产品定位（原 §1 + 设备定位）</li>
+      <li>⚪ §2 共享底座（原 §4.0 + 交互模型/按键/页面结构，去重合并）<span class="chg-add">🟢 「端云」列一并废弃（全量，R1-F7）</span></li>
+      <li><span class="chg-mod">🟡 §3 需求主体 <b>Epic &gt; Feature &gt; Story</b> 三层（human 定）——线框随 feature 走；<span class="chg-mod">P1 实存一件归 F1，P2–P4 挂「待补」占位标（R1-F4 如实化，不虚构库存）</span></span></li>
+      <li>⚪ §4 体验与视觉风格（「站酷快乐体」类字体需求住这里）</li>
+      <li>⚪ §5 NFR 章独立成章 <span class="chg-add">🟢 未拍数值阈值带「待定」迁入（OQ-3 裁）</span></li>
+      <li>⚪ §6 路线图（原 §8）+ §7 需求类开放问题</li>
+    </ul>
+  </div>
+  <div class="card arch" style="flex:1.2;min-width:280px;">
+    <h3>docs/architecture.md <span class="tag p-purple">怎么造</span></h3>
+    <ul>
+      <li><span class="chg-mod">🟡 「硬件盘点」→ <b>Infra（基础设施）</b>：板子 + ECS + 网络（human 定，通用化作其他项目模板）</span></li>
+      <li>⚪ 系统架构（原 §3，方向 B）</li>
+      <li>⚪ UI 实现策略（原 §5.7，字体/资产管线）</li>
+      <li><span class="chg-mod">🟡 「端云接口」→ <b>契约层（Contracts）</b>：只引用 docs/contracts/ SSOT + 各契约面导航，不抄细节（human 定）；§6.1/6.2 重叠内容随 CDQ-260902 归位契约</span></li>
+      <li>⚪ 技术决策 + 技术类开放问题</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ② 锚定机制 -->
+<div class="card wide" style="margin-bottom:18px;">
+  <h3>互相锚定：story 锚行 <span class="tag p-gray">三件，稳态 0–3 个锚</span></h3>
+  <div class="grid2">
+    <div>
+      <div class="anchor-line"><span class="pill p-blue">UI 锚点</span> <span class="mono">canvas-p2</span> → 现行设计稿 v3 的 <span class="mono">data-od-id</span>（舞台粒度）<span class="chg-add">🟢 + id 稳定规约：只增不随便改、新版设计稿 diff id 清单、断锚显式处置（human 提问催生）</span></div>
+      <div class="anchor-line"><span class="pill p-purple">支撑</span> <span class="mono">arch §x.y</span> → architecture.md 真实小节（涉双侧 story 同时锚板侧 + 云侧）</div>
+      <div class="anchor-line"><span class="pill p-green">可行性</span> <span class="pill p-green">✅ 已实证</span><span class="pill p-amber">🟡 待实证</span><span class="pill p-red">🔴 撑不住→必须挂 ARQ/开放问题</span> <span class="chg-add">🟢 初标清单（带证据行号）human 逐条过目后落文件（OQ-2 裁）</span></div>
+      <div class="anchor-line"><span class="pill p-gray" style="text-decoration:line-through;">端云 [板]/[云]</span> <span class="strike">废弃</span>——支撑锚是严格超集；拆包 subsystem 改从支撑锚推导</div>
+    </div>
+    <div style="border-left:2px dashed #e5e7eb;padding-left:18px;">
+      <b style="font-size:13px;">spec-anchor-check.mjs（⚪ 新增脚本；OQ-4 裁：先手动跑不挂 hook）</b>
+      <ul style="margin-top:6px;">
+        <li>⚪ 每个 <span class="mono">arch §x.y</span> 解析到真实标题；UI 锚解析到真实 <span class="mono">data-od-id</span>；🔴 必须挂账</li>
+        <li>⚪ <span class="mono">--reverse</span> 反向视图（脚本生成，不手写双向）；<span class="chg-add">🟢 --diff-ids 设计稿迭代断锚前置检查</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ③ census 改指集 -->
+<div class="card wide" style="margin-bottom:18px;">
+  <h3>census 改指集：manifest 7 行 → 17 行 <span class="tag badge-add">🟢 评审期最大增量（R2/R3 census 实跑产物）</span></h3>
+  <table class="mini">
+    <tr><th style="width:120px">类别</th><th>文件与改法</th></tr>
+    <tr><td>🟢 G3 联动</td><td><span class="mono">pre-merge-escalation-gate.mjs</span>——CDQ 核验按 <span class="mono">docs/spec.md</span> 字面串比对，改址后漏拦；字面集扩为三路径，与 <span class="mono">integrator.md:42</span> Basis 前缀写作约定<b>同一 commit 联动</b>（漏一边 = 闸与约定脱钩）</td></tr>
+    <tr><td>🟢 .delivery SSOT</td><td><span class="mono">milestones.jsonl</span> 七条 acceptanceRef（机器消费字段）直改源改指 requirements.md；<span class="mono">delivery-workspace.json:6</span> 权威指针；<span class="mono">STATUS.md</span> 派生视图<b>不手改、重跑脚本再生成</b></td></tr>
+    <tr><td>🟢 G1 / agent / command</td><td><span class="mono">AGENTS.md:7</span>、<span class="mono">DEV-GOVERNANCE.md:241</span>（G1）；<span class="mono">architect.md / architect-reviewer.md / integrator.md</span>（自改递归 ×3）；<span class="mono">arch-change.md:24</span>；<span class="mono">notes/ui-implementation-strategy.md:3</span></td></tr>
+    <tr><td>⚪ 原有</td><td>两新文件 + spec 归档 + scope-map / repo-structure（白名单两处一致）+ CDQ 挂账登记 + 锚检脚本</td></tr>
+    <tr><td>🔴 移除</td><td><span class="strike">docs/templates ×2（实测零命中，R2-F8）</span>；<span class="strike">.planning/kidpal-mvp/PROPOSAL.md 改指（旧批归档豁免，F3 裁）</span></td></tr>
+  </table>
+  <div class="lane">
+    <b>豁免 7 类</b>（census 逐件归类）：① 冻结验收件/实现面注释（KR-E2/SUNU 的 spec 存在性 canary、schedule_reminder:1561 直读）——<b>spec 归档后真实翻红 = 已知机械后果</b>，挂 CDQ、不改冻结件、处置归 phase 2 验收基线重建；② 通用示例占位（docs/systems/Sx-name/spec.md，不绑本仓）；③ append-only 历史行；④ 设计稿资产母版（v4 迭代时改）；⑤ 第三方供应商/构建产物；⑥ changes/taskpackages/待归档 .planning/契约面（:4 断链挂账 CDQ，F2 裁）；⑦ .delivery/STATUS.md 派生视图。
+  </div>
+</div>
+
+<!-- ④ 流程 -->
+<div class="card wide">
+  <h3>走向：评审已收口，明日 landing</h3>
+  <div class="flow" style="margin-top:8px;">
+    <div class="step done"><b>立项 ack</b><small>2026-09-13</small></div>
+    <div class="conn">→</div>
+    <div class="step done"><b>R1–R4 评审循环</b><small>打回 7+4+3 → GREEN<br>14 项 finding 全闭环</small></div>
+    <div class="conn">→</div>
+    <div class="step done"><b>human 裁 OQ 全集</b><small>OQ-1 归档 / 2 逐条过目<br>/ 3 待定迁入 / 4 先手动跑</small></div>
+    <div class="conn">→</div>
+    <div class="step now"><b>FROZEN v1.0</b><small>← 现在在这里<br>manifest 17 行终稿</small></div>
+    <div class="conn">→</div>
+    <div class="step todo"><b>明日：.planning 归档</b><small>human 定向操作<br>（§5 #1 时序断言）</small></div>
+    <div class="conn">→</div>
+    <div class="step todo"><b>packet-bound landing</b><small>17 行落地 + 可行性逐条过目<br>escalation-gate 联动原子改</small></div>
+    <div class="conn">→</div>
+    <div class="step todo"><b>verifier + retro + 升级闸</b><small>合并本地 main<br>remote push 仍 human</small></div>
+    <div class="conn">→</div>
+    <div class="step todo"><b>phase 2 立项</b><small>符合度审计 + 新拆包办法收尾</small></div>
+  </div>
+  <div class="lane" style="margin-top:12px;">
+    <b>并行 lane · 260912 拆包链 session</b>：包级 story 内嵌规则消费本变更定义的 story 锚格式（S-Fx.y 稳定编号），互不阻塞。<b>耦合点唯一。</b>
+  </div>
+</div>
+
+</body>
+</html>

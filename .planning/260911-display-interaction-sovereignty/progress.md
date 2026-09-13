@@ -141,3 +141,45 @@
   非 host 齿、integrator 不代跑。
 - 下一步：feature 分支 commit 冻结 diff → supervisor 合并门（机械闸 supervisor-verdict-gate，
   riskTier=high 升级人类复核）。
+
+## 2026-09-12 · launch 面准备批次②（主线程记，PKG-4 单包）
+
+- **调度判定**：PKG-2 已并（board 16:15 翻 merged，main d80e319 + 簿记 4af97fe/438f85a），
+  PKG-4 260911-display-first-m1（mergeOrder 20）dependsOn 双前置全满足（screen-unification
+  d80e319 / ecs-deploy-convergence d087fb7）→ **本批 = 单包 PKG-4**，依赖图说了算不硬凑并行：
+  render-pages（批次③，mergeOrder 21，pods 目录尚无其 pod json，下批备launch时再登记）按 human
+  已裁「②先③后」排后，且其换皮/字体 scope 与本包固件渲染面高度相交，并行必撞冻结面；
+  audio-bargein-hw（mergeOrder 14）launch 面 260909 批已备妥（worktree + prompt 俱在），归
+  human 另窗口决定，不在本批。WIP：无 running Pod，余量充足；mergeToken.holder=none。
+- **红基线（human 指示 verbatim：「红基线那些不要测试，上一个包merge刚测试的，用它的结果」）**：
+  不重跑，引 PKG-2 合并收口实测 @ 合并树 d80e319（出处 = 已提交制品
+  `changes/dev/260911-screen-unification/existing-red-inventory.md` + `pod-retro.md` 合并夜追记，
+  符合 KR retro 教训 #1「口径引已提交 inventory」）：① host 全量 **116 Tests / 4 Failures
+  全在册**（WSA-A6:830 / WSA-A4:663 owner=260903-device-ws-switch、P2-A1:571 owner=批次③、
+  VRT-A2·E2:878 owner=260829-voice-roundtrip 且 cwd 敏感）+ KEYA 5/5 绿（PKG-1×PKG-2 语义
+  相容证据）+ IDF 真编 exit 0（bin 0x2c2e00）；② server 验收 **1 failed（SMK-A4，owner=
+  260829-smoke-e2e）/ 125 passed / 6 skipped / 45 deselected**。main 自 d80e319 仅簿记 commit
+  无代码面变更；launch prompt 基线段已标注「引用非现跑」出处。
+- **launch 机械门**：`--check-launch 260911-display-first-m1 --base-ref main` 全绿
+  （ok:true、blocking/warn 均空）。
+- **环境等价化完成**：worktree `C:/AI/KidPal-pod-display-first-m1`（branch
+  dev/260911-display-first-m1，base = main 438f85a）；firmware/sdkconfig + dependencies.lock
+  镜像、managed_components git bash `ln -s` 软链指主 checkout（原生 python isdir=True）、
+  worktree-bootstrap.mjs 跑过（.env / shim 面源不存在按设计跳过）。
+- **专属图索引已建（必办项）**：`C-AI-KidPal-pod-display-first-m1`（moderate + persistence，
+  12396 节点 / 38079 边 == expected；skipped 0，parse_partial 65 文件 = 音频 codec /
+  application.cc:524 等既有 best-effort 信号）。注：`server/deploy`（engine-patch 面 = 本包
+  主目标）在图排除面内，查该面降级 Grep/Read——已写进 launch prompt。
+- **board 预填**：`--set-pod 260911-display-first-m1 --status queued --worktree-path
+  C:/AI/KidPal-pod-display-first-m1` 完成。
+- **launch prompt** 落 `.git/devloop/launch/prompt-260911-display-first-m1.txt`（VS Code 交互
+  会话形态默认，headless 备选需 human 亲笔授权；含 VERIFY_FW_BUILD_REQUIRED=1、brief-inputs
+  crossEnd 三 counterparts 非 exempt、C 侧 cwd 指针只登记、阶段 0 reviewer-first 契约复核 +
+  M3 禁采、部署纪律 apply-xiaozhi-overlay.sh + engine-patch 在位核验、上一批收口留根 6 条移入
+  intake 评估（含 SU-A7「两键一致」并后复跑归本包 DF-A6 收口轮、真机轮实时口令协议、live 会话
+  不常驻在线前提、合并闸 --human-approval-ref + --human-approved-exemption 双凭据、tier③
+  簿记相交配方、mutation 命名子串教训））。
+- **待 human**：① PKG-4 launch 自跑（worktree 内 VS Code 会话，prompt 全文为启动输入）；
+  ② DF-A3 时延实测 + DF-A6 workstream 收口真机轮需 live ECS + human 持板（含 SU-A7 两键一致
+  复跑；§5 五条收口标准并集对账，本包 = 末位 owner）；③ audio-bargein-hw 是否另窗口穿插 launch
+  由 human 定；④ render-pages（批次③）待 PKG-4 并后再备 launch 面。
