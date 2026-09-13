@@ -22,7 +22,7 @@
 | RTC | PCF85063（I2C）+ **RTC 独立备用电池座** | 走时提醒，主电/RTC 独立续航，掉电保持 |
 | 传感器 | SHTC3 温湿度 | 辅助（可显示环境温度湿度） |
 | 存储 | Micro SD 卡槽（FAT32）+ 16MB Flash | 板端非易失介质仅存设备凭证、1bpp 美术资产/字体、固件本体；业务数据不落板（决策 24） |
-| 电池 | **18650 锂电池座 + 充放电管理** | 便携；ADC 测电压电量；CHG充电/WRN反接指示灯 |
+| 电池 | **18650 锂电池座 + 充放电管理** | 便携；ADC 测电压电量；CHG充电/WRN反接指示灯。⚠️ 2026-09-13 查证：硬件电池 ADC 在（官方 Demo `03_ADC_Test`：ADC1_CH3=GPIO4 分压，`Adc_GetBatteryLevel` 已验证），但**固件未接线 = Phase 1 修复项**——板类 `adc1_handle`/`cali_handle`/`vbat_status` 为死成员、无 `GetBatteryLevel` override（基座默认返回 false）、渲染节点无电池注入缝（`s_battery_pct` 恒 100）；修复前真机电量恒显示满电、S-F1.1 AC3 低电闪烁不触发 |
 | 扩展 | 2×8 排母(2.54mm) + USB/UART/I2C/GPIO | 可扩展前光等 |
 
 > 关键约束（已据官方文档修正）：
@@ -268,6 +268,8 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 
 **底部键帽条 `comp-keybar`（三槽：左 KEY 提示 · 中 4 页点 · 右 BOOT 提示）**：条体已常驻（`bottom_bar_` 挂在基座 screen、非任何单页所有，故覆盖层盖不掉；实测 min-height 48px，设计规格 38px），但**内部只实现了单个居中 label**（文案随态联动，冻结映射见 `kidpal_voice_states.c`）——**三槽布局、4 点页面指示器、BOOT 提示、`[KEY]`/`[BOOT]` 键帽图形均未实现 = Phase 1 修复项**。需求侧已定：条常驻、**中槽页点仅 P1–P4 主页面显示，覆盖层不显示页点**而左右槽照常（requirements.md §2.2）；规格权威 = brand-spec「姿态规则」+ 设计稿 v3 §06。
 
+**首页辅助条（2026-09-13 需求侧重排：📶 联网打头 + 各项图标前置，requirements.md WF-F1-01/S-F1.1）**：联网图标链路已实现（基座 `LvglDisplay::UpdateStatusBar` 每 10s 刷 `board.GetNetworkStateIcon()` → `network_label_`，真机可见；断网返回 `FONT_AWESOME_WIFI_SLASH` 斜杠图标、另有强/中/弱三档信号，需求侧 S-F1.1 AC4 已补写断网态）；**电量百分比链路未接线 = Phase 1 修复项**（详见 §1.1 电池行 ⚠️：硬件 ADC 在、固件三处未接，恒显示满电）。辅助条各小图标（📶/🌡/💧/🔋）走预栅格化 1bpp 资产或 FontAwesome 图标字体，归设计稿重做时定。
+
 ---
 
 ## 4. 契约层（Contracts）
@@ -300,7 +302,7 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 9. **端云通信（2026-09-02 更新）**：**WebSocket + Opus 流式（方向 B）**——human 裁定。服务端借鉴官方开源小智服务端实现（xinnan-tech/xiaozhi-esp32-server，MIT，活跃），不逐行自研流式编排。Pod S 的同步 HTTP 链路为架构验证台阶（260829-smoke-e2e live 5/5），迁移后退役。
 10. **使用形态**：**便携电池为主**（18650），唤醒待机功耗需实测（2026-09-13 唤醒词升入 Phase 1 后，此实测相应提前至 Phase 1 阶段）。
 11. **语言大脑**：OpenClaw + DeepSeek，意图理解、对话、任务分发、纠正/结束判定。
-12. **汉字笔顺**：✅ D3 格式定稿——makemeahanzi 数据源（已实测跑通），OpenClaw 组 JSON（strokes SVG path + medians 骨架点），板子只渲染（LVGL 绘制 + 逐笔动画）。
+12. **汉字笔顺**：✅ D3 格式定稿——makemeahanzi 数据源（已实测跑通），OpenClaw 组 JSON（strokes SVG path + medians 骨架点），板子只渲染（LVGL 绘制 + 逐笔动画）。⚠️ 2026-09-13 需求侧新增「每日一字」（P4 空态由设备主动出一个字教学，requirements.md S-F3.4）：选字来源与下发链路未定（挂 requirements.md §7 开放问题 5），笔顺数据格式不变（D3 沿用）。
 13. **课表/故事存储**：OpenClaw 存 MD 文件；课表录入主路径为家长端。
 14. **页面结构**：**4 页循环**（首页/课表/故事/查字），BOOT 单击循环切换。
 15. **首页内容**：时间+日期+温湿度+今日日程+电量（常显信息牌）。
