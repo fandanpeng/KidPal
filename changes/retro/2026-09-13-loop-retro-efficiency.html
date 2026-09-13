@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KidPal Loop Retro · 2026-09-13 · Pod 执行效率分析</title>
+<style>
+  :root { color-scheme: light; }
+  .viz-root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --gridline: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;  /* builder */
+    --series-2: #eb6834;  /* acceptance-author */
+    --series-3: #1baf7a;  /* integrator */
+    --series-4: #eda100;  /* fixer */
+    --series-5: #e87ba4;  /* architect / architect-reviewer */
+    --uncaptured: #d8d6cf;
+    --good: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --gridline: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+      --uncaptured: #3a3a38;
+      --good: #0ca30c;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .viz-root { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.2px; }
+  .subtitle { color: var(--text-secondary); font-size: 13.5px; margin-top: 4px; }
+  .honesty {
+    margin-top: 14px; padding: 10px 14px; font-size: 12.5px; color: var(--text-secondary);
+    border: 1px solid var(--border); border-left: 3px solid var(--series-4);
+    border-radius: 6px; background: var(--surface-1);
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 20px 0 28px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .tile .v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .k { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .tile .n { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  section { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-bottom: 20px; }
+  h2 { font-size: 16px; font-weight: 650; margin-bottom: 2px; }
+  .h2sub { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; }
+  .chart { margin-top: 8px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .rowlabel { flex: 0 0 208px; font-size: 12.5px; text-align: right; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track { flex: 1; display: flex; height: 18px; border-radius: 4px; overflow: hidden; background: transparent; }
+  .seg { height: 18px; }
+  .seg + .seg { margin-left: 2px; }
+  .rowval { flex: 0 0 132px; font-size: 11.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 4px; font-size: 12px; color: var(--text-secondary); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .rec { padding: 14px 20px; }
+  .rec ol { margin: 8px 0 0 20px; }
+  .rec li { margin: 10px 0; font-size: 13.5px; }
+  .rec .rt { font-weight: 650; }
+  .rec .gain { color: var(--good); font-size: 12.5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gridline); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; }
+  td.num, th.num { text-align: right; }
+  .foot { font-size: 12px; color: var(--muted); margin-top: 18px; line-height: 1.7; }
+  .note-inline { font-size: 11.5px; color: var(--muted); }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); color: var(--text-secondary); margin-left: 6px; vertical-align: 1px; }
+  @media (max-width: 640px) {
+    .rowlabel { flex-basis: 128px; font-size: 11.5px; }
+    .rowval { flex-basis: 96px; font-size: 10.5px; }
+    h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+
+<header>
+  <h1>Dev Loop 周期复盘 · Pod 执行效率分析</h1>
+  <div class="subtitle">loop-retro-2026-09-13 · 覆盖 13 个 Pod（260829 批 6 + 260907/260901 各 1 + 260911 批 5）· 数据源：pod-events.jsonl（机器权威）+ 各包 pod-retro.md（planner 第一人称）</div>
+  <div class="honesty">
+    <strong>计量口径（诚实声明）：</strong>token 覆盖 = { dispatchesTotal: 97, dispatchesWithTokenData: 44, dispatchesUnavailable: 53 }；token 分项（input / output / cacheRead / cacheWrite）全为 0，仅有 total——口径缺口已在册（ARQ-260909-dispatch-stamp-telemetry-gaps）。dispatch-stamp 不覆盖主线程 planner 自身，故「挂钟 − 已捕获子 agent 时间」的差含主线程编排、human 等待、真机物理段与并行争用，<strong>不可全部归因于 agent 低效</strong>。260829 批 5 包无逐派发时长/ token 计量。
+  </div>
+</header>
+
+<div class="tiles">
+  <div class="tile"><div class="v">134.7 h</div><div class="k">13 包总挂钟（首事件→末事件）</div><div class="n">hardware-validation 单包 34.9h 为真机物理节奏主导</div></div>
+  <div class="tile"><div class="v">21.6 h</div><div class="k">已捕获子 agent 时间</div><div class="n">仅占挂钟 16%——84% 无遥测</div></div>
+  <div class="tile"><div class="v">251 万</div><div class="k">exact tokens 合计（8 包有数）</div><div class="n">覆盖 44/97 派发；最大单包 135 万</div></div>
+  <div class="tile"><div class="v">6 / 5 / 4</div><div class="k">最高频摩擦主题（假绿族 / 形态闸往返 / 真机协调）</div><div class="n">跨 13 包归纳，见摩擦主题图</div></div>
+</div>
+
+<section>
+  <h2>① 每 Pod 挂钟 vs 已捕获 agent 时间</h2>
+  <div class="h2sub">蓝色 = dispatch-stamp 捕获的子 agent 时长；灰 = 未捕获段（主线程 / human 等待 / 真机物理 / 争用）。260829 批多数包无捕获数据，整段为灰。</div>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--series-1)"></span>已捕获 agent 时间</span>
+    <span><span class="swatch" style="background:var(--uncaptured)"></span>未捕获（无遥测）</span>
+  </div>
+  <div class="chart" id="chart-wall"></div>
+</section>
+
+<section>
+  <h2>② 已捕获 agent 时间 · 按角色分解</h2>
+  <div class="h2sub">仅含 dispatch-stamp 有 durationMs 的派发。builder + acceptance-author 合计 17.7h，占已捕获时间 82%——效率杠杆集中在这两个角色。</div>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--series-1)"></span>builder（10.2h）</span>
+    <span><span class="swatch" style="background:var(--series-2)"></span>acceptance-author（7.5h）</span>
+    <span><span class="swatch" style="background:var(--series-3)"></span>integrator（2.9h）</span>
+    <span><span class="swatch" style="background:var(--series-4)"></span>fixer（0.6h）</span>
+    <span><span class="swatch" style="background:var(--series-5)"></span>architect(-reviewer)（0.4h）</span>
+  </div>
+  <div class="chart" id="chart-role"></div>
+</section>
+
+<section>
+  <h2>③ Token 消耗（仅 exact 数据，8 包）</h2>
+  <div class="h2sub">另 5 包无 token 计量（260829 批 4 包 + render-pages 的 5 次派发全部 unavailable）。screen-unification 一包占 exact 总量 54%。</div>
+  <div class="chart" id="chart-token"></div>
+</section>
+
+<section>
+  <h2>④ 单次派发长尾 TOP 10（≥54 min 或 toolUses ≥40）</h2>
+  <div class="h2sub">长tail阈值 = 40 toolUses。builder 实现轮占 6/10；acceptance-freeze 轮占 3/10——冻结大文件验收是最长的非实现派发。</div>
+  <div class="chart" id="chart-longtail"></div>
+</section>
+
+<section>
+  <h2>⑤ 跨 Pod 摩擦主题分布</h2>
+  <div class="h2sub">按 pod-retro 第一人称体感归纳，数字 = 命中包数（非次数）。这些是「代码本身没大问题、效率被磨掉」的位置。</div>
+  <div class="chart" id="chart-friction"></div>
+</section>
+
+<section class="rec">
+  <h2>⑥ 效率改进建议（按 ROI 排序）</h2>
+  <ol>
+    <li><span class="rt">起包形态预检机判化</span>：派 builder 前 dry-run 全部静态闸（mutation-check / docs-sync / taskpackage-required / coverage）一次列全缺口，把「代码一轮绿、纸面三轮红」压成一轮。<span class="gain">收益：5 包实证，每包省 2–4 个完整 verify 周期；关键路径 display-first-m1「四轮能压成一轮」原话。</span><span class="tag">部分同根 ARQ-260907（已 land 未被行为闭合）+ 新子项：coverage 机器可识别形态未钉文</span></li>
+    <li><span class="rt">补齐主线程遥测</span>：dispatch-stamp 覆盖 planner 主线程时长 + token 分项。当前 84% 挂钟不可归因，本轮「哪里耗时」一半是推断。<span class="gain">收益：一切效率优化的计量地基；消除 R2 硬项的诚实性缺口。</span><span class="tag">同根 ARQ-260909，本轮追加证据</span></li>
+    <li><span class="rt">验收齿强度自检固定化</span>：文本齿防「注释/字符串偶然满足」、结构齿先想「绕过路径是什么」、外部断言输入清单固定「真记录抽样 / 对端解析器源码」。<span class="gain">收益：假绿族 6 包，每例省 1 轮重派 + 多次 human 目击返工（「界面还是老的」×3 次实证）。</span><span class="tag">同根 ARQ-260911-tooth-strength / verdict-uncovered-surface，追加证据</span></li>
+    <li><span class="rt">真机轮协议三件套</span>：捕获窗口由 human 就绪信号开启（非 agent 单方面开播）、单一长捕获覆盖全窗口（DTR/RTS 关端口复位伪影 ×3）、动作点用实时口令钉（非提前发时间表）。<span class="gain">收益：4 包实证；screen-unification 合并夜真机协调是当晚最大摩擦源。</span><span class="tag">新 ARQ candidate</span></li>
+    <li><span class="rt">派发模板前置探测清单</span>：部署类先探测目标形态（bundle/source、锚点 grep）、版本化制品先 grep 谁把版本名钉进断言、auth/安全面先读引擎真实实现再裁。<span class="gain">收益：4 包各交过 1–3 轮学费（char-stroke 部署三轮往返、g-relay-fix 整轮、ecs-deploy D5 两次反转）。</span><span class="tag">登记不硬治（派发模板级）</span></li>
+    <li><span class="rt">分类器误伤背书前置</span>：变异探针 / ECS 操作 / mutation 取证类「看起来像攻击」的合法动作，派发前预落 human-decision 事件背书。<span class="gain">收益：3 包各烧一轮拦截往返 + human 中场出场。</span><span class="tag">新 ARQ candidate</span></li>
+  </ol>
+</section>
+
+<section>
+  <h2>⑦ 完整数据表（table view）</h2>
+  <div class="h2sub">挂钟 = pod-events 首末事件戳；已捕获 = 有 durationMs 的派发合计；token 仅 exact。</div>
+  <table id="data-table">
+    <thead><tr>
+      <th>Pod</th><th class="num">挂钟 h</th><th class="num">已捕获 h</th><th class="num">捕获率</th>
+      <th class="num">exact tokens</th><th class="num">派发数</th><th class="num">摩擦</th><th>主要耗时点（pod-retro 体感）</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="foot">
+    waiting 清单（本轮不分析）：260831-cloud-link-bringup、260831-simulator-lvgl-align（等 loop-health）；260913-happy-flow-host-capture（在途）。<br>
+    两源偏差（GC3）：机器聚合 friction 17 条 vs 散文主题 6 类，主题级不可机对撞，人工覆盖比对未见「ledger=0 / retro=N」型偏差。<br>
+    GC1 对账：4 项发现命中在册 ARQ（260909 / 260911×2 / 260907），按纪律记复现 + 追加证据，不新立；3 项无同根（真机轮协议 / 分类器误伤 / current 指针隐性状态）→ ARQ candidate，待人裁是否登记。
+  </div>
+</section>
+
+</div>
+
+<script>
+const PODS = [
+  // id, wallH, capturedH, tokens(exact|null), dispatches, frictions, 耗时点
+  { id:"260829-char-stroke",      wall:6.2,  cap:0,     tok:0,      disp:10, fric:1, note:"部署生成器三轮往返 + live 延迟措辞考古；无逐派发计量" },
+  { id:"260829-hardware-validation", wall:34.9, cap:0.08, tok:4284, disp:1,  fric:1, note:"真机物理节奏主导：传感器链 3.5h + 显示链 5.5h + 语音链 3h（烧录-复烧-目视）" },
+  { id:"260829-home-p1",          wall:4.3,  cap:0,     tok:0,      disp:9,  fric:0, note:"WSL 9p 争用 + 上游永红齿对账；无逐派发计量" },
+  { id:"260829-schedule-p2",      wall:4.3,  cap:0,     tok:0,      disp:5,  fric:0, note:"mutation 骨架≠证据烧一轮 verifier；WSL 慢 IO；无逐派发计量" },
+  { id:"260829-schedule-reminder",wall:16.4, cap:5.63,  tok:238639, disp:19, fric:4, note:"builder 单轮 109min（226 tools）+ verify 71min；.vN 槽位假绿审计" },
+  { id:"260829-story-p3",         wall:8.2,  cap:2.39,  tok:133954, disp:6,  fric:2, note:"acceptance-author stall 19min 零落件；证伪性工作占比高" },
+  { id:"260901-ui-art-integration",wall:5.1, cap:0,     tok:0,      disp:11, fric:0, note:"11 次 planner 派发全在主线程、零 stamp；heredoc 中文杂讯三轮" },
+  { id:"260907-g-relay-fix",      wall:3.4,  cap:1.50,  tok:9613,   disp:9,  fric:1, note:"三包并列最快；冒烟三轮节奏干净" },
+  { id:"260911-display-first-m1", wall:11.5, cap:0.85,  tok:77369,  disp:3,  fric:4, note:"taskpackage 形态缺口 verifier 三趟往返；git config 环境事故停等" },
+  { id:"260911-ecs-deploy-convergence", wall:3.0, cap:1.06, tok:64908, disp:7, fric:4, note:"漂移家族比预估深；D5 auth 按错误注释裁决两次反转" },
+  { id:"260911-key-route-a1",     wall:5.1,  cap:2.93,  tok:634984, disp:5,  fric:3, note:"builder 85min；真机捕获窗口与 human 操作不同步重捕一次" },
+  { id:"260911-render-pages",     wall:22.4, cap:2.64,  tok:null,   disp:5,  fric:3, note:"acceptance-freeze 73min + builder 66min；真机轮四轮 fixer（boot 死锁）" },
+  { id:"260911-screen-unification",wall:9.9, cap:4.50,  tok:1347158,disp:7,  fric:7, note:"builder 145min（实现 89 + reparent 56）；元数据面反复卡包；真机轮协调" },
+];
+
+const ROLES = [
+  ["builder", "var(--series-1)"],
+  ["acceptance-author", "var(--series-2)"],
+  ["integrator", "var(--series-3)"],
+  ["fixer", "var(--series-4)"],
+  ["architect", "var(--series-5)"],
+];
+// 各角色已捕获小时（与 pod-events 逐派发汇总一致）
+const ROLE_H = {
+  "260829-char-stroke":      { builder:0, "acceptance-author":0, integrator:0, fixer:0, architect:0 },
+  "260829-hardware-validation":{ builder:0, "acceptance-author":0.08, integrator:0, fixer:0, architect:0 },
+  "260829-home-p1":          { builder:0, "acceptance-author":0, integrator:0, fixer:0, architect:0 },
+  "260829-schedule-p2":      { builder:0, "acceptance-author":0, integrator:0, fixer:0, architect:0 },
+  "260829-schedule-reminder":{ builder:3.00, "acceptance-author":1.26, integrator:1.20, fixer:0, architect:0.16 },
+  "260829-story-p3":         { builder:1.16, "acceptance-author":1.13, integrator:0, fixer:0, architect:0.10 },
+  "260901-ui-art-integration":{ builder:0, "acceptance-author":0, integrator:0, fixer:0, architect:0 },
+  "260907-g-relay-fix":      { builder:0.47, "acceptance-author":0.69, integrator:0.34, fixer:0, architect:0 },
+  "260911-display-first-m1": { builder:0.54, "acceptance-author":0.27, integrator:0, fixer:0, architect:0.04 },
+  "260911-ecs-deploy-convergence":{ builder:0.08, "acceptance-author":0.65, integrator:0.30, fixer:0.03, architect:0 },
+  "260911-key-route-a1":     { builder:1.42, "acceptance-author":1.04, integrator:0.47, fixer:0, architect:0 },
+  "260911-render-pages":     { builder:1.10, "acceptance-author":1.22, integrator:0.22, fixer:0, architect:0.09 },
+  "260911-screen-unification":{ builder:2.42, "acceptance-author":1.15, integrator:0.34, fixer:0.59, architect:0 },
+};
+
+const LONGTAIL = [
+  ["schedule-reminder · builder · build", 109, 226],
+  ["screen-unification · builder · implement", 89, 105],
+  ["key-route-a1 · builder · build", 85, 84],
+  ["schedule-reminder · acceptance-author · acceptance", 76, 45],
+  ["render-pages · acceptance-author · freeze", 73, 95],
+  ["schedule-reminder · builder · verify", 71, 50],
+  ["story-p3 · builder · implementation", 69, 109],
+  ["render-pages · builder · implementation", 66, 160],
+  ["screen-unification · builder · reparent", 56, 99],
+  ["key-route-a1 · acceptance-author · acceptance", 54, 99],
+];
+
+const FRICTION = [
+  ["假绿 / 齿强度漏洞（注释糊绿、改名绕过、fixture 自造、vacuous live）", 6],
+  ["taskpackage 元数据 / 形态闸往返（代码绿、纸面红）", 5],
+  ["真机物理节奏 / 协调（烧录复烧、捕获窗口、目视等待）", 4],
+  ["派发输入缺前置探测（目标形态 / 版本槽位 / 引擎真实实现）", 4],
+  ["current/ 指针隐性全局状态（错包验证、簿记污染）", 3],
+  ["auto-mode 分类器误伤合法工作流（变异探针 / ECS）", 3],
+  ["WSL 9p / 共享盘 IO 争用", 2],
+];
+
+function fmt(n, d=1){ return n.toLocaleString('zh-CN',{minimumFractionDigits:d, maximumFractionDigits:d}); }
+
+// ① wall vs captured
+(function(){
+  const el = document.getElementById('chart-wall');
+  const max = Math.max(...PODS.map(p=>p.wall));
+  [...PODS].sort((a,b)=>b.wall-a.wall).forEach(p=>{
+    const capW = (p.cap/p.wall)*100, uncW = 100-capW;
+    el.insertAdjacentHTML('beforeend', `<div class="row" title="${p.id}：挂钟 ${fmt(p.wall)}h，已捕获 ${fmt(p.cap,2)}h，未捕获 ${fmt(p.wall-p.cap,1)}h">
+      <div class="rowlabel">${p.id}</div>
+      <div class="track">
+        <div class="seg" style="width:${capW}%;background:var(--series-1)"></div>
+        <div class="seg" style="width:${uncW}%;background:var(--uncaptured)"></div>
+      </div>
+      <div class="rowval">${fmt(p.wall)}h · 捕获 ${fmt(p.cap,2)}h</div></div>`);
+  });
+})();
+
+// ② role breakdown
+(function(){
+  const el = document.getElementById('chart-role');
+  const max = 5.63;
+  PODS.forEach(p=>{
+    const rh = ROLE_H[p.id]; const tot = Object.values(rh).reduce((a,b)=>a+b,0);
+    let segs = ROLES.map(([r,c])=> rh[r]>0 ? `<div class="seg" style="width:${(rh[r]/max)*100}%;background:${c}" title="${r}: ${fmt(rh[r],2)}h"></div>` : '').join('');
+    if (!tot) segs = `<div class="seg" style="width:100%;background:transparent" title="无逐派发时长计量"></div>`;
+    el.insertAdjacentHTML('beforeend', `<div class="row" title="${p.id}：已捕获合计 ${fmt(tot,2)}h">
+      <div class="rowlabel">${p.id}</div>
+      <div class="track">${segs}</div>
+      <div class="rowval">${tot? fmt(tot,2)+'h' : '无计量'}</div></div>`);
+  });
+})();
+
+// ③ tokens
+(function(){
+  const el = document.getElementById('chart-token');
+  const rows = PODS.filter(p=>p.tok>0).sort((a,b)=>b.tok-a.tok);
+  const max = rows[0].tok;
+  rows.forEach(p=>{
+    el.insertAdjacentHTML('beforeend', `<div class="row" title="${p.id}：${p.tok.toLocaleString()} tokens（exact）">
+      <div class="rowlabel">${p.id}</div>
+      <div class="track"><div class="seg" style="width:${(p.tok/max)*100}%;background:var(--series-1)"></div></div>
+      <div class="rowval">${(p.tok/10000).toFixed(1)} 万</div></div>`);
+  });
+  el.insertAdjacentHTML('beforeend', `<div class="note-inline" style="margin-top:8px">无 exact 数据：char-stroke / home-p1 / schedule-p2 / ui-art-integration（260829 批无计量）、render-pages（5 派发全部 unavailable）。</div>`);
+})();
+
+// ④ longtail
+(function(){
+  const el = document.getElementById('chart-longtail');
+  const max = LONGTAIL[0][1];
+  LONGTAIL.forEach(([label, min, tools])=>{
+    el.insertAdjacentHTML('beforeend', `<div class="row" title="${label}：${min} min · ${tools} toolUses">
+      <div class="rowlabel">${label}</div>
+      <div class="track"><div class="seg" style="width:${(min/max)*100}%;background:var(--series-1)"></div></div>
+      <div class="rowval">${min} min · ${tools} 工具</div></div>`);
+  });
+})();
+
+// ⑤ friction themes
+(function(){
+  const el = document.getElementById('chart-friction');
+  const max = FRICTION[0][1];
+  FRICTION.forEach(([label, n])=>{
+    el.insertAdjacentHTML('beforeend', `<div class="row" title="${label}：${n} 包命中">
+      <div class="rowlabel" style="flex-basis:420px;text-align:left">${label}</div>
+      <div class="track"><div class="seg" style="width:${(n/max)*100}%;background:var(--series-2)"></div></div>
+      <div class="rowval">${n} 包</div></div>`);
+  });
+})();
+
+// ⑦ table
+(function(){
+  const tb = document.querySelector('#data-table tbody');
+  PODS.forEach(p=>{
+    const rate = p.cap>0 ? fmt(p.cap/p.wall*100,0)+'%' : '—';
+    const tok = p.tok===null ? 'unavailable' : (p.tok>0 ? p.tok.toLocaleString() : '无计量');
+    tb.insertAdjacentHTML('beforeend', `<tr>
+      <td>${p.id}</td><td class="num">${fmt(p.wall)}</td><td class="num">${fmt(p.cap,2)}</td>
+      <td class="num">${rate}</td><td class="num">${tok}</td><td class="num">${p.disp}</td>
+      <td class="num">${p.fric}</td><td style="font-size:12px;color:var(--text-secondary)">${p.note}</td></tr>`);
+  });
+})();
+</script>
+</body>
+</html>
