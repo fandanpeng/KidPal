@@ -4,7 +4,7 @@
 > 「怎么造」见 [architecture.md](architecture.md)（互链对偶文件）；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）；术语 = [glossary.md](glossary.md)（唯一权威定义）；story 撰写与锚定纪律见 skill `write-story`。
 > 目标用户：8–12 岁小朋友。形态：ESP32-S3-RLCD-4.2 作 Client 端，云端（Aliyun + OpenClaw）作服务端大脑。400×300 黑白 1bpp RLCD 的显示约束贯穿全部 UI 定义。
 > 范围定名（2026-09-13）：**MVP** = 已开发完成、经真机验证的那批开发 Task Package 与功能（历史交付基线，不是本文范围）；**Phase 1** = 即将开发的下一版，本文即 Phase 1 的需求基线——在 MVP 成果之上，对既有 story 做大量改动。原「二期」清单 = Phase 1 之后另立 Epic 的功能。
-> 当前版本 **v1.52**；版本历史与逐次变更见文末 §9「变更记录」。
+> 当前版本 **v1.53**；版本历史与逐次变更见文末 §9「变更记录」。
 
 ---
 
@@ -425,7 +425,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 - AC4：Given 录音中，When 再按 KEY（兜底收尾，与全局会话结束手势一致），Then 停录并保存；KEY 长按**同短按（保存）**——防长按误触毁稿（v1.47）；When 按 BOOT（短按/长按/双击同义）或说「讲错啦」，Then 取消录音、已录内容丢弃退回列表——**不设重录恢复**（v1.49 human 裁先不加，见 §8）。
 
 **线框**：WF-F2-02（录音态）；记录语境引导态复用 WF-B-01 布局、气泡换「需要我帮你记点什么？」。
-**补充规则**：录音不自动开始——翻到 P3 只见列表，BOOT 翻页路过不误触；P3 同时承担回看。双入口口径 = P3 按 KEY（**记录语境**，无需触发词）+ 任意页触发词（「我要讲故事」/「帮我记下来」，判意图后开录）。一刀切 = P3 按 KEY 的会话里**提问也被记录**（2026-09-14 human 裁，代价已知悉——提问请去其他页按 KEY）。技术信号 = 设备须把「会话发起自 P3」上下文告知云端、网关即切累积态（arch §5.1 故事归档组件·`start_recording` 时机扩展）。误判挽回口径 = 被误判为闲聊的真实故事，孩子可经「刚才那段是故事」挽回。埋点 = 无。
+**补充规则**：录音不自动开始——翻到 P3 只见列表，BOOT 翻页路过不误触；P3 同时承担回看。双入口口径 = P3 按 KEY（**记录语境**，无需触发词）+ 任意页触发词（「我要讲故事」/「帮我记下来」，判意图后开录）。一刀切 = P3 按 KEY 的会话里**提问也被记录**（2026-09-14 human 裁，代价已知悉——提问请去其他页按 KEY）。技术信号 = 设备须把「会话发起自 P3」上下文告知云端、网关即切累积态（arch §5.1 故事归档组件；信号载体 = 契约 §四 `kidpal_session_ctx`，source_page=story，front 拦截切累积态）。误判挽回口径 = 被误判为闲聊的真实故事，孩子可经「刚才那段是故事」挽回。埋点 = 无。
 **锚**：UI = `p3-recording` ｜ 支撑 = arch §5.1（故事归档组件）、§5.2 场景④（录音与归档链路，板+云）
 **可行性**：✅（manual 聆听 + 网关累积态已备；P3 会话上下文信号 = 新增，随 arch §5.1 联动）
 
@@ -676,6 +676,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 
 | 版本 | 日期 | 变更 | 依据 |
 |---|---|---|---|
+| v1.53 | 2026-09-15 | **S-F2.2 信号载体契约落定（零语义变更）**：S-F2.2 补充规则的 P3 会话上下文信号载体从「arch §5.1 故事归档组件·`start_recording` 时机扩展」改指「契约 §四 `kidpal_session_ctx`（source_page=story，front 拦截切累积态）」——载体已按 Track B 正式流程定义入契约（[changes/arch/260914-arch-review-kidpal-session-ctx-contract/](changes/arch/260914-arch-review-kidpal-session-ctx-contract/)：PROPOSAL FROZEN v1.1 + architect R1/R2/R3 评审 R3 GREEN + human 契约门预授权与 OQ2 三值裁定），CDQ-260914-kidpal-session-ctx 登记，实现面归 dev-loop（arch §9 to-be ⑥） | human 指示（「把 plan 升级为正式 proposal，请 architect review 一遍，没问题再落」）+ Track B 七步（跳过项无，如实记录） |
 | v1.52 | 2026-09-14 | **砍 P3 朗读 + 架构侧可行性 review 批改**：① **S-F2.3 朗读砍除**（human 裁）——阅读态回归纯阅读（KEY 短按不响应、长按退出不变），§2.3 矩阵删「朗读中」行、阅读行 KEY 格改「—」、实现对账 ⑥ 删朗读项，WF-F2-04 键帽/口径、F2 intro、§1 概述、§2.4 P3 描述、S-F2.2 补充规则同步；S-F2.3 锚「arch §5.1（故事回放）」修正为「故事数据链路」——旧档 §2.7 C4「故事回放」行在架构重构时丢失致锚名悬空（本次 review 发现）；② **S-F3.3 可行性 ✅→🟡**（随 S-F3.1 同链降级——live 查字链路不可跑时查字窗无法弹出）；③ S-F3.1 可行性注补证据（260829-char-stroke live 3 齿 RUN_LIVE=1 曾全绿、A9 端到端 14.95s；现回归根因待查）；④ §4 RLCD「~45-70 FPS」补口径注（官方 Demo 文档口径、未真机实测）；⑤ S-F3.1/3.2/3.3 锚行括注中历史名 canvas-p4 去反引号（零语义变更）——反引号包裹被 spec-anchor-check 误当现行 UI 锚致 3 条悬空误报，去引号后机检归零。零 story 增删（S-F2.3 改写不删号） | human 四点裁定（砍朗读 / 🟡 查证 / 信号契约另立 / 小修）（跳过 Track B，如实记录） |
 | v1.51 | 2026-09-14 | **设计稿锚指针批改（零需求语义变更）**：设计稿 v4 落地（[ui/kidpal-ui-design-v4.html](ui/kidpal-ui-design-v4.html)——以 v3 为底全面对齐 v1.50：P1 重心重排 / P2 一周网格 / P3 星星记录本四子态 + 删除确认弹窗 / 查字窗 char-window / 语音轮四态同骨架 / 六姿态），UI 锚 15/15 双向对账通过（`canvas-p4`、`state-sleepy` 两处缺席均为已砍项的正确消除）；§2.2 键帽条行规格权威指针由「设计稿 v3 §06」改指「设计稿 v4 §03 `comp-keybar`」 | human 指示直改（跳过 Track B，如实记录） |
 | v1.50 | 2026-09-14 | **架构文档重构连带锚批改（零需求语义变更）**：architecture.md 按 arc42 骨架 + 五视图重构（背景/总览/目标与约束/QA 对策映射/逻辑·运行·部署·数据·开发五视图/横切/契约/风险债/演进路线/决策历史档，MVP 28 条决策冻结为 §10 历史档、新决策归 ADR.md）；本文全文 26 处 arch 支撑锚按「旧 § 号→新 § 号」映射批改（NFR 决策引用改指 §6.x 机制节或 §10 决策历史档；§4 技术支撑锚改指 §5.5），§9 历史变更行按 append-only 纪律不动；头部补 glossary.md 术语指针（glossary 新建）。`spec-anchor-check` 机检 arch 锚悬空归零（`char-window` UI 锚 3 处为重构前遗留修复项，随撤 P4 改造消除） | human 指示「出重构方案后对着直接改、跳过 Track B」（如实记录；骨架与映射表 = docs/notes/arch-restructure-skeleton.md） |
