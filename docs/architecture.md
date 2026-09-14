@@ -262,13 +262,17 @@
 
 UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方案：页面布局与动态文本走 LVGL 控件，吉祥物/手绘框/涂鸦等美术元素离线从设计稿 SVG 栅格化为 1bpp 资产经 SPIFFS 加载（与字体 .bin 同管道）。模拟器与固件 LVGL 版本必须对齐（当前锁 9.3.x）。完整可行性矩阵与资产管线见 [ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。
 
-各页（首页/课表/故事/查字）布局、提醒弹窗、长文滚动等渲染均走本节 LVGL 控件面；页面结构与键位的产品定义见 requirements.md §2。字体类需求（requirements.md §4）的技术支撑 = 本节资产管道（`lv_font_conv` → SPIFFS `.bin`）。
+各页（首页/课表/记录本）布局、提醒弹窗、查字窗、长文滚动等渲染均走本节 LVGL 控件面；页面结构与键位的产品定义见 requirements.md §2。字体类需求（requirements.md §4）的技术支撑 = 本节资产管道（`lv_font_conv` → SPIFFS `.bin`）。
 
 **语音轮演出**（需求侧现存四态：聆听/思考/播报/提醒；**低电演出 2026-09-13 已砍**，`KVST_SCENE_LOWBATT` 场景码留在冻结闭集内不再驱动、数值不得偏移，低电信号只剩首页辅助条电池图标每秒闪）：场景码与内容映射已冻结并验收（`kidpal_voice_states`，场景→姿态/气泡/键帽条单源），但**「状态 → 渲染」接线不全 = Phase 1 修复项**——活侧 `LcdDisplay::SetStatus` 仅映射 LISTENING/SPEAKING/STANDBY 三态，`KVST_SCENE_THINK` 与 `KVST_SCENE_LOWBATT` 均零调用者、`lang_config` 无 thinking 状态文案，且小智 DeviceState 枚举本无 thinking 态；会话状态机虽有 `SES_STATE_THINKING`（边 = `LISTENING --UTT_START--> THINKING`）但未接渲染路径。故思考页真机不弹。需求侧已定进入时机 = **孩子说完这一句**（切句完成/上行结束，requirements.md §2.2 思考中行），与现有 `UTT_START`（开口）边语义不一致，接线时一并对齐。版式通则（2026-09-14 requirements v1.24）：**聆听/思考/播报/提醒四态同一版式骨架 = 左小伴（各态 pose）· 右内容区**（WF-B-01~04），渲染面可按一个参数化模板实现四态，不为单一态做特别设计。
 
 **记录会话演出（P3 星星记录本，requirements v1.33 WF-F2-02/03）**：录音态（`p3-recording`）版式沿用上述四态通则（左小伴 pose-record · 右内容区 = REC 闪点 + 大时长 + 声波 + 引导语气泡 + 整段回显区）；盖章演出（`p3-stamp-frame` + `comp-stamp`）为例外构图 = 全屏定格居中（-8° 微倾、0.8 秒，几何冻结）。两者 MVP 均已实现且验收（`story_page.c` 录音/阅读/盖章页面态、pose-jump 位图已接；`mcp_server.cc` 归档幂等触发盖章）。⚠️ **改名对账漂移 = Phase 1 dev 修复项（v1.33 requirements F2 登记，需求先行、代码后改）**：① `story_page.c` 盖章文案 `KSTORY_STAMP_FMT` 仍为「故事徽章·第 %d 颗已入册！」，应为「星星徽章」（v1.26）；② P3 列表仍渲染页名标题「我的故事」，应为页内无标题、星星计数即页身份（v1.27）；③ 常驻语音入口提示仍只有「我要讲故事」第一指令，应补「帮我记下来」（v1.26）；④ 列表选中行仍反白，应为带边框（v1.31 真机反馈）。冻结验收 needle（`story_p3.acceptance.c` 逐字钉旧文案）须随文案一并更新——改文案不是改逻辑，但 needle 不更新会红。
 
-**底部键帽条 `comp-keybar`（三槽：左 KEY 提示 · 中 4 页点 · 右 BOOT 提示）**：条体已常驻（`bottom_bar_` 挂在基座 screen、非任何单页所有，故覆盖层盖不掉；实测 min-height 48px，设计规格 38px），但**内部只实现了单个居中 label**（文案随态联动，冻结映射见 `kidpal_voice_states.c`）——**三槽布局、4 点页面指示器、BOOT 提示、`[KEY]`/`[BOOT]` 键帽图形均未实现 = Phase 1 修复项**。需求侧已定：条常驻、**中槽页点仅 P1–P4 主页面显示，覆盖层不显示页点**而左右槽照常（requirements.md §2.2）；规格权威 = brand-spec「姿态规则」+ 设计稿 v3 §06。
+**查字窗（requirements v1.36：撤 P4 常驻页，char view 改会话内覆盖窗）**：宿主从「BOOT 翻页可达的常驻页」改为「display 块 `char` 驱动的覆盖窗」（驻留到按键、KEY 短按重播/长按关窗、BOOT 关窗照常翻页、无页点），渲染资产**全复用**——笔顺引擎、米字格、D3 makemehanzi 数据、逐笔动画均不变；页面注册 4 页→3 页、键帽页点 4→3。⚠️ 实现侧对账 = Phase 1 dev 修复项：UI 锚 `canvas-p4` → `char-window` 改名连带 P4 相关验收 needle 一并更新（需求侧已先行钉锚，见 requirements F3）；同会话后续 display 块（text 问答框等）替换查字窗 = 网关既有「每回复一块、新块换旧块」机制，无新增链路。会话语义（requirements v1.37）：char 回复的 TTS 播完即闭会话、**不回聆听态**（麦克风不常开）——由网关/设备在该回复播完即结束会话，具体载体（control 动作 or 会话侧关闭）随 E1 契约细化在 Phase 1 联调定；查字窗驻留不受会话关闭影响。TTS 只播引导语、不逐笔念笔名（D3 无笔名字段，`speech_hint` 承载）。⚠️ 对账（requirements v1.38，Phase 1 dev 修复项）：右栏进度珠砍除（`progress_label` 死成员 + 头注释虚标清理）、当前笔白衬边替代握笔小手占位（包 12 美术小手资产不再需要）、右栏部首行装配未上屏（CHR-A6 `card.radical` 有值、label 拼装漏）——白衬边画法 `charpage_render_frame` CURRENT 分支已实现。
+
+**底部键帽条 `comp-keybar`（三槽：左 KEY 提示 · 中 3 页点 · 右 BOOT 提示；v1.36 页循环 4→3，页点随之 3 点）**：条体已常驻（`bottom_bar_` 挂在基座 screen、非任何单页所有，故覆盖层盖不掉；实测 min-height 48px，设计规格 38px），但**内部只实现了单个居中 label**（文案随态联动，冻结映射见 `kidpal_voice_states.c`）——**三槽布局、页点、BOOT 提示、`[KEY]`/`[BOOT]` 键帽图形均未实现 = Phase 1 修复项**。需求侧已定：条常驻、**中槽页点仅 P1–P3 主页面显示，覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点**而左右槽照常（requirements.md §2.2）；规格权威 = brand-spec「姿态规则」+ 设计稿 v3 §06。
+
+**按键路由现状（requirements v1.39 查证）**：BOOT 单击 = 板装配层**硬路由**（`InitializeButtons` → `key_route_global(BOOT, CLICK)` 恒产 `GLOBAL_ACT_PAGE_NEXT` → `kidpal_render_node_cycle_next()`，不看当前层）——覆盖层的「关闭」是翻页函数开头清 transient 层的副作用，正经裁决函数 `kidpal_reminder_key` 设备侧零调用（仅验收测试用）。需求侧 v1.39 已定**覆盖层内 BOOT = 关窗回原页不翻页**：落地 = dispatch 层按 `layer_top` 分流 + `cycle_next` 拆「清层/进页」耦合（层栈 `kidpal_layer_stack` 架构现成支持），连带 `schedule_reminder_b.acceptance.c` 十余处「BOOT 关闭照常翻页」钉点成批改。同族漂移（Phase 1 dev 修复项，对账清单见 requirements §2.3 ⚠️）：页序实现 `HOME→CHAR→SCHEDULE→STORY` ≠ spec P1→P2→P3；BOOT 双击接线已移除（spec 列表跳屏/阅读翻屏语义实现侧不存在）；P3 BOOT 短按族（光标/翻屏）未接（故事手势消费只有 BOOT 长按旧语义一条缝）；KEY 长按恒回首页（「返回上一层」未接）。
 
 **首页辅助条（2026-09-13 需求侧重排：📶 联网打头 + 各项图标前置，requirements.md WF-F1-01/S-F1.1）**：联网图标链路已实现（基座 `LvglDisplay::UpdateStatusBar` 每 10s 刷 `board.GetNetworkStateIcon()` → `network_label_`，真机可见；断网返回 `FONT_AWESOME_WIFI_SLASH` 斜杠图标、另有强/中/弱三档信号，需求侧 S-F1.1 AC4 已补写断网态）；**电量百分比链路未接线 = Phase 1 修复项**（详见 §1.1 电池行 ⚠️：硬件 ADC 在、固件三处未接，恒显示满电）。辅助条各小图标（📶/🌡/💧/🔋）走预栅格化 1bpp 资产或 FontAwesome 图标字体，归设计稿重做时定。
 
@@ -304,7 +308,7 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 9. **端云通信（2026-09-02 更新）**：**WebSocket + Opus 流式（方向 B）**——human 裁定。服务端借鉴官方开源小智服务端实现（xinnan-tech/xiaozhi-esp32-server，MIT，活跃），不逐行自研流式编排。Pod S 的同步 HTTP 链路为架构验证台阶（260829-smoke-e2e live 5/5），迁移后退役。
 10. **使用形态**：**便携电池为主**（18650），唤醒待机功耗需实测（2026-09-13 唤醒词升入 Phase 1 后，此实测相应提前至 Phase 1 阶段）。
 11. **语言大脑**：OpenClaw + DeepSeek，意图理解、对话、任务分发、纠正/结束判定。
-12. **汉字笔顺**：✅ D3 格式定稿——makemeahanzi 数据源（已实测跑通），OpenClaw 组 JSON（strokes SVG path + medians 骨架点），板子只渲染（LVGL 绘制 + 逐笔动画）。⚠️ 2026-09-13 需求侧新增「每日一字」（P4 空态由设备主动出一个字教学，requirements.md S-F3.4）：选字来源与下发链路未定（挂 requirements.md §7 开放问题 5），笔顺数据格式不变（D3 沿用）。
+12. **汉字笔顺**：✅ D3 格式定稿——makemeahanzi 数据源（已实测跑通），OpenClaw 组 JSON（strokes SVG path + medians 骨架点），板子只渲染（LVGL 绘制 + 逐笔动画）。⚠️ 2026-09-13 需求侧新增「每日一字」（P4 空态由设备主动出一个字教学，requirements.md S-F3.4）：选字来源与下发链路未定（挂 requirements.md §7 开放问题 5），笔顺数据格式不变（D3 沿用）。~~注记已消解（2026-09-14 requirements v1.36）~~：撤 P4 常驻页、查字改会话内专门窗口（`char` view 覆盖窗），每日一字随之砍除、开放问题 5 关闭——笔顺数据格式仍不变。
 13. **课表/故事存储**：OpenClaw 存 MD 文件；课表录入主路径为家长端。
 14. **页面结构**：**4 页循环**（首页/课表/故事/查字），BOOT 单击循环切换。
 15. **首页内容**：时间+日期+温湿度+今日日程+电量（常显信息牌）。
