@@ -351,7 +351,7 @@
 | 2 | live 五齿留红：L4 渲染回执未达（设备仅回 ack:false 受理帧，疑 `mcp_server.cc` 判定门未生效） | 提醒出队机制 live 不完整 | 已如案登记（260911 review-packet）；Phase 1 修复 | dev-loop |
 | 3 | 设备闲置 ~3 分钟休眠断连 → `alert_skip` | 提醒不可达窗口 | 常驻连接与休眠的取舍 = 产品决策待裁 | human |
 | 4 | 查字冷启动 ~109s（DeepSeek 侧生成慢） | NFR-PERF-2 黄灯 | char_cache 预热已缓解一部分；流式/异步优化 = Phase 1 修复优先项 | dev-loop |
-| 5 | live 查字链路当前不可跑（human 2026-09-13 口述） | S-F3.1/F3.2 可行性 🟡 | Phase 1 阶段二首项 | dev-loop |
+| 5 | live 查字链路当前不可跑（human 2026-09-13 口述） | S-F3.1/F3.2/F3.3 可行性 🟡 | Phase 1 阶段二首项 | dev-loop |
 | 6 | F2 改名对账四项 + 键路由对账六项 + 电量 ADC 三处未接 + 思考态零调用（均【修复项】） | 文档与代码的漂移已成片 | requirements §2.3/F2 ⚠️ 对账清单 + §5.5.4；随 Phase 1 各阶段接线 | dev-loop |
 | 7 | `server/deploy/README.md` prompt 现状仍写 v3（实为 v4） | 部署指引误导 | 本档已如实记 v4；README 待随下次部署批更新【文档债】 | dev-loop |
 | 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
