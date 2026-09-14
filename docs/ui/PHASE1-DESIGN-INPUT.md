@@ -2,7 +2,7 @@
 
 > **用途**：2026-09-13 起 requirements.md 从头梳理（v1.3 → v1.43）产出的、与设计相关的全部变更，汇总为下一轮设计稿重做的输入。**本文件不是设计稿、也不是需求权威**——需求权威始终是 [requirements.md](../requirements.md)，本文件只做「设计侧该知道什么」的索引与解释，两者冲突时以 requirements.md 为准。
 > **读者**：设计（人 / OpenDesign 管线）。
-> **现状提示**：[UIUX-DESIGN-BRIEF.md](UIUX-DESIGN-BRIEF.md) 已升 v4、与 requirements v1.40 对齐，可直接作设计入口；既有设计稿 [kidpal-ui-design-v3.html](kidpal-ui-design-v3.html)（最新母版）、v2、v1 中，凡与本清单冲突的部分均已过期，重做时以本清单 + requirements.md 为准。
+> **现状提示**：[UIUX-DESIGN-BRIEF.md](UIUX-DESIGN-BRIEF.md) 已升 v4、与 requirements v1.40 对齐，可直接作设计入口；**设计稿 v4 已落地（2026-09-14）= [kidpal-ui-design-v4.html](kidpal-ui-design-v4.html)（最新母版，以 v3 为底全面对齐 requirements v1.50 + 本清单）**。v3 / v2 / v1 全部过期留档，资产管线母版以 v4 为准。
 
 ---
 
@@ -125,9 +125,10 @@
 
 | 文件 | 状态 |
 |---|---|
-| [kidpal-ui-design-v3.html](kidpal-ui-design-v3.html) | 最新母版（姿态库、网点三板斧、V3 §06 键帽条文案）。**已过期部分**：提醒弹窗的整屏 d50 网点底（608/1102/1118 行）、P1 首页布局（时间/温湿度打头）、聆听态无回显区、**低电打盹姿态 `pose-sleep` 已砍**（姿态资产可留档不再使用） |
-| [kidpal-ui-design-v2.html](kidpal-ui-design-v2.html) | 中间版，姿态库可参考 |
-| [kidpal-ui-design.html](kidpal-ui-design.html) | v1，**已过期部分**：470 行弹窗「底层用网点压暗」、397 行聆听态指示点 d50 背景、P4 线框 |
+| [kidpal-ui-design-v4.html](kidpal-ui-design-v4.html) | **最新母版（2026-09-14 落地）**——以 v3 为底按本清单逐区改造：P1 重心重排（WF-F1-01）/ P2 一周网格（WF-F1-02）/ P3 星星记录本四子态 + 删除确认弹窗（WF-F2-01~05）/ 查字窗 char-window（WF-F3-01）/ 语音轮四态同骨架（WF-B-01~04）/ 六姿态（pose-sleep 砍除）/ 键帽条 3 页点。requirements 侧 UI 锚 15/15 双向对账通过（v1.51 登记） |
+| [kidpal-ui-design-v3.html](kidpal-ui-design-v3.html) | **过期留档**（被 v4 取代；姿态库、网点三板斧、键帽条规格已由 v4 继承；pose-sleep / ic-apple / ic-penhand / ic-moon 等已砍资产可在本档溯源） |
+| [kidpal-ui-design-v2.html](kidpal-ui-design-v2.html) | 中间版，留档 |
+| [kidpal-ui-design.html](kidpal-ui-design.html) | v1，留档 |
 | [UIUX-DESIGN-BRIEF.md](UIUX-DESIGN-BRIEF.md) | **v4（2026-09-14）已对齐 requirements v1.40**：3 页循环 + 查字窗、键位 v1.36/v1.39 口径（KEY 主操作/长按返回上一层、BOOT 覆盖层关窗不翻页）、六姿态（无低电瞌睡）、星星资产；**各页细目不复述——§5 改导航表（一句话 + 权威锚 + 设计待定项）指 requirements，防双源漂移**，另附「已砍清单别复活」（低电打盹/握笔小手/进度珠/天气行/今天明天切换/故事果/页内标题提示/第 4 页/语音喊停）。§3.1 趣味性、§3.3 教学红线编号未动（requirements §4 的 brief 锚仍有效）；「大字优先」已改可读性分级 |
 | [brand-spec.md](brand-spec.md) | 小伴造型与黑色剪影语言仍有效，未受本轮变更影响 |
 
