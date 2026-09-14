@@ -21,7 +21,7 @@
                     └──────────┘  （录入课表/查日志）     │  （编排大脑）  │   │
                                                           └──────┬───────┘   │
  ┌──────────┐  按键/语音            ┌────────────┐ wss  │ OpenAI 兼容   │
- │  孩子     │ ──────────────────▶ │ ESP32 设备  │ ─────┼──▶（见 §2.2 三腿拓扑）
+ │  孩子     │ ──────────────────▶ │ ESP32 设备  │ ─────┼──▶（见 §2.2 端云四层链路）
  └──────────┘  看屏/听播报          │ （常显终端） │◀─────┘
                                     └────────────┘
  外部服务（设备/云端经其完成能力）：
@@ -33,7 +33,7 @@
 
 | 依赖 | 协议/形态 | 可用性假设 | 风险归属 |
 |---|---|---|---|
-| 小智官方服务端镜像 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest` | Docker 容器（引擎腿运行时） | 镜像由官方演进；**镜像升级 = engine-patch 漂移风险** | 部署副本漂移治理（ARQ-260907-engine-deploy-patch-drift，§8） |
+| 小智官方服务端镜像 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest` | Docker 容器（引擎服务运行时） | 镜像由官方演进；**镜像升级 = engine-patch 漂移风险** | 部署副本漂移治理（ARQ-260907-engine-deploy-patch-drift，§8） |
 | 阿里云 ASR（Qwen3-ASR-Flash，DashScope 流式） | 容器内 provider，凭据 env `DASHSCOPE_API_KEY` | 按量计费 + 免费额度；额度尽/流式不达标 → 切本地 SenseVoice（决策 19，配置级切换） | 出网路径①（NFR-SEC-2 记账） |
 | DeepSeek（deepseek-v4-flash） | OpenClaw 内部 provider | OpenClaw 侧配置，公网可达 | 出网路径② |
 | edge-tts（zh-CN-XiaoxiaoNeural） | 引擎容器内 provider | **微软非官方接口，有被封运维风险**，不作唯一依赖；被封 → 提醒降级「仅弹窗+提示音」仍必达（§6 降级） | 出网路径③ |
@@ -60,21 +60,21 @@
 
 **设备 = 哑终端（「会说话的显示器」），OpenClaw = 编排大脑。** 设备只负责收音/放音/显示/按键，不理解业务、不存数据、不做智能；所有数据、逻辑、记忆在云端。设备与云端之间用**约定的数据格式**（契约 E1 display 块）通信——课表存 MD、故事存 MD、笔顺由云端按格式输出，设备拿来就画。
 
-### 2.2 容器级总图（C4-L2，三腿拓扑）
+### 2.2 容器级总图（C4-L2，端云四层链路）
 
 ```
-【设备腿】ESP32-S3（小智 V2.1.0 基座固件）
+【设备端】ESP32-S3（小智 V2.1.0 基座固件）
    │ wss://ECS:8000（TLS + 强制设备鉴权；小智协议：hello 协商 + Opus 帧 + JSON）
    ▼
-【front 腿】server/gateway/front/front_app.py（唯一公网入口，TLS 终结 + 鉴权权威）
+【接入网关】server/gateway/front/front_app.py（唯一公网入口，TLS 终结 + 鉴权权威）
    │ ① 设备 ws 双泵代理（上行透传 / 下行截获 display 侧通道）
    │ ② plain ws ▶ loopback 127.0.0.1:8010
    ▼
-【引擎腿】xiaozhi-esp32-server 官方容器（Docker host 网络 + engine-patch 部署副本补丁）
+【引擎服务】xiaozhi-esp32-server 官方容器（Docker host 网络 + engine-patch 部署副本补丁）
    │  ASR（阿里云）· VAD 切句 · TTS（edge-tts）· Opus 下行
    │  display fence 剥离（补丁状态机）→ 侧通道帧回 front
    │  LLM type:openai ▼ loopback 127.0.0.1:18789
-【脑腿】OpenClaw（大脑 + 记忆 + 工具 + cron）
+【编排大脑】OpenClaw（记忆 + 工具 + cron）
    │  意图/多轮对话（每轮透传历史）/ 业务 MD 读写 / QQ 录入
    │  提醒：cron 重算（openclaw-patch 确定性脚本）写 alerts/pending.json
    ▼
@@ -235,9 +235,9 @@
 
 | 面 | 承载 | 端口/边界 |
 |---|---|---|
-| 设备腿入口 | `kidpal-front.service`（uvicorn `front.front_app:app`） | **0.0.0.0:8000 TLS**（唯一公网入口；证书 `/opt/kidpal/xiaozhi-esp32-server/cert/server.{pem,key}`，自签 RSA-3072 notAfter 2046-08-30） |
-| 引擎腿 | `xiaozhi-container.service` → docker compose（`xiaozhi-esp32-server`，官方镜像 6.9GB，`network_mode: host`） | 自绑 `127.0.0.1:8010` 明文 ws（不外露）；`data/.config.yaml` overlay + models 卷；engine-patch 两文件 bind-mount 覆盖 `core/` |
-| 脑腿 | OpenClaw（宿主进程） | `18789` 锁 loopback（gateway.bind=loopback，部署期断言）；容器经真 loopback 访问 |
+| 设备接入（公网入口） | `kidpal-front.service`（uvicorn `front.front_app:app`） | **0.0.0.0:8000 TLS**（唯一公网入口；证书 `/opt/kidpal/xiaozhi-esp32-server/cert/server.{pem,key}`，自签 RSA-3072 notAfter 2046-08-30） |
+| 引擎服务 | `xiaozhi-container.service` → docker compose（`xiaozhi-esp32-server`，官方镜像 6.9GB，`network_mode: host`） | 自绑 `127.0.0.1:8010` 明文 ws（不外露）；`data/.config.yaml` overlay + models 卷；engine-patch 两文件 bind-mount 覆盖 `core/` |
+| 编排大脑 | OpenClaw（宿主进程） | `18789` 锁 loopback（gateway.bind=loopback，部署期断言）；容器经真 loopback 访问 |
 | 交接目录 | `/opt/kidpal/alerts/`（pending.json + semantic.json）、`/opt/kidpal/stories/` | 同机文件交接，front 与 OpenClaw 共享 |
 | 配置与密钥 | `provider.config.yaml`（渲染源）→ `data/.config.yaml`（overlay 渲染产物）；`secrets.env` chmod 600（仓库只有 `.example`） | 引擎 `server.auth: false`（鉴权唯一权威在 front，260911 裁）；token ≥22 字符否则拒绝渲染 |
 | 历史单 | `xiaozhi-gateway.service`（legacy）、`kidpal-shim.service`（已退役） | shim 8080 已停；公网探针实证 8080 不可达、8000 唯一入口（260903 实证） |
@@ -343,7 +343,7 @@
 
 ## 8. 风险·技术债·开放问题
 
-### 8.1 架构风险与技术债记账（ knowingly 欠下的）
+### 8.1 架构风险与技术债记账（明知而暂欠的）
 
 | # | 风险/债 | 影响 | 缓解/接受 | owner |
 |---|---|---|---|---|
@@ -352,10 +352,10 @@
 | 3 | 设备闲置 ~3 分钟休眠断连 → `alert_skip` | 提醒不可达窗口 | 常驻连接与休眠的取舍 = 产品决策待裁 | human |
 | 4 | 查字冷启动 ~109s（DeepSeek 侧生成慢） | NFR-PERF-2 黄灯 | char_cache 预热已缓解一部分；流式/异步优化 = Phase 1 修复优先项 | dev-loop |
 | 5 | live 查字链路当前不可跑（human 2026-09-13 口述） | S-F3.1/F3.2 可行性 🟡 | Phase 1 阶段二首项 | dev-loop |
-| 6 | F2 改名对账四项 + 键路由对账六项 + 电量 ADC 三处未接 + 思考态零调用（均【修复项】） | 文档↔代码漂移成面 | requirements §2.3/F2 ⚠️ 对账清单 + §5.5.4；随 Phase 1 各阶段接线 | dev-loop |
+| 6 | F2 改名对账四项 + 键路由对账六项 + 电量 ADC 三处未接 + 思考态零调用（均【修复项】） | 文档与代码的漂移已成片 | requirements §2.3/F2 ⚠️ 对账清单 + §5.5.4；随 Phase 1 各阶段接线 | dev-loop |
 | 7 | `server/deploy/README.md` prompt 现状仍写 v3（实为 v4） | 部署指引误导 | 本档已如实记 v4；README 待随下次部署批更新【文档债】 | dev-loop |
 | 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
-| 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（网关腿解耦方案二）留 Phase 1 | human |
+| 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（方案二：接入网关对设备常驻连接、引擎按会话起停）留 Phase 1 | human |
 | 10 | 16px 以下 CJK 1bpp 可读性未实测 | 字号下限悬置 | 单独烧版对照（ARQ-260831-small-cjk-1bpp-readability） | 真机字体任务 |
 | 11 | shim 退役遗留：ECS 停服 + 8080 安全组未清 | 攻击面残留（探针已证不可达） | teardown 证据待补 | dev-loop |
 | 12 | 验收齿可合法弱于契约（同族 ≥6 包）+ 跨包行为无显式 owner | 齿绿而契约未兑现 | ARQ-260911-tooth-strength-below-contract / cross-package-behavior-owner-gap | architect |
@@ -374,7 +374,7 @@
 
 > 架构侧演进视角；开发推进顺序权威 = requirements.md §6（Phase 1 四阶段）。
 
-**as-is（MVP 已建基线，22 包 closed + happy-flow-host-capture 在办）**：方向 B 三腿拓扑 live 全通（listen→ASR→TTS→音频下发 0 断链）；shim 退役、front 唯一公网入口落地；引擎 fence 剥离补丁 + front 校验 relay live；提醒 cron→pending.json→推送链路 live（L3 绿、L4 回执留红）；四页旧形态渲染（HOME→CHAR→SCHEDULE→STORY）；prompt v4 版本化接线；证书/overlay/secrets/cron 运维面就位。
+**as-is（MVP 已建基线，22 包 closed + happy-flow-host-capture 在办）**：方向 B 端云四层链路 live 全通（listen→ASR→TTS→音频下发 0 断链）；shim 退役、front 唯一公网入口落地；引擎 fence 剥离补丁 + front 校验 relay live；提醒 cron→pending.json→推送链路 live（L3 绿、L4 回执留红）；四页旧形态渲染（HOME→CHAR→SCHEDULE→STORY）；prompt v4 版本化接线；证书/overlay/secrets/cron 运维面就位。
 
 **to-be（Phase 1 结构变更）**：① 键路由改造——dispatch 按 `layer_top` 分流 + `cycle_next` 拆「清层/进页」（BOOT 隔离、KEY 长按返回上一层、单双击消歧仅列表态）；② 60s/120s 双阈值 timer 生产者接线（会话状态机激活）；③ 思考态渲染接线；④ 撤 P4 常驻页 → 3 页循环 + `char-window` 覆盖窗；⑤ display 周网格数据（契约）；⑥ 新增 control 动作（故事删除/音量调节，随契约门）；⑦ L4 渲染回执修复 + 查字 live 链路修复。
 
@@ -384,7 +384,7 @@
 
 ## 10. 决策记录
 
-**2026-09-14 起，新架构决策一律登记 [ADR.md](ADR.md)（append-only，五件格式）；本节以下为 MVP 时代决策历史档，冻结不再新增。** 决策 20 的实施级修正见 ADR-002（提醒生产侧混合分层）与 ADR-003（出音链路借引擎既有音频链）；版本化制品接线不变式见 ADR-001（历史档正文保持原文，本档不内嵌 ADR 注记）。历史档内「本文件 §x.y」「§2.9 / §2.10 / §3.1」等自引用均指**迁移前旧版编号**，非本档现行编号（映射表见 [notes/arch-restructure-skeleton.md](notes/arch-restructure-skeleton.md)）。
+**2026-09-14 起，新架构决策一律登记 [ADR.md](ADR.md)（append-only，五件格式）；本节以下为 MVP 时代决策历史档，冻结不再新增。** 决策 20 的实施级修正见 ADR-002（提醒生产侧混合分层）与 ADR-003（出音链路借引擎既有音频链）；版本化制品接线不变式见 ADR-001（历史档正文保持原文，本档不内嵌 ADR 注记）。历史档内「本文件 §x.y」「§2.9 / §2.10 / §3.1」等自引用均指**迁移前旧版编号**，非本档现行编号；历史档中的「设备腿 / 引擎腿 / 脑腿」为链路分层旧称谓，现行 = 设备端 / 接入网关 / 引擎服务 / 编排大脑（见 [glossary.md](glossary.md)）。映射表见 [notes/arch-restructure-skeleton.md](notes/arch-restructure-skeleton.md)。
 
 1. **顶层定位**：**OpenClaw 作编排层+主 Agent（大脑/记忆/工具），板子只作"会说话的显示器"终端**。所有数据/逻辑/记忆在 OpenClaw（课表存MD、故事存MD、笔顺由OpenClaw按格式输出）；板子只收音/放音/显示/按键。
 2. **技术路线**：**基于小智(XiaoZhi V2.1.0) 二次开发**（官方已移植本板，含 AFE唤醒+AEC+VAD、全双工音频、显示、Wi-Fi、Opus、LVGL）。换后端接 Aliyun+OpenClaw + 重做 UI + 加业务。
@@ -419,4 +419,4 @@
 
 ## 11. 术语表
 
-项目黑话的唯一权威定义 = [glossary.md](glossary.md)（哑终端 / 方向 A·B / 三腿拓扑 / 三段阶梯 / 星星记录本 / fence 剥离 / 设备腿·引擎腿·脑腿 / overlay / 钉点 / Track A·B / 齿 …）。本档与 requirements.md 共用，不在本档重复定义。
+项目黑话的唯一权威定义 = [glossary.md](glossary.md)（哑终端 / 方向 A·B / 端云四层链路 / 三段阶梯 / 星星记录本 / fence 剥离 / overlay / 钉点 / Track A·B / 齿 …）。本档与 requirements.md 共用，不在本档重复定义。
