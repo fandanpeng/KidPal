@@ -2,302 +2,389 @@
 
 > 自 `docs/spec.md`（v0.2 FROZEN）拆分落地（2026-09-13，`260913-arch-review-spec-split`，Track B FROZEN v1.1）；spec 原件归档于 [archive/spec.md](archive/spec.md)，仅作溯源。
 > 读者：architect / planner / dev-loop 各 Pod。需求面（产品是什么）见 [requirements.md](requirements.md)；数据格式权威见 [contracts/interface-contract.md](contracts/interface-contract.md)（契约门）。
+> **文档分工（2026-09-14 重构定）**：本档 = 系统**结构与机制**的单一事实源；架构决策本体 = [ADR.md](ADR.md)（本章 §10 只留索引 + MVP 时代决策历史档）；数据格式 = contracts/；需求与阈值 = requirements.md；术语 = [glossary.md](glossary.md)。细节一旦在两处复制即开始腐烂——本档对上述各面只放指针。
 > **锚稳定规则**：本文件小节编号发布后视为稳定标识——requirements.md 的 story/NFR 支撑锚按号引用；改编号 = 有意识地同步改锚（`node .claude/scripts/spec-anchor-check.mjs` 机检抓悬空）。
-> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md v1.49+）。§5 决策条目为历史记录、保留当时的「MVP」措辞（所指为已交付范围，仍为真）；本日起的前瞻表述用 Phase 1，「二期」= Phase 1 之后的功能。
+> **定名（2026-09-13）**：**MVP** = 已开发完成、经真机验证的交付基线；**Phase 1** = 即将开发的下一版（需求 = requirements.md v1.49+）。「二期」= Phase 1 之后。
+> **现状标注约定**：【已实证】= live/真机验证过的事实；【修复项】= 已登记的 Phase 1 dev 修复项；【二期】= 明确后置。
 
 ---
 
-## 1. Infra（基础设施）
+## 1. 背景与上下文（系统活在什么世界里）
 
-### 1.1 板子硬件（ESP32-S3-RLCD-4.2，依据本地官方 Demo 实测确认）
+> ← 收编自旧 §2.1/§2.5，按 C4-L1 重组；外部依赖清单与范围声明为本轮新增。
 
-| 模块 | 型号/配置 | 说明 |
-|---|---|---|
-| 主控 | ESP32-S3-WROOM-1-N16R8（双核 240MHz） | Wi-Fi + BLE5，512KB SRAM + 384KB ROM，**16MB Flash + 8MB PSRAM** |
-| 屏幕 | **RLCD 反射式，ST7305 驱动，400×300 横屏(300×400竖)，1bpp 单色** | 4.2寸。SPI(SCK11/MOSI12/DC5/CS40/RST41)。无背光靠环境光，越亮越清晰，暗处不可见(本板文档未列前光→大概率无)，超低功耗可常显。一帧 400×300÷8=15KB。**刷新快(~45-70 FPS)，可动画/滚动/实时刷新**。ST7305 支持局部窗口更新+低功耗模式 |
-| **按键 ×3** | **KEY（自定义）、BOOT（GPIO0）、PWR（电源）** | KEY=自定义功能键；BOOT=按住上电进下载模式/平时可自定义；**PWR=长按关机/单击开机，为硬件电源电路键，固件不可读（官方全部 Demo 无 PWR 读取代码，文档描述"长按下电/单击上电"为电源管理行为）→ 实际可用功能键=KEY+BOOT 两个**。multi_button 支持单击/双击/长按。如需第三键可经 2×8 排母 GPIO 外扩 |
-| 触摸屏 | **无** | 交互全靠按键 + 语音 |
-| 音频输入 | ES7210 ADC + **双麦克风阵列** | 支持降噪/回声消除，可做近场/远场语音识别与唤醒（当前用"按一下启动会话"） |
-| 音频输出 | ES8311 codec + PA（MX1.25 2PIN 扬声器接口） | I2S 放音，可播放提示音/语音 |
-| RTC | PCF85063（I2C）+ **RTC 独立备用电池座** | 走时提醒，主电/RTC 独立续航，掉电保持 |
-| 传感器 | SHTC3 温湿度 | 辅助（可显示环境温度湿度） |
-| 存储 | Micro SD 卡槽（FAT32）+ 16MB Flash | 板端非易失介质仅存设备凭证、1bpp 美术资产/字体、固件本体；业务数据不落板（决策 24） |
-| 电池 | **18650 锂电池座 + 充放电管理** | 便携；ADC 测电压电量；CHG充电/WRN反接指示灯。⚠️ 2026-09-13 查证：硬件电池 ADC 在（官方 Demo `03_ADC_Test`：ADC1_CH3=GPIO4 分压，`Adc_GetBatteryLevel` 已验证），但**固件未接线 = Phase 1 修复项**——板类 `adc1_handle`/`cali_handle`/`vbat_status` 为死成员、无 `GetBatteryLevel` override（基座默认返回 false）、渲染节点无电池注入缝（`s_battery_pct` 恒 100）；修复前真机电量恒显示满电、S-F1.1 AC3 低电闪烁不触发 |
-| 扩展 | 2×8 排母(2.54mm) + USB/UART/I2C/GPIO | 可扩展前光等 |
+### 1.1 系统上下文图（C4-L1）
 
-> 关键约束（已据官方文档修正）：
-> - **400×300 单色 1bpp**：UI 用黑/白两色 + 抖动(dithering)模拟灰度。
-> - **刷新快（~45-70 FPS）**：与普通 LCD 相当，**可做流畅滚动、动画、笔顺动态演示**——非墨水屏那种慢。这解放了 UI 设计。
-> - **反射式无背光**：暗处不可见（本板大概率无前光），阳光下极佳、超低功耗、可常显「今日日程」。
-> - **图形库**：沿用**小智自带 LVGL**（单色模式），笔顺用 `lv_canvas` 绘制，不重写显示层。
-> - ST7305 支持局部窗口更新，可按需优化功耗。
-> - 语音是主要输入方式（孩子打字不便），配合少量物理按键。
->
-> 环境硬要求：arduino-esp32 **v3.3.0+**，U8g2 **v2.36.19+**（才含 ST7305 300×400 支持）。
+```
+                    ┌──────────┐   QQ 语音/文字        ┌──────────────┐
+                    │  家长     │ ───────────────────▶ │   OpenClaw    │◀──┐
+                    └──────────┘  （录入课表/查日志）     │  （编排大脑）  │   │
+                                                          └──────┬───────┘   │
+ ┌──────────┐  按键/语音            ┌────────────┐ wss  │ OpenAI 兼容   │
+ │  孩子     │ ──────────────────▶ │ ESP32 设备  │ ─────┼──▶（见 §2.2 三腿拓扑）
+ └──────────┘  看屏/听播报          │ （常显终端） │◀─────┘
+                                    └────────────┘
+ 外部服务（设备/云端经其完成能力）：
+   阿里云 ASR（Qwen3-ASR-Flash）· edge-tts（微软非官方接口）· DeepSeek（OpenClaw 内）
+   makemeahanzi 字库（静态数据）· 小智官方服务端镜像（xinnan-tech，容器运行时）
+```
 
-### 1.2 云端 ECS 与网络拓扑
+### 1.2 外部依赖清单
 
-- **OpenClaw 部署**：阿里云成都 ECS（公网 ws://8.137.91.16:18789 已验证通，内网 172.26.11.60）。流式网关与 OpenClaw 同机，loopback 调用，真 token 不出内网（决策 5）。
-- **18789 收敛 = 方向 B 落地前硬前置**：OpenClaw 18789 锁 127.0.0.1（安全组/防火墙，部署期断言）（决策 22）。
-- **ECS 算力**：ASR 云优先后本机只扛网关+TTS（2026-09-02 实测现余量约 1GB 内存/19G 磁盘）；不够可扩容（human 2026-09-02 裁）。
-- makemeahanzi 字库已下载到服务器 `kidpal/chardata/`（9574 字 / 32MB，见 §2.8）。
+| 依赖 | 协议/形态 | 可用性假设 | 风险归属 |
+|---|---|---|---|
+| 小智官方服务端镜像 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest` | Docker 容器（引擎腿运行时） | 镜像由官方演进；**镜像升级 = engine-patch 漂移风险** | 部署副本漂移治理（ARQ-260907-engine-deploy-patch-drift，§8） |
+| 阿里云 ASR（Qwen3-ASR-Flash，DashScope 流式） | 容器内 provider，凭据 env `DASHSCOPE_API_KEY` | 按量计费 + 免费额度；额度尽/流式不达标 → 切本地 SenseVoice（决策 19，配置级切换） | 出网路径①（NFR-SEC-2 记账） |
+| DeepSeek（deepseek-v4-flash） | OpenClaw 内部 provider | OpenClaw 侧配置，公网可达 | 出网路径② |
+| edge-tts（zh-CN-XiaoxiaoNeural） | 引擎容器内 provider | **微软非官方接口，有被封运维风险**，不作唯一依赖；被封 → 提醒降级「仅弹窗+提示音」仍必达（§6 降级） | 出网路径③ |
+| makemeahanzi 字库 | 静态数据（9574 字 / 32MB），已在服务器 `chardata/` + 预热 `char_cache.json` | 静态、无在线依赖 | 无 |
+| QQ（家长通道） | OpenClaw 对话通道 | 家长 QQ 在线 | 录入即时性（兜底 = 直改 MD 下次重算生效，S-F1.5） |
+| 阿里云成都 ECS（8.137.91.16） | 全部云端面的宿主 | 单机；实测余量约 1GB 内存 / 19G 磁盘（2026-09-02；ASR 云优先后本机只扛 front+引擎+TTS） | 单点；扩容 human 裁（§5.3） |
+
+### 1.3 范围声明（明确不在本系统内）
+
+- 家长管控与小程序家长端——**不做**（2026-09-14 裁，家长知情权 = OpenClaw 侧完整日志）；
+- 温湿度云端记录与家长侧视图——**不做**（仅本地直读上首页）；
+- 语音喊停（一开口即停）——**二期**（依赖本地 AEC+VAD 阈值实测，不挡 Phase 1；KEY 单击打断为 Phase 1 唯一打断手段）；
+- OTA——Phase 1 非目标（证书生命周期相位对账见 §8/决策 22）；
+- 机械内容过滤层（policy-as-code）——留作日后合规选项（决策 28）；
+- 多设备/多用户——MVP 单设备（全设备共享单 token，多设备时转每设备唯一并记账，决策 22）。
 
 ---
 
-## 2. 系统架构
+## 2. 架构总览（一页读懂全貌）
 
-### 2.1 顶层定位（已定 ✅：OpenClaw 编排层 + 板子终端）
+> ← 收编自旧 §2.1/§2.5 + 决策 1/2/3/9/18/20/22/23/24 原则抽取。
 
-> 这是与用户对齐后的核心定位，统领整个架构。
+### 2.1 顶层定位
 
-```
-【ESP32 板子】= 终端（"会说话的显示器"）
-   只负责：麦克风收音、扬声器放音、屏幕显示、按键交互
-   ❌ 不理解业务、❌ 不存数据、❌ 不做智能
+**设备 = 哑终端（「会说话的显示器」），OpenClaw = 编排大脑。** 设备只负责收音/放音/显示/按键，不理解业务、不存数据、不做智能；所有数据、逻辑、记忆在云端。设备与云端之间用**约定的数据格式**（契约 E1 display 块）通信——课表存 MD、故事存 MD、笔顺由云端按格式输出，设备拿来就画。
 
-【OpenClaw】= 编排层 + 主 Agent（大脑 + 记忆 + 工具）
-   负责：听懂(ASR)、理解意图(DeepSeek)、执行功能、记忆存储(MD 文件)、回复(TTS)
-   ✅ 所有数据、逻辑、记忆都在这里
-```
-
-**核心原则**：板子是个"哑终端"，一切智能与记忆在 OpenClaw。板子通过一套**约定的数据格式**接收"屏幕要显示什么"，只负责渲染。课表存成 MD、故事存成 MD、生字笔顺由 OpenClaw 按格式输出——板子拿来就画。
-
-### 2.2 服务端架构：流式网关 + OpenClaw（方向 B，2026-09-02 更新）
-
-> 关键发现（沿用）：OpenClaw 网关自带 **OpenAI 兼容 API（`POST /v1/chat/completions`，2026-09-02 实测支持 `stream:true` token 级流式）**，跑的是完整 agent（意图理解/多轮会话/读课表MD/存故事/查字/记忆/工具调用全包）。**业务网关、CRUD、意图层全部不需要自研**。
-> 方向更新（2026-09-02 human 裁定）：端云通信由「MVP 同步 HTTP」转为 **WebSocket + Opus 流式（方向 B）**，服务端借鉴官方开源小智服务端实现，不逐行自研流式编排。
+### 2.2 容器级总图（C4-L2，三腿拓扑）
 
 ```
-【ESP32 设备】(家里，小智 V2.1.0 基座原生 WS+Opus 管线)
-   │ 设备 token（弱权限，WS 握手 Bearer）
-   ▼ 公网 wss（自签证书；小智协议：hello 协商 + Opus 二进制帧 + JSON 消息）
-【流式网关】xinnan-tech/xiaozhi-esp32-server（开源 MIT，部署于 ECS，唯一公网入口）
-   上行：Opus 16kHz/60ms 帧 → VAD 切句 → ASR（阿里云云 ASR，云优先）
-   下行：LLM token 流 → 句级切分 → TTS（edge-tts）→ Opus 24kHz 帧
-   推送：display JSON 走 mcp kidpal/display 工具；提醒走 mcp kidpal/alert 工具（服务端定时推送）
-   │ loopback + 真 token（真 token 不出内网）
+【设备腿】ESP32-S3（小智 V2.1.0 基座固件）
+   │ wss://ECS:8000（TLS + 强制设备鉴权；小智协议：hello 协商 + Opus 帧 + JSON）
    ▼
-【OpenClaw 网关】大脑 —— OpenAI 兼容端点（type=openai 配置级接入；流式请求禁带 max_tokens，实测坑）
+【front 腿】server/gateway/front/front_app.py（唯一公网入口，TLS 终结 + 鉴权权威）
+   │ ① 设备 ws 双泵代理（上行透传 / 下行截获 display 侧通道）
+   │ ② plain ws ▶ loopback 127.0.0.1:8010
+   ▼
+【引擎腿】xiaozhi-esp32-server 官方容器（Docker host 网络 + engine-patch 部署副本补丁）
+   │  ASR（阿里云）· VAD 切句 · TTS（edge-tts）· Opus 下行
+   │  display fence 剥离（补丁状态机）→ 侧通道帧回 front
+   │  LLM type:openai ▼ loopback 127.0.0.1:18789
+【脑腿】OpenClaw（大脑 + 记忆 + 工具 + cron）
+   │  意图/多轮对话（每轮透传历史）/ 业务 MD 读写 / QQ 录入
+   │  提醒：cron 重算（openclaw-patch 确定性脚本）写 alerts/pending.json
+   ▼
+ front 每分钟轮询 pending.json → mcp kidpal/alert 推送设备
 ```
 
-**砍掉**（沿用）：自研业务网关、CRUD 接口、会话/意图层（DeepSeek+多轮对话自带）。
-**保留（极薄，形态变化）**：音频转换（ASR/TTS 走网关 provider 插件）+ 设备鉴权 + 提醒推送；「零自研业务逻辑」的薄桥红线不变，变的是承载形态（HTTP 四端点 → 小智协议剖面 + provider 配置 + 小段 push helper）。
-
-**迁移与既有资产**：
-- Pod S（260829-smoke-e2e）的同步 HTTP 链路（四端点 + WAV 上行/MP3 下行）为**架构验证台阶**（live 5/5 实证），方向 B 落地后退役；其安全发现（401 门穿透与修复、设备 token 纪律）沿用。
-- 服务端实现形态：官方开源服务端 **Python 版**（xinnan-tech/xiaozhi-esp32-server，2026-09-02 grilling 选定；Go 社区版弃选——社区小、provider 覆盖未验证；配置级接 OpenClaw/edge-tts，ASR 走阿里云云端）+ 两个小补丁（结构化下发 push helper、提醒定时推送，各约几十行）。
-- **语音喊停靠本地**（AEC+VAD 本地停播）的设计原则不变（2026-09-13 需求修订：喊停未随 MVP 交付、亦不纳入 Phase 1，归二期；原则适用于二期落地时）；WS 通道下云端取消生成（abort 消息）成为补充能力。
-
-**display 指令下发与格式校验**（自底座与 S-F4.1 机制段迁入）：
-- OpenClaw 回复末尾 ` ```display ` 块嵌入显示指令 JSON，经 `mcp` kidpal/display 工具下发，`view` 决定板子切哪页渲染（格式权威 = 契约 E1，见 §4）。
-- **格式不遵循兜底（V27 定）**：display 块解析失败 / view 不在白名单 / data 畸形 → 网关机械校验拒绝（白名单 + shape/大小上限，实现见 dev-loop handoff V27），脏 JSON 丢弃或降级友好提示，不入板盲渲染（2026-09-03 裁定）。
-- **答案超限处置（V32 定）**：「3 句以内」为生成端约束；约束失效时按有处理的失败模式截断/分屏提示，非仅记遵循度缺陷。
-- **思考安抚定时器**：LLM 首 token 超 4 秒未到即先推固定安抚句走 TTS（2026-09-02 grilling 定；需求侧 = requirements.md NFR-PERF-1）。
-- WS 断线 = 自动重连，屏幕显示不受影响（2026-09-02 第三轮 grilling 定）。
-
-### 2.3 技术基座：基于"小智"(XiaoZhi) V2.1.0 二次开发（已定 ✅）
-
-官方 Demo 已含**小智 V2.1.0 对本板的完整移植**（`03_XiaoZhi/XiaoZhiCode_V2.1.0`，板级目录 `main/boards/waveshare-s3-rlcd-4.2/`）。它是 ESP-IDF + C++ 大型工程，已集成：
-- **ESP-SR AFE 音频前端**：唤醒词(WakeNet) + **AEC 回声消除** + **VAD 语音活动检测**（一个引擎全包，跑在核1，内存放 PSRAM）
-- **全双工音频**：ES8311(放)+ES7210(录)，24kHz，`AUDIO_INPUT_REFERENCE=true`（AEC 用播放信号做参考）
-- **按键即对话**：BOOT 单击 = `ToggleChatState()` 切换对话状态（正是"按一下启动会话"模式；本项目改为 KEY 主司对话、BOOT 主司翻页，权威键位见 requirements.md §2.3）
-- RLCD 显示驱动（custom_lcd_display）、Wi-Fi、Opus 编解码、MCP 工具框架、LVGL
-
-**我们基于它改：换后端（接 Aliyun+OpenClaw）+ 重做 UI（3页结构；原 4 页——2026-09-14 requirements v1.36 撤 P4 查字常驻页）+ 加课表/故事/查字业务。** 不用从零整合音频/AEC/显示底层。
-
-### 2.4 端云职责划分（音频与会话链路：本地实时音频 + 云端语义）
-
-> 关键修正：全放云端会有"gap"——喊停/打断要求即时响应，等云端来不及。**实时的音频信号处理必须放本地 ESP-SR；理解语义才放云端。**（这正是小智架构）
+### 2.3 端云职责划分（实时本地 · 语义云端）
 
 | 能力 | 位置 | 说明 |
 |---|---|---|
-| **AEC 回声消除** | **本地**（ESP-SR AFE） | 边放音边录音消回声，实时性 |
-| **VAD 语音活动检测** | **本地**（ESP-SR AFE） | 检测孩子插话/喊停（喊停检测 = 二期），即时 |
-| **唤醒词检测** | **本地**（ESP-SR WakeNet） | Phase 1 唤醒入口（2026-09-13 升入；MVP 开发期间已实测「你好，小智」唤醒可用；硬件已支持双麦+ES7210，小智已集成 WakeNet；定制「你好，小伴」后续换模型） |
-| **喊停/打断检测** | **本地**（AEC+VAD 检测到人声即停播） | **二期**（2026-09-13 定为不纳入 Phase 1，原 MVP 计划必做、未交付；Phase 1 打断 = KEY 单击）；机制须即时，不等云端；依赖 AEC 效果，音量过大/混响强时可能误触发或漏触发，**需实测调阈值**（最大不确定点 → §6 开放问题） |
-| **会话管理**（按一下启动/超时关/结束关） | 本地状态机 | 基于小智 ToggleChatState 改。⚠️ 2026-09-14 对照 review 登记：设备侧 60s/120s 双阈值超时 timer 生产者未接线（`SESSION_TIMEOUT_60S` 仅有状态机逻辑与验收测试注入、活侧无生产者，真机 60 秒自动关闭从未发生）= Phase 1 修复项（requirements.md §2.1 ⚠️ 对账；录音态例外 = 120 秒无语音自动收尾归档，requirements v1.46） |
-| **音量语音调节**（Phase 1，requirements v1.44） | **云端判意图 + 本地执行** | 会话中说「声音大一点 / 声音小一点」→ ASR 成文后 OpenClaw 判意图 → control 动作下发板端调 ES8311 播放增益 + 语音简短确认（如「好，声音调大了」）；档位数量与步长归实现期。载体随契约门定（2026-09-14 对照 review 登记） |
-| **ASR（自由语音→文字）** | **云端**（阿里云云 ASR，音频流式上行、服务端 VAD 切句） | 开放语句本地识别不了；切句成文经 WS `stt` 消息回发设备、聆听态逐句回显（MVP 真机已实测，requirements §2.2 聆听中行） |
-| **意图理解/对话/纠正** | **云端**（OpenClaw+DeepSeek，`/v1/chat/completions`） | 重智能，含"别讲了/不对"等控制指令理解 |
-| **TTS 语音合成** | **云端**（edge-tts，网关 provider；语音随提醒推送下发，见 §2.9） | 晓晓/云希童声 |
-| **课表/故事/查字业务+存储** | **云端**（OpenClaw，MD 文件） | |
+| AEC 回声消除 / VAD / 唤醒词（WakeNet） | **本地**（ESP-SR AFE，跑核 1、内存放 PSRAM） | 实时性要求；唤醒 = 「你好，小智」双入口之一（Phase 1，MVP 期间已实测） |
+| 喊停/打断检测 | **本地**（AEC+VAD）【二期】 | Phase 1 打断 = KEY 单击 + `abort` 消息云端取消生成 |
+| 会话管理 | 本地状态机 | 基于小智 ToggleChatState 改；60s/120s 双阈值（§5.1 会话状态机） |
+| ASR / 意图理解 / TTS / 业务与存储 | **云端** | 阿里云 ASR → OpenClaw+DeepSeek → edge-tts；课表/故事/查字全在脑 |
+| display 校验权威 | **front** | 引擎侧剥离、front 侧机械校验后下发（「引擎为主剥离、front 为校验/relay 权威」分工） |
 
-### 2.5 架构图
+### 2.4 五条架构原则
 
-```
-┌────────────────────────────────────────────┐
-│  ESP32-S3 Client（基于小智改）                │
-│  本地 ESP-SR AFE：                           │
-│   唤醒词 + AEC回声消除 + VAD + 喊停检测(二期)    │
-│  会话状态机：按一下启动/超时关/结束关           │
-│  LVGL 黑白 UI（3页）+ Opus编解码              │
-│  RTC 走时 + SPIFFS 1bpp 美术资产 + Wi-Fi    │
-└──────────┬─────────────────────────────────┘
-           │ 公网 wss（Opus 音频 + JSON）
-           ▼
-┌──────────────────────────────────────────┐
-│  流式网关（开源小智服务端，公网入口）        │
-│   WS：Opus 帧 + stt/tts/mcp 消息           │
-│   设备鉴权 + ASR(云)/TTS 换码 + 提醒推送    │
-└──────────┬───────────────────────────────┘
-           │ loopback（真 token 不出内网）
-           ▼
-┌──────────────────────────────────────────┐
-│  OpenClaw 网关（大脑，阿里云成都ECS）       │
-│  POST /v1/chat/completions（完整agent）： │
-│   意图理解/多轮对话/纠正/结束判定           │
-│  业务：课表(schedule.md)/故事(stories/)/  │
-│        查字(makemeahanzi 笔顺JSON)         │
-│  ASR: 阿里云云 ASR  TTS: edge-tts          │
-└──────────────────────────────────────────┘
-```
-
-### 2.6 核心请求链路（以查字为例）
-
-```
-孩子按一下 KEY，或喊唤醒词「你好，小智」（Phase 1 双入口）→ 设备进入对话态，本地 AFE 开始聆听（本地 VAD 供喊停/插话检测用，喊停为二期）
-  → 孩子说"勇敢的勇怎么写" → Opus 帧持续流式上行 → 服务端 VAD 切句 → 云 ASR 转文字
-  → 网关转发 OpenClaw（OpenAI 兼容端点，流式）
-  → OpenClaw/DeepSeek 判意图=查字，提取"勇"，查 makemeahanzi 组笔顺 JSON
-  → LLM token 流→句级切分→edge-tts→下行 Opus 帧播放；display JSON 经 mcp kidpal/display 下发板子
-  → 板子：屏幕画"勇"+笔顺演示，扬声器播读音
-  → 若 AI 讲太长：Phase 1 = 按一下 KEY 立即停播（并发 `abort` 消息云端取消生成）；二期 = 语音喊停（本地 AEC+VAD 检测人声→立即停播→`abort`）
-```
-**设备固件保持"笨"而轻，所有 AI 能力都在服务端**，便于随时升级模型而不动终端。
-
-### 2.7 OpenClaw 功能清单（A1–E3）
-
-#### A. 语音基础能力（管道层）
-| # | 功能 | 说明 | 现状 |
-|---|---|---|---|
-| A1 | **ASR 语音识别** | 接收设备音频→转文字。**阿里云云 ASR 云优先**（Qwen3-ASR-Flash / Aliyun 流式；与 ECS 同区、按量计费+免费额度）；本地 SenseVoice（官方服务端 `fun_local`）兜底——额度用尽或隐私需求变化时扩容 ECS 配置级切换。不用 faster-whisper（权重源 huggingface.co 本机不可达、质量不及） | 云服务，部署期开通 |
-| A2 | **TTS 语音合成** | AI 回复文字→语音。edge-tts（晓晓/云希，童声友好，Pod S 已实证产出；**可替换 provider**——微软非官方接口有被封的运维风险，不作唯一依赖） | 已实证（Pod S） |
-| A3 | **意图理解** | DeepSeek 判断功能（课表/故事/查字/闲聊）+ 控制指令（"别讲了/拜拜/不对"）。走 `/v1/chat/completions` | OpenClaw 自带 |
-| A4 | **对话管理** | 多轮对话上下文，支持连续追问（连续性待部署首验，见 §6 开放问题 1） | OpenClaw 自带 |
-
-#### B. 课表/日程功能
-| # | 功能 | 说明 |
-|---|---|---|
-| B1 | **课表存储** | 用 MD 文件存（如 `schedule.md`），结构化：课程名/时间/周期(每周几)/地点/备注 |
-| B2 | **课表查询** | 孩子问"今天下午有什么课"→读 MD 按当前时间筛选→自然语言答复。⚠️ 2026-09-14 requirements v1.19：答复走**问答框**（共享底座播报态），**不嵌回课表页**（「帮我显示课表」才切页）；P2 课表页改**一周总览网格**（周一~周日 × 上午/下午/晚上，格内逐节列课程名）——网格内容由云端按课表 MD 三区块算好下发（「学校课程表」区块供给逐节科目名、每周固定课表供给课外课、一次性安排带 ※ 临时标记），display 响应块需承载整周网格数据 |
-| B3 | **日程提醒** | 按区块范围：「学校课程表」区块不提醒；「每周固定课表」区块（培训班，每周重复生成）+ 一次性安排提醒：三段阶梯（前晚带物/当日早上日程/事前 15 分钟）→ 服务端定时经 WS **推送 `mcp` kidpal/alert 工具**（不再轮询）；渲染即确认出队、过期静默作废。机制详见 §2.9；需求口径见 requirements.md S-F1.4 |
-| B4 | **课表录入** | 家长通过 QQ/直接改 MD 录入，OpenClaw 解析存入 schedule.md（通道口径 = requirements.md S-F1.5） |
-
-#### C. 故事记录功能（⚠️ 2026-09-14 requirements v1.26 改名：F2 =「星星记录」、P3 页名 =「星星记录本」，内容口径拓宽 = 孩子记下来的一切（故事/日记/碎碎念），「故事果」资产改名「星星」；数据面 `stories/` MD 与下列链路不变；2026-09-14 对照 review 新增 C5 删除链路（requirements v1.47/v1.48））
-| # | 功能 | 说明 |
-|---|---|---|
-| C1 | **故事保存** | 孩子讲完(ASR文字)→存成 MD（如 `stories/2026-08-27-小兔子.md`），含标题/日期/正文 |
-| C2 | **自动起标题** | DeepSeek 起标题（云端润色/小结已砍，见 requirements.md 已砍清单 S-F2.5） |
-| C3 | **故事列表** | 孩子问"我讲过的故事"→返回标题+日期列表给设备显示 |
-| C4 | **故事回放** | 孩子选某个→返回正文（设备显示文字，或 TTS 读出来） |
-| C5 | **故事删除**（2026-09-14 对照 review 登记） | P3 列表 BOOT 长按 → 删除确认子态（整屏覆盖弹窗，KEY 确认 / BOOT 取消 / 10 秒无操作静默取消，requirements v1.47/v1.48 WF-F2-05）→ 云端同步删 `stories/` 对应 MD。星星计数 = 现存篇数（板端按列表即得），盖章文案 N = 入册流水号只增不减（OpenClaw 侧记账）。链路载体（control 动作 or agent 对话意图）待定，随契约门定 |
-
-#### D. 查生字功能（核心：格式化输出）
-| # | 功能 | 说明 |
-|---|---|---|
-| D1 | **字库/笔顺数据** | OpenClaw 维护或调用汉字数据源，给出指定字的：字形、拼音、笔画数、部首、**笔顺(分步)**、释义、组词 |
-| D2 | **结构化输出** | 按约定格式返回，设备只渲染（格式见 D3/E1，契约面） |
-| D3 | **笔顺数据格式** | ✅ 已定稿（见 §2.8）：makemeahanzi，strokes SVG path + medians 骨架点 |
-
-#### E. 设备回传协议（OpenClaw → 板子 的数据格式）
-| # | 功能 | 说明 |
-|---|---|---|
-| E1 | **统一响应格式** | OpenClaw 在回复中嵌入"屏幕显示指令"（` ```display ` 块藏 JSON block），网关解析分发给设备（格式权威 = [契约](contracts/interface-contract.md)，见 §4） |
-| E2 | **显示指令** | 见 [docs/contracts/interface-contract.md](contracts/interface-contract.md)：`{view, data}`，view=char/schedule/story_list/story_text/text/home/control |
-| E3 | **提醒下发** | 服务端定时任务 → 经 WS 推送 `mcp` kidpal/alert 工具（设备侧 `state-reminder` 富弹窗为**新固件面**；小智原生 alert 通道弃用，见决策 23） |
-
-### 2.8 关键数据格式与笔顺渲染（D3 已定稿）
-
-数据源：**makemeahanzi**（HanziWriter 同款开源数据，9574 字 / 32MB，已下载到服务器 `kidpal/chardata/`）：
-- `dictionary.txt`：拼音、部首、结构（如 ⿱甬力）、笔画数、释义
-- `graphics.txt`：每笔一个 SVG path + medians 骨架点
-
-**单字 JSON（实测"勇"字约 2KB）**：
-```json
-{
-  "type": "char",
-  "char": "勇",
-  "pinyin": "yǒng",
-  "radical": "力",
-  "strokeCount": 9,
-  "strokes": ["M 547 677 Q ...", "..."],
-  "medians": [[[x, y], ...], ...],
-  "structure": "⿱甬力",
-  "meaning": "勇敢；有胆量"
-}
-```
-- `strokes`：9 条 SVG path（1024×1024 坐标系），用于逐笔填充显示字形。
-- `medians`：每笔骨架中线点序列，"笔尖"沿它移动做写字动画（HanziWriter 同机制）。
-
-**板子端渲染要点**（确定性，无技术风险）：
-- **坐标变换**：1024×1024 → 400×300。注意 makemeahanzi Y 轴朝下且字形偏上，需翻转+偏移。
-- **SVG path 解析**：路径含 M/Q/L/Z（二次贝塞尔）。板子端用轻量解析器把贝塞尔离散成点，LVGL `lv_canvas` 逐点绘制，或简化为折线逼近（1bpp 下视觉差异小）。
-- **1bpp 光栅化**：矢量轮廓 scanline 填充成黑白位图，逐笔叠加显示。
-
-> D3 字段级格式权威 = 契约（见 §4）；E1 统一响应格式 / B1 课表 MD 结构的草案同在契约层，随契约门（CDQ-260902 在办）确认。
-
-### 2.9 提醒调度与推送机制（云）
-
-> 自 spec S-F1.4 机制段迁入（需求口径——范围/三档时刻/过期不追催——在 requirements.md S-F1.4 补充规则；决策原文 = §5.1 决策 20/27）。
-
-- **脑算网关推**：OpenClaw cron（**2026-09-02 实测可行**：本机调度器在跑、已有 class-reminder 类任务运行记录；`cron --message` 可定时触发 agent 回合组三档文案）按 schedule.md 算好三档时刻、把每档提醒条目写入 `alerts/pending.json`（含 fire_at + 文案）；网关只做到点经 WS 推送（`mcp` kidpal/alert 工具）+ 标记已推送（重试计数用）。业务逻辑 100% 在脑，网关恒薄。
-- **排程机制（V16 定）**：重算粒度 = 预排——OpenClaw cron 定期（每 15 分钟）扫 schedule.md 重算三档（已过去的档位直接跳过）；QQ 录入路径（OpenClaw 自改写）写入后**即时**触发重算；直改 MD 路径等下一次定期扫描。pending.json 交接 = 同机共享文件，网关 push helper 每分钟轮询、到点触发推送。离线期间未送达档位何时作废 = 网关推送时点判定（到点设备离线即进入重推窗口，上限后静默作废）。
-- **幂等 id（V15 定）**：提醒实例 id = 确定性散列（schedule 条目 + 档位 + 事件日期），OpenClaw cron 首次生成、**跨重推/重算不变**（重算复用既有 id 不重生成）；字段级形状由契约门 §三 重写锁定。
-- **送达与出队（第二轮 grilling 定 + V14 解耦口径）**：**重试到确认**——网关推送后等渲染回执，超时 60 秒未收到即重推，单档上限 3 次，不做重连即重推，过期仍未送达 = 静默作废不补发。推送可达性依赖决策 21 常驻连接（2026-09-14 前引擎 120 秒无语音关闭曾反复断连制造推送黑洞，配置修正见决策 21 注记）。两个机制解耦（四态 received/queued/rendered/acked）：① **幂等去重 = 接收即入集**——设备接收到条目（入队前）即把 id 记入易失 known-id 集合，仅用于屏蔽重复入队，与渲染无关；② **回执出队 = 渲染即发**——回执仅在弹窗渲染完成时发出（渲染即确认、即出队）。同 id 重推两态分处：已渲染 → 补回回执（重复弹窗根除）；排队未渲染 → 去重不重复入队、不回执，等渲染后回。
-- **弹窗形态（V18 滞留处置）**：弹窗**无超时**、驻留到按键——KEY = 关闭回当前页，BOOT = 关闭回原页、**不翻页**（requirements v1.39 覆盖层 BOOT 隔离；本句原「照常翻页」为 v1.13 旧口径，v1.43 勘误同步）；弹窗期间新提醒到达按到达顺序**排队**，关掉当前自动弹下一个（未渲染队列不合并、不替换；队列深度天然有界 = 当天有效事项数）；**录音态例外（requirements v1.46，2026-09-14 对照 review 补）**：录音会话期间新提醒排队延后、录音会话结束立刻弹（防提醒 TTS 混进录音内容）；**已渲染但永未按键的滞留弹窗在事件时刻过后允许被后续提醒顶替显示**（早已出队，顶替非追加送达），不阻塞队列后续。
-- **主动播报（2026-09-02 human 定）**：提醒到达 = 提示音 + **TTS 读出文案** + 弹窗驻留三件套同时发生；alert 载荷带 `speech` 字段，网关合成 TTS 随推送一并下发音频。
-- **speech 合成解耦（V20 定）**：`speech` 于**排程时预合成**存缓存、到点随推送下发（消除到点实时合成的同步依赖）；合成失败/超时 → 降级「仅弹窗+提示音」继续投递、不阻塞；edge-tts 被封同理退化。**弹窗+提示音必达**，语音为可选增强。
-- **过期数据清理（V34 定）**：提醒档位过期作废见上；schedule.md 内过期一次性安排 = 查询时 OpenClaw 按当前时间过滤，**MVP 不做归档**（增长治理留后续，若启用则 owner = OpenClaw 侧 cron）。
-
-### 2.10 故事录音与归档链路
-
-> 自 spec S-F2.2 机制段迁入（2026-09-02 第三轮 grilling 定 + V31）；决策原文 = §5.1 决策 25。
-
-- **流式链路**：录音 = 小智 **manual 聆听模式**（音频边说边上行、直到 `StopListening`）＋ **网关累积**——开始信号走 E1 control 扩展动作 `start_recording`（OpenClaw 判「我要讲故事」意图后下发，网关解析 display 块时同步切该会话为累积态、**不按句切分送对话**，设备切 REC 录音演出）；停录后网关把累积转写整段送 OpenClaw 归档（起标题/盖章）。闲聊（VAD 自动断句逐句进对话）与录故事（累积到停）两条聆听语义正式分流。**契约变更**：E1 control 动作表新增 `start_recording`（随契约门重写一并过，见 §4 在办）。⚠️ 2026-09-14 requirements v1.32 扩展：累积态进入时机新增**P3 会话上下文信号**——设备在星星记录本按 KEY 发起会话时，须把「会话发起自 P3」上下文告知云端，网关**会话建立即切累积态**（不等触发词意图判定；该会话一刀切纯记录，收尾 = 「我说完了/讲完啦」或再按 KEY）。信号载体（hello 消息扩展 or 会话首帧元数据）待定，随 `start_recording` 契约变更一并过契约门。
-- **误判兜底与回滚（human 2026-09-03 裁，V31 定；⚠️ 2026-09-14 requirements v1.47/v1.49 修订——按键语义随 §2.3 全矩阵更新，本条已按新口径改写）**：不加专用键、不投语音意图精判，走**显式回退路径**——录音中 KEY 长按~~取消~~（v1.47 改：KEY 长按 = 同短按**保存**，防长按误触毁稿；**丢弃移 BOOT 通道**，短/长/双击同义 = 丢弃退出回列表）、说「讲错啦」仍可取消（录音态语音通道保留）；触发句「我要讲故事」归闲聊缓冲、不归档；~~误收尾可撤销：停录后 10 秒内说「重录」重来~~（v1.49 撤——可恢复丢弃需板端保留已录缓存与恢复链路，先不加，误按风险由键帽提示 +「BOOT = 放弃」总纲承担）；漏判（真讲故事被判闲聊）由网关保留近 N 句转写、可经「刚才那段是故事」挽回。专用录音键列可选后置。
+1. **哑终端**：设备零业务、零存储、零智能（决策 1/24）；
+2. **唯一公网入口 = front**，引擎与 OpenClaw 不外露（18789 锁 loopback，决策 9/18/22）；
+3. **网关恒薄**：front 只做终结/鉴权/校验/relay/投递，业务逻辑 100% 在脑（决策 20「脑算网推」）；
+4. **实时本地 · 语义云端**：音频信号处理（AEC/VAD/唤醒）必须本地，语义才上云（决策 3）；
+5. **介质禁令**：板端非易失介质仅存设备凭证、预栅格化资产与字体、固件本体；业务/身份/事项状态只驻 RAM（决策 24）。
 
 ---
 
-## 3. UI 实现策略
+## 3. 架构目标与约束
 
-### 3.1 双层方案：LVGL 原生骨架 + 预栅格化 1bpp 美术资产
+> ← 收编自旧 §1.1 关键约束 + 决策 7/8/10/16/19/28；假设清单为本轮新增。
 
-UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方案：页面布局与动态文本走 LVGL 控件，吉祥物/手绘框/涂鸦等美术元素离线从设计稿 SVG 栅格化为 1bpp 资产经 SPIFFS 加载（与字体 .bin 同管道）。模拟器与固件 LVGL 版本必须对齐（当前锁 9.3.x）。完整可行性矩阵与资产管线见 [ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。
+### 3.1 质量属性目标（可验证表述；阈值权威 = requirements.md §5）
 
-各页（首页/课表/记录本）布局、提醒弹窗、查字窗、长文滚动等渲染均走本节 LVGL 控件面；页面结构与键位的产品定义见 requirements.md §2。字体类需求（requirements.md §4）的技术支撑 = 本节资产管道（`lv_font_conv` → SPIFFS `.bin`）。
+- **不冷场**：孩子说完到设备开口，等待超 4 秒先播安抚句（NFR-PERF-1）；
+- **查字延迟**：问「X 怎么写」到笔顺演示开始目标 5 秒档（NFR-PERF-2；【修复项】实测冷启动约 109 秒，见 §8）；
+- **传输安全**：公网入口强制鉴权，不留 validation-mode 后门；wss + 自签长期证书（NFR-SEC-1）；
+- **儿童数据出网**：三条路径（音频→阿里云 / 转写→DeepSeek / 回复→edge-tts）human 已记账接受（NFR-SEC-2）；
+- **离线边界**：断网仅本地时间/温湿度/电量，不缓存任何事项（NFR-OFF-1）；
+- **内容安全**：答案口语化、3 句以内、适合 8–12 岁（生成端 system prompt 约束 + 失效截断兜底，NFR-SAFE-1）；
+- **1bpp CJK 可读性**：16px 以下真机可读性下限未实测（NFR-READ-1，ARQ-260831-small-cjk-1bpp-readability）。
 
-**语音轮演出**（需求侧现存四态：聆听/思考/播报/提醒；**低电演出 2026-09-13 已砍**，`KVST_SCENE_LOWBATT` 场景码留在冻结闭集内不再驱动、数值不得偏移，低电信号只剩首页辅助条电池图标每秒闪）：场景码与内容映射已冻结并验收（`kidpal_voice_states`，场景→姿态/气泡/键帽条单源），但**「状态 → 渲染」接线不全 = Phase 1 修复项**——活侧 `LcdDisplay::SetStatus` 仅映射 LISTENING/SPEAKING/STANDBY 三态，`KVST_SCENE_THINK` 与 `KVST_SCENE_LOWBATT` 均零调用者、`lang_config` 无 thinking 状态文案，且小智 DeviceState 枚举本无 thinking 态；会话状态机虽有 `SES_STATE_THINKING`（边 = `LISTENING --UTT_START--> THINKING`）但未接渲染路径。故思考页真机不弹。需求侧已定进入时机 = **孩子说完这一句**（切句完成/上行结束，requirements.md §2.2 思考中行），与现有 `UTT_START`（开口）边语义不一致，接线时一并对齐。版式通则（2026-09-14 requirements v1.24）：**聆听/思考/播报/提醒四态同一版式骨架 = 左小伴（各态 pose）· 右内容区**（WF-B-01~04），渲染面可按一个参数化模板实现四态，不为单一态做特别设计。
+### 3.2 硬约束
 
-**记录会话演出（P3 星星记录本，requirements v1.33 WF-F2-02/03）**：录音态（`p3-recording`）版式沿用上述四态通则（左小伴 pose-record · 右内容区 = REC 闪点 + 大时长 + 声波 + 引导语气泡 + 整段回显区）；盖章演出（`p3-stamp-frame` + `comp-stamp`）为例外构图 = 全屏定格居中（-8° 微倾、0.8 秒，几何冻结）。两者 MVP 均已实现且验收（`story_page.c` 录音/阅读/盖章页面态、pose-jump 位图已接；`mcp_server.cc` 归档幂等触发盖章）。⚠️ **改名对账漂移 = Phase 1 dev 修复项（v1.33 requirements F2 登记，需求先行、代码后改）**：① `story_page.c` 盖章文案 `KSTORY_STAMP_FMT` 仍为「故事徽章·第 %d 颗已入册！」，应为「星星徽章」（v1.26）；② P3 列表仍渲染页名标题「我的故事」，应为页内无标题、星星计数即页身份（v1.27）；③ 常驻语音入口提示仍只有「我要讲故事」第一指令，应补「帮我记下来」（v1.26）；④ 列表选中行仍反白，应为带边框（v1.31 真机反馈）。冻结验收 needle（`story_p3.acceptance.c` 逐字钉旧文案）须随文案一并更新——改文案不是改逻辑，但 needle 不更新会红。
+- 屏幕 400×300、1bpp 纯黑白无灰度、反射式无背光（暗处不可见）、刷新快（~45-70 FPS，可动画/滚动/笔顺演示）、ST7305 局部窗口更新可优化功耗；
+- 可用功能键 = KEY（GPIO18）+ BOOT（GPIO0）两个；PWR 为硬件电源电路键、固件不可读；multi_button 支持单击/双击/长按；
+- 18650 便携电池为主，唤醒待机功耗实测挂 Phase 1（决策 10）；
+- 实时音频处理必须本地（ESP-SR），不等云端（§2.4 原则 4）；
+- 模拟器与固件 LVGL 版本必须对齐（锁 9.3.x）。
 
-**查字窗（requirements v1.36：撤 P4 常驻页，char view 改会话内覆盖窗）**：宿主从「BOOT 翻页可达的常驻页」改为「display 块 `char` 驱动的覆盖窗」（驻留到按键或 5 分钟无操作自动关窗回原页（requirements v1.43 兜底，计时随任意按键重计）、KEY 短按重播/长按关窗、BOOT 关窗回原页**不翻页**（requirements v1.39 隔离；原「照常翻页」为旧口径，v1.43 勘误同步）、无页点），渲染资产**全复用**——笔顺引擎、米字格、D3 makemeahanzi 数据、逐笔动画均不变；页面注册 4 页→3 页、键帽页点 4→3。⚠️ 实现侧对账 = Phase 1 dev 修复项：UI 锚 `canvas-p4` → `char-window` 改名连带 P4 相关验收 needle 一并更新（需求侧已先行钉锚，见 requirements F3）；同会话后续 display 块（text 问答框等）替换查字窗 = 网关既有「每回复一块、新块换旧块」机制，无新增链路。会话语义（requirements v1.37）：char 回复的 TTS 播完即闭会话、**不回聆听态**（麦克风不常开）——由网关/设备在该回复播完即结束会话，具体载体（control 动作 or 会话侧关闭）随 E1 契约细化在 Phase 1 联调定；查字窗驻留不受会话关闭影响。TTS 只播引导语、不逐笔念笔名（D3 无笔名字段，`speech_hint` 承载）。⚠️ 对账（requirements v1.38，Phase 1 dev 修复项）：右栏进度珠砍除（`progress_label` 死成员 + 头注释虚标清理）、当前笔白衬边替代握笔小手占位（包 12 美术小手资产不再需要）、右栏部首行装配未上屏（CHR-A6 `card.radical` 有值、label 拼装漏）——白衬边画法 `charpage_render_frame` CURRENT 分支已实现。
+### 3.3 假设清单（假设被打破时的后果）
 
-**底部键帽条 `comp-keybar`（三槽：左 KEY 提示 · 中 3 页点 · 右 BOOT 提示；v1.36 页循环 4→3，页点随之 3 点）**：条体已常驻（`bottom_bar_` 挂在基座 screen、非任何单页所有，故覆盖层盖不掉；实测 min-height 48px，设计规格 38px），但**内部只实现了单个居中 label**（文案随态联动，冻结映射见 `kidpal_voice_states.c`）——**三槽布局、页点、BOOT 提示、`[KEY]`/`[BOOT]` 键帽图形均未实现 = Phase 1 修复项**。需求侧已定：条常驻、**中槽页点仅 P1–P3 主页面显示，覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点**而左右槽照常（requirements.md §2.2）；规格权威 = brand-spec「姿态规则」+ 设计稿 v3 §06。
-
-**按键路由现状（requirements v1.39 查证）**：BOOT 单击 = 板装配层**硬路由**（`InitializeButtons` → `key_route_global(BOOT, CLICK)` 恒产 `GLOBAL_ACT_PAGE_NEXT` → `kidpal_render_node_cycle_next()`，不看当前层）——覆盖层的「关闭」是翻页函数开头清 transient 层的副作用，正经裁决函数 `kidpal_reminder_key` 设备侧零调用（仅验收测试用）。需求侧 v1.39 已定**覆盖层内 BOOT = 关窗回原页不翻页**：落地 = dispatch 层按 `layer_top` 分流 + `cycle_next` 拆「清层/进页」耦合（层栈 `kidpal_layer_stack` 架构现成支持），连带 `schedule_reminder_b.acceptance.c` 十余处「BOOT 关闭照常翻页」钉点成批改。同族漂移（Phase 1 dev 修复项，对账清单见 requirements §2.3 ⚠️）：页序实现 `HOME→CHAR→SCHEDULE→STORY` ≠ spec P1→P2→P3；BOOT 双击接线已移除（spec 列表跳屏/阅读翻屏语义实现侧不存在）；P3 BOOT 短按族（光标/翻屏）未接（故事手势消费只有 BOOT 长按旧语义一条缝）；KEY 长按恒回首页（「返回上一层」未接）。
-
-**首页辅助条（2026-09-13 需求侧重排：📶 联网打头 + 各项图标前置，requirements.md WF-F1-01/S-F1.1）**：联网图标链路已实现（基座 `LvglDisplay::UpdateStatusBar` 每 10s 刷 `board.GetNetworkStateIcon()` → `network_label_`，真机可见；断网返回 `FONT_AWESOME_WIFI_SLASH` 斜杠图标、另有强/中/弱三档信号，需求侧 S-F1.1 AC4 已补写断网态）；**电量百分比链路未接线 = Phase 1 修复项**（详见 §1.1 电池行 ⚠️：硬件 ADC 在、固件三处未接，恒显示满电）。辅助条各小图标（📶/🌡/💧/🔋）走预栅格化 1bpp 资产或 FontAwesome 图标字体，归设计稿重做时定。
+| 假设 | 被打破时 |
+|---|---|
+| OpenClaw 输出遵循 display 契约格式 | 遵循度实测 12/12（validation-batch）；失效 → front `display_schema` 机械校验兜底：脏 JSON 丢弃/降级友好提示，不入板盲渲染（V27） |
+| edge-tts 可用 | 被封 → 提醒降级「仅弹窗+提示音」必达不阻塞（V20 不对称性）；问答侧换 provider（配置级） |
+| 云 ASR 配额充足且流式达标 | 额度尽/不达标 → 升级 ECS 切本地 SenseVoice（决策 19，无返工） |
+| 设备常驻在线（提醒推送可达） | 引擎侧两道超时已修正为 24h 兜底（决策 21）；残余 = 闲置约 3 分钟休眠断连 → `alert_skip reason=no_online_device`【产品决策待裁，§8】 |
+| 单设备单用户 | 多设备 → token 转每设备唯一并记账（决策 22 已预留） |
+| 引擎镜像版本与部署副本兼容 | 镜像升级 → bind-mount 补丁语义漂移；唯一机械报警锚 = 启动标记行（§5.3.3） |
 
 ---
 
-## 4. 契约层（Contracts）
+## 4. 质量属性 → 架构对策映射（需求↔架构接缝）
 
-数据格式与端云接口细节的单一事实源 = [docs/contracts/interface-contract.md](contracts/interface-contract.md)（契约门：architect-reviewer 四分类 + human 签字）。本节只做导航，不抄细节：
+> 本轮新增。每条 NFR 指到满足它的机制；机制详情在所指小节。
 
-- **笔顺 JSON（D3）**：已定稿（makemeahanzi，strokes SVG path + medians 骨架点）——数据源自测与板端渲染要点见 §2.8，字段格式权威在契约。
-- **display 统一响应块（E1）**：草案在契约——OpenClaw 回复末尾 ` ```display ` 块嵌入显示指令 JSON，网关切分两路（正文送 TTS、display JSON 下发板子）；`{view, data, speech_hint?}`，view = char/schedule/story_list/story_text/text/home/control。对 OpenClaw 的要求：system prompt 约束始终按此格式回复（格式遵循度需实测）；网关侧校验姿态见 §2.2（V27）。
-- **课表 MD 结构（B1）**：草案在契约——YAML frontmatter（时区/孩子名；原 `remind_before_min` 字段已被三档阶梯废止，删除/标废止待契约门裁）+ Markdown 表格三区块（每周固定课表 / 一次性安排 / 学校课程表）。
-- **shim API**：HTTP 四端点形态（/v1/asr /v1/chat /v1/tts /v1/alerts，WAV 上行/MP3 下行）为已验证的架构台阶（Pod S live 5/5），方向 B 落地后退役；契约面随契约门重写为小智协议剖面。
-- **在办（CDQ-260902，四题 2026-09-03 human 已批，待原子落地）**：契约按方向 B 重写为小智协议剖面节（hello/二进制帧/消息类型子集 + display/提醒经 mcp + 鉴权 + 出队/推送语义）；§三提醒轮询语义重写为推送语义；E1 control 动作表新增 `start_recording`；**另（2026-09-14 架构↔需求对照 review 登记三件契约影响，随契约门一并裁）**：① E1 schedule 视图需承载一周总览网格数据（requirements v1.19）；② E1 control 预计新增「故事删除」动作（§2.7 C5，requirements v1.47/v1.48）；③ E1 control 预计新增「音量调节」动作（§2.4，requirements v1.44）——载体与字段形状待契约门定。
-- 协议选型决策（方向 B、wss 自签证书、provider 约束「流式请求禁带 max_tokens」）= §5.1 决策 9/18/22。
+| NFR（requirements §5） | 架构对策 | 机制位置 |
+|---|---|---|
+| NFR-PERF-1 不冷场 ≤4s | front 安抚定时器 `SOOTHING_TIMEOUT_MS=4000`（LLM 首 token 超时先推固定安抚句）+ 设备状态机 `THINKING_TIMEOUT_4S`→SPEAKING（COMFORT 标记）【状态机接线 = 修复项】 | §5.1 front 组件 / §5.1 会话状态机 |
+| NFR-PERF-2 查字 5 秒档 | OpenClaw 侧 `warm_char_cache.py` 预热 9574 字全量 `char_cache.json` + char_stroke hold-and-replace 缓存；【修复项】live 冷启动实测 ~109s，流式/异步优化待做 | §5.1 OpenClaw 补丁组件 |
+| NFR-SEC-1 强制鉴权 + 传输安全 | front TLS 终结（自签 RSA-3072 20 年）+ `websocket.accept()` 之前强制 `gw_auth.authorize`（constant-time、token ≥22 字符、未设拒服务）+ OpenClaw 18789 锁 loopback + 引擎层 `auth: false`（鉴权唯一权威在 front，260911 裁） | §6.1 / §5.3.2 |
+| NFR-SEC-2 出网记账 | 三条出网路径（§1.2 表）+ 决策 19 记账 | §1.2 |
+| NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 | §6.2 / §5.4 |
+| NFR-SAFE-1 内容安全 | system prompt v4 三句纪律 + front 兜底文案与 V32 截断（超限按有处理的失败模式） | §5.1 front 组件 / §5.5.5 prompt 版本化 |
+| NFR-READ-1 1bpp CJK 下限 | 字体子集管线（`lv_font_conv` → SPIFFS `.bin`）+ 待实测（单独烧版对照） | §5.5.3 字体管线 |
 
 ---
 
-## 5. 技术决策
+## 5. 架构视图
 
-> 自 spec §7 verbatim 迁入；文内原「spec §x.y」自引用已机械改指本文件小节（语义不变），story 引用（S-Fx.y）指 requirements.md。
+> 每视图回答一个问题：逻辑=分几块各管什么；运行=场景怎么流；部署=跑在哪；数据=长什么样谁拥有；开发=怎么造怎么验。
 
-### 5.1 已定 ✅
+### 5.1 逻辑视图（组件与职责）
+
+> ← 收编自旧 §2.4/§2.6/§2.7/§2.8/§2.9/§2.10，按组件归属重组；实现现状锚来自 dev 包与代码调研（2026-09-14）。
+
+#### 5.1.1 设备端组件（firmware/main/）
+
+| 组件 | 文件 | 职责与现状 |
+|---|---|---|
+| 应用主循环 | `application.cc` | WS 协议装载、OnIncomingJson 分发（tts/stt/llm/mcp/system）、主线程 Schedule 队列、OTA、abort 发送 |
+| **会话状态机** | `session_state_machine.cc` | 6 态（IDLE/LISTENING/THINKING/SPEAKING/MANUAL_RECORDING/ENDED）×11 事件（KEY_SHORT_PRESS/BOOT_SHORT_PRESS/END_INTENT/SESSION_TIMEOUT_60S/UTT_START/REPLY_READY/SPEAK_DONE/ABORT_SPEECH/THINKING_TIMEOUT_4S/START_RECORDING/STOP_RECORDING），表驱动纯逻辑、头注释自证「绝无真实 timer」。⚠️【修复项】`ses_machine_dispatch` 生产代码零调用——真机 60 秒自动关闭从未发生，Phase 1 接 timer 生产者（requirements §2.1 对账；录音态例外 = 120s 自动收尾归档，requirements v1.46） |
+| 设备状态机 | `device_state_machine.cc` | 小智原生态机（idle/connecting/listening/speaking…），`SetStatus` 仅映射三态——思考态不渲染【修复项，见 §5.5.4】 |
+| **渲染节点层** | `display/kidpal_render_node.cc` | 归一屏收口（唯一顶层屏）、页循环枚举 `HOME→CHAR→SCHEDULE→STORY`（注意：与 spec P1→P2→P3 页序漂移，撤 P4 后改 3 页【修复项】）、`cycle_next()` |
+| **层栈** | `display/kidpal_layer.c` | 前台层栈单一权威：CHAT(1 常驻非栈)/LOCAL_PAGE(2)/VOICE(3)/SERVER_PAGE(4)/REMINDER(5)/PROVISION(6)，数值大者置前；push/pop/top 纯逻辑 host 可测。覆盖层 BOOT 隔离、提醒最高层、查字窗均落在本层栈语义上【BOOT 不翻页 dispatch 分流 = 修复项】 |
+| 页面组件 | `home_p1.c` / `schedule_page.c` / `story_page.c` / `char_page.cc` / `reminder_page.c` | 各页渲染与页内输入消费；story_page 含列表/阅读/录音/盖章四态；reminder_page 含设备侧四态（RECEIVED/QUEUED/RENDERED/ACKED） |
+| view 路由 | `display/view_router.c` | 7 view 白名单路由（text/home/control/char/schedule/story_list/story_text），UNKNOWN 拒绝 |
+| 板级层 | `boards/waveshare-s3-rlcd-4.2/` | CustomBoard 初始化序（I2C→codec→传感器→按键→LCD→art→渲染节点）；`custom_lcd_display.cc` 私有 RLCD 1bpp 驱动（非 esp_lcd 组件）；ADC 电池死成员【修复项：三处未接线，恒显满电】 |
+| 按键路由 | `key_gesture_parser.cc` + 板装配层 | 每键一个 parser 实例；dispatch 落在 iot_button 回调经 `key_route_global` **硬路由**产 GLOBAL_ACT_*（KEY CLICK=SESSION_TOGGLE / KEY LONG=HOME / BOOT CLICK=PAGE_NEXT / BOOT LONG=故事翻屏特例）。⚠️【修复项】全局硬路由不看当前层——「覆盖层 BOOT 不翻页」「KEY 长按返回上一层」「单双击消歧」等 Phase 1 键位改造落点（requirements §2.3 ⚠️ 对账） |
+| 音频链路 | `audio/`（audio_service / codecs/box_audio_codec / processors/afe_audio_processor / wake_words/afe_wake_word / opus_*） | ES8311(出)+ES7210(入) 24kHz、AEC 参考信号、esp-sr ~2.2（AFE/WakeNet/VAD）、Opus 16k 上行 / 24k 下行 |
+| 协议层 | `protocols/websocket_protocol.cc` | NVS namespace "websocket"（url/token/version）读用；hello 协商（features: aec?/mcp:true，audio_params opus/16k/60ms）；BinaryProtocol3 二进制帧 |
+| MCP 工具面 | `mcp_server.cc` | `kidpal/display`（view+data → 0-6 路由 → 渲染节点 begin/end + cache_* 供 cycle_next）；`kidpal/alert`（alert 解析 → 四态入队 → 渲染 → `EmitRenderReceipt` 回执）；通用工具（音量 `self.audio_speaker.set_volume` / 亮度等）【音量语音调节的板端执行面落点，requirements v1.44】 |
+| 资产 | `assets.cc` + `display/art_assets.c` | assets 分区 mmap + art SPIFFS 分区（`/art` VFS，KAP1 1bpp 美术），失败降级占位矩形 |
+
+#### 5.1.2 服务端组件（server/）
+
+| 组件 | 文件 | 职责与现状 |
+|---|---|---|
+| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、故事接线（stt 帧喂累积 / listen-stop 归档下发）、提醒轮询循环 |
+| 鉴权 | `gateway/auth.py` | `authorize` 纯函数 + `secrets.compare_digest` 常时比较 + `TOKEN_MIN_CHARS=22`；token 来自 env，未设 = 拒绝服务，无 validation-mode 后门 |
+| display 校验 | `gateway/display_schema.py` | 7 view 白名单 + `MAX_DATA_BYTES=65536` + control 动作分表（拒转 `end_session`；放行 `stop_speaking`/`start_recording`）——display 契约的机械执行点（V27） |
+| mcp relay | `gateway/mcp_relay.py` | display/提醒统一 JSON-RPC `tools/call`（kidpal/display、kidpal/alert）；数字 id（时间戳+单调序号）；渲染回执消费 |
+| 兜底 | `gateway/fallback.py` | 4s 安抚定时器、错误兜底文案、V32 截断 |
+| provider 适配 | `gateway/provider.py` | OpenClaw/ASR/TTS 配置承载；`FEATURE_STREAMING_FORBIDS_MAX_TOKENS=true`（决策 18 硬约束） |
+| 课表解析 | `gateway/schedule.py` | B1 三区块 MD 纯解析（`parse_schedule_md`/`items_for_date`/`group_upcoming` 分组）——**唯一解析器**，openclaw-patch 复用不自建第二套 |
+| 故事归档 | `gateway/story.py` | `archive_story` 落盘 `<stories_dir>/<id>.md`（哨兵头 + kidpal-id/date/title）；story_text 最小三键下发 |
+| 提醒投递 | `gateway/reminders.py` | AlertDispatcher：每分钟轮询 pending.json → 到点推送 → 60s 超时重推 ×3 → 过期作废；`MAX_PENDING=64/MAX_TRACKED=256` |
+| **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚** |
+| **OpenClaw 侧补丁** | `server/deploy/openclaw-patch/` | 提醒生产侧混合分层（ADR-002）：`reminder_schedule_lib.py` 确定性脚本（三档算术 20:30/07:45/前 15min + 幂等 id 确定性散列 ≤40 字符 + `pending.json` 原子写 + 坏输入降级）；语义判断 = agent 回合产 `semantic.json`（缺/坏降级机械兜底文案）；`char_stroke_lib.py` + `warm_char_cache.py`（9574 字缓存）；`make_openclaw_patch.py`（OpenClaw dist hold-and-replace 补丁，drift-guard） |
+| OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/记忆/工具/QQ 录入）；system prompt 版本化 v4（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
+| shim（已退役） | `server/shim.py` | HTTP 四端点台阶，头部 ARCHIVED（2026-09-05 退役）；`kidpal-shim.service` 为历史单，ECS 侧停服 + 8080 安全组关闭待清【遗留待办】 |
+
+#### 5.1.3 组件依赖方向
+
+设备协议层 ⇄ front（唯一对外面）；front → 引擎（明文 ws）→ OpenClaw（OpenAI 兼容）；front ↔ 提醒交接目录（pending.json/semantic.json）；openclaw-patch 脚本 ← 复用 gateway/schedule.py 解析器（单源）；设备渲染层 ← MCP 工具面注入（view 路由单向）。
+
+### 5.2 运行视图（关键场景端到端）
+
+> ← 收编自旧 §2.6 一条扩为五条。证据状态（缺口详见 §8.1）：① 开机常显 live 实证；② 语音问答 live 全通；③ 查字 host 已验、live 链路当前不可跑（Phase 1 阶段二首项）；④ 记录归档 host 验收过、live 面部分在办；⑤ 提醒 live L3 投递绿、L4 渲染回执留红。
+
+**① 开机与常显**：上电 → WiFi（NVS 凭据 / 配网）→ WS 建连（front TLS + 鉴权）→ hello 协商 → 常显 P1 首页。「接下来」刷新三触发 = WS 连接建立 + 每日 0:00 跨天 + 新建日程后即时推（决策 26；producer = QQ 录入路径 OpenClaw 自改写即时重算+推送，直改 MD 靠连接/跨天兜底）。
+
+**② 语音问答**：KEY 单击或喊「你好，小智」→ hello → Opus 16k 帧流式上行 → 引擎 VAD 切句 → 云 ASR → `stt` 消息回发（聆听态逐句回显）→ OpenClaw（每轮透传历史）流式回复 → 引擎 TTS delta 流上 **fence 剥离状态机**：闭块瞬间同步发侧通道帧；正文送 TTS → Opus 24k 下行播报；front 截获侧通道帧 → `display_schema` 校验 → 逐块 mcp `kidpal/display` 下发 → 设备渲染。播报中 KEY 单击 = 停播 + `abort` 云端取消生成（Phase 1 唯一打断手段）。
+
+**③ 查字**：同 ② 前半；OpenClaw 判查字意图 → `char_stroke_lib` 从 9574 字 `char_cache.json` hold-and-replace 组 D3 笔顺 JSON（不逐笔念笔名，`speech_hint` 承载引导语）→ `view=char` 覆盖窗（驻留到按键或 5 分钟无操作；KEY 短按重播/长按关窗；BOOT 关窗回原页不翻页；播完会话即结束不回聆听态——requirements v1.36/v1.37/v1.43 口径）。
+
+**④ 记录归档**：触发词（「我要讲故事」/「帮我记下来」）或 P3 会话上下文信号（设备告知「会话发起自 P3」，网关会话建立即切累积态——requirements v1.32 扩展；信号载体随契约定）→ 引擎 manual 聆听 + front 旁路累积（stt 帧喂入，AI 不逐句回复）→ 收尾（「我说完了/讲完啦」/再按 KEY / 120s 超时自动收尾归档）→ `story.py` 归档 + 起标题（模型一回合只起 ≤12 字 title）→ `story_text` 下发渲染 + 盖章演出（N = 入册流水号只增不减）。误判兜底见 §10 决策 25 与 requirements v1.47/v1.49 修订。
+
+**⑤ 提醒推送**：OpenClaw cron 每 15 分钟跑 `reminder_schedule_lib.py` 重算三档（QQ 录入后即时再跑）→ `pending.json` 原子写 → front 每分钟轮询 → AlertDispatcher 到点推送 `mcp kidpal/alert`（载荷带 speech 字段）→ 设备四态入队 → 渲染即回执（出队依据；同 id 接收即入集去重）→ 语音出音 = front 注入 `{"type":"kidpal_speak"}` → 引擎认领转调既有 `speak_txt`（edge-tts + Opus 下行链，ADR-003；不自建合成/不注入二进制音频帧）。超时 60s 重推 ×3，过期作废；录音态期间提醒排队延后（requirements v1.46）。
+
+### 5.3 部署视图（跑在哪、怎么运维）
+
+> ← 收编自旧 §1.1/§1.2 + server/deploy/README 与 260903-gateway-directionB / 260911-ecs-deploy-convergence 实证。
+
+#### 5.3.1 设备节点（ESP32-S3-RLCD-4.2 硬件）
+
+| 模块 | 型号/配置 | 说明 |
+|---|---|---|
+| 主控 | ESP32-S3-WROOM-1-N16R8（双核 240MHz） | Wi-Fi + BLE5，16MB Flash + 8MB PSRAM |
+| 屏幕 | 4.2" RLCD 反射式，300×400 竖版（固件按 400×300 横用），1bpp | SPI 接口；无背光靠环境光；一帧 15KB；驱动 IC 口径 ST7305（官方 Demo 文档；固件为 custom 初始化序列、未硬编码型号），支持局部窗口更新 |
+| 按键 ×3 | KEY=GPIO18、BOOT=GPIO0、PWR=硬件电源键 | KEY/BOOT 已接线（multi_button 三手势）；PWR 长按关机/单击开机、固件不可读 |
+| 音频 | ES8311 codec（出）+ ES7210 ADC 双麦阵列（入） | AEC 用播放信号做参考；MX1.25 扬声器接口 |
+| RTC | PCF85063（I2C）+ 独立备用电池座 | 备用电池座**仅支持 PH1.0 可充电电池**（不可装纽扣锂原电池） |
+| 传感器 | SHTC3 温湿度（I2C） | 仅本地直读上首页（云端记录不做） |
+| 存储 | 16MB Flash 分区（assets/art 分区）+ Micro SD 槽 | **SD 槽固件未接入**（资产走内部 Flash SPIFFS art 分区）；I2C 四器件（ES8311/ES7210/RTC/SHTC3）共享总线 |
+| 电池 | 18650 + 充放电管理（CHG/WRN 指示灯） | ADC 测电量；⚠️【修复项】固件三处未接线（板类 ADC 死成员、无 GetBatteryLevel override、渲染无注入缝），真机恒显满电 |
+
+#### 5.3.2 云端拓扑（阿里云成都 ECS 8.137.91.16）
+
+| 面 | 承载 | 端口/边界 |
+|---|---|---|
+| 设备腿入口 | `kidpal-front.service`（uvicorn `front.front_app:app`） | **0.0.0.0:8000 TLS**（唯一公网入口；证书 `/opt/kidpal/xiaozhi-esp32-server/cert/server.{pem,key}`，自签 RSA-3072 notAfter 2046-08-30） |
+| 引擎腿 | `xiaozhi-container.service` → docker compose（`xiaozhi-esp32-server`，官方镜像 6.9GB，`network_mode: host`） | 自绑 `127.0.0.1:8010` 明文 ws（不外露）；`data/.config.yaml` overlay + models 卷；engine-patch 两文件 bind-mount 覆盖 `core/` |
+| 脑腿 | OpenClaw（宿主进程） | `18789` 锁 loopback（gateway.bind=loopback，部署期断言）；容器经真 loopback 访问 |
+| 交接目录 | `/opt/kidpal/alerts/`（pending.json + semantic.json）、`/opt/kidpal/stories/` | 同机文件交接，front 与 OpenClaw 共享 |
+| 配置与密钥 | `provider.config.yaml`（渲染源）→ `data/.config.yaml`（overlay 渲染产物）；`secrets.env` chmod 600（仓库只有 `.example`） | 引擎 `server.auth: false`（鉴权唯一权威在 front，260911 裁）；token ≥22 字符否则拒绝渲染 |
+| 历史单 | `xiaozhi-gateway.service`（legacy）、`kidpal-shim.service`（已退役） | shim 8080 已停；公网探针实证 8080 不可达、8000 唯一入口（260903 实证） |
+
+#### 5.3.3 运维面
+
+- **overlay 渲染**：`apply-xiaozhi-overlay.sh` 以 `provider.config.yaml` 为源渲染 `data/.config.yaml`（LLM type:openai→OpenClaw、TTS edge、ASR qwen3_asr_flash、禁 max_tokens、`server.ip=127.0.0.1/port=8010`）+ prompt 版本接线（PROMPT_SRC/DST）；
+- **部署后核验三件**：① `docker logs | grep "kidpal display-strip patch active"`（每次建连打一行；**缺失 = 补丁未生效**，fence 重新混入播报 + relay 断链）；② `docker inspect` 核 bind-mount 两映射在位；③ 端口探针（8000 可达 / 8010·18789·8080 不可达）；
+- **漂移告警语义**：镜像升级 → 部署副本（0.9.6 基线）可能与新引擎内部 API 不匹配（ARQ-260907-engine-deploy-patch-drift）；升级前先对上游 diff；
+- **证书**：`cert-renew.sh`（VALID_DAYS=7300，auto/renew/force 三模式）+ `cert-warn-expiry.sh`（WARN_DAYS=30，exit 0/1/2 可机判）；
+- **提醒 cron**：`openclaw cron`（kidpal-reminder-plan，venv 解释器载荷——系统 python 3.6.8 不兼容之坑已记录）；回滚 = live `.config.yaml` 时间戳备份 + `openclaw cron remove`；
+- **已知怪癖**：容器 healthcheck 恒 unhealthy（镜像内无 ss/netstat）；引擎健康以标记行 + 设备可建连为准。
+
+### 5.4 数据视图（谁拥有、存哪、活多久）
+
+> ← 收编自决策 13/24/26 + ADR-002 + 路径常量调研；格式权威全部指向 contracts/。
+
+| 数据 | 位置 | 写者（owner） | 生命周期 | 掉电语义 | 格式权威 |
+|---|---|---|---|---|---|
+| 课表 `schedule.md` | OpenClaw workspace `/root/.openclaw/workspace/kidpal/` | OpenClaw（QQ 录入改写）/ 家长直改 | 持久；过期一次性安排查询时过滤、不归档 | 云端持久 | 契约 B1 |
+| 故事 `stories/<id>.md` | `/opt/kidpal/stories/` | front `story.py` 归档 | 持久；删除 = 云端同步删 MD（C5，requirements v1.47）【链路载体待契约】 | 云端持久 | 契约 story_text |
+| 提醒 `alerts/pending.json` + `semantic.json` | `/opt/kidpal/alerts/` | 脚本（原子写）/ agent | 到点作废、过期不补发 | 云端可失（cron 重算再生） | §5.2 场景⑤ |
+| 字库 `chardata/` + `char_cache.json` | OpenClaw workspace | `warm_char_cache.py` 生成 | 静态 | 云端持久 | 契约 D3 |
+| 设备凭证（url/token/version） | 设备 NVS namespace "websocket" | 配网写入（token=24B CSPRNG） | 持久 | 掉电保持 | 介质禁令白名单（决策 24） |
+| 板端业务/状态（提醒 id 集合、渲染缓冲、层栈、会话态） | 设备 RAM | 固件 | 会话期 | **掉电即失、禁落非易失介质** | 决策 24 |
+| 1bpp 美术/字体/提示音 | 设备 art+assets 分区 | 资产管线（构建期） | 静态 | 随固件面 | §5.5.2 |
+| 对话历史（剥离前原文） | 引擎容器内存 | 引擎 | 连接期（跨 UI 会话累积——决策 21 连带，feature/bug 待 human 拍） | 掉电即失 | — |
+
+### 5.5 开发视图（怎么造、怎么验）
+
+#### 5.5.1 仓库结构与技术栈
+
+- `firmware/`：小智 V2.1.0 整树基座 + 板级 overlay（ESP-IDF + C++；esp-sr ~2.2、esp-opus-encoder ~2.4.1、LVGL 锁 9.3.x）。注：官方 Demo 的 Arduino + U8g2 路线**未被采用**（旧文档 §1.1 的 U8g2 版本约束属该路线遗留）；
+- `server/`：gateway（front 冻结模块）/ deploy（部署面）/ acceptance（~183 验收函数，offline+live 两面）/ shim.py（已退役）；
+- `tools/`：LVGL 模拟器 + 资产管线（不入图索引，查询降级 Grep）；
+- `docs/`（spec 面 + contracts + notes）、`changes/`（治理/开发证据）、`.claude/`（治理机制）。
+
+#### 5.5.2 资产管线（预栅格化 1bpp）
+
+设计稿 HTML 内嵌 SVG 为唯一母版 → 脚本抽取 symbol → 栅格化 → **RGB565 `.bin`**（I1 索引仅留真机 bin-decoder 优化项，可回收 16 倍空间）→ SPIFFS art 分区；模拟器同批资产双端渲染。管线三坑已修：透明 SVG 先 flatten(#ffffff) 再阈值化；libvips 不解析多层 `<use href>`；`<text>` 依赖运行环境字体（真机须以实际字体子集重烘）。⚠️ 预算口径 = 策略笔记实测于 art 切分前（47 资产 599,698B + P2–P4 估算 ≈3.85MB vs assets 8MB、余量 54.1%）；现分区为 art 512KB（KAP1 美术）+ assets 8MB 双分区（§5.5.6），47 项资产的实际落位与 P4 笔顺字盘（~3.1MB）装载目标须在 Phase 1 资产装载时复核。PSRAM 预算：LVGL draw buffer 240KB + RLCD 帧缓冲 15KB + 两张 LUT 360KB；ThorVG sdkconfig 默认关——预栅格化是复杂图形唯一低成本路径。详见 [notes/ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。
+
+#### 5.5.3 字体管线
+
+模拟器 FreeType 快速迭代 / 真机 `lv_font_conv` 生成 PuHui 子集 `.bin`（font_body/font_num_baloo/font_title_zcool 三族，SPIFFS 加载）；大号数字与图案化文字首选 imgfont 或预渲染位图（原生标签行距/基线对齐是高频痛点）；16px 以下 CJK 1bpp 真机可读性未实测（NFR-READ-1，单独烧版对照）。
+
+#### 5.5.4 UI 演出与现状
+
+- **语音轮四态**（聆听/思考/播报/提醒）版式骨架 = 左小伴（各态 pose）· 右内容区（requirements v1.24）；场景码与内容映射已冻结（`kidpal_voice_states`）；⚠️【修复项】活侧 `SetStatus` 仅映射三态、思考态零调用者——真机思考页不弹，Phase 1 接线（进入时机 = 孩子说完这一句，与现有 `UTT_START` 开口边对齐）；
+- **记录会话演出**（`p3-recording`/`p3-stamp-frame`+`comp-stamp`）MVP 已实现验收；⚠️ 改名对账四项【修复项】：盖章文案「故事徽章→星星徽章」/ 页名「我的故事」应删 / 提示缺「帮我记下来」/ 选中反白应改边框（冻结验收 needle 随文案一并更新）；
+- **查字窗**（v1.36 改窗）：宿主常驻页改覆盖窗，渲染资产全复用；【修复项】`canvas-p4`→`char-window` 锚改名、进度珠死成员清理、当前笔白衬边已实现（小手占位删）、部首行装配未上屏须补；
+- **底部键帽条**：条体已常驻（基座 screen 所有），内部仅单个居中 label——三槽布局/页点/键帽图形【修复项】；
+- **首页辅助条**：联网图标链路已实现（断网 WiFi-slash + 强/中/弱三档）；电量【修复项】见 §5.3.1。
+
+#### 5.5.5 OpenClaw system prompt 版本化
+
+声明件 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（无扩展名）显式声明当前接线版；**现状 = v4**（v1 基座 69 行 → v2 +课表 producer+char C1 114 行 → v3 +故事 producer 160 行 → v4 +F4 故事分工修正）。历史文件不改、共存可 diff。**接线不变式：渲染面（overlay PROMPT_SRC）== 声明面（provider.config 三键）== 被测面**（ADR-001：守卫从结构化指向解析当前版，禁版本字面断言）。已知漂移：`server/deploy/README.md` 仍写 v3【文档债】；live 探针个别字面钉旧版（ARQ-260908-versioned-guard-version-literal-coupling）。
+
+#### 5.5.6 构建与测试基建
+
+- 构建：ESP-IDF（`idf_run.py` 包装，WSL CRLF 坑见 kidpal-idf-env skill）；资产构建 `scripts/build_default_assets.py` → assets.bin；分区表 `partitions/v2/16m.csv`（**art SPIFFS 512KB @0x780000** 承载 KAP1 美术，包 9b ART-E2 从 ota_1 尾部切出；**assets SPIFFS 8MB @0x800000** 承载字体/音效，行冻结保 canary）；
+- 测试四面：① 固件 host 验收（`test/*.acceptance.c`，含冻结 needle）；② server 验收 ~183 函数（docstring 内 frozen offline contract；live 面 `@pytest.mark.live` 默认 skip、`RUN_LIVE=1` 显式放行——G3 纪律）；③ 模拟器（LVGL 9.3 对齐 + 1bpp 阈值化快照自查 `kidpal_snapshot`，验收图一律阈值化 PNG）；④ live 冒烟（真机轮，捕获纪律见 kidpal-live-smoke-debug skill：wire capture 因 permessage-deflate 失败，用设备/引擎日志替代）；
+- 结构化日志：front `gateway/log.py`（K6）+ correlationId 纪律；三日志源关联 = 设备串口 × front systemd × 引擎 docker logs。
+
+---
+
+## 6. 横切机制（贯穿所有模块的那几件事）
+
+> ← 从决策 21/22/24/26/27/28 抽机制本体；决策条目本身在 §10。
+
+### 6.1 鉴权与传输安全
+**在哪侧：front（唯一权威）。** TLS 终结（自签 RSA-3072，≥10 年门槛、实配 20 年）+ HTTP upgrade 层 accept 之前强制 token（常时比较、≥22 字符、未设拒服务、无 validation-mode 后门）+ OpenClaw 18789 锁 loopback（部署期断言）。引擎层 `auth: false`——HMAC 与小智引擎不相容，260911 裁静态 token 强制点唯一钉在 front。设备 token = 全设备共享单 token（MVP 单设备；已知取舍：无每设备身份、单点泄露危及全部）。CA 嵌入固件实现面 = dev-loop handoff V10；轮换脚本 + 到期告警在位（§5.3.3）。
+
+### 6.2 离线边界与介质禁令
+**在哪侧：设备（禁令）+ 云（真相源）。** 断网仅本地时间/温湿度/电量；无提醒、课表/查字/问答不可用；不缓存任何事项。板端非易失介质白名单 = 设备凭证（url/token/version）+ 预栅格化资产与字体 + 固件本体；一切业务/身份/事项状态只驻 RAM、掉电即失（决策 24）。
+
+### 6.3 错误处理与降级
+**原则：有处理的失败模式，不静默重试、不曝技术错误。** 云端任一环节失败 → 固定安抚句「网络出小差了，等一会儿再试试吧」+ text 视图结束当轮（决策 26）；display 脏块 → front 机械校验拒绝（丢弃或降级提示，不入板盲渲染，V27）；答案超限 → 截断/分屏（V32）；speech 合成失败 → 弹窗+提示音仍必达（V20/ADR-003 不对称必达）；fence 未闭合 → 裸载荷进 display 侧通道、绝不进 TTS（宁默不念 JSON）；art 挂载失败 → 占位矩形降级。
+
+### 6.4 断线重连与常驻连接
+**在哪侧：设备（重连）+ 引擎配置（不再主动断）。** 设备开机即连、断线自动重连、屏幕显示不受影响。引擎侧两道超时已配置修正为 24h 纯兜底 + 告别语关闭（`close_connection_no_voice_time: 86400` + `end_prompt.enable: false`，决策 21——此前 120s 无语音断连制造推送黑洞）。已知残余：设备闲置约 3 分钟休眠断 WS → `alert_skip reason=no_online_device`【产品决策待裁，§8】。
+
+### 6.5 幂等与一致性
+**在哪侧：提醒链路两端。** 幂等 id = 确定性散列（schedule 条目+档位+事件日期），脚本首次生成、跨重推/重算不变（ADR-002）；设备接收即入易失 known-id 集合（仅防重复入队）；回执出队 = 渲染即发（渲染即确认）；同 id 重推两态分处（已渲染→补回回执；排队未渲染→去重等渲染）；pending.json 临时文件原子写。重试 = 60s 超时重推、单档上限 3、不做重连即重推、过期静默作废。
+
+### 6.6 可观测性
+三日志源：设备串口（COM5，被动 watch / 复位捕获纪律）、front systemd 日志（K6 结构化 + correlationId）、引擎 docker logs（补丁标记行 = 部署面报警锚）。关联法与已知坑（wire capture 因 permessage-deflate 不可用）见 kidpal-live-smoke-debug / kidpal-serial-monitor skills。派发观测缺口（dispatch-stamp 无模型/token 分项）= ARQ-260909。
+
+---
+
+## 7. 接口与契约（指针，不抄细节）
+
+> ← 收编自旧 §4；CDQ-260902 已 CLOSED（2026-09-03 human 批四题，契约重写原子落地），「在办」状态更新。
+
+数据格式与端云接口的单一事实源 = [docs/contracts/interface-contract.md](contracts/interface-contract.md)（契约门：architect-reviewer 四分类 + human 签字）：
+
+- **笔顺 JSON（D3）**：已定稿——makemeahanzi，strokes SVG path + medians 骨架点；数据源与板端渲染要点见 §5.1.1 查字组件与 [notes/](notes/)；
+- **display 统一响应块（E1）**：`{view, data, speech_hint?}`，7 view 白名单；引擎剥离 → front 校验（V27）→ mcp 下发；control 动作表已含 `start_recording`（CDQ-260902 落地）；
+- **课表 MD（B1）**：YAML frontmatter + 三区块表格；`remind_before_min` 已随三档阶梯废止；
+- **端云协议剖面**：hello / BinaryProtocol2/3 帧 / JSON 消息类型（stt/tts/llm/mcp/system）——契约已按方向 B 重写（CDQ-260902 CLOSED）；shim 四端点形态退役为已验证台阶；
+- **契约门在办**：CDQ-260913-spec-split-fallout（spec.md 归档断链 + 验收基线重建，HUMAN_APPROVED 在办）；另登记三件随下次契约门裁（2026-09-14 对照 review）：① E1 schedule 视图承载一周总览网格数据（requirements v1.19）；② 「故事删除」动作（requirements v1.47/v1.48，§5.4 数据视图）；③ 「音量调节」动作（requirements v1.44，§5.1.1 MCP 工具面）。
+
+---
+
+## 8. 风险·技术债·开放问题
+
+### 8.1 架构风险与技术债记账（ knowingly 欠下的）
+
+| # | 风险/债 | 影响 | 缓解/接受 | owner |
+|---|---|---|---|---|
+| 1 | 引擎部署副本补丁漂移（bind-mount 覆盖官方镜像 core/） | 镜像更新即丢补丁或语义不匹配 | 标记行机械报警锚 + 升级前对上游 diff；ARQ-260907-engine-deploy-patch-drift | dev-loop 运维面 |
+| 2 | live 五齿留红：L4 渲染回执未达（设备仅回 ack:false 受理帧，疑 `mcp_server.cc` 判定门未生效） | 提醒出队机制 live 不完整 | 已如案登记（260911 review-packet）；Phase 1 修复 | dev-loop |
+| 3 | 设备闲置 ~3 分钟休眠断连 → `alert_skip` | 提醒不可达窗口 | 常驻连接与休眠的取舍 = 产品决策待裁 | human |
+| 4 | 查字冷启动 ~109s（DeepSeek 侧生成慢） | NFR-PERF-2 黄灯 | char_cache 预热已缓解一部分；流式/异步优化 = Phase 1 修复优先项 | dev-loop |
+| 5 | live 查字链路当前不可跑（human 2026-09-13 口述） | S-F3.1/F3.2 可行性 🟡 | Phase 1 阶段二首项 | dev-loop |
+| 6 | F2 改名对账四项 + 键路由对账六项 + 电量 ADC 三处未接 + 思考态零调用（均【修复项】） | 文档↔代码漂移成面 | requirements §2.3/F2 ⚠️ 对账清单 + §5.5.4；随 Phase 1 各阶段接线 | dev-loop |
+| 7 | `server/deploy/README.md` prompt 现状仍写 v3（实为 v4） | 部署指引误导 | 本档已如实记 v4；README 待随下次部署批更新【文档债】 | dev-loop |
+| 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
+| 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（网关腿解耦方案二）留 Phase 1 | human |
+| 10 | 16px 以下 CJK 1bpp 可读性未实测 | 字号下限悬置 | 单独烧版对照（ARQ-260831-small-cjk-1bpp-readability） | 真机字体任务 |
+| 11 | shim 退役遗留：ECS 停服 + 8080 安全组未清 | 攻击面残留（探针已证不可达） | teardown 证据待补 | dev-loop |
+| 12 | 验收齿可合法弱于契约（同族 ≥6 包）+ 跨包行为无显式 owner | 齿绿而契约未兑现 | ARQ-260911-tooth-strength-below-contract / cross-package-behavior-owner-gap | architect |
+
+> 治理类 ARQ 全景（~30 条）见 [ARCH-REVIEW-QUEUE.md](ARCH-REVIEW-QUEUE.md)，本章只记架构相关面。
+
+### 8.2 开放问题
+
+1. ~~多轮会话连续性~~ **已定案（2026-09-11 V21 探针实证）**：stateless 不续、**每轮透传历史**续——承载方案关闭；剩余相位矛盾见 ARQ-260902-multiturn-continuity（session_id 语义与协议剖面承载定义随契约门 §四）。
+2. **AEC 实测调优**【二期】：喊停误触发/漏触发阈值（机制侧 §5.1.1 音频组件；需求侧 requirements §2.1）——2026-09-13 定不纳入 Phase 1 后不再挡路。
+3. **证书生命周期相位对账**：OTA vs 首期续证（ARQ-260902-cert-lifecycle-deadlock）——证书形态已定（≥10 年 + 轮换脚本 + 告警），human 已裁 accept-as-risk。
+
+---
+
+## 9. 演进路线（as-is → to-be）
+
+> 架构侧演进视角；开发推进顺序权威 = requirements.md §6（Phase 1 四阶段）。
+
+**as-is（MVP 已建基线，22 包 closed + happy-flow-host-capture 在办）**：方向 B 三腿拓扑 live 全通（listen→ASR→TTS→音频下发 0 断链）；shim 退役、front 唯一公网入口落地；引擎 fence 剥离补丁 + front 校验 relay live；提醒 cron→pending.json→推送链路 live（L3 绿、L4 回执留红）；四页旧形态渲染（HOME→CHAR→SCHEDULE→STORY）；prompt v4 版本化接线；证书/overlay/secrets/cron 运维面就位。
+
+**to-be（Phase 1 结构变更）**：① 键路由改造——dispatch 按 `layer_top` 分流 + `cycle_next` 拆「清层/进页」（BOOT 隔离、KEY 长按返回上一层、单双击消歧仅列表态）；② 60s/120s 双阈值 timer 生产者接线（会话状态机激活）；③ 思考态渲染接线；④ 撤 P4 常驻页 → 3 页循环 + `char-window` 覆盖窗；⑤ display 周网格数据（契约）；⑥ 新增 control 动作（故事删除/音量调节，随契约门）；⑦ L4 渲染回执修复 + 查字 live 链路修复。
+
+**二期触发条件**：语音喊停（AEC 阈值实测就绪时）、品牌唤醒词「你好，小伴」（WakeNet 模型替换）、OTA（证书相位对账先行）、机械内容过滤层（合规需要时）、多设备（token 形态切换）。**重构触发**：引擎镜像升级 = 补丁漂移核对；需求重基线 = portfolio 重切（committed 条款）。
+
+---
+
+## 10. 决策记录
+
+**2026-09-14 起，新架构决策一律登记 [ADR.md](ADR.md)（append-only，五件格式）；本节以下为 MVP 时代决策历史档，冻结不再新增。** 决策 20 的实施级修正见 ADR-002（提醒生产侧混合分层）与 ADR-003（出音链路借引擎既有音频链）；版本化制品接线不变式见 ADR-001（历史档正文保持原文，本档不内嵌 ADR 注记）。历史档内「本文件 §x.y」「§2.9 / §2.10 / §3.1」等自引用均指**迁移前旧版编号**，非本档现行编号（映射表见 [notes/arch-restructure-skeleton.md](notes/arch-restructure-skeleton.md)）。
 
 1. **顶层定位**：**OpenClaw 作编排层+主 Agent（大脑/记忆/工具），板子只作"会说话的显示器"终端**。所有数据/逻辑/记忆在 OpenClaw（课表存MD、故事存MD、笔顺由OpenClaw按格式输出）；板子只收音/放音/显示/按键。
 2. **技术路线**：**基于小智(XiaoZhi V2.1.0) 二次开发**（官方已移植本板，含 AFE唤醒+AEC+VAD、全双工音频、显示、Wi-Fi、Opus、LVGL）。换后端接 Aliyun+OpenClaw + 重做 UI + 加业务。
@@ -312,7 +399,7 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 11. **语言大脑**：OpenClaw + DeepSeek，意图理解、对话、任务分发、纠正/结束判定。
 12. **汉字笔顺**：✅ D3 格式定稿——makemeahanzi 数据源（已实测跑通），OpenClaw 组 JSON（strokes SVG path + medians 骨架点），板子只渲染（LVGL 绘制 + 逐笔动画）。⚠️ 2026-09-13 需求侧新增「每日一字」（P4 空态由设备主动出一个字教学，requirements.md S-F3.4）：选字来源与下发链路未定（挂 requirements.md §7 开放问题 5），笔顺数据格式不变（D3 沿用）。~~注记已消解（2026-09-14 requirements v1.36）~~：撤 P4 常驻页、查字改会话内专门窗口（`char` view 覆盖窗），每日一字随之砍除、开放问题 5 关闭——笔顺数据格式仍不变。
 13. **课表/故事存储**：OpenClaw 存 MD 文件；课表录入主路径为家长端。
-14. **页面结构**：**4 页循环**（首页/课表/故事/查字），BOOT 单击循环切换。⚠️ 2026-09-14 requirements v1.36：撤 P4 查字常驻页，页循环 4→3（首页/课表/星星记录本）——本条为历史口径，现状见 §3.1。
+14. **页面结构**：**4 页循环**（首页/课表/故事/查字），BOOT 单击循环切换。⚠️ 2026-09-14 requirements v1.36：撤 P4 查字常驻页，页循环 4→3（首页/课表/星星记录本）——本条为历史口径，现状见 §5.1.1（渲染节点层）。
 15. **首页内容**：时间+日期+温湿度+今日日程+电量（常显信息牌）。⚠️ 2026-09-13 requirements v1.4 重排：「接下来日程+提醒」为常显主体、环境信息退居辅助条——本条为历史口径，现状见 requirements.md S-F1.1。
 16. **屏幕**：ST7305 / 400×300 / 1bpp / 45-70FPS / 无前光。按键 ×3（KEY/BOOT/PWR）。
 17. **图形库**：**沿用小智自带 LVGL**（单色模式），笔顺用 `lv_canvas` 绘制。——美术元素（吉祥物/手绘框/涂鸦）不走运行时绘制，走预栅格化 1bpp 资产（本文件 §3.1）。
@@ -328,17 +415,8 @@ UI 实现采用「LVGL 原生骨架 + 预栅格化 1bpp 美术资产」双层方
 27. **提醒主动播报（2026-09-02 human 定）**：提醒到达 = 提示音 + TTS 读出文案 + 弹窗驻留三件套；alert 载荷带 `speech` 字段，网关合成 TTS 随推送下发——孩子不看屏也能听到。
 28. **通用问答（2026-09-02 human 定）**：新增 F4/S-F4.1——意图分类含闲聊/百科；答案纪律（口语化、3 句以内、儿童化）由 system prompt 钉死；显示 = **全文上屏滚动**（human 裁定，不走摘要方案）；字号下限待 1bpp 真机可读性实测（超限按可读字号、滚动承接）。「3 句以内」为生成端约束，**超限按有处理的失败模式**（网关截断/分屏）而非仅记遵循度缺陷（V32 定）。**内容安全姿态（human 2026-09-03 裁，V30 定）**：MVP 接受 system-prompt 级约束 + ACCEPT-AS-RISK 记账；明确排除「家长逐条审批」形态（第七人工门红线）；机械内容过滤层（policy-as-code）留作日后合规选项。
 
-### 5.2 待 brainstorm 项处置（自 spec §7「待 brainstorm」四条）
-
-1. **关键格式**：① 笔顺 D3 已定稿（§2.8）；② 统一响应 JSON（E1）、③ 课表 MD 结构（B1）草案 → 转契约门确认（CDQ-260902 在办，见 §4）。
-2. **离线降级**：✅ 已定（决策 24）。
-3. **家长端形态**：需求类——主通道已定（QQ 对 OpenClaw 说为主、直改 MD 为副，2026-09-03 human 裁），残余开放见 requirements.md §7——该条 2026-09-14 requirements v1.43 已裁（家长管控与小程序均不做，家长知情权 = OpenClaw 侧完整日志），残余已清零。
-4. **ECS 算力**：✅ 已缓解已结（ASR 云优先后本机只扛网关+TTS，2026-09-02 实测现余量约 1GB 内存/19G 磁盘；不够可扩容，human 2026-09-02 裁）——见 §1.2。
-
 ---
 
-## 6. 技术类开放问题
+## 11. 术语表
 
-1. **多轮会话连续性**（🔵 待部署验证）：部署期首验 = 两轮追问连续性探针；通过 → A4 成立；失败 → 网关适配传会话标识/历史（立项）或 A4/「那『星』字呢」指代降级单轮问答并记账（ARQ-260902-multiturn-continuity）。会话连续性承载（网关侧状态 vs 每轮透传历史）随首验定案；协议剖面承载定义随契约门 §四（V21 定）。需求侧联动 = requirements.md §7「语音查下一个字（指代解析）」——该问题 2026-09-14 requirements v1.37 已收窄消解（查字窗播完即闭会话、无指代场景），本开放问题仅对其他多轮场景（连续追问）仍有效。
-2. **AEC 实测调优（原最大技术风险点；2026-09-13 语音喊停定为不纳入 Phase 1 后不再挡 Phase 1，转为二期落地前置）**：音量/混响下喊停的误触发与漏触发阈值，需实测调（机制侧见 §2.4；需求侧为共享底座「语音喊停（二期）」，requirements.md §2.1）。
-3. **证书生命周期相位对账**：部署期对账证书有效期 vs OTA 建立，若 OTA 必晚于首期续证则 OTA 提前或显式记账死局（ARQ-260902-cert-lifecycle-deadlock）；证书形态已定（≥10 年 + 轮换脚本 + 到期告警，决策 22，owner = 方向 B 落地包）。
+项目黑话的唯一权威定义 = [glossary.md](glossary.md)（哑终端 / 方向 A·B / 三腿拓扑 / 三段阶梯 / 星星记录本 / fence 剥离 / 设备腿·引擎腿·脑腿 / overlay / 钉点 / Track A·B / 齿 …）。本档与 requirements.md 共用，不在本档重复定义。
