@@ -1,0 +1,133 @@
+{
+  "changeId": "260915-p1-home-battery",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M1-home-qa",
+    "upstreamFrozen": "",
+    "workstream": "m1-home-qa"
+  },
+  "subsystem": "firmware",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC4）",
+  "planRef": "delivery/taskpackages/260915-p1-home-battery/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单——P1-A4 注入假状态验收（s_battery_pct 恒 100）为本包红基线判读输入）",
+  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m1-home-qa/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "host-teeth",
+    "device-round"
+  ],
+  "acceptance": [
+    "PH-A1: 首页版式——「接下来」日程为主体（最近一项最醒目 + 倒计时贴纸），小伴常驻演出、页面趣味点缀保留；版式对齐 WF-F1-01（v1.4 重排序）",
+    "PH-A2: 辅助条小图标前置——联网小标打头、温/湿/电各带小图标、湿度 45% 不裸数字挨电池；版式对齐 WF-F1-01 ①辅助条",
+    "PH-A3: 电量 ADC 接线机制齿——板类死成员（adc1_handle/cali_handle/vbat_status）接线 + GetBatteryLevel override 实装（基座默认返回 false 的现状销账）+ 渲染节点电池注入缝（s_battery_pct 不再恒 100）；机制级断言（注入缝符号级）",
+    "PH-A4: 低电闪烁——电量 ≤ 15% 且未充电时辅助条电池图标每秒闪、充电即停（AC3）；不做小伴睡姿演出（已砍项零触碰）",
+    "PH-A5: 断网态——时间/温湿度/电量照常本地显示、日程区不更新、联网小标变 WiFi 斜杠（AC4，GetNetworkStateIcon 断网链路已实现、本包只验收钉点）",
+    {
+      "id": "PH-A6: 真机确认轮（human 持板）——ADC 实测电量值合理、低电闪烁/充电停闪真机可见；证据落 changes/dev/<changeId>/",
+      "kind": "structural"
+    },
+    "PH-A7: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/p1_home_battery.acceptance.c"
+  ],
+  "exitCriteria": [
+    "PH-E1: 范围纪律——首页日程数据口径零改动（课表数据接首页归 M3 决策 26 链路，本包按现数据口径验收）；spec 面零修订",
+    "PH-E2: ADC 硬件不确定性降级预案——若真机 ADC 读数漂移/校准失败，降级 = 保留 host 面机制齿 + 真机项改「读数偏差记录」结构性验收，不虚报绿；降级不亏证据"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "delivery/milestones/milestones.jsonl"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#S-F1.1",
+    "docs/requirements.md#S-F1.1-AC1",
+    "docs/requirements.md#S-F1.1-AC3",
+    "docs/requirements.md#S-F1.1-AC4",
+    "delivery/milestones/milestones.jsonl#M1-home-qa"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件首页渲染 + 板级 ADC 接线，零 docs 面改动：S-F1.1 语义权威在 requirements 现文（v1.4 重排已冻结）、契约面只读；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 24,
+  "dependsOn": [],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板，ADC 实测）",
+  "decisionCoverage": [
+    {
+      "decision": "M1块②-首页新版式接下来主体",
+      "summary": "「接下来」为主体 + 辅助条小图标 + 倒计时，版式 = WF-F1-01（v1.4 重排序）；数据口径零改动（课表数据接首页归 M3）。",
+      "sourceRefs": [
+        "docs/requirements.md#S-F1.1"
+      ],
+      "landsIn": "acceptance:PH-A1"
+    },
+    {
+      "decision": "M1块②-电量ADC三处死成员接线",
+      "summary": "电量百分比真机取不到 = Phase 1 修复项：adc1_handle/cali_handle/vbat_status 死成员接线 + GetBatteryLevel override + 渲染注入缝（s_battery_pct 恒 100 销账）。",
+      "sourceRefs": [
+        "docs/requirements.md#S-F1.1"
+      ],
+      "landsIn": "acceptance:PH-A3"
+    },
+    {
+      "decision": "M1块②-低电闪烁最小信号保留",
+      "summary": "低电打盹演出已砍（§8）：保留的最小信号 = 辅助条电池图标每秒闪、充电即停（S-F1.1 AC3）；低电不占小伴姿态通道。",
+      "sourceRefs": [
+        "docs/requirements.md#S-F1.1",
+        "docs/requirements.md#§8"
+      ],
+      "landsIn": "acceptance:PH-A4"
+    },
+    {
+      "decision": "M1块②-日程数据口径不动",
+      "summary": "首页「接下来」数据仍按现口径验收，课表数据接首页归 M3 与阶段一合流——本包显式不触数据链路。",
+      "sourceRefs": [
+        "docs/requirements.md#§6"
+      ],
+      "landsIn": "exitCriteria:PH-E1"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "电量 ADC 端到端（板级 ADC → GetBatteryLevel → 渲染注入缝 → 辅助条显示）",
+      "owner": "260915-p1-home-battery",
+      "note": "端到端 owner = 本包独占（防接线掉缝——ARQ-260911-cross-package-behavior-owner-gap 同型纪律）；keybar/首页渲染包不另接电池数据。"
+    },
+    {
+      "behavior": "首页版式与辅助条图标",
+      "owner": "260915-p1-home-battery",
+      "note": "首页内容区渲染 owner = 本包；键帽条三槽（keybar-three-slot）为独立 chrome、互不重叠，并行开发文件面不交叠。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/boards/common/adc_battery_monitor.h",
+        "symbol": "GetBatteryLevel"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.cc",
+        "symbol": "battery"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块②）。与键基建两包并行（独立文件面：首页渲染 + 板级 ADC vs 键路由/键帽条）。官方 Demo 03_ADC_Test（ADC1_CH3=GPIO4 分压，Adc_GetBatteryLevel 已验证）为参考树只读实现依据。包级 plan.md = 全量义务（planRef 已指）。"
+}

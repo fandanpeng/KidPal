@@ -1,0 +1,151 @@
+{
+  "workstream": "m1-home-qa",
+  "source": "delivery/milestones/milestones.jsonl#M1-home-qa",
+  "upstreamFrozen": "",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-09-15",
+  "updatedAt": "2026-09-15",
+  "_doc": [
+    "workstream 级 decisionCoverage：拆包输入 = 里程碑注册表 M1-home-qa nextAction 四块（v1.42 四阶段重切后首次拆包；sourceType=delivery-story，非 proposal，无 upstreamFrozen pin）。",
+    "本次拆 5 包：key-layer-dispatch（块①键基建）/ keybar-three-slot（块①键帽条）/ p1-home-battery（块②首页+电量）/ voice-round-ui（块③问答演出）/ reminder-overlay-unify（块④提醒四态统一）。",
+    "块③的 happy-flow-host-capture 收尾 = 在办独立包（delivery/changes/dev/260913-happy-flow-host-capture/ open），不随本批重拆，只挂账。",
+    "story 引用全部走锚点引用纪律（S-Fx.y · 标题 + AC 号集），story 语义权威 = docs/requirements.md 现文；本批引用的 S-F1.1 / S-F1.3 / S-F1.4 / S-F4.1 均不在 §8 已砍清单、可行性均 ✅（intake 两道机查通过）。",
+    "跨包共享冻结面交叉扫描：① 键帽文案 kidpal_voice_states 冻结闭集跨 keybar/voice-round/reminder 三包共享——值唯一、非互斥、无冲突（登记纪律 = 值零偏移）；② 行为碰撞型 = key-layer-dispatch 必触 schedule_reminder_b.acceptance.c 冻结钉点（已申报走 acceptance-author 留痕修订）；reminder-overlay-unify 亦触同套件但在其合并后的新基线上，不双改。未发现常量互斥型冲突。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "M1块①-键基建先行（dispatch+键帽条）",
+      "summary": "nextAction 块①：键帽条三槽 + 覆盖层 BOOT 隔离（含 schedule_reminder_b 钉点成批改）+ KEY 长按返回上一层——不做则后续每页返工；拆为 key-layer-dispatch（分层裁决/清层进页分离/长按返回/钉点批改）+ keybar-three-slot（三槽 chrome/页点/随态文案）两包，键基建先并。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M1-home-qa", "docs/requirements.md#§6"],
+      "landsIn": "package:260915-key-layer-dispatch",
+      "packageAcceptance": ["KD-A1", "KD-A2", "KD-A3", "KD-A4"]
+    },
+    {
+      "decision": "M1块①-键帽条三槽",
+      "summary": "三槽 + 页点 + 覆盖层页点隐藏 = keybar-three-slot；页点显隐读 layer_top（与键路由同源），随态文案走 kidpal_voice_states 冻结闭集。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M1-home-qa", "docs/requirements.md#§2.2"],
+      "landsIn": "package:260915-keybar-three-slot",
+      "packageAcceptance": ["KB-A1", "KB-A2", "KB-A3", "KB-A4"]
+    },
+    {
+      "decision": "M1块①-页点数量暂4点（deviation 待 human 过目）",
+      "summary": "spec §2.2 冻结口径 = 中 3 页点（v1.36 页循环 4→3），但撤 P4 常驻页归 M2——阶段一页点先按现行 4 页循环渲染，4→3 对账归 M2 收回；deviation 显式登记，launch 前 human 过目（launchPreconditions 第 2 条）。",
+      "sourceRefs": ["docs/requirements.md#§2.2", "docs/requirements.md#§6"],
+      "landsIn": "exitCriteria:KB-E1"
+    },
+    {
+      "decision": "M1块②-P1新版式+电量ADC",
+      "summary": "nextAction 块②：接下来主体 + 辅助条小图标 + 倒计时 + 电量 ADC 三处死成员接线（S-F1.1 AC1–AC4）= p1-home-battery；数据口径零改动（课表接首页归 M3）。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M1-home-qa", "docs/requirements.md#S-F1.1"],
+      "landsIn": "package:260915-p1-home-battery",
+      "packageAcceptance": ["PH-A1", "PH-A2", "PH-A3", "PH-A4", "PH-A5"]
+    },
+    {
+      "decision": "M1块③-百科问答演出补齐",
+      "summary": "nextAction 块③演出面：思考页接线全新（弹出与状态切换同刻）/ 聆听回显 / 问答框长文滚动 / 打断手感（S-F4.1 + S-F1.3 问答框口径 + §2.2 状态表）= voice-round-ui；四态骨架 owner = 该包。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M1-home-qa", "docs/requirements.md#§2.2", "docs/requirements.md#S-F4.1", "docs/requirements.md#S-F1.3"],
+      "landsIn": "package:260915-voice-round-ui",
+      "packageAcceptance": ["VQ-A1", "VQ-A2", "VQ-A3", "VQ-A4", "VQ-A5"]
+    },
+    {
+      "decision": "M1块③-happy-flow-host-capture收尾（在办包挂账）",
+      "summary": "happy-flow-host-capture 为在办独立包（open），由其自身 planner 闭环收尾——本 workstream 只挂账不承载、不重拆。",
+      "sourceRefs": ["delivery/changes/INDEX.md#260913-happy-flow-host-capture"],
+      "landsIn": "deferred",
+      "reason": "在办包已有 live 工作面与 planner 闭环，重拆会破坏其在途验收；M1 里程碑收口前由其自身收尾，本批零触碰。"
+    },
+    {
+      "decision": "M1块③-60秒/120秒timer接线（deferred）",
+      "summary": "60 秒会话超时 timer 生产者接线 + 录音态 120 秒双阈值（§2.1 对账 + §7 开放问题 7）与语音轮状态机同 seam 但独立可验证——deferred 至 M1 后续批次拆包，非 dropped。",
+      "sourceRefs": ["docs/requirements.md#§2.1", "docs/requirements.md#§7"],
+      "landsIn": "deferred",
+      "reason": "演出面（voice-round-ui）与 timer 接线可独立验证，合并进同包会膨胀范围；留 M1 后续批次按实况立项（deferred 非 dropped）。"
+    },
+    {
+      "decision": "M1块④-提醒弹窗四态统一",
+      "summary": "nextAction 块④：四态统一骨架（不单独设计）+ 最高层覆盖 + 录音排队例外 + 驻留到按键 + BOOT 新语义（S-F1.4 AC1–AC6）= reminder-overlay-unify；硬依赖 key-layer-dispatch（钉点新基线+分层裁决）与 voice-round-ui（骨架复用）。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M1-home-qa", "docs/requirements.md#S-F1.4", "docs/requirements.md#§2.2"],
+      "landsIn": "package:260915-reminder-overlay-unify",
+      "packageAcceptance": ["RM-A1", "RM-A2", "RM-A3", "RM-A4", "RM-A5", "RM-A6"]
+    },
+    {
+      "decision": "跨包-layer_top分层模型owner",
+      "summary": "覆盖层按键裁决/分层模型端到端 owner = 260915-key-layer-dispatch；keybar（页点显隐）、voice-round-ui（打断衔接）、reminder（最高层入层）均只读消费——防裁决逻辑三包漂移（ARQ-260911-cross-package-behavior-owner-gap 同型纪律）。",
+      "sourceRefs": ["docs/ARCH-REVIEW-QUEUE.md#ARQ-260911-cross-package-behavior-owner-gap"],
+      "landsIn": "package:260915-key-layer-dispatch",
+      "packageAcceptance": ["KD-A1", "KD-A3"]
+    },
+    {
+      "decision": "跨包-四态骨架owner与复用纪律",
+      "summary": "四态统一版式骨架 owner = 260915-voice-round-ui；260915-reminder-overlay-unify 复用（改骨架回 owner 包登记、不 fork）——防两包各建一套骨架漂移。",
+      "sourceRefs": ["docs/requirements.md#§2.2"],
+      "landsIn": "exitCriteria:VQ-E4"
+    },
+    {
+      "decision": "跨包-电量ADC端到端owner",
+      "summary": "电量 ADC 端到端（板级 ADC→GetBatteryLevel→渲染注入缝→辅助条）owner = 260915-p1-home-battery 独占——防接线掉缝（键位对账/P1-A4 假状态教训同型）。",
+      "sourceRefs": ["docs/requirements.md#S-F1.1"],
+      "landsIn": "package:260915-p1-home-battery",
+      "packageAcceptance": ["PH-A3"]
+    },
+    {
+      "decision": "非目标-页循环4→3/撤P4/页点4→3归M2",
+      "summary": "撤 P4 常驻页、页循环 4→3、锚 canvas-p4→char-window 对账、页点 4→3 收口归 M2 查字窗阶段——本批全部包显式零触碰（KD-E1/KB-E1）。",
+      "sourceRefs": ["docs/requirements.md#§6"],
+      "landsIn": "exitCriteria:KD-E1"
+    },
+    {
+      "decision": "非目标-P3键位族v1.47归M4",
+      "summary": "录音态 BOOT 丢弃、P3 列表删除确认子态、单双击 300ms 消歧随 M4 星星记录本阶段落地——本批零触碰（对账 ⑥）。",
+      "sourceRefs": ["docs/requirements.md#§2.3"],
+      "landsIn": "exitCriteria:KD-E1"
+    },
+    {
+      "decision": "非目标-课表数据接首页归M3",
+      "summary": "首页「接下来」数据源改课表链路（决策 26）随 M3 与阶段一合流——本批 p1-home-battery 按现数据口径验收（PH-E1）。",
+      "sourceRefs": ["docs/requirements.md#§6"],
+      "landsIn": "exitCriteria:PH-E1"
+    },
+    {
+      "decision": "spec面零修订纪律",
+      "summary": "本批全部包 docsSyncRequired=false：requirements §2/§6/F1/F4 语义权威在文冻结、契约面只读；实现中发现与 spec 冲突走 spec-lane 逃生门（Track B），不预先立项、不在 Pod 内改 spec。",
+      "sourceRefs": ["docs/requirements.md"],
+      "landsIn": "exitCriteria:KD-E2"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "layer_top 分层模型 + 覆盖层按键裁决",
+      "owner": "260915-key-layer-dispatch",
+      "note": "端到端 owner 独占；keybar/voice-round-ui/reminder-overlay-unify 消费不改。",
+      "carriedBy": "260915-key-layer-dispatch"
+    },
+    {
+      "topic": "四态统一版式骨架（左小伴右内容）",
+      "owner": "260915-voice-round-ui",
+      "note": "骨架先建（mergeOrder 25）；reminder-overlay-unify（26）复用不 fork。",
+      "carriedBy": "260915-reminder-overlay-unify"
+    },
+    {
+      "topic": "键帽条三槽 + 页点机制（chrome）",
+      "owner": "260915-keybar-three-slot",
+      "note": "三槽机制/随态文案 owner = 本包；语音轮/提醒包消费。",
+      "carriedBy": "260915-keybar-three-slot"
+    },
+    {
+      "topic": "电量 ADC 端到端链路",
+      "owner": "260915-p1-home-battery",
+      "note": "板级 ADC→渲染注入缝→辅助条显示端到端独占。",
+      "carriedBy": "260915-p1-home-battery"
+    }
+  ],
+  "contractBlockedPackages": [],
+  "launchPreconditions": [
+    "F-03 commit-before-launch：拆包四件套（delivery/workstreams/m1-home-qa/** + delivery/taskpackages/260915-{key-layer-dispatch,keybar-three-slot,p1-home-battery,voice-round-ui,reminder-overlay-unify}/**）在门 1 GREEN 后 commit 到专用 base ref（非 main，禁 commit-on-main）；worktree 自该 base ref 建出，Pod checkout 天然含拆包产物。",
+    "门 1（拆包 review 门）先行：本四件套齐备后停等——human / 主线程派 architect 做轻量 checklist review（五项 + workType 分流），GREEN + human 过目切法后方可交 launch；裁决 append delivery/workstreams/m1-home-qa/review.md「门 1」节。",
+    "页点数量 deviation 需 human 过目：keybar-three-slot 阶段一按现行 4 页循环渲染页点（spec §2.2 冻结口径 = 3 点，撤 P4 归 M2）——human 不认可则备选 = 提前撤 P4（越阶段，连带查字断供风险）或本包改锚 M2，launch 前必须拍板。",
+    "260915-reminder-overlay-unify 额外前置：260915-key-layer-dispatch 与 260915-voice-round-ui 均已合并（schedule_reminder_b 钉点新基线 + 分层裁决 + 四态骨架可复用）后才可起 Pod——依据其 taskpackage dependsOn，launch 执行者按 board 依赖序点火。",
+    "跨包冻结面扫描已做（launch 前预警义务）：行为碰撞型 = key-layer-dispatch 必触 schedule_reminder_b.acceptance.c 冻结钉点（已申报走 acceptance-author 留痕修订）；键帽文案 kidpal_voice_states 冻结闭集三包共享、值唯一非互斥；未发现常量互斥型冲突。",
+    "Pod worktree 图索引：launch 面必办项——bootstrap 后跑一次 index_repository(repo_path=<worktree>) 建专属图索引（ARQ-260905-worktree-graph-index-rules）。"
+  ]
+}

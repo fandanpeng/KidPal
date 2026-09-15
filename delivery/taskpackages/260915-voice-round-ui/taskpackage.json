@@ -1,0 +1,154 @@
+{
+  "changeId": "260915-voice-round-ui",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M1-home-qa",
+    "upstreamFrozen": "",
+    "workstream": "m1-home-qa"
+  },
+  "subsystem": "firmware",
+  "story": "S-F4.1 · 语音问答（AC1–AC2）+ S-F1.3 · 语音问课表（AC1/AC3，问答框口径）+ §2.2 状态表（聆听/思考/播报三行）",
+  "planRef": "delivery/taskpackages/260915-voice-round-ui/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单）",
+  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m1-home-qa/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "host-teeth",
+    "state-machine",
+    "device-round"
+  ],
+  "acceptance": [
+    "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+    "VQ-A2: 聆听态话语回显区——孩子说的话逐句回显在「我在听！」标识下方（网关 ASR 切句成文经 WS stt 消息下发即上屏）；回显区滚动、超屏高滚出",
+    "VQ-A3: 播报态问答框长文滚动——答案文字全文上屏、超出屏高滚动看完（回引 NFR-READ-1 字号下限），非一行字幕",
+    "VQ-A4: 打断手感——播报中 KEY 单击 = 立即停播并聆听（100% 可靠）；KEY 长按/BOOT = 结束会话回原页（读 260915-key-layer-dispatch 建立的分层裁决）",
+    "VQ-A5: 四态版式骨架统一——聆听/思考/播报三态 = 左小伴（各态 pose）· 右内容区同骨架（WF-B-01/02/03），键帽文案走 kidpal_voice_states 冻结映射；提醒弹窗同骨架由 260915-reminder-overlay-unify 承载、本包建骨架",
+    "VQ-A6: 超时安抚钉点——思考等待期超 4 秒先开口安抚不冷场（回引 NFR-PERF-1，计时起点 = 本态入口）",
+    {
+      "id": "VQ-A7: 真机确认轮（human 持板）——思考页真机首次可弹、回显/滚动/打断三手感真机确认；证据落 changes/dev/<changeId>/",
+      "kind": "structural"
+    },
+    "VQ-A8: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/voice_round_ui.acceptance.c"
+  ],
+  "exitCriteria": [
+    "VQ-E1: 范围纪律——60 秒会话超时 timer 生产者接线不在本包（deferred 至 M1 后续批次，§2.1 对账项）；语音喊停（AEC 调优）归二期零触碰",
+    "VQ-E2: 范围纪律——课表答复数据侧（备注列参与答复）归 M3 语音问课表数据包；本包只做问答框演出口径",
+    "VQ-E3: 需求面零修订——docs/requirements.md 不动；发现冲突走 spec-lane 逃生门",
+    "VQ-E4: 四态骨架 owner 声明——本包建左小伴右内容骨架，260915-reminder-overlay-unify 复用（跨包行为登记，见 crossPackageBehaviors）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "delivery/milestones/milestones.jsonl"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#S-F4.1",
+    "docs/requirements.md#S-F1.3",
+    "docs/requirements.md#§2.2",
+    "delivery/milestones/milestones.jsonl#M1-home-qa"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件语音轮演出补齐，零 docs 面改动：三态线框与状态表已冻结于 requirements §2.2（v1.22/v1.24 口径在文）、契约面只读；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 25,
+  "dependsOn": [
+    "260915-key-layer-dispatch",
+    "260915-keybar-three-slot"
+  ],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "M1块③-思考页接线全新",
+      "summary": "思考页真机不弹（活侧渲染只映射聆听/播报、场景码与姿态资产已备零调用）= Phase 1 修复项；弹出时机 = 说完这句同一时刻、不分离。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F4.1"
+      ],
+      "landsIn": "acceptance:VQ-A1"
+    },
+    {
+      "decision": "M1块③-聆听回显+问答框长文滚动",
+      "summary": "聆听回显（WS stt 下发即上屏、滚动）与播报问答框全文滚动（NFR-READ-1）——MVP 已实测链路在、演出面缺，本包补齐。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F4.1"
+      ],
+      "landsIn": "acceptance:VQ-A2"
+    },
+    {
+      "decision": "M1块③-打断手感KEY单击停播",
+      "summary": "Phase 1 唯一打断手段 = KEY 单击立即停播并聆听（100% 可靠）；语音喊停二期不碰。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.1",
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "acceptance:VQ-A4"
+    },
+    {
+      "decision": "M1块③-四态版式骨架owner=本包",
+      "summary": "四态统一骨架（左小伴右内容）owner = voice-round-ui；提醒弹窗包复用同骨架（跨包行为登记）——防两包各建一套骨架漂移。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "exitCriteria:VQ-E4"
+    },
+    {
+      "decision": "M1块③-60秒timer接线deferred",
+      "summary": "60 秒/120 秒 timer 生产者接线与演出面同 seam 但独立可验证，deferred 至 M1 后续批次（非 dropped，防本包范围膨胀）。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.1",
+        "docs/requirements.md#§7"
+      ],
+      "landsIn": "exitCriteria:VQ-E1"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "四态统一版式骨架（左小伴右内容，WF-B-01/02/03/04 共用）",
+      "owner": "260915-voice-round-ui",
+      "note": "骨架 owner = 本包（mergeOrder 25 先于提醒包）；260915-reminder-overlay-unify 复用同骨架只换 pose 与内容，不得另建骨架。"
+    },
+    {
+      "behavior": "播报中打断/会话结束键位语义",
+      "owner": "260915-key-layer-dispatch",
+      "note": "分层裁决 owner = key-layer-dispatch；本包消费（VQ-A4），语义与其 KD-A3/KD-A1 一致。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/lcd_display.cc",
+        "symbol": "kidpal_voice_state_look"
+      },
+      {
+        "path": "firmware/main/display/kidpal_voice_states.c",
+        "symbol": "kidpal_voice_state_look"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_render_actions"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块③）。与 key-layer-dispatch / keybar-three-slot 同渲染面相邻但职责已切分：分层裁决归键基建包、骨架 owner 归本包、提醒复用。60 秒 timer 接线 deferred（见 VQ-E1）。包级 plan.md = 全量义务（planRef 已指）。禁改 docs/contracts/** 与 docs/requirements.md。"
+}
