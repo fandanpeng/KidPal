@@ -6,50 +6,32 @@
 
 ## 完工比例
 
-- **已验收**：0%（0 / 7 里程碑 accepted 及以后）
-- **在途预计**：11.4%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **已验收**：0%（0 / 4 里程碑 accepted 及以后）
+- **在途预计**：10%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
-
-### M0
-
-| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
-|---|---|---|---|---|
-| 跑通官方小智固件，体验交互手感 | `in_delivery` | green | 官方小智固件已跑通、硬件能力已实测盘点（architecture.md §1.1）；声学/AEC 实盘证据收口（audio-bargein-hw / hardware-validation 包） | [ref](../docs/requirements.md) |
 
 ### M1
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 薄桥 shim + 设备↔shim↔OpenClaw 联通 | `in_delivery` | green | shim 与云端链路验证批收口（cloud-link-bringup 8/9，display 12/12）；待设备端服务器地址指向 shim 的真机联通（阶段 C 殿后） | [ref](../docs/requirements.md) |
+| 阶段一·首页 + 百科问答（对话主路径体验） | `in_delivery` | green | 全局 UI 基建先行（键帽条三槽/覆盖层 BOOT 隔离/KEY 长按返回上一层，§2.3 键位对账）；P1 新版式「接下来」+ 电量 ADC（S-F1.1）；百科问答演出补齐（思考页/聆听回显/问答框滚动/打断手感，S-F1.3）+ happy-flow-host-capture 收尾；提醒弹窗四态统一（S-F1.4） | [ref](../docs/requirements.md) |
 
 ### M2
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 全链路：语音→ASR→OpenClaw→回复→TTS→设备播放 | `planning` | green | whisper(ASR)+DeepSeek+TTS 全链路真机串通；char 冷启动 ~109s 延迟待流式/异步消解（M2） | [ref](../docs/requirements.md) |
+| 阶段二·查字窗（live 链路修复 + 页→窗改造） | `planning` | green | live 查字链路修复（NFR-PERF-2 黄灯转绿前提，host 面已验、live 端到端待实证）；撤 P4 常驻页、页循环 4→3、锚 canvas-p4→char-window 对账改名（F3 全节） | [ref](../docs/requirements.md) |
 
 ### M3
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 查生字（笔顺 JSON 下发 + LVGL 逐笔演示） | `planning` | green | makemeahanzi 笔顺 D3 JSON 下发 + lv_canvas 逐笔渲染（char-stroke 包）；D3 格式已定稿 | [ref](../docs/requirements.md) |
+| 阶段三·课表（一周网格 + 家长录入 + 数据接首页） | `planning` | green | P2 一周总览网格 + 语音问课表口径（S-F1.2/S-F1.3）；家长录入 B4 课表数据源头（S-F1.5）；与阶段一合流——课表数据接首页「接下来」（决策 26 链路） | [ref](../docs/requirements.md) |
 
 ### M4
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 4 页 UI 重做 + 课表 + RTC 提醒 | `planning` | green | 首页 P1/课表 P2/故事 P3/查字 P4 四页 1bpp RLCD 重做 + 课表 MD 消费 + RTC 提醒（home-p1 / schedule-p2 / schedule-reminder 包） | [ref](../docs/requirements.md) |
-
-### M5
-
-| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
-|---|---|---|---|---|
-| 故事记录 + 归档 + 语音喊停实测调优（AEC） | `planning` | green | 故事记录/列表/回放 + 归档 + AEC 喊停误触发/漏触发阈值实测（最大技术风险点） | [ref](../docs/requirements.md) |
-
-### M6
-
-| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
-|---|---|---|---|---|
-| 家长端录入 + 配网绑定 + 稳定性 + 功耗优化 | `planning` | green | 家长端形态（QQ/小程序/MD）待定；配网与设备绑定 + 按一下会话续航功耗实测（requirements.md §7 / architecture.md §6） | [ref](../docs/requirements.md) |
+| 阶段四·星星记录本（P3 四态 + F2 改名对账） | `planning` | green | P3 四态全家：列表/记录会话（录音+归档链路）/星星徽章盖章/阅读态（S-F2.1~2.4）；F2 改名对账四项（盖章文案/页名/提示缺第二指令/选中反白→边框） | [ref](../docs/requirements.md) |
 

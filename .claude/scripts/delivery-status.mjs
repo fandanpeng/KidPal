@@ -2,6 +2,7 @@
 // 从 delivery/milestones/milestones.jsonl（里程碑基线，镜像 core.Milestone + delivery.MilestoneDeliveryState）
 // 计算完工比例并生成 delivery/milestones/STATUS.md。
 // 单一事实源 = milestones.jsonl；STATUS.md 是派生只读视图（勿手改）。
+// 本仓字段注记：里程碑编号字段名 = `milestone`（2026-09-15 human 裁定由 `phase` 改名，免「阶段/里程碑」歧义）。
 // 无外部依赖；可独立运行：node .claude/scripts/delivery-status.mjs
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -38,10 +39,10 @@ function pct(n) {
 }
 
 function renderMd({ milestones, total, acceptedCount, acceptedPct, inflightPct }) {
-  const byPhase = new Map();
+  const byMilestone = new Map();
   for (const m of milestones) {
-    if (!byPhase.has(m.phase)) byPhase.set(m.phase, []);
-    byPhase.get(m.phase).push(m);
+    if (!byMilestone.has(m.milestone)) byMilestone.set(m.milestone, []);
+    byMilestone.get(m.milestone).push(m);
   }
   const lines = [];
   lines.push('# 交付完工度 · STATUS（自动生成，勿手改）');
@@ -57,12 +58,12 @@ function renderMd({ milestones, total, acceptedCount, acceptedPct, inflightPct }
   lines.push('');
   lines.push('## 里程碑基线');
   lines.push('');
-  for (const ph of [...byPhase.keys()].sort()) {
+  for (const ph of [...byMilestone.keys()].sort()) {
     lines.push(`### ${ph}`);
     lines.push('');
     lines.push('| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |');
     lines.push('|---|---|---|---|---|');
-    for (const m of byPhase.get(ph)) {
+    for (const m of byMilestone.get(ph)) {
       const ref = m.acceptanceRef ? `[ref](../${m.acceptanceRef})` : '—';
       lines.push(`| ${m.name} | \`${m.state}\` | ${m.health || '—'} | ${m.nextAction || '—'} | ${ref} |`);
     }
