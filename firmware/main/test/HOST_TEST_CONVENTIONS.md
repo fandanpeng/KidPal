@@ -152,7 +152,7 @@ manifest 事实，不臆测。
 ## Host 整帧截图办法（HOST CAPTURE，2026-09-13 起各 pod 通用）
 
 > 动机与首用：human 一次性授权把 Happy Flow 各页在 host 真渲染后整帧落盘存档
-> （`changes/dev/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
+> （`delivery/changes/dev/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
 > 任何 pod 想给「host 可渲染的页面/控件」留截图证据，照此办理，不必重新趟坑。
 > 参考实现 = `firmware/main/test/happy_flow_capture.test.c`（普通 `.test.c`，非冻结件）。
 

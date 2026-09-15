@@ -6,7 +6,7 @@ The handoff package must be understandable without the author present. A zip tha
 
 ## Package Shape
 
-Use this layout for every cross-repo handoff zip. The zip is a **generated transfer artifact** and should be written outside the repo by default, for example `D:\AI-work\<handoff-id>.zip`; do not commit/store it under `changes/` unless a human explicitly asks to archive the binary.
+Use this layout for every cross-repo handoff zip. The zip is a **generated transfer artifact** and should be written outside the repo by default, for example `D:\AI-work\<handoff-id>.zip`; do not commit/store it under `delivery/changes/` unless a human explicitly asks to archive the binary.
 
 ```text
 <handoff-id>.zip

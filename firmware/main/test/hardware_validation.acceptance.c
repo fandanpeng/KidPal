@@ -20,7 +20,7 @@
  *
  * HWV-A2~A8 / 续航基准 / 证书握手的**物理真机半**（按键手感、双麦采音、RLCD 观感、
  * 16px 以下 CJK 1bpp 可读性、前光、续航实测）全部落在
- * .claude/taskpackages/260829-hardware-validation/device-acceptance-checklist.md
+ * delivery/taskpackages/260829-hardware-validation/device-acceptance-checklist.md
  * （human 持板执行 + 逐项勾验记录回写），host 段无法冒充真机已验（HWV-E2 证据纪律）——
  * 本文件绝不把真机事实伪造成 host 断言。
  *

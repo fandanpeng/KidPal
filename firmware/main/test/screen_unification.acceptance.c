@@ -109,7 +109,7 @@
  *   coverage: SU-A6  登记（不落断言）: 全量既有冻结齿复跑 = 矩阵回归动作，非新齿；
  *               渲染路径重构致齿红仅本 acceptance-author 留痕修订（REVISION LOG）。
  *   coverage: SU-A8  登记（不落断言）: 真机 human 持板并发场景，证据落
- *               changes/dev/260911-screen-unification/，非 host 齿。
+ *               delivery/changes/dev/260911-screen-unification/，非 host 齿。
  *   coverage: SU-A9  登记（不落断言）: host runner 终跑全绿 exit 0，过程性结论非新齿。
  *   coverage: SU-E3  boundary/security -> test s4 (冻结面零越界 canary: 契约/spec
  *               在世 + 设备不直连 openclaw/18789 + 扫描器自检防假绿)
@@ -161,7 +161,7 @@
  *               最低）自洽的「push 基层 + pop 服务端页」达前形式（原「push(LOCAL_PAGE)
  *               即前台」在 SERVER_PAGE 在场时与优先级表矛盾 = 测试错误红, 非语义放松）。
  *               裁断出处：
- *               changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-01。
+ *               delivery/changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-01。
  *   2026-09-11  单物理屏收紧（SU-RULING-02 方案1；actor="human-deputy", 代裁,
  *               deviation=false, 禁止记成 human 亲裁, canon C-14）——真归一为单物理屏、
  *               物理 reparent 留 PKG-2 包内随包交付。tighten: 补钉「除 s_kidpal_scr 外
@@ -175,7 +175,7 @@
  *               赋值捕获归零」精确化为「第二屏载体加载归零」, 避免误伤 char/schedule/
  *               story/reminder 页渲染用 lv_screen_active() 取活动屏绘制句柄的合法用法。
  *               断言语义不放松（纯加法, s3 既有两齿原样不动）。裁断出处:
- *               changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-02。
+ *               delivery/changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-02。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>

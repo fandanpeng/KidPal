@@ -1,6 +1,6 @@
 # PROPOSAL.template · Track B 提案模板（canonical · 260802-gov-review-track-b-hardening T1 落地，OQ2=(b) 选址 docs/templates/）
 
-> 用法：复制本件为 `changes/arch/<change-id>/PROPOSAL.md`，替换 `<尖括号>` 占位；**带【硬项】的小节是义务不是建议**——缺失即判官 BLOCK 的合法理由。
+> 用法：复制本件为 `delivery/changes/arch/<change-id>/PROPOSAL.md`，替换 `<尖括号>` 占位；**带【硬项】的小节是义务不是建议**——缺失即判官 BLOCK 的合法理由。
 > **先起名**：目录名必须命中 `.claude/scope-map.json` review-agent 写槽 token——governance-lane = `<YYMMDD>-gov-review-<slug>`、spec-lane = `<YYMMDD>-arch-review-<slug>`；缺 token 时判官/核验官制品写入被 enforce-scope 拦截，起草期 `changes-index.mjs --upsert <id>` 亦点名（见 protocol「双轨路由」节命名条款）。
 > 文体：散文节按 AGENTS.md「输出标准」节写通顺完整的句子；Status 凭据行、landing-manifest 围栏块、packet-binding 行等机器校验结构保持精确格式。
 > 形制来源：Track B 前四乘客 PROPOSAL 实际形状归纳（auth-axis / unit-gate / verifier-dispatch / claude-consistency）+ 四乘客 retro §4 建议第①③④类固化 + 本批 R1/R2 评审修订（硬项 2a）。

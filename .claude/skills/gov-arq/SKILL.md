@@ -19,8 +19,8 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 
 1. **收 provenance（地面真值）** — 找出至少一条可识别执行记录，引具体路径/行：
    - loop-retro 条目（`.claude/loop-retro/loop-retro-*.md` 某行）/ friction 记录；
-   - verifier-evidence round（`.claude/taskpackages/*/verifier-evidence/rounds/*.json`）；
-   - architect-review / adjudicator finding（`changes/arch/*/`）；
+   - verifier-evidence round（`delivery/taskpackages/*/verifier-evidence/rounds/*.json`）；
+   - architect-review / adjudicator finding（`delivery/changes/arch/*/`）；
    - 带执行证据的已登记 ARQ（`docs/ARCH-REVIEW-QUEUE.md` 某行引执行来源）。
    **终点**：一条可点开的执行记录引用。没有 → 走 HARD-GATE 的停法。
 
@@ -31,7 +31,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    **终点**：三条全 yes → `review profile = Track B（不论 G 几）`。任一 no → **不是快路径**，`review profile = full-adversarial + human（Track A）`；skill 仍可起草，但 profile 必须写实，不得回标 Track B。
 
 3. **判 G 层 + 机检硬排除事实**（即便走 Track B 也写清，供 architect-reviewer 判；表见 `docs/DEV-GOVERNANCE.md` §6，硬排除清单见 `.claude/agents/architect-reviewer.md`）：
-   - **列出要改的确切路径** → 机判 G 层：G1（README/AGENTS/CLAUDE/blueprint/DEV-GOVERNANCE）、G2（`.claude/{agents,commands,references,rules,skills}/**`）、G3（scope-map / *.settings / verify-gates / hooks / scripts）、G4（changes/** / 队列）。**所列路径即后续 Track B PROPOSAL 硬项 2a「目标文件锚清单」的种子**（`docs/templates/PROPOSAL.template.md`——登记侧写清路径，处理侧直接锚定）。
+   - **列出要改的确切路径** → 机判 G 层：G1（README/AGENTS/CLAUDE/blueprint/DEV-GOVERNANCE）、G2（`.claude/{agents,commands,references,rules,skills}/**`）、G3（scope-map / *.settings / verify-gates / hooks / scripts）、G4（delivery/changes/** / 队列）。**所列路径即后续 Track B PROPOSAL 硬项 2a「目标文件锚清单」的种子**（`docs/templates/PROPOSAL.template.md`——登记侧写清路径，处理侧直接锚定）。
    - 逐项声明（可机判，不靠判断）：触 `docs/contracts/**` 或造 spec-contract drift？改 agent `tools`/`name`/`model`/write scope/authority 语义？改 self-def（architect.md）或 review-loop agent 定义？新增/删/改任何 human/engineering/merge/contract/review gate？mixed lane / 触 L0 蓝图？
    - **便宜验证计划**：例如复跑 `route-regression-check.mjs` / `lint-descriptions.mjs` / `landing-fidelity-check.mjs`。
    **终点**：G 层标注 + 上述每一项的 yes/no + 验证计划名。触 G1/G3/contracts/gate/self-def/mixed 任一项 → 标 `full-adversarial + human`（这些是 lightweight 机检硬排除；Track B 可吃 G3，但仍须把这些事实写明供判）。
@@ -50,7 +50,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    **终点**：一行 6 列齐全、未结原因格六要素（证据/影响面/建议改动/riskTier/review profile/owner）齐全。
 
 6. **登记** — 写进 `docs/ARCH-REVIEW-QUEUE.md` 对应节：需立即拍板 → §1.1 Blocker；待阶段/触发 → §1.2 Deferred；刻意接受的风险 → §1.3 Accepted-risk（列换为 `| ID | 严重度 | title | 保留原因 | 复议触发 | 来源 |`）。
-   **不**改 §0 维护规则、**不**动 §2 已结索引（除非本 skill 之外另行收口）、**不**手写节标题计数「（X 项）」、**不**往行里复制 debate log / review-packet / canary 长证据（只链接 `changes/arch/**`）。
+   **不**改 §0 维护规则、**不**动 §2 已结索引（除非本 skill 之外另行收口）、**不**手写节标题计数「（X 项）」、**不**往行里复制 debate log / review-packet / canary 长证据（只链接 `delivery/changes/arch/**`）。
    **终点**：queue 文件里该行已落盘对应节。
 
 7. **交接下游** — 报告：已登 `ARQ-id` + review profile + 下一步命令。

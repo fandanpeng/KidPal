@@ -1,7 +1,7 @@
 # V23 ASR 终选与 VAD 切句兼容性结论（决策19）
 
 > **_INTEGRATOR LANDING NOTE_**: staged by builder in `server/` (builder scope excludes
-> `changes/dev/`). Integrator must land into `changes/dev/260903-gateway-directionB/`
+> `delivery/changes/dev/`). Integrator must land into `delivery/changes/dev/260903-gateway-directionB/`
 > (`v23*.md` or `asr*.md`) for `test_a8_v23_asr_selection_evidence` to go green.
 
 ## 结论一句话
@@ -32,7 +32,7 @@
 ## 证据 / 动作
 
 - 本文件 = V23 终选结论落盘（A8 证据面，`test_a8_v23_asr_selection_evidence` 消费）。
-- **升级项**：阿里云 ASR 凭据开通（human 待办）→ 开通后补 live 流式 + VAD 切句实测，必要时在 `changes/dev/` 附实测定案。
+- **升级项**：阿里云 ASR 凭据开通（human 待办）→ 开通后补 live 流式 + VAD 切句实测，必要时在 `delivery/changes/dev/` 附实测定案。
 - 结构面已按可声明形状实现：`server/gateway/provider.py`（ASR 族 provider 注册）+ `server/deploy/provider.config.yaml`（ASR: aliyun 候选流式）+ `server/deploy/apply-xiaozhi-overlay.sh`（AliyunStreamASR 渲染，appkey/token 由 env 注入）。
 
 ---

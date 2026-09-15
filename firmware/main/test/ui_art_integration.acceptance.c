@@ -7,7 +7,7 @@
  *  schedule-reminder/story-p3; 上游资产包 260831-ui-art-assets 已 merged).
  *
  * Story: 固件侧资产管线消费上游 47 枚已出图资产（tools/simulator/LvglWindowsSimulator/
- * assets/，清单 = changes/dev/260831-ui-art-assets/assets-manifest.md），经 SPIFFS
+ * assets/，清单 = delivery/changes/dev/260831-ui-art-assets/assets-manifest.md），经 SPIFFS
  * assets 分区按路径加载并渲染；各页面渲染面（包 2/4/5/6/7/8）统一接入换皮；换皮后
  * 各页面 host 回归独立于 9b 真机观感（ART-E3: 不 supersede 页面包既有验收）。
  *

@@ -21,7 +21,7 @@
  * 「有键能起对话就算过」的 BOOT≈KEY 行为等价假绿。
  *
  * KR-A5（GPIO18 电平/上拉 human 真机确认）是 device-round 验收项，host 齿无法钉——
- * 本文件不尝试真机构建/烧录；该项证据要求落 changes/dev/260911-key-route-a1/（human
+ * 本文件不尝试真机构建/烧录；该项证据要求落 delivery/changes/dev/260911-key-route-a1/（human
  * 持板轮日志/照片，见本文件尾「真机证据要求」）。KR-A6（host runner 终跑 exit 0）与
  * KR-E3（真机证据齐 + 逃生门零触发）是执行/汇总结论，非本文件断言面。
  *
@@ -655,7 +655,7 @@ TEST_CASE("键位路线A1: 注册序守卫+spec契约canary+扫描器自检 (KR-
  * 真机证据要求（KR-A5 / KR-E1 / KR-E3，本文件不承载, human 持板轮）:
  *   KR-A5: KEY(GPIO18) 三手势真机可达 + 电平/上拉确认（悬空风险销账），HWV-A2 顺带
  *   核验；GPIO18 的 active_high（上拉/下拉）真机实测结果回填并冻结进板级 key_button_
- *   构造的 active_high 实参。证据落 changes/dev/260911-key-route-a1/（日志/照片）。
+ *   构造的 active_high 实参。证据落 delivery/changes/dev/260911-key-route-a1/（日志/照片）。
  *   KR-E1: 页内特例 P2 问课程 / P3 光标+双击进阅读 / P3 念给我听 / P4 播笔顺 / 提醒
  *   弹窗 KEY 关闭 = 零触碰留根 A2（本文件 test 4 tooth 2 只守 BOOT 长按故事翻屏一项
  *   板级接缝；其余页内特例的接线状态由既有 HWV-A9 / story_p3 冻结齿承载, 本包不新钉）。
@@ -666,7 +666,7 @@ TEST_CASE("键位路线A1: 注册序守卫+spec契约canary+扫描器自检 (KR-
  * coverage 登记（对齐 hardware_validation 先例的登记式 coverage 行; 非闸必需——
  * KR-A5 kind=structural 豁免, KR-E1/E2/E3 为 exitCriteria 不入 acceptance 闸）:
  *   coverage: KR-A5  physical 半 -> 真机持板轮（HWV-A2 顺带）, 不落 C 断言;
- *             证据落 changes/dev/260911-key-route-a1/（human 持板日志/照片）
+ *             证据落 delivery/changes/dev/260911-key-route-a1/（human 持板日志/照片）
  *   coverage: KR-E1  范围纪律 -> test 4 tooth 2（BOOT 长按故事翻屏 guard）部分承载;
  *             其余页内特例零触碰留根 A2（既有 HWV-A9 / story_p3 冻结齿承载）
  *   coverage: KR-E2  spec 零修订 -> test 5（docs/spec.md 与契约 canary）

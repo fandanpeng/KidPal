@@ -16,8 +16,8 @@
     "repoUrl": "local:KidPal",
     "defaultBranch": "main",
     "workspaceType": "firmware-plus-server",
-    "planRoot": ".planning"
+    "planRoot": "delivery/workstreams"
   },
-  "milestoneBaseline": ".delivery/milestones.jsonl",
-  "statusRollup": ".delivery/STATUS.md"
+  "milestoneBaseline": "delivery/milestones/milestones.jsonl",
+  "statusRollup": "delivery/milestones/STATUS.md"
 }

@@ -2,7 +2,7 @@
  * Frozen acceptance tests — TaskPackage 260911-render-pages（批次③ 渲染观感 + V3
  * 整屏还原双轨）RP-A11 新产 V3 保真齿（红基线先行）。
  * (subsystem: firmware; 承载: RP-A8 页面换皮框族面 / RP-A9 五态演出换皮内容面 /
- *  RP-A4 V3 字体分型（S0.1 决策件 changes/dev/260911-render-pages/font-decision-s01.md）;
+ *  RP-A4 V3 字体分型（S0.1 决策件 delivery/changes/dev/260911-render-pages/font-decision-s01.md）;
  *  dependsOn 260911-screen-unification（聊天 layer 底座, 已合并 d80e319）).
  *
  * Nature: host-runnable STRUCTURAL teeth（schedule_p2 / story_p3 / screen_unification
@@ -895,7 +895,7 @@ TEST_CASE("v3 restore: 字体分型——SPIFFS 非 KAP1 字体资产闭集 (RP-
 /* --------------------------------------------------------------------------- *
  * 附注（不在断言面，留根）：
  * - RP-A5（真机整屏 V3 对照轮）= human 持板证据轮, 本文件不承载（观感/两句检验题
- *   归真机证据, 落 changes/dev/260911-render-pages/）。
+ *   归真机证据, 落 delivery/changes/dev/260911-render-pages/）。
  * - V3 §07 红线清单（除 #000/#fff 无第三色 / 线宽 >=3px / 无渐变投影 / 动效白名单
  *   眨眼 4.4s·嘴部 240ms·声波·笔顺 950ms 等）= design review / 真机轮核对面
  *   （RP-E4 evidence）, 逐项机判会产出大量脆断言, 不进本冻结文件。

@@ -58,7 +58,7 @@ the operator runs the physical smoke, and the evidence files are落盘.
 SUPERSEDED-DISPOSAL (2026-09-09 合并链定向处置批, acceptance-author, human 授权
 pod-events eventId=2dd4498d-68db-448f-ac72-5e90d1cad0ad): 方向 A（设备 HTTP shim）
 架构已由 260903-device-ws-switch 退役取代（spec docs/spec.md §3.0.0「迁移与既有资产」
-台阶退役条款 + §7 决策 9/18; 归档记录 changes/dev/260903-device-ws-switch/
+台阶退役条款 + §7 决策 9/18; 归档记录 delivery/changes/dev/260903-device-ws-switch/
 shim-archive-record.md）。据此：架构过时齿（SMK-A1/A2/A3-mp3/E1）标 skip；
 证据齿中 SMK-A3-roundtrip / SMK-E2 因 roundtrip.json 从未落盘（设备完整往返未发生
 即被方向 B 取代, 不可回补）标 skip；SMK-A4 由回收的 screen.md 实证据承载（不 skip）。
@@ -129,7 +129,7 @@ VALID_VIEWS = {"char", "schedule", "story_list", "story_text", "text", "home", "
 #     小智服务端网关，HTTP shim 退役为已验证台阶（spec §3.0.0「迁移与既有资产」）。」
 #     （决策 9 = 端云通信 WebSocket + Opus 流式（方向 B）；决策 18 = 服务端实现
 #     形态 = 官方 Python 版小智服务端网关。）
-#   - 归档记录: changes/dev/260903-device-ws-switch/shim-archive-record.md
+#   - 归档记录: delivery/changes/dev/260903-device-ws-switch/shim-archive-record.md
 #     （「处置：归档（archived）——文件保留在原路径，头部加 ARCHIVED 墓碑注记；
 #     代码逻辑零改动」。）
 #
@@ -141,7 +141,7 @@ _SUPERSEDED_DISPOSAL = (
     "2dd4498d-68db-448f-ac72-5e90d1cad0ad): 方向 A（设备 HTTP shim）架构已由 "
     "260903-device-ws-switch 退役取代 — spec docs/spec.md §3.0.0「迁移与既有资产」"
     "台阶退役条款 + §7 决策 9/18（「已被决策 9/18 取代：方向 B 转官方小智服务端网关，"
-    "HTTP shim 退役为已验证台阶」）; 归档记录 changes/dev/260903-device-ws-switch/"
+    "HTTP shim 退役为已验证台阶」）; 归档记录 delivery/changes/dev/260903-device-ws-switch/"
     "shim-archive-record.md。断言本体保留于 skip 之后（不可达），供未来重新启用判定。"
 )
 

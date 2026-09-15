@@ -2,7 +2,7 @@
 // commit-safety.mjs — 提醒级 advisory 钩子（非门，一切路径 exit 0）
 //
 // 治理声明：owner=architect · approver=human · G3（DEV-GOVERNANCE §6 强制执行层行覆盖）· 提醒级非门。
-// 批准物：changes/arch/260802-gov-review-agents-md-optimize/PROPOSAL.md（FROZEN 2026-08-03，T7；OQ-2 已裁 (a) 提醒级）。
+// 批准物：delivery/changes/arch/260802-gov-review-agents-md-optimize/PROPOSAL.md（FROZEN 2026-08-03，T7；OQ-2 已裁 (a) 提醒级）。
 // 实证来源：/insights 报告 2026-08-02 —— 16 轮合并马拉松中 `git add` 被静默拒绝 → 残余冲突标记进 commit，事后才发现。
 //
 // 行为规格：

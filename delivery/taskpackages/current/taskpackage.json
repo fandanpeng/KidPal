@@ -5,10 +5,10 @@
   "origin": {
     "type": "regression",
     "upstreamType": "regression",
-    "upstreamRef": "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "upstreamRef": "delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
     "workstream": "kidpal-mvp"
   },
-  "planRef": ".claude/taskpackages/260911-render-pages/plan.md",
+  "planRef": "delivery/taskpackages/260911-render-pages/plan.md",
   "subsystem": "firmware",
   "story": "批次③ 渲染观感 + V3 整屏还原双轨（2026-09-11 human 扩包裁定：扩③ scope、整屏一次还原、字体生产并包）：缺陷轨 #9 故事页排版（ksy_label 不设宽不 wrap 横向裁切 + READER 画全文不消费 screens 分页；冻结验收头注 ⑤ 本要求当前屏正文，本项=兑现冻结契约既述行为非语义变更）+ #10 字体缺字（正文普惠小子集缺「猬」）+ #11 课表页数据链（先勘察后修）+ #12 P2-A1 恒红齿修复（acceptance-author tightly-only 修齿，方案 B，否决补哨兵标记）。还原轨（V3 定稿 docs/ui/kidpal-ui-design-v3.html）：P2/P3/P4 页面换皮（LVGL 骨架保留，框族 9 宫格/网点/涂鸦铺开 + V3 字体）+ P4 笔顺页观感还原（三态笔道/握笔小手/进度珠，B8 打包策略已锁）+ 语音轮五态演出换皮（PKG-2 迁出的聊天 layer 内容换小伴七姿态 + V3 气泡 + 常驻键帽条；依赖 260911-screen-unification 合并）+ V3 字体体系并包（站酷标题 + Baloo 数字 + 正文缺字策略，走 U 闭集修订通道）。",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量：story_p3 8 齿 / schedule_p2 全齿 / story_page_stack 3 齿 / ui_art_integration 闭集齿）；intake 时 acceptance-author 复核红基线记录（P2-A1 恒红 + 排版缺陷现状）",
@@ -16,7 +16,7 @@
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
-    ".planning/kidpal-mvp/"
+    "delivery/workstreams/kidpal-mvp/"
   ],
   "riskTier": "high",
   "gateProfile": [
@@ -30,7 +30,7 @@
     "RP-A3: 课表页——按数据链勘察根因修复（固件缓存/接线或 server producer 面），真机课表页见真实条目；schedule_p2 全齿绿",
     "RP-A4: V3 字体体系并包——S0.1 决策落地（正文选型 + 缺字策略 + 标题/数字生产方案），每字体逐字钉三分道路径（F1：编译内置 / 非 KAP1 独立落地 + 分型新齿 / 预渲染位图回 KAP1），标题（站酷快乐体）/数字（Baloo 2）资产经 U 管线新产按选定路径入盘，V3 字号阶梯落位；「猬」等抽样字渲染可见证据；字体不得触 B8 KAP1 闭集白名单（唯一新增 KAP1 = 气泡尾巴，走 U 闭集修订 REVISION LOG + 跨包留痕）；若走独立 SPIFFS 落地则分型新齿守闭集",
     {
-      "id": "RP-A5: 真机整屏 V3 对照轮（human 持板）——四页 + 语音轮五态逐一对照 V3 设计稿验收，含故事正文换行完整可见（含「猬」）+ BOOT 翻页逐屏正文 + 课表页真实内容 + HWV-A7 顺带核验；V3 §01 两句检验题（「这是什么」「哪里可爱」）孩子实测；证据落 changes/dev/260911-render-pages/",
+      "id": "RP-A5: 真机整屏 V3 对照轮（human 持板）——四页 + 语音轮五态逐一对照 V3 设计稿验收，含故事正文换行完整可见（含「猬」）+ BOOT 翻页逐屏正文 + 课表页真实内容 + HWV-A7 顺带核验；V3 §01 两句检验题（「这是什么」「哪里可爱」）孩子实测；证据落 delivery/changes/dev/260911-render-pages/",
       "kind": "structural"
     },
     "RP-A6: 冻结面零越界——docs/contracts/**、managed_components/** git 零触碰；*.acceptance.* 仅 acceptance-author 留痕修订（P2-A1 齿 + U 闭集扩容【字体/气泡尾巴——压暗用既有 d50 网点资产】+ 换皮致路径敏感齿必要修订），REVISION LOG 齐、断言语义不放松；story_page.h 冻结头 additive-only",
@@ -63,18 +63,18 @@
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四D",
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
-    "changes/dev/260829-hardware-validation/review-packet.md",
-    ".planning/260911-display-interaction-sovereignty/PROPOSAL.md",
+    "delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
+    "delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四D",
+    "delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七",
+    "delivery/changes/dev/260829-hardware-validation/review-packet.md",
+    "delivery/workstreams/260911-display-interaction-sovereignty/PROPOSAL.md",
     "docs/ui/kidpal-ui-design-v3.html",
     "docs/notes/ui-implementation-strategy.md"
   ],
   "sourceRefs": [
-    "changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
-    "changes/dev/260829-hardware-validation/review-packet.md#F5",
-    "changes/dev/260829-hardware-validation/review-packet.md#F2",
+    "delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§四A",
+    "delivery/changes/dev/260829-hardware-validation/review-packet.md#F5",
+    "delivery/changes/dev/260829-hardware-validation/review-packet.md#F2",
     "docs/ui/kidpal-ui-design-v3.html#sec-pages",
     "docs/ui/kidpal-ui-design-v3.html#sec-states",
     "docs/ui/kidpal-ui-design-v3.html#sec-rules"
@@ -94,7 +94,7 @@
       "decision": "human-20260911-V3整屏还原扩包",
       "summary": "human 2026-09-11 对话内三问裁定：「V3 整屏设计还原」（配色/布局/图标/整体视觉规格与 docs/ui/kidpal-ui-design-v3.html 的差距）不另立项，扩进本包——范围 = 页面换皮（P2/P3/P4）+ P4 笔顺观感还原 + 语音轮五态演出换皮；字体生产并包（原 RP-A4 触发器「拆出另立项」条款废除——换皮依赖字体，拆出去就没皮）。riskTier 复判 medium→high，crossEnd 撤 exempt，iterationBudget 2→3、fixBudget 3→4。",
       "sourceRefs": [
-        ".claude/taskpackages/260911-render-pages/plan.md#还原轨"
+        "delivery/taskpackages/260911-render-pages/plan.md#还原轨"
       ],
       "landsIn": "acceptance:RP-A8"
     },
@@ -102,7 +102,7 @@
       "decision": "human-20260911-V3整屏还原扩包",
       "summary": "human 2026-09-11 对话内三问裁定：「V3 整屏设计还原」（配色/布局/图标/整体视觉规格与 docs/ui/kidpal-ui-design-v3.html 的差距）不另立项，扩进本包——范围 = 页面换皮（P2/P3/P4）+ P4 笔顺观感还原 + 语音轮五态演出换皮；字体生产并包（原 RP-A4 触发器「拆出另立项」条款废除——换皮依赖字体，拆出去就没皮）。riskTier 复判 medium→high，crossEnd 撤 exempt，iterationBudget 2→3、fixBudget 3→4。",
       "sourceRefs": [
-        ".claude/taskpackages/260911-render-pages/plan.md#还原轨"
+        "delivery/taskpackages/260911-render-pages/plan.md#还原轨"
       ],
       "landsIn": "acceptance:RP-A9"
     },
@@ -110,7 +110,7 @@
       "decision": "human-20260911-V3整屏还原扩包",
       "summary": "human 2026-09-11 对话内三问裁定：「V3 整屏设计还原」（配色/布局/图标/整体视觉规格与 docs/ui/kidpal-ui-design-v3.html 的差距）不另立项，扩进本包——范围 = 页面换皮（P2/P3/P4）+ P4 笔顺观感还原 + 语音轮五态演出换皮；字体生产并包（原 RP-A4 触发器「拆出另立项」条款废除——换皮依赖字体，拆出去就没皮）。riskTier 复判 medium→high，crossEnd 撤 exempt，iterationBudget 2→3、fixBudget 3→4。",
       "sourceRefs": [
-        ".claude/taskpackages/260911-render-pages/plan.md#还原轨"
+        "delivery/taskpackages/260911-render-pages/plan.md#还原轨"
       ],
       "landsIn": "acceptance:RP-A10"
     },
@@ -118,7 +118,7 @@
       "decision": "human-20260911-V3整屏还原扩包",
       "summary": "human 2026-09-11 对话内三问裁定：「V3 整屏设计还原」（配色/布局/图标/整体视觉规格与 docs/ui/kidpal-ui-design-v3.html 的差距）不另立项，扩进本包——范围 = 页面换皮（P2/P3/P4）+ P4 笔顺观感还原 + 语音轮五态演出换皮；字体生产并包（原 RP-A4 触发器「拆出另立项」条款废除——换皮依赖字体，拆出去就没皮）。riskTier 复判 medium→high，crossEnd 撤 exempt，iterationBudget 2→3、fixBudget 3→4。",
       "sourceRefs": [
-        ".claude/taskpackages/260911-render-pages/plan.md#还原轨"
+        "delivery/taskpackages/260911-render-pages/plan.md#还原轨"
       ],
       "landsIn": "acceptance:RP-A4"
     },
@@ -144,7 +144,7 @@
       "decision": "human-20260911-P2A1修法方案B",
       "summary": "P2-A1 恒红齿修法裁定方案 B：acceptance-author 修 first-match 定位歧义（tightly-only + REVISION LOG），否决方案 A（render_node 补哨兵标记）。",
       "sourceRefs": [
-        ".claude/taskpackages/260911-render-pages/plan.md#阶段1"
+        "delivery/taskpackages/260911-render-pages/plan.md#阶段1"
       ],
       "landsIn": "acceptance:RP-A1"
     },
@@ -152,7 +152,7 @@
       "decision": "human-20260911-批次②先③后",
       "summary": "接续顺序锁定批次②（260911-display-interaction-sovereignty）先行、本包后——#11 数据链与 #9 screen_lines 接线与 ② 重构面（kidpal_render_node.cc/mcp_server.cc）同文件；mergeOrder 17 为占位，portfolio-planner 排序时落锁。",
       "sourceRefs": [
-        ".planning/260911-display-interaction-sovereignty/PROPOSAL.md"
+        "delivery/workstreams/260911-display-interaction-sovereignty/PROPOSAL.md"
       ],
       "landsIn": "exitCriteria:RP-E1"
     },
@@ -227,5 +227,5 @@
     ]
   },
   "notes": "triage 2026-09-11：architect 判②单包 Full（sourceType=regression），human 触点①已确认（含 #12 方案 B 修法 + ② 先 ③ 后接续顺序）。**2026-09-11 扩包裁定（human 对话内三问钉死，扩包后骨架重写）**：①「V3 整屏设计还原」扩进本包（页面换皮 P2/P3/P4 + P4 笔顺观感 + 五态演出换皮，整屏一次还原）；②字体生产并包（原 S0.1 触发器「拆出另立项」条款废除）；③riskTier medium→high、crossEnd 撤 exempt（新产 V3 保真齿）、iterationBudget 3 / fixBudget 4、dependsOn 增 260911-screen-unification（五态落点 = PKG-2 聊天 layer 底座）。执行纪律：阶段 1 齿修复先行（恒红污染全批验证信号）；S0.1 字体方案决策是 human 触点②（并包下只裁方案不裁去留）；S0.2 数据链勘察后若根因在云侧 producer 则本包扩 server 面、若需改契约则逃生门停；S0.3 五态落点勘察（PKG-2 未合并时纸面推演，合并后 rebase 校正）。input-brief 双份由 planner /build-feature Step 7 产出。禁改 docs/contracts/** 与 managed_components/**；*.acceptance.* 仅本包明示的 acceptance-author 留痕修订（P2-A1 齿 + U 闭集扩容 + 路径敏感齿必要修订）。**复查补记（2026-09-11）**：①acceptanceTestsFile 增列 firmware/main/test/v3_restore.acceptance.c——RP-A11 新产 V3 保真齿的落点文件，文件名 intake 时 acceptance-author 可改定，改则同步本字段；②跨包交点申报——application.cc 三符号（SetChatMessage/SetStatus/SetEmotion）与 PKG-2 crossEnd counterparts 双登记，所有权拆分 = PKG-2 齿断言 layer 化落点（语义 owner）、本包齿断言五态内容渲染（换皮 owner），断言面不重叠；本包 dependsOn PKG-2、后并，不构成 launch 冲突；③P3 录音子状态与盖章成帧冻结逻辑已在 story_page.c（KSTORY_PAGE_RECORDING/kidpal_story_rec_tick/盖章几何冻结值），换皮范围含其观感层（plan S5.3），冻结语义零改动；④提醒弹窗压暗用既有 d50 网点资产（闭集内）；F1 更正后唯一新增 KAP1 = 气泡尾巴，字体走三分道路径（编译内置 / 非 KAP1 独立落地 + 分型齿 / 预渲染位图）不并 KAP1 闭集；⑤architect-reviewer review（2026-09-11，GREEN-WITH-ITEMS，见 arch-review.md）9 条 findings 已折回包定义：F1 字体分型 / F2 #9 切片机制齿 / F3 五态 symbol 未钉 / F4 活控件机制 / F5 切片齿+字段笔误 / F6 server 条件依赖 / F7 P1 边界 / F8 budget 4:5 / F9 动效白名单+转写脚本承接。 **acceptance 冻结补记（2026-09-12）**：acceptance-author 交付——①RP-A1 齿 6/齿 5 修毕（定义签名定位，tightly-only，修后当前树即绿，S1.3 口径 = runner 复跑不回红）；②v3_restore.acceptance.c 新产 6 齿（五态内容/接线/资产/d50 压暗/换皮框族/字体分型闭集，红基线 = 接线后首跑全红+守卫绿，见 red-baseline-freeze.md）；③F2/F5 新齿落 story_p3.acceptance.c（F5 原拟 .test.c 超写域，planner 裁定维持冻结件落点不搬移）；④U 闭集 47→48（bubble_tail_24.bin，ART-A5 连带红 owner=本包）；⑤冻结契约 = kidpal_voice_state_look 纯逻辑 + kidpal_story_reader_slice 切片助手（builder 落地 kidpal_voice_states.{c,h} + story_page.h additive 声明 + CMakeLists 接线 v3_restore 在 host_infra_smoke 之前）；⑥字体分型闭集落 v3_restore test 6（fonts_root 独立闭集，与 B8 分型）。",
-  "mutationSkipReason": "launch 侧裁定 mutationRequired=false（本包齿以真实渲染帧/资产闭集/结构扫描为断言对象，无 vacuity 自证面）；acceptance-author intake 同判未设变异条目；依据见 changes/dev/260911-render-pages/red-baseline-freeze.md"
+  "mutationSkipReason": "launch 侧裁定 mutationRequired=false（本包齿以真实渲染帧/资产闭集/结构扫描为断言对象，无 vacuity 自证面）；acceptance-author intake 同判未设变异条目；依据见 delivery/changes/dev/260911-render-pages/red-baseline-freeze.md"
 }

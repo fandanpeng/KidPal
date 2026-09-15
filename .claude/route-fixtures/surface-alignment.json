@@ -4,18 +4,18 @@
   "exemptions": { "agents": [] },
   "writeScope": {
     "architect": {
-      "allow": ["docs/systems/**", "docs/contracts/**", "changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"],
+      "allow": ["docs/systems/**", "docs/contracts/**", "delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"],
       "exemptions": [],
       "lastReviewed": "2026-08-27",
       "rationale": "Draft/judge only; canonical landing is main-thread packet-bound. G1/G3 self-deny lives in scope-map deny carve-out."
     },
-    "review-moderator": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", "docs/systems/**", "docs/contracts/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "scenario-author": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "challenger": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "defender": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "adjudicator": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "review-moderator": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", "docs/systems/**", "docs/contracts/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "scenario-author": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "challenger": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "defender": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "adjudicator": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
     "architect-reviewer": { "_readOnly": true, "lastReviewed": "2026-08-27" },
-    "landing-verifier": { "allow": ["changes/arch/arch-review-*/**", "changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." }
+    "landing-verifier": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." }
   },
   "criticalDenySet": {
     "settingsFile": ".claude/review-loop.settings.json",

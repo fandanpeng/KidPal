@@ -1,5 +1,5 @@
 > 归位注记（acceptance-author, 2026-09-07）：本文件目标位置为
-> `C:/AI/KidPal/.claude/taskpackages/260829-char-stroke/red-baseline-summary.md`
+> `C:/AI/KidPal/delivery/taskpackages/260829-char-stroke/red-baseline-summary.md`
 > （planner 已按包 2 先例授权产出该摘要），但 enforce-scope 拦截（acceptance-author
 > 写边界 = firmware/server 的 acceptance 面 + tools）。故落边界内本路径（WSA 包
 > red-baseline-summary.md 同目录先例；包专名防覆盖 WSA 同名件），请有写权方原样归位。

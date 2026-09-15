@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // brief-inputs.mjs · dev-loop 派发输入面封闭化：从 TaskPackage refs + crossEnd 派生 input-brief
-// 立法来源：changes/arch/260908-gov-review-input-surface-frontload/PROPOSAL.md（FROZEN v1.0 · T2）
+// 立法来源：delivery/changes/arch/260908-gov-review-input-surface-frontload/PROPOSAL.md（FROZEN v1.0 · T2）
 // 承载 DEV-GOVERNANCE「起包格式期望前置」第六条第 ①②③ 件（同批 T1）。
 //
 // 定位：**派生清单，不新造事实源**——只读 taskpackage.json 与被引文件，只写 taskpackages 目录内 brief。
@@ -203,7 +203,7 @@ function renderCounterparts(tp, errors) {
 
 // ③ 先例封顶：三判定源钉死（R1/F8）——merged / subsystem token 包含 / changeId 日期前缀
 function isMerged(changeId) {
-  const verdictPath = resolve(projectDir, 'changes/dev', changeId, 'supervisor-verdict.json');
+  const verdictPath = resolve(projectDir, 'delivery/changes/dev', changeId, 'supervisor-verdict.json');
   if (existsSync(verdictPath)) {
     try {
       const v = JSON.parse(readFileSync(verdictPath, 'utf8').replace(/^﻿/, ''));
@@ -211,7 +211,7 @@ function isMerged(changeId) {
       if (String(verdict).toUpperCase() === 'APPROVE') return true;
     } catch { /* 非法 JSON 视作未判 */ }
   }
-  const events = resolve(projectDir, '.claude/taskpackages', changeId, 'pod-events.jsonl');
+  const events = resolve(projectDir, 'delivery/taskpackages', changeId, 'pod-events.jsonl');
   if (existsSync(events)) {
     for (const line of readFileSync(events, 'utf8').split(/\r?\n/)) {
       if (!line.trim()) continue;
@@ -234,7 +234,7 @@ function datePrefix(changeId) {
 function findPrecedents(tp, repoRoot = projectDir) {
   const selfId = tp.changeId;
   const mine = subsystemTokens(tp);
-  const base = join(repoRoot, '.claude', 'taskpackages');
+  const base = join(repoRoot, 'delivery', 'taskpackages');
   if (!existsSync(base)) return [];
   const cands = [];
   for (const dir of readdirSync(base, { withFileTypes: true })) {
@@ -288,7 +288,7 @@ function renderBrief(tp, role, opts = {}) {
   if (nonEmptyString(opts.regeneratedBecause)) {
     L.push(`> regenerated-because: ${String(opts.regeneratedBecause).trim()}（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）`);
   }
-  L.push(`> 来源 TaskPackage: \`.claude/taskpackages/${tp.changeId}/taskpackage.json\` · subsystem: ${tp.subsystem || '(空)'} · rigor: ${tp.rigor || 'full'}`);
+  L.push(`> 来源 TaskPackage: \`delivery/taskpackages/${tp.changeId}/taskpackage.json\` · subsystem: ${tp.subsystem || '(空)'} · rigor: ${tp.rigor || 'full'}`);
   L.push('');
   L.push(`## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）`);
   L.push('');
@@ -412,9 +412,9 @@ function selfCheck() {
     return t.has('firmware') && t.has('server') && t.size === 2;
   })(), 'tokenization');
   ok('③ 时间轴 = changeId 日期前缀', datePrefix('260903-gateway-directionB') === '260903', 'prefix extraction');
-  ok('current/ 指针副本排除', !existsSync(join(projectDir, '.claude/taskpackages'))
+  ok('current/ 指针副本排除', !existsSync(join(projectDir, 'delivery/taskpackages'))
       || (() => {
-        const names = readdirSync(join(projectDir, '.claude/taskpackages'), { withFileTypes: true })
+        const names = readdirSync(join(projectDir, 'delivery/taskpackages'), { withFileTypes: true })
           .filter((d) => d.isDirectory()).map((d) => d.name);
         const probe = { changeId: 'x', subsystem: names.length ? 'firmware+server' : 'none', acceptanceTestsFile: [] };
         const found = findPrecedents(probe).some((p) => p.changeId === 'current');
@@ -438,7 +438,7 @@ function main() {
   if (!args.changeId) fail('--change-id required');
   if (!ROLES.includes(args.role)) fail('--role must be acceptance-author|builder', { got: args.role });
 
-  const dir = resolve(projectDir, '.claude/taskpackages', args.changeId);
+  const dir = resolve(projectDir, 'delivery/taskpackages', args.changeId);
   const tpPath = join(dir, 'taskpackage.json');
   if (!existsSync(tpPath)) fail('TaskPackage not found', { expected: tpPath });
   let tp;

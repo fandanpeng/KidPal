@@ -273,7 +273,7 @@
 - `firmware/`：小智 V2.1.0 整树基座 + 板级 overlay（ESP-IDF + C++；esp-sr ~2.2、esp-opus-encoder ~2.4.1、LVGL 锁 9.3.x）。注：官方 Demo 的 Arduino + U8g2 路线**未被采用**（旧文档 §1.1 的 U8g2 版本约束属该路线遗留）；
 - `server/`：gateway（front 冻结模块）/ deploy（部署面）/ acceptance（~183 验收函数，offline+live 两面）/ shim.py（已退役）；
 - `tools/`：LVGL 模拟器 + 资产管线（不入图索引，查询降级 Grep）；
-- `docs/`（spec 面 + contracts + notes）、`changes/`（治理/开发证据）、`.claude/`（治理机制）。
+- `docs/`（spec 面 + contracts + notes）、`delivery/changes/`（治理/开发证据）、`.claude/`（治理机制）。
 
 #### 5.5.2 资产管线（预栅格化 1bpp）
 

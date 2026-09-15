@@ -1,13 +1,13 @@
-# `.planning/` — 长周期工作记忆
+# `delivery/workstreams/` — 长周期工作记忆
 
-本目录承载**跨切片、长周期**的工作记忆（为什么 / 发现 / 进展）。它是 workstream（里程碑 / 命名倡议）级的，区别于单切片验收包（`.claude/taskpackages/`）与实现变更归档（`changes/dev/`）。
+本目录承载**跨切片、长周期**的工作记忆（为什么 / 发现 / 进展）。它是 workstream（里程碑 / 命名倡议）级的，区别于单切片验收包（`delivery/taskpackages/`）与实现变更归档（`delivery/changes/dev/`）。
 
 > 本仓是治理迁移的采用方（自 AInativecompany 迁入），非 dogfood 参考实例；本文件只保留与栈无关的通用结构与纪律。
 
 ## 结构
 
 ```text
-.planning/
+delivery/workstreams/
   README.md                       # 本治理文件（准入 / 归属 / 生命周期 / 结构）
   INDEX.md                        # 人读总览（hook 自动生成，勿手改）
   index.jsonl                     # 机读 feed：工具只读消费（hook 自动生成，勿手改）
@@ -35,9 +35,9 @@
 
 自上而下套这个梯：
 
-1. 带 `<change-id>` 的单切片 dev-loop 变更 → **不建**，归 `.claude/taskpackages/<change-id>/`（晋升后进 `changes/dev/`）。
+1. 带 `<change-id>` 的单切片 dev-loop 变更 → **不建**，归 `delivery/taskpackages/<change-id>/`（晋升后进 `delivery/changes/dev/`）。
 2. 已存在 workstream 的子任务 / 续作 → **不建**，追加进那个 workstream 的 `progress.md` / `findings.md`。
-3. 跨多切片 / 多会话，且带未来 agent 必须读的 why / findings / deviation → **建** `.planning/<slug>/`。
+3. 跨多切片 / 多会话，且带未来 agent 必须读的 why / findings / deviation → **建** `delivery/workstreams/<slug>/`。
 4. 其余（琐碎一次性、纯探讨、无耐久产出）→ **不建**，靠 commit message 或不留。
 
 粒度是 **1 workstream : N changes**：N 个变更挂同一个 slug 下（taskpackage 引用它），workstream 目录只累加 progress，所以 change 数飞涨、目录数缓涨。
@@ -53,7 +53,7 @@
 | 收口 | integrator | 填 `closed:` + `status: done` → 触发归档 |
 | 始终 | verifier、architect-reviewer | 只读，不建不改 |
 
-写权限以 [.claude/scope-map.json](../.claude/scope-map.json) 各 agent 条目的 `.planning/**` allow 为准。
+写权限以 [.claude/scope-map.json](../.claude/scope-map.json) 各 agent 条目的 `delivery/workstreams/**` allow 为准。
 
 ## task_plan.md front-matter（状态单一事实源）
 
@@ -87,9 +87,9 @@ changes:                  # 挂在本 workstream 下的 change-id（体现 1:N�
 
 | 层 | 是什么 | 谁写 |
 |---|---|---|
-| `.planning/<workstream>/` | 跨切片、长周期工作记忆（为什么 / 发现 / 进展） | 人 · 主线程 · dev-loop agent |
-| `.claude/taskpackages/<change-id>/` | 单个正式实现切片的机器可读验收包（exit criteria / 预算 / 证据） | dev-loop |
-| `changes/dev/<change-id>/` | 晋升后的长期实现变更归档 | integrator |
+| `delivery/workstreams/<workstream>/` | 跨切片、长周期工作记忆（为什么 / 发现 / 进展） | 人 · 主线程 · dev-loop agent |
+| `delivery/taskpackages/<change-id>/` | 单个正式实现切片的机器可读验收包（exit criteria / 预算 / 证据） | dev-loop |
+| `delivery/changes/dev/<change-id>/` | 晋升后的长期实现变更归档 | integrator |
 
 ## 约定
 
@@ -97,4 +97,4 @@ changes:                  # 挂在本 workstream 下的 change-id（体现 1:N�
 - 一个 workstream 完结后保留归档（搬进 `_archive/`），不删（这是耐久记忆）。
 - `INDEX.md` / `index.jsonl` 由 hook 自动生成，**勿手改**；要改内容去改各 `task_plan.md` 的 front-matter。
 - 手动重建索引：`node .claude/scripts/planning-index.mjs`。
-- `.planning/` 入库版本控制（"代码库是 planning 源头"），不进 `.gitignore`。
+- `delivery/workstreams/` 入库版本控制（"代码库是 planning 源头"），不进 `.gitignore`。

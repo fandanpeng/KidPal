@@ -10,10 +10,6 @@
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
 
 ```landing-manifest
-delivery/milestones
-delivery/workstreams
-delivery/taskpackages
-delivery/changes
 .claude/scope-map.json
 .claude/dev-loop.settings.json
 .claude/route-fixtures/surface-alignment.json
@@ -93,7 +89,6 @@ docs/requirements.md
 docs/architecture.md
 docs/DEV-GOVERNANCE.md
 docs/ARCH-REVIEW-QUEUE.md
-docs/CONTRACT-DECISION-QUEUE.md
 docs/ADR.md
 docs/notes/ui-implementation-strategy.md
 docs/notes/validation-batch-conclusion.md
@@ -154,7 +149,7 @@ delivery/taskpackages/current/verdict.json
 docs/contracts/interface-contract.md
 ```
 
-> 迁移锚按模板条款只记迁入路径（四目录根）。OQ2 已裁 (a)：firmware/server/tools 证据件 12 行为无条件锚。`docs/contracts/interface-contract.md` 为 T6 契约面指针锚（OQ1 裁 (c)）。评审 R2 补锚 4 件：`portfolio-planner.md`、`plain-file-handoff.md`、`docs/architecture.md`、`milestones.jsonl`。**R1 已裁扩围（human 2026-09-14「同意推荐」）**：代码面 20 件（firmware 10 `.c` + server 9 `.py` + `.gitattributes`）已补入锚。
+> 迁移锚只记迁入路径（四目录根）。OQ2 已裁 (a)：firmware/server/tools 证据件 12 行为无条件锚。`docs/contracts/interface-contract.md` 为 T6 契约面指针锚（OQ1 裁 (c)）。评审 R2 补锚 4 件：`portfolio-planner.md`、`plain-file-handoff.md`、`docs/architecture.md`、`milestones.jsonl`。**R1 已裁扩围（human 2026-09-14「同意推荐」）**：代码面 20 件（firmware 10 `.c` + server 9 `.py` + `.gitattributes`）已补入锚。**landing 期结构修正（2026-09-15，landing-fidelity-check fail-loud 所迫、如实记档于 landing-summary §3-10）**：① 四目录根迁入锚剔出 manifest（git diff 不产目录级变更、不可机判；T1 改整裁腿空锚）；② `docs/CONTRACT-DECISION-QUEUE.md` 剔出（其 census 命中经核全为已结行历史行、零落地件——判官 R14 所述「manifest 侧无命中正当」件之一）；③ 各 T 补「目标文件：」锚清单行（模板硬项 2a，起草期遗漏、四轮评审未捕获，retro 收录）。
 
 ---
 
@@ -224,6 +219,7 @@ grep -rl '\.delivery' .（同上过滤）
 - 未晋升两包（260829-audio-bargein-hw、260829-shim-skeleton）与 `current/` 同为搬移对象；仅 `current/` 件内容随后由 T4 批改（活工作面），两未晋升包按历史件处理（其包内 `.planning` 引用留档——影响为包内 workstream 指针 stale，读档时按当时语境理解）。
 - 前置条件：迁移窗口内无在途 Pod worktree（Pod 分支基于旧路径，rebase 会大面积冲突；landing 前 human/主线程确认）。
 - 对应根因：P1。
+目标文件：无（目录迁移整裁腿——四目录根为迁入锚、git diff 不产目录级变更不可机判；迁入内容件的活内容锚归 T4，历史面件零改动不产锚）
 
 ### T2 · 机械强制层路径批改（scope-map / hooks / scripts / settings，与 T1 同一 commit）
 
@@ -233,6 +229,7 @@ grep -rl '\.delivery' .（同上过滤）
 - `dev-loop.settings.json`、`route-fixtures/surface-alignment.json` 同步替换。
 - 顺序敏感：scope-map 批改与 git mv 必须同 commit（避免窗口期 agent 写路径被拦/放行错位）。enforce-scope 不拦顶层目录创建（已核 scope-map `universal.denyCreate` 仅 `contracts/**`，enforce-scope.mjs:53 消费），`delivery/` 可直接创建。
 - 对应根因：P1、P2。
+目标文件：`.claude/scope-map.json` `.claude/dev-loop.settings.json` `.claude/route-fixtures/surface-alignment.json` `.claude/hooks/commit-safety.mjs` `.claude/hooks/enforce-scope.mjs` `.claude/hooks/planning-sync.mjs` `.claude/hooks/portfolio-sync.mjs` `.claude/hooks/suggest-codebase-memory.mjs` `.claude/hooks/supervisor-gate-check.mjs` `.claude/hooks/supervisor-verdict-gate.mjs` `.claude/hooks/verify.mjs` `.claude/scripts/acceptance-coverage-check.mjs` `.claude/scripts/arch-review-handoff-check.mjs` `.claude/scripts/brief-inputs.mjs` `.claude/scripts/changes-index.mjs` `.claude/scripts/closeout-check.mjs` `.claude/scripts/delivery-status.mjs` `.claude/scripts/devloop-artifact-check.mjs` `.claude/scripts/dispatch-stamp.mjs` `.claude/scripts/docs-sync-check.mjs` `.claude/scripts/journal-append.mjs` `.claude/scripts/landing-fidelity-check.mjs` `.claude/scripts/lib/governance-gate-shared.mjs` `.claude/scripts/loop-health-report.mjs` `.claude/scripts/loop-metrics.mjs` `.claude/scripts/merge-driver.mjs` `.claude/scripts/mutation-check.mjs` `.claude/scripts/planning-index.mjs` `.claude/scripts/pod-events-aggregate.mjs` `.claude/scripts/pod-events-append.mjs` `.claude/scripts/portfolio-reconcile.mjs` `.claude/scripts/pre-merge-escalation-gate.mjs` `.claude/scripts/proposal-consolidation-check.mjs` `.claude/scripts/render-roadmap.mjs` `.claude/scripts/security-check.mjs` `.claude/scripts/taskpackage-required-check.mjs` `.claude/scripts/verifier-evidence-check.mjs`
 
 ### T3 · 治理文档与活文档面批改
 
@@ -243,6 +240,10 @@ grep -rl '\.delivery' .（同上过滤）
 - 代码面指针批改（评审 R1，human 2026-09-14 裁扩围）：firmware 10 件 `.c`（全注释指针）、server 9 件 `.py`（docstring / 断言消息串 + **功能性路径常量**——`CHANGES_DEV` 派生的 `PACKAGE_EVIDENCE_DIR` / `LIVE_EVIDENCE_DIR` 等，测试运行时实读 `changes/dev/` 证据目录，不改迁移后必红）、`.gitattributes`（`merge=union` 属性行更新至 `delivery/workstreams/_archive/2026/kidpal-mvp/progress.md`，顺修既有归档失配——原行指向归档前的 `.planning/kidpal-mvp/` 早已失配）——全部按映射表平移，代码逻辑零变更。
 - 条件锚（OQ2 裁 (a) 时）：firmware 红基线摘要 6 件、`server/evidence/260903-gateway-directionB/` 4 件、tools 验收件 2 件——纯指针批改。
 - 对应根因：P2、P4。
+目标文件：`AGENTS.md` `.claude/rules/repo-structure.md` `.claude/rules/prompt-authoring.md` `.claude/agents/adjudicator.md` `.claude/agents/architect-reviewer.md` `.claude/agents/architect.md` `.claude/agents/challenger.md` `.claude/agents/defender.md` `.claude/agents/integrator.md` `.claude/agents/landing-verifier.md` `.claude/agents/planner.md` `.claude/agents/portfolio-planner.md` `.claude/agents/review-moderator.md` `.claude/agents/scenario-author.md` `.claude/commands/arch-change.md` `.claude/commands/build-feature.md` `.claude/commands/loop-retro.md` `.claude/commands/review-arch.md` `.claude/commands/review-governance.md` `.claude/commands/triage-change.md` `.claude/references/arch-review-protocol.md` `.claude/references/arch-scenarios.md` `.claude/references/architect-operating-model.md` `.claude/references/architecture-decisions.md` `.claude/references/change-triage.md` `.claude/references/dev-loop-operating-system.md` `.claude/references/dev-loop.md` `.claude/references/pod-coordination.md` `.claude/references/task-intake-and-slicing.md` `.claude/references/taskpackage-authoring.md` `.claude/references/track-b-verifier-brief.md` `.claude/references/plain-file-handoff.md` `.claude/skills/arch-doc-restructure/SKILL.md` `.claude/skills/brainstorming/SKILL.md` `.claude/skills/gov-arq/SKILL.md` `.claude/skills/kidpal-pod-launch-prep/SKILL.md` `.claude/skills/merge-to-main/SKILL.md` `.claude/skills/opendesign-connect/SKILL.md`
+目标文件：`docs/requirements.md` `docs/architecture.md` `docs/DEV-GOVERNANCE.md` `docs/ARCH-REVIEW-QUEUE.md` `docs/ADR.md` `docs/notes/ui-implementation-strategy.md` `docs/notes/validation-batch-conclusion.md` `docs/templates/GOVERNANCE-MIGRATION-GUIDE.md` `docs/templates/PROPOSAL.template.md` `docs/templates/WORKSTREAM-PROPOSAL.template.md` `docs/templates/WORKSTREAM-ROADMAP.template.md` `docs/templates/architect-landing-summary.template.md` `docs/templates/retro.template.md`
+目标文件：`firmware/main/test/HOST_TEST_CONVENTIONS.md` `server/deploy/README.md` `server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md` `firmware/main/test/acceptance/red-baseline/red-baseline-summary.char-stroke.md` `firmware/main/test/acceptance/red-baseline/red-baseline-summary.md` `firmware/main/test/acceptance/red-baseline/schedule-p2-red-baseline-summary.md` `firmware/main/test/acceptance/red-baseline/schedule-reminder-red-baseline-summary.md` `firmware/main/test/acceptance/red-baseline/screen-unification-red-baseline-summary.md` `firmware/main/test/acceptance/red-baseline/story-p3-red-baseline-summary.md` `server/evidence/260903-gateway-directionB/cert-lifecycle-accept-risk.md` `server/evidence/260903-gateway-directionB/deploy.md` `server/evidence/260903-gateway-directionB/v21-multiturn-continuity-probe.md` `server/evidence/260903-gateway-directionB/v23-asr-final-selection.md` `tools/asset-pipeline/tests/test_art_assets.acceptance.md` `tools/simulator/tests/test_lvgl_align.acceptance.md`
+目标文件：`firmware/main/test/char_stroke.acceptance.c` `firmware/main/test/device_ws_switch.acceptance.c` `firmware/main/test/happy_flow_capture.test.c` `firmware/main/test/hardware_validation.acceptance.c` `firmware/main/test/key_route_a1.acceptance.c` `firmware/main/test/schedule_reminder_b.acceptance.c` `firmware/main/test/screen_unification.acceptance.c` `firmware/main/test/ui_art_integration.acceptance.c` `firmware/main/test/v3_restore.acceptance.c` `firmware/main/test/voice_roundtrip_b.acceptance.c` `server/acceptance/test_char_stroke.acceptance.py` `server/acceptance/test_gateway_directionB.acceptance.py` `server/acceptance/test_g_relay_fix.acceptance.py` `server/acceptance/test_schedule_p2.acceptance.py` `server/acceptance/test_schedule_reminder.acceptance.py` `server/acceptance/test_smoke_e2e.acceptance.py` `server/acceptance/test_story_p3.acceptance.py` `server/acceptance/test_story_wiring.acceptance.py` `server/acceptance/test_voice_roundtrip_b.acceptance.py` `.gitattributes`
 
 ### T4 · 迁入件活内容批改 + 派生索引再生
 
@@ -252,6 +253,7 @@ grep -rl '\.delivery' .（同上过滤）
 - `delivery/milestones/milestones.jsonl`（评审 R2 补锚，活数据件）：各里程碑 `planningRefs` 等字段内旧路径按映射表批改（closeout-check 对该字段名 fail-closed，改漏即门红）。
 - 派生索引再生（脚本跑、勿手改）：`planning-index.mjs` 重建 `delivery/workstreams/{INDEX.md,index.jsonl}`；`delivery-status.mjs` 再生 `delivery/milestones/STATUS.md`；`changes-index.mjs` **无参全量重建**（评审 R4：实测现 INDEX.md 45 行含旧前缀，仅 `--upsert` 会留 44+ 行死链；脚本无参幂等重建全部行）后再 `--upsert 260914-gov-review-delivery-restructure` 确保本变更行在册。
 - 对应根因：P2。
+目标文件：`delivery/milestones/delivery-workspace.json` `delivery/milestones/milestones.jsonl` `delivery/workstreams/README.md` `delivery/workstreams/INDEX.md` `delivery/workstreams/index.jsonl` `delivery/milestones/STATUS.md` `delivery/changes/INDEX.md` `delivery/taskpackages/current/input-brief-acceptance-author.md` `delivery/taskpackages/current/input-brief-builder.md` `delivery/taskpackages/current/taskpackage.json` `delivery/taskpackages/current/verdict.json`
 
 ### T5 · 图索引面登记
 
@@ -259,6 +261,7 @@ grep -rl '\.delivery' .（同上过滤）
 - `.claude/.cbmignore`（KidPal-claude 项目）：删除已失效的 `taskpackages/` 行、注释同步。
 - 操作项（非文件锚）：迁移后主索引刷新（`index_repository`）使排除生效。
 - 对应根因：P1（taskpackages 意外不入图的错位被显式规则取代）。
+目标文件：`.cbmignore` `.claude/.cbmignore`
 
 ### T6 · 契约面 3 处指针批改（OQ1 human 裁 (c) + 扩围裁定）
 
@@ -266,6 +269,7 @@ grep -rl '\.delivery' .（同上过滤）
 - 行 4（2026-09-14 human 扩围裁定「顺手一起改了」）：更早的过期指针，指向已于 2026-09-13 spec 拆分归档的 `docs/spec.md`。原文（verbatim）：`> 配合 [docs/spec.md](../spec.md) §3.0.2（D3 笔顺格式已定稿）使用。` 替换后完整句：`> 配合 [docs/requirements.md](../requirements.md) F3（查字窗·笔顺演示需求）使用；笔顺 JSON 格式（D3）以本契约为权威。`（旧 §3.0.2 的承接面 = requirements.md F3 story；格式定义权威本就在本契约自身，补充句只是显式化既有事实。）
 - 契约门形态（human 2026-09-14 立项裁定 + 同日扩围裁定）：architect-reviewer 四分类预审（行 5/96 已裁「随本治理变更携带（同 PR）· 零语义地址修正」；行 4 同性质顺延——指向承接面的指针刷新，零条款语义变更）+ human 签字（两项裁定即预签）；不升 Track A。
 - 对应根因：P3（行 5/96）+ 预审官范围外发现（行 4，human 裁并入）。
+目标文件：`docs/contracts/interface-contract.md`
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 

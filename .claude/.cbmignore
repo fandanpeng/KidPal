@@ -1,7 +1,9 @@
-# KidPal-claude 图项目排除规则（项目根 = .claude；2026-09-13 human 裁定 hooks/ 与 scripts/ 入图）
-# 只保留 hooks/ 与 scripts/；agents/skills/rules 等治理 markdown 与 taskpackages 证据、
-# 本地配置（settings*.json）不入图。scripts/ 在工具内置 skip-list（目录名级），此处的
-# `!scripts` 取反是显式放行尝试——若重建后 scripts/ 仍被跳过，则以独立根单独建项目兜底。
+# KidPal-claude 图项目排除规则（项目根 = .claude；2026-09-13 human 裁定 hooks/ 与 scripts/ 入图；
+# 2026-09-14 human 裁定维持 hooks+scripts 不扩——260914-gov-review-delivery-restructure T5）
+# 只保留 hooks/ 与 scripts/；agents/skills/rules 等治理 markdown 与本地配置（settings*.json）不入图。
+# taskpackages 已迁出 .claude（→ delivery/taskpackages/，主索引侧由 .cbmignore 排除 delivery/）。
+# scripts/ 在工具内置 skip-list（目录名级），此处的 `!scripts` 取反是显式放行尝试——
+# 若重建后 scripts/ 仍被跳过，则以独立根单独建项目兜底。
 agents/
 commands/
 loop-retro/
@@ -9,7 +11,6 @@ references/
 route-fixtures/
 rules/
 skills/
-taskpackages/
 verify-logs/
 dev-loop.settings.json
 review-loop.settings.json

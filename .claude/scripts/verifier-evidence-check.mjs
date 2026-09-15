@@ -119,15 +119,15 @@ export function normalizeExpected(input) {
 
 export function evidencePaths(projectDir, expected) {
   const tuple = normalizeExpected(expected);
-  const taskPackageDir = resolve(projectDir, '.claude', 'taskpackages', tuple.changeId);
+  const taskPackageDir = resolve(projectDir, 'delivery', 'taskpackages', tuple.changeId);
   const taskPackagePath = resolve(taskPackageDir, 'taskpackage.json');
-  const currentTaskPackagePath = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const currentTaskPackagePath = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   const evidenceRoot = resolve(taskPackageDir, 'verifier-evidence');
   const roundsDir = resolve(evidenceRoot, 'rounds');
   const finalName = `r${tuple.round}.json`;
   validateComponent(finalName, 'finalName');
   const finalPath = resolve(roundsDir, finalName);
-  const evidenceRef = `.claude/taskpackages/${tuple.changeId}/verifier-evidence/rounds/${finalName}`;
+  const evidenceRef = `delivery/taskpackages/${tuple.changeId}/verifier-evidence/rounds/${finalName}`;
   return { ...tuple, taskPackageDir, taskPackagePath, currentTaskPackagePath, evidenceRoot, roundsDir, finalPath, finalName, evidenceRef };
 }
 
@@ -433,8 +433,8 @@ export function validateEvidenceFile(projectDir, expectedInput, options = {}) {
 }
 
 function writeSelfTaskPackage(root, changeId) {
-  const named = resolve(root, '.claude', 'taskpackages', changeId);
-  const current = resolve(root, '.claude', 'taskpackages', 'current');
+  const named = resolve(root, 'delivery', 'taskpackages', changeId);
+  const current = resolve(root, 'delivery', 'taskpackages', 'current');
   mkdirSync(named, { recursive: true });
   mkdirSync(current, { recursive: true });
   const taskPackage = { changeId, subsystem: 'self-check' };
@@ -477,7 +477,7 @@ function runSelfCheck() {
     checks.push(['valid-green', validateEvidenceFile(root, expected).ok]);
     checks.push(['wrong-round', !validateEvidenceFile(root, { ...expected, round: 2 }).ok]);
     checks.push(['wrong-invocation', !validateEvidenceFile(root, { ...expected, invocationId: '22222222-2222-4222-8222-222222222222' }).ok]);
-    writeFileSync(resolve(root, '.claude', 'taskpackages', 'current', 'verdict.json'), '{ malformed');
+    writeFileSync(resolve(root, 'delivery', 'taskpackages', 'current', 'verdict.json'), '{ malformed');
     checks.push(['projection-poison-ignored', validateEvidenceFile(root, expected).ok]);
     const failExpected = { ...expected, round: 2, invocationId: '33333333-3333-4333-8333-333333333333' };
     const failPaths = evidencePaths(root, failExpected);

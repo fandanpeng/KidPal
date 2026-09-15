@@ -62,18 +62,18 @@ FROZEN device-face offline contract (cross-reference; asserted in the C twin):
   This file does NOT re-assert them; the twin-alignment tooth guards the twin
   file exists and keeps carrying the §四 profile.
 
-Evidence dir: changes/dev/260829-voice-roundtrip/ (G 包 changes/dev/ 先例).
+Evidence dir: delivery/changes/dev/260829-voice-roundtrip/ (G 包 delivery/changes/dev/ 先例).
   - live 冒烟证据（设备侧, C 证据验收消费）: *roundtrip*/*evidence* 记录件。
   - a4-adherence-samples.md: A4 live 统计样本 + 失败样本处置记录（live 面写）。
   - abort 取消生成观察记录（A6 offline 验收消费）。
 
 Red baseline (vehicle state, 2026-09-07 acceptance-author 实测):
   - server/deploy/ 无任何 system prompt 版本化文件, deploy overlay 不引用之
-    （E4 双齿红）; changes/dev/260829-voice-roundtrip/ 不存在（A4/A6 证据齿红）。
+    （E4 双齿红）; delivery/changes/dev/260829-voice-roundtrip/ 不存在（A4/A6 证据齿红）。
   - G 包已 landed 的 gateway 面（mcp_relay/display_schema/fallback）按冻结
     offline contract 断言为绿色守卫（对齐齿, 防漂移）。
   - live 面（A4 统计复验 / A7 问答链路）不在红基线 auto-run 范围（@live）。
-  See .claude/taskpackages/260829-voice-roundtrip/red-baseline-summary.md.
+  See delivery/taskpackages/260829-voice-roundtrip/red-baseline-summary.md.
 
 Collection discipline:
   - 本文件名含两个点（test_*.acceptance.py），pytest 默认 prepend import 模式
@@ -109,7 +109,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SERVER = REPO_ROOT / "server"
 GATEWAY_DIR = SERVER / "gateway"
 DEPLOY_DIR = SERVER / "deploy"
-EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-voice-roundtrip"
+EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-voice-roundtrip"
 C_TWIN = REPO_ROOT / "firmware" / "main" / "test" / "voice_roundtrip_b.acceptance.c"
 
 # FROZEN artifact path (钉死; rationale in module docstring).
@@ -302,7 +302,7 @@ class VoiceRoundtripBOfflineAcceptance(unittest.TestCase):
         self.assertTrue(
             files,
             "VRT-A4 RED: no display-adherence recheck record under "
-            "changes/dev/260829-voice-roundtrip/ — 方向 B 网关切分路径的格式遵循度"
+            "delivery/changes/dev/260829-voice-roundtrip/ — 方向 B 网关切分路径的格式遵循度"
             "统计性复验未执行（契约待确认点 1: 不复用 HTTP 期 12/12 旧结论）.",
         )
         text = _read_text(files[0])
@@ -334,7 +334,7 @@ class VoiceRoundtripBOfflineAcceptance(unittest.TestCase):
         self.assertTrue(
             files,
             "VRT-A6 RED: no abort/cloud-cancel observation record under "
-            "changes/dev/260829-voice-roundtrip/ — 喊停/打断 -> abort -> 云端取消"
+            "delivery/changes/dev/260829-voice-roundtrip/ — 喊停/打断 -> abort -> 云端取消"
             "生成链路未实测或未记录 (契约 §四 abort 消息).",
         )
         text = _read_text(files[0])

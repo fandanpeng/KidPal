@@ -1,6 +1,6 @@
 # WORKSTREAM-PROPOSAL.template · workstream 设计权威模板（canonical · 260912-gov-review-portfolio-decomposition-chain T1 落地，FROZEN v1.0）
 
-> 用法：复制本件为 `.planning/<workstream-slug>/PROPOSAL.md`，替换 `<尖括号>` 占位。**起草方 = 主线程**（`/triage-change` ③档路径；输入常为 human 与主线程讨论的产物，起草权不转移至 portfolio-planner——下游写上游输入是倒置）。
+> 用法：复制本件为 `delivery/workstreams/<workstream-slug>/PROPOSAL.md`，替换 `<尖括号>` 占位。**起草方 = 主线程**（`/triage-change` ③档路径；输入常为 human 与主线程讨论的产物，起草权不转移至 portfolio-planner——下游写上游输入是倒置）。
 > 本件是 workstream 的**裁决记录**：只管「三问 + 裁定」，冻结后不改。「列车怎么跑、走到哪了」归活文档 `roadmap.md`（模板 `WORKSTREAM-ROADMAP.template.md`）。
 > **带【硬项】的小节是义务不是建议**——缺失即 portfolio-planner intake fail-closed 打回主线程补齐（不猜、不代写）。
 > 权威序恒为：**spec（`docs/requirements.md` + `docs/architecture.md`）= 行为语义权威，本件 = 路径选择记录**。本件不得自冻成第二事实源。

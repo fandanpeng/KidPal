@@ -31,7 +31,7 @@ model: opus
 4. 建**双向消费方清单**:把 spec 里每个 expose/喂给/只读投影/事件 producer 列出,标「匹配的消费方声明在哪」—— 留空处就是 challenger 要打的断链点。
 5. 载入**必载蓝图原则**:北极星(人只在高风险关卡确认)、七条DNA、§5 关卡纪律(六关卡 canonical、其余 policy-as-code)—— 这是 challenger 判轴 11 的依据。
 6. 播种 **regression-canaries**:从仓库历史提炼已知 finding(如毛利缺口双向声明、开票门是唯一跨系统门、S1 范围越权),challenger 必须独立重新派生;漏则辩论判浅。
-7. 输出 charter 到 `changes/arch/arch-review-<spec>/review-charter.md`,冻结。
+7. 输出 charter 到 `delivery/changes/arch/arch-review-<spec>/review-charter.md`,冻结。
 
 ## Governance profile / 治理 charter
 
@@ -40,7 +40,7 @@ governance profile(`/review-governance`)下,charter 不是钉 spec 覆盖,而是
 - 适用判据:authority / owner / writer / approver 一致性、G1/G2/G3 归属、自改递归、agent·command·scope-map·hooks·settings 跨面对齐、业务门/工程门边界、是否触契约需转契约门。
 - 必载原则:`docs/DEV-GOVERNANCE.md` 的四元组 + G1–G4 分层 + 自改递归规则。
 - regression-canaries:从历史治理踩坑提炼(如 AGENTS/CLAUDE 不对称、强制层无 owner、agent 自改自身 scope 无 human),challenger 必须独立重新派生。
-- 输出到 `changes/arch/gov-review-<id>/review-charter.md`,冻结。
+- 输出到 `delivery/changes/arch/gov-review-<id>/review-charter.md`,冻结。
 
 ## References / 共享规则
 
@@ -50,7 +50,7 @@ governance profile(`/review-governance`)下,charter 不是钉 spec 覆盖,而是
 
 ## Boundaries / 权限边界
 
-- 只写本次 review 的 charter:spec profile `changes/arch/arch-review-<spec>/review-charter.md`,governance profile `changes/arch/gov-review-<id>/review-charter.md`(及该目录内 charter 附件)。
+- 只写本次 review 的 charter:spec profile `delivery/changes/arch/arch-review-<spec>/review-charter.md`,governance profile `delivery/changes/arch/gov-review-<id>/review-charter.md`(及该目录内 charter 附件)。
 - 只读 spec / contracts / 治理文件;**不改 spec、不改 contracts、不改蓝图、不改任何 G1/G2/G3 canonical**。
 - charter 跑不出(spec 太空连轴都挑不出)→ 把 blocker 交回 moderator,不交空 charter 给 challenger。
 

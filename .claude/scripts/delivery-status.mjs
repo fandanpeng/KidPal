@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 从 .delivery/milestones.jsonl（里程碑基线，镜像 core.Milestone + delivery.MilestoneDeliveryState）
-// 计算完工比例并生成 .delivery/STATUS.md。
+// 从 delivery/milestones/milestones.jsonl（里程碑基线，镜像 core.Milestone + delivery.MilestoneDeliveryState）
+// 计算完工比例并生成 delivery/milestones/STATUS.md。
 // 单一事实源 = milestones.jsonl；STATUS.md 是派生只读视图（勿手改）。
 // 无外部依赖；可独立运行：node .claude/scripts/delivery-status.mjs
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -48,7 +48,7 @@ function renderMd({ milestones, total, acceptedCount, acceptedPct, inflightPct }
   lines.push('');
   lines.push('> 由 [.claude/scripts/delivery-status.mjs](../.claude/scripts/delivery-status.mjs) 从 [milestones.jsonl](milestones.jsonl) 生成。');
   lines.push('> 单一事实源是 `milestones.jsonl`（里程碑基线，镜像 `core.Milestone` + `delivery.MilestoneDeliveryState`）；改状态去改它再重跑：`node .claude/scripts/delivery-status.mjs`。');
-  lines.push('> 里程碑度量**交付（实现验收）**、非设计；完工比例只读派生、不手填、不数 `.planning/` todo。');
+  lines.push('> 里程碑度量**交付（实现验收）**、非设计；完工比例只读派生、不手填、不数 `delivery/workstreams/` todo。');
   lines.push('');
   lines.push('## 完工比例');
   lines.push('');
@@ -72,7 +72,7 @@ function renderMd({ milestones, total, acceptedCount, acceptedPct, inflightPct }
 }
 
 export function statusSnapshot(projectDir) {
-  const jsonlPath = join(projectDir, '.delivery', 'milestones.jsonl');
+  const jsonlPath = join(projectDir, 'delivery/milestones', 'milestones.jsonl');
   if (!existsSync(jsonlPath)) {
     throw new Error(`milestones.jsonl not found at ${jsonlPath}`);
   }
@@ -87,7 +87,7 @@ export function statusSnapshot(projectDir) {
   const acceptedPct = total ? acceptedCount / total : 0;
   const inflightPct = total ? weightSum / total : 0;
   const md = renderMd({ milestones, total, acceptedCount, acceptedPct, inflightPct });
-  const outPath = join(projectDir, '.delivery', 'STATUS.md');
+  const outPath = join(projectDir, 'delivery/milestones', 'STATUS.md');
   return { total, acceptedCount, acceptedPct, inflightPct, outPath, md };
 }
 

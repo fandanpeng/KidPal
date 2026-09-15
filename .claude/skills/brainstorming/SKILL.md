@@ -56,10 +56,10 @@ flowchart LR
 brainstorming 到「达成一致的设计」为止。**不自己实现、不写 canonical spec**（那些各有 owner）。按设计落到哪条 lane，把它作为输入交给对应 governed 入口：
 
 - **要实现**（feature / bug fix / behavior / test）→ 档 1 期间由 human 决定是否临时跳过流程一次性执行（如实记录）；档 2 dev-loop 迁入后交 **`/build-feature`**。
-- **架构 / 治理 / spec 意图或拓扑**（`docs/systems/**`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `changes/`（或 `.planning/` scratch）作讨论稿**，交 **`/arch-change`**（review-moderator 分类；**成形设计已落 changes/ 作讨论稿的，按『已有 proposal』跳过 architect 起草**；输入仅瘦 plan、无落盘上下文时才反派 architect 起草候选，走对抗 review）。
+- **架构 / 治理 / spec 意图或拓扑**（`docs/systems/**`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作讨论稿**，交 **`/arch-change`**（review-moderator 分类；**成形设计已落 delivery/changes/ 作讨论稿的，按『已有 proposal』跳过 architect 起草**；输入仅瘦 plan、无落盘上下文时才反派 architect 起草候选，走对抗 review）。
 - **纯契约改动**（`docs/contracts/**`：shim API / display 块 / 笔顺 JSON / 课表 MD）→ 交 **architect-reviewer** + 人类契约门。
 
-成形设计即讨论稿，落 `changes/`（或 `.planning/` scratch）作 `/arch-change` 的『已有 proposal』输入（非 canonical）；canonical 正式 spec 由下游 owner（architect）产出。
+成形设计即讨论稿，落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作 `/arch-change` 的『已有 proposal』输入（非 canonical）；canonical 正式 spec 由下游 owner（architect）产出。
 
 ---
 

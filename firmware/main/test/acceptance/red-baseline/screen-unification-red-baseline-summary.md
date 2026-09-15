@@ -106,7 +106,7 @@ runner 自报 7 Tests 6 Failures，断言全落在缺失行为/结构上）。�
    动作（既有冻结件，非本文件新齿）；本文件只钉「char 页并入 s_kidpal_scr 层机体
    系、无独立屏」，不重写 char_stroke.acceptance.c。
 4. **真机面（SU-A8）**：语音轮/推送页/提醒并发 0 复位 0 崩溃 = human 持板，证据落
-   `changes/dev/260911-screen-unification/`，非 host 齿、本文件不冒充真机已验。
+   `delivery/changes/dev/260911-screen-unification/`，非 host 齿、本文件不冒充真机已验。
 
 ---
 
@@ -115,7 +115,7 @@ runner 自报 7 Tests 6 Failures，断言全落在缺失行为/结构上）。�
 冻结验收件 `firmware/main/test/screen_unification.acceptance.c` 同日执行前台优先级
 语义修订（SERVER_PAGE/VOICE 数值码 3↔4，回答期间服务端推送页前台可见、语音不拦内容
 页；actor="human-deputy" 代裁，裁断出处
-`changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-01`，
+`delivery/changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-01`，
 对齐 PROPOSAL §0 L26-27 / §5 L152-153），修订后复跑 C 类冻结实编冒烟 + 红基线：
 
 ```
@@ -164,7 +164,7 @@ cd /mnt/c/AI/KidPal-pod-screen-unification
 
 **修订性质**：本修订 = tighten 向设计权威对齐（SU-RULING-02 方案1；actor="human-deputy",
 代裁, deviation=false, 禁止记成 human 亲裁, canon C-14；裁断出处
-`changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-02`）。
+`delivery/changes/arch/260908-gov-review-human-deputy-shadow/deputy-shadow.md#SU-RULING-02`）。
 真归一为单物理屏、物理 reparent 留 PKG-2 包内随包交付。收紧「除 s_kidpal_scr 外，
 display/ 不得存在第二个前台屏载体」不变式，封死 builder 首轮两处符号级零残留齿被绕过
 的路径：①捕获改名（旧 `s_chat_scr` 改名 `s_voice_ui_scr`，s1 只扫旧名漏判）；②非创建点

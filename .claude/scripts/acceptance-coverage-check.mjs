@@ -22,7 +22,7 @@ function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
   if (explicit) return resolve(projectDir, explicit);
 
-  const current = resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+  const current = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
   return existsSync(current) ? current : null;
 }
 

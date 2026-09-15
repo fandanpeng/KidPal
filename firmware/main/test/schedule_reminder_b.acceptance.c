@@ -245,7 +245,7 @@
  *   Every TEST_CASE must execute and pass; the runner must exit 0.
  *   Freeze-phase red baseline (this round) used the in-scope standalone stub per
  *   firmware/main/test/acceptance/red-baseline/ — see
- *   .claude/taskpackages/260829-schedule-reminder/red-baseline-summary.md.
+ *   delivery/taskpackages/260829-schedule-reminder/red-baseline-summary.md.
  * ---------------------------------------------------------------------------
  * Red-baseline 判读口径 (2026-09-08 acceptance-author 实测, 与 planner 更正一致):
  *   main 的 host ELF 基线 = 60 Tests / 3 Failures, 三条既有红全是同族 [evidence] 齿

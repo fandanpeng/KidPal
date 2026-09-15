@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // 每 Pod loop-health 机器信号提取器（per-change，非跨 Pod 聚合器）：
-//   从单个 changes/dev/<change-id>/ 的 loop 过程交付物（taskpackage / test-evidence /
+//   从单个 delivery/changes/dev/<change-id>/ 的 loop 过程交付物（taskpackage / test-evidence /
 //   review-packet / supervisor-verdict）+ session-digest.md 抽确定性信号，
-//   供 integrator 写该 Pod 自己的 changes/dev/<change-id>/loop-health.md（Pod 自总结）。
+//   供 integrator 写该 Pod 自己的 delivery/changes/dev/<change-id>/loop-health.md（Pod 自总结）。
 //   跨 Pod 复盘（提取共性）在 .claude/commands/loop-retro.md，读各 Pod 的 loop-health.md。
 //
 // 关键纪律（见 .claude/references/dev-loop-operating-system.md §5–§6）：
@@ -27,7 +27,7 @@ import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收
 
 // R5 (gov-review-devloop-evidence-led, FROZEN 2026-07-24):
 //   - C4 retired test-evidence.md, final-summary.md (replaced by verdict.json + verification.json machine evidence)
-//   - taskpackage.json stays (live file is authoritative; changes/dev/ snapshot retired)
+//   - taskpackage.json stays (live file is authoritative; delivery/changes/dev/ snapshot retired)
 //   - verdict.json + verification.json added as machine evidence artifacts
 
 const STANDARD_ARTIFACTS = [
@@ -74,7 +74,7 @@ function digestSignals(text) {
 
 // 单个 Pod 的 loop-health 机器信号（per-change）。integrator 据此写该 Pod 的 loop-health.md。
 export function buildChangeHealth(projectDir, changeId) {
-  const dir = resolve(projectDir, 'changes', 'dev', changeId);
+  const dir = resolve(projectDir, 'delivery', 'changes', 'dev', changeId);
   const present = {};
   const missing = [];
   for (const a of STANDARD_ARTIFACTS) {
@@ -120,13 +120,13 @@ export function buildChangeHealth(projectDir, changeId) {
     partialReason: partial
       ? 'missing session-digest and/or standard artifacts on this change; loop-health is advisory'
       : null,
-    note: 'per-Pod machine signals; integrator folds into changes/dev/<id>/loop-health.md. Not a source of truth. See dev-loop-operating-system.md §5.',
+    note: 'per-Pod machine signals; integrator folds into delivery/changes/dev/<id>/loop-health.md. Not a source of truth. See dev-loop-operating-system.md §5.',
   };
 }
 
-// 便捷全量扫描：为 retro 起步用；权威的每 Pod loop-health 是各 changes/dev/<id>/loop-health.md（叙述+信号）。
+// 便捷全量扫描：为 retro 起步用；权威的每 Pod loop-health 是各 delivery/changes/dev/<id>/loop-health.md（叙述+信号）。
 export function scanAllChanges(projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd()) {
-  const devDir = resolve(projectDir, 'changes', 'dev');
+  const devDir = resolve(projectDir, 'delivery', 'changes', 'dev');
   const changes = listChangeDirs(devDir).map((id) => buildChangeHealth(projectDir, id));
   return {
     generatedAt: new Date().toISOString(),
@@ -175,8 +175,8 @@ function isPostEventsCutoff(changeId) {
 //   Else loop-health.md exists → old-format (pending analysis)
 //   Else → waiting
 export function computeRetroScope(projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd()) {
-  const devDir = resolve(projectDir, 'changes', 'dev');
-  const tpRoot = resolve(projectDir, '.claude', 'taskpackages');
+  const devDir = resolve(projectDir, 'delivery', 'changes', 'dev');
+  const tpRoot = resolve(projectDir, 'delivery', 'taskpackages');
   const ledger = readRetroLedger(projectDir);
   const covered = new Set(
     ledger.flatMap((r) => (Array.isArray(r.coveredChangeIds) ? r.coveredChangeIds : [])),
@@ -332,7 +332,7 @@ if (isMain()) {
     process.stderr.write(
       `[loop-health] ${changeId}: verdict=${health.verdict}, partial=${health.partial}` +
         (health.missingArtifacts.length ? `, missing=${health.missingArtifacts.join(',')}` : '') +
-        `. integrator: fold into changes/dev/${changeId}/loop-health.md\n`,
+        `. integrator: fold into delivery/changes/dev/${changeId}/loop-health.md\n`,
     );
   }
 }

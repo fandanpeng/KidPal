@@ -90,7 +90,7 @@ Red baseline (vehicle state, 2026-09-07 acceptance-author 实测):
   - openclaw-system-prompt.v2.md 不存在、无任何 deploy 载体引用 (E3 双齿红);
   - gateway 面零 char 组装引用 (E3 薄桥守卫绿) + display_schema 未动 (闸 A 守卫绿);
   - live 面被 conftest 机械 skip, 不 auto-run.
-  See .claude/taskpackages/260829-char-stroke/red-baseline-summary.md.
+  See delivery/taskpackages/260829-char-stroke/red-baseline-summary.md.
 
 Collection discipline: 文件名两点 (test_*.acceptance.py) 须 importlib 模式 (G 包先例):
   cd server && python -m pytest acceptance/test_char_stroke.acceptance.py -q --import-mode=importlib

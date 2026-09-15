@@ -41,4 +41,4 @@ paths:
 
 给明确终点、防无限发散：每个步骤写出可检查终点——什么制品、落在哪个路径、由谁消费/检查。
 
-适用例：「TaskPackage 立即写入 `.claude/taskpackages/<change-id>/taskpackage.json`，不能只留在聊天里」是可检查终点；「完成拆包」「准备好文档」不是。TaskPackage 级 `acceptance` / `exitCriteria` 的写法与工程语义归 `task-intake-and-slicing.md`，本 rule 不重复。
+适用例：「TaskPackage 立即写入 `delivery/taskpackages/<change-id>/taskpackage.json`，不能只留在聊天里」是可检查终点；「完成拆包」「准备好文档」不是。TaskPackage 级 `acceptance` / `exitCriteria` 的写法与工程语义归 `task-intake-and-slicing.md`，本 rule 不重复。

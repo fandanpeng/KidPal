@@ -39,7 +39,7 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
   if (explicit) return resolve(projectDir, explicit);
-  return resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+  return resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
 }
 
 function print(payload) {
@@ -133,7 +133,7 @@ if (originType === 'proposal') {
   if (!ref) {
     errors.push('origin.ref is required for origin.type=proposal');
   } else if (!isProposalMdPath(ref)) {
-    errors.push(`origin.ref ${ref} is not a valid proposal .md path (expect changes/(arch|dev)/<id>/PROPOSAL.md or .planning/<ws>/PROPOSAL.md)`);
+    errors.push(`origin.ref ${ref} is not a valid proposal .md path (expect delivery/changes/(arch|dev)/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
   }
 } else if (isProposalByPath) {
   // hybrid（ref 是 PROPOSAL 路径但 type 非 proposal）：shape 闸仅 advisory（H2 / CF-02a）
@@ -161,10 +161,10 @@ if (hasChangeId) {
     let isGrandfathered = false;
     let grandfatheredReason = '';
 
-    // 用 changes/dev/<changeId> 的 git 首提日期判定（taskpackage 可能尚未落 dev 但用同一 changeId）
-    // 先试 changes/dev，若不存在则试 .claude/taskpackages/<changeId>
-    const devPath = `changes/dev/${changeIdStr}`;
-    const tpPath = `.claude/taskpackages/${changeIdStr}`;
+    // 用 delivery/changes/dev/<changeId> 的 git 首提日期判定（taskpackage 可能尚未落 dev 但用同一 changeId）
+    // 先试 delivery/changes/dev，若不存在则试 delivery/taskpackages/<changeId>
+    const devPath = `delivery/changes/dev/${changeIdStr}`;
+    const tpPath = `delivery/taskpackages/${changeIdStr}`;
     let firstCommit = gitFirstCommitDate(devPath);
     if (firstCommit === null) {
       firstCommit = gitFirstCommitDate(tpPath);

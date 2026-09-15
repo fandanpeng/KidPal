@@ -75,7 +75,7 @@ reminder trigger logic being out of package scope (归包 7).
 
 Live face (@pytest.mark.live, NOT auto-run — conftest mechanical skip gate,
 ARQ-260901-g3): P2-A6 真录一轮的证据断言, evidence lands under
-changes/dev/260829-schedule-p2/ (operator-produced md).  Three facts:
+delivery/changes/dev/260829-schedule-p2/ (operator-produced md).  Three facts:
   ① QQ 录入指令事实 (家长经 QQ 对 OpenClaw 说录入内容);
   ② schedule.md 改写事实 (OpenClaw 自改写写入课表 MD, 即时触发重算;
      三档阶梯本身归包 7 — 证据只须证明改写与触发发生);
@@ -143,7 +143,7 @@ SCHEDULE_MODULE = GATEWAY_DIR / "schedule.py"
 DEPLOY_DIR = SERVER / "deploy"
 PROMPT_CARRIER_V2 = DEPLOY_DIR / "openclaw-system-prompt.v2.md"
 OVERLAY_WIRING = DEPLOY_DIR / "apply-xiaozhi-overlay.sh"
-LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-schedule-p2"
+LIVE_EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-schedule-p2"
 
 # --------------------------------------------------------------------------- #
 # Frozen B1 sample (contract §2.2 verbatim structure) + fixed weekday dates    #
@@ -659,7 +659,7 @@ class _TmpDir:
 
 class ScheduleP2LiveAcceptance(unittest.TestCase):
     """live evidence teeth: read the real QQ-entry smoke evidence under
-    changes/dev/260829-schedule-p2/ (operator-produced md; probe ≠ exercise 纪律 —
+    delivery/changes/dev/260829-schedule-p2/ (operator-produced md; probe ≠ exercise 纪律 —
     必须真走一轮 QQ 录入→改写→孩子问课, 只探测 OpenClaw 可达不算)."""
 
     maxDiff = None
@@ -684,7 +684,7 @@ class ScheduleP2LiveAcceptance(unittest.TestCase):
         corpus = self._evidence_corpus()
         self.assertTrue(
             corpus,
-            "P2-A6 live RED: no live evidence 落盘 under changes/dev/260829-schedule-p2/ — "
+            "P2-A6 live RED: no live evidence 落盘 under delivery/changes/dev/260829-schedule-p2/ — "
             "QQ 录入真录一轮（录入→改写→问课消费）的证据必须先落盘, 三事实齿据此核销 "
             "(probe ≠ exercise).")
         entry_markers = ("每周三", "录入", "QQ", "qq")

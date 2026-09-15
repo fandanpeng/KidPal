@@ -148,7 +148,7 @@ Coverage map (acceptanceRef / exitCriteria / decisionCoverage -> test):
   P3-E3 (润色后置) + 契约零改动    -> test_boundary_contract_surface_untouched
   P3-E2 (两面证据 + 既有验收回归)  -> test_e2_existing_directionb_acceptance_green
   live (不 auto-run, 机械闸 skip)  -> StoryP3LiveAcceptance.test_live_story_roundtrip_evidence
-        证据只认 changes/dev/260829-story-p3/live-evidence/ 内操作者投递的实测产物
+        证据只认 delivery/changes/dev/260829-story-p3/live-evidence/ 内操作者投递的实测产物
         (= live-roundtrip.json 结构化记录六键齐 + 含 ASR 段的 *.log); closeout 散文
         (docs-delta/review-packet/pod-retro) 不构成语料 (integrator F3 假绿实证)。
 
@@ -193,7 +193,7 @@ PROVIDER_DECLARE = DEPLOY_DIR / "provider.config.yaml"
 # review-packet.md / pod-retro.md 天然写满「我要讲故事 / start_recording / 转写 /
 # stories / .md / 徽章 / 盖章」这些 needle, 任何如实描述本包的散文都能喂绿证据齿
 # (integrator review finding F3 实证两次假绿)。故语料只认操作者投递到本目录的实测产物。
-LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-story-p3" / "live-evidence"
+LIVE_EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-story-p3" / "live-evidence"
 LIVE_RECORD_GLOB = "*.live-roundtrip.json"   # 结构化事实记录 (缺 = 红)
 LIVE_LOG_GLOB = "*.log"                      # 原始日志件 (含 ASR 段)
 LIVE_STORY_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$")  # 真 stories/ 文件名形状
@@ -978,14 +978,14 @@ class StoryP3OfflineAcceptance(unittest.TestCase):
 class StoryP3LiveAcceptance(unittest.TestCase):
     """live evidence teeth: the real round trip (真说「我要讲故事」→ 真采音上行 →
     停录 → 云端整段转写归档 → 列表/盖章真出现) cannot be scripted here. 证据落
-    **changes/dev/260829-story-p3/live-evidence/** (operator-produced, 专用子目录)。
+    **delivery/changes/dev/260829-story-p3/live-evidence/** (operator-produced, 专用子目录)。
     probe ≠ exercise 纪律: 必须真走一轮端到端并记录事实, 只探测网关可达不算 (DEV-GOVERNANCE
     §2)。麦克风采音本身是硬件强绑定子能力 — P3-E2 显式殿后包 9b; 本齿在**本包台架相位
     或 9b 相位**执行并回填, 不参与冻结红基线计数 (机械闸 skip)。
 
     改判缘由 (2026-09-08, integrator 五轴 review finding F3; 本 Pod 决策链: integrator
     抓出 → planner 源码复核坐实 → 续派 acceptance-author tighten): 原齿语料取
-    `changes/dev/260829-story-p3/` **整个 closeout 目录**并 rglob .md/.log/.txt/.json,
+    `delivery/changes/dev/260829-story-p3/` **整个 closeout 目录**并 rglob .md/.log/.txt/.json,
     而 closeout 的 docs-delta.md / review-packet.md 天然写满全部 needle → **任何如实
     描述本包的散文都能让它绿** (integrator 两次实测复现假绿: 放红基线副本 = 1 passed;
     撤副本只留 packet = 又 1 passed, 全程零真采音零真归档)。本齿因此收紧为
@@ -1027,7 +1027,7 @@ class StoryP3LiveAcceptance(unittest.TestCase):
         self.assertTrue(
             files,
             "P3-A4 live RED: 证据目录空/不存在 — 只认 "
-            "changes/dev/260829-story-p3/live-evidence/ 内的实测产物 "
+            "delivery/changes/dev/260829-story-p3/live-evidence/ 内的实测产物 "
             f"(现存: {[str(p) for p in files]}); 真录一轮（说「我要讲故事」→录→停→归档→"
             "回看/盖章）的证据必须先投递, 四事实齿据此核销 (probe ≠ exercise; 采音殿后 "
             "9b 时由 9b 相位执行并回填)。closeout 目录里的散文 (docs-delta/review-packet/"

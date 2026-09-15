@@ -61,7 +61,7 @@
  *               start/sentence_start(带文字)/stop 状态机原生缝 + stt 识别文字
  *               上屏 + 句级文字同步 SetChatMessage 守卫)
  *   coverage: VRT-A2/E2 evidence  -> test evidence (方向 B 流式回环 live 冒烟
- *               证据: changes/dev/260829-voice-roundtrip/ 记录件含 session_id/
+ *               证据: delivery/changes/dev/260829-voice-roundtrip/ 记录件含 session_id/
  *               stt/tts/sentence_start/state-speaking 文字同步真实标记,
  *               WSA-A4 修订版标记口径)
  *   coverage: VRT-A3  behavioral  -> test VRT-A3 (view 路由行为: text/home/
@@ -88,7 +88,7 @@
  *   2) cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf
  *   Every TEST_CASE must execute and pass; the runner must exit 0.
  *
- * Evidence dir (A2/E2 live smoke): changes/dev/260829-voice-roundtrip/ — the
+ * Evidence dir (A2/E2 live smoke): delivery/changes/dev/260829-voice-roundtrip/ — the
  *   roundtrip/evidence record file is produced by the operator/builder during
  *   the pod's live smoke, then asserted HERE by content (WSA-A4 evidence face
  *   precedent). A missing/empty/unqualified evidence file is RED with its own
@@ -106,7 +106,7 @@
  *   -> VRT-A1/A3/A3-text/A5 RED below each for its own missing-behaviour
  *      reason; A2/A6/boundary are green-guards of native faces that MUST stay
  *      green; evidence is red until the live smoke is performed. See
- *      .claude/taskpackages/260829-voice-roundtrip/red-baseline-summary.md.
+ *      delivery/taskpackages/260829-voice-roundtrip/red-baseline-summary.md.
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-07  initial freeze (acceptance-author).
@@ -848,7 +848,7 @@ TEST_CASE("voice roundtrip b: abort 发送路径 (VRT-A6)", "[voice_rt][VRT-A6]"
  * VRT-A2/E2 — 流式语音回环 live 冒烟证据（evidence-based, operator-produced）
  * The live streaming round trip (stt 识别回传 -> OpenClaw -> 句级 tts 下行播放 +
  * 文字同步上屏 state-speaking) cannot be scripted here; the acceptance asserts
- * the REAL evidence record exists under changes/dev/260829-voice-roundtrip/
+ * the REAL evidence record exists under delivery/changes/dev/260829-voice-roundtrip/
  * (a file named *roundtrip* or *evidence*) and carries the protocol FACTS of
  * contract §四 — same marker口径 as the WSA-A4 human-authorized amendment
  * (permessage-deflate hides wire literals; each fact accepts the markers this
@@ -876,10 +876,10 @@ TEST_CASE("voice roundtrip b: 流式语音回环 live 冒烟证据 (VRT-A2/E2 ev
     VRT_REQUIRE_ROOT();
 
     TEST_ASSERT_TRUE_MESSAGE(
-        vrt_find_evidence("changes/dev/260829-voice-roundtrip", name_needles, 2,
+        vrt_find_evidence("delivery/changes/dev/260829-voice-roundtrip", name_needles, 2,
                           content_groups, 5, hit, sizeof(hit)),
         "VRT-A2/E2 RED: no qualified roundtrip evidence record under "
-        "changes/dev/260829-voice-roundtrip/ — 流式语音回环 live 冒烟（含句级播放与"
+        "delivery/changes/dev/260829-voice-roundtrip/ — 流式语音回环 live 冒烟（含句级播放与"
         "文字同步上屏 state-speaking）未执行或证据不合格（五事实标记缺一即红, "
         "「没报错」不算过）");
 }

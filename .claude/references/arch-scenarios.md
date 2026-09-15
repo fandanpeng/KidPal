@@ -40,7 +40,7 @@
 - **幽灵需求**:某集成没具名外部系统/dedup/同意边界,builder 乱接 → 轴 8。
 - **信任边界破**:外部不可信内容直入 LLM/落库,无 policy 闸 → 轴 10。
 - **自动化断点**:某管控强制逐条人工审,AI-native 流程断在人这里 → 轴 11。
-- **治理跨面不一致**（governance profile）:agent 定义 ↔ scope-map ↔ hooks ↔ settings ↔ 派发 prompt 对「能不能写 / 写哪」表述打架 → 被命令写文件的只读 agent 退化用 Bash heredoc,正文撇号打破 `bash -c` 外层引号（`unexpected EOF while looking for matching '`）卡死（2026-07-20 K1 review defender 崩溃）。→ 治理轴「跨面不一致 / authority≠write」;CANARY 全文见 [gov-review-defender-write-scope ADR-001](../../changes/arch/gov-review-defender-write-scope/ADR-001-defender-write-scope-and-bash-guard.md)。
+- **治理跨面不一致**（governance profile）:agent 定义 ↔ scope-map ↔ hooks ↔ settings ↔ 派发 prompt 对「能不能写 / 写哪」表述打架 → 被命令写文件的只读 agent 退化用 Bash heredoc,正文撇号打破 `bash -c` 外层引号（`unexpected EOF while looking for matching '`）卡死（2026-07-20 K1 review defender 崩溃）。→ 治理轴「跨面不一致 / authority≠write」;CANARY 全文见 [gov-review-defender-write-scope ADR-001](../../delivery/changes/arch/gov-review-defender-write-scope/ADR-001-defender-write-scope-and-bash-guard.md)。
 
 ## 四、按 spec 类型挑场景（scenario-author 用）
 

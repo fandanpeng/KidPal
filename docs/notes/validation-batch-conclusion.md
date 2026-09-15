@@ -1,8 +1,8 @@
 # KidPal 功能支撑验证批 · 最终结论（V3 设计输入 + 云端 MVP 链路打通证明）
 
 > 日期：2026-09-01（验证批收口，三包已合并入 main）
-> 性质：本档是 [.planning/kidpal-validation/](../../.planning/README.md) 功能支撑验证批的**收口汇总件**——PROPOSAL §3 要求三包各出独立报告、收口汇总成《V3 设计输入结论》＋《云端 MVP 链路打通证明》；本档即该汇总，把三份 dev 报告的结论提到一处，供 V3 设计稿与后续主体开发直接引用。
-> 逐条实证明细在三份收口报告：[TP-A 云端链路](../../changes/dev/260831-cloud-link-bringup/cloud-link-validation-report.md) · [TP-B UI 可行性](../../changes/dev/260831-ui-art-assets/UI-art-feasibility.md) ＋ [预算](../../changes/dev/260831-ui-art-assets/budget.md) · [TP-C 模拟器对齐](../../changes/dev/260831-simulator-lvgl-align/review-packet.md)。逐点可行性分级在 [feature-inventory.md](feature-inventory.md)，实现策略在 [ui-implementation-strategy.md](ui-implementation-strategy.md)。
+> 性质：本档是 [delivery/workstreams/kidpal-validation/](../../delivery/workstreams/README.md) 功能支撑验证批的**收口汇总件**——PROPOSAL §3 要求三包各出独立报告、收口汇总成《V3 设计输入结论》＋《云端 MVP 链路打通证明》；本档即该汇总，把三份 dev 报告的结论提到一处，供 V3 设计稿与后续主体开发直接引用。
+> 逐条实证明细在三份收口报告：[TP-A 云端链路](../../delivery/changes/dev/260831-cloud-link-bringup/cloud-link-validation-report.md) · [TP-B UI 可行性](../../delivery/changes/dev/260831-ui-art-assets/UI-art-feasibility.md) ＋ [预算](../../delivery/changes/dev/260831-ui-art-assets/budget.md) · [TP-C 模拟器对齐](../../delivery/changes/dev/260831-simulator-lvgl-align/review-packet.md)。逐点可行性分级在 [feature-inventory.md](feature-inventory.md)，实现策略在 [ui-implementation-strategy.md](ui-implementation-strategy.md)。
 > 术语：OC-n = OpenClaw 云端对接功能点；CLB / SLA / UAA = 三个验证包（TP-A 云端 / TP-C 模拟器 / TP-B 资产）各自的验收项；OQ-3(a) = human 对阈值化截图「结构＋风格保真、不追像素级」的目测裁定口径；E1 / B1 / D3 = display 响应块 / 课表 MD / 笔顺 JSON 三个契约结构。
 
 ## 0. 一句话结论
@@ -54,7 +54,7 @@ V2 设计稿里"方案已定但没出图"的美术元素**全部走资产管线�
 2. **-8° 印章内圈 2.5px 虚线**——是全场最细笔画，-8° 后有无断口/糊连；备选：虚线增粗至 3.5px / 降角至 -5° / 两圈分离叠加。
 3. 造型（摇头耳朵是否成菱形）、网点密度观感（d50/d25/d12）保真。
 
-快照在 `changes/dev/260831-ui-art-assets/snapshots/` 与 `tools/asset-pipeline/report/snapshots/`。
+快照在 `delivery/changes/dev/260831-ui-art-assets/snapshots/` 与 `tools/asset-pipeline/report/snapshots/`。
 
 ## 6. 真机留根项（本批不烧真机，登记待后续）
 

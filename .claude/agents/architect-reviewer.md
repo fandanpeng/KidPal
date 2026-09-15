@@ -40,7 +40,7 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 1. **定位权威来源**
    - 读 `docs/contracts/**`（单一文件 `interface-contract.md`）——本仓契约是**单文件 markdown 协议面**（笔顺 JSON / display 块 / 课表 MD / shim API），无 schema/events/mcp-tools 多文件结构。
   - 读对应 spec（KidPal 单系统：`docs/requirements.md` + `docs/architecture.md`；将来多系统时按 `docs/systems/<sys>/` 展开），只用它解释意图；与 contract 冲突时以 contract 为准，除非当前问题正是 contract 与已批准 spec 冲突。
-  - 若来自 arch-review，读对应 `changes/arch/arch-review-*/findings.md`、`debate-log.md`、`review-packet.md` 或 adjudicator ruling，只把它们当作证据与路由上下文，不把它们当契约事实源。
+  - 若来自 arch-review，读对应 `delivery/changes/arch/arch-review-*/findings.md`、`debate-log.md`、`review-packet.md` 或 adjudicator ruling，只把它们当作证据与路由上下文，不把它们当契约事实源。
 
 2. **分类判断**
    把问题归为四类之一：

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 每次 planner Agent() dispatch 收工后调用，把 harness 回传值落盘。
-// Pre-cutoff: 程序内部 fs-append 一行到 .claude/taskpackages/<id>/dispatch-log.jsonl。
+// Pre-cutoff: 程序内部 fs-append 一行到 delivery/taskpackages/<id>/dispatch-log.jsonl。
 // Post-cutoff (EVENTS_SCHEMA_CUTOFF): writes dispatch-completed event to pod-events.jsonl
 //   via pod-events-append.mjs. Does NOT write dispatch-log.jsonl for post-cutoff Pods (F1).
 // 对偶 portfolio-reconcile.mjs（程序内 fs 写，非 shell 重定向）。
@@ -45,13 +45,13 @@ function required(name) {
 
 function taskPackageDir() {
   const explicit = flagVal('--task-package-id');
-  if (explicit) return resolve(projectDir, '.claude', 'taskpackages', explicit);
+  if (explicit) return resolve(projectDir, 'delivery', 'taskpackages', explicit);
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   try {
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));
-    return tp.changeId ? resolve(projectDir, '.claude', 'taskpackages', tp.changeId) : null;
+    return tp.changeId ? resolve(projectDir, 'delivery', 'taskpackages', tp.changeId) : null;
   } catch {
     return null;
   }
@@ -61,7 +61,7 @@ function resolveChangeId() {
   const explicit = flagVal('--task-package-id');
   if (explicit) return explicit;
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   try {
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));

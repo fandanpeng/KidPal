@@ -9,7 +9,7 @@ TaskPackage `260829-schedule-p2`（课表页 今天/明天渲染 + 语音问课�
 
 1. **python 验收文件**：TaskPackage `acceptanceTestsFile` 只钉 C 侧文件，python 侧落
    `server/acceptance/test_schedule_p2.acceptance.py`（与 260829-voice-roundtrip 先例同目录同通路，launch 输入授权此落点）。planner 可选把该路径 append 进 `acceptanceTestsFile`（不改动其它冻结字段）。
-2. **本摘要**：落在 scope 内 `firmware/main/test/acceptance/red-baseline/`（与 unity stub 同目录）；如 planner 想要 `.claude/taskpackages/260829-schedule-p2/red-baseline-summary.md` 形态，请原样归位。
+2. **本摘要**：落在 scope 内 `firmware/main/test/acceptance/red-baseline/`（与 unity stub 同目录）；如 planner 想要 `delivery/taskpackages/260829-schedule-p2/red-baseline-summary.md` 形态，请原样归位。
 3. **host_app CMakeLists 接线**：builder 须把 `"../../schedule_p2.acceptance.c"` 与
    schedule_page 实现源（frozen offline contract, 建议家 `firmware/main/display/schedule_page.{c,h}`）加进 `firmware/main/test/host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS`（[C4.2]，包 2/3 同款一行模式）。
 
@@ -82,4 +82,4 @@ E1 回归守卫首版选 voice_roundtrip_b 套件，实测发现其 **VRT-A4 证
 
 - 编译通道：C 侧冻结验收文件 `-Wall -Wextra` BUILD_CLEAN（零告警零错误）；python 侧 pytest 收集零 error。
 - 执行通道：两侧各自当场执行一次（stub ELF + pytest），error = 0（全部 failure 为断言 failure = 设计态红基线，非 error）。
-- live 面：`@pytest.mark.live` 不 auto-run；真录一轮（QQ 录入→改写→问课消费, probe ≠ exercise）由 operator 在本包相位内执行并把证据落 `changes/dev/260829-schedule-p2/`。
+- live 面：`@pytest.mark.live` 不 auto-run；真录一轮（QQ 录入→改写→问课消费, probe ≠ exercise）由 operator 在本包相位内执行并把证据落 `delivery/changes/dev/260829-schedule-p2/`。

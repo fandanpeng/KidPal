@@ -1,6 +1,6 @@
 ---
 description: 架构/治理变更统一入口（对偶 /build-feature）。把 plan mode 产出的想法交给对抗 review loop 自动跑：分类（spec/governance/mixed + 是否触契约）→ 派 architect 起草候选 → architect-reviewer 契约预审 → 路由进 spec profile 或 governance profile 跑完整 review → 落地低影响 spec / 出 decision packet 交 human。
-argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收窄 planner 的 write scope" 或 changes/arch/gov-review-<id>/PROPOSAL.md 路径>
+argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收窄 planner 的 write scope" 或 delivery/changes/arch/gov-review-<id>/PROPOSAL.md 路径>
 ---
 
 # /arch-change
@@ -29,10 +29,10 @@ argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收�
    - **纯契约面**（`docs/contracts/**`，无 spec/governance 配套）**：不在本命令处理 —— 直接派 `architect-reviewer` + 人类契约门，告知用户走契约门，本命令收尾。
    分类结果**必须显式展示给用户**；含糊时用 AskUserQuestion 确认，别猜。
    - **review-depth（stage 2，lane 定后判；本段 = Track A 内部 G 层路由）**：`lightweight-architect-review` vs `full-adversarial`。**lightweight 仅限小/低风险 G2**（G1 指令根 + G3 强制层新 idea 恒 full-adversarial + human，永不 lightweight）。lightweight 快道：派 `architect-reviewer` 判 eligibility（4 裁断 LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED，机检硬排除 vs 主观残留）→ 若 `LIGHTWEIGHT_OK` 则你**独立复判 eligibility**（非 pass-through，作者≠判官保全）→ 通过后**由主线程 packet-bound landing（landing-manifest 绑定）** → 记 lightweight 证据（`lightweight-intake.md` / `architect-reviewer-verdict.md` / `architect-landing-summary.md` / 验证）。不达判据 → `full-adversarial`（下面步骤 3–7）。详见 [arch-review-protocol.md](../references/arch-review-protocol.md)「Review-depth 分类 + Lightweight path」（Track A 触发时适用；默认路由 = Track B，见「双轨路由」节）。
-2. **归一制品目录**：spec profile → `changes/arch/arch-review-<slug>/`；governance profile → `changes/arch/gov-review-<id>/`。
+2. **归一制品目录**：spec profile → `delivery/changes/arch/arch-review-<slug>/`；governance profile → `delivery/changes/arch/gov-review-<id>/`。
 3. **派 architect 起草候选**（作者阶段，对偶 dev-loop builder）：派 `architect`（起草 subagent）→ 产出**候选**：
    - **spec lane** → spec 草案 / 候选修订写入 `docs/systems`（草案面，**写入不等于 spec 已冻结**）。
-   - **governance lane** → `changes/arch/gov-review-<id>/PROPOSAL.md`（**不落 G1/G2/G3 canonical**）。
+   - **governance lane** → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`（**不落 G1/G2/G3 canonical**）。
    - architect 只起草候选、准备 review 背景 / 候选关注点 / 历史 canary 线索；**不写冻结 charter、不自评 spec 可冻结、自改递归仍须 human**。
 4. **契约预审（仅当 contract-touching）**：派 `architect-reviewer` 四分类；`SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED` → 停在人类契约门，配套 spec / proposal 暂存 packet 不单独落地（原子性：与契约改动同一 PR）。
 5. **路由进 profile 跑完整 loop**：按分类进入 spec profile 或 governance profile，按 `.claude/agents/review-moderator.md` Process 推进：`scenario-author` 冻 charter → `challenger`↔`defender` 辩论内循环（你驱动，**禁止嵌套派生**）→ `adjudicator` 裁定 + 标 outcome → 级联续问穷尽。全程维护 `debate-log.md`。

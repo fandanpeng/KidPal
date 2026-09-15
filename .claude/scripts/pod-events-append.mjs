@@ -60,7 +60,7 @@ export function appendPodEvent(changeId, { eventType, actor, source, payload }) 
     throw new Error('[pod-events-append] payload must be an object');
   }
 
-  const tpDir = resolve(projectDir, '.claude', 'taskpackages', changeId);
+  const tpDir = resolve(projectDir, 'delivery', 'taskpackages', changeId);
   if (!existsSync(tpDir)) {
     // No TaskPackage directory — skip gracefully (exit 0 behavior)
     return { ok: true, skipped: true, reason: 'no-taskpackage-dir' };
@@ -96,7 +96,7 @@ function resolveChangeId() {
   const explicit = flagVal('--change-id');
   if (explicit) return explicit;
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   try {
     const tp = JSON.parse(require('node:fs').readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));

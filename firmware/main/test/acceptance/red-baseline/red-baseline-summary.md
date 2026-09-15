@@ -13,7 +13,7 @@ enforce-scope 对 acceptance-author 只放行 `firmware/**/*.acceptance.c(pp)`�
 （red-baseline-summary.md 的归位注记形态）先落 scope 内、由有写权的收口方归位：
 
 1. **python 验收文件**：TaskPackage `acceptanceTestsFile` 钉 `server/tests/test_voice_roundtrip_b.acceptance.py`，scope 拦截，实落 `server/acceptance/test_voice_roundtrip_b.acceptance.py`（与既有冻结验收同目录同通路，断言零变更）。归位二选一：(a) 更新 taskpackage 路径为本路径； (b) 移至 server/tests/ 并在 server/pytest.ini 加 `addopts = --import-mode=importlib`。文件头注已写明。
-2. **本摘要**：目标位置 `.claude/taskpackages/260829-voice-roundtrip/red-baseline-summary.md` 被 scope 拦，实落本目录，请原样归位。
+2. **本摘要**：目标位置 `delivery/taskpackages/260829-voice-roundtrip/red-baseline-summary.md` 被 scope 拦，实落本目录，请原样归位。
 3. **host_app CMakeLists 接线**：`../../voice_roundtrip_b.acceptance.c` 加入 `firmware/main/test/host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS`（builder wiring 职责, [C4.2]；WSA 同款）。builder 还须把 view_router 实现源一并编入（见下 frozen contract）。
 
 ## C 侧红基线（命令与实跑）
@@ -51,7 +51,7 @@ wsl -d Ubuntu-24.04 -- /mnt/c/tmp/vrt_red_runner         # exit code = 失败 TE
 | VRT-A2（stt/tts 状态机原生缝） | GREEN（守卫, 必须保持绿） | 契约 §四 设备半是 WS 包复活的原生管线：application.cc 的 tts start/sentence_start(带文字→SetChatMessage assistant)/stop + stt(→SetChatMessage user) 全在世；端到端 live 由证据齿承载 |
 | VRT-A5（网关兜底设备侧消费） | **RED** | 兜底 text 视图消费面缺失（weak 哨兵）+ 格式不遵循独立 UNKNOWN 降级路由缺失；tts stop→Idle 当轮结束守卫绿。生成逻辑归 G 已 landed（python 侧守卫），本包缺口 = 设备侧消费 |
 | VRT-A6（abort 发送路径） | GREEN（守卫, 必须保持绿） | 原生在世：protocol.cc SendAbortSpeaking 发 `{"session_id","type":"abort"}`；application.cc `AbortSpeaking(` 出现 5 处（定义 + 4 打断调用点 ≥ 3 阈值）。**对 taskpackage redBaselineResult「无 abort 发送路径」的勘误：发送路径 xiaozhi 原生在世，本包 A6 的真缺口在云端取消生成证据（python 侧）与 9a 真机停播实测** |
-| VRT-A2/E2（live 冒烟证据） | **RED** | changes/dev/260829-voice-roundtrip/ 不存在——流式回环 live 冒烟（五事实：session_id / stt / tts / sentence_start / state-speaking 文字同步）未执行（evidence-based 齿按性质红，WSA-A4 先例） |
+| VRT-A2/E2（live 冒烟证据） | **RED** | delivery/changes/dev/260829-voice-roundtrip/ 不存在——流式回环 live 冒烟（五事实：session_id / stt / tts / sentence_start / state-speaking 文字同步）未执行（evidence-based 齿按性质红，WSA-A4 先例） |
 | boundary/security（扫描器自检 + 范围守卫） | GREEN（必须保持绿） | 扫描器四态自检 + 计数器校验通过；「网络出小差了」兜底文案未硬入固件（生成逻辑归 G, F2）；设备无 openclaw/18789 直连引用 |
 
 ## python 侧红基线（命令与实跑）
@@ -83,7 +83,7 @@ SSH 前置真连通过（ECS 在线），a4/a7 live 齿红在冻结 system promp
 | test_a2_protocol_profile_twin_aligned | GREEN（守卫） | C 孪生文件在世且承载 §四 剖面标记（同会话冻结, 对齐成立） |
 | test_a3_cloud_display_envelope | GREEN（守卫） | G 已 landed 的 mcp_relay/display_schema offline contract 对齐（tools/call 信封 + 白名单 == 契约 §1.3/§1.4） |
 | test_a5_cloud_fallback_alignment | GREEN（守卫） | fallback.py 生成面零漂移：ERROR_FALLBACK 措辞、4000ms、text view 载荷形状 == 设备消费面、V32 截断 |
-| test_a4_adherence_recheck_evidence_record | **RED** | changes/dev/260829-voice-roundtrip/ 无遵循度复验记录——方向 B fence 路径统计性复验未执行（契约待确认点 1 不复用 12/12） |
+| test_a4_adherence_recheck_evidence_record | **RED** | delivery/changes/dev/260829-voice-roundtrip/ 无遵循度复验记录——方向 B fence 路径统计性复验未执行（契约待确认点 1 不复用 12/12） |
 | test_a6_abort_cloud_cancel_evidence | **RED** | 无 abort→云端取消生成观察记录（设备发送路径由 C 侧守卫；云端半未实测） |
 | test_a7_system_prompt_f4_discipline_offline | **RED** | server/deploy/openclaw-system-prompt.v1.md 不存在——三句纪律/儿童化/E1 遵循无处钉死 |
 | test_e4_system_prompt_versioned_landed | **RED** | 版本化 system prompt 未落盘（fence 指令/白名单/两部分/v1/增量扩展区全缺） |

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PostToolUse 钩子：当某次 Edit/Write/MultiEdit 触及 .claude/taskpackages/ 或 changes/dev/
+// PostToolUse 钩子：当某次 Edit/Write/MultiEdit 触及 delivery/taskpackages/ 或 delivery/changes/dev/
 //   （Pod 在 repo 侧的进展信号）时，触发 portfolio reconcile，保持共享 board 新鲜。
 // 非阻塞：始终 exit 0；失败只打印告警，不打断会话（PostToolUse 不应拦截）。
 //
@@ -35,8 +35,8 @@ function main() {
   const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   const abs = resolve(input.cwd || projectDir, filePath);
   const rel = relative(projectDir, abs).split(sep).join('/');
-  // 只在 Pod 进展信号（taskpackages / changes/dev）编辑后触发
-  if (!rel.startsWith('.claude/taskpackages/') && !rel.startsWith('changes/dev/')) {
+  // 只在 Pod 进展信号（taskpackages / delivery/changes/dev）编辑后触发
+  if (!rel.startsWith('delivery/taskpackages/') && !rel.startsWith('delivery/changes/dev/')) {
     process.exit(0);
   }
 

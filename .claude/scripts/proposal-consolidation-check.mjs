@@ -18,7 +18,7 @@
 //      markdown 链接目标排除（B3，gov-review-gate-input-format-contract）；错误消息含引用 vs 目标辨别引导。
 // advisory（只报告不失败）：finding-id 在 PROPOSAL 中的覆盖率。
 //
-// 用法：node .claude/scripts/proposal-consolidation-check.mjs changes/arch/gov-review-<id>
+// 用法：node .claude/scripts/proposal-consolidation-check.mjs delivery/changes/arch/gov-review-<id>
 
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
@@ -92,7 +92,7 @@ if (process.argv.includes('--self-check')) { runExtractSelfCheck(); runExtractTa
 
 if (!reviewDir) {
   fail('review directory argument is required', {
-    usage: 'node .claude/scripts/proposal-consolidation-check.mjs changes/arch/gov-review-<id>',
+    usage: 'node .claude/scripts/proposal-consolidation-check.mjs delivery/changes/arch/gov-review-<id>',
   });
 }
 
@@ -101,7 +101,7 @@ if (!existsSync(reviewDir)) fail('review directory does not exist', { reviewDir 
 const proposalPath = resolve(reviewDir, 'PROPOSAL.md');
 const decisionPacketPath = resolve(reviewDir, 'decision-packet.md');
 const findingsPath = resolve(reviewDir, 'findings.md');
-const relDir = `changes/arch/${basename(reviewDir)}`;
+const relDir = `delivery/changes/arch/${basename(reviewDir)}`;
 
 if (!existsSync(proposalPath)) {
   fail('PROPOSAL.md is required (governance profile 定稿的单一权威设计)', { reviewDir: relDir });

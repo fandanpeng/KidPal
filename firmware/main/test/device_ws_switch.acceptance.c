@@ -73,7 +73,7 @@
  *   -> WSA-A1..A6 RED below each for its own missing-behaviour reason; WSA-A7 is
  *      green-by-construction (the supersede annotations were authored by
  *      acceptance-author as this package's first deliverable). See
- *      .claude/taskpackages/260903-device-ws-switch/red-baseline-summary.md.
+ *      delivery/taskpackages/260903-device-ws-switch/red-baseline-summary.md.
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-05  WSA-A2 CSPRNG tooth tightened: symbol-presence match ("esp_random"
@@ -83,7 +83,7 @@
  *               dangling-include fake-green hole. Other A2 semantics unchanged.
  *   2026-09-05  WSA-A6 tooth 3 first-match defect fixed: scan now requires BOTH
  *               "shim.py" AND "archiv" in the SAME file (wsa_scan_tree_both; single-
- *               needle first-match pinned changes/arch/.../adjudications.md which
+ *               needle first-match pinned delivery/changes/arch/.../adjudications.md which
  *               dir-orders ahead of the real record -> tooth red regardless of the
  *               record). Harness wsa_scan_tree call sites unaffected (needle2=NULL).
  *               Reason: builder scan replication; tighten-only discipline kept.
@@ -810,7 +810,7 @@ TEST_CASE("device ws switch: 固件侧 HTTP 台阶退役 (WSA-A5)", "[device_ws]
  *      8080 security-group closure with a concrete connect-failure marker.
  *   2) server/shim.py archived: the live path is gone, or the file carries an
  *      ARCHIVED tombstone header; an archive record mentioning shim.py + archiv*
- *      must exist under changes/.
+ *      must exist under delivery/changes/.
  * RED today: no evidence file; shim.py live; no archive record.
  * ------------------------------------------------------------------------ */
 TEST_CASE("device ws switch: 安全收尾——ECS shim 停服 + shim.py 归档 (WSA-A6)",
@@ -855,14 +855,14 @@ TEST_CASE("device ws switch: 安全收尾——ECS shim 停服 + shim.py 归档 
             "ARCHIVED/SUPERSEDED tombstone — shim 未归档退役 (OQ-R4: shim 退役相位 = 本包同批)");
     }
 
-    /* 3) 归档记录：changes/ 下存在同时提及 shim.py 且标注 archiv*(归档/archived) 的
+    /* 3) 归档记录：delivery/changes/ 下存在同时提及 shim.py 且标注 archiv*(归档/archived) 的
      *    记录件。REVISION 2026-09-05: both-needle match — the previous first-match on
-     *    "shim.py" alone pinned changes/arch/260902-.../adjudications.md (mentions
-     *    shim.py, no "archiv") which dir-orders ahead of any future changes/dev record,
+     *    "shim.py" alone pinned delivery/changes/arch/260902-.../adjudications.md (mentions
+     *    shim.py, no "archiv") which dir-orders ahead of any future delivery/changes/dev record,
      *    making this tooth red regardless of whether the record existed. */
     TEST_ASSERT_TRUE_MESSAGE(
-        wsa_scan_tree_both("changes", "shim.py", "archiv", 1, NULL, hit, sizeof(hit)),
-        "WSA-A6 RED: no record under changes/ mentions shim.py AND states an archiving "
+        wsa_scan_tree_both("delivery", "changes", "shim.py", "archiv", 1, NULL, hit, sizeof(hit)),
+        "WSA-A6 RED: no record under delivery/changes/ mentions shim.py AND states an archiving "
         "(archiv*/归档, same file) — 归档记录缺失; 仅提及 shim.py 的文件不算归档记录");
 }
 

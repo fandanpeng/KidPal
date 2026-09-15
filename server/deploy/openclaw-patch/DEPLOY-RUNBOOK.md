@@ -133,7 +133,7 @@ grep -c "KidPal C1" $TARGET || echo "marker cleared (回滚成功)"
 
 > 覆盖指针：本节 §8.2-8.4 的部署执行由 260911-ecs-deploy-convergence 包承载（acceptance
 > ECS-A4 = cron 在册 + lastRunStatus=ok + kidpal-front.service env；ECS-A5 = live 五齿
-> L1-L5 证据交班，证据落 changes/dev/260829-schedule-reminder/）。
+> L1-L5 证据交班，证据落 delivery/changes/dev/260829-schedule-reminder/）。
 
 > 混合分层（裁定一 eventId acaef302-9ddc-4508-b5d3-94023e050f43）：**时刻算术 + 幂等 id +
 > pending.json 原子写 = 确定性脚本** `reminder_schedule_lib.py`（本目录，`warm_char_cache.py`
@@ -200,7 +200,7 @@ cd server && RUN_LIVE=1 python -m pytest -q --import-mode=importlib \
   acceptance/test_schedule_reminder.acceptance.py -k live
 ```
 五事实（L1 cron 真在册且真跑过 / L2 pending.json 真形状 / L3 真推到设备 / L4 真渲染回执
-出队 / L5 真大模型语义产物）落盘 `changes/dev/260829-schedule-reminder/`；证据内不得出现
+出队 / L5 真大模型语义产物）落盘 `delivery/changes/dev/260829-schedule-reminder/`；证据内不得出现
 `Invalid id` / `Unknown message type` / 推送失败 / 排程失败 字样（probe ≠ exercise）。
 真实提醒音效与弹窗并发时序、屏上网点观感殿后 9b。
 

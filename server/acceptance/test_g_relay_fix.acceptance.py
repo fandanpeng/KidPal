@@ -1,6 +1,6 @@
 """Frozen acceptance tests for TaskPackage 260907-g-relay-fix (subsystem: server).
 
-Defect of record (changes/dev/260829-voice-roundtrip/review-packet.md SHOULD #1 +
+Defect of record (delivery/changes/dev/260829-voice-roundtrip/review-packet.md SHOULD #1 +
 roundtrip-live-evidence.md「新发现（G 包 live 面缺陷）」段, session 95ccf407): the
 direction-B gateway front's REAL ws proxy path forwarded engine frames to the device with
 ZERO text takeover — the `` ```display `` fence rode through into the TTS/文字同步 text and
@@ -128,7 +128,7 @@ proxy path is unit-exercised offline with zero sockets.
 
 Live face (@pytest.mark.live, NOT auto-run — conftest mechanical skip, ARQ-260901-g3):
 GRF-A5 真机一轮会话的日志证据断言, evidence lands per GRF-E2 under
-changes/dev/260907-g-relay-fix/ (evidence form = what the stack naturally persists:
+delivery/changes/dev/260907-g-relay-fix/ (evidence form = what the stack naturally persists:
 设备串口摘录 / 引擎 docker logs 摘录 / 证据 md — NOT wire literals).  Four facts:
   ⓪ engine patch marker line ``kidpal display-strip patch active`` present in the engine
      startup log excerpt (补丁真在跑, not a stale container);
@@ -166,7 +166,7 @@ Coverage map (acceptanceRef -> test method):
         -> test_a5_live_display_text_view_triggered
   GRF-E1 (既有 G 包验收不回归)
         -> test_e1_existing_directionb_acceptance_structural_green
-  GRF-E2 (live 证据落 changes/dev/260907-g-relay-fix/) — the live teeth's evidence contract
+  GRF-E2 (live 证据落 delivery/changes/dev/260907-g-relay-fix/) — the live teeth's evidence contract
 
 Red baseline (transport-revision round, 2026-09-07): the front five functions and the
 defense-in-depth strip are GREEN; the DEVICE wire form is NOT — envelopes still ride the
@@ -271,7 +271,7 @@ DEPLOY_DIR = SERVER / "deploy"
 ENGINE_PATCH_DIR = DEPLOY_DIR / "engine-patch"
 ENGINE_PATCH_CONNECTION = ENGINE_PATCH_DIR / "connection.py"
 ENGINE_PATCH_STRIP = ENGINE_PATCH_DIR / "kidpal_display_strip.py"
-CHANGES_DEV = REPO_ROOT / "changes" / "dev"
+CHANGES_DEV = REPO_ROOT / "delivery" / "changes" / "dev"
 LIVE_EVIDENCE_DIR = CHANGES_DEV / "260907-g-relay-fix"
 
 # Frozen literals (engine patch of record — pod-events decision engine-patch-approval).
@@ -1368,7 +1368,7 @@ class DisplayFirstM1Acceptance(unittest.TestCase):
 
 class GRelayFixLiveAcceptance(unittest.TestCase):
     """live evidence teeth: read the real-device smoke evidence under
-    changes/dev/260907-g-relay-fix/ (GRF-E2).  Evidence form = what the stack naturally
+    delivery/changes/dev/260907-g-relay-fix/ (GRF-E2).  Evidence form = what the stack naturally
     persists (设备串口摘录 / 引擎 docker logs 摘录 / 证据 md)，NOT wire literals
     (permessage-deflate makes wire capture the wrong form — kidpal-live-smoke-debug 口径).
     """
@@ -1394,7 +1394,7 @@ class GRelayFixLiveAcceptance(unittest.TestCase):
         corpus = self._evidence_corpus()
         self.assertTrue(
             corpus,
-            "GRF-A5/E2 RED: no live evidence 落盘 under changes/dev/260907-g-relay-fix/ — "
+            "GRF-A5/E2 RED: no live evidence 落盘 under delivery/changes/dev/260907-g-relay-fix/ — "
             "真机一轮冒烟（修复后）的串口/引擎日志证据必须先落盘（GRF-E2），四事实齿据此核销.",
         )
         return corpus

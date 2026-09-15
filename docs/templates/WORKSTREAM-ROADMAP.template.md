@@ -1,8 +1,8 @@
 # WORKSTREAM-ROADMAP.template · workstream 活文档 roadmap 模板（canonical · 260912-gov-review-portfolio-decomposition-chain T1 落地，FROZEN v1.0）
 
-> 用法：复制本件为 `.planning/<workstream-slug>/roadmap.md`。**产方 = portfolio-planner**（拆包时），**审方 = 门 1 判官 + human**，**消费方 = planner / acceptance-author（锚 2）+ integrator / supervisor（锚 3）**。
+> 用法：复制本件为 `delivery/workstreams/<workstream-slug>/roadmap.md`。**产方 = portfolio-planner**（拆包时），**审方 = 门 1 判官 + human**，**消费方 = planner / acceptance-author（锚 2）+ integrator / supervisor（锚 3）**。
 > 本件是**活文档**：与冻结的 `PROPOSAL.md`（裁决记录）双轨分离。
-> **职责划界（防第二事实源）**：`task_plan.md` frontmatter 维持 `planning-index.mjs` 机器索引源地位；`progress.md` 维持进度记录；本件 = **效果对账 + 列车图投影**。包集与达成状态的权威恒 = board（`$(git rev-parse --git-common-dir)/devloop/`）+ `.claude/taskpackages/<changeId>/taskpackage.json`——**本件只投影不裁决**，重叠处以权威侧为准。
+> **职责划界（防第二事实源）**：`task_plan.md` frontmatter 维持 `planning-index.mjs` 机器索引源地位；`progress.md` 维持进度记录；本件 = **效果对账 + 列车图投影**。包集与达成状态的权威恒 = board（`$(git rev-parse --git-common-dir)/devloop/`）+ `delivery/taskpackages/<changeId>/taskpackage.json`——**本件只投影不裁决**，重叠处以权威侧为准。
 > 文体：③ 节每包效果段是唯一需要人写的散文（机器写不出的那一段）；②④ 节与达成状态列由脚本渲染。
 
 ---

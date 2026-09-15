@@ -7,7 +7,7 @@
 //     （verifier 亲跑命令 + 输出摘要 + exit code，即 260726 实际形态）——此为程序条款（降级手工替代集）/pending，
 //     requiredFiles:228-230 逻辑不变（机器产线运行时仍退役；避免注释↔代码主动分歧，对偶所攻 devloop-artifact 文本↔行为同构）。
 //   - taskpackage.json conditional: required for legacy (pre-cutoff) packages only;
-//     post-cutoff packages resolve TaskPackage from .claude/taskpackages/<id>/ (gov-review-taskpkg-lifecycle, FROZEN 2026-07-25)
+//     post-cutoff packages resolve TaskPackage from delivery/taskpackages/<id>/ (gov-review-taskpkg-lifecycle, FROZEN 2026-07-25)
 //   - verification.json advisory check added
 // closeout-hardening (gov-review-devloop-closeout-hardening, 2026-07-27 human-approved, Q5=warn):
 //   - closeout 制品 SSOT（dev-loop.md「closeout 制品 SSOT」表为承重/blocking 状态单一权威，本头注与之对齐、不重述分类）：
@@ -25,7 +25,7 @@
 // metrics-ledger advisory section (loop-metrics.json + pod-journal.jsonl) remains untouched below
 // - changeIdArchiveCandidates 改 YYMMDD- 前缀感知（原按日期后缀 -YYYY-MM-DD 剥）
 // - 新增 UPSTREAM_DRIFT detection（convention-only / warn，DP-4 / F3）
-// - 新增 changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
+// - 新增 delivery/changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
 // - sourceType-without-origin 过渡告警（advisory，不红）
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -48,7 +48,7 @@ function taskPackagePath() {
   const explicit = positionalArgs[0] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
   if (explicit && !explicit.startsWith('--')) return resolve(projectDir, explicit);
 
-  const current = resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+  const current = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
   return existsSync(current) ? current : null;
 }
 
@@ -142,19 +142,19 @@ function warnDrift(payload, taskPackage) {
   }
 }
 
-// ── changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
+// ── delivery/changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
 function upsertIndexRow(changeId, taskPackage, archDir) {
-  const indexPath = resolve(projectDir, 'changes', 'INDEX.md');
+  const indexPath = resolve(projectDir, 'delivery', 'changes', 'INDEX.md');
   if (!existsSync(indexPath)) return 'index-missing-skipped'; // 首次 closeout 需先跑 changes-index.mjs 产 header
   const origin = (taskPackage.origin && typeof taskPackage.origin === 'object') ? taskPackage.origin : null;
   const prefixMatch = String(changeId).match(CHANGE_ID_PREFIX_RE);
   const date = prefixMatch && prefixMatch[1]
     ? `20${prefixMatch[1].slice(0,2)}-${prefixMatch[1].slice(2,4)}-${prefixMatch[1].slice(4,6)}`
-    : (gitFirstCommitDate(`changes/dev/${changeId}`) || '');
+    : (gitFirstCommitDate(`delivery/changes/dev/${changeId}`) || '');
   const originRef = resolveOriginRef(origin) || '';
   const workstream = (origin && origin.workstream) || '';
 
-  const newRow = `| [${changeId}](../changes/dev/${changeId}/) | ${date || '—'} | ${originRef || '—'} | closed | ${workstream || '—'} |`;
+  const newRow = `| [${changeId}](../delivery/changes/dev/${changeId}/) | ${date || '—'} | ${originRef || '—'} | closed | ${workstream || '—'} |`;
 
   let content = readText(indexPath);
   const originalContent = content;
@@ -186,7 +186,7 @@ function changeIdArchiveCandidates(changeId) {
   const withoutDate = str.replace(/-\d{4}-\d{2}-\d{2}$/, ''); // 去后缀: slug-YYYY-MM-DD
   const noPrefix = stripPrefix(str);                           // 去前缀: YYMMDD-slug → slug
 
-  const changesRoot = resolve(projectDir, 'changes', 'dev');
+  const changesRoot = resolve(projectDir, 'delivery', 'changes', 'dev');
   const candidates = [resolve(changesRoot, str)];
   if (withoutDate !== str) candidates.push(resolve(changesRoot, withoutDate));
   if (noPrefix !== str) candidates.push(resolve(changesRoot, noPrefix));
@@ -246,24 +246,24 @@ if (hasPrefix) {
     advisories.push(`changeId date prefix (${prefixedDate}) is not valid YYMMDD (month 01-12, day 01-31)`);
   }
 } else {
-  const firstCommit = gitFirstCommitDate(`changes/dev/${changeId}`) || gitFirstCommitDate(`.claude/taskpackages/${changeId}`);
+  const firstCommit = gitFirstCommitDate(`delivery/changes/dev/${changeId}`) || gitFirstCommitDate(`delivery/taskpackages/${changeId}`);
   if (firstCommit && firstCommit >= CHANGE_ID_CUTOFF) {
     advisories.push(`changeId lacks YYMMDD- prefix but first commit ${firstCommit} >= cutoff ${CHANGE_ID_CUTOFF}; missing-date-prefix blocks at taskpackage-required gate for new packages`);
   }
 }
 
 const changeDir = findChangeDir(changeId);
-if (!changeDir) fail('changes/dev/<changeId> folder is missing', { changeId, expected: `changes/dev/${changeId}` });
+if (!changeDir) fail('delivery/changes/dev/<changeId> folder is missing', { changeId, expected: `delivery/changes/dev/${changeId}` });
 
-// Post-cutoff packages no longer require taskpackage.json in changes/dev/ (gov-review-taskpkg-lifecycle).
-// TaskPackage is resolved from .claude/taskpackages/<id>/ for post-cutoff packages.
+// Post-cutoff packages no longer require taskpackage.json in delivery/changes/dev/ (gov-review-taskpkg-lifecycle).
+// TaskPackage is resolved from delivery/taskpackages/<id>/ for post-cutoff packages.
 const isPostCutoff = isPostCutoffChangeId(changeId);
 // Post-EVENTS_SCHEMA_CUTOFF: session-digest/loop-health/loop-metrics retired (Package B)
 const isPostEventsCutoff = hasPrefix && String(changeId).slice(0, 6) >= EVENTS_SCHEMA_CUTOFF.replace(/-/g, '').slice(2);
 const requiredFiles = closeoutRequiredFiles(changeId);
 const machineEvidenceFiles = ['verdict.json', 'verification.json'];
 const missing = requiredFiles.filter((file) => !existsSync(resolve(changeDir, file)));
-if (missing.length > 0) fail('changes/dev/<changeId> is missing standard closeout artifacts', { changeId, missing });
+if (missing.length > 0) fail('delivery/changes/dev/<changeId> is missing standard closeout artifacts', { changeId, missing });
 
 // Machine evidence (verdict.json / verification.json) — advisory, not blocking
 const missingMachineEvidence = machineEvidenceFiles.filter((file) => !existsSync(resolve(changeDir, file)));
@@ -273,9 +273,9 @@ if (missingMachineEvidence.length > 0) {
 
 // Post-EVENTS_SCHEMA_CUTOFF: pod-events.jsonl advisory check (Package B, non-blocking)
 if (isPostEventsCutoff) {
-  const podEventsPath = resolve(projectDir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl');
+  const podEventsPath = resolve(projectDir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl');
   if (!existsSync(podEventsPath)) {
-    advisories.push('pod-events.jsonl not found in .claude/taskpackages/<id>/ — new-format Pod should have pod-events (advisory-only, not blocking)');
+    advisories.push('pod-events.jsonl not found in delivery/taskpackages/<id>/ — new-format Pod should have pod-events (advisory-only, not blocking)');
   }
 }
 
@@ -286,7 +286,7 @@ if (isPostEventsCutoff) {
 if (isPostCutoff) {
   const podRetroPath = resolve(changeDir, 'pod-retro.md');
   if (!existsSync(podRetroPath)) {
-    advisories.push('pod-retro.md missing in changes/dev/<id>/ — planner first-person hot memory not recorded (Q5=warn advisory; zero-retroactivity: post-cutoff only). planner 收尾相位 should write it after integrator closeout, before supervisor gate.');
+    advisories.push('pod-retro.md missing in delivery/changes/dev/<id>/ — planner first-person hot memory not recorded (Q5=warn advisory; zero-retroactivity: post-cutoff only). planner 收尾相位 should write it after integrator closeout, before supervisor gate.');
   }
 }
 
@@ -314,23 +314,23 @@ if (!bearing.ok) {
   });
 }
 
-if (taskPackage.deliveryMilestoneStateChanged === true || taskPackage.milestoneStateChanged === true) {
-  const milestones = resolve(projectDir, '.delivery/milestones.jsonl');
-  const status = resolve(projectDir, '.delivery/STATUS.md');
+if (taskPackagedelivery/milestonesMilestoneStateChanged === true || taskPackage.milestoneStateChanged === true) {
+  const milestones = resolve(projectDir, 'delivery/milestones/milestones.jsonl');
+  const status = resolve(projectDir, 'delivery/milestones/STATUS.md');
   if (!existsSync(milestones) || !existsSync(status)) {
-    fail('delivery milestone state changed but .delivery files are missing', { milestones: existsSync(milestones), status: existsSync(status) });
+    fail('delivery milestone state changed but delivery/milestones files are missing', { milestones: existsSync(milestones), status: existsSync(status) });
   }
   const statusCheck = checkStatus(projectDir);
   if (!statusCheck.ok) {
-    fail('.delivery/STATUS.md is stale; run node .claude/scripts/delivery-status.mjs', {
-      milestones: '.delivery/milestones.jsonl',
-      status: '.delivery/STATUS.md',
+    fail('delivery/milestones/STATUS.md is stale; run node .claude/scripts/delivery-status.mjs', {
+      milestones: 'delivery/milestones/milestones.jsonl',
+      status: 'delivery/milestones/STATUS.md',
     });
   }
 }
 
-if (taskPackage.planningWorkstreamRequired === true || taskPackage.workstreamRequired === true) {
-  const refs = asArray(taskPackage.planningRefs || taskPackage.planningRef);
+if (taskPackagedelivery/workstreamsWorkstreamRequired === true || taskPackage.workstreamRequired === true) {
+  const refs = asArray(taskPackagedelivery/workstreamsRefs || taskPackagedelivery/workstreamsRef);
   if (refs.length === 0) fail('planning workstream required but TaskPackage has no planningRef(s)', { changeId });
   const missingRefs = refs.filter((ref) => !existsSync(resolve(projectDir, ref)));
   if (missingRefs.length > 0) fail('planningRef(s) are missing', { missingRefs });
@@ -387,5 +387,5 @@ if (updateIndexRequested) {
   }
 }
 
-print({ ok: true, gate: 'closeout', changeId, changeDir: `changes/dev/${basename(changeDir)}`, requiredFiles, advisories, indexProjection });
+print({ ok: true, gate: 'closeout', changeId, changeDir: `delivery/changes/dev/${basename(changeDir)}`, requiredFiles, advisories, indexProjection });
 if (missing.length > 0) process.exit(1);

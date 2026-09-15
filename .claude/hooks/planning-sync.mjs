@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// PostToolUse 钩子：当某次 Edit/Write/MultiEdit 触及 .planning/ 时，触发 reconcile
+// PostToolUse 钩子：当某次 Edit/Write/MultiEdit 触及 delivery/workstreams/ 时，触发 reconcile
 //   —— done/abandoned 的 workstream 搬进 _archive/<year>/，并重建 INDEX.md / index.jsonl。
 // 非阻塞：始终 exit 0；失败只打印告警，不打断会话（PostToolUse 不应拦截）。
 //
@@ -33,7 +33,7 @@ function main() {
   const projectDir = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   const abs = resolve(input.cwd || projectDir, filePath);
   const rel = relative(projectDir, abs).split(sep).join('/');
-  if (!rel.startsWith('.planning/')) process.exit(0); // 只在 .planning/ 编辑后触发
+  if (!rel.startsWith('delivery/workstreams/')) process.exit(0); // 只在 delivery/workstreams/ 编辑后触发
 
   try {
     const res = reconcile(projectDir);

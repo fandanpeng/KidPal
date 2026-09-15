@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// .planning/ reconcile 引擎：
+// delivery/workstreams/ reconcile 引擎：
 //   1) 扫描顶层 workstream 目录 + _archive/**，读各自 task_plan.md 的 YAML front-matter。
 //   2) 顶层中 status ∈ {done, abandoned} 的 workstream → 移到 _archive/<closed 年份>/<slug>/。
 //   3) 重建 INDEX.md（人读）与 index.jsonl（S5/工具只读）。
 // 设计：无外部依赖、幂等、可独立运行（node .claude/scripts/planning-index.mjs）。
-// 由 .claude/hooks/planning-sync.mjs 在 PostToolUse(.planning/** 编辑后) 触发；亦可手动跑。
+// 由 .claude/hooks/planning-sync.mjs 在 PostToolUse(delivery/workstreams/** 编辑后) 触发；亦可手动跑。
 
 import {
   existsSync,
@@ -17,7 +17,7 @@ import {
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PLANNING_DIRNAME = '.planning';
+const PLANNING_DIRNAME = 'delivery/workstreams';
 const RESERVED = new Set(['README.md', 'INDEX.md', 'index.jsonl', '_archive']);
 const ACTIVE_STATUSES = new Set(['active', 'blocked']);
 const ARCHIVE_STATUSES = new Set(['done', 'abandoned']);
@@ -138,10 +138,10 @@ function buildIndexMd(items, now) {
     .sort((a, b) => String(b.closed || '').localeCompare(String(a.closed || '')));
 
   const out = [];
-  out.push('# .planning Index');
+  out.push('# delivery/workstreams Index');
   out.push('');
   out.push(
-    `> 自动生成（hook：编辑 .planning/ 即重建；标记 done 即归档）。**勿手改**。最后更新 ${now}。`,
+    `> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 ${now}。`,
   );
   out.push('');
   out.push(`## Active (${active.length})`);
@@ -198,7 +198,7 @@ function buildIndexJsonl(items) {
 
 export function reconcile(projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd()) {
   const root = planningDir(projectDir);
-  if (!existsSync(root)) return { ok: true, skipped: true, reason: 'no .planning/' };
+  if (!existsSync(root)) return { ok: true, skipped: true, reason: 'no delivery/workstreams/' };
   const moves = archiveCompleted(root);
   const items = collect(root);
   const now = new Date().toISOString().slice(0, 10);

@@ -6,7 +6,7 @@
  * 性质：**advisory 生成器，非门**——渲染失败只 warn，不作任何放行/拦截判据。
  *
  * 权威序（防第二事实源）：包集与达成状态的权威恒 = board（git common dir 下 devloop/）
- * + `.claude/taskpackages/<changeId>/taskpackage.json`；本脚本**只投影不裁决**。
+ * + `delivery/taskpackages/<changeId>/taskpackage.json`；本脚本**只投影不裁决**。
  * roadmap.md ② 节由本脚本渲染、人工禁改；改依赖/排序 = 改权威侧再重跑（全量重算、幂等）。
  *
  * 输入面（FROZEN n-15 钉死）：
@@ -236,7 +236,7 @@ function renderFragment({ slug, pkgs, statuses, deviationsByPkg, generatedAt }) 
 }
 
 function buildModel(opts) {
-  const taskpackagesRoot = opts.taskpackagesRoot ?? join(REPO_ROOT, '.claude', 'taskpackages');
+  const taskpackagesRoot = opts.taskpackagesRoot ?? join(REPO_ROOT, 'delivery', 'taskpackages');
   const pkgs = collectPackages(taskpackagesRoot, opts.workstream);
   if (pkgs.length === 0) warn(`workstream=${opts.workstream} 圈定到 0 个包（origin.workstream 无命中）`);
   const statuses = readBoardStatuses(resolveBoardPath(opts.board));

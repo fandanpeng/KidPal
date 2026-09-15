@@ -26,7 +26,7 @@ function resolveChangeId() {
   const explicit = flagVal('--change-id');
   if (explicit) return explicit;
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   try {
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));
@@ -226,7 +226,7 @@ function run() {
     process.exit(0);
   }
 
-  const eventsPath = resolve(projectDir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl');
+  const eventsPath = resolve(projectDir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl');
   const { events, malformedLines } = readEventsFile(eventsPath);
 
   const result = {

@@ -2,7 +2,7 @@
 
 > **归位注记**：本文按机械 scope 边界落在 acceptance-author 可写面内
 > （`firmware/**/acceptance/**`）。planner 要求的形态是
-> `.claude/taskpackages/260829-schedule-reminder/red-baseline-summary.md`
+> `delivery/taskpackages/260829-schedule-reminder/red-baseline-summary.md`
 > ——请原样 `git mv` 归位（内容与此路径要求完全对齐，无需改写）。
 > 包 260829-schedule-p2 的同类摘要当初也落在本目录并留了同款注记。
 
@@ -138,7 +138,7 @@ cd server && python -m pytest -q --import-mode=importlib           # 全档
 **builder 落地后复测（2026-09-08，含本摘要第 6 节的冻结件自身缺陷修复）**：
 点名命令 → **33 passed / 5 skipped / 0 failed**；全档 → **8 failed / 134 passed / 40 skipped**
 —— 8 条既有红（smoke_e2e 7 + vrt 证据齿 1）一条未动，本包 33 个离线齿全绿、5 个 live 齿仍被
-机械 skip（等 `changes/dev/260829-schedule-reminder/` 真跑证据落盘后由点名命令放行）。
+机械 skip（等 `delivery/changes/dev/260829-schedule-reminder/` 真跑证据落盘后由点名命令放行）。
 
 ### 3.1 30 条红的分组（每条对应哪个 RMD-Ax 与哪个缺失行为）
 
@@ -162,7 +162,7 @@ schedule_p2 三档独立复跑 exit 0，实测本包落盘时全部 rc=0）、
 
 5 条 live skip（`@pytest.mark.live`，conftest 机械 skip；`RUN_LIVE=1` / `-m live` 放行）：
 真 cron 在册与 pending.json 真身、真到点推送与真回执出队、真大模型语义产物、真语音注入出音
-日志事实、真断网一轮无提醒作废。每条都要求 `changes/dev/260829-schedule-reminder/` 下
+日志事实、真断网一轮无提醒作废。每条都要求 `delivery/changes/dev/260829-schedule-reminder/` 下
 **真跑一轮的落盘证据**（probe ≠ exercise），并要求证据内不得出现失败字样
 （`Invalid id` / `Unknown message type` / 推送失败 / 排程失败 等）。
 

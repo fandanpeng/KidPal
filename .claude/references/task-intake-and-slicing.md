@@ -1,12 +1,12 @@
 # Task Intake and Slicing
 
-This reference is mandatory for planner intake. It decides where a piece of work came from, how large the executable slice should be, whether `.planning/` is needed, and which gates must be enabled before builder work starts.
+This reference is mandatory for planner intake. It decides where a piece of work came from, how large the executable slice should be, whether `delivery/workstreams/` is needed, and which gates must be enabled before builder work starts.
 
 ## Core Rule
 
-Every formal implementation-facing change starts as a TaskPackage. `.delivery/` is the milestone denominator, `.planning/` is long-lived work memory, and `.claude/taskpackages/<change-id>/` is the executable contract for one dev-loop slice.
+Every formal implementation-facing change starts as a TaskPackage. `delivery/milestones/` is the milestone denominator, `delivery/workstreams/` is long-lived work memory, and `delivery/taskpackages/<change-id>/` is the executable contract for one dev-loop slice.
 
-Do not use `.delivery/` or `.planning/` as a substitute for a TaskPackage.
+Do not use `delivery/milestones/` or `delivery/workstreams/` as a substitute for a TaskPackage.
 
 Acceptance vs exitCriteria authoring convention (A10-type): `acceptance[]` holds only test-assertable items; process/evidence items belong in `exitCriteria`. Non-id-testable entries use explicit object markers — `{ "id": "X", "kind": "structural" }` (non-code-testable) or `{ "id": "X", "suiteGate": true }` (suite-level regression gate; positive list/negative rule apply, and the two markers are mutually exclusive). Acceptance-prose word-washing is removed and forbidden, and bare-suffix / interval-abbreviation mentions (e.g. `A1..A14`) no longer exempt — write full ids or explicit object markers. See `.claude/references/dev-loop.md` §3 (变更制品) for the convention and its red-verdict guidance.
 
@@ -19,13 +19,13 @@ Each TaskPackage must include:
   "sourceType": "arch-review",
   "origin": {
     "upstreamType": "proposal",
-    "upstreamRef": ".planning/<ws>/PROPOSAL.md",
+    "upstreamRef": "delivery/workstreams/<ws>/PROPOSAL.md",
     "upstreamFrozen": "<version/sha>"
   },
   "sourceRefs": ["D-A1"],
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
-  "planningRefs": [".planning/devpc-review-remediation/"],
+  "planningRefs": ["delivery/workstreams/devpc-review-remediation/"],
   "riskTier": "high",
   "gateProfile": ["contract-drift", "types", "real-db"]
 }
@@ -42,16 +42,16 @@ TaskPackage 层 `origin` 形状（G3 读取此层，与 workstream 层（task_pl
 ```jsonc
 "origin": {
   "upstreamType": "proposal",
-  "upstreamRef": ".planning/<ws>/PROPOSAL.md",
+  "upstreamRef": "delivery/workstreams/<ws>/PROPOSAL.md",
   "upstreamFrozen": "sha1:<16hex>",
   "workstream": "<ws-slug>"
 }
 ```
 
 - **`upstreamType`**（必填）：取值 = `sourceType` 9 枚举（`delivery-story`、`planning-workstream`、`arch-review`、`human-ad-hoc`、`ci-failure`、`drift-report`、`regression`、`maintenance`、`proposal`）**+ 一个受控扩展 `human-confirmed-plan`**。`human-confirmed-plan` 是过渡性——专为「人确认过、非正式 proposal 的设计权威」（如 s1-nsa design-plan.md）设，其 `origin.type` 不映射到任何 `sourceType`（两者并存→红）。
-- **`upstreamRef`**（proposal 型必填，其余 type 可省略）：指向上游设计目录——proposal 型指向 FROZEN PROPOSAL 路径（如 `.planning/<ws>/PROPOSAL.md` 或 `changes/(arch|dev)/<id>/PROPOSAL.md`）。非 proposal 型（regression/ci-failure/…）指向触发来源（issue / drift 报告 / 人类指令记录）。**proposal→docRefs back-check（完整性闸）**——触发判据为**析取** `isProposalByType ∨ isProposalByPath`（260731 Phase 2 T1 路径枢轴：`isProposalByPath` = `origin.upstreamRef ∨ origin.ref` fragment-stripped 走 G3 `isProposalMdPath`；`isProposalByType` = `sourceType/originType === 'proposal'` 字符串判，析取保老包）时 `origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`（新包 / 路径枢轴包——origin.ref 接管 back-check；老包（sourceType=proposal、originType 非 proposal、ref 非 proposal 路径）维持 sourceRefs-based back-check 不误红，过渡 carve-out）。**decisionCoverage 承重触发维持字符串判**（`isProposalByType`），不随路径枢轴（OQ4-B：hybrid 不被要求 in-taskpackage DC，其 DC 在 workstream 级）。
+- **`upstreamRef`**（proposal 型必填，其余 type 可省略）：指向上游设计目录——proposal 型指向 FROZEN PROPOSAL 路径（如 `delivery/workstreams/<ws>/PROPOSAL.md` 或 `delivery/changes/(arch|dev)/<id>/PROPOSAL.md`）。非 proposal 型（regression/ci-failure/…）指向触发来源（issue / drift 报告 / 人类指令记录）。**proposal→docRefs back-check（完整性闸）**——触发判据为**析取** `isProposalByType ∨ isProposalByPath`（260731 Phase 2 T1 路径枢轴：`isProposalByPath` = `origin.upstreamRef ∨ origin.ref` fragment-stripped 走 G3 `isProposalMdPath`；`isProposalByType` = `sourceType/originType === 'proposal'` 字符串判，析取保老包）时 `origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`（新包 / 路径枢轴包——origin.ref 接管 back-check；老包（sourceType=proposal、originType 非 proposal、ref 非 proposal 路径）维持 sourceRefs-based back-check 不误红，过渡 carve-out）。**decisionCoverage 承重触发维持字符串判**（`isProposalByType`），不随路径枢轴（OQ4-B：hybrid 不被要求 in-taskpackage DC，其 DC 在 workstream 级）。
 - **`upstreamFrozen`**（**仅 origin.upstreamType=proposal 必填**、占位符无效；其余 type 可空、不触发 UPSTREAM_DRIFT）：钉上游 PROPOSAL 被批时间点，用于 `closeout-check` 检测**上游悄改漂移**（UPSTREAM_DRIFT = **warn/告警，非红拦**——convention-only，机器齿记 ARQ-260723-artifact-lifecycle-teeth）。**标准 pin 格式（260731-gov-review-artifact-lifecycle-origin-teeth Phase 1 FROZEN；Phase 2 同批改写 + carry 再确认，H4 批准）**：`sha1:<16hex>`，算法 = `'sha1:' + createHash('sha1').update(fileContent.replace(/\r\n/g, '\n')).digest('hex').slice(0,16)`（**raw file bytes 行尾归一化（`\r\n` → `\n`）后 hash**，G3 `computeFrozenPin` 共享单源，与 `closeout-check.mjs` 消费端一致）。**不是** `git hash-object`（后者含 git blob header `"blob <size>\0" + content`，对同一文件产出不同 hash，结构性不可比）。**过渡期**：prose pin（如 `"frozen v0.2 2026-07-29 (...)"`）及 `git hash-object` 产物均为非标准格式 → convention-only-skip（不判 drift），不追溯为红；新包冻结时应使用标准 raw-content-sha1 格式。
-- **`workstream`**（可选）：归属的 `.planning` workstream slug，供 `portfolio-planner` 拆包 + 反向反查消费方。
+- **`workstream`**（可选）：归属的 `delivery/workstreams` workstream slug，供 `portfolio-planner` 拆包 + 反向反查消费方。
 
 **小 bug 包 origin 填法**：triage 判②单包小 bug → `origin.upstreamType = regression | ci-failure | drift-report`（按触发源，**非 proposal**），`origin.upstreamRef` 指向触发来源（issue / drift 报告 / 人类指令记录），**无需 FROZEN PROPOSAL**——小 bug 上游不是 proposal。`origin` 仍是一等强键，只是 type 非 proposal。
 
@@ -62,7 +62,7 @@ TaskPackage 层 `origin` 形状（G3 读取此层，与 workstream 层（task_pl
 "origin": {
   "type": "regression",            // 与 upstreamType 镜像同值（桥接 ARQ-077 键不对称）
   "upstreamType": "regression",    // 触发源，非 proposal
-  "upstreamRef": ".planning/<ws>/PROPOSAL.md#§x.y",  // 仍指向 FROZEN PROPOSAL（fragment 可加）
+  "upstreamRef": "delivery/workstreams/<ws>/PROPOSAL.md#§x.y",  // 仍指向 FROZEN PROPOSAL（fragment 可加）
   "upstreamFrozen": "sha1:<16hex>",  // 标准 pin（见上）；过渡期 prose pin 可接受
   "workstream": "<ws-slug>"
 }
@@ -91,13 +91,13 @@ Use one of:
 | sourceType | Use when |
 |---|---|
 | `delivery-story` | Planner creates the TaskPackage directly from a committed delivery milestone or canonical acceptance item that is small enough for one loop slice. |
-| `planning-workstream` | The slice is a child of an existing `.planning/<workstream>`. |
+| `planning-workstream` | The slice is a child of an existing `delivery/workstreams/<workstream>`. |
 | `arch-review` | The source is an architecture review finding, ARQ/CDQ row, contract gate condition, or review packet. |
 | `human-ad-hoc` | A human gives a one-off task that is not already in delivery or planning. |
 | `ci-failure` | A PR/CI/verifier gate failure triggers the task. |
 | `drift-report` | A scheduled or manual drift report triggers the task. |
 | `regression` | A behavioral regression from manual QA, acceptance, or user feedback triggers the task. |
-| `proposal` | 来源为 `changes/(arch|dev)/**/PROPOSAL.md` 或 `.planning/<ws>/PROPOSAL.md`（大 feature 设计权威，gov-review-architect-change-triage §3.6）类设计方案；载荷 = 决策集；蒸馏完整性规则强制适用（**含 Lite，见 decisionCoverage 规则**）。`human-confirmed-plan` **不是** sourceType 枚举值（其正名归 artifact-lifecycle 的 origin.type，本表不预支）。 |
+| `proposal` | 来源为 `delivery/changes/(arch|dev)/**/PROPOSAL.md` 或 `delivery/workstreams/<ws>/PROPOSAL.md`（大 feature 设计权威，gov-review-architect-change-triage §3.6）类设计方案；载荷 = 决策集；蒸馏完整性规则强制适用（**含 Lite，见 decisionCoverage 规则**）。`human-confirmed-plan` **不是** sourceType 枚举值（其正名归 artifact-lifecycle 的 origin.type，本表不预支）。 |
 
 `sourceType` records origin, not impact. If an arch-review task changes milestone health, keep `sourceType: "arch-review"` and set `deliveryImpact: "milestone-affecting"`.
 
@@ -109,9 +109,9 @@ Use one of:
 - Architecture review: `ARQ-063`, `D-A1`, `F3`, `ARQ-063-C1`
 - Human ad-hoc: `TEMP-YYYY-MM-DD-short-slug`
 - CI/drift: `CI-types-2026-07-05`, `DRIFT-D6-CREATE-TABLE-IN-TEST`
-- Proposal: `changes/(arch|dev)/<id>/PROPOSAL.md#§x.y`，或大 feature `.planning/<ws>/PROPOSAL.md#§x.y`
+- Proposal: `delivery/changes/(arch|dev)/<id>/PROPOSAL.md#§x.y`，或大 feature `delivery/workstreams/<ws>/PROPOSAL.md#§x.y`
 
-For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `changes/arch/`, `changes/dev/`, **or `.planning/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `.planning`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
+For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/changes/dev/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
 
 > **DP-1 过渡 carve-out**：上述规则仅适用于既有 sourceType=proposal 老包（无 origin 或其 type 非 proposal）。新包（`origin.upstreamType=proposal`）的 proposal→docRefs back-check 由 **`origin.upstreamRef` 接管**——`origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`，`sourceRefs` 不再承载 proposal 路径（退本职为代码范围锚点）。详见 [task-intake-and-slicing.md](#origin) `### origin` 节。
 
@@ -122,9 +122,9 @@ Use one of:
 | deliveryImpact | Meaning |
 |---|---|
 | `none` | Does not change milestone state or committed scope. |
-| `milestone-affecting` | May block, unblock, or advance a `.delivery` milestone. |
+| `milestone-affecting` | May block, unblock, or advance a `delivery/milestones` milestone. |
 
-Changing `.delivery/milestones.jsonl` is still an integrator/human closeout act. `deliveryImpact` only tells the loop to inspect milestone health.
+Changing `delivery/milestones/milestones.jsonl` is still an integrator/human closeout act. `deliveryImpact` only tells the loop to inspect milestone health.
 
 ### planningImpact
 
@@ -132,14 +132,14 @@ Use one of:
 
 | planningImpact | Meaning |
 |---|---|
-| `none` | Single slice; do not create `.planning/`. |
-| `attach-existing` | Append progress to an existing `.planning/<workstream>`. `planningRefs[]` is required. |
+| `none` | Single slice; do not create `delivery/workstreams/`. |
+| `attach-existing` | Append progress to an existing `delivery/workstreams/<workstream>`. `planningRefs[]` is required. |
 | `create-workstream` | A new workstream is needed. Creating the top-level workstream is `portfolio-planner`'s authority (the cross-Pod RTE), not planner; a single-Pod planner only uses `attach-existing`. `planningRefs[]` is required. |
 | `needs-triage` | Planner lacks enough information. Stop, ask the human or do read-only discovery. Do not send to builder. |
 
-Create `.planning/<workstream>` only when future agents need durable why/findings/progress across multiple slices. If the diff plus TaskPackage is enough, do not create a workstream. Creating a top-level workstream (and decomposing work into multiple TaskPackages) is `portfolio-planner`'s authority; a single-Pod planner only attaches to an existing workstream. If multi-Pod decomposition is needed, route to `portfolio-planner`.
+Create `delivery/workstreams/<workstream>` only when future agents need durable why/findings/progress across multiple slices. If the diff plus TaskPackage is enough, do not create a workstream. Creating a top-level workstream (and decomposing work into multiple TaskPackages) is `portfolio-planner`'s authority; a single-Pod planner only attaches to an existing workstream. If multi-Pod decomposition is needed, route to `portfolio-planner`.
 
-> **workstream 创建权的两半（gov-review-architect-change-triage §3.4 / F4 / Q4，human-confirmed 2026-07-22）**：上面"create-workstream = portfolio-planner 权限"指的是**拆包+调度态建立**（把 workstream 拆成 N 个 TaskPackage、建 `task_plan`/`pod-board`/`progress`）。另有**设计权威落家**一半：`/triage-change` 的人类/主线程可在 triage 时创建 `.planning/<ws>/` **仅用于装 reviewed FROZEN PROPOSAL（+ review.md）**，供 portfolio-planner 后续拆包消费。portfolio-planner 的拆包+调度权**不垄断建目录**。这是对 ARQ-065/066 RTE 集权的**有意放宽（deliberate relaxation，非回归）**，与 `architect-operating-model.md` §4「human or planner main thread creates `.planning/<workstream>`」对齐。
+> **workstream 创建权的两半（gov-review-architect-change-triage §3.4 / F4 / Q4，human-confirmed 2026-07-22）**：上面"create-workstream = portfolio-planner 权限"指的是**拆包+调度态建立**（把 workstream 拆成 N 个 TaskPackage、建 `task_plan`/`pod-board`/`progress`）。另有**设计权威落家**一半：`/triage-change` 的人类/主线程可在 triage 时创建 `delivery/workstreams/<ws>/` **仅用于装 reviewed FROZEN PROPOSAL（+ review.md）**，供 portfolio-planner 后续拆包消费。portfolio-planner 的拆包+调度权**不垄断建目录**。这是对 ARQ-065/066 RTE 集权的**有意放宽（deliberate relaxation，非回归）**，与 `architect-operating-model.md` §4「human or planner main thread creates `delivery/workstreams/<workstream>`」对齐。
 
 ### riskTier
 
@@ -198,7 +198,7 @@ Use a Full TaskPackage when any are true:
 - multiple filesystems or packages;
 - closeout evidence needs claim verification.
 
-Create or attach `.planning/<workstream>` when any are true:
+Create or attach `delivery/workstreams/<workstream>` when any are true:
 
 - multiple TaskPackages will be needed;
 - findings form a remediation campaign;
@@ -227,13 +227,13 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 ### 双轨制品与拆包权威
 
-- workstream **PROPOSAL**（`.planning/<ws>/PROPOSAL.md`，模板 [`WORKSTREAM-PROPOSAL.template.md`](../../docs/templates/WORKSTREAM-PROPOSAL.template.md)）= **裁决记录**（三问 + 裁定），冻结后不改；**roadmap**（`.planning/<ws>/roadmap.md`，模板 [`WORKSTREAM-ROADMAP.template.md`](../../docs/templates/WORKSTREAM-ROADMAP.template.md)）= **活文档**（效果对账 + 列车图投影）。
+- workstream **PROPOSAL**（`delivery/workstreams/<ws>/PROPOSAL.md`，模板 [`WORKSTREAM-PROPOSAL.template.md`](../../docs/templates/WORKSTREAM-PROPOSAL.template.md)）= **裁决记录**（三问 + 裁定），冻结后不改；**roadmap**（`delivery/workstreams/<ws>/roadmap.md`，模板 [`WORKSTREAM-ROADMAP.template.md`](../../docs/templates/WORKSTREAM-ROADMAP.template.md)）= **活文档**（效果对账 + 列车图投影）。
 - PROPOSAL §拆包预判 = **意图提示、非权威**；拆包权威 = 四件套（`roadmap.md` + `taskpackage.json` × N + `plan.md` × N + `decision-coverage.json`）经**门 1** 冻结 + human 过目切法。
 - **职责划界（防第二事实源）**：`task_plan.md` frontmatter 维持 `planning-index.mjs` 机器索引源地位，`progress.md` 维持进度记录，roadmap **只投影不裁决**——包集与达成状态的权威恒 = board + taskpackage JSON。roadmap ② 节（列车图）由 `.claude/scripts/render-roadmap.mjs` 机械渲染、人工禁改。
 
 ### plan.md 全量义务
 
-- 每个 TaskPackage 拆包时必备 `.claude/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
+- 每个 TaskPackage 拆包时必备 `delivery/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
 - plan.md 骨架：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 改法取舍 + 阶段划分 + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。
 
 ### story 锚点引用与转写
@@ -252,12 +252,12 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **派发形态**：human / 主线程派 architect（只读审 + 返回裁决、零写入 canonical）。portfolio-planner frontmatter 无 `Agent()` **也不加**（authoring 纪律）——其 Step 6 前以 AskUserQuestion 请 human 发起门 1，随后**停等**，不绕行。
 - **checklist 五项**：① 切片逻辑（按行为切还是按页面/问题切，图上见；偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额默认仅核心包）。
 - **workType 分流**：整改型核根因↔改法 + 红基线在位；新建型核切片与覆盖；重构型核结构性质可验收。
-- **裁决耐久记录**：verdict + checklist 逐项结论 + 派发/裁决时点 append 到 `.planning/<ws>/review.md`「门 1」节——GREEN 不得只留在聊天。
+- **裁决耐久记录**：verdict + checklist 逐项结论 + 派发/裁决时点 append 到 `delivery/workstreams/<ws>/review.md`「门 1」节——GREEN 不得只留在聊天。
 - **存疑向严**：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
 
 ### launchPreconditions（canonical 定义）
 
-- **落点** = workstream `.planning/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。条目 = 前置描述，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。
+- **落点** = workstream `delivery/workstreams/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。条目 = 前置描述，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。
 - **核验 = convention + 人读**（260913 human 裁 M-1）：launch 执行者（human 点火前）人工核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**不改 `portfolio-reconcile.mjs --check-launch` 既有判定语义**；机械齿（脚本读 launchPreconditions）另登 ARQ 留根，人读反复漏检再机械化。
 
 ## UIUX Depth Ladder and Optional TaskPackage Fields
@@ -282,7 +282,7 @@ The UIUX fields are an **OPTIONAL extension**, not part of the required intake f
   "uiuxLevel": 2,
   "designRefs": ["docs/systems/<S>/UIUX-DESIGN-BRIEF.md#pageId-x"],
   "sharedUiRefs": ["docs/ui/design.md#component-action-card"],
-  "localDesignArtifactRefs": ["changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
+  "localDesignArtifactRefs": ["delivery/changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
   "artifactPackageRef": "<external zip path or future S5 artifactId>",
   "uiAcceptanceRefs": ["pageId-x.stateId-y"],
   "designReviewRequired": true,
@@ -304,25 +304,25 @@ Shape:
   {
     "decision": "D1",
     "summary": "Polish only runs when substantive content changes (three-way check).",
-    "sourceRefs": ["changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
+    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
     "landsIn": "acceptance:POL-B2"
   },
   {
     "decision": "D2",
     "summary": "Unit tests cover debounce merge and failure fallback.",
-    "sourceRefs": ["changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
+    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
     "landsIn": "exitCriteria:E2"
   },
   {
     "decision": "D3",
     "summary": "Cross-slice delay to another package.",
-    "sourceRefs": ["changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
+    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
     "landsIn": "package:s1-ai-summary-polish"
   },
   {
     "decision": "D4",
     "summary": "A dropped decision.",
-    "sourceRefs": ["changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
+    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
     "landsIn": "dropped",
     "reason": "risk-accepted: human accepted on 2026-07-19 that X is out of scope for this slice."
   }

@@ -150,7 +150,7 @@ function latestMtimeMs(dir) {
 }
 
 function podDirFresh(projectDir, changeId) {
-  const latest = latestMtimeMs(resolve(projectDir, '.claude', 'taskpackages', changeId));
+  const latest = latestMtimeMs(resolve(projectDir, 'delivery', 'taskpackages', changeId));
   return latest > 0 && Date.now() - latest <= ACTIVITY_WINDOW_MIN * 60 * 1000;
 }
 
@@ -165,7 +165,7 @@ function isHeadMergedIntoMain(projectDir, changeId) {
     return false; // HEAD∉main / main 不存在 / git 失败
   }
   try {
-    execSync(`git cat-file -e main:changes/dev/${changeId}/docs-delta.md`, { cwd: projectDir, stdio: 'pipe' });
+    execSync(`git cat-file -e main:delivery/changes/dev/${changeId}/docs-delta.md`, { cwd: projectDir, stdio: 'pipe' });
     return true;
   } catch {
     return false; // closeout 不在 main（fork-point 幻觉形：制品只在盘）
@@ -226,7 +226,7 @@ function validateRefArray(value, fieldName, projectDir, options = {}) {
 }
 
 function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projectDir) {
-  const prefix = `.claude/taskpackages/${changeId}/verifier-evidence/rounds/`;
+  const prefix = `delivery/taskpackages/${changeId}/verifier-evidence/rounds/`;
   const refs = validateRefArray(provenance.verifierEvidenceRefs, 'provenance.verifierEvidenceRefs', projectDir, {
     prefix,
     exactCount: 1,
@@ -259,7 +259,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
     // 豁免制品 = i1 先例（260801-i1-test-script-wiring）自发产出的分类清单，钩子只查形状（存在且非空），
     // 内容真实性由 human 裁合并时审（PROPOSAL §6 接受风险）。
     if (verdictValue === 'ESCALATE' && fact.ok === false) {
-      const inventoryPath = resolve(projectDir, 'changes', 'dev', changeId, 'existing-red-inventory.md');
+      const inventoryPath = resolve(projectDir, 'delivery', 'changes', 'dev', changeId, 'existing-red-inventory.md');
       if (existsSync(inventoryPath) && statSync(inventoryPath).size > 0) {
         warn(
           `G6 red-evidence ESCALATE exemption: bearing fact is red (${ref}) and existing-red-inventory.md present — ` +
@@ -270,7 +270,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
       block(
         `verifier evidence ref is not green final evidence: ${ref}. ` +
         `Red-evidence ESCALATE can stop legally only with the exemption artifact: produce ` +
-        `changes/dev/${changeId}/existing-red-inventory.md (classified inventory of pre-existing reds + repair-intent ` +
+        `delivery/changes/dev/${changeId}/existing-red-inventory.md (classified inventory of pre-existing reds + repair-intent ` +
         `registration; precedent: 260801-i1-test-script-wiring) and stop again, or merge via human ruling. ` +
         `APPROVE never qualifies for this exemption.`,
       );
@@ -280,7 +280,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
 }
 
 function validateCloseoutArtifactRefs(provenance, changeId, closeoutFiles, projectDir) {
-  const prefix = `changes/dev/${changeId}/`;
+  const prefix = `delivery/changes/dev/${changeId}/`;
   const refs = validateRefArray(provenance.closeoutArtifactsChecked, 'provenance.closeoutArtifactsChecked', projectDir, { prefix });
   const present = new Set(refs.map(({ ref }) => ref));
   for (const file of closeoutFiles) {
@@ -403,8 +403,8 @@ function batteryRunHook(fixtureDir) {
 }
 
 function setupPodBase(fixtureDir, changeId, { pastPodDir = false } = {}) {
-  writeFixtureFile(fixtureDir, '.claude/taskpackages/current/taskpackage.json', JSON.stringify({ changeId }, null, 2));
-  const podEventPath = writeFixtureFile(fixtureDir, `.claude/taskpackages/${changeId}/pod-events.jsonl`, '');
+  writeFixtureFile(fixtureDir, 'delivery/taskpackages/current/taskpackage.json', JSON.stringify({ changeId }, null, 2));
+  const podEventPath = writeFixtureFile(fixtureDir, `delivery/taskpackages/${changeId}/pod-events.jsonl`, '');
   if (pastPodDir) {
     const past = new Date(Date.now() - 2 * 60 * 60 * 1000);
     utimesSync(podEventPath, past, past);
@@ -412,12 +412,12 @@ function setupPodBase(fixtureDir, changeId, { pastPodDir = false } = {}) {
 }
 
 function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }) {
-  writeFixtureFile(fixtureDir, `changes/dev/${changeId}/docs-delta.md`, '# docs-delta fixture\n');
-  writeFixtureFile(fixtureDir, `changes/dev/${changeId}/review-packet.md`, '# review-packet fixture\n');
+  writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/docs-delta.md`, '# docs-delta fixture\n');
+  writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/review-packet.md`, '# review-packet fixture\n');
   writeFixtureFile(fixtureDir, '.claude/verify-logs/fixture.log', 'fixture gate log\n');
   writeFixtureFile(
     fixtureDir,
-    `.claude/taskpackages/${changeId}/verifier-evidence/rounds/r1.json`,
+    `delivery/taskpackages/${changeId}/verifier-evidence/rounds/r1.json`,
     JSON.stringify(
       {
         artifactType: 'verifier-round-fact',
@@ -434,7 +434,7 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
   );
   writeFixtureFile(
     fixtureDir,
-    `changes/dev/${changeId}/supervisor-verdict.json`,
+    `delivery/changes/dev/${changeId}/supervisor-verdict.json`,
     JSON.stringify(
       {
         verdict: verdictValue,
@@ -444,10 +444,10 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
           provenanceVersion: '2.0',
           mechanicalSupervisorGate: { ran: true, producedBy: 'supervisor-verdict-gate.mjs' },
           verifyLogRefs: ['.claude/verify-logs/fixture.log'],
-          verifierEvidenceRefs: [`.claude/taskpackages/${changeId}/verifier-evidence/rounds/r1.json`],
+          verifierEvidenceRefs: [`delivery/taskpackages/${changeId}/verifier-evidence/rounds/r1.json`],
           closeoutArtifactsChecked: [
-            `changes/dev/${changeId}/docs-delta.md`,
-            `changes/dev/${changeId}/review-packet.md`,
+            `delivery/changes/dev/${changeId}/docs-delta.md`,
+            `delivery/changes/dev/${changeId}/review-packet.md`,
           ],
         },
       },
@@ -456,7 +456,7 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
     ),
   );
   if (inventory) {
-    writeFixtureFile(fixtureDir, `changes/dev/${changeId}/existing-red-inventory.md`, '# existing red inventory fixture\n');
+    writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/existing-red-inventory.md`, '# existing red inventory fixture\n');
   }
 }
 
@@ -615,7 +615,7 @@ function main(projectDir = defaultProjectDir) {
   // --self-check 派发移至文件尾 isMain 守卫（对偶 mutation-check 形态；FIX-11 语义不变）
 
   // G0: Load taskpackage
-  const taskPackagePath = resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+  const taskPackagePath = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
   if (!existsSync(taskPackagePath)) process.exit(0);
 
   let taskPackage;
@@ -628,12 +628,12 @@ function main(projectDir = defaultProjectDir) {
   const changeId = taskPackage.changeId;
   if (!changeId) process.exit(0);
 
-  const changeDir = resolve(projectDir, 'changes', 'dev', changeId);
+  const changeDir = resolve(projectDir, 'delivery', 'changes', 'dev', changeId);
 
   // G1: Closeout artifact existence check (C4: retired test-evidence.md + final-summary.md)
   // CF-9/F-01 (gov-review-devloop-closeout-hardening §3.3, 2026-07-27 human-approved): cutoff-aware 去快照。
   // post-cutoff（isPostCutoff，基准 CHANGE_ID_CUTOFF 对齐 closeout-check.mjs:72 / isPostCutoff:225，非 EVENTS_SCHEMA_CUTOFF）
-  // → changes/dev/ 下 taskpackage.json 快照退役（活文件 .claude/taskpackages/<id>/ 唯一承载）→ closeoutFiles 去快照项；
+  // → delivery/changes/dev/ 下 taskpackage.json 快照退役（活文件 delivery/taskpackages/<id>/ 唯一承载）→ closeoutFiles 去快照项；
   // pre-cutoff 保留三件（含 taskpackage.json 快照）。单数组驱动 G1 早退 / G5 mtime 循环 / G6 validateCloseoutArtifactRefs
   // 三处一致变更——防合规 post-cutoff v2 包过早退却在 G6 被错索 taskpackage.json 快照 ref 而 block。
   const closeoutFiles = isPostCutoff(changeId)
@@ -655,7 +655,7 @@ function main(projectDir = defaultProjectDir) {
       // This is exactly the PROPOSAL §1.1 triggering scenario
       block(
         `no closeout artifacts AND no code changes detected for Pod "${changeId}", and no in-flight signals ` +
-        `(worktree clean, no activity in .claude/taskpackages/${changeId}/ within ${ACTIVITY_WINDOW_MIN}min). ` +
+        `(worktree clean, no activity in delivery/taskpackages/${changeId}/ within ${ACTIVITY_WINDOW_MIN}min). ` +
         `This matches the "hallucinated completion" pattern: planner claimed done but produced zero artifacts and zero code changes. ` +
         `If a subagent phase is legitimately in flight, let it land artifacts before stopping; otherwise produce real closeout artifacts before stopping.`,
       );
@@ -668,7 +668,7 @@ function main(projectDir = defaultProjectDir) {
   const verdictPath = resolve(changeDir, 'supervisor-verdict.json');
   if (!existsSync(verdictPath)) {
     block(
-      `changes/dev/${changeId} has closeout artifacts but no supervisor-verdict.json. ` +
+      `delivery/changes/dev/${changeId} has closeout artifacts but no supervisor-verdict.json. ` +
       `Run supervisor and persist APPROVE/BLOCK/ESCALATE before stopping.`,
     );
   }

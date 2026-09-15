@@ -12,7 +12,7 @@
 ## 1. 角色与写域（写域零扩张）
 
 - **architect（子 agent，只读+审）**：判四档 + 出 reviewed plan + 写 rationale。**不写任何文件**（只读 + 审 + 同会话 return）。architect 是 full architect（有判断力、主持 review），**不是 `architect-reviewer`**（后者只读、只做契约影响分类 + lightweight eligibility，不主持收敛、不出 reviewed plan）。
-- **主线程（`/triage-change` 编排者 = 人类主线程）**：落盘 reviewed plan。主线程不受 per-agent enforce-scope 限（dev-loop.md §4），可写 `.planning`/`taskpackages`。让主线程落、architect 只审，正好绕开扩 architect 写域——**写域零扩张，不触 scope-map**。
+- **主线程（`/triage-change` 编排者 = 人类主线程）**：落盘 reviewed plan。主线程不受 per-agent enforce-scope 限（dev-loop.md §4），可写 `delivery/workstreams`/`taskpackages`。让主线程落、architect 只审，正好绕开扩 architect 写域——**写域零扩张，不触 scope-map**。
 - **planner / portfolio-planner**：写各自既有的家（本就是其写域），从家里读 reviewed plan 做 intake/拆包。
 - **人类**：三个承重触点（见 §5）；FROZEN 归人类（作者≠判官）。
 
@@ -22,9 +22,9 @@
 
 | 档 | 判据 | 去向 |
 |---|---|---|
-| **③ 拆包** | 跨多切片 / 需多 Pod / 迁移 / 高风险大 feature | reviewed plan → `.planning/<ws>/PROPOSAL.md`（人类冻结）→ portfolio-planner 拆 N 包 |
-| **② 单包 Full** | 单切片但 high/critical（触 security 轴 / 真 DB / 状态机 / AI 成本审计）| reviewed plan → `taskpackages/<id>/plan.md` → planner 单 Pod，Full |
-| **② 单包 Lite** | 单一来源/紧耦合小簇 · 单 owning 包 · 无悬挂契约决策 · 无迁移删数 · 一轮收 | reviewed plan → `taskpackages/<id>/plan.md` → planner 单 Pod，Lite |
+| **③ 拆包** | 跨多切片 / 需多 Pod / 迁移 / 高风险大 feature | reviewed plan → `delivery/workstreams/<ws>/PROPOSAL.md`（人类冻结）→ portfolio-planner 拆 N 包 |
+| **② 单包 Full** | 单切片但 high/critical（触 security 轴 / 真 DB / 状态机 / AI 成本审计）| reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Full |
+| **② 单包 Lite** | 单一来源/紧耦合小簇 · 单 owning 包 · 无悬挂契约决策 · 无迁移删数 · 一轮收 | reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Lite |
 | **① 直接修** | 不改 apps 行为 / 人类明确跳过 | 不进 loop（地板） |
 
 **小 feature 与小 bug 合流为同一档（②单包）**：执行形状相同（单 Pod 单 TaskPackage 跑 dev loop），仅以 `sourceType`（feature→`proposal`/`human-ad-hoc`；bug→`regression`/`ci-failure`/`drift-report`；`human-confirmed-plan` 归 artifact-lifecycle origin.type，不预支）与 `plan.md` 内容框架（feature 写"建什么+方案"，bug 写"根因假设+修复+影响面"）区分。
@@ -36,15 +36,15 @@
 | | 大 feature（③拆包） | 小 feature/bug（②单包） |
 |---|---|---|
 | review 深度 | 实质单轮：findings 逐条 + 处置 | 快审：确认判据 + 路由裁决 |
-| 生成物 | `.planning/<ws>/review.md`（findings + architect sign-off） | 裁决写进 `plan.md` frontmatter，不单独成件 |
+| 生成物 | `delivery/workstreams/<ws>/review.md`（findings + architect sign-off） | 裁决写进 `plan.md` frontmatter，不单独成件 |
 | 人类确认 | **要**（触点②盖 FROZEN——诞生了跨会话耐久权威） | plan mode 里人类已批过 plan 即够（+ 触点①确认路由） |
 | 逃生门 | 见 §6 reviewer-first | 同左 |
 
-**dev 侧为何单轮而非对抗**：dev plan 不碰单一事实源（contracts/spec），错了 verifier 验收门会接住，不值得 challenger/defender 对抗红队。单轮 architect review + 人类确认，与体量对齐。这与 `changes/arch/` 的 spec/governance 对抗 review **不是同一回事**，不互相替代。
+**dev 侧为何单轮而非对抗**：dev plan 不碰单一事实源（contracts/spec），错了 verifier 验收门会接住，不值得 challenger/defender 对抗红队。单轮 architect review + 人类确认，与体量对齐。这与 `delivery/changes/arch/` 的 spec/governance 对抗 review **不是同一回事**，不互相替代。
 
 **深度纪律（防漂移，accepted-risk）**：小 review 不得漂成重审（过度治理），也不得橡皮图章（审不出问题）——靠四档裁决 + progressive-rigor 约定框住；loop-retro 监控吞吐与深度校准。
 
-## 4. reviewed plan 就近落地（主线程落盘，changes/arch 不碰）
+## 4. reviewed plan 就近落地（主线程落盘，delivery/changes/arch 不碰）
 
 跨会话递不到 planner（planner 是另一会话）。落盘由主线程做，跨会话靠**家里的耐久文件**（plan.md / PROPOSAL.md），不靠返回一段 prose（沿用 dev-loop-handoff 纪律）。
 
@@ -53,8 +53,8 @@
   └─ 派 architect（只读+审）→ 返回 reviewed plan + 裁决（同会话 return，非跨会话 prose）
   └─ 主线程 AskUserQuestion 呈现裁决，人类【确认 / 改判四档】（一句话）   ← 人类触点①
   └─ 确认后主线程把 reviewed plan 落进它的家（只搬运、不改内容）：
-        ③大 → .planning/<ws>/PROPOSAL.md（+review.md，freezeState=pending-human；按 docs/templates/WORKSTREAM-PROPOSAL.template.md 三问 + 分型模板起草——业务目的清单 / workType 数组 / spec 关系标注三项硬项缺失即 portfolio-planner intake fail-closed 打回，260912 拆包链 T1）
-        ②   → taskpackages/<id>/plan.md（frontmatter：rigor/riskTier/sourceType/reviewed-by/date）
+        ③大 → delivery/workstreams/<ws>/PROPOSAL.md（+review.md，freezeState=pending-human；按 docs/templates/WORKSTREAM-PROPOSAL.template.md 三问 + 分型模板起草——业务目的清单 / workType 数组 / spec 关系标注三项硬项缺失即 portfolio-planner intake fail-closed 打回，260912 拆包链 T1）
+        ②   → delivery/taskpackages/<id>/plan.md（frontmatter：rigor/riskTier/sourceType/reviewed-by/date）
   └─（仅大 feature）人类盖 FROZEN（作者≠判官）                       ← 人类触点②
   └─ 报告下一步命令                                                    ← 人类触点③
         ▼（人类起对应会话）
@@ -69,11 +69,11 @@
 4. **FROZEN 拆包门 convention-only（F6/Q5）**：portfolio-planner 只拆 FROZEN 的 PROPOSAL（无 freezeState 机器校验，靠自觉）；未冻 → 先走 architect review + 人类冻结。
 5. **逃生门 reviewer-first（F10）**：见 §6。
 
-**大 feature FROZEN**：PROPOSAL.md 由**人类**盖 FROZEN（版本/sha）；机器判据 = `review.md`（architect sign-off + findings）存在 + human confirmation record。**architect 不能自冻**——scope-map architect allow 不含 `.planning`，物理写不进（作者≠判官由 scope **机器兜住**）。
+**大 feature FROZEN**：PROPOSAL.md 由**人类**盖 FROZEN（版本/sha）；机器判据 = `review.md`（architect sign-off + findings）存在 + human confirmation record。**architect 不能自冻**——scope-map architect allow 不含 `delivery/workstreams`，物理写不进（作者≠判官由 scope **机器兜住**）。
 
-**大 feature `.planning/<ws>/` 由谁建（F4 / Q4）**：triage 时由**人类/主线程**创建 `.planning/<ws>/` 装 reviewed PROPOSAL。这把"workstream 创建"拆成两半：**设计权威落家**（triage 时人类/主线程建目录 + PROPOSAL/review）与**调度态建立**（portfolio-planner 拆包时 attach 补 `task_plan`/`pod-board`/`progress`）——portfolio-planner 的"workstream 权限"读作**拆包+调度**权，不垄断建目录。**这是对 ARQ-065/066 RTE 集权的有意放宽（deliberate relaxation，human-confirmed 2026-07-22，非回归）**，与 architect-operating-model §4 / task-intake create-workstream 补注一致。
+**大 feature `delivery/workstreams/<ws>/` 由谁建（F4 / Q4）**：triage 时由**人类/主线程**创建 `delivery/workstreams/<ws>/` 装 reviewed PROPOSAL。这把"workstream 创建"拆成两半：**设计权威落家**（triage 时人类/主线程建目录 + PROPOSAL/review）与**调度态建立**（portfolio-planner 拆包时 attach 补 `task_plan`/`pod-board`/`progress`）——portfolio-planner 的"workstream 权限"读作**拆包+调度**权，不垄断建目录。**这是对 ARQ-065/066 RTE 集权的有意放宽（deliberate relaxation，human-confirmed 2026-07-22，非回归）**，与 architect-operating-model §4 / task-intake create-workstream 补注一致。
 
-**落地顺序（②单包，F11）**：主线程先建 `taskpackages/<id>/plan.md`（含 frontmatter 裁决）→ planner 跑 `/build-feature <id>` 时建 `taskpackage.json` 做 intake（sourceRefs/origin 回指 plan.md，`rigor` 取自 frontmatter）。两次写跨人类触发的独立会话顺序发生，无竞态。
+**落地顺序（②单包，F11）**：主线程先建 `delivery/taskpackages/<id>/plan.md`（含 frontmatter 裁决）→ planner 跑 `/build-feature <id>` 时建 `taskpackage.json` 做 intake（sourceRefs/origin 回指 plan.md，`rigor` 取自 frontmatter）。两次写跨人类触发的独立会话顺序发生，无竞态。
 
 ## 5. 三个承重人类触点（落盘本身全自动，人类只保留三下，每下承重、非帮机器填表）
 
@@ -95,7 +95,7 @@
 
 ## 6. 逃生门（reviewer-first，F10）
 
-分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + **停、升级 `changes/arch/` full-adversarial**。dev 分流门无权批准事实源变更，不越权。
+分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + **停、升级 `delivery/changes/arch/` full-adversarial**。dev 分流门无权批准事实源变更，不越权。
 
 ## 7. Lite TaskPackage 字段级定义
 
@@ -103,7 +103,7 @@ Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。
 
 ## 8. proposal 合法路径
 
-`sourceType=proposal` 的合法 proposal 路径为 `changes/(arch|dev)/**/PROPOSAL.md` **或 `.planning/<ws>/PROPOSAL.md`**（大 feature 设计权威）。G3 `taskpackage-required-check.mjs` 的 `isProposalMdPath` 已同步扩认 `.planning`（本提案落地的机械前提；artifact-lifecycle 的 origin.ref 校验复用之，sequencing 上本提案先于/同批）。
+`sourceType=proposal` 的合法 proposal 路径为 `delivery/changes/(arch|dev)/**/PROPOSAL.md` **或 `delivery/workstreams/<ws>/PROPOSAL.md`**（大 feature 设计权威）。G3 `taskpackage-required-check.mjs` 的 `isProposalMdPath` 已同步扩认 `delivery/workstreams`（本提案落地的机械前提；artifact-lifecycle 的 origin.ref 校验复用之，sequencing 上本提案先于/同批）。
 
 ## 9. 强制力说明（honest，F9）
 

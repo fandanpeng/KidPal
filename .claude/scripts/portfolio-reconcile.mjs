@@ -247,7 +247,7 @@ export function checkLaunchReachability(projectDir, { changeId, baseRef, exists:
   const blocking = [], warn = [], present = [];
 
   // ① taskpackage.json —— blocking
-  const tpPath = `.claude/taskpackages/${changeId}/taskpackage.json`;
+  const tpPath = `delivery/taskpackages/${changeId}/taskpackage.json`;
   if (!exists(tpPath)) blocking.push(tpPath);
   else {
     present.push(tpPath);
@@ -263,7 +263,7 @@ export function checkLaunchReachability(projectDir, { changeId, baseRef, exists:
     // ③ decision-coverage.json —— warn（仅当有 workstream）
     const ws = origin && origin.workstream;
     if (ws) {
-      const dcPath = `.planning/${ws}/decision-coverage.json`;
+      const dcPath = `delivery/workstreams/${ws}/decision-coverage.json`;
       if (exists(dcPath)) present.push(dcPath); else warn.push(dcPath);
     }
   }
@@ -284,22 +284,22 @@ export function selfCheck() {
     if (typeof exists !== 'function' || typeof show !== 'function') throw new Error('selfCheck: stub injection failed');
     return { exists, show };
   };
-  const TP = '.claude/taskpackages/cid-a/taskpackage.json';
+  const TP = 'delivery/taskpackages/cid-a/taskpackage.json';
 
-  // ① proposal 型双路 changes/(arch|dev)/** 三件齐 → ok:true
+  // ① proposal 型双路 delivery/changes/(arch|dev)/** 三件齐 → ok:true
   let w = mkStubs({
-    [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'changes/arch/x/PROPOSAL.md', workstream: 'ws-a' } }),
-    'changes/arch/x/PROPOSAL.md': '# PROPOSAL',
-    '.planning/ws-a/decision-coverage.json': '{}',
+    [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/changes/arch/x/PROPOSAL.md', workstream: 'ws-a' } }),
+    'delivery/changes/arch/x/PROPOSAL.md': '# PROPOSAL',
+    'delivery/workstreams/ws-a/decision-coverage.json': '{}',
   });
   let r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
   t('proposal-dualpath-all-present', { ok: r.ok, blocking: r.blocking, warn: r.warn, presentCount: r.present.length }, { ok: true, blocking: [], warn: [], presentCount: 3 });
 
   // ② hybrid 带片段，剥除后命中 → ok:true
   w = mkStubs({
-    [TP]: JSON.stringify({ origin: { upstreamType: 'regression', upstreamRef: '.planning/ws-b/PROPOSAL.md#§4.1', workstream: 'ws-b' } }),
-    '.planning/ws-b/PROPOSAL.md': '# PROPOSAL',
-    '.planning/ws-b/decision-coverage.json': '{}',
+    [TP]: JSON.stringify({ origin: { upstreamType: 'regression', upstreamRef: 'delivery/workstreams/ws-b/PROPOSAL.md#§4.1', workstream: 'ws-b' } }),
+    'delivery/workstreams/ws-b/PROPOSAL.md': '# PROPOSAL',
+    'delivery/workstreams/ws-b/decision-coverage.json': '{}',
   });
   r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
   t('hybrid-fragment-stripped-hit', { ok: r.ok, blocking: r.blocking }, { ok: true, blocking: [] });
@@ -310,9 +310,9 @@ export function selfCheck() {
   t('non-proposal-upstream-proposal-na', { ok: r.ok, blocking: r.blocking }, { ok: true, blocking: [] });
 
   // ④ proposal 型但 PROPOSAL 缺 → ok:false + 点名
-  w = mkStubs({ [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'changes/arch/y/PROPOSAL.md' } }) });
+  w = mkStubs({ [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/changes/arch/y/PROPOSAL.md' } }) });
   r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
-  t('proposal-missing-blocking-named', { ok: r.ok, hasBlocking: r.blocking.length > 0, named: r.blocking.some((b) => b.includes('changes/arch/y/PROPOSAL.md')) }, { ok: false, hasBlocking: true, named: true });
+  t('proposal-missing-blocking-named', { ok: r.ok, hasBlocking: r.blocking.length > 0, named: r.blocking.some((b) => b.includes('delivery/changes/arch/y/PROPOSAL.md')) }, { ok: false, hasBlocking: true, named: true });
 
   const pass = cases.filter((c) => c.pass).length;
   const okAll = pass === cases.length;

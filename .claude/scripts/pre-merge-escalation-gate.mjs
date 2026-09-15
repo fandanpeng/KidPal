@@ -2,7 +2,7 @@
 // pre-merge-escalation-gate.mjs — 前置升级闸（auto-merge 前的机械判，非门、非 merge 执行者）
 //
 // 治理声明：owner=architect · approver=human · G3（DEV-GOVERNANCE §6 强制执行层行覆盖）。
-// 批准物：源仓 changes/arch/260831-gov-review-auto-merge-local-main/PROPOSAL.md（FROZEN v1.0，T1）
+// 批准物：源仓 delivery/changes/arch/260831-gov-review-auto-merge-local-main/PROPOSAL.md（FROZEN v1.0，T1）
 //   —— 同步自源仓 commit 6154a6c（治理迁移指南 §4.3 同步通道）；契约面路径按 KidPal 适配为 docs/contracts/**。
 // 分工：本脚本只重算「例外清单是否命中」，命中即 exit 1 且报命中项；放行 exit 0。**合并前必经，
 //   ——它放行 merge-driver 才跑**（merge-driver 在 processPod Step 1 前 invoke，见 PROPOSAL T2）。
@@ -61,7 +61,7 @@ function sourceReachableFromMain(execFn, source) {
 
 /** 读 supervisor-verdict.json（dev-loop 档），缺失返回 null。 */
 function readSupervisorVerdict(dir, changeId) {
-  const p = join(dir, 'changes', 'dev', changeId, 'supervisor-verdict.json');
+  const p = join(dir, 'delivery', 'changes', 'dev', changeId, 'supervisor-verdict.json');
   if (!existsSync(p)) return null;
   try {
     return JSON.parse(readFileSync(p, 'utf8'));
@@ -75,8 +75,8 @@ function readSupervisorVerdict(dir, changeId) {
 
 /** 读治理 PROPOSAL §7 与 Status 行 + landing-verdict（Track B 档）。 */
 function readGovAnchors(dir, changeId) {
-  const proposalPath = join(dir, 'changes', 'arch', changeId, 'PROPOSAL.md');
-  const landingVerdictPath = join(dir, 'changes', 'arch', changeId, 'landing-verdict.md');
+  const proposalPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'PROPOSAL.md');
+  const landingVerdictPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'landing-verdict.md');
   if (!existsSync(proposalPath)) return null;
   const text = readFileSync(proposalPath, 'utf8');
   const frozen = /^[>\s]*\*\*状态：FROZEN v\d+\.\d+/m.test(text); // 260905 T4：容忍 `> ` 引用前缀，与行首形态双命中（既有错位归位，260905-gov-review-verify-gates-align）
@@ -115,12 +115,12 @@ export const CONTRACT_SPEC_LITERALS = ['docs/contracts/**', 'docs/spec.md', 'doc
 export function contractFindingsAccounted(dir, changeId, deps = {}) {
   const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
   const readPacketText = () => {
-    let t = readText(join(dir, 'changes', 'dev', changeId, 'review-packet.md'));
-    if (t === null) t = readText(join(dir, '.claude', 'taskpackages', changeId, 'review-packet.md'));
+    let t = readText(join(dir, 'delivery', 'changes', 'dev', changeId, 'review-packet.md'));
+    if (t === null) t = readText(join(dir, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
     if (t === null && deps.podsRecordPath) {
       try {
         const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
-        if (wt) t = readText(join(wt, 'changes', 'dev', changeId, 'review-packet.md')) ?? readText(join(wt, '.claude', 'taskpackages', changeId, 'review-packet.md'));
+        if (wt) t = readText(join(wt, 'delivery', 'changes', 'dev', changeId, 'review-packet.md')) ?? readText(join(wt, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
       } catch { /* worktree 回退失败按不在场处理 */ }
     }
     return t;
@@ -135,12 +135,12 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
   const cdqHasRow = cdqText !== null && cdqText.includes(changeId);
   const deferAnchored = (() => {
     const raw =
-      readText(join(dir, '.claude', 'taskpackages', changeId, 'pod-events.jsonl')) ??
+      readText(join(dir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl')) ??
       (deps.podsRecordPath
         ? (() => {
             try {
               const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
-              return wt ? readText(join(wt, '.claude', 'taskpackages', changeId, 'pod-events.jsonl')) : null;
+              return wt ? readText(join(wt, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl')) : null;
             } catch { return null; }
           })()
         : null);
@@ -286,7 +286,7 @@ export function evaluate(ctx) {
     else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
     else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
   } else {
-    push(`unknown change kind（changeId 既无 changes/dev 也无 changes/arch）`);
+    push(`unknown change kind（changeId 既无 delivery/changes/dev 也无 delivery/changes/arch）`);
   }
 
   return { blocked: reasons.length > 0, reasons };
@@ -307,8 +307,8 @@ function findPodsRecordPath(projectDir, changeId) {
 /** 从磁盘组 ctx（live path）。 */
 function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
-  const devDir = join(projectDir, 'changes', 'dev', changeId);
-  const archDir = join(projectDir, 'changes', 'arch', changeId);
+  const devDir = join(projectDir, 'delivery', 'changes', 'dev', changeId);
+  const archDir = join(projectDir, 'delivery', 'changes', 'arch', changeId);
   const hasDev = existsSync(devDir);
   const hasArch = existsSync(archDir);
   const kind = hasArch ? 'gov' : hasDev ? 'devloop' : 'unknown';

@@ -24,8 +24,11 @@ paths:
 | `ESP32-S3-RLCD-4.2-Demo/**` | 只读参考 | 官方 Demo + 小智源码（第三方，不入版本控制） | 任何写入 |
 | `.claude/` | 平台 | 治理机制：agents / rules / hooks / scope-map / settings / scripts / references | 用 Bash 重定向写（bashDenyWrite 红线） |
 | `.codebase-memory/` | codebase-memory-mcp 工具（自动生成） | 图索引快照 artifact（`graph.db.zst` + `artifact.json`）与工具自写 `.gitattributes`（`merge=ours` 消二进制冲突）——worktree 从共享快照引导图索引、替代从头 full index | 手改（工具生成派生快照、非数据/结构 SSOT；刷新走 `index_repository(persistence=true)`）。**图索引项目归属（2026-09-05 消歧，ARQ-260905-worktree-graph-index-rules）**：主 checkout 用主索引 `KidPal`；**每个 Pod worktree 必须有自己的专属图索引，属 launch 面必办项**——worktree 准备阶段在 bootstrap 后跑一次 `index_repository(repo_path=<worktree>)`，即从仓内快照导入 + 增量补差（快照 2026-09-05 入仓，commit b7aa3df；项目名由工具按路径派生，先例 `C-AI-KidPal-pod-gateway-directionB` / `C-AI-KidPal-pod-host-test-infra`），不得让 Pod 降级「无专属图索引、读文件」；建前先以 `list_projects` 核对既有项目在册状态，历史文档 / launch prompt 中的降级注记不作为依据 |
-| `changes/arch/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
-| `changes/dev/**` | dev-loop | 实现变更证据归档 | 当 live 工作区用（live 在 `.claude/taskpackages/`） |
+| `delivery/milestones/` | 主线程 | 里程碑注册表：`milestones.jsonl`（单一事实源，state 由人/integrator 维护）+ 脚本再生 `STATUS.md` + `delivery-workspace.json` 绑定元数据 | 手改派生件 STATUS.md（改状态去改 milestones.jsonl 再重跑脚本） |
+| `delivery/workstreams/` | 人 · 主线程 planner · dev-loop | workstream 级长周期工作记忆（为什么/发现/进展），准入判据与生命周期治理见 [delivery/workstreams/README.md](../../delivery/workstreams/README.md)；活跃在顶层、完结归 `_archive/<年>/` | 违反准入判据建目录（半年后接手的 agent 靠 diff + taskpackage + commit 能继续的不配建） |
+| `delivery/taskpackages/` | dev-loop | 单切片在途验收包（含 `current/` 活工作面） | 当长期归档用（长期在 `delivery/changes/dev/`）；Bash 重定向写（scope-map bashDenyWrite 红线） |
+| `delivery/changes/arch/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
+| `delivery/changes/dev/**` | dev-loop | 实现变更证据归档 | 当 live 工作区用（live 在 `delivery/taskpackages/`） |
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
@@ -36,6 +39,6 @@ paths:
 
 ## 工作产物去哪
 
-- 治理 / spec 变更过程产物 → `changes/arch/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件）。
-- dev-loop 过程产物 → `.claude/taskpackages/<change-id>/`（短期）→ 晋升 `changes/dev/<change-id>/`（长期）。
+- 治理 / spec 变更过程产物 → `delivery/changes/arch/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件）。
+- dev-loop 过程产物 → `delivery/taskpackages/<change-id>/`（短期）→ 晋升 `delivery/changes/dev/<change-id>/`（长期）。
 - 模拟器/管线的构建产物 → 不进仓（`.gitignore` 已覆盖 `tools/**/node_modules/`、模拟器 Output）。

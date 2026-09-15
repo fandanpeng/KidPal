@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 最小 Pod Journal（层 A）事件追加器。
 // 供 planner 调用，程序内部 fs-append round-outcome / friction 事件到
-// .claude/taskpackages/<id>/pod-journal.jsonl。
+// delivery/taskpackages/<id>/pod-journal.jsonl。
 // 对偶 dispatch-stamp.mjs / portfolio-reconcile.mjs（程序内 fs 写，非 shell 重定向）。
 // 无 hash-chain / journalHeadHash（层 A 不上重机器）。
 //
@@ -46,13 +46,13 @@ function required(name) {
 
 function taskPackageDir() {
   const explicit = flagVal('--task-package-id');
-  if (explicit) return resolve(projectDir, '.claude', 'taskpackages', explicit);
+  if (explicit) return resolve(projectDir, 'delivery', 'taskpackages', explicit);
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   try {
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^﻿/, ''));
-    return tp.changeId ? resolve(projectDir, '.claude', 'taskpackages', tp.changeId) : null;
+    return tp.changeId ? resolve(projectDir, 'delivery', 'taskpackages', tp.changeId) : null;
   } catch {
     return null;
   }

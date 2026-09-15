@@ -98,7 +98,7 @@ function boundedText(value, maxBytes) {
 
 // ── verdict.json（机器事实，程序 fs-write，非 agent 落盘；R11）──
 function writeVerdictJson(results, ok, error, phase, extra = {}) {
-  const dir = resolve(projectDir, '.claude', 'taskpackages');
+  const dir = resolve(projectDir, 'delivery', 'taskpackages');
   mkdirSync(dir, { recursive: true });
   const verdict = {
     producedBy: 'verify.mjs (script fs-write)',
@@ -120,11 +120,11 @@ function writeVerdictJson(results, ok, error, phase, extra = {}) {
 // OWNER: metrics-ledger (FROZEN v4). C1 does NOT modify this section.
 function persistVerifyRuns(results, phase, caller) {
   try {
-    const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+    const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
     if (!existsSync(current)) return; // no TaskPackage context → skip
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^﻿/, ''));
     if (!tp.changeId) return;
-    const tpDir = resolve(projectDir, '.claude', 'taskpackages', tp.changeId);
+    const tpDir = resolve(projectDir, 'delivery', 'taskpackages', tp.changeId);
     mkdirSync(tpDir, { recursive: true });
     const record = {
       ts: new Date().toISOString(),

@@ -1,6 +1,6 @@
 # Pod Coordination — blackboard / merge token / reconcile（canonical mechanics）
 
-> 状态：canonical dev-loop 协调机制参考。落定自 `changes/arch/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1）§7–§9。
+> 状态：canonical dev-loop 协调机制参考。落定自 `delivery/changes/arch/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1）§7–§9。
 > 上层定义见 [`dev-loop-operating-system.md`](dev-loop-operating-system.md)；本文件只讲多 Pod 并行的协调**机制**。角色见 [`.claude/agents/portfolio-planner.md`](../agents/portfolio-planner.md)。
 
 ## 1. 原则
@@ -23,7 +23,7 @@ $(git rev-parse --git-common-dir)/devloop/reconcile.lock        # advisory lock�
 
 > 实现备注：主 worktree 下该命令返回**相对** `.git`，linked worktree 返回**绝对**路径；脚本必须对结果做 `path.resolve(cwd, commonDir)`（或用 `--path-format=absolute`），否则主 worktree 在非 repo-root cwd 下解析错。
 
-**耐久证据**仍入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；pre-cutoff 继续兼容 session-digest / loop-health / pod-journal。它们落 `changes/dev/<change-id>/` 与 `.claude/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
+**耐久证据**仍入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；pre-cutoff 继续兼容 session-digest / loop-health / pod-journal。它们落 `delivery/changes/dev/<change-id>/` 与 `delivery/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
 
 > 跨设备不靠 live board：本机多 worktree 用共享 git common dir；跨设备协作 post-cutoff 走 handoff + pod-retro（叙事连续性）+ pod-events（结构化证据），pre-cutoff 仍可用 session-digest；不共享运行时 board。
 
@@ -32,10 +32,10 @@ $(git rev-parse --git-common-dir)/devloop/reconcile.lock        # advisory lock�
 portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfolio-planner.md) Step 6 commit-before-launch 不变量），launch 序列加**前置门**：launch 前对每个 ready 包跑 `git cat-file -e <base-ref>:<path>` 校验**基准 ref**（专用 base ref，非 main）已含 check 集：
 
 - **check 集 + 分层（defender 倾向 / human A-3 裁）**：
-  - `taskpackage.json`（`.claude/taskpackages/<changeId>/taskpackage.json`）= **blocking**
+  - `taskpackage.json`（`delivery/taskpackages/<changeId>/taskpackage.json`）= **blocking**
   - PROPOSAL（`origin.upstreamRef` 解析）= **blocking**
-  - `decision-coverage.json`（`.planning/<ws>/decision-coverage.json`）= **warn**
-- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `.planning/<ws>` ∨ `changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
+  - `decision-coverage.json`（`delivery/workstreams/<ws>/decision-coverage.json`）= **warn**
+- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `delivery/workstreams/<ws>` ∨ `delivery/changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
 - **`launchPreconditions` 核验 = convention + 人读（本门不含机械齿，260912 拆包链 M-1，260913 human 裁）**：`--check-launch` 的机械 check 集**不读** workstream `decision-coverage.json` 顶层 `launchPreconditions`；该面由 **launch 执行者（human 点火前）人工核**——逐条核前置是否满足，其中 `需修订` 类 spec 裁定按落点二分核对应文件已冻结（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。未满足 → 承载包不得 launch（粒度 = 包，非整 workstream 陪等）。canonical 定义见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「launchPreconditions」节；机械齿（脚本读该键）另登 ARQ 留根，人读反复漏检再机械化——**本门判定语义不变**。
 - **board 不入 check 集**：board/token 恒在 git common dir（§2）、不入版本控制，其可见性由 common dir 给、不靠 commit；board 失同步由 planner intake-reconcile 修。
 - 缺失（blocking 项）→ **拒绝 launch**，报「拆包产物未 commit 到基准 ref」，回 portfolio-planner 补 commit（对偶 planner.md F-09 needs-triage 默认出口）。
@@ -141,8 +141,8 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 ### 10b. post-merge 簿记落点口径
 
 - **pod-events 的 merge-completed 事件**：merge-driver Step 5b 机械落 main（合并现场单文件 pathspec commit）——main 自持、feature 分支可删，planner 无需手动补（home-p1 `46d99b5` / schedule-p2 `7717eea` 的手动簿记由此机械化）。簿记失败为 advisory warn、不阻塞合并链。
-- **changes/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。
-- **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`.claude/taskpackages/<pod-id>/**` + `changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
+- **delivery/changes/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。
+- **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`delivery/taskpackages/<pod-id>/**` + `delivery/changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
 
 ## 10c. 版本化制品 `.vN` 槽位预约与登记表（260908 批，A-7/B-2/B-0 已裁）
 
@@ -184,7 +184,7 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 
 **不一致 = 就地升裁，禁攒到集成夜**：走既有 escalation 通道（`agent-escalation` → 需要人则 ESCALATE 停 human），不新设通道。human 裁断后 planner 落一条 pod-events 事件——**既有事件型** `human-decision` + `payload.decision="anchor3-deviation-ruling"`、append 姿势 `--actor human`（eventId 即裁定锚；eventType 是 `pod-events-append.mjs` 机械闭集，不扩闭集，沿 `approve-escalated-merge` 先例形态）。roadmap 达成状态由 `render-roadmap.mjs` 按该区分值渲染为 `deviation（裁定锚 <eventId>）`。
 
-**绿路径上 portfolio-planner 沉默**：常规「下一包 ready」由 `portfolio-reconcile.mjs` 机械计算（依赖已满足 + WIP 未满 + mergeOrder 最靠前），human 照常点火（`git worktree add` + 起 planner，现行流程不变）；与 roadmap 的匹配判断已在锚 3 于**合并前**完成，不后置到 merge 之后。roadmap 达成状态刷新时机 = 包 merge 后由 human 合并簿记顺跑一次 `node .claude/scripts/render-roadmap.mjs --workstream <slug> --write-into .planning/<ws>/roadmap.md`（全量重算、幂等），门 1 与收口相位亦可调用。
+**绿路径上 portfolio-planner 沉默**：常规「下一包 ready」由 `portfolio-reconcile.mjs` 机械计算（依赖已满足 + WIP 未满 + mergeOrder 最靠前），human 照常点火（`git worktree add` + 起 planner，现行流程不变）；与 roadmap 的匹配判断已在锚 3 于**合并前**完成，不后置到 merge 之后。roadmap 达成状态刷新时机 = 包 merge 后由 human 合并簿记顺跑一次 `node .claude/scripts/render-roadmap.mjs --workstream <slug> --write-into delivery/workstreams/<ws>/roadmap.md`（全量重算、幂等），门 1 与收口相位亦可调用。
 
 **portfolio-planner 再出场条件（收窄）** = 仅**调度异常**时由 human 唤起重裁：① 锚 3 deviation 影响后续包（依赖它的包是否照原计划跑）；② 依赖关系与实际不符；③ WIP / mergeOrder 需重排。不 per-merge、不 per-launch 例行出场。
 

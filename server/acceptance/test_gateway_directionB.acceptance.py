@@ -51,7 +51,7 @@ Coverage map (acceptanceRef / exitCriteria -> test method):
   GWA-A9 (self-signed cert: validity >=10y + rotation script + expiry alert; launch prerequisite)
         -> test_a9_cert_rotation_and_expiry_scripts            [structural]
         -> test_a9_live_cert_validity_ge_10y                   [live]
-  GWA-E2 (ECS live 按 ARQ-260901-g3 口径 @pytest.mark.live; deploy evidence 落 changes/dev/)
+  GWA-E2 (ECS live 按 ARQ-260901-g3 口径 @pytest.mark.live; deploy evidence 落 delivery/changes/dev/)
         -> test_e2_deploy_evidence_in_changes_dev              [structural evidence]
         -> LiveAcceptance pytestmark = live                    [live]
   GWA-E3 (launch prereq gate cluster: 18789 lock 127.0.0.1 (V28, deploy-phase assertion);
@@ -114,7 +114,7 @@ Red baseline (vehicle state, 2026-09-04): server/ carries only the OLD thin shim
 (FastAPI, validation-mode auth, faster-whisper ASR, no mcp, no schema check). The official
 xiaozhi-esp32-server is cloned at /opt/kidpal/ on ECS but NOT deployed; there is no
 provider config, no kidpal mcp relay, no forced auth, no cert script, and no
-server/gateway/ adaptation module. changes/dev/260903-gateway-directionB/ is empty.
+server/gateway/ adaptation module. delivery/changes/dev/260903-gateway-directionB/ is empty.
 Every structural/offline/evidence test below is therefore RED right now for its own
 missing-behaviour reason — none may turn green until the builder lands the gateway
 adaptation + the operator runs the deploy phase and the probe/evidence 落盘.
@@ -155,7 +155,7 @@ except ImportError:
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SERVER = REPO_ROOT / "server"
 GATEWAY_DIR = SERVER / "gateway"
-CHANGES_DEV = REPO_ROOT / "changes" / "dev"
+CHANGES_DEV = REPO_ROOT / "delivery" / "changes" / "dev"
 PACKAGE_EVIDENCE_DIR = CHANGES_DEV / "260903-gateway-directionB"
 
 # --------------------------------------------------------------------------- #
@@ -549,7 +549,7 @@ class DirectionBStructuralAcceptance(unittest.TestCase):
                  if "v21" in p.name.lower()]
         self.assertTrue(
             files,
-            "GWA-A8 RED: no V21 multiturn-continuity probe evidence 落盘 under changes/dev/"
+            "GWA-A8 RED: no V21 multiturn-continuity probe evidence 落盘 under delivery/changes/dev/"
             "260903-gateway-directionB/. 部署期第一件事 = 两轮追问连续性探针, 结论 + 承载方案 "
             "(acceptance:A4 / 传会话标识·历史 / 降级单轮并记账, ARQ-260902-multiturn-continuity) "
             "must be recorded before绿.",
@@ -602,12 +602,12 @@ class DirectionBStructuralAcceptance(unittest.TestCase):
 
     # --- GWA-E2 -------------------------------------------------------------
     def test_e2_deploy_evidence_in_changes_dev(self):
-        """coverage: GWA-E2 — ECS live 验收口径 + 部署证据落 changes/dev/."""
+        """coverage: GWA-E2 — ECS live 验收口径 + 部署证据落 delivery/changes/dev/."""
         files = [p for p in _files_under(PACKAGE_EVIDENCE_DIR, ".md")
                  if "deploy" in p.name.lower()]
         self.assertTrue(
             files,
-            "GWA-E2 RED: no deploy evidence 落盘 under changes/dev/260903-gateway-directionB/ "
+            "GWA-E2 RED: no deploy evidence 落盘 under delivery/changes/dev/260903-gateway-directionB/ "
             "(e.g. deploy.md). Deploy proof (systemd status snapshot / deploy log / wss reachable "
             "record) must be recorded — ARQ-260901-g3 口径.",
         )
@@ -633,7 +633,7 @@ class DirectionBStructuralAcceptance(unittest.TestCase):
                  if "cert" in p.name.lower() or "risk" in p.name.lower() or "deadlock" in p.name.lower()]
         self.assertTrue(
             files,
-            "GWA-E3 RED: no cert-lifecycle accept-as-risk 记账 record 落盘 under changes/dev/"
+            "GWA-E3 RED: no cert-lifecycle accept-as-risk 记账 record 落盘 under delivery/changes/dev/"
             "260903-gateway-directionB/. human 2026-09-04 裁定 = accept-as-risk (OTA 不提前); "
             "记账记录 + ARQ 队列迁移 (integrator 收口) 须显式.",
         )

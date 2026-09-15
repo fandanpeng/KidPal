@@ -11,7 +11,7 @@
     "PreToolUse 还在 Bash matcher 上挂 enforce-scope：按 universal.bashDenyWrite 拦 shell 重定向写契约/强制层",
     "（cat >/tee/>），堵『Bash 重定向绕过契约冻结/强制层』的洞；不套 per-agent allow/deny（不误伤 verifier 跑测试）。",
     "Bash push-main 保护防止跳合并门；Stop 的 supervisor-gate-check.mjs 防止 integrator closeout 后无 supervisor 裁断就收尾。",
-    "PostToolUse 的 portfolio-sync.mjs 在 Edit/Write 触及 .claude/taskpackages/ 或 changes/dev/ 后触发 portfolio-reconcile；board 在共享 git common dir，不入版本控制。",
+    "PostToolUse 的 portfolio-sync.mjs 在 Edit/Write 触及 delivery/taskpackages/ 或 delivery/changes/dev/ 后触发 portfolio-reconcile；board 在共享 git common dir，不入版本控制。",
     "ask 弹窗批准判据（260908 批 A-4/N6）：核 human 授权 eventId 在场且可锚到 pod-events 对应事件（pod-coordination.md §10a runbook + integrator.md merge-chain execution 节）。",
     "ask = 手动 Bash 路径 best-effort（260908 批 A-4 主张限定）：条件语义（Pod worktree 内 / 预登记消解规则 + human 授权事件在场）机械层不判、由 integrator.md 正文纪律承载；复合命令、env 前缀（如 GIT_EDITOR=true git rebase）、child_process 三类绕道在册，airtight 需新 PreToolUse hook（留根另批，等价新设闸走 full）。"
   ],

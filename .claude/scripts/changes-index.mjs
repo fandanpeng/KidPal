@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// changes/INDEX.md 幂等全量重建 + 单行 upsert（G3，对偶 .claude/scripts/planning-index.mjs）。
-// 扫描 changes/dev/*/ + changes/arch/*/，收 origin.ref/origin.workstream/changeId/日期/状态，重建 changes/INDEX.md。
+// delivery/changes/INDEX.md 幂等全量重建 + 单行 upsert（G3，对偶 .claude/scripts/planning-index.mjs）。
+// 扫描 delivery/changes/dev/*/ + delivery/changes/arch/*/，收 origin.ref/origin.workstream/changeId/日期/状态，重建 delivery/changes/INDEX.md。
 // 幂等——每次同输入产同输出；INDEX 头标「勿手改」。
 //
 // 用法：
@@ -26,10 +26,10 @@ import { resolveOriginRef, isFrozen, closeoutRequiredFiles } from './lib/governa
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 // 状态缓存（一次性钉死结果），供零 fork 复用。tracked，幂等。
-const STATE_CACHE_PATH = resolve(projectDir, 'changes', '.changes-index-state.json');
+const STATE_CACHE_PATH = resolve(projectDir, 'delivery', 'changes', '.changes-index-state.json');
 
 // 人工 adjudication（landing 期一次性判定，immutable）：机械强信号判不出的发散旧批 + 进行中批。
-// 每个值 = true（人工核 verdict 文件确认已落地）。判据记录于 changes/arch/260823-gov-review-arq-queue-restructure/（landing 期 verdict 人工判定清单）。
+// 每个值 = true（人工核 verdict 文件确认已落地）。判据记录于 delivery/changes/arch/260823-gov-review-arq-queue-restructure/（landing 期 verdict 人工判定清单）。
 const LANDED_ADJUDICATION = {
   // 发散散文旧批（强信号判不出，人工核 verdict 结论为通过态）：
   '260729-gov-review-portfolio-handoff-failclosed': true,      // 转绿记录 + R-1~R-4 全绿 → 翻 GREEN（终态）
@@ -139,16 +139,16 @@ export function deriveDevClosed(dir, changeId) {
 }
 // collectDev 内：const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
 
-// 收 dev dirs（changes/dev/*/ 子目录，changeId 形状，可能含 closeout 制品）。
+// 收 dev dirs（delivery/changes/dev/*/ 子目录，changeId 形状，可能含 closeout 制品）。
 function collectDev() {
-  const root = resolve(projectDir, 'changes', 'dev');
+  const root = resolve(projectDir, 'delivery', 'changes', 'dev');
   const items = [];
   if (!existsSync(root)) return items;
   for (const name of readdirSync(root, { withFileTypes: true })) {
     if (!name.isDirectory()) continue;
     const dir = join(root, name.name);
     const tp = join(dir, 'taskpackage.json');
-    const tpFallback = resolve(projectDir, '.claude', 'taskpackages', name.name, 'taskpackage.json');
+    const tpFallback = resolve(projectDir, 'delivery', 'taskpackages', name.name, 'taskpackage.json');
     let originRef = '', originWorkstream = '';
     const tpPath = existsSync(tp) ? tp : (existsSync(tpFallback) ? tpFallback : null);
     if (tpPath) {
@@ -158,7 +158,7 @@ function collectDev() {
         originWorkstream = o.workstream || '';
       } catch { /* 非 JSON 或缺 origin */ }
     }
-    const date = parseChangeIdDate(name.name) || gitFirstCommitDate(`changes/dev/${name.name}`);
+    const date = parseChangeIdDate(name.name) || gitFirstCommitDate(`delivery/changes/dev/${name.name}`);
     const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
     items.push({ changeId: name.name, date, lane: 'dev', originRef, status, workstream: originWorkstream });
   }
@@ -225,7 +225,7 @@ function staleCandidate({ landed, firstCommit, thresholdDays, now }) {
 
 // 单目录 arch 状态计算（供 collectArch 全量与 --upsert 单行复用）。cache 提供已钉死的 date/mergedInMain（零 fork）；frozen/landed 从文件现推（廉价、无 fork）。
 function computeArchEntry(name, cache) {
-  const dir = join(resolve(projectDir, 'changes', 'arch'), name);
+  const dir = join(resolve(projectDir, 'delivery', 'changes', 'arch'), name);
   const propPath = join(dir, 'PROPOSAL.md');
   const cached = cache[name] || {};
   let status = 'draft';
@@ -233,14 +233,14 @@ function computeArchEntry(name, cache) {
     try { if (isFrozen(readText(propPath))) status = 'frozen'; } catch { /* ignore */ }
   }
   if (deriveLanded(dir, cached)) status = 'landed'; // landed 是终态，覆盖 frozen（① 人工 adjudication 缓存优先）
-  const date = cached.date || parseChangeIdDate(name) || gitFirstCommitDate(`changes/arch/${name}`);
+  const date = cached.date || parseChangeIdDate(name) || gitFirstCommitDate(`delivery/changes/arch/${name}`);
   const mergedInMain = cached.mergedInMain !== undefined ? cached.mergedInMain : '';
   return { changeId: name, date, lane: 'arch', originRef: '', status, workstream: '', mergedInMain };
 }
 
-// 收 arch dirs（changes/arch/*/ 子目录，review 文件夹，读 PROPOSAL.md 状态行 + landing-verdict.md 取状态）。
+// 收 arch dirs（delivery/changes/arch/*/ 子目录，review 文件夹，读 PROPOSAL.md 状态行 + landing-verdict.md 取状态）。
 function collectArch(cache = {}) {
-  const root = resolve(projectDir, 'changes', 'arch');
+  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
   const items = [];
   if (!existsSync(root)) return items;
   for (const name of readdirSync(root, { withFileTypes: true })) {
@@ -251,7 +251,7 @@ function collectArch(cache = {}) {
 }
 
 // ── stale-report：机械 census（只读、永不删除、永不改写）──
-// 遍历 changes/arch/*/，deriveLanded（复用单源 + cache）+ gitFirstCommitDate → staleCandidate 过滤，
+// 遍历 delivery/changes/arch/*/，deriveLanded（复用单源 + cache）+ gitFirstCommitDate → staleCandidate 过滤，
 // stdout 打 JSON；无陈旧时 stale:[]。fileCount = 目录直接子文件计数（非递归），纯观察列、不参与判定。
 function todayLocalIso() {
   const d = new Date();
@@ -264,7 +264,7 @@ function todayLocalIso() {
 function staleReport() {
   const thresholdDays = parseInt(process.env.ARCH_GC_STALE_DAYS || '30', 10) || 30;
   const now = todayLocalIso();
-  const root = resolve(projectDir, 'changes', 'arch');
+  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
   const stale = [];
   if (!existsSync(root)) return { ok: true, mode: 'stale-report', thresholdDays, stale };
   const cache = loadStateCache();
@@ -276,7 +276,7 @@ function staleReport() {
       fileCount = readdirSync(dir, { withFileTypes: true }).filter(e => e.isFile()).length;
     } catch { fileCount = 0; }
     const landed = deriveLanded(dir, cache[name.name]);
-    const firstCommit = gitFirstCommitDate(`changes/arch/${name.name}`);
+    const firstCommit = gitFirstCommitDate(`delivery/changes/arch/${name.name}`);
     if (staleCandidate({ landed, firstCommit, thresholdDays, now })) {
       stale.push({ dir: name.name, firstCommit, landed, fileCount });
     }
@@ -302,7 +302,7 @@ function buildIndexMd(items) {
     out.push('| changeId | 日期 | origin.ref | 状态 | workstream |');
     out.push('|---|---|---|---|---|');
     for (const i of dev) {
-      out.push(`| [${esc(i.changeId)}](../changes/dev/${i.changeId}/) | ${i.date || '—'} | ${esc(i.originRef) || '—'} | ${esc(i.status)} | ${esc(i.workstream) || '—'} |`);
+      out.push(`| [${esc(i.changeId)}](../delivery/changes/dev/${i.changeId}/) | ${i.date || '—'} | ${esc(i.originRef) || '—'} | ${esc(i.status)} | ${esc(i.workstream) || '—'} |`);
     }
   } else {
     out.push('_（无）_');
@@ -314,7 +314,7 @@ function buildIndexMd(items) {
     out.push('| changeId | 日期 | 状态 | 已合main |');
     out.push('|---|---|---|---|');
     for (const i of arch) {
-      out.push(`| [${esc(i.changeId)}](../changes/arch/${i.changeId}/) | ${i.date || '—'} | ${esc(i.status)} | ${esc(i.mergedInMain) || '—'} |`);
+      out.push(`| [${esc(i.changeId)}](../delivery/changes/arch/${i.changeId}/) | ${i.date || '—'} | ${esc(i.status)} | ${esc(i.mergedInMain) || '—'} |`);
     }
   } else {
     out.push('_（无）_');
@@ -329,28 +329,28 @@ function buildIndexMd(items) {
 function checkArchDirNaming(id) {
   if (!parseChangeIdDate(id)) return null; // 非日期前缀或非法日期前缀 → 不断言
   if (/gov-review|arch-review/.test(id)) return null;
-  return `naming: changes/arch/${id} 缺写槽 token（gov-review / arch-review）——日期前缀提案目录名必须命中 .claude/scope-map.json review-agent 写槽，否则评审/核验期制品写入被 enforce-scope 拦截（见 protocol「双轨路由」节命名条款）`;
+  return `naming: delivery/changes/arch/${id} 缺写槽 token（gov-review / arch-review）——日期前缀提案目录名必须命中 .claude/scope-map.json review-agent 写槽，否则评审/核验期制品写入被 enforce-scope 拦截（见 protocol「双轨路由」节命名条款）`;
 }
 
 // ── 单行 upsert：在 INDEX 中定位 <id> 的 arch 行 → 替换或插入（只动一行，对偶 closeout-check:163-177 dev 段先例）──
 function upsertArchRow(indexPath, id, cache) {
   const namingError = checkArchDirNaming(id);
   if (namingError) return { ok: false, error: namingError };
-  if (!existsSync(join(resolve(projectDir, 'changes', 'arch'), id))) {
-    return { ok: false, error: `arch dir changes/arch/${id} absent on disk` };
+  if (!existsSync(join(resolve(projectDir, 'delivery', 'changes', 'arch'), id))) {
+    return { ok: false, error: `arch dir delivery/changes/arch/${id} absent on disk` };
   }
-  if (!existsSync(indexPath)) return { ok: false, error: 'changes/INDEX.md absent — run full rebuild first' };
+  if (!existsSync(indexPath)) return { ok: false, error: 'delivery/changes/INDEX.md absent — run full rebuild first' };
   const entry = computeArchEntry(id, cache);
   // 已合 main：按目录末提交现推并钉进缓存（260909 T6；前提 = 合 main 完成后跑本 upsert，R1-F3）
-  const merged = dirMergedInMain(`changes/arch/${id}`);
+  const merged = dirMergedInMain(`delivery/changes/arch/${id}`);
   if (merged) { entry.mergedInMain = merged; cache[id] = { ...(cache[id] || {}), date: entry.date, mergedInMain: merged }; }
-  const newRow = `| [${esc(entry.changeId)}](../changes/arch/${entry.changeId}/) | ${entry.date || '—'} | ${esc(entry.status)} | ${esc(entry.mergedInMain) || '—'} |`;
+  const newRow = `| [${esc(entry.changeId)}](../delivery/changes/arch/${entry.changeId}/) | ${entry.date || '—'} | ${esc(entry.status)} | ${esc(entry.mergedInMain) || '—'} |`;
 
   const content = readText(indexPath);
   const lines = content.split('\n');
   const archStart = lines.findIndex(l => /^## arch /.test(l));
   if (archStart < 0) return { ok: false, error: 'INDEX header non-standard (no "## arch" section)' };
-  const linkRe = new RegExp(`^\\| \\[${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]\\(\\.\\./changes/arch/`);
+  const linkRe = new RegExp(`^\\| \\[${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]\\(\\.\\./delivery/changes/arch/`);
   const idx = lines.findIndex((l, i) => i > archStart && linkRe.test(l));
   let action;
   if (idx >= 0) {
@@ -378,13 +378,13 @@ function upsertArchRow(indexPath, id, cache) {
 // ── 一次性回填：对全部 arch 目录算 date/mergedInMain（fork git 一次）+ landed 状态，写缓存 + 全量重建 ──
 function backfill() {
   const cache = loadStateCache();
-  const root = resolve(projectDir, 'changes', 'arch');
+  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
   const names = existsSync(root) ? readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name) : [];
   let computed = 0, landedCount = 0;
   for (const name of names) {
-    const sha = gitFirstCommitSha(`changes/arch/${name}`);
+    const sha = gitFirstCommitSha(`delivery/changes/arch/${name}`);
     const date = parseChangeIdDate(name) || (sha ? gitCommitDate(sha) : '');
-    const merged = dirMergedInMain(`changes/arch/${name}`);
+    const merged = dirMergedInMain(`delivery/changes/arch/${name}`);
     const landed = deriveLanded(join(root, name), cache[name]);
     if (landed) landedCount++;
     cache[name] = { date, mergedInMain: merged, landed };
@@ -392,7 +392,7 @@ function backfill() {
   }
   saveStateCache(cache);
   const items = [...collectDev(), ...collectArch(cache)];
-  writeFileSync(resolve(projectDir, 'changes', 'INDEX.md'), buildIndexMd(items), 'utf8');
+  writeFileSync(resolve(projectDir, 'delivery', 'changes', 'INDEX.md'), buildIndexMd(items), 'utf8');
   return { ok: true, backfilled: computed, archCount: items.filter(i => i.lane === 'arch').length, landed: landedCount };
 }
 
@@ -406,7 +406,7 @@ function selfCheck() {
   t('frozen: Status 行 FROZEN → frozen', isFrozen('> Status: **FROZEN v1.0**'), true);
   t('frozen: DRAFT 主导（先位）→ 非 frozen', isFrozen('> Status: **DRAFT v0.5**（R2 GREEN 后标 FROZEN）'), false);
   t('frozen: 正文含 FROZEN 但无状态行 → 非 frozen（F2 回归）', isFrozen('# 提案\n正文说「评审通过后标 FROZEN」'), false);
-  // landed verdict 闭集（F1 回归）：用 os.tmpdir() 夹具测 deriveLanded 真函数（不写 changes/arch、不污染收件箱）
+  // landed verdict 闭集（F1 回归）：用 os.tmpdir() 夹具测 deriveLanded 真函数（不写 delivery/changes/arch、不污染收件箱）
   const osTmp = process.env.TMPDIR || process.env.TMP || process.env.TEMP || '/tmp';
   const mkFix = (id, verdictLines) => {
     const d = resolve(osTmp, 'changes-index-selfcheck-' + id);
@@ -472,7 +472,7 @@ function selfCheck() {
 function main() {
   const cache = loadStateCache();
   const items = [...collectDev(), ...collectArch(cache)];
-  const indexMd = resolve(projectDir, 'changes', 'INDEX.md');
+  const indexMd = resolve(projectDir, 'delivery', 'changes', 'INDEX.md');
   writeFileSync(indexMd, buildIndexMd(items), 'utf8');
   return { ok: true, devCount: items.filter(i => i.lane === 'dev').length, archCount: items.filter(i => i.lane === 'arch').length };
 }
@@ -491,7 +491,7 @@ if (invokedDirectly) {
     const id = args[1];
     if (!id) { console.error(JSON.stringify({ ok: false, error: '--upsert requires <changeId>' })); process.exit(2); }
     const cache = loadStateCache();
-    result = upsertArchRow(resolve(projectDir, 'changes', 'INDEX.md'), id, cache);
+    result = upsertArchRow(resolve(projectDir, 'delivery', 'changes', 'INDEX.md'), id, cache);
     saveStateCache(cache);
   } else {
     result = main();

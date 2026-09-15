@@ -176,7 +176,7 @@ unit-run-check 的 fileHasLiveMark 整档排除出闸内 auto-run，所以**本�
 的证据只能由显式点名命令承载**：
   cd server && python -m pytest -q --import-mode=importlib acceptance/test_schedule_reminder.acceptance.py
 ）：真 cron + 真推送 + 真回执 + 真语义文案一轮的落盘证据断言，证据下
-changes/dev/260829-schedule-reminder/（probe ≠ exercise —— 只探测 openclaw 可达不算 live
+delivery/changes/dev/260829-schedule-reminder/（probe ≠ exercise —— 只探测 openclaw 可达不算 live
 验收；必须真走一轮到点投递闭环）。五事实见类内 docstring。
 
 Coverage map (acceptanceRef / exitCriteria / decisionCoverage -> test method):
@@ -292,7 +292,7 @@ MCP_RELAY = GATEWAY_DIR / "mcp_relay.py"
 SCHEDULE_MODULE = GATEWAY_DIR / "schedule.py"          # 包 6 producer（本包只消费不改）
 LADDER_CONFIG = DEPLOY_DIR / "openclaw-reminder.config.yaml"
 PROMPT_CARRIER_V3 = DEPLOY_DIR / "openclaw-system-prompt.v3.md"
-LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-schedule-reminder"
+LIVE_EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-schedule-reminder"
 
 SPEECH_INJECTION_TYPE = "kidpal_speak"       # 裁定二冻结的内部指令类型字面
 PENDING_NAME = "pending.json"
@@ -1650,7 +1650,7 @@ class ScheduleReminderLiveAcceptance(unittest.TestCase):
     """live teeth: 真跑一轮三档排程→到点推送→渲染回执出队的落盘证据（planner 已在 ECS
     只读实测 cron 在册：4 条全 status=ok，含先例 class-reminder-0529；本包必须真 exercise
     一次端到端，只探测可达不算 —— probe ≠ exercise）。证据下
-    changes/dev/260829-schedule-reminder/。
+    delivery/changes/dev/260829-schedule-reminder/。
 
     五事实：
       L1 cron 任务真在册并真跑过（openclaw cron list 摘录：name/enabled/schedule.expr/
@@ -1685,7 +1685,7 @@ class ScheduleReminderLiveAcceptance(unittest.TestCase):
         corpus = self._corpus()
         self.assertTrue(
             corpus,
-            "RMD-E2 live RED: changes/dev/260829-schedule-reminder/ 下无落盘证据 — 真 cron"
+            "RMD-E2 live RED: delivery/changes/dev/260829-schedule-reminder/ 下无落盘证据 — 真 cron"
             " 排程 + 真到点投递 + 真回执闭环必须先真跑一轮并留证（probe ≠ exercise）。")
         return corpus
 

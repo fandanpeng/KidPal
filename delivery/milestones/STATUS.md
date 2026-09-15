@@ -2,7 +2,7 @@
 
 > 由 [.claude/scripts/delivery-status.mjs](../.claude/scripts/delivery-status.mjs) 从 [milestones.jsonl](milestones.jsonl) 生成。
 > 单一事实源是 `milestones.jsonl`（里程碑基线，镜像 `core.Milestone` + `delivery.MilestoneDeliveryState`）；改状态去改它再重跑：`node .claude/scripts/delivery-status.mjs`。
-> 里程碑度量**交付（实现验收）**、非设计；完工比例只读派生、不手填、不数 `.planning/` todo。
+> 里程碑度量**交付（实现验收）**、非设计；完工比例只读派生、不手填、不数 `delivery/workstreams/` todo。
 
 ## 完工比例
 

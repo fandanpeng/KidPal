@@ -61,7 +61,7 @@ function resolveChangeId() {
   const explicit = process.argv.find((a, i) => a === '--change-id' && i + 1 < process.argv.length);
   if (explicit) return process.argv[process.argv.indexOf('--change-id') + 1];
 
-  const current = resolve(projectDir, '.claude', 'taskpackages', 'current', 'taskpackage.json');
+  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
   if (!existsSync(current)) return null;
   const tp = readJson(current);
   return tp && tp.changeId ? tp.changeId : null;
@@ -219,7 +219,7 @@ const isPostEventsCutoff = (() => {
 
 if (isPostEventsCutoff) {
   // For post-cutoff Pods: read dispatch-completed from pod-events.jsonl, emit coverage, return only
-  const tpDirPostCutoff = resolve(projectDir, '.claude', 'taskpackages', changeId);
+  const tpDirPostCutoff = resolve(projectDir, 'delivery', 'taskpackages', changeId);
   const eventsPath = resolve(tpDirPostCutoff, 'pod-events.jsonl');
   const verifyPathPostCutoff = resolve(tpDirPostCutoff, 'verifier-evidence', 'verify-runs.jsonl');
 
@@ -265,7 +265,7 @@ if (isPostEventsCutoff) {
 const notes = [];
 let metricsCompleteness = 'full';
 
-const tpDir = resolve(projectDir, '.claude', 'taskpackages', changeId);
+const tpDir = resolve(projectDir, 'delivery', 'taskpackages', changeId);
 const verifyPath = resolve(tpDir, 'verify-runs.jsonl');
 const dispatchPath = resolve(tpDir, 'dispatch-log.jsonl');
 
@@ -319,7 +319,7 @@ if (hasFailFastTruncation) {
 }
 
 // 读 terminalOutcome / riskTier
-const changeDir = resolve(projectDir, 'changes', 'dev', changeId);
+const changeDir = resolve(projectDir, 'delivery', 'changes', 'dev', changeId);
 const verdictPath = resolve(changeDir, 'supervisor-verdict.json');
 const taskPackagePath = resolve(changeDir, 'taskpackage.json');
 
@@ -364,7 +364,7 @@ const metrics = {
   notes,
 };
 
-// 产出路径：优先 changes/dev/<changeId>/，若不存在则 .claude/taskpackages/<changeId>/
+// 产出路径：优先 delivery/changes/dev/<changeId>/，若不存在则 delivery/taskpackages/<changeId>/
 let outputDir;
 if (existsSync(changeDir)) {
   outputDir = changeDir;

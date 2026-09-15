@@ -1,7 +1,7 @@
 # ARQ-260902-cert-lifecycle-deadlock —— accept-as-risk 记账（GWA-E3 / GWA-A9）
 
 > **_INTEGRATOR LANDING NOTE_**: staged by builder in `server/`; builder write-scope excludes
-> `changes/dev/`. Integrator must land into `changes/dev/260903-gateway-directionB/`
+> `delivery/changes/dev/`. Integrator must land into `delivery/changes/dev/260903-gateway-directionB/`
 > (`cert*.md` / `risk*.md` / `deadlock*.md`) for
 > `test_e3_cert_deadlock_accept_risk_record` to go green. **ARQ 队列迁移由 integrator 收口**
 > （builder 无 docs/** 写权）。
@@ -21,4 +21,4 @@
 - 风险：自签证书无 CA 链、无自动 OTA 提前；到期若轮换脚本未被 cron 触发或 ECS 失联，wss 设备腿在 `notAfter` 后失效。
 - 缓释：20 年有效期 + 机械轮换 + 到期前 30 天告警 + 证书/脚本路径 frozen（`GATEWAY_CERT_PATH`）。
 - 决策：**接受风险**，不 OTA 提前（human 2026-09-04 裁定）。验收面不变。
-- 依据：`ARQ-260902-cert-lifecycle-deadlock`；`changes/arch/260902-arch-review-kidpal-spec-v0.2/adjudications.md#V25`。
+- 依据：`ARQ-260902-cert-lifecycle-deadlock`；`delivery/changes/arch/260902-arch-review-kidpal-spec-v0.2/adjudications.md#V25`。

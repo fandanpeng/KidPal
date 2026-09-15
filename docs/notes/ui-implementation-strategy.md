@@ -1,6 +1,6 @@
 # KidPal UI 实现策略 · 「LVGL 骨架 + 预栅格化美术资产」双层方案
 
-> 来源：`changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md`（FROZEN 2026-08-31，architect R3 GREEN）。本文承载完整分析；架构侧索引见 [architecture.md](../architecture.md) §3「UI 实现策略」。
+> 来源：`delivery/changes/arch/260830-arch-review-ui-impl-strategy/PROPOSAL.md`（FROZEN 2026-08-31，architect R3 GREEN）。本文承载完整分析；架构侧索引见 [architecture.md](../architecture.md) §3「UI 实现策略」。
 > 适用对象：M4「4 页 UI 重做」及其后的所有 UI 开发包；资产管线与 P1 重做归后续 dev-loop TaskPackage。
 
 ## 0. 一句话定论

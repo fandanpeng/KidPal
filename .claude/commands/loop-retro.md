@@ -14,7 +14,7 @@ argument-hint: <可选：周期范围或聚焦点，例如 "近 10 个 change" �
 ## 纪律（先读）
 
 - 复盘**只读**证据，不改实现、不改 canonical 定义。
-- 新格式（changeId >= 250725 且 pod-events 存在）只读 `.claude/taskpackages/<id>/pod-events.jsonl` + `changes/dev/<id>/pod-retro.md`；旧格式继续读 loop-health/session-digest/pod-journal/pod-retro。两条路径互斥，retro 不重算 verifier/supervisor 事实。
+- 新格式（changeId >= 250725 且 pod-events 存在）只读 `delivery/taskpackages/<id>/pod-events.jsonl` + `delivery/changes/dev/<id>/pod-retro.md`；旧格式继续读 loop-health/session-digest/pod-journal/pod-retro。两条路径互斥，retro 不重算 verifier/supervisor 事实。
 - **游标**由 `.claude/loop-retro/ledger.jsonl` 判定。候选按 exclusive dispatch：new-format → old-format loop-health → waiting；同一 Pod 只进入一条路径。
 - **retro 不自我批准**：任何要改 Dev Loop OS 定义 / agent 角色 / gate / scope-map / K9-DevLoop 边界 / merge 标准的发现，先成为 **architect-owned ARQ candidate**，交 `architect` 处理，**不**直接进普通 planning / TaskPackage。
 - 只有 architect 裁定明确需要动实现面（`firmware/**` / `server/**` / 测试）时，才转实现侧 dev-loop。

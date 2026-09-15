@@ -28,7 +28,7 @@ FROZEN wiring facts (offline, needle-level on the production source):
      组块下发。v3 现含缺陷行「只需回填 title + text（正文逐字来自…）」-> RED。
 
 Live faces (@pytest.mark.live, NOT auto-run — conftest 机械 skip 闸, ARQ-260901-g3):
-真机轮的落盘证据断言，证据下 changes/dev/260829-hardware-validation/（本包专属）：
+真机轮的落盘证据断言，证据下 delivery/changes/dev/260829-hardware-validation/（本包专属）：
   - story 录制→归档→盖章端到端（archive_story 真落盘 + story_text 组块下发 + 设备
     盖章/保存成功回执）——probe ≠ exercise：必须真跑一轮真实端到端路径。
   - 证书真实设备握手冒烟（CA pinning 真机首连, spec 决策 22 / 契约 §四 wss）。
@@ -89,9 +89,9 @@ OVERLAY_WIRING = DEPLOY_DIR / "apply-xiaozhi-overlay.sh"
 PROVIDER_DECLARE = DEPLOY_DIR / "provider.config.yaml"
 
 # 本包专属真机轮证据目录（live/device evidence; human + integrator 落盘）。
-LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-hardware-validation"
+LIVE_EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-hardware-validation"
 # 包 7 留根 live 五齿的既有证据目录（9b 承接 ECS 部署窗口后真跑的那一轮）。
-REMINDER_LIVE_EVIDENCE_DIR = REPO_ROOT / "changes" / "dev" / "260829-schedule-reminder"
+REMINDER_LIVE_EVIDENCE_DIR = REPO_ROOT / "delivery" / "changes" / "dev" / "260829-schedule-reminder"
 
 
 def _read_text(path: Path) -> str:
@@ -228,7 +228,7 @@ class StoryWiringLiveAcceptance(unittest.TestCase):
     """live teeth: 真机轮落盘证据断言（@pytest.mark.live, 不 auto-run）。probe !=
     exercise —— 必须真跑一轮 real path（真录一段故事→真归档→真组块下发→真盖章；
     真机证书首连握手；真续航/功耗观测；真 ECS 部署 + 真 cron 提醒关闭）并落 evidence
-    下 changes/dev/260829-hardware-validation/（及交班既有 260829-schedule-reminder/）。
+    下 delivery/changes/dev/260829-hardware-validation/（及交班既有 260829-schedule-reminder/）。
 
     device 面 red-by-construction（真机轮未跑, human 持板执行）——本类只断言 evidence
     「在案且真跑了」, 不伪造已测绿。"""
@@ -291,7 +291,7 @@ class StoryWiringLiveAcceptance(unittest.TestCase):
         reminder = self._corpus(REMINDER_LIVE_EVIDENCE_DIR)
         self.assertTrue(
             reminder,
-            "live RED: changes/dev/260829-schedule-reminder/ 下仍无 live 五齿证据 — 包 7 "
+            "live RED: delivery/changes/dev/260829-schedule-reminder/ 下仍无 live 五齿证据 — 包 7 "
             "留根的 L1-L5（真 cron/真 pending.json/真推送/真渲染回执出队/真语义产物）未真跑"
             "一轮; 9b 承接 ECS 部署窗口后必须真 exercise 一次端到端（probe ≠ exercise）")
 

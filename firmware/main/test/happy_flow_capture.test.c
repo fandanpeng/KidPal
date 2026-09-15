@@ -5,7 +5,7 @@
  * 目的（human 一次性授权 2026-09-13）：把 Happy Flow 涉及的、host runner 已有渲染面
  * 的页面逐页真渲染（与冻结验收同源的同一条 LVGL 软渲染路径），经包 0 渲染缝的
  * additive 落盘函数 host_infra_dump_bmp()（host_infra_seam.c）把整帧写成 24-bit BMP，
- * 供「页面观感验证记录」落 changes/dev/260913-happy-flow-host-capture/。
+ * 供「页面观感验证记录」落 delivery/changes/dev/260913-happy-flow-host-capture/。
  *
  * 范围（Happy Flow 中 host 有渲染面的页面）：
  *   P1 首页 / P2 课表（今天 + 明天两态）/ P3 故事（列表/阅读两屏/录音/盖章）/ P4

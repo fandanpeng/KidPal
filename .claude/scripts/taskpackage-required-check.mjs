@@ -26,7 +26,7 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
   if (explicit) return resolve(projectDir, explicit);
-  return resolve(projectDir, '.claude/taskpackages/current/taskpackage.json');
+  return resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
 }
 
 function print(payload) {
@@ -121,7 +121,7 @@ const pathToTaskPackage = taskPackagePath();
 if (!existsSync(pathToTaskPackage)) {
   fail('Dev-loop verification requires a persisted TaskPackage file', {
     expected: pathToTaskPackage,
-    hint: 'planner must write .claude/taskpackages/<change-id>/taskpackage.json and refresh .claude/taskpackages/current/taskpackage.json before verifier runs',
+    hint: 'planner must write delivery/taskpackages/<change-id>/taskpackage.json and refresh delivery/taskpackages/current/taskpackage.json before verifier runs',
   });
 }
 
@@ -141,7 +141,7 @@ const explicitInvocation = !!(process.argv[2] || process.env.DEV_LOOP_TASKPACKAG
 if (!explicitInvocation) {
   const currentChangeId = nonEmptyString(taskPackage.changeId) ? String(taskPackage.changeId) : null;
   if (currentChangeId) {
-    const canonicalPath = resolve(projectDir, '.claude/taskpackages', currentChangeId, 'taskpackage.json');
+    const canonicalPath = resolve(projectDir, 'delivery/taskpackages', currentChangeId, 'taskpackage.json');
     if (canonicalPath !== pathToTaskPackage && existsSync(canonicalPath)) {
       const sha256 = content => createHash('sha256').update(content).digest('hex');
       if (sha256(readFileSync(pathToTaskPackage, 'utf8')) !== sha256(readFileSync(canonicalPath, 'utf8'))) {
@@ -195,8 +195,8 @@ if (Array.isArray(taskPackage.acceptance)) {
 
 if (hasSourceType && !isOneOf(taskPackage.sourceType, SOURCE_TYPES)) missing.push('sourceType(valid)');
 if (originType && !isOneOf(originType, ORIGIN_TYPES)) missing.push(`origin.type(valid: ${ORIGIN_TYPES.join('|')})`);
-if (nonEmptyString(taskPackage.deliveryImpact) && !isOneOf(taskPackage.deliveryImpact, DELIVERY_IMPACTS)) missing.push('deliveryImpact(valid)');
-if (nonEmptyString(taskPackage.planningImpact) && !isOneOf(taskPackage.planningImpact, PLANNING_IMPACTS)) missing.push('planningImpact(valid)');
+if (nonEmptyString(taskPackagedelivery/milestonesImpact) && !isOneOf(taskPackagedelivery/milestonesImpact, DELIVERY_IMPACTS)) missing.push('deliveryImpact(valid)');
+if (nonEmptyString(taskPackagedelivery/workstreamsImpact) && !isOneOf(taskPackagedelivery/workstreamsImpact, PLANNING_IMPACTS)) missing.push('planningImpact(valid)');
 if (nonEmptyString(taskPackage.riskTier) && !isOneOf(taskPackage.riskTier, RISK_TIERS)) missing.push('riskTier(valid)');
 
 // 并存一致性（tie-break = origin.type == sourceType，human-confirmed-plan 例外须 sourceType 缺省）
@@ -219,8 +219,8 @@ if (nonEmptyString(taskPackage.changeId)) {
   } else {
     // 无前缀 → 判白名单：git 首提 < cutoff = 老包放行
     let isGrandfathered = false;
-    let firstCommit = gitFirstCommitDate(`changes/dev/${cid}`);
-    if (firstCommit === null) firstCommit = gitFirstCommitDate(`.claude/taskpackages/${cid}`);
+    let firstCommit = gitFirstCommitDate(`delivery/changes/dev/${cid}`);
+    if (firstCommit === null) firstCommit = gitFirstCommitDate(`delivery/taskpackages/${cid}`);
     if (firstCommit === null) {
       // git 不可用 / 新 dir 无历史 → degrade: 放行（convention 兜底，不误红）
       isGrandfathered = true;
@@ -233,14 +233,14 @@ if (nonEmptyString(taskPackage.changeId)) {
   }
 }
 
-const planningRefs = Array.isArray(taskPackage.planningRefs) ? taskPackage.planningRefs : [];
-if (['attach-existing', 'create-workstream'].includes(taskPackage.planningImpact) && planningRefs.length === 0) {
+const planningRefs = Array.isArray(taskPackagedelivery/workstreamsRefs) ? taskPackagedelivery/workstreamsRefs : [];
+if (['attach-existing', 'create-workstream'].includes(taskPackagedelivery/workstreamsImpact) && planningRefs.length === 0) {
   missing.push('planningRefs(required when planningImpact attaches or creates workstream)');
 }
-if (taskPackage.planningImpact === 'none' && planningRefs.length > 0) {
+if (taskPackagedelivery/workstreamsImpact === 'none' && planningRefs.length > 0) {
   missing.push('planningRefs(empty when planningImpact=none)');
 }
-if (taskPackage.planningImpact === 'needs-triage') {
+if (taskPackagedelivery/workstreamsImpact === 'needs-triage') {
   missing.push('planningImpact must be resolved before verifier runs');
 }
 
@@ -330,7 +330,7 @@ if (isProposalByType || isProposalByPath) {
     if (!originRef) {
       coverageErrors.push('origin.ref is required for origin.type=proposal');
     } else if (!isProposalMdPath(originRef)) {
-      coverageErrors.push(`origin.ref ${originRef} is not a valid proposal .md path (expect changes/(arch|dev)/<id>/PROPOSAL.md or .planning/<ws>/PROPOSAL.md)`);
+      coverageErrors.push(`origin.ref ${originRef} is not a valid proposal .md path (expect delivery/changes/(arch|dev)/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
     } else if (!normalizedDocRefs.has(originRef)) {
       coverageErrors.push(`proposal origin.ref ${originRef} must also appear in docRefs[]`);
     }

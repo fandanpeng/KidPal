@@ -19,7 +19,7 @@
 4. 主线程 packet-bound 落地（landing-manifest 绑定）+ 写 landing summary；
 5. 主线程派 landing-verifier 独立核验——结构门 `landing-fidelity-check.mjs` + 逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
 6. 补写 retro report 闭环（骨架 `docs/templates/retro.template.md`）——趁热写、先于合并；
-7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `changes/INDEX.md`。
+7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/changes/INDEX.md`。
 
 **升级判据（命中任一 → Track A full-adversarial，入口 `/arch-change`）**：① 触契约面 `docs/contracts/**`（直走契约门）；② 跨系统结构性变更（如固件协议与服务端语义同时动）。governance 类变更不强制升级；「声明红队」= 自愿逃生门（human 或 architect 任一方随时可启）。**熔断**：评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A）。**存疑向严**：判据适用存疑默认升 human。
 
@@ -40,13 +40,13 @@
 
 | 范围 | 图索引项目名 | 覆盖内容 | 排除 |
 |------|--------------|----------|------|
-| 本仓主索引 | `KidPal` | `firmware` 自有固件 + `server/` 云端 shim | `docs/`、`tools/`（含 LVGL 模拟器）、`build/`、`managed_components/`（排除规则落 `.cbmignore` + `.gitignore`） |
+| 本仓主索引 | `KidPal` | `firmware` 自有固件 + `server/` 云端 shim | `docs/`、`tools/`（含 LVGL 模拟器）、`delivery/`（交付工件面，260914 批 OQ3(a) 裁定排除）、`build/`、`managed_components/`（排除规则落 `.cbmignore` + `.gitignore`） |
 | 参考·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | Arduino 示例、LVGL8/9 库 | — |
 | 参考·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
 | 参考·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
 | 参考·Firmware | `ESP32-S3-RLCD-4.2-Demo-04_Firmware` | 固件相关（内容极少） | — |
 | 参考·XiaoZhiServer | `ESP32-S3-RLCD-4.2-Demo-05_XiaoZhiServer` | 小智官方 Python 服务端 `xiaozhi-esp32-server`（流式网关参考实现，MIT；2026-09-02 定向 B 后克隆，部署源在 ECS `/opt/kidpal/xiaozhi-esp32-server`） | — |
-| 治理机检 | `KidPal-claude` | `.claude/hooks` + `.claude/scripts`（治理钩子与机检脚本，2026-09-13 human 裁定入图） | `.claude` 其余内容（agents/skills/rules/taskpackages/settings 等，控噪规则落 `.claude/.cbmignore`） |
+| 治理机检 | `KidPal-claude` | `.claude/hooks` + `.claude/scripts`（治理钩子与机检脚本，2026-09-13 human 裁定入图；2026-09-14 human 裁定维持不扩） | `.claude` 其余内容（agents/skills/rules/settings 等，控噪规则落 `.claude/.cbmignore`；taskpackages 已迁出至 `delivery/taskpackages/`，2026-09-15） |
 
 - 主索引项目名固定为 `KidPal`，改名会导致图工具 project not found。
 - 参考代码的索引不并入主索引，避免第三方代码淹没调用图；参考代码只读，不直接改。

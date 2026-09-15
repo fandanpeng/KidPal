@@ -178,7 +178,7 @@
  * 静态字库查表拼装 + LRU/预热 + system prompt v2 + live 5 秒档, @live 不 auto-run).
  *
  * RED baseline (vehicle state, 2026-09-07 acceptance-author 实测, see
- * .claude/taskpackages/260829-char-stroke/red-baseline-summary.md):
+ * delivery/taskpackages/260829-char-stroke/red-baseline-summary.md):
  *   - firmware/main has NO char-stroke face: no kidpal_char_* symbols, no
  *     米字格/握笔 markup, mcp_server.cc kidpal/display switch handles case 0/1/2
  *     only (char=VRT_ROUTE_CHAR=3 falls to default degrade), no char CMake wiring.

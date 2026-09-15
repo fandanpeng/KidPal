@@ -1,8 +1,8 @@
 # KidPal 端云接口契约（E1 统一响应格式 + B1 课表 MD 结构）
 
 > 与 OpenClaw 对齐用。定义 OpenClaw 如何返回"语音 + 屏幕显示指令"，以及课表 MD 的存储结构。
-> 配合 [docs/spec.md](../spec.md) §3.0.2（D3 笔顺格式已定稿）使用。
-> **方向 B 修订（2026-09-03 生效）**：端云通信转 WebSocket + Opus 流式（小智协议剖面，见 §四）；提醒由轮询改推送（§三重写）；本修订经契约门四题 human 批准（CDQ-260902，2026-09-03）+ spec v0.2 首次对抗审（260902-arch-review-kidpal-spec-v0.2）同 PR 原子落地。修订前 HTTP 形态信封草案存档：`changes/arch/260902-arch-review-shim-api-field-envelope/CONTRACT-CHANGE-PACKET.v1-http-field-envelope.superseded.md`。
+> 配合 [docs/requirements.md](../requirements.md) F3（查字窗·笔顺演示需求）使用；笔顺 JSON 格式（D3）以本契约为权威。
+> **方向 B 修订（2026-09-03 生效）**：端云通信转 WebSocket + Opus 流式（小智协议剖面，见 §四）；提醒由轮询改推送（§三重写）；本修订经契约门四题 human 批准（CDQ-260902，2026-09-03）+ spec v0.2 首次对抗审（260902-arch-review-kidpal-spec-v0.2）同 PR 原子落地。修订前 HTTP 形态信封草案存档：`delivery/changes/arch/260902-arch-review-shim-api-field-envelope/CONTRACT-CHANGE-PACKET.v1-http-field-envelope.superseded.md`。
 
 ---
 
@@ -93,7 +93,7 @@ OpenClaw 回复文本（示例）
 板子行为：切到 P3 故事页，显示标题列表，KEY 选择。
 
 - **`total`**（可选，整数）：孩子已录故事总数 = 故事果计数，由云端计算下发。板子据此渲染 P3 右上角故事果计数器（×N）与盖章帧「第 N 颗」（S-F2.1/S-F2.4）。**缺省时板子回退用 `items.length`**（向后兼容）。注意 `total` 是 stories 全集计数，若 `items` 分页/截断，不得以 `items.length` 顶替 `total` 作正式数据源。
-- （契约变更记录：2026-08-29 经契约门批准新增 `total`，additive 可选字段，见 changes/arch/260829-arch-review-kidpal-spec-stories。）
+- （契约变更记录：2026-08-29 经契约门批准新增 `total`，additive 可选字段，见 delivery/changes/arch/260829-arch-review-kidpal-spec-stories。）
 
 #### ④ `story_text` —— 故事正文（回放/刚存好）
 ```json

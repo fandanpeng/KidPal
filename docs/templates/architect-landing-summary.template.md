@@ -1,6 +1,6 @@
 # architect-landing-summary.template · Track B landing 摘要模板（canonical · 260802-gov-review-track-b-hardening T2 落地，OQ2=(b) 选址 docs/templates/）
 
-> 用法：复制为 `changes/arch/<change-id>/architect-landing-summary.md`，替换 `<尖括号>` 占位。
+> 用法：复制为 `delivery/changes/arch/<change-id>/architect-landing-summary.md`，替换 `<尖括号>` 占位。
 > 文体：散文节按 AGENTS.md「输出标准」节写通顺完整的句子；manifest 围栏块、packet-id 行等机器校验结构保持精确格式；证据引用保持逐字精确。
 > **五件组件 = packet 绑定面**（FROZEN PROPOSAL packet-binding 行声明的组件清单）：缺一即结构门 / landing-verifier 合法打回理由。
 > 形制来源：Track B 乘客 summary 实际形状归纳 + unit-gate F4（缺 `landing-manifest` 围栏块 → B2 RED；「packet-binding」非字面「packet-id」 → 正则漏）教训固化。

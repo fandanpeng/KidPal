@@ -9,7 +9,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 
 ## 产物（完成标准）
 
-1. 调度判定记录（哪几包、为什么）→ 落 `.planning/kidpal-mvp/progress.md` 追加段
+1. 调度判定记录（哪几包、为什么）→ 落 `delivery/workstreams/kidpal-mvp/progress.md` 追加段
 2. 每个包：`--check-launch` 机械门绿
 3. 每个包：worktree `C:/AI/KidPal-pod-<suffix>` + branch `dev/<changeId>`（base = 当前 main）
 4. 每个包：固件环境等价化（sdkconfig / dependencies.lock 镜像 + managed_components 共享软链 + bootstrap 跑过）
@@ -24,8 +24,8 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 
 - board：`cat $(git rev-parse --git-common-dir)/devloop/pods/*.json`（linked worktree 下 common dir 是绝对路径；主 worktree 是相对 `.git`，脚本已处理，手动读时先 `cd` 主 checkout）。
 - 既有 worktree：`git worktree list`；mergeToken holder。
-- 每包 `dependsOn` / `mergeOrder` / `riskTier`：`.claude/taskpackages/<id>/taskpackage.json`。
-- 调度规则权威：`.planning/kidpal-mvp/PROPOSAL.md` §3（关键路径 + 并行调度 + WIP=3）。
+- 每包 `dependsOn` / `mergeOrder` / `riskTier`：`delivery/taskpackages/<id>/taskpackage.json`。
+- 调度规则权威：`delivery/workstreams/kidpal-mvp/PROPOSAL.md` §3（关键路径 + 并行调度 + WIP=3）。
 
 ### 1. 调度判定
 
@@ -97,7 +97,7 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 - launch-argument 形状声明 + planner 身份 + **运行形态**：默认 human 在 VS Code 交互会话起（AskUserQuestion 可用、升级走正常 ruling）；headless 无人值守为备选形态（AskUserQuestion 不可用 → 严格非交互 fail-closed：pending-human-ruling.md + needs-triage）。Step 1 handoff 探测三处（taskpackage / PROPOSAL 定位 / pods json → `--set-pod running`）。
 - 本包定位：mergeOrder、dependsOn（标清哪些已 merged）、PROPOSAL §4 共享面/碰撞面条款、spec/契约锚点。
-- 环境既成事实：IDF 通路 `python c:\tmp\idf_run.py`（丢失按 pod-s-handoff/README.md §3.1 重写）、sdkconfig/deps/软链/图索引项目名、上游 merged 面（server/gateway 等）、ECS 访问 `c:\tmp\ssh_helper.py`、live 拓扑指针（ops skill `kidpal-ecs-gateway`）。① **固件严格模式默认开**（260909 T3/T5，OQ1=(b)）：launch prompt 环境段注入 `VERIFY_FW_BUILD_REQUIRED=1`——firmware-build 闸双路探测（PATH idf.py ∨ venv python + `c:/tmp/idf_run.py` wrapper）不通即红；显式关闭须在 prompt 留痕理由。② **260908 批 input-brief 机制接入**：builder/验收起草前跑 `node .claude/scripts/brief-inputs.mjs --change-id <id> --role acceptance-author` / `--role builder` 取输入面；`crossEnd` 判断先补——判不了向严填 `counterparts`，**不填 `exempt`**。③ C 侧遗留指针（只登记不改码，自有实现面走 dev-loop）：`firmware/main/test/**.acceptance.c` 读 `changes/dev/**` 证据按相对路径、root 定位吃 cwd（`voice_roundtrip_b.acceptance.c:878` 类），消解归 dev-loop 包，见 260909-gov-review-gate-truthfulness §6 留根。
+- 环境既成事实：IDF 通路 `python c:\tmp\idf_run.py`（丢失按 pod-s-handoff/README.md §3.1 重写）、sdkconfig/deps/软链/图索引项目名、上游 merged 面（server/gateway 等）、ECS 访问 `c:\tmp\ssh_helper.py`、live 拓扑指针（ops skill `kidpal-ecs-gateway`）。① **固件严格模式默认开**（260909 T3/T5，OQ1=(b)）：launch prompt 环境段注入 `VERIFY_FW_BUILD_REQUIRED=1`——firmware-build 闸双路探测（PATH idf.py ∨ venv python + `c:/tmp/idf_run.py` wrapper）不通即红；显式关闭须在 prompt 留痕理由。② **260908 批 input-brief 机制接入**：builder/验收起草前跑 `node .claude/scripts/brief-inputs.mjs --change-id <id> --role acceptance-author` / `--role builder` 取输入面；`crossEnd` 判断先补——判不了向严填 `counterparts`，**不填 `exempt`**。③ C 侧遗留指针（只登记不改码，自有实现面走 dev-loop）：`firmware/main/test/**.acceptance.c` 读 `delivery/changes/dev/**` 证据按相对路径、root 定位吃 cwd（`voice_roundtrip_b.acceptance.c:878` 类），消解归 dev-loop 包，见 260909-gov-review-gate-truthfulness §6 留根。
 - **上一批收口留根的 live 偏差逐条移入 intake 评估**（构成 blockingDecision → fail-closed 上报，不静默推进；先例：Intent:nointent 待 OpenClaw tools 修复、ASR 终选凭据未裁定）。
 - 纪律提醒：运行形态对应的 fail-closed 口径、契约/验收冻结面、pod-events 实时 append、合并只走 merge-driver 本地 --no-ff、不直推 main 不 push。
 

@@ -169,10 +169,10 @@ function defaultGitDiffStat(wt, since) {
 }
 
 function defaultWriteDetectChangesCloseout(changeId, payload) {
-  // best-effort 写 changes/dev/<changeId>/detect-changes-advisory.json；失败抛（被 F1 catch-all 接住，不阻塞 merge）。
+  // best-effort 写 delivery/changes/dev/<changeId>/detect-changes-advisory.json；失败抛（被 F1 catch-all 接住，不阻塞 merge）。
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const dir = join(projectDir, 'changes', 'dev', changeId);
-  if (!existsSync(dir)) return; // closeout 目录不存在（未晋升 changes/dev）→ 静默跳过
+  const dir = join(projectDir, 'delivery', 'changes', 'dev', changeId);
+  if (!existsSync(dir)) return; // closeout 目录不存在（未晋升 delivery/changes/dev）→ 静默跳过
   writeFileSync(
     join(dir, 'detect-changes-advisory.json'),
     `${JSON.stringify({ changeId, generatedBy: 'merge-driver detect_changes advisory (ARQ-100)', ...payload }, null, 2)}\n`,
@@ -374,7 +374,7 @@ function readPod(devloopDir, changeId) {
 }
 
 // 找到 Pod 的 worktree 路径。
-// 优先用 pod 文件中的 worktreePath；fallback: 扫描 git worktree list 并匹配 .claude/taskpackages/<changeId>/。
+// 优先用 pod 文件中的 worktreePath；fallback: 扫描 git worktree list 并匹配 delivery/taskpackages/<changeId>/。
 function findWorktree(pod, projectDir) {
   if (pod && pod.worktreePath) {
     if (existsSync(pod.worktreePath)) return pod.worktreePath;
@@ -393,7 +393,7 @@ function findWorktree(pod, projectDir) {
       if (line.startsWith('worktree ')) {
         currentPath = line.slice('worktree '.length);
         // Check if this worktree has the matching taskpackage
-        const tp = join(currentPath, '.claude', 'taskpackages', changeId, 'taskpackage.json');
+        const tp = join(currentPath, 'delivery', 'taskpackages', changeId, 'taskpackage.json');
         if (existsSync(tp)) return currentPath;
       }
     }
@@ -780,7 +780,7 @@ export function ensureGraphCacheSynced(cwd, changeId) {
 // ---- Step 0 治理面自动收口（T2，260907-gov-review-merge-friction）----
 // P2：pod-retro / supervisor-verdict / pod-events 追加等收尾制品产生于 integrator「最终」commit 之后，
 // 无人 commit 则 rebase 步死于 unstaged。若本 worktree unstaged/untracked 全部落在本 Pod 治理面白名单
-// （.claude/taskpackages/<pod-id>/** + changes/dev/<pod-id>/**）内 → 自动 add 精确路径 + chore commit；
+// （delivery/taskpackages/<pod-id>/** + delivery/changes/dev/<pod-id>/**）内 → 自动 add 精确路径 + chore commit；
 // 任一文件白名单外 → warn 留痕并保持 fail 行为（rebase 步 fail-closed，绝不吞非治理面变更）。
 function governanceFaceAutocommit(wt, changeId) {
   let out = '';
@@ -799,8 +799,8 @@ function governanceFaceAutocommit(wt, changeId) {
     return false;
   }
   const prefixes = [
-    `.claude/taskpackages/${changeId}/`,
-    `changes/dev/${changeId}/`,
+    `delivery/taskpackages/${changeId}/`,
+    `delivery/changes/dev/${changeId}/`,
   ];
   const inWhitelist = (p) => prefixes.some((pre) => p === pre.slice(0, -1) || p.startsWith(pre));
   const targets = [];
@@ -833,8 +833,8 @@ function governanceFaceAutocommit(wt, changeId) {
 // rebase 语境 theirs = 被重放的 Pod 侧（方向 R1 亲核）。冲突文件集含任一非特判文件 → 返回 false，
 // 调用方整体 abort + blocked（特判不部分生效，R1-F4）；重放多 commit 冲突循环消解（R1-F4）。
 const PROJECTION_CONFLICT_FILES = [
-  '.claude/taskpackages/current/taskpackage.json',
-  '.claude/taskpackages/current/verdict.json',
+  'delivery/taskpackages/current/taskpackage.json',
+  'delivery/taskpackages/current/verdict.json',
 ];
 const PROJECTION_CONFLICT_MAX_ROUNDS = 16;
 function tryResolveProjectionConflicts(wt, changeId) {
@@ -946,7 +946,7 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
     if (/[\\/]/.test(changeId) || changeId === 'current' || changeId === '.' || changeId === '..') {
       throw new Error(`changeId 形状非法（${changeId}），簿记跳过`);
     }
-    const evRel = `.claude/taskpackages/${changeId}/pod-events.jsonl`;
+    const evRel = `delivery/taskpackages/${changeId}/pod-events.jsonl`;
     const evAbs = join(mergeCwd, ...evRel.split('/'));
     const mergeSha = execSync('git rev-parse HEAD', { cwd: mergeCwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const event = {
@@ -1067,15 +1067,15 @@ function runMergeFrictionSelfCheck() {
       writeFileSync(join(t2, 'base.txt'), 'base\n');
       git(t2, ['add', '--', 'base.txt']);
       git(t2, ['commit', '-m', 'init']);
-      mkdirSync(join(t2, '.claude', 'taskpackages', '260901-t2p'), { recursive: true });
-      writeFileSync(join(t2, '.claude', 'taskpackages', '260901-t2p', 'pod-events.jsonl'), '{}\n');
-      mkdirSync(join(t2, 'changes', 'dev', '260901-t2p'), { recursive: true });
-      writeFileSync(join(t2, 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro\n');
+      mkdirSync(join(t2, 'delivery', 'taskpackages', '260901-t2p'), { recursive: true });
+      writeFileSync(join(t2, 'delivery', 'taskpackages', '260901-t2p', 'pod-events.jsonl'), '{}\n');
+      mkdirSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p'), { recursive: true });
+      writeFileSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro\n');
       const a = governanceFaceAutocommit(t2, '260901-t2p');
       const stA = git(t2, ['status', '--porcelain']);
       const msgA = git(t2, ['log', '-1', '--pretty=%s']);
       assert('T2a 白名单内 → 自动收口 commit 且 status 净', a === true && stA === '' && msgA.includes('merge 前治理面收口'), `ret=${a} status=${JSON.stringify(stA)} msg=${msgA}`);
-      writeFileSync(join(t2, 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro2\n');
+      writeFileSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro2\n');
       writeFileSync(join(t2, 'stranger.txt'), 'offender\n');
       const b = governanceFaceAutocommit(t2, '260901-t2p');
       const stB = git(t2, ['status', '--porcelain']);
@@ -1090,9 +1090,9 @@ function runMergeFrictionSelfCheck() {
   // ---- T3：投影冲突 --theirs 特判 ----
   {
     const t3 = mkRepo('t3');
-    const proj = '.claude/taskpackages/current/taskpackage.json';
+    const proj = 'delivery/taskpackages/current/taskpackage.json';
     try {
-      mkdirSync(join(t3, '.claude', 'taskpackages', 'current'), { recursive: true });
+      mkdirSync(join(t3, 'delivery', 'taskpackages', 'current'), { recursive: true });
       writeFileSync(join(t3, proj.replace(/\//g, '/')), '{"active":"base"}\n');
       git(t3, ['add', '--', '.']);
       git(t3, ['commit', '-m', 'init']);
@@ -1132,20 +1132,20 @@ function runMergeFrictionSelfCheck() {
   {
     const t4 = mkRepo('t4');
     try {
-      writeFileSync(join(t4, '.gitattributes'), '.planning/kidpal-mvp/progress.md merge=union\n');
-      mkdirSync(join(t4, '.planning', 'kidpal-mvp'), { recursive: true });
-      writeFileSync(join(t4, '.planning', 'kidpal-mvp', 'progress.md'), 'base\n');
+      writeFileSync(join(t4, '.gitattributes'), 'delivery/workstreams/kidpal-mvp/progress.md merge=union\n');
+      mkdirSync(join(t4, 'delivery/workstreams', 'kidpal-mvp'), { recursive: true });
+      writeFileSync(join(t4, 'delivery/workstreams', 'kidpal-mvp', 'progress.md'), 'base\n');
       git(t4, ['add', '--', '.']);
       git(t4, ['commit', '-m', 'init']);
       git(t4, ['checkout', '-b', 'sideA']);
-      appendFileSync(join(t4, '.planning', 'kidpal-mvp', 'progress.md'), 'sideA-entry\n');
+      appendFileSync(join(t4, 'delivery/workstreams', 'kidpal-mvp', 'progress.md'), 'sideA-entry\n');
       git(t4, ['commit', '-am', 'sideA closeout record']);
       git(t4, ['checkout', 'main']);
-      appendFileSync(join(t4, '.planning', 'kidpal-mvp', 'progress.md'), 'main-entry\n');
+      appendFileSync(join(t4, 'delivery/workstreams', 'kidpal-mvp', 'progress.md'), 'main-entry\n');
       git(t4, ['commit', '-am', 'main closeout record']);
       let mergeOk = true;
       try { git(t4, ['merge', 'sideA', '--no-edit']); } catch { mergeOk = false; }
-      const content = readFileSync(join(t4, '.planning', 'kidpal-mvp', 'progress.md'), 'utf8');
+      const content = readFileSync(join(t4, 'delivery/workstreams', 'kidpal-mvp', 'progress.md'), 'utf8');
       assert('T4 union merge 自动双侧保留', mergeOk && content.includes('sideA-entry') && content.includes('main-entry'), `ok=${mergeOk} content=${JSON.stringify(content)}`);
     } catch (err) {
       assert('T4 夹具异常', false, err.message);
@@ -1156,14 +1156,14 @@ function runMergeFrictionSelfCheck() {
   {
     const t6 = mkRepo('t6');
     try {
-      mkdirSync(join(t6, '.claude', 'taskpackages', '260901-t6p'), { recursive: true });
-      writeFileSync(join(t6, '.claude', 'taskpackages', '260901-t6p', 'pod-events.jsonl'), '{"seed":true}\n');
+      mkdirSync(join(t6, 'delivery', 'taskpackages', '260901-t6p'), { recursive: true });
+      writeFileSync(join(t6, 'delivery', 'taskpackages', '260901-t6p', 'pod-events.jsonl'), '{"seed":true}\n');
       git(t6, ['add', '--', '.']);
       git(t6, ['commit', '-m', 'init']);
       writeFileSync(join(t6, 'decoy.txt'), 'staged residue\n');
       git(t6, ['add', '--', 'decoy.txt']); // 模拟 staged graph 残留
       step5bBookkeeping(t6, '260901-t6p', { mode: 'self-check' });
-      const events = readFileSync(join(t6, '.claude', 'taskpackages', '260901-t6p', 'pod-events.jsonl'), 'utf8');
+      const events = readFileSync(join(t6, 'delivery', 'taskpackages', '260901-t6p', 'pod-events.jsonl'), 'utf8');
       const lastShow = git(t6, ['show', '--name-only', '--pretty=%s', 'HEAD']);
       const st = git(t6, ['status', '--porcelain']);
       assert('T6 簿记落行 + pathspec 不夹带 staged 残留',
@@ -1178,7 +1178,7 @@ function runMergeFrictionSelfCheck() {
   {
     const st7 = [
       'AA server/deploy/openclaw-system-prompt.v3.md',
-      'UU .claude/taskpackages/current/taskpackage.json',
+      'UU delivery/taskpackages/current/taskpackage.json',
       '?? stray.txt',
     ].join('\n');
     assert('T7a 版本化 add/add 检出（AA + .vN.md 形态）',
@@ -1251,7 +1251,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // T2：--human-approval-ref 非空时透传，升级闸核验 pod-events 人批事件后可放行 ESCALATE 包（260904-gov-review-escalate-merge-approval）
   log(`${changeId}: running pre-merge escalation gate...`);
   // T4（260908 批 ladder）：探测面制品路径——gate --probe-out 落 taskpackage 目录（Step 0 白名单内），Step 1b 后读取
-  const overlapProbePath = join(wt, '.claude', 'taskpackages', changeId, 'overlap-probe.json');
+  const overlapProbePath = join(wt, 'delivery', 'taskpackages', changeId, 'overlap-probe.json');
   if (!DRY_RUN) {
     try {
       const gateArgs = [join(projectDir, '.claude', 'scripts', 'pre-merge-escalation-gate.mjs'), changeId, '--source-ref', 'HEAD', '--project-dir', projectDir, '--probe-out', overlapProbePath];
@@ -1362,7 +1362,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
     if (qc.ok) { qcOk = true; break; }
     if (qc.failingGate === 'acceptance' && HUMAN_EXEMPTION !== null) {
       // 豁免判据（shape-only，对齐 supervisor-gate-check G6）：人类 token（flag）+ 预存红分类制品存在非空。
-      const inventory = join(projectDir, 'changes', 'dev', changeId, 'existing-red-inventory.md');
+      const inventory = join(projectDir, 'delivery', 'changes', 'dev', changeId, 'existing-red-inventory.md');
       let exemptByHuman = false;
       try {
         exemptByHuman = existsSync(inventory) && readFileSync(inventory, 'utf8').trim().length > 0;
