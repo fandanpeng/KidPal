@@ -9,6 +9,11 @@
  * + `delivery/taskpackages/<changeId>/taskpackage.json`；本脚本**只投影不裁决**。
  * roadmap.md ② 节由本脚本渲染、人工禁改；改依赖/排序 = 改权威侧再重跑（全量重算、幂等）。
  *
+ * 显示编号（承重/游离，260915 定）：`<WS>-<KN><波次><并行字母?>`（如 M1-K2a）由 dependsOn +
+ * mergeOrder 机械推导，定义 = task-intake-and-slicing.md「TaskPackage 显示编号」节——
+ * K=承重（被 in-scope 下游依赖，或主干终点=依赖深度达最大）、N=游离（无人等待的侧线）、
+ * 波次=in-scope 依赖深度+1、字母=同波次按 mergeOrder 的并行占位序；外部前置不参与推导。
+ *
  * 输入面（FROZEN n-15 钉死）：
  *   - taskpackage JSON 集按 `origin.workstream` 圈定（实测边界：跨 workstream 的 dependsOn
  *     目标不在圈定内，渲染为带标注外部节点——FROZEN m-11/R2-m2 口径）；
@@ -20,7 +25,7 @@
  * 用法：
  *   node .claude/scripts/render-roadmap.mjs --workstream <slug> [--write-into <roadmap.md>]
  *                                          [--out <fragment.md>] [--board <path>]
- *                                          [--taskpackages-root <dir>] [--json]
+ *                                          [--taskpackages-root <dir>] [--ws-code <M1>] [--json]
  *   node .claude/scripts/render-roadmap.mjs --self-check
  *
  * 退出码：0 = 渲染成功（含 warn）；1 = --self-check 断言失败；2 = 参数/输入错误（fail-loud）。
@@ -59,6 +64,7 @@ function parseArgs(argv) {
     else if (a === '--out') args.out = argv[++i];
     else if (a === '--board') args.board = argv[++i];
     else if (a === '--taskpackages-root') args.taskpackagesRoot = argv[++i];
+    else if (a === '--ws-code') args.wsCode = argv[++i];
     else fail(`未知参数：${a}`);
   }
   return args;
@@ -171,6 +177,55 @@ function mermaidId(changeId) {
   return changeId.replace(/[^A-Za-z0-9_]/g, '_');
 }
 
+/** workstream 短码：默认从 slug 里程碑前缀推导（m1-home-qa → M1），--ws-code 显式覆盖。 */
+function deriveWsCode(slug, explicit) {
+  if (explicit) return explicit;
+  const m = /^(m\d+)[a-z]?/.exec(slug ?? '');
+  return m ? m[1].toUpperCase() : slug;
+}
+
+/**
+ * 显示编号（承重/游离）：定义 = task-intake-and-slicing.md「TaskPackage 显示编号」节。
+ * K ⟺ 有 in-scope 依赖者 ∨ 主干终点（依赖深度 = 本 workstream 最大）；N ⟺ 其余（无人等待的侧线）。
+ * 波次 = in-scope 依赖深度 + 1；同波次 >1 包时按 mergeOrder（collectPackages 已排序）加并行字母。
+ * 外部前置（跨 workstream dependsOn 目标）不参与推导。渲染态、非 canonical 字段——每次全量重算。
+ */
+function assignDisplayIds(pkgs, wsCode) {
+  if (pkgs.length === 0) return;
+  const byId = new Map(pkgs.map((p) => [p.changeId, p]));
+  const inScope = (id) => byId.has(id);
+  const depth = new Map();
+  const visiting = new Set();
+  const depthOf = (id) => {
+    if (!inScope(id)) return 0;
+    if (depth.has(id)) return depth.get(id);
+    if (visiting.has(id)) return 0; // 环守卫：依赖成环归 portfolio-planner Red Flag 拦，此处只防炸
+    visiting.add(id);
+    const d = 1 + Math.max(0, ...byId.get(id).dependsOn.filter(inScope).map(depthOf));
+    visiting.delete(id);
+    depth.set(id, d);
+    return d;
+  };
+  for (const p of pkgs) depthOf(p.changeId);
+  const dependents = new Set();
+  for (const p of pkgs) for (const dep of p.dependsOn) if (inScope(dep)) dependents.add(dep);
+  const maxDepth = Math.max(...pkgs.map((p) => depth.get(p.changeId)));
+  const waveMembers = new Map();
+  for (const p of pkgs) {
+    const d = depth.get(p.changeId);
+    if (!waveMembers.has(d)) waveMembers.set(d, []);
+    waveMembers.get(d).push(p);
+  }
+  for (const members of waveMembers.values()) {
+    members.forEach((p, i) => {
+      const d = depth.get(p.changeId);
+      const kn = dependents.has(p.changeId) || d === maxDepth ? 'K' : 'N';
+      const letter = members.length > 1 ? String.fromCharCode(97 + i) : '';
+      p.displayId = `${wsCode}-${kn}${d}${letter}`;
+    });
+  }
+}
+
 function renderMermaid(pkgs, statuses, deviationsByPkg) {
   const inScope = new Set(pkgs.map((p) => p.changeId));
   const lines = ['```mermaid', 'graph LR'];
@@ -178,7 +233,7 @@ function renderMermaid(pkgs, statuses, deviationsByPkg) {
   for (const p of pkgs) {
     const dev = (deviationsByPkg.get(p.changeId) ?? []).length > 0;
     const merged = statuses.get(p.changeId) === 'merged';
-    const label = `${p.changeId}${p.mergeOrder != null ? ` (mo${p.mergeOrder})` : ''}`;
+    const label = `${p.displayId ? `${p.displayId}｜` : ''}${p.changeId}${p.mergeOrder != null ? ` (mo${p.mergeOrder})` : ''}`;
     lines.push(`  ${mermaidId(p.changeId)}["${label}"]`);
     if (dev) lines.push(`  class ${mermaidId(p.changeId)} deviation`);
     else if (merged) lines.push(`  class ${mermaidId(p.changeId)} achieved`);
@@ -204,13 +259,13 @@ function renderMermaid(pkgs, statuses, deviationsByPkg) {
 
 function renderStatusTable(pkgs, statuses, deviationsByPkg) {
   const rows = [
-    '| changeId | mergeOrder | 达成状态 | deviation 裁定锚 |',
-    '|---|---|---|---|',
+    '| 编号 | changeId | mergeOrder | 达成状态 | deviation 裁定锚 |',
+    '|---|---|---|---|---|',
   ];
   for (const p of pkgs) {
     const devs = deviationsByPkg.get(p.changeId) ?? [];
     rows.push(
-      `| ${p.changeId} | ${p.mergeOrder ?? '—'} | ${achievement(statuses.get(p.changeId), devs)} | ${
+      `| ${p.displayId ?? '—'} | ${p.changeId} | ${p.mergeOrder ?? '—'} | ${achievement(statuses.get(p.changeId), devs)} | ${
         devs.length ? devs.map((d) => `\`${d.eventId}\``).join(' ') : '—'
       } |`,
     );
@@ -224,6 +279,8 @@ function renderFragment({ slug, pkgs, statuses, deviationsByPkg, generatedAt }) 
     BEGIN_MARKER,
     `<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=${slug}，渲染时刻 ${generatedAt}）。`,
     '     人工禁改；渲染源唯一 = board + taskpackage JSON。全量重算、幂等。 -->',
+    '<!-- 编号读法：<WS>-<K|N><波次><并行字母?>（如 M1-K2a）——K=承重（被下游依赖或主干终点）、N=游离（无人等待的侧线）；',
+    '     波次=依赖深度+1（跨 workstream 外部前置不占波次）；同波次字母=并行占位序、非合并序。编号随依赖重渲染自动重算，确切依赖边以本图为准。 -->',
     block,
     '',
     renderStatusTable(pkgs, statuses, deviationsByPkg),
@@ -238,6 +295,7 @@ function renderFragment({ slug, pkgs, statuses, deviationsByPkg, generatedAt }) 
 function buildModel(opts) {
   const taskpackagesRoot = opts.taskpackagesRoot ?? join(REPO_ROOT, 'delivery', 'taskpackages');
   const pkgs = collectPackages(taskpackagesRoot, opts.workstream);
+  assignDisplayIds(pkgs, deriveWsCode(opts.workstream, opts.wsCode));
   if (pkgs.length === 0) warn(`workstream=${opts.workstream} 圈定到 0 个包（origin.workstream 无命中）`);
   const statuses = readBoardStatuses(resolveBoardPath(opts.board));
   const deviationsByPkg = new Map();
@@ -344,6 +402,14 @@ function selfCheck() {
   );
   assert(achievement(undefined, []) === 'pending', 'board 缺席 → pending（降级不炸）', failures);
 
+  // 显示编号（承重/游离）：alpha 被 beta 依赖 = K1a；gamma 无人依赖且非主干终点（深度 1 < 最大 2）= N1b；
+  // beta 无人依赖但依赖深度 = 最大（主干终点）= K2，单元素波次无字母；外部前置（260101-external）不占深度。
+  assert(model.pkgs.find((p) => p.changeId === '260101-alpha').displayId === 'ws-a-K1a', '编号：被依赖包 = K + 同波字母 a', failures);
+  assert(model.pkgs.find((p) => p.changeId === '260101-gamma').displayId === 'ws-a-N1b', '编号：无人依赖且非主干终点 = N', failures);
+  assert(model.pkgs.find((p) => p.changeId === '260101-beta').displayId === 'ws-a-K2', '编号：主干终点（深度=最大）= K、单元素波次无字母', failures);
+  assert(deriveWsCode('m1-home-qa') === 'M1', '编号：WS 短码从 slug 里程碑前缀推导', failures);
+  assert(deriveWsCode('ws-a', 'M9') === 'M9', '编号：--ws-code 显式覆盖', failures);
+
   const { block, externals } = renderMermaid(model.pkgs, model.statuses, model.deviationsByPkg);
   assert(externals.length === 1 && externals[0] === '260101-external', '跨 workstream dependsOn → 外部节点', failures);
   assert(block.includes('跨 workstream 外部前置'), '外部节点带标注', failures);
@@ -358,6 +424,8 @@ function selfCheck() {
     generatedAt: 'FIXED',
   });
   assert(frag.startsWith(BEGIN_MARKER) && frag.trimEnd().endsWith(END_MARKER), 'fragment 带标记对', failures);
+  assert(frag.includes('编号读法'), 'fragment 带编号图例', failures);
+  assert(frag.includes('| ws-a-K1a | 260101-alpha |'), '状态表带编号列', failures);
 
   // 幂等：同输入两次渲染逐字一致（generatedAt 固定）
   const frag2 = renderFragment({
@@ -412,6 +480,7 @@ function main() {
           generatedAt,
           packages: model.pkgs.map((p) => ({
             changeId: p.changeId,
+            displayId: p.displayId ?? null,
             mergeOrder: p.mergeOrder,
             dependsOn: p.dependsOn,
             boardStatus: model.statuses.get(p.changeId) ?? null,

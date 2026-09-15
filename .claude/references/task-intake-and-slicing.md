@@ -260,6 +260,18 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **落点** = workstream `delivery/workstreams/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。条目 = 前置描述，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。
 - **核验 = convention + 人读**（260913 human 裁 M-1）：launch 执行者（human 点火前）人工核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**不改 `portfolio-reconcile.mjs --check-launch` 既有判定语义**；机械齿（脚本读 launchPreconditions）另登 ARQ 留根，人读反复漏检再机械化。
 
+### TaskPackage 显示编号（承重/游离，机械推导 · 2026-09-15 定，ARQ-260915-taskpackage-display-numbering）
+
+**形态** `<WS>-<KN><波次><并行字母?>`，如 `M1-K2a`：
+
+- `<WS>` = workstream 短码，建 workstream 时定（与里程碑一对一时 = 里程碑号，如 `M1`；一号多 workstream 加建序字母 `M1a`/`M1b`）。机械侧：`render-roadmap.mjs` 从 slug 里程碑前缀推导（`m1-home-qa` → `M1`），`--ws-code` 显式覆盖。
+- `<KN>` = **K（承重）/ N（游离），恒由机器从 dependsOn 推导、人工不赋值**：K ⟺ 被任一 in-scope 下游包 dependsOn，或位于主干终点（依赖深度达本 workstream 最大）；N ⟺ 无人依赖且不在主干终点。跨 workstream 外部前置不参与 K/N 与波次推导（已并/跨流包不占本流波次）。
+- 波次数 = in-scope 依赖深度 + 1；并行字母 = 同波次内按 mergeOrder 的占位序（同波互不依赖、可同批 launch，字母序 ≠ 合并序），单元素波次省略字母。
+
+**判读保证**（推导性质，非人工约定）：① 任何包的 dependsOn 目标必为 K（承重闭合——被依赖者必承重）；② N 包无人等待：延后/重排不阻塞任何包（全浮动侧线）；③ 编号不编码完整依赖边——波次给最早开工层级、K/N 给主干/侧线，确切边以 dependsOn 与列车图为准。
+
+**机制**：编号是**渲染态、非 canonical 字段**——由 `render-roadmap.mjs` 从 dependsOn + mergeOrder 推导、随 roadmap ② 节列车图渲染（图例随区块输出），`taskpackage.json` 不存编号、人工不赋值。依赖变更后编号随重渲染自动重算，不构成拆包制品变更、不重过门 1。
+
 ## UIUX Depth Ladder and Optional TaskPackage Fields
 
 When a slice touches user-visible UI, planner detects a UIUX depth level and, from Level 2 up, records UIUX context on the TaskPackage. Depth drives whether a `uiux-author` step runs and what design-review evidence integrator owes at closeout.

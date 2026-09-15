@@ -24,6 +24,7 @@
 <!-- render-roadmap:begin -->
 <!-- 本区块由 node .claude/scripts/render-roadmap.mjs --workstream <slug> --write-into <本文件> 机械渲染。
      人工禁改本区块；渲染源唯一 = board + taskpackage JSON（dependsOn / mergeOrder / 达成状态）。
+     编号（<WS>-<K|N><波次><并行字母>，K=承重/N=游离）由 dependsOn 同源机械推导，读法图例随区块渲染（定义 = task-intake-and-slicing.md「TaskPackage 显示编号」节）。
      改依赖或排序 = 改 taskpackage JSON / board，再重跑脚本全量重算（幂等）。 -->
 <!-- render-roadmap:end -->
 
