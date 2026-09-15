@@ -124,3 +124,29 @@ int kidpal_layer_chat_clear_event(int event)
             return 0; /* 未知/负值事件 -> 保守驻留（不清） */
     }
 }
+
+/* 显式清层步骤（KD-A2 清层/进页分离）：出掉全部 transient 覆盖层（一个调用清干净），
+ * 基层 LOCAL_PAGE 与配网 PROVISION 恒不碰（配网层零触碰红线）。返回出掉的层数。
+ * NULL -> -1；空栈/纯基层栈 -> 0。清层事实源 —— 「关窗」不得另写逐层 pop 循环，须经
+ * 本步骤（设备侧由 kidpal_render_node dismiss_front_overlay / cycle_next 消费）。 */
+int kidpal_layer_pop_transients(kidpal_layer_stack_t *st)
+{
+    static const int s_transient[] = {
+        KIDPAL_LAYER_VOICE,        /* 语音轮（覆盖层） */
+        KIDPAL_LAYER_SERVER_PAGE,  /* 服务端推送页（覆盖层） */
+        KIDPAL_LAYER_REMINDER      /* 提醒弹窗（最高层覆盖） */
+    };
+    int popped = 0;
+    size_t i;
+
+    if (st == NULL) {
+        return -1;
+    }
+    for (i = 0; i < sizeof(s_transient) / sizeof(s_transient[0]); i++) {
+        if (kidpal_layer_has(st, s_transient[i]) == 1) {
+            kidpal_layer_pop(st, s_transient[i]);
+            popped++;
+        }
+    }
+    return popped;
+}

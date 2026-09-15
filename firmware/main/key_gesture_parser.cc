@@ -123,3 +123,45 @@ global_action_t key_route_global(key_id_t key, key_gesture_t g)
     }
     return GLOBAL_ACT_NONE;                   /* BOOT 长按/双击无全局语义 */
 }
+
+global_action_t key_route_layer(key_id_t key, key_gesture_t g, int overlay_top)
+{
+    /* 越界键位（含 PWR）：一律无动作（覆盖层/基层两列一致，零污染）。 */
+    if ((uint32_t)key >= (uint32_t)KEY_ID_COUNT) {
+        return GLOBAL_ACT_NONE;
+    }
+
+    if (overlay_top != 0) {
+        /* 覆盖层顶层列（v1.39 覆盖层 BOOT 隔离 + v1.36 返回上一层）。 */
+        switch (g) {
+        case KEY_GESTURE_CLICK:
+            /* BOOT 单击 = 关顶层回原页、不产翻页动作（隔离口径）；KEY 单击 = 会话主轴
+             * 零回归（提醒弹窗 KEY 关闭由 dispatch 先交顶层裁决函数承载）。 */
+            if (key == KEY_ID_KEY) {
+                return GLOBAL_ACT_SESSION_TOGGLE;
+            }
+            return GLOBAL_ACT_OVERLAY_CLOSE;
+        case KEY_GESTURE_LONG_PRESS:
+            /* KEY 长按 = 返回上一层（覆盖层 = 关层回原页）；BOOT 长按覆盖层列无语义。 */
+            if (key == KEY_ID_KEY) {
+                return GLOBAL_ACT_OVERLAY_CLOSE;
+            }
+            return GLOBAL_ACT_NONE;
+        default:
+            return GLOBAL_ACT_NONE;           /* KEY/BOOT 双击族覆盖层列 NONE */
+        }
+    }
+
+    /* 基层列（overlay_top == 0）: 与 key_route_global 全表等价——主页面路径零回归。
+     * key_route_global 本体零改动，其表为基层列的实现载体；KEY/BOOT 两键位经各自字面
+     * 调用显式喂进全局路由表（KR-A3 设备侧接线入口的回程自证——base 列即 key_route_global
+     * 的别名，非再建一套基层手势语义）。 */
+    switch (key) {
+    case KEY_ID_KEY:
+        return key_route_global(KEY_ID_KEY, g);
+    case KEY_ID_BOOT:
+        return key_route_global(KEY_ID_BOOT, g);
+    default:
+        return GLOBAL_ACT_NONE; /* 越界键位已在上方拒收，此处不可达 */
+    }
+}

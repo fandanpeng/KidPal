@@ -16,6 +16,7 @@
 #include "lvgl.h"
 #include "custom_lcd_display.h"
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6 渲染节点 */
+#include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
 #include "sdkconfig.h"          /* CONFIG_BUTTON_* 按键消抖/长按窗参数 */
 
@@ -68,16 +69,43 @@ static void keya_dispatch_global_action(global_action_t act)
         app.ToggleChatState();
         break;
     case GLOBAL_ACT_HOME:
-        /* KEY 长按=回首页（所有页面一致，路由无页面入参的全局层语义）。 */
+        /* KEY 长按=回首页（所有页面一致，路由无页面入参的全局层语义；主页面 KEY 长按 =
+         * 回首页，260915-m1-k1a KD-A3 取舍 C「上一层=首页」在基层的映射，零回归）。 */
         app.Schedule([]() { kidpal_render_node_show_home(); });
         break;
     case GLOBAL_ACT_PAGE_NEXT:
-        /* BOOT 单击=翻页（P1->P2->P3->P4 循环，冻结路由表 KEY_ID_BOOT+CLICK 恒产此动作）。 */
+        /* BOOT 单击=翻页（P1->P2->P3->P4 循环，冻结路由表 KEY_ID_BOOT+CLICK 恒产此动作；
+         * 主页面基层路径零回归）。 */
         app.Schedule([]() { kidpal_render_node_cycle_next(); });
+        break;
+    case GLOBAL_ACT_OVERLAY_CLOSE:
+        /* 覆盖层关层回原页：映射显式关层步骤 kidpal_render_node_dismiss_front_overlay
+         * （「关窗」唯一入口，KD-A2），**永不**映射翻页/cycle_next（v1.39 隔离口径）。
+         * 覆盖层顶层在回调入口已先交顶层裁决函数 kidpal_reminder_key（DISMISS 即消费）；
+         * 本 case 为 key_route_layer 覆盖层列返回的兜底消费（如覆盖层为非提醒弹窗）。 */
+        app.Schedule([]() { kidpal_render_node_dismiss_front_overlay(); });
         break;
     default:
         break;
     }
+}
+
+/* 覆盖层顶层按键裁决（260915-m1-k1a-key-layer-dispatch, KD-A1/A3）：覆盖层顶层先交顶层
+ * 覆盖层裁决函数 kidpal_reminder_key（提醒弹窗，设备侧首次接线——requirements §2.3
+ * 对账 ①「正经裁决函数设备侧零调用」修复落点）；返回 KRM_KEY_DISMISS = 顶层覆盖层已
+ * 消费（关层回原页），返回 1；未消费（如覆盖层非提醒弹窗 / 无驻留弹窗）返回 0，落
+ * layer-aware 路由表 key_route_layer。 */
+static int keya_overlay_consume(key_id_t key, key_gesture_t g)
+{
+    kidpal_reminder_t *r = kidpal_reminder_default();
+    page_id_t page_out = PAGE_P1;
+    page_id_t cur = static_cast<page_id_t>(kidpal_render_node_get_page());
+
+    if (kidpal_reminder_key(r, key, g, cur, &page_out) == KRM_KEY_DISMISS) {
+        kidpal_render_node_dismiss_front_overlay();
+        return 1;
+    }
+    return 0;
 }
 
 /* 冻结解析器（key_gesture_parser）设备侧产出手势的一致性观测日志（K6 结构化 + corr_id）。
@@ -276,38 +304,60 @@ private:
             keya_log_gesture(KEY_ID_KEY, g);
         });
 
-        /* BOOT 单击（去对话化，KR-A4）：不再走 ToggleChatState / show_chat / 故事键单击。
-         * 经冻结路由 key_route_global(KEY_ID_BOOT, CLICK) 产出 GLOBAL_ACT_PAGE_NEXT -> 翻页
-         * （冻结路由表已证 KEY_ID_BOOT+CLICK 恒 PAGE_NEXT、永非 SESSION_TOGGLE，接线即强制
-         * 去对话化）。开机 starting 态进配网分支保留原位（最小改动、勿引入新行为；spec §5.3
-         * 「BOOT 长按=配网」与现状「BOOT 单击 starting 态=配网」的既有漂移冻结齿未钉，零触碰）。 */
+        /* BOOT 单击（去对话化，KR-A4）：不再直连 key_route_global 硬路由（对账 ① 根因
+         * 拆除, 260915-m1-k1a KD-A1）——统一经 layer-aware 分流进入：覆盖层顶层先交顶层
+         * 覆盖层裁决函数 kidpal_reminder_key（DISMISS = 关层回原页、不产翻页动作, v1.39
+         * 隔离口径）；未消费落 key_route_layer（BOOT 单击：覆盖层->OVERLAY_CLOSE /
+         * 基层->PAGE_NEXT 翻页, 主页面 BOOT 单击翻页路径零回归）。开机 starting 态进配网
+         * 分支保留原位（最小改动、勿引入新行为；spec §5.3「BOOT 长按=配网」与现状「BOOT
+         * 单击 starting 态=配网」的既有漂移冻结齿未钉，零触碰）。 */
         boot_button_.OnClick([this]() {
             auto& app = Application::GetInstance();
             if (app.GetDeviceState() == kDeviceStateStarting) {
                 EnterWifiConfigMode();
                 return;
             }
-            keya_dispatch_global_action(key_route_global(KEY_ID_BOOT, KEY_GESTURE_CLICK));
+            int overlay = kidpal_render_node_front_is_overlay();
+            if (overlay && keya_overlay_consume(KEY_ID_BOOT, KEY_GESTURE_CLICK)) {
+                return; /* 顶层覆盖层已消费 BOOT（关层回原页、不翻页） */
+            }
+            keya_dispatch_global_action(key_route_layer(KEY_ID_BOOT, KEY_GESTURE_CLICK, overlay));
         });
         /* BOOT 长按: 故事阅读态翻屏（P3 页内特例，KR-E1 零触碰红线，接缝原样保留）。 */
         boot_button_.OnLongPress([this]() {
             McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS);
         });
-        /* BOOT 双击既有一键过渡接线（OnDoubleClick->cycle_next）已移除：冻结路由表 BOOT
-         * DOUBLE_CLICK = GLOBAL_ACT_NONE 无语义，且 BOOT 单击已主司翻页、双击过渡冗余；
-         * 无任何冻结验收齿钉该过渡（regression-safe，判断详见交付报告）。 */
+        /* BOOT 双击既有一键过渡接线（OnDoubleClick->cycle_next）已移除：layer-aware 路由
+         * 覆盖层/基层 BOOT 双击均 GLOBAL_ACT_NONE 无语义，且 BOOT 单击已主司翻页、
+         * 双击过渡冗余；无任何冻结验收齿钉该过渡（regression-safe，判断详见交付报告）。 */
 
-        /* KEY 单击 = 发起对话（路由 GLOBAL_ACT_SESSION_TOGGLE）。 */
-        key_button_.OnClick([]() {
-            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_CLICK));
+        /* KEY 单击：重点对话（layer-aware 分流）。覆盖层顶层先交顶层裁决函数——提醒弹窗
+         * KEY 单击 = 关闭回当前页，DISMISS 即消费；未消费落 key_route_layer（KEY 单击：
+         * 覆盖层/基层均 SESSION_TOGGLE，会话主轴零回归）。 */
+        key_button_.OnClick([this]() {
+            int overlay = kidpal_render_node_front_is_overlay();
+            if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_CLICK)) {
+                return;
+            }
+            keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK, overlay));
         });
-        /* KEY 双击：注册接缝（KR-A1 三手势全注册），全局层无语义（路由 GLOBAL_ACT_NONE）。 */
-        key_button_.OnDoubleClick([]() {
-            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK));
+        /* KEY 双击：注册接缝（KR-A1 三手势全注册），layer-aware 路由（覆盖层/基层双击
+         * 均 GLOBAL_ACT_NONE，全局层无语义）。 */
+        key_button_.OnDoubleClick([this]() {
+            int overlay = kidpal_render_node_front_is_overlay();
+            keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK, overlay));
         });
-        /* KEY 长按 = 回首页（路由 GLOBAL_ACT_HOME，所有页面一致）。 */
-        key_button_.OnLongPress([]() {
-            keya_dispatch_global_action(key_route_global(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS));
+        /* KEY 长按：返回上一层（v1.36 layer-aware 裁决, 260915-m1-k1a KD-A3；覆盖层顶层
+         * 先交顶层裁决函数——提醒弹窗 KEY 长按 = 关层回原页，DISMISS 即消费；未消费落
+         * key_route_layer：覆盖层->OVERLAY_CLOSE 返回上一层 / 基层->HOME 回首页，原
+         * GLOBAL_ACT_HOME->show_home 硬路由改为 layer-aware 裁决，主页面 KEY 长按回首页
+         * 映射零回归）。 */
+        key_button_.OnLongPress([this]() {
+            int overlay = kidpal_render_node_front_is_overlay();
+            if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)) {
+                return;
+            }
+            keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS, overlay));
         });
     }
 

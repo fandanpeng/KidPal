@@ -2,8 +2,12 @@
  * Frozen acceptance tests — TaskPackage 260829-schedule-reminder
  * (subsystem: firmware+server; 日程提醒全链路 · 设备面 = state-reminder 富弹窗三件套 /
  *  排队逐个弹 / V18 滞留顶替 / 四态 received-queued-rendered-acked 幂等去重 / 渲染才允许
- *  回执 / 易失 known-id 只驻 RAM / KEY 关闭回当前页、BOOT 关闭照常翻页;
+ *  回执 / 易失 known-id 只驻 RAM / KEY 关闭回当前页、BOOT 关闭回原页不翻页;
  *  mergeOrder 11; dependsOn 260829-schedule-p2).
+ *  [REVISION 2026-09-15] BOOT/KEY-长按 手势钉点按 docs/requirements.md §2.3 权威矩阵
+ *  v1.39 覆盖层隔离口径成批修订（TaskPackage 260915-m1-k1a-key-layer-dispatch KD-A4,
+ *  acceptance-author 留痕修订, 详见文件尾 REVISION LOG）——修订前口径为「BOOT 关闭并
+ *  照常翻页 / KEY 长按全局回首页」, 与 v1.39 隔离 + v1.36 返回上一层冲突。
  *
  * Nature: host-runnable BEHAVIORAL + structural frozen acceptance on the DEVICE alert
  * consumption face, following the schedule_p2.acceptance.c (KSP) /
@@ -154,21 +158,25 @@
  *
  *   int kidpal_reminder_key(kidpal_reminder_t *s, key_id_t key, key_gesture_t g,
  *                           page_id_t current, page_id_t *page_out);
- *       弹窗驻留期的按键裁决 (spec S-F1.4 弹窗形态):
+ *       弹窗驻留期的按键裁决 (spec S-F1.4 弹窗形态; v1.39 隔离口径修订, 260915-m1-k1a):
  *         KRM_KEY_DISMISS, *page_out = current            — KEY CLICK: 关闭弹窗、回当前页
  *                                                             (条目已于渲染时确认出队)
- *         KRM_KEY_DISMISS, *page_out = 下一页 (P1->P2->P3->P4->P1 回绕)
- *                                                         — BOOT CLICK: 关闭弹窗并照常翻页
- *                                                             (保住「翻页不被打断」手势)
- *         KRM_KEY_DISMISS, *page_out = PAGE_P1            — KEY LONG_PRESS: 关闭 + 全局回
- *                                                             首页 (所有页面一致)
+ *         KRM_KEY_DISMISS, *page_out = current            — BOOT CLICK: 关闭弹窗回原页、
+ *                                                             **不翻页** (v1.39 覆盖层隔离:
+ *                                                             覆盖层内 BOOT = 关顶层回原页,
+ *                                                             「翻页不被打断」手势口径已由
+ *                                                             requirements §2.3 翻转)
+ *         KRM_KEY_DISMISS, *page_out = current            — KEY LONG_PRESS: 关层回原页
+ *                                                             (v1.36「返回上一层」在覆盖层
+ *                                                             顶层的实例; 全局「恒回首页」
+ *                                                             硬路由由 260915-m1-k1a 拆除)
  *         KRM_KEY_PASS, *page_out = current               — BOOT LONG_PRESS / BOOT
  *                                                             DOUBLE_CLICK / KEY
  *                                                             DOUBLE_CLICK / 越界键位:
  *                                                             弹窗不吞其它层手势, 驻留不变
  *       NULL s/page_out -> -1; 弹窗不驻留时任意手势 -> KRM_KEY_PASS 且不改页.
- *       (BOOT CLICK 的「下一页」MUST be taken from the shared 包 3 底座 key_page_next()
- *       — 页序单源, 本包不得另立表; 断言按观测值钉, 见 P2 先例。)
+ *       (页序不再经 key_page_next——v1.39 隔离后覆盖层 BOOT 不产翻页动作, 翻页只住
+ *        主页面基层路径; 原「BOOT 下一页取包 3 底座单源」注记随口径修订一并撤销。)
  *
  *   int kidpal_reminder_page_render(const kidpal_alert_t *a);
  *       渲染面 (pure LVGL on the ACTIVE screen — lv_obj_ / lv_label / lv_anim only, no
@@ -206,8 +214,9 @@
  *   coverage: RMD-A5 (排队逐个弹 + V18 滞留顶替) + RMD-A7 (离线无本地触发)
  *             -> test RMD-A5-queue (入队不叠屏 / FIFO 逐个弹 / 事件时刻前不替换、过后
  *                允许顶替 / 顶替非追加送达 / 队列溢出有界不崩)
- *   coverage: RMD-A5 (KEY 关闭回当前页、BOOT 关闭照常翻页)
- *             -> test RMD-A5-key (四态手势裁决 + 与包 3 页序底座接缝 + 不吞其它层)
+ *   coverage: RMD-A5 (KEY 关闭回当前页、BOOT 关闭回原页不翻页——v1.39 隔离口径修订,
+ *             260915-m1-k1a KD-A4)
+ *             -> test RMD-A5-key (四态手势裁决 + 覆盖层 BOOT 隔离 + 不吞其它层)
  *   coverage: RMD-A6 (四态送达语义 + 渲染才允许回执决策表 + 幂等去重 + 同 id 重推两态分处)
  *             -> test RMD-A6-states (接收/排队期 may_emit_receipt 恒 0、mark_rendered 后
  *                才 1、回执一次后回 0、排队未渲染重复推送不入队不回执、已渲染补回回执)
@@ -1103,10 +1112,14 @@ TEST_CASE("schedule reminder b: 排队逐个弹 + V18 滞留顶替 (RMD-A5)", "[
 }
 
 /* -------------------------------------------------------------------------- *
- * RMD-A5 — KEY 关闭回当前页 / BOOT 关闭照常翻页（与包 3 手势底座的接缝）
- * RED today: weak-default UNIMPLEMENTED sentinel.
+ * RMD-A5 — KEY 关闭回当前页 / BOOT 关闭回原页不翻页（v1.39 覆盖层隔离口径,
+ * 260915-m1-k1a KD-A4 成批修订; 「翻页只住主页面基层路径」——覆盖层 BOOT 不再经
+ * 包 3 key_page_next 产翻页, 页序接缝钉点随口径撤销）
+ * RED today: weak-default UNIMPLEMENTED sentinel; 实现已落地但仍按旧「照常翻页」
+ * 口径返回 key_page_next/PAGE_P1 —— 三处隔离钉点对当前实现为设计态红
+ * （真实缺失行为 = 隔离口径未落地, builder 随 260915-m1-k1a KD-A1/A3 拆耦合转绿）。
  * ------------------------------------------------------------------------ */
-TEST_CASE("schedule reminder b: KEY 关闭回当前页、BOOT 关闭照常翻页 (RMD-A5)",
+TEST_CASE("schedule reminder b: KEY 关闭回当前页、BOOT 关闭回原页不翻页 (RMD-A5)",
           "[schedule_reminder][RMD-A5][gesture]")
 {
     static unsigned char store[4096];
@@ -1132,38 +1145,44 @@ TEST_CASE("schedule reminder b: KEY 关闭回当前页、BOOT 关闭照常翻页
     TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_shown_id(s, shown, sizeof(shown)) == 0,
         "KRM-A5 RED: 关闭后弹窗仍驻留");
 
-    /* BOOT 关闭 -> 照常翻页 (P1->P2, 页序取包 3 底座 key_page_next 单源) */
+    /* BOOT 关闭 -> 回原页不翻页 (v1.39 隔离: 覆盖层内 BOOT = 关顶层回原页,
+     * P1 弹窗关闭后仍停 P1, 翻页动作不发生) */
     krm_fill(&a, "rmd-B2", "2026-09-09T16:15:00+08:00", "文案");
     (void)kidpal_reminder_receive(s, &a);
     (void)kidpal_reminder_raise_next(s, KRM_EV_1615);
-    out = PAGE_P1;
+    out = PAGE_P2;
     TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_key(s, KEY_ID_BOOT, KEY_GESTURE_CLICK, PAGE_P1, &out)
                                  == KRM_KEY_DISMISS,
         "KRM-A5 RED: BOOT 单击没有关闭弹窗");
-    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P2,
-        "KRM-A5 RED: BOOT 关闭没有照常翻页 (P1 应到 P2) — 「翻页不被打断」手势被吞");
+    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P1,
+        "KRM-A5 RED: BOOT 关闭后翻了页 — v1.39 覆盖层隔离要求 BOOT = 关窗回原页、"
+        "不产翻页动作 (requirements §2.3 提醒弹窗行, 260915-m1-k1a KD-A4 修订)");
 
-    /* P4 -> P1 回绕 (与包 3 key_page_next 页序接缝一致) */
+    /* P4 驻留弹窗 -> BOOT 关闭同样回原页 (隔离口径不随页号变化; 原「P4->P1 回绕、
+     * 与包 3 key_page_next 页序接缝」钉点随 v1.39 口径一并撤销) */
     krm_fill(&a, "rmd-B3", "2026-09-09T16:15:00+08:00", "文案");
     (void)kidpal_reminder_receive(s, &a);
     (void)kidpal_reminder_raise_next(s, KRM_EV_1615);
-    out = PAGE_P2;
+    out = PAGE_P1;
     TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_key(s, KEY_ID_BOOT, KEY_GESTURE_CLICK, PAGE_P4, &out)
                                  == KRM_KEY_DISMISS,
         "KRM-A5 RED: BOOT click on P4 did not dismiss");
-    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P1,
-        "KRM-A5 RED: P4 的 BOOT 翻页没有回绕到 P1 — 页序与包 3 底座 key_page_next 分叉");
+    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P4,
+        "KRM-A5 RED: P4 的 BOOT 关闭没有回原页 — 覆盖层 BOOT 隔离不随页号漂移 "
+        "(v1.39 隔离口径, 260915-m1-k1a KD-A4 修订)");
 
-    /* KEY 长按 = 关闭 + 全局回首页 (spec §4.0 所有页面一致) */
+    /* KEY 长按 = 关层回原页 (v1.36「返回上一层」在覆盖层顶层的实例; 原「关闭 + 全局
+     * 回首页」硬路由钉点随 layer-aware 裁决修订一并撤销, 260915-m1-k1a KD-A3/A4) */
     krm_fill(&a, "rmd-B4", "2026-09-09T16:15:00+08:00", "文案");
     (void)kidpal_reminder_receive(s, &a);
     (void)kidpal_reminder_raise_next(s, KRM_EV_1615);
-    out = PAGE_P3;
+    out = PAGE_P1;
     TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_key(s, KEY_ID_KEY, KEY_GESTURE_LONG_PRESS, PAGE_P3, &out)
                                  == KRM_KEY_DISMISS,
         "KRM-A5 RED: KEY 长按没有关闭弹窗");
-    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P1,
-        "KRM-A5 RED: KEY 长按没有回首页 — 全局手势被弹窗吞掉会破坏「所有页面一致」");
+    TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P3,
+        "KRM-A5 RED: KEY 长按没有关层回原页 — v1.36 返回上一层在覆盖层 = 关层回原页, "
+        "不再恒回首页 (requirements §2.3 提醒弹窗行, 260915-m1-k1a KD-A4 修订)");
 
     /* 其余手势不吞 (弹窗驻留、页不变) */
     krm_fill(&a, "rmd-B5", "2026-09-09T16:15:00+08:00", "文案");
@@ -1185,7 +1204,8 @@ TEST_CASE("schedule reminder b: KEY 关闭回当前页、BOOT 关闭照常翻页
             TEST_ASSERT_TRUE_MESSAGE(
                 kidpal_reminder_key(s, pass[i].k, pass[i].g, PAGE_P2, &out) == KRM_KEY_PASS,
                 "KRM-A5 RED: 弹窗吞掉了不属于它的手势 — 应 PASS 给下层并保持驻留 "
-                "(spec 只裁 KEY=关闭回当前页 / BOOT=关闭并照常翻页)");
+                "(spec 只裁 KEY 单击=关闭回当前页 / BOOT 单击=关闭回原页, "
+                "260915-m1-k1a KD-A4 口径)");
             TEST_ASSERT_TRUE_MESSAGE(out == PAGE_P2,
                 "KRM-A5 RED: a passed-through gesture mutated the page");
             TEST_ASSERT_TRUE_MESSAGE(kidpal_reminder_shown_id(s, shown, sizeof(shown)) == 1,
@@ -1765,4 +1785,41 @@ TEST_CASE("schedule reminder b: 渲染面先清屏具名化——B 后不残留 
  *               This ADD keeps the same declared intent (V27 / spec §4.0 畸形载荷显式降级
  *               而非盲渲染), removes no assertion, adds no acceptance id, and is already
  *               satisfied by the landed implementation (11 explicit markers).
+ *   2026-09-15  KD-A4 成批修订 (acceptance-author, TaskPackage 260915-m1-k1a-key-layer-
+ *               dispatch; tightly-only + 留痕 + 不豁免验证): BOOT 翻页相关钉点按
+ *               docs/requirements.md §2.3 权威矩阵 v1.39 覆盖层隔离口径（+ v1.36
+ *               「返回上一层」在覆盖层顶层的实例）成批修订，断言语义**收紧不放松**——
+ *               「BOOT 关闭照常翻页」翻转为「BOOT 关闭回原页、不产翻页动作」。修订点
+ *               逐处清单（口径依据 = requirements §2.3 提醒弹窗行 + §2.2 提醒行/查字窗行
+ *               「v1.39：窗内 BOOT 不翻页」+ ⚠️ 键位对账 ①⑤）:
+ *                 (1) 文件头 story 摘要行：「BOOT 关闭照常翻页」→「BOOT 关闭回原页不翻页」
+ *                     + 修订声明注记；
+ *                 (2) 文件头 FROZEN OFFLINE CONTRACT kidpal_reminder_key 契约块：
+ *                     BOOT CLICK 条目 *page_out 由「下一页 (P1->P2->P3->P4->P1 回绕)」
+ *                     改为 current（回原页不翻页）；
+ *                 (3) 同契约块 KEY LONG_PRESS 条目 *page_out 由 PAGE_P1（全局回首页）
+ *                     改为 current（关层回原页——KD-A3 layer-aware 裁决落地连带，同一
+ *                     裁决函数同一测试，原钉点与新裁决直接冲突，不修订则本套齿在
+ *                     KD-A3 落地后必红、违背「修订后该套齿全绿」义务）；
+ *                 (4) 同契约块尾注：撤销「BOOT 下一页 MUST 取包 3 底座 key_page_next
+ *                     单源」注记（隔离后覆盖层 BOOT 不再产翻页，页序单源耦合不存在）；
+ *                 (5) coverage map RMD-A5-key 行描述同步；
+ *                 (6) test RMD-A5-key 注释块 + 测试名：「BOOT 关闭照常翻页」→「BOOT
+ *                     关闭回原页不翻页」（测试名变更 = 钉点语义随口径，coverage 标记
+ *                     RMD-A5 不变，机检闸 regex 按 id 匹配不受影响）；
+ *                 (7) test 体 rmd-B2 钉点：out==PAGE_P2 → out==PAGE_P1（回原页不翻页）；
+ *                 (8) test 体 rmd-B3 钉点：P4→P1 回绕钉点（out==PAGE_P1）→ P4 回原页
+ *                     （out==PAGE_P4），key_page_next 页序接缝断言撤销；
+ *                 (9) test 体 rmd-B4 钉点：KEY 长按 out==PAGE_P1 → out==PAGE_P3
+ *                     （关层回原页，同 (3) 依据）；
+ *                (10) 「其余手势不吞」红字符串口径措辞同步（断言本体零变更：BOOT
+ *                     长按/双击、KEY 双击、越界键位仍 KRM_KEY_PASS）。
+ *               套件其余钉点零触碰（渲染面/四态回执/排队顶替/介质禁令/boundary 全未动）；
+ *               无豁免、无 skip、无断言放松。修订后三处隔离钉点 (7)(8)(9) 对当前实现
+ *               （reminder_page.c kidpal_reminder_key 仍返回 key_page_next/PAGE_P1）
+ *               为设计态红 = 真实缺失行为（隔离语义未落地），红基线判读见
+ *               delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/red-baseline-freeze.md；
+ *               builder 随 260915-m1-k1a KD-A1/A3 拆耦合后转绿。firmware/main/test/
+ *               reminder_page.test.c（非冻结件）无需修订（其 BOOT 钉点仅「无弹窗 PASS」，
+ *               与隔离口径不冲突）。
  * --------------------------------------------------------------------------- */

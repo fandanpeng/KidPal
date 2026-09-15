@@ -6,15 +6,16 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check dev 段增量刷行 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | dev/arch | origin.ref | 状态 | workstream；arch 段另含「已合main」。arch 状态机：draft→frozen→landed(终态)。
 
-## dev (23)
+## dev (24)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260915-m1-k1a-key-layer-dispatch](../delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260913-happy-flow-host-capture](../delivery/changes/dev/260913-happy-flow-host-capture/) | 2026-09-13 | — | open | — |
 | [260911-display-first-m1](../delivery/changes/dev/260911-display-first-m1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260911-ecs-deploy-convergence](../delivery/changes/dev/260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
 | [260911-key-route-a1](../delivery/changes/dev/260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
-| [260911-render-pages](../delivery/changes/dev/260911-render-pages/) | 2026-09-11 | changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七 | closed | kidpal-mvp |
+| [260911-render-pages](../delivery/changes/dev/260911-render-pages/) | 2026-09-11 | delivery/changes/dev/260829-hardware-validation/PROGRESS-SUMMARY-260910.md#§七 | closed | kidpal-mvp |
 | [260911-screen-unification](../delivery/changes/dev/260911-screen-unification/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260907-g-relay-fix](../delivery/changes/dev/260907-g-relay-fix/) | 2026-09-07 | changes/dev/260829-voice-roundtrip/review-packet.md#SHOULD-1 | closed | kidpal-mvp |
 | [260903-device-ws-switch](../delivery/changes/dev/260903-device-ws-switch/) | 2026-09-03 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
@@ -34,13 +35,13 @@
 | [260829-story-p3](../delivery/changes/dev/260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](../delivery/changes/dev/260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 
-## arch (23)
+## arch (24)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
 | [260915-gov-review-worktree-pool-reuse](../delivery/changes/arch/260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | landed | yes |
 | [260914-arch-review-kidpal-session-ctx-contract](../delivery/changes/arch/260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | — |
-| [260914-gov-review-delivery-restructure](../delivery/changes/arch/260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | yes |
+| [260914-gov-review-delivery-restructure](../delivery/changes/arch/260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | — |
 | [260913-arch-review-spec-split](../delivery/changes/arch/260913-arch-review-spec-split/) | 2026-09-13 | landed | yes |
 | [260912-gov-review-portfolio-decomposition-chain](../delivery/changes/arch/260912-gov-review-portfolio-decomposition-chain/) | 2026-09-12 | landed | yes |
 | [260909-gov-review-gate-truthfulness](../delivery/changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | landed | yes |
