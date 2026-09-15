@@ -41,7 +41,7 @@
 |---|---|---|---|
 | [260915-gov-review-worktree-pool-reuse](../delivery/changes/arch/260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | landed | yes |
 | [260914-arch-review-kidpal-session-ctx-contract](../delivery/changes/arch/260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | — |
-| [260914-gov-review-delivery-restructure](../delivery/changes/arch/260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | — |
+| [260914-gov-review-delivery-restructure](../delivery/changes/arch/260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | yes |
 | [260913-arch-review-spec-split](../delivery/changes/arch/260913-arch-review-spec-split/) | 2026-09-13 | landed | yes |
 | [260912-gov-review-portfolio-decomposition-chain](../delivery/changes/arch/260912-gov-review-portfolio-decomposition-chain/) | 2026-09-12 | landed | yes |
 | [260909-gov-review-gate-truthfulness](../delivery/changes/arch/260909-gov-review-gate-truthfulness/) | 2026-09-09 | landed | yes |
