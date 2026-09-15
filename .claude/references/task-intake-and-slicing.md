@@ -272,6 +272,8 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 **机制**：编号是**渲染态、非 canonical 字段**——由 `render-roadmap.mjs` 从 dependsOn + mergeOrder 推导、随 roadmap ② 节列车图渲染（图例随区块输出），`taskpackage.json` 不存编号、人工不赋值。依赖变更后编号随重渲染自动重算，不构成拆包制品变更、不重过门 1。
 
+**changeId 嵌编号 token（常设规则，2026-09-15 定）**：拆包建包时（portfolio-planner Step 4 落盘四件套），changeId 在日期前缀后、语义 slug 前嵌入编号 token——形态 `YYMMDD-<ws小写>-<kn小写><波次><字母?>-<语义slug>`（如 `260915-m1-k2-keybar-three-slot`；单元素波次无字母，如 `260915-m1-n1b-p1-home-battery`）。编号 token = **建包时点依赖图的镜像**：后续依赖变更时渲染态编号随重渲染重算，changeId **不追溯改名**（目录 / taskpackage / dependsOn / board / merge token 均以 changeId 为键，键名冻结）；token 与渲染态漂移时判读以渲染态为准，后续批次新增包用当次推导的编号嵌名。
+
 ## UIUX Depth Ladder and Optional TaskPackage Fields
 
 When a slice touches user-visible UI, planner detects a UIUX depth level and, from Level 2 up, records UIUX context on the TaskPackage. Depth drives whether a `uiux-author` step runs and what design-review evidence integrator owes at closeout.
