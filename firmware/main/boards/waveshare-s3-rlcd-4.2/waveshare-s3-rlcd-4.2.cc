@@ -82,7 +82,22 @@ static void keya_dispatch_global_action(global_action_t act)
         /* 覆盖层关层回原页：映射显式关层步骤 kidpal_render_node_dismiss_front_overlay
          * （「关窗」唯一入口，KD-A2），**永不**映射翻页/cycle_next（v1.39 隔离口径）。
          * 覆盖层顶层在回调入口已先交顶层裁决函数 kidpal_reminder_key（DISMISS 即消费）；
-         * 本 case 为 key_route_layer 覆盖层列返回的兜底消费（如覆盖层为非提醒弹窗）。 */
+         * 本 case 为 key_route_layer 覆盖层列返回的兜底消费（如覆盖层为非提醒弹窗）。
+         * 会话级联（KD-A5 真机 r1 修复）：前台为 VOICE 覆盖层（会话类覆盖层）且设备处于
+         * 会话态（Connecting/Listening/Speaking）时，关层同时结束会话——复用 KEY 单击同
+         * 一条 ToggleChatState 会话结束路径（listening 态 = CloseAudioChannel），requirements
+         * §2.3「问答·聆听/思考」行 BOOT 短按 = 结束会话回原页；提醒弹窗等非会话覆盖层
+         * 关层语义不变（本就无会话）。时序安全性：TOGGLE_CHAT 事件在主循环先于 SCHEDULE
+         * 队列处理、且 idle 落定经 WS 断开异步抵达，故关层（回原页落定）必先于 idle 的
+         * voice_end；voice_end 见 VOICE 已不在栈上而零副作用，不会把「回原页」改写成
+         * 「回首页」。 */
+        if (kidpal_render_node_front_is_voice() != 0) {
+            DeviceState st = app.GetDeviceState();
+            if (st == kDeviceStateConnecting || st == kDeviceStateListening ||
+                st == kDeviceStateSpeaking) {
+                app.ToggleChatState();
+            }
+        }
         app.Schedule([]() { kidpal_render_node_dismiss_front_overlay(); });
         break;
     default:

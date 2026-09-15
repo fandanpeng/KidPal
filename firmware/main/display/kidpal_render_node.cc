@@ -578,6 +578,14 @@ int kidpal_render_node_front_is_overlay(void)
             top == KIDPAL_LAYER_REMINDER) ? 1 : 0;
 }
 
+/* 前台顶层是否为会话类覆盖层（VOICE）：OVERLAY_CLOSE 关层级联判据（KD-A5 真机 r1
+ * 修复）。只认 VOICE 单层——提醒弹窗 / 服务端推送页等非会话覆盖层关层语义不变
+ * （本就无会话）。与 front_is_overlay 同为无锁整数读，板级 dispatch 消费。 */
+int kidpal_render_node_front_is_voice(void)
+{
+    return kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE ? 1 : 0;
+}
+
 /* 设备侧显式关层步骤（「关窗」唯一入口，KD-A2 清层/进页分离）：前台为覆盖层时经
  * 显式清层步骤出掉 transient 覆盖层回基层，并重渲基层当前页——关层归关层、不产翻页
  * 动作（v1.39 覆盖层隔离口径）。内部消费 kidpal_layer_pop_transients（单一清层事实源，

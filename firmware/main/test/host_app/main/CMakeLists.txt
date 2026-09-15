@@ -112,6 +112,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
     "../../key_layer_dispatch.acceptance.c"
 
+    # 包 260915-m1-k1a-key-layer-dispatch KD-A5 真机轮修复回归守卫（非冻结件, [C4.3]
+    # 普通 .test.c）：树级结构齿钉「OVERLAY_CLOSE 在 VOICE 覆盖层顶层级联结束会话
+    # （front_is_voice + ToggleChatState + dismiss 三件套）+ 提醒弹窗关层路径不级联
+    # （非会话语义不变）+ front_is_voice 判据单层落点」。置于 smoke 之前（执行序 =
+    # 列表逆序: 包 0 boundary 齿仍最先跑）。相对 host_app/main 为 ../../。
+    "../../key_layer_session_cascade.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )
