@@ -2,7 +2,7 @@
 
 > 用法：复制本件为 `delivery/changes/arch/<change-id>/retro.md`，替换 `<尖括号>` 占位；**带【硬项】的小节是义务不是建议**——缺失即判官 / 核验官打回的合法理由。
 > 文体：散文节按 AGENTS.md「输出标准」节写通顺完整的句子；计量表与证据引用保持精确。
-> **retro = Track B 第 6 步闭环件**（制品 4 件之一：PROPOSAL + architect-landing-summary + landing-verdict + retro）；landing-verdict 绿后由主线程趁热撰写、**先于 human 合并完成**（合并仅剩分支搬移）；retro 不含合并锚——落点由 `delivery/changes/INDEX.md` `mergedInMain` 列机械现推；共性建议登记 ARQ 收件箱，决策日志行挂 retro 链接。
+> **retro = Track B 第 6 步闭环件**（制品 4 件之一：PROPOSAL + architect-landing-summary + landing-verdict + retro）；landing-verdict 绿后由主线程趁热撰写、**先于 human 合并完成**（合并仅剩分支搬移）；retro 不含合并锚——落点由 `delivery/changes/arch/INDEX.md` `mergedInMain` 列机械现推；共性建议登记 ARQ 收件箱，决策日志行挂 retro 链接。
 > 形制来源：4 份真实 retro 形状归纳（auth-axis / unit-gate / verifier-dispatch / claude-consistency，260802-gov-review-track-b-permanentize T10）。
 
 ---

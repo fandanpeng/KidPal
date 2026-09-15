@@ -25,7 +25,7 @@
 // metrics-ledger advisory section (loop-metrics.json + pod-journal.jsonl) remains untouched below
 // - changeIdArchiveCandidates 改 YYMMDD- 前缀感知（原按日期后缀 -YYYY-MM-DD 剥）
 // - 新增 UPSTREAM_DRIFT detection（convention-only / warn，DP-4 / F3）
-// - 新增 delivery/changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
+// - 新增 delivery/changes/dev/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
 // - sourceType-without-origin 过渡告警（advisory，不红）
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -142,10 +142,10 @@ function warnDrift(payload, taskPackage) {
   }
 }
 
-// ── delivery/changes/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
+// ── delivery/changes/dev/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
 function upsertIndexRow(changeId, taskPackage, archDir) {
-  const indexPath = resolve(projectDir, 'delivery', 'changes', 'INDEX.md');
-  if (!existsSync(indexPath)) return 'index-missing-skipped'; // 首次 closeout 需先跑 changes-index.mjs 产 header
+  const indexPath = resolve(projectDir, 'delivery', 'changes', 'dev', 'INDEX.md');
+  if (!existsSync(indexPath)) return 'index-missing-skipped'; // 首次 closeout 需先跑 changes-index.mjs 产骨架
   const origin = (taskPackage.origin && typeof taskPackage.origin === 'object') ? taskPackage.origin : null;
   const prefixMatch = String(changeId).match(CHANGE_ID_PREFIX_RE);
   const date = prefixMatch && prefixMatch[1]
@@ -154,26 +154,19 @@ function upsertIndexRow(changeId, taskPackage, archDir) {
   const originRef = resolveOriginRef(origin) || '';
   const workstream = (origin && origin.workstream) || '';
 
-  const newRow = `| [${changeId}](../delivery/changes/dev/${changeId}/) | ${date || '—'} | ${originRef || '—'} | closed | ${workstream || '—'} |`;
+  const newRow = `| [${changeId}](${changeId}/) | ${date || '—'} | ${originRef || '—'} | closed | ${workstream || '—'} |`;
 
   let content = readText(indexPath);
   const originalContent = content;
   let action = 'inserted';
-  // 如果已有此行 → 替换；否则在 dev section 末尾追加
+  // 如果已有此行 → 替换；否则追加到表尾（dev INDEX = 单 dev 段；乱序行由下次全量重建收敛）
   const escapedId = changeId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const rowRe = new RegExp(`^\\| \\[${escapedId}\\]\\(.*?\\) \\|.*\\| closed \\|.*\\|$`, 'm');
   if (rowRe.test(content)) {
     content = content.replace(rowRe, newRow);
     action = 'replaced';
   } else {
-    // 在 ## dev 与 ## arch 之间插入（追到 dev section 末尾）
-    const devSectionStart = content.indexOf('\n## dev');
-    const archSectionStart = content.indexOf('\n## arch', devSectionStart + 1);
-    if (devSectionStart >= 0 && archSectionStart > devSectionStart) {
-      content = content.slice(0, archSectionStart) + newRow + '\n' + content.slice(archSectionStart);
-    } else {
-      return 'index-header-skipped'; // fallback：header 不标准，skip
-    }
+    content = content.replace(/\s*$/, '\n') + newRow + '\n';
   }
   if (content === originalContent) return 'unchanged';
   writeFileSync(indexPath, content, 'utf8');

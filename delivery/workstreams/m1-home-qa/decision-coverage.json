@@ -50,7 +50,7 @@
     {
       "decision": "M1块③-happy-flow-host-capture收尾（在办包挂账）",
       "summary": "happy-flow-host-capture 为在办独立包（open），由其自身 planner 闭环收尾——本 workstream 只挂账不承载、不重拆。",
-      "sourceRefs": ["delivery/changes/INDEX.md#260913-happy-flow-host-capture"],
+      "sourceRefs": ["delivery/changes/dev/INDEX.md#260913-happy-flow-host-capture"],
       "landsIn": "deferred",
       "reason": "在办包已有 live 工作面与 planner 闭环，重拆会破坏其在途验收；M1 里程碑收口前由其自身收尾，本批零触碰。"
     },

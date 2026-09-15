@@ -107,7 +107,7 @@
 4. **新写指令根与强制层配置**：AGENTS / CLAUDE / DEV-GOVERNANCE（档位裁剪版）/ scope-map / settings×2 / fixtures 净版。
 5. **定义契约面并落冻结**：确认 P2 选出的契约文件归位到契约面目录，登记进 scope-map `bashDenyWrite` + loop settings `permissions.deny`；配套 rule 写清楚「影子目录禁令」（防有人另起炉灶建同名平行目录）。
 6. **全部文本替换走工程纪律**：不用裸 sed 连环替换（实测多条 `-e` 表达式遇分隔符冲突整批静默跳过）；用 Python 脚本一次执行互斥的替换规则（重叠规则会产生双重替换坏链），替换完全量 grep 验证清零后才算完。
-7. **建变更证据骨架 + 冒烟验证**：`delivery/changes/INDEX.md` 空骨架 + 跑全套冒烟（见 §6.M）。全绿才提交。
+7. **建变更证据骨架 + 冒烟验证**：`delivery/changes/dev/INDEX.md` + `delivery/changes/arch/INDEX.md` 空骨架（INDEX 按 lane 拆分）+ 跑全套冒烟（见 §6.M）。全绿才提交。
 8. **建图索引 + 记账收尾**：按 P7 建索引（多分支 worktree 时每支手动建）；为本批写 bootstrap PROPOSAL 记账（见 §6.F），状态钉进 INDEX。
 
 ---

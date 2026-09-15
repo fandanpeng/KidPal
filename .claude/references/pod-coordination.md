@@ -154,7 +154,7 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 ### 10b. post-merge 簿记落点口径
 
 - **pod-events 的 merge-completed 事件**：merge-driver Step 5b 机械落 main（合并现场单文件 pathspec commit）——main 自持、feature 分支可删，planner 无需手动补（home-p1 `46d99b5` / schedule-p2 `7717eea` 的手动簿记由此机械化）。簿记失败为 advisory warn、不阻塞合并链。
-- **delivery/changes/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。
+- **delivery/changes/dev/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。INDEX 已按 lane 拆分（dev / arch 各一份），Pod 合并流只触 dev 侧。
 - **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`delivery/taskpackages/<pod-id>/**` + `delivery/changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
 
 ## 10c. 版本化制品 `.vN` 槽位预约与登记表（260908 批，A-7/B-2/B-0 已裁）
