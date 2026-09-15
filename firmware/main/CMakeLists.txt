@@ -67,6 +67,18 @@ set(SOURCES "audio/audio_codec.cc"
             # lv_layer_top 由板装配层触发)。不进入 host 构建 (host_app CMakeLists 不含本文件，
             # 与 char_page.cc 同理)。
             "display/kidpal_render_node.cc"
+            # NFR-READ-1 字号真机对照实验页（human 指示一次性实验构建，不入产线）：
+            # 9 档 1bpp NotoSansSC 字号 C 数组字体 (lv_font_conv 产线同源参数) + 顶层对照页。
+            "display/font_size_test_page.cc"
+            "display/font_test_10.c"
+            "display/font_test_12.c"
+            "display/font_test_14.c"
+            "display/font_test_16.c"
+            "display/font_test_18.c"
+            "display/font_test_20.c"
+            "display/font_test_24.c"
+            "display/font_test_28.c"
+            "display/font_test_32.c"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"

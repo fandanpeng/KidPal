@@ -11,6 +11,7 @@
 #include "settings.h"
 #include "config.h"
 #include "board.h"
+#include "font_size_test_page.h"
 
 void CustomLcdDisplay::Lvgl_flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p)
 {
@@ -97,6 +98,10 @@ height_(height)
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     port_cfg.task_priority   = 2;
     port_cfg.timer_period_ms = 50;
+    /* 栈溢出验证补丁（2026-09-15 一次性实验，跳过流程如实记录）：默认 7168 被
+     * char_page 动画帧（pts/sc/toks 256 点局部数组 ≈6.5KB）打穿，taskLVGL 栈溢出
+     * panic（串口实证两轮）。正式修复（预解析去栈 + 栈定容）走 dev-loop，本行届时随包收编。 */
+    port_cfg.task_stack      = 16384;
     lvgl_port_init(&port_cfg);
     lvgl_port_lock(0);
 
@@ -120,6 +125,10 @@ height_(height)
     ESP_LOGI(TAG, "ui start");
 
     SetupUI();
+
+    /* NFR-READ-1 字号真机对照实验页：2026-09-15 已实测（14px 清晰 / 12px 不可读，
+     * 下限定 14px）。实验完毕，调用注释留存备查，恢复正常启动画面。 */
+    /* font_size_test_page_show(); */
 }
 
 CustomLcdDisplay::~CustomLcdDisplay() {
