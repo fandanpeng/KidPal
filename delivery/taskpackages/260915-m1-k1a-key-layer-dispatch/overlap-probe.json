@@ -4,13 +4,9 @@
   "source": "HEAD",
   "overlap": {
     "probed": true,
-    "tier": "tradeoff",
-    "intersectingFiles": [
-      "delivery/changes/INDEX.md"
-    ],
-    "conflictedFiles": [
-      "delivery/changes/INDEX.md"
-    ],
+    "tier": "no-overlap",
+    "intersectingFiles": [],
+    "conflictedFiles": [],
     "addAddFiles": []
   }
 }
