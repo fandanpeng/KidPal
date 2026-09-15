@@ -208,7 +208,7 @@
 
 **② 语音问答**：KEY 单击或喊「你好，小智」→ hello → Opus 16k 帧流式上行 → 引擎 VAD 切句 → 云 ASR → `stt` 消息回发（聆听态逐句回显）→ OpenClaw（每轮透传历史）流式回复 → 引擎 TTS delta 流上 **fence 剥离状态机**：闭块瞬间同步发侧通道帧；正文送 TTS → Opus 24k 下行播报；front 截获侧通道帧 → `display_schema` 校验 → 逐块 mcp `kidpal/display` 下发 → 设备渲染。播报中 KEY 单击 = 停播 + `abort` 云端取消生成（Phase 1 唯一打断手段）。
 
-**③ 查字**：同 ② 前半；OpenClaw 判查字意图 → `char_stroke_lib` 从 9574 字 `char_cache.json` hold-and-replace 组 D3 笔顺 JSON（不逐笔念笔名，`speech_hint` 承载引导语——2026-09-15 真机实证播报正常，播报可行性从来不是问题，「逐笔念笔名」当初系教学红线裁量砍除、非不可行）→ `view=char` 覆盖窗（驻留到按键或 5 分钟无操作；KEY 短按重播/长按关窗；BOOT 关窗回原页不翻页；播完会话即结束不回聆听态——requirements v1.36/v1.37/v1.43 口径）。2026-09-15 真机复验：全链恢复可跑（语音应答→窗开 ~21.6s，5 秒档优化归 Phase 1）；板端两缺陷定位 = LVGL 任务栈溢出（已验证修复方向）+ SVG 解析器缺 C 命令（见 §8 风险债 5）。
+**③ 查字**：同 ② 前半；OpenClaw 判查字意图 → `char_stroke_lib` 从 9574 字 `char_cache.json` hold-and-replace 组 D3 笔顺 JSON（逐笔念笔名 = OpenClaw 回复文本自由承载，requirements v1.55 恢复——2026-09-15 真机实证「勇」9 笔笔名几何对照零错误，试点期持续核错误率；若走权威笔名数据源需 D3 契约扩展，届时契约门）→ `view=char` 覆盖窗（驻留到按键或 5 分钟无操作；KEY 短按重播/长按关窗；BOOT 关窗回原页不翻页；播完会话即结束不回聆听态——requirements v1.36/v1.37/v1.43 口径）。2026-09-15 真机复验：全链恢复可跑（语音应答→窗开 ~21.6s，5 秒档优化归 Phase 1）；板端两缺陷定位 = LVGL 任务栈溢出（已验证修复方向）+ SVG 解析器缺 C 命令（见 §8 风险债 5）。
 
 **④ 记录归档**：触发词（「我要讲故事」/「帮我记下来」）或 P3 会话上下文信号（设备告知「会话发起自 P3」，网关会话建立即切累积态——requirements v1.32 扩展；信号载体 = 契约 §四 `kidpal_session_ctx`（front 拦截消费、引擎不感知））→ 引擎 manual 聆听 + front 旁路累积（stt 帧喂入，AI 不逐句回复）→ 收尾（「我说完了/讲完啦」/再按 KEY / 120s 超时自动收尾归档）→ `story.py` 归档 + 起标题（模型一回合只起 ≤12 字 title）→ `story_text` 下发渲染 + 盖章演出（N = 入册流水号只增不减）。误判兜底见 §10 决策 25 与 requirements v1.47/v1.49 修订。
 
@@ -354,6 +354,7 @@
 | 5 | live 查字链路缺陷两件（2026-09-15 真机串口实证定位，原「链路不可跑」结案）：① taskLVGL 栈溢出——CustomLcdDisplay 自建 lvgl_port_init 用默认 7168 栈 < char_page 动画帧（pts/sc/toks 256 点局部数组 ≈6.5KB）需求，panic 实证两轮；16K 一次性补丁真机验证有效（烧在 `custom_lcd_display.cc:104`，跳过流程如实记录）。② 板端 SVG 解析器（`char_stroke.c`，U 冻结合约）缺 C 命令支持——makemeahanzi 数据含三次贝塞尔 `C`，勇 9 笔中 6 笔被 `default: return -1` 整笔丢弃、示范字残缺 | S-F3.1/3.2/3.3 示范字不完整；崩溃已消（补丁）、残缺未修 | 正式修复走 dev-loop：char_page 预解析去栈 + 栈定容（①）+ `case 'C'` 三次贝塞尔采样 + acceptance 补 C 用例（②）；补丁行随包收编 | dev-loop |
 | 6 | F2 改名对账四项 + 键路由对账六项 + 电量 ADC 三处未接 + 思考态零调用（均【修复项】） | 文档与代码的漂移已成片 | requirements §2.3/F2 ⚠️ 对账清单 + §5.5.4；随 Phase 1 各阶段接线 | dev-loop |
 | 7 | `server/deploy/README.md` prompt 现状仍写 v3（实为 v4） | 部署指引误导 | 本档已如实记 v4；README 待随下次部署批更新【文档债】 | dev-loop |
+| 8 | 逐笔念笔名试点期笔名错误率未成批核验（requirements v1.55 恢复；「勇」单字零错误 = 唯一实测点，笔名由 LLM 自由生成、无权威数据源兜底） | LLM 猜错笔名 = 教学事故（孩子照错的学） | 试点期扩常用字样本人工核错误率；不达标 → 回退纯引导语或接权威笔名数据源 + D3 契约扩展 `stroke_names`（走契约门） | human（试跑采样）+ dev-loop（数据源方案） |
 | 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
 | 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（方案二：接入网关对设备常驻连接、引擎按会话起停）留 Phase 1 | human |
 | 10 | 16px 以下 CJK 1bpp 可读性未实测 | 字号下限悬置 | 单独烧版对照（ARQ-260831-small-cjk-1bpp-readability） | 真机字体任务 |
