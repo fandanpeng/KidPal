@@ -56,6 +56,7 @@
 
 ## 6. 本环遗留
 
+- **升级闸 BLOCK → human 批放行（2026-09-15）**：前置升级闸命中唯一例外项「docs/contracts/** diff 且同批无契约门证据」（`hasContractGateEvidence` 硬编码 false、向严设计，人批豁免条款明文不豁免契约面）→ 升级 human；human 于本对话裁定「批准」合并（依据 = T6 三行零语义 + 两次预签 + 四分类预审 + 复核 PASS）。merge 执行见 `delivery/changes/INDEX.md` mergedInMain 列；remote push 归 human。
 - 留根：stale 指针（requirements/ADR/ARQ/CDQ 历史行 + INDEX origin 数据列 46 行）——读档按当时语境理解，实质修订时随批刷新（PROPOSAL §6）。
 - 操作项：主索引 / C-AI-KidPal-gov 图随 watcher 自刷新吃新 `.cbmignore`（`delivery/` 排除生效）；合并 main 后主 checkout 同理。
 - 登记不硬治：权限分类器误拦（§4-5）。
