@@ -114,9 +114,9 @@ for (const finding of asArray(handoff.findings)) {
   }
   if (!nonEmptyString(finding.severity)) errors.push(`${finding.findingId}.severity is required`);
   if (!['low', 'medium', 'high', 'critical'].includes(finding.riskTier)) errors.push(`${finding.findingId}.riskTier must be low|medium|high|critical`);
-  if (!['none', 'milestone-affecting'].includes(findingdelivery/milestonesImpact)) errors.push(`${finding.findingId}delivery/milestonesImpact must be none|milestone-affecting`);
-  if (!['none', 'attach-existing', 'create-workstream', 'needs-triage'].includes(findingdelivery/workstreamsRecommendation)) {
-    errors.push(`${finding.findingId}delivery/workstreamsRecommendation must be none|attach-existing|create-workstream|needs-triage`);
+  if (!['none', 'milestone-affecting'].includes(finding.deliveryImpact)) errors.push(`${finding.findingId}.deliveryImpact must be none|milestone-affecting`);
+  if (!['none', 'attach-existing', 'create-workstream', 'needs-triage'].includes(finding.planningRecommendation)) {
+    errors.push(`${finding.findingId}.planningRecommendation must be none|attach-existing|create-workstream|needs-triage`);
   }
   if (!Array.isArray(finding.blockingDecisions)) errors.push(`${finding.findingId}.blockingDecisions must be an array`);
   if (!nonEmptyArray(finding.suggestedTaskPackages) && asArray(finding.blockingDecisions).length === 0) {

@@ -195,8 +195,8 @@ if (Array.isArray(taskPackage.acceptance)) {
 
 if (hasSourceType && !isOneOf(taskPackage.sourceType, SOURCE_TYPES)) missing.push('sourceType(valid)');
 if (originType && !isOneOf(originType, ORIGIN_TYPES)) missing.push(`origin.type(valid: ${ORIGIN_TYPES.join('|')})`);
-if (nonEmptyString(taskPackagedelivery/milestonesImpact) && !isOneOf(taskPackagedelivery/milestonesImpact, DELIVERY_IMPACTS)) missing.push('deliveryImpact(valid)');
-if (nonEmptyString(taskPackagedelivery/workstreamsImpact) && !isOneOf(taskPackagedelivery/workstreamsImpact, PLANNING_IMPACTS)) missing.push('planningImpact(valid)');
+if (nonEmptyString(taskPackage.deliveryImpact) && !isOneOf(taskPackage.deliveryImpact, DELIVERY_IMPACTS)) missing.push('deliveryImpact(valid)');
+if (nonEmptyString(taskPackage.planningImpact) && !isOneOf(taskPackage.planningImpact, PLANNING_IMPACTS)) missing.push('planningImpact(valid)');
 if (nonEmptyString(taskPackage.riskTier) && !isOneOf(taskPackage.riskTier, RISK_TIERS)) missing.push('riskTier(valid)');
 
 // 并存一致性（tie-break = origin.type == sourceType，human-confirmed-plan 例外须 sourceType 缺省）
@@ -233,14 +233,14 @@ if (nonEmptyString(taskPackage.changeId)) {
   }
 }
 
-const planningRefs = Array.isArray(taskPackagedelivery/workstreamsRefs) ? taskPackagedelivery/workstreamsRefs : [];
-if (['attach-existing', 'create-workstream'].includes(taskPackagedelivery/workstreamsImpact) && planningRefs.length === 0) {
+const planningRefs = Array.isArray(taskPackage.planningRefs) ? taskPackage.planningRefs : [];
+if (['attach-existing', 'create-workstream'].includes(taskPackage.planningImpact) && planningRefs.length === 0) {
   missing.push('planningRefs(required when planningImpact attaches or creates workstream)');
 }
-if (taskPackagedelivery/workstreamsImpact === 'none' && planningRefs.length > 0) {
+if (taskPackage.planningImpact === 'none' && planningRefs.length > 0) {
   missing.push('planningRefs(empty when planningImpact=none)');
 }
-if (taskPackagedelivery/workstreamsImpact === 'needs-triage') {
+if (taskPackage.planningImpact === 'needs-triage') {
   missing.push('planningImpact must be resolved before verifier runs');
 }
 

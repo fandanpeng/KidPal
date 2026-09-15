@@ -314,7 +314,7 @@ if (!bearing.ok) {
   });
 }
 
-if (taskPackagedelivery/milestonesMilestoneStateChanged === true || taskPackage.milestoneStateChanged === true) {
+if (taskPackage.deliveryMilestoneStateChanged === true || taskPackage.milestoneStateChanged === true) {
   const milestones = resolve(projectDir, 'delivery/milestones/milestones.jsonl');
   const status = resolve(projectDir, 'delivery/milestones/STATUS.md');
   if (!existsSync(milestones) || !existsSync(status)) {
@@ -329,8 +329,8 @@ if (taskPackagedelivery/milestonesMilestoneStateChanged === true || taskPackage.
   }
 }
 
-if (taskPackagedelivery/workstreamsWorkstreamRequired === true || taskPackage.workstreamRequired === true) {
-  const refs = asArray(taskPackagedelivery/workstreamsRefs || taskPackagedelivery/workstreamsRef);
+if (taskPackage.planningWorkstreamRequired === true || taskPackage.workstreamRequired === true) {
+  const refs = asArray(taskPackage.planningRefs || taskPackage.planningRef);
   if (refs.length === 0) fail('planning workstream required but TaskPackage has no planningRef(s)', { changeId });
   const missingRefs = refs.filter((ref) => !existsSync(resolve(projectDir, ref)));
   if (missingRefs.length > 0) fail('planningRef(s) are missing', { missingRefs });

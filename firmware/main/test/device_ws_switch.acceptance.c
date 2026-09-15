@@ -861,7 +861,7 @@ TEST_CASE("device ws switch: 安全收尾——ECS shim 停服 + shim.py 归档 
      *    shim.py, no "archiv") which dir-orders ahead of any future delivery/changes/dev record,
      *    making this tooth red regardless of whether the record existed. */
     TEST_ASSERT_TRUE_MESSAGE(
-        wsa_scan_tree_both("delivery", "changes", "shim.py", "archiv", 1, NULL, hit, sizeof(hit)),
+        wsa_scan_tree_both("delivery/changes", "shim.py", "archiv", 1, NULL, hit, sizeof(hit)),
         "WSA-A6 RED: no record under delivery/changes/ mentions shim.py AND states an archiving "
         "(archiv*/归档, same file) — 归档记录缺失; 仅提及 shim.py 的文件不算归档记录");
 }
