@@ -36,6 +36,23 @@ host-vs-device 编译矩阵落在「INF-E2 兼容矩阵」一节（同一文档�
   门误判「无可识别断言」转红；因此**任何新增 C 单测文件都必须带至少一个真实 `assert()` 调用**
   作为逻辑守卫（例如反射到被测逻辑的不变式），而不是可有可无的摆设。
 
+## 冻结验收归档纪律（2026-09-15 起）
+
+- MVP/验证期冻结验收与普通单测完成其交付使命后**归档不删除**：统一 `git mv` 进
+  `firmware/main/test/acceptance/archive/`（逐件来源包与归档时点事实见该目录
+  `README.md`），并从 `host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS` 摘除，
+  不再编入 host runner 每轮全量跑。
+- 2026-09-15 两批归档（human 裁定，M1 阶段一已进入）：首批 13 件冻结验收（260829–
+  260911 批），随归档自然消红 4 条在册既存红（SU-E3 / KR-A6 / WSA-A4 / WSA-A6，见
+  `delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/existing-red-inventory.md`
+  R3–R6）；第二批 6 件普通 .test.c/.cpp 单测 + 仅被它们消费的 6 个被测实现。归档后
+  host runner 现役 = key_layer_dispatch（M1-K1a 冻结验收）+ host_infra_smoke（包 0
+  守卫）两件。
+- 后续纪律：归档件不得重新接线；M1+ 各包新写冻结验收/单测照 [C4.2]/[C4.3] 放置接线，
+  置于 smoke 之前；被改动行为需要回归守卫时由改动包 acceptance-author 新写钉点，不复活
+  整份归档件；仅被归档测试消费的被测实现一并从 host 构建摘除（新包需要时随新验收接线
+  回来）。
+
 ## [C4.3] 命名约定（NAMING CONVENTION）
 
 - 后缀：冻结验收文件统一用 `*.acceptance.c`；普通单测文件用 `*.test.c`。本文件首个冻结样例即
@@ -154,7 +171,8 @@ manifest 事实，不臆测。
 > 动机与首用：human 一次性授权把 Happy Flow 各页在 host 真渲染后整帧落盘存档
 > （`delivery/changes/dev/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
 > 任何 pod 想给「host 可渲染的页面/控件」留截图证据，照此办理，不必重新趟坑。
-> 参考实现 = `firmware/main/test/happy_flow_capture.test.c`（普通 `.test.c`，非冻结件）。
+> 参考实现 = `firmware/main/test/acceptance/archive/happy_flow_capture.test.c`
+> （2026-09-15 归档移位，配方仍有效；需要截图时按本节配方接线复活或照抄写新测试文件）。
 
 ### 能力面：渲染缝的落盘入口
 

@@ -8,102 +8,24 @@
 # into firmware/main/test/ (or a per-module <subsystem>/test dir); add each such file
 # to `HOST_ACCEPTANCE_SRCS` below so it is compiled into this host runner.
 #
+# 2026-09-15 归档（human 裁定，M1 阶段一已进入）：MVP/验证期 13 个冻结验收（260829–
+# 260911 批）已移入 ../acceptance/archive/（清单与纪律见该目录 README.md），不再编入
+# host runner 每轮全量跑。现役冻结验收仅剩 key_layer_dispatch（M1-K1a）；M1 后续包
+# （K2/K3/K4/N1b）各自新写冻结验收时在此追加，置于 host_infra_smoke 之前。
+# 2026-09-15 归档第二批（human 裁定）：6 个普通 .test.c/.cpp 单测（cascade / reminder /
+# capture / stack / provision / seam_bounds）与仅被它们消费的被测实现（home_p1/schedule_page/
+# story_page/char_stroke/art_assets/reminder_page.c 六个页面·资产模块）一并移入
+# ../acceptance/archive/（清单见该目录 README.md）。现役只剩 key_layer_dispatch +
+# host_infra_smoke 两件及其被测实现 key_gesture_parser.cc / kidpal_layer.c。
+#
 # The FROZEN acceptance file is consumed DIRECTLY from firmware/main/test/ (one
 # level up from this component dir) — single source of truth, never copied. A source
 # file outside the component source dir is fine here: this is a test-only project.
 set(HOST_ACCEPTANCE_SRCS
-    # The host smoke acceptance is listed LAST (registered first at runtime, unity
-    # registers TEST_CASE on `main` in reverse link order) so its `boundary` tooth — which
-    # asserts the seam exposes the NOT_RENDERED sentinel (-1) "before any frame is flushed"
-    # — runs against a FRESH process, before any render-producing test (incl. this package's
-    # home_p1 / schedule_p2 render teeth) flushes a frame. Keeping boundary first is the
-    # package-0 guard it needs (it cannot pass after any prior render in the process).
-    # 包 260829-schedule-p2 (方向 B) 置于列表最前：host runner 实测执行序 = 列表
-    # 逆序 (后注册先跑)，schedule 的 LVGL 真帧渲染测试须在 host_infra_smoke 的
-    # nothing-rendered 边界齿之后执行，否则缝的 rendered 态会误红该守卫。
-    "../../schedule_p2.acceptance.c"
-    # 被测实现（5 个 frozen offline contract 函数 + 纯 LVGL 渲染面 -> lvgl include
-    # 由本组件 REQUIRES lvgl 提供；P2-A3 render 齿由本接线兑现真跑）。
-    # 相对 host_app/main 为 ../../../。
-    "../../../display/schedule_page.c"
-    # 包 3 (260829-session-logic)：冻结验收 + 被测纯逻辑实现（seam 头在 firmware/main/，
-    # 相对 host_app/main 为 ../../../）。
-    "../../session_logic.acceptance.c"
-    "../../../session_state_machine.cc"
+    # 被测实现（key_layer_dispatch 行为齿的强符号源：key_route_layer 决策表 +
+    # kidpal_layer_pop_transients 清层步骤；相对 host_app/main 为 ../../../）。
     "../../../key_gesture_parser.cc"
-    "../../device_ws_switch.acceptance.c"
-    "seam_bounds.test.c"
-    "../../ws_provision.test.cpp"
-    # 包 260829-voice-roundtrip (方向 B)：冻结验收 + 被测纯逻辑实现（view_router 强符号
-    # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../）。
-    "../../voice_roundtrip_b.acceptance.c"
-    "../../../display/view_router.c"
-    # 包 260829-home-p1 (首页常显信息牌)：冻结验收 + 被测纯逻辑实现（home_p1 强符号覆盖
-    # weak 哨兵; 渲染缝 additive 在 host_infra_seam.c）。
-    "../../home_p1.acceptance.c"
-    "../../../display/home_p1.c"
-    # 包 260829-char-stroke (查生字 P4)：冻结验收 + 被测纯逻辑实现 (char_stroke 强符号
-    # 覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
-    "../../char_stroke.acceptance.c"
-    "../../../display/char_stroke.c"
-    # 包 260829-schedule-reminder (提醒弹窗消费面)：冻结验收 + 被测纯 C 实现
-    # (reminder_page 强符号覆盖 weak 哨兵的关键——不编入则冻结离线契约仍红;
-    #  相对 host_app/main 为 ../../../; 提示音缝在本模块内是弱默认, 设备侧强定义在
-    #  mcp_server.cc, host 不参与)。
-    "../../schedule_reminder_b.acceptance.c"
-    "../../../display/reminder_page.c"
-    # 包 260829-schedule-reminder 自带单测（非冻结件）：fire_at 日历/偏移边界、UTF-8 码点
-    # 安全截断、known-id 集满淘汰保护驻留/排队项、满队列 FIFO 与 V18 顶替顺序。
-    "../../reminder_page.test.c"
-    # 包 260829-story-p3 (P3 故事页)：冻结验收 + 被测纯逻辑/纯 LVGL 实现 (story_page 强
-    # 符号覆盖弱哨兵的关键——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
-    "../../story_p3.acceptance.c"
-    "../../../display/story_page.c"
-    # 包 260907-hardware-validation (包 9b) 真机语音轮 2 修复自带守卫（非冻结件, [C4.3]
-    # 普通 .test.c）：钉 ssl_receive 4096B 栈预算的结构尺寸 + 树级扫描「大栈缓冲不得回潮」
-    # + 就地解析语义。相对 host_app/main 为 ../../。
-    "../../story_page_stack.test.c"
-    # 包 260901-ui-art-integration (包子 U)：冻结验收 + 被测纯逻辑资产层 (art_assets 强
-    # 符号覆盖 weak 哨兵——不编入则冻结离线契约仍红; 相对 host_app/main 为 ../../../)。
-    # **必须置于 host smoke acceptance 之前**（smoke 保持列表末位 = 最先执行，
-    # 包 0 boundary 齿注册序守卫; 验收 test 1 结构齿 6 校验此序）。
-    "../../ui_art_integration.acceptance.c"
-    "../../../display/art_assets.c"
-
-    # 包 260907-hardware-validation (包 9b)：冻结验收（纯树级结构齿, 自身只依赖
-    # unity + 标准 C, 无新增被测符号链接——运行时以文本读工作树断言 F2 接线 /
-    # RTC·SHTC3 driver 绑定 / 守卫, 见文件头 Run protocol）。**必须置于 host smoke
-    # acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary 齿注册序守卫; 本包
-    # 验收 test 4 tooth 1 校验此序）。相对 host_app/main 为 ../../。
-    "../../hardware_validation.acceptance.c"
-
-    # 包 260911-key-route-a1 (键位路线落地 PKG-1)：冻结验收（纯树级结构齿, 自身只依赖
-    # unity + 标准 C, 无新增被测符号链接——运行时以文本读工作树断言板级 KEY GPIO 注册 /
-    # parser 喂入 / 路由 dispatch / BOOT 去对话化, 见文件头 Run protocol）。
-    # **必须置于 host smoke acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary
-    # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
-    "../../key_route_a1.acceptance.c"
-
-    # 包 260911-screen-unification (PKG-2 归一屏)：冻结验收 + 被测纯逻辑前台 layer 栈
-    # (kidpal_layer.c 强符号覆盖 weak 哨兵——不编入则冻结离线契约仍红; 相对 host_app/
-    # main 为 ../../../)。**必须置于 host smoke acceptance 之前**（smoke 保持末位 =
-    # 最先执行, 包 0 boundary 齿注册序守卫; 验收 test s2 结构齿校验此序）。
-    "../../screen_unification.acceptance.c"
     "../../../display/kidpal_layer.c"
-
-    # 包 260911-render-pages (批次③ V3 整屏还原 + 五态演出): 冻结验收 v3_restore
-    # (五态纯逻辑契约 6 齿 + 页面换皮框族/字体分型/提醒压暗等) + 被测纯逻辑五态内容
-    # 选择模块 (kidpal_voice_states.c 强符号覆盖 weak 哨兵——不编入则冻结离线契约仍红;
-    # 相对 host_app/main 为 ../../../)。**必须置于 host smoke acceptance 之前**（smoke
-    # 保持列表末位 = 最先执行, 包 0 boundary 齿注册序守卫; v3_restore 无渲染齿, 不影响
-    # 该守卫）。
-    "../../v3_restore.acceptance.c"
-    "../../../display/kidpal_voice_states.c"
-
-    # happy_flow_capture.test.c (human 一次性授权截图轮, 2026-09-13): Happy Flow 各页
-    # host 真渲染 -> 渲染缝 additive BMP 落盘缝。普通 .test.c 非冻结件。置于 smoke 之前
-    # （执行序 = 列表逆序: 包 0 boundary 齿仍最先跑, 本文件随后, 既有齿不受扰动）。
-    "../../happy_flow_capture.test.c"
 
     # 包 260915-m1-k1a-key-layer-dispatch（键位对账①②⑤ 落地面 / 分层派发改造）：冻结
     # 验收（路由级决策表 key_route_layer + 显式清层步骤 kidpal_layer_pop_transients 的行为
@@ -112,14 +34,7 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
     "../../key_layer_dispatch.acceptance.c"
 
-    # 包 260915-m1-k1a-key-layer-dispatch KD-A5 真机轮修复回归守卫（非冻结件, [C4.3]
-    # 普通 .test.c）：树级结构齿钉「OVERLAY_CLOSE 在 VOICE 覆盖层顶层级联结束会话
-    # （front_is_voice + ToggleChatState + dismiss 三件套）+ 提醒弹窗关层路径不级联
-    # （非会话语义不变）+ front_is_voice 判据单层落点」。置于 smoke 之前（执行序 =
-    # 列表逆序: 包 0 boundary 齿仍最先跑）。相对 host_app/main 为 ../../。
-    "../../key_layer_session_cascade.test.c"
-
-    # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
+    # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
 
