@@ -93,7 +93,11 @@ typedef enum {
     GLOBAL_ACT_NONE = 0,
     GLOBAL_ACT_SESSION_TOGGLE,
     GLOBAL_ACT_HOME,
-    GLOBAL_ACT_PAGE_NEXT
+    GLOBAL_ACT_PAGE_NEXT,
+    /* 覆盖层关层回原页（v1.39 隔离 + v1.36 返回上一层 的统一路由动作）。
+     * append-only 追加位：既有四值零偏移（TaskPackage 260915-m1-k1a-key-layer-dispatch,
+     * key_layer_dispatch.acceptance.c seam [1] 钉值 = 4）。 */
+    GLOBAL_ACT_OVERLAY_CLOSE = 4
 } global_action_t;
 
 /* 全局路由表（spec §4.0 全局按键手势表，仅全局层——无页面参数、context-free）：
@@ -107,6 +111,20 @@ typedef enum {
  *   BOOT LONG_PRESS / DOUBLE_CLICK -> GLOBAL_ACT_NONE
  *   任何越界键位（>=KEY_ID_COUNT，如 PWR）-> GLOBAL_ACT_NONE */
 global_action_t key_route_global(key_id_t key, key_gesture_t g);
+
+/* layer-aware 全局路由表（TaskPackage 260915-m1-k1a-key-layer-dispatch）：
+ * overlay_top 由 dispatch 层归一化（0 = 主页面基层，非 0 = 覆盖层顶层），路由表自身
+ * 保持 context-free 纯逻辑（key_gesture_parser.cc 单源）：
+ *   overlay_top != 0（覆盖层顶层）:
+ *     KEY  CLICK      -> GLOBAL_ACT_SESSION_TOGGLE（会话主轴零回归；提醒弹窗 KEY 关闭
+ *                        由 dispatch 先交顶层裁决函数，裁决消费即不走路由）
+ *     KEY  LONG_PRESS -> GLOBAL_ACT_OVERLAY_CLOSE（返回上一层 = 关层回原页）
+ *     BOOT CLICK      -> GLOBAL_ACT_OVERLAY_CLOSE（v1.39 隔离 = 关顶层回原页、不产翻页）
+ *     其余（双击族 / BOOT 长按）-> GLOBAL_ACT_NONE
+ *   overlay_top == 0（主页面基层）: 与 key_route_global(key, g) 全表等价
+ *     （主页面 BOOT 单击翻页 / KEY 长按回首页，§2.3 主页面矩阵行零回归）。
+ *   越界键位（>= KEY_ID_COUNT，含 PWR）-> GLOBAL_ACT_NONE。 */
+global_action_t key_route_layer(key_id_t key, key_gesture_t g, int overlay_top);
 
 #ifdef __cplusplus
 }

@@ -465,30 +465,16 @@ void kidpal_render_node_end_provision(void)
  * 阶段 B：BOOT 双按翻页（本地浏览层生命周期）
  * ---------------------------------------------------------------------- */
 
-void kidpal_render_node_cycle_next(void)
+/* 渲染指定 KidPal 页到 s_kidpal_scr（干净重建 + 注入缓存数据）。供 cycle_next 翻页与
+ * dismiss_front_overlay 关层回原页共用（单一页面渲染权威，KD-A2 清层/进页分离后翻页
+ * 逻辑一并收敛于此）。必须持有 lvgl_port_lock。本函数只画内容页——页面归属由调用方
+ * 经 layer 栈裁决，函数体零层栈副作用（不含任何 kidpal_layer_pop）。 */
+static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 {
-    lvgl_port_lock(0);
-
-    if (s_kidpal_scr == NULL) {
-        lvgl_port_unlock();
-        ESP_LOGW(RN_TAG, "cycle_next called before init");
-        return;
-    }
-
-    /* 手动翻页 = 用户主动接管导航：清 transient 前台（服务端页/提醒/语音），回到本地
-     * 浏览基层。 */
-    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
-    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
-    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
-    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
-
-    kidpal_page_id_t next = static_cast<kidpal_page_id_t>(
-        (static_cast<int>(s_local_page) + 1) % KP_PAGE_COUNT);
-
     lv_obj_clean(s_kidpal_scr);
     s_kidpal_img = NULL; /* clean 已销毁，避免悬垂 */
 
-    switch (next) {
+    switch (page) {
         case KP_PAGE_HOME: {
             /* show_home 内联逻辑；s_kidpal_scr 已 clean，不必二次 clean。 */
             s_kidpal_img = lv_image_create(s_kidpal_scr);
@@ -507,7 +493,7 @@ void kidpal_render_node_cycle_next(void)
             kidpal_home_p1_render_frame();
             lv_screen_load(s_kidpal_scr);
             s_local_page = KP_PAGE_HOME;
-            ESP_LOGI(RN_TAG, "cycle -> HOME (P1)");
+            ESP_LOGI(RN_TAG, "render page HOME (P1)");
             break;
         }
         case KP_PAGE_CHAR: {
@@ -523,7 +509,7 @@ void kidpal_render_node_cycle_next(void)
                 lv_obj_center(lbl);
             }
             s_local_page = KP_PAGE_CHAR;
-            ESP_LOGI(RN_TAG, "cycle -> CHAR (P4) has_data=%d", s_has_char_data ? 1 : 0);
+            ESP_LOGI(RN_TAG, "render page CHAR (P4) has_data=%d", s_has_char_data ? 1 : 0);
             break;
         }
         case KP_PAGE_SCHEDULE: {
@@ -552,7 +538,7 @@ void kidpal_render_node_cycle_next(void)
                 );
             }
             s_local_page = KP_PAGE_SCHEDULE;
-            ESP_LOGI(RN_TAG, "cycle -> SCHEDULE (P2) n=%d", s_sched_n);
+            ESP_LOGI(RN_TAG, "render page SCHEDULE (P2) n=%d", s_sched_n);
             break;
         }
         case KP_PAGE_STORY: {
@@ -573,13 +559,79 @@ void kidpal_render_node_cycle_next(void)
                 kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
             }
             s_local_page = KP_PAGE_STORY;
-            ESP_LOGI(RN_TAG, "cycle -> STORY (P3) count=%d", s_story_list.count);
+            ESP_LOGI(RN_TAG, "render page STORY (P3) count=%d", s_story_list.count);
             break;
         }
         default:
             s_local_page = KP_PAGE_HOME;
             break;
     }
+}
+
+/* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层
+ * （VOICE / SERVER_PAGE / REMINDER）-> 1；LOCAL_PAGE / PROVISION / NONE -> 0。 */
+int kidpal_render_node_front_is_overlay(void)
+{
+    int top = kidpal_layer_top(&s_layer_stack);
+    return (top == KIDPAL_LAYER_VOICE ||
+            top == KIDPAL_LAYER_SERVER_PAGE ||
+            top == KIDPAL_LAYER_REMINDER) ? 1 : 0;
+}
+
+/* 前台顶层是否为会话类覆盖层（VOICE）：OVERLAY_CLOSE 关层级联判据（KD-A5 真机 r1
+ * 修复）。只认 VOICE 单层——提醒弹窗 / 服务端推送页等非会话覆盖层关层语义不变
+ * （本就无会话）。与 front_is_overlay 同为无锁整数读，板级 dispatch 消费。 */
+int kidpal_render_node_front_is_voice(void)
+{
+    return kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE ? 1 : 0;
+}
+
+/* 设备侧显式关层步骤（「关窗」唯一入口，KD-A2 清层/进页分离）：前台为覆盖层时经
+ * 显式清层步骤出掉 transient 覆盖层回基层，并重渲基层当前页——关层归关层、不产翻页
+ * 动作（v1.39 覆盖层隔离口径）。内部消费 kidpal_layer_pop_transients（单一清层事实源，
+ * 不另写逐层 pop 循环）。 */
+void kidpal_render_node_dismiss_front_overlay(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+
+    if (kidpal_render_node_front_is_overlay() != 0) {
+        (void)kidpal_layer_pop_transients(&s_layer_stack);
+        kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+        rn_render_kidpal_page_locked(static_cast<kidpal_page_id_t>(s_local_page));
+    }
+    rn_voice_chrome_front_locked();
+
+    lvgl_port_unlock();
+    ESP_LOGI(RN_TAG, "dismiss_front_overlay: LOCAL_PAGE front (layer top=%d)",
+             kidpal_layer_top(&s_layer_stack));
+}
+
+void kidpal_render_node_cycle_next(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        ESP_LOGW(RN_TAG, "cycle_next called before init");
+        return;
+    }
+
+    /* 手动翻页 = 用户主动接管导航：经显式清层步骤（kidpal_layer_pop_transients）出掉
+     * transient 前台（服务端页/提醒/语音）回基层——「关窗」不再依赖本函数开头逐层
+     * kidpal_layer_pop 的副作用（requirements §2.3 对账 ①, KD-A2 清层/进页分离；清层
+     * 只住显式步骤），进页归进页。 */
+    (void)kidpal_layer_pop_transients(&s_layer_stack);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+
+    kidpal_page_id_t next = static_cast<kidpal_page_id_t>(
+        (static_cast<int>(s_local_page) + 1) % KP_PAGE_COUNT);
+
+    rn_render_kidpal_page_locked(next);
 
     /* 浏览页前台：五态姿态/气泡退隐（chrome 显隐前台维度）。 */
     rn_voice_chrome_front_locked();

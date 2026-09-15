@@ -1,0 +1,152 @@
+{
+  "changeId": "260915-m1-k4-reminder-overlay-unify",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M1-home-qa",
+    "upstreamFrozen": "",
+    "workstream": "m1-home-qa"
+  },
+  "subsystem": "firmware",
+  "story": "S-F1.4 · 日程提醒（AC1–AC6）",
+  "planRef": "delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线——schedule_reminder_b 套齿在 260915-m1-k1a-key-layer-dispatch 成批改后的新基线上复核）",
+  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m1-home-qa/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "host-teeth",
+    "state-machine",
+    "device-round"
+  ],
+  "acceptance": [
+    "RM-A1: 提醒弹窗四态统一骨架——版式与语音轮三态同一骨架（左小伴 pose-jump + 右大字事项/时间，WF-B-04），复用 260915-m1-k3-voice-round-ui 建立的骨架（不另建）；三件套同时发生（提示音 + 语音读出 + 弹窗驻留）",
+    "RM-A2: 最高层覆盖——提醒弹出时压过查字窗/录音态/播报中等任何前台内容；置顶期间 KEY/BOOT 按弹窗语义处理、不穿透底层窗口（§2.2 层级口径）",
+    "RM-A3: 录音态排队例外——录音中提醒到达 = 排队延后、录音会话结束立刻弹（防提醒 TTS 混进录音内容）；这是层级口径唯一例外",
+    "RM-A4: 排队不叠屏——弹窗期间另一条提醒到达排队、当前弹窗关闭后下一条自动弹出（AC3）",
+    "RM-A5: 去重不重复弹——同一提醒云端重算/重推不重复弹窗（AC4）",
+    "RM-A6: 弹窗驻留到按键、不设无操作自动消失（AC1/AC2 + 补充规则驻留口径）；KEY = 关闭回当前页、BOOT = 关闭回原页不翻页（读 key-layer-dispatch 分层裁决）",
+    "RM-A7: 过期档位不补发——已过时刻的档位不补发不追催（补充规则过期口径）",
+    {
+      "id": "RM-A8: 真机确认轮（human 持板）——弹窗演出/最高层覆盖/录音排队例外真机确认；证据落 changes/dev/<changeId>/",
+      "kind": "structural"
+    },
+    "RM-A9: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿（schedule_reminder_b 新基线）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/reminder_overlay_unify.acceptance.c"
+  ],
+  "exitCriteria": [
+    "RM-E1: 范围纪律——三段阶梯时刻/范围口径/权限 = 云侧数据面，本包只做板端弹窗演出与层级（提醒推送链路 MVP 已交付，云侧零改动）",
+    "RM-E2: 需求面零修订——docs/requirements.md 不动；发现冲突走 spec-lane 逃生门",
+    "RM-E3: 骨架复用纪律——只用 voice-round-ui 建的骨架，改骨架须回 owner 包登记，不得 fork"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "delivery/milestones/milestones.jsonl"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#S-F1.4",
+    "docs/requirements.md#S-F1.4-AC2",
+    "docs/requirements.md#S-F1.4-AC6",
+    "docs/requirements.md#§2.2",
+    "delivery/milestones/milestones.jsonl#M1-home-qa"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件提醒弹窗演出 + 层级语义，零 docs 面改动：四态统一裁定（v1.23/v1.24）与层级口径（v1.44）已冻结于 requirements §2.2、契约面只读；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 26,
+  "dependsOn": [
+    "260915-m1-k1a-key-layer-dispatch",
+    "260915-m1-k2-keybar-three-slot",
+    "260915-m1-k3-voice-round-ui"
+  ],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "M1块④-四态统一骨架（不单独设计）",
+      "summary": "v1.23/v1.24 human 裁：提醒弹窗与语音轮三态同一版式骨架，原白底描边硬投影弹窗形态作废——本包复用 voice-round-ui 骨架只换 pose 与内容。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F1.4"
+      ],
+      "landsIn": "acceptance:RM-A1"
+    },
+    {
+      "decision": "M1块④-提醒最高层覆盖",
+      "summary": "v1.44 层级口径：提醒 = 最高层覆盖（压过查字窗/录音态/播报中），置顶期间按键不穿透；唯一例外 = 录音态排队延后。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F1.4-AC6"
+      ],
+      "landsIn": "acceptance:RM-A2"
+    },
+    {
+      "decision": "M1块④-录音态排队例外",
+      "summary": "录音期间提醒排队延后、录音会话结束立刻弹（防提醒 TTS 混进录音内容，§2.2 层级口径唯一例外）。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F1.4-AC6"
+      ],
+      "landsIn": "acceptance:RM-A3"
+    },
+    {
+      "decision": "M1块④-弹窗驻留到按键",
+      "summary": "v1.14/v1.23 驻留口径：驻留到按键、不设无操作自动消失——提醒比常显信息重要，过夜驻留无害。",
+      "sourceRefs": [
+        "docs/requirements.md#S-F1.4"
+      ],
+      "landsIn": "acceptance:RM-A6"
+    },
+    {
+      "decision": "M1块④-BOOT新语义生效",
+      "summary": "弹窗内 BOOT = 关闭回原页不翻页（v1.39 隔离口径）——消费 key-layer-dispatch 的分层裁决，依赖其先行合并。",
+      "sourceRefs": [
+        "docs/requirements.md#S-F1.4-AC2",
+        "docs/requirements.md#§2.3"
+      ],
+      "landsIn": "acceptance:RM-A6"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "提醒弹窗演出 + 最高层覆盖 + 录音排队例外",
+      "owner": "260915-m1-k4-reminder-overlay-unify",
+      "note": "弹窗演出/层级/排队 owner = 本包；分层裁决机制 owner = key-layer-dispatch（消费）、骨架 owner = voice-round-ui（复用）——三 owner 边界已在 crossPackageBehaviors 对齐。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_receive"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_raise_next"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.h",
+        "symbol": "kidpal_render_node_begin_page"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块④）。launch 硬前置 = key-layer-dispatch 已合并（schedule_reminder_b 钉点新基线 + 分层裁决）+ voice-round-ui 已合并（骨架复用）。包级 plan.md = 全量义务（planRef 已指）。禁改 docs/contracts/** 与 docs/requirements.md。",
+  "redBaselineCommand_note": "本包 launch 须在 key-layer-dispatch 合并后（schedule_reminder_b 钉点新基线），避免两包同时改同一验收套件"
+}

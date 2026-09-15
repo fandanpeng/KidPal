@@ -107,6 +107,29 @@ void kidpal_render_node_end_provision(void);
 void kidpal_render_node_cycle_next(void);
 
 /*
+ * 前台归一化查询（layer 栈 owner 侧，TaskPackage 260915-m1-k1a-key-layer-dispatch）：
+ * 前台 owner ∈ {VOICE, SERVER_PAGE, REMINDER} -> 1（覆盖层顶层）；LOCAL_PAGE /
+ * PROVISION / CHAT / NONE -> 0（配网态按键语义零触碰）。板级按键 dispatch 消费它做
+ * layer_top 分流。
+ */
+int kidpal_render_node_front_is_overlay(void);
+
+/*
+ * 前台顶层是否为会话类覆盖层（VOICE，KD-A5 关层级联判据）：1 = VOICE 顶层；0 = 其它
+ * （提醒弹窗 / 服务端推送页 / 基层 / 配网）。板级 OVERLAY_CLOSE 消费它决定是否级联
+ * 结束会话——会话类覆盖层关层 = 结束会话回原页（requirements §2.3「问答·聆听/思考」
+ * 行）；提醒弹窗等非会话覆盖层关层语义不变（本就无会话）。
+ */
+int kidpal_render_node_front_is_voice(void);
+
+/*
+ * 设备侧显式关层步骤（「关窗」唯一入口，KD-A2 清层/进页分离）：前台为覆盖层
+ * （front_is_overlay()）时出掉 transient 层回基层并重渲基层页；内部消费
+ * kidpal_layer_pop_transients（单一清层事实源），永不映射翻页/cycle_next。
+ */
+void kidpal_render_node_dismiss_front_overlay(void);
+
+/*
  * 注入 RTC 时间（CustomBoard::InitializeSensors() 读完后调用）。
  * hour: 0..23, minute: 0..59。
  */

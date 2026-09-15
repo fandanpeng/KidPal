@@ -943,15 +943,18 @@ int kidpal_reminder_key(kidpal_reminder_t *s, key_id_t key, key_gesture_t g,
         return KRM_KEY_DISMISS;
     }
     if (key == KEY_ID_BOOT && g == KEY_GESTURE_CLICK) {
-        s->has_shown = 0; /* 关闭并照常翻页：页序取包 3 底座 key_page_next 单源 */
+        s->has_shown = 0; /* 关闭并回原页不翻页：覆盖层 BOOT 密封口径（v1.39 隔离,
+                           * requirements §2.3 提醒弹窗行——覆盖层内 BOOT 不产翻页动作,
+                           * 260915-m1-k1a KD-A4 修订） */
         memset(&s->shown, 0, sizeof(s->shown));
-        *page_out = key_page_next(current);
+        *page_out = current;
         return KRM_KEY_DISMISS;
     }
     if (key == KEY_ID_KEY && g == KEY_GESTURE_LONG_PRESS) {
-        s->has_shown = 0; /* 全局回首页（所有页面一致，弹窗不得吞全局手势） */
+        s->has_shown = 0; /* 关层回原页：v1.36 返回上一层在覆盖层顶层的实例, 不再
+                           * 恒回首页（KD-A3 layer-aware 裁决, 260915-m1-k1a KD-A4 修订） */
         memset(&s->shown, 0, sizeof(s->shown));
-        *page_out = PAGE_P1;
+        *page_out = current;
         return KRM_KEY_DISMISS;
     }
     return KRM_KEY_PASS; /* BOOT 长按 / 双击 / 越界键位：不吞、驻留不变 */

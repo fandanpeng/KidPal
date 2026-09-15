@@ -1,0 +1,230 @@
+{
+  "changeId": "260915-m1-k1a-key-layer-dispatch",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M1-home-qa",
+    "upstreamFrozen": "",
+    "workstream": "m1-home-qa"
+  },
+  "subsystem": "firmware",
+  "story": "无 story——共享底座键位对账项；语义权威 = docs/requirements.md §2.3 按键手势（权威键位定义）+ §2.2 键帽条行（覆盖层 BOOT 隔离口径 v1.39）",
+  "planRef": "delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单——前批有效基线 104/4，四条在册既存红见 260911-key-route-a1 redBaselineResult 裁定）",
+  "redBaselineResult": "2026-09-15 acceptance-author 本 worktree 复跑 = 129 Tests / 5 Failures / 0 Ignored（launch 侧同日 129/4）。比对：Tests 零差异；Failures +1 = RMD-A5（schedule_reminder_b.acceptance.c:1157）——KD-A4 钉点成批修订落盘后的设计态义务红（旧口径齿对旧实现天然绿，launch 侧实跑先于修订），非意外新增。在册既存红 4 条不变：SU-E3:1010 / KR-A6:636（docs/spec.md 归档悬空同根）、WSA-A4:663 / WSA-A6:830（owner=260903-device-ws-switch）。有效基线 = 129/5，终跑判据 = 相对本基线零新增红 + 本包新齿全绿（新齿接线后总数增长，不以总数相等判读）。详 delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/red-baseline-freeze.md",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m1-home-qa/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "host-teeth",
+    "state-machine",
+    "device-round"
+  ],
+  "acceptance": [
+    "KD-A1: 覆盖层 BOOT 隔离机制齿——按键 dispatch 层按 layer_top 分流：覆盖层（提醒弹窗/查字窗/语音轮演出）为顶层时 BOOT = 关闭顶层回原页、不产翻页动作；机制级断言（layer 分流符号/路由级）而非纯行为断言",
+    "KD-A2: cycle_next 清层与进页分离——「关窗」不再依赖翻页函数开头清 transient 层的副作用，清层逻辑独立成显式步骤；主页面 BOOT 单击翻页路径零回归（§2.3 主页面矩阵行）",
+    "KD-A3: KEY 长按返回上一层——覆盖层顶层时 KEY 长按 = 关层回原页；主页面时 = 回首页（现行页集下「上一层」= 首页，逐层返回语义随页集扩展自然成立）；原 GLOBAL_ACT_HOME 硬路由改为 layer-aware 裁决",
+    "KD-A4: schedule_reminder_b.acceptance.c 验收钉点成批改——十余处「BOOT 关闭照常翻页」钉点按 v1.39 隔离口径成批修订（acceptance-author 权限内修订、留痕 + 不豁免验证），修订后该套齿全绿",
+    {
+      "id": "KD-A5: 真机确认轮（human 持板）——覆盖层内 BOOT = 关层回原页不翻页、主页面 BOOT = 翻页、KEY 长按返回上一层三行为真机手感确认；证据落 changes/dev/<changeId>/",
+      "kind": "structural"
+    },
+    "KD-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿（在册既存红非本包责任，判读随 review-packet 呈 supervisor）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/key_layer_dispatch.acceptance.c"
+  ],
+  "exitCriteria": [
+    "KD-E1: 范围纪律——页循环 4→3 / 撤 P4 常驻页 / 页序漂移对账（键位对账 ②）零触碰，归 M2 查字窗阶段；v1.47 P3 键位族（对账 ⑥）零触碰，归 M4",
+    "KD-E2: 需求面零修订——docs/requirements.md 不动；实现中发现与 §2.3 矩阵冲突走 spec-lane 逃生门（Track B），不预先立项",
+    "KD-E3: 键位对账登记更新——requirements §2.3 ⚠️ 对账块中 ①⑤ 项的实现侧状态由 Pod 外主线程在对账轮更新（本包只留实现证据，不改 spec）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "delivery/milestones/milestones.jsonl"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.2",
+    "delivery/milestones/milestones.jsonl#M1-home-qa"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件键路由派发层改造 + 既有验收钉点成批改，零 docs 面改动：requirements §2.3 权威矩阵已冻结（v1.39/v1.47 口径在文）、契约面只读、对账登记更新归主线程对账轮（KD-E3）；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 22,
+  "dependsOn": [],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "M1块①-覆盖层BOOT隔离",
+      "summary": "v1.39 隔离口径：覆盖层内 BOOT = 关闭顶层回原页、不翻页；实现须拆「BOOT 单击 = 板装配层硬路由翻页」耦合（dispatch 按 layer_top 分流 + cycle_next 清层/进页分离）。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.3",
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "acceptance:KD-A1"
+    },
+    {
+      "decision": "M1块①-KEY长按返回上一层",
+      "summary": "v1.36 升级：KEY 长按全局语义 = 返回上一层；实现现恒回首页（GLOBAL_ACT_HOME→show_home），本包接 layer-aware 返回。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.3"
+      ],
+      "landsIn": "acceptance:KD-A3"
+    },
+    {
+      "decision": "M1块①-验收钉点成批改",
+      "summary": "schedule_reminder_b.acceptance.c 十余处「BOOT 关闭照常翻页」钉点随隔离口径成批改——冻结验收钉点修订走 acceptance-author 权限内修订（留痕 + 不豁免验证）。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.3"
+      ],
+      "landsIn": "acceptance:KD-A4"
+    },
+    {
+      "decision": "M1块①-页循环4→3与P3键位族不在本包",
+      "summary": "键位对账 ②（页序漂移/撤 P4）归 M2、对账 ⑥（P3 键位族）归 M4——本包显式零触碰并留根。",
+      "sourceRefs": [
+        "docs/requirements.md#§6"
+      ],
+      "landsIn": "exitCriteria:KD-E1"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "layer_top 分层模型与覆盖层按键裁决（覆盖层 BOOT/KEY 长按语义）",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
+      "note": "分层模型 owner = 本包独占；keybar（页点显隐）、语音轮（覆盖层演出）、提醒弹窗（最高层覆盖）各包消费分层模型但不改裁决逻辑。"
+    },
+    {
+      "behavior": "KEY 长按「返回上一层」路由语义",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
+      "note": "承接 260911-key-route-a1 落地的 KEY 接线与全局路由表，长按语义由「恒回首页」升级为 layer-aware 返回；后续页内特例（M2/M4）在本包语义上扩展。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptance": "KD-A1: 覆盖层 BOOT 隔离机制齿——按键 dispatch 层按 layer_top 分流：覆盖层（提醒弹窗/查字窗/语音轮演出）为顶层时 BOOT = 关闭顶层回原页、不产翻页动作；机制级断言（layer 分流符号/路由级）而非纯行为断言",
+        "mutation": "key_route_layer 覆盖层列塌回基层表：overlay_top!=0 分支删除、一律落 key_route_global 结果（覆盖层与基层同表，BOOT 单击恢复翻页动作）",
+        "affectedTest": "test 1「key_route_layer 决策表」tooth 1（覆盖层 BOOT CLICK == OVERLAY_CLOSE 且 != PAGE_NEXT，双判别式独立咬住）+ tooth 2/3/4",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "路由级机制齿对「覆盖层列缺失」敏感；key_gesture_parser.cc 变异后还原 sha 同值。"
+      },
+      {
+        "acceptance": "KD-A1: 覆盖层 BOOT 隔离机制齿——按键 dispatch 层按 layer_top 分流：覆盖层（提醒弹窗/查字窗/语音轮演出）为顶层时 BOOT = 关闭顶层回原页、不产翻页动作；机制级断言（layer 分流符号/路由级）而非纯行为断言",
+        "mutation": "板级 dispatch 分流拆除：KEY/BOOT 手势回调恢复直连 keya_dispatch_global_action(key_route_global(...))（不看前台层）",
+        "affectedTest": "test 2「dispatch 分流接线」tooth 4（负向 needle 复活即红）+ tooth 5/6",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "板级文件变异；负向齿对直连接线复活敏感。"
+      },
+      {
+        "acceptance": "KD-A1: 覆盖层 BOOT 隔离机制齿——按键 dispatch 层按 layer_top 分流：覆盖层（提醒弹窗/查字窗/语音轮演出）为顶层时 BOOT = 关闭顶层回原页、不产翻页动作；机制级断言（layer 分流符号/路由级）而非纯行为断言",
+        "mutation": "kidpal_reminder_key 设备侧调用点删除（顶层覆盖层裁决函数回到设备侧零调用）",
+        "affectedTest": "test 2 tooth 7（kidpal_reminder_key 文件引用数回落到 2 = 定义+声明）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "对账①「正经裁决函数设备侧零调用」回归被钉。"
+      },
+      {
+        "acceptance": "KD-A2: cycle_next 清层与进页分离——「关窗」不再依赖翻页函数开头清 transient 层的副作用，清层逻辑独立成显式步骤；主页面 BOOT 单击翻页路径零回归（§2.3 主页面矩阵行）",
+        "mutation": "kidpal_layer_pop_transients 漏出 SERVER_PAGE（transient 集只剩 VOICE/REMINDER 两条）",
+        "affectedTest": "test 3 tooth 3（满覆盖栈 popped==3 断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "transient 集完整性被钉；kidpal_layer.c 变异还原 sha 同值。"
+      },
+      {
+        "acceptance": "KD-A2: cycle_next 清层与进页分离——「关窗」不再依赖翻页函数开头清 transient 层的副作用，清层逻辑独立成显式步骤；主页面 BOOT 单击翻页路径零回归（§2.3 主页面矩阵行）",
+        "mutation": "kidpal_layer_pop_transients 连 PROVISION 一起出栈（清层集合越界）",
+        "affectedTest": "test 3 tooth 4（PROVISION 不碰断言：popped==0 且 top 不变）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "配网层零触碰红线（KD-E1）被清层步骤侧钉住。"
+      },
+      {
+        "acceptance": "KD-A2: cycle_next 清层与进页分离——「关窗」不再依赖翻页函数开头清 transient 层的副作用，清层逻辑独立成显式步骤；主页面 BOOT 单击翻页路径零回归（§2.3 主页面矩阵行）",
+        "mutation": "cycle_next 函数体开头塞回 kidpal_layer_pop 逐层清层（恢复「关窗寄生翻页函数」副作用）",
+        "affectedTest": "test 3 tooth 6（cycle_next 函数区 kidpal_layer_pop(& 计数==0 断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "函数区切区齿对清层副作用回潮敏感（清层/进页分离的机制本体）。"
+      },
+      {
+        "acceptance": "KD-A3: KEY 长按返回上一层——覆盖层顶层时 KEY 长按 = 关层回原页；主页面时 = 回首页（现行页集下「上一层」= 首页，逐层返回语义随页集扩展自然成立）；原 GLOBAL_ACT_HOME 硬路由改为 layer-aware 裁决",
+        "mutation": "key_route_layer 覆盖层列 KEY LONG_PRESS 改回 GLOBAL_ACT_HOME（恒回首页硬路由回潮）",
+        "affectedTest": "test 1 tooth 2（覆盖层 KEY 长按 == OVERLAY_CLOSE 断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "v1.36 返回上一层语义被钉。"
+      },
+      {
+        "acceptance": "KD-A3: KEY 长按返回上一层——覆盖层顶层时 KEY 长按 = 关层回原页；主页面时 = 回首页（现行页集下「上一层」= 首页，逐层返回语义随页集扩展自然成立）；原 GLOBAL_ACT_HOME 硬路由改为 layer-aware 裁决",
+        "mutation": "板级 GLOBAL_ACT_HOME 分支改调翻页（主页面 KEY 长按回首页映射断）",
+        "affectedTest": "test 4 tooth 1（板级 kidpal_render_node_show_home 映射守卫）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "主页面矩阵行零回归守卫。"
+      },
+      {
+        "acceptance": "KD-A4: schedule_reminder_b.acceptance.c 验收钉点成批改——十余处「BOOT 关闭照常翻页」钉点按 v1.39 隔离口径成批修订（acceptance-author 权限内修订、留痕 + 不豁免验证），修订后该套齿全绿",
+        "mutation": "reminder_page.c kidpal_reminder_key BOOT CLICK 分支改回 key_page_next(current) 翻页 + KEY 长按分支改回 PAGE_P1（隔离口径实现回退）",
+        "affectedTest": "schedule_reminder_b.acceptance.c test RMD-A5-key 三处隔离钉点（rmd-B2 out==PAGE_P1 / rmd-B3 out==PAGE_P4 / rmd-B4 out==PAGE_P3）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "KD-A4 成批修订后的钉点对隔离实现回退敏感；断言语义不放松的自证。"
+      },
+      {
+        "acceptance": "KD-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿（在册既存红非本包责任，判读随 review-packet 呈 supervisor）",
+        "mutation": "key_layer_dispatch.acceptance.c 从 HOST_ACCEPTANCE_SRCS 注销（runner 不再编入本包齿）",
+        "affectedTest": "test 5 tooth 1（注册序守卫：needle 缺失即红）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "套件接线完整性守卫；smoke 末位序守卫同 tooth 覆盖。"
+      },
+      {
+        "acceptance": "KD-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿（在册既存红非本包责任，判读随 review-packet 呈 supervisor）",
+        "mutation": "GLOBAL_ACT_OVERLAY_CLOSE 枚举值偏移：从 append 追加改为插在 PAGE_NEXT 之前（OVERLAY_CLOSE 变 4、PAGE_NEXT 变 5 之外再偏移既有值）",
+        "affectedTest": "test 1 tooth 1（KLD_OVERLAY_CLOSE_VALUE==4 字面钉值）+ 既有 session_logic/screen_unification 数值齿连带",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "append-only 枚举纪律被钉；既有值偏移另有 session_logic 冻结齿兜底。"
+      }
+    ],
+    "_meta": "执行者=builder（acceptance-author 冻结期只落变异计划条目；actual mutation 由 builder/verifier workflow 执行并回填 sha 同值对与还原后全绿证据，先例 = 260829-schedule-reminder 37 条实载）。KD-A5（真机确认轮, kind=structural, human 持板）不入变异自证面。变异命名纪律：全部为行为级操作描述，未铸造与原符号共享可识别子串的变异符号名（KR-A3 _TOGGLE_X 教训）。"
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+        "symbol": "key_route_global"
+      },
+      {
+        "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+        "symbol": "InitializeButtons"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_key"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.h",
+        "symbol": "kidpal_render_node_begin_page"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块①基建）。与 260911-key-route-a1 同 seam 演进：其 KEY 接线/全局路由表已合并（mergeOrder 18），本包在其上做 layer-aware 派发改造。schedule_reminder_b 钉点成批改 = 冻结验收面行为碰撞，已申报走 acceptance-author 留痕修订。包级 plan.md = 全量义务（planRef 已指）。禁改 docs/contracts/** 与 docs/requirements.md。"
+}

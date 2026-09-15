@@ -1,0 +1,297 @@
+I (120053) Application: << 好嘞，那我就在这儿安安静静待着
+I (121443) SystemInfo: free sram: 50591 minimal sram: 43459
+I (123313) Application: << 你想聊啥随时喊我一声就行
+I (126693) StateMachine: State: speaking -> listening
+I (128393) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-128393 key=0 gesture=1
+I (128573) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-128573 action=1
+I (128573) kidpal_rn: show_chat: VOICE layer push (top=3)
+E (128573) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (128583) esp-tls-mbedtls: read error :-0x004C
+E (128583) EspSsl: SSL receive failed: -76
+I (128593) WS: Websocket disconnected
+I (128593) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (128603) wifi:Set ps type: 2, coexist: 0
+
+I (128603) StateMachine: State: listening -> idle
+I (128653) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=128441
+I (128653) kidpal_rn: voice_end: top=2
+I (130453) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-130453 key=0 gesture=1
+I (130643) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-130643 action=1
+I (130643) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (130643) StateMachine: State: idle -> connecting
+I (130643) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (130653) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (131773) esp-x509-crt-bundle: Certificate validated
+I (132203) WS: Session ID: 8325eb15-9cc8-445b-867a-ddf59c4bda50
+I (132203) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (132203) wifi:Set ps type: 0, coexist: 0
+
+W (132203) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (132213) StateMachine: State: connecting -> listening
+I (136173) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-136173 key=1 gesture=1
+I (136363) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-136363 action=4
+I (136403) kidpal_rn: render page HOME (P1)
+I (136403) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (140443) SystemInfo: free sram: 51247 minimal sram: 43459
+I (141823) I2S_IF: Pending out channel for in channel running
+I (141823) AudioCodec: Set output enable to false
+I (150443) SystemInfo: free sram: 51267 minimal sram: 43459
+I (159753) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-159753 key=0 gesture=1
+I (159943) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-159943 action=1
+I (159943) kidpal_rn: show_chat: VOICE layer push (top=3)
+E (159943) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (159943) esp-tls-mbedtls: read error :-0x004C
+E (159953) EspSsl: SSL receive failed: -76
+I (159953) WS: Websocket disconnected
+I (159953) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (159963) wifi:Set ps type: 2, coexist: 0
+
+I (159973) StateMachine: State: listening -> idle
+I (160013) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=159806
+I (160013) kidpal_rn: voice_end: top=2
+I (163133) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-163133 key=1 gesture=1
+I (163323) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-163323 action=3
+I (163523) kidpal_rn: render page CHAR (P4) has_data=0
+I (165433) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-165433 key=1 gesture=1
+I (165613) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-165613 action=3
+I (165623) kidpal_rn: render page SCHEDULE (P2) n=0
+I (167143) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-167143 key=1 gesture=1
+I (167323) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-167323 action=3
+I (167323) kidpal_rn: render page STORY (P3) count=0
+I (169123) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-169123 key=1 gesture=1
+I (169303) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-169303 action=3
+I (169353) kidpal_rn: render page HOME (P1)
+I (169443) SystemInfo: free sram: 57395 minimal sram: 43459
+W (170603) Display: System time is not set, tm_year: 70
+W (171653) Display: System time is not set, tm_year: 70
+W (172703) Display: System time is not set, tm_year: 70
+W (173743) Display: System time is not set, tm_year: 70
+W (174783) Display: System time is not set, tm_year: 70
+W (175783) Display: System time is not set, tm_year: 70
+W (176773) Display: System time is not set, tm_year: 70
+W (177763) Display: System time is not set, tm_year: 70
+W (178753) Display: System time is not set, tm_year: 70
+W (179743) Display: System time is not set, tm_year: 70
+I (179743) SystemInfo: free sram: 57395 minimal sram: 43459
+W (180773) Display: System time is not set, tm_year: 70
+W (181763) Display: System time is not set, tm_year: 70
+W (182753) Display: System time is not set, tm_year: 70
+W (183743) Display: System time is not set, tm_year: 70
+W (184773) Display: System time is not set, tm_year: 70
+W (185763) Display: System time is not set, tm_year: 70
+W (186753) Display: System time is not set, tm_year: 70
+I (187463) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-187463 key=0 gesture=1
+I (187653) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-187653 action=1
+W (187743) Display: System time is not set, tm_year: 70
+I (187753) StateMachine: State: idle -> connecting
+I (187753) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (187753) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (188853) esp-x509-crt-bundle: Certificate validated
+I (189283) WS: Session ID: 87b08aef-a337-47d0-ab61-84c224537168
+I (189283) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (189283) wifi:Set ps type: 0, coexist: 0
+
+W (189293) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (189303) StateMachine: State: connecting -> listening
+I (189303) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (192803) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (194293) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-194293 action=4
+I (194333) kidpal_rn: render page HOME (P1)
+I (194343) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (195213) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-195213 key=0 gesture=3
+I (196193) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-196193 key=1 gesture=1
+I (196373) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-196373 action=3
+I (196383) kidpal_rn: render page CHAR (P4) has_data=0
+I (197443) SystemInfo: free sram: 50923 minimal sram: 43459
+I (197473) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-197473 key=1 gesture=1
+I (197663) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-197663 action=3
+I (197673) kidpal_rn: render page SCHEDULE (P2) n=0
+I (201103) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-201103 action=2
+I (201153) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=200933
+I (201153) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (202083) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-202083 key=0 gesture=3
+I (207443) SystemInfo: free sram: 51007 minimal sram: 43459
+I (217443) SystemInfo: free sram: 51039 minimal sram: 43459
+I (227443) SystemInfo: free sram: 51019 minimal sram: 43459
+I (237443) SystemInfo: free sram: 51011 minimal sram: 43459
+I (247443) SystemInfo: free sram: 51039 minimal sram: 43459
+I (253803) Application: >> 嗯
+I (253923) StateMachine: State: listening -> speaking
+I (260713) Application: << No response from OpenClaw
+I (260973) I2S_IF: Mode 0 need extend bits 64 to 32
+I (260983) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (260983) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (261003) Adev_Codec: Open codec device OK
+I (261003) AudioCodec: Set output enable to true
+I (263443) SystemInfo: free sram: 51155 minimal sram: 43459
+I (263603) StateMachine: State: speaking -> listening
+I (268903) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-268903 action=1
+E (268963) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (268963) esp-tls-mbedtls: read error :-0x004C
+E (268963) EspSsl: SSL receive failed: -76
+I (268963) WS: Websocket disconnected
+I (268973) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (268973) wifi:Set ps type: 2, coexist: 0
+
+I (268983) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (268983) StateMachine: State: listening -> idle
+I (269033) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=268823
+I (269033) kidpal_rn: voice_end: top=2
+I (278443) SystemInfo: free sram: 57851 minimal sram: 43459
+I (278983) I2S_IF: Pending out channel for in channel running
+I (278983) AudioCodec: Set output enable to false
+W (279443) Display: System time is not set, tm_year: 70
+W (280443) Display: System time is not set, tm_year: 70
+W (281443) Display: System time is not set, tm_year: 70
+W (282443) Display: System time is not set, tm_year: 70
+W (283443) Display: System time is not set, tm_year: 70
+W (284443) Display: System time is not set, tm_year: 70
+W (285443) Display: System time is not set, tm_year: 70
+W (286443) Display: System time is not set, tm_year: 70
+W (287453) Display: System time is not set, tm_year: 70
+W (288443) Display: System time is not set, tm_year: 70
+I (288453) SystemInfo: free sram: 57551 minimal sram: 43459
+W (289443) Display: System time is not set, tm_year: 70
+W (290443) Display: System time is not set, tm_year: 70
+W (291443) Display: System time is not set, tm_year: 70
+W (292443) Display: System time is not set, tm_year: 70
+W (293443) Display: System time is not set, tm_year: 70
+W (294443) Display: System time is not set, tm_year: 70
+W (295443) Display: System time is not set, tm_year: 70
+W (296443) Display: System time is not set, tm_year: 70
+W (297443) Display: System time is not set, tm_year: 70
+W (298443) Display: System time is not set, tm_year: 70
+I (298443) SystemInfo: free sram: 58067 minimal sram: 43459
+W (299443) Display: System time is not set, tm_year: 70
+W (300443) Display: System time is not set, tm_year: 70
+W (301443) Display: System time is not set, tm_year: 70
+W (302443) Display: System time is not set, tm_year: 70
+W (303443) Display: System time is not set, tm_year: 70
+W (304443) Display: System time is not set, tm_year: 70
+W (305443) Display: System time is not set, tm_year: 70
+W (306443) Display: System time is not set, tm_year: 70
+W (307443) Display: System time is not set, tm_year: 70
+W (308443) Display: System time is not set, tm_year: 70
+I (308453) SystemInfo: free sram: 57551 minimal sram: 43459
+W (309443) Display: System time is not set, tm_year: 70
+W (310443) Display: System time is not set, tm_year: 70
+W (311443) Display: System time is not set, tm_year: 70
+W (312443) Display: System time is not set, tm_year: 70
+W (313443) Display: System time is not set, tm_year: 70
+W (314443) Display: System time is not set, tm_year: 70
+W (315443) Display: System time is not set, tm_year: 70
+W (316443) Display: System time is not set, tm_year: 70
+W (317443) Display: System time is not set, tm_year: 70
+W (318443) Display: System time is not set, tm_year: 70
+I (318443) SystemInfo: free sram: 58067 minimal sram: 43459
+W (319443) Display: System time is not set, tm_year: 70
+W (320443) Display: System time is not set, tm_year: 70
+W (321443) Display: System time is not set, tm_year: 70
+W (322443) Display: System time is not set, tm_year: 70
+W (323443) Display: System time is not set, tm_year: 70
+W (324443) Display: System time is not set, tm_year: 70
+W (325443) Display: System time is not set, tm_year: 70
+W (326443) Display: System time is not set, tm_year: 70
+W (327443) Display: System time is not set, tm_year: 70
+W (328453) Display: System time is not set, tm_year: 70
+I (328453) SystemInfo: free sram: 57551 minimal sram: 43459
+W (329453) Display: System time is not set, tm_year: 70
+W (330493) Display: System time is not set, tm_year: 70
+W (331533) Display: System time is not set, tm_year: 70
+W (332523) Display: System time is not set, tm_year: 70
+W (333513) Display: System time is not set, tm_year: 70
+W (334503) Display: System time is not set, tm_year: 70
+W (335493) Display: System time is not set, tm_year: 70
+W (336533) Display: System time is not set, tm_year: 70
+W (337523) Display: System time is not set, tm_year: 70
+W (338503) Display: System time is not set, tm_year: 70
+I (338503) SystemInfo: free sram: 58067 minimal sram: 43459
+W (339493) Display: System time is not set, tm_year: 70
+W (340523) Display: System time is not set, tm_year: 70
+W (341513) Display: System time is not set, tm_year: 70
+W (342503) Display: System time is not set, tm_year: 70
+W (343493) Display: System time is not set, tm_year: 70
+W (344523) Display: System time is not set, tm_year: 70
+W (345513) Display: System time is not set, tm_year: 70
+W (346503) Display: System time is not set, tm_year: 70
+W (347493) Display: System time is not set, tm_year: 70
+W (348523) Display: System time is not set, tm_year: 70
+I (348523) SystemInfo: free sram: 57551 minimal sram: 43459
+W (349513) Display: System time is not set, tm_year: 70
+W (350503) Display: System time is not set, tm_year: 70
+W (351493) Display: System time is not set, tm_year: 70
+W (352523) Display: System time is not set, tm_year: 70
+W (353513) Display: System time is not set, tm_year: 70
+W (354503) Display: System time is not set, tm_year: 70
+W (355493) Display: System time is not set, tm_year: 70
+W (356523) Display: System time is not set, tm_year: 70
+W (357513) Display: System time is not set, tm_year: 70
+W (358513) Display: System time is not set, tm_year: 70
+I (358513) SystemInfo: free sram: 57551 minimal sram: 43459
+W (359503) Display: System time is not set, tm_year: 70
+W (360543) Display: System time is not set, tm_year: 70
+W (361583) Display: System time is not set, tm_year: 70
+W (362573) Display: System time is not set, tm_year: 70
+W (363563) Display: System time is not set, tm_year: 70
+W (364553) Display: System time is not set, tm_year: 70
+W (365543) Display: System time is not set, tm_year: 70
+W (366583) Display: System time is not set, tm_year: 70
+W (367573) Display: System time is not set, tm_year: 70
+W (368573) Display: System time is not set, tm_year: 70
+I (368573) SystemInfo: free sram: 58067 minimal sram: 43459
+W (369553) Display: System time is not set, tm_year: 70
+W (370603) Display: System time is not set, tm_year: 70
+W (371603) Display: System time is not set, tm_year: 70
+W (372653) Display: System time is not set, tm_year: 70
+W (373693) Display: System time is not set, tm_year: 70
+W (374733) Display: System time is not set, tm_year: 70
+W (375723) Display: System time is not set, tm_year: 70
+W (376713) Display: System time is not set, tm_year: 70
+W (377703) Display: System time is not set, tm_year: 70
+W (378693) Display: System time is not set, tm_year: 70
+I (378693) SystemInfo: free sram: 57551 minimal sram: 43459
+W (379733) Display: System time is not set, tm_year: 70
+W (380733) Display: System time is not set, tm_year: 70
+W (381713) Display: System time is not set, tm_year: 70
+W (382703) Display: System time is not set, tm_year: 70
+W (383753) Display: System time is not set, tm_year: 70
+W (384793) Display: System time is not set, tm_year: 70
+W (385843) Display: System time is not set, tm_year: 70
+W (386833) Display: System time is not set, tm_year: 70
+W (387813) Display: System time is not set, tm_year: 70
+W (388813) Display: System time is not set, tm_year: 70
+I (388813) SystemInfo: free sram: 57783 minimal sram: 43459
+W (389803) Display: System time is not set, tm_year: 70
+W (390793) Display: System time is not set, tm_year: 70
+W (391823) Display: System time is not set, tm_year: 70
+W (392813) Display: System time is not set, tm_year: 70
+W (393803) Display: System time is not set, tm_year: 70
+W (394793) Display: System time is not set, tm_year: 70
+W (395823) Display: System time is not set, tm_year: 70
+W (396813) Display: System time is not set, tm_year: 70
+W (397803) Display: System time is not set, tm_year: 70
+W (398793) Display: System time is not set, tm_year: 70
+I (398793) SystemInfo: free sram: 57783 minimal sram: 43459
+W (399833) Display: System time is not set, tm_year: 70
+W (400813) Display: System time is not set, tm_year: 70
+W (401803) Display: System time is not set, tm_year: 70
+W (402793) Display: System time is not set, tm_year: 70
+W (403833) Display: System time is not set, tm_year: 70
+W (404813) Display: System time is not set, tm_year: 70
+W (405803) Display: System time is not set, tm_year: 70
+W (406793) Display: System time is not set, tm_year: 70
+W (407823) Display: System time is not set, tm_year: 70
+W (408813) Display: System time is not set, tm_year: 70
+I (408813) SystemInfo: free sram: 58299 minimal sram: 43459
+W (409803) Display: System time is not set, tm_year: 70
+W (410843) Display: System time is not set, tm_year: 70
+W (411443) Display: System time is not set, tm_year: 70
+W (412873) Display: System time is not set, tm_year: 70
+W (413863) Display: System time is not set, tm_year: 70
+W (414853) Display: System time is not set, tm_year: 70
+W (415853) Display: System time is not set, tm_year: 70
+W (416443) Display: System time is not set, tm_year: 70
+W (417443) Display: System time is not set, tm_year: 70
+W (418443) Display: System time is not set, tm_year: 70
+I (418443) SystemInfo: free sram: 57783 minimal sram: 43459
+W (419443) Display: System time is not set, tm_year: 70

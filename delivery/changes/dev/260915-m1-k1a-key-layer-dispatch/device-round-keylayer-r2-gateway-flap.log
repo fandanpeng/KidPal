@@ -1,0 +1,152 @@
+W (3342474) Display: System time is not set, tm_year: 70
+W (3343464) Display: System time is not set, tm_year: 70
+W (3344464) Display: System time is not set, tm_year: 70
+W (3345454) Display: System time is not set, tm_year: 70
+W (3346504) Display: System time is not set, tm_year: 70
+I (3346504) SystemInfo: free sram: 64699 minimal sram: 52267
+W (3347504) Display: System time is not set, tm_year: 70
+W (3348494) Display: System time is not set, tm_year: 70
+W (3349544) Display: System time is not set, tm_year: 70
+W (3350544) Display: System time is not set, tm_year: 70
+W (3351534) Display: System time is not set, tm_year: 70
+I (3352514) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3352514 action=1
+W (3352524) Display: System time is not set, tm_year: 70
+I (3352524) StateMachine: State: idle -> connecting
+I (3352524) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (3352524) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (3361624) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3361624 key=0 gesture=1
+I (3361804) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3361804 action=1
+E (3362574) esp-tls: [sock=54] select() timeout
+E (3362574) esp-tls: Failed to open new connection
+E (3362574) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (3362574) WebSocket: Failed to connect to server
+E (3362584) WS: Failed to connect to websocket server, code=32774
+I (3362594) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (3362594) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (3362604) StateMachine: State: connecting -> idle
+W (3362604) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (3362624) I2S_IF: Mode 0 need extend bits 64 to 32
+I (3362624) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (3362624) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (3362644) Adev_Codec: Open codec device OK
+I (3362644) AudioCodec: Set output enable to true
+I (3362644) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (3362714) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3362495
+I (3362714) kidpal_rn: voice_end: top=2
+I (3362724) StateMachine: State: idle -> connecting
+I (3362724) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (3362734) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (3369774) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3369774 key=0 gesture=1
+I (3369954) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3369954 action=1
+E (3372754) esp-tls: [sock=54] select() timeout
+E (3372754) esp-tls: Failed to open new connection
+E (3372754) EspSsl: Failed to connect to 8.137.91.16:8000, code=0x8006
+E (3372754) WebSocket: Failed to connect to server
+E (3372754) WS: Failed to connect to websocket server, code=32774
+I (3372764) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (3372764) StateMachine: State: connecting -> idle
+W (3372774) Application: Alert [circle_xmark] 错误: 无法连接服务，请稍后再试
+I (3372784) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (3372854) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3372637
+I (3372854) kidpal_rn: voice_end: top=2
+I (3372854) StateMachine: State: idle -> connecting
+I (3372854) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (3372864) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (3374134) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3374134 action=3
+I (3374854) esp-x509-crt-bundle: Certificate validated
+I (3376484) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3376484 key=1 gesture=1
+I (3376674) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3376674 action=3
+I (3376884) WS: Session ID: 4caeeeae-f4fb-400e-8027-6b1a41bb8aa9
+I (3376884) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (3376884) wifi:Set ps type: 0, coexist: 0
+
+W (3376904) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (3376904) StateMachine: State: connecting -> listening
+I (3376914) kidpal_rn: render page CHAR (P4) has_data=0
+I (3376914) kidpal_rn: render page SCHEDULE (P2) n=0
+I (3376934) AFE: AFE Version: (1MIC_V250121)
+I (3376934) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (3376934) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (3376944) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (3377214) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3377214 key=1 gesture=1
+I (3377394) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3377394 action=3
+I (3377484) kidpal_rn: render page STORY (P3) count=0
+I (3378934) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3378934 key=1 gesture=1
+I (3379114) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3379114 action=3
+I (3379154) kidpal_rn: render page HOME (P1)
+I (3382684) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3382684 action=2
+I (3382724) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3382518
+I (3382724) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3384624) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3384624 key=0 gesture=3
+I (3385544) SystemInfo: free sram: 51339 minimal sram: 44271
+I (3387264) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3387264 action=2
+I (3387604) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3387396
+I (3387604) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3389624) I2S_IF: Pending out channel for in channel running
+I (3389624) AudioCodec: Set output enable to false
+I (3390924) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3390924 key=0 gesture=3
+I (3393824) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3393824 action=2
+I (3393874) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3393653
+I (3393874) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3394024) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3394024 key=0 gesture=3
+I (3395524) SystemInfo: free sram: 51543 minimal sram: 44271
+I (3399834) Application: >> 能听到我说话吗？
+I (3399834) StateMachine: State: listening -> speaking
+I (3409614) SystemInfo: free sram: 51491 minimal sram: 42863
+I (3409894) Application: << 听得到呀，我在这儿呢
+I (3411004) I2S_IF: Mode 0 need extend bits 64 to 32
+I (3411004) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (3411004) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (3411024) Adev_Codec: Open codec device OK
+I (3411024) AudioCodec: Set output enable to true
+I (3413194) Application: << 你说吧，我好好听着～
+I (3416074) StateMachine: State: speaking -> listening
+I (3418754) Application: >> 没事
+I (3418754) StateMachine: State: listening -> speaking
+I (3420354) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3420354 action=2
+I (3420734) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3420508
+I (3420734) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3428724) SystemInfo: free sram: 51479 minimal sram: 42247
+I (3429194) Application: << 好嘞，那我就在这儿待着
+I (3431674) Application: << 你想起什么随时喊我一声～
+I (3432544) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3432544 key=0 gesture=3
+I (3434904) StateMachine: State: speaking -> listening
+I (3434904) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3434904 action=2
+I (3434954) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3434743
+I (3434964) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3438984) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3438984 key=0 gesture=3
+I (3441054) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3441054 action=2
+I (3441104) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=3440883
+I (3441104) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (3441164) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3441164 key=0 gesture=3
+I (3444624) SystemInfo: free sram: 51091 minimal sram: 42247
+I (3449814) Application: >> 你改坏了
+I (3449824) StateMachine: State: listening -> speaking
+I (3450014) I2S_IF: Pending out channel for in channel running
+I (3450014) AudioCodec: Set output enable to false
+I (3459754) SystemInfo: free sram: 51519 minimal sram: 42247
+I (3469844) SystemInfo: free sram: 51003 minimal sram: 42247
+I (3479444) SystemInfo: free sram: 51519 minimal sram: 42247
+I (3489444) SystemInfo: free sram: 51003 minimal sram: 42247
+I (3499444) SystemInfo: free sram: 51003 minimal sram: 42247
+I (3509444) SystemInfo: free sram: 51519 minimal sram: 42247
+I (3519444) SystemInfo: free sram: 51003 minimal sram: 42247
+I (3521174) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (3529444) SystemInfo: free sram: 51459 minimal sram: 42247
+I (3539444) SystemInfo: free sram: 50943 minimal sram: 42247
+I (3549444) SystemInfo: free sram: 51459 minimal sram: 42247
+I (3559454) SystemInfo: free sram: 50943 minimal sram: 42247
+I (3568634) Application: << 先把自己最近动过的东西过了一遍。有个前提得说清：这个 workspace 从来就没有 git 历史（`.git` 是空的、0 个 commit），所以我没法「diff 出我改坏了哪一行」，只能靠改动清单 + 现场证据反推。**我最怀疑的一处：`skills/kidpal-char-strokes`。** 它现在让我「从 `char_cache.json` 整条原样拷进 display」，这跟你定的契约「char 只出最小意图块 `{"char":"字"}`、坐标由查字工具在出口拼装」是直接打架的。今天（09-15）「永字/勇字怎么写」的几个回合就甩出了整段坐标大块——写字这块最可能已经被我搞坏。09-12 我提过修正提案但你说先别改，所以它一直挂在那儿没动。**次怀疑：`skills/kidpal-schedule-answer`（09-13 新建）。** 它把学校课按「第1节…第6节」塞进 `data.items`，`time` 不是真实时刻——板子若按时刻渲染就会错位。我最近动过的东西，按时间排：<details><summary>改动清单（09-07 ~ 09-13）</summary>- **09-13**：新建 `skills/kidpal-schedule-answer/SKILL.md`- **09-10~
+I (3569754) SystemInfo: free sram: 51495 minimal sram: 42247
+I (3569834) I2S_IF: Mode 0 need extend bits 64 to 32
+I (3569834) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (3569834) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (3569854) Adev_Codec: Open codec device OK
+I (3569854) AudioCodec: Set output enable to true
+I (3579904) SystemInfo: free sram: 50459 minimal sram: 42247
+I (3589914) SystemInfo: free sram: 50935 minimal sram: 42247
+I (3599454) SystemInfo: free sram: 50823 minimal sram: 42247
+I (3609444) SystemInfo: free sram: 50279 minimal sram: 42247
+I (3619454) SystemInfo: free sram: 50403 minimal sram: 42075
+I (3629444) SystemInfo: free sram: 50303 minimal sram: 42075
+I (3639454) SystemInfo: free sram: 50791 minimal sram: 42075

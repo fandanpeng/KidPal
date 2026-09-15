@@ -1,0 +1,257 @@
+W (33462) Display: System time is not set, tm_year: 70
+W (34462) Display: System time is not set, tm_year: 70
+W (35462) Display: System time is not set, tm_year: 70
+W (36462) Display: System time is not set, tm_year: 70
+I (36462) SystemInfo: free sram: 64851 minimal sram: 52467
+W (37462) Display: System time is not set, tm_year: 70
+W (38462) Display: System time is not set, tm_year: 70
+W (39462) Display: System time is not set, tm_year: 70
+W (40462) Display: System time is not set, tm_year: 70
+W (41462) Display: System time is not set, tm_year: 70
+W (42462) Display: System time is not set, tm_year: 70
+W (43462) Display: System time is not set, tm_year: 70
+W (44462) Display: System time is not set, tm_year: 70
+W (45462) Display: System time is not set, tm_year: 70
+W (46462) Display: System time is not set, tm_year: 70
+I (46462) SystemInfo: free sram: 64335 minimal sram: 52467
+W (47462) Display: System time is not set, tm_year: 70
+W (48462) Display: System time is not set, tm_year: 70
+W (49462) Display: System time is not set, tm_year: 70
+W (50462) Display: System time is not set, tm_year: 70
+W (51462) Display: System time is not set, tm_year: 70
+W (52462) Display: System time is not set, tm_year: 70
+W (53462) Display: System time is not set, tm_year: 70
+W (54462) Display: System time is not set, tm_year: 70
+W (55462) Display: System time is not set, tm_year: 70
+W (56462) Display: System time is not set, tm_year: 70
+I (56462) SystemInfo: free sram: 64851 minimal sram: 52467
+W (57462) Display: System time is not set, tm_year: 70
+W (58462) Display: System time is not set, tm_year: 70
+W (59462) Display: System time is not set, tm_year: 70
+W (60462) Display: System time is not set, tm_year: 70
+W (61462) Display: System time is not set, tm_year: 70
+W (62462) Display: System time is not set, tm_year: 70
+W (63462) Display: System time is not set, tm_year: 70
+W (64462) Display: System time is not set, tm_year: 70
+W (65462) Display: System time is not set, tm_year: 70
+W (66462) Display: System time is not set, tm_year: 70
+I (66462) SystemInfo: free sram: 64331 minimal sram: 52467
+W (67462) Display: System time is not set, tm_year: 70
+I (67832) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-67832 action=1
+I (67832) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (67832) StateMachine: State: idle -> connecting
+I (67842) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (67842) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (72272) esp-x509-crt-bundle: Certificate validated
+I (72702) WS: Session ID: a86790e9-7567-4bc8-a16b-306620a27fc8
+I (72702) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (72702) wifi:Set ps type: 0, coexist: 0
+
+W (72712) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (72722) StateMachine: State: connecting -> listening
+I (72742) AFE: AFE Version: (1MIC_V250121)
+I (72742) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (72742) AFE: AFE Pipeline: [input] -> |VAD(WebRTC)| -> [output]
+I (72752) AfeAudioProcessor: Audio communication task started, feed size: 512 fetch size: 512
+I (79652) Application: >> 明天星期几？
+I (79652) StateMachine: State: listening -> speaking
+I (86572) Application: << 明天是星期三哦～今天是星期二，往后数一天
+I (86762) I2S_IF: Mode 0 need extend bits 64 to 32
+I (86762) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (86772) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (86792) Adev_Codec: Open codec device OK
+I (86792) AudioCodec: Set output enable to true
+I (89452) SystemInfo: free sram: 50715 minimal sram: 44279
+I (90912) Application: << 九月十六号就是星期三啦
+I (94272) StateMachine: State: speaking -> listening
+I (95632) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-95632 action=4
+E (95632) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (95632) esp-tls-mbedtls: read error :-0x004C
+E (95642) EspSsl: SSL receive failed: -76
+I (95642) WS: Websocket disconnected
+I (95642) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (95652) wifi:Set ps type: 2, coexist: 0
+
+I (95782) kidpal_rn: render page HOME (P1)
+I (95782) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (95782) StateMachine: State: listening -> idle
+I (97292) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-97292 key=0 gesture=3
+I (100822) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (105652) SystemInfo: free sram: 58159 minimal sram: 42127
+W (106642) Display: System time is not set, tm_year: 70
+W (107632) Display: System time is not set, tm_year: 70
+W (108682) Display: System time is not set, tm_year: 70
+W (109712) Display: System time is not set, tm_year: 70
+I (109772) I2S_IF: Pending out channel for in channel running
+I (109772) AudioCodec: Set output enable to false
+W (110762) Display: System time is not set, tm_year: 70
+W (111762) Display: System time is not set, tm_year: 70
+W (112752) Display: System time is not set, tm_year: 70
+W (113742) Display: System time is not set, tm_year: 70
+I (113752) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-113752 action=3
+I (113762) kidpal_rn: render page CHAR (P4) has_data=0
+W (114682) Display: System time is not set, tm_year: 70
+W (115462) Display: System time is not set, tm_year: 70
+I (115462) SystemInfo: free sram: 57535 minimal sram: 42127
+I (115922) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-115922 key=1 gesture=1
+I (116112) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-116112 action=3
+I (116112) kidpal_rn: render page SCHEDULE (P2) n=0
+W (116692) Display: System time is not set, tm_year: 70
+W (117462) Display: System time is not set, tm_year: 70
+I (117742) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-117742 key=1 gesture=1
+I (117922) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-117922 action=3
+I (117922) kidpal_rn: render page STORY (P3) count=0
+W (118722) Display: System time is not set, tm_year: 70
+W (119462) Display: System time is not set, tm_year: 70
+W (120462) Display: System time is not set, tm_year: 70
+I (120722) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-120722 key=1 gesture=1
+I (120902) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-120902 action=3
+I (120952) kidpal_rn: render page HOME (P1)
+W (121762) Display: System time is not set, tm_year: 70
+W (122742) Display: System time is not set, tm_year: 70
+W (123732) Display: System time is not set, tm_year: 70
+W (124782) Display: System time is not set, tm_year: 70
+W (125832) Display: System time is not set, tm_year: 70
+I (125832) SystemInfo: free sram: 58155 minimal sram: 42127
+I (125832) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-125832 action=1
+I (125832) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (125842) StateMachine: State: idle -> connecting
+I (125852) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (125852) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (126482) esp-x509-crt-bundle: Certificate validated
+I (126902) WS: Session ID: 4f7e7229-00bd-4d97-b40b-efd20eae0993
+I (126902) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (126902) wifi:Set ps type: 0, coexist: 0
+
+W (126912) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (126912) StateMachine: State: connecting -> listening
+I (132982) Application: >> 明天有什么课？
+I (132982) StateMachine: State: listening -> speaking
+I (142462) SystemInfo: free sram: 51923 minimal sram: 42127
+I (152452) SystemInfo: free sram: 51407 minimal sram: 42127
+I (162462) SystemInfo: free sram: 51923 minimal sram: 42127
+I (172452) SystemInfo: free sram: 51407 minimal sram: 42127
+I (182452) SystemInfo: free sram: 51923 minimal sram: 42127
+I (186212) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-186212 action=4
+I (186212) Application: Abort speaking
+I (186352) kidpal_rn: render page HOME (P1)
+I (186352) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (186352) StateMachine: State: speaking -> listening
+I (187972) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-187972 key=0 gesture=3
+I (195452) SystemInfo: free sram: 51363 minimal sram: 42127
+I (205462) SystemInfo: free sram: 51363 minimal sram: 42127
+I (215552) SystemInfo: free sram: 51303 minimal sram: 42127
+I (225642) SystemInfo: free sram: 51539 minimal sram: 42127
+I (225992) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-225992 action=1
+I (225992) kidpal_rn: show_chat: VOICE layer push (top=3)
+E (225992) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (225992) esp-tls-mbedtls: read error :-0x004C
+E (226002) EspSsl: SSL receive failed: -76
+I (226002) WS: Websocket disconnected
+I (226002) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (226012) wifi:Set ps type: 2, coexist: 0
+
+I (226012) StateMachine: State: listening -> idle
+I (226072) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=225855
+I (226072) kidpal_rn: voice_end: top=2
+I (229582) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-229582 key=0 gesture=1
+I (229762) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-229762 action=1
+I (229762) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (229762) StateMachine: State: idle -> connecting
+I (229772) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (229772) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (229952) esp-x509-crt-bundle: Certificate validated
+I (230362) WS: Session ID: 3bd5779f-56f4-4f38-9f1e-fcaf68e92139
+I (230362) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (230372) wifi:Set ps type: 0, coexist: 0
+
+W (230372) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (230382) StateMachine: State: connecting -> listening
+I (233202) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-233202 key=1 gesture=1
+I (233382) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-233382 action=4
+E (233382) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (233382) esp-tls-mbedtls: read error :-0x004C
+E (233392) EspSsl: SSL receive failed: -76
+I (233392) WS: Websocket disconnected
+I (233392) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (233402) wifi:Set ps type: 2, coexist: 0
+
+I (233452) kidpal_rn: render page HOME (P1)
+I (233452) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (233452) StateMachine: State: listening -> idle
+I (242212) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-242212 key=0 gesture=1
+I (242402) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-242402 action=1
+I (242402) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (242402) StateMachine: State: idle -> connecting
+I (242402) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (242412) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (243732) esp-x509-crt-bundle: Certificate validated
+I (244132) WS: Session ID: 0b929b6c-ca55-4a97-b7ac-57f14ab7a8d7
+I (244132) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (244132) wifi:Set ps type: 0, coexist: 0
+
+W (244142) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (244152) StateMachine: State: connecting -> listening
+I (251422) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-251422 action=4
+E (251422) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (251422) esp-tls-mbedtls: read error :-0x004C
+E (251422) EspSsl: SSL receive failed: -76
+I (251422) WS: Websocket disconnected
+I (251432) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (251432) wifi:Set ps type: 2, coexist: 0
+
+I (251492) kidpal_rn: render page HOME (P1)
+I (251492) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (251492) StateMachine: State: listening -> idle
+I (252322) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-252322 key=0 gesture=3
+I (260452) SystemInfo: free sram: 57495 minimal sram: 42127
+W (262462) Display: System time is not set, tm_year: 70
+W (263462) Display: System time is not set, tm_year: 70
+W (264462) Display: System time is not set, tm_year: 70
+W (265462) Display: System time is not set, tm_year: 70
+W (266462) Display: System time is not set, tm_year: 70
+W (267462) Display: System time is not set, tm_year: 70
+W (268462) Display: System time is not set, tm_year: 70
+W (269462) Display: System time is not set, tm_year: 70
+W (270462) Display: System time is not set, tm_year: 70
+I (270462) SystemInfo: free sram: 58011 minimal sram: 42127
+W (271462) Display: System time is not set, tm_year: 70
+W (272462) Display: System time is not set, tm_year: 70
+W (273462) Display: System time is not set, tm_year: 70
+W (274462) Display: System time is not set, tm_year: 70
+W (275462) Display: System time is not set, tm_year: 70
+W (276462) Display: System time is not set, tm_year: 70
+W (277462) Display: System time is not set, tm_year: 70
+W (278462) Display: System time is not set, tm_year: 70
+W (279462) Display: System time is not set, tm_year: 70
+W (280462) Display: System time is not set, tm_year: 70
+I (280462) SystemInfo: free sram: 57495 minimal sram: 42127
+W (281462) Display: System time is not set, tm_year: 70
+W (282462) Display: System time is not set, tm_year: 70
+W (283462) Display: System time is not set, tm_year: 70
+W (284462) Display: System time is not set, tm_year: 70
+W (285462) Display: System time is not set, tm_year: 70
+W (286462) Display: System time is not set, tm_year: 70
+W (287462) Display: System time is not set, tm_year: 70
+W (288482) Display: System time is not set, tm_year: 70
+W (289522) Display: System time is not set, tm_year: 70
+W (290572) Display: System time is not set, tm_year: 70
+I (290572) SystemInfo: free sram: 58011 minimal sram: 42127
+W (291562) Display: System time is not set, tm_year: 70
+W (292552) Display: System time is not set, tm_year: 70
+W (293562) Display: System time is not set, tm_year: 70
+W (294542) Display: System time is not set, tm_year: 70
+W (295532) Display: System time is not set, tm_year: 70
+W (296582) Display: System time is not set, tm_year: 70
+W (297632) Display: System time is not set, tm_year: 70
+W (298682) Display: System time is not set, tm_year: 70
+W (299722) Display: System time is not set, tm_year: 70
+W (300772) Display: System time is not set, tm_year: 70
+I (300772) SystemInfo: free sram: 57495 minimal sram: 42127
+W (301772) Display: System time is not set, tm_year: 70
+W (302762) Display: System time is not set, tm_year: 70
+W (303752) Display: System time is not set, tm_year: 70
+W (304762) Display: System time is not set, tm_year: 70
+W (305742) Display: System time is not set, tm_year: 70
+W (306732) Display: System time is not set, tm_year: 70
+W (307782) Display: System time is not set, tm_year: 70

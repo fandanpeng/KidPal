@@ -1,0 +1,135 @@
+{
+  "changeId": "260915-m1-k2-keybar-three-slot",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M1-home-qa",
+    "upstreamFrozen": "",
+    "workstream": "m1-home-qa"
+  },
+  "subsystem": "firmware",
+  "story": "无 story——共享底座键帽条；语义权威 = docs/requirements.md §2.2 键帽条行（comp-keybar 三槽规格）+ §2.4 页面结构",
+  "planRef": "delivery/taskpackages/260915-m1-k2-keybar-three-slot/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单）",
+  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m1-home-qa/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "host-teeth",
+    "device-round"
+  ],
+  "acceptance": [
+    "KB-A1: 三槽结构——键帽条 = 通栏贴底三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），条本身任何状态常驻（基座 chrome，覆盖层盖不掉）；替换现单行居中文案形态",
+    "KB-A2: 页点机制——中槽页点仅主页面显示（当前页实心放大），覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点；页点数量 = 现行页循环页数（阶段一 = 4，4→3 对账随 M2 撤 P4 一并收回——deviation 显式登记，非静默 spec 冲突）",
+    "KB-A3: 左右槽随态文案——随态切换走 kidpal_voice_states 冻结映射闭集（聆听「说完啦」/播报「打断」/提醒「知道了」等），闭集值零偏移；覆盖层内左右槽照常给操作提示",
+    "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
+    {
+      "id": "KB-A5: 真机确认轮（human 持板）——三槽条 + 页点显隐 + 随态文案真机可见；证据落 changes/dev/<changeId>/",
+      "kind": "structural"
+    },
+    "KB-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/keybar_three_slot.acceptance.c"
+  ],
+  "exitCriteria": [
+    "KB-E1: 范围纪律——页点 4→3 收口归 M2（KB-A2 deviation 在 M2 撤 P4 包对账收回）；spec 面零修订",
+    "KB-E2: kidpal_voice_states 冻结闭集零偏移——文案值域只在闭集内引用、不增删改闭集成员（新增态文案归承载态的包按冻结映射走）",
+    "KB-E3: 覆盖层显隐消费分层模型零裁决权——keybar 只读 layer_top 显隐，不改覆盖层进出裁决（owner = 260915-m1-k1a-key-layer-dispatch）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "delivery/milestones/milestones.jsonl",
+    "docs/ui/brand-spec.md",
+    "docs/ui/UIUX-DESIGN-BRIEF.md"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#§2.2",
+    "docs/requirements.md#§2.4",
+    "delivery/milestones/milestones.jsonl#M1-home-qa"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包为固件键帽条 chrome 改造，零 docs 面改动：三槽规格权威 = requirements §2.2 + brand-spec 姿态规则 + 设计稿 v4 §03 comp-keybar（均在文冻结）；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 23,
+  "dependsOn": [
+    "260915-m1-k1a-key-layer-dispatch"
+  ],
+  "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
+  "decisionCoverage": [
+    {
+      "decision": "M1块①-键帽条三槽",
+      "summary": "三槽布局与页点 MVP 未实现（现仅单行居中文案随态联动）——本包补齐三槽 + 页点机制，规格权威 = requirements §2.2 comp-keybar 行 + 设计稿 v4。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "acceptance:KB-A1"
+    },
+    {
+      "decision": "M1块①-覆盖层不显示页点",
+      "summary": "中槽页点仅主页面显示、覆盖层隐藏——显隐裁决读 layer_top 分层模型（owner = key-layer-dispatch），本包只读消费、零裁决权。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "acceptance:KB-A4"
+    },
+    {
+      "decision": "M1块①-页点数量阶段一暂4点deviation",
+      "summary": "spec 权威（§2.2 中 3 页点，v1.36 页循环 4→3）与现行实现 4 页循环存在跨阶段时序差：阶段一先按现行页循环渲染页点，4→3 对账归 M2；deviation 显式登记、launch 前 human 过目。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#§6"
+      ],
+      "landsIn": "exitCriteria:KB-E1"
+    },
+    {
+      "decision": "M1块①-键帽文案冻结闭集",
+      "summary": "键帽文案 = 冻结映射（kidpal_voice_states 闭集）——本包机制承载随态切换、值零偏移；新增态文案归承载态的包。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "exitCriteria:KB-E2"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "behavior": "键帽条三槽 + 页点机制（chrome 渲染面）",
+      "owner": "260915-m1-k2-keybar-three-slot",
+      "note": "三槽机制与随态文案切换 owner = 本包；语音轮/提醒弹窗包（voice-round-ui / reminder-overlay-unify）消费机制、不改 keybar 结构。"
+    },
+    {
+      "behavior": "覆盖层页点显隐裁决",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
+      "note": "layer_top 分层模型与覆盖层进出裁决 owner = key-layer-dispatch；keybar 只读显隐。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/lcd_display.cc",
+        "symbol": "kidpal_voice_state_look"
+      },
+      {
+        "path": "firmware/main/display/kidpal_voice_states.c",
+        "symbol": "kidpal_voice_state_look"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块①基建）。依赖 key-layer-dispatch 的 layer_top 分层模型（页点显隐与键路由同源）。页点数量 deviation（暂 4 点）已登记 launchPreconditions，launch 前 human 过目。包级 plan.md = 全量义务（planRef 已指）。"
+}

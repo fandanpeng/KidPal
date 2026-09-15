@@ -51,6 +51,13 @@ int kidpal_layer_has(const kidpal_layer_stack_t *st, int layer);
 int kidpal_layer_chat_target(void);
 int kidpal_layer_chat_clear_event(int event);
 
+/* 显式清层步骤（TaskPackage 260915-m1-k1a-key-layer-dispatch, KD-A2 清层/进页分离）：
+ * 「关窗」唯一事实源用的纯逻辑步骤。出掉全部 transient 覆盖层
+ * （KIDPAL_LAYER_VOICE / KIDPAL_LAYER_SERVER_PAGE / KIDPAL_LAYER_REMINDER，各至多一条、
+ * 幂等）；KIDPAL_LAYER_LOCAL_PAGE / KIDPAL_LAYER_PROVISION 不碰（配网层零触碰）。
+ * 返回出掉的层数（>=0）；NULL st -> -1。空栈/纯基层栈 -> 0。 */
+int kidpal_layer_pop_transients(kidpal_layer_stack_t *st);
+
 #ifdef __cplusplus
 }
 #endif

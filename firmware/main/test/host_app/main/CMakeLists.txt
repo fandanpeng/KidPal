@@ -105,6 +105,20 @@ set(HOST_ACCEPTANCE_SRCS
     # （执行序 = 列表逆序: 包 0 boundary 齿仍最先跑, 本文件随后, 既有齿不受扰动）。
     "../../happy_flow_capture.test.c"
 
+    # 包 260915-m1-k1a-key-layer-dispatch（键位对账①②⑤ 落地面 / 分层派发改造）：冻结
+    # 验收（路由级决策表 key_route_layer + 显式清层步骤 kidpal_layer_pop_transients 的行为
+    # 半 + 板级 dispatch 分流/关层步骤/裁决函数接线的结构半 + 零回归守卫 + 注册序守卫）。
+    # **必须置于 host smoke acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
+    "../../key_layer_dispatch.acceptance.c"
+
+    # 包 260915-m1-k1a-key-layer-dispatch KD-A5 真机轮修复回归守卫（非冻结件, [C4.3]
+    # 普通 .test.c）：树级结构齿钉「OVERLAY_CLOSE 在 VOICE 覆盖层顶层级联结束会话
+    # （front_is_voice + ToggleChatState + dismiss 三件套）+ 提醒弹窗关层路径不级联
+    # （非会话语义不变）+ front_is_voice 判据单层落点」。置于 smoke 之前（执行序 =
+    # 列表逆序: 包 0 boundary 齿仍最先跑）。相对 host_app/main 为 ../../。
+    "../../key_layer_session_cascade.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本列表头注释。
     "../../host_infra_smoke.acceptance.c"
 )
