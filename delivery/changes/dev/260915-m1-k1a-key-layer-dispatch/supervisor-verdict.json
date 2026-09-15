@@ -1,0 +1,68 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-15T11:35:03.152Z",
+  "changeId": "260915-m1-k1a-key-layer-dispatch",
+  "originType": "delivery-story",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "high",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 1,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "high",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/verifier-evidence/rounds/r1.json",
+        "bearingFactOk": false,
+        "completedRounds": 1,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/docs-delta.md",
+          "delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "delivery-story"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789461743284-unit.log",
+      ".claude/verify-logs/1789461748978-acceptance.log",
+      ".claude/verify-logs/1789463118540-unit.log",
+      ".claude/verify-logs/1789463124418-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/verifier-evidence/rounds/r1.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/docs-delta.md",
+      "delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/review-packet.md"
+    ]
+  }
+}
