@@ -2,7 +2,7 @@
 
 AdcBatteryMonitor::AdcBatteryMonitor(adc_unit_t adc_unit, adc_channel_t adc_channel, float upper_resistor, float lower_resistor, gpio_num_t charging_pin)
     : charging_pin_(charging_pin) {
-    
+
     // Initialize charging pin (only if it's not NC)
     if (charging_pin_ != GPIO_NUM_NC) {
         gpio_config_t gpio_cfg = {
@@ -16,16 +16,13 @@ AdcBatteryMonitor::AdcBatteryMonitor(adc_unit_t adc_unit, adc_channel_t adc_chan
     }
 
     // Initialize ADC battery estimation
-    adc_battery_estimation_t adc_cfg = {
-        .internal = {
-            .adc_unit = adc_unit,
-            .adc_bitwidth = ADC_BITWIDTH_DEFAULT,
-            .adc_atten = ADC_ATTEN_DB_12,
-        },
-        .adc_channel = adc_channel,
-        .upper_resistor = upper_resistor,
-        .lower_resistor = lower_resistor
-    };
+    adc_battery_estimation_t adc_cfg = {};
+    adc_cfg.internal.adc_unit = adc_unit;
+    adc_cfg.internal.adc_bitwidth = ADC_BITWIDTH_DEFAULT;
+    adc_cfg.internal.adc_atten = ADC_ATTEN_DB_12;
+    adc_cfg.adc_channel = adc_channel;
+    adc_cfg.upper_resistor = upper_resistor;
+    adc_cfg.lower_resistor = lower_resistor;
 
     // 在ADC配置部分进行条件设置
     if (charging_pin_ != GPIO_NUM_NC) {
@@ -42,6 +39,59 @@ AdcBatteryMonitor::AdcBatteryMonitor(adc_unit_t adc_unit, adc_channel_t adc_chan
     adc_battery_estimation_handle_ = adc_battery_estimation_create(&adc_cfg);
 
     // Initialize timer
+    esp_timer_create_args_t timer_cfg = {
+        .callback = [](void *arg) {
+            AdcBatteryMonitor *self = (AdcBatteryMonitor *)arg;
+            self->CheckBatteryStatus();
+        },
+        .arg = this,
+        .name = "adc_battery_monitor",
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_cfg, &timer_handle_));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer_handle_, 1000000));
+}
+
+/* 外部句柄构造（包 260915-m1-n1b-p1-home-battery）：与内部构造同体，仅估计库配置走
+ * external 分支（复用板级 ADC unit/calibration，不二次 claim）。估计库对
+ * adc_battery_estimation_t 无显式 tag——它以 internal.adc_unit < SOC_ADC_PERIPH_NUM
+ * 判别内外部；external.adc_handle 是堆指针（ESP32-S3 堆址远大于该枚举值），写入
+ * external 成员后该判别自然落 external 分支（估计库头注「Use external ADC handle
+ * if provided」的设计用法）。 */
+AdcBatteryMonitor::AdcBatteryMonitor(adc_oneshot_unit_handle_t adc_handle, adc_cali_handle_t adc_cali_handle, adc_channel_t adc_channel, float upper_resistor, float lower_resistor, gpio_num_t charging_pin)
+    : charging_pin_(charging_pin) {
+
+    if (charging_pin_ != GPIO_NUM_NC) {
+        gpio_config_t gpio_cfg = {
+            .pin_bit_mask = 1ULL << charging_pin,
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        ESP_ERROR_CHECK(gpio_config(&gpio_cfg));
+    }
+
+    adc_battery_estimation_t adc_cfg = {};
+    adc_cfg.external.adc_handle = adc_handle;
+    adc_cfg.external.adc_cali_handle = adc_cali_handle;
+    adc_cfg.adc_channel = adc_channel;
+    adc_cfg.upper_resistor = upper_resistor;
+    adc_cfg.lower_resistor = lower_resistor;
+
+    if (charging_pin_ != GPIO_NUM_NC) {
+        adc_cfg.charging_detect_cb = [](void *user_data) -> bool {
+            AdcBatteryMonitor *self = (AdcBatteryMonitor *)user_data;
+            return gpio_get_level(self->charging_pin_) == 1;
+        };
+        adc_cfg.charging_detect_user_data = this;
+    } else {
+        // 无充电检测引脚：软件估算（电压上升趋势 = 充电，估计库
+        // CONFIG_BATTERY_STATE_SOFTWARE_ESTIMATION 路径）
+        adc_cfg.charging_detect_cb = nullptr;
+        adc_cfg.charging_detect_user_data = nullptr;
+    }
+    adc_battery_estimation_handle_ = adc_battery_estimation_create(&adc_cfg);
+
     esp_timer_create_args_t timer_cfg = {
         .callback = [](void *arg) {
             AdcBatteryMonitor *self = (AdcBatteryMonitor *)arg;

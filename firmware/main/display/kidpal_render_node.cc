@@ -275,6 +275,16 @@ void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
     if (humidity_pct >=  0 && humidity_pct <= 100) { s_humidity_pct = humidity_pct; }
 }
 
+void kidpal_render_node_inject_battery(int battery_pct, int charging)
+{
+    /* 包 260915-m1-n1b-p1-home-battery：板级 ADC 读数 -> 渲染状态写点（「s_battery_pct
+     * 恒 100」销账——声明初始化器的 100 只是无读数时的保守默认，本函数是唯一运行期
+     * 写点；三个 hp1_state 组装点 rn_render_home_locked / rn_render_kidpal_page_locked
+     * HOME 分支 / kidpal_render_node_tick 继续消费）。 */
+    if (battery_pct >= 0 && battery_pct <= 100) { s_battery_pct = battery_pct; }
+    s_charging = (charging != 0) ? 1 : 0;
+}
+
 void kidpal_render_node_show_home(void)
 {
     lvgl_port_lock(0);

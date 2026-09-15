@@ -33,6 +33,17 @@
 #define P1_COLOR_BG  0xFFFFFFu  /* 白底（1bpp 黑白设计）；探针不计为墨水 */
 #define P1_COLOR_INK 0x000000u  /* 墨水（非白非哨兵即探针计数） */
 
+/* ---- 数字字形目标盒（M1-N1b 真机根因修复；不偏移资产/不动 art_assets.c） ----
+ * imgfont_digit_*.bin 是旧版式大时钟的 48 宽 x 64 高字形（advance 冻结 48），
+ * 辅助条/小一号数字若按 12/13px pitch 原样逐字符 blit 会相邻重叠溢出（真机「超大
+ * 字体」）。本文件改走运行时最近邻降采样进目标盒 + 钉区 clip。整数值统一 1 盒：
+ *   P1_DIG_W/H = 16x22 —— 数字内容（源 ink ~28x42，缩放 ~15x13px）逐字符 ink 实测
+ *   收进各钉区（辅助条时间 x[42..103]@y[12..26]、值半区 x[~242..262]@y[13..27]，
+ *   主体小一号 x[144..208]，全部贴内，见 verifier 审查注）。主体验「接下来」（pitch
+ *   25）保持原样 48px 字形 == 最醒目恰配，不经缩放。 ---- */
+#define P1_DIG_W 16
+#define P1_DIG_H 22
+
 /* ---- 帧缓冲（纯逻辑，无 LVGL/芯片） ----
  * 包 9b HWV-A6 渲染节点落地：设备侧 480KB 帧缓冲置 PSRAM (.ext_ram.bss) 以避免
  * ESP32-S3 内部 DRAM 溢出（sdkconfig.defaults.esp32s3 开启
@@ -401,31 +412,31 @@ int kidpal_home_p1_set_state(const hp1_state_t *st)
 
 /* ======================= 渲染（纯逻辑构建 400x300 帧） ======================= */
 /*
- * 9b 首页内容渲染（承接 human 裁定「继续吧」的首页渲染节点之后一步）：
- *   - 消灭实心黑块：把 p1_fill_rect 换为描边/轮廓 + 数字字形 + art 可见化；
- *   - 时间走 imgfont 数字字形（HH:MM 或 H:MM）+ 冒号（眨眼相位不吞）；
- *   - 温湿度在 icon 右侧显示温度/湿度数值（imgfont 数字，可增，env_valid=0 全隐）；
- *   - 保留「solid 语义的最小兜底」：当 art 未挂载（host 早期、SPIFFS 失败、
- *     资产缺）时回退到「描边框 + 冒号实心点」，使 P1-A2/A3/A4 断言仍绿；
- *     当 art 在场时改由 loader 原语（kidpal_art_glyph/pixel/load）绘制真实字形与
- *     资产像素——同一片墨，只是从"占位实心块"升为"真字形/真姿态"。
+ * 包 260915-m1-n1b-p1-home-battery（M1-N1b）：WF-F1-01 v1.4 重排序新版式。
+ * 布局钉区域矩形（含端点；钉区是布局在位钉不是字体/颜色钉）：
+ *   ① 辅助条 y[0..39] 横贯带，左->右 = 时间 {36,6,108,33} · 日期 {112,6,208,33} ·
+ *      温度 {212,6,264,33}（图标半 {212..232} 前置 + 数值半 {236..264}）·
+ *      湿度 {268,6,318,33}（图标半前置 + 数值半，不裸数字）·
+ *      电量 {322,6,396,33}（图标半前置 + 数值半）；
+ *   ② 日程主体：小伴常驻演出（左）{8,48,128,208} + 「接下来」最近一项（右）
+ *      {136,48,392,168} + 倒计时贴纸 {268,50,390,130}（接下来卡右部）；
+ *   ③ 后续事项逐项 {136,172,392,214} + 明日预告 {136,220,392,258}。
+ * 兜底义务：每个「有墨」钉区在 art 未挂载的兜底路径下也有墨（描边/兜底字形纪律）；
+ * 每个「零墨」钉区在两条路径下严格零墨。温湿度缺席（env_valid=0）= 整元素隐藏、
+ * 不画假数据。
  *
- * 缝函数（kidpal_art_render_asset/draw_nine_slice/draw_dots/draw_time）仍不接：
- * 那些整帧缝拖冻结的 g_fb 480KB，设备内部 DRAM 溢出（本包上一轮已避开），
- * 本包一律走 loader 原语（s_p1_fb 已在 PSRAM）。
+ * 低电闪烁（PH-A4）：doze = battery_pct <= 15 且未充电；doze 灭相窗（1s 周期，
+ * 可见窗 3/4）内辅助条电池整元素（图标+数值）不画；充电恒醒恒画。低电不占小伴
+ * 姿态通道（§8 已砍项零触碰——低电只保留辅助条电池图标每秒闪最小信号）。
  *
- * 主机影响面（P1-A2/A3/A4 断言逐条判定；不改动冻结文件）：
- *   - P1-A2 date 区「有墨」：art_ok 时 pose_daily 提供；art 缺时 stroke 兜底 → 绿。
- *   - P1-A2 冒号眨眼「严格减墨」：art_ok 时 colon 字形像素门内消失（~180 墨）；
- *     art 缺时兜底两个实心点门内消失 → 绿。ink_off < ink_on 两条路径都成立。
- *   - P1-A3 next 区「无待办时零墨」：p1_draw_next 仍整体 gate 于 s_count>0 &
- *     HP1_ELEM_BIT_NEXT；s_count=0 时整个函数不调 → 区内零墨 → 绿。
- *   - P1-A3 全过期「sticker 区零墨」：p1_draw_sticker 仍 gate 于 countdown=0；
- *     全过期时 countdown=1 分支不进入 → 绿。
- *   - P1-A2/A3 env_valid=0「th 区零墨」：p1_draw_th 整体 gate 于 env_valid=1 &
- *     HP1_ELEM_BIT_TH，温湿度数字也在门内 → 绿。
- *   - P1-A4 打盹电池每秒闪「灭相电池区零墨」：p1_draw_battery 仍 gate 于
- *     blink_visible=1（doze）；灭相整个不画（含 icon + 兜底 stroke）→ 绿。
+ * 主机影响面（p1_home_battery.acceptance.c 断言逐条判定；不改动冻结文件）：
+ *   - PH-A1 主体在位：next/sticker/mascot/nextlist/preview 各按钉区画墨；空日程
+ *     （s_count=0）时 next 整区不画 -> 严格零墨（旧版式大时间已让位辅助条）。
+ *   - PH-A2 图标前置：温/湿/电图标半与数值半分别落各自半区（湿度数值不单独裸在
+ *     电池旁——图标半在前）；env_valid=0 时温/湿整元素不画 -> 零墨。
+ *   - PH-A3 行为半：辅助条电量渲染消费 hp1_state.battery_pct（注入缝驱动）。
+ *   - PH-A4：doze==1 且灭相 -> p1_draw_aux_batt 整个不调（图标半+数值半+兜底描边
+ *     全在门内）-> 电池整区零墨；亮相窗/充电/非低电恒画。
  */
 
 static void p1_clear(void)
@@ -518,6 +529,49 @@ static int p1_blit_art(const char *file, int x0, int y0, int bw, int bh)
     return 1;
 }
 
+/*
+ * loader 原语消费【缩放】（M1-N1b 真机根因修复，与 p1_blit_glyph_scaled 同款手法）：
+ * 图标资产（如 thermo_man 41x67 / drop_baby 32x51 / ic_batt_48 48x48）远大于首页
+ * 辅助条图标半区槽位（20x28 / 20x28 / 22x28）——裸 p1_blit_art 只 clip 不缩放 = 只画
+ * 资产左上角 bh 行内就被裁、图标只显示一小半（真机「图标只显示一半」）。本函数把
+ * KAP1 位图按 1bpp 最近邻整数降采样进目标 [x0, x0+dw-1] x [y0, y0+dh-1] 盒（同款
+ * 映射 sy=(y*img.h)/dh, sx=(x*img.w)/dw），再 clip 进钉区 [cx0,cy0,cx1,cy1] 与帧缓冲
+ * ——绝不让 ink 溢出图标半区、也不让残边粘上相邻数值半（真机「残边与 95 视觉粘连」）。
+ * 只 ADD 墨水；未 mount / 加载失败 -> 0（调用方走原有兜底描边）。纯整数运算。
+ */
+static int p1_blit_art_scaled(const char *file, int x0, int y0, int dw, int dh,
+                              int cx0, int cy0, int cx1, int cy1)
+{
+    kidpal_art_img_t img;
+
+    if (file == NULL || dw <= 0 || dh <= 0) {
+        return 0;
+    }
+    if (kidpal_art_load(file, &img) != 0) {
+        return 0; /* 未 mount / 文件缺 / 解码失败 -> 让调用方走兜底 stroke */
+    }
+    if (img.w <= 0 || img.h <= 0) {
+        return 0;
+    }
+    for (int y = 0; y < dh; y++) {
+        int sy = (y * img.h) / dh; /* 源行最近邻映射 */
+        for (int x = 0; x < dw; x++) {
+            int sx = (x * img.w) / dw; /* 源列最近邻映射 */
+            int px = x0 + x, py = y0 + y;
+            if (px < cx0 || px > cx1 || py < cy0 || py > cy1) {
+                continue; /* 钉区 clip，绝不越区写入其它区域 */
+            }
+            if (px < 0 || py < 0 || px >= P1_FB_W || py >= P1_FB_H) {
+                continue;
+            }
+            if (kidpal_art_pixel(&img, sx, sy) == 1) {
+                s_p1_fb[py * P1_FB_W + px] = P1_COLOR_INK;
+            }
+        }
+    }
+    return 1;
+}
+
 /* imgfont 单字形 blit（'0'..'9' | ':'）。用 kidpal_art_glyph（loader 原语）
  * 直接吐像素到 s_p1_fb；未挂载/字符非法 -> 返回 0。 */
 static int p1_blit_glyph(char c, int x0, int y0)
@@ -565,8 +619,68 @@ static int p1_blit_digits(const char *s, int x0, int y0, int pitch,
     return ok;
 }
 
-/* 整数字渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
-static int p1_blit_int(int value, int x0, int y0, int pitch)
+/* imgfont 单字形【缩放】blit（'0'..'9' | ':'）：把源字形 cell (img.w x img.h) 最近邻
+ * 降采样进目标盒 [x0, y0, x0+dw-1, y0+dh-1]，再 clip 进钉区盒 [cx0,cy0,cx1,cy1] 与帧
+ * 缓冲——绝不让 ink 溢出钉区、也绝不让相邻字形重叠（根因修复）。只 ADD 墨水；未挂载/
+ * 字符非法 -> 0。纯整数运算（无浮点），适配 1bpp 帧。 */
+static int p1_blit_glyph_scaled(char c, int x0, int y0, int dw, int dh,
+                                int cx0, int cy0, int cx1, int cy1)
+{
+    kidpal_art_img_t img;
+
+    if (kidpal_art_glyph(c, &img) != 0) {
+        return 0;
+    }
+    if (dw <= 0 || dh <= 0 || img.w <= 0 || img.h <= 0) {
+        return 0;
+    }
+    for (int y = 0; y < dh; y++) {
+        int sy = (y * img.h) / dh; /* 源行最近邻映射 */
+        for (int x = 0; x < dw; x++) {
+            int sx = (x * img.w) / dw; /* 源列最近邻映射 */
+            int px = x0 + x, py = y0 + y;
+            if (px < cx0 || px > cx1 || py < cy0 || py > cy1) {
+                continue; /* 钉区 clip：绝不越区写入其它（可能要求无墨的）区域 */
+            }
+            if (px < 0 || py < 0 || px >= P1_FB_W || py >= P1_FB_H) {
+                continue;
+            }
+            if (kidpal_art_pixel(&img, sx, sy) == 1) {
+                s_p1_fb[py * P1_FB_W + px] = P1_COLOR_INK;
+            }
+        }
+    }
+    return 1;
+}
+
+/* 把 "HH:MM" / "H:MM" / 任意数值串按【缩放】逐字符、pitch 步进 blit 进帧；每个字形
+ * 降采样进同一 (dw,dh) 盒并 clip 进钉区。colon_visible=0 时跳过 ':'（眨眼灭相严格减
+ * 墨的墨源）。返回成功 blit 的字符数。 */
+static int p1_blit_str_scaled(const char *s, int x0, int y0, int pitch,
+                              int dw, int dh, int cx0, int cy0, int cx1, int cy1,
+                              int colon_visible)
+{
+    int ok = 0, i;
+
+    if (s == NULL || pitch <= 0) {
+        return 0;
+    }
+    for (i = 0; s[i] != '\0'; i++) {
+        char c = s[i];
+        if (c == ':' && !colon_visible) {
+            continue;
+        }
+        if (p1_blit_glyph_scaled(c, x0 + i * pitch, y0, dw, dh,
+                                 cx0, cy0, cx1, cy1)) {
+            ok++;
+        }
+    }
+    return ok;
+}
+
+/* 整数字【缩放】渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
+static int p1_blit_int_scaled(int value, int x0, int y0, int pitch,
+                              int dw, int dh, int cx0, int cy0, int cx1, int cy1)
 {
     char buf[8];
     int n;
@@ -591,7 +705,8 @@ static int p1_blit_int(int value, int x0, int y0, int pitch)
         }
     }
     buf[n] = '\0';
-    return p1_blit_digits(buf, x0, y0, pitch, 1);
+    return p1_blit_str_scaled(buf, x0, y0, pitch, dw, dh,
+                              cx0, cy0, cx1, cy1, 1);
 }
 
 /* 手写 HH:MM / H:MM 格式化（避免 snprintf -Werror=format-truncation 触发；
@@ -612,126 +727,164 @@ static void p1_fmt_hhmm(int hour, int minute, char *buf, int cap)
     buf[n] = '\0';
 }
 
-/* 大时间：走 imgfont 数字（HH:MM / H:MM）+ 冒号眨眼相位；未挂载兜底为
- * 「描边框 + 冒号两点（相位门内）」，保证 P1-A2「区域内有墨」+「严格减墨」
- * 断言在 art 缺场时仍绿。
- *
- * 落点：x0=25, y0=25, pitch=30。5 字符 "HH:MM" cell 总宽 4*30+48=168，
- * 数字墨（相对 x=[11..38]）绝对落 x=[36..193]，冒号墨（相对 x=[20..29]，
- * y=[17..27]∪[37..47]）落 x=[105..114] y=[42..72]，全在 time 钉区 [15..185]
- * x [15..95] 内（末位数字墨 x=193 略过界 8px 不伤 pin：pin 只要求"有墨"，
- * 未要求"边界不越"；越界墨落在 date 区起点之前 195，不污染 date 断言）。
- */
-static void p1_draw_time(int colon_visible)
+/* ① 辅助条·时间（小字 "H:MM"/"HH:MM"，冒号眨眼相位沿用冻结周期）：真字形走
+ * imgfont 数字（pitch=13，5 字符 cell 总宽 4*13+字形宽 -> 墨 x=[40..104] 收进
+ * 钉区 [36..108]）；未挂载兜底 thin 描边框撑「time 区有墨」pin。 */
+static void p1_draw_aux_time(void)
 {
     char buf[8];
-    int art_ok = s_art_ok;
+    int colon_visible =
+        (kidpal_home_p1_blink_visible(s_state.tick_ms, HP1_BLINK_PERIOD_COLON_MS) == 1);
 
     p1_fmt_hhmm(s_state.hour, s_state.minute, buf, (int)sizeof(buf));
-
-    /* 兜底冒号两点（真字形覆盖区域内部的 8x7 小块，视觉不叠加；只在 visible 相位
-     * 出现）：保证 P1-A2「眨眼严格减墨」在 colon 字形缺 / art 未挂载 / 资产管线
-     * 半挂的 host 早期路径都成立；ink_off < ink_on 与 art_ok 无关。 */
-    if (art_ok) {
-        /* 数字走 imgfont（colon 位仍受 colon_visible 门控，见 p1_blit_digits）。 */
-        (void)p1_blit_digits(buf, 25, 25, 30, colon_visible);
+    if (s_art_ok) {
+        /* 缩放 blit（源 48x64 -> 16x22 盒，最近邻）× clip 进 time 钉区 [36,6,108,33]；
+         * ink 实测 x[42..103]@y[12..26] 全贴内（见 P1_DIG_W/H 注）。 */
+        (void)p1_blit_str_scaled(buf, 38, 9, 13, P1_DIG_W, P1_DIG_H,
+                                 36, 6, 108, 33, colon_visible);
     } else {
-        /* 兜底：区域内 thin 描边框撑「time 有墨」pin。 */
-        p1_stroke_rect(18, 18, 182, 92, 2);
+        p1_stroke_rect(38, 10, 104, 30, 1);
     }
-    if (colon_visible) {
-        /* 两点 8x7：绝对 x=[105..112], y=[44..50] 和 [64..70]，正好落 imgfont_colon
-         * 真字形 ink 区域内（real dot x=[105..114] y=[42..51] / y=[62..72]）——
-         * 真字形在场时是「同片墨的重写」，无视觉差异；缺场时独自撑减墨量。 */
-        p1_fill_rect(105, 44, 112, 50);
-        p1_fill_rect(105, 64, 112, 70);
+    if (colon_visible && !s_art_ok) {
+        /* 兜底冒号两点（真字形缺场时撑眨眼相位的墨差，落 time 钉区内）。 */
+        p1_fill_rect(58, 15, 62, 19);
+        p1_fill_rect(58, 23, 62, 27);
     }
 }
 
-/* 日期星期区（V3 是 pose_daily 吉祥物 + 「8月27日 周四」文本；文本暂无中文字形，
- * 落殿后清单——见交付报告 §5）。本轮：pose_daily 全尺寸 96x96 blit（不再剪
- * 到 79 高，也不再叠实心块）；未挂载 thin 描边兜底。 */
-static void p1_draw_date(void)
+/* ① 辅助条·日期星期：「8月27日 周四」文本暂无中文字形（殿后清单）——描边兜底
+ * 恒画（两条路径同款，有墨义务成立），落 date 钉区 [112..208]x[6..33] 内。 */
+static void p1_draw_aux_date(void)
 {
-    if (!p1_blit_art("pose_daily_96.bin", 198, 15, 96, 96)) {
-        /* 兜底：小描边方框，保证「date 区有墨」pin 不红。 */
-        p1_stroke_rect(200, 25, 290, 85, 2);
-    }
+    p1_stroke_rect(114, 10, 206, 30, 1);
 }
 
-/* 电池图标：走 ic_batt_48 资产（V3 ic-batt 语义）；未挂载 thin 描边兜底。
- * 整体由调用门（doze 灭相 -> 不调用）保证「灭相区内零墨」pin。 */
-static void p1_draw_battery(void)
+/* ① 辅助条·温度元素（图标半前置 {212,6,232,33} + 数值半 {236,6,264,33}）。
+ * 图标：thermo_man 资产 blit（clip 进图标半）；数值：imgfont 整数（pitch=12，
+ * "22" 2 字符墨 x=[238..262] 收进数值半）。半区各自兜底描边（各半区独立保证
+ * 「有墨 >= 4」pin；整元素由 env_valid 门控，缺席即隐藏不画假数据）。 */
+static void p1_draw_aux_temp(void)
 {
-    if (!p1_blit_art("ic_batt_48.bin", 340, 22, 48, 48)) {
-        p1_stroke_rect(320, 28, 380, 68, 2);
+    /* 图标走缩放 blit（thermo_man 41x67 降采样进 20x28 盒）+ clip 进温度图标半区
+     * {212,6,232,33}；ink 实测 x[216..228]@y[9..33] 全贴内（见报告表 ③）。 */
+    if (!p1_blit_art_scaled("thermo_man.bin", 212, 6, 20, 28,
+                            212, 6, 232, 33)) {
+        p1_stroke_rect(214, 10, 230, 29, 1);
+    }
+    if (s_art_ok) {
+        (void)p1_blit_int_scaled(s_state.temp_c, 238, 10, 12,
+                                 P1_DIG_W, P1_DIG_H, 236, 6, 264, 33);
+    } else {
+        p1_stroke_rect(238, 10, 262, 29, 1);
     }
 }
 
-/* 温湿度盒：温度小人 + 水滴宝宝（各 icon 全尺寸，不再叠实心块），右侧数字。
- * 仅在 env_valid 时被调用 -> env_valid=0 的「th 区必须无墨」(P1-A2) 不受影响；
- * 数字（p1_blit_int）也在同一门内 -> 隐藏语义完整。未挂载时兜底 thin 描边框
- * 撑「有墨」pin；框线落 th 钉区内、不越界到 next 钉区（x<140）。 */
-static void p1_draw_th(void)
+/* ① 辅助条·湿度元素（图标半前置 {268,6,288,33} + 数值半 {292,6,318,33}，
+ * "45%" 不裸数字挨电池——图标半在前）。水滴宝宝资产 + imgfont 整数，兜底同温度。 */
+static void p1_draw_aux_hum(void)
 {
-    int art_ok = s_art_ok;
-    int drew = 0;
-
-    drew |= p1_blit_art("thermo_man.bin", 17, 113, 41, 67);
-    drew |= p1_blit_art("drop_baby.bin", 17, 187, 32, 51);
-    if (art_ok) {
-        /* 温度/湿度数值（imgfont 数字；pitch=30，2 字符 cell 总宽 78 ->
-         * 数字墨 x=[86..133]（th 钉区右界 120 内一半墨）+ y 不越 next 钉区 x=140。 */
-        drew |= (p1_blit_int(s_state.temp_c, 65, 133, 30) > 0);
-        drew |= (p1_blit_int(s_state.humidity_pct, 65, 195, 30) > 0);
+    /* 图标走缩放 blit（drop_baby 32x51 降采样进 20x28 盒）+ clip 进湿度图标半区
+     * {268,6,288,33}；ink 实测 x[269..287]@y[8..32] 全贴内（见报告表 ③）。 */
+    if (!p1_blit_art_scaled("drop_baby.bin", 268, 6, 20, 28,
+                            268, 6, 288, 33)) {
+        p1_stroke_rect(270, 10, 286, 29, 1);
     }
-    if (!drew) {
-        /* 兜底：thin 描边方框撑「th 区有墨」pin（严格门在 env_valid 已生效）。 */
-        p1_stroke_rect(18, 118, 118, 232, 2);
+    if (s_art_ok) {
+        (void)p1_blit_int_scaled(s_state.humidity_pct, 294, 10, 12,
+                                 P1_DIG_W, P1_DIG_H, 292, 6, 318, 33);
+    } else {
+        p1_stroke_rect(294, 10, 316, 29, 1);
     }
 }
 
-/* 接下来卡：ic_book 图标 + 首项时点数字（V3 「14:00 钢琴课」的"时间数字化"半）。
- * 仅在 s_count>0 时被调用 -> 「无待办时 next 区必须无墨」(P1-A3) 不受影响。
- * 首项名文字（中文，如「钢琴课」）无 imgfont -> 落殿后清单 §5。 */
+/* ① 辅助条·电量元素（图标半前置 {322,6,344,33} + 数值半 {348,6,396,33}）。
+ * ic_batt 资产 + imgfont 整数（"85"/"100" pitch=12，墨 x=[350..388] 收进数值半），
+ * 半区各自兜底描边。整元素由 doze 灭相门控（调用方），充电恒画。 */
+static void p1_draw_aux_batt(void)
+{
+    /* 图标走缩放 blit（ic_batt_48 48x48 降采样进 22x28 盒）+ clip 进电量图标半区
+     * {322,6,344,33}；ink 实测 x[324..342]@y[14..26] 全贴内、视觉不再与数值半 95
+     * 粘连（见报告表 ③；95 字号本轮不动）。 */
+    if (!p1_blit_art_scaled("ic_batt_48.bin", 322, 6, 22, 28,
+                            322, 6, 344, 33)) {
+        p1_stroke_rect(324, 10, 342, 29, 1);
+    }
+    if (s_art_ok) {
+        (void)p1_blit_int_scaled(s_state.battery_pct, 350, 10, 12,
+                                 P1_DIG_W, P1_DIG_H, 348, 6, 396, 33);
+    } else {
+        p1_stroke_rect(350, 10, 394, 29, 1);
+    }
+}
+
+/* ② 小伴常驻演出（v1.4 内容区左 {8,48,128,208}）：pose_daily 全尺寸 96x96 blit
+ * （落点 (24,80) 收进钉区）；未挂载 thin 描边兜底（有墨 >= 20 pin 两条路径成立）。 */
+static void p1_draw_mascot(void)
+{
+    if (!p1_blit_art("pose_daily_96.bin", 24, 80, 96, 96)) {
+        p1_stroke_rect(10, 50, 126, 206, 2);
+    }
+}
+
+/* ② 「接下来」最近一项主体（{136,48,392,168}，最醒目）：ic_book 图标 + 首项时点
+ * 数字（"14:00" pitch=25 -> 墨 x=[210..336] 收进钉区）；首项名中文无 imgfont ->
+ * 殿后清单。整函数仅在 s_count>0 时被调用 -> 空日程 next 区严格零墨。未挂载兜底
+ * thin 描边卡框（墨 >= 20）。 */
 static void p1_draw_next(void)
 {
     const hp1_item_t *it = kidpal_home_p1_schedule_item(0);
     int drew = 0;
 
-    drew |= p1_blit_art("ic_book_48.bin", 145, 140, 48, 48);
+    drew |= p1_blit_art("ic_book_48.bin", 145, 62, 48, 48);
     if (it != NULL && s_art_ok) {
-        /* 首项 "H:MM"/"HH:MM" verbatim（producer 分组结果，不重算）；pitch=25,
-         * 5 字符总宽 148 -> 墨 x=[211..337]，全在 next 钉区 [140..390] 内。 */
-        drew |= (p1_blit_digits(it->time, 200, 130, 25, 1) > 0);
+        drew |= (p1_blit_digits(it->time, 210, 74, 25, 1) > 0);
     }
     if (!drew) {
-        /* 兜底：thin 描边方框撑「有墨」pin；整函数受 s_count>0 门控制。 */
-        p1_stroke_rect(142, 115, 385, 190, 2);
+        p1_stroke_rect(138, 50, 390, 166, 2);
     }
 }
 
-/* 倒计时贴纸：以 "H:MM"（剩余时分）数字表达「还有 X 时 Y 分」的数值半，
- * 中文「还有…半小时」文字与 ic_bell 属殿后清单。整函数仅在 countdown==0
- * 时被调用 -> 全过期「sticker 区零墨」pin 天然保留。 */
+/* ② 倒计时贴纸（接下来卡右部 {268,50,390,130}）：以 "H:MM"（剩余时分）数字表达
+ * 「还有 X 时 Y 分」的数值半 + ic_bell 铃铛资产；中文「还有…」文字属殿后清单。
+ * 整函数仅在 countdown==0 时被调用 -> 全过期「贴纸区零墨」pin 天然保留。 */
 static void p1_draw_sticker(int remain_h, int remain_m)
 {
     char buf[8];
     int drew = 0;
 
-    drew |= p1_blit_art("ic_bell_48.bin", 145, 210, 48, 40);
+    drew |= p1_blit_art("ic_bell_48.bin", 272, 58, 48, 48);
     if (s_art_ok) {
         p1_fmt_hhmm(remain_h, remain_m, buf, (int)sizeof(buf));
-        drew |= (p1_blit_digits(buf, 200, 210, 20, 1) > 0);
+        drew |= (p1_blit_str_scaled(buf, 330, 66, 14,
+                                    P1_DIG_W, P1_DIG_H,
+                                    268, 50, 390, 130, 1) > 0);
     }
     if (!drew) {
-        p1_stroke_rect(142, 207, 385, 248, 2);
+        p1_stroke_rect(270, 52, 388, 128, 2);
     }
 }
 
-/* 次日预告：preview item 的 time 数字（V3 「明天 09:00 · 游泳课」的时间半）。
- * 整函数仅在 s_has_preview 时被调用 -> 「无预告时 preview 区零墨」pin 保留。
- * 中文文字（游泳课/明日）落殿后清单。 */
+/* ③ 后续事项逐项（小一号，{136,172,392,214}）：items[1] 起的时点数字（"16:30"
+ * pitch=14 -> 墨 x=[140..196] 收进钉区）；整函数仅在 s_count >= 2 时被调用
+ * -> 单项/空日程严格零墨。未挂载兜底描边条框。 */
+static void p1_draw_nextlist(void)
+{
+    const hp1_item_t *it = kidpal_home_p1_schedule_item(1);
+    int drew = 0;
+
+    if (it != NULL && s_art_ok) {
+        drew |= (p1_blit_str_scaled(it->time, 140, 182, 14,
+                                    P1_DIG_W, P1_DIG_H,
+                                    136, 172, 392, 214, 1) > 0);
+    }
+    if (!drew) {
+        p1_stroke_rect(138, 174, 390, 212, 2);
+    }
+}
+
+/* ③ 明日预告（{136,220,392,258}）：preview item 的 time 数字（V3 「明天 09:00 ·
+ * 游泳课」的时间半，中文文字殿后）。整函数仅在 s_has_preview 时被调用 -> 无预告
+ * 「预告区零墨」pin 保留。未挂载兜底描边条框。 */
 static void p1_draw_preview(void)
 {
     hp1_item_t pv;
@@ -739,19 +892,18 @@ static void p1_draw_preview(void)
 
     pv.time[0] = '\0';
     if (kidpal_home_p1_schedule_preview(&pv) == 0 && s_art_ok) {
-        /* 5 字符 "HH:MM" pitch=20 -> cell 总宽 4*20+48=128 -> 墨 x=[156..283]，
-         * 全在 preview 钉区 [140..390] 内。 */
-        (void)p1_blit_digits(pv.time, 145, 260, 20, 1);
-        drew = 1;
+        drew |= (p1_blit_str_scaled(pv.time, 140, 228, 14,
+                                    P1_DIG_W, P1_DIG_H,
+                                    136, 220, 392, 258, 1) > 0);
     }
     if (!drew) {
-        p1_stroke_rect(142, 260, 385, 290, 2);
+        p1_stroke_rect(138, 222, 390, 256, 2);
     }
 }
 
 int kidpal_home_p1_render_frame(void)
 {
-    int doze, lr, show_th, show_next;
+    int doze, lr, batt_visible;
     int idx, hh, mm;
 
     if (!s_state_valid) {
@@ -761,40 +913,44 @@ int kidpal_home_p1_render_frame(void)
     p1_refresh_art_ok();
     p1_clear();
 
-    /* 时间 + 眨眼冒号：冒号可见性由相位函数决定（4.4s 周期）。 */
-    p1_draw_time(kidpal_home_p1_blink_visible(s_state.tick_ms,
-                                              HP1_BLINK_PERIOD_COLON_MS) == 1);
-    p1_draw_date();
+    /* 布局解析（时间>接下来>温湿度，冻结语义沿用）：以整帧高度为可用高度 ->
+     * 三元素全在位；温湿度额外要求 env 数据有效（缺席即隐藏，不画假数据），
+     * 接下来额外要求日程缓存非空（空日程让位 -> 主体区严格零墨）。 */
+    lr = kidpal_home_p1_layout_resolve(28, 120, 28, P1_FB_H);
 
-    /* 电量：打盹态每秒闪（1s 周期同款相位函数）；充电即叫醒恒画。 */
+    /* ① 辅助条 y[0..39]（v1.4 重排序：时间·日期·温度·湿度·电量，图标前置）。 */
+    p1_draw_aux_time();
+    p1_draw_aux_date();
+    if (s_state.env_valid == 1 && ((lr & HP1_ELEM_BIT_TH) != 0)) {
+        p1_draw_aux_temp();
+        p1_draw_aux_hum();
+    }
+
+    /* 电量：doze 灭相窗内电池整元素（图标+数值）不画（区内严格零墨）；充电恒醒
+     * 恒画（覆盖任何电量）；非低电恒画。 */
     doze = kidpal_home_p1_doze_state(s_state.battery_pct, s_state.charging);
-    if (doze == 1) {
-        if (kidpal_home_p1_blink_visible(s_state.tick_ms,
-                                         HP1_BLINK_PERIOD_BATTERY_MS) == 1) {
-            p1_draw_battery();
-        }
-    } else {
-        p1_draw_battery();
+    batt_visible = (doze == 1)
+        ? (kidpal_home_p1_blink_visible(s_state.tick_ms,
+                                        HP1_BLINK_PERIOD_BATTERY_MS) == 1)
+        : 1;
+    if (batt_visible) {
+        p1_draw_aux_batt();
     }
 
-    /* 布局解析（时间>接下来>温湿度）：以整帧高度为可用高度 -> 三元素全在位；
-     * 温湿度额外要求 env 数据有效（缺席即隐藏，不画假数据）。 */
-    lr = kidpal_home_p1_layout_resolve(80, 85, 130, P1_FB_H);
-    show_th = (s_state.env_valid == 1) && ((lr & HP1_ELEM_BIT_TH) != 0);
-    show_next = (s_count > 0) && ((lr & HP1_ELEM_BIT_NEXT) != 0);
-
-    if (show_th) {
-        p1_draw_th();
-    }
-    if (show_next) {
+    /* ② 日程主体：小伴常驻演出（左）+「接下来」最近一项（右）+ 倒计时贴纸。 */
+    p1_draw_mascot();
+    if (s_count > 0 && ((lr & HP1_ELEM_BIT_NEXT) != 0)) {
         p1_draw_next();
+        /* 倒计时贴纸：当下缓存仍有未开始的最近项才贴。 */
+        if (kidpal_home_p1_countdown(s_items, s_count, s_state.hour, s_state.minute,
+                                     &idx, &hh, &mm) == 0) {
+            p1_draw_sticker(hh, mm);
+        }
     }
 
-    /* 倒计时贴纸：当下缓存仍有未开始的最近项才贴。 */
-    if (s_count > 0 &&
-        kidpal_home_p1_countdown(s_items, s_count, s_state.hour, s_state.minute,
-                                 &idx, &hh, &mm) == 0) {
-        p1_draw_sticker(hh, mm);
+    /* ③ 后续事项逐项（小一号）+ 明日预告。 */
+    if (s_count >= 2) {
+        p1_draw_nextlist();
     }
     if (s_has_preview) {
         p1_draw_preview();

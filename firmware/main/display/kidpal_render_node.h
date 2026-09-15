@@ -143,6 +143,15 @@ void kidpal_render_node_inject_rtc(int hour, int minute);
 void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct);
 
 /*
+ * 注入电量（包 260915-m1-n1b-p1-home-battery：CustomBoard ADC 读数后在
+ * inject_rtc/inject_env 同一装配点调用，LVGL 就绪后）。
+ * battery_pct: 0..100（越界值丢弃、保持原值——声明初始化器的保守默认 100 仅作
+ * 无 ADC 读数时的兜底，本函数是它的唯一运行期写点）。
+ * charging: 非 0 归 1。
+ */
+void kidpal_render_node_inject_battery(int battery_pct, int charging);
+
+/*
  * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，
  * 前台 owner 由 layer 栈 top() 单一裁决。
  */

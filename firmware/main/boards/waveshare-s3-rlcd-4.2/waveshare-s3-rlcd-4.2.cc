@@ -19,8 +19,26 @@
 #include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
 #include "sdkconfig.h"          /* CONFIG_BUTTON_* 按键消抖/长按窗参数 */
+#include <esp_adc/adc_oneshot.h>      /* 包 260915-m1-n1b-p1-home-battery: 板级电池 ADC */
+#include <esp_adc/adc_cali.h>         /* 包 260915-m1-n1b-p1-home-battery: ADC 校准 */
+#include <esp_adc/adc_cali_scheme.h>  /* 包 260915-m1-n1b-p1-home-battery: 曲线拟合校准 */
+#include "adc_battery_monitor.h"      /* 包 260915-m1-n1b-p1-home-battery: 充电态监测基座 */
 
 #define TAG "waveshare_rlcd_4_2"
+
+/* 包 260915-m1-n1b-p1-home-battery：板级电池 ADC 采集配置。官方 Demo
+ * ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/03_ADC_Test（只读参考，重写进本文件）已验证：
+ * 电池电压经板上分压进 GPIO4 = ADC1_CH3，Adc_GetBatteryLevel 把校准后电压按
+ * VBAT = mV*3 / 1000、[3.0, 4.12]V 线性映射到 0..100。 */
+#define BATTERY_ADC_CHANNEL          ADC_CHANNEL_3
+#define BATTERY_VOLTAGE_DIVIDER      3.0f  /* VBAT = ADC 引脚校准电压 x 3（板上分压比） */
+#define BATTERY_VOLTAGE_MIN_V        3.0f  /* <= 3.0V -> 0% */
+#define BATTERY_VOLTAGE_MAX_V        4.12f /* >= 4.12V -> 100% */
+#define BATTERY_EST_UPPER_RESISTOR   200000.0f /* 分压估算用上臂标称值（1:2 -> 比率 3，
+                                              * 仅喂 AdcBatteryMonitor 趋势引擎；显示电量
+                                              * 走 ReadBatteryLevel 的 Demo 实测映射，
+                                              * PH-A6 真机轮以实测读数校核） */
+#define BATTERY_EST_LOWER_RESISTOR   100000.0f
 
 /* 换皮消费接线 (包 9b HWV-A6 / ART-E2 收口)：单一资产层挂载根。装配层约定 VFS 路径
  * "/art"，并在 InitializeArt 里 esp_vfs_spiffs_register 把 art SPIFFS 分区 (分区表
@@ -152,9 +170,15 @@ private:
     key_gesture_parser_t boot_gesture_;
     key_gesture_parser_t key_gesture_;
     CustomLcdDisplay *display_;
-    adc_oneshot_unit_handle_t adc1_handle;
-    adc_cali_handle_t cali_handle;
-    bool vbat_status = 0;
+    /* 包 260915-m1-n1b-p1-home-battery 电量链路接线（原三处死成员销账：声明 +
+     * 真实使用）。adc1_handle/cali_handle = InitializeBatteryAdc 创建的 ADC oneshot
+     * unit 与曲线拟合校准句柄（ReadBatteryLevel 消费 + 外部句柄喂
+     * AdcBatteryMonitor）；vbat_status = 最近一次电量读数有效性（GetBatteryLevel
+     * override 返回值语义：读失败 = 如实报无电量数据）。 */
+    adc_oneshot_unit_handle_t adc1_handle = nullptr;
+    adc_cali_handle_t cali_handle = nullptr;
+    bool vbat_status = false;
+    AdcBatteryMonitor *battery_monitor_ = nullptr;
 
     /* 包 9b HWV-A6: 把 InitializeSensors() 读到的 RTC/温湿度暂存于此，在
      * InitializeLcdDisplay() 之后统一注入渲染节点（LVGL 在传感器读取时尚未初始化）。 */
@@ -286,6 +310,67 @@ private:
         } else {
             ESP_LOGW(TAG, "shtc3 corr_id=%s read_deferred", corr_id);
         }
+    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：板级电池 ADC 挂起（参考树 03_ADC_Test
+     * Adc_PortInit 只读重写）：ADC1 oneshot unit + GPIO4(ADC1_CH3) 通道（12bit /
+     * 12dB）+ 曲线拟合校准。句柄落 adc1_handle/cali_handle 死成员（销账），并经
+     * 外部句柄构造喂 AdcBatteryMonitor（unit 排他 claim，估计库不重复建 unit）。 */
+    void InitializeBatteryAdc() {
+        adc_oneshot_unit_init_cfg_t init_cfg = {};
+        init_cfg.unit_id = ADC_UNIT_1;
+        ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_cfg, &adc1_handle));
+        adc_oneshot_chan_cfg_t chan_cfg = {};
+        chan_cfg.bitwidth = ADC_BITWIDTH_12;
+        chan_cfg.atten = ADC_ATTEN_DB_12;
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, BATTERY_ADC_CHANNEL, &chan_cfg));
+        adc_cali_curve_fitting_config_t cali_cfg = {};
+        cali_cfg.unit_id = ADC_UNIT_1;
+        cali_cfg.chan = BATTERY_ADC_CHANNEL;
+        cali_cfg.atten = ADC_ATTEN_DB_12;
+        cali_cfg.bitwidth = ADC_BITWIDTH_12;
+        ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_cfg, &cali_handle));
+
+        /* AdcBatteryMonitor 基座实装：充电态趋势检测（本板充放电管理无充电检测 GPIO
+         * 在册——arch 硬件表 CHG/WRN 仅指示灯，官方 Demo 亦无充电检测；电压上升趋势
+         * = 充电，PH-A6 真机轮回读）。 */
+        battery_monitor_ = new AdcBatteryMonitor(adc1_handle, cali_handle,
+                                                 BATTERY_ADC_CHANNEL,
+                                                 BATTERY_EST_UPPER_RESISTOR,
+                                                 BATTERY_EST_LOWER_RESISTOR,
+                                                 GPIO_NUM_NC);
+    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：单次电量读（参考树 03_ADC_Test
+     * Adc_GetBatteryLevel 只读重写）：raw -> 校准 mV -> VBAT = mV*3/1000 ->
+     * [3.0, 4.12]V 线性映射 0..100。读失败置 vbat_status=false 并返回 false
+     * （调用方如实报无电量数据，不画假值）。 */
+    bool ReadBatteryLevel(int *level_out) {
+        int raw = 0;
+        int mv = 0;
+        esp_err_t err = adc_oneshot_read(adc1_handle, BATTERY_ADC_CHANNEL, &raw);
+        if (err == ESP_OK) {
+            err = adc_cali_raw_to_voltage(cali_handle, raw, &mv);
+        }
+        if (err != ESP_OK) {
+            vbat_status = false;
+            return false;
+        }
+        float vol = 0.001f * mv * BATTERY_VOLTAGE_DIVIDER;
+        int level;
+        if (vol <= BATTERY_VOLTAGE_MIN_V) {
+            level = 0;
+        } else if (vol >= BATTERY_VOLTAGE_MAX_V) {
+            level = 100;
+        } else {
+            level = static_cast<int>(((vol - BATTERY_VOLTAGE_MIN_V) /
+                                      (BATTERY_VOLTAGE_MAX_V - BATTERY_VOLTAGE_MIN_V)) * 100.0f);
+        }
+        vbat_status = true;
+        if (level_out != NULL) {
+            *level_out = level;
+        }
+        return true;
     }
 
     void InitializeButtons() {
@@ -439,6 +524,7 @@ public:
          * 各读函数失败路径的 RecoverI2cBus, 总线不会被残留 busy 锁死到 codec 事务上。 */
         GetAudioCodec();
         InitializeSensors();
+        InitializeBatteryAdc();
         InitializeButtons();
         InitializeTools();
         InitializeLcdDisplay();
@@ -456,8 +542,41 @@ public:
         kidpal_render_node_init();
         kidpal_render_node_inject_rtc(s_rtc_h, s_rtc_m);
         kidpal_render_node_inject_env(s_env_ok, s_env_temp, s_env_rh);
+        /* 包 260915-m1-n1b-p1-home-battery 电量装配点（seam [2]）：板级 ADC 读数 ->
+         * 渲染节点电池注入缝，inject_rtc/inject_env 同一装配点（LVGL 就绪后）。
+         * 读失败不注入（渲染节点保守默认保持），不画假值。 */
+        {
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            int bat_pct = 0;
+            bool chg = battery_monitor_->IsCharging();
+            if (ReadBatteryLevel(&bat_pct)) {
+                kidpal_render_node_inject_battery(bat_pct, chg ? 1 : 0);
+                ESP_LOGI(TAG, "battery_inject corr_id=%s level=%d charging=%d vbat_ok=%d",
+                         corr_id, bat_pct, chg ? 1 : 0, vbat_status ? 1 : 0);
+            } else {
+                ESP_LOGW(TAG, "battery_inject corr_id=%s read_deferred vbat_ok=%d "
+                              "(ADC 读失败, 电量保守默认保持)", corr_id,
+                         vbat_status ? 1 : 0);
+            }
+        }
         kidpal_render_node_show_home();
    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：Board::GetBatteryLevel 基座默认 return false
+     * 的现状销账——chrome (lvgl_display UpdateStatusBar) 每 10s 轮询电量显示真值。
+     * 显示电量 = ReadBatteryLevel（官方 Demo 已验证映射）；充电态 = AdcBatteryMonitor
+     * 趋势检测（顺带消费估计库采样窗喂趋势缓冲），PH-A6 真机轮回读充电停闪表现。 */
+    virtual bool GetBatteryLevel(int& level, bool& charging, bool& discharging) override {
+        int pct = 0;
+        (void)ReadBatteryLevel(&pct); /* 置 vbat_status = 最近一次读有效性 */
+        (void)battery_monitor_->GetBatteryLevel(); /* 喂估计库采样窗（趋势引擎） */
+        charging = battery_monitor_->IsCharging();
+        discharging = !charging;
+        level = pct;
+        return vbat_status; /* 读失败 = 如实报无电量数据（基座 false 语义） */
+    }
 
     virtual AudioCodec* GetAudioCodec() override {
         static BoxAudioCodec audio_codec(

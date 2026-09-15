@@ -9,6 +9,16 @@
 class AdcBatteryMonitor {
 public:
     AdcBatteryMonitor(adc_unit_t adc_unit, adc_channel_t adc_channel, float upper_resistor, float lower_resistor, gpio_num_t charging_pin = GPIO_NUM_NC);
+    /*
+     * 外部句柄构造（包 260915-m1-n1b-p1-home-battery）：板级已持有 ADC oneshot unit +
+     * calibration 句柄时复用之（ESP-IDF 对同一 ADC unit 的二次
+     * adc_oneshot_new_unit 会返回 ESP_ERR_NOT_FOUND——unit 是排他 claim，内部构造
+     * 与板级自有 ADC 初始化不能共存）。估计库经 adc_battery_estimation_t 的
+     * external 分支吃外部句柄，不重复创建/销毁 unit。
+     */
+    AdcBatteryMonitor(adc_oneshot_unit_handle_t adc_handle, adc_cali_handle_t adc_cali_handle,
+                      adc_channel_t adc_channel, float upper_resistor, float lower_resistor,
+                      gpio_num_t charging_pin = GPIO_NUM_NC);
     ~AdcBatteryMonitor();
 
     bool IsCharging();
