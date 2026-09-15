@@ -75,3 +75,49 @@
 4. landing-summary §3-4 补记本批漏网损伤（诚实注记增补），retro 收录「正则替换须带成员访问边界守卫 + 固定签名 C 函数禁按插段实现」教训。
 
 **merge 门：不放行。** 结构与文档面保真优秀（137 锚全落、历史面零损、契约/敏感面逐字合规），唯 T2 批改面存在 4 处会使 G3 门与 host 验收编译即刻失败的逻辑损伤，属「批定改法落错」而非「漏落」或「夹带」——修复面小且机械，修完复验即可转绿。
+
+---
+
+## 7. 复核轮记录（2026-09-15，append-only，不改写上轮 FAIL 结论）
+
+> 判定：**PASS（GREEN）——放行 merge（merge 仍归 human manual-merge 门）。**
+> 判定人：landing-verifier（同一角色、独立复核，只读 codebase、只写本件复核节）。修复基线：landing commit `bd81f57` → 修复 commit `1857dd3`（原基线 `3dda7bd`）。核验方式：`git diff bd81f57..1857dd3` 逐文件人读 + 三脚本亲自复跑 + 防回归扫描亲自复跑 + 结构门亲自复跑。
+
+### 7.1 修复面逐文件裁断（diff 实证）
+
+| 文件 | 声明修复 | 实证裁断 |
+|---|---|---|
+| `.claude/scripts/closeout-check.mjs` | 恢复原属性名 :317/:332-333 | ✓ 恰 3 行、全部复原（`taskPackage.deliveryMilestoneStateChanged` / `planningWorkstreamRequired` / `planningRefs ‖ planningRef`），无其它改动 |
+| `.claude/scripts/taskpackage-required-check.mjs` | 恢复原属性名 :198-199/:236-243 | ✓ 恰 6 行、9 处粘连全复原（`deliveryImpact`/`planningImpact`/`planningRefs`），无其它改动 |
+| `.claude/scripts/arch-review-handoff-check.mjs` | 恢复原属性名 :117-118 | ✓ 恰 2 行、4 处粘连全复原（`finding.deliveryImpact`/`finding.planningRecommendation`） |
+| `firmware/main/test/device_ws_switch.acceptance.c` | 8 参改回 7 参单串 | ✓ 恰 1 行：`wsa_scan_tree_both("delivery/changes", "shim.py", "archiv", 1, NULL, hit, sizeof(hit))`——与上轮 §6-2 指定形态逐字一致 |
+| `delivery/taskpackages/260911-render-pages/taskpackage.json` | canonical 回写对齐 current | ✓ 恰为路径指针改写（upstreamRef/planRef/planningRefs/docRefs/sourceRefs/crossEnd.sourceRefs/notes/mutationSkipReason 的旧前缀 → `delivery/` 新前缀），语义字段零变；与 landing 对 current 的批改同构 |
+| `architect-landing-summary.md` | 补记 §3-11/12 | ✓ 恰 2 行，内容与实际修复相符（含「pre-landing 字节一致、失配 100% landing 造成」的诚实归因） |
+| `retro.md` | 新建收口 | ✓ 新件 62 行；§3-F2-④ 把成员访问粘连形列为第 8 种路径形态、§3-F2b 记 canonical 活面误判、§4-2 固化建议收录形态族谱表——上轮 §6-4 两条教训均落档 |
+| `landing-verdict.md` | 本件（上轮 verdict） | ✓ 上轮 FAIL 结论原文保留，本节 append |
+
+**合计 mjs 粘连修复 17 处 + C 件 1 处 = 18 处，与声明计数吻合。** 上轮 §6 三条件全部核销：
+
+1. **§6-1（mjs 粘连损伤修复）**：✓。增强实证——三脚本 `git diff 3dda7bd..1857dd3` 的属性访问行净零差（对 pre-landing 原版逐属性复原，非仅修掉粘连串）。
+2. **§6-2（C 件 7 参形）**：✓，形态逐字符合。
+3. **§6-3（防回归扫描 + 冒烟 + 复核重派）**：✓。核验官亲自复跑：①粘连形扩展扫描 `[A-Za-z0-9_})\]]delivery/(milestones|workstreams|taskpackages|changes)` 全树（含代码面、排除证据制品）**零命中**；②`closeout-check.mjs` 实跑 `ok:true` exit 0；③`taskpackage-required-check.mjs` 实跑 `ok:true` exit 0（读 `delivery/taskpackages/current/taskpackage.json`，changeId 260911-render-pages）；④`arch-review-handoff-check.mjs` 实跑到达 usage 业务判定（exit 1 = 缺目录参数的正常 usage 出口，非 ReferenceError）。
+4. **§6-4（summary 补记 + retro 收录）**：✓（§3-11/12 + retro F2-④/F2b/§4-2）。
+
+### 7.2 canonical↔current 复核
+
+`git diff --no-index delivery/taskpackages/260911-render-pages/taskpackage.json delivery/taskpackages/current/taskpackage.json` → **exit 0，字节一致**。required-check 门恢复正常判定基础。定性：canonical 在途包属活面（census 起草期误归历史面的覆盖缺口），修复 = 补完 T2 批定改法本身（同构指针平移），非 scope creep；已在 landing-summary §3-12 + retro F2b 如实留痕。
+
+### 7.3 结构门复跑（含基线口径注记）
+
+- 首两跑 `ok:false` 均为**调用口径问题、非 landing 缺陷**：①不给 baseRef 时脚本默认对 `HEAD~1..HEAD`（= `bd81f57..1857dd3`，只见修复轮改动，全 manifest 误报 claimed-but-not-landed）；②`baseRef=3dda7bd` 键值形不被解析（baseRef 取位置参数 argv[3]，键值串被当 ref 名）。
+- 正确调用 `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260914-gov-review-delivery-restructure 3dda7bd`（位置 baseRef 覆盖 bd81f57+1857dd3 两 commit 全部已提交改动）：**`ok:true`，frozen:true，packetBinding:true**，unauthorized/claimedNotLanded/plannedNotLanded 全空，exit 0。两 commit 跨越不影响结论（合并视角 = 相对 3dda7bd 的全量 diff）。
+
+### 7.4 终态
+
+上轮 4 红项 + canonical 对齐缺口 + 制品补记全部修复且经独立复证实证；修复面恰为声明面、无新私货；结构门 ok:true。**终态 PASS，放行 merge（Track B 自动合并前置闸由主线程跑，merge 决定权归流程既定归属）。**
+
+- 结构门：`ok:true`（baseRef=3dda7bd 位置参数，exit 0）
+- 冒烟：closeout-check `ok:true` / taskpackage-required-check `ok:true` / arch-review-handoff-check 到 usage 判定（均核验官亲跑）
+- 防回归扫描：粘连形全树零命中（核验官亲跑）
+- canonical↔current：字节一致（`git diff --no-index` exit 0）
+- 破坏性自检：修复轮 diff 仅触上轮红项文件 + 两个制品件 + 本件，零越界
