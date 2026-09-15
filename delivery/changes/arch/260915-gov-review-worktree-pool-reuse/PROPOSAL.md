@@ -58,32 +58,32 @@ docs/architecture.md
 ### T1 · kidpal-pod-launch-prep skill 重写 launch 步骤（复用 ∨ 按需新建 + 换包协议）
 
 改 `.claude/skills/kidpal-pod-launch-prep/SKILL.md`：① 产物清单第 3 条与「步骤 3」从「每个包：worktree + branch `dev/<changeId>`」改为「每个包：**运行时 worktree（复用空闲树 ∨ 按需新建）**」；② 新增换包协议四条（与 T2 的 reference 小节同文概要）：树空闲判读（**会话在场即占用**——worktree 由人打开会话占用，一目录一会话，并行同树在操作层不可达；board 的 worktreePath 是记录不是锁）→ **一树一常驻分支**（树建出时定一个常驻分支〔如 `dev/pool-1`，命名自由非门〕，包与包之间不换不删；上一包 **merged** → 直接续跑，上一包 **abandoned** → 先 main→base 同步（**显式前置一步**，R2-N3）再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品再续——复位目标**非 main**：main..base 含未 launch 包的拆包制品，字面复位 main 会把它们从树里抹掉、下一包 intake 即 fail-closed〔R1-F1〕；原「不复用旧包分支」的隔离职能由复位规则承担）→ 交接卫生（tracked 净 + untracked 清、**白名单保留 `build/` 与 `managed_components` 软链**——保热编译与组件缓存）→ 按需扩容（建新树决策归 human，评估并行收益 vs 一棵树的冷编译成本；每树各自常驻分支，git 本禁同分支两树、天然分流）；③ base ref 措辞对齐 F-05——**三处**（R1-F2 补全）：`:14`「base = 当前 main」、`:56` 尾参 `main`、`:38` `--check-launch <changeId> --base-ref main`（行为承重——launch 机械门的实际参数）→ 全部改专用 base 分支；④ 「坑」节补一条：复用树上残留 untracked 的交接卫生教训位；⑤ **launch prompt 收缩为启动卡**——skill §7 重写：prompt 终态 = 数行启动卡，**四要素**（包 changeId + 基线锚指针〔progress.md 带 SHA 行〕+ 上一包 pod-retro 留根指针 + **固件严格模式声明行**〔`VERIFY_FW_BUILD_REQUIRED=1` 默认开、无关闭留痕即开——firmware-build-check.mjs 读进程环境变量、未设即降级〔R1-F3，实测 :108〕，声明载体随 prompt 收缩后归启动卡，不得静默丢〕），身份探测/包事实/环境事实/教训全文一律不再搬运（planner changeId 裸起步自探测〔planner.md:35〕、环境事实归 skills、基线归 progress.md、留根归 pod-retro）；launch 侧动作收敛为三件 = board worktreePath 重指 + 基线差异判停（T3）+ 写启动卡；⑥ **dev-loop-operating-system.md:50 同族措辞对齐**——「每个 ready TaskPackage: git worktree add」改为「复用 ∨ 按需新建」口径（R1-F4，与 SKILL.md 同族的每包一树固化残留）。为什么：直击根因 2/3/5/6；不设独占校验门——占用在操作层自证（human 2026-09-15 裁定，OQ4 撤销）；分支零仪式——merge-driver 读当前分支（merge-driver.mjs:1412），常驻分支零脚本改动。
-**目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`（改）+ `.claude/references/dev-loop-operating-system.md`（改，⑥ 一行）**
+目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`（改）+ `.claude/references/dev-loop-operating-system.md`（改，⑥ 一行）
 
 ### T2 · pod-coordination reference 增「worktree 池复用」小节
 
 改 `.claude/references/pod-coordination.md`：在 Pod worktree 协调面（§1 附近）新增小节「worktree 池复用（换包协议）」：① worktree 与 TaskPackage 无结构绑定（引 portfolio-planner.md:50 launch 侧预填语义）；② 换包协议成文（四条，与 T1 同义）：空闲判读（会话在场即占用、board worktreePath 是记录不是锁）、一树一常驻分支（merged 续跑 / abandoned 复位到**同步后的专用 base 分支**，非 main——R1-F1）、交接卫生白名单、按需扩容决策归 human（评估并行收益 vs 一棵树的冷编译成本）；③ 与既有条款的相容声明：merge-driver 经 pods json worktreePath 定位 + 读当前分支（不认 `dev/<changeId>` 名，问题 5 证据）不受影响、ARQ-260905 每 worktree 专属图索引随树复用自动增量、快照流向不涉 Pod 树不变。为什么：复用协议需要单一事实源，skill 是操作手册、reference 是协调语义 SSOT，两处各管一面不重复正文。
-**目标文件：`.claude/references/pod-coordination.md`（改）**
+目标文件：`.claude/references/pod-coordination.md`（改）
 
 ### T3 · 上游已知红基线的锚点 + 差异判停协议（成文 human 2026-09-12 一次性裁定）
 
 改 `.claude/skills/kidpal-pod-launch-prep/SKILL.md` §2「上游已知红计数」段：① **producer 记锚**——基线记录行（progress.md append 行）在既有「计数 + 命令 + 日期」三要素外增两要素：**量测时 HEAD commit SHA** + **面域**（host 面 = `firmware`、server 面 = `server`，两面分别记锚——一面变另一面可继续引用）；② **consumer 差异判停**——Pod intake / 后续 launch 拿到基线记录后先跑 `git diff --quiet <anchor-sha> HEAD -- <面域>`：零差异 → 引用该 progress.md 行（SHA + 落盘锚 verbatim），**不重跑**；有差异 → 重跑该面（命令同记录）；③ **真值纪律精确化**——「现跑命令，禁手写散文」增补第三态定义：带锚引用 =（量测 SHA + 命令 + 落盘锚）三件齐，缺一即视同手写散文（纪律不放松，只把「重跑」与「带锚引用」并列合法）；④ launch prompt 模板要素（skill §7）同步——**启动卡基线锚行**附 anchor SHA 与面域，Pod 按差异判停（措辞与 T1 ⑤ 启动卡形态统一，R1-N2）。**边界（防误伤）**：本协议只管**上游已知红基线**；本包验收红基线（acceptance-author 步骤 6 的新冻结齿红基线）恒现跑——新测试无缓存可言。为什么：直击根因 4，且把 human 已裁先例成文化，与 T1/T2 同文件同批不扩触面。
-**目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`（改，与 T1 同文件）**
+目标文件：`.claude/skills/kidpal-pod-launch-prep/SKILL.md`（改，与 T1 同文件）
 
 ### T4 · integrator.md 分支亲核措辞对齐（常驻分支口径）
 
 改 `.claude/agents/integrator.md:64/68`：分支亲核从「当前分支亲核为 `dev/<changeId>`」改为「当前分支亲核为**本树常驻分支**（`git rev-parse --abbrev-ref HEAD`，非 main/master 即过——merge-driver 同口径读当前分支）」；`:68` 的「仅在 Pod 分支 `dev/<changeId>` 上执行 `git rebase` / `git merge`」同步改「仅在本树常驻分支上执行」，**「禁在 Pod 分支引入 merge commit」纪律原文保留**（驱动契约不变）。为什么：分支惯例仅此一处 prose 承载行为语义（问题 5 证据），不对齐则 integrator 按旧惯例停在新形态的合法树上。
-**目标文件：`.claude/agents/integrator.md`（改）**
+目标文件：`.claude/agents/integrator.md`（改）
 
 ### T5 · kidpal-idf-env skill 补两坑（环境事实归位耐久的家）
 
 改 `.claude/skills/kidpal-idf-env/SKILL.md`：补 2026-09-15 launch-prep 实测两坑——① **`espidf_wsl.sh` 头注释的 `-T main` 示例已失效**（IDF v5.5.1 idf.py 无 `-T` 选项，报 `Error: No such option: -T`；正确用法 = `espidf_wsl.sh build`）；② **git-bash 调 WSL 须 `MSYS_NO_PATHCONV=1`**（否则 `/mnt/c/...` 被 MSYS 改写为 `C:/Program Files/Git/mnt/c/...`，报 No such file or directory）。两坑命令与输出 verbatim 落本 change 目录耐久制品 [evidence-wsl-pitfalls.md](evidence-wsl-pitfalls.md)（R1-F6：证据不再只引会话记录）。为什么：launch prompt 收缩后（T1 ⑤）环境事实的唯一耐久家 = skill，两坑今日实踩、证据在案，不补则下个包重踩。
-**目标文件：`.claude/skills/kidpal-idf-env/SKILL.md`（改）**
+目标文件：`.claude/skills/kidpal-idf-env/SKILL.md`（改）
 
 ### T6 · architecture §5.5.6 开发拓扑记账（一行，spec 面连带）
 
 改 `docs/architecture.md` §5.5.6「构建与测试基建」：构建条目后补一行开发拓扑事实——「开发拓扑：Pod 在本地 git worktree 树池中开发（复用 ∨ 按需扩容，一树一常驻分支）；固件环境等价三件套 = sdkconfig/dependencies.lock 镜像 + managed_components 软链共享主 checkout + worktree-bootstrap；host build 热缓存随树（`build/` gitignored），换包增量编译（操作协议见 kidpal-pod-launch-prep skill）」。为什么：直击根因 7——「怎么造」的 dev 视图补上「在哪种树上造」这一级事实，本批拓扑变更同步记账防文档漂移；纯增记账、无行为变更。
-**目标文件：`docs/architecture.md`（改）**
+目标文件：`docs/architecture.md`（改）
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 

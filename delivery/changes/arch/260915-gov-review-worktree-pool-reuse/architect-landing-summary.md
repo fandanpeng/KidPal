@@ -24,6 +24,8 @@ V1 `grep -n 'worktree add' SKILL.md` → 唯一命中 = 步骤 3 按需新建条
 2. **pod-coordination §2b 连带一行**：机械承载行「在 `git worktree add` 前跑」扩为「在新建 worktree 或复用换包前跑」——不在 §2 任何 T 的逐字改法内，属 T2 同文件一致性连带（复用形态下该行字面不可达），landing-verifier 人读 diff 核对时请注意此行。
 3. **残留观察**：V9（N1b 在 K1a worktree 的首例换包 + 基线差异判停）按 OQ3 排期在 K1a 合并后执行，证据将落 `delivery/workstreams/m1-home-qa/progress.md`——不阻塞本批收口。
 4. lint-descriptions 1 条既有 warn（landing-verifier.md description 超长）非本批引入、未处理（留根：下个触 landing-verifier 的治理批顺手收）。
+5. **T1 坑节「传染条」连带改写**（landing-verifier 观察项 1 补报）：坑节首条随 prompt 收缩由「旧 prompt 的过期注记会传染」改写为「过期的环境注记会传染（坑位移位到 skills / progress.md 锚行）」——语义等价移位，属 T1 ⑤ 收缩的一致性连带，与 §3.2 同性质。
+6. **结构门返修**（verifier FAIL 项）：PROPOSAL §2 六条锚行原为 `**目标文件：…**` 加粗形态，`parseSection2AnchorLists` 只认行首裸形态（ARQ-260913 同款解析盲点在册）——已去粗归一（零语义变更），结构门复跑结果见 verdict 复核段。
 
 ```landing-manifest
 .claude/agents/integrator.md
