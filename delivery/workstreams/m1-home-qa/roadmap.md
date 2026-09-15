@@ -17,15 +17,17 @@
 ## ② 列车图（依赖 + 批次）
 
 <!-- render-roadmap:begin -->
-<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m1-home-qa，渲染时刻 2026-09-15T02:40:16.919Z）。
+<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m1-home-qa，渲染时刻 2026-09-15T03:41:29.114Z）。
      人工禁改；渲染源唯一 = board + taskpackage JSON。全量重算、幂等。 -->
+<!-- 编号读法：<WS>-<K|N><波次><并行字母?>（如 M1-K2a）——K=承重（被下游依赖或主干终点）、N=游离（无人等待的侧线）；
+     波次=依赖深度+1（跨 workstream 外部前置不占波次）；同波次字母=并行占位序、非合并序。编号随依赖重渲染自动重算，确切依赖边以本图为准。 -->
 ```mermaid
 graph LR
-  260915_key_layer_dispatch["260915-key-layer-dispatch (mo22)"]
-  260915_keybar_three_slot["260915-keybar-three-slot (mo23)"]
-  260915_p1_home_battery["260915-p1-home-battery (mo24)"]
-  260915_voice_round_ui["260915-voice-round-ui (mo25)"]
-  260915_reminder_overlay_unify["260915-reminder-overlay-unify (mo26)"]
+  260915_key_layer_dispatch["M1-K1a｜260915-key-layer-dispatch (mo22)"]
+  260915_keybar_three_slot["M1-K2｜260915-keybar-three-slot (mo23)"]
+  260915_p1_home_battery["M1-N1b｜260915-p1-home-battery (mo24)"]
+  260915_voice_round_ui["M1-K3｜260915-voice-round-ui (mo25)"]
+  260915_reminder_overlay_unify["M1-K4｜260915-reminder-overlay-unify (mo26)"]
   260915_key_layer_dispatch --> 260915_keybar_three_slot
   260915_key_layer_dispatch --> 260915_voice_round_ui
   260915_keybar_three_slot --> 260915_voice_round_ui
@@ -36,13 +38,13 @@ graph LR
   classDef deviation fill:#fce8e6,stroke:#ea4335
   classDef external stroke-dasharray: 4 3,color:#5f6368
 ```
-| changeId | mergeOrder | 达成状态 | deviation 裁定锚 |
-|---|---|---|---|
-| 260915-key-layer-dispatch | 22 | pending（board: queued） | — |
-| 260915-keybar-three-slot | 23 | pending（board: queued） | — |
-| 260915-p1-home-battery | 24 | pending（board: queued） | — |
-| 260915-voice-round-ui | 25 | pending（board: queued） | — |
-| 260915-reminder-overlay-unify | 26 | pending（board: queued） | — |
+| 编号 | changeId | mergeOrder | 达成状态 | deviation 裁定锚 |
+|---|---|---|---|---|
+| M1-K1a | 260915-key-layer-dispatch | 22 | pending（board: queued） | — |
+| M1-K2 | 260915-keybar-three-slot | 23 | pending（board: queued） | — |
+| M1-N1b | 260915-p1-home-battery | 24 | pending（board: queued） | — |
+| M1-K3 | 260915-voice-round-ui | 25 | pending（board: queued） | — |
+| M1-K4 | 260915-reminder-overlay-unify | 26 | pending（board: queued） | — |
 <!-- render-roadmap:end -->
 
 ## ③ 每包条目
