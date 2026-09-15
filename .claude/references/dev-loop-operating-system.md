@@ -47,7 +47,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
        WIP limit、merge order、Pod 状态 board 初始化（--set-pod queued）
   -> launch (script/CI/human)
        launch 前置门（pod-coordination §2b）: git cat-file -e 校验基准 ref 含 taskpackage+PROPOSAL（blocking）/ decision-coverage（warn），缺失拒绝 launch
-       每个 ready TaskPackage: git worktree add（自含拆包产物的专用 base ref）+ 起 planner 会话
+       TaskPackage ready 即就运行时 worktree（复用空闲树 ∨ 按需新建，一树一常驻分支——pod-coordination §2c 换包协议；自含拆包产物的专用 base ref）+ 起 planner 会话
   -> planner (single Pod) × N
        各自跑 acceptance→builder→verifier↔fixer→integrator→planner 收尾 pod-retro→supervisor（Pod 内完整闭环）
        pod-retro 相位对齐 §5b：integrator closeout 之后、supervisor gate 之前（第一人称热记忆；post-cutoff closeout 完整性条件）

@@ -38,6 +38,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260915-gov-review-worktree-pool-reuse](../delivery/changes/arch/260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | frozen | — |
 | [260914-arch-review-kidpal-session-ctx-contract](../delivery/changes/arch/260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | — |
 | [260914-gov-review-delivery-restructure](../delivery/changes/arch/260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | yes |
 | [260913-arch-review-spec-split](../delivery/changes/arch/260913-arch-review-spec-split/) | 2026-09-13 | landed | yes |

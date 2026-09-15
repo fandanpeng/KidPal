@@ -55,4 +55,12 @@ sed 's/\r$//' espidf_wsl.sh > /tmp/espidf_wsl.lf.sh && bash /tmp/espidf_wsl.lf.s
 ```
 Root fix (pin `*.sh` to LF via `.gitattributes`) is tracked as governance debt — see `docs/ARCH-REVIEW-QUEUE.md` ARQ-260906-shell-scripts-lf-gitattributes.
 
+## Two more WSL gotchas (260915 launch-prep 实测; verbatim evidence = delivery/changes/arch/260915-gov-review-worktree-pool-reuse/evidence-wsl-pitfalls.md)
+1. **`espidf_wsl.sh` 头注释的 `-T main` 示例已失效** — IDF v5.5.1 `idf.py` has no `-T` option (`Error: No such option: -T`). Correct usage = `espidf_wsl.sh build`（无 -T）.
+2. **git-bash 调 WSL 必须 `MSYS_NO_PATHCONV=1` 前缀** — otherwise MSYS rewrites `/mnt/c/...` into `C:/Program Files/Git/mnt/c/...` (`No such file or directory`). Working form:
+```
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal/firmware/main/test/host_app/espidf_wsl.sh build
+MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- /mnt/c/AI/KidPal/firmware/main/test/host_app/build/host_infra_test.elf
+```
+
 Related: [[kidpal-serial-monitor]] [[kidpal-nvs-ops]] [[kidpal-live-smoke-debug]]

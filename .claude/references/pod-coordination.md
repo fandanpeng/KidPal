@@ -40,9 +40,22 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
 - **board 不入 check 集**：board/token 恒在 git common dir（§2）、不入版本控制，其可见性由 common dir 给、不靠 commit；board 失同步由 planner intake-reconcile 修。
 - 缺失（blocking 项）→ **拒绝 launch**，报「拆包产物未 commit 到基准 ref」，回 portfolio-planner 补 commit（对偶 planner.md F-09 needs-triage 默认出口）。
 
-> 机械承载（2026-08-25-gov-review-launch-reachability-guard T1 落地）：`node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-ref <ref>`——launch 执行者在 `git worktree add` 前跑，blocking 缺即 exit 1 拒绝（对偶本节 `git cat-file -e` 语义）。
+> 机械承载（2026-08-25-gov-review-launch-reachability-guard T1 落地）：`node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-ref <ref>`——launch 执行者在新建 worktree **或复用换包**前跑，blocking 缺即 exit 1 拒绝（对偶本节 `git cat-file -e` 语义）。
 
 > **门归属（非第 7 工程门）**：本前置门是 launch 编排的**结构性前置条件**——判者 = `git cat-file -e` 确定性退出码机械检查（制度族，对偶 `taskpackage-required-check.mjs` 起包结构闸），非 human judgment 门。DEV-GOVERNANCE §5「工程门 = 6 行」折进注（G1，human-only）明文其为「launch 编排结构性前置条件，非第 7 工程门」；本文件只引其相位，不落折进注。
+
+## 2c. worktree 池复用（换包协议 · 260915-gov-review-worktree-pool-reuse T2）
+
+**worktree 与 TaskPackage 无结构绑定**：board 的 worktreePath 是 launch 侧预填的运行时记录（见 [`portfolio-planner.md`](../agents/portfolio-planner.md) Step 6 ③——launch 方是唯一知道 worktree 绝对路径的实体），树是新建还是复用对下游机械透明；merge-driver 经 `pods/<change-id>.json` 的 worktreePath 定位 + 读 Pod worktree **当前所在分支**并入 main（不认 `dev/<changeId>` 名字）。
+
+换包协议四条（操作手册 = [`kidpal-pod-launch-prep` skill](../skills/kidpal-pod-launch-prep/SKILL.md) 步骤 3）：
+
+1. **空闲判读**：树上有会话在跑即占用（一个目录一个会话，并行同树在操作层不可达）；board 的 worktreePath 是**记录不是锁**，不设独占校验门。
+2. **一树一常驻分支**：每棵树一个常驻分支，包与包之间不换不删——上一包 merged → 直接续跑（merge-driver rebase 步已把常驻分支 rebase 到 main）；上一包 abandoned → 先 main→base 同步（显式前置一步），再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品（复位目标非 main——main..base 含未 launch 包的拆包制品）。
+3. **交接卫生**：换包前 tracked 改动须净、untracked 清理，白名单保留 `build/` 与 `managed_components` 软链（host build 热缓存随树）。
+4. **按需扩容**：建新树决策归 human（评估并行收益 vs 一棵树的 host 冷编译成本）；每树各自常驻分支。
+
+与既有机制的相容：ARQ-260905 每 worktree 专属图索引随树复用、自动增量刷新；快照流向不涉 Pod 树、不变；分支亲核语义见 [`integrator.md`](../agents/integrator.md)（常驻分支口径）。
 
 ## 3. Pod 状态机
 

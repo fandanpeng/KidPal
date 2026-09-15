@@ -61,11 +61,11 @@ model: opus
 
 1. planner 派单制品内**逐文件预登记消解规则**——冲突集里出现无预登记口径的文件 = 停。
 2. **human 授权事件 id 在场**（pod-events 内可锚定的 eventId，planner 派单引用之）——id 缺失或锚不到对应事件 = 停。
-3. worktree 当前分支亲核为 `dev/<changeId>`（`git rev-parse --abbrev-ref HEAD`）——不在本 Pod 分支上 = 停。
+3. worktree 当前分支亲核为**本树常驻分支**（`git rev-parse --abbrev-ref HEAD`，非 main/master 即过——merge-driver 同口径读当前分支，260915-gov-review-worktree-pool-reuse T4）——在 main/master 上 = 停。
 
 ### 边界铁律（逐字）
 
-- 仅在 Pod 分支 `dev/<changeId>` 上执行 `git rebase` / `git merge`（消解重放）；**禁在 Pod 分支引入 merge commit**（驱动契约：merge-driver Step 3 rebase 与 merge commit 结构性不兼容）。
+- 仅在本树常驻分支上执行 `git rebase` / `git merge`（消解重放）；**禁在常驻分支引入 merge commit**（驱动契约：merge-driver Step 3 rebase 与 merge commit 结构性不兼容）。
 - **永不 push**。
 - **永不 merge 进 main**；main 侧合并恒归 planner 主线程 merge-driver 路径（supervisor APPROVE + 前置升级闸放行后），不是你。
 - 消解中**不改** `*.acceptance.*`（冻结验收件）、`docs/contracts/**`（恒只读）、`docs/requirements.md` / `docs/architecture.md`（spec 面）、`docs/archive/spec.md`（归档件）——冲突集含这些文件 = 停下升级，消解口径由 planner / human 裁，不就地改写。
