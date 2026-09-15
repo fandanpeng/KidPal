@@ -101,5 +101,9 @@
   "260912-gov-review-portfolio-decomposition-chain": {
     "date": "2026-09-12",
     "mergedInMain": "yes"
+  },
+  "260915-gov-review-worktree-pool-reuse": {
+    "date": "2026-09-15",
+    "mergedInMain": "no"
   }
 }
