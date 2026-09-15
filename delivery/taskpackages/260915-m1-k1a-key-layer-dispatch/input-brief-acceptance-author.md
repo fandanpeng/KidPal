@@ -1,9 +1,9 @@
-# input-brief · builder · 260915-voice-round-ui
+# input-brief · acceptance-author · 260915-m1-k1a-key-layer-dispatch
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-15T02:47:20.781Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
-> 来源 TaskPackage: `delivery/taskpackages/260915-voice-round-ui/taskpackage.json` · subsystem: firmware · rigor: full
+> generated-at: 2026-09-15T02:47:19.527Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/taskpackage.json` · subsystem: firmware · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
@@ -12,8 +12,7 @@
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `docs/requirements.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/milestones/milestones.jsonl` | — | 无锚点（整文件） | — | bare |
-| `docs/requirements.md` | `S-F4.1` | S-F4.1 · 语音问答 | 530 | ok |
-| `docs/requirements.md` | `S-F1.3` | S-F1.3 · 语音问课表 | 272 | ok |
+| `docs/requirements.md` | `§2.3` | 2.3 按键手势（3 键，无触摸；本节为权威键位定义） | 134 | ok |
 | `docs/requirements.md` | `§2.2` | 2.2 状态表（会话生命周期 × UI 演出） | 58 | ok |
 | `delivery/milestones/milestones.jsonl` | `M1-home-qa` | （未定位到标题节） | — | not-found |
 
@@ -21,9 +20,10 @@
 
 | 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
 |---|---|---|---|
-| `firmware/main/display/lcd_display.cc` | `kidpal_voice_state_look` | :1052-1054 | — |
-| `firmware/main/display/kidpal_voice_states.c` | `kidpal_voice_state_look` | :23-66 | — |
-| `firmware/main/display/reminder_page.c` | `kidpal_reminder_render_actions` | :914-926 | 1166 |
+| `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | `key_route_global` | :280-291 | 290, 302, 306, 310 |
+| `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | `InitializeButtons` | :248-312 | 377 |
+| `firmware/main/display/reminder_page.c` | `kidpal_reminder_key` | :928-958 | — |
+| `firmware/main/display/kidpal_render_node.h` | `kidpal_render_node_begin_page` | :79-119 | — |
 
 上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
 

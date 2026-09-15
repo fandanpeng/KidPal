@@ -1,4 +1,4 @@
-# plan · 260915-p1-home-battery
+# plan · 260915-m1-n1b-p1-home-battery
 
 > workstream：m1-home-qa（M1 开工批，块②P1 新版式 + 电量 ADC）｜ workType：新建型（锚 = S-F1.1 补充规则「辅助条实现现状」差距登记）｜ 设计权威 = docs/requirements.md S-F1.1（线框 WF-F1-01 v1.4 重排序）+ arch §5.5.4
 

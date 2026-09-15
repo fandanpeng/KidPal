@@ -1,5 +1,5 @@
 {
-  "changeId": "260915-reminder-overlay-unify",
+  "changeId": "260915-m1-k4-reminder-overlay-unify",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -11,8 +11,8 @@
   },
   "subsystem": "firmware",
   "story": "S-F1.4 · 日程提醒（AC1–AC6）",
-  "planRef": "delivery/taskpackages/260915-reminder-overlay-unify/plan.md",
-  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线——schedule_reminder_b 套齿在 260915-key-layer-dispatch 成批改后的新基线上复核）",
+  "planRef": "delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线——schedule_reminder_b 套齿在 260915-m1-k1a-key-layer-dispatch 成批改后的新基线上复核）",
   "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
@@ -26,7 +26,7 @@
     "device-round"
   ],
   "acceptance": [
-    "RM-A1: 提醒弹窗四态统一骨架——版式与语音轮三态同一骨架（左小伴 pose-jump + 右大字事项/时间，WF-B-04），复用 260915-voice-round-ui 建立的骨架（不另建）；三件套同时发生（提示音 + 语音读出 + 弹窗驻留）",
+    "RM-A1: 提醒弹窗四态统一骨架——版式与语音轮三态同一骨架（左小伴 pose-jump + 右大字事项/时间，WF-B-04），复用 260915-m1-k3-voice-round-ui 建立的骨架（不另建）；三件套同时发生（提示音 + 语音读出 + 弹窗驻留）",
     "RM-A2: 最高层覆盖——提醒弹出时压过查字窗/录音态/播报中等任何前台内容；置顶期间 KEY/BOOT 按弹窗语义处理、不穿透底层窗口（§2.2 层级口径）",
     "RM-A3: 录音态排队例外——录音中提醒到达 = 排队延后、录音会话结束立刻弹（防提醒 TTS 混进录音内容）；这是层级口径唯一例外",
     "RM-A4: 排队不叠屏——弹窗期间另一条提醒到达排队、当前弹窗关闭后下一条自动弹出（AC3）",
@@ -68,9 +68,9 @@
   "docsSyncReason": "本包为固件提醒弹窗演出 + 层级语义，零 docs 面改动：四态统一裁定（v1.23/v1.24）与层级口径（v1.44）已冻结于 requirements §2.2、契约面只读；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
   "mergeOrder": 26,
   "dependsOn": [
-    "260915-key-layer-dispatch",
-    "260915-keybar-three-slot",
-    "260915-voice-round-ui"
+    "260915-m1-k1a-key-layer-dispatch",
+    "260915-m1-k2-keybar-three-slot",
+    "260915-m1-k3-voice-round-ui"
   ],
   "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
   "decisionCoverage": [
@@ -122,7 +122,7 @@
   "crossPackageBehaviors": [
     {
       "behavior": "提醒弹窗演出 + 最高层覆盖 + 录音排队例外",
-      "owner": "260915-reminder-overlay-unify",
+      "owner": "260915-m1-k4-reminder-overlay-unify",
       "note": "弹窗演出/层级/排队 owner = 本包；分层裁决机制 owner = key-layer-dispatch（消费）、骨架 owner = voice-round-ui（复用）——三 owner 边界已在 crossPackageBehaviors 对齐。"
     }
   ],

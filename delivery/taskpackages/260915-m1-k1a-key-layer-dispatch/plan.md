@@ -1,4 +1,4 @@
-# plan · 260915-key-layer-dispatch
+# plan · 260915-m1-k1a-key-layer-dispatch
 
 > workstream：m1-home-qa（M1 开工批，块①全局 UI 基建）｜ workType：整改型（锚 = requirements §2.3「键位实现侧对账」问题登记块）｜ 设计权威 = docs/requirements.md §2.2/§2.3（story 语义权威现文）
 

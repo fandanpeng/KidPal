@@ -1,4 +1,4 @@
-# plan · 260915-reminder-overlay-unify
+# plan · 260915-m1-k4-reminder-overlay-unify
 
 > workstream：m1-home-qa（M1 开工批，块④提醒弹窗四态统一）｜ workType：新建型（锚 = requirements §2.2 提醒行「v1.13 形态作废 / 层级口径 v1.44」裁定登记）｜ 设计权威 = docs/requirements.md §2.2 提醒行 + WF-B-04 + S-F1.4
 
@@ -10,7 +10,7 @@
 
 ## 改法取舍
 
-- **取舍 A（复用骨架不另建）**：版式直接复用 260915-voice-round-ui 建的四态骨架，只换 pose（pose-jump）与内容（大字事项/时间）；改骨架需求回 owner 包登记，不 fork（RM-E3）。
+- **取舍 A（复用骨架不另建）**：版式直接复用 260915-m1-k3-voice-round-ui 建的四态骨架，只换 pose（pose-jump）与内容（大字事项/时间）；改骨架需求回 owner 包登记，不 fork（RM-E3）。
 - **取舍 B（层级实现点）**：最高层覆盖落在 key-layer-dispatch 的 layer_top 模型上（提醒层 = 最高优先级入层），按键不穿透 = 顶层裁决逻辑复用；录音排队例外 = 入层判断特例（录音态期间提醒入队、录音会话结束立刻入层）。
 - **取舍 C（板端/云侧切分）**：三段阶梯时刻、范围口径、家长权限 = 云侧数据面（MVP 已交付）——本包零云改动，只做板端演出/层级/排队/去重（RM-E1）。
 - **取舍 D（launch 前置）**：本包 launch 硬前置 = key-layer-dispatch 已合并（schedule_reminder_b 钉点新基线 + 分层裁决可复用）+ voice-round-ui 已合并（骨架存在）——已落 dependsOn 与 notes。

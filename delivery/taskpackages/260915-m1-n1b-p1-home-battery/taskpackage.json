@@ -1,5 +1,5 @@
 {
-  "changeId": "260915-p1-home-battery",
+  "changeId": "260915-m1-n1b-p1-home-battery",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -11,7 +11,7 @@
   },
   "subsystem": "firmware",
   "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC4）",
-  "planRef": "delivery/taskpackages/260915-p1-home-battery/plan.md",
+  "planRef": "delivery/taskpackages/260915-m1-n1b-p1-home-battery/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单——P1-A4 注入假状态验收（s_battery_pct 恒 100）为本包红基线判读输入）",
   "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
   "deliveryImpact": "milestone-affecting",
@@ -103,12 +103,12 @@
   "crossPackageBehaviors": [
     {
       "behavior": "电量 ADC 端到端（板级 ADC → GetBatteryLevel → 渲染注入缝 → 辅助条显示）",
-      "owner": "260915-p1-home-battery",
+      "owner": "260915-m1-n1b-p1-home-battery",
       "note": "端到端 owner = 本包独占（防接线掉缝——ARQ-260911-cross-package-behavior-owner-gap 同型纪律）；keybar/首页渲染包不另接电池数据。"
     },
     {
       "behavior": "首页版式与辅助条图标",
-      "owner": "260915-p1-home-battery",
+      "owner": "260915-m1-n1b-p1-home-battery",
       "note": "首页内容区渲染 owner = 本包；键帽条三槽（keybar-three-slot）为独立 chrome、互不重叠，并行开发文件面不交叠。"
     }
   ],

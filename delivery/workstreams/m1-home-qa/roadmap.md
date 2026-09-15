@@ -17,39 +17,39 @@
 ## ② 列车图（依赖 + 批次）
 
 <!-- render-roadmap:begin -->
-<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m1-home-qa，渲染时刻 2026-09-15T03:41:29.114Z）。
+<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m1-home-qa，渲染时刻 2026-09-15T03:47:36.527Z）。
      人工禁改；渲染源唯一 = board + taskpackage JSON。全量重算、幂等。 -->
 <!-- 编号读法：<WS>-<K|N><波次><并行字母?>（如 M1-K2a）——K=承重（被下游依赖或主干终点）、N=游离（无人等待的侧线）；
      波次=依赖深度+1（跨 workstream 外部前置不占波次）；同波次字母=并行占位序、非合并序。编号随依赖重渲染自动重算，确切依赖边以本图为准。 -->
 ```mermaid
 graph LR
-  260915_key_layer_dispatch["M1-K1a｜260915-key-layer-dispatch (mo22)"]
-  260915_keybar_three_slot["M1-K2｜260915-keybar-three-slot (mo23)"]
-  260915_p1_home_battery["M1-N1b｜260915-p1-home-battery (mo24)"]
-  260915_voice_round_ui["M1-K3｜260915-voice-round-ui (mo25)"]
-  260915_reminder_overlay_unify["M1-K4｜260915-reminder-overlay-unify (mo26)"]
-  260915_key_layer_dispatch --> 260915_keybar_three_slot
-  260915_key_layer_dispatch --> 260915_voice_round_ui
-  260915_keybar_three_slot --> 260915_voice_round_ui
-  260915_key_layer_dispatch --> 260915_reminder_overlay_unify
-  260915_keybar_three_slot --> 260915_reminder_overlay_unify
-  260915_voice_round_ui --> 260915_reminder_overlay_unify
+  260915_m1_k1a_key_layer_dispatch["M1-K1a｜260915-m1-k1a-key-layer-dispatch (mo22)"]
+  260915_m1_k2_keybar_three_slot["M1-K2｜260915-m1-k2-keybar-three-slot (mo23)"]
+  260915_m1_n1b_p1_home_battery["M1-N1b｜260915-m1-n1b-p1-home-battery (mo24)"]
+  260915_m1_k3_voice_round_ui["M1-K3｜260915-m1-k3-voice-round-ui (mo25)"]
+  260915_m1_k4_reminder_overlay_unify["M1-K4｜260915-m1-k4-reminder-overlay-unify (mo26)"]
+  260915_m1_k1a_key_layer_dispatch --> 260915_m1_k2_keybar_three_slot
+  260915_m1_k1a_key_layer_dispatch --> 260915_m1_k3_voice_round_ui
+  260915_m1_k2_keybar_three_slot --> 260915_m1_k3_voice_round_ui
+  260915_m1_k1a_key_layer_dispatch --> 260915_m1_k4_reminder_overlay_unify
+  260915_m1_k2_keybar_three_slot --> 260915_m1_k4_reminder_overlay_unify
+  260915_m1_k3_voice_round_ui --> 260915_m1_k4_reminder_overlay_unify
   classDef achieved fill:#e6f4ea,stroke:#34a853
   classDef deviation fill:#fce8e6,stroke:#ea4335
   classDef external stroke-dasharray: 4 3,color:#5f6368
 ```
 | 编号 | changeId | mergeOrder | 达成状态 | deviation 裁定锚 |
 |---|---|---|---|---|
-| M1-K1a | 260915-key-layer-dispatch | 22 | pending（board: queued） | — |
-| M1-K2 | 260915-keybar-three-slot | 23 | pending（board: queued） | — |
-| M1-N1b | 260915-p1-home-battery | 24 | pending（board: queued） | — |
-| M1-K3 | 260915-voice-round-ui | 25 | pending（board: queued） | — |
-| M1-K4 | 260915-reminder-overlay-unify | 26 | pending（board: queued） | — |
+| M1-K1a | 260915-m1-k1a-key-layer-dispatch | 22 | pending（board: queued） | — |
+| M1-K2 | 260915-m1-k2-keybar-three-slot | 23 | pending（board: queued） | — |
+| M1-N1b | 260915-m1-n1b-p1-home-battery | 24 | pending（board: queued） | — |
+| M1-K3 | 260915-m1-k3-voice-round-ui | 25 | pending（board: queued） | — |
+| M1-K4 | 260915-m1-k4-reminder-overlay-unify | 26 | pending（board: queued） | — |
 <!-- render-roadmap:end -->
 
 ## ③ 每包条目
 
-### 260915-key-layer-dispatch
+### 260915-m1-k1a-key-layer-dispatch
 
 - **mergeOrder**：22
 - **完成后人能看到什么**：在提醒弹窗、查字窗、语音轮演出等任何覆盖层里按 BOOT，屏幕不再「顺手翻到下一页」，而是关掉覆盖层回到打开覆盖层前的原页；在主页面上 KEY 长按回到上一层（当前页集下 = 回首页）。这是后续所有页内键位工作的地基——键位手感从此与 spec 权威矩阵对齐。
@@ -57,7 +57,7 @@ graph LR
 - **demo 证据形态**：host runner 输出 + 真机轮（human 持板：覆盖层 BOOT 不翻页、KEY 长按返回）
 - **达成状态**：pending
 
-### 260915-keybar-three-slot
+### 260915-m1-k2-keybar-three-slot
 
 - **mergeOrder**：23
 - **完成后人能看到什么**：屏幕底部常驻通栏键帽条从单行居中文案升级为三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），左右槽文案随当前态切换（聆听「说完啦」等冻结映射），进入覆盖层时页点消失、左右槽照常提示——基座 chrome 手感与设计稿 v4 `comp-keybar` 对齐。
@@ -65,7 +65,7 @@ graph LR
 - **demo 证据形态**：模拟器截图 + host runner + 真机轮
 - **达成状态**：pending
 
-### 260915-p1-home-battery
+### 260915-m1-n1b-p1-home-battery
 
 - **mergeOrder**：24
 - **完成后人能看到什么**：首页新版式——辅助条各项图标前置（联网小标打头、温/湿/电各带小图标、湿度不裸数字挨电池）；电量 ADC 三处死成员接线（板类 `adc1_handle`/`cali_handle`/`vbat_status` + `GetBatteryLevel` 实装 + 渲染节点电池注入缝，`s_battery_pct` 不再恒 100）——真机电量首次显示真实值，低电时电池图标每秒闪、充电即停，断网时联网小标变 WiFi 斜杠。
@@ -73,7 +73,7 @@ graph LR
 - **demo 证据形态**：模拟器截图 + host runner + 真机轮（human 持板：ADC 实测电量/低电闪烁）
 - **达成状态**：pending
 
-### 260915-voice-round-ui
+### 260915-m1-k3-voice-round-ui
 
 - **mergeOrder**：25
 - **完成后人能看到什么**：语音会话演出补齐成完整三态演出 + 打断手感：孩子说完一句，思考页（pose-think + 飘问号）与状态切换同一时刻弹出（真机首次可弹）；说话逐句回显在「我在听！」下方（超屏滚动）；答复长文在问答框滚动看完（回引 NFR-READ-1）；播报中按 KEY 立即停播转聆听——对话主路径不再「黑箱等待」。
@@ -81,7 +81,7 @@ graph LR
 - **demo 证据形态**：模拟器截图 + host runner + 真机轮
 - **达成状态**：pending
 
-### 260915-reminder-overlay-unify
+### 260915-m1-k4-reminder-overlay-unify
 
 - **mergeOrder**：26
 - **完成后人能看到什么**：到点提醒弹窗与语音轮四态同一版式骨架（左小伴 pose-jump + 右大字事项/时间），弹出时压过查字窗/录音态/播报中等一切前台内容（最高层）；置顶期间按键不穿透底层窗口；录音中到达的提醒排队延后、录音会话结束立刻弹；弹窗驻留到按键不自动消失；同一提醒不重复弹——三段阶梯提醒的手感与 §2.2 权威口径一致。

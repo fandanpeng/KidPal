@@ -1,4 +1,4 @@
-# plan · 260915-keybar-three-slot
+# plan · 260915-m1-k2-keybar-three-slot
 
 > workstream：m1-home-qa（M1 开工批，块①全局 UI 基建）｜ workType：新建型（锚 = requirements §2.2 键帽条行「三槽布局与页点 MVP 未实现」现状登记）｜ 设计权威 = docs/requirements.md §2.2 comp-keybar 行 + docs/ui/brand-spec.md「姿态规则」+ 设计稿 v4 §03 comp-keybar
 
@@ -11,7 +11,7 @@
 ## 改法取舍
 
 - **取舍 A（页点数量）**：spec 权威 = 中 3 页点（v1.36 页循环 4→3），但撤 P4 常驻页是 M2 工作、M1 撤页会让现行查字不可达。**取**：页点机制按「数量 = 现行页循环页数」实现（阶段一 = 4 点），4→3 对账归 M2 撤页包收回；deviation 显式登记（KB-A2 / KB-E1 / workstream launchPreconditions）。**舍**：本包内提前撤 P4（越阶段、连带查字断供）。
-- **取舍 B（显隐裁决源）**：页点显隐读 `layer_top`（260915-key-layer-dispatch 建立的分层模型），与键路由同源；不另立第二真相源（KB-A4/KD 侧 crossPackageBehaviors 已登记 owner 边界）。
+- **取舍 B（显隐裁决源）**：页点显隐读 `layer_top`（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源；不另立第二真相源（KB-A4/KD 侧 crossPackageBehaviors 已登记 owner 边界）。
 - **取舍 C（随态文案）**：左右槽文案切换机制由本包承载，值域只引用 `kidpal_voice_states` 冻结闭集、零增删改；新增态文案（如思考「不等了」若闭集缺）归承载该态的包按冻结映射走，本包不代填（KB-E2）。
 
 ## 阶段划分

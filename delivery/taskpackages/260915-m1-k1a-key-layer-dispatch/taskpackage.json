@@ -1,5 +1,5 @@
 {
-  "changeId": "260915-key-layer-dispatch",
+  "changeId": "260915-m1-k1a-key-layer-dispatch",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -11,7 +11,7 @@
   },
   "subsystem": "firmware",
   "story": "无 story——共享底座键位对账项；语义权威 = docs/requirements.md §2.3 按键手势（权威键位定义）+ §2.2 键帽条行（覆盖层 BOOT 隔离口径 v1.39）",
-  "planRef": "delivery/taskpackages/260915-key-layer-dispatch/plan.md",
+  "planRef": "delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单——前批有效基线 104/4，四条在册既存红见 260911-key-route-a1 redBaselineResult 裁定）",
   "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
   "deliveryImpact": "milestone-affecting",
@@ -102,12 +102,12 @@
   "crossPackageBehaviors": [
     {
       "behavior": "layer_top 分层模型与覆盖层按键裁决（覆盖层 BOOT/KEY 长按语义）",
-      "owner": "260915-key-layer-dispatch",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
       "note": "分层模型 owner = 本包独占；keybar（页点显隐）、语音轮（覆盖层演出）、提醒弹窗（最高层覆盖）各包消费分层模型但不改裁决逻辑。"
     },
     {
       "behavior": "KEY 长按「返回上一层」路由语义",
-      "owner": "260915-key-layer-dispatch",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
       "note": "承接 260911-key-route-a1 落地的 KEY 接线与全局路由表，长按语义由「恒回首页」升级为 layer-aware 返回；后续页内特例（M2/M4）在本包语义上扩展。"
     }
   ],

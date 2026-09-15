@@ -1,5 +1,5 @@
 {
-  "changeId": "260915-keybar-three-slot",
+  "changeId": "260915-m1-k2-keybar-three-slot",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -11,7 +11,7 @@
   },
   "subsystem": "firmware",
   "story": "无 story——共享底座键帽条；语义权威 = docs/requirements.md §2.2 键帽条行（comp-keybar 三槽规格）+ §2.4 页面结构",
-  "planRef": "delivery/taskpackages/260915-keybar-three-slot/plan.md",
+  "planRef": "delivery/taskpackages/260915-m1-k2-keybar-three-slot/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单）",
   "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
   "deliveryImpact": "milestone-affecting",
@@ -28,7 +28,7 @@
     "KB-A1: 三槽结构——键帽条 = 通栏贴底三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），条本身任何状态常驻（基座 chrome，覆盖层盖不掉）；替换现单行居中文案形态",
     "KB-A2: 页点机制——中槽页点仅主页面显示（当前页实心放大），覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点；页点数量 = 现行页循环页数（阶段一 = 4，4→3 对账随 M2 撤 P4 一并收回——deviation 显式登记，非静默 spec 冲突）",
     "KB-A3: 左右槽随态文案——随态切换走 kidpal_voice_states 冻结映射闭集（聆听「说完啦」/播报「打断」/提醒「知道了」等），闭集值零偏移；覆盖层内左右槽照常给操作提示",
-    "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
+    "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
     {
       "id": "KB-A5: 真机确认轮（human 持板）——三槽条 + 页点显隐 + 随态文案真机可见；证据落 changes/dev/<changeId>/",
       "kind": "structural"
@@ -41,7 +41,7 @@
   "exitCriteria": [
     "KB-E1: 范围纪律——页点 4→3 收口归 M2（KB-A2 deviation 在 M2 撤 P4 包对账收回）；spec 面零修订",
     "KB-E2: kidpal_voice_states 冻结闭集零偏移——文案值域只在闭集内引用、不增删改闭集成员（新增态文案归承载态的包按冻结映射走）",
-    "KB-E3: 覆盖层显隐消费分层模型零裁决权——keybar 只读 layer_top 显隐，不改覆盖层进出裁决（owner = 260915-key-layer-dispatch）"
+    "KB-E3: 覆盖层显隐消费分层模型零裁决权——keybar 只读 layer_top 显隐，不改覆盖层进出裁决（owner = 260915-m1-k1a-key-layer-dispatch）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -64,7 +64,7 @@
   "docsSyncReason": "本包为固件键帽条 chrome 改造，零 docs 面改动：三槽规格权威 = requirements §2.2 + brand-spec 姿态规则 + 设计稿 v4 §03 comp-keybar（均在文冻结）；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
   "mergeOrder": 23,
   "dependsOn": [
-    "260915-key-layer-dispatch"
+    "260915-m1-k1a-key-layer-dispatch"
   ],
   "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
   "decisionCoverage": [
@@ -105,12 +105,12 @@
   "crossPackageBehaviors": [
     {
       "behavior": "键帽条三槽 + 页点机制（chrome 渲染面）",
-      "owner": "260915-keybar-three-slot",
+      "owner": "260915-m1-k2-keybar-three-slot",
       "note": "三槽机制与随态文案切换 owner = 本包；语音轮/提醒弹窗包（voice-round-ui / reminder-overlay-unify）消费机制、不改 keybar 结构。"
     },
     {
       "behavior": "覆盖层页点显隐裁决",
-      "owner": "260915-key-layer-dispatch",
+      "owner": "260915-m1-k1a-key-layer-dispatch",
       "note": "layer_top 分层模型与覆盖层进出裁决 owner = key-layer-dispatch；keybar 只读显隐。"
     }
   ],

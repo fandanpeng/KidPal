@@ -1,9 +1,9 @@
-# input-brief · acceptance-author · 260915-p1-home-battery
+# input-brief · builder · 260915-m1-k1a-key-layer-dispatch
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-15T02:47:20.281Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> 来源 TaskPackage: `delivery/taskpackages/260915-p1-home-battery/taskpackage.json` · subsystem: firmware · rigor: full
+> generated-at: 2026-09-15T02:47:19.732Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
+> 来源 TaskPackage: `delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/taskpackage.json` · subsystem: firmware · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
@@ -12,18 +12,18 @@
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `docs/requirements.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/milestones/milestones.jsonl` | — | 无锚点（整文件） | — | bare |
-| `docs/requirements.md` | `S-F1.1` | S-F1.1 · 常显首页看「接下来干嘛」 | 221 | ok |
-| `docs/requirements.md` | `S-F1.1-AC1` | （未定位到标题节） | — | not-found |
-| `docs/requirements.md` | `S-F1.1-AC3` | （未定位到标题节） | — | not-found |
-| `docs/requirements.md` | `S-F1.1-AC4` | （未定位到标题节） | — | not-found |
+| `docs/requirements.md` | `§2.3` | 2.3 按键手势（3 键，无触摸；本节为权威键位定义） | 134 | ok |
+| `docs/requirements.md` | `§2.2` | 2.2 状态表（会话生命周期 × UI 演出） | 58 | ok |
 | `delivery/milestones/milestones.jsonl` | `M1-home-qa` | （未定位到标题节） | — | not-found |
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
 | 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
 |---|---|---|---|
-| `firmware/main/boards/common/adc_battery_monitor.h` | `GetBatteryLevel` | :16-31 | — |
-| `firmware/main/display/kidpal_render_node.cc` | `battery` | :207-214 | 213, 503, 611 |
+| `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | `key_route_global` | :280-291 | 290, 302, 306, 310 |
+| `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | `InitializeButtons` | :248-312 | 377 |
+| `firmware/main/display/reminder_page.c` | `kidpal_reminder_key` | :928-958 | — |
+| `firmware/main/display/kidpal_render_node.h` | `kidpal_render_node_begin_page` | :79-119 | — |
 
 上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
 
