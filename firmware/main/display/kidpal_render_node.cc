@@ -125,6 +125,7 @@ static std::string s_char_json;   /* 动态分配，不占 .bss；mcp_server cac
  * s_kidpal_scr==NULL（未 init / 非 KidPal 归一屏板）时不作为。
  * ---------------------------------------------------------------------- */
 extern "C" void kidpal_lcd_voice_chrome_front(int front);
+extern "C" void kidpal_lcd_keybar_sync(void);
 
 static void rn_voice_chrome_front_locked(void)
 {
@@ -132,6 +133,19 @@ static void rn_voice_chrome_front_locked(void)
         return;
     }
     kidpal_lcd_voice_chrome_front(kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE);
+}
+
+/* 键帽条三槽刷新 (260915-m1-k2-keybar-three-slot R1 / ①④根修): 由本模块的页面渲染权威
+ * (rn_render_home_locked / rn_render_kidpal_page_locked) 每页落屏后经 LcdDisplay C 桥驱动
+ * —— 与键路由/页循环同源, 不依赖语音态/前台桥 (基础页/启动后键帽条也须落字与刷新, KB-A1
+ * 通栏贴底三槽任何状态常驻)。keybar 只经 kidpal_render_node_front_is_overlay/get_page 读
+ * 入参, 本调用零 layer 进出裁决 (KB-E3)。调用点已持 lvgl_port_lock, 桥内递归取锁无害。 */
+static void rn_keybar_sync_locked(void)
+{
+    if (s_kidpal_scr == NULL) {
+        return;
+    }
+    kidpal_lcd_keybar_sync();
 }
 
 /* -------------------------------------------------------------------------
@@ -227,6 +241,9 @@ static void rn_render_home_locked(void)
 
     ESP_LOGI(RN_TAG, "render home 400x300 render_rc=%d state_rc=%d tick=%d",
              render_rc, state_rc, st.tick_ms);
+
+    /* 首页基层落屏后驱动键帽条三槽刷新 (keybar R1 / ①根修)。 */
+    rn_keybar_sync_locked();
 }
 
 /* -------------------------------------------------------------------------
@@ -585,6 +602,10 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             s_local_page = KP_PAGE_HOME;
             break;
     }
+
+    /* 各基础页落屏后驱动键帽条三槽刷新 (keybar R1 / ①根修: 页槽表与页点随翻页更新,
+     * 覆盖层关层回原页也走本函数)。调用方已持 lvgl 锁。 */
+    rn_keybar_sync_locked();
 }
 
 /* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层

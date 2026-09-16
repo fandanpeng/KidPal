@@ -46,6 +46,18 @@ set(HOST_ACCEPTANCE_SRCS
     # 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
     "../../p1_home_battery.acceptance.c"
 
+    # 包 260915-m1-k2-keybar-three-slot（键帽条三槽改造）被测实现：keybar.c（[1] 纯逻辑
+    # 单源：kidpal_keybar_dots/slots 强符号覆盖 weak 哨兵；含 kidpal_keybar_scene 闭集单源
+    # 引用链）+ kidpal_voice_states.c（[2] 冻结闭集单源，在世实现首次入 runner，强符号覆盖
+    # kidpal_voice_state_look weak 哨兵）。相对 host_app/main 为 ../../../display/。
+    "../../../display/keybar.c"
+    "../../../display/kidpal_voice_states.c"
+
+    # 包 260915-m1-k2-keybar-three-slot 冻结验收（页点/左右槽纯逻辑决策表 + 闭集零偏移
+    # 行为复核 + 三槽结构/layer_top 同源/零裁决权结构齿 + 注册序守卫）。**必须置于 host
+    # smoke acceptance 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
+    "../../keybar_three_slot.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

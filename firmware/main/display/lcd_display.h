@@ -79,6 +79,13 @@ public:
      * kidpal_render_node 在前台切换点调用 (调用方已持 lvgl 锁, 递归互斥量)。
      * 键帽条与聊天文本 (PKG-2 任何页可见语义) 不受此开关影响。 */
     void KidPalVoiceChromeFront(bool voice_front);
+
+    /* 键帽条三槽刷新 (260915-m1-k2-keybar-three-slot R1): render_node 页渲染权威
+     * (rn_render_home_locked / rn_render_kidpal_page_locked 每页落屏后) 经 C 桥
+     * kidpal_lcd_keybar_sync() 驱动 —— 基础页槽位/页点/覆盖层显隐与键路由/页循环同源,
+     * 不依赖语音态前台桥 (①/④ 根修: 基础页/启动后 keybar 必须落字与刷新)。内部自取
+     * lvgl 锁 (递归), 调用方无需预加锁。 */
+    void KidPalKeybarSync();
 };
 
 // SPI LCD display

@@ -5,6 +5,9 @@
 #include "assets/lang_config.h"
 #include "kidpal_voice_states.h"
 #include "art_assets.h"
+#include "kidpal_render_node.h"
+#include "key_gesture_parser.h"
+#include "keybar.h"
 
 #include <vector>
 #include <algorithm>
@@ -20,6 +23,7 @@
 #define TAG "LcdDisplay"
 
 LV_FONT_DECLARE(BUILTIN_TEXT_FONT);
+LV_FONT_DECLARE(font_puhui_14_1); /* 全量 14px 普惠体: 键帽条左右槽专用 (font_puhui_basic_30_4 稀疏子集缺课/程/翻/页等键帽字形->空白, KB-A5 复轮根因; 全量 30px 超分区/gate, 14px 与 page body 同字号可读) */
 LV_FONT_DECLARE(BUILTIN_ICON_FONT);
 LV_FONT_DECLARE(font_awesome_30_4);
 
@@ -373,7 +377,11 @@ static const char* const g_kidpal_pose_asset[5] = {
 /* V3 气泡尾巴 (U 闭集修订唯一新增 KAP1: frm-sm 手绘圆角框 + 左下斜切小尾巴). */
 static const char g_kidpal_bubble_tail_asset[] = "bubble_tail_24.bin";
 
-static lv_obj_t*   g_kidpal_keycap_label = NULL; /* 底部键帽条 (常驻) */
+static lv_obj_t*   g_kidpal_keybar_left_label  = NULL; /* 三槽·左 KEY 提示槽 (通栏贴底常驻, bottom_bar_ 子件) */
+static lv_obj_t*   g_kidpal_keybar_dots_box     = NULL; /* 三槽·中页点槽容器 (页点子件建其上, bottom_bar_ 子件) */
+static lv_obj_t*   g_kidpal_keybar_right_label  = NULL; /* 三槽·右 BOOT 提示槽 (通栏贴底常驻, bottom_bar_ 子件) */
+static lv_obj_t*   g_kidpal_keybar_dot[PAGE_COUNT] = {0}; /* 中槽页点子件 (数量 = 现行页循环, 当前页实心放大) */
+static int         g_kidpal_keybar_scene        = 0;  /* 覆盖层当前语音场景 (随态右槽 结束/关闭 与左槽单源用) */
 static lv_obj_t*   g_kidpal_chat_label   = NULL; /* 同步文字框 / 气泡挂点 (SetupUI 纪元) */
 static lv_obj_t*   g_kidpal_pose_parent  = NULL; /* 姿态图父容器 = SetupUI 活分支表情区 (SetupUI 纪元) */
 static lv_obj_t*   g_kidpal_pose_img     = NULL; /* 姿态图对象 (场景切换重建, 旧件必删) */
@@ -389,8 +397,8 @@ static uint32_t*   g_kidpal_pose_px = NULL;
 static int         g_kidpal_pose_st   = 0; /* 0=未试 1=可用 2=不可用 */
 static int         g_kidpal_pose_scene = -1;
 
-static void kidpal_voice_apply_look(int scene);
 static void kidpal_chrome_mid_sync_locked(void);
+static void kidpal_keybar_sync_locked(void); /* 定义在活分支尾 (SetupUI 之后), 前向声明供 SetupUI 首刷调用 */
 
 #if CONFIG_USE_WECHAT_MESSAGE_STYLE
 void LcdDisplay::SetupUI() {
@@ -937,16 +945,42 @@ void LcdDisplay::SetupUI() {
     lv_obj_align(chat_message_label_, LV_ALIGN_CENTER, 0, 0); // Vertically and horizontally centered in bottom_bar_
     g_kidpal_chat_label = chat_message_label_; /* 五态气泡/同步文字挂点 (file-static 跟踪) */
 
-    /* 底部键帽条 (V3 §06「任何状态下底部提示条永不消失」, 五态键帽文案联动 说完啦/
-     * 不等了/打断/知道了/叫醒它) —— bottom_bar_ 的子件, 随聊天 chrome 一起迁
-     * lv_layer_top() 任何页可见 (PKG-2 聊天 chrome 常驻)。 */
-    g_kidpal_keycap_label = lv_label_create(bottom_bar_);
-    lv_label_set_text(g_kidpal_keycap_label, "说完啦");
-    lv_obj_set_width(g_kidpal_keycap_label, LV_HOR_RES - lvgl_theme->spacing(8));
-    lv_label_set_long_mode(g_kidpal_keycap_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_style_text_align(g_kidpal_keycap_label, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_color(g_kidpal_keycap_label, lvgl_theme->text_color(), 0);
-    lv_obj_align(g_kidpal_keycap_label, LV_ALIGN_BOTTOM_MID, 0, -lvgl_theme->spacing(1));
+    /* 底部键帽条三槽 (KB-A1, 通栏贴底常驻 chrome): 左 KEY 提示槽 · 中页点槽 · 右
+     * BOOT 提示槽, 全部建在 bottom_bar_ 载体上 (通栏贴底对齐在世, 本包零触碰其几何),
+     * 随聊天 chrome 一起迁 lv_layer_top() 任何页可见。替换旧单行居中文案形态。左右槽
+     * 随态写点: apply_look 左槽消费 look.keycap、sync 经 keybar 单源取左右槽值。 */
+    g_kidpal_keybar_left_label = lv_label_create(bottom_bar_);
+    lv_label_set_text(g_kidpal_keybar_left_label, "");
+    lv_obj_set_style_text_font(g_kidpal_keybar_left_label, &font_puhui_14_1, 0); /* 全量字体: 键帽文案字形全覆盖 (basic 子集缺字) */
+    lv_obj_set_style_text_color(g_kidpal_keybar_left_label, lvgl_theme->text_color(), 0);
+    lv_obj_align(g_kidpal_keybar_left_label, LV_ALIGN_BOTTOM_LEFT, 0, 0);
+
+    g_kidpal_keybar_dots_box = lv_obj_create(bottom_bar_);
+    lv_obj_set_style_bg_opa(g_kidpal_keybar_dots_box, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(g_kidpal_keybar_dots_box, 0, 0);
+    lv_obj_set_style_radius(g_kidpal_keybar_dots_box, 0, 0);
+    lv_obj_set_style_pad_all(g_kidpal_keybar_dots_box, 0, 0);
+    lv_obj_align(g_kidpal_keybar_dots_box, LV_ALIGN_BOTTOM_MID, 0, 0);
+    for (int d = 0; d < (int)PAGE_COUNT; d++) {
+        g_kidpal_keybar_dot[d] = lv_obj_create(g_kidpal_keybar_dots_box);
+        lv_obj_set_size(g_kidpal_keybar_dot[d], 8, 8);
+        lv_obj_set_style_radius(g_kidpal_keybar_dot[d], 4, 0);
+        lv_obj_set_style_bg_color(g_kidpal_keybar_dot[d], lvgl_theme->text_color(), 0);
+        lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[d], LV_OPA_COVER, 0);
+        lv_obj_align(g_kidpal_keybar_dot[d], LV_ALIGN_BOTTOM_MID,
+                     (d - ((int)PAGE_COUNT - 1) / 2) * 16, 0);
+    }
+
+    g_kidpal_keybar_right_label = lv_label_create(bottom_bar_);
+    lv_label_set_text(g_kidpal_keybar_right_label, "");
+    lv_obj_set_style_text_font(g_kidpal_keybar_right_label, &font_puhui_14_1, 0); /* 全量字体: 键帽文案字形全覆盖 (basic 子集缺字) */
+    lv_obj_set_style_text_color(g_kidpal_keybar_right_label, lvgl_theme->text_color(), 0);
+    lv_obj_align(g_kidpal_keybar_right_label, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+
+    /* 三槽建完后立即首刷 (R1 修复, ①/③/④): 基础页/启动后 keybar 必须落字与页点, 不能
+     * 只等语音/前台桥触发。此处 SetupUI 已持 lvgl 锁, sync_locked 只读 render_node 状态
+     * (boot 期 layer 栈空 -> overlay_top=0, get_page=KP_PAGE_HOME) —— 首页基层即落字。 */
+    kidpal_keybar_sync_locked();
 
     /* 五态姿态图父容器 = 表情区 emoji_box_ (xiaozhi 聊天 chrome 一员, 随 chrome
      * reparent 常驻聊天层): 姿态挂进 chrome 子树而非裸挂 lv_layer_top(), 归
@@ -1020,6 +1054,61 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
 #endif
 
 /* -------------------------------------------------------------------------- *
+ * 三槽槽位随态刷新 (键帽条 chrome, 任何状态常驻): 页点显隐读 layer_top —— 与板级
+ * dispatch 键分流同源 via kidpal_render_node_front_is_overlay (KB-A4, 不另立第二真相
+ * 源); 左右槽文案与页点机制值全部出自 keybar 纯逻辑单源 (kidpal_keybar_slots /
+ * kidpal_keybar_dots), 设备侧零重算。keybar 只读 layer_top 显隐、零覆盖层进出裁决权
+ * (KB-E3, 本函数不含任何 kidpal_layer_push/pop)。调用方必须已持 LVGL 锁。
+ * ------------------------------------------------------------------------ */
+static void kidpal_keybar_sync_locked(void)
+{
+    kidpal_keybar_dots_t d;
+    const char *left = NULL, *right = NULL;
+    int rn_page = kidpal_render_node_get_page();
+    int overlay_top = kidpal_render_node_front_is_overlay();
+    int page = PAGE_P1;
+
+    /* 渲染节点页 (KP_PAGE_*) -> 键路由页序 (PAGE_P1..PAGE_P4, key_gesture_parser 单源)
+     * 的语义页索引映射: 实心页点与页槽表按「当前画的是哪一页」定格。 */
+    switch (rn_page) {
+        case KP_PAGE_SCHEDULE: page = PAGE_P2; break; /* P2 课表 */
+        case KP_PAGE_STORY:    page = PAGE_P3; break; /* P3 故事 */
+        case KP_PAGE_CHAR:     page = PAGE_P4; break; /* P4 查字 */
+        case KP_PAGE_HOME:
+        default:               page = PAGE_P1; break; /* P1 首页 */
+    }
+
+    if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
+        if (kidpal_keybar_slots(page, g_kidpal_keybar_scene, overlay_top,
+                                &left, &right) == 0) {
+            if (left != NULL) {
+                lv_label_set_text(g_kidpal_keybar_left_label, left);
+            }
+            if (right != NULL) {
+                lv_label_set_text(g_kidpal_keybar_right_label, right);
+            }
+        }
+    }
+
+    if (kidpal_keybar_dots(page, overlay_top, &d) == 0 &&
+        g_kidpal_keybar_dots_box != NULL) {
+        if (d.visible) {
+            lv_obj_remove_flag(g_kidpal_keybar_dots_box, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(g_kidpal_keybar_dots_box, LV_OBJ_FLAG_HIDDEN);
+        }
+        for (int i = 0; i < (int)PAGE_COUNT; i++) {
+            if (g_kidpal_keybar_dot[i] != NULL) {
+                int act = (i == d.active);
+                lv_obj_set_size(g_kidpal_keybar_dot[i], act ? 12 : 8, act ? 12 : 8);
+                lv_obj_set_style_radius(g_kidpal_keybar_dot[i], act ? 6 : 4, 0);
+                lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[i], LV_OPA_COVER, 0);
+            }
+        }
+    }
+}
+
+/* -------------------------------------------------------------------------- *
  * 五态演出内容驱动实现 (包 260911-render-pages RP-A9)。全部位于活分支侧 (最后一个
  * SetupUI 定义点之后), 经 kidpal_voice_state_look 单源取五态 look —— 姿态 / 气泡 /
  * 键帽条文案。层底座与优先级仲裁零触碰 (RP-A9)。气泡尾巴资产 bubble_tail_24.bin
@@ -1083,10 +1172,15 @@ static void kidpal_voice_apply_look(int scene)
         return;
     }
 
-    /* 底部键帽条文案 (任何状态常驻, V3 §06)。 */
-    if (g_kidpal_keycap_label != NULL) {
-        lv_label_set_text(g_kidpal_keycap_label, look.keycap);
+    /* 三槽·左槽随态文案 (任何状态常驻, V3 §06): 左槽消费 look.keycap —— 值域只经
+     * kidpal_voice_states 冻结闭集单源 (KB-A3/KB-E2, 键帽条文案不再有第二条来源)。 */
+    if (g_kidpal_keybar_left_label != NULL) {
+        lv_label_set_text(g_kidpal_keybar_left_label, look.keycap);
     }
+    /* 记录当前语音场景供随态右槽 (结束/关闭) 裁决; 顺带刷新中/右槽 + 页点显隐
+     * (覆盖层随态, 锁已在持)。 */
+    g_kidpal_keybar_scene = scene;
+    kidpal_keybar_sync_locked();
 
     /* 气泡文案: 无独立 bubble 的场景 (播报态走同步文字框 chat_message_label_) 不动。 */
     if (look.bubble != NULL && g_kidpal_chat_label != NULL) {
@@ -1487,6 +1581,7 @@ void LcdDisplay::KidPalVoiceChromeFront(bool voice_front) {
     g_kidpal_voice_front = voice_front ? 1 : 0;
     if (lvgl_port_lock(30000)) {
         kidpal_chrome_mid_sync_locked();
+        kidpal_keybar_sync_locked();
         lvgl_port_unlock();
     }
 }
@@ -1501,4 +1596,26 @@ extern "C" void kidpal_lcd_voice_chrome_front(int front)
         return;
     }
     s_kidpal_lcd_self->KidPalVoiceChromeFront(front != 0);
+}
+
+void LcdDisplay::KidPalKeybarSync() {
+    /* 键帽条三槽随态刷新 (keybar R1 / ①④根修): render_node 页渲染权威每页落屏后调用,
+     * 驱动基础页槽位 + 页点显隐 + 覆盖层随态文案。内部递归取锁 (render_node 调用点已持
+     * lvgl 锁), NULL/锁失败静默返回 —— 不改变渲染节点任何状态, 零副作用。 */
+    if (lvgl_port_lock(30000)) {
+        kidpal_keybar_sync_locked();
+        lvgl_port_unlock();
+    }
+}
+
+/* C 桥 (keybar R1 / ①④根修): render_node (C++ 但不同编译单元) 在基础页渲染权威点
+ * (rn_render_home_locked / rn_render_kidpal_page_locked 每页落屏后) 经本接口驱动键帽条
+ * 三槽刷新 —— 与键路由/页循环同源, 不依赖语音态/前台桥。self 守卫同 voce chrome 桥
+ * (boot 期 render_node_init 跑在构造期内, 绝不经 Board::GetInstance())。 */
+extern "C" void kidpal_lcd_keybar_sync(void)
+{
+    if (s_kidpal_lcd_self == NULL) {
+        return;
+    }
+    s_kidpal_lcd_self->KidPalKeybarSync();
 }

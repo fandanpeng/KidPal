@@ -61,6 +61,10 @@ set(SOURCES "audio/audio_codec.cc"
             # (场景 -> 姿态/气泡/键帽条), 无芯片依赖 -> host_app linux target 同源
             # (接线见 host_app CMakeLists)。层底座零触碰, 只做内容面映射。
             "display/kidpal_voice_states.c"
+            # 键帽条三槽演出内容选择单源 (包 260915-m1-k2-keybar-three-slot): 纯逻辑模块
+            # (槽位 -> 键帽 JSON/点阵), 无芯片依赖 -> host_app linux target 同源 (接线见
+            # host_app CMakeLists)。kidpal_voice_states_closed_set 闭集零偏移。
+            "display/keybar.c"
             # 设备渲染节点 (包 9b HWV-A6 收口 + 包 260911-screen-unification 归一屏):
             # host_infra_render_p1_frame 强符号 + 4 页 LVGL 屏驱动 (KidPal 专属 s_kidpal_scr,
             # display/ 唯一被 lv_screen_load 的前台屏；xiaozhi 聊天 chrome 已 reparent 到

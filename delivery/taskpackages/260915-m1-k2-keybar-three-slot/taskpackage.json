@@ -116,7 +116,74 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "KB-A1: 三槽结构——键帽条 = 通栏贴底三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），条本身任何状态常驻（基座 chrome，覆盖层盖不掉）；替换现单行居中文案形态",
+        "mutations": [
+          {
+            "name": "M-CAPLABEL-RESURRECT",
+            "site": "firmware/main/display/lcd_display.cc:382（statics 复活 g_kidpal_keycap_label 引用）",
+            "result": "failed as expected",
+            "redTooth": "测试4 tooth4 @ keybar_three_slot.acceptance.c:733（g_kidpal_keycap_label 残留 1 处 expected 0——三槽替换未拆除旧单行形态）"
+          }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "KB-A2: 页点机制——中槽页点仅主页面显示（当前页实心放大），覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点；页点数量 = 现行页循环页数（阶段一 = 4，4→3 对账随 M2 撤 P4 一并收回——deviation 显式登记，非静默 spec 冲突）",
+        "mutations": [
+          {
+            "name": "M-DOTS-VIS-ALWAYS",
+            "site": "firmware/main/display/keybar.c:26（kidpal_keybar_dots overlay 分支 ?0:1 恒真）",
+            "result": "failed as expected",
+            "redTooth": "测试1 覆盖层列 @ keybar_three_slot.acceptance.c:491（覆盖层顶层 visible=1 expected 0——覆盖层不显示页点被破坏）"
+          }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "KB-A3: 左右槽随态文案——随态切换走 kidpal_voice_states 冻结映射闭集（聆听「说完啦」/播报「打断」/提醒「知道了」等），闭集值零偏移；覆盖层内左右槽照常给操作提示",
+        "mutations": [
+          {
+            "name": "M-SLOTS-P1-DRIFT",
+            "site": "firmware/main/display/keybar.c:44（slots 基层 case PAGE_P1 左槽 说话→上页）",
+            "result": "failed as expected",
+            "redTooth": "测试2 P1 页槽 @ keybar_three_slot.acceptance.c:529（左=上页 expected 说话——WF-F1-01 全局键帽条行漂移）"
+          },
+          {
+            "name": "M-SLOTS-OVERLAY-LEFT-FIXED",
+            "site": "firmware/main/display/keybar.c:67（slots 覆盖层 *out_left = look.keycap → 恒「固定」）",
+            "result": "failed as expected",
+            "redTooth": "测试2 覆盖层列 @ keybar_three_slot.acceptance.c:574（左=固定 != 闭集 keycap——左槽值域脱离 kidpal_voice_states 冻结闭集单源）"
+          }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
+        "mutations": [
+          {
+            "name": "M-RENDER-OVERLAY-GATE-ZERO",
+            "site": "firmware/main/display/lcd_display.cc:1061 + 1051（sync 内 front_is_overlay() 调用→恒 0，同步移除注释 needle）",
+            "result": "failed as expected",
+            "redTooth": "测试4 tooth6 @ keybar_three_slot.acceptance.c:753（零 kidpal_render_node_front_is_overlay expected >=1——页点显隐未读 layer_top/键路由同源红线）"
+          }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "KB-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿",
+        "mutations": [
+          {
+            "name": "M-CMAKE-ORDER-SWAP",
+            "site": "firmware/main/test/host_app/main/CMakeLists.txt:62（keybar_three_slot.acceptance.c 注册行移至 host_infra_smoke 之后）",
+            "result": "failed as expected",
+            "redTooth": "测试5 tooth1 @ keybar_three_slot.acceptance.c:839（接线注册序守卫——必须排在 smoke 之前；smoke 边界齿本轮未级联红，如实记录）"
+          }
+        ],
+        "sensitive": true
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
