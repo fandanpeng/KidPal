@@ -130,10 +130,11 @@ int kidpal_render_node_front_is_voice(void);
 void kidpal_render_node_dismiss_front_overlay(void);
 
 /*
- * 注入 RTC 时间（CustomBoard::InitializeSensors() 读完后调用）。
- * hour: 0..23, minute: 0..59。
+ * 注入 RTC 时间 + 日期（CustomBoard::InitializeSensors() 读完后调用）。
+ * hour: 0..23, minute: 0..59。month: 1..12 / mday: 1..31（0 = 未知，渲染叠描边兜底）；
+ * 日期字段为 M1-N1b 日期 DD-Mon 扩展（板级 PCF85063 寄存器 0x09=月 / 0x07=日 带入）。
  */
-void kidpal_render_node_inject_rtc(int hour, int minute);
+void kidpal_render_node_inject_rtc(int hour, int minute, int month, int mday);
 
 /*
  * 注入温湿度（CustomBoard 传感器读后调用）。

@@ -215,6 +215,24 @@ int kidpal_art_glyph(char ch, kidpal_art_img_t *out)
         snprintf(name, sizeof(name), "imgfont_digit_%c.bin", ch);
     } else if (ch == ':') {
         snprintf(name, sizeof(name), "imgfont_colon.bin");
+    } else if (ch == '%') {
+        /* '%' 记号（M1-N1b 看屏终验：手工基元修形不达标 -> 改真字形）。与字母/数字同
+         * cell 几何（48x64），由 tools/asset-pipeline/gen_imgfont_letters.py 生成 fixed
+         * 名 imgfont_pct.bin（避开字母大小写分流命名；不在 gen_art_spiffs.mjs 白名单）。 */
+        snprintf(name, sizeof(name), "imgfont_pct.bin");
+    } else if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+        /* 字母字形扩展（包 260915-m1-k1a-key-layer-dispatch，M1-N1b 日期 DD-Mon）：
+         * 字母按大小写分流文件（NTFS 大小写不敏感属跨端缺陷——同名模板会使小写
+         * 覆盖大写，故大写走 imgfont_letter_%c.bin、小写走 imgfont_letter_lc_%c.bin，
+         * 与 tools/asset-pipeline/gen_imgfont_letters.py 生成侧同规）。与数字同 cell
+         * 几何（48x64），由 gen_imgfont_letters.py 生成，47 枚闭集白名单管线不产出
+         * （gen_art_spiffs.mjs 只写其白名单件、重跑不删字母 bin）。
+         * 大写 'A' -> imgfont_letter_A.bin；小写 'a' -> imgfont_letter_lc_a.bin。 */
+        if (ch >= 'a' && ch <= 'z') {
+            snprintf(name, sizeof(name), "imgfont_letter_lc_%c.bin", ch);
+        } else {
+            snprintf(name, sizeof(name), "imgfont_letter_%c.bin", ch);
+        }
     } else {
         return -1;
     }

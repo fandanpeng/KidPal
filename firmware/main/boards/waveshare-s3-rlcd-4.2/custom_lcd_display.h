@@ -52,6 +52,12 @@ public:
     void RLCD_ColorClear(uint8_t color);
     void RLCD_Display();
 	void RLCD_SetPixel(uint16_t x, uint16_t y, uint8_t color);
+
+    /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标与温/湿/电辅助条小标同档。基座
+     * LcdDisplay::SetTheme 会按主题 icon_font（本板 = font_awesome_30_4，30px，~2x 辅助条
+     * ~13px 图标）重设 network_label_，主题刷新时若不拦截会跳回大档。override 在基座之后
+     * 强制联网小标回落小号 FA 字体 font_awesome_14_1（14px），维持 human 裁定同档。 */
+    void SetTheme(Theme* theme) override;
 };
 
 #endif

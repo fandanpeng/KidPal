@@ -84,6 +84,8 @@ static kidpal_page_id_t s_local_page = KP_PAGE_HOME;
 /* 注入状态。 */
 static int s_rtc_hour     = 0;
 static int s_rtc_minute   = 0;
+static int s_rtc_month    = 0; /* 1..12（0 = 未知；板级 PCF85063 日期寄存器带入） */
+static int s_rtc_mday     = 0; /* 1..31（0 = 未知） */
 static int s_env_valid    = 0;
 static int s_temp_c       = 0;
 static int s_humidity_pct = 0;
@@ -201,6 +203,8 @@ static void rn_render_home_locked(void)
     hp1_state_t st = {};
     st.hour         = s_rtc_hour;
     st.minute       = s_rtc_minute;
+    st.month        = s_rtc_month;
+    st.mday         = s_rtc_mday;
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;
@@ -262,10 +266,13 @@ void kidpal_render_node_init(void)
     ESP_LOGI(RN_TAG, "KidPal render node initialized (unified screen + layer stack)");
 }
 
-void kidpal_render_node_inject_rtc(int hour, int minute)
+void kidpal_render_node_inject_rtc(int hour, int minute, int month, int mday)
 {
     if (hour   >= 0 && hour   <= 23) { s_rtc_hour   = hour;   }
     if (minute >= 0 && minute <= 59) { s_rtc_minute = minute; }
+    /* 日期扩展（M1-N1b）：0 = 未知（默认保持），1..12 / 1..31 合法值带入渲染态。 */
+    if (month >= 1 && month <= 12) { s_rtc_month = month; }
+    if (mday  >= 1 && mday  <= 31) { s_rtc_mday  = mday;  }
 }
 
 void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
@@ -493,6 +500,8 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             hp1_state_t st = {};
             st.hour         = s_rtc_hour;
             st.minute       = s_rtc_minute;
+            st.month        = s_rtc_month;
+            st.mday         = s_rtc_mday;
             st.env_valid    = s_env_valid;
             st.temp_c       = s_temp_c;
             st.humidity_pct = s_humidity_pct;
@@ -667,6 +676,8 @@ void kidpal_render_node_tick(void)
     hp1_state_t st = {};
     st.hour         = s_rtc_hour;
     st.minute       = s_rtc_minute;
+    st.month        = s_rtc_month;
+    st.mday         = s_rtc_mday;
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;

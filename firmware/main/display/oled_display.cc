@@ -97,7 +97,6 @@ OledDisplay::~OledDisplay() {
     if (top_bar_ != nullptr) {
         network_label_ = nullptr;
         mute_label_ = nullptr;
-        battery_label_ = nullptr;
         lv_obj_del(top_bar_);
     }
     if (side_bar_ != nullptr) {
@@ -106,7 +105,6 @@ OledDisplay::~OledDisplay() {
             notification_label_ = nullptr;
             network_label_ = nullptr;
             mute_label_ = nullptr;
-            battery_label_ = nullptr;
         }
         lv_obj_del(side_bar_);
     }
@@ -199,10 +197,6 @@ void OledDisplay::SetupUI_128x64() {
     mute_label_ = lv_label_create(right_icons);
     lv_label_set_text(mute_label_, "");
     lv_obj_set_style_text_font(mute_label_, icon_font, 0);
-
-    battery_label_ = lv_label_create(right_icons);
-    lv_label_set_text(battery_label_, "");
-    lv_obj_set_style_text_font(battery_label_, icon_font, 0);
 
     /* Layer 2: Status bar - for center text labels */
     status_bar_ = lv_obj_create(screen);
@@ -352,10 +346,6 @@ void OledDisplay::SetupUI_128x32() {
     network_label_ = lv_label_create(status_bar_);
     lv_label_set_text(network_label_, "");
     lv_obj_set_style_text_font(network_label_, icon_font, 0);
-
-    battery_label_ = lv_label_create(status_bar_);
-    lv_label_set_text(battery_label_, "");
-    lv_obj_set_style_text_font(battery_label_, icon_font, 0);
 
     chat_message_label_ = lv_label_create(side_bar_);
     lv_obj_set_size(chat_message_label_, width_ - 32, LV_SIZE_CONTENT);

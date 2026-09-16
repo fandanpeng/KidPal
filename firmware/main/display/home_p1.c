@@ -33,16 +33,25 @@
 #define P1_COLOR_BG  0xFFFFFFu  /* 白底（1bpp 黑白设计）；探针不计为墨水 */
 #define P1_COLOR_INK 0x000000u  /* 墨水（非白非哨兵即探针计数） */
 
-/* ---- 数字字形目标盒（M1-N1b 真机根因修复；不偏移资产/不动 art_assets.c） ----
+/* ---- 数字字形目标盒（M1-N1b 真机根因修复序列；不偏移资产/不动 art_assets.c） ----
  * imgfont_digit_*.bin 是旧版式大时钟的 48 宽 x 64 高字形（advance 冻结 48），
  * 辅助条/小一号数字若按 12/13px pitch 原样逐字符 blit 会相邻重叠溢出（真机「超大
- * 字体」）。本文件改走运行时最近邻降采样进目标盒 + 钉区 clip。整数值统一 1 盒：
- *   P1_DIG_W/H = 16x22 —— 数字内容（源 ink ~28x42，缩放 ~15x13px）逐字符 ink 实测
- *   收进各钉区（辅助条时间 x[42..103]@y[12..26]、值半区 x[~242..262]@y[13..27]，
- *   主体小一号 x[144..208]，全部贴内，见 verifier 审查注）。主体验「接下来」（pitch
- *   25）保持原样 48px 字形 == 最醒目恰配，不经缩放。 ---- */
+ * 字体」）。本文件统一改走运行时最近邻降采样进目标盒 + 钉区 clip。翻档为两套规格：
+ *
+ *   P1_DIG_W/H = 16x22 ——「主体区」小一号之目标盒（sticker/nextlist/preview 共用，
+ *   pitch 14；W2 third-round 定为 body 口径，不再被辅助条消费）。主体验「接下来」
+ *   （pitch 25）保持原样 48px 字形 == 最醒目恰配，不经缩放。
+ *
+ *   P1_AUX_DIG_W/H = 12x16、P1_AUX_PITCH = 10 ——「辅助条」四数值（时间/温度/湿度/
+ *   电量）之统一小字规格（W2 design authority WF-F1-01 v1.4: ①辅助条各数值同尺寸
+ *   小字、图标前置）。源 48x64 字形降采样进 12x16 盒、pitch 10。湿度/电量数值后补
+ *   '%' 记号（M1-N1b 看屏终验：手工基元两轮修形不达标 -> 改走真字形 imgfont_pct.bin，
+ *   同 cell 同基线 p1_blit_glyph_scaled('%', …)），收进各自冻结元素矩形内。 ---- */
 #define P1_DIG_W 16
 #define P1_DIG_H 22
+#define P1_AUX_DIG_W 12
+#define P1_AUX_DIG_H 16
+#define P1_AUX_PITCH  10
 
 /* ---- 帧缓冲（纯逻辑，无 LVGL/芯片） ----
  * 包 9b HWV-A6 渲染节点落地：设备侧 480KB 帧缓冲置 PSRAM (.ext_ram.bss) 以避免
@@ -387,6 +396,13 @@ int kidpal_home_p1_set_state(const hp1_state_t *st)
     if (st->minute < 0 || st->minute > 59) {
         return -1;
     }
+    /* 日期可缺（0 = 未知，渲染叠描边兜底不画假日期；M1-N1b 日期 DD-Mon 扩展）。 */
+    if (st->month < 0 || st->month > 12) {
+        return -1;
+    }
+    if (st->mday < 0 || st->mday > 31) {
+        return -1;
+    }
     if (st->env_valid != 0 && st->env_valid != 1) {
         return -1;
     }
@@ -709,6 +725,20 @@ static int p1_blit_int_scaled(int value, int x0, int y0, int pitch,
                               cx0, cy0, cx1, cy1, 1);
 }
 
+/* 整数值小数位计数（abs，v==0 -> 1），用于 '%' 后缀起笔定位（辅助条值区贴内）。 */
+static int p1_ndigits(int v)
+{
+    int n = 1;
+    if (v < 0) {
+        v = -v;
+    }
+    while (v >= 10) {
+        v /= 10;
+        n++;
+    }
+    return n;
+}
+
 /* 手写 HH:MM / H:MM 格式化（避免 snprintf -Werror=format-truncation 触发；
  * hour 0..23 minute 0..59 已在 set_state 门内保证；buffer 至少 6 字节）。 */
 static void p1_fmt_hhmm(int hour, int minute, char *buf, int cap)
@@ -728,8 +758,8 @@ static void p1_fmt_hhmm(int hour, int minute, char *buf, int cap)
 }
 
 /* ① 辅助条·时间（小字 "H:MM"/"HH:MM"，冒号眨眼相位沿用冻结周期）：真字形走
- * imgfont 数字（pitch=13，5 字符 cell 总宽 4*13+字形宽 -> 墨 x=[40..104] 收进
- * 钉区 [36..108]）；未挂载兜底 thin 描边框撑「time 区有墨」pin。 */
+ * imgfont 数字（P1_AUX 12x16 盒 pitch=10，5 字符 cell 总宽 4*10+12 -> 墨 x=[41..87]
+ * 收进钉区 [36..108]）；未挂载兜底 thin 描边框撑「time 区有墨」pin。 */
 static void p1_draw_aux_time(void)
 {
     char buf[8];
@@ -738,9 +768,11 @@ static void p1_draw_aux_time(void)
 
     p1_fmt_hhmm(s_state.hour, s_state.minute, buf, (int)sizeof(buf));
     if (s_art_ok) {
-        /* 缩放 blit（源 48x64 -> 16x22 盒，最近邻）× clip 进 time 钉区 [36,6,108,33]；
-         * ink 实测 x[42..103]@y[12..26] 全贴内（见 P1_DIG_W/H 注）。 */
-        (void)p1_blit_str_scaled(buf, 38, 9, 13, P1_DIG_W, P1_DIG_H,
+        /* 缩放 blit（源 48x64 -> 12x16 盒，最近邻）× clip 进 time 钉区 [36,6,108,33]；
+         * M1-N1b 统一中线 y0=12 -> ink x[41..87]@y[14..24]、墨高 11px 以 y≈19 为心
+         * （与图标同中线，见自查表）。 */
+        (void)p1_blit_str_scaled(buf, 38, 12, P1_AUX_PITCH,
+                                 P1_AUX_DIG_W, P1_AUX_DIG_H,
                                  36, 6, 108, 33, colon_visible);
     } else {
         p1_stroke_rect(38, 10, 104, 30, 1);
@@ -752,66 +784,139 @@ static void p1_draw_aux_time(void)
     }
 }
 
-/* ① 辅助条·日期星期：「8月27日 周四」文本暂无中文字形（殿后清单）——描边兜底
- * 恒画（两条路径同款，有墨义务成立），落 date 钉区 [112..208]x[6..33] 内。 */
+/* ① 辅助条·日期（M1-N1b 日期 DD-Mon，human 裁定 2026-09-16）：真实渲染 "DD Mon"——
+ * 日号 2 位数字（走 P1_AUX 缩放数字路径，pitch=10）+ 空格（固定 advance）+ 月缩写
+ * （Jan..Dec title case 静态表，字母走 glyph 缩放路径——字母与数字同 cell 尺寸，
+ * 复用 p1_blit_glyph_scaled，见 art_assets.c 字母桶 imgfont_letter_%c.bin 扩展）。
+ * 月份数据源 = hp1_state.month/mday（板级 PCF85063 日/月寄存器 → inject_rtc 带入，
+ * 链路见 kidpal_render_node.cc s_rtc_month/mday）。month/mday=0（未知/缺 RTC 日期）
+ * 或 art 未挂载路径：保留描边兜底（有墨义务；不画假日期）。 */
+static const char* const k_p1_month_abbr[13] = {
+    "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
+static void p1_fmt_mday_2(int mday, char *buf, int cap)
+{
+    /* 日号恒 2 位（"01".."31"；mday 1..31 已在 set_state 门内保证）。 */
+    int n = 0;
+    if (n < cap - 1) { buf[n++] = (char)('0' + mday / 10); }
+    if (n < cap - 1) { buf[n++] = (char)('0' + mday % 10); }
+    buf[n] = '\0';
+}
+
 static void p1_draw_aux_date(void)
 {
-    p1_stroke_rect(114, 10, 206, 30, 1);
+    int month = s_state.month;
+    int mday  = s_state.mday;
+    char ds[8];
+    const char *mn;
+    int drew = 0;
+    int x, i;
+
+    /* 日期有效（= RTC 日期已注入）且 art 挂载：真实渲染 "DD Mon"。 */
+    if (month >= 1 && month <= 12 && mday >= 1 && mday <= 31 && s_art_ok) {
+        mn = k_p1_month_abbr[month];
+        p1_fmt_mday_2(mday, ds, (int)sizeof(ds));
+        /* 布局（落 date 钉区 {112,6,208,33}）：日号 2 数字 pitch=10 起笔 126，全部 cell
+         * 区间 [126, 126+10+12-1=147]；后接 8px 空格 -> 月首 x=156；3 字母 pitch=10
+         * 收进区右界（156+2*10+12-1=187 < 208），不侵温度区(212)。 */
+        x = 126;
+        /* 日号 2 位：p1_blit_str_scaled 走 imgfont_digit 缩放路径（P1_AUX 12x16，
+         * y0=12 统一中线）。 */
+        drew |= (p1_blit_str_scaled(ds, x, 12, P1_AUX_PITCH,
+                                    P1_AUX_DIG_W, P1_AUX_DIG_H,
+                                    112, 6, 208, 33, 1) > 0);
+        /* 空格（固定 advance 8px）+ 月缩写 3 字母（glyph 缩放路径同 cell，y0=12）。 */
+        x = 126 + 2 * P1_AUX_PITCH + 8; /* = 154（2 数字 cell 后 + 8px 空） */
+        for (i = 0; mn[i] != '\0' && i < 3; i++) {
+            drew |= p1_blit_glyph_scaled(mn[i], x + i * P1_AUX_PITCH, 12,
+                                         P1_AUX_DIG_W, P1_AUX_DIG_H,
+                                         112, 6, 208, 33);
+        }
+    }
+    if (!drew) {
+        /* 兜底（art 未挂载 / 日期未知）：描边框撑「date 区有墨」pin，不画假日期。 */
+        p1_stroke_rect(126, 10, 194, 30, 1);
+    }
 }
 
 /* ① 辅助条·温度元素（图标半前置 {212,6,232,33} + 数值半 {236,6,264,33}）。
- * 图标：thermo_man 资产 blit（clip 进图标半）；数值：imgfont 整数（pitch=12，
- * "22" 2 字符墨 x=[238..262] 收进数值半）。半区各自兜底描边（各半区独立保证
- * 「有墨 >= 4」pin；整元素由 env_valid 门控，缺席即隐藏不画假数据）。 */
+ * 图标：thermo_man 资产 blit（clip 进图标半）；数值：imgfont 整数（P1_AUX 12x16
+ * pitch=10，"22" 2 字符墨 x=[241..257] 收进数值半）。半区各自兜底描边（各半区独立
+ * 保证「有墨 >= 4」pin；整元素由 env_valid 门控，缺席即隐藏不画假数据）。°C 单位
+ * 后缀本轮不动（° 与 C 均无 imgfont 字形，基元画 C 观感风险大，留 human 裁定）。 */
 static void p1_draw_aux_temp(void)
 {
-    /* 图标走缩放 blit（thermo_man 41x67 降采样进 20x28 盒）+ clip 进温度图标半区
-     * {212,6,232,33}；ink 实测 x[216..228]@y[9..33] 全贴内（见报告表 ③）。 */
-    if (!p1_blit_art_scaled("thermo_man.bin", 212, 6, 20, 28,
+    /* 图标走缩放 blit（thermo_man 41x67 降采样进 20x20 盒）+ clip 进温度图标半区
+     * {212,6,232,33}；M1-N1b 看屏终验统一辅助条中线：图标墨带收敛到 ~18px 高、以
+     * 中线 y≈19 为心落座（ink ~[11..28]，下探标定见截图自查表）。 */
+    if (!p1_blit_art_scaled("thermo_man.bin", 212, 9, 20, 20,
                             212, 6, 232, 33)) {
         p1_stroke_rect(214, 10, 230, 29, 1);
     }
     if (s_art_ok) {
-        (void)p1_blit_int_scaled(s_state.temp_c, 238, 10, 12,
-                                 P1_DIG_W, P1_DIG_H, 236, 6, 264, 33);
+        (void)p1_blit_int_scaled(s_state.temp_c, 238, 12, P1_AUX_PITCH,
+                                 P1_AUX_DIG_W, P1_AUX_DIG_H, 236, 6, 264, 33);
     } else {
         p1_stroke_rect(238, 10, 262, 29, 1);
     }
 }
 
 /* ① 辅助条·湿度元素（图标半前置 {268,6,288,33} + 数值半 {292,6,318,33}，
- * "45%" 不裸数字挨电池——图标半在前）。水滴宝宝资产 + imgfont 整数，兜底同温度。 */
+ * "45%" 不裸数字挨电池——图标半在前，数值紧跟 '%' 后缀）。水滴宝宝资产 + imgfont
+ * 整数 + 基元 '%'（w=7 贴身收进元素右界 318，见标定表），兜底同温度。 */
 static void p1_draw_aux_hum(void)
 {
-    /* 图标走缩放 blit（drop_baby 32x51 降采样进 20x28 盒）+ clip 进湿度图标半区
-     * {268,6,288,33}；ink 实测 x[269..287]@y[8..32] 全贴内（见报告表 ③）。 */
-    if (!p1_blit_art_scaled("drop_baby.bin", 268, 6, 20, 28,
+    int val = s_state.humidity_pct;
+    int n = p1_ndigits(val);
+
+    /* 图标走缩放 blit（drop_baby 32x51 降采样进 20x20 盒）+ clip 进湿度图标半区
+     * {268,6,288,33}；M1-N1b 看屏终验统一中线：墨带收敛 ~17px 高、以 y≈19 为心
+     * （ink ~[11..27]）。 */
+    if (!p1_blit_art_scaled("drop_baby.bin", 268, 9, 20, 20,
                             268, 6, 288, 33)) {
         p1_stroke_rect(270, 10, 286, 29, 1);
     }
     if (s_art_ok) {
-        (void)p1_blit_int_scaled(s_state.humidity_pct, 294, 10, 12,
-                                 P1_DIG_W, P1_DIG_H, 292, 6, 318, 33);
+        /* 数值起笔 285 贴图标半区右界（288）内侧留白 3px；'%' 改走真字形管线
+         * （p1_blit_glyph_scaled('%', …, 12x16 同 cell 同基线）替代手工基元两轮
+         * 修形：% 同数字 cell 自动基线对齐，同 y0。% 起笔 = 285 + pitch*n + 2（n =
+         * 位数）落整元素 {268,6,318,33} 内（n<=2 收进右界），clip 防越界。湿度 100
+         * （n=3）时元素右界不足容纳 '%'（预既有缺陷，home 实况近不着边），仍无条件
+         * 绘制、clip 截断到右界 318。 */
+        (void)p1_blit_int_scaled(val, 285, 12, P1_AUX_PITCH,
+                                 P1_AUX_DIG_W, P1_AUX_DIG_H, 268, 6, 318, 33);
+        p1_blit_glyph_scaled('%', 285 + P1_AUX_PITCH * n + 2, 12,
+                             P1_AUX_DIG_W, P1_AUX_DIG_H, 268, 6, 318, 33);
     } else {
         p1_stroke_rect(294, 10, 316, 29, 1);
     }
 }
 
 /* ① 辅助条·电量元素（图标半前置 {322,6,344,33} + 数值半 {348,6,396,33}）。
- * ic_batt 资产 + imgfont 整数（"85"/"100" pitch=12，墨 x=[350..388] 收进数值半），
+ * ic_batt 资产 + imgfont 整数（"85"/"100" P1_AUX 12x16 pitch=10）+ '%' 后缀（w=8），
  * 半区各自兜底描边。整元素由 doze 灭相门控（调用方），充电恒画。 */
 static void p1_draw_aux_batt(void)
 {
-    /* 图标走缩放 blit（ic_batt_48 48x48 降采样进 22x28 盒）+ clip 进电量图标半区
-     * {322,6,344,33}；ink 实测 x[324..342]@y[14..26] 全贴内、视觉不再与数值半 95
-     * 粘连（见报告表 ③；95 字号本轮不动）。 */
-    if (!p1_blit_art_scaled("ic_batt_48.bin", 322, 6, 22, 28,
+    int val = s_state.battery_pct;
+    int n = p1_ndigits(val);
+
+    /* 图标走缩放 blit（ic_batt_48 48x48 降采样进 22x40 盒）+ clip 进电量图标半区
+     * {322,6,344,33}；M1-N1b 看屏终验统一中线：box y0=0 顶越区由 clip 取齐、ink 墨带
+     * ~18px 高、以 y≈19 为心（ink ~[11..28]，下探标定见截图自查表）。数值起笔 348
+     * （图标墨右界贴半区 ~342，>=4px 空隙）。 */
+    if (!p1_blit_art_scaled("ic_batt_48.bin", 322, 0, 22, 40,
                             322, 6, 344, 33)) {
         p1_stroke_rect(324, 10, 342, 29, 1);
     }
     if (s_art_ok) {
-        (void)p1_blit_int_scaled(s_state.battery_pct, 350, 10, 12,
-                                 P1_DIG_W, P1_DIG_H, 348, 6, 396, 33);
+        (void)p1_blit_int_scaled(val, 348, 12, P1_AUX_PITCH,
+                                 P1_AUX_DIG_W, P1_AUX_DIG_H, 348, 6, 396, 33);
+        /* '%' 真字形（替代手工基元）：起笔 348 + pitch*n + 2 = 尾数 cell 后 2px 间距，
+         * 同 12x16 cell 同 y0=12 同数字基线；clip 防越半区右界 396。 */
+        p1_blit_glyph_scaled('%', 348 + P1_AUX_PITCH * n + 2, 12,
+                             P1_AUX_DIG_W, P1_AUX_DIG_H, 348, 6, 396, 33);
     } else {
         p1_stroke_rect(350, 10, 394, 29, 1);
     }

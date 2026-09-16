@@ -33,11 +33,15 @@ protected:
     lv_obj_t *status_label_ = nullptr;
     lv_obj_t *notification_label_ = nullptr;
     lv_obj_t *mute_label_ = nullptr;
-    lv_obj_t *battery_label_ = nullptr;
+    /* 包 260915-m1-n1b-p1-home-battery (真机缺陷修复, human 逐字「最右侧还有一个
+     * 老的电池图标，导致电池数字被遮盖」): chrome 状态栏电池段全链摘除——
+     * battery_label_ 的创建/更新/删除不再维护，member 一并移除。
+     * 治理依据 (crossPackageBehaviors): 电量端到端 owner = 本包独占，其他渲染面
+     * 不另接电池数据；电量显示归 home_p1 帧缓冲，chrome 状态栏不得再画电池。
+     * 低电 popup (low_battery_popup_) 非状态栏电池图标链路，保守保留不动。 */
     lv_obj_t* low_battery_popup_ = nullptr;
     lv_obj_t* low_battery_label_ = nullptr;
-    
-    const char* battery_icon_ = nullptr;
+
     const char* network_icon_ = nullptr;
     bool muted_ = false;
 

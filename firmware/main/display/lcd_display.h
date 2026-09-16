@@ -61,6 +61,12 @@ public:
     // Set whether to hide chat messages/subtitles
     void SetHideSubtitle(bool hide);
 
+    /* 板类把 chrome 联网小标（network_label_）切到指定字体（包 260915-m1-n1b-p1-home-battery
+     * 任务 B：waveshare-s3-rlcd-4.2 首页联网小标与温/湿/电辅助条小标同档）。基座默认按
+     * 主题 icon_font 渲染；板类在构造期调用一次把联网小标定为小号 FA 字体，配合 override
+     * SetTheme（自定义层）在主题刷新后维持不跳档。 */
+    void KidPalSetNetworkLabelFont(const lv_font_t* font);
+
     // KidPal 归一屏（包 260911-screen-unification SU-RULING-02 单物理屏）：
     // 把 SetupUI 建立在 LVGL 默认屏上的聊天 chrome（状态栏 / 表情 / 气泡 / 低电量弹窗）
     // 迁到常驻 parent（调用方传 lv_layer_top()，恒浮于活动屏之上、非屏）。整屏不透明
