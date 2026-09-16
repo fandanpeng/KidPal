@@ -139,7 +139,10 @@ const CORE_PATH_PATTERNS = [
 // 260801-gov-review-supervisor-gate-auth-axis-fp（FROZEN v0.3.1）假阳治理——三件套（判据不变，机械投影收敛）：
 //   ②paths 承重（优先）：路径子串闭集命中即触发——*auth* 子串天然覆盖 **/auth/**、authenticator、
 //     oauth-client、reauth 路径（segment glob 不吃 oauth-client.ts，子串形态保 OAuth 族文件级命中）；
-//     向宽代价声明：*auth* 吃 author.ts 类文件名——identity 域安全相邻，命中属向严可接受。
+//     向宽代价原声明「*auth* 吃 author.ts 类文件名属向严可接受」——260916 实证两包证伪（input-brief-acceptance-author.md
+//     制品路径致 riskTier 虚高 ESCALATE、靠 human-approval 凭据放行），paths 轴收窄：先跳过测试/制品面排除闭集
+//     （ARQ-260916-supervisor-auth-fp-author，与 content 轴 OQ-1=(a) 共享 ARTIFACT_TEST_EXCLUDE_PATH_RES 单源）；
+//     生产面路径命中零改，向严不减（归因失败回退全量 content 扫描仍覆盖制品面文本）。
 //   ①content 收敛（补充）：字母边界匹配（(?<![a-z])/(?![a-z]) 非 \b 的 \w 语义——OAuth2 的 2 不阻断，
 //     而 author/AuthSession/authenticator/authority/acceptance-author 右邻字母被杀）+ 命中词闭集过滤
 //     （门自产词汇 auth-axis / security-axis-diff:auth + 防御性 acceptance-author；词提取字符集含 ':'
@@ -194,7 +197,9 @@ const TEST_FILE_RE = /(\.spec\.|\.test\.|__tests__|\/acceptance\/)/;
 
 // 测试/制品面排除闭集（260803-critical-content-fp T2 立，260813-gate-accuracy-batch OQ-1=(a) 升两轴共享单源）：
 // critical-content 轴与 auth 轴 content 扫描共用——这些路径的 diff 内容 = 测试 cleanup / 制品 prose，
-// 不承载生产删数据/安全面风险信号，content 扫描跳过；critical-path 轴、auth paths 轴与 high 各轴不受影响（判据不变、投影精度收敛）。
+// 不承载生产删数据/安全面风险信号，content 扫描跳过；critical-path 轴与 high core 轴不受影响。
+// 260916 扩消费面（ARQ-260916-supervisor-auth-fp-author）：auth paths 轴亦消费本闭集（securityAxisTriggered 路径环先跳过）——
+// 制品面路径名同样不承载生产安全信号，消 *auth* 吃 input-brief-acceptance-author.md 类假阳；判据不变、投影精度收敛。
 // 维护注：TEST_FILE_RE 复用单源；制品三根对应 repo-structure「工作产物去哪」（delivery/changes/** closeout / taskpackages 过程件 / delivery/workstreams workstream 记忆）。
 const ARTIFACT_TEST_EXCLUDE_PATH_RES = [
   TEST_FILE_RE,                 // 测试面：.spec. / .test. / __tests__ / /acceptance/
@@ -232,6 +237,9 @@ function isCoreStar(paths) {
 // 归因失败回退全量 body 扫描 = 原行为（向严单调，OQ-2=(a)）。reason 保旧形态不归因（OQ-7=(i)：排除闭集词形交互面归零）。
 function securityAxisTriggered(paths, content, tp, perFile) {
   for (const p of paths) {
+    // ARQ-260916-supervisor-auth-fp-author：测试/制品面路径不承载安全面路径信号——排除闭集与 content 轴共享单源，
+    // 消 *auth* 子串吃 input-brief-acceptance-author.md 类制品路径的假阳（实证两包 riskTier 虚高 ESCALATE）。
+    if (isArtifactTestExcluded(p)) continue;
     for (const re of SECURITY_AXIS_PATH_PATTERNS) {
       if (re.test(p)) return { hit: true, reason: `security-axis-path:${p}` };
     }
@@ -722,6 +730,21 @@ function selfCheck() {
   // 混合回退——归因覆盖不全 → 全量扫描 = 向严
   const authAttrPartial = new Map([['delivery/changes/dev/x/review-packet.md', '+auth prose']]); // 第二路径未覆盖
   ok(deriveDiffTier(['delivery/changes/dev/x/review-packet.md', 'firmware/main/y.c'], 'auth prose', {}, { perFile: authAttrPartial }).tier === 'high', 'auth-fallback-partial-coverage-whole-body');
+
+  // ARQ-260916-supervisor-auth-fp-author 路径轴收窄电池（paths 轴消费测试/制品面排除闭集，与 content 轴共享单源）
+  // 假阳重放（实证形态）：input-brief 制品路径含 author 子串，归因可用 → paths 轴跳过、content 轴跳过 → low
+  ok(deriveDiffTier(
+    ['delivery/taskpackages/x/input-brief-acceptance-author.md'],
+    'brief prose',
+    { subsystem: 'delivery' },
+    { perFile: new Map([['delivery/taskpackages/x/input-brief-acceptance-author.md', '+brief prose']]) },
+  ).tier === 'low', 'fp-path-input-brief-author-attributed-not-hit');
+  // 假阳重放：同路径、归因缺失 → 回退全量 content 扫描（内容无 auth 词）→ 仍 low（路径轴不再单独触发）
+  ok(deriveDiffTier(['delivery/taskpackages/x/input-brief-per-file.md', 'delivery/taskpackages/x/input-brief-acceptance-author.md'], 'brief prose only', {}).tier === 'low', 'fp-path-input-brief-author-fallback-not-hit');
+  // 向严保全：回退模式下制品面 content 含真 auth 词仍触发——收窄只作用于路径形态，content 全量扫描不减
+  ok(deriveDiffTier(['delivery/taskpackages/x/input-brief-acceptance-author.md'], 'auth token refresh flow', {}).tier === 'high', 'auth-excluded-path-content-fallback-still-hit');
+  // 向严保全：生产面 auth 路径命中零改（回归锚）
+  ok(deriveDiffTier(['firmware/main/auth/guard.c'], '', {}).tier === 'high', 'auth-path-axis-still-hit-260916');
 
   console.log(JSON.stringify({ selfCheck: 'supervisor-verdict-gate', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);
