@@ -31,8 +31,11 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const FW_UNIT_RE = /\.(test)\.(c|cpp|cc)$/;
 // shim pytest 文件。
 const PY_TEST_RE = /(^|\/)(test_[^/]*|[^/]*_test)\.py$/;
-// 枚举时跳过的目录。
-const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'ESP32-S3-RLCD-4.2-Demo']);
+// 枚举时跳过的目录。archive = sweep 退役面（ARQ-260916-unit-gate-archive-recursion：归档件按
+// sweep 77b6b0c「移位即退役」口径已不是现役 unit 面——闸枚举若收归档件并显式传参，pytest 对
+// 显式文件不受 norecursedirs/collect_ignore 约束（260916 实测），final 相位恒红。固件侧
+// main/test/acceptance/archive/ 同口径退役，一并跳过）。
+const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'ESP32-S3-RLCD-4.2-Demo', 'archive']);
 
 function print(payload) { console.log(JSON.stringify(payload, null, 2)); }
 function fail(message, details = {}) { print({ ok: false, gate: 'unit', message, ...details }); process.exit(1); }
@@ -182,6 +185,10 @@ function runSelfCheck() {
     const real = collectReal(projectDir);
     const dReal = decide(real);
     ok('real-repo-smoke', true, `fwFiles=${real.fwUnitFiles.length} pyFiles=${real.pyTestFiles.length} ok=${dReal.ok}`);
+    // ARQ-260916-unit-gate-archive-recursion：归档退役面（*/archive/）不入枚举——sweep「移位即退役」
+    // 口径对闸枚举同样成立；任一面枚举命中 archive 路径即红（防 SKIP_DIRS 回退静默复发）。
+    ok('real-repo-no-archive-collected', !real.pyTestFiles.some((f) => /(^|\/)archive\//.test(f)) && !real.fwUnitFiles.some((f) => /(^|\/)archive\//.test(f)),
+      real.pyTestFiles.filter((f) => /(^|\/)archive\//.test(f)).join(',') || 'no-archive-in-enumeration');
   } catch (e) {
     ok('real-repo-smoke', false, `enumeration failed: ${e.message}`);
   }
