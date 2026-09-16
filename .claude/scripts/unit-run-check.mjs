@@ -187,8 +187,8 @@ function runSelfCheck() {
     ok('real-repo-smoke', true, `fwFiles=${real.fwUnitFiles.length} pyFiles=${real.pyTestFiles.length} ok=${dReal.ok}`);
     // ARQ-260916-unit-gate-archive-recursion：归档退役面（*/archive/）不入枚举——sweep「移位即退役」
     // 口径对闸枚举同样成立；任一面枚举命中 archive 路径即红（防 SKIP_DIRS 回退静默复发）。
-    ok('real-repo-no-archive-collected', !real.pyTestFiles.some((f) => /(^|\/)archive\//.test(f)) && !real.fwUnitFiles.some((f) => /(^|\/)archive\//.test(f)),
-      real.pyTestFiles.filter((f) => /(^|\/)archive\//.test(f)).join(',') || 'no-archive-in-enumeration');
+    const archiveHits = [...real.pyTestFiles, ...real.fwUnitFiles].filter((f) => /(^|\/)archive\//.test(f));
+    ok('real-repo-no-archive-collected', archiveHits.length === 0, archiveHits.join(',') || 'no-archive-in-enumeration');
   } catch (e) {
     ok('real-repo-smoke', false, `enumeration failed: ${e.message}`);
   }
