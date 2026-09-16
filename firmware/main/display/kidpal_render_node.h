@@ -130,10 +130,11 @@ int kidpal_render_node_front_is_voice(void);
 void kidpal_render_node_dismiss_front_overlay(void);
 
 /*
- * 注入 RTC 时间（CustomBoard::InitializeSensors() 读完后调用）。
- * hour: 0..23, minute: 0..59。
+ * 注入 RTC 时间 + 日期（CustomBoard::InitializeSensors() 读完后调用）。
+ * hour: 0..23, minute: 0..59。month: 1..12 / mday: 1..31（0 = 未知，渲染叠描边兜底）；
+ * 日期字段为 M1-N1b 日期 DD-Mon 扩展（板级 PCF85063 寄存器 0x09=月 / 0x07=日 带入）。
  */
-void kidpal_render_node_inject_rtc(int hour, int minute);
+void kidpal_render_node_inject_rtc(int hour, int minute, int month, int mday);
 
 /*
  * 注入温湿度（CustomBoard 传感器读后调用）。
@@ -141,6 +142,15 @@ void kidpal_render_node_inject_rtc(int hour, int minute);
  * temp_c: 摄氏度（-40..60）。humidity_pct: 0..100。
  */
 void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct);
+
+/*
+ * 注入电量（包 260915-m1-n1b-p1-home-battery：CustomBoard ADC 读数后在
+ * inject_rtc/inject_env 同一装配点调用，LVGL 就绪后）。
+ * battery_pct: 0..100（越界值丢弃、保持原值——声明初始化器的保守默认 100 仅作
+ * 无 ADC 读数时的兜底，本函数是它的唯一运行期写点）。
+ * charging: 非 0 归 1。
+ */
+void kidpal_render_node_inject_battery(int battery_pct, int charging);
 
 /*
  * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，

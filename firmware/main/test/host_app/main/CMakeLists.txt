@@ -15,8 +15,9 @@
 # 2026-09-15 归档第二批（human 裁定）：6 个普通 .test.c/.cpp 单测（cascade / reminder /
 # capture / stack / provision / seam_bounds）与仅被它们消费的被测实现（home_p1/schedule_page/
 # story_page/char_stroke/art_assets/reminder_page.c 六个页面·资产模块）一并移入
-# ../acceptance/archive/（清单见该目录 README.md）。现役只剩 key_layer_dispatch +
-# host_infra_smoke 两件及其被测实现 key_gesture_parser.cc / kidpal_layer.c。
+# ../acceptance/archive/（清单见该目录 README.md）。现役 = key_layer_dispatch +
+# host_infra_smoke 两件及其被测实现 key_gesture_parser.cc / kidpal_layer.c；260915 批
+# M1-N1b 起各包新冻结验收与其被测实现按下文 HOST_ACCEPTANCE_SRCS 追加。
 #
 # The FROZEN acceptance file is consumed DIRECTLY from firmware/main/test/ (one
 # level up from this component dir) — single source of truth, never copied. A source
@@ -33,6 +34,17 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 保持末位 = 最先执行, 包 0 boundary
     # 齿注册序守卫; 本包验收 test 5 tooth 1 校验此序）。相对 host_app/main 为 ../../。
     "../../key_layer_dispatch.acceptance.c"
+
+    # 包 260915-m1-n1b-p1-home-battery（首页新版式 + 电量 ADC 接线）被测实现：home_p1.c
+    # 冻结离线契约实现（行为齿强符号覆盖 weak 哨兵的关键；相对 host_app/main 为
+    # ../../../display/）。art_assets.c 不接（走兜底描边路径，钉区有墨义务同样成立；
+    # 挂资产后图标齿才探真资产像素）。
+    "../../../display/home_p1.c"
+
+    # 包 260915-m1-n1b-p1-home-battery 冻结验收（新版式 pixel-probe + 低电闪烁决策表 +
+    # 注入缝/板级接线结构齿 + 断网钉点 + 注册序守卫）。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
+    "../../p1_home_battery.acceptance.c"
 
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"

@@ -1,0 +1,12 @@
+{
+  "changeId": "260915-m1-n1b-p1-home-battery",
+  "kind": "devloop",
+  "source": "HEAD",
+  "overlap": {
+    "probed": true,
+    "tier": "no-overlap",
+    "intersectingFiles": [],
+    "conflictedFiles": [],
+    "addAddFiles": []
+  }
+}

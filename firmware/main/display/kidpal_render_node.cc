@@ -84,6 +84,8 @@ static kidpal_page_id_t s_local_page = KP_PAGE_HOME;
 /* 注入状态。 */
 static int s_rtc_hour     = 0;
 static int s_rtc_minute   = 0;
+static int s_rtc_month    = 0; /* 1..12（0 = 未知；板级 PCF85063 日期寄存器带入） */
+static int s_rtc_mday     = 0; /* 1..31（0 = 未知） */
 static int s_env_valid    = 0;
 static int s_temp_c       = 0;
 static int s_humidity_pct = 0;
@@ -201,6 +203,8 @@ static void rn_render_home_locked(void)
     hp1_state_t st = {};
     st.hour         = s_rtc_hour;
     st.minute       = s_rtc_minute;
+    st.month        = s_rtc_month;
+    st.mday         = s_rtc_mday;
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;
@@ -262,10 +266,13 @@ void kidpal_render_node_init(void)
     ESP_LOGI(RN_TAG, "KidPal render node initialized (unified screen + layer stack)");
 }
 
-void kidpal_render_node_inject_rtc(int hour, int minute)
+void kidpal_render_node_inject_rtc(int hour, int minute, int month, int mday)
 {
     if (hour   >= 0 && hour   <= 23) { s_rtc_hour   = hour;   }
     if (minute >= 0 && minute <= 59) { s_rtc_minute = minute; }
+    /* 日期扩展（M1-N1b）：0 = 未知（默认保持），1..12 / 1..31 合法值带入渲染态。 */
+    if (month >= 1 && month <= 12) { s_rtc_month = month; }
+    if (mday  >= 1 && mday  <= 31) { s_rtc_mday  = mday;  }
 }
 
 void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
@@ -273,6 +280,16 @@ void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct)
     s_env_valid    = (env_valid == 1) ? 1 : 0;
     if (temp_c      >= -40 && temp_c      <= 60)  { s_temp_c       = temp_c;       }
     if (humidity_pct >=  0 && humidity_pct <= 100) { s_humidity_pct = humidity_pct; }
+}
+
+void kidpal_render_node_inject_battery(int battery_pct, int charging)
+{
+    /* 包 260915-m1-n1b-p1-home-battery：板级 ADC 读数 -> 渲染状态写点（「s_battery_pct
+     * 恒 100」销账——声明初始化器的 100 只是无读数时的保守默认，本函数是唯一运行期
+     * 写点；三个 hp1_state 组装点 rn_render_home_locked / rn_render_kidpal_page_locked
+     * HOME 分支 / kidpal_render_node_tick 继续消费）。 */
+    if (battery_pct >= 0 && battery_pct <= 100) { s_battery_pct = battery_pct; }
+    s_charging = (charging != 0) ? 1 : 0;
 }
 
 void kidpal_render_node_show_home(void)
@@ -483,6 +500,8 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             hp1_state_t st = {};
             st.hour         = s_rtc_hour;
             st.minute       = s_rtc_minute;
+            st.month        = s_rtc_month;
+            st.mday         = s_rtc_mday;
             st.env_valid    = s_env_valid;
             st.temp_c       = s_temp_c;
             st.humidity_pct = s_humidity_pct;
@@ -657,6 +676,8 @@ void kidpal_render_node_tick(void)
     hp1_state_t st = {};
     st.hour         = s_rtc_hour;
     st.minute       = s_rtc_minute;
+    st.month        = s_rtc_month;
+    st.mday         = s_rtc_mday;
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;

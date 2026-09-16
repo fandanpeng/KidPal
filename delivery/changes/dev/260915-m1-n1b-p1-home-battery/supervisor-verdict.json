@@ -1,0 +1,77 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-16T06:12:52.551Z",
+  "changeId": "260915-m1-n1b-p1-home-battery",
+  "originType": "delivery-story",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "security-axis-path:delivery/taskpackages/260915-m1-n1b-p1-home-battery/input-brief-acceptance-author.md",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "medium",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "security-axis-path:delivery/taskpackages/260915-m1-n1b-p1-home-battery/input-brief-acceptance-author.md"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 12,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "medium",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "security-axis-path:delivery/taskpackages/260915-m1-n1b-p1-home-battery/input-brief-acceptance-author.md"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/260915-m1-n1b-p1-home-battery/verifier-evidence/rounds/r12.json",
+        "bearingFactOk": false,
+        "completedRounds": 12,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/260915-m1-n1b-p1-home-battery/docs-delta.md",
+          "delivery/changes/dev/260915-m1-n1b-p1-home-battery/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "delivery-story"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789461743284-unit.log",
+      ".claude/verify-logs/1789461748978-acceptance.log",
+      ".claude/verify-logs/1789463118540-unit.log",
+      ".claude/verify-logs/1789463124418-acceptance.log",
+      ".claude/verify-logs/1789485860043-mutation-check.log",
+      ".claude/verify-logs/1789488468744-unit.log",
+      ".claude/verify-logs/1789488475385-acceptance.log",
+      ".claude/verify-logs/1789490261700-unit.log",
+      ".claude/verify-logs/1789490267507-acceptance.log",
+      ".claude/verify-logs/1789537345305-unit.log",
+      ".claude/verify-logs/1789537352187-acceptance.log",
+      ".claude/verify-logs/1789538611975-unit.log",
+      ".claude/verify-logs/1789538618055-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/260915-m1-n1b-p1-home-battery/verifier-evidence/rounds/r12.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/260915-m1-n1b-p1-home-battery/docs-delta.md",
+      "delivery/changes/dev/260915-m1-n1b-p1-home-battery/review-packet.md"
+    ]
+  }
+}

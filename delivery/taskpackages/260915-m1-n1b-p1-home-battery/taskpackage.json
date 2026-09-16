@@ -13,7 +13,7 @@
   "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC4）",
   "planRef": "delivery/taskpackages/260915-m1-n1b-p1-home-battery/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单——P1-A4 注入假状态验收（s_battery_pct 恒 100）为本包红基线判读输入）",
-  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "redBaselineResult": "有效基线落账点 = acceptance-author 冻新齿时 host 全量首跑（2026-09-15，acceptance-author 首跑 + planner 独立复核双确认）：host 通道① 8 Tests / 0 Failures / 0 Ignored——新有效基线不含 K1a 期 4 条在册红（SU-E3:1010 / KR-A6:636 / WSA-A6:830 / WSA-A4:663，随 544a804 测试归档移出现役面，owner 不变、不代修）；通道② 新齿 gcc 实编 COMPILE_OK（-Wall -Wextra）+ 解析性红定性（inject_battery / 板类 GetBatteryLevel / adc1_handle 等接线现状零命中，新齿红基线预演成立）。server 面 = K1a closeout 锚 2026-09-15 直接引用（面域零差异）：2 failed / 130 passed（SMK-A4、SRE-E4，均非本包面）。判读口径：相对本基线零新增红 + 本包新齿全绿 = PH-A7。**【2026-09-16 planner 修正】**：final full（r3/r6）实为 3 failed——第 3 条 VRT-A2（test_voice_roundtrip_b protocol_profile_twin_aligned）系 544a804 归档（human 裁定一次性操作，晚于 K1a 锚取点）移走 voice_roundtrip_b.acceptance.c 致 server 齿旧路径失配；相对 K1a 锚属 1 条未在册红，但本包验证窗口 r1→r6 恒 3 failed、代码面零引入（diff 仅本包固件面 + delivery 记账面）。owner 判读（server 齿归档适配 or human 裁例外）已走 agent-escalation（pod-events dfda0852），合并门停等项 +1。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -114,7 +114,54 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "PH-A1: 首页版式——「接下来」日程为主体（最近一项最醒目 + 倒计时贴纸），小伴常驻演出、页面趣味点缀保留；版式对齐 WF-F1-01（v1.4 重排序）",
+        "mutations": [
+          { "name": "HPB_GATE_EMPTY_LEAK", "site": "home_p1.c:805 空日程门放宽恒渲染", "result": "failed as expected", "redTooth": "测试1 tooth5 @ p1_home_battery.acceptance.c:729（空日程主体区墨 1464!=0）" },
+          { "name": "HPB_MASCOT_OMIT", "site": "home_p1.c:804 小伴常驻演出调用禁调", "result": "failed as expected", "redTooth": "测试1 tooth3 @ :700（演出区墨 0<20）" }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "PH-A2: 辅助条小图标前置——联网小标打头、温/湿/电各带小图标、湿度 45% 不裸数字挨电池；版式对齐 WF-F1-01 ①辅助条",
+        "mutations": [
+          { "name": "HPB_ENV_FORCE_SHOW", "site": "home_p1.c:787 env 有效性门恒真", "result": "failed as expected", "redTooth": "测试3 tooth5 @ :910（env_valid=0 温/湿区仍有墨）" },
+          { "name": "HPB_HALF_GLYPH_DROP", "site": "home_p1.c:650 温度图标半丢弃", "result": "failed as expected", "redTooth": "测试3 tooth2 @ :876（图标半区墨 0<4）" }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "PH-A3: 电量 ADC 接线机制齿——板类死成员（adc1_handle/cali_handle/vbat_status）接线 + GetBatteryLevel override 实装（基座默认返回 false 的现状销账）+ 渲染节点电池注入缝（s_battery_pct 不再恒 100）；机制级断言（注入缝符号级）",
+        "mutations": [
+          { "name": "PCT_WRITE_BYPASS", "site": "kidpal_render_node.cc:284 注入写点旁路（注释字面同批中和，变异名不含被测符号字面）", "result": "failed as expected", "redTooth": "测试3 tooth11 @ :972（恒值注入守卫：计数回落 4<5）——预期齿 tooth7 因验收切片宽度含 line499 消费点对本变异不敏感（切片宽度设计边界，已如实记录）" },
+          { "name": "BOARD_INJECT_UNCALL", "site": "waveshare-s3-rlcd-4.2.cc:555 板级注入调用注释（自泄注释已中和）", "result": "failed as expected", "redTooth": "测试3 tooth8 @ :944（注入消费文件数 2<3）" }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "PH-A4: 低电闪烁——电量 ≤ 15% 且未充电时辅助条电池图标每秒闪、充电即停（AC3）；不做小伴睡姿演出（已砍项零触碰）",
+        "mutations": [
+          { "name": "HPB_DOZE_ALWAYS_VISIBLE", "site": "home_p1.c:795-798 灭相相位门恒可见", "result": "failed as expected", "redTooth": "测试1 tooth6 @ :744（灭相窗电池区墨 200!=0）" },
+          { "name": "HPB_DOZE_BOUND_OFF", "site": "home_p1.c:326 阈值 <= 改 <", "result": "failed as expected", "redTooth": "测试2 @ :801（doze_state(15,0) 阈值边界漂移）" }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "PH-A5: 断网态——时间/温湿度/电量照常本地显示、日程区不更新、联网小标变 WiFi 斜杠（AC4，GetNetworkStateIcon 断网链路已实现、本包只验收钉点）",
+        "mutations": [
+          { "name": "NET_ICON_UNPIN", "site": "wifi_board.cc:274 断网分支 SLASH 改 WIFI", "result": "failed as expected", "redTooth": "测试4 tooth1 @ :1000（断网 WiFi_SLASH 钉点丢失）" }
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "PH-A7: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿",
+        "mutations": [
+          { "name": "CMAKE_ORDER_SWAP", "site": "host_app/main/CMakeLists.txt 接线批移 smoke 之后", "result": "failed as expected", "redTooth": "测试5 tooth1 @ :1057（接线序守卫红 + smoke 边界齿级联红，失败 2）" }
+        ],
+        "sensitive": true
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
@@ -129,5 +176,5 @@
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块②）。与键基建两包并行（独立文件面：首页渲染 + 板级 ADC vs 键路由/键帽条）。官方 Demo 03_ADC_Test（ADC1_CH3=GPIO4 分压，Adc_GetBatteryLevel 已验证）为参考树只读实现依据。包级 plan.md = 全量义务（planRef 已指）。"
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块②）。与键基建两包并行（独立文件面：首页渲染 + 板级 ADC vs 键路由/键帽条）。官方 Demo 03_ADC_Test（ADC1_CH3=GPIO4 分压，Adc_GetBatteryLevel 已验证）为参考树只读实现依据。包级 plan.md = 全量义务（planRef 已指）。intake C5（planner 2026-09-15）：scope-map firmware/** 已覆盖 builder/fixer allow 面，验收文件 firmware/main/test/p1_home_battery.acceptance.c 在 allow 内。批内串行化（launch 确认）：K1a（mergeOrder 22）已并本地 main，本包在 544a804 新提交面直接开发，rebase 条款作废。锚 2 方向核对（planner 2026-09-15）：roadmap 效果段五要素与 PH-A2/A3/A4/A5 逐条对上，AC 回引集一致（AC2 数据面经 decisionCoverage 第 4 条 landsIn:PH-E1 裁定排除，展示面 PH-A1 承载）。"
 }

@@ -58,9 +58,8 @@ LvglDisplay::~LvglDisplay() {
     if (mute_label_ != nullptr) {
         lv_obj_del(mute_label_);
     }
-    if (battery_label_ != nullptr) {
-        lv_obj_del(battery_label_);
-    }
+    /* 包 260915-m1-n1b-p1-home-battery: 电池段全链已摘除（battery_label_ removed），
+     * 低电 popup 非状态栏电池图标链路、保守保留删除。 */
     if( low_battery_popup_ != nullptr ) {
         lv_obj_del(low_battery_popup_);
     }
@@ -138,32 +137,17 @@ void LvglDisplay::UpdateStatusBar(bool update_all) {
     }
 
     esp_pm_lock_acquire(pm_lock_);
-    // Update battery icon
+    /* 包 260915-m1-n1b-p1-home-battery（真机缺陷修复）：chrome 状态栏电池段全链已
+     * 摘除——battery_label_ 的更新不再维护（creation/update/delete 均已移除），电量
+     * 显示归 home_p1 帧缓冲（本包跨包行为 owner 独占，其他渲染面不另接电池数据）。
+     * 低电 popup (low_battery_popup_) 仍需 battery_level/charging 判定，保留读取与
+     * 弹窗显隐逻辑（非状态栏电池图标链路，保守不动）。 */
     int battery_level;
     bool charging, discharging;
-    const char* icon = nullptr;
     if (board.GetBatteryLevel(battery_level, charging, discharging)) {
-        if (charging) {
-            icon = FONT_AWESOME_BATTERY_BOLT;
-        } else {
-            const char* levels[] = {
-                FONT_AWESOME_BATTERY_EMPTY, // 0-19%
-                FONT_AWESOME_BATTERY_QUARTER,    // 20-39%
-                FONT_AWESOME_BATTERY_HALF,    // 40-59%
-                FONT_AWESOME_BATTERY_THREE_QUARTERS,    // 60-79%
-                FONT_AWESOME_BATTERY_FULL, // 80-99%
-                FONT_AWESOME_BATTERY_FULL, // 100%
-            };
-            icon = levels[battery_level / 20];
-        }
         DisplayLockGuard lock(this);
-        if (battery_label_ != nullptr && battery_icon_ != icon) {
-            battery_icon_ = icon;
-            lv_label_set_text(battery_label_, battery_icon_);
-        }
-
         if (low_battery_popup_ != nullptr) {
-            if (strcmp(icon, FONT_AWESOME_BATTERY_EMPTY) == 0 && discharging) {
+            if (battery_level <= 19 && discharging) {
                 if (lv_obj_has_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN)) { // Show if low battery popup is hidden
                     lv_obj_remove_flag(low_battery_popup_, LV_OBJ_FLAG_HIDDEN);
                     app.PlaySound(Lang::Sounds::OGG_LOW_BATTERY);
@@ -179,6 +163,7 @@ void LvglDisplay::UpdateStatusBar(bool update_all) {
 
     // Update network icon every 10 seconds
     static int seconds_counter = 0;
+    const char* icon = nullptr; // 联网小标（网络图标，非电池）——保留不动
     if (update_all || seconds_counter++ % 10 == 0) {
         // Don't read 4G network status during firmware upgrade to avoid occupying UART resources
         auto device_state = Application::GetInstance().GetDeviceState();

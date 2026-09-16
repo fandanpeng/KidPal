@@ -1,0 +1,3 @@
+# host 截图 harness 的可再生输出（PNG/BMP，由 harness 构建重生成）——不入库；
+# harness 源 home_p1_screenshot.c 本体入库。demo 证据以路径引用留仓外（c:/tmp/p1shots/）。
+out/

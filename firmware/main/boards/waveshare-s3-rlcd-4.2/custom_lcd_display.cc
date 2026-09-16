@@ -12,6 +12,33 @@
 #include "config.h"
 #include "board.h"
 #include "font_size_test_page.h"
+#include <lvgl.h> /* 包 260915-m1-n1b-p1-home-battery 任务 B: SetTheme override 落小号 FA 字体 */
+
+LV_FONT_DECLARE(font_awesome_14_1); /* 联网小标与辅助条小标同档用 14px Font Awesome */
+
+void CustomLcdDisplay::SetTheme(Theme* theme) {
+    /* 基座先把 chrome 按主题样式化（network_label_ 会按 text_font line_height 决策落到
+     * icon_font = font_awesome_30_4，30px）；随后强制联网小标回落小号 FA 字体 14px，与
+     * 温/湿/电辅助条位图图标（~13px 墨高，home_p1 资产）同大小档。 */
+    LcdDisplay::SetTheme(theme);
+    DisplayLockGuard lock(this);
+    if (network_label_ != nullptr) {
+        lv_obj_set_style_text_font(network_label_, &font_awesome_14_1, 0);
+    }
+    /* M1-N1b 看屏终验（human「wifi 图片明显低了，其它也不整齐」）：chrome 顶带
+     * (top_bar_, lv_set_flex cross-center) 只容 network_label_（左）+ mute_label_（右）
+     * 两项。mute_label_ 仍走主题 icon_font（大号）会把 top_bar_ 撑高，cross-center 把
+     * 联网小标高带放到辅助条中线之下。统一把两项压到同档 14px FA + 抬高 pad_top，
+     * 使 top_bar_ 内容高=15、cross-center 落在辅助条中线 y≈19.5（换算：aux 中线在
+     * 400x300 帧缓冲 y≈19.5，P1 帧 1:1 blit 到屏 (0,0)，network_label_ line_height 15
+     * -> top=pad_top，center=pad_top+7.5=19.5 取 pad_top=12）。 */
+    if (mute_label_ != nullptr) {
+        lv_obj_set_style_text_font(mute_label_, &font_awesome_14_1, 0);
+    }
+    if (top_bar_ != nullptr) {
+        lv_obj_set_style_pad_top(top_bar_, 12, 0);
+    }
+}
 
 void CustomLcdDisplay::Lvgl_flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p)
 {

@@ -99,14 +99,12 @@ void OttoEmojiDisplay::SetStatus(const char* status) {
         lv_label_set_text(status_label_, "\xEF\x84\xB0");  // U+F130 麦克风图标
         lv_obj_clear_flag(status_label_, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(network_label_, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(battery_label_, LV_OBJ_FLAG_HIDDEN);
         return;
     } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
         lv_obj_set_style_text_font(status_label_, &OTTO_ICON_FONT, 0);
         lv_label_set_text(status_label_, "\xEF\x80\xA8");  // U+F028 说话图标
         lv_obj_clear_flag(status_label_, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(network_label_, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(battery_label_, LV_OBJ_FLAG_HIDDEN);
         return;
     } else if (strcmp(status, Lang::Strings::CONNECTING) == 0) {
         lv_obj_set_style_text_font(status_label_, &OTTO_ICON_FONT, 0);
@@ -118,7 +116,6 @@ void OttoEmojiDisplay::SetStatus(const char* status) {
         lv_label_set_text(status_label_, "");
         lv_obj_clear_flag(status_label_, LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(network_label_, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_clear_flag(battery_label_, LV_OBJ_FLAG_HIDDEN);
         return;
     }
 

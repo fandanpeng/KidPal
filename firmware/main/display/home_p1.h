@@ -43,6 +43,10 @@ typedef struct {
 typedef struct {
     int hour;          /* 0..23 */
     int minute;        /* 0..59 */
+    /* 日期（包 260915-m1-k1a-key-layer-dispatch，M1-N1b 日期 DD-Mon）：0 = 未知/缺
+     * RTC 日期数据（渲染叠描边框兜底，不画假日期）。month 1..12、mday 1..31。 */
+    int month;         /* 1..12 (0 = 未知) */
+    int mday;          /* 1..31 (0 = 未知) */
     int env_valid;     /* 1 = 温湿度有效; 0 = 无数据 -> 温湿度区隐藏 */
     int temp_c;        /* -40..60 (env_valid=1 时有效) */
     int humidity_pct;  /* 0..100   (env_valid=1 时有效) */

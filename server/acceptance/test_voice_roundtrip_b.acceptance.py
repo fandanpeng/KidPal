@@ -105,6 +105,22 @@ try:
 except ImportError:
     _HAS_PYTEST = False
 
+
+# 模块级退役（human 裁定 2026-09-16，pod-events eventId bba7d239，planner 记账）：
+# 本文件是 MVP 验证期验收的 server 半边，其设备半边（C 孪生
+# firmware/main/test/voice_roundtrip_b.acceptance.c）已被 544a804 归档退役；
+# server 半边留在现役纯属归档批扫尾遗漏（VRT-A2 孪生对齐齿 C_TWIN 硬编码
+# 指旧址故红）。human 裁定「不要跑这个了」= 整体退出现役运行范围，按 human
+# 明示跳过流程的一次性操作落账（非修绿、非验证通过）。形态 = 模块级 skip
+# （pytest 原生 skip 语义、与既有 skip 同通道；gate 收集 glob 为 server/ 递归、
+# 物理移目录仍被收集且需动治理脚本，故不搬目录）。回滚 = 删除本 pytestmark 块。
+# 扫尾项：server 面其余 MVP 期孪生/伴随齿未随 544a804 退役者，留独立批 sweep。
+if _HAS_PYTEST:
+    pytestmark = pytest.mark.skip(
+        reason="human 裁定退出现役（pod-events bba7d239，2026-09-16）：MVP 验证期 "
+               "server 半边，设备半边已随 544a804 归档，留现役属归档批扫尾遗漏；"
+               "跳过流程一次性操作，非修绿")
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SERVER = REPO_ROOT / "server"
 GATEWAY_DIR = SERVER / "gateway"

@@ -19,8 +19,32 @@
 #include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
 #include "sdkconfig.h"          /* CONFIG_BUTTON_* 按键消抖/长按窗参数 */
+#include <esp_adc/adc_oneshot.h>      /* 包 260915-m1-n1b-p1-home-battery: 板级电池 ADC */
+#include <esp_adc/adc_cali.h>         /* 包 260915-m1-n1b-p1-home-battery: ADC 校准 */
+#include <esp_adc/adc_cali_scheme.h>  /* 包 260915-m1-n1b-p1-home-battery: 曲线拟合校准 */
+#include "adc_battery_monitor.h"      /* 包 260915-m1-n1b-p1-home-battery: 充电态监测基座 */
+
+/* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
+ * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
+ * 此处构造期再压到 font_awesome_14_1（14px，WiFi 字形 ink ~13px），并靠 waveshare
+ * CustomLcdDisplay::SetTheme override 在主题刷新后维持同档。 */
+LV_FONT_DECLARE(font_awesome_14_1);
 
 #define TAG "waveshare_rlcd_4_2"
+
+/* 包 260915-m1-n1b-p1-home-battery：板级电池 ADC 采集配置。官方 Demo
+ * ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/03_ADC_Test（只读参考，重写进本文件）已验证：
+ * 电池电压经板上分压进 GPIO4 = ADC1_CH3，Adc_GetBatteryLevel 把校准后电压按
+ * VBAT = mV*3 / 1000、[3.0, 4.12]V 线性映射到 0..100。 */
+#define BATTERY_ADC_CHANNEL          ADC_CHANNEL_3
+#define BATTERY_VOLTAGE_DIVIDER      3.0f  /* VBAT = ADC 引脚校准电压 x 3（板上分压比） */
+#define BATTERY_VOLTAGE_MIN_V        3.0f  /* <= 3.0V -> 0% */
+#define BATTERY_VOLTAGE_MAX_V        4.12f /* >= 4.12V -> 100% */
+#define BATTERY_EST_UPPER_RESISTOR   200000.0f /* 分压估算用上臂标称值（1:2 -> 比率 3，
+                                              * 仅喂 AdcBatteryMonitor 趋势引擎；显示电量
+                                              * 走 ReadBatteryLevel 的 Demo 实测映射，
+                                              * PH-A6 真机轮以实测读数校核） */
+#define BATTERY_EST_LOWER_RESISTOR   100000.0f
 
 /* 换皮消费接线 (包 9b HWV-A6 / ART-E2 收口)：单一资产层挂载根。装配层约定 VFS 路径
  * "/art"，并在 InitializeArt 里 esp_vfs_spiffs_register 把 art SPIFFS 分区 (分区表
@@ -152,14 +176,22 @@ private:
     key_gesture_parser_t boot_gesture_;
     key_gesture_parser_t key_gesture_;
     CustomLcdDisplay *display_;
-    adc_oneshot_unit_handle_t adc1_handle;
-    adc_cali_handle_t cali_handle;
-    bool vbat_status = 0;
+    /* 包 260915-m1-n1b-p1-home-battery 电量链路接线（原三处死成员销账：声明 +
+     * 真实使用）。adc1_handle/cali_handle = InitializeBatteryAdc 创建的 ADC oneshot
+     * unit 与曲线拟合校准句柄（ReadBatteryLevel 消费 + 外部句柄喂
+     * AdcBatteryMonitor）；vbat_status = 最近一次电量读数有效性（GetBatteryLevel
+     * override 返回值语义：读失败 = 如实报无电量数据）。 */
+    adc_oneshot_unit_handle_t adc1_handle = nullptr;
+    adc_cali_handle_t cali_handle = nullptr;
+    bool vbat_status = false;
+    AdcBatteryMonitor *battery_monitor_ = nullptr;
 
     /* 包 9b HWV-A6: 把 InitializeSensors() 读到的 RTC/温湿度暂存于此，在
      * InitializeLcdDisplay() 之后统一注入渲染节点（LVGL 在传感器读取时尚未初始化）。 */
     int s_rtc_h    = 0;
     int s_rtc_m    = 0;
+    int s_rtc_mday = 0; /* M1-N1b 日期 DD-Mon: PCF85063 0x07=日(BCD) 带出 */
+    int s_rtc_mon  = 0; /*              PCF85063 0x09=月(BCD) 带出 */
     int s_env_ok   = 0;
     int s_env_temp = 0;
     int s_env_rh   = 0;
@@ -193,14 +225,16 @@ private:
         return static_cast<uint8_t>(((b >> 4) * 10) + (b & 0x0F));
     }
 
-    /* RTC(PCF85063) 走时直读: 从 Seconds 寄存器(0x04)连读秒/分/时 3 字节 (BCD)。
-     * 真实 I2C 读事务 (写寄存器指针 -> repeated-start -> 读), 非仅挂载。 */
-    bool ReadRtcTime(int* hour, int* min, int* sec) {
+    /* RTC(PCF85063) 走时直读: 从 Seconds 寄存器(0x04)连读秒/分/时/日/月 5 字节 (BCD)。
+     * 真实 I2C 读事务 (写寄存器指针 -> repeated-start -> 读), 非仅挂载。
+     * 0x04=Seconds, 0x05=Minutes, 0x06=Hours, 0x07=Days, 0x09=Months(跳过 0x08=Weekdays)。
+     * 日期字段为 M1-N1b 日期 DD-Mon 扩展带出 (0x07 日 / 0x09 月)。 */
+    bool ReadRtcTime(int* hour, int* min, int* sec, int* mday, int* mon) {
         if (pcf85063_dev_ == nullptr) {
             return false;
         }
-        uint8_t reg = 0x04; /* PCF85063: 0x04=Seconds, 0x05=Minutes, 0x06=Hours */
-        uint8_t rx[3] = {};
+        uint8_t reg = 0x04; /* PCF85063: 0x04=Seconds, 0x05=Minutes, 0x06=Hours, 0x07=Days, 0x08=Weekdays, 0x09=Months */
+        uint8_t rx[6] = {};
         esp_err_t err = i2c_master_transmit_receive(pcf85063_dev_, &reg, 1, rx, sizeof(rx),
                                                     HWV_SENSOR_I2C_TIMEOUT_MS);
         if (err != ESP_OK) {
@@ -211,6 +245,9 @@ private:
         if (sec)  *sec  = BcdToDec(rx[0] & 0x7F); /* 秒: 去 CV(bit7) 后 BCD->dec */
         if (min)  *min  = BcdToDec(rx[1] & 0x7F); /* 分: 去 OS(bit7) 后 BCD->dec */
         if (hour) *hour = BcdToDec(rx[2] & 0x3F); /* 时: 去 AF(bit7)/保留(bit6) 后 BCD->dec */
+        if (mday) *mday = BcdToDec(rx[3] & 0x3F); /* 日=0x07: 去 bit7/bit6 后 BCD->dec (1..31) */
+        /* rx[4] = 0x08 Weekdays: 本函数不消费 */
+        if (mon)  *mon  = BcdToDec(rx[5] & 0x1F); /* 月=0x09: 去 bit7..5 (century/leap) 后 BCD->dec (1..12) */
         return true;
     }
 
@@ -269,11 +306,14 @@ private:
         char corr_id[24];
         snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                  static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-        int h = 0, m = 0, s = 0;
-        if (ReadRtcTime(&h, &m, &s)) {
-            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d", corr_id, h, m, s);
+        int h = 0, m = 0, s = 0, mday = 0, mon = 0;
+        if (ReadRtcTime(&h, &m, &s, &mday, &mon)) {
+            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d",
+                     corr_id, h, m, s, mon, mday);
             s_rtc_h = h; /* 包 9b HWV-A6: 暂存供渲染节点注入 */
             s_rtc_m = m;
+            s_rtc_mday = mday; /* M1-N1b 日期 DD-Mon: 暂存月/日供注入 */
+            s_rtc_mon  = mon;
         } else {
             ESP_LOGW(TAG, "rtc_pcf85063 corr_id=%s read_deferred", corr_id);
         }
@@ -286,6 +326,67 @@ private:
         } else {
             ESP_LOGW(TAG, "shtc3 corr_id=%s read_deferred", corr_id);
         }
+    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：板级电池 ADC 挂起（参考树 03_ADC_Test
+     * Adc_PortInit 只读重写）：ADC1 oneshot unit + GPIO4(ADC1_CH3) 通道（12bit /
+     * 12dB）+ 曲线拟合校准。句柄落 adc1_handle/cali_handle 死成员（销账），并经
+     * 外部句柄构造喂 AdcBatteryMonitor（unit 排他 claim，估计库不重复建 unit）。 */
+    void InitializeBatteryAdc() {
+        adc_oneshot_unit_init_cfg_t init_cfg = {};
+        init_cfg.unit_id = ADC_UNIT_1;
+        ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_cfg, &adc1_handle));
+        adc_oneshot_chan_cfg_t chan_cfg = {};
+        chan_cfg.bitwidth = ADC_BITWIDTH_12;
+        chan_cfg.atten = ADC_ATTEN_DB_12;
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, BATTERY_ADC_CHANNEL, &chan_cfg));
+        adc_cali_curve_fitting_config_t cali_cfg = {};
+        cali_cfg.unit_id = ADC_UNIT_1;
+        cali_cfg.chan = BATTERY_ADC_CHANNEL;
+        cali_cfg.atten = ADC_ATTEN_DB_12;
+        cali_cfg.bitwidth = ADC_BITWIDTH_12;
+        ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_cfg, &cali_handle));
+
+        /* AdcBatteryMonitor 基座实装：充电态趋势检测（本板充放电管理无充电检测 GPIO
+         * 在册——arch 硬件表 CHG/WRN 仅指示灯，官方 Demo 亦无充电检测；电压上升趋势
+         * = 充电，PH-A6 真机轮回读）。 */
+        battery_monitor_ = new AdcBatteryMonitor(adc1_handle, cali_handle,
+                                                 BATTERY_ADC_CHANNEL,
+                                                 BATTERY_EST_UPPER_RESISTOR,
+                                                 BATTERY_EST_LOWER_RESISTOR,
+                                                 GPIO_NUM_NC);
+    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：单次电量读（参考树 03_ADC_Test
+     * Adc_GetBatteryLevel 只读重写）：raw -> 校准 mV -> VBAT = mV*3/1000 ->
+     * [3.0, 4.12]V 线性映射 0..100。读失败置 vbat_status=false 并返回 false
+     * （调用方如实报无电量数据，不画假值）。 */
+    bool ReadBatteryLevel(int *level_out) {
+        int raw = 0;
+        int mv = 0;
+        esp_err_t err = adc_oneshot_read(adc1_handle, BATTERY_ADC_CHANNEL, &raw);
+        if (err == ESP_OK) {
+            err = adc_cali_raw_to_voltage(cali_handle, raw, &mv);
+        }
+        if (err != ESP_OK) {
+            vbat_status = false;
+            return false;
+        }
+        float vol = 0.001f * mv * BATTERY_VOLTAGE_DIVIDER;
+        int level;
+        if (vol <= BATTERY_VOLTAGE_MIN_V) {
+            level = 0;
+        } else if (vol >= BATTERY_VOLTAGE_MAX_V) {
+            level = 100;
+        } else {
+            level = static_cast<int>(((vol - BATTERY_VOLTAGE_MIN_V) /
+                                      (BATTERY_VOLTAGE_MAX_V - BATTERY_VOLTAGE_MIN_V)) * 100.0f);
+        }
+        vbat_status = true;
+        if (level_out != NULL) {
+            *level_out = level;
+        }
+        return true;
     }
 
     void InitializeButtons() {
@@ -439,6 +540,7 @@ public:
          * 各读函数失败路径的 RecoverI2cBus, 总线不会被残留 busy 锁死到 codec 事务上。 */
         GetAudioCodec();
         InitializeSensors();
+        InitializeBatteryAdc();
         InitializeButtons();
         InitializeTools();
         InitializeLcdDisplay();
@@ -450,14 +552,52 @@ public:
          * 内容任何页可见。必须在 kidpal_render_node_init() 之前：init 创建并首载
          * s_kidpal_scr，把原默认首屏留在后面不再加载。 */
         display_->KidPalReparentChatToLayer(lv_layer_top());
+        /* 任务 B（包 260915-m1-n1b-p1-home-battery）：联网小标与温/湿/电辅助条小标同档。
+         * 基座 SetupUI 初帧把 network_label_ 落 icon_font=font_awesome_30_4（30px，~2x 辅助条
+         * ~13px 图标墨高）；构造期压到 font_awesome_14_1（14px），真机小标同档。断网斜杠
+         * 链路（GetNetworkStateIcon/PH-A5）与 home_p1 帧缓冲面均不动。 */
+        display_->KidPalSetNetworkLabelFont(&font_awesome_14_1);
         /* 包 9b HWV-A6: 渲染节点在 LVGL 与 art SPIFFS 均就绪后初始化。
          * init() 创建 s_kidpal_scr（不渲染，无 I/O）；inject 注入开机 RTC/温湿度；
          * show_home() 渲染首页 P1 帧并加载到 RLCD。 */
         kidpal_render_node_init();
-        kidpal_render_node_inject_rtc(s_rtc_h, s_rtc_m);
+        kidpal_render_node_inject_rtc(s_rtc_h, s_rtc_m, s_rtc_mon, s_rtc_mday);
         kidpal_render_node_inject_env(s_env_ok, s_env_temp, s_env_rh);
+        /* 包 260915-m1-n1b-p1-home-battery 电量装配点（seam [2]）：板级 ADC 读数 ->
+         * 渲染节点电池注入缝，inject_rtc/inject_env 同一装配点（LVGL 就绪后）。
+         * 读失败不注入（渲染节点保守默认保持），不画假值。 */
+        {
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            int bat_pct = 0;
+            bool chg = battery_monitor_->IsCharging();
+            if (ReadBatteryLevel(&bat_pct)) {
+                kidpal_render_node_inject_battery(bat_pct, chg ? 1 : 0);
+                ESP_LOGI(TAG, "battery_inject corr_id=%s level=%d charging=%d vbat_ok=%d",
+                         corr_id, bat_pct, chg ? 1 : 0, vbat_status ? 1 : 0);
+            } else {
+                ESP_LOGW(TAG, "battery_inject corr_id=%s read_deferred vbat_ok=%d "
+                              "(ADC 读失败, 电量保守默认保持)", corr_id,
+                         vbat_status ? 1 : 0);
+            }
+        }
         kidpal_render_node_show_home();
    }
+
+    /* 包 260915-m1-n1b-p1-home-battery：Board::GetBatteryLevel 基座默认 return false
+     * 的现状销账——chrome (lvgl_display UpdateStatusBar) 每 10s 轮询电量显示真值。
+     * 显示电量 = ReadBatteryLevel（官方 Demo 已验证映射）；充电态 = AdcBatteryMonitor
+     * 趋势检测（顺带消费估计库采样窗喂趋势缓冲），PH-A6 真机轮回读充电停闪表现。 */
+    virtual bool GetBatteryLevel(int& level, bool& charging, bool& discharging) override {
+        int pct = 0;
+        (void)ReadBatteryLevel(&pct); /* 置 vbat_status = 最近一次读有效性 */
+        (void)battery_monitor_->GetBatteryLevel(); /* 喂估计库采样窗（趋势引擎） */
+        charging = battery_monitor_->IsCharging();
+        discharging = !charging;
+        level = pct;
+        return vbat_status; /* 读失败 = 如实报无电量数据（基座 false 语义） */
+    }
 
     virtual AudioCodec* GetAudioCodec() override {
         static BoxAudioCodec audio_codec(
