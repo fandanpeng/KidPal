@@ -145,3 +145,16 @@ TaskPackage 未声明 `s2ExploratoryRequired` / `s2ExploratoryGoals` ⇒ 本相�
 6. **红证据 ESCALATE**：final fact `ok:false` 触发人类裁决通道；本包自身面无 hard-violation、无 BLOCKING finding。
 7. 冻结面（`docs/contracts/**`、`docs/requirements.md`）git 零触碰；`docs/ARCH-REVIEW-QUEUE.md` 仅新增 ARQ 登记（queue 面非 spec 面）。
 8. demo 对账：host 截图（`c:/tmp/p1shots/` 路径引用）+ host 13/0 在册 + 真机轮 PASS（四份 boot 日志在册）；roadmap 效果段两处在案偏差（低电真机可见性、断网切换沿）均为 human 明示裁定的挂起观察项。
+
+## 追记（2026-09-16，VRT-A2 退役批，integrator 收口）
+
+> append-only 追加节，上文各行照旧存档；本节为准的状态更新如下。
+
+- **VRT-A2 归属裁定已销账（human 裁定退出现役，非修绿）**：上文 Findings 行 1 与 Residual Risk 第 2 条、挂起项台账中「VRT-A2 owner 判读 pending」的状态**更新为 resolved（销账）**。human 裁定（2026-09-16，主线程 AskUserQuestion 留痕，pod-events human-decision `bba7d239`，decision=`vrt-a2-retire-out-of-scope`，逐字「不要跑这个了」）：`test_voice_roundtrip_b.acceptance.py` server 验收**整体退出现役运行范围**。
+- **机制判读**：该件是 MVP 验证期验收的 server 半边，其设备半边（C 孪生 `firmware/main/test/voice_roundtrip_b.acceptance.c`）已被 544a804 归档退役——server 半边留现役纯属归档批**扫尾遗漏**（VRT-A2 孪生对齐齿 `C_TWIN` 硬编码指旧址 :113 故红），非产品缺陷、非本包引入。
+- **落地形态**：模块级 skip（`server/acceptance/test_voice_roundtrip_b.acceptance.py` +16 行 `pytestmark = pytest.mark.skip(...)`，acceptance-author 落码；按 human 明示跳过流程的一次性操作落账）。bba7d239 事件初拟「移入 server/acceptance/archive/」，实际落码改为模块级 skip——原因在码内注释在案：gate 收集 glob 为 `server/` 递归、物理移目录仍被收集且需动治理脚本，故不搬目录。**回滚 = 删除该 pytestmark 块**（单文件单块，无其他耦合面）。
+- **final r12 判读（承 bearing final fact 更新）**：r12（`phase:"final"`、`ok:false`、`observedGateExit:1`、`authority:"bearing"`、`invocationId b680d6ba-eff3-45d8-8965-a22e492f60fc`、2026-09-16T06:03Z）——**七闸全绿**（taskpackage-required / firmware-build 真编译 `xiaozhi.bin 0x2c8070 / 0xa7f90 (19%) free` / contract-lint / acceptance-coverage / mutation-check / docs-sync / security）+ unit/acceptance 两 full 闸**唯余 SMK-A4 / SRE-E4 两条在册红**（unit `2 failed, 159 passed, 14 skipped` / acceptance `2 failed, 122 passed, 14 skipped`）。**VRT-A2 已退出失败面**（skip 生效、失败计数 3→2），r6 时点的第三红消除。checker：`verifier-evidence-check.mjs --phase final --round 12` → `{"ok":true,"factOk":false,...}` exit 0——final evidence 结构有效，红证据照 precedent 走 ESCALATE 通道（红项均见下条红清单件）。
+- **escalation `dfda0852` resolved**：r6 时点的 VRT-A2 归属 escalation 由 bba7d239 human 裁定消账。
+- **在册红清单件**：本目录新增 `existing-red-inventory.md`（对偶 260915-m1-k1a 包同名件格式）——SMK-A4 / SRE-E4 两条在册设计态红（owner 不变、本包不代修）+ VRT-A2 条目（人裁退出现役销账，非修绿，引 bba7d239）。
+- **扫尾项登记**：server 面可能仍有 MVP 期孪生/伴随齿未随 544a804 归档批退役（已实证一例 = 本件 server 半边），留独立批 sweep——`ARQ-260916-server-mvp-teeth-sweep` 已登记 `docs/ARCH-REVIEW-QUEUE.md` 队尾，**不阻本包**。
+- **合并门须知更新**：上文「合并门须知」第 2/3/6 条中 VRT-A2 相关表述（漂移红、pending 裁定）以本节为准——final 判读面改读 r12；剩余合并门红项 = SMK-A4 / SRE-E4 两条在册锚红（launch 预报先存，红证据 ESCALATE 豁免件 = `existing-red-inventory.md`）。
