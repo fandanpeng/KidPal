@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260915-m1-k3-voice-round-ui",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "85588510-e1d2-4208-81eb-6744fef4dc2b",
+  "startedAt": "2026-09-16T16:12:03.697Z",
+  "completedAt": "2026-09-16T16:12:24.432Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "exit": 0,
+      "exitCode": 0,
+      "ms": 174,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"taskpackage-required\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"changeId\": \"260915-m1-k3-voice-round-ui\"\n}\n",
+      "stderr": "",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required passed"
+    },
+    {
+      "id": "firmware-build",
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": false,
+      "exit": 2,
+      "exitCode": 2,
+      "ms": 20412,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"phase\": \"building\",\n  \"reason\": \"工具链可用，真编译\",\n  \"via\": \"venv:C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe + c:/tmp/idf_run.py\"\n}\nExecuting action: all (aliases: build)\r\nRunning cmake in directory C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\r\nExecuting \"cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\\Users\\15802\\.espressif\\python_env\\idf5.5_py3.10_env\\Scripts\\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=1 C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\"...\r\n{\n  \"ok\": false,\n  \"gate\": \"firmware-build\",\n  \"message\": \"固件 build 失败（exit 2）\"\n}\n",
+      "stderr": "CMake Error: Error: generator : Ninja\r\nDoes not match the generator used previously: Visual Studio 17 2022\r\nEither remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.\r\ncmake failed with exit code 1, output of the command is in the C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\\log\\idf_py_stderr_output_21708 and C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\\log\\idf_py_stdout_output_21708\r\n",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "firmware-build failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "validation",
+    "fingerprint": "c9a351cb2789",
+    "failingStep": "firmware-build",
+    "message": "gate firmware-build failed (exit 2)",
+    "cmd": "node .claude/scripts/firmware-build-check.mjs",
+    "logFile": ".claude/verify-logs/1789575144417-firmware-build.log",
+    "logTail": "{\n  \"ok\": true,\n  \"gate\": \"firmware-build\",\n  \"phase\": \"building\",\n  \"reason\": \"工具链可用，真编译\",\n  \"via\": \"venv:C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe + c:/tmp/idf_run.py\"\n}\nExecuting action: all (aliases: build)\r\nRunning cmake in directory C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\r\nExecuting \"cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=C:\\Users\\15802\\.espressif\\python_env\\idf5.5_py3.10_env\\Scripts\\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=1 C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\"...\r\n{\n  \"ok\": false,\n  \"gate\": \"firmware-build\",\n  \"message\": \"固件 build 失败（exit 2）\"\n}\nCMake Error: Error: generator : Ninja\r\nDoes not match the generator used previously: Visual Studio 17 2022\r\nEither remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.\r\ncmake failed with exit code 1, output of the command is in the C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\\log\\idf_py_stderr_output_21708 and C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\firmware\\build\\log\\idf_py_stdout_output_21708\r\n"
+  }
+}

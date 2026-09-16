@@ -10,23 +10,24 @@
  *
  *   IDLE:             KEY_SHORT_PRESS -> LISTENING；其余全拒
  *                     （含 BOOT_SHORT_PRESS：BOOT 永不启动会话）。
- *   LISTENING:        UTT_START->THINKING；END_INTENT / SESSION_TIMEOUT_60S /
- *                     KEY_SHORT_PRESS / BOOT_SHORT_PRESS（对话中 BOOT 也可结束
+ *   LISTENING:        UTT_START->THINKING；END_INTENT /
+ *                     SES_EVT_SESSION_TIMEOUT_60S / KEY_SHORT_PRESS /
+ *                     BOOT_SHORT_PRESS（对话中 BOOT 也可结束
  *                     会话）-> ENDED；START_RECORDING->MANUAL_RECORDING（包 8
  *                     接合）。REPLY_READY / SPEAK_DONE / ABORT_SPEECH /
  *                     THINKING_TIMEOUT_4S / STOP_RECORDING 拒绝。
  *   THINKING:         REPLY_READY->SPEAKING；THINKING_TIMEOUT_4S->SPEAKING 带
  *                     COMFORT 标记（思考超 4s 先开口安抚，不冷场，spec §4.0）；
- *                     END_INTENT / SESSION_TIMEOUT_60S / KEY_SHORT_PRESS /
- *                     BOOT_SHORT_PRESS -> ENDED；其余拒绝。
+ *                     END_INTENT / SES_EVT_SESSION_TIMEOUT_60S /
+ *                     KEY_SHORT_PRESS / BOOT_SHORT_PRESS -> ENDED；其余拒绝。
  *   SPEAKING:         SPEAK_DONE->LISTENING；ABORT_SPEECH->LISTENING 带 ABORT
  *                     标记（人声喊停回聆听，不结束会话）；KEY_SHORT_PRESS->
  *                     ENDED 带 ABORT 标记（KEY 打断停播并手动关闭会话）；
  *                     BOOT_SHORT_PRESS->ENDED（不带打断标记）；END_INTENT /
- *                     SESSION_TIMEOUT_60S -> ENDED；其余拒绝。
+ *                     SES_EVT_SESSION_TIMEOUT_60S -> ENDED；其余拒绝。
  *   MANUAL_RECORDING: STOP_RECORDING->LISTENING；END_INTENT /
- *                     SESSION_TIMEOUT_60S / KEY_SHORT_PRESS / BOOT_SHORT_PRESS
- *                     -> ENDED（会话生命周期语义在累积态不被破坏）；
+ *                     SES_EVT_SESSION_TIMEOUT_60S / KEY_SHORT_PRESS /
+ *                     BOOT_SHORT_PRESS -> ENDED（会话生命周期语义在累积态不被破坏）；
  *                     UTT_START / REPLY_READY / START_RECORDING 拒绝
  *                     （累积态不进对话轮、重复切入拒绝）。
  *   ENDED:            终态——一切事件拒绝；新会话须全新实例 init。
@@ -44,7 +45,7 @@ typedef struct {
 } ses_edge_t;
 
 /* 列序（= ses_event_t）：
- * KEY_SHORT_PRESS, BOOT_SHORT_PRESS, END_INTENT, SESSION_TIMEOUT_60S,
+ * KEY_SHORT_PRESS, BOOT_SHORT_PRESS, END_INTENT, SES_EVT_SESSION_TIMEOUT_60S,
  * UTT_START, REPLY_READY, SPEAK_DONE, ABORT_SPEECH,
  * THINKING_TIMEOUT_4S, START_RECORDING, STOP_RECORDING */
 static const ses_edge_t k_ses_table[SES_STATE_COUNT_][SES_EVT_COUNT] = {

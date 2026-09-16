@@ -58,6 +58,16 @@ set(HOST_ACCEPTANCE_SRCS
     # smoke acceptance 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
     "../../keybar_three_slot.acceptance.c"
 
+    # 包 260915-m1-k3-voice-round-ui（语音轮演出补齐）被测实现：voice_round.c（[1]
+    # 纯逻辑单源：kidpal_voice_round_scene 场景映射决策表 + kidpal_voice_echo_* 逐句回显
+    # 机制，强符号覆盖 weak 哨兵）。相对 host_app/main 为 ../../../display/。
+    "../../../display/voice_round.c"
+
+    # 包 260915-m1-k3-voice-round-ui 冻结验收（场景决策表行为半 + 回显逐句机制 +
+    # 活侧渲染接线结构齿 + 打断衔接/闭集零偏移 + 注册序守卫）。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
+    "../../voice_round_ui.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
