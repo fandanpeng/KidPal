@@ -1,5 +1,5 @@
 {
-  "changeId": "260915-m1-k2-keybar-three-slot",
+  "changeId": "260915-m1-k3-voice-round-ui",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -10,10 +10,10 @@
     "workstream": "m1-home-qa"
   },
   "subsystem": "firmware",
-  "story": "无 story——共享底座键帽条；语义权威 = docs/requirements.md §2.2 键帽条行（comp-keybar 三槽规格）+ §2.4 页面结构",
-  "planRef": "delivery/taskpackages/260915-m1-k2-keybar-three-slot/plan.md",
+  "story": "S-F4.1 · 语音问答（AC1–AC2）+ S-F1.3 · 语音问课表（AC1/AC3，问答框口径）+ §2.2 状态表（聆听/思考/播报三行）",
+  "planRef": "delivery/taskpackages/260915-m1-k3-voice-round-ui/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单）",
-  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "redBaselineResult": "2026-09-16 acceptance-author 现跑复核：18 Tests / 0 Failures / 0 Ignored OK（exit 0；n1b 锚 13 + k2 新齿 5 = 本包有效基线）；server 面 0 collected（--ignore=server/acceptance/archive 口径）；在册既存红 = 空。冻结记录 = delivery/changes/dev/260915-m1-k3-voice-round-ui/red-baseline.md",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -22,166 +22,179 @@
   "riskTier": "medium",
   "gateProfile": [
     "host-teeth",
+    "state-machine",
     "device-round"
   ],
   "acceptance": [
-    "KB-A1: 三槽结构——键帽条 = 通栏贴底三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），条本身任何状态常驻（基座 chrome，覆盖层盖不掉）；替换现单行居中文案形态",
-    "KB-A2: 页点机制——中槽页点仅主页面显示（当前页实心放大），覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点；页点数量 = 现行页循环页数（阶段一 = 4，4→3 对账随 M2 撤 P4 一并收回——deviation 显式登记，非静默 spec 冲突）",
-    "KB-A3: 左右槽随态文案——随态切换走 kidpal_voice_states 冻结映射闭集（聆听「说完啦」/播报「打断」/提醒「知道了」等），闭集值零偏移；覆盖层内左右槽照常给操作提示",
-    "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
+    "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+    "VQ-A2: 聆听态话语回显区——孩子说的话逐句回显在「我在听！」标识下方（网关 ASR 切句成文经 WS stt 消息下发即上屏）；回显区滚动、超屏高滚出",
+    "VQ-A3: 播报态问答框长文滚动——答案文字全文上屏、超出屏高滚动看完（回引 NFR-READ-1 字号下限），非一行字幕",
+    "VQ-A4: 打断手感——播报中 KEY 单击 = 立即停播并聆听（100% 可靠）；KEY 长按/BOOT = 结束会话回原页（读 260915-m1-k1a-key-layer-dispatch 建立的分层裁决）",
+    "VQ-A5: 四态版式骨架统一——聆听/思考/播报三态 = 左小伴（各态 pose）· 右内容区同骨架（WF-B-01/02/03），键帽文案走 kidpal_voice_states 冻结映射；提醒弹窗同骨架由 260915-m1-k4-reminder-overlay-unify 承载、本包建骨架",
+    "VQ-A6: 超时安抚钉点——思考等待期超 4 秒先开口安抚不冷场（回引 NFR-PERF-1，计时起点 = 本态入口）",
     {
-      "id": "KB-A5: 真机确认轮（human 持板）——三槽条 + 页点显隐 + 随态文案真机可见；证据落 changes/dev/<changeId>/",
+      "id": "VQ-A7: 真机确认轮（human 持板）——思考页真机首次可弹、回显/滚动/打断三手感真机确认；证据落 changes/dev/<changeId>/",
       "kind": "structural"
     },
-    "KB-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿"
+    "VQ-A8: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/keybar_three_slot.acceptance.c"
+    "firmware/main/test/voice_round_ui.acceptance.c"
   ],
   "exitCriteria": [
-    "KB-E1: 范围纪律——页点 4→3 收口归 M2（KB-A2 deviation 在 M2 撤 P4 包对账收回）；spec 面零修订",
-    "KB-E2: kidpal_voice_states 冻结闭集零偏移——文案值域只在闭集内引用、不增删改闭集成员（新增态文案归承载态的包按冻结映射走）",
-    "KB-E3: 覆盖层显隐消费分层模型零裁决权——keybar 只读 layer_top 显隐，不改覆盖层进出裁决（owner = 260915-m1-k1a-key-layer-dispatch）"
+    "VQ-E1: 范围纪律——60 秒会话超时 timer 生产者接线不在本包（deferred 至 M1 后续批次，§2.1 对账项）；语音喊停（AEC 调优）归二期零触碰",
+    "VQ-E2: 范围纪律——课表答复数据侧（备注列参与答复）归 M3 语音问课表数据包；本包只做问答框演出口径",
+    "VQ-E3: 需求面零修订——docs/requirements.md 不动；发现冲突走 spec-lane 逃生门",
+    "VQ-E4: 四态骨架 owner 声明——本包建左小伴右内容骨架，260915-m1-k4-reminder-overlay-unify 复用（跨包行为登记，见 crossPackageBehaviors）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     "docs/requirements.md",
-    "delivery/milestones/milestones.jsonl",
-    "docs/ui/brand-spec.md",
-    "docs/ui/UIUX-DESIGN-BRIEF.md"
+    "delivery/milestones/milestones.jsonl"
   ],
   "sourceRefs": [
+    "docs/requirements.md#S-F4.1",
+    "docs/requirements.md#S-F1.3",
     "docs/requirements.md#§2.2",
-    "docs/requirements.md#§2.4",
     "delivery/milestones/milestones.jsonl#M1-home-qa"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsSyncReason": "本包为固件键帽条 chrome 改造，零 docs 面改动：三槽规格权威 = requirements §2.2 + brand-spec 姿态规则 + 设计稿 v4 §03 comp-keybar（均在文冻结）；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
-  "mergeOrder": 23,
+  "docsSyncReason": "本包为固件语音轮演出补齐，零 docs 面改动：三态线框与状态表已冻结于 requirements §2.2（v1.22/v1.24 口径在文）、契约面只读；实现侧注记随代码注释与 changes/dev closeout 制品承载。",
+  "mergeOrder": 25,
   "dependsOn": [
-    "260915-m1-k1a-key-layer-dispatch"
+    "260915-m1-k1a-key-layer-dispatch",
+    "260915-m1-k2-keybar-three-slot"
   ],
   "testHost": "host runner（WSL linux target）+ 真机确认轮（human 持板）",
   "decisionCoverage": [
     {
-      "decision": "M1块①-键帽条三槽",
-      "summary": "三槽布局与页点 MVP 未实现（现仅单行居中文案随态联动）——本包补齐三槽 + 页点机制，规格权威 = requirements §2.2 comp-keybar 行 + 设计稿 v4。",
-      "sourceRefs": [
-        "docs/requirements.md#§2.2"
-      ],
-      "landsIn": "acceptance:KB-A1"
-    },
-    {
-      "decision": "M1块①-覆盖层不显示页点",
-      "summary": "中槽页点仅主页面显示、覆盖层隐藏——显隐裁决读 layer_top 分层模型（owner = key-layer-dispatch），本包只读消费、零裁决权。",
-      "sourceRefs": [
-        "docs/requirements.md#§2.2"
-      ],
-      "landsIn": "acceptance:KB-A4"
-    },
-    {
-      "decision": "M1块①-页点数量阶段一暂4点deviation",
-      "summary": "spec 权威（§2.2 中 3 页点，v1.36 页循环 4→3）与现行实现 4 页循环存在跨阶段时序差：阶段一先按现行页循环渲染页点，4→3 对账归 M2；deviation 显式登记、launch 前 human 过目。",
+      "decision": "M1块③-思考页接线全新",
+      "summary": "思考页真机不弹（活侧渲染只映射聆听/播报、场景码与姿态资产已备零调用）= Phase 1 修复项；弹出时机 = 说完这句同一时刻、不分离。",
       "sourceRefs": [
         "docs/requirements.md#§2.2",
-        "docs/requirements.md#§6"
+        "docs/requirements.md#S-F4.1"
       ],
-      "landsIn": "exitCriteria:KB-E1"
+      "landsIn": "acceptance:VQ-A1"
     },
     {
-      "decision": "M1块①-键帽文案冻结闭集",
-      "summary": "键帽文案 = 冻结映射（kidpal_voice_states 闭集）——本包机制承载随态切换、值零偏移；新增态文案归承载态的包。",
+      "decision": "M1块③-聆听回显+问答框长文滚动",
+      "summary": "聆听回显（WS stt 下发即上屏、滚动）与播报问答框全文滚动（NFR-READ-1）——MVP 已实测链路在、演出面缺，本包补齐。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.2",
+        "docs/requirements.md#S-F4.1"
+      ],
+      "landsIn": "acceptance:VQ-A2"
+    },
+    {
+      "decision": "M1块③-打断手感KEY单击停播",
+      "summary": "Phase 1 唯一打断手段 = KEY 单击立即停播并聆听（100% 可靠）；语音喊停二期不碰。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.1",
+        "docs/requirements.md#§2.2"
+      ],
+      "landsIn": "acceptance:VQ-A4"
+    },
+    {
+      "decision": "M1块③-四态版式骨架owner=本包",
+      "summary": "四态统一骨架（左小伴右内容）owner = voice-round-ui；提醒弹窗包复用同骨架（跨包行为登记）——防两包各建一套骨架漂移。",
       "sourceRefs": [
         "docs/requirements.md#§2.2"
       ],
-      "landsIn": "exitCriteria:KB-E2"
+      "landsIn": "exitCriteria:VQ-E4"
+    },
+    {
+      "decision": "M1块③-60秒timer接线deferred",
+      "summary": "60 秒/120 秒 timer 生产者接线与演出面同 seam 但独立可验证，deferred 至 M1 后续批次（非 dropped，防本包范围膨胀）。",
+      "sourceRefs": [
+        "docs/requirements.md#§2.1",
+        "docs/requirements.md#§7"
+      ],
+      "landsIn": "exitCriteria:VQ-E1"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "behavior": "键帽条三槽 + 页点机制（chrome 渲染面）",
-      "owner": "260915-m1-k2-keybar-three-slot",
-      "note": "三槽机制与随态文案切换 owner = 本包；语音轮/提醒弹窗包（voice-round-ui / reminder-overlay-unify）消费机制、不改 keybar 结构。"
+      "behavior": "四态统一版式骨架（左小伴右内容，WF-B-01/02/03/04 共用）",
+      "owner": "260915-m1-k3-voice-round-ui",
+      "note": "骨架 owner = 本包（mergeOrder 25 先于提醒包）；260915-m1-k4-reminder-overlay-unify 复用同骨架只换 pose 与内容，不得另建骨架。"
     },
     {
-      "behavior": "覆盖层页点显隐裁决",
+      "behavior": "播报中打断/会话结束键位语义",
       "owner": "260915-m1-k1a-key-layer-dispatch",
-      "note": "layer_top 分层模型与覆盖层进出裁决 owner = key-layer-dispatch；keybar 只读显隐。"
+      "note": "分层裁决 owner = key-layer-dispatch；本包消费（VQ-A4），语义与其 KD-A3/KD-A1 一致。"
     }
   ],
+  "uiuxRequired": true,
+  "uiuxLevel": 2,
+  "designRefs": [
+    "docs/ui/UIUX-DESIGN-BRIEF.md#§5-语音轮四态",
+    "docs/requirements.md#§2.2"
+  ],
+  "sharedUiRefs": [
+    "docs/ui/UIUX-DESIGN-BRIEF.md#§2.3-comp-keybar"
+  ],
+  "uiAcceptanceRefs": [
+    "VQ-A1",
+    "VQ-A2",
+    "VQ-A3",
+    "VQ-A5"
+  ],
+  "designReviewRequired": false,
+  "designReviewNote": "L2：设计权威已冻结于 UIUX-DESIGN-BRIEF v4 + requirements §2.2（pose/气泡/键帽闭集在文）；UI-state 验收由 VQ-A1/A2/A3/A5 + VQ-A7 真机轮承载，integrator 证据走 demo 对账行（锚 3）。",
+  "uiuxAuthorNote": "uiux-author 派发降级为 planner 直翻：.claude/agents/ 无 uiux-author.md（同 verifier 退役先例，Agent 派发必 fail）；interaction brief 实质已由冻结 brief §5 语音轮行承载，零新增设计决策。",
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "KB-A1: 三槽结构——键帽条 = 通栏贴底三槽（左 KEY 提示 · 中页点 · 右 BOOT 提示），条本身任何状态常驻（基座 chrome，覆盖层盖不掉）；替换现单行居中文案形态",
-        "mutations": [
-          {
-            "name": "M-CAPLABEL-RESURRECT",
-            "site": "firmware/main/display/lcd_display.cc:382（statics 复活 g_kidpal_keycap_label 引用）",
-            "result": "failed as expected",
-            "redTooth": "测试4 tooth4 @ keybar_three_slot.acceptance.c:733（g_kidpal_keycap_label 残留 1 处 expected 0——三槽替换未拆除旧单行形态）"
-          }
-        ],
-        "sensitive": true
+        "acceptanceId": "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+        "mutation": "kvr_scene_stt_auto_row_mute_stub",
+        "counterEvidence": "test 1 tooth 1, expect KVST_SCENE_THINK",
+        "result": "failed as expected"
       },
       {
-        "acceptanceId": "KB-A2: 页点机制——中槽页点仅主页面显示（当前页实心放大），覆盖层（提醒弹窗/查字窗/语音轮演出）不显示页点；页点数量 = 现行页循环页数（阶段一 = 4，4→3 对账随 M2 撤 P4 一并收回——deviation 显式登记，非静默 spec 冲突）",
-        "mutations": [
-          {
-            "name": "M-DOTS-VIS-ALWAYS",
-            "site": "firmware/main/display/keybar.c:26（kidpal_keybar_dots overlay 分支 ?0:1 恒真）",
-            "result": "failed as expected",
-            "redTooth": "测试1 覆盖层列 @ keybar_three_slot.acceptance.c:491（覆盖层顶层 visible=1 expected 0——覆盖层不显示页点被破坏）"
-          }
-        ],
-        "sensitive": true
+        "acceptanceId": "VQ-A2: 聆听态话语回显区——孩子说的话逐句回显在「我在听！」标识下方（网关 ASR 切句成文经 WS stt 消息下发即上屏）；回显区滚动、超屏高滚出",
+        "mutation": "kvr_echo_ring_evict_newest_stub",
+        "counterEvidence": "test 2 tooth 3, expect oldest evicted (strcmp line buf_b)",
+        "result": "failed as expected"
       },
       {
-        "acceptanceId": "KB-A3: 左右槽随态文案——随态切换走 kidpal_voice_states 冻结映射闭集（聆听「说完啦」/播报「打断」/提醒「知道了」等），闭集值零偏移；覆盖层内左右槽照常给操作提示",
-        "mutations": [
-          {
-            "name": "M-SLOTS-P1-DRIFT",
-            "site": "firmware/main/display/keybar.c:44（slots 基层 case PAGE_P1 左槽 说话→上页）",
-            "result": "failed as expected",
-            "redTooth": "测试2 P1 页槽 @ keybar_three_slot.acceptance.c:529（左=上页 expected 说话——WF-F1-01 全局键帽条行漂移）"
-          },
-          {
-            "name": "M-SLOTS-OVERLAY-LEFT-FIXED",
-            "site": "firmware/main/display/keybar.c:67（slots 覆盖层 *out_left = look.keycap → 恒「固定」）",
-            "result": "failed as expected",
-            "redTooth": "测试2 覆盖层列 @ keybar_three_slot.acceptance.c:574（左=固定 != 闭集 keycap——左槽值域脱离 kidpal_voice_states 冻结闭集单源）"
-          }
-        ],
-        "sensitive": true
+        "acceptanceId": "VQ-A3: 播报态问答框长文滚动——答案文字全文上屏、超出屏高滚动看完（回引 NFR-READ-1 字号下限），非一行字幕",
+        "mutation": "lcd_cc_answer_route_mute_stub",
+        "counterEvidence": "test 3 tooth 5, expect region contains g_kidpal_voice_answer_box",
+        "result": "failed as expected"
       },
       {
-        "acceptanceId": "KB-A4: 覆盖层页点隐藏与分层模型一致性——页点显隐裁决读 layer_top（260915-m1-k1a-key-layer-dispatch 建立的分层模型），与键路由同源、不另立第二真相源",
-        "mutations": [
-          {
-            "name": "M-RENDER-OVERLAY-GATE-ZERO",
-            "site": "firmware/main/display/lcd_display.cc:1061 + 1051（sync 内 front_is_overlay() 调用→恒 0，同步移除注释 needle）",
-            "result": "failed as expected",
-            "redTooth": "测试4 tooth6 @ keybar_three_slot.acceptance.c:753（零 kidpal_render_node_front_is_overlay expected >=1——页点显隐未读 layer_top/键路由同源红线）"
-          }
-        ],
-        "sensitive": true
+        "acceptanceId": "VQ-A4: 打断手感——播报中 KEY 单击 = 立即停播并聆听（100% 可靠）；KEY 长按/BOOT = 结束会话回原页（读 260915-m1-k1a-key-layer-dispatch 建立的分层裁决）",
+        "mutation": "overlay_boot_click_row_flip_stub",
+        "counterEvidence": "test 4 tooth 1, expect ==4 and !=PAGE_NEXT",
+        "result": "failed as expected"
       },
       {
-        "acceptanceId": "KB-A6: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿",
-        "mutations": [
-          {
-            "name": "M-CMAKE-ORDER-SWAP",
-            "site": "firmware/main/test/host_app/main/CMakeLists.txt:62（keybar_three_slot.acceptance.c 注册行移至 host_infra_smoke 之后）",
-            "result": "failed as expected",
-            "redTooth": "测试5 tooth1 @ keybar_three_slot.acceptance.c:839（接线注册序守卫——必须排在 smoke 之前；smoke 边界齿本轮未级联红，如实记录）"
-          }
-        ],
-        "sensitive": true
+        "acceptanceId": "VQ-A5: 四态版式骨架统一——聆听/思考/播报三态 = 左小伴（各态 pose）· 右内容区同骨架（WF-B-01/02/03），键帽文案走 kidpal_voice_states 冻结映射；提醒弹窗同骨架由 260915-m1-k4-reminder-overlay-unify 承载、本包建骨架",
+        "mutation": "listen_bubble_glyph_drift_stub",
+        "counterEvidence": "test 4 tooth 4, expect verbatim 我在听！",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A6: 超时安抚钉点——思考等待期超 4 秒先开口安抚不冷场（回引 NFR-PERF-1，计时起点 = 本态入口）",
+        "mutation": "ses_cc_comfort_flag_mute_stub",
+        "counterEvidence": "test 4 tooth 6, expect SES_STATE_SPEAKING, SES_FLAG_COMFORT_SPEECH",
+        "result": "failed as expected"
+      },
+      {
+        "id": "VQ-A7: 真机确认轮（human 持板）——思考页真机首次可弹、回显/滚动/打断三手感真机确认；证据落 changes/dev/<changeId>/",
+        "kind": "structural"
+      },
+      {
+        "acceptanceId": "VQ-A8: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿",
+        "mutation": "host_srcs_line_omit_stub",
+        "counterEvidence": "test 5 tooth 1, expect voice_round_ui.acceptance.c registered before smoke",
+        "result": "failed as expected"
       }
     ]
   },
@@ -194,9 +207,13 @@
       {
         "path": "firmware/main/display/kidpal_voice_states.c",
         "symbol": "kidpal_voice_state_look"
+      },
+      {
+        "path": "firmware/main/display/reminder_page.c",
+        "symbol": "kidpal_reminder_render_actions"
       }
     ],
     "exempt": ""
   },
-  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块①基建）。依赖 key-layer-dispatch 的 layer_top 分层模型（页点显隐与键路由同源）。页点数量 deviation（暂 4 点）已登记 launchPreconditions，launch 前 human 过目。包级 plan.md = 全量义务（planRef 已指）。"
+  "notes": "拆包 2026-09-15 portfolio-planner（M1-home-qa 开工批，块③）。与 key-layer-dispatch / keybar-three-slot 同渲染面相邻但职责已切分：分层裁决归键基建包、骨架 owner 归本包、提醒复用。60 秒 timer 接线 deferred（见 VQ-E1）。包级 plan.md = 全量义务（planRef 已指）。禁改 docs/contracts/** 与 docs/requirements.md。"
 }

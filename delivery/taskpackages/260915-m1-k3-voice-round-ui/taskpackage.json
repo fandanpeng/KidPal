@@ -13,7 +13,7 @@
   "story": "S-F4.1 · 语音问答（AC1–AC2）+ S-F1.3 · 语音问课表（AC1/AC3，问答框口径）+ §2.2 状态表（聆听/思考/播报三行）",
   "planRef": "delivery/taskpackages/260915-m1-k3-voice-round-ui/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线并记录在册既存红清单）",
-  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "redBaselineResult": "2026-09-16 acceptance-author 现跑复核：18 Tests / 0 Failures / 0 Ignored OK（exit 0；n1b 锚 13 + k2 新齿 5 = 本包有效基线）；server 面 0 collected（--ignore=server/acceptance/archive 口径）；在册既存红 = 空。冻结记录 = delivery/changes/dev/260915-m1-k3-voice-round-ui/red-baseline.md",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -129,9 +129,74 @@
       "note": "分层裁决 owner = key-layer-dispatch；本包消费（VQ-A4），语义与其 KD-A3/KD-A1 一致。"
     }
   ],
+  "uiuxRequired": true,
+  "uiuxLevel": 2,
+  "designRefs": [
+    "docs/ui/UIUX-DESIGN-BRIEF.md#§5-语音轮四态",
+    "docs/requirements.md#§2.2"
+  ],
+  "sharedUiRefs": [
+    "docs/ui/UIUX-DESIGN-BRIEF.md#§2.3-comp-keybar"
+  ],
+  "uiAcceptanceRefs": [
+    "VQ-A1",
+    "VQ-A2",
+    "VQ-A3",
+    "VQ-A5"
+  ],
+  "designReviewRequired": false,
+  "designReviewNote": "L2：设计权威已冻结于 UIUX-DESIGN-BRIEF v4 + requirements §2.2（pose/气泡/键帽闭集在文）；UI-state 验收由 VQ-A1/A2/A3/A5 + VQ-A7 真机轮承载，integrator 证据走 demo 对账行（锚 3）。",
+  "uiuxAuthorNote": "uiux-author 派发降级为 planner 直翻：.claude/agents/ 无 uiux-author.md（同 verifier 退役先例，Agent 派发必 fail）；interaction brief 实质已由冻结 brief §5 语音轮行承载，零新增设计决策。",
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+        "mutation": "kvr_scene_stt_auto_row_mute_stub",
+        "counterEvidence": "test 1 tooth 1, expect KVST_SCENE_THINK",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A2: 聆听态话语回显区——孩子说的话逐句回显在「我在听！」标识下方（网关 ASR 切句成文经 WS stt 消息下发即上屏）；回显区滚动、超屏高滚出",
+        "mutation": "kvr_echo_ring_evict_newest_stub",
+        "counterEvidence": "test 2 tooth 3, expect oldest evicted (strcmp line buf_b)",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A3: 播报态问答框长文滚动——答案文字全文上屏、超出屏高滚动看完（回引 NFR-READ-1 字号下限），非一行字幕",
+        "mutation": "lcd_cc_answer_route_mute_stub",
+        "counterEvidence": "test 3 tooth 5, expect region contains g_kidpal_voice_answer_box",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A4: 打断手感——播报中 KEY 单击 = 立即停播并聆听（100% 可靠）；KEY 长按/BOOT = 结束会话回原页（读 260915-m1-k1a-key-layer-dispatch 建立的分层裁决）",
+        "mutation": "overlay_boot_click_row_flip_stub",
+        "counterEvidence": "test 4 tooth 1, expect ==4 and !=PAGE_NEXT",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A5: 四态版式骨架统一——聆听/思考/播报三态 = 左小伴（各态 pose）· 右内容区同骨架（WF-B-01/02/03），键帽文案走 kidpal_voice_states 冻结映射；提醒弹窗同骨架由 260915-m1-k4-reminder-overlay-unify 承载、本包建骨架",
+        "mutation": "listen_bubble_glyph_drift_stub",
+        "counterEvidence": "test 4 tooth 4, expect verbatim 我在听！",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A6: 超时安抚钉点——思考等待期超 4 秒先开口安抚不冷场（回引 NFR-PERF-1，计时起点 = 本态入口）",
+        "mutation": "ses_cc_comfort_flag_mute_stub",
+        "counterEvidence": "test 4 tooth 6, expect SES_STATE_SPEAKING, SES_FLAG_COMFORT_SPEECH",
+        "result": "failed as expected"
+      },
+      {
+        "id": "VQ-A7: 真机确认轮（human 持板）——思考页真机首次可弹、回显/滚动/打断三手感真机确认；证据落 changes/dev/<changeId>/",
+        "kind": "structural"
+      },
+      {
+        "acceptanceId": "VQ-A8: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿",
+        "mutation": "host_srcs_line_omit_stub",
+        "counterEvidence": "test 5 tooth 1, expect voice_round_ui.acceptance.c registered before smoke",
+        "result": "failed as expected"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [

@@ -20,3 +20,15 @@
 **consumer 差异判停（Pod intake 执行）**：两面各跑 `git diff --quiet e990eb2 HEAD -- <面域>`；firmware 面零差异 → 引用上述锚（SHA + 落盘锚 verbatim），不重跑；server 面现役面空态按重跑锚核（收集件数 = 0 即一致）；有差异 → 重跑该面（命令同记录）。
 
 **遗留 human 项**：无——deviation 已拍板；launch prompt 交 human 在本树 VS Code 会话自跑（headless 为备选）。
+
+## 2026-09-16 · launch 批：260915-m1-k3-voice-round-ui（单包，M1-K3）
+
+**调度判定**：本批 = 单包 k3（mergeOrder 25）。依赖图说了算——k3 dependsOn [k1a, k2] 均已 merged（board 实读），k4（mo26）dependsOn 还含 k3 未就绪；当前无 running Pod，WIP=3 有余量。树池串行复用第 4 棒：K1a → N1b → K2 → 本包，同树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch、常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 0aed071 = main（k2 merged 后 merge-driver rebase 步已同步，不换不删）。
+
+**门**：check-launch 2026-09-16 绿（`node .claude/scripts/portfolio-reconcile.mjs --check-launch 260915-m1-k3-voice-round-ui --base-ref main`，blocking 空 / warn 空）。
+
+**交接卫生（复用树）**：tracked 净、untracked 零残留（git status --porcelain 空）；managed_components 软链原生 python 验 isdir=True；build/ 热缓存随树保留。固件环境等价化与图索引按复用树规则跳过（图索引项目名 = C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，随树增量刷新，list_projects 实核在位）。
+
+**基线锚**：引用上一段（2026-09-16 k2 批）两面锚——server 面 0 collected（a398264，--ignore=server/acceptance/archive 口径）+ firmware host 面 13 Tests / 0 Failures（e990eb2）；本 HEAD 已前移至 0aed071（其间隔两笔 ARQ-260916-unit-gate-archive-recursion gov commit），Pod intake 按差异判停协议逐面核（git diff --quiet <锚SHA> HEAD -- <面域>），零差异引用、有差异重跑。
+
+**launch 方式**：human 指示本批免人工交接——环境就绪无问题后由主线程直接 Launch Planner（launch prompt 卡在 .git/devloop/launch/prompt-260915-m1-k3-voice-round-ui.txt）。遗留 human 项：无。

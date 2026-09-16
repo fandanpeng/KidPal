@@ -15,6 +15,11 @@
  * 单一权威；本文件在状态跃迁处事件驱动语音层进出 + 聊天层驻留清除时机（OQ3=c）。 */
 #include "display/kidpal_layer.h"
 #include "display/kidpal_render_node.h"
+/* 语音轮场景映射 + 话语回显纯逻辑单源 (包 260915-m1-k3-voice-round-ui, seam [1]/[2]):
+ * stt 分支同刻消费 kidpal_voice_round_scene 决策表驱动思考页弹出 + SetChatMessage(user)
+ * 既有回显通道。设备侧零重抄映射。 */
+#include "display/voice_round.h"
+#include "display/kidpal_voice_states.h"
 
 #include <cstring>
 #include <esp_log.h>
@@ -483,7 +488,18 @@ void Application::InitializeProtocol() {
             if (cJSON_IsString(text)) {
                 ESP_LOGI(TAG, ">> %s", text->valuestring);
                 Schedule([this, display, message = std::string(text->valuestring)]() {
+                    /* 语音轮演出 (包 260915-m1-k3-voice-round-ui, seam [2]): 思考触发 =
+                     * 服务端 VAD 切句完成 (stt 下发) 同刻消费场景单源 —— 状态切换与页面
+                     * 弹出同一时刻 (requirements §2.2 思考中行), 非 tts start、非定时器。
+                     * 回显 (SetChatMessage("user") 既有通道) 与思考切换同一回调。manual
+                     * 记录语境 (LISTEN_MANUAL) 切句只回显不逐句进思考。 */
                     display->SetChatMessage("user", message.c_str());
+                    kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
+                                        ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
+                    int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
+                    if (scene == KVST_SCENE_THINK) {
+                        display->SetStatus(Lang::Strings::THINKING);
+                    }
                 });
             }
         } else if (strcmp(type->valuestring, "llm") == 0) {

@@ -4,6 +4,7 @@
 #include "lvgl_theme.h"
 #include "assets/lang_config.h"
 #include "kidpal_voice_states.h"
+#include "voice_round.h"
 #include "art_assets.h"
 #include "kidpal_render_node.h"
 #include "key_gesture_parser.h"
@@ -11,6 +12,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <cstdio>
 #include <font_awesome.h>
 #include <esp_log.h>
 #include <esp_err.h>
@@ -396,6 +398,17 @@ static lv_image_dsc_t g_kidpal_pose_dsc;
 static uint32_t*   g_kidpal_pose_px = NULL;
 static int         g_kidpal_pose_st   = 0; /* 0=未试 1=可用 2=不可用 */
 static int         g_kidpal_pose_scene = -1;
+
+/* 语音轮演出容器 (包 260915-m1-k3-voice-round-ui, [3] 聆听回显区 + 问答框):
+ * 左小伴 (各态 pose 挂 emoji_box_) · 右内容区同骨架 —— 两容器均可滚动
+ * (LV_OBJ_FLAG_SCROLLABLE, VQ-A2/A3)。回显区 = 逐句累积, 新句 push 后整列重建;
+ * 问答框 = 答案全文长文滚动。设备侧只消费纯逻辑单源返回值, 零重抄。 */
+static lv_obj_t*   g_kidpal_voice_echo_box    = NULL; /* 聆听话语回显区容器 (「我在听！」
+                                                       标识下方, 可滚动) */
+static lv_obj_t*   g_kidpal_voice_echo_label  = NULL; /* 回显区内容缓存对象 (整列文本) */
+static lv_obj_t*   g_kidpal_voice_answer_box  = NULL; /* 播报问答框容器 (WF-B-03 右内容区,
+                                                       可滚动, 答案全文上屏滚动看完) */
+static lv_obj_t*   g_kidpal_voice_answer_label = NULL; /* 问答框内容缓存对象 (全文) */
 
 static void kidpal_chrome_mid_sync_locked(void);
 static void kidpal_keybar_sync_locked(void); /* 定义在活分支尾 (SetupUI 之后), 前向声明供 SetupUI 首刷调用 */
@@ -990,6 +1003,43 @@ void LcdDisplay::SetupUI() {
     g_kidpal_emoji_label = emoji_label_;
     g_kidpal_emoji_image = emoji_image_;
 
+    /* 语音轮演出容器创建 (包 260915-m1-k3-voice-round-ui, [3] 聆听回显区 + 问答框):
+     * 左小伴 (各态 pose 挂 emoji_box_) · 右内容区两容器同骨架 —— 均可滚动
+     * (LV_OBJ_FLAG_SCROLLABLE, VQ-A2/A3:「我在听！」下方逐句回显 / 答案全文长文滚动
+     * 看完, 回引 NFR-READ-1)。容器建在 chrome 挂点下, 随聊天 chrome 常驻任何页。
+     * 回显/问答对象 (file-static) 供活 SetChatMessage 按 role 路由消费。 */
+    g_kidpal_voice_echo_box = lv_obj_create(screen);
+    lv_obj_set_style_bg_opa(g_kidpal_voice_echo_box, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(g_kidpal_voice_echo_box, 0, 0);
+    lv_obj_set_style_pad_all(g_kidpal_voice_echo_box, 0, 0);
+    lv_obj_set_size(g_kidpal_voice_echo_box, LV_HOR_RES * 0.7, LV_SIZE_CONTENT);
+    lv_obj_set_scroll_dir(g_kidpal_voice_echo_box, LV_DIR_VER);
+    lv_obj_add_flag(g_kidpal_voice_echo_box, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(g_kidpal_voice_echo_box, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_align(g_kidpal_voice_echo_box, LV_ALIGN_TOP_MID, 0, lvgl_theme->spacing(10));
+    g_kidpal_voice_echo_label = lv_label_create(g_kidpal_voice_echo_box);
+    lv_label_set_long_mode(g_kidpal_voice_echo_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(g_kidpal_voice_echo_label, LV_HOR_RES * 0.7);
+    lv_obj_set_style_text_align(g_kidpal_voice_echo_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_set_style_text_color(g_kidpal_voice_echo_label, lvgl_theme->text_color(), 0);
+    lv_label_set_text(g_kidpal_voice_echo_label, "");
+
+    g_kidpal_voice_answer_box = lv_obj_create(screen);
+    lv_obj_set_style_bg_opa(g_kidpal_voice_answer_box, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(g_kidpal_voice_answer_box, 0, 0);
+    lv_obj_set_style_pad_all(g_kidpal_voice_answer_box, 0, 0);
+    lv_obj_set_size(g_kidpal_voice_answer_box, LV_HOR_RES * 0.8, LV_SIZE_CONTENT);
+    lv_obj_set_scroll_dir(g_kidpal_voice_answer_box, LV_DIR_VER);
+    lv_obj_add_flag(g_kidpal_voice_answer_box, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(g_kidpal_voice_answer_box, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_align(g_kidpal_voice_answer_box, LV_ALIGN_TOP_MID, 0, lvgl_theme->spacing(10));
+    g_kidpal_voice_answer_label = lv_label_create(g_kidpal_voice_answer_box);
+    lv_label_set_long_mode(g_kidpal_voice_answer_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(g_kidpal_voice_answer_label, LV_HOR_RES * 0.8);
+    lv_obj_set_style_text_align(g_kidpal_voice_answer_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_set_style_text_color(g_kidpal_voice_answer_label, lvgl_theme->text_color(), 0);
+    lv_label_set_text(g_kidpal_voice_answer_label, "");
+
     low_battery_popup_ = lv_obj_create(screen);
     lv_obj_set_scrollbar_mode(low_battery_popup_, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_size(low_battery_popup_, LV_HOR_RES * 0.9, text_font->line_height * 2);
@@ -1049,6 +1099,52 @@ void LcdDisplay::SetChatMessage(const char* role, const char* content) {
     if (chat_message_label_ == nullptr) {
         return;
     }
+    (void)role;
+
+    /* 语音轮演出路由 (包 260915-m1-k3-voice-round-ui, seam [3]): role "user" ->
+     * 聆听话语回显区消费 kidpal_voice_echo_push 逐句入列 (纯逻辑单源, 设备侧零重算)
+     * 并整列重建上屏 g_kidpal_voice_echo_box; role "assistant" -> 答案全文渲到
+     * g_kidpal_voice_answer_box (问答框口径, S-F1.3 AC1「与百科问答同一问答框」,
+     * 长文滚动由容器 LV_OBJ_FLAG_SCROLLABLE 承载, 非一行字幕)。其余 role (如 system
+     * 系统态) 走既有同步文字框 chat_message_label_ 语义, 不动。 */
+    if (content != nullptr && role != nullptr && strcmp(role, "user") == 0) {
+        if (g_kidpal_voice_echo_box != nullptr) {
+            kidpal_voice_echo_push(content);
+            /* 整列重建: 逐句经纯逻辑单源取行 (行序/容量滚出全归单源), 设备侧只拼串 */
+            if (g_kidpal_voice_echo_label != nullptr) {
+                char line_buf[512] = {0};
+                size_t off = 0;
+                int n = kidpal_voice_echo_count();
+                for (int i = 0; i < n; i++) {
+                    const char* line = NULL;
+                    if (kidpal_voice_echo_line(i, &line) == 0 && line != NULL) {
+                        int w = snprintf(line_buf + off, sizeof(line_buf) - off,
+                                         "%s%s", off ? "\n" : "", line);
+                        if (w > 0 && (size_t)w < sizeof(line_buf) - off) {
+                            off += (size_t)w;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                lv_label_set_text(g_kidpal_voice_echo_label, line_buf);
+                /* 新句入列后滚到底部让最新话语可见 */
+                lv_obj_scroll_to_y(g_kidpal_voice_echo_box,
+                                   lv_obj_get_scroll_bottom(g_kidpal_voice_echo_box),
+                                   LV_ANIM_OFF);
+            }
+        }
+        return;
+    }
+    if (content != nullptr && role != nullptr && strcmp(role, "assistant") == 0) {
+        if (g_kidpal_voice_answer_box != nullptr &&
+            g_kidpal_voice_answer_label != nullptr) {
+            lv_label_set_text(g_kidpal_voice_answer_label, content);
+            lv_obj_scroll_to_y(g_kidpal_voice_answer_box, 0, LV_ANIM_OFF);
+        }
+        return;
+    }
+
     lv_label_set_text(chat_message_label_, content);
 }
 #endif
@@ -1286,6 +1382,11 @@ void LcdDisplay::SetStatus(const char* status) {
     if (status != NULL) {
         if (strcmp(status, Lang::Strings::LISTENING) == 0) {
             kidpal_voice_apply_look(KVST_SCENE_LISTEN);
+        } else if (strcmp(status, Lang::Strings::THINKING) == 0) {
+            /* 思考页首接活侧渲染路径 (VQ-A1, 现状零调用销账): stt 分支同刻消费场景单源
+             * 后经 SetStatus(THINKING) 驱动 apply_look(KVST_SCENE_THINK) —— 状态切换
+             * 与页面弹出同一时刻, requirements §2.2 思考中行。 */
+            kidpal_voice_apply_look(KVST_SCENE_THINK);
         } else if (strcmp(status, Lang::Strings::SPEAKING) == 0) {
             kidpal_voice_apply_look(KVST_SCENE_TALK);
         } else if (strcmp(status, Lang::Strings::STANDBY) == 0) {
