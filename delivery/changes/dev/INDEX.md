@@ -34,3 +34,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260915-m1-n1b-p1-home-battery](260915-m1-n1b-p1-home-battery/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |

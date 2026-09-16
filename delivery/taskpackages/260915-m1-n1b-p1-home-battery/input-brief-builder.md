@@ -2,7 +2,7 @@
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-15T13:45:53.409Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
+> generated-at: 2026-09-16T03:21:23.517Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
 > 来源 TaskPackage: `delivery/taskpackages/260915-m1-n1b-p1-home-battery/taskpackage.json` · subsystem: firmware · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
@@ -22,8 +22,8 @@
 
 | 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
 |---|---|---|---|
-| `firmware/main/boards/common/adc_battery_monitor.h` | `GetBatteryLevel` | :16-31 | — |
-| `firmware/main/display/kidpal_render_node.cc` | `battery` | :207-214 | 213, 489, 663 |
+| `firmware/main/boards/common/adc_battery_monitor.h` | `GetBatteryLevel` | :26-41 | — |
+| `firmware/main/display/kidpal_render_node.cc` | `battery` | :211-218 | 217, 285, 291, 508, 684 |
 
 上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
 
