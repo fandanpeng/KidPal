@@ -32,3 +32,15 @@
 **基线锚**：引用上一段（2026-09-16 k2 批）两面锚——server 面 0 collected（a398264，--ignore=server/acceptance/archive 口径）+ firmware host 面 13 Tests / 0 Failures（e990eb2）；本 HEAD 已前移至 0aed071（其间隔两笔 ARQ-260916-unit-gate-archive-recursion gov commit），Pod intake 按差异判停协议逐面核（git diff --quiet <锚SHA> HEAD -- <面域>），零差异引用、有差异重跑。
 
 **launch 方式**：human 指示本批免人工交接——环境就绪无问题后由主线程直接 Launch Planner（launch prompt 卡在 .git/devloop/launch/prompt-260915-m1-k3-voice-round-ui.txt）。遗留 human 项：无。
+
+## 2026-09-17 · launch 批：260915-m1-k4-reminder-overlay-unify（单包，M1-K4）
+
+**调度判定**：本批 = 单包 k4（mergeOrder 26，本 workstream 末包）。依赖图说了算——k4 dependsOn [k1a, k2, k3] 均 merged（board 实读），当前无 running Pod，WIP=3 有余量。树池串行复用第 5 棒：K1a → N1b → K2 → K3 → 本包，同树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch、常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 187aa71 = main（k3 merged 后 merge-driver rebase 步已同步，不换不删）。
+
+**门**：check-launch 2026-09-17 绿（`node .claude/scripts/portfolio-reconcile.mjs --check-launch 260915-m1-k4-reminder-overlay-unify --base-ref main`，blocking 空 / warn 空）。
+
+**交接卫生（复用树）**：tracked 净、untracked 零残留（git status --porcelain 空）；managed_components 软链原生 python 验 isdir=True；build/ 热缓存随树保留。固件环境等价化与图索引按复用树规则跳过（图索引项目名 = C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，随树增量刷新，list_projects 实核在位）。
+
+**基线锚（consumer 差异判停，2026-09-17 实测）**：引用 2026-09-16 k2 批段两面锚——server 面 0 collected（a398264，--ignore=server/acceptance/archive 口径）+ firmware host 面 13 Tests / 0 Failures（e990eb2）；本 HEAD 已前移至 187aa71（其间隔 k2/k3 合并及多笔 gov commit）。判停结论：`git diff --quiet e990eb2 HEAD -- firmware/` 有差异、`git diff --quiet a398264 HEAD -- server/` 有差异 → **两面均须重跑**（命令同锚记录；server 量测必须带 --ignore=server/acceptance/archive），Pod intake 由 acceptance-author 实跑落账；本包红基线另含 schedule_reminder_b 套齿 k1a 批改后的新基线复核（taskpackage redBaselineCommand 为准）。
+
+**launch 方式**：human 指示「环境准备好了就进入开发流程」——沿用 k3 批免人工交接先例，主线程写启动卡后直接 Launch Planner（卡在 .git/devloop/launch/prompt-260915-m1-k4-reminder-overlay-unify.txt）。遗留 human 项：无。
