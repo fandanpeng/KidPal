@@ -4,10 +4,8 @@
   "source": "HEAD",
   "overlap": {
     "probed": true,
-    "tier": "union-safe",
-    "intersectingFiles": [
-      "delivery/taskpackages/260915-m1-k3-voice-round-ui/pod-events.jsonl"
-    ],
+    "tier": "no-overlap",
+    "intersectingFiles": [],
     "conflictedFiles": [],
     "addAddFiles": []
   }
