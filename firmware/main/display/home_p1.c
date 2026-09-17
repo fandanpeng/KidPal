@@ -1006,6 +1006,35 @@ static void p1_draw_preview(void)
     }
 }
 
+/* 首页顶部信息栏下方虚线分隔 (device-round VQ-A7 r3 §A2): P1 辅助条 (布局钉区 y[0..39])
+ * 之下、日程主体 (y>=48) 之上画通栏虚点分隔线。设计稿锚 (kidpal-ui-design-v4.html P1
+ * 辅助条节) = 左右 6px 内缩、约 3px 线宽 dash/点线; 像素级观感归真机轮 VQ-A7, 本函数
+ * 钉「软帧侧虚线/点线画法在世」。设备首页 = home_p1.c 软帧整帧渲染单源 (400×300 帧整帧
+ * blit), LVGL 对象画法会被帧 blit 覆盖 —— mock kidpal_ui.c:197-204 的 lv_line dash 画法
+ * 为参照而非设备落点 (偏离 planner 建议形态声明见交付报告)。 */
+static void p1_draw_aux_dash_sep(void)
+{
+    int y = 42, x0 = 6, x1 = P1_FB_W - 7; /* 左右 6px 内缩 */
+    int dash_on = 3, dash_gap = 3;        /* ~3px 线宽段 + 等宽空段 */
+    int x = x0, on = 1;
+
+    while (x <= x1) {
+        int stop = x + (on ? dash_on : dash_gap) - 1;
+        if (stop > x1) {
+            stop = x1;
+        }
+        if (on) {
+            for (int xx = x; xx <= stop; xx++) {
+                for (int t = 0; t < 3 && (y + t) < P1_FB_H; t++) {
+                    s_p1_fb[(y + t) * P1_FB_W + xx] = P1_COLOR_INK;
+                }
+            }
+        }
+        x = stop + 1;
+        on = !on;
+    }
+}
+
 int kidpal_home_p1_render_frame(void)
 {
     int doze, lr, batt_visible;
@@ -1041,6 +1070,9 @@ int kidpal_home_p1_render_frame(void)
     if (batt_visible) {
         p1_draw_aux_batt();
     }
+
+    /* 辅助条下缘虚线分隔 (r3 §A2): 信息栏之下、日程主体之上画通栏虚点线。 */
+    p1_draw_aux_dash_sep();
 
     /* ② 日程主体：小伴常驻演出（左）+「接下来」最近一项（右）+ 倒计时贴纸。 */
     p1_draw_mascot();

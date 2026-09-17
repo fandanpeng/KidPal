@@ -378,6 +378,12 @@ static const char* const g_kidpal_pose_asset[5] = {
 };
 /* V3 气泡尾巴 (U 闭集修订唯一新增 KAP1: frm-sm 手绘圆角框 + 左下斜切小尾巴). */
 static const char g_kidpal_bubble_tail_asset[] = "bubble_tail_24.bin";
+/* r3-C1 麦克风 (WF-B-01 聆听态标识件, 资产在世 ic_mic_48.bin 补消费接线; 文件名
+ * 含 mic, 与 spiffs_root 闭集同字面锚定). */
+static const char g_kidpal_mic_asset[] = "ic_mic_48.bin";
+/* r3-C2 飘问号 (WF-B-02 思考态标识件; 独立 KAP1 新增闭集, tools/asset-pipeline/
+ * gen_question.mjs 生成 question_96.bin 落 spiffs_root; 文件名含 question). */
+static const char g_kidpal_question_asset[] = "question_96.bin";
 
 static lv_obj_t*   g_kidpal_keybar_left_label  = NULL; /* 三槽·左 KEY 提示槽 (通栏贴底常驻, bottom_bar_ 子件) */
 static lv_obj_t*   g_kidpal_keybar_dots_box     = NULL; /* 三槽·中页点槽容器 (页点子件建其上, bottom_bar_ 子件) */
@@ -419,6 +425,27 @@ static lv_obj_t*   g_kidpal_voice_header_label = NULL; /* 右内容区标头 (�
                                                          「我在听！」, look.bubble 写点由旧
                                                          chat 挂点统一迁此; WF-B 标头位, 挂在
                                                          echo_box 之前 = 回显行在标头下方) */
+/* r3-C 三态标识件 (WF-B-01/02/03): 聆听态麦克风 (ic_mic_48.bin) · 思考态飘问号 x3
+ * (question_96.bin 静态摆, 动画浮动后置) · 播报态声波条 (LVGL 原生矩形 + lv_anim 跳动,
+ * 免管线、动画天然, 与资产闭集治理不冲突 —— 取舍见交付报告)。对象惰性建一次于
+ * apply_look, 场景切换只切 HIDDEN, 不重建不泄漏 (姿态/标识件重建纪律同 pose)。气泡
+ * 尾巴 (bubble_tail_24.bin) 为三态标头的气泡背景件, 随 look.bubble 显隐。 */
+static lv_obj_t*   g_kidpal_mic_img        = NULL;
+static lv_image_dsc_t g_kidpal_mic_dsc;
+static uint32_t*   g_kidpal_mic_px         = NULL;
+static lv_obj_t*   g_kidpal_q_img[3]       = {0};
+static lv_image_dsc_t g_kidpal_q_dsc;
+static uint32_t*   g_kidpal_q_px           = NULL;
+static lv_obj_t*   g_kidpal_bubble_img     = NULL;
+static lv_image_dsc_t g_kidpal_bubble_dsc;
+static uint32_t*   g_kidpal_bubble_px      = NULL;
+static lv_obj_t*   g_kidpal_wave_box       = NULL;
+static lv_obj_t*   g_kidpal_wave_bar[6]    = {0};
+static int         g_kidpal_emblem_built   = 0;  /* 0=未建 1=已建 */
+static int32_t     g_kidpal_wave_phase     = 0;
+static int         g_kidpal_wave_an_running = 0;
+
+static void kidpal_voice_emblem_apply_locked(int scene);
 
 static void kidpal_chrome_mid_sync_locked(void);
 static void kidpal_keybar_sync_locked(void); /* 定义在活分支尾 (SetupUI 之后), 前向声明供 SetupUI 首刷调用 */
@@ -955,7 +982,12 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_pad_bottom(bottom_bar_, lvgl_theme->spacing(2), 0);
     lv_obj_set_style_pad_left(bottom_bar_, lvgl_theme->spacing(4), 0);
     lv_obj_set_style_pad_right(bottom_bar_, lvgl_theme->spacing(4), 0);
-    lv_obj_set_style_border_width(bottom_bar_, 0, 0);
+    /* 底部键帽条上沿 3px 实线分隔 (device-round VQ-A7 r3 §A1; brief §2.3 原文「上沿
+     * 3px 实线分隔」; mock kidpal_ui.c:224-226 同款画法: border_width 3 + border_side
+     * TOP)。旧 border_width 0 写点销账 (LVGL 同属性后写覆盖前写, 残留即被抹平)。 */
+    lv_obj_set_style_border_color(bottom_bar_, lvgl_theme->text_color(), 0);
+    lv_obj_set_style_border_width(bottom_bar_, 3, 0);
+    lv_obj_set_style_border_side(bottom_bar_, LV_BORDER_SIDE_TOP, 0);
     lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     /* chat_message_label_ placed in bottom_bar_ and vertically centered */
@@ -1271,10 +1303,6 @@ static void kidpal_voice_apply_look(int scene)
     int       new_w = 0, new_h = 0;
     int       need_pose = 0;
 
-    /* V3 气泡尾巴资产 (U 闭集修订唯一新增 KAP1) 为气泡完成件, 消费接线见 v3_restore
-     * 齿 (本实现以键帽条 + 姿态为主; 气泡尾巴拼装观感归设计面)。 */
-    (void)g_kidpal_bubble_tail_asset;
-
     /* 五态内容选择单源 (weak 哨兵被强符号覆盖后为真实映射)。 */
     if (kidpal_voice_state_look(scene, &look) != 0 || look.keycap == NULL) {
         return;
@@ -1332,12 +1360,23 @@ static void kidpal_voice_apply_look(int scene)
     g_kidpal_keybar_scene = scene;
     kidpal_keybar_sync_locked();
 
+    /* 三态标识件按场景显隐 (r3-C: 聆听态 mic / 思考态问号 / 播报态声波条 + lv_anim;
+     * 惰性建一次于本函数, 场景切换只切 HIDDEN)。 */
+    kidpal_voice_emblem_apply_locked(scene);
+
     /* 气泡标头文案: 写右内容区标头对象 (g_kidpal_voice_header_label, voice_page 直接
      * 子件; 统一写点由旧底栏 chat 挂点迁至此处 —— 三态标头单源仍从
-     * kidpal_voice_states 闭集取 look.bubble, 不另抄第二份文案来源)。无独立 bubble
-     * 的场景 (REMIND/LOWBATT) 该标头不动。 */
+     * kidpal_voice_states 闭集取 look.bubble, 不另抄第二份文案来源)。气泡尾巴资产
+     * (bubble_tail_24.bin, r3-B) 作标头气泡背景件随 bubble 显隐 —— 三态标头挂进
+     * 气泡形态消费该资产 (适用态 = 三标头态; (void) 闲置已销账)。无独立 bubble 的
+     * 场景 (REMIND/LOWBATT) 该标头与气泡背景不动。 */
     if (look.bubble != NULL && g_kidpal_voice_header_label != NULL) {
         lv_label_set_text(g_kidpal_voice_header_label, look.bubble);
+        if (g_kidpal_bubble_img != NULL) {
+            lv_obj_remove_flag(g_kidpal_bubble_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    } else if (g_kidpal_bubble_img != NULL) {
+        lv_obj_add_flag(g_kidpal_bubble_img, LV_OBJ_FLAG_HIDDEN);
     }
 
     if (need_pose) {
@@ -1382,6 +1421,181 @@ static void kidpal_voice_apply_look(int scene)
     kidpal_chrome_mid_sync_locked();
 
     lvgl_port_unlock();
+}
+
+/* ---- r3-C 三态标识件构建 + 显隐 (C1 mic / C2 飘问号 / C3 声波条 lv_anim) ----
+ * 1bpp KAP1 资产惰性加载进 ARGB 缓冲 -> 建 lv_image, 一次建成后常驻, 场景切换只切
+ * HIDDEN。同姿态纪律: 资产加载在锁内做 (本函数只被 apply_look 锁内调用), 对象树操作
+ * 单点。声波条 = LVGL 原生矩形组 + lv_anim 跳动 (免管线、动画天然, 不与资产闭集治理
+ * 冲突; KAP1 位图备选为返钉路径)。 */
+
+static void kidpal_voice_wave_anim_cb(void* var, int32_t v)
+{
+    (void)var;
+    /* 相位错开 => ▂▄▆▄▂▅▇ 起伏波形 (6 条, 高度随相位/序号变化)。 */
+    for (int i = 0; i < 6; i++) {
+        int32_t h;
+        if (g_kidpal_wave_bar[i] == NULL) {
+            continue;
+        }
+        h = 10 + ((v + i * 13) % 34);
+        if (h < 10) {
+            h = 10;
+        }
+        if (h > 44) {
+            h = 44;
+        }
+        lv_obj_set_height(g_kidpal_wave_bar[i], (lv_coord_t)h);
+    }
+}
+
+/* 1bpp 资产 -> 堆 ARGB 缓冲 + 填充 image dsc (返回的 px 记入 *pxOut 供长期保留)。 */
+static void kidpal_voice_build_art_img(const char* asset, lv_image_dsc_t* dsc,
+                                       uint32_t** pxOut)
+{
+    kidpal_art_img_t img;
+    uint32_t* px;
+
+    if (asset == NULL || dsc == NULL || pxOut == NULL) {
+        return;
+    }
+    if (kidpal_art_load(asset, &img) != 0 || img.w <= 0 || img.h <= 0) {
+        return;
+    }
+    px = (uint32_t*)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (px == NULL) {
+        return;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(dsc, 0, sizeof(*dsc));
+    dsc->header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    dsc->header.w      = (uint32_t)img.w;
+    dsc->header.h      = (uint32_t)img.h;
+    dsc->header.stride = (uint32_t)img.w * 4u;
+    dsc->data          = (const uint8_t*)px;
+    dsc->data_size     = (uint32_t)(img.w * img.h * 4u);
+    *pxOut = px;
+}
+
+static void kidpal_voice_build_emblem_locked(void)
+{
+    /* 气泡尾巴 (r3-B): 标头气泡背景, 三标头态随 look.bubble 显隐 (见 apply_look)。 */
+    if (g_kidpal_bubble_px == NULL) {
+        kidpal_voice_build_art_img(g_kidpal_bubble_tail_asset, &g_kidpal_bubble_dsc,
+                                   &g_kidpal_bubble_px);
+        if (g_kidpal_bubble_px != NULL && g_kidpal_voice_page != NULL) {
+            g_kidpal_bubble_img = lv_image_create(g_kidpal_voice_page);
+            lv_image_set_src(g_kidpal_bubble_img, &g_kidpal_bubble_dsc);
+            lv_obj_set_pos(g_kidpal_bubble_img, 102, 12); /* 标头左缘气泡尾, 观感归真机轮 */
+            lv_obj_add_flag(g_kidpal_bubble_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    /* 麦克风 (C1, 聆听态)。 */
+    if (g_kidpal_mic_px == NULL) {
+        kidpal_voice_build_art_img(g_kidpal_mic_asset, &g_kidpal_mic_dsc,
+                                   &g_kidpal_mic_px);
+        if (g_kidpal_mic_px != NULL && g_kidpal_voice_page != NULL) {
+            g_kidpal_mic_img = lv_image_create(g_kidpal_voice_page);
+            lv_image_set_src(g_kidpal_mic_img, &g_kidpal_mic_dsc);
+            lv_obj_set_pos(g_kidpal_mic_img, 130, 52); /* 右内容区, 观感归真机轮 */
+            lv_obj_add_flag(g_kidpal_mic_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    /* 飘问号 x3 (C2, 思考态静态摆, 动画浮动后置)。 */
+    if (g_kidpal_q_px == NULL) {
+        kidpal_voice_build_art_img(g_kidpal_question_asset, &g_kidpal_q_dsc,
+                                   &g_kidpal_q_px);
+        if (g_kidpal_q_px != NULL && g_kidpal_voice_page != NULL) {
+            for (int i = 0; i < 3; i++) {
+                g_kidpal_q_img[i] = lv_image_create(g_kidpal_voice_page);
+                lv_image_set_src(g_kidpal_q_img[i], &g_kidpal_q_dsc);
+                lv_obj_set_pos(g_kidpal_q_img[i], 338 - i * 36, 56 + (i == 1 ? 6 : 0));
+                lv_obj_add_flag(g_kidpal_q_img[i], LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+    }
+    /* 声波条 (C3, 播报态, LVGL 原生矩形 + lv_anim)。 */
+    if (g_kidpal_wave_box == NULL && g_kidpal_voice_page != NULL) {
+        g_kidpal_wave_box = lv_obj_create(g_kidpal_voice_page);
+        lv_obj_remove_style_all(g_kidpal_wave_box);
+        lv_obj_set_size(g_kidpal_wave_box, 160, 48);
+        lv_obj_set_pos(g_kidpal_wave_box, 156, 120);
+        lv_obj_set_style_bg_opa(g_kidpal_wave_box, LV_OPA_TRANSP, 0);
+        lv_obj_clear_flag(g_kidpal_wave_box, LV_OBJ_FLAG_SCROLLABLE);
+        for (int i = 0; i < 6; i++) {
+            g_kidpal_wave_bar[i] = lv_obj_create(g_kidpal_wave_box);
+            lv_obj_remove_style_all(g_kidpal_wave_bar[i]);
+            lv_obj_set_size(g_kidpal_wave_bar[i], 14, 10);
+            lv_obj_set_pos(g_kidpal_wave_bar[i], i * 22, 0);
+            lv_obj_set_style_radius(g_kidpal_wave_bar[i], 7, 0);
+            lv_obj_set_style_bg_color(g_kidpal_wave_bar[i], lv_color_hex(0x000000), 0);
+            lv_obj_set_style_bg_opa(g_kidpal_wave_bar[i], LV_OPA_COVER, 0);
+        }
+        lv_obj_add_flag(g_kidpal_wave_box, LV_OBJ_FLAG_HIDDEN);
+    }
+    g_kidpal_emblem_built = 1;
+}
+
+static void kidpal_voice_emblem_apply_locked(int scene)
+{
+    int want_mic = 0, want_q = 0, want_wave = 0;
+
+    if (!g_kidpal_emblem_built) {
+        kidpal_voice_build_emblem_locked();
+    }
+    switch (scene) {
+    case KVST_SCENE_LISTEN:
+        want_mic = 1;
+        break;
+    case KVST_SCENE_THINK:
+        want_q = 1;
+        break;
+    case KVST_SCENE_TALK:
+        want_wave = 1;
+        break;
+    default:
+        break;
+    }
+    if (g_kidpal_mic_img != NULL) {
+        if (want_mic) {
+            lv_obj_remove_flag(g_kidpal_mic_img, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(g_kidpal_mic_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        if (g_kidpal_q_img[i] != NULL) {
+            if (want_q) {
+                lv_obj_remove_flag(g_kidpal_q_img[i], LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(g_kidpal_q_img[i], LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+    }
+    if (g_kidpal_wave_box != NULL) {
+        if (want_wave) {
+            lv_obj_remove_flag(g_kidpal_wave_box, LV_OBJ_FLAG_HIDDEN);
+            if (!g_kidpal_wave_an_running) {
+                lv_anim_t a;
+                lv_anim_init(&a);
+                lv_anim_set_var(&a, &g_kidpal_wave_phase);
+                lv_anim_set_values(&a, 0, 127);
+                lv_anim_set_duration(&a, 700);
+                lv_anim_set_path_cb(&a, lv_anim_path_linear);
+                lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
+                lv_anim_set_exec_cb(&a, kidpal_voice_wave_anim_cb);
+                lv_anim_start(&a);
+                g_kidpal_wave_an_running = 1;
+            }
+        } else {
+            lv_obj_add_flag(g_kidpal_wave_box, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
 }
 
 /* -------------------------------------------------------------------------- *

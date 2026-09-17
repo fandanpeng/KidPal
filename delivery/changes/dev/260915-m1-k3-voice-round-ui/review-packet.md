@@ -244,3 +244,57 @@ planner intake 核实：`art_assets.c` 闭集**无 question/问号资产**（只
 ### 修复轮待 supervisor 裁断（r2 增量）
 
 r2 增量：scoped r8 + final r9 全绿（checker PASS）、host 25/0（24 基线 + TEST 7 三齿）、mutation +5 全 sensitive、零新增 BLOCKING finding、问号图标 fail-closed 上报项显式登记（归后续资产批）、VQ-A7 维持 PENDING（human 第 3 轮持板观感确认）。integrator 判定：r2 修复轮可进合并门，与首轮及 r1 修复轮收口合并裁断。
+
+## 修复轮 addendum r3（静态盘点补齐）
+
+> 2026-09-17 human 拍板「静态盘点先干、真机照片后置精修」（pod-events eventId `2bb41d6a-76c4-41f7-b756-a562486f04b2`，human-decision `device-round-vqa7-r3-static-inventory`）——r3 补齐轮 = Chrome 两条分隔线 + bubble_tail 气泡尾巴接线 + 缺资产扩闭集（mic/问号/声波条）+ D 精修后置不做。证据 = [device-round-vqa7-r3.md](device-round-vqa7-r3.md)。本节为增量收口：五处静态摆修复 + 增补齿 TEST 8（五 tooth）+ scoped r10 绿 + final r11 绿，零状态机/逻辑改动，r1/r2 修复面零回改（映射表 `voice_round.c` 零触碰）。
+
+### r3 静态盘点五处 ↔ 修复 ↔ 增补齿（TEST 8）↔ 复验对照表
+
+| 派单项（device-round-vqa7-r3） | 修复（fixer 落地） | 增补齿（acceptance-author，TEST 8 单独成节，既有 TEST 1-7 零改动） | 复验证据 |
+|---|---|---|---|
+| §A1 底部键帽条上沿 3px 实线分隔（brief §2.3 原文；现 bottom_bar_ border_width=0） | lcd_display.cc：bottom_bar_ 创建区域内补 `border_color` + `border_width 3` + `LV_BORDER_SIDE_TOP` 三写点（mock kidpal_ui.c:224-226 同款画法）；旧 `border_width 0` 写点销账（LVGL 同属性后写覆盖前写，残留即抹平） | tooth 1：创建区域内 `LV_BORDER_SIDE_TOP` + `border_width(bottom_bar_, 3` 双 needle ≥1；反证齿 = 残留 `border_width(bottom_bar_, 0` 写点 ==0 | r10 scoped 7 闸全绿（ok:true，exit 0，invocationId `26d850d9-627f-4c9a-8752-a42dddd18ab8`）+ r11 final 9 闸全绿（ok:true，exit 0，invocationId `1ae7c32b-6612-469c-b6db-b6d2f4f86c5d`）；host 26/0 含 TEST 8 全齿（见下复验段） |
+| §A2 首页顶部信息栏下方虚线（design 稿 P1 辅助条节几何锚明确，不 fail-closed） | **home_p1.c 软帧自绘**：新增 `p1_draw_aux_dash_sep()`（y=42、左右 6px 内缩、3px 段 dash_on/dash_gap 等宽虚点线，软帧整帧 blit 前画入 s_p1_fb） | tooth 2：home_p1.c 内 dash/dot/虚线/点线 任一形态 needle ≥1（画法存在性齿；几何观感归真机轮） | 同上 r10/r11 全绿 |
+| §B bubble_tail_24.bin 气泡尾巴接线（apply_look 现状 (void) 闲置） | lcd_display.cc：apply_look 气泡标头段——有 look.bubble 的三标头态显 `g_kidpal_bubble_img`（标头左缘气泡尾背景件，惰性建一次挂 voice_page），无 bubble 态隐藏；**消费销账**（(void) 闲置写点删除） | tooth 3：a) firmware/main 树内 bubble_tail_24.bin 引用不断（归档齿 v3_restore 同形态断言承接，消费不断红线）+ b) apply_look 区域内气泡尾巴引用 ≥1 + c) 反证齿 = `(void)g_kidpal_bubble_tail_asset` 残留 ==0 | 同上 r10/r11 全绿 |
+| §C1 麦克风图标（WF-B-01 聆听态标识件）——资产已在世（ic_mic_48.bin）缺消费 | lcd_display.cc：`kidpal_voice_build_art_img` 1bpp KAP1 → ARGB 缓冲 → lv_image，`g_kidpal_mic_img` 惰性建一次挂 voice_page，LISTEN 态显隐（apply_look 场景切换只切 HIDDEN，不重建不泄漏） | tooth 4 前半：spiffs_root 文件名含 mic 的 .bin ≥1（现状绿守卫半）+ 活侧 lcd_display.cc 消费同名资产 ≥1 | 同上 r10/r11 全绿 |
+| §C2 问号（WF-B-02 思考态飘问号 ×3）——spiffs_root 零在世，两路评估取一 | **独立 KAP1 新资产**：`tools/asset-pipeline/gen_question.mjs`（自绘简笔问号剪影，96×96 1bpp KAP1）生成 `spiffs_root/question_96.bin`；`g_kidpal_q_img[3]` 三位置静态摆（THINK 态显隐），**动画浮动后置** | tooth 4 后半：spiffs_root 文件名含 question 的 .bin ≥1 + 活侧消费同名 ≥1 | 同上 r10/r11 全绿 |
+| §C3 声波条（WF-B-03 播报态）——两路评估取一 | **LVGL 原生矩形 + lv_anim**：`g_kidpal_wave_box`（6 条圆角矩形条，remove_style_all 自绘黑条）+ `lv_anim` 700ms 线性无限循环，相位错开高度起伏；TALK 态显隐并启动动画（免管线、动画天然） | tooth 5：apply_look 区域内 lv_anim 写点 ≥1（创建/启停段字面不锁；态级绑定观感归真机轮） | 同上 r10/r11 全绿 |
+
+**取舍说明**：① C2 问号取独立 KAP1 资产路线（备选 imgfont 加 '?' 字形 = 返钉路径）——贴近管线现状（gen_question.mjs 照既有 KAP1 冻结格式幂等重跑，art 分区 spiffsgen 0x80000 构建实测通过），且三位置静态摆同资产复用、与 imgfont 闭集（数字/字母/冒号/百分号）治理互不干扰；② C3 声波条取 LVGL 原生路线（备选 KAP1 位图帧 = 返钉路径）——跳动动画用 lv_anim 天然表达，位图帧需多帧资产且动效僵硬，与「资产闭集」治理不冲突（非位图资产不进 KAP1 闭集）。两处返钉路径均在 TEST 8 尾注「增补齿义务红形态（r3）」段登记。
+
+**偏离说明（A2 落点）**：planner 派单建议画法 = mock kidpal_ui.c:197-204 的 lv_line dash 对象画法；设备首页实况 = home_p1.c 软帧整帧渲染单源（400×300 帧 blit），LVGL 对象画法会被帧 blit 覆盖——故落点改软帧自绘（mock 画法为参照、dash/dot 语义同源），TEST 8 tooth 2 按设备实况钉软帧侧画法存在性，非对 design 稿几何的偏离（左右 6px 内缩等几何锚已入实现注释，像素级观感归真机轮）。
+
+**D 后置声明**：内容区描边卡/框感精修 + 三态元素位置精调 = human 明令后置（等真机照片比对下一轮），**本轮零内容区边框改动**，TEST 8 无对应齿（coverage map 显式登记「无齿条目」）。
+
+### 增补齿 mutation 回填
+
+taskpackage `mutationEvidence.perAcceptance` 增 5 条（M-r3-T1 底条分隔样式塌陷 / M-r3-T2 软帧 dash 画绘删除 / M-r3-T3 bubble_tail 消费回退 (void) 闲置 / M-r3-T4 问号资产+消费删除 / M-r3-T5 声波动画载体删除），逐条 `failed as expected`（各自对应 TEST 8 齿红）。
+
+### r3 复验证据（integrator 现跑，2026-09-17）
+
+1. verifier scoped r10 + final r11 fact 均 `ok:true` / observedGateExit 0；r11 final 9 闸逐闸 ok（taskpackage-required / firmware-build / contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit / acceptance，unit 37 passed）。`delivery/taskpackages/current/verdict.json` = verify.mjs fs-write 投影（non-bearing，与 r11 fact 同源）。changes/dev 目录 verdict.json/verification.json 缺席 = closeout-check advisory-only（机器件 R11 禁 agent 落盘；近期 Pod 包同口径，维持不补）。
+2. host runner 全量 verbatim（WSL，绝对路径入参，integrator 现跑）：
+   - build：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build` → `ninja: no work to do. Done`，exit 0（构建缓存与源面一致，fixer 轮已建）；
+   - run：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/build/host_infra_test.elf` → 末三行 verbatim：`26 Tests 0 Failures 0 Ignored` / `OK`，exit 0。**26 = 25 前基线 + TEST 8（1 test case，五 tooth）**。
+3. `closeout-check.mjs --read-only`：`ok:true`，exit 0（requiredFiles docs-delta.md + review-packet.md 在场；advisory 两条 non-bearing：① machine evidence 投影 advisory——见上 1，不补；② loop-retro 触发阈值提示，发起责任 = 主线程，非本包 gate）。
+4. firmware-build（r10/r11 闸内真编译）：xiaozhi.bin **0x30b6b0**，app 分区 0x370000，0x64950（**11%**）free（较 r2 轮 0x30b110 净增 ~0x5a0 字节，资源面无虞）；art 分区 spiffsgen 0x80000（512KB）含 question_96.bin 构建实测通过。
+5. 影响面（11b，worktree）：detect_changes 仍 **N/A (worktree)**；本轮 diff 落在预期闭集（firmware 3 件：home_p1.c / lcd_display.cc / voice_round_ui.acceptance.c + 治理面：taskpackage ×2 / pod-events / verify-runs / r10-r11 fact / supervisor-verdict / device-round-vqa7-r3.md / 本 addendum / tools/asset-pipeline/gen_question.mjs / spiffs_root/question_96.bin），无计划外文件；`docs/contracts/**`、`docs/requirements.md`、映射表 `voice_round.c` 零触碰（r10/r11 contract-lint + docs-sync 闸绿背书）。
+
+### 修复轮 findings 增量（r3）
+
+| Severity | Kind | Area | Finding | Basis | Required action |
+|---|---|---|---|---|---|
+| 无 BLOCKING | — | — | — | — | — |
+
+（r3 轮零新增 finding：acceptance-author 增补齿 + fixer 落地 + verifier r10/r11 两轮全绿；pod-events r3 段 = human-decision 1 条 + dispatch-completed 2 条，无 friction。）
+
+### 修复轮 Residual Risk 更新（r3）
+
+- r2 轮「问号图标缺资产 fail-closed」residual **销账**：question_96.bin 已落地 + 三位置静态摆消费（C2）；动画浮动后置归真机轮观感判断。
+- 新增：三态标识件（mic/问号/声波条）与气泡尾巴、两条分隔线的**像素级观感（含 1bpp 阈值观感）未经真机确认**——归 VQ-A7 真机轮（见下）。
+- **VQ-A7 状态维持 PENDING（第 3 轮观感确认）**：r2 功能四项全通 + r3 静态盘点落地后，剩余观感面（分隔线几何、气泡尾巴拼装、资产观感与 1bpp 阈值、声波跳动动效）待 human 第 3 轮持板确认；不因 r3 转 PASS。
+- decisionCoverage：本轮增 5 条 mutation 记录（landsIn acceptance），仍**无 `landsIn: dropped` 条目**，无 risk-accepted 项需列。
+
+### 修复轮待 supervisor 裁断（r3 增量）
+
+r3 增量：scoped r10 + final r11 全绿、host 26/0（25 基线 + TEST 8 五齿）、mutation +5 全 sensitive、closeout-check 只读 exit 0、零新增 BLOCKING finding、A2 软帧落点偏离声明与 C2/C3 取舍说明在案、D 精修后置零触碰、VQ-A7 维持 PENDING（human 第 3 轮持板观感确认，含 1bpp 阈值与资产观感）。integrator 判定：r3 补齐轮可进合并门，与首轮及 r1/r2 修复轮收口合并裁断；merge 冻结等主线程点火。
