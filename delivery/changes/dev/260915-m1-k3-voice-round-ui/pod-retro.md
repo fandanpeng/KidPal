@@ -50,3 +50,9 @@
 - **取证先行又赢了一轮**:主线程串口日志 + 代码复读把三根因钉到行号,fixer 一轮全清——对比 k2 期「盲修两轮才上仪器化」,这次是反过来先仪器后动手,fixBudget 只烧 1。
 - **feed 锚假红坑**:fixer 修复注释里逐字写了禁针 token,结构齿扫注释命中假红——「树扫含注释」这个齿特性值得写进所有后续修复轮派单(已落 friction c721520b)。
 - **write-once 闸与修复轮的兼容性待观察**:supervisor-verdict.json 首轮已 write-once,修复轮重跑闸的落账行为见本轮记录。
+
+## 修复轮 r2 追加(标头件,2026-09-17)
+
+- **design-review 留白的消解姿势干净**:THINK/TALK bubble 当初锁 NULL(注释「归 design review 不锁」),human 复测指令即裁定(「思考中」/「播报」)——留白字段等 design review 而非硬编码,这次兑现了当初的留白设计意图;acceptance-author 增补 TEST 7 时主动核了与 TEST 4 的断言面关系(无冲突、新权威声明),没造成齿内互斥。
+- **小修轮节奏健康**:取证四点我 intake 直读钉底(bubble 现值/旧挂点/资产闭集/§2.2 口径)→ 增补齿 → fixer 一轮全清 → verifier r8/r9 一次绿。fixBudget 未动,标准「齿先行红、实现转绿」形态。
+- **问号图标缺资产是唯一开口**:art 闭集无 question 资产,文案标头先行、图标 fail-closed 上报——资产批(工具链 gen_assets)归后续包,review-packet 已登记。
