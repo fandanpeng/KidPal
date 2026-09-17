@@ -56,3 +56,9 @@
 - **design-review 留白的消解姿势干净**:THINK/TALK bubble 当初锁 NULL(注释「归 design review 不锁」),human 复测指令即裁定(「思考中」/「播报」)——留白字段等 design review 而非硬编码,这次兑现了当初的留白设计意图;acceptance-author 增补 TEST 7 时主动核了与 TEST 4 的断言面关系(无冲突、新权威声明),没造成齿内互斥。
 - **小修轮节奏健康**:取证四点我 intake 直读钉底(bubble 现值/旧挂点/资产闭集/§2.2 口径)→ 增补齿 → fixer 一轮全清 → verifier r8/r9 一次绿。fixBudget 未动,标准「齿先行红、实现转绿」形态。
 - **问号图标缺资产是唯一开口**:art 闭集无 question 资产,文案标头先行、图标 fail-closed 上报——资产批(工具链 gen_assets)归后续包,review-packet 已登记。
+
+## 修复轮 r3 追加(静态盘点补齐,2026-09-17)
+
+- **软帧 vs 对象两个渲染模型差点造出假红齿**:首页是软帧 blit 单源(lv_line 对象画了也会被整帧覆盖),acceptance-author 核实后把 tooth 2 落点改到 home_p1.c 软帧侧——「先核被测面的渲染模型再钉锚」和 r1 的「先核 canary token 在世实况」同属一类前置,值得进增补齿 checklist。
+- **「资产在世零消费」是独立于「资产缺失」的病型**:mic 资产早在闭集里、消费为零——intake 只核「有没有」会漏掉「用没用」。本轮齿把存在半作绿守卫、消费半作红,一个 tooth 两种牙。
+- 管线扩展走了 bubble_tail 独立生成器先例(gen_question.mjs),verify_art_assets.mjs 硬编码主 worktree 路径在隔离 worktree 不适用——工具面路径假设值得治理批收敛(小,登记不立包)。
