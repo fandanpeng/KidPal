@@ -162,6 +162,24 @@ TaskPackage 无 UIUX 工作面（固件修复批、无新 UI 面、无 uiux 派�
 
 verifier final fact 9 闸全绿（checker PASS，r4 含 unit/acceptance full 实跑）；红基线 35/1（义务红）→ 终跑 35/0/0 零新增红；FX-A1 RED→GREEN 已声明且 mutation 反证封死 vacuous；mutation 5 变异 / 3 acceptance 全 sensitive；docs-sync/security 绿；builder deviceBuildCaveat 由设备真编译消解；五轴 review 无 BLOCKING；RM-A8 真机轮 pending（FX-A2/A3/A7 + FX-A6 真机半 + 模拟器截图缺口，全部归属 human 持板轮，planner 裁定已落账）；F0 如实移交未顺手修。integrator 判定：可进合并门；RM-A8 pending 状态与两条 NIT 提请 supervisor 一并裁断。
 
+## RM-A8 真机确认轮 human 裁决补充（2026-09-17）
+
+> 本节为合并链前追加节（append，不改动上文任何既有节）。human 裁决逐字证据见 [device-round-2.md](./device-round-2.md)；裁决锚 pod-events human-decision `a4f89467-8038-4878-98f3-1ec4c2979aa7`（2026-09-17）。
+
+1. **FX-A2 / FX-A3 状态转移：deferred → 真机实证通过**——human 持板真机轮目击确认：F1 三方互证（设备侧 `alert_receipt ack=true dequeued=true` + 网关 `alert_ack attempts=2` + TTS 单次播放、无 60s 重推）；F2 串口 + 目击（`voice_look_skip reason=reminder_persist` 拦截 TALK/LISTEN、弹窗全程 top=5 驻留 + KEY 关闭回当前页）。上文验收对照表中 FX-A2 / FX-A3 两行的 PENDING RM-A8 状态以此节为准更新为真机实证通过；上文「Residual Risk / 遗留与移交」节中 RM-A8 pending 表述同样以此节收口。
+2. **弹窗字号 14px 裁定：接受**——主线程核验弹窗与对话同为 `font_puhui_14_1` 14px；human 裁定接受，约束理由 = 字体资产限制（全量 30px 超分区、稀疏子集缺字形），观感由排版承载；**不另开批**。
+3. **合并批准**：human 批准升裁合并（approve-escalated-merge）——机械 supervisor verdict ESCALATE（riskTier=high）事项由 human 真机目击后放行。
+4. **FX-A7 四项清单覆盖进度更新**：
+
+| 项 | 原状态（上文 FX-A7 节） | 现状态 |
+|---|---|---|
+| 弹窗演出（骨架/三件套） | pending RM-A8 | ✓ 真机实证通过（F1+F2 合并效果） |
+| 最高层覆盖 | pending RM-A8 | ✓ 真机实证通过（top=5 全程驻留，不被 speaking 态覆盖） |
+| 录音排队例外 | pending RM-A8 | pending 合并后重跑轮（机制面 TEST 1 tooth2 + TEST 7 + MUT-FX-A5 已绿） |
+| 模拟器截图 | pending RM-A8 | pending 合并后重跑轮（planner 裁定归属不变，随轮顺带补） |
+
+5. **剩余项去向**：BOOT 键位 / 录音排队例外 / 模拟器截图三项随合并后重跑轮补测，证据落本目录（device-round-2.md 第 6 节清单）。
+
 ---
 
 **固件严格模式声明：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开）**——本包 verifier final r4 firmware-build 闸为真编译（9.6s，ninja 实跑，xiaozhi.bin 产出），声明行随卡走不得省。
