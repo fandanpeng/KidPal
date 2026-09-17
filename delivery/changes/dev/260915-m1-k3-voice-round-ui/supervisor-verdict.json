@@ -3,7 +3,7 @@
   "riskTier": "medium",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-09-17T04:56:52.644Z",
+  "ts": "2026-09-17T05:20:07.754Z",
   "changeId": "260915-m1-k3-voice-round-ui",
   "originType": "delivery-story",
   "adjudication": {
