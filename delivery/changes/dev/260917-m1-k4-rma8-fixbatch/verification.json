@@ -1,0 +1,37 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r4.json)",
+  "changeId": "260917-m1-k4-rma8-fixbatch",
+  "phase": "final",
+  "round": 4,
+  "invocationId": "14a340ac-9e45-4bc3-8ebd-ba4966fd6d72",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260917-m1-k4-rma8-fixbatch/verifier-evidence/rounds/r4.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-17T14:01:31.229Z",
+    "completedAt": "2026-09-17T14:01:45.195Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 198, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9583, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 产出）——builder deviceBuildCaveat 消解" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 153, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 153, "timing": "scoped" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 167, "timing": "scoped" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 152, "timing": "scoped" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 144, "timing": "scoped" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 3039, "timing": "full", "note": "37 passed" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 224, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=19 / serverAcceptanceFiles=0" }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 260917-m1-k4-rma8-fixbatch --phase final --round 4 --invocation-id 14a340ac-9e45-4bc3-8ebd-ba4966fd6d72",
+    "exit": 0,
+    "output": {"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/260917-m1-k4-rma8-fixbatch/verifier-evidence/rounds/r4.json","factOk":true,"observedGateExit":0,"phase":"final","round":4}
+  },
+  "note": "advisory-only projection；closeout 判断必须来自 validated final fact（r4.json，bearing）。red trajectory r1（coverage marker 语法）/r2（mutation evidence 缺失）均已消解，轨迹在案 rounds/r1-r2.json。"
+}

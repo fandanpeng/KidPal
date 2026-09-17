@@ -1,0 +1,31 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "260917-m1-k4-rma8-fixbatch",
+  "ts": "2026-09-17T14:01:45.203Z",
+  "phase": "final",
+  "round": 4,
+  "invocationId": "14a340ac-9e45-4bc3-8ebd-ba4966fd6d72",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/260917-m1-k4-rma8-fixbatch/verifier-evidence/rounds/r4.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 9,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "FX-A1：红基线 35 Tests/1 Failure（义务红 TEST 9，acceptance.c:1208，@f0a650e）→ final 35/0/0（TEST 9 PASS:1190）；MUT-FX-A1 反证在案",
+    "redTrajectory": "r1 acceptance-coverage（coverage marker 语法）/ r2 mutation-check（evidence 缺失）均已消解",
+    "demoReconciliation": "见 review-packet.md Demo 对账行——修复方向与 device-round-1 根因钉死方向逐条一致；真机演出 pending RM-A8（human 持板）",
+    "fxA7Ruling": "模拟器截图缺口随 RM-A8 确认轮重跑一并消解（不拆独立批）；FX-A2/A3/A6 真机半 pending RM-A8",
+    "f0": "不在本包（FX-E3），移交 ARQ/独立批；deviceBuildCaveat 已由 final firmware-build 闸消解",
+    "detectChanges": "N/A (worktree)；替代抽查 = git diff --stat 闭集 + 共享符号 grep（kidpal_reminder_mark_rendered 生产闭集 1 处 / kidpal_voice_apply_look 消费闭集相容），详见 review-packet.md 影响面核对节",
+    "humanRulingSupplement20260917": "human 裁决补充（pod-events a4f89467-8038-4878-98f3-1ec4c2979aa7）：approve-escalated-merge；FX-A2/FX-A3 deferred→真机实证通过（F1 ack=true dequeued=true + alert_ack attempts=2 + 单次 TTS；F2 voice_look_skip + top=5 驻留 + KEY 回当前页）；弹窗字号 14px human 接受（字体资产约束，不另开批）；FX-A7 剩余项（BOOT 键位/录音排队例外/模拟器截图）随合并后重跑轮补测——逐字证据见 device-round-2.md 与 review-packet.md 追加节"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。"
+}
