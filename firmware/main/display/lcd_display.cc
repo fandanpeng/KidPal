@@ -400,9 +400,15 @@ static int         g_kidpal_pose_st   = 0; /* 0=未试 1=可用 2=不可用 */
 static int         g_kidpal_pose_scene = -1;
 
 /* 语音轮演出容器 (包 260915-m1-k3-voice-round-ui, [3] 聆听回显区 + 问答框):
- * 左小伴 (各态 pose 挂 emoji_box_) · 右内容区同骨架 —— 两容器均可滚动
+ * 左小伴 (各态 pose 挂 pose 挂点) · 右内容区同骨架 —— 两容器均可滚动
  * (LV_OBJ_FLAG_SCROLLABLE, VQ-A2/A3)。回显区 = 逐句累积, 新句 push 后整列重建;
- * 问答框 = 答案全文长文滚动。设备侧只消费纯逻辑单源返回值, 零重抄。 */
+ * 问答框 = 答案全文长文滚动。设备侧只消费纯逻辑单源返回值, 零重抄。
+ * device-round VQ-A7 r1 修复面③: 两容器脱离裸挂 screen 顶层 (旧形态挂默认首屏,
+ * 该屏归一屏后不再加载 = 永不可见), 改挂语音轮整页版式容器 g_kidpal_voice_page
+ * (常驻 lv_layer_top, 显隐由 chrome 中部显隐纪律单点驱动)。 */
+static lv_obj_t*   g_kidpal_voice_page        = NULL; /* 语音轮整页版式容器 (WF-B 左小伴·右内容区,
+                                                      活跃期整页盖住首页内容, 常驻 layer_top) */
+static lv_obj_t*   g_kidpal_pose_box          = NULL; /* 左小伴 pose 挂点 (WF-B 左列, 96×96) */
 static lv_obj_t*   g_kidpal_voice_echo_box    = NULL; /* 聆听话语回显区容器 (「我在听！」
                                                        标识下方, 可滚动) */
 static lv_obj_t*   g_kidpal_voice_echo_label  = NULL; /* 回显区内容缓存对象 (整列文本) */
@@ -995,49 +1001,81 @@ void LcdDisplay::SetupUI() {
      * (boot 期 layer 栈空 -> overlay_top=0, get_page=KP_PAGE_HOME) —— 首页基层即落字。 */
     kidpal_keybar_sync_locked();
 
-    /* 五态姿态图父容器 = 表情区 emoji_box_ (xiaozhi 聊天 chrome 一员, 随 chrome
-     * reparent 常驻聊天层): 姿态挂进 chrome 子树而非裸挂 lv_layer_top(), 归
-     * PKG-2 聊天 chrome 生命周期管辖 (RP-A5 修复; 真机「每页出猫 / 叠首页时间」
-     * 根因 = 裸挂 top layer 绕过层仲裁 + 旧图不删堆叠)。 */
-    g_kidpal_pose_parent = emoji_box_;
+    /* 语音轮整页版式 (device-round VQ-A7 r1 修复面③; WF-B-01~03 冻结线框 = 语音轮
+     * 四态同一版式骨架「左小伴 pose · 右内容区」, requirements v1.24 human 冻结 +
+     * UIUX-DESIGN-BRIEF §5 语音轮四态行同锚): 语音轮活跃 (五态演出 + VOICE 前台) 时
+     * 整页盖住首页内容 —— 首页猫遮蔽销账取「整页版式盖住」形态 (冻结线框无首页内容,
+     * 非单屏模型冲突, 零冻结稿改动)。容器常驻 lv_layer_top 且创建序先于 chrome 迁移
+     * (板级装配 KidPalReparentChatToLayer 后迁) -> 键帽条/状态栏等 chrome 浮其上任何
+     * 状态可见; 默认隐藏, 显隐单点 = kidpal_chrome_mid_sync_locked。 */
+    g_kidpal_voice_page = lv_obj_create(lv_layer_top());
+    lv_obj_set_size(g_kidpal_voice_page, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_style_bg_color(g_kidpal_voice_page, lvgl_theme->background_color(), 0);
+    lv_obj_set_style_bg_opa(g_kidpal_voice_page, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(g_kidpal_voice_page, 0, 0);
+    lv_obj_set_style_border_width(g_kidpal_voice_page, 0, 0);
+    lv_obj_set_style_pad_all(g_kidpal_voice_page, 0, 0);
+    lv_obj_clear_flag(g_kidpal_voice_page, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
+
+    /* 左小伴 pose 挂点 (WF-B 左列, 96×96 左上; pose 图由 apply_look 在此容器居中,
+     * 姿态不再 96×96 居中叠首页猫。像素级落位归真机轮 VQ-A7 观感微调)。 */
+    g_kidpal_pose_box = lv_obj_create(g_kidpal_voice_page);
+    lv_obj_set_size(g_kidpal_pose_box, 96, 96);
+    lv_obj_set_pos(g_kidpal_pose_box, 16, 36);
+    lv_obj_set_style_bg_opa(g_kidpal_pose_box, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(g_kidpal_pose_box, 0, 0);
+    lv_obj_set_style_pad_all(g_kidpal_pose_box, 0, 0);
+    lv_obj_clear_flag(g_kidpal_pose_box, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 五态姿态图父容器 = 语音轮整页版式左列 pose 挂点 (WF-B 骨架; 原挂 emoji_box_
+     * 居中 = 叠首页猫缺陷面, VQ-A7 r1 事实④)。笑脸 label/图仍住 emoji_box_ (chrome
+     * 中部显隐纪律管互斥, 演出期隐、非演出期回)。 */
+    g_kidpal_pose_parent = g_kidpal_pose_box;
     g_kidpal_emoji_label = emoji_label_;
     g_kidpal_emoji_image = emoji_image_;
 
-    /* 语音轮演出容器创建 (包 260915-m1-k3-voice-round-ui, [3] 聆听回显区 + 问答框):
-     * 左小伴 (各态 pose 挂 emoji_box_) · 右内容区两容器同骨架 —— 均可滚动
-     * (LV_OBJ_FLAG_SCROLLABLE, VQ-A2/A3:「我在听！」下方逐句回显 / 答案全文长文滚动
-     * 看完, 回引 NFR-READ-1)。容器建在 chrome 挂点下, 随聊天 chrome 常驻任何页。
-     * 回显/问答对象 (file-static) 供活 SetChatMessage 按 role 路由消费。 */
-    g_kidpal_voice_echo_box = lv_obj_create(screen);
+    /* 右内容区两容器 (WF-B 右列, x = 16+96+12 = 124, 宽 = 400-124-12 = 264; 同一内容
+     * 区按场景互斥显隐: LISTEN/THINK -> 回显区, TALK -> 问答框, 同步点同上)。均整块
+     * 占满右列 (固定高度 = 滚动机制有界承载, VQ-A2「超屏高滚出」/VQ-A3「长文滚动
+     * 看完」); 回显/问答对象 (file-static) 供活 SetChatMessage 按 role 路由消费。 */
+    g_kidpal_voice_echo_box = lv_obj_create(g_kidpal_voice_page);
     lv_obj_set_style_bg_opa(g_kidpal_voice_echo_box, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(g_kidpal_voice_echo_box, 0, 0);
     lv_obj_set_style_pad_all(g_kidpal_voice_echo_box, 0, 0);
-    lv_obj_set_size(g_kidpal_voice_echo_box, LV_HOR_RES * 0.7, LV_SIZE_CONTENT);
+    lv_obj_set_size(g_kidpal_voice_echo_box, 264, 216);
+    lv_obj_set_pos(g_kidpal_voice_echo_box, 124, 36);
     lv_obj_set_scroll_dir(g_kidpal_voice_echo_box, LV_DIR_VER);
     lv_obj_add_flag(g_kidpal_voice_echo_box, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(g_kidpal_voice_echo_box, LV_SCROLLBAR_MODE_AUTO);
-    lv_obj_align(g_kidpal_voice_echo_box, LV_ALIGN_TOP_MID, 0, lvgl_theme->spacing(10));
     g_kidpal_voice_echo_label = lv_label_create(g_kidpal_voice_echo_box);
     lv_label_set_long_mode(g_kidpal_voice_echo_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(g_kidpal_voice_echo_label, LV_HOR_RES * 0.7);
+    lv_obj_set_width(g_kidpal_voice_echo_label, 264);
     lv_obj_set_style_text_align(g_kidpal_voice_echo_label, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_color(g_kidpal_voice_echo_label, lvgl_theme->text_color(), 0);
+    /* 全量字体: 孩子话语中文字形全覆盖 (LVGL 默认字体无中文字形 = 整段空白零上屏,
+     * device-round VQ-A7 r1 事实③; 对照 keybar font_puhui_14_1 先例同形态。14px =
+     * NFR-READ-1 1bpp CJK 可读性下限定案档, 全量 puhui 非 basic 稀疏子集)。 */
+    lv_obj_set_style_text_font(g_kidpal_voice_echo_label, &font_puhui_14_1, 0);
     lv_label_set_text(g_kidpal_voice_echo_label, "");
 
-    g_kidpal_voice_answer_box = lv_obj_create(screen);
+    g_kidpal_voice_answer_box = lv_obj_create(g_kidpal_voice_page);
     lv_obj_set_style_bg_opa(g_kidpal_voice_answer_box, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(g_kidpal_voice_answer_box, 0, 0);
     lv_obj_set_style_pad_all(g_kidpal_voice_answer_box, 0, 0);
-    lv_obj_set_size(g_kidpal_voice_answer_box, LV_HOR_RES * 0.8, LV_SIZE_CONTENT);
+    lv_obj_set_size(g_kidpal_voice_answer_box, 264, 216);
+    lv_obj_set_pos(g_kidpal_voice_answer_box, 124, 36);
     lv_obj_set_scroll_dir(g_kidpal_voice_answer_box, LV_DIR_VER);
     lv_obj_add_flag(g_kidpal_voice_answer_box, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(g_kidpal_voice_answer_box, LV_SCROLLBAR_MODE_AUTO);
-    lv_obj_align(g_kidpal_voice_answer_box, LV_ALIGN_TOP_MID, 0, lvgl_theme->spacing(10));
     g_kidpal_voice_answer_label = lv_label_create(g_kidpal_voice_answer_box);
     lv_label_set_long_mode(g_kidpal_voice_answer_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(g_kidpal_voice_answer_label, LV_HOR_RES * 0.8);
+    lv_obj_set_width(g_kidpal_voice_answer_label, 264);
     lv_obj_set_style_text_align(g_kidpal_voice_answer_label, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_color(g_kidpal_voice_answer_label, lvgl_theme->text_color(), 0);
+    /* 全量字体: 同回显区 (答案全文中文覆盖; NFR-READ-1 14px 下限档, 禁 basic 稀疏
+     * 子集 —— 键帽 KB-A5 同族根因)。 */
+    lv_obj_set_style_text_font(g_kidpal_voice_answer_label, &font_puhui_14_1, 0);
     lv_label_set_text(g_kidpal_voice_answer_label, "");
 
     low_battery_popup_ = lv_obj_create(screen);
@@ -1295,9 +1333,9 @@ static void kidpal_voice_apply_look(int scene)
             g_kidpal_pose_px = NULL;
         }
         if (new_px != NULL && g_kidpal_pose_parent != NULL) {
-            /* 挂聊天 chrome 表情区容器 (SetupUI 活分支 emoji_box_): 归 xiaozhi
-             * 聊天 chrome 子树与常驻聊天层生命周期管辖, 不再裸挂 lv_layer_top()
-             * 绕过 PKG-2 层仲裁; 姿态落情绪位 (居中), 不再压首页时间。 */
+            /* 挂语音轮整页版式左列 pose 挂点 (SetupUI 活分支 g_kidpal_pose_box, WF-B
+             * 「左小伴」列; device-round VQ-A7 r1 修复面③ —— 原 96×96 居中叠首页猫
+             * 缺陷面销账, pose 不再压首页猫/时间, 显隐归 chrome 中部显隐纪律)。 */
             memset(&g_kidpal_pose_dsc, 0, sizeof(g_kidpal_pose_dsc));
             g_kidpal_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
             g_kidpal_pose_dsc.header.w      = (uint32_t)new_w;
@@ -1337,7 +1375,9 @@ static void kidpal_voice_apply_look(int scene)
  *   mode=2 idle (STANDBY): 姿态与笑脸都隐 —— chrome 中部无任何图形, 页面干净;
  *   mode=0 未接管: boot/connecting 等, SetEmotion 自管不动。
  * 键帽条与聊天文本 (chat_message_label_) 任何状态不动 (V3 §06 / PKG-2 语义)。
- * 显隐只切 LV_OBJ_FLAG_HIDDEN, 对象与缓冲复用不重建 (round 1 泄漏纪律不破)。
+ * 语音轮整页版式 (VQ-A7 r1 修复面③): 页面容器随 mode=1+前台 显隐, 回显区/问答框
+ * 在其内按场景互斥 (LISTEN/THINK 回显 / TALK 问答) —— 显隐只切 LV_OBJ_FLAG_HIDDEN,
+ * 对象与缓冲复用不重建 (round 1 泄漏纪律不破)。
  * 调用方必须已持 LVGL 锁。
  * ------------------------------------------------------------------------ */
 static void kidpal_chrome_mid_sync_locked(void)
@@ -1369,6 +1409,41 @@ static void kidpal_chrome_mid_sync_locked(void)
         }
         if (g_kidpal_pose_img != NULL) {
             lv_obj_add_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+
+    /* 语音轮整页版式显隐 (device-round VQ-A7 r1 修复面③; 与姿态同两条件与):
+     * 页面容器 = 演出活跃且 VOICE 前台时整页盖住首页内容 (WF-B 冻结线框; 首页猫
+     * 遮蔽销账 = 整页盖住形态, 显隐只切 HIDDEN 零重建)。回显区/问答框按场景互斥:
+     * LISTEN/THINK -> 回显区 (WF-B-01/02), TALK -> 问答框 (WF-B-03); 提醒/低电等
+     * 其余场景两区都隐。场景值取 g_kidpal_keybar_scene (apply_look 每次都刷新)。 */
+    {
+        int voice_live = (g_kidpal_mid_mode == 1 && g_kidpal_voice_front) ? 1 : 0;
+        int show_echo = (voice_live &&
+                         (g_kidpal_keybar_scene == KVST_SCENE_LISTEN ||
+                          g_kidpal_keybar_scene == KVST_SCENE_THINK)) ? 1 : 0;
+        int show_answer = (voice_live &&
+                           g_kidpal_keybar_scene == KVST_SCENE_TALK) ? 1 : 0;
+        if (g_kidpal_voice_page != NULL) {
+            if (voice_live) {
+                lv_obj_remove_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+        if (g_kidpal_voice_echo_box != NULL) {
+            if (show_echo) {
+                lv_obj_remove_flag(g_kidpal_voice_echo_box, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(g_kidpal_voice_echo_box, LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+        if (g_kidpal_voice_answer_box != NULL) {
+            if (show_answer) {
+                lv_obj_remove_flag(g_kidpal_voice_answer_box, LV_OBJ_FLAG_HIDDEN);
+            } else {
+                lv_obj_add_flag(g_kidpal_voice_answer_box, LV_OBJ_FLAG_HIDDEN);
+            }
         }
     }
 }

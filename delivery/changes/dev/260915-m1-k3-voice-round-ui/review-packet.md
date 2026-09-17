@@ -152,3 +152,48 @@ TaskPackage 未声明 `s2ExploratoryRequired=true`，本包不执行 S2 official
 ## 待 supervisor 裁断
 
 verifier final fact 9 闸全绿（checker PASS）；host 23/0 vs 基线 18/0 零新增红 + server 面 0 collected；mutation 7/7 sensitive；docs-sync/security 绿；五轴 review 无 BLOCKING；VQ-A7 真机轮 pending 已按 human 拍板 deferred 出 Pod（交接链在 pod-events 1dc757f9）。integrator 判定：可进合并门；VQ-A7 pending 状态与三条 NIT 提请 supervisor 一并裁断。
+
+## 修复轮 addendum（device-round VQ-A7 r1）
+
+> 2026-09-17 human 持板第 1 轮（板上固件 = 8a3fc07，串口取证主线程转写）结果：VQ-A4 打断手感 ✅；思考页弹出（VQ-A1）/ 回显（VQ-A2）/ 长文滚动问答框（VQ-A3）+ 骨架成页（VQ-A5 观感面）❌。证据 = [device-round-vqa7-r1.md](device-round-vqa7-r1.md)。本节为增量收口：修复 diff + 增补齿 TEST 6 + scoped r6 绿 + final r7 绿，**映射表零改动红线保持**（决策表 TEST 1 齿零改动全绿，喂入时机只动触发点）。
+
+### 三缺陷 ↔ 修复 ↔ 增补齿 ↔ 复验证据对照表
+
+| 真机缺陷（r1 取证） | 修复（fixer 落地） | 增补齿（acceptance-author，TEST 6 单独成节，既有 TEST 1-5 零改动） | 复验证据 |
+|---|---|---|---|
+| ② THINKING 存活 10ms 被顶掉：方向 B 网关在 stt 后 10ms 即发 `tts start`（先于 LLM 出结果，第一句答案距 stt 12 秒），冻结映射 LISTEN_AUTO: TTS_START→TALK 在 tts start 帧当场生效 | application.cc 修复面①：tts start 帧只复位 `aborted_`，不再 `SetDeviceState(kDeviceStateSpeaking)`；`KVR_EVT_TTS_START` 喂入迁往首个 tts `sentence_start` 分支（实际起播时刻），经冻结映射单源 `kidpal_voice_round_scene` 消费（映射表零改动、只动触发点） | tooth 1：tts 分支头段（tts start 路径）禁三种场景切换载体（`SetDeviceState(kDeviceStateSpeaking)` / `kidpal_voice_round_scene(` / `kidpal_voice_apply_look(`）；tooth 2：sentence_start 分支须含 `KVR_EVT_TTS_START` 喂入且经 `kidpal_voice_round_scene` 单源 | r6 scoped 7 闸全绿（ok:true，exit 0，invocationId `97796e0f-fafe-4c15-8104-6f999b18f065`）+ r7 final 9 闸全绿（ok:true，exit 0，invocationId `ab08b7a4-4751-403c-b872-88c769dc7609`）；VQ-A6 4s 安抚窗口随此修复才真实存在（既有锁面 TEST 1 + TEST 4 tooth 6 不动） |
+| ③ 回显/问答 label 只设 text_color 未设字体——LVGL 默认字体无中文字形，整段空白零上屏 | lcd_display.cc 修复面②：两 label 显式 `lv_obj_set_style_text_font(..., &font_puhui_14_1, 0)`（对照同文件 keybar 三 label 先例；14px = NFR-READ-1 可读性下限定案档，全量 puhui 非 basic 稀疏子集） | tooth 3：echo/answer label 各须 ≥1 处全量 puhui 字体配置，且禁 `font_puhui_basic_` 稀疏子集（键帽 KB-A5 同族根因禁回退） | 同上 r6/r7 全绿；host 24/0（见下）含 TEST 6 全齿 |
+| ④ 「两只猫」/ 骨架未成页：echo/answer 两容器 TOP_MID 挂裸 screen 顶层被首页内容盖住；姿态 96×96 居中叠首页猫——WF-B「左小伴 · 右内容区」整页版式未落成 | lcd_display.cc 修复面③：新增 `g_kidpal_voice_page` 整页版式容器（常驻 lv_layer_top、全屏不透明背景、默认隐藏、显隐单点 = `kidpal_chrome_mid_sync_locked`）；`g_kidpal_pose_box` 左列挂点（16,36 起 96×96），pose 图改挂于此；echo/answer 挂右内容区（x=124，264×216），回显区/问答框按场景互斥显隐（LISTEN/THINK→回显区，TALK→问答框）；首页猫遮蔽销账取「整页版式盖住」形态（冻结线框无首页内容，非单屏模型冲突，零冻结稿改动） | tooth 4：echo/answer 容器须离裸 screen 根（合格形态三选一：创建点不在裸根 / 显式重挂 / 入 chrome 迁移清单），父级名不锁；tooth 5：告别 TOP_MID/CENTER 族居中叠装（WF-B 反形态销账，正几何像素级归真机轮） | 同上 r6/r7 全绿 |
+
+增补齿 mutation 回填：taskpackage `mutationEvidence.perAcceptance` 增 8 条（MUT-VRZ-FEEDPOINT-RESTORE-EARLYFRAME / MUT-VRZ-DEVSWITCH-RESTORE-EARLYFRAME / MUT-VRZ-GLYPH-DROP-L1 / MUT-VRZ-GLYPH-SWAP-SPARSE / MUT-VRZ-GLYPH-DROP-L2 / MUT-VRZ-MOUNT-RESET-BAREROOT / MUT-VRZ-GEO-RESTORE-STACKED-ALIGN，共 8 条含 VQ-A1 双变异），逐条 `failed as expected`。
+
+### 修复轮复验证据（integrator 现跑，2026-09-17）
+
+1. verifier scoped r6 + final r7 fact 均 `ok:true` / observedGateExit 0；`verifier-evidence-check.mjs`（final r7）输出 verbatim：`{"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/260915-m1-k3-voice-round-ui/verifier-evidence/rounds/r7.json","factOk":true,"observedGateExit":0,"phase":"final","round":7}`，exit 0。`delivery/taskpackages/current/verdict.json` = verify.mjs fs-write 投影（non-bearing，与 r7 fact 同源；gatesRun 9 全绿）。
+2. host runner 全量 verbatim（WSL，仓根 cwd）：
+   - build：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` → `ninja: no work to do. Done`，exit 0（构建缓存与源面一致）；
+   - run：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf` → 末三行 verbatim：`24 Tests 0 Failures 0 Ignored` / `OK`，exit 0。**24 = 23 前基线 + TEST 6（1 test case，五 tooth）**，TEST 6 case 本轮 verbatim PASS（`voice_round_ui.acceptance.c:1074`）。
+3. `closeout-check.mjs --read-only`：`ok:true`，exit 0（requiredFiles docs-delta.md + review-packet.md 在场；advisory 两条 non-bearing：① machine evidence 投影 advisory——`current/verdict.json` 已由 verify.mjs fs-write 刷新在案；② loop-retro 触发阈值提示，发起责任 = 主线程，非本包 gate）。
+4. firmware-build（r6/r7 闸内）：xiaozhi.bin 0x30b090，app 分区 0x370000，**11% 余量**（修复净增 ~0x90 字节，资源面无虞）。
+5. 影响面（11b，worktree，增量）：detect_changes 仍 **N/A (worktree)**；修复 diff 落在预期闭集 8 tracked 件（application.cc / lcd_display.cc / acceptance.c + 治理面 5 件）+ 3 untracked 新件（device-round 证据 + r6/r7 fact），无计划外文件；映射表 `voice_round.c` 零触碰（喂入时机只动 application.cc 触发点）。
+
+### Demo 对账行更新（真机 r1 结果）
+
+真机第 1 轮（板上 8a3fc07）：**A4 打断手感过**（KEY 单击立即停播转聆听，human 确认）；**三项不过 = VQ-A1 思考页弹出 / VQ-A2 回显 / VQ-A3 长文滚动问答框 + VQ-A5 骨架成页观感面**——三缺陷已按上表修复落地并 host 面全绿（24/0）。**VQ-A7 复测仍归 human 持板**：修复后固件（本轮 commit 构建）待主线程 kidpal-flash-device 重烧、human 复测四项原清单（① 思考页首次可弹同刻 ② 回显三手感 ③ 长文滚动观感 ④ 打断手感回归确认）。VQ-A7 状态维持 **PENDING（复测轮）**，不因修复转 PASS。
+
+### 修复轮 findings 增量
+
+| Severity | Kind | Area | Finding | Basis | Required action |
+|---|---|---|---|---|---|
+| 无 BLOCKING | — | — | — | — | — |
+| NIT | judgement-call | governance | fixer 修复注释逐字复现结构齿禁针 token（`SetDeviceState(kDeviceStateSpeaking)` 字面入注释）致 TEST 6 tooth 1 一轮假红，fixer 自纠改写措辞转绿——结构齿树扫含注释，修复轮注释须避免逐字复现禁针序列 | pod-events friction eventId `c721520b-402f-4f46-a29c-a3850954993f`（scope-drift，planner 登记）+ changed-code hunk（application.cc 修复面①注释措辞） | 流程教训入 pod-events 在案；后续修复轮注释避开禁针字面（无独立 ARQ，不阻断） |
+
+### 修复轮 Residual Risk 更新
+
+- 原三条 residual risk 中「三态视觉/滚动/打断观感未经真机确认」**仍在**（VQ-A7 复测 pending，human 持板）；机制面缺陷（喂入时机 / 字体 / 挂载与版式）已由 TEST 6 齿面钉死 + host 24/0 承载。
+- decisionCoverage：本轮增 8 条 mutation 记录（landsIn acceptance），仍**无 `landsIn: dropped` 条目**，无 risk-accepted 项需列。
+- VQ-A6 4s 安抚计时起点在修复后才真实存在（修复前 THINKING 存活 10ms 无窗口可言）——复测轮 human 可一并观察。
+
+### 修复轮待 supervisor 裁断
+
+修复轮增量：scoped r6 + final r7 全绿（checker PASS）、host 24/0（23 基线 + TEST 6 五齿）、closeout-check 只读 exit 0、映射表零改动红线保持、1 条新 NIT（fixer 注释禁针假红自纠，pod-events 在案）。integrator 判定：修复轮可进合并门，与首轮收口合并裁断；VQ-A7 复测轮维持 human 持板 pending 状态不变。
