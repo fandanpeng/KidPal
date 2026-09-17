@@ -460,9 +460,13 @@ void Application::InitializeProtocol() {
         if (strcmp(type->valuestring, "tts") == 0) {
             auto state = cJSON_GetObjectItem(root, "state");
             if (strcmp(state->valuestring, "start") == 0) {
+                /* 语音轮演出 (device-round VQ-A7 r1 修复面①): tts start 帧不再触发语音
+                 * 轮场景切换 —— 方向 B 网关在 stt 之后立即发 tts start (先于 LLM 出结果),
+                 * 旧形态「进 Speaking 设备态」经状态级联 SetStatus(SPEAKING) ->
+                 * apply_look(TALK) 把 THINKING 页 10ms 顶掉。「开始播报」语义迁往首个
+                 * sentence_start 分支 (实际起播时刻), 此处只复位打断标志。 */
                 Schedule([this]() {
                     aborted_ = false;
-                    SetDeviceState(kDeviceStateSpeaking);
                 });
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
@@ -479,6 +483,20 @@ void Application::InitializeProtocol() {
                 if (cJSON_IsString(text)) {
                     ESP_LOGI(TAG, "<< %s", text->valuestring);
                     Schedule([this, display, message = std::string(text->valuestring)]() {
+                        /* 语音轮演出 (device-round VQ-A7 r1 修复面①): 「开始播报」绑定
+                         * 实际起播时刻 —— 首个 sentence_start 才进 Speaking 态 (设备态
+                         * 级联 SetStatus(SPEAKING) -> apply_look(TALK)); 网关时序保证本句
+                         * 音频包恒后于 sentence_start 到达 (sendAudioHandle.py: 先发
+                         * sentence_start 再 sendAudio), 状态先行不丢首包。喂入经冻结映射
+                         * 单源 kidpal_voice_round_scene (映射表零改动, 只动触发点), 消费
+                         * 链形态与 stt 分支同款。 */
+                        SetDeviceState(kDeviceStateSpeaking);
+                        kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
+                                            ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
+                        int scene = kidpal_voice_round_scene(ctx, KVR_EVT_TTS_START);
+                        if (scene == KVST_SCENE_TALK) {
+                            display->SetStatus(Lang::Strings::SPEAKING);
+                        }
                         display->SetChatMessage("assistant", message.c_str());
                     });
                 }

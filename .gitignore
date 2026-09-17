@@ -43,3 +43,4 @@ tools/simulator/Output/
 # Pod runtime byproducts
 __pycache__/
 .claude/verify-logs/
+overlap-probe.json

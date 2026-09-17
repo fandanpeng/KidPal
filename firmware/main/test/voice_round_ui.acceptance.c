@@ -122,6 +122,88 @@
  *       mutationEvidence.perAcceptance 逐条回填, acceptanceId 与 taskpackage
  *       acceptance[] 正文逐字节一致。
  *
+ *   [8] 真机轮回归增补（2026-09-17 device-round VQ-A7 r1 增补齿, 单独成节 = TEST 6;
+ *       既有齿 [1]-[7] 零改动）——human 真机确认轮第 1 轮暴露三处 host 断言面缺口
+ *       （k2 期教训④重演: 视觉/接线类断言缺口 host 齿兜不住）, 按红基线模型增补
+ *       （增补齿 = 设计态红, fixer 实现后转绿, verifier 终验）:
+ *       a. TTS_START 喂入时机（VQ-A1 深化）: 活侧现状经 tts start -> SetDeviceState
+ *          (kDeviceStateSpeaking) -> SetStatus(SPEAKING) -> apply_look(KVST_SCENE_
+ *          TALK) 间接触发场景切换; 方向 B 网关在 stt 之后立即发 tts start（先于 LLM
+ *          出结果）, THINKING 存活 10ms 被顶掉。钉: KVR_EVT_TTS_START 喂入点 = tts
+ *          sentence_start 处理分支（实际起播时刻）, 且必须经冻结映射单源
+ *          kidpal_voice_round_scene 消费（映射表零改动红线: 场景切换不得绕开决策表
+ *          ——喂入时机移动, 表值行为级锁已在 TEST 1）; tts start 帧处理路径零场景
+ *          切换触发（禁 SetDeviceState(kDeviceStateSpeaking) / kidpal_voice_round_
+ *          scene( / kidpal_voice_apply_look( 三载体）。等价「音频真正起播」锚若被
+ *          实现采用, 须返 planner 重新钉锚（本齿按 device-round 首选形态冻结）。
+ *          VQ-A6 不新增齿: 4s 安抚计时起点语义 = THINKING 入口, 修复后才真实存在;
+ *          既有锁面 = TEST 1（入口唯一锚）+ TEST 4 tooth 6（session_state_machine
+ *          冻结边）, 增补不触碰。
+ *       b. 回显/问答 label 全量中文字体（VQ-A2/A3 深化）: g_kidpal_voice_echo_label
+ *          / g_kidpal_voice_answer_label 显式 lv_obj_set_style_text_font 配全量
+ *          puhui 家族字体（对照 keybar font_puhui_14_1 先例同形态, 具体型号由实现
+ *          按 NFR-READ-1 可读性下限选）; 禁 basic 稀疏子集（缺中文字形 = 整段空白
+ *          零上屏回归, 键帽 KB-A5 同族根因）。
+ *       c. 可见面挂载 + 骨架反形态（VQ-A5 深化）: echo/answer 两容器须挂载于语音轮
+ *          可见子树/语音层而非裸 screen 顶层（聊天 chrome 子树 vs 语音轮专用内容面
+ *          = 实现取舍, 父级名不锁; 合格形态三选一 = 创建点已离裸 screen 根 / 显式
+ *          lv_obj_set_parent / 入 KidPalReparentChatToLayer 迁移清单）; 且告别
+ *          TOP_MID 居中叠装（现状 TOP_MID 直接挂裸 screen 顶层被页面内容盖住 +
+ *          姿态 96×96 居中叠首页猫; WF-B「左小伴 · 右内容区」骨架 = requirements
+ *          v1.24 human 冻结, UIUX-DESIGN-BRIEF §5 语音轮四态行同锚——正几何像素级
+ *          分配归真机轮 VQ-A7 观感轮, 本齿钉反形态销账; 若实现采用右侧专用面板内
+ *          居中的合法形态, 须返 planner 重新钉锚）。
+ *
+ *   [9] 真机轮回归增补第 2 轮（2026-09-17 device-round VQ-A7 r2 增补齿, 单独成节 =
+ *       TEST 7; 既有齿 [1]-[8] 与 TEST 1-6 零改动）——human 真机确认轮第 2 轮（板上
+ *       54aa903, 功能四项全通）暴露一类渲染面偏差「各态内容区标识件缺失 + 气泡写点
+ *       挂旧聊天 chrome」（零状态机/逻辑改动, 全在演出面）:
+ *       a. 三态 bubble 闭集标头值（kidpal_voice_states.c 单源）: LISTEN =「我在听！」
+ *          （既有零偏移复核）; THINK =「思考中」（human 钉 = §2.2 态名口径, 消解
+ *          「问号/气泡文案归 design review」留白）; TALK =「播报」（WF-B-03 线框
+ *          标头字面）。问号图标资产 art_assets.c 闭集无 question 资产（planner 核实）
+ *          = fail-closed 已上报归后续资产批, 文案标头先行——本齿不造图标齿。
+ *       b. 标头写点统一: kidpal_voice_apply_look 的 look.bubble 写点不再写
+ *          g_kidpal_chat_label（bottom_bar_ 内 chat_message_label_ 旧挂点）, 改写
+ *          g_kidpal_voice_page 右内容区标头对象（新增, 名不锁——标头符号名由实现定,
+ *          齿钉「voice_page 直接子件 + apply_look 旧挂点写点清零 + look.bubble 单源
+ *          仍在」形态; 等价锚若被采用须返 planner 重新钉锚）。
+ *       c. 回显行挂标头下方: WF-B-01/VQ-A2 冻结原文「回显在『我在听！』标识下方」
+ *          ——标头对象与 echo_box 同父（g_kidpal_voice_page）且创建序在 echo_box
+ *          之前（LVGL 同父子件叠序 = 创建序, 标头在上、回显行在下）。
+ *       与 TEST 4 的关系: TEST 4 tooth 4 对 THINK/TALK 只断 pose/keycap、不断
+ *       bubble（现值 NULL 无断言面）——三态 bubble 值的新权威 = TEST 7 tooth 1,
+ *       TEST 4 零改动零冲突（新值落地后 TEST 4 仍绿, 无须裁量）。
+ *
+ *   [10] 真机轮回归增补第 3 轮（2026-09-17 device-round VQ-A7 r3 增补齿, 单独成节 =
+ *       TEST 8; 既有齿 [1]-[9] 与 TEST 1-7 零改动）——human 拍板「静态盘点先干、
+ *       真机照片后置精修」（delivery/changes/dev/260915-m1-k3-voice-round-ui/
+ *       device-round-vqa7-r3.md）四类 Chrome/演出面缺口（零状态机/逻辑改动）:
+ *       a. r3-A1 底部键帽条上沿 3px 实线: lcd_display.cc bottom_bar_ 创建区域内
+ *          LV_BORDER_SIDE_TOP + border_width 3 双 needle（brief §2.3「上沿 3px
+ *          实线分隔」原文; mock kidpal_ui.c:224-226 同款画法）; 反证齿 = 旧
+ *          border_width 0 写点销账（LVGL 同属性后写覆盖前写, 残留即被抹平）。
+ *       b. r3-A2 首页顶部信息栏下方虚线: 设备首页 = home_p1.c 软帧渲染单源
+ *          （rn_render_home_locked -> kidpal_home_p1_render_frame, 400×300 帧整帧
+ *          blit; LVGL 对象画法会被帧 blit 覆盖——mock kidpal_ui.c:197-204 lv_line
+ *          画法为参照而非设备落点, 对 planner 建议形态的偏离声明见交付报告）
+ *          ——needle 钉软帧侧 dash/dot/虚线画法在世; 几何参数（design 稿
+ *          kidpal-ui-design-v4.html P1 辅助条节 border-top 2.5px dotted / 左右
+ *          6px 内缩）像素级观感归真机轮 VQ-A7, 本齿钉画法存在性。
+ *       c. r3-B bubble_tail 消费接线: 三态标头挂进气泡形态消费 bubble_tail_24.bin
+ *          （现 apply_look 处 (void) 闲置销账）; 归档齿 v3_restore:648 同形态断言
+ *          承接（消费不断红线; a) 半现状绿守卫）。
+ *       d. r3-C 新资产闭集: mic（spiffs_root ic_mic_48.bin 已在世——钉活侧消费,
+ *          资产名不锁 = 文件名含 mic 的 .bin 形态扫描）/ 问号（spiffs_root 零资产,
+ *          首选形态 = 新增 KAP1 .bin 文件名含 question; 备选 imgfont 加 '?'
+ *          字形路线 = 返钉路径, 见交付报告）/ 声波条（human 倾向 LVGL 原生矩形 +
+ *          lv_anim 跳动——免管线、动画天然; KAP1 位图 = 返钉路径）。消费面 =
+ *          lcd_display.cc（语音轮三态渲染唯一渲染面, seam [2] apply_look 单点）;
+ *          态级绑定（聆听态 mic / 思考态问号 / 播报态声波）分支内字面形态不锁,
+ *          绑定观感归真机轮 VQ-A7。
+ *       e. r3-D 内容区边框精修 + 三态元素位置精调 = 后置项, 本轮零齿（human 明令
+ *          「本轮不新增内容区边框」, 等真机照片比对下一轮）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: VQ-A1 思考页接线机制齿（渲染映射激活 + 弹出时机同刻）-> test 1（行为半:
@@ -155,6 +237,19 @@
  *   coverage: VQ-E3 需求面零修订 -> test 5 tooth 3（requirements/契约 canary）
  *   coverage: VQ-E4 四态骨架 owner 声明 -> test 3/test 4（骨架对象 + 闭集单源由本包
  *             建立并钉死）; 提醒包复用行为见 [5]（跨包登记, 零齿）
+ *   coverage: VQ-A2 真机 r2 增补 -- 聆听态「我在听！」标头 + 回显行挂标头下方 ->
+ *             test 7 tooth 1（LISTEN bubble 零偏移复核）/tooth 3（同父创建序在先）
+ *   coverage: VQ-A5 真机 r2 增补 -- 三态 bubble 闭集标头值（THINK「思考中」/TALK
+ *             「播报」）+ 标头写点统一挂 voice_page 右内容区、旧聊天 chrome 挂点
+ *             销账 -> test 7 tooth 1/tooth 2
+ *   coverage: r3-A1 底部键帽条上沿 3px 实线分隔 -> test 8 tooth 1
+ *   coverage: r3-A2 首页顶部信息栏下方虚线 -> test 8 tooth 2
+ *   coverage: r3-B bubble_tail 气泡尾巴消费接线（消费不断红线承接）-> test 8 tooth 3
+ *   coverage: r3-C1 mic 图标资产闭集在世 + 聆听态活侧消费 -> test 8 tooth 4
+ *   coverage: r3-C2 问号资产闭集新增 + 思考态活侧消费 -> test 8 tooth 4
+ *   coverage: r3-C3 声波条载体于播报态渲染路径 -> test 8 tooth 5
+ *   coverage: r3-D 内容区边框精修 -> 无齿条目（human 明令后置, 等真机照片比对
+ *             下一轮; 本轮不新增内容区边框, 零触碰）
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   0) builder wiring 见 [6]。
@@ -196,6 +291,9 @@
 #define KVR_CMAKELISTS   "firmware/main/test/host_app/main/CMakeLists.txt"
 #define KVR_REQUIREMENTS "docs/requirements.md"
 #define KVR_CONTRACT     "docs/contracts/interface-contract.md"
+/* r3 TEST 8 增补被扫面（设备首页软帧渲染单源 + 资产闭集源目录）。 */
+#define KVR_HOME_P1C     "firmware/main/display/home_p1.c"
+#define KVR_SPIFFS_DIR   "firmware/main/assets/spiffs_root"
 
 /* -------------------------------------------------------------------------- *
  * FROZEN OFFLINE CONTRACT — weak sentinels（强定义落地后覆盖）。
@@ -474,6 +572,48 @@ static int kvr_scan_count(const char *rel_dir, const char *needle, char *first_h
         return 0;
     }
     return kvr_count_files_with_needle(abs, rel_dir, needle, first_hit, cap, 0);
+}
+
+/* r3 TEST 8: spiffs_root 资产闭集文件名扫描——返回文件名含 substr 且 .bin 后缀的
+ * 资产个数, first_hit 回填首个命中文件名（供消费 needle 用: 资产名不锁策略下先
+ * 探明实际资产名、再以该名断活侧消费, 消费与存在同一字面锚定）。直接扫
+ * spiffs_root 目录本身（非递归, 资产闭集平铺）: kvr_is_skipped_dir 的 "assets"
+ * 跳过只作用于递归遍历的子项名, 本 helper 不走该路径、不受影响。 */
+static int kvr_count_bin_assets_named(const char *rel_dir, const char *substr,
+                                      char *first_hit, size_t cap)
+{
+    char abs[KVR_MAX_PATH];
+    DIR *d;
+    struct dirent *e;
+    int count = 0;
+
+    if (first_hit != NULL && cap > 0) {
+        first_hit[0] = '\0';
+    }
+    if (!kvr_rel(abs, sizeof(abs), rel_dir) || !kvr_is_dir(abs)) {
+        return 0;
+    }
+    d = opendir(abs);
+    if (d == NULL) {
+        return 0;
+    }
+    while ((e = readdir(d)) != NULL) {
+        const char *name = e->d_name;
+        size_t len = strlen(name);
+
+        if (len < 4 || strcmp(name + len - 4, ".bin") != 0) {
+            continue;
+        }
+        if (strstr(name, substr) == NULL) {
+            continue;
+        }
+        if (count == 0 && first_hit != NULL && cap > 0) {
+            snprintf(first_hit, cap, "%s", name);
+        }
+        count++;
+    }
+    closedir(d);
+    return count;
 }
 
 /* Slice of rel from the start_needle occurrence selected by use_last (0 = first,
@@ -1021,6 +1161,428 @@ TEST_CASE("语音轮场景映射: 注册序守卫+范围纪律canary+扫描器�
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 6 — VQ-A1/A2/A3/A5 真机轮回归增补齿（device-round VQ-A7 r1 深化; structural,
+ * seam [8]; 增补条目单独成节, 既有齿 TEST 1-5 零改动）
+ * 2026-09-17 human 真机确认轮第 1 轮（板上 8a3fc07）暴露三处 host 齿断言面缺口:
+ *   ① TTS_START 喂入时机: 方向 B 网关 stt 后 10ms 即发 tts start（先于 LLM 出结果,
+ *      第一句答案距 stt 12 秒）, 活侧经 tts start -> SetDeviceState(kDeviceState-
+ *      Speaking) -> SetStatus(SPEAKING) -> apply_look(KVST_SCENE_TALK) 间接触发场景
+ *      切换, THINKING 存活 10ms 被顶掉——「开始播报」语义须对齐实际起播时刻。
+ *   ② 回显/问答 label 只设 text_color 未设字体——LVGL 默认字体无中文字形, 整段空白
+ *      零上屏（对照同文件 keybar 三 label 显式 font_puhui_14_1 先例）。
+ *   ③ echo/answer 两容器 TOP_MID 直接挂裸 screen 顶层, 被页面内容盖住; 姿态 96×96
+ *      居中叠首页猫——WF-B「左小伴 · 右内容区」骨架未落成。
+ * RED today（设计态红, 义务红形态见文件尾「增补齿义务红形态」段）。
+ * ------------------------------------------------------------------------ */
+/* coverage: VQ-A1 -- 增补齿: KVR_EVT_TTS_START 喂入点 = tts sentence_start 处理分支（实际起播时刻, 经冻结映射单源消费）, tts start 帧路径零场景切换触发（THINKING 10ms 被顶掉销账; device-round-vqa7-r1 事实②） */
+/* coverage: VQ-A2 -- 增补齿: 回显 label 显式全量中文字体（默认字体无中文字形零上屏销账, keybar 全量 puhui 先例形态; device-round-vqa7-r1 事实③） */
+/* coverage: VQ-A3 -- 增补齿: 问答 label 显式全量中文字体（同上, 型号由实现按 NFR-READ-1 下限选, 禁 basic 稀疏子集） */
+/* coverage: VQ-A5 -- 增补齿: echo/answer 容器挂载于语音轮可见子树/语音层而非裸 screen 顶层 + 告别 TOP_MID 居中叠装（首页遮蔽/骨架未成页销账; device-round-vqa7-r1 事实④, WF-B 左小伴右内容骨架） */
+TEST_CASE("语音轮场景映射: 真机轮回归增补——喂入时机+全量字体+可见面挂载 (VQ-A1/VQ-A2/VQ-A3/VQ-A5)",
+          "[voice_round_ui][VQ-A1][VQ-A2][VQ-A3][VQ-A5][structural][device-round]")
+{
+    char *region;
+    char *rparent;
+    int n, on_screen, reparented, in_list;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ---- tooth 1 (VQ-A1 增补): tts start 帧处理路径零场景切换触发。区域 = tts 分支
+     * 头段（start + stop 两个子分支, sentence_start 锚之前）。禁三种场景切换载体:
+     * SetDeviceState(kDeviceStateSpeaking)（现状载体——经 SetStatus(SPEAKING)->
+     * apply_look(KVST_SCENE_TALK) 间接触发, 即 THINKING 10ms 被顶掉根因）+
+     * kidpal_voice_round_scene( / kidpal_voice_apply_look(（任何直接触发形态）。
+     * 修复后喂入与起播态迁往 sentence_start 分支（tooth 2）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(type->valuestring, \"tts\") == 0",
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KVR-A1 RED(infra): application.cc tts 分支头段切取失败（锚漂移——tts 帧"
+        "分派结构被改动须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "SetDeviceState(kDeviceStateSpeaking)") == 0 &&
+        kvr_count_in_slice(region, "kidpal_voice_round_scene(") == 0 &&
+        kvr_count_in_slice(region, "kidpal_voice_apply_look(") == 0,
+        "KVR-A1 RED(增补): tts start 帧处理路径仍触发语音轮场景切换——「开始播报」"
+        "语义未对齐实际起播时刻, THINKING 页在 LLM 出结果前即被顶掉（device-round "
+        "VQ-A7 r1 事实②; 修复方向 = KVR_EVT_TTS_START 喂入点迁往首个 tts "
+        "sentence_start 分支, 映射表零改动只动触发点）");
+    free(region);
+
+    /* ---- tooth 2 (VQ-A1 增补): KVR_EVT_TTS_START 喂入点 = tts sentence_start 处理
+     * 分支（首个分句到达 = 实际起播时刻; 「音频真正起播」等价锚若被采用须返 planner
+     * 重新钉锚——本齿按 device-round 首选形态冻结）。喂入必须经冻结映射单源
+     * kidpal_voice_round_scene（映射表零改动红线: 场景切换不得绕开决策表——
+     * 表值行为级锁在 TEST 1, 喂入通道挪动不触表）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0",
+                                   "strcmp(type->valuestring, \"stt\") == 0",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KVR-A1 RED(infra): application.cc sentence_start 分支区域切取失败（锚漂移"
+        "——tts 帧分派结构被改动须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "kidpal_voice_round_scene(") >= 1 &&
+        kvr_count_in_slice(region, "KVR_EVT_TTS_START") >= 1,
+        "KVR-A1 RED(增补): application.cc sentence_start 分支未喂入 KVR_EVT_TTS_START"
+        "（经 kidpal_voice_round_scene 单源）——「开始播报」场景切换未绑实际起播时刻"
+        "（device-round VQ-A7 r1 事实②修复方向; 映射表零改动, 只动触发点）");
+    free(region);
+
+    /* ---- tooth 3 (VQ-A2/A3 增补): 回显/问答 label 显式全量中文字体——对照 keybar
+     * 先例 lv_obj_set_style_text_font(label, &font_puhui_14_1, 0) 同形态（全量
+     * puhui 家族, 具体型号由实现按 NFR-READ-1 可读性下限选）; 禁 basic 稀疏子集
+     * （缺中文字形 = 整段空白零上屏回归, 键帽 KB-A5 同族根因）。 */
+    n = kvr_count_in_file(KVR_LCD_CC,
+        "lv_obj_set_style_text_font(g_kidpal_voice_echo_label, &font_puhui_");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("KVR-A2 RED(增补): 回显 label 未显式设置全量中文字体（现 %d 处）——"
+               "LVGL 默认字体无中文字形, 孩子说的话整段空白零上屏（device-round "
+               "VQ-A7 r1 事实③; 对照 keybar font_puhui_14_1 先例, 型号按 NFR-READ-1 "
+               "下限选）", n));
+    n = kvr_count_in_file(KVR_LCD_CC,
+        "lv_obj_set_style_text_font(g_kidpal_voice_answer_label, &font_puhui_");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("KVR-A3 RED(增补): 问答 label 未显式设置全量中文字体（现 %d 处）——"
+               "默认字体无中文字形, 答案整段空白零上屏（device-round VQ-A7 r1 事实③）",
+               n));
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_set_style_text_font(g_kidpal_voice_echo_label, &font_puhui_basic_") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_set_style_text_font(g_kidpal_voice_answer_label, &font_puhui_basic_") == 0,
+        "KVR-A2 RED(增补): 回显/问答 label 误配 basic 稀疏子集字体——子集缺中文字形, "
+        "零上屏回归（键帽 KB-A5 同族根因, 禁回退）");
+
+    /* ---- tooth 4 (VQ-A5 增补): echo/answer 容器挂载于语音轮可见子树/语音层而非裸
+     * screen 顶层（现状 TOP_MID 直接挂 lv_screen_active() 裸根, 被页面内容盖住）。
+     * 行为面「不在被页面内容遮挡的位置」, 不钉死具体父级名（聊天 chrome 子树 /
+     * 语音轮专用内容面 = 实现取舍）: 合格形态三选一 = 创建点已不在裸 screen 根 /
+     * 显式 lv_obj_set_parent 重挂 / 入 KidPalReparentChatToLayer 聊天 chrome 迁移
+     * 清单。运行期可见性本体归真机轮 VQ-A7 oracle, 本齿钉挂载面销账。 */
+    rparent = kvr_region_between_ex(KVR_LCD_CC,
+                                    "void LcdDisplay::KidPalReparentChatToLayer",
+                                    "void LcdDisplay::KidPalVoiceChromeFront",
+                                    0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(rparent,
+        "KVR-A5 RED(infra): lcd_display.cc 聊天 chrome 迁移函数区域切取失败（锚漂移"
+        "——KidPalReparentChatToLayer 结构被改动须复核本齿锚）");
+    on_screen = kvr_count_in_file(KVR_LCD_CC,
+                                  "g_kidpal_voice_echo_box = lv_obj_create(screen)");
+    reparented = kvr_count_in_file(KVR_LCD_CC,
+                                   "lv_obj_set_parent(g_kidpal_voice_echo_box");
+    in_list = kvr_count_in_slice(rparent, "g_kidpal_voice_echo_box");
+    TEST_ASSERT_TRUE_MESSAGE(!on_screen || reparented >= 1 || in_list >= 1,
+        kvr_fm("KVR-A5 RED(增补): 聆听回显区容器仍裸挂 screen 顶层（裸根创建=%d, "
+               "显式重挂=%d, chrome 迁移清单=%d）——被页面内容遮挡, 语音轮期间零可见"
+               "（device-round VQ-A7 r1 事实④; 挂载须入语音轮可见子树/语音层, 父级"
+               "名不锁）", on_screen, reparented, in_list));
+    on_screen = kvr_count_in_file(KVR_LCD_CC,
+                                  "g_kidpal_voice_answer_box = lv_obj_create(screen)");
+    reparented = kvr_count_in_file(KVR_LCD_CC,
+                                   "lv_obj_set_parent(g_kidpal_voice_answer_box");
+    in_list = kvr_count_in_slice(rparent, "g_kidpal_voice_answer_box");
+    TEST_ASSERT_TRUE_MESSAGE(!on_screen || reparented >= 1 || in_list >= 1,
+        kvr_fm("KVR-A5 RED(增补): 播报问答框容器仍裸挂 screen 顶层（裸根创建=%d, "
+               "显式重挂=%d, chrome 迁移清单=%d）——同上, 语音轮期间零可见", on_screen,
+               reparented, in_list));
+    free(rparent);
+
+    /* ---- tooth 5 (VQ-A5 增补): 告别 TOP_MID 居中叠装——两容器不再水平居中压在
+     * 姿态列上方（现状 TOP_MID 挂裸 screen + 姿态 96×96 居中 = 叠首页猫遮蔽缺陷面;
+     * WF-B「左小伴 · 右内容区」骨架 = requirements v1.24 human 冻结, UIUX-DESIGN-
+     * BRIEF §5 语音轮四态行同锚）。正几何（pose 左/内容右的像素级分配）归真机轮
+     * VQ-A7 观感轮, 本齿钉反形态销账; 若实现采用右侧专用面板内居中的合法形态, 须返
+     * planner 重新钉锚（面板内居中合法, 本齿锚不区分）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_echo_box, LV_ALIGN_TOP_MID") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_echo_box, LV_ALIGN_BOTTOM_MID") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_echo_box, LV_ALIGN_CENTER") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_center(g_kidpal_voice_echo_box") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_answer_box, LV_ALIGN_TOP_MID") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_answer_box, LV_ALIGN_BOTTOM_MID") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_align(g_kidpal_voice_answer_box, LV_ALIGN_CENTER") == 0 &&
+        kvr_count_in_file(KVR_LCD_CC,
+            "lv_obj_center(g_kidpal_voice_answer_box") == 0,
+        "KVR-A5 RED(增补): 回显/问答容器仍水平居中（TOP_MID/CENTER 族）叠装在姿态列"
+        "上方——WF-B「左小伴 · 右内容区」骨架未落成, 居中形态即首页猫遮蔽缺陷面"
+        "（device-round VQ-A7 r1 事实④）");
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 7 — VQ-A2/VQ-A5 真机轮第 2 轮回归增补齿（device-round VQ-A7 r2; behavioral
+ * + structural, seam [9]; 增补条目单独成节, 既有齿 TEST 1-6 零改动）
+ * 2026-09-17 human 真机确认轮第 2 轮（板上 54aa903, 功能四项全通: 思考态持续显示/
+ * 回显/播报/打断）暴露一类渲染面偏差「各态内容区标识件缺失 + 气泡写点挂旧聊天
+ * chrome」（零状态机/逻辑改动, 全在演出面）:
+ *   ① 思考态右内容区缺「思考中」标头（WF-B-02）——kidpal_voice_states.c THINK
+ *      bubble 现值 NULL（「问号/气泡文案归 design review」留白, human 本次指令
+ *      消解 = §2.2 态名口径「思考中」）;
+ *   ② 聆听态内容区缺「我在听！」标识（WF-B-01; VQ-A2 冻结原文「回显在『我在听！』
+ *      标识下方」——回显行须挂标头下方）;
+ *   ③ 播报态右内容区标头缺（WF-B-03 线框标头字面 =「播报」）;
+ *   ④ apply_look 的 look.bubble 现写 g_kidpal_chat_label（chat_message_label_,
+ *      bottom_bar_ 键帽条内旧挂点）——新整页版式下观感不是右区标头, 统一改挂
+ *      g_kidpal_voice_page 右内容区标头位。
+ * 问号图标资产: art_assets.c 闭集无 question/问号资产（planner 核实）= fail-closed
+ * 已上报（归后续资产批）, 文案标头先行——本齿不造图标齿。
+ * 与 TEST 4 的关系（判读声明）: TEST 4 tooth 4 对 THINK/TALK 只断 pose/keycap、
+ * 不断 bubble（现值 NULL 无断言面）——三态 bubble 值的新权威 = 本 TEST tooth 1,
+ * TEST 4 零改动、零冲突（新值落地后 TEST 4 仍绿, 无须裁量）。
+ * RED today（设计态红, 义务红形态见文件尾「增补齿义务红形态（r2）」段）。
+ * ------------------------------------------------------------------------ */
+/* coverage: VQ-A2 -- 真机 r2 增补齿: 聆听态「我在听！」标头在世 + 回显行挂标头下方（同父创建序在先; device-round-vqa7-r2 事实②, WF-B-01/VQ-A2 冻结原文「回显在『我在听！』标识下方」） */
+/* coverage: VQ-A5 -- 真机 r2 增补齿: 三态 bubble 闭集标头值（LISTEN 零偏移复核 + THINK「思考中」human 钉消解 design-review 留白 + TALK「播报」WF-B-03 线框字面）+ 标头写点统一挂 voice_page 右内容区、旧聊天 chrome 挂点销账（device-round-vqa7-r2 事实①③④） */
+TEST_CASE("语音轮场景映射: 真机轮r2回归增补——三态标头闭集+写点统一+回显挂标头下 (VQ-A2/VQ-A5)",
+          "[voice_round_ui][VQ-A2][VQ-A5][structural][device-round]")
+{
+    kidpal_voice_look_t look;
+    char *region;
+    int n;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ---- tooth 1 (VQ-A5/VQ-A2): 三态 bubble 闭集标头值（kidpal_voice_states 单源,
+     * 强符号在 runner）——LISTEN 既有零偏移复核; THINK「思考中」（human 钉 = §2.2
+     * 态名口径, 消解 design-review 留白）; TALK「播报」（WF-B-03 线框标头字面）。
+     * 本齿 = 三态 bubble 值新权威（与 TEST 4 关系见本 TEST 头注判读声明）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_voice_state_look(KVST_SCENE_LISTEN, &look) == 0 &&
+                                 look.bubble != NULL &&
+                                 strcmp(look.bubble, "我在听！") == 0,
+        "KVR-A2 RED(r2): 聆听态 bubble 漂移——「我在听！」标识文案偏移（WF-B-01; "
+        "既有零偏移复核, 与 TEST 4 tooth 4 同值）");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_voice_state_look(KVST_SCENE_THINK, &look) == 0 &&
+                                 look.bubble != NULL &&
+                                 strcmp(look.bubble, "思考中") == 0,
+        "KVR-A5 RED(r2): 思考态 bubble 缺失——右内容区无「思考中」标头（WF-B-02; "
+        "kidpal_voice_states.c 现值 NULL, design-review 留白由 human 真机 r2 指令"
+        "消解 = §2.2 态名口径; 问号图标缺资产 fail-closed 已上报, 文案标头先行）");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_voice_state_look(KVST_SCENE_TALK, &look) == 0 &&
+                                 look.bubble != NULL &&
+                                 strcmp(look.bubble, "播报") == 0,
+        "KVR-A5 RED(r2): 播报态 bubble 缺失——右内容区无「播报」标头（WF-B-03 线框"
+        "标头字面; kidpal_voice_states.c 现值 NULL）");
+
+    /* ---- tooth 2 (VQ-A5): 标头写点统一——apply_look 的 look.bubble 写点不再写
+     * g_kidpal_chat_label（bottom_bar_ 内 chat_message_label_ 旧挂点, 新整页版式
+     * 下观感不是右区标头）, 改写 g_kidpal_voice_page 右内容区标头对象（新增, 名
+     * 不锁）。三件断言:
+     *  a) apply_look 区域零 g_kidpal_chat_label（旧挂点写点清零; 与 b) 合取 =
+     *     bubble 写点存在且不在旧挂点, 即「旧挂点写点清零或标头写点唯一」）;
+     *  b) apply_look 区域仍保有 look.bubble 写点（单源仍从闭集取文案, 不另抄
+     *     第二份文案来源）;
+     *  c) 标头对象在世: g_kidpal_voice_page 直接子件新增一件（现状 pose/echo/
+     *     answer 三件, 标头 = 第四件; label/容器两形态均合法, 精确符号名不锁）。
+     * 运行期观感归真机轮 VQ-A7 oracle, 本齿钉写点/挂载面销账。 */
+    region = kvr_region_between_ex(KVR_LCD_CC,
+                                   "static void kidpal_voice_apply_look(int scene)",
+                                   "static void kidpal_chrome_mid_sync_locked(void)",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KVR-A5 RED(infra): lcd_display.cc apply_look 区域切取失败（尾锚 "
+        "kidpal_chrome_mid_sync_locked 漂移须复核本齿锚）");
+    n = kvr_count_in_slice(region, "g_kidpal_chat_label");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("KVR-A5 RED(r2): apply_look 的 bubble 写点仍挂 g_kidpal_chat_label"
+               "（现 %d 处）——旧挂点在 bottom_bar_ 键帽条内, 新整页版式下观感不是"
+               "右内容区标头（device-round VQ-A7 r2 事实④; 统一改挂 voice_page 右"
+               "内容区标头位, 名不锁）", n));
+    TEST_ASSERT_TRUE_MESSAGE(kvr_count_in_slice(region, ", look.bubble)") >= 1,
+        "KVR-A5 RED(r2): apply_look 零 look.bubble 写点——三态标头文案不再从 "
+        "kidpal_voice_states 闭集单源取出（另抄第二份 = 事实源分叉, 闭集零偏移"
+        "防线拆除）");
+    free(region);
+    n = kvr_count_in_file(KVR_LCD_CC, "create(g_kidpal_voice_page)");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 4,
+        kvr_fm("KVR-A5 RED(r2): g_kidpal_voice_page 直接子件创建仅 %d 处（期望 "
+               ">= 4: pose + 回显区 + 问答框 + 新增标头）——右内容区标头对象未落地 "
+               "（device-round VQ-A7 r2 事实①②③; 标头符号名不锁, label/容器两形态"
+               "均合法）", n));
+
+    /* ---- tooth 3 (VQ-A2): 回显行挂标头下方——WF-B-01/VQ-A2 冻结原文「回显在
+     * 『我在听！』标识下方」。标头对象与 echo_box 同父（needle 含父参
+     * g_kidpal_voice_page 即钉同父）且创建序在 echo_box 之前（LVGL 同父子件叠序 =
+     * 创建序, 标头在上、回显行在下）。区域 = voice_page 创建起至 echo_box 创建止
+     * （尾锚排除）, 其中 create(g_kidpal_voice_page) >= 2 = echo 之前除 pose 外
+     * 尚有新子件（= 标头; pose 前后均满足「在 echo_box 之前」, 精确位置不锁）。
+     * 若实现采用其它换序机制（lv_obj_move_to_index 等）, 须返 planner 重新钉锚。 */
+    region = kvr_region_between_ex(KVR_LCD_CC,
+                                   "g_kidpal_voice_page = lv_obj_create(lv_layer_top())",
+                                   "g_kidpal_voice_echo_box = lv_obj_create(g_kidpal_voice_page)",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KVR-A2 RED(infra): lcd_display.cc voice_page 布局区域切取失败（锚漂移——"
+        "SetupUI 整页版式结构被改动须复核本齿锚）");
+    n = kvr_count_in_slice(region, "create(g_kidpal_voice_page)");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kvr_fm("KVR-A2 RED(r2): echo_box 创建之前 voice_page 子件仅 %d 件（期望 "
+               ">= 2: pose + 标头）——标头未挂回显行上方, 「回显在『我在听！』标识"
+               "下方」未落成（device-round VQ-A7 r2 事实②; WF-B-01 冻结原文）", n));
+    free(region);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 8 — r3 静态盘点增补齿（device-round VQ-A7 r3; structural, seam [10];
+ * 增补条目单独成节, 既有齿 TEST 1-7 零改动）
+ * 2026-09-17 human 拍板「静态盘点先干、真机照片后置精修」四类 Chrome/演出面缺口:
+ *   r3-A1 底部键帽条上沿 3px 实线分隔（brief §2.3 原文; 现 bottom_bar_ 边宽 = 0）;
+ *   r3-A2 首页顶部信息栏下方虚线（design 稿 P1 辅助条节几何锚明确, 不 fail-closed;
+ *         设备侧 = home_p1.c 软帧渲染面, mock lv_line 画法为参照非落点）;
+ *   r3-B  bubble_tail_24.bin 气泡尾巴消费接线（现 apply_look (void) 闲置;
+ *         归档齿 v3_restore:648 消费不断红线承接）;
+ *   r3-C  缺资产扩闭集: mic（资产在世缺消费）/ 问号（资产零在世）/ 声波条
+ *         （载体缺失）; r3-D 内容区边框精修 = 后置零齿。
+ * RED today（设计态红, 义务红形态见文件尾「增补齿义务红形态（r3）」段; tooth 3-a
+ * 归档承接半与 tooth 4 mic 资产在世半为现状绿守卫, 不构成假绿——同齿红半承载
+ * 真实缺失行为）。
+ * ------------------------------------------------------------------------ */
+/* coverage: r3-A1 -- 底部键帽条上沿 3px 实线分隔（brief §2.3 原文; device-round-vqa7-r3 §A1; mock kidpal_ui.c:224-226 同款画法; 反证齿 = 0 写点销账） */
+/* coverage: r3-A2 -- 首页顶部信息栏下方虚线（design 稿 kidpal-ui-design-v4.html P1 辅助条节 border-top dotted 几何锚; device-round-vqa7-r3 §A2; 设备侧 home_p1.c 软帧渲染面, 画法存在性齿、几何观感归真机轮） */
+/* coverage: r3-B -- bubble_tail_24.bin 气泡尾巴消费接线（apply_look (void) 闲置销账 + 归档 v3_restore:648 同形态消费不断红线承接; device-round-vqa7-r3 §B） */
+/* coverage: r3-C1 -- mic 图标资产闭集在世 + 聆听态活侧消费（device-round-vqa7-r3 §C1, WF-B-01; 资产名不锁 = 文件名含 mic 的 .bin 形态） */
+/* coverage: r3-C2 -- 问号资产闭集新增 + 思考态活侧消费（首选 KAP1 .bin 形态, imgfont '?' 字形 = 备选返钉路径; device-round-vqa7-r3 §C2, WF-B-02） */
+/* coverage: r3-C3 -- 声波条载体于播报态渲染路径（首选 lv_anim 原生形态, KAP1 位图 = 备选返钉路径; device-round-vqa7-r3 §C3, WF-B-03） */
+TEST_CASE("语音轮场景映射: 真机轮r3静态盘点增补——Chrome分隔线+气泡尾巴消费+资产闭集+声波条 (r3-A1/r3-A2/r3-B/r3-C)",
+          "[voice_round_ui][r3][structural][device-round]")
+{
+    char *region;
+    char mic_asset[KVR_MAX_PATH];
+    char q_asset[KVR_MAX_PATH];
+    char hit[KVR_MAX_PATH];
+    int n;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ---- tooth 1 (r3-A1): 底部键帽条上沿 3px 实线分隔。bottom_bar_ 创建区域内
+     * LV_BORDER_SIDE_TOP + border_width 3 双 needle（brief §2.3「上沿 3px 实线
+     * 分隔」原文; mock kidpal_ui.c:224-226 同款画法: border_width 3 + border_side
+     * TOP）。反证齿: 旧 border_width 0 写点必须销账——LVGL 同属性后写覆盖前写,
+     * 残留 0 写点 = 上沿实线被抹平的假接线。 */
+    region = kvr_region_between_ex(KVR_LCD_CC,
+                                   "bottom_bar_ = lv_obj_create(screen)",
+                                   "chat_message_label_ = lv_label_create(bottom_bar_)",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "r3-A1 RED(infra): lcd_display.cc bottom_bar_ 创建区域切取失败（锚漂移——"
+        "SetupUI 活分支结构被改动须复核本齿锚）");
+    n = kvr_count_in_slice(region, "LV_BORDER_SIDE_TOP");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-A1 RED: bottom_bar_ 创建区域零 LV_BORDER_SIDE_TOP 写点（现 %d 处）"
+               "——底部键帽条上沿 3px 实线分隔缺失（brief §2.3 原文; device-round "
+               "VQ-A7 r3 §A1）", n));
+    n = kvr_count_in_slice(region, "border_width(bottom_bar_, 3");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-A1 RED: bottom_bar_ 边宽 3 写点缺失（现 %d 处）——上沿分隔线宽度"
+               "未按冻结口径落地", n));
+    n = kvr_count_in_slice(region, "border_width(bottom_bar_, 0");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("r3-A1 RED(反证): bottom_bar_ 区域残留 border_width 0 写点 %d 处——"
+               "LVGL 同属性后写覆盖前写, 残留即上沿实线被抹平", n));
+    free(region);
+
+    /* ---- tooth 2 (r3-A2): 首页顶部信息栏下方虚线。设备首页 = home_p1.c 软帧渲染
+     * 单源（rn_render_home_locked -> kidpal_home_p1_render_frame, 400×300 帧整帧
+     * blit; LVGL 对象画法会被帧 blit 覆盖）——needle 钉软帧侧虚线/点线画法在世
+     * （dash / dot / 虚线 / 点线 任一形态; mock kidpal_ui.c:197-204 lv_line 画法为
+     * 参照而非设备落点——对 planner 建议形态的偏离声明见交付报告; 若实现采用
+     * 其它画法 API 由 fixer 报告后 acceptance-author 复核返钉）。几何参数（design
+     * 稿 :555 border-top 2.5px dotted / 左右 6px 内缩）像素级观感归真机轮 VQ-A7。 */
+    TEST_ASSERT_TRUE_MESSAGE(kvr_exists(KVR_HOME_P1C),
+        "r3-A2 RED(infra): home_p1.c 不存在——首页软帧渲染单源被移除（tooth 锚面"
+        "失效, 返 acceptance-author 复核）");
+    n = kvr_count_in_file(KVR_HOME_P1C, "dash") +
+        kvr_count_in_file(KVR_HOME_P1C, "dot") +
+        kvr_count_in_file(KVR_HOME_P1C, "虚线") +
+        kvr_count_in_file(KVR_HOME_P1C, "点线");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-A2 RED: home_p1.c 零虚线/点线画法（dash/dot/虚线/点线 共 %d "
+               "命中）——首页顶部信息栏下方虚线分隔缺失（device-round VQ-A7 r3 "
+               "§A2; design 稿 P1 辅助条节几何锚）", n));
+
+    /* ---- tooth 3 (r3-B): bubble_tail 气泡尾巴消费接线（三态标头挂进气泡形态消费
+     * 该资产; device-round VQ-A7 r3 §B）。三件断言:
+     *  a) 归档齿 v3_restore:648 同形态承接——firmware/main 树内 bubble_tail_24.bin
+     *     引用不断（消费不断红线; 现状绿守卫, 定义点 g_kidpal_bubble_tail_asset
+     *     即命中——与 b) 合取后红线语义 = 定义 + 真实消费双在世）;
+     *  b) apply_look 区域内气泡尾巴引用在世（>=1; 消费形式不锁——资产名常量引用
+     *     或字面名引用均计）;
+     *  c) 反证齿: (void) 闲置抑制形态销账——消费 = 真实挂接, 不是压编译器告警。 */
+    n = kvr_scan_count("firmware/main", "bubble_tail_24.bin", hit, sizeof(hit));
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-B RED: firmware/main 零 bubble_tail_24.bin 引用（归档 v3_restore"
+               ":648 同形态断言承接失守）——V3 气泡尾巴资产消费不断红线被破坏"
+               "（首个命中应为资产常量定义点; 现命中: %s）", hit));
+    region = kvr_region_between_ex(KVR_LCD_CC,
+                                   "static void kidpal_voice_apply_look(int scene)",
+                                   "static void kidpal_chrome_mid_sync_locked(void)",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "r3-B RED(infra): lcd_display.cc apply_look 区域切取失败（锚漂移——与 "
+        "TEST 7 tooth 2 同锚, 被改动须复核本齿锚）");
+    n = kvr_count_in_slice(region, "g_kidpal_bubble_tail_asset") +
+        kvr_count_in_slice(region, "bubble_tail_24.bin");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-B RED: apply_look 区域零气泡尾巴引用（现 %d 处）——三态标头未挂进"
+               "气泡形态, bubble_tail_24.bin 有资产未消费（device-round VQ-A7 r3 §B; "
+               "1bpp 阈值观感归设备侧验证, 本齿钉消费接线）", n));
+    n = kvr_count_in_slice(region, "(void)g_kidpal_bubble_tail_asset");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("r3-B RED(反证): apply_look 区域残留 (void) 闲置抑制写点 %d 处——"
+               "消费 = 真实挂接, 不是压编译器告警（r3 §B 闲置销账要求）", n));
+
+    /* ---- tooth 5 (r3-C3): 声波条载体于播报态渲染路径（human 倾向 LVGL 原生矩形 +
+     * lv_anim 跳动——免管线、动画天然, 与资产闭集治理不冲突）。needle = 活侧
+     * lcd_display.cc 零 lv_anim（现状零）——声波条为当前语音轮唯一动画需求面,
+     * 创建/启停段字面不锁（SetupUI 常驻创建 + apply_look TALK 启停 / TALK 分支内
+     * 创建两形态均合法）; 态级绑定观感归真机轮 VQ-A7。若 fixer 取 KAP1 位图路线,
+     * 本齿返钉（见交付报告备选返钉路径）。与 tooth 3 共用同一切取区域（apply_look
+     * 单点 = 语音轮三态渲染唯一渲染面, seam [2]）。 */
+    n = kvr_count_in_slice(region, "lv_anim");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("r3-C3 RED: lcd_display.cc apply_look 区域零 lv_anim 写点（现 %d 处）"
+               "——播报态声波条载体缺失（device-round VQ-A7 r3 §C3, WF-B-03; human "
+               "倾向 LVGL 原生矩形 + lv_anim 形态, KAP1 位图为备选返钉路径）", n));
+    free(region);
+
+    /* ---- tooth 4 (r3-C1/C2): 新资产闭集——mic 图标 + 问号 + 活侧消费。资产存在
+     * 形态 = spiffs_root 文件名闭集（名不锁: mic = 文件名含 mic 的 .bin——现状
+     * ic_mic_48.bin 已在世为绿守卫; 问号 = 文件名含 question 的 .bin——spiffs_root
+     * 现零在世）。消费形态 = 活侧 lcd_display.cc 引用同一资产文件名 >= 1（先探明
+     * 实际资产名再以该名断消费, 存在与消费同一字面锚定; 姿态资产 pose_*.bin 在
+     * lcd_display.cc 字面引用为同款先例）。态级绑定（聆听态 mic / 思考态问号）由
+     * apply_look 按 scene 分支承载, 分支内字面形态不锁——绑定观感归真机轮 VQ-A7。
+     * 问号备选返钉路径: fixer 取 imgfont 加 '?' 字形路线时本齿改断字体表含问号
+     * （见交付报告备选返钉路径声明）。 */
+    n = kvr_count_bin_assets_named(KVR_SPIFFS_DIR, "mic", mic_asset, sizeof(mic_asset));
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        "r3-C1 RED: spiffs_root 零 mic 图标资产（文件名含 mic 的 .bin）——麦克风"
+        "图标闭集缺失（device-round VQ-A7 r3 §C1, WF-B-01 聆听态; 现状 ic_mic_48."
+        "bin 在世, 本半为守卫半）");
+    TEST_ASSERT_TRUE_MESSAGE(kvr_count_in_file(KVR_LCD_CC, mic_asset) >= 1,
+        kvr_fm("r3-C1 RED: 活侧 lcd_display.cc 零 %s 消费——聆听态麦克风图标有资产"
+               "未消费（挂接观感归真机轮, 本齿钉消费接线; device-round VQ-A7 r3 "
+               "§C1）", mic_asset));
+    n = kvr_count_bin_assets_named(KVR_SPIFFS_DIR, "question", q_asset,
+                                   sizeof(q_asset));
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        "r3-C2 RED: spiffs_root 零问号资产（文件名含 question 的 .bin）——问号闭集"
+        "缺失（device-round VQ-A7 r3 §C2, WF-B-02 飘问号; 首选 KAP1 新增 .bin 形态, "
+        "imgfont 加 '?' 字形为备选返钉路径）");
+    TEST_ASSERT_TRUE_MESSAGE(kvr_count_in_file(KVR_LCD_CC, q_asset) >= 1,
+        kvr_fm("r3-C2 RED: 活侧 lcd_display.cc 零 %s 消费——思考态问号有资产未消费"
+               "（飘问号 x3 静态摆, 动画浮动可后置; device-round VQ-A7 r3 §C2）",
+               q_asset));
+}
+
 /* ---------------------------------------------------------------------------
  * VQ-A8 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1052,6 +1614,70 @@ TEST_CASE("语音轮场景映射: 注册序守卫+范围纪律canary+扫描器�
  *   test/host_app 均可）; delivery/changes/dev/ 下证据路径一律按相对路径 + 仓根
  *   cwd 前提（C 侧遗留指针纪律, root 定位吃 cwd）。
  * ---------------------------------------------------------------------------
+ * 增补齿义务红形态（2026-09-17 device-round VQ-A7 r1 增补, acceptance-author）:
+ *   增补齿 = 设计态红（现实现下 TEST 6 FAIL 为预期, fixer 落地后转绿, verifier 终验;
+ *   不计入「新增红」违约——真实缺失行为红, 与 freeze 相位义务红同性质）:
+ *     - TEST 6 tooth 1（tts start 帧路径仍含 SetDeviceState(kDeviceStateSpeaking)
+ *       ——现状喂入载体在位, 场景切换未迁离 tts start 帧）;
+ *     - TEST 6 tooth 2（sentence_start 分支零 kidpal_voice_round_scene / KVR_EVT_
+ *       TTS_START 喂入——「开始播报」未绑实际起播时刻）;
+ *     - TEST 6 tooth 3（echo/answer label 零 lv_obj_set_style_text_font 全量字体
+ *       配置——默认字体无中文字形零上屏）;
+ *     - TEST 6 tooth 4（echo/answer 容器仍裸挂 screen 根创建, 无显式重挂/迁移清单
+ *       在位——被页面内容遮挡）;
+ *     - TEST 6 tooth 5（两容器仍 TOP_MID 族居中叠装在姿态列上方）。
+ *   义务红消除判据 = TEST 6 全齿绿（喂入在 sentence_start 分支经映射单源 / 字体
+ *   全量 puhui 家族 / 挂载离裸根三形态之一 / 居中反形态销账）; suite 终跑判读同
+ *   VQ-A8 段口径（相对有效基线零新增红 + 本包齿全绿, 增补齿并入本包齿集）。
+ *   锚漂移防护: TEST 6 各区域切取锚（tts/sentence_start/stt 帧分派、KidPalReparent
+ *   ChatToLayer 迁移函数）漂移时以 RED(infra) 形态报出, 须返 acceptance-author 复核
+ *   钉锚, 不得由 builder/fixer 改齿。
+ * ---------------------------------------------------------------------------
+ * 增补齿义务红形态（r2）（2026-09-17 device-round VQ-A7 r2 增补, acceptance-author）:
+ *   TEST 7 = 设计态红（现实现下 FAIL 为预期, fixer 落地后转绿, verifier 终验;
+ *   不计入「新增红」违约——真实缺失行为红）:
+ *     - TEST 7 tooth 1（THINK/TALK bubble 现值 NULL——「思考中」/「播报」标头
+ *       文案未落 kidpal_voice_states.c 闭集; LISTEN 同齿为既有零偏移复核, 现状绿）;
+ *     - TEST 7 tooth 2（apply_look 的 bubble 写点仍挂 g_kidpal_chat_label 旧挂点 +
+ *       voice_page 直接子件仅 3 件、标头对象未新增——现 3 < 4）;
+ *     - TEST 7 tooth 3（echo_box 创建之前 voice_page 子件仅 pose 1 件——标头不在
+ *       回显行上方, 「回显在『我在听！』标识下方」未落成）。
+ *   义务红消除判据 = TEST 7 全齿绿（三态 bubble 闭集值在世 / apply_look 旧挂点
+ *   写点清零且 look.bubble 单源写点仍经新标头 / 标头同父且创建序在 echo_box 之前）;
+ *   suite 终跑判读同 VQ-A8 段口径（相对有效基线零新增红 + 本包齿全绿, r2 增补齿
+ *   并入本包齿集）。锚漂移防护同上: apply_look 尾锚（kidpal_chrome_mid_sync_
+ *   locked）与 voice_page/echo_box 创建行锚漂移以 RED(infra) 报出, 返 acceptance-
+ *   author 复核, 不得由 builder/fixer 改齿。
+ * ---------------------------------------------------------------------------
+ * 增补齿义务红形态（r3）（2026-09-17 device-round VQ-A7 r3 静态盘点增补,
+ * acceptance-author）:
+ *   TEST 8 = 设计态红（现实现下 FAIL 为预期, fixer 落地后转绿, verifier 终验;
+ *   不计入「新增红」违约——真实缺失行为红）:
+ *     - TEST 8 tooth 1（bottom_bar_ 现边宽 0、零 LV_BORDER_SIDE_TOP 写点 + 残留
+ *       border_width 0 写点——上沿 3px 实线分隔缺失, 反证齿同红）;
+ *     - TEST 8 tooth 2（home_p1.c 现零 dash/dot/虚线/点线 画法——首页信息栏下
+ *       虚线分隔缺失）;
+ *     - TEST 8 tooth 3 b/c（apply_look 内气泡尾巴仍 (void) 闲置——消费未接线,
+ *       闲置销账反证齿同红; a) 归档承接半现状绿）;
+ *     - TEST 8 tooth 4（问号资产零在世 + mic/问号零活侧消费; mic 资产在世半
+ *       现状绿守卫）;
+ *     - TEST 8 tooth 5（lcd_display.cc 现零 lv_anim——播报态声波条载体缺失）。
+ *   义务红消除判据 = TEST 8 全齿绿（实线分隔在世且 0 写点销账 / 虚线画法在世 /
+ *   bubble_tail 真实挂接消费且闲置写点销账 / 两资产闭集在世且活侧消费在世 /
+ *   lv_anim 载体在世）; suite 终跑判读同 VQ-A8 段口径（相对有效基线零新增红 +
+ *   本包齿全绿, r3 增补齿并入本包齿集）。
+ *   备选返钉路径（任一被 fixer 采用须报告 + acceptance-author 复核返钉, 不得由
+ *   builder/fixer 改齿）:
+ *     - tooth 2: 实现走 dash/dot 字面之外其它画法 API（如自命名辅助函数内联点绘）
+ *       ——返钉为该函数消费 needle;
+ *     - tooth 4 问号: fixer 取 imgfont 加 '?' 字形路线（不新增 KAP1 .bin）——本齿
+ *       改断字体表/imgfont 闭集含问号字形;
+ *     - tooth 5: fixer 取 KAP1 位图路线（声波条帧资产）——本齿改断 spiffs_root
+ *       声波资产在世 + 播报态消费。
+ *   锚漂移防护: bottom_bar_ 创建区锚（chat_message_label_ 尾锚）/ apply_look 区域
+ *   锚（与 TEST 7 同锚）/ home_p1.c 存在性锚漂移以 RED(infra) 报出, 返 acceptance-
+ *   author 复核, 不得由 builder/fixer 改齿。
+ * ---------------------------------------------------------------------------
  * VQ-A7 真机证据要求（本文件不承载, human 持板轮; enforce-scope 拦 changes/dev
  * 写入——本段由 planner 转写进 delivery/changes/dev/260915-m1-k3-voice-round-ui/）:
  *   ① 思考页真机首次可弹（说完一句即弹、与状态切换同刻, 不分离）;
@@ -1072,4 +1698,26 @@ TEST_CASE("语音轮场景映射: 注册序守卫+范围纪律canary+扫描器�
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-16  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-k3-voice-round-ui)。
+ *   2026-09-17  augment: device-round VQ-A7 r1 三处真机缺陷增补齿（TEST 6 单独成节,
+ *               seam [8] 尾注「增补齿义务红形态」段同步; TTS_START 喂入时机 VQ-A1 /
+ *               全量中文字体 VQ-A2/A3 / 可见面挂载+骨架反形态 VQ-A5; 既有齿 TEST 1-5
+ *               零改动）（acceptance-author, planner 增补派单, 红基线模型: 增补齿 =
+ *               设计态红, fixer 实现后转绿）。
+ *   2026-09-17  augment: device-round VQ-A7 r2 渲染面偏差增补齿（TEST 7 单独成节,
+ *               seam [9] + 尾注「增补齿义务红形态（r2）」段同步; 三态 bubble 闭集
+ *               标头值 VQ-A2/A5 / 标头写点统一挂 voice_page 右内容区 VQ-A5 / 回显行
+ *               挂标头下方 VQ-A2; 既有齿 TEST 1-6 零改动; TEST 4 对 THINK/TALK
+ *               bubble 无断言面, 零冲突无须裁量——判读声明落 TEST 7 头注）
+ *               （acceptance-author, planner 小修轮增补派单, 红基线模型同 r1: 增补齿
+ *               = 设计态红, fixer 实现后转绿）。
+ *   2026-09-17  augment: device-round VQ-A7 r3 静态盘点增补齿（TEST 8 单独成节,
+ *               seam [10] + 尾注「增补齿义务红形态（r3）」段同步; 底条上沿 3px 实线
+ *               r3-A1 / 首页辅助条虚线 r3-A2 / bubble_tail 消费接线 r3-B / mic+
+ *               问号新资产闭集+活侧消费 r3-C1/C2 / 声波条载体 r3-C3; 既有齿
+ *               TEST 1-7 零改动; r3-D 内容区边框精修 human 明令后置零齿; tooth 2
+ *               落点按设备实况钉 home_p1.c 软帧渲染面——mock lv_line 画法形态不适用
+ *               设备首页整帧 blit, 偏离 planner 建议形态声明见交付报告; tooth 4
+ *               mic 半按实况改钉消费接线——ic_mic_48.bin 已在世）
+ *               （acceptance-author, planner 补齐轮增补派单, 红基线模型同 r1/r2:
+ *               增补齿 = 设计态红, fixer 实现后转绿）。
  * --------------------------------------------------------------------------- */

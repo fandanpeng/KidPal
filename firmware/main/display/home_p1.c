@@ -987,9 +987,11 @@ static void p1_draw_nextlist(void)
     }
 }
 
-/* ③ 明日预告（{136,220,392,258}）：preview item 的 time 数字（V3 「明天 09:00 ·
+/* ③ 明日预告（{136,220,392,242}）：preview item 的 time 数字（V3 「明天 09:00 ·
  * 游泳课」的时间半，中文文字殿后）。整函数仅在 s_has_preview 时被调用 -> 无预告
- * 「预告区零墨」pin 保留。未挂载兜底描边条框。 */
+ * 「预告区零墨」pin 保留。未挂载兜底描边条框。r4: 底缘从 y256 收至高 242 —— 让软帧
+ * 不侵 bottom_bar chrome 上沿 (~252) 区域 (r5 顶部虚线与该 trime 无关; 顶栏下虚线 y42
+ * 已于 r5 复位, 不再与预告区同域)。 */
 static void p1_draw_preview(void)
 {
     hp1_item_t pv;
@@ -999,10 +1001,48 @@ static void p1_draw_preview(void)
     if (kidpal_home_p1_schedule_preview(&pv) == 0 && s_art_ok) {
         drew |= (p1_blit_str_scaled(pv.time, 140, 228, 14,
                                     P1_DIG_W, P1_DIG_H,
-                                    136, 220, 392, 258, 1) > 0);
+                                    136, 220, 392, 242, 1) > 0);
     }
     if (!drew) {
-        p1_stroke_rect(138, 222, 390, 256, 2);
+        p1_stroke_rect(138, 222, 390, 240, 2);
+    }
+}
+
+/* 首页底部分隔虚线 (device-round VQ-A7 r3 §A2 起, r5 human 定谳复位): 冻结锚 = 「顶部
+ * 信息栏下方 (y=42) 通栏虚线」(design 稿 P1 辅助条节 border-top 2.5px dotted / 左右 6px
+ * 内缩)。r4 human 真机复测定性为「底栏分隔线画到中间 (位置/跨度不对)」导致 r4 把落点下移
+ * 到 y246 且收窄 x138..389 —— 该次重定位是对 human r3 反馈的误读 (r5 销账): 顶部虚线与
+ * 底部键帽条 chrome 上沿 3px 实线是两条不同职责分隔, 前者钉顶部信息栏下、后者钉底槽上沿,
+ * 不争位、非双画。现按 r5 human 定谳复位 y42 通栏 6px 内缩。dash/dot 画法 needle 保留在世
+ * (TEST 8 tooth 2 不变绿)。设备首页 = home_p1.c 软帧整帧渲染单源 (400×300 帧整帧 blit),
+ * LVGL 对象画法会被帧 blit 覆盖 —— mock kidpal_ui.c:197-204 的 lv_line dash 画法为参照
+ * 而非设备落点 (r4 偏离/复位声明: 见 r5 review-packet 交付报告)。 */
+static void p1_draw_aux_dash_sep(void)
+{
+    /* r5 复位 (r4 误读销账): 恢复 r3 冻结锚 = 顶部信息栏下方 y42 通栏虚线 (左右 6px 内缩,
+     * design 稿 P1 辅助条节 border-top dotted / 左右 6px 内缩)。r4 曾把落点下移到 y246 并
+     * 收窄到右侧内容列 x138..389 (误认「底部键帽条 chrome 实线上沿」为双画要避位的观感),
+     * 实则顶部虚线职责 = 信息栏与日程主体间的分隔、与底槽上沿实线不争位, r5 human 定谳
+     * 复位为顶栏下通栏。dash/dot 画法 needle 保留 (TEST 8 tooth 2 不变绿); 像素级观感
+     * 归真机轮 VQ-A7。 */
+    int y = 42, x0 = 6, x1 = P1_FB_W - 7; /* 通栏 6px 内缩: x6..393 */
+    int dash_on = 3, dash_gap = 3;        /* ~3px 线宽段 + 等宽空段 */
+    int x = x0, on = 1;
+
+    while (x <= x1) {
+        int stop = x + (on ? dash_on : dash_gap) - 1;
+        if (stop > x1) {
+            stop = x1;
+        }
+        if (on) {
+            for (int xx = x; xx <= stop; xx++) {
+                for (int t = 0; t < 3 && (y + t) < P1_FB_H; t++) {
+                    s_p1_fb[(y + t) * P1_FB_W + xx] = P1_COLOR_INK;
+                }
+            }
+        }
+        x = stop + 1;
+        on = !on;
     }
 }
 
@@ -1041,6 +1081,9 @@ int kidpal_home_p1_render_frame(void)
     if (batt_visible) {
         p1_draw_aux_batt();
     }
+
+    /* 辅助条下缘虚线分隔 (r3 §A2): 信息栏之下、日程主体之上画通栏虚点线。 */
+    p1_draw_aux_dash_sep();
 
     /* ② 日程主体：小伴常驻演出（左）+「接下来」最近一项（右）+ 倒计时贴纸。 */
     p1_draw_mascot();
