@@ -1,0 +1,85 @@
+{
+  "changeId": "260917-m2-k1-char-link-defect-fix",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "milestone",
+    "upstreamType": "milestone",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M2-char-window",
+    "upstreamFrozen": "",
+    "workstream": "m2-char-window"
+  },
+  "subsystem": "firmware",
+  "story": "M2-K1 查字链路两缺陷正式修复（板端 LVGL 栈定容 + SVG 解析器补 C 命令）",
+  "planRef": "delivery/taskpackages/260917-m2-k1-char-link-defect-fix/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m2-char-window/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "M2K1-A1: SVG 解析器 C 命令 host 齿——新增齿在未打修复的当前解析器上 RED（含 C 命令的 makemeahanzi 路径整笔被丢弃、断言零丢笔），补 C 命令三次贝塞尔离散成点后 GREEN；closeout 声明 RED→GREEN",
+    "M2K1-A2: M/L/Q/Z 既有命令回归齿——解析点集与修复前逐位一致（C 命令加入不改既有四命令行为，char_stroke 数据面零回归）",
+    "M2K1-A3: 栈修复结构齿——char_page 动画帧路径（pts/sc/toks 局部大数组）去栈改造后，结构断言钉渲染帧路径零 ~6.5KB 级栈局部数组；custom_lcd_display.cc taskLVGL 栈定容值收编为命名常量、一次性补丁注记替换",
+    {
+      "id": "M2K1-A4: live 端到端复证（deferred 归 M2-K3 设备轮）——真机查『勇』9 笔完整演示不崩、示范字无缺笔；NFR-PERF-2 live 复测随同轮承载",
+      "kind": "structural",
+      "note": "真机齿 deferred：单真机不两轮撞车，K1 侧 host 齿 + device build 闸先行，live 复证挂 K3 设备轮（launchPreconditions 第 4 条）"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/char_stroke.acceptance.c"
+  ],
+  "exitCriteria": [
+    "M2K1-E1: C 命令齿 RED→GREEN + 既有命令回归齿全绿，host runner 全量零新增红",
+    "M2K1-E2: 铁律——不改 docs/contracts/**（D3 strokes 为 makemeahanzi SVG path 自由文本，C 命令属词汇表内解析补全、非契约改动；仍按契约纪律先走 architect 快审确认归类）、不改 spec、不改 agent 定义/gate",
+    "M2K1-E3: device build 闸全绿（custom_lcd_display.cc 板级面本包必触，设备编译不得缺席）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md"
+  ],
+  "sourceRefs": [
+    "delivery/milestones/milestones.jsonl#M2-char-window",
+    "docs/requirements.md#S-F3.1",
+    "docs/requirements.md#NFR-PERF-2",
+    "firmware/main/display/char_stroke.c",
+    "firmware/main/display/char_page.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "纯实现缺陷修复：契约 D3 无改动（SVG path 词汇表内解析补全）、spec 层需求行已冻结（S-F3.1 可行性注记已登记两缺陷修复路径），零 docs 面改动；修复细节随代码注释与 closeout 制品承载。",
+  "mergeOrder": 28,
+  "dependsOn": [],
+  "testHost": "host runner（WSL linux target）+ device build 闸；真机半 deferred 归 M2-K3 设备轮",
+  "decisionCoverage": [],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/char_stroke.c",
+        "symbol": "char_stroke_parse_path"
+      },
+      {
+        "path": "firmware/main/display/char_page.cc",
+        "symbol": "charpage_render_frame"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "两缺陷 2026-09-15 真机复验登记（requirements S-F3.1 可行性注记），已核 260915-m1-k1a/k2/k3/k4 与 260917-m1-k4-rma8-fixbatch 四个已合并包均未触及（grep 证据：char_stroke.c:62/174-241 仍仅 M/L/Q/Z、custom_lcd_display.cc:128-131 16K 栈仍为一次性实验注记）。mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。char_stroke.c 为数据面 host 可编（归档齿 char_stroke.acceptance.c 先例），C 命令齿 host 机判；char_page.cc 装配面非 host 编译，A3 结构齿以源级断言承载。"
+}
