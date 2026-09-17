@@ -751,6 +751,11 @@ void Application::HandleStateChangedEvent() {
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
             kidpal_render_node_voice_end();
+            /* M1-K4 RM-A3「录音会话结束立刻弹」触发（触发点路由不锁）：录音态提醒到点
+             * 排队延后，会话/录音收尾回 Idle 即调 RaiseReminderQueue —— 此刻录音态已
+             * 消除、gate 判 RAISE，把排队提醒立即弹出（无排队或弹窗已驻留时其内部
+             * raise_next 返回 0 = no-op，恒安全幂等）。 */
+            McpServer::GetInstance().RaiseReminderQueue();
             break;
         case kDeviceStateConnecting:
             display->SetStatus(Lang::Strings::CONNECTING);

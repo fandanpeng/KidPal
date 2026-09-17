@@ -13,7 +13,7 @@
   "story": "S-F1.4 · 日程提醒（AC1–AC6）",
   "planRef": "delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核红基线——schedule_reminder_b 套齿在 260915-m1-k1a-key-layer-dispatch 成批改后的新基线上复核）",
-  "redBaselineResult": "intake 时由 acceptance-author 实跑复核（本字段由 Pod 内 planner 落账）",
+  "redBaselineResult": "intake 2026-09-17 两面重跑实测（launch 判停两面均须重跑，已执行）：firmware host 面 26 Tests / 0 Failures / 0 Ignored EXIT=0（13/0 旧锚后 K2/N1b/K3 齿入 runner、schedule_reminder_b k1a 批改后归档退役，在册红空，CMakeCache Ninja 一致）；server 面 0 collected exit 0（--ignore=server/acceptance/archive 口径，与 a398264 锚一致）。C 类实编 gcc -fsyntax-only error 零；coverage 闸 ok:true。有效基线 = 26/0/0 + 0 collected；义务红清单与逐条定性见 delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/red-baseline.md",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -128,7 +128,60 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "RM-A1: 提醒弹窗四态统一骨架——版式与语音轮三态同一骨架（左小伴 pose-jump + 右大字事项/时间，WF-B-04），复用 260915-m1-k3-voice-round-ui 建立的骨架（不另建）；三件套同时发生（提示音 + 语音读出 + 弹窗驻留）",
+        "mutation": "lcd_display_remind_scene_swap_stub",
+        "counterEvidence": "test 7 tooth 1, expect lcd_display.cc 消费 kidpal_voice_apply_look(KVST_SCENE_REMIND) ≥1 处（骨架单源不 fork）; FAIL @ line 991「现 0 处」; 34 Tests 1 Failures",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A2: 最高层覆盖——提醒弹出时压过查字窗/录音态/播报中等任何前台内容；置顶期间 KEY/BOOT 按弹窗语义处理、不穿透底层窗口（§2.2 层级口径）",
+        "mutation": "reminder_gate_raise_col_invalid_stub",
+        "counterEvidence": "test 1 tooth 1, expect kidpal_reminder_gate(非录音前台 layer=0,0)==KRM_GATE_RAISE（最高层覆盖恒放行）; FAIL @ line 556「非录音前台 layer=0 门控未放行 RAISE」; 34/1",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A3: 录音态排队例外——录音中提醒到达 = 排队延后、录音会话结束立刻弹（防提醒 TTS 混进录音内容）；这是层级口径唯一例外",
+        "mutation": "reminder_gate_defer_col_raise_stub",
+        "counterEvidence": "test 1 tooth 2, expect kidpal_reminder_gate(录音 layer=0,1)==KRM_GATE_DEFER（录音恒延后唯一例外）; FAIL @ line 567「录音前台 layer=0 门控未延后 DEFER」; 34/1",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A4: 排队不叠屏——弹窗期间另一条提醒到达排队、当前弹窗关闭后下一条自动弹出（AC3）",
+        "mutation": "reminder_raise_render_guard_removed_stub",
+        "counterEvidence": "test 4 tooth 2, expect raise_next(1615+1)==0（驻留未渲染不得叠屏, 渲染级不变式）; FAIL @ line 766「驻留未渲染时 raise 判定替换了弹窗——叠屏」; 34/1 独红",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A5: 去重不重复弹——同一提醒云端重算/重推不重复弹窗（AC4）",
+        "mutation": "reminder_receive_acked_rearm_stub",
+        "counterEvidence": "test 5 tooth 3, expect receive(已 acked 重推)==KRM_STATE_RECEIVED 零动作不复活; FAIL @ line 824「已确认驻留被重推复活/重弹」; 34/1 独红",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A6: 弹窗驻留到按键、不设无操作自动消失（AC1/AC2 + 补充规则驻留口径）；KEY = 关闭回当前页、BOOT = 关闭回原页不翻页（读 key-layer-dispatch 分层裁决）",
+        "mutation": "reminder_key_click_passthrough_stub",
+        "counterEvidence": "test 6 Block 2 KEY 单击, expect kidpal_reminder_key(...KEY CLICK)==KRM_KEY_DISMISS && page_out==PAGE_P2（关闭回当前页）; FAIL @ line 880「KEY 单击未关闭回当前页」; 连带 test 4 tooth 3 line 772 FAIL（共享 key() 语义涟漪）; 34/2",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "RM-A7: 过期档位不补发——已过时刻的档位不补发不追催（补充规则过期口径）",
+        "mutation": "reminder_v18_expire_noreplace_stub",
+        "counterEvidence": "test 6 Block 3, expect raise_next(1615)==2（V18 滞留顶替, 被顶替项不复活）; FAIL @ line 949「事件已过的滞留弹窗未被顶替」; 34/1 独红",
+        "result": "failed as expected"
+      },
+      {
+        "id": "RM-A8: 真机确认轮（human 持板）——弹窗演出/最高层覆盖/录音排队例外真机确认；证据落 changes/dev/<changeId>/",
+        "kind": "structural"
+      },
+      {
+        "acceptanceId": "RM-A9: host runner 终跑 = 相对有效基线零新增红 + 本包新齿全绿（schedule_reminder_b 新基线）",
+        "mutation": "cmake_registration_after_smoke_stub",
+        "counterEvidence": "test 8 tooth 1, expect reminder_overlay_unify.acceptance.c 行排在 host_infra_smoke 之前（注册序守卫 mine<smoke）; FAIL @ line 1115「本包两行必须排在 host_infra_smoke.acceptance.c 之前」; 34/1",
+        "result": "failed as expected"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [

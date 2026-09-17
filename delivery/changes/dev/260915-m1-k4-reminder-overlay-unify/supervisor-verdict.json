@@ -1,0 +1,93 @@
+{
+  "verdict": "APPROVE",
+  "riskTier": "medium",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-09-17T08:51:31.580Z",
+  "changeId": "260915-m1-k4-reminder-overlay-unify",
+  "originType": "delivery-story",
+  "adjudication": {
+    "verdict": "APPROVE",
+    "riskTier": "medium",
+    "reasons": [
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:medium",
+      "adjudicate:low/med∧evidence-complete→APPROVE(restore-auto-merge)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "low",
+      "declaredTier": "medium",
+      "effectiveTier": "medium",
+      "ambiguous": false,
+      "diffReasons": [
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 3,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "low",
+        "declaredTier": "medium",
+        "effectiveTier": "medium",
+        "ambiguous": false,
+        "diffReasons": [
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/verifier-evidence/rounds/r3.json",
+        "bearingFactOk": true,
+        "completedRounds": 3,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/docs-delta.md",
+          "delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "delivery-story"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789461743284-unit.log",
+      ".claude/verify-logs/1789461748978-acceptance.log",
+      ".claude/verify-logs/1789463118540-unit.log",
+      ".claude/verify-logs/1789463124418-acceptance.log",
+      ".claude/verify-logs/1789485860043-mutation-check.log",
+      ".claude/verify-logs/1789488468744-unit.log",
+      ".claude/verify-logs/1789488475385-acceptance.log",
+      ".claude/verify-logs/1789490261700-unit.log",
+      ".claude/verify-logs/1789490267507-acceptance.log",
+      ".claude/verify-logs/1789537345305-unit.log",
+      ".claude/verify-logs/1789537352187-acceptance.log",
+      ".claude/verify-logs/1789538611975-unit.log",
+      ".claude/verify-logs/1789538618055-acceptance.log",
+      ".claude/verify-logs/1789548112570-firmware-build.log",
+      ".claude/verify-logs/1789548407775-mutation-check.log",
+      ".claude/verify-logs/1789548424958-mutation-check.log",
+      ".claude/verify-logs/1789549791318-unit.log",
+      ".claude/verify-logs/1789549816257-unit.log",
+      ".claude/verify-logs/1789549865424-unit.log",
+      ".claude/verify-logs/1789549898693-unit.log",
+      ".claude/verify-logs/1789564558139-unit.log",
+      ".claude/verify-logs/1789564618306-unit.log",
+      ".claude/verify-logs/1789564696672-unit.log",
+      ".claude/verify-logs/1789564723662-unit.log",
+      ".claude/verify-logs/1789575144417-firmware-build.log",
+      ".claude/verify-logs/1789575308744-firmware-build.log",
+      ".claude/verify-logs/1789575608196-mutation-check.log",
+      ".claude/verify-logs/1789630001813-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/verifier-evidence/rounds/r3.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/docs-delta.md",
+      "delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/review-packet.md"
+    ]
+  }
+}

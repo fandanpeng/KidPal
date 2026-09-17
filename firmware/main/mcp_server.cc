@@ -311,9 +311,29 @@ ReturnValue McpServer::HandleAlertCall(const PropertyList& arguments) {
     return ack;
 }
 
+/* 提醒材料壳 C 桥（K4 overlay-unify 消费; 实现 home = display/lcd_display.cc, 复用
+ * 语音轮四态骨架 + 时间行单源 kidpal_reminder_hhmm。同名缩略不冲突 —— 声明在此以
+ * 匹配既有 kidpal_lcd_voice_chrome_front 的「调用点前向声明」模式）。 */
+extern "C" int kidpal_lcd_reminder_show(const kidpal_alert_t *a);
+
 void McpServer::RaiseReminderQueue() {
     kidpal_reminder_t* state = kidpal_reminder_default();
     kidpal_alert_t shown;
+
+    /* 录音排队例外门控（RM-A3, requirements §2.2 唯一例外）: 录音中提醒到点不 raise、
+     * 队列保持（防提醒 TTS 混进录音内容）；front_layer 取 K1a layer 栈单一权威。
+     * 录音会话结束 -> application.cc Idle 路径触发本函数，此刻 recording=0 即恢复弹出。
+     * DEFER（录音中）/ INVALID（防御）-> 队列保持不动、不发回执不叠屏。 */
+    {
+        int rec_now = (g_story_view.page == KSTORY_PAGE_RECORDING) ? 1 : 0;
+        int decision = kidpal_reminder_gate(kidpal_render_node_front_layer(), rec_now);
+
+        if (decision != KRM_GATE_RAISE) {
+            ESP_LOGI(TAG, "alert_defer corr_id=none recording=%d state=%d", rec_now,
+                     decision);
+            return;
+        }
+    }
 
     int raised = kidpal_reminder_raise_next(state, AlertNowMinutes());
     if (raised <= 0) {
@@ -323,15 +343,16 @@ void McpServer::RaiseReminderQueue() {
         return;
     }
     /* 崩溃修复（包 260829-hardware-validation 语义保留）+ 提醒前台优先级（review F8，
-     * 归一屏）：提醒弹窗渲染与故事/课表同族——kidpal_reminder_page_render 走
-     * lv_screen_active()+lv_obj_clean()。语音轮若恰有提醒到点，clean 聊天层视觉控件会
-     * 销毁 xiaozhi status_label_ → SetStatus 悬空崩溃。夹 begin_reminder/end 令其画到
-     * s_kidpal_scr 并持锁，且把 REMINDER 推入前台 layer 栈（REMINDER > VOICE/SERVER，
-     * 提醒恰在语音轮到点也置前、不崩——同族崩溃已修症状未修架构，此处修架构）。
+     * 归一屏）：提醒弹窗渲染与故事/课表同族，走 lv_screen_active()+lv_obj_clean()。
+     * 语音轮若恰有提醒到点，clean 聊天层视觉控件会销毁 xiaozhi status_label_ →
+     * SetStatus 悬空崩溃。夹 begin_reminder/end 令其画到 s_kidpal_scr 并持锁，且把
+     * REMINDER 推入前台 layer 栈（REMINDER > VOICE/SERVER，提醒恰在语音轮到点也置前、
+     * 不崩——同族崩溃已修症状未修架构，此处修架构）。材料壳 = 语音轮四态骨架复用
+     * （K4, RM-E3 反 fork），旧 v1.13 卡面渲染面已退役。
      * 本函数有两个调用上下文（main-task Schedule / LVGL 定时器 AlertDrainTimerCb），
      * esp_lvgl_port 锁为递归互斥量，同任务嵌套 take 安全、give 平衡。 */
     kidpal_render_node_begin_reminder();
-    int alert_drawn = kidpal_reminder_page_render(&shown);
+    int alert_drawn = kidpal_lcd_reminder_show(&shown);
     kidpal_render_node_end_page();
     if (alert_drawn != 1) {
         /* 渲染未成 -> 不发回执，交由网关 60s 重推收敛（不假装送达） */
@@ -342,10 +363,15 @@ void McpServer::RaiseReminderQueue() {
         /* 首次有提醒到达才建驱动 timer（1s 轮询 raise 判定；无常驻定时器开销） */
         g_alert_drain_timer = lv_timer_create(AlertDrainTimerCb, 1000, nullptr);
     }
+    /* 三件套（RM-A1）提示音一半：真起弹窗即出音（OGG_POPUP 音源强定义在本文件, 见
+     * kidpal_reminder_play_popup_tone）。语音一半不在设备侧：服务端到点向引擎腿注入
+     * kidpal_speak，借引擎既有 edge-tts + opus 下行链出音（裁定二）；设备只画「小伴
+     * 在说」形态并出提示音。 */
+    if ((kidpal_reminder_render_actions(&shown) & KRM_ACT_TONE) != 0) {
+        kidpal_reminder_play_popup_tone();
+    }
     ESP_LOGI(TAG, "alert_render corr_id=%s raised=%d actions=%d tone=ogg_popup speak_leg=engine",
              shown.id, raised, kidpal_reminder_render_actions(&shown));
-    /* 语音一半不在设备侧：服务端到点向引擎腿注入 kidpal_speak，借引擎既有
-     * edge-tts + opus 下行链出音（裁定二）；设备只画「小伴在说」形态并出提示音。 */
     EmitRenderReceipt(std::string(shown.id));
 }
 
