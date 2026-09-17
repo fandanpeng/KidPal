@@ -1156,6 +1156,113 @@ TEST_CASE("提醒弹窗统一: 注册序守卫+需求契约canary+扫描器自�
     (void)hit; /* scan helper 保留给后续增补轮; 本轮计数面用 count_in_file 承载 */
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 9 — FX-A1 F1 渲染回执链集成齿（structural, TaskPackage 260917-m1-k4-rma8-fixbatch）
+ *
+ * K4 假绿根源修复齿: 既有 RM 齿在 fixture 里自调 kidpal_reminder_mark_rendered 桩级
+ * 模拟「渲染完成」（TEST 5/6, 状态机单测语义正确, 本包零改）, 但真实渲染路径
+ * RaiseReminderQueue 生产代码零 mark_rendered 调用点 -> shown.rendered 恒 0 ->
+ * may_emit_receipt 恒 0 -> EmitRenderReceipt 静默 return -> 网关 alert_deliver
+ * delivered=True 而 acked=0、60s 重推 ×3、TTS 重播（RM-A8 device-round-1 F1, 根因
+ * 钉死）。本齿钉「渲染路径接线回执链」这一集成事实, 齿代码**零 mark_rendered 自调**
+ * （本包验收纪律——K4 假绿根源禁令）。
+ *
+ * 形状选型声明（acceptance-author 2026-09-17）: plan.md 给出两形状——①源级结构断言
+ * ②链接 RaiseReminderQueue 的 host harness。选①, 理由: RaiseReminderQueue 依赖
+ * McpServer::GetInstance / Application::Schedule / lvgl_port 锁 / kidpal_lcd_reminder_
+ * show（LVGL 对象面）, host harness 须整面 stub 上述运行时 = 以 mock 剧场再造被测链路
+ * （test-quality-antipatterns「Over-mocking」）, 且桩级 harness 仍证明不了真机 acked=1;
+ * 结构断言 + mutation 证据（删除接线调用 -> 本齿必红 -> 还原）+ FX-A2 真机三方互证
+ * 三层承载同一链条。结构齿的注释假绿风险由 mutation 证据兜底: 变异 = 删除真实调用行
+ * （留注释不红 -> mutation 证据失败 -> verifier 判 vacuous）。
+ *
+ * RED today（f0a650e, 未打修复）: mcp_server.cc RaiseReminderQueue→EmitRenderReceipt
+ * 区域零 mark_rendered 调用（tooth 1/2 红, 本批义务红核心）。GREEN after fix
+ * （plan.md 一行级接线）: 转绿。closeout 须声明本齿 RED→GREEN。
+ *
+ * mutation 证据期望（mutationRequired=true, builder 回传义务, 落 taskpackage
+ * mutationEvidence.perAcceptance, acceptanceId 与 taskpackage acceptance[] 正文逐字节
+ * 一致——勿到 verifier 轮才补）: FX-A1 —— 变异 = 注释/删除 RaiseReminderQueue 内
+ * mark_rendered 接线调用（或等价使回执链断的实现面变异; 变异命名不得保留被测符号原
+ * 字面为子串, [6] 纪律）, 预期 TEST 9 转 RED, 还原后 GREEN; 逐字证据随 closeout 回传。
+ * ------------------------------------------------------------------------ */
+/* coverage: FX-A1 -- F1 host 集成齿: RaiseReminderQueue 渲染成功路径在 alert_drawn!=1 早退之后、EmitRenderReceipt 之前调用 kidpal_reminder_mark_rendered（渲染即武装回执; 测试代码不自调 mark_rendered; 未打修复 RED -> 修复后 GREEN, closeout 声明 RED→GREEN; mutation 证据必回传） */
+TEST_CASE("F1 渲染回执链接线: RaiseReminderQueue 渲染路径调用 mark_rendered (FX-A1)",
+          "[reminder_overlay_unify][FX-A1][receipt][structural]")
+{
+    char *region;
+    int n;
+
+    KRMU_REQUIRE_ROOT();
+
+    /* tooth 1: 渲染成功路径整段（RaiseReminderQueue 定义 -> EmitRenderReceipt 调用）
+     * 存在 mark_rendered 接线调用——「画完弹窗即武装渲染完成」的回执链事实。RED today:
+     * 生产零调用点（device-round-1 F1 根因）。 */
+    region = krmu_region_between(KRMU_MCP_CC,
+                                 "void McpServer::RaiseReminderQueue()",
+                                 "EmitRenderReceipt(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KRMU RED(infra): mcp_server.cc RaiseReminderQueue 区域切取失败（锚漂移——"
+        "RaiseReminderQueue/EmitRenderReceipt 结构被改动须复核本齿锚）");
+    n = krmu_count_in_slice(region, "kidpal_reminder_mark_rendered(");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        krmu_fm("FX-A1 RED: mcp_server.cc RaiseReminderQueue 渲染路径零 "
+                "kidpal_reminder_mark_rendered 调用（现 %d 处）——渲染即确认的回执链断: "
+                "shown.rendered 恒 0 -> may_emit_receipt 恒 0 -> 回执静默不发 -> 网关 "
+                "acked=0 + 60s 重推 + TTS 重播（RM-A8 device-round-1 F1）", n));
+    free(region);
+
+    /* tooth 2: 接线落位 = alert_drawn != 1 早退检查之后、EmitRenderReceipt 之前
+     * （plan.md 钉死的单一修复点: 同时覆盖 raise_next=1 新弹与 =2 V18 滞留顶替两路径;
+     * 渲染未成时不得武装回执——「不假装送达」红线, mcp_server.cc alert_render degrade
+     * 语义保留）。 */
+    region = krmu_region_between(KRMU_MCP_CC,
+                                 "alert_drawn != 1",
+                                 "EmitRenderReceipt(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "KRMU RED(infra): mcp_server.cc alert_drawn 早退锚切取失败（锚漂移须复核本齿锚）");
+    n = krmu_count_in_slice(region, "kidpal_reminder_mark_rendered(");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        krmu_fm("FX-A1 RED: mark_rendered 接线不在渲染成功路径上（须落位 alert_drawn!=1"
+                " 早退之后、EmitRenderReceipt 之前, 现 %d 处）——接线落位漂移: 早退前"
+                "武装 = 渲染未成假装送达; EmitRenderReceipt 后武装 = 回执永不发", n));
+    free(region);
+}
+
+/* coverage: FX-A4 -- host 机制半=TEST 6 Block 2（KEY 单击回当前页 / BOOT 关窗回原页不翻页判别式全表）; 真机半 deferred RM-A8 重跑 */
+/* coverage: FX-A5 -- host 机制半=TEST 1 tooth2（gate DEFER 决策表）+ TEST 7 tooth4/5（录音排队决策表）; 真机补测 deferred RM-A8 */
+
+/* ---------------------------------------------------------------------------
+ * FX coverage map（TaskPackage 260917-m1-k4-rma8-fixbatch, acceptance 靶 FX-A1~A7
+ * 落位声明——host 可机判 vs 真机齿 vs 结构条目, 不得静默; 上方两条 coverage marker
+ * 行 = 闸可机读形态, 本 map 块 prose 为同一落位声明的人读形态, 两者语义逐字一致）:
+ *   FX-A1 -> TEST 9（host 结构齿, RED->GREEN; 本批义务红清单核心; 齿代码零
+ *            mark_rendered 自调; 形状选型理由见 TEST 9 头注）。
+ *   FX-A2 -> 真机齿 deferred（RM-A8 重跑, human 持板: journalctl acked=1 + 串口无
+ *            60s 重推 + 单次 TTS 目击三方互证, 沿用 device-round-1 取证形态; 证据落
+ *            changes/dev/260917-m1-k4-rma8-fixbatch/）。host 侧承载 = TEST 9（回执链
+ *            接线事实 = 真机 acked=1 的设备侧前置）; WS/网关链路 host 上不可机判,
+ *            不造伪断言。
+ *   FX-A3 -> 真机齿 deferred（RM-A8 重跑; F2 不变量靶 = 弹窗驻留期间 speaking 态
+ *            视觉事件不得改变 REMINDER 前台视觉 + 弹窗三要素 TTS 播报全程可见不中断
+ *            + 串口零 REMINDER top 期间语音场景视觉接管日志——依赖 builder 前置排查
+ *            第 1 步观测点）。host 无齿: 根因未钉死前验收不预绑修法（plan.md 机制
+ *            无关铁律）, 结构齿会假绑修法; 视觉驻留本质真机面。
+ *   FX-A4 -> 键位语义: host 机制半由既有 TEST 6 Block 2 承载（KEY 单击回当前页 /
+ *            BOOT 单击回原页不翻页判别式, RM-A6 / S-F1.4 AC2 键位全表, 本包零改
+ *            语义）; 真机半（KEY/BOOT 真机手感）归 RM-A8 重跑。
+ *   FX-A5 -> 录音排队例外补测: host 机制半由既有 TEST 1 tooth 2（gate DEFER 决策表）
+ *            + TEST 7 tooth 4/5（RaiseReminderQueue 消费门控 + application.cc 录音
+ *            结束触发在世）承载; 真机补测（录音中到点不弹、录音结束立刻弹, RM-A3）
+ *            归 RM-A8 重跑。
+ *   FX-A6 -> 语音轮回归靶: host 半 = runner 全量既有齿零新增红（含 voice_round_ui.
+ *            acceptance.c 语音态齿; 由红基线实跑记录承载）; 真机半（无提醒驻留时
+ *            LISTEN/THINK/TALK 三态视觉与修复前一致, 真机会话目击）归 RM-A8 重跑。
+ *   FX-A7 -> RM-A8 确认轮重跑（human 持板, kind=structural 对象条目）: 无 host 齿;
+ *            四项清单证据落 changes/dev/260917-m1-k4-rma8-fixbatch/; 模拟器截图缺口
+ *            归属 = planner 裁定, closeout 声明去向, 不得静默丢。
+ * ------------------------------------------------------------------------- */
+
 /* ---------------------------------------------------------------------------
  * RM-A9 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1214,4 +1321,12 @@ TEST_CASE("提醒弹窗统一: 注册序守卫+需求契约canary+扫描器自�
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-17  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-k4-reminder-overlay-unify)。
+ *   2026-09-17  append TEST 9（FX-A1 F1 回执链集成齿）+ FX coverage map
+ *               (acceptance-author, TaskPackage 260917-m1-k4-rma8-fixbatch——K4
+ *               RM-A8 缺陷修复批; 既有 TEST 1~8 语义零改动; mutation 证据期望
+ *               写入 TEST 9 头注, builder 义务)。
+ *   2026-09-17  append FX-A4/FX-A5 两条 coverage marker 行（acceptance-author,
+ *               同 TaskPackage——verifier r1 coverage 闸报 FX-A4/FX-A5 未覆盖:
+ *               map 块 prose 形态不被 marker 正则识别; marker 置于 map 块前独立
+ *               注释行, 零齿触碰零逻辑改动）。
  * --------------------------------------------------------------------------- */

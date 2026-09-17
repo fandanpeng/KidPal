@@ -1372,6 +1372,22 @@ static void kidpal_voice_apply_look(int scene)
     int       new_w = 0, new_h = 0;
     int       need_pose = 0;
 
+    /* F2 驻留观测 + 守卫 (RM-A8, FX-A3 不变量, 常驻日志量级无害): 先记录本次语音视觉
+     * apply 的场景与当前前台层 (serial-logmable 观测点, device-round-1 F2 取证依赖)。
+     * 守卫 = 提醒弹窗驻留 (REMINDER 前台) 期间跳过非 REMIND 语音场景 —— 弹窗与语音轮
+     * 共用同一批骨架对象 (pose_box/voice_header_label/keycap/emblem), TTS 起播
+     * SetStatus(SPEAKING) -> apply_look(KVST_SCENE_TALK) 会在弹窗之上覆写 pose-jump 与
+     * 时间行标头 (弹窗即起即盖, F2 根因本体)。REMIND 场景自身放行 (弹窗绘制路径
+     * kidpal_lcd_reminder_show:2116 调用), 停驻期间其它语音场景一律跳过。
+     * 回归安全 (FX-A6): 无提醒驻留 (front_is_reminder==0) 时守卫恒不触发 -> 语音轮
+     * LISTEN/THINK/TALK 视觉与修复前逐位一致。 */
+    ESP_LOGI(TAG, "voice_look scene=%d top=%d", scene, kidpal_render_node_front_layer());
+    if (scene != KVST_SCENE_REMIND && kidpal_render_node_front_is_reminder() == 1) {
+        ESP_LOGI(TAG, "voice_look_skip scene=%d top=%d reason=reminder_persist",
+                 scene, kidpal_render_node_front_layer());
+        return;
+    }
+
     /* 五态内容选择单源 (weak 哨兵被强符号覆盖后为真实映射)。 */
     if (kidpal_voice_state_look(scene, &look) != 0 || look.keycap == NULL) {
         return;

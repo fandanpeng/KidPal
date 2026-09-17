@@ -359,6 +359,11 @@ void McpServer::RaiseReminderQueue() {
         ESP_LOGW(TAG, "alert_render corr_id=%s drawn=false degrade=true", shown.id);
         return;
     }
+    /* F1 回执接线（渲染即确认）：画成即 mark_rendered，EmitRenderReceipt 内的
+     * may_emit_receipt 才放行（shown.rendered 须 =1）。修复前生产零调用点、
+     * shown.rendered 恒 0 -> 回执静默不发、网关 60s 重推 TTS 重播。落位在公共
+     * 渲染后段，天然覆盖 raise_next 返回 1（新弹）与 2（滞留顶替）两条路径。 */
+    int armed = kidpal_reminder_mark_rendered(state, shown.id);
     if (g_alert_drain_timer == nullptr) {
         /* 首次有提醒到达才建驱动 timer（1s 轮询 raise 判定；无常驻定时器开销） */
         g_alert_drain_timer = lv_timer_create(AlertDrainTimerCb, 1000, nullptr);
@@ -370,8 +375,8 @@ void McpServer::RaiseReminderQueue() {
     if ((kidpal_reminder_render_actions(&shown) & KRM_ACT_TONE) != 0) {
         kidpal_reminder_play_popup_tone();
     }
-    ESP_LOGI(TAG, "alert_render corr_id=%s raised=%d actions=%d tone=ogg_popup speak_leg=engine",
-             shown.id, raised, kidpal_reminder_render_actions(&shown));
+    ESP_LOGI(TAG, "alert_render corr_id=%s raised=%d actions=%d tone=ogg_popup speak_leg=engine armed=%d",
+             shown.id, raised, kidpal_reminder_render_actions(&shown), armed);
     EmitRenderReceipt(std::string(shown.id));
 }
 
