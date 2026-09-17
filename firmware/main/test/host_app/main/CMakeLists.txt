@@ -68,6 +68,19 @@ set(HOST_ACCEPTANCE_SRCS
     # acceptance 之前**（smoke 末位 = 最先执行；本文件 test 5 tooth 1 校验此序）。
     "../../voice_round_ui.acceptance.c"
 
+    # 包 260915-m1-k4-reminder-overlay-unify（提醒弹窗四态统一骨架 + 最高层覆盖 + 录音
+    # 排队例外）被测实现：reminder_page.c（[1] 入层门控 kidpal_reminder_gate + [2] 时间行
+    # 单源 kidpal_reminder_hhmm + [3] 状态机九符号强定义，覆盖本验收 weak 哨兵）。
+    # 其 kidpal_art_* 引用由 p1_home_battery.acceptance.c 在世 weak 桩覆盖（与 home_p1.c
+    # 同款, 无需另接 art_assets.c）。**必须置于 host smoke acceptance 之前**（smoke 末位
+    # = 最先执行; 本文件 test 8 tooth 1 校验此序）。
+    "../../../display/reminder_page.c"
+
+    # 包 260915-m1-k4-reminder-overlay-unify 冻结验收（门控决策表 + 时间行单源 + 排队/
+    # 去重/驻留/过期状态机回归 + 活侧接线结构齿 + 注册序守卫）。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行; 本文件 test 8 tooth 1 校验此序）。
+    "../../reminder_overlay_unify.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

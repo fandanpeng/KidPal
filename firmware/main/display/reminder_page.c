@@ -780,8 +780,11 @@ int kidpal_reminder_receive(kidpal_reminder_t *s, const kidpal_alert_t *a)
     known_idx = krm_known_index(s, a->id);
     if (known_idx >= 0) {
         /* 幂等去重：已知 id 绝不重复入队（关掉一个不会再弹一个） */
-        if (s->has_shown && s->shown.rendered && strcmp(s->shown.id, a->id) == 0) {
-            /* 已渲染的驻留项被重推（回执在途丢失）-> 补回回执，不重新弹窗 */
+        if (s->has_shown && s->shown.rendered && !s->shown.acked &&
+            strcmp(s->shown.id, a->id) == 0) {
+            /* 已渲染驻留项被重推（回执在途丢失）-> 补回回执、不重新弹窗。
+             * 已 acked 的驻留项 = 已确认出队（一 id 一回执, RM-A5 AC4「关掉一个不会
+             * 再弹一个」）：重推按已知 id 零动作, 不许二次武装回执、不许复活重弹。 */
             s->shown.armed = 1;
             return KRM_STATE_RENDERED;
         }
@@ -1029,6 +1032,39 @@ static void krm_hhmm_of(const char *fire_at, char *out, size_t cap)
         return;
     }
     krm_copy_str(out, cap, "--:--"); /* 不可解析（合法路径不达）-> 明确占位，不空白 */
+}
+
+/* -------------------------------------------------------------------------- *
+ * 入层门控 + 时间行单源（TaskPackage 260915-m1-k4-reminder-overlay-unify, frozen
+ * seam [1]/[2]）。数值与存储语义 = reminder_page.h 声明 + 冻结验收文件头逐字一致。
+ * ------------------------------------------------------------------------ */
+
+int kidpal_reminder_gate(int front_layer, int recording)
+{
+    if (front_layer < 0 || (recording != 0 && recording != 1)) {
+        return KRM_GATE_INVALID; /* 越界前台/录音入参 -> 决策表防线, 从不为 UB */
+    }
+    if (recording != 0) {
+        return KRM_GATE_DEFER; /* 唯一例外 = 录音态：对任何前台一律延后（排队, 防提醒
+                                * TTS 混进录音内容; 会话结束由调用方触发恢复弹出） */
+    }
+    return KRM_GATE_RAISE; /* 非录音前台一律允许入层弹窗（最高层覆盖 RM-A2; 实际压层由
+                            * layer 栈优先级承载, 门控只锁「允许入层尝试」） */
+}
+
+int kidpal_reminder_hhmm(const char *fire_at, char *out, size_t cap)
+{
+    if (out == NULL || cap < 6) {
+        return -1; /* out NULL / cap < 6 -> "--:--"+NUL 最小 6 字节契约 */
+    }
+    /* fire_at 字面 11..15 位组 "HH:MM"（child 看到课表里的时刻, 不做时区二次换算） */
+    if (fire_at != NULL && krm_digit(fire_at[11]) && krm_digit(fire_at[12]) &&
+        fire_at[13] == ':' && krm_digit(fire_at[14]) && krm_digit(fire_at[15])) {
+        snprintf(out, cap, "%c%c:%c%c", fire_at[11], fire_at[12], fire_at[14], fire_at[15]);
+        return 0;
+    }
+    krm_copy_str(out, cap, "--:--"); /* 形状不可读（含 NULL）-> 明确占位, 不空白 */
+    return 1;
 }
 
 /* 小伴 pose-jump 位（占位几何：头 + 身 + 惊叫气泡）。母版是 SVG 位图资产，

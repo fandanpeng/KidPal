@@ -7,6 +7,7 @@
 #include "voice_round.h"
 #include "art_assets.h"
 #include "kidpal_render_node.h"
+#include "reminder_page.h" /* 提醒弹窗消费面 (K4): 时间行单源 kidpal_reminder_hhmm + 载荷形状 */
 #include "key_gesture_parser.h"
 #include "keybar.h"
 
@@ -1690,6 +1691,14 @@ static void kidpal_voice_emblem_apply_locked(int scene)
  * ------------------------------------------------------------------------ */
 static void kidpal_chrome_mid_sync_locked(void)
 {
+    /* 提醒材料壳（K4 overlay-unify）：提醒 = 最高层覆盖, 其外壳 = 本骨架整页 —— REMIND
+     * 态下即使 VOICE 非前台（REMINDER 层置顶）也要点亮整页外壳 + 小伴 pose; 关窗后
+     * front_is_reminder() 变 0 -> 自动回落不残留跨页。判据取 render_node 层 top（与语音
+     * 前台桥同源, 零第二条真理）。顶置计算供下方 pose 与 voice_page 两块共用。 */
+    const int reminder_shell =
+        (g_kidpal_mid_mode == 1 && g_kidpal_keybar_scene == KVST_SCENE_REMIND &&
+         kidpal_render_node_front_is_reminder()) ? 1 : 0;
+
     if (g_kidpal_mid_mode == 1) {
         if (g_kidpal_emoji_label != NULL) {
             lv_obj_add_flag(g_kidpal_emoji_label, LV_OBJ_FLAG_HIDDEN);
@@ -1697,12 +1706,11 @@ static void kidpal_chrome_mid_sync_locked(void)
         if (g_kidpal_emoji_image != NULL) {
             lv_obj_add_flag(g_kidpal_emoji_image, LV_OBJ_FLAG_HIDDEN);
         }
-        /* 姿态显示需两条件同时成立: 五态演出活跃 (mode=1, SetStatus 驱动) 且
-         * VOICE 层为前台层 (g_kidpal_voice_front, render_node 前台切换桥驱动)。
-         * 内容页 (答案/提醒/浏览页) 前台时演出进行中也不得浮出 (RP-A5 r3:
-         * 「课表答案页显示时猫咪在中间」)。 */
+        /* 姿态显示需 五态演出活跃 (mode=1) + （VOICE 前台 或 提醒材料壳点亮）。
+         * 内容页前台时演出中也不得浮出 (RP-A5 r3「课表答案页显示时猫咪在中间」);
+         * 提醒材料壳点亮时 pose-jump 必须随外壳浮出 (WF-B-04 左小伴)。 */
         if (g_kidpal_pose_img != NULL) {
-            if (g_kidpal_voice_front) {
+            if (g_kidpal_voice_front || reminder_shell) {
                 lv_obj_remove_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
             } else {
                 lv_obj_add_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
@@ -1723,15 +1731,17 @@ static void kidpal_chrome_mid_sync_locked(void)
     /* 语音轮整页版式显隐 (device-round VQ-A7 r1 修复面③; 与姿态同两条件与):
      * 页面容器 = 演出活跃且 VOICE 前台时整页盖住首页内容 (WF-B 冻结线框; 首页猫
      * 遮蔽销账 = 整页盖住形态, 显隐只切 HIDDEN 零重建)。回显区/问答框按场景互斥:
-     * LISTEN/THINK -> 回显区 (WF-B-01/02), TALK -> 问答框 (WF-B-03); 提醒/低电等
-     * 其余场景两区都隐。场景值取 g_kidpal_keybar_scene (apply_look 每次都刷新)。 */
+     * LISTEN/THINK -> 回显区 (WF-B-01/02), TALK -> 问答框 (WF-B-03); 提醒态 -> 问答框
+     * 承载大字事项+时间 (WF-B-04)。场景值取 g_kidpal_keybar_scene (apply_look 刷新)。 */
     {
-        int voice_live = (g_kidpal_mid_mode == 1 && g_kidpal_voice_front) ? 1 : 0;
+        int voice_live = (g_kidpal_mid_mode == 1 &&
+                          (g_kidpal_voice_front || reminder_shell)) ? 1 : 0;
         int show_echo = (voice_live &&
                          (g_kidpal_keybar_scene == KVST_SCENE_LISTEN ||
                           g_kidpal_keybar_scene == KVST_SCENE_THINK)) ? 1 : 0;
         int show_answer = (voice_live &&
-                           g_kidpal_keybar_scene == KVST_SCENE_TALK) ? 1 : 0;
+                           (g_kidpal_keybar_scene == KVST_SCENE_TALK ||
+                            g_kidpal_keybar_scene == KVST_SCENE_REMIND)) ? 1 : 0;
         if (g_kidpal_voice_page != NULL) {
             if (voice_live) {
                 lv_obj_remove_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
@@ -2080,6 +2090,48 @@ extern "C" void kidpal_lcd_voice_chrome_front(int front)
         return;
     }
     s_kidpal_lcd_self->KidPalVoiceChromeFront(front != 0);
+}
+
+/* -------------------------------------------------------------------------- *
+ * 提醒弹窗材料壳 (K4 overlay-unify, RM-A1/A2/A3): 复用语音轮四态骨架（RM-E3 反 fork）
+ * —— pose-jump + 键帽「知道了」从 K2 闭集单源取出 (kidpal_voice_state_look，经
+ * apply_look 落键帽条/姿态同对象)；右内容区承载大字事项(title)+时间行(kidpal_reminder_
+ * hhmm 单源, 渲染面不重写第二份时间解析)。提醒 = 最高层覆盖, 外壳显隐由 chrome 中部
+ * 显隐纪律单点驱动 (kidpal_chrome_mid_sync_locked 依 REMIND 场景 + front_is_reminder
+ * 点亮; 关窗自动回落)。mcp_server.cc RaiseReminderQueue 经本 C 桥消费（取代旧 v1.13
+ * 卡面 kidpal_reminder_page_render）。返回 1 = 已画成, -1 = 降级（NULL/不可读, 不崩）。
+ * ------------------------------------------------------------------------ */
+extern "C" int kidpal_lcd_reminder_show(const kidpal_alert_t *a)
+{
+    char time_line[8];
+
+    if (s_kidpal_lcd_self == NULL || a == NULL || a->id[0] == '\0') {
+        return -1;
+    }
+    if (kidpal_reminder_hhmm(a->fire_at, time_line, sizeof(time_line)) < 0) {
+        return -1; /* 时间行单源不可组（合法路径不达）-> 降级不盲渲 */
+    }
+
+    /* 四态骨架单源消费: pose-jump + 键帽「知道了」（闭集, apply_look 内部自取放锁）。 */
+    kidpal_voice_apply_look(KVST_SCENE_REMIND);
+
+    if (!lvgl_port_lock(30000)) {
+        return -1;
+    }
+    /* 右内容区: 标头 = 时间行, 主体 = 大字事项。全部落在既建骨架对象上, 零第二渲染源。 */
+    if (g_kidpal_voice_header_label != NULL) {
+        lv_label_set_text(g_kidpal_voice_header_label, time_line);
+    }
+    if (g_kidpal_voice_answer_label != NULL) {
+        lv_label_set_text(g_kidpal_voice_answer_label, a->title);
+    }
+    if (g_kidpal_voice_answer_box != NULL) {
+        lv_obj_remove_flag(g_kidpal_voice_answer_box, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_scroll_to_y(g_kidpal_voice_answer_box, 0, LV_ANIM_OFF);
+    }
+    kidpal_chrome_mid_sync_locked();
+    lvgl_port_unlock();
+    return 1;
 }
 
 void LcdDisplay::KidPalKeybarSync() {

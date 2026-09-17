@@ -65,6 +65,30 @@ int kidpal_alert_parse(const char *args_json, kidpal_alert_t *out);
  * V18「事件时刻过后」顶替判定的算术底座。 */
 long long kidpal_fire_at_minutes(const char *fire_at_iso);
 
+/* ---- 入层门控 + 时间行单源（TaskPackage 260915-m1-k4-reminder-overlay-unify）
+ * 语义权威 = frozen acceptance firmware/main/test/reminder_overlay_unify.acceptance.c
+ * 文件头 Seam contract [1]/[2]。KRM_GATE_* 冻结数值与本文件验收件内自持声明逐值一致
+ * （偏移即预处理器重定义冲突 fail-loud）；builder 落此不得偏离。 ------------------
+ *
+ * [1] 提醒层入层门控决策表（RM-A2 最高层覆盖 / RM-A3 录音排队例外机制单源）：
+ *   front_layer = 到达时前台 owner（kidpal_layer.h 闭集值 KIDPAL_LAYER_*）;
+ *   recording   = 录音态在世（0/1）。
+ *   recording != 0 -> KRM_GATE_DEFER（唯一例外 = 录音态：录音期间提醒排队延后、录音
+ *     会话结束立刻弹——防提醒 TTS 混进录音内容, 对任何前台一律延后）;
+ *   recording == 0 && front_layer >= 0 -> KRM_GATE_RAISE（最高层覆盖: 基层/查字窗/
+ *     播报中/语音轮/聊天/无前台一律允许入层弹窗; 实际压层由 layer 栈优先级承载）;
+ *   front_layer < 0 或 recording 不在 {0,1} -> KRM_GATE_INVALID（从不为 UB）。 */
+#define KRM_GATE_RAISE   1   /* 立即入层弹窗（最高层覆盖, RM-A2） */
+#define KRM_GATE_DEFER   0   /* 排队延后（录音排队例外, RM-A3） */
+#define KRM_GATE_INVALID (-1) /* 越界防御 */
+int kidpal_reminder_gate(int front_layer, int recording);
+
+/* [2] 弹窗时间行单源（RM-A1 内容机制, 现有 krm_hhmm_of 逻辑的导出, 行为零变化）:
+ *   fire_at 字面 11..15 位组 "HH:MM"（孩子看到课表里的那个时刻, 不做设备时区二次换算）:
+ *   0 = 组出 HH:MM; 1 = 形状不可读 -> "--:--" 兜底占位（含 NULL fire_at, 明确占位不
+ *   空白）; -1 = out NULL / cap < 6（"--:--"+NUL 最小 6 字节）。恒 NUL 结尾、绝不溢出。 */
+int kidpal_reminder_hhmm(const char *fire_at, char *out, size_t cap);
+
 /* ---- 设备侧提醒状态机（四态 received / queued / rendered / acked）----------- */
 enum {
     KRM_STATE_RECEIVED = 0, /* 接收即入 known-id 集（屏蔽重复入队） */

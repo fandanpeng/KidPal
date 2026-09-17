@@ -123,6 +123,18 @@ int kidpal_render_node_front_is_overlay(void);
 int kidpal_render_node_front_is_voice(void);
 
 /*
+ * 前台顶层是否为提醒弹窗覆盖层（REMINDER）：提醒态材料外壳显隐的判据（K4 消费——
+ * 复用语音轮四态骨架时仅当 REMINDER 层确在顶层才点亮外壳, 关窗后自动回落不残留）。
+ */
+int kidpal_render_node_front_is_reminder(void);
+
+/*
+ * 当前前台顶层 layer 值（kidpal_layer.h 闭集 KIDPAL_LAYER_*; 空栈 = KIDPAL_LAYER_NONE）。
+ * 提醒入层门控 kidpal_reminder_gate 的 front_layer 入参（RM-A2/RM-A3 机制单源）取此。
+ */
+int kidpal_render_node_front_layer(void);
+
+/*
  * 设备侧显式关层步骤（「关窗」唯一入口，KD-A2 清层/进页分离）：前台为覆盖层
  * （front_is_overlay()）时出掉 transient 层回基层并重渲基层页；内部消费
  * kidpal_layer_pop_transients（单一清层事实源），永不映射翻页/cycle_next。

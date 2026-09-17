@@ -626,6 +626,18 @@ int kidpal_render_node_front_is_voice(void)
     return kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE ? 1 : 0;
 }
 
+/* 前台顶层是否为提醒弹窗覆盖层（REMINDER）：提醒材料外壳显隐判据（K4, 关窗自动回落）。 */
+int kidpal_render_node_front_is_reminder(void)
+{
+    return kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_REMINDER ? 1 : 0;
+}
+
+/* 当前前台顶层 layer 值（提醒门控 kidpal_reminder_gate 的 front_layer 入参单一权威）。 */
+int kidpal_render_node_front_layer(void)
+{
+    return kidpal_layer_top(&s_layer_stack);
+}
+
 /* 设备侧显式关层步骤（「关窗」唯一入口，KD-A2 清层/进页分离）：前台为覆盖层时经
  * 显式清层步骤出掉 transient 覆盖层回基层，并重渲基层当前页——关层归关层、不产翻页
  * 动作（v1.39 覆盖层隔离口径）。内部消费 kidpal_layer_pop_transients（单一清层事实源，
