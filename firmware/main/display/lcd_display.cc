@@ -415,6 +415,10 @@ static lv_obj_t*   g_kidpal_voice_echo_label  = NULL; /* 回显区内容缓存�
 static lv_obj_t*   g_kidpal_voice_answer_box  = NULL; /* 播报问答框容器 (WF-B-03 右内容区,
                                                        可滚动, 答案全文上屏滚动看完) */
 static lv_obj_t*   g_kidpal_voice_answer_label = NULL; /* 问答框内容缓存对象 (全文) */
+static lv_obj_t*   g_kidpal_voice_header_label = NULL; /* 右内容区标头 (「思考中」/「播报」/
+                                                         「我在听！」, look.bubble 写点由旧
+                                                         chat 挂点统一迁此; WF-B 标头位, 挂在
+                                                         echo_box 之前 = 回显行在标头下方) */
 
 static void kidpal_chrome_mid_sync_locked(void);
 static void kidpal_keybar_sync_locked(void); /* 定义在活分支尾 (SetupUI 之后), 前向声明供 SetupUI 首刷调用 */
@@ -1035,6 +1039,18 @@ void LcdDisplay::SetupUI() {
     g_kidpal_emoji_label = emoji_label_;
     g_kidpal_emoji_image = emoji_image_;
 
+    /* 右内容区标头 (WF-B 标头位; look.bubble 写点由旧 g_kidpal_chat_label 底栏挂点统一
+     * 迁此 —— 「思考中」/「播报」/「我在听！」三态标头, 单源从 kidpal_voice_states
+     * 闭集取文案, 不另抄。创建序在 echo_box 之前 = 回显行在标头下方 (VQ-A2 冻结原文
+     * 「回显在『我在听！』标识下方」; LVGL 同父子件叠序 = 创建序)。全量字体同 r1 口径)。 */
+    g_kidpal_voice_header_label = lv_label_create(g_kidpal_voice_page);
+    lv_obj_set_pos(g_kidpal_voice_header_label, 124, 16);
+    lv_obj_set_width(g_kidpal_voice_header_label, 264);
+    lv_obj_set_style_text_align(g_kidpal_voice_header_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_set_style_text_color(g_kidpal_voice_header_label, lvgl_theme->text_color(), 0);
+    lv_obj_set_style_text_font(g_kidpal_voice_header_label, &font_puhui_14_1, 0);
+    lv_label_set_text(g_kidpal_voice_header_label, "");
+
     /* 右内容区两容器 (WF-B 右列, x = 16+96+12 = 124, 宽 = 400-124-12 = 264; 同一内容
      * 区按场景互斥显隐: LISTEN/THINK -> 回显区, TALK -> 问答框, 同步点同上)。均整块
      * 占满右列 (固定高度 = 滚动机制有界承载, VQ-A2「超屏高滚出」/VQ-A3「长文滚动
@@ -1316,9 +1332,12 @@ static void kidpal_voice_apply_look(int scene)
     g_kidpal_keybar_scene = scene;
     kidpal_keybar_sync_locked();
 
-    /* 气泡文案: 无独立 bubble 的场景 (播报态走同步文字框 chat_message_label_) 不动。 */
-    if (look.bubble != NULL && g_kidpal_chat_label != NULL) {
-        lv_label_set_text(g_kidpal_chat_label, look.bubble);
+    /* 气泡标头文案: 写右内容区标头对象 (g_kidpal_voice_header_label, voice_page 直接
+     * 子件; 统一写点由旧底栏 chat 挂点迁至此处 —— 三态标头单源仍从
+     * kidpal_voice_states 闭集取 look.bubble, 不另抄第二份文案来源)。无独立 bubble
+     * 的场景 (REMIND/LOWBATT) 该标头不动。 */
+    if (look.bubble != NULL && g_kidpal_voice_header_label != NULL) {
+        lv_label_set_text(g_kidpal_voice_header_label, look.bubble);
     }
 
     if (need_pose) {

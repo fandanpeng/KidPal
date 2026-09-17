@@ -237,6 +237,36 @@
         "mutation": "MUT-VRZ-GEO-RESTORE-STACKED-ALIGN",
         "counterEvidence": "restore TOP_MID/center stacked alignment => TEST 6 tooth 5 red",
         "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+        "mutation": "mut-r2t1a",
+        "counterEvidence": "THINK bubble value swapped to placeholder => TEST 7 tooth 1 THINK red",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A1: 思考页接线机制齿——state-thinking 渲染映射激活（活侧渲染路径首接思考态，场景码/姿态资产已备零调用现状销账）；弹出时机 = 孩子说完这一句（服务端 VAD 切句完成/音频上行结束）即切「思考中」并弹出，状态切换与页面弹出同一时刻",
+        "mutation": "mut-r2t2a",
+        "counterEvidence": "apply_look reintroduces g_kidpal_chat_label write => TEST 7 tooth 2a red",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A2: 聆听态话语回显区——孩子说的话逐句回显在「我在听！」标识下方（网关 ASR 切句成文经 WS stt 消息下发即上屏）；回显区滚动、超屏高滚出",
+        "mutation": "mut-r2t3a",
+        "counterEvidence": "header creation moved after echo_box => TEST 7 tooth 3 red",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A3: 播报态问答框长文滚动——答案文字全文上屏、超出屏高滚动看完（回引 NFR-READ-1 字号下限），非一行字幕",
+        "mutation": "mut-r2t1b",
+        "counterEvidence": "TALK bubble row deleted to NULL => TEST 7 tooth 1 TALK red",
+        "result": "failed as expected"
+      },
+      {
+        "acceptanceId": "VQ-A5: 四态版式骨架统一——聆听/思考/播报三态 = 左小伴（各态 pose）· 右内容区同骨架（WF-B-01/02/03），键帽文案走 kidpal_voice_states 冻结映射；提醒弹窗同骨架由 260915-m1-k4-reminder-overlay-unify 承载、本包建骨架",
+        "mutation": "mut-r2t2b",
+        "counterEvidence": "header object creation removed => TEST 7 tooth 2c+3 red",
+        "result": "failed as expected"
       }
     ]
   },

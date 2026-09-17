@@ -9,8 +9,10 @@
  *
  * 冻结映射（键帽短语 = V3 §06 逐字，五态键帽行不得偏移）:
  *   LISTEN  -> pose LISTEN, bubble "我在听！", keycap "说完啦"
- *   THINK   -> pose THINK,  keycap "不等了"   (bubble NULL: 问号/气泡文案归 design review)
- *   TALK    -> pose TALK,   keycap "打断"     (声波条/同步文字框为 LVGL 接线面)
+ *   THINK   -> pose THINK,  bubble "思考中",   keycap "不等了"  (human 真机 r2 消解
+ *               design-review 留白 = §2.2 态名口径; 问号图标缺资产 fail-closed 已上报)
+ *   TALK    -> pose TALK,   bubble "播报",     keycap "打断"    (WF-B-03 线框标头字面;
+ *               声波条/同步文字框为 LVGL 接线面)
  *   REMIND  -> pose JUMP,   keycap "知道了"
  *   LOWBATT -> pose SLEEP,  keycap "叫醒它"
  * 防御: out == NULL 或 scene 非法 (<0 或 >LOWBATT) -> -1。返回 0 成功。
@@ -23,6 +25,8 @@
 int kidpal_voice_state_look(int scene, kidpal_voice_look_t *out)
 {
     static const char *const kListenBubble = "我在听！";
+    static const char *const kThinkBubble  = "思考中";
+    static const char *const kTalkBubble   = "播报";
     static const char *const kCapListen    = "说完啦";
     static const char *const kCapThink     = "不等了";
     static const char *const kCapTalk      = "打断";
@@ -42,12 +46,13 @@ int kidpal_voice_state_look(int scene, kidpal_voice_look_t *out)
             break;
         case KVST_SCENE_THINK:
             out->pose   = KVST_POSE_THINK;
-            out->bubble = NULL; /* 问号/气泡文案归 design review，不锁 */
+            out->bubble = kThinkBubble; /* 「思考中」标头, human 真机 r2 消解留白
+                                           = §2.2 态名口径 (TEST 7 tooth 1) */
             out->keycap = kCapThink;
             break;
         case KVST_SCENE_TALK:
             out->pose   = KVST_POSE_TALK;
-            out->bubble = NULL; /* 声波条 + 同步文字框为 LVGL 接线面，本纯逻辑不锁 */
+            out->bubble = kTalkBubble; /* 「播报」标头, WF-B-03 线框字面 (TEST 7 tooth 1) */
             out->keycap = kCapTalk;
             break;
         case KVST_SCENE_REMIND:

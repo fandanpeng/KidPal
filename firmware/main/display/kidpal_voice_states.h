@@ -38,8 +38,8 @@ extern "C" {
 
 typedef struct {
     int pose;           /* KVST_POSE_* (该态小伴姿态) */
-    const char *bubble; /* V3 气泡文案 (frm-sm 手绘圆角框 + 左下斜切尾巴);
-                           NULL = 该态无气泡（如思考态问号走 emotion 面） */
+    const char *bubble; /* 各态内容区标头文案 (「我在听！」/「思考中」/「播报」
+                           三态标头, 单源 = 本闭集; REMIND/LOWBATT 无标头 = NULL) */
     const char *keycap; /* 底部键帽条 KEY 短语 (V3 §06, 恒非空; 键帽条任何状态常驻) */
 } kidpal_voice_look_t;
 

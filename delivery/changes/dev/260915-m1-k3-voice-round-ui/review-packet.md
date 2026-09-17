@@ -197,3 +197,50 @@ verifier final fact 9 闸全绿（checker PASS）；host 23/0 vs 基线 18/0 零
 ### 修复轮待 supervisor 裁断
 
 修复轮增量：scoped r6 + final r7 全绿（checker PASS）、host 24/0（23 基线 + TEST 6 五齿）、closeout-check 只读 exit 0、映射表零改动红线保持、1 条新 NIT（fixer 注释禁针假红自纠，pod-events 在案）。integrator 判定：修复轮可进合并门，与首轮收口合并裁断；VQ-A7 复测轮维持 human 持板 pending 状态不变。
+
+## 修复轮 addendum r2（标头件）
+
+> 2026-09-17 human 持板第 2 轮（板上固件 = 54aa903 构建）结果：**功能四项全通**——思考态持续显示 ✅（日志实锤 stt→首句 12s 窗口状态稳定）、回显 ✅、播报 ✅、打断 ✅。剩余偏差收敛为一类渲染面问题「各态内容区标识件缺失 + 气泡写点挂旧聊天 chrome」，**零状态机/逻辑改动，全在演出面**。证据 = [device-round-vqa7-r2.md](device-round-vqa7-r2.md)（human 复测主线程转述 + planner intake 只读核实）。本节为增量收口：四点偏差修复 + 增补齿 TEST 7 + scoped r8 绿 + final r9 绿。r1 轮四项功能修复维持不回归（映射表喂入时机/字体/整页版式零回改）。
+
+### 四点标头偏差 ↔ 修复 ↔ 增补齿（TEST 7）↔ 复验对照表
+
+| 真机偏差（r2 取证） | 修复（fixer 落地） | 增补齿（acceptance-author，TEST 7 单独成节，既有 TEST 1-6 零改动） | 复验证据 |
+|---|---|---|---|
+| ① 思考态右内容区缺「思考中」标头（WF-B-02）——THINK bubble 现值 NULL（「问号/气泡文案归 design review」留白） | kidpal_voice_states.c：THINK bubble = **「思考中」**（human 钉 = §2.2 态名口径，human 真机 r2 指令消解留白） | tooth 1：三态 bubble 闭集值断言（THINK「思考中」） | r8 scoped 7 闸全绿 + r9 final 9 闸全绿（均 ok:true / exit 0，见下复验段） |
+| ② 聆听态内容区缺「我在听！」标识（WF-B-01；VQ-A2 冻结原文「回显在『我在听！』标识下方」——回显行悬空无挂点） | lcd_display.cc：新增右内容区标头对象（`g_kidpal_voice_header_label`，g_kidpal_voice_page 直接子件，x=124 宽 264，全量 puhui 字体同 r1 口径），创建序在 echo_box **之前**（LVGL 同父子件叠序 = 创建序，标头在上、回显行在下） | tooth 3：标头与 echo_box 同父（needle 含父参）且创建序在先（voice_page 起至 echo_box 止区间 `create(g_kidpal_voice_page)` ≥ 2 = pose + 标头） | 同上 |
+| ③ 播报态右内容区缺「播报」标头（WF-B-03 线框标头字面） | kidpal_voice_states.c：TALK bubble = **「播报」**（WF-B-03 线框字面） | tooth 1：TALK「播报」断言 | 同上 |
+| ④ apply_look 的 look.bubble 写 `g_kidpal_chat_label`（bottom_bar_ 键帽条内 chat_message_label_ 旧挂点；新整页版式 g_kidpal_voice_page 为 lv_layer_top 全屏 OPA_COVER，旧挂点观感不可见） | lcd_display.cc：apply_look 的 bubble 写点统一迁至右内容区标头对象；**单源不变**（仍从 kidpal_voice_states 闭集取 look.bubble，不另抄第二份文案来源） | tooth 2：apply_look 区域零 `g_kidpal_chat_label`（旧挂点写点清零）+ `look.bubble` 写点 ≥ 1（单源仍在）+ voice_page 直接子件 ≥ 4（pose + 回显区 + 问答框 + 新增标头） | 同上 |
+
+LISTEN bubble「我在听！」既有值由 tooth 1 同齿零偏移复核（与 TEST 4 tooth 4 同值，TEST 4 零改动零冲突——TEST 4 对 THINK/TALK 只断 pose/keycap、不断 bubble，判读声明落 TEST 7 头注）。映射表 `voice_round.c` 零触碰（本轮只动 kidpal_voice_states.c 闭集值与 lcd_display.cc 演出面）。
+
+### 问号图标缺资产 fail-closed 上报（显式登记）
+
+planner intake 核实：`art_assets.c` 闭集**无 question/问号资产**（只有 imgfont 数字/字母/冒号/百分号）→ 思考态问号图标（WF-B-02）缺资产，按 fail-closed 处理：**文案标头先行**（本轮「思考中」标头落地），图标归**后续资产批**，TEST 7 不造图标齿。登记为 residual risk（见下），后续资产批落图标时须复核 TEST 7 头注「本齿不造图标齿」口径并按需增补。
+
+### 修复轮复验证据（integrator 现跑，2026-09-17）
+
+1. verifier scoped r8 + final r9 fact 均 `ok:true` / observedGateExit 0（r8 invocationId `0590539c-f47d-462d-8139-099468a3637a`，r9 invocationId `ecfc8cd1-ded6-4694-882e-f8eb7fab1e8c`）；`verifier-evidence-check.mjs`（final r9）输出 verbatim：`{"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/260915-m1-k3-voice-round-ui/verifier-evidence/rounds/r9.json","factOk":true,"observedGateExit":0,"phase":"final","round":9}`，exit 0。`delivery/taskpackages/current/verdict.json` = verify.mjs fs-write 投影（non-bearing，与 r9 fact 同源）。
+2. host runner 全量 verbatim（WSL，绝对路径入参）：
+   - build：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build` → `ninja: no work to do. Done`，exit 0（构建缓存与源面一致，fixer 轮已建）；
+   - run：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/build/host_infra_test.elf` → 末三行 verbatim：`25 Tests 0 Failures 0 Ignored` / `OK`，exit 0。**25 = 24 前基线 + TEST 7（1 test case，三 tooth）**；TEST 7 case PASS 行 verbatim：`voice_round_ui.acceptance.c:1263:语音轮场景映射: 真机轮r2回归增补——三态标头闭集+写点统一+回显挂标头下 (VQ-A2/VQ-A5):PASS`。
+3. firmware-build（r8/r9 闸内真编译）：xiaozhi.bin **0x30b110**，app 分区 0x370000，0x64ef0（**11%**）free（较 r1 修复轮 0x30b090 净增 ~0x80 字节，资源面无虞）。
+4. mutation 增补 5 条（taskpackage `mutationEvidence.perAcceptance`：mut-r2t1a / mut-r2t1b / mut-r2t2a / mut-r2t2b / mut-r2t3a），逐条 `failed as expected`（THINK bubble 换值 / TALK bubble 删行 / apply_look 复引旧挂点 / 标头对象删除 / 标头创建序后移，各自对应 TEST 7 齿红）。
+5. 影响面（11b，worktree）：detect_changes 仍 **N/A (worktree)**；本轮 diff 落在预期闭集（firmware 4 件：kidpal_voice_states.{c,h} / lcd_display.cc / voice_round_ui.acceptance.c + 治理面：taskpackage ×2 / pod-events / verify-runs / r8/r9 fact / supervisor-verdict / ARCH-REVIEW-QUEUE 一行 ARQ 登记 / device-round-vqa7-r2.md / 本 addendum），无计划外文件。
+
+### 修复轮 findings 增量（r2）
+
+| Severity | Kind | Area | Finding | Basis | Required action |
+|---|---|---|---|---|---|
+| 无 BLOCKING | — | — | — | — | — |
+
+（r2 轮零新增 finding：fixer/acceptance-author 落地一轮过，无假红/禁针/锚漂移事件；pod-events r2 段仅 dispatch-completed 两条，无 friction。）
+
+### 修复轮 Residual Risk 更新（r2）
+
+- 问号图标缺资产 fail-closed：思考态图标位暂缺，文案标头已先行；归**后续资产批**（human 知情，device-round-vqa7-r2.md 在案）。
+- **VQ-A7 状态维持 PENDING（第 3 轮观感确认）**：r2 功能四项全通后，剩余观感面（三态标头文案上屏位置/字号/版式、问号图标缺位观感）待 human 第 3 轮持板确认；不因 r2 转 PASS。
+- decisionCoverage：本轮增 5 条 mutation 记录（landsIn acceptance），仍**无 `landsIn: dropped` 条目**，无 risk-accepted 项需列。
+
+### 修复轮待 supervisor 裁断（r2 增量）
+
+r2 增量：scoped r8 + final r9 全绿（checker PASS）、host 25/0（24 基线 + TEST 7 三齿）、mutation +5 全 sensitive、零新增 BLOCKING finding、问号图标 fail-closed 上报项显式登记（归后续资产批）、VQ-A7 维持 PENDING（human 第 3 轮持板观感确认）。integrator 判定：r2 修复轮可进合并门，与首轮及 r1 修复轮收口合并裁断。
