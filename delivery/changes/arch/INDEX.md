@@ -6,11 +6,14 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (24)
+## arch (28)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260918-gov-review-loop-friction-sweep](260918-gov-review-loop-friction-sweep/) | 2026-09-18 | draft | — |
+| [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | draft | — |
+| [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | draft | — |
+| [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | draft | — |
+| [260918-gov-review-merge-chain-friction](260918-gov-review-merge-chain-friction/) | 2026-09-18 | draft | — |
 | [260915-gov-review-worktree-pool-reuse](260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | landed | yes |
 | [260914-arch-review-kidpal-session-ctx-contract](260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | — |
 | [260914-gov-review-delivery-restructure](260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | yes |

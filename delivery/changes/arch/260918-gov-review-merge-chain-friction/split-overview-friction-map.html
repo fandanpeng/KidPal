@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>14 条 dev-loop 摩擦项 · 现状 → 影响 → 改法</title>
+<title>dev-loop 摩擦清账 · 四批拆分总览</title>
 <style>
   :root{
     --bg:#fafaf9; --card:#ffffff; --line:#e7e5e4; --ink:#1c1917; --muted:#78716c;
@@ -20,7 +20,7 @@
     line-height:1.6; -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:1080px;margin:0 auto}
-  header{margin-bottom:28px}
+  header{margin-bottom:26px}
   h1{font-size:23px;margin:0 0 6px;letter-spacing:-.01em}
   .sub{color:var(--muted);font-size:14px}
   .facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
@@ -28,13 +28,25 @@
   .fact b{font-weight:650}
   .fact span{color:var(--muted)}
 
-  .band{margin-top:34px}
-  .band-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .split{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 17px;margin-top:18px}
+  .split h2{font-size:13px;margin:0 0 8px;font-weight:650;color:var(--muted);letter-spacing:.02em}
+  .split p{margin:0 0 10px;font-size:13.5px}
+  .split table{width:100%;border-collapse:collapse;font-size:13px}
+  .split td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .split tr:last-child td{border-bottom:0}
+  .split td:first-child{width:44px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:650;color:var(--accent);white-space:nowrap}
+  .split td:nth-child(2){width:auto;padding-right:14px}
+  .split td:last-child{width:78px;text-align:right;color:var(--muted);white-space:nowrap}
+  .split code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#f5f5f4;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+  .band{margin-top:32px}
+  .band-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
   .band-head h2{font-size:16px;margin:0;font-weight:650}
   .band-head .n{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:1px 9px;background:var(--card)}
+  .band-head .cid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--accent);background:#eef2ff;border:1px solid #c7d2fe;border-radius:5px;padding:1px 8px}
   .band-note{color:var(--muted);font-size:13px;margin:0 0 14px}
 
-  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0;margin-bottom:10px;overflow:hidden}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
   .item-top{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid var(--line)}
   .tid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;font-weight:650;color:#fff;background:var(--accent);border-radius:5px;padding:2px 7px;flex:none}
   .ttl{font-size:14.5px;font-weight:600}
@@ -56,7 +68,8 @@
   .cell.fix .lbl{color:var(--fix)}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:#f5f5f4;border:1px solid var(--line);border-radius:4px;padding:0 4px}
 
-  .arrow{display:none}
+  .deferred{background:#f5f5f4;border:1px dashed var(--line);border-radius:10px;padding:11px 16px;font-size:13px;color:var(--muted);margin-bottom:10px}
+  .deferred b{color:var(--ink)}
 
   footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
 
@@ -66,6 +79,7 @@
     .lbl{font-size:10.5px}
     .arq{display:none}
     .ttl{font-size:13.5px}
+    .split td:last-child{display:none}
   }
 </style>
 </head>
@@ -73,24 +87,35 @@
 <div class="wrap">
 
 <header>
-  <h1>dev-loop 摩擦清账批 · 14 条</h1>
-  <div class="sub"><span class="mono">260918-gov-review-loop-friction-sweep</span> 草案 v0.1 · 每条：现状问题 → 卡住哪个流程 → 大致改法方向</div>
+  <h1>dev-loop 摩擦清账 · 四批拆分总览</h1>
+  <div class="sub">原合并草案 <span class="mono">260918-gov-review-loop-friction-sweep</span> 已按 human 裁定拆为四批、逐批 review。每条：现状问题 → 卡住哪个流程 → 改法方向。</div>
   <div class="facts">
-    <div class="fact"><b>13</b> <span>个改法项（T1–T13）</span></div>
-    <div class="fact"><b>14</b> <span>条在册 ARQ</span></div>
-    <div class="fact"><b>4</b> <span>类流程面</span></div>
-    <div class="fact"><b>medium</b> <span>riskTier</span></div>
+    <div class="fact"><b>4</b> <span>个独立 PROPOSAL</span></div>
+    <div class="fact"><b>11</b> <span>个改法项</span></div>
+    <div class="fact"><b>12</b> <span>条在册 ARQ</span></div>
+    <div class="fact"><b>2</b> <span>项移出待单处理</span></div>
     <div class="fact"><b>0</b> <span>契约面改动</span></div>
+  </div>
+
+  <div class="split">
+    <h2>拆分批次</h2>
+    <p>按<b>流程面</b>切，每批一个 PROPOSAL、一次 review。本图的 A/B/C/D 四组与四批一一对应。</p>
+    <table>
+      <tr><td>P1</td><td>合并链 <code>260918-gov-review-merge-chain-friction</code></td><td>2 项 · medium</td></tr>
+      <tr><td>P2</td><td>起包 / 派发链 <code>260918-gov-review-dispatch-chain-friction</code></td><td>2 项 · low</td></tr>
+      <tr><td>P3</td><td>收口 / 簿记链 <code>260918-gov-review-closeout-chain-friction</code></td><td>4 项 · medium</td></tr>
+      <tr><td>P4</td><td>治理批自身 <code>260918-gov-review-batch-drafting-friction</code></td><td>3 项 · low</td></tr>
+    </table>
   </div>
 </header>
 
-<!-- ===================== A ===================== -->
+<!-- ===================== P1 ===================== -->
 <section class="band">
-  <div class="band-head"><h2>A · 合并链</h2><span class="n">2 项</span></div>
+  <div class="band-head"><h2>A · 合并链</h2><span class="cid">P1</span><span class="n">2 项</span></div>
   <p class="band-note">每次 Pod 分支并入 main 都要过。这两条都属于「闸在例行噪音上磨钝」。</p>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T1</span><span class="ttl">升级闸的「判官 GREEN」检查形同虚设</span><span class="arq">ARQ-260909<br>gate-green-anchor</span></div>
+    <div class="item-top"><span class="tid">P1</span><span class="ttl">升级闸的「判官 GREEN」检查形同虚设</span><span class="arq">ARQ-260909<br>gate-green-anchor</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>判定用的匹配规则里留了一个「只要正文出现 GREEN 就算过」的兜底分支。规则上方那行注释写的是「必须和 verdict 同一段」——<b>注释是真意图，代码没跟上</b>。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每次治理批合并前的升级闸。这一关<b>现在恒为真</b>——等于该关不存在，实际只剩「FROZEN 行」和「verdict 文件在不在」两道锚在守。</div>
@@ -99,7 +124,7 @@
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T5</span><span class="ttl">合并探针产物的「忽略」配置对已入库文件不生效</span><span class="arq">ARQ-260917<br>step5b 残余</span></div>
+    <div class="item-top"><span class="tid">P1</span><span class="ttl">合并探针产物的「忽略」配置对已入库文件不生效</span><span class="arq">ARQ-260917<br>step5b 残余</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>合并闸每次运行都会重写一份探针文件。上一轮修复给这份文件加了「忽略」条目——<b>但忽略只对没入库的文件生效</b>，库里那 11 份是早就入库的，条目对它们完全不起作用。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每次合并前的 rebase 步。闸一跑、文件就变脏，rebase 报「本地改动会被覆盖」直接中止。<b>前一轮的修复看着像修了、其实病灶原样保留</b>。</div>
@@ -108,55 +133,41 @@
   </article>
 </section>
 
-<!-- ===================== B ===================== -->
+<!-- ===================== P2 ===================== -->
 <section class="band">
-  <div class="band-head"><h2>B · 起包 / launch 链</h2><span class="n">4 项</span></div>
-  <p class="band-note">每次开新包、派新 agent、上真机都要碰。共同形态：<b>该看到的没看到，该带的信息没带</b>。</p>
+  <div class="band-head"><h2>B · 起包 / 派发链</h2><span class="cid">P2</span><span class="n">2 项</span></div>
+  <p class="band-note">每次派新 agent、上真机都要碰。共同形态：<b>该带的信息没带、该有的说明书没有</b>。</p>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T4</span><span class="ttl">「这个包合并过没有」判断不出来，先例永远取旧的</span><span class="arq">ARQ-260909<br>precedent-merged</span></div>
-    <div class="rows">
-      <div class="cell bad"><div class="lbl">现 状</div>判断一个包是否已合并，代码只认两种痕迹：监督判 <span class="mono">APPROVE</span>、或事件名里带 <span class="mono">merge</span>。但本仓的<b>主流合并形态是「监督判升级 + 人来批」</b>——两种痕迹一个都不占。</div>
-      <div class="cell imp"><div class="lbl">影 响</div>起包时给子 agent 生成输入清单的「同子系统先例」这一路。现判只认出 4/19，实际有 ≥8 个包真合并过。<b>方向是安全侧</b>（少读不会放松任何门），但「取最新先例」这个目的没达到。</div>
-      <div class="cell fix"><div class="lbl">改 法</div>补第三种痕迹：人批事件里的批准标记。配一正一负两个夹具——升级形态的包<b>必须入选</b>，没合并过的<b>必须不入选</b>。</div>
-    </div>
-  </article>
-
-  <article class="item">
-    <div class="item-top"><span class="tid">T6</span><span class="ttl">launch 前置清单没人机检，全靠人读</span><span class="arq">ARQ-260914<br>portfolio-reconcile</span></div>
-    <div class="rows">
-      <div class="cell bad"><div class="lbl">现 状</div>带「需修订」标记的工作流，会写一份 launch 前置清单（哪些规范修订得先落地）。这份清单<b>现在没有任何机器在读</b>——launch 检查器根本不认这个键。</div>
-      <div class="cell imp"><div class="lbl">影 响</div>launch 前的可达性检查。清单缺失或过期时不报红，<b>兜底只剩人记得去看</b>。</div>
-      <div class="cell fix"><div class="lbl">改 法</div>让既有的 launch 检查器多读这个键：有就逐条核、缺就报红；<b>没有该键视为无前置</b>（现存工作流行为零变更，向后兼容）。</div>
-    </div>
-  </article>
-
-  <article class="item">
-    <div class="item-top"><span class="tid">T11</span><span class="ttl">合法的高风险动作每次都要现场解释一遍</span><span class="arq">ARQ-260913<br>auto-mode 分类器</span></div>
+    <div class="item-top"><span class="tid">P2</span><span class="ttl">合法的高风险动作每次都要现场解释一遍</span><span class="arq">ARQ-260913<br>auto-mode 分类器</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>变异探针、ECS 部署、mutation 取证这类动作，形态上「看起来像攻击」。安全分类器已经<b>三次实打实误伤</b>——其中一次方向完全判反（把「要求真实变异再还原」的探针判成造假绿）。</div>
-      <div class="cell imp"><div class="lbl">影 响</div>每次含这类动作的派发。每次烧一轮拦截往返 + 你中途出场拍板，<b>已成成本模式</b>。根子是：判的是动作形态，而成本最低的补充信息（合法性 + 还原路径）现无处固定承载。</div>
+      <div class="cell imp"><div class="lbl">影 响</div>每次含这类动作的派发。每次烧一轮拦截往返 + 主线程中途出场拍板，<b>已成成本模式</b>。根子是：判的是动作形态，而成本最低的补充信息（合法性 + 还原路径）现无处固定承载。</div>
       <div class="cell fix"><div class="lbl">改 法</div>在派发契约里加一句常设条款：这类动作的派发必须固定带两句——「本动作为什么合法、怎么还原」+「被拦就停、主线程代执行」。<b>成本一次付、每包复得</b>。</div>
     </div>
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T12</span><span class="ttl">真机轮协调没有说明书，每轮重新交学费</span><span class="arq">ARQ-260913<br>device-round-protocol</span></div>
+    <div class="item-top"><span class="tid">P2</span><span class="ttl">真机轮协调没有说明书，每轮重新交学费</span><span class="arq">ARQ-260913<br>device-round-protocol</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>真机轮的三条关键姿势——捕获窗口何时开、串口怎么抓、动作点怎么下——<b>散在 4 个包的复盘里，没有落成文档</b>。串口 skill 里提过一次 DTR/RTS，但那是工具说明，没记它的伪影模式。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每次上真机。实测四类事故：窗口开早了操作落窗外（重捕一轮）、中途关端口制造假重启、提前分发时间表结果设备离线、烧录后才现形的死锁。</div>
       <div class="cell fix"><div class="lbl">改 法</div>在串口 skill 里新开一节把这套姿势固化（单一长捕获 + 伪影识别 + 人就绪开窗 + 实时口令），再在别处加一行指针引用。<b>沿用「环境事实归 skill」的既有口径</b>。</div>
     </div>
   </article>
+
+  <div class="deferred">
+    <b>本组移出 2 项</b>（按 human 裁定留 ARQ 队列、后续单独处理）：输入清单的先例取旧（<span class="mono">ARQ-260909-precedent-merged-detection-gap</span>）、launch 前置清单无人机检（<span class="mono">ARQ-260914-portfolio-reconcile-launchpreconditions</span>）。
+  </div>
 </section>
 
-<!-- ===================== C ===================== -->
+<!-- ===================== P3 ===================== -->
 <section class="band">
-  <div class="band-head"><h2>C · 收口 / 簿记链</h2><span class="n">4 项</span></div>
+  <div class="band-head"><h2>C · 收口 / 簿记链</h2><span class="cid">P3</span><span class="n">4 项</span></div>
   <p class="band-note">每次包收口、写簿记、跑终审都要碰。<b>共同形态：写进去了，但状态没跟上事实</b>。</p>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T2</span><span class="ttl">索引表里已落地的批次还写着「已冻结」</span><span class="arq">ARQ-260909<br>index-verdict</span></div>
+    <div class="item-top"><span class="tid">P3</span><span class="ttl">索引表里已落地的批次还写着「已冻结」</span><span class="arq">ARQ-260909<br>index-verdict</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>索引靠读收口意见里的几种固定写法来推断「落地了没」。写法有一类 <span class="mono">ok: true（GREEN）</span> 的加粗行，<b>三种读法一个都不认</b>。</div>
       <div class="cell imp"><div class="lbl">影 响</div>交付索引表的状态列。<b>现在表里有 6 条已落地批次显示成 frozen</b>——起草期现跑数出来的，不是推测。索引是给人看的收件箱状态，失真直接误导。</div>
@@ -165,16 +176,7 @@
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T7</span><span class="ttl">「当前包」指针指错了，簿记静默写进别的包</span><span class="arq">ARQ-260913<br>current-pointer</span></div>
-    <div class="rows">
-      <div class="cell bad"><div class="lbl">现 状</div>有一处「当前包」指针，多个脚本靠它认自己该服务哪个包。但指针是<b>隐性全局状态</b>，而脚本读完指针<b>什么都不打印</b>——指对了还是指错了，输出上一模一样。</div>
-      <div class="cell imp"><div class="lbl">影 响</div>每个包的收口。实测三个包复现：① 九闸跑在错误包上下文里全绿；② 簿记写进上一批的账里，得手工回滚重灌；③ 指针没切就静默假绿。</div>
-      <div class="cell fix"><div class="lbl">改 法</div>两件事：让脚本<b>始终回声一次</b>它解析到的包名（从不可见变可见）；再加一个<b>可选</b>的硬校验开关，调用方传了期望值、不符就报错停下。<b>不传则行为与今天完全一致</b>——是否收紧交给调用方。</div>
-    </div>
-  </article>
-
-  <article class="item">
-    <div class="item-top"><span class="tid">T3</span><span class="ttl">验收闸还在数退役的旧文件</span><span class="arq">ARQ-260916<br>acc-gate-archive</span></div>
+    <div class="item-top"><span class="tid">P3</span><span class="ttl">验收闸还在数退役的旧文件</span><span class="arq">ARQ-260916<br>acc-gate-archive</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>固件面验收文件已被整体归档退役，但验收闸的目录跳过清单里<b>没有归档目录名</b>，仍把它们当现役文件数进去。姊妹闸上次修了，<b>这道漏改</b>。另外「归档」这个保留目录名的约定只活在两处代码注释里，没成文。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每次终审的验收相位。起草期现跑：该面命中的 <b>13 件全部在归档目录下——现役件为 0</b>，闸的输入集只剩退役件。当前不产红只因为别处证据在场，换判据就会复刻姊妹闸的打红病灶。</div>
@@ -183,22 +185,31 @@
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T10</span><span class="ttl">「冻结点只准加严、不准放宽」这条纪律，没有成文</span><span class="arq">ARQ-260908<br>tighten-only</span></div>
+    <div class="item-top"><span class="tid">P3</span><span class="ttl">「当前包」指针指错了，簿记静默写进别的包</span><span class="arq">ARQ-260913<br>current-pointer</span></div>
+    <div class="rows">
+      <div class="cell bad"><div class="lbl">现 状</div>有一处「当前包」指针，多个脚本靠它认自己该服务哪个包。但指针是<b>隐性全局状态</b>，而脚本读完指针<b>什么都不打印</b>——指对了还是指错了，输出上一模一样。</div>
+      <div class="cell imp"><div class="lbl">影 响</div>每个包的收口。实测三个包复现：① 九闸跑在错误包上下文里全绿；② 簿记写进上一批的账里，得手工回滚重灌；③ 指针没切就静默假绿。</div>
+      <div class="cell fix"><div class="lbl">改 法</div>两件事：让脚本<b>始终回声一次</b>它解析到的包名（从不可见变可见）；再加一个<b>可选</b>的硬校验开关，调用方传了期望值、不符就报错停下。<b>不传则行为与今天完全一致</b>——是否收紧交给调用方。</div>
+    </div>
+  </article>
+
+  <article class="item">
+    <div class="item-top"><span class="tid">P3</span><span class="ttl">「冻结点只准加严、不准放宽」这条纪律，没有成文</span><span class="arq">ARQ-260908<br>tighten-only</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>冻结的验收件原则上不许改，但实际有一个人性化出口：作者可以<b>只加断言、不加严不放松</b>地补齿。这条纪律已经用了好几次，<b>但它只活在冻结件页脚和散落先例里</b>，治理文档里搜不到。</div>
-      <div class="cell imp"><div class="lbl">影 响</div>每当有包需要补齿。<b>每次都要现付一次升级成本</b>（实测一次 = 一轮 architect 派发 + 你出场一次）。更坏的是反向：没有成文边界时，「补齿」和「改验收」的区分只靠执行者自律，<b>放宽断言可以伪装成加严</b>。</div>
+      <div class="cell imp"><div class="lbl">影 响</div>每当有包需要补齿。<b>每次都要现付一次升级成本</b>（实测一次 = 一轮 architect 派发 + human 出场一次）。更坏的是反向：没有成文边界时，「补齿」和「改验收」的区分只靠执行者自律，<b>放宽断言可以伪装成加严</b>。</div>
       <div class="cell fix"><div class="lbl">改 法</div>把已有的那份防滥用五件写进治理文档新开一节（纯 additive 机器可判 / 原变异重放自证 / 三件记录 / 范围帽 / 意图锚定）。<b>前两条是机器可判的硬闸</b>，堵住伪装路径。</div>
     </div>
   </article>
 </section>
 
-<!-- ===================== D ===================== -->
+<!-- ===================== P4 ===================== -->
 <section class="band">
-  <div class="band-head"><h2>D · 治理批自身</h2><span class="n">3 项</span></div>
+  <div class="band-head"><h2>D · 治理批自身</h2><span class="cid">P4</span><span class="n">3 项</span></div>
   <p class="band-note">这是「治理流程自己的摩擦」——每开一个治理批就要付一次，且<b>已经连批复现</b>。</p>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T8</span><span class="ttl">结构门对着真实存在的文件喊「找不到」</span><span class="arq">ARQ-260914 + ARQ-260907<br>citation-prefix</span></div>
+    <div class="item-top"><span class="tid">P4</span><span class="ttl">结构门对着真实存在的文件喊「找不到」</span><span class="arq">ARQ-260914 + ARQ-260907<br>citation-prefix</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>结构门核验提案里的引用时，会拿一批「前缀候选」去补全裸文件名。候选清单是<b>手工维护的</b>，漏了参考面目录和 docs 子目录两类。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每个治理批的结构门输出。评审记录引一个真实存在的文件也会报「找不到」——<b>纯假警报，但拉低整份输出的信噪比</b>，每批都要人工定性一遍。</div>
@@ -207,7 +218,7 @@
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T9</span><span class="ttl">提案里的清单写错了，要到落地核验期才被发现</span><span class="arq">ARQ-260914<br>landing-preflight</span></div>
+    <div class="item-top"><span class="tid">P4</span><span class="ttl">提案里的清单写错了，要到落地核验期才被发现</span><span class="arq">ARQ-260914<br>landing-preflight</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>提案必须列一份「要改哪些文件」的清单，格式有硬要求。解析这份清单的函数<b>已经存在且可单独调用</b>——但它只在落地核验期才被用上。</div>
       <div class="cell imp"><div class="lbl">影 响</div>每个治理批。<b>已连批三次同型返工</b>：一次格式写成加粗（要走一次追认）、一次整行漏写（四轮评审全没抓住）、一次清单整段缺失。每次都到落地期才炸。</div>
@@ -216,7 +227,7 @@
   </article>
 
   <article class="item">
-    <div class="item-top"><span class="tid">T13</span><span class="ttl">路径改动的「形态族谱」没有沉淀，每批重新撞一遍</span><span class="arq">ARQ-260915<br>path-form-family</span></div>
+    <div class="item-top"><span class="tid">P4</span><span class="ttl">路径改动的「形态族谱」没有沉淀，每批重新撞一遍</span><span class="arq">ARQ-260915<br>path-form-family</span></div>
     <div class="rows">
       <div class="cell bad"><div class="lbl">现 状</div>仓库里一个路径至少有 <b>八种文本写法</b>（普通斜杠、分段引号、Python 拼接、正则转义、点号属性粘连……）。做路径迁移批改时，每种写法都要现撞现总结。</div>
       <div class="cell imp"><div class="lbl">影 响</div>含目录迁移 / 路径批改的治理批。上一批为此付了<b>四轮评审 + 落地四轮修复</b>；最隐蔽的一种（点号属性被误吃，18 处）四轮评审加全套机检都没抓到，最后靠独立核验官首轮判 FAIL 才接住。</div>
@@ -226,9 +237,10 @@
 </section>
 
 <footer>
-  依据 <span class="mono">delivery/changes/arch/260918-gov-review-loop-friction-sweep/PROPOSAL.md</span> DRAFT v0.1。<br>
-  图中「现状」栏的每条断言均于 2026-09-18 在 <span class="mono">gov/kidpal</span> 工作树现跑实测，非转引队列原文——其中 T3 的件数（实测 13 / 原文 9）已按实证申报更正。<br>
-  <b>性质</b>：起草期沟通辅助件（由 <span class="mono">show-me</span> skill 生成），非 canonical 证据、不在 landing-manifest 内；权威以 PROPOSAL.md 为准，两者不一致时以 PROPOSAL 为准。
+  依据四份 PROPOSAL（DRAFT v0.1，均在 <span class="mono">delivery/changes/arch/260918-gov-review-*-friction/PROPOSAL.md</span>）。<br>
+  图中「现状」栏的每条断言均于 2026-09-18 在 <span class="mono">gov/kidpal</span> 工作树现跑实测，非转引队列原文。自查期按硬项 1a 逐条复证引据，查出并更正了 <b>两处 ARQ 原文陈旧</b>：验收闸归档件数（实测 13 / 原文 9）；tighten-only 页脚件数（实测 20 / 原文 7，且原文 7 个 file:line 中 3 个已漂移）。<br>
+  四批的 §2 锚清单均经 <span class="mono">parseSection2AnchorLists</span> 干跑：12 / 2 / 4 / 3 路径，全部 ≡ landing-manifest、零 problems。<br>
+  <b>性质</b>：起草期沟通辅助件（由 <span class="mono">show-me</span> skill 生成），非 canonical 证据、不在任何 landing-manifest 内；权威以各 PROPOSAL.md 为准。
 </footer>
 
 </div>

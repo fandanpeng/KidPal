@@ -6,11 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (29)
+## dev (30)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
 | [260917-m1-k4-rma8-fixbatch](260917-m1-k4-rma8-fixbatch/) | 2026-09-17 | delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/device-round-1.md | closed | m1-home-qa |
+| [260917-m2-k1-char-link-defect-fix](260917-m2-k1-char-link-defect-fix/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
 | [260915-m1-k1a-key-layer-dispatch](260915-m1-k1a-key-layer-dispatch/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-k2-keybar-three-slot](260915-m1-k2-keybar-three-slot/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | open | m1-home-qa |
 | [260915-m1-k3-voice-round-ui](260915-m1-k3-voice-round-ui/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
