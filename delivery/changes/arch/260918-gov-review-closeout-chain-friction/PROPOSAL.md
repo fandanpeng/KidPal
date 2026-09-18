@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-closeout-chain-friction
 
-> **状态：DRAFT v0.1 · 2026-09-18 · 待 human 立项 ack**（FROZEN 行待补凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 留 Track B；OQ2 = 五件原样落 DEV-GOVERNANCE §6〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260909-index-verdict-anchor-okform-gap`（T1）、`ARQ-260916-acc-gate-archive-skew`（T2）、`ARQ-260913-current-pointer-implicit-global`（T3）、`ARQ-260908-tighten-only-unwritten`（T4）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -186,6 +186,13 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 **(a) 按五件原样落 `docs/DEV-GOVERNANCE.md`「验收测试纪律」§6**（**推荐**；承 260907 批 T8「新节 + 引用行」同形态先例）。(b) 降强度：只落「纯 additive 机器可判 + 三件记录」两条，其余三条（原变异重放 / 范围帽 / 意图锚定）留参考面——理由：五件里只有前两条是机器可判的硬闸，后三条是判断、成文后仍需人读。**(c) 落 `.claude/references/acceptance-evidence.md`（G2）而非 DEV-GOVERNANCE（G1）**——理由：G1 的挂载面更宽。
 
 **这项为什么该 human 裁**：§6 是**新增一条适用于全部未来包的验收纪律条款**（挂载面扩张），且它同时是「给冻结件开后门」的**授权来源**——授权边界该由 human 划。
+
+### OQ 裁决（human 2026-09-18）
+
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 | **(a) 留 Track B** | human 原话裁定「都留 Track B」——本批两处闸触点（T2 验收闸枚举面、T3 新 fail-loud）均按判官全面审，**不升 full-adversarial**。折中案 (c)（硬校验缓启）未采。 |
+| OQ2 | **(a) 五件原样落 `docs/DEV-GOVERNANCE.md` §6** | 采纳完整防滥用五件；(b) 降强度、(c) 换 G2 落点两案均未采。human 明确该条同时是「给冻结件开后门」的授权边界。 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 

@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-batch-drafting-friction
 
-> **状态：DRAFT v0.1 · 2026-09-18 · 待 human 立项 ack**（FROZEN 行待补凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 候选域改自动派生；OQ2 = 八形态表显式非穷举〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260914-lfc-citation-references-prefix` + `ARQ-260907-lfc-citation-docs-prefix`（残余①）（T1）、`ARQ-260914-landing-preflight-anchor-parse`（T2）、`ARQ-260915-path-form-family-reference`（T3）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -163,6 +163,13 @@ docs/templates/PROPOSAL.template.md
 
 **(a) 显式声明非穷举**（**推荐**）：「该批实测所见八类，非理论穷举；遇新形态时 append」。理由：封闭清单会让第 9 类无据可依，而路径形态确实可能随工具链演进增长。
 **(b) 声明为封闭八类**。理由：边界更清晰、更好判官核，但需人工维护且在遇新形态时立刻过时。
+
+### OQ 裁决（human 2026-09-18）
+
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 | **(a) 改成自动派生** | 候选域从实际目录结构派生，不再手工维护清单。(b) 补两条硬编码、(c) 派生 + 文件头注释两案均未采。**human 在裁决前先问清了实际读者**——结构门的执行者是 `landing-verifier`（Track B 第 5 步 landing 核验期，零上下文、只读、只写 verdict），故「核验锚点由清单内容变为派生规则」这一代价已明示并接受。 |
+| OQ2 | **(a) 显式声明非穷举** | 八形态表写明「该批实测所见八类，非理论穷举；遇新形态时 append」。 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 

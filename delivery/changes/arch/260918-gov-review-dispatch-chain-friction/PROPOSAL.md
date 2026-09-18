@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-dispatch-chain-friction
 
-> **状态：DRAFT v0.1 · 2026-09-18 · 待 human 立项 ack**（FROZEN 行待补凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 落参考文档面；OQ2 = 开放举例〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260913-auto-mode-classifier-legit-workflow`（T1）、`ARQ-260913-device-round-protocol`（T2）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-closeout-chain-friction` / `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -119,6 +119,13 @@
 ### OQ2 · T1 的「四类动作」清单是否封闭
 
 推荐**开放列举 + 判据句**（写「凡形态上可能被安全分类器误判为攻击的合法验证动作」，后附四类**示例**而非穷举），而非封闭四类。理由：分类器的误伤面会随动作类型增长（本批四类来自 3 包实证，非穷举），封闭清单会让第 5 类无据可依。备选：封闭四类（边界更清晰、更好判官核，但需人工维护）。
+
+### OQ 裁决（human 2026-09-18）
+
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 | **(a) 落参考文档面** | T1 落 `.claude/references/pod-coordination.md`（派发契约既有承载点）；T2 落 skill 新节 + `pod-coordination.md` 一行引用指针。两处的 (b) 备选（落 agent def）未采——避开 self-def 判断点。 |
+| OQ2 | **(a) 开放举例 + 判据句** | 两处列举均写「以下为示例、非穷举，遇新形态补录」。 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 

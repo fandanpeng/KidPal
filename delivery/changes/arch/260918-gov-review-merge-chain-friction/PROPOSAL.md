@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-merge-chain-friction
 
-> **状态：DRAFT v0.1 · 2026-09-18 · 待 human 立项 ack**（FROZEN 行待补凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 留 Track B；OQ2 = 11 件全撤〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260909-gate-green-anchor-regex-loose`（T1）、`ARQ-260917-step5b-main-append-remerge-tier3` 残余③ + 同族 probe 输出文件（T2）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `260918-gov-review-dispatch-chain-friction` / `-closeout-chain-friction` / `-batch-drafting-friction`。**另有两项（输入清单先例取旧、launch 前置清单不核）按 human 裁定移出本族、留 ARQ 队列后续单独处理**。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -139,6 +139,13 @@ delivery/taskpackages/260915-m1-n1b-p1-home-battery/overlap-probe.json
 ### OQ2 · T2 的撤跟踪范围
 
 **(a) 11 件全撤**（推荐；`git rm --cached`，工作树文件保留、历史不变）。理由：清点以索引态为穷举、一次撤干净，避免「同族形态可复发」的教训再留尾巴。**(b) 只撤近三批**（260915 三件，早期批次已收口、其 probe 不再被重写）。理由：改动面最小。**(c) 不撤，改 merge-driver 落点**（把 probe 输出移出被合并路径）。理由：从形态上根治，但要动合并主流程、半径大于本批定位，与本批 §0 非目标冲突。
+
+### OQ 裁决（human 2026-09-18）
+
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 | **(a) 留 Track B** | human 原话裁定「都留 Track B」——本族两处闸语义触点（本批 T1 与 P3 的验收闸枚举）均按判官全面审，**不升 full-adversarial**。折中案 (c) 未采。 |
+| OQ2 | **(a) 11 件全撤** | 清点以索引态为穷举、一次撤干净。 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
