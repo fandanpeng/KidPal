@@ -109,5 +109,9 @@
   "260914-gov-review-delivery-restructure": {
     "date": "2026-09-14",
     "mergedInMain": "yes"
+  },
+  "260918-gov-review-merge-chain-friction": {
+    "date": "2026-09-18",
+    "mergedInMain": "no"
   }
 }
