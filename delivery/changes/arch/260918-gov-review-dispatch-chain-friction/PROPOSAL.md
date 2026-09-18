@@ -1,11 +1,11 @@
 # PROPOSAL · 260918-gov-review-dispatch-chain-friction
 
-> **状态：DRAFT v0.5 · 2026-09-19 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；**R1 BLOCK(F1..F4) 后按 human 2026-09-19 裁定把 T1〔高风险合法动作预防声明〕整条移出本批**、退回 ARQ 队列单开一批，见 §6 留根①；R1 针对幸存 T 的 F3/F4 已在 v0.5 收口，见下）。
+> **状态：FROZEN v1.0 · 2026-09-19 · 可进 landing（按 human 指示暂不 landing，待 human 阅后再落）**（凭据：human 2026-09-18 立项 ack + OQ 全裁；R1 BLOCK(F1..F4)→按 human 2026-09-19 裁定移出 T1〔预防声明〕→ v0.5 → **R2 GREEN**〔§7 `### R2 - 2026-09-19 - architect`，含 3 条 NIT F5–F7，已在标冻前折入〕）。
 > **承载 ARQ**：`ARQ-260913-device-round-protocol`（本批唯一 T）。**原承载的 `ARQ-260913-auto-mode-classifier-legit-workflow` 已移出本批、退回队列**（该 ARQ 的改法经 R1 实测**打错机制**，见 §6 留根①）。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction`（已 FROZEN v1.0）/ `-closeout-chain-friction`（已 FROZEN v1.0）/ `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
-> **riskTier**：low（一句话证成：本批为 skill 面 + reference 指针行的**纯成文与固化**，零闸判定改动、零脚本行为改动、零 agent frontmatter 改动；不新增节、不改既有三节内容）。
+> **riskTier**：low（一句话证成：本批为 skill 面 + reference 指针行的**纯成文与固化**，零闸判定改动、零脚本行为改动、零 agent frontmatter 改动；**只新增一节**（不改既有三节内容）。R2-F5 更正：v0.5 原写「不新增节」与 §0/§2 的「新增一节」自相矛盾，属 v0.2 编辑残留）。
 > **review profile**：G2（`.claude/references/pod-coordination.md` + `.claude/skills/kidpal-serial-monitor/SKILL.md`）。契约面 / G1 / G3 均为零。**本批是本拆包族里零闸语义触点的一批**。
 >
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
@@ -90,7 +90,7 @@
 | 主体落点 | **(a) 落 skill** | 维持 |
 | 指针落点 | **(a) 补一行指针** | 维持；其**目的表述**已按 R1-F3 如实化（主通道 = skill description，指针为次要发现路径） |
 
-**v0.5 的 OQ 清零说明**：v0.2 时的 OQ1（T1/T2 落点）中**关于 T1〔预防声明〕的部分随该 T 移出而作废**；关于 T2 的部分已裁并保留（上表）。human 裁决「落参考文档面、不落 agent def」对族内其余批次仍有效。
+**v0.5 的 OQ 清零说明**：v0.2 时的 OQ1（T1/T2 落点）中**关于 T1〔预防声明〕的部分随该 T 移出而作废**；关于 T2 的部分已裁并保留（上表）。human 裁决「落参考文档面、不落 agent def」对族内其余批次仍有效——**但该裁决已被 2026-09-19 的「携带臂」裁决部分取代**（R2-F7 采纳，见 §6 留根①）：T1〔预防声明〕的下一批**须补携带臂**，即需在 `.claude/agents/planner.md` 派发步加一行指针；故「不落 agent def」**不再是无例外的通则**，下一批起草者勿据此跳过携带臂。
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
@@ -103,7 +103,7 @@
 | V3 | `grep -c "kidpal-serial-monitor" .claude/references/pod-coordination.md` | ≥1（指针行在场）；且该行**不含**转抄的正文内容（防双源漂移——目视核） |
 | V4 | `grep -c "DTR/RTS" .claude/skills/kidpal-serial-monitor/SKILL.md` | ≥2（`:10` 原有 1 处 + 新节伪影模式 ≥1 处） |
 | V5 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件）。**注**：本批不动 frontmatter，两脚本预期**零差异**通过——这是「未破坏路由」的正面证据 |
-| V6 | `git diff .claude/scripts/ .claude/agents/` | **零改动**（证明 T1〔预防声明〕确已移出、未夹带） |
+| V6 | **改锚（R2-F6 采纳）**：landing 后跑 `git log --oneline <FROZEN 时点 SHA>..HEAD -- .claude/scripts .claude/agents`（等价 `git diff <FROZEN SHA>..HEAD -- <同路径>`） | **零提交 / 零 diff**——证明 T1〔预防声明〕确已移出、landing 未夹带。**如实声明局限（R2-F6）**：单纯 `git diff`（工作树 vs index）**只对「landing 前未提交窗口」可证伪，已 commit 的夹带恒空绿**（v0.5 原写法即此半真空形态）；真保证由 V7 的 scope-creep + landing-verifier 逐文件 diff 承载 |
 | V7 | `landing-fidelity-check.mjs <本批>` 结构门 | §2 锚集 ≡ manifest 机判通过（本批 2 路径） |
 
 ## 6. 留根清单
@@ -191,3 +191,30 @@
 - 验证集 V1–V6 逐条机械可判、锚点非空转 ✓（V1 依赖落地文本含「预防声明」字面——§2 草案条款正文现未含该词，落地时须按 V1 锚点写入）。
 
 **结论**：BLOCK(F1, F2, F3, F4)。F1 升级 human（T1 是否补「执行前 human-decision 背书」第三臂，或显式缩圈 T1 目标面为派发侧子类）；F2 建议 F1 裁决时一并定携带臂取舍；F3/F4 措辞级，主线程修订时顺手收。T2 除 NIT 外无实质问题。
+
+### R2 - 2026-09-19 - architect
+
+**verdict：GREEN**（F1/F2 随 T1〔预防声明〕整条移出本批而作废，按 human 2026-09-19 裁定执行、不重开；幸存 T 的 F3/F4 收口到位；本轮新出 3 条 NIT，均不涉目标效果、不阻塞 GREEN，建议主线程标 FROZEN 前顺手收）。
+
+#### R1 findings 处置核对
+
+- **F3（收口到位）**：§2 T1③ 目的表述已如实化。亲核 skill description 原文（`.claude/skills/kidpal-serial-monitor/SKILL.md:3` verbatim「Use whenever reading device boot logs, watching a smoke round, or debugging on-device behavior」）——「description 已覆盖 reading device boot logs / watching a smoke round 场景」的引述逐字准确；「真机轮必含串口读、故 description 触发达成主通道」与 4 包实证（key-route-a1 300s 窗口 / screen-unification 捕获夜等均以串口读为主轴）相符。**保留该指针的判官意见：值得保留**——在新定性下它有真实（次要）价值：`:196` demo 对账行的消费面按形态核「串口日志 / 真机轮」证据，收口/对账读者知晓 skill 含 DTR/RTS 伪影模式识别恰有助于判证据质量（伪影误读会污染对账结论）；成本一行、V3 已设防转抄、§6 交日落复盘项已设撤除判据（从未被用到即评估撤除）。不撤、manifest 维持 2 路径。
+- **F4（收口到位）**：§1 改「三次设备重启……其中 21:15 / 22:50 两处时刻有实测记录」、§2 T1① 改「三次重启、21:15 / 22:50 两处有实测记录」——与 screen-unification pod-retro `:34` verbatim「当晚三次设备重启全部与捕获结束时刻吻合（21:15 / 22:50 秒级）」相符（三次重启、两个可考时刻）。「3 例实证 + 1 类泛化」更正已写入 §6 留根① 供下一批采用 ✓。
+- **F1/F2（作废，处置正确）**：human 裁定 T1 整条移出、单开一批重新设计。v0.5 无残留的预防声明**改法**（全文检索「预防声明」仅存于移出说明、留根①、V6 反向断言——均为「已移出」语境，非悬空改法）✓。
+
+#### 移出动作与交接质量核对（亲核）
+
+- **无夹带实证**：`git show e42e4e3 --stat` = 仅本 PROPOSAL.md + `docs/ARCH-REVIEW-QUEUE.md` 两文件，`.claude/agents/`、`.claude/scripts/` 零触碰 ✓。
+- **ARQ 队列追记在场且完整**（`docs/ARCH-REVIEW-QUEUE.md:58`）：三例运行者身份（char-stroke planner 直跑 / story-p3 主线程直跑 / g-relay-fix 子 agent，pod-events 与 pod-retro verbatim 引用与本批 R1 证据一致）、双臂结构（口径臂 pod-coordination / 携带臂 planner.md）、human 2026-09-19 携带臂裁决、双臂修法方向（自执行臂 = 既有 `human-decision` 事件背书，先例 `approve-mutation-probe-workflow`）、两处计数更正、「须双臂一起落，不得只落口径臂」处置——**四项交接要件齐备，下一批凭 §6 留根① + 该 ARQ 追记可直接接手，无需重付诊断成本** ✓。
+- **R1 记录保全**：§7 R1 段逐字原样、append-only 保持 ✓。
+- **内部自洽**：manifest（2 路径）≡ §2 目标文件并集 {SKILL.md, pod-coordination.md} ✓；packet-id 行已更新为单 T ✓；riskTier=low / profile=G2 成立（skill 正文一节 + reference 指针行，零 G1/G3/契约/frontmatter）✓；Track B 默认路由成立 ✓；OQ 裁决框架未重开 ✓。
+
+#### 新出 findings（均 NIT，不阻塞）
+
+- **F5（NIT）· riskTier 证成句自相矛盾**：头注 `riskTier` 行写「**不新增节**、不改既有三节内容」，与 §0 非目标「只新增一节 + 在既有节补一行指向」及 §2 T1①「新增一节」直接矛盾（v0.2 原句为「T2 只往 skill 加一节」的编辑残留）。riskTier=low 的结论本身不受影响（往 skill 加一节仍是 low），但 FROZEN 前须一词修正（「不新增节」→「只新增一节」），否则冻结件携带假事实断言。
+- **F6（NIT）· V6 断言形态半真空**：`git diff .claude/scripts/ .claude/agents/`（工作树 vs index）只在 landing 前**未提交窗口**可证伪；若夹带改动已随本批 commit 落盘（如携带臂被误提前写进 planner.md 并提交），该命令恒空绿、证不出。V6 声称的「证明 T1 确已移出、未夹带」超出其实际检测力——真正的无夹带保证由 V7（landing-fidelity scope-creep 硬门）+ landing-verifier 逐文件 diff 承载，V6 属冗余辅助。修法方向：改锚 commit 范围（`git diff <pre-landing-sha>..HEAD -- .claude/scripts .claude/agents`，预期空）或如实降格其声称（「landing 前工作树抽查」）。本轮实测无夹带（e42e4e3 stat 为证），故仅措辞级。
+- **F7（NIT）· §4「不落 agent def 仍有效」与携带臂新裁的误读风险**：§4 末「human 裁决『落参考文档面、不落 agent def』对族内其余批次仍有效」未标注已被 2026-09-19 携带臂裁决**部分取代**（留根①：下一批须在 planner.md 派发步加携带臂、两臂一起落）；下一批起草者是本留根的第一读者，若先读到 §4 这句可能误以为「不落 agent def」仍是约束、漏掉携带臂。留根① 与 ARQ 追记均已强调「须双臂一起落」，故风险低；建议 FROZEN 前在 §4 该句补半句「（该裁定已被 2026-09-19 携带臂裁决部分取代，见 §6 留根①）」。
+
+#### 结论
+
+GREEN。F3/F4 收口到位、移出动作干净、交接四要件齐备、R1 记录保全。F5/F6/F7 三条 NIT 建议主线程在标 FROZEN 前一并顺手修（均为一词/一句级，不构成再评审义务）；修后即可进入 FROZEN → packet-bound landing 流程。无升级 human 项。
