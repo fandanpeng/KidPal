@@ -1,0 +1,50 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "260917-m2-k1-char-link-defect-fix",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "5aaa1e91-2c09-4a93-8ef5-bb5f8ee5d9a6",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260917-m2-k1-char-link-defect-fix/verifier-evidence/rounds/r3.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-18T00:24:58.217Z",
+    "completedAt": "2026-09-18T00:25:12.527Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 179, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9595, "timing": "scoped", "note": "device build 真编译通过（xiaozhi.bin 0x30b780 bytes，分区余量 11%）——E3 device build 闸满足" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 150, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 163, "timing": "scoped" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 172, "timing": "scoped" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 146, "timing": "scoped", "note": "docsSyncRequired=false" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 146, "timing": "scoped" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 3358, "timing": "full", "note": "37 passed (pytest)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 248, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=20 / serverAcceptanceFiles=0" }
+  ],
+  "hostRunner": {
+    "finalResult": "39 Tests / 0 Failures (builder 实跑)",
+    "baselineRef": "既有套件 35T/0F @ be3cf9f（260915 T3 判停引用，firmware/、server/ 两面对 be3cf9f 零差异）",
+    "newTeeth": "char_stroke.acceptance.c 4 齿（M2K1-A1/A2/A3 + 注册序守卫）",
+    "redBaseline": "4 Tests / 3 Failures（runner exit=3，acceptance-author standalone 实跑未修复树；红名 verbatim 在 taskpackage redBaselineResult）"
+  },
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 260917-m2-k1-char-link-defect-fix --phase final --round 3 --invocation-id 5aaa1e91-2c09-4a93-8ef5-bb5f8ee5d9a6",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/260917-m2-k1-char-link-defect-fix/verifier-evidence/rounds/r3.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 3
+    }
+  }
+}

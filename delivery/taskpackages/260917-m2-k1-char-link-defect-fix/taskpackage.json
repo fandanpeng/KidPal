@@ -3,8 +3,8 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M2-char-window",
     "upstreamFrozen": "",
     "workstream": "m2-char-window"
@@ -13,7 +13,7 @@
   "story": "M2-K1 查字链路两缺陷正式修复（板端 LVGL 栈定容 + SVG 解析器补 C 命令）",
   "planRef": "delivery/taskpackages/260917-m2-k1-char-link-defect-fix/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "",
+  "redBaselineResult": "红基线落账 2026-09-18（acceptance-author standalone 实跑，未修复树，char_stroke.acceptance.c 4齿全量）：4 Tests / 3 Failures（runner exit=3），红因全为 story 缺失的真实行为/接线义务、零环境错——A1 红名 verbatim「FAIL: M2K1-A1 RED: 最小 C 路径解析返回 -1——含 C 命令的 makemeahanzi 笔画被整笔丢弃（现状缺陷①: tokenizer 仅 M/L/Q/Z, 未知命令 -> -1; S-F3.1 示范字残缺根因）。修复 = C 命令三次贝塞尔离散成点」；A3 结构义务红（char_page.cc 帧路径 3 处 [256] 局部数组在位）+ boundary 接线义务红；A2 PASS（修复前行为冻结参照）。既有 host 套件基线按 260915 T3 判停引用不重跑：35T/0F @ be3cf9f（firmware/、server/ 两面对 be3cf9f 零差异）",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -66,13 +66,35 @@
   "decisionCoverage": [],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "M2K1-A1: SVG 解析器 C 命令 host 齿——新增齿在未打修复的当前解析器上 RED（含 C 命令的 makemeahanzi 路径整笔被丢弃、断言零丢笔），补 C 命令三次贝塞尔离散成点后 GREEN；closeout 声明 RED→GREEN",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-M2K1-A1-cmd-c-removed：char_stroke.c cs_tokenize 接受集退回 M/L/Q/Z（C/c 撤除）——新齿 standalone 实跑红名「FAIL: M2K1-A1 RED: 最小 C 路径解析返回 -1——含 C 命令的 makemeahanzi 笔画被整笔丢弃（现状缺陷①: tokenizer 仅 M/L/Q/Z, 未知命令 -> -1; S-F3.1 示范字残缺根因）。修复 = C 命令三次贝塞尔离散成点」；还原后 standalone 4 Tests / 0 Failures",
+        "counterEvidence": "char_stroke.acceptance.c TEST 1（:481）最小 C 路径齿红名 verbatim 在案（redBaselineResult 字段引全文）；红→绿链 = MUT 应用红 + 还原绿"
+      },
+      {
+        "acceptanceId": "M2K1-A2: M/L/Q/Z 既有命令回归齿——解析点集与修复前逐位一致（C 命令加入不改既有四命令行为，char_stroke 数据面零回归）",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-M2K1-A2-bezier-segs-changed：char_stroke.c CS_BEZIER_SEGS 8→10（触 Q 采样密度）——新齿 standalone 实跑红名「FAIL: M2K1-A2 RED: Q 离散点集漂移（got 11 点, 参照 9 点逐位）——贝塞尔采样密度/公式/端点精确语义被触碰」；还原后 standalone 4 Tests / 0 Failures",
+        "counterEvidence": "char_stroke.acceptance.c TEST 2（:561）Q 离散 9 点参照表逐位比对红名 verbatim 在案；红→绿链 = MUT 应用红 + 还原绿"
+      },
+      {
+        "acceptanceId": "M2K1-A3: 栈修复结构齿——char_page 动画帧路径（pts/sc/toks 局部大数组）去栈改造后，结构断言钉渲染帧路径零 ~6.5KB 级栈局部数组；custom_lcd_display.cc taskLVGL 栈定容值收编为命名常量、一次性补丁注记替换",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-M2K1-A3-frame-path-stack-array-restored：char_page.cc charpage_render_frame 函数体恢复非 static kidpal_cs_point [256] 栈局部——新齿 standalone 实跑红名「FAIL: M2K1-A3 RED: char_page.cc 渲染帧路径仍有 1 处非 static kidpal_cs_point [256] 栈局部数组（pts/sc 形态, 单帧 ~6KB 栈, 打穿 taskLVGL 7168 默认栈 -> panic 的缺陷②本体）——去栈改造未落成」；还原后 standalone 4 Tests / 0 Failures",
+        "counterEvidence": "char_stroke.acceptance.c TEST 3（:659）结构齿红名 verbatim 在案（红基线期 3 处 [256] 在位计数吻合）；红→绿链 = MUT 应用红 + 还原绿"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
       {
         "path": "firmware/main/display/char_stroke.c",
-        "symbol": "char_stroke_parse_path"
+        "symbol": "kidpal_char_stroke_parse"
       },
       {
         "path": "firmware/main/display/char_page.cc",

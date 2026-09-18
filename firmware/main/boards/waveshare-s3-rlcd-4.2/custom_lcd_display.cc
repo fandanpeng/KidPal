@@ -16,6 +16,13 @@
 
 LV_FONT_DECLARE(font_awesome_14_1); /* 联网小标与辅助条小标同档用 14px Font Awesome */
 
+/* taskLVGL 任务栈定容（M2-K1 缺陷②修复的板级落点）：esp_lvgl_port 默认 7168 曾被
+ * char_page 动画帧历史大栈数组（pts/sc/toks 256 点局部 ≈6.5KB）打穿、栈溢出 panic
+ * （2026-09-15 串口实证两轮）。正式修复 = 帧路径预解析去栈（char_page.cc）+ 栈定容
+ * 在此收编为命名常量作单源。定容 16384 = 预解析去栈后动画帧栈需求回落 + LVGL 渲染
+ * 中间态与保底裕量的硬上界。 */
+static const uint32_t KP_TASK_LVGL_STACK_SIZE = 16384;
+
 void CustomLcdDisplay::SetTheme(Theme* theme) {
     /* 基座先把 chrome 按主题样式化（network_label_ 会按 text_font line_height 决策落到
      * icon_font = font_awesome_30_4，30px）；随后强制联网小标回落小号 FA 字体 14px，与
@@ -125,10 +132,9 @@ height_(height)
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     port_cfg.task_priority   = 2;
     port_cfg.timer_period_ms = 50;
-    /* 栈溢出验证补丁（2026-09-15 一次性实验，跳过流程如实记录）：默认 7168 被
-     * char_page 动画帧（pts/sc/toks 256 点局部数组 ≈6.5KB）打穿，taskLVGL 栈溢出
-     * panic（串口实证两轮）。正式修复（预解析去栈 + 栈定容）走 dev-loop，本行届时随包收编。 */
-    port_cfg.task_stack      = 16384;
+    /* taskLVGL 栈定容（M2-K1 缺陷②修复板级落点）：定容值收编命名常量为单源,
+     * 依据见 KP_TASK_LVGL_STACK_SIZE 定义处（预解析去栈后栈需求回落 + 硬上界裕量）。 */
+    port_cfg.task_stack      = KP_TASK_LVGL_STACK_SIZE;
     lvgl_port_init(&port_cfg);
     lvgl_port_lock(0);
 

@@ -1,0 +1,30 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "260917-m2-k1-char-link-defect-fix",
+  "ts": "2026-09-18T00:25:12.527Z",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "5aaa1e91-2c09-4a93-8ef5-bb5f8ee5d9a6",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/260917-m2-k1-char-link-defect-fix/verifier-evidence/rounds/r3.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 9,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "M2K1-A1/A2/A3 三齿 RED→GREEN 链完整：红基线 2026-09-18 acceptance-author standalone 实跑（未修复树）4 Tests / 3 Failures（runner exit=3，A1/A3/boundary 义务红、A2 PASS 冻结参照，红名 verbatim 在 taskpackage redBaselineResult）→ final host runner 39 Tests / 0 Failures（builder 实跑，既有 35T/0F @ be3cf9f + 新齿 4）；三条 mutation 反证（MUT-M2K1-A1-cmd-c-removed / MUT-M2K1-A2-bezier-segs-changed / MUT-M2K1-A3-frame-path-stack-array-restored）全部 failed as expected + 还原后 4T/0F，perAcceptance record 在 taskpackage mutationEvidence",
+    "redTrajectory": "r1 scoped taskpackage-required 红（拆包元数据形态：origin.type=milestone 不在闸值域闭集，planner finalize 权内改 delivery-story 后闸绿，friction event 8c4ec567-0e7e-45cc-89ba-e48784666008 在案）→ r2 scoped 全绿 → r3 final 全绿",
+    "demoReconciliation": "见 review-packet.md Demo 对账行——roadmap §③ K1 demo 证据形态四项（host runner C 齿 RED→GREEN / 既有命令回归齿 / device build 闸 / 真机半 deferred 归 K3）逐项一致，一致性结论落行在案",
+    "m2k1a4Deferral": "M2K1-A4 live 端到端复证 deferred 归 M2-K3 设备轮（structural 条目 note：单真机不两轮撞车，launchPreconditions 第 4 条）；NFR-PERF-2 live 复测随 K3 轮承载",
+    "detectChanges": "N/A (worktree)；替代抽查 = git diff --stat 闭集 + 共享符号 trace_path（charpage_render_frame callers 闭集场内 / kidpal_char_stroke_parse 强定义 home 唯一），详见 review-packet.md 影响面核对节",
+    "docsSync": "docsSyncRequired=false；零 docs/contracts/spec 触碰（git diff 零命中 + final r3 contract-lint/docs-sync 双闸绿），见同目录 docs-delta.md"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。"
+}

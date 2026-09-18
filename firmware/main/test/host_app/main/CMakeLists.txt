@@ -81,6 +81,15 @@ set(HOST_ACCEPTANCE_SRCS
     # acceptance 之前**（smoke 末位 = 最先执行; 本文件 test 8 tooth 1 校验此序）。
     "../../reminder_overlay_unify.acceptance.c"
 
+    # 包 260917-m2-k1-char-link-defect-fix（查字链路两缺陷修复：C 命令三次贝塞尔 +
+    # 动画帧去大栈数组 + taskLVGL 栈定容收编）：冻结验收（C 命令零丢笔/离散语义 +
+    # M/L/Q/Z 逐位回归/防御面零回归 + 栈修复结构齿 + 注册序守卫）。强符号源
+    # char_stroke.c 覆盖 weak 哨兵（其 art_assets.h 引用为纯声明头, parse 路径不调
+    # art 函数, 无需另接 art_assets.c——260829 先例）。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行; 本文件 test 4 tooth 1 校验此序）。
+    "../../char_stroke.acceptance.c"
+    "../../../display/char_stroke.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
