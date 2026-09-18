@@ -3,17 +3,17 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M2-char-window",
     "upstreamFrozen": "",
     "workstream": "m2-char-window"
   },
   "subsystem": "firmware",
-  "story": "M2-K2 撤 P4 常驻页——页循环 4→3、枚举对齐 spec P1→P2→P3、keybar 页点 4→3（收回 M1 deviation）",
+  "story": "M2-K2 撤 P4 常驻页——页循环 4→3、枚举对齐 spec P1→P2→P3、keybar 页点 4→3（收回 M1-K2 deviation）",
   "planRef": "delivery/taskpackages/260917-m2-k2-retract-p4-three-page/plan.md",
-  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "",
+  "redBaselineCommand": "上游既有套件基线（仓根起）：cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"。注意 elf 相对 host_app/ 目录，从仓根跑 ./build/... 必报 No such file（拆包期原文即此歧义形，已修）。本包新齿红基线由 acceptance-author 冻结时实跑（新套件未登记进 runner 前用 standalone 脚手架跑，DEV-GOVERNANCE §3/§4）。",
+  "redBaselineResult": "上游已知红基线（launch 侧现跑，2026-09-18 @ HEAD ca7ff81）：firmware host 面 **39 Tests / 0 Failures / 0 Ignored**、exit 0——按 260915 T3 差异判停协议，`git diff --quiet be3cf9f HEAD -- firmware/` 有差异（M2-K1 动了 char_stroke.c / char_page.cc / custom_lcd_display.cc）故重跑，本行为 firmware 面现行锚；server 面零差异，继续引用 m2-char-window progress.md 锚行 37 passed / 0 failed @ be3cf9f。既有套件零红（35T @ be3cf9f → 39T @ ca7ff81 的增量为 M2-K1 新齿，非本包责任）。本包新齿红基线待 acceptance-author 冻结时补记。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -25,10 +25,10 @@
     "test-quality"
   ],
   "acceptance": [
-    "M2K2-A1: 页循环 3 页 host 齿——cycle_next 循环语义断言 HOME→SCHEDULE→STORY 三页循环、KP_PAGE_CHAR 不再停靠（既有 4 页循环断言修订走 acceptance-author 留痕）",
-    "M2K2-A2: 枚举对齐结构齿——kidpal_render_node.h 枚举值与 spec P1→P2→P3 页序一致（行 166 ② 页序漂移理顺），页点 total 断言 = 3（keybar 中槽 4→3，M1-K2 launch 前拍板 deviation 的既定收回）",
-    "M2K2-A3: 键路由回归靶——key_route_global 基层列语义与 key_layer_dispatch 基层列等价 guard 齿全绿（BOOT 翻页语义零回归，撤页不触碰键基建）",
-    "M2K2-A4: 查字数据通路保留靶——mcp_server view=char 路由与 char_page 渲染面在撤页后仍可被服务端下发触发（M2-K3 改窗的前置生存面），结构断言钉通路在场",
+    "M2K2-A1: 三页循环齿（行为半 host 纯逻辑 + 结构半源切区）——行为半 = key_page_next 三页回绕 P1→P2→P3→P1、非法页（含 PAGE_COUNT 与越界 id）回 P1（key_gesture_parser.cc 进 host 构建，真行为面）；结构半 = kidpal_render_node.cc 的 cycle_next 函数区步进基数随 KP_PAGE_COUNT、CHAR 不再作为循环停靠页（该文件设备专属不进 host，齿形态照 KD-A2 结构半先例：稳定签名切区 + 断言区内不现 KP_PAGE_CHAR 停靠）",
+    "M2K2-A2: 枚举对齐 + 页点 3 点齿——① 两枚举与 spec P1→P2→P3 同序：KP_PAGE_HOME=0 / KP_PAGE_SCHEDULE=1 / KP_PAGE_STORY=2 / KP_PAGE_COUNT=3（kidpal_render_node.h，行 166 ② 页序漂移理顺）与 PAGE_P1=0 / PAGE_P2 / PAGE_P3 / PAGE_COUNT=3（key_gesture_parser.h）逐项对齐，齿可直接对 host 可编的后者断言、前者以文本/切区齿钉；② kidpal_keybar_dots 行为齿 = 三页各自 overlay_top=0 时 total==3（同源 PAGE_COUNT、不钉字面）、page=3 越界防御返回 -1（keybar.c 进 host 构建）",
+    "M2K2-A3: 键路由回归靶——key_route_global 基层列与 key_layer_dispatch 分层派发既有语义零回归：BOOT 单击恒 GLOBAL_ACT_PAGE_NEXT、覆盖层内 BOOT = OVERLAY_CLOSE 不产翻页、KEY 长按族零偏移（本齿不新写断言，钉「既有 key_layer_dispatch.acceptance.c 全套（除 KD-E1 撤页守卫修订外）零修改仍全绿」为回归判据）",
+    "M2K2-A4: 查字数据通路保留靶——撤页后查字能力仍在场：mcp_server.cc case 3（VRT_ROUTE_CHAR）路由与 kidpal_char_page_show 调用点、kidpal_render_node_cache_char_data 调用点、char_page 渲染面文件均保留（结构齿 = 文本在场断言，钉 M2-K3 改窗的前置生存面；路由语义零改动）",
     {
       "id": "M2K2-A5: 真机翻页确认（deferred 归 M2-K3 设备轮）——BOOT 翻页 3 页循环手感 + 页点 3 点真机目击",
       "kind": "structural",
@@ -36,13 +36,14 @@
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/render_pages.acceptance.c",
+    "firmware/main/test/retract_p4_three_page.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
     "firmware/main/test/key_layer_dispatch.acceptance.c"
   ],
   "exitCriteria": [
-    "M2K2-E1: 三页循环 + 页点 3 点 host 齿全绿，key_route_global / key_layer_dispatch 既有语义零回归，host runner 全量零新增红",
-    "M2K2-E2: 铁律——不改 docs/contracts/**、不改 spec、不改 agent 定义/gate；schedule_reminder_b.acceptance.c 等冻结套件钉点（页循环 4 页断言）修订一律走 acceptance-author 留痕，不绕闸",
-    "M2K2-E3: 撤页 = 循环面撤出，查字数据通路（mcp_server char 路由）不顺手拆——改窗归 M2-K3，不得越包"
+    "M2K2-E1: 三页循环齿 + 页点 3 点齿 + 枚举对齐齿 host 全绿，key_route_global / key_layer_dispatch 既有语义零回归，host runner 全量零新增红（上游基线锚 = 39T/0F @ ca7ff81）",
+    "M2K2-E2: 铁律——不改 docs/contracts/**、不改 spec、不改 agent 定义/gate；冻结套件钉点修订一律走 acceptance-author 留痕。本包实际触发的成批钉点 = key_layer_dispatch.acceptance.c 的 KD-E1 零触碰守卫（现正向断言 key_gesture_parser.h 含 PAGE_P4/PAGE_COUNT，撤页必红，其注释自注「页循环 4->3/撤 P4 归 M2」即本包）+ keybar_three_slot.acceptance.c 的 KKB-E1 infra 齿（现字面钉 PAGE_COUNT == 4，与其自注「M2 后随枚举自动 4→3、不需改本文件」自相矛盾，须改成同源判别）。注：拆包期点名的 schedule_reminder_b.acceptance.c 已于 260915 批移入 acceptance/archive/、不再编入 host runner（其内 4 页钉点不跑），本包无需改归档件",
+    "M2K2-E3: 撤页 = 循环面撤出，查字数据通路（mcp_server char 路由 → char_page_show）不顺手拆——改窗归 M2-K3，不得越包；kidpal_render_node_cache_char / cache_char_data 两个循环支撑 API 随撤页成写侧死态，本包保留不动、由 K3 改窗时统一收（在 landing summary 如实登记，禁静默删除）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -57,7 +58,12 @@
     "docs/requirements.md#F3",
     "firmware/main/display/kidpal_render_node.h",
     "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/keybar.c"
+    "firmware/main/key_gesture_parser.h",
+    "firmware/main/key_gesture_parser.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
   ],
   "iterationBudget": 2,
   "fixBudget": 2,
@@ -83,9 +89,17 @@
       {
         "path": "firmware/main/display/keybar.c",
         "symbol": "kidpal_keybar_dots"
+      },
+      {
+        "path": "firmware/main/key_gesture_parser.cc",
+        "symbol": "key_page_next"
+      },
+      {
+        "path": "firmware/main/display/lcd_display.cc",
+        "symbol": "kidpal_keybar_sync_locked"
       }
     ],
     "exempt": ""
   },
-  "notes": "riskTier=high 理由：触共享翻页状态机（kidpal_render_node 循环）+ keybar chrome 共享面 + 冻结套件钉点成批改（schedule_reminder_b.acceptance.c 十余处 4 页断言——行 165 对账注记先例同型）。dependsOn K1 = char_page.cc 冲突面协调（K1 动动画帧、本包动 render_node 的 CHAR 停靠分支与 char_page 邻近引用），非技术必需依赖。mcp_server.cc:650-657 char 路由注释随撤页对账更新但不改路由语义。mutationEvidence 空骨架前置；device build 闸必跑（render_node/keybar 均设备面生效）。"
+  "notes": "riskTier=high 理由：触共享翻页状态机（两页枚举 + keybar chrome 共享面）+ 两处在世冻结套件的守卫齿成批改（KD-E1 / KKB-E1）。dependsOn K1 已 merged（16b0d4e），冲突面（char_page.cc 动画帧 vs render_node CHAR 停靠分支）已由串行合并消解。\n\n**intake 修正记录（planner 2026-09-18，四项拆包期事实偏差，均在 planner finalize 权内、不改包语义方向）**：① origin.type/upstreamType 由 \"milestone\" 改 \"delivery-story\"——taskpackage-required-check 闸值域闭集不认 milestone（resolveOriginType 优先取 upstreamType），与 M2-K1 r1 同款形态税，来源事实仍由 sourceRefs/upstreamRef 里程碑锚表达；② acceptanceTestsFile 原指 firmware/main/test/render_pages.acceptance.c **该文件不存在**（260911-render-pages 套件已随 260915 归档批移入 acceptance/archive/ 并改名消解），改钉本包新套件 retract_p4_three_page.acceptance.c + 两处待修订在世套件；③ sourceRefs 补齐真实改动面：页点总数与页序的单一事实源住 key_gesture_parser.h（M1-K2 KB-E1 有意同源），keybar 页索引映射住 lcd_display.cc，拆包期只列了 render_node.h/.cc + keybar.c，会误导 builder 以为改一处枚举即可；④ redBaselineCommand 的 ./build/host_infra_test.elf 相对 host_app/ 而非仓根，按字面跑必报 No such file，已写明 cwd。\n\n**Intake checklist（C5）核对结论**：已核 .claude/scope-map.json——builder/fixer allow firmware/** 覆盖本包全部目标路径（key_gesture_parser.h/.cc、render_node.h/.cc、keybar.c、lcd_display.cc、mcp_server.cc、host_app/main/CMakeLists.txt），无中途卡住风险；acceptance-author allow 覆盖 firmware/**/*.acceptance.c（新套件 + 两处在世套件修订均可写），但 **不含 host_app/main/CMakeLists.txt**——新冻结验收登记进 HOST_ACCEPTANCE_SRCS（置于 host_infra_smoke 之前）由 builder 首步落地，形态照 M2-K1 先例（96731d6 同时改 CMakeLists +9/-0 与新增 char_stroke.acceptance.c）。acceptance-author 在交付报告里给出需登记的确切行与插入位。\n\n**host 可编面事实**（决定齿形态，别再猜）：进 host runner 的被测实现 = key_gesture_parser.cc / display/keybar.c / display/kidpal_layer.c / home_p1.c / kidpal_voice_states.c / voice_round.c / reminder_page.c / char_stroke.c；**不进 host** = kidpal_render_node.cc / lcd_display.cc / char_page.cc / mcp_server.cc。故 A1/A2/A4 里涉及后四者的断言只能是源切区/文本结构齿（KD-A2/KD-E1 先例形态），行为齿只能落在前两者与 key_gesture_parser.cc 上。\n\nmcp_server.cc:650-657 char 路由注释随撤页对账更新但不改路由语义。mutationEvidence 空骨架前置；device build 闸必跑（render_node/lcd_display/keybar 均设备面生效，VERIFY_FW_BUILD_REQUIRED=1）。"
 }

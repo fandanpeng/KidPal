@@ -41,3 +41,20 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **launch 启动卡**：已落 git common dir `devloop/launch/prompt-260917-m2-k1-char-link-defect-fix.txt`（四要素收缩形态）。
 
 **遗留 human 项**：launch 由 human 过目切法后执行（交互会话形态默认；主线程确认后可由 planner 即时启动）——本 skill 不代跑 launch。
+
+## 2026-09-18 · K1 merged → 本批 = 单包 K2，launch 面就绪（树池第 8 棒同树续跑）
+
+**调度判定**：`260917-m2-k1-char-link-defect-fix` 已 merged（16b0d4e，mo28）；K2 dependsOn [K1] 已就绪、K3 dependsOn [K1, K2] 仍等 K2 → 本批 = 单包 K2（mergeOrder 29）。依赖图说了算，不硬凑并行。树池串行复用第 8 棒，同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch`（merge-driver rebase 步已同步至 ca7ff81 = main tip，交接卫生 tracked 净 / 无游离 untracked，白名单 build/ 与 managed_components 软链保留）。
+
+**`--check-launch`**：`node .claude/scripts/portfolio-reconcile.mjs --check-launch 260917-m2-k2-retract-p4-three-page --base-ref base/m2-char-window` → ok:true、blocking 空、warn 空（present = K2 taskpackage.json + decision-coverage.json）。board worktreePath 已预填本树、`--status running` 由 Pod intake（planner Step 1）落。
+
+**上游已知红基线（本包 launch 侧现跑，firmware 面）**：
+- **firmware host 面**：**39 Tests / 0 Failures / 0 Ignored**、exit 0（2026-09-18 @ HEAD `ca7ff81`；量测时 ninja no-work、elf 为 K1 收口态产物）。差异判停：`git diff --quiet be3cf9f HEAD -- firmware/` **有差异**（K1 动 char_stroke.c / char_page.cc / custom_lcd_display.cc）→ 按 260915 T3 协议重跑本面，本行取代 be3cf9f 的 35T 行成为 firmware 面现行锚（35→39 的增量为 K1 新齿，非本包责任）。命令（**elf 相对 host_app/ 目录，从仓根跑 `./build/...` 必报 No such file**）：`cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c "cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf"`。面域 = firmware。
+- **server 面**：`git diff --quiet be3cf9f HEAD -- server/` **零差异** → 引用本文件上方锚行 37 passed / 0 failed @ be3cf9f，不重跑。面域 = server。
+- K2 包 intake 消费同协议：本包未动 firmware/ 前再次起 runner 即引用 ca7ff81 锚行。
+
+**intake 修正（planner 权内，K2 taskpackage 四项拆包期事实偏差）**：① `origin.type/upstreamType` milestone→delivery-story（taskpackage-required-check 值域闭集不认 milestone，与 K1 r1 同款形态税——上游拆包器产出闸不认的枚举值，已在 K1 retro 登记为待上溯项）；② `acceptanceTestsFile` 原指 `firmware/main/test/render_pages.acceptance.c`——**该文件不存在**（260911-render-pages 套件已随 260915 归档批移入 `acceptance/archive/`），改钉本包新套件 `retract_p4_three_page.acceptance.c` + 两处在世套件；③ `sourceRefs` 补齐真实改动面 `key_gesture_parser.h/.cc` + `lcd_display.cc`（页点总数与页序单源住 key_gesture_parser.h、KP_PAGE→PAGE_Pn 页索引映射住 lcd_display.cc，只列 render_node.h/.cc + keybar.c 会误导 builder 以为改一处枚举即可）；④ `redBaselineCommand` 的 cwd 歧义修（同上）。**冻结钉点现实改指**：plan.md 点名的 `schedule_reminder_b.acceptance.c` 已归档不跑，实际成批触发 = `key_layer_dispatch.acceptance.c` 的 KD-E1 零触碰守卫（正向断言 key_gesture_parser.h 含 PAGE_P4）+ `keybar_three_slot.acceptance.c` 的 KKB-E1 infra 齿（字面钉 `PAGE_COUNT == 4`，与其自注「M2 后随枚举自动 4→3、不需改本文件」自相矛盾）——两处走 acceptance-author 留痕修订。
+
+**环境事实**：图索引沿用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（随树增量刷新）；固件环境等价化沿用树内 sdkconfig / dependencies.lock / managed_components 软链（host 构建刚实证可用）。host runner 热缓存随树保留（本次 ninja no-work 即热缓存生效）。
+
+**launch 启动卡**：`.git/devloop/launch/prompt-260917-m2-k2-retract-p4-three-page.txt`（四要素收缩形态）。
