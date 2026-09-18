@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-batch-drafting-friction
 
-> **状态：DRAFT v0.7 · 2026-09-19 · 已立项 ack · 待 architect R3 确认**（凭据：human 2026-09-18 立项 ack + OQ 全裁；R1 BLOCK(F1/F2) → v0.6 → R2 判 F1/F3–F6 到位、新出 F7/F8(均 BLOCKING)+F9–F12 → **v0.7 逐条收口**〔F7 第 3 类改按锚注记分形态 / F8 探针行首锚定限 §2 域 / F9 §3 同步 / F10 计数精算更正 / F11–F12 措辞〕。FROZEN 行待补 R3 GREEN 凭据）。
+> **状态：DRAFT v0.8 · 2026-09-19 · 已立项 ack · 已缩圈 · 待 architect R4 确认**（凭据：human 2026-09-18 立项 ack + OQ 全裁；R1 BLOCK(F1/F2) → v0.6 → R2 BLOCK(F7/F8)+F9–F12 → v0.7 收口 → R3 BLOCK(F13)+F14 → **触发熔断（3 轮未 GREEN），human 2026-09-19 裁定「缩圈」：T2 原第 3 类整条拿掉、移入 §6 留根⑥**，本批覆盖面收为两类。FROZEN 行待补 R4 GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260914-lfc-citation-references-prefix` + `ARQ-260907-lfc-citation-docs-prefix`（残余①）（T1）、`ARQ-260914-landing-preflight-anchor-parse`（T2）、`ARQ-260915-path-form-family-reference`（T3）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -64,7 +64,7 @@ docs/templates/PROPOSAL.template.md
 
 **机制侧事实（亲核）**：解析函数 `parseSection2AnchorLists` 已从 `.claude/scripts/lib/governance-gate-shared.mjs:345` **具名导出**（同文件另导出 `compareAnchorSets:426`、`extractManifestBlock:124`）；而 `.claude/scripts/landing-fidelity-check.mjs` 现只接受 `process.argv[2]` = reviewDir（`:50`）、`process.argv[3]` = baseRef（`:52`）与 `--self-check`（`:226`），**无任何前置干跑入口**。
 
-**根因**：三个错误类（加粗形态 / 无锚行含整行缺失 / 注记夹带路径 token）都能被**已导出的纯解析函数**在**起草期**抓获，但该函数只在 landing 期被调用——**检查点放得太靠后**。
+**根因**：错误类中**至少两类**（加粗形态 / 无锚行含整行缺失）能被**已导出的纯解析函数 + 一条行首锚定探针**在**起草期**抓获，但它们只在 landing 期才被调用——**检查点放得太靠后**。**另注**：第三类（锚行注记夹带路径 token / 幻影路径）经三轮评审证明**其判据设计不成立**（对合法「不在场」形态持续误报），已按 human 熔断裁定移出本批覆盖面，见 §6 留根⑥。
 
 ### 问题 3：路径迁移类变更的「路径文本表示形态族谱」未固化
 
@@ -94,23 +94,19 @@ docs/templates/PROPOSAL.template.md
 
 承载 `ARQ-260914-landing-preflight-anchor-parse`。
 
-改 `.claude/scripts/landing-fidelity-check.mjs`：新增 `--preflight <proposal-path>` 入口——**只解析、不对账**。行为 = 对给定 PROPOSAL 调 `parseSection2AnchorLists`（`.claude/scripts/lib/governance-gate-shared.mjs:345` 已具名导出，**本 T 只消费、不改 lib**），把三类错**在起草期**报出来：
+改 `.claude/scripts/landing-fidelity-check.mjs`：新增 `--preflight <proposal-path>` 入口——**只解析、不对账**。行为 = 对给定 PROPOSAL 调 `parseSection2AnchorLists`（`.claude/scripts/lib/governance-gate-shared.mjs:345` 已具名导出，**本 T 只消费、不改 lib**），把**两类错**在起草期报出来（原第 3 类已按 human 熔断裁定拿掉，见 §6 留根⑥）：
 
 1. **加粗锚行** `**目标文件**：`（解析器只认裸形态）——它在 parser 侧表现为「**缺锚清单**」；干跑**另加一条专用探针**把该形态**具名报出**，免与真缺锚混同。**探针须行首锚定 + 限 §2 节域**（R2-F8 采纳：v0.6 写「正则扫字面」按字面实现会**误咬散文**——本 PROPOSAL 自身即命中 **5 次**、全为**行内引用该错误形态的 prose**（§1 问题 2 的记载、§5 V4 的夹具描述），V3-② 首跑必误红；行首锚定 + 限 §2 域实测 **0 命中**为正确态）。自检补一条「散文引用该形态不误报」的反例夹具；
 2. **无锚清单**（含**整行缺失**——问题 2 的第三种、也是最彻底的一种）；
-3. **锚并集含「仓内不存在的路径」——按锚注记分形态判**（R2-F7 采纳的机制化改写；v0.6 的**单一形态会让「新增锚」自咬**：本 PROPOSAL 的 T3 目标 `.claude/references/path-form-family.md` 即为新增、当前不在场，V3-④ 首跑必红）：
-   - **新增锚**（注记含「新增」）→ **反向断言**：该路径**已存在**才报（新增目标本就不该在场）；
-   - **改锚 / 迁移锚 / 无注记** → 不存在即报（治幻影路径实害，即 260912 那条已撤的 `.claude/skills/triage-change/SKILL.md`）；
-   - **跨分支锚**（同批未并 main 的路径）→ **降 advisory**、不判红。
-   
-   全仓实核另有三类**合法「当前不在场」**形态，即上述分形态的必要性证据：撤回批（`260908` ×2）、旧路径已迁移（`260830` `docs/spec.md` → `docs/archive/`）、跨分支锚（`260914` ×19）。
-目的是让**三类错各有机制**（v0.2 的第 3 类在「只消费 parser、不对账」约束下无检测机制，parser 的 `problems` 族仅四类、注记区路径 token **合法入并集且零 problem**）。
+**原第 3 类「锚并集含仓内不存在的路径」——已按 human 2026-09-19 熔断裁定整条拿掉**（详见 §6 留根⑥）：该类自 v0.2 起被连轮指出会**对合法情形误报**——F7（新增锚本就不在场）、F13（迁移批的**迁入路径**由落地动作诞生、起草期定义上不在场，而 `preflight` 恰恰是起草期工具，故**任何标准迁移批都会被判红**）；三轮评审每轮各拓一类，说明该类的**判据设计**（对锚并集做仓内存在性检查）建立在「不存在的即幻影」这一**不成立的假设**上——§2 锚清单里的路径**合法地**就可能不在场（新增 / 迁入 / 撤回 / 迁走四形态）。故本 T 缩圈为只保留下面两类**判官三轮验证干净**的错。
+
+目标是让**保留下来的两类错各有机制**（两类均已判官实证：第 1 类行首锚定 + 限 §2 域后本件 0 命中、真加粗锚行必命中；第 2 类由 parser 原生 `problems` 直接给出）。
 
 **不做** §2↔manifest 比对（那是 landing 期的事，前置干跑只保证「形态可解析」）。
 
 同批在 `docs/templates/PROPOSAL.template.md` 的**「**【硬项 2a · 目标文件锚清单】」段**（R1-F6 采纳：v0.2 泛称「起草 checklist」，而该文件内的实际可落点即 §2 导语与硬项 2a 段）补两句：① 「FROZEN 标注前跑一次 `--preflight`，并通过 §5 验证集命令实跑」（治问题 2 的**连带项**——验证集命令未实跑的口径瑕疵）；② 「路径类变更先查 T3 的族谱表」（**该项即 T3 的 checklist 落点，故 T3 不重复改本文件**）。
 
-为什么这样改：直击问题 2 的根因——三类错都能被**已导出**的纯解析函数在起草期抓获，而它今天只在 landing 期被调用；连批三次的返工（含一次 human 格式追认）全部可免。**本 T 不新增工程门**：`--preflight` 是起草期只读自检、**不参与任何门判定、不在任何闸链里被调用**。
+为什么这样改：直击问题 2 的根因——两类错都能被**已导出**的纯解析函数 / 一条行首锚定的探针在起草期抓获，而解析函数今天只在 landing 期被调用；连批三次的返工（含一次 human 格式追认）中，第 1/2 两类可全免。**本 T 不新增工程门**：`--preflight` 是起草期只读自检、**不参与任何门判定、不在任何闸链里被调用**。**缩圈后的覆盖面如实声明**：原设想的第 3 类（幻影路径）**不在本 T 覆盖内**——它需要另行设计（见 §6 留根⑥）。
 
 **入口接线注意**：现 CLI 以 `argv[2]`/`argv[3]` 取位置参数（`:50`/`:52`）、`--self-check` 以 `process.argv.includes` 判（`:226`）。新增 `--preflight` 须与既有位置参数形态**互不干扰**（干跑模式下不消费 `argv[2]` 为 reviewDir），实现时须显式处理优先级并在 `--self-check` 电池里加一条「干跑模式下不误触 reviewDir 解析」的断言。
 
@@ -185,8 +181,8 @@ docs/templates/PROPOSAL.template.md
 |---|---|---|
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --self-check` | 全绿 + 新增 citation 两夹具（`.claude/references/` 与 `docs/templates/` 裸名）具名出现 |
 | V2 | 同上电池内的「干跑模式不误触 reviewDir 解析」新断言 | 具名出现且通过（防 T2 新入口与 `:50`/`:52` 位置参数互扰） |
-| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | **四项全清**：① §2 锚清单形态可解析（parser 零 problems）；② 无加粗锚行（专用探针**行首锚定 + 限 §2 域**，R2-F8）；③ 无缺锚清单；④ **锚并集按注记分形态后零判红**——**本 PROPOSAL 的 T3 新增锚 `.claude/references/path-form-family.md` 走反向断言、不得被点名**（R2-F7）；跨分支锚降 advisory。**三类错各有反例夹具**（V4） |
-| V4 | 对**故意注入加粗形态的副本**跑 `--preflight` | 须报错（**反例夹具**，防干跑恒绿） |
+| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | **两项全清**（缩圈后）：① §2 锚清单形态可解析（parser 零 problems）；② 无加粗锚行（专用探针**行首锚定 + 限 §2 域**，R2-F8）；③ 无缺锚清单——即 parser `problems` 为空且探针零命中。**本件 T3 的新增锚 `.claude/references/path-form-family.md` 不再被任何检查点名**（第 3 类已拿掉，R3 熔断裁定） |
+| V4 | **两反例夹具**（缩圈后覆盖保留的两类）：① 对**故意注入加粗形态 `**目标文件**：` 的副本**跑 `--preflight`；② 对**故意抽掉某 T 锚清单的副本**跑 `--preflight` | ① 须报「加粗锚行」（**且散文引用形态不误报**——R2-F8 的反例夹具）；② 须报「缺锚清单」——两者均防干跑恒绿 |
 | V5 | **四夹具**现跑（对照 `:90` 现候选域；R1-F4 计数归正：v0.2 写「三夹具」却只点名两条） | **新增两条**：`dev-loop-operating-system.md` / `PROPOSAL.template.md` —— 现候选域**均未命中**、扩形后**均 resolved**。**防回归两条**：`DEV-GOVERNANCE.md`（`docs/` 根族）/ `governance-gate-shared.mjs`（`.claude/scripts/lib/` 族）—— **现候选域本已命中、扩形后须仍命中**（四项前后各留完整输出） |
 | V6 | `grep -c "path-form-family" docs/templates/PROPOSAL.template.md` | ≥1（T2 落的族谱指针在场） |
 | V7 | `ls .claude/references/path-form-family.md` + `grep -c "^| [1-8] " .claude/references/path-form-family.md` | 文件在场 + 八形态行齐（各 1） |
@@ -202,6 +198,23 @@ docs/templates/PROPOSAL.template.md
 3. **`ARQ-260914-lfc-citation-references-prefix` 的 `.claude/scripts/lib/` 子目录形态**——现候选域含 `.claude/scripts/lib/` 一层；若将来出现更深层（如 `.claude/scripts/lib/sub/`）的裸名引用，目录扫描派生应天然覆盖，但**本批未构造该场景的夹具**。随 T1 落地后观察。
 4. **拆包族另三批**（`-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`）——本批不承接。
 5. **移出本族的两个 launch 面 ARQ**（输入清单先例取旧、launch 前置清单不核）——留 ARQ 队列后续单独处理。
+
+6. **T2 原第 3 类「锚并集含仓内不存在的路径」——移出本批覆盖面，需重新设计**（human 2026-09-19 熔断裁定；三轮评审实证其判据设计不成立）
+
+   本条的实质产出，须完整交接，否则下一批会重复本批的错误设计：
+
+   - **目标**：治 260912 那条 near-miss——T1 锚行注记逐字回引**已撤**的幻影路径 `.claude/skills/triage-change/SKILL.md`，该 token 进 §2 锚并集后造成 §2↔manifest 假失配（靠 landing-verifier D4 处置意见抓住）。
+   - **三轮被证伪的过程**（每轮各拓一类合法误报）：
+
+     | 轮 | finding | 被误报的合法形态 |
+     |---|---|---|
+     | R2 | F7 | **新增锚**——本批 T3 目标 `.claude/references/path-form-family.md` 是**本批要创建的**文件，起草期定义上不在场 |
+     | R2 | F8 | **散文引用**——探针全文正扫 `**目标文件**：` 会命中正文里**引用该错误形态**的 prose（本 PROPOSAL 自身命中 5 次） |
+     | R3 | F13 | **迁移锚的迁入路径**——按 parser 语义「迁出不入并集、**迁入入并集**」，而迁入路径由**本批 landing 动作诞生**、起草期不在场；故**任何标准迁移批跑 `--preflight` 都会对全部迁入锚判红**，而迁移批恰是 `preflight` 的目标场景（实证：260913 迁入锚 `docs/archive/spec.md` 即该批落地产物） |
+
+   - **根因定性（关键，勿照抄原设计）**：该类的判据「对锚并集做仓内存在性检查」**建立在一个不成立的假设上**——「不存在的即幻影」。实际上 §2 锚清单里的路径**合法地**就可能不在场，至少四形态：**新增**（本批创建）/ **迁入**（本批落地时诞生）/ **撤回**（已在历史批删撤）/ **迁走**（已迁移到新址）。三轮评审每轮各撞一类，说明**枚举补丁不可收敛**——正确方向应是**从锚注记的语义出发**（parser 已解析出的「新增 / 迁移 / 改 / 无注记」分类若存在则可用），或**放弃存在性检查、改治更上游的因**（如要求锚行注记不引路径 token——这正是 260912 那条 D4 处置意见的原始建议）。
+   - **交接给下一批的动作**：先核 parser 是否**已**产出锚注记的分类信息（若否，本类可能需要先扩 parser，那就不是一条 `--preflight` 子检查的量级）；再在其他四形态**各造一条夹具**的前提下设计判据。
+   - **本批已落地的部分不受影响**：T2 保留的第 1/2 两类由三轮评审实证干净（第 1 类行首锚定 + 限 §2 域后本件 0 命中、真加粗锚行必命中；第 2 类由 parser 原生 `problems` 直接给出）。
 
 **交日落复盘项**：本批 T2 的 `--preflight` 落地后，建议在 `/loop-retro` 观察——**是否还有 landed 期才暴露的 PROPOSAL 形态错**（即 `--preflight` 未覆盖的第 4 类错）。若有，即该干跑面仍有缺口。
 
@@ -267,3 +280,20 @@ docs/templates/PROPOSAL.template.md
 **F11（NIT）· §6 留根 1「不再手工维护清单」表述过强**。并集形态下现有四前缀仍是硬编码保留（防回归锚）；实际语义 = 派生集自动生长、手工核冻结为不再增长的防回归锚。建议校准措辞，免与 OQ1 裁决备注「不再手工维护清单」形成口径漂移。
 
 **F12（NIT）· 防回归两夹具与既有电池夹具的关系未写明**。现行 `runCitationAnchorsSelfCheck` 电池里已有同形态两件：260907 热修 `docs/GOV.md` 夹具（docs 根族）与 260907 批 T2 `.claude/scripts/lib/fixture.mjs` 夹具（lib 族）——纯派生回归时任一自曝，断言可证伪 ✓。建议 v0.6 的「补两防回归夹具」写明为「**确认保留既有两件并具名防回归语义**」（沿临时目录 hermetic 形态），避免落地时重复造轮或误删；若改用真实仓名（`DEV-GOVERNANCE.md` / `governance-gate-shared.mjs`）做夹具则须走 `projectDir`（非 hermetic、依赖仓实况），判官不推荐。
+
+### R3 - 2026-09-19 - architect
+
+**verdict：BLOCK(F13)**（F14 为 NIT）。R2 的 F7/F8 修订对本批**到位**、V3 四项对本 PROPOSAL 已全部可满足；但 F7 分形态改写**新引入一处对迁移批的保证性假阳性**（F13），须冻结前归一。无升级 human 项——单条款规格修订，不动 OQ 裁决、不触契约面、不改轨。
+
+**修订到位性核对（R3 聚焦）**：
+
+- **① F7 分形态 → 对本批到位**。判官按 v0.8 规则模拟本 PROPOSAL：两改锚（`landing-fidelity-check.mjs`、`PROPOSAL.template.md`）在场零报；T3 新增锚 `path-form-family.md` 走反向断言、不在场不点名——**V3-④「本 PROPOSAL 的 T3 新增锚不得被点名」可满足** ✓。三类实测误报形态处置核：新增锚 → 反向断言消 ✓；撤回批 260830 类 → preflight 只跑起草批、moot ✓；跨分支 → advisory，判据机械可实现（worktree 不在场 ∧ `git cat-file -e main:<path>` 在场——refs 跨 worktree 共享，判官实测该原语可用；措辞见 F14）。260912 幻影路径（注记区引用、无注记）按「无注记 → 不存在即报」仍判红 ✓ 真阳性保持。
+- **② F8 探针 → 到位**。行首锚定 + 限 §2 节域实测：本 PROPOSAL 全文 5 处 `**目标文件**：` 全为**行内** prose 引用、行首锚定 0 命中 = 散文不误报 ✓；真加粗锚行（§2 内行首形态）必命中探针、且 parser 侧同时报「缺锚清单」双保险，V4 反例夹具覆盖 ✓；自检补「散文引用该形态不误报」反例夹具已写入 ✓。
+- **③ F9–F12 → 全部到位**。F9：§3 硬项 1c 已改并集/递归形态并自注更正出处 ✓。F10：精算数字逐字一致（纯一级派生 8 条去重〔9 次出现〕+ 纯递归 4 条仅 docs 根族、标注 R1 算术 slip、结论不受影响）✓。F11：留根 1 已弱化为「新增目录不再需手工补前缀；现有四前缀仍显式保留；残余手工面仅剩摘除旧前缀」✓。F12：防回归夹具口径改「确认保留既有件并具名」（`docs/GOV.md`、`scripts/lib/fixture.mjs`）✓。
+- **④ 结构与新矛盾**：manifest（3 路径）仍 ≡ §2 锚并集（真实 parser 干跑零 problems、aligned）；§7 R1/R2 原样保全；commit 4b735e9 实查仅改本 PROPOSAL.md 一件。新矛盾 = F13（下）。
+
+**Findings（新）**：
+
+**F13（BLOCKING）· 分形态把「迁移锚」归入「不存在即报」组——对迁移批构成保证性假阳性**。v0.8 第 3 类写「**改锚 / 迁移锚 / 无注记** → 不存在即报」。按 parser 语义（lib `:416`：迁出路径不入并集、**迁入路径入并集**），class-3 检查域里「迁移锚」实际能碰到的只有**迁入路径**——而迁入路径由**本批 landing 动作诞生**、起草期定义上不在场。实证：`260913-arch-review-spec-split` 的迁入锚 `docs/archive/spec.md` 即该批归档动作的产物（落地才存在），其 `.delivery/milestones.jsonl` 等三条迁入锚现亦不在场（后续 260914 再迁移）；260914 批自身就是迁移批。故按 v0.8 规则，**任何标准迁移批跑 `--preflight` 会对其全部迁入锚判红**——恰是 T2/T3 的目标场景（「下次路径迁移批」）。**修法**：迁入锚改走**新增锚同款反向断言**（迁入路径已存在 = 目标位被占冲突，报；不在场 = 正常，不报）；「改锚 / 无注记」保持不存在即报不动（260912 幻影即无注记形态，真阳性不受影响）。
+
+**F14（NIT）· 跨分支判据措辞校准**。v0.8 括注「同批未并 main 的路径」与机械可实现形态有出入——可实现判据 = **worktree 不在场 ∧ `main` ref 同字面路径在场** → advisory。另注（判官 R2 表述自校）：R2 所称 260914 ×19「跨分支锚」经 main 树抽查实为**后续再迁移**（现住 `firmware/main/test/acceptance/archive/` 等字面路径，main tip `210bb6e` 实查）——该家族只存在于历史 landed 批，preflight 只跑起草批不会遇到；起草批真正会遇到的形态是「main 已有、gov 未回同步」的路径，main-ref 查询判据对它成立。建议括注改写为「不在本工作树、在 `main` ref 的路径」。
