@@ -113,8 +113,10 @@
  *   coverage: KD-A6 host runner 终跑判读 + 本文件注册结构守卫 + KD-E2 spec 零修订
  *             canary + KD-E1 零触碰守卫 + 扫描器自检 -> test 5（suite 级判读说明见
  *             本文件尾「KD-A6 终跑判读」段）
- *   coverage: KD-E1 范围纪律 -> test 4 tooth 2（PAGE_P4 页枚举零触碰守卫——页循环
- *             4->3 / 撤 P4 归 M2）+ test 4 tooth 3（BOOT 长按故事翻屏接缝零触碰——
+ *   coverage: KD-E1 范围纪律 -> test 4 tooth 2（2026-09-18 留痕修订：原「PAGE_P4 页枚举
+ *             零触碰守卫——页循环 4->3 / 撤 P4 归 M2」随 260917-m2-k2-retract-p4-three-
+ *             page 落地翻正为「PAGE_P4 已撤 + PAGE_COUNT == 3」同源判别）+ test 4
+ *             tooth 3（BOOT 长按故事翻屏接缝零触碰——
  *             P3 键位族 v1.47 归 M4 的在世证据之一）
  *   coverage: KD-E2 需求面零修订 -> test 5 tooth 3（requirements/契约 canary）
  *
@@ -759,11 +761,12 @@ TEST_CASE("键位分层派发: 清层与进页分离——显式清层步骤+cyc
 /* -------------------------------------------------------------------------- *
  * TEST 4 — KD-A3/KD-E1 零回归守卫（structural + 冻结语义锚）
  * 主页面 KEY 长按 = 回首页映射零回归（layer-aware 裁决只改覆盖层列; GLOBAL_ACT_HOME
- * -> show_home 既有映射在世）; KD-E1 范围纪律守卫: 页循环 4->3 / 撤 P4（对账 ②,
- * 归 M2）零触碰 + BOOT 长按故事翻屏接缝（P3 键位族归 M4 的在世证据）零触碰。
+ * -> show_home 既有映射在世）; KD-E1 范围纪律守卫: 页枚举三页集守卫（原「PAGE_P4
+ * 零触碰 / 撤 P4 归 M2」随 260917-m2-k2-retract-p4-three-page 落地翻正为「P4 已撤」）
+ * + BOOT 长按故事翻屏接缝（P3 键位族归 M4 的在世证据）零触碰。
  * ------------------------------------------------------------------------ */
 /* coverage: KD-A3 -- 主页面 KEY 长按回首页映射零回归守卫 */
-/* coverage: KD-E1 -- 范围纪律守卫：PAGE_P4 页枚举零触碰（页循环 4->3/撤 P4 归 M2）+ BOOT 长按故事翻屏接缝在世（P3 键位族归 M4） */
+/* coverage: KD-E1 -- 范围纪律守卫（2026-09-18 留痕修订随 M2-K2 撤 P4）：PAGE_P4 已撤（头内字面零残留）+ PAGE_COUNT==3 同源判别（复活第 4 页位即红）+ BOOT 长按故事翻屏接缝在世（P3 键位族归 M4） */
 TEST_CASE("键位分层派发: 零回归守卫——HOME映射+P4页枚举+BOOT长按故事接缝 (KD-A3/KD-E1)",
           "[key_layer_dispatch][KD-A3][KD-E1][guard]")
 {
@@ -777,13 +780,20 @@ TEST_CASE("键位分层派发: 零回归守卫——HOME映射+P4页枚举+BOOT�
         "KLD-A3 RED(guard): 板级 GLOBAL_ACT_HOME -> show_home 映射丢失——主页面 KEY "
         "长按回首页路径被 layer-aware 改造误伤");
 
-    /* tooth 2 (KD-E1 guard): 页循环 4->3 / 撤 P4 零触碰——key_gesture_parser.h 的
-     * PAGE_P4/PAGE_COUNT 页枚举仍在（对账 ② 页序漂移一并理顺归 M2 查字窗阶段）。 */
+    /* tooth 2 (KD-E1 guard, 2026-09-18 留痕修订随 M2-K2 撤 P4 语义翻正):
+     * 原齿（2026-09-15 冻结）正向断言 key_gesture_parser.h 含 PAGE_P4/PAGE_COUNT，其
+     * 自注「页循环 4->3 / 撤 P4 归 M2」= 260917-m2-k2-retract-p4-three-page，本包落地
+     * 后「零触碰」前提解除 -> 守卫翻正为钉「第 4 页位已撤」的正向事实（复活即红）。
+     * PAGE_COUNT == 3 的字面真值单点钉在 retract_p4_three_page.acceptance.c test 3，
+     * 本齿以同源判别复对账（不另立第二字面源）。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        kld_file_contains("firmware/main/key_gesture_parser.h", "PAGE_P4") &&
-            kld_file_contains("firmware/main/key_gesture_parser.h", "PAGE_COUNT"),
-        "KD-E1 RED: key_gesture_parser.h 页枚举 PAGE_P4/PAGE_COUNT 被触碰——页循环 "
-        "4->3 / 撤 P4 归 M2（KD-E1 范围纪律, 本包零触碰）");
+        kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4") == 0 &&
+            (int)PAGE_COUNT == 3 && (int)PAGE_P3 == (int)PAGE_COUNT - 1,
+        kld_fm("KD-E1 RED: key_gesture_parser.h 页枚举不再等于三页集（PAGE_COUNT=%d, "
+               "PAGE_P3=%d, 头内 PAGE_P4 字面 %d 处）——M2-K2 已撤的 P4 页位被复活 / "
+               "页循环被改回 4 页（requirements §2.4 3 页循环 + 行 186）",
+               (int)PAGE_COUNT, (int)PAGE_P3,
+               kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4")));
 
     /* tooth 3 (KD-E1 guard): BOOT 长按故事翻屏接缝在世（P3 页内特例; v1.47 P3 键位族
      * 对账 ⑥ 归 M4——该接缝是本包零触碰的在世证据, key_route_a1 KR-A4 tooth 2 同款）。 */
@@ -910,4 +920,18 @@ TEST_CASE("键位分层派发: 注册序守卫+需求契约canary+扫描器自�
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-15  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-k1a-key-layer-dispatch).
+ *   2026-09-18  KD-E1 撤页守卫语义翻正（acceptance-author 留痕修订，授权通道 =
+ *               TaskPackage 260917-m2-k2-retract-p4-three-page M2K2-E2「冻结套件钉点
+ *               修订一律走 acceptance-author 留痕」）。改了什么：test 4 tooth 2 原正向
+ *               断言 key_gesture_parser.h 含 PAGE_P4 与 PAGE_COUNT（其自注「页循环 4->3
+ *               / 撤 P4 归 M2」点名的就是该包），M2-K2 撤页落地后「零触碰」前提解除 ->
+ *               现钉 PAGE_P4 头内字面零残留 + PAGE_COUNT == 3 + PAGE_P3 == PAGE_COUNT-1
+ *               三条同源判别（字面 3 的单点钉死仍住 retract_p4_three_page.acceptance.c
+ *               test 3，本齿不另立第二字面源）。为何属留痕通道而非绕闸：只随已冻结的
+ *               需求事实（requirements §2.4 行 186）改守卫指向，未放宽本包任何语义断言
+ *               ——同 test tooth 1（HOME 映射在世）与 tooth 3（BOOT 长按故事接缝在世）、
+ *               以及 test 1/2/3/5 全部零改动（M2K2-A3 回归判据要求本套件除本齿外零
+ *               修改仍全绿）。红态后果：本齿对未撤页现状（PAGE_COUNT=4）为设计态红，
+ *               builder 落 M2-K2 实现后转绿；上方 2026-09-15 冻结相位的「本包义务红」
+ *               历史记录不改写（append-only）。
  * --------------------------------------------------------------------------- */
