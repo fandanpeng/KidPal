@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-merge-chain-friction
 
-> **状态：DRAFT v0.5 · 2026-09-19 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；architect R1 BLOCK(F1/F2) 后**按 human 2026-09-19 裁定把 T1〔升级闸 GREEN 机锚收窄〕整条移出本批**，见 §6 留根①。FROZEN 行待补 R2 GREEN 凭据）。
+> **状态：FROZEN v1.0 · 2026-09-19 · 可进 landing（按 human 指示暂不 landing，待 human 阅后再落）**（凭据：human 2026-09-18 立项 ack + OQ 全裁 + architect R1 BLOCK(F1/F2)→主线程按 human 2026-09-19 裁定移出 T1→R2 GREEN〔§7 `### R2 - 2026-09-19 - architect`，0 BLOCK / 2 NIT〕；R2 的 N1 计数修正已折入 §6 与队列追记，N2 勘误已在 R2 留痕）。
 > **承载 ARQ**：`ARQ-260917-step5b-main-append-remerge-tier3`（残余③ + 同族 probe 输出文件）——本批唯一 T。**原承载的 `ARQ-260909-gate-green-anchor-regex-loose` 已移出本批、退回队列**（该 ARQ 的处方经 R1 实测证伪，需重新设计，见 §6 留根①）。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `260918-gov-review-dispatch-chain-friction` / `-closeout-chain-friction` / `-batch-drafting-friction`。**另有两项（输入清单先例取旧、launch 前置清单不核）按 human 裁定移出本族、留 ARQ 队列后续单独处理**。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -119,7 +119,7 @@ delivery/taskpackages/260915-m1-n1b-p1-home-battery/overlap-probe.json
 
 这是本批 R1 的实质产出，须完整交接，否则下一批会重复本批的错误设计：
 
-- **原处方被证伪**：`ARQ-260909-gate-green-anchor-regex-loose` 的处方是「regex 收窄至『verdict/结论 同段』形态与 :83 注释意图对齐」。R1 + 主线程起草后复测证明**该描述不成立**——真实判官 verdict 形态 **≥8 种、跨两套惯例**（§7 内联 append / 独立 `review-*.md` 文件），其中 `**GREEN（可 FROZEN）**`（行首加粗独立形态，6 处、跨 4 批）与 Status 行轮次指针 `R2 GREEN〔review-r2-architect.md〕` **都不含 `verdict/结论` 标签**。
+- **原处方被证伪**：`ARQ-260909-gate-green-anchor-regex-loose` 的处方是「regex 收窄至『verdict/结论 同段』形态与 :83 注释意图对齐」。R1 + 主线程起草后复测证明**该描述不成立**——真实判官 verdict 形态 **≥8 种、跨两套惯例**（§7 内联 append / 独立 `review-*.md` 文件），其中 `**GREEN（可 FROZEN）**`（行首加粗独立形态，**5 处、跨 4 批**——R2-N1 计数勘误，原记 6 处；且其中**仅 1 处为真 verdict 行**，余 4 处为 prose 引述，反而加强「行首锚化会误命中非 verdict prose」的论点）与 Status 行轮次指针 `R2 GREEN〔review-r2-architect.md〕` **都不含 `verdict/结论` 标签**。
 - **「恒真」的真机制与 §1 原归因不同**（v0.5 已更正）：`PROPOSAL.template.md` 头部的样板行「**结构字段硬条款**：…：**GREEN 结论前必须在场**」**自带 GREEN**，实测存在于 **16 / 26** 份 arch PROPOSAL，**它单独一个就让现行 regex 为真**——闸对这些批恒真，与判官判没判无关。（v0.1 曾把恒真归因于判官 verdict 行命中裸分支，该归因**不完整**，以本条为准。）
 - **四个候选设计全部实测不成立**（对全部 26 份 arch PROPOSAL 逐份实测）：
 
@@ -196,3 +196,35 @@ delivery/taskpackages/260915-m1-n1b-p1-home-battery/overlap-probe.json
 - V1–V7 逐条机械可执行 ✓（V1 现有 gov 档夹具 :404-408 可扩；V7 锚集 = manifest 12 路径自洽）。
 
 **结论**：T2 两侧无保留；T1 方向与夹具方法正确，但候选 regex 的闭合性（F1）与申报完整性（F2）须修订。预期 R2 聚焦 F1/F2 修订到位性 + 是否引入新矛盾，无需全量重核。
+
+### R2 - 2026-09-19 - architect
+
+**verdict：GREEN**（0 BLOCK / 2 NIT，无升级 human 项）——T1 移出动作到位、无新矛盾；F5 修订到位；riskTier/profile 降档成立；manifest 闭合与 11 件穷举维持；§7 R1 记录原样保全。R1 的 F1–F4 随 T1（GREEN 机锚收窄）移出本批而作废，按 human 2026-09-19 裁定不再重开。两条 NIT 为留根①/队列追记的**计数级**偏差与 R1 自身一处分母勘误，定性结论均不受影响，建议主线程标 FROZEN 时顺手折入或留给留根① 的下一批机械重导。
+
+#### R2 复核范围与结论（逐项对应派遣焦点）
+
+1. **F5 修订到位性 ✓**：§2 T1③（v0.5:68）如实申报了全部三要素——main 工作树 tracked-deleted 盘删、Pod 过渡期一次性「local changes would be overwritten」撞、文件可再生（gate `:553-555` 每跑 `--probe-out` 重写）无数据丢失——并承诺写进 landing summary 诚实注记段，超出 R1「一句申报」的最低要求。
+2. **移出后内部自洽 ✓**：
+   - riskTier medium→low、profile 收窄成立：亲核 §2 全文——本批对 `pre-merge-escalation-gate.mjs` 的全部改动 = T1② 一行注释（「该改动是纯注释——不触任何判定语义」），manifest 内无其它脚本触点；撤跟踪对闸行为零影响（probe-out 写点 `:555` 路径不变、撤跟踪后仍可写为 ignored 文件）。无漏报的语义改动残留。
+   - V5（`git diff` 全部落在注释行内）**真能证伪**：若落地 diff 出现任何可执行语句变更，V5 即红；且与 V4（self-check 与改动前逐格一致 = 行为零差异的正面证据）互补，非真空绿。判定载体是 landing-verifier 人读 diff——对一行注释量级恰当，不要求脚本机判。
+   - manifest 12 路径（1 脚本 + 11 probe）与 §2 目标文件集逐条闭合 ✓；`git ls-files | grep -c overlap-probe.json` 现值仍 = **11**（撤跟踪为 landing 动作，穷举基线未变）✓。
+3. **悬空引用清零 ✓**：全份通读——Status 行（:3）、承载 ARQ 行（:4「本批唯一 T…已移出本批、退回队列」）、§0 目标/非目标（:32/:36「不动升级闸的任何判定语义」）、§1（问题重编号、:40 声明与 R1 亲核范围如实限定于**幸存断言**）、§3 sweep 表（「G3 纯注释、行为零变更」）、§4（原 OQ1 划线作废 + human「都留 Track B」对族内其余批次效力的保留）、§6 留根①——无任何仍按「本批含 GREEN 机锚改动」叙述的残留句。§7 R1 记录中旧 T1/T2 编号为 append-only 历史层，commit 700cc92 消息已给编号映射，不构成矛盾。
+4. **留根① 交接质量 ✓**：四要素齐备——真机制（样板行「GREEN 结论前必须在场」16/26 份、单独即令现行 regex 为真；本轮亲核 `grep -l "GREEN 结论前必须在场"` = **16**、arch PROPOSAL 总数 = **26**，逐格吻合）、四候选实测表、建议方向（「判官 verdict 行规范化 + 机器锚」，跨 G2 面如实申报）、队列状态（700cc92 对 `docs/ARCH-REVIEW-QUEUE.md` ARQ-260909 行的追记与 §6 内容一致、处置列改「单开一批」）。下一批凭它可直接接手。
+5. **§7 R1 保全 ✓**：逐段比对，R1 记录原样在场、一字未动（commit 700cc92 消息同称）。
+
+#### R2 Findings（均 NIT，不阻塞）
+
+**N1 · NIT · 留根①/队列追记「行首加粗独立形态 6 处、跨 4 批」计数偏高 1**：亲核 `grep -rn "^\*\*GREEN" delivery/changes/arch/*/PROPOSAL.md` = **5 处、跨 4 批**（260904:224 `**GREEN 附带核对（结构字段硬条款）**`、260909:280 `**GREEN 前置核对 ✓**`、260913:363 与 :416 `**GREEN 范围声明**`、260914:504 `**GREEN（可 FROZEN）**`）。其中仅 260914:504 为真 verdict 行，其余四条为 prose 行——这**反而加强**留根①的论点（行首锚化候选连非 verdict 的 prose 行都会命中）。定性结论（形态存在、无标签、跨多批）不受影响；建议下一批机械 grep 重导计数，不采信 prose 计数。
+
+**N2 · NIT · R1 记录「全部 25 份」为打印计数 artifact（本条即勘误留痕）**：arch PROPOSAL 真实总数 = **26**；第 26 份 `260829-gov-review-migration-tier23/PROPOSAL.md` 的 GREEN 计数 = **0**（双 regex 均假，R1 的枚举脚本对「两侧皆假」的文件静默不打印，故 R1 只列出 25 份——分母少 1、flip 数 8 与全部结论不受影响）。v0.5 与队列追记采用 26 为正确值。R1 段 append-only 不改，以本条为准。
+
+#### 亲核留痕（R2）
+
+- `git rev-parse 700cc92` 存在 ✓；`git show --stat` = PROPOSAL.md（207 行重写）+ `docs/ARCH-REVIEW-QUEUE.md`（2 行）✓；commit 消息的修订清单与 v0.5 实文逐项相符 ✓。
+- ARQ-260909 追记（queue:49 现文）verbatim 核过：处方证伪、真机制 16/26、四候选实测、建议方向、处置「单开一批」五要素与 §6 留根① 一致 ✓；原「与 260908 批 merge-friction 余项并批」处置列已按处方证伪作废 ✓。
+- `git ls-files | grep -c overlap-probe.json` = 11（撤跟踪基线未变）✓；样板行 grep = 16/26 ✓；`260829-gov-review-migration-tier23` GREEN = 0 ✓；`^\*\*GREEN` = 5 处跨 4 批（N1）。
+- gate 脚本零改动（工作树 diff 于本批 manifest 目标文件上仍为待落地态；`:199`/`:200`/`:553-555` 行号锚与 v0.5 引用复核一致）✓。
+- 结构字段：landing-manifest 围栏块（12 路径）在场 ✓；packet-id 行（:7，改法集 = T1 + §5 验证集）在场 ✓。
+- V1–V7 逐条机械可执行 ✓（V1 补「撤前 = 11 > 0 非空基线」修掉了 R1 曾提示的真空绿形态；V2/V3 覆盖 R1-F5 所指的 V4 旧编号对应项）。
+
+**结论**：本批已收敛至「撤跟踪 11 件 + 一行注释 + 过渡预期申报」的申报与实现一致形态，可标 FROZEN（凭据 = human 立项 ack + 本 R2 GREEN + OQ 已裁）。两条 NIT 建议主线程标 FROZEN 时顺手折入（N1 计数改 5 或注明口径）或显式留给留根① 下一批。
