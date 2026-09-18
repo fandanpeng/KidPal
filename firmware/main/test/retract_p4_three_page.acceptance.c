@@ -61,6 +61,8 @@
  *       文件保留；kidpal_render_node_cache_char / cache_char_data 两个循环支撑 API
  *       随撤页成写侧死态 —— 本包**保留不动**，由 M2-K3 改窗时统一收（在 landing
  *       summary 如实登记，禁静默删除）。窗语义归 K3，本包不为其新增任何行为断言。
+ *       [2026-09-19 留痕修订: M2-K3 收拢落地后两 API 应清 —— test 6 tooth 2/5 已翻正
+ *       为「已收」零残留, 见 REVISION LOG; 本包冻结相位的「保留不动」历史表述不改写。]
  *
  *   [6] Builder FIRST ACTION（本文件进 runner 的唯一前置）: 向
  *       firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS
@@ -871,8 +873,8 @@ TEST_CASE("撤 P4 三页循环: 键路由回归靶——BOOT 翻页动作+覆盖
  * view=char 数值码、char_page/char_stroke 渲染面文件必须整体在世（M2-K3 改窗的
  * 前置生存面）。不为窗语义新增行为断言（越包红线）。
  * ------------------------------------------------------------------------ */
-/* coverage: M2K2-A4 -- 查字通路保留靶：VRT_ROUTE_CHAR 数值码 == 3（契约 §1.3 ①，路由语义零改动）+ mcp case 3 区内四处消费点（route=char ack / 缺字段降级门 / char_page_show / cache_char_data）+ 文件级调用点在世 + view_router 消费面在世 */
-/* coverage: M2K2-E3 -- 通路不顺手拆：char_page.{h,cc} + char_stroke.c 渲染面文件在世 + kidpal_render_node_cache_char / cache_char_data 循环支撑 API 保留（写侧死态，禁静默删除，K3 统一收） */
+/* coverage: M2K2-A4 -- 查字通路保留靶：VRT_ROUTE_CHAR 数值码 == 3（契约 §1.3 ①，路由语义零改动）+ mcp case 3 区内三处保留消费点（route=char ack / 缺字段降级门 / char_page_show）+ 文件级调用点在世 + view_router 消费面在世（2026-09-19 留痕修订：cache_char_data 调用点由「保留」翻正为「已收」——M2-K3 收拢面, 见 REVISION LOG） */
+/* coverage: M2K2-E3 -- 通路不顺手拆：char_page.{h,cc} + char_stroke.c 渲染面文件在世 + kidpal_render_node_cache_char / cache_char_data 写侧死态 API（M2K2-E3 自注「保留不动、K3 统一收」——2026-09-19 留痕修订随 M2-K3 收拢翻正为「已收」零残留, 见 REVISION LOG） */
 TEST_CASE("撤 P4 三页循环: 查字数据通路保留——mcp case 3+渲染调用点+数值码 (M2K2-A4)",
           "[retract_p4_three_page][M2K2-A4][M2K2-E3][structural]")
 {
@@ -903,10 +905,15 @@ TEST_CASE("撤 P4 三页循环: 查字数据通路保留——mcp case 3+渲染�
     TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(region, "kidpal_char_page_show(") >= 1,
         "M2K2-A4 RED: case 3 区内 kidpal_char_page_show 调用点丢失——服务端下发 char "
         "不再触发渲染（查字能力被撤页顺手拆掉 = M2K2-E3 越包红线）");
+    /* case 3 区内 cache_char_data 调用点（2026-09-19 留痕修订, 随 M2-K3 收拢翻正）:
+     * 原齿钉「调用点保留」（M2K2-E3「写侧死态保留不动、K3 统一收」），M2-K3 承接收拢后
+     * 调用点应清——本齿翻正为「已收」（零残留），否则 M2-K3 收拢落地会令本齿假红。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        rtp_count_in_slice(region, "kidpal_render_node_cache_char_data(") >= 1,
-        "M2K2-A4 RED: case 3 区内 cache_char_data 调用点丢失——写侧死态应「保留不动、"
-        "K3 统一收」（M2K2-E3 明令禁静默删除）");
+        rtp_count_in_slice(region, "kidpal_render_node_cache_char_data(") == 0,
+        rtp_fm("M2K2-A4 RED(翻正 2026-09-19): case 3 区内仍有 %d 处 cache_char_data 调用点"
+               "——写侧死态应由 M2-K3 改窗时统一收（M2K2-E3 自注「删除归 M2-K3」; 本包"
+               "确为承接包），调用点未清 = 收拢未落",
+               rtp_count_in_slice(region, "kidpal_render_node_cache_char_data(")));
     /* char 路由的语义零改动判别：块内不得出现新的页停靠动作（cycle_next 不是 char
      * 路由的消费面——撤页后更不该借 char 路由复活翻页停靠）。 */
     TEST_ASSERT_TRUE_MESSAGE(rtp_count_in_slice(region, "kidpal_render_node_cycle_next(") == 0,
@@ -930,12 +937,18 @@ TEST_CASE("撤 P4 三页循环: 查字数据通路保留——mcp case 3+渲染�
         "M2K2-A4 RED: char_page.{h,cc} / char_stroke.c 渲染面文件缺失——撤页连带删了"
         "查字实现面（M2K2-E3 越包红线）");
 
-    /* tooth 5: 循环支撑 API 保留守卫（E3 明令：写侧死态本包保留不动）。 */
+    /* tooth 5 (2026-09-19 留痕修订, 随 M2-K3 收拢翻正): 原齿钉「cache_char /
+     * cache_char_data 两 API 声明保留」（M2K2-E3「写侧死态本包保留不动, 删除归
+     * M2-K3」），M2-K3 承接收拢后两 API 声明应清——翻正为「已收」（声明 + 定义零残留），
+     * 否则 M2-K3 收拢落地会令本齿假红。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        rtp_file_contains(RTP_RN_H, "void kidpal_render_node_cache_char(") &&
-            rtp_file_contains(RTP_RN_H, "void kidpal_render_node_cache_char_data("),
-        "M2K2-A4 RED(guard): kidpal_render_node.h 的 cache_char / cache_char_data 声明"
-        "消失——M2K2-E3 规定两 API 随撤页成写侧死态但**本包保留不动**，删除归 M2-K3");
+        rtp_count_in_file(RTP_RN_H, "kidpal_render_node_cache_char") == 0 &&
+            rtp_count_in_file(RTP_RN_CC, "kidpal_render_node_cache_char") == 0,
+        rtp_fm("M2K2-A4 RED(翻正 2026-09-19): kidpal_render_node.h/.cc 仍有 cache_char* "
+               "%d/%d 处——写侧死态 API 应由 M2-K3 改窗时统一收（M2K2-E3 自注「删除归 "
+               "M2-K3」），未清 = 收拢未落",
+               rtp_count_in_file(RTP_RN_H, "kidpal_render_node_cache_char"),
+               rtp_count_in_file(RTP_RN_CC, "kidpal_render_node_cache_char")));
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1113,4 +1126,15 @@ TEST_CASE("撤 P4 三页循环: 注册序守卫+需求契约canary+扫描器自�
  *               keybar_three_slot.acceptance.c KKB-E1 infra 齿 + KB-A3 第 4 页槽齿
  *               （同源化）。归档件 firmware/main/test/acceptance/archive 目录下的 .c
  *               件不编入 runner、不改（TaskPackage M2K2-E2 已如实登记现实）。
+ *   2026-09-19  test 6 两处 cache_char 保留守卫随 M2-K3 收拢翻正（acceptance-author
+ *               留痕修订，授权通道 = TaskPackage 260917-m2-k3-char-window-overlay A6
+ *               「M2K2-E3 明注『保留不动、由 M2-K3 改窗时统一收』——本包收它们」）。
+ *               完备性反查发现: 本文件 test 6 tooth 2 的「case 3 区内 cache_char_data
+ *               调用点保留」与 tooth 5 的「kidpal_render_node.h 两 API 声明保留」会在
+ *               M2-K3 收拢落地后**假红**（守卫对象已按 E3 自注被删除）——两齿翻正为
+ *               「已收」（调用点/声明定义零残留）。为何属留痕通道而非绕闸：只随 E3
+ *               自注的既定归属（删除归 M2-K3）把守卫指向翻转，未放宽本包任何语义断言；
+ *               本文件其余全部齿（test 1–5、test 6 tooth 1/3/4、test 7）零改动。
+ *               红态后果：两齿对「收拢未落」现状为设计态红, builder 落 M2-K3 收拢后
+ *               转绿。
  * --------------------------------------------------------------------------- */

@@ -3,8 +3,8 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M2-char-window",
     "upstreamFrozen": "",
     "workstream": "m2-char-window"
@@ -12,8 +12,8 @@
   "subsystem": "firmware",
   "story": "M2-K3 页→窗改造——查字会话内覆盖窗（层注册 + 键位语义 + 5 分钟自动关窗）+ 右栏对账三项 + 锚改名对账 + F3 真机确认轮（含 NFR-PERF-2 live 复测）",
   "planRef": "delivery/taskpackages/260917-m2-k3-char-window-overlay/plan.md",
-  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "",
+  "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核。elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
+  "redBaselineResult": "RED — host runner 全量（acceptance-author 实跑 + planner 2026-09-19 独立复跑双证）：`46 Tests 2 Failures 0 Ignored / FAIL`，delta 恰好 2 条本包义务红、其余 44 齿零新增红。freeze 前同命令基线 = `46 Tests 0 Failures 0 Ignored / OK`。红二条：① `key_layer_dispatch.acceptance.c:597`（[KD-A1][KD-A3]）——查字窗列 KEY 单击仍 = SESSION_TOGGLE(1)，期望 GLOBAL_ACT_CHAR_REPLAY(=5)（新层列未落）；② `retract_p4_three_page.acceptance.c:911`（[M2K2-A4]）——mcp case 3 区内仍有 1 处 cache_char_data 调用点（M2-K3 收拢未落，翻正齿设计态红）。新件独立线束执行：`7 Tests 6 Failures`（test1–5/7 从红起算，test6 为 must-stay-green 守卫设计态即绿；逐齿红因均系本包缺失的真实行为，无环境/依赖/测试自身错误）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -31,7 +31,7 @@
     "M2K3-A3: 驻留计时 host 齿——5 分钟无操作自动关窗回原页，计时随任意按键重计；播完会话即结束不回聆听态（不触发麦克风/语音轮演出）",
     "M2K3-A4: 页点隐藏靶——查字窗前台时 keybar 中槽页点隐藏、左右槽照常给操作提示（复用 keybar overlay_top 隐藏路径，结构断言钉查字窗层进隐藏闭集）",
     "M2K3-A5: 右栏对账三项——部首行补上屏（S-F3.2 AC1：card.radical 已装配未上屏的 label 拼装补齐）、进度珠死成员与虚标头注清理（progress_label 死成员零赋值 + char_page.cc 头注虚标）、握笔小手 12px 圆环占位删除（charpage_draw_penhand 移除）；结构齿 + 渲染帧断言",
-    "M2K3-A6: 锚改名对账——canvas-p4 → char-window 实现侧对账收尾（char_page 头注、测试齿锚注记），closeout 声明改名清单",
+    "M2K3-A6: 锚改名对账——canvas-p4 → char-window 实现侧对账收尾（char_page 头注、测试齿锚注记、kidpal_render_node.h/.cc 两处 M2-K2 遗留「M2-K3 改窗时统一收」的写侧死态 API kidpal_render_node_cache_char / cache_char_data 及其 mcp_server 调用点收拢），closeout 声明改名清单",
     {
       "id": "M2K3-A7: F3 真机确认轮（human 持板）——S-F3.1 AC1–AC4（弹窗米字格逐笔演示 / 三态可辨 / 歇 2 秒重播 / 逐笔念笔名 v1.55 口径——OpenClaw 回复文本承载、真机已实证查『勇』9 笔零错误，试点期口径确认）、S-F3.2 AC1、S-F3.3 AC1–AC2、窗口交互包全项（播完不回聆听态 / 5 分钟自动关窗 / KEY 短按重播长按关窗 / BOOT 关窗不翻页 / 无页点）、提醒弹窗压查字窗层级确认（§2.2 行 67：提醒=最高层、录音态唯一例外）、K1 两缺陷 live 复证（查『勇』9 笔完整不崩无缺笔）",
       "kind": "structural",
@@ -44,7 +44,9 @@
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/key_layer_dispatch.acceptance.c"
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c",
+    "firmware/main/test/retract_p4_three_page.acceptance.c"
   ],
   "exitCriteria": [
     "M2K3-E1: A1–A6 host 齿全绿，host runner 全量零新增红；A7/A8 真机轮闭环（human 裁决落账）",
@@ -66,16 +68,29 @@
     "docs/requirements.md#§2.2",
     "docs/requirements.md#NFR-PERF-2",
     "docs/requirements.md#§2.3",
+    "docs/requirements.md#§2.4",
     "firmware/main/display/char_page.cc",
+    "firmware/main/display/char_page.h",
     "firmware/main/display/kidpal_layer.h",
     "firmware/main/display/kidpal_layer.c",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/key_gesture_parser.h",
     "firmware/main/key_gesture_parser.cc",
-    "firmware/main/mcp_server.cc"
+    "firmware/main/mcp_server.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/key_layer_dispatch.acceptance.c",
+    "firmware/main/test/acceptance/archive/screen_unification.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
   ],
   "iterationBudget": 3,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
+  "docsOwner": "integrator",
   "docsSyncReason": "spec 查字窗口径已冻结（v1.36/v1.37/v1.39/v1.43/v1.55 现文即权威），本包为需求先行后的实现对账（F3 实现侧对账三项 + 锚改名 + 撤页改窗），零 docs 面改动。",
   "mergeOrder": 30,
   "dependsOn": [
@@ -100,10 +115,44 @@
       },
       {
         "path": "firmware/main/mcp_server.cc",
-        "symbol": "kidpal_char_page_show 调用点（view=char 路由）"
+        "symbol": "kidpal_char_page_show"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.cc",
+        "symbol": "kidpal_render_node_front_is_overlay"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.cc",
+        "symbol": "kidpal_render_node_dismiss_front_overlay"
+      },
+      {
+        "path": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+        "symbol": "keya_dispatch_global_action"
+      },
+      {
+        "path": "firmware/main/display/lcd_display.cc",
+        "symbol": "kidpal_keybar_sync_locked"
       }
     ],
     "exempt": ""
   },
-  "notes": "riskTier=high 理由：状态机轴（层模型扩展 + 键位矩阵）+ 触 key_layer_dispatch 冻结等价 guard 齿 + 真机确认轮硬依赖 + 与提醒弹窗/语音轮三层交互面（回归半径越查字窗自身边界）。layer-aware dispatch 基建（K1a M1 已并）与 keybar overlay 隐藏路径（K2 已并）是本包复用前置——均已 merged。5 分钟计时器 host 模拟形态由 acceptance-author 冻齿时定。提醒压查字窗（行 67）与录音排队例外在 K4/rma8 已实现并闭环，本包只做查字窗侧对账确认（REMINDER 置顶时压过查字窗、不穿透），不重实现。mutationEvidence 空骨架前置。"
+  "notes": "riskTier=high 理由：状态机轴（层模型扩展 + 键位矩阵）+ 触 key_layer_dispatch 冻结等价 guard 齿 + 真机确认轮硬依赖 + 与提醒弹窗/语音轮三层交互面（回归半径越查字窗自身边界）。layer-aware dispatch 基建（K1a M1 已并）与 keybar overlay 隐藏路径（K2 已并）是本包复用前置——均已 merged。5 分钟计时器 host 模拟形态由 acceptance-author 冻齿时定。提醒压查字窗（行 67）与录音排队例外在 K4/rma8 已实现并闭环，本包只做查字窗侧对账确认（REMINDER 置顶时压过查字窗、不穿透），不重实现。mutationEvidence 空骨架前置。",
+  "notesIntake": [
+    "【intake 修正，planner 权内，2026-09-19】origin.type/upstreamType `milestone` → `delivery-story`：拆包期枚举值 `milestone` 不在 taskpackage-required-check 闭集内（is: delivery-story|planning-workstream|arch-review|human-ad-hoc|ci-failure|drift-report|regression|maintenance|proposal|human-confirmed-plan），且 check 要求 origin.type 与 sourceType 等值——与 K1 r1 / K2 intake 同款形态税，实测 taskpackage-required-check 对 K3 canonical 文件报 `origin.type (milestone) must equal sourceType (delivery-story)`，已在 intake 消解。上游拆包器产出闸不认的枚举值属待上溯项（K1/K2 retro 已登记）。",
+    "【intake 修正，sourceRefs 补真实改动面】拆包期 sourceRefs 只列 char_page.cc / kidpal_layer.h/.c / key_gesture_parser.cc / mcp_server.cc 五处实现文件，**遗漏四处真实改动面**（K2 retro「intake 期把拆包产物的每个引用字段对磁盘逐条核」教训的直接命中）：① `kidpal_render_node.h/.cc`——front_is_overlay 覆盖层闭集须纳入查字窗层、dismiss_front_overlay 关窗出口、两处 M2-K2 遗留写侧死态 API（cache_char / cache_char_data，文件头明注「由 M2-K3 改窗时统一收，禁静默删除」）归本包收；② `keybar.h/.c`——中槽页点隐藏闭集（KB-A2/A4 机制单源）；③ `lcd_display.cc`——keybar 槽位渲染消费点；④ 板级 `waveshare-s3-rlcd-4.2.cc`——KEY/BOOT 手势回调的 key_route_layer 消费链（查字窗 KEY 短按 = 重播须在此列分流）。另补 `docs/requirements.md#§2.4`（撤页后页结构权威）、`firmware/main/test/key_layer_dispatch.acceptance.c`（A2 点名必改的在世冻结套件）、`firmware/main/test/acceptance/archive/screen_unification.acceptance.c`（kidpal_layer.h 头注声明的「冻结数值码」来源文件）、`firmware/main/test/host_app/main/CMakeLists.txt`（新验收件注册位）。",
+    "【层数值码设计方向，planner 判据交 acceptance-author 冻齿时钉】kidpal_layer.h/.c 头注钉「语义与数值码以冻结验收 screen_unification.acceptance.c 文件头 FROZEN OFFLINE CONTRACT 为准，不得偏移」，现行闭集 LOCAL_PAGE=2 / VOICE=3 / SERVER_PAGE=4 / REMINDER=5 / PROVISION=6，优先级 = 数值越大越靠前。查字窗层须落 LOCAL_PAGE 之上、REMINDER 之下（§2.2 行 67 提醒=最高层覆盖须压过查字窗）。**硬约束实测：全仓消费点均为符号常量引用，零数值字面耦合**（唯一字面在两处注释里：reminder_overlay_unify.acceptance.c:86 的 `KIDPAL_LAYER_REMINDER(5)` 与 kidpal_layer.h 的闭集清单注释）——故「插入查字窗层 + REMINDER/PROVISION 上移」在机械上是安全的符号级改动，属 A2 明示的「新层修订走 acceptance-author 留痕」范畴。**替代方案（若 acceptance-author 评估更优可选）**：复用 SERVER_PAGE(4) 语义 + 独立判据函数区分——但 A1 明文要求「新增查字窗层进 kidpal_layer 栈模型」，取此替代须在冻齿记录里写明偏离理由。**不论取哪条，`kidpal_layer.c` 的 is_stackable 上界常量须随闭集同步**（现写 `<= KIDPAL_LAYER_PROVISION`，符号引用、自动跟随）。",
+    "【K2 遗留收拢面（A6 承载）】`kidpal_render_node.h:203-215` 两 API 与 `mcp_server.cc` 对应调用点被 M2-K2 明注为「写侧死态、保留不动、由 M2-K3 改窗时统一收，禁静默删除」——本包收它们时须同步清理 mcp_server.cc 的调用行，且**不得顺手改动 mcp_server 的 view=char 路由本体**（E2：服务端下发语义不动）。",
+    "【acceptance-author 完备性反查请求（K2 retro 教训 #1）】上列「已知必改面」**非穷尽**——请在派发后做一次独立完备性反查（在世的其它冻结套件是否有会在撤页/改窗后假红的钉点，如 keybar_three_slot / reminder_overlay_unify 的层与页点断言），本清单不构成完全覆盖承诺。",
+    "【S-F3.3 AC2 待判项】requirements 行 492 的 AC2「Given 演示写完，When 定格，Then 显示『✔ 写完啦 · 共 9 笔』」——现实现 `char_page.cc` 的 hint_label 文案为「跟随笔画一笔一画描红」，非定格文案。是否纳入本包 A5 之外的实现侧对账，请 acceptance-author 判（本 planner 未预先改 acceptance 组，避免越权钉死）。",
+    "【uiux depth 判读，planner】uiuxRequired=false。依据：查字窗的 UI 设计权威已冻结在上游（requirements F3 + WF-F3-01 线框 v1.37 + 设计稿 v4 `char-window`），本包是需求先行后的**实现侧对账**（撤页改窗 + 三小项 + 锚改名），无新设计面、无 L2 级需 uiux-author 翻译冻结 brief 的缺口；A1–A6 覆盖 L1 UI-state 验收。docs/ui/UIUX-DESIGN-BRIEF.md（v4）在场、与需求一致，无需另派 uiux-author。",
+    "【scope-map 核对，C5 intake checklist】已核 `.claude/scope-map.json`：builder/fixer allow 面 = `firmware/**` + `server/**` + `tools/**` + `delivery/workstreams/**`，覆盖本包全部目标路径（firmware/main/** 实现 + 板级 + host_app CMakeLists）；acceptance-author allow 面 = `firmware/**/*.acceptance.c` 等，覆盖新验收件与两处在世套件修订；**`firmware/main/test/host_app/main/CMakeLists.txt` 不在 acceptance-author allow 面内 → 新验收件的注册归 builder**（K2 同款形态，已写入 launch 启动卡）。deny 面 `**/*.acceptance.c` 对 builder 生效（builder 改不动验收件）。零 scope 冲突，无需新增包路径。",
+    "【契约判定，Step 2】零契约改动，无需派 architect-reviewer：门 1（2026-09-17 architect-reviewer 轻量 checklist）已对本批三包含 K3 裁定「零契约改动裁定成立」（裁决记录 = delivery/workstreams/m2-char-window/review.md 门 1 节）。intake 复查未发现新的契约面触点——E1 view=char display 响应块既有且语义不动、D3 strokes 不动、层闭集改动落 `firmware/main/display/kidpal_layer.h/.c`（实现面，非 docs/contracts/**，走 acceptance-author 留痕）。",
+    "【acceptance 冻结落点（Step 8 finalize，2026-09-19）】新件 `firmware/main/test/char_window_overlay.acceptance.c`（7 TEST_CASE，覆盖 A1–A6 + boundary）；两处在世冻结件留痕修订：`key_layer_dispatch.acceptance.c`（A2 指定通道，append-only 追加查字窗列三齿 + seam [1] 第三参语义扩注 + 两冻结数值 fallback，既有通用覆盖层列/基层列零改动）与 `retract_p4_three_page.acceptance.c`（完备性反查发现的假红翻正，见下条）。builder 接线义务：向 `firmware/main/test/host_app/main/CMakeLists.txt` 的 `HOST_ACCEPTANCE_SRCS` 追加 `\"../../char_window_overlay.acceptance.c\"` 与 `\"../../../display/char_window.c\"`，置于 `host_infra_smoke.acceptance.c` 之前（该路径不在 acceptance-author scope allow 面内）。",
+    "【完备性反查命中（acceptance-author 独立发现，planner 清单未列）】`retract_p4_three_page.acceptance.c` 的 test 6 tooth 2（钉 mcp case 3 区 `cache_char_data` 调用点保留）与 tooth 5（钉 `kidpal_render_node.h` 两 API 声明保留）是 M2-K2 的「保留不动、删除归 M2-K3」守卫——本包收拢这两处后必假红，已翻正为「已收」零残留。**这是 K2 retro 教训 #1「planner 的点名天生不完备、须请对面做完备性反查」的第二次实例命中**（K2 那次也是验收作者主动反查出的第三处必改点）。其余在世冻结套件逐条核对零假红（key_layer_dispatch 既有齿走通用覆盖层列、keybar_three_slot / char_stroke / reminder_overlay_unify / p1_home_battery / voice_round_ui / host_infra_smoke 均零触点或符号引用；归档件不编入 runner）。",
+    "【builder 必改面增补（plan.md 未列，acceptance-author 判入本包）】① **S-F3.3 AC2 纳入本包**：`kidpal_char_card_build` 的 `out->progress` 已实现「写完啦·共 N 笔」定格语义（char_stroke.c:571-575），缺口只在 `char_page.cc` 未消费 `card.progress`（现 `hint_label` 为静态占位「跟随笔画一笔一画描红」）——齿取同源判别（钉呈现面消费 `card.progress` 单源，不钉格式字面）。② **新增纯逻辑模块 `firmware/main/display/char_window.{h,c}`**（`kidpal_char_window_idle_step` + `KIDPAL_CHAR_WINDOW_IDLE_MS == 300000`）承载 5 分钟驻留计时——不在拆包 sourceRefs，builder allow 面 `firmware/**` 已覆盖、无 scope 冲突。",
+    "【层数值码落点（acceptance-author 冻结，planner 已复核机械安全）】`KIDPAL_LAYER_CHAR_WINDOW = 5`，`REMINDER` 5→6、`PROVISION` 6→7，下层 LOCAL_PAGE=2 / VOICE=3 / SERVER_PAGE=4 零偏移；`kidpal_layer.c` 的 `is_stackable` 上界为符号引用自动跟随，transient 集新增 CHAR_WINDOW。`key_route_layer` 第三参**语义扩为前台层归一化值**（0 = 基层/配网/无前台；非 0 = 前台覆盖层层值），新增 CHAR_WINDOW 列；`GLOBAL_ACT_CHAR_REPLAY = 5`（append-only，既有四值零偏移）。板级 dispatch 改喂 `kidpal_render_node_front_layer()`（覆盖层时；基层/配网喂 0），`GLOBAL_ACT_CHAR_REPLAY` → `kidpal_char_page_replay()`。**风险点**：若 builder 发现任何数值字面耦合 → 返 planner，不得硬改。M2K3-E3 逃生门未触发（不涉四态骨架共享对象层、不涉提醒/语音/查字三层仲裁架构）。",
+    "【mutationEvidence 义务】test 3 通用列与 test 6 等 must-stay-green 守卫的反转性无法在 freeze 相位从红起算，依赖 mutation 回填（builder/planner 义务，`mutationRequired: true` 已在册、perAcceptance 空骨架前置）。",
+    "【已知未纳本包项（如实记录，不扩触碰面）】`reminder_overlay_unify.acceptance.c` 的 stale 字面注释（`:43-44/:86/:657/:680/:695` 的 `REMINDER(5)`/`VOICE(3)`/`SERVER_PAGE(4)` 文本）在 renumber 后不准确——仅注释与诊断字符串、不影响绿，建议随后续批 refresh，本包不动以免扩大触碰面。"
+  ],
+  "bootNotes": "VERIFY_FW_BUILD_REQUIRED=1 严格模式随 launch 启动卡走；host runner elf 相对 firmware/main/test/host_app/。"
 }
