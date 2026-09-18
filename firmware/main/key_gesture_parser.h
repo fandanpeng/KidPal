@@ -12,7 +12,7 @@ extern "C" {
  *
  * 行为语义权威：docs/spec.md §4.0 全局按键手势表 + §5.3 按键定义。
  * 职责分离：KEY 主司会话（短按启动/结束会话、长按回首页）、BOOT 主司翻页
- * （短按 P1→P2→P3→P4 循环）。KEY 长按回首页「所有页面一致」由路由函数
+ * （短按 P1→P2→P3 三页循环）。KEY 长按回首页「所有页面一致」由路由函数
  * 无页面入参表达（全局层、context-free）。
  *
  * 纯逻辑约束：单实例单键（每个物理键一个 key_gesture_parser_t 实例）；
@@ -39,12 +39,13 @@ typedef enum {
     KEY_GESTURE_LONG_PRESS
 } key_gesture_t;
 
-/* 四页循环翻页的页 id（页序纯逻辑在本包；跨页渲染/端到端整合由包 9b 兜底，SES-E2）。 */
+/* 三页循环翻页的页 id（页序纯逻辑在本包；跨页渲染/端到端整合由包 9b 兜底，SES-E2）。
+ * 2026-09-17 M2-K2 撤 P4 常驻页：第 4 页位整值撤出（不留占位、不复用编号），
+ * PAGE_COUNT 随枚举自动 4→3，页序与 spec P1→P2→P3（requirements §2.4 3 页循环）逐项对齐。 */
 typedef enum {
     PAGE_P1 = 0,
     PAGE_P2,
     PAGE_P3,
-    PAGE_P4,
     PAGE_COUNT
 } page_id_t;
 
@@ -86,7 +87,7 @@ key_gesture_t key_gesture_parser_feed(key_gesture_parser_t *p,
 key_gesture_t key_gesture_parser_poll(key_gesture_parser_t *p,
                                       uint32_t now_ms);
 
-/* 页序纯逻辑：P1->P2->P3->P4->P1 回绕；非法页（含越界 id）回 PAGE_P1。 */
+/* 页序纯逻辑：P1->P2->P3->P1 回绕（基数 (pg+1) % PAGE_COUNT 同源）；非法页（含越界 id）回 PAGE_P1。 */
 page_id_t key_page_next(page_id_t pg);
 
 typedef enum {
@@ -105,7 +106,7 @@ typedef enum {
  *                        会话中打断停播由状态机 SES_EVT_KEY_SHORT_PRESS 承载）
  *   KEY  DOUBLE_CLICK -> GLOBAL_ACT_NONE（KEY 双击全局层无语义）
  *   KEY  LONG_PRESS   -> GLOBAL_ACT_HOME（全局一致）
- *   BOOT CLICK        -> GLOBAL_ACT_PAGE_NEXT（P1→P2→P3→P4 循环；
+ *   BOOT CLICK        -> GLOBAL_ACT_PAGE_NEXT（P1→P2→P3 三页循环；
  *                        对话中 BOOT 结束会话由状态机 SES_EVT_BOOT_SHORT_PRESS
  *                        独立承载，路由层与状态机各取所需）
  *   BOOT LONG_PRESS / DOUBLE_CLICK -> GLOBAL_ACT_NONE

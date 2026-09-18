@@ -631,8 +631,11 @@ void McpServer::AddCommonTools() {
                     });
                     break;
                 }
-                case 3: { /* VRT_ROUTE_CHAR —— 查生字 P4 (包 260829-char-stroke, 本包
-                             additive 补 case 3, 只消费不改 view_router 数值码). */
+                case 3: { /* VRT_ROUTE_CHAR —— 查生字 (包 260829-char-stroke, 本包
+                             additive 补 case 3, 只消费不改 view_router 数值码).
+                             2026-09-17 M2-K2 撤 P4 常驻页：查字不再是 BOOT 翻页可停靠
+                             页位（页循环 4→3），但本路由与渲染调用点整体保留——撤销的
+                             是常驻页位、不是查字能力，改窗归 M2-K3。 */
                     cJSON_AddStringToObject(ack, "route", "char");
                     std::string char_data = data;
                     /* 缺字段防御降级门 (闸 A 包内裁定): 必需键六件不全 -> 降级提示、
@@ -644,7 +647,8 @@ void McpServer::AddCommonTools() {
                             "strokeCount/strokes/medians)");
                         break;
                     }
-                    /* 通过校验 -> 切 P4 页喂数据 (LVGL 主线程延迟执行) */
+                    /* 通过校验 -> 喂数据渲染查字面 (LVGL 主线程延迟执行; M2-K2 撤 P4
+                     * 常驻页后不再作为翻页停靠页，但服务端下发的查字渲染通路保留)。 */
                     app.Schedule([char_data]() {
                         /* 崩溃修复（包 260829-hardware-validation 语义保留 / 归一屏）：
                          * char 页已并入 s_kidpal_scr 体系——kidpal_char_page_show 在活动屏
@@ -655,8 +659,9 @@ void McpServer::AddCommonTools() {
                          * 直接画在 s_kidpal_scr 上（净显示 = char 页）。 */
                         kidpal_render_node_begin_page();
                         kidpal_char_page_show(char_data.c_str());
-                        /* 包 9b HWV-A6: 缓存笔顺 JSON 与有效标志，
-                         * 供 BOOT 双按 cycle_next 重新停靠 CHAR 页时渲染。 */
+                        /* 包 9b HWV-A6 写侧缓存：M2-K2 撤 P4 常驻页后本对缓存成写侧
+                         * 死态（cycle_next 不再停靠 CHAR 页、无循环读方），保留不动
+                         * （M2K2-E3 禁静默删除），由 M2-K3 改窗时统一收。 */
                         kidpal_render_node_cache_char_data(char_data.c_str());
                         kidpal_render_node_end_page();
                     });

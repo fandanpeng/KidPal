@@ -90,6 +90,15 @@ set(HOST_ACCEPTANCE_SRCS
     "../../char_stroke.acceptance.c"
     "../../../display/char_stroke.c"
 
+    # 包 260917-m2-k2-retract-p4-three-page（撤 P4 常驻页：页循环 4→3 + 两页枚举对齐 spec
+    # P1→P2→P3 + 键帽条页点 4→3）冻结验收（key_page_next 三页回绕 + 枚举对齐/字面 3 单点
+    # + keybar 页点同源与第 4 页索引越界的真行为半；render_node/lcd_display/mcp_server 切区
+    # 与文本结构半；键路由回归靶 + 查字通路保留靶 + 注册序/需求契约 canary）。被测实现
+    # key_gesture_parser.cc / display/keybar.c（+ 其链接依赖 display/kidpal_voice_states.c）
+    # 均已在册，本包零新增实现接线。**必须置于 host smoke acceptance 之前**（smoke 末位 =
+    # 最先执行; 本文件 test 7 tooth 1 校验此序）。
+    "../../retract_p4_three_page.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

@@ -1,0 +1,50 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "260917-m2-k2-retract-p4-three-page",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "97a5acfc-ad34-45db-b9a3-8f2d2475e983",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260917-m2-k2-retract-p4-three-page/verifier-evidence/rounds/r2.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-18T14:47:04.875Z",
+    "completedAt": "2026-09-18T14:47:19.810Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 248, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9759, "timing": "scoped", "note": "device build 真编译通过（VERIFY_FW_BUILD_REQUIRED=1 未降级；xiaozhi.bin 0x30b6f0 bytes，分区余量 11%）——E3 device build 闸满足" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 128, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 167, "timing": "scoped", "note": "functional = M2K2-A1..A4；structural 豁免 = M2K2-A5；files = retract_p4_three_page / keybar_three_slot / key_layer_dispatch acceptance.c" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 168, "timing": "scoped", "note": "4 functional acceptance sensitive:true + failed as expected；A5 structural 豁免" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 139, "timing": "scoped", "note": "docsSyncRequired=false（requirements 面零漂移；architecture 面 stale 以 Findings 登记，非本包可改）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 144, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 3829, "timing": "full", "note": "37 passed (pytest, server 面；integrator 独立复跑一致)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 220, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=21 / serverAcceptanceFiles=0" }
+  ],
+  "hostRunner": {
+    "finalResult": "46 Tests / 0 Failures / 0 Ignored, EXIT=0 (integrator 独立复跑 2026-09-18)",
+    "baselineRef": "既有套件 39T/0F @ ca7ff81（K2 launch 锚；server 面零差异）",
+    "newTeeth": "retract_p4_three_page.acceptance.c 7 齿（M2K2-A1/A2/A3/A4 覆盖 + 注册序/需求契约 canary）→ 39 + 7 = 46",
+    "redBaseline": "新件 standalone 7T/6F, ELF exit 6（acceptance-author 实跑未修复树；红名 verbatim 在 taskpackage redBaselineResult）；真 host runner 39T/1F（唯一红 = 本包义务红 KD-E1）"
+  },
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 260917-m2-k2-retract-p4-three-page --phase final --round 2 --invocation-id 97a5acfc-ad34-45db-b9a3-8f2d2475e983",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/260917-m2-k2-retract-p4-three-page/verifier-evidence/rounds/r2.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 2
+    }
+  }
+}

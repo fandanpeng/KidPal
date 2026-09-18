@@ -119,7 +119,7 @@ global_action_t key_route_global(key_id_t key, key_gesture_t g)
     }
     /* KEY_ID_BOOT */
     if (g == KEY_GESTURE_CLICK) {
-        return GLOBAL_ACT_PAGE_NEXT;          /* P1→P2→P3→P4 循环翻页 */
+        return GLOBAL_ACT_PAGE_NEXT;          /* P1→P2→P3 三页循环翻页 */
     }
     return GLOBAL_ACT_NONE;                   /* BOOT 长按/双击无全局语义 */
 }
