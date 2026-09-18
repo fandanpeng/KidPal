@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-closeout-chain-friction
 
-> **状态：DRAFT v0.5 · 2026-09-19 · 已立项 ack · 待 architect R1 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；**v0.5 按 human 2026-09-19 裁定把 T1〔索引终态锚〕整条移出本批**、退回 ARQ 队列单开一批，见 §6 留根①。FROZEN 行待补 architect Rn GREEN 凭据）。
+> **状态：DRAFT v0.6 · 2026-09-19 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；v0.5 按 human 2026-09-19 裁定把 T1〔索引终态锚〕整条移出本批；**R1 BLOCK(F1..F6) → 主线程 v0.6 逐条修订**〔F1 口径更正 / F2–F3 留根补全 / F4–F5 T3 溯源与落点 / F6 T2 回声归因与 flag 交互〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260916-acc-gate-archive-skew`（T1）、`ARQ-260913-current-pointer-implicit-global`（T2）、`ARQ-260908-tighten-only-unwritten`（T3）。**原承载的 `ARQ-260909-index-verdict-anchor-okform-gap` 已移出本批、退回队列**（该 ARQ 的处方经起草期实测证伪，见 §6 留根①）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction`（已 FROZEN v1.0）/ `-dispatch-chain-friction` / `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -20,9 +20,9 @@ docs/DEV-GOVERNANCE.md
 
 ## 0. 想实现的效果与差距
 
-**目标效果一句话**：把收口 / 簿记链上三处「写进去了、但状态或口径没跟上事实」的失准修齐——验收闸数退役件、簿记写错包无声、加严纪律无成文。
+**目标效果一句话**：把收口 / 簿记链上三处「写进去了、但状态或口径没跟上事实」的失准修齐——验收闸混数退役件、簿记写错包无声、加严纪律无成文。
 
-**现状差距**：这三条都是**已实测确认**的失准：验收闸固件面枚举到的 13 件全在归档目录下、现役 0 件（起草期现跑数出）；「当前包」指针指错时脚本零输出（3 包 retro 实证）；tighten-only 纪律在治理文档里 grep 零命中（现跑）——而它已被实际行使多次（**实测 20 份验收件带其页脚**，含 6 份现役）。
+**现状差距**：这三条都是**已实测确认**的失准：验收闸固件面枚举 **20 件、其中 13 件是归档退役件**（真跑闸 + 逐件拆分核实）；「当前包」指针指错时脚本零输出（3 包 retro 实证）；tighten-only 纪律在治理文档里 grep 零命中（现跑）——而它已被实际行使多次（**实测 20 份验收件带其页脚**，含 6 份现役）。
 
 **非目标（本批不做什么）**：不动 `docs/contracts/**` 与系统 spec 两文件；不动任何验收冻结件（`*.acceptance.*`）；不改任何 agent frontmatter；不新增工程门（T1 只把既有集合补一个成员、T2 的新硬失败默认关）；**不动 `changes-index.mjs`**（T1〔索引终态锚〕已移出本批）。
 
@@ -38,11 +38,20 @@ docs/DEV-GOVERNANCE.md
 const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'ESP32-S3-RLCD-4.2-Demo']);
 ```
 
-`archive` 不在集内；同文件 `FW_ACC_RE = /\.acceptance\.(c|cpp|cc)$/`（`:31`）按扩展名形状匹配、不限深度，故 `firmware/main/test/acceptance/archive/` 下的归档 `.acceptance.c` 仍被枚举为「在盘验收文件」。
+`archive` 不在集内；同文件 `FW_ACC_RE = /\.acceptance\.(c|cpp|cc)$/`（`:31`）按扩展名形状匹配、不限深度。**闸的枚举根是 `firmware/`**（`:137` = `const fwDir = join(root, 'firmware')`），不是某个子目录——故 `firmware/main/test/acceptance/archive/` 下的归档件与 `firmware/main/test/` 下的现役件**同属该闸的枚举面**。
 
-**起草期现跑实测（按闸同款 `collectFiles` 逻辑复现，含 `:46` 的 `SKIP_DIRS.has(entry) || entry.startsWith('.')` 跳过规则）**：`firmware/main/test/acceptance/` 现枚举命中 **13 件，且 13 件全部位于 `archive/` 下**——该面**现役件为 0**，即该闸固件面的 oracle 输入集当前**只剩退役件**。逐件：`char_stroke` / `device_ws_switch` / `hardware_validation` / `home_p1` / `key_route_a1` / `schedule_p2` / `schedule_reminder_b` / `screen_unification` / `session_logic` / `story_p3` / `ui_art_integration` / `v3_restore` / `voice_roundtrip_b`（各 `.acceptance.c`）；补 `archive` 进 `SKIP_DIRS` 后同口径枚举 = **0 件**。
+**起草期现跑实测（两条口径并列，勿混）**：
 
-**【硬项 1a · 数字更正申报】** `ARQ-260916-acc-gate-archive-skew` 原文记该目录下「**9 件**归档 `.acceptance.c`」，本批现跑为 **13 件**。两者不符，本批以现跑实测为准并把偏差如实登记（成因未追：或为 9-15 固件归档批之后又有 4 件于后续包并入 archive，起草期未回溯 git 历史）。**该更正不影响改法**（T1 的修法是集合补一个成员、与件数无关），但件数差 4 说明该 ARQ 的取证时点已陈旧。
+- **闸口径**（真跑 `node .claude/scripts/acceptance-run-check.mjs`，输出 verbatim）：`"surfaces": { "firmwareAcceptanceFiles": 20, "serverAcceptanceFiles": 0 }`——**20 件**。
+- **该 20 件的构成**（按闸同款 `collectFiles` 逻辑复现，含 `:46` 的 `SKIP_DIRS.has(entry) || entry.startsWith('.')` 跳过规则）：**归档 13 件**（全在 `firmware/main/test/acceptance/archive/` 下）+ **现役 7 件**（全在 `firmware/main/test/` 下）。
+
+  - 归档 13 件：`char_stroke` / `device_ws_switch` / `hardware_validation` / `home_p1` / `key_route_a1` / `schedule_p2` / `schedule_reminder_b` / `screen_unification` / `session_logic` / `story_p3` / `ui_art_integration` / `v3_restore` / `voice_roundtrip_b`（各 `.acceptance.c`）；
+  - 现役 7 件：`char_stroke.acceptance.c` / `host_infra_smoke.acceptance.c` / `keybar_three_slot.acceptance.c` / `key_layer_dispatch.acceptance.c` / `p1_home_battery.acceptance.c` / `reminder_overlay_unify.acceptance.c` / `voice_round_ui.acceptance.c`。
+- **补 `archive` 进 `SKIP_DIRS` 后**：闸口径 **20 → 7**（只跳退役面，7 件现役件全部保留）。
+
+**【硬项 1a · 口径更正申报（R1-F1，主线程起草期失误）】** v0.5 曾把「`firmware/main/test/acceptance/` 子目录下 13 件全为归档、现役 0 件」**误升格为闸口径**，据此写出「该闸固件面的 oracle 输入集当前只剩退役件」「V1 补后 0 条」两处失准断言。**根因 = 起草期只扫了一个子目录、未核对闸的枚举根（`:137` = `firmware/`）**。R1 判官真跑闸抓到（`:206` `firmwareAcceptanceFiles: 20`），本版按实况更正：**该闸的固件面 7 件现役件一直在枚举集内，退役件只是其中 13/20**。**改法不受影响**（T1 仍是「集合补一个成员」，与件数无关），但**危害定性收窄**：病灶不是「输入集只剩退役件」，而是「20 件里混着 13 件退役件——退役面上的断言失败会被计入现役验收结果，且清点报数虚高 2.85 倍」。V1 亦据实改为**双探针**（子目录口径 13→0 + 闸口径 20→7），避免与 V2 自检输出的 `fwAcc=7` 互相矛盾。
+
+**【硬项 1a · ARQ 数字更正申报】** `ARQ-260916-acc-gate-archive-skew` 原文记该目录下「**9 件**归档 `.acceptance.c`」，本批现跑为 **13 件**。两者不符，本批以现跑实测为准并把偏差如实登记（成因未追：或为 9-15 固件归档批之后又有 4 件于后续包并入 archive，起草期未回溯 git 历史）。**该更正不影响改法**（T1 的修法是集合补一个成员、与件数无关），但件数差 4 说明该 ARQ 的取证时点已陈旧。
 
 **对偶闸已修而本闸未修**：`unit-run-check.mjs` 的 `SKIP_DIRS` 已于 260916 补 `archive`（ARQ-260916-unit-gate-archive-recursion 闭账 commit `4fc0969`，`git rev-parse 4fc0969` 核实存在；`:38` 现含 `'archive'` 亲核确认），两闸退役口径现不同步。
 
@@ -96,9 +105,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 改 `.claude/scripts/dispatch-stamp.mjs`：
 
-① `resolveChangeId()`（`:60`）的返回值在调用点（`:165`）**始终回显一行到 stderr**（形态如 `dispatch-stamp: resolved changeId = <id> (from delivery/taskpackages/current/taskpackage.json)`）——使解析结果从不可见变为可见。
-
-② 新增**可选** flag `--expect-change-id <id>`：传了且与解析值不符即 **fail-loud 退出**（打印解析值与期望值两值 + 指向 `current/` 路径），不传则行为与今天**完全一致**。
+① `resolveChangeId()`（`:60-72`）的返回值在调用点（`:165`）**始终回显一行到 stderr**——**回显须如实反映本次实际来源**（R1-F6 采纳）：该函数有两条路径，`--task-package-id <id>` 显式给出时（`:61-62`）来源 = 该 flag、否则读 `current/taskpackage.json`（`:64-68`）；故形态为 `dispatch-stamp: resolved changeId = <id> (from --task-package-id)` 或 `... (from delivery/taskpackages/current/taskpackage.json)` **二选一**，不得固定写后者。② 新增**可选** flag `--expect-change-id <id>`：传了且与解析值不符即 **fail-loud 退出**（打印解析值与期望值两值 + 指向来源），不传则行为与今天**完全一致**。**并显式定义与既有「无上下文 exit 0」的交互**（R1-F6 采纳）：`:167-169` 现为 `if (!tpDir || !changeId) { … process.exit(0) }`——本 T 规定 **`--expect-change-id` 在场而无上下文（解析值 = null）时亦 fail-loud 退出**（原因：调用方明确表达了「本包应在场」的期望，静默 exit 0 正是本问题要治的「错与对无差别」形态）；**不传该 flag 时维持现有 exit 0 不变**。
 
 为什么这样改：直击问题 2 的根因——错与对在输出上无差别；让每个经 `current/` 解析的调用点**看得见**解析值，并给调用方一个**零成本升级到硬校验**的开关。**选 `--expect-change-id` 而非无条件 fail-loud**：后者会打断跨包簿记的合法用法（如收口期为上一包补记），而前者把是否收紧留在调用方手里。**本批只改 `dispatch-stamp.mjs`**；`journal-append` / `verify.mjs` 等同族调用点只在本 T 说明里点名、不在本批改（§6 留根）。
 
@@ -108,10 +115,10 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 承载 `ARQ-260908-tighten-only-unwritten`。
 
-改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节，在 §5 之后新增 **§6 tighten-only 修订窗口**，正文直接采纳 advisory `0e55cfab` 里那份**防滥用五件**（逐字为据，非重写；human 2026-09-18 OQ 全裁采纳完整五件）：
+改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节，在 §5 之后新增 **§6 tighten-only 修订窗口**，正文按 **`docs/ARCH-REVIEW-QUEUE.md` 的 `ARQ-260908-tighten-only-unwritten` 行**所载「防滥用五件」落地。**溯源更正（R1-F4 采纳）**：该 ARQ 行自陈其来源为 architect advisory `0e55cfab`，但本批落的是**该行已操作化的形态**——它相对 advisory 原文含三处向严增补，**不等于 advisory 原文的连排条款**；v0.5 原写「直接采纳 advisory 里那份（逐字为据）」属溯源错标，本版更正为「以 ARQ 行的操作化形态为准、advisory 为上游出处」。human 2026-09-18 OQ 全裁采纳完整五件。
 
 1. **纯 additive 机器可判**：`git diff -U0` 删除行数 = 0；
-2. **新齿必须重跑当初暴露 vacuity 的原变异**并证明转红、`sha256` 还原核销（不许另造易过变异自证）；
+2. **新齿必须重跑当初暴露 vacuity 的原变异**并证明转红、`sha256` 还原核销（不许另造易过变异自证）。**核销证据落点成文（R1-F5 采纳）**：`sha256` 记入**冻结件 `REVISION LOG` 同一条**（与第 3 条三件记录同址），格式 `<前 sha256> → <后 sha256>`。**如实声明**：本仓现**无已执行的 `sha256` 核销先例**（`7ab2d47` 仅留行数计数、未记 hash），故本条落地后为**首例**、其工具面（是否需脚本辅助生成/比对）留 §6 留根⑧；
 3. **三件记录**：冻结件 `REVISION LOG` append 带 `Reason` + `mutationEvidence` 该条 `sensitive:false→true` + 红基线摘要补一段；
 4. **范围帽**：同 Pod、同既有冻结件、不新建文件；
 5. **意图锚定**：新齿须钉既有 `acceptanceRef` / `decisionCoverage` 原意图；若需新 acceptance id 或改行为定义即属 re-spec、**升 human**。
@@ -133,7 +140,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 | 索引生成器 | `.claude/scripts/changes-index.mjs` | **未触**（v0.5 移出） | 原 T1〔索引终态锚〕已移出本批，见 §6 留根① |
 | 工程门新增 | — | **零新增** | T1 只给既有集合补一个成员；T2 的新硬失败默认关、仅显式传参时生效 |
 
-**【硬项 1b · sweep 透镜】** T1① 落地新枚举口径，起草期已预跑原始输出（见 §1 问题 1 的 13 件清单 + 补集后 0 件的两侧实测）。**索引锚面随 T1〔原〕移出，其 census（11 条已合 main 却非 landed）转入 §6 留根① 交接下一批**，本批不再作为落地依据。
+**【硬项 1b · sweep 透镜】** T1① 落地新枚举口径，起草期已预跑原始输出（见 §1 问题 1 的**双口径**实测：闸口径 20→7、构成拆分 归档 13 + 现役 7）。T1② 的成文面已由 `grep -c archive docs/DEV-GOVERNANCE.md` 现跑核为 0（成文前）。**索引锚面随 T1〔原〕移出，其 census（11 条已合 main 却非 landed）转入 §6 留根① 交接下一批**，本批不再作为落地依据。
 
 **【硬项 1c · 复扫模式完备性先验】** 本批 T1 涉**退役语面残留清扫**。模式集显式枚举全形态：`archive`（英文词形，目录名精确匹配）× 有 / 无 backtick × 两种消费形态（`SKIP_DIRS` 集合成员 / `norecursedirs` 配置项）。**完备性论证**：`SKIP_DIRS.has(entry)` 按**目录名精确相等**匹配（`acceptance-run-check.mjs:46` = `if (SKIP_DIRS.has(entry) || entry.startsWith('.')) continue;`，`entry` 为 `readdirSync` 的单段名），故无需考虑大小写变体或路径形态——`archive` 一词即完备。T2/T3 不涉退役语面。
 
@@ -166,7 +173,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 | 项 | 命令 | 预期 |
 |---|---|---|
-| V1 | 按闸同款 `collectFiles` 逻辑枚举 `firmware/main/test/acceptance/` | 补 `archive` 前实测 **13** 条命中（全在 `archive/` 下）、补后 **0** 条（前后各留一次输出） |
+| V1 | **双探针**（R1-F1 采纳）：① 真跑 `node .claude/scripts/acceptance-run-check.mjs` 取 `surfaces.firmwareAcceptanceFiles`；② 按闸同款 `collectFiles` 逻辑枚举 `firmware/`，按路径含 `/archive/` 与否拆分计数 | ① 补 `archive` 前 = **20**（>0 非空基线）、补后 = **7**；② 补前 = 归档 **13** + 现役 **7**、补后 = 归档 **0** + 现役 **7**（**与 V2 自检输出的 `fwAcc=7` 必须一致**，前后各留完整输出） |
 | V2 | `node .claude/scripts/acceptance-run-check.mjs --self-check` | 全绿 + 新增实盘断言（`archive` 路径零枚举）具名出现 |
 | V3 | 三路探针（**起草期已核实 `dispatch-stamp.mjs` 现无 `--self-check` 入口**，故不写自检、改实跑探针）：① `grep -c "resolved changeId" .claude/scripts/dispatch-stamp.mjs`；② 在 `current/` 指向某包的临时状态下跑一次真调用；③ 带 `--expect-change-id <不同值>` 再跑一次 | ① ≥1；② stderr 出现 `resolved changeId = <该包 id>`；③ **非零退出** + 打印两值；**不带该 flag 时与今日行为一致**（exit 0） |
 | V4 | `grep -c "archive" docs/DEV-GOVERNANCE.md` + `grep -c "tighten" docs/DEV-GOVERNANCE.md` | 两条均 ≥1（**原均为 0**）；且 §5/§6 两节标题 `grep -c` 各 1（防两 T 互撞） |
@@ -200,7 +207,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **② T3 的引用行一侧未落**（`acceptance-author` agent def 的 References 行）——本批只落 DEV-GOVERNANCE §6；引用行需动 agent def，触 self-def 判断点，留后续。
 
-**③ `journal-append.mjs` / `verify.mjs` 的 `current/` 解析点未改**——本批只改 `dispatch-stamp.mjs`（见 T2 边界）。待观察 `--expect-change-id` 的实际采用率，再决定是否推广为常设硬校验。
+**③ `current/` 同族解析点未改——清单据实扩充（R1-F2 采纳）**——本批只改 `dispatch-stamp.mjs`（见 T2 边界）。起草期 `grep -rln "taskpackages/current" .claude/scripts .claude/hooks` 实测 **17 个文件**带该解析面，其中「读指针取 changeId」式调用点至少含：`.claude/scripts/journal-append.mjs:51` / `pod-events-append.mjs:99` / `pod-events-aggregate.mjs:29` / `loop-metrics.mjs:64` / `mutation-check.mjs:17` / `security-check.mjs:13` / `acceptance-coverage-check.mjs:25` / `docs-sync-check.mjs:22` / `closeout-check.mjs:51` / `devloop-artifact-check.mjs:42` / `taskpackage-required-check.mjs:29` / `verifier-evidence-check.mjs:124` / `.claude/hooks/verify.mjs:123` / `supervisor-verdict-gate.mjs:468` / `supervisor-gate-check.mjs:618`。**其中 `.claude/hooks/verify.mjs:123` 恰是 ARQ-260913 病例①「九闸跑在错误包上下文全绿」的承载者**——本批不动它，但它是该族病灶最该收口的一处。待观察 `--expect-change-id` 的实际采用率，再决定是否推广为常设硬校验（或直接在其余调用点上加回声）。
 
 **④ `current/` 指针副本的行尾字节差同族面**（loop-retro-2026-09-13，screen-unification 改进 4：指针副本刷新须字节级复制、禁 Write 重打全文）——本批未承接（属 dev-loop 操作纪律，非治理脚本面）。**建议下个动 `current/` 刷新面的批承接**。
 
@@ -210,6 +217,10 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **⑦ 移出本族的两个 launch 面 ARQ**（输入清单先例取旧、launch 前置清单不核）——留 ARQ 队列后续单独处理。
 
+**⑧ T3 第 2 条 `sha256` 核销的工具面**（R1-F5 连带）——本批只成文「记入 `REVISION LOG` 同一条」这一落点，**不提供脚本辅助**（生成/比对 hash）。若首例执行时发现手工易错，随任一治理批补工具。
+
+**⑨ `ARQ-260913-current-pointer-implicit-global` 建议改动①未承接**（R1-F3 采纳）——该 ARQ 给了三条建议：本批只落第②条（脚本回声 + 可选硬校验）；**第①条「起包 checklist 固定第一条：核 `current/` 指向本包」既未承接、v0.5 亦无留根指针**，属 `planner.md` 起包 checklist 条文面（触 agent def），留根待后续治理批；第③条（指针副本刷新走字节级复制）见本条④。
+
 **交日落复盘项**：本批 T1〔原索引锚〕的 census（11 条）建议在下一批落地后复跑一次，确认是否清零；T1① 撤 archive 后观察 final 相位是否如预期不再枚举退役件。
 
 **自律件**：起草期已按硬项 1a 亲核（§1 全部断言带命令与日期）；13 件清单与 20 份页脚清点均为现跑枚举、非转引；v0.5 的 T1〔索引锚〕移出为 human 裁定 + 起草期实测双重驱动，非主线程自裁。
@@ -217,3 +228,59 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+### R1 - 2026-09-19 - architect
+
+**verdict：BLOCK(F1..F6)**（F1 为 BLOCKING、F2–F5 为 SHOULD、F6 为 NIT；无「影响目标效果」级问题——三个 T 的修法方向均经亲核成立，OQ 两项 human 裁决与内容无实质冲突，故**无升级 human 项**，打回均为事实更正与留根补全，修订到位后可直接进 R2）。
+
+#### 亲核留痕（R1 全面审，全部现跑实测，工具 = Read/Grep/Bash 于 `gov/kidpal` worktree，2026-09-19）
+
+- **结构门**：landing-manifest 围栏块在场（3 路径）且 ≡ §2 各 T 目标文件并集（`acceptance-run-check.mjs` / `dispatch-stamp.mjs` / `docs/DEV-GOVERNANCE.md`）；packet-id 行在场（Status 头部块「packet-binding」行）。✓
+- **§1 事实断言逐条**：`acceptance-run-check.mjs:31` `FW_ACC_RE`、`:34` `SKIP_DIRS`（无 `archive`）、`:46` 跳过规则、`unit-run-check.mjs:38`（含 `'archive'`，:34-37 注释在）、`dispatch-stamp.mjs:60-72` `resolveChangeId()` 全程无输出、`:165` 调用点、`server/pytest.ini:6` `norecursedirs` 含 `archive`——全部 verbatim 核实。✓
+- **计数复核（不采信转述，自跑）**：① REVISION LOG 页脚 grep = **20 份** ✓（12 归档 C + 6 现役 C + 2 归档 py，逐文件名吻合）；② `firmware/main/test/acceptance/` 子目录枚举 = **13 件且全在 archive/ 下** ✓（与 PROPOSAL 一致）；③ **但闸真实口径（root=`firmware/`）枚举 = 20 件**（13 归档 + 7 现役 `main/test/*.acceptance.c`，含 `host_infra_smoke.acceptance.c`），补 `archive` 后 = **7 件**（见 F1）；④ `docs/DEV-GOVERNANCE.md` grep `archive` / `tighten` 均**零命中** ✓，「## 验收测试纪律」:264、§1 :268 / §2 :279 / §3 :283 / §4 :287 ✓；⑤ 三行 ARQ 原文逐字核对（`docs/ARCH-REVIEW-QUEUE.md:43/:63/:66`）✓——`ARQ-260916` 原文确记「9 件」、`ARQ-260908` 原文确记「7 份」且三处引据漂移（`:1700→:1761`、`:979→:1087`、`:95→:100`）经 sed 逐行核验属实，PROPOSAL 的两份【硬项 1a 数字更正申报】成立；⑥ commit `4fc0969` / `7c6d7c5` / `7ab2d47` 经 `git rev-parse` 全部存在 ✓，`0e55cfab` 为 pod-events `eventId`（`delivery/taskpackages/260829-schedule-reminder/pod-events.jsonl:23`，PROPOSAL 表述准确、本就未称其为 commit）✓；⑦ `7ab2d47` 限冻结件两文件 `git show --numstat` = `101/0` + `200/0`、删除行计数 0 ✓（整 commit 含 taskpackage.json 簿记改动有删除行，ARQ 口径本就限冻结件）；⑧ advisory `0e55cfab` payload ④ 防滥用条款原文亲读 ✓（见 F4）。
+- **T1 边界透镜（dispatch 特别提示）**：补 `archive` 后两闸 `SKIP_DIRS` 完全一致（逐成员比对）✓；`server/` 下唯一 `archive` 目录 = `acceptance/archive`，而 `PY_ACC_RE` 要求 `acceptance/` 直接子文件，归档层文件本就不匹配、`server/acceptance/` 现役仅 `conftest.py`（py 枚举 = 0，补前后均 0）——**server 面零受影响**，改动效果恰收敛于固件面 13 件 ✓；「退役保留名」三处代码承载点（两 `SKIP_DIRS` + `pytest.ini` `norecursedirs`）与 T1② 成文内容逐一对得上 ✓；自检电池补实盘断言沿 `real-repo-no-archive-collected` 先例可行（本闸 `--self-check` 现输出 `real-repo-smoke ... fwAcc=20` 可直接改挂）✓。
+- **T2 边界透镜**：`dispatch-stamp.mjs` 的 stderr 输出**无任何程序化消费方**（全仓 grep：引用方均为 prose——`planner.md` 纪律、references、事件 `source` 字段值回显；无脚本 parse 其 stderr）→ 回显一行不破坏任何消费方 ✓；但 `current/` 解析面枚举不全（见 F2）。
+- **T3 透镜**：第 1 条（`-U0` 删除行 = 0）机械可判且有已执行先例（`7ab2d47`）✓；第 2 条见 F5；第 3 条三件记录在 `schedule_reminder_b.acceptance.c:1766/:1780` REVISION LOG 与红基线摘要（`7ab2d47` 新增 `88/0`）有真先例 ✓；第 4/5 条措辞机械可判 ✓。
+- **V5 基线现跑**：`route-regression-check.mjs` 28 ok 0 fail ✓；`lint-descriptions.mjs` 仅既有 `landing-verifier.md` 超长告警（363 > 320）✓——与 §5 V5 预期一致。
+
+#### findings
+
+**F1（BLOCKING）· §0/§1 问题 1 的「验收闸固件面」口径断言与闸真实行为不符，V1 预期值同病**
+
+- 证据（实测）：`node .claude/scripts/acceptance-run-check.mjs`（真跑，2026-09-19）输出 `"firmwareAcceptanceFiles": 20`；同款逻辑复现（root=`firmware/`、现行 `SKIP_DIRS`）= 20 件 = 13 归档（`main/test/acceptance/archive/`）+ **7 现役**（`main/test/char_stroke|host_infra_smoke|key_layer_dispatch|keybar_three_slot|p1_home_battery|reminder_overlay_unify|voice_round_ui` 各 `.acceptance.c`）；补 `archive` 后 = **7 件**（非 0）。
+- 矛盾点（PROPOSAL verbatim）：§0「验收闸固件面枚举到的 13 件全在归档目录下、现役 0 件」；§1 问题 1「该闸固件面的 oracle 输入集当前**只剩退役件**」；§5 V1「补后 **0** 条」。三者把**子目录探针口径**（root=`firmware/main/test/acceptance/`，13→0 正确）误升格为**闸口径**（root=`firmware/`，实际 20→7）：闸的 oracle 输入集现役件非 0，且落地后闸枚举亦非 0。若 landing 验证按 V1 字面理解「补后 0」，将与 V2 自检实盘输出的 `fwAcc=7` 直接冲突，验证集自相矛盾。
+- 定性：**不影响 T1 修法方向**（跳 archive 后退役 13 件确被剔净、现役 7 件保留、两闸口径同步——目标效果仍达成），属基线事实失准 + 验证集口径错标，按本批自立的硬项 1a 纪律必须更正后方可 FROZEN。
+- 建议修法：① §0/§1 改为「闸口径枚举 20 件（13 归档 + 7 现役）；其中 `firmware/main/test/acceptance/` 子面 13 件全为退役件、现役 0」；② V1 改为两路探针并各钉枚举根：子目录根 13→0（保留）+ **闸根 `firmware/` 20→7**（新增，两侧留输出），使 V1 与 V2 的 `fwAcc=7` 自洽；③ F1 更正后同步核对 §2 T1① 与 §3 sweep 表中所有「13 件」表述的口径标注。
+
+**F2（SHOULD）· 留根③ / §3 的 `current/` 同族调用点枚举不全**
+
+- 证据（实测 grep `delivery/taskpackages/current/taskpackage.json`）：经 `current/` 解析的脚本共 **8** 处——`dispatch-stamp.mjs:64`、`journal-append.mjs:51`、`hooks/verify.mjs:123`、`acceptance-coverage-check.mjs:25`、`closeout-check.mjs:51`、`devloop-artifact-check.mjs:42`、`docs-sync-check.mjs:22`、`loop-metrics.mjs:64`。PROPOSAL 留根③ 只点名 `journal-append.mjs` / `verify.mjs` 两处、§3 sweep 表同（「journal-append / verify.mjs 同族」）。
+- 定性：T2「只改一个」的边界本身成立（OQ1 已裁留 Track B，回声 + 默认关不依赖全量改）；但留根清单是下一批的交接面，少列 5-6 处会让推广决策（留根③「观察 `--expect-change-id` 采用率再推广」）建立在不完整面上。
+- 建议修法：留根③ 补全 8 处清单（至少补 `hooks/verify.mjs`——它是 ARQ-260913 病例① home-p1 九闸假绿的直接承载者，恰是三病例中本批改法没覆盖的那一类）。
+
+**F3（SHOULD）· `ARQ-260913` 建议改动① 无承接亦无留根指针**
+
+- 证据：`docs/ARCH-REVIEW-QUEUE.md:63` 该 ARQ 建议改动三项：① 起包 checklist 固定「核 current/ 指向本包」；② 脚本回显 + 不符 fail-loud；③ 指针副本字节级复制。本批 T2 承接 ②（形态调整为可选 flag）、留根④ 承接 ③；**① 既未进任何 T 也无留根条目**，而该 ARQ 被本批声明为「承载」并预期闭账。
+- 建议修法：留根新增一条登记建议①（起包 checklist 条文，落点 planner 起包纪律面），或在 T2 说明里显式声明不承接的理由。
+
+**F4（SHOULD）· T3「逐字为据，非重写」的出处表述不准**
+
+- 证据（verbatim 对照）：advisory `0e55cfab`（pod-events.jsonl:23）payload ④ 原文为连排条款「git diff 对冻结件须纯 additive；新齿必须重跑当初暴露 vacuity 的原变异证明转红并 sha256 还原；REVISION LOG append 带 Reason；mutationEvidence 该条 sensitive:false 翻 true；范围帽=…；意图锚定=…」——**不含**「`git diff -U0` 删除行数 = 0」「（不许另造易过变异自证）」「红基线摘要补一段」三个操作化增补。PROPOSAL §2 T3 的五件成文形态实与 **`ARQ-260908` 队列行**（`docs/ARCH-REVIEW-QUEUE.md:43` 建议改动段，登记期加工）逐字吻合。
+- 定性：内容与 human OQ2 已裁「五件原样落」无冲突（human 看到的即是五件成文形态，且三个增补均为向严、不放松），但「逐字为据，非重写」的溯源标注错误——五件的操作化形态出自 ARQ 队列行而非 advisory 原文。按硬项 1a 引据纪律应更正出处。
+- 建议修法：T3 说明改为「采纳 `ARQ-260908` 队列行所载五件（其形态为 advisory `0e55cfab` ④ 的登记期操作化，含三处向严增补）」。
+
+**F5（SHOULD）· T3 第 2 条「sha256 还原核销」缺记录落点规约，按现文是半句可执行、半句口号**
+
+- 证据：仓内 sha256 机械先例仅 `taskpackage-required-check.mjs`（taskpackage pin 逐字节比对，merge-driver.mjs:858 注释引用）与 merge-driver 自用，**无任何对冻结件「变异→还原」做 sha256 核销的已执行先例**（`7ab2d47` REVISION LOG 与红基线摘要均无 hash 记录；`schedule_reminder_b.acceptance.c:1766` 只记 `Reason: mutation evidence sensitive:false`）；advisory/ARQ 亦未指定核销结果落在哪。
+- 定性：`sha256sum`/`git hash-object` 是零成本可执行命令，「还原」本身可机判；但**核销证据无落点** = 事后无法审计第 2 条是否被遵守，恰落在本批自立的「硬项可执行性」透镜上（口号 vs 机械可判的边界）。
+- 建议修法：T3 落地正文给第 2 条补一句落点（如「核销证据 = REVISION LOG 该条附还原前后 hash 或核销命令输出摘录」），使其与第 3 条三件记录同构可审计。
+
+**F6（NIT）· T2 两个未定义交互态**
+
+- 证据：`dispatch-stamp.mjs:60-72` `resolveChangeId()` 优先取 `--task-package-id` 显式值、否则读 `current/`；`:167-170` 无上下文时 stderr 提示后 **exit 0**。
+- 问题：① 回显行固定写「(from delivery/taskpackages/current/taskpackage.json)」在显式 flag 路径下是错误归因；② 传了 `--expect-change-id` 而解析值为 null（无上下文）时的行为未定义（现路径 exit 0 会把硬校验静默吞掉）。
+- 建议修法：T2 落地说明补两句——回显按实际来源标注（flag / current/）；`--expect-change-id` 在场且解析 null 时同判不符、fail-loud。
+
+#### R1 结论
+
+BLOCK(F1..F6)。F1 为唯一 BLOCKING（闸口径基线失准 + V1 预期错标，修订为子目录/闸根双探针即可）；F2–F5 均为事实标注与留根交接面补全；F6 为落地说明补定义。三个 T 的改法方向、riskTier=medium、G1+G3 profile、Track B 轨道自评均经亲核成立；两条 OQ 的 human 裁决无需重开。**无升级 human 项。**
