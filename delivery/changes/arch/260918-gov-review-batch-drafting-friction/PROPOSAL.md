@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-batch-drafting-friction
 
-> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 候选域改自动派生；OQ2 = 八形态表显式非穷举〕。FROZEN 行待补 architect Rn GREEN 凭据）。
+> **状态：DRAFT v0.6 · 2026-09-19 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；**R1 BLOCK(F1/F2) → 主线程 v0.6 逐条修订**〔F1 派生改并集形态 / F2 第 3 类机制化改写 / F3 损伤归因更正 / F4 夹具计数 / F5 派生前缀字典序 / F6 模板落点点名〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260914-lfc-citation-references-prefix` + `ARQ-260907-lfc-citation-docs-prefix`（残余①）（T1）、`ARQ-260914-landing-preflight-anchor-parse`（T2）、`ARQ-260915-path-form-family-reference`（T3）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -84,7 +84,7 @@ docs/templates/PROPOSAL.template.md
 
 改 `.claude/scripts/landing-fidelity-check.mjs:90` 的前缀候选域：在现有四前缀外补 `.claude/references/`（治残余①）**并**补 docs 子目录形态（治残余②——候选域现只有 `docs/` 根，需覆盖 `docs/templates/`、`docs/notes/` 等子目录下的裸名引用）。
 
-**实现取目录扫描派生而非再加两条硬编码前缀**：从 `docs/` 与 `.claude/` 下实际存在的一级子目录派生候选前缀集，使候选域随仓结构增长自动跟进，**免去「每加一个 docs 子目录就手工补一行」的漂移形态**——该漂移正是本问题的成因（见问题 1 根因）。自检（`runCitationAnchorsSelfCheck`，`:226` 已接线）补两夹具：裸名指向 `.claude/references/` 下实存文件 → resolved 非空、零 problems；裸名指向 `docs/templates/` 下实存文件 → 同上。
+**实现取并集形态（R1-F1 采纳——v0.2 的「一级子目录派生」按字面会丢前缀，已修正）**：候选域 = **现有四前缀原样保留**（`.claude/scripts/` / `.claude/scripts/lib/` / `.claude/hooks/` / `docs/`，**防回归**）**∪ 派生集**（`docs/` 与 `.claude/` 树下**递归全部目录**）。**v0.2 的失准**：原写「取目录扫描派生**而非**再加硬编码前缀」，判官按字面实现并全仓 28 份 arch PROPOSAL 端到端复跑，实测**丢两个现有前缀**——`docs/` 根（**根不是子目录**、一级派生取不到）与 `.claude/scripts/lib/`（**两级路径**、一级派生取不到），致 **11 条已消警引据回退为 file-not-exist**（`DEV-GOVERNANCE.md` docs 根族 ×4、`governance-gate-shared.mjs` lib 族 ×3、`acceptance-id-shared.mjs` ×1 等），与本 T「**在现有四前缀外补**」「只消假警报」的 riskTier 证成直接冲突。改用并集形态后：现有四前缀**零回退**、派生集覆盖新增目录。**派生前缀集钉字典序排序**（R1-F5 采纳；实测同名文件跨前缀碰撞现为零，排序为确定性兜底）。自检（`runCitationAnchorsSelfCheck`，`:226` 已接线）补**四**夹具：两新增（`.claude/references/` / `docs/templates/` 裸名）+ **两防回归**（`docs/` 根裸名如 `DEV-GOVERNANCE.md`、`.claude/scripts/lib/` 裸名如 `governance-gate-shared.mjs`）—— 均须 resolved 非空、零 problems。
 
 **消警留痕形态保持**：仍经 `resolvedByPrefix` 独立观察列输出，**不静默吞**——扩候选域只减少假警报，不改变「解析到了就留痕」的可见性。
 
@@ -96,13 +96,13 @@ docs/templates/PROPOSAL.template.md
 
 改 `.claude/scripts/landing-fidelity-check.mjs`：新增 `--preflight <proposal-path>` 入口——**只解析、不对账**。行为 = 对给定 PROPOSAL 调 `parseSection2AnchorLists`（`.claude/scripts/lib/governance-gate-shared.mjs:345` 已具名导出，**本 T 只消费、不改 lib**），把三类错**在起草期**报出来：
 
-1. **加粗锚行** `**目标文件**：`（解析器只认裸形态）；
+1. **加粗锚行** `**目标文件**：`（解析器只认裸形态）——它在 parser 侧表现为「**缺锚清单**」；干跑**另加一条专用探针**（正则扫 `**目标文件**：` 字面）把该形态**具名报出**，免与真缺锚混同（R1-F2 采纳：v0.2 未说明该类的可检测性，只写「报出来」）；
 2. **无锚清单**（含**整行缺失**——问题 2 的第三种、也是最彻底的一种）；
-3. **锚行注记夹带路径 token**（会污染 §2↔manifest 并集、造成假失配）。
+3. **锚并集含仓内不存在的路径**（**R1-F2 采纳的机制化改写**）——治的正是问题 2 第 2 例的实害：注记逐字回引**已撤**的幻影路径 `.claude/skills/triage-change/SKILL.md`，该 token 进并集后造成 §2↔manifest 假失配。**v0.2 原写「锚行注记夹带路径 token」在「只消费 parser、不对账」的约束下无检测机制**（parser 的 `problems` 族仅四类，注记区路径 token **合法入并集且零 problem**）——改为对**并集中的每条路径做仓内存在性检查**：不存在的即报（存在的 token 无害、不报）。该形同时覆盖加粗形态之外的幻影路径族。
 
 **不做** §2↔manifest 比对（那是 landing 期的事，前置干跑只保证「形态可解析」）。
 
-同批在 `docs/templates/PROPOSAL.template.md` 的起草 checklist 补两句：① 「FROZEN 标注前跑一次 `--preflight`，并通过 §5 验证集命令实跑」（治问题 2 的**连带项**——验证集命令未实跑的口径瑕疵）；② 「路径类变更先查 T3 的族谱表」（**该项即 T3 的 checklist 落点，故 T3 不重复改本文件**）。
+同批在 `docs/templates/PROPOSAL.template.md` 的**「**【硬项 2a · 目标文件锚清单】」段**（R1-F6 采纳：v0.2 泛称「起草 checklist」，而该文件内的实际可落点即 §2 导语与硬项 2a 段）补两句：① 「FROZEN 标注前跑一次 `--preflight`，并通过 §5 验证集命令实跑」（治问题 2 的**连带项**——验证集命令未实跑的口径瑕疵）；② 「路径类变更先查 T3 的族谱表」（**该项即 T3 的 checklist 落点，故 T3 不重复改本文件**）。
 
 为什么这样改：直击问题 2 的根因——三类错都能被**已导出**的纯解析函数在起草期抓获，而它今天只在 landing 期被调用；连批三次的返工（含一次 human 格式追认）全部可免。**本 T 不新增工程门**：`--preflight` 是起草期只读自检、**不参与任何门判定、不在任何闸链里被调用**。
 
@@ -127,7 +127,7 @@ docs/templates/PROPOSAL.template.md
 | 7 | 正则转义两子形 | `\.planning` / `changes\/` |
 | 8 | **点号成员访问粘连形** | `taskPackage.deliveryMilestoneStateChanged` |
 
-加三类批量替换风险注记：**幂等双应用**（压缩形两轮叠加，实测 18+10+1+24 处损伤）、**点前缀规则误吃成员访问**（第 8 类的成因）、**转义形不可见**（第 7 类，正则里看不见、`node --check` 抓不到）。同时写明**第 6 类的实现-判据不一致教训**（卫兵字符类排除 `/` 而 V1 判据 `[^a-z]` **包含** `/`——实现与判据不一致，是「同一批里两种口径打架」的活例）。
+加三类批量替换风险注记：**幂等双应用**（压缩形两轮叠加）、**点前缀规则误吃成员访问**（第 8 类的成因）、**转义形不可见**（第 7 类，正则里看不见、`node --check` 抓不到）。**另附该环损伤总账（R1-F3 采纳更正）**：该环四类损伤合计 `18+10+1+24`，**四数分属四类、不可整体归因给幂等双应用**——`18` = 粘连形 / `10` = 转义形 / `1` = 幂等双应用 / `24` = V1 自咬（v0.2 把四数整体挂在「幂等双应用」下，属误归因）。同时写明**第 6 类的实现-判据不一致教训**（卫兵字符类排除 `/` 而 V1 判据 `[^a-z]` **包含** `/`——实现与判据不一致，是「同一批里两种口径打架」的活例）。
 
 **本 T 不改 `PROPOSAL.template.md`**——其族谱指针由 **T2 一并落地**（见 T2 说明），避免同文件两处改动。
 
@@ -179,9 +179,9 @@ docs/templates/PROPOSAL.template.md
 |---|---|---|
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --self-check` | 全绿 + 新增 citation 两夹具（`.claude/references/` 与 `docs/templates/` 裸名）具名出现 |
 | V2 | 同上电池内的「干跑模式不误触 reviewDir 解析」新断言 | 具名出现且通过（防 T2 新入口与 `:50`/`:52` 位置参数互扰） |
-| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | 报「§2 锚清单形态可解析、无加粗锚行、无缺锚清单、注记零路径 token」 |
+| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | **四项全清**：① §2 锚清单形态可解析（parser 零 problems）；② 无加粗锚行（专用探针，R1-F2 新增机制）；③ 无缺锚清单；④ **锚并集零「仓内不存在路径」**（R1-F2 改写后的第 3 类机制）——**三类错各有反例夹具**（V4） |
 | V4 | 对**故意注入加粗形态的副本**跑 `--preflight` | 须报错（**反例夹具**，防干跑恒绿） |
-| V5 | 三夹具现跑（对照 `:90` 现候选域） | `dev-loop-operating-system.md` 与 `PROPOSAL.template.md` 现候选域均未命中；扩形后均 resolved（**前后各留一次输出**） |
+| V5 | **四夹具**现跑（对照 `:90` 现候选域；R1-F4 计数归正：v0.2 写「三夹具」却只点名两条） | **新增两条**：`dev-loop-operating-system.md` / `PROPOSAL.template.md` —— 现候选域**均未命中**、扩形后**均 resolved**。**防回归两条**：`DEV-GOVERNANCE.md`（`docs/` 根族）/ `governance-gate-shared.mjs`（`.claude/scripts/lib/` 族）—— **现候选域本已命中、扩形后须仍命中**（四项前后各留完整输出） |
 | V6 | `grep -c "path-form-family" docs/templates/PROPOSAL.template.md` | ≥1（T2 落的族谱指针在场） |
 | V7 | `ls .claude/references/path-form-family.md` + `grep -c "^| [1-8] " .claude/references/path-form-family.md` | 文件在场 + 八形态行齐（各 1） |
 | V8 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
@@ -204,3 +204,32 @@ docs/templates/PROPOSAL.template.md
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+### R1 - 2026-09-19 - architect
+
+**verdict：BLOCK(F1, F2)**（F3–F6 为 SHOULD/NIT，随修订一并处理）。**无升级 human 项**——F1/F2 均为规格完备性缺陷，修订不动 OQ1(a)/OQ2 裁决方向、不触契约面、不改 review 轨。
+
+**亲核留痕（R1 全量）**：
+
+- 行号断言全对：`landing-fidelity-check.mjs:50/:52/:90/:226`（argv[2]/argv[3]/候选域四前缀/`--self-check` includes 接线）与 `governance-gate-shared.mjs:124/:345/:426`（extractManifestBlock/parseSection2AnchorLists/compareAnchorSets 具名导出）逐行核对相符；`:90` 候选域四前缀 verbatim = `['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/', 'docs/']`。
+- `ls .claude/references/` = 24 件、无 `path-form-family.md`：实测相符。
+- §1 两裸名现状复现（判官自实现 `checkCitationAnchors` 同逻辑对全仓 28 份 arch PROPOSAL 复跑：237 条 citation、现行前缀下 65 条 file-not-exist）：`dev-loop-operating-system.md:130`（260912 批 2 条在册）与 `PROPOSAL.template.md:49`（260907 批 1 条在册）均 file-not-exist——问题 1 两条残余属实；`.claude/references/dev-loop-operating-system.md:130` 与 `docs/templates/PROPOSAL.template.md:49` 实存、行内容逐字相符（前者 = EVENTS_SCHEMA_CUTOFF 闭集 SSOT 行）。
+- T3 溯源：八形态表逐条对上 `260914-gov-review-delivery-restructure/retro.md:38`（F2 四连击 + 八形态列举）、`:48`（§4-2 八类 + 清扫子检配对建议）、`:55`（四轮评审 + 首轮 FAIL 接住第 8 形）；第 8 类硬数字 = retro:38「3 脚本 + 1 C 件 18 处」+ landing-verdict:34（`closeout-check.mjs:317` 实例）；「转义形 10 处」= verdict:20/:50；「24 命中自咬」= retro:42（F5）；第 6 类教训（r4 卫兵字符类排除 `/` 而 V1 判据 `[^a-z]` 含 `/`）= retro:38① verbatim。
+- 结构字段：landing-manifest 围栏块（3 路径）与 packet-id 行在场；以真实 `parseSection2AnchorLists` + `compareAnchorSets` 对本 PROPOSAL 干跑 = 零 problems、§2 union ≡ manifest（3 路径互恰）。
+- T2 接线可行性：`--preflight` 会被 `:50` 的 argv[2] 无条件消费（`reviewDir = resolve(projectDir, '--preflight')` → `:271` existsSync fail），故新入口须在 `:266` 前拦截（`--self-check` 在 `:226` 的先例位置可行）——PROPOSAL「入口接线注意」已如实表述，方向可行。V4 可证伪：加粗形态副本可机械构造（`目标文件：` → `**目标文件**：`），parser 对该形态报「缺锚清单」→ 反例夹具成立。
+
+**Findings**：
+
+**F1（BLOCKING）· T1 派生规则按字面会丢现有四前缀中的两项，回退三类已消警引据**。判官自实现派生逻辑（「`docs/` 与 `.claude/` 下实际存在的一级子目录」→ 前缀集）实测：派生集 = `docs/{archive,contracts,notes,templates,ui}/` + `.claude/{agents,commands,hooks,loop-retro,references,route-fixtures,rules,scripts,skills,verify-logs}/`，**不含 `docs/` 根、不含 `.claude/scripts/lib/`**（一级派生只产 `<root>/<sub>/` 形态）。端到端复跑（28 份 arch PROPOSAL：现行四前缀 65 条 problems → 纯一级派生前缀 35 条 problems）实测**新增回退 11 条已消警引据**：`DEV-GOVERNANCE.md:280/:293/:291/:22`（docs 根裸名，260907 热修所治形态复发）、`governance-gate-shared.mjs:34/:386/:410`、`acceptance-id-shared.mjs:36`（lib 裸名，260907 批 T2 所治形态复发）。这与 T1 正文「**在现有四前缀外补**」、riskTier 证成「T1 只扩 advisory 前缀候选域（只消假警报、不放松任何判据）」、§3 sweep 表「二者均不改既有 fail/pass 判据」直接冲突，并证伪 §6 留根 3「更深层……目录扫描派生应天然覆盖」（一级规则下不成立）。**修法方向**：派生规则改为保持现有覆盖面的形态——「`docs/` 与 `.claude/` 树下全部目录（递归）∪ `docs/` 根」或「现有四前缀 ∪ 派生集」并集（后者仍含手工清单成分，与 OQ1(a)「不再手工维护清单」精神需对齐，判官倾向前者）；`runCitationAnchorsSelfCheck` 补防回归夹具：docs 根裸名 + lib 裸名各一条（现行电池里已有 docs 根夹具——纯一级派生若真实现，该夹具本会自曝，须确认不被顺手删掉）。
+
+**F2（BLOCKING）· T2 第三类错（锚行注记夹带路径 token）在「只解析、不对账」约束下无检测机制，V3 预期输出与声称行为矛盾**。亲核 `parseSection2AnchorLists`（lib `:345-423`）：problem 族仅 缺锚清单 / 歧义锚 / 或锚未决 / §2 未找到 四类；锚行注记区 backtick 路径 token 会被当正常多路径锚并入 union、零 problem（260824 批正例自检的「多路径锚」即合法形态）。故 T2 声称的三类错里，第 1 类（加粗）在 parse-only 下只能以「缺锚清单」面目出现（非独立「加粗」报错），第 3 类**完全无机制**；而 V3 预期「报……无加粗锚行、无缺锚清单、注记零路径 token」三项中两项无指定可实现机制。260912 实案是幻影路径（文件不存在），可用「union 各路径存在性检查」抓；但真实存在的路径写进注记同样污染 union、只有对账能抓——而 T2 明文排除对账。**修法方向**（三选一，主线程定）：① preflight 增 union 路径存在性检查（治幻影路径）+ 对起草期已在场的 manifest 块做 **advisory 级**差集报告（「不做比对」收窄为「不因失配 fail」）；② 加粗形态补独立探针（锚行正则 `**目标文件**：` 形态点名）；③ 从 T2 声称面撤掉第 3 类、如实留给 landing 期。当前文本自相矛盾，冻结前必须归一。
+
+**F3（SHOULD）· T3 风险注记把「18+10+1+24」误归因给幂等双应用**。原文「幂等双应用（压缩形两轮叠加，实测 18+10+1+24 处损伤）」——该四数实为整环四类损伤/误咬之和（ARQ-260915 原文「landing 四轮修复（18+10+1+24 处损伤/误咬）」）：18 = 成员访问粘连（retro:38）、10 = 转义形（verdict:20/:50）、1 = 双应用（retro:38②）、24 = V1 自咬（retro:42 F5）。挂在「幂等双应用」名下会让未来读者把 43 处全当双应用防。修法：数字族挪到八形态表的环级损伤汇总处，或改注「整环四类损伤/误咬合计，其中双应用 1 处」。
+
+**F4（SHOULD）· V5「三夹具」计数与所名两裸名不符**。V5 行写「三夹具现跑」但只点名 `dev-loop-operating-system.md` 与 `PROPOSAL.template.md` 两条；T1 自检新增夹具也是两条。冻结前归一（改「两夹具」或点名第三条是什么）。
+
+**F5（NIT）· 派生前缀集建议钉确定性排序**。实测当前 12 个前缀池内 .md/.mjs/.json **同名碰撞为零**（first-hit 语义现无实际歧义）；但派生集随 readdirSync 顺序不定，`resolvedAs` 输出可复现性建议字典序钉死。
+
+**F6（NIT）· T2 模板落点措辞**。「起草 checklist」在 `docs/templates/PROPOSAL.template.md` 里无同名节；实际落点应点名「硬项 2a · 目标文件锚清单」段（`:49`）。V6 的 grep 判据不受影响，但落点精确到段可免 landing-verifier 逐文件 diff 对照时的两读。
+
+**同族透镜结论**（本批特别提示的「该 T 是否真能覆盖目标面」三问）：T1 对两条点名残余**确能消警**（派生集含 `.claude/references/` 与 `docs/templates/`，端到端实测两条均 resolved）——但派生规则本体按字面引入回归（F1）；T2 入口接线可行、V4 可证伪，但三类错的声称面与机制不匹配（F2）；T3 八形态表逐条可溯源、硬数字相符，唯数字归因一处失准（F3）。
