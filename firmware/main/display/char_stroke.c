@@ -36,7 +36,8 @@
 #define CS_STROKE_MS 950
 #define CS_REST_MS 2000
 
-/* 二次贝塞尔离散密度：每 Q 段内点样本数 (>= 2 保证捕获曲线形状, CHR-A2) */
+/* Q/C 贝塞尔离散密度：每 Q 段/C 段内点样本数 (>= 2 保证捕获曲线形状, CHR-A2)。
+ * Q (二次) 与 C (三次) 共用同一采样密度, 端点精确落于曲线上。 */
 #define CS_BEZIER_SEGS 8
 
 /* 解析用绝对形 token */
@@ -59,8 +60,11 @@ static int cs_tokenize(const char *path, cs_tok *toks, int cap)
             break;
         }
         char c = *p;
-        if (c == 'M' || c == 'L' || c == 'Q' || c == 'Z' ||
-            c == 'm' || c == 'l' || c == 'q' || c == 'z') {
+        /* C/c = 三次贝塞尔绝对/相对命令（词汇表闭集扩充至 makemeahanzi 实况 vocab——
+         * D3 strokes 自由文本含 C, M2-K1 缺陷①修复；小写按既有 M/L/Q/Z 先例与绝对
+         * 同语义消费, 未知字符拒绝语义不放宽） */
+        if (c == 'M' || c == 'L' || c == 'Q' || c == 'C' || c == 'Z' ||
+            c == 'm' || c == 'l' || c == 'q' || c == 'c' || c == 'z') {
             if (nt >= cap) {
                 return -1;
             }
@@ -139,6 +143,35 @@ static void cs_bezier_t(float t, float x0, float y0,
     float u = 1.0f - t;
     *bx = u * u * x0 + 2.0f * u * t * cx + t * t * ex;
     *by = u * u * y0 + 2.0f * u * t * cy + t * t * ey;
+}
+
+/* 读取六个连续 number token (c1x,c1y,c2x,c2y,ex,ey) —— C 段 = 两控制点 + 终点
+ * (makemeahanzi 词汇表实况形状)。返回 0 成功, -1 失败 */
+static int cs_read_cubic(const cs_tok *toks, int nt, int *i,
+                         float *c1x, float *c1y, float *c2x, float *c2y,
+                         float *ex, float *ey)
+{
+    float x1, y1, x2, y2, x3, y3;
+    if (cs_read_pair(toks, nt, i, &x1, &y1) != 0 ||
+        cs_read_pair(toks, nt, i, &x2, &y2) != 0 ||
+        cs_read_pair(toks, nt, i, &x3, &y3) != 0) {
+        return -1;
+    }
+    *c1x = x1; *c1y = y1; *c2x = x2; *c2y = y2; *ex = x3; *ey = y3;
+    return 0;
+}
+
+/* 三次贝塞尔 B(t), t in [0,1]: P0=(x0,y0) C1/C2=两控制点 P1=(ex,ey)
+ * B(t) = (1-t)^3·P0 + 3(1-t)^2·t·C1 + 3(1-t)·t^2·C2 + t^3·P1 */
+static void cs_bezier_cubic_t(float t, float x0, float y0,
+                              float c1x, float c1y, float c2x, float c2y,
+                              float ex, float ey,
+                              float *bx, float *by)
+{
+    float u = 1.0f - t;
+    float uu = u * u, tt = t * t;
+    *bx = uu * u * x0 + (3.0f * uu * t) * c1x + (3.0f * u * tt) * c2x + tt * t * ex;
+    *by = uu * u * y0 + (3.0f * uu * t) * c1y + (3.0f * u * tt) * c2y + tt * t * ey;
 }
 
 int kidpal_char_stroke_parse(const char *svg_path, kidpal_cs_point *out, int max_pts)
@@ -226,6 +259,33 @@ int kidpal_char_stroke_parse(const char *svg_path, kidpal_cs_point *out, int max
                     float t = (float)s / (float)CS_BEZIER_SEGS;
                     float bx, by;
                     cs_bezier_t(t, cur_x, cur_y, cx, cy, ex, ey, &bx, &by);
+                    if (s == CS_BEZIER_SEGS) {
+                        bx = ex; by = ey; /* 端点精确 */
+                    }
+                    if (cs_push(out, &count, max_pts, bx, by) != 0) {
+                        return -1;
+                    }
+                }
+                cur_x = ex; cur_y = ey;
+            }
+            break;
+        }
+        case 'C':
+        case 'c': {
+            /* cubic bezier: 连续 6 个 number = (控制点1, 控制点2, 终点)。与既有 Q
+             * 同款离散成点策略（CS_BEZIER_SEGS 采样 + 端点精确落于曲线）, 复用既点集
+             * 管线, 不引入新渲染路径——M2-K1 缺陷①修复 (6/9 笔含 C 不再被整笔丢弃)。 */
+            while (i < nt && toks[i].type == 0) {
+                float c1x, c1y, c2x, c2y, ex, ey;
+                if (cs_read_cubic(toks, nt, &i, &c1x, &c1y, &c2x, &c2y, &ex, &ey) != 0) {
+                    return -1;
+                }
+                /* 采样 >= 2 内点 (CS_BEZIER_SEGS), 端点精确落于曲线上 */
+                for (int s = 1; s <= CS_BEZIER_SEGS; s++) {
+                    float t = (float)s / (float)CS_BEZIER_SEGS;
+                    float bx, by;
+                    cs_bezier_cubic_t(t, cur_x, cur_y, c1x, c1y, c2x, c2y,
+                                      ex, ey, &bx, &by);
                     if (s == CS_BEZIER_SEGS) {
                         bx = ex; by = ey; /* 端点精确 */
                     }

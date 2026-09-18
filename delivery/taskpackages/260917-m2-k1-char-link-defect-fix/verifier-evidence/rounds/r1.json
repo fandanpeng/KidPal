@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260917-m2-k1-char-link-defect-fix",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "f7f4fc88-5729-42e1-b085-c7837f7b902d",
+  "startedAt": "2026-09-18T00:20:43.774Z",
+  "completedAt": "2026-09-18T00:20:44.113Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 178,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"origin.type(valid: delivery-story|planning-workstream|arch-review|human-ad-hoc|ci-failure|drift-report|regression|maintenance|proposal|human-confirmed-plan)\",\n    \"origin.type (milestone) must equal sourceType (delivery-story) when both present\"\n  ],\n  \"coverageErrors\": []\n}\n",
+      "stderr": "",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "6da8d2d677a7",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1789690844101-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"origin.type(valid: delivery-story|planning-workstream|arch-review|human-ad-hoc|ci-failure|drift-report|regression|maintenance|proposal|human-confirmed-plan)\",\n    \"origin.type (milestone) must equal sourceType (delivery-story) when both present\"\n  ],\n  \"coverageErrors\": []\n}\n"
+  }
+}

@@ -33,6 +33,9 @@
 #define CHARPAGE_GRID_CELL 52       /* 米字格四宫格单元 (208/4) */
 #define CHARPAGE_TIMER_PERIOD_MS 100
 #define CHARPAGE_PRESS_SIZE 12      /* 握笔小手占位半径 */
+/* 单笔预解析点集容量上限（对齐 char_stroke 消费面 256 点口径; 帧路径零 ~6.5KB 级
+ * 栈局部数组——M2-K1 缺陷②修复: pts/sc/toks 去栈, 预解析落堆承载） */
+#define CHARPAGE_MAX_PTS 256
 
 /* 单页状态 (设备同一时刻只有查生字一页, 静态单例足够且 additive 不动底座) */
 struct CharPageState {
@@ -51,6 +54,9 @@ struct CharPageState {
     char **stroke_paths;         /* 每笔 SVG path (cJSON 生命周期内取出 strdup) */
     char **median_jsons;         /* 每笔 medians 块 JSON */
     int *med_pts;                /* 每笔 medians 点数 (供笔尖移动) */
+    kidpal_cs_point *pre_pts;    /* 每笔预解析点集堆缓冲 (n_strokes × CHARPAGE_MAX_PTS,
+                                    M2-K1 缺陷②去栈机制面——帧路径零解析调用零大栈数组) */
+    int *pre_counts;             /* 每笔预解析点数 (<=0 = 该笔不可用; 帧路径复用) */
     int elapsed_ms;
 };
 
@@ -107,6 +113,24 @@ static int charpage_parse_data(const char *data_json)
             }
         }
     }
+    /* 预解析去栈（M2-K1 缺陷②修复机制面）：把每笔 stroke path 一次性离散成点集落
+     * 堆（帧路径逐笔逐帧重复解析 + pts[256] 局部大数组 → 移除）。parse 内部 toks[256]
+     * ~2KB 栈随调用点移出帧路径而离场。 */
+    g_page.pre_pts = (kidpal_cs_point *)calloc(
+        (size_t)n * CHARPAGE_MAX_PTS, sizeof(kidpal_cs_point));
+    g_page.pre_counts = (int *)calloc((size_t)n, sizeof(int));
+    if (g_page.pre_pts == NULL || g_page.pre_counts == NULL) {
+        cJSON_Delete(root);
+        return 0;
+    }
+    for (int i = 0; i < n; i++) {
+        if (g_page.stroke_paths[i] != NULL) {
+            int pc = kidpal_char_stroke_parse(
+                g_page.stroke_paths[i],
+                g_page.pre_pts + (size_t)i * CHARPAGE_MAX_PTS, CHARPAGE_MAX_PTS);
+            g_page.pre_counts[i] = (pc > 0) ? pc : 0;
+        }
+    }
     cJSON_Delete(root);
     return 1;
 }
@@ -125,6 +149,10 @@ static void charpage_free_state(void)
         g_page.median_jsons = NULL;
         g_page.med_pts = NULL;
     }
+    free(g_page.pre_pts);
+    free(g_page.pre_counts);
+    g_page.pre_pts = NULL;
+    g_page.pre_counts = NULL;
     free(g_page.canvas_buf);
     free(g_page.rast);
     g_page.canvas_buf = NULL;
@@ -194,13 +222,16 @@ static void charpage_render_frame(int cur_stroke, int written)
 
     for (int i = 0; i < g_page.n_strokes; i++) {
         int st = kidpal_char_stroke_state(i, written, cur_stroke);
-        kidpal_cs_point pts[256];
-        int n = g_page.stroke_paths[i]
-                    ? kidpal_char_stroke_parse(g_page.stroke_paths[i], pts, 256)
-                    : -1;
+        /* 预解析点集（parse_data 落堆: 帧路径零 kidpal_char_stroke_parse 调用、
+         * 零 [256] 级栈局部数组——M2-K1 缺陷②去栈）。 */
+        int n = (g_page.pre_pts != NULL && g_page.pre_counts != NULL)
+                    ? g_page.pre_counts[i]
+                    : 0;
         if (n <= 0) {
             continue;
         }
+        const kidpal_cs_point *pts =
+            g_page.pre_pts + (size_t)i * CHARPAGE_MAX_PTS;
         if (st == 2 /* PENDING */) {
             /* 未写: 沿 medians 画虚线点链, 点距 kidpal_char_dash_dot_pitch() */
             kidpal_cs_point mids[64];
@@ -226,10 +257,11 @@ static void charpage_render_frame(int cur_stroke, int written)
             continue;
         }
         if (st == 0 /* WRITTEN */) {
-            /* 已写: 轮廓变换到 canvas 尺寸后光栅填充 (实心黑) */
-            kidpal_cs_point sc[256];
-            if (n > 256) {
-                n = 256;
+            /* 已写: 轮廓变换到 canvas 尺寸后光栅填充 (实心黑); sc = 静态承载
+             * (const pts 手工经静态数组拷贝并缩放到 canvas 域, 帧路径零栈) */
+            static kidpal_cs_point sc[CHARPAGE_MAX_PTS];
+            if (n > CHARPAGE_MAX_PTS) {
+                n = CHARPAGE_MAX_PTS;
             }
             for (int k = 0; k < n; k++) {
                 int ox, oy;
@@ -241,10 +273,11 @@ static void charpage_render_frame(int cur_stroke, int written)
                 /* 该笔无法填充 -> 跳过, 不致整页崩溃 */
             }
         } else if (st == 1 /* CURRENT */) {
-            /* 当前笔: 白衬边 = 光栅 + 外扩一笔 (简化: 先画黑, 再由衬边重叠) */
-            kidpal_cs_point sc[256];
-            if (n > 256) {
-                n = 256;
+            /* 当前笔: 白衬边 = 光栅 + 外扩一笔 (简化: 先画黑, 再由衬边重叠);
+             * sc = 静态承载 (帧路径零栈, 与 WRITTEN 分支同款) */
+            static kidpal_cs_point sc[CHARPAGE_MAX_PTS];
+            if (n > CHARPAGE_MAX_PTS) {
+                n = CHARPAGE_MAX_PTS;
             }
             for (int k = 0; k < n; k++) {
                 int ox, oy;

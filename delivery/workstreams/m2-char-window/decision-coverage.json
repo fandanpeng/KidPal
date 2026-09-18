@@ -1,0 +1,62 @@
+{
+  "workstream": "m2-char-window",
+  "source": "delivery/milestones/milestones.jsonl#M2-char-window",
+  "upstreamFrozen": "",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-09-17",
+  "updatedAt": "2026-09-17",
+  "_doc": [
+    "workstream 级 decisionCoverage：拆包输入 = 里程碑注册表 M2-char-window nextAction 两块（live 查字链路修复 + 撤 P4/页→窗改造；sourceType=delivery-story，非 proposal，无 upstreamFrozen pin）。",
+    "本次拆 3 包：char-link-defect-fix（K1 两缺陷修复）/ retract-p4-three-page（K2 撤 P4 三页循环）/ char-window-overlay（K3 页→窗改造 + F3 真机确认轮 + NFR-PERF-2 复测）。",
+    "拆包前重叠面核查（避免重复拆）：已合并的 260915-m1-k1a/k2/k3/k4 与 260917-m1-k4-rma8-fixbatch 均未触及查字链路两缺陷（char_stroke.c 仍仅 M/L/Q/Z、custom_lcd_display.cc 16K 栈仍为一次性实验注记，grep 证据在 taskpackage notes）；§2.2 行 67 提醒最高层 + 录音例外已由 K4/rma8 实现闭环，K3 只做查字窗侧对账确认不重实现。",
+    "story 引用全部走锚点引用纪律（S-Fx.y · 标题 + AC 号集），story 语义权威 = docs/requirements.md 现文；本批引用的 S-F3.1 / S-F3.2 / S-F3.3 均不在 §8 已砍清单（S-F3.4「每日一字」已砍、不拆）、可行性均 ✅（intake 两道机查通过）。",
+    "dropped/挂账项：原 S-F3.4 每日一字（§8 已砍，随撤页连根消解，零拆包）；「语音查下一个字（指代解析）」（§7 开放问题，不在本里程碑）；D3 契约扩展 stroke_names 字段（试点期不做，需求注记——若笔名错误率不可接受届时走契约门）。",
+    "跨包共享冻结面交叉扫描：① 常量互斥型——未发现（页点 4→3 是 M1-K2 launch 前拍板 deviation 的既定收回，非互斥冲突）；② 行为碰撞型——K2 撤 P4 必触 schedule_reminder_b.acceptance.c 等冻结套件 4 页循环钉点（十余处成批改）、K3 新增查字窗层必触 key_layer_dispatch.acceptance.c 基层列等价 guard 齿的层表断言，两处修订一律走 acceptance-author 留痕、不双改（K2 与 K3 合并序串行，层表在其合并后新基线上）。",
+    "契约面裁定：零契约改动——D3 strokes 为 makemeahanzi SVG path 自由文本（C 命令属词汇表内解析补全）、E1 view=char 既有 display 响应块（覆盖窗显示时机是实现侧）、AC4 笔名由 OpenClaw 回复文本承载（试点期不做 stroke_names 扩展）。K1 仍按契约纪律对 D3 归类走 architect 快审确认（预期「无需改」）。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "M2块1-live查字链路修复（两缺陷）",
+      "summary": "nextAction 块①：板端 LVGL 任务栈溢出正式修复（预解析去栈 + 栈定容，收编 16K 一次性补丁）+ SVG 解析器补 C 命令（勇 9 笔中 6 笔含 C 被丢）——NFR-PERF-2 黄灯转绿前提，host 面已验、live 端到端待实证；单包竖切 = 查字演示正确性与链路稳定能力。",
+      "sourceRefs": ["delivery/milestones/milestones.jsonl#M2-char-window", "docs/requirements.md#S-F3.1", "docs/requirements.md#NFR-PERF-2"],
+      "landsIn": "package:260917-m2-k1-char-link-defect-fix",
+      "packageAcceptance": ["M2K1-A1", "M2K1-A2", "M2K1-A3"]
+    },
+    {
+      "decision": "M2块1-live端到端实证（NFR-PERF-2 复测）",
+      "summary": "live 口径 ~21.6s（2026-09-15 真机实测）→ 5 秒档：两缺陷修复后复测，随 K3 F3 真机确认轮同轮承载（单真机不两轮撞车）；5 秒档未达 = 停、升 human 裁（优化包另立或接受降档），不预绑优化方案。",
+      "sourceRefs": ["docs/requirements.md#NFR-PERF-2"],
+      "landsIn": "package:260917-m2-k3-char-window-overlay",
+      "packageAcceptance": ["M2K3-A8"]
+    },
+    {
+      "decision": "M2块2-撤P4常驻页（页循环4→3+枚举对齐+页点4→3）",
+      "summary": "nextAction 块②前半：P4 撤常驻页位、cycle 循环 4→3、kidpal_render_node.h 枚举 HOME→CHAR→SCHEDULE→STORY 与 spec P1→P2→P3 漂移理顺（行 166 ②）、keybar 页点 4→3（收回 M1-K2 deviation）；查字数据通路保留（K3 改窗生存面）；单包竖切 = 3 页循环能力。",
+      "sourceRefs": ["docs/requirements.md#§2.4", "docs/requirements.md#§2.2", "docs/requirements.md#F3"],
+      "landsIn": "package:260917-m2-k2-retract-p4-three-page",
+      "packageAcceptance": ["M2K2-A1", "M2K2-A2", "M2K2-A3", "M2K2-A4"]
+    },
+    {
+      "decision": "M2块2-页→窗改造（F3全节+窗口交互包）",
+      "summary": "nextAction 块②后半：查字 = 会话内覆盖窗（层注册进 kidpal_layer、KEY 短按重播/长按关窗、BOOT 关窗回原页不翻页、5 分钟自动关窗计时随按键重计、窗内无页点、播完不回聆听态）+ 右栏对账三项（部首行上屏/进度珠死成员清理/小手占位删除）+ 锚 canvas-p4→char-window 对账改名收尾 + 提醒弹窗压查字窗层级对账确认（行 67）；单包竖切 = 「说『勇怎么写』当前页弹窗完整交互包」能力。",
+      "sourceRefs": ["docs/requirements.md#F3", "docs/requirements.md#S-F3.1", "docs/requirements.md#S-F3.2", "docs/requirements.md#S-F3.3", "docs/requirements.md#§2.2", "docs/requirements.md#§2.3"],
+      "landsIn": "package:260917-m2-k3-char-window-overlay",
+      "packageAcceptance": ["M2K3-A1", "M2K3-A2", "M2K3-A3", "M2K3-A4", "M2K3-A5", "M2K3-A6", "M2K3-A7"]
+    },
+    {
+      "decision": "M2块2-S-F3.4每日一字",
+      "summary": "已砍（§8 已砍清单）：P4 空态补丁，撤页后连根消解——零拆包、dropped。",
+      "sourceRefs": ["docs/requirements.md#§8"],
+      "landsIn": "dropped",
+      "reason": "§8 已砍清单既定，撤 P4 后空态不复存在"
+    }
+  ],
+  "launchPreconditions": [
+    "commit-before-launch（F-03）：三包四件套（delivery/taskpackages/<id>/{taskpackage.json,plan.md}）+ workstream 制品（delivery/workstreams/m2-char-window/**）+ milestones.jsonl planningRefs 挂接，commit 到专用 base ref（非 main，F-05）——milestones.jsonl 与 STATUS.md 重建在 portfolio-planner scope 边界外（enforce-scope 拦截，如实上报），须主线程补执行",
+    "门 1 先行：本拆包四件套齐备后由 human 发起门 1（architect 轻量 checklist review 五项 + workType 分流），GREEN + human 过目切法后方可 launch；裁决耐久记录 append delivery/workstreams/m2-char-window/review.md「门 1」节",
+    "deviation 拍板：无新增 deviation——页点 4→3 为 M1-K2 launch 前拍板 deviation 的既定收回（m1-home-qa progress.md 2026-09-16 在案），无再拍项",
+    "真机硬依赖：M2K3-A7/A8（F3 确认轮 + NFR-PERF-2 复测）与 K1/K2 deferred 真机半全部挂 K3 设备轮，需 human 持板；K3 设备轮前 K1/K2 的 host 半须已 merged",
+    "冻结面修订通道：schedule_reminder_b.acceptance.c（K2）与 key_layer_dispatch.acceptance.c 层表（K3）钉点修订一律走 acceptance-author 留痕；D3 归类 architect 快审确认在 K1 intake 期完成",
+    "图索引：复用树（C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 树池串行先例）则项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 随树增量刷新；新建树则 launch 面必办 index_repository（worktree 专属图索引）"
+  ]
+}

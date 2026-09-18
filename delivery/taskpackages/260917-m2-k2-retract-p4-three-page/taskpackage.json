@@ -1,0 +1,91 @@
+{
+  "changeId": "260917-m2-k2-retract-p4-three-page",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "milestone",
+    "upstreamType": "milestone",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M2-char-window",
+    "upstreamFrozen": "",
+    "workstream": "m2-char-window"
+  },
+  "subsystem": "firmware",
+  "story": "M2-K2 撤 P4 常驻页——页循环 4→3、枚举对齐 spec P1→P2→P3、keybar 页点 4→3（收回 M1 deviation）",
+  "planRef": "delivery/taskpackages/260917-m2-k2-retract-p4-three-page/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m2-char-window/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "state-machine",
+    "test-quality"
+  ],
+  "acceptance": [
+    "M2K2-A1: 页循环 3 页 host 齿——cycle_next 循环语义断言 HOME→SCHEDULE→STORY 三页循环、KP_PAGE_CHAR 不再停靠（既有 4 页循环断言修订走 acceptance-author 留痕）",
+    "M2K2-A2: 枚举对齐结构齿——kidpal_render_node.h 枚举值与 spec P1→P2→P3 页序一致（行 166 ② 页序漂移理顺），页点 total 断言 = 3（keybar 中槽 4→3，M1-K2 launch 前拍板 deviation 的既定收回）",
+    "M2K2-A3: 键路由回归靶——key_route_global 基层列语义与 key_layer_dispatch 基层列等价 guard 齿全绿（BOOT 翻页语义零回归，撤页不触碰键基建）",
+    "M2K2-A4: 查字数据通路保留靶——mcp_server view=char 路由与 char_page 渲染面在撤页后仍可被服务端下发触发（M2-K3 改窗的前置生存面），结构断言钉通路在场",
+    {
+      "id": "M2K2-A5: 真机翻页确认（deferred 归 M2-K3 设备轮）——BOOT 翻页 3 页循环手感 + 页点 3 点真机目击",
+      "kind": "structural",
+      "note": "真机齿 deferred：单真机不两轮撞车，挂 K3 设备轮"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/render_pages.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c"
+  ],
+  "exitCriteria": [
+    "M2K2-E1: 三页循环 + 页点 3 点 host 齿全绿，key_route_global / key_layer_dispatch 既有语义零回归，host runner 全量零新增红",
+    "M2K2-E2: 铁律——不改 docs/contracts/**、不改 spec、不改 agent 定义/gate；schedule_reminder_b.acceptance.c 等冻结套件钉点（页循环 4 页断言）修订一律走 acceptance-author 留痕，不绕闸",
+    "M2K2-E3: 撤页 = 循环面撤出，查字数据通路（mcp_server char 路由）不顺手拆——改窗归 M2-K3，不得越包"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md"
+  ],
+  "sourceRefs": [
+    "delivery/milestones/milestones.jsonl#M2-char-window",
+    "docs/requirements.md#§2.4",
+    "docs/requirements.md#§2.2",
+    "docs/requirements.md#F3",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/keybar.c"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "spec 撤页语义已冻结（requirements v1.36/v1.39 现文即权威），本包为需求先行后的实现对账（行 186 + 行 166 ②），零 docs 面改动。",
+  "mergeOrder": 29,
+  "dependsOn": [
+    "260917-m2-k1-char-link-defect-fix"
+  ],
+  "testHost": "host runner（WSL linux target）+ device build 闸；真机半 deferred 归 M2-K3 设备轮",
+  "decisionCoverage": [],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/display/kidpal_render_node.cc",
+        "symbol": "kidpal_render_node_cycle_next"
+      },
+      {
+        "path": "firmware/main/display/keybar.c",
+        "symbol": "kidpal_keybar_dots"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "riskTier=high 理由：触共享翻页状态机（kidpal_render_node 循环）+ keybar chrome 共享面 + 冻结套件钉点成批改（schedule_reminder_b.acceptance.c 十余处 4 页断言——行 165 对账注记先例同型）。dependsOn K1 = char_page.cc 冲突面协调（K1 动动画帧、本包动 render_node 的 CHAR 停靠分支与 char_page 邻近引用），非技术必需依赖。mcp_server.cc:650-657 char 路由注释随撤页对账更新但不改路由语义。mutationEvidence 空骨架前置；device build 闸必跑（render_node/keybar 均设备面生效）。"
+}
