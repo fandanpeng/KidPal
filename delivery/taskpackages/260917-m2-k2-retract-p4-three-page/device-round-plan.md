@@ -48,3 +48,23 @@ cd "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware"
 - **全 PASS** → 我落一条真机目击记录（`device-round-1.md` 同域形态）进本包证据面 + pod-events，A5 由 deferred 转达成；随后仍请你一句合并人批凭据（M2-K2 riskTier=high 的既定人批门）。
 - 任一 FAIL → 我据现场描述判「退 fixer 修」还是「转 K3 设备轮」，并如实登记，不硬合。
 - 想要串口证据：被动捕获 `c:/tmp/serial_passive.py`（一进程独占 COM5，开之前先 kill 追端口捕获）。
+
+---
+
+## E. 现场状态与接续（2026-09-18 夜 · planner 记；真机轮推迟到 2026-09-19）
+
+**已发生**：固件**已烧**（app-only、偏移 `0x20000`、保 NVS）——`Wrote 3192560 bytes at 0x00020000` + **`Hash of data verified.`** + `Hard resetting via RTS pin`。启动抓包 30 秒：**0 个 `[[RE-ENUM]]`**、18124 字节、uptime 平滑推至 108 秒 ⇒ 无偏移伪影、无复位循环。日志留存 `c:/tmp/boot-check.log`。
+
+**卡点（明天第一件事）**：设备有存好的 WiFi 凭据但**扫不到那个 AP**，60 秒后自行进配网——
+```
+I (39383) WifiStation: No AP found, next scan in 40 seconds
+I (62123) WifiStation: Stopping WiFi station
+I (62143) kidpal_rn: begin_provision: PROVISION push (top=6)
+```
+配网层在最顶（top=6）⇒ 屏幕是配网页，本地页被盖住；**连上网才会自动退**。所以先解决联网，再做下面清单。
+① 最快 = 把它记得的那个 AP 开起来（若是手机热点就开一下）→ 复位板子 → 自行连上回首页；
+② 或重配 = 手机连板子开的热点（AP 名/密码显示在配网页上）→ 浏览器 `192.168.4.1` → 选 WiFi 填密码。
+
+**联网后**：先抓 30 秒日志确认 `WifiStation` 连上 + websocket 通，**验证点 4/5（查字通路 + 覆盖层 BOOT 隔离）才有意义**；验证点 1/2/3/6/7 离线即可，退出配网页就能看。
+
+**合并门状态**：本包已由 human 于 2026-09-18 批合并（ESCALATE 人批凭据 pod-events `f06ccad5-7651-49af-94a0-2ce05220d1f8`），合并不等真机轮；**真机结果若异常 → 走后续修复批（本包已合并，不回滚先修）**。真机目击若 PASS，则补记为 M2K2-A5 的落地证据（原 deferred 给 K3 设备轮）。
