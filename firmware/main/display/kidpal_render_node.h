@@ -1,8 +1,9 @@
 /*
  * kidpal_render_node.h — 设备渲染节点（包 260911-screen-unification 归一屏收口）
  *
- * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 4 页 BOOT 双按翻页驱动。
- * 阶段 B：BOOT 双按 → home→char→schedule→story→home 循环。
+ * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 3 页 BOOT 双按翻页驱动。
+ * 阶段 B：BOOT 双按 → home→schedule→story→home 三页循环（P4 查字常驻页已撤销，
+ * 包 260917-m2-k2-retract-p4-three-page；页序对齐 spec P1→P2→P3）。
  * 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（取代原三散标志 + 1s tick 对账）：
  * 语音轮页(3) / 服务端推送页(4) / 本地浏览页(2) / 提醒弹窗(5) / 配网(6) 按优先级表
  * 由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
@@ -20,13 +21,15 @@
 extern "C" {
 #endif
 
-/* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。 */
+/* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。
+ * 2026-09-17 M2-K2 撤 P4：查生字页枚举位整值撤出（CHAR 退出本地浏览页循环），
+ * 三页重排为 spec 页序 KP_PAGE_HOME → KP_PAGE_SCHEDULE → KP_PAGE_STORY，
+ * 与 key_gesture_parser.h 的 PAGE_P1/P2/P3 逐项同序同值。 */
 typedef enum {
     KP_PAGE_HOME     = 0,  /* P1 首页常显（400×300 XRGB8888 → RLCD）*/
-    KP_PAGE_CHAR     = 1,  /* P4 查生字（需服务端下发笔顺数据；无数据则停靠占位）*/
-    KP_PAGE_SCHEDULE = 2,  /* P2 课表页 */
-    KP_PAGE_STORY    = 3,  /* P3 故事列表页 */
-    KP_PAGE_COUNT    = 4
+    KP_PAGE_SCHEDULE = 1,  /* P2 课表页 */
+    KP_PAGE_STORY    = 2,  /* P3 故事列表页 */
+    KP_PAGE_COUNT    = 3
 } kidpal_page_id_t;
 
 /*
@@ -101,8 +104,9 @@ void kidpal_render_node_begin_provision(void);
 void kidpal_render_node_end_provision(void);
 
 /*
- * BOOT 双按翻页。依次推进 home→char→schedule→story→home（本地浏览层生命周期，
- * 出掉一切 transient 上层）。CHAR 页已并入 s_kidpal_scr 体系（不再自建独立屏）。
+ * BOOT 双按翻页。依次推进 home→schedule→story→home（本地浏览层生命周期，
+ * 出掉一切 transient 上层）。P4 查字常驻页已撤销（M2-K2，页序对齐 spec P1→P2→P3）；
+ * 查字渲染面保留，其前台归属归 M2-K3 改窗决定。
  */
 void kidpal_render_node_cycle_next(void);
 
@@ -196,14 +200,15 @@ void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
                                     const kidpal_story_text_t *t);
 
 /*
- * 标记 P4 查生字页是否有有效数据。
+ * 标记查生字页是否有有效数据（M2-K2 撤 P4 后本 API 成写侧死态：cycle_next 不再停靠
+ * CHAR 页，本标记无循环消费方；保留不动，由 M2-K3 改窗时统一收，禁静默删除）。
  * mcp_server 在 kidpal_char_page_show() 调用前后设置。
- * has_data=true 后 cycle_next 才会在 4 页循环中停靠 CHAR 页。
  */
 void kidpal_render_node_cache_char(int has_data);
 
 /*
- * 缓存最近一次 P4 笔顺 JSON（供 cycle_next 翻页重新渲染）。
+ * 缓存最近一次笔顺 JSON（M2-K2 撤 P4 后本 API 同成写侧死态：仅写不读，保留不动、
+ * 归 M2-K3 改窗时统一收）。
  * mcp_server 在 char_page_show 后调用，传入原始 data_json 字符串。
  * 内部 strdup 存储，动态分配，不增加静态 DRAM。
  */

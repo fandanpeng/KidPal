@@ -1317,17 +1317,11 @@ static void kidpal_keybar_sync_locked(void)
     const char *left = NULL, *right = NULL;
     int rn_page = kidpal_render_node_get_page();
     int overlay_top = kidpal_render_node_front_is_overlay();
-    int page = PAGE_P1;
 
-    /* 渲染节点页 (KP_PAGE_*) -> 键路由页序 (PAGE_P1..PAGE_P4, key_gesture_parser 单源)
-     * 的语义页索引映射: 实心页点与页槽表按「当前画的是哪一页」定格。 */
-    switch (rn_page) {
-        case KP_PAGE_SCHEDULE: page = PAGE_P2; break; /* P2 课表 */
-        case KP_PAGE_STORY:    page = PAGE_P3; break; /* P3 故事 */
-        case KP_PAGE_CHAR:     page = PAGE_P4; break; /* P4 查字 */
-        case KP_PAGE_HOME:
-        default:               page = PAGE_P1; break; /* P1 首页 */
-    }
+    /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
+     * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
+     * 表按当前页定格）。越界页一律回落首页（防御语义零改动）。 */
+    int page = (rn_page >= 0 && rn_page < (int)PAGE_COUNT) ? rn_page : PAGE_P1;
 
     if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
         if (kidpal_keybar_slots(page, g_kidpal_keybar_scene, overlay_top,

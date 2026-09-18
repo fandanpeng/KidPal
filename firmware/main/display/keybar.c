@@ -44,12 +44,12 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
             case PAGE_P1: *out_left = "说话";     *out_right = "翻页"; break;
             case PAGE_P2: *out_left = "问课程";   *out_right = "翻页"; break;
             case PAGE_P3: *out_left = "说话·双击看"; *out_right = "下移"; break;
-            case PAGE_P4:
             default:
-                /* P4 撤页过渡兜底（v1.36 撤 P4、页循环仍 4——KB-E1 deviation）。
-                 * 页槽值 spec 未定，只保证给非 NULL 存在性值；值钉定须 human 裁定后
-                 * tighten-only 修订（ADV-1 已登记 planner）。 */
-                *out_left = "说话"; *out_right = "翻页"; break;
+                /* M2-K2 撤 P4：原第 4 页槽位的过渡兜底 case 随枚举整值撤出而消解，
+                 * 页槽表只剩 P1/P2/P3 三行。越界页（含原第 4 页索引 = PAGE_COUNT）
+                 * 已由上方防御列一律 -1，本分支对合法页（0..PAGE_COUNT-1 = P1..P3）
+                 * 不可达；保留仅为 switch 完整性，不复活任何页位。 */
+                return -1;
         }
         return 0;
     }

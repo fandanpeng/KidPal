@@ -18,8 +18,8 @@
  *       整屏不透明背景 container_ 留在原默认首屏（该屏此后不再加载、不再渲染）。
  *     - s_kidpal_scr（lv_obj_create(NULL)）= KidPal 各类内容页的唯一天花板，也是
  *       display/ 下唯一被 lv_screen_load 的顶层屏（真单物理屏不变式）。
- *  4. 阶段 B：BOOT 双按翻页（home→char→schedule→story→home），翻页 = 本地浏览层
- *     生命周期（清 transient，回 LOCAL_PAGE 基层）。
+ *  4. 阶段 B：BOOT 双按翻页（home→schedule→story→home 三页循环，M2-K2 撤 P4 常驻页），
+ *     翻页 = 本地浏览层生命周期（清 transient，回 LOCAL_PAGE 基层）。
  *  5. 崩溃修复（包 260829-hardware-validation）语义保留：服务端推送页面渲染必须经
  *     begin_page()/end_page() 夹钳——begin_page 把 SERVER_PAGE(或 REMINDER) 推入
  *     layer 栈、持 LVGL 锁、把活动屏切到 s_kidpal_scr；页面渲染函数内部
@@ -76,7 +76,7 @@ static lv_obj_t *s_kidpal_img = NULL;
  * 因此 s_p1_dsc 必须在整个屏幕生命周期内保持存活。 */
 static lv_image_dsc_t s_p1_dsc;
 
-/* 当前本地浏览页（阶段 B cycle 状态：翻到 char/schedule/story 时仍停在 LOCAL_PAGE
+/* 当前本地浏览页（阶段 B cycle 状态：翻到 schedule/story 时仍停在 LOCAL_PAGE
  * 层，只是换了页内内容）。区别于前台 owner——前台 owner 由 layer 栈 top() 单一裁决，
  * 本变量只记录「LOCAL_PAGE 基层当前画的是哪一页」，供 tick 首页动画判据与翻页步进。 */
 static kidpal_page_id_t s_local_page = KP_PAGE_HOME;
@@ -109,7 +109,8 @@ static kidpal_story_view_t s_story_view = {};
 static kidpal_story_list_t s_story_list = {};
 static kidpal_story_text_t s_story_text = {};
 
-/* P4 查生字：有数据则 cycle_next 不跳过。 */
+/* 查生字写侧状态（M2-K2 撤 P4 常驻页后成写侧死态：cycle_next 不再停靠 CHAR 页、
+ * 本对与 s_char_json 无循环读方；保留不动（M2K2-E3 禁静默删除），由 M2-K3 改窗时统一收）。 */
 static bool        s_has_char_data = false;
 static std::string s_char_json;   /* 动态分配，不占 .bss；mcp_server cache_char_data 填充 */
 
@@ -261,7 +262,7 @@ void kidpal_render_node_init(void)
      * layer，SU-RULING-02 单物理屏）；本模块只创建并持有唯一前台屏 s_kidpal_scr。 */
 
     /* 创建专属屏（lv_obj_create(NULL) = 新建一屏，不与任何父对象绑定）。
-     * display/ 下唯一的顶层屏创建点（归一屏单屏不变式，char 页已并入此体系）。 */
+     * display/ 下唯一的顶层屏创建点（归一屏单屏不变式，各内容页均已并入此体系）。 */
     s_kidpal_scr = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(s_kidpal_scr, lv_color_white(), 0);
     lv_obj_set_style_bg_opa(s_kidpal_scr, LV_OPA_COVER, 0);
@@ -530,22 +531,6 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             lv_screen_load(s_kidpal_scr);
             s_local_page = KP_PAGE_HOME;
             ESP_LOGI(RN_TAG, "render page HOME (P1)");
-            break;
-        }
-        case KP_PAGE_CHAR: {
-            /* 查生字页已并入 s_kidpal_scr 体系（归一屏单屏不变式）：kidpal_char_page_show
-             * 在活动屏（= s_kidpal_scr）上清屏并绘制，不再自建独立屏。 */
-            lv_screen_load(s_kidpal_scr);
-            if (s_has_char_data && !s_char_json.empty()) {
-                kidpal_char_page_show(s_char_json.c_str());
-            } else {
-                lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
-                lv_label_set_text(lbl, "查生字 · 等待数据");
-                lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
-                lv_obj_center(lbl);
-            }
-            s_local_page = KP_PAGE_CHAR;
-            ESP_LOGI(RN_TAG, "render page CHAR (P4) has_data=%d", s_has_char_data ? 1 : 0);
             break;
         }
         case KP_PAGE_SCHEDULE: {
