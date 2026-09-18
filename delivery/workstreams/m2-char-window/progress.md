@@ -58,3 +58,24 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **环境事实**：图索引沿用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（随树增量刷新）；固件环境等价化沿用树内 sdkconfig / dependencies.lock / managed_components 软链（host 构建刚实证可用）。host runner 热缓存随树保留（本次 ninja no-work 即热缓存生效）。
 
 **launch 启动卡**：`.git/devloop/launch/prompt-260917-m2-k2-retract-p4-three-page.txt`（四要素收缩形态）。
+
+## 2026-09-19 · K2 merged → 本批 = 单包 K3，launch 面就绪（树池第 9 棒同树续跑）
+
+**调度判定**：`260917-m2-k2-retract-p4-three-page` 已 merged（2608b68，mo29）；K3 dependsOn [K1(16b0d4e), K2(2608b68)] 全部就绪、mergeOrder 30 为末包 → 本批 = 单包 K3。依赖图说了算，不硬凑并行。树池串行复用第 9 棒，同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch`。
+
+**交接卫生 + 树同步**：换包前 tracked 净（`git status --short` 空）、无游离 untracked；白名单 `build/` 与 `managed_components` 软链保留。常驻分支原停 933a123（2 commits behind main，merge-driver rebase 步在本包 launch 前尚未落）——`git merge --ff-only main` 快进至 **210bb6e**（main tip），无冲突、无 merge commit。
+
+**`--check-launch`**：`node .claude/scripts/portfolio-reconcile.mjs --check-launch 260917-m2-k3-char-window-overlay --base-ref base/m2-char-window` → ok:true、blocking 空、warn 空（present = K3 taskpackage.json + decision-coverage.json）。board worktreePath 已预填本树（queued），`--status running` 由 Pod intake（planner Step 1）落。
+
+**launchPreconditions 人读核（pod-coordination §2b 该门不含机械齿，260913 human 裁）**：六条逐条核——① commit-before-launch：四件套 + workstream 制品 + milestones.jsonl planningRefs 已 commit base ref（be3cf9f），STATUS.md 已重建；② 门 1 先行：architect-reviewer 轻量 checklist 五项 GREEN + workType 分流已 append `review.md` 门 1 节（2026-09-17）；③ deviation 拍板：页点 4→3 为 M1-K2 既定收回、无新增 deviation；④ 真机硬依赖：A7/A8 需 human 持板、K1/K2 host 半须先 merged——**两条均已 merged**，前提满足；⑤ 冻结面修订通道：`key_layer_dispatch.acceptance.c` 层表修订走 acceptance-author 留痕（本包特有，已写入启动卡）；⑥ 图索引：复用树沿用项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 随树增量刷新。全部满足，无未决项。
+
+**上游已知红基线（沿用 260909 T5 机械来源口径，本包 launch 侧现跑 firmware 面）**：
+- **firmware host 面**：**46 Tests / 0 Failures / 0 Ignored**、exit 0（2026-09-19 @ HEAD `210bb6e`；含 K2 新增 `retract_p4_three_page.acceptance.c` 7 齿）。差异判停：`git diff --quiet ca7ff81 HEAD -- firmware/` **有差异**（K2 动 keybar / kidpal_render_node / lcd_display / key_gesture_parser / mcp_server / 两处在世套件 + 新增套件）→ 按 260915 T3 协议重跑本面，本行取代 ca7ff81 的 39T 行成为 firmware 面现行锚（39→46 的增量为 K2 新齿，非本包责任）。命令（**elf 相对 host_app/ 目录，从仓根跑 `./build/...` 必报 No such file**）：`cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c "cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf"`。面域 = firmware。零红。
+- **server 面**：`git diff --quiet be3cf9f HEAD -- server/` **零差异** → 引用本文件上方锚行 37 passed / 0 failed @ be3cf9f，不重跑。面域 = server（本包 server/ 零改动，M2K3-E2 铁律）。
+- K3 包 intake 消费同协议：本包未动 firmware/ 前再次起 runner 即引用 210bb6e 锚行。
+
+**环境事实**：图索引沿用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（moderate + persistence，随树自动增量刷新）；固件环境等价化沿用树内既有 sdkconfig / dependencies.lock / managed_components 软链（native python 核 `os.path.isdir` = True；host runner 本次现跑实证可用，跳过重建；热缓存生效，ninja 无全量冷编译）。
+
+**launch 启动卡**：`.git/devloop/launch/prompt-260917-m2-k3-char-window-overlay.txt`（四要素收缩形态）。
+
+**launch 形态**：human 在本树会话内指示「启动 dev loop 按流程定义跑、无 block 不请示」→ 本树既有会话即 Pod 本体，按 `claude --agent planner` 主线程语义就地起 loop（对偶 `/build-feature` 入口）。不另起第二会话同树并行（树池协议「一个目录一个会话」）。
