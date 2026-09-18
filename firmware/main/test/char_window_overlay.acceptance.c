@@ -116,6 +116,35 @@
  *       （KR-A3 _TOGGLE_X 教训）；逐齿可反转性见 acceptance-author 交付报告
  *       （mutationEvidence.perAcceptance 由 planner 回填）。
  *
+ *   [9] 5 分钟驻留计时**设备侧驱动**（M2K3-A3 驱动半; sealing pass 2026-09-19 补钉;
+ *       home = firmware/main/display/kidpal_render_node.{h,cc} + boards/
+ *       waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc）:
+ *       [3] 的纯逻辑模块 char_window.c 原**全仓零活消费者**（只登记进设备构建、无人调用）
+ *       ——A7 真机轮的窗口交互包明确含「5 分钟没动自动关窗」, 驱动不接线则该项在设备上
+ *       不可能真绿。本 seam 钉死驱动落地面与形态（builder 建议落点, 已冻结为形态）:
+ *       a) **落地面 = kidpal_render_node 既有 1s tick**（kidpal_render_node_tick, 由 init
+ *          创建的 1s LVGL 定时器回调驱动; 不另起 timer）。kidpal_render_node.cc 持一个
+ *          文件级 static 无操作累计毫秒（初值 0）。
+ *       b) **喂 step**: tick 函数体内调
+ *          kidpal_char_window_idle_step(&累计器, RN_TICK_MS(1000), key_pressed_flag)。
+ *          该调用须在 tick 函数区（本齿切区锚 = tick 定义 -> cache_schedule 定义）内。
+ *       c) **查字窗前台门控**: 累计/关窗仅在查字窗为前台时生效——tick 函数区内须引用
+ *          KIDPAL_LAYER_CHAR_WINDOW 符号（如 kidpal_layer_top(&s_layer_stack) ==
+ *          KIDPAL_LAYER_CHAR_WINDOW / kidpal_layer_has(...) / front_layer() == ...）。
+ *          非查字窗前台不得累计（否则窗一开首拍即因历史累计越限而立即关窗）。
+ *       d) **到点关窗**: step 返回 1（>= 5 分钟）-> 调
+ *          kidpal_render_node_dismiss_front_overlay()（关窗唯一入口, 回原页不翻页,
+ *          与 BOOT/KEY 长按同语义; v1.36/v1.39）。该调用须在 tick 函数区内。
+ *       e) **任意按键重计**: 新增设备侧公开入口
+ *          void kidpal_render_node_char_window_key_hit(void);（kidpal_render_node.h 声明 +
+ *          .cc 定义）, 由板级 KEY/BOOT 手势回调入口（waveshare-s3-rlcd-4.2.cc）在**任意
+ *          键**手势时调用——置「本拍有按键」标志喂 tick 的 key_pressed, 或直接归零累计器;
+ *          两条路径任选, 须满足 v1.43「计时随任意按键重计」。**本 API 名为冻结形态**,
+ *          builder 若需改形态须经 planner 重派 acceptance-author。
+ *       **LVGL 定时器回调内（关窗）的递归/时序安全** = 实现侧（builder 职责; 无本地板
+ *       不可脑补）——本 seam 只钉驱动落地面与形态, 不钉安全证明。承载齿 = test 8（全部
+ *       正向断言走注释剥离后计数, 防注释假绿）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: M2K3-A1 层注册 -> test 1（行为半: 新层可入栈/覆盖当前页/pop 回原页不翻页/
@@ -127,6 +156,8 @@
  *             前台层值 + CHAR_REPLAY 消费映射 replay）
  *   coverage: M2K3-A3 驻留计时 -> test 4（行为半: idle_step 5 分钟阈值/任意按键重计/
  *             防御）+ test 5（结构半: 查字窗显示路径零会话/聆听入口 = 播完不回聆听态）
+ *             + test 8（驱动半: seam [9] 设备侧驱动接线——1s tick 喂 idle_step + 查字窗
+ *             前台门控 + 到点 dismiss 关窗 + 板级任意键经 char_window_key_hit 归零）
  *   coverage: M2K3-A4 页点隐藏 -> test 2（结构半: front_is_overlay 闭集纳入 CHAR_WINDOW）
  *             + test 6（行为半守卫: 覆盖层归一化值页点隐藏零回归）
  *   coverage: M2K3-A5 右栏对账三项 -> test 5（结构半: 部首行补上屏 + progress_label 死
@@ -142,7 +173,8 @@
  *   coverage: M2K3-A7 A8 真机轮（human 持板, kind=structural）-> 不落 C 齿, 见文件尾
  *             「A7/A8 deferred」段（S-F3.1 AC1–AC4 / S-F3.2 AC1 / S-F3.3 AC1–AC2 /
  *             交互包全项 / 提醒压查字窗 / NFR-PERF-2 live 复测）
- *   coverage: M2K3-E1 host 全量零新增红 -> test 7（注册序守卫）+ 文件尾「终跑判读」段
+ *   coverage: M2K3-E1 host 全量零新增红 -> test 7（注册序守卫）+ test 8（驱动面新齿,
+*             封口相位设计态红 = 本包最后一个待 builder 补的驱动面）+ 文件尾「终跑判读」段
  *   coverage: M2K3-E2 铁律（零契约/零 spec/零 agent-gate 触及）-> test 7 tooth 2/3
  *             （requirements 查字窗锚 + 契约面在世 canary + 扫描器自检）
  *
@@ -407,6 +439,151 @@ static int cwx_count_in_slice(const char *slice, const char *needle)
     return count;
 }
 
+/* -------------------------------------------------------------------------- *
+ * Comment-stripping scanner support（260917-m2-k3 sealing pass）:
+ *   裸源扫描分不清「代码」与「注释」——一个只出现在**注释**里的 needle 会满足
+ *   「某代码形态在世」的正向齿（实测教训：builder M4 变异 = 真删部首行后，snprintf
+ *   上方一条携带 `card.radical` 字面的说明注释仍让 A5a 齿保持绿；删注释后才转红）。
+ *   下列助手把注释字节抹成空格，使正向齿只能被**可执行源**满足。
+ *
+ *   cwx_strip_c_comments(): C/C++ `//` 行注释 + 块注释。**字符串/字符字面量体保留**
+ *   （故 needle 里自带字符串字面量的齿——如 cJSON_AddStringToObject(ack, "route",
+ *   "char")——仍能命中），但扫描器会跳过字面量体，不把 `"..."` / '...' 里的 `//`
+ *   误判成注释。
+ *   cwx_strip_hash_comments(): CMake `#`-到-行尾注释（引号串保留），使被注释掉的
+ *   源行无法满足接线齿。
+ *   两者都保持缓冲长度（注释字节 -> 空格），调用方负责 free；不可读/NULL -> NULL。
+ * ------------------------------------------------------------------------ */
+
+static char *cwx_strip_c_comments(const char *src)
+{
+    size_t n, i = 0;
+    char *out;
+
+    assert(src != NULL);
+    n = strlen(src);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL);
+    memcpy(out, src, n + 1);
+
+    while (i < n) {
+        char c = out[i];
+        if (c == '"' || c == '\'') {
+            char q = c;
+            i++;
+            while (i < n) {
+                if (out[i] == '\\' && i + 1 < n) { i += 2; continue; }
+                if (out[i] == q) { i++; break; }
+                i++;
+            }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '/') {
+            while (i < n && out[i] != '\n') { out[i] = ' '; i++; }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '*') {
+            out[i] = ' '; out[i + 1] = ' '; i += 2;
+            while (i < n) {
+                if (out[i] == '*' && i + 1 < n && out[i + 1] == '/') {
+                    out[i] = ' '; out[i + 1] = ' '; i += 2; break;
+                }
+                if (out[i] != '\n') { out[i] = ' '; }
+                i++;
+            }
+            continue;
+        }
+        i++;
+    }
+    return out;
+}
+
+static char *cwx_strip_c_comments_file(const char *rel)
+{
+    char *buf = cwx_read(rel, NULL);
+    char *out;
+
+    if (buf == NULL) {
+        return NULL;
+    }
+    out = cwx_strip_c_comments(buf);
+    free(buf);
+    return out;
+}
+
+static char *cwx_strip_hash_comments(const char *src)
+{
+    size_t n, i = 0;
+    char *out;
+
+    assert(src != NULL);
+    n = strlen(src);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL);
+    memcpy(out, src, n + 1);
+
+    while (i < n) {
+        char c = out[i];
+        if (c == '"') {
+            i++;
+            while (i < n) {
+                if (out[i] == '\\' && i + 1 < n) { i += 2; continue; }
+                if (out[i] == '"') { i++; break; }
+                i++;
+            }
+            continue;
+        }
+        if (c == '#') {
+            while (i < n && out[i] != '\n') { out[i] = ' '; i++; }
+            continue;
+        }
+        i++;
+    }
+    return out;
+}
+
+/* 注释剥离后的文件级 needle 计数/包含（正向结构齿用；注释无法满足）。 */
+static int cwx_count_in_file_code(const char *rel, const char *needle)
+{
+    char *stripped = cwx_strip_c_comments_file(rel);
+    int r;
+
+    if (stripped == NULL) {
+        return 0;
+    }
+    r = cwx_count_in_slice(stripped, needle);
+    free(stripped);
+    return r;
+}
+
+static int cwx_file_code_contains(const char *rel, const char *needle)
+{
+    char *stripped = cwx_strip_c_comments_file(rel);
+    int r;
+
+    if (stripped == NULL) {
+        return 0;
+    }
+    r = cwx_contains(stripped, needle);
+    free(stripped);
+    return r;
+}
+
+/* 注释剥离后的切区 needle 计数（正向结构齿用；注释无法满足）。 */
+static int cwx_count_in_slice_code(const char *slice, const char *needle)
+{
+    char *stripped;
+    int r;
+
+    if (slice == NULL) {
+        return 0;
+    }
+    stripped = cwx_strip_c_comments(slice);
+    r = cwx_count_in_slice(stripped, needle);
+    free(stripped);
+    return r;
+}
+
 #define CWX_REQUIRE_ROOT() TEST_ASSERT_TRUE_MESSAGE(cwx_locate_root(), \
     "CWX RED(infra): repo root not located from cwd — run the ELF from the repo root " \
     "or from firmware/main/test/host_app (see HOST_TEST_CONVENTIONS.md [C4.4])")
@@ -569,8 +746,9 @@ TEST_CASE("查字窗层注册: 闭集插入+清层集+覆盖层闭集+dispatch�
 
     CWX_REQUIRE_ROOT();
 
-    /* tooth 1 (A1): kidpal_layer.h 常量闭集含 KIDPAL_LAYER_CHAR_WINDOW。 */
-    TEST_ASSERT_TRUE_MESSAGE(cwx_file_contains(CWX_LAYER_H, "KIDPAL_LAYER_CHAR_WINDOW"),
+    /* tooth 1 (A1): kidpal_layer.h 常量闭集含 KIDPAL_LAYER_CHAR_WINDOW（注释剥离后计数
+     * ——头注清单也提到该符号, 剥注释后只认 #define 实体, 防注释假绿）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_file_code_contains(CWX_LAYER_H, "KIDPAL_LAYER_CHAR_WINDOW"),
         "M2K3-A1 RED: kidpal_layer.h 未定义 KIDPAL_LAYER_CHAR_WINDOW——查字窗层未进"
         "层闭集（A1 明文要求新增查字窗层进 kidpal_layer 栈模型）");
 
@@ -581,7 +759,7 @@ TEST_CASE("查字窗层注册: 闭集插入+清层集+覆盖层闭集+dispatch�
     TEST_ASSERT_NOT_NULL_MESSAGE(region,
         "M2K3-A1 RED(infra): kidpal_layer.c 的 pop_transients 函数区切取失败（签名锚漂移"
         "——须复核本齿锚, 不得改判为绿）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
         "M2K3-A1 RED: kidpal_layer_pop_transients transient 集未纳 KIDPAL_LAYER_CHAR_WINDOW"
         "——查字窗不是清层对象, 关窗无法经显式清层步骤回基层（KD-A2 清层事实源断）");
     free(region);
@@ -593,7 +771,7 @@ TEST_CASE("查字窗层注册: 闭集插入+清层集+覆盖层闭集+dispatch�
     TEST_ASSERT_NOT_NULL_MESSAGE(region,
         "M2K3-A4 RED(infra): kidpal_render_node.cc 的 front_is_overlay 函数区切取失败"
         "（签名锚漂移——须复核本齿锚）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
         "M2K3-A4 RED: front_is_overlay 覆盖层闭集未纳 KIDPAL_LAYER_CHAR_WINDOW——查字窗"
         "前台时前台归一化不报覆盖层（页点不隐藏 + 键路由不自查字窗列分流; §2.2 覆盖层"
         "不显示页点）");
@@ -601,27 +779,27 @@ TEST_CASE("查字窗层注册: 闭集插入+清层集+覆盖层闭集+dispatch�
 
     /* tooth 4 (A1): 查字窗层存在设备侧入栈消费点（覆盖窗显示时机 = 实现侧，非常驻页）。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        cwx_count_in_file(CWX_RN_CC, "KIDPAL_LAYER_CHAR_WINDOW") >= 1 ||
-            cwx_count_in_file(CWX_MCP_CC, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+        cwx_count_in_file_code(CWX_RN_CC, "KIDPAL_LAYER_CHAR_WINDOW") >= 1 ||
+            cwx_count_in_file_code(CWX_MCP_CC, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
         "M2K3-A1 RED: 渲染节点 / mcp_server 均零 KIDPAL_LAYER_CHAR_WINDOW 消费——查字窗"
         "层只有声明没有入栈点（覆盖窗显示时机未接, 窗退化为常驻页）");
 
     /* tooth 5 (A2): 板级 dispatch 把前台层值喂进 key_route_layer（查字窗列的入参前提）。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        cwx_file_contains(CWX_BOARD_CC, "kidpal_render_node_front_layer("),
+        cwx_file_code_contains(CWX_BOARD_CC, "kidpal_render_node_front_layer("),
         "M2K3-A2 RED: 板级 dispatch 未消费 kidpal_render_node_front_layer——layer-aware "
         "路由表拿不到前台层身份（查字窗列永不被选中, KEY 短按仍走 SESSION_TOGGLE）");
     TEST_ASSERT_TRUE_MESSAGE(
-        cwx_count_in_file(CWX_BOARD_CC, "key_route_layer(") >= 1,
+        cwx_count_in_file_code(CWX_BOARD_CC, "key_route_layer(") >= 1,
         "M2K3-A2 RED: 板级 dispatch 未消费 key_route_layer——分层路由表被绕开");
 
     /* tooth 6 (A2): GLOBAL_ACT_CHAR_REPLAY 被消费映射 kidpal_char_page_replay（重播接线）。 */
-    TEST_ASSERT_TRUE_MESSAGE(cwx_file_contains(CWX_BOARD_CC, "GLOBAL_ACT_CHAR_REPLAY"),
+    TEST_ASSERT_TRUE_MESSAGE(cwx_file_code_contains(CWX_BOARD_CC, "GLOBAL_ACT_CHAR_REPLAY"),
         "M2K3-A2 RED: 板级 dispatch 未消费 GLOBAL_ACT_CHAR_REPLAY——查字窗 KEY 短按重播"
         "动作无落点（S-F3.3 AC1 重播未接）");
     TEST_ASSERT_TRUE_MESSAGE(
-        cwx_count_in_file(CWX_BOARD_CC, "kidpal_char_page_replay(") >= 1 ||
-            cwx_count_in_file(CWX_MCP_CC, "kidpal_char_page_replay(") >= 1,
+        cwx_count_in_file_code(CWX_BOARD_CC, "kidpal_char_page_replay(") >= 1 ||
+            cwx_count_in_file_code(CWX_MCP_CC, "kidpal_char_page_replay(") >= 1,
         "M2K3-A2 RED: GLOBAL_ACT_CHAR_REPLAY 未映射 kidpal_char_page_replay——重播动作"
         "不触达查字页重播实现（S-F3.3 AC1）");
 }
@@ -798,10 +976,10 @@ TEST_CASE("查字窗对账: 显示路径零会话+右栏三项+锚改名+cache_c
 
     /* ---- A6 guard: mcp view=char 路由本体零触碰（E2 服务端下发语义不动）------- */
     TEST_ASSERT_TRUE_MESSAGE(
-        cwx_count_in_slice(region,
+        cwx_count_in_slice_code(region,
                            "cJSON_AddStringToObject(ack, \"route\", \"char\")") >= 1 &&
-            cwx_count_in_slice(region, "kidpal_char_data_validate(") >= 1 &&
-            cwx_count_in_slice(region, "kidpal_char_page_show(") >= 1,
+            cwx_count_in_slice_code(region, "kidpal_char_data_validate(") >= 1 &&
+            cwx_count_in_slice_code(region, "kidpal_char_page_show(") >= 1,
         "M2K3-A6 RED: case 3 区内的 view=char 路由本体（ack route=char / 缺字段降级门 / "
         "char_page_show 调用点）被拆——E2 铁律明令**不得顺手改动 view=char 路由本体**"
         "（服务端下发语义不动）");
@@ -812,9 +990,14 @@ TEST_CASE("查字窗对账: 显示路径零会话+右栏三项+锚改名+cache_c
     TEST_ASSERT_NOT_NULL_MESSAGE(region,
         "M2K3-A5 RED(infra): char_page.cc 的速查卡拼装区切取失败（card_build 调用 / "
         "cardlabel 字体锚漂移——须复核本齿锚）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "card.radical") >= 1,
+    /* 注释剥离后计数（sealing pass 收紧）：原裸扫「区内出现 card.radical 字面即过」——
+     * 区内**任意注释**提到 card.radical 即可假绿（builder M4 实证: 真删部首行后, snprintf
+     * 上方一条携带该字面的说明注释仍让本齿保持绿）。剥 C 块注释与 // 行注释后只认真实消费形态
+     * （snprintf 实参 g_page.card.radical）, 注释再也无法满足。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "card.radical") >= 1,
         "M2K3-A5 RED: 速查卡 label 拼装未纳入 card.radical——部首行装配了未上屏"
-        "（S-F3.2 AC1「拼音带声调 + 共 N 画 + 部首标签 + 组词」四行不齐, v1.38 对账③）");
+        "（S-F3.2 AC1「拼音带声调 + 共 N 画 + 部首标签 + 组词」四行不齐, v1.38 对账③；"
+        "本齿注释剥离后计数, 注释无法满足）");
     free(region);
 
     /* ---- A5b: 进度珠死成员清理 + 头注虚标清除 --------------------------------- */
@@ -844,12 +1027,14 @@ TEST_CASE("查字窗对账: 显示路径零会话+右栏三项+锚改名+cache_c
      * -> "写完啦·共 N 笔", 已在世且在世齿）; 缺口在**呈现面**——char_page.cc 只拼
      * pinyin/stroke_total/words, 未消费 card.progress（现 hint_label 静态占位
      * 「跟随笔画一笔一画描红」, 无定格态）。本齿钉呈现面消费该单源字段（不钉格式字面,
-     * 走同源判别——「写完啦」文案只住 char_stroke.c 契约, 页面不得重抄）。 */
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_file(CWX_CHAR_CC, "card.progress") >= 1,
+     * 走同源判别——「写完啦」文案只住 char_stroke.c 契约, 页面不得重抄）。sealing pass
+     * 收紧: 原文件级裸扫「出现 card.progress 字面即过」可被任意注释假绿; 剥 C 注释后只认
+     * 呈现面对该单源字段的真实消费（charpage_refresh_hint / hint_label 写点）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_file_code(CWX_CHAR_CC, "card.progress") >= 1,
         cwx_fm("M2K3-S-F3.3-AC2 RED: char_page.cc 零 card.progress 消费——演示写完的定格"
                "文案（「写完啦·共 N 笔」单源 = kidpal_char_card_build 的 out->progress）"
                "未上屏（S-F3.3 AC2 缺口: 现 hint_label 静态占位「跟随笔画一笔一画描红」,"
-               " 无定格态; requirements 行 515 / WF-F3-01 底部提示条）"));
+               " 无定格态; requirements 行 515 / WF-F3-01 底部提示条；注释剥离后计数）"));
 
     /* ---- A6a: 锚改名 canvas-p4 -> char-window（实现侧头注对账）---------------- */
     TEST_ASSERT_TRUE_MESSAGE(
@@ -880,7 +1065,7 @@ TEST_CASE("查字窗对账: 显示路径零会话+右栏三项+锚改名+cache_c
                cwx_count_in_file(CWX_MCP_CC, "kidpal_render_node_cache_char")));
 
     /* guard: 收拢后 char 渲染主路径仍在世（死态 API 收拢 ≠ 拆查字能力）。 */
-    TEST_ASSERT_TRUE_MESSAGE(cwx_file_contains(CWX_MCP_CC, "kidpal_char_page_show(") &&
+    TEST_ASSERT_TRUE_MESSAGE(cwx_file_code_contains(CWX_MCP_CC, "kidpal_char_page_show(") &&
                                  cwx_exists(CWX_CHAR_CC) && cwx_exists(CWX_CHAR_H),
         "M2K3-A6 RED(guard): 死态 API 收拢连带拆了查字渲染主路径（char_page_show / "
         "char_page.{h,cc}）——收拢只针对写侧死态, 不动查字能力本体");
@@ -960,17 +1145,21 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
     CWX_REQUIRE_ROOT();
 
     /* tooth 1: 本文件 + char_window.c 接线进 HOST_ACCEPTANCE_SRCS 且排在 host_infra_smoke
-     * 之前（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。RED until builder wires. */
+     * 之前（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。RED until builder wires.
+     * sealing pass 收紧: 剥 CMake `#`-到-行尾注释后扫描——被注释掉的源行（`# "...c"`）
+     * 不再能满足接线齿（引号串保留, 长度保持, 相对序判定不受影响）。 */
     mk = cwx_read(CWX_CMAKELISTS, NULL);
     TEST_ASSERT_NOT_NULL_MESSAGE(mk,
         "CWX RED(infra): host_app/main/CMakeLists.txt unreadable");
     {
-        const char *mine = strstr(mk, "char_window_overlay.acceptance.c");
-        const char *impl = strstr(mk, "../../../display/char_window.c");
-        const char *smoke = strstr(mk, "host_infra_smoke.acceptance.c");
+        char *mk_code = cwx_strip_hash_comments(mk);
+        const char *mine = strstr(mk_code, "char_window_overlay.acceptance.c");
+        const char *impl = strstr(mk_code, "../../../display/char_window.c");
+        const char *smoke = strstr(mk_code, "host_infra_smoke.acceptance.c");
         TEST_ASSERT_TRUE_MESSAGE(mine != NULL,
             "M2K3-E1 RED: char_window_overlay.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS "
-            "— 本包冻结验收未进 host 执行面（BUILDER DUTY: 见本文件头注 [7]）");
+            "— 本包冻结验收未进 host 执行面（BUILDER DUTY: 见本文件头注 [7]；注释剥离后"
+            "扫描, 被注释掉的源行不算接线）");
         TEST_ASSERT_TRUE_MESSAGE(impl != NULL,
             "M2K3-E1 RED: display/char_window.c 未接线进 HOST_ACCEPTANCE_SRCS — 驻留计时"
             "强符号无处落地（weak 哨兵将持续红, test 4 not-wired）");
@@ -980,6 +1169,7 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
         TEST_ASSERT_TRUE_MESSAGE(mine < smoke && impl < smoke,
             "M2K3-E1 RED: 本包两行必须排在 host_infra_smoke.acceptance.c 之前（smoke "
             "末位 = 最先执行, boundary 齿注册序守卫）");
+        free(mk_code);
     }
     free(mk);
 
@@ -1030,6 +1220,74 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 8 — M2K3-A3 驻留计时**驱动半**（structural; sealing pass 2026-09-19）
+ * seam [3] 只钉了纯逻辑模块 char_window.c；其设备侧**驱动**（喂 dt / 按键归零 / 到点
+ * 调 dismiss）原无齿覆盖——模块全仓零活消费者（只登记进设备构建、无人调用）。A7 真机轮
+ * 的窗口交互包明确含「5 分钟没动自动关窗」, 驱动不接线则该项在设备上不可能真绿（human
+ * 持板轮会被卡住）。本齿钉死设备侧驱动落地面与形态（seam [9]）：kidpal_render_node 既有
+ * 1s tick 累计喂 kidpal_char_window_idle_step + 到点复用
+ * kidpal_render_node_dismiss_front_overlay 关窗 + 板级任意键手势经
+ * kidpal_render_node_char_window_key_hit 归零重计。
+ * 全部正向齿走**注释剥离后计数**（sealing pass 收紧, 防注释假绿——见 builder M4 实证）。
+ * RED today（设计态, 交 builder 补实现的靶）: RN_CC tick 区零
+ * kidpal_char_window_idle_step 消费 / kidpal_render_node_char_window_key_hit 全仓零命中
+ * ——驱动未落。**不得为让它绿而把齿改写成愿望式或放宽其它齿。**
+ * ------------------------------------------------------------------------ */
+/* coverage: M2K3-A3 -- 驻留计时驱动半（seam [9]）: 1s tick 累计喂 kidpal_char_window_idle_step（查字窗前台门控, 引用 KIDPAL_LAYER_CHAR_WINDOW）+ 到点调 kidpal_render_node_dismiss_front_overlay 关窗（回原页不翻页）+ 板级任意键手势经 kidpal_render_node_char_window_key_hit 归零重计 */
+TEST_CASE("查字窗驻留计时: 设备侧驱动接线（1s tick 喂 step + 到点 dismiss 关窗 + 按键归零） (M2K3-A3 驱动半)",
+          "[char_window_overlay][M2K3-A3][structural]")
+{
+    char *region;
+
+    CWX_REQUIRE_ROOT();
+
+    /* tooth 1: kidpal_render_node.cc 既有 1s tick（kidpal_render_node_tick）区内喂
+     * kidpal_char_window_idle_step——驱动落地面 = 既有 1s 定时器, 不另起 timer。 */
+    region = cwx_region_between(CWX_RN_CC, "void kidpal_render_node_tick(void)",
+                                "extern \"C\" void kidpal_render_node_cache_schedule");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "M2K3-A3 RED(infra): kidpal_render_node.cc 的 tick 函数区切取失败（签名锚漂移"
+        "——须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_char_window_idle_step(") >= 1,
+        "M2K3-A3 RED: kidpal_render_node_tick 未消费 kidpal_char_window_idle_step——5 分钟"
+        "驻留计时的设备侧驱动未接线（char_window.c 全仓零活消费者, 驻留上限永不被喂 dt, "
+        "A7 真机轮「5 分钟自动关窗」项不可能真绿）");
+
+    /* tooth 2: tick 区内的驱动被查字窗前台门控（引用 KIDPAL_LAYER_CHAR_WINDOW）——非查字窗
+     * 前台时不得累计/误关（否则窗打开首拍即因历史累计越限而立即关窗）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+        "M2K3-A3 RED: kidpal_render_node_tick 内的驻留驱动未以 KIDPAL_LAYER_CHAR_WINDOW 门控"
+        "——计时无条件累计（非查字窗前台也累计, 窗一开首拍即越限误关）");
+
+    /* tooth 3: 到点复用 kidpal_render_node_dismiss_front_overlay 关窗（关窗唯一入口, 回
+     * 原页不翻页, v1.36/v1.39）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_render_node_dismiss_front_overlay(") >= 1,
+        "M2K3-A3 RED: tick 区内驻留驱动到点未调 kidpal_render_node_dismiss_front_overlay"
+        "——5 分钟无操作未经关窗唯一入口关窗（回原页不翻页; v1.36/v1.39 关窗语义）");
+
+    /* tooth 4: 板级任意键手势经 kidpal_render_node_char_window_key_hit 归零重计（v1.43
+     * 「计时随任意按键重计」）——RN_H 声明确存在 + 板级 cc 有调用点（KEY/BOOT 手势回调）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_file_code_contains(CWX_RN_H, "kidpal_render_node_char_window_key_hit"),
+        "M2K3-A3 RED: kidpal_render_node.h 未声明 kidpal_render_node_char_window_key_hit——"
+        "板级任意键归零入口缺失（seam [9]; v1.43 计时随任意按键重计）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_BOARD_CC, "kidpal_render_node_char_window_key_hit(") >= 1,
+        "M2K3-A3 RED: 板级 KEY/BOOT 手势回调未调 kidpal_render_node_char_window_key_hit——"
+        "任意按键不重计驻留计时（v1.43 缺失, 键操作后 5 分钟窗不延长）");
+
+    /* guard（驱动面在世正向）: RN_CC 源（非测试）内确有 kidpal_char_window_idle_step 消费
+     * ——模块有真实设备消费者, 不再只登记进设备构建而无人调用。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_RN_CC, "kidpal_char_window_idle_step(") >= 1,
+        "M2K3-A3 RED: kidpal_render_node.cc 零 kidpal_char_window_idle_step 消费——驻留计时"
+        "纯逻辑模块无设备侧活消费者（seam [3] 只钉模块、驱动缺位）");
+    free(region);
+}
+
 /* ---------------------------------------------------------------------------
  * 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1044,6 +1302,8 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
  *     - 本文件 test 5（部首未上屏 / progress_label + 头注虚标 / penhand 圆环 / P4 页
  *       自述 / cache_char 三处——结构红）;
  *     - 本文件 test 7 tooth 1（注册接线守卫, builder 首步 +1/-0 后转绿）;
+ *     - **本文件 test 8（seam [9] 设备侧驱动接线——sealing pass 新增; 封口相位唯一红,
+ *       交 builder 补实现; 见「SEALING PASS 2026-09-19」段）**;
  *     - key_layer_dispatch.acceptance.c 新增查字窗列齿（test 1 追加; 见该文件
  *       REVISION LOG 2026-09-19——对未落层现状为设计态红）;
  *     - retract_p4_three_page.acceptance.c test 6 tooth 2/5 翻正齿（见该文件 REVISION
@@ -1052,9 +1312,27 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
  *     test 1 下层三值零偏移 + PROVISION 零触碰; test 3 通用覆盖层列/基层列/越界键位;
  *     test 5 mcp view=char 路由本体零触碰 + char 渲染主路径在世; test 6 全部（A4/A5
  *     行为半守卫）; test 7 tooth 2/3/4（需求契约 canary + 扫描器自检）。
- *   builder 接线后期望终跑量级 = 46 + 本文件 7 TEST_CASE + K1a/retract 修订齿增量
+ *   builder 接线后期望终跑量级 = 46 + 本文件 8 TEST_CASE + K1a/retract 修订齿增量
  *   （HOST_TEST_CONVENTIONS [C4.4]: 测试数是随套件增长的派生量, 不当硬编码判据, 真判据
  *   = OK + EXIT=0 + 全 PASS）。
+ *
+ * SEALING PASS 2026-09-19（acceptance-author 封口补钉; tighten-only）:
+ *   触发 = builder 如实上报两处验收面欠覆盖（见 pod-events friction scan-miss
+ *   2026-09-18T23:24:56）:
+ *   ① **A3 驱动半无齿覆盖**: char_window.c 全仓零活消费者 → 追 seam [9] + test 8, 钉死
+ *      设备侧驱动落地面（既有 1s tick 喂 step + 查字窗前台门控 + 到点 dismiss 关窗 +
+ *      板级任意键经 kidpal_render_node_char_window_key_hit 归零）。**该齿封口相位设计态红**
+ *      （驱动未落 = 缺失的真实行为红）, 是交给 builder 补实现的靶; 不为让它绿而放宽。
+ *   ② **计数型结构齿强度不足（builder M4 实证假绿）**: 原 A5a 以「切区 + 区内 card.radical
+ *      计数 >= 1」实现, 区内**任意注释**提到该字面即可满足——builder 真删部首行后, snprintf
+ *      上方一条携带 `card.radical` 的说明注释仍让齿保持绿, 删注释后才转红。同类 `card.progress`
+ *      为**文件级**计数、强度更弱。**收紧**: 新增 C/C++ 注释剥离器（cwx_strip_c_comments,
+ *      保留字符串字面量体）与 CMake `#` 注释剥离器（cwx_strip_hash_comments）, 把本文件
+ *      **全部正向计数/包含齿**改走注释剥离后扫描（cwx_count_in_file_code /
+ *      cwx_file_code_contains / cwx_count_in_slice_code）。收紧后真实实现形态仍满足（builder
+ *      报告: 真实代码形态已就位——snprintf 实参 g_page.card.radical / charpage_refresh_hint 的
+ *      g_page.card.progress 消费）, 故**不应由绿转红**。负向齿（`== 0`）与「头注锚」（A6a
+ *      char-window 锚 = 设计上钉注释）**不剥注释**——剥注释会把负向齿放松、把锚齿架空。
  *
  * RED baseline 判读口径（freeze 相位, acceptance-author 2026-09-19 实跑）:
  *   通道① 编译通道（DEV-GOVERNANCE「验收测试纪律」§4 C 类冻结验收实编）:
@@ -1086,4 +1364,12 @@ TEST_CASE("查字窗: 注册序守卫+需求契约canary+扫描器自检 (M2K3-E
  *               retract_p4_three_page.acceptance.c（test 6 cache_char 保留守卫随本包
  *               收拢翻正, 见该文件 REVISION LOG）。归档件 firmware/main/test/acceptance/
  *               archive 目录下的 .c 件不编入 runner、不改。
+ *   2026-09-19  sealing pass (acceptance-author, same TaskPackage; tighten-only)。触发 =
+ *               builder 如实上报两处验收面欠覆盖, planner 判为验收职责面并路由回来:
+ *               ① 追 seam [9] + test 8——M2K3-A3 驻留计时**设备侧驱动**（char_window.c
+ *                  原全仓零活消费者）。② 收紧计数型结构齿——新增 C/CMake 注释剥离器, 把
+ *                  本文件全部正向计数/包含齿改走注释剥离后扫描（防注释假绿; builder M4
+ *                  实证: A5a 原裸扫可被注释满足）。**只加齿收紧, 不放松任何既有齿**;
+ *                  负向齿与头注锚齿（A6a char-window）不剥注释。另两处在世冻结件
+ *                  （key_layer_dispatch / retract_p4_three_page）本轮不动——未实证同类假绿。
  * --------------------------------------------------------------------------- */
