@@ -1,18 +1,17 @@
 # PROPOSAL · 260918-gov-review-closeout-chain-friction
 
-> **状态：DRAFT v0.2 · 2026-09-18 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁〔OQ1 = 留 Track B；OQ2 = 五件原样落 DEV-GOVERNANCE §6〕。FROZEN 行待补 architect Rn GREEN 凭据）。
-> **承载 ARQ**：`ARQ-260909-index-verdict-anchor-okform-gap`（T1）、`ARQ-260916-acc-gate-archive-skew`（T2）、`ARQ-260913-current-pointer-implicit-global`（T3）、`ARQ-260908-tighten-only-unwritten`（T4）。不关的根写 §6 留根指针。
-> **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-batch-drafting-friction`。
+> **状态：DRAFT v0.5 · 2026-09-19 · 已立项 ack · 待 architect R1 评审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；**v0.5 按 human 2026-09-19 裁定把 T1〔索引终态锚〕整条移出本批**、退回 ARQ 队列单开一批，见 §6 留根①。FROZEN 行待补 architect Rn GREEN 凭据）。
+> **承载 ARQ**：`ARQ-260916-acc-gate-archive-skew`（T1）、`ARQ-260913-current-pointer-implicit-global`（T2）、`ARQ-260908-tighten-only-unwritten`（T3）。**原承载的 `ARQ-260909-index-verdict-anchor-okform-gap` 已移出本批、退回队列**（该 ARQ 的处方经起草期实测证伪，见 §6 留根①）。不关的根写 §6 留根指针。
+> **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction`（已 FROZEN v1.0）/ `-dispatch-chain-friction` / `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
-> **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T4）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
-> **riskTier**：medium（一句话证成：T2 触**验收闸的枚举面**、T3 引入**新的 fail-loud 路径**（但默认关、仅显式传参时生效）；T1 为生成器补锚、T4 为成文。各项方向为**收窄 / 向后兼容 / 向严**，无放松面、无数据丢失形态）。
-> **review profile**：**G1 + G3**（G1 = `docs/DEV-GOVERNANCE.md`「验收测试纪律」新增两节——非契约面，承 260907-gov-review-arq-governance-batch-2 T8「新节 + 引用行」同形态先例；G3 = `.claude/scripts/` 三个脚本）。契约面 / G2 / agent frontmatter 为零。
+> **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T3）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
+> **riskTier**：medium（一句话证成：T1 触**验收闸的枚举面**、T2 引入**新的 fail-loud 路径**（默认关、仅显式传参生效）；T3 为成文。各项方向为**收窄 / 向后兼容 / 向严**，无放松面、无数据丢失形态。T1〔索引锚〕移出后本批已不含生成器面改动）。
+> **review profile**：**G1 + G3**（G1 = `docs/DEV-GOVERNANCE.md`「验收测试纪律」新增两节——非契约面，承 260907-gov-review-arq-governance-batch-2 T8「新节 + 引用行」同形态先例；G3 = `.claude/scripts/` 两个脚本）。契约面 / G2 / agent frontmatter 为零。
 >
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
 
 ```landing-manifest
 .claude/scripts/acceptance-run-check.mjs
-.claude/scripts/changes-index.mjs
 .claude/scripts/dispatch-stamp.mjs
 docs/DEV-GOVERNANCE.md
 ```
@@ -21,41 +20,17 @@ docs/DEV-GOVERNANCE.md
 
 ## 0. 想实现的效果与差距
 
-**目标效果一句话**：把收口 / 簿记链上四处「写进去了、但状态或口径没跟上事实」的失准修齐——索引推不出 landed、验收闸数退役件、簿记写错包无声、加严纪律无成文。
+**目标效果一句话**：把收口 / 簿记链上三处「写进去了、但状态或口径没跟上事实」的失准修齐——验收闸数退役件、簿记写错包无声、加严纪律无成文。
 
-**现状差距**：这四条都是**已实测确认**的失准，不是猜测：索引表里 6 条已落地批次显示成 frozen（现跑数出）；验收闸固件面枚举到的 13 件全在归档目录下、现役 0 件（现跑数出）；「当前包」指针指错时脚本零输出（3 包 retro 实证）；tighten-only 纪律在治理文档里 grep 零命中（现跑）——而它已被实际行使多次。
+**现状差距**：这三条都是**已实测确认**的失准：验收闸固件面枚举到的 13 件全在归档目录下、现役 0 件（起草期现跑数出）；「当前包」指针指错时脚本零输出（3 包 retro 实证）；tighten-only 纪律在治理文档里 grep 零命中（现跑）——而它已被实际行使多次（**实测 20 份验收件带其页脚**，含 6 份现役）。
 
-**非目标（本批不做什么）**：不动 `docs/contracts/**` 与系统 spec 两文件；不动任何验收冻结件（`*.acceptance.*`）；不改任何 agent frontmatter；不新增工程门（T2 只把既有集合补一个成员、T3 的新硬失败默认关）；不改 `changes-index.mjs` 的 verdict 书写要求（容忍多形态本就是它的设计）。
+**非目标（本批不做什么）**：不动 `docs/contracts/**` 与系统 spec 两文件；不动任何验收冻结件（`*.acceptance.*`）；不改任何 agent frontmatter；不新增工程门（T1 只把既有集合补一个成员、T2 的新硬失败默认关）；**不动 `changes-index.mjs`**（T1〔索引终态锚〕已移出本批）。
 
 ## 1. 问题与根因（地面真值）
 
-**【硬项 1a 声明】** 本节全部断言均为 2026-09-18 在 `gov/kidpal` 工作树上现跑实测所得，命令与关键输出逐条留痕；所有 commit SHA 经 `git rev-parse` 核实；所有行号为本批起草时的现行值。
+**【硬项 1a 声明】** 本节全部断言均为 2026-09-18/19 在 `gov/kidpal` 工作树上现跑实测所得，命令与关键输出逐条留痕；所有 commit SHA 经 `git rev-parse` 核实；所有行号为本批起草时的现行值。
 
-### 问题 1：`changes-index` 终态锚不识 `ok: true（GREEN）` 标题行，landed 推导静默不动
-
-证据（verbatim 亲核）：`.claude/scripts/changes-index.mjs:177-178` 两条锚定义 =
-
-```js
-const VERDICT_STATUS_RE = /^\s*(?:>+\s*)?(?:\*{0,2})\s*(?:verdict|总判|总判定|结论|复验结论|判定)\s*(?:\*{0,2})\s*[:：=]\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)\b/i;
-const VERDICT_HEADING_RE = /^#{1,4}\s*(?:\d{1,3}[.、]\s*)?(?:verdict|总判|总判定|结论|复验结论)\s*[:：]?\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)?\b/i;
-```
-
-两条都要求行以 `verdict|总判|结论|…` 标签起头；`VERDICT_HEADING_RE` 另要求 `#` 标题形态。**`**ok: true（GREEN）——…**` 属加粗行、既无标签前缀也非标题**，两通道皆不命中。
-
-**活证据（起草期现跑，命令 = `cat delivery/changes/arch/INDEX.md`）**：现行 INDEX 中以下批次显示 `frozen | 已合main = yes`——**已落地却推不出 landed**：
-
-| changeId | INDEX 状态 | 实际 |
-|---|---|---|
-| `260908-gov-review-merge-chain-hardening` | frozen | landed（architect-landing-summary manifest 8/8 全落） |
-| `260907-gov-review-merge-friction` | frozen | landed |
-| `260908-gov-review-escalation-conflict-ladder` | frozen | landed |
-| `260904-gov-review-escalate-merge-approval` | frozen | landed |
-| `260907-gov-review-architect-dispatch-model-override` | frozen | landed（`agent-model-guard.mjs` 在场） |
-| `260830-arch-review-ui-impl-strategy` | frozen | landed |
-
-（另有三条 `draft | yes` 同族形态。）根因：`deriveLanded` 的三通道（标签+冒号 / 编号标题 / JSON 行锚）是对既有 verdict 书写习惯的**事后归纳**，未覆盖 `ok: true（GREEN）` 这一已被使用的形态。`ARQ-260909-index-verdict-anchor-okform-gap` 已在 260909-gov-review-gate-truthfulness 合并簿记期实测记录同一现象——本批 §1 的表格是其**跨批复现**（非孤例），故按该 ARQ 候选①（补第四锚）处置。
-
-### 问题 2：`acceptance-run-check` 枚举不跳 `archive` 退役面，且退役保留名约定无处成文
+### 问题 1：`acceptance-run-check` 枚举不跳 `archive` 退役面，且退役保留名约定无处成文
 
 证据（verbatim 亲核）：`.claude/scripts/acceptance-run-check.mjs:34` =
 
@@ -67,13 +42,13 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **起草期现跑实测（按闸同款 `collectFiles` 逻辑复现，含 `:46` 的 `SKIP_DIRS.has(entry) || entry.startsWith('.')` 跳过规则）**：`firmware/main/test/acceptance/` 现枚举命中 **13 件，且 13 件全部位于 `archive/` 下**——该面**现役件为 0**，即该闸固件面的 oracle 输入集当前**只剩退役件**。逐件：`char_stroke` / `device_ws_switch` / `hardware_validation` / `home_p1` / `key_route_a1` / `schedule_p2` / `schedule_reminder_b` / `screen_unification` / `session_logic` / `story_p3` / `ui_art_integration` / `v3_restore` / `voice_roundtrip_b`（各 `.acceptance.c`）；补 `archive` 进 `SKIP_DIRS` 后同口径枚举 = **0 件**。
 
-**【硬项 1a · 数字更正申报】** `ARQ-260916-acc-gate-archive-skew` 原文记该目录下「**9 件**归档 `.acceptance.c`」，本批现跑为 **13 件**。两者不符，本批以现跑实测为准并把偏差如实登记（成因未追：或为 9-15 固件归档批之后又有 4 件于后续包并入 archive，起草期未回溯 git 历史）。**该更正不影响改法**（T2 的修法是集合补一个成员、与件数无关），但件数差 4 说明该 ARQ 的取证时点已陈旧。
+**【硬项 1a · 数字更正申报】** `ARQ-260916-acc-gate-archive-skew` 原文记该目录下「**9 件**归档 `.acceptance.c`」，本批现跑为 **13 件**。两者不符，本批以现跑实测为准并把偏差如实登记（成因未追：或为 9-15 固件归档批之后又有 4 件于后续包并入 archive，起草期未回溯 git 历史）。**该更正不影响改法**（T1 的修法是集合补一个成员、与件数无关），但件数差 4 说明该 ARQ 的取证时点已陈旧。
 
-**对偶闸已修而本闸未修**：`unit-run-check.mjs` 的 `SKIP_DIRS` 已于 260916 补 `archive`（ARQ-260916-unit-gate-archive-recursion 闭账 commit `4fc0969`，`git rev-parse 4fc0969` 核实存在），两闸退役口径现不同步。
+**对偶闸已修而本闸未修**：`unit-run-check.mjs` 的 `SKIP_DIRS` 已于 260916 补 `archive`（ARQ-260916-unit-gate-archive-recursion 闭账 commit `4fc0969`，`git rev-parse 4fc0969` 核实存在；`:38` 现含 `'archive'` 亲核确认），两闸退役口径现不同步。
 
 **第二条缺口**：`grep -n archive docs/DEV-GOVERNANCE.md` **零命中**——「任意深度名为 `archive` 的目录 = 退役保留名」这一约定现仅存于 `unit-run-check.mjs` 与 `server/pytest.ini` 两处**代码注释**，包作者不可见；将来现役测试误落该名会静默不跑。根因：退役机制由 260916 一次性直修引入，只改了代码、未成文；acceptance 闸是对偶面漏改。
 
-### 问题 3：`current/` 指针是隐性全局状态，经它解析的脚本不回声、错了也静默
+### 问题 2：`current/` 指针是隐性全局状态，经它解析的脚本不回声、错了也静默
 
 证据（verbatim 亲核）：`.claude/scripts/dispatch-stamp.mjs:60-68` 的 `resolveChangeId()` 从 `delivery/taskpackages/current/taskpackage.json` 读 `changeId` 并返回，**全程无任何输出**；调用点 `:165` = `const changeId = resolveChangeId();` 随后直接以该 changeId 写 `pod-events.jsonl`。
 
@@ -85,7 +60,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **根因**：`current/` 是设计上的**单指针**，但每个经它解析的调用点都把它当**可信输入**，且解析结果不可见——**错与对在输出上无差别**。
 
-### 问题 4：tighten-only 修订纪律只活在页脚与散落先例里
+### 问题 3：tighten-only 修订纪律只活在页脚与散落先例里
 
 证据（亲核）：`grep -n tighten docs/DEV-GOVERNANCE.md` **零命中**——「## 验收测试纪律」节现存 §1（server host/live 两态，`:268`）/ §2（probe ≠ exercise，`:279`）/ §3（冻结即冒烟，`:283`）/ §4（C 类冻结验收实编，`:287`）四小节，**无 tighten-only 条**。
 
@@ -101,29 +76,21 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **影响面**：① 每包遇 tighten 场景都要现付一次 advisory/escalation 成本（该包实测 = 一次 architect 派发 20,374 tokens + 一次 human 触点）；② 更坏的是**反向漂移**——无成文边界时「补齿」与「改验收」的区分只靠执行者自律，**放宽断言可以伪装成 tighten**。
 
-## 2. 改法（T1–T4）
+## 2. 改法（T1–T3）
 
-> **同文件落地顺序钉死**：T2 与 T4 都改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节的尾部——**T2 先落 §5，T4 后落 §6**（T4 依赖 T2 已落，同批内顺序执行）。两节互不重叠。
+> **同文件落地顺序钉死**：T1 与 T3 都改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节的尾部——**T1 先落 §5，T3 后落 §6**（T3 依赖 T1 已落，同批内顺序执行）。两节互不重叠。
 
-### T1 · `changes-index` `deriveLanded` 增第四锚：`ok: true（GREEN/PASS）` 行
-
-承载 `ARQ-260909-index-verdict-anchor-okform-gap`。
-
-改 `.claude/scripts/changes-index.mjs`：在 `:177-178` 两条锚旁新增第三条锚正则（第四通道），识 `ok: true（GREEN）` / `ok:true(GREEN)` / `ok: true（PASS）` 等变体，接线进 `deriveLanded()`（`:179`）与既有三通道并列。为什么这样改：直击问题 1 的根因——三通道是对既有书写习惯的事后归纳、漏了已被实际使用的形态；补锚后 §1 表中 6 条 `frozen | yes` 批次经 `--upsert` / 全量重建即翻 `landed`（**这是本 T 的可执行验收面**）。自检电池（`--self-check`，`:512`）补两夹具：`ok: true（GREEN）` → true、`ok: false（RED）` → false。**不改** verdict 模板的书写要求、不强制单一形态。
-
-目标文件：`.claude/scripts/changes-index.mjs`（改）
-
-### T2 · `acceptance-run-check` 枚举跳 `archive` + 退役保留名成文（§5）
+### T1 · `acceptance-run-check` 枚举跳 `archive` + 退役保留名成文（§5）
 
 承载 `ARQ-260916-acc-gate-archive-skew`。
 
-① 改 `.claude/scripts/acceptance-run-check.mjs:34`：`SKIP_DIRS` 集合补 `'archive'`——镜像 `unit-run-check.mjs` 已于 260916 落地的同款修法，使两闸退役口径同步。自检电池补**实盘断言**（沿 unit 闸 `real-repo-no-archive-collected` 先例）：枚举命中 `archive` 路径即 FAIL，防 `SKIP_DIRS` 回退静默复发。
+① 改 `.claude/scripts/acceptance-run-check.mjs:34`：`SKIP_DIRS` 集合补 `'archive'`——镜像 `unit-run-check.mjs` 已于 260916 落地的同款修法（该闸 `SKIP_DIRS` 现含 archive，commit `4fc0969`），使两闸退役口径同步。自检电池补**实盘断言**（沿 unit 闸 `real-repo-no-archive-collected` 先例）：枚举命中 `archive` 路径即 FAIL，防 `SKIP_DIRS` 回退静默复发。
 
-② 改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节**新增 §5「退役保留目录名」**：正文钉死「`archive` = 两面（firmware / server）退役保留目录名，现役测试禁落该名」+ 写明两处代码承载点（`.claude/scripts/unit-run-check.mjs` 与 `.claude/scripts/acceptance-run-check.mjs` 的 `SKIP_DIRS`、`server/pytest.ini` 的 `norecursedirs`）+ 写明「归档件按定义非现役面」的对偶语义（承 260916-unit-gate-archive-recursion）。为什么这样改：直击问题 2 的第二条缺口——约定现只活在代码注释里，包作者不可见。
+② 改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节**新增 §5「退役保留目录名」**：正文钉死「`archive` = 两面（firmware / server）退役保留目录名，现役测试禁落该名」+ 写明两处代码承载点（`.claude/scripts/unit-run-check.mjs` 与 `.claude/scripts/acceptance-run-check.mjs` 的 `SKIP_DIRS`、`server/pytest.ini` 的 `norecursedirs`）+ 写明「归档件按定义非现役面」的对偶语义（承 260916-unit-gate-archive-recursion）。为什么这样改：直击问题 1 的第二条缺口——约定现只活在代码注释里，包作者不可见。
 
 目标文件：`.claude/scripts/acceptance-run-check.mjs`（改）、`docs/DEV-GOVERNANCE.md`（改：新增 §5）
 
-### T3 · `dispatch-stamp` 回显所解析 changeId + 可选 `--expect-change-id` 硬校验
+### T2 · `dispatch-stamp` 回显所解析 changeId + 可选 `--expect-change-id` 硬校验
 
 承载 `ARQ-260913-current-pointer-implicit-global`。
 
@@ -133,15 +100,15 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 ② 新增**可选** flag `--expect-change-id <id>`：传了且与解析值不符即 **fail-loud 退出**（打印解析值与期望值两值 + 指向 `current/` 路径），不传则行为与今天**完全一致**。
 
-为什么这样改：直击问题 3 的根因——错与对在输出上无差别；让每个经 `current/` 解析的调用点**看得见**解析值，并给调用方一个**零成本升级到硬校验**的开关。**选 `--expect-change-id` 而非无条件 fail-loud**：后者会打断跨包簿记的合法用法（如收口期为上一包补记），而前者把是否收紧留在调用方手里。**本批只改 `dispatch-stamp.mjs`**；`journal-append` / `verify.mjs` 等同族调用点只在本 T 说明里点名、不在本批改（§6 留根）。
+为什么这样改：直击问题 2 的根因——错与对在输出上无差别；让每个经 `current/` 解析的调用点**看得见**解析值，并给调用方一个**零成本升级到硬校验**的开关。**选 `--expect-change-id` 而非无条件 fail-loud**：后者会打断跨包簿记的合法用法（如收口期为上一包补记），而前者把是否收紧留在调用方手里。**本批只改 `dispatch-stamp.mjs`**；`journal-append` / `verify.mjs` 等同族调用点只在本 T 说明里点名、不在本批改（§6 留根）。
 
 目标文件：`.claude/scripts/dispatch-stamp.mjs`（改）
 
-### T4 · `DEV-GOVERNANCE` 验收测试纪律新增 §6「tighten-only 修订窗口」
+### T3 · `DEV-GOVERNANCE` 验收测试纪律新增 §6「tighten-only 修订窗口」
 
 承载 `ARQ-260908-tighten-only-unwritten`。
 
-改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节，在 §5 之后新增 **§6 tighten-only 修订窗口**，正文直接采纳 advisory `0e55cfab` 里那份**防滥用五件**（逐字为据，非重写）：
+改 `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」节，在 §5 之后新增 **§6 tighten-only 修订窗口**，正文直接采纳 advisory `0e55cfab` 里那份**防滥用五件**（逐字为据，非重写；human 2026-09-18 OQ 全裁采纳完整五件）：
 
 1. **纯 additive 机器可判**：`git diff -U0` 删除行数 = 0；
 2. **新齿必须重跑当初暴露 vacuity 的原变异**并证明转红、`sha256` 还原核销（不许另造易过变异自证）；
@@ -151,7 +118,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 **本 T 不落引用行一侧**：该 ARQ 原文落地面为「`docs/DEV-GOVERNANCE.md` 新增 §5 + acceptance-author agent def 引用行」——本 T **只落 DEV-GOVERNANCE 一侧**，引用行留 §6 留根（理由：动 agent def 触 self-def 判断点，不值得为一条引用行把本批拖进该争议；且本批 §0 已声明不动任何 frontmatter）。
 
-为什么这样改：直击问题 4 的两条影响面——① 消灭每包现付的 advisory 成本（该纪律从此有据可依）；② 堵住「放宽断言伪装成 tighten」的反向漂移（五件里 1/2 两条是机器可判的硬闸）。
+为什么这样改：直击问题 3 的两条影响面——① 消灭每包现付的 advisory 成本（该纪律从此有据可依，**使用面实测 20 份**）；② 堵住「放宽断言伪装成 tighten」的反向漂移（五件里 1/2 两条是机器可判的硬闸）。human 明确该条同时是「给冻结件开后门」的**授权边界**，故五件完整落、不降强度。
 
 目标文件：`docs/DEV-GOVERNANCE.md`（改：新增 §6）
 
@@ -159,70 +126,93 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
 
 | 面 | 文件 | 类别 | 说明 |
 |---|---|---|---|
-| arch INDEX 生成器 | `.claude/scripts/changes-index.mjs` | G3（生成器，**非门**） | T1 补第四锚。消费方 = `--upsert` / 全量重建 / `--self-check`；INDEX 非拦阻依据（文件头自陈） |
-| 验收闸 | `.claude/scripts/acceptance-run-check.mjs` | G3（**枚举面改动，如实声明**） | T2① 跳 archive。消费方 = `verify.mjs` 的 acceptance 相位、`--self-check` |
-| 簿记写入器 | `.claude/scripts/dispatch-stamp.mjs` | G3（**新 fail-loud 路径，如实声明**） | T3 回声 + 可选硬校验。消费方 = planner Step 9 `[DISPATCH-STAMP]` 纪律；`journal-append` / `verify.mjs` 同族**本批不改** |
-| 治理规则正文 | `docs/DEV-GOVERNANCE.md` | **G1** | T2② 新增 §5 退役保留名、T4 新增 §6 tighten-only。承 260907 批 T8 同形态先例（新节非改判据） |
+| 验收闸 | `.claude/scripts/acceptance-run-check.mjs` | G3（**枚举面改动，如实声明**） | T1① 跳 archive。消费方 = `verify.mjs` 的 acceptance 相位、`--self-check` |
+| 簿记写入器 | `.claude/scripts/dispatch-stamp.mjs` | G3（**新 fail-loud 路径，如实声明**） | T2 回声 + 可选硬校验。消费方 = planner Step 9 `[DISPATCH-STAMP]` 纪律；`journal-append` / `verify.mjs` 同族**本批不改** |
+| 治理规则正文 | `docs/DEV-GOVERNANCE.md` | **G1** | T1② 新增 §5 退役保留名、T3 新增 §6 tighten-only。承 260907 批 T8 同形态先例（新节非改判据） |
 | 契约面 / G2 / agent frontmatter | — | **未触** | 零改动 |
-| 工程门新增 | — | **零新增** | T2 只给既有集合补一个成员；T3 的新硬失败默认关、仅显式传参时生效 |
+| 索引生成器 | `.claude/scripts/changes-index.mjs` | **未触**（v0.5 移出） | 原 T1〔索引终态锚〕已移出本批，见 §6 留根① |
+| 工程门新增 | — | **零新增** | T1 只给既有集合补一个成员；T2 的新硬失败默认关、仅显式传参时生效 |
 
-**【硬项 1b · sweep 透镜】** T2① 落地新枚举口径，起草期已预跑原始输出（见 §1 问题 2 的 13 件清单 + 补集后 0 件的两侧实测）。T1 的新锚**已在现行 INDEX 上预跑**——§1 表格的 6 条 `frozen | yes` 即「补锚后应翻 landed」的 census（机械枚举自 `delivery/changes/arch/INDEX.md` 逐行读取，无截断形态）。
+**【硬项 1b · sweep 透镜】** T1① 落地新枚举口径，起草期已预跑原始输出（见 §1 问题 1 的 13 件清单 + 补集后 0 件的两侧实测）。**索引锚面随 T1〔原〕移出，其 census（11 条已合 main 却非 landed）转入 §6 留根① 交接下一批**，本批不再作为落地依据。
 
-**【硬项 1c · 复扫模式完备性先验】** 本批 T2 涉**退役语面残留清扫**。模式集显式枚举全形态：`archive`（英文词形，目录名精确匹配）× 有 / 无 backtick × 两种消费形态（`SKIP_DIRS` 集合成员 / `norecursedirs` 配置项）。**完备性论证**：`SKIP_DIRS.has(entry)` 按**目录名精确相等**匹配（`acceptance-run-check.mjs:46` = `if (SKIP_DIRS.has(entry) || entry.startsWith('.')) continue;`，`entry` 为 `readdirSync` 的单段名），故无需考虑大小写变体或路径形态——`archive` 一词即完备。T1/T3/T4 不涉退役语面。
+**【硬项 1c · 复扫模式完备性先验】** 本批 T1 涉**退役语面残留清扫**。模式集显式枚举全形态：`archive`（英文词形，目录名精确匹配）× 有 / 无 backtick × 两种消费形态（`SKIP_DIRS` 集合成员 / `norecursedirs` 配置项）。**完备性论证**：`SKIP_DIRS.has(entry)` 按**目录名精确相等**匹配（`acceptance-run-check.mjs:46` = `if (SKIP_DIRS.has(entry) || entry.startsWith('.')) continue;`，`entry` 为 `readdirSync` 的单段名），故无需考虑大小写变体或路径形态——`archive` 一词即完备。T2/T3 不涉退役语面。
 
 ## 4. human 取舍点（OQ）
 
-### OQ1 · T2（验收闸枚举面）与 T3（新 fail-loud 路径）的闸 / 行为触点，走 Track B 判官判、还是升 full-adversarial + human
+### OQ1 · T1（验收闸枚举面）与 T2（新 fail-loud 路径）的闸 / 行为触点，走 Track B 判官判、还是升 full-adversarial + human
 
-**背景（必须给全）**：本批两个 T 触到闸 / 脚本的**判定与行为语义**：T2 改**验收闸的枚举面**（承载 ARQ 自陈「**非门判定语义变更**——若判为门扩齿须如实升 review」）；T3 引入**新的 fail-loud 退出路径**（承载 ARQ 自陈「② 经 current/ 解析的脚本启动时回显所解析 changeId、与本包不符即 fail-loud」，方向为**向严**）。两条先例方向不一致：260907 批把 DEV-GOVERNANCE 新节按 Track B 落，`ARQ-260908-versioned-guard-version-literal-coupling` 却把「改闸判据」判为硬排除 → full。**按 AGENTS.md「存疑向严」，该判断显式交 human。**
+**背景（必须给全）**：本批两个 T 触到闸 / 脚本的**判定与行为语义**：T1 改**验收闸的枚举面**（承载 ARQ 自陈「**非门判定语义变更**——若判为门扩齿须如实升 review」）；T2 引入**新的 fail-loud 退出路径**（承载 ARQ 自陈「② 经 current/ 解析的脚本启动时回显所解析 changeId、与本包不符即 fail-loud」，方向为**向严**）。**human 2026-09-18 已裁「都留 Track B」**（该裁决对本批仍有效）。
 
 **选项**：
-- **(a) 留 Track B**（判官按 `track-b-judge-brief` 全面审；双方随时可启「声明红队」升级）。**推荐**。理由：(1) 不命中两条 Track A 判据；(2) 两处方向均为**收窄 / 向后兼容 / 向严**——T2 收窄枚举面、T3 的硬失败默认关；(3) 半径已由起草期实测照出（13→0 两侧、6 条应翻 landed 的 census）；(4) 拆包后本批闸触点已从「5 处混在一包」降到「2 处同族（都是收口期脚本）」。
-- **(b) 升 full-adversarial + human**。理由：T3 的新硬失败路径如果被误用（调用方误传 `--expect-change-id`）会**打断合法簿记**，红队更稳。
-- **(c) 折中（推荐备选）**：Track B，但 T3 的 `--expect-change-id` 在**落地后先只回显、不启用硬校验**，观察一段再启（把新硬失败路径拆成两个相位落地）。
+- **(a) 留 Track B**（human 已裁；判官按 `track-b-judge-brief` 全面审）。理由：(1) 不命中两条 Track A 判据；(2) 两处方向均为**收窄 / 向后兼容 / 向严**——T1 收窄枚举面、T2 的硬失败默认关；(3) 半径已由起草期实测照出（13→0 两侧）。
+- **(b) 升 full-adversarial + human**。理由：T2 的新硬失败路径如果被误用（调用方误传 `--expect-change-id`）会**打断合法簿记**。
+- **(c) 折中**：Track B，但 T2 的 `--expect-change-id` 在**落地后先只回显、不启用硬校验**，观察一段再启。
 
-### OQ2 · T4 的 §6 落点与强度
+### OQ2 · T3（tighten-only §6）的落点与强度
 
-**(a) 按五件原样落 `docs/DEV-GOVERNANCE.md`「验收测试纪律」§6**（**推荐**；承 260907 批 T8「新节 + 引用行」同形态先例）。(b) 降强度：只落「纯 additive 机器可判 + 三件记录」两条，其余三条（原变异重放 / 范围帽 / 意图锚定）留参考面——理由：五件里只有前两条是机器可判的硬闸，后三条是判断、成文后仍需人读。**(c) 落 `.claude/references/acceptance-evidence.md`（G2）而非 DEV-GOVERNANCE（G1）**——理由：G1 的挂载面更宽。
+**(a) 按五件原样落 `docs/DEV-GOVERNANCE.md`「验收测试纪律」§6**（**human 2026-09-18 已裁**）。理由：该纪律是「给冻结件开后门」的**授权来源**，授权边界该由 human 划；五件里 1/2 两条是机器可判的硬闸。
 
-**这项为什么该 human 裁**：§6 是**新增一条适用于全部未来包的验收纪律条款**（挂载面扩张），且它同时是「给冻结件开后门」的**授权来源**——授权边界该由 human 划。
+### OQ 裁决（human 2026-09-18，v0.5 状态复核）
 
-### OQ 裁决（human 2026-09-18）
-
-| OQ | 裁决 | 备注 |
+| OQ | 裁决 | v0.5 状态 |
 |---|---|---|
-| OQ1 | **(a) 留 Track B** | human 原话裁定「都留 Track B」——本批两处闸触点（T2 验收闸枚举面、T3 新 fail-loud）均按判官全面审，**不升 full-adversarial**。折中案 (c)（硬校验缓启）未采。 |
-| OQ2 | **(a) 五件原样落 `docs/DEV-GOVERNANCE.md` §6** | 采纳完整防滥用五件；(b) 降强度、(c) 换 G2 落点两案均未采。human 明确该条同时是「给冻结件开后门」的授权边界。 |
+| OQ1（闸触点轨道） | **(a) 留 Track B** | 维持（T1〔索引锚〕移出后，本批闸触点由「三处」降为「两处」，判断不变） |
+| OQ2（§6 落点与强度） | **(a) 五件原样落 DEV-GOVERNANCE** | 维持，无变化 |
+| ~~原 OQ1「T1〔索引终态锚〕…」~~ | — | **该 T 无 OQ**（其处方经起草期实测证伪 → 随 T 移出） |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
-**【真空绿规约】** V3/V4 为 `--self-check` 电池，其新增夹具须在输出中**具名出现**（防「加了夹具但没接线」的真空绿）；V6 的重建为全量重跑，须先断言输入非空（INDEX 源目录非空）。
+**【真空绿规约】** V2 为 `--self-check` 电池，其新增夹具须在输出中**具名出现**（防「加了夹具但没接线」的真空绿）；V3 的重放须先断言输入非空（枚举前命中数 > 0）；V5 为探针类，须覆盖「不带 flag」「带错误值」两态。
 
 | 项 | 命令 | 预期 |
 |---|---|---|
-| V1 | `node .claude/scripts/changes-index.mjs --self-check` | 全绿 + 新增两夹具（`ok: true（GREEN）` → true、`ok: false（RED）` → false）具名出现 |
-| V2 | `node .claude/scripts/changes-index.mjs`（全量重建）+ `cat delivery/changes/arch/INDEX.md` | §1 表中 6 条 `frozen \| yes` 批次翻 `landed`；`git diff` 仅该列变化 |
-| V3 | `node .claude/scripts/acceptance-run-check.mjs --self-check` | 全绿 + 新增实盘断言（`archive` 路径零枚举）具名出现 |
-| V4 | 按闸同款 `collectFiles` 逻辑枚举 `firmware/main/test/acceptance/` | 补 `archive` 前实测 **13** 条命中（全在 `archive/` 下）、补后 **0** 条（前后各留一次输出） |
-| V5 | `grep -c "archive" docs/DEV-GOVERNANCE.md` + `grep -c "tighten" docs/DEV-GOVERNANCE.md` | 两条均 ≥1（**原均为 0**） |
-| V6 | 三路探针（**起草期已核实 `dispatch-stamp.mjs` 现无 `--self-check` 入口**，故本项不写自检、改实跑探针）：① `grep -c "resolved changeId" .claude/scripts/dispatch-stamp.mjs`；② 在 `current/` 指向某包的临时状态下跑一次真调用；③ 带 `--expect-change-id <不同值>` 再跑一次 | ① ≥1；② stderr 出现 `resolved changeId = <该包 id>`；③ **非零退出** + 打印两值；**不带该 flag 时与今日行为一致**（exit 0） |
-| V7 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
-| V8 | `landing-fidelity-check.mjs <本批>` 结构门 | §2 锚集 ≡ manifest 机判通过（本批 4 路径） |
+| V1 | 按闸同款 `collectFiles` 逻辑枚举 `firmware/main/test/acceptance/` | 补 `archive` 前实测 **13** 条命中（全在 `archive/` 下）、补后 **0** 条（前后各留一次输出） |
+| V2 | `node .claude/scripts/acceptance-run-check.mjs --self-check` | 全绿 + 新增实盘断言（`archive` 路径零枚举）具名出现 |
+| V3 | 三路探针（**起草期已核实 `dispatch-stamp.mjs` 现无 `--self-check` 入口**，故不写自检、改实跑探针）：① `grep -c "resolved changeId" .claude/scripts/dispatch-stamp.mjs`；② 在 `current/` 指向某包的临时状态下跑一次真调用；③ 带 `--expect-change-id <不同值>` 再跑一次 | ① ≥1；② stderr 出现 `resolved changeId = <该包 id>`；③ **非零退出** + 打印两值；**不带该 flag 时与今日行为一致**（exit 0） |
+| V4 | `grep -c "archive" docs/DEV-GOVERNANCE.md` + `grep -c "tighten" docs/DEV-GOVERNANCE.md` | 两条均 ≥1（**原均为 0**）；且 §5/§6 两节标题 `grep -c` 各 1（防两 T 互撞） |
+| V5 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
+| V6 | `git diff .claude/scripts/changes-index.mjs` | **零改动**（证明 T1〔索引锚〕确已移出、未夹带） |
+| V7 | `landing-fidelity-check.mjs <本批>` 结构门 | §2 锚集 ≡ manifest 机判通过（本批 3 路径） |
 
 ## 6. 留根清单
 
-**不关的根**：
+**① T1〔索引终态锚〕——移出本批、退回 ARQ 队列，需重新设计**（human 2026-09-19 裁定；起草期实测触发）
 
-1. **T4 的引用行一侧未落**（`acceptance-author` agent def 的 References 行）——本批只落 DEV-GOVERNANCE §6；引用行需动 agent def，触 self-def 判断点，留后续（若那时该争议已定，随任一治理批补一行即可）。
-2. **`journal-append.mjs` / `verify.mjs` 的 `current/` 解析点未改**——本批只改 `dispatch-stamp.mjs`（见 T3 边界）。待观察 `--expect-change-id` 的实际采用率，再决定是否推广为常设硬校验。
-3. **`current/` 指针副本的行尾字节差同族面**（loop-retro-2026-09-13，screen-unification 改进 4：指针副本刷新须字节级复制、禁 Write 重打全文）——本批未承接（属 dev-loop 操作纪律，非治理脚本面）。**建议下个动 `current/` 刷新面的批承接**。
-4. **`ARQ-260908-known-red-count-no-mechanical-source` 子项②③**——子项①已由 260909 T5 承接；②（evidence 齿 root 注入）落 `.claude/references/acceptance-evidence.md`，与本批 §0 非目标冲突；③（runner 报告头写执行目录）属 host 测试基建面。两项留根。
-5. **拆包族另三批**（`-merge-chain-friction` / `-dispatch-chain-friction` / `-batch-drafting-friction`）——本批不承接。
-6. **移出本族的两个 launch 面 ARQ**（输入清单先例取旧、launch 前置清单不核）——留 ARQ 队列后续单独处理。
+本条的实质产出，须完整交接，否则下一批会重复本批的错误设计：
 
-**交日落复盘项**：T1 落地后在 `/loop-retro` 观察——INDEX 全量重建后**是否仍有推不出 landed 的批次**；若有，即该锚面仍有未枚举形态（本批 §1 表格的 6 条是已知集合，出现第 7 类即信号）。
+- **原处方被证伪**：`ARQ-260909-index-verdict-anchor-okform-gap` 的处方是「`deriveLanded` 补第四锚，识 `ok: true（GREEN/PASS）` 形态」。起草期实测：**19 份 `landing-verdict.md` 中只有 1 份**是该形态（260909-gov-review-gate-truthfulness）。补一条锚解决不了实际缺口。
+- **实际缺口面（起草期 census，11 条「已合 main 但 INDEX 状态非 landed」）**：
 
-**自律件**：起草期已按硬项 1a 亲核（§1 全部断言带命令与日期）；13 件清单与 6 条 frozen 表均为现跑枚举、非转引。
+  | 批次 | 实际 verdict 写法 | 锚为何不认 |
+  |---|---|---|
+  | `260907-gov-review-architect-dispatch-model-override` | `**verdict：APPROVE**` | token 集合 `(PASS\|GREEN\|RED\|FAIL\|BLOCK)` **无 APPROVE** |
+  | `260908-gov-review-escalation-conflict-ladder` | `### 7.0 Verdict：**GREEN（…）**` | 编号正则 `\d{1,3}[.、]` 吃不了点分号 `7.0` |
+  | `260908-gov-review-merge-chain-hardening` | 同上形态 | 同上 |
+  | `260907-gov-review-merge-friction` | `**绿（GREEN）**——…` | 无「标签 + 冒号」 |
+  | `260904-gov-review-escalate-merge-approval` | `**最终 verdict：GREEN。**` | `最终` 挡在标签前 |
+  | `260830-arch-review-ui-impl-strategy` | `**绿（放行建议）——…**` | 同上 |
+  | （另 5 条） | **无 `landing-verdict.md`** | 老惯例批 |
+
+- **病灶定性（关键，与本批原判断不同）**：脚本**自己的设计意图是对的**——`.claude/scripts/changes-index.mjs:176` 注释写「新批强制规范 verdict 行（`> verdict: PASS/GREEN`）→ 100% 走机器锚；旧批发散散文不强行机械解析（太脆），归 ① 人工 adjudication」，且 `LANDED_ADJUDICATION` 人工 pin 表**已存在且已用**（`:36` 起 7 条，注释「发散散文旧批…人工核 verdict 结论为通过态」）。**坏的不是设计，是「新批没照做」**——260904～260915 这 6 条近批各写各的、一条都没进 pin 表，于是静默显示 frozen。**故「补一条锚」是治标、会变成打地鼠。**
+- **影响面定性（降低判断难度）**：INDEX 是**投影、不是拦阻依据**（文件头自陈「不做拦阻依据」），故这是**显示真实性问题**、非闸缺陷；危害是误导读者（本批起草期即被误导一次）。
+- **建议下一批的处置方向（不自批，交 review）**：优先按脚本自身设计意图收口——① 把上表 6 条已落地批按实况 pin 进 `LANDED_ADJUDICATION`（一行一条 + 人读理由，沿既有 7 条格式）；② 把「点分编号」这个**明显安全**的形态补进 `VERDICT_HEADING_RE`（`\d{1,3}` → 允许 `\d{1,3}(?:\.\d{1,3})?`）；③ verdict 行规范成文（`docs/templates/` + verifier 简报）把缺口堵在未来。**不追求用正则穷举所有历史写法**（`绿` / `最终 verdict` 类形态本身脆）。
+- **队列状态**：`ARQ-260909-index-verdict-anchor-okform-gap` **仍在册未结**，已在 `docs/ARCH-REVIEW-QUEUE.md` 补注本批实测 census 与病灶定性，供下一批直接引用。
+
+**② T3 的引用行一侧未落**（`acceptance-author` agent def 的 References 行）——本批只落 DEV-GOVERNANCE §6；引用行需动 agent def，触 self-def 判断点，留后续。
+
+**③ `journal-append.mjs` / `verify.mjs` 的 `current/` 解析点未改**——本批只改 `dispatch-stamp.mjs`（见 T2 边界）。待观察 `--expect-change-id` 的实际采用率，再决定是否推广为常设硬校验。
+
+**④ `current/` 指针副本的行尾字节差同族面**（loop-retro-2026-09-13，screen-unification 改进 4：指针副本刷新须字节级复制、禁 Write 重打全文）——本批未承接（属 dev-loop 操作纪律，非治理脚本面）。**建议下个动 `current/` 刷新面的批承接**。
+
+**⑤ `ARQ-260908-known-red-count-no-mechanical-source` 子项②③**——子项①已由 260909 T5 承接；②（evidence 齿 root 注入）落 `.claude/references/acceptance-evidence.md`，与本批 §0 非目标冲突；③（runner 报告头写执行目录）属 host 测试基建面。两项留根。
+
+**⑥ 拆包族另三批**（`-merge-chain-friction` 已 FROZEN v1.0 / `-dispatch-chain-friction` / `-batch-drafting-friction`）——本批不承接。
+
+**⑦ 移出本族的两个 launch 面 ARQ**（输入清单先例取旧、launch 前置清单不核）——留 ARQ 队列后续单独处理。
+
+**交日落复盘项**：本批 T1〔原索引锚〕的 census（11 条）建议在下一批落地后复跑一次，确认是否清零；T1① 撤 archive 后观察 final 相位是否如预期不再枚举退役件。
+
+**自律件**：起草期已按硬项 1a 亲核（§1 全部断言带命令与日期）；13 件清单与 20 份页脚清点均为现跑枚举、非转引；v0.5 的 T1〔索引锚〕移出为 human 裁定 + 起草期实测双重驱动，非主线程自裁。
 
 ## 7. 评审记录
 
