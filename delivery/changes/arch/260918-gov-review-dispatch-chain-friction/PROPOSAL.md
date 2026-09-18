@@ -157,3 +157,52 @@
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+### R1 - 2026-09-19 - architect
+
+**verdict：BLOCK(F1, F2, F3, F4)**。F1 为 BLOCKING 且标「升级 human」（影响目标效果级：T1 对其三例自证证据中的一例拦截点不可达）；F2 SHOULD；F3/F4 NIT。T2 覆盖面判定成立（F3/F4 均为措辞级，不动改法方向）。
+
+#### F1（BLOCKING · 升级 human）· T1 的 dispatch prompt 机制到不了「主会话自执行」这一实证拦截点，且未承接 §1 自引的「执行前」臂
+
+**证据（亲核）**：
+
+- `delivery/changes/dev/260829-char-stroke/pod-events.jsonl:7` human-decision 事件 verbatim：`"summary":"human 批准 planner 直跑变异探针循环（mutation-check 闸 8 功能 id 证据）：变异→WSL 重建→host ELF 齿红确认→还原 sha256 校验；auto-mode 分类器曾误拦，human 逐条放行/放行工作流"`——char-stroke 的变异探针是 **planner 主会话直跑**被拦（「human 逐条放行」），该拦截点无 dispatch prompt 存在。
+- `delivery/changes/dev/260829-story-p3/pod-retro.md:23`（人工纠偏节）verbatim：「只有两处真停下来问了你：**① 主线程能不能直接改实现跑变异（你放行）**」——story-p3 的最终执行姿势同样是主线程直跑；其卡点节 `:13` verbatim「mutation 那步被 auto-mode 分类器拦了，判我「不可逆破坏 builder 产物」」。
+- 三例中只有 g-relay-fix 是子会话（builder）被拦，且其第二轮的 dispatch prompt 预防声明实证有效（`delivery/changes/dev/260907-g-relay-fix/pod-retro.md:11` verbatim「第二轮直接在派发 prompt 里预防性声明『被拦就停、主线程代执行』，省了硬碰」）——T1 的机制对**子会话子类**成立、有实证。
+- 本 PROPOSAL §1 自己引用的 char-stroke retro 模式（`delivery/changes/dev/260829-char-stroke/pod-retro.md:11` verbatim）是「凡『看起来像攻击』的验证动作，**派发/执行前**先落 human-decision 事件背书」——含**执行前**臂；T1 两句只承接了派发臂，未承接执行前落 human-decision 事件背书这一 retro 已总结、且 char-stroke 已实操（`approve-mutation-probe-workflow` 事件在册）的形态。
+
+**判读**：本批同族 P1/P3 各有一个 T 因「改法覆盖不了目标面」被证伪移出；T1 对「派发侧携带」子类覆盖成立，但对「主会话自执行」子类（char-stroke 实证形态；story-p3 终态形态；且变异类动作的既有处置惯例本就因子会话写权限被拦而把执行推向主会话——T1 第二句「主线程代执行」恰是该推移的产物）不可达。这与 ARQ 建议①原文一致（T1 忠实承载 ARQ 处方，处方本身漏了执行侧臂），但判官按透镜「该 T 的改法是否真能覆盖它的目标面」须指出：三例自证证据中至少一例不被本改法覆盖。
+
+**建议修法方向（不换落点、零门改动、不触 OQ1 裁决面）**：条款补第三句（或并入判据句）覆盖自执行姿势——主会话/无 dispatch prompt 的执行者跑清单内高风险合法动作前，**预落既有事件型 `human-decision` 背书**（先例：`approve-mutation-probe-workflow`，eventType 零闭集扩张），声明内容同两句（合法性与还原路径 + 兜底句）。是否采纳此扩臂或显式缩圈 T1 目标面为「派发侧子类」= 方向取舍，**升级 human 裁**。
+
+#### F2（SHOULD）· T1 生产者可达性断链：所引 `:196` 先例实为双臂结构，T1 只落了口径臂
+
+**证据（亲核）**：`.claude/references/pod-coordination.md:196` verbatim「义务的生产者可达性由 **planner Step 11 派 integrator 的 dispatch prompt 显式携带**（与锚 2 brief 携带效果段同构，派发侧传递；integrator.md 不因此改）」；`.claude/agents/planner.md:78`（Step 11）verbatim「workstream 包的 dispatch prompt 显式携带『review-packet 必含 demo 对账行』……口径见 `pod-coordination.md` §11」。即先例的**携带臂活在 planner.md（agent def）**，pod-coordination.md 只承载口径。T1 按 OQ1(a) 只落口径臂；而 planner.md 全文对 pod-coordination.md 的引用仅 `:78`（§11 口径）与 `:119`（合并串行化），其派发步 Step 7 明文「派发 prompt 只引用两份 brief 的文件路径……不转抄清单正文」、Step 9「只引用 Step 7 已生成的 input-brief-builder.md 路径」——**派发期没有任何指针把新条款带给派发作者**。条款被采纳全靠派发作者自发翻阅 pod-coordination.md，无承载通道。
+
+**判读**：§6 留根 2 已诚实登记「实际采用率未观测 + 观察计划」，风险本身是知情的；但 §1 的先例引用「派发契约的既有承载点就在这里（`:196` 同族先例）」掩盖了先例的携带臂在 agent def 面——先例之所以生效，正因 planner.md Step 11 带了那一臂。若主线程沿用此引用为 T1 的可达性论据，属引用失真。
+
+**建议修法方向**：① 落地措辞如实改述先例结构（「同族先例」→「同族口径承载点；其携带臂在 planner.md Step 11，本批按 OQ1(a) 不建携带臂，可达性以留根 2 观察计划承载」）；② 若 human 欲保证携带臂，须显式批一条 planner.md 派发步指针行（触 OQ1(b) 邻面）——建议随 F1 一并裁，不单独升级。
+
+#### F3（NIT）· T2 指针行的读者面错配
+
+**证据（亲核）**：pod-coordination.md 全文「真机轮」仅出现在 `:196` demo 对账行段（closeout/对账语境，读者 = planner Step 11 / 收口侧）；真机轮串口捕获的**执行**发生在 verifier/integrator 执行期或主会话，其触达通道是 skill 的 description（`.claude/skills/kidpal-serial-monitor/SKILL.md:3`「Use whenever reading device boot logs, watching a smoke round, or debugging on-device behavior」——真机轮必含串口读，触发成立，T2 主通道覆盖成立）。指针行声称目的「防真机轮派发侧想不到翻该 skill」依赖派发侧读 pod-coordination.md，无证据支撑。
+
+**建议修法方向**：措辞如实化为「辅助指针（收口/对账侧可达；主通道 = skill description 触发）」，或按 OQ1 裁决维持位置、仅修正目的表述。
+
+#### F4（NIT）· 计数与清单小失真
+
+- T2①「21:15 / 22:50 **两度**实证」 vs §1 / ARQ / `delivery/changes/dev/260911-screen-unification/pod-retro.md:34` verbatim「当晚**三次**设备重启全部与捕获结束时刻吻合（21:15 / 22:50 秒级）」——三次重启、两个时刻，PROPOSAL 内部不一致。
+- §1/§2 称「四类已实证误伤」；实测误伤记录为 **3 例**（char-stroke 探针 / story-p3 取证 / g-relay-fix ECS），「部署动作」第四类来自 ARQ trigger 行（「下个含变异探针 / ECS 操作 / 部署动作的包 launch 前」）对 g-relay-fix 形态的泛化，非独立实证；§3 硬项 1b 括号「（变异探针 / ECS 部署 / mutation 取证 + 部署动作）」中「部署」出现两次。OQ2 已裁开放举例，影响小，但应如实写「三类实证 + 一类泛化示例」。
+
+#### 亲核留痕（§1 事实断言逐项）
+
+- `wc -l .claude/skills/kidpal-serial-monitor/SKILL.md` = 31 ✓；三节标题 `:8`（Tools）/`:19`（Rules that cost time when forgotten）/`:24`（Reading a smoke round）逐行核对 ✓；DTR/RTS 全文仅 `:10` 一次且为工具说明形态（未记录伪影模式）✓。
+- `grep -rn "预防声明" .claude/` 零命中 ✓；「单一长捕获 / 就绪信号开窗 / 实时口令」零命中 ✓；`grep -rln "真机轮" .claude/` = planner.md / pod-coordination.md / task-intake-and-slicing.md / loop-retro/ledger.jsonl（与 §6 留根 3 一致，确无 checklist 载体）✓；`grep -c "kidpal-serial-monitor" .claude/references/pod-coordination.md` = 0 ✓（V4 基线成立）。
+- 三例误伤证据逐条 verbatim 吻合：char-stroke pod-retro 卡点 1（`:11`）✓、story-p3 卡点（`:13`）+ 人工纠偏节（`:23`）✓、g-relay-fix 卡点 1（`:11`）✓；ARQ 两行原文（`docs/ARCH-REVIEW-QUEUE.md:57-58`）与 §1/§2 引述吻合 ✓。
+- 4 包真机轮实证逐条吻合：key-route-a1 卡点 3（pod-retro `:30-34` verbatim「第一次 300s 窗口开早了……第二次窗口 human 主动喊开始，一次过」）✓、screen-unification 追记（`:33-34`）✓、hardware-validation「烧录 2min + 复烧验证 + human 目视……成为主循环周期」（`:31`）✓、render-pages「boot 死锁……烧录后才现形」「开机冒烟……已立为必经步」（`:34`）✓。三条姿势确属「各包现撞现总结」（key-route-a1 事前未知、screen-unification 当夜事后钉死），「知道了但没地方写」判定成立，T2 覆盖面成立；skill 新节与既有三节互补不冲突（「COM5 独占」↔「绝不关端口」）。
+- 260915 批口径引用属实（`260915-gov-review-worktree-pool-reuse/PROPOSAL.md` T2⑤「环境事实归 skills、基线归 progress.md、留根归 pod-retro」在册）✓。
+- **结构字段核对**：landing-manifest 围栏块在场（2 路径）✓；packet-id 行在场（头注「packet-binding（FROZEN 生效）」行）✓；manifest ≡ §2 各 T 目标文件并集 {pod-coordination.md, SKILL.md} ✓。
+- **边界核对**：riskTier=low / profile=G2 成立（两落点均 `.claude/references` + `.claude/skills`，零 G1/G3/契约/frontmatter，零闸零脚本）✓；Track B 默认路由成立（两条升级判据均未命中）✓；OQ1/OQ2 裁决未重开（本评审仅在裁决框架内指出可达性与覆盖面后果，落点维持参考文档面）✓。
+- 验证集 V1–V6 逐条机械可判、锚点非空转 ✓（V1 依赖落地文本含「预防声明」字面——§2 草案条款正文现未含该词，落地时须按 V1 锚点写入）。
+
+**结论**：BLOCK(F1, F2, F3, F4)。F1 升级 human（T1 是否补「执行前 human-decision 背书」第三臂，或显式缩圈 T1 目标面为派发侧子类）；F2 建议 F1 裁决时一并定携带臂取舍；F3/F4 措辞级，主线程修订时顺手收。T2 除 NIT 外无实质问题。

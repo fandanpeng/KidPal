@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-closeout-chain-friction
 
-> **状态：DRAFT v0.7 · 2026-09-19 · 已立项 ack · 待 architect R3 确认**（凭据：human 2026-09-18 立项 ack + OQ 全裁；v0.5 按 human 2026-09-19 裁定移出 T1〔索引终态锚〕；R1 BLOCK(F1..F6) → v0.6 修订 → R2 判 F1–F6 全到位、新出 F7+N1–N3 → **v0.7 逐条收口**〔F7 危害定性回收 / N1 OQ 口径更正 / N2 计数口径 / N3 补第四路探针〕。FROZEN 行待补 R3 GREEN 凭据）。
+> **状态：FROZEN v1.0 · 2026-09-19 · 可进 landing（按 human 指示暂不 landing，待 human 阅后再落）**（凭据：human 2026-09-18 立项 ack + OQ 全裁；v0.5 按 human 2026-09-19 裁定移出 T1〔索引终态锚〕；R1 BLOCK(F1..F6) → v0.6 → R2 BLOCK(F7+N1–N3) → v0.7 全收口 → **R3 GREEN**〔§7 `### R3 - 2026-09-19 - architect`，含一处 NIT N4，已在标冻前折入〕）。
 > **承载 ARQ**：`ARQ-260916-acc-gate-archive-skew`（T1）、`ARQ-260913-current-pointer-implicit-global`（T2）、`ARQ-260908-tighten-only-unwritten`（T3）。**原承载的 `ARQ-260909-index-verdict-anchor-okform-gap` 已移出本批、退回队列**（该 ARQ 的处方经起草期实测证伪，见 §6 留根①）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction`（已 FROZEN v1.0）/ `-dispatch-chain-friction` / `-batch-drafting-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -49,7 +49,7 @@ const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 
   - 现役 7 件：`char_stroke.acceptance.c` / `host_infra_smoke.acceptance.c` / `keybar_three_slot.acceptance.c` / `key_layer_dispatch.acceptance.c` / `p1_home_battery.acceptance.c` / `reminder_overlay_unify.acceptance.c` / `voice_round_ui.acceptance.c`。
 - **补 `archive` 进 `SKIP_DIRS` 后**：闸口径 **20 → 7**（只跳退役面，7 件现役件全部保留）。
 
-**【硬项 1a · 口径更正申报（R1-F1，主线程起草期失误）】** v0.5 曾把「`firmware/main/test/acceptance/` 子目录下 13 件全为归档、现役 0 件」**误升格为闸口径**，据此写出「该闸固件面的 oracle 输入集当前只剩退役件」「V1 补后 0 条」两处失准断言。**根因 = 起草期只扫了一个子目录、未核对闸的枚举根（`:137` = `firmware/`）**。R1 判官真跑闸抓到（`:206` `firmwareAcceptanceFiles: 20`），本版按实况更正：**该闸的固件面 7 件现役件一直在枚举集内，退役件只是其中 13/20**。**改法不受影响**（T1 仍是「集合补一个成员」，与件数无关），但**危害定性须据实回收**（R2-F7 采纳）：v0.6 前半句「按实况更正：7 件现役件一直在枚举集内、退役件只是其中 13/20」成立；**后半句「退役面上的断言失败会被计入现役验收结果」机制不成立、已删**——该闸固件面是**结构闸**（`fwAccFiles` 只喂 `decide()` 的**存在性判定**与 `surfaces` **计数**，见 `:85`/`:89-90`/`:206`，**不执行任何断言**），而 host_app runner 用**显式清单**（`firmware/main/test/host_app/main/CMakeLists.txt` 恰列那 7 件现役件、:`7` 注释并明言归档件「不再编入」）——**退役件无通道进入现役结果**。**据实回收为 ARQ-260916 原口径**：「退役件混入 oracle 输入集与清点统计（**虚高 2.85 倍**）；**将来 runner 判据变更 / 撤除时退役件会独立触发结构红**」（后者即 `:89-90` 的 `has-acceptance-files-no-runner`）。V1 亦据实改为**双探针**（子目录口径 13→0 + 闸口径 20→7），避免与 V2 自检输出的 `fwAcc=7` 互相矛盾。
+**【硬项 1a · 口径更正申报（R1-F1，主线程起草期失误）】** v0.5 曾把「`firmware/main/test/acceptance/` 子目录下 13 件全为归档、现役 0 件」**误升格为闸口径**，据此写出「该闸固件面的 oracle 输入集当前只剩退役件」「V1 补后 0 条」两处失准断言。**根因 = 起草期只扫了一个子目录、未核对闸的枚举根（`:137` = `firmware/`）**。R1 判官真跑闸抓到（`:206` `firmwareAcceptanceFiles: 20`），本版按实况更正：**该闸的固件面 7 件现役件一直在枚举集内，退役件只是其中 13/20**。**改法不受影响**（T1 仍是「集合补一个成员」，与件数无关），但**危害定性须据实回收**（R2-F7 采纳）：v0.6 前半句「按实况更正：7 件现役件一直在枚举集内、退役件只是其中 13/20」成立；**后半句「退役面上的断言失败会被计入现役验收结果」机制不成立、已删**——该闸固件面是**结构闸**（`fwAccFiles` 只喂 `decide()` 的**存在性判定**与 `surfaces` **计数**，见 `:85`/`:89-90`/`:206`，**不执行任何断言**），而 host_app runner 用**显式清单**（`firmware/main/test/host_app/main/CMakeLists.txt` 恰列那 7 件现役件、`:11-12` 注释并明言归档件「不再编入」；R3-N4 修正：v0.7 原记 `:7`，`:7` 实为 Convention 注释行）——**退役件无通道进入现役结果**。**据实回收为 ARQ-260916 原口径**：「退役件混入 oracle 输入集与清点统计（**虚高 2.85 倍**）；**将来 runner 判据变更 / 撤除时退役件会独立触发结构红**」（后者即 `:89-90` 的 `has-acceptance-files-no-runner`）。V1 亦据实改为**双探针**（子目录口径 13→0 + 闸口径 20→7），避免与 V2 自检输出的 `fwAcc=7` 互相矛盾。
 
 **【硬项 1a · ARQ 数字更正申报】** `ARQ-260916-acc-gate-archive-skew` 原文记该目录下「**9 件**归档 `.acceptance.c`」，本批现跑为 **13 件**。两者不符，本批以现跑实测为准并把偏差如实登记（成因未追：或为 9-15 固件归档批之后又有 4 件于后续包并入 archive，起草期未回溯 git 历史）。**该更正不影响改法**（T1 的修法是集合补一个成员、与件数无关），但件数差 4 说明该 ARQ 的取证时点已陈旧。
 
@@ -321,3 +321,26 @@ BLOCK(F1..F6)。F1 为唯一 BLOCKING（闸口径基线失准 + V1 预期错标�
 #### R2 结论
 
 BLOCK(F7)。F1–F6 修订实质全部到位（F2 的方法计数出入记 N2）；唯一拦路项 F7 为 v0.6 新引入的一句危害机制断言失准（一行措辞更正，方向：回收 ARQ-260916 原口径），N1–N3 顺手修。三个 T 的改法、验证集（V1 双探针已与 V2 自洽）、riskTier / profile / 轨道自评维持 R1 判定成立。**无升级 human 项。**
+
+### R3 - 2026-09-19 - architect
+
+**verdict：GREEN**（F7 + N1–N3 全部收口；附一处不影响判定的引据行号瑕疵，记 N4 NIT、不拦 GREEN、可随 FROZEN 标注顺手修）。
+
+#### 亲核留痕（R3 极简确认，commit `18cb3b6` = 单文件 43+/6-，仅本 PROPOSAL，无夹带；结构字段复核：landing-manifest 围栏块 3 路径与 packet-id 行 v0.7 未动、仍在场）
+
+- **F7 收口 ✓**：① 失准机制断言「退役面上的断言失败会被计入现役验收结果」**已删**，回收为 ARQ-260916 原口径「退役件混入 oracle 输入集与清点统计（虚高 2.85 倍）+ 将来 runner 判据变更/撤除时退役件独立触发结构红」——与闸实际机制相符（`:89-90` 亲核 = `if (input.fwAccFiles.length > 0 && !input.fwHasRunner)` → `has-acceptance-files-no-runner`，退役件单独在场即可触红；`:85` decide() 输入注释、`:206` `surfaces` 计数行均属实——`fwAccFiles` 确只喂存在性判定与计数、不执行断言）；② host_app runner 显式清单引据成立（`CMakeLists.txt` `HOST_ACCEPTANCE_SRCS` 恰列 7 件现役 `.acceptance.c`，与 §1 现役清单吻合）；唯行号引据见 N4。
+- **N1 收口 ✓**：§4 OQ1 (a) 理由 (3) 改「闸口径 20→7 两侧」+ 显式注明「口径修正、不改本 OQ 的裁决内容」——按建议采括注式更正、保决策留痕不失真。
+- **N2 收口 ✓**：留根③ 改双口径并列——并集模式 `grep -rln "taskpackages', 'current'\|taskpackages/current" .claude/scripts .claude/hooks` **实测 = 17 个文件**（本判官逐字复跑，逐文件名吻合，含 `dispatch-stamp.mjs` 与 `merge-driver.mjs`）；窄模式 `taskpackages/current` = **10 个文件**（R2 已实测）。命令与计数现已一一对应；「其中读指针取 changeId 式调用点至少含（15 处）」的「至少含」措辞在并集 17 文件口径下准确（17 含 merge-driver〔merge 特判〕与 dispatch-stamp〔本批在改〕两处非清单成员）。并注明 v0.6 引宽命令未注口径的成因，透明。
+- **N3 收口 ✓**：V3 扩为**四路探针**——新增 ④「无上下文状态下：带 `--expect-change-id` → 非零退出 / 不带 → 仍 exit 0」，恰覆盖 F6 新定义态的两边；② 并加测显式 `--task-package-id` 路径的来源标注（`from --task-package-id`），把 F6 回声归因的二选一定义也接进验证面——超出建议下限、真空绿规约「须覆盖两态」随之自洽。
+- **新矛盾扫描**：v0.7 全 diff 逐行过——§1 更正申报块的 F7 替换文与 §0/§3/V1 双口径无冲突；Status 头部块 v0.7 修订链（R1→v0.6→R2→v0.7）与 §7 各轮记录一致；无其它节被触动。未发现新矛盾。
+
+#### findings
+
+**N4（NIT，不拦 GREEN）· F7 收口文中 CMakeLists 引据行号偏移**
+
+- 证据：v0.7 §1 更正申报写「`firmware/main/test/host_app/main/CMakeLists.txt` 恰列那 7 件现役件、`:7` 注释并明言归档件『不再编入』」。亲读该文件：`:7` 是 Convention 注释（「later logic packages drop their own `*.acceptance.c`…」）；「不再编入」实际在 **`:11-12`**（「2026-09-15 归档……已移入 ../acceptance/archive/……不再编入 host runner 每轮全量跑」）。所证事实（显式清单、归档件不编入）本身成立、且 `:12` 就在引处附近——纯引据行号笔误。
+- 处置：不拦 GREEN；建议主线程标 FROZEN 前把 `:7` 顺手改为 `:11-12`（§1 属问题陈述面、不在 landing-manifest 内，此修不触 packet 内容）。不修亦不损害本 GREEN 的判定基础。
+
+#### R3 结论
+
+**GREEN**。三轮收敛链完整：R1 BLOCK(F1..F6) → v0.6 → R2 BLOCK(F7+N1–N3) → v0.7 全收口。三个 T（T1 验收闸枚举跳 archive + §5 退役保留名成文 / T2 dispatch-stamp 回声 + 可选 `--expect-change-id` 硬校验 / T3 §6 tighten-only 五件）方向、边界、验证集（V1 双探针、V3 四路探针）均经亲核成立；风险评级 medium、G1+G3 profile、Track B 轨道自评维持；两条 OQ 的 human 裁决未被任何轮次触动。唯一遗留 N4 为 NIT 级引据行号笔误、附处置建议。**无升级 human 项。**凭本 GREEN，主线程可按 Track B 第 3 步标 FROZEN。

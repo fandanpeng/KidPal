@@ -11,7 +11,7 @@
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
 | [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | draft | — |
-| [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | draft | — |
+| [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | frozen | no |
 | [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | draft | — |
 | [260918-gov-review-merge-chain-friction](260918-gov-review-merge-chain-friction/) | 2026-09-18 | frozen | no |
 | [260915-gov-review-worktree-pool-reuse](260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | landed | yes |
