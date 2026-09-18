@@ -1,6 +1,6 @@
 # PROPOSAL · 260918-gov-review-batch-drafting-friction
 
-> **状态：DRAFT v0.6 · 2026-09-19 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-18 立项 ack + OQ 全裁；**R1 BLOCK(F1/F2) → 主线程 v0.6 逐条修订**〔F1 派生改并集形态 / F2 第 3 类机制化改写 / F3 损伤归因更正 / F4 夹具计数 / F5 派生前缀字典序 / F6 模板落点点名〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
+> **状态：DRAFT v0.7 · 2026-09-19 · 已立项 ack · 待 architect R3 确认**（凭据：human 2026-09-18 立项 ack + OQ 全裁；R1 BLOCK(F1/F2) → v0.6 → R2 判 F1/F3–F6 到位、新出 F7/F8(均 BLOCKING)+F9–F12 → **v0.7 逐条收口**〔F7 第 3 类改按锚注记分形态 / F8 探针行首锚定限 §2 域 / F9 §3 同步 / F10 计数精算更正 / F11–F12 措辞〕。FROZEN 行待补 R3 GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260914-lfc-citation-references-prefix` + `ARQ-260907-lfc-citation-docs-prefix`（残余①）（T1）、`ARQ-260914-landing-preflight-anchor-parse`（T2）、`ARQ-260915-path-form-family-reference`（T3）。不关的根写 §6 留根指针。
 > **母批关系**：本批为 `260918` 拆包族之一（原合并草案 `260918-gov-review-loop-friction-sweep` 已按 human 2026-09-18 裁定拆为四批，逐批 review；原草案已删，其证据已按批内聚进各自 §1）。族内另三批 = `-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -84,7 +84,7 @@ docs/templates/PROPOSAL.template.md
 
 改 `.claude/scripts/landing-fidelity-check.mjs:90` 的前缀候选域：在现有四前缀外补 `.claude/references/`（治残余①）**并**补 docs 子目录形态（治残余②——候选域现只有 `docs/` 根，需覆盖 `docs/templates/`、`docs/notes/` 等子目录下的裸名引用）。
 
-**实现取并集形态（R1-F1 采纳——v0.2 的「一级子目录派生」按字面会丢前缀，已修正）**：候选域 = **现有四前缀原样保留**（`.claude/scripts/` / `.claude/scripts/lib/` / `.claude/hooks/` / `docs/`，**防回归**）**∪ 派生集**（`docs/` 与 `.claude/` 树下**递归全部目录**）。**v0.2 的失准**：原写「取目录扫描派生**而非**再加硬编码前缀」，判官按字面实现并全仓 28 份 arch PROPOSAL 端到端复跑，实测**丢两个现有前缀**——`docs/` 根（**根不是子目录**、一级派生取不到）与 `.claude/scripts/lib/`（**两级路径**、一级派生取不到），致 **11 条已消警引据回退为 file-not-exist**（`DEV-GOVERNANCE.md` docs 根族 ×4、`governance-gate-shared.mjs` lib 族 ×3、`acceptance-id-shared.mjs` ×1 等），与本 T「**在现有四前缀外补**」「只消假警报」的 riskTier 证成直接冲突。改用并集形态后：现有四前缀**零回退**、派生集覆盖新增目录。**派生前缀集钉字典序排序**（R1-F5 采纳；实测同名文件跨前缀碰撞现为零，排序为确定性兜底）。自检（`runCitationAnchorsSelfCheck`，`:226` 已接线）补**四**夹具：两新增（`.claude/references/` / `docs/templates/` 裸名）+ **两防回归**（`docs/` 根裸名如 `DEV-GOVERNANCE.md`、`.claude/scripts/lib/` 裸名如 `governance-gate-shared.mjs`）—— 均须 resolved 非空、零 problems。
+**实现取并集形态（R1-F1 采纳——v0.2 的「一级子目录派生」按字面会丢前缀，已修正）**：候选域 = **现有四前缀原样保留**（`.claude/scripts/` / `.claude/scripts/lib/` / `.claude/hooks/` / `docs/`，**防回归**）**∪ 派生集**（`docs/` 与 `.claude/` 树下**递归全部目录**）。**v0.2 的失准**：原写「取目录扫描派生**而非**再加硬编码前缀」，判官按字面实现并全仓 28 份 arch PROPOSAL 端到端复跑，实测**丢两个现有前缀**——`docs/` 根（**根不是子目录**、一级派生取不到）与 `.claude/scripts/lib/`（**两级路径**、一级派生取不到），致**已消警引据回退为 file-not-exist**（R2-F10 计数更正：v0.6 照抄了 R1 的算术 slip「11 条」——**精确清点为纯一级派生 8 条去重（9 次出现）+ 纯递归派生 4 条**（仅 `docs/` 根族，因递归天然含 `lib`）；判官已如实更正，**结论不受影响**：改并集后实测**回退 0**、结构门 problems **68→26**、两处点名残余**均 resolved**），与本 T「**在现有四前缀外补**」「只消假警报」的 riskTier 证成直接冲突。改用并集形态后：现有四前缀**零回退**、派生集覆盖新增目录。**派生前缀集钉字典序排序**（R1-F5 采纳；实测同名文件跨前缀碰撞现为零，排序为确定性兜底）。自检（`runCitationAnchorsSelfCheck`，`:226` 已接线）：**两新增夹具**（`.claude/references/` / `docs/templates/` 裸名）+ **两防回归夹具**——后者与电池**既有**两件同形态（`docs/GOV.md`、`scripts/lib/fixture.mjs`），故此处口径为「**确认保留既有件并具名**」而非「新增」（R2-F12 采纳）；四项均须 resolved 非空、零 problems。
 
 **消警留痕形态保持**：仍经 `resolvedByPrefix` 独立观察列输出，**不静默吞**——扩候选域只减少假警报，不改变「解析到了就留痕」的可见性。
 
@@ -96,9 +96,15 @@ docs/templates/PROPOSAL.template.md
 
 改 `.claude/scripts/landing-fidelity-check.mjs`：新增 `--preflight <proposal-path>` 入口——**只解析、不对账**。行为 = 对给定 PROPOSAL 调 `parseSection2AnchorLists`（`.claude/scripts/lib/governance-gate-shared.mjs:345` 已具名导出，**本 T 只消费、不改 lib**），把三类错**在起草期**报出来：
 
-1. **加粗锚行** `**目标文件**：`（解析器只认裸形态）——它在 parser 侧表现为「**缺锚清单**」；干跑**另加一条专用探针**（正则扫 `**目标文件**：` 字面）把该形态**具名报出**，免与真缺锚混同（R1-F2 采纳：v0.2 未说明该类的可检测性，只写「报出来」）；
+1. **加粗锚行** `**目标文件**：`（解析器只认裸形态）——它在 parser 侧表现为「**缺锚清单**」；干跑**另加一条专用探针**把该形态**具名报出**，免与真缺锚混同。**探针须行首锚定 + 限 §2 节域**（R2-F8 采纳：v0.6 写「正则扫字面」按字面实现会**误咬散文**——本 PROPOSAL 自身即命中 **5 次**、全为**行内引用该错误形态的 prose**（§1 问题 2 的记载、§5 V4 的夹具描述），V3-② 首跑必误红；行首锚定 + 限 §2 域实测 **0 命中**为正确态）。自检补一条「散文引用该形态不误报」的反例夹具；
 2. **无锚清单**（含**整行缺失**——问题 2 的第三种、也是最彻底的一种）；
-3. **锚并集含仓内不存在的路径**（**R1-F2 采纳的机制化改写**）——治的正是问题 2 第 2 例的实害：注记逐字回引**已撤**的幻影路径 `.claude/skills/triage-change/SKILL.md`，该 token 进并集后造成 §2↔manifest 假失配。**v0.2 原写「锚行注记夹带路径 token」在「只消费 parser、不对账」的约束下无检测机制**（parser 的 `problems` 族仅四类，注记区路径 token **合法入并集且零 problem**）——改为对**并集中的每条路径做仓内存在性检查**：不存在的即报（存在的 token 无害、不报）。该形同时覆盖加粗形态之外的幻影路径族。
+3. **锚并集含「仓内不存在的路径」——按锚注记分形态判**（R2-F7 采纳的机制化改写；v0.6 的**单一形态会让「新增锚」自咬**：本 PROPOSAL 的 T3 目标 `.claude/references/path-form-family.md` 即为新增、当前不在场，V3-④ 首跑必红）：
+   - **新增锚**（注记含「新增」）→ **反向断言**：该路径**已存在**才报（新增目标本就不该在场）；
+   - **改锚 / 迁移锚 / 无注记** → 不存在即报（治幻影路径实害，即 260912 那条已撤的 `.claude/skills/triage-change/SKILL.md`）；
+   - **跨分支锚**（同批未并 main 的路径）→ **降 advisory**、不判红。
+   
+   全仓实核另有三类**合法「当前不在场」**形态，即上述分形态的必要性证据：撤回批（`260908` ×2）、旧路径已迁移（`260830` `docs/spec.md` → `docs/archive/`）、跨分支锚（`260914` ×19）。
+目的是让**三类错各有机制**（v0.2 的第 3 类在「只消费 parser、不对账」约束下无检测机制，parser 的 `problems` 族仅四类、注记区路径 token **合法入并集且零 problem**）。
 
 **不做** §2↔manifest 比对（那是 landing 期的事，前置干跑只保证「形态可解析」）。
 
@@ -147,7 +153,7 @@ docs/templates/PROPOSAL.template.md
 
 **【硬项 1b · sweep 透镜】** T1 落地新候选域，起草期已预跑原始输出（见 §1 问题 1 的两裸名实测表：`dev-loop-operating-system.md`、`PROPOSAL.template.md` 现候选域均未命中）。**本批不引入新枚举面**，故无 census 需要展开；T2 的新入口为**新增 CLI 形态**，不改变任何既有判定 pattern。
 
-**【硬项 1c · 复扫模式完备性先验】** 本批 T1 涉**路径前缀候选域的完备性**——模式集为**目录扫描派生**（从 `docs/` 与 `.claude/` 下实际存在的一级子目录派生），**完备性论证**：派生源即文件系统实况（`readdirSync` 一级子目录枚举），不依赖手工清单或词形假设，新增目录自动入集。T3 的八形态表为**枚举式记录**（非清扫模式集），其完备性边界已在文档内显式声明为「该批实测所见八类，非理论穷举」。
+**【硬项 1c · 复扫模式完备性先验】** 本批 T1 涉**路径前缀候选域的完备性**——候选域为**并集形态**（现有四前缀 ∪ `docs/` 与 `.claude/` 树下**递归全部目录**；R2-F9 同步：v0.6 此处仍写「一级子目录派生」、与 §2 的并集/递归形态矛盾，已更正），**完备性论证**：派生源即文件系统实况（递归 `readdirSync` 枚举），不依赖手工清单或词形假设，新增目录自动入集；且**现有四前缀原样保留**保证零回退。T3 的八形态表为**枚举式记录**（非清扫模式集），其完备性边界已在文档内显式声明为「该批实测所见八类，非理论穷举」。
 
 ## 4. human 取舍点（OQ）
 
@@ -179,7 +185,7 @@ docs/templates/PROPOSAL.template.md
 |---|---|---|
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --self-check` | 全绿 + 新增 citation 两夹具（`.claude/references/` 与 `docs/templates/` 裸名）具名出现 |
 | V2 | 同上电池内的「干跑模式不误触 reviewDir 解析」新断言 | 具名出现且通过（防 T2 新入口与 `:50`/`:52` 位置参数互扰） |
-| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | **四项全清**：① §2 锚清单形态可解析（parser 零 problems）；② 无加粗锚行（专用探针，R1-F2 新增机制）；③ 无缺锚清单；④ **锚并集零「仓内不存在路径」**（R1-F2 改写后的第 3 类机制）——**三类错各有反例夹具**（V4） |
+| V3 | `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL>` | **四项全清**：① §2 锚清单形态可解析（parser 零 problems）；② 无加粗锚行（专用探针**行首锚定 + 限 §2 域**，R2-F8）；③ 无缺锚清单；④ **锚并集按注记分形态后零判红**——**本 PROPOSAL 的 T3 新增锚 `.claude/references/path-form-family.md` 走反向断言、不得被点名**（R2-F7）；跨分支锚降 advisory。**三类错各有反例夹具**（V4） |
 | V4 | 对**故意注入加粗形态的副本**跑 `--preflight` | 须报错（**反例夹具**，防干跑恒绿） |
 | V5 | **四夹具**现跑（对照 `:90` 现候选域；R1-F4 计数归正：v0.2 写「三夹具」却只点名两条） | **新增两条**：`dev-loop-operating-system.md` / `PROPOSAL.template.md` —— 现候选域**均未命中**、扩形后**均 resolved**。**防回归两条**：`DEV-GOVERNANCE.md`（`docs/` 根族）/ `governance-gate-shared.mjs`（`.claude/scripts/lib/` 族）—— **现候选域本已命中、扩形后须仍命中**（四项前后各留完整输出） |
 | V6 | `grep -c "path-form-family" docs/templates/PROPOSAL.template.md` | ≥1（T2 落的族谱指针在场） |
@@ -191,7 +197,7 @@ docs/templates/PROPOSAL.template.md
 
 **不关的根**：
 
-1. **`ARQ-260907-lfc-citation-docs-prefix` 的「候选域维护策略」子项**——本批 T1 取「目录扫描派生」已实质回应（不再手工维护清单）；但若判官认为该派生的**边界**（扫到几级、哪些目录排除）需单独成文，可另登。本批不预留该条款（OQ1(c) 若被选中则部分覆盖）。
+1. **`ARQ-260907-lfc-citation-docs-prefix` 的「候选域维护策略」子项**——本批 T1 取**并集形态**（现有四前缀保留 ∪ 递归派生）已实质回应：**新增目录不再需要手工补前缀**（派生自动覆盖）；但**现有四前缀仍是显式保留的**（防回归），故「**完全**不再手工维护清单」在并集形态下表述过强（R2-F11 采纳更正）——残余的手工面仅剩「何时可从并集里摘除已无用的旧前缀」。
 2. **验证集命令「实跑」的机械化**——T2 的 checklist 第二句要求「冻结前通过 §5 验证集命令实跑」，但**「是否真跑过」无机械判据**（仍是纪律句）。**建议下个动 `--preflight` 的批评估**：是否可让 `--preflight` 顺带实跑 §5 命令并留输出（本批不做，避免新入口承担执行职责）。
 3. **`ARQ-260914-lfc-citation-references-prefix` 的 `.claude/scripts/lib/` 子目录形态**——现候选域含 `.claude/scripts/lib/` 一层；若将来出现更深层（如 `.claude/scripts/lib/sub/`）的裸名引用，目录扫描派生应天然覆盖，但**本批未构造该场景的夹具**。随 T1 落地后观察。
 4. **拆包族另三批**（`-merge-chain-friction` / `-dispatch-chain-friction` / `-closeout-chain-friction`）——本批不承接。
@@ -233,3 +239,31 @@ docs/templates/PROPOSAL.template.md
 **F6（NIT）· T2 模板落点措辞**。「起草 checklist」在 `docs/templates/PROPOSAL.template.md` 里无同名节；实际落点应点名「硬项 2a · 目标文件锚清单」段（`:49`）。V6 的 grep 判据不受影响，但落点精确到段可免 landing-verifier 逐文件 diff 对照时的两读。
 
 **同族透镜结论**（本批特别提示的「该 T 是否真能覆盖目标面」三问）：T1 对两条点名残余**确能消警**（派生集含 `.claude/references/` 与 `docs/templates/`，端到端实测两条均 resolved）——但派生规则本体按字面引入回归（F1）；T2 入口接线可行、V4 可证伪，但三类错的声称面与机制不匹配（F2）；T3 八形态表逐条可溯源、硬数字相符，唯数字归因一处失准（F3）。
+
+### R2 - 2026-09-19 - architect
+
+**verdict：BLOCK(F7, F8)**（F9–F12 为 SHOULD/NIT；F1/F3–F6 六项 R1 findings 全部到位）。**无升级 human 项**——F7/F8 均为 F2 机制化改写的精度修订（新增锚豁免 / 探针扫描域钉死），不动 OQ 裁决、不触契约面、不改轨。
+
+**修订到位性核对（R2 聚焦，逐条）**：
+
+- **F1 → 到位**。① 归因核对：v0.6 正文「`docs/` 根不是子目录、`.claude/scripts/lib/` 是两级路径 → 一级派生取不到」与 R1 实测一致（判官 R2 重测：纯一级派生集确实两项皆缺）。② **并集形态实测消回退**：判官按 v0.6 文本自实现（现行四前缀 ∪ `docs/`+`.claude/` 树下递归全部目录，字典序）对全仓 28 份 arch PROPOSAL 复跑——递归派生集 42 项（含 `.claude/scripts/lib/`、不含 `docs/` 根，故并集里 `docs/` 根由硬编码四前缀承担）；**并集形态回退 = 0**（problems 68 → 26），两点名残余 `dev-loop-operating-system.md:130` / `PROPOSAL.template.md:49` 并集下均 resolved。③ 四夹具可证伪：纯派生回归时任一防回归夹具自曝（现行电池里已有同形态两件——260907 热修 `docs/GOV.md` 夹具与 260907 批 T2 `.claude/scripts/lib/fixture.mjs` 夹具，见 F12 注）。
+- **F2 → 机制方向对、两处新精度缺陷**（见 F7/F8）。① 可实现性：存在性检查 = 纯 fs 检查、不涉 manifest 对账（约束内 ✓）；加粗专用探针可行（约束内 ✓）。② V3 四项项项有机制——但 **④ 的预期值对本 PROPOSAL 自身不可满足**（F7）、**② 的探针按字面全文跑会误咬本 PROPOSAL 自身**（F8）。③ 假阳性实核（判官对全仓锚并集跑存在性检查）：**有**——本批 1/3 锚为新增目标（`.claude/references/path-form-family.md` 现不存在）；另 260908-gov-review-human-deputy-shadow（撤回批，2 锚不存在）、260830-arch-review-ui-impl-strategy（`docs/spec.md` 已迁 `docs/archive/`、旧路径不在场）、260914 批（19 锚为 firmware/server 面路径、不在 gov worktree 分支——`firmware/main/test/` 在本 worktree 存在但那 19 件具体文件不在本分支）。「合法引用当前不存在路径」的形态真实且多样，须分形态处置（F7 修法）。
+- **F3 → 到位**：四数分属（18 粘连 / 10 转义 / 1 幂等双应用 / 24 V1 自咬）与 R1 溯源逐条一致；幂等双应用注记已不带数字族。
+- **F4 → 到位**：V5 改四夹具并点名两防回归（`DEV-GOVERNANCE.md` / `governance-gate-shared.mjs`）+「现候选域本已命中、扩形后须仍命中」前后输出留痕。
+- **F5 → 到位**：字典序钉死已写入 T1。
+- **F6 → 到位**：`docs/templates/PROPOSAL.template.md:49`「**【硬项 2a · 目标文件锚清单】**」段实存、为可落点；commit 4abb1c9 实查仅改本 PROPOSAL.md 一件（模板未动，其头部「R1/R2 评审修订」字样系 260802 批既有文本）。
+- **结构核对**：manifest（3 路径）仍 ≡ §2 锚并集（真实 parser 干跑零 problems、`compareAnchorSets` aligned=true）；§7 R1 记录原样保全；§2 导语「同文件落地顺序钉死」与 v0.6 无新矛盾。
+
+**Findings（新）**：
+
+**F7（BLOCKING）· F2 第 3 类机制未豁免「新增」锚——V3-④ 对本 PROPOSAL 自身不可满足**。判官以 v0.6 机制模拟（并集每条路径做仓内存在性检查、无豁免）对本 PROPOSAL 干跑：并集 3 路径中 `.claude/references/path-form-family.md`（T3 新增目标、现不存在）即被点名——V3-④「锚并集零『仓内不存在路径』」**首跑必红**。这不是边缘例：preflight 是**起草期**工具，而 PROPOSAL 锚清单的常规形态就含「新增」目标文件（本批即 1/3）；全仓实核另见撤回批、已迁移旧路径（260830 `docs/spec.md`→archive）、跨分支锚（260914 的 19 件 firmware/server 面）三类合法「当前不在场」形态。**修法**：存在性检查按锚注记分形态——「新增」锚**反向断言**（已存在 = 冲突报错，向严；或至少豁免不报）；「改」锚不存在即报（真错——260830 旧路径类即此）；跨分支不在场降 advisory（如实留痕、不 fail）。V3-④ 预期同步改写为「新增锚按反向断言、改锚零不存在」。parser 已有「迁出/条件」注记裁剪先例，注记键「新增」可循同款形态接入。
+
+**F8（BLOCKING）· 加粗专用探针未钉扫描域——按字面全文正扫会误咬散文引用（260914 F5 自咬家族同型）**。v0.6 写「正则扫 `**目标文件**：` 字面」：判官实测，全文本正扫 `\*\*目标文件\*\*\s*[:：]` 在**本 PROPOSAL 自身**命中 5 次、**全部为散文行内引用该错误形态**（§1 问题 2 证据 1、T2 第 1 类等处——即 V3-②「无加粗锚行」对本 PROPOSAL 首跑即误报红）；行首锚定（`^\s*>\s*\*\*目标文件\*\*\s*[:：]`，镜像 parser 锚行识别形态）实测 0 命中 = 正确。**修法**：探针钉**行首锚定 + 限 §2 节域**（与 `parseSection2AnchorLists` 的解析域一致），并在 `--self-check` 电池里加一条「散文行内引用错误形态不误报」的反例夹具（本 PROPOSAL 自身即现成素材）。
+
+**F9（SHOULD）· §3 硬项 1c 未随 T1 并集形态同步**。1c 仍写「模式集为**目录扫描派生**（从 `docs/` 与 `.claude/` 下实际存在的一级子目录派生）……`readdirSync` 一级子目录枚举」——与 §2 T1 v0.6「现有四前缀 ∪ 递归全部目录」直接矛盾（一处一级派生、一处递归并集）。冻结前把 1c 的模式集描述同步改为并集形态，否则 landing-verifier 逐文件 diff 对照时两读。
+
+**F10（SHOULD）· 回退计数「11 条」失准（判官 R1 自身算术错误、v0.6 照抄传播，如实更正）**。判官 R2 重测精确清点：**纯一级派生**回退 = **8 条去重 / 9 次出现**（`DEV-GOVERNANCE.md:280/:293/:291/:22` ×4、`governance-gate-shared.mjs:34/:386/:410` ×3 去重〔`:34` 出现 2 次〕、`acceptance-id-shared.mjs:36` ×1）；**纯递归派生**回退 = **4 条**（仅 DEV-GOVERNANCE docs 根族——递归天然含 `.claude/scripts/lib/`，lib 族零回退）。R1 finding 枚举了 8 条却写「11 条」，v0.6 正文与 commit message 均照抄。结论不受影响（回退真实存在、并集形态实测归零），但数字须更正入文（建议注「R2 计数勘误，原记 11」）。
+
+**F11（NIT）· §6 留根 1「不再手工维护清单」表述过强**。并集形态下现有四前缀仍是硬编码保留（防回归锚）；实际语义 = 派生集自动生长、手工核冻结为不再增长的防回归锚。建议校准措辞，免与 OQ1 裁决备注「不再手工维护清单」形成口径漂移。
+
+**F12（NIT）· 防回归两夹具与既有电池夹具的关系未写明**。现行 `runCitationAnchorsSelfCheck` 电池里已有同形态两件：260907 热修 `docs/GOV.md` 夹具（docs 根族）与 260907 批 T2 `.claude/scripts/lib/fixture.mjs` 夹具（lib 族）——纯派生回归时任一自曝，断言可证伪 ✓。建议 v0.6 的「补两防回归夹具」写明为「**确认保留既有两件并具名防回归语义**」（沿临时目录 hermetic 形态），避免落地时重复造轮或误删；若改用真实仓名（`DEV-GOVERNANCE.md` / `governance-gate-shared.mjs`）做夹具则须走 `projectDir`（非 hermetic、依赖仓实况），判官不推荐。
