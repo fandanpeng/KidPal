@@ -322,6 +322,19 @@ static void charpage_draw_penhand(int cur_stroke)
     }
 }
 
+/* 面板销毁即停表: 页面可经多条路径拆掉 (翻页换页清理 / 重开 lv_obj_delete / 换屏),
+ * 全部收敛在 panel 的 LV_EVENT_DELETE 上删动画 timer——否则关页后 timer 存活,
+ * 下一拍 charpage_render_frame 摸已删 canvas → 空指针崩溃
+ * (2026-09-18 真机实证: BOOT 离开查字页 render HOME 下一拍 LoadProhibited @0x0)。 */
+static void charpage_on_panel_delete(lv_event_t *e)
+{
+    (void)e;
+    if (g_page.timer != NULL) {
+        lv_timer_del(g_page.timer);
+        g_page.timer = NULL;
+    }
+}
+
 /* 动画节拍回调 */
 static void charpage_timer_cb(lv_timer_t *timer)
 {
@@ -331,6 +344,9 @@ static void charpage_timer_cb(lv_timer_t *timer)
 
     if (p == NULL) {
         return;
+    }
+    if (p->canvas == NULL) {
+        return; /* 面板已拆但 timer 尚未销毁的窗口期: 空守卫, 不摸悬空句柄 */
     }
     phase = kidpal_char_anim_state(p->elapsed_ms, p->n_strokes, &cur_stroke, &written);
     if (phase < 0) {
@@ -467,6 +483,9 @@ void kidpal_char_page_show(const char *data_json)
     lv_obj_set_style_pad_all(g_page.panel, 0, 0);
     lv_obj_set_style_border_width(g_page.panel, 0, 0);
     lv_obj_clear_flag(g_page.panel, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 动画 timer 与面板同寿: 面板删 → timer 删 (见 charpage_on_panel_delete) */
+    lv_obj_add_event_cb(g_page.panel, charpage_on_panel_delete, LV_EVENT_DELETE, NULL);
 
     /* 米字格大字盘 (左, ~208px) */
     g_page.canvas_buf = (lv_color_t *)malloc(sizeof(lv_color_t) *
