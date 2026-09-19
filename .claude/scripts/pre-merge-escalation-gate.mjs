@@ -196,6 +196,11 @@ export function parallelOverlapProbe(execFn, source, target) {
     });
     const tier = (() => {
       if (!intersectingFiles.length) return 'no-overlap';
+      // 核查结论（260918-gov-review-merge-chain-friction T1②，FROZEN 2026-09-19）：`merge=union` 文件
+      // （如 `delivery/taskpackages/**/pod-events.jsonl`，`.gitattributes` 由 c16283b 落地）由 git 自动并、
+      // **不出现在 conflictedFiles**，天然落下面本行判 union-safe（② 级不升人）——**无需为 union 文件加显式豁免**。
+      // 依据 = 本行分支逻辑 + ARQ-260917 记录的 k3 修复轮 r15 合并实测「tier3 评审噪音收口」。
+      // 再下一行 `VERSIONED_ARTIFACT_RE_LOCAL` 是另一条并列路径（版本化制品 carve-out），非 union 情形所依赖。
       if (!conflictedFiles.length) return 'union-safe'; // 相交但可自动并（不同 hunk git 自并）
       if (conflictedFiles.every((f) => VERSIONED_ARTIFACT_RE_LOCAL.test(f))) return 'union-safe'; // S1 carve-out：已登记形态 → ②
       return 'tradeoff';
