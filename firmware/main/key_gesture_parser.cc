@@ -1,5 +1,11 @@
 #include "key_gesture_parser.h"
 
+/* 查字窗层值单源（TaskPackage 260917-m2-k3-char-window-overlay, seam [2]）：路由表的
+ * 查字窗列需识别「前台层值 == KIDPAL_LAYER_CHAR_WINDOW」。层闭集 owner = display/
+ * kidpal_layer.h，路由表以符号引用而非复制数值（零数值字面耦合）。相对 include 以
+ * 兼容 host（-I display）与设备（INCLUDE_DIRS "."）两侧。 */
+#include "display/kidpal_layer.h"
+
 /*
  * KEY/BOOT 全局按键手势解析实现（纯逻辑，显式毫秒时间戳注入，无真实 timer）。
  *
@@ -126,9 +132,31 @@ global_action_t key_route_global(key_id_t key, key_gesture_t g)
 
 global_action_t key_route_layer(key_id_t key, key_gesture_t g, int overlay_top)
 {
-    /* 越界键位（含 PWR）：一律无动作（覆盖层/基层两列一致，零污染）。 */
+    /* 越界键位（含 PWR）：一律无动作（各列一致，零污染）。 */
     if ((uint32_t)key >= (uint32_t)KEY_ID_COUNT) {
         return GLOBAL_ACT_NONE;
+    }
+
+    /* 查字窗列（TaskPackage 260917-m2-k3-char-window-overlay, seam [2] 新增列；
+     * overlay_top = 前台层归一化值 == KIDPAL_LAYER_CHAR_WINDOW）: 查字窗是会话内覆盖窗，
+     * KEY 短按 = 重播笔顺（S-F3.3 AC1; 非会话主轴）、KEY 长按 / BOOT 单击 = 关窗回原页
+     * （v1.39 隔离，不产翻页）、双击族 / BOOT 长按 NONE。 */
+    if (overlay_top == KIDPAL_LAYER_CHAR_WINDOW) {
+        switch (g) {
+        case KEY_GESTURE_CLICK:
+            if (key == KEY_ID_KEY) {
+                return GLOBAL_ACT_CHAR_REPLAY;   /* 重播笔顺（含打断当前播报重演） */
+            }
+            return GLOBAL_ACT_OVERLAY_CLOSE;     /* BOOT 单击 = 关窗回原页、不翻页 */
+        case KEY_GESTURE_LONG_PRESS:
+            /* KEY 长按 = 关窗回原页；BOOT 长按查字窗列无语义（故事翻屏接缝零触碰）。 */
+            if (key == KEY_ID_KEY) {
+                return GLOBAL_ACT_OVERLAY_CLOSE;
+            }
+            return GLOBAL_ACT_NONE;
+        default:
+            return GLOBAL_ACT_NONE;              /* KEY/BOOT 双击族查字窗列 NONE */
+        }
     }
 
     if (overlay_top != 0) {

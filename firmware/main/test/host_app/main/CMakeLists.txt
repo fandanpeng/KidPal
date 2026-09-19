@@ -99,6 +99,19 @@ set(HOST_ACCEPTANCE_SRCS
     # 最先执行; 本文件 test 7 tooth 1 校验此序）。
     "../../retract_p4_three_page.acceptance.c"
 
+    # 包 260917-m2-k3-char-window-overlay（M2-K3 页→窗改造：查字窗层注册 + 键位语义矩阵 +
+    # 5 分钟驻留计时 + 页点隐藏 + 右栏对账三项 + 锚改名对账）。冻结验收（层栈行为/结构半 +
+    # 查字窗列路由决策表 + 驻留计时行为/结构半 + 右栏对账结构半 + 注册序/需求契约 canary）。
+    # 新增纯逻辑模块 display/char_window.c = seam [3] 驻留计时的强符号源（覆盖冻结件 weak
+    # 哨兵）。被测实现 kidpal_layer.c / key_gesture_parser.cc 已在册。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行; 本文件 test 7 tooth 1 校验此序）。
+    "../../char_window_overlay.acceptance.c"
+    "../../../display/char_window.c"
+
+    # 包 260917-m2-k3-char-window-overlay builder 单元测试（驻留计时 / 查字窗层栈 /
+    # 查字窗列路由的边界与分支补强——冻结齿未穷尽的边界面）。置于 host smoke acceptance 之前。
+    "../../char_window.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

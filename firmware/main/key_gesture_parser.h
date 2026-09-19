@@ -98,7 +98,11 @@ typedef enum {
     /* 覆盖层关层回原页（v1.39 隔离 + v1.36 返回上一层 的统一路由动作）。
      * append-only 追加位：既有四值零偏移（TaskPackage 260915-m1-k1a-key-layer-dispatch,
      * key_layer_dispatch.acceptance.c seam [1] 钉值 = 4）。 */
-    GLOBAL_ACT_OVERLAY_CLOSE = 4
+    GLOBAL_ACT_OVERLAY_CLOSE = 4,
+    /* 查字窗 KEY 短按 = 重播笔顺（含打断当前播报重演；S-F3.3 AC1）。
+     * append-only 追加位：既有五值零偏移（TaskPackage 260917-m2-k3-char-window-overlay,
+     * char_window_overlay.acceptance.c seam [2] 钉值 = 5）。 */
+    GLOBAL_ACT_CHAR_REPLAY = 5
 } global_action_t;
 
 /* 全局路由表（spec §4.0 全局按键手势表，仅全局层——无页面参数、context-free）：
@@ -114,9 +118,17 @@ typedef enum {
 global_action_t key_route_global(key_id_t key, key_gesture_t g);
 
 /* layer-aware 全局路由表（TaskPackage 260915-m1-k1a-key-layer-dispatch）：
- * overlay_top 由 dispatch 层归一化（0 = 主页面基层，非 0 = 覆盖层顶层），路由表自身
- * 保持 context-free 纯逻辑（key_gesture_parser.cc 单源）：
- *   overlay_top != 0（覆盖层顶层）:
+ * overlay_top 由 dispatch 层归一化——2026-09-19 留痕修订（TaskPackage
+ * 260917-m2-k3-char-window-overlay, seam [2]）后其语义**扩为前台层归一化值**：
+ *   0 = 基层 / 配网 / 无前台（原 K1a 归一化 0 是其子集）;
+ *   非 0 = 前台覆盖层层值（KIDPAL_LAYER_*，取 kidpal_render_node_front_layer()）。
+ * 路由表自身保持 context-free 纯逻辑（key_gesture_parser.cc 单源）：
+ *   overlay_top == KIDPAL_LAYER_CHAR_WINDOW（查字窗列，本包新增）:
+ *     KEY  CLICK      -> GLOBAL_ACT_CHAR_REPLAY（重播笔顺——非 SESSION_TOGGLE）
+ *     KEY  LONG_PRESS -> GLOBAL_ACT_OVERLAY_CLOSE（关窗回原页）
+ *     BOOT CLICK      -> GLOBAL_ACT_OVERLAY_CLOSE（v1.39 隔离 = 关窗回原页、不产翻页）
+ *     其余（双击族 / BOOT 长按）-> GLOBAL_ACT_NONE
+ *   其它非 0 值（通用覆盖层列，K1a 原样）:
  *     KEY  CLICK      -> GLOBAL_ACT_SESSION_TOGGLE（会话主轴零回归；提醒弹窗 KEY 关闭
  *                        由 dispatch 先交顶层裁决函数，裁决消费即不走路由）
  *     KEY  LONG_PRESS -> GLOBAL_ACT_OVERLAY_CLOSE（返回上一层 = 关层回原页）
@@ -124,7 +136,8 @@ global_action_t key_route_global(key_id_t key, key_gesture_t g);
  *     其余（双击族 / BOOT 长按）-> GLOBAL_ACT_NONE
  *   overlay_top == 0（主页面基层）: 与 key_route_global(key, g) 全表等价
  *     （主页面 BOOT 单击翻页 / KEY 长按回首页，§2.3 主页面矩阵行零回归）。
- *   越界键位（>= KEY_ID_COUNT，含 PWR）-> GLOBAL_ACT_NONE。 */
+ *   越界键位（>= KEY_ID_COUNT，含 PWR）-> GLOBAL_ACT_NONE。
+ * key_route_global 本体零改动（基层列实现载体），主页面路径零回归。 */
 global_action_t key_route_layer(key_id_t key, key_gesture_t g, int overlay_top);
 
 #ifdef __cplusplus

@@ -6,9 +6,10 @@
  *     通过 LVGL XRGB8888 图像渲染至 RLCD。
  *  2. 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（把原先三散同行标志 +
  *     1s tick 轮询对账整体退役）。
- *     layer 栈按优先级表裁决「谁在前台」：配网(6) > 提醒(5) > 服务端推送页(4) >
+ *     layer 栈按优先级表裁决「谁在前台」：配网(7) > 提醒(6) > 查字窗(5) > 服务端推送页(4) >
  *     语音轮(3) > 本地浏览页(2)，聊天 layer(1) 常驻非栈成员。push/pop 语义见
  *     display/kidpal_layer.(c|h) 与冻结验收 screen_unification.acceptance.c。
+ *     （2026-09-19 M2-K3 页→窗改造：插入查字窗层，REMINDER 5→6 / PROVISION 6→7。）
  *  3. 单物理屏时序说明（归一屏 SU-RULING-02 方案1，聊天控件物理 reparent 已随本包落地）：
  *     - xiaozhi LcdDisplay::SetupUI() 在 LcdDisplay 构造期把聊天/表情/状态控件建在
  *       LVGL 默认首屏上，此刻 s_kidpal_scr 尚未创建（先 SetupUI 后 render_node_init）。
@@ -42,6 +43,7 @@
 #include "schedule_page.h"
 #include "story_page.h"
 #include "char_page.h"
+#include "char_window.h"   /* M2K3-A3 驱动半 seam [9]: kidpal_char_window_idle_step / 5min 上限 */
 #include "kidpal_layer.h"
 
 #include <esp_log.h>
@@ -97,6 +99,17 @@ static int s_charging     = 0;
 static lv_timer_t *s_tick_timer = NULL;
 static const uint32_t RN_TICK_MS = 1000;
 
+/* 查字窗 5 分钟驻留计时的设备侧驱动状态（TaskPackage 260917-m2-k3-char-window-overlay,
+ * seam [9], M2K3-A3 驱动半；requirements §2.2 查字窗行 v1.43「计时随任意按键重计」）：
+ *   s_char_window_idle_ms = 距最近一次操作的累计毫秒（tick 内喂 kidpal_char_window_idle_step
+ *     推进/归零；仅在查字窗为前台时累计，否则归零——非查字窗前台不得累计，否则窗一开
+ *     首拍即因历史累计越限而立即误关窗）。文件级 static，初值 0。
+ *   s_char_window_key_hit = 板级任意键按下的置位标志（kidpal_render_node_char_window_key_hit），
+ *     tick 内取出并清位后作为 key_pressed 喂 step。跨任务写（按键回调任务），tick（LVGL
+ *     定时器任务）读，32 位对齐整数读写原子。 */
+static unsigned long s_char_window_idle_ms = 0;
+static volatile int  s_char_window_key_hit = 0;
+
 /* P2 课表缓存（mcp_server 收到课表数据后调 cache_schedule 填充；cycle_next 读此）。 */
 static char                s_sched_title[64] = "今日课表";
 static kidpal_schedule_item_t s_sched_items[16];
@@ -108,11 +121,6 @@ static char                s_sched_now[8] = "";
 static kidpal_story_view_t s_story_view = {};
 static kidpal_story_list_t s_story_list = {};
 static kidpal_story_text_t s_story_text = {};
-
-/* 查生字写侧状态（M2-K2 撤 P4 常驻页后成写侧死态：cycle_next 不再停靠 CHAR 页、
- * 本对与 s_char_json 无循环读方；保留不动（M2K2-E3 禁静默删除），由 M2-K3 改窗时统一收）。 */
-static bool        s_has_char_data = false;
-static std::string s_char_json;   /* 动态分配，不占 .bss；mcp_server cache_char_data 填充 */
 
 /* ------------------------------------------------------------------------- *
  * 五态 chrome 显隐的前台维度桥 (RP-A5 r3/r4)：姿态/气泡仅当 VOICE 层为前台层时显示，
@@ -437,6 +445,37 @@ void kidpal_render_node_end_page(void)
     lvgl_port_unlock();
 }
 
+/* -------------------------------------------------------------------------
+ * 查字窗渲染的持锁夹钳（TaskPackage 260917-m2-k3-char-window-overlay, M2-K3 页→窗改造）:
+ * 与 begin_page/end_page 同形，但推的是 CHAR_WINDOW 层——查字窗是**会话内覆盖窗**、
+ * 覆盖当前页之上（非常驻页, v1.36 撤 P4），键路由据此走查字窗列（KEY 短按 = 重播）、
+ * 键帽条中槽页点经 front_is_overlay 自动隐藏。**不起会话 / 聆听**（无 ToggleChatState /
+ * show_chat / voice_begin）——「播完会话即结束、不回聆听态」（§2.2 行 68）。
+ * char_page 在活动屏（s_kidpal_scr）上叠加窗面板而不清屏，故关窗（dismiss_front_overlay
+ * 清 transient 回基层）后原页原样回来、不翻页。
+ * ---------------------------------------------------------------------- */
+void kidpal_render_node_begin_char_window(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        /* 未 init：保持持锁状态交调用方 end_char_window 释放，渲染函数自行降级。 */
+        return;
+    }
+    /* 查字窗接管前台：推 CHAR_WINDOW（覆盖当前页之上、REMINDER 之下——提醒仍压过窗）。
+     * 不 pop 任何既有层：提醒弹窗等上层驻留时保持原位（层级由 kidpal_layer 优先级承载）。 */
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_CHAR_WINDOW);
+    lv_screen_load(s_kidpal_scr);
+    /* 五态姿态/气泡退隐（chrome 显隐前台维度）；中槽页点隐藏（覆盖层不显示页点）。 */
+    rn_voice_chrome_front_locked();
+    rn_keybar_sync_locked();
+}
+
+void kidpal_render_node_end_char_window(void)
+{
+    lvgl_port_unlock();
+}
+
 void kidpal_render_node_begin_reminder(void)
 {
     lvgl_port_lock(0);
@@ -453,7 +492,7 @@ void kidpal_render_node_begin_reminder(void)
 }
 
 /* -------------------------------------------------------------------------
- * 配网 layer（SU-A2 残项补全）：配网 = 前台优先级最高层（PROVISION=6），配网进/退由
+ * 配网 layer（SU-A2 残项补全）：配网 = 前台优先级最高层（PROVISION=7），配网进/退由
  * WifiBoard 配网模式进/退事件驱动。两个入口各自纯进/纯退、独立持锁释放（进在按钮任务 /
  * 网络回调任务、退在 WifiManager 事件回调，跨任务不成对调用，故不像 begin_page/end_page
  * 那样配锁）。
@@ -468,8 +507,8 @@ void kidpal_render_node_begin_provision(void)
         lvgl_port_unlock();
         return;
     }
-    /* 配网进 layer 优先级表最高层：PROVISION(6) > REMINDER(5) > SERVER_PAGE(4) >
-     * VOICE(3) > LOCAL_PAGE(2)。幂等去重，重复进入安全。 */
+    /* 配网进 layer 优先级表最高层：PROVISION(7) > REMINDER(6) > CHAR_WINDOW(5) >
+     * SERVER_PAGE(4) > VOICE(3) > LOCAL_PAGE(2)。幂等去重，重复进入安全。 */
     kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_PROVISION);
     lv_screen_load(s_kidpal_scr);
 
@@ -594,13 +633,16 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 }
 
 /* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层
- * （VOICE / SERVER_PAGE / REMINDER）-> 1；LOCAL_PAGE / PROVISION / NONE -> 0。 */
+ * （VOICE / SERVER_PAGE / REMINDER / CHAR_WINDOW）-> 1；LOCAL_PAGE / PROVISION /
+ * CHAT / NONE -> 0。（2026-09-19 M2-K3：闭集纳入 CHAR_WINDOW——查字窗前台时页点隐藏
+ * 与键路由同源。） */
 int kidpal_render_node_front_is_overlay(void)
 {
     int top = kidpal_layer_top(&s_layer_stack);
     return (top == KIDPAL_LAYER_VOICE ||
             top == KIDPAL_LAYER_SERVER_PAGE ||
-            top == KIDPAL_LAYER_REMINDER) ? 1 : 0;
+            top == KIDPAL_LAYER_REMINDER ||
+            top == KIDPAL_LAYER_CHAR_WINDOW) ? 1 : 0;
 }
 
 /* 前台顶层是否为会话类覆盖层（VOICE）：OVERLAY_CLOSE 关层级联判据（KD-A5 真机 r1
@@ -648,6 +690,15 @@ void kidpal_render_node_dismiss_front_overlay(void)
              kidpal_layer_top(&s_layer_stack));
 }
 
+/* 板级任意键手势归零查字窗驻留计时（seam [9]e; requirements v1.43「计时随任意按键重计」）。
+ * 由板级 KEY/BOOT 按键按下回调调用（waveshare-s3-rlcd-4.2.cc）——置「本拍有按键」标志，
+ * tick 内作为 key_pressed 喂 kidpal_char_window_idle_step 使计时归零重计。无锁整数写，
+ * 可跨任务调用；非查字窗前台时该标志被 tick 取出即弃（零副作用）。 */
+void kidpal_render_node_char_window_key_hit(void)
+{
+    s_char_window_key_hit = 1;
+}
+
 void kidpal_render_node_cycle_next(void)
 {
     lvgl_port_lock(0);
@@ -683,6 +734,30 @@ int kidpal_render_node_get_page(void)
 
 void kidpal_render_node_tick(void)
 {
+    /* 5 分钟驻留计时的设备侧驱动（seam [9], M2K3-A3 驱动半）：落地面 = 本既有 1s tick
+     * （不另起 timer）。仅当查字窗为前台（KIDPAL_LAYER_CHAR_WINDOW 门控）时累计与到点
+     * 关窗——非查字窗前台把累计器归零，否则窗一开首拍即因历史累计越限而立即误关窗。
+     * 到点（step 返回 1）经关窗唯一入口 kidpal_render_node_dismiss_front_overlay 关窗
+     * （回原页、不翻页，与 BOOT/KEY 长按同语义）。
+     * 时序安全：本函数由 LVGL 定时器（esp_lvgl_port task）调用、锁已持有；lvgl_port_lock
+     * 为**递归互斥量**（LVGL9 端口 xSemaphoreCreateRecursiveMutex），dismiss 内部再取锁
+     * 为同任务递归获取、不阻塞不死锁——故本区内直调 dismiss 安全。
+     * 注意：本驱动必须在下方 early-return 之前——查字窗前台时 layer top = CHAR_WINDOW，
+     * 会被那句「top != LOCAL_PAGE 即 return」挡掉，放在其后则驱动永不执行。 */
+    {
+        int key_pressed = s_char_window_key_hit;
+        s_char_window_key_hit = 0; /* 本拍消费，未消费也清位（防跨窗陈旧置位） */
+        if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_CHAR_WINDOW) {
+            if (kidpal_char_window_idle_step(&s_char_window_idle_ms, RN_TICK_MS,
+                                             key_pressed) == 1) {
+                ESP_LOGI(RN_TAG, "char window idle timeout (5min no-op) -> dismiss");
+                kidpal_render_node_dismiss_front_overlay();
+            }
+        } else {
+            s_char_window_idle_ms = 0; /* 非查字窗前台: 不计时（防历史累计误关窗） */
+        }
+    }
+
     /* 首页动画重渲（冒号/电池闪烁）：仅当本地首页是前台 owner 且图像控件存活时触发。
      * 由 LVGL 定时器（esp_lvgl_port task）调用，锁已持有。前台归属由 layer 栈
      * top() 单一裁决（服务端页/提醒/语音等更上层在场时不重渲首页，也不会误触
@@ -739,17 +814,4 @@ extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
     if (v != NULL) { memcpy(&s_story_view, v, sizeof(s_story_view)); }
     if (l != NULL) { memcpy(&s_story_list, l, sizeof(s_story_list)); }
     if (t != NULL) { memcpy(&s_story_text, t, sizeof(s_story_text)); }
-}
-
-extern "C" void kidpal_render_node_cache_char(int has_data)
-{
-    s_has_char_data = (has_data != 0);
-}
-
-extern "C" void kidpal_render_node_cache_char_data(const char *data_json)
-{
-    if (data_json != NULL && data_json[0] != '\0') {
-        s_char_json = data_json; /* std::string 赋值，动态分配 */
-        s_has_char_data = true;
-    }
 }
