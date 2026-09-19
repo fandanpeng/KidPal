@@ -12,22 +12,22 @@
   - `firmware/main/display/char_page.h` +17/-… / `.cc` +128/-…——锚 `canvas-p4` → **`char-window`** 改名收尾；覆盖窗**叠层不清屏**（关窗回原页不翻页）；**右栏对账三项**（部首行补上屏 = 四行齐 / 进度珠死成员 `progress_label` 清零 / 握笔小手 12px 圆环占位 `charpage_draw_penhand` 与 `CHARPAGE_PRESS_SIZE` 整体删除）；底部提示条文案改消费 `kidpal_char_card_build` 的 `progress` 单源（S-F3.3 AC2 定格「写完啦·共 N 笔」）；`charpage_on_panel_delete` 补清 `panel/canvas` 句柄防悬垂二删。
   - `firmware/main/mcp_server.cc` +34/-…——case 3 查字路由改经 `begin/end_char_window`（**路由语义与 `view_router` 数值码本体零改动**；`cache_char_data` 调用点收拢删除）。
   - `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` +32/-…——`keya_front_route_top` 前台层归一化喂第三参；`GLOBAL_ACT_CHAR_REPLAY` → `kidpal_char_page_replay`；两键 `OnPressDown` 调 `char_window_key_hit`（任意键重计）。
-  - `firmware/main/CMakeLists.txt` +6/-0——`display/char_window.c` 进设备源表。
+  - `firmware/main/CMakeLists.txt` +7/-0——`display/char_window.c` 进设备源表（含登记项上方注释块；注释末句经 r4 修正为与落地实现相符，见 Findings SHOULD 行）。
   - `firmware/main/test/host_app/main/CMakeLists.txt` +13/-0——新验收件 + `char_window.c` 强符号源 + builder 单测注册进 `HOST_ACCEPTANCE_SRCS`（**置于 host_infra_smoke 之前**）。
   - **新增 3 文件**：`firmware/main/display/char_window.{h,c}`（26+39 行，5 分钟驻留计时纯逻辑单源 `kidpal_char_window_idle_step` / `KIDPAL_CHAR_WINDOW_IDLE_MS = 300000`）、`firmware/main/test/char_window.test.c`（170 行，builder 补强面，**非判定权威**）。
 - **验收冻结（commit `759709e` + `7f2e0f3`，firmware 面 3 文件 +1479/-10）**：
   - 新增 `firmware/main/test/char_window_overlay.acceptance.c`（**1375 行，7 TEST_CASE**，覆盖 A1–A6 + boundary；seam [1]–[9]）。
   - `key_layer_dispatch.acceptance.c` +70/-0（append-only 追加查字窗列三齿 + seam [1] 第三参语义扩注，既有通用覆盖层列/基层列零改动）。
   - `retract_p4_three_page.acceptance.c` +44/-10（**完备性反查发现的假红翻正**——test 6 tooth 2/tooth 5 的「cache_char 保留」守卫随本包收拢翻正为「已收」）。
-- **Net diff**：firmware 面合计 **18 文件 +2063/-165**（实现 15 + 验收 3）。
+- **Net diff**：firmware 面合计 **18 文件 +2067/-165**（实现 15 + 验收 3；含 r4 注释修正 +1 行，`git diff --stat 210bb6e..HEAD` 实测）。
 - **簿记面（非实现改动，随收口 commit 冻结）**：`delivery/taskpackages/<id>/taskpackage.json`（mutationEvidence.perAcceptance 6 条回填）、`delivery/taskpackages/current/taskpackage.json`（planner finalize 投影）、`input-brief-*.md`、`pod-events.jsonl`（append 3 条）、`verify-runs.jsonl`、`verifier-evidence/`（immutable，只引路径不复制正文）。
 - **Scope**：板端 `firmware/` 单一子系统——① 查字窗层注册 + 键位语义矩阵 + 页点隐藏；② 5 分钟驻留计时（纯逻辑 + 设备侧驱动）；③ 右栏对账三项 + 锚改名 + M2-K2 遗留 API 收拢。云端 `server/` **零改动**，`docs/**`（含 `docs/contracts/**`）、`.claude/**` **零触碰**（`git diff 210bb6e..worktree` 逐面零命中）。
 - **Split recommendation**：不拆——层注册/键位矩阵/驻留计时是同一「会话内覆盖窗」语义的三面（层归属决定键路由与页点、计时决定关窗时机），半拆即窗语义断裂；验收件单文件冻结、一次 RED→GREEN 链承载。
 
 ## Verification Evidence
 
-- **Structural gates**：final r3 fact **九闸全绿**（`ok:true`、`observedGateExit:0`、invocationId `1221bff2-dbc5-4f73-9d5d-b72b3014d1e0`，2026-09-19T00:39:10.961Z–00:39:25.229Z，evidenceRef `delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r3.json`）——taskpackage-required / **firmware-build（device build 真编译，`VERIFY_FW_BUILD_REQUIRED=1`，`xiaozhi.bin` 0x30b7d0 bytes、分区余量 11%，未降级）** / contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit（pytest 37 passed）/ acceptance（oracle-pass，firmwareAcceptanceFiles 22）。scoped r1 fact（invocationId `f1b37186-d4ce-4a1c-b70d-aca61559d66c`，rounds/r1.json）**mutation-check 红**（mutationEvidence 空骨架，设计态红）；scoped r2 fact（invocationId `268044e3-aef8-4ff2-b425-713cd6e5d09d`，rounds/r2.json）七闸全绿。
-- **机械校验**：`.claude/scripts/verifier-evidence-check.mjs --change-id 260917-m2-k3-char-window-overlay --phase final --round 3 --invocation-id 1221bff2-…` **integrator 实跑 exit 0、`factOk:true`、`observedGateExit:0`**（2026-09-19）——final evidence 有效，可进 closeout。
+- **Structural gates**：final r4 fact **九闸全绿**（`ok:true`、`observedGateExit:0`、invocationId `1c7a5463-162c-4e8b-9912-835cf48c9549`，2026-09-19T01:00:39.871Z–01:01:47.714Z，evidenceRef `delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r4.json`）——taskpackage-required / **firmware-build（device build 真编译，`VERIFY_FW_BUILD_REQUIRED=1`，`xiaozhi.bin` 0x30b7d0 bytes、分区余量 11%，未降级）** / contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit（pytest 37 passed）/ acceptance（oracle-pass，firmwareAcceptanceFiles 22）。**r3（invocationId `1221bff2-dbc5-4f73-9d5d-b72b3014d1e0`，rounds/r3.json）已由 r4 取代**——r4 覆盖本包自引入假陈述最小修正（`firmware/main/CMakeLists.txt` 注释，零语义改动）后重跑，仍九闸全绿；本 packet 以最新 final 轮 r4 为准。scoped r1 fact（invocationId `f1b37186-d4ce-4a1c-b70d-aca61559d66c`，rounds/r1.json）**mutation-check 红**（mutationEvidence 空骨架，设计态红）；scoped r2 fact（invocationId `268044e3-aef8-4ff2-b425-713cd6e5d09d`，rounds/r2.json）七闸全绿。
+- **机械校验**：`.claude/scripts/verifier-evidence-check.mjs --change-id 260917-m2-k3-char-window-overlay --phase final --round 4 --invocation-id 1c7a5463-…` **integrator 实跑 exit 0、`factOk:true`、`observedGateExit:0`**（2026-09-19）——final evidence 有效，可进 closeout。
 - **host runner 全量（integrator 独立复跑，非闸境）**：`cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build` 后直调 `./build/host_infra_test.elf`（**elf 相对 host_app/**）→ **`58 Tests / 0 Failures / 0 Ignored`、EXIT=0**（2026-09-19 integrator 实跑）。账实相符：launch 基线 **46T/0F @ 210bb6e**（progress.md 锚）+ 本包新齿（新件 7 TEST_CASE + 两在世件留痕修订 + builder 单测 3 齿 + seal TEST 8）= 58；红基线链 57T/1F（seal 后，唯一红 = A3 驱动半）→ 58T/0F。
 - **server 面（跨子系统覆盖边界）**：`server/` 本包零改动（`git diff 210bb6e..worktree -- server/` 零命中）；pytest `37 passed`（unit 闸）。本包无 server 侧事件流/契约面改动，故「跨子系统事件流面」无本包可归因的增量；覆盖边界 = 固件 host 逻辑面（host runner 全量）+ 设备编译面（device build 闸），真机渲染/层交互面 deferred（见 demo 对账行）。
 - **Mutation check**：TaskPackage `mutationEvidence.perAcceptance` **六条 record（M2K3-A1/A2/A3/A4/A5/A6）全部 `sensitive:true` + `failed as expected`**，`sensitive:true × 6`，M2K3-A7/A8 structural 豁免——各条「单点变异 → 转红 → 还原复绿」链完整，还原指纹逐字节相同（sha256 逐条在册），全仓零变异残留。7/7 全红（含 A4/A6 本轮新造靶）。A5 关键加固证据：变异态下切区内仍留携带「部首」字样的注释、齿仍转红——实证 sealing pass 的 C 注释剥离收紧有效（原裸扫形态会假绿）。本 packet 引用 taskpackage 字段，不重跑。
@@ -42,7 +42,7 @@ roadmap 权威口径（`delivery/workstreams/m2-char-window/roadmap.md` §③ K3
 | roadmap 证据形态项 | 本包实际证据 | 对账 |
 |---|---|---|
 | host runner（A1–A6 齿全绿留痕） | `char_window_overlay.acceptance.c` 7 TEST_CASE（层注册/键位矩阵/驻留计时/页点隐藏/右栏对账/锚改名）+ builder 单测 3 齿 + `key_layer_dispatch` 查字窗列三齿 → 全量 **58T/0F EXIT=0**（integrator 独立复跑）；A1–A6 各一条 mutation 反证（`sensitive:true × 6` + 还原复绿） | 一致 |
-| device build 闸 | final r3 `firmware-build` exit 0（真编译、`VERIFY_FW_BUILD_REQUIRED=1` 未降级、`xiaozhi.bin` 0x30b7d0 / 余量 11%；`char_window.c` / `kidpal_render_node.cc` 的新驱动均在编译内，E3 device build 面满足） | 一致 |
+| device build 闸 | final r4 `firmware-build` exit 0（真编译、`VERIFY_FW_BUILD_REQUIRED=1` 未降级、`xiaozhi.bin` 0x30b7d0 / 余量 11%；`char_window.c` / `kidpal_render_node.cc` 的新驱动均在编译内，E3 device build 面满足） | 一致 |
 | F3 真机确认轮（human 持板：S-F3.1 AC1–AC4 + NFR-PERF-2 串口计时，RM-A8 形态） | **deferred、未执行**——M2K3-A7 / A8 structural 条目在册（note：真机齿 deferred，human 持板，证据落 `delivery/changes/dev/<changeId>/`）；本包**host 半闭环、真机半未做** | 一致（roadmap 口径本即「human 持板」；deferred 与口径吻合，无超出声明的证据形态、无未声明的降级） |
 
 **一致性结论：一致。** demo 证据形态三项与 roadmap §③ K3 权威口径逐项吻合；**本包 host 半闭环、真机半（A7/A8）未做**——review-packet 明记此点，**不得读成整包已验收**。效果段核对：①②③④由 host 齿 + device build 闸落证（A1 层注册 / A2 键位矩阵 / A3 驻留计时 + 页点隐藏 / A4 页点 / A5 右栏四行 / A6 锚改名）；⑤ 提醒压查字窗层级由 A1 结构齿（CHAR_WINDOW 落 REMINDER 之下）+ `front_is_overlay` 闭集钉；⑥ NFR-PERF-2 5 秒档 + K1 两缺陷 live 复证**归 A7/A8 真机轮**（roadmap 口径）。数字链自洽：46（launch 锚）+ 本包新齿 = 58 = 全量实跑；红基线 57T/1F 的唯一红 = A3 驱动半（sealing pass 补钉前后）。**无不一致项，无需就 demo 口径上报 planner。**
@@ -66,9 +66,9 @@ roadmap 权威口径（`delivery/workstreams/m2-char-window/roadmap.md` §③ K3
 
 | Severity | Kind | Area | Finding | Basis | Required action |
 |---|---|---|---|---|---|
-| SHOULD | judgement-call | firmware/build | `firmware/main/CMakeLists.txt:76` 新注释写「设备侧调用点待接 —— 见本包 builder 交付报告「遗留」节」，但设备侧调用点**已在本包接通**（`kidpal_render_node_tick` 1s 累计喂 `kidpal_char_window_idle_step`）——注释与代码现状相左，会误导审读者以为 A3 驱动半未接 | changed-code hunk `firmware/main/CMakeLists.txt`（+6，新注释块）+ 实证调用点在场（`grep -n kidpal_char_window_idle_step firmware/main/display/kidpal_render_node.cc` → :751；graph `trace_path` inbound 在本工作树项目解析 0 边属解析局限，以 grep 为准） | 登记（本 packet + docs-delta）；**不在本包就地改**——合并门冻结已验 diff，post-verification 改动需新轮（iterationBudget 已用 3）；建议 planner 后续 micro-fix 批校正该注释 |
+| SHOULD | judgement-call | firmware/build | `firmware/main/CMakeLists.txt:76` 新注释曾写「设备侧调用点待接 —— 见本包 builder 交付报告「遗留」节」，但设备侧调用点**已在本包接通**（`kidpal_render_node_tick` 1s 累计喂 `kidpal_char_window_idle_step`）——注释与代码现状相左，会误导审读者以为 A3 驱动半未接 | changed-code hunk `firmware/main/CMakeLists.txt`（+7，新注释块）+ 实证调用点在场（`grep -n kidpal_char_window_idle_step firmware/main/display/kidpal_render_node.cc` → :751；graph `trace_path` inbound 在本工作树项目解析 0 边属解析局限，以 grep 为准） | **已在本包内修正（resolved，非遗留）**——改法：commit `e9b3530` 将该登记项上方注释末句改写为与落地实现相符的陈述（设备侧消费者 = `kidpal_render_node_tick`：1s 节拍累计 + 查字窗前台门控、到点经 `kidpal_render_node_dismiss_front_overlay` 关窗；任意键归零入口 = `kidpal_render_node_char_window_key_hit`），仅动注释、零语义改动；终审事实随之由 r3 重跑为 r4（九闸全绿），host runner 仍 58T/0F。本包 M2K3-A5 本职即清理头注虚标类假注释，故不在本包再送新的 |
 | NIT | judgement-call | firmware/display | `firmware/main/display/kidpal_render_node.h:81` 注释「begin_page 内部取锁，调用方不得已持有 LVGL 锁（否则递归死锁——不得在 LVGL 定时器回调内调用）」与本包新驱动的实证相左——`kidpal_render_node_tick`（LVGL 定时器回调，锁已持有）内直调 `kidpal_render_node_dismiss_front_overlay`（内部再取锁）**不死锁**，因 `lvgl_port_lock` = 递归互斥量（builder 实证 esp_lvgl_port lvgl9 `xSemaphoreCreateRecursiveMutex`，pod-events `4cf60886-…` 超读链） | changed-code adjacency：`kidpal_render_node.cc` tick 内的新驱动块（changed hunk）**依赖**该递归锁性质；`kidpal_render_node.h:81` 陈注声称相反 | 登记（改善项，不扩面）；建议后续批校正该注释（本包未改，如实留痕） |
-| FYI | judgement-call | firmware/display | `firmware/main/display/char_page.cc:523` device build 告警 `variable 'ch' set but not used [-Wunused-but-set-variable]`（`const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ;`）为本包改动块**邻近的基线既有**告警，本包未顺手改 | final r3 `firmware-build` stdout 逐字（编译告警）+ 该行在本包 diff 中为**未改的 context 行** | no-trigger——本包未顺手改（不扩面），如实登记；建议后续批清理 |
+| FYI | judgement-call | firmware/display | `firmware/main/display/char_page.cc:523` device build 告警 `variable 'ch' set but not used [-Wunused-but-set-variable]`（`const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ;`）为本包改动块**邻近的基线既有**告警，本包未顺手改 | final r4 `firmware-build` stdout 逐字（编译告警）+ 该行在本包 diff 中为**未改的 context 行** | no-trigger——本包未顺手改（不扩面），如实登记；建议后续批清理 |
 | FYI | judgement-call | firmware | `key_gesture_parser.cc` 新增 `#include "display/kidpal_layer.h"`（parser → layer 的新 include 边） | changed hunk（+`#include "display/kidpal_layer.h"`）+ 反向零回引（`kidpal_layer.h` 不 include `key_gesture_parser.h`，**无环**）+ 引用为**符号常量**（优于复制数值字面） | no-trigger——符号引用层闭集（零数值字面耦合），无环、无跨层新增调用方（见「影响面核对」） |
 | FYI | judgement-call | governance/tooling | 本 Pod 五条 friction 已落 pod-events：① 拆包期 sourceRefs 遗漏四处真实改动面（`ac30fd55-…`）② `origin.type` 枚举值 `milestone` 不在闸闭集（`0337c1b8-…`）③ acceptance-author 挂钟停滞（`bf5c5107-…`）④ 三处 over-scan 申报（`5bff6dd0-…` / `93fe9f88-…` / `da58c461-…` / `4cf60886-…`）⑤ **seam 漏钉一处承重落地面**（A3 设备侧驱动无齿，`cfefdf89-…`） | pod-events 事件 id 在场 + 该等项不在 verify 闸集内（多为拆包器产出侧与验收面欠覆盖，已由 sealing pass 消解） | no-trigger——非本包阻断项，候选并入下次治理批（承重缺口已由 acceptance-author 补 seam [9] 消解） |
 
@@ -80,18 +80,18 @@ roadmap 权威口径（`delivery/workstreams/m2-char-window/roadmap.md` §③ K3
 2. **Test quality**：断言真实行为非实现镜像——A1/A2/A3 行为半直接断言 host 可编纯逻辑（`kidpal_layer_*` / `key_route_layer` / `kidpal_char_window_idle_step`）的返回值；结构半对设备专属文件（`kidpal_render_node.{h,cc}` / `char_page.{h,cc}` / `mcp_server.cc` / board）用稳定签名切区 + 「区内零字面/计数」结构齿。**sealing pass 加固**：13 处正向计数齿改走 **C/C++ 注释剥离器**（保字符串字面量体）+ CMake `#` 注释剥离，受控变异 M4' 实证「真删部首行 + 保留携带字面量的注释」正确转红；负向齿与钉头注的锚齿不剥（剥了会放松）。六条功能齿全部 mutation 敏感（`sensitive:true × 6`）+ 七条单点变异逐齿翻红 + 还原复绿（A4/A6 本轮新造靶）。红基线由 acceptance-author 独立实跑（launch 46T/2F / 封口前 56T/0F / 封口后 57T/1F），非 builder 自证。**完备性反查两次命中**（K2 retro 教训 #1 的第二次实例）：`retract_p4_three_page.acceptance.c` 的 K2 守卫齿随收拢必假红 → 翻正为「已收」。
 3. **Contract/boundary safety**：`docs/contracts/**` 零触碰（`git diff` 零命中 + contract-lint 绿）；`view_router` 数值码零改动（case 3 区守卫齿钉）；`key_route_layer` 第三参语义**扩展**（0 子集保留、非 0 从「1」扩为「实际层值」）——通用覆盖层列行为等价（REMINDER/VOICE/SERVER_PAGE 仍走通用列，A2 guard 齿 + 板级 `keya_overlay_consume` 分流路径零回归）；层闭集改动落 `firmware/main/display/kidpal_layer.h/.c`（**实现面，非 `docs/contracts/**`**），走 acceptance-author 留痕通道。`server/` 零改动。**spec 面零漂移**（向已冻结需求对账）。`mcp_server` char 路由的缺字段降级门保持不动。
 4. **Operability/security**：无 secret / 权限 / correlationId 面（security 闸 `securityReviewRequired=false`，exit 0）。新增 `kidpal_render_node_char_window_key_hit` 为跨任务无锁整数置位（按键回调任务写、LVGL 定时器任务取并清位；32 位对齐整数读写原子，未消费也清位防跨窗口陈旧置位）；`char_window.c` 对 `NULL` 指针防御（从不为 UB）。计时器不另起（落既有 1s tick），无新增攻击面。**无新增依赖**（`char_window.{h,c}` 仅引 `stddef.h`；无 chip/FreeRTOS/LVGL 依赖）。
-5. **Maintainability/simplicity**：改动局部、单源清晰——层闭集单一权威（`kidpal_layer.h`，路由表符号引用而非复制）；5 分钟计时纯逻辑单源（`char_window.c`，设备侧仅驱动）；底部提示条文案消费 `card.progress` 单源（零重抄格式）；握笔小手占位与 `progress_label` 死成员是**纯删除**（复杂度消失、非转移，符合 deletion test）；锚 `char-window` 改名收尾消解 M2-K2 遗留写侧死态 API（登记交接闭环）。**无过早抽象、无重复实现**：`keya_front_route_top` 是薄归一化函数（1 调用点族内），复用 `front_is_overlay` 单一裁决；`char_window.test.c` 明标「补强面非判定权威」（不与冻结齿争权威）。simplification tags 零命中（`minimal:` 零命中）。两处陈注（见 Findings）为既有/本包引入的注释准确性问题，非结构冗余。
+5. **Maintainability/simplicity**：改动局部、单源清晰——层闭集单一权威（`kidpal_layer.h`，路由表符号引用而非复制）；5 分钟计时纯逻辑单源（`char_window.c`，设备侧仅驱动）；底部提示条文案消费 `card.progress` 单源（零重抄格式）；握笔小手占位与 `progress_label` 死成员是**纯删除**（复杂度消失、非转移，符合 deletion test）；锚 `char-window` 改名收尾消解 M2-K2 遗留写侧死态 API（登记交接闭环）。**无过早抽象、无重复实现**：`keya_front_route_top` 是薄归一化函数（1 调用点族内），复用 `front_is_overlay` 单一裁决；`char_window.test.c` 明标「补强面非判定权威」（不与冻结齿争权威）。simplification tags 零命中（`minimal:` 零命中）。两处注释准确性问题（见 Findings）——CMakeLists 那条为**本包引入、已在包内修正**（commit `e9b3530`），`kidpal_render_node.h` 那条为**既有**（登记交后续批）——均非结构冗余。
 
 ## Residual Risk
 
 - Known limitation:
   - **M2K3-A7/A8 真机确认轮 deferred（human 持板）**——F3 真机确认轮（S-F3.1 AC1–AC4 / S-F3.2 AC1 / S-F3.3 AC1–AC2 / 窗口交互包全项含 5 分钟自动关窗 / 提醒压查字窗层级 / K1 两缺陷 live 复证）+ NFR-PERF-2 5 秒档复测在本包外；本包 **host 半闭环、真机半未做**（device build 闸只担保编译，不担保实机行为）。**接手口径**：随 M2 设备轮（human 持板，沿用 RM-A8 串口取证形态）一并执行；证据落 `delivery/changes/dev/260917-m2-k3-char-window-overlay/`。
   - **层数值码残留登记（非活耦合、未纳入本包）**：归档件 `firmware/main/test/acceptance/archive/screen_unification.acceptance.c` 的 `#define KIDPAL_LAYER_REMINDER 5` 与活跃 assert 在 renumber 后不准确——**已实证不编入任何构建**（host_app 与设备 CMakeLists 均不含），属非活耦合，未硬改亦未停包；`reminder_overlay_unify.acceptance.c` 数处 stale 注释文本；另两处在世冻结件（`key_layer_dispatch` / `retract_p4_three_page`）残留结构同型的裸正扫齿。**建议后续批统一 refresh**（含引入注释剥离器）。
-  - **Findings 两条陈注**（CMakeLists「待接」/ render_node.h「递归死锁」）未在本包就地改，登记交后续批（见 Findings；合并门冻结已验 diff 之故）。
+  - **Findings 两条注释准确性问题**：① CMakeLists「待接」陈注为**本包引入、已在包内修正**（commit `e9b3530`，非遗留，见 Findings）；② `kidpal_render_node.h`「递归死锁」陈注为**既有**、未在本包就地改，登记交后续批（见 Findings）。
 - Follow-up recommended：
-  - M2 设备轮执行 A7/A8（F3 确认 + NFR-PERF-2）；后续批 refresh 归档件/注释/裸正扫齿 + 校正两处陈注 + 清理 `char_page.cc:523` 未用变量告警。
+  - M2 设备轮执行 A7/A8（F3 确认 + NFR-PERF-2）；后续批 refresh 归档件/裸正扫齿 + 校正 `kidpal_render_node.h` 既有陈注 + 清理 `char_page.cc:523` 未用变量告警（CMakeLists 陈注已在本包内修正，不在后续批）。
   - 五条 friction（拆包器 sourceRefs 遗漏 / 枚举形态税 / acceptance-author 停滞 / over-scan / seam 漏钉）候选并入下次治理批。
-- Human decision needed：**无**（无契约/spec 变更面由本包就地裁、无依赖新增、无安全残余）——A7/A8 真机轮走 M2 设备轮 human 持板既有通道，非本包新增升级点。回滚方式 = 本包 commit 单点 revert（改动面收敛于 firmware 12 源/接线 + 3 新件 + 3 测试件，无 schema/契约迁移；`char_window_overlay.acceptance.c` / `char_window.{h,c}` / `char_window.test.c` 新增件随 revert 移除，CMakeLists 登记行反向删除）。
+- Human decision needed：**无**（无契约/spec 变更面由本包就地裁、无依赖新增、无安全残余）——A7/A8 真机轮走 M2 设备轮 human 持板既有通道，非本包新增升级点。回滚方式 = 本包 commit 序列 revert（改动面收敛于 firmware 12 源/接线 + 3 新件 + 3 测试件，无 schema/契约迁移；`char_window_overlay.acceptance.c` / `char_window.{h,c}` / `char_window.test.c` 新增件随 revert 移除，CMakeLists 登记行反向删除；`e9b3530` 陈注修正随 revert 一并回退）。
 - decisionCoverage：TaskPackage `decisionCoverage` 为**空集（`[]`）**——无 `landsIn: dropped && reason: risk-accepted` 条目，无 D<n> 风险接受挂账。
 
 ## 影响面核对（worktree 口径 · step 11b）
@@ -110,10 +110,18 @@ roadmap 权威口径（`delivery/workstreams/m2-char-window/roadmap.md` §③ K3
 
 - 待合并分支：`dev/260915-m1-k1a-key-layer-dispatch`（本 Pod 常驻分支，本包改动冻结于其上，mergeOrder 30）。
 - 合并路径：planner 主线程跑 `supervisor-verdict-gate.mjs` 机械闸 → APPROVE 后前置升级闸（`pre-merge-escalation-gate.mjs`）→ 放行 `merge-driver --pod` 本地合并；**本 integrator 不执行 merge、不 push、不在 main 上 commit**。
+- **本包完整 commit 序列**（本分支，launch 基线 `026b1f5` @ `210bb6e`；自早至晚）：
+  1. `759709e` `test(m2-k3): 验收冻结落账——新件 char_window_overlay.acceptance.c（7 TEST_CASE 覆盖 A1–A6）+ 两处在世冻结件留痕修订 + TaskPackage finalize`
+  2. `7f2e0f3` `test(m2-k3): 验收封口补钉——seam [9]+TEST 8 驱动半（A3 设备侧驱动欠覆盖）+ 13 处计数齿注释剥离收紧`
+  3. `f5ef1a2` `feat(firmware): m2-k3 页→窗改造——查字窗层注册 + 键位语义矩阵 + 5 分钟驻留计时 + 右栏对账三项 + 锚改名/API 收拢（M2K3-A1~A6 齿全绿）`
+  4. `eacad5c` `chore(m2-k3 closeout): 晋升 closeout 制品 + 冻结收口 diff`
+  5. `e9b3530` `fix(m2-k3): 本包自引入假陈述最小修正 + 终审重跑 r4 落账`（本轮新 commit——CMakeLists 注释末句修正 + r4 fact/账行/投影）
+  6. `chore(m2-k3 closeout): 制品刷新指向 r4 + 假陈述修正状态更新 + merge packet`（本轮制品刷新 commit——verdict.json / verification.json / docs-delta.md / review-packet.md 刷新 + closeout index 更新；即本 packet 本次修订所在 commit，`git log -1` 可锚）
+- **最终冻结 diff 的 stat**（锚至不可变 commit `e9b3530`，即本轮 r4 落账 commit；`git diff --stat 026b1f5..e9b3530`）：**34 文件 +3264/-258**——其中 code 面 firmware **18 文件 +2067/-165**（实现 15 + 验收 3）、簿记面 `delivery/taskpackages/**`（taskpackage + current 投影 + input-brief×2 + pod-events + verify-runs + verifier-evidence r1–r4）、closeout 制品面 `delivery/changes/dev/260917-m2-k3-char-window-overlay/` 5 文件 + `delivery/changes/dev/INDEX.md` 单行。本轮制品刷新 commit 另对 4 文件（verdict.json / verification.json / docs-delta.md / review-packet.md）做 r3→r4 修订，计入其自身 diff。**逐面零命中**：`server/`、`docs/contracts/`、`docs/requirements.md`、`docs/architecture.md`、`.claude/`。
 - 阻塞项：**无 BLOCKING finding**；`closeout-check` 两 blocking 制品（`docs-delta.md` / `review-packet.md`）已晋升本目录。
-- 唯一需 planner 裁定的非阻塞项：Findings SHOULD（CMakeLists 陈注「待接」）——登记或走后续 micro-fix 批，**不阻断**本包合并门。
-- 回滚方式：单点 revert 本包 commit（见 Residual Risk）。
-- 遗留脏行说明：`delivery/taskpackages/current/verdict.json`（verify.mjs 脚本 fs-write 的 non-bearing 投影，指向 r3）为簿记面 M 态，随本收口 commit 一并冻结；`.codebase-memory/` 脏为工具再生面常态，不 stage、不还原；`firmware/build/` 与 `firmware/main/test/host_app/build/` 为白名单构建产物，不 stage。
+- 原唯一需 planner 裁定的非阻塞项（Findings SHOULD：CMakeLists 陈注「待接」）**已在本包内修正**（commit `e9b3530`）——不再挂后续 micro-fix，本包合并门无遗留待裁非阻塞项。
+- 回滚方式：revert 本包 commit 序列（见 Residual Risk）。
+- 遗留脏行说明：`delivery/taskpackages/current/verdict.json`（verify.mjs 脚本 fs-write 的 non-bearing 投影，现指向 r4）为簿记面 M 态，已随本轮收口 commit 一并冻结；`.codebase-memory/` 脏为工具再生面常态，不 stage、不还原；`firmware/build/` 与 `firmware/main/test/host_app/build/` 为白名单构建产物，不 stage。
 
 ## 边界外移交项（integrator scope 外 · 主线程执行）
 

@@ -1,17 +1,18 @@
 {
   "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
   "changeId": "260917-m2-k3-char-window-overlay",
-  "ts": "2026-09-19T00:39:25.229Z",
+  "ts": "2026-09-19T01:01:47.725Z",
   "phase": "final",
-  "round": 3,
-  "invocationId": "1221bff2-dbc5-4f73-9d5d-b72b3014d1e0",
+  "round": 4,
+  "invocationId": "1c7a5463-162c-4e8b-9912-835cf48c9549",
   "ok": true,
-  "evidenceRef": "delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r3.json",
+  "evidenceRef": "delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r4.json",
   "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
   "observedGateExit": 0,
   "legacyNonBearing": false,
   "gatesNotExecuted": [],
   "gatesRun": 9,
+  "roundProgression": "r3（1221bff2-dbc5-4f73-9d5d-b72b3014d1e0，九闸全绿）已被 r4（1c7a5463-162c-4e8b-9912-835cf48c9549）取代——r4 覆盖本包自引入假陈述最小修正（firmware/main/CMakeLists.txt 注释，零语义改动）、重跑仍九闸全绿；本件以最新 final 轮 r4 为准。",
   "sourceProvenance": {
     "factArtifactType": "verifier-round-fact",
     "factAuthority": "bearing",
@@ -19,15 +20,16 @@
     "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
   },
   "closeoutDeclarations": {
-    "redToGreen": "M2K3-A1..A6 功能齿 RED→GREEN：acceptance-author 独立实跑红基线（launch 46T/2F、封口前 56T/0F、封口后 57T/1F，唯一红 = A3 设备侧驱动 seam [9] sealing pass 前设计态红）→ final host runner 58 Tests / 0 Failures / 0 Ignored EXIT=0（integrator 独立复跑，launch 锚 46T/0F @ 210bb6e + 本包新齿）；六条 mutation 反证（MUT-M2K3-A1..A6）全部 failed as expected + 还原指纹逐字节相同，perAcceptance record 在 taskpackage mutationEvidence",
-    "redTrajectory": "acceptance-author standalone 红基线（新件 8T/1F 仅 test 8 红；真 host runner 57T/1F）→ verify scoped r1（f1b37186-…，mutation-check 红，空骨架设计态）→ verify scoped r2（268044e3-…，七闸全绿）→ verify final r3（1221bff2-…，九闸全绿，本包承重 fact）",
+    "redToGreen": "M2K3-A1..A6 功能齿 RED→GREEN：acceptance-author 独立实跑红基线（launch 46T/2F、封口前 56T/0F、封口后 57T/1F，唯一红 = A3 设备侧驱动 seam [9] sealing pass 前设计态红）→ final host runner 58 Tests / 0 Failures / 0 Ignored EXIT=0（integrator 独立复跑，launch 锚 46T/0F @ 210bb6e + 本包新齿；r4 注释修正后复跑仍 58T/0F）；六条 mutation 反证（MUT-M2K3-A1..A6）全部 failed as expected + 还原指纹逐字节相同，perAcceptance record 在 taskpackage mutationEvidence",
+    "redTrajectory": "acceptance-author standalone 红基线（新件 8T/1F 仅 test 8 红；真 host runner 57T/1F）→ verify scoped r1（f1b37186-…，mutation-check 红，空骨架设计态）→ verify scoped r2（268044e3-…，七闸全绿）→ verify final r3（1221bff2-…，九闸全绿）→ verify final r4（1c7a5463-…，收紧 CMakeLists 陈注后重跑，九闸全绿，本包承重 fact；r3 已被 r4 取代）",
     "demoReconciliation": "见 review-packet.md Demo 对账行——roadmap §③ K3 demo 证据形态三项（host runner A1–A6 齿 / device build 闸 / F3 真机确认轮 human 持板）逐项一致；本包 host 半闭环、真机半（A7/A8）未做，一致性结论落行在案",
     "deviceDeferral": "M2K3-A7（F3 真机确认轮）/ A8（NFR-PERF-2 live 复测）structural deferred：human 持板，随 M2 设备轮执行（RM-A8 串口取证形态），证据落 delivery/changes/dev/260917-m2-k3-char-window-overlay/",
     "k2LegacyCollapse": "M2-K2 遗留写侧死态 API 收拢闭环：kidpal_render_node_cache_char / cache_char_data（声明 + 定义）+ 静态 s_has_char_data / s_char_json + mcp_server.cc 调用点整体收拢；retract_p4_three_page.acceptance.c 两处「保留不动」守卫齿随本包翻正为「已收」",
     "layerRenumber": "层数值码 renumber（KIDPAL_LAYER_CHAR_WINDOW=5，REMINDER 5→6、PROVISION 6→7，下层 LOCAL_PAGE/VOICE/SERVER_PAGE 零偏移）；全仓消费点零数值字面耦合（符号引用），ID 沿用固定顺序",
     "underCoverageDiscovery": "验收面欠覆盖发现与封口：A3 设备侧驱动（喂 dt / 按键归零 / 到点 dismiss）原无齿覆盖 → acceptance-author 补 seam [9] + TEST 8（7 断言）→ builder 补实现转绿；同轮 13 处计数型结构齿引入注释剥离器收紧（受控变异实证原形态注释即可满足）",
+    "selfIntroducedFalseStatement": "本包自引入假陈述最小修正（本包内闭环，非遗留）：firmware/main/CMakeLists.txt 中 display/char_window.c 登记项上方注释末句「设备侧调用点待接 —— 见本包 builder 交付报告「遗留」节」为首轮 builder 驱动未接时写、第二轮驱动接上后未同步的假陈述（本包 M2K3-A5 本职即清理头注虚标类假注释，不能同包再送一条新的）→ 改写为与落地实现相符的陈述（设备侧消费者 = kidpal_render_node_tick / 任意键归零入口 = char_window_key_hit），零语义改动；终审事实随之由 r3 重跑为 r4（九闸全绿）",
     "detectChanges": "N/A (worktree)；替代抽查 = git diff --stat 闭集 + 共享符号 trace_path / grep（kidpal_render_node_front_is_overlay 11 callers 场内、kidpal_layer_push/pop_transients callers 全在 render_node.cc、key_route_layer 板级两调用点、char_window_idle_step 唯一设备侧消费者 render_node_tick），详见 review-packet.md 影响面核对节",
     "docsSync": "docsSyncRequired=false 在本包责任范围内成立（requirements 面零漂移，向已冻结 F3 各版本对账）；零契约/零 spec/零 agent-gate 改动（M2K3-E2 守住），server/ 零改动；三处已知残留（归档件数值字面 / 在世冻结件 stale 注释 / 同型裸正扫齿）登记交后续批，见同目录 docs-delta.md"
   },
-  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。"
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。以最新 final 轮 r4 为准。"
 }

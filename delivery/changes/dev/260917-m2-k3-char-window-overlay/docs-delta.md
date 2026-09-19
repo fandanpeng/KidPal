@@ -16,8 +16,8 @@
 
 | 面 | 文件 | 本包动作 | 核对证据 |
 |---|---|---|---|
-| 契约面 | `docs/contracts/interface-contract.md`（E1 display 响应块 / D3 笔顺 JSON / B1 课表 MD / shim API） | 零触碰（只读） | contract-lint 闸绿（final r3，exit 0）；`git diff 210bb6e..worktree -- docs/contracts/` 零命中；`architect-reviewer` 门 1 轻量 checklist 已对本批三包含 K3 裁定「零契约改动裁定成立」（裁决记录 = `delivery/workstreams/m2-char-window/review.md` 门 1 节）。注：契约 §1.3 ①「切到 P4 查字页」旧措辞属撤页前过时描述句（门 1 已附观察，不阻断）——契约字段与 display 响应块语义零改动，不构成契约变更 |
-| spec 面·需求 | `docs/requirements.md` | 零触碰 | docs-sync 闸绿（final r3，`docsSyncRequired=false`）；`git diff 210bb6e..worktree -- docs/requirements.md` 零命中。F3 全节（S-F3.1 AC1–AC4 / S-F3.2 AC1 / S-F3.3 AC1–AC2）+ §2.2 查字窗行/提醒行 + NFR-PERF-2 已是本包目标的权威现文——实现向需求对账，需求无需改 |
+| 契约面 | `docs/contracts/interface-contract.md`（E1 display 响应块 / D3 笔顺 JSON / B1 课表 MD / shim API） | 零触碰（只读） | contract-lint 闸绿（final r4，exit 0）；`git diff 210bb6e..worktree -- docs/contracts/` 零命中；`architect-reviewer` 门 1 轻量 checklist 已对本批三包含 K3 裁定「零契约改动裁定成立」（裁决记录 = `delivery/workstreams/m2-char-window/review.md` 门 1 节）。注：契约 §1.3 ①「切到 P4 查字页」旧措辞属撤页前过时描述句（门 1 已附观察，不阻断）——契约字段与 display 响应块语义零改动，不构成契约变更 |
+| spec 面·需求 | `docs/requirements.md` | 零触碰 | docs-sync 闸绿（final r4，`docsSyncRequired=false`）；`git diff 210bb6e..worktree -- docs/requirements.md` 零命中。F3 全节（S-F3.1 AC1–AC4 / S-F3.2 AC1 / S-F3.3 AC1–AC2）+ §2.2 查字窗行/提醒行 + NFR-PERF-2 已是本包目标的权威现文——实现向需求对账，需求无需改 |
 | spec 面·架构 | `docs/architecture.md` | 零触碰 | `git diff 210bb6e..worktree -- docs/architecture.md` 零命中；E2 铁律在案。本包不触系统边界（查字窗层插入 + 键路由列扩 + 5 分钟计时是本仓既有 layer 骨架内的实现对账，不动四态骨架共享对象层或提醒/语音/查字三层仲裁架构——M2K3-E3 逃生门未触发） |
 | docRefs | `docs/requirements.md` | 只读引用（F3 / §2.2 / §2.3 / §2.4 / NFR-PERF-2） | 无需更新——需求行语义未变 |
 | ADR | `docs/ADR.md` | 零触碰、无需新增 | 层数值码 renumber（插入 CHAR_WINDOW + REMINDER/PROVISION 上移）与页→窗改造的架构裁决早在 requirements F3 各版本 / architecture 渲染节点层定稿，本包是既有裁决的落地对账，**无新系统边界 / 事件 / tool / 契约取舍**，无接受残余风险或推迟迁移/安全事项 → 无 `adrRequired`（TaskPackage 亦未置 `adrRequired`）。详见 Review Packet「Five-Axis Review」第 3 轴与「Residual Risk」 |
@@ -26,7 +26,7 @@
 ## 核对方法
 
 - `git diff --stat 210bb6e -- docs/`、`-- docs/contracts/`、`-- docs/requirements.md`、`-- server/`、`-- .claude/`：**五面全部零命中**（2026-09-19 integrator 收拢时实跑；210bb6e = K3 launch 基线 = main tip）。
-- final r3（invocationId `1221bff2-dbc5-4f73-9d5d-b72b3014d1e0`，`ok:true`/`observedGateExit:0`）contract-lint / docs-sync / taskpackage-required 三闸 exit 0；`verifier-evidence-check.mjs` 实跑 `factOk:true`。
+- final r4（invocationId `1c7a5463-162c-4e8b-9912-835cf48c9549`，`ok:true`/`observedGateExit:0`，本包自引入假陈述最小修正后重跑）contract-lint / docs-sync / taskpackage-required 三闸 exit 0；`verifier-evidence-check.mjs` 实跑 `factOk:true`。r3（`1221bff2-…`）已被 r4 取代。
 - 契约面变更裁定另有门 1（architect-reviewer 轻量 checklist）GREEN 在案。
 
 ## 实现侧注记承载位置（改动的 why 随代码注释承载，非 spec 面）
