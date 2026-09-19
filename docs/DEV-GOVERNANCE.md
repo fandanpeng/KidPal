@@ -288,6 +288,26 @@ server 面验收分两态：
 
 C 类（固件/结构面）冻结验收文件落盘时，acceptance-author 当场实编一次该验收文件本身（C 编译器过一遍），判据 = **编译通道 error 为零**。红基线对结构/基建类包明示「验收文件本身可编译」：§3 的线束冒烟清单（SSH/线束助手/pytest 收集）不含编译通道，C 验收的语法缺陷（宏参数形态、复合字面量分组等）只有实编才暴露——260829-host-test-infra 实证：`host_infra_smoke.acceptance.c` 宏参编译错误到 builder 首实编才爆、退回 acceptance-author 返工（ARQ-260907-frozen-acceptance-compile-baseline）。§3 管执行通道、§4 管编译通道，两者并列不互替。
 
+### 5. 退役保留目录名（`archive`）
+
+**`archive` = 两面（firmware / server）的退役保留目录名；现役测试禁落该名。**
+
+- **语义**：任意深度上名为 `archive` 的目录 = 退役保留面。归档件按定义**非现役面**——**「移位即退役」**：一个测试文件一旦移入 `archive/`，即不再属现役验收 / 单测集合。
+- **代码承载点（两处 `SKIP_DIRS` + 一处配置，三处须同口径）**：`.claude/scripts/unit-run-check.mjs` 的 `SKIP_DIRS`、`.claude/scripts/acceptance-run-check.mjs` 的 `SKIP_DIRS`、`server/pytest.ini` 的 `norecursedirs`。任一处缺 `archive`，该闸就会把退役件当现役枚举——表现为该相位系统性常红、或清点报数虚高。
+- **为什么成文**：该约定原只活在两处代码注释里、**包作者不可见**——现役测试误落该名会被**静默不跑**（不报错、不收集），是最难发现的形态。实证：260916-unit-gate-archive-recursion（unit 闸纳入 archive → final 相位系统性常红 + 裸 pytest 基线 121F 假红）；260918-gov-review-closeout-chain-friction T1（acceptance 闸固件面枚举 22 件中 **13 件是归档退役件**，跳 archive 后为 9 件现役）。
+
+### 6. tighten-only 修订窗口（冻结件的纯加严修订）
+
+冻结验收件原则上不许改（防实现方「改测试让它通过」）。**唯一例外 = 本节窗口**：acceptance-author 可在**不新建文件、不改动既有断言语义**的前提下**纯 additive 补齿**。**这是「给冻结件开后门」的授权边界，故配防滥用五件**：
+
+1. **纯 additive 机器可判**：`git diff -U0` 对冻结件的**删除行数 = 0**（本条是机器闸——非 0 即违规）。
+2. **新齿必须重跑当初暴露 vacuity 的原变异**并证明转红（**不许另造易过变异自证**）；**`sha256` 还原核销**——记入该冻结件 `REVISION LOG` **同一条**，格式 `<前 sha256> → <后 sha256>`。（**如实声明**：本仓现**无已执行的 `sha256` 核销先例**——`7ab2d47` 仅留行数计数、未记 hash；本节落地后为**首例**。）
+3. **三件记录**：① 冻结件 `REVISION LOG` append 带 `Reason`；② taskpackage 的 `mutationEvidence` 该条 `sensitive: false → true`；③ 红基线摘要补一段。
+4. **范围帽**：同 Pod、同既有冻结件、**不新建文件**。
+5. **意图锚定**：新齿须钉**既有** `acceptanceRef` / `decisionCoverage` 的**原意图**；若需新 acceptance id、或须改行为定义 ⇒ 属 **re-spec**、**升 human**。
+
+**超窗即改验收**：不满足以上五件任一条的修订 = **非** tighten-only，须走正常返工 / 改验收通道（可能触 human）。`mutation-check` 会跑出 `insensitive` 但**不判谁有权补 oracle**——本节的职责正是补上「**谁、在什么边界内**」这个答案。
+
 ## 起包格式期望前置（planner / portfolio-planner / acceptance-author / builder 四方）
 
 > 成文：260907-gov-review-arq-governance-batch-2（T6）；承载 ARQ-260907-taskpackage-format-expectations-frontload。格式期望只活在闸的判定代码里、起草侧零成文 = 靠闸红反推再回派（跨 4 包 5 子项实证）。六条前置清单：

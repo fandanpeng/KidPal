@@ -31,7 +31,7 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const FW_ACC_RE = /\.acceptance\.(c|cpp|cc)$/;
 // shim pytest 验收文件（acceptance 目录下 test_*.py）。
 const PY_ACC_RE = /(^|\/)acceptance\/(test_[^/]*|[^/]*_test)\.py$/;
-const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'ESP32-S3-RLCD-4.2-Demo']);
+const SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'ESP32-S3-RLCD-4.2-Demo', 'archive']);
 
 function print(payload) { console.log(JSON.stringify(payload, null, 2)); }
 function fail(message, details = {}) { print({ ok: false, gate: 'acceptance', message, ...details }); process.exit(1); }
@@ -173,6 +173,11 @@ function runSelfCheck() {
     const real = collectReal(projectDir);
     const dReal = decide(real);
     ok('real-repo-smoke', true, `fwAcc=${real.fwAccFiles.length} pyAcc=${real.pyAccFiles.length} ok=${dReal.ok}`);
+    // ARQ-260916-acc-gate-archive-skew（260918-gov-review-closeout-chain-friction T1①，FROZEN 2026-09-19）：
+    // 归档退役面（*/archive/）不入枚举——镜像 unit 闸 `real-repo-no-archive-collected` 同款断言，
+    // 使两闸退役口径同步（「移位即退役」语义）。任一面枚举命中 archive 路径即红，防 SKIP_DIRS 回退静默复发。
+    const archiveHits = [...real.fwAccFiles, ...real.pyAccFiles].filter((f) => /(^|\/)archive\//.test(f));
+    ok('real-repo-no-archive-collected', archiveHits.length === 0, archiveHits.join(',') || 'no-archive-in-enumeration');
   } catch (e) {
     ok('real-repo-smoke', false, `enumeration failed: ${e.message}`);
   }

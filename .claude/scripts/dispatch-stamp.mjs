@@ -57,18 +57,25 @@ function taskPackageDir() {
   }
 }
 
-function resolveChangeId() {
+// 260918-gov-review-closeout-chain-friction T2\u2460\uFF08FROZEN 2026-09-19\uFF09\uFF1A\u89E3\u6790\u987B**\u540C\u65F6\u56DE\u62A5\u6765\u6E90**\u2014\u2014
+// \u672C\u51FD\u6570\u6709\u4E24\u6761\u8DEF\u5F84\uFF08\u663E\u5F0F flag / \u8BFB current/ \u6307\u9488\uFF09\uFF0C\u8C03\u7528\u70B9\u8981\u5982\u5B9E\u56DE\u663E\u300C\u672C\u6B21\u5B9E\u9645\u6765\u81EA\u54EA\u6761\u300D\uFF0C
+// \u4E0D\u5F97\u56FA\u5B9A\u5199\u540E\u8005\uFF08R1-F6\uFF09\u3002\u6545\u5185\u90E8\u8FD4\u56DE { changeId, source }\uFF0C\u65E7\u7B7E\u540D\u4FDD\u7559\u4E3A\u8584\u5C01\u88C5\u3002
+function resolveChangeIdWithSource() {
   const explicit = flagVal('--task-package-id');
-  if (explicit) return explicit;
+  if (explicit) return { changeId: explicit, source: '--task-package-id' };
 
   const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
-  if (!existsSync(current)) return null;
+  if (!existsSync(current)) return { changeId: null, source: 'delivery/taskpackages/current/taskpackage.json\uFF08\u4E0D\u5B58\u5728\uFF09' };
   try {
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));
-    return tp.changeId || null;
+    return { changeId: tp.changeId || null, source: 'delivery/taskpackages/current/taskpackage.json' };
   } catch {
-    return null;
+    return { changeId: null, source: 'delivery/taskpackages/current/taskpackage.json\uFF08\u4E0D\u53EF\u89E3\u6790\uFF09' };
   }
+}
+
+function resolveChangeId() {
+  return resolveChangeIdWithSource().changeId;
 }
 
 function isPostEventsCutoff(changeId) {
@@ -162,8 +169,28 @@ function run() {
     process.exit(2);
   }
 
-  const changeId = resolveChangeId();
+  const resolved = resolveChangeIdWithSource();
+  const changeId = resolved.changeId;
   const tpDir = taskPackageDir();
+
+  // T2①（FROZEN §2）：**始终**回显所解析 changeId 与其**实际来源**（错与对在输出上不再无差别）。
+  process.stderr.write(`dispatch-stamp: resolved changeId = ${changeId || '(none)'} (from ${resolved.source})\n`);
+
+  // T2②（FROZEN §2，含 R1-F6 的交互定义）：`--expect-change-id` 为**可选**硬校验开关——
+  // 传了则「不符」与「无上下文」两态均 fail-loud（后者因调用方已明确表达「本包应在场」的期望）；
+  // **不传则行为与改前完全一致**（含下方 no-context → exit 0）。
+  const expectChangeId = flagVal('--expect-change-id') || null;
+  if (expectChangeId) {
+    if (!changeId) {
+      process.stderr.write(`dispatch-stamp: --expect-change-id ${expectChangeId} 在场但无 TaskPackage 上下文（解析值 = none，来源 ${resolved.source}）——fail-loud\n`);
+      process.exit(2);
+    }
+    if (changeId !== expectChangeId) {
+      process.stderr.write(`dispatch-stamp: changeId 不符——解析值 ${changeId}（来源 ${resolved.source}）≠ 期望值 ${expectChangeId}\n`);
+      process.exit(2);
+    }
+  }
+
   if (!tpDir || !changeId) {
     process.stderr.write('[dispatch-stamp] no TaskPackage context; skipping dispatch stamp\n');
     process.exit(0);
