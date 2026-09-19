@@ -1,8 +1,9 @@
 /*
  * kidpal_layer.c — KidPal 前台 layer 栈管理单一权威 (TaskPackage
- * 260911-screen-unification, PKG-2 归一屏)。纯逻辑实现，语义/数值码以冻结验收
- * firmware/main/test/screen_unification.acceptance.c 文件头 FROZEN OFFLINE
- * CONTRACT 为准。
+ * 260911-screen-unification, PKG-2 归一屏)。纯逻辑实现，语义/数值码的现役权威 =
+ * 冻结验收 firmware/main/test/char_window_overlay.acceptance.c 文件头 FROZEN OFFLINE
+ * CONTRACT seam [1]（2026-09-19 M2-K3 插入查字窗层 + REMINDER/PROVISION 上移；初版来源
+ * screen_unification.acceptance.c 已归档、不编入 runner，其内数值字面停留于插入前闭集）。
  *
  * 无 chip/FreeRTOS/ESP-component/cJSON 依赖；host runner 与设备树同源可编
  * （host 强符号覆盖验收文件的 weak 哨兵）。内部把栈保持按 layer 数值升序
@@ -13,8 +14,9 @@
 
 #include <stddef.h> /* NULL */
 
-/* 前台栈成员合法域 = LOCAL_PAGE..PROVISION（2..6）。CHAT 常驻非栈成员、
- * NONE 空栈 owner，均非可入栈/可查询编码。 */
+/* 前台栈成员合法域 = LOCAL_PAGE..PROVISION（2..7, 闭集 6 种）。CHAT 常驻非栈成员、
+ * NONE 空栈 owner，均非可入栈/可查询编码。上界取符号 KIDPAL_LAYER_PROVISION，随闭集
+ * 自动跟随（2026-09-19 插入查字窗层 + REMINDER/PROVISION 上移后仍是符号引用）。 */
 static int kidpal_layer_is_stackable(int layer)
 {
     return layer >= KIDPAL_LAYER_LOCAL_PAGE && layer <= KIDPAL_LAYER_PROVISION;
@@ -35,7 +37,7 @@ int kidpal_layer_push(kidpal_layer_stack_t *st, int layer)
         }
     }
 
-    /* 防御（合法编码最多 5 种不同层，正常不可达）：栈满不得越界写。 */
+    /* 防御（合法编码最多 6 种不同层，正常不可达）：栈满不得越界写。 */
     if (st->n >= KIDPAL_LAYER_STACK_MAX) {
         return -1;
     }
@@ -128,13 +130,17 @@ int kidpal_layer_chat_clear_event(int event)
 /* 显式清层步骤（KD-A2 清层/进页分离）：出掉全部 transient 覆盖层（一个调用清干净），
  * 基层 LOCAL_PAGE 与配网 PROVISION 恒不碰（配网层零触碰红线）。返回出掉的层数。
  * NULL -> -1；空栈/纯基层栈 -> 0。清层事实源 —— 「关窗」不得另写逐层 pop 循环，须经
- * 本步骤（设备侧由 kidpal_render_node dismiss_front_overlay / cycle_next 消费）。 */
+ * 本步骤（设备侧由 kidpal_render_node dismiss_front_overlay / cycle_next 消费）。
+ * 2026-09-19 留痕修订（260917-m2-k3-char-window-overlay, seam [1]）: transient 集纳入
+ * KIDPAL_LAYER_CHAR_WINDOW——查字窗是 transient 覆盖层，关窗 = 出清层回基层（回原页、
+ * 不翻页；s_local_page 不被本层改动）。 */
 int kidpal_layer_pop_transients(kidpal_layer_stack_t *st)
 {
     static const int s_transient[] = {
         KIDPAL_LAYER_VOICE,        /* 语音轮（覆盖层） */
         KIDPAL_LAYER_SERVER_PAGE,  /* 服务端推送页（覆盖层） */
-        KIDPAL_LAYER_REMINDER      /* 提醒弹窗（最高层覆盖） */
+        KIDPAL_LAYER_REMINDER,     /* 提醒弹窗（最高层覆盖） */
+        KIDPAL_LAYER_CHAR_WINDOW   /* 查字窗（会话内覆盖窗） */
     };
     int popped = 0;
     size_t i;

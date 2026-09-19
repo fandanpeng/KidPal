@@ -1,7 +1,9 @@
 /*
- * char_page.cc — KidPal 查生字 P4 页 (LVGL 9.3, 设备侧): 米字格大字盘 (左) +
- * 右栏速查卡 (拼音带声调/共 N 画/进度珠/第 X 笔·共 N 笔/部首/组词) + 底部提示条
- * + 逐笔动画驱动 (沿 medians 笔尖移动 + 当前笔白衬边 + 握笔小手占位)。
+ * char_page.cc — KidPal 查字窗 `char-window` (LVGL 9.3, 设备侧): 米字格大字盘 (左) +
+ * 右栏速查卡 (拼音带声调 / 共 N 画 / 部首 / 组词) + 底部提示条 + 逐笔动画驱动
+ * (沿 medians 笔尖移动 + 当前笔白衬边)。**会话内覆盖窗**（M2-K3 页→窗改造）: 在当前页
+ * 之上叠一层窗面板、**不清屏**——关窗（dismiss_front_overlay 清 transient 回基层）后
+ * 原页原样回来、不翻页。
  *
  * 教学设计红线 (spec §5.6 v3 / S-F3.1, CHR-A7): 米字格示范字【只走 strokes 数据
  * 光栅渲染路径】(kidpal_char_raster_stroke, 字库数据即标准规范字形,
@@ -10,8 +12,14 @@
  *
  * 动画状态机 (950ms/笔、演完歇 2s 重来、三态已写/当前/未写虚线点链 6px、KEY 短按
  * 重播) 全部委托 display/char_stroke.c 的纯逻辑合约 (kidpal_char_anim_state 等),
- * 本页只做 LVGL 呈现。数据结构由 mcp_server 经 kidpal_char_data_validate 防御
- * 降级门校验后喂入; 本函数仍防御 (缺字段/解析失败 -> 不盲渲染直接返回)。
+ * 本窗只做 LVGL 呈现。底部提示条文案消费 kidpal_char_card_build 的 out->progress
+ * 单源 (演示中「第 X 笔·共 N 笔」/ 定格「写完啦·共 N 笔」, S-F3.3 AC2——本窗零重抄
+ * 文案格式)。数据结构由 mcp_server 经 kidpal_char_data_validate 防御降级门校验后喂入;
+ * 本函数仍防御 (缺字段/解析失败 -> 不盲渲染直接返回)。
+ *
+ * v1.38 对账清理 (本包落地): 右栏已砍项死成员清零 + 头注虚标清除; 握笔小手 12px 圆环
+ * 占位 (占位绘制函数与尺寸常量整体) 删除——改口径后小手资产不再需要, 当前笔改白衬边。
+ * 锚 = `char-window` (原 canvas-p4, v1.38 对账改名收尾)。
  */
 
 #include "char_page.h"
@@ -32,19 +40,17 @@
 #define CHARPAGE_CANVAS_SIZE 208    /* 米字格大字盘边长 (设计稿帧约 236/字盘约 208) */
 #define CHARPAGE_GRID_CELL 52       /* 米字格四宫格单元 (208/4) */
 #define CHARPAGE_TIMER_PERIOD_MS 100
-#define CHARPAGE_PRESS_SIZE 12      /* 握笔小手占位半径 */
 /* 单笔预解析点集容量上限（对齐 char_stroke 消费面 256 点口径; 帧路径零 ~6.5KB 级
  * 栈局部数组——M2-K1 缺陷②修复: pts/sc/toks 去栈, 预解析落堆承载） */
 #define CHARPAGE_MAX_PTS 256
 
-/* 单页状态 (设备同一时刻只有查生字一页, 静态单例足够且 additive 不动底座) */
+/* 单窗状态 (设备同一时刻只有查字窗一扇, 静态单例足够且 additive 不动底座) */
 struct CharPageState {
-    lv_obj_t *panel;           /* 查生字页面板：活动屏（s_kidpal_scr）上的一层，不自建屏 */
+    lv_obj_t *panel;           /* 查字窗面板：活动屏（s_kidpal_scr）之上叠的一层，不自建屏 */
     lv_obj_t *canvas;
     lv_obj_t *char_label;        /* 大字 */
     lv_obj_t *pinyin_label;
     lv_obj_t *stroke_total_label;
-    lv_obj_t *progress_label;
     lv_obj_t *words_label;
     lv_obj_t *hint_label;
     lv_timer_t *timer;
@@ -57,6 +63,10 @@ struct CharPageState {
     kidpal_cs_point *pre_pts;    /* 每笔预解析点集堆缓冲 (n_strokes × CHARPAGE_MAX_PTS,
                                     M2-K1 缺陷②去栈机制面——帧路径零解析调用零大栈数组) */
     int *pre_counts;             /* 每笔预解析点数 (<=0 = 该笔不可用; 帧路径复用) */
+    /* 速查卡单源 (S-F3.2 AC1 / S-F3.3 AC2)：kidpal_char_card_build 装配结果——pinyin/
+     * radical/stroke_total/words 供 label 拼装, progress 供底部提示条（演示中进度 vs
+     * 定格文案）。char 数组副本, cJSON 释放后安全。 */
+    kidpal_char_card card;
     int elapsed_ms;
 };
 
@@ -293,36 +303,29 @@ static void charpage_render_frame(int cur_stroke, int written)
     charpage_blit(size);
 }
 
-/* 握笔小手占位: 当前笔白衬边 + 握笔小手领写元素 (U 包 12 换正式美术资产, 本包
- * 用简易几何占位, additive 不动资产管线)。CHR-A5 structural 齿钉的是页面结构
- * 「握笔小手」元素存在; 像素级观感殿后包 9b device 验收。 */
-static void charpage_draw_penhand(int cur_stroke)
+/* 底部提示条文案刷新: 消费速查卡单源 kidpal_char_card_build 的 out->progress
+ * (演示中「第 X 笔·共 N 笔」/ 定格「写完啦·共 N 笔」——S-F3.3 AC2 演示写完定格文案上屏;
+ * 本窗零重抄文案格式, 文案文本只住 char_stroke.c 契约)。cur_stroke < 0 = 定格/
+ * 演示写完（与 kidpal_char_anim_state 的 REST 相位同源）。 */
+static void charpage_refresh_hint(int cur_stroke)
 {
-    int size = CHARPAGE_CANVAS_SIZE;
-    kidpal_cs_point mids[64];
-    int mn = (cur_stroke >= 0 && cur_stroke < g_page.n_strokes &&
-              g_page.median_jsons[cur_stroke])
-                 ? kidpal_char_medians_parse(g_page.median_jsons[cur_stroke], mids, 64)
-                 : -1;
-    if (mn <= 0) {
-        return;
+    kidpal_char_info info = { g_page.card.pinyin, g_page.card.radical,
+                              g_page.n_strokes, g_page.card.words };
+    kidpal_char_card c;
+
+    if (kidpal_char_card_build(&info, cur_stroke, &c) != 0) {
+        return; /* 数据面缺字段防御: 保持上次文案, 不盲写 */
     }
-    int dx, dy;
-    charpage_map(size, mids[mn - 1].x, mids[mn - 1].y, &dx, &dy);
-    /* 占位: 在当前笔笔尖画一个 12px 圆环, 示意握笔小手位置 (后续换美术资产) */
-    int r = CHARPAGE_PRESS_SIZE;
-    for (int ang = 0; ang < 360; ang++) {
-        float th = (float)ang * 0.017453293f;
-        int px = dx + (int)((float)r * cosf(th));
-        int py = dy + (int)((float)r * sinf(th));
-        if (px >= 0 && px < size && py >= 0 && py < size) {
-            lv_canvas_set_px(g_page.canvas, px, py, lv_color_make(0x40, 0x80, 0xf0),
-                             LV_OPA_COVER);
-        }
+    if (strcmp(g_page.card.progress, c.progress) == 0) {
+        return; /* 文案未变 -> 不重复 set（省 LVGL 无效化） */
+    }
+    snprintf(g_page.card.progress, sizeof(g_page.card.progress), "%s", c.progress);
+    if (g_page.hint_label != NULL) {
+        lv_label_set_text(g_page.hint_label, g_page.card.progress);
     }
 }
 
-/* 面板销毁即停表: 页面可经多条路径拆掉 (翻页换页清理 / 重开 lv_obj_delete / 换屏),
+/* 面板销毁即停表: 面板可经多条路径拆掉 (关窗清层换页清理 / 重开 lv_obj_delete / 换屏),
  * 全部收敛在 panel 的 LV_EVENT_DELETE 上删动画 timer——否则关页后 timer 存活,
  * 下一拍 charpage_render_frame 摸已删 canvas → 空指针崩溃
  * (2026-09-18 真机实证: BOOT 离开查字页 render HOME 下一拍 LoadProhibited @0x0)。 */
@@ -333,6 +336,11 @@ static void charpage_on_panel_delete(lv_event_t *e)
         lv_timer_del(g_page.timer);
         g_page.timer = NULL;
     }
+    /* 同步清 panel/canvas 句柄：外部路径（关窗清层 —— dismiss_front_overlay 清 transient
+     * 后重渲基层页 / 翻页清屏 / 换屏）销毁本面板后句柄不得悬垂，否则下一扇窗打开时
+     * show() 会对已删对象二次 lv_obj_delete（双重删除崩溃）。 */
+    g_page.panel = NULL;
+    g_page.canvas = NULL;
 }
 
 /* 动画节拍回调 */
@@ -353,14 +361,14 @@ static void charpage_timer_cb(lv_timer_t *timer)
         return;
     }
     p->elapsed_ms += CHARPAGE_TIMER_PERIOD_MS;
-    /* 每帧重绘: 已写/当前/未写三态 (小手随当前笔移动) */
+    /* 每帧重绘: 已写/当前/未写三态; 底部提示条随相位刷新 (演示中进度 / 定格文案)。 */
     charpage_render_frame(cur_stroke, written);
-    charpage_draw_penhand(cur_stroke);
+    charpage_refresh_hint(cur_stroke);
     (void)phase;
 }
 
 /* ------------------------------------------------------------------------- *
- * 换皮消费接线 (包 9b HWV-A6)：P4 田字格大框 (frm_236_236) 真机位图接入。
+ * 换皮消费接线 (包 9b HWV-A6)：查字窗田字格大框 (frm_236_236) 真机位图接入。
  *
  * char_page.cc 是设备装配面（非 host 编译），故这里的 loader 消费不影响 host 端
  * char_stroke 纯逻辑齿，也不触发 U B8 逐笔演示守卫（B8 只扫 char_stroke.c）。
@@ -370,10 +378,10 @@ static void charpage_timer_cb(lv_timer_t *timer)
  * 红线 CHR-A7：绝不以整帧预烘焙位图替换逐笔演示）。未 mount / 加载失败 -> 静默降级，
  * 画布既有灰边框 + 米字格引导线仍在。
  *
- * 为何 P4 的资产消费落在此 .cc 装配面而非 char_stroke.c：char_stroke.c 是 U 冻结的纯
+ * 为何查字窗的资产消费落在此 .cc 装配面而非 char_stroke.c：char_stroke.c 是 U 冻结的纯
  * 逻辑合约，B8 守卫禁止其引 loader；而参数化整帧缝 (draw_nine_slice/draw_dots) 会把
  * art_assets.c 的整帧 g_fb[400x300] (~480KB 静态) 拖进设备 .dram0.bss（且设备端该缝
- * 为弱默认 no-op，真机渲染节点殿后本包）——直接撑爆 ESP32-S3 内部 RAM。故 P4 只走
+ * 为弱默认 no-op，真机渲染节点殿后本包）——直接撑爆 ESP32-S3 内部 RAM。故查字窗只走
  * loader→lv_image 的设备真实通路，既消费单一资产层、又不引整帧 g_fb。
  * ------------------------------------------------------------------------ */
 #define CHARPAGE_FRAME_W 236
@@ -449,13 +457,13 @@ void kidpal_char_page_show(const char *data_json)
         return;
     }
 
+    /* 上一扇窗的残留一律先清：外部路径（关窗清层 / 翻页清屏）可能已销毁 panel、只剩
+     * 堆缓冲与句柄——若以 panel 存活与否决定是否回收，会漏释放且对悬垂 panel 再
+     * lv_obj_delete（双重删除崩溃）。先删 LVGL 对象（触发停表 + 清句柄），再释放堆缓冲。 */
     if (g_page.panel != NULL) {
         lv_obj_delete(g_page.panel);
-        g_page.panel = NULL;
-        g_page.canvas = NULL;
-        charpage_free_state();
-        memset(&g_page, 0, sizeof(g_page));
     }
+    charpage_free_state();
     memset(&g_page, 0, sizeof(g_page));
 
     if (!charpage_parse_data(data_json)) {
@@ -463,18 +471,18 @@ void kidpal_char_page_show(const char *data_json)
         return;
     }
 
-    /* 查生字页已并入 s_kidpal_scr 体系（归一屏单屏不变式）：作为活动屏上的一层/一页
-     * 绘制，不自建独立屏。取活动屏并先清空（与 schedule/story 渲染同款先清后画，
-     * 幂等、重渲染绝不与上一帧叠加）；活动屏由调用方保证 = s_kidpal_scr（mcp_server
-     * char 路由经 begin_page 切屏，cycle_next 则显式加载 s_kidpal_scr）。 */
+    /* 查字窗已并入 s_kidpal_scr 体系（归一屏单屏不变式，M2-K3 页→窗改造）：**在当前页
+     * 之上叠一层窗面板**，不自建独立屏、**不清屏**——底层原页对象保持存活，关窗
+     * （dismiss_front_overlay 清 transient 层 + 重渲基层页）后原页原样回来、不翻页。
+     * 后建的 panel 是活动屏末位子对象，z 序天然叠于既有页内容之上（覆盖窗）。活动屏由
+     * 调用方保证 = s_kidpal_scr（mcp_server char 路由经 begin_char_window 切屏）。 */
     lv_obj_t *host = lv_screen_active();
     if (host == NULL) {
         ESP_LOGW(CHARPAGE_TAG, "no active screen — degrade, no blind render");
         return;
     }
-    lv_obj_clean(host);
 
-    /* 全屏白底页面板（挂在活动屏上，作为一层；不新建顶层屏）。 */
+    /* 覆盖窗面板（挂在活动屏上、叠于当前页之上；不新建顶层屏、不清底、不翻页）。 */
     g_page.panel = lv_obj_create(host);
     lv_obj_set_size(g_page.panel, LV_HOR_RES, LV_VER_RES);
     lv_obj_set_style_bg_color(g_page.panel, lv_color_make(0xff, 0xff, 0xff), 0);
@@ -508,8 +516,8 @@ void kidpal_char_page_show(const char *data_json)
     /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
     charpage_art_overlay();
 
-    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 进度 + 部首 + 组词 (数据面委托
-     * kidpal_char_card_build 装配语义, 页面呈现) */
+    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 组词 (数据面委托
+     * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
     {
         cJSON *root = cJSON_Parse(data_json);
         const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ;
@@ -532,25 +540,29 @@ void kidpal_char_page_show(const char *data_json)
         g_page.n_strokes = stroke_count;
 
         kidpal_char_info info_o = { pinyin, radical, stroke_count, words };
-        kidpal_char_card card;
-        memset(&card, 0, sizeof(card));
-        kidpal_char_card_build(&info_o, -1, &card); /* 初始写完定格 或 首笔, 页内再更新 */
+        memset(&g_page.card, 0, sizeof(g_page.card));
+        /* 初始装配 (cur_stroke < 0 = 定格语义; 动画拍内按相位刷新进度文案)。 */
+        kidpal_char_card_build(&info_o, -1, &g_page.card);
 
         lv_obj_t *cardlabel = lv_label_create(g_page.panel);
         lv_obj_set_pos(cardlabel, 228, 8);
         char buf[256];
-        snprintf(buf, sizeof(buf), "%s\n%s\n%s", card.pinyin, card.stroke_total,
-                 card.words);
+        /* 部首行补上屏 (v1.38 对账③): 数据面已装配部首、原 label 拼装漏——补齐
+         * 「拼音带声调 + 共 N 画 + 部首 + 组词」四行 (S-F3.2 AC1)。 */
+        snprintf(buf, sizeof(buf), "%s\n%s\n部首：%s\n%s", g_page.card.pinyin,
+                 g_page.card.stroke_total, g_page.card.radical, g_page.card.words);
         lv_label_set_text(cardlabel, buf);
         lv_obj_set_style_text_font(cardlabel, LV_FONT_DEFAULT, 0);
         if (root != NULL) cJSON_Delete(root);
     }
 
-    /* 底部提示条 (占位, 语义: 演示中) */
+    /* 底部提示条: 文案消费 kidpal_char_card_build 的 progress 单源 (演示中「第 X 笔·
+     * 共 N 笔」/ 演示写完定格「写完啦·共 N 笔」——S-F3.3 AC2, 本窗零重抄文案格式)。 */
     g_page.hint_label = lv_label_create(g_page.panel);
     lv_obj_set_pos(g_page.hint_label, 0, 280);
-    lv_label_set_text(g_page.hint_label, "跟随笔画一笔一画描红");
+    lv_label_set_text(g_page.hint_label, g_page.card.progress);
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);
+    charpage_refresh_hint(0); /* 首拍相位 = 第 1 笔 (与动画 t=0 同源) */
 
     /* 逐笔动画驱动 */
     g_page.timer = lv_timer_create(charpage_timer_cb, CHARPAGE_TIMER_PERIOD_MS, &g_page);

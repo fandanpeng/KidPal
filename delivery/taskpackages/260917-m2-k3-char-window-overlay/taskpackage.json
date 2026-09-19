@@ -101,7 +101,50 @@
   "decisionCoverage": [],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+        {
+              "acceptanceId": "M2K3-A1: 层注册 host 齿——新增查字窗层进 kidpal_layer 栈模型（stackable 语义一致），弹窗 = 当前页之上覆盖、pop 后回原页不翻页；结构断言钉层枚举与栈行为",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A1-transient-drop-char-window：kidpal_layer.c 的 kidpal_layer_pop_transients 内 transient 闭集 s_transient[] 删除 KIDPAL_LAYER_CHAR_WINDOW 条目（4 元素 → 3 元素），单点删除。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:762，test 2 tooth 2 / A1 结构半）：「M2K3-A1 RED: kidpal_layer_pop_transients transient 集未纳 KIDPAL_LAYER_CHAR_WINDOW——查字窗不是清层对象, 关窗无法经显式清层步骤回基层（KD-A2 清层事实源断）」；同变异另红 char_window_overlay.acceptance.c:695（test 1：「[LOCAL_PAGE, CHAR_WINDOW] 清层返回 0（期望 1, 查字窗层出净）」）与 char_window.test.c:82。红→绿链：目标态 58T/0F OK → 变异态 58T/3F（全 [M2K3-A1] 标记）→ 还原态 58T/0F OK。还原指纹：kidpal_layer.c sha256=c6357e7f82570845a30739d52f288248d3d663826ac9dc113fa8fbc7313da640（cmp 逐字节相同）。"
+        },
+        {
+              "acceptanceId": "M2K3-A2: 键位语义矩阵 host 齿——查字窗前台时 KEY 短按 = 重播笔顺（含打断当前播报重新演示）、KEY 长按 = 关窗回原页、BOOT = 关窗回原页不翻页（v1.39 隔离口径，复用 K1a M1 layer-aware dispatch 基建）；key_layer_dispatch 基层列等价 guard 齿零回归（新层修订走 acceptance-author 留痕）",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A2-char-column-collapse：key_gesture_parser.cc 的 key_route_layer 查字窗列（overlay_top == KIDPAL_LAYER_CHAR_WINDOW）KEY 单击分支 return GLOBAL_ACT_CHAR_REPLAY 改为 return GLOBAL_ACT_SESSION_TOGGLE（查字窗列塌回通用覆盖层列），单点改一个 return 值。佐证靶 MUT-M2K3-A2-board-const-one：板级第三参喂常量 1 而非前台层值（红 char_window_overlay.acceptance.c:788，A2 结构半）。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:826，test 3 tooth 1 / A2 行为半）：「M2K3-A2 RED: 查字窗前台 KEY 单击路由 = 1 期望 GLOBAL_ACT_CHAR_REPLAY(=5)——查字窗列未落（KEY 短按未接重播, S-F3.3 AC1）」；同变异另红 key_layer_dispatch.acceptance.c:597（「KLD-A2 RED: 查字窗列 KEY 单击 = 1 期望 GLOBAL_ACT_CHAR_REPLAY(=5) 且 != SESSION_TOGGLE」）与 char_window.test.c:101。红→绿链：目标态 58T/0F OK → 变异态 58T/3F → 还原态 58T/0F OK。还原指纹：key_gesture_parser.cc sha256=38ecffac4b5b971a84b2eea7781cb24ad0e48ed8aad2f6f42d6d54cb71b3805d（cmp 相同）。"
+        },
+        {
+              "acceptanceId": "M2K3-A3: 驻留计时 host 齿——5 分钟无操作自动关窗回原页，计时随任意按键重计；播完会话即结束不回聆听态（不触发麦克风/语音轮演出）",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A3-threshold-strict：char_window.c 的 kidpal_char_window_idle_step 关窗阈值判定 *idle_ms >= KIDPAL_CHAR_WINDOW_IDLE_MS 改为 *idle_ms > KIDPAL_CHAR_WINDOW_IDLE_MS（恰好 5 分钟整点不再关窗），单点比较符改动。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:917，test 4 tooth 2 / A3 行为半）：「M2K3-A3 RED: idle 到 300000 返回 0 / idle=300000 期望 1 / 300000——5 分钟无操作未自动关窗（v1.43 兜底缺失, §2.2 行 68）」；同变异另红 char_window.test.c:43 与 char_window.test.c:149（1s 节奏下应在第 300 拍才关窗）。红→绿链：目标态 58T/0F OK → 变异态 58T/3F → 还原态 58T/0F OK。还原指纹：char_window.c sha256=fc8a52d22dcbf04e3ef45472435c5c4f86d5f07a3cbd19ded086527c2f600dd5（cmp 相同）。"
+        },
+        {
+              "acceptanceId": "M2K3-A4: 页点隐藏靶——查字窗前台时 keybar 中槽页点隐藏、左右槽照常给操作提示（复用 keybar overlay_top 隐藏路径，结构断言钉查字窗层进隐藏闭集）",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A4-overlay-closure-drop：kidpal_render_node.cc 的 kidpal_render_node_front_is_overlay() 覆盖层闭集删除 || top == KIDPAL_LAYER_CHAR_WINDOW（闭集回退为 VOICE/SERVER_PAGE/REMINDER 三员），单点删除。本轮新造靶（上轮无变异证据）。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:774，test 2 tooth 3 / A4 结构半）：「M2K3-A4 RED: front_is_overlay 覆盖层闭集未纳 KIDPAL_LAYER_CHAR_WINDOW——查字窗前台时前台归一化不报覆盖层（页点不隐藏 + 键路由不自查字窗列分流; §2.2 覆盖层不显示页点）」。红→绿链：目标态 58T/0F OK → 变异态 58T/1F → 还原态 58T/0F OK。还原指纹：kidpal_render_node.cc sha256=be59ae8160774dabf8a9b427ae18d1619b8016877a29c27e490163ef2f74d193（cmp 相同）。"
+        },
+        {
+              "acceptanceId": "M2K3-A5: 右栏对账三项——部首行补上屏（S-F3.2 AC1：card.radical 已装配未上屏的 label 拼装补齐）、进度珠死成员与虚标头注清理（progress_label 死成员零赋值 + char_page.cc 头注虚标）、握笔小手 12px 圆环占位删除（charpage_draw_penhand 移除）；结构齿 + 渲染帧断言",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A5-radical-line-drop：char_page.cc 速查卡 label 拼装 snprintf 删去部首行——格式串由四段（拼音/共 N 画/部首：%s/组词）改三段，实参表同步去掉 g_page.card.radical（回到 v1.38 对账③ 记载的历史缺陷形态）。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:997，test 5 A5a / A5 结构半）：「M2K3-A5 RED: 速查卡 label 拼装未纳入 card.radical——部首行装配了未上屏（S-F3.2 AC1「拼音带声调 + 共 N 画 + 部首标签 + 组词」四行不齐, v1.38 对账③；本齿注释剥离后计数, 注释无法满足）」。**关键加固证据**：变异态下该切区内仍留有一条携带「部首」字样的说明注释在世，齿仍转红——实证 sealing pass 的 C 注释剥离收紧有效（原裸扫形态会因该注释假绿）。红→绿链：目标态 58T/0F OK → 变异态 58T/1F → 还原态 58T/0F OK。还原指纹：char_page.cc sha256=818ef55f3f7214f4fe42f64574810bc345d92f9d13b8493cbba70e206daa52f6（cmp 相同）。"
+        },
+        {
+              "acceptanceId": "M2K3-A6: 锚改名对账——canvas-p4 → char-window 实现侧对账收尾（char_page 头注、测试齿锚注记、kidpal_render_node.h/.cc 两处 M2-K2 遗留「M2-K3 改窗时统一收」的写侧死态 API kidpal_render_node_cache_char / cache_char_data 及其 mcp_server 调用点收拢），closeout 声明改名清单",
+              "sensitive": true,
+              "result": "failed as expected",
+              "mutation": "MUT-M2K3-A6-cache-api-revive：kidpal_render_node.h 复活已收拢的写侧死态 API——在 kidpal_render_node_cache_story 声明后回插 void kidpal_render_node_cache_char_data(const char *data_json); 声明行，单点新增一行（K2 遗留收拢面回退）。本轮新造靶（上轮无变异证据）。",
+              "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:1053，test 5 A6b / A6 结构半）：「M2K3-A6 RED: kidpal_render_node.h/.cc 仍有 kidpal_render_node_cache_char* 1/0 处——M2-K2 遗留写侧死态 API 未收拢（M2K2-E3 明注「保留不动、由 M2-K3 改窗时统一收，禁静默删除」——本包即其承接包）」；同变异另红 retract_p4_three_page.acceptance.c:944（test 6 tooth 5 翻正齿）。红→绿链：目标态 58T/0F OK → 变异态 58T/2F → 还原态 58T/0F OK。还原指纹：kidpal_render_node.h sha256=24f7fba7b4f8885aca8ec67a7aaa955108d557e014973a63299362aebad2a5ef（cmp 相同）。"
+        }
+  ]
   },
   "crossEnd": {
     "counterparts": [
