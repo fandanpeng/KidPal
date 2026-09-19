@@ -195,6 +195,8 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 
 **demo 对账行（包收口必含）**：integrator 的 review-packet / supervisor-verdict 闸消费面必含一行 demo 对账 = **demo 证据**（形态按 `roadmap.md` ③ 节本包拆包时定的：模拟器截图 / host runner 输出 / 串口日志 / 真机轮）+ **与本包效果段的一致性结论**。义务的生产者可达性由 **planner Step 11 派 integrator 的 dispatch prompt 显式携带**（与锚 2 brief 携带效果段同构，派发侧传递；integrator.md 不因此改）。
 
+**真机轮 / 串口日志类 demo 证据的读法（260918-gov-review-dispatch-chain-friction T1③）**：判「串口日志 / 真机轮」形态的 demo 证据时，`.claude/skills/kidpal-serial-monitor/SKILL.md` 的「Device round protocol / 真机轮协调协议」一节载有**捕获窗口 / DTR-RTS 复位伪影识别 / 动作点口令**三条姿势——知道它们有助于**判该证据本身的质量**（例：与捕获启停**秒级吻合**的「重启」是端口复位伪影、非真重启，据此可判证据是否被误读）。该 skill 的**主通道是它自身的 description 触发**（真机轮必含串口读），此处指针是**收口 / 对账读者的次要发现路径**；**不转抄正文**（防双源漂移）。
+
 **不一致 = 就地升裁，禁攒到集成夜**：走既有 escalation 通道（`agent-escalation` → 需要人则 ESCALATE 停 human），不新设通道。human 裁断后 planner 落一条 pod-events 事件——**既有事件型** `human-decision` + `payload.decision="anchor3-deviation-ruling"`、append 姿势 `--actor human`（eventId 即裁定锚；eventType 是 `pod-events-append.mjs` 机械闭集，不扩闭集，沿 `approve-escalated-merge` 先例形态）。roadmap 达成状态由 `render-roadmap.mjs` 按该区分值渲染为 `deviation（裁定锚 <eventId>）`。
 
 **绿路径上 portfolio-planner 沉默**：常规「下一包 ready」由 `portfolio-reconcile.mjs` 机械计算（依赖已满足 + WIP 未满 + mergeOrder 最靠前），human 照常点火（`git worktree add` + 起 planner，现行流程不变）；与 roadmap 的匹配判断已在锚 3 于**合并前**完成，不后置到 merge 之后。roadmap 达成状态刷新时机 = 包 merge 后由 human 合并簿记顺跑一次 `node .claude/scripts/render-roadmap.mjs --workstream <slug> --write-into delivery/workstreams/<ws>/roadmap.md`（全量重算、幂等），门 1 与收口相位亦可调用。
