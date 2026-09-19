@@ -48,6 +48,8 @@
 
 **【硬项 2a · 目标文件锚清单】** 每 T 末尾显式列「目标文件：<仓根相对路径清单>」（该 T 落地时要改/新增的仓内文件，新增/改分注，条件触发的标触发条件）。packet-binding 完整性断言（landing-manifest ≡ 各 T 目标文件并集）依赖本清单：**缺锚清单 = 门 RED 点名缺锚（fail-loud，不假绿）**。只认「路径出现」不含「改/读」语义的提取规则在真实 PROPOSAL 上歧义爆炸（260802-gov-review-track-b-hardening R1-F1 活例实证），故锚清单为义务。承重 landing 指令（箭头替换的目标文本 / 联动指称）必须原文引用钉死并给出替换后完整句，禁止转述（「那行」「上面那句」类两读指称不许）。改法标题一律 `### T<n> · <标题>` 标题形态——机械门 `parseSection2AnchorLists` 只认 `### T<n>`（260906 批 FROZEN 后格式返修实证，粗体段形态不被机辨）；landing-manifest 围栏块一行一个裸路径，不带括注（`extractManifestBlock` 逐字取行）。（两句为 260907-gov-review-arq-governance-batch-2 T8 钉死。）
 
+**【起草期自检两句】**（260918-gov-review-batch-drafting-friction T2 钉死）① **FROZEN 标注前跑一次 `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL 路径>`**——只读干跑，报两类**形态**错（加粗锚行 `**目标文件**：`、无锚清单含整行缺失），**不参与任何门判定、不进任何闸链**；**并通过 §5 验证集命令实跑**（不实跑的验证集 = 「冻结可判性」停留在纸面，260914 批实测瑕疵）。② **路径类变更先查 `.claude/references/path-form-family.md` 的形态族谱表**——一仓路径至少有八种文本写法，逐类残留清扫子检模式与三类替换风险注记见该表（260914 批因路径批改付了四轮评审 + 落地四轮修复，其中最隐蔽的一类四轮机检全漏）。
+
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 
 | 面 | 文件 | 类别 | 说明 |

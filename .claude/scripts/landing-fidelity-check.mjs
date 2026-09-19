@@ -27,7 +27,7 @@
 // （一行一个 canonical 路径，authoring 格式契约见 architect-operating-model §5）。
 // B2 fail-loud：任一侧无该块 → 显式 RED（格式不合格），不再正则兜底。
 
-import { existsSync, mkdirSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { basename, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync, spawnSync } from 'node:child_process';
@@ -47,9 +47,20 @@ import {
 
 const BOM = String.fromCharCode(0xFEFF);
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const reviewDir = process.argv[2] ? resolve(projectDir, process.argv[2]) : null;
+// --preflight（260918-gov-review-batch-drafting-friction T2，FROZEN 2026-09-19）：冻结前只读干跑入口。
+// 抽成纯函数以便自检断言「干跑模式不误触 reviewDir/baseRef 解析」——否则 `--preflight` 自身会被
+// 位置参数当路径消费（PROPOSAL §2 T2「入口接线注意」明列此风险）。常规模式行为与改前逐字一致。
+function parseCliArgs(rawArgv) {
+  const argv = rawArgv.slice(2);
+  const idx = argv.indexOf('--preflight');
+  if (idx >= 0) return { preflight: argv[idx + 1] || null, positional: null, baseRef: null };
+  return { preflight: null, positional: argv[0] || null, baseRef: argv[1] || null };
+}
+const CLI = parseCliArgs(process.argv);
+const preflightArg = CLI.preflight;
+const reviewDir = CLI.positional ? resolve(projectDir, CLI.positional) : null;
 // 可选 baseRef：判定「已落地」时相对哪个 ref 看改动。不给则默认工作树 ∪ 最近一次 commit/merge（HEAD~1..HEAD）。
-const baseRef = process.argv[3] || null;
+const baseRef = CLI.baseRef || null;
 
 function print(payload) {
   console.log(JSON.stringify(payload, null, 2));
@@ -67,6 +78,34 @@ function readText(path) {
 // ── 引据锚点检查（260826-gov-review-claude-consistency-batch3 T1，advisory-only）──
 // 提取 PROPOSAL 全文 backtick 包裹的 `<路径>:<行号>` 形态引据（正则限 .mjs/.md/.json 扩展名 + 行号，
 // 裸数字 / 非路径形态不提取，防噪声），逐条查文件存在 + 行号 ≤ 文件行数；问题只入观察列，不产 fail。
+// T1（260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）：citation 裸名引据的前缀候选域 = **并集形态**。
+// 现有四前缀**原样保留**（防回归）+ 派生集（`docs/` 与 `.claude/` 树下**递归全部目录**）。
+// R1-F1 实测：若改成「一级子目录派生**取代**硬编码」（v0.2 字面），会丢 `docs/` 根（根不是子目录）
+// 与 `.claude/scripts/lib/`（两级路径），致已消警引据回退为 file-not-exist；并集形态下回退 0。
+// 派生前缀集钉字典序排序（R1-F5：确定性兜底）。按 dir 缓存——自检夹具用临时目录，键不同即重新派生（防假绿）。
+const CITATION_BASE_PREFIXES = ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/', 'docs/'];
+const citationPrefixCache = new Map();
+function citationPrefixes(dir) {
+  const key = resolve(dir);
+  if (citationPrefixCache.has(key)) return citationPrefixCache.get(key);
+  const out = new Set(CITATION_BASE_PREFIXES);
+  for (const root of ['docs', '.claude']) {
+    const walk = (rel) => {
+      let entries;
+      try { entries = readdirSync(resolve(dir, rel), { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        if (!e.isDirectory() || e.name.startsWith('.')) continue;
+        out.add(`${rel}/${e.name}/`);
+        walk(`${rel}/${e.name}`);
+      }
+    };
+    walk(root);
+  }
+  const list = [...out].sort();
+  citationPrefixCache.set(key, list);
+  return list;
+}
+
 const CITATION_RE = /`([^\s`]*\.(?:mjs|md|json):\d+)`/g;
 function checkCitationAnchors(proposalText, projectDir) {
   const checked = [];
@@ -87,7 +126,10 @@ function checkCitationAnchors(proposalText, projectDir) {
       // 260907 热修（human 批准一次性跳过治理批，追认载体 = ARQ-260907-lfc-citation-docs-prefix）：候选域补 `docs/`——
       // 裸 docs 文件名引据（如 `DEV-GOVERNANCE.md:280`）实存而报 file-not-exist（verifier 观察 4②）。
       let resolvedBy = null;
-      for (const prefix of ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/', 'docs/']) {
+      // T1（260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）：候选域由硬编码四前缀改
+      // **并集形态**（原四前缀 ∪ `docs/`、`.claude/` 树下递归派生集）——治「手工清单随仓结构增长漂移」，
+      // 覆盖 references 面与 docs 子目录面裸名引据。消警留痕形态不变（仍走 resolvedByPrefix 观察列）。
+      for (const prefix of citationPrefixes(projectDir)) {
         if (existsSync(resolve(projectDir, prefix + relPath))) { resolvedBy = prefix; break; }
       }
       if (resolvedBy) { resolved.push({ citation, resolvedAs: `${resolvedBy}${relPath}:${line}` }); continue; }
@@ -99,6 +141,86 @@ function checkCitationAnchors(proposalText, projectDir) {
     if (line > lineCount) problems.push({ citation, reason: `line-out-of-range（line ${line} > ${lineCount}）` });
   }
   return { checked, problems, resolved };
+}
+
+// ── 冻结前干跑（T2，260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）──
+// **只解析、不对账**：报两类起草期错。不做 §2↔manifest 比对（那是 landing 期的事）。
+// 不参与任何门判定、不进任何闸链（PROPOSAL §2 T2 明列）。
+//
+// 第 1 类 加粗锚行 `**目标文件**：`——解析器只认裸形态，故它在 parser 侧表现为「缺锚清单」；
+//   另加专用探针具名报出。**探针须行首锚定 + 限 §2 节域**：全文正扫会误咬正文里「引用该错误形态」
+//   的 prose（R2-F8 实证——本批 PROPOSAL 自身即命中多行、全为行内引用的散文），行首锚定 + 限域后为 0。
+// 第 2 类 无锚清单（含整行缺失）——由 parser 原生 problems 直接给出。
+const BOLD_ANCHOR_RE = /^\s*\*{1,2}\s*目标文件\s*\*{0,2}\s*[:：]/;
+
+// §2 节域切片：`## 2. ...` 行起、至下一个 `## ` 行前止。
+function section2Body(text) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^##\s*2[.、]?\s/.test(l));
+  if (start < 0) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##\s/.test(lines[i])) { end = i; break; }
+  }
+  return lines.slice(start + 1, end);
+}
+
+// 纯判定（供自检直接调用）：返回两类错的 findings 列表。
+function preflightFindings(text) {
+  const body = section2Body(text);
+  const boldLines = [];
+  if (body) body.forEach((l, i) => { if (BOLD_ANCHOR_RE.test(l)) boldLines.push(i + 1); });
+  const problems = parseSection2AnchorLists(text).problems || [];
+  const findings = [];
+  if (boldLines.length) findings.push({ class: 'bold-anchor-line', lines: boldLines });
+  if (problems.length) findings.push({ class: 'missing-anchor-list', detail: problems });
+  return { bodyFound: !!body, findings };
+}
+
+function runPreflight(proposalPath) {
+  const abs = resolve(projectDir, proposalPath);
+  if (!existsSync(abs)) {
+    print({ ok: false, gate: 'landing-preflight', message: 'PROPOSAL 不存在', proposal: proposalPath });
+    process.exit(1);
+  }
+  const { bodyFound, findings } = preflightFindings(readText(abs));
+  print({
+    ok: findings.length === 0,
+    gate: 'landing-preflight',
+    proposal: proposalPath,
+    section2BodyFound: bodyFound,
+    anchorCount: [...(parseSection2AnchorLists(readText(abs)).union || [])].length,
+    findings,
+    note: '只读干跑：只保证 §2 锚清单「形态可解析」，不做 §2↔manifest 对账；不参与任何门判定。',
+  });
+  process.exit(findings.length === 0 ? 0 : 1);
+}
+
+// 干跑自检（T2）：① CLI 解析「干跑模式不误触 positional/baseRef」；② 加粗探针「真命中 / 散文不误报 / 限域生效 / 裸形态不误报」。
+function runPreflightSelfCheck() {
+  let pass = 0;
+  let fail = 0;
+  const check = (label, got, want) => {
+    if (got === want) { pass++; } else { fail++; console.error(JSON.stringify({ selfCheck: 'landing-preflight', label, got, want })); }
+  };
+  const p = parseCliArgs(['node', 'x', '--preflight', 'some/PROPOSAL.md']);
+  check('干跑模式 preflight 取值', p.preflight, 'some/PROPOSAL.md');
+  check('干跑模式 positional 为 null（不误触 reviewDir）', p.positional, null);
+  check('干跑模式 baseRef 为 null', p.baseRef, null);
+  const q = parseCliArgs(['node', 'x', 'dir', 'ref']);
+  check('常规模式 positional 不变', q.positional, 'dir');
+  check('常规模式 baseRef 不变', q.baseRef, 'ref');
+  const boldCls = (t) => preflightFindings(t).findings.filter((f) => f.class === 'bold-anchor-line').length;
+  const boldTrue = ['## 2. 改法（T1）', '', '**目标文件**：`.claude/scripts/a.mjs`（改）', '', '## 3. 影响面'].join('\n');
+  check('§2 域内行首加粗锚行必命中', boldCls(boldTrue), 1);
+  const boldProse = ['## 2. 改法（T1）', '', '改法：把 `**目标文件**：` 这个错误形态修掉（行内引用）。', '', '## 3. 影响面'].join('\n');
+  check('散文行内引用不误报（R2-F8）', boldCls(boldProse), 0);
+  const boldOutside = ['## 1. 问题', '', '**目标文件**：`.claude/scripts/a.mjs`', '', '## 3. 影响面'].join('\n');
+  check('§2 域外不报（限域生效）', boldCls(boldOutside), 0);
+  const bareOk = ['## 2. 改法（T1）', '', '目标文件：`.claude/scripts/a.mjs`（改）', '', '## 3. 影响面'].join('\n');
+  check('裸形态（正形）不误报', boldCls(bareOk), 0);
+  console.log(JSON.stringify({ selfCheck: 'landing-preflight', pass, fail, total: pass + fail, ok: fail === 0 }));
+  if (fail > 0) process.exit(1);
 }
 
 // 纯逻辑自检（四例，真空绿：夹具非空、断言 checked/problems 精确计数）。临时夹具文件 → 例后清理。
@@ -137,6 +259,25 @@ function runCitationAnchorsSelfCheck() {
   check('docs-prefix-resolved 数', docsRes.resolved.length, 1);
   check('docs-prefix 解析形态', docsRes.resolved[0] && docsRes.resolved[0].resolvedAs, 'docs/GOV.md:2');
   check('docs-prefix 零 problems', docsRes.problems.length, 0);
+  // 防回归具名声明（T1，260918 批）：上两条（`.claude/scripts/lib/fixture.mjs` 与 `docs/GOV.md`）即
+  // PROPOSAL §2 T1 所称「两防回归夹具」——**确认既有件保留并在此具名**，非本批新增（R2-F12 采纳）。
+  // 本批新增两夹具：references 面 / docs 子目录面裸名——并集形态后须 resolved。
+  const refDir = mkdtempSync(join(tmpdir(), 'cit-ref-'));
+  mkdirSync(join(refDir, '.claude', 'references'), { recursive: true });
+  writeFileSync(join(refDir, '.claude', 'references', 'dev-loop-operating-system.md'), 'a\nb\nc\n', 'utf8');
+  const refRes = checkCitationAnchors('见 `dev-loop-operating-system.md:2`（references 面裸名）。', refDir);
+  rmSync(refDir, { recursive: true, force: true });
+  check('references-prefix-resolved 数', refRes.resolved.length, 1);
+  check('references-prefix 解析形态', refRes.resolved[0] && refRes.resolved[0].resolvedAs, '.claude/references/dev-loop-operating-system.md:2');
+  check('references-prefix 零 problems', refRes.problems.length, 0);
+  const tplDir = mkdtempSync(join(tmpdir(), 'cit-tpl-'));
+  mkdirSync(join(tplDir, 'docs', 'templates'), { recursive: true });
+  writeFileSync(join(tplDir, 'docs', 'templates', 'PROPOSAL.template.md'), 'a\nb\nc\n', 'utf8');
+  const tplRes = checkCitationAnchors('见 `PROPOSAL.template.md:2`（docs 子目录面裸名）。', tplDir);
+  rmSync(tplDir, { recursive: true, force: true });
+  check('templates-prefix-resolved 数', tplRes.resolved.length, 1);
+  check('templates-prefix 解析形态', tplRes.resolved[0] && tplRes.resolved[0].resolvedAs, 'docs/templates/PROPOSAL.template.md:2');
+  check('templates-prefix 零 problems', tplRes.problems.length, 0);
   console.log(JSON.stringify({ selfCheck: 'citation-anchors', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
@@ -222,8 +363,18 @@ function runVerbatimQuotesSelfCheck() {
 }
 
 // 自检接线顺序审查（真空绿规约）：runIsFrozenSelfCheck 为终端式（无条件 process.exit），必须列最后；
-// 其余非终端式自检（含 B7 新增 section2Anchors、T2 新增 verbatim-quotes）排在其前，否则永不执行。
-if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runIsFrozenSelfCheck(); }
+// 其余非终端式自检（含 B7 新增 section2Anchors、T2 新增 verbatim-quotes、260918 批新增 landing-preflight）排在其前，否则永不执行。
+if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runPreflightSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runIsFrozenSelfCheck(); }
+
+// 干跑入口（T2，260918 批）：只读、不对账、不参与任何门判定、不进任何闸链。
+// 置于 --self-check 之后（两者同给时先跑自检并以其退出码为准）。
+if (process.argv.indexOf('--preflight') >= 0) {
+  if (!preflightArg) {
+    print({ ok: false, gate: 'landing-preflight', message: '--preflight 需要一个 PROPOSAL 路径参数' });
+    process.exit(1);
+  }
+  runPreflight(preflightArg);
+}
 
 function runGit(cmd) {
   try {
