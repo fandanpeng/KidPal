@@ -40,3 +40,5 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260917-m2-k2-retract-p4-three-page](260917-m2-k2-retract-p4-three-page/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
+| [260917-m2-k3-char-window-overlay](260917-m2-k3-char-window-overlay/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |

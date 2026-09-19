@@ -1,11 +1,13 @@
 /*
  * kidpal_render_node.h — 设备渲染节点（包 260911-screen-unification 归一屏收口）
  *
- * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 4 页 BOOT 双按翻页驱动。
- * 阶段 B：BOOT 双按 → home→char→schedule→story→home 循环。
+ * 把 KidPal 首页 P1（400×300 ARGB 帧）推至 RLCD，并提供 3 页 BOOT 双按翻页驱动。
+ * 阶段 B：BOOT 双按 → home→schedule→story→home 三页循环（P4 查字常驻页已撤销，
+ * 包 260917-m2-k2-retract-p4-three-page；页序对齐 spec P1→P2→P3）。
  * 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（取代原三散标志 + 1s tick 对账）：
- * 语音轮页(3) / 服务端推送页(4) / 本地浏览页(2) / 提醒弹窗(5) / 配网(6) 按优先级表
- * 由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
+ * 语音轮页(3) / 服务端推送页(4) / 查字窗(5) / 本地浏览页(2) / 提醒弹窗(6) / 配网(7)
+ * 按优先级表由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
+ * （2026-09-19 M2-K3 页→窗改造：插入查字窗层，REMINDER 5→6 / PROVISION 6→7。）
  *
  * 实现文件（kidpal_render_node.cc）是设备专属（不进入 host 构建），
  * 在此头声明 C linkage 供 board .cc / application.cc / mcp_server.cc 调用。
@@ -20,13 +22,15 @@
 extern "C" {
 #endif
 
-/* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。 */
+/* 页枚举（与 cycle_next() 的步进顺序对应；记录「本地浏览层当前画哪一页」）。
+ * 2026-09-17 M2-K2 撤 P4：查生字页枚举位整值撤出（CHAR 退出本地浏览页循环），
+ * 三页重排为 spec 页序 KP_PAGE_HOME → KP_PAGE_SCHEDULE → KP_PAGE_STORY，
+ * 与 key_gesture_parser.h 的 PAGE_P1/P2/P3 逐项同序同值。 */
 typedef enum {
     KP_PAGE_HOME     = 0,  /* P1 首页常显（400×300 XRGB8888 → RLCD）*/
-    KP_PAGE_CHAR     = 1,  /* P4 查生字（需服务端下发笔顺数据；无数据则停靠占位）*/
-    KP_PAGE_SCHEDULE = 2,  /* P2 课表页 */
-    KP_PAGE_STORY    = 3,  /* P3 故事列表页 */
-    KP_PAGE_COUNT    = 4
+    KP_PAGE_SCHEDULE = 1,  /* P2 课表页 */
+    KP_PAGE_STORY    = 2,  /* P3 故事列表页 */
+    KP_PAGE_COUNT    = 3
 } kidpal_page_id_t;
 
 /*
@@ -80,6 +84,19 @@ void kidpal_render_node_begin_page(void);
 void kidpal_render_node_end_page(void);
 
 /*
+ * 查字窗渲染的持锁夹钳（TaskPackage 260917-m2-k3-char-window-overlay, M2-K3 页→窗改造）：
+ * 持锁 + 把 KIDPAL_LAYER_CHAR_WINDOW 推入 layer 栈（会话内覆盖窗——覆盖当前页之上、
+ * 非常驻页），切活动屏到 s_kidpal_scr，并刷新键帽条（查字窗前台时中槽页点隐藏）。
+ * 与 end_char_window() 配对释放锁。设备侧由 mcp_server.cc 的 view=char 渲染路径调用。
+ *
+ * **不起会话 / 聆听**（无 ToggleChatState / show_chat / voice_begin）——「播完会话即
+ * 结束、不回聆听态」（§2.2 行 68 / F3 窗口交互包 v1.37）。关窗走
+ * kidpal_render_node_dismiss_front_overlay（清 transient 回基层、回原页不翻页）。
+ */
+void kidpal_render_node_begin_char_window(void);
+void kidpal_render_node_end_char_window(void);
+
+/*
  * 提醒弹窗渲染的持锁夹钳：持锁 + 把 REMINDER 推入 layer 栈（REMINDER > VOICE/SERVER_PAGE，
  * review F8 架构修复——提醒恰在语音轮到点也置前、不崩），切活动屏到 s_kidpal_scr。
  * 与 end_page() 配对释放锁。设备侧由 mcp_server.cc RaiseReminderQueue 调用。
@@ -87,7 +104,7 @@ void kidpal_render_node_end_page(void);
 void kidpal_render_node_begin_reminder(void);
 
 /*
- * 配网进 layer 优先级表最高层（PROVISION=6，SU-A2 残项补全）：推 PROVISION + 收盾物理屏。
+ * 配网进 layer 优先级表最高层（PROVISION=7，SU-A2 残项补全）：推 PROVISION + 收盾物理屏。
  * 配网进/退由 WifiBoard 配网模式进/退事件驱动（waveshare-s3-rlcd-4.2 板
  * EnterWifiConfigMode / StartWifiConfigMode 与 WifiManager 事件回调）。独立持锁释放，
  * 跨任务不成对调用（不像 begin_page/end_page 配锁）。
@@ -101,17 +118,18 @@ void kidpal_render_node_begin_provision(void);
 void kidpal_render_node_end_provision(void);
 
 /*
- * BOOT 双按翻页。依次推进 home→char→schedule→story→home（本地浏览层生命周期，
- * 出掉一切 transient 上层）。CHAR 页已并入 s_kidpal_scr 体系（不再自建独立屏）。
+ * BOOT 双按翻页。依次推进 home→schedule→story→home（本地浏览层生命周期，
+ * 出掉一切 transient 上层）。P4 查字常驻页已撤销（M2-K2，页序对齐 spec P1→P2→P3）；
+ * 查字渲染面保留，其前台归属归 M2-K3 改窗决定。
  */
 void kidpal_render_node_cycle_next(void);
 
 /*
  * 前台归一化查询（layer 栈 owner 侧，TaskPackage 260915-m1-k1a-key-layer-dispatch）：
- * 前台 owner ∈ {VOICE, SERVER_PAGE, REMINDER} -> 1（覆盖层顶层）；LOCAL_PAGE /
- * PROVISION / CHAT / NONE -> 0（配网态按键语义零触碰）。板级按键 dispatch 消费它做
- * layer_top 分流。
- */
+ * 前台 owner ∈ {VOICE, SERVER_PAGE, REMINDER, CHAR_WINDOW} -> 1（覆盖层顶层）；
+ * LOCAL_PAGE / PROVISION / CHAT / NONE -> 0（配网态按键语义零触碰）。板级按键 dispatch
+ * 消费它做 layer_top 分流；keybar 消费它做中槽页点隐藏（覆盖层不显示页点）。
+ * （2026-09-19 M2-K3：闭集纳入 CHAR_WINDOW——查字窗前台自动隐藏页点。） */
 int kidpal_render_node_front_is_overlay(void);
 
 /*
@@ -140,6 +158,15 @@ int kidpal_render_node_front_layer(void);
  * kidpal_layer_pop_transients（单一清层事实源），永不映射翻页/cycle_next。
  */
 void kidpal_render_node_dismiss_front_overlay(void);
+
+/*
+ * 板级任意键手势归零查字窗驻留计时（TaskPackage 260917-m2-k3-char-window-overlay，seam [9]e；
+ * requirements §2.2 查字窗行 v1.43「计时随任意按键重计」）：板级 KEY/BOOT 任意键按下时调用，
+ * 置「本拍有按键」标志——kidpal_render_node_tick 内作为 key_pressed 喂
+ * kidpal_char_window_idle_step，使 5 分钟无操作驻留计时随任意按键重计（不关窗）。
+ * 无锁标志写（tick 内取出并清位），可跨任务调用（按键回调任务 != LVGL 定时器任务）。
+ */
+void kidpal_render_node_char_window_key_hit(void);
 
 /*
  * 注入 RTC 时间 + 日期（CustomBoard::InitializeSensors() 读完后调用）。
@@ -194,20 +221,6 @@ void kidpal_render_node_cache_schedule(const char *title,
 void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
                                     const kidpal_story_list_t *l,
                                     const kidpal_story_text_t *t);
-
-/*
- * 标记 P4 查生字页是否有有效数据。
- * mcp_server 在 kidpal_char_page_show() 调用前后设置。
- * has_data=true 后 cycle_next 才会在 4 页循环中停靠 CHAR 页。
- */
-void kidpal_render_node_cache_char(int has_data);
-
-/*
- * 缓存最近一次 P4 笔顺 JSON（供 cycle_next 翻页重新渲染）。
- * mcp_server 在 char_page_show 后调用，传入原始 data_json 字符串。
- * 内部 strdup 存储，动态分配，不增加静态 DRAM。
- */
-void kidpal_render_node_cache_char_data(const char *data_json);
 
 #ifdef __cplusplus
 }

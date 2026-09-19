@@ -29,7 +29,9 @@
  *       typedef struct {
  *           int visible;  -- 1 = 页点显示（仅主页面基层）; 0 = 覆盖层隐藏
  *           int total;    -- 页点总数 = 现行页循环页数（同源 key_gesture_parser.h
- *                            PAGE_COUNT，阶段一 = 4——deviation 对账锚 KB-E1）
+ *                            PAGE_COUNT，阶段一 = 4——deviation 对账锚 KB-E1；
+ *                            2026-09-18 随 260917-m2-k2-retract-p4-three-page 撤 P4，
+ *                            deviation 收回、随枚举 = 3，本模块永不写死数字面）
  *           int active;   -- 当前实心页点下标（0-based，= 当前页）
  *       } kidpal_keybar_dots_t;
  *
@@ -57,6 +59,9 @@
  *           P4 -> 左右 = 撤页过渡兜底（v1.36 撤 P4、页循环仍 4——KB-E1 deviation;
  *                 页槽值 spec 未定, 本齿只钉 rc=0 且左右非 NULL, 值钉定须 human 裁定
  *                 后 tighten-only 修订——ADV 已登记 planner）;
+ *                 2026-09-18 随 260917-m2-k2-retract-p4-three-page 该兜底 case 消解
+ *                 （第 4 页位整值撤出 -> 该索引落入越界防御列 -1; 原「存在性」齿已
+ *                 同步翻正，见本文件 REVISION LOG，ADV 随 deviation 收回一并消解）;
  *           scene 入参在基层列被忽略（任意 int 均合法——主页面无语音场景语境）。
  *         overlay_top != 0（覆盖层随态, scene 槽表）:
  *           左槽 = kidpal_voice_state_look(scene).keycap（冻结闭集单源——内部消费
@@ -111,7 +116,8 @@
  *             （结构齿: 三槽冻结符号 + bottom_bar_ 载体 + 旧 label 零残留 + 设备侧
  *             消费 [1] 单源）+ test 1/2（行为半: 三槽机制值出自纯逻辑单源）
  *   coverage: KB-A2 页点机制 -> test 1（决策表: 基层 visible/total/active + 覆盖层
- *             隐藏 + 数量 = PAGE_COUNT(4) deviation 对账锚 KB-E1 + 防御）+ test 4
+ *             隐藏 + 数量 = PAGE_COUNT 同源判别（2026-09-18 随 M2-K2 撤 P4：原
+ *             PAGE_COUNT(4) deviation 对账锚收回为同源判别）+ 防御）+ test 4
  *             （结构半: 设备侧消费 kidpal_keybar_dots）
  *   coverage: KB-A3 左右槽随态文案 -> test 2（决策表: 页槽表 + 随态表 + 闭集左槽
  *             与 look.keycap 逐字相等 + BOOT 右槽冻结值）+ test 3（闭集零偏移行为
@@ -128,7 +134,10 @@
  *   coverage: KB-A6 host runner 终跑 -> test 5（注册接线结构守卫）+ 本文件尾
  *             「KB-A6 终跑判读」段（suite 级判读: 相对有效基线零新增红 + 本包新齿全绿）
  *   coverage: KB-E1 范围纪律（页点 4→3 收口归 M2 + spec 零修订）-> test 1 tooth 1
- *             （PAGE_COUNT == 4 deviation 对账锚, M2 撤 P4 后本齿随枚举自动 4→3）
+ *             （deviation 对账锚：2026-09-18 随 260917-m2-k2-retract-p4-three-page
+ *             撤 P4 收回 —— 原字面 PAGE_COUNT == 4 已改为本齿自注早已承诺的同源判别
+ *             「total 随枚举单源走」，字面 3 的唯一钉点移住
+ *             firmware/main/test/retract_p4_three_page.acceptance.c test 3）
  *             + test 5 tooth 3（requirements/契约 canary）
  *   coverage: KB-E2 闭集零偏移 -> test 2（左槽值域 = look.keycap 单源）+ test 3
  *             （五成员逐字复核 + kCap 恰 5 + 零 BOOT 提示字面混入）
@@ -445,16 +454,25 @@ TEST_CASE("键帽条三槽: 页点槽裁决——基层显隐+当前页实心+�
     kidpal_keybar_dots_t d;
     int page, rc;
 
-    /* tooth 1 (KB-E1 deviation 对账锚): 页点数量 = 现行页循环页数，同源
-     * key_gesture_parser.h PAGE_COUNT（阶段一 = 4）。spec §2.2 冻结口径为 3 点
-     * （v1.36 页循环 4→3）——deviation 已 human 2026-09-16 拍板认可（workstream
-     * launchPreconditions 第 3 条）: 阶段一按现行页循环渲染 4 页点, 4→3 对账归 M2
-     * 撤 P4 包收回。M2 撤页改 PAGE_COUNT 后本齿自动跟随, 不需要改本文件——
-     * 数量不钉字面 4、钉「== PAGE_COUNT」同源判别（KB-E1: spec 面零修订）。 */
-    TEST_ASSERT_TRUE_MESSAGE(PAGE_COUNT == 4,
-        kkb_fm("KKB-E1 RED(infra): PAGE_COUNT=%d 期望 4——页枚举在 KB-A2 deviation "
-               "对账锚（阶段一 = 4 点）之外被改动; 若为 M2 撤 P4 收口, 同步修订本齿 "
-               "注释与 taskpackage deviation 登记", (int)PAGE_COUNT));
+    /* tooth 1 (KB-E1 deviation 对账锚 —— 2026-09-18 随 260917-m2-k2-retract-p4-three-
+     * page 撤 P4 收回，留痕修订): 页点数量 = 现行页循环页数，同源 key_gesture_parser.h
+     * PAGE_COUNT。spec §2.2 冻结口径本就是 3 点（v1.36 页循环 4→3）——阶段一按现行 4
+     * 页循环渲染 4 点的 deviation 由 human 2026-09-16 拍板认可（workstream
+     * launchPreconditions 第 3 条），4→3 对账归 M2 撤 P4 包、现已落地。本齿按原自注
+     * 承诺的形态改写：原写法 `PAGE_COUNT == 4` 把 deviation 的字面值钉成了断言，与
+     * 「M2 后随枚举自动 4→3、不需改本文件」自相矛盾（撤页必假红）；现钉**同源判别**
+     * ——dots 报出的 total 必须等于这枚枚举的当前值，且 keybar.c 的取源确实是它
+     * （不被硬编码顶掉）。字面 3 的单点钉死移住 retract_p4_three_page.acceptance.c
+     * test 3（两处并存会互相遮蔽），本文件不再对 PAGE_COUNT 取任何字面值。 */
+    rc = kidpal_keybar_dots(0, 0, &d);
+    kkb_require_implemented(rc, "kidpal_keybar_dots unimplemented/wired");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0 && d.total == (int)PAGE_COUNT &&
+                                 kkb_count_in_file(KKB_KEYBAR_C, "(int)PAGE_COUNT") >= 2,
+        kkb_fm("KKB-E1 RED: 页点总数与 PAGE_COUNT(%d) 脱钩（dots(0,base) rc=%d 报 %d, "
+               "keybar.c 内 (int)PAGE_COUNT 取源 %d 处）——页点数量不再随页枚举单源走"
+               "（KB-E1 deviation 已随 M2-K2 撤 P4 收回: 数量 = 现行页循环页数）",
+               (int)PAGE_COUNT, rc, d.total,
+               kkb_count_in_file(KKB_KEYBAR_C, "(int)PAGE_COUNT")));
 
     /* ---- 主页面基层列（overlay_top == 0）----------------------------------- */
     for (page = 0; page < (int)PAGE_COUNT; page++) {
@@ -546,14 +564,20 @@ TEST_CASE("键帽条三槽: 左右槽随态文案——页槽表+闭集单源+BO
                "态线框漂移 (BOOT 短按=光标下移, §2.4 P3 行)",
                left ? left : "(null)", right ? right : "(null)"));
 
-    /* P4: 撤页过渡兜底（v1.36 撤 P4、页循环仍 4——KB-E1 deviation）。页槽值 spec
-     * 未定, 本齿只钉存在性（rc=0 + 左右非 NULL）; 值钉定须 human 裁定后 tighten-only
-     * 修订（ADV 已登记 planner——不静默钉值、不静默放空）。 */
-    rc = kidpal_keybar_slots(3, 0, 0, &left, &right);
-    TEST_ASSERT_TRUE_MESSAGE(rc == 0 && left != NULL && right != NULL,
-        kkb_fm("KKB-A3 RED: P4 页槽 rc=%d left=%s right=%s——撤页过渡兜底缺失或返回"
-               "空指针（页循环仍 4, 键帽条必须能渲染 P4 槽位）",
-               rc, left ? left : "(null)", right ? right : "(null)"));
+    /* 第 4 页槽位齿（KB-E1 deviation 面 —— 2026-09-18 随 260917-m2-k2-retract-p4-
+     * three-page 撤 P4 落地做留痕修订）: 原齿钉「index 3 有兜底槽位」（v1.36 撤 P4、
+     * 页循环仍 4 的过渡形态，只钉存在性，值钉定归 human——ADV 已登记 planner）。撤页
+     * 后 keybar.c 的 `case PAGE_P4:` 兜底分支随枚举整值消解，原齿的字面 index 3 恰好
+     * 等于新的 PAGE_COUNT -> 会变成「要求已撤页位仍存在」的假红。现按同源形态翻正为
+     * **越界防御齿**: page = PAGE_COUNT（撤页前后皆为不存在的第 4 页索引）一律 -1;
+     * human 待裁定的 P4 槽值 ADV 随 deviation 收回一并消解（不再有该页位）。 */
+    left = NULL;
+    right = NULL;
+    rc = kidpal_keybar_slots((int)PAGE_COUNT, 0, 0, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+        kkb_fm("KKB-A3 RED: slots(page=PAGE_COUNT=%d) rc=%d left=%s right=%s 期望 -1——"
+               "不存在的页索引被当成合法页给槽文案（撤页后页槽表只三行, 越界页交防御列）",
+               (int)PAGE_COUNT, rc, left ? left : "(null)", right ? right : "(null)"));
 
     /* 基层列 scene 入参被忽略（主页面无语音场景语境, 任意 int 合法——[1] 契约）。 */
     rc = kidpal_keybar_slots(0, 99, 0, &left, &right);
@@ -919,6 +943,12 @@ TEST_CASE("键帽条三槽: 注册序守卫+需求契约canary+扫描器自检 (
  *         kidpal_voice_states.c 接线行（test 5 tooth 1 红）;
  *       - canary 绿: requirements.md 含 comp-keybar/三槽锚、契约面在世、PAGE_COUNT=4
  *         （test 1 tooth 1 + test 5 tooth 2 现状绿）。
+ *         〔2026-09-18 留痕注记（acceptance-author, TaskPackage 260917-m2-k2-retract-
+ *         p4-three-page）: 上行为 2026-09-16 冻结相位的历史实测记录，不改写。该相位
+ *         的 PAGE_COUNT=4 已随本包撤 P4 变为 3；test 1 tooth 1 与 test 2 第 4 页槽位齿
+ *         已同步改为同源/越界防御形态，**撤页前后皆绿、不新增红**，字面 3 的单点钉死
+ *         移住 firmware/main/test/retract_p4_three_page.acceptance.c test 3。详见本文件
+ *         尾 REVISION LOG 2026-09-18 条目。〕
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
  *   test/host_app 均可）。
  * ---------------------------------------------------------------------------
@@ -932,4 +962,17 @@ TEST_CASE("键帽条三槽: 注册序守卫+需求契约canary+扫描器自检 (
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-16  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-k2-keybar-three-slot).
+ *   2026-09-18  KB-E1 deviation 对账收回的两处同源化修订（acceptance-author 留痕修订，
+ *               授权通道 = TaskPackage 260917-m2-k2-retract-p4-three-page M2K2-E2）。
+ *               ① test 1 tooth 1：原 `PAGE_COUNT == 4` 与本齿自注「M2 后随枚举自动
+ *               4→3、不需改本文件」自相矛盾（撤页必假红），改为同源判别 dots 报出的
+ *               total == PAGE_COUNT + keybar.c 取源仍是这枚枚举（(int)PAGE_COUNT 计数
+ *               >= 2）；本文件不再对 PAGE_COUNT 取字面值。② test 2 第 4 页槽位齿：原
+ *               `slots(3, …)` 钉「存在性」，撤页后 index 3 == 新 PAGE_COUNT 会假红，
+ *               改为 `slots(PAGE_COUNT, …) == -1` 的越界防御齿（同 test 防御列已含
+ *               page=-1 齿，不重复）。为何属留痕通道而非绕闸：只随已冻结的需求事实
+ *               （§2.2「中 3 页点 / 页点随之 4→3」）把 deviation 锚收回为同源形态，未
+ *               放宽任何本包语义断言；test 3/4/5 与本文件其余齿零改动。红态后果：两处
+ *               修订在撤页前后皆绿（不新增红），本包设计态红全部由
+ *               firmware/main/test/retract_p4_three_page.acceptance.c 承载。
  * --------------------------------------------------------------------------- */

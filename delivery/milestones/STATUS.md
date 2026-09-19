@@ -7,7 +7,7 @@
 ## 完工比例
 
 - **已验收**：0%（0 / 4 里程碑 accepted 及以后）
-- **在途预计**：10%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **在途预计**：20%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -21,7 +21,7 @@
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 阶段二·查字窗（live 链路修复 + 页→窗改造） | `planning` | green | live 查字链路修复（NFR-PERF-2 黄灯转绿前提，host 面已验、live 端到端待实证）；撤 P4 常驻页、页循环 4→3、锚 canvas-p4→char-window 对账改名（F3 全节） | [ref](../docs/requirements.md) |
+| 阶段二·查字窗（live 链路修复 + 页→窗改造） | `in_delivery` | green | live 查字链路修复（NFR-PERF-2 黄灯转绿前提，host 面已验、live 端到端待实证）；撤 P4 常驻页、页循环 4→3、锚 canvas-p4→char-window 对账改名（F3 全节） | [ref](../docs/requirements.md) |
 
 ### M3
 

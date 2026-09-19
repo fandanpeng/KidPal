@@ -46,6 +46,18 @@
  *           （KEY CLICK->SESSION_TOGGLE / KEY LONG_PRESS->HOME / BOOT CLICK->PAGE_NEXT /
  *            其余 NONE——主页面 BOOT 单击翻页路径零回归，§2.3 主页面矩阵行）
  *         越界键位（>= KEY_ID_COUNT，含 PWR）-> GLOBAL_ACT_NONE（两列一致，零污染）
+ *       [2026-09-19 留痕修订追加（TaskPackage 260917-m2-k3-char-window-overlay）]
+ *       第三参语义**扩为前台层归一化值**（原 0/非 0 归一化是其子集，上方各行语义零
+ *       回归）: overlay_top == KIDPAL_LAYER_CHAR_WINDOW -> **查字窗列**（本包新增）:
+ *         KEY  CLICK      -> GLOBAL_ACT_CHAR_REPLAY（= 5, append-only 追加; 重播笔顺,
+ *                            含打断当前播报重演——非 SESSION_TOGGLE）
+ *         KEY  LONG_PRESS -> GLOBAL_ACT_OVERLAY_CLOSE（关窗回原页）
+ *         BOOT CLICK      -> GLOBAL_ACT_OVERLAY_CLOSE（v1.39 隔离, 不产翻页）
+ *         其余（双击族 / BOOT 长按）-> GLOBAL_ACT_NONE
+ *       其它非 0 值 -> 通用覆盖层列（K1a 原样）; 0 -> 基层列（K1a 原样）。
+ *       板级 dispatch 把前台层值（kidpal_render_node_front_layer()）喂进第三参
+ *       （覆盖层时; 基层/配网喂 0）——见本文件 test 1 追加齿 + char_window_overlay.
+ *       acceptance.c 结构半。
  *       key_route_global 本体**零改动**（其表为基层列的实现载体；session_logic 齿全绿
  *       must-stay）。
  *
@@ -113,8 +125,10 @@
  *   coverage: KD-A6 host runner 终跑判读 + 本文件注册结构守卫 + KD-E2 spec 零修订
  *             canary + KD-E1 零触碰守卫 + 扫描器自检 -> test 5（suite 级判读说明见
  *             本文件尾「KD-A6 终跑判读」段）
- *   coverage: KD-E1 范围纪律 -> test 4 tooth 2（PAGE_P4 页枚举零触碰守卫——页循环
- *             4->3 / 撤 P4 归 M2）+ test 4 tooth 3（BOOT 长按故事翻屏接缝零触碰——
+ *   coverage: KD-E1 范围纪律 -> test 4 tooth 2（2026-09-18 留痕修订：原「PAGE_P4 页枚举
+ *             零触碰守卫——页循环 4->3 / 撤 P4 归 M2」随 260917-m2-k2-retract-p4-three-
+ *             page 落地翻正为「PAGE_P4 已撤 + PAGE_COUNT == 3」同源判别）+ test 4
+ *             tooth 3（BOOT 长按故事翻屏接缝零触碰——
  *             P3 键位族 v1.47 归 M4 的在世证据之一）
  *   coverage: KD-E2 需求面零修订 -> test 5 tooth 3（requirements/契约 canary）
  *
@@ -165,6 +179,15 @@
  * 以字面量钉值而非直接引用枚举名——冻结期枚举尚未落地，本文件必须先可编译（C 类
  * 冻结验收实编纪律）；落地后 assert 的是 key_route_layer 的实际返回值 == 4。 */
 #define KLD_OVERLAY_CLOSE_VALUE 4
+
+/* --- 查字窗列（2026-09-19 留痕修订追加, TaskPackage 260917-m2-k3-char-window-overlay,
+ * seam [1] 逆向追加列; 既有基层列等价 guard 齿语义零回归）---------------------------
+ * KIDPAL_LAYER_CHAR_WINDOW fallback: kidpal_layer.h 落地前的编译兜底（与落地值一致 = 5）。
+ * GLOBAL_ACT_CHAR_REPLAY 冻结数值 = 5（append-only 追加位, 落地前以字面量钉值）。 */
+#ifndef KIDPAL_LAYER_CHAR_WINDOW
+#define KIDPAL_LAYER_CHAR_WINDOW 5
+#endif
+#define KLD_CHAR_REPLAY_VALUE 5
 
 __attribute__((weak)) global_action_t key_route_layer(key_id_t key, key_gesture_t g,
                                                       int overlay_top)
@@ -562,6 +585,41 @@ TEST_CASE("键位分层派发: key_route_layer 决策表——覆盖层隔离列
         (int)key_route_global(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS) == (int)GLOBAL_ACT_HOME,
         "KLD-A1 RED(infra): key_route_global 基层语义锚漂移——BOOT 单击翻页 / KEY 长按"
         "回首页的全局表被本包改动（key_route_global 本体零改动红线）");
+
+    /* ---- 查字窗列（2026-09-19 留痕修订追加; overlay_top 语义扩为前台层归一化值）----
+     * key_route_layer 第三参 = 前台层值（0 = 基层/配网/无前台; 非 0 = 前台覆盖层层值）;
+     * overlay_top == KIDPAL_LAYER_CHAR_WINDOW -> 查字窗列（本包新增列）:
+     *   KEY 短按 = GLOBAL_ACT_CHAR_REPLAY（重播笔顺, 非 SESSION_TOGGLE）,
+     *   KEY 长按 = OVERLAY_CLOSE / BOOT 单击 = OVERLAY_CLOSE（v1.39 隔离, 不翻页）,
+     *   双击族 / BOOT 长按 = NONE。
+     * 既有覆盖层列（value = 1 等非查字窗非 0 值）与基层列（value = 0）语义零回归——
+     * 上方各行不动 = 本列追加不改既有等价 guard。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK, KIDPAL_LAYER_CHAR_WINDOW) ==
+                KLD_CHAR_REPLAY_VALUE &&
+            (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK, KIDPAL_LAYER_CHAR_WINDOW) !=
+                (int)GLOBAL_ACT_SESSION_TOGGLE,
+        kld_fm("KLD-A2 RED: 查字窗列 KEY 单击 = %d 期望 GLOBAL_ACT_CHAR_REPLAY(=%d) 且 "
+               "!= SESSION_TOGGLE——查字窗列未落（overlay_top 未携前台层值 / 查字窗层"
+               "未进路由表; TaskPackage 260917-m2-k3 A2）",
+               (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK,
+                                    KIDPAL_LAYER_CHAR_WINDOW), KLD_CHAR_REPLAY_VALUE));
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS,
+                             KIDPAL_LAYER_CHAR_WINDOW) == KLD_OVERLAY_CLOSE_VALUE &&
+            (int)key_route_layer(KEY_ID_BOOT, KEY_GESTURE_CLICK,
+                                 KIDPAL_LAYER_CHAR_WINDOW) == KLD_OVERLAY_CLOSE_VALUE &&
+            (int)key_route_layer(KEY_ID_BOOT, KEY_GESTURE_CLICK,
+                                 KIDPAL_LAYER_CHAR_WINDOW) != (int)GLOBAL_ACT_PAGE_NEXT,
+        "KLD-A2 RED: 查字窗列 KEY 长按 / BOOT 单击未路由 OVERLAY_CLOSE（或 BOOT 单击"
+        "产翻页）——查字窗关窗回原页（v1.39 隔离）未进路由表");
+    TEST_ASSERT_TRUE_MESSAGE(
+        (int)key_route_layer(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK,
+                             KIDPAL_LAYER_CHAR_WINDOW) == (int)GLOBAL_ACT_NONE &&
+            (int)key_route_layer(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS,
+                                 KIDPAL_LAYER_CHAR_WINDOW) == (int)GLOBAL_ACT_NONE,
+        "KLD-A2 RED: 查字窗列双击族 / BOOT 长按出现非 NONE 动作——语义面外手势被查字窗"
+        "列吞掉");
 }
 
 /* -------------------------------------------------------------------------- *
@@ -759,11 +817,12 @@ TEST_CASE("键位分层派发: 清层与进页分离——显式清层步骤+cyc
 /* -------------------------------------------------------------------------- *
  * TEST 4 — KD-A3/KD-E1 零回归守卫（structural + 冻结语义锚）
  * 主页面 KEY 长按 = 回首页映射零回归（layer-aware 裁决只改覆盖层列; GLOBAL_ACT_HOME
- * -> show_home 既有映射在世）; KD-E1 范围纪律守卫: 页循环 4->3 / 撤 P4（对账 ②,
- * 归 M2）零触碰 + BOOT 长按故事翻屏接缝（P3 键位族归 M4 的在世证据）零触碰。
+ * -> show_home 既有映射在世）; KD-E1 范围纪律守卫: 页枚举三页集守卫（原「PAGE_P4
+ * 零触碰 / 撤 P4 归 M2」随 260917-m2-k2-retract-p4-three-page 落地翻正为「P4 已撤」）
+ * + BOOT 长按故事翻屏接缝（P3 键位族归 M4 的在世证据）零触碰。
  * ------------------------------------------------------------------------ */
 /* coverage: KD-A3 -- 主页面 KEY 长按回首页映射零回归守卫 */
-/* coverage: KD-E1 -- 范围纪律守卫：PAGE_P4 页枚举零触碰（页循环 4->3/撤 P4 归 M2）+ BOOT 长按故事翻屏接缝在世（P3 键位族归 M4） */
+/* coverage: KD-E1 -- 范围纪律守卫（2026-09-18 留痕修订随 M2-K2 撤 P4）：PAGE_P4 已撤（头内字面零残留）+ PAGE_COUNT==3 同源判别（复活第 4 页位即红）+ BOOT 长按故事翻屏接缝在世（P3 键位族归 M4） */
 TEST_CASE("键位分层派发: 零回归守卫——HOME映射+P4页枚举+BOOT长按故事接缝 (KD-A3/KD-E1)",
           "[key_layer_dispatch][KD-A3][KD-E1][guard]")
 {
@@ -777,13 +836,20 @@ TEST_CASE("键位分层派发: 零回归守卫——HOME映射+P4页枚举+BOOT�
         "KLD-A3 RED(guard): 板级 GLOBAL_ACT_HOME -> show_home 映射丢失——主页面 KEY "
         "长按回首页路径被 layer-aware 改造误伤");
 
-    /* tooth 2 (KD-E1 guard): 页循环 4->3 / 撤 P4 零触碰——key_gesture_parser.h 的
-     * PAGE_P4/PAGE_COUNT 页枚举仍在（对账 ② 页序漂移一并理顺归 M2 查字窗阶段）。 */
+    /* tooth 2 (KD-E1 guard, 2026-09-18 留痕修订随 M2-K2 撤 P4 语义翻正):
+     * 原齿（2026-09-15 冻结）正向断言 key_gesture_parser.h 含 PAGE_P4/PAGE_COUNT，其
+     * 自注「页循环 4->3 / 撤 P4 归 M2」= 260917-m2-k2-retract-p4-three-page，本包落地
+     * 后「零触碰」前提解除 -> 守卫翻正为钉「第 4 页位已撤」的正向事实（复活即红）。
+     * PAGE_COUNT == 3 的字面真值单点钉在 retract_p4_three_page.acceptance.c test 3，
+     * 本齿以同源判别复对账（不另立第二字面源）。 */
     TEST_ASSERT_TRUE_MESSAGE(
-        kld_file_contains("firmware/main/key_gesture_parser.h", "PAGE_P4") &&
-            kld_file_contains("firmware/main/key_gesture_parser.h", "PAGE_COUNT"),
-        "KD-E1 RED: key_gesture_parser.h 页枚举 PAGE_P4/PAGE_COUNT 被触碰——页循环 "
-        "4->3 / 撤 P4 归 M2（KD-E1 范围纪律, 本包零触碰）");
+        kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4") == 0 &&
+            (int)PAGE_COUNT == 3 && (int)PAGE_P3 == (int)PAGE_COUNT - 1,
+        kld_fm("KD-E1 RED: key_gesture_parser.h 页枚举不再等于三页集（PAGE_COUNT=%d, "
+               "PAGE_P3=%d, 头内 PAGE_P4 字面 %d 处）——M2-K2 已撤的 P4 页位被复活 / "
+               "页循环被改回 4 页（requirements §2.4 3 页循环 + 行 186）",
+               (int)PAGE_COUNT, (int)PAGE_P3,
+               kld_count_in_file("firmware/main/key_gesture_parser.h", "PAGE_P4")));
 
     /* tooth 3 (KD-E1 guard): BOOT 长按故事翻屏接缝在世（P3 页内特例; v1.47 P3 键位族
      * 对账 ⑥ 归 M4——该接缝是本包零触碰的在世证据, key_route_a1 KR-A4 tooth 2 同款）。 */
@@ -910,4 +976,32 @@ TEST_CASE("键位分层派发: 注册序守卫+需求契约canary+扫描器自�
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-15  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-k1a-key-layer-dispatch).
+ *   2026-09-18  KD-E1 撤页守卫语义翻正（acceptance-author 留痕修订，授权通道 =
+ *               TaskPackage 260917-m2-k2-retract-p4-three-page M2K2-E2「冻结套件钉点
+ *               修订一律走 acceptance-author 留痕」）。改了什么：test 4 tooth 2 原正向
+ *               断言 key_gesture_parser.h 含 PAGE_P4 与 PAGE_COUNT（其自注「页循环 4->3
+ *               / 撤 P4 归 M2」点名的就是该包），M2-K2 撤页落地后「零触碰」前提解除 ->
+ *               现钉 PAGE_P4 头内字面零残留 + PAGE_COUNT == 3 + PAGE_P3 == PAGE_COUNT-1
+ *               三条同源判别（字面 3 的单点钉死仍住 retract_p4_three_page.acceptance.c
+ *               test 3，本齿不另立第二字面源）。为何属留痕通道而非绕闸：只随已冻结的
+ *               需求事实（requirements §2.4 行 186）改守卫指向，未放宽本包任何语义断言
+ *               ——同 test tooth 1（HOME 映射在世）与 tooth 3（BOOT 长按故事接缝在世）、
+ *               以及 test 1/2/3/5 全部零改动（M2K2-A3 回归判据要求本套件除本齿外零
+ *               修改仍全绿）。红态后果：本齿对未撤页现状（PAGE_COUNT=4）为设计态红，
+ *               builder 落 M2-K2 实现后转绿；上方 2026-09-15 冻结相位的「本包义务红」
+ *               历史记录不改写（append-only）。
+ *   2026-09-19  查字窗列追加（acceptance-author 留痕修订，授权通道 = TaskPackage
+ *               260917-m2-k3-char-window-overlay A2「新层修订走 acceptance-author 留痕」
+ *               + plan.md「查字窗前台语义挂 layer-aware dispatch 的新层列」）。改了什么：
+ *               key_route_layer 第三参语义扩为前台层归一化值（0 = 基层/配网/无前台;
+ *               非 0 = 前台覆盖层层值），新增 overlay_top == KIDPAL_LAYER_CHAR_WINDOW
+ *               的查字窗列（KEY 单击 -> GLOBAL_ACT_CHAR_REPLAY=5 / KEY 长按·BOOT 单击
+ *               -> OVERLAY_CLOSE / 其余 NONE）；test 1 末尾**追加**三条查字窗列齿 +
+ *               seam [1] 文档段 + 两个冻结数值 fallback（KIDPAL_LAYER_CHAR_WINDOW=5 /
+ *               KLD_CHAR_REPLAY_VALUE=5）。为何属留痕通道而非绕闸：纯追加, 未放宽既有
+ *               任何断言——既有覆盖层列（value=1）/基层列（value=0）各行零改动、语义
+ *               零回归（原「0/非 0 归一化」是新语义的子集）；新层数值码与路由列均为
+ *               TaskPackage 明示的 A1/A2 冻结面。红态后果：三条新齿对未落查字窗列现状
+ *               为设计态红（KEY 单击落 SESSION_TOGGLE），builder 落 M2-K3 实现后转绿；
+ *               本文件其余全部齿（test 1 既有各行 / test 2/3/4/5）零改动、零新增红。
  * --------------------------------------------------------------------------- */

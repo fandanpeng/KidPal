@@ -631,8 +631,14 @@ void McpServer::AddCommonTools() {
                     });
                     break;
                 }
-                case 3: { /* VRT_ROUTE_CHAR —— 查生字 P4 (包 260829-char-stroke, 本包
-                             additive 补 case 3, 只消费不改 view_router 数值码). */
+                case 3: { /* VRT_ROUTE_CHAR —— 查字窗 (包 260829-char-stroke, 本包
+                             additive 补 case 3, 只消费不改 view_router 数值码).
+                             2026-09-17 M2-K2 撤 P4 常驻页：查字不再是 BOOT 翻页可停靠
+                             页位（页循环 4→3），但本路由与渲染调用点整体保留——撤销的
+                             是常驻页位、不是查字能力。
+                             2026-09-19 M2-K3 页→窗落地：查字渲染路径改经
+                             begin/end_char_window（CHAR_WINDOW 层）叠加**会话内覆盖窗**，
+                             关窗走 dismiss_front_overlay 回原页、不翻页。 */
                     cJSON_AddStringToObject(ack, "route", "char");
                     std::string char_data = data;
                     /* 缺字段防御降级门 (闸 A 包内裁定): 必需键六件不全 -> 降级提示、
@@ -644,21 +650,22 @@ void McpServer::AddCommonTools() {
                             "strokeCount/strokes/medians)");
                         break;
                     }
-                    /* 通过校验 -> 切 P4 页喂数据 (LVGL 主线程延迟执行) */
+                    /* 通过校验 -> 喂数据渲染查字窗 (LVGL 主线程延迟执行; M2-K3 页→窗改造
+                     * 后作为**会话内覆盖窗**——覆盖当前页之上、非常驻页, 服务端下发的
+                     * 查字渲染通路保留)。 */
                     app.Schedule([char_data]() {
                         /* 崩溃修复（包 260829-hardware-validation 语义保留 / 归一屏）：
-                         * char 页已并入 s_kidpal_scr 体系——kidpal_char_page_show 在活动屏
-                         * 上清屏并绘制（先清后画、不自建独立屏），不触碰聊天层视觉控件，
-                         * 天然免疫 SetStatus 悬空崩溃。
-                         * 仍夹 begin/end：begin_page 把 SERVER_PAGE 推入 layer 栈 + 持 LVGL
-                         * 锁消除与 LVGL 任务竞态 + 切活动屏到 s_kidpal_scr，随后 char_page_show
-                         * 直接画在 s_kidpal_scr 上（净显示 = char 页）。 */
-                        kidpal_render_node_begin_page();
+                         * 查字窗已并入 s_kidpal_scr 体系——kidpal_char_page_show 在活动屏
+                         * 当前页之上叠一层窗面板（不清屏、不自建独立屏），不触碰聊天层
+                         * 视觉控件，天然免疫 SetStatus 悬空崩溃。
+                         * 仍夹 begin/end：begin_char_window 把 CHAR_WINDOW 推入 layer 栈
+                         * + 持 LVGL 锁消除与 LVGL 任务竞态 + 切活动屏到 s_kidpal_scr，随后
+                         * char_page_show 画在 s_kidpal_scr 上（覆盖窗 = 当前页之上的净显示，
+                         * 关窗回原页不走翻页）。**不起会话 / 聆听**——播完会话即结束、不回
+                         * 聆听态（§2.2 行 68 / F3 窗口交互包 v1.37）。 */
+                        kidpal_render_node_begin_char_window();
                         kidpal_char_page_show(char_data.c_str());
-                        /* 包 9b HWV-A6: 缓存笔顺 JSON 与有效标志，
-                         * 供 BOOT 双按 cycle_next 重新停靠 CHAR 页时渲染。 */
-                        kidpal_render_node_cache_char_data(char_data.c_str());
-                        kidpal_render_node_end_page();
+                        kidpal_render_node_end_char_window();
                     });
                     break;
                 }

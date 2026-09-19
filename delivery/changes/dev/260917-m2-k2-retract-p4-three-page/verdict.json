@@ -1,0 +1,31 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "260917-m2-k2-retract-p4-three-page",
+  "ts": "2026-09-18T14:47:19.810Z",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "97a5acfc-ad34-45db-b9a3-8f2d2475e983",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/260917-m2-k2-retract-p4-three-page/verifier-evidence/rounds/r2.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 9,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "M2K2-A1/A2/A4 缺失行为齿 RED→GREEN：acceptance-author 冻结相位实跑红基线（新件 standalone 7T/6F、ELF exit 6，六条红因全为本包缺失的真实行为；真 host runner 39T/1F，唯一红 = 本包义务红 KD-E1）→ final host runner 46 Tests / 0 Failures / 0 Ignored EXIT=0（integrator 独立复跑，既有基线 39T/0F @ ca7ff81 + 新件 7 齿）；四条 mutation 反证（MUT-M2K2-A1 / A2 / A3 / A4）全部 failed as expected + 还原复绿，perAcceptance record 在 taskpackage mutationEvidence",
+    "redTrajectory": "acceptance-author standalone 红基线（新件 7T/6F exit 6；KD-E1 设计态 5T/1F；scratch 目标态自证 7T/0F；八条单点变异逐齿翻红）→ verify scoped r1 七闸全绿（37ab5573-…）→ verify final r2 九闸全绿（97a5acfc-…，本包承重 fact）",
+    "demoReconciliation": "见 review-packet.md Demo 对账行——roadmap §③ K2 demo 证据形态五项（host 三页循环齿 / 页点 3 点齿 / 键路由回归靶 / device build 闸 / 真机手感 deferred 归 K3）逐项一致，一致性结论落行在案",
+    "m2k2a5Deferral": "M2K2-A5 真机翻页确认 deferred 归 M2-K3 设备轮（structural 条目 note：单真机不两轮撞车，挂 K3 设备轮）；K3 接手口径 = 随 F3 真机确认轮一并目击 3 页循环手感 + 3 点页点",
+    "e3DeadApiRegistration": "E3 写侧死态 API 登记在册：kidpal_render_node_cache_char / kidpal_render_node_cache_char_data（公开 API）与静态 s_has_char_data / s_char_json，及 kidpal_render_node.cc:44 未用 #include \"char_page.h\"（planner 裁定保留）——本包按 E3 保留不动、定义处已加注，交 K3 改窗统一收",
+    "detectChanges": "N/A (worktree)；替代抽查 = git diff --stat 闭集 + 共享符号 trace_path（kidpal_render_node_cycle_next / kidpal_render_node_get_page 入站调用方闭集场内、key_page_next 无 live 调用方、keybar 两函数消费点唯一 lcd_display.cc），详见 review-packet.md 影响面核对节",
+    "docsSync": "docsSyncRequired=false 在本包责任范围内成立（requirements 面零漂移，向已冻结需求 v1.36 对账）；独立核对发现一处 architecture 面 stale（docs/architecture.md 行 170 / 381【修复项】标记），本包 E2 禁触 spec → 登记交主线程 spec 批，见同目录 docs-delta.md 与 review-packet.md Findings(SHOULD)"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。"
+}

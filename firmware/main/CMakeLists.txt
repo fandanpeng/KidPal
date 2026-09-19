@@ -69,6 +69,13 @@ set(SOURCES "audio/audio_codec.cc"
             # (kidpal_voice_echo_push / kidpal_voice_round_scene), 无芯片依赖 ->
             # host_app linux target 同源 (接线见 host_app CMakeLists)。
             "display/voice_round.c"
+            # 查字窗驻留计时纯逻辑单源 (包 260917-m2-k3-char-window-overlay): 5 分钟无操作
+            # 关窗步进 (kidpal_char_window_idle_step + KIDPAL_CHAR_WINDOW_IDLE_MS), 无芯片 /
+            # FreeRTOS / LVGL 依赖 -> device 与 host_app linux target 同源 (host 接线见
+            # host_app CMakeLists)。设备侧消费者 = kidpal_render_node_tick (1s 节拍累计 +
+            # 查字窗前台门控, 到点经 kidpal_render_node_dismiss_front_overlay 关窗); 任意键
+            # 归零入口 = kidpal_render_node_char_window_key_hit (板级 KEY/BOOT 按下回调调用)。
+            "display/char_window.c"
             # 设备渲染节点 (包 9b HWV-A6 收口 + 包 260911-screen-unification 归一屏):
             # host_infra_render_p1_frame 强符号 + 4 页 LVGL 屏驱动 (KidPal 专属 s_kidpal_scr,
             # display/ 唯一被 lv_screen_load 的前台屏；xiaozhi 聊天 chrome 已 reparent 到

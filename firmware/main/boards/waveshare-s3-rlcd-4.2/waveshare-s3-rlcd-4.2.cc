@@ -17,6 +17,7 @@
 #include "custom_lcd_display.h"
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6 渲染节点 */
 #include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
+#include "display/char_page.h" /* 包 260917-m2-k3-char-window-overlay: 查字窗 KEY 短按重播 kidpal_char_page_replay 设备侧消费 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
 #include "sdkconfig.h"          /* CONFIG_BUTTON_* 按键消抖/长按窗参数 */
 #include <esp_adc/adc_oneshot.h>      /* 包 260915-m1-n1b-p1-home-battery: 板级电池 ADC */
@@ -73,6 +74,18 @@ static uint32_t keya_now_ms(void)
     return static_cast<uint32_t>(esp_log_timestamp());
 }
 
+/* 前台层归一化值喂入 key_route_layer 第三参（TaskPackage 260917-m2-k3-char-window-overlay,
+ * seam [2] 语义扩：0 = 基层 / 配网 / 无前台; 非 0 = 前台覆盖层层值）。覆盖层身份由
+ * front_is_overlay 单一裁决（与 keybar 中槽页点隐藏同源），层值由 front_layer 取——
+ * 查字窗前台时第三参 = KIDPAL_LAYER_CHAR_WINDOW，路由表据此选中查字窗列。 */
+static int keya_front_route_top(void)
+{
+    if (kidpal_render_node_front_is_overlay() == 0) {
+        return 0; /* 基层 / 配网 / 无前台 -> 基层列 */
+    }
+    return kidpal_render_node_front_layer();
+}
+
 /* 冻结路由输出 -> 应用动作 dispatch（GLOBAL_ACT_SESSION_TOGGLE / HOME / PAGE_NEXT 三
  * 枚举在此被设备侧消费）。LVGL 屏切换统一经 Application::Schedule 回 main app task，
  * 与既有 BOOT 单击 show_chat 先例同任务上下文。 */
@@ -123,6 +136,12 @@ static void keya_dispatch_global_action(global_action_t act)
             }
         }
         app.Schedule([]() { kidpal_render_node_dismiss_front_overlay(); });
+        break;
+    case GLOBAL_ACT_CHAR_REPLAY:
+        /* 查字窗 KEY 短按 = 重播笔顺（S-F3.3 AC1, 含打断当前播报重演）：映射
+         * kidpal_char_page_replay（动画进度归零、从第一笔重新逐笔演示）。不产会话动作、
+         * 不翻页——「播完会话即结束、不回聆听态」（§2.2 行 68 / F3 窗口交互包 v1.37）。 */
+        app.Schedule([]() { kidpal_char_page_replay(); });
         break;
     default:
         break;
@@ -406,6 +425,10 @@ private:
          * K6 corr_id 日志），手势->动作 dispatch 唯一落在下方 iot_button 手势回调，避免
          * iot_button 短按窗(180ms) 与 parser 双击窗(350ms) 消歧时序分歧导致重复触发。 */
         boot_button_.OnPressDown([this]() {
+            /* M2K3-A3 驱动半（seam [9]e, requirements v1.43「计时随任意按键重计」）：任意键
+             * 按下即归零查字窗 5 分钟驻留计时（按下边沿覆盖全部手势——单击/长按/双击皆是
+             * 按下的超集，故两个键的 OnPressDown 即「任意按键」的完整入口）。 */
+            kidpal_render_node_char_window_key_hit();
             (void)key_gesture_parser_feed(&boot_gesture_, KEY_ID_BOOT, keya_now_ms(), 1);
         });
         boot_button_.OnPressUp([this]() {
@@ -413,6 +436,7 @@ private:
             keya_log_gesture(KEY_ID_BOOT, g);
         });
         key_button_.OnPressDown([this]() {
+            kidpal_render_node_char_window_key_hit(); /* 任意键（KEY）按下 -> 驻留计时重计 */
             (void)key_gesture_parser_feed(&key_gesture_, KEY_ID_KEY, keya_now_ms(), 1);
         });
         key_button_.OnPressUp([this]() {
@@ -433,7 +457,7 @@ private:
                 EnterWifiConfigMode();
                 return;
             }
-            int overlay = kidpal_render_node_front_is_overlay();
+            int overlay = keya_front_route_top();
             if (overlay && keya_overlay_consume(KEY_ID_BOOT, KEY_GESTURE_CLICK)) {
                 return; /* 顶层覆盖层已消费 BOOT（关层回原页、不翻页） */
             }
@@ -451,7 +475,7 @@ private:
          * KEY 单击 = 关闭回当前页，DISMISS 即消费；未消费落 key_route_layer（KEY 单击：
          * 覆盖层/基层均 SESSION_TOGGLE，会话主轴零回归）。 */
         key_button_.OnClick([this]() {
-            int overlay = kidpal_render_node_front_is_overlay();
+            int overlay = keya_front_route_top();
             if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_CLICK)) {
                 return;
             }
@@ -460,7 +484,7 @@ private:
         /* KEY 双击：注册接缝（KR-A1 三手势全注册），layer-aware 路由（覆盖层/基层双击
          * 均 GLOBAL_ACT_NONE，全局层无语义）。 */
         key_button_.OnDoubleClick([this]() {
-            int overlay = kidpal_render_node_front_is_overlay();
+            int overlay = keya_front_route_top();
             keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK, overlay));
         });
         /* KEY 长按：返回上一层（v1.36 layer-aware 裁决, 260915-m1-k1a KD-A3；覆盖层顶层
@@ -469,7 +493,7 @@ private:
          * GLOBAL_ACT_HOME->show_home 硬路由改为 layer-aware 裁决，主页面 KEY 长按回首页
          * 映射零回归）。 */
         key_button_.OnLongPress([this]() {
-            int overlay = kidpal_render_node_front_is_overlay();
+            int overlay = keya_front_route_top();
             if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)) {
                 return;
             }
