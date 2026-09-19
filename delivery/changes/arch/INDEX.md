@@ -10,12 +10,12 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | landed | no |
-| [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | landed | no |
-| [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | landed | no |
-| [260918-gov-review-merge-chain-friction](260918-gov-review-merge-chain-friction/) | 2026-09-18 | landed | no |
+| [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | landed | yes |
+| [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | landed | yes |
+| [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | landed | yes |
+| [260918-gov-review-merge-chain-friction](260918-gov-review-merge-chain-friction/) | 2026-09-18 | landed | yes |
 | [260915-gov-review-worktree-pool-reuse](260915-gov-review-worktree-pool-reuse/) | 2026-09-15 | landed | yes |
-| [260914-arch-review-kidpal-session-ctx-contract](260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | — |
+| [260914-arch-review-kidpal-session-ctx-contract](260914-arch-review-kidpal-session-ctx-contract/) | 2026-09-14 | frozen | yes |
 | [260914-gov-review-delivery-restructure](260914-gov-review-delivery-restructure/) | 2026-09-14 | landed | yes |
 | [260913-arch-review-spec-split](260913-arch-review-spec-split/) | 2026-09-13 | landed | yes |
 | [260912-gov-review-portfolio-decomposition-chain](260912-gov-review-portfolio-decomposition-chain/) | 2026-09-12 | landed | yes |

@@ -67,7 +67,7 @@
   "260909-gov-review-gate-truthfulness": {
     "date": "2026-09-09",
     "mergedInMain": "yes",
-    "landed": false
+    "landed": true
   },
   "260829-arch-review-kidpal-spec-stories": {
     "date": "2026-08-29",
@@ -96,34 +96,47 @@
   },
   "260913-arch-review-spec-split": {
     "date": "2026-09-13",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260912-gov-review-portfolio-decomposition-chain": {
     "date": "2026-09-12",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260915-gov-review-worktree-pool-reuse": {
     "date": "2026-09-15",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260914-gov-review-delivery-restructure": {
     "date": "2026-09-14",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260918-gov-review-merge-chain-friction": {
     "date": "2026-09-18",
-    "mergedInMain": "no"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260918-gov-review-closeout-chain-friction": {
     "date": "2026-09-18",
-    "mergedInMain": "no"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260918-gov-review-dispatch-chain-friction": {
     "date": "2026-09-18",
-    "mergedInMain": "no"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260918-gov-review-batch-drafting-friction": {
     "date": "2026-09-18",
-    "mergedInMain": "no"
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "260914-arch-review-kidpal-session-ctx-contract": {
+    "date": "2026-09-14",
+    "mergedInMain": "yes",
+    "landed": false
   }
 }
