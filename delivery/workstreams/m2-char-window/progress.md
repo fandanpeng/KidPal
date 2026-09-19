@@ -79,3 +79,22 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **launch 启动卡**：`.git/devloop/launch/prompt-260917-m2-k3-char-window-overlay.txt`（四要素收缩形态）。
 
 **launch 形态**：human 在本树会话内指示「启动 dev loop 按流程定义跑、无 block 不请示」→ 本树既有会话即 Pod 本体，按 `claude --agent planner` 主线程语义就地起 loop（对偶 `/build-feature` 入口）。不另起第二会话同树并行（树池协议「一个目录一个会话」）。
+
+## 2026-09-19 · K3 闭环 → merged（mo30，M2 三包全并；树池第 9 棒同树续跑）
+
+**结果**：`260917-m2-k3-char-window-overlay` 已 merged 本地 main（`2785578`，人批凭据 `587714c5`）。M2 workstream 三包（mo28/29/30）全部并入 main。
+
+**交付面**：页→窗改造全套（查字窗层注册 `KIDPAL_LAYER_CHAR_WINDOW=5` + REMINDER/PROVISION 上移、键位语义矩阵新层列 + `GLOBAL_ACT_CHAR_REPLAY`、5 分钟驻留计时纯逻辑模块 `char_window.{h,c}` + 设备侧驱动、右栏对账三项、`canvas-p4`→`char-window` 锚改名、K2 遗留两处写侧死态 API 收拢）。host 行为面全绿 + 设备 ESP-IDF 真编译过 + A1–A6 各一条变异反证。
+
+**过程要点（耐久项）**：
+1. **验收面欠覆盖一处承重落地面**：5 分钟驻留的设备侧驱动封冻时无齿覆盖（seam 只钉纯逻辑模块）——builder 按纪律拒绝脑补并如实上报 → planner 判归属 → acceptance-author 补 `seam [9] + TEST 8`（设计态红）→ builder 补实现 → 转绿。**A7 真机轮的「5 分钟自动关窗」项在此驱动接线前不可能真绿**，这是本包最值得记的一条。
+2. **验收齿强度被实现者反向证伪**：A5a「部首行补上屏」原以「切区内符号计数 ≥1」实现、**注释即可满足**（实现者变异自证实测不红）；已引入注释剥离器收紧 13 处同类正向计数齿，受控变异复现证实有效。
+3. **完备性反查命中假红**：`retract_p4_three_page` 两条 M2-K2「保留不动、删除归 M2-K3」守卫齿在本包收拢后必假红——由 acceptance-author 独立反查发现并翻正（K2 retro 动作清单第二次复利）。
+4. **拆包产物腐坏连续第三棒命中**：`origin.type=milestone` 不在闸值域闭集 + `sourceRefs` 漏四处真实改动面（kidpal_render_node.h/.cc 覆盖层闭集与两处待收 API / keybar.h+.c / lcd_display.cc / 板级 dispatch 消费链），intake 期逐条对磁盘核出并补齐。
+
+**遗留（未闭环，归后续）**：
+- **A7/A8 真机确认轮未做（human 持板）**：F3 确认轮（S-F3.1 AC1–AC4 / S-F3.2 AC1 / S-F3.3 AC1–AC2 / 窗口交互包全项含 5 分钟自动关窗 / 提醒压查字窗层级 / K1 两缺陷 live 复证）+ NFR-PERF-2 5 秒档复测。**本包 host 半闭环、真机半未做——不得读成整包已验收**（review-packet 已明记）。
+- 层 renumber 三处已知残留（归档件数值字面 / `reminder_overlay_unify.acceptance.c` stale 注释 / 另两处在世件结构同型裸正扫齿）——建议后续批统一 refresh。
+- `kidpal_render_node.h` 的 `begin_page`「递归死锁」注释与实证递归锁相左（既有 NIT，未改）。
+
+**边界外移交项（主线程执行，已完成）**：`milestones.jsonl` M2-char-window `state` `planning → in_delivery` + `delivery-status.mjs` 重建 STATUS.md——经 human 2026-09-19 显式授权「现在就补」执行，落 `21c4dd9` 并 ff 入 main。**待判**：该里程碑行的 `nextAction` 仍描述 K1/K2/K3 已完成的工作（撤 P4 / 页→窗 / 锚改名），内容已过期——planner 按授权范围只动了 `state`，未擅改 `nextAction`，留给 human 或 portfolio 收口时对账。
