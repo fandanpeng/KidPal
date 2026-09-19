@@ -98,3 +98,5 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 - `kidpal_render_node.h` 的 `begin_page`「递归死锁」注释与实证递归锁相左（既有 NIT，未改）。
 
 **边界外移交项（主线程执行，已完成）**：`milestones.jsonl` M2-char-window `state` `planning → in_delivery` + `delivery-status.mjs` 重建 STATUS.md——经 human 2026-09-19 显式授权「现在就补」执行，落 `21c4dd9` 并 ff 入 main。**待判**：该里程碑行的 `nextAction` 仍描述 K1/K2/K3 已完成的工作（撤 P4 / 页→窗 / 锚改名），内容已过期——planner 按授权范围只动了 `state`，未擅改 `nextAction`，留给 human 或 portfolio 收口时对账。
+
+**待修 gov 工具缺陷（本包实跑测出，planner 无权修）**：`render-roadmap.mjs` 的包发现未排除 `delivery/taskpackages/current/` 指针目录——该目录镜像最后活跃包，被当作第二个包计入，致同一 changeId 渲染出两行（`M2-K3a` / `M2-K3b` 同 changeId 同 mergeOrder，脚本自报「4 包」而实际 3 包）。触发条件 = `current/` 指向被渲染 workstream 内的包（本包 intake 把 `current/` 刷成 K3 后立即复现；2026-09-17 那次渲染未复现，因当时 `current/` 指 workstream 外包）。**planner 处置 = 不落盘该渲染**（roadmap ② 节机械渲染块人工禁改，且 `.claude/scripts/**` 不在 planner scope allow 面内），roadmap.md 保持既有状态；证据与复现命令落 K3 pod-events（`2f64635a`）。建议走 `/gov-arq` 或下一批治理修脚本后重渲本 workstream roadmap。
