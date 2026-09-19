@@ -1,0 +1,50 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "260917-m2-k3-char-window-overlay",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "1221bff2-dbc5-4f73-9d5d-b72b3014d1e0",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r3.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-19T00:39:10.961Z",
+    "completedAt": "2026-09-19T00:39:25.229Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 178, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9163, "timing": "scoped", "note": "device build 真编译通过（VERIFY_FW_BUILD_REQUIRED=1 未降级；xiaozhi.bin 0x30b7d0 bytes，分区余量 11%）——E3 device build 闸满足" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 155, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 165, "timing": "scoped", "note": "functional = M2K3-A1..A6；structural 豁免 = M2K3-A7/A8；files = char_window_overlay / key_layer_dispatch / retract_p4_three_page acceptance.c" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 164, "timing": "scoped", "note": "6 functional acceptance sensitive:true + failed as expected；A7/A8 structural 豁免" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 156, "timing": "scoped", "note": "docsSyncRequired=false（零 docs/contracts/spec/agent-gate 改动，M2K3-E2 守住）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 156, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 3795, "timing": "full", "note": "37 passed (pytest, server 面；本包 server/ 零改动)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 210, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=22 / serverAcceptanceFiles=0" }
+  ],
+  "hostRunner": {
+    "finalResult": "58 Tests / 0 Failures / 0 Ignored, EXIT=0 (integrator 独立复跑 2026-09-19)",
+    "baselineRef": "launch 基线 46T/0F @ 210bb6e（progress.md 锚）",
+    "newTeeth": "char_window_overlay.acceptance.c 7 TEST_CASE（M2K3-A1..A6 + boundary）+ builder 单测 char_window.test.c 3 齿 + 两在世冻结件留痕修订（key_layer_dispatch 查字窗列三齿 / retract_p4_three_page 翻正）+ seal TEST 8 → 46 + 本包新齿 = 58",
+    "redBaseline": "launch 46T/2F（delta 2 本包义务红）；封口前 56T/0F（builder 实现态）；封口后 57T/1F（唯一红 = A3 驱动半 TEST 8，acceptance-author 实跑）；新件 standalone 8T/1F（仅 test 8 红）"
+  },
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 260917-m2-k3-char-window-overlay --phase final --round 3 --invocation-id 1221bff2-dbc5-4f73-9d5d-b72b3014d1e0",
+    "exit": 0,
+    "output": {
+      "ok": true,
+      "gate": "verifier-evidence",
+      "evidenceRef": "delivery/taskpackages/260917-m2-k3-char-window-overlay/verifier-evidence/rounds/r3.json",
+      "factOk": true,
+      "observedGateExit": 0,
+      "phase": "final",
+      "round": 3
+    }
+  }
+}
