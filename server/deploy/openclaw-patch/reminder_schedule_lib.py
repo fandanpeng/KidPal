@@ -22,7 +22,10 @@ frontmatter 的 remind_before_min 已废止（契约 §2.3），本文件永不�
 config 的 before_min 来。
 """
 
-from __future__ import annotations
+# NOTE (260920-m2-charwindow-display-fix rework, python 3.6 compat): this script runs under
+# the ECS system python3 (CPython 3.6). `from __future__ import annotations` removed (PEP 563
+# = 3.7+, SyntaxError on 3.6). Rest of the file is already 3.6-safe (f-strings = 3.6+, typing
+# builtins, no PEP 585 subscripts / dataclasses / walrus).
 
 import hashlib
 import json

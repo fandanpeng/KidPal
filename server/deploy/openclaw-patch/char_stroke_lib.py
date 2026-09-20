@@ -14,7 +14,12 @@ TaskPackage 260829-char-stroke（mergeOrder 7）。机制 B = OpenClaw 回复出
  原捕获签名有变；本模块契约单源以现役件为准。）
 """
 
-from __future__ import annotations
+# NOTE (260920-m2-charwindow-display-fix rework, python 3.6 compat): this module runs under
+# the ECS system python3 (CPython 3.6). Must stay python 3.6-compatible: `from __future__
+# import annotations` removed (PEP 563 = 3.7+ SyntaxError). Annotations below are typing/builtin
+# (Optional[dict]/Iterable[str]/-> str/-> dict) = 3.5-/3.6-safe; no PEP 585 subscripts, no
+# dataclasses, no walrus. The `"OrderedDict[str, object]"` annotation is already a quoted
+# string (never eagerly evaluated) — keep quoted.
 
 import json
 import re

@@ -16,7 +16,10 @@ frozen contract): extract minimal char block -> static 字库 LRU -> replace wit
 FULL D3 JSON. HOLD-AND-REPLACE: the gateway never emits the minimal block as-is.
 """
 
-from __future__ import annotations
+# NOTE (260920-m2-charwindow-display-fix rework, python 3.6 compat): this generator is
+# run under the ECS system python3 (CPython 3.6). It MUST stay python 3.6-compatible:
+# `from __future__ import annotations` was removed (PEP 563 = 3.7+, SyntaxError on 3.6).
+# Keep it that way — no PEP 585 builtin subscripts, no dataclasses, no walrus, no 3.7+.
 
 import sys
 
