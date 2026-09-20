@@ -9,7 +9,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 
 本 skill 是**单条、按需**的 ARQ 起草器，与 `/loop-retro`（跨 Pod 周期性批量 retro）互补、字段 convention 完全一致；它不是批量 retro，也不是新 idea 入口。登记进 queue 是**主线程职责**（human-approved 2026-07-28），本 skill 由主线程执行即落该职责。
 
-> **路由注**（2026-08-02 常驻化）：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程起草 PROPOSAL → human 立项 ack → architect 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（触 `contracts/**` / 跨系统结构性变更 / 声明红队）的交 `/arch-change`（Track A）。步骤 2/3 的三要件与机检硬排除判断**照常写进行**（行内信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`（硬项 1a 起草实证 / 1b sweep 透镜 / 1c 复扫先验 / 2a 目标文件锚清单），landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
+> **路由注**（2026-08-02 常驻化）：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程起草 PROPOSAL → human 立项 ack → architect 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（触 `contracts/**` / 跨系统结构性变更 / 声明红队）的交 `/arch-change`（Track A）。步骤 2/3 的三要件与机检硬排除判断**照常写进行**（行内信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`（硬项 · 起草期实证 / sweep 透镜 / 复扫先验 / 目标文件锚清单），landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
 
 <HARD-GATE>
 没有**至少一条可识别的执行记录**（provenance）前，不起草 gov 改进项 ARQ 行——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的 gov 改进项」，停：是新 idea 就交 `/arch-change`（cadence 共性批量 retro 的 `/loop-retro` 属档 2 未迁，本仓暂由主线程人工归纳），或先去补执行证据再回来。产物只有 queue 里的一行（或对既例行的证据注记）；其余边界见「约束」节。
@@ -31,7 +31,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    **终点**：三条全 yes → `review profile = Track B（不论 G 几）`。任一 no → **不是快路径**，`review profile = full-adversarial + human（Track A）`；skill 仍可起草，但 profile 必须写实，不得回标 Track B。
 
 3. **判 G 层 + 机检硬排除事实**（即便走 Track B 也写清，供 architect-reviewer 判；表见 `docs/DEV-GOVERNANCE.md` §6，硬排除清单见 `.claude/agents/architect-reviewer.md`）：
-   - **列出要改的确切路径** → 机判 G 层：G1（README/AGENTS/CLAUDE/blueprint/DEV-GOVERNANCE）、G2（`.claude/{agents,commands,references,rules,skills}/**`）、G3（scope-map / *.settings / verify-gates / hooks / scripts）、G4（delivery/changes/** / 队列）。**所列路径即后续 Track B PROPOSAL 硬项 2a「目标文件锚清单」的种子**（`docs/templates/PROPOSAL.template.md`——登记侧写清路径，处理侧直接锚定）。
+   - **列出要改的确切路径** → 机判 G 层：G1（README/AGENTS/CLAUDE/blueprint/DEV-GOVERNANCE）、G2（`.claude/{agents,commands,references,rules,skills}/**`）、G3（scope-map / *.settings / verify-gates / hooks / scripts）、G4（delivery/changes/** / 队列）。**所列路径即后续 Track B PROPOSAL 硬项 ·「目标文件锚清单」的种子**（`docs/templates/PROPOSAL.template.md`——登记侧写清路径，处理侧直接锚定）。
    - 逐项声明（可机判，不靠判断）：触 `docs/contracts/**` 或造 spec-contract drift？改 agent `tools`/`name`/`model`/write scope/authority 语义？改 self-def（architect.md）或 review-loop agent 定义？新增/删/改任何 human/engineering/merge/contract/review gate？mixed lane / 触 L0 蓝图？
    - **便宜验证计划**：例如复跑 `route-regression-check.mjs` / `lint-descriptions.mjs` / `landing-fidelity-check.mjs`。
    **终点**：G 层标注 + 上述每一项的 yes/no + 验证计划名。触 G1/G3/contracts/gate/self-def/mixed 任一项 → 标 `full-adversarial + human`（这些是 lightweight 机检硬排除；Track B 可吃 G3，但仍须把这些事实写明供判）。

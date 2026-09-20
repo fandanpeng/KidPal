@@ -162,7 +162,7 @@ docs/templates/PROPOSAL.template.md
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --preflight delivery/changes/arch/260920-gov-review-proposal-structure-merge/PROPOSAL.md` | `ok:true` / `findings:[]` / exit 0——**本件即新结构，须自证形态可解析** |
 | V2 | `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260920-gov-review-proposal-structure-merge` | `ok:true`；`frozen`/`packetBinding` 真；`proposalTargets` ≡ `summaryTargets`（**5 路径**——R1-F1 更正，v0.2 原写 3 为 census 更正前陈旧值）；`unauthorized`/`claimedNotLanded`/`plannedNotLanded` 全空 |
 | V3 | `node .claude/scripts/landing-fidelity-check.mjs --self-check`（**R1-F8 更正**：`governance-gate-shared.mjs` 无 CLI 入口、不可直接复跑；改经 landing-fidelity 的自检电池承载） | `section2Anchors` 电池**全绿且与改动前零差异**（R1 判官基线 = **19/19**）——证机械门未受本批影响 |
-| V4 | `grep -rn "硬项[[:space:]]*1a\|硬项[[:space:]]*1b\|硬项[[:space:]]*1c\|硬项[[:space:]]*2a" --include="*.md" .claude/ docs/` | 落地后 **零命中**（T2 证据表列的 **12 处**全改完）。**注意勿加 `grep -v` 过滤**——本件首版即因该过滤按行内容误吞三行（见 T2 的「本批自证」段） |
+| V4 | `grep -rnE "【硬项[[:space:]]*1[abc]\b\|【硬项[[:space:]]*2a\b" --include="*.md" .claude/ docs/`（**标签本体**形态 = `【硬项` 起头；R1-F2 更正：v0.3 原用裸 `硬项 1a` 模式会误命中**留痕引用**——模板内 4 处「原『硬项 1a』」式历史注记是有意保留的溯源，不属待清项） | 落地后 **零命中**（T2 证据表列的 **12 处**全改完：标签本体 4 处 + 引用 8 处）。**注意勿加 `grep -v` 过滤**——本件首版即因该过滤按行内容误吞三行（见 T2 的「本批自证」段） |
 | V5 | `grep -c "§1 引述" .claude/references/track-b-judge-brief.md` + `grep -c "§2 引述" …` | `§1 引述` = **0**、`§2 引述` = **1** |
 | V6 | `grep -c "^## 1\." docs/templates/PROPOSAL.template.md` + `grep -c "^## 2\." …` | `## 1.` = **0**（§1 已并入）、`## 2.` = **1**（节号保留） |
 | V6b | `grep -n "§1" docs/templates/PROPOSAL.template.md` | **零命中**（R1-F3 补：模板内唯一 §1 残留 = :47 引言句，随 T1 连带二替换后归零） |

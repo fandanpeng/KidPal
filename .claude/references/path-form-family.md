@@ -61,6 +61,6 @@
 
 ## 六、相关
 
-- 起草自检两句 → `docs/templates/PROPOSAL.template.md` §2「【硬项 2a · 目标文件锚清单】」段末
+- 起草自检两句 → `docs/templates/PROPOSAL.template.md` §2「【硬项 · 目标文件锚清单】」段末
 - 结构门 / 冻结前干跑 → `.claude/scripts/landing-fidelity-check.mjs`（`--preflight`）
 - 实证批 → `delivery/changes/arch/260914-gov-review-delivery-restructure/`（retro §3-F2/F2b、§4-2；landing-verdict 首轮 FAIL 红项）
