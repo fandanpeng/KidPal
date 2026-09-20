@@ -298,7 +298,7 @@
 #### 5.5.6 构建与测试基建
 
 - 构建：ESP-IDF（`idf_run.py` 包装，WSL CRLF 坑见 kidpal-idf-env skill）；资产构建 `scripts/build_default_assets.py` → assets.bin；分区表 `partitions/v2/16m.csv`（**art SPIFFS 512KB @0x780000** 承载 KAP1 美术，包 9b ART-E2 从 ota_1 尾部切出；**assets SPIFFS 8MB @0x800000** 承载字体/音效，行冻结保 canary）；
-- 开发拓扑：Pod 在本地 git worktree 树池中开发（复用 ∨ 按需扩容，一树一常驻分支）；固件环境等价三件套 = sdkconfig/dependencies.lock 镜像 + managed_components 软链共享主 checkout + worktree-bootstrap；host build 热缓存随树（`build/` gitignored），换包增量编译（操作协议见 kidpal-pod-launch-prep skill）；
+- 开发拓扑：Pod 在本地 git worktree 树池中开发（复用 ∨ 按需扩容，一树一常驻分支）；固件环境等价三件套 = sdkconfig/dependencies.lock 镜像 + managed_components 软链共享主 checkout + worktree-bootstrap；host build 热缓存随树（`build/` gitignored），换包增量编译（launch 面准备操作协议见 `kidpal-pod-launch-prep` skill，= Dev Loop ② 阶段；见 `docs/DEV-GOVERNANCE.md` §4）；
 - 测试四面：① 固件 host 验收（`test/*.acceptance.c`，含冻结 needle）；② server 验收 ~183 函数（docstring 内 frozen offline contract；live 面 `@pytest.mark.live` 默认 skip、`RUN_LIVE=1` 显式放行——G3 纪律）；③ 模拟器（LVGL 9.3 对齐 + 1bpp 阈值化快照自查 `kidpal_snapshot`，验收图一律阈值化 PNG）；④ live 冒烟（真机轮，捕获纪律见 kidpal-live-smoke-debug skill：wire capture 因 permessage-deflate 失败，用设备/引擎日志替代）；
 - 结构化日志：front `gateway/log.py`（K6）+ correlationId 纪律；三日志源关联 = 设备串口 × front systemd × 引擎 docker logs。
 

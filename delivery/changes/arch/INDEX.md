@@ -10,6 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260921-gov-review-launch-pipeline](260921-gov-review-launch-pipeline/) | 2026-09-21 | draft | — |
 | [260920-gov-review-bearing-strength-align](260920-gov-review-bearing-strength-align/) | 2026-09-20 | landed | yes |
 | [260920-gov-review-citation-anchor-residue](260920-gov-review-citation-anchor-residue/) | 2026-09-20 | landed | yes |
 | [260920-gov-review-dispatch-telemetry-source](260920-gov-review-dispatch-telemetry-source/) | 2026-09-20 | landed | yes |

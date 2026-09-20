@@ -25,6 +25,8 @@ $(git rev-parse --git-common-dir)/devloop/reconcile.lock        # advisory lock�
 
 **耐久证据**仍入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；pre-cutoff 继续兼容 session-digest / loop-health / pod-journal。它们落 `delivery/changes/dev/<change-id>/` 与 `delivery/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
 
+启动卡（`delivery/taskpackages/<changeId>/launch-card.md`）按**耐久证据**归类（随拆包 commit 进基准 ref），**不在**上述协调态清单内——它是包的一部分，不是运行时状态。（260921-gov-review-launch-pipeline T2 立此归类。）
+
 > 跨设备不靠 live board：本机多 worktree 用共享 git common dir；跨设备协作 post-cutoff 走 handoff + pod-retro（叙事连续性）+ pod-events（结构化证据），pre-cutoff 仍可用 session-digest；不共享运行时 board。
 
 ## 2b. Launch 前置门（commit-before-launch 校验）
@@ -36,7 +38,7 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
   - PROPOSAL（`origin.upstreamRef` 解析）= **blocking**
   - `decision-coverage.json`（`delivery/workstreams/<ws>/decision-coverage.json`）= **warn**
 - `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `delivery/workstreams/<ws>` ∨ `delivery/changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
-- **`launchPreconditions` 核验 = convention + 人读（本门不含机械齿，260912 拆包链 M-1，260913 human 裁）**：`--check-launch` 的机械 check 集**不读** workstream `decision-coverage.json` 顶层 `launchPreconditions`；该面由 **launch 执行者（human 点火前）人工核**——逐条核前置是否满足，其中 `需修订` 类 spec 裁定按落点二分核对应文件已冻结（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。未满足 → 承载包不得 launch（粒度 = 包，非整 workstream 陪等）。canonical 定义见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「launchPreconditions」节；机械齿（脚本读该键）另登 ARQ 留根，人读反复漏检再机械化——**本门判定语义不变**。
+- **`launchPreconditions` 核验 = 机械读 + 人读（260921-gov-review-launch-pipeline T6 承载 `ARQ-260914`）**：`--check-launch` **读** workstream `decision-coverage.json` 顶层 `launchPreconditions`——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（不阻断）**。**人读核验义务不变**：该面仍由 **launch 执行者（human 点火前）逐条核**——逐条核前置是否满足，其中 `需修订` 类 spec 裁定按落点二分核对应文件已冻结（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）；未满足 → 承载包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果由 launch 执行者回写**条目的 `status` / `evidence`（凭据 = progress.md 锚行 / human 裁决 ref），使下次不再重复报。canonical 定义（对象形态 + 写入义务分派）见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「launchPreconditions」节。**旧形态兼容**：裸 `string` 条目按 `{scope:"workstream", status:"unverified"}` 视之；读侧对旧形态走汇总行、不逐条报（防永久噪音），且**不静默丢失**。**本门判定语义不变**——该键仍属 warn 通道、非 blocking 源，**不新增工程门**。（本项前身「机械齿另登 ARQ 留根，人读反复漏检再机械化」**已由本次读侧落地而作废**——该 ARQ 即 `ARQ-260914`。）
 - **board 不入 check 集**：board/token 恒在 git common dir（§2）、不入版本控制，其可见性由 common dir 给、不靠 commit；board 失同步由 planner intake-reconcile 修。
 - 缺失（blocking 项）→ **拒绝 launch**，报「拆包产物未 commit 到基准 ref」，回 portfolio-planner 补 commit（对偶 planner.md F-09 needs-triage 默认出口）。
 

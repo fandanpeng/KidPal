@@ -259,8 +259,18 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 ### launchPreconditions（canonical 定义）
 
-- **落点** = workstream `delivery/workstreams/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。条目 = 前置描述，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）。
-- **核验 = convention + 人读**（260913 human 裁 M-1）：launch 执行者（human 点火前）人工核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**不改 `portfolio-reconcile.mjs --check-launch` 既有判定语义**；机械齿（脚本读 launchPreconditions）另登 ARQ 留根，人读反复漏检再机械化。
+- **落点** = workstream `delivery/workstreams/<ws>/decision-coverage.json` **顶层键**（数组；先例形态 = 260911 批）。**条目形态 = 对象**（260921-gov-review-launch-pipeline T6 承载 `ARQ-260914`；旧裸 `string` 形态向后兼容、不再新写）：
+
+  | 键 | 取值 | 写入义务 |
+  |---|---|---|
+  | `text` | 前置描述字符串，须点名承载包与前置对象；由 `需修订` 类 spec 裁定产生的条目须写明**修订落点**（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`） | 建包方 |
+  | `scope` | `"workstream"` ∨ `"package:<changeId>"`（**复用同文件 `decisionCoverage` 条目的 `landsIn` 取值形态**，不新造约定） | **建包方**（portfolio-planner 落四件套时填——条目文本本就点名承载包，机械可判） |
+  | `status` | `"unverified"` ∨ `"verified"` | **launch 执行者**（human 点火前核后回写） |
+  | `evidence` | 凭据锚（`progress.md` 行 / human 裁决 ref）；`status === "verified"` 时应在场 | launch 执行者 |
+
+- **读侧**（`portfolio-reconcile.mjs --check-launch`，260921-gov-review-launch-pipeline T6 落地）：脚本**读**该键——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（blocking 语义不变）**；裸 `string` 旧形态按 `{scope:"workstream", status:"unverified"}` 视之并走汇总行、不逐条报（防永久噪音，且不静默丢失）。**本改动不改任何门的判定语义、不新增工程门。**
+- **核验 = 机械读 + 人读**（260921-gov-review-launch-pipeline T6 取代原「convention + 人读，本门不含机械齿」口径）：**人读义务不变**——launch 执行者（human 点火前）逐条核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果回写 `status` / `evidence`**，使 `--check-launch` 下次不再重复报同一条。
+- **存量迁移不在同批**：两个在册 workstream（`m1-home-qa` / `m2-char-window`，各 6 条裸 `string`）的迁移由建包方在下次动该 workstream 时随批完成（`scope` 机械填、`status` 逐条引源行填）；过渡期由上述旧形态兼容行为承接。
 
 ### TaskPackage 显示编号（承重/游离，机械推导 · 2026-09-15 定，ARQ-260915-taskpackage-display-numbering）
 

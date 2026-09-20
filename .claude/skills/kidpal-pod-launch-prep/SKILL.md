@@ -7,6 +7,8 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 
 把「下一批 TaskPackage 的 launch 面」从调度判定一路备到 human 可自跑 launch 命令。适用于 kidpal-mvp workstream 多 Pod 模式（PROPOSAL FROZEN v0.4，15 包，WIP=3）；单 Pod 形态是子集。
 
+> **执行主体 = 主线程（human 会话）**；本手册 = [`docs/DEV-GOVERNANCE.md`](../../../docs/DEV-GOVERNANCE.md) §4 Dev Loop 图的 **② launch 面准备** 阶段操作手册（260921-gov-review-launch-pipeline T1 立此坐标）。
+
 ## 产物（完成标准）
 
 1. 调度判定记录（哪几包、为什么）→ 落 `delivery/workstreams/kidpal-mvp/progress.md` 追加段
@@ -15,8 +17,9 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 4. 每个包：固件环境等价化（sdkconfig / dependencies.lock 镜像 + managed_components 共享软链 + bootstrap 跑过）
 5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（moderate + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
 6. board（`devloop/pods/<changeId>.json`）预填 worktreePath
-7. launch prompt 落 `.git/devloop/launch/prompt-<changeId>.txt`
-8. **不代跑 launch、不合并、不 push**——launch 命令交 human 自跑
+7. 启动卡落 `delivery/taskpackages/<changeId>/launch-card.md`
+8. 每个包：双 `input-brief-*.md` 在场（拆包侧产、launch 侧核）
+9. **不代跑 launch、不合并、不 push**——launch 命令交 human 自跑
 
 ## 步骤
 
@@ -102,24 +105,28 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 只预填 queued + worktreePath（复用时 = 重指到所复用树的路径）；`--status running` 归 Pod intake（planner Step 1）做。
 
-### 7. launch 启动卡（260915-gov-review-worktree-pool-reuse T1⑤：prompt 收缩）
+### 7. 启动卡（260915-gov-review-worktree-pool-reuse T1⑤：prompt 收缩）
 
-写 `.git/devloop/launch/prompt-<changeId>.txt`（在 git common dir，不入版本控制）——**数行启动卡，四要素**：
+写 `delivery/taskpackages/<changeId>/launch-card.md`（**Git-tracked**，随 commit-before-launch 进基准 ref——Pod 建树即天然拿到。落点迁移见 260921-gov-review-launch-pipeline T2）——**数行启动卡，五要素**：
 
 ```
 跑 <changeId>（<workstream>，mergeOrder <N>）。
 基线锚：<workstream progress.md 带 SHA 行>——各面域判停结论（可引用 / 须重跑，按步骤 2 差异判停）。
 上一包留根：<changes/dev/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省）。
+命令行（两形态并列，标注适用条件）：
+① 人在场交互式：claude --settings .claude/dev-loop.settings.json --agent planner
+② 无人值守 headless：claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner（另加 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0）
 ```
 
-- 身份探测 / 包事实 / 环境事实 / 教训全文**不再搬运**：planner 凭 changeId 裸起步自探测三处（taskpackage / upstreamRef / pods json——planner.md Step 1）；包事实在 taskpackage.json + plan.md + decision-coverage；环境事实的耐久家 = skills（kidpal-idf-env / kidpal-serial-monitor / kidpal-ecs-gateway / kidpal-live-smoke-debug）；基线家 = progress.md 带锚行；教训家 = 上一包 pod-retro.md；input-brief 与 C 侧 cwd 敏感判读等既有指针由 planner/verifier 自身定义与 260909 批制品承载。
+- 身份探测 / 包事实 / 环境事实 / 教训全文**不再搬运**：planner 凭 changeId 裸起步自探测四处（taskpackage / upstreamRef / pods json / 本包启动卡——planner.md Step 1）；包事实在 taskpackage.json + plan.md + decision-coverage；环境事实的耐久家 = skills（kidpal-idf-env / kidpal-serial-monitor / kidpal-ecs-gateway / kidpal-live-smoke-debug）；基线家 = progress.md 带锚行；教训家 = 上一包 pod-retro.md；input-brief 与 C 侧 cwd 敏感判读等既有指针由 planner/verifier 自身定义与 260909 批制品承载。
 - launch 侧动作收敛为三件：board worktreePath 重指（步骤 6）+ 基线差异判停（步骤 2）+ 写启动卡。
+- **存量卡位置注记（260921-gov-review-launch-pipeline T2）**：落点迁移前的启动卡留在 git common dir 的 `.git/devloop/launch/prompt-<changeId>.txt`（**历史制品，不回改、不迁移**）。按新路径找不到旧卡时，**不等同于"拆包产物缺失"**——先去该目录查。
 
 ### 8. 记录与交接
 
 - progress.md 追加段：调度判定、门结果、环境事实、遗留 human 项（该文件 append-only，不覆盖旧行）。
-- 向 human 交付：每包一份 launch prompt（human 在对应 worktree 的 VS Code 会话自跑；headless 命令形态为备选）。
+- 向 human 交付：每包一份启动卡（路径见步骤 7；human 在对应 worktree 的会话自跑，命令行见卡内第五要素）。
 
 ## 坑（实测代价换来的）
 

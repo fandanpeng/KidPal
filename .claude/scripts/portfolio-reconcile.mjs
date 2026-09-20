@@ -240,11 +240,34 @@ export function reconcile(projectDir = process.env.CLAUDE_PROJECT_DIR || process
 // 注入缝（R1-F3 修订）：exists / show 第三/四参可选，注入测试桩；缺省走 git 直派——自检传桩测纯逻辑，
 // 落地行为走缺省分支，二者同函数体、无第二份逻辑。
 // 判据键纪律（F-05 / 批 2 B6/B8）：origin 读取走 lib 单源，不内联自产键。
+// ── launchPreconditions 读侧（260921-gov-review-launch-pipeline T6，承载 ARQ-260914）──────────
+// 形态：[{ text, scope, status, evidence? }]；scope ∈ "workstream" | "package:<changeId>"；
+//       status ∈ "unverified" | "verified"。旧形态裸 string **向后兼容** = { scope:'workstream', status:'unverified' }。
+// 语义：① 按包过滤 —— 只取 scope === 'workstream' ∨ scope === `package:<本包>`，其余折叠为一行计数（不逐条列）；
+//       ② 只报 status !== 'verified' 的条目；③ 旧形态（裸 string）不逐条报、只汇总计数（防永久噪音，且不静默丢失）。
+// **warn 通道，非 blocking 源**——本函数不改任何门的判定语义、不新增工程门。
+export function summarizeLaunchPreconditions(raw, changeId) {
+  if (!Array.isArray(raw)) return null;
+  const pending = [];
+  let legacyCount = 0, otherPackagesCount = 0, verifiedCount = 0;
+  for (const item of raw) {
+    const legacy = typeof item === 'string';
+    const text = legacy ? item : (item && typeof item.text === 'string' ? item.text : '');
+    const scope = legacy ? 'workstream' : ((item && item.scope) || 'workstream');
+    const status = legacy ? 'unverified' : ((item && item.status) || 'unverified');
+    if (scope !== 'workstream' && scope !== `package:${changeId}`) { otherPackagesCount += 1; continue; }
+    if (status === 'verified') { verifiedCount += 1; continue; }
+    if (legacy) legacyCount += 1; else pending.push({ text, scope });
+  }
+  return { pending, legacyCount, otherPackagesCount, verifiedCount, total: raw.length };
+}
+
 export function checkLaunchReachability(projectDir, { changeId, baseRef, exists: injectExists, show: injectShow }) {
   if (!changeId || !baseRef) throw new Error('checkLaunchReachability: changeId & baseRef required');
   const exists = injectExists || ((path) => { try { execFileSync('git', ['cat-file', '-e', `${baseRef}:${path}`], { cwd: projectDir, stdio: 'ignore' }); return true; } catch { return false; } });
   const show = injectShow || ((path) => execFileSync('git', ['show', `${baseRef}:${path}`], { cwd: projectDir, encoding: 'utf8' }));
   const blocking = [], warn = [], present = [];
+  let launchPreconditions = null;
 
   // ① taskpackage.json —— blocking
   const tpPath = `delivery/taskpackages/${changeId}/taskpackage.json`;
@@ -264,10 +287,17 @@ export function checkLaunchReachability(projectDir, { changeId, baseRef, exists:
     const ws = origin && origin.workstream;
     if (ws) {
       const dcPath = `delivery/workstreams/${ws}/decision-coverage.json`;
-      if (exists(dcPath)) present.push(dcPath); else warn.push(dcPath);
+      if (exists(dcPath)) {
+        present.push(dcPath);
+        // ④ launchPreconditions —— warn（260921-gov-review-launch-pipeline T6；承载 ARQ-260914）
+        //    读得到就按包过滤汇总；读不到（文件非 JSON / 无该键）则保持 null，不报红、不改 ok。
+        let dc = null;
+        try { dc = JSON.parse(show(dcPath)); } catch { dc = null; }
+        launchPreconditions = summarizeLaunchPreconditions(dc && dc.launchPreconditions, changeId);
+      } else warn.push(dcPath);
     }
   }
-  return { ok: blocking.length === 0, changeId, baseRef, blocking, warn, present };
+  return { ok: blocking.length === 0, changeId, baseRef, blocking, warn, present, launchPreconditions };
 }
 
 // ---- 自检（ARQ-114 先例；注入缝测纯逻辑、不触 git；260825-gov-review-launch-reachability-guard T1(c)）----
@@ -314,6 +344,37 @@ export function selfCheck() {
   r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
   t('proposal-missing-blocking-named', { ok: r.ok, hasBlocking: r.blocking.length > 0, named: r.blocking.some((b) => b.includes('delivery/changes/arch/y/PROPOSAL.md')) }, { ok: false, hasBlocking: true, named: true });
 
+  // ⑤ launchPreconditions 新形态（对象）：按包过滤 + 只报未核（260921-gov-review-launch-pipeline T6）
+  //    可分辨性：不按 scope 过滤 → A4 会混入 pending；不按 status 过滤 → A3 会混入 pending。
+  w = mkStubs({
+    [TP]: JSON.stringify({ origin: { upstreamType: 'regression', upstreamRef: 'issue-1', workstream: 'ws-c' } }),
+    'delivery/workstreams/ws-c/decision-coverage.json': JSON.stringify({ launchPreconditions: [
+      { text: 'A1', scope: 'workstream', status: 'unverified' },
+      { text: 'A2', scope: 'package:cid-a', status: 'unverified' },
+      { text: 'A3', scope: 'package:cid-a', status: 'verified' },
+      { text: 'A4', scope: 'package:other-pkg', status: 'unverified' },
+    ] }),
+  });
+  r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
+  t('launchpreconds-object-filtered-by-scope-and-status', {
+    pendingTexts: r.launchPreconditions.pending.map((p) => p.text),
+    legacyCount: r.launchPreconditions.legacyCount,
+    otherPackagesCount: r.launchPreconditions.otherPackagesCount,
+    verifiedCount: r.launchPreconditions.verifiedCount,
+  }, { pendingTexts: ['A1', 'A2'], legacyCount: 0, otherPackagesCount: 1, verifiedCount: 1 });
+
+  // ⑥ launchPreconditions 旧形态（裸 string）：走一行汇总、不逐条进 pending（260921-gov-review-launch-pipeline T6）
+  //    可分辨性：若把旧形态当新形态直接报，pending 会是 3 条而非 0。
+  w = mkStubs({
+    [TP]: JSON.stringify({ origin: { upstreamType: 'regression', upstreamRef: 'issue-1', workstream: 'ws-d' } }),
+    'delivery/workstreams/ws-d/decision-coverage.json': JSON.stringify({ launchPreconditions: ['L1', 'L2', 'L3'] }),
+  });
+  r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
+  t('launchpreconds-legacy-summarized-not-listed', {
+    pendingLen: r.launchPreconditions.pending.length,
+    legacyCount: r.launchPreconditions.legacyCount,
+  }, { pendingLen: 0, legacyCount: 3 });
+
   const pass = cases.filter((c) => c.pass).length;
   const okAll = pass === cases.length;
   return { selfCheck: 'portfolio-reconcile', ok: okAll, pass, fail: cases.length - pass, total: cases.length, cases: okAll ? undefined : cases.filter((c) => !c.pass) };
@@ -358,6 +419,14 @@ if (isMain()) {
     }
     const res = checkLaunchReachability(projectDir, { changeId: args.checkLaunch, baseRef: args.baseRef });
     process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
+    // launchPreconditions 人读汇总（260921-gov-review-launch-pipeline T6；**warn 通道，不阻断**）
+    const lp = res.launchPreconditions;
+    if (lp) {
+      for (const p of lp.pending) process.stdout.write(`[launch-precondition] 未核（${p.scope}）：${p.text}\n`);
+      if (lp.otherPackagesCount > 0) process.stdout.write(`[launch-precondition] 另 ${lp.otherPackagesCount} 条属其他包（已折叠，不逐条列）\n`);
+      if (lp.legacyCount > 0) process.stdout.write(`[launch-precondition] 本 workstream 尚有 ${lp.legacyCount} 条旧形态（裸 string）前置未迁移，按 workstream 级呈现\n`);
+      if (lp.pending.length === 0 && lp.legacyCount === 0) process.stdout.write(`[launch-precondition] 本包相关前置无待核项（已核 ${lp.verifiedCount} 条）\n`);
+    }
     if (!res.ok) {
       process.stdout.write(`[check-launch] 拆包产物未 commit 到基准 ref：${res.blocking.join('、')}——回 portfolio-planner 补 commit（pod-coordination §2b）\n`);
       process.exit(1);

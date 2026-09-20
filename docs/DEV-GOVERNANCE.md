@@ -122,17 +122,19 @@ flowchart TD
 ```mermaid
 flowchart LR
     PP["① portfolio-planner · 拆包+调度 (RTE)"]
-    PL["② planner Pod ×N · acceptance→builder→verifier↔fixer→integrator→planner 收尾(pod-retro)→supervisor"]
-    LR["③ loop-retro · 跨 Pod 提共性"]
+    LP["② launch 面准备 · 主线程（操作手册 = kidpal-pod-launch-prep skill）"]
+    PL["③ planner Pod ×N · acceptance→builder→verifier↔fixer→integrator→planner 收尾(pod-retro)→supervisor"]
+    LR["④ loop-retro · 跨 Pod 提共性"]
     ARQ["architect-owned ARQ → 治理变更"]
-    PP -->|launch| PL
+    PP -->|拆包制品 commit 到 base ref| LP
+    LP -->|worktree + 环境 + 图索引 + 启动卡| PL
     PL -->|retro evidence| LR
     LR -->|治理发现| ARQ
     ARQ -.->|改进定义| PP
 ```
 
 - **对象 / 触发**：自有实现面（固件业务 + 云端 shim，动工前由 human 登记进 scope-map）实现（feature / bugfix / 重构 / 测试修复 / 实现侧 docs-sync）。
-- **怎么做**：⓪ 开工前 `/triage-change` 比例化分档（拆包 / Full / Lite / 直接修）→ ① RTE 拆包调度 → ② planner 带单 Pod：acceptance-author（红基线）→ builder → verifier↔fixer → integrator（docs-sync + 全量 e2e + closeout）→ planner 收尾（pod-retro）→ supervisor 合并门 → planner 前置升级闸放行后本地合并 → ③ `/loop-retro` 周期性跨 Pod 复盘提共性 → 治理类进 ARQ、回流 ① intake，构成**自改进回路**。疑似触契约 → architect-reviewer 兜底。
+- **怎么做**：⓪ 开工前 `/triage-change` 比例化分档（拆包 / Full / Lite / 直接修）→ ① RTE 拆包调度 → ② launch 面准备（主线程，操作手册 = `kidpal-pod-launch-prep` skill）→ ③ planner 带单 Pod：acceptance-author（红基线）→ builder → verifier↔fixer → integrator（docs-sync + 全量 e2e + closeout）→ planner 收尾（pod-retro）→ supervisor 合并门 → planner 前置升级闸放行后本地合并 → ④ `/loop-retro` 周期性跨 Pod 复盘提共性 → 治理类进 ARQ、回流 ① intake，构成**自改进回路**。疑似触契约 → architect-reviewer 兜底。
 - **证据**：`delivery/taskpackages/<id>/`（execution ledger）+ `delivery/changes/dev/<id>/`（closeout audit）。详见 [dev-loop-operating-system.md](../.claude/references/dev-loop-operating-system.md) · [dev-loop.md](../.claude/references/dev-loop.md) · [change-triage.md](../.claude/references/change-triage.md)。
 
 ### 治理变更 ≈ 流程改进 retrospective
