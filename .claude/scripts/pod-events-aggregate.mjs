@@ -157,6 +157,65 @@ function aggregateActors(events) {
   };
 }
 
+// T5（260920-gov-review-dispatch-telemetry-source，FROZEN v1.0）· 生效模型覆盖度 + token 来源分布。
+// **只增键、不改既有键**（承本件 T7 同款纪律，既有消费方不破）。
+// `bySource` 是 transcript 通道失效的**机械观察点**（R2-C3 折入）：命中率归零 = 该表里
+// `transcript` 连续多个包恒 0——cadence 复盘读它，而非靠人眼「留意」。
+function aggregateModels(events) {
+  const dispatches = events.filter(e => e.eventType === 'dispatch-completed');
+  const byModel = {};
+  const bySource = {};
+  let withModel = 0;
+  for (const d of dispatches) {
+    const m = d.payload && d.payload.model;
+    if (typeof m === 'string' && m) {
+      withModel++;
+      byModel[m] = (byModel[m] || 0) + 1;
+    }
+    const tu = d.payload && d.payload.tokenUsage;
+    const s = tu ? (tu.source || '(none)') : '(no-tokenUsage)';
+    bySource[s] = (bySource[s] || 0) + 1;
+  }
+  return { dispatchesTotal: dispatches.length, withModel, byModel, bySource };
+}
+
+// T5 · 主线程自身消耗（子项 c）的**累计检查点序列**。语义 = 截至各次 stamp 的累计值，
+// 故 retro 取同包首尾两点做差即得该包期间主线程消耗（`cumulativeDelta` 即此差）。
+function aggregateMainThread(events) {
+  const checkpoints = events
+    .filter(e => e.eventType === 'dispatch-completed'
+      && e.payload && e.payload.mainThreadUsage
+      && e.payload.mainThreadUsage.source === 'transcript')
+    .map(e => {
+      const m = e.payload.mainThreadUsage;
+      return {
+        eventId: e.eventId || null,
+        ts: e.timestamp || null,
+        input: m.input, output: m.output,
+        cacheRead: m.cacheRead, cacheWrite: m.cacheWrite,
+        total: m.total, model: m.model || null,
+      };
+    })
+    .sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+  const first = checkpoints.length ? checkpoints[0] : null;
+  const last = checkpoints.length ? checkpoints[checkpoints.length - 1] : null;
+  return {
+    checkpointsTotal: checkpoints.length,
+    first,
+    last,
+    cumulativeDelta: first && last && checkpoints.length > 1
+      ? {
+          input: last.input - first.input,
+          output: last.output - first.output,
+          cacheRead: last.cacheRead - first.cacheRead,
+          cacheWrite: last.cacheWrite - first.cacheWrite,
+          total: last.total - first.total,
+        }
+      : null,
+    checkpoints,
+  };
+}
+
 function aggregateEscalations(events) {
   const escalations = events.filter(e => e.eventType === 'agent-escalation');
   const resolutions = events.filter(e => e.eventType === 'agent-escalation-resolved');
@@ -236,6 +295,8 @@ function run() {
     malformedLines,
     tokens: aggregateTokens(events),
     actors: aggregateActors(events), // T7 新列（只增键，既有消费方不破）
+    models: aggregateModels(events), // T5 新列（只增键；bySource 兼作 transcript 通道失效观察点）
+    mainThread: aggregateMainThread(events), // T5 新列（只增键；子项 c 的累计检查点序列）
     escalations: aggregateEscalations(events),
     friction: aggregateFriction(events),
   };

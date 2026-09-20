@@ -85,7 +85,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 | `commands/build-feature.md` | `/build-feature <story>` 工作流，把上面这套串起来。 |
 | `references/*.md` | 共享工作流知识：任务 intake 与切片、验收证据、测试反模式、ErrorEnvelope、K6 可观测性、安全闸、Review Packet、ADR。 |
 | `scripts/arch-review-handoff-check.mjs` | arch-review 收口检查：有实现侧 confirmed finding 时必须有 `dev-loop-handoff.json`。 |
-| `scripts/dispatch-stamp.mjs` | `--token-status exact|unavailable` + 可选 input/output/cache/total/source/reason；post-cutoff 只写 pod-events `dispatch-completed`，pre-cutoff 保留 legacy `--tokens` + dispatch-log。 |
+| `scripts/dispatch-stamp.mjs` | `--token-status exact|unavailable` + 可选 input/output/cache/total/source/reason；post-cutoff 只写 pod-events `dispatch-completed`，pre-cutoff 保留 legacy `--tokens` + dispatch-log。**post-cutoff 另按 `--dispatch-id`（= harness agentId）读会话 transcript 自动派生** token 四路分项（`source: 'transcript'`）、**实际生效模型**（`payload.model` + `modelSource`）与主线程累计消耗（`payload.mainThreadUsage`）；取不到时如实降级 `unavailable`（260920-gov-review-dispatch-telemetry-source FROZEN v1.0）。 |
 | `scripts/brief-inputs.mjs` | 派发输入面封闭化（260908-gov-review-input-surface-frontload T2）：读 taskpackage 的 refs + `crossEnd`，产 `input-brief-<role>.md`（锚点节定位 / 跨端对端面 / 先例封顶 3 / 超读申报模板）。**planner Step 7 前置一次产双份**；对端 symbol 解析失败 fail-loud 不产空锚；`--dry-run` / `--self-check` 供验证。只读派生、不抽契约正文。 |
 | `scripts/journal-append.mjs` | Post-cutoff friction 重定向 pod-events、round-outcome 丢弃；pre-cutoff 保留 pod-journal。 |
 | `scripts/pod-events-append.mjs` | pod-events v1 共享 envelope writer；导出唯一 `EVENTS_SCHEMA_CUTOFF`，校验闭集 eventType 并生成 UUID。 |

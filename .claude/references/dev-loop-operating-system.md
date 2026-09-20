@@ -129,7 +129,12 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 
 `EVENTS_SCHEMA_CUTOFF = '2026-07-25'` 是唯一 cutoff SSOT，定义于 `pod-events-append.mjs`。changeId date-prefix `>= 250725` 的 Pod 使用 `delivery/taskpackages/<changeId>/pod-events.jsonl`，每行 envelope 为 `{schemaVersion:1,eventId,changeId,timestamp,eventType,actor,source,payload}`；eventId 为 UUID，eventType 闭集：`dispatch-completed | agent-escalation | agent-escalation-resolved | human-decision | human-correction | friction`。
 
-- `dispatch-completed.tokenUsage` 只接受 harness exact 值或显式 `unavailable`。`total = input + output`（两者都有时），cache 字段不重复计入；unknown 绝不写 0，harness genuine zero 必须带 `note: harness-reported-zero`。
+- `dispatch-completed.tokenUsage` 按**来源分档**（260920-gov-review-dispatch-telemetry-source FROZEN v1.0）：
+  - `source: 'transcript'` —— **仓内 token 归因最忠实记录**（模型 API 回传的逐消息 usage，四路齐全），由 `dispatch-stamp.mjs` 按 `--dispatch-id`（= harness agentId）自动派生。**它不是计费真值**——provider 计费可因缓存折扣等与之不同，计费对账不在此范围。
+  - `source: 'harness'` —— harness 回传的**单值**（`--token-total`；legacy 面 `--tokens`），口径未文档化、与逐消息账对不上，**降为回退值与交叉核对**（存 `harnessReported`），不再作为唯一权威。
+  - 取值优先级：transcript → 旗标 → `unavailable`。命中时 `status` 必须为 `'exact'`（`status` 是既有消费方的唯一分桶键）。
+- `total = input + output`（两者都有时），cache 字段不重复计入；unknown 绝不写 0，harness genuine zero 必须带 `note: harness-reported-zero`。
+- **降级纪律**：transcript 取不到时按既有路径降级为 `unavailable`，**不得因遥测缺失而阻断或延迟派发**；遥测是记账面，不是门。
 - subagent Red Flag / blocker / out-of-scope / human ruling request 的顺序固定为：detect → best-effort append `agent-escalation` → 立即 stop/escalate。Resolution 另 append `agent-escalation-resolved` 引用原 eventId，不改写旧行。Append 失败仅在 response 暴露 advisory，并在可写时记 pod-retro degraded note；不得延迟实时升级。
 - human decision/correction 由 planner 在收到或检测到 human input 后 append。Verifier rounds、gate outcomes、test results、supervisor verdict 不进入 pod-events，仍以 immutable verifier evidence / supervisor verdict 为权威。
 - pod-events observational、non-bearing、fail-open：malformed 行诊断后跳过，缺失不阻 verifier、supervisor 或 merge。聚合 token 时只求和 `status=exact`，并始终报告 `{dispatchesTotal, dispatchesWithTokenData, dispatchesUnavailable}`。

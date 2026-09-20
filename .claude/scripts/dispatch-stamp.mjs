@@ -16,6 +16,11 @@
 //     [--token-cache-write <n>] [--token-total <n>] [--token-source <s>] \
 //     [--token-reason <s>] [--task-package-id <id>]
 //
+// **T2（260920-gov-review-dispatch-telemetry-source，FROZEN v1.0）**：post-cutoff 分支另读
+// 会话 transcript（见 lib/transcript-telemetry.mjs）自动派生 token 四路分项、**实际生效模型**
+// 与主线程累计消耗。此时 `--dispatch-id` **必须传 harness 回传的 agentId**——它是 transcript 的
+// 连接键。取值优先级：transcript → 旗标 → unavailable。取不到时**如实降级**，绝不禁用派发。
+//
 // 用法（legacy, pre-cutoff）：
 //   node .claude/scripts/dispatch-stamp.mjs \
 //     --dispatch-id <id> --actor <name> --phase <phase> \
@@ -26,6 +31,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EVENTS_SCHEMA_CUTOFF, appendPodEvent } from './pod-events-append.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { readDispatchTelemetry, readMainThreadUsage } from './lib/transcript-telemetry.mjs'; // T2（260920-gov-review-dispatch-telemetry-source）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -155,6 +161,38 @@ function buildTokenUsage() {
   return { status: 'unavailable', reason: 'no-token-flags-provided' };
 }
 
+// T2（260920-gov-review-dispatch-telemetry-source，FROZEN v1.0）：harness 回传的**单值**是哪个旗标
+// ——post-cutoff = `--token-total`，legacy = `--tokens`。点名它是为了与**四路旗标**
+// （`--token-input` / `--token-output` / `--token-cache-read` / `--token-cache-write`）区分开：
+// 那四路是「调用方手喂分项」的通道，与 harness 回传无关，两者不是一回事（R2-N3 折入）。
+function harnessReportedSingle() {
+  const total = optionalNonNegativeInteger('--token-total');
+  if (total !== undefined) return total;
+  const legacy = flagVal('--tokens');
+  if (legacy !== undefined && /^\d+$/.test(legacy)) return Number(legacy);
+  return undefined;
+}
+
+// harness 回传的 agentId 形态：17 位十六进制（实测 `aaecbb47025725868` / `ae098421d664d6298`）。
+// 历史自造标签（`builder-r1` / `verify-r2` / `integrator-closeout`）不匹配 → 触发 advisory。
+const AGENT_ID_SHAPE = /^[0-9a-f]{17}$/i;
+
+// 主线程累计消耗的 payload 段。取不到时如实降级，**绝不禁用派发**。
+function mainThreadUsagePayload(sessionId, projectDirName) {
+  const m = readMainThreadUsage(sessionId, projectDirName);
+  if (!m.found) return { status: 'unavailable', reason: m.reason };
+  return {
+    source: 'transcript',
+    input: m.input,
+    output: m.output,
+    cacheRead: m.cacheRead,
+    cacheWrite: m.cacheWrite,
+    total: m.total,
+    model: m.model,
+    messageCount: m.messageCount,
+  };
+}
+
 function run() {
   const dispatchId = required('--dispatch-id');
   const actor = required('--actor');
@@ -198,15 +236,63 @@ function run() {
 
   mkdirSync(tpDir, { recursive: true });
 
-  const tokenUsage = buildTokenUsage();
+  const flagTokenUsage = buildTokenUsage();
   // T2（260920-gov-review-reader-scripts-align，FROZEN 2026-09-20）：**可选** `--model <id>`——
-  // 传了则写入 payload.model（「实际生效模型」，MODEL-TIER 条款 `planner.md:59` 的落点）；
-  // 不传则 **不带该键**（向后兼容——既有调用方行为零变更，且不制造「0 充数」式伪值）。
-  const model = flagVal('--model') || null;
+  // 传了则写入 payload.model；不传则 **不带该键**（向后兼容——既有调用方行为零变更）。
+  // T2（260920-gov-review-dispatch-telemetry-source，FROZEN v1.0）：该旗标**降为回退值**——
+  // 它只能表达「**请求的**模型」（槽位名），transcript 里的 `message.model` 才是「**生效的**模型」。
+  const flagModel = flagVal('--model') || null;
 
   if (isPostEventsCutoff(changeId)) {
     // Post-cutoff: write to pod-events.jsonl ONLY (F1: no dispatch-log.jsonl)
     try {
+      // ── T2（FROZEN v1.0）：transcript 派生。**只在 post-cutoff 分支**——pre-cutoff 走
+      // legacy dispatch-log.jsonl，数据模型不同，保持零变更以压风险面。──
+      const telemetry = readDispatchTelemetry(dispatchId);
+
+      // 取值优先级（FROZEN §2 T2）：transcript → 旗标 → unavailable。
+      // **命中时 `status` 必须为 `'exact'`**——它是既有消费方（loop-metrics.mjs:242 /
+      // pod-events-aggregate.mjs:76）的**唯一分桶键**，它们只判 status、不读 source；
+      // 只写 source 会让新源落进 unavailable 桶、覆盖度静默不涨且无门报红（R1-S1）。
+      const tokenUsage = telemetry.found
+        ? {
+            status: 'exact',
+            source: 'transcript',
+            input: telemetry.input,
+            output: telemetry.output,
+            cacheRead: telemetry.cacheRead,
+            cacheWrite: telemetry.cacheWrite,
+            total: telemetry.total,
+          }
+        : flagTokenUsage;
+
+      // harness 单值交叉核对（可选，E2 那类对账的证据基础）。注意该「单值」= `--token-total`
+      // （legacy = `--tokens`），**不是四路旗标**（R2-N3）。
+      const harnessReported = harnessReportedSingle();
+      if (harnessReported !== undefined) tokenUsage.harnessReported = harnessReported;
+
+      // 实际生效模型：transcript 优先，`--model` 旗标回退；`modelSource` 标明取自哪条路。
+      const effectiveModel = telemetry.found && telemetry.model ? telemetry.model : null;
+      const model = effectiveModel || flagModel;
+      const modelSource = effectiveModel ? 'transcript' : (flagModel ? 'flag' : null);
+
+      // 主线程自身消耗（子项 c）：累计检查点语义——retro 取同包首尾两次 stamp 做差即得区间消耗。
+      // **仅命中派发 transcript 时带该键**：未命中时连 sessionId 都无从得知（连接键就是 agentId），
+      // 此时凭空写一个 unavailable 段只会给老形态事件添噪。承本件既有约定——「不传则不带该键」
+      // （见上方 `--model` 注释），也正是 §5 #4「逐字段一致」得以**字面成立**的前提。
+      const mainThreadUsage = telemetry.found
+        ? mainThreadUsagePayload(telemetry.sessionId, telemetry.projectDirName)
+        : null;
+
+      // 连接键未命中且 id 不具 agentId 形态 → advisory（fail-soft，不改 exit code）。
+      // 这正是历史上 51 条自造标签（`builder-r1` 类）的可观测化。
+      if (!telemetry.found && !AGENT_ID_SHAPE.test(dispatchId)) {
+        process.stderr.write(
+          `[dispatch-stamp] advisory: --dispatch-id "${dispatchId}" 不像 harness agentId（17 位十六进制）` +
+          `且未命中 transcript（${telemetry.reason}）——本次遥测将不可归因。planner.md [DISPATCH-STAMP] 要求传 harness 回传的 agentId。\n`
+        );
+      }
+
       const result = appendPodEvent(changeId, {
         eventType: 'dispatch-completed',
         actor,
@@ -219,16 +305,18 @@ function run() {
           terminalStatus,
           tokenUsage,
           ...(model ? { model } : {}),
+          ...(modelSource ? { modelSource } : {}),
+          ...(mainThreadUsage ? { mainThreadUsage } : {}),
         },
       });
-      process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs}ms -> pod-events.jsonl\n`);
+      process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs}ms -> pod-events.jsonl (tokens: ${tokenUsage.status}/${tokenUsage.source || '-'}${model ? `, model: ${model} (${modelSource})` : ''})\n`);
     } catch (e) {
       process.stderr.write(`[dispatch-stamp] pod-events append error: ${e.message}\n`);
       process.exit(1);
     }
   } else {
     // Pre-cutoff: legacy dispatch-log.jsonl behavior
-    const tokens = tokenUsage.status === 'exact' ? (tokenUsage.total || 0) : 0;
+    const tokens = flagTokenUsage.status === 'exact' ? (flagTokenUsage.total || 0) : 0;
     const record = {
       dispatchId,
       actor,
