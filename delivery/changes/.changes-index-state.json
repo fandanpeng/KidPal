@@ -167,5 +167,9 @@
   "260920-gov-review-dispatch-telemetry-source": {
     "date": "2026-09-20",
     "mergedInMain": "yes"
+  },
+  "260921-gov-review-launch-pipeline": {
+    "date": "2026-09-21",
+    "mergedInMain": "yes"
   }
 }
