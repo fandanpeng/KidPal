@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-verdict-anchor-align
 
-> **状态：DRAFT v0.1 · 2026-09-20 · 待 human 立项 ack**（FROZEN 行须含凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-20 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-20 立项 ack + OQ 全裁〔OQ1 = 接受缝隙；OQ2 = 本批落 + 注明依据〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260909-gate-green-anchor-regex-loose`（T1+T2）、`ARQ-260909-index-verdict-anchor-okform-gap`（T2，其「pin」侧）、`ARQ-260920-changes-index-mergedinmain-stale`（T3）。**三条同根**：verdict/状态行的**判据与实际书写形态脱节**。不关的根写 §6 留根指针。
 > **本批定位**：三条合一的根治方案 = **verdict 行规范化 + 判据单源化**——判官与核验官的 verdict 行写**固定机器可读形态**（两处简报成文），升级闸与 `deriveLanded` 改用**同一个规范锚**（`VERDICT_STATUS_RE` 迁 lib 单源），`mergedInMain` 守卫收真值型，**6 个存量批按实况 pin 进既有 `LANDED_ADJUDICATION`**（沿既有 7 条先例）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据均未命中。**但 T2 触「改 gate 判定」（前置升级闸的 GREEN 锚）**——按 AGENTS.md「存疑向严」与 P1 先例（human 裁「都留 Track B」），本批**如实声明该 gate 事实交判官核**，判官认为须升级即升。
@@ -149,6 +149,13 @@
 **(b) 留给 human 逐条核后另落**。理由：pin 是「人工核 verdict 结论为通过态」的**人工判断**的固化——严格说该由 human 逐条确认。**折中**：本批落 pin，但**在 pin 注释里逐条注明「依据 = 该批 landing-verdict 的 verdict 行 verbatim」**，供 human 事后抽查。
 
 **这项为什么该 human 裁**：pin 的实质是**把「人工核过」写成代码常量**——谁有权做这个断言，是授权边界。
+
+### OQ 裁决（human 2026-09-20）
+
+| OQ | 裁决 | 备注 |
+|---|---|---|
+| OQ1 | **(a) 接受缝隙** | 过渡窗口实际为零（无在途 FROZEN 批）；下一批判官若沿用旧习惯会被闸拦一次——**那是 T1 义务要教的，拦一次即纠正**。 |
+| OQ2 | **(a) 本批落 + 注明依据** | 6 条 pin 逐条注明「依据 = 该批 landing-verdict 的 verdict 行 verbatim」供事后抽查。 |
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
