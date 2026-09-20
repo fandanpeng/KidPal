@@ -116,3 +116,13 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **遗留**：① **MCF-A5 真机腿未做（human 持板）**——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 提示条可见 + schedule/story 中文可见性取证，**与 K3 A7/A8 设备确认轮同轮合并执行（单真机不两轮撞车）**；R1 = `font_puhui_14_1` 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）。② NIT：char_stroke.h:23 changeId 笔误（240920→260920，标识符笔误非行为误导，留后续批）。③ loop-retro 阈值 advisory 持续在案。
 
 **合并**：supervisor 门 APPROVE（medium + 证据完备 → 自动合并通道）→ 升级闸 PASS → `merge-driver` 本地合并 `a259601`（mo31）。里程碑不动（M2 已 in_delivery；ready_for_acceptance 待设备轮闭环）。
+
+## 2026-09-20 · 待立项：查字窗右栏「通用文本通道」（落法 B，human 已同意另立）
+
+**来源**：human 真机轮口径——「板子端 就是一个展示的地方，不用限定结构，云端给什么我们显示什么，缺的东西将来改云端加，比板子端要方便」（pod-events `98c9591f`）。**human 2026-09-20 已同意**「这一轮走 A，B 另立立项」（pod-events 同日）。
+
+**落法 B 内容**：display 块（E1 / D3 char data）增加**通用文本通道**——云端给一组待显示行，板端按原样呈现，不再由板端固定行结构。达成后「云端加内容不动板」成立（新增内容类型零固件改动、零烧录）。
+
+**为何另立而不并入当轮**：碰 `docs/contracts/**` 属契约面，按仓内铁律**直走 `/arch-change`**（architect-reviewer 四分类 + human 契约门），不得混入 dev-loop 四档 triage；且当轮三个缺口（拼音遮挡/释义英文/组词空）中两个本就由**落法 A**（云面往既有 `meaning`/`words` 填）可解，无须把当轮小修绑在契约门上。
+
+**触发通道**：`/arch-change`（human 发起）；建议时点 = 当轮修复包落地并经 human 持板复验满意后。责任人 = 主线程（human）发起，architect 起草候选。
