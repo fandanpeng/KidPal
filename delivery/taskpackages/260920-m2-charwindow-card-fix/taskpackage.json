@@ -1,0 +1,90 @@
+{
+  "changeId": "260920-m2-charwindow-card-fix",
+  "rigor": "lite",
+  "origin": {
+    "type": "human-confirmed-plan",
+    "upstreamType": "human-confirmed-plan",
+    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
+    "upstreamFrozen": "",
+    "workstream": "m2-char-window"
+  },
+  "subsystem": "firmware",
+  "story": "M2-K3 真机轮修复——查字窗右栏速查栏与底部提示条字体接线（char_page 全树唯一显式钉 LV_FONT_DEFAULT 于中文 label 的病灶，真机整栏隐身）+ S-F3.2 AC1 五行兑现（释义行上屏，D3 meaning 字段既有、云端已在下发）",
+  "planRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
+  "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；acceptance-author 实跑复核。elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m2-char-window/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality",
+    "mcp-tool-contract"
+  ],
+  "acceptance": [
+    "MCF-A1: 字体接线结构齿——负向：char_page.cc 中 LV_FONT_DEFAULT 作 text_font 实参出现数 == 0（现状红 = 真实缺陷信号，RED→GREEN 可判）；正向：cardlabel 与 hint_label 两个 label 创建/设值区各有 &font_puhui_ 字面在世（注释剥离后计数——sealing pass 先例，注释无法满足）",
+    "MCF-A2: meaning 承载行为齿（host runner 真调 char_stroke.c 强符号）——card_build 三态：非空 verbatim 截断安全 / NULL → out->meaning 空串且 rc=0（缺义不降级整窗）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面）",
+    "MCF-A3: 五行拼装齿——速查卡 snprintf 五行含 card.meaning 实参（拼音带声调/共 N 画/部首/释义/组词，S-F3.2 AC1 五行口径）；meaning 缺失兜底「释义：—」占位形态钉死不留现场裁量；refresh_hint 装配区含 meaning（注释剥离后计数）",
+    "MCF-A4: 冻结件 tighten-only 留痕修订——char_window_overlay.acceptance.c 的 A5 覆盖随 spec v1.56 四行→五行（A5a 区末端锚 lv_obj_set_style_text_font(cardlabel 若被改写须同步锚修订，只改实参不动锚字面则锚存活）；char_stroke.acceptance.c 若触其冻结面同样留痕；负向齿与锚齿不剥注释（sealing pass 纪律）",
+    {
+      "id": "MCF-A5: 真机腿 deferred（human 持板）——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 底部提示条可见 + 顺带 schedule/story 页中文可见性一句取证（v1.56 对账④勘误的对比证据）；R1 风险：font_puhui_14_1 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）",
+      "kind": "structural",
+      "note": "host 无 SPIFFS/内置字体字形与真机恒不等（HOST_TEST_CONVENTIONS「字体现实」节明文）——齿只钉接线与数据面行为，字形终审归本条真机腿（M2K1-A4 先例形态，不造 host 伪断言）"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/char_stroke.acceptance.c",
+    "firmware/main/test/char_window_overlay.acceptance.c"
+  ],
+  "exitCriteria": [
+    "MCF-E1: A1–A4 host 齿全绿（含负向齿从红转绿），host runner 全量零新增红；A5 真机轮闭环（human 裁决落账）",
+    "MCF-E2: 铁律——零契约改动（D3 meaning 既有）、零 spec 改动（v1.56+勘误已落账本包只消费）、零云面改动（server/ 零触碰）、零 agent 定义/gate 改动；mcp_server case 3 与 validate 六键闭集零改动（human 已裁）",
+    "MCF-E3: 冻结件修订只走 acceptance-author 留痕（char_stroke 扩展 additive-only；K3 件 tighten-only）；builder 零写权"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#S-F3.2",
+    "docs/requirements.md#F3",
+    "docs/requirements.md#§2.2",
+    "firmware/main/display/char_page.cc",
+    "firmware/main/display/char_stroke.h",
+    "firmware/main/display/char_stroke.c",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/test/char_stroke.acceptance.c",
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "server/deploy/openclaw-patch/char_stroke_lib.py"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsOwner": "integrator",
+  "docsSyncReason": "spec v1.56 + 勘误已落账（a24a718/5982d82），本包只消费 S-F3.2 五行口径——零 docs 面改动。",
+  "mergeOrder": 31,
+  "dependsOn": [
+    "260917-m2-k3-char-window-overlay"
+  ],
+  "testHost": "host runner（WSL linux target）+ device build 闸 + 真机腿（human 持板，A7 同轮）",
+  "decisionCoverage": [],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "板端显示面字体接线与释义渲染，零跨端 wire 形状改动——D3 data.meaning 字段既有、OpenClaw 生产端（char_stroke_lib.py 取词典 definition）已在下发，契约与云面零改动"
+  },
+  "notes": "rigor=lite / riskTier=medium（architect /triage-change 2026-09-20 裁决，human 触点①确认：② Lite、font_puhui_14_1 显式接线、meaning 不纳入 validate 闭集）。机制已钉死不留现场裁量：复用 lcd_display.cc 的 font_puhui_14_1 显式逐 label 先例（font_body 运行时接线 = RP-A4 residual 后续包不并入）。冻结件纪律：char_stroke 扩展 additive-only（meaning NULL 容忍、不进 NULL 拒绝集）；K3 冻结件 tighten-only、负向齿与锚齿不剥注释。A5 真机腿 deferred human 持板——host 齿只钉接线与数据面行为（HOST_TEST_CONVENTIONS「字体现实」节明文），不造 host 伪断言。mutation 义务：撤 font_puhui 接线 → A1 结构齿红；撤 card_build meaning → A2 行为齿红。",
+  "notesIntake": [
+    "【triage 裁决链】/triage-change 2026-09-20：architect 比例化 review（只读、同会话返回）→ 四档裁决 ② 单包 Lite + 两项纠偏发现（A：lv_font_load 全树零运行时调用、schedule_page.c:780 为设计注记非代码——plan 起草期曾误引；B：v1.56 对账④「全工程中文页面均显式加载 font_body」为事实错误，已勘误 5982d82）→ human 触点①三问全按推荐确认（② Lite / font_puhui_14_1 / meaning 不纳入）。",
+    "【防伪齿核心（architect 诚实性检查）】A1 负向齿 = 本次的关键形态创新：LV_FONT_DEFAULT 作 text_font 实参数 == 0，对现状（:555 显式钉默认字体）即红——修复后转绿，RED→GREEN 有真实信号。这直接针对 K3 A5a 假绿的病灶（当时的正向包含齿对字体面零覆盖）。正向齿全部走注释剥离后计数（sealing pass 先例）。",
+    "【builder 接线义务】char_stroke.h/c 扩展 additive-only（meaning NULL 容忍、不进 NULL 拒绝集，容量对齐 words 惯例 char meaning[96]）；char_page.cc 两处 positional initializer（refresh_hint 与 show 内）同步补 meaning 成员，建议改 designated initializer 防成员漂移；CMake 零新增接线（font_puhui_14_1 定义在 xiaozhi-fonts 组件、lcd_display.cc 同组件先例已证可达，char_page.cc 非 host 编译由结构齿扫源码承载）。"
+  ]
+}
