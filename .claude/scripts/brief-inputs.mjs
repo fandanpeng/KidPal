@@ -5,6 +5,12 @@
 //
 // 定位：**派生清单，不新造事实源**——只读 taskpackage.json 与被引文件，只写 taskpackages 目录内 brief。
 // 四路展开：① 契约/spec 锚点节  ② 跨端对端面（crossEnd）  ③ 同 subsystem 先例封顶 3  ④ 超读申报段模板
+// 第五路（260920-gov-review-bearing-strength-align T1，FROZEN 2026-09-20）：⑤ 跨包承接面——扫**两写面**
+// （`delivery/taskpackages/*/taskpackage.json` 包面 + `delivery/workstreams/*/decision-coverage.json`
+// workstream 面，排除 `_archive/`），取**承接包 = 本包 changeId** 的条目。**承接包判定统一为
+// `carriedBy ?? owner`**（两写面在这一位上用不同的键：workstream 面读 `carriedBy`、包面读 `owner`——
+// 按 `owner` 单键判会把「谁定语义」当成「谁承接」）；行为名**读侧兼容** `topic` ∨ `behavior`（包面存量写
+// `behavior`）。零命中**明写 `none`**（防「没写」与「没有」混同）。方向 = 补可见性，不改任何门判定。
 // 生成时点 = planner Step 7 派发前一次产双份（acceptance-author + builder）；Step 8 核在场；Step 9 只引用。
 // advisory（非门）：引 wire 节 ∧ counterparts 空 ∧ 无 exempt → stderr WARN 提示 planner 复核申报。
 
@@ -276,13 +282,71 @@ function wireAdvisory(tp, ce) {
 
 const advisoriesGlobal = [];
 
+// ⑤ 跨包承接面（260920-gov-review-bearing-strength-align T1）：承接包判定 = `carriedBy ?? owner`；
+// 行为名读侧兼容 `topic` ∨ `behavior`；两写面扫描，`_archive/` 与自包登记（指回本包自己的承接）
+// 不算「上游承接」故排除。解析失败**不静默**：以 notes 行呈现（可见、非致命——不影响本包其它路）。
+function readJsonOrNull(path) {
+  try { return JSON.parse(readFileSync(path, 'utf8').replace(/^﻿/, '')); } catch { return null; }
+}
+
+function cellText(v) {
+  return String(v == null ? '' : v).replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
+}
+
+function collectCrossPackageCarry(tp, repoRoot = projectDir) {
+  const rows = [];
+  const notes = [];
+  const selfId = tp.changeId;
+  const push = (source, entry) => {
+    if (!entry || typeof entry !== 'object') return;
+    const carry = nonEmptyString(entry.carriedBy) ? entry.carriedBy : entry.owner;
+    if (carry !== selfId) return;
+    const behavior = nonEmptyString(entry.topic) ? entry.topic
+      : (nonEmptyString(entry.behavior) ? entry.behavior : '(未命名行为)');
+    rows.push({
+      source,
+      behavior,
+      owner: nonEmptyString(entry.owner) ? entry.owner : '(缺省)',
+      carriedBy: nonEmptyString(entry.carriedBy) ? entry.carriedBy : '(缺省=owner)',
+      note: nonEmptyString(entry.note) ? entry.note : '—',
+    });
+  };
+  // 写面一：包面（自包排除——本条路要送的是「上游交给我」的项，不是自登记）
+  const pkBase = join(repoRoot, 'delivery', 'taskpackages');
+  if (existsSync(pkBase)) {
+    for (const dir of readdirSync(pkBase, { withFileTypes: true })) {
+      if (!dir.isDirectory() || dir.name === 'current' || dir.name === selfId) continue;
+      const p = join(pkBase, dir.name, 'taskpackage.json');
+      if (!existsSync(p)) continue;
+      const other = readJsonOrNull(p);
+      if (!other) { notes.push(`> ⚠ 无法解析 \`delivery/taskpackages/${dir.name}/taskpackage.json\`（该写面本次未纳入）`); continue; }
+      for (const e of Array.isArray(other.crossPackageBehaviors) ? other.crossPackageBehaviors : []) push(`package:${dir.name}`, e);
+    }
+  }
+  // 写面二：workstream 面（`_archive/` 排除——归档不派单）
+  const wsBase = join(repoRoot, 'delivery', 'workstreams');
+  if (existsSync(wsBase)) {
+    for (const dir of readdirSync(wsBase, { withFileTypes: true })) {
+      if (!dir.isDirectory() || dir.name.startsWith('_')) continue;
+      const p = join(wsBase, dir.name, 'decision-coverage.json');
+      if (!existsSync(p)) continue;
+      const dc = readJsonOrNull(p);
+      if (!dc) { notes.push(`> ⚠ 无法解析 \`delivery/workstreams/${dir.name}/decision-coverage.json\`（该写面本次未纳入）`); continue; }
+      for (const e of Array.isArray(dc.crossPackageBehaviors) ? dc.crossPackageBehaviors : []) push(`workstream:${dir.name}`, e);
+    }
+  }
+  return { rows, notes };
+}
+
 function renderBrief(tp, role, opts = {}) {
   const errors = [];
   const advisories = [];
+  const repoRoot = opts.repoRoot || projectDir;
   const now = new Date().toISOString();
   const anchorRows = renderAnchorSections(collectRefs(tp), advisories);
   const ce = renderCounterparts(tp, errors);
   const precedents = findPrecedents(tp);
+  const carry = collectCrossPackageCarry(tp, repoRoot);
   const warn = wireAdvisory(tp, ce);
 
   const L = [];
@@ -347,6 +411,26 @@ function renderBrief(tp, role, opts = {}) {
   L.push('| 清单外文件 | 原因（一句话） |');
   L.push('|---|---|');
   L.push('| （无） | — |');
+  L.push('');
+  L.push('## ⑤ 跨包承接面（上游登记的、**承接包 = 本包**的跨包行为）');
+  L.push('');
+  if (carry.notes.length > 0) {
+    for (const n of carry.notes) L.push(n);
+    L.push('');
+  }
+  if (carry.rows.length === 0) {
+    L.push('`none` —— 两写面（包面 `taskpackage.json` / workstream `decision-coverage.json`）中无「承接包 = 本包」的登记。');
+    L.push('');
+    L.push('`none` 是**结论**、不是省略：若你确信本包该承接某项跨包行为而上游未登记，写进 ④ 超读申报段并回报 planner（那正是本路要消的那类缝）。');
+  } else {
+    L.push('| 来源 | 行为 | 语义 owner | 承接包（`carriedBy ?? owner`） | note |');
+    L.push('|---|---|---|---|---|');
+    for (const r of carry.rows) {
+      L.push(`| \`${cellText(r.source)}\` | ${cellText(r.behavior)} | \`${cellText(r.owner)}\` | \`${cellText(r.carriedBy)}\` | ${cellText(r.note)} |`);
+    }
+    L.push('');
+    L.push('上述条目 = **本包承接的跨包行为**（上游起包期 / 拆包期登记）。验收面须覆盖它们，或在本包 review-packet 的「未覆盖面申报」段写明去向（`dev-loop.md`「### 合并门 Review Packet」）。');
+  }
   L.push('');
 
   // 全局 ADV（②③档越界提示等）并入返回值，调用方只见一个 advisories 数组（防双清单漂移）
@@ -446,6 +530,60 @@ function selfCheck() {
   ok('isMerged 其他 human-decision 不入选（decision 词面不含 approve-escalated-merge）', isMerged(imOpenId, imDir) === false);
   ok('isMerged 无事件文件 → false', isMerged('260901-absent-decoy', imDir) === false);
   rmSync(imDir, { recursive: true, force: true });
+
+  // ⑤ 跨包承接面（260920-gov-review-bearing-strength-align T1，FROZEN 2026-09-20）：两写面 + 承接包判定
+  // `carriedBy ?? owner` + 零命中 none + 归档/自包/反向 decoy 排除。夹具走 temp repo（repoRoot 注入）。
+  const cpbDir = mkdtempSync(join(tmpdir(), 'brief-cpb-'));
+  const cpbSelf = '260930-carry-self';
+  const cpbOther = '260930-carry-other';
+  mkdirSync(join(cpbDir, 'delivery', 'taskpackages', cpbSelf), { recursive: true });
+  mkdirSync(join(cpbDir, 'delivery', 'taskpackages', cpbOther), { recursive: true });
+  mkdirSync(join(cpbDir, 'delivery', 'workstreams', 'probe-ws'), { recursive: true });
+  mkdirSync(join(cpbDir, 'delivery', 'workstreams', '_archive', '2026', 'old'), { recursive: true });
+  mkdirSync(join(cpbDir, 'delivery', 'taskpackages', 'current'), { recursive: true });
+  // 写面一 · 包面：存量键 `behavior` + `owner` 直指承接包（无 carriedBy）
+  writeFileSync(join(cpbDir, 'delivery', 'taskpackages', cpbOther, 'taskpackage.json'), JSON.stringify({
+    changeId: cpbOther,
+    crossPackageBehaviors: [
+      { behavior: '包面行为甲（owner 直指本包）', owner: cpbSelf, note: '存量键形态' },
+      { behavior: '包面 decoy', owner: cpbOther, note: '承接包是别包，不得出现' },
+    ],
+  }), 'utf8');
+  // 自包登记（owner/carriedBy 均指自己）→ 不算「上游承接」、不得出现在自己的 brief 里
+  writeFileSync(join(cpbDir, 'delivery', 'taskpackages', cpbSelf, 'taskpackage.json'), JSON.stringify({
+    changeId: cpbSelf,
+    crossPackageBehaviors: [{ behavior: '自包登记 decoy', owner: cpbSelf, note: '自包不出现在自己的承接面' }],
+  }), 'utf8');
+  // 写面二 · workstream 面：canonical 四键，`owner ≠ carriedBy` 且承接包 = 本包
+  writeFileSync(join(cpbDir, 'delivery', 'workstreams', 'probe-ws', 'decision-coverage.json'), JSON.stringify({
+    crossPackageBehaviors: [
+      { topic: 'workstream 行为乙（语义 owner ≠ 承接包）', owner: '260930-owner-k1', note: '活语义', carriedBy: cpbSelf },
+      { topic: 'workstream decoy（owner 指本包但 carriedBy 是别包）', owner: cpbSelf, note: '不得出现——按 owner 单键判会误纳', carriedBy: '260930-owner-k1' },
+    ],
+  }), 'utf8');
+  // 归档面（`_archive/`）→ 不派单、不得出现
+  writeFileSync(join(cpbDir, 'delivery', 'workstreams', '_archive', '2026', 'old', 'decision-coverage.json'), JSON.stringify({
+    crossPackageBehaviors: [{ topic: '归档 decoy', owner: 'x', note: '归档不派单', carriedBy: cpbSelf }],
+  }), 'utf8');
+  ok('⑤ 夹具非空（两写面 + 自包 + 归档四面均在盘）',
+      existsSync(join(cpbDir, 'delivery', 'taskpackages', cpbOther, 'taskpackage.json'))
+      && existsSync(join(cpbDir, 'delivery', 'taskpackages', cpbSelf, 'taskpackage.json'))
+      && existsSync(join(cpbDir, 'delivery', 'workstreams', 'probe-ws', 'decision-coverage.json'))
+      && existsSync(join(cpbDir, 'delivery', 'workstreams', '_archive', '2026', 'old', 'decision-coverage.json')));
+  const cpbTp = { changeId: cpbSelf, subsystem: 'firmware', docRefs: [], sourceRefs: [], contractRefs: [], crossEnd: { counterparts: [], exempt: '' } };
+  const cpb = renderBrief(cpbTp, 'builder', { repoRoot: cpbDir });
+  ok('⑤ 命中·包面（`behavior` 存量键 + `owner` 判承接）',
+      cpb.markdown.includes('## ⑤ 跨包承接面') && cpb.markdown.includes('包面行为甲（owner 直指本包）')
+      && cpb.markdown.includes(`package:${cpbOther}`));
+  ok('⑤ 命中·workstream 面（按 `carriedBy` 判承接，`owner` 是别包）',
+      cpb.markdown.includes(`workstream:probe-ws`) && cpb.markdown.includes('workstream 行为乙（语义 owner ≠ 承接包）')
+      && cpb.markdown.includes('260930-owner-k1'));
+  ok('⑤ 排除（承接包是别包 / `owner` 指本包但 `carriedBy` 是别包 / 自包登记 / 归档面）',
+      !cpb.markdown.includes('包面 decoy') && !cpb.markdown.includes('workstream decoy')
+      && !cpb.markdown.includes('自包登记 decoy') && !cpb.markdown.includes('归档 decoy'));
+  const cpbNone = renderBrief({ ...cpbTp, changeId: '260930-nothing-carry' }, 'builder', { repoRoot: cpbDir });
+  ok('⑤ 零命中明写 `none`（不是省略）', cpbNone.markdown.includes('`none` —— 两写面'));
+  rmSync(cpbDir, { recursive: true, force: true });
   const failed = checks.filter((c) => !c.pass);
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
 

@@ -131,7 +131,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `verdict.json`：**兼容投影**，由 `verify.mjs` best-effort 写入 `current/verdict.json`，可含 `evidenceRef` / identity，但可覆盖、non-bearing；不能满足 FS-EVIDENCE-2、resume、closeout、supervisor 或 merge-readiness。
 - `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审全量闸仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
-- `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk。
+- `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。
 - `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/changes/dev/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = planner Step 7 派发前一次产双份**，Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。
@@ -244,6 +244,7 @@ integrator 在 supervisor 合并门前必须产出 Review Packet，辅助 superv
 - design-review evidence（若 TaskPackage 声明 `designReviewRequired`）：integrator 在 bootstrap 期只落**文本**证据——viewport 覆盖摘要、a11y 摘要、design-drift 摘要、外部 artifact 引用（若有）、residual risk；**不**把 screenshot / video / HTML 证据提交进仓库。
 - findings：按 `BLOCKING` / `SHOULD` / `NIT` / `OPTIONAL` / `FYI` 分级。
 - five-axis review：correctness、test quality、contract/boundary safety、operability/security、maintainability/simplicity。
+- **未覆盖面申报（260920-gov-review-bearing-strength-align T3，FROZEN v1.0）**：对照本包 `acceptance[]` 集合 + 本包引用的契约条目 + roadmap §3 效果段，列出**本次无齿 / 未跑的设计性质**，逐条一行写「性质 + 现状 + 去向（deferred 到哪包 / `structural` 豁免 id / 由真机轮或 human 持板兜 / 明确接受不覆盖）」。**零缺口时明写 `none`**（防「没写」与「没有」混同）。本段管**齿覆盖轴**，与锚 3 demo 对账行（管**证据形态轴**）正交、同址（口径见 `pod-coordination.md` §11）；**义务的生产者可达性由 planner Step 11 的 dispatch prompt 携带**（与锚 3 同构，`integrator.md` 不因此改）。既存实况：本仓 33 份 dev review-packet 中 23 份出现过未闭环类措辞，但**位置与粒度各异**（如 `260920-m2-charwindow-display-fix/review-packet.md:43` 的 MCD-A6「未做、deferred」写在 Demo 对账行表内）——本段把该申报固定到统一位置。
 - residual risk：已知限制、后续建议、人类决策点。
 - S2 exploratory evidence（若 TaskPackage 声明）：required/executed、runId、goals、终态 status、structured runResult summary、integrator triage、采纳进 findings 的项目、knowledge persisted / not persisted with reason，以及可选 artifact refs；不复制 raw screenshots / traces / logs。`queued` / `running` 不得作为 pending evidence 进入 supervisor；`cancelled` / `interrupted` 默认 evidence incomplete，除非 integrator 采纳其本身为 finding。
 

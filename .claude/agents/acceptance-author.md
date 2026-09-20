@@ -45,6 +45,8 @@ model: opus
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」（T3/T8，260906-gov-review-arq-governance-batch；起草 live/host 验收前必读）：§1 server host/live 两态约定（`@pytest.mark.live` 执行器不自动跑）；§2 **probe ≠ exercise**——跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），只探测可达不算 live 验收；§3 **冻结即冒烟**——冻结落盘时当场执行一次线束冒烟（live 面真连 SSH、线束助手真调一次、pytest 收集零错误），判据 = 执行通道 error 为零（error ≠ failure：断言 failure 是冻结相位的设计态红基线，不阻塞冻结）。
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」§4（T5，260907 批）：**C 类冻结验收实编**——C 类验收文件落盘时当场实编一次（编译通道 error 为零），红基线明示「验收文件本身可编译」；与 §3 冻结即冒烟并列不互替。
 - `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」（T6，260907 批）：验收断言写机器可识别形态 + coverage 标记随测试名、验收 ID 禁括号后缀（起包清单六条中的②③）；**第 ⑥ 条（T4，260908-gov-review-input-surface-frontload）= 输入面期望前置：你的输入面是 `input-brief-acceptance-author.md` 封闭清单，跨端对端解析器源码在其中，超读要申报。**
+- `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」§6「tighten-only 修订窗口」（260920-gov-review-bearing-strength-align 搭车件，结 `ARQ-260908-tighten-only-unwritten`）：冻结件可**纯 additive** 补齿 / 修自己 fixture 缺陷，禁放宽、禁改断言语义；五件防滥用件（删除行 0 / 原变异重放转红 / `sha256` 核销 / 范围帽 / 意图锚定）见该节。
+- `.claude/references/acceptance-evidence.md`（260920-gov-review-bearing-strength-align T2）：**「契约条目 ↔ 齿 的强度申报」节**——产齿时申报「契约条目 → 承载齿 → 性质档（机制级 / 行为级 / 源锚代理）」、弱于契约处逐条写缺口、行为等价假设必须显式化、落点 = 冻结验收件头注；**「evidence 类扫描齿的 root 注入」节**——扫描类齿显式接收仓根，禁依赖调用 cwd。
 
 ## Boundaries / 权限边界
 
