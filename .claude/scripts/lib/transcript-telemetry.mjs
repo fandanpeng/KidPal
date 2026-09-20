@@ -47,16 +47,25 @@ function usageOf(o) {
   return u && typeof u === 'object' ? u : null;
 }
 
-// 按 message.id 去重（E3 实测陷阱）：同一次 API 响应的 usage 会按 content block 落多遍
-// （`apiBlockIndex` 0/1…），数值完全相同。不去重即按块数虚增。
-// 无 message.id 的记录**不参与去重**（无法判定归属），按独立条目计入——fail-open 取真值而非丢数据。
+// 按 message.id 去重（E3 实测陷阱）：同一次 API 响应的 usage 会按 content block / 流式分块
+// 落多遍（`apiBlockIndex` 递增）。**关键是 usage 为渐进更新**——前面各块 `output_tokens = 0`
+// 且 `stop_reason = null`，**只有末块带完整 usage**。
+//
+// **取最后一条（last-wins）**。2026-09-21 实测：判官 27 条消息**全部**如此，末块 out 为
+// 308 / 539 / 833…，前面各块皆为 0。首见即定（first-wins）会把 `output` 与 `total` **系统性
+// 少报**（实测判官 out 62,043 被报成 **0**、total 207,029 少报成 144,986，≈30%），且**静默**
+// ——0 看起来是个合法值，不抛错、不报红。
+//
+// **夹具义务（承重）**：反例形态（各块 usage 相同）下两种取法**等价**，故夹具**必须**造
+// 「渐进块」才分得开方向；用等值块造的夹具对去重方向是恒真的（与核验官 2026-09-20 抓出的
+// 「空壳夹具」同族）。
 function dedupeByMessageId(records) {
   const byId = new Map();
   const noId = [];
   for (const r of records) {
     const id = r && r.message && r.message.id;
     if (typeof id !== 'string' || id === '') { noId.push(r); continue; }
-    if (!byId.has(id)) byId.set(id, r); // 首见即定，后续同 id 的块共享同一 usage
+    byId.set(id, r); // **后见覆盖 → 末块胜**；无 message.id 的记录不参与去重（无法判定归属），如实计入
   }
   return [...byId.values(), ...noId];
 }
@@ -173,24 +182,33 @@ export function readMainThreadUsage(sessionId, projectDirName) {
 }
 
 // ── 自检（夹具；真空绿规约：先断言夹具输入非空，空夹具判 FAIL）──────────────
+// 忠实复刻 transcript 的**流式分块**形态：usage 渐进更新——**只有末块带完整 usage**，
+// 前面各块 `output_tokens = 0` / `stop_reason = null`。
+// **夹具必须照此造**：若各块 usage 相同（早期夹具的错法），first-wins 与 last-wins **等价**，
+// 对去重方向恒真——2026-09-21 那个「out 恒 0」缺陷就是这样全绿溜过去的。
 function rec(id, { input = 0, output = 0, cacheRead = 0, cacheWrite = 0, model = 'x', sidechain = false, blocks = 1 } = {}) {
-  return Array.from({ length: blocks }, () => ({
-    type: 'assistant',
-    isSidechain: sidechain,
-    sessionId: 'sess-1',
-    message: {
-      id,
-      type: 'message',       // 陷阱字段：值恒为 "message"，误用它计数为 0
-      role: 'assistant',
-      model,
-      usage: {
-        input_tokens: input,
-        output_tokens: output,
-        cache_read_input_tokens: cacheRead,
-        cache_creation_input_tokens: cacheWrite,
+  return Array.from({ length: blocks }, (_, i) => {
+    const isLast = i === blocks - 1;
+    return {
+      type: 'assistant',
+      isSidechain: sidechain,
+      sessionId: 'sess-1',
+      apiBlockIndex: i,
+      message: {
+        id,
+        type: 'message',       // 陷阱字段：值恒为 "message"，误用它计数为 0
+        role: 'assistant',
+        model,
+        stop_reason: isLast ? 'tool_use' : null,
+        usage: {
+          input_tokens: input,
+          output_tokens: isLast ? output : 0,   // ← 末块才是真值
+          cache_read_input_tokens: cacheRead,
+          cache_creation_input_tokens: cacheWrite,
+        },
       },
-    },
-  }));
+    };
+  });
 }
 
 function writeJsonl(path, records) {
@@ -243,6 +261,13 @@ export function selfCheck() {
       return r.input === 30 && r.output === 3 && r.cacheRead === 300 && r.cacheWrite === 5;
     });
 
+    // 去重**方向**的真控制（2026-09-21 缺陷闭环）：末块胜。
+    // first-wins 会得 output 0（各块前面的 out 全 0）/ total 30；last-wins 得 output 3 / total 33。
+    add('dispatch-dedupe-last-wins-directional', () => {
+      const r = readDispatchTelemetry('aaa');
+      return r.output === 3 && r.total === 33;
+    });
+
     add('dispatch-total-is-input-plus-output', () => {
       const r = readDispatchTelemetry('aaa');
       return r.total === r.input + r.output && r.total === 33;
@@ -287,6 +312,12 @@ export function selfCheck() {
     add('main-thread-dedupe-no-inflation', () => {
       const r = readMainThreadUsage('sess-1', slug);
       return r.input === 10 && r.output === 2 && r.cacheRead === 100 && r.messageCount === 2;
+    });
+
+    // 主线程侧去重**方向**的真控制（同上）：first-wins 会得 output 1（p1 有值、p2 取首块 0）。
+    add('main-thread-dedupe-last-wins-directional', () => {
+      const r = readMainThreadUsage('sess-1', slug);
+      return r.output === 2 && r.total === 12;
     });
 
     add('main-thread-total-and-model', () => {
