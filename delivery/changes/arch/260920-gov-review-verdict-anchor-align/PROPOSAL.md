@@ -1,0 +1,181 @@
+# PROPOSAL · 260920-gov-review-verdict-anchor-align
+
+> **状态：DRAFT v0.1 · 2026-09-20 · 待 human 立项 ack**（FROZEN 行须含凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **承载 ARQ**：`ARQ-260909-gate-green-anchor-regex-loose`（T1+T2）、`ARQ-260909-index-verdict-anchor-okform-gap`（T2，其「pin」侧）、`ARQ-260920-changes-index-mergedinmain-stale`（T3）。**三条同根**：verdict/状态行的**判据与实际书写形态脱节**。不关的根写 §6 留根指针。
+> **本批定位**：三条合一的根治方案 = **verdict 行规范化 + 判据单源化**——判官与核验官的 verdict 行写**固定机器可读形态**（两处简报成文），升级闸与 `deriveLanded` 改用**同一个规范锚**（`VERDICT_STATUS_RE` 迁 lib 单源），`mergedInMain` 守卫收真值型，**6 个存量批按实况 pin 进既有 `LANDED_ADJUDICATION`**（沿既有 7 条先例）。
+> **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据均未命中。**但 T2 触「改 gate 判定」（前置升级闸的 GREEN 锚）**——按 AGENTS.md「存疑向严」与 P1 先例（human 裁「都留 Track B」），本批**如实声明该 gate 事实交判官核**，判官认为须升级即升。
+> **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T4）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
+> **riskTier**：medium（一句话证成：T2 改**前置升级闸的判定锚**——属本仓最承重的闸；但方向为**收窄/向严**（从「恒真」恢复为「只认规范 verdict 行」），且**无在途 FROZEN 批受影响**（见 §2 T2 的过渡分析）；T3 为一行守卫收窄；T1/T4 为成文与数据。无放松面、无数据丢失）。
+> **review profile**：G3 + G2（G3 = `changes-index.mjs` + `pre-merge-escalation-gate.mjs` + `lib/governance-gate-shared.mjs`；G2 = `.claude/references/track-b-judge-brief.md`）。契约面 / G1 / agent frontmatter 为零。**T2 触「改 gate 判定」= lightweight 机检硬排除项，如实声明交判**。
+>
+> **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
+
+```landing-manifest
+.claude/references/track-b-judge-brief.md
+.claude/references/track-b-verifier-brief.md
+.claude/scripts/changes-index.mjs
+.claude/scripts/lib/governance-gate-shared.mjs
+.claude/scripts/pre-merge-escalation-gate.mjs
+```
+
+---
+
+## 0. 想实现的效果与差距
+
+**目标效果一句话**：让「verdict 写成什么样」与「机器怎么判 verdict」**同形**——判官与核验官写**固定机器可读形态**的 verdict 行，升级闸与索引的判据改用**同一个规范锚**（lib 单源），存量批按实况 pin 进既有机制。
+
+**现状差距**：三处判据**各自漂移、且互相不知道对方的存在**——升级闸的 GREEN 锚**恒真**（样板行自带 GREEN + 裸分支）；`deriveLanded` 的锚**不识 6 批的实际 verdict 形态**；`mergedInMain` 被 `'no'` 钉死。**三者共享同一个根**：verdict 行的书写形态从未被规范化，而消费它的判据各自为政。
+
+**非目标（本批不做什么）**：不改 `docs/contracts/**` 与系统 spec；不动任何 agent frontmatter；不新增工程门；**不追溯老批的判定**（闸只在被合并批上跑、`deriveLanded` 对老批走既有 `LANDED_ADJUDICATION` 人工 pin）；不改 `landing-fidelity-check.mjs`（那是批② 已落的引用面）。
+
+## 2. 问题、根因与改法（T1…T4）
+
+**【硬项 · 起草期实证义务】** 本节断言均为 2026-09-20 现跑实测（命令 + 输出留痕见各 T 证据段）。
+
+**【硬项 · 目标文件锚清单】** 每 T 末尾显式列「目标文件：<仓根相对路径清单>」。改法标题一律 `### T<n> · <标题>`；landing-manifest 围栏块一行一个裸路径。
+
+**条目形态（五段固定式）**：见 `docs/templates/PROPOSAL.template.md` §2「条目形态」。
+
+**【起草期自检两句】** ① FROZEN 前跑 `--preflight` 并通过 §5 验证集实跑；② 本批不涉路径类变更，族谱表不适用。
+
+### T1 · verdict 行规范成文（判官简报 + 核验官简报两处落点）
+
+**问题**：判官与核验官的 verdict 行**书写形态从未被规范化**——起草期实测（26 份 arch PROPOSAL + 19 份 landing-verdict），verdict 行至少 **8 种写法**（`verdict：GREEN` / `**GREEN（可 FROZEN）**` / `**结论：GREEN（可冻结）。**` / `### R2 · architect verdict：GREEN（…）` / `判定：PASS——…` / `## 总结论：绿（…）` / `**verdict：APPROVE**` / Status 行轮次指针 `R2 GREEN〔…〕`），**没有一种被两处判据共同认可**。影响面：升级闸的 GREEN 锚**恒真**（见 T2）、`deriveLanded` 对 6 批推不出 landed（见 T3）。
+
+**证据**（全部亲核，2026-09-20）：
+- 判官简报（verbatim）：`.claude/references/track-b-judge-brief.md:21` = `**verdict 格式**：\`GREEN\` 或 \`BLOCK(F1..Fn)\`；每个 finding 附证据…`——**只定义了 token，没定义行的书写形态**（行首？要不要标签？加不加粗？）。
+- 核验官简报（verbatim）：`.claude/references/track-b-verifier-brief.md:30-32` = `## verdict 格式` 段——`\`landing-verdict.md\` 含：verdict 行（\`PASS\` / \`FAIL(F1..Fn)\` / \`PASS + N ADVISORY\`）+ 六项逐项结论…`——同样**只定义 token、没定义行形态**。
+- **两处简报都没说「verdict 行长什么样」** ⇒ 每个判官/核验官自由发挥，形态发散。
+
+**根因**：两处简报的 verdict 格式段定义了**语义**（什么算 GREEN / 什么算 FAIL）但**没定义行的机器可读形态**——而下游有两个消费方（升级闸、deriveLanded）各自猜形态。
+
+**改法**：
+1. 改 `.claude/references/track-b-judge-brief.md:21`：verdict 格式段**追加行形态义务**——「verdict 行必须写为**行首** `verdict: <TOKEN>`（可带 `>` 引用前缀；TOKEN ∈ `GREEN` / `BLOCK(F1..Fn)`），**append 到 PROPOSAL §7**」。
+2. 改 `.claude/references/track-b-verifier-brief.md:30-32`：verdict 格式段**追加行形态义务**——「`landing-verdict.md` 必须含一行**行首** `verdict: <TOKEN>`（TOKEN ∈ `PASS` / `FAIL(F1..Fn)` / `PASS + N ADVISORY`）」。
+
+**为什么这样改**：直击根因——**下游两个消费方需要的「机器可读 verdict 行」从未被定义**；定义一次（简报成文），两个消费方（升级闸、deriveLanded）就能**共用同一个锚**。
+
+目标文件：`.claude/references/track-b-judge-brief.md`（改）、`.claude/references/track-b-verifier-brief.md`（改）
+
+### T2 · 升级闸 GREEN 锚改用 `VERDICT_STATUS_RE`（迁 lib 单源）
+
+承载 `ARQ-260909-gate-green-anchor-regex-loose`。
+
+**问题**：升级闸的 GREEN 锚（`.claude/scripts/pre-merge-escalation-gate.mjs:84`）**恒真**——**恒真的真机制**（本批起草期实测）= `PROPOSAL.template.md` 头部样板行 `**结构字段硬条款**：…：**GREEN 结论前必须在场**` **自带 GREEN**，实测存在于 **16/26** 份 arch PROPOSAL 且**单独即令现行 regex 为真**，与判官判没判无关。**裸 GREEN 分支**只是让恒真雪上加霜。
+
+**证据**（现跑，2026-09-20）：
+- 样板行实测：`grep -l "GREEN 结论前必须在场" delivery/changes/arch/*/PROPOSAL.md` = **16 / 26** 份。
+- 样板行单独测试：对该行文本跑现行 regex → `true`（即使整份 PROPOSAL 无任何判官 verdict）。
+- **`VERDICT_STATUS_RE` 的剖面**（对 26 份 arch PROPOSAL 逐行测，即 `deriveLanded` 的真实用法）：FROZEN 24 批中命中 **17**、未命中 **7**（均为非规范形态批）；未命中的 7 批**均已合并**（闸不会再跑它们）⇒ **零实际影响**；非 FROZEN 批中被命中 **1**（`260830`，其 verdict `**结论：GREEN。**` 为**真判官 GREEN**、其 FROZEN_RE 不匹配仅因 Status 行无版本号）⇒ **零假阳性**。
+
+**根因**：`readGovAnchors` 的 green regex 是「**全文 token 匹配**」——而 PROPOSAL 是**充满 GREEN 字样的治理文档**（样板行、census、讨论），全文匹配**必然恒真**。**正确形态是「行首判据」**——而 `changes-index.mjs:177` 的 `VERDICT_STATUS_RE` 已经是**行首判据**（`^\s*…verdict…:…TOKEN`）且已被 `deriveLanded` 验证过。
+
+**改法**：
+1. `VERDICT_STATUS_RE`（+ `VERDICT_HEADING_RE`）从 `changes-index.mjs:177-178` **迁到 `lib/governance-gate-shared.mjs`**（export 单源），`changes-index.mjs` 改 import——**防派生判据双源分叉**（沿 `CONTRACT_WIRE_FILE` / `closeoutRequiredFiles` 的 lib 单源先例）。
+2. `pre-merge-escalation-gate.mjs:84` 的 green 改为：对 PROPOSAL 文本**逐行**跑 `VERDICT_STATUS_RE`（任一行 token ∈ {GREEN, PASS} 即 `green = true`）——**即 `deriveLanded` 对 PROPOSAL 的同款判定**。
+3. **裸 GREEN 分支删除**（ARQ 原病灶）。
+
+**为什么这样改**：① 恒真的根因是**全文 token 匹配**而非裸分支本身——把锚改成**行首判据**后，样板行（GREEN 在行中）与散文（GREEN 在行中）**都不命中**，只有**行首 verdict 行**命中 ⇒ 恒真根治；② 单源化 = 升级闸与 `deriveLanded` **共用同一条判据**（不再各自猜形态）；③ **老批不追溯**——闸只在被合并批上跑，24 批 FROZEN 中 7 批非规范形态的**均已合并**（零实际影响）；④ **新批**由 T1 的简报义务保证写规范形态。
+
+**过渡分析（无在途受影响批）**：本批立项时点（2026-09-20）**无 FROZEN 未合并的批**——260918 四批 + 批① 均已 landed + merged。故锚收窄**不产生任何过渡期假阴性**。
+
+**自检**：gate 的 `--self-check` 补三夹具——样板行文本 → **不命中**（恒真根因消除）；`verdict：GREEN` 行 → 命中；`BLOCK(F1)` 行 → 不命中（GREEN 锚不认 BLOCK）。
+
+目标文件：`.claude/scripts/lib/governance-gate-shared.mjs`（改：VERDICT_* 迁入 + export）、`.claude/scripts/changes-index.mjs`（改：改 import）、`.claude/scripts/pre-merge-escalation-gate.mjs`（改：green 锚换源 + 删裸分支）
+
+### T3 · `mergedInMain` 守卫收真值型（`if (merged)` → `=== 'yes'`）
+
+承载 `ARQ-260920-changes-index-mergedinmain-stale`。
+
+**问题**：`changes-index.mjs:371` 的守卫 `if (merged) { …cache[id] = {…mergedInMain: merged} }`——`gitContainedInMain` 返回 `'yes'` / `'no'` / `''`（`:118`），**`'no'` 在 JS 中为真值** ⇒ 「未合并」时守卫照样通过、把 `'no'` 钉进缓存；而全量重建**缓存优先**（`:240`）⇒ 合并后该列**不翻 `yes`**。实测：本族四批合并后全量重建仍显示 `landed | no`，须 `--backfill` 才翻（commit `5a01585` 记录）。
+
+**根因**：`:371` 的 `if (merged)` 读起来像「**如果已合并**才写」，实际是「**只要 git 给了确定答复就写**（无论答案）」——**守卫与意图脱节**（与 `ARQ-260909-gate-green-anchor-regex-loose` 的「注释意图 vs 实现」同型）。
+
+**改法**：`:371` 的 `if (merged)` 改为 `if (merged === 'yes')`——**一行**，使「未合并」不再钉缓存（合并后跑 `--upsert` 即正确翻 `yes`）。
+
+目标文件：`.claude/scripts/changes-index.mjs`（改）
+
+### T4 · 6 个存量批 pin 进 `LANDED_ADJUDICATION`（沿既有机制）
+
+承载 `ARQ-260909-index-verdict-anchor-okform-gap`（其「存量失真」侧）。
+
+**问题**：6 个已合并批的 landing-verdict **verdict 行形态不被 `deriveLanded` 认出**（六成因：`verdict：APPROVE` token 不在集 / `### 7.0 Verdict：` 点分编号 / `**绿（GREEN）**` 无标签 / `**最终 verdict：GREEN**` 前缀挡路 / `**绿（放行建议）**` 同类 / `## 0. Verdict：**RED**` 后续转绿为散文无 token 行）。INDEX 恒显示 frozen。**为什么用 pin 而非补锚**：六形态**各自不同**，补锚 = 打地鼠（P4 批已实证）；而 **`LANDED_ADJUDICATION` 就是既有机制**（`changes-index.mjs:36` 起 7 条，注释「发散散文旧批…人工核 verdict 结论为通过态」）——**沿它就是沿设计**。
+
+**证据**（现跑，2026-09-20；逐批核 landing-verdict 的实际 verdict 行）：
+- `260907-architect-dispatch-model-override`：`:3` = `**verdict：APPROVE**`——token 不在集。
+- `260908-escalation-conflict-ladder`：`:95` = `### 7.0 Verdict：**GREEN（放行建议…）**`——点分编号 `7.0` 不被 `\d{1,3}[.、]\s*` 认。
+- `260908-merge-chain-hardening`：`:5` = `## 0. Verdict：**RED（…）**`，`:164` = 散文「五前提全部满足…全绿」——**转绿无 token 行**。
+- `260907-merge-friction`：`:98` = `**绿（GREEN）**——…`——无标签。
+- `260904-escalate-merge-approval`：`:77` = `**最终 verdict：GREEN。**`——`最终` 挡在标签前。
+- `260830-ui-impl-strategy`：`:9` = `**绿（放行建议）——…**`——无标签。
+
+**改法**：`changes-index.mjs` 的 `LANDED_ADJUDICATION` map **增 6 条**（沿既有 7 条格式：id → true + 人读理由注释），逐条注明明实核的 verdict 行与出处——**pin 是「人工核 verdict 结论为通过态」的既有机制**，6 条均为本批起草期逐批实核（verdict 行 verbatim 已列上）。
+
+**为什么这样改**：直击根因——**沿既有机制**而非打地鼠补锚；且 6 条 pin 后 INDEX 对它们的显示**恢复真实**（landed）。
+
+目标文件：`.claude/scripts/changes-index.mjs`（改：LANDED_ADJUDICATION +6 条）
+
+## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
+
+| 面 | 文件 | 类别 | 说明 |
+|---|---|---|---|
+| 判官简报 | `.claude/references/track-b-judge-brief.md` | G2 | T1① verdict 行形态义务。消费方 = 判官（每批） |
+| 核验官简报 | `.claude/references/track-b-verifier-brief.md` | G2 | T1② verdict 行形态义务。消费方 = landing-verifier（每批） |
+| 索引生成器 | `.claude/scripts/changes-index.mjs` | G3 | T2 VERDICT_* 改 import（迁 lib）；T3 LANDED_ADJUDICATION +6 条 pin。消费方 = `--upsert` / 全量重建 / `--backfill` / `--self-check` |
+| 共享 lib | `.claude/scripts/lib/governance-gate-shared.mjs` | G3 | T2 VERDICT_* 迁入 + export。消费方 = `changes-index` + `pre-merge-escalation-gate` |
+| **前置升级闸** | `.claude/scripts/pre-merge-escalation-gate.mjs` | G3（**gate 判定锚变更，如实声明**） | T2 green 锚改 `VERDICT_STATUS_RE` 逐行判 + 删裸分支。消费方 = merge-driver 透传、landing 前置升级闸、`--self-check` |
+| 契约面 / G1 / agent frontmatter | — | **未触** | 零改动 |
+| 工程门新增 | — | **零新增** | T2 是**改既有闸的锚形态**（向严），非新增门 |
+
+**【硬项 · sweep 透镜义务】** T2 落地新判定 pattern（VERDICT_STATUS_RE 用于升级闸），**起草期已对全量 26 份 arch PROPOSAL 预跑**（剖面见 T2 证据段：FROZEN 24 中命中 17 / 未命中 7〔均已合并、零实际影响〕/ 非命中 1 属 FROZEN_RE 版本号瑕疵非锚问题）。**T4 的 6 条 pin 逐批实核 verdict 行**（verbatim 已列）。
+
+**【硬项 · 复扫模式完备性先验】** 本批不涉退役语面 / 残留清扫，无清扫模式集。
+
+## 4. human 取舍点（OQ）
+
+### OQ1 · T2 的过渡策略
+
+**背景**：锚收窄后，**新批**须写规范 verdict 行（T1 的简报义务保证）、**老批**不追溯（闸只跑被合并批）。但有一个**过渡期缝隙**：若某批在**本批落地之后**、判官**还没读到新简报**时被合并，闸会对它判红（假阴性）。
+
+**(a) 接受该缝隙**（推荐）：缝隙窗口 = 本批 landing 到判官下次读到新简报之间，**实际为零**——本批立项时点无在途 FROZEN 批（260918 四批 + 批① 均已合并），而下一批的判官派遣会在本批 landing 之后。**风险 = 下一批的判官若沿用旧习惯写非规范 verdict 行，其批会被闸拦**——但那正是 T1 义务要教的，拦一次即纠正。
+**(b) 过渡宽限**：闸在收窄后 N 批内对非规范形态**降 advisory 不拦**。理由：更平滑；代价：**宽限期内的恒真没治**，且 N 的选取又是新参数。
+**(c) 不收窄，只加 T4 pin**：维持现状、只修 INDEX 显示。理由：零风险；代价：升级闸的恒真**原样保留**（`ARQ-260909-gate-green-anchor-regex-loose` 不关）。
+
+**这项为什么该 human 裁**：T2 改的是**前置升级闸**的判定锚，缝隙的容忍度是**流程风险偏好**问题。
+
+### OQ2 · T4 的 6 条 pin 是否由本批落
+
+**(a) 本批落**（推荐）：6 条的 verdict 行 verbatim 已实核（§2 T4 证据段），pin 是机械动作；不落则 INDEX 对它们继续显示 frozen。
+**(b) 留给 human 逐条核后另落**。理由：pin 是「人工核 verdict 结论为通过态」的**人工判断**的固化——严格说该由 human 逐条确认。**折中**：本批落 pin，但**在 pin 注释里逐条注明「依据 = 该批 landing-verdict 的 verdict 行 verbatim」**，供 human 事后抽查。
+
+**这项为什么该 human 裁**：pin 的实质是**把「人工核过」写成代码常量**——谁有权做这个断言，是授权边界。
+
+## 5. 验证集（landing 前机械前置 + landing 后核验）
+
+**【真空绿规约】** V2/V3 为 `--self-check`，**新增夹具须具名**；V4 的「样板行不命中」须**先断样板行文本确实含 GREEN**（防夹具没造对）；V5 的 6 条 pin 须**逐条带 verdict 行 verbatim**（非只写 id）。
+
+| 项 | 命令 | 预期 |
+|---|---|---|
+| V1 | `node .claude/scripts/changes-index.mjs --self-check` | 全绿（VERDICT_* 迁 lib 后零回退——原有 29 条断言 + 新增） |
+| V2 | `node .claude/scripts/pre-merge-escalation-gate.mjs --self-check` | 全绿 + **新增三夹具**具名（样板行文本 → 不命中 / `verdict：GREEN` 行 → 命中 / `BLOCK(F1)` → 不命中） |
+| V3 | `node .claude/scripts/pre-merge-escalation-gate.mjs 260918-gov-review-merge-chain-friction`（**已合并批**） | 结构上仍 `PASS`——**过渡分析（无在途受影响批）的实证**：该批已合并，闸的重跑不应因锚收窄而翻转结论 |
+| V4 | 对 6 条 pin 后的批跑 `deriveLanded`（经 `--backfill` 或 `--upsert`） | 6 批 INDEX 状态由 `frozen` 翻 `landed` |
+| V5 | `git diff .claude/scripts/` 逐行归类 | T3 的 diff = **1 行改动**（`if (merged)` → `=== 'yes'`）；T2 的 diff = **VERDICT_* 定义删除 + import 增 + green 换源**，均落在声称范围 |
+| V6 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿 |
+| V7 | `landing-fidelity-check.mjs <本批>` 结构门 | §2 锚集 ≡ manifest 机判通过（本批 5 路径） |
+
+## 6. 留根清单
+
+1. **批② 的 `ARQ-260909-index-verdict-anchor-okform-gap`**——本批的 T1/T2/T4 合起来关它：**新批**走规范形态（T1 成文 + T2 锚认）、**存量批**走 pin（T4）。**关它的条件 = T1–T4 全部落地**。
+2. **`ARQ-260909-gate-green-anchor-regex-loose`**——本批 T2 关它（锚收窄 + 裸分支删除）；**处方证伪的完整分析**（四候选实测表 + 真机制）已在 P1 批 §6 留根① 与队列行追记。
+3. **`ARQ-260920-changes-index-mergedinmain-stale`**——本批 T3 关它的「守卫真值陷阱」侧；**「重建不重算」侧由 T4 的 pin 缓解**（6 批 pin 后 INDEX 恢复真实），但**「合并后跑 upsert 前仍显示 no」的时序问题仍在**——随该 ARQ 的收口一并评估是否需要「合并流程强制 backfill」。
+4. **`260830` 的 FROZEN_RE 版本号瑕疵**——其 Status 行 `**状态：FROZEN · 2026-08-31` 无 `vN.M`，`readGovAnchors` 的 frozen 锚不命中（本批起草期实测）。**不修**（该批已合并、闸不再跑它）；如实登记为既有瑕疵。
+5. **判官/核验官对新形态的遵从率**——T1 的简报义务落地后，判官是否**每次**都写规范行，需 `/loop-retro` 观察。若遵从率低，T2 的锚会对它们判红——**那是有意的**（逼规范），但若误伤率高则须回头评估。
+
+**交日落复盘项**：T2 落地后，`/loop-retro` 观察——下一批的判官 verdict 行是否规范（遵从率）、升级闸是否有新假阴性。
+
+**自律件**：起草期四处 census（样板行 16/26、VERDICT_STATUS_RE 剖面 17/24+7、净增益、6 批 pin 的 verdict 行 verbatim）均为现跑；**本批的处方证伪教训已吸收**——所有「改法」都先做了全量剖面验证（非照 ARQ 原文）。
+
+## 7. 评审记录
+
+（判官 append-only 区；主线程不预判结论。）

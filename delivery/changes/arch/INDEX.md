@@ -10,6 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260920-gov-review-verdict-anchor-align](260920-gov-review-verdict-anchor-align/) | 2026-09-20 | draft | — |
 | [260920-gov-review-proposal-structure-merge](260920-gov-review-proposal-structure-merge/) | 2026-09-20 | landed | yes |
 | [260920-gov-review-reader-scripts-align](260920-gov-review-reader-scripts-align/) | 2026-09-20 | landed | yes |
 | [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | landed | yes |
