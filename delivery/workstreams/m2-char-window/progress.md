@@ -116,3 +116,25 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **遗留**：① **MCF-A5 真机腿未做（human 持板）**——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 提示条可见 + schedule/story 中文可见性取证，**与 K3 A7/A8 设备确认轮同轮合并执行（单真机不两轮撞车）**；R1 = `font_puhui_14_1` 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）。② NIT：char_stroke.h:23 changeId 笔误（240920→260920，标识符笔误非行为误导，留后续批）。③ loop-retro 阈值 advisory 持续在案。
 
 **合并**：supervisor 门 APPROVE（medium + 证据完备 → 自动合并通道）→ 升级闸 PASS → `merge-driver` 本地合并 `a259601`（mo31）。里程碑不动（M2 已 in_delivery；ready_for_acceptance 待设备轮闭环）。
+
+## 2026-09-20 · 待立项：查字窗右栏「通用文本通道」（落法 B，human 已同意另立）
+
+**来源**：human 真机轮口径——「板子端 就是一个展示的地方，不用限定结构，云端给什么我们显示什么，缺的东西将来改云端加，比板子端要方便」（pod-events `98c9591f`）。**human 2026-09-20 已同意**「这一轮走 A，B 另立立项」（pod-events 同日）。
+
+**落法 B 内容**：display 块（E1 / D3 char data）增加**通用文本通道**——云端给一组待显示行，板端按原样呈现，不再由板端固定行结构。达成后「云端加内容不动板」成立（新增内容类型零固件改动、零烧录）。
+
+**为何另立而不并入当轮**：碰 `docs/contracts/**` 属契约面，按仓内铁律**直走 `/arch-change`**（architect-reviewer 四分类 + human 契约门），不得混入 dev-loop 四档 triage；且当轮三个缺口（拼音遮挡/释义英文/组词空）中两个本就由**落法 A**（云面往既有 `meaning`/`words` 填）可解，无须把当轮小修绑在契约门上。
+
+**触发通道**：`/arch-change`（human 发起）；建议时点 = 当轮修复包落地并经 human 持板复验满意后。责任人 = 主线程（human）发起，architect 起草候选。
+
+## 2026-09-20 · 修复包 `260920-m2-charwindow-display-fix` 闭环 → merged（mo32；human 真机测试后批合并）
+
+**入口与路由**：human 真机轮 finding②③（右栏遮挡/释义英文/播报杂质）→ `/triage-change`（architect ② Lite 合一包跨两端 + 遮挡真凶修正）→ human 触点①四问确认（含撤回组词、云面只改一件）→ 闭环。
+
+**交付面**：板端 `char_page.cc` 单文件（右栏 y 8→30 避开恒显状态带 + 定宽 160 + WRAP + 空行不显示 + 组词 join/UTF-8 封顶；提示条 280→244）；云面 prompt **v5** bump（中文释义进 display 块 + 禁自检/来源/附录/HTML 进回复）+ 网关双出口 meaning merge 与 `<details>` strip（`k1cStripAppendix`）。**零契约/零 spec/零新增字段**（落法 A；落法 B 已登记另立）。
+
+**部署（human 指示 post-merge 前置执行供其测试）**：ECS 网关 dist 重注入（python3.6 兼容化后 apply 成功；marker 幂等跳过新 helper 的坑经 `.c1.bak.mainline` 纯净恢复解决）+ overlay 渲染 v5 + 网关/引擎重启；板子全量烧录（遮挡修复先行可测）。**部署中已上线的改动 = 已合并内容**（工作树与 main 逐字一致）。
+
+**human 真机测试后批合并**（合并门 ESCALATE：云面验收件 all-mock 闭集升档 high；凭据 `6b34d988`）→ merge-driver 本地合并 mo32。**A6 真机腿五项未逐项反馈**，按 human 指示合并；如有残留现象走后续 finding。
+
+**遗留**：① 流式出口 `<details>` **跨 delta 分裂漏剥**（integrator SHOULD，prompt v5 禁令为第一道防线）——后续批 strip 跨 delta 累积 + 补齿；② 文档债三处（architecture.md「现状=v4」/ README「v3」/ DEPLOY-RUNBOOK 引 v3）；③ char_stroke.h:23 changeId 笔误（上包 NIT）；④ loop-retro 阈值 advisory。

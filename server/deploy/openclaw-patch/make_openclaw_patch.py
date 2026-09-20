@@ -16,7 +16,10 @@ frozen contract): extract minimal char block -> static 字库 LRU -> replace wit
 FULL D3 JSON. HOLD-AND-REPLACE: the gateway never emits the minimal block as-is.
 """
 
-from __future__ import annotations
+# NOTE (260920-m2-charwindow-display-fix rework, python 3.6 compat): this generator is
+# run under the ECS system python3 (CPython 3.6). It MUST stay python 3.6-compatible:
+# `from __future__ import annotations` was removed (PEP 563 = 3.7+, SyntaxError on 3.6).
+# Keep it that way — no PEP 585 builtin subscripts, no dataclasses, no walrus, no 3.7+.
 
 import sys
 
@@ -106,6 +109,21 @@ function k1cLoadCache() {
   return k1cCharCache;
 }
 
+/* 剥离 <details>…</details> 及同类 HTML/附录块 (MCD-A7 / human finding③)。只认真实
+ * 的 <details> 开/闭锚, 不碰正常口语正文 (含普通括号/中文标点)——正向 case 不得误伤;
+ * 有开锚无闭锚 = 疑似正文提及, 原样透传不剥。迭代移除处理 content 内含嵌套闭锚退化输入。 */
+function k1cStripAppendix(text) {
+  if (typeof text !== "string") return text;
+  let out = text;
+  for (;;) {
+    const i = out.indexOf("<details");
+    if (i < 0) return out;
+    const j = out.indexOf("</details>", i);
+    if (j < 0) return out;
+    out = out.slice(0, i) + out.slice(j + "</details>".length);
+  }
+}
+
 /* 提取第一条 ```display fenced view=="char" 块 (返回完整 fenced 块文本) */
 const k1cFenceRe = /```display\\s*(\\{.*?\\})\\s*```/s;
 function k1cExtractBlock(text) {
@@ -117,16 +135,14 @@ function k1cExtractBlock(text) {
 
 /* 整段非流式改写: 把首个 char 最小块替换为全量 D3 JSON (含 view/data 信封) */
 function k1cRewriteText(text) {
+  text = k1cStripAppendix(text);   // MCD-A7: 非流式出口同剥 <details> 附录
   if (typeof text !== "string" || !text.includes("```display")) return text;
   const minimal = k1cExtractBlock(text);
   if (!minimal) return text;
-  let ch = null;
-  try { ch = JSON.parse(minimal)?.data?.char; } catch { return text; }
-  if (!ch || !k1cLoadCache().has(ch)) return text;      // 未命中字库 -> 亮原样
-  // 缓存值 = data 层, emit 前必须包 view/data 信封 (契约 §1.3①) —— 否则设备 view 路由拿不到 view 字段
-  const enveloped = { view: "char", data: k1cLoadCache().get(ch) };
+  const full = k1cLookupBlock(minimal);   // 与流式出口同一 meaning merge 语义 (HOLD-AND-REPLACE)
+  if (!full) return text;                 // 未命中字库 -> 原样放行
   return text.replace(k1cFenceRe,
-    "```display\\n" + safeJson(enveloped) + "\\n```");
+    "```display\\n" + safeJson(full) + "\\n```");
 }
 
 /* 流式 hold-and-replace 状态机: per-request accumulator。
@@ -145,6 +161,7 @@ function k1cStreamKey(req) {
   return id === "" ? "k1c-single" : ("k1c:" + id);
 }
 function k1cStreamStep(req, deltaText) {
+  deltaText = k1cStripAppendix(deltaText || "");   // MCD-A7: 流式出口剥 <details> 附录
   const key = k1cStreamKey(req);
   let s = k1cStreams.get(key);
   if (!s) { s = { pending: "" }; k1cStreams.set(key, s); }
@@ -179,9 +196,15 @@ function k1cLookupBlock(jsonText) {
     if (!o || o.view !== "char" || !o.data || typeof o.data.char !== "string") return null;
     const ch = o.data.char;
     if (!k1cLoadCache().has(ch)) return null;
+    // MCD-A5 meaning merge: 最小块携带的中文释义 (同回复播报那句中文解释同源) 覆盖
+    // cache 值; 缺键/空串 -> 回落 cache 原值。浅拷贝, 不毒化跨请求共享的字库缓存。
+    const data = Object.assign({}, k1cLoadCache().get(ch));
+    if (typeof o.data.meaning === "string" && o.data.meaning.length > 0) {
+      data.meaning = o.data.meaning;
+    }
     // 缓存值 = data 层 (char_cache.json = assemble_char 产物, 不带信封); emit 前必须包
     // view/data 信封 (契约 §1.3①) —— k1cStreamStep/k1cRewriteText 两路径一致。
-    return { view: "char", data: k1cLoadCache().get(ch) };
+    return { view: "char", data };
   } catch { return null; }
 }
 /* JSON.stringify with null-replacer, ensure_ascii irrelevant here (TS native unicode ok) */

@@ -168,6 +168,38 @@
  *          行为半（card_build meaning 三态）归 char_stroke.acceptance.c（同批 additive
  *          修订, seam [5]）。
  *
+ *   [11] 查字窗展示面让位 + 空行不显示 + 组词多词 join（MCD-A1/A2/A3/A4; home =
+ *       firmware/main/display/char_page.cc 单文件; 260920-m2-charwindow-display-fix
+ *       additive 追加; 真机根因与需求权威 = human 真机轮 finding② + plan.md reviewed
+ *       plan + requirements S-F3.2 AC1 五行口径 / F3）:
+ *       a) **右栏去遮挡（A1）**: 恒显顶部状态带 top_bar_（LV_OPA_50 半透）+ status_bar_
+ *          （KidPalReparentChatToLayer 的 chat_top[] reparent 到 lv_layer_top, **任何状态
+ *          恒显**）压住 y≈0-24 全宽——cardlabel 起点 `(228, 8)` 使拼音行 y8-26 整行被压。
+ *          修法 = **内容让位**（不动 chrome）: cardlabel 起点第二参 **>= 30**（清出状态
+ *          带 + 余量）+ `lv_obj_set_width(cardlabel, 160)`（388-228）在场 + `LV_LABEL_LONG_WRAP`
+ *          在场（释义改中文变长**必**冲出右缘, 同刀钉死）。齿取注释剥离后源的字面整数
+ *          第二参（cwx_ints_after）——几何锚须以**字面整数**书写。
+ *       b) **提示条让位（A2）**: 底部提示条 hint_label 原 (0,280) 落 `bottom_bar_` 键帽条
+ *          带（LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压——同族遮挡（human 裁本轮
+ *          一并修）。修法 = hint_label 起点第二参 **< 252**（避开该带）。
+ *       c) **空行不显示（A3）**: 速查卡拼装层按字段有无选择拼行——右栏任一行（组词/部首等）
+ *          数据为空 -> **该行不拼装**（不显示空行、不显示占位符）。冻结形态 = 拼装区
+ *          （card_build 调用 -> cardlabel 字体锚之间）出现**字段首字节判空闸**
+ *          `radical[0]` / `words[0]`（条件拼行; 注释剥离后计数）。释义行保留 MCF 裁定的
+ *          「释义：—」缺义兜底（本包不撤回, human 裁: 缺义只损右栏一行）。
+ *       d) **组词多词 join（A4）**: 现只取 `words[0]`（多词丢失）; 改为 words 数组前 N 项
+ *          以「、」join（`kidpal_char_info.words` 注释本就写明「、-joined」、`card.words[96]`
+ *          容量按多词设计）——**装配在 char_page 层, 不动 char_stroke.c 纯逻辑合约**
+ *          （U 冻结面 + B8 守卫不触）。冻结形态 = 解析区（`const char *pinyin = "?"` ->
+ *          `lv_obj_t *cardlabel` 之间）出现「、」分隔字面 + 数组遍历循环（for + GetArraySize）。
+ *          **数据面 96B 容量 / 中文多字节边界**（UTF-8 半字）由 card_build 守卫齿承载（同
+ *          test 11 行为半: 93B 中文满长 verbatim + 135B 超长截断安全恒 NUL）——**不改
+ *          card_stroke.c**; UTF-8 边界安全（join 不劈半字）落在 char_page 装配面（设备侧,
+ *          本 runner 非 host 编译 = 归真机腿/实现侧义务）。
+ *       **不动 chrome 语义**（让状态带随窗隐藏会扩大前台维度显隐面、横跨提醒 K4 最高层
+ *       与语音轮四态既有闭环）——取单文件局部几何改动。
+ *       **零新增字段**（落法 B display 块通用文本通道 = 另立契约门立项, 本轮不预造）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: M2K3-A1 层注册 -> test 1（行为半: 新层可入栈/覆盖当前页/pop 回原页不翻页/
@@ -211,6 +243,17 @@
  *   coverage: MCF-A4 留痕修订（同包）-> test 5 A5a 红名口径四行->五行（spec v1.56,
  *             断言本体零放宽）+ test 6 info 显式零初始化（meaning 字段落地后未初始化
  *             成员 = 野指针 UB 的预防性收固, 期望值零变化）+ 本文件尾 REVISION LOG
+ *   coverage: MCD-A1 右栏去遮挡（260920-m2-charwindow-display-fix）-> test 10（源锚:
+ *             cardlabel set_pos 第二参 >= 30 + lv_obj_set_width(cardlabel, 160) 在场 +
+ *             LV_LABEL_LONG_WRAP 在场; 注释剥离后字面整数取值）
+ *   coverage: MCD-A2 提示条让位（同包）-> test 10（源锚: hint_label set_pos 第二参 < 252,
+ *             避开 bottom_bar_ 带 y252-300）
+ *   coverage: MCD-A3 空行不显示（同包）-> test 11（拼装区字段首字节判空闸 radical[0] /
+ *             words[0]——按字段有无选择拼行, 无空行/无占位符; 注释剥离后计数）
+ *   coverage: MCD-A4 组词多词 join（同包）-> test 11（解析区「、」分隔字面 + 数组遍历
+ *             循环 for+GetArraySize, 非只取 words[0]）+ 同 test 行为半（card_build 96B /
+ *             中文多字节边界: 93B 中文满长 verbatim + 135B 超长截断安全恒 NUL,
+ *             must-stay-green 数据面守卫）
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   0) builder wiring 见 [7]。
@@ -506,6 +549,45 @@ static int cwx_count_lines_with_both(const char *slice, const char *needle1,
         line = eol + 1;
     }
     return count;
+}
+
+/* Signed integer literals that appear AFTER the first occurrence of anchor in hay,
+ * up to the closing ')' or end-of-buffer。用于几何源锚齿（set_pos/set_width 第二参
+ * 等）——值以真实源落点为锚, 禁行号钉点; 字符指针/常量名不作数（只取数字字面量, 故
+ * 齿的冻结形态要求几何锚以**字面整数**书写; 非字面形态 -> count 不足 = 红, 不改判）。
+ * 返回写入 out 的个数（anchor 缺席 / 无可解析数字 -> 0）。 */
+static int cwx_ints_after(const char *hay, const char *anchor, long *out, int max_args)
+{
+    const char *p;
+
+    if (hay == NULL || anchor == NULL || out == NULL || max_args <= 0) {
+        return 0;
+    }
+    p = strstr(hay, anchor);
+    if (p == NULL) {
+        return 0;
+    }
+    p += strlen(anchor);
+    {
+        int n = 0;
+        while (*p != '\0' && n < max_args) {
+            if (*p == ')' || *p == ';') {
+                break;
+            }
+            if (*p == '-' || (*p >= '0' && *p <= '9')) {
+                char *end = NULL;
+                long v = strtol(p, &end, 10);
+                if (end == p) {
+                    break;
+                }
+                out[n++] = v;
+                p = end;
+                continue;
+            }
+            p++;
+        }
+        return n;
+    }
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1475,6 +1557,195 @@ TEST_CASE("查字窗右栏: 字体接线负向+font_puhui 正向+释义五行拼
     free(region);
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 10 — MCD-A1/A2 板端展示面让位源锚齿（structural; seam [11]; char_page.cc
+ * 设备装配面非 host 编译——源级树扫承载, 本件既有范式; 全部几何锚走**注释剥离后
+ * 源的字面整数取值** cwx_ints_after）
+ * RED today（设计态, 交 builder 改 char_page.cc 单文件的靶）: cardlabel 起点 (228,8)
+ * ——右栏拼音行被恒显顶部状态带 top_bar_/status_bar_（y0-24）压（真机 finding②）;
+ * 无 set_width(cardlabel) / 无 LV_LABEL_LONG_WRAP（释义改中文变长必冲出右缘）;
+ * hint_label (0,280) 落 bottom_bar_ 键帽条带（y252-300）内。
+ * **每条源锚配负向变异自证**（锚值改回 => 齿转红; 见 REVISION LOG / 交付报告
+ * mutationEvidence）——本包防假绿核心纪律（K3 A5a 正向包含齿假绿教训）。
+ * **不得为让它绿而放宽/改写齿**。
+ * ------------------------------------------------------------------------ */
+/* coverage: MCD-A1 -- 板端右栏去遮挡源锚齿: cardlabel set_pos 第二参 >= 30（清出恒显顶部状态带 y0-24）+ lv_obj_set_width(cardlabel, 160) 在场（388-228）+ LV_LABEL_LONG_WRAP 在场（释义改中文变长不冲出右缘被裁） */
+/* coverage: MCD-A2 -- 板端提示条让位源锚齿: hint_label set_pos 第二参 < 252（避开 bottom_bar_ 键帽条带 y252-300） */
+TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (MCD-A1/A2)",
+          "[char_window_overlay][MCD-A1][MCD-A2][structural]")
+{
+    char *code;
+    char *region;
+    long a[8];
+    int n;
+
+    CWX_REQUIRE_ROOT();
+
+    /* 注释剥离后的源: 几何锚只认**可执行源**的字面整数（注释里的锚不作数）。 */
+    code = cwx_strip_c_comments_file(CWX_CHAR_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(code, "CWX RED(infra): char_page.cc unreadable");
+
+    /* ---- A1a: cardlabel 起点第二参 >= 30（清出恒显顶部状态带 y0-24）----------- */
+    n = cwx_ints_after(code, "lv_obj_set_pos(cardlabel,", a, 8);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        cwx_fm("MCD-A1 RED(infra): char_page.cc 未取到 lv_obj_set_pos(cardlabel, X, Y) 的"
+               "两个整型实参（取到 %d 个）——cardlabel 几何锚漂移或非字面形态（本齿锚 = "
+               "字面整数第二参; 须复核锚, 不得改判为绿）", n));
+    TEST_ASSERT_TRUE_MESSAGE(a[1] >= 30,
+        cwx_fm("MCD-A1 RED: cardlabel 起点 y=%ld < 30——右栏拼音行仍被恒显顶部状态带 "
+               "top_bar_/status_bar_（KidPalReparentChatToLayer chat_top[] reparent 到 "
+               "lv_layer_top, y0-24 任何状态恒显）压住（human 真机轮 finding②; 右栏须下移"
+               "到 y>=30 清出状态带 + 余量）", a[1]));
+
+    /* ---- A1b: lv_obj_set_width(cardlabel, 160) 在场（释义中文变长不冲出右缘）--- */
+    n = cwx_ints_after(code, "lv_obj_set_width(cardlabel,", a, 8);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1 && a[0] == 160,
+        cwx_fm("MCD-A1 RED: 未取到 lv_obj_set_width(cardlabel, 160)（取到 %d 参, 首值 "
+               "%ld）——右栏 label 无宽度约束, 释义改中文变长必冲出右缘被裁（388-228=160;"
+               " plan.md 改动面 1）", n, n >= 1 ? a[0] : -1L));
+
+    /* ---- A1c: LV_LABEL_LONG_WRAP 在场（定宽换行生效）------------------------ */
+    region = cwx_region_between(CWX_CHAR_CC, "lv_obj_t *cardlabel = lv_label_create",
+                                "g_page.hint_label = lv_label_create");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCD-A1 RED(infra): cardlabel 创建区切取失败（锚 lv_obj_t *cardlabel = "
+        "lv_label_create / g_page.hint_label = lv_label_create 漂移——须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "LV_LABEL_LONG_WRAP") >= 1,
+        "MCD-A1 RED: cardlabel 未设 LV_LABEL_LONG_WRAP——定宽后长释义不换行（单行被裁; "
+        "plan.md 改动面 1 同刀钉死; 注释剥离后计数, 注释无法满足）");
+    free(region);
+
+    /* ---- A2: hint_label 起点第二参 < 252（避开 bottom_bar_ 带 y252-300）------- */
+    n = cwx_ints_after(code, "lv_obj_set_pos(g_page.hint_label,", a, 8);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        cwx_fm("MCD-A2 RED(infra): char_page.cc 未取到 lv_obj_set_pos(g_page.hint_label, "
+               "X, Y) 两个整型实参（取到 %d 个）——提示条几何锚漂移或非字面形态", n));
+    TEST_ASSERT_TRUE_MESSAGE(a[1] < 252,
+        cwx_fm("MCD-A2 RED: hint_label 起点 y=%ld >= 252——底部提示条仍落 bottom_bar_ "
+               "键帽条带（LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压（human 裁: 提示条"
+               "一并修, 上移到避开该带, plan.md 改动面 2）", a[1]));
+
+    /* ---- 扫描器自检: 字面整数取值器对已知在世形态能命中（负向齿机器防假绿）----- */
+    n = cwx_ints_after(code, "lv_obj_set_pos(g_page.canvas,", a, 8);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2 && a[0] == 4 && a[1] == 8,
+        "CWX RED(infra): cwx_ints_after 对已知 canvas 锚失灵（期望 4, 8）——取值器坏, "
+        "A1/A2 齿失去咬合力");
+
+    free(code);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 11 — MCD-A3/A4 空行不显示 + 组词多词 join（structural + 行为半守卫;
+ * seam [11]; char_page.cc 设备装配面非 host 编译——源级树扫承载;
+ * 数据面 card_build 96B / 中文多字节边界走 host 真调——char_stroke.acceptance.c
+ * card_build 既有 host 测试形态, 但**不改 char_stroke.c**）
+ * RED today（设计态）: 拼装区零 radical[0]/words[0] 判空闸（现单条 snprintf 无条件拼
+ * 五行）; 解析区只 cJSON_GetArrayItem(j, 0) 取 words[0]、零「、」分隔、零数组遍历。
+ * 行为半（card_build 96B / 中文多字节）**must-stay-green**（数据面语义不动）。
+ * ------------------------------------------------------------------------ */
+/* coverage: MCD-A3 -- 空行不显示: 速查卡拼装区按字段有无选择拼行——字段首字节判空闸 radical[0] / words[0] 在场（组词/部首空则该行不拼装, 无空行/无占位符; 释义行保留 MCF 「释义：—」兜底） */
+/* coverage: MCD-A4 -- 组词多词 join: 解析区「、」分隔字面 + words 数组遍历循环（for + GetArraySize, 非只取 words[0]）+ 数据面 card_build 96B/中文多字节边界守卫（93B 中文满长 verbatim + 135B 超长截断安全恒 NUL, must-stay-green; 不动 char_stroke.c） */
+TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节边界 (MCD-A3/A4)",
+          "[char_window_overlay][MCD-A3][MCD-A4][structural][guard]")
+{
+    char *region;
+    kidpal_char_info info;
+    kidpal_char_card card;
+    char cn31[128];
+    char cn45[256];
+    int i, k;
+
+    CWX_REQUIRE_ROOT();
+
+    /* ---- A3: 速查卡拼装区按字段有无选择拼行 -------------------------------- */
+    region = cwx_region_between(CWX_CHAR_CC, "kidpal_char_card_build(&info_o",
+                                "lv_obj_set_style_text_font(cardlabel");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCD-A3 RED(infra): 速查卡拼装区切取失败（锚 kidpal_char_card_build(&info_o / "
+        "lv_obj_set_style_text_font(cardlabel 漂移——须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "radical[0]") >= 1,
+        "MCD-A3 RED: 拼装区零 radical 首字节判空（radical[0]）——部首为空时仍拼该行"
+        "（空行/占位符; plan.md 改动面 3: 按字段有无选择拼行; 注释剥离后计数）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "words[0]") >= 1,
+        "MCD-A3 RED: 拼装区零 words 首字节判空（words[0]）——组词为空时仍拼该行"
+        "（空行/占位符; plan.md 改动面 3; 注释剥离后计数）");
+    free(region);
+
+    /* ---- A4: words 数组多词 join（非只取 words[0]）------------------------- */
+    region = cwx_region_between(CWX_CHAR_CC, "const char *pinyin = \"?\"",
+                                "lv_obj_t *cardlabel");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCD-A4 RED(infra): char_page.cc 的 cJSON 解析/装配区切取失败（锚 const char "
+        "*pinyin = \"?\" / lv_obj_t *cardlabel 漂移——须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "、") >= 1,
+        "MCD-A4 RED: 解析区零「、」分隔字面——words 多词未以「、」join（现只取 words[0],"
+        " 多词丢失; kidpal_char_info.words 注释本就写明「、-joined」; 注释剥离后计数）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "for (") >= 1 &&
+                                 cwx_count_in_slice_code(region, "GetArraySize") >= 1,
+        "MCD-A4 RED: 解析区零 words 数组遍历循环（for + GetArraySize）——仍只取 words[0]"
+        "（多词组装落 char_page 层, 不动 char_stroke.c 纯逻辑合约; 注释剥离后计数）");
+    free(region);
+
+    /* ---- A4 数据面守卫（must-stay-green）: card_build 96B / 中文多字节边界 ------
+     * 中文满长 case（防 UTF-8 半字截断的数据面半边）: 96B 容量内（93B）逐字 verbatim;
+     * 超容（135B）截断安全（恒 NUL + <=95B, 不越界）。数据面语义**既定**（MCF 已冻结
+     * 「超长 verbatim 截断」），本包不动 char_stroke.c——UTF-8 边界安全（join 不劈半字）
+     * 落 char_page 装配面（设备侧, 非 host 编译 = 真机腿/实现侧义务）。 */
+    /* "永" = E6 B0 B8（3 字节）; 31 字 = 93 字节 < 95 -> 逐字保留。 */
+    k = 0;
+    for (i = 0; i < 31; i++) {
+        cn31[k++] = (char)0xE6; cn31[k++] = (char)0xB0; cn31[k++] = (char)0xB8;
+    }
+    cn31[k] = '\0';
+    memset(&info, 0, sizeof(info));
+    info.pinyin = "yǒng";
+    info.radical = "水";
+    info.stroke_count = 9;
+    info.words = "勇敢、勇气";
+    info.meaning = cn31;
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0 &&
+                                 strcmp(card.meaning, cn31) == 0,
+        cwx_fm("MCD-A4 RED(guard): 93B 中文满长 meaning 未逐字保留（card.meaning 长度 "
+               "%zu, 期望 93）——96B 容量内多字节拷贝失守（中文满长 case）",
+               strlen(card.meaning)));
+    TEST_ASSERT_TRUE_MESSAGE(strcmp(card.words, "勇敢、勇气") == 0 &&
+                                 strcmp(card.progress, "写完啦·共 9 笔") == 0,
+        "MCD-A4 RED(guard): 中文满长 meaning 加入后 words/progress 漂移——数据面回归");
+
+    /* 45 字 = 135 字节 > 95 -> 截断安全（恒 NUL + <=95）。 */
+    k = 0;
+    for (i = 0; i < 45; i++) {
+        cn45[k++] = (char)0xE6; cn45[k++] = (char)0xB0; cn45[k++] = (char)0xB8;
+    }
+    cn45[k] = '\0';
+    info.meaning = cn45;
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0 &&
+                                 strlen(card.meaning) <= 95 &&
+                                 card.meaning[strlen(card.meaning)] == '\0',
+        cwx_fm("MCD-A4 RED(guard): 135B 超长中文 meaning 截断不安全（长度 %zu, 须 <=95 且"
+               "恒 NUL 结尾）——96B 容量越界/不截断（中文多字节边界; 数据面既定截断语义）",
+               strlen(card.meaning)));
+
+    /* 组词多词 join 后的满长（「、」分隔的 40 字 -> 超容）截断安全, 同语义。 */
+    k = 0;
+    for (i = 0; i < 40; i++) {
+        cn45[k++] = (char)0xE6; cn45[k++] = (char)0xB0; cn45[k++] = (char)0xB8;
+        if (i + 1 < 40) { cn45[k++] = (char)0xE3; cn45[k++] = (char)0x80; cn45[k++] = (char)0x81; }
+    }
+    cn45[k] = '\0';
+    info.meaning = "勇敢；有胆量";
+    info.words = cn45;
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0 &&
+                                 strlen(card.words) <= 95 &&
+                                 card.words[strlen(card.words)] == '\0',
+        cwx_fm("MCD-A4 RED(guard): 「、」join 多词组词超容后截断不安全（长度 %zu, 须 "
+               "<=95 且恒 NUL 结尾）——words[96] 容量越界（多词 join 的数据面半边）",
+               strlen(card.words)));
+}
+
 /* ---------------------------------------------------------------------------
  * 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1499,12 +1770,20 @@ TEST_CASE("查字窗右栏: 字体接线负向+font_puhui 正向+释义五行拼
  *       现状红 = 真实缺陷信号（:555 LV_FONT_DEFAULT 实参在世）, font_puhui 接线 /
  *       释义五行数据链全缺——builder 落地后转绿, 负向齿 RED->GREEN 为本包核心信号;
  *       char_stroke.acceptance.c test 5 同批义务红, test 6 探针门控缺席编译）。
+ *     - 本文件 test 10（MCD-A1/A2——260920-m2-charwindow-display-fix 修订新增:
+ *       cardlabel (228,8) 被恒显顶部状态带压 / 无 set_width+wrap / hint_label (0,280)
+ *       落 bottom_bar_ 带——源锚现状红, builder 改 char_page.cc 后转绿）。
+ *     - 本文件 test 11 结构半（MCD-A3/A4——拼装区零 radical[0]/words[0] 判空闸 /
+ *       解析区只取 words[0] 零「、」零遍历——源锚现状红, builder 改 char_page.cc 后转绿）。
  *   MUST-STAY-GREEN（守卫齿, 现状即绿、绿才是本包做对）:
  *     test 1 下层三值零偏移 + PROVISION 零触碰; test 3 通用覆盖层列/基层列/越界键位;
  *     test 5 mcp view=char 路由本体零触碰 + char 渲染主路径在世; test 6 全部（A4/A5
- *     行为半守卫）; test 7 tooth 2/3/4（需求契约 canary + 扫描器自检）。
- *   builder 接线后期望终跑量级 = 46 + 本文件 8 TEST_CASE + K1a/retract 修订齿增量
- *   （HOST_TEST_CONVENTIONS [C4.4]: 测试数是随套件增长的派生量, 不当硬编码判据, 真判据
+ *     行为半守卫）; test 7 tooth 2/3/4（需求契约 canary + 扫描器自检）;
+ *     **test 11 行为半（MCD-A4 card_build 96B / 中文多字节边界——数据面既定语义守卫,
+ *     builder 不动 char_stroke.c）; test 10 canvas 取值器自检**。
+ *   builder 接线后期望终跑量级 = 46 + 本文件 8 TEST_CASE + 260920-m2-charwindow-card-fix
+ *   同批 test 9 + 260920-m2-charwindow-display-fix 同批 test 10/11 + K1a/retract 修订齿
+ *   增量（HOST_TEST_CONVENTIONS [C4.4]: 测试数是随套件增长的派生量, 不当硬编码判据, 真判据
  *   = OK + EXIT=0 + 全 PASS）。
  *
  * SEALING PASS 2026-09-19（acceptance-author 封口补钉; tighten-only）:
@@ -1580,4 +1859,22 @@ TEST_CASE("查字窗右栏: 字体接线负向+font_puhui 正向+释义五行拼
  *               只改实参 LV_FONT_DEFAULT -> &font_puhui_14_1 不动锚字面, 无需锚修订
  *               （MCF-A4 预案未触发, 留痕）。行为半（card_build meaning 三态）归
  *               char_stroke.acceptance.c（同批 additive 修订, seam [5] + test 5/6）。
+ *   2026-09-20  MCD revision (acceptance-author, TaskPackage 260920-m2-charwindow-display-fix;
+ *               additive + tighten-only; 板端只动本件——不新建板端文件):
+ *               ① 追 seam [11] + test 10（MCD-A1/A2——右栏去遮挡 + 提示条让位源锚齿）:
+ *                  cardlabel set_pos 第二参 >= 30 / lv_obj_set_width(cardlabel, 160) 在场 /
+ *                  LV_LABEL_LONG_WRAP 在场; hint_label set_pos 第二参 < 252（避开
+ *                  bottom_bar_ 带 y252-300）。齿取注释剥离后源的字面整数第二参（新增助手
+ *                  cwx_ints_after）——几何锚须字面整数书写, 非字面形态 = 红不改判。
+ *               ② 追 test 11（MCD-A3/A4）——空行不显示（拼装区字段首字节判空闸
+ *                  radical[0] / words[0], 注释剥离后计数）+ 组词多词 join（解析区「、」
+ *                  分隔字面 + 数组遍历循环 for+GetArraySize, 非只取 words[0]）; 数据面
+ *                  card_build 96B / 中文多字节边界（93B 中文满长 verbatim + 135B 超长
+ *                  截断安全恒 NUL）must-stay-green 守卫——**不改 char_stroke.c**（U 冻结
+ *                  面）; UTF-8 边界安全（join 不劈半字）落 char_page 装配面（设备侧, 非
+ *                  host 编译 = 真机腿/实现侧义务, 见 seam [11]d）。
+ *               **零新增字段**（落法 B display 块通用文本通道 = 另立立项, 本轮不预造）。
+ *               本包只动 char_window_overlay.acceptance.c（板端）; 云面新建
+ *               server/acceptance/test_char_meaning_merge.acceptance.py（MCD-A5/A7）。
+ *               每条源锚齿配负向变异自证（锚值改回 => 齿转红）, 证据见交付报告。
  * --------------------------------------------------------------------------- */

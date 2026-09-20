@@ -1,18 +1,18 @@
 {
-  "changeId": "260920-m2-charwindow-card-fix",
+  "changeId": "260920-m2-charwindow-display-fix",
   "rigor": "lite",
   "origin": {
     "type": "human-confirmed-plan",
     "upstreamType": "human-confirmed-plan",
-    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
+    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
     "upstreamFrozen": "",
     "workstream": "m2-char-window"
   },
-  "subsystem": "firmware",
-  "story": "M2-K3 真机轮修复——查字窗右栏速查栏与底部提示条字体接线（char_page 全树唯一显式钉 LV_FONT_DEFAULT 于中文 label 的病灶，真机整栏隐身）+ S-F3.2 AC1 五行兑现（释义行上屏，D3 meaning 字段既有、云端已在下发）",
-  "planRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
-  "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；acceptance-author 实跑复核。elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
-  "redBaselineResult": "RED（freeze 后现行基线）—— host runner 全量 **60 Tests / 2 Failures / 0 Ignored**（acceptance-author 实跑 + planner 2026-09-20 独立复跑双证），两条均为设计态义务红、其余 58 齿零新增红：① `char_window_overlay.acceptance.c` test 9（MCF-A1 负向齿）——「char_page.cc 仍有 1 行 lv_obj_set_style_text_font 调用携带 LV_FONT_DEFAULT 实参」（:555 病灶本体，builder 改接 font_puhui_14_1 后 RED→GREEN）；② `char_stroke.acceptance.c` test 5（MCF-A2 结构半）——「kidpal_char_info 零 meaning 成员」（seam 未落义务红；TEST 6 行为齿探针门控缺席编译，红由 test 5 承载）。**builder 接线义务（acceptance-author 新增 seam 形态，改动须返 planner）**：落 meaning 字段时同步 `#define KIDPAL_CHAR_STROKE_HAS_MEANING 1`（K3 件 fallback 宏同款先例；漏定义 = 行为齿静默缺席编译、test 5 结构齿咬住）。",
+  "subsystem": "firmware+server",
+  "story": "查字窗展示面修复——右栏去遮挡（恒显顶部状态带 top_bar_/status_bar_ 压住拼音行）+ 底部提示条让位（bottom_bar_ 同族）+ 右栏定宽换行与空行不显示 + 云端把已播报的中文解释写进 display 块既有 meaning 字段（播报内容零变化）",
+  "planRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
+  "redBaselineCommand": "板端：cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"；云面：python -m pytest -q --import-mode=importlib -m \"not live\" c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance（elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
+  "redBaselineResult": "RED（freeze 后现行基线，acceptance-author 实跑 + planner 2026-09-20 独立复跑双证）——【板端】host runner **63 Tests / 2 Failures / 0 Ignored**（was 61/0），唯二红 = 新增 TEST 10（MCD-A1/A2：cardlabel y=8 < 30 病灶在案）+ TEST 11（MCD-A3/A4：拼装区零 radical[0] 判空），其余 61 齿零新增红；【云面】pytest -m \"not live\" server/acceptance = **8 failed / 2 passed**（原面仅 conftest 无齿），8 红 = A5 四齿 + A7 三齿 + prompt 两齿中的行为/结构半（现行 TS helper 无 meaning merge / 无 <details> 剥离、prompt v4 无 meaning 新约无附录禁令 = 真实缺陷信号），2 绿 = must-stay-green 守卫（prompt 两面接线版本无关 + A7 正向不误剥）；server/tests 仍 37 passed 未受影响。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -24,28 +24,26 @@
     "mcp-tool-contract"
   ],
   "acceptance": [
-    "MCF-A1: 字体接线结构齿——负向：char_page.cc 中 LV_FONT_DEFAULT 作 text_font 实参出现数 == 0（现状红 = 真实缺陷信号，RED→GREEN 可判）；正向：cardlabel 与 hint_label 两个 label 创建/设值区各有 &font_puhui_ 字面在世（注释剥离后计数——sealing pass 先例，注释无法满足）",
-    "MCF-A2: meaning 承载行为齿（host runner 真调 char_stroke.c 强符号）——card_build 三态：非空 verbatim 截断安全 / NULL → out->meaning 空串且 rc=0（缺义不降级整窗）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面）",
-    "MCF-A3: 五行拼装齿——速查卡 snprintf 五行含 card.meaning 实参（拼音带声调/共 N 画/部首/释义/组词，S-F3.2 AC1 五行口径）；meaning 缺失兜底「释义：—」占位形态钉死不留现场裁量；refresh_hint 装配区含 meaning（注释剥离后计数）",
+    "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）",
+    "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证",
+    "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）",
+    "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case",
+    "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合",
+    "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约",
     {
-      "id": "MCF-A4: 冻结件 tighten-only 留痕修订——char_window_overlay.acceptance.c 的 A5 覆盖随 spec v1.56 四行→五行（A5a 区末端锚 lv_obj_set_style_text_font(cardlabel 若被改写须同步锚修订，只改实参不动锚字面则锚存活）；char_stroke.acceptance.c 若触其冻结面同样留痕；负向齿与锚齿不剥注释（sealing pass 纪律）",
+      "id": "MCD-A6: 真机/live 腿 deferred（human 持板）——① 真实遮挡消除（层序渲染结果只有上屏可证，源锚齿只是决策代理）；② 中文释义真机上屏可读、wrap 不溢出；③ 提示条新位置可见且不被键帽条压；④ 播报与屏显一致（human 判据最终裁判）；⑤ live 腿按「probe != exercise」真跑一次查字端到端（真发一问、板子收到中文释义块）",
       "kind": "structural",
-      "note": "套件级留痕修订项（acceptance 文件自身内容 + REVISION LOG），无逐条实现侧行为可变异——mutation 证据语义不适用（mutation-check structural 豁免语义，同 K3 A7/A8 形态）；其真实性由冻结件本体与 REVISION LOG 承载，builder 零写权"
-    },
-    {
-      "id": "MCF-A5: 真机腿 deferred（human 持板）——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 底部提示条可见 + 顺带 schedule/story 页中文可见性一句取证（v1.56 对账④勘误的对比证据）；R1 风险：font_puhui_14_1 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）",
-      "kind": "structural",
-      "note": "host 无 SPIFFS/内置字体字形与真机恒不等（HOST_TEST_CONVENTIONS「字体现实」节明文）——齿只钉接线与数据面行为，字形终审归本条真机腿（M2K1-A4 先例形态，不造 host 伪断言）"
+      "note": "host 无真实层序渲染与设备字体现实，遮挡与观感类判据 host 只能以源锚齿代理——诚实标注归真机腿"
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/char_stroke.acceptance.c",
-    "firmware/main/test/char_window_overlay.acceptance.c"
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "server/acceptance/test_char_meaning_merge.acceptance.py"
   ],
   "exitCriteria": [
-    "MCF-E1: A1–A4 host 齿全绿（含负向齿从红转绿），host runner 全量零新增红；A5 真机轮闭环（human 裁决落账）",
-    "MCF-E2: 铁律——零契约改动（D3 meaning 既有）、零 spec 改动（v1.56+勘误已落账本包只消费）、零云面改动（server/ 零触碰）、零 agent 定义/gate 改动；mcp_server case 3 与 validate 六键闭集零改动（human 已裁）",
-    "MCF-E3: 冻结件修订只走 acceptance-author 留痕（char_stroke 扩展 additive-only；K3 件 tighten-only）；builder 零写权"
+    "MCD-E1: A1–A5 host/pytest 齿全绿（含负向齿从红转绿），板端 host runner 全量零新增红、云面 pytest 全绿；A6 真机/live 腿闭环（human 裁决落账）",
+    "MCD-E2: 铁律——零契约改动（D3 meaning/words 字段既有，本轮向契约样例中文语义收敛）、零 spec 改动、零 agent 定义/gate 改动；char_stroke.c/.h 纯逻辑合约不动（U 冻结面 + B8 守卫）",
+    "MCD-E3: 落法 B（display 块通用文本通道）不预造、不顺手夹带——本轮零新增字段；冻结件修订只走 acceptance-author 留痕（builder 零写权）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -56,61 +54,102 @@
   "sourceRefs": [
     "docs/requirements.md#S-F3.2",
     "docs/requirements.md#F3",
-    "docs/requirements.md#§2.2",
     "firmware/main/display/char_page.cc",
-    "firmware/main/display/char_stroke.h",
-    "firmware/main/display/char_stroke.c",
     "firmware/main/display/lcd_display.cc",
-    "firmware/main/test/char_stroke.acceptance.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/char_stroke.h",
     "firmware/main/test/char_window_overlay.acceptance.c",
-    "server/deploy/openclaw-patch/char_stroke_lib.py"
+    "server/deploy/openclaw-system-prompt.v4.md",
+    "server/deploy/openclaw-patch/make_openclaw_patch.py",
+    "server/deploy/openclaw-patch/char_stroke_lib.py",
+    "server/deploy/openclaw-patch/warm_char_cache.py",
+    "docs/contracts/interface-contract.md"
   ],
   "iterationBudget": 3,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
   "docsOwner": "integrator",
-  "docsSyncReason": "spec v1.56 + 勘误已落账（a24a718/5982d82），本包只消费 S-F3.2 五行口径——零 docs 面改动。",
-  "mergeOrder": 31,
+  "docsSyncReason": "spec 侧 S-F3.2 与 WF-F3-01 线框现文即目标形状（中文释义/组词本就在线框里），本轮是实现向 spec 收敛——零 docs 面改动。",
+  "mergeOrder": 32,
   "dependsOn": [
-    "260917-m2-k3-char-window-overlay"
+    "260920-m2-charwindow-card-fix"
   ],
-  "testHost": "host runner（WSL linux target）+ device build 闸 + 真机腿（human 持板，A7 同轮）",
+  "testHost": "host runner（板端）+ device build 闸 + server pytest（云面 host-fast）+ 真机/live 腿（human 持板）",
   "decisionCoverage": [],
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "MCF-A1: 字体接线结构齿——负向：char_page.cc 中 LV_FONT_DEFAULT 作 text_font 实参出现数 == 0（现状红 = 真实缺陷信号，RED→GREEN 可判）；正向：cardlabel 与 hint_label 两个 label 创建/设值区各有 &font_puhui_ 字面在世（注释剥离后计数——sealing pass 先例，注释无法满足）",
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "MUT-MCF-A1-font-unwire：char_page.cc cardlabel 字体设值恢复 LV_FONT_DEFAULT 实参（撤 font_puhui_14_1 接线），单点还原病灶形态。",
-        "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c test 9，MCF-A1 负向齿）：「MCF-A1 RED: char_page.cc 仍有 1 行 lv_obj_set_style_text_font 调用携带 LV_FONT_DEFAULT 实参」——负向齿对病灶形态即红、修复后转绿（RED→GREEN 真信号）。红→绿链：绿态 61T/0F OK → 变异态 61T/1F → 还原态 61T/0F OK。还原指纹：char_page.cc md5=9711356c（与绿态逐字节一致）。"
+        "mutation": "MUT-MCD-A1（builder 实现态三连）：cardlabel y 30→8 / width 160→80 / WRAP→CLIP，逐锚负向变异。",
+        "counterEvidence": "三变异各自使 TEST 10 FAIL（红名逐字：y=8<30 / 未取到 set_width 160 / 未设 LONG_WRAP）；md5=7149722faf988dda2706d95cb8802e66 与绿态逐字节一致、零残留。红→绿链：绿态 63T/0F → 变异态 FAIL → 还原 63T/0F。",
+        "acceptanceId": "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）"
       },
       {
-        "acceptanceId": "MCF-A2: meaning 承载行为齿（host runner 真调 char_stroke.c 强符号）——card_build 三态：非空 verbatim 截断安全 / NULL → out->meaning 空串且 rc=0（缺义不降级整窗）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面）",
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "MUT-MCF-A2-meaning-drop：char_stroke.c 的 kidpal_char_card_build 撤 meaning 装配（删 NULL 容忍分支 + verbatim 拷贝分支），单点删除。",
-        "counterEvidence": "红齿双咬：char_stroke.acceptance.c TEST 6（MCF-A2 行为半，红名「card.meaning=\"\" 期望 verbatim 「勇敢；有胆量」」）+ TEST 5（MCF-A2 结构半，红名「card_build 函数区零/弱 meaning 消费」）。红→绿链：绿态 61T/0F OK → 变异态 61T/2F → 还原态 61T/0F OK。还原指纹：char_stroke.c md5=673f21ed（与绿态逐字节一致）。"
+        "mutation": "MUT-MCD-A2（builder 实现态）：hint_label 244→280（退回 bottom_bar_ 带）。",
+        "counterEvidence": "TEST 10 FAIL（hint y=280 >= 252）；还原复绿。",
+        "acceptanceId": "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证"
       },
       {
-        "acceptanceId": "MCF-A3: 五行拼装齿——速查卡 snprintf 五行含 card.meaning 实参（拼音带声调/共 N 画/部首/释义/组词，S-F3.2 AC1 五行口径）；meaning 缺失兜底「释义：—」占位形态钉死不留现场裁量；refresh_hint 装配区含 meaning（注释剥离后计数）",
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "MUT-MCF-A3-line5-drop：char_page.cc 速查卡 snprintf 五行格式串删「释义：%s」段连同 card.meaning 实参，回四行形态（4 实参），单点删除。本轮新造靶（planner 派发补充）。",
-        "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:1451 test 9，MCF-A3 齿）：「MCF-A3 RED: 速查卡拼装区零 card.meaning 实参——释义行未上屏（S-F3.2 AC1 v1.56 五行口径; 注释剥离后计数——builder M4 实证: 注释提及不算实现）」。命中面：card.meaning 计数 / 释义：字面 / — 兜底 / %s\n 五行形态四条同咬。红→绿链：绿态 61T/0F OK → 变异态 61T/1F → 还原态 61T/0F OK。还原指纹：char_page.cc md5=b595ba00f4b2402c22917009fcaf0346（与绿态逐字节一致）。"
+        "mutation": "MUT-MCD-A3（builder 实现态双靶）：radical[0] token 移除 / words[0] token 移除。",
+        "counterEvidence": "TEST 11 两次 FAIL（零 radical 判空 / 零 words 判空）；还原复绿。",
+        "acceptanceId": "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-MCD-A4（builder 实现态）：「、」分隔字面移除（join 退化）。",
+        "counterEvidence": "TEST 11 FAIL（零「、」字面）；还原复绿。数据面 96B 守卫由 TEST 11 数据面半承载（93B verbatim / 135B 超容恒 NUL）。",
+        "acceptanceId": "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异（影子服务端树 C:/tmp/srvroot 代表实现：scratch TS helper + python 镜像 + v5 prompt 双面接线，先 9/10 全绿证明可满足）：流式路径去 merge（k1cLookupBlock）/ 非流式去 merge。",
+        "counterEvidence": "A5 两齿（python 镜像语义 + TS 两路径行为 + 两函数体结构）FAIL；还原复绿。云面 5/5。",
+        "acceptanceId": "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异（同上影子树）：流式路径去 strip（k1cStreamStep）/ 剥离规则过宽（OPEN=「（」）。",
+        "counterEvidence": "A7 两路径齿 FAIL（附录泄漏）+ 正向不误剥齿 FAIL（过宽误伤）——两个方向都咬得住；还原复绿。",
+        "acceptanceId": "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约"
       }
     ]
   },
   "crossEnd": {
-    "counterparts": [],
-    "exempt": "板端显示面字体接线与释义渲染，零跨端 wire 形状改动——D3 data.meaning 字段既有、OpenClaw 生产端（char_stroke_lib.py 取词典 definition）已在下发，契约与云面零改动"
+    "counterparts": [
+      {
+        "path": "firmware/main/display/char_page.cc",
+        "symbol": "kidpal_char_page_show"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/make_openclaw_patch.py",
+        "symbol": "k1cRewriteText"
+      },
+      {
+        "path": "server/deploy/openclaw-patch/char_stroke_lib.py",
+        "symbol": "assemble_char"
+      }
+    ],
+    "exempt": ""
   },
-  "notes": "rigor=lite / riskTier=medium（architect /triage-change 2026-09-20 裁决，human 触点①确认：② Lite、font_puhui_14_1 显式接线、meaning 不纳入 validate 闭集）。机制已钉死不留现场裁量：复用 lcd_display.cc 的 font_puhui_14_1 显式逐 label 先例（font_body 运行时接线 = RP-A4 residual 后续包不并入）。冻结件纪律：char_stroke 扩展 additive-only（meaning NULL 容忍、不进 NULL 拒绝集）；K3 冻结件 tighten-only、负向齿与锚齿不剥注释。A5 真机腿 deferred human 持板——host 齿只钉接线与数据面行为（HOST_TEST_CONVENTIONS「字体现实」节明文），不造 host 伪断言。mutation 义务：撤 font_puhui 接线 → A1 结构齿红；撤 card_build meaning → A2 行为齿红。",
+  "notes": "rigor=lite / riskTier=medium（architect /triage-change 2026-09-20 裁决 ② 单包 Lite 合一包 + human 触点①确认）。**跨两端**：板端 firmware/main/display/char_page.cc（单文件：右栏让位 + 提示条让位 + 空行不显示 + words 多词 join）+ 云面 server/deploy/**（prompt v5 bump + 网关双出口 merge + python 镜像 + ECS 部署腿）。human 决策收敛（覆盖 architect 原方案两处）：① 云面只改一件 = 把已播报的中文解释写进 display 块既有 meaning 字段（TTS 播报内容零变化、不新增字段、不改契约、不改板端渲染）；② 撤回组词（播报不读组词 ⇒ 显示面不凭空多行；不补组词数据、不重建 char_cache，architect 备选「中文词典源重建 9574 字 cache」随之作废）。遮挡真凶 = 恒显顶部状态带 top_bar_（LV_OPA_50 半透）+ status_bar_（KidPalReparentChatToLayer 的 chat_top[] reparent 到 lv_layer_top，任何状态恒显）——planner 原指认 voice_page 右内容区**已证伪并纠正**（voice_page 默认 HIDDEN、显隐单点 kidpal_chrome_mid_sync_locked）。修法取**内容让位**（不动 chrome：让状态带随窗隐藏会扩大前台维度显隐面、横跨提醒 K4 最高层与语音轮四态既有闭环）。风险：网关流式/非流式双出口 merge 不一致 = 离线绿真机红（260907-g-relay-fix 同族）→ 齿必须两路径都打。",
   "notesIntake": [
-    "【triage 裁决链】/triage-change 2026-09-20：architect 比例化 review（只读、同会话返回）→ 四档裁决 ② 单包 Lite + 两项纠偏发现（A：lv_font_load 全树零运行时调用、schedule_page.c:780 为设计注记非代码——plan 起草期曾误引；B：v1.56 对账④「全工程中文页面均显式加载 font_body」为事实错误，已勘误 5982d82）→ human 触点①三问全按推荐确认（② Lite / font_puhui_14_1 / meaning 不纳入）。",
-    "【防伪齿核心（architect 诚实性检查）】A1 负向齿 = 本次的关键形态创新：LV_FONT_DEFAULT 作 text_font 实参数 == 0，对现状（:555 显式钉默认字体）即红——修复后转绿，RED→GREEN 有真实信号。这直接针对 K3 A5a 假绿的病灶（当时的正向包含齿对字体面零覆盖）。正向齿全部走注释剥离后计数（sealing pass 先例）。",
-    "【builder 接线义务】char_stroke.h/c 扩展 additive-only（meaning NULL 容忍、不进 NULL 拒绝集，容量对齐 words 惯例 char meaning[96]）；char_page.cc 两处 positional initializer（refresh_hint 与 show 内）同步补 meaning 成员，建议改 designated initializer 防成员漂移；CMake 零新增接线（font_puhui_14_1 定义在 xiaozhi-fonts 组件、lcd_display.cc 同组件先例已证可达，char_page.cc 非 host 编译由结构齿扫源码承载）。"
+    "【triage 裁决链】/triage-change 2026-09-20：architect 比例化 review（只读、同会话返回）→ 第一刀复核零触碰事实源（走落法 A）→ ② 单包 Lite 合一包 + crossEnd 双向申报 → human 触点①四问（档位/拆包、云面范围、组词、旗标项）确认。",
+    "【human 判据（本包验收方向权威）】「板子端就是一个展示的地方，不用限定结构，云端给什么我们显示什么」（pod-events 98c9591f）+「就按语音播报的内容，除了笔画顺序不显示之外，语音播报什么我们就显示什么」（同 84beaf72）+「同意 这一轮走 A，B 另立立项」（b5f4485d）——右栏目标 = 播报内容 − 笔名。",
+    "【落法 B 边界（防夹带）】display 块通用文本通道 = 另立契约门立项（human 已同意，登记于 delivery/workstreams/m2-char-window/progress.md 2026-09-20 节），触发通道 /arch-change；本轮**零新增字段**，builder/acceptance-author 均不得顺手预造通用容器。",
+    "【acceptance-author 义务】① 板端齿落 `firmware/main/test/char_window_overlay.acceptance.c`（在世件，tighten/additive 留痕）；② 云面齿落 `server/acceptance/` **新件（禁落 archive 名目录）**，并同步 `char_stroke_lib.py` docstring 的冻结验收指针（其原指 `server/acceptance/test_char_stroke.acceptance.py` 已归档）；③ 每条源锚齿配负向变异自证（MCF 已证负向齿有效、K3 A5a 正向包含齿假绿教训）。",
+    "【builder 义务】① 板端只动 `char_page.cc`（不触 char_stroke.c/.h 纯逻辑合约）；② 云面 prompt 用 **v5 新文件 bump**（勿回改 v4）+ bump 前核槽位未被并行分支占用（ARQ-260908 教训）+ 同步 OPENCLAW_SYSTEM_PROMPT_CARRIER 与 apply-xiaozhi-overlay.sh 渲染引用；③ 网关 merge 两条出口路径（k1cRewriteText 非流式 / k1cLookupBlock 流式）必须一致；④ ECS 部署按 DEPLOY-RUNBOOK.md，live 腿真跑不得只探端口。",
+    "【旗标项裁决】提示条一并修（human 裁）；米字格大框顶部**不动**（human 未觉碍，50% 半透仍可见）。",
+    "【planner 三点裁决（acceptance-author 报告遗留 1-3，2026-09-20）】① char_stroke_lib.py docstring 指针：维持冻齿转 builder 执行（builder scope allow server/** 覆盖，无须放宽 acceptance-author scope）——齿现红即 builder 靶。② UTF-8 半字截断：**不动 card_build 字节截断冻结语义**（MCF TEST 6 既定），改由 **char_page 装配层的 join 实现侧 UTF-8-aware 封顶**（组词 join 时按 UTF-8 边界截断到安全长度再交 card_build）——card_build 永不见到超长串，冻结面零触碰；设备侧归真机腿。③ MCD-A5 冻结点 = 既有 C1 函数 `replace_minimal_block(text, full_data)`，builder 须沿该函数扩展（另立函数名 = 齿保持红 = 返 planner）。",
+    "【quota 事件】acceptance-author 收尾时撞 5h 配额上限（429，reset 16:25 CST）——工作已全部落盘、报告完整交付，无未落盘工作。"
   ]
 }
