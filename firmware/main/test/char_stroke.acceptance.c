@@ -77,6 +77,24 @@
  *       launchPreconditions 第 4 条; NFR-PERF-2 live 复测随同轮）。host 侧
  *       前置 = 本文件 [1]/[2]/[3] + device build 闸（M2K1-E3）。本文件不造
  *       live 伪断言。
+ *
+ *   [5] meaning 承载（MCF-A2; home = char_stroke.h + char_stroke.c
+ *       kidpal_char_card_build; 260920-m2-charwindow-card-fix additive 追加;
+ *       需求权威 = docs/requirements.md S-F3.2 AC1 v1.56 五行口径 + F3 对账⑤）:
+ *       kidpal_char_info 增成员 `const char *meaning`（**NULL 容忍**——与
+ *       pinyin/radical/words 必非空语义不同, **不进 NULL 拒绝集**; human 裁降级
+ *       口径: 缺释义只损右栏一行、不构成盲渲染风险, 旧 payload 整窗降级 = 行为
+ *       回归）; kidpal_char_card 增 `char meaning[96]`（容量对齐 words 惯例）。
+ *       语义: 非空 -> verbatim 截断安全拷贝（恒 NUL 结尾, 与 pinyin/words 同款）;
+ *             NULL -> out->meaning[0] = '\0' 且 rc = 0（缺义不降级整窗）;
+ *             既有四字段 + progress 文案零回归（M2-K1 冻结面, test 2 参照表守卫
+ *             兜底）。
+ *       **同步冻结形态**: char_stroke.h 须 `#define KIDPAL_CHAR_STROKE_HAS_MEANING 1`
+ *       ——本文件 MCF-A2 行为齿（test 6）的编译期 seam 探针: 落地前 fallback 0 =
+ *       行为齿缺席编译（seam 缺失的红由 test 5 结构齿承载, 非空过; K3 件
+ *       `#ifndef KIDPAL_LAYER_CHAR_WINDOW` fallback 宏同款先例）, 落地后行为齿自动
+ *       生效。builder 漏定义该宏由 test 5 结构齿咬住; 改动该形态须返 planner 重派
+ *       acceptance-author。
  * ===========================================================================
  *
  * ---------------------------------------------------------------------------
@@ -98,6 +116,11 @@
  *             失去对象）+ 文件尾「RED baseline 判读口径」段。
  *   M2K1-E2（铁律: 不改 docs/contracts 契约面与 spec）-> test 4 tooth 2（契约面/spec
  *             面在世 canary——发现冲突走 spec-lane 逃生门, 不预先改 docs）。
+ *   coverage: MCF-A2 -> test 5（结构半: 头双字段 + 编译期探针宏 + card_build meaning
+ *             消费, 注释剥离后计数——sealing pass 纪律; RED today = seam 未落,
+ *             builder 落地后 GREEN）+ test 6（行为半, 编译期探针门控: 非空 verbatim
+ *             截断安全 / NULL -> 空串 rc=0 缺义不降级整窗 / 四字段 + progress 零
+ *             回归; 探针宏缺席时本齿缺席编译——非空过, 由 test 5 咬住）。
  * ---------------------------------------------------------------------------
  *
  * BUILDER DUTY（接线, acceptance-author 被 enforce-scope 拦在 CMakeLists 外——
@@ -119,6 +142,10 @@
  *   M2K1-A3 —— 变异 = char_page.cc 帧路径恢复任一 kidpal_cs_point [256] 栈
  *              局部（或 custom_lcd_display.cc 恢复裸 16384 字面）, 预期 test 3
  *              转 RED, 还原后 GREEN; 逐字证据随 closeout 回传。
+ *   MCF-A2 —— 变异 = card_build 撤 meaning 装配（如把 meaning 纳入 NULL 拒绝集 /
+ *              删 verbatim 拷贝分支）, 预期 test 6 转 RED（state 3 rc=-1 或
+ *              state 1 verbatim 失败）+ test 5 结构齿同红, 还原后 GREEN。
+ *              撤探针宏 = test 5 红 + 行为齿缺席编译（构建面暴露）。
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   1) MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/
@@ -153,11 +180,27 @@
  *   修复后判读: host runner 全量零新增红 + test 1/3/4 转绿 + test 2 保持绿
  *      （M2K1-E1）; test 1 的 RED→GREEN 红名 verbatim + standalone 复跑证据随
  *      closeout 回传。
+ *   260920-m2-charwindow-card-fix 增量判读（acceptance-author 2026-09-20 实跑）:
+ *      test 5（MCF-A2 结构半）FAIL = 义务红设计态（头零 meaning 字段 / 零探针宏 /
+ *      card_build 零 meaning 消费——seam 未落, builder 落地后转绿）; test 6 = 探针
+ *      门控缺席编译（不进跑分, 红由 test 5 承载）。修复后期望: test 5 GREEN +
+ *      test 6 自动生效并 GREEN（MCF-E1 半边, 另半边在 char_window_overlay.acceptance.c
+ *      test 9——A1 负向齿从现状红转绿）。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-18  initial freeze (acceptance-author, TaskPackage
  *               260917-m2-k1-char-link-defect-fix; A1 RED 实跑 + A2 参照表
  *               2026-09-18 未修复树实测 dump 冻结)。
+ *   2026-09-20  MCF additive revision (acceptance-author, TaskPackage
+ *               260920-m2-charwindow-card-fix; additive-only——既有 test 1–4 与
+ *               参照表零触碰): 追 seam [5] + test 5（MCF-A2 结构半）+ test 6
+ *               （MCF-A2 行为半, 编译期探针 KIDPAL_CHAR_STROKE_HAS_MEANING 门控,
+ *               K3 件 #ifndef fallback 宏同款先例）——meaning 承载（S-F3.2 AC1
+ *               v1.56 释义行数据面; NULL 容忍不进拒绝集, human 裁降级口径）。
+ *               char_stroke.h 头注「本头声明与冻结验收 fallback 块逐字一致」的自述
+ *               随本包语义追加进一步过时（本文件无 fallback 块, seam 以真实头为
+ *               单源 + 探针宏门控）——按 plan.md 裁定只留痕不改头注（头注归
+ *               builder 的 char_stroke.h 变更面）。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>
@@ -191,6 +234,16 @@ __attribute__((weak)) int kidpal_char_stroke_parse(const char *svg_path,
 }
 
 /* -------------------------------------------------------------------------- *
+ * MCF-A2 seam 编译期探针（冻结 seam [5] 同步形态, 260920-m2-charwindow-card-fix）:
+ * char_stroke.h 落 meaning 字段时同步 #define KIDPAL_CHAR_STROKE_HAS_MEANING 1。
+ * 落地前 fallback 0 = 行为齿（test 6）缺席编译——非空过, seam 缺失的红由 test 5
+ * 结构齿承载（K3 件 #ifndef fallback 宏同款先例）。
+ * ------------------------------------------------------------------------ */
+#ifndef KIDPAL_CHAR_STROKE_HAS_MEANING
+#define KIDPAL_CHAR_STROKE_HAS_MEANING 0
+#endif
+
+/* -------------------------------------------------------------------------- *
  * Repo-tree scanning helpers（host 侧结构齿, K4/kld 先例）。全部扫描跑在真实
  * 工作树上, root 以手持 cwd 定位（仓根或 firmware/main/test/host_app 均可）。
  * ------------------------------------------------------------------------ */
@@ -205,6 +258,7 @@ __attribute__((weak)) int kidpal_char_stroke_parse(const char *svg_path,
 #define CSA_CONTRACT       "docs/contracts/interface-contract.md"
 #define CSA_REQUIREMENTS   "docs/requirements.md"
 #define CSA_CHAR_STROKE_H  "firmware/main/display/char_stroke.h"
+#define CSA_CHAR_STROKE_C  "firmware/main/display/char_stroke.c"
 
 static char csa_root[CSA_MAX_PATH];
 static int csa_root_ready;
@@ -335,6 +389,79 @@ static int csa_count_in_file(const char *rel, const char *needle)
 {
     char *buf = csa_read(rel);
     int r = csa_count_in_slice(buf, needle);
+    free(buf);
+    return r;
+}
+
+/* -------------------------------------------------------------------------- *
+ * Comment-stripping scanner support（260920-m2-charwindow-card-fix 追加, K3 件
+ * cwx_strip_c_comments 同款）: 正向结构齿只认**可执行源**——注释里的 needle 无法
+ * 满足计数（builder M4 实证假绿教训）。负向齿不使用（剥注释会放松负向齿）。
+ * 字符串/字符字面量体保留（释义格式字面等字符串针仍可命中）。注释字节 -> 空格,
+ * 长度保持; 调用方负责 free; 不可读/NULL -> 计 0。
+ * ------------------------------------------------------------------------ */
+static char *csa_strip_c_comments(const char *src)
+{
+    size_t n, i = 0;
+    char *out;
+
+    assert(src != NULL);
+    n = strlen(src);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL);
+    memcpy(out, src, n + 1);
+
+    while (i < n) {
+        char c = out[i];
+        if (c == '"' || c == '\'') {
+            char q = c;
+            i++;
+            while (i < n) {
+                if (out[i] == '\\' && i + 1 < n) { i += 2; continue; }
+                if (out[i] == q) { i++; break; }
+                i++;
+            }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '/') {
+            while (i < n && out[i] != '\n') { out[i] = ' '; i++; }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '*') {
+            out[i] = ' '; out[i + 1] = ' '; i += 2;
+            while (i < n) {
+                if (out[i] == '*' && i + 1 < n && out[i + 1] == '/') {
+                    out[i] = ' '; out[i + 1] = ' '; i += 2; break;
+                }
+                if (out[i] != '\n') { out[i] = ' '; }
+                i++;
+            }
+            continue;
+        }
+        i++;
+    }
+    return out;
+}
+
+/* 注释剥离后的 needle 计数（正向结构齿用; 注释无法满足）。 */
+static int csa_count_in_slice_code(const char *slice, const char *needle)
+{
+    char *stripped;
+    int r;
+
+    if (slice == NULL) {
+        return 0;
+    }
+    stripped = csa_strip_c_comments(slice);
+    r = csa_count_in_slice(stripped, needle);
+    free(stripped);
+    return r;
+}
+
+static int csa_count_in_file_code(const char *rel, const char *needle)
+{
+    char *buf = csa_read(rel);
+    int r = csa_count_in_slice_code(buf, needle);
     free(buf);
     return r;
 }
@@ -813,3 +940,127 @@ TEST_CASE("boundary: 注册接线守卫+契约spec canary+扫描器自检 (M2K1-
         "（现状树帧路径含三态分类调用, 切区器应能数到）");
     free(region);
 }
+
+/* -------------------------------------------------------------------------- *
+ * TEST 5 — MCF-A2 meaning 承载 seam 结构齿（structural; seam [5];
+ * 260920-m2-charwindow-card-fix additive。char_stroke.{h,c} 强定义 home 均在
+ * host runner 在册——本齿以源级树扫承载 freeze 相位红, builder 落地后 GREEN;
+ * 正向计数全部注释剥离后计数——sealing pass 纪律, 注释无法满足）
+ * RED today（设计态）: 头零 meaning 字段 / 零探针宏 / card_build 零 meaning 消费。
+ * ------------------------------------------------------------------------ */
+/* coverage: MCF-A2 -- meaning 承载结构半: kidpal_char_info 增 const char *meaning（NULL 容忍, 不进拒绝集）+ kidpal_char_card 增 char meaning[96] + 编译期探针宏 KIDPAL_CHAR_STROKE_HAS_MEANING（行为齿编译门, 漏定义由本齿咬住）+ card_build 函数区 meaning 消费在世（NULL 容忍分支 + 拷贝分支 >= 2; 注释剥离后计数） */
+TEST_CASE("meaning 承载 seam 结构: 头双字段+探针宏+card_build 消费 (MCF-A2)",
+          "[char_stroke][MCF-A2][structural]")
+{
+    char *region;
+
+    CSA_REQUIRE_ROOT();
+
+    /* tooth 1: kidpal_char_info 增 const char *meaning（末位可选面, NULL 容忍）。 */
+    region = csa_region_between(CSA_CHAR_STROKE_H, "} kidpal_cs_point;",
+                                "} kidpal_char_info;");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A2 RED(infra): char_stroke.h 的 kidpal_char_info 结构区切取失败（锚漂移"
+        "——须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(csa_count_in_slice_code(region, "meaning") >= 1,
+        "MCF-A2 RED: kidpal_char_info 零 meaning 成员——释义承载字段缺失（S-F3.2 AC1 "
+        "v1.56 释义行的数据面 seam; plan.md 改动面 1, NULL 容忍不进拒绝集; 注释剥离后"
+        "计数）");
+    free(region);
+
+    /* tooth 2: kidpal_char_card 增 char meaning[96]（容量对齐 words 惯例）。 */
+    region = csa_region_between(CSA_CHAR_STROKE_H, "} kidpal_char_info;",
+                                "} kidpal_char_card;");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A2 RED(infra): char_stroke.h 的 kidpal_char_card 结构区切取失败（锚漂移）");
+    TEST_ASSERT_TRUE_MESSAGE(csa_count_in_slice_code(region, "meaning") >= 1,
+        "MCF-A2 RED: kidpal_char_card 零 meaning 缓冲——速查卡释义装配无落点"
+        "（容量对齐 words 惯例 char meaning[96]; 注释剥离后计数）");
+    free(region);
+
+    /* tooth 3: 编译期探针宏（冻结 seam [5] 同步形态）——行为齿 test 6 的编译门;
+     * 漏定义则行为齿静默缺席编译 = 套件级假绿缝隙, 本齿咬住。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        csa_count_in_file_code(CSA_CHAR_STROKE_H, "KIDPAL_CHAR_STROKE_HAS_MEANING") >= 1,
+        "MCF-A2 RED: char_stroke.h 零 KIDPAL_CHAR_STROKE_HAS_MEANING 探针宏——MCF-A2 "
+        "行为齿的编译期 seam 缺失（冻结 seam [5] 同步形态: 头落 meaning 字段时同步 "
+        "#define KIDPAL_CHAR_STROKE_HAS_MEANING 1; 漏定义则行为齿永不编译）");
+
+    /* tooth 4: card_build 函数区 meaning 消费在世（NULL 容忍分支 + verbatim 拷贝
+     * 分支 >= 2 处; 注释剥离后计数——注释提及不算实现, builder M4 教训）。 */
+    region = csa_region_between(CSA_CHAR_STROKE_C, "int kidpal_char_card_build(",
+                                "int kidpal_char_data_validate(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A2 RED(infra): char_stroke.c 的 card_build 函数区切取失败（签名锚漂移）");
+    TEST_ASSERT_TRUE_MESSAGE(csa_count_in_slice_code(region, "meaning") >= 2,
+        "MCF-A2 RED: kidpal_char_card_build 函数区零/弱 meaning 消费——释义装配未落地"
+        "（NULL 容忍分支 + verbatim 截断安全拷贝分支 >= 2 处; 注释剥离后计数）");
+    free(region);
+}
+
+#if KIDPAL_CHAR_STROKE_HAS_MEANING
+/* -------------------------------------------------------------------------- *
+ * TEST 6 — MCF-A2 meaning 承载行为齿（behavioral, 强定义 char_stroke.c 已在册;
+ * 260920-m2-charwindow-card-fix additive。**编译期探针门控**: seam 未落时本齿缺席
+ * 编译, 由 test 5 结构齿承载红——非空过）
+ * 三态: 非空 verbatim + 截断安全 / NULL -> 空串 rc=0（缺义不降级整窗——human 裁
+ * 降级口径核心）/ 既有四字段 + progress 文案零回归（M2-K1 冻结面共存）。
+ * ------------------------------------------------------------------------ */
+/* coverage: MCF-A2 -- meaning 承载行为半（编译期探针门控）: 非空 verbatim + 截断安全（>96 字节 -> 95 + NUL 恒不越界）/ NULL -> out->meaning 空串且 rc=0（缺义不降级整窗, meaning 不进 NULL 拒绝集）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面） */
+TEST_CASE("meaning 承载行为: verbatim+截断安全+NULL 容忍不降级 (MCF-A2)",
+          "[char_stroke][MCF-A2][behavior]")
+{
+    kidpal_char_info info;
+    kidpal_char_card card;
+    char big[160];
+
+    /* ---- state 1: 非空 verbatim + 与既有四字段共存零回归 -------------------- */
+    memset(&info, 0, sizeof(info));
+    info.pinyin = "yǒng";
+    info.radical = "力";
+    info.stroke_count = 9;
+    info.words = "勇敢、勇气";
+    info.meaning = "勇敢；有胆量";
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0,
+        "MCF-A2 RED: 非空 meaning 装配 rc != 0——card_build 拒收了合法装配面");
+    TEST_ASSERT_TRUE_MESSAGE(strcmp(card.meaning, "勇敢；有胆量") == 0,
+        csa_fm("MCF-A2 RED: card.meaning=\"%s\" 期望 verbatim \"勇敢；有胆量\"——释义被"
+               "改写/截断/丢弃（S-F3.2 AC1 v1.56 释义行数据面）", card.meaning));
+    TEST_ASSERT_TRUE_MESSAGE(strcmp(card.pinyin, "yǒng") == 0 &&
+                                 strcmp(card.radical, "力") == 0 &&
+                                 strcmp(card.stroke_total, "共 9 画") == 0 &&
+                                 strcmp(card.words, "勇敢、勇气") == 0 &&
+                                 strcmp(card.progress, "写完啦·共 9 笔") == 0,
+        csa_fm("MCF-A2 RED: meaning 加入后既有四字段/progress 漂移 (pinyin=%s, "
+               "stroke_total=%s, progress=%s)——M2-K1 冻结面回归（参照表守卫语义同源）",
+               card.pinyin, card.stroke_total, card.progress));
+
+    /* ---- state 2: 截断安全（>96 字节 -> 95 + NUL, 恒不越界）------------------ */
+    memset(big, 'a', sizeof(big));
+    big[sizeof(big) - 1] = '\0';
+    info.meaning = big;
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0,
+        "MCF-A2 RED: 超长 meaning 装配 rc != 0——截断路径被当作失败");
+    TEST_ASSERT_TRUE_MESSAGE(strlen(card.meaning) == 95 && card.meaning[95] == '\0',
+        csa_fm("MCF-A2 RED: 超长 meaning 截断后长度 %zu（期望 95 + NUL）——容量 "
+               "meaning[96] 的截断安全语义缺失（越界/不截断/未恒 NUL 结尾）",
+               strlen(card.meaning)));
+
+    /* ---- state 3: NULL -> 空串 + rc=0（缺义不降级整窗——human 裁降级口径核心）-- */
+    info.meaning = NULL;
+    memset(&card, 0, sizeof(card));
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_char_card_build(&info, -1, &card) == 0,
+        "MCF-A2 RED: meaning=NULL 装配 rc != 0——缺义被降级整窗（human 裁: 缺释义只损"
+        "右栏一行, meaning 不进 NULL 拒绝集; 旧 payload 整窗降级 = 行为回归）");
+    TEST_ASSERT_TRUE_MESSAGE(card.meaning[0] == '\0',
+        csa_fm("MCF-A2 RED: meaning=NULL 时 card.meaning=\"%s\" 非空串——缺义容忍语义"
+               "缺失（「释义：—」兜底占位归 char_page 呈现面, 数据面须空串）",
+               card.meaning));
+    TEST_ASSERT_TRUE_MESSAGE(strcmp(card.words, "勇敢、勇气") == 0 &&
+                                 strcmp(card.progress, "写完啦·共 9 笔") == 0,
+        "MCF-A2 RED: meaning=NULL 时其余字段未照常装配——缺义容忍路径连带损了右栏"
+        "其余行（缺义只损一行, 不降级整窗）");
+}
+#endif /* KIDPAL_CHAR_STROKE_HAS_MEANING */

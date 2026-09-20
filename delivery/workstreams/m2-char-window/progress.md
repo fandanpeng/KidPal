@@ -100,3 +100,19 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **边界外移交项（主线程执行，已完成）**：`milestones.jsonl` M2-char-window `state` `planning → in_delivery` + `delivery-status.mjs` 重建 STATUS.md——经 human 2026-09-19 显式授权「现在就补」执行，落 `21c4dd9` 并 ff 入 main。**待判**：该里程碑行的 `nextAction` 仍描述 K1/K2/K3 已完成的工作（撤 P4 / 页→窗 / 锚改名），内容已过期——planner 按授权范围只动了 `state`，未擅改 `nextAction`，留给 human 或 portfolio 收口时对账。
 
 **待修 gov 工具缺陷（本包实跑测出，planner 无权修）**：`render-roadmap.mjs` 的包发现未排除 `delivery/taskpackages/current/` 指针目录——该目录镜像最后活跃包，被当作第二个包计入，致同一 changeId 渲染出两行（`M2-K3a` / `M2-K3b` 同 changeId 同 mergeOrder，脚本自报「4 包」而实际 3 包）。触发条件 = `current/` 指向被渲染 workstream 内的包（本包 intake 把 `current/` 刷成 K3 后立即复现；2026-09-17 那次渲染未复现，因当时 `current/` 指 workstream 外包）。**planner 处置 = 不落盘该渲染**（roadmap ② 节机械渲染块人工禁改，且 `.claude/scripts/**` 不在 planner scope allow 面内），roadmap.md 保持既有状态；证据与复现命令落 K3 pod-events（`2f64635a`）。建议走 `/gov-arq` 或下一批治理修脚本后重渲本 workstream roadmap。
+
+## 2026-09-20 · A7 真机轮 finding → 修复包 `260920-m2-charwindow-card-fix` 闭环 → merged（mo31）
+
+**入口与路由**：human 真机确认轮 finding①（查「勇」右栏整栏隐身 + 释义须上屏 + AC4 听觉口径确认）→ spec v1.56 + 勘误落账（`a24a718`/`5982d82`，human 授权直改）→ `/triage-change`（architect 比例化 review ② Lite/medium + 两项纠偏发现）→ human 触点①三问确认 → 本包闭环。
+
+**交付面**：右栏速查栏与底部提示条接 `font_puhui_14_1`（根因 = `char_page.cc:555` 全树唯一在中文 label 显式钉 `LV_FONT_DEFAULT`）；S-F3.2 AC1 五行兑现（释义行上屏，缺义兜底「释义：—」U+2014 钉进齿）；`char_stroke.{h,c}` additive 扩展 meaning 承载（NULL 容忍不进拒绝集 + `KIDPAL_CHAR_STROKE_HAS_MEANING` 探针宏）；K3 冻结件 tighten-only 修订。**zero**：契约/spec/云面/CMake/mcp_server case 3。
+
+**过程要点（耐久项）**：
+1. **spec 起草期把设计注释当已落地代码**（v1.56「全工程显式加载 font_body」有误）——architect 纠偏发现 B 抓出、主线程对磁盘核验证实、勘误 append-only。教训已升格：**引用「某机制已存在」必须 grep 运行时调用行，注释/设计文档不算证据**。
+2. **防伪齿形态落地**：MCF-A1 负向齿（`LV_FONT_DEFAULT` 作 text_font 实参数 == 0）对病灶即红、修复转绿——齿敏感性与病灶同构，补 K3 A5a 正向包含齿的盲区。
+3. **设备构建闸再证价值**：五行拼装 `buf[256]` 触发设备侧 `-Werror=format-truncation`（host 不编 char_page.cc 原理上测不出），放大 384 修平——连续两棒实证「host 全绿 ≠ 设备能编」。
+4. A4 mutation 语义归位：套件级留痕修订项 `kind: structural`（起草期就该判「可变异面」，不留到闸报红）。
+
+**遗留**：① **MCF-A5 真机腿未做（human 持板）**——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 提示条可见 + schedule/story 中文可见性取证，**与 K3 A7/A8 设备确认轮同轮合并执行（单真机不两轮撞车）**；R1 = `font_puhui_14_1` 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）。② NIT：char_stroke.h:23 changeId 笔误（240920→260920，标识符笔误非行为误导，留后续批）。③ loop-retro 阈值 advisory 持续在案。
+
+**合并**：supervisor 门 APPROVE（medium + 证据完备 → 自动合并通道）→ 升级闸 PASS → `merge-driver` 本地合并 `a259601`（mo31）。里程碑不动（M2 已 in_delivery；ready_for_acceptance 待设备轮闭环）。
