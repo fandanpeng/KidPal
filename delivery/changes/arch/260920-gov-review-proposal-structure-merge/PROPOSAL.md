@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-proposal-structure-merge
 
-> **状态：DRAFT v0.1 · 2026-09-20 · 待 human 立项 ack**（FROZEN 行待补凭据：human 立项 ack + architect Rn GREEN）。
+> **状态：DRAFT v0.2 · 2026-09-20 · 已立项 ack · 待 architect R1 评审**（凭据：human 2026-09-20 会话「立项 ack」+ OQ 全裁〔OQ1 = 保留 §1 空档；OQ2 = 硬项标签去数字〕。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：无——human 2026-09-20 会话直接触发（读 260918 批 PROPOSAL 时提出「问题与改法两段分离、阅读成本大」）。收口时按惯例补登记。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T2）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
