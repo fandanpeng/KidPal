@@ -146,6 +146,7 @@
   },
   "260920-gov-review-reader-scripts-align": {
     "date": "2026-09-20",
-    "mergedInMain": "no"
+    "mergedInMain": "yes",
+    "landed": true
   }
 }
