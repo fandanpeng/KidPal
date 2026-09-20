@@ -145,6 +145,29 @@
  *       不可脑补）——本 seam 只钉驱动落地面与形态, 不钉安全证明。承载齿 = test 8（全部
  *       正向断言走注释剥离后计数, 防注释假绿）。
  *
+ *   [10] 右栏字体接线 + 释义行上屏（MCF-A1/A3; home = firmware/main/display/char_page.cc;
+ *       260920-m2-charwindow-card-fix additive 追加; 真机根因与需求权威 = requirements
+ *       v1.56 对账④⑤ + S-F3.2 AC1 五行口径 + plan.md reviewed plan）:
+ *       a) **负向齿（本包防伪齿核心）**: char_page.cc 全文行级——`lv_obj_set_style_text_font(`
+ *          调用行携带 `LV_FONT_DEFAULT` 实参 = 0。现状 :555 是全树唯一在中文 label 上显式
+ *          钉默认字体（内置 montserrat_14 纯拉丁, 无汉字与带调韵母字形 -> 真机右栏速查栏
+ *          + 底部提示条整栏隐身）——**对现状即红 = 真实缺陷信号**, builder 显式改接
+ *          font_puhui_14_1 后转绿（RED->GREEN 可判; 直接针对本件 A5a 假绿病灶: K3 时的
+ *          正向包含齿对字体面零覆盖）。负向齿**不剥注释**（sealing pass 纪律——剥注释会
+ *          放松负向齿; 行级双针形态天然排除「注释提及 LV_FONT_DEFAULT」的假红）。
+ *       b) **正向齿**: `LV_FONT_DECLARE(font_puhui_14_1)` 声明在世 + cardlabel 与
+ *          hint_label 两个 label 创建/设值区各有 `&font_puhui_` 字面在世（全部注释剥离
+ *          后计数, sealing pass 先例——注释无法满足; lcd_display.cc 键帽条左右槽 + 语音
+ *          轮 header/echo/answer 五处真机已验证同款先例）。
+ *       c) **五行拼装（S-F3.2 AC1 v1.56 五行口径）**: cJSON 解析区取 `meaning`（防御
+ *          消费, 参照既有 "?" 缺省先例）+ info_o 装配含 meaning（两处 positional
+ *          initializer 同步补成员, plan.md 改动面 3④）+ 速查卡 snprintf 五行含
+ *          `card.meaning` 实参 + `释义：` 行字面 + 缺义兜底 `—` 占位（**形态钉死不留
+ *          现场裁量**——human 裁: 缺义只损右栏一行, 不降级整窗）+ `%s\n` >= 4（五行
+ *          形态）+ charpage_refresh_hint 装配区含 meaning（全部注释剥离后计数）。
+ *          行为半（card_build meaning 三态）归 char_stroke.acceptance.c（同批 additive
+ *          修订, seam [5]）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: M2K3-A1 层注册 -> test 1（行为半: 新层可入栈/覆盖当前页/pop 回原页不翻页/
@@ -177,6 +200,17 @@
 *             封口相位设计态红 = 本包最后一个待 builder 补的驱动面）+ 文件尾「终跑判读」段
  *   coverage: M2K3-E2 铁律（零契约/零 spec/零 agent-gate 触及）-> test 7 tooth 2/3
  *             （requirements 查字窗锚 + 契约面在世 canary + 扫描器自检）
+ *   coverage: MCF-A1 右栏字体接线（260920-m2-charwindow-card-fix）-> test 9（负向:
+ *             text_font 调用行 LV_FONT_DEFAULT 实参 = 0——现状红 = 真实缺陷信号,
+ *             RED->GREEN 可判; 正向: DECLARE + cardlabel/hint_label 两区 &font_puhui_
+ *             字面在世, 注释剥离后计数）
+ *   coverage: MCF-A3 五行拼装（同包）-> test 9（cJSON 解析区取 meaning + info_o 装配
+ *             + snprintf 五行 card.meaning 实参 + 释义行 + 缺义兜底「释义：—」占位
+ *             形态钉死 + %s\n >= 4 五行形态 + refresh_hint 区 meaning, 注释剥离后
+ *             计数）; 行为半归 char_stroke.acceptance.c test 6
+ *   coverage: MCF-A4 留痕修订（同包）-> test 5 A5a 红名口径四行->五行（spec v1.56,
+ *             断言本体零放宽）+ test 6 info 显式零初始化（meaning 字段落地后未初始化
+ *             成员 = 野指针 UB 的预防性收固, 期望值零变化）+ 本文件尾 REVISION LOG
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   0) builder wiring 见 [7]。
@@ -435,6 +469,41 @@ static int cwx_count_in_slice(const char *slice, const char *needle)
     n = strlen(needle);
     for (h = slice; (h = strstr(h, needle)) != NULL; h += (n ? n : 1)) {
         count++;
+    }
+    return count;
+}
+
+/* 行级判定（raw 不剥注释——负向齿专用; csa_count_lines_with_both 同款,
+ * 260920-m2-charwindow-card-fix 追加）: slice 内同时含 needle1 与 needle2、且不含
+ * excl（NULL = 不排除）的行数。负向齿用行级双针而非全文计数: 注释行提及
+ * LV_FONT_DEFAULT（如「从 LV_FONT_DEFAULT 改接…」的迁移注记）不会误红, 而
+ * 剥注释会放松负向齿（sealing pass 纪律: 负向齿不剥注释）。 */
+static int cwx_count_lines_with_both(const char *slice, const char *needle1,
+                                     const char *needle2, const char *excl)
+{
+    int count = 0;
+    const char *line;
+
+    if (slice == NULL) {
+        return 0;
+    }
+    line = slice;
+    while (*line != '\0') {
+        const char *eol = strchr(line, '\n');
+        size_t len = eol ? (size_t)(eol - line) : strlen(line);
+        char tmp[CWX_MAX_PATH];
+        size_t cp = len < sizeof(tmp) - 1 ? len : sizeof(tmp) - 1;
+
+        memcpy(tmp, line, cp);
+        tmp[cp] = '\0';
+        if (strstr(tmp, needle1) != NULL && strstr(tmp, needle2) != NULL &&
+            (excl == NULL || strstr(tmp, excl) == NULL)) {
+            count++;
+        }
+        if (eol == NULL) {
+            break;
+        }
+        line = eol + 1;
     }
     return count;
 }
@@ -996,7 +1065,8 @@ TEST_CASE("查字窗对账: 显示路径零会话+右栏三项+锚改名+cache_c
      * （snprintf 实参 g_page.card.radical）, 注释再也无法满足。 */
     TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "card.radical") >= 1,
         "M2K3-A5 RED: 速查卡 label 拼装未纳入 card.radical——部首行装配了未上屏"
-        "（S-F3.2 AC1「拼音带声调 + 共 N 画 + 部首标签 + 组词」四行不齐, v1.38 对账③；"
+        "（S-F3.2 AC1「拼音带声调 + 共 N 画 + 部首 + 释义 + 组词」五行不齐, v1.38 对账③"
+        "+ v1.56 五行口径（释义行由 260920-m2-charwindow-card-fix 承接, 见 test 9）; "
         "本齿注释剥离后计数, 注释无法满足）");
     free(region);
 
@@ -1102,6 +1172,12 @@ TEST_CASE("查字窗对账: 页点隐藏机制+部首字段装配守卫 (M2K3-A4
     /* A5 guard: 速查卡数据面装配（radical 有值——v1.38 对账③「card.radical 有值、
      * label 拼装漏」的「有值」半守卫; 修复只住 char_page.cc 的 label 拼装, 不动本函数）。 */
     memset(&card, 0, sizeof(card));
+    /* 260920-m2-charwindow-card-fix 修订（REVISION LOG 2026-09-20, MCF-A4 留痕）:
+     * info 显式零初始化——kidpal_char_info 增 meaning 字段（同包 seam, home =
+     * char_stroke.h）落地后, 未初始化的 info.meaning = 野指针会被 card_build 的
+     * NULL 容忍分支消费成 UB（完备性反查发现）; memset 后 meaning = NULL 恰走容忍
+     * 路径, 本守卫期望值零变化（rc=0 + radical/pinyin/progress 断言不变）。 */
+    memset(&info, 0, sizeof(info));
     info.pinyin = "yǒng";
     info.radical = "力";
     info.stroke_count = 9;
@@ -1288,6 +1364,117 @@ TEST_CASE("查字窗驻留计时: 设备侧驱动接线（1s tick 喂 step + 到
     free(region);
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 9 — MCF-A1/A3 右栏字体接线 + 释义行上屏（structural; seam [10];
+ * 260920-m2-charwindow-card-fix additive。char_page.cc 设备装配面非 host 编译——
+ * 源级树扫承载, 本件既有范式; 负向齿不剥注释, 正向齿全部注释剥离后计数——
+ * sealing pass 纪律）
+ * RED today（设计态）: 负向齿 :555 LV_FONT_DEFAULT 实参在世（真机右栏整栏隐身
+ * 病灶本体红, RED->GREEN 可判——本包防伪齿核心, 直接针对 K3 A5a 假绿病灶「正向
+ * 包含齿对字体面零覆盖」）+ font_puhui 接线 / meaning 数据链全缺。
+ * ------------------------------------------------------------------------ */
+/* coverage: MCF-A1 -- 右栏字体接线结构齿: 负向（char_page.cc 中 lv_obj_set_style_text_font( 调用行携带 LV_FONT_DEFAULT 实参 = 0; 现状红 = 真实缺陷信号, 修复后转绿 RED→GREEN 可判）+ 正向（LV_FONT_DECLARE(font_puhui_14_1) + cardlabel/hint_label 两设值区 &font_puhui_ 字面在世, 注释剥离后计数） */
+/* coverage: MCF-A3 -- 五行拼装结构齿: cJSON 解析区取 meaning（防御消费）+ info_o 装配含 meaning + 速查卡 snprintf 五行含 card.meaning 实参 + 释义：行字面 + 缺义兜底「释义：—」占位形态钉死 + %s\n >= 4 五行形态 + charpage_refresh_hint 装配区含 meaning（注释剥离后计数）; 行为半归 char_stroke.acceptance.c test 6 */
+TEST_CASE("查字窗右栏: 字体接线负向+font_puhui 正向+释义五行拼装 (MCF-A1/A3)",
+          "[char_window_overlay][MCF-A1][MCF-A3][structural]")
+{
+    char *buf;
+    char *region;
+    int n;
+
+    CWX_REQUIRE_ROOT();
+
+    /* ---- A1 负向齿（本包防伪齿核心; 不剥注释——行级双针天然排除注释假红）----- */
+    buf = cwx_read(CWX_CHAR_CC, NULL);
+    TEST_ASSERT_NOT_NULL_MESSAGE(buf, "CWX RED(infra): char_page.cc unreadable");
+    n = cwx_count_lines_with_both(buf, "lv_obj_set_style_text_font(",
+                                  "LV_FONT_DEFAULT", NULL);
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        cwx_fm("MCF-A1 RED: char_page.cc 仍有 %d 行 lv_obj_set_style_text_font 调用携带 "
+               "LV_FONT_DEFAULT 实参——中文 label 显式钉默认字体（内置 montserrat_14 纯拉丁, "
+               "无汉字与带调韵母字形 -> 真机右栏速查栏 + 底部提示条整栏隐身, v1.56 对账④"
+               "病灶本体; 修复 = 显式接线 font_puhui_14_1, RED->GREEN 可判）", n));
+
+    /* 扫描器自检: 行级双针计数器对已知在世形态能命中（负向齿机器防假绿）。 */
+    n = cwx_count_lines_with_both(buf, "lv_obj_set_style_text_font(",
+                                  "lv_obj_set_style_text_font(", NULL);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        "CWX RED(infra): line-pair counter cannot see a known call line — 行级计数器失灵"
+        "（负向齿机器失去咬合力）");
+    free(buf);
+
+    /* ---- A1 正向齿（注释剥离后计数——sealing pass 先例, 注释无法满足）--------- */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_CHAR_CC, "LV_FONT_DECLARE(font_puhui_14_1)") >= 1,
+        "MCF-A1 RED: char_page.cc 零 LV_FONT_DECLARE(font_puhui_14_1)——全量 14px 普惠体"
+        "声明缺失（lcd_display.cc 键帽条/语音轮五处真机已验证同款先例; R3 链接可达性"
+        "seam, 注释剥离后计数）");
+
+    region = cwx_region_between(CWX_CHAR_CC, "lv_obj_set_style_text_font(cardlabel",
+                                "g_page.hint_label = lv_label_create");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A1 RED(infra): cardlabel 字体设值区切取失败（锚漂移——A5a 区末端锚 "
+        "lv_obj_set_style_text_font(cardlabel 若被改写须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "&font_puhui_") >= 1,
+        "MCF-A1 RED: cardlabel 设值区零 &font_puhui_ 字面——速查卡 label 仍钉默认字体"
+        "（真机整栏隐身病灶; 注释剥离后计数, 注释无法满足）");
+    free(region);
+
+    region = cwx_region_between(CWX_CHAR_CC, "g_page.hint_label = lv_label_create",
+                                "g_page.timer = lv_timer_create");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A1 RED(infra): hint_label 创建/设值区切取失败（锚漂移——须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "&font_puhui_") >= 1,
+        "MCF-A1 RED: hint_label 区零 &font_puhui_ 字面——底部提示条未显式设字体"
+        "（s_kidpal_scr 字体继承存在未解张力, 不赌继承——v1.56 对账④; 注释剥离后计数）");
+    free(region);
+
+    /* ---- A3 五行拼装齿（注释剥离后计数）------------------------------------- */
+    /* tooth: cJSON 解析区取 meaning（防御消费, 参照既有 "?" 缺省先例）+ info_o 装配。 */
+    region = cwx_region_between(CWX_CHAR_CC, "const char *pinyin = \"?\"",
+                                "lv_obj_t *cardlabel");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A3 RED(infra): char_page.cc 的 cJSON 解析/装配区切取失败（锚漂移——须复核"
+        "本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "meaning") >= 2,
+        "MCF-A3 RED: char_page.cc 解析/装配区零/弱 meaning 消费——释义数据链入口缺失"
+        "（cJSON GetObjectItem(\"meaning\") 防御取值 + info_o 装配 >= 2 处; D3 "
+        "data.meaning 字段既有、云端已在下发, 零契约改动; 注释剥离后计数）");
+    free(region);
+
+    /* tooth: 速查卡 snprintf 五行——card.meaning 实参 + 释义：行字面 + 缺义兜底「—」
+     * 占位（形态钉死不留现场裁量——human 裁）+ %s\n >= 4（五行形态）。 */
+    region = cwx_region_between(CWX_CHAR_CC, "kidpal_char_card_build(&info_o",
+                                "lv_obj_set_style_text_font(cardlabel");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A3 RED(infra): 速查卡拼装区切取失败（锚漂移——须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "card.meaning") >= 1,
+        "MCF-A3 RED: 速查卡拼装区零 card.meaning 实参——释义行未上屏（S-F3.2 AC1 "
+        "v1.56 五行口径; 注释剥离后计数——builder M4 实证: 注释提及不算实现）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "释义：") >= 1,
+        "MCF-A3 RED: 速查卡拼装区零「释义：」行字面——五行缺释义行标签（S-F3.2 AC1 "
+        "v1.56: 拼音带声调/共 N 画/部首/释义/组词）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "—") >= 1,
+        "MCF-A3 RED: 速查卡拼装区零「—」兜底占位——meaning 缺失时右栏形态未钉死"
+        "（human 裁: 缺义兜底「释义：—」占位, 不留现场裁量; 兜底归呈现面, 数据面 "
+        "NULL -> 空串归 card_build——char_stroke.acceptance.c test 6）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "%s\\n") >= 4,
+        "MCF-A3 RED: 速查卡拼装区 %s\\n 不足 4 处——五行形态缺失（AC1 五行: 4 个换行"
+        "分隔符, v1.56 五行口径）");
+    free(region);
+
+    /* tooth: charpage_refresh_hint 装配区含 meaning（底部提示条同链零漂移——plan.md
+     * 改动面 3④: 两处 positional initializer 同步补 meaning 成员）。 */
+    region = cwx_region_between(CWX_CHAR_CC, "static void charpage_refresh_hint",
+                                "static void charpage_on_panel_delete");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "MCF-A3 RED(infra): charpage_refresh_hint 函数区切取失败（签名锚漂移）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "meaning") >= 1,
+        "MCF-A3 RED: charpage_refresh_hint 装配区零 meaning——hint 重装配链释义缺位"
+        "（plan.md 改动面 3⑤; 注释剥离后计数）");
+    free(region);
+}
+
 /* ---------------------------------------------------------------------------
  * 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1308,6 +1495,10 @@ TEST_CASE("查字窗驻留计时: 设备侧驱动接线（1s tick 喂 step + 到
  *       REVISION LOG 2026-09-19——对未落层现状为设计态红）;
  *     - retract_p4_three_page.acceptance.c test 6 tooth 2/5 翻正齿（见该文件 REVISION
  *       LOG 2026-09-19; 原「cache_char 保留」守卫随本包收拢翻正为「已收」）。
+ *     - 本文件 test 9（MCF-A1/A3——260920-m2-charwindow-card-fix 修订新增: 负向齿
+ *       现状红 = 真实缺陷信号（:555 LV_FONT_DEFAULT 实参在世）, font_puhui 接线 /
+ *       释义五行数据链全缺——builder 落地后转绿, 负向齿 RED->GREEN 为本包核心信号;
+ *       char_stroke.acceptance.c test 5 同批义务红, test 6 探针门控缺席编译）。
  *   MUST-STAY-GREEN（守卫齿, 现状即绿、绿才是本包做对）:
  *     test 1 下层三值零偏移 + PROVISION 零触碰; test 3 通用覆盖层列/基层列/越界键位;
  *     test 5 mcp view=char 路由本体零触碰 + char 渲染主路径在世; test 6 全部（A4/A5
@@ -1372,4 +1563,21 @@ TEST_CASE("查字窗驻留计时: 设备侧驱动接线（1s tick 喂 step + 到
  *                  实证: A5a 原裸扫可被注释满足）。**只加齿收紧, 不放松任何既有齿**;
  *                  负向齿与头注锚齿（A6a char-window）不剥注释。另两处在世冻结件
  *                  （key_layer_dispatch / retract_p4_three_page）本轮不动——未实证同类假绿。
+ *   2026-09-20  MCF revision (acceptance-author, TaskPackage 260920-m2-charwindow-card-fix;
+ *               additive + tighten-only):
+ *               ① 追 seam [10] + test 9——右栏字体接线（A1 负向齿: text_font 调用行
+ *                  LV_FONT_DEFAULT 实参 = 0, 对现状 :555 即红 = 真实缺陷信号, RED->GREEN
+ *                  可判; 直接针对本件 A5a 假绿病灶「正向包含齿对字体面零覆盖」; 负向齿
+ *                  不剥注释, 行级双针形态）+ font_puhui_14_1 正向接线齿（DECLARE +
+ *                  cardlabel/hint_label 两区, 注释剥离后计数）+ A3 释义五行拼装齿（解析/
+ *                  装配/snprintf/refresh_hint, 注释剥离后计数）。
+ *               ② tighten: test 5 A5a 红名口径四行->五行（spec v1.56 释义行入 AC1;
+ *                  断言本体与阈值零放宽）。
+ *               ③ 收固: test 6 kidpal_char_info info 显式 memset 零初始化——meaning 字段
+ *                  （同包 seam, home = char_stroke.h）落地后未初始化成员 = 野指针 UB
+ *                  （完备性反查发现）; 期望值零变化, 非语义改动。
+ *               A5a 区末端锚 lv_obj_set_style_text_font(cardlabel 经核验**存活**——builder
+ *               只改实参 LV_FONT_DEFAULT -> &font_puhui_14_1 不动锚字面, 无需锚修订
+ *               （MCF-A4 预案未触发, 留痕）。行为半（card_build meaning 三态）归
+ *               char_stroke.acceptance.c（同批 additive 修订, seam [5] + test 5/6）。
  * --------------------------------------------------------------------------- */

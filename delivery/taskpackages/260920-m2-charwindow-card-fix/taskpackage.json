@@ -12,7 +12,7 @@
   "story": "M2-K3 真机轮修复——查字窗右栏速查栏与底部提示条字体接线（char_page 全树唯一显式钉 LV_FONT_DEFAULT 于中文 label 的病灶，真机整栏隐身）+ S-F3.2 AC1 五行兑现（释义行上屏，D3 meaning 字段既有、云端已在下发）",
   "planRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
   "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；acceptance-author 实跑复核。elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
-  "redBaselineResult": "",
+  "redBaselineResult": "RED（freeze 后现行基线）—— host runner 全量 **60 Tests / 2 Failures / 0 Ignored**（acceptance-author 实跑 + planner 2026-09-20 独立复跑双证），两条均为设计态义务红、其余 58 齿零新增红：① `char_window_overlay.acceptance.c` test 9（MCF-A1 负向齿）——「char_page.cc 仍有 1 行 lv_obj_set_style_text_font 调用携带 LV_FONT_DEFAULT 实参」（:555 病灶本体，builder 改接 font_puhui_14_1 后 RED→GREEN）；② `char_stroke.acceptance.c` test 5（MCF-A2 结构半）——「kidpal_char_info 零 meaning 成员」（seam 未落义务红；TEST 6 行为齿探针门控缺席编译，红由 test 5 承载）。**builder 接线义务（acceptance-author 新增 seam 形态，改动须返 planner）**：落 meaning 字段时同步 `#define KIDPAL_CHAR_STROKE_HAS_MEANING 1`（K3 件 fallback 宏同款先例；漏定义 = 行为齿静默缺席编译、test 5 结构齿咬住）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
