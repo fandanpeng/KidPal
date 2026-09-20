@@ -141,6 +141,7 @@
   },
   "260920-gov-review-proposal-structure-merge": {
     "date": "2026-09-20",
-    "mergedInMain": "yes"
+    "mergedInMain": "no",
+    "landed": true
   }
 }
