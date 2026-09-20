@@ -342,6 +342,21 @@ export function runResolveOriginSelfCheck() {
 //   - 迁移锚读 B：路径后注记（至下一路径间文本）含「迁出」→ 迁出路径仅表示法注记、不入并集；迁入路径入对账；
 //   - 条件锚裁剪：路径后注记含「条件」/「触发条件」→ 条件锚，裁出不入并集（manifest 反映裁断）；注记不可识别/模糊 → 按必选锚对账（向严，防条件标注成绕过口）；
 //   - 或锚：相邻两路径之间出现「或」= 或锚未决 → problem 点名（须 FROZEN/manifest 层定夺后重跑，不静默拆解、不吞过）。
+//   - fenced code block 全跳（T3 子项 b，260920-gov-review-citation-anchor-residue，FROZEN 2026-09-20）：
+//     §2 的围栏块 = 示范 / 原文钉死内容，**不是声明**（该立场有既有用法支撑：`checkVerbatimQuotes` 早已把 §2
+//     围栏块正文当「作者原文钉死的目标文件内容」做字节级对账）。条目标题扫描与锚行扫描**都**跳围栏内（含开合行），
+//     否则围栏内的 `### T<n>` 会造幻影条目并吞其后真锚行、围栏内的 `目标文件：` 会进锚并集造成 §2↔manifest 假失配
+//     （R1-F5 两具夹具实测：围栏内路径带 backtick → anchorCount 1 + 真条目被判缺锚；裸写 → anchorCount 0 + 歧义锚）。
+function fenceLineFlags(lines) {
+  const flags = new Array(lines.length).fill(false);
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*```/.test(lines[i])) { flags[i] = true; inFence = !inFence; continue; }
+    flags[i] = inFence;
+  }
+  return flags;
+}
+
 export function parseSection2AnchorLists(text) {
   const problems = [];
   const union = new Set();
@@ -354,15 +369,22 @@ export function parseSection2AnchorLists(text) {
   for (let i = start + 1; i < lines.length; i++) {
     if (/^##\s/.test(lines[i])) { end = i; break; }
   }
+  const flags = fenceLineFlags(lines); // 全文件算一次，再按节域切片（下标与 lines 对齐）
   const entries = [];
   let current = null;
-  for (const line of lines.slice(start, end)) {
+  for (let i = start; i < end; i++) {
+    const line = lines[i];
+    if (flags[i]) {
+      // 围栏内：不产生条目标题，也不算锚行；仅当已进入某条目时记为「围栏内文本」（后续锚行扫描会跳过）。
+      if (current) current.lines.push({ text: line, fenced: true });
+      continue;
+    }
     const tMatch = line.match(/^###\s+(T\d+[^\n]*)/);
     if (tMatch) {
       current = { label: tMatch[1].trim(), lines: [] };
       entries.push(current);
     } else if (current) {
-      current.lines.push(line);
+      current.lines.push({ text: line, fenced: false });
     }
   }
   if (entries.length === 0) {
@@ -370,7 +392,8 @@ export function parseSection2AnchorLists(text) {
   }
   for (const entry of entries) {
     const anchorLines = entry.lines
-      .map((raw) => raw.replace(/^\s*>\s*/, ''))
+      .filter((l) => !l.fenced)
+      .map((l) => l.text.replace(/^\s*>\s*/, ''))
       .filter((stripped) => /^目标文件\s*[:：]/.test(stripped.trim()));
     if (anchorLines.length === 0) {
       problems.push(`缺锚清单：${entry.label} 无「目标文件：」行（fail-loud，不假绿）`);
@@ -512,6 +535,43 @@ export function runSection2AnchorSelfCheck() {
   const chRes = parseSection2AnchorLists(changesPath);
   ok(chRes.problems.length === 0, 'changes-anchor-no-problems');
   ok(JSON.stringify(chRes.union) === JSON.stringify(['delivery/changes/dev/260831-cloud-link-bringup/review-packet.md']), 'changes-anchor-union');
+
+  // fenced code block 跳过（T3 子项 b，260920-gov-review-citation-anchor-residue，FROZEN 2026-09-20）。
+  // 夹具两具，形态取自 R1-F5 在真实旧行为下的实测：围栏内路径**带 backtick** / **裸写**。
+  // 期望：两种形态下都**零幻影条目、零误判缺锚、围栏内 token 一律不入锚并集**。
+  const fencedWithBacktick = [
+    '## 2. 改法（T1）',
+    '### T1 · 甲',
+    '正文一句。',
+    '目标文件：`.claude/scripts/real.mjs`（改）',
+    '',
+    '```md',
+    '### T1 · 围栏内示范条目',
+    '目标文件：`docs/templates/PROPOSAL.template.md`（改）',
+    '```',
+    '',
+    '## 3. 影响面',
+  ].join('\n');
+  const fbRes = parseSection2AnchorLists(fencedWithBacktick);
+  ok(fbRes.problems.length === 0, 'fence-backtick-no-problems');
+  ok(JSON.stringify(fbRes.union) === JSON.stringify(['.claude/scripts/real.mjs']), 'fence-backtick-union-excludes-fenced');
+  const fencedBare = fencedWithBacktick.replace('目标文件：`docs/templates/PROPOSAL.template.md`（改）', '目标文件：docs/templates/PROPOSAL.template.md（改）');
+  const fnRes = parseSection2AnchorLists(fencedBare);
+  ok(fnRes.problems.length === 0, 'fence-bare-no-problems');
+  ok(JSON.stringify(fnRes.union) === JSON.stringify(['.claude/scripts/real.mjs']), 'fence-bare-union-excludes-fenced');
+  // 反向正控：围栏内的 `### T<n>` 不得造出条目标题（否则其后真锚行会被吞）
+  const fencedPhantom = [
+    '## 2. 改法（T1）',
+    '```md',
+    '### T1 · 围栏内示范条目',
+    '```',
+    '### T1 · 真条目',
+    '目标文件：`.claude/scripts/real.mjs`（改）',
+    '## 3. 影响面',
+  ].join('\n');
+  const fpRes = parseSection2AnchorLists(fencedPhantom);
+  ok(fpRes.problems.length === 0, 'fence-phantom-no-problems');
+  ok(JSON.stringify(fpRes.union) === JSON.stringify(['.claude/scripts/real.mjs']), 'fence-phantom-no-swallow');
 
   console.log(JSON.stringify({ selfCheck: 'section2Anchors', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);

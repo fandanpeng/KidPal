@@ -78,16 +78,20 @@ function readText(path) {
 // ── 引据锚点检查（260826-gov-review-claude-consistency-batch3 T1，advisory-only）──
 // 提取 PROPOSAL 全文 backtick 包裹的 `<路径>:<行号>` 形态引据（正则限 .mjs/.md/.json 扩展名 + 行号，
 // 裸数字 / 非路径形态不提取，防噪声），逐条查文件存在 + 行号 ≤ 文件行数；问题只入观察列，不产 fail。
-// T1（260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）：citation 裸名引据的前缀候选域 = **并集形态**。
-// 现有四前缀**原样保留**（防回归）+ 派生集（`docs/` 与 `.claude/` 树下**递归全部目录**）。
-// R1-F1 实测：若改成「一级子目录派生**取代**硬编码」（v0.2 字面），会丢 `docs/` 根（根不是子目录）
-// 与 `.claude/scripts/lib/`（两级路径），致已消警引据回退为 file-not-exist；并集形态下回退 0。
-// 派生前缀集钉字典序排序（R1-F5：确定性兜底）。按 dir 缓存——自检夹具用临时目录，键不同即重新派生（防假绿）。
+//
+// T1（260920-gov-review-citation-anchor-residue，FROZEN 2026-09-20）：候选域由「硬编码四项 ∪ 两树递归派生」
+// 改为**由版本控制面派生**——语义 = 「仓内可被引用的目录」= 每个被跟踪 / 未被忽略的未跟踪文件的全部祖先目录。
+// 零手工清单；build / vendor 产物因 `.gitignore` 自动排除；新增目录自动入集。治「逐批现撞现补前缀」——
+// 该面此前已四轮扩域（260826 初版 → 260907 三候选前缀 → 260907 热修补 `docs/` → 260918 并集形态 + 两树递归）。
+// R1-F1 实测更正：四项常量在 git 派生域下均被覆盖，但**两树递归域不含 `docs/` 与 `.claude/` 两个根**
+// （walk-only 42 项，两根均不在集）——故四项常量**保留于回退分支**、正常 git 路径不消费它。
+// 失败即留痕：git 不可用 → 回退静态派生并把 prefixSource 记为 'fallback-static'（不静默降级）。
+// 派生前缀集钉字典序排序（确定性兜底）。按 dir 缓存——自检夹具用临时目录，键不同即重新派生（防假绿）。
 const CITATION_BASE_PREFIXES = ['.claude/scripts/', '.claude/scripts/lib/', '.claude/hooks/', 'docs/'];
 const citationPrefixCache = new Map();
-function citationPrefixes(dir) {
-  const key = resolve(dir);
-  if (citationPrefixCache.has(key)) return citationPrefixCache.get(key);
+
+// 回退分支专用：四项常量 ∪ `docs/`、`.claude/` 两树递归（**不含**两个根，靠常量补）。
+function staticCitationPrefixes(dir) {
   const out = new Set(CITATION_BASE_PREFIXES);
   for (const root of ['docs', '.claude']) {
     const walk = (rel) => {
@@ -101,16 +105,56 @@ function citationPrefixes(dir) {
     };
     walk(root);
   }
-  const list = [...out].sort();
-  citationPrefixCache.set(key, list);
-  return list;
+  return [...out].sort();
+}
+
+// 正常分支：git 索引面派生。任一 git 调用失败 → 返回 null（调用方转回退并留痕）。
+function gitCitationPrefixes(dir) {
+  const out = new Set();
+  const addPath = (p) => {
+    const segs = p.split('/');
+    segs.pop(); // 去掉文件名，只取祖先目录
+    let acc = '';
+    for (const seg of segs) { acc += seg + '/'; out.add(acc); }
+  };
+  for (const args of [['ls-files', '-z'], ['ls-files', '-z', '--others', '--exclude-standard']]) {
+    const res = spawnSync('git', args, { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28 });
+    if (res.status !== 0 || typeof res.stdout !== 'string') return null;
+    for (const p of res.stdout.split('\0')) if (p) addPath(p);
+  }
+  return [...out].sort();
+}
+
+// 返回 { prefixes, source }——source 进观察列 prefixSource，读者据此判读候选域宽度。
+function citationPrefixes(dir) {
+  const key = resolve(dir);
+  if (citationPrefixCache.has(key)) return citationPrefixCache.get(key);
+  const viaGit = gitCitationPrefixes(dir);
+  const entry = viaGit
+    ? { prefixes: viaGit, source: 'git-index' }
+    : { prefixes: staticCitationPrefixes(dir), source: 'fallback-static' };
+  citationPrefixCache.set(key, entry);
+  return entry;
 }
 
 const CITATION_RE = /`([^\s`]*\.(?:mjs|md|json):\d+)`/g;
+// T2（260920 批，FROZEN 2026-09-20）：结果由单一 `problems` 一分为六列。判定顺序（钉死，R2 后定）：
+//   ① 字面直中 → 不报；直中但行号越界 / 不可读 → 仍进 problems（两类 reason 原样保留，不被本批触碰）
+//   ② 路径段含 `…` / `...` → abbreviated（**必须先于前缀试探**，否则会命中碰巧同名文件而假绿）
+//   ③ 前缀试探唯一命中 → resolvedByPrefix   ④ ≥2 命中 → ambiguousShortForm（向严，不取首个）
+//   ⑤ 0 命中且路径首段是仓内实存一级目录 → problems 的 file-not-exist（真·断链）
+//   ⑥ 0 命中且非仓根相对形态 → shortFormUnresolved（附补救句）
+// 「一级目录集合」取自**同一份派生前缀集的一级段**（同源同缓存，不另造事实源）；回退域下该集合随之收窄
+// （只有 docs / .claude），故 `delivery/...` 型引据会由 ⑤ 落 ⑥——**是分类漂移、不是假绿**（两类都不进 errors）。
 function checkCitationAnchors(proposalText, projectDir) {
   const checked = [];
   const problems = [];
   const resolved = [];
+  const abbreviated = [];
+  const ambiguousShortForm = [];
+  const shortFormUnresolved = [];
+  const { prefixes, source: prefixSource } = citationPrefixes(projectDir);
+  const topLevelDirs = new Set(prefixes.map((p) => p.split('/')[0]));
   const re = new RegExp(CITATION_RE.source, 'g');
   let m;
   while ((m = re.exec(proposalText)) !== null) {
@@ -121,26 +165,24 @@ function checkCitationAnchors(proposalText, projectDir) {
     const relPath = mm[1];
     const line = parseInt(mm[2], 10);
     const abs = resolve(projectDir, relPath);
-    if (!existsSync(abs)) {
-      // T2（260907 批）：裸文件名引用前缀重解析——候选前缀依次试探，命中即消警并留痕（resolvedByPrefix 进观察列，不静默）。
-      // 260907 热修（human 批准一次性跳过治理批，追认载体 = ARQ-260907-lfc-citation-docs-prefix）：候选域补 `docs/`——
-      // 裸 docs 文件名引据（如 `DEV-GOVERNANCE.md:280`）实存而报 file-not-exist（verifier 观察 4②）。
-      let resolvedBy = null;
-      // T1（260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）：候选域由硬编码四前缀改
-      // **并集形态**（原四前缀 ∪ `docs/`、`.claude/` 树下递归派生集）——治「手工清单随仓结构增长漂移」，
-      // 覆盖 references 面与 docs 子目录面裸名引据。消警留痕形态不变（仍走 resolvedByPrefix 观察列）。
-      for (const prefix of citationPrefixes(projectDir)) {
-        if (existsSync(resolve(projectDir, prefix + relPath))) { resolvedBy = prefix; break; }
-      }
-      if (resolvedBy) { resolved.push({ citation, resolvedAs: `${resolvedBy}${relPath}:${line}` }); continue; }
-      problems.push({ citation, reason: 'file-not-exist' }); continue;
+    if (existsSync(abs)) {
+      let lineCount = 0;
+      try { lineCount = readFileSync(abs, 'utf8').split('\n').length; }
+      catch { problems.push({ citation, reason: 'file-unreadable' }); continue; }
+      if (line > lineCount) problems.push({ citation, reason: `line-out-of-range（line ${line} > ${lineCount}）` });
+      continue;
     }
-    let lineCount = 0;
-    try { lineCount = readFileSync(abs, 'utf8').split('\n').length; }
-    catch { problems.push({ citation, reason: 'file-unreadable' }); continue; }
-    if (line > lineCount) problems.push({ citation, reason: `line-out-of-range（line ${line} > ${lineCount}）` });
+    if (/[…]|\.\.\./.test(relPath)) { abbreviated.push({ citation }); continue; }
+    const hits = prefixes.filter((prefix) => existsSync(resolve(projectDir, prefix + relPath)));
+    if (hits.length === 1) { resolved.push({ citation, resolvedAs: `${hits[0]}${relPath}:${line}` }); continue; }
+    if (hits.length > 1) { ambiguousShortForm.push({ citation, hits }); continue; }
+    if (topLevelDirs.has(relPath.split('/')[0])) {
+      problems.push({ citation, reason: 'file-not-exist' });
+      continue;
+    }
+    shortFormUnresolved.push({ citation, hint: '建议写全仓相对路径，或核对是否已迁走' });
   }
-  return { checked, problems, resolved };
+  return { checked, problems, resolved, abbreviated, ambiguousShortForm, shortFormUnresolved, prefixSource };
 }
 
 // ── 冻结前干跑（T2，260918-gov-review-batch-drafting-friction，FROZEN 2026-09-19）──
@@ -153,7 +195,22 @@ function checkCitationAnchors(proposalText, projectDir) {
 // 第 2 类 无锚清单（含整行缺失）——由 parser 原生 problems 直接给出。
 const BOLD_ANCHOR_RE = /^\s*\*{1,2}\s*目标文件\s*\*{0,2}\s*[:：]/;
 
+// 围栏状态机（T3 子项 b，260920-gov-review-citation-anchor-residue，FROZEN 2026-09-20）：标记每行是否处于
+// fenced code block 内（**含开合行自身**）。§2 的围栏块 = 示范 / 原文钉死内容，**不是声明**——该立场有仓内
+// 既有用法支撑：`checkVerbatimQuotes` 早已把 §2 围栏块正文当「作者原文钉死的目标文件内容」做字节级对账。
+function fenceFlags(lines) {
+  const flags = new Array(lines.length).fill(false);
+  let inFence = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*```/.test(lines[i])) { flags[i] = true; inFence = !inFence; continue; }
+    flags[i] = inFence;
+  }
+  return flags;
+}
+
 // §2 节域切片：`## 2. ...` 行起、至下一个 `## ` 行前止。
+// 返回值 = `{ body, offset, inFence }`——offset 供报**文件绝对行号**（T3 子项 a：v0.1 报的是节域内相对号，
+// 作者须心算偏移才能定位）；inFence 为与 body 等长的围栏标记切片（T3 子项 b）。
 function section2Body(text) {
   const lines = text.split(/\r?\n/);
   const start = lines.findIndex((l) => /^##\s*2[.、]?\s/.test(l));
@@ -162,19 +219,25 @@ function section2Body(text) {
   for (let i = start + 1; i < lines.length; i++) {
     if (/^##\s/.test(lines[i])) { end = i; break; }
   }
-  return lines.slice(start + 1, end);
+  const flags = fenceFlags(lines);
+  return { body: lines.slice(start + 1, end), offset: start + 1, inFence: flags.slice(start + 1, end) };
 }
 
-// 纯判定（供自检直接调用）：返回两类错的 findings 列表。
+// 纯判定（供自检直接调用）：返回两类错的 findings 列表。行号一律**文件绝对行号**。
 function preflightFindings(text) {
-  const body = section2Body(text);
+  const sec = section2Body(text);
   const boldLines = [];
-  if (body) body.forEach((l, i) => { if (BOLD_ANCHOR_RE.test(l)) boldLines.push(i + 1); });
+  if (sec) {
+    sec.body.forEach((l, i) => {
+      if (sec.inFence[i]) return; // 围栏内的加粗锚行是示范文本，不是声明
+      if (BOLD_ANCHOR_RE.test(l)) boldLines.push(i + 1 + sec.offset);
+    });
+  }
   const problems = parseSection2AnchorLists(text).problems || [];
   const findings = [];
   if (boldLines.length) findings.push({ class: 'bold-anchor-line', lines: boldLines });
   if (problems.length) findings.push({ class: 'missing-anchor-list', detail: problems });
-  return { bodyFound: !!body, findings };
+  return { bodyFound: !!sec, findings };
 }
 
 function runPreflight(proposalPath) {
@@ -183,20 +246,27 @@ function runPreflight(proposalPath) {
     print({ ok: false, gate: 'landing-preflight', message: 'PROPOSAL 不存在', proposal: proposalPath });
     process.exit(1);
   }
-  const { bodyFound, findings } = preflightFindings(readText(abs));
+  const text = readText(abs);
+  const { bodyFound, findings } = preflightFindings(text);
+  const union = [...(parseSection2AnchorLists(text).union || [])].sort();
   print({
     ok: findings.length === 0,
     gate: 'landing-preflight',
     proposal: proposalPath,
     section2BodyFound: bodyFound,
-    anchorCount: [...(parseSection2AnchorLists(readText(abs)).union || [])].length,
+    anchorCount: union.length,
+    // T3 子项 c：锚并集**成员名单**（不只是个数）——纯可见面，不是判据，`ok` 判定一字不动。
+    // 治「锚行注记夹带路径 token」那一类（三轮证伪后缩圈移出、判据不机械化）：作者在起草期即可
+    // 看到「哪些 token 进了锚集」，260912 那种注记夹带当场可见（该次锚并集 10 项 vs manifest 9 行）。
+    anchorUnion: union,
     findings,
     note: '只读干跑：只保证 §2 锚清单「形态可解析」，不做 §2↔manifest 对账；不参与任何门判定。',
   });
   process.exit(findings.length === 0 ? 0 : 1);
 }
 
-// 干跑自检（T2）：① CLI 解析「干跑模式不误触 positional/baseRef」；② 加粗探针「真命中 / 散文不误报 / 限域生效 / 裸形态不误报」。
+// 干跑自检（T2）：① CLI 解析「干跑模式不误触 positional/baseRef」；② 加粗探针「真命中 / 散文不误报 / 限域生效 / 裸形态不误报」；
+// ③ T3 子项 a「报文件绝对行号」；④ T3 子项 b「跳围栏」；⑤ T3 子项 c「anchorUnion 可见面」。
 function runPreflightSelfCheck() {
   let pass = 0;
   let fail = 0;
@@ -219,17 +289,64 @@ function runPreflightSelfCheck() {
   check('§2 域外不报（限域生效）', boldCls(boldOutside), 0);
   const bareOk = ['## 2. 改法（T1）', '', '目标文件：`.claude/scripts/a.mjs`（改）', '', '## 3. 影响面'].join('\n');
   check('裸形态（正形）不误报', boldCls(bareOk), 0);
+  // ③ 行号精度（T3 子项 a，260920 批）：报**文件绝对行号**，非 §2 节域内相对号。
+  // 夹具刻意让二者相差 ≥3：§2 标题在第 3 行、加粗锚行在第 6 行；旧行为报 3，新行为须报 6。
+  const absLines = ['# 夹具', '', '## 2. 改法（T1）', '### T1 · 甲', '正文一句。', '**目标文件**：`.a.mjs`（改）', '', '## 3. 影响面'];
+  const absText = absLines.join('\n');
+  const absReported = (preflightFindings(absText).findings.find((f) => f.class === 'bold-anchor-line') || {}).lines || [];
+  check('行号·报文件绝对行号（非节域相对号）', absReported[0], 6);
+  check('行号·与环境真身行号一致', absLines.indexOf('**目标文件**：`.a.mjs`（改）') + 1, 6);
+  // ④ 跳围栏（T3 子项 b）：§2 围栏内含 `### T<n>` 示范条目 + **裸** `目标文件：` 行。
+  // 旧行为：造幻影条目、把真 T1 判成缺锚、并让围栏内 token 进锚并集 —— 本夹具须三项全消。
+  const fenced = [
+    '## 2. 改法（T1）',
+    '### T1 · 甲',
+    '正文一句。',
+    '目标文件：`.claude/scripts/a.mjs`（改）',
+    '',
+    '```md',
+    '### T1 · 围栏内示范条目',
+    '目标文件：docs/templates/PROPOSAL.template.md（改）',
+    '```',
+    '',
+    '## 3. 影响面',
+  ].join('\n');
+  const fencedProblems = parseSection2AnchorLists(fenced).problems.filter((x) => /^缺锚清单/.test(x));
+  check('跳围栏·真 T1 不被判成缺锚（无幻影条目吞锚）', fencedProblems.length, 0);
+  const fencedUnion = [...parseSection2AnchorLists(fenced).union].sort();
+  check('跳围栏·锚并集只含真锚行路径', JSON.stringify(fencedUnion), JSON.stringify(['.claude/scripts/a.mjs']));
+  check('跳围栏·围栏内 token 不入并集', fencedUnion.includes('docs/templates/PROPOSAL.template.md'), false);
+  // 围栏内加粗锚行同样是示范文本，不得被加粗探针报出
+  const fencedBold = ['## 2. 改法（T1）', '### T1 · 甲', '目标文件：`.a.mjs`（改）', '', '```md', '**目标文件**：`.b.mjs`（改）', '```', '', '## 3. 影响面'].join('\n');
+  check('跳围栏·围栏内加粗锚行不报', boldCls(fencedBold), 0);
+  // ⑤ anchorUnion 可见面（T3 子项 c）：输出的并集成员名单须与 anchorCount 一致。
+  // 夹具须含 `### T<n>` 条目头——无条目时 parser 按 fail-loud 返回空并集 + 「无任何 T 条目」problem。
+  const unionOk = ['## 2. 改法（T1）', '### T1 · 甲', '目标文件：`.claude/scripts/a.mjs`（改）', '', '## 3. 影响面'].join('\n');
+  const unionDemo = [...parseSection2AnchorLists(unionOk).union].sort();
+  check('anchorUnion·与 anchorCount 一致', unionDemo.length, 1);
+  check('anchorUnion·成员名单内容', JSON.stringify(unionDemo), JSON.stringify(['.claude/scripts/a.mjs']));
   console.log(JSON.stringify({ selfCheck: 'landing-preflight', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
 
-// 纯逻辑自检（四例，真空绿：夹具非空、断言 checked/problems 精确计数）。临时夹具文件 → 例后清理。
+// 纯逻辑自检（真空绿：夹具非空、断言逐项精确计数）。临时夹具目录 → 例后清理。
+// T1（260920 批）后引据夹具**须是真 git 仓**（候选域改由 git 索引面派生，非 git 目录走回退域、测不到主路径）。
+function makeGitFixtureRepo(prefix) {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  execSync('git init -q', { cwd: dir, stdio: 'ignore' });
+  return dir;
+}
+function gitAddFixture(dir) {
+  // autocrlf 静音：夹具文件由 writeFileSync 落 LF，Windows 全局 core.autocrlf=true 时 git add 会往 stderr 吐 CRLF 警告。
+  execSync('git -c core.autocrlf=false -c core.safecrlf=false add -A', { cwd: dir, stdio: 'ignore' });
+}
 function runCitationAnchorsSelfCheck() {
   let pass = 0;
   let fail = 0;
   const check = (label, got, want) => {
     if (got === want) { pass++; } else { fail++; console.error(JSON.stringify({ selfCheck: 'citation-anchors', label, got, want })); }
   };
+  // ── 例 1：提取与行号越界（非 git 夹具，直中分支不依赖候选域）──
   const fixtureDir = mkdtempSync(join(tmpdir(), 'cit-anchor-'));
   const fixtureAbs = join(fixtureDir, '__fixture__.md');
   writeFileSync(fixtureAbs, 'a\nb\nc\n', 'utf8'); // 3 行
@@ -239,45 +356,59 @@ function runCitationAnchorsSelfCheck() {
   const { checked, problems } = checkCitationAnchors(text, projectDir);
   rmSync(fixtureDir, { recursive: true, force: true });
   check('checked 数（v0.3:2 不提取）', checked.length, 3);
-  check('problems 数（越界 + 不存在）', problems.length, 2);
-  // T2（260907 批）前缀重解析自检：裸文件名引用 + .claude/scripts/lib/ 夹具 → resolved 非空、零 problems
-  const prefixDir = mkdtempSync(join(tmpdir(), 'cit-prefix-'));
-  mkdirSync(join(prefixDir, '.claude', 'scripts', 'lib'), { recursive: true });
-  writeFileSync(join(prefixDir, '.claude', 'scripts', 'lib', 'fixture.mjs'), 'a\nb\nc\n', 'utf8');
-  const prefixText = '见 `fixture.mjs:2`（裸文件名，应经前缀解析命中）。';
-  const prefixRes = checkCitationAnchors(prefixText, prefixDir);
-  rmSync(prefixDir, { recursive: true, force: true });
-  check('prefix-resolved 数', prefixRes.resolved.length, 1);
-  check('prefix-resolved 解析形态', prefixRes.resolved[0] && prefixRes.resolved[0].resolvedAs, '.claude/scripts/lib/fixture.mjs:2');
-  check('prefix 零 problems', prefixRes.problems.length, 0);
-  // 260907 热修自检：docs/ 裸名前缀重解析（ARQ-260907-lfc-citation-docs-prefix）
-  const docsDir = mkdtempSync(join(tmpdir(), 'cit-docs-'));
-  mkdirSync(join(docsDir, 'docs'), { recursive: true });
-  writeFileSync(join(docsDir, 'docs', 'GOV.md'), 'a\nb\nc\n', 'utf8');
-  const docsRes = checkCitationAnchors('见 `GOV.md:2`（裸 docs 文件名，应经 docs/ 前缀解析命中）。', docsDir);
-  rmSync(docsDir, { recursive: true, force: true });
-  check('docs-prefix-resolved 数', docsRes.resolved.length, 1);
-  check('docs-prefix 解析形态', docsRes.resolved[0] && docsRes.resolved[0].resolvedAs, 'docs/GOV.md:2');
-  check('docs-prefix 零 problems', docsRes.problems.length, 0);
-  // 防回归具名声明（T1，260918 批）：上两条（`.claude/scripts/lib/fixture.mjs` 与 `docs/GOV.md`）即
-  // PROPOSAL §2 T1 所称「两防回归夹具」——**确认既有件保留并在此具名**，非本批新增（R2-F12 采纳）。
-  // 本批新增两夹具：references 面 / docs 子目录面裸名——并集形态后须 resolved。
-  const refDir = mkdtempSync(join(tmpdir(), 'cit-ref-'));
-  mkdirSync(join(refDir, '.claude', 'references'), { recursive: true });
-  writeFileSync(join(refDir, '.claude', 'references', 'dev-loop-operating-system.md'), 'a\nb\nc\n', 'utf8');
-  const refRes = checkCitationAnchors('见 `dev-loop-operating-system.md:2`（references 面裸名）。', refDir);
-  rmSync(refDir, { recursive: true, force: true });
-  check('references-prefix-resolved 数', refRes.resolved.length, 1);
-  check('references-prefix 解析形态', refRes.resolved[0] && refRes.resolved[0].resolvedAs, '.claude/references/dev-loop-operating-system.md:2');
-  check('references-prefix 零 problems', refRes.problems.length, 0);
-  const tplDir = mkdtempSync(join(tmpdir(), 'cit-tpl-'));
-  mkdirSync(join(tplDir, 'docs', 'templates'), { recursive: true });
-  writeFileSync(join(tplDir, 'docs', 'templates', 'PROPOSAL.template.md'), 'a\nb\nc\n', 'utf8');
-  const tplRes = checkCitationAnchors('见 `PROPOSAL.template.md:2`（docs 子目录面裸名）。', tplDir);
-  rmSync(tplDir, { recursive: true, force: true });
-  check('templates-prefix-resolved 数', tplRes.resolved.length, 1);
-  check('templates-prefix 解析形态', tplRes.resolved[0] && tplRes.resolved[0].resolvedAs, 'docs/templates/PROPOSAL.template.md:2');
-  check('templates-prefix 零 problems', tplRes.problems.length, 0);
+  check('problems 数（越界 1 条；不存在那条归 shortFormUnresolved 非 problems）', problems.length, 1);
+  check('problems reason = line-out-of-range', problems[0] && /^line-out-of-range/.test(problems[0].reason), true);
+
+  // ── 例 2：六列分类族（真 git 仓）+ gitignore 正控 ──
+  const repo = makeGitFixtureRepo('cit-classify-');
+  mkdirSync(join(repo, 'docs', 'templates'), { recursive: true });
+  mkdirSync(join(repo, 'delivery', 'workstreams', 'm1'), { recursive: true });
+  mkdirSync(join(repo, 'a'), { recursive: true });
+  mkdirSync(join(repo, 'b'), { recursive: true });
+  mkdirSync(join(repo, 'build', 'sub'), { recursive: true });
+  writeFileSync(join(repo, '.gitignore'), 'build/\n', 'utf8');
+  writeFileSync(join(repo, 'docs', 'templates', 'PROPOSAL.template.md'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'docs', 'gone.md'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'delivery', 'workstreams', 'm1', 'short.mjs'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'delivery', 'workstreams', 'm1', 'progress.md'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'a', 'progress.md'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'b', 'progress.md'), 'a\nb\nc\n', 'utf8');
+  writeFileSync(join(repo, 'build', 'sub', 'gen.mjs'), 'a\nb\nc\n', 'utf8'); // gitignore 覆盖 → build/ 不得成为候选前缀
+  gitAddFixture(repo);
+  const classifyText = [
+    '见 `docs/templates/PROPOSAL.template.md:2`（字面直中，不报）。',
+    '见 `m1/short.mjs:2`（前缀省略，唯一命中 delivery/workstreams/）。',
+    '见 `progress.md:2`（中段省略，a/ 与 b/ 与 delivery/ 下各一份 → 多命中）。',
+    '见 `docs/gone.md:5`（首段 docs 是实存一级目录 → 真断链）。',
+    '见 `nope/deep.mjs:5`（首段 nope 非一级目录 → 短形态不中）。',
+    '见 `…/PROPOSAL.md:126`（缩写形态，不是字面路径）。',
+  ].join('\n');
+  const cls = checkCitationAnchors(classifyText, repo);
+  check('分类·prefixSource = git-index', cls.prefixSource, 'git-index');
+  check('分类·problems 数（仅 docs/gone.md 真断链）', cls.problems.length, 1);
+  check('分类·problems 条目', cls.problems[0] && cls.problems[0].citation, 'docs/gone.md:5');
+  check('分类·resolvedByPrefix 数', cls.resolved.length, 1);
+  check('分类·resolvedByPrefix 形态', cls.resolved[0] && cls.resolved[0].resolvedAs, 'delivery/workstreams/m1/short.mjs:2');
+  check('分类·abbreviated 数', cls.abbreviated.length, 1);
+  check('分类·ambiguousShortForm 数（progress.md 在 a/ b/ delivery/ 三处）', cls.ambiguousShortForm.length, 1);
+  check('分类·ambiguousShortForm 命中数 ≥3', cls.ambiguousShortForm[0] && cls.ambiguousShortForm[0].hits.length, 3);
+  check('分类·shortFormUnresolved 数', cls.shortFormUnresolved.length, 1);
+  check('分类·字面直中不进任何分类列', cls.checked.length, 6);
+  // gitignore 正控（T1 承重断言之一）：`build/` 被 .gitignore 覆盖 → 不得成为候选前缀。
+  // 夹具形态须**排除「字面直中」这条捷径**——故不引 `build/...` 本身（那会直接命中工作树里的实存文件、
+  // 绕开候选域），而引一个**只有 `build/` 成为前缀时才解析得到**的短形态 `sub/gen.mjs`。
+  // 判据：若候选域把 build/ 收了进来 → 它会被 resolved；正确行为 = 落 shortFormUnresolved、resolved 为空。
+  const ignored = checkCitationAnchors('见 `sub/gen.mjs:2`（真身在 gitignore 的 build/ 下，不得经候选域解析）。', repo);
+  check('gitignore 正控·build/ 未成为候选前缀（resolved 为空）', ignored.resolved.length, 0);
+  check('gitignore 正控·归类为 shortFormUnresolved（首段 sub 非一级目录）', ignored.shortFormUnresolved.length, 1);
+  check('gitignore 正控·problems 为空', ignored.problems.length, 0);
+  rmSync(repo, { recursive: true, force: true });
+
+  // ── 例 3：非 git 回退分支（直接单测 staticCitationPrefixes，不依赖「git 恰好在某目录失败」这种脆断言）──
+  const staticList = staticCitationPrefixes(process.cwd());
+  check('回退分支·含四项常量之一 docs/', staticList.includes('docs/'), true);
+  check('回退分支·含两树递归产物 .claude/hooks/', staticList.includes('.claude/hooks/'), true);
+  check('回退分支·不含 delivery 面（回退域比 git 域窄，见 §2 T1 改法 2）', staticList.some((p) => p.startsWith('delivery/')), false);
   console.log(JSON.stringify({ selfCheck: 'citation-anchors', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
@@ -548,8 +679,27 @@ const lintDescriptionsAdvisory = (() => {
 })();
 
 // --- 引据锚点观察列（260826-gov-review-claude-consistency-batch3 T1，advisory-only）---
-const { checked: citationChecked, problems: citationProblems, resolved: citationResolved } = checkCitationAnchors(proposalText, projectDir);
-const citationAnchorAdvisory = { checked: citationChecked.length, problems: citationProblems, resolvedByPrefix: citationResolved };
+// T2（260920 批）：六列——`problems`（真·断链 + 两条行号 / 可读性 reason）、`resolvedByPrefix`（唯一命中）、
+// `abbreviated` / `ambiguousShortForm` / `shortFormUnresolved`（三类非断链成因）、`prefixSource`（候选域来源）。
+// 字段名 `problems` / `resolvedByPrefix` 保持不变（既有 landing-summary / verdict 引用它们）。
+const {
+  checked: citationChecked,
+  problems: citationProblems,
+  resolved: citationResolved,
+  abbreviated: citationAbbreviated,
+  ambiguousShortForm: citationAmbiguous,
+  shortFormUnresolved: citationShortFormUnresolved,
+  prefixSource: citationPrefixSource,
+} = checkCitationAnchors(proposalText, projectDir);
+const citationAnchorAdvisory = {
+  checked: citationChecked.length,
+  problems: citationProblems,
+  resolvedByPrefix: citationResolved,
+  abbreviated: citationAbbreviated,
+  ambiguousShortForm: citationAmbiguous,
+  shortFormUnresolved: citationShortFormUnresolved,
+  prefixSource: citationPrefixSource,
+};
 
 // --- §2 钉死引号块逐字对账观察列（260826-gov-review-g3-infra-convergence T2，advisory-only）---
 const verbatimQuoteAdvisory = checkVerbatimQuotes(proposalText, projectDir, [...proposalTargets]);
