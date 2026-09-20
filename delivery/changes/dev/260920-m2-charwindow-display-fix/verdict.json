@@ -1,0 +1,47 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "260920-m2-charwindow-display-fix",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "fdf34129-032d-4e25-a5a5-d9165e6d7755",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/verifier-evidence/rounds/r3.json",
+  "provenance": {
+    "sourceType": "human-confirmed-plan",
+    "triage": "/triage-change 2026-09-20 裁决 ② Lite 合一包（板端+云面 crossEnd 双向申报）+ human 触点①四问确认",
+    "rigor": "lite",
+    "riskTier": "medium"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-20T09:03:07.422Z",
+    "completedAt": "2026-09-20T09:03:22.992Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "timing": "scoped", "note": "device build 真编译未降级（xiaozhi.bin 0x30b9b0 bytes，app 分区余量 11%）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "timing": "scoped", "note": "docs/contracts/ 全生命周期零触碰（launch 基线 d174a05 diff 实证）；D3 meaning/words 字段既有，本轮零新增字段" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "timing": "scoped", "note": "functional = MCD-A1/A2/A3/A4/A5/A7；structural 豁免 = MCD-A6（真机/live 腿 deferred human 持板）；files = char_window_overlay.acceptance.c + test_char_meaning_merge.acceptance.py" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "timing": "scoped", "note": "6 条 mutation record（A1–A4 实现态 + A5/A7 freeze 相位影子树）全部 sensitive:true + failed as expected、还原复绿零残留" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "timing": "scoped", "note": "docsSyncRequired=false（零 docs/contracts/spec/agent-gate 改动，MCD-E2 守住；prompt 版本字面漂移三处已登记文档债，版本无关守卫齿不受影响）" },
+    { "gate": "security", "kind": "security", "ok": true, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "timing": "full", "note": "47 passed（拆账 = server/tests 37 零回归 + 本包云面新验收件 10 齿被 server 面收集；integrator --collect-only 实测）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "timing": "full", "note": "oracle-pass + executor-run 10 passed（云面新件全量真跑）；板端 on-target 真机渲染面 deferred 归 MCD-A6 human 持板轮" }
+  ],
+  "hostRunnerIntegratorRerun": {
+    "date": "2026-09-20",
+    "result": "63 Tests / 0 Failures / 0 Ignored, OK, EXIT=0",
+    "note": "integrator 独立复跑（非闸境）；数字链 = card-fix 收口锚 61T（mo31 merged a259601）+ 本包新齿 2（char_window_overlay TEST 10/11）；红基线 63T/2F 均为设计态义务红"
+  },
+  "impactAudit": {
+    "detectChanges": "N/A (worktree) — Pod worktree diff 对主索引不可见",
+    "closedSet": "git diff --numstat d174a05：firmware 2 文件（实现 1 + 冻结件 1）+ server 6 文件（含新验收件）+ prompt v5 新文件（未跟踪）；docs/、.claude/ 零命中",
+    "sharedSymbolSpotCheck": "kidpal_char_page_show 调用方闭集 = Application::Initialize / kidpal_render_node 三处 / McpServer::AddCommonTools（trace_path 实证，零跨层新增）；k1cRewriteText/k1cStreamStep = patch 注入串（图外），消费闭集 = make_openclaw_patch.py 两处 NEW 注入点 + DEPLOY-RUNBOOK（grep 实证）；replace_minimal_block 消费方 = 现役云面验收件（反射）+ 归档件"
+  },
+  "residual": "MCD-A6 真机/live 腿 deferred（human 持板，前置 = ECS 部署 + 烧板，均 post-merge 由 planner 按 human 指示执行）——host 半闭环，不得读成整包已验收；R2 = 流式出口 <details> 跨 delta 分裂漏剥边界（review-packet Findings #1 SHOULD，prompt v5 禁令为第一道防线，live 腿人耳验证）；文档债三处（architecture.md v4 字面 / README v3 / DEPLOY-RUNBOOK v3）交后续批"
+}

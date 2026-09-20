@@ -1,0 +1,85 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "260920-m2-charwindow-display-fix",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "fdf34129-032d-4e25-a5a5-d9165e6d7755",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/verifier-evidence/rounds/r3.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260920-m2-charwindow-display-fix --phase final --round 3 --invocation-id fdf34129-032d-4e25-a5a5-d9165e6d7755",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-20"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 2,
+        "invocationId": "1f5ed007-dd3d-443e-b776-49553aa3e55f",
+        "producedBy": "verifier（终审）",
+        "mechanicalCheck": { "exit": 0, "factOk": true, "runBy": "integrator", "date": "2026-09-20" }
+      },
+      {
+        "round": 1,
+        "invocationId": "3e6f5cac-008a-4df3-85f0-19c87244a1ef",
+        "producedBy": "verifier（scoped）",
+        "mechanicalCheck": "fact ok:true / observedGateExit:0（r1.json 直读；r1 为 scoped 无独立 checker 必要，r2 复验 PASS 时已级联核验同源 fact 流）"
+      }
+    ]
+  },
+  "lifecycle": {
+    "rounds": [
+      { "round": 1, "timing": "scoped", "outcome": "一次绿", "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/verifier-evidence/rounds/r1.json" },
+      { "round": 2, "timing": "scoped+full", "outcome": "一次绿（verifier 终审）", "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/verifier-evidence/rounds/r2.json" },
+      { "round": 3, "timing": "scoped+full", "outcome": "一次绿（integrator final 复跑，round 模式 ordinal 不可重放故新开）", "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/verifier-evidence/rounds/r3.json" }
+    ],
+    "reworkRounds": 0,
+    "redBaseline": "host runner 全量 63 Tests / 2 Failures / 0 Ignored（唯二红 = 新增 TEST 10 MCD-A1/A2 源锚病灶本体 + TEST 11 MCD-A3/A4 拼装判空）+ 云面 pytest -m \"not live\" server/acceptance 8 failed / 2 passed（8 红 = A5 四齿 + A7 三齿 + prompt 行为/结构半，真实缺陷信号）——acceptance-author 实跑 + planner 2026-09-20 独立复跑双证",
+    "greenState": "host runner 全量 63 Tests / 0 Failures / 0 Ignored EXIT=0（integrator 独立复跑 2026-09-20；61 = card-fix 收口锚 + 2 本包新齿）+ 云面 10 passed（unit 闸 47 = 37 零回归 + 10 本包新齿）"
+  },
+  "provenance": {
+    "sourceType": "human-confirmed-plan",
+    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
+    "triageEventRef": "/triage-change 2026-09-20（architect 比例化 review ② Lite 合一包 + crossEnd 双向申报 + human 触点①四问确认；human 判据锚 pod-events 98c9591f / 84beaf72 / b5f4485d）",
+    "launchBaseline": "d174a05（2026-09-20 真机轮记账 commit）",
+    "acceptanceFreeze": "93bb20e（板端 TEST10/11 + 云面新件 10 齿）",
+    "mergeOrder": 32,
+    "dependsOn": ["260920-m2-charwindow-card-fix（mo31，merged a259601）"],
+    "workstream": "m2-char-window"
+  },
+  "scopeAudit": {
+    "implementationFiles": [
+      "firmware/main/display/char_page.cc",
+      "server/deploy/openclaw-patch/make_openclaw_patch.py",
+      "server/deploy/openclaw-patch/char_stroke_lib.py",
+      "server/deploy/openclaw-system-prompt.v5.md",
+      "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+      "server/deploy/apply-xiaozhi-overlay.sh",
+      "server/deploy/provider.config.yaml"
+    ],
+    "frozenAcceptanceFiles": [
+      "firmware/main/test/char_window_overlay.acceptance.c",
+      "server/acceptance/test_char_meaning_merge.acceptance.py"
+    ],
+    "zeroTouchSurfaces": ["docs/contracts/", "docs/requirements.md", "docs/architecture.md", ".claude/", "firmware/main/display/char_stroke.c", "firmware/main/display/char_stroke.h"],
+    "auditCommand": "git diff --numstat d174a05 -- firmware/ server/ docs/ .claude/"
+  },
+  "demoReconciliation": {
+    "testHost": "host runner（板端）+ device build 闸 + server pytest（云面 host-fast）+ 真机/live 腿（human 持板）",
+    "hostRunner": "63T/0F EXIT=0（integrator 独立复跑）",
+    "serverPytest": "acceptance 10 passed + unit 47 passed（37 零回归 + 10 本包新齿）",
+    "deviceBuild": "firmware-build exit 0（真编译未降级，xiaozhi.bin 0x30b9b0 / 余量 11%）",
+    "deviceLeg": "未做（MCD-A6 deferred，human 持板；前置 = ECS 部署 + 烧板，post-merge 由 planner 按 human 指示执行）——host 半闭环，不得读成整包已验收"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/changes/dev/260920-m2-charwindow-display-fix/review-packet.md",
+    "docsDelta": "delivery/changes/dev/260920-m2-charwindow-display-fix/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；其后 pre-merge-escalation-gate 放行 → merge-driver --pod 本地合并；ECS 部署 + 烧板 post-merge"
+}

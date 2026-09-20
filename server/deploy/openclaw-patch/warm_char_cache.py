@@ -12,7 +12,11 @@ Usage (ECS python3, offline, no third-party import):
 Default out.json = same dir as CHAR_DATA_DIR/char_cache.json, keyed by char.
 """
 
-from __future__ import annotations
+# NOTE (260920-m2-charwindow-display-fix rework, python 3.6 compat): this script runs under
+# the ECS system python3 (CPython 3.6). Must stay python 3.6-compatible: `from __future__
+# import annotations` removed (PEP 563 = 3.7+ SyntaxError); `cache: dict[str, dict]` PEP 585
+# builtin subscript removed (3.9+ TypeError on 3.6) -> plain `cache = {}`. Keep the existing
+# CPython-3.6 dict-insertion-order dependency (standard; assert order not specified in spec).
 
 import csv  # noqa: F401 (record delimiter for tab/semicolon tolerant parse-path, unused)
 import json
@@ -51,7 +55,7 @@ def main() -> int:
     dictionary = _load_index(os.path.join(data_dir, "dictionary.txt"), "character")
     print(f"loaded graphics={len(graphics)} dictionary={len(dictionary)} from {data_dir}")
 
-    cache: dict[str, dict] = {}
+    cache: dict = {}
     skipped_mismatch = 0
     for ch, g in graphics.items():
         d = dictionary.get(ch)
