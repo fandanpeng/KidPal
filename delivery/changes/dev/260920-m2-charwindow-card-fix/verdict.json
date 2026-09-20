@@ -1,0 +1,47 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "260920-m2-charwindow-card-fix",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "31bd5da8-40f0-49c5-b3f3-95dd7adeb01f",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 9,
+  "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/verifier-evidence/rounds/r2.json",
+  "provenance": {
+    "sourceType": "human-confirmed-plan",
+    "triage": "/triage-change 2026-09-20 四档裁决 ② Lite + human 触点①三问确认（pod-events 9ea58a1e）",
+    "rigor": "lite",
+    "riskTier": "medium"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-09-20T05:24:19.355Z",
+    "completedAt": "2026-09-20T05:24:34.831Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 192, "timing": "scoped" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 9591, "timing": "scoped", "note": "device build 真编译通过（未降级；xiaozhi.bin 0x30b870 bytes，分区余量 11%）——「host 全绿 ≠ 设备能编」在案实例：五行拼装 buf[256] 触发设备侧 -Werror=format-truncation，builder 放大 buf[384] 修平" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 148, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 159, "timing": "scoped", "note": "functional = MCF-A1/A2/A3；structural 豁免 = MCF-A4（留痕修订）/ MCF-A5（真机腿 deferred human 持板）；files = char_stroke / char_window_overlay acceptance.c" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 152, "timing": "scoped", "note": "3 functional acceptance sensitive:true + failed as expected（MUT-MCF-A1-font-unwire / MUT-MCF-A2-meaning-drop / MUT-MCF-A3-line5-drop，还原指纹逐字节一致）；A4/A5 structural 豁免" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 158, "timing": "scoped", "note": "docsSyncRequired=false（零 docs/contracts/spec/agent-gate 改动，MCF-E2 守住；spec v1.56+勘误 5982d82 已在 launch 基线，本包只消费）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 161, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 4522, "timing": "full", "note": "37 passed (pytest, server 面；本包 server/ 零改动)" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 247, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=9 / serverAcceptanceFiles=0；on-target 真机渲染面 deferred 归 MCF-A5 human 持板轮" }
+  ],
+  "hostRunnerIntegratorRerun": {
+    "date": "2026-09-20",
+    "result": "61 Tests / 0 Failures / 0 Ignored, OK, EXIT=0",
+    "note": "integrator 独立复跑（非闸境）；数字链 = K3 收口锚 58T + 本包新齿 3（char_stroke TEST5/6 + char_window_overlay TEST9）；红基线 60T/2F 均为设计态义务红"
+  },
+  "impactAudit": {
+    "detectChanges": "N/A (worktree) — Pod worktree diff 对主索引不可见",
+    "closedSet": "git diff --numstat 5982d82：firmware 5 文件 +525/-11（实现 3 + 验收 2）；server/、docs/contracts/、docs/requirements.md、docs/architecture.md、.claude/ 零命中",
+    "sharedSymbolSpotCheck": "kidpal_char_card_build / kidpal_char_info 消费闭集 = char_page.cc 两处 + 冻结验收件（grep 实证）；trace_path 本树解析 0 边为图解析局限，以 grep 为准"
+  },
+  "residual": "MCF-A5 真机腿 deferred（human 持板，与 K3 A7 同轮合并取证）——host 半闭环，不得读成整包已验收；R1 = font_puhui_14_1 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）"
+}

@@ -27,7 +27,11 @@
     "MCF-A1: 字体接线结构齿——负向：char_page.cc 中 LV_FONT_DEFAULT 作 text_font 实参出现数 == 0（现状红 = 真实缺陷信号，RED→GREEN 可判）；正向：cardlabel 与 hint_label 两个 label 创建/设值区各有 &font_puhui_ 字面在世（注释剥离后计数——sealing pass 先例，注释无法满足）",
     "MCF-A2: meaning 承载行为齿（host runner 真调 char_stroke.c 强符号）——card_build 三态：非空 verbatim 截断安全 / NULL → out->meaning 空串且 rc=0（缺义不降级整窗）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面）",
     "MCF-A3: 五行拼装齿——速查卡 snprintf 五行含 card.meaning 实参（拼音带声调/共 N 画/部首/释义/组词，S-F3.2 AC1 五行口径）；meaning 缺失兜底「释义：—」占位形态钉死不留现场裁量；refresh_hint 装配区含 meaning（注释剥离后计数）",
-    "MCF-A4: 冻结件 tighten-only 留痕修订——char_window_overlay.acceptance.c 的 A5 覆盖随 spec v1.56 四行→五行（A5a 区末端锚 lv_obj_set_style_text_font(cardlabel 若被改写须同步锚修订，只改实参不动锚字面则锚存活）；char_stroke.acceptance.c 若触其冻结面同样留痕；负向齿与锚齿不剥注释（sealing pass 纪律）",
+    {
+      "id": "MCF-A4: 冻结件 tighten-only 留痕修订——char_window_overlay.acceptance.c 的 A5 覆盖随 spec v1.56 四行→五行（A5a 区末端锚 lv_obj_set_style_text_font(cardlabel 若被改写须同步锚修订，只改实参不动锚字面则锚存活）；char_stroke.acceptance.c 若触其冻结面同样留痕；负向齿与锚齿不剥注释（sealing pass 纪律）",
+      "kind": "structural",
+      "note": "套件级留痕修订项（acceptance 文件自身内容 + REVISION LOG），无逐条实现侧行为可变异——mutation 证据语义不适用（mutation-check structural 豁免语义，同 K3 A7/A8 形态）；其真实性由冻结件本体与 REVISION LOG 承载，builder 零写权"
+    },
     {
       "id": "MCF-A5: 真机腿 deferred（human 持板）——右栏五行可见 + 带调拼音（yǒng 的 ǒ）字形实渲 + 底部提示条可见 + 顺带 schedule/story 页中文可见性一句取证（v1.56 对账④勘误的对比证据）；R1 风险：font_puhui_14_1 带调韵母字形覆盖未实证，缺字升 font_body 接线包（RP-A4 residual）",
       "kind": "structural",
@@ -75,7 +79,29 @@
   "decisionCoverage": [],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "MCF-A1: 字体接线结构齿——负向：char_page.cc 中 LV_FONT_DEFAULT 作 text_font 实参出现数 == 0（现状红 = 真实缺陷信号，RED→GREEN 可判）；正向：cardlabel 与 hint_label 两个 label 创建/设值区各有 &font_puhui_ 字面在世（注释剥离后计数——sealing pass 先例，注释无法满足）",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-MCF-A1-font-unwire：char_page.cc cardlabel 字体设值恢复 LV_FONT_DEFAULT 实参（撤 font_puhui_14_1 接线），单点还原病灶形态。",
+        "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c test 9，MCF-A1 负向齿）：「MCF-A1 RED: char_page.cc 仍有 1 行 lv_obj_set_style_text_font 调用携带 LV_FONT_DEFAULT 实参」——负向齿对病灶形态即红、修复后转绿（RED→GREEN 真信号）。红→绿链：绿态 61T/0F OK → 变异态 61T/1F → 还原态 61T/0F OK。还原指纹：char_page.cc md5=9711356c（与绿态逐字节一致）。"
+      },
+      {
+        "acceptanceId": "MCF-A2: meaning 承载行为齿（host runner 真调 char_stroke.c 强符号）——card_build 三态：非空 verbatim 截断安全 / NULL → out->meaning 空串且 rc=0（缺义不降级整窗）/ 既有四字段与 progress 文案零回归（M2-K1 冻结面）",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-MCF-A2-meaning-drop：char_stroke.c 的 kidpal_char_card_build 撤 meaning 装配（删 NULL 容忍分支 + verbatim 拷贝分支），单点删除。",
+        "counterEvidence": "红齿双咬：char_stroke.acceptance.c TEST 6（MCF-A2 行为半，红名「card.meaning=\"\" 期望 verbatim 「勇敢；有胆量」」）+ TEST 5（MCF-A2 结构半，红名「card_build 函数区零/弱 meaning 消费」）。红→绿链：绿态 61T/0F OK → 变异态 61T/2F → 还原态 61T/0F OK。还原指纹：char_stroke.c md5=673f21ed（与绿态逐字节一致）。"
+      },
+      {
+        "acceptanceId": "MCF-A3: 五行拼装齿——速查卡 snprintf 五行含 card.meaning 实参（拼音带声调/共 N 画/部首/释义/组词，S-F3.2 AC1 五行口径）；meaning 缺失兜底「释义：—」占位形态钉死不留现场裁量；refresh_hint 装配区含 meaning（注释剥离后计数）",
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "MUT-MCF-A3-line5-drop：char_page.cc 速查卡 snprintf 五行格式串删「释义：%s」段连同 card.meaning 实参，回四行形态（4 实参），单点删除。本轮新造靶（planner 派发补充）。",
+        "counterEvidence": "红齿 FAIL 原文（char_window_overlay.acceptance.c:1451 test 9，MCF-A3 齿）：「MCF-A3 RED: 速查卡拼装区零 card.meaning 实参——释义行未上屏（S-F3.2 AC1 v1.56 五行口径; 注释剥离后计数——builder M4 实证: 注释提及不算实现）」。命中面：card.meaning 计数 / 释义：字面 / — 兜底 / %s\n 五行形态四条同咬。红→绿链：绿态 61T/0F OK → 变异态 61T/1F → 还原态 61T/0F OK。还原指纹：char_page.cc md5=b595ba00f4b2402c22917009fcaf0346（与绿态逐字节一致）。"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [],
