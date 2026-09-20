@@ -12,7 +12,7 @@
 |---|---|---|---|
 | [260920-gov-review-proposal-structure-merge](260920-gov-review-proposal-structure-merge/) | 2026-09-20 | landed | yes |
 | [260920-gov-review-reader-scripts-align](260920-gov-review-reader-scripts-align/) | 2026-09-20 | landed | yes |
-| [260920-gov-review-verdict-anchor-align](260920-gov-review-verdict-anchor-align/) | 2026-09-20 | frozen | no |
+| [260920-gov-review-verdict-anchor-align](260920-gov-review-verdict-anchor-align/) | 2026-09-20 | landed | yes |
 | [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | landed | yes |
 | [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | landed | yes |
 | [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | landed | yes |
