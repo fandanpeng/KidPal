@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-proposal-structure-merge
 
-> **状态：DRAFT v0.2 · 2026-09-20 · 已立项 ack · 待 architect R1 评审**（凭据：human 2026-09-20 会话「立项 ack」+ OQ 全裁〔OQ1 = 保留 §1 空档；OQ2 = 硬项标签去数字〕。FROZEN 行待补 architect Rn GREEN 凭据）。
+> **状态：DRAFT v0.3 · 2026-09-20 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-20 会话「立项 ack」+ OQ 全裁〔OQ1 = 保留 §1 空档；OQ2 = 硬项标签去数字〕；**R1 BLOCK(F1..F3)+F4–F8 → v0.3 逐条收口**〔F1 V2 路径数 / F2 OQ2 理由数字 / F3 模板 :47 替换句钉死 + §1 零命中验证 / F4–F8 计数与口径〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
 > **承载 ARQ**：无——human 2026-09-20 会话直接触发（读 260918 批 PROPOSAL 时提出「问题与改法两段分离、阅读成本大」）。收口时按惯例补登记。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T2）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -53,7 +53,7 @@ docs/templates/PROPOSAL.template.md
 - 模板现状（verbatim）：`docs/templates/PROPOSAL.template.md:31` = `## 1. 问题与根因（地面真值）`、`:45` = `## 2. 改法（T1…Tn）`——两节分离，各自独立成章。
 - **对位成本落在判官透镜上**（verbatim）：`.claude/references/track-b-judge-brief.md:30` 评审透镜第 3 条 = 「**根因→改法对应**：各 T 是否真治对应问题类；有无错配/漏承接」——该透镜的实现方式就是跨节对位。
 - **人类读者反馈**（会话原文，2026-09-20）：human 读 260918 批 PROPOSAL 时提出「现在的结构是『问题根因』…然后到下一个章节又变成『解法』…它俩是分开的…这样我在看的时候，能把问题和解法一块看了。不然两段是分开的，阅读成本比较大」。
-- **跨批普遍性**：现存 `PROPOSAL.md` **29 份**（`find . -name PROPOSAL.md` 亲跑）全部为两段式。
+- **跨批普遍性**：现存 `PROPOSAL.md` **30 份**（`find . -name PROPOSAL.md` 亲跑，2026-09-20；R1-F5 更正：v0.2 原写 29 份为时点值，且「全部为两段式」**对本件自身不成立**——本件即新结构；故口径应为「**其余 29 份为两段式**」）。
 
 **根因**：模板形制来自「四乘客归纳」（模板 `:6` 形制来源句自陈）。定型时的组织原则是「**先穷举地面真值、再给改法**」——这个顺序对**作者**友好（分两步写：先查清事实，再设计改法），但把**对位**留给了**读者**。而 PROPOSAL 的主要读法是**通读一遍做判断**（立项 ack / 判官评审 / 核验官核对），不是分步查阅——写法顺序与读法顺序错配。
 
@@ -76,7 +76,8 @@ docs/templates/PROPOSAL.template.md
 
    **其余四段加粗只作视觉分隔、不承载机器语义，故可自由。** 这两条合起来是「**形态必须与机械门同形**」的具体落地：**模板给出的示范形态，就是未来每份 PROPOSAL 会照抄的形态**——所以模板里的示范必须与门同形。
 3. 条目**标题取问题的短名**（便于扫目录认出是哪条），**正文首行给完整陈述**——两处分工、**不重复**（标题不含影响与频率，正文首行承载它们）。
-4. **连带**：`track-b-judge-brief.md:27` 评审透镜第 1 条「**§1 引述**（编号、次数、数据点）与证据基线逐一核对」→ 引述节号改指 **§2**（合并后 §1 不存在，若不改，该透镜会指向空节）。
+4. **连带一**：`track-b-judge-brief.md:27` 评审透镜第 1 条「**§1 引述**（编号、次数、数据点）与证据基线逐一核对」→ 引述节号改指 **§2**（合并后 §1 不存在，若不改，该透镜会指向空节）。
+5. **连带二（R1-F3 补钉，模板内唯一 §1 残留）**：模板 §2 的引言句（`PROPOSAL.template.md:47`）写「每 T 一节：改什么（文件/段落）+ 怎么改 + 为什么这样改（**对 §1 哪个根因**）。扩承重闸优先、克制新立脚本。」——合并后指向不存在的 §1。**替换后完整句钉死**：`每 T 一节：先写「问题」与「证据」，再写「根因」，再写「改什么 + 怎么改 + 为什么这样改（对哪个根因）」。扩承重闸优先、克制新立脚本。`（该句不含 `目标文件：` 起头，**裸锚行不受影响**）。同批把 §2 T1 的「读法注」两处形态约束（锚行裸起不加粗、解析器不跳引号块）**随五段式一并写进模板正文**，使模板示范与门同形。
 
 目标文件：`docs/templates/PROPOSAL.template.md`（改：§1 并入 §2 + 五段式条目模板）、`.claude/references/track-b-judge-brief.md`（改：透镜第 1 条引述节号 §1→§2）
 
@@ -107,6 +108,8 @@ docs/templates/PROPOSAL.template.md
 - **同型先例**：本仓已有「标识符绑死会漂移的位置 → 位置一动即失真」的实例——在册 `ARQ-260909-gate-green-anchor-regex-loose` 的病灶即「注释声明的意图与实现脱节」。
 
 **【硬项 · sweep 透镜 · 本批自证】** 上表首版 census **写错过一次，如实记录**：初稿用 `grep … | grep -v "PROPOSAL.template.md"` 想排除**模板文件**——但 `grep -v` 过滤的是**行内容**，凡行文提及 `PROPOSAL.template` 的**整行**都被滤掉，于是 `path-form-family.md:64`、`gov-arq/SKILL.md:12`/`:34` 三行（各自正文里都引了模板路径）**被静默吞掉**，初稿因此误报「外部引用 4 处 / 2 文件」。改用不带 `-v` 的完整模式重跑得 12 处 / 5 文件。**这正是本仓「枚举 census 须注明命令、遇省略须逐条展开」（硬项 · sweep 透镜义务）要防的形态——过滤口径写错 = 静默漏项。**
+
+**作用域声明（R1-F6）**：本 census 的作用域 = `.claude/` + `docs/`（`--include="*.md"`）；`delivery/changes/arch/**` 历史制品内的旧标签（数十处）为 frozen/landed 记录、**不追溯改**——排除是有意处置而非遗漏。
 
 **根因**：标签的设计意图是「第几节的第几个硬项」——把**位置**编进了**名字**。凡名字含位置信息者，位置变则名字失真；而修复（改数字）会**逐个波及引用点**，引用点越多越贵。
 
@@ -148,7 +151,7 @@ docs/templates/PROPOSAL.template.md
 | OQ | 选项 | 裁决 | 理由 |
 |---|---|---|---|
 | OQ1 · 合并后节号出现 `0 → 2 → 3…` 空档，如何处理 | (a) **保留空档**（§0 当导语）；(b) 把 §0 改名 §1 消掉空档 | **(a) 保留空档** | 两者机械代价相同（都要改 judge-brief 一行）；而「§0 = 导语」是本仓既有惯例（`dev-loop.md` / `change-triage.md` / `ARCH-REVIEW-QUEUE.md` / `ui-implementation-strategy.md` 均以 §0 起）。为一个纯粹观感空档而破惯例不划算 |
-| OQ2 · 硬项标签是否去数字 | (a) **去数字**（纯功能标签）；(b) 保留数字并重排 | **(a) 去数字** | 数字前缀把「位置」编进了「名字」——T1 的合并正撞在这上面（`1a` 与 `2a` 同落 §2 即自相矛盾）。去数字一次性解除耦合；外部引用面仅 4 处，成本已实测 |
+| OQ2 · 硬项标签是否去数字 | (a) **去数字**（纯功能标签）；(b) 保留数字并重排 | **(a) 去数字** | 数字前缀把「位置」编进了「名字」——T1 的合并正撞在这上面（`1a` 与 `2a` 同落 §2 即自相矛盾）。去数字一次性解除耦合；外部引用面（模板外）**7 处 / 4 文件**，成本已实测。**R1-F2 更正**：v0.2 原写「仅 4 处」系首版 `grep -v` 误计值，按更正后 census 更正（裁决实质不受影响） |
 
 **无待裁 OQ。**
 
@@ -157,11 +160,12 @@ docs/templates/PROPOSAL.template.md
 | 项 | 命令 | 预期 |
 |---|---|---|
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --preflight delivery/changes/arch/260920-gov-review-proposal-structure-merge/PROPOSAL.md` | `ok:true` / `findings:[]` / exit 0——**本件即新结构，须自证形态可解析** |
-| V2 | `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260920-gov-review-proposal-structure-merge` | `ok:true`；`frozen`/`packetBinding` 真；`proposalTargets` ≡ `summaryTargets`（3 路径）；`unauthorized`/`claimedNotLanded`/`plannedNotLanded` 全空 |
-| V3 | `node .claude/scripts/lib/governance-gate-shared.mjs` 经 landing-fidelity 的 `--self-check` 电池 | `section2Anchors` 电池**全绿且与改动前零差异**——证机械门未受本批影响 |
+| V2 | `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260920-gov-review-proposal-structure-merge` | `ok:true`；`frozen`/`packetBinding` 真；`proposalTargets` ≡ `summaryTargets`（**5 路径**——R1-F1 更正，v0.2 原写 3 为 census 更正前陈旧值）；`unauthorized`/`claimedNotLanded`/`plannedNotLanded` 全空 |
+| V3 | `node .claude/scripts/landing-fidelity-check.mjs --self-check`（**R1-F8 更正**：`governance-gate-shared.mjs` 无 CLI 入口、不可直接复跑；改经 landing-fidelity 的自检电池承载） | `section2Anchors` 电池**全绿且与改动前零差异**（R1 判官基线 = **19/19**）——证机械门未受本批影响 |
 | V4 | `grep -rn "硬项[[:space:]]*1a\|硬项[[:space:]]*1b\|硬项[[:space:]]*1c\|硬项[[:space:]]*2a" --include="*.md" .claude/ docs/` | 落地后 **零命中**（T2 证据表列的 **12 处**全改完）。**注意勿加 `grep -v` 过滤**——本件首版即因该过滤按行内容误吞三行（见 T2 的「本批自证」段） |
 | V5 | `grep -c "§1 引述" .claude/references/track-b-judge-brief.md` + `grep -c "§2 引述" …` | `§1 引述` = **0**、`§2 引述` = **1** |
 | V6 | `grep -c "^## 1\." docs/templates/PROPOSAL.template.md` + `grep -c "^## 2\." …` | `## 1.` = **0**（§1 已并入）、`## 2.` = **1**（节号保留） |
+| V6b | `grep -n "§1" docs/templates/PROPOSAL.template.md` | **零命中**（R1-F3 补：模板内唯一 §1 残留 = :47 引言句，随 T1 连带二替换后归零） |
 | V7 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
 
 **真空绿规约核对**：V3 为「**零差异**」型断言（工程门未受影响的正面证据，而非「跑过了就算」）；V4/V5 为**改名类**——须断言**旧标识符零命中**，不能只断言新标识符在场（否则改名没改净也是绿）；V1 为**自指**型——本件用新结构写，故它同时充当形态夹具。
@@ -182,3 +186,38 @@ docs/templates/PROPOSAL.template.md
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+### R1 - 2026-09-20 - architect
+
+**verdict：BLOCK(F1..F3)（3 SHOULD + 5 NIT；无 BLOCKING、无升级 human 项）**。方向性判断先行：T1（§1 并入 §2、节号保 2、五段固定式）与 T2（硬项标签去数字）的改法方向均成立，机械门兼容性已由本判官**实跑改法后形态的夹具**证实（见亲核留痕 1，非仅读本件描述）；打回项全部是**计数回灌不彻底**（260920 census 更正只回灌了 T2 与 §3，漏了 V2 与 OQ2 理由行）与**一处承重指令未钉死**（模板 `:47` 的「对 §1」残留指称）——均为机械修订，修完可直接进 R2 聚焦复核。
+
+**findings**：
+
+- **F1 · SHOULD · §5 V2 预期「3 路径」为陈旧计数**。判官亲跑（`parseSection2AnchorLists` + `extractManifestBlock` 于本件全文）：problems=[]、union = 5 路径、manifest 围栏块 = 同 5 路径、`compareAnchorSets` aligned（双向差空）。「3 路径」是 census 更正前首版 manifest（模板 + judge-brief + residual-scan-patterns 三件）的残影。落地核验若按 V2 字面「3 路径」核对会误判。修法：V2 改「5 路径」。
+- **F2 · SHOULD · §4 OQ2 理由行「外部引用面仅 4 处」与自身 census 矛盾**。按 T2 更正后 census：12 处中模板外引用 = judge-brief 1 + residual-scan-patterns 3 + path-form-family 1 + gov-arq SKILL 2 = **7 处 / 4 文件**；「4 处」即 T2「本批自证」段记录的首版 `grep -v` 误计值（外部 4 处 / 2 文件）。OQ2 裁决（去数字）**不受影响**——7 处成本仍低、且选项 (b) 保留数字重排同样要动全部引用点、还留再漂移隐患——故不构成 OQ 重开、不升级 human；但 frozen 记录的理由行数字须与 census 一致。修法：理由行改「外部引用面 7 处 / 4 文件（12 处中的模板外部分）」并注计数更正来源。
+- **F3 · SHOULD · T1 连带漏一处 §1 残留消费点：模板 `:47`「对 §1 哪个根因」**。`docs/templates/PROPOSAL.template.md:47`（§2 引言句）verbatim = 「每 T 一节：改什么（文件/段落）+ 怎么改 + 为什么这样改（**对 §1 哪个根因**）。扩承重闸优先、克制新立脚本。」——§1 并入后该指称指向空节。判官全文 grep 核过：这是模板内唯一一处「§1」字样引用（`:31` 是被并掉的节标题本体、`:33` 是随迁正文，均随 T1 消解）。T1 改法四条（并入 / 改标题 / 五段式 / judge-brief 连带）未列此句改写；「改：§1 并入 §2」的目标文件注记语义上可涵盖，但按本批自己的硬项标准（「承重 landing 指令必须原文引用钉死并给出替换后完整句」）该句属承重指称、未钉死；且验证集无一条能抓「§1」字样残留（V4 扫硬项数字、V6 数节标题行）。修法：T1 补钉死 `:47` 替换后完整句（如「每 T 一节：……为什么这样改（对应本条目「根因」段）。」），并补一条验证（`grep -n "§1" docs/templates/PROPOSAL.template.md` 期望零命中）；同时确认 T1 改法 2 的两条读法注（锚行裸起、不得加粗）随五段式一并写入模板正文，不得只留本 PROPOSAL。
+- **F4 · NIT · T1 证据引述 `track-b-judge-brief.md:30` 偏一行**。实测评审透镜第 3 条（根因→改法对应）在 `:29`；`:30` 是第 4 条（硬项可执行性）。同文件另两处引用（`:27` 透镜第 1 条、`:28` census 硬项 1b）均准确。citation 机检只查行界不查内容、抓不住此类偏移，恰是「行号引用须现跑实测」硬项要防的形态。修法：改 `:29`。
+- **F5 · NIT · 「现存 PROPOSAL.md 29 份」计数过时且口径未注**。实测 `find . -name PROPOSAL.md`（排 ESP32 参考树）= **30 份**：`delivery/changes/arch/**` 27 份（含本件）+ `delivery/workstreams/_archive/2026/` 3 份。起草期时点（本件未落盘）= 29 成立；但冻结时点该句已过时，且「全部为两段式」对本件自身不成立（本件即新形态）。修法：改「其余 29 份（本件除外）」并注明统计口径（是否含 workstream 归档件）。
+- **F6 · NIT · census「全仓」措辞与 delivery/ 历史面排除未显式声明**。T2 称「全仓引用面 census」但命令作用域 = `.claude/ docs/`；实测 `delivery/changes/arch/**` 历史制品（已 frozen 的 PROPOSAL / verdict / retro / summary）中「硬项 1a/1b/1c/2a」引用数十处——按「不追溯改写既有 PROPOSAL」非目标保留是正确处置，但未像 retro.template R 编号那样给出显式排除说明。修法：T2「非本批目标」或 §6 留根补一句「delivery/changes/arch/** 历史制品内旧标签为 frozen 记录、不追溯改」。
+- **F7 · NIT · 围栏幻影条目形态（已登记 ARQ 的补充观察，不要求本批改）**。判官夹具实测出 fence 缺陷的第二形态：§2 围栏内出现**带数字**的 `### T<n>` 行会创建幻影条目并吞掉其后第一条真锚行（真 T 报缺锚、围栏内路径入并集）——fail-loud RED、非假绿，根因与已登记缺陷同一（解析器不感知 fence）；但 ARQ-260920-anchor-parse-fence-lineno 行与 §6 留根④ 的表述只点名「目标文件： 行被吃」形态。将来修该 ARQ 子项 b 时若只给锚行过滤加 fence 跳过、不给条目头扫描加，幻影条目仍在。建议：处理该 ARQ 时把本形态纳入子项 b 修复面（ARQ 行注记由主线程裁量；本批 T1 改法 2 的围栏示范用 `T<n>` 占位符〔非数字〕，本件自身安全，已实测）。
+- **F8 · NIT · V3 命令列非可直接复跑形态**。实测 `governance-gate-shared.mjs` 无 CLI 入口（直跑零输出、exit 0），可直接复跑的命令是 `node .claude/scripts/landing-fidelity-check.mjs --self-check`（该电池含 section2Anchors，判官已跑全绿）。修法：V3 命令列改写为该命令 + 断言 section2Anchors 电池行。判官已采基线：`section2Anchors pass:19 fail:0 total:19`（2026-09-20），供「零差异」断言对照。
+
+**亲核留痕（关键项，2026-09-20 判官亲跑）**：
+
+1. **机械门兼容性（最承重项，按改法后模板形态实跑夹具）**：构造样例 = §0 导语 + **无 §1** + `## 2. 问题、根因与改法（T1…T2）` 五段式条目（裸 `目标文件：` 行）+ §3–§7 → `parseSection2AnchorLists` 返 problems=[]、union = 5 预置路径；`compareAnchorSets(union, manifest)` = aligned（双向差空）；§2 定位：parser 正则与 preflight 探针（`section2Body` 同款 `/^##\s*2[.、]?\s/`）均正确命中（§1 缺席不破定位链）。**结论：T1 改法与机械门同形，兼容性成立。**
+2. **本件自证（V1 当下即绿）**：`node .claude/scripts/landing-fidelity-check.mjs --preflight <本件>` → `ok:true / findings:[] / anchorCount:5`；本件全文跑 `parseSection2AnchorLists` + `extractManifestBlock` 对账 → aligned（5 ≡ 5）。
+3. **自检电池**：`landing-fidelity-check.mjs --self-check` 全绿（section2Anchors 19/19、landing-preflight 9/9、citation-anchors 14/14、isFrozen 19/19 等）。
+4. **census 全量复跑（无排除过滤）**：`grep -rn "硬项[[:space:]]*1a\|硬项[[:space:]]*1b\|硬项[[:space:]]*1c\|硬项[[:space:]]*2a" --include="*.md" .claude/ docs/` → **12 行 / 5 文件**，与 T2 证据表 12 行逐一吻合（SKILL `:12` 同行含四标签——按行计 12、按标签计 15，T2 已自行注明「须逐处改」）。
+5. **行号引述逐处核对**：模板 `:31` / `:45` / `:35` / `:49` / `:59` / `:61` / `:6`、judge-brief `:27` / `:28`（`:30` 除外，见 F4）、residual-scan-patterns `:3` / `:16` / `:18`、path-form-family `:64`、gov-arq SKILL `:12` / `:34` —— 全部 verbatim 吻合。
+6. **消费方 census**：`parseSection2AnchorLists` 通查 `.claude/scripts/` = 仅 `landing-fidelity-check.mjs`（import `:39` + 调用 `:173` / `:192` / `:458`）；`proposal-consolidation-check.mjs` 零命中——§3「仅一个消费方」属实。
+7. **§1 节号其他消费方排查**：track-b-verifier-brief 仅引 §2（改法集 / 锚清单并集），无 §1 引用、无数字硬项标签——T1/T2 连带无需触它；architect-landing-summary.template `:31` 的「§1 表文件列」指 summary 自身 §1，不受影响；WORKSTREAM 两模板与 portfolio-planner 的「PROPOSAL §1 业务目的清单」指 workstream 模板族，与本模板无关。**模板面唯一漏网 = F3 的 `:47`。**
+8. **§0 起始惯例（OQ1 理由）**：dev-loop.md（`## 0. 强制默认规则`）、change-triage.md（`## 0. 铁律与地板`）、ARCH-REVIEW-QUEUE.md（`## 0. AI 维护规则`）、docs/notes/ui-implementation-strategy.md（`## 0. 一句话定论`）——四件属实。
+9. **ARQ 在册**：ARQ-260920-anchor-parse-fence-lineno（全文读：两缺陷 + `--preflight` 输出 verbatim 凭据 + 子项 b 如实标分叉，登记质量合格）、ARQ-260914-landing-preflight-anchor-parse、ARQ-260909-gate-green-anchor-regex-loose 均在册。
+10. **V5 / V6 / V7 基线**：judge-brief `§1 引述`=1 / `§2 引述`=0；模板 `^## 1.`=1 / `^## 2.`=1；`route-regression-check.mjs` 28 ok 0 fail；`lint-descriptions.mjs` 仅 landing-verifier.md 超长告警（与 V7 预期一致，本批未触该文件）。
+11. **留根④ 两条的代码级复核**：`preflightFindings()` 的 `boldLines.push(i + 1)` 中 `i` 确为 §2 切片下标（相对行号缺陷属实）；锚行过滤仅 strip `>` + trim（不感知 fence，属实）。
+12. **retro.template R 编号排除**：retro.template `:14`–`:22` 硬项 R1–R5 + ARCH-REVIEW-QUEUE 行内「硬项 R2」实测在册——R 编号不绑节号，排除理由成立。
+13. **自检夹具字面计数**：`governance-gate-shared.mjs` 内 `'## 2. 改法'` 子串出现 11 处（含 `:443` 的 `'## 2. 改法（T1…T2）'`）——§3 sweep 表「11 处字面不受影响」按子串口径成立。
+
+**升级 human**：无。F1–F3 均为机械修订（计数回灌 + 指令钉死），不触改法方向、不触 OQ 裁决实质（F2 已注明裁决不受影响）。
+
+**结构字段在场核对（透镜 7）**：landing-manifest 围栏块（5 路径）与 packet-id 行均在场，且与 §2 锚并集实测对账 aligned。
