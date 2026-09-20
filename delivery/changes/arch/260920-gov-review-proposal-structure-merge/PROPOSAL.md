@@ -5,15 +5,17 @@
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T2）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
 > **riskTier**：low（一句话证成：纯**文档形态 + 引用标签**改动，**零脚本改动**；机械门 `parseSection2AnchorLists` 的定位三要素——§2 节号、`### T<n>` 条目头、`目标文件：` 裸行——**全部原样保留**）。
-> **review profile**：G2（`docs/templates/PROPOSAL.template.md` + `.claude/references/track-b-judge-brief.md` + `.claude/references/residual-scan-patterns.md` 三件，全在 G2 面）。契约面 / G1 / G3 均为零。
+> **review profile**：G2（`docs/templates/PROPOSAL.template.md` + `.claude/references/track-b-judge-brief.md` + `.claude/references/residual-scan-patterns.md` + `.claude/references/path-form-family.md` + `.claude/skills/gov-arq/SKILL.md` **五件**，全在 G2 面）。契约面 / G1 / G3 均为零。
 >
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
 >
 > **【本批自指声明】** 本 PROPOSAL **自己就用被提议的新结构写**（§1 空档、§2 五段式条目）——作为形态演示。其机械门相关形态（§2 节号 = 2、条目头 `### T<n>`、`目标文件：` 裸行）与本批改法**同形**，故不自相矛盾：门解析本件与解析改法后的模板，走的是同一条定位链。
 
 ```landing-manifest
+.claude/references/path-form-family.md
 .claude/references/residual-scan-patterns.md
 .claude/references/track-b-judge-brief.md
+.claude/skills/gov-arq/SKILL.md
 docs/templates/PROPOSAL.template.md
 ```
 
@@ -84,11 +86,27 @@ docs/templates/PROPOSAL.template.md
 
 **证据**（全部亲核，2026-09-20）：
 - 现模板（verbatim）：`:35` = `**【硬项 1a · 起草期实证义务】**`（该条原属 §1）、`:49` = `**【硬项 2a · 目标文件锚清单】**`（属 §2）——`1a` 与 `2a` 的数字分别锚在 §1 与 §2。
-- **外部引用面**（`grep -rn "硬项 1a\|硬项 1b\|硬项 1c\|硬项 2a" --include="*.md" .claude/ docs/` 亲跑）：
-  - 「硬项 1b」**1 处** = `.claude/references/track-b-judge-brief.md:28`；
-  - 「硬项 1c」**3 处** = `.claude/references/residual-scan-patterns.md:3` / `:16` / `:18`；
-  - 「硬项 1a」「硬项 2a」**0 处**（无外部引用）。
-- **同型先例**：本仓已有「标识符绑死会漂移的位置 → 位置一动即失真」的实例——在册 `ARQ-260909-gate-green-anchor-regex-loose` 的病灶即「注释声明的意图与实现脱节」，其追记里判官的原话是「与 `:83` 注释声明该契约」类的位置耦合。
+- **全仓引用面 census**（命令 `grep -rn "硬项[[:space:]]*1a\|硬项[[:space:]]*1b\|硬项[[:space:]]*1c\|硬项[[:space:]]*2a" --include="*.md" .claude/ docs/` 亲跑）：**共 12 处，分布 5 个文件**，逐处列出：
+
+  | # | 位置 | 命中标签 |
+  |---|---|---|
+  | 1 | `docs/templates/PROPOSAL.template.md:35` | 硬项 1a（**标签本体**） |
+  | 2 | `docs/templates/PROPOSAL.template.md:49` | 硬项 2a（**标签本体**） |
+  | 3 | `docs/templates/PROPOSAL.template.md:59` | 硬项 1b（**标签本体**） |
+  | 4 | `docs/templates/PROPOSAL.template.md:61` | 硬项 1c（**标签本体**） |
+  | 5 | `docs/templates/PROPOSAL.template.md:6` | 硬项 2a（形制来源句内的引用） |
+  | 6 | `.claude/references/track-b-judge-brief.md:28` | 硬项 1b |
+  | 7 | `.claude/references/residual-scan-patterns.md:3` | 硬项 1c |
+  | 8 | `.claude/references/residual-scan-patterns.md:16` | 硬项 1b |
+  | 9 | `.claude/references/residual-scan-patterns.md:18` | 硬项 1c |
+  | 10 | `.claude/references/path-form-family.md:64` | 硬项 2a |
+  | 11 | `.claude/skills/gov-arq/SKILL.md:12` | 硬项 1a **/** 1b **/** 1c **/** 2a（同句四标签） |
+  | 12 | `.claude/skills/gov-arq/SKILL.md:34` | 硬项 2a |
+
+- **非本批目标（如实排除并说明）**：`docs/templates/retro.template.md` 的「硬项 R1…R5」**是另一套编号**（retro 的硬项按 R 编号、**不绑节号**），不属本批；`docs/ARCH-REVIEW-QUEUE.md` 内的「硬项 R2」同类。二者的存在恰好说明：**R 编号因不绑节号而从未漂移，1a/2a 因绑节号而在 T1 的合并上即刻自相矛盾**——这是本 T 的直接对照证据。
+- **同型先例**：本仓已有「标识符绑死会漂移的位置 → 位置一动即失真」的实例——在册 `ARQ-260909-gate-green-anchor-regex-loose` 的病灶即「注释声明的意图与实现脱节」。
+
+**【硬项 · sweep 透镜 · 本批自证】** 上表首版 census **写错过一次，如实记录**：初稿用 `grep … | grep -v "PROPOSAL.template.md"` 想排除**模板文件**——但 `grep -v` 过滤的是**行内容**，凡行文提及 `PROPOSAL.template` 的**整行**都被滤掉，于是 `path-form-family.md:64`、`gov-arq/SKILL.md:12`/`:34` 三行（各自正文里都引了模板路径）**被静默吞掉**，初稿因此误报「外部引用 4 处 / 2 文件」。改用不带 `-v` 的完整模式重跑得 12 处 / 5 文件。**这正是本仓「枚举 census 须注明命令、遇省略须逐条展开」（硬项 · sweep 透镜义务）要防的形态——过滤口径写错 = 静默漏项。**
 
 **根因**：标签的设计意图是「第几节的第几个硬项」——把**位置**编进了**名字**。凡名字含位置信息者，位置变则名字失真；而修复（改数字）会**逐个波及引用点**，引用点越多越贵。
 
@@ -101,9 +119,9 @@ docs/templates/PROPOSAL.template.md
 | 【硬项 1b · sweep 透镜义务】 | **【硬项 · sweep 透镜义务】** |
 | 【硬项 1c · 复扫模式完备性先验】 | **【硬项 · 复扫模式完备性先验】** |
 
-并同步 **4 处外部引用**（judge-brief ×1 + residual-scan-patterns ×3）。**义务语义零变**，只动标签文字。
+并同步**上表列出的全部 12 处**（跨 **5 个文件**：模板本体 4 处标签 + 模板 `:6` 引用 + judge-brief + residual-scan-patterns ×3 + path-form-family + gov-arq ×2）。**义务语义零变**，只动标签文字。**gov-arq 的 `:12` 一行含四个标签**，须逐处改（不是整行替换）。
 
-目标文件：`docs/templates/PROPOSAL.template.md`（改：四标签去数字）、`.claude/references/track-b-judge-brief.md`（改：硬项 1b → 硬项）、`.claude/references/residual-scan-patterns.md`（改：硬项 1c ×3 → 硬项）
+目标文件：`docs/templates/PROPOSAL.template.md`（改：四标签去数字 + `:6` 引用去数字）、`.claude/references/track-b-judge-brief.md`（改：硬项 1b → 硬项）、`.claude/references/residual-scan-patterns.md`（改：硬项 1b ×1 + 硬项 1c ×2 → 硬项）、`.claude/references/path-form-family.md`（改：硬项 2a → 硬项）、`.claude/skills/gov-arq/SKILL.md`（改：`:12` 四标签 + `:34` 一标签 → 硬项）
 
 **【起草期自检两句】**（260918-gov-review-batch-drafting-friction T2 钉死，随 §2 保留）① **FROZEN 标注前跑一次 `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL 路径>`**——只读干跑，报两类**形态**错（加粗锚行、无锚清单含整行缺失），不参与任何门判定、不进任何闸链；**并通过 §5 验证集命令实跑**。② **路径类变更先查 `.claude/references/path-form-family.md` 的形态族谱表**。
 
@@ -113,7 +131,9 @@ docs/templates/PROPOSAL.template.md
 |---|---|---|---|
 | 提案模板 | `docs/templates/PROPOSAL.template.md` | G2 | §1 并入 §2 + 五段式条目模板 + 四标签去数字。消费方 = 每一份新 PROPOSAL 的作者 |
 | 判官简报 | `.claude/references/track-b-judge-brief.md` | G2 | 透镜第 1 条引述节号 §1→§2 + 硬项 1b 去数字。消费方 = 每环判官派遣 prompt |
-| 扫描模式参考 | `.claude/references/residual-scan-patterns.md` | G2 | 硬项 1c ×3 去数字。消费方 = 涉退役语面清扫的批次作者 |
+| 扫描模式参考 | `.claude/references/residual-scan-patterns.md` | G2 | 硬项 1b ×1 + 1c ×2 去数字（`:3`/`:16`/`:18`）。消费方 = 涉退役语面清扫的批次作者 |
+| 路径形态族谱 | `.claude/references/path-form-family.md` | G2 | `:64` 的「硬项 2a」去数字。消费方 = 路径类变更批次作者（该文件 260919 刚由 P4 落地） |
+| 治理 ARQ skill | `.claude/skills/gov-arq/SKILL.md` | G2 | `:12`（同句四标签）+ `:34` 去数字。消费方 = 登记 ARQ 的主线程。**注意 `:12` 一行含四个标签、须逐处改** |
 | **机械门** | `.claude/scripts/lib/governance-gate-shared.mjs` | **未触** | `parseSection2AnchorLists` 定位三要素（`/^##\s*2[.、]/` + `/^###\s+(T\d+…)/` + `目标文件：` 裸行）**原样保留**；其自检夹具 11 处 `'## 2. 改法'` 字面**不受影响** |
 | **脚本面 / 契约面 / G1 / agent frontmatter** | — | **未触** | 零改动 |
 
@@ -139,7 +159,7 @@ docs/templates/PROPOSAL.template.md
 | V1 | `node .claude/scripts/landing-fidelity-check.mjs --preflight delivery/changes/arch/260920-gov-review-proposal-structure-merge/PROPOSAL.md` | `ok:true` / `findings:[]` / exit 0——**本件即新结构，须自证形态可解析** |
 | V2 | `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260920-gov-review-proposal-structure-merge` | `ok:true`；`frozen`/`packetBinding` 真；`proposalTargets` ≡ `summaryTargets`（3 路径）；`unauthorized`/`claimedNotLanded`/`plannedNotLanded` 全空 |
 | V3 | `node .claude/scripts/lib/governance-gate-shared.mjs` 经 landing-fidelity 的 `--self-check` 电池 | `section2Anchors` 电池**全绿且与改动前零差异**——证机械门未受本批影响 |
-| V4 | `grep -rn "硬项 1a\|硬项 1b\|硬项 1c\|硬项 2a" --include="*.md" .claude/ docs/` | 落地后 **零命中**（4 处引用全改完） |
+| V4 | `grep -rn "硬项[[:space:]]*1a\|硬项[[:space:]]*1b\|硬项[[:space:]]*1c\|硬项[[:space:]]*2a" --include="*.md" .claude/ docs/` | 落地后 **零命中**（T2 证据表列的 **12 处**全改完）。**注意勿加 `grep -v` 过滤**——本件首版即因该过滤按行内容误吞三行（见 T2 的「本批自证」段） |
 | V5 | `grep -c "§1 引述" .claude/references/track-b-judge-brief.md` + `grep -c "§2 引述" …` | `§1 引述` = **0**、`§2 引述` = **1** |
 | V6 | `grep -c "^## 1\." docs/templates/PROPOSAL.template.md` + `grep -c "^## 2\." …` | `## 1.` = **0**（§1 已并入）、`## 2.` = **1**（节号保留） |
 | V7 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
