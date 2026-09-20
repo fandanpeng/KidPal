@@ -24,7 +24,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync
 import { resolve, join, basename } from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { resolveOriginRef, isFrozen, closeoutRequiredFiles } from './lib/governance-gate-shared.mjs';
+import { resolveOriginRef, isFrozen, closeoutRequiredFiles, VERDICT_STATUS_RE, VERDICT_HEADING_RE } from './lib/governance-gate-shared.mjs';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -48,6 +48,19 @@ const LANDED_ADJUDICATION = {
   '260731-gov-review-deny-main-push-hardening': true,         // 文末「故五复验 VERDICT = PASS」（五复验叙事行）
   '260813-gov-review-gate-accuracy-batch': true,              // 文末「复验结论：总判由 FAIL 转 PASS」（翻判）
   'gov-review-governance-doc-restructure': true,              // 「## 结论\n**GREEN。**」（token 在标题下一加粗行）
+  // landing 期补判 · 260920 批（260920-gov-review-verdict-anchor-align T4，human 2026-09-20 OQ2 裁
+  // 「本批落 + 注明依据」）——六批的 verdict 行形态**各自不同**、均不被 deriveLanded 的锚识别
+  // （六成因见该批 §2 T4 证据段）；逐条注明「依据 = 该批 landing-verdict 的 verdict 行 verbatim」，
+  // 供事后抽查。六批的目录末提交均已在 main（该批起草期实核）：
+  '260907-gov-review-architect-dispatch-model-override': true, // landing-verdict `:3` = `**verdict：APPROVE**`（token 不在集）
+  '260908-gov-review-escalation-conflict-ladder': true,        // `:95` = `### 7.0 Verdict：**GREEN（放行建议…）**`（点分编号 7.0 不被认）
+  '260908-gov-review-merge-chain-hardening': true,             // `:5` = `## 0. Verdict：**RED（…）**`；`:164` = 散文「五前提全部满足…全绿」（转绿无 token 行）
+  '260907-gov-review-merge-friction': true,                    // `:98` = `**绿（GREEN）**——…`（无标签）
+  '260904-gov-review-escalate-merge-approval': true,           // `:77` = `**最终 verdict：GREEN。**`（`最终` 挡在标签前）
+  '260830-arch-review-ui-impl-strategy': true,                 // `:9` = `**绿（放行建议）——…**`（无标签）
+  // 第 7 条（**起草期 census 遗漏补登**，2026-09-20 落地期现跑发现）：该批的「已合main」在 T4 起草 census 时
+  // 尚为空（后由 backfill 重算为 yes），故未入原 6 条清单；实况 = 已落地（复核轮 PASS）：
+  '260914-arch-review-kidpal-session-ctx-contract': true,      // `:92` = `**LANDING VERDICT: PASS**`（label 为 `LANDING VERDICT` 非 `verdict`，行首判据不认）
 };
 
 function loadStateCache() {
@@ -174,8 +187,8 @@ function collectDev() {
 //   ② 机械强信号——「状态行」（verdict/总判/结论 同行跟 token，兼容全角「：」）或「标题行 + 随后加粗 token」；
 //   ③ 都不命中 → 非 landed（fail-closed：宁漏标不错标，漏标由人工 adjudication 兜底）。
 // 新批强制规范 verdict 行（`> verdict: PASS/GREEN`）→ 100% 走 ②。旧批发散散文（「转绿记录」「验收通过」等叙事）不强行机械解析（太脆），归 ①。
-const VERDICT_STATUS_RE = /^\s*(?:>+\s*)?(?:\*{0,2})\s*(?:verdict|总判|总判定|结论|复验结论|判定)\s*(?:\*{0,2})\s*[:：=]\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)\b/i;
-const VERDICT_HEADING_RE = /^#{1,4}\s*(?:\d{1,3}[.、]\s*)?(?:verdict|总判|总判定|结论|复验结论)\s*[:：]?\s*\*{0,2}\s*(PASS|GREEN|RED|FAIL|BLOCK)?\b/i;
+// VERDICT_STATUS_RE / VERDICT_HEADING_RE 已迁 lib 单源（260920-gov-review-verdict-anchor-align T2——
+// 升级闸 readGovAnchors 的 green 锚共用同一判据，防双源分叉；import 在上）。
 function deriveLanded(dir, cached) {
   if ((cached && cached.landed === true) || LANDED_ADJUDICATION[basename(dir)] === true) return true; // ① 人工 adjudication 钉死
   const vp = join(dir, 'landing-verdict.md');
@@ -368,7 +381,10 @@ function upsertArchRow(indexPath, id, cache) {
   const entry = computeArchEntry(id, cache);
   // 已合 main：按目录末提交现推并钉进缓存（260909 T6；前提 = 合 main 完成后跑本 upsert，R1-F3）
   const merged = dirMergedInMain(`delivery/changes/arch/${id}`);
-  if (merged) { entry.mergedInMain = merged; cache[id] = { ...(cache[id] || {}), date: entry.date, mergedInMain: merged }; }
+  // T3（260920-gov-review-verdict-anchor-align，FROZEN 2026-09-20）：守卫收真值型——
+  // gitContainedInMain 返回 'yes'/'no'/''（:118），'no' 在 JS 中为真值 ⇒ 旧守卫会把 'no' 也钉进缓存，
+  // 而全量重建缓存优先（:240）⇒ 合并后该列不翻 yes。收窄为只钉 'yes'（已合并的 immutable 事实）。
+  if (merged === 'yes') { entry.mergedInMain = merged; cache[id] = { ...(cache[id] || {}), date: entry.date, mergedInMain: merged }; }
   const newRow = `| [${esc(entry.changeId)}](${entry.changeId}/) | ${entry.date || '—'} | ${esc(entry.status)} | ${esc(entry.mergedInMain) || '—'} |`;
 
   const content = readText(indexPath);
@@ -412,7 +428,9 @@ function backfill() {
     const merged = dirMergedInMain(`delivery/changes/arch/${name}`);
     const landed = deriveLanded(join(root, name), cache[name]);
     if (landed) landedCount++;
-    cache[name] = { date, mergedInMain: merged, landed };
+    // T3（260920-gov-review-verdict-anchor-align，R1-F7 采纳）：merged === ''（git 不可用）时保旧值，
+    // 防「已钉的 yes 被空答复抹掉」。
+    cache[name] = { date, mergedInMain: merged === '' ? (cache[name] ? cache[name].mergedInMain : '') : merged, landed };
     computed++;
   }
   saveStateCache(cache);

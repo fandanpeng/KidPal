@@ -29,7 +29,7 @@
 
 ## verdict 格式
 
-`landing-verdict.md` 含：verdict 行（`PASS` / `FAIL(F1..Fn)` / `PASS + N ADVISORY`）+ 六项逐项结论 + 亲核留痕（命令 + 关键输出）+ ADVISORY 清单（非阻断观察）。FAIL = 主线程修订后重派（同 agent resume）。
+`landing-verdict.md` 含：verdict 行（`PASS` / `FAIL(F1..Fn)` / `PASS + N ADVISORY`）+ 六项逐项结论 + 亲核留痕（命令 + 关键输出）+ ADVISORY 清单（非阻断观察）。FAIL = 主线程修订后重派（同 agent resume）。**verdict 行形态义务（260920-gov-review-verdict-anchor-align T1 钉死）**：`landing-verdict.md` 必须含一行**行首** `verdict: <TOKEN>`（TOKEN ∈ `PASS` / `FAIL(F1..Fn)`）——该行是 `changes-index.mjs` `deriveLanded` 的机器锚消费面，形态不符 = INDEX 推不出 landed。
 
 ## 升级线
 

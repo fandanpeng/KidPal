@@ -559,3 +559,12 @@ export function resolveHumanApproval(dir, changeId, eventId, deps = {}) {
   if (hit.schemaVersion !== 1) return { ok: false, reason: `schemaVersion=${hit.schemaVersion}（应为 1）` };
   return { ok: true, reason: 'human-approval verified' };
 }
+
+// ── verdict 行判据单源（260920-gov-review-verdict-anchor-align T2，FROZEN 2026-09-20）──
+// 从 changes-index.mjs:177-178 迁入（export 单源，防派生判据双源分叉）。
+// 消费方 = changes-index deriveLanded（逐行 exec，后出者胜）+ pre-merge-escalation-gate
+// readGovAnchors 的 green 锚（逐行扫，任一行 token = GREEN 即 green）。
+// 行首判据（^）+ 可选 > 引用前缀 + 可选加粗 + 可选反引号包 token（260920 批 §7 的
+// `**Verdict：\`GREEN\`**` 形态为真实判官输出）。
+export const VERDICT_STATUS_RE = /^\s*(?:>+\s*)?(?:\*{0,2})\s*(?:verdict|总判|总判定|结论|复验结论|判定)\s*(?:\*{0,2})\s*[:：=]\s*(?:[\x60*]{0,4})\s*(PASS|GREEN|RED|FAIL|BLOCK)\b/i;
+export const VERDICT_HEADING_RE = /^#{1,4}\s*(?:\d{1,3}[.、]\s*)?(?:verdict|总判|总判定|结论|复验结论)\s*[:：]?\s*(?:[\x60*]{0,4})\s*(PASS|GREEN|RED|FAIL|BLOCK)?\b/i;

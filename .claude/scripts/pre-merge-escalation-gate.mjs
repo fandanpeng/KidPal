@@ -29,7 +29,7 @@ import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { resolveHumanApproval } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）
+import { resolveHumanApproval, VERDICT_STATUS_RE } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
@@ -74,14 +74,30 @@ function readSupervisorVerdict(dir, changeId) {
 // 五要素人批事件核验（approve-escalated-merge）；T5 defer/accept-risk 锚核验复用同函数、decision 参数化。
 
 /** 读治理 PROPOSAL §7 与 Status 行 + landing-verdict（Track B 档）。 */
+// T2（260920-gov-review-verdict-anchor-align，FROZEN 2026-09-20）：green 判定抽为纯函数（self-check 可测）——
+// 逐行 VERDICT_STATUS_RE、**取最后命中 token**（后出者胜，与 deriveLanded 的 :189 覆写语义一致）。
+function isGreenVerdict(text) {
+  let lastToken = '';
+  for (const line of text.split('\n')) {
+    const m = VERDICT_STATUS_RE.exec(line);
+    if (m) lastToken = m[1].toUpperCase();
+  }
+  return lastToken === 'GREEN';
+}
+
 function readGovAnchors(dir, changeId) {
   const proposalPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'PROPOSAL.md');
   const landingVerdictPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'landing-verdict.md');
   if (!existsSync(proposalPath)) return null;
   const text = readFileSync(proposalPath, 'utf8');
   const frozen = /^[>\s]*\*\*状态：FROZEN v\d+\.\d+/m.test(text); // 260905 T4：容忍 `> ` 引用前缀，与行首形态双命中（既有错位归位，260905-gov-review-verify-gates-align）
-  // §7 含判官 GREEN verdict：宽松匹配「GREEN」且「verdict」同段（拒绝仅 history 提及 GREEN）
-  const green = /verdict[：:]\s*GREEN|结论[：:]\s*GREEN|GREEN/gi.test(text);
+  // §7 含判官 GREEN verdict（260920-gov-review-verdict-anchor-align T2，FROZEN 2026-09-20）：
+  // 改用 lib 单源 VERDICT_STATUS_RE（行首判据），**取最后命中的 token**（后出者胜，与 deriveLanded
+  // 的 :189 覆写语义一致——防「GREEN 后重开」场景 fail-open）。token 集收 {GREEN}（R1-F2：删 PASS——
+  // 260918 批 R1:176 已论证否决：spoof 面、判官语法无 PASS）。**裸 GREEN 分支删除**（ARQ-260909 原
+  // 病灶：全文 token 匹配 + 样板行「GREEN 结论前必须在场」自带 GREEN ⇒ 恒真）。
+  // RE 须容忍 token 前后的反引号（批① §7 的 `**Verdict：\`GREEN\`**` 形态为真实判官输出）。
+  const green = isGreenVerdict(text);
   const landingVerdict = existsSync(landingVerdictPath);
   return { frozen, green, landingVerdict };
 }
@@ -491,6 +507,16 @@ function selfCheck() {
     const v4Json = JSON.stringify({ changeId: 'x', kind: 'devloop', overlap: v4Overlap });
     const v4KeysOk = ['"intersectingFiles"', '"conflictedFiles"', '"addAddFiles"', '"tier"'].every((k) => v4Json.includes(k)) && v4Json.includes('"b.c"');
     cases.push({ name: 'overlap-probeout-payload-keys-ok', ok: v4KeysOk, got: v4Json.slice(0, 80) });
+  }
+
+  // T2（260920-gov-review-verdict-anchor-align）：green 锚三夹具——
+  // 样板行（GREEN 在行中、无 verdict 标签）不命中 / 规范 verdict 行命中 / BLOCK 行不命中。
+  // 真空绿：样板行文本先断含 GREEN 字样（防夹具没造对）。
+  {
+    const boilerplate = '> **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**';
+    cases.push({ name: 'green-anchor-boilerplate-not-green', ok: !isGreenVerdict(boilerplate), got: `含 GREEN=${/GREEN/.test(boilerplate)} → isGreen=${isGreenVerdict(boilerplate)}` });
+    cases.push({ name: 'green-anchor-verdict-line-green', ok: isGreenVerdict('verdict: GREEN'), got: `isGreen=${isGreenVerdict('verdict: GREEN')}` });
+    cases.push({ name: 'green-anchor-block-not-green', ok: !isGreenVerdict('verdict: BLOCK(F1)'), got: `isGreen=${isGreenVerdict('verdict: BLOCK(F1)')}` });
   }
 
   const fail = cases.filter((c) => !c.ok);

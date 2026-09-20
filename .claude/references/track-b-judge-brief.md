@@ -18,7 +18,7 @@
 
 1. **只读全仓 canonical；唯一可写面** = 评审对象 PROPOSAL 的 **§7 评审记录段**（append-only，不改任何既有文字）。不得写其它任何文件（修订是主线程的事）。
 2. **地面真值亲核义务**：一切事实断言（file:line、引述、计数、命令行为）必须亲核（Read/Grep/Bash 实测），不得凭 PROPOSAL 转述采信；引用给 verbatim。
-3. **verdict 格式**：`GREEN` 或 `BLOCK(F1..Fn)`；每个 finding 附证据（file:line verbatim / 实测输出）+ 严重度（BLOCKING / SHOULD / NIT）+ 建议修法方向。
+3. **verdict 格式**：`GREEN` 或 `BLOCK(F1..Fn)`；每个 finding 附证据（file:line verbatim / 实测输出）+ 严重度（BLOCKING / SHOULD / NIT）+ 建议修法方向。**verdict 行形态义务（260920-gov-review-verdict-anchor-align T1 钉死）**：append 到 PROPOSAL §7 的 verdict 行必须写为**行首** `verdict: <TOKEN>`（可带 `>` 引用前缀；TOKEN ∈ `GREEN` / `BLOCK(F1..Fn)`）——该行是前置升级闸 `readGovAnchors` 的机器锚消费面，形态不符 = 闸判不出 GREEN。
 4. **升级线**：发现「影响目标效果」级问题（改法方向性错误、漏掉的根因类、riskTier/profile 误判致该走更重轨）→ 显式标注「升级 human」。
 5. **轮次纪律**：R1 全面审；R2+ 聚焦前轮 findings 的修订到位性 + 修订是否引入新矛盾，不做无的放矢的全量重核。
 
