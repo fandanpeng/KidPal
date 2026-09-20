@@ -148,5 +148,9 @@
     "date": "2026-09-20",
     "mergedInMain": "yes",
     "landed": true
+  },
+  "260920-gov-review-verdict-anchor-align": {
+    "date": "2026-09-20",
+    "mergedInMain": "no"
   }
 }

@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-verdict-anchor-align
 
-> **状态：DRAFT v0.3 · 2026-09-20 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-20 立项 ack + OQ 全裁；**R1 GREEN（0 BLOCK / 3 SHOULD / 4 NIT）→ 主线程 v0.3 折入 F1–F7**〔F1 green 取最后命中 token / F2 token 集收 {GREEN} / F3 RE 容忍反引号 + T1 正例 / F4 census 时点校准 / F5 pin 数 12 + CONTRACT_WIRE_FILE 先例更正 / F6 显示副作用申报 / F7 backfill 空答复保旧值〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
+> **状态：FROZEN v1.0 · 2026-09-20 · 可进 landing**（凭据：human 2026-09-20 立项 ack + OQ 全裁 + **architect R1 GREEN**〔§7 `### R1 - 2026-09-20 - architect`，0 BLOCK / 3 SHOULD / 4 NIT〕——判官明示「F1–F3 为 FROZEN 前应折入项（一句话量级，折入后无需再轮）」，主线程已将 F1–F7 全部折入 v0.3（见上）。**本批无 human OQ 裁断项**——OQ1/OQ2 已裁〔见 §4〕）。
 > **承载 ARQ**：`ARQ-260909-gate-green-anchor-regex-loose`（T1+T2）、`ARQ-260909-index-verdict-anchor-okform-gap`（T2，其「pin」侧）、`ARQ-260920-changes-index-mergedinmain-stale`（T3）。**三条同根**：verdict/状态行的**判据与实际书写形态脱节**。不关的根写 §6 留根指针。
 > **本批定位**：三条合一的根治方案 = **verdict 行规范化 + 判据单源化**——判官与核验官的 verdict 行写**固定机器可读形态**（两处简报成文），升级闸与 `deriveLanded` 改用**同一个规范锚**（`VERDICT_STATUS_RE` 迁 lib 单源），`mergedInMain` 守卫收真值型，**6 个存量批按实况 pin 进既有 `LANDED_ADJUDICATION`**（沿既有 7 条先例）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节）。两条升级判据均未命中。**但 T2 触「改 gate 判定」（前置升级闸的 GREEN 锚）**——按 AGENTS.md「存疑向严」与 P1 先例（human 裁「都留 Track B」），本批**如实声明该 gate 事实交判官核**，判官认为须升级即升。
