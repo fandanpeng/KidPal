@@ -5,11 +5,13 @@ TaskPackage 260829-char-stroke（mergeOrder 7）。机制 B = OpenClaw 回复出
 后的全量 D3 data（strokes/medians 等坐标只出自云端静态字库，绝不入 shim）。本模块
 纯 python、无 import-time 第三方依赖（禁 fastapi/httpx/LLM），任何机器常年可跑。
 
-契约（函数名/签名/语义不得偏移 —— 冻结于 server/acceptance/test_char_stroke.acceptance.py
+契约（函数名/签名/语义不得偏移 —— 冻结于 server/acceptance/test_char_meaning_merge.acceptance.py
 模块 docstring；discovery 按契约标记文本扫装）：
   - assemble_char / extract_minimal_char_block / replace_minimal_block
   - CharLruCache / warmup_cache
   - 常量 FULL_DATA_KEYS / REQUIRED_DATA_KEYS
+（260920-m2-charwindow-display-fix：冻结验收指针已收编到现役件 test_char_meaning_merge.acceptance.py，
+ 原捕获签名有变；本模块契约单源以现役件为准。）
 """
 
 from __future__ import annotations
@@ -114,6 +116,9 @@ def replace_minimal_block(text: str, full_data: dict) -> str:
     """把 text 中的 char display 块 JSON 替换为拼装后的全量 full_data。
 
     语音部分原样保留; 无 char 块时原样返回 (机制 B: 网关永不见最小块成品)。
+    MCD-A5（260920-m2-charwindow-display-fix）: 最小块携带的 `meaning`（中文释义、
+    同回复播报那句中文解释同源）**覆盖** full_data 的 meaning 再 emit；缺键/空串 ->
+    回落 cache 原值。浅拷贝不毒化调用方的共享 cache 行。
     """
     if not isinstance(text, str) or not text:
         return text
@@ -126,7 +131,12 @@ def replace_minimal_block(text: str, full_data: dict) -> str:
         return text
     if not _is_char_block(obj):
         return text
-    new_json = json.dumps(full_data, ensure_ascii=False)
+    data = dict(full_data)  # 浅拷贝: 覆盖语义不改调用方的 cache 数据
+    inner = obj.get("data")
+    m_meaning = inner.get("meaning") if isinstance(inner, dict) else None
+    if isinstance(m_meaning, str) and m_meaning.strip():
+        data["meaning"] = m_meaning
+    new_json = json.dumps(data, ensure_ascii=False)
     replaced = text[: m.start(1)] + new_json + text[m.end(1):]
     return replaced
 

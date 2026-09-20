@@ -548,8 +548,46 @@ void kidpal_char_page_show(const char *data_json)
             if (j && cJSON_IsNumber(j) && j->valueint > 0) stroke_count = j->valueint;
             j = cJSON_GetObjectItem(root, "words");
             if (j && cJSON_IsArray(j) && cJSON_GetArraySize(j) > 0) {
-                cJSON *w0 = cJSON_GetArrayItem(j, 0);
-                if (w0 && cJSON_IsString(w0)) words = w0->valuestring;
+                /* 组词多词 join (MCD-A4): words 数组前 N 项以「、」顿号 join（非只取
+                 * [0]——kidpal_char_info.words 注释本就写明「、-joined」、card.words[96]
+                 * 容量按多词设计）。装配落 char_page 层, 不动 char_stroke.c 纯逻辑合约。
+                 * UTF-8 边界封顶 (planner 裁决②, 装配面义务): 先按 96B 容量域逐词拷贝,
+                 * 若容限截断劈了多字节半字（末字节是 0x80-0xBF 连续字节）则回退到完整
+                 * 字符边界, 绝不交 card_build 半字（card_build 的 96B 字节截断冻结语义
+                 * 不动, 超长串永不到它手上）。 */
+                static char joined[96];                 /* 对齐 card.words[96] 容量 */
+                static const char ws[] = "、";          /* 「、」= E3 80 81, 3 字节 */
+                const size_t wslen = sizeof(ws) - 1;
+                const int nw = cJSON_GetArraySize(j);
+                size_t used = 0;
+                int truncated = 0;
+                for (int wi = 0; wi < nw; wi++) {
+                    cJSON *w = cJSON_GetArrayItem(j, wi);
+                    if (!w || !cJSON_IsString(w)) continue;
+                    const char *s = w->valuestring;
+                    if (used > 0) {                     /* 非首项先加顿号 */
+                        if (used + wslen + 1 >= sizeof(joined)) { truncated = 1; break; }
+                        memcpy(joined + used, ws, wslen);
+                        used += wslen;
+                    }
+                    size_t sl = strlen(s);
+                    if (used + sl + 1 >= sizeof(joined)) {
+                        sl = sizeof(joined) - 1 - used;  /* 容量封顶 */
+                        truncated = 1;
+                    }
+                    if (sl > 0) { memcpy(joined + used, s, sl); used += sl; }
+                }
+                joined[used] = '\0';
+                if (truncated) {
+                    /* UTF-8 半字回退: **只在真发生容量截断时**回退到完整字符边界——
+                     * 否则末尾合法 CJK 字符的末字节（本身是 0x80-0xBF）会被误删。 */
+                    while (used > 0 &&
+                           ((unsigned char)joined[used - 1] & 0xC0) == 0x80) {
+                        used--;
+                    }
+                    joined[used] = '\0';
+                }
+                words = joined;
             }
             j = cJSON_GetObjectItem(root, "meaning");
             if (j && cJSON_IsString(j)) meaning = j->valuestring;
@@ -571,18 +609,38 @@ void kidpal_char_page_show(const char *data_json)
         kidpal_char_card_build(&info_o, -1, &g_page.card);
 
         lv_obj_t *cardlabel = lv_label_create(g_page.panel);
-        lv_obj_set_pos(cardlabel, 228, 8);
+        /* 右栏去遮挡 (MCD-A1): 恒显顶部状态带 top_bar_/status_bar_（LV_OPA_50 半透,
+         * y0-24 任何状态恒显）压住拼音行——起点 y8 -> y30 清出状态带 + 余量 (内容让位,
+         * 不动 chrome)。配定宽 + wrap: 释义改中文后变长必冲出右缘被裁 (右缘 388 - x228
+         * = 160), 同刀钉死。 */
+        lv_obj_set_pos(cardlabel, 228, 30);
+        lv_obj_set_width(cardlabel, 160);
+        lv_label_set_long_mode(cardlabel, LV_LABEL_LONG_WRAP);
         /* 五行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
          * meaning 95 + words 95 + 标签/换行，编译分析最坏 ~354B）——五行不能因缓冲太小被
          * 尾部截断（S-F3.2 AC1 五行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
         char buf[384];
         /* 右栏速查卡五行拼装 (S-F3.2 AC1 v1.56 五行口径): 拼音带声调 + 共 N 画 + 部首 +
-         * 释义 + 组词。meaning 缺义兜底「释义：—」占位（human 裁: 缺义只损右栏一行、
-         * 不降级整窗——缺义形态钉死不留现场裁量; — = U+2014 全角破折号）。 */
-        snprintf(buf, sizeof(buf), "%s\n%s\n部首：%s\n释义：%s\n%s",
-                 g_page.card.pinyin, g_page.card.stroke_total, g_page.card.radical,
-                 (g_page.card.meaning[0] != '\0') ? g_page.card.meaning : "—",
-                 g_page.card.words);
+         * 释义 + 组词。MCD-A3 空行不显示: 任一行（组词/部首等）数据为空 -> 该行不拼装
+         * （无空行、无占位符）。释义行保留 MCF 裁定的「释义：—」缺义兜底（human 裁:
+         * 缺义只损右栏一行、不降级整窗——形态钉死不留现场裁量; — = U+2014 全角破折号）。
+         * 五行 < buf[384] 容量（拼音/部首 47 + stroke 47 + 释义 95 + words 95 + 标签/
+         * 换行，编译分析最坏 ~354B; 部首行条件化后恒不大于原无条件最坏值）。 */
+        {
+            size_t w = 0;
+            w += (size_t)snprintf(buf + w, sizeof(buf) - w, "%s\n%s\n",
+                                  g_page.card.pinyin, g_page.card.stroke_total);
+            if (g_page.card.radical[0] != '\0') {        /* 部首非空才拼该行 */
+                w += (size_t)snprintf(buf + w, sizeof(buf) - w, "部首：%s\n",
+                                      g_page.card.radical);
+            }
+            w += (size_t)snprintf(buf + w, sizeof(buf) - w, "释义：%s\n",
+                                  (g_page.card.meaning[0] != '\0')
+                                      ? g_page.card.meaning : "—");
+            if (g_page.card.words[0] != '\0') {          /* 组词非空才拼该行 */
+                (void)snprintf(buf + w, sizeof(buf) - w, "%s", g_page.card.words);
+            }
+        }
         lv_label_set_text(cardlabel, buf);
         lv_obj_set_style_text_font(cardlabel, &font_puhui_14_1, 0);
         if (root != NULL) cJSON_Delete(root);
@@ -591,7 +649,9 @@ void kidpal_char_page_show(const char *data_json)
     /* 底部提示条: 文案消费 kidpal_char_card_build 的 progress 单源 (演示中「第 X 笔·
      * 共 N 笔」/ 演示写完定格「写完啦·共 N 笔」——S-F3.3 AC2, 本窗零重抄文案格式)。 */
     g_page.hint_label = lv_label_create(g_page.panel);
-    lv_obj_set_pos(g_page.hint_label, 0, 280);
+    /* 提示条让位 (MCD-A2): 底部提示条原 (0,280) 落 bottom_bar_ 键帽条带
+     * （LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压——上移到 y244 避开该带。 */
+    lv_obj_set_pos(g_page.hint_label, 0, 244);
     lv_label_set_text(g_page.hint_label, g_page.card.progress);
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);
     /* 底部提示条显式接线 font_puhui_14_1（v1.56 对账④: 不赌 s_kidpal_scr 字体继承——

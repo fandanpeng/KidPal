@@ -92,11 +92,14 @@ ls -la "$OVERLAY"
 #        260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定；两并行包各写一份 .v3 抢同槽位
 #        (add/add)，按 human 授权 pod-events dc9a5c15 取并集；槽位预约规则见
 #        ARQ-260908-versioned-artifact-slot-collision)。
-#   v4 = openclaw-system-prompt.v4.md (当前渲染源; 260829-hardware-validation F4 分工修正:
+#   v4 = openclaw-system-prompt.v4.md (260829-hardware-validation F4 分工修正:
 #        删模型「回填整段正文」缺陷表述、改为一回合只起 title、story_text 正文+id 由网关下发;
 #        v3 及其下 v1/v2 基座语义逐字保留、可 diff)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v4.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v4.md"
+#   v5 = openclaw-system-prompt.v5.md (当前渲染源; 260920-m2-charwindow-display-fix MCD-A5/A7:
+#        char 最小意图块 data 增中文释义 meaning (同语音那句中文解释同源同字≤24字) + 面向设备
+#        回复只含口语正文+一个 display 块、禁任何自检/来源/附录/明细/HTML 结构; v4 基座逐字保留)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v5.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v5.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -114,7 +117,7 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v4.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: openclaw-system-prompt.v5.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
 # 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,

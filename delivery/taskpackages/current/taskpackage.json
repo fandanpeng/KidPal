@@ -83,29 +83,29 @@
       {
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "freeze 相位负向变异自证（影子树 C:/tmp/mutroot 代表实现，真实 61/0 ELF）：cardlabel set_pos 228,30→228,8 / 删 lv_obj_set_width(cardlabel,160) / 删 LV_LABEL_LONG_WRAP，逐锚回退。",
-        "counterEvidence": "三变异各自使 TEST 10 转 FAIL（代表实现下先全绿证明可满足）；还原后复绿。板端 6/6 变异全部咬合、另一齿保持 PASS = 独立敏感。",
+        "mutation": "MUT-MCD-A1（builder 实现态三连）：cardlabel y 30→8 / width 160→80 / WRAP→CLIP，逐锚负向变异。",
+        "counterEvidence": "三变异各自使 TEST 10 FAIL（红名逐字：y=8<30 / 未取到 set_width 160 / 未设 LONG_WRAP）；md5=7149722faf988dda2706d95cb8802e66 与绿态逐字节一致、零残留。红→绿链：绿态 63T/0F → 变异态 FAIL → 还原 63T/0F。",
         "acceptanceId": "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）"
       },
       {
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "freeze 相位负向变异：hint_label set_pos 244→280（退回 bottom_bar_ 带内）。",
-        "counterEvidence": "TEST 10 的 hint 断言转 FAIL；还原复绿（板端 6/6 之一）。",
+        "mutation": "MUT-MCD-A2（builder 实现态）：hint_label 244→280（退回 bottom_bar_ 带）。",
+        "counterEvidence": "TEST 10 FAIL（hint y=280 >= 252）；还原复绿。",
         "acceptanceId": "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证"
       },
       {
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "freeze 相位负向变异：删拼装区 radical[0] 首字节判空闸。",
-        "counterEvidence": "TEST 11 转 FAIL（红名「拼装区零 radical 首字节判空」即现状红名同源）；还原复绿。",
+        "mutation": "MUT-MCD-A3（builder 实现态双靶）：radical[0] token 移除 / words[0] token 移除。",
+        "counterEvidence": "TEST 11 两次 FAIL（零 radical 判空 / 零 words 判空）；还原复绿。",
         "acceptanceId": "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）"
       },
       {
         "sensitive": true,
         "result": "failed as expected",
-        "mutation": "freeze 相位负向变异：组词 join 退回只取 words[0]。",
-        "counterEvidence": "TEST 11 转 FAIL；还原复绿。数据面 96B 截断守卫由 TEST 11 数据面半（93B verbatim / 135B 超容恒 NUL / join 超容截断）承载。",
+        "mutation": "MUT-MCD-A4（builder 实现态）：「、」分隔字面移除（join 退化）。",
+        "counterEvidence": "TEST 11 FAIL（零「、」字面）；还原复绿。数据面 96B 守卫由 TEST 11 数据面半承载（93B verbatim / 135B 超容恒 NUL）。",
         "acceptanceId": "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case"
       },
       {
