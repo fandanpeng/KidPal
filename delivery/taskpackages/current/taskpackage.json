@@ -12,7 +12,7 @@
   "story": "查字窗展示面修复——右栏去遮挡（恒显顶部状态带 top_bar_/status_bar_ 压住拼音行）+ 底部提示条让位（bottom_bar_ 同族）+ 右栏定宽换行与空行不显示 + 云端把已播报的中文解释写进 display 块既有 meaning 字段（播报内容零变化）",
   "planRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
   "redBaselineCommand": "板端：cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"；云面：python -m pytest -q --import-mode=importlib -m \"not live\" c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance（elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
-  "redBaselineResult": "",
+  "redBaselineResult": "RED（freeze 后现行基线，acceptance-author 实跑 + planner 2026-09-20 独立复跑双证）——【板端】host runner **63 Tests / 2 Failures / 0 Ignored**（was 61/0），唯二红 = 新增 TEST 10（MCD-A1/A2：cardlabel y=8 < 30 病灶在案）+ TEST 11（MCD-A3/A4：拼装区零 radical[0] 判空），其余 61 齿零新增红；【云面】pytest -m \"not live\" server/acceptance = **8 failed / 2 passed**（原面仅 conftest 无齿），8 红 = A5 四齿 + A7 三齿 + prompt 两齿中的行为/结构半（现行 TS helper 无 meaning merge / 无 <details> 剥离、prompt v4 无 meaning 新约无附录禁令 = 真实缺陷信号），2 绿 = must-stay-green 守卫（prompt 两面接线版本无关 + A7 正向不误剥）；server/tests 仍 37 passed 未受影响。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -79,7 +79,50 @@
   "decisionCoverage": [],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异自证（影子树 C:/tmp/mutroot 代表实现，真实 61/0 ELF）：cardlabel set_pos 228,30→228,8 / 删 lv_obj_set_width(cardlabel,160) / 删 LV_LABEL_LONG_WRAP，逐锚回退。",
+        "counterEvidence": "三变异各自使 TEST 10 转 FAIL（代表实现下先全绿证明可满足）；还原后复绿。板端 6/6 变异全部咬合、另一齿保持 PASS = 独立敏感。",
+        "acceptanceId": "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异：hint_label set_pos 244→280（退回 bottom_bar_ 带内）。",
+        "counterEvidence": "TEST 10 的 hint 断言转 FAIL；还原复绿（板端 6/6 之一）。",
+        "acceptanceId": "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异：删拼装区 radical[0] 首字节判空闸。",
+        "counterEvidence": "TEST 11 转 FAIL（红名「拼装区零 radical 首字节判空」即现状红名同源）；还原复绿。",
+        "acceptanceId": "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异：组词 join 退回只取 words[0]。",
+        "counterEvidence": "TEST 11 转 FAIL；还原复绿。数据面 96B 截断守卫由 TEST 11 数据面半（93B verbatim / 135B 超容恒 NUL / join 超容截断）承载。",
+        "acceptanceId": "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异（影子服务端树 C:/tmp/srvroot 代表实现：scratch TS helper + python 镜像 + v5 prompt 双面接线，先 9/10 全绿证明可满足）：流式路径去 merge（k1cLookupBlock）/ 非流式去 merge。",
+        "counterEvidence": "A5 两齿（python 镜像语义 + TS 两路径行为 + 两函数体结构）FAIL；还原复绿。云面 5/5。",
+        "acceptanceId": "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合"
+      },
+      {
+        "sensitive": true,
+        "result": "failed as expected",
+        "mutation": "freeze 相位负向变异（同上影子树）：流式路径去 strip（k1cStreamStep）/ 剥离规则过宽（OPEN=「（」）。",
+        "counterEvidence": "A7 两路径齿 FAIL（附录泄漏）+ 正向不误剥齿 FAIL（过宽误伤）——两个方向都咬得住；还原复绿。",
+        "acceptanceId": "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
@@ -105,6 +148,8 @@
     "【落法 B 边界（防夹带）】display 块通用文本通道 = 另立契约门立项（human 已同意，登记于 delivery/workstreams/m2-char-window/progress.md 2026-09-20 节），触发通道 /arch-change；本轮**零新增字段**，builder/acceptance-author 均不得顺手预造通用容器。",
     "【acceptance-author 义务】① 板端齿落 `firmware/main/test/char_window_overlay.acceptance.c`（在世件，tighten/additive 留痕）；② 云面齿落 `server/acceptance/` **新件（禁落 archive 名目录）**，并同步 `char_stroke_lib.py` docstring 的冻结验收指针（其原指 `server/acceptance/test_char_stroke.acceptance.py` 已归档）；③ 每条源锚齿配负向变异自证（MCF 已证负向齿有效、K3 A5a 正向包含齿假绿教训）。",
     "【builder 义务】① 板端只动 `char_page.cc`（不触 char_stroke.c/.h 纯逻辑合约）；② 云面 prompt 用 **v5 新文件 bump**（勿回改 v4）+ bump 前核槽位未被并行分支占用（ARQ-260908 教训）+ 同步 OPENCLAW_SYSTEM_PROMPT_CARRIER 与 apply-xiaozhi-overlay.sh 渲染引用；③ 网关 merge 两条出口路径（k1cRewriteText 非流式 / k1cLookupBlock 流式）必须一致；④ ECS 部署按 DEPLOY-RUNBOOK.md，live 腿真跑不得只探端口。",
-    "【旗标项裁决】提示条一并修（human 裁）；米字格大框顶部**不动**（human 未觉碍，50% 半透仍可见）。"
+    "【旗标项裁决】提示条一并修（human 裁）；米字格大框顶部**不动**（human 未觉碍，50% 半透仍可见）。",
+    "【planner 三点裁决（acceptance-author 报告遗留 1-3，2026-09-20）】① char_stroke_lib.py docstring 指针：维持冻齿转 builder 执行（builder scope allow server/** 覆盖，无须放宽 acceptance-author scope）——齿现红即 builder 靶。② UTF-8 半字截断：**不动 card_build 字节截断冻结语义**（MCF TEST 6 既定），改由 **char_page 装配层的 join 实现侧 UTF-8-aware 封顶**（组词 join 时按 UTF-8 边界截断到安全长度再交 card_build）——card_build 永不见到超长串，冻结面零触碰；设备侧归真机腿。③ MCD-A5 冻结点 = 既有 C1 函数 `replace_minimal_block(text, full_data)`，builder 须沿该函数扩展（另立函数名 = 齿保持红 = 返 planner）。",
+    "【quota 事件】acceptance-author 收尾时撞 5h 配额上限（429，reset 16:25 CST）——工作已全部落盘、报告完整交付，无未落盘工作。"
   ]
 }
