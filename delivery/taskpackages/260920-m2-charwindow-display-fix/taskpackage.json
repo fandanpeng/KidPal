@@ -29,6 +29,7 @@
     "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）",
     "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case",
     "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合",
+    "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约",
     {
       "id": "MCD-A6: 真机/live 腿 deferred（human 持板）——① 真实遮挡消除（层序渲染结果只有上屏可证，源锚齿只是决策代理）；② 中文释义真机上屏可读、wrap 不溢出；③ 提示条新位置可见且不被键帽条压；④ 播报与屏显一致（human 判据最终裁判）；⑤ live 腿按「probe != exercise」真跑一次查字端到端（真发一问、板子收到中文释义块）",
       "kind": "structural",
