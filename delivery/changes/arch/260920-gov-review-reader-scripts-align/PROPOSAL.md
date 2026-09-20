@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-reader-scripts-align
 
-> **状态：DRAFT v0.2 · 2026-09-20 · 待 human 立项 ack**（FROZEN 行须含凭据：human 立项 ack + architect Rn GREEN + human 裁 OQ 结果）。
+> **状态：DRAFT v0.2 · 2026-09-20 · 已立项 ack · 待 architect 评审**（凭据：human 2026-09-20 立项 ack。FROZEN 行待补 architect Rn GREEN 凭据）。
 > **承载 ARQ**：`ARQ-260909-precedent-merged-detection-gap`（T1）、`ARQ-260909-dispatch-stamp-telemetry-gaps`（T2，**子项 a；子项 b 经实测缩圈**）。**原 T2〔`ARQ-260914-portfolio-reconcile-launchpreconditions`〕已按 human 2026-09-20 裁定移出本批**——该条须先定**前置清单的数据模型**（见 §6 留根①），并入「拆包 / 输入 / launch prompt 流程化」批。不关的根写 §6 留根指针。
 > **本批定位**：两条都是**读侧/写侧与事实不对齐**——脚本按早期形态写死了判定源或字段，形态前进了一步、读侧没跟；且都**不改任何门的判定语义**（改的是一个 advisory 生成器的判定源、一个簿记写入器的可选字段）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
