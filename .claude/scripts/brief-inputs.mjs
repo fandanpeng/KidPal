@@ -8,8 +8,9 @@
 // 生成时点 = planner Step 7 派发前一次产双份（acceptance-author + builder）；Step 8 核在场；Step 9 只引用。
 // advisory（非门）：引 wire 节 ∧ counterparts 空 ∧ 无 exempt → stderr WARN 提示 planner 复核申报。
 
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -202,8 +203,12 @@ function renderCounterparts(tp, errors) {
 }
 
 // ③ 先例封顶：三判定源钉死（R1/F8）——merged / subsystem token 包含 / changeId 日期前缀
-function isMerged(changeId) {
-  const verdictPath = resolve(projectDir, 'delivery/changes/dev', changeId, 'supervisor-verdict.json');
+// T1（260920-gov-review-reader-scripts-align，FROZEN 2026-09-20）：第三判定源——
+// ESCALATE + 人批形态（本仓主流）：`human-decision` 事件 + `payload.decision` 含 `approve-escalated-merge`。
+// 该形态源①（认 APPROVE）与源②（认 merge 事件名）皆不认；起草期实测为 **7 个存量包**的净缺口。
+// `dir` 参数为自检注入用（默认 projectDir；不改既有调用方）。
+function isMerged(changeId, dir = projectDir) {
+  const verdictPath = resolve(dir, 'delivery/changes/dev', changeId, 'supervisor-verdict.json');
   if (existsSync(verdictPath)) {
     try {
       const v = JSON.parse(readFileSync(verdictPath, 'utf8').replace(/^﻿/, ''));
@@ -211,12 +216,13 @@ function isMerged(changeId) {
       if (String(verdict).toUpperCase() === 'APPROVE') return true;
     } catch { /* 非法 JSON 视作未判 */ }
   }
-  const events = resolve(projectDir, 'delivery/taskpackages', changeId, 'pod-events.jsonl');
+  const events = resolve(dir, 'delivery/taskpackages', changeId, 'pod-events.jsonl');
   if (existsSync(events)) {
     for (const line of readFileSync(events, 'utf8').split(/\r?\n/)) {
       if (!line.trim()) continue;
       if (/"eventType"\s*:\s*"merge-(completed|merged)"/.test(line)) return true;
       if (/"eventType"\s*:\s*"[^"]*merge[^"]*"/.test(line)) return true;
+      if (/"eventType"\s*:\s*"human-decision"/.test(line) && /"decision"\s*:\s*"[^"]*approve-escalated-merge/.test(line)) return true;
     }
   }
   return false;
@@ -421,8 +427,28 @@ function selfCheck() {
         return !found;
       })(), 'no precedent may be named current');
 
+  // T1（260920-gov-review-reader-scripts-align，FROZEN 2026-09-20）：isMerged 第三判定源双夹具——
+  // ESCALATE + 人批形态的 decoy merged 包**须入选**、未 merged 包**须不入选**（R1-F1 教训：夹具须真实 fs、
+  // 断言前先断夹具非空）。isMerged 带 dir 参数（自检注入用），故 temp dir 可行。
+  const imDir = mkdtempSync(join(tmpdir(), 'brief-ism-'));
+  const imMergedId = '260901-merged-decoy';
+  const imOpenId = '260901-open-decoy';
+  mkdirSync(join(imDir, 'delivery', 'taskpackages', imMergedId), { recursive: true });
+  mkdirSync(join(imDir, 'delivery', 'taskpackages', imOpenId), { recursive: true });
+  writeFileSync(join(imDir, 'delivery', 'taskpackages', imMergedId, 'pod-events.jsonl'),
+    JSON.stringify({ schemaVersion: 1, changeId: imMergedId, eventType: 'human-decision', payload: { decision: 'approve-escalated-merge' } }) + '\n', 'utf8');
+  writeFileSync(join(imDir, 'delivery', 'taskpackages', imOpenId, 'pod-events.jsonl'),
+    JSON.stringify({ schemaVersion: 1, changeId: imOpenId, eventType: 'human-decision', payload: { decision: 'some-other-decision' } }) + '\n', 'utf8');
+  ok('isMerged 夹具非空（两 decoy 的 pod-events 均在盘）',
+      existsSync(join(imDir, 'delivery', 'taskpackages', imMergedId, 'pod-events.jsonl'))
+      && existsSync(join(imDir, 'delivery', 'taskpackages', imOpenId, 'pod-events.jsonl')));
+  ok('isMerged ESCALATE+人批 decoy 须入选（第三判定源）', isMerged(imMergedId, imDir) === true);
+  ok('isMerged 其他 human-decision 不入选（decision 词面不含 approve-escalated-merge）', isMerged(imOpenId, imDir) === false);
+  ok('isMerged 无事件文件 → false', isMerged('260901-absent-decoy', imDir) === false);
+  rmSync(imDir, { recursive: true, force: true });
   const failed = checks.filter((c) => !c.pass);
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
+
   console.log(`\nbrief-inputs --self-check: ${checks.length - failed.length}/${checks.length} passed`);
   if (failed.length > 0) {
     console.error('SELF-CHECK RED');

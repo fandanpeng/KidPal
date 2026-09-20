@@ -199,6 +199,10 @@ function run() {
   mkdirSync(tpDir, { recursive: true });
 
   const tokenUsage = buildTokenUsage();
+  // T2（260920-gov-review-reader-scripts-align，FROZEN 2026-09-20）：**可选** `--model <id>`——
+  // 传了则写入 payload.model（「实际生效模型」，MODEL-TIER 条款 `planner.md:59` 的落点）；
+  // 不传则 **不带该键**（向后兼容——既有调用方行为零变更，且不制造「0 充数」式伪值）。
+  const model = flagVal('--model') || null;
 
   if (isPostEventsCutoff(changeId)) {
     // Post-cutoff: write to pod-events.jsonl ONLY (F1: no dispatch-log.jsonl)
@@ -214,6 +218,7 @@ function run() {
           toolUses,
           terminalStatus,
           tokenUsage,
+          ...(model ? { model } : {}),
         },
       });
       process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs}ms -> pod-events.jsonl\n`);
