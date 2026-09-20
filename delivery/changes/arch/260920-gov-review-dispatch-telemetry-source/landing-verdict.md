@@ -1,3 +1,5 @@
+verdict: PASS
+
 # landing-verdict · 260920-gov-review-dispatch-telemetry-source
 
 **Verdict：首轮 `FAIL`（1 RED）→ 复核轮 `PASS`（RED 已闭环）**——最终结论见文末「复核轮次（R 轮）」节 §R.7；上文 §0–§7 为首轮留痕。首轮 RED = §5 #1 主线程侧② 夹具在落地实现中缺失（可复现）；§2 改法本身始终忠实落到位。

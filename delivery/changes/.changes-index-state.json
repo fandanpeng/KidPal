@@ -163,5 +163,9 @@
     "date": "2026-09-20",
     "mergedInMain": "yes",
     "landed": true
+  },
+  "260920-gov-review-dispatch-telemetry-source": {
+    "date": "2026-09-20",
+    "mergedInMain": "yes"
   }
 }
