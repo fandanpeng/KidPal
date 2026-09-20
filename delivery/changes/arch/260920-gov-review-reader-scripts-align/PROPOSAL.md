@@ -1,6 +1,6 @@
 # PROPOSAL · 260920-gov-review-reader-scripts-align
 
-> **状态：DRAFT v0.3 · 2026-09-20 · 已立项 ack · 待 architect R2 复审**（凭据：human 2026-09-20 立项 ack；**R1 BLOCK(F1..F4) → 主线程 v0.3 逐条修订**〔F1 V2 改 temp projectDir 探针 / F2 T1 影响面校准为「净增益 7」 / F3 census 加时点注记 / F4 六处引据与标签更正〕，详见 §7 R1。FROZEN 行待补 R2 GREEN 凭据）。
+> **状态：FROZEN v1.0 · 2026-09-20 · 可进 landing（暂压着，待 human 阅后再落）**（凭据：human 2026-09-20 立项 ack + **architect R2 GREEN**〔§7 `### R2 - 2026-09-20 - architect`，附 2 条 NIT F5/F6，已在标冻前折入〕；**本批无 OQ**——两条改法均无真设计分叉，故无 human OQ 裁断项）。
 > **承载 ARQ**：`ARQ-260909-precedent-merged-detection-gap`（T1）、`ARQ-260909-dispatch-stamp-telemetry-gaps`（T2，**子项 a；子项 b 经实测缩圈**）。**原 T2〔`ARQ-260914-portfolio-reconcile-launchpreconditions`〕已按 human 2026-09-20 裁定移出本批**——该条须先定**前置清单的数据模型**（见 §6 留根①），并入「拆包 / 输入 / launch prompt 流程化」批。不关的根写 §6 留根指针。
 > **本批定位**：两条都是**读侧/写侧与事实不对齐**——脚本按早期形态写死了判定源或字段，形态前进了一步、读侧没跟；且都**不改任何门的判定语义**（改的是一个 advisory 生成器的判定源、一个簿记写入器的可选字段）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。两条升级判据（触契约面 / 跨系统结构性变更）均未命中。
@@ -37,12 +37,12 @@
 
 ### T1 · 先例判定认不出本仓的主流合并形态
 
-**问题**：`brief-inputs.mjs` 的「同 subsystem 先例」封顶 3 那条路，靠 `isMerged()` 判断一个包是否已合并。它只认两种痕迹：监督 verdict 判 `APPROVE`、或 pod-events 事件名里带 `merge`。而**本仓的主流合并形态是「监督判 ESCALATE + 人批」**——该形态的事件是 `eventType: "human-decision"` 且 `payload.decision = "approve-escalated-merge"`，**两种痕迹一个都不占**。影响面（R1-F2 校准后的精确口径，2026-09-20 复跑）：起包时给子 agent 生成的输入清单里，「取最新先例」这个目的**部分未达成**——35 个候选包中两源已认出 **21** 个（merge-driver 的 `merge-completed` 事件**被第二源 regex 认得**），带 `approve-escalated-merge` 者 **24** 个，故**第三源的净增益 = 7 个存量包**（清单见下证据段）。**R1-F2 更正**：v0.2 原写「先例集**恒**给陈旧包」**属过度陈述**，实际是 7 个包的缺口。**方向是 fail-closed**（少读不误扩阅读面、不放松任何门），故非缺陷、是**目的部分未达**。
+**问题**：`brief-inputs.mjs` 的「同 subsystem 先例」封顶 3 那条路，靠 `isMerged()` 判断一个包是否已合并。它只认两种痕迹：监督 verdict 判 `APPROVE`、或 pod-events 事件名里带 `merge`。而**本仓的主流合并形态是「监督判 ESCALATE + 人批」**——该形态的事件是 `eventType: "human-decision"` 且 `payload.decision = "approve-escalated-merge"`，**两种痕迹一个都不占**。影响面（R1-F2 校准后的精确口径，2026-09-20 复跑）：起包时给子 agent 生成的输入清单里，「取最新先例」这个目的**部分未达成**——**34** 个候选包（`current/` 指针**不计入**，与先例路的排除语义一致；R2-F5 更正：v0.2/v0.3 原写 35 系把 `current/` 计入分母）中两源已认出 **21** 个（merge-driver 的 `merge-completed` 事件**被第二源 regex 认得**），带 `approve-escalated-merge` 者 **24** 个，故**第三源的净增益 = 7 个存量包**（清单见下证据段）。**R1-F2 更正**：v0.2 原写「先例集**恒**给陈旧包」**属过度陈述**，实际是 7 个包的缺口。**方向是 fail-closed**（少读不误扩阅读面、不放松任何门），故非缺陷、是**目的部分未达**。
 
 **证据**（全部亲核，2026-09-20）：
 - 现行两判定源（verbatim）：`.claude/scripts/brief-inputs.mjs:210-211` = 读 `delivery/changes/dev/<id>/supervisor-verdict.json` 的 `verdict`，`if (String(verdict).toUpperCase() === 'APPROVE') return true;`；`:218-219` = 扫 `delivery/taskpackages/<id>/pod-events.jsonl`，`/"eventType"\s*:\s*"merge-(completed|merged)"/` 与 `/"eventType"\s*:\s*"[^"]*merge[^"]*"/`。**两处都不认 `human-decision`**（行号经 R1-F4① 更正：v0.2 原写 `:208-210` / `:219-221`）。
 - **主流形态的实据**（现跑枚举）：`grep -rln "approve-escalated-merge" delivery/taskpackages/*/pod-events.jsonl` 命中 **24 个包**（R1 复跑；`260829-char-stroke` / `260829-hardware-validation` / `260829-home-p1` 等）——即该形态**确实是本仓主流**，非孤例。
-- **净增益清点**（现跑，逐包核「两源是否已认出」）：候选包 **35**、两源合计认出 **21**、带 `approve-escalated-merge` 者 **24** ⇒ **净增益 7 个存量包** = `260829-home-p1` / `260829-schedule-p2` / `260829-session-logic` / `260829-smoke-e2e` / `260829-voice-roundtrip` / `260903-device-ws-switch` / `260907-g-relay-fix`。（R1-F2 独立复跑同得 7，并指出该集恰为 `260908-gov-review-input-surface-frontload/landing-verdict.md` **§5 残余风险 (a) `:83`** 与 **§4 表行 4** 点名的那批。）
+- **净增益清点**（现跑，逐包核「两源是否已认出」）：候选包 **34**（`current/` 不计入；R2-F5 更正）、两源合计认出 **21**、带 `approve-escalated-merge` 者 **24** ⇒ **净增益 7 个存量包** = `260829-home-p1` / `260829-schedule-p2` / `260829-session-logic` / `260829-smoke-e2e` / `260829-voice-roundtrip` / `260903-device-ws-switch` / `260907-g-relay-fix`。（R1-F2 独立复跑同得 7，并指出该集恰为 `260908-gov-review-input-surface-frontload/landing-verdict.md` **§5 残余风险 (a) `:83`** 与 **§4 表行 4** 点名的那批。）
 - **识别率原记**（转引 + 复核）：该 landing-verdict 记「现判只认出 4/19」。**R1-F4⑥ 更正**：v0.2 把该断言引作「**D1**」——该文**无 D1 标签**（按 § 编号），实在 **§4 表行 4** 与 **§5 残余风险 (a) `:83`**；「D1」是 ARQ 行自己的简写。本批起草期复核了其**方向**（两源确不认 human-decision）属实；**唯一数字以本段现跑为准**（4/19 为彼时时点值）。
 
 **根因**：`isMerged` 的判定源按**早期 APPROVE 形态**写死；本仓主合并形态迁到「ESCALATE + 人批」后，**没有回写判定源**。**同类先例**：`ARQ-260920-changes-index-mergedinmain-stale`（`changes-index` 的 `mergedInMain` 守卫因 `'no'` 是真值而失效）——都是「读侧判据与事实脱节且静默」。
@@ -79,7 +79,7 @@
 | launch 检查器 | `.claude/scripts/portfolio-reconcile.mjs` | **未触**（v0.2 移出） | 原 T2〔launchPreconditions〕已移出本批，见 §6 留根① |
 | 工程门新增 | — | **零新增** | 两条均只改既有脚本的判定源/字段面，不改任何门 |
 
-**【硬项 · sweep 透镜义务】** 本批**不引入新门、不引入新判定 pattern**（T1 是给既有判据**增源**、T2 是给既有 payload **增可选字段**），故无 pattern 全仓预跑义务。**但 census 义务已履行**（两处，均现跑 + 留痕）：① T1 的净增益清点（35 候选 / 两源认出 21 / 带 `approve-escalated-merge` 24 / **净增益 7**，见 T1 证据段）；② T2 的 `dispatch-completed` 全量普查（**192 条**〔起草期时点；R1 复跑 195，见 T2 的 R1-F3 时点注记〕/ model **0** 条 / exact **126** 条 / 分项非零 **4** 条）。
+**【硬项 · sweep 透镜义务】** 本批**不引入新门、不引入新判定 pattern**（T1 是给既有判据**增源**、T2 是给既有 payload **增可选字段**），故无 pattern 全仓预跑义务。**但 census 义务已履行**（两处，均现跑 + 留痕）：① T1 的净增益清点（**34** 候选〔`current/` 不计入〕/ 两源认出 21 / 带 `approve-escalated-merge` 24 / **净增益 7**，见 T1 证据段）；② T2 的 `dispatch-completed` 全量普查（**192 条**〔起草期时点；R1 复跑 195，见 T2 的 R1-F3 时点注记〕/ model **0** 条 / exact **126** 条 / 分项非零 **4** 条）。
 
 **【硬项 · 复扫模式完备性先验】** 本批**不涉退役语面 / 残留清扫**，无清扫模式集。
 
@@ -96,7 +96,7 @@
 | 项 | 命令 | 预期 |
 |---|---|---|
 | V1 | `node .claude/scripts/brief-inputs.mjs --self-check` | 全绿 + 新增双夹具具名（ESCALATE + 人批 decoy 须入选 / 未 merged 须不入选） |
-| V2 | **三路探针 · temp projectDir 模式**（**R1-F1 采纳**——v0.2 原设计「用不匹配的 `--expect-change-id` 触发提前退出」**是假绿**：该 fail-loud 在 `dispatch-stamp.mjs:188-191`、**先于** `appendPodEvent`（`:210-217`），事件根本不落盘 ⇒ ②③ 无可观察对象。**修法取 temp projectDir**：在临时目录建 `delivery/taskpackages/<探针包 id>/`，以 `CLAUDE_PROJECT_DIR=<tempDir>` 跑**真实调用**、读 tempDir 下的 `pod-events.jsonl`，用毕 `rm -rf` 并**断言目录已不存在**。**起草期已实证该形态可行**——temp dir 建包 → 事件落 temp dir → 清理成功，故非纸面设计） | ① `grep -c "flagVal('--model')" .claude/scripts/dispatch-stamp.mjs` ≥1（入口在场）；② 带 `--model <id>` 跑 → 该条 `payload` **含** `model`；③ 不带 `--model` 跑 → 该条 `payload` **不带** `model` 键（向后兼容）。三路各留完整输出 |
+| V2 | **三路探针 · temp projectDir 模式**（**R1-F1 采纳**——v0.2 原设计「用不匹配的 `--expect-change-id` 触发提前退出」**是假绿**：该 fail-loud 在 `dispatch-stamp.mjs:188-191`、**先于** `appendPodEvent` **调用**（`:206-218`；R2-F6② 更正：v0.3 把 `:210-217` 挂在调用上，该区间实为**payload 字面量**、调用在 `:206-218`，二者「先于」判定不受影响），事件根本不落盘 ⇒ ②③ 无可观察对象。**修法取 temp projectDir**：在临时目录建 `delivery/taskpackages/<探针包 id>/`——**探针包 id 须带 ≥`260725` 的 YYMMDD 日期前缀**（R2-F6① 钉死：`isPostEventsCutoff` 在 `:81-85` 按 `CHANGE_ID_PREFIX_RE` 取前缀、`EVENTS_SCHEMA_CUTOFF` = `2026-07-25`；**前缀晚于该日才走 pod-events 分支**，否则落回 legacy `dispatch-log.jsonl` 路径、探针读错文件），**前缀选错会响亮失败而非假绿**；以 `CLAUDE_PROJECT_DIR=<tempDir>` 跑**真实调用**、读 tempDir 下的 `pod-events.jsonl`，用毕 `rm -rf` 并**断言目录已不存在**。**起草期已实证该形态可行**——temp dir 建包 → 事件落 temp dir → 清理成功，故非纸面设计） | ① `grep -c "flagVal('--model')" .claude/scripts/dispatch-stamp.mjs` ≥1（入口在场）；② 带 `--model <id>` 跑 → **读 tempDir 下 `pod-events.jsonl` 的该条 `dispatch-completed`**，其 `payload` **含** `model`；③ 不带 `--model` 跑 → 同法读该条，`payload` **不带** `model` 键（向后兼容）。三路各留完整输出 |
 | V3 | `node .claude/scripts/route-regression-check.mjs` + `node .claude/scripts/lint-descriptions.mjs` | 全绿；lint 只允许既有告警（`landing-verifier.md` 超长，本批未触该文件） |
 | V4 | `git diff --stat .claude/scripts/` | 恰为本批 manifest 两路径，无夹带 |
 | V5 | `landing-fidelity-check.mjs <本批>` 结构门 | §2 锚集 ≡ manifest 机判通过（本批 2 路径） |
@@ -145,3 +145,23 @@
 **其余亲核留痕（全部 2026-09-20 本 worktree 现跑）**：T1 两判定源 verbatim 与源码吻合（`isMerged()` `:205-223`）；`approve-escalated-merge` 包枚举重跑 `grep -rln` 命中 **24 包**（「≥3」成立、例举三包均在）；T2 全文无 model 维度（`grep -ci "model"` = 0、`flagVal('--model')` = 0）确认；消费面双向核对——`pod-events-append.mjs:59-60` payload 仅验「是 object」不验键集，`pod-events-aggregate.mjs:71,128-137` 与 `loop-metrics.mjs:239-243` 均守卫式属性访问 ⇒ 增/缺 `model` 键均无破坏，「不传则不带该键」向后兼容成立；planner `[DISPATCH-STAMP]` 纪律（Step 9）flag 集不含 `--model`，改动零影响；结构字段在场（landing-manifest 围栏块 2 路径 + packet-id 行），`landing-fidelity-check.mjs --preflight` 现跑 `{"ok":true,"anchorCount":2,"findings":[]}`，§2 锚集 ≡ manifest 两路径自洽；基线命令现跑——V1 `--self-check` 19/19 GREEN、V3 `route-regression-check` 28 ok 0 fail + `lint-descriptions` 仅既有 `landing-verifier.md` 超长告警（363>320），与 V3 预期相符；ARQ 两行原文（`docs/ARCH-REVIEW-QUEUE.md:49/51`）与承载关系、留根⑥口径差注记一致。
 
 **结论**：修 F1（BLOCKING）+ 顺手 F2–F4 后可交 R2 聚焦复核（只核修订到位性与是否引入新矛盾，不重全量）。
+
+### R2 - 2026-09-20 - architect
+
+**Verdict：`GREEN`**（附 2 条 NIT 非阻塞更正，F5/F6——均为单行量级口径钉死，建议主线程标 FROZEN 前顺手改，改后无需再轮；不改判 GREEN。）R1 四 findings 修订到位性逐条核毕，T1/T2 改法本体两轮未动，无升级 human 项。
+
+**R1 修订到位性（逐条亲核，全部 2026-09-20 现跑）：**
+
+- **F1（BLOCKING）→ 已修，机制实证可行。** v0.3 V2 改 temp projectDir 探针。本判官**独立实跑**该形态（非采信自述）：`mktemp -d` 建临时目录 + `mkdir delivery/taskpackages/260990-r2-probe-pkg` + `CLAUDE_PROJECT_DIR=<tempDir> node .claude/scripts/dispatch-stamp.mjs … --task-package-id 260990-r2-probe-pkg` → 事件**确实落在 tempDir 的 pod-events.jsonl**，envelope 完整可读（`payload` 键集直接可判含/不含 `model`）——① 可观察性成立。② 残留写副作用 = 零：亲核 `pod-events-append.mjs:23`（`projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd()`，与 `dispatch-stamp.mjs:30` 同源）与 `:63/:83-84`（唯一写点 = `resolve(projectDir, 'delivery', 'taskpackages', changeId)/pod-events.jsonl` 的 `appendFileSync`，无别处状态/索引/锁文件）；实跑后仓内 `delivery/taskpackages/260990-r2-probe-pkg` 不存在、`git status --porcelain delivery/taskpackages/` 干净；`rm -rf` + `[ ! -d ]` 断言成立。
+- **F2（SHOULD）→ 实质已修，分母引入一处小漂移（→F5）。** v0.3 口径「两源认出 **21** / 带 `approve-escalated-merge` **24** / **净增益 7** + 7 包逐个列名」与本判官 R2 复跑**逐数吻合**，7 包清单与 R1 独立清点**逐字一致**（`home-p1 / schedule-p2 / session-logic / smoke-e2e / voice-roundtrip / 260903-device-ws-switch / 260907-g-relay-fix`）；「恒给陈旧包→部分未达 + 过度陈述更正」的校准到位。唯「候选包 **35**」不复现：本判官按先例路同口径（`acceptanceTestsFile` 非空、排除 `current/`）复跑得 **34**——35 疑为把 `current/` 指针目录计进分母（`ls delivery/taskpackages | wc -l` = 35 = 34 + current；current/ 无 pod-events.jsonl，故探测数不受它影响、恰可解释 21/24/7 吻合而分母多 1）。见 F5。
+- **F3（NIT）→ 已修。** T2 证据段与 §3 sweep 段均加时点注记（192 = 起草期时点、R1 复跑 195、delta = `260920-m2-charwindow-card-fix` 当日 3 条、闭环 commit `adc0241`），并显式声明「**判据是『model 字段 0 条』这一全覆盖事实，不是具体条数』——后续核验请按此口径，勿按 192 字面复跑」。该声明足以防字面复跑报红。子项 b 段的「126（R1 复跑 128，同 F3 时点漂移）」注记亦在场。
+- **F4（NIT）→ 六处均已更正、未引入新漂移（V2 括注一处微标注 →F6 顺带）。** 逐处复核：① `:210-211` ✓（实际 verdict 取值 `:210`、APPROVE 判 `:211`）；② `:218-219` ✓（两 merge regex 实际行）；③ `:99-156` + 四 flag `:105-113` ✓（函数体实际 `:99-156`）；④ payload `:210-217` ✓（字面量实际 `:210-217`）；⑤ `planner.md:59` 于 T2 问题段与 §6 留根④ 双处同步 ✓；⑥ 「D1」→「§4 表行 4 与 §5 残余风险 (a) `:83`」 ✓（亲核该文无 D1 标签、断言实在此两处）。
+
+**R2 新 findings（均 NIT、非阻塞）：**
+
+- **F5（NIT）·「候选包 35」分母口径漂移。** 见上 F2 核对：可复现口径为 **34**（`acceptanceTestsFile` 非空、排除 `current/`——与 `findPrecedents` 的 current/ 排除语义一致）。建议更正为 34（或如确要写 35，须声明分母含 `current/` 指针，但那与先例路语义不一致、不推荐）。承载数字 21/24/7 与 7 包清单不受影响。
+- **F6（NIT）· V2 括注两处微标注。** ① 探针包 id **须带 ≥ `260725` 的日期前缀**（如 `260990-probe-xxx`）才走 post-cutoff pod-events 分支——本判官用 `260990-` 前缀实证通过；V2 未钉此前置，若核验官选了无日期前缀/前缀过小的 id 会落到 legacy `dispatch-log.jsonl` 分支（该失败是**响亮**的——temp pod-events.jsonl 不存在即被发现，非假绿，故仅 NIT）。建议 V2 补一句「探针包 id 须带 ≥260725 日期前缀」。② V2 写「先于 `appendPodEvent`（`:210-217`）」——`:210-217` 实为 payload 字面量，`appendPodEvent` 调用在 `:206-218`；「先于」的判定不受影响，标注宜对齐（T2 证据段同号引用是对的，仅 V2 此处挂错了对象）。
+
+**另核项（R2 清单）**：manifest（2 路径）仍 ≡ §2 锚清单并集（T1 `brief-inputs.mjs` + T2 `dispatch-stamp.mjs`）✓；`landing-fidelity-check.mjs --preflight` 复跑 `{"ok":true,"anchorCount":2,"findings":[]}` ✓；§7 R1 原样保全（diff 核对 `c3ba367→63dd6a9` 仅本 PROPOSAL 一文件、R1 全文以追加形态入 commit、无既有行改写）✓；「无 OQ」仍成立（两改法文本两轮未动，无新分叉）✓；无新引入矛盾（除 F5/F6 两 NIT）。
+
+**结论**：GREEN。主线程可凭「立项 ack + 本 R2 GREEN」标 FROZEN（F5/F6 两条 NIT 建议冻结前顺手更正，单行量级、无需再轮）；随后走 packet-bound 落地 + landing-verifier 独立核验。
