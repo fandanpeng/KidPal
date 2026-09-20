@@ -36,6 +36,11 @@
 #include <string.h>
 #include <cstdio>
 
+LV_FONT_DECLARE(font_puhui_14_1); /* 全量 14px 普惠体: 右栏速查卡 + 底部提示条显式接线
+                                     (v1.56 对账④ ——LV_FONT_DEFAULT 内置 montserrat_14 纯拉丁,
+                                     无汉字与带调韵母字形, 中文 label 绝不能钉默认字体; 与
+                                     lcd_display.cc 键帽条/语音轮五处真机验证同款先例) */
+
 #define CHARPAGE_TAG "char_page"
 #define CHARPAGE_CANVAS_SIZE 208    /* 米字格大字盘边长 (设计稿帧约 236/字盘约 208) */
 #define CHARPAGE_GRID_CELL 52       /* 米字格四宫格单元 (208/4) */
@@ -309,8 +314,17 @@ static void charpage_render_frame(int cur_stroke, int written)
  * 演示写完（与 kidpal_char_anim_state 的 REST 相位同源）。 */
 static void charpage_refresh_hint(int cur_stroke)
 {
-    kidpal_char_info info = { g_page.card.pinyin, g_page.card.radical,
-                              g_page.n_strokes, g_page.card.words };
+    /* repositional -> designated initializer (260920-m2-charwindow-card-fix):
+     * kidpal_char_info 增 meaning 成员后, positional 补成员易漏/易漂移——designated
+     * 防成员漂移（plan.md 改动面 3④）。meaning 透传 g_page.card.meaning（缺义已由
+     * card_build 装配空串）。 */
+    kidpal_char_info info = {
+        .pinyin       = g_page.card.pinyin,
+        .radical      = g_page.card.radical,
+        .stroke_count = g_page.n_strokes,
+        .words        = g_page.card.words,
+        .meaning      = g_page.card.meaning,
+    };
     kidpal_char_card c;
 
     if (kidpal_char_card_build(&info, cur_stroke, &c) != 0) {
@@ -520,7 +534,8 @@ void kidpal_char_page_show(const char *data_json)
      * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
     {
         cJSON *root = cJSON_Parse(data_json);
-        const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ;
+        const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ,
+                   *meaning = "?";
         int stroke_count = g_page.n_strokes;
         if (root != NULL) {
             cJSON *j = cJSON_GetObjectItem(root, "pinyin");
@@ -536,23 +551,40 @@ void kidpal_char_page_show(const char *data_json)
                 cJSON *w0 = cJSON_GetArrayItem(j, 0);
                 if (w0 && cJSON_IsString(w0)) words = w0->valuestring;
             }
+            j = cJSON_GetObjectItem(root, "meaning");
+            if (j && cJSON_IsString(j)) meaning = j->valuestring;
         }
         g_page.n_strokes = stroke_count;
 
-        kidpal_char_info info_o = { pinyin, radical, stroke_count, words };
+        /* repositional -> designated initializer (260920-m2-charwindow-card-fix;
+         * plan.md 改动面 3④): kidpal_char_info 增 meaning 后 positional 补成员易漂移。
+         * meaning 缺省走 "?" 兜底——card_build 的 NULL 容忍分支装配空串呈现面再兜底。 */
+        kidpal_char_info info_o = {
+            .pinyin       = pinyin,
+            .radical      = radical,
+            .stroke_count = stroke_count,
+            .words        = words,
+            .meaning      = meaning,
+        };
         memset(&g_page.card, 0, sizeof(g_page.card));
         /* 初始装配 (cur_stroke < 0 = 定格语义; 动画拍内按相位刷新进度文案)。 */
         kidpal_char_card_build(&info_o, -1, &g_page.card);
 
         lv_obj_t *cardlabel = lv_label_create(g_page.panel);
         lv_obj_set_pos(cardlabel, 228, 8);
-        char buf[256];
-        /* 部首行补上屏 (v1.38 对账③): 数据面已装配部首、原 label 拼装漏——补齐
-         * 「拼音带声调 + 共 N 画 + 部首 + 组词」四行 (S-F3.2 AC1)。 */
-        snprintf(buf, sizeof(buf), "%s\n%s\n部首：%s\n%s", g_page.card.pinyin,
-                 g_page.card.stroke_total, g_page.card.radical, g_page.card.words);
+        /* 五行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
+         * meaning 95 + words 95 + 标签/换行，编译分析最坏 ~354B）——五行不能因缓冲太小被
+         * 尾部截断（S-F3.2 AC1 五行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
+        char buf[384];
+        /* 右栏速查卡五行拼装 (S-F3.2 AC1 v1.56 五行口径): 拼音带声调 + 共 N 画 + 部首 +
+         * 释义 + 组词。meaning 缺义兜底「释义：—」占位（human 裁: 缺义只损右栏一行、
+         * 不降级整窗——缺义形态钉死不留现场裁量; — = U+2014 全角破折号）。 */
+        snprintf(buf, sizeof(buf), "%s\n%s\n部首：%s\n释义：%s\n%s",
+                 g_page.card.pinyin, g_page.card.stroke_total, g_page.card.radical,
+                 (g_page.card.meaning[0] != '\0') ? g_page.card.meaning : "—",
+                 g_page.card.words);
         lv_label_set_text(cardlabel, buf);
-        lv_obj_set_style_text_font(cardlabel, LV_FONT_DEFAULT, 0);
+        lv_obj_set_style_text_font(cardlabel, &font_puhui_14_1, 0);
         if (root != NULL) cJSON_Delete(root);
     }
 
@@ -562,6 +594,9 @@ void kidpal_char_page_show(const char *data_json)
     lv_obj_set_pos(g_page.hint_label, 0, 280);
     lv_label_set_text(g_page.hint_label, g_page.card.progress);
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);
+    /* 底部提示条显式接线 font_puhui_14_1（v1.56 对账④: 不赌 s_kidpal_scr 字体继承——
+     * 中文 label 绝不经由继承落到纯拉丁默认字体, 需显式钉全量普惠体）。 */
+    lv_obj_set_style_text_font(g_page.hint_label, &font_puhui_14_1, 0);
     charpage_refresh_hint(0); /* 首拍相位 = 第 1 笔 (与动画 t=0 同源) */
 
     /* 逐笔动画驱动 */

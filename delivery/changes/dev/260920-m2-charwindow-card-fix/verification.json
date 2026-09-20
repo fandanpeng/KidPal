@@ -1,0 +1,49 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "260920-m2-charwindow-card-fix",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "31bd5da8-40f0-49c5-b3f3-95dd7adeb01f",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/verifier-evidence/rounds/r2.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260920-m2-charwindow-card-fix --phase final --round 2 --invocation-id 31bd5da8-40f0-49c5-b3f3-95dd7adeb01f",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-20"
+    }
+  },
+  "lifecycle": {
+    "rounds": [
+      { "round": 1, "timing": "scoped", "outcome": "一次绿", "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/verifier-evidence/rounds/r1.json" },
+      { "round": 2, "timing": "scoped+full", "outcome": "一次绿（终审）", "evidenceRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/verifier-evidence/rounds/r2.json" }
+    ],
+    "reworkRounds": 0,
+    "redBaseline": "host runner 全量 60 Tests / 2 Failures / 0 Ignored（两条均为设计态义务红：char_window_overlay test 9 = MCF-A1 负向齿病灶本体；char_stroke test 5 = MCF-A2 结构半）——acceptance-author 实跑 + planner 2026-09-20 独立复跑双证",
+    "greenState": "host runner 全量 61 Tests / 0 Failures / 0 Ignored, EXIT=0（integrator 独立复跑 2026-09-20；58 = K3 收口锚 + 3 本包新齿）"
+  },
+  "provenance": {
+    "sourceType": "human-confirmed-plan",
+    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md",
+    "triageEventRef": "pod-events 9ea58a1e（/triage-change 四档裁决 ② Lite + human 触点①三问确认）",
+    "launchBaseline": "5982d82（spec v1.56 勘误 commit）",
+    "mergeOrder": 31,
+    "workstream": "m2-char-window"
+  },
+  "scopeAudit": {
+    "firmwareFiles": ["firmware/main/display/char_page.cc", "firmware/main/display/char_stroke.c", "firmware/main/display/char_stroke.h", "firmware/main/test/char_stroke.acceptance.c", "firmware/main/test/char_window_overlay.acceptance.c"],
+    "zeroTouchSurfaces": ["server/", "docs/contracts/", "docs/requirements.md", "docs/architecture.md", ".claude/"],
+    "auditCommand": "git diff --numstat 5982d82 -- firmware/ server/ docs/ .claude/"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/changes/dev/260920-m2-charwindow-card-fix/review-packet.md",
+    "docsDelta": "delivery/changes/dev/260920-m2-charwindow-card-fix/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）"
+}

@@ -562,6 +562,17 @@ int kidpal_char_card_build(const kidpal_char_info *info, int cur_stroke,
     snprintf(out->radical, sizeof(out->radical), "%s", info->radical);
     snprintf(out->words, sizeof(out->words), "%s", info->words);
 
+    /* meaning（释义, S-F3.2 AC1 v1.56 五行口径; MCF-A2 additive）: 与上三字段不同,
+     * meaning 是**新增可选面**、NULL 容忍（不进上方 NULL 拒绝集——human 裁: 缺释义
+     * 只损右栏一行、不构成盲渲染风险, 旧 payload 整窗降级 = 行为回归）。非空 -> verbatim
+     * 截断安全拷贝（恒 NUL 结尾, 与 pinyin/radical/words 同款）; NULL -> 空串且 rc=0
+     * （缺义不降级整窗; 「释义：—」占位归 char_page 呈现面, 数据面只保证空串）。 */
+    if (info->meaning != NULL) {
+        snprintf(out->meaning, sizeof(out->meaning), "%s", info->meaning);
+    } else {
+        out->meaning[0] = '\0';
+    }
+
     snprintf(out->stroke_total, sizeof(out->stroke_total),
              "共 %d 画", info->stroke_count);
 

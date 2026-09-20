@@ -20,6 +20,11 @@
 extern "C" {
 #endif
 
+/* MCF-A2 编译期探针宏（240920-m2-charwindow-card-fix additive）: kidpal_char_info 增
+ * meaning 成员后同步定义。frozen acceptance 的 TEST 6 行为齿以此宏为编译门——落地前
+ * fallback 0 = 行为齿缺席编译（非空过, 红由 TEST 5 结构齿承载）。漏定义 = TEST 5 红。 */
+#define KIDPAL_CHAR_STROKE_HAS_MEANING 1
+
 typedef struct {
     float x, y;
 } kidpal_cs_point;
@@ -29,6 +34,9 @@ typedef struct {
     const char *radical;     /* verbatim (e.g. "力") */
     int        stroke_count; /* from D3 strokeCount */
     const char *words;       /* 、-joined (e.g. "勇敢、勇气"), verbatim */
+    const char *meaning;     /* 释义字典 definition (S-F3.2 AC1 五行口径), verbatim;
+                                **NULL 容忍**——缺释义只损右栏一行、不降级整窗, 与
+                                pinyin/radical/words 必非空语义不同（human 裁降级口径） */
 } kidpal_char_info;
 
 typedef struct {
@@ -37,6 +45,7 @@ typedef struct {
     char stroke_total[48];   /* "共 <N> 画" */
     char progress[48];       /* "第 <X> 笔·共 <N> 笔" | "写完啦·共 <N> 笔" */
     char words[96];
+    char meaning[96];        /* 释义, 容量对齐 words 惯例; 缺义数据面装配空串 */
 } kidpal_char_card;
 
 int kidpal_char_stroke_parse(const char *svg_path, kidpal_cs_point *out, int max_pts);
