@@ -10,6 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260920-gov-review-proposal-structure-merge](260920-gov-review-proposal-structure-merge/) | 2026-09-20 | draft | — |
 | [260918-gov-review-batch-drafting-friction](260918-gov-review-batch-drafting-friction/) | 2026-09-18 | landed | yes |
 | [260918-gov-review-closeout-chain-friction](260918-gov-review-closeout-chain-friction/) | 2026-09-18 | landed | yes |
 | [260918-gov-review-dispatch-chain-friction](260918-gov-review-dispatch-chain-friction/) | 2026-09-18 | landed | yes |
