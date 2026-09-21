@@ -478,8 +478,14 @@ def _today_tomorrow_iso() -> tuple[str, str]:
 
 async def _relay_schedule_payload(payload: dict, websocket) -> None:
     """把 home upcoming payload 以设备 wire 单帧下发（复用既有 display 中继链，
-    home 形状必过 display_schema 机械门；down 即降级不裸送）。"""
-    await _relay_display_blocks_to_device([payload], websocket)
+    home 形状必过 display_schema 机械门；down 即降级不裸送）。
+
+    中继链的冻结入口 build_display_tool_calls 只对 str 块做 json.loads 再校验，
+    dict 块会被判 "not JSON-object parseable" 一律降级成 text 兜底（2026-09-21
+    线上实测：建连推送全部变成「这张小卡片没显示好」）——本函数必须 dumps 成 str
+    再入中继。"""
+    await _relay_display_blocks_to_device(
+        [json.dumps(payload, ensure_ascii=False)], websocket)
 
 
 async def _push_schedule_refresh_to_legs(model: dict) -> int:

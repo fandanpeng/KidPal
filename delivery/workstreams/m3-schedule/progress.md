@@ -97,3 +97,10 @@
 - **合并前分支链**：e11aaa5 feat（实现 + 验收 + closeout 四件）→ 2e3471a chore（pod-retro + supervisor-verdict + pod-events）→ eeaab30 chore（Step 0 治理面收口）。
 - **human 在场实测随批交接（K3 设备轮 / 部署）**：① 真机空网格降级行为实证正确（courses=0 → 「暂时没有数据」不盲渲染，A4 降级语义真机侧目击）；② 设备日期时间错误根因 = ECS 网关未下发 server_time（ota.cc settimeofday 无输入），随 K1 部署面一并消解、非 K2 缺陷。
 - **解锁**：K3 dependsOn [K1, K2] 全 merged，K3 设备轮可 launch（M3K3-A3 真机确认轮含 K2 挂账三项：版式目测/翻页手感/今天列观感 + 格内 >4 门裁剪与「明早」渲染标签显示形态目击）。
+
+## 2026-09-21 · K1 live 半热修（human 批准跳过流程，诚实留痕）
+
+- **线上实测发现 K1 缺陷**：三触发推送（建连/零点/即时）全部被降级成「这张小卡片没显示好」text 兜底，首页「接下来」恒空。根因 = `_relay_schedule_payload` 把 dict 载荷直接塞进冻结中继 `build_display_tool_calls` 的 blocks 列表，而该冻结入口只对 str 块 json.loads，dict 判「not JSON-object parseable」一律降级。本地 17 齿测 payload 产出 + validate_display 单元面，未覆盖 dict-穿-中继集成形状（live 半 structural deferred 的漏网形状）。
+- **热修**：`_relay_schedule_payload` 先 `json.dumps` 成 str 再入中继（只动 K1 调用点，不碰 260907-g-relay-fix 冻结四 callable）。全量 server 75 passed 零回归；部署 ECS 后探针复验 = 建连推送真发 view=home + upcoming 数据。
+- **流程豁免留痕**：human 2026-09-21 批准「跳过流程热修」（在场等真机效果场景），主线程直接改自有实现面，本段即诚实记录。K1 契约耦合钉行零触碰。
+- **随轮登记的独立缺口（未修）**：① 语音轮结束后 ~36s WS 被对端关闭、设备静默掉线至按键才重连（front 无关线日志，疑 NAT/keepalive 面，待查）；② 设备时间错误 = 服务端 OTA 响应缺 server_time 下发（ota.cc settimeofday 无输入，独立小变更）；③ 课表页网格空 = 预期内——薄意图展开接线归 K3（voice-schedule-entry-live）。
