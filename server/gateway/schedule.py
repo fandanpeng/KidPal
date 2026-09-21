@@ -7,8 +7,13 @@ schedule_view_payload / group_upcoming)，本模块不得偏移；行为契约�
 
 - 契约 §二 B1 课表 MD 结构（表体零变更）：每周固定课表 + 一次性安排两类必带,
   学校课程表为可选区块（缺块 -> 空表）。
-- 契约 §1.3 ② schedule view data 形状 {title, items:[{time,name,location}]}
-  —— 零增减（不发明 view、不加字段、不进反白/星标等 UI 语义态）。
+- 契约 §1.3 ② schedule view data 形状（2026-09-21 契约门重定义，随 M3-K1 同 PR，
+  packet = delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/）：
+  完整网格 {week:{courses:[{day,slot,name,flags}]}}——day 0 基（周一=0）、slot
+  0 上午 / 1 下午 / 2 晚上、flags bit0=※ 临时安排 bit1=星标呼应；意图薄载荷
+  data:{}（front 截获展开，不直达设备）；旧 {title, items} 列表形即废（front
+  机械校验拒绝并降级）。备注不进网格载荷；旧「不进反白/星标等 UI 语义态」
+  钉行由 flags 位承载取代（契约 §1.3② 变更记录行）。
 - P2-E4：frontmatter ``remind_before_min`` 已废止（契约 §2.3, 2026-09-03 契约门
   裁定）——解析忽略、永不进入模型；提醒触发逻辑不在本模块（归包 7）。
 - P2-A2：脏行大声拒绝（ValueError），绝不静默丢行。

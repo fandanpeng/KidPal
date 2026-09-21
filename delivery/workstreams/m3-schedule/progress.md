@@ -44,3 +44,10 @@
 
 
 
+
+## 2026-09-21 · 契约 diff 落地（主线程，human 乙通道授权，K1 Pod 启动前）
+
+- **CCP 落地**：`260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md`（HUMAN_APPROVED §5 五问裁定）→ 主线程起草逐字 patch（4 hunk，+35/−10）→ human 过目确认 → `git apply` 落盘 `docs/contracts/interface-contract.md`（§1.3② 周网格形状重定义 breaking + §1.3⑥ home 可选 data.upcoming additive + §1.5/§1.6/§2.3 连带改写 + 两处变更记录行）。
+- **随包收口义务同批完成**：schedule.py 模块头钉行更新（doc 零行为）；CDQ-260921-m3-k1-schedule-grid 登记（LANDED）；ADR-004 追加；gate evidence §5–§10 回填（Status → LANDED，C1–C4 全 done）；evidence/validate_display 三样本 ALL-SAMPLES-GREEN。
+- **验证**：patch 4 hunk 与 packet §1 触点一一对应（人工逐字核对降级，ARQ-260827 在册）；server 面 `pytest -m "not live"` → 47 passed / 0 failed（与基线锚一致，零新增红）。
+- **K1 影响注记**：契约面已在本分支 working tree——K1 dev-loop 起跑时 intake 应将本批 diff 计入基线（redBaseline 面无行为变化）；K1 builder 不再触碰契约耦合钉行；Q5 front 收紧与 A2–A4 实现齿照 plan 归 Pod。
