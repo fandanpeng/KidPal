@@ -6,11 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (35)
+## dev (36)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
 | [260921-m3-k1-cloud-schedule-producer](260921-m3-k1-cloud-schedule-producer/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |
+| [260921-m3-k2-p2-week-grid-page](260921-m3-k2-p2-week-grid-page/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |
 | [260920-m2-charwindow-card-fix](260920-m2-charwindow-card-fix/) | 2026-09-20 | delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md | closed | m2-char-window |
 | [260920-m2-charwindow-display-fix](260920-m2-charwindow-display-fix/) | 2026-09-20 | delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md | closed | m2-char-window |
 | [260917-m1-k4-rma8-fixbatch](260917-m1-k4-rma8-fixbatch/) | 2026-09-17 | delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/device-round-1.md | closed | m1-home-qa |
@@ -45,4 +46,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [260921-m3-k2-p2-week-grid-page](260921-m3-k2-p2-week-grid-page/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |
