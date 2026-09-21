@@ -259,6 +259,15 @@ def build_display_tool_calls(blocks: list) -> list:
                 payload = json.loads(block)
             except (TypeError, ValueError):
                 payload = None
+        # 「帮我显示课表」意图薄载荷截获展开（M3K3-A2）：LLM 只发 {view:schedule,
+        # data:{}}，在 validate_display/下发之前被替换为新鲜周网格（单源复用
+        # schedule.expand_schedule_intent_payload -> week_grid_payload）。恰薄载荷
+        # 才截获；读不到 schedule.md / 其它形状 -> _expand_schedule_intent 返回
+        # None，原样走既有 relay 链交 display_schema 机械门裁决（Q5）。
+        if payload is not None:
+            expanded = _expand_schedule_intent(payload)
+            if expanded is not None:
+                payload = expanded
         if payload is not None:
             ok, reason = gw_display.validate_display(payload)
         else:
@@ -451,6 +460,11 @@ _alert_delivery_tasks: set = set()
 _T8 = timezone(timedelta(hours=8))
 SCHEDULE_MD = os.environ.get("KIDPAL_SCHEDULE_MD", "/opt/kidpal/schedule.md")
 ALERTS_DIR = os.environ.get("KIDPAL_ALERTS_DIR", "/opt/kidpal/alerts")
+# 学校课程表首节时刻（合并「上学」项的显式入参 school_start，决策 26）——repo 侧载体
+# = openclaw-schedule.config.yaml，env 可配（同三档提醒 KIDPAL_* 口径，禁止硬编绝对路径）。
+_DEPLOY_DIR = Path(__file__).resolve().parents[2] / "deploy"
+SCHEDULE_CFG = os.environ.get(
+    "KIDPAL_SCHEDULE_CONFIG", str(_DEPLOY_DIR / "openclaw-schedule.config.yaml"))
 _daily_push_local_date: "str | None" = None   # 触发②记账：已推本地日（每 local 日恰一次）
 
 
@@ -476,10 +490,52 @@ def _today_tomorrow_iso() -> tuple[str, str]:
     return today.isoformat(), (today + timedelta(days=1)).isoformat()
 
 
+def _schedule_school_start() -> "str | None":
+    """读 openclaw-schedule.config.yaml 的 school_start（决策 26 合并「上学」项首节时刻）。
+
+    读/解析失败 -> None（可归因、不炸中继，与 _load_schedule_model 同口径）。"""
+    try:
+        text = Path(SCHEDULE_CFG).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    m = re.search(r"^school_start:\s*[\"']?([0-2]\d:[0-5]\d)", text, re.MULTILINE)
+    return m.group(1) if m else None
+
+
+def _expand_schedule_intent(payload) -> "dict | None":
+    """「帮我显示课表」意图薄载荷 -> front 截获展开为新鲜周网格（M3K3-A2 接线。
+
+    relay 链上的参数装配（实现细节，frozen contract §3 自陈）：读 schedule.md 取 B1
+    模型、week_date_iso = 本地今天、now_hhmm = 当前时刻、school_start 取配置文件首节
+    时刻；模型读/解析失败 -> 不截获（None，薄载荷原样走 relay 链交 display_schema
+    机械门裁决，不炸中继）。截获判据 = schedule.expand_schedule_intent_payload（恰
+    薄载荷才展开、其余 None）；脏 B1 的 ValueError 沿 producer 大声拒绝（记日志，
+    不静默产空网格——P2-A2）。"""
+    if not isinstance(payload, dict) or payload.get("view") != "schedule":
+        return None
+    model = _load_schedule_model()
+    if model is None:
+        return None
+    week_date_iso, _tomorrow = _today_tomorrow_iso()
+    try:
+        return gw_schedule.expand_schedule_intent_payload(
+            payload, model, week_date_iso, _local_now_hhmm(), _schedule_school_start())
+    except ValueError as e:  # noqa: BLE001 — 脏 B1 大声拒绝传日志，中继照走
+        log.warning("schedule_intent_expand_err err=%s detail=%s",
+                    type(e).__name__, str(e)[:120])
+        return None
+
+
 async def _relay_schedule_payload(payload: dict, websocket) -> None:
     """把 home upcoming payload 以设备 wire 单帧下发（复用既有 display 中继链，
-    home 形状必过 display_schema 机械门；down 即降级不裸送）。"""
-    await _relay_display_blocks_to_device([payload], websocket)
+    home 形状必过 display_schema 机械门；down 即降级不裸送）。
+
+    中继链的冻结入口 build_display_tool_calls 只对 str 块做 json.loads 再校验，
+    dict 块会被判 "not JSON-object parseable" 一律降级成 text 兜底（2026-09-21
+    线上实测：建连推送全部变成「这张小卡片没显示好」）——本函数必须 dumps 成 str
+    再入中继。"""
+    await _relay_display_blocks_to_device(
+        [json.dumps(payload, ensure_ascii=False)], websocket)
 
 
 async def _push_schedule_refresh_to_legs(model: dict) -> int:

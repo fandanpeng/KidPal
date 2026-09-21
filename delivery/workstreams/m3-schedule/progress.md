@@ -90,3 +90,49 @@
 - **verifier 相位**：scoped r1 红（taskpackage-required current/ 指针未随回填刷新，治理投影时序非实现缺陷）→ 回写后 r2 七闸全绿（evidence `verifier-evidence/rounds/r2.json`）。
 - **integrator 收口**：final r3 九闸全绿（`6375d877-217c-4b40-ac52-38875ba87de5`，ok:true / observedGateExit:0）+ evidence-check exit 0；host runner 全量独立复跑 **74 Tests / 0 Failures / 0 Ignored**（wrapper 脚本文件取码 build exit 0 + run exit 0，`VERIFY_FW_BUILD_REQUIRED=1` 内联；既有 63 齿零偏移 + 新 11 齿全绿）；device build 闸 exit 0（xiaozhi.bin 0x30c2a0 bytes, 0x63d60 bytes (11%) free，Windows 原生 IDF 5.5）。closeout 制品落 `delivery/changes/dev/260921-m3-k2-p2-week-grid-page/`（docs-delta + review-packet + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT 留档；demo 对账七项全一致 + 未覆盖面 6 条挂账）。
 - **挂账**：M3K2-A7 真机半（版式 1bpp 目测/翻页手感/今天列观感）deferred 归 K3 设备轮（M3K3-A3）；板级零点跨天重读 RTC 未落本包（重启恢复正确，K3 前修注释或落重读线）；host 子集缺 ※/★ 字形走程序化兜底（设备真字形观感归 K3）。K3 dependsOn [K1, K2] 中 K2 待合并解锁。
+
+## 2026-09-21 · K2 合并落账（merge complete）
+
+- **合并**：merge-driver 本地 `--no-ff` 合入 main（merge commit `618bd4dfadd4`，human-approval-ref=`8bcdd601-7b45-4ba6-ad1c-d7db00b3475f`）；机械 supervisor-verdict 闸产 ESCALATE（riskTier high 声明先验升级，provenance v2.0 过 supervisor-gate-check）→ human 批准 → pre-merge escalation gate PASS → merge OK，merge token 已释放。board 置 merged。
+- **合并前分支链**：e11aaa5 feat（实现 + 验收 + closeout 四件）→ 2e3471a chore（pod-retro + supervisor-verdict + pod-events）→ eeaab30 chore（Step 0 治理面收口）。
+- **human 在场实测随批交接（K3 设备轮 / 部署）**：① 真机空网格降级行为实证正确（courses=0 → 「暂时没有数据」不盲渲染，A4 降级语义真机侧目击）；② 设备日期时间错误根因 = ECS 网关未下发 server_time（ota.cc settimeofday 无输入），随 K1 部署面一并消解、非 K2 缺陷。
+- **解锁**：K3 dependsOn [K1, K2] 全 merged，K3 设备轮可 launch（M3K3-A3 真机确认轮含 K2 挂账三项：版式目测/翻页手感/今天列观感 + 格内 >4 门裁剪与「明早」渲染标签显示形态目击）。
+
+## 2026-09-21 · K1 live 半热修（human 批准跳过流程，诚实留痕）
+
+- **线上实测发现 K1 缺陷**：三触发推送（建连/零点/即时）全部被降级成「这张小卡片没显示好」text 兜底，首页「接下来」恒空。根因 = `_relay_schedule_payload` 把 dict 载荷直接塞进冻结中继 `build_display_tool_calls` 的 blocks 列表，而该冻结入口只对 str 块 json.loads，dict 判「not JSON-object parseable」一律降级。本地 17 齿测 payload 产出 + validate_display 单元面，未覆盖 dict-穿-中继集成形状（live 半 structural deferred 的漏网形状）。
+- **热修**：`_relay_schedule_payload` 先 `json.dumps` 成 str 再入中继（只动 K1 调用点，不碰 260907-g-relay-fix 冻结四 callable）。全量 server 75 passed 零回归；部署 ECS 后探针复验 = 建连推送真发 view=home + upcoming 数据。
+- **流程豁免留痕**：human 2026-09-21 批准「跳过流程热修」（在场等真机效果场景），主线程直接改自有实现面，本段即诚实记录。K1 契约耦合钉行零触碰。
+- **随轮登记的独立缺口（未修）**：① 语音轮结束后 ~36s WS 被对端关闭、设备静默掉线至按键才重连（front 无关线日志，疑 NAT/keepalive 面，待查）；② 设备时间错误 = 服务端 OTA 响应缺 server_time 下发（ota.cc settimeofday 无输入，独立小变更）；③ 课表页网格空 = 预期内——薄意图展开接线归 K3（voice-schedule-entry-live）。④ 首页 P1 CJK 殿后清单立项形状（2026-09-21 真机轮与 human 对齐）：固定标签（接下来/明天/今天 等封闭集合）烘焙小资产 + 动态内容（课程名/事项名，开放集合）走字体——复用网格页已接的 lv_font_source_han_sans_sc_14_cjk，P1 软帧管线补「LVGL 字体栅格化进帧」画字 helper + 版式落位，待立项。
+
+## 2026-09-21 · K3 launch 面就绪（本批 = 单包 K3，树池串行复用第 10 棒）
+
+**调度判定**：本批 = 单包 K3（mergeOrder 35）。依赖图说了算——K3 dependsOn [K1, K2] 均已 merged（K1 @ 08:16Z、K2 @ 11:58Z）解锁；无其他可跑包、WIP 无压力、mergeToken 无持有者。同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch` 续跑（不换不删）。分支 vs main 实测 ahead 3 / behind 2——merge-driver rebase 式合并正常形态：树内内容为超集（含 K1 live 半热修 85e7d48，随 K3 合并回 main；main 侧 2 commit 为合并侧事件记录，分支已自带等价收尾账），树内开发无缺口。
+
+**launch 机械门**：`--check-launch 260921-m3-k3-voice-schedule-entry-live --base-ref base/m3-schedule` → ok:true，blocking 空、warn 空；launchPreconditions 待核 1 条 = 真机持板硬依赖（M3K3-A3 设备轮固有，K1/K2 host 半已 merged 满足其前半条件），其余 4 条已核、1 条属其他包折叠。
+
+**上游已知红基线（260909 T5 + 260915 T3 差异判停协议）**：
+- **server 面**：`git diff --quiet e6a62a9 HEAD -- server/` 有差异（K1 live 半热修动 front_app.py）→ 重跑：`python -m pytest -q --import-mode=importlib -m "not live" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/tests" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **75 passed / 0 failed**（2026-09-21；量测 @ 91b3b5c，面域 = server）。零红。
+- **firmware host 面**：`git diff --quiet 36d1519 HEAD -- firmware/` 有差异（K2 实现批 +2861/−640）→ 重跑（WSL host runner build + run）→ **74 Tests / 0 Failures / 0 Ignored**，exit 0（2026-09-21；量测 @ 91b3b5c，面域 = firmware；既有 63 齿零偏移 + K2 新 11 齿全绿）。零红。
+- Pod intake 按差异判停协议消费本段：对相应面域先 `git diff --quiet 91b3b5c HEAD -- <面域>`，零差异引用本行、有差异同命令重跑。
+
+**环境事实**：交接卫生核过（tracked 净 + untracked 净，firmware/build 与 managed_components 白名单在场——host 构建热缓存随树）；固件环境等价化沿用树内既有面（复用树跳过重建）；图索引复用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（status ready，17534 nodes / 46802 edges，自动增量已跟上 K2 后代码面）；board 已预填 K3 → 本树（--set-pod queued）；`delivery/taskpackages/current/` 指针已刷新指向 K3。
+
+**launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/launch-card.md`（五要素齐 + 交接注记：M3K1-A5/M3K2-A7 双 live 半归本包设备轮、板级零点重读 RTC 遗留评估归属、prompt v6 部署 ECS 需 human 确认窗口、K1 热修轮两独立缺口如实记录）。
+
+**遗留 human 项**：本次 launch 由 human 显式指示主线程代跑（交互会话内派 planner agent），偏离启动卡「human 自跑」默认形态并在此留痕；M3K3-A3 真机确认轮仍需 human 持板开窗，prompt v6 部署 ECS 窗口需 human 确认。
+
+## 2026-09-21 · K3 设备轮进行中 + 挂账④立项落包（triage ②单包 Lite）
+
+- **v6 部署 ECS 完成**（human 批准，主线程执行）：6 文件推送（v6 prompt + apply 脚本 + provider.config + K1 遗留 reminder_schedule_lib + front_app.py + schedule.py，远端各留 `.bak-260921-k3-v6`）→ apply 渲染 → v6 prompt 注入 .config.yaml（容器内 grep 实证 4 命中）→ 引擎/front 重启双绿（5 组件初始化成功；venv python 导入 expand_schedule_intent_payload + front 截获接线实证）。
+- **设备轮 offline 链已目击**：「帮我显示课表」意图 → 自动切 P2 → 网格有课（A2 链通）；「明天有什么课」问答框答复正常播报（S-F1.3 主验证点过）。已知缺口复现：设备时钟 tm_year 70（OTA 缺 server_time）→ 今天列高亮落周五（实为周日）——独立缺口如实挂账非 K3 义务。首页「接下来」固定标签 + time（ASCII）可画、CJK 课程名缺失 = 挂账④驱动实证（数据已到设备）。QQ 录入三触发项待 human 修 OpenClaw 后续跑。
+- **挂账④立项落包**：human 立项 ack（动态内容用对话同款普通字体）→ triage 门 architect 四档裁决 **②单包 Lite / riskTier medium**（human 确认不改判；字体双分支实证收敛：设备侧 font_puhui_14_1 即对话页同款）→ 落包 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/`（plan.md + taskpackage.json，origin.type=human-confirmed-plan 指向本文件挂账段）。调度：排 K3 合并后串行。
+
+## 2026-09-21 · K3 收口（integrator：设备轮制品 + closeout 四件 + final r2 九闸全绿）
+
+- **M3K3-A3 设备轮落记录**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/device-round-record.md`（human 目击设备轮 OK，2026-09-21 晚）。三源逐字对账（串口 c:/tmp/k3_round1.log 30min 完整捕获 + ECS journalctl + 引擎 docker logs，integrator 收口实拉）：AC2「帮我显示课表」意图链完整目击 ×2（22:11:37 courses=37 / 22:44:01 courses=40，均自动切 P2）；AC1 问答框答复不切页、日期准；AC4 备注读回（书法班时间地点进答复）；三触发①联网建连三度到端目击、②journalctl `trigger=midnight sent=1`（22:00:34，如实注记 = v6 部署重启补推非真零点 tick）、③ human 目击 + QQ 录入门数 37→40 全通路实证。A3 两齿随记录落盘转绿。
+- **归因更正（诚实留痕）**：派单素材将 851.5s `view=home upcoming_apply ok` 归因为「三触发③录入后即时推送」；三源关联显示该时点（22:19:59）早于录入的设备侧实证时点、与 farewell 轮同拍（v6 口径「说再见 → home 空」）——记录已按证据更正，③ 的 journalctl `trigger=immediate` 全量回溯 0 命中（lib 已随部署批上 ECS 仍零 firing）转 K1 部署面复核项（review-packet Findings SHOULD + 未覆盖面④）。
+- **K1/K2 deferred 真机半收口**：M3K1-A5 ①确认/②通路级/③human 目击+37→40（机器日志半缺位显式挂账）；M3K2-A7 切页/网格确认，※/★/「明早」/14px 四细节 human 未逐项口述——按 human 实际确认范围记录，不扩写。
+- **verify 链**：scoped r1（verifier，7 闸全绿，offline 半程）→ final **r2 九闸全绿**（integrator，`d4839306-bfe9-4f4e-9716-d106dbd8ead2`，ok:true / observedGateExit:0；unit 95 passed、acceptance 41 passed 零新增红）+ verifier-evidence-check exit 0（factOk:true）。integrator 独立复跑 `server/acceptance/` 41 passed（本包 14/14）+ `server/tests/` 54 passed。
+- **closeout 制品**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/`（device-round-record.md + review-packet.md + docs-delta.md + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT；demo 对账一致带挂账 + 未覆盖面 8 条逐条显式化）；docsSyncRequired=false 义务核清（spec/契约/prompt 历史版本零触碰）。
+- **状态**：commit 冻结 diff 后交 planner 跑 supervisor-verdict-gate 机械闸；不 push、不 merge。
