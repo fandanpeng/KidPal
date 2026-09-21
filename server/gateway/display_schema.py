@@ -84,6 +84,26 @@ def validate_display(payload) -> tuple[bool, str]:
     if data is None and view != "home":
         return (False, f"view {view!r} requires a data object")
 
+    # Q5 收紧（契约 §1.5 step 3 / M3-K1 契约门裁定）：schedule view data 只放行
+    # 意图薄载荷 {}（取舍点 A 甲案）或新周网格形状 {week:{courses:[{day,slot,name,flags}]}}；
+    # 旧 {title, items} 列表形与缺 courses 的畸形周网格一律拒绝并降级提示。网格由 front
+    # 机械计算（schedule.py 单源）——此校验只把关 shape floor，不作逐字段深度类型校验。
+    if view == "schedule" and data != {}:
+        week = data.get("week") if isinstance(data, dict) else None
+        if not isinstance(week, dict):
+            return (False, "schedule view data must be {} (thin) or a week-grid "
+                           "{week:{courses:[{day,slot,name,flags}]}}")
+        courses = week.get("courses")
+        if not isinstance(courses, list):
+            return (False, "schedule week-grid requires a courses list "
+                           "({week:{courses:[...]}})")
+        for course in courses:
+            if not isinstance(course, dict):
+                return (False, "schedule week-grid course entry must be an object")
+            for key in ("day", "slot", "name", "flags"):
+                if key not in course:
+                    return (False, f"schedule week-grid course entry missing key {key!r}")
+
     size = _data_bytes(data if isinstance(data, dict) else {})
     if size < 0:
         return (False, "data is not JSON-serialisable")

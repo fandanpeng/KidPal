@@ -35,7 +35,8 @@ import os
 import re
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Header, Request, WebSocket, WebSocketDisconnect, HTTPException
@@ -48,6 +49,8 @@ from gateway import mcp_relay as gw_mcp
 from gateway import fallback as gw_fallback
 from gateway import provider as gw_provider
 from gateway import reminders as gw_reminders
+from gateway import schedule as gw_schedule
+from gateway import schedule_push as gw_schedule_push
 from gateway import story as gw_story
 
 
@@ -436,6 +439,96 @@ _alert_loop_task = None
 _alert_delivery_tasks: set = set()
 
 
+# --- 课表三触发 producer 接线 (M3-K1 / 决策 26) -----------------------------------
+# 契约 §1.3⑥ home 可选 data.upcoming 承载：建连 / 每日零点 / 录入即时三时点把「接下来」
+# 推向设备。触发① 直接（ws 建连后即推）；触发② 每日零点 + 触发③ 录入即时 marker 走
+# reminder 轮询循环 piggyback（复用 alerts 交接目录模式）。决策面（daily_push_due /
+# refresh_requested / consume_refresh_marker / connect_push_payload 单源）在
+# gateway.schedule_push；本处只做脏活接线。副通道（家长直改 schedule.md 不落 marker）
+# 无即时推、靠①+②兜底（S-F1.5 AC2）。
+# 时区固定 UTC+8（house 先例：B1 frontmatter timezone 唯一在役 Asia/Shanghai；
+# host 无 tzdata，禁用 zoneinfo 直算偏移）。
+_T8 = timezone(timedelta(hours=8))
+SCHEDULE_MD = os.environ.get("KIDPAL_SCHEDULE_MD", "/opt/kidpal/schedule.md")
+ALERTS_DIR = os.environ.get("KIDPAL_ALERTS_DIR", "/opt/kidpal/alerts")
+_daily_push_local_date: "str | None" = None   # 触发②记账：已推本地日（每 local 日恰一次）
+
+
+def _load_schedule_model() -> "dict | None":
+    """读 schedule.md -> B1 模型；读/解析失败返回 None（产出可归因，不炸轮询循环）。"""
+    try:
+        text = Path(SCHEDULE_MD).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        return gw_schedule.parse_schedule_md(text)
+    except ValueError as e:  # noqa: BLE001 — 脏 B1 大声拒绝传日志，轮询照走
+        log.warning("schedule_md_err err=%s detail=%s", type(e).__name__, str(e)[:120])
+        return None
+
+
+def _local_now_hhmm() -> str:
+    return datetime.now(tz=_T8).strftime("%H:%M")
+
+
+def _today_tomorrow_iso() -> tuple[str, str]:
+    today = datetime.now(tz=_T8).date()
+    return today.isoformat(), (today + timedelta(days=1)).isoformat()
+
+
+async def _relay_schedule_payload(payload: dict, websocket) -> None:
+    """把 home upcoming payload 以设备 wire 单帧下发（复用既有 display 中继链，
+    home 形状必过 display_schema 机械门；down 即降级不裸送）。"""
+    await _relay_display_blocks_to_device([payload], websocket)
+
+
+async def _push_schedule_refresh_to_legs(model: dict) -> int:
+    """触发①③共用：把 home upcoming payload 推给当前在线设备腿，返回投递腿数。"""
+    today_iso, tomorrow_iso = _today_tomorrow_iso()
+    payload = gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
+                                                tomorrow_iso)
+    sent = 0
+    for device_ws, _engine_ws in list(_alert_legs):
+        try:
+            await _relay_schedule_payload(payload, device_ws)
+            sent += 1
+        except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
+            log.warning("schedule_push_leg_err err=%s", type(e).__name__)
+    return sent
+
+
+async def run_schedule_poll_once(now_utc=None) -> dict:
+    """两轮 piggyback：触发② 每日零点 + 触发③ 录入即时 marker。
+
+    返回可观测计数（K6 correlationId = 触发类别 记账）供日志归因。恰一次语义：
+    触发② 靠 last_push_local_date 记账；触发③ 靠 consume_refresh_marker 恰一次消费
+    （一个 marker -> 至少一次推送，消费即移除不重复）。"""
+    global _daily_push_local_date
+    model = _load_schedule_model()
+    if model is None:
+        return {"trigger2": False, "immediate": 0, "sent": 0, "reason": "no_model"}
+    now_utc_dt = datetime.now(tz=timezone.utc) if now_utc is None else now_utc
+    corr = gw_provider.corr_id()
+    sent = 0
+    tz_name = model.get("timezone") or ""
+    # 触发② 每日零点：本地日历日跨天 -> 只推恰一次
+    if gw_schedule_push.daily_push_due(tz_name, _daily_push_local_date, now_utc_dt):
+        local_date = now_utc_dt.astimezone(_T8).date().isoformat()
+        _daily_push_local_date = local_date
+        sent += await _push_schedule_refresh_to_legs(model)
+        log.info("schedule_push trigger=midnight corr=%s local=%s sent=%d",
+                 corr, local_date, sent)
+    # 触发③ 录入即时：轮询 piggyback 消费 refresh marker（副通道无 marker -> 不触发）
+    immediate = 0
+    while gw_schedule_push.consume_refresh_marker(ALERTS_DIR):
+        immediate += 1
+        sent += await _push_schedule_refresh_to_legs(model)
+    if immediate:
+        log.info("schedule_push trigger=immediate corr=%s markers=%d sent=%d",
+                 corr, immediate, sent)
+    return {"trigger2": True, "immediate": immediate, "sent": sent, "corr": corr}
+
+
 def _entry_from_envelope(envelope, business_id) -> dict:
     """从 kidpal/alert 信封还原 §三 条目（wire 上 view 是 JSON 字符串 -> 解回对象）。
 
@@ -534,15 +627,22 @@ async def run_alert_poll_once(now_epoch=None) -> dict:
 
 
 async def reminder_poll_loop() -> None:
-    """每分钟轮询到点推送（节拍对齐整分钟；单轮异常绝不杀死循环）。"""
+    """每分钟轮询到点推送 + 课表 piggyback（触发②每日零点/③录入即时 marker）。
+
+    节拍对齐整分钟；单轮异常绝不杀死循环。提醒投递与课表推送同节拍，两路各自容错。"""
     try:
         await run_alert_poll_once()          # 起轮先跑一次：避免刚连上就错过整分钟点
     except Exception as e:  # noqa: BLE001
         log.warning("alert_poll_error err=%s", type(e).__name__)
+    try:
+        await run_schedule_poll_once()       # 课表 piggyback：同一循环，容错不连坐
+    except Exception as e:  # noqa: BLE001
+        log.warning("schedule_poll_error err=%s", type(e).__name__)
     while True:
         try:
             await asyncio.sleep(gw_reminders.next_poll_delay(time.time()))
             await run_alert_poll_once()
+            await run_schedule_poll_once()
         except asyncio.CancelledError:
             raise
         except Exception as e:  # noqa: BLE001 — 提醒投递不得因单轮异常停摆
@@ -603,6 +703,18 @@ async def ws_gateway(websocket: WebSocket):
             # 起每分钟轮询（到点经 kidpal/alert 推送 + 渲染回执接出队方）；断开即摘除、不攒历史。
             _register_alert_legs(websocket, upstream)
             _ensure_alert_loop()
+            # 课表三触发 ①：WS 建连即推首页「接下来」（触发②每日零点/③录入即时 marker 走
+            # 轮询 piggyback）。失败不阻断建连（读不见 schedule.md 等 -> 记日志跳过）。
+            try:
+                model_op = _load_schedule_model()
+                if model_op is not None:
+                    today_iso, tomorrow_iso = _today_tomorrow_iso()
+                    await _relay_schedule_payload(
+                        gw_schedule.home_upcoming_payload(
+                            model_op, today_iso, _local_now_hhmm(), tomorrow_iso),
+                        websocket)
+            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+                log.warning("schedule_connect_push_err err=%s", type(e).__name__)
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:
