@@ -65,3 +65,20 @@
 - **合并**：ESCALATE（diff 重算 critical：触契约 critical-path）→ human 批准 → 升级闸硬编码拦契约批（`hasContractGateEvidence` 恒 false，证据接入未实现——gate-tooling 缺口，escalation `1a13b9a2`）→ human 裁乙案拆批：契约批 `24bb1b8` 先行治理 lane ff 合 main，实现批经 merge-driver 标准链合并（merge commit `ce56940`，human-approval-ref `36840095`）。
 - **收尾**：INDEX 双 lane 重建（K1 行 closed）+ escalation 销账 + K2/K3 origin 枚举预检修正（`1548267`）。K2 dependsOn K1 解锁，launch 由 human 走 launch-prep；K2 起包时 preview.time 裁决点（契约示例「明早」 vs seam HH:MM）与分界时刻留痕随包交接。
 - **治理跟进项（执行测出，归 /loop-retro 提炼）**：① 升级闸契约证据探测接入（hasContractGateEvidence 硬编码缺口）；② 起包 checklist 补 current/ 指针刷新；③ dispatch-stamp 恒传 --task-package-id；④ loop-retro 阈值已达（15 ≥ 10）待 human 发起。
+
+## 2026-09-21 · K2 launch 面就绪（本批 = 单包 K2，human 指定本树续跑）
+
+**调度判定**：本批 = 单包 K2（mergeOrder 34）。依赖图说了算——K2 dependsOn [K1] 已 merged 解锁；K3 dependsOn [K1, K2] 仍被 K2 挡住；当前无 running Pod、mergeToken 无持有者。树池串行复用第 9 棒，同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch`（K1 收尾两 commit rebase 到 main cfdcdba 之上，新头 e6a62a9，main ⊆ HEAD 已同步；不换不删）。
+
+**launch 机械门**：`--check-launch 260921-m3-k2-p2-week-grid-page --base-ref base/m3-schedule` → ok:true，blocking 空、warn 空；launchPreconditions 本包相关已核 4 条、无待核（另 2 条属其他包已折叠）。
+
+**上游已知红基线（260909 T5 + 260915 T3 差异判停协议）**：
+- **server 面**：`git diff --quiet 40aefa4 HEAD -- server/` 有差异（K1 实现批 +1349 行）→ 重跑：`python -m pytest -q --import-mode=importlib -m "not live" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/tests" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **75 passed / 0 failed**（2026-09-21；量测 @ e6a62a9，面域 = server；launch 批仅动 delivery/ 与 current/ 指针，server 面续引无需再跑）。零红。
+- **firmware host 面**：`git diff --quiet 40aefa4 HEAD -- firmware/` 实测零差异 → **引用不重跑**：63 Tests / 0 Failures / 0 Ignored，exit 0（2026-09-21 @ 40aefa4，面域 = firmware，上一段锚行 verbatim）。
+- Pod intake 按差异判停协议消费本段：对相应面域先 `git diff --quiet e6a62a9 HEAD -- <面域>`，零差异引用本行、有差异同命令重跑。
+
+**环境事实**：交接卫生核过（tracked 净 + untracked 净，build/ 与 managed_components 软链白名单在场——host 构建热缓存随树）；固件环境等价化沿用树内既有 sdkconfig / dependencies.lock / managed_components 软链（复用树跳过重建）；图索引复用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（status ready，17461 nodes / 46504 edges，自动增量已跟上 K1 后代码面）；board 已预填 K2 → 本树（--set-pod queued，mergeToken 无持有者）。
+
+**launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k2-p2-week-grid-page/launch-card.md`（五要素齐 + 交接注记：dispatch-stamp 恒传 --task-package-id、mutation-check 先读提取器、preview.time 裁决点 K2 落渲染标签口径、M3K2-A7 live 半 deferred K3）。`delivery/taskpackages/current/` 指针已刷新指向 K2（K1 retro 改进项②由 launch-prep 侧办结）。
+
+**遗留 human 项**：launch 由 human 执行（交互会话形态默认）——launch-prep 不代跑。命令行两形态见启动卡第五要素。

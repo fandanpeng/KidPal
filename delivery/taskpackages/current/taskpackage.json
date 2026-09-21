@@ -1,5 +1,5 @@
 {
-  "changeId": "260921-m3-k1-cloud-schedule-producer",
+  "changeId": "260921-m3-k2-p2-week-grid-page",
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
@@ -9,42 +9,41 @@
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
   },
-  "subsystem": "server",
-  "story": "S-F1.2 · 课表页看「一周总览」（补充规则数据口径半）+ S-F1.5 · 家长录入课表（AC1 即时链路半）+ S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC2 producer 半）——技术描述见 plan.md（契约对齐 + B1→周网格/接下来计算 + 决策 26 三触发 producer + 录入即时通道）",
-  "planRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/plan.md",
-  "redBaselineCommand": "python -m pytest server/acceptance/ -q（offline 冻结齿基线；新增齿在未实现树上 RED，intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "acceptance-author 2026-09-21 实跑（现状树、本包冻齿落盘后）：python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance => 13 failed, 51 passed in 0.89s。既有基线 47 passed 全绿保持；新增 17 齿 = 13 RED + 4 must-stay-green（契约门三样本过门齿 ×3 + M3K1-E1 零偏移守卫齿 ×1）。红因全部对应当前 story 缺失的真实行为：week_grid_payload/home_upcoming_payload 未实现、schedule_push.py 缺失、validate_display 未做 Q5 收紧（旧形状仍过门）。收集零错误（冻结即冒烟 PASS）。红名 verbatim 见 mutationEvidence.perAcceptance。",
+  "subsystem": "firmware",
+  "story": "S-F1.2 · 课表页看「一周总览」（AC1–AC4）+ S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC2 消费接线半）——技术描述见 plan.md（P2 一周总览网格页整页重写 WF-F1-02 版式 + 首页「接下来」注入接线，新 schedule payload 消费）",
+  "planRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
     "delivery/workstreams/m3-schedule/"
   ],
-  "riskTier": "medium",
+  "riskTier": "high",
   "gateProfile": [
     "test-quality"
   ],
   "acceptance": [
-    "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-    "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-    "M3K1-A3: 首页 upcoming payload 齿——group_upcoming 既有口径零偏移复用，产 view=home 可选 data（今日分组项 + 明日预告 preview 形状按契约冻结版）；offline 验收含决策 26 合并「上学」项回归（12:00 在校时段计 upcoming 语义）",
-    "M3K1-A4: 三触发推送齿——①WS 建连即推 ②每日零点推（timezone 取 B1 frontmatter Asia/Shanghai）③录入即时推（OpenClaw 主通道改写 MD 后通知 front，通道取舍点按 plan.md 落定实现；副通道直改文件不触发即时推、靠①②兜底 = S-F1.5 AC2 语义）；offline/模拟验证三触发各自到达且互不重复",
+    "M3K2-A1: 周网格版式齿——WF-F1-02：7 列（周一~周日）× 3 行（上午/下午/晚上）整屏网格，格内多课逐门竖排小字、字号 ≥14px（NFR-READ-1 下限，产线 font_body.bin 14px 贴线）、不做格内滚动；host 渲染齿断言布局常量与墨迹结构（含空格空行语义）",
+    "M3K2-A2: 今天列高亮齿——设备本地日期（RTC，M1-K1a 接线）推导今天列、整列高亮（粗框/反色）；本地零点切换（host 注入跨天状态断言切换）",
+    "M3K2-A3: ※ 临时标记 + 星标呼应齿——payload flags 位（bit0 ※ / bit1 星标）渲染标记与固定课区分；星标与首页「接下来」当前项呼应",
+    "M3K2-A4: 新形状消费 + 缓存齿——cache_schedule 从 16 项列表缓存改周网格缓存（供 BOOT 翻页 cycle_next 浏览）；自足式最小 JSON 扫描解析新形状，畸形/缺字段/越界 cap 一律 -1、调用方友好降级绝不盲渲染（V27）",
+    "M3K2-A5: 首页「接下来」注入齿——view=home 携 data 到达 → kidpal_home_p1_schedule_inject 冻结 seam（零修改）注入 → 当前在 P1 即重渲染首页日程主体；缺/空 data 行为不变（向后兼容）；断网日程区不更新语义保持（NFR-OFF-1）",
+    "M3K2-A6: 页循环/键帽条回归靶——P2 仍在三页循环（HOME→SCHEDULE→STORY，M2-K2 既定）、键帽条三槽常驻不被网格遮挡（回归齿非修订面，key_layer_dispatch/schedule_reminder_b 既有齿零偏移通过）",
     {
-      "id": "M3K1-A5: live 三触发复证（deferred 归 M3-K3 设备轮）——真机联网/零点/录入三时点首页与课表页实际刷新目击；引擎/front 日志关联取证",
+      "id": "M3K2-A7: 真机网格目测 + 翻页手感（deferred 归 M3-K3 设备轮）——WF-F1-02 版式真机 1bpp 目测（NFR-READ-1 14px 小字可读）、BOOT 翻页进出 P2 手感、今天列高亮真机观感",
       "kind": "structural",
-      "note": "live 半 deferred：单真机不两轮撞车，K1 侧 offline 齿先行，live 复证挂 K3 设备轮（crossPackageBehaviors 第 3 条）"
+      "note": "真机半 deferred：单真机不两轮撞车，K2 侧 host 齿 + device build 闸先行，真机目测挂 K3 设备轮（crossPackageBehaviors 第 3 条）"
     }
   ],
-  "acceptanceTestsFile": [
-    "server/acceptance/test_m3k1_schedule_producer.acceptance.py"
-  ],
+  "acceptanceTestsFile": [],
   "exitCriteria": [
-    "M3K1-E1: 新增 offline 齿全绿（网格计算/upcoming payload/三触发模拟），既有 schedule.py 冻结语义（parse_schedule_md/items_for_date/group_upcoming）零偏移、pytest 全量零新增红",
-    "M3K1-E2: 铁律——契约 diff 仅经契约门通道落地（四分类预审 + human 签字在案，M3K1-A1）；不改 spec、不改 agent 定义/gate；schedule.py docstring 契约钉行随契约门同 PR 更新（旧钉行「schedule view data 形状零增减」被契约门取代）",
-    "M3K1-E3: 录入即时通知通道不动 OpenClaw 本体架构（走既有交接目录/部署补丁模式，取舍点留痕），provider 配置渲染链（overlay）零破坏"
+    "M3K2-E1: 新增 host 齿全绿（版式/今天列/标记/解析降级/注入接线/回归靶），host runner 全量零新增红",
+    "M3K2-E2: 铁律——不改 docs/contracts/**（消费冻结形状，形状权威 = K1 契约门定稿）、不改 spec、不改 agent 定义/gate；home_p1.acceptance.c 与 home_p1 冻结 seam 零修改（仅消费）",
+    "M3K2-E3: device build 闸全绿（schedule_page.c 页面组件面本包必触，设备编译不得缺席）"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md#§1.3",
-    "docs/contracts/interface-contract.md#§2"
+    "docs/contracts/interface-contract.md#§1.3"
   ],
   "docRefs": [
     "docs/requirements.md#F1"
@@ -52,187 +51,52 @@
   "sourceRefs": [
     "delivery/milestones/milestones.jsonl#M3-schedule",
     "docs/requirements.md#S-F1.2",
-    "docs/requirements.md#S-F1.3",
-    "docs/requirements.md#S-F1.5",
+    "docs/requirements.md#S-F1.2-AC1",
+    "docs/requirements.md#S-F1.2-AC2",
+    "docs/requirements.md#S-F1.2-AC3",
+    "docs/requirements.md#S-F1.2-AC4",
     "docs/requirements.md#S-F1.1",
     "docs/requirements.md#S-F1.1-AC1",
-    "docs/requirements.md#S-F1.5-AC1",
-    "docs/architecture.md#§5.1",
-    "docs/architecture.md#§5.2",
+    "docs/requirements.md#NFR-READ-1",
     "docs/contracts/interface-contract.md#§1.3",
-    "docs/contracts/interface-contract.md#§2",
-    "server/gateway/schedule.py#parse_schedule_md",
-    "server/gateway/front/front_app.py#_relay_display_blocks_to_device"
+    "firmware/main/display/schedule_page.c#kidpal_schedule_parse",
+    "firmware/main/display/home_p1.c#kidpal_home_p1_schedule_inject",
+    "firmware/main/display/kidpal_render_node.cc#kidpal_render_node_cache_schedule"
   ],
   "iterationBudget": 2,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
-  "docsSyncRequired": true,
-  "docsSyncReason": "契约 diff（E1 §1.3②/§1.3⑥）随包同 PR 落地（经契约门）；schedule.py 模块头契约钉行同步更新。spec 面零改动（requirements v1.19 口径已冻结在前）。",
-  "mergeOrder": 33,
-  "dependsOn": [],
-  "testHost": "python -m pytest server/acceptance/ offline 齿；live 三触发 deferred 归 M3-K3 设备轮",
+  "docsSyncRequired": false,
+  "docsSyncReason": "纯板端实现：契约形状消费方（diff 归 K1 契约门同 PR）、spec 层需求行已冻结（S-F1.2 v1.19 口径），零 docs 面改动；实现细节随代码注释与 closeout 制品承载。",
+  "mergeOrder": 34,
+  "dependsOn": [
+    "260921-m3-k1-cloud-schedule-producer"
+  ],
+  "testHost": "host runner（WSL linux target）+ device build 闸；真机目测 deferred 归 M3-K3 设备轮",
   "decisionCoverage": [],
   "crossPackageBehaviors": [
     {
-      "topic": "schedule 周网格 payload 形状（契约冻结单源）",
-      "owner": "260921-m3-k1-cloud-schedule-producer",
-      "carriedBy": "260921-m3-k1-cloud-schedule-producer",
-      "note": "形状权威 = 契约门签字后的 interface-contract.md §1.3②；K2 消费齿按冻结形状写，契约 diff 未落地前 K2 不冻网格形状齿。"
-    },
-    {
-      "topic": "首页「接下来」home data 承载",
+      "topic": "schedule 周网格 payload 形状消费",
       "owner": "260921-m3-k1-cloud-schedule-producer",
       "carriedBy": "260921-m3-k2-p2-week-grid-page",
-      "note": "payload 语义 owner = K1（契约冻结 home 可选 data 形状）；板端注入接线承接 = K2（home_p1 schedule_inject 冻结 seam 消费）。"
+      "note": "按契约门定稿形状写消费齿与解析；K1 契约 diff 落地前不冻网格形状齿。"
     },
     {
-      "topic": "课表链路 live 真机复证（K1 producer 真机半）",
+      "topic": "首页「接下来」home data 注入接线",
       "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k2-p2-week-grid-page",
+      "note": "home_p1 schedule_inject 冻结 seam 消费（seam 零改），缺 data 行为不变。"
+    },
+    {
+      "topic": "P2 网格/首页注入真机半",
+      "owner": "260921-m3-k2-p2-week-grid-page",
       "carriedBy": "260921-m3-k3-voice-schedule-entry-live",
-      "note": "K1 live 半 structural deferred 挂 K3 设备轮（M3K1-A5）。"
+      "note": "K2 live 半 structural deferred 挂 K3 设备轮（M3K2-A7）。"
     }
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-        "tooth": "test_a1_legacy_schedule_shape_rejected_q5",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A1 RED: legacy schedule shape {'view': 'schedule', 'data': {'title': '今天下午', 'items': [{'time': '14:00', 'name': '钢琴课', 'location': '琴行'}]}} still passes the gate — Q5 收紧(旧形状拒绝并降级提示)未实现 (packet §5).",
-        "redToGreen": "builder 在 display_schema.validate_display 落 Q5 收紧（schedule data 只放行 {} 或新周网格形状）后声明 GREEN；counterEvidence = 旧形状样本重新过门即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-        "tooth": "test_a1_malformed_week_shape_rejected",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A1 RED: {'week': {}} (courses 缺失) passed the gate (ok) — 收紧到新形状 = 非 {}/周网格形状一律拒绝 (packet Q5).",
-        "redToGreen": "builder 在 display_schema.validate_display 落 Q5 收紧（schedule data 只放行 {} 或新周网格形状）后声明 GREEN；counterEvidence = 旧形状样本重新过门即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-        "tooth": "test_a2_week_grid_empty_week_and_dirty_input_boundary",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A2 RED: schedule.py has no module-level callable week_grid_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-        "tooth": "test_a2_week_grid_flags_compose_bit0_or_bit1",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A2 RED: schedule.py has no module-level callable week_grid_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-        "tooth": "test_a2_week_grid_frozen_shape_and_day0_mapping",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A2 RED: schedule.py has no module-level callable week_grid_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-        "tooth": "test_a2_week_grid_onetime_flag_and_out_of_week_filtered",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A2 RED: schedule.py has no module-level callable week_grid_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
-        "tooth": "test_a2_week_grid_star_marks_current_upcoming",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A2 RED: schedule.py has no module-level callable week_grid_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A3: 首页 upcoming payload 齿——group_upcoming 既有口径零偏移复用，产 view=home 可选 data（今日分组项 + 明日预告 preview 形状按契约冻结版）；offline 验收含决策 26 合并「上学」项回归（12:00 在校时段计 upcoming 语义）",
-        "tooth": "test_a3_decision26_merged_school_1200_regression",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A3 RED: schedule.py has no module-level callable home_upcoming_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A3: 首页 upcoming payload 齿——group_upcoming 既有口径零偏移复用，产 view=home 可选 data（今日分组项 + 明日预告 preview 形状按契约冻结版）；offline 验收含决策 26 合并「上学」项回归（12:00 在校时段计 upcoming 语义）",
-        "tooth": "test_a3_home_upcoming_payload_frozen_shape",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A3 RED: schedule.py has no module-level callable home_upcoming_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A3: 首页 upcoming payload 齿——group_upcoming 既有口径零偏移复用，产 view=home 可选 data（今日分组项 + 明日预告 preview 形状按契约冻结版）；offline 验收含决策 26 合并「上学」项回归（12:00 在校时段计 upcoming 语义）",
-        "tooth": "test_a3_preview_tomorrow_and_empty_cases",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A3 RED: schedule.py has no module-level callable home_upcoming_payload() — frozen M3K1 offline contract (week grid / home upcoming producer) not implemented.",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A4: 三触发推送齿——①WS 建连即推 ②每日零点推（timezone 取 B1 frontmatter Asia/Shanghai）③录入即时推（OpenClaw 主通道改写 MD 后通知 front，通道取舍点按 plan.md 落定实现；副通道直改文件不触发即时推、靠①②兜底 = S-F1.5 AC2 语义）；offline/模拟验证三触发各自到达且互不重复",
-        "tooth": "test_a4_connect_push_payload_single_source",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A4 RED: server/gateway/schedule_push.py missing — 三触发 producer 决策面(触发①②③模拟契约)未实现。",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A4: 三触发推送齿——①WS 建连即推 ②每日零点推（timezone 取 B1 frontmatter Asia/Shanghai）③录入即时推（OpenClaw 主通道改写 MD 后通知 front，通道取舍点按 plan.md 落定实现；副通道直改文件不触发即时推、靠①②兜底 = S-F1.5 AC2 语义）；offline/模拟验证三触发各自到达且互不重复",
-        "tooth": "test_a4_daily_push_due_local_midnight_b1_timezone",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A4 RED: server/gateway/schedule_push.py missing — 三触发 producer 决策面(触发①②③模拟契约)未实现。",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A4: 三触发推送齿——①WS 建连即推 ②每日零点推（timezone 取 B1 frontmatter Asia/Shanghai）③录入即时推（OpenClaw 主通道改写 MD 后通知 front，通道取舍点按 plan.md 落定实现；副通道直改文件不触发即时推、靠①②兜底 = S-F1.5 AC2 语义）；offline/模拟验证三触发各自到达且互不重复",
-        "tooth": "test_a4_refresh_marker_main_channel_only_and_exactly_once",
-        "redBaseline": "RED",
-        "redMessage": "M3K1-A4 RED: server/gateway/schedule_push.py missing — 三触发 producer 决策面(触发①②③模拟契约)未实现。",
-        "redToGreen": "builder 按冻结件文件头 FROZEN OFFLINE CONTRACT 落地对应函数/模块后全量绿声明 GREEN；counterEvidence = 函数缺失/改名/断言变形即红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-        "tooth": "test_a1_new_week_grid_shape_passes_schema",
-        "redBaseline": "GREEN(must-stay-green)",
-        "redMessage": null,
-        "redToGreen": "GREEN(must-stay-green)：三样本任一被 Q5 收紧误杀即红",
-        "sensitive": false
-      },
-      {
-        "acceptanceId": "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-        "tooth": "test_a1_thin_payload_passes_schema",
-        "redBaseline": "GREEN(must-stay-green)",
-        "redMessage": null,
-        "redToGreen": "GREEN(must-stay-green)：薄载荷 data:{} 被收紧误杀即红",
-        "sensitive": false
-      },
-      {
-        "acceptanceId": "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
-        "tooth": "test_a1_home_with_and_without_data_passes_schema",
-        "redBaseline": "GREEN(must-stay-green)",
-        "redMessage": null,
-        "redToGreen": "GREEN(must-stay-green)：home 带 data/缺 data 任一被误拒即红",
-        "sensitive": false
-      },
-      {
-        "acceptanceId": "M3K1-E1: 新增 offline 齿全绿（网格计算/upcoming payload/三触发模拟），既有 schedule.py 冻结语义（parse_schedule_md/items_for_date/group_upcoming）零偏移、pytest 全量零新增红",
-        "tooth": "test_e1_existing_schedule_semantics_zero_offset",
-        "redBaseline": "GREEN(must-stay-green)",
-        "redMessage": null,
-        "redToGreen": "GREEN(must-stay-green)：既有 parse_schedule_md/items_for_date/group_upcoming 语义偏移即红",
-        "sensitive": false
-      }
-    ]
+    "perAcceptance": []
   },
   "crossEnd": {
     "counterparts": [
@@ -241,16 +105,12 @@
         "symbol": "parse_schedule_md"
       },
       {
-        "path": "server/gateway/schedule.py",
-        "symbol": "group_upcoming"
-      },
-      {
         "path": "server/gateway/front/front_app.py",
         "symbol": "_relay_display_blocks_to_device"
       }
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。重叠面核查：schedule_p2 旧冻结验收已 archive 退役（ARQ-260916 批），本包新建齿不走 supersede；prompt 面零触碰（v6 bump 归 K3）。OpenClaw 本体（ECS）不在本包改架构——录入即时通知取舍点（交接目录 marker vs front 端点 vs 轮询 piggyback）见 plan.md，倾向交接目录 marker（复用 alerts/ 既有模式、主副通道天然可区分）。",
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。",
   "docsOwner": "integrator"
 }
