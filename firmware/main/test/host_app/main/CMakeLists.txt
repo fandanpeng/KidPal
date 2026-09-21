@@ -112,6 +112,21 @@ set(HOST_ACCEPTANCE_SRCS
     # 查字窗列路由的边界与分支补强——冻结齿未穷尽的边界面）。置于 host smoke acceptance 之前。
     "../../char_window.test.c"
 
+    # 包 260921-m3-k2-p2-week-grid-page（P2 一周总览网格页整页重写 + 首页「接下来」
+    # 注入接线）被测实现：schedule_page.c（kidpal_schedule_grid_parse/grid_render 冻结
+    # 离线契约强符号源, 覆盖冻结件 weak 哨兵; schedule_page.h 声明头）+ home_upcoming.c
+    # （kidpal_home_upcoming_apply A5 接线层强符号源; home_upcoming.h 声明头; 只消费
+    # home_p1 冻结 seam——home_p1.c 强符号已在册, 覆盖冻结件 seam 读侧 weak 哨兵,
+    # p1_home_battery 同款）。相对 host_app/main 为 ../../../display/。
+    "../../../display/schedule_page.c"
+    "../../../display/home_upcoming.c"
+
+    # 包 260921-m3-k2-p2-week-grid-page 冻结验收（A1 版式结构 + A4 周网格解析降级 +
+    # A2 今天列注入缝 + A5 upcoming 注入 + A6 回归靶 + LVGL 软渲染真帧探针）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫）。
+    "../../schedule_grid.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

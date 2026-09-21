@@ -3,8 +3,8 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
@@ -13,7 +13,7 @@
   "story": "S-F1.2 · 课表页看「一周总览」（AC1–AC4）+ S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC2 消费接线半）——技术描述见 plan.md（P2 一周总览网格页整页重写 WF-F1-02 版式 + 首页「接下来」注入接线，新 schedule payload 消费）",
   "planRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/plan.md",
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "",
+  "redBaselineResult": "既有齿基线 63 Tests 0 Failures 0 Ignored，exit 0（VERIFY_FW_BUILD_REQUIRED=1 实跑，2026-09-21 acceptance-author @ 36d1519，回归靶零偏移）；本文件 stub 红基线 7 Tests 5 Failures，exit 5（BUILD_CLEAN 零告警，红全在真实缺失行为：grid parse 缺失 ×2 / inject_weekday 缝缺失 / home_upcoming_apply 缺失 / mcp 路由未消费，守卫齿与回归靶绿）",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -36,7 +36,9 @@
       "note": "真机半 deferred：单真机不两轮撞车，K2 侧 host 齿 + device build 闸先行，真机目测挂 K3 设备轮（crossPackageBehaviors 第 3 条）"
     }
   ],
-  "acceptanceTestsFile": [],
+  "acceptanceTestsFile": [
+    "firmware/main/test/schedule_grid.acceptance.c"
+  ],
   "exitCriteria": [
     "M3K2-E1: 新增 host 齿全绿（版式/今天列/标记/解析降级/注入接线/回归靶），host runner 全量零新增红",
     "M3K2-E2: 铁律——不改 docs/contracts/**（消费冻结形状，形状权威 = K1 契约门定稿）、不改 spec、不改 agent 定义/gate；home_p1.acceptance.c 与 home_p1 冻结 seam 零修改（仅消费）",
@@ -96,7 +98,29 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      { "acceptanceId": "M3K2-A1: 周网格版式齿——WF-F1-02：7 列（周一~周日）× 3 行（上午/下午/晚上）整屏网格，格内多课逐门竖排小字、字号 ≥14px（NFR-READ-1 下限，产线 font_body.bin 14px 贴线）、不做格内滚动；host 渲染齿断言布局常量与墨迹结构（含空格空行语义）", "mutations": [
+        { "name": "KSG_CELL_BAND_LEAK", "site": "firmware/main/display/schedule_page.c:853（day 列带平移一格）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1274 KSG-A1 render RED: course-diff pixels fall outside their (day,slot) cell bands — 网格格归属失真（WF-F1-02 版式区钉）" },
+        { "name": "KSG_PITCH_SHRINK", "site": "firmware/main/display/schedule_page.c:650（KSG_ROW_PITCH 16→12）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1342 KSG-A1 render RED: stacked second course line pitch < 14px — NFR-READ-1 1bpp CJK 字号下限被突破" } ], "sensitive": true },
+      { "acceptanceId": "M3K2-A2: 今天列高亮齿——设备本地日期（RTC，M1-K1a 接线）推导今天列、整列高亮（粗框/反色）；本地零点切换（host 注入跨天状态断言切换）", "mutations": [
+        { "name": "KSG_TODAY_NOOP", "site": "firmware/main/display/schedule_page.c:830（高亮分支恒不画）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1374 KSG-A2 render RED: today_col=k produced a frame identical to the no-today baseline — 今天列整列高亮缺失 (S-F1.2 AC2)" },
+        { "name": "KSG_HIGHLIGHT_BLEED", "site": "firmware/main/display/schedule_page.c:834（高亮改画整屏宽）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1379 KSG-A2 render RED: today-column highlight ink leaks outside the day-k column band — 整列高亮不越出本列" },
+        { "name": "RN_WDAY_SEAM_UNCALL", "site": "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc:602（板级装配点调用整行移除，变异名不含被测符号字面）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:899 KSG-A2 RED: the board RTC assembly point does not call kidpal_render_node_inject_weekday( — 板级星期数据未接线（净洁 ELF 单独复证 74 Tests 1 Failure 唯一红即本齿）" } ], "sensitive": true },
+      { "acceptanceId": "M3K2-A3: ※ 临时标记 + 星标呼应齿——payload flags 位（bit0 ※ / bit1 星标）渲染标记与固定课区分；星标与首页「接下来」当前项呼应", "mutations": [
+        { "name": "KSG_FLAG_TEMP_DROP", "site": "firmware/main/display/schedule_page.c:759（bit0 不渲染）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1442 KSG-A3 render RED: flags bit0 (※ 临时安排) produced no visible in-cell ink diff — ※ 标记缺失或不可见/越格 (S-F1.2 AC3)" },
+        { "name": "KSG_FLAG_STAR_DROP", "site": "firmware/main/display/schedule_page.c:763（bit1 不渲染）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1449 KSG-A3 render RED: flags bit1 (星标呼应) produced no visible in-cell ink diff — 星标缺失或不可见/越格 (S-F1.2 AC4)" },
+        { "name": "KSG_FLAG_MASK_WIPE", "site": "firmware/main/display/schedule_page.c:437（parse flags 恒置 0）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:762 KSG-A4 RED: course 1 flags bit0 (※ 临时) lost in parse — 临时标记位必须保真" } ], "sensitive": true },
+      { "acceptanceId": "M3K2-A4: 新形状消费 + 缓存齿——cache_schedule 从 16 项列表缓存改周网格缓存（供 BOOT 翻页 cycle_next 浏览）；自足式最小 JSON 扫描解析新形状，畸形/缺字段/越界 cap 一律 -1、调用方友好降级绝不盲渲染（V27）", "mutations": [
+        { "name": "KSG_DEGRADE_BLIND", "site": "firmware/main/display/schedule_page.c:584（薄载荷分支 -1 改 0）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:804 KSG-A4 RED: thin payload data={} must degrade (-1) — 薄载荷不直达设备, 泄漏到达也绝不盲渲染 (V27)" },
+        { "name": "KSG_CAP_OVERFLOW", "site": "firmware/main/display/schedule_page.c:481（cap 不足仍拷贝）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:858 KSG-A4 RED: cap < course count must return -1, never overflow/silent truncate" } ], "sensitive": true },
+      { "acceptanceId": "M3K2-A5: 首页「接下来」注入齿——view=home 携 data 到达 → kidpal_home_p1_schedule_inject 冻结 seam（零修改）注入 → 当前在 P1 即重渲染首页日程主体；缺/空 data 行为不变（向后兼容）；断网日程区不更新语义保持（NFR-OFF-1）", "mutations": [
+        { "name": "HUP_INJECT_SKIP", "site": "firmware/main/display/home_upcoming.c:605（成功路径不调 seam 直接 0）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:930 KSG-A5 RED: seam item count must be 2 after canonical apply — 注入未达冻结 seam" },
+        { "name": "HUP_NULLPV_DEGRADE", "site": "firmware/main/display/home_upcoming.c:413（preview:null 误降级 -1）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:946 KSG-A4/A5 RED: preview:null must be tolerated (明日无项 = 无预告, 不降级) — producer wire 实况 (schedule.py home_upcoming_payload)" },
+        { "name": "HUP_MINGZAO_PASS", "site": "firmware/main/display/home_upcoming.c:419（preview 项校验放宽为失败即吞）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:980 KSG-A5 RED: non-HH:MM preview.time (明早 literal) must be rejected (-1) — K1 裁决口径: 载荷钉明日首项 HH:MM, 自然语言标签不入冻结 seam" } ], "sensitive": true },
+      { "acceptanceId": "M3K2-A6: 页循环/键帽条回归靶——P2 仍在三页循环（HOME→SCHEDULE→STORY，M2-K2 既定）、键帽条三槽常驻不被网格遮挡（回归齿非修订面，key_layer_dispatch/schedule_reminder_b 既有齿零偏移通过）", "mutations": [
+        { "name": "KSG_KEYBAR_STRIP_INK", "site": "firmware/main/display/schedule_page.c:812（底缘分隔线加高侵入 y≥252）", "result": "failed as expected", "redTooth": "schedule_grid.acceptance.c:1289 KSG-A1/A6 render RED: grid frame paints ink below y=252 — 网格侵入了键帽条带（键帽条三槽常驻不被遮挡）" } ], "sensitive": true }
+    ],
+    "runNote": "14/14 mutation RED→GREEN（builder 执行，2026-09-21）：还原确认 = 终态 git diff 无变异残留 + 恢复后重建重跑 74 Tests 0 Failures 绿；mutation 原始日志 C:/tmp/ksg_mut2/（仓外临时区，落账后可弃）。KSG_FLAG_MASK_WIPE 红齿落 A4 保真齿（flags 位由 parse→render 链路承载，bit 丢失在 parse 处打红）。HUP_MINGZAO_PASS 诚实红实现 = preview 解析失败即吞（冻结 seam p1_valid_item 是 HH:MM 第二道背书，不改 seam 无法使载荷直达 0），红位点与骨架 redTooth 对齐。"
   },
   "crossEnd": {
     "counterparts": [
@@ -111,5 +135,6 @@
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。"
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。",
+  "docsOwner": "integrator"
 }

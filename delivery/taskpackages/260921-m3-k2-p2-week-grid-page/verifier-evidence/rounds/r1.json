@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260921-m3-k2-p2-week-grid-page",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "b3f1a9c2-4d7e-4a58-9c21-6e0f8d2b41aa",
+  "startedAt": "2026-09-21T11:16:29.132Z",
+  "completedAt": "2026-09-21T11:16:29.521Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 258,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\260921-m3-k2-p2-week-grid-page\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n",
+      "stderr": "",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "729e3c4ee097",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1789989389509-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"canonical 与 current/ 指针副本不一致，请刷新 current/（planner 改 canonical 后必须重新写回 current/）\",\n  \"canonical\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\260921-m3-k2-p2-week-grid-page\\\\taskpackage.json\",\n  \"current\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\"\n}\n"
+  }
+}
