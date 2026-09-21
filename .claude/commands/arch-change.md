@@ -1,5 +1,5 @@
 ---
-description: 架构/治理变更统一入口（对偶 /build-feature）。把 plan mode 产出的想法交给对抗 review loop 自动跑：分类（spec/governance/mixed + 是否触契约）→ 派 architect 起草候选 → architect-reviewer 契约预审 → 路由进 spec profile 或 governance profile 跑完整 review → 落地低影响 spec / 出 decision packet 交 human。
+description: 架构/治理变更统一入口（Track A）（对偶 /build-feature）。把 plan mode 产出的想法交给对抗 review loop 自动跑：分类（spec/governance/mixed + 是否触契约）→ 派 architect 起草候选 → architect-reviewer 契约预审 → 路由进 spec profile 或 governance profile 跑完整 review → 落地低影响 spec / 出 decision packet 交 human。
 argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收窄 planner 的 write scope" 或 delivery/changes/arch/gov-review-<id>/PROPOSAL.md 路径>
 ---
 

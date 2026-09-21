@@ -12,7 +12,7 @@
 - **spec profile**(`/review-arch`):审 spec(`docs/systems/**`、`docs/systems/**`、L0)是否可冻结。低影响 confirmed spec 文本由 moderator 落地。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
 - **governance profile**(`/review-governance`):审 G1/G2/G3 开发治理变更是否自洽、可批准。**不落 canonical**,只产证据 + decision packet,human 批后由主线程 packet-bound landing（landing 通道见「双轨路由」节）。证据落 `delivery/changes/arch/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
 
-**统一入口 `/arch-change`**(对偶 dev-loop `/build-feature`):把一个 plan/想法丢给 moderator,先 phase-0 分类再路由进上面某个 profile;`/review-arch`、`/review-governance` 是 profile 已知时的直达入口。
+**统一入口 `/arch-change`**(对偶 dev-loop `/build-feature`):把一个 plan/想法丢给 moderator,先 phase-0 分类再路由进上面某个 profile;`/review-arch`、`/review-governance` 是 profile 已知时的直达入口。**⚠「统一」的所指（本句即「`/arch-change` = 统一入口」这一定位的定义句）**：统一的**不是** Track A 与 Track B 两条轨，而是 **Track A 内部的 spec / governance 两个 profile**——`/arch-change` **是 Track A 的入口**；**Track B 常驻轻路径没有命令入口**，其入口 = 主线程直接起草 PROPOSAL（见「双轨路由」节）。故「命中升级判据 / 声明红队 → `/arch-change`」与「默认 Track B → 主线程起草」两句各指其一、并不冲突。**（边界 · 承 R2-F9）**「统一入口」在本仓是一个**通用短语**而非本命令的专名：`docs/DEV-GOVERNANCE.md` §7 的「**统一入口**」段标题指的是**治理 / spec 变更的入口总览**（同一段同时讲两条轨），`.claude/agents/portfolio-planner.md:25` 的「repair-intent 统一入口」指的是**修复意图的收口处**——二者各由本处上下文定义，**不在本句的覆盖范围内**；本句只定义「用作 `/arch-change` 标签时」的所指。
 
 本文下面各节(intake+分类、辩论内循环、五条要点、finding 结案、渐进式严格、反空过)是**共同机制**,两 profile 通用;差异只在 charter 判据、可写落点与 pass-oracle。
 

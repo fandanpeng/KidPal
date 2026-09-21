@@ -1,6 +1,7 @@
 # track-b-verifier-brief · Track B 核验官简报模板（canonical · 260802-gov-review-track-b-hardening T3+T4 落地）
 
 > **头注（harness 降级标准声明，每环免登记）**：Kimi CLI 无 typed landing-verifier agent——核验官由**零上下文 coder 子 agent** 承担，纪律全靠本简报 + 事后 diff 核（子 agent 机械上可写全仓，约束是行为性的）。
+> **本仓实况注记（260921-gov-review-canonical-text-align T2 追加）**：本仓**有** typed `landing-verifier` agent，故上文「Kimi 无 typed agent、由零上下文 coder 子 agent 承担」的降级头注**在本仓不适用**；另，本仓**无** `.claude/scripts/cross-surface-check.mjs`（迁移悬空引用，清单第 4 项已就地钉死）。
 > 用法：主线程每环复制本简报为核验官派遣 prompt，填 `<尖括号>` 位（change-id / packet / 验证集），其余原样。
 
 ---
@@ -20,7 +21,7 @@
 1. **逐文件 diff 对照**：landing-manifest 每个文件的实际 diff 对照 FROZEN PROPOSAL §2 对应 T 的改法——语义保真（改法对不对、有无私货），超出 manifest 的 canonical 改动逐一质询。
 2. **packet-binding 一致**：summary 的 packet-id 行 ↔ FROZEN §2 改法集 + §5 验证集；manifest ↔ §2 目标文件锚清单并集（条件锚按 OQ 裁断裁剪）；T2 五件组件 / T3 条目清单若被声明为绑定面，核「落的 == FROZEN 组件清单」。
 3. **验证集复跑**：§5 每条机械命令亲跑，输出与 summary 验证证据段声称比对。
-4. **结构门复跑**：`node .claude/scripts/cross-surface-check.mjs` + `node .claude/scripts/landing-fidelity-check.mjs <change-dir>` 亲跑看退出码。
+4. **结构门复跑**：`node .claude/scripts/landing-fidelity-check.mjs <change-dir>` 亲跑看退出码。**（本仓无 `cross-surface-check.mjs`**——该件为自源仓迁移带入的悬空引用，本仓从未存在；若你到场的清单里仍见到它，即为本文修订未生效，记 ADVISORY 并按「无此门」处理。260921-canonical-text-align T2 删除。）
 5. **真空绿规约**（三乘客三次现身收口，T4）：
    - 重放类：Windows 下 git 修订符用 `~1` 不用 `^1`（cmd execSync 吃 `^`）；重放脚本**先断言输入非空**（paths>0 / content.length>0）再解释结果——空输入的「绿」是真空绿。
    - 接线类：凡 `--self-check` 接线 / 扩展，验证标准 = 输出**含新增自检名**（grep）+ 审查调用顺序（终端 exit 型自检不得挡在后续自检之前）——「自检跑了」≠「自检真跑了」。
