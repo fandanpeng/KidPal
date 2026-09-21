@@ -3,8 +3,8 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
@@ -111,5 +111,6 @@
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。"
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。",
+  "docsOwner": "integrator"
 }

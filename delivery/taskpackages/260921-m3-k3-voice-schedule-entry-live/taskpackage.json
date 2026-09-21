@@ -3,8 +3,8 @@
   "rigor": "full",
   "sourceType": "delivery-story",
   "origin": {
-    "type": "milestone",
-    "upstreamType": "milestone",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
     "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
@@ -93,5 +93,6 @@
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。prompt v6 槽位 2026-09-21 核 server/deploy/ 未占用（ARQ-260908 槽位预约规则）；本包建包时复核，若并行占用按并集规则处置。真机轮协调协议（单一长捕获/human 就绪开窗/实时口令钉动作点）走 kidpal-serial-monitor skill 既有节。"
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。prompt v6 槽位 2026-09-21 核 server/deploy/ 未占用（ARQ-260908 槽位预约规则）；本包建包时复核，若并行占用按并集规则处置。真机轮协调协议（单一长捕获/human 就绪开窗/实时口令钉动作点）走 kidpal-serial-monitor skill 既有节。",
+  "docsOwner": "integrator"
 }
