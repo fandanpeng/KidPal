@@ -110,14 +110,14 @@
     {
       "text": "commit-before-launch（F-03）：三包 taskpackage.json/plan.md + 双 input-brief（brief-inputs.mjs 同批产物）+ workstream 四件（task_plan.md/progress.md/review.md/decision-coverage.json）+ roadmap 渲染 + milestones.jsonl M3-schedule planningRefs 挂接，commit 到专用 base ref（非 main，F-05）。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 40aefa4 = base/m3-schedule（progress.md 2026-09-21「launch 面就绪」段）"
     },
     {
       "text": "门 1 GREEN + human 过目切法：architect 轻量 checklist review 五项（切片逻辑 / 依赖序与 WIP / decision-coverage 完备 / 意图陈述一致 / demo 证据形态可行）+ workType 分流，裁决耐久记录 append delivery/workstreams/m3-schedule/review.md「门 1」节；判官不绿或契约预审存疑 → 存疑向严升 Track A（/arch-change）。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "review.md 门 1 节（BLOCK(F1)→修复→GREEN 复核，2026-09-21）+ human 过目切法认可（同日，progress.md「human 两判断点落定」段）"
     },
     {
       "text": "真机硬依赖：260921-m3-k3-voice-schedule-entry-live 设备轮需 human 持板（S-F1.2 AC1–4 / S-F1.3 AC1–4 / S-F1.5 AC1 三处消费 + AC2 副通道兜底 / 决策 26 三触发 / NFR-READ-1 网格目测清单，串口+引擎日志取证走 kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）；该包 launch 前 K1/K2 的 host 半须已 merged。",
@@ -128,14 +128,14 @@
     {
       "text": "冻结面与槽位：旧 schedule_p2 验收板/云两侧均已 archive 退役（ARQ-260916 批），K1/K2 新建齿不走 supersede 通道；home_p1.acceptance.c 冻结 seam 齿零修改（K2 仅消费）；prompt v6 槽位 260921 核 server/deploy/ 未占用（ARQ-260908 槽位预约规则），K3 建包时若发现并行占用须按并集规则处置。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "archive 双侧在案（firmware/main/test/acceptance/archive/ + server/acceptance/archive/）+ v6 槽位 2026-09-21 复核空闲（progress.md 2026-09-21「launch 面就绪」段）"
     },
     {
       "text": "图索引：launch 面（kidpal-pod-launch-prep skill 步骤 5）为每 Pod worktree 建/刷专属图索引（index_repository），不得降级「无图索引、读文件」。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "复用树项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch status ready（17345 nodes / 46026 edges，随树自动增量，server/gateway 符号可达实证）"
     }
   ]
 }
