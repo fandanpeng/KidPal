@@ -192,6 +192,29 @@ void kidpal_render_node_inject_env(int env_valid, int temp_c, int humidity_pct);
 void kidpal_render_node_inject_battery(int battery_pct, int charging);
 
 /*
+ * 注入设备本地星期（M1-K1a RTC 注入家族同款第四缝, TaskPackage
+ * 260921-m3-k2-p2-week-grid-page：inject_rtc/inject_env/inject_battery 之后）。
+ * mon0_wday = 设备本地星期（周一=0..周日=6, 与 producer day 同基）; 0..6 合法
+ * 写入, 越域忽略保持原值（防御, 不崩）。板级在 inject_rtc/inject_env 同一 RTC
+ * 装配点调用（LVGL 就绪后）; 本地零点跨天后板级重读 RTC 即切换（P2 网格每次
+ * 落屏重取今天列, 今天列 = 注入星期列;「今天」按设备本地日期零点切换、不依赖
+ * 云端, NFR-OFF-1 语义一致）。
+ */
+void kidpal_render_node_inject_weekday(int mon0_wday);
+
+/*
+ * 当前注入星期列（今天列; 未注入/越域 = -1）。P2 网格渲染以此画今天列高亮,
+ * 越域不高亮（不画假「今天」）。无锁整数读, 可跨任务调用。
+ */
+int kidpal_render_node_today_col(void);
+
+/*
+ * P1 首页是否在屏（LOCAL_PAGE 前台且当前页 = HOME）。mcp home 路由「data.upcoming
+ * 注入成功且 P1 首页在屏 -> 重渲染首页日程主体」的判据单一权威（M3-K2 A5 接线）。
+ */
+int kidpal_render_node_home_on_screen(void);
+
+/*
  * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，
  * 前台 owner 由 layer 栈 top() 单一裁决。
  */
@@ -205,14 +228,15 @@ int kidpal_render_node_get_page(void);
 void kidpal_render_node_tick(void);
 
 /*
- * 缓存 P2 课表数据（供 cycle_next 翻页使用）。
- * mcp_server 在收到服务端下发课表后调用；title/items 可为 NULL（则保持上次缓存）。
+ * 缓存 P2 一周总览网格数据（供 cycle_next 翻页使用; cache_schedule 网格化——旧
+ * 16 项列表缓存作废, TaskPackage 260921-m3-k2-p2-week-grid-page, 容量
+ * KSG_COURSE_CAP=84 定容冻结值）。mcp_server schedule 路由解析成功后调用填充;
+ * n > KSG_COURSE_CAP 时只拷前 cap 条、绝不溢出; n <= 0 或 courses == NULL 时
+ * 清空缓存 = 空态（BOOT 翻页 cycle_next 读此缓存, 缓存空 -> 友好空态降级画面,
+ * R-S0.2 纪律沿用, 绝不盲渲染）。
  */
-void kidpal_render_node_cache_schedule(const char *title,
-                                       const kidpal_schedule_item_t *items,
-                                       int n,
-                                       int is_tomorrow,
-                                       const char *now_hhmm);
+void kidpal_render_node_cache_schedule_grid(const kidpal_schedule_course_t *courses,
+                                            int n);
 
 /*
  * 缓存 P3 故事页状态（供 cycle_next 翻页使用）。

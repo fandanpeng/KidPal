@@ -82,3 +82,11 @@
 **launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k2-p2-week-grid-page/launch-card.md`（五要素齐 + 交接注记：dispatch-stamp 恒传 --task-package-id、mutation-check 先读提取器、preview.time 裁决点 K2 落渲染标签口径、M3K2-A7 live 半 deferred K3）。`delivery/taskpackages/current/` 指针已刷新指向 K2（K1 retro 改进项②由 launch-prep 侧办结）。
 
 **遗留 human 项**：launch 由 human 执行（交互会话形态默认）——launch-prep 不代跑。命令行两形态见启动卡第五要素。
+
+## 2026-09-21 · K2 Pod 完成落账（acceptance→builder→verifier→integrator 全程闭环）
+
+- **acceptance 相位**：11 齿落 `firmware/main/test/schedule_grid.acceptance.c`（A1 版式区钉 / A2 今天列 / A3 标记 / A4 解析降级 / A5 注入接线 / A6 回归靶）；红基线两段落账 taskpackage.json——既有齿基线 63 Tests 0 Failures exit 0（@ 36d1519 回归靶零偏移）+ stub 红基线 7 Tests 5 Failures exit 5（红全在真实缺失行为：grid parse 缺失 ×2 / inject_weekday 缝缺失 / home_upcoming_apply 缺失 / mcp 路由未消费）。形状依赖就绪：K1 契约门 CLOSED + `24bb1b8` 已在分支基线，A4/A5 形状齿随批冻齐（launch-card 交接注记兑现）。
+- **builder 相位**：schedule_page.c 整页重写（旧列表版式退役，五函数→两 FROZEN OFFLINE CONTRACT 函数）+ cache_schedule 网格化（84 定容）+ mcp_server 新形状消费与 home 注入接线 + 板级 PCF85063 0x08 星期寄存器带出映射（周一=0 基）+ `home_upcoming.{c,h}` 接线层新文件（home_p1 冻结 seam 零修改）。mutation 14/14 RED→GREEN（counterEvidence 回填 taskpackage.json；原始日志 `C:/tmp/ksg_mut2/` 仓外临时区落账后可弃）。
+- **verifier 相位**：scoped r1 红（taskpackage-required current/ 指针未随回填刷新，治理投影时序非实现缺陷）→ 回写后 r2 七闸全绿（evidence `verifier-evidence/rounds/r2.json`）。
+- **integrator 收口**：final r3 九闸全绿（`6375d877-217c-4b40-ac52-38875ba87de5`，ok:true / observedGateExit:0）+ evidence-check exit 0；host runner 全量独立复跑 **74 Tests / 0 Failures / 0 Ignored**（wrapper 脚本文件取码 build exit 0 + run exit 0，`VERIFY_FW_BUILD_REQUIRED=1` 内联；既有 63 齿零偏移 + 新 11 齿全绿）；device build 闸 exit 0（xiaozhi.bin 0x30c2a0 bytes, 0x63d60 bytes (11%) free，Windows 原生 IDF 5.5）。closeout 制品落 `delivery/changes/dev/260921-m3-k2-p2-week-grid-page/`（docs-delta + review-packet + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT 留档；demo 对账七项全一致 + 未覆盖面 6 条挂账）。
+- **挂账**：M3K2-A7 真机半（版式 1bpp 目测/翻页手感/今天列观感）deferred 归 K3 设备轮（M3K3-A3）；板级零点跨天重读 RTC 未落本包（重启恢复正确，K3 前修注释或落重读线）；host 子集缺 ※/★ 字形走程序化兜底（设备真字形观感归 K3）。K3 dependsOn [K1, K2] 中 K2 待合并解锁。

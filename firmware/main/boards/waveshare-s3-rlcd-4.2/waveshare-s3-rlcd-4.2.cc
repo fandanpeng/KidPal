@@ -211,6 +211,9 @@ private:
     int s_rtc_m    = 0;
     int s_rtc_mday = 0; /* M1-N1b 日期 DD-Mon: PCF85063 0x07=日(BCD) 带出 */
     int s_rtc_mon  = 0; /*              PCF85063 0x09=月(BCD) 带出 */
+    /* M3-K2 今天列推导: PCF85063 0x08=Weekdays 带出, 周一=0..周日=6（与 producer
+     * day 同基）; -1 = 读失败/寄存器值非法（今天列不高亮, 不画假「今天」）。 */
+    int s_rtc_wday = -1;
     int s_env_ok   = 0;
     int s_env_temp = 0;
     int s_env_rh   = 0;
@@ -244,11 +247,12 @@ private:
         return static_cast<uint8_t>(((b >> 4) * 10) + (b & 0x0F));
     }
 
-    /* RTC(PCF85063) 走时直读: 从 Seconds 寄存器(0x04)连读秒/分/时/日/月 5 字节 (BCD)。
-     * 真实 I2C 读事务 (写寄存器指针 -> repeated-start -> 读), 非仅挂载。
-     * 0x04=Seconds, 0x05=Minutes, 0x06=Hours, 0x07=Days, 0x09=Months(跳过 0x08=Weekdays)。
-     * 日期字段为 M1-N1b 日期 DD-Mon 扩展带出 (0x07 日 / 0x09 月)。 */
-    bool ReadRtcTime(int* hour, int* min, int* sec, int* mday, int* mon) {
+    /* RTC(PCF85063) 走时直读: 从 Seconds 寄存器(0x04)连读秒/分/时/日/星期/月 6 字节
+     * (BCD/二进制)。真实 I2C 读事务 (写寄存器指针 -> repeated-start -> 读), 非仅挂载。
+     * 0x04=Seconds, 0x05=Minutes, 0x06=Hours, 0x07=Days, 0x08=Weekdays, 0x09=Months。
+     * 日期字段为 M1-N1b 日期 DD-Mon 扩展带出 (0x07 日 / 0x09 月); 星期字段为 M3-K2
+     * 今天列推导带出 (0x08, 二进制 0..6, PCF85063 口径 0=周日)。 */
+    bool ReadRtcTime(int* hour, int* min, int* sec, int* mday, int* mon, int* wday_mon0) {
         if (pcf85063_dev_ == nullptr) {
             return false;
         }
@@ -265,7 +269,12 @@ private:
         if (min)  *min  = BcdToDec(rx[1] & 0x7F); /* 分: 去 OS(bit7) 后 BCD->dec */
         if (hour) *hour = BcdToDec(rx[2] & 0x3F); /* 时: 去 AF(bit7)/保留(bit6) 后 BCD->dec */
         if (mday) *mday = BcdToDec(rx[3] & 0x3F); /* 日=0x07: 去 bit7/bit6 后 BCD->dec (1..31) */
-        /* rx[4] = 0x08 Weekdays: 本函数不消费 */
+        if (wday_mon0) {
+            /* 星期=0x08: 二进制 0..6（PCF85063 口径 0=周日）, 掩 bit7..3 保留位。
+             * 映射周一=0 基: 0(周日)->6, 1(周一)..6(周六)->raw-1; >6 非法 -> -1。 */
+            int raw = static_cast<int>(rx[4] & 0x07);
+            *wday_mon0 = (raw > 6) ? -1 : (raw == 0 ? 6 : raw - 1);
+        }
         if (mon)  *mon  = BcdToDec(rx[5] & 0x1F); /* 月=0x09: 去 bit7..5 (century/leap) 后 BCD->dec (1..12) */
         return true;
     }
@@ -325,14 +334,15 @@ private:
         char corr_id[24];
         snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                  static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-        int h = 0, m = 0, s = 0, mday = 0, mon = 0;
-        if (ReadRtcTime(&h, &m, &s, &mday, &mon)) {
-            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d",
-                     corr_id, h, m, s, mon, mday);
+        int h = 0, m = 0, s = 0, mday = 0, mon = 0, wday = -1;
+        if (ReadRtcTime(&h, &m, &s, &mday, &mon, &wday)) {
+            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d wday=%d",
+                     corr_id, h, m, s, mon, mday, wday);
             s_rtc_h = h; /* 包 9b HWV-A6: 暂存供渲染节点注入 */
             s_rtc_m = m;
             s_rtc_mday = mday; /* M1-N1b 日期 DD-Mon: 暂存月/日供注入 */
             s_rtc_mon  = mon;
+            s_rtc_wday = wday; /* M3-K2 今天列: 暂存星期供 inject_weekday */
         } else {
             ESP_LOGW(TAG, "rtc_pcf85063 corr_id=%s read_deferred", corr_id);
         }
@@ -586,6 +596,10 @@ public:
          * show_home() 渲染首页 P1 帧并加载到 RLCD。 */
         kidpal_render_node_init();
         kidpal_render_node_inject_rtc(s_rtc_h, s_rtc_m, s_rtc_mon, s_rtc_mday);
+        /* M3-K2 星期注入缝（inject_rtc/inject_env 同一 RTC 装配点, LVGL 就绪后）:
+         * 板级 PCF85063 0x08 星期寄存器 -> 渲染节点注入缝, P2 网格今天列推导数据源。
+         * 读失败/非法值保持 -1（渲染节点越域忽略, 不画假「今天」高亮）。 */
+        kidpal_render_node_inject_weekday(s_rtc_wday);
         kidpal_render_node_inject_env(s_env_ok, s_env_temp, s_env_rh);
         /* 包 260915-m1-n1b-p1-home-battery 电量装配点（seam [2]）：板级 ADC 读数 ->
          * 渲染节点电池注入缝，inject_rtc/inject_env 同一装配点（LVGL 就绪后）。

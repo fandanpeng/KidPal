@@ -1,0 +1,61 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "260921-m3-k2-p2-week-grid-page",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "6375d877-217c-4b40-ac52-38875ba87de5",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/verifier-evidence/rounds/r3.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260921-m3-k2-p2-week-grid-page --phase final --round 3 --invocation-id 6375d877-217c-4b40-ac52-38875ba87de5",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-21"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 1,
+        "invocationId": "(r1.json 直读)",
+        "producedBy": "verify.mjs（scoped，红：taskpackage-required current/ 指针未刷新——治理投影时序，非实现缺陷）"
+      },
+      {
+        "round": 2,
+        "invocationId": "c7a2e8d1-9b34-4f6c-a5d0-1e8f7c3b92d6",
+        "producedBy": "verifier（scoped，7 闸全绿）",
+        "mechanicalCheck": "fact ok:true / observedGateExit:0（r2.json 直读；r3 final 复验 PASS 时级联覆盖同源 fact 流）"
+      }
+    ]
+  },
+  "lifecycle": {
+    "rounds": [
+      {
+        "round": 1,
+        "timing": "scoped",
+        "outcome": "红（taskpackage-required：current/ 投影未随回填刷新——治理投影时序，非实现缺陷红）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/verifier-evidence/rounds/r1.json"
+      },
+      {
+        "round": 2,
+        "timing": "scoped",
+        "outcome": "绿（7 闸全绿，verifier）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/verifier-evidence/rounds/r2.json"
+      },
+      {
+        "round": 3,
+        "timing": "scoped+full",
+        "outcome": "绿（9 闸全绿 final，unit/acceptance 两 full 闸入场，integrator）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/verifier-evidence/rounds/r3.json"
+      }
+    ],
+    "reworkRounds": 1,
+    "reworkNote": "r1 红因 = current/taskpackage.json 指针未随 counterEvidence 回填刷新（planner 回写后 r2 起连续两轮全绿）；非实现缺陷红",
+    "redBaseline": "既有齿基线 63 Tests 0 Failures 0 Ignored exit 0（VERIFY_FW_BUILD_REQUIRED=1 实跑，2026-09-21 acceptance-author @ 36d1519）+ stub 红基线 7 Tests 5 Failures exit 5（BUILD_CLEAN 零告警，红全在真实缺失行为）——红名 verbatim 落账 taskpackage.json mutationEvidence",
+    "greenState": "host runner 全量 74 Tests / 0 Failures / 0 Ignored（既有 63 齿零偏移 + 新 11 齿全绿；integrator 独立复跑 2026-09-21 一致，wrapper 脚本文件取码 build exit 0 + run exit 0）+ device build 闸 exit 0（xiaozhi.bin 0x30c2a0 bytes, 0x63d60 bytes (11%) free，Windows 原生 IDF 5.5）+ mutation 14/14 RED→GREEN"
+  }
+}

@@ -1,22 +1,24 @@
 /*
- * schedule_page.c — KidPal P2 课表页消费面：五个 FROZEN OFFLINE CONTRACT 的
- * 实现 (TaskPackage 260829-schedule-p2, 契约 §1.3 ② / S-F1.2 / S-F1.3)。
+ * schedule_page.c — KidPal P2 一周总览网格页消费面：两个 FROZEN OFFLINE CONTRACT
+ * 的实现 (TaskPackage 260921-m3-k2-p2-week-grid-page, 契约 §1.3② 周网格 data /
+ * S-F1.2 / NFR-READ-1; 2026-09-21 契约门定稿)。
  *
- * 语义与形状以冻结验收 firmware/main/test/schedule_p2.acceptance.c 文件头为准，
+ * 语义与形状以冻结验收 firmware/main/test/schedule_grid.acceptance.c 文件头为准，
  * 不得偏移；强定义在 host runner 里覆盖验收文件内的 weak 哨兵 (-2) 后被真测
  * （同 view_router.c 先例）。
  *
- * 纯逻辑 + 纯 LVGL（lv_obj_/lv_label/lv_anim only，无 Board/Display class 依赖）
+ * 纯逻辑 + 纯 LVGL（lv_obj_/lv_label only，无 Board/Display class 依赖）
  * -> host_app linux target 与设备树两侧同源可编。解析器为自足式最小 JSON 扫描
- * （无外部 JSON 库依赖，frozen contract 要求）。
+ * （无外部 JSON 库依赖，frozen contract 要求）；safe-truncate / JSON 扫描小工具
+ * 自 260829-schedule-p2 旧列表页整页重写中沿用（版式主体作废重写，plan.md 取舍）。
  *
  * 降级语义：解析畸形/缺字段/越界 cap 一律 -1 —— 调用方必须友好降级、绝不盲渲染
- * (V27 / spec §4.0)。
+ * (V27 / spec §4.0)。旧列表形状 {title,items} 无 "week" 键 -> -1（旧形状已随
+ * 契约门 2026-09-21 废止，设备侧不得盲渲染旧列表）。
  */
 
 #include "schedule_page.h"
 
-#include "art_assets.h"
 #include <string.h>
 
 #include "lvgl.h"
@@ -37,29 +39,6 @@ static void ksp_copy_str(char *dst, size_t cap, const char *src)
         dst[i] = src[i];
     }
     dst[i] = '\0';
-}
-
-/* "HH:MM" 前缀解析（前导 HH:MM 决定，区间形式 "HH:MM-HH:MM" 天然兼容）。
- * 非法（位数/分隔/越界 23:59）-> -1。 */
-static int ksp_parse_hhmm(const char *s, int *hh, int *mm)
-{
-    int h, m;
-
-    if (s == NULL) {
-        return -1;
-    }
-    if (s[0] < '0' || s[0] > '9' || s[1] < '0' || s[1] > '9' || s[2] != ':' ||
-        s[3] < '0' || s[3] > '9' || s[4] < '0' || s[4] > '9') {
-        return -1;
-    }
-    h = (s[0] - '0') * 10 + (s[1] - '0');
-    m = (s[3] - '0') * 10 + (s[4] - '0');
-    if (h > 23 || m > 59) {
-        return -1;
-    }
-    *hh = h;
-    *mm = m;
-    return 0;
 }
 
 /* -------------------------------------------------------------------------- *
@@ -320,20 +299,276 @@ static int kspj_skip_value(ksp_json_cursor *c)
     return 0;
 }
 
+/* 解析整数 JSON number（可选 '-' + 数字 >=1）。小数/指数 = 非整数数字 -> 0（畸形，
+ * 契约要求 day/slot/flags 是 JSON 数字且逐字段整数保真）。成功 1 / 畸形 0。 */
+static int kspj_int(ksp_json_cursor *c, int *out)
+{
+    int neg = 0;
+    long v = 0;
+
+    kspj_ws(c);
+    if (kspj_peek(c) == '-') {
+        neg = 1;
+        c->pos++;
+    }
+    if (!(kspj_peek(c) >= '0' && kspj_peek(c) <= '9')) {
+        return 0; /* 非数字（含字符串/true/null）-> 畸形 */
+    }
+    while (c->s[c->pos] >= '0' && c->s[c->pos] <= '9') {
+        v = v * 10 + (c->s[c->pos] - '0');
+        if (v > 1000000L) {
+            return 0; /* 值域上游必拒, 防溢出 */
+        }
+        c->pos++;
+    }
+    {
+        char ch = kspj_peek(c);
+
+        if (ch == '.' || ch == 'e' || ch == 'E') {
+            return 0; /* 小数/指数 = 非整数 -> 畸形 */
+        }
+    }
+    *out = (int)(neg ? -v : v);
+    return 1;
+}
+
 /* -------------------------------------------------------------------------- *
- * kidpal_schedule_parse — P2-A2 device face
+ * kidpal_schedule_grid_parse — 契约 §1.3② 周网格 data 解析（A4 device face）
+ *
+ * 形状 = {"week":{"courses":[{day,slot,name,flags},…]}};
+ * day/slot/flags 必须是 JSON 数字且在 0..6 / 0..2 / 0..3 值域（越界一律 -1，
+ * 绝不盲渲染, V27）; name 非缺失非空、按 KSG_NAME_CAP safe-truncate;
+ * flags 缺省 0、未知扩展字段忽略（additive tolerance）; 尾部垃圾 = 畸形 -> -1。
  * ------------------------------------------------------------------------ */
 
-#define KSP_TITLE_BUF 128
-#define KSP_KEY_BUF   32
+#define KSG_KEY_BUF 16
 
-int kidpal_schedule_parse(const char *data_json, char *title, size_t title_cap,
-                          kidpal_schedule_item_t *items, int cap)
+/* 解析单条 course 条目（cursor 在 '{' 前）。成功 0 / 畸形 -1。 */
+static int ksg_parse_course(ksp_json_cursor *arr, kidpal_schedule_course_t *out)
+{
+    int has_day = 0;
+    int has_slot = 0;
+    int has_name = 0;
+    int day = 0;
+    int slot = 0;
+    int flags = 0;
+    char nbuf[KSG_NAME_CAP];
+
+    kspj_ws(arr);
+    if (kspj_peek(arr) != '{') {
+        return -1; /* 条目非对象 -> -1 */
+    }
+    arr->pos++;
+    kspj_ws(arr);
+    if (kspj_peek(arr) == '}') {
+        return -1; /* 空 entry：缺 day/slot/name -> -1 */
+    }
+    for (;;) {
+        char key[KSG_KEY_BUF];
+
+        kspj_ws(arr);
+        if (!kspj_string(arr, key, sizeof(key))) {
+            return -1;
+        }
+        kspj_ws(arr);
+        if (kspj_peek(arr) != ':') {
+            return -1;
+        }
+        arr->pos++;
+        kspj_ws(arr);
+
+        if (strcmp(key, "day") == 0) {
+            if (!kspj_int(arr, &day)) {
+                return -1; /* 非数字 day -> -1 */
+            }
+            if (day < 0 || day > 6) {
+                return -1; /* day 值域 0..6（day 0 基 周一=0） */
+            }
+            has_day = 1;
+        } else if (strcmp(key, "slot") == 0) {
+            if (!kspj_int(arr, &slot)) {
+                return -1;
+            }
+            if (slot < 0 || slot > 2) {
+                return -1; /* slot 值域 0..2 */
+            }
+            has_slot = 1;
+        } else if (strcmp(key, "flags") == 0) {
+            if (!kspj_int(arr, &flags)) {
+                return -1; /* 非整数 flags（含字符串 "1"）-> -1（跨端 wire 是数字） */
+            }
+            if (flags < 0 || flags > (KSG_FLAG_TEMP | KSG_FLAG_STAR)) {
+                return -1; /* flags 值域 0..3 */
+            }
+        } else if (strcmp(key, "name") == 0) {
+            if (kspj_peek(arr) != '"') {
+                return -1; /* 缺/非 string name -> -1 */
+            }
+            if (!kspj_string(arr, nbuf, sizeof(nbuf))) {
+                return -1;
+            }
+            if (nbuf[0] == '\0') {
+                return -1; /* name 非空字符串（空串 -> -1） */
+            }
+            has_name = 1;
+        } else {
+            if (!kspj_skip_value(arr)) {
+                return -1; /* 未知字段值畸形 -> -1（否则忽略扩展位, additive） */
+            }
+        }
+
+        kspj_ws(arr);
+        char d = kspj_peek(arr);
+        if (d == ',') {
+            arr->pos++;
+            continue;
+        }
+        if (d == '}') {
+            arr->pos++;
+            break;
+        }
+        return -1;
+    }
+    if (!has_day || !has_slot || !has_name) {
+        return -1; /* 缺 day/slot/name —— 契约条目必带键 */
+    }
+    out->day = day;
+    out->slot = slot;
+    out->flags = flags;
+    ksp_copy_str(out->name, sizeof(out->name), nbuf);
+    return 0;
+}
+
+/* 解析 courses 数组（cursor 在 '['）。两遍式：先计数校验结构（cap 不足 -> -1,
+ * 绝不溢出/静默截断），再逐条填充。返回条数 / 畸形 -1。 */
+static int ksg_parse_courses_array(ksp_json_cursor *c,
+                                   kidpal_schedule_course_t *courses, int cap)
+{
+    int count;
+
+    if (kspj_peek(c) != '[') {
+        return -1; /* courses 非数组 -> -1 */
+    }
+    /* pass 1: 计数（skip 校验每个元素结构） */
+    {
+        ksp_json_cursor scan = *c;
+
+        scan.pos++;
+        kspj_ws(&scan);
+        if (kspj_peek(&scan) == ']') {
+            scan.pos++;
+            count = 0;
+        } else {
+            count = 0;
+            for (;;) {
+                if (!kspj_skip_value(&scan)) {
+                    return -1;
+                }
+                count++;
+                kspj_ws(&scan);
+                char d = kspj_peek(&scan);
+                if (d == ',') {
+                    scan.pos++;
+                    continue;
+                }
+                if (d == ']') {
+                    scan.pos++;
+                    break;
+                }
+                return -1;
+            }
+        }
+        if (count > cap) {
+            return -1; /* cap < 条数 -> -1（绝不溢出/静默截断） */
+        }
+    }
+    /* pass 2: 逐条解析字段（条目分隔 ',' 与闭合 ']' 由本层统一消费） */
+    {
+        ksp_json_cursor arr = *c;
+
+        arr.pos++;
+        for (int i = 0; i < count; i++) {
+            if (ksg_parse_course(&arr, &courses[i]) != 0) {
+                return -1;
+            }
+            if (i + 1 < count) {
+                kspj_ws(&arr);
+                if (kspj_peek(&arr) != ',') {
+                    return -1;
+                }
+                arr.pos++;
+            }
+        }
+        kspj_ws(&arr);
+        if (kspj_peek(&arr) != ']') {
+            return -1;
+        }
+        arr.pos++;
+        *c = arr; /* 主游标推进过数组 */
+    }
+    return count;
+}
+
+/* 解析 week 对象（cursor 在 '{' 前），返回 courses 条数 / 畸形 -1。
+ * 未知扩展键（如 "tz"）忽略（additive tolerance）；缺 courses -> -1。 */
+static int ksg_parse_week(ksp_json_cursor *c,
+                          kidpal_schedule_course_t *courses, int cap)
+{
+    int count = -1;
+
+    if (kspj_peek(c) != '{') {
+        return -1;
+    }
+    c->pos++;
+    kspj_ws(c);
+    if (kspj_peek(c) == '}') {
+        return -1; /* week 空对象 = 缺 courses -> -1 */
+    }
+    for (;;) {
+        char key[KSG_KEY_BUF];
+
+        kspj_ws(c);
+        if (!kspj_string(c, key, sizeof(key))) {
+            return -1;
+        }
+        kspj_ws(c);
+        if (kspj_peek(c) != ':') {
+            return -1;
+        }
+        c->pos++;
+        kspj_ws(c);
+
+        if (strcmp(key, "courses") == 0) {
+            count = ksg_parse_courses_array(c, courses, cap);
+            if (count < 0) {
+                return -1;
+            }
+        } else {
+            if (!kspj_skip_value(c)) {
+                return -1;
+            }
+        }
+
+        kspj_ws(c);
+        char d = kspj_peek(c);
+        if (d == ',') {
+            c->pos++;
+            continue;
+        }
+        if (d == '}') {
+            c->pos++;
+            return count;
+        }
+        return -1;
+    }
+}
+
+int kidpal_schedule_grid_parse(const char *data_json,
+                               kidpal_schedule_course_t *courses, int cap)
 {
     ksp_json_cursor c = { data_json, 0 };
-    char title_buf[KSP_TITLE_BUF];
-    int has_title = 0;
-    int item_count = -1;
+    int count = -1;
+    int has_week = 0;
 
     if (data_json == NULL) {
         return -1; /* NULL 载荷 -> 显式降级（friendly degrade，绝不盲渲染, V27） */
@@ -346,11 +581,11 @@ int kidpal_schedule_parse(const char *data_json, char *title, size_t title_cap,
     c.pos++;
     kspj_ws(&c);
     if (kspj_peek(&c) == '}') {
-        return -1; /* {} 缺 title 与 items */
+        return -1; /* 薄载荷 data="{}"：缺 week -> -1（绝不盲渲染, V27） */
     }
 
     for (;;) {
-        char key[KSP_KEY_BUF];
+        char key[KSG_KEY_BUF];
 
         kspj_ws(&c);
         if (!kspj_string(&c, key, sizeof(key))) {
@@ -363,165 +598,17 @@ int kidpal_schedule_parse(const char *data_json, char *title, size_t title_cap,
         c.pos++;
         kspj_ws(&c);
 
-        if (strcmp(key, "title") == 0) {
-            if (kspj_peek(&c) != '"') {
-                return -1; /* 非 string title -> -1（title 是契约必带字段） */
-            }
-            if (!kspj_string(&c, title_buf, sizeof(title_buf))) {
+        if (strcmp(key, "week") == 0) {
+            count = ksg_parse_week(&c, courses, cap);
+            if (count < 0) {
                 return -1;
             }
-            has_title = 1;
-        } else if (strcmp(key, "items") == 0) {
-            if (kspj_peek(&c) != '[') {
-                return -1; /* 非 array items -> -1 */
-            }
-
-            /* pass 1: 计数（skip 校验每个元素结构），cap 不足 -> -1（绝不溢出/
-             * 静默截断，调用方必须按数扩容）。 */
-            {
-                ksp_json_cursor scan = c;
-                int count = 0;
-
-                scan.pos++;
-                kspj_ws(&scan);
-                if (kspj_peek(&scan) == ']') {
-                    scan.pos++;
-                } else {
-                    for (;;) {
-                        if (!kspj_skip_value(&scan)) {
-                            return -1;
-                        }
-                        count++;
-                        kspj_ws(&scan);
-                        char d = kspj_peek(&scan);
-                        if (d == ',') {
-                            scan.pos++;
-                            continue;
-                        }
-                        if (d == ']') {
-                            scan.pos++;
-                            break;
-                        }
-                        return -1;
-                    }
-                }
-                if (cap < count) {
-                    return -1;
-                }
-                item_count = count;
-            }
-
-            /* pass 2: 逐元素解析字段（time/name 必带 string、location 缺省 ""、
-             * 未知扩展字段忽略）。 */
-            {
-                ksp_json_cursor arr = c;
-
-                arr.pos++;
-                for (int i = 0; i < item_count; i++) {
-                    int has_time = 0;
-                    int has_name = 0;
-                    char tbuf[16];
-                    char nbuf[48];
-                    char lbuf[48];
-
-                    lbuf[0] = '\0'; /* 缺 location 解析为 ""（additive tolerance） */
-                    kspj_ws(&arr);
-                    if (kspj_peek(&arr) != '{') {
-                        return -1; /* item 非对象 -> -1 */
-                    }
-                    arr.pos++;
-                    kspj_ws(&arr);
-                    if (kspj_peek(&arr) == '}') {
-                        return -1; /* 空 item：缺 time/name -> -1 */
-                    }
-                    for (;;) {
-                        char ikey[KSP_KEY_BUF];
-
-                        kspj_ws(&arr);
-                        if (!kspj_string(&arr, ikey, sizeof(ikey))) {
-                            return -1;
-                        }
-                        kspj_ws(&arr);
-                        if (kspj_peek(&arr) != ':') {
-                            return -1;
-                        }
-                        arr.pos++;
-                        kspj_ws(&arr);
-                        if (strcmp(ikey, "time") == 0) {
-                            if (kspj_peek(&arr) != '"') {
-                                return -1; /* 缺/非 string time -> -1 */
-                            }
-                            if (!kspj_string(&arr, tbuf, sizeof(tbuf))) {
-                                return -1;
-                            }
-                            has_time = 1;
-                        } else if (strcmp(ikey, "name") == 0) {
-                            if (kspj_peek(&arr) != '"') {
-                                return -1; /* 缺/非 string name -> -1 */
-                            }
-                            if (!kspj_string(&arr, nbuf, sizeof(nbuf))) {
-                                return -1;
-                            }
-                            has_name = 1;
-                        } else if (strcmp(ikey, "location") == 0) {
-                            if (kspj_peek(&arr) != '"') {
-                                return -1;
-                            }
-                            if (!kspj_string(&arr, lbuf, sizeof(lbuf))) {
-                                return -1;
-                            }
-                        } else {
-                            if (!kspj_skip_value(&arr)) {
-                                return -1;
-                            }
-                        }
-                        kspj_ws(&arr);
-                        char d = kspj_peek(&arr);
-                        if (d == ',') {
-                            arr.pos++;
-                            continue;
-                        }
-                        if (d == '}') {
-                            arr.pos++;
-                            break;
-                        }
-                        return -1;
-                    }
-                    if (!has_time || !has_name) {
-                        return -1;
-                    }
-                    /* tbuf/nbuf/lbuf 容量与目标字段逐一相等，safe 拷贝 */
-                    ksp_copy_str(items[i].time, sizeof(items[i].time), tbuf);
-                    ksp_copy_str(items[i].name, sizeof(items[i].name), nbuf);
-                    ksp_copy_str(items[i].location, sizeof(items[i].location), lbuf);
-
-                    kspj_ws(&arr);
-                    char d = kspj_peek(&arr);
-                    if (i + 1 < item_count) {
-                        if (d != ',') {
-                            return -1;
-                        }
-                        arr.pos++;
-                    } else {
-                        if (d != ']') {
-                            return -1;
-                        }
-                        arr.pos++;
-                    }
-                }
-                if (item_count == 0) {
-                    /* 空数组（空课表合法页）：pass 2 循环未跑，须补消费 ']' */
-                    kspj_ws(&arr);
-                    if (kspj_peek(&arr) != ']') {
-                        return -1;
-                    }
-                    arr.pos++;
-                }
-                c = arr; /* 主游标推进过数组 */
-            }
+            has_week = 1;
         } else {
+            /* 旧列表形状 {title,items} 无 week 键 -> has_week 保持 0 -> -1；
+             * 未知顶层字段值畸形 -> -1（否则忽略扩展位） */
             if (!kspj_skip_value(&c)) {
-                return -1; /* 未知顶层字段值畸形 -> -1（否则忽略扩展位） */
+                return -1;
             }
         }
 
@@ -542,330 +629,229 @@ int kidpal_schedule_parse(const char *data_json, char *title, size_t title_cap,
     if (c.s[c.pos] != '\0') {
         return -1; /* 尾部垃圾 = 畸形 JSON */
     }
-    if (!has_title || item_count < 0) {
-        return -1; /* 缺 title / 缺 items —— data 形状必带字段 */
+    if (!has_week || count < 0) {
+        return -1; /* 缺 week —— data 形状必带键 */
     }
-    if (title != NULL) {
-        ksp_copy_str(title, title_cap, title_buf);
-    }
-    return item_count;
+    return count;
 }
 
 /* -------------------------------------------------------------------------- *
- * kidpal_schedule_dot_state — P2-A3 圆点两态 (S-F1.2)
- * ------------------------------------------------------------------------ */
-
-int kidpal_schedule_dot_state(const char *start_hhmm, const char *now_hhmm,
-                              int is_tomorrow)
-{
-    int sh, sm, nh, nm;
-
-    if (start_hhmm == NULL) {
-        return -1; /* 防御：无法判定 */
-    }
-    if (is_tomorrow != 0) {
-        return 0; /* 明天全空心：now 无关，NULL 亦 0 (S-F1.2 切明天全空心) */
-    }
-    if (now_hhmm == NULL) {
-        return -1; /* 今天视图无 now 无法判定 */
-    }
-    if (ksp_parse_hhmm(start_hhmm, &sh, &sm) != 0 ||
-        ksp_parse_hhmm(now_hhmm, &nh, &nm) != 0) {
-        return -1; /* 时刻不可解析 -> 防御降级 */
-    }
-    /* start <= now -> 已开始/已上完（空心）；start > now -> 待上（实心） */
-    return (sh * 60 + sm) <= (nh * 60 + nm) ? 0 : 1;
-}
-
-/* -------------------------------------------------------------------------- *
- * kidpal_schedule_page_input — P2-A4 页内输入特例 (spec §4.0)
- * ------------------------------------------------------------------------ */
-
-ksp_day_t kidpal_schedule_page_input(key_id_t key, key_gesture_t g,
-                                     ksp_day_t current)
-{
-    /* 只消费全局层留下的 BOOT LONG_PRESS (GLOBAL_ACT_NONE, 包 3 冻结路由)；
-     * 其余 key/gesture 组合一律不吞（KEY 长按回首页 / BOOT 单击翻页 /
-     * KEY 单击双击 / 越界键位 —— 全局手势「所有页面一致」不被页内破坏）。 */
-    if (key == KEY_ID_BOOT && g == KEY_GESTURE_LONG_PRESS) {
-        return (current == KSP_DAY_TODAY) ? KSP_DAY_TOMORROW : KSP_DAY_TODAY;
-    }
-    return current;
-}
-
-/* -------------------------------------------------------------------------- *
- * kidpal_schedule_locate — P2-A5 滚动定位 (S-F1.3)
- * ------------------------------------------------------------------------ */
-
-int kidpal_schedule_locate(const kidpal_schedule_item_t *items, int n,
-                           const char *time, const char *name)
-{
-    const char *t;
-
-    if (items == NULL || n <= 0 || name == NULL) {
-        return -1;
-    }
-    t = (time == NULL) ? "" : time; /* NULL time 按仅 name 通配宽容处理 */
-    for (int i = 0; i < n; i++) {
-        int time_ok = (t[0] == '\0') || (strcmp(items[i].time, t) == 0);
-        int name_ok = (strcmp(items[i].name, name) == 0);
-
-        if (time_ok && name_ok) {
-            return i;
-        }
-    }
-    return -1; /* 未命中（精确匹配，无子串模糊） */
-}
-
-/* -------------------------------------------------------------------------- *
- * kidpal_schedule_page_render — P2-A3/A4/A5 渲染面 (纯 LVGL)
+ * kidpal_schedule_grid_render — P2 一周总览网格渲染面 (纯 LVGL, WF-F1-02 版式区钉)
  *
- * minimal: 布局常量按 host seam 400x300 定坐标（列表纵向排布），真实屏幕观感
- * 殿后 9b（P2-E2 口径）；行数超屏不滚动（P2 只承担「看安排」）。
+ * minimal: 版式常量按冻结验收文件头区钉定坐标（400x300 减键帽条 chrome）;
+ * 真机 1bpp 目测/翻页手感 deferred 归 M3-K3 设备轮（M3K2-A7 挂账）。
  * ------------------------------------------------------------------------ */
 
-#define KSP_ROW_Y0       40
-#define KSP_ROW_H        40
-#define KSP_DOT_SIZE     38
-#define KSP_DOT_BORDER   8
-#define KSP_DOT_X        6
-#define KSP_COL_TIME_X   52
-#define KSP_COL_NAME_X   150
-#define KSP_COL_LOC_X    262
-#define KSP_STAR_X       356
-#define KSP_COLOR_TEXT   0x222222u
-#define KSP_COLOR_DOT    0x333333u
-#define KSP_COLOR_BG     0xFFFFFFu
-#define KSP_COLOR_SEP    0x888888u
+#define KSG_COLOR_TEXT 0x222222u
+#define KSG_COLOR_BG   0xFFFFFFu
+#define KSG_COLOR_SEP  0x999999u
+#define KSG_FB_W       400
+#define KSG_FB_H       300
+#define KSG_ROW_PITCH  16 /* 格内课程名行 pitch >= KSG_FONT_MIN_PX(14) + 2px 余量 */
 
-static void ksp_title_bounce_anim_cb(void *var, int32_t v)
+/* 表头带 y[0..29]; 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..251]
+ * （冻结验收文件头版式区钉, 勿偏移）; y>=252 键帽条带零墨。 */
+static const int ksg_slot_ys[3][2] = { { 30, 103 }, { 104, 177 }, { 178, 251 } };
+
+/* CJK 文本字体：host = LVGL 内置 Source Han Sans SC 14 子集（CONFIG_LV_FONT_
+ * SOURCE_HAN_SANS_SC_14_CJK, host_app/sdkconfig.defaults）; 设备 = 全量 14px 普惠体
+ * （keybar/char_page 同源 BUILTIN_TEXT_FONT, NFR-READ-1 14px 同档）。缺省平台返回
+ * NULL（继承 LVGL 默认字体, 渲染面不崩）。 */
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
+#elif defined(ESP_PLATFORM)
+LV_FONT_DECLARE(font_puhui_14_1);
+#endif
+
+static const lv_font_t *ksg_text_font(void)
 {
-    lv_obj_set_y((lv_obj_t *)var, v);
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    return &lv_font_source_han_sans_sc_14_cjk;
+#elif defined(ESP_PLATFORM)
+    return &font_puhui_14_1;
+#else
+    return NULL;
+#endif
 }
 
-/*
- * 换皮消费接线 (包 9b HWV-A6)：把 U 单一资产层的吉祥物姿态经 loader 原语
- * (kidpal_art_load + kidpal_art_pixel) 合成为一枚 LVGL lv_image (ARGB8888：
- * 墨=不透明黑 0xFF000000 / 纸及非阈值化=透明 0x00000000)，叠加在课表右下空白区
- * (spec §5.5「每页至少露一面」)。选 load+pixel→lv_image 而非整帧 render/draw 缝：
- * 本页正文是活 LVGL 控件，整帧替换会与文字互相覆盖；lv_image 经既有 LVGL->面板
- * flush 即刻真机可见。落点避开圆点两态 (KSP_DOT_X=6)、分隔线 (y<=118) 与列文本
- * (y<=90) —— 对 P2-A3 的 diff/暗色/非均匀采样断言零干扰（姿态只增暗色、且今/明
- * 两帧恒同不改变圆点差异）。未 mount / 加载失败 / malloc 失败 -> 静默跳过，页面
- * 回既有版面 (best-effort，绝不 panic)。姿态常量，故 lv_malloc 一次并缓存复用。
- */
-#define KSP_POSE_MAX 96
-static lv_image_dsc_t s_ksp_pose_dsc;
-static uint32_t      *s_ksp_pose_px  = NULL;
-static int            s_ksp_pose_st  = 0; /* 0=未试 1=可用 2=不可用 */
-
-static int ksp_pose_image_ready(void)
+/* host 子集字体可能缺 ※(U+203B)/★(U+2605) 字形——先查字形表，缺则走程序化兜底
+ * 画法（纪律同 home_p1 描边兜底）。「标记可见」本身即验收面（M3K2-A3），兜底画法
+ * 与真字形在真帧上都落在课程名所在格带内。 */
+static int ksg_glyph_available(uint32_t cp)
 {
-    kidpal_art_img_t img;
+    const lv_font_t *f = ksg_text_font();
+    lv_font_glyph_dsc_t dsc;
 
-    if (s_ksp_pose_st == 2) {
+    if (f == NULL) {
         return 0;
     }
-    if (s_ksp_pose_st == 1) {
-        return 1;
-    }
-    if (kidpal_art_load("pose_daily_96.bin", &img) != 0 ||
-        img.w <= 0 || img.h <= 0 || img.w > KSP_POSE_MAX || img.h > KSP_POSE_MAX) {
-        s_ksp_pose_st = 2;
-        return 0;
-    }
-    s_ksp_pose_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
-    if (s_ksp_pose_px == NULL) {
-        s_ksp_pose_st = 2;
-        return 0;
-    }
-    for (int y = 0; y < img.h; y++) {
-        for (int x = 0; x < img.w; x++) {
-            int p = kidpal_art_pixel(&img, x, y);
-            s_ksp_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
-        }
-    }
-    memset(&s_ksp_pose_dsc, 0, sizeof(s_ksp_pose_dsc));
-    s_ksp_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
-    s_ksp_pose_dsc.header.w      = img.w;
-    s_ksp_pose_dsc.header.h      = img.h;
-    s_ksp_pose_dsc.header.stride = (uint32_t)img.w * 4u;
-    s_ksp_pose_dsc.data          = (const uint8_t *)s_ksp_pose_px;
-    s_ksp_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
-    s_ksp_pose_st = 1;
-    return 1;
+    return lv_font_get_glyph_dsc(f, &dsc, cp, 0) ? 1 : 0;
 }
 
-/* -------------------------------------------------------------------------- *
- * 换皮网点弱底纹 (包 260911-render-pages RP-A8)：把三档网点之一 d12 (4x4, 单元 4px,
- * 三档中最稀疏档) 合成为 ARGB8888 tile, 经 bg_image_tiled 在 `bg` 上平铺成课表页
- * 弱底纹 (V3 :451 vs-card / :512 姿态舞台同档)。d50 为设计唯一半调压暗档 (弹窗
- * 背后整屏压暗, 仅 reminder_page.c 消费), 不作页面底纹 (RP-A5 r3 真机轮: d50 整页
- * 平铺呈「很多黑点」)。未 mount/失败 -> NULL (best-effort)。
- * ------------------------------------------------------------------------ */
-#define KSP_DOTS_MAX 16
-static lv_image_dsc_t s_ksp_dots_dsc;
-static uint32_t      *s_ksp_dots_px  = NULL;
-static int            s_ksp_dots_st  = 0; /* 0=未试 1=可用 2=不可用 */
-
-static const lv_image_dsc_t *ksp_dots_dsc(void)
+static lv_obj_t *ksg_rect_obj(lv_obj_t *parent, int x, int y, int w, int h,
+                              uint32_t color)
 {
-    kidpal_art_img_t img;
+    lv_obj_t *r = lv_obj_create(parent);
 
-    if (s_ksp_dots_st == 2) {
-        return NULL;
-    }
-    if (s_ksp_dots_st == 1) {
-        return &s_ksp_dots_dsc;
-    }
-    if (kidpal_art_load("d12.bin", &img) != 0 ||
-        img.w <= 0 || img.h <= 0 || img.w > KSP_DOTS_MAX || img.h > KSP_DOTS_MAX) {
-        s_ksp_dots_st = 2;
-        return NULL;
-    }
-    s_ksp_dots_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
-    if (s_ksp_dots_px == NULL) {
-        s_ksp_dots_st = 2;
-        return NULL;
-    }
-    for (int y = 0; y < img.h; y++) {
-        for (int x = 0; x < img.w; x++) {
-            int p = kidpal_art_pixel(&img, x, y);
-            s_ksp_dots_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
-        }
-    }
-    memset(&s_ksp_dots_dsc, 0, sizeof(s_ksp_dots_dsc));
-    s_ksp_dots_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
-    s_ksp_dots_dsc.header.w      = img.w;
-    s_ksp_dots_dsc.header.h      = img.h;
-    s_ksp_dots_dsc.header.stride = (uint32_t)img.w * 4u;
-    s_ksp_dots_dsc.data          = (const uint8_t *)s_ksp_dots_px;
-    s_ksp_dots_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
-    s_ksp_dots_st = 1;
-    return &s_ksp_dots_dsc;
+    lv_obj_remove_style_all(r);
+    lv_obj_set_pos(r, (lv_coord_t)x, (lv_coord_t)y);
+    lv_obj_set_size(r, (lv_coord_t)w, (lv_coord_t)h);
+    lv_obj_set_style_bg_color(r, lv_color_hex(color), 0);
+    lv_obj_set_style_bg_opa(r, LV_OPA_COVER, 0);
+    return r;
 }
 
-
-int kidpal_schedule_page_render(const char *title,
-                                const kidpal_schedule_item_t *items, int n,
-                                int is_tomorrow, const char *now_hhmm,
-                                int locate_row)
+static lv_obj_t *ksg_label(lv_obj_t *parent, const char *txt, int x, int y)
 {
+    lv_obj_t *l = lv_label_create(parent);
+
+    lv_label_set_text(l, txt);
+    lv_obj_set_pos(l, (lv_coord_t)x, (lv_coord_t)y);
+    lv_obj_set_style_text_color(l, lv_color_hex(KSG_COLOR_TEXT), 0);
+    return l;
+}
+
+/* 程序化 ※ 兜底（十字 + 四角点, 10x10）——与 ★ 兜底（实心菱形）真帧可区分。 */
+static void ksg_marker_temp_proc(lv_obj_t *scr, int x, int y)
+{
+    ksg_rect_obj(scr, x + 4, y, 2, 10, KSG_COLOR_TEXT);      /* 竖笔 */
+    ksg_rect_obj(scr, x, y + 4, 10, 2, KSG_COLOR_TEXT);      /* 横笔 */
+    ksg_rect_obj(scr, x + 1, y + 1, 2, 2, KSG_COLOR_TEXT);   /* 四角点 */
+    ksg_rect_obj(scr, x + 7, y + 1, 2, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x + 1, y + 7, 2, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x + 7, y + 7, 2, 2, KSG_COLOR_TEXT);
+}
+
+/* 程序化 ★ 兜底（实心菱形, 10x10）。 */
+static void ksg_marker_star_proc(lv_obj_t *scr, int x, int y)
+{
+    ksg_rect_obj(scr, x + 4, y, 2, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x + 2, y + 2, 6, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x, y + 4, 10, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x + 2, y + 6, 6, 2, KSG_COLOR_TEXT);
+    ksg_rect_obj(scr, x + 4, y + 8, 2, 2, KSG_COLOR_TEXT);
+}
+
+/* 画一枚标记：字形可用 -> 真字形 label；缺字形 -> 程序化兜底。 */
+static void ksg_draw_marker(lv_obj_t *scr, int x, int y, uint32_t cp,
+                            void (*fallback)(lv_obj_t *, int, int))
+{
+    if (ksg_glyph_available(cp)) {
+        char utf8[5];
+
+        utf8[0] = (char)(0xE0u | (cp >> 12));
+        utf8[1] = (char)(0x80u | ((cp >> 6) & 0x3Fu));
+        utf8[2] = (char)(0x80u | (cp & 0x3Fu));
+        utf8[3] = '\0';
+        (void)ksg_label(scr, utf8, x, y);
+    } else {
+        fallback(scr, x, y + 3);
+    }
+}
+
+/* (day,slot) 格内一行：[※?][★?] 课程名（标记 10px + 2px 间隙; 名按格宽截断,
+ * 不做格内滚动——格内溢出走截断降级, spec S-F1.2 补充规则口径）。 */
+static void ksg_cell_row(lv_obj_t *scr, const kidpal_schedule_course_t *co,
+                         int cell_x0, int cell_x1, int row_y)
+{
+    int x = cell_x0 + 2;
+
+    if (co->flags & KSG_FLAG_TEMP) {
+        ksg_draw_marker(scr, x, row_y, 0x203Bu, ksg_marker_temp_proc);
+        x += 12;
+    }
+    if (co->flags & KSG_FLAG_STAR) {
+        ksg_draw_marker(scr, x, row_y, 0x2605u, ksg_marker_star_proc);
+        x += 12;
+    }
+    if (x < cell_x1 - 1) {
+        lv_obj_t *nm = ksg_label(scr, co->name, x, row_y);
+
+        lv_obj_set_width(nm, (lv_coord_t)(cell_x1 - 1 - x));
+        lv_obj_set_height(nm, KSG_ROW_PITCH);
+        lv_label_set_long_mode(nm, LV_LABEL_LONG_CLIP);
+    }
+}
+
+int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
+                                int today_col)
+{
+    lv_obj_t *scr;
+    int rows[7][3] = { { 0 } };
+
     /* 参数校验先行：非法参数不动屏、不崩（frozen contract）。 */
-    if (title == NULL || n < 0 || (items == NULL && n > 0)) {
+    if (n < 0 || (n > 0 && courses == NULL)) {
         return -1;
     }
-
-    lv_obj_t *scr = lv_screen_active();
+    scr = lv_screen_active();
     if (scr == NULL) {
         return -1; /* LVGL 未初始化（host 缝未置 rendered 态等）-> 不崩 */
     }
 
-    /* 幂等清屏后重画（可反复调用） */
+    /* 幂等清屏后重画（可反复调用）。全屏白底：y>=252 键帽条带零墨的前提是整屏
+     * 铺白，网格家具/课程墨全部落在 y<=KSG_GRID_BOTTOM。 */
     lv_obj_clean(scr);
     lv_obj_set_style_pad_all(scr, 0, 0);
+    (void)ksg_rect_obj(scr, 0, 0, KSG_FB_W, KSG_FB_H, KSG_COLOR_BG);
 
-    lv_obj_t *bg = lv_obj_create(scr);
-    lv_obj_remove_style_all(bg);
-    lv_obj_set_size(bg, LV_PCT(100), LV_PCT(100));
-    lv_obj_set_pos(bg, 0, 0);
-    lv_obj_set_style_bg_color(bg, lv_color_hex(KSP_COLOR_BG), 0);
-    lv_obj_set_style_bg_opa(bg, LV_OPA_COVER, 0);
-    lv_obj_clear_flag(bg, LV_OBJ_FLAG_SCROLLABLE);
+    /* CJK 字体挂到屏（子对象继承; host 真字形经 lv_font_get_glyph_dsc 探测） */
+    if (ksg_text_font() != NULL) {
+        lv_obj_set_style_text_font(scr, ksg_text_font(), 0);
+    }
 
-    /* 换皮 (包 260911-render-pages RP-A8): 手绘框族 frm_ (frm_236_236 / frm_sm_160_120 /
-     * frm_flat_240_96 9 宫格) 铺开 + d50 网点弱底纹。LVGL 骨架与动态文本语义保留
-     * (冻结齿不锁布局, 真实观感归 RP-A5 真机轮)。d50 平铺为弱底纹, 姿态在右下叠加。
-     *
-     * V3 字体接线 (RP-A4/S0.1, S0.1 决策件 font-decision-s01.md): 正文/标题/数字三
-     * 字体经 SPIFFS 非 KAP1 独立落地 fonts_root (冻结路径): font_body.bin (GB2312
-     * 全集正文) / font_title_zcool.bin (站酷快乐体标题) / font_num_baloo.bin (Baloo 2
-     * 数字) —— 由设备字体加载器 lv_font_load 从 fonts_root 取, 标题→font_title_zcool,
-     * 时间→font_num_baloo, 正文→font_body; V3 字号阶梯 (30 标题 / 44 时间) 落位。
-     * host runner 无 SPIFFS 字体挂载, 该加载在设备真机轮 (RP-A5) 验证。 */
+    /* 家具：表格线 + 表头 + 槽位标签（与课程/今天列无关 -> 帧 diff 相消, 探针
+     * 断言只锁差集像素落带）。页内无标题无提示行（v1.20 已删, 操作提示归全局
+     * 键帽条）。 */
+    for (int k = 0; k < 7; k++) {
+        ksg_rect_obj(scr, 40 + 51 * k - 1, 0, 2, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
+    }
+    ksg_rect_obj(scr, 396, 0, 2, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 29, KSG_FB_W, 2, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 103, KSG_FB_W, 2, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 177, KSG_FB_W, 2, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, KSG_GRID_BOTTOM - 1, KSG_FB_W, 2, KSG_COLOR_SEP);
+
     {
-        const lv_image_dsc_t *dots = ksp_dots_dsc();
-        if (dots != NULL) {
-            lv_obj_set_style_bg_image_src(bg, dots, 0);
-            lv_obj_set_style_bg_image_tiled(bg, true, 0);
+        static const char days[7][7] = { "周一", "周二", "周三", "周四",
+                                         "周五", "周六", "周日" };
+        static const char slots[3][7] = { "上午", "下午", "晚上" };
+
+        for (int d = 0; d < 7; d++) {
+            (void)ksg_label(scr, days[d], 40 + 51 * d + 4, 6);
+        }
+        for (int s = 0; s < 3; s++) {
+            (void)ksg_label(scr, slots[s], 4, ksg_slot_ys[s][0] + 6);
         }
     }
 
-    /* 标题逐字上屏 + P2-A4 弹跳切换动画（lv_anim） */
-    lv_obj_t *title_label = lv_label_create(scr);
-    lv_label_set_text(title_label, title);
-    lv_obj_set_pos(title_label, 12, 8);
-    lv_obj_set_style_text_color(title_label, lv_color_hex(KSP_COLOR_TEXT), 0);
-    {
-        lv_anim_t a;
+    /* 今天列整列高亮：0..6 合法 -> 该 day 列带整列高亮（边框式, 与未高亮列可
+     * 区分, 墨不越带）；越域（含 -1 = 未注入星期）-> 无任何列高亮（不画假「今天」,
+     * 兜底纪律同 home_p1 日期未知不画假日期）。 */
+    if (today_col >= 0 && today_col <= 6) {
+        lv_obj_t *hl = lv_obj_create(scr);
 
-        lv_anim_init(&a);
-        lv_anim_set_var(&a, title_label);
-        lv_anim_set_values(&a, -10, 8);
-        lv_anim_set_duration(&a, 450);
-        lv_anim_set_path_cb(&a, lv_anim_path_bounce);
-        lv_anim_set_exec_cb(&a, ksp_title_bounce_anim_cb);
-        lv_anim_start(&a);
+        lv_obj_remove_style_all(hl);
+        lv_obj_set_pos(hl, (lv_coord_t)(40 + 51 * today_col), 0);
+        lv_obj_set_size(hl, 51, KSG_GRID_BOTTOM + 1);
+        lv_obj_set_style_border_width(hl, 2, 0);
+        lv_obj_set_style_border_color(hl, lv_color_hex(KSG_COLOR_TEXT), 0);
+        lv_obj_set_style_border_opa(hl, LV_OPA_COVER, 0);
+        lv_obj_set_style_bg_opa(hl, LV_OPA_TRANSP, 0);
     }
 
+    /* 课程逐门竖排：同 (day,slot) 格内自上而下堆叠（同格多条目保持 producer
+     * 下发序）; 行 pitch KSG_ROW_PITCH >= KSG_FONT_MIN_PX（NFR-READ-1）。 */
     for (int i = 0; i < n; i++) {
-        int y = KSP_ROW_Y0 + KSP_ROW_H * i;
+        int d = courses[i].day;
+        int s = courses[i].slot;
+        int r = rows[d][s];
 
-        /* 圆点两态 (S-F1.2)：空心 = 已上完/明天，实心 = 待上。
-         * dot_state 防御 -1（不可判定）按「未发生」归空心。 */
-        int dot = kidpal_schedule_dot_state(items[i].time, now_hhmm, is_tomorrow);
-
-        lv_obj_t *d = lv_obj_create(scr);
-        lv_obj_remove_style_all(d);
-        lv_obj_set_size(d, KSP_DOT_SIZE, KSP_DOT_SIZE);
-        lv_obj_set_pos(d, KSP_DOT_X, y);
-        lv_obj_set_style_radius(d, LV_RADIUS_CIRCLE, 0);
-        lv_obj_set_style_border_width(d, KSP_DOT_BORDER, 0);
-        lv_obj_set_style_border_color(d, lv_color_hex(KSP_COLOR_DOT), 0);
-        lv_obj_set_style_border_opa(d, LV_OPA_COVER, 0);
-        lv_obj_set_style_bg_opa(d, LV_OPA_COVER, 0);
-        lv_obj_set_style_bg_color(d, lv_color_hex(dot == 1 ? KSP_COLOR_DOT
-                                                           : KSP_COLOR_BG), 0);
-
-        lv_obj_t *t = lv_label_create(scr);
-        lv_label_set_text(t, items[i].time);
-        lv_obj_set_pos(t, KSP_COL_TIME_X, y + 10);
-        lv_obj_set_style_text_color(t, lv_color_hex(KSP_COLOR_TEXT), 0);
-
-        lv_obj_t *nm = lv_label_create(scr);
-        lv_label_set_text(nm, items[i].name);
-        lv_obj_set_pos(nm, KSP_COL_NAME_X, y + 10);
-        lv_obj_set_style_text_color(nm, lv_color_hex(KSP_COLOR_TEXT), 0);
-
-        lv_obj_t *loc = lv_label_create(scr);
-        lv_label_set_text(loc, items[i].location);
-        lv_obj_set_pos(loc, KSP_COL_LOC_X, y + 10);
-        lv_obj_set_style_text_color(loc, lv_color_hex(KSP_COLOR_TEXT), 0);
-
-        /* P2-A5 星标呼应：画在定位行（设备侧渲染标志，不进 data 形状；
-         * 不新增反白高亮态——human 裁砍, P2-E3）。 */
-        if (i == locate_row) {
-            lv_obj_t *star = lv_label_create(scr);
-            lv_label_set_text(star, "★");
-            lv_obj_set_pos(star, KSP_STAR_X, y + 10);
-            lv_obj_set_style_text_color(star, lv_color_hex(KSP_COLOR_DOT), 0);
+        if (r >= 4) {
+            continue; /* 防御：KSG_COURSE_CAP 定容 7 天×3 格×每格 4 门, 越格不画 */
         }
-
-        /* 行分隔线（列表视觉；位置压在采样网格整点上，保证 host 真帧可探针） */
-        lv_obj_t *sep = lv_obj_create(scr);
-        lv_obj_remove_style_all(sep);
-        lv_obj_set_size(sep, LV_HOR_RES - 24, 3);
-        lv_obj_set_pos(sep, 12, y + 38);
-        lv_obj_set_style_bg_color(sep, lv_color_hex(KSP_COLOR_SEP), 0);
-        lv_obj_set_style_bg_opa(sep, LV_OPA_COVER, 0);
-    }
-
-    /* 换皮：吉祥物每日姿态叠右下空白区（避开圆点/分隔线/列文本）。best-effort。 */
-    if (ksp_pose_image_ready()) {
-        lv_obj_t *pose = lv_image_create(scr);
-        lv_image_set_src(pose, &s_ksp_pose_dsc);
-        lv_obj_set_pos(pose, LV_HOR_RES - KSP_POSE_MAX - 4,
-                       LV_VER_RES - KSP_POSE_MAX - 6);
+        rows[d][s]++;
+        ksg_cell_row(scr, &courses[i], 40 + 51 * d, 90 + 51 * d,
+                     ksg_slot_ys[s][0] + 2 + r * KSG_ROW_PITCH);
     }
 
     return n;

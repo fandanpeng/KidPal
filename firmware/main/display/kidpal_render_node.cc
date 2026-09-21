@@ -93,6 +93,10 @@ static int s_temp_c       = 0;
 static int s_humidity_pct = 0;
 static int s_battery_pct  = 100; /* 保守初始值（无 ADC 读数时使用） */
 static int s_charging     = 0;
+/* 设备本地星期（周一=0..周日=6; -1 = 未注入/越域不画假「今天」）。M3-K2 今天列
+ * 推导数据源：板级 RTC 装配点经 kidpal_render_node_inject_weekday 写入, P2 网格
+ * 每次落屏重取（本地零点跨天后板级重读 RTC 即切换, 不依赖云端, NFR-OFF-1）。 */
+static int s_rtc_wday     = -1;
 
 /* 动画 LVGL 定时器（在 init 中创建，每 RN_TICK_MS 触发一次）。仅重渲首页动画帧，
  * 不做任何前台/语音对账（对账已由事件驱动 layer push/pop 接管）。 */
@@ -110,12 +114,11 @@ static const uint32_t RN_TICK_MS = 1000;
 static unsigned long s_char_window_idle_ms = 0;
 static volatile int  s_char_window_key_hit = 0;
 
-/* P2 课表缓存（mcp_server 收到课表数据后调 cache_schedule 填充；cycle_next 读此）。 */
-static char                s_sched_title[64] = "今日课表";
-static kidpal_schedule_item_t s_sched_items[16];
-static int                 s_sched_n = 0;
-static int                 s_sched_is_tomorrow = 0;
-static char                s_sched_now[8] = "";
+/* P2 一周总览网格缓存（mcp_server 收到周网格数据解析成功后调
+ * cache_schedule_grid 填充; cycle_next 读此渲染 P2; cache_schedule 网格化,
+ * 旧 16 项列表缓存作废, 容量 KSG_COURSE_CAP=84 定容冻结值）。 */
+static kidpal_schedule_course_t s_grid_courses[KSG_COURSE_CAP];
+static int                      s_grid_n = 0;
 
 /* P3 故事缓存。 */
 static kidpal_story_view_t s_story_view = {};
@@ -316,6 +319,28 @@ void kidpal_render_node_inject_battery(int battery_pct, int charging)
      * HOME 分支 / kidpal_render_node_tick 继续消费）。 */
     if (battery_pct >= 0 && battery_pct <= 100) { s_battery_pct = battery_pct; }
     s_charging = (charging != 0) ? 1 : 0;
+}
+
+void kidpal_render_node_inject_weekday(int mon0_wday)
+{
+    /* M3-K2 星期注入缝（inject_rtc/inject_env/inject_battery 家族同款第四缝）：
+     * 0..6 合法写入（周一=0..周日=6, 与 producer day 同基）; 越域忽略保持原值
+     * （防御, 不崩）——未注入/越域时 P2 网格不画假「今天」高亮。 */
+    if (mon0_wday >= 0 && mon0_wday <= 6) { s_rtc_wday = mon0_wday; }
+}
+
+int kidpal_render_node_today_col(void)
+{
+    return s_rtc_wday;
+}
+
+int kidpal_render_node_home_on_screen(void)
+{
+    /* P1 首页在屏 = LOCAL_PAGE 前台且当前页 = HOME（同 kidpal_render_node_tick
+     * 首页动画重渲判据口径）; mcp home 路由「data.upcoming 注入成功且 P1 在屏 ->
+     * 重渲染首页日程主体」的判据单一权威（M3-K2 A5 接线）。 */
+    return (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE &&
+            s_local_page == KP_PAGE_HOME) ? 1 : 0;
 }
 
 void kidpal_render_node_show_home(void)
@@ -573,13 +598,14 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             break;
         }
         case KP_PAGE_SCHEDULE: {
-            /* 把 s_kidpal_scr 设为活动屏，schedule_page_render 在 lv_screen_active()
-             * 上清屏并绘制。 */
+            /* 把 s_kidpal_scr 设为活动屏，kidpal_schedule_grid_render 在
+             * lv_screen_active() 上清屏并绘制一周总览网格（7 列×3 行）。 */
             lv_screen_load(s_kidpal_scr);
-            if (s_sched_n <= 0) {
-                /* #11 数据链根因 (R-S0.2): 缓存仅在语音查询过课表后才填充; 孩子 BOOT
-                 * 翻页切来时可能本开机未查询 -> n=0 空壳页。改画友好空态 (居中提示),
-                 * 不再渲染空壳页; 语音查询路径 (mcp case 4) 不动。 */
+            if (s_grid_n <= 0) {
+                /* #11 数据链根因 (R-S0.2): 缓存仅在云端推送过周网格后才填充; 孩子
+                 * BOOT 翻页切来时可能本开机未收到 -> 空缓存。改画友好空态 (居中
+                 * 提示), 不再渲染空壳页; 云端推送路径 (mcp kidpal/display schedule
+                 * 路由) 不动。 */
                 lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
                 lv_label_set_text(lbl, "还没有课表数据，问我『我的课表』吧");
                 lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
@@ -588,17 +614,13 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                 lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
                 lv_obj_center(lbl);
             } else {
-                kidpal_schedule_page_render(
-                    s_sched_title,
-                    s_sched_n > 0 ? s_sched_items : NULL,
-                    s_sched_n,
-                    s_sched_is_tomorrow,
-                    s_sched_now,
-                    -1 /* locate_row: -1 = 不定位，静态展示 */
-                );
+                /* P2 一周总览网格（today_col = 注入星期列; 未注入/越域 -> 网格面
+                 * 自行不画假「今天」高亮）。 */
+                kidpal_schedule_grid_render(s_grid_courses, s_grid_n, s_rtc_wday);
             }
             s_local_page = KP_PAGE_SCHEDULE;
-            ESP_LOGI(RN_TAG, "render page SCHEDULE (P2) n=%d", s_sched_n);
+            ESP_LOGI(RN_TAG, "render page SCHEDULE (P2 grid) courses=%d wday=%d",
+                     s_grid_n, s_rtc_wday);
             break;
         }
         case KP_PAGE_STORY: {
@@ -785,26 +807,19 @@ void kidpal_render_node_tick(void)
  * 缓存 setter（供 mcp_server.cc 在收到服务端数据后调用）
  * ---------------------------------------------------------------------- */
 
-extern "C" void kidpal_render_node_cache_schedule(const char *title,
-                                                   const kidpal_schedule_item_t *items,
-                                                   int n,
-                                                   int is_tomorrow,
-                                                   const char *now_hhmm)
+extern "C" void kidpal_render_node_cache_schedule_grid(const kidpal_schedule_course_t *courses,
+                                                       int n)
 {
-    if (title != NULL) {
-        strncpy(s_sched_title, title, sizeof(s_sched_title) - 1);
-        s_sched_title[sizeof(s_sched_title) - 1] = '\0';
+    /* cache_schedule 网格化（M3-K2）：n<=0 或 courses==NULL 时清空缓存 = 空态
+     * （BOOT 翻页 cycle_next 落友好空态画面, 绝不盲渲染）; n > KSG_COURSE_CAP
+     * 只拷前 cap 条, 绝不溢出（定容 7 天×3 格×每格 4 门冻结值）。 */
+    if (n <= 0 || courses == NULL) {
+        s_grid_n = 0;
+        return;
     }
-    int copy = (n > 0 && items != NULL) ? (n > 16 ? 16 : n) : 0;
-    if (copy > 0) {
-        memcpy(s_sched_items, items, static_cast<size_t>(copy) * sizeof(s_sched_items[0]));
-    }
-    s_sched_n           = copy;
-    s_sched_is_tomorrow = is_tomorrow;
-    if (now_hhmm != NULL) {
-        strncpy(s_sched_now, now_hhmm, sizeof(s_sched_now) - 1);
-        s_sched_now[sizeof(s_sched_now) - 1] = '\0';
-    }
+    int copy = (n > KSG_COURSE_CAP) ? KSG_COURSE_CAP : n;
+    memcpy(s_grid_courses, courses, static_cast<size_t>(copy) * sizeof(s_grid_courses[0]));
+    s_grid_n = copy;
 }
 
 extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,

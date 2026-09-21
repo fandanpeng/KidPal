@@ -28,6 +28,7 @@
 #include "display/reminder_page.h" /* 提醒弹窗消费面 (包 260829-schedule-reminder):
                                     * kidpal/alert 载荷解析 + 四态状态机 + 富弹窗渲染 */
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6: 设备渲染节点 show_home/cycle/cache */
+#include "display/home_upcoming.h" /* M3-K2 A5: 首页「接下来」data.upcoming 注入冻结 seam 接线层 */
 #include "assets/lang_config.h"    /* Lang::Sounds::OGG_POPUP —— 三件套的提示音音源 */
 
 #define TAG "MCP"
@@ -530,14 +531,43 @@ void McpServer::AddCommonTools() {
                         });
                     }
                     break;
-                case 1: /* VRT_ROUTE_HOME —— 回 P1 首页常显 */
+                case 1: { /* VRT_ROUTE_HOME —— 回 P1 首页常显 */
                     cJSON_AddStringToObject(ack, "route", "home");
                     /* 包 9b HWV-A6: 渲染节点落地后，home 路由改推首页帧至 RLCD。
-                     * 旧行为（SetChatMessage 空串）仅清 xiaozhi 对话区，不显示 KidPal 首页。 */
-                    app.Schedule([]() {
-                        kidpal_render_node_show_home();
+                     * 旧行为（SetChatMessage 空串）仅清 xiaozhi 对话区，不显示 KidPal 首页。
+                     *
+                     * M3-K2 A5 接线（契约 §1.3⑥ additive, S-F1.1 消费半）：data 非空时
+                     * 消费 data.upcoming 经 kidpal_home_upcoming_apply 注入 home_p1 冻结
+                     * seam（缺/空 data 行为完全不变——既有 show_home 路径零偏移）；注入
+                     * 成功且 P1 首页在屏 -> 重渲染首页日程主体（云端一推首页跟着换）；
+                     * P1 不在屏 -> seam 已更新、下次首页落屏自然带出（不抢前台）；
+                     * apply -1 -> 显式降级（seam 零变化, 绝不盲渲染, V27）。断网无推送
+                     * = apply 不被调、日程区不更新（NFR-OFF-1: 设备零轮询）。 */
+                    char corr_id[24];
+                    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+                    std::string home_data = data;
+                    app.Schedule([home_data, corr_id]() {
+                        if (home_data.empty()) {
+                            /* 缺/空 data: 既有 show_home 路径零偏移 */
+                            kidpal_render_node_show_home();
+                            return;
+                        }
+                        int rc = kidpal_home_upcoming_apply(home_data.c_str());
+                        if (rc != 0) {
+                            ESP_LOGW(TAG, "display_dispatch view=home corr_id=%s "
+                                          "upcoming_apply degrade rc=%d", corr_id, rc);
+                            return; /* 拒收整包不半写: seam 零变化, 不盲渲染、不改前台 */
+                        }
+                        ESP_LOGI(TAG, "display_dispatch view=home corr_id=%s "
+                                      "upcoming_apply ok", corr_id);
+                        if (kidpal_render_node_home_on_screen()) {
+                            /* 注入成功且 P1 首页在屏 -> 重渲染首页日程主体 */
+                            kidpal_render_node_show_home();
+                        }
                     });
                     break;
+                }
                 case 2: { /* VRT_ROUTE_CONTROL —— 契约 §1.4 动作执行 */
                     cJSON_AddStringToObject(ack, "route", "control");
                     std::string action = mcp_json_get_string(data, "action");
@@ -572,62 +602,48 @@ void McpServer::AddCommonTools() {
                     }
                     break;
                 }
-                case 4: { /* VRT_ROUTE_SCHEDULE —— P2 课表页 (契约 §1.3 ②, 包
-                           * 260829-schedule-p2)。解析 data {"title","items":[…]}：
-                           * 成功 -> kidpal_schedule_page_render 渲染面真画 (标题
-                           * 弹跳/圆点两态/行列表)；解析失败 -> 显式降级 (友好提示,
-                           * 绝不盲渲染, V27 / spec §4.0)。 */
+                case 4: { /* VRT_ROUTE_SCHEDULE —— P2 一周总览网格页 (契约 §1.3② 周网格
+                           * data 2026-09-21 契约门定稿, M3-K2 整页重写; 旧列表形状
+                           * {title,items} 已废止)。解析 data {"week":{"courses":[…]}}：
+                           * 成功 -> kidpal_schedule_grid_render 渲染面真画（7 列×3 行
+                           * 网格 + 今天列高亮 + ※/星标）并填充周网格缓存（BOOT 翻页
+                           * cycle_next 浏览源）；解析失败 -> 显式降级（友好提示, 绝不
+                           * 盲渲染, V27 / spec §4.0）。 */
                     cJSON_AddStringToObject(ack, "route", "schedule");
                     char corr_id[24];
                     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-                    char title[64];
-                    /* items[16] = 16 × 112B = 1792B（含 Schedule 闭包按值捕获的再一份
-                     * = 3.5KB 峰值）→ 上堆，理由见本文件头「ssl_receive 栈纪律」。 */
-                    auto items = std::make_shared<std::array<kidpal_schedule_item_t, 16>>();
-                    int n = kidpal_schedule_parse(data.c_str(), title, sizeof(title),
-                                                  items->data(), 16);
+                    /* courses[84] = 84 × 60B = ~5KB → 上堆，理由见本文件头「ssl_receive
+                     * 栈纪律」。 */
+                    auto courses =
+                        std::make_shared<std::array<kidpal_schedule_course_t, KSG_COURSE_CAP>>();
+                    int n = kidpal_schedule_grid_parse(data.c_str(), courses->data(),
+                                                       KSG_COURSE_CAP);
                     if (n < 0) {
-                        /* 降级：schedule data 畸形/缺字段 -> 友好提示, 不盲渲染 */
+                        /* 降级：schedule data 畸形/缺字段/旧形状/越界 cap -> 友好提示,
+                         * 不盲渲染（V27） */
                         cJSON_AddBoolToObject(ack, "degrade", true);
-                        ESP_LOGW(TAG, "display_dispatch view=schedule corr_id=%s items=0 degrade=true", corr_id);
+                        ESP_LOGW(TAG, "display_dispatch view=schedule corr_id=%s courses=0 degrade=true",
+                                 corr_id);
                         auto display = Board::GetInstance().GetDisplay();
                         app.Schedule([display]() {
                             display->SetChatMessage("system", "课表数据有点问题，稍后再试试");
                         });
                         break;
                     }
-                    /* 明天视图判定 (P2-A4 全空心前提)：契约 data 形状零变更、无
-                     * is_tomorrow 字段 —— producer 在 title 语义里携带, 设备侧按
-                     * title 含「明天」做最小判定 (minimal, 升级路径=producer 显式
-                     * 约定 title 词汇表, 不动 data 形状)。 */
-                    int is_tomorrow = (strstr(title, "明天") != nullptr) ? 1 : 0;
-                    int locate_row = -1; /* 语音问课表定位行由语音消费路径经
-                                          * kidpal_schedule_locate 续接, 默认无星标 */
-                    /* 设备当前 HH:MM (圆点两态判定; RTC 未同步时按 00:00 全实心降级) */
-                    char now_hhmm[8] = "00:00";
-                    {
-                        time_t now_t = time(nullptr);
-                        struct tm tm_now;
-                        if (localtime_r(&now_t, &tm_now) != nullptr) {
-                            snprintf(now_hhmm, sizeof(now_hhmm), "%02d:%02d",
-                                     tm_now.tm_hour, tm_now.tm_min);
-                        }
-                    }
-                    cJSON_AddNumberToObject(ack, "items", n);
-                    ESP_LOGI(TAG, "display_dispatch view=schedule corr_id=%s items=%d is_tomorrow=%d degrade=false",
-                             corr_id, n, is_tomorrow);
-                    auto display = Board::GetInstance().GetDisplay();
-                    std::string now_str = now_hhmm;
-                    app.Schedule([display, title, items, n, is_tomorrow, now_str, locate_row, corr_id]() {
+                    cJSON_AddNumberToObject(ack, "courses", n);
+                    ESP_LOGI(TAG, "display_dispatch view=schedule corr_id=%s courses=%d degrade=false",
+                             corr_id, n);
+                    app.Schedule([courses, n, corr_id]() {
                         kidpal_render_node_begin_page();
-                        int drawn = kidpal_schedule_page_render(
-                            title, items->data(), n, is_tomorrow, now_str.c_str(), locate_row);
-                        ESP_LOGI(TAG, "schedule_render corr_id=%s items=%d drawn=%d",
-                                 corr_id, n, drawn);
-                        /* 包 9b HWV-A6: 缓存课表至渲染节点，供 BOOT 双按翻页 cycle_next 读取。 */
-                        kidpal_render_node_cache_schedule(title, items->data(), n, is_tomorrow, now_str.c_str());
+                        int drawn = kidpal_schedule_grid_render(
+                            courses->data(), n, kidpal_render_node_today_col());
+                        /* M3-K2: 缓存周网格至渲染节点，供 BOOT 双按翻页 cycle_next 读取
+                         * （cache_schedule 网格化）。 */
+                        kidpal_render_node_cache_schedule_grid(courses->data(), n);
                         kidpal_render_node_end_page();
+                        ESP_LOGI(TAG, "schedule_grid_render corr_id=%s courses=%d drawn=%d",
+                                 corr_id, n, drawn);
                     });
                     break;
                 }
