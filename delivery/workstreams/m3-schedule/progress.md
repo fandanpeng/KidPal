@@ -121,3 +121,9 @@
 **launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/launch-card.md`（五要素齐 + 交接注记：M3K1-A5/M3K2-A7 双 live 半归本包设备轮、板级零点重读 RTC 遗留评估归属、prompt v6 部署 ECS 需 human 确认窗口、K1 热修轮两独立缺口如实记录）。
 
 **遗留 human 项**：本次 launch 由 human 显式指示主线程代跑（交互会话内派 planner agent），偏离启动卡「human 自跑」默认形态并在此留痕；M3K3-A3 真机确认轮仍需 human 持板开窗，prompt v6 部署 ECS 窗口需 human 确认。
+
+## 2026-09-21 · K3 设备轮进行中 + 挂账④立项落包（triage ②单包 Lite）
+
+- **v6 部署 ECS 完成**（human 批准，主线程执行）：6 文件推送（v6 prompt + apply 脚本 + provider.config + K1 遗留 reminder_schedule_lib + front_app.py + schedule.py，远端各留 `.bak-260921-k3-v6`）→ apply 渲染 → v6 prompt 注入 .config.yaml（容器内 grep 实证 4 命中）→ 引擎/front 重启双绿（5 组件初始化成功；venv python 导入 expand_schedule_intent_payload + front 截获接线实证）。
+- **设备轮 offline 链已目击**：「帮我显示课表」意图 → 自动切 P2 → 网格有课（A2 链通）；「明天有什么课」问答框答复正常播报（S-F1.3 主验证点过）。已知缺口复现：设备时钟 tm_year 70（OTA 缺 server_time）→ 今天列高亮落周五（实为周日）——独立缺口如实挂账非 K3 义务。首页「接下来」固定标签 + time（ASCII）可画、CJK 课程名缺失 = 挂账④驱动实证（数据已到设备）。QQ 录入三触发项待 human 修 OpenClaw 后续跑。
+- **挂账④立项落包**：human 立项 ack（动态内容用对话同款普通字体）→ triage 门 architect 四档裁决 **②单包 Lite / riskTier medium**（human 确认不改判；字体双分支实证收敛：设备侧 font_puhui_14_1 即对话页同款）→ 落包 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/`（plan.md + taskpackage.json，origin.type=human-confirmed-plan 指向本文件挂账段）。调度：排 K3 合并后串行。

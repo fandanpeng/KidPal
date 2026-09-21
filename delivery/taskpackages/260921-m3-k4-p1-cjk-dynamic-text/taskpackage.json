@@ -1,0 +1,72 @@
+{
+  "changeId": "260921-m3-k4-p1-cjk-dynamic-text",
+  "rigor": "lite",
+  "sourceType": null,
+  "origin": {
+    "type": "human-confirmed-plan",
+    "upstreamType": "human-confirmed-plan",
+    "upstreamRef": "delivery/workstreams/m3-schedule/progress.md",
+    "upstreamFrozen": "",
+    "workstream": "m3-schedule"
+  },
+  "subsystem": "firmware",
+  "story": "首页 P1 动态日程名（课程名/事项名，开放集合 CJK 文本）在「接下来」卡、后续事项行、明日预告行正常渲染（14px 普通字体，设备 font_puhui_14_1 / host Source Han 子集双分支），从「画不出即丢弃」变为「画得出、超宽截断不越区」——技术方案见 plan.md（弱符号字形 seam + 设备/host 双强符号 + UTF-8 解码逐字形 blit）",
+  "planRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/plan.md",
+  "redBaselineCommand": "WSL host runner（firmware/main/test/host_app espidf_wsl.sh build + host_infra_test.elf）——既有 74 齿基线；新冻结齿（p1_cjk_name.acceptance.c）在未实现树上 RED，intake 时 acceptance-author 实跑复核",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m3-schedule/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "P1CJK-A1: name 墨落钉区齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应钉区（next {136,48,392,168} / nextlist {136,172,392,214} / preview {136,220,392,242}）",
+    "P1CJK-A2: 长 name 截断齿——超宽 name 截断不越钉区右界",
+    "P1CJK-A3: 回归守卫齿——空日程/单项各「零墨」pin 不回归（既有 74 齿 must-stay-green）",
+    "P1CJK-A4: UTF-8 容错齿——截断尾序列（home_upcoming 31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩",
+    "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩",
+    "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量记录（无新增大静态量，帧缓冲不增）；真机目测点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口"
+  ],
+  "acceptanceTestsFile": [],
+  "exitCriteria": [
+    "P1CJK-E1: host runner 新齿全绿 + 既有 74 齿零偏移（build exit 0 + run exit 0）；device build 闸过",
+    "P1CJK-E2: 铁律——hp1_item_t 与 11 个冻结契约函数零偏移、home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、固定标签烘焙资产维持现状",
+    "P1CJK-E3: 真机目测点挂设备轮窗口收口（可随 K3 设备轮或独立开窗），阈值微调属设计迭代不触契约"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "docs/requirements.md#S-F1.1"
+  ],
+  "sourceRefs": [
+    "delivery/workstreams/m3-schedule/progress.md",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/home_upcoming.c",
+    "firmware/main/display/schedule_page.c",
+    "firmware/main/test/host_app/main/host_infra_seam.c"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "纯渲染实现缺口收口（spec S-F1.1 既有已验收需求的实现补齐，非行为漂移）；契约/spec/部署面零改，无文档同步义务。",
+  "mergeOrder": null,
+  "dependsOn": [],
+  "testHost": "WSL host runner（pixel-probe 齿）+ device build 闸 + 真机目测（挂设备轮窗口）",
+  "decisionCoverage": [],
+  "crossPackageBehaviors": [],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "单子系统纯渲染变更（firmware display 内聚簇：home_p1.c + kidpal_render_node.cc + host seam），无跨包行为对偶面"
+  },
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：home_upcoming.c:393–396 按字节截 31 字节会截半 UTF-8 多字节字符，P1 解码器须安全停笔（plan.md 边角节）。调度：排 K3（260921-m3-k3-voice-schedule-entry-live）合并后串行（树池/mergeToken 纪律）；triage = architect 四档裁决 2026-09-21 ②单包 Lite，human 确认不改判，包 id human 拍板 m3-k4 序号。",
+  "docsOwner": "integrator"
+}
