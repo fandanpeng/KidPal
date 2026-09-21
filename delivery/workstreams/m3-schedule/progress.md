@@ -58,3 +58,10 @@
 - **intake**：上一包 pod-retro 五条留根逐条评估，无 blockingDecision；`VERIFY_FW_BUILD_REQUIRED=1` 声明随卡。
 - **契约落地核对（planner 逐字）**：4 hunk == packet §1 + §5 五问裁定，PASS；C1–C4 收口（gate evidence LANDED）。裁决点留观 1 条：§1.3⑥ 示例 `preview.time="明早"` 与 home_p1.h seam `hp1_item_t.time ≤5 字节` 冲突——K1 齿按 seam 兼容口径钉 preview.time=明日首项 HH:MM，「明早」判设备渲染标签（K2 落），如 human 契约门本意是载荷直发标签需回裁。
 - **acceptance-author 冻齿**：17 齿落 `server/acceptance/test_m3k1_schedule_producer.acceptance.py`（13 RED + 4 must-stay-green，红基线 13 failed/51 passed 实跑落账 taskpackage.json）；7 条遗留裁决点中 5 条为钉深申报、Q5 收紧落点=validate_display（planner 采认，契约 §1.5 落地文同口径）、preview.time 见上条。A5 live 半 structural deferred 挂 K3。
+
+## 2026-09-21 · K1 合并落账（Pod 全程闭环）
+
+- **质量面**：17 齿全绿（13 RED→GREEN + 4 must-stay-green），全量 75 passed / 0 failed；final r5 九闸 PASS（evidence `delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r5.json`）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT 留档）。
+- **合并**：ESCALATE（diff 重算 critical：触契约 critical-path）→ human 批准 → 升级闸硬编码拦契约批（`hasContractGateEvidence` 恒 false，证据接入未实现——gate-tooling 缺口，escalation `1a13b9a2`）→ human 裁乙案拆批：契约批 `24bb1b8` 先行治理 lane ff 合 main，实现批经 merge-driver 标准链合并（merge commit `ce56940`，human-approval-ref `36840095`）。
+- **收尾**：INDEX 双 lane 重建（K1 行 closed）+ escalation 销账 + K2/K3 origin 枚举预检修正（`1548267`）。K2 dependsOn K1 解锁，launch 由 human 走 launch-prep；K2 起包时 preview.time 裁决点（契约示例「明早」 vs seam HH:MM）与分界时刻留痕随包交接。
+- **治理跟进项（执行测出，归 /loop-retro 提炼）**：① 升级闸契约证据探测接入（hasContractGateEvidence 硬编码缺口）；② 起包 checklist 补 current/ 指针刷新；③ dispatch-stamp 恒传 --task-package-id；④ loop-retro 阈值已达（15 ≥ 10）待 human 发起。
