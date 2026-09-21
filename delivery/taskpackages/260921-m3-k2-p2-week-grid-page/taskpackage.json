@@ -1,0 +1,115 @@
+{
+  "changeId": "260921-m3-k2-p2-week-grid-page",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "milestone",
+    "upstreamType": "milestone",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+    "upstreamFrozen": "",
+    "workstream": "m3-schedule"
+  },
+  "subsystem": "firmware",
+  "story": "S-F1.2 · 课表页看「一周总览」（AC1–AC4）+ S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC2 消费接线半）——技术描述见 plan.md（P2 一周总览网格页整页重写 WF-F1-02 版式 + 首页「接下来」注入接线，新 schedule payload 消费）",
+  "planRef": "delivery/taskpackages/260921-m3-k2-p2-week-grid-page/plan.md",
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && ./build/host_infra_test.elf（host runner 全量既有齿基线；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m3-schedule/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "M3K2-A1: 周网格版式齿——WF-F1-02：7 列（周一~周日）× 3 行（上午/下午/晚上）整屏网格，格内多课逐门竖排小字、字号 ≥14px（NFR-READ-1 下限，产线 font_body.bin 14px 贴线）、不做格内滚动；host 渲染齿断言布局常量与墨迹结构（含空格空行语义）",
+    "M3K2-A2: 今天列高亮齿——设备本地日期（RTC，M1-K1a 接线）推导今天列、整列高亮（粗框/反色）；本地零点切换（host 注入跨天状态断言切换）",
+    "M3K2-A3: ※ 临时标记 + 星标呼应齿——payload flags 位（bit0 ※ / bit1 星标）渲染标记与固定课区分；星标与首页「接下来」当前项呼应",
+    "M3K2-A4: 新形状消费 + 缓存齿——cache_schedule 从 16 项列表缓存改周网格缓存（供 BOOT 翻页 cycle_next 浏览）；自足式最小 JSON 扫描解析新形状，畸形/缺字段/越界 cap 一律 -1、调用方友好降级绝不盲渲染（V27）",
+    "M3K2-A5: 首页「接下来」注入齿——view=home 携 data 到达 → kidpal_home_p1_schedule_inject 冻结 seam（零修改）注入 → 当前在 P1 即重渲染首页日程主体；缺/空 data 行为不变（向后兼容）；断网日程区不更新语义保持（NFR-OFF-1）",
+    "M3K2-A6: 页循环/键帽条回归靶——P2 仍在三页循环（HOME→SCHEDULE→STORY，M2-K2 既定）、键帽条三槽常驻不被网格遮挡（回归齿非修订面，key_layer_dispatch/schedule_reminder_b 既有齿零偏移通过）",
+    {
+      "id": "M3K2-A7: 真机网格目测 + 翻页手感（deferred 归 M3-K3 设备轮）——WF-F1-02 版式真机 1bpp 目测（NFR-READ-1 14px 小字可读）、BOOT 翻页进出 P2 手感、今天列高亮真机观感",
+      "kind": "structural",
+      "note": "真机半 deferred：单真机不两轮撞车，K2 侧 host 齿 + device build 闸先行，真机目测挂 K3 设备轮（crossPackageBehaviors 第 3 条）"
+    }
+  ],
+  "acceptanceTestsFile": [],
+  "exitCriteria": [
+    "M3K2-E1: 新增 host 齿全绿（版式/今天列/标记/解析降级/注入接线/回归靶），host runner 全量零新增红",
+    "M3K2-E2: 铁律——不改 docs/contracts/**（消费冻结形状，形状权威 = K1 契约门定稿）、不改 spec、不改 agent 定义/gate；home_p1.acceptance.c 与 home_p1 冻结 seam 零修改（仅消费）",
+    "M3K2-E3: device build 闸全绿（schedule_page.c 页面组件面本包必触，设备编译不得缺席）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3"
+  ],
+  "docRefs": [
+    "docs/requirements.md#F1"
+  ],
+  "sourceRefs": [
+    "delivery/milestones/milestones.jsonl#M3-schedule",
+    "docs/requirements.md#S-F1.2",
+    "docs/requirements.md#S-F1.2-AC1",
+    "docs/requirements.md#S-F1.2-AC2",
+    "docs/requirements.md#S-F1.2-AC3",
+    "docs/requirements.md#S-F1.2-AC4",
+    "docs/requirements.md#S-F1.1",
+    "docs/requirements.md#S-F1.1-AC1",
+    "docs/requirements.md#NFR-READ-1",
+    "docs/contracts/interface-contract.md#§1.3",
+    "firmware/main/display/schedule_page.c#kidpal_schedule_parse",
+    "firmware/main/display/home_p1.c#kidpal_home_p1_schedule_inject",
+    "firmware/main/display/kidpal_render_node.cc#kidpal_render_node_cache_schedule"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": false,
+  "docsSyncReason": "纯板端实现：契约形状消费方（diff 归 K1 契约门同 PR）、spec 层需求行已冻结（S-F1.2 v1.19 口径），零 docs 面改动；实现细节随代码注释与 closeout 制品承载。",
+  "mergeOrder": 34,
+  "dependsOn": [
+    "260921-m3-k1-cloud-schedule-producer"
+  ],
+  "testHost": "host runner（WSL linux target）+ device build 闸；真机目测 deferred 归 M3-K3 设备轮",
+  "decisionCoverage": [],
+  "crossPackageBehaviors": [
+    {
+      "topic": "schedule 周网格 payload 形状消费",
+      "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k2-p2-week-grid-page",
+      "note": "按契约门定稿形状写消费齿与解析；K1 契约 diff 落地前不冻网格形状齿。"
+    },
+    {
+      "topic": "首页「接下来」home data 注入接线",
+      "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k2-p2-week-grid-page",
+      "note": "home_p1 schedule_inject 冻结 seam 消费（seam 零改），缺 data 行为不变。"
+    },
+    {
+      "topic": "P2 网格/首页注入真机半",
+      "owner": "260921-m3-k2-p2-week-grid-page",
+      "carriedBy": "260921-m3-k3-voice-schedule-entry-live",
+      "note": "K2 live 半 structural deferred 挂 K3 设备轮（M3K2-A7）。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/schedule.py",
+        "symbol": "parse_schedule_md"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_relay_display_blocks_to_device"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。schedule_page.c 现为旧列表版（260829-schedule-p2 产物，消费旧 {title,items} 形状），本包整页重写为周网格；旧冻结验收 schedule_p2.acceptance.c 已 archive 退役，不走 supersede。crossEnd counterparts 指对端面（payload 生产方），本包不写 server/。K1 契约门未 CLOSED 前本包 acceptance-author 只能冻与形状无关齿（版式结构/今天列/回归靶）。"
+}

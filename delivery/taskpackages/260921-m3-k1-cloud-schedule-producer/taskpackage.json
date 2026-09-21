@@ -1,0 +1,116 @@
+{
+  "changeId": "260921-m3-k1-cloud-schedule-producer",
+  "rigor": "full",
+  "sourceType": "delivery-story",
+  "origin": {
+    "type": "milestone",
+    "upstreamType": "milestone",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+    "upstreamFrozen": "",
+    "workstream": "m3-schedule"
+  },
+  "subsystem": "server",
+  "story": "S-F1.2 · 课表页看「一周总览」（补充规则数据口径半）+ S-F1.5 · 家长录入课表（AC1 即时链路半）+ S-F1.1 · 常显首页看「接下来干嘛」（AC1–AC2 producer 半）——技术描述见 plan.md（契约对齐 + B1→周网格/接下来计算 + 决策 26 三触发 producer + 录入即时通道）",
+  "planRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/plan.md",
+  "redBaselineCommand": "python -m pytest server/acceptance/ -q（offline 冻结齿基线；新增齿在未实现树上 RED，intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m3-schedule/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "M3K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET（本包目录）经 architect-reviewer 四分类预审 + human 契约门签字（HUMAN_APPROVED）后，契约 diff（E1 §1.3② schedule view 周网格形状重定义 + §1.3⑥ view=home 可选 data 承载 upcoming）随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口",
+    "M3K1-A2: B1→周网格计算齿——schedule.py 新增周网格函数：学校课逐节（上午 4 节/下午 2 节，来自「学校课程表」区块）、固定课外课逐门（「每周固定课表」）、临时安排逐门带 ※（「一次性安排」按当周日期落格、过期过滤）、星标呼应（group_upcoming 判定的当前「接下来」项带星标）；offline 验收全绿",
+    "M3K1-A3: 首页 upcoming payload 齿——group_upcoming 既有口径零偏移复用，产 view=home 可选 data（今日分组项 + 明日预告 preview 形状按契约冻结版）；offline 验收含决策 26 合并「上学」项回归（12:00 在校时段计 upcoming 语义）",
+    "M3K1-A4: 三触发推送齿——①WS 建连即推 ②每日零点推（timezone 取 B1 frontmatter Asia/Shanghai）③录入即时推（OpenClaw 主通道改写 MD 后通知 front，通道取舍点按 plan.md 落定实现；副通道直改文件不触发即时推、靠①②兜底 = S-F1.5 AC2 语义）；offline/模拟验证三触发各自到达且互不重复",
+    {
+      "id": "M3K1-A5: live 三触发复证（deferred 归 M3-K3 设备轮）——真机联网/零点/录入三时点首页与课表页实际刷新目击；引擎/front 日志关联取证",
+      "kind": "structural",
+      "note": "live 半 deferred：单真机不两轮撞车，K1 侧 offline 齿先行，live 复证挂 K3 设备轮（crossPackageBehaviors 第 3 条）"
+    }
+  ],
+  "acceptanceTestsFile": [],
+  "exitCriteria": [
+    "M3K1-E1: 新增 offline 齿全绿（网格计算/upcoming payload/三触发模拟），既有 schedule.py 冻结语义（parse_schedule_md/items_for_date/group_upcoming）零偏移、pytest 全量零新增红",
+    "M3K1-E2: 铁律——契约 diff 仅经契约门通道落地（四分类预审 + human 签字在案，M3K1-A1）；不改 spec、不改 agent 定义/gate；schedule.py docstring 契约钉行随契约门同 PR 更新（旧钉行「schedule view data 形状零增减」被契约门取代）",
+    "M3K1-E3: 录入即时通知通道不动 OpenClaw 本体架构（走既有交接目录/部署补丁模式，取舍点留痕），provider 配置渲染链（overlay）零破坏"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3",
+    "docs/contracts/interface-contract.md#§2"
+  ],
+  "docRefs": [
+    "docs/requirements.md#F1"
+  ],
+  "sourceRefs": [
+    "delivery/milestones/milestones.jsonl#M3-schedule",
+    "docs/requirements.md#S-F1.2",
+    "docs/requirements.md#S-F1.3",
+    "docs/requirements.md#S-F1.5",
+    "docs/requirements.md#S-F1.1",
+    "docs/requirements.md#S-F1.1-AC1",
+    "docs/requirements.md#S-F1.5-AC1",
+    "docs/architecture.md#§5.1",
+    "docs/architecture.md#§5.2",
+    "docs/contracts/interface-contract.md#§1.3",
+    "docs/contracts/interface-contract.md#§2",
+    "server/gateway/schedule.py#parse_schedule_md",
+    "server/gateway/front/front_app.py#_relay_display_blocks_to_device"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
+  "docsSyncReason": "契约 diff（E1 §1.3②/§1.3⑥）随包同 PR 落地（经契约门）；schedule.py 模块头契约钉行同步更新。spec 面零改动（requirements v1.19 口径已冻结在前）。",
+  "mergeOrder": 33,
+  "dependsOn": [],
+  "testHost": "python -m pytest server/acceptance/ offline 齿；live 三触发 deferred 归 M3-K3 设备轮",
+  "decisionCoverage": [],
+  "crossPackageBehaviors": [
+    {
+      "topic": "schedule 周网格 payload 形状（契约冻结单源）",
+      "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k1-cloud-schedule-producer",
+      "note": "形状权威 = 契约门签字后的 interface-contract.md §1.3②；K2 消费齿按冻结形状写，契约 diff 未落地前 K2 不冻网格形状齿。"
+    },
+    {
+      "topic": "首页「接下来」home data 承载",
+      "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k2-p2-week-grid-page",
+      "note": "payload 语义 owner = K1（契约冻结 home 可选 data 形状）；板端注入接线承接 = K2（home_p1 schedule_inject 冻结 seam 消费）。"
+    },
+    {
+      "topic": "课表链路 live 真机复证（K1 producer 真机半）",
+      "owner": "260921-m3-k1-cloud-schedule-producer",
+      "carriedBy": "260921-m3-k3-voice-schedule-entry-live",
+      "note": "K1 live 半 structural deferred 挂 K3 设备轮（M3K1-A5）。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/schedule.py",
+        "symbol": "parse_schedule_md"
+      },
+      {
+        "path": "server/gateway/schedule.py",
+        "symbol": "group_upcoming"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_relay_display_blocks_to_device"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。重叠面核查：schedule_p2 旧冻结验收已 archive 退役（ARQ-260916 批），本包新建齿不走 supersede；prompt 面零触碰（v6 bump 归 K3）。OpenClaw 本体（ECS）不在本包改架构——录入即时通知取舍点（交接目录 marker vs front 端点 vs 轮询 piggyback）见 plan.md，倾向交接目录 marker（复用 alerts/ 既有模式、主副通道天然可区分）。"
+}

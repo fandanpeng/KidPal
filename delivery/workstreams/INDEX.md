@@ -1,10 +1,12 @@
 # delivery/workstreams Index
 
-> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-09-20。
+> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-09-21。
 
-## Active (0)
+## Active (1)
 
-_（无）_
+| slug | status | area | owner | opened | summary |
+|---|---|---|---|---|---|
+| [m3-schedule](m3-schedule/task_plan.md) | active | delivery | portfolio-planner | 2026-09-21 | M3-schedule 里程碑拆包——P2 一周总览网格（S-F1.2）+ 语音问课表问答框口径（S-F1.3）+ 家长录入即时链路（S-F1.5/B4）+ 课表数据接首页「接下来」合流（决策 26 三触发 producer 链路） |
 
 ## Archived (3)
 
