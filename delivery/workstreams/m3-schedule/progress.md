@@ -104,3 +104,20 @@
 - **热修**：`_relay_schedule_payload` 先 `json.dumps` 成 str 再入中继（只动 K1 调用点，不碰 260907-g-relay-fix 冻结四 callable）。全量 server 75 passed 零回归；部署 ECS 后探针复验 = 建连推送真发 view=home + upcoming 数据。
 - **流程豁免留痕**：human 2026-09-21 批准「跳过流程热修」（在场等真机效果场景），主线程直接改自有实现面，本段即诚实记录。K1 契约耦合钉行零触碰。
 - **随轮登记的独立缺口（未修）**：① 语音轮结束后 ~36s WS 被对端关闭、设备静默掉线至按键才重连（front 无关线日志，疑 NAT/keepalive 面，待查）；② 设备时间错误 = 服务端 OTA 响应缺 server_time 下发（ota.cc settimeofday 无输入，独立小变更）；③ 课表页网格空 = 预期内——薄意图展开接线归 K3（voice-schedule-entry-live）。④ 首页 P1 CJK 殿后清单立项形状（2026-09-21 真机轮与 human 对齐）：固定标签（接下来/明天/今天 等封闭集合）烘焙小资产 + 动态内容（课程名/事项名，开放集合）走字体——复用网格页已接的 lv_font_source_han_sans_sc_14_cjk，P1 软帧管线补「LVGL 字体栅格化进帧」画字 helper + 版式落位，待立项。
+
+## 2026-09-21 · K3 launch 面就绪（本批 = 单包 K3，树池串行复用第 10 棒）
+
+**调度判定**：本批 = 单包 K3（mergeOrder 35）。依赖图说了算——K3 dependsOn [K1, K2] 均已 merged（K1 @ 08:16Z、K2 @ 11:58Z）解锁；无其他可跑包、WIP 无压力、mergeToken 无持有者。同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch` 续跑（不换不删）。分支 vs main 实测 ahead 3 / behind 2——merge-driver rebase 式合并正常形态：树内内容为超集（含 K1 live 半热修 85e7d48，随 K3 合并回 main；main 侧 2 commit 为合并侧事件记录，分支已自带等价收尾账），树内开发无缺口。
+
+**launch 机械门**：`--check-launch 260921-m3-k3-voice-schedule-entry-live --base-ref base/m3-schedule` → ok:true，blocking 空、warn 空；launchPreconditions 待核 1 条 = 真机持板硬依赖（M3K3-A3 设备轮固有，K1/K2 host 半已 merged 满足其前半条件），其余 4 条已核、1 条属其他包折叠。
+
+**上游已知红基线（260909 T5 + 260915 T3 差异判停协议）**：
+- **server 面**：`git diff --quiet e6a62a9 HEAD -- server/` 有差异（K1 live 半热修动 front_app.py）→ 重跑：`python -m pytest -q --import-mode=importlib -m "not live" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/tests" "c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **75 passed / 0 failed**（2026-09-21；量测 @ 91b3b5c，面域 = server）。零红。
+- **firmware host 面**：`git diff --quiet 36d1519 HEAD -- firmware/` 有差异（K2 实现批 +2861/−640）→ 重跑（WSL host runner build + run）→ **74 Tests / 0 Failures / 0 Ignored**，exit 0（2026-09-21；量测 @ 91b3b5c，面域 = firmware；既有 63 齿零偏移 + K2 新 11 齿全绿）。零红。
+- Pod intake 按差异判停协议消费本段：对相应面域先 `git diff --quiet 91b3b5c HEAD -- <面域>`，零差异引用本行、有差异同命令重跑。
+
+**环境事实**：交接卫生核过（tracked 净 + untracked 净，firmware/build 与 managed_components 白名单在场——host 构建热缓存随树）；固件环境等价化沿用树内既有面（复用树跳过重建）；图索引复用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（status ready，17534 nodes / 46802 edges，自动增量已跟上 K2 后代码面）；board 已预填 K3 → 本树（--set-pod queued）；`delivery/taskpackages/current/` 指针已刷新指向 K3。
+
+**launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/launch-card.md`（五要素齐 + 交接注记：M3K1-A5/M3K2-A7 双 live 半归本包设备轮、板级零点重读 RTC 遗留评估归属、prompt v6 部署 ECS 需 human 确认窗口、K1 热修轮两独立缺口如实记录）。
+
+**遗留 human 项**：本次 launch 由 human 显式指示主线程代跑（交互会话内派 planner agent），偏离启动卡「human 自跑」默认形态并在此留痕；M3K3-A3 真机确认轮仍需 human 持板开窗，prompt v6 部署 ECS 窗口需 human 确认。
