@@ -12,8 +12,8 @@
   "subsystem": "server",
   "story": "S-F1.3 · 语音问课表（AC1–AC4）+ S-F1.5 · 家长录入课表（AC1–AC2 live 复证）+ S-F1.2 · 课表页看「一周总览」（真机半）+ S-F1.1 · 常显首页看「接下来干嘛」（三触发 live）——技术描述见 plan.md（prompt v6 问课表口径 + 「帮我显示课表」意图链 + live 设备确认轮）",
   "planRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/plan.md",
-  "redBaselineCommand": "python -m pytest server/acceptance/ -q（offline 冻结齿基线；新增 prompt/意图齿在未实现树上 RED，intake 时 acceptance-author 实跑复核）",
-  "redBaselineResult": "",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib server/acceptance/",
+  "redBaselineResult": "RED-BASELINE(设计态红, acceptance-author 2026-09-21 实跑): 12 failed / 29 passed（既有 27 齿零新增红）；新增 14 齿 = 12 红（真实缺失：v6 未落盘5 + 接线锚红1 + 意图展开未实现4 + 设备轮未落2）+ 2 must-stay-green（三面接线一致 / v5 零回改）",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -28,7 +28,9 @@
     "M3K3-A2: 「帮我显示课表」意图齿——AC2：孩子明确说「帮我显示课表/打开课表」→ 屏幕切 P2 周网格；链路 = 意图信号 → front 展开/触发 → view=schedule 下发 → 设备切页（offline 机械验证路径各环节，含 front 截获展开新网格的单元齿）",
     "M3K3-A3: live 真机确认轮（human 持板）——清单目击取证（串口 + front systemd + 引擎 docker logs 三源关联，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）：S-F1.2 AC1–AC4（网格/今天列/※/星标 + NFR-READ-1 14px 目测）、S-F1.3 AC1–AC4（问答框答复含备注/帮我显示课表切页/播报声波/长答复）、S-F1.5 AC1（QQ 录入后课表页/问课表/提醒三处即时变化）+ AC2（直改文件副通道连接/跨天兜底）、决策 26 三触发（联网/零点/录入后首页「接下来」实际刷新）；K1/K2 deferred 真机半（M3K1-A5/M3K2-A7）随轮收口"
   ],
-  "acceptanceTestsFile": [],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py"
+  ],
   "exitCriteria": [
     "M3K3-E1: offline 新增齿全绿（v6 锚齿 + carrier/overlay 接线齿 + 意图路径齿），pytest 全量零新增红；live 探针版本字面耦合按 ARQ-260908 既有纪律处理（不新钉 v6 字面）",
     "M3K3-E2: 铁律——不改 docs/contracts/**（「帮我显示课表」链路形态按 K1 契约门裁定消费）、不改 spec、不改 agent 定义/gate；prompt v5 及以下历史版本不回改",
@@ -78,7 +80,29 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "M3K3-A1: prompt v6 问课表口径齿——v6 新文件落盘（版本化演进，v5 基座逐字保留可 diff）+ OPENCLAW_SYSTEM_PROMPT_CARRIER 声明切换 + overlay 渲染接线（apply-xiaozhi-overlay.sh 引用改 v6）+ provider.config 声明面同步（接线不变式：渲染面 == 声明面 == 被测面，ADR-001）；课表 producer 段重写：答复走问答框文本含备注内容（AC4 带物读回）、网格数据 LLM 不生成（意图信号化、薄载荷形态按 K1 契约门取舍点 A 裁定）",
+        "shortId": "M3K3-A1",
+        "mutation": "三选一：(a) 删除/清空 server/deploy/openclaw-system-prompt.v6.md；(b) apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST 与 provider.config.yaml system_prompt 三键改回 v5（v6 不动）；(c) v6 课表段删问答框/备注/薄载荷锚",
+        "result": "(a) 落盘齿转红；(b) 三面一致性齿转红；(c) 措辞锚齿转红——敏感（turned red）",
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "M3K3-A2: 「帮我显示课表」意图齿——AC2：孩子明确说「帮我显示课表/打开课表」→ 屏幕切 P2 周网格；链路 = 意图信号 → front 展开/触发 → view=schedule 下发 → 设备切页（offline 机械验证路径各环节，含 front 截获展开新网格的单元齿）",
+        "shortId": "M3K3-A2",
+        "mutation": "意图截获失联：expand_schedule_intent_payload 恒返回 None / 或对非薄载荷也截获（贪截获）/ 或 front_app.py relay 路径删除引用",
+        "result": "薄载荷展开齿+边界齿+引用代理齿转红——敏感（turned red）；贪截获变异实测边界齿红",
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "M3K3-A3: live 真机确认轮（human 持板）——清单目击取证（串口 + front systemd + 引擎 docker logs 三源关联，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）：S-F1.2 AC1–AC4（网格/今天列/※/星标 + NFR-READ-1 14px 目测）、S-F1.3 AC1–AC4（问答框答复含备注/帮我显示课表切页/播报声波/长答复）、S-F1.5 AC1（QQ 录入后课表页/问课表/提醒三处即时变化）+ AC2（直改文件副通道连接/跨天兜底）、决策 26 三触发（联网/零点/录入后首页「接下来」实际刷新）；K1/K2 deferred 真机半（M3K1-A5/M3K2-A7）随轮收口",
+        "shortId": "M3K3-A3",
+        "mutation": "制品缺失：删除/清空 delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/device-round-record.md，或记录删任一清单族关键词（S-F1.2/今天列/星标/14px/备注/三触发/M3K1-A5/M3K2-A7/三源日志）",
+        "result": "设备轮落地齿或清单对账齿转红——敏感（turned red）",
+        "sensitive": true
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [

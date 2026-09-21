@@ -446,3 +446,29 @@ def home_upcoming_payload(model: dict, today_iso: str, now_hhmm: str,
     preview = ({"time": nxt[0]["time"], "name": nxt[0]["name"]} if nxt else None)
     return {"view": "home", "data": {"upcoming": {
         "day_key": "今天", "items": items, "preview": preview}}}
+
+
+def expand_schedule_intent_payload(payload, model: dict, week_date_iso: str,
+                                   now_hhmm: str | None = None,
+                                   school_start: str | None = None) -> "dict | None":
+    """「帮我显示课表」意图薄载荷 -> front 截获展开的决策面（契约 §1.3② 甲案，
+    TaskPackage 260921-m3-k3-voice-schedule-entry-live M3K3-A2 冻结契约）。
+
+    - payload 恰为意图薄载荷：dict 且 view == "schedule" 且 data == {}（空 dict）
+      -> 返回 week_grid_payload(model, week_date_iso, now_hhmm, school_start)
+      （**单源同算**——直接复用 K1 周网格 producer，绝不另起一套网格计算）。
+    - 其余一切（非 dict / view 非 schedule / data 缺失 / data 非空 dict / data
+      非 dict）-> 返回 None = 不截获，front 原样走既有 relay 链（薄载荷之外形状由
+      display_schema.validate_display 机械门裁决：新周网格放行、旧 {title,items}
+      拒绝降级——Q5，K1 已冻结，本件不重复）。
+    - 脏 B1（model 解析自坏 MD）-> 沿 week_grid_payload 的 ValueError 大声传播，
+      绝不静默产空网格（P2-A2 先例）。
+    """
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("view") != "schedule":
+        return None
+    data = payload.get("data")
+    if not isinstance(data, dict) or data:
+        return None
+    return week_grid_payload(model, week_date_iso, now_hhmm, school_start)

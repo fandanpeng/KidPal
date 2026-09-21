@@ -173,5 +173,71 @@ class ValidateDisplayScheduleTighten(unittest.TestCase):
             self.assertTrue(isinstance(reason, str) and reason)
 
 
+class ExpandScheduleIntentBoundaries(unittest.TestCase):
+    """260921-m3-k3 意图薄载荷截获展开决策面（M3K3-A2 实现自带测）。
+
+    规格 = server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py 的 A2 四齿；
+    本文件补规格未逐字段钉的边界/错误路径：恰薄载荷才展开、单源同算、其余原样放行、
+    脏 B1 大声 ValueError（P2-A2）、展开产物过 display_schema 机械门。"""
+
+    def setUp(self):
+        self.model = schedule.parse_schedule_md(GRID)
+
+    def _expand(self, payload, model=None, week=MON, now=None, school=None):
+        return schedule.expand_schedule_intent_payload(
+            payload, self.model if model is None else model, week, now, school)
+
+    def test_thin_intent_expands_single_source(self):
+        expanded = self._expand({"view": "schedule", "data": {}}, now="17:00",
+                                school="08:00")
+        expected = schedule.week_grid_payload(
+            self.model, MON, "17:00", "08:00")
+        self.assertEqual(expanded, expected)          # 单源同算，不另起网格
+        ok, reason = ds.validate_display(expanded)
+        self.assertTrue(ok, reason)                   # 展开产物过真实机械门
+
+    def test_thin_without_now_school_matches_grid(self):
+        expanded = self._expand({"view": "schedule", "data": {}})
+        self.assertEqual(
+            expanded, schedule.week_grid_payload(self.model, MON))
+
+    def test_only_exact_thin_payload_intercepts(self):
+        full = schedule.week_grid_payload(self.model, MON)
+        cases = [
+            ("full week grid", full),
+            ("legacy shape", {"view": "schedule",
+                              "data": {"title": "今天", "items": []}}),
+            ("missing data", {"view": "schedule"}),
+            ("data not empty", {"view": "schedule",
+                                "data": {"week": {"courses": []}}}),
+            ("data not dict", {"view": "schedule", "data": "[]"}),
+            ("non-schedule view", {"view": "text", "data": {"text": "hi"}}),
+            ("not a dict", "```display\n{view:schedule}\n```"),
+        ]
+        for label, payload in cases:
+            self.assertIsNone(self._expand(payload),
+                              f"非薄载荷被误截获: {label}")
+
+    def test_data_emptied_equivalent(self):
+        """data == {} 的等价空 dict（A2 冻结契约按 == 判）也能展开。"""
+        self.assertIsNotNone(self._expand({"view": "schedule", "data": dict()}))
+
+    def test_dirty_b1_valueerror_loud(self):
+        """脏 B1（坏 week_date_iso / 坏 model 触发 producer 校验）→ 沿 week_grid_payload
+        的 ValueError 大声传播，绝不静默产空网格（P2-A2）。"""
+        dirty = GRID.replace("| 周一 | 16:30", "| 周九 | 16:30")
+        with self.assertRaises(ValueError):
+            schedule.parse_schedule_md(dirty)   # 脏星期在 parse 层即大声拒绝
+        # expand 链自身：坏 week_date_iso 触发 week_grid_payload 校验 -> ValueError 上抛，
+        # 不是返回 None（不静默降级产空网格）。
+        with self.assertRaises(ValueError):
+            self._expand({"view": "schedule", "data": {}}, week="not-a-date")
+
+    def test_wire_roundtrip_preserved(self):
+        expanded = self._expand({"view": "schedule", "data": {}})
+        wire = json.dumps(expanded["data"], ensure_ascii=False)
+        self.assertEqual(json.loads(wire), expanded["data"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

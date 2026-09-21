@@ -6,13 +6,13 @@
 `apply-xiaozhi-overlay.sh` 完成（把 `openclaw-system-prompt.v5.md` 拷到 ECS
 `data/` 与 `.config.yaml` 同目录）。
 
-- artifact（生成唯一来源）：`openclaw-system-prompt.v5.md`（当前冻结版本化文件，v5）。
-  v5 = 在 v4 版之上叠加 260920-m2-charwindow-display-fix 的 **MCD-A5/A7 查字窗展示面**：
-  ① char 最小意图块 `data` 增 `meaning`（中文释义，建议 ≤24 字，与语音部分那句中文解释
-  **同源同字**——同一回合同一 LLM 同时写语音与 meaning ⇒ 播报与屏显构造性一致；板端
-  `meaning[96]` = 32 CJK 字硬上限）；② 面向设备的回复**只含口语正文 + 一个 display 块、
-  禁任何自检/来源/附录/明细/HTML 结构**（内部自检走日志面、不进回复正文）。
-  v4 及其下 v1/v2/v3 基座语义逐字保留、可 diff。
+- artifact（生成唯一来源）：`openclaw-system-prompt.v6.md`（当前冻结版本化文件，v6）。
+  v6 = 在 v5 版之上叠加 260921-m3-k3-voice-schedule-entry-live 的 **M3-K3 课表问答口径 + 意图信号化**：
+  ① 课表问答的答复走**问答框**文本（与百科问答同一问答框，不切课表页、不滚动定位），答复**包含备注
+  内容**（带物读回，S-F1.3 AC1/AC4）；② 「**帮我显示课表/打开课表**」意图 → `schedule` view、`data`
+  恰为**薄载荷 `{}`**，**网格数据不由 LLM 生成**（front 机械计算单源、LLM 意图信号化——K1 契约门
+  Q2 甲案 / Q4 裁定）；旧 {title,items} 形状即废（Q5 收紧）。**只动课表段 + 版本沿革前言**，v5 及其下
+  v1/v2/v3/v4 基座语义逐字保留、可 diff。
   （v3 并集版沿革：260829-story-p3 故事 producer 扩展〔我要讲故事→start_recording /
   停录起标题出 story_text / V31 四条回退 / story_list.total 全集计数〕+ 260829-schedule-reminder
   包 7 / RMD-A8 提醒备注解析约定〔备注列携带物判定 + entry_key 对齐 + 三档范围 + cron/对话
@@ -27,10 +27,12 @@
   `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版）→
   `openclaw-system-prompt.v4.md`（260829-hardware-validation：F4 故事分工修正，v3 基座逐字保留）→
   `openclaw-system-prompt.v5.md`（260920-m2-charwindow-display-fix：MCD-A5/A7 char 最小意图块
-  增中文释义 meaning + 面向设备回复禁附录/HTML）
+  增中文释义 meaning + 面向设备回复禁附录/HTML）→
+  `openclaw-system-prompt.v6.md`（260921-m3-k3-voice-schedule-entry-live：M3-K3 课表问答口径
+  答复走问答框含备注读回 + 「帮我显示课表」意图薄载荷 data:{} + 网格数据不由 LLM 生成）
 - 声明面：`provider.config.yaml`（`system_prompt.deploy_target` + 同文件的
   `reminder_config` 三档阶梯配置声明）
-- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v5.md`；
+- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v6.md`；
   同批渲染 `openclaw-reminder.config.yaml` 并铺 `openclaw-patch/reminder_schedule_lib.py`）
 - 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
   生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉

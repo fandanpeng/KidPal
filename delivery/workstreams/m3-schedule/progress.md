@@ -127,3 +127,12 @@
 - **v6 部署 ECS 完成**（human 批准，主线程执行）：6 文件推送（v6 prompt + apply 脚本 + provider.config + K1 遗留 reminder_schedule_lib + front_app.py + schedule.py，远端各留 `.bak-260921-k3-v6`）→ apply 渲染 → v6 prompt 注入 .config.yaml（容器内 grep 实证 4 命中）→ 引擎/front 重启双绿（5 组件初始化成功；venv python 导入 expand_schedule_intent_payload + front 截获接线实证）。
 - **设备轮 offline 链已目击**：「帮我显示课表」意图 → 自动切 P2 → 网格有课（A2 链通）；「明天有什么课」问答框答复正常播报（S-F1.3 主验证点过）。已知缺口复现：设备时钟 tm_year 70（OTA 缺 server_time）→ 今天列高亮落周五（实为周日）——独立缺口如实挂账非 K3 义务。首页「接下来」固定标签 + time（ASCII）可画、CJK 课程名缺失 = 挂账④驱动实证（数据已到设备）。QQ 录入三触发项待 human 修 OpenClaw 后续跑。
 - **挂账④立项落包**：human 立项 ack（动态内容用对话同款普通字体）→ triage 门 architect 四档裁决 **②单包 Lite / riskTier medium**（human 确认不改判；字体双分支实证收敛：设备侧 font_puhui_14_1 即对话页同款）→ 落包 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/`（plan.md + taskpackage.json，origin.type=human-confirmed-plan 指向本文件挂账段）。调度：排 K3 合并后串行。
+
+## 2026-09-21 · K3 收口（integrator：设备轮制品 + closeout 四件 + final r2 九闸全绿）
+
+- **M3K3-A3 设备轮落记录**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/device-round-record.md`（human 目击设备轮 OK，2026-09-21 晚）。三源逐字对账（串口 c:/tmp/k3_round1.log 30min 完整捕获 + ECS journalctl + 引擎 docker logs，integrator 收口实拉）：AC2「帮我显示课表」意图链完整目击 ×2（22:11:37 courses=37 / 22:44:01 courses=40，均自动切 P2）；AC1 问答框答复不切页、日期准；AC4 备注读回（书法班时间地点进答复）；三触发①联网建连三度到端目击、②journalctl `trigger=midnight sent=1`（22:00:34，如实注记 = v6 部署重启补推非真零点 tick）、③ human 目击 + QQ 录入门数 37→40 全通路实证。A3 两齿随记录落盘转绿。
+- **归因更正（诚实留痕）**：派单素材将 851.5s `view=home upcoming_apply ok` 归因为「三触发③录入后即时推送」；三源关联显示该时点（22:19:59）早于录入的设备侧实证时点、与 farewell 轮同拍（v6 口径「说再见 → home 空」）——记录已按证据更正，③ 的 journalctl `trigger=immediate` 全量回溯 0 命中（lib 已随部署批上 ECS 仍零 firing）转 K1 部署面复核项（review-packet Findings SHOULD + 未覆盖面④）。
+- **K1/K2 deferred 真机半收口**：M3K1-A5 ①确认/②通路级/③human 目击+37→40（机器日志半缺位显式挂账）；M3K2-A7 切页/网格确认，※/★/「明早」/14px 四细节 human 未逐项口述——按 human 实际确认范围记录，不扩写。
+- **verify 链**：scoped r1（verifier，7 闸全绿，offline 半程）→ final **r2 九闸全绿**（integrator，`d4839306-bfe9-4f4e-9716-d106dbd8ead2`，ok:true / observedGateExit:0；unit 95 passed、acceptance 41 passed 零新增红）+ verifier-evidence-check exit 0（factOk:true）。integrator 独立复跑 `server/acceptance/` 41 passed（本包 14/14）+ `server/tests/` 54 passed。
+- **closeout 制品**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/`（device-round-record.md + review-packet.md + docs-delta.md + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT；demo 对账一致带挂账 + 未覆盖面 8 条逐条显式化）；docsSyncRequired=false 义务核清（spec/契约/prompt 历史版本零触碰）。
+- **状态**：commit 冻结 diff 后交 planner 跑 supervisor-verdict-gate 机械闸；不 push、不 merge。

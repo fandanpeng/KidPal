@@ -24,11 +24,12 @@ gateway:
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
 # apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2/.v3 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v5.md"   # 当前版本化文件 (v5 = v4 版 + MCD-A5/A7: char 最小意图块
-                                             #   增中文释义 meaning + 面向设备回复禁附录/HTML;
-                                             #   历史 v1..v4 不改可 diff)
-  source: "../deploy/openclaw-system-prompt.v5.md"
-  deploy_target: "openclaw-system-prompt.v5.md"   # ECS data/ 下的渲染目标名
+  artifact: "openclaw-system-prompt.v6.md"   # 当前版本化文件 (v6 = v5 版 + M3-K3 课表问答口径:
+                                             #   答复走问答框含备注读回 + 「帮我显示课表」意图薄载荷
+                                             #   data:{} + 网格数据不由 LLM 生成(front 机械单源);
+                                             #   历史 v1..v5 不改可 diff)
+  source: "../deploy/openclaw-system-prompt.v6.md"
+  deploy_target: "openclaw-system-prompt.v6.md"   # ECS data/ 下的渲染目标名
   # 演进: openclaw-system-prompt.v1.md (基座) → openclaw-system-prompt.v2.md (+课表 producer
   # + char C1) → openclaw-system-prompt.v3.md (+故事 producer 扩展, 并入本包包 7 提醒备注解析
   # 约定成并集版——两并行包曾各写一份 v3 抢同槽位，按 human 授权 pod-events dc9a5c15 取并集；
