@@ -44,3 +44,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260921-m3-k1-cloud-schedule-producer](260921-m3-k1-cloud-schedule-producer/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |

@@ -421,6 +421,33 @@ def write_pending_atomic(path, entries: list) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# 刷新 marker 落笔（M3-K1 取舍点 C 甲案：OpenClaw 主通道改写 schedule.md 后，经本
+# 重算入口在既有 alerts 交接目录落 refresh marker，front 轮询 piggyback 消费）
+# --------------------------------------------------------------------------- #
+
+# 与 gateway.schedule_push.MARKER_FILENAME 冻结常数一致（跨组件协议常量；OpenClaw 写 /
+# front 读的两侧必须钉同一名字）。
+REFRESH_MARKER_FILENAME = "schedule.refresh"
+
+
+def drop_refresh_marker(alerts_dir) -> None:
+    """在主通道重算成功后，向 alerts 交接目录落一个刷新 marker（幂等：先行在场则跳过）。
+
+    marker 是尽力而为信号、不抛异常——丢它主通道即时推仍被「建连推/每日零点推」兜底
+    （S-F1.5 AC2 语义：副通道直改 schedule.md 不经本入口 -> 无 marker -> 无即时推）。"""
+    if not alerts_dir:
+        return
+    try:
+        os.makedirs(str(alerts_dir), exist_ok=True)
+        mark = os.path.join(str(alerts_dir), REFRESH_MARKER_FILENAME)
+        if not os.path.exists(mark):
+            with open(mark, "w", encoding="utf-8") as f:
+                f.write("")
+    except OSError:
+        pass  # marker 尽力而为：不因交接目录不可写让排程失败
+
+
+# --------------------------------------------------------------------------- #
 # cron 载荷入口（OpenClaw cron --command 执行；live 相位人工批准，本包只落载体）
 # --------------------------------------------------------------------------- #
 
@@ -465,6 +492,10 @@ def main(argv=None) -> int:
     plan = plan_reminders(model, datetime.now().astimezone().isoformat(timespec="seconds"),
                           config=cfg, semantic=semantic)
     write_pending_atomic(pending, plan)
+    # M3-K1 主通道即时推（取舍点 C 甲案）：OpenClaw 主通道改写 schedule.md 后经本重算入口
+    # 落刷新 marker 通知 front 即时推「接下来」；副通道直改文件不经本入口 -> 无 marker。
+    # 与 pending.json 同目录（alerts 交接目录），front 轮询 piggyback 消费。
+    drop_refresh_marker(alerts_dir)
     print(f"planned {len(plan)} alert slots -> {pending} "
           f"(night_at={cfg['night_at']} morning_at={cfg['morning_at']} "
           f"before_min={cfg['before_min']} semantic={'fallback' if semantic is None else 'loaded'})")
