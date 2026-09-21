@@ -171,5 +171,9 @@
   "260921-gov-review-launch-pipeline": {
     "date": "2026-09-21",
     "mergedInMain": "yes"
+  },
+  "260921-gov-review-canonical-text-align": {
+    "date": "2026-09-21",
+    "mergedInMain": "yes"
   }
 }
