@@ -136,3 +136,11 @@
 - **verify 链**：scoped r1（verifier，7 闸全绿，offline 半程）→ final **r2 九闸全绿**（integrator，`d4839306-bfe9-4f4e-9716-d106dbd8ead2`，ok:true / observedGateExit:0；unit 95 passed、acceptance 41 passed 零新增红）+ verifier-evidence-check exit 0（factOk:true）。integrator 独立复跑 `server/acceptance/` 41 passed（本包 14/14）+ `server/tests/` 54 passed。
 - **closeout 制品**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/`（device-round-record.md + review-packet.md + docs-delta.md + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT；demo 对账一致带挂账 + 未覆盖面 8 条逐条显式化）；docsSyncRequired=false 义务核清（spec/契约/prompt 历史版本零触碰）。
 - **状态**：commit 冻结 diff 后交 planner 跑 supervisor-verdict-gate 机械闸；不 push、不 merge。
+
+## 2026-09-21 · K3 合并收尾（planner：机械闸 ESCALATE → human 批准 → merge-driver 进 main）
+
+- **机械合并门**：supervisor-verdict-gate 产 **ESCALATE**（write-once 落盘 supervisor-verdict.json；G6 diff 重算 medium→high：`all-mock:test-files-no-real-db/event-assertion` 判据命中 + adjudicate 规则 critical/high→ESCALATE）；supervisor-gate-check exit 0（provenance v2 全过：mechanicalSupervisorGate.ran=true、bearing fact=r2 ok、closeout refs 安全）。board 置 blocked 停等。
+- **human 批准升级合并**（主线程 AskUserQuestion 拍板，制品过目后确认：ESCALATE 按 high 档接受）→ pod-events human-decision `7a929952`（decision=approve-escalated-merge，eventId 即人批凭据）→ `merge-driver --pod --human-approval-ref`：approval-ref 五要素核验 OK → 升级闸 PASS → rebase OK → quick-check 2 闸绿 → **merge OK**，main tip `72c654a`（merge commit 携 human-approval-ref）；Step 5b merge-completed `56b2557b` 落 pod-events；board 置 merged；token released（next holder: none）。
+- **批内随进**：K4 立项 commit `40ce8c7`（纯 delivery 制品，human 已知悉属预期）；分支实现 commit 以 rebase 形态进 main（`91b9d0c` 收口 + `24d58e5` Step 0 治理面 3 文件 + `b032d39` pod-events 簿记）。
+- **合并后收尾**：dev INDEX K3 行 closed 在场（integrator closeout-check --update-index 刷入，K1/K2/K3 三行齐、arch lane 无涉免重建）；分支 pod-events 同步 merge-completed 事件（受门 Edit 补行，非重定向）；progress 本段；收尾 commit 落分支（树池续跑，分支 vs main 收敛）。
+- **欠账移交（不随本包闭合）**：① `trigger=immediate` ECS 取证——K1 部署面复核项（review-packet SHOULD：journalctl 全量回溯 0 命中、疑 OpenClaw 容器 drop 入口未触达/交接目录错位）；② loop-retro 阈值 advisory 17——主线程发起（run /loop-retro）；③ milestones.jsonl M3-schedule 状态（K3 merged 后是否关里程碑）——主线程判定；④ 设备时钟（OTA 缺 server_time）/ WS ~36s 掉线族——K1 热修轮两独立缺口维持挂账。
