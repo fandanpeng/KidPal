@@ -1,19 +1,19 @@
 {
-  "changeId": "260921-m3-k3-voice-schedule-entry-live",
-  "rigor": "full",
-  "sourceType": "delivery-story",
+  "changeId": "260921-m3-k4-p1-cjk-dynamic-text",
+  "rigor": "lite",
+  "sourceType": null,
   "origin": {
-    "type": "delivery-story",
-    "upstreamType": "delivery-story",
-    "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+    "type": "human-confirmed-plan",
+    "upstreamType": "human-confirmed-plan",
+    "upstreamRef": "delivery/workstreams/m3-schedule/progress.md",
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
   },
-  "subsystem": "server",
-  "story": "S-F1.3 · 语音问课表（AC1–AC4）+ S-F1.5 · 家长录入课表（AC1–AC2 live 复证）+ S-F1.2 · 课表页看「一周总览」（真机半）+ S-F1.1 · 常显首页看「接下来干嘛」（三触发 live）——技术描述见 plan.md（prompt v6 问课表口径 + 「帮我显示课表」意图链 + live 设备确认轮）",
-  "planRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/plan.md",
-  "redBaselineCommand": "python -m pytest -q --import-mode=importlib server/acceptance/",
-  "redBaselineResult": "RED-BASELINE(设计态红, acceptance-author 2026-09-21 实跑): 12 failed / 29 passed（既有 27 齿零新增红）；新增 14 齿 = 12 红（真实缺失：v6 未落盘5 + 接线锚红1 + 意图展开未实现4 + 设备轮未落2）+ 2 must-stay-green（三面接线一致 / v5 零回改）",
+  "subsystem": "firmware",
+  "story": "首页 P1 动态日程名（课程名/事项名，开放集合 CJK 文本）在「接下来」卡、后续事项行、明日预告行正常渲染（14px 普通字体，设备 font_puhui_14_1 / host Source Han 子集双分支），从「画不出即丢弃」变为「画得出、超宽截断不越区」——技术方案见 plan.md（弱符号字形 seam + 设备/host 双强符号 + UTF-8 解码逐字形 blit）",
+  "planRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/plan.md",
+  "redBaselineCommand": "WSL host runner（firmware/main/test/host_app espidf_wsl.sh build + host_infra_test.elf）——既有 74 齿基线；新冻结齿（p1_cjk_name.acceptance.c）在未实现树上 RED，intake 时 acceptance-author 实跑复核",
+  "redBaselineResult": "",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -24,99 +24,49 @@
     "test-quality"
   ],
   "acceptance": [
-    "M3K3-A1: prompt v6 问课表口径齿——v6 新文件落盘（版本化演进，v5 基座逐字保留可 diff）+ OPENCLAW_SYSTEM_PROMPT_CARRIER 声明切换 + overlay 渲染接线（apply-xiaozhi-overlay.sh 引用改 v6）+ provider.config 声明面同步（接线不变式：渲染面 == 声明面 == 被测面，ADR-001）；课表 producer 段重写：答复走问答框文本含备注内容（AC4 带物读回）、网格数据 LLM 不生成（意图信号化、薄载荷形态按 K1 契约门取舍点 A 裁定）",
-    "M3K3-A2: 「帮我显示课表」意图齿——AC2：孩子明确说「帮我显示课表/打开课表」→ 屏幕切 P2 周网格；链路 = 意图信号 → front 展开/触发 → view=schedule 下发 → 设备切页（offline 机械验证路径各环节，含 front 截获展开新网格的单元齿）",
-    "M3K3-A3: live 真机确认轮（human 持板）——清单目击取证（串口 + front systemd + 引擎 docker logs 三源关联，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）：S-F1.2 AC1–AC4（网格/今天列/※/星标 + NFR-READ-1 14px 目测）、S-F1.3 AC1–AC4（问答框答复含备注/帮我显示课表切页/播报声波/长答复）、S-F1.5 AC1（QQ 录入后课表页/问课表/提醒三处即时变化）+ AC2（直改文件副通道连接/跨天兜底）、决策 26 三触发（联网/零点/录入后首页「接下来」实际刷新）；K1/K2 deferred 真机半（M3K1-A5/M3K2-A7）随轮收口"
+    "P1CJK-A1: name 墨落钉区齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应钉区（next {136,48,392,168} / nextlist {136,172,392,214} / preview {136,220,392,242}）",
+    "P1CJK-A2: 长 name 截断齿——超宽 name 截断不越钉区右界",
+    "P1CJK-A3: 回归守卫齿——空日程/单项各「零墨」pin 不回归（既有 74 齿 must-stay-green）",
+    "P1CJK-A4: UTF-8 容错齿——截断尾序列（home_upcoming 31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩",
+    "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩",
+    "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量记录（无新增大静态量，帧缓冲不增）；真机目测点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口"
   ],
-  "acceptanceTestsFile": [
-    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py"
-  ],
+  "acceptanceTestsFile": [],
   "exitCriteria": [
-    "M3K3-E1: offline 新增齿全绿（v6 锚齿 + carrier/overlay 接线齿 + 意图路径齿），pytest 全量零新增红；live 探针版本字面耦合按 ARQ-260908 既有纪律处理（不新钉 v6 字面）",
-    "M3K3-E2: 铁律——不改 docs/contracts/**（「帮我显示课表」链路形态按 K1 契约门裁定消费）、不改 spec、不改 agent 定义/gate；prompt v5 及以下历史版本不回改",
-    "M3K3-E3: 真机确认轮制品齐（设备轮记录 + 三源日志证据 + human 确认清单逐项判定），K1/K2 deferred 真机半闭环声明（closeout 对账）"
+    "P1CJK-E1: host runner 新齿全绿 + 既有 74 齿零偏移（build exit 0 + run exit 0）；device build 闸过",
+    "P1CJK-E2: 铁律——hp1_item_t 与 11 个冻结契约函数零偏移、home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、固定标签烘焙资产维持现状",
+    "P1CJK-E3: 真机目测点挂设备轮窗口收口（可随 K3 设备轮或独立开窗），阈值微调属设计迭代不触契约"
   ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md#§1.3"
-  ],
+  "contractRefs": [],
   "docRefs": [
-    "docs/requirements.md#F1"
+    "docs/requirements.md#S-F1.1"
   ],
   "sourceRefs": [
-    "delivery/milestones/milestones.jsonl#M3-schedule",
-    "docs/requirements.md#S-F1.3",
-    "docs/requirements.md#S-F1.3-AC1",
-    "docs/requirements.md#S-F1.3-AC2",
-    "docs/requirements.md#S-F1.3-AC4",
-    "docs/requirements.md#S-F1.5",
-    "docs/requirements.md#S-F1.5-AC1",
-    "docs/requirements.md#S-F1.5-AC2",
-    "docs/requirements.md#S-F1.2",
-    "docs/requirements.md#S-F1.1",
-    "docs/requirements.md#NFR-READ-1",
-    "server/deploy/openclaw-system-prompt.v5.md",
-    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
-    "server/deploy/apply-xiaozhi-overlay.sh"
+    "delivery/workstreams/m3-schedule/progress.md",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/home_upcoming.c",
+    "firmware/main/display/schedule_page.c",
+    "firmware/main/test/host_app/main/host_infra_seam.c"
   ],
   "iterationBudget": 2,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsSyncReason": "prompt 版本化演进面（v6 新文件 + carrier 声明）随代码与部署制品承载；spec/契约零改动（口径已冻结：S-F1.3 v1.19、契约形状归 K1 契约门）。server/deploy/README.md 的 v3 文档债不属本包（既有 ARQ 在册，若顺手修另留痕）。",
-  "mergeOrder": 35,
-  "dependsOn": [
-    "260921-m3-k1-cloud-schedule-producer",
-    "260921-m3-k2-p2-week-grid-page"
-  ],
-  "testHost": "pytest offline 齿 + human 持板真机确认轮（三源日志取证）",
+  "docsSyncReason": "纯渲染实现缺口收口（spec S-F1.1 既有已验收需求的实现补齐，非行为漂移）；契约/spec/部署面零改，无文档同步义务。",
+  "mergeOrder": null,
+  "dependsOn": [],
+  "testHost": "WSL host runner（pixel-probe 齿）+ device build 闸 + 真机目测（挂设备轮窗口）",
   "decisionCoverage": [],
-  "crossPackageBehaviors": [
-    {
-      "topic": "课表链路 live 真机复证（K1/K2 deferred 真机半收口）",
-      "owner": "260921-m3-k3-voice-schedule-entry-live",
-      "carriedBy": "260921-m3-k3-voice-schedule-entry-live",
-      "note": "M3K1-A5 / M3K2-A7 的 live 目击证据随本包设备轮（M3K3-A3）收口；本包 launch 前 K1/K2 host 半须已 merged。"
-    }
-  ],
+  "crossPackageBehaviors": [],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "M3K3-A1: prompt v6 问课表口径齿——v6 新文件落盘（版本化演进，v5 基座逐字保留可 diff）+ OPENCLAW_SYSTEM_PROMPT_CARRIER 声明切换 + overlay 渲染接线（apply-xiaozhi-overlay.sh 引用改 v6）+ provider.config 声明面同步（接线不变式：渲染面 == 声明面 == 被测面，ADR-001）；课表 producer 段重写：答复走问答框文本含备注内容（AC4 带物读回）、网格数据 LLM 不生成（意图信号化、薄载荷形态按 K1 契约门取舍点 A 裁定）",
-        "shortId": "M3K3-A1",
-        "mutation": "三选一：(a) 删除/清空 server/deploy/openclaw-system-prompt.v6.md；(b) apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST 与 provider.config.yaml system_prompt 三键改回 v5（v6 不动）；(c) v6 课表段删问答框/备注/薄载荷锚",
-        "result": "(a) 落盘齿转红；(b) 三面一致性齿转红；(c) 措辞锚齿转红——敏感（turned red）",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K3-A2: 「帮我显示课表」意图齿——AC2：孩子明确说「帮我显示课表/打开课表」→ 屏幕切 P2 周网格；链路 = 意图信号 → front 展开/触发 → view=schedule 下发 → 设备切页（offline 机械验证路径各环节，含 front 截获展开新网格的单元齿）",
-        "shortId": "M3K3-A2",
-        "mutation": "意图截获失联：expand_schedule_intent_payload 恒返回 None / 或对非薄载荷也截获（贪截获）/ 或 front_app.py relay 路径删除引用",
-        "result": "薄载荷展开齿+边界齿+引用代理齿转红——敏感（turned red）；贪截获变异实测边界齿红",
-        "sensitive": true
-      },
-      {
-        "acceptanceId": "M3K3-A3: live 真机确认轮（human 持板）——清单目击取证（串口 + front systemd + 引擎 docker logs 三源关联，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）：S-F1.2 AC1–AC4（网格/今天列/※/星标 + NFR-READ-1 14px 目测）、S-F1.3 AC1–AC4（问答框答复含备注/帮我显示课表切页/播报声波/长答复）、S-F1.5 AC1（QQ 录入后课表页/问课表/提醒三处即时变化）+ AC2（直改文件副通道连接/跨天兜底）、决策 26 三触发（联网/零点/录入后首页「接下来」实际刷新）；K1/K2 deferred 真机半（M3K1-A5/M3K2-A7）随轮收口",
-        "shortId": "M3K3-A3",
-        "mutation": "制品缺失：删除/清空 delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/device-round-record.md，或记录删任一清单族关键词（S-F1.2/今天列/星标/14px/备注/三触发/M3K1-A5/M3K2-A7/三源日志）",
-        "result": "设备轮落地齿或清单对账齿转红——敏感（turned red）",
-        "sensitive": true
-      }
-    ]
+    "perAcceptance": []
   },
   "crossEnd": {
-    "counterparts": [
-      {
-        "path": "firmware/main/display/schedule_page.c",
-        "symbol": "kidpal_schedule_page_render"
-      },
-      {
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_relay_display_blocks_to_device"
-      }
-    ],
-    "exempt": ""
+    "counterparts": [],
+    "exempt": "单子系统纯渲染变更（firmware display 内聚簇：home_p1.c + kidpal_render_node.cc + host seam），无跨包行为对偶面"
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。prompt v6 槽位 2026-09-21 核 server/deploy/ 未占用（ARQ-260908 槽位预约规则）；本包建包时复核，若并行占用按并集规则处置。真机轮协调协议（单一长捕获/human 就绪开窗/实时口令钉动作点）走 kidpal-serial-monitor skill 既有节。",
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：home_upcoming.c:393–396 按字节截 31 字节会截半 UTF-8 多字节字符，P1 解码器须安全停笔（plan.md 边角节）。调度：排 K3（260921-m3-k3-voice-schedule-entry-live）合并后串行（树池/mergeToken 纪律）；triage = architect 四档裁决 2026-09-21 ②单包 Lite，human 确认不改判，包 id human 拍板 m3-k4 序号。",
   "docsOwner": "integrator"
 }
