@@ -231,3 +231,14 @@
 - **合并链**：merge-driver --pod --human-approval-ref 标准链 → rebase OK / quick-check OK / **merge OK**——R4 批回 main，token 释放。
 - **R4 遗留挂账**：① mutation 执行面粒度差跨三棒（R3/R4 均以设计态红≙变异态在案，实跑变异未落仓内 evidence——pod-retro 已记「下棒必须处理」）；② A3 断电续航真机实证（human 观察反馈补账，`0e07412a` deferred 知情）；③ loop-retro 19 advisory（第四棒提请）；④ 图索引 re-index（time_sync [S1]/[S6] 符号）。
 - **验收常识沉淀（pod-retro R4 段）**：睡眠/延时类板级行为 host 齿只能钉形态不能钉时序——时序语义必须设备窗实证且跨多次边界采样（单边界观察会采到幸运相位；双稳态 motif = K4 双分支盲区后第二例）。
+
+## 2026-09-23 · K6 开机自动建连立项 + launch 面就绪（主线程，human 离席夜间自主跑）
+
+- **立项**：human 现场报告「开机/重启后设备与 Front 连接不自动建立，需按键才建连；首页『接下来』无内容、课表页直切无数据」。主线程实证根因——`WebsocketProtocol::Start()` 空桩（小智上游惰性连接语义），`OpenAudioChannel()` 仅四个人工交互点调用（application.cc:712/:745/:784/:986），boot 链路无建连；server 侧 ws_gateway 建连即推首页「接下来」+ 提醒轮询，设备不连全悬空。课表页（症状 B）根因更深：周网格缓存唯一填充源是语音轮 display tool call，三推送触发均不推周网格——**human 拍板 B 另走设计入口（可能触契约），A-only 入包**。
+- **triage**：architect 裁决 **②单包 Lite**（不触契约面——契约 §1.3⑥ 明文建连/推送时机属行为策略不进契约，architect 已核 interface-contract.md）+ **Shape A 形状修订**：弃 Connecting 态互斥（REBUT 两条：Connecting 是承重 UI 语义——voice_begin 弹语音轮层清提醒弹窗；断网 handler 在 Connecting 态 CloseAudioChannel 与后台 task 构成 use-after-free），改「`auto_connect_in_flight_` 标志互斥 + 状态恒 Idle + 主循环 handler 内判起 + OnNetworkError lambda 静默拦截 + 3 次退避重试 + 四人工 call site 加守卫」。human 离席前预授权「技术问题 call architect」，Shape A 按授权落、回席后补 ack（plan.md 留痕）。
+- **建包** `260923-m3-k6-boot-auto-connect`（plan.md reviewed plan + taskpackage.json + launch-card.md），挂本 workstream（attach-existing），排常驻树第 10 棒（K5 已闭环 @b869658）。
+- **上游已知红基线锚（差异判停 2026-09-23，两面分记）**：
+  - server 面锚：`git diff --quiet dc6094a HEAD -- server` 零差异 → 引用 K4 launch 段锚「server 95 @ dc6094a」（量测命令 `python -m pytest -q --import-mode=importlib -m "not live" <repo>/server/acceptance`，2026-09-22 量测于 dc6094a，面域 = server）；
+  - firmware 面锚：`git diff --quiet 9cae452 HEAD -- firmware` **有差异**（K5 批 21 文件）→ **现跑** WSL host runner：**92 Tests / 0 Failures** @ `b869658`（量测命令 `firmware/main/test/host_app espidf_wsl.sh build` + `host_infra_test.elf` run，2026-09-23 量测于 b869658，面域 = firmware）。
+  - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
+- **launch 指示**：human 离席（2026-09-23 夜）预授权主线程准备好后直接启动 dev loop（planner Pod in-process，K5 先例），真机锚挂设备轮窗口不阻塞 host 半收口。
