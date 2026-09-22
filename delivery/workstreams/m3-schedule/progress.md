@@ -242,3 +242,11 @@
   - firmware 面锚：`git diff --quiet 9cae452 HEAD -- firmware` **有差异**（K5 批 21 文件）→ **现跑** WSL host runner：**92 Tests / 0 Failures** @ `b869658`（量测命令 `firmware/main/test/host_app espidf_wsl.sh build` + `host_infra_test.elf` run，2026-09-23 量测于 b869658，面域 = firmware）。
   - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
 - **launch 指示**：human 离席（2026-09-23 夜）预授权主线程准备好后直接启动 dev loop（planner Pod in-process，K5 先例），真机锚挂设备轮窗口不阻塞 host 半收口。
+
+## 2026-09-23 · K6 host 半闭环（dev loop 主轮零返工 + 本地合并；真机半挂设备轮）
+
+- **dev loop 全链零 fixer 轮**：acceptance-author 冻结 6 TEST_CASE 结构齿（`firmware/main/test/boot_auto_connect.acceptance.c`，1047 行，MUTATION REPLAY MAP M1..M6 在册）+ 双通道红基线实跑（通道①既有齿 92/0 与锚零偏移、通道②新齿 6/6 设计态红）；builder 按 Shape A 实现（application.h 标志成员 + application.cc 缝实现/双触发点/四 call site 守卫/OnNetworkError 拦截/Schedule 包裹 + host_app CMakeLists 注册），三通道全绿：通道② 6/0、通道① **98 Tests / 0 Failures**（92+6 零偏移）、device build 闸过（xiaozhi.bin 余量 0x61900 = 11%）。verifier r1（brief 双份维护坑）/r2（mutation-check 隐式匹配坑）两轮机械形状空转后 r3 scoped + r4 final 全闸绿。
+- **K5 跨三棒 mutation 欠账本包销账**：六条变异第一方实跑（字节级备份回拷 + sha256 复核还原），原始输出落 `delivery/taskpackages/260923-m3-k6-boot-auto-connect/mutation-evidence/` 六件，逐条红 tooth 与 expectedRed 对上（M4 附带 TEST2 tooth9 同源共红为预期内注记）。
+- **合并链**：机械 supervisor 闸 APPROVE（green-channel，provenance v2.0）→ 前置升级闸 PASS 无例外 → merge-driver 本地 `--no-ff` 合并 main（`6d1bec9`，Step 0 治理面收口 `ccae6b2`，pod-events merge-completed `6d1bec9344d4`），human 离席零打断、零拍板请求。
+- **剩余（真机半，挂设备轮窗口 human 在场收口）**：K6-A7 四子锚真机实证（①冷启动建连推送 + P1「接下来」②wifi 闪断自动恢复避 IsTimeout ③宕机静默零错误卡 ④AutoConnect task 栈高水位）→ 真机轮后 progress.md K6 段终账。真机采样注意：退避为 vTaskDelay 时序行为，wifi 闪断子锚至少采两次断连相位（K5 跨多边界采样常识）。
+- **症状 B（课表页冷缓存）**：维持 human 拍板「另走设计入口」，不入本包。
