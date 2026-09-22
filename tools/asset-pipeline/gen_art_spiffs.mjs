@@ -4,7 +4,7 @@
  *
  * 上游母版纪律：单一母版 = tools/simulator/LvglWindowsSimulator/assets/assets.c（由
  * gen_assets.mjs 从 V3 设计稿生成，阈值化 RGB565，唯一值集 ⊆ {0x0000, 0xFFFF}）。
- * 本脚本把 47 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
+ * 本脚本把 52 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
  * firmware/main/assets/spiffs_root/。文件名 = 上游管线资产名 + ".bin"。
  *
  * KAP1 冻结格式（left firmware/main/test/ui_art_integration.acceptance.c 头）：
@@ -32,15 +32,17 @@ const REPO       = join(__dirname, '..', '..');
 const ASSETS_C   = join(REPO, 'tools', 'simulator', 'LvglWindowsSimulator', 'assets', 'assets.c');
 const OUT_DIR    = join(REPO, 'firmware', 'main', 'assets', 'spiffs_root');
 
-/* 47 枚闭集白名单（= acceptance artt_expected[] 文件根名，= assets.h 符号名） */
+/* 52 枚闭集白名单（= acceptance artt_expected[] 文件根名，= assets.h 符号名） */
 const WHITELIST = [
   /* 吉祥物 7 姿态 */
   'pose_daily_96', 'pose_listen_96', 'pose_think_96', 'pose_talk_96',
-  'pose_record_96', 'pose_sleep_96', 'pose_jump_96',
+  'pose_record_96', 'pose_jump_96',  // pose_sleep_96 v1.14 已裁，不再再生（磁盘旧 bin 留存）
   /* 图标族 14 */
   'ic_apple_48', 'ic_book_48', 'ic_mic_48', 'ic_drop_48', 'ic_thermo_48',
   'ic_bell_48', 'ic_batt_48', 'ic_mag_48', 'ic_star_48', 'ic_cloud_48',
   'ic_penhand_48', 'ic_note_48', 'ic_moon_48', 'ic_wave_48',
+  /* V5 增补（2026-09-22 human 五裁定）：wifi 双态 + 波浪线/星星画布目标尺寸直出 */
+  'ic_wifi_14', 'ic_wifioff_14', 'ic_wave_58', 'ic_star_22', 'ic_star_18', 'ic_star_38',
   /* 手绘框族 3 */
   'frm_236_236', 'frm_sm_160_120', 'frm_flat_240_96',
   /* 抖动网点 3 */

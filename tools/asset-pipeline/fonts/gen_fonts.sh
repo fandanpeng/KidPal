@@ -43,8 +43,12 @@ node "$LVFC_JS" --font "$BODY_SRC" --size 14 --bpp 1 --format bin --no-compress 
     --symbols "$BODY_SYMBOLS" -o "$OUT/font_body.bin"
 
 echo "=== 2/3 font_title_zcool.bin (30px 1bpp 标题子集) ==="
+# 字表 V5 对齐（2026-09-22）：V3 基础表 + 查字窗（部首日/组词/写完啦共笔）+ 删除确认（删掉这篇？）
+# + 提醒（记得带画具！）+ 成就帧（星徽章颗入）+ 拼音 xīng + 补数字 345789 + ！？·
+# 特殊字形 °/✔ 按 human 裁定暂不做。注意：reader 标题与提醒正文是动态文案，静态子集覆盖不了，
+# 动态 ZCOOL 渲染路径（fallback body / 逐字形 blit）归 dev-loop 包定案。
 node "$LVFC_JS" --font "$TITLE_SRC" --size 30 --bpp 1 --format bin \
-    --symbols '我的故事今天的课明天的课今天下午查生字小伴讲完啦知道了不等了打断叫醒它说完啦还没有课表数据问我吧开录新说的要了有一颗已入册快来一起看书吧2026年月日时分第屏共翻页真机对照武英数语钢琴课美术班方块球游泳训练' \
+    --symbols '我的故事今天的课明天的课今天下午查生字小伴讲完啦知道了不等了打断叫醒它说完啦还没有课表数据问我吧开录新说的要了有一颗已入册快来一起看书吧2026年月日时分第屏共翻页真机对照武英数语钢琴课美术班方块球游泳训练删掉这篇？记得带画具！星徽章颗入部首日组词笔xīng345789！？·' \
     -o "$OUT/font_title_zcool.bin"
 
 echo "=== 3/3 font_num_baloo.bin (44px 1bpp 数字子集) ==="

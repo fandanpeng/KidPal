@@ -41,6 +41,12 @@ for (const m of html.matchAll(/<svg class="(tilt\d+r?)" style="left:(\d+)px;top:
   inlineSvgs.push({ tilt: m[1], x: +m[2], y: +m[3], w: +m[4], h: m[5] ? +m[5] : null, viewBox: m[6], body: m[7] });
 }
 const inlineNamed = { '64 96': 'thermo-man', '56 88': 'drop-baby' };
+// V4 起画布退场的 V2/V3 legacy 内嵌件——现固件 home_p1 与 simulator kidpal_ui.c 仍在消费，
+// 母版自 V3 固化于此（不再依赖设计稿携带），rotate 沿用当年 OQ-1(a) 烘斜口径。
+const LEGACY_INLINE = {
+  thermo_man: { viewBox: '0 0 64 96', w: 64, h: 96, rotate: -1, body: '<line x1="24" y1="34" x2="15" y2="26" stroke="#000" stroke-width="4" stroke-linecap="round"/><line x1="40" y1="34" x2="49" y2="26" stroke="#000" stroke-width="4" stroke-linecap="round"/><circle cx="14" cy="25" r="3.2" fill="#000"/><circle cx="50" cy="25" r="3.2" fill="#000"/><rect x="24" y="8" width="16" height="56" rx="8" fill="#fff" stroke="#000" stroke-width="4"/><circle cx="32" cy="70" r="12" fill="#fff" stroke="#000" stroke-width="4"/><line x1="32" y1="68" x2="32" y2="16" stroke="#000" stroke-width="7" stroke-linecap="round"/><path d="M38 14 h4 M38 20 h4 M38 26 h4" stroke="#000" stroke-width="3"/><circle cx="28.5" cy="68" r="1.8" fill="#000"/><circle cx="35.5" cy="68" r="1.8" fill="#000"/><path d="M28.5 72 q3.5 3 7 0" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round"/><rect x="21" y="86" width="9" height="7" rx="3.5" fill="#000"/><rect x="34" y="86" width="9" height="7" rx="3.5" fill="#000"/>' },
+  drop_baby: { viewBox: '0 0 56 88', w: 56, h: 88, rotate: 2, body: '<path d="M28 6 C37 19 44 27 44 37 A16 16 0 1 1 12 37 C12 27 19 19 28 6 Z" fill="#fff" stroke="#000" stroke-width="4"/><circle cx="22.5" cy="38" r="2.2" fill="#000"/><circle cx="33.5" cy="38" r="2.2" fill="#000"/><path d="M23 43.5 q5 4.5 10 0" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/><use href="#cheekdots" transform="translate(16 46)"/><use href="#cheekdots" transform="translate(40 46)"/><line x1="7" y1="48" x2="1" y2="44" stroke="#000" stroke-width="3.5" stroke-linecap="round"/><line x1="49" y1="48" x2="55" y2="44" stroke="#000" stroke-width="3.5" stroke-linecap="round"/><circle cx="0.5" cy="43" r="2.6" fill="#000"/><circle cx="55.5" cy="43" r="2.6" fill="#000"/><rect x="19" y="79" width="8" height="6" rx="3" fill="#000"/><rect x="30" y="79" width="8" height="6" rx="3" fill="#000"/>' },
+};
 
 function wrapSvg(viewBox, body, extraDefs = true) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${extraDefs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
@@ -252,16 +258,33 @@ function recenter(raw, W, H, boxW, boxH, mode) {
 // ── 9. 资产清单 ──
 const jobs = []; // {name, svg(w=null→dot/raw), w, h, rotate, kind, extra}
 
-// 吉祥物七姿态：同族同尺寸 96×96，0°（姿态族中性；-1° 倾斜是 P1 摆放层关注点，不烘进姿态族）。
+// 吉祥物六姿态（pose-sleep v1.14 已裁）：同族同尺寸 96×96，0°（姿态族中性；-1° 倾斜是 P1 摆放层关注点，不烘进姿态族）。
 // pose_daily 由旧 98×98(-1°) 重新中立化为 96×96(0°)，保证七姿态逐枚同尺寸防跳位。
-for (const id of ['daily', 'listen', 'think', 'talk', 'record', 'sleep', 'jump']) {
+for (const id of ['daily', 'listen', 'think', 'talk', 'record', 'jump']) { // pose-sleep v1.14 已裁（磁盘旧 bin 留存给现固件语音页，不再再生）
   jobs.push({ name: `pose_${id}_96`, svg: svgUse(`pose-${id}`), w: 96, h: 96, rotate: 0, kind: 'svg' });
 }
 // 全图标族 14 枚：「48 盒」统一 48×48；ic-wave 波浪线 48×14 特例（非正方形）。
 for (const id of ['apple', 'book', 'mic', 'drop', 'thermo', 'bell', 'batt', 'mag', 'star', 'cloud', 'penhand', 'note', 'moon']) {
+  if (!symbols[`ic-${id}`]) continue; // V4 起符号库退场的 legacy 件，走下方 LEGACY_ICONS 兜底
   jobs.push({ name: `ic_${id}_48`, svg: svgUse(`ic-${id}`), w: 48, h: 48, rotate: 0, kind: 'svg' });
 }
+// legacy 图标三枚（V2/V3 符号库件，V4 换代退场；simulator 与 spiffs 白名单仍引用，母版自 V3 固化于此）
+const LEGACY_ICONS = {
+  'apple': { viewBox: '0 0 48 48', body: '<circle cx="23" cy="29" r="13.5" fill="#fff" stroke="#000" stroke-width="4"/><path d="M24 16 q-1 -7 -6 -9" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M25 13 q7 -8 15 -4 q-3 9 -15 6z" fill="#000"/>' },
+  'penhand': { viewBox: '0 0 48 48', body: '<line x1="40" y1="6" x2="24" y2="25" stroke="#000" stroke-width="7" stroke-linecap="round"/><path d="M24 25 l-5.5 6.5 l7.5 -1.5 z" fill="#000"/><rect x="12" y="22" width="20" height="17" rx="8" fill="#fff" stroke="#000" stroke-width="4"/><path d="M28.5 27 h5 M28.5 32 h4" stroke="#000" stroke-width="3" stroke-linecap="round"/>' },
+  'moon': { viewBox: '0 0 48 48', body: '<path d="M38 30 A16.5 16.5 0 1 1 20 8 a13 13 0 0 0 18 22 Z" fill="#fff" stroke="#000" stroke-width="4" stroke-linejoin="round"/>' },
+};
+for (const [id, d] of Object.entries(LEGACY_ICONS)) {
+  jobs.push({ name: `ic_${id}_48`, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${d.viewBox}"><defs>${defs}</defs>${d.body}</svg>`, w: 48, h: 48, rotate: 0, kind: 'svg' });
+}
 jobs.push({ name: 'ic_wave_48', svg: svgUse('ic-wave'), w: 48, h: 14, rotate: 0, kind: 'svg' });
+// V5 增补（2026-09-22 human 五裁定）：wifi 双态补集 + 波浪线/星星按 400×300 画布目标尺寸直出（禁 Pod 运行时缩放）。
+jobs.push({ name: 'ic_wifi_14', svg: svgUse('ic-wifi'), w: 14, h: 14, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_wifioff_14', svg: svgUse('ic-wifioff'), w: 14, h: 14, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_wave_58', svg: svgUse('ic-wave'), w: 58, h: 17, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_star_22', svg: svgUse('ic-star'), w: 22, h: 22, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_star_18', svg: svgUse('ic-star'), w: 18, h: 18, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_star_38', svg: svgUse('ic-star'), w: 38, h: 38, rotate: 0, kind: 'svg' });
 
 // 框族整框（RGB565 参考整图 + 9 宫格切分父本）：frm 大框 / frm-sm 小框 / frm-flat 底框, 角片 24px。
 const FRAMES = [
@@ -317,6 +340,9 @@ for (const s of inlineSvgs) {
     const deg = s.tilt === 'tilt1' ? -1 : s.tilt === 'tilt2r' ? 2 : 0;
     jobs.push({ name: nm.replace(/-/g, '_'), svg: wrapSvg(s.viewBox, `<g>${s.body}</g>`, true), w: s.w, h: s.h, rotate: deg, kind: 'svg' });
   }
+}
+for (const [nm, s] of Object.entries(LEGACY_INLINE)) {
+  jobs.push({ name: nm, svg: wrapSvg(s.viewBox, `<g>${s.body}</g>`, true), w: s.w, h: s.h, rotate: s.rotate, kind: 'svg' });
 }
 // 大时间字块 10:24（P1 既有，-1° 倾斜整块，保留）
 jobs.push({ name: 'time_10_24', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 108"><text x="122" y="86" text-anchor="middle" font-family="'Segoe UI','Arial Rounded MT Bold',sans-serif" font-weight="700" font-size="96" letter-spacing="-3" fill="#000">10  24</text></svg>`, w: 244, h: 108, rotate: -1, kind: 'svg' });
