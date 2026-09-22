@@ -100,3 +100,12 @@ docs/requirements.md
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+> **r1 · architect · 2026-09-22 · DRAFT v1.1**
+> 结论：BLOCK（R1–R4 四项打回——① :550 §4 可读性分级例举「接下来」事项与倒计时用大字的双重 V4 残留漏扫；② :614 §6 路线图阶段一倒计时残留漏扫；③ §5 `grep '倒计时'` 预期不可机械判定（漏 :356 正交概念豁免位）；④ OQ1 §8 砍项行未入 packet 改法枚举。另有随批小修四条（arch §3 指针 / 对账五条计数 / 速查卡 ×2 计数 / §3 SHA 缺 20df3cb）与 advisory 三条（A1 设计母版 v4 残留段留根 / A2 :552 手绘感分类 / A3 云端分组注记）。方向、分层、OQ 一致性、契约零触点判定均通过，无需升级 human。）
+> 逐轴发现与修法详见 [architect-review-r1.md](architect-review-r1.md)。
+
+> **r2 · architect · 2026-09-22 · DRAFT v1.2**
+> 结论：GREEN（r1 四项打回全部修到位、随批小修与 advisory 三条全部落位、逐节重读未引入新问题、preflight 判官本机亲证干跑 ok（anchorUnion = `docs/requirements.md` 单成员、findings 空）、契约零触点判定维持——无需契约门。）
+> FROZEN 凭据行：260922-arch-review-spec-v5-ui-align · architect review 绿 @ DRAFT v1.2（2026-09-22）——凭据 = ① human 立项 ack 已收（OQ1 = 倒计时贴纸进 §8 已砍清单 / OQ2 = 「明天」区多项列出、仅课外班与临时事件，§4 裁定记录）；② r1 打回四项已经 r2 逐条复核修讫；③ 契约零触点核查通过；④ preflight 干跑 ok、anchorUnion = `docs/requirements.md` 单成员、findings 空。可凭「立项 ack + 本绿」标 FROZEN，进入 packet-bound 落地（landing-manifest = docs/requirements.md）。
+> 逐条复核详见 [architect-review-r2.md](architect-review-r2.md)。
