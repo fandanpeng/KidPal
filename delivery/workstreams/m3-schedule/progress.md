@@ -161,3 +161,12 @@
 **launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/launch-card.md`（五要素齐 + 交接注记：plan.md 边角 UTF-8 截半容错、E2 铁律冻结面清单、字体双分支实证、真机目测挂窗、在案欠账勿吸清单）。
 
 **遗留 human 项**：K4 launch 执行形态待 human 指定（主线程代跑 / 交互自跑 / headless，命令行见启动卡第五要素）；loop-retro 阈值 advisory 17 待 human 发起（第三次提请）。
+
+## 2026-09-22 · K4 Pod 跑完 + 合并落账（planner Pod，主线程代跑 launch）
+
+- **Pod 闭环**：intake 四点探测全命中（board running）→ acceptance-author 冻结 `firmware/test/p1_cjk_name.acceptance.c`（6 TEST_CASE，红基线两通道实跑：既有 74 齿零偏移全绿 + 新齿 stub 独立红 5/6，红因 = 字形 seam 未实现真实缺失）→ builder 实现 [S1] 字形 seam 三落点（home_p1.c 弱默认 + kidpal_render_node.cc 设备强符号 font_puhui_14_1 + host_infra_seam.c Source Han）+ UTF-8 逐字形 blit + host_app 注册面接线 → host runner 80 齿全绿（74 零偏移 + 新齿 6）→ scoped r3 五闸绿 → final r4 九闸绿（xiaozhi.bin 0x30c5b0、app 分区余量 11% free——A6 build 闸兑现）。
+- **冻齿 TEST 2 算术缺陷修复**：builder 升级 + planner 亲核（pcn_diff_stats out_total 整帧语义 → TEST 2 求和 3× 重复计数、D==3D 与 total>0 互斥）→ acceptance-author 最小补丁（total 改单次整帧计数 D）+ REVISION LOG + 判别力两层保全（tooth 1 右界带直扫 + tooth 2 并集外 diff）。A2 去 clip 变异复验仍转红，齿强度未弱化。
+- **verifier 轮红 ×2 均 planner 元数据**：r1 contractRefs 空数组（补冻结契约面引用）、r2 mutationEvidence 短 id 不匹配全 id 判据（全 id + sensitive:true 回填）。代码面零红轮。
+- **合并门**：机械 supervisor-verdict 闸 APPROVE（riskTier medium，provenance v2 全过）→ 前置升级闸 PASS → merge-driver --pod 本地合并：merge commit `f8703d5`（main @ `6eeb43d` 簿记），token 释放。Review Packet findings 零 BLOCKING（1 NIT：mutation 执行面留痕粒度，planner 裁不阻塞——红基线 stub ≙ A1 变异态在案 + A2 复验在 REVISION LOG）。
+- **E2 铁律全绿**：home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、hp1_item_t 与 11 冻结契约函数零偏移、固定标签烘焙资产零改（diff 闭集 + 冻齿 canary 双证）。
+- **遗留（非阻塞）**：① P1CJK-A6 真机目测三点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口——按 kidpal-serial-monitor 协调协议向 human 约开窗（可独立开窗或随下次设备轮）；② loop-retro 阈值 18 advisory 持续挂账（主线程发起责任）。
