@@ -153,3 +153,61 @@ Findings 说明（五轴 review 执行留痕，见下节；无 finding 不等于
 - 影响面（11b，worktree）：detect_changes 仍 **N/A (worktree 未提交 diff)**（同主轮口径）；追加轮 diff 落在预期闭集（firmware 4 件：lvgl_display.cc / waveshare 板文件 / time_sync.{h,c} + 冻齿 1 件 time_sync.acceptance.c + 治理面：taskpackage ×2 / pod-events / verify-runs / r3/r4 fact / red-baseline wrapper / closeout 制品 ×3 / 本 addendum），无计划外文件。
 - 追加轮 findings：**零新增**（零 BLOCKING / SHOULD / NIT——主轮五轴结论经追加轮 diff 复核全部维持；变更面收敛于两项拍板的实现面，E2 八项逐条 verified）。
 - 本节只追加、不改主轮段落语义；追加轮改动不 push、不 merge（树池惯例：分支领先 main 随下批回 main）。
+
+## 追加轮 R4 addendum（2026-09-22）
+
+> R3 主批已人批合并回 main（dedf986），本节为 R4 追加轮收口**纯追加**——R3 addendum 与主轮既有段落零改语义。授权链：human 拍板（pod-events human-decision eventId `d2148f66-4a71-4131-8ce1-bf417f60950d`，2026-09-22，原始拍板 = human 真机 R3 bin 复观察发现双稳态缺陷后口头裁定，主线程转发明细在案）。R4 新 diff 的合并链照走人批，本相位不跑 supervisor gate、不 merge。
+
+### ① R4 因果链（双稳态真机复现 → 串口根因实证 → human 放宽拍板 d2148f66 → 冻齿 teeth 7-11 → builder 单点补丁 → verifier r5/r6）
+
+1. **真机 R3b 分钟对齐复观察发现双稳态缺陷**：有时 <1s（R3 轮幸运相位）、有时恒慢 60s（human 两次观察分别命中两态）。**串口根因实证**（主线程捕获 2026-09-22 23:06-23:07，pod-events d2148f66 rootCause 原样在案）：边界后 55s 零注入，仅两条注入（uptime 4257925/4257945 相差 20ms）都带旧分钟 rtc=23:06——机制 = pdMS_TO_TICKS 向下取整（tick=100Hz 量化 ~10ms）致唤醒落在边界前 + vTaskDelay(next_ms<10ms)=0 自旋数拍 + 板级 I2C 读 RTC 耗时吃掉亚 tick 余量 → 稳态落「每分钟只在边界前注入旧值」倒霉相位。
+2. **human 放宽拍板 d2148f66**：注入点从边界 ±0ms 改为**边界后 +KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS(=2000ms)**——唤醒恒落边界后 ~2s（远大于 tick 量化与 I2C 耗时，结构性消灭错过边界）；最坏显示滞后 = 2s + 1s 重渲 tick ≈ 3s，human 明示接受上限；常量值偏离 2000 须回 planner 重冻结；[S6] kidpal_ts_ms_to_next_minute 纯函数语义不动，只改板级接线表达式；R3 裸形态退役 + 防回归负锚（禁止延迟表达式裸用 ms_to_next_minute 无 offset）。
+3. **冻齿修订（acceptance-author 追加轮，REVISION LOG R4 条）**：TEST 8 既有 teeth 0-6 零偏移，新钉 R4 结构齿 teeth 7-11——tooth 7 常量定义+计数（0 处红）、tooth 8 TimeSyncPeriodicLoop 区内偏移真进延迟表达式、tooth 9 R3 裸形态精确串退役负锚、tooth 10 值域 2000 定值解析、tooth 11 首拍相位 = 首个边界后 2s 边角齿（MUST-STAY-GREEN）。红基线实跑（命令逐字在验收文件头注 R4 追记 + 线束脚本 `firmware/main/test/acceptance/red-baseline/ts_red_r4_wrapper.sh`）：通道①a 哨兵形态 8 Tests / 4 Failures（1/2/3 weak 哨兵 + TEST 8 tooth 0；4-7 绿零偏移）；通道①b 强符号线束 8 Tests / 1 Failures（TEST 1-7 全绿零偏移，红恰 = 新 tooth 7「板文件 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 仅 0 处」= R4 修法未实现设计态红；teeth 8/9/10 解析性必红、tooth 11 解析性绿）；通道② host runner 终态 rebuild 92 Tests / 1 Failures，唯一红同 tooth 7，其余 91 齿全绿零偏移。
+4. **实现（builder 单点补丁一次跑绿）**：R4 diff 实现面**单文件**——板文件 `waveshare-s3-rlcd-4.2.cc` 一处：`#define KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 2000`（落点裁定 = 板文件，设备时序常量随消费点，time_sync.h 保持 [S1]/[S6] 纯逻辑单源零设备语义）+ 节拍延迟表达式 `base_ms + KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS`（原 R3 裸形态 `vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms))` 退役）。host runner 92 Tests / 0 Failures；device build xiaozhi.bin 0x30e140 / app 分区 0x370000 / 0x61ec0 bytes (11%) free（与 r4 体积持平——纯板级常量/表达式改动零增重）。
+5. **verifier 追加轮双轮绿**：scoped r5 六闸全绿（invocationId `830472c6-2927-4fce-aff1-9a477c55c12c`，fact ok:true / observedGateExit:0）→ **final r6 九闸全绿**（invocationId `9740f5f3-0979-4ce8-9dcd-1a46bd185f64`，fact ok:true / observedGateExit:0，evidenceRef `verifier-evidence/rounds/r6.json`；unit 95 passed + acceptance 41 structural 齿 passed）。integrator 机械 fact 校验双轮实跑 exit 0 / factOk:true（r5 scoped + r6 final，2026-09-22）。
+6. **真机复验半待开窗**：R4 修法落地后的目测清单挂设备轮窗口（见第⑤节），A3 断电续航 / A3b 长开机 / R3a 隐藏目测一并复验。
+
+### ② Demo 对账行（R4 追加轮）
+
+- **R4 后全量 host 证据**：final r6 unit 95 passed + acceptance 41 structural 齿 passed；host runner 92 Tests / 0 Failures（builder 实跑转绿；红基线通道①b 8/1 与通道② 92/1 的红恰 = tooth 7 设计态，落实现后转绿——转红转绿双向在案）。
+- **R4 待复验面如实申报（全挂设备轮窗口）**：**连跨 2-3 个分钟边界观察注入恒带新分钟值**（R3 裸形态双稳态缺陷的复现靶面）+ **human 目测 P1 滞后 ≤3s 稳定**（R4 接受上限；R3b 原「读点秒≈0 / 滞后 <1s」目标随 R3 裸形态退役，见第⑤节）；A3 断电续航 / A3b 长开机 / R3a 隐藏后目测一并复验。主线程流程 = 绿后 rebuild + re-flash + 真机复验，合并门待真机复验后再裁。R4 收口前 demo 对账的**实证更新半**不闭环，与主轮/R3 同口径挂账——计划内 deferred，非证据缺失。
+
+### ③ R4 E2 铁律自查（逐条 diff 证据，2026-09-22 integrator 实跑）
+
+R4 实现 diff 闭集 = **单文件板文件** `waveshare-s3-rlcd-4.2.cc`（+ 冻齿 1 件 time_sync.acceptance.c + wrapper 脚本 1 件 + 治理面制品，全部非实现语义面）。逐项：
+
+| 铁律项 | 证据 | 结论 |
+|---|---|---|
+| `docs/contracts/**` 零改 | `git status --porcelain docs/contracts/` 零输出；contract-lint r5/r6 两轮绿；TEST 4 tooth 4 canary 在 41 structural 齿轮内 PASS | 零改 verified |
+| spec（requirements.md / architecture.md）零改 | `git status --porcelain docs/requirements.md docs/architecture.md` 零输出；docs-sync r5/r6 闸绿（docsSyncRequired:false） | 零改 verified |
+| ota.cc server_time 死代码不复活 | `git diff --stat -- firmware/main/ota.cc` 零输出（零 diff）；R4 diff 面无 application.cc；TEST 4 tooth 1 `CheckVersion(` 计数守卫 PASS | 保持 verified |
+| **[S6] 纯函数零触碰（R4 拍板约束）** | `time_sync.h` / `time_sync.c` **零 diff**（`git diff --name-only` 实测零命中）；TEST 8 teeth 0-6 零偏移（决策表 + 值域不变量 + 既有接线齿全绿） | 零触碰 verified |
+| 电池链路零触碰（owner 边界） | 板文件 R4 diff `+` 行 grep `battery\|adc_\|GetBatteryLevel` **0 命中**；adc_battery_monitor 链路文件零 diff | 零触碰 verified |
+| inject 家族本体零触碰 | `kidpal_render_node.cc` / `home_p1.c` / `custom_lcd_display.cc` / `p1_home_battery.acceptance.c` / `schedule_grid.acceptance.c` **零 diff**（实测）；TEST 6 tooth 1-4 + TEST 7 六齿在世守卫全绿（92/0 轮内）；R4 拍板只改延迟表达式、不触家族语义，落地符合 | 零触碰 verified |
+| lvgl_display.cc / application.cc 零触碰 | 两文件 R4 零 diff（R3 已落地的隐藏/节流面不在本轮变更面）；TEST 4 teeth 3/14 + TEST 7 teeth 3-5 守卫全绿 | 零触碰 verified |
+| 渲染版式/帧缓冲链路零触碰 | R4 diff 唯一实现文件为板文件 TimeSyncPeriodicLoop 节拍段（+注释 +常量 +表达式，见 ① 第 4 条），无渲染路径文件 | 零触碰 verified |
+
+### ④ Mutation 执行留痕（R4）
+
+- **登记面**：K5-R3b 的 mutationEvidence.perAcceptance 已更新为 **R4 形态变异**（逐字）——mutation = 删板级 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 常量 / 延迟表达式退回 R3 裸形态（唤醒落边界前，双稳态缺陷回潮）/ 恢复 boot 相位固定节拍；expectedRed = tooth 7 常量计数敏感（0 处红）/ tooth 8 区内偏移消费敏感 / tooth 9 裸形态退役负锚敏感 / tooth 10 值域 2000 敏感 turned red；mutation-check 闸 r5/r6 两轮绿。
+- **执行面（如实申报粒度差）**：R4 **未实跑变异**——R4 设计态红≙登记变异态在案，替代证据链：① 通道①a 哨兵形态 8/4（1/2/3 weak 哨兵 + tooth 0）；② 通道①b 强符号线束 8 Tests / 1 Failures，**红恰 = tooth 7**（R4 修法未实现态 = 删常量变异的同形初态；teeth 8/9/10 解析性必红、tooth 11 解析性绿，与登记 expectedRed 的敏感面一致）；③ 通道② host runner 92 Tests / 1 Failures，唯一红同 tooth 7，既有 91 齿全绿零偏移；④ builder 落实现后 host runner 92/0 转绿——设计态红→实现态绿的转红转绿双向在案，齿非恒红恒绿。①②③ 为 acceptance-author 2026-09-22 冻结修订期实跑（命令逐字在验收文件头注 R4 追记 + 线束脚本 ts_red_r4_wrapper.sh）；④ 为 verifier r6 acceptance 闸承载。主轮 5 组实跑变异自证（[S1] 家族齿）与 R3 轮设计态红自证在案不重复。
+- **粒度差声明**：同 R3 先例——登记面与执行面（设计态红等价证明）存在粒度差；R4 变异敏感面收敛于板级单点（常量 + 表达式），tooth 7 计数齿在设计态即红、实现态即绿，判读不损失；若合并门判需补实跑变异，可在设备轮窗前补跑（mutation 手法已在 expectedRed 逐字登记）。
+
+### ⑤ R4 未覆盖面申报更新（真机 deferred 逐条）
+
+| # | 未覆盖面 | 现状 | 去向 |
+|---|---|---|---|
+| 1 | **K5-R3b 真机半（R4 重指）**——连跨 2-3 个分钟边界观察注入恒带新分钟值 + human 目测滞后 ≤3s 稳定 | host 结构半全绿（TEST 8 teeth 7-11 + teeth 0-6 零偏移 + host 92/0）；真机未跑（新 bin 未烧） | 设备轮窗口（绿后 rebuild + re-flash，与 2/3/4 一并复验）；R3b 原「读点秒≈0/滞后 <1s」目标**随 R3 裸形态退役**，不复验 |
+| 2 | K5-R3a 真机半——隐藏后目测（状态栏无时钟 + 其余元素正常） | host 结构半全绿（TEST 7 六齿）；真机目测未跑 | 同上 |
+| 3 | K5-A3 真机半——断电重启 + 断网 → RTC 恢复显示正确时间 | host 半绿；真机未做，human 拍板申报「等新 bin 一并复验」（0e07412a deferred） | 同上 |
+| 4 | K5-A3b 真机半——长开机 ≥N 分钟 P1 时间继续走 | host 半绿；真机 R3 轮已观察 34 分钟无冻结（0e07412a），新 bin 后复验 | 同上 |
+| 5 | K5-A4 真机复证——NTP 不可达降级真机实证 | host 降级语义已闭环（主轮 E3 口径）；真机复证未跑 | 设备轮窗口内补复证 |
+| 6 | 其余面（K5-A1/A2/A5 host 半、契约引用、plan 效果段 host 可判半） | final r6 九闸绿 + host 92/0 双承载 | 无缺口（R4 零新增 host 侧缺口） |
+
+### R4 closeout 制品刷新与影响面
+
+- `verdict.json`（current/verdict.json 同形副本）+ `verification.json`（advisory 投影，补 r5/r6 双轮 check 记录）已以 final r6 fact 刷新（r1-r4 历史原样保留）；`current/verdict.json`（verify.mjs 程序 fs-write，non-bearing advisory）已随 r6 刷新。bearing fact = `delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r6.json`，本 packet 只引用不复制。pod-retro.md 不动（planner 收尾相位统一重写）。
+- Loop metrics / Pod Journal（post-cutoff dual-format）：不产 `session-digest.md` / `loop-health.md` / `loop-metrics.json` / `pod-journal.jsonl`；`pod-events.jsonl` 在场（R4 轮 human-decision d2148f66 + acceptance-author/builder dispatch-completed + friction over-scan 各 1 条已入账，advisory 检查通过）。
+- 影响面（11b，worktree）：detect_changes 仍 **N/A (worktree 未提交 diff)**（同主轮/R3 口径）；R4 diff 落在预期闭集（实现 1 件板文件 + 冻齿 1 件 + wrapper 脚本 1 件 + 治理面：taskpackage ×2 / pod-events / verify-runs / r5/r6 fact / closeout 制品 ×3 / 本 addendum），无计划外文件。
+- R4 findings：**零新增**（零 BLOCKING / SHOULD / NIT——主轮/R3 五轴结论经 R4 diff 复核全部维持；变更面收敛于板级单点补丁，E2 八项逐条 verified）。
+- 本节只追加、不改主轮与 R3 段落语义；R4 改动不 push、不 merge（上轮 ESCALATE 已人批合并 dedf986，R4 新 diff 合并链照走人批）。
