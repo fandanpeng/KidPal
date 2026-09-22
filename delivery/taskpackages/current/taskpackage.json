@@ -1,20 +1,20 @@
 {
-  "changeId": "260922-m3-k5-sntp-time-sync",
+  "changeId": "260923-m3-k6-boot-auto-connect",
   "rigor": "lite",
   "sourceType": null,
   "origin": {
     "type": "human-confirmed-plan",
-    "time": "2026-09-22",
+    "time": "2026-09-23",
     "upstreamType": "human-confirmed-plan",
-    "upstreamRef": "delivery/workstreams/m3-schedule/progress.md",
+    "upstreamRef": "本会话 human 现场报告（开机/重启后设备与 Front 连接不自动建立，需按键才建连）+ human 立项 ack（A-only）；architect triage 裁决 ②单包 Lite + Shape A 形状修订（human 离席预授权技术判断，回席后补 ack）",
     "upstreamFrozen": "",
     "workstream": "m3-schedule"
   },
   "subsystem": "firmware",
-  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1 时间/日期 + AC4 断网本地显示）——设备全部常显时间面显示真实本地时间：联网自动 NTP 对时 + 写回 PCF85063 硬件 RTC（断电续航）+ P1 时间消费面周期 re-inject 修掉 boot 快照冻结（F2）；技术方案见 plan.md（triage F1=(a) human 拍板 2026-09-22）",
-  "planRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/plan.md",
-  "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/ts_red_runner ../../time_sync.acceptance.c runner.c && /tmp/ts_red_runner（exit=失败 TEST_CASE 数）",
-  "redBaselineResult": "通道① 84 Tests / 0 Failures / exit 0（与上游锚 84 @ 9cae452 零偏移）；通道② 编译零 error + 6 Tests / 6 Failures / exit 6，红全部为本包设计态义务红（[S1] 缝未实现 + SNTP/写回/恢复/re-inject/接线结构 needle 现状零命中），MUST-STAY-GREEN 半（TEST 4 tooth 1-5、TEST 6 tooth 1-4）实跑全绿。红基线实跑 2026-09-22 acceptance-author。追加轮 R3 修订红基线增补（2026-09-22 acceptance-author 实跑，命令逐字在验收文件头注 R3 追记）：通道①b 强符号线束 8 Tests 2 Failures（TEST 1-6 全绿零偏移 + TEST 7/8 修订齿设计态红）；通道② host runner 92 Tests 2 Failures（红恰 = K5-R3a/R3b 设计态，既有 90 齿零偏移全绿）；编译通道 error/warning 零。 R4 追加轮（d2148f66）：通道① ts_red_r4_wrapper.sh——1a 哨兵形态 8 Tests/4 Failures（1/2/3 weak 哨兵 + TEST 8 tooth 0；4-7 绿零偏移）；1b 强符号形态 8 Tests/1 Failures（TEST 1-7 全绿；TEST 8 红于新 tooth 7「板文件 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 仅 0 处」= R4 修法未实现设计态红；teeth 8/9/10 解析性必红、tooth 11 解析性绿）。通道② host runner 终态 rebuild 92 Tests/1 Failures，唯一红同 tooth 7，其余 91 齿全绿零偏移。",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1）——设备开机激活完成后自动与 Front 建立 WS 连接（网络断开重连同样自动恢复），使 server「设备联网时」推送触发（S-F1.1 补充规则明文：刷新触发 = 设备联网时 + 每日零点 + 新建日程后即时）与提醒投递链开机即生效；技术方案见 plan.md（architect Shape A：标志互斥 + 状态恒 Idle，triage ②单包 Lite 2026-09-23）",
+  "planRef": "delivery/taskpackages/260923-m3-k6-boot-auto-connect/plan.md",
+  "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/k6_red_runner ../../boot_auto_connect.acceptance.c runner.c && /tmp/k6_red_runner（exit=失败 TEST_CASE 数）",
+  "redBaselineResult": "2026-09-23 acceptance-author 实跑回填。通道①（既有齿零偏移）：espidf_wsl.sh build 过（ninja no work to do，既有面零改动）+ host_infra_test.elf 全量实跑 = 92 Tests / 0 Failures 0 Ignored——与上游锚 92/0 @ b869658 零偏移（回归判据成立）。通道②（新齿独立红，red-baseline/k6_red_wrapper.sh）：gcc -std=c11 -Wall -Wextra 编译 COMPILE_EXIT=0（零 error 零 warning，验收文件实编过，验收测试纪律 §4）；实跑 = 6 Tests / 6 Failures（RUN_EXIT=6），全红 = 设计态红（frozen seam 未实现：auto_connect_in_flight_ / TryStartAutoConnect / kAutoConnectBackoffS 全仓零命中，2026-09-23 grep 实证），逐 TEST 首红 tooth：TEST1 tooth3（application.h 无 auto_connect_in_flight_）/ TEST2 tooth3（OnNetworkError 无 in-flight 拦截分支）/ TEST3 tooth2（TryStartAutoConnect 区缺席→预检 needle 全缺）/ TEST4 tooth2（同缝区缺席）/ TEST5 ToggleChat 守卫齿（四 call site 现状零 in-flight 守卫）/ TEST6 tooth6（OnAudioChannelOpened 无 Schedule 包裹；tooth7 注册行缺失被 abort 屏蔽，解析性必红，builder 接线后转绿）。各 TEST 的 MUST-STAY-GREEN 齿全部先行实跑绿（TEST1 tooth1/2 Connecting 恒 4 + 扫描器自检、TEST2 tooth1/2、TEST3 tooth1 protocol 读形态、TEST4 tooth1 activation 模板锚、TEST5 四区既有语义锚、TEST6 tooth1-5/8 canary+protocol 零触碰+既有注册面）。K6-A7 真机锚零 host 齿，deferred 设备轮（K6-E3）。六条 expectedRed 补跑手法逐字命令见 firmware/main/test/boot_auto_connect.acceptance.c 文件尾 MUTATION REPLAY MAP（builder/收尾相位实跑，原始输出落 mutation-evidence/）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -25,109 +25,98 @@
     "test-quality"
   ],
   "acceptance": [
-    "K5-A1: SNTP 校时正锚——联网后系统时间被设置：SNTP 启动挂 WiFi got IP 后异步（不阻塞激活/主流程），同步成功后系统时间正确（UTC+8 本地时间），状态栏守门 lvgl_display.cc:134 `tm_year >= 2025-1900` 通过、HH:MM 渲染正确；真机负锚点 = `System time is not set, tm_year: 70` 日志清零（真机半挂设备轮窗口）",
-    "K5-A2: PCF85063 写回路径齿——SNTP 成功事件驱动写回：本地时间 BCD 写 0x04–0x09 寄存器（现固件只读，新增 I2C 写路径），BCD 编解码 host 机判；OS 位（oscillator stop）置位 = 晶振曾停振 → 时间不可信 → 不写回、等 SNTP 降级（不把坏时间当权威）",
-    "K5-A3: 断电续航恢复齿——boot 读 RTC 后系统时间恢复路径补齐（现状 ReadRtcTime 仅注入 P1、未 settimeofday）：断电重启 + 保持断网 → 状态栏/P1 显示正确时间（S-F1.1 AC4 / NFR-OFF-1 离线口径）；RTC 读出值直接喂 inject 不经 TZ（寄存器存本地 BCD）",
-    "K5-A3b: 周期 re-inject 钉——修 F2 boot 快照冻结：P1 时间消费面从 boot 一次 ReadRtcTime→inject 改为周期重读重注入；re-inject 频率与 P1 重绘节拍协调（避免跳字/撕裂）；inject 家族（inject_rtc/s_rtc_hour guard 齿）保持在世零偏移",
-    "K5-A4: 失败降级负锚——NTP 不可达：主流程不卡（激活/对话照常）、无 crash、守门拒绝渲染维持（tm_year:70 态）、不重试风暴（退避）、`System time is not set` W 日志节流降噪（现每 10s 一条）",
-    "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）",
-    "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
-    "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链；R4 修订 human 拍板 d2148f66）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1，纯函数语义 R4 不动）+ 板级 TimeSyncPeriodicLoop 节拍 = kidpal_ts_ms_to_next_minute(now) + KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS(=2000)（边界后 ~2s 唤醒，结构性消灭 tick 量化/I2C 竞速错过；R3 裸形态退役防回归负锚；常量值偏离 2000 须回 planner 重冻结）；最坏显示滞后 = 2s + 1s 重渲 ≈ 3s（human 明示接受）；boot 相位固定节拍退役；inject 家族语义零触碰；真机半（连跨 2-3 分钟边界注入恒带新分钟值 + 滞后 ≤3s 稳定）挂设备轮"
+    "K6-A1: 自动建连缝正锚——守卫入口三条件（state==Idle && !IsAudioChannelOpened() && !auto_connect_in_flight_）、双触发点接线（HandleActivationDoneEvent 末尾 + HandleNetworkConnectedEvent Idle 支路）、spawn 判定在主循环 handler 内、后台 task 化（xTaskCreate 沿用 activation 模板，不阻塞主循环）；负 needle：自动路径零 SetDeviceState(kDeviceStateConnecting) 调用（防语音轮 UI 接管回归的机判齿）",
+    "K6-A2: 静默失败锚——InitializeProtocol 的 OnNetworkError lambda 内 auto_connect_in_flight_ 拦截分支（不置 MAIN_EVENT_ERROR、不弹错误卡）；重试有界退避 3 次（5s/10s/20s）、每次重试前重查三条件、耗尽后放弃；失败全程设备态保持 Idle",
+    "K6-A3: 未配网/空 url 负锚——自动建连入口预检 Settings(\"websocket\") 的 url（token 同检）非空，空则单条 log + 完全 no-op（不起 task、不重试、不报错）；Settings 只读不写、namespace 对齐 websocket_protocol.cc:86-89",
+    "K6-A4: in-flight 生命周期负锚——auto_connect_in_flight_ 在 task 所有退出路径（成功/失败/bail）必清；泄漏 true = 人工按键永久 no-op + 自动建连永久失效（本形状唯一单点灾难模式），verifier 逐路径核对 + needle 机判",
+    "K6-A5: 人工路径守卫齿——四个 OpenAudioChannel call site（application.cc ToggleChat/StartListening/WakeWordDetected/WakeWordInvoke 四处）in-flight 守卫接线；按键/唤醒既有分支行为语义零改动（needle 零偏移）",
+    "K6-A6: 回归 + device build 闸——既有 host 齿全绿零偏移（key_layer_dispatch / schedule_grid / p1_home_battery / time_sync 等）；boot UI 序列不变（首页稳落、无 VOICE 层推入）；xiaozhi.bin 构建过 + 体积余量记录；OnAudioChannelOpened lambda 体 Schedule() 包裹（回调统一回主循环）落齿",
+    "K6-A7: 真机锚（挂设备轮窗口，human 在场，不阻塞 Pod）——①冷启动无按键：串口见 WS connect + hello 交换、front 日志见建连推送发出、P1 显示「接下来」；②wifi 真实闪断重连：连接自动恢复（避开 IsTimeout 120s 路径）；③server 宕机开机：设备静默落首页、零错误卡，此后按键人工建连仍可用；④AutoConnect task 栈高水位日志无溢出迹象"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/time_sync.acceptance.c"
+    "firmware/main/test/boot_auto_connect.acceptance.c"
   ],
-  "testHost": "WSL host runner（BCD/写回/恢复/re-inject 注入缝逻辑 host 机判）+ device build 闸 + 真机窗口（挂设备轮，human 在场）",
+  "testHost": "WSL host runner（守卫/拦截/生命周期注入缝逻辑 host 机判）+ device build 闸 + 真机窗口（挂设备轮，human 在场）",
   "exitCriteria": [
-    "K5-E1: host runner 全量齿零红（新冻结齿 build+run exit 0，既有齿零偏移）；device build 闸过（体积余量证据）",
-    "K5-E2: 铁律——docs/contracts/** 与 spec 零改；协议/server/front 零改；渲染版式/帧缓冲链路零触碰（电池链路 owner 边界不碰）；OTA 校时通道不复活（ota.cc server_time 路径保持现状死代码）；remind 链零改",
-    "K5-E3: 真机锚收口挂设备轮窗口——A1（SNTP 后状态栏/P1 时间正确 + tm_year:70 清零）+ A3b（长开机不冻结）+ A3（断电续航）真机实证；失败降级（A4）真机或 host 可证降级语义",
-    "真机轮后 progress.md K5 段落账 + pod-retro.md（closeout 相位）"
+    "K6-E1: host runner 全量齿零红（新冻结齿 build+run exit 0，既有齿零偏移）；device build 闸过（体积余量证据）",
+    "K6-E2: 铁律——docs/contracts/** 与 spec 零改；server/front（front_app.py 等）零改；device_state_machine.cc 零触碰、protocol.h 接口签名零改（违反须回 triage 升 Full）；按键/唤醒人工路径语义零改动（仅加 in-flight 守卫）；IsTimeout 120s 覆盖式重连既有行为不顺手修",
+    "K6-E3: 真机锚收口挂设备轮窗口——K6-A7 四子锚真机实证（单一长捕获 + 就绪信号开窗，不撞车纪律）",
+    "真机轮后 progress.md K6 段落账 + pod-retro.md（closeout 相位）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/requirements.md#S-F1.1",
-    "docs/requirements.md#NFR-OFF-1"
+    "docs/requirements.md#S-F1.1"
   ],
   "sourceRefs": [
-    "delivery/workstreams/m3-schedule/progress.md",
     "firmware/main/application.cc",
-    "firmware/main/ota.cc",
-    "firmware/main/display/lvgl_display/lvgl_display.cc",
+    "firmware/main/application.h",
+    "firmware/main/protocols/websocket_protocol.cc",
     "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/home_p1.c",
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
-    "firmware/main/test/p1_home_battery.acceptance.c"
+    "server/gateway/front/front_app.py",
+    "delivery/taskpackages/260923-m3-k6-boot-auto-connect/plan.md"
   ],
   "iterationBudget": 2,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsSyncReason": "时间同步实现缺口收口（spec S-F1.1 既有已验收需求 AC1/AC4 + NFR-OFF-1 的实现补齐，非行为漂移）；时间同步不在任何契约内、契约/spec/协议/server/front 零改，无文档同步义务。",
+  "docsSyncReason": "建连时机是行为策略非契约/spec 面——契约 §1.3⑥ 明文推送时机不进契约（architect 2026-09-23 已核 interface-contract.md 确认不触契约面）；spec 未规定连接建立机制，无文档同步义务。",
   "mergeOrder": null,
   "dependsOn": [],
-  "decisionCoverage": [],
-  "crossPackageBehaviors": [],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包复用既有 hello 握手零新消息形状，server/front 零改动；建连时机属行为策略非 wire 形状（plan.md 契约核查节 architect CONFIRMED）"
+  },
+  "notes": "禁止改 docs/contracts/**、spec 冻结面、server/front、device_state_machine.cc、protocol.h 接口签名、*.acceptance.*（验收归 acceptance-author）。上一包 K5 留根两条 intake 评估结论：① mutation 执行面粒度差跨三棒（R3/R4 以设计态红≙变异态在案、实跑变异未落仓内 evidence）——本棒必须处理：mutation 实跑并把原始输出落 delivery/taskpackages/260923-m3-k6-boot-auto-connect/mutation-evidence/（逐 acceptance 一文件，expectedRed 补跑手法已逐字在 mutationEvidence.perAcceptance 登记）；② 睡眠/延时类板级行为 host 齿只钉形态不钉时序——重试退避 5s/10s/20s host 齿钉决策表形态（封顶 3 次、递增序列），实时时序归真机窗 K6-A7。",
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "K5-A1: SNTP 校时正锚——联网后系统时间被设置：SNTP 启动挂 WiFi got IP 后异步（不阻塞激活/主流程），同步成功后系统时间正确（UTC+8 本地时间），状态栏守门 lvgl_display.cc:134 `tm_year >= 2025-1900` 通过、HH:MM 渲染正确；真机负锚点 = `System time is not set, tm_year: 70` 日志清零（真机半挂设备轮窗口）",
+        "acceptance": "K6-A1: 自动建连缝正锚——守卫入口三条件（state==Idle && !IsAudioChannelOpened() && !auto_connect_in_flight_）、双触发点接线（HandleActivationDoneEvent 末尾 + HandleNetworkConnectedEvent Idle 支路）、spawn 判定在主循环 handler 内、后台 task 化（xTaskCreate 沿用 activation 模板，不阻塞主循环）；负 needle：自动路径零 SetDeviceState(kDeviceStateConnecting) 调用（防语音轮 UI 接管回归的机判齿）",
         "sensitive": true,
-        "mutation": "变异 kidpal_ts_year_ok 守门阈值（>=125 边界）或删 application.cc SNTP 起始挂点或 TZ CST-8→GMT+0",
-        "expectedRed": "TEST 2 tooth 1 阈值敏感 / TEST 4 tooth 8-9 挂点敏感 / tooth 12 TZ 敏感 turned red；红基线通道② stub（seam 未实现）≙ 同一变异态在案独立红"
+        "mutation": "删守卫入口任一条件（三条件缺一）或摘双触发点接线任一处或把自动路径改回 SetDeviceState(kDeviceStateConnecting) 互斥形状",
+        "expectedRed": "新齿守卫条件敏感 tooth / 触发点接线敏感 tooth / 零 Connecting 负 needle turned red；红基线通道②（seam 未实现设计态红）≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-A2: PCF85063 写回路径齿——SNTP 成功事件驱动写回：本地时间 BCD 写 0x04–0x09 寄存器（现固件只读，新增 I2C 写路径），BCD 编解码 host 机判；OS 位（oscillator stop）置位 = 晶振曾停振 → 时间不可信 → 不写回、等 SNTP 降级（不把坏时间当权威）",
+        "acceptance": "K6-A2: 静默失败锚——InitializeProtocol 的 OnNetworkError lambda 内 auto_connect_in_flight_ 拦截分支（不置 MAIN_EVENT_ERROR、不弹错误卡）；重试有界退避 3 次（5s/10s/20s）、每次重试前重查三条件、耗尽后放弃；失败全程设备态保持 Idle",
         "sensitive": true,
-        "mutation": "变异 kidpal_ts_bcd_encode（hi<<4|lo→hi*10+lo）或 kidpal_ts_write_decision 移除 OS 位分支或删板级 WriteRtcTime",
-        "expectedRed": "TEST 1 tooth 1 BCD 敏感 / TEST 2 tooth 2 OS 降级敏感 / TEST 5 tooth 1 写回路径敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
+        "mutation": "删 OnNetworkError lambda 拦截分支（错误卡回潮）或退避封顶 3 改无限或删重试前三条件重查",
+        "expectedRed": "拦截分支 needle / 退避封顶决策表 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-A3: 断电续航恢复齿——boot 读 RTC 后系统时间恢复路径补齐（现状 ReadRtcTime 仅注入 P1、未 settimeofday）：断电重启 + 保持断网 → 状态栏/P1 显示正确时间（S-F1.1 AC4 / NFR-OFF-1 离线口径）；RTC 读出值直接喂 inject 不经 TZ（寄存器存本地 BCD）",
+        "acceptance": "K6-A3: 未配网/空 url 负锚——自动建连入口预检 Settings(\"websocket\") 的 url（token 同检）非空，空则单条 log + 完全 no-op（不起 task、不重试、不报错）；Settings 只读不写、namespace 对齐 websocket_protocol.cc:86-89",
         "sensitive": true,
-        "mutation": "kidpal_ts_write_decision 移除 year 可信门或删板级 settimeofday boot 恢复",
-        "expectedRed": "TEST 2 tooth 3 可信门敏感 / TEST 5 tooth 4 恢复路径敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
+        "mutation": "删 url 非空预检（空 url 起重试风暴）或预检改写 Settings（只读纪律破）",
+        "expectedRed": "预检分支 tooth / 只读守卫 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-A3b: 周期 re-inject 钉——修 F2 boot 快照冻结：P1 时间消费面从 boot 一次 ReadRtcTime→inject 改为周期重读重注入；re-inject 频率与 P1 重绘节拍协调（避免跳字/撕裂）；inject 家族（inject_rtc/s_rtc_hour guard 齿）保持在世零偏移",
+        "acceptance": "K6-A4: in-flight 生命周期负锚——auto_connect_in_flight_ 在 task 所有退出路径（成功/失败/bail）必清；泄漏 true = 人工按键永久 no-op + 自动建连永久失效（本形状唯一单点灾难模式），verifier 逐路径核对 + needle 机判",
         "sensitive": true,
-        "mutation": "删板级周期 ReadRtcTime 调用点（2→1）或删周期 inject_rtc 重注入（2→1）",
-        "expectedRed": "TEST 5 tooth 5/6 周期性敏感（boot 快照冻结语义回潮）turned red；红基线通道② stub ≙ 同一变异态在案独立红"
+        "mutation": "task 任一退出路径（成功/失败/bail）漏清 auto_connect_in_flight_",
+        "expectedRed": "生命周期逐路径 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-A4: 失败降级负锚——NTP 不可达：主流程不卡（激活/对话照常）、无 crash、守门拒绝渲染维持（tm_year:70 态）、不重试风暴（退避）、`System time is not set` W 日志节流降噪（现每 10s 一条）",
+        "acceptance": "K6-A5: 人工路径守卫齿——四个 OpenAudioChannel call site（application.cc ToggleChat/StartListening/WakeWordDetected/WakeWordInvoke 四处）in-flight 守卫接线；按键/唤醒既有分支行为语义零改动（needle 零偏移）",
         "sensitive": true,
-        "mutation": "backoff 恒定小值/去封顶，log_throttled 边界 <→<=，或删 lvgl_display.cc log_throttled 消费",
-        "expectedRed": "TEST 3 tooth 2/4/6/7 决策表敏感 / TEST 4 tooth 14 消费接线敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
+        "mutation": "摘任一 call site 守卫或改动人工路径既有分支行为",
+        "expectedRed": "call site 守卫 needle turned red；既有齿（key_layer_dispatch 等）零偏移约束同查；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）",
+        "acceptance": "K6-A6: 回归 + device build 闸——既有 host 齿全绿零偏移（key_layer_dispatch / schedule_grid / p1_home_battery / time_sync 等）；boot UI 序列不变（首页稳落、无 VOICE 层推入）；xiaozhi.bin 构建过 + 体积余量记录；OnAudioChannelOpened lambda 体 Schedule() 包裹（回调统一回主循环）落齿",
         "sensitive": true,
-        "mutation": "删 HOST_ACCEPTANCE_SRCS 注册行或拆 inject_rtc 函数体",
-        "expectedRed": "TEST 6 tooth 2/5 注册与既有齿守卫敏感 turned red；红基线通道② stub（注册行缺失 tooth 5 红）≙ 同一变异态在案独立红"
+        "mutation": "删 host runner 注册行或摘 OnAudioChannelOpened 的 Schedule() 包裹",
+        "expectedRed": "注册 needle / Schedule 包裹 needle turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
+        "acceptance": "K6-A7: 真机锚（挂设备轮窗口，human 在场，不阻塞 Pod）——①冷启动无按键：串口见 WS connect + hello 交换、front 日志见建连推送发出、P1 显示「接下来」；②wifi 真实闪断重连：连接自动恢复（避开 IsTimeout 120s 路径）；③server 宕机开机：设备静默落首页、零错误卡，此后按键人工建连仍可用；④AutoConnect task 栈高水位日志无溢出迹象",
         "sensitive": true,
-        "mutation": "恢复 UpdateStatusBar 区 SetStatus(time_str) 渲染调用（或摘除区内 mute/network/low_battery_popup_ 任一在世 needle）",
-        "expectedRed": "TEST 7 tooth 2 负锚敏感（时钟渲染复活转红）/ teeth 3-5 状态栏元素在世守卫敏感 turned red；红基线通道②（92 Tests 2 Failures 红恰 = TEST 7）≙ 同一变异态在案独立红"
-      },
-      {
-        "acceptance": "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链；R4 修订 human 拍板 d2148f66）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1，纯函数语义 R4 不动）+ 板级 TimeSyncPeriodicLoop 节拍 = kidpal_ts_ms_to_next_minute(now) + KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS(=2000)（边界后 ~2s 唤醒，结构性消灭 tick 量化/I2C 竞速错过；R3 裸形态退役防回归负锚；常量值偏离 2000 须回 planner 重冻结）；最坏显示滞后 = 2s + 1s 重渲 ≈ 3s（human 明示接受）；boot 相位固定节拍退役；inject 家族语义零触碰；真机半（连跨 2-3 分钟边界注入恒带新分钟值 + 滞后 ≤3s 稳定）挂设备轮",
-        "sensitive": true,
-        "mutation": "R4 形态变异：删板级 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 常量或延迟表达式退回 R3 裸形态 vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms))（唤醒落边界前，双稳态缺陷回潮）或恢复 boot 相位固定节拍",
-        "expectedRed": "TEST 8 tooth 7 常量计数敏感（0 处红）/ tooth 8 区内偏移消费敏感 / tooth 9 裸形态退役负锚敏感 / tooth 10 值域 2000 敏感 turned red；R4 红基线通道②（92 Tests/1 Failures 红恰 = tooth 7）≙ 同一变异态在案独立红"
+        "mutation": "杀自动建连路径（in-flight 恒 true 模拟泄漏 / 摘双触发点接线）——A7 四子锚观测面（建连推送/P1 内容/静默零错误卡/栈高水位）随自动路径失效 turned red",
+        "expectedRed": "真机变异态 = 开机不建连（回潮到立项前症状）；host 侧同因红由 K6-A1 触发点变异承载（M1），真机实跑挂设备轮窗口 K6-E3（deferred 非豁免）"
       }
+    ],
+    "realDeviceDeferrals": [
+      "K6-A7 四子锚真机半挂设备轮窗口，不阻塞 host 半收口"
     ]
-  },
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "单子系统纯固件变更（firmware 时间内聚簇：SNTP 挂点 + PCF85063 读写 + render_node inject + 状态栏守门），无跨包行为对偶面"
-  },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏，plan.md 边角节）：F2 冻结语义（只 settimeofday 不 re-inject 修不了 P1）、F4 POSIX TZ `CST-8` 符号反转易错 + RTC 寄存器存本地 BCD 读出不经 TZ、F5 失败退避不重试风暴 + `System time is not set` W 日志节流、F3 断电重启须 settimeofday 从 RTC 恢复系统时间、OS 位停振不写回等 SNTP 降级。铁律：OTA 校时通道不复活（ota.cc server_time 保持死代码）、电池链路 owner 边界不触碰、inject 家族 guard 齿零偏移。调度：K4 已合并收尾（74b6929 回 main / 7a5d909 落账），排常驻树续棒；triage = architect 四档裁决 2026-09-22 ②单包 Lite，human 拍板范围 F1=(a) + F2 随包，包 id m3-k5 序号。origin.taskpackage.json 曾截断损坏（.time 残片 + 尾部缺失），launch prep 2026-09-22 主线程对照 K4 骨架修复补齐——intake 时 planner 注意核对本文件与其余制品一致性。",
-  "docsOwner": "integrator"
+  }
 }

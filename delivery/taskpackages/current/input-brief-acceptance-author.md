@@ -1,31 +1,28 @@
-# input-brief · acceptance-author · 260922-m3-k5-sntp-time-sync
+# input-brief · acceptance-author · 260923-m3-k6-boot-auto-connect
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-22T09:40:48.847Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> 来源 TaskPackage: `delivery/taskpackages/260922-m3-k5-sntp-time-sync/taskpackage.json` · subsystem: firmware · rigor: lite
+> generated-at: 2026-09-22T16:28:54.183Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `delivery/taskpackages/260923-m3-k6-boot-auto-connect/taskpackage.json` · subsystem: firmware · rigor: lite
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
+| `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `docs/requirements.md` | `S-F1.1` | S-F1.1 · 常显首页看「接下来干嘛」 | 224 | ok |
-| `docs/requirements.md` | `NFR-OFF-1` | NFR-OFF-1 · 离线边界 | 591 | ok |
-| `delivery/workstreams/m3-schedule/progress.md` | — | 无锚点（整文件） | — | bare |
 | `firmware/main/application.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/ota.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/display/lvgl_display/lvgl_display.cc` | — | 无锚点（整文件） | — | bare |
+| `firmware/main/application.h` | — | 无锚点（整文件） | — | bare |
+| `firmware/main/protocols/websocket_protocol.cc` | — | 无锚点（整文件） | — | bare |
 | `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/display/kidpal_render_node.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/display/home_p1.c` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/test/p1_home_battery.acceptance.c` | — | 无锚点（整文件） | — | bare |
+| `server/gateway/front/front_app.py` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/260923-m3-k6-boot-auto-connect/plan.md` | — | 无锚点（整文件） | — | bare |
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 单子系统纯固件变更（firmware 时间内聚簇：SNTP 挂点 + PCF85063 读写 + render_node inject + 状态栏守门），无跨包行为对偶面
+> 本包复用既有 hello 握手零新消息形状，server/front 零改动；建连时机属行为策略非 wire 形状（plan.md 契约核查节 architect CONFIRMED）
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
@@ -33,9 +30,9 @@
 
 | 先例包 | 冻结验收文件 |
 |---|---|
+| 260922-m3-k5-sntp-time-sync | `firmware/main/test/time_sync.acceptance.c` |
 | 260921-m3-k2-p2-week-grid-page | `firmware/main/test/schedule_grid.acceptance.c` |
 | 260921-m3-k4-p1-cjk-dynamic-text | `firmware/main/test/p1_cjk_name.acceptance.c` |
-| 260920-m2-charwindow-card-fix | `firmware/main/test/char_stroke.acceptance.c` · `firmware/main/test/char_window_overlay.acceptance.c` |
 
 封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
 

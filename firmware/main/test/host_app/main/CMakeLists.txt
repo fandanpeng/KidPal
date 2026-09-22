@@ -160,6 +160,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫; 本文件 TEST 6 tooth 5 校验此序）。
     "../../time_sync.acceptance.c"
 
+    # 包 260923-m3-k6-boot-auto-connect（开机自动建连 + 断网重连自动恢复 + 静默失败
+    # + in-flight 生命周期 + 人工路径守卫）冻结验收：自动建连缝正锚 / OnNetworkError
+    # 拦截 + 有界退避决策表 / 未配网预检只读 / 全部为结构半（守卫/拦截/生命周期注入缝
+    # 逻辑 host 机判）+ 回归 + 注册序守卫。**必须置于 host smoke acceptance 之前**
+    # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../boot_auto_connect.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

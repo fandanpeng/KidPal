@@ -14,7 +14,7 @@
   "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1）——设备开机激活完成后自动与 Front 建立 WS 连接（网络断开重连同样自动恢复），使 server「设备联网时」推送触发（S-F1.1 补充规则明文：刷新触发 = 设备联网时 + 每日零点 + 新建日程后即时）与提醒投递链开机即生效；技术方案见 plan.md（architect Shape A：标志互斥 + 状态恒 Idle，triage ②单包 Lite 2026-09-23）",
   "planRef": "delivery/taskpackages/260923-m3-k6-boot-auto-connect/plan.md",
   "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/k6_red_runner ../../boot_auto_connect.acceptance.c runner.c && /tmp/k6_red_runner（exit=失败 TEST_CASE 数）",
-  "redBaselineResult": "PENDING——待 acceptance-author 实跑回填（通道①既有齿基线数 + 通道②新齿设计态红明细）",
+  "redBaselineResult": "2026-09-23 acceptance-author 实跑回填。通道①（既有齿零偏移）：espidf_wsl.sh build 过（ninja no work to do，既有面零改动）+ host_infra_test.elf 全量实跑 = 92 Tests / 0 Failures 0 Ignored——与上游锚 92/0 @ b869658 零偏移（回归判据成立）。通道②（新齿独立红，red-baseline/k6_red_wrapper.sh）：gcc -std=c11 -Wall -Wextra 编译 COMPILE_EXIT=0（零 error 零 warning，验收文件实编过，验收测试纪律 §4）；实跑 = 6 Tests / 6 Failures（RUN_EXIT=6），全红 = 设计态红（frozen seam 未实现：auto_connect_in_flight_ / TryStartAutoConnect / kAutoConnectBackoffS 全仓零命中，2026-09-23 grep 实证），逐 TEST 首红 tooth：TEST1 tooth3（application.h 无 auto_connect_in_flight_）/ TEST2 tooth3（OnNetworkError 无 in-flight 拦截分支）/ TEST3 tooth2（TryStartAutoConnect 区缺席→预检 needle 全缺）/ TEST4 tooth2（同缝区缺席）/ TEST5 ToggleChat 守卫齿（四 call site 现状零 in-flight 守卫）/ TEST6 tooth6（OnAudioChannelOpened 无 Schedule 包裹；tooth7 注册行缺失被 abort 屏蔽，解析性必红，builder 接线后转绿）。各 TEST 的 MUST-STAY-GREEN 齿全部先行实跑绿（TEST1 tooth1/2 Connecting 恒 4 + 扫描器自检、TEST2 tooth1/2、TEST3 tooth1 protocol 读形态、TEST4 tooth1 activation 模板锚、TEST5 四区既有语义锚、TEST6 tooth1-5/8 canary+protocol 零触碰+既有注册面）。K6-A7 真机锚零 host 齿，deferred 设备轮（K6-E3）。六条 expectedRed 补跑手法逐字命令见 firmware/main/test/boot_auto_connect.acceptance.c 文件尾 MUTATION REPLAY MAP（builder/收尾相位实跑，原始输出落 mutation-evidence/）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -64,46 +64,55 @@
   "docsSyncReason": "建连时机是行为策略非契约/spec 面——契约 §1.3⑥ 明文推送时机不进契约（architect 2026-09-23 已核 interface-contract.md 确认不触契约面）；spec 未规定连接建立机制，无文档同步义务。",
   "mergeOrder": null,
   "dependsOn": [],
-  "decisionCoverage": [],
-  "crossPackageBehaviors": [],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包复用既有 hello 握手零新消息形状，server/front 零改动；建连时机属行为策略非 wire 形状（plan.md 契约核查节 architect CONFIRMED）"
+  },
+  "notes": "禁止改 docs/contracts/**、spec 冻结面、server/front、device_state_machine.cc、protocol.h 接口签名、*.acceptance.*（验收归 acceptance-author）。上一包 K5 留根两条 intake 评估结论：① mutation 执行面粒度差跨三棒（R3/R4 以设计态红≙变异态在案、实跑变异未落仓内 evidence）——本棒必须处理：mutation 实跑并把原始输出落 delivery/taskpackages/260923-m3-k6-boot-auto-connect/mutation-evidence/（逐 acceptance 一文件，expectedRed 补跑手法已逐字在 mutationEvidence.perAcceptance 登记）；② 睡眠/延时类板级行为 host 齿只钉形态不钉时序——重试退避 5s/10s/20s host 齿钉决策表形态（封顶 3 次、递增序列），实时时序归真机窗 K6-A7。",
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "K6-A1: 自动建连缝正锚（守卫三条件 + 双触发点 + 主循环 spawn + 后台 task 化 + 零 Connecting 负 needle）",
+        "acceptance": "K6-A1: 自动建连缝正锚——守卫入口三条件（state==Idle && !IsAudioChannelOpened() && !auto_connect_in_flight_）、双触发点接线（HandleActivationDoneEvent 末尾 + HandleNetworkConnectedEvent Idle 支路）、spawn 判定在主循环 handler 内、后台 task 化（xTaskCreate 沿用 activation 模板，不阻塞主循环）；负 needle：自动路径零 SetDeviceState(kDeviceStateConnecting) 调用（防语音轮 UI 接管回归的机判齿）",
         "sensitive": true,
         "mutation": "删守卫入口任一条件（三条件缺一）或摘双触发点接线任一处或把自动路径改回 SetDeviceState(kDeviceStateConnecting) 互斥形状",
         "expectedRed": "新齿守卫条件敏感 tooth / 触发点接线敏感 tooth / 零 Connecting 负 needle turned red；红基线通道②（seam 未实现设计态红）≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K6-A2: 静默失败锚（OnNetworkError in-flight 拦截 + 有界退避 + 状态恒 Idle）",
+        "acceptance": "K6-A2: 静默失败锚——InitializeProtocol 的 OnNetworkError lambda 内 auto_connect_in_flight_ 拦截分支（不置 MAIN_EVENT_ERROR、不弹错误卡）；重试有界退避 3 次（5s/10s/20s）、每次重试前重查三条件、耗尽后放弃；失败全程设备态保持 Idle",
         "sensitive": true,
         "mutation": "删 OnNetworkError lambda 拦截分支（错误卡回潮）或退避封顶 3 改无限或删重试前三条件重查",
         "expectedRed": "拦截分支 needle / 退避封顶决策表 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K6-A3: 未配网/空 url 负锚（预检 no-op）",
+        "acceptance": "K6-A3: 未配网/空 url 负锚——自动建连入口预检 Settings(\"websocket\") 的 url（token 同检）非空，空则单条 log + 完全 no-op（不起 task、不重试、不报错）；Settings 只读不写、namespace 对齐 websocket_protocol.cc:86-89",
         "sensitive": true,
         "mutation": "删 url 非空预检（空 url 起重试风暴）或预检改写 Settings（只读纪律破）",
         "expectedRed": "预检分支 tooth / 只读守卫 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K6-A4: in-flight 生命周期负锚（全退出路径必清）",
+        "acceptance": "K6-A4: in-flight 生命周期负锚——auto_connect_in_flight_ 在 task 所有退出路径（成功/失败/bail）必清；泄漏 true = 人工按键永久 no-op + 自动建连永久失效（本形状唯一单点灾难模式），verifier 逐路径核对 + needle 机判",
         "sensitive": true,
         "mutation": "task 任一退出路径（成功/失败/bail）漏清 auto_connect_in_flight_",
         "expectedRed": "生命周期逐路径 tooth turned red；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K6-A5: 人工路径守卫齿（四 call site in-flight 守卫 + 既有语义零改动）",
+        "acceptance": "K6-A5: 人工路径守卫齿——四个 OpenAudioChannel call site（application.cc ToggleChat/StartListening/WakeWordDetected/WakeWordInvoke 四处）in-flight 守卫接线；按键/唤醒既有分支行为语义零改动（needle 零偏移）",
         "sensitive": true,
         "mutation": "摘任一 call site 守卫或改动人工路径既有分支行为",
         "expectedRed": "call site 守卫 needle turned red；既有齿（key_layer_dispatch 等）零偏移约束同查；红基线通道② ≙ 同一变异态在案独立红"
       },
       {
-        "acceptance": "K6-A6: 回归 + device build 闸（既有齿零偏移 + boot UI 序列不变 + OnAudioChannelOpened Schedule 包裹落齿）",
+        "acceptance": "K6-A6: 回归 + device build 闸——既有 host 齿全绿零偏移（key_layer_dispatch / schedule_grid / p1_home_battery / time_sync 等）；boot UI 序列不变（首页稳落、无 VOICE 层推入）；xiaozhi.bin 构建过 + 体积余量记录；OnAudioChannelOpened lambda 体 Schedule() 包裹（回调统一回主循环）落齿",
         "sensitive": true,
         "mutation": "删 host runner 注册行或摘 OnAudioChannelOpened 的 Schedule() 包裹",
         "expectedRed": "注册 needle / Schedule 包裹 needle turned red；红基线通道② ≙ 同一变异态在案独立红"
+      },
+      {
+        "acceptance": "K6-A7: 真机锚（挂设备轮窗口，human 在场，不阻塞 Pod）——①冷启动无按键：串口见 WS connect + hello 交换、front 日志见建连推送发出、P1 显示「接下来」；②wifi 真实闪断重连：连接自动恢复（避开 IsTimeout 120s 路径）；③server 宕机开机：设备静默落首页、零错误卡，此后按键人工建连仍可用；④AutoConnect task 栈高水位日志无溢出迹象",
+        "sensitive": true,
+        "mutation": "杀自动建连路径（in-flight 恒 true 模拟泄漏 / 摘双触发点接线）——A7 四子锚观测面（建连推送/P1 内容/静默零错误卡/栈高水位）随自动路径失效 turned red",
+        "expectedRed": "真机变异态 = 开机不建连（回潮到立项前症状）；host 侧同因红由 K6-A1 触发点变异承载（M1），真机实跑挂设备轮窗口 K6-E3（deferred 非豁免）"
       }
     ],
     "realDeviceDeferrals": [

@@ -1,0 +1,34 @@
+执行时间: 2026-09-23 (integrator 收尾相位第一方实跑, 非转录——原始输出逐字落盘)
+命令行: MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/acceptance/red-baseline/k6_red_wrapper.sh
+变异内容 (M4, K6-A4): 删 task 唯一共享清点——auto_connect_in_flight_ = false 摘除（所有退出路径漏清 = 泄漏 true 单点灾难模式; 其余缝面不动）
+期望红: TEST 4 红（tooth 3 task 区清点缺）; 共红预警: TEST 2 tooth 9 缝区 flag 下界 3 破（同源计数齿, 见判定注记）
+=== MUTATION STATE RUN ===
+=== channel 2: standalone structural harness (boot_auto_connect) ===
+COMPILE_EXIT=0
+Running 开机自动建连: 自动建连缝正锚 (K6-A1) ... PASS
+Running 开机自动建连: 静默失败+有界退避决策表 (K6-A2) ...     FAIL: K6-A2 RED: 缝区 auto_connect_in_flight_ 出现 < 3 次（下界: 守卫查 + 置位 + task 重查/清）——重试前重查或收尾清标志缺失
+  -> FAIL
+Running 开机自动建连: 未配网预检负锚 (K6-A3) ... PASS
+Running 开机自动建连: in-flight生命周期 (K6-A4) ...     FAIL: K6-A4 RED: task 区（xTaskCreate 之后）无 auto_connect_in_flight_ 清点——task 退出不清标志（泄漏 true = 人工按键永久 no-op + 自动建连永久失效, 单点灾难模式）
+  -> FAIL
+Running 开机自动建连: 人工路径守卫+既有语义零改动 (K6-A5) ... PASS
+Running 开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6-A6) ... PASS
+-----------------------
+6 Tests 2 Failures
+RUN_EXIT=2
+WRAPPER_EXIT=0
+
+=== RESTORED, GREEN RE-RUN ===
+还原方式: 字节级备份副本回拷 application.cc（sha256 复核一致）
+=== channel 2: standalone structural harness (boot_auto_connect) ===
+COMPILE_EXIT=0
+Running 开机自动建连: 自动建连缝正锚 (K6-A1) ... PASS
+Running 开机自动建连: 静默失败+有界退避决策表 (K6-A2) ... PASS
+Running 开机自动建连: 未配网预检负锚 (K6-A3) ... PASS
+Running 开机自动建连: in-flight生命周期 (K6-A4) ... PASS
+Running 开机自动建连: 人工路径守卫+既有语义零改动 (K6-A5) ... PASS
+Running 开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6-A6) ... PASS
+-----------------------
+6 Tests 0 Failures
+RUN_EXIT=0
+WRAPPER_EXIT=0
