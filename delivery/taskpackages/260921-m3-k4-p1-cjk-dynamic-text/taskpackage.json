@@ -13,7 +13,7 @@
   "story": "首页 P1 动态日程名（课程名/事项名，开放集合 CJK 文本）在「接下来」卡、后续事项行、明日预告行正常渲染（14px 普通字体，设备 font_puhui_14_1 / host Source Han 子集双分支），从「画不出即丢弃」变为「画得出、超宽截断不越区」——技术方案见 plan.md（弱符号字形 seam + 设备/host 双强符号 + UTF-8 解码逐字形 blit）",
   "planRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/plan.md",
   "redBaselineCommand": "WSL host runner（firmware/main/test/host_app espidf_wsl.sh build + host_infra_test.elf）——既有 74 齿基线；新冻结齿（p1_cjk_name.acceptance.c）在未实现树上 RED，intake 时 acceptance-author 实跑复核",
-  "redBaselineResult": "acceptance-author 两通道实跑（2026-09-22 @ eb63c93）：① 既有 74 齿全量 host runner → 74 Tests 0 Failures 0 Ignored / OK / rc=0（与 91b3b5c 锚零偏移）；② 新齿经 red-baseline stub 脚手架独立编译执行（gcc rc=0、6/6 TEST_CASE 执行零崩溃）→ 6 Tests / 5 Failures / exit 5（TEST 5 = A3 单项守卫 + E2 canary 基线即绿，MUST-STAY-GREEN）；红因全部 = 字形 seam 未实现 → name 不画（真实缺失行为），零链接/编译/环境红。预期红 = 设计态。",
+  "redBaselineResult": "追加轮两段式（acceptance-author 实跑 2026-09-22）：① 修订前主轮合并态 host runner 80 Tests / 0 Failures / exit 0（全绿锚）；② 修订版接入后 83 Tests / 7 Failures（83 = 80 − 6 旧 PCN + 9 新；7 红逐 CASE = 新版式未实现 + 资产未烘焙真实缺失：TEST1 ROW1 带外 / TEST3 / TEST4 / TEST5 单项 ROW2 墨 / TEST7 资产引用缺失 / TEST8 资产管线缺失接线态 / TEST9 极宽名首行未画），MUST-STAY-GREEN（TEST2 守卫、TEST6 结构齿）+ 其余 74 齿零偏移全绿；C 类实编 error 零、冻结即冒烟零崩溃（stub 通道 9 Tests / 8 Failures 弱哨兵真实缺失）。预期红 = 设计态。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -24,20 +24,25 @@
     "test-quality"
   ],
   "acceptance": [
-    "P1CJK-A1: name 墨落钉区齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应钉区（next {136,48,392,168} / nextlist {136,172,392,214} / preview {136,220,392,242}）",
-    "P1CJK-A2: 长 name 截断齿——超宽 name 截断不越钉区右界",
-    "P1CJK-A3: 回归守卫齿——空日程/单项各「零墨」pin 不回归（既有 74 齿 must-stay-green）",
-    "P1CJK-A4: UTF-8 容错齿——截断尾序列（home_upcoming 31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩",
-    "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩",
-    "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量记录（无新增大静态量，帧缓冲不增）；真机目测点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口"
+    "P1CJK-A1: name 墨落行带齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应行带（[S3] 行流语义：ROW1 {136,96,392,122} / ROW2 {136,124,392,150} / ROW3 {136,152,392,178}）",
+    "P1CJK-A2: 长名换行承载齿——超宽 name 换行不越卡区（右界带 x[393..399] 零墨守卫保留；换行 vs clip 机制判别在 A10）",
+    "P1CJK-A3: 回归守卫齿——空日程/单项行带零墨 pin 不回归（行带口径：单项 ROW2/ROW3/FLOW 零墨 + 标签在场；空日程半由既有 HPB 齿承载）",
+    "P1CJK-A4: UTF-8 容错齿——截断尾序列（31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩（落位带 ROW1）",
+    "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩（落位带 ROW1）",
+    "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量证据重录（B 方案静态 draw_buf 增量如实记）；真机复验挂设备轮窗口（A6 首轮 live FAIL：设备字形乱码 → 根因 raw A1 连续位流 → B 方案修复后复验）",
+    "P1CJK-A7: 接下来烘焙大字标签齿——「接下来」烘焙大字标签墨在场（LABEL 带 {136,48,266,92} 墨 >= 30；结构半 = home_p1.c 引用 [S5] 冻结资产名 p1_label_jiexialai.bin/p1_label_mingzao.bin）",
+    "P1CJK-A8: 行内时间值承载齿——行内时间走 [S1] seam ASCII（14px 对话同款，与文字行统一口径），time 值 diff 全落对应行带（ROW1/ROW2/ROW3）",
+    "P1CJK-A9: 末行预告构成齿——明早标签槽 {136,152,180,178} 墨 >= 12 + 预告时间起笔 x>=184 不侵槽；版式退役负断言（右上区 {268,50,390,92} 任何夹具零墨 = 大时间/贴纸/预告右上三重退役；旧预告独立带 {136,220,392,242} 零墨）；「明早」文案权威 = spec WF-F1-01 v1.21，载荷侧 HH:MM 由 K2 齿守",
+    "P1CJK-A10: 满载与换行压力齿——HP1_ITEM_MAX=8 项 + 预告 + 10 字 CJK 名 containment（卡区缝界外带零墨）；31×W 极宽名换行行为（ROW1 首行落位 + 续行落带）",
+    "P1CJK-A11: 设备字体×设备解码路径 host 覆盖齿——font_puhui_14_1 编入 host runner，[S6] 追加 seam（kidpal_p1_font_glyph_for_font，与 [S1] 共享解码核心，纯 additive）经独立参考解码器 oracle 逐位对比（设备字体 13 码点 bpp1 连续位流 + host 子集 8 码点 bpp4 阈值判别）+ advance 尺度化齿（嫌疑① 叠印）+ 行尾字节 padding 恒零齿（嫌疑② 尾字节）+ [S1]×[S6] 同构一致性齿；红 = host 复现（修到绿，设备路径从此免烧板），绿 = 不复现（根因在设备环境，转插桩）——两态皆合法交付物"
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/p1_cjk_name.acceptance.c"
   ],
   "exitCriteria": [
-    "P1CJK-E1: host runner 新齿全绿 + 既有 74 齿零偏移（build exit 0 + run exit 0）；device build 闸过",
-    "P1CJK-E2: 铁律——hp1_item_t 与 11 个冻结契约函数零偏移、home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、固定标签烘焙资产维持现状",
-    "P1CJK-E3: 真机目测点挂设备轮窗口收口（可随 K3 设备轮或独立开窗），阈值微调属设计迭代不触契约"
+    "P1CJK-E1: host runner 全量齿零红（修订版齿集 build exit 0 + run exit 0，既有 74 齿零偏移）；device build 闸过（体积余量证据重录）",
+    "P1CJK-E2: 铁律——hp1_item_t 与 11 个冻结契约函数零偏移、home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、[S5] 新标签资产（p1_label_jiexialai.bin/p1_label_mingzao.bin）按冻结名落盘 + 既有烘焙资产零删改（固定标签殿后由 human 2026-09-22 显式解除，落 pod-events c4785230）",
+    "P1CJK-E3: 真机复验挂设备轮窗口收口——A6 首轮 live FAIL（设备字形乱码）→ 根因（raw A1 连续位流 vs 字节对齐行假设）→ B 方案修复（LVGL 官方解码）+ 版式对齐 WF-F1-01（human 范围扩展授权）→ 复验"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -67,40 +72,70 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "P1CJK-A1: name 墨落钉区齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应钉区（next {136,48,392,168} / nextlist {136,172,392,214} / preview {136,220,392,242}）",
+        "acceptance": "P1CJK-A1: name 墨落行带齿——注入带 CJK name 的 upcoming → render → pixel-probe name 墨落对应行带（[S3] 行流语义：ROW1 {136,96,392,122} / ROW2 {136,124,392,150} / ROW3 {136,152,392,178}）",
         "sensitive": true,
-        "mutation": "home_p1.c name 渲染分支删除/不调字形 seam（回退「画不出即丢弃」）",
-        "expectedRed": "PCN-A1 RED: 换 name 帧差为零——日程 name 未被渲染…"
+        "mutation": "行流落位 y 常量回写旧位（PCN_ROW_Y_STUB 整词替换）",
+        "expectedRed": "PCN-A1 RED: …落在 ROW1 …带外"
       },
       {
-        "acceptance": "P1CJK-A2: 长 name 截断齿——超宽 name 截断不越钉区右界",
+        "acceptance": "P1CJK-A2: 长名换行承载齿——超宽 name 换行不越卡区（右界带 x[393..399] 零墨守卫保留；换行 vs clip 机制判别在 A10）",
         "sensitive": true,
-        "mutation": "name blit 去钉区右界 clip",
-        "expectedRed": "PCN-A2 RED: next 区行带右界带 x[393..399] 墨 != 0——超宽 name 截断越出钉区右界…"
+        "mutation": "name blit 右界 clip 放开（cx1 399）",
+        "expectedRed": "PCN-A2 RED: 卡区行带右界带 x[393..399] 墨 != 0"
       },
       {
-        "acceptance": "P1CJK-A3: 回归守卫齿——空日程/单项各「零墨」pin 不回归（既有 74 齿 must-stay-green）",
+        "acceptance": "P1CJK-A3: 回归守卫齿——空日程/单项行带零墨 pin 不回归（行带口径：单项 ROW2/ROW3/FLOW 零墨 + 标签在场；空日程半由既有 HPB 齿承载）",
         "sensitive": true,
-        "mutation": "home_p1.c s_count >= 2 / s_has_preview 门控拆为无条件调用",
-        "expectedRed": "PCN-A3 RED: 单项日程 nextlist 区墨 != 0——s_count>=2 门控被破…"
+        "mutation": "行流门控拆为无条件",
+        "expectedRed": "PCN-A3 RED: 单项日程 ROW2 墨 != 0"
       },
       {
-        "acceptance": "P1CJK-A4: UTF-8 容错齿——截断尾序列（home_upcoming 31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩",
+        "acceptance": "P1CJK-A4: UTF-8 容错齿——截断尾序列（31 字节截半多字节字符）安全停笔：截半字符不画、不越界、不崩（落位带 ROW1）",
         "sensitive": true,
-        "mutation": "解码器把不完整尾序列当 1 字节伪字形继续 blit（或越读 NUL 后字节）",
-        "expectedRed": "PCN-A4 RED: 截半帧 vs 完整帧 diff != 0——截半多字节字符被画…（越读型可能主崩，crash 亦算红）"
+        "mutation": "解码器把不完整尾序列当伪字形续画",
+        "expectedRed": "PCN-A4 RED: 截半帧 vs 完整帧 diff != 0"
       },
       {
-        "acceptance": "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩",
+        "acceptance": "P1CJK-A5: 字形缺失退化齿——弱默认路径（字形不可用）退化为现状不崩（落位带 ROW1）",
         "sensitive": true,
-        "mutation": "缺字形路径返回未初始化字形描述（w/h/bits 垃圾）",
-        "expectedRed": "PCN-A5 RED: 缺字形字符引入 diff != 0——缺字形路径画了墨（垃圾/未初始化字形描述）…"
+        "mutation": "缺字形路径返回未初始化描述",
+        "expectedRed": "PCN-A5 RED: 缺字形字符引入 diff != 0"
       },
       {
-        "acceptance": "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量记录（无新增大静态量，帧缓冲不增）；真机目测点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口",
+        "acceptance": "P1CJK-A6: device build 闸——xiaozhi.bin 构建过 + 体积余量证据重录（B 方案静态 draw_buf 增量如实记）；真机复验挂设备轮窗口（A6 首轮 live FAIL：设备字形乱码 → 根因 raw A1 连续位流 → B 方案修复后复验）",
         "sensitive": true,
-        "mutation": "kidpal_render_node.cc 强符号改名/移除 font_puhui_14_1 引用（闸条目半非齿不适用；TEST 6 tooth 3 结构半适用）",
+        "mutation": "kidpal_render_node.cc 强符号改名/移除 font_puhui_14_1 引用（闸条目半非齿不适用；TEST 6 结构半适用）",
         "expectedRed": "PCN-A6 RED: kidpal_render_node.cc 无 kidpal_p1_font_glyph 强符号 / font_puhui_14_1 引用——设备分支缺场…"
+      },
+      {
+        "acceptance": "P1CJK-A7: 接下来烘焙大字标签齿——「接下来」烘焙大字标签墨在场（LABEL 带 {136,48,266,92} 墨 >= 30；结构半 = home_p1.c 引用 [S5] 冻结资产名 p1_label_jiexialai.bin/p1_label_mingzao.bin）",
+        "sensitive": true,
+        "mutation": "(a) 资产引用 needle 改名；(b) 标签绘制分支删除",
+        "expectedRed": "(a) PCN-A7 RED: home_p1.c 未引用烘焙标签资产…；(b) PCN-A7 RED: 「接下来」标签带墨 < 30"
+      },
+      {
+        "acceptance": "P1CJK-A8: 行内时间值承载齿——行内时间走 [S1] seam ASCII（14px 对话同款，与文字行统一口径），time 值 diff 全落对应行带（ROW1/ROW2/ROW3）",
+        "sensitive": true,
+        "mutation": "行内时间改值无关固定串（TIME_LITERAL_STUB）",
+        "expectedRed": "PCN-A8 RED: 换 item0 time 帧差为零"
+      },
+      {
+        "acceptance": "P1CJK-A9: 末行预告构成齿——明早标签槽 {136,152,180,178} 墨 >= 12 + 预告时间起笔 x>=184 不侵槽；版式退役负断言（右上区 {268,50,390,92} 任何夹具零墨 = 大时间/贴纸/预告右上三重退役；旧预告独立带 {136,220,392,242} 零墨）；「明早」文案权威 = spec WF-F1-01 v1.21，载荷侧 HH:MM 由 K2 齿守",
+        "sensitive": true,
+        "mutation": "预告落回旧带 y228 / 贴纸恢复 / 标签不画 / 时间起笔 x<184",
+        "expectedRed": "旧预告独立带…墨 != 0 / 右上独立区…墨 != 0 / 明早标签槽墨 < 12 / 预告 time 墨差…落在标签槽右侧带之外"
+      },
+      {
+        "acceptance": "P1CJK-A10: 满载与换行压力齿——HP1_ITEM_MAX=8 项 + 预告 + 10 字 CJK 名 containment（卡区缝界外带零墨）；31×W 极宽名换行行为（ROW1 首行落位 + 续行落带）",
+        "sensitive": true,
+        "mutation": "containment clip 拆除 / 换行改回单行 clip",
+        "expectedRed": "满载帧卡区底界外带 y[243..251] 墨 != 0 / 极宽名帧 ROW1 以下带墨 < 20"
+      },
+      {
+        "acceptance": "P1CJK-A11: 设备字体×设备解码路径 host 覆盖齿——font_puhui_14_1 编入 host runner，[S6] 追加 seam（kidpal_p1_font_glyph_for_font，与 [S1] 共享解码核心，纯 additive）经独立参考解码器 oracle 逐位对比（设备字体 13 码点 bpp1 连续位流 + host 子集 8 码点 bpp4 阈值判别）+ advance 尺度化齿（嫌疑① 叠印）+ 行尾字节 padding 恒零齿（嫌疑② 尾字节）+ [S1]×[S6] 同构一致性齿；红 = host 复现（修到绿，设备路径从此免烧板），绿 = 不复现（根因在设备环境，转插桩）——两态皆合法交付物",
+        "sensitive": true,
+        "mutation": "seam 阈值 128→64（bpp1 免疫时判别面移 tooth4 bpp4）/ 参考位序反转 / advance 尺度化移除或二重压缩 / [S1]×[S6] 核心分叉",
+        "expectedRed": "PCN-A11 RED: 设备字体 U+8BFE 墨形与参考解码不一致… / host 子集 U+38 墨形与参考解码不一致… / PCN-A11 RED(嫌疑①): advance 220 != 参考 14… / PCN-A11 RED: [S1] 与 [S6] dsc/位图不一致——共享核心义务被破"
       }
     ]
   },
@@ -108,6 +143,6 @@
     "counterparts": [],
     "exempt": "单子系统纯渲染变更（firmware display 内聚簇：home_p1.c + kidpal_render_node.cc + host seam），无跨包行为对偶面"
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：home_upcoming.c:393–396 按字节截 31 字节会截半 UTF-8 多字节字符，P1 解码器须安全停笔（plan.md 边角节）。调度：排 K3（260921-m3-k3-voice-schedule-entry-live）合并后串行（树池/mergeToken 纪律）；triage = architect 四档裁决 2026-09-21 ②单包 Lite，human 确认不改判，包 id human 拍板 m3-k4 序号。【intake 后回填】冻结 seam 契约 [S1]（acceptance 齿头注）= int kidpal_p1_font_glyph(uint32_t, kidpal_p1_glyph_t*{w,h,advance,bits}) 1bpp 行主序 stride=(w+7)/8，弱默认在 home_p1.c 恒不可用；红基线脚手架 = firmware/main/test/acceptance/red-baseline/pcn_red_seam_stub.c + pcn_red_wrapper.sh（ksg 先例同款，冻结齿未接线 host_app 注册面）；BUILDER DUTY = 实现 [S1] seam（home_p1.c 弱默认 + kidpal_render_node.cc 设备强符号 + host_infra_seam.c host 强符号）+ UTF-8 解码逐字形 blit + host_app CMakeLists 注册面接线（smoke 末位序）。变异命名纪律：不得保留被测符号原字面为子串（用 _STUB 类整词替换）。",
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：home_upcoming.c:393–396 按字节截 31 字节会截半 UTF-8 多字节字符，P1 解码器须安全停笔（plan.md 边角节）。调度：排 K3（260921-m3-k3-voice-schedule-entry-live）合并后串行（树池/mergeToken 纪律）；triage = architect 四档裁决 2026-09-21 ②单包 Lite，human 确认不改判，包 id human 拍板 m3-k4 序号。【intake 后回填】冻结 seam 契约 [S1]（acceptance 齿头注）= int kidpal_p1_font_glyph(uint32_t, kidpal_p1_glyph_t*{w,h,advance,bits}) 1bpp 行主序 stride=(w+7)/8，弱默认在 home_p1.c 恒不可用；红基线脚手架 = firmware/main/test/acceptance/red-baseline/pcn_red_seam_stub.c + pcn_red_wrapper.sh（ksg 先例同款，冻结齿未接线 host_app 注册面）；BUILDER DUTY = 实现 [S1] seam（home_p1.c 弱默认 + kidpal_render_node.cc 设备强符号 + host_infra_seam.c host 强符号）+ UTF-8 解码逐字形 blit + host_app CMakeLists 注册面接线（smoke 末位序）。变异命名纪律：不得保留被测符号原字面为子串（用 _STUB 类整词替换）。【追加轮 2026-09-22】live A6 FAIL（设备字形乱码）→ planner 只读调查根因 = raw A1 连续位流 vs 字节对齐行假设（fdsc->stride=0 时 lv_font_fmt_txt 解码位计数器不逐行复位；host bpp4 偶宽碰巧等价故全绿）→ human 拍板 B 方案（LVGL 官方解码 A8 draw_buf 阈值 128，box 上限收 32×32，双强符号同改；pod-events c4785230）+ 版式对齐 WF-F1-01（requirements.md:208-218 线框权威；大 imgfont 时间退役、接下来/明早烘焙标签新资产 [S5]、行流语义 [S3] 行带重钉、预告并入第三行、倒计时贴纸随时钟缺口挂账不做）。冻齿原地修订零新增注册面；跨包冲击 = p1_home_battery.acceptance.c HPB tooth2/4/5 修订窗口（planner 派 HPB 修订，builder/verifier 遇红不得自行放宽）。【第 3 追加轮 2026-09-22】live 复验第 2 轮部分 FAIL（烘焙标签完美、seam 文字行仍乱码且形态改变）→ human 硬要求设备字体上 host 实证复现后再修；A11 冻结（TEST 10，[S6] kidpal_p1_font_glyph_for_font 追加缝 + 独立参考解码器 oracle，红=复现/绿=设备环境分支，两态皆合法）；friction 台账 6ad46b62。",
   "docsOwner": "integrator"
 }

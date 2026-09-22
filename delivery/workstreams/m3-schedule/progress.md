@@ -161,3 +161,31 @@
 **launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/launch-card.md`（五要素齐 + 交接注记：plan.md 边角 UTF-8 截半容错、E2 铁律冻结面清单、字体双分支实证、真机目测挂窗、在案欠账勿吸清单）。
 
 **遗留 human 项**：K4 launch 执行形态待 human 指定（主线程代跑 / 交互自跑 / headless，命令行见启动卡第五要素）；loop-retro 阈值 advisory 17 待 human 发起（第三次提请）。
+
+## 2026-09-22 · K4 Pod 跑完 + 合并落账（planner Pod，主线程代跑 launch）
+
+- **Pod 闭环**：intake 四点探测全命中（board running）→ acceptance-author 冻结 `firmware/test/p1_cjk_name.acceptance.c`（6 TEST_CASE，红基线两通道实跑：既有 74 齿零偏移全绿 + 新齿 stub 独立红 5/6，红因 = 字形 seam 未实现真实缺失）→ builder 实现 [S1] 字形 seam 三落点（home_p1.c 弱默认 + kidpal_render_node.cc 设备强符号 font_puhui_14_1 + host_infra_seam.c Source Han）+ UTF-8 逐字形 blit + host_app 注册面接线 → host runner 80 齿全绿（74 零偏移 + 新齿 6）→ scoped r3 五闸绿 → final r4 九闸绿（xiaozhi.bin 0x30c5b0、app 分区余量 11% free——A6 build 闸兑现）。
+- **冻齿 TEST 2 算术缺陷修复**：builder 升级 + planner 亲核（pcn_diff_stats out_total 整帧语义 → TEST 2 求和 3× 重复计数、D==3D 与 total>0 互斥）→ acceptance-author 最小补丁（total 改单次整帧计数 D）+ REVISION LOG + 判别力两层保全（tooth 1 右界带直扫 + tooth 2 并集外 diff）。A2 去 clip 变异复验仍转红，齿强度未弱化。
+- **verifier 轮红 ×2 均 planner 元数据**：r1 contractRefs 空数组（补冻结契约面引用）、r2 mutationEvidence 短 id 不匹配全 id 判据（全 id + sensitive:true 回填）。代码面零红轮。
+- **合并门**：机械 supervisor-verdict 闸 APPROVE（riskTier medium，provenance v2 全过）→ 前置升级闸 PASS → merge-driver --pod 本地合并：merge commit `f8703d5`（main @ `6eeb43d` 簿记），token 释放。Review Packet findings 零 BLOCKING（1 NIT：mutation 执行面留痕粒度，planner 裁不阻塞——红基线 stub ≙ A1 变异态在案 + A2 复验在 REVISION LOG）。
+- **E2 铁律全绿**：home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、hp1_item_t 与 11 冻结契约函数零偏移、固定标签烘焙资产零改（diff 闭集 + 冻齿 canary 双证）。
+- **遗留（非阻塞）**：① P1CJK-A6 真机目测三点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口——按 kidpal-serial-monitor 协调协议向 human 约开窗（可独立开窗或随下次设备轮）；② loop-retro 阈值 18 advisory 持续挂账（主线程发起责任）。
+
+## 2026-09-22 · K4 live 轮 A6 FAIL 修复 + 版式对齐追加轮（planner Pod，human 两判断点）
+
+- **A6 首轮真机目测 FAIL**：设备侧 CJK 课程名乱码（碎点断笔），ASCII time 正常、host 80 齿全绿。human 指示先只读根因调查再修——planner 调查定案：font_puhui_14_1（bpp=1、PLAIN、fdsc->stride=0）raw A1 位图为跨行连续位流（LVGL lv_font_fmt_txt.c 官方解码循环 stride_in==0 时位计数器不逐行复位），强符号按字节对齐行索引致 box_w 非 8 倍数字形逐行漂移；host Source Han bpp4 偶宽字形两寻址碰巧等价故 host 全绿（假绿盲区）。
+- **human 拍板**（pod-events c4785230）：B 方案（去 req_raw_bitmap=1，走 LVGL 官方解码到 A8 静态 draw_buf、阈值 128 化 1bpp、box 上限收 32×32、双强符号同改）+ 版式对齐 WF-F1-01：大 imgfont 时间退役、「接下来」烘焙大字标签（新资产 p1_label_jiexialai.bin，83×30）、文字行全 14px 逐字形 blit 行流语义（ROW1/2/3 + 正常换行）、末行「明早」烘焙标签（p1_label_mingzao.bin，38×20，文案非「明天」）+ HH:MM + 首项名并入主体第三行、倒计时贴纸随时钟缺口挂账不做；固定标签殿后由 human 显式解除（立项 ack）。
+- **冻齿修订**：PCN 原地修订（A1–A6 重钉行带 + 新增 A7–A10：烘焙标签在场/行内时间值承载/末行预告构成与三重退役负断言/满载换行压力）+ HPB 跨包修订窗口（p1_home_battery tooth2/4/5，授权链 = human 拍板事件原文）。追加轮两处冻齿缺陷均 planner 亲核 + acceptance-author 修（TEST 9 tooth4 live/快照帧测量笔误）。
+- **实现与验证**：builder 一次实现全部设计面 + 资产管线（tools/asset-pipeline/gen_kidpal_labels.py，KAP1 格式照抄先例）+ art_assets.c host 接线；host runner **83 Tests / 0 Failures**（既有 74 零偏移）；verifier scoped r5 + final r6 九闸全绿（xiaozhi.bin 0x30c340、11% free——体积较修复前还小，B 方案静态增量被版式退役对冲）；E2 铁律全绿（既有资产零删改、契约/spec/home_upcoming/schedule_page 零触碰）。
+- **收口**：commit `2d60006`（分支 dev/260915-m1-k1a-key-layer-dispatch，树池惯例领先 main 随下批回 main）；review-packet 追加轮 addendum 五节（因果链/demo 对账/冻齿缺陷入册/E2 表/未覆盖面申报）。
+- **遗留（非阻塞）**：① **真机复验半挂设备轮窗口**（五项目测：B 方案后 1bpp 可读性、「接下来」大字标签、「明早」文案、行流版式与线框一致、右上区三重退役无残墨）——主线程按 kidpal-serial-monitor 协调协议约窗烧板（xiaozhi.bin @ commit 2d60006 构建，0x20000 保 NVS）；② loop-retro 阈值 18 advisory 持续挂账。
+
+## 2026-09-22 · K4 live 第 2 轮 FAIL → 设备字体上 host → 真根因修复（第 3 追加轮）
+
+- **live 第 2 轮部分 FAIL**：art 分区补烧后「接下来/明早」烘焙标签完美渲染（资产管线/版式骨架 OK），seam 文字行仍乱码且形态改变（稀疏破碎疑似叠印，非第 1 轮斜切）——B 修复改变行为未踩中根因。human 硬要求：设备字体上 host 实证复现后再修（pod-events 6ad46b62；烧录面教训 app+art 双分区已留痕）。
+- **A11 冻结**：font_puhui_14_1（纯 C）编入 host runner + [S6] 追加缝 `kidpal_p1_font_glyph_for_font`（与 [S1] 共享解码核心、纯 additive）+ 独立参考解码器 oracle（零调用官方解码入口，bpp1 连续位流 / bpp4 阈值判别双面 + advance 尺度化 + 行尾 padding 齿）。
+- **host 复现成功 = 真根因**：`font->get_glyph_bitmap` 返回 `lv_draw_buf_t*` 结构指针，旧实现（含 B 方案）强转像素指针读的是结构头垃圾（随内存布局漂移 = 两轮乱码形态不同的解释）；`lv_font_get_glyph_dsc` 不清 req_raw_bitmap 栈局部、旁路官方包装归一化是次生嫌疑一并显式清零。两 TU 同构修复（[S1]=固定字体调核心、[S6]=参数化核心）；r7 设备 TU C++ const cast 编译红由 fixer 单点补丁闭环。
+- **验证**：host runner **84 Tests / 0 Failures**（83 零回归 + TEST 10 五 tooth）；verifier scoped r8 + final r9 九闸全绿（xiaozhi.bin 0x30c340、11% free，A11 零体积增量）；E2 铁律全绿（[S6] 纯 additive、既有资产/契约/spec/home_upcoming/schedule_page 零触碰）。
+- **收口**：commit `14a27f6`（分支领先 main 随批回 main）；review-packet 第 3 追加轮 addendum（因果链/demo 对账/治理收益/未覆盖面）。
+- **治理收益**：设备字体 × 设备解码路径的 host oracle 覆盖永久入册——live 路径字形回归从此免烧板。
+- **遗留**：① 真机第 3 轮复验挂设备轮窗口（seam 乱码消除目测 + 烘焙标签回归 + app+art 双分区烧录）；② loop-retro 阈值 advisory 持续挂账。

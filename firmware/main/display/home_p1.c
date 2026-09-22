@@ -606,52 +606,10 @@ static int p1_blit_art_scaled(const char *file, int x0, int y0, int dw, int dh,
     return 1;
 }
 
-/* imgfont 单字形 blit（'0'..'9' | ':'）。用 kidpal_art_glyph（loader 原语）
- * 直接吐像素到 s_p1_fb；未挂载/字符非法 -> 返回 0。 */
-static int p1_blit_glyph(char c, int x0, int y0)
-{
-    kidpal_art_img_t img;
-
-    if (kidpal_art_glyph(c, &img) != 0) {
-        return 0;
-    }
-    for (int y = 0; y < img.h; y++) {
-        for (int x = 0; x < img.w; x++) {
-            int dx = x0 + x, dy = y0 + y;
-            int p;
-            if (dx < 0 || dy < 0 || dx >= P1_FB_W || dy >= P1_FB_H) {
-                continue;
-            }
-            p = kidpal_art_pixel(&img, x, y);
-            if (p == 1) {
-                s_p1_fb[dy * P1_FB_W + dx] = P1_COLOR_INK;
-            }
-        }
-    }
-    return 1;
-}
-
-/* 把 "HH:MM" / "H:MM" / 任意数值串按 pitch 逐字符 blit 进帧；返回成功 blit 的
- * 字符数。colon_visible=0 时跳过 ':'（眨眼灭相严格减墨的墨源）。 */
-static int p1_blit_digits(const char *s, int x0, int y0, int pitch,
-                          int colon_visible)
-{
-    int ok = 0, i;
-
-    if (s == NULL || pitch <= 0) {
-        return 0;
-    }
-    for (i = 0; s[i] != '\0'; i++) {
-        char c = s[i];
-        if (c == ':' && !colon_visible) {
-            continue;
-        }
-        if (p1_blit_glyph(c, x0 + i * pitch, y0)) {
-            ok++;
-        }
-    }
-    return ok;
-}
+/* 追加轮 [S3] 版式退役：非缩放 imgfont 单字形 blit（p1_blit_glyph）与逐字符
+ * pitch blit（p1_blit_digits）原为大 imgfont 时间/旧贴纸服务，本轮退役不再被
+ * 调用（文字行全走 [S1] seam + 行流）。缩放路径 p1_blit_glyph_scaled /
+ * p1_blit_str_scaled 保留供辅助条（时间/温湿度/电量）消费。 */
 
 /* imgfont 单字形【缩放】blit（'0'..'9' | ':'）：把源字形 cell (img.w x img.h) 最近邻
  * 降采样进目标盒 [x0, y0, x0+dw-1, y0+dh-1]，再 clip 进钉区盒 [cx0,cy0,cx1,cy1] 与帧
@@ -712,13 +670,15 @@ static int p1_blit_str_scaled(const char *s, int x0, int y0, int pitch,
     return ok;
 }
 
-/* ---- [S2]/[S4] UTF-8 解码 + 动态日程名逐字形 blit（seam [S1]） ----
- * name 来自 hp1_item_t.name（HP1_NAME_LEN=32），上游注入层按字节截到 31 字节会截半
- * UTF-8 多字节字符——本解码器遇不完整尾序列安全停笔：截半字符不画、不越界、不崩
+/* ---- [S2]/[S4] UTF-8 解码 + 动态日程名逐字形 blit（seam [S1]）+ 正常换行 ----
+ * name/time 来自 hp1_item_t（name ZU HP1_NAME_LEN=32，上游注入层按字节截 31 会截半
+ * UTF-8 多字节字符）——解码器遇不完整尾序列安全停笔：截半字符不画、不越界、不崩
  * （[S4]，容错在 P1 侧重构，K2 注入层本包零改）。
- * 起笔 x 固定（不随 name 字节数平移）；逐字形按 advance 步进，clip 进钉区。
- * 字形不可用（[S1] 弱默认/缺字形）-> 跳过该字符、不画垃圾（A5 退化，skip-vs-stop
- * 不超约束）。返回成功 blit 的字形数。 */
+ * 追加轮 [S3] 行流语义：文字行自 ROW1 y=96 起**正常换行**流式下排（换行续行落下一
+ * 行带），一切墨 clip 进给定盒（含卡区右界 x=392 / 底界 y=242 containment）。
+ * 行内时间走 [S2] seam ASCII（与 name 同缝承载，host 可探 time 值 diff）。
+ * 字形不可用（[S1] 弱默认/缺字形）-> 跳过该字符、不画垃圾（A5 退化）。
+ * 返回本次调用起始的行数（wrap 后加行递增）。 */
 
 /* 依首字节判 UTF-8 序列字节数；非法首字节 -> 0。 */
 static int p1_utf8_seq_bytes(unsigned char b)
@@ -738,24 +698,48 @@ static int p1_utf8_seq_bytes(unsigned char b)
     return 0;
 }
 
-static int p1_blit_name(const char *name, int x0, int y0,
+/* "HH:MM " + name 接进缓冲（避免 snprintf -Wformat-truncation；time<=5、1 空格、
+ * name<=31, 缓冲 >= 40 即安全）。 */
+static void p1_join_time_name(const hp1_item_t *it, char *buf, int cap)
+{
+    const char *s;
+    int n = 0;
+
+    for (s = it->time; *s != '\0' && n < cap - 1; s++) {
+        buf[n++] = *s;
+    }
+    if (n < cap - 1) {
+        buf[n++] = ' ';
+    }
+    for (s = it->name; *s != '\0' && n < cap - 1; s++) {
+        buf[n++] = *s;
+    }
+    buf[n] = '\0';
+}
+
+/* 行流文本 blit：从 (x0, y0) 起逐字形画 UTF-8 text，行宽超右界 cx1（且非行首）时换行
+ * （cur_y += line_h, cur_x 归 x0）；每字形沿 w/h 逐像素画、clip 进盒 [cx0,cy0,cx1,cy1]
+ * 与帧缓冲（含右界/底界 containment——墨绝不越过 cx1/cy1）。返回起始的行数。 */
+static int p1_blit_flow(const char *text, int x0, int y0, int line_h,
                         int cx0, int cy0, int cx1, int cy1)
 {
     size_t len;
     size_t pos;
     int cur_x;
-    int drawn;
+    int cur_y;
+    int lines;
 
-    if (name == NULL) {
-        return 0;
+    if (text == NULL || line_h <= 0) {
+        return 1; /* 空/非法入参：占 1 行防止调用方光速越界 */
     }
-    len = strlen(name);
+    len = strlen(text);
     pos = 0;
     cur_x = x0;
-    drawn = 0;
+    cur_y = y0;
+    lines = 1;
 
     while (pos < len) {
-        unsigned char b = (unsigned char)name[pos];
+        unsigned char b = (unsigned char)text[pos];
         uint32_t cp;
         int seq, i;
 
@@ -769,7 +753,7 @@ static int p1_blit_name(const char *name, int x0, int y0,
             }
             cp = (uint32_t)(b & (uint32_t)(seq == 2 ? 0x1Fu : seq == 3 ? 0x0Fu : 0x07u));
             for (i = 1; i < seq; i++) {
-                unsigned char c = (unsigned char)name[pos + (size_t)i];
+                unsigned char c = (unsigned char)text[pos + (size_t)i];
                 if ((c & 0xC0u) != 0x80u) {
                     cp = 0;
                     break;
@@ -785,22 +769,31 @@ static int p1_blit_name(const char *name, int x0, int y0,
         {
             kidpal_p1_glyph_t g;
             int stride;
+            int line_x;
             int sy, sx;
 
             if (kidpal_p1_font_glyph(cp, &g) != 0 || g.bits == NULL) {
                 continue; /* 字形不可用 -> 跳过，不画垃圾 */
             }
             if (g.w <= 0 || g.h <= 0 || g.w > 64 || g.h > 64) {
-                continue; /* [S1] 盒上限 64，越界字形视为不可用 */
+                continue; /* [S1] 盒上限，越界字形视为不可用 */
+            }
+            /* 换行：非行首且当前字形笔进越右界 -> 换下一行（正常换行，续行落下一行带）。 */
+            line_x = cur_x;
+            if (cur_x != x0 && (cur_x + g.advance) > cx1) {
+                cur_y += line_h;
+                lines++;
+                line_x = x0;
+                cur_x = x0;
             }
             stride = (g.w + 7) / 8;
             for (sy = 0; sy < g.h; sy++) {
-                int py = y0 + sy;
+                int py = cur_y + sy;
                 if (py < cy0 || py > cy1 || py < 0 || py >= P1_FB_H) {
                     continue;
                 }
                 for (sx = 0; sx < g.w; sx++) {
-                    int px = cur_x + sx;
+                    int px = line_x + sx;
                     int bit;
                     if (px < cx0 || px > cx1 || px < 0 || px >= P1_FB_W) {
                         continue;
@@ -812,11 +805,10 @@ static int p1_blit_name(const char *name, int x0, int y0,
                     }
                 }
             }
-            cur_x += g.advance;
-            drawn++;
+            cur_x = line_x + g.advance;
         }
     }
-    return drawn;
+    return lines;
 }
 
 /* 整数字【缩放】渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
@@ -1056,96 +1048,66 @@ static void p1_draw_mascot(void)
     }
 }
 
-/* ② 「接下来」最近一项主体（{136,48,392,168}，最醒目）：ic_book 图标 + 首项时点
- * 数字（"14:00" pitch=25 -> 墨 x=[210..336] 收进钉区）；首项名中文无 imgfont ->
- * 殿后清单。整函数仅在 s_count>0 时被调用 -> 空日程 next 区严格零墨。未挂载兜底
- * thin 描边卡框（墨 >= 20）。 */
-static void p1_draw_next(void)
+/* ②/③ 「接下来」日程卡（[S3] 追加轮行流语义, human 版式扩展 2026-09-22）：
+ * 卡顶「接下来」= 烘焙大字标签（[S5] p1_label_jiexialai.bin, 卡题固定、空日程仍在场,
+ * 左锚定 LABEL 带 {136,48,266,92}）；倒计时贴纸/大 imgfont 时间本轮退役（不入渲染）；
+ * 文字行全部 14px font_puhui_14_1 逐字形 blit + 正常换行——最近项行 ROW1{136,96,392,122}
+ * （时间 + 课程名, 行内时间走 [S1] seam ASCII）、后续事项行 ROW2{136,124,392,150}
+ * 逐项 时间+名、末行预告 ROW3{136,152,392,178} = 明早标签（[S5] p1_label_mingzao.bin,
+ * 文案「明早」非「明天」）+ HH:MM（起笔 x>=184 不侵明早槽）+ 名。行流自 ROW1 起按
+ * 行流式下排（换行续行落下一行带），一切墨不越卡区 CARD{136,48,392,242}。
+ * 空日程仍画标签 + 行流零墨（HPB tooth 5 语义）。 */
+static void p1_draw_card(void)
 {
-    const hp1_item_t *it = kidpal_home_p1_schedule_item(0);
-    int drew = 0;
-
-    drew |= p1_blit_art("ic_book_48.bin", 145, 62, 48, 48);
-    if (it != NULL && s_art_ok) {
-        drew |= (p1_blit_digits(it->time, 210, 74, 25, 1) > 0);
-    }
-    if (!drew) {
-        p1_stroke_rect(138, 50, 390, 166, 2);
-    }
-    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 next 钉区
-     * {136,48,392,168}。 */
-    if (it != NULL) {
-        (void)p1_blit_name(it->name, 136, 143, 136, 48, 392, 168);
-    }
-}
-
-/* ② 倒计时贴纸（接下来卡右部 {268,50,390,130}）：以 "H:MM"（剩余时分）数字表达
- * 「还有 X 时 Y 分」的数值半 + ic_bell 铃铛资产；中文「还有…」文字属殿后清单。
- * 整函数仅在 countdown==0 时被调用 -> 全过期「贴纸区零墨」pin 天然保留。 */
-static void p1_draw_sticker(int remain_h, int remain_m)
-{
-    char buf[8];
-    int drew = 0;
-
-    drew |= p1_blit_art("ic_bell_48.bin", 272, 58, 48, 48);
-    if (s_art_ok) {
-        p1_fmt_hhmm(remain_h, remain_m, buf, (int)sizeof(buf));
-        drew |= (p1_blit_str_scaled(buf, 330, 66, 14,
-                                    P1_DIG_W, P1_DIG_H,
-                                    268, 50, 390, 130, 1) > 0);
-    }
-    if (!drew) {
-        p1_stroke_rect(270, 52, 388, 128, 2);
-    }
-}
-
-/* ③ 后续事项逐项（小一号，{136,172,392,214}）：items[1] 起的时点数字（"16:30"
- * pitch=14 -> 墨 x=[140..196] 收进钉区）；整函数仅在 s_count >= 2 时被调用
- * -> 单项/空日程严格零墨。未挂载兜底描边条框。 */
-static void p1_draw_nextlist(void)
-{
-    const hp1_item_t *it = kidpal_home_p1_schedule_item(1);
-    int drew = 0;
-
-    if (it != NULL && s_art_ok) {
-        drew |= (p1_blit_str_scaled(it->time, 140, 182, 14,
-                                    P1_DIG_W, P1_DIG_H,
-                                    136, 172, 392, 214, 1) > 0);
-    }
-    if (!drew) {
-        p1_stroke_rect(138, 174, 390, 212, 2);
-    }
-    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 nextlist
-     * 钉区 {136,172,392,214}。 */
-    if (it != NULL) {
-        (void)p1_blit_name(it->name, 210, 184, 136, 172, 392, 214);
-    }
-}
-
-/* ③ 明日预告（{136,220,392,242}）：preview item 的 time 数字（V3 「明天 09:00 ·
- * 游泳课」的时间半，中文文字殿后）。整函数仅在 s_has_preview 时被调用 -> 无预告
- * 「预告区零墨」pin 保留。未挂载兜底描边条框。r4: 底缘从 y256 收至高 242 —— 让软帧
- * 不侵 bottom_bar chrome 上沿 (~252) 区域 (r5 顶部虚线与该 trime 无关; 顶栏下虚线 y42
- * 已于 r5 复位, 不再与预告区同域)。 */
-static void p1_draw_preview(void)
-{
+    const int line_h = 28;      /* [S3] 行带 pitch：ROW1 96 -> ROW2 124 -> ROW3 152 */
+    const int text_yoff = 6;    /* 14px 字形在 26px 行带内的垂直对齐偏移 */
+    const int cx0 = 136, cy0 = 48, cx1 = 392, cy1 = 242; /* 卡区 clip */
+    int fy = 96;                /* 行流光标：自 ROW1 顶起, 逐块按占用行数下移 */
+    int used, i;
+    char line[48];
+    const hp1_item_t *it;
     hp1_item_t pv;
-    int drew = 0;
     int has_pv;
 
+    /* 「接下来」烘焙大字标签（固定卡题；空日程仍在场）。独立于 s_art_ok——kidpal_
+     * art_load 自身决定烘焙 vs 兜底（[S5]: 标签在场义务独立于数字资产挂载）。 */
+    if (!p1_blit_art("p1_label_jiexialai.bin", 136, 55, 130, 44)) {
+        p1_stroke_rect(136, 48, 266, 92, 1); /* 兜底描边撑「标签带有墨 >= 30」 */
+    }
+
+    /* 最近项行 ROW1（time + name, 行内时间 [S2] seam ASCII）。 */
+    if (s_count > 0) {
+        it = kidpal_home_p1_schedule_item(0);
+        if (it != NULL) {
+            p1_join_time_name(it, line, (int)sizeof(line));
+            used = p1_blit_flow(line, cx0, fy + text_yoff, line_h,
+                                cx0, cy0, cx1, cy1);
+            fy += used * line_h;
+        }
+
+        /* 后续事项行 ROW2..（逐项 时间+名, 行流下排）。 */
+        for (i = 1; i < s_count; i++) {
+            it = kidpal_home_p1_schedule_item(i);
+            if (it == NULL) {
+                break;
+            }
+            p1_join_time_name(it, line, (int)sizeof(line));
+            used = p1_blit_flow(line, cx0, fy + text_yoff, line_h,
+                                cx0, cy0, cx1, cy1);
+            fy += used * line_h;
+        }
+    }
+
+    /* 末行预告（明早标签 + HH:MM + 名）：明早烘焙标签落行 3 左槽, time 起笔 x>=184。
+     * 行流 y = fy（标准夹具 2 项 + 预告 = 第三行 y=152）。 */
     has_pv = (kidpal_home_p1_schedule_preview(&pv) == 0);
-    if (has_pv && s_art_ok) {
-        drew |= (p1_blit_str_scaled(pv.time, 140, 228, 14,
-                                    P1_DIG_W, P1_DIG_H,
-                                    136, 220, 392, 242, 1) > 0);
-    }
-    if (!drew) {
-        p1_stroke_rect(138, 222, 390, 240, 2);
-    }
-    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 preview
-     * 钉区 {136,220,392,242}。 */
     if (has_pv) {
-        (void)p1_blit_name(pv.name, 210, 228, 136, 220, 392, 242);
+        if (!p1_blit_art("p1_label_mingzao.bin", 136, fy + 3, 44, 26)) {
+            p1_stroke_rect(136, fy, 180, fy + 26, 1); /* 兜底描边撑明早槽有墨 */
+        }
+        p1_join_time_name(&pv, line, (int)sizeof(line));
+        (void)p1_blit_flow(line, 184, fy + text_yoff, line_h,
+                           cx0, cy0, cx1, cy1);
     }
 }
 
@@ -1190,7 +1152,6 @@ static void p1_draw_aux_dash_sep(void)
 int kidpal_home_p1_render_frame(void)
 {
     int doze, lr, batt_visible;
-    int idx, hh, mm;
 
     if (!s_state_valid) {
         return -1;
@@ -1226,23 +1187,12 @@ int kidpal_home_p1_render_frame(void)
     /* 辅助条下缘虚线分隔 (r3 §A2): 信息栏之下、日程主体之上画通栏虚点线。 */
     p1_draw_aux_dash_sep();
 
-    /* ② 日程主体：小伴常驻演出（左）+「接下来」最近一项（右）+ 倒计时贴纸。 */
+    /* ②/③ 日程卡：[S3] 追加轮行流版式——小伴常驻演出（左）+「接下来」卡（右）：
+     * 标签 + 行流文字（最近项 ROW1 / 后续事项 ROW2.. / 末行预告 ROW3）。倒计时贴纸/
+     * 大 imgfont 时间本轮退役（不入渲染）。空日程仍画标签（卡题固定）、行流零墨。 */
     p1_draw_mascot();
-    if (s_count > 0 && ((lr & HP1_ELEM_BIT_NEXT) != 0)) {
-        p1_draw_next();
-        /* 倒计时贴纸：当下缓存仍有未开始的最近项才贴。 */
-        if (kidpal_home_p1_countdown(s_items, s_count, s_state.hour, s_state.minute,
-                                     &idx, &hh, &mm) == 0) {
-            p1_draw_sticker(hh, mm);
-        }
-    }
-
-    /* ③ 后续事项逐项（小一号）+ 明日预告。 */
-    if (s_count >= 2) {
-        p1_draw_nextlist();
-    }
-    if (s_has_preview) {
-        p1_draw_preview();
+    if ((lr & HP1_ELEM_BIT_NEXT) != 0) {
+        p1_draw_card();
     }
 
     return host_infra_render_p1_frame(s_p1_fb, P1_FB_W, P1_FB_H);

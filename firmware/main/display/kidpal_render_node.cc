@@ -204,9 +204,20 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
  * [S1] 设备字形强符号：kidpal_p1_font_glyph（覆盖 home_p1.c 弱默认）
  *
  * ksg_text_font()（schedule_page.c 先例）同款双分支取对话页同款 14px 普通字体
- * font_puhui_14_1；lv_font_get_glyph_dsc + 字形位图（A1/A2/A4/A8）alpha 阈值化
- * 成 1bpp 墨（seam [S1]）。设备 builds 恰一个强符号覆盖 home_p1 weak；host 侧
- * 由 host_infra_seam.c 提供同符号（本 TU 不编入 host runner）。
+ * font_puhui_14_1。**方案 B（human 拍板 2026-09-22）**：去掉 req_raw_bitmap=1，
+ * 走 LVGL 官方解码（lv_font_get_glyph_bitmap 把字体 glyph 转成 A8 写入 draw_buf，
+ * 内部按行处理 stride，修掉 live 轮 A6 FAIL 的「fdsc->stride=0 时 bpp=1 PLAIN
+ * 连续位流跨行逐位漂移」根因——旧 raw 位流手解假定字节对齐行）→ A8 阈值 128 化
+ * 1bpp（A8@128 ≡ A4@8 ≡ A2@2 ≡ A1@1 = 50% 覆盖，逐齿期望零偏移）。字形盒上限收
+ * 32×32（对 [S1] 冻结 1..64 的实现收紧子集，非契约变更）。设备 builds 恰一个强
+ * 符号覆盖 home_p1 weak；host 侧由 host_infra_seam.c 提供同符号（本 TU 不编入
+ * host runner）。
+ *
+ * **共享核心同构重构（[S6] 追加 seam，第三追加轮 A11）**：解码+阈值化核心重构为
+ * 字体参数化 p1_glyph_render_core()，[S1] 入口 = 固定设备字体调核心——与 host seam
+ * （host_infra_seam.c p1_glyph_core）同构，两 TU 对同字体输出逐字节一致（TEST 10
+ * tooth 5 承载）。**零新增导出符号**：设备生产路径唯一字体入口仍 kidpal_p1_font_glyph，
+ * [S6] 为测试可达缝，设备 TU 不导出（头注登记面；[S6] 强符号仅 host runner 定义）。
  * ---------------------------------------------------------------------- */
 #if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
 LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
@@ -214,65 +225,87 @@ LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
 LV_FONT_DECLARE(font_puhui_14_1);
 #endif
 
-extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+/* 方案 B A8 静态 draw_buf（LVGL 官方解码 scratch；32×32 盒上限）。每个二进制恰
+ * 一个 TU 持有一份（设备本 TU + host seam TU），静态内存增量 = 本缓冲大小 + 1bpp
+ * 输出（32*((32+7)/8)=128B）。 */
+#define P1_GLYPH_BOX_CAP 32
+static unsigned char s_glyph_a8_data[LV_DRAW_BUF_SIZE(P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP, LV_COLOR_FORMAT_A8)]
+    __attribute__((aligned(LV_DRAW_BUF_ALIGN)));
+static lv_draw_buf_t s_glyph_a8_buf;
+static int s_glyph_a8_ready = 0;
+
+static int p1_glyph_a8_buf_init(void)
 {
-#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-    static const lv_font_t *s_font = &lv_font_source_han_sans_sc_14_cjk;
-#elif defined(ESP_PLATFORM)
-    static const lv_font_t *s_font = &font_puhui_14_1;
-#else
-    if (out != NULL) {
-        out->w = 0;
-        out->h = 0;
-        out->advance = 0;
-        out->bits = NULL;
+    if (s_glyph_a8_ready) {
+        return 1;
     }
-    return -1;
-#endif
+    if (lv_draw_buf_init(&s_glyph_a8_buf, P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP,
+                         LV_COLOR_FORMAT_A8, 0,
+                         s_glyph_a8_data, sizeof(s_glyph_a8_data)) != LV_RESULT_OK) {
+        return 0;
+    }
+    s_glyph_a8_ready = 1;
+    return 1;
+}
+
+/* [S6] 共享核心（设备同构副本，host seam 同名态）：字体参数化解码+阈值化核心。
+ * 返回 0 = 字形可用; 非 0 = 不可用。语义与 [S1] 逐字段一致。static——设备 TU
+ * 零新增导出符号（[S6] 仅 host runner 定义，设备单一生产入口仍 [S1]）。 */
+static int p1_glyph_render_core(const lv_font_t *font, uint32_t codepoint,
+                                kidpal_p1_glyph_t *out)
+{
     lv_font_glyph_dsc_t dsc;
-    const uint8_t *bits;
-    static unsigned char s_bits[64 * ((64 + 7) / 8)];
-    int bpp, stride, threshold;
+    const uint8_t *a8;
+    static unsigned char s_bits[P1_GLYPH_BOX_CAP * ((P1_GLYPH_BOX_CAP + 7) / 8)];
+    int byte_stride, a8_stride;
     int x, y;
 
-    if (out == NULL) {
-        return -1; /* [S1]: out == NULL -> 非 0 */
+    if (out == nullptr || font == nullptr) {
+        return -1; /* [S1]: out == NULL -> 非 0；NULL 字体防御 */
     }
-    if (!lv_font_get_glyph_dsc(s_font, &dsc, codepoint, 0)) {
+    if (!lv_font_get_glyph_dsc(font, &dsc, codepoint, 0)) {
         return -1;
     }
     if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
         return -1;
     }
-    bpp = static_cast<int>(dsc.format); /* A1=1, A2=2, A4=4, A8=8 */
-    if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8) {
+    if (static_cast<int>(dsc.box_w) > P1_GLYPH_BOX_CAP ||
+        static_cast<int>(dsc.box_h) > P1_GLYPH_BOX_CAP) {
+        return -1; /* 32×32 实现收紧子集（[S1] 冻结 1..64 的实现子集） */
+    }
+    /* 方案 B：req_raw_bitmap 保持 0（默认）——LVGL 官方解码到 A8 draw_buf。
+     * **live 轮乱码根因**（设备 TU 同构修复，host seam 同款注释）：lv_font_get_glyph_dsc
+     * 不初始化 req_raw_bitmap（stack 局部未清零）；直接调 font->get_glyph_bitmap 会
+     * 旁路掉官方包装 lv_font_get_glyph_bitmap 的 req_raw_bitmap=0 归一化，未清零字段
+     * 随机命中 raw 早退 → 返回原图而非解码 A8，文字行乱码。TEST 10（A11）host 实证
+     * 复现（通道④分支1），修复 = 显式清零（两 TU 同构同改）。 */
+    dsc.req_raw_bitmap = 0;
+    if (!p1_glyph_a8_buf_init()) {
         return -1;
     }
-    if (dsc.box_w > 64 || dsc.box_h > 64) {
-        return -1; /* [S1] 盒上限 64 */
+    {
+        /* **live 轮乱码根因（设备 TU 同构修复，host seam 同款注释）**：LVGL 9
+         * get_glyph_bitmap 返回 `lv_draw_buf_t *`（struct），须读返回对象 .data；
+         * 旧实现把 struct 指针当 A8 像素读 → 读到 draw_buf 结构头垃圾 → 字形错乱。
+         * TEST 10（A11）host 实证复现（通道④分支1），两 TU 同构同改。 */
+        const lv_draw_buf_t *s_dec_db =
+            static_cast<const lv_draw_buf_t *>(font->get_glyph_bitmap(&dsc, &s_glyph_a8_buf));
+        if (s_dec_db == nullptr) {
+            return -1;
+        }
+        a8 = static_cast<const uint8_t *>(s_dec_db->data);
     }
-    dsc.req_raw_bitmap = 1;
-    bits = static_cast<const uint8_t *>(s_font->get_glyph_bitmap(&dsc, nullptr));
-    if (bits == nullptr) {
+    if (a8 == nullptr) {
         return -1;
     }
-    stride = (static_cast<int>(dsc.box_w) * bpp + 7) / 8;
-    threshold = (bpp == 1) ? 1 : (bpp == 2 ? 2 : (bpp == 4 ? 8 : 128));
+    byte_stride = (static_cast<int>(dsc.box_w) + 7) / 8;
+    a8_stride = static_cast<int>(lv_draw_buf_width_to_stride(
+        static_cast<uint32_t>(dsc.box_w), LV_COLOR_FORMAT_A8));
     std::memset(s_bits, 0, sizeof(s_bits));
     for (y = 0; y < static_cast<int>(dsc.box_h); y++) {
         for (x = 0; x < static_cast<int>(dsc.box_w); x++) {
-            int pix = 0;
-            if (bpp == 1) {
-                pix = (bits[y * stride + (x >> 3)] >> (7 - (x & 7))) & 1u;
-            } else if (bpp == 2) {
-                pix = (bits[y * stride + (x >> 2)] >> (6 - 2 * (x & 3))) & 3u;
-            } else if (bpp == 4) {
-                pix = (bits[y * stride + (x >> 1)] >> ((x & 1) ? 0 : 4)) & 15u;
-            } else {
-                pix = bits[y * stride + x];
-            }
-            if (pix >= threshold) {
-                s_bits[y * ((static_cast<int>(dsc.box_w) + 7) / 8) + (x >> 3)] |=
+            if (a8[y * a8_stride + x] >= 128) { /* A8 阈值 128 = 50% 覆盖 */
+                s_bits[y * byte_stride + (x >> 3)] |=
                     static_cast<unsigned char>(1u << (7 - (x & 7)));
             }
         }
@@ -282,6 +315,23 @@ extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
     out->advance = static_cast<int>(dsc.adv_w);
     out->bits = s_bits;
     return 0;
+}
+
+extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    return p1_glyph_render_core(&lv_font_source_han_sans_sc_14_cjk, codepoint, out);
+#elif defined(ESP_PLATFORM)
+    return p1_glyph_render_core(&font_puhui_14_1, codepoint, out);
+#else
+    if (out != nullptr) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = nullptr;
+    }
+    return -1;
+#endif
 }
 
 /* -------------------------------------------------------------------------
