@@ -212,6 +212,12 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
  * 32×32（对 [S1] 冻结 1..64 的实现收紧子集，非契约变更）。设备 builds 恰一个强
  * 符号覆盖 home_p1 weak；host 侧由 host_infra_seam.c 提供同符号（本 TU 不编入
  * host runner）。
+ *
+ * **共享核心同构重构（[S6] 追加 seam，第三追加轮 A11）**：解码+阈值化核心重构为
+ * 字体参数化 p1_glyph_render_core()，[S1] 入口 = 固定设备字体调核心——与 host seam
+ * （host_infra_seam.c p1_glyph_core）同构，两 TU 对同字体输出逐字节一致（TEST 10
+ * tooth 5 承载）。**零新增导出符号**：设备生产路径唯一字体入口仍 kidpal_p1_font_glyph，
+ * [S6] 为测试可达缝，设备 TU 不导出（头注登记面；[S6] 强符号仅 host runner 定义）。
  * ---------------------------------------------------------------------- */
 #if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
 LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
@@ -242,31 +248,22 @@ static int p1_glyph_a8_buf_init(void)
     return 1;
 }
 
-extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+/* [S6] 共享核心（设备同构副本，host seam 同名态）：字体参数化解码+阈值化核心。
+ * 返回 0 = 字形可用; 非 0 = 不可用。语义与 [S1] 逐字段一致。static——设备 TU
+ * 零新增导出符号（[S6] 仅 host runner 定义，设备单一生产入口仍 [S1]）。 */
+static int p1_glyph_render_core(const lv_font_t *font, uint32_t codepoint,
+                                kidpal_p1_glyph_t *out)
 {
-#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-    static const lv_font_t *s_font = &lv_font_source_han_sans_sc_14_cjk;
-#elif defined(ESP_PLATFORM)
-    static const lv_font_t *s_font = &font_puhui_14_1;
-#else
-    if (out != NULL) {
-        out->w = 0;
-        out->h = 0;
-        out->advance = 0;
-        out->bits = NULL;
-    }
-    return -1;
-#endif
     lv_font_glyph_dsc_t dsc;
     const uint8_t *a8;
     static unsigned char s_bits[P1_GLYPH_BOX_CAP * ((P1_GLYPH_BOX_CAP + 7) / 8)];
     int byte_stride, a8_stride;
     int x, y;
 
-    if (out == NULL) {
-        return -1; /* [S1]: out == NULL -> 非 0 */
+    if (out == nullptr || font == nullptr) {
+        return -1; /* [S1]: out == NULL -> 非 0；NULL 字体防御 */
     }
-    if (!lv_font_get_glyph_dsc(s_font, &dsc, codepoint, 0)) {
+    if (!lv_font_get_glyph_dsc(font, &dsc, codepoint, 0)) {
         return -1;
     }
     if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
@@ -274,13 +271,30 @@ extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
     }
     if (static_cast<int>(dsc.box_w) > P1_GLYPH_BOX_CAP ||
         static_cast<int>(dsc.box_h) > P1_GLYPH_BOX_CAP) {
-        return -1; /* [S1] 32×32 实现收紧子集 */
+        return -1; /* 32×32 实现收紧子集（[S1] 冻结 1..64 的实现子集） */
     }
-    /* 方案 B：req_raw_bitmap 保持 0（默认）——LVGL 官方解码到 A8 draw_buf。 */
+    /* 方案 B：req_raw_bitmap 保持 0（默认）——LVGL 官方解码到 A8 draw_buf。
+     * **live 轮乱码根因**（设备 TU 同构修复，host seam 同款注释）：lv_font_get_glyph_dsc
+     * 不初始化 req_raw_bitmap（stack 局部未清零）；直接调 font->get_glyph_bitmap 会
+     * 旁路掉官方包装 lv_font_get_glyph_bitmap 的 req_raw_bitmap=0 归一化，未清零字段
+     * 随机命中 raw 早退 → 返回原图而非解码 A8，文字行乱码。TEST 10（A11）host 实证
+     * 复现（通道④分支1），修复 = 显式清零（两 TU 同构同改）。 */
+    dsc.req_raw_bitmap = 0;
     if (!p1_glyph_a8_buf_init()) {
         return -1;
     }
-    a8 = static_cast<const uint8_t *>(s_font->get_glyph_bitmap(&dsc, &s_glyph_a8_buf));
+    {
+        /* **live 轮乱码根因（设备 TU 同构修复，host seam 同款注释）**：LVGL 9
+         * get_glyph_bitmap 返回 `lv_draw_buf_t *`（struct），须读返回对象 .data；
+         * 旧实现把 struct 指针当 A8 像素读 → 读到 draw_buf 结构头垃圾 → 字形错乱。
+         * TEST 10（A11）host 实证复现（通道④分支1），两 TU 同构同改。 */
+        const lv_draw_buf_t *s_dec_db =
+            static_cast<const lv_draw_buf_t *>(font->get_glyph_bitmap(&dsc, &s_glyph_a8_buf));
+        if (s_dec_db == nullptr) {
+            return -1;
+        }
+        a8 = static_cast<const uint8_t *>(s_dec_db->data);
+    }
     if (a8 == nullptr) {
         return -1;
     }
@@ -301,6 +315,23 @@ extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
     out->advance = static_cast<int>(dsc.adv_w);
     out->bits = s_bits;
     return 0;
+}
+
+extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    return p1_glyph_render_core(&lv_font_source_han_sans_sc_14_cjk, codepoint, out);
+#elif defined(ESP_PLATFORM)
+    return p1_glyph_render_core(&font_puhui_14_1, codepoint, out);
+#else
+    if (out != nullptr) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = nullptr;
+    }
+    return -1;
+#endif
 }
 
 /* -------------------------------------------------------------------------

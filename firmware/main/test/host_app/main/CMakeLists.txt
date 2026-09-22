@@ -141,6 +141,14 @@ set(HOST_ACCEPTANCE_SRCS
     # acceptance 之前**（smoke 末位 = 最先执行, 本文件 TEST 6 tooth 4 钉存在性）。
     "../../p1_cjk_name.acceptance.c"
 
+    # 包 260921-m3-k4-p1-cjk-dynamic-text 第三追加轮（A11, [S6]）设备字体上 host
+    # (human 硬要求 2026-09-22; BUILDER DUTY 8))：把设备字体 font_puhui_14_1.c
+    # 编入 host runner 源清单（纯 C、lv_font_fmt_txt 格式、bpp=1 --no-compress,
+    # lvgl.h include 在 host 通道可达——REQUIRES lvgl 已在 include path）。相对
+    # host_app/main 为 ../../../managed_components/。managed_components 第三方面
+    # 只读：编入 = 消费, 非修改。TEST 10 tooth 0a weak 探针经此编入解析到强定义。
+    "../../../../managed_components/78__xiaozhi-fonts/src/font_puhui_14_1.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

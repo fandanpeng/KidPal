@@ -159,3 +159,58 @@
 - `verdict.json`（fact 副本，K3 先例同形）+ `verification.json`（advisory 投影）已以 final r6 fact 刷新（r1–r4 历史原样保留 + 追加 r5/r6）；`current/verdict.json`（verify.mjs 程序 fs-write，non-bearing advisory）已随 r6 刷新。bearing fact = `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json`，本 packet 只引用不复制。
 - Loop metrics / Pod Journal（post-cutoff dual-format）：不产 `session-digest.md` / `loop-health.md` / `loop-metrics.json` / `pod-journal.jsonl`；`pod-events.jsonl` 在场（advisory 检查通过）。
 - 本节只追加、不改主轮段落语义；追加轮改动不 push、不 merge（树池惯例：分支领先 main 随下批回 main）。
+
+## 第 3 追加轮 addendum（2026-09-22 · A11 设备字体 host 覆盖 + 真根因修复）
+
+> 主轮与历次 addendum 段落零改语义，本节纯追加。授权链：human 硬要求（pod-events eventId `6ad46b62-6e19-4cc1-bacb-67e42ec9857e`，2026-09-22——live 复验第 2 轮 seam 文字行仍乱码 + 硬要求设备字体上 host 实证复现后再修），A11 冻结（TEST 10：[S6] `kidpal_p1_font_glyph_for_font` 追加缝 + 独立参考解码器 oracle `firmware/main/test/acceptance/red-baseline/pcn_a11_oracle_check.py`；红 = host 复现修到绿，绿 = 不复现转设备环境插桩——两态皆合法交付物）。
+
+### 第 3 追加轮因果链（live 第 2 轮 FAIL → host 实证复现 → 真根因修复 → r9 收口）
+
+1. **live 复验第 2 轮部分 FAIL**：烘焙大字标签完美，但 seam 文字行仍乱码且形态与首轮不同——首轮根因结论（raw A1 连续位流逐行漂移）不能完全解释第 2 轮形态，存在未定位残根因。
+2. **human 硬要求 → A11 冻结**：设备字体（`font_puhui_14_1`）上 host 实证复现后再修。acceptance-author 冻 TEST 10（A11）——[S6] 追加 seam（`kidpal_p1_font_glyph_for_font`，与 [S1] 共享解码核心，纯 additive）+ 独立参考解码器 oracle（设备字体 13 码点 bpp1 连续位流 + host 子集 8 码点 bpp4 阈值判别）+ advance 尺度化齿（嫌疑① 叠印）+ 行尾 padding 恒零齿（嫌疑② 尾字节）+ [S1]×[S6] 同构一致性齿。
+3. **host 实证复现成功 = 真根因判定**：LVGL 9 `font->get_glyph_bitmap` 返回 **`lv_draw_buf_t *` 结构指针**，旧实现（含 B 方案）把结构指针强转 `const uint8_t*` 当 A8 像素读 → 读到的是 **draw_buf 结构头垃圾**，非像素数据；垃圾值随内存布局漂移 = 两轮 live 乱码形态不同的解释。次根因：`lv_font_get_glyph_dsc` 不初始化 `req_raw_bitmap`（stack 局部未清零），直调 `get_glyph_bitmap` 旁路官方包装 `lv_font_get_glyph_bitmap` 的 `req_raw_bitmap=0` 归一化，未清零字段随机命中 raw 早退。修复 = 读返回对象 `.data` + `dsc.req_raw_bitmap = 0` 显式清零（对齐官方包装语义），两 TU 同构同改（host `host_infra_seam.c p1_glyph_core` + 设备 `kidpal_render_node.cc p1_glyph_render_core`，双注释留痕）。
+4. **[S6] 追加缝（纯 additive）**：解码+阈值化核心重构为字体参数化共享核心；[S1] 入口 = 固定字体调核心（签名与语义零改），[S6] 入口按字体取字形（仅 host runner 定义，设备 TU 核心为 static——**零新增导出符号**，设备生产路径唯一字体入口仍 [S1]）。设备字体 `font_puhui_14_1` 从此在 host 有 oracle 齿覆盖，永久入册。
+5. **fixer 单点补丁**：r7 scoped firmware-build 红（设备 TU C++ const cast 编译红，A11 同构修复首版笔误）→ fixer 单点补丁，非设计面返工。
+6. **round 链**：r7 scoped firmware-build 红（invocation `cbe96239-5f22-44d4-993d-2550bda971cc`）→ r8 scoped 六闸绿（invocation `f0819091-20ca-4702-8956-81be0edec4ac`）→ **r9 final 九闸全绿**（invocation `0f2c1bc2-4244-43b7-93c5-140452e0b12c`，fact `ok:true` / `observedGateExit:0`，evidenceRef `verifier-evidence/rounds/r9.json`）；verifier-evidence-check 双轮 integrator 实跑 exit 0（r8 `--phase scoped` / r9 `--phase final`，均 `factOk:true`）。
+
+### Demo 对账行（第 3 追加轮）
+
+- **全量 84 齿证据行（integrator 独立实跑逐字）**：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` → ninja 判定 no work to do（源与 ELF 同步）build rc=0；`wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf` → **逐字证据行：`84 Tests 0 Failures 0 Ignored` / `OK` / `RC=0`**（Unity 汇总 84 PASS / 0 FAIL）。计数口径：既有 83 齿零回归 + PCN 新增 TEST 10（A11）= 84。
+- **TEST 10（P1CJK-A11）单 Unity 行 PASS**：`P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A11):PASS`（`p1_cjk_name.acceptance.c:1775`）。五 tooth 全过（另有 tooth 0a/0b/0c infra probe：设备字体 + [S6] 符号链接面可达 + CMakeLists 接线守卫）：
+  1. tooth 1 设备字体 oracle：`font_puhui_14_1` 13 码点 bpp1 连续位流 vs 独立参考解码器逐位一致；
+  2. tooth 2 advance 尺度化：`out.advance == (raw adv_w + 8) >> 4`（嫌疑① 叠印排除）；
+  3. tooth 3 行尾 padding：[S6] 输出每行尾字节未用位恒零（嫌疑② 尾字节排除）；
+  4. tooth 4 host 子集 oracle：8 码点 bpp4 阈值判别面逐位一致；
+  5. tooth 5 [S1]×[S6] 同构一致性：两入口对同字体输出逐字节一致（共享核心义务承载）。
+- **device build 闸**：r9 firmware-build 真编译——xiaozhi.bin **0x30c340 bytes**、app 分区 0x370000 bytes、余量 **0x63cc0 bytes (11%) free**（与第 2 追加轮 r6 同值——A11 + 真根因修复零体积增量）。
+
+### 治理收益
+
+- 设备字体 × 设备同款解码路径自此在 host runner 有**永久 oracle 齿覆盖**（TEST 10 入册 [S6]）：字形解码类回归 host 即红，live 路径从此免烧板验字形。
+- 真根因（draw_buf 结构头误读 + `req_raw_bitmap` 未清零旁路官方包装归一化）两 TU 同构修复并双注释留痕，后续 LVGL 9 `get_glyph_bitmap` 消费方可直接引用本先例。
+
+### 第 3 追加轮 E2 铁律自查（逐条证据，2026-09-22 integrator 实跑）
+
+| 铁律项 | 证据 | 结论 |
+|---|---|---|
+| `hp1_item_t` 与 11 冻结契约函数零偏移 | `home_p1.h` 零 diff（不在本轮改动闭集）；`hp1_item_t`（:41）与 11 函数声明面（schedule_inject/count/item/preview、day_rollover、countdown、blink_visible、doze_state、layout_resolve、set_state、render_frame）全部在未动的 home_p1.h 内；E2 canary PASS（`P1CJK guards: 铁律canary+… (P1CJK-E2/A3):PASS` :1247 + `home upcoming: …home_p1 seam 零改 canary (M3K2-A5/E2):PASS`，均在 84 齿轮内） | 零偏移 verified |
+| `home_upcoming.{c,h}` 零改 | 两路径不在 `git diff --name-only` / untracked 闭集 | 零改 verified |
+| `docs/contracts/**` 与 `docs/requirements.md` 零改 | 两路径不在改动闭集；contract-lint 闸 r9 绿 | 零改 verified |
+| `schedule_page.c` 零触碰 | 不在改动闭集（本轮 diff 面 = kidpal_render_node.cc + host seam/CMakeLists/PCN A11 段 + 治理面） | 零触碰 verified |
+| [S6] 纯 additive（[S1] 语义零改、`kidpal_p1_font.h` 零改） | `kidpal_p1_font.h` 零 diff（[S6] 符号不入任何头、设备 TU `p1_glyph_render_core` 为 static、零新增导出符号）；[S1] `kidpal_p1_font_glyph` 签名与语义零改（host 入口仍固定 Source Han 子集字体、设备入口仍双分支，改前改后同形；TEST 10 tooth 5 同构齿 + 既有 [S1] 行为齿 84 轮全绿承载） | 纯 additive verified |
+| 既有烘焙资产零删改 | 本轮 diff/untracked 闭集零 assets 路径、零新增资产（[S5] 两枚标签资产为第 2 追加轮既有，零触碰） | 零删改 verified |
+
+### 第 3 追加轮未覆盖面申报
+
+| # | 未覆盖面 | 设计性质 + 现状 | 去向 |
+|---|---|---|---|
+| 1 | **A6 真机第 3 轮复验**（E3） | 设计性质 = 真机屏人眼目测面。现状 = 真根因已 host 实证复现并修复（TEST 10 五 tooth PASS）+ device build 闸过（11% free）+ r9 九闸绿 + host 84 齿全绿 | **挂设备轮窗口**：① seam 文字行乱码消除目测；② 烘焙标签回归确认；③ 烧录面教训 app+art 双分区（首轮 live 验证烧录面教训，如实挂账）。其余 none |
+| 2 | 其余 acceptance 面（A1–A10 行为齿 + E1/E2） | 逐条有冻结齿承载，r9 final + host runner 84 齿双绿 | **none**（零缺口） |
+
+第 3 追加轮 findings：零新增（findings 面沿用历轮：主轮 NIT 一条 + 追加轮零新增不重复列示；r7 编译红为 fixer 单点补丁笔误级，非 finding）。
+
+### 第 3 追加轮 closeout 制品刷新
+
+- `verdict.json`（fact 副本，K3 先例同形）+ `verification.json`（advisory 投影）已以 final r9 fact 刷新（r1–r8 历史原样保留于 verifier-evidence/rounds/；round 链 r7 红/r8 scoped/r9 final 在案）；`current/verdict.json`（verify.mjs 程序 fs-write，non-bearing advisory）已随 r9 刷新。bearing fact = `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json`，本 packet 只引用不复制。
+- Loop metrics / Pod Journal（post-cutoff dual-format）：不产 `session-digest.md` / `loop-health.md` / `loop-metrics.json` / `pod-journal.jsonl`；`pod-events.jsonl` 在场（advisory 检查通过）。
+- 本节只追加、不改主轮与历次 addendum 段落语义；改动不 push、不 merge（树池惯例：分支领先 main 随下批回 main）。

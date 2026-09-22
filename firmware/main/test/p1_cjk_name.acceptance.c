@@ -104,6 +104,28 @@
  *       本文件夹具私有资产根（仅拷入两枚标签 bin，其余资产维持兜底路径——host runner
  *       其余齿的兜底态零扰动，s_art_ok 恒 0）。
  *
+ *   [S6] 按字体取字形追加 seam（第三追加轮新增，2026-09-22 human 硬要求「设备字体
+ *        font_puhui_14_1 编进 host runner，让设备字体 × 设备同款解码路径在 host 上
+ *        有齿——实证复现后再修，修好永久入册」）：
+ *
+ *     int kidpal_p1_font_glyph_for_font(const lv_font_t *font, uint32_t codepoint,
+ *                                       kidpal_p1_glyph_t *out);
+ *       返回 0 = 字形可用（*out 已填充）; 非 0 = 不可用（out 不消费）。
+ *       out == NULL -> 非 0（防御）。语义与 [S1] 逐字段一致（1bpp 行主序 MSB 先行、
+ *       stride=(w+7)/8、盒上限 32×32、有效期到本函数下一次调用）。
+ *       **共享核心义务**：[S1] 入口 = 固定字体调 [S6] 核心（同形 core，字体作参数）
+ *       ——设备路径与 host 路径代码同构，TEST 10 tooth 5 以 [S1]×[S6] 输出逐字节
+ *       一致承载。强符号落点 = firmware/main/test/host_app/main/host_infra_seam.c
+ *       （host runner 唯一 [S6] 义务面）；设备 TU（kidpal_render_node.cc）保持 [S1]
+ *       单一生产入口、零新增导出符号（[S6] 为测试可达缝：设备生产路径唯一字体入口
+ *       仍 [S1]，[S6] 零生产调用方——本头注即登记面；[S6] 声明不进 kidpal_p1_font.h
+ *       ——该头属被测面，本轮零触碰）。
+ *       本冻结文件内 weak 哨兵仅为 red-baseline stub 脚手架独立编译路径保留；强定义
+ *       接线后覆盖之（多重 weak 合法，[S1] 先例）。A11 段（TEST 10 及其 helper/
+ *       声明）以 __has_include("lvgl.h") 门控——host runner 通道在世（lvgl 在 include
+ *       path），red-baseline stub 通道（通道③）编译出（lvgl 头不可达），两通道口径
+ *       见文件尾 run protocol / RED baseline 判读。
+ *
  * ---------------------------------------------------------------------------
  * 契约条目 ↔ 齿 的强度申报（acceptance-evidence.md「契约条目 ↔ 齿 的强度申报」节
  * 体例；消费方 = integrator 与判官按本头注核）:
@@ -142,6 +164,24 @@
  *        下由极宽 ASCII 名承载，CJK 长名不触换行为几何事实，非齿缺口。
  *   源锚代理档自陈：TEST 6 tooth 1/2/4 与 TEST 7 结构半为源锚代理（符号/资产名存在
  *        性，非行为本体）；其行为本体由 TEST 1-4/7/8/9 兑现，两档并列互证。
+ *   P1CJK-A11（设备字体 × 设备同款解码路径的 host 齿——font_puhui_14_1 在 host runner
+ *        上经 [S6] 解码, 与齿内独立参考解码器逐位一致）
+ *     -> TEST 10 承载：行为级（真字体原始数据的独立 oracle 逐位对比——参考解码器直接
+ *        读 glyph_bitmap/glyph_dsc/cmaps 原始表、按 lv_font_conv 格式规范独立重解
+ *        bpp=1/4 PLAIN 连续位流, 与被测路径零共享代码；嫌疑① advance 尺度化齿 +
+ *        嫌疑② 行尾字节 padding 恒零齿独立分齿承载）。设备字体样本 13 码点
+ *        （课/程/钢/琴/舞/蹈/体/育/春/游/'8'/'W'/':'，含奇宽 box_w 13/13/13/7）+
+ *        host 子集样本 8 码点（bpp=4 阈值判别面）。
+ *     -> TEST 10 tooth 0c 承载：源锚代理档（host CMakeLists 含 font_puhui_14_1 +
+ *        host_infra_seam.c 含 [S6] 强符号名）。
+ *        弱于契约处显式声明：① host 复现不等价于设备侧复现——LVGL 版本/编译器/内存
+ *        布局在 host 与设备同构是**行为等价假设**（B 方案代码同源同语义; 若 host 绿而
+ *        真机仍乱码, 分支结论 = 差异在设备侧环境, 转定向插桩串口 hex dump 对照, 不是
+ *        假绿也不是齿缺口）；② 参考解码器只覆盖 PLAIN（bitmap_format=0）bpp∈{1,4}——
+ *        两字体再生成若引入压缩/其它 bpp, 齿以 infra 红自诊断而非静默；③ 参考 advance
+ *        期望 = (raw adv_w + 8) >> 4（8.4 定点四舍五入, 官方取值口径）, 以 [S6] 查 dsc
+ *        时 next=0 → kern 分支死路为前提（letter '\0' 的 gid 恒 0, 官方 dsc getter
+ *        语义）——该前提属 [S6] 冻结语义的一部分。
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
@@ -160,6 +200,8 @@
  *   coverage: P1CJK-A9 末行预告构成 + 版式退役负断言（贴纸/大时间右上区、旧预告带）
  *             -> TEST 8
  *   coverage: P1CJK-A10 版式承载不越卡区（满载压力 containment）+ 换行行为 -> TEST 9
+ *   coverage: P1CJK-A11 设备字体×设备同款解码路径 host 齿（独立参考解码 oracle + advance
+ *             尺度化 + 行尾 padding + host 子集 bpp=4 阈值判别面 + [S1]×[S6] 同构）-> TEST 10
  *   coverage: P1CJK-E2 铁律 canary（hp1_item_t 与 11 个冻结契约函数零偏移 +
  *             home_upcoming 零改语义 + 契约/需求面在世）-> TEST 5 canary 段。
  *             **本轮追记**：追加轮 = 渲染侧纯版式（[S3] 重钉 + [S5] 新资产），载荷
@@ -201,6 +243,15 @@
  *   7) device build 闸（P1CJK-A6）：xiaozhi.bin 构建过 + 体积余量记录；真机目测点
  *      （新版式）= 大字标签可见/行版式与 WF-F1-01 对照/换行不越卡/明早文案（非明天）/
  *      B 方案解码后 1bpp 可读性——挂设备轮窗口。
+ *   8) 设备字体上 host（第三追加轮 A11，[S6]）：firmware/main/test/host_app/main/
+ *      CMakeLists.txt 把 firmware/managed_components/78__xiaozhi-fonts/src/
+ *      font_puhui_14_1.c 编入 host runner 源清单（纯 C、lv_font_fmt_txt 格式、
+ *      bpp=1 --no-compress, lvgl.h include 在 host 通道可达）；host_infra_seam.c 落地
+ *      [S6] 强符号 kidpal_p1_font_glyph_for_font（与 [S1] 共享同一解码+阈值化核心,
+ *      [S1] 入口改为固定字体调 [S6] 核心——TEST 10 tooth 5 逐字节一致承载）；设备 TU
+ *      kidpal_render_node.cc 同构重构 [S1] 为字体参数化 core（零新增导出符号, 设备
+ *      生产入口仍 kidpal_p1_font_glyph）。font_puhui_14_1.c / lv_font_*.c 零触碰
+ *      （managed_components 第三方面只读——编入 = 消费, 非修改）。
  *
  * ---------------------------------------------------------------------------
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
@@ -1521,6 +1572,411 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
                ink, PCN_INK_MIN_WRAP));
 }
 
+/* ========================================================================== *
+ * TEST 10 — P1CJK-A11：设备字体 font_puhui_14_1 上 host（第三追加轮, human 硬要求
+ * 2026-09-22；[S6] seam 契约见头注）。
+ *
+ * oracle 设计（防同源循环, 关键）：齿内独立参考解码器——只读字体原始数据表
+ * （glyph_bitmap / glyph_dsc / cmaps, 经公开 lv_font_t 符号遍历其 dsc）, 按
+ * lv_font_conv 格式规范独立重解 PLAIN 连续位流（bpp=1 / bpp=4）→ 1bpp 行主序位图,
+ * 与 [S6] 输出逐位对比。参考解码器与被测路径**零共享代码**：零调用
+ * font->get_glyph_dsc / font->get_glyph_bitmap / lv_font_* 任何解码入口——位序、
+ * stride、阈值全部独立推导（bpp=4 阈值 128 ⇔ nibble*17 >= 128 ⇔ nibble >= 8, 从
+ * 格式规范线性标度推出, 不引官方 opa4 表）。
+ *
+ *   tooth 0c (structural, 源锚代理档): host CMakeLists 含 font_puhui_14_1 +
+ *            host_infra_seam.c 含 [S6] 强符号名（BUILDER DUTY 8) 接线守卫）
+ *   tooth 0a (infra probe): 设备字体 / host 子集字体符号在 host runner 链接面
+ *            （weak 探针, 未编入 = NULL = infra 红自诊断, 不静默不假绿）
+ *   tooth 0b (infra probe): [S6] 强符号可达（weak 哨兵在世时恒不可用 = infra 红）
+ *   tooth 1 (设备字体 oracle, 嫌疑② 墨形半): 13 码点 [S6] 输出 vs 参考解码——
+ *            w/h 相等 + 每行有效墨位逐位一致（box_w 非 8 倍数样本天然覆盖行消费
+ *            尾字节读取: 课13/琴13/体13/'8'7）
+ *   tooth 2 (嫌疑① advance 尺度化): 每样本 out.advance == (raw adv_w + 8) >> 4
+ *            （8.4 定点四舍五入; next=0 → kern 死路, 见强度申报③）+ CJK advance
+ *            落 8..20px 合理区间（防叠印/拉稀——live 轮乱码形态的字距错乱判别面）
+ *   tooth 3 (嫌疑② 尾字节 padding 半): [S6] 输出每行尾字节未用位恒零
+ *   tooth 4 (host 子集 oracle, bpp=4 阈值判别面): 8 码点（'8'/'W'/':'/泳/春/体/育/
+ *            程）[S6] 输出 vs 参考解码逐位一致——A8 阈值 128 的独立判别面（bpp=1
+ *            设备字体 A8 ∈ {0,255} 对阈值不敏感, 阈值变异只在 bpp=4 上可判别）
+ *   tooth 5 ([S1]×[S6] 同构一致性): [S1] 入口与 [S6](host 字体) 输出逐字节一致
+ *            ——共享核心义务（头注 [S6]）的行为承载
+ *
+ * 红基线语义（[S6] 头注 + 通道④ 判读口径）: builder 落 BUILDER DUTY 8) 后, 本齿
+ * oracle 红 = host 复现设备乱码成功（fixer 修到绿, 从此免烧板）; 全绿 = host 不复现
+ * （分支结论登记, 转设备侧定向插桩）。接线前红 = infra 红自诊断。
+ * ========================================================================== */
+#if defined(__has_include)
+#if __has_include("lvgl.h")
+#define PCN_A11_LVGL_PRESENT 1
+#endif
+#endif
+
+#if defined(PCN_A11_LVGL_PRESENT)
+
+#include "lvgl.h"
+
+/* [S6] 追加 seam weak 哨兵（强定义 = host_infra_seam.c; 多重 weak 合法, [S1] 先例）。
+ * out 参数类型与 kidpal_p1_glyph_t ABI 逐字段一致（同 [S1] 的 pcn_glyph_t 先例）。 */
+__attribute__((weak)) int kidpal_p1_font_glyph_for_font(const lv_font_t *font,
+                                                        uint32_t codepoint,
+                                                        pcn_glyph_t *out)
+{
+    (void)font; (void)codepoint; (void)out;
+    return -1; /* weak 默认 = 字形不可用 */
+}
+
+/* 字体符号 weak 探针：未编入 host runner 时地址为 NULL（ELF weak undefined 零解析）,
+ * tooth 0a 自诊断 infra 红; 编入后解析到强定义, 探针零成本。 */
+extern const lv_font_t font_puhui_14_1 __attribute__((weak));
+extern const lv_font_t lv_font_source_han_sans_sc_14_cjk __attribute__((weak));
+
+/* 设备字体样本（font_puhui_14_1, bpp=1 PLAIN, --no-compress 全码位）: 课/程/钢/琴/
+ * 舞/蹈/体/育/春/游 + '8'/'W'/':'。含奇宽 box_w（课13/琴13/体13/'8'7——行消费尾字节
+ * 读取覆盖）与 CJK advance 14px（嫌疑② 判别面）。码点集经冻结前独立验证脚本
+ * （acceptance/red-baseline/pcn_a11_oracle_check.py, 非冻结件）逐字形 ASCII art 核对
+ * ——13/13 全部解出正确字形。 */
+static const uint32_t pcn_a11_dev_cps[] = {
+    0x8BFEu, /* 课 */ 0x7A0Bu, /* 程 */ 0x94A2u, /* 钢 */ 0x7434u, /* 琴 */
+    0x821Eu, /* 舞 */ 0x8E48u, /* 蹈 */ 0x4F53u, /* 体 */ 0x80B2u, /* 育 */
+    0x6625u, /* 春 */ 0x6E38u, /* 游 */ 0x0038u, /* '8' */ 0x0057u, /* 'W' */
+    0x003Au, /* ':' */
+};
+
+/* host 子集样本（lv_font_source_han_sans_sc_14_cjk, bpp=4 PLAIN）: 全部经同一验证
+ * 脚本核对在字体码位集内（简化字 课/钢/琴/游/语/训/培 不在子集——fixture 已按实测
+ * 在场码点取材, 防样本缺场假红）。 */
+static const uint32_t pcn_a11_host_cps[] = {
+    0x0038u, /* '8' */ 0x0057u, /* 'W' */ 0x003Au, /* ':' */ 0x6CF3u, /* 泳 */
+    0x6625u, /* 春 */ 0x4F53u, /* 体 */ 0x80B2u, /* 育 */ 0x7A0Bu, /* 程 */
+};
+
+/* 1bpp 参考输出缓冲上界 = [S1] 盒上限 64 * stride(8) = 512B（seam 实现收紧 32×32
+ * 亦在界内）。 */
+#define PCN_A11_BITS_CAP 512u
+
+/* CJK advance 合理区间（嫌疑② 判别界）：14px 字体 CJK 字形 14px 笔进, 落 8..20px;
+ * 越下界 = 字距坍缩叠印, 越上界 = 字距拉稀——live 轮乱码形态的字距错乱判别面。 */
+#define PCN_A11_ADV_MIN 8
+#define PCN_A11_ADV_MAX 20
+
+/* 独立 cmap 反查：codepoint -> glyph id（FORMAT0_TINY / FORMAT0_FULL /
+ * SPARSE_TINY 三型——两字体 29+6 个 cmap 实测只用这三型; 其它类型返回 0 走 infra 红,
+ * 防字体再生成静默假绿）。线性扫描独立实现, 不引 lv_utils_bsearch。 */
+static int pcn_a11_ref_glyph_id(const lv_font_t *font, uint32_t cp)
+{
+    const lv_font_fmt_txt_dsc_t *fdsc = (const lv_font_fmt_txt_dsc_t *)font->dsc;
+    uint16_t i;
+
+    for (i = 0; i < fdsc->cmap_num; i++) {
+        const lv_font_fmt_txt_cmap_t *cm = &fdsc->cmaps[i];
+        uint32_t rcp = cp - cm->range_start;
+
+        if (rcp >= (uint32_t)cm->range_length) {
+            continue;
+        }
+        if (cm->type == LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY) {
+            return (int)cm->glyph_id_start + (int)rcp;
+        }
+        if (cm->type == LV_FONT_FMT_TXT_CMAP_FORMAT0_FULL) {
+            const uint8_t *ofs = (const uint8_t *)cm->glyph_id_ofs_list;
+            /* 格式规范: 非首字符 offset==0 = 缺字形（与官方反查语义一致, 独立实现） */
+            if (ofs[rcp] == 0 && cp != cm->range_start) {
+                continue;
+            }
+            return (int)cm->glyph_id_start + (int)ofs[rcp];
+        }
+        if (cm->type == LV_FONT_FMT_TXT_CMAP_SPARSE_TINY) {
+            uint16_t j;
+            for (j = 0; j < cm->list_length; j++) {
+                if (cm->unicode_list[j] == (uint16_t)rcp) {
+                    return (int)cm->glyph_id_start + (int)j;
+                }
+            }
+            return 0; /* 区内但不在稀疏表 = 缺字形 */
+        }
+        return 0; /* 未预期 cmap 类型 = 字体再生成漂移, 调用方报 infra 红 */
+    }
+    return 0;
+}
+
+/* 独立参考解码器：PLAIN（bitmap_format=0）bpp=1/4 连续位流 → 1bpp 行主序位图
+ * （stride=(w+7)/8, MSB 先行, 1=墨, 行尾未用位零——[S1] 输出契约同形）。
+ * 返回 0 = 解出; -1 = 码点不在字体; -2 = 字体格式漂移（非 PLAIN / 非 bpp1/4）。
+ * 零调用官方解码入口（见块头 oracle 设计）。 */
+static int pcn_a11_ref_decode(const lv_font_t *font, uint32_t cp,
+                              pcn_glyph_t *out, unsigned char *bits,
+                              size_t bits_cap)
+{
+    const lv_font_fmt_txt_dsc_t *fdsc = (const lv_font_fmt_txt_dsc_t *)font->dsc;
+    const lv_font_fmt_txt_glyph_dsc_t *gd;
+    int gid, w, h, stride, x, y;
+    uint32_t bi, k;
+
+    if (fdsc->bitmap_format != LV_FONT_FMT_TXT_PLAIN ||
+        (fdsc->bpp != 1 && fdsc->bpp != 4)) {
+        return -2;
+    }
+    gid = pcn_a11_ref_glyph_id(font, cp);
+    if (gid == 0) {
+        return -1;
+    }
+    gd = &fdsc->glyph_dsc[gid];
+    w = (int)gd->box_w;
+    h = (int)gd->box_h;
+    if (w <= 0 || h <= 0 || w > 64 || h > 64) {
+        return -1;
+    }
+    stride = (w + 7) / 8;
+    if ((size_t)(h * stride) > bits_cap) {
+        return -1;
+    }
+    /* advance 期望（嫌疑① 判别基准）: fmt_txt 以 8.4 定点存 adv_w（真值*16）, 官方
+     * 取值口径 = 四舍五入 (raw+8)>>4; [S6] 查 dsc 恒 next=0 → letter '\0' 的 gid 恒 0
+     * → kern 分支死路, 期望值与 kern 无关（[S6] 冻结语义, 见强度申报③）。 */
+    out->w = w;
+    out->h = h;
+    out->advance = (((int)gd->adv_w + 8) >> 4);
+    memset(bits, 0, (size_t)(h * stride));
+    bi = (uint32_t)gd->bitmap_index;
+    for (y = 0; y < h; y++) {
+        for (x = 0; x < w; x++) {
+            k = (uint32_t)(y * w + x);
+            if (fdsc->bpp == 1) {
+                /* bpp=1 PLAIN: 全字形连续位流（k 位 = 字节 k>>3 的 MSB 起第 k&7 位）
+                 * ——行间不按字节对齐（旧 raw 手解的逐行漂移根因, 本参考实现按格式
+                 * 规范独立推导, 与官方解码语义互证）。 */
+                if ((fdsc->glyph_bitmap[bi + (k >> 3)] >> (7 - (k & 7))) & 1u) {
+                    bits[y * stride + (x >> 3)] |= (unsigned char)(1u << (7 - (x & 7)));
+                }
+            } else {
+                /* bpp=4 PLAIN: 4bit/像素连续半字节流（MS nibble 先行）, A8 = nibble*17
+                 * （格式规范线性标度）, 阈值 128 ⇔ nibble >= 8。 */
+                uint8_t byte = fdsc->glyph_bitmap[bi + (k >> 1)];
+                unsigned nib = ((k & 1u) == 0) ? (unsigned)(byte >> 4)
+                                               : (unsigned)(byte & 0xFu);
+                if (nib * 17u >= 128u) {
+                    bits[y * stride + (x >> 3)] |= (unsigned char)(1u << (7 - (x & 7)));
+                }
+            }
+        }
+    }
+    out->bits = bits;
+    return 0;
+}
+
+/* 1bpp 读单位（行主序 MSB 先行）。 */
+static int pcn_a11_bit(const unsigned char *bits, int stride, int x, int y)
+{
+    return (bits[y * stride + (x >> 3)] >> (7 - (x & 7))) & 1;
+}
+
+/* coverage: P1CJK-A11 -- 设备字体×设备同款解码路径 host 齿：独立参考解码 oracle（[S6]）+ advance 尺度化 + 行尾 padding + host 子集 bpp=4 阈值判别面 + [S1]×[S6] 同构 */
+TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A11)",
+          "[p1_cjk_name][P1CJK-A11][devfont-oracle]")
+{
+    pcn_glyph_t g, ref;
+    unsigned char seam_snap[PCN_A11_BITS_CAP];
+    unsigned char ref_bits[PCN_A11_BITS_CAP];
+    const lv_font_t *dev_font = &font_puhui_14_1;
+    const lv_font_t *host_font = &lv_font_source_han_sans_sc_14_cjk;
+    size_t i;
+
+    PCN_REQUIRE_ROOT();
+
+    /* tooth 0c (structural, 源锚代理档): BUILDER DUTY 8) 接线守卫。 */
+    TEST_ASSERT_TRUE_MESSAGE(pcn_file_contains(PCN_HOST_CMAKE, "font_puhui_14_1") &&
+                                 pcn_file_contains(PCN_SEAM_C,
+                                                   "kidpal_p1_font_glyph_for_font"),
+        "PCN RED(infra): host_app 接线面缺 [S6]/设备字体——CMakeLists.txt 未编入 "
+        "font_puhui_14_1.c 或 host_infra_seam.c 无 kidpal_p1_font_glyph_for_font "
+        "（BUILDER DUTY 8) 未落, 设备字体 × 设备同款解码路径的 host 齿缺场）");
+
+    /* tooth 0a (infra probe): 字体符号链接面（weak 探针——未编入 = NULL, 不静默）。 */
+    TEST_ASSERT_TRUE_MESSAGE(dev_font != NULL,
+        "PCN RED(infra): font_puhui_14_1 未编入 host runner（符号探针 NULL）——"
+        "BUILDER DUTY 8) 接线缺失, A11 设备字体齿不可达");
+    TEST_ASSERT_TRUE_MESSAGE(host_font != NULL,
+        "PCN RED(infra): lv_font_source_han_sans_sc_14_cjk 不在 host runner 链接面"
+        "——host 子集字体探针 NULL（runner 装配面被拆, 非本包预期）");
+
+    /* tooth 0b (infra probe): [S6] 强符号可达（weak 哨兵在世 = 恒不可用 = infra 红）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_p1_font_glyph_for_font(dev_font, 0x0057u, &g) == 0,
+        "PCN RED(infra): [S6] kidpal_p1_font_glyph_for_font 不可达（weak 哨兵在世）——"
+        "host_infra_seam.c 未落地 [S6] 强符号/共享核心（BUILDER DUTY 8)）");
+
+    /* ---- tooth 1 (设备字体 oracle, 嫌疑② 墨形半): [S6] vs 独立参考解码 ---- */
+    {
+        int odd_w_seen = 0;
+
+        for (i = 0; i < sizeof(pcn_a11_dev_cps) / sizeof(pcn_a11_dev_cps[0]); i++) {
+            uint32_t cp = pcn_a11_dev_cps[i];
+            int stride, rc, mmx = -1, mmy = -1, x, y;
+
+            rc = kidpal_p1_font_glyph_for_font(dev_font, cp, &g);
+            TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+                pcn_fm("PCN-A11 RED: [S6] 对设备字体 U+%04X 报不可用 rc=%d——设备路径"
+                       "字形获取失败（官方 dsc 查找/盒上限拒绝, 非 [S1] 冻结语义）",
+                       cp, rc));
+            stride = (g.w + 7) / 8;
+            memcpy(seam_snap, g.bits, (size_t)(g.h * stride));
+            if (g.w % 8 != 0) {
+                odd_w_seen = 1;
+            }
+            rc = pcn_a11_ref_decode(dev_font, cp, &ref, ref_bits, sizeof(ref_bits));
+            TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+                pcn_fm("PCN RED(infra): 参考解码器对设备字体 U+%04X 解不出 rc=%d——"
+                       "字体面再生成致样本缺场/格式漂移（压缩或非 1bpp）, fixture 需"
+                       "对齐（pcn_a11_oracle_check.py 重验）, 不静默", cp, rc));
+            TEST_ASSERT_TRUE_MESSAGE(g.w == ref.w && g.h == ref.h,
+                pcn_fm("PCN-A11 RED: 设备字体 U+%04X 盒尺寸不一致 seam=%dx%d ref=%dx%d"
+                       "——dsc 面漂移", cp, g.w, g.h, ref.w, ref.h));
+            /* 每行有效墨位逐位对比（尾字节 padding 归 tooth 3, 分齿正交判别）。 */
+            for (y = 0; y < ref.h && mmx < 0; y++) {
+                for (x = 0; x < ref.w; x++) {
+                    if (pcn_a11_bit(seam_snap, stride, x, y) !=
+                        pcn_a11_bit(ref_bits, stride, x, y)) {
+                        mmx = x; mmy = y;
+                        break;
+                    }
+                }
+            }
+            TEST_ASSERT_TRUE_MESSAGE(mmx < 0,
+                pcn_fm("PCN-A11 RED: 设备字体 U+%04X 墨形与参考解码不一致（首个差异位 "
+                       "x=%d y=%d, box=%dx%d）——bpp=1 PLAIN 解码/位流消费缺陷（host "
+                       "复现设备乱码, 本红即复现证据, 通道④ 判读分支 (a)）",
+                       cp, mmx, mmy, ref.w, ref.h));
+        }
+        TEST_ASSERT_TRUE_MESSAGE(odd_w_seen,
+            "PCN RED(infra): 设备字体样本全部 box_w%8==0——行尾字节覆盖失效（字体"
+            "再生成致样本漂移, fixture 需补奇宽字形, 不静默）");
+    }
+
+    /* ---- tooth 2 (嫌疑① advance 尺度化) ---- */
+    for (i = 0; i < sizeof(pcn_a11_dev_cps) / sizeof(pcn_a11_dev_cps[0]); i++) {
+        uint32_t cp = pcn_a11_dev_cps[i];
+        int rc = kidpal_p1_font_glyph_for_font(dev_font, cp, &g);
+
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN-A11 RED(infra): [S6] tooth 2 对 U+%04X 不可用 rc=%d", cp, rc));
+        rc = pcn_a11_ref_decode(dev_font, cp, &ref, ref_bits, sizeof(ref_bits));
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN RED(infra): 参考解码器 tooth 2 对 U+%04X 解不出 rc=%d", cp, rc));
+        TEST_ASSERT_TRUE_MESSAGE(g.advance == ref.advance,
+            pcn_fm("PCN-A11 RED(嫌疑①): 设备字体 U+%04X advance %d != 参考 %d（raw "
+                   "adv_w 8.4 定点, px 尺度化 (raw+8)>>4）——advance 尺度化缺陷"
+                   "（叠印/拉稀形态根因之一, 通道④ 判读分支 (a)）",
+                   cp, g.advance, ref.advance));
+        if (cp >= 0x4E00u) { /* CJK 码位段: 笔进合理区间防叠印/拉稀 */
+            TEST_ASSERT_TRUE_MESSAGE(g.advance >= PCN_A11_ADV_MIN &&
+                                         g.advance <= PCN_A11_ADV_MAX,
+                pcn_fm("PCN-A11 RED(嫌疑①): 设备字体 CJK U+%04X advance %d 越出 "
+                       "%d..%d px 合理区间——字距错乱（叠印/拉稀形态判别面命中）",
+                       cp, g.advance, PCN_A11_ADV_MIN, PCN_A11_ADV_MAX));
+        }
+    }
+
+    /* ---- tooth 3 (嫌疑② 尾字节 padding 恒零) ---- */
+    for (i = 0; i < sizeof(pcn_a11_dev_cps) / sizeof(pcn_a11_dev_cps[0]); i++) {
+        uint32_t cp = pcn_a11_dev_cps[i];
+        int stride, rc, x, y, bad = 0;
+
+        rc = kidpal_p1_font_glyph_for_font(dev_font, cp, &g);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN-A11 RED(infra): [S6] tooth 3 对 U+%04X 不可用 rc=%d", cp, rc));
+        stride = (g.w + 7) / 8;
+        memcpy(seam_snap, g.bits, (size_t)(g.h * stride));
+        for (y = 0; y < g.h && !bad; y++) {
+            for (x = g.w; x < stride * 8; x++) {
+                if (pcn_a11_bit(seam_snap, stride, x, y) != 0) {
+                    bad = 1;
+                    break;
+                }
+            }
+        }
+        TEST_ASSERT_TRUE_MESSAGE(!bad,
+            pcn_fm("PCN-A11 RED(嫌疑②): 设备字体 U+%04X 行尾字节未用位非零（box=%dx%d,"
+                   " stride=%d）——1bpp 输出尾字节 padding 被写脏（行流消费/输出 hygiene"
+                   "缺陷, 通道④ 判读分支 (a)）", cp, g.w, g.h, stride));
+    }
+
+    /* ---- tooth 4 (host 子集 oracle, bpp=4 阈值判别面) ---- */
+    for (i = 0; i < sizeof(pcn_a11_host_cps) / sizeof(pcn_a11_host_cps[0]); i++) {
+        uint32_t cp = pcn_a11_host_cps[i];
+        int stride, rc, mmx = -1, mmy = -1, x, y;
+
+        rc = kidpal_p1_font_glyph_for_font(host_font, cp, &g);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN-A11 RED: [S6] 对 host 子集 U+%04X 报不可用 rc=%d", cp, rc));
+        stride = (g.w + 7) / 8;
+        memcpy(seam_snap, g.bits, (size_t)(g.h * stride));
+        rc = pcn_a11_ref_decode(host_font, cp, &ref, ref_bits, sizeof(ref_bits));
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN RED(infra): 参考解码器对 host 子集 U+%04X 解不出 rc=%d——"
+                   "字体面漂移, fixture 需对齐", cp, rc));
+        TEST_ASSERT_TRUE_MESSAGE(g.w == ref.w && g.h == ref.h &&
+                                 g.advance == ref.advance,
+            pcn_fm("PCN-A11 RED: host 子集 U+%04X dsc/advance 不一致 seam=%dx%d adv=%d "
+                   "ref=%dx%d adv=%d", cp, g.w, g.h, g.advance, ref.w, ref.h,
+                   ref.advance));
+        for (y = 0; y < ref.h && mmx < 0; y++) {
+            for (x = 0; x < ref.w; x++) {
+                if (pcn_a11_bit(seam_snap, stride, x, y) !=
+                    pcn_a11_bit(ref_bits, stride, x, y)) {
+                    mmx = x; mmy = y;
+                    break;
+                }
+            }
+        }
+        TEST_ASSERT_TRUE_MESSAGE(mmx < 0,
+            pcn_fm("PCN-A11 RED: host 子集 U+%04X 墨形与参考解码不一致（首个差异位 "
+                   "x=%d y=%d, box=%dx%d）——bpp=4 A8 阈值化路径缺陷（阈值≠128 或"
+                   "解码漂移; bpp=1 设备字体对阈值不敏感, 本齿为阈值变异唯一判别面）",
+                   cp, mmx, mmy, ref.w, ref.h));
+    }
+
+    /* ---- tooth 5 ([S1]×[S6] 同构一致性): 共享核心义务的行为承载 ---- */
+    for (i = 0; i < sizeof(pcn_a11_host_cps) / sizeof(pcn_a11_host_cps[0]); i++) {
+        uint32_t cp = pcn_a11_host_cps[i];
+        int stride, rc, b, total, mm = -1;
+
+        rc = kidpal_p1_font_glyph(cp, &g); /* [S1] host 入口 */
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN-A11 RED(infra): [S1] 对 host 子集 U+%04X 不可用 rc=%d——host "
+                   "seam 强符号面漂移（83 齿基线态被破）", cp, rc));
+        stride = (g.w + 7) / 8;
+        memcpy(seam_snap, g.bits, (size_t)(g.h * stride));
+        /* [S1] 与 [S6] 可能共享同一静态输出缓冲（有效期到下一次调用）——已先快照
+         * [S1] 输出, 再调 [S6] 并快照其输出, 然后逐字节对比。 */
+        rc = kidpal_p1_font_glyph_for_font(host_font, cp, &ref);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            pcn_fm("PCN-A11 RED(infra): [S6] tooth 5 对 U+%04X 不可用 rc=%d", cp, rc));
+        memcpy(ref_bits, ref.bits,
+               (size_t)(ref.h * ((ref.w + 7) / 8)));
+        TEST_ASSERT_TRUE_MESSAGE(g.w == ref.w && g.h == ref.h &&
+                                 g.advance == ref.advance,
+            pcn_fm("PCN-A11 RED: [S1] 与 [S6]（同字体 U+%04X）dsc 不一致 %dx%d/%d vs "
+                   "%dx%d/%d——两入口未共享同一解码+阈值化核心（[S6] 头注共享核心"
+                   "义务被破, 设备/host 路径同构缺失）", cp, g.w, g.h, g.advance,
+                   ref.w, ref.h, ref.advance));
+        total = ref.h * ((ref.w + 7) / 8);
+        for (b = 0; b < total; b++) {
+            if (seam_snap[b] != ref_bits[b]) {
+                mm = b;
+                break;
+            }
+        }
+        if (mm >= 0) { /* 条件构造诊断消息, 防 mm<0 时的越界读 */
+            TEST_FAIL_MESSAGE(pcn_fm("PCN-A11 RED: [S1] 与 [S6]（同字体 U+%04X）位图"
+                                     "第 %d 字节不一致（0x%02X vs 0x%02X）——共享核心"
+                                     "义务被破（同构缺失）", cp, mm, seam_snap[mm],
+                                     ref_bits[mm]));
+        }
+    }
+}
+
+#endif /* PCN_A11_LVGL_PRESENT */
+
 /* ---------------------------------------------------------------------------
  * P1CJK-A6 闸证据条目（冻结文本——本条不是 host 齿, 不造假齿; 执行承载 = verifier
  * final 轮收口 + human 持板目击, 证据落 delivery/changes/dev/
@@ -1570,8 +2026,26 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
  *           firmware/main/test/acceptance/red-baseline/runner.c \
  *           firmware/main/test/acceptance/red-baseline/pcn_red_seam_stub.c
  *       （仓根 cwd 执行 /tmp/pcn_red_runner; 编译通道 error 为零 = 实编过）
+ *       **第三追加轮口径**：A11 段（TEST 10 + 其 helper/声明, 见 [S6] 块门控说明）以
+ *       __has_include("lvgl.h") 门控——通道③ include path 无 lvgl 头, A11 编译出,
+ *       本通道实编覆盖文件其余部分; A11 段自身实编通道 = 通道①/② host runner 构建
+ *       （lvgl 在 include path, 构建失败即响红, 无静默跳过面）。
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
  *   test/host_app 均可）; 标签资产私有根 = /tmp/pcj_assets_ft（WSL 内）。
+ *   通道④ A11 冻结后判读口径（第三追加轮, 2026-09-22 acceptance-author 冻结时点）:
+ *       - 通道①/②（host runner）: 通道① 基线 = 83 Tests / 0 Failures / OK（冻结前
+ *         实跑锚, 见 REVISION LOG 第三追加轮条目）; A11 接入后至 builder 落 BUILDER
+ *         DUTY 8) 前: 既有 83 齿零扰动（全绿）, TEST 10 红 = 接线态 infra 红
+ *         （tooth 0c 结构半 / tooth 0a 字体符号探针 / tooth 0b [S6] 可达探针, 红名
+ *         自诊断指认 BUILDER DUTY 8)）——非违约红。
+ *       - builder 落 BUILDER DUTY 8) 后两种设计态结果（均合法交付物, 见 [S6] 头注）:
+ *         (a) TEST 10 oracle 齿红（tooth 1-4 红名 PCN-A11 RED: ...）= host 复现成功
+ *             ——bpp=1 解码缺陷在 host 可见, fixer 修到绿, 从此免烧板回归;
+ *         (b) TEST 10 全绿 = host 不复现——如实登记分支结论「host 覆盖在世且绿、
+ *             根因在设备侧环境」（行为等价假设破口径, 见强度申报①）, 转定向插桩
+ *             （设备串口 hex dump 对照）, 不是假绿。
+ *       - 通道③（stub 实编）: A11 编译出（门控）, 其余部分编译零 error + 运行判读
+ *         同通道②（冻结时点 stub 通道 = 设计态红, MUST-STAY-GREEN 面不变）。
  * --------------------------------------------------------------------------- */
 /* REVISION LOG (acceptance-author only; 修订均经 planner 派发):
  *   2026-09-22  initial freeze (acceptance-author, TaskPackage
@@ -1622,4 +2096,32 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
  *               pcn_right_band_ink(rect, frame) 同风格）, tooth 4 改量极宽名帧
  *               快照 pcn_f_b, 断言与红名原文语义不变; 同 CASE tooth 1/2 快照读
  *               法零触碰, 判别力不变。
+ *   2026-09-22  第三追加轮 A11 冻结（planner 派发, human 硬要求「设备字体
+ *               font_puhui_14_1 编进 host runner, 让设备字体 × 设备同款解码路径在
+ *               host 上有齿——实证复现后再修, 修好永久入册」; live 复验第 2 轮
+ *               部分 FAIL: 烘焙标签完美渲染, seam 文字行仍乱码且形态改变——B 修复
+ *               改变行为未踩中根因）: 新增 [S6] 追加 seam（kidpal_p1_font_glyph_
+ *               for_font, 与 [S1] 共享核心; 形状 = 派单冻结形状, out 参数经
+ *               pcn_glyph_t ABI 同形）+ 新增 TEST 10（P1CJK-A11）五 tooth + 三
+ *               infra 探针。oracle = 齿内独立参考解码器（只读 glyph_bitmap/glyph_
+ *               dsc/cmaps 原始表, 按 lv_font_conv 格式规范独立重解 PLAIN bpp=1/4
+ *               连续位流; 零调用官方解码入口——同源循环防护）; 码点集 = 派单 13
+ *               码点（课/程/钢/琴/舞/蹈/体/育/春/游/'8'/'W'/':', 含奇宽 box_w
+ *               13/13/13/7——嫌疑② 行消费覆盖）+ host 子集 8 码点（'8'/'W'/':'
+ *               /泳/春/体/育/程; 简化字 课/钢/琴/游/语/训/培 实测不在 host 子集
+ *               ——fixture 按实测在场取材）。advance 期望 = (raw adv_w + 8) >> 4
+ *               （8.4 定点四舍五入; next=0 → kern 死路——前提显式化见强度申报③）;
+ *               CJK advance 区间判别 8..20px。行尾 padding 恒零独立分齿。bpp=4
+ *               host 子集 oracle = 阈值变异判别面（bpp=1 数据 A8 ∈ {0,255}, 阈值
+ *               128→64 在设备字体上不可判别——变异面从设备字体移到 host 子集,
+ *               阈值义务不落空）。冻结前独立验证: 参考解码算法以 scratch 脚本
+ *               （acceptance/red-baseline/pcn_a11_oracle_check.py, 非冻结件）对
+ *               两字体全部 21 码点逐字形 ASCII art 核对（13/13 + 8/8 全部解出正确
+ *               字形）。红基线: 通道① 冻结前实跑 = 83 Tests / 0 Failures / OK /
+ *               exit 0（2026-09-22 acceptance-author 实跑锚）; A11 接入后判读 =
+ *               通道④（接线态 infra 红自诊断 → builder 落 DUTY 8) 后红 = host
+ *               复现成功 / 绿 = host 不复现分支结论, 两态皆合法交付物）。A11 段
+ *               __has_include("lvgl.h") 门控: host runner 通道在世, 通道③ stub
+ *               通道编译出（lvgl 头不可达）——A11 实编通道 = host runner 构建,
+ *               显式登记不静默。
  * --------------------------------------------------------------------------- */
