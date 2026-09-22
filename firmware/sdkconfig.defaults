@@ -40,6 +40,10 @@ CONFIG_UART_ISR_IN_IRAM=y
 # Fix ESP_SSL error
 CONFIG_MBEDTLS_SSL_RENEGOTIATION=n
 
+# K5 (260922-m3-k5-sntp-time-sync): SNTP 多 server（ntp.aliyun.com 主 + 2 备）前提；
+# 生成面默认 =1, 备用 server 不生效。esp_sntp API 依赖 CONFIG_LWIP_SNTP（IDF 默认 y）。
+CONFIG_LWIP_SNTP_MAX_SERVERS=3
+
 # LVGL 9.2.2
 
 CONFIG_LV_OS_NONE=y

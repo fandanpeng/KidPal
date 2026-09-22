@@ -27,8 +27,83 @@
 #include <driver/gpio.h>
 #include <arpa/inet.h>
 #include <font_awesome.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <esp_sntp.h>
+#include <sys/time.h>
+#include "time_sync.h"
 
 #define TAG "Application"
+
+/* -------------------------------------------------------------------------- *
+ * K5（TaskPackage 260922-m3-k5-sntp-time-sync）[S2] SNTP 校时挂点：
+ * WiFi got IP 后异步启动（HandleNetworkConnectedEvent -> KidPalStartSntpTimeSync），
+ * 不阻塞激活/主流程——esp_sntp_init 只配 server 列表与起 lwip SNTP 轮询任务（自身
+ * 异步），后续同步监测在独立低优先级 task 内以 kidpal_ts_backoff_delay_ms 退避节奏
+ * 轮询（失败不重试风暴：SNTP 内部重试恒开, 监测只观测不重启）。TZ 走 POSIX `CST-8`
+ * （UTC+8, F4 符号反转; 勿照抄 emote_display.cc `GMT+0` 错误先例）。OTA 校时通道
+ * 不复活（K5-E2）：本文件零 CheckVersion 调用, ota.cc server_time 路径保持死代码。
+ * 板级写回（SNTP 同步成功 -> PCF85063）由板文件经 esp_sntp_set_time_sync_notification_cb
+ * 承接（见 boards/waveshare-s3-rlcd-4.2.cc），应用层不触碰 I2C。
+ * ------------------------------------------------------------------------ */
+static bool s_sntp_started = false;
+
+/* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
+static void KidPalSntpMonitorTask(void *arg)
+{
+    int failures = 0;
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(kidpal_ts_backoff_delay_ms(failures)));
+        time_t now = time(NULL);
+        struct tm tm_local;
+        localtime_r(&now, &tm_local);
+        if (kidpal_ts_year_ok(tm_local.tm_year)) {
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            ESP_LOGI(TAG, "sntp_time_sync corr_id=%s ok year=%d", corr_id,
+                     tm_local.tm_year + 1900);
+            break; /* 同步成功, 监测任务退出（SNTP 按配置周期继续保时） */
+        }
+        failures++;
+        if (failures <= 3 || failures % 10 == 0) { /* 退避降噪: 前几次 + 低频续报 */
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            ESP_LOGW(TAG, "sntp_time_sync corr_id=%s not_synced failures=%d "
+                          "next_backoff_ms=%d", corr_id, failures,
+                     kidpal_ts_backoff_delay_ms(failures));
+        }
+    }
+    vTaskDelete(NULL);
+}
+
+static void KidPalStartSntpTimeSync()
+{
+    if (s_sntp_started) {
+        return; /* 幂等: WiFi 重连反复触发本路径, SNTP 只起一次 */
+    }
+    s_sntp_started = true;
+
+    /* POSIX TZ `CST-8` = UTC+8（F4: POSIX 符号反转——西半球为正, 东八区写 8）。 */
+    setenv("TZ", "CST-8", 1);
+    tzset();
+
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setservername(0, "ntp.aliyun.com");   /* 主（plan 关键接缝） */
+    esp_sntp_setservername(1, "ntp1.aliyun.com");  /* 备 1 */
+    esp_sntp_setservername(2, "pool.ntp.org");     /* 备 2 */
+    esp_sntp_init(); /* 异步起 lwip SNTP 轮询, 不阻塞调用方（主事件循环） */
+
+    char corr_id[24];
+    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ESP_LOGI(TAG, "sntp_time_sync corr_id=%s started servers=ntp.aliyun.com,ntp1.aliyun.com,pool.ntp.org tz=CST-8",
+             corr_id);
+
+    xTaskCreate(KidPalSntpMonitorTask, "sntp_mon", 4096, nullptr, 1, nullptr);
+}
+
 
 
 Application::Application() {
@@ -269,6 +344,10 @@ void Application::Run() {
 
 void Application::HandleNetworkConnectedEvent() {
     ESP_LOGI(TAG, "Network connected");
+    /* K5 [S2]: SNTP 校时挂在 WiFi got IP（本事件区）之后异步启动——不阻塞激活/
+     * 主流程（esp_sntp_init 自身异步 + 监测在独立 task）；写回 PCF85063 由板级
+     * sync 回调承接。幂等, 重连不重启。 */
+    KidPalStartSntpTimeSync();
     auto state = GetDeviceState();
 
     if (state == kDeviceStateStarting || state == kDeviceStateWifiConfiguring) {

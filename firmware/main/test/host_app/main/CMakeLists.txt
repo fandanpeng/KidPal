@@ -149,6 +149,17 @@ set(HOST_ACCEPTANCE_SRCS
     # 只读：编入 = 消费, 非修改。TEST 10 tooth 0a weak 探针经此编入解析到强定义。
     "../../../../managed_components/78__xiaozhi-fonts/src/font_puhui_14_1.c"
 
+    # 包 260922-m3-k5-sntp-time-sync（SNTP 校时 + PCF85063 写回 + 断电续航 + 周期
+    # re-inject）被测实现接线：time_sync.c = seam [S1] 纯逻辑时间缝六函数强符号源
+    # （覆盖冻结件 weak 哨兵的关键）。相对 host_app/main 为 ../../../（= firmware/main/）。
+    "../../../time_sync.c"
+
+    # 包 260922-m3-k5-sntp-time-sync 冻结验收（BCD 编解码 + 守门阈值/可信门 + 退避/节流
+    # 决策表行为半 + SNTP 挂点/写回/恢复/re-inject/接线结构半 + 铁律守卫 + 注册序守卫）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本文件 TEST 6 tooth 5 校验此序）。
+    "../../time_sync.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

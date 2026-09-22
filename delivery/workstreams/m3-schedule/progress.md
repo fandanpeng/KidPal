@@ -189,3 +189,27 @@
 - **收口**：commit `14a27f6`（分支领先 main 随批回 main）；review-packet 第 3 追加轮 addendum（因果链/demo 对账/治理收益/未覆盖面）。
 - **治理收益**：设备字体 × 设备解码路径的 host oracle 覆盖永久入册——live 路径字形回归从此免烧板。
 - **遗留**：① 真机第 3 轮复验挂设备轮窗口（seam 乱码消除目测 + 烘焙标签回归 + app+art 双分区烧录）；② loop-retro 阈值 advisory 持续挂账。
+
+## 2026-09-22 · K4 真机第 3 轮 PASS + 合并收尾（planner Pod）
+
+- **human 真机第 3 轮复验 PASS**（原话「这次对了，提交合并吧」pod-events 560daa86）：seam 文字行乱码消除（第 3 追加轮真根因修复生效）、烘焙标签/版式目测通过——A6 真机半闭环，全验收齿闭环。
+- **合并链**：supervisor-verdict-gate 依 fail-loud 指引以新 bearing 轮（final r9 九闸绿）refresh stale verdict → **APPROVE**（riskTier medium，completedRounds 9，provenance v2 全过，supervisor-gate-check exit 0）→ 前置升级闸 PASS → merge-driver --pod：rebase OK / quick-check OK / **merge OK**——merge commit `74b6929`（main @ `29749c0` 簿记），追加轮三批（2d60006+75d01b5、14a27f6+7dec9de）随批回 main，token 释放。
+- **K4 全包闭环**：主轮（合并 f8703d5）→ 追加轮 1（A6 live FAIL 根因 + B 方案 + 版式对齐）→ 追加轮 2/3（设备字体上 host 复现真根因 draw_buf 结构头误读 → 修复 + A11 host oracle 永久入册）→ 真机第 3 轮 PASS。治理遗产：设备字体 × 设备解码路径 host 免烧板覆盖、行流版式 [S3]/[S5] 资产契约、独立 oracle 齿设计先例。
+- **持续挂账（非本包义务）**：loop-retro 阈值 18 advisory（主线程 /loop-retro）；设备时钟缺口（贴纸随时钟恢复另立项）。
+
+## 2026-09-22 · 时间缺口 triage 建包（主线程 /triage-change）
+
+- K3 设备轮挂账「设备时间错误」立项推进：主线程实测修正根因——引擎 OTA 端点实发正确 `server_time`（timestamp UTC ms + offset 480），真因 = 方向 B 短路激活后 `ActivationTask()` 不再调 `Ota::CheckVersion()`（全固件唯一 settimeofday 点）且固件无 SNTP，真机串口 `tm_year: 70` 实证。
+- `/triage-change` 派 architect 比例化 review → **②单包 Lite**（不触契约面/spec 冻结面，逃生门不命中）；F1 范围裁定 human 拍板 **(a) SNTP + 写回 PCF85063 + 周期 re-inject**、F2（P1 boot 快照冻结）随包一并修。
+- 建包 `260922-m3-k5-sntp-time-sync`（plan.md reviewed plan + taskpackage.json 骨架，intake 时 planner 补齐验收面），挂本 workstream（attach-existing），排常驻树第 9 棒。下一步 = 人类起 planner 会话跑 `/build-feature 260922-m3-k5-sntp-time-sync`。
+
+## 2026-09-22 · K5 launch 面就绪（主线程 launch prep，树池续棒）
+
+- **树池**：常驻树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch` 续棒。launch prep 开树时树面状态：常驻分支落后 main 四笔（ui-v5 gov 批，仅 docs/delivery 面）且领先两笔（K4 收尾落账 `7a5d909` 未回 main——K4 合并后落账 commit 留在了常驻分支）——已 rebase 到 main（`20df3cb`），closeout 现为 `6cb4824`、立项落包 `b054660`。**K4 收尾落账此前未回 main，随本批 pod 合并回 main**（merge-driver rebase 步自然携带）。
+- **launch 侧异常处置**：`delivery/taskpackages/260922-m3-k5-sntp-time-sync/taskpackage.json` 原始落盘截断损坏（` .time": ""` 残片 + iterationBudget 后尾部全缺），launch prep 对照 K4 立项骨架修复补齐（补 contractRefs/docRefs/sourceRefs/fixBudget/notes/crossEnd 等尾部字段），JSON 校验过（35 字段）。plan.md 完好未动。
+- **上游已知红基线锚（差异判停 2026-09-22，两面引用不重跑）**：
+  - server 面锚：`git diff --quiet dc6094a HEAD -- server` 零差异 → 引用 K4 launch 段锚「server 95 @ dc6094a」（量测命令 `python -m pytest -q --import-mode=importlib -m "not live" <repo>/server/acceptance`，2026-09-22 量测于 dc6094a，面域 = server）；
+  - firmware 面锚：`git diff --quiet 9cae452 HEAD -- firmware` 零差异 → 引用 K4 第 3 追加轮段锚「host runner 84 Tests / 0 Failures」（量测命令 WSL host runner `firmware/main/test/host_app espidf_wsl.sh build` + `host_infra_test.elf` run，2026-09-22 量测于 9cae452（main 侧同内容双生 SHA `14a27f6`），面域 = firmware；rebase 后至本段落笔 HEAD `b054660` 复核仍零差异）。
+  - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
+- **制品**：launch-card.md（本包特记：taskpackage.json 修复留痕、input-brief 由 intake 补齐）+ current/ 指针刷新为 K5（K4 残留 input-brief/verdict 清除，canonical 存 K4 包目录）+ milestones.jsonl M3 nextAction 增补 K5 进行中。board 预填 queued + worktreePath 本树。
+- **launch 指示**：human 已指示主线程准备好后直接启动 dev loop（planner），不另起交互会话。
