@@ -34,3 +34,10 @@
 - mutation 实跑落仓内 evidence 文件，消掉 provenance 转述差（跨两棒的同一欠账）。
 - finalize 预飞三闸判据 checklist 固化为习惯（连续两棒净赚）。
 - 能落纯函数的语义尽量落纯函数齿——真机一次过的直接经验。
+
+## 真机窗口收口体感（2026-09-22 · R3 bin 目测，追加轮后）
+
+1. **追加轮两项真机一次过**：R3a 隐藏目测「消失了，正常」、R3b 滞后「1s 以内」——分钟对齐纯函数缝的端到端兑现，与主轮同款经验（纯函数齿 → 真机风险面小）第二次验证。A3b 长开机 34 分钟日志无断 + 冒号闪烁佐证 1s tick 活性，F2 冻结缺陷的修复在长时域上站住了。
+2. **A3 断电续航 human 主动延期**（「断网现在做不了，跳过，后面观察」）——账面如实记 deferred 不记 PASS，E3 口径 human 承担。这是「human 决定的 deferred」与「证据缺失」的诚实分界，后续口头反馈时补账。
+3. **reinject 双触发缺陷（advisory 挂账，human 裁不另开轮）**：pdMS_TO_TICKS 向下取整 + vTaskDelay(0) 自旋致边界前 ~10ms 双发（corr_id 2069695/2069705），旧值注入窗口被边界注入立即覆盖、收敛 <1s——显示语义无损但日志面可辨。修法留账供后续批：next_ms 提前量（读点前 ~50ms 唤醒）/ceil 取整，或唤醒后回校验到边界再注入。这类「tick 粒度 vs 语义粒度」的边界相位问题值得进 seam 类实现的边角常识（同 K4 双分支等价性盲区一档：host 纯函数齿测不出 vTaskDelay 的取整行为）。
+4. 合并门裁决上下文已备齐：ESCALATE（sdkconfig critical-path 重算）+ A3 deferred human 知情——human 合并裁决自带上下文，planner 不再另跑闸（verdict write-once 押后不变）。
