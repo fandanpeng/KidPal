@@ -1,9 +1,8 @@
 // shoot_design.mjs — 设计稿 HTML → 每画布精确截图（布局锚图片，给 dev-loop Pod 消费）。
 // 原理：无头 Edge 逐 `.dev[data-od-id]` 元素截图（元素级裁剪，绝不手抠区域）。
-// 每画布出两版：
-//   docs/ui/<VER>/<id>.png        — 2×（800×600）抗锯齿，看细节
-//   docs/ui/<VER>/<id>.1bpp.png   — 1:1（400×300）阈值化纯黑白，真机 1bpp 观感的唯一真相版
-// 用法：node shoot_design.mjs <html 绝对路径> <输出目录>   （输出目录须已存在，旧同名文件被覆盖）
+// 每画布出一版：
+//   docs/ui/<VER>/<id>.png — 1:1（400×300）阈值化纯黑白，真机 1bpp 观感的唯一真相版
+// 用法：node shoot_design.mjs <html 绝对路径> <输出目录>
 import { chromium } from 'playwright-core';
 import sharp from 'sharp';
 import { mkdirSync } from 'fs';
@@ -40,46 +39,35 @@ for (let i = 0; i < devs.length; i++) {
 }
 console.log('canvases:', shots.map(s => s.id).join(', '));
 
-async function shootAll(z, suffix, threshold) {
-  await page.addStyleTag({ content: `.devsz{--z:${z} !important}` });
-  await page.waitForTimeout(150);
-  const W = 400 * z, H = 300 * z;
-  const els = shots.map(s => s.el);
-  for (let i = 0; i < shots.length; i++) {
-    const { el, id } = shots[i];
-    // 邻画隔离：多画布同排时 z=2 的 800px 画布横向溢出、后 DOM 画布叠绘到前画布右半上
-    // （实测子画面/语音态 2x 图被邻居内容污染）。截前隐藏其它画布——visibility 保布局不重排。
-    await page.evaluate(({ list, idx }) => {
-      for (let j = 0; j < list.length; j++) list[j].style.visibility = j === idx ? '' : 'hidden';
-    }, { list: els, idx: i });
-    await el.scrollIntoViewIfNeeded();
-    // 整数像素吸附 + 整数 clip：el.screenshot() 内部会再滚动，与吸附竞争，且跨版本页面
-    // 高度不同会让文字光栅相位漂移（实测未改页面可差到 3%+）。改为手动滚动后按整数
-    // 视口 clip 截图，完全接管滚动，保证同内容跨版本逐像素一致。
-    const d = await el.evaluate(e => {
-      const r = e.getBoundingClientRect();
-      return { dx: Math.round(r.x) - r.x, dy: Math.round(r.y) - r.y, x: Math.round(r.x), y: Math.round(r.y) };
-    });
-    const t = `translate(${d.dx}px, ${d.dy}px) scale(${z})`;
-    if (d.dx || d.dy) await el.evaluate((e, tr) => { e.style.transform = tr; }, t);
-    const buf = await page.screenshot({ clip: { x: d.x, y: d.y, width: W, height: H } });
-    if (d.dx || d.dy) await el.evaluate(e => { e.style.transform = ''; });
-    // 元素可能落在小数坐标上（截图高度会进位 +1），裁回精确 400×300·z
-    const shot = sharp(buf).extract({ left: 0, top: 0, width: W, height: H });
-    const out = `${outDir}/${id}${suffix}`;
-    if (threshold) {
-      // 真机 1bpp 口径：灰度抗锯齿 → 128 阈值化，唯一值 ⊆ {0,255}
-      await shot.grayscale().threshold(128).png().toFile(out);
-    } else {
-      await shot.png().toFile(out);
-    }
-    console.log(`  ${out} ${W}x${H}`);
-  }
-  await page.evaluate(({ list }) => { for (const e of list) e.style.visibility = ''; }, { list: els });
+// 单一 1:1 阈值化档
+const z = 1, W = 400, H = 300;
+await page.addStyleTag({ content: `.devsz{--z:${z} !important}` });
+await page.waitForTimeout(150);
+const els = shots.map(s => s.el);
+for (let i = 0; i < shots.length; i++) {
+  const { el, id } = shots[i];
+  // 邻画隔离：同排多画布时后 DOM 画布可能叠绘到前画布边缘（语音态网格列窄于 400px）。
+  // 截前隐藏其它画布——visibility 保布局不重排。
+  await page.evaluate(({ list, idx }) => {
+    for (let j = 0; j < list.length; j++) list[j].style.visibility = j === idx ? '' : 'hidden';
+  }, { list: els, idx: i });
+  await el.scrollIntoViewIfNeeded();
+  // 整数像素吸附 + 整数 clip：el.screenshot() 内部会再滚动，与吸附竞争，且跨版本页面
+  // 高度不同会让文字光栅相位漂移。手动滚动后按整数视口 clip 截图，完全接管滚动。
+  const d = await el.evaluate(e => {
+    const r = e.getBoundingClientRect();
+    return { dx: Math.round(r.x) - r.x, dy: Math.round(r.y) - r.y, x: Math.round(r.x), y: Math.round(r.y) };
+  });
+  const t = `translate(${d.dx}px, ${d.dy}px) scale(${z})`;
+  if (d.dx || d.dy) await el.evaluate((e, tr) => { e.style.transform = tr; }, t);
+  const buf = await page.screenshot({ clip: { x: d.x, y: d.y, width: W, height: H } });
+  if (d.dx || d.dy) await el.evaluate(e => { e.style.transform = ''; });
+  // 真机 1bpp 口径：灰度抗锯齿 → 128 阈值化，唯一值 ⊆ {0,255}
+  const out = `${outDir}/${id}.png`;
+  await sharp(buf).extract({ left: 0, top: 0, width: W, height: H }).grayscale().threshold(128).png().toFile(out);
+  console.log(`  ${out} ${W}x${H}`);
 }
-
-await shootAll(2, '.png', false);      // 2× 抗锯齿细节版
-await shootAll(1, '.1bpp.png', true);  // 1:1 阈值化真相版
+await page.evaluate(({ list }) => { for (const e of list) e.style.visibility = ''; }, { list: els });
 
 await browser.close();
 console.log('done →', outDir);
