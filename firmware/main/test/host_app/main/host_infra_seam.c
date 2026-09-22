@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include "lvgl.h"
+#include "kidpal_p1_font.h"
 
 /* Must match the acceptance file's HOST_INFRA_FRAME_W/H and color. */
 #define SEAM_FRAME_W 400
@@ -227,5 +228,82 @@ int art_render_blit_frame(const uint32_t *argb, int w, int h)
         s_fb[i] = argb[i] & 0x00FFFFFFu;
     }
     s_rendered = true;
+    return 0;
+}
+
+/* ============================================================================
+ * [S1] host 字形强符号：kidpal_p1_font_glyph（覆盖 home_p1.c 弱默认）
+ *
+ * lv_font_source_han_sans_sc_14_cjk 子集同款路径（schedule_page.c 先例；host_app
+ * REQUIRES lvgl 已在, CONFIG_LV_FONT_SOURCE_HAN_SANS_SC_14_CJK 已开）。lv_font_get_
+ * glyph_dsc + 字形位图（A1/A2/A4/A8）alpha 阈值化成 1bpp 墨（seam [S1]）。host
+ * runner 恰一个强符号覆盖 home_p1 weak；设备由 kidpal_render_node.cc 提供同符号。
+ * ========================================================================== */
+int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
+    static const lv_font_t *s_font = &lv_font_source_han_sans_sc_14_cjk;
+#else
+    if (out != NULL) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = NULL;
+    }
+    return -1;
+#endif
+    lv_font_glyph_dsc_t dsc;
+    const uint8_t *bits;
+    static unsigned char s_bits[64 * ((64 + 7) / 8)];
+    int bpp, stride, threshold;
+    int x, y;
+
+    if (out == NULL) {
+        return -1; /* [S1]: out == NULL -> 非 0 */
+    }
+    if (!lv_font_get_glyph_dsc(s_font, &dsc, codepoint, 0)) {
+        return -1;
+    }
+    if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
+        return -1;
+    }
+    bpp = (int)dsc.format; /* A1=1, A2=2, A4=4, A8=8 */
+    if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8) {
+        return -1;
+    }
+    if ((int)dsc.box_w > 64 || (int)dsc.box_h > 64) {
+        return -1; /* [S1] 盒上限 64 */
+    }
+    dsc.req_raw_bitmap = 1;
+    bits = (const uint8_t *)s_font->get_glyph_bitmap(&dsc, NULL);
+    if (bits == NULL) {
+        return -1;
+    }
+    stride = ((int)dsc.box_w * bpp + 7) / 8;
+    threshold = (bpp == 1) ? 1 : (bpp == 2 ? 2 : (bpp == 4 ? 8 : 128));
+    memset(s_bits, 0, sizeof(s_bits));
+    for (y = 0; y < (int)dsc.box_h; y++) {
+        for (x = 0; x < (int)dsc.box_w; x++) {
+            int pix = 0;
+            if (bpp == 1) {
+                pix = (bits[y * stride + (x >> 3)] >> (7 - (x & 7))) & 1u;
+            } else if (bpp == 2) {
+                pix = (bits[y * stride + (x >> 2)] >> (6 - 2 * (x & 3))) & 3u;
+            } else if (bpp == 4) {
+                pix = (bits[y * stride + (x >> 1)] >> ((x & 1) ? 0 : 4)) & 15u;
+            } else {
+                pix = bits[y * stride + x];
+            }
+            if (pix >= threshold) {
+                s_bits[y * (((int)dsc.box_w + 7) / 8) + (x >> 3)] |=
+                    (uint8_t)(1u << (7 - (x & 7)));
+            }
+        }
+    }
+    out->w = (int)dsc.box_w;
+    out->h = (int)dsc.box_h;
+    out->advance = (int)dsc.adv_w;
+    out->bits = s_bits;
     return 0;
 }
