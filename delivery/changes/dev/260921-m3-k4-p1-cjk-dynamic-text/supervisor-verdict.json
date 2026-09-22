@@ -3,7 +3,7 @@
   "riskTier": "medium",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-09-22T02:03:16.204Z",
+  "ts": "2026-09-22T07:25:55.864Z",
   "changeId": "260921-m3-k4-p1-cjk-dynamic-text",
   "originType": "human-confirmed-plan",
   "adjudication": {
@@ -23,7 +23,7 @@
         "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
       ]
     },
-    "circuitBreakerCompletedRounds": 4,
+    "circuitBreakerCompletedRounds": 9,
     "evidenceComplete": true
   },
   "provenance": {
@@ -41,9 +41,9 @@
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json",
+        "bearingFactRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json",
         "bearingFactOk": true,
-        "completedRounds": 4,
+        "completedRounds": 9,
         "closeoutArtifactsChecked": [
           "delivery/changes/dev/260921-m3-k4-p1-cjk-dynamic-text/docs-delta.md",
           "delivery/changes/dev/260921-m3-k4-p1-cjk-dynamic-text/review-packet.md"
@@ -90,10 +90,11 @@
       ".claude/verify-logs/1789967805780-mutation-check.log",
       ".claude/verify-logs/1789989389509-taskpackage-required.log",
       ".claude/verify-logs/1790040914186-taskpackage-required.log",
-      ".claude/verify-logs/1790041038913-mutation-check.log"
+      ".claude/verify-logs/1790041038913-mutation-check.log",
+      ".claude/verify-logs/1790060212280-firmware-build.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json"
+      "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/changes/dev/260921-m3-k4-p1-cjk-dynamic-text/docs-delta.md",
