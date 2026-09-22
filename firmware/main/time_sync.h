@@ -38,6 +38,12 @@ int kidpal_ts_backoff_delay_ms(int consecutive_failures);
 int kidpal_ts_log_throttled(long long now_ms, long long last_ms,
                             long long min_interval_ms);
 
+/* [S6] R3 追加轮第七函数（分钟对齐缝）: now_ms < 0 -> -1（防御）; 否则 =
+ * 60000 - (now_ms % 60000), 恒在 [1,60000]（恰在分钟边界 -> 60000, 整周期后仍落
+ * 边界, 禁 0 延迟忙旋）。入参口径 = 毫秒时钟且其分钟边界与墙上分钟边界对齐
+ * （epoch ms 满足）。设备侧消费: TimeSyncPeriodicLoop 节拍相位按此计算。 */
+long long kidpal_ts_ms_to_next_minute(long long now_ms);
+
 #ifdef __cplusplus
 }
 #endif

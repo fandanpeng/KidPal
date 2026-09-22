@@ -95,3 +95,61 @@ Findings 说明（五轴 review 执行留痕，见下节；无 finding 不等于
 ## 回滚方式
 
 单 commit 收口（SHA 见交付报告）；回滚 = 分支上 `git revert <sha>`（单 commit 自含实现 + 制品，无跨 commit 依赖）；上游锚 84 齿 @ 9cae452 可独立复跑比对零偏移。
+
+## 追加轮 R3 addendum（2026-09-22）
+
+> 主轮已收口（e5b248a 主 commit + 62807fc INDEX + 956b25a 落账；机械 supervisor verdict ESCALATE 在案押后，合并门仍待人类，不在本相位），本节为追加轮收口**纯追加**——主轮既有段落零改语义。授权链：human 两项拍板（pod-events human-decision eventId `fc43063d-5ba5-4229-8e86-0297fac4e170`，2026-09-22，原始拍板 = human 真机第 1 轮目测后口头裁定，主线程转发明细在案）。
+
+### ① 追加轮因果链（真机第 1 轮实证 → human 两拍板 → 冻齿修订 → 实现 → verifier r3/r4）
+
+1. **真机第 1 轮 A1 正锚实证通过**（e5b248a bin）：rtc_writeback ok rtc=20:01:44 date=09-22、rtc_reinject 60s 节拍精确、`tm_year: 70` 全窗零条、chrome 状态栏时钟首次渲染正确（20:06）；K4 五项目测全过；wday 寄存器周日=0基↔内部周一=0基转换正确。主轮 deferred 真机面按预期收口——同时暴露两条追加诉求。
+2. **human 拍板两项**（同上授权链）：① A-HIDE-STATUSBAR-CLOCK——隐藏 XiaoZhi chrome 状态栏时钟（lvgl_display UpdateStatusBar 区 SetStatus(time_str) 退役），P1 辅助条时间/日期保留为唯一常显时间面，温度/电量/wifi 等其余状态栏元素零改，电池链路/帧缓冲零触碰；② A-REINJECT-MINUTE-ALIGN——re-inject 读点对齐分钟边界（读点秒≈0、滞后 <1s），只调 TimeSyncPeriodicLoop 节拍相位，不触 inject 家族语义。拍板同时申报：A3 断电续航未做等新 bin 一并复验。
+3. **冻齿修订（acceptance-author 追加轮，REVISION LOG R3 条）**：time_sync.acceptance.c 纯 additive 补齿 + 锚重指，零放宽零退役既有齿——A1 真机锚从 chrome 状态栏重指 P1 辅助条（p1_draw_aux_time）；新增 TEST 7（K5-R3a：UpdateStatusBar 区 SetStatus( 零调用负锚 + mute/网络/低电 popup 在世齿 + p1_draw_aux_time ≥2 在世齿）与 TEST 8（K5-R3b：[S6] kidpal_ts_ms_to_next_minute 决策表 + 值域不变量 + 板级消费接线 + boot 相位固定节拍退役负锚）；新增 [S6] 第七函数冻结缝（签名/语义在头注 [S6] 段）。
+4. **实现（builder 追加轮一次跑绿）**：lvgl_display.cc 只摘 then 分支 SetStatus(time_str) 渲染调用（守门行与节流分支零触碰）；time_sync.{h,c} 新增 [S6] 第七函数 kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1、恰在边界回卷 60000 禁忙旋）；板文件 TimeSyncPeriodicLoop 节拍改由该函数按墙上分钟边界计算（gettimeofday epoch ms → 缝函数 → vTaskDelay，时钟未就绪兜底 60000 下轮重算）。
+5. **verifier 追加轮双轮绿**：scoped r3 六闸全绿（invocationId `a434a4b7-cdcb-4b82-8d72-6fc59b46f054`，fact ok:true / observedGateExit:0）→ **final r4 九闸全绿**（invocationId `5569266d-5288-450b-8e4d-eea5e94a6bdc`，fact ok:true / observedGateExit:0，evidenceRef `verifier-evidence/rounds/r4.json`）；acceptance-coverage 八条（K5-A1..A5 + K5-R3a/K5-R3b）。integrator 机械 fact 校验双轮实跑 exit 0 / factOk:true（r3 scoped + r4 final，2026-09-22）。
+6. **体积余量重录**：final r4 firmware-build 真编译——xiaozhi.bin **0x30e140 bytes**、app 分区 0x370000 bytes、余量 **0x61ec0 bytes (11%) free**（较主轮 0x30e0c0 增 0x80 bytes，节拍计算 + 隐藏退役相抵后净增极小）。
+7. **真机复验半待开窗**：追加轮两项落地后的目测清单挂设备轮窗口（见第⑤节），A3 断电续航 / A3b 长开机一并复验。
+
+### ② Demo 对账行（追加轮）
+
+- **真机第 1 轮 A1 正锚实证细节（已在案，pod-events fc43063d 转录）**：SNTP 后 rtc_writeback ok（rtc=20:01:44 date=09-22）、rtc_reinject 60s 节拍精确（读点秒恒 :44）、`System time is not set, tm_year: 70` 全窗零条（负锚清零实证）、chrome 状态栏时钟首次渲染正确（20:06，该面后被拍板①隐藏）、K4 五项目测全过。
+- **追加轮后全量 host 证据**：final r4 unit 95 passed + acceptance 41 structural 齿 passed；host runner 92 Tests / 0 Failures（既有 90 齿零偏移 + R3 两新齿绿）——builder 实跑 + acceptance-author 红基线通道②设计态 92/2 对账（红恰为两新齿设计态，落实现后转绿）。
+- **追加轮后待复验面如实申报（全挂设备轮窗口）**：隐藏后目测（状态栏无时钟 + 其余元素正常，TEST 7 真机半）、读点秒≈0 目测（P1 滞后 <1s，TEST 8 真机半）、A3 断电续航、A3b 长开机——human 拍板同时申报「A3 未做等新 bin 一并复验」，为计划内 deferred，非证据缺失。追加轮收口前 demo 对账的**实证更新半**不闭环，与主轮同口径挂账。
+
+### ③ 追加轮 E2 铁律自查（逐条 diff 证据，2026-09-22 integrator 实跑）
+
+| 铁律项 | 证据 | 结论 |
+|---|---|---|
+| `docs/contracts/**` 零改 | `git status --porcelain docs/contracts/` 零输出；contract-lint r3/r4 两轮绿；TEST 4 tooth 4 canary 在 92 齿轮内 PASS | 零改 verified |
+| spec（requirements.md / architecture.md）零改 | `git status --porcelain docs/requirements.md docs/architecture.md` 零输出；docs-sync r3/r4 闸绿（docsSyncRequired:false） | 零改 verified |
+| ota.cc server_time 死代码不复活 | `git diff --stat -- firmware/main/ota.cc` 零输出（零 diff）；application.cc 本轮零触碰（不在追加轮 diff 面）；TEST 4 tooth 1 `CheckVersion(` 计数守卫 PASS | 保持 verified |
+| 电池链路零触碰 | 板文件 diff `+` 行 grep `battery\|adc_\|GetBatteryLevel` **0 命中**；TEST 7 tooth 5（low_battery_popup_ 判定链路在世）PASS；追加轮 diff 面无电池链路文件 | 零触碰 verified |
+| inject 家族本体零触碰 | `kidpal_render_node.cc` / `home_p1.c` / `custom_lcd_display.cc` / `p1_home_battery.acceptance.c` / `schedule_grid.acceptance.c` 全部零 diff（`git diff --stat` 零输出）；TEST 6 tooth 1-4（inject_rtc 函数体 / .h 声明 / s_rtc_hour 家族计数）MUST-STAY-GREEN 全绿；TEST 7 tooth 6（p1_draw_aux_time ≥2 在世）PASS——拍板②只调节拍相位、不触家族语义，落地符合 | 零触碰 verified |
+| home_p1.c 零改 | 不在追加轮 diff 闭集（10 modified + 3 untracked 逐一核对，见 Change Size 追加轮清单）；TEST 7 tooth 6 只读扫针 | 零改 verified |
+| 守门行/节流分支零触碰（lvgl_display.cc） | `git diff --unified=0` 实证：仅两 hunk——摘注释行 + 摘 then 分支 3 行（`char time_str[16]` / `strftime` / `SetStatus(time_str)`）换 6 行退役注记；守门行 `tm->tm_year >= 2025 - 1900` 与 else 节流分支均不在 diff 面（零触碰）；TEST 4 teeth 3/14 + TEST 7 teeth 3-5 在世守卫全绿 | 零触碰 verified |
+| 渲染版式/帧缓冲链路零触碰 | lvgl_display.cc 之外显示面零 diff；摘除的仅为 SetStatus 文案写入（chrome 状态栏时钟渲染调用），mute/网络/低电 popup 渲染路径 TEST 7 teeth 3-5 全绿 | 零触碰 verified |
+
+### ④ Mutation 执行留痕（追加轮）
+
+- **登记面**：K5-R3a / K5-R3b 两条 acceptance 已登记 taskpackage.json `mutationEvidence.perAcceptance`（sensitive:true 各带 mutation / expectedRed：R3a = 恢复 SetStatus(time_str) 渲染或摘除区内任一在世 needle → tooth 2 负锚 / teeth 3-5 在世守卫转红；R3b = 缝函数返回恒 0 忙旋或恢复固定节拍串 → tooth 1 决策表 / tooth 5 负锚转红）；mutation-check 闸 r3/r4 两轮绿。
+- **执行面（如实申报粒度差）**：追加轮**未实跑变异**——R3a/R3b 为负锚/结构齿，其设计态红与登记 mutation 的 turned-red 态为同一代码形态，替代证据链 = 设计态红≙变异态在案：① 通道①a 哨兵线束 8 CASE / 5 红（TEST 1/2/3 为线束未链实现的已知判读态 + TEST 7 tooth 2 红「SetStatus( 仍 1 处」+ TEST 8 tooth 0 红「weak 哨兵」）；② 通道①b 强符号线束 8 Tests / 2 Failures（TEST 1-6 全绿零偏移，红恰 = TEST 7/8 设计态）；③ 通道② host runner 92 Tests / 2 Failures（红恰 = K5-R3a/R3b，既有 90 齿零偏移全绿）；④ builder 落实现后 host runner 92/0 转绿（integrator 独立复跑通道①b 强符号线束：8 Tests / 0 Failures / RUN_EXIT=0——设计态红→实现态绿的转红转绿双向在案，齿非恒红恒绿）。上述 ①②③ 为 acceptance-author 2026-09-22 冻结修订期实跑（命令逐字在验收文件头注 R3 追记 + 线束脚本 `firmware/main/test/acceptance/red-baseline/ts_red_r3_wrapper.sh`），④ 为 integrator 收口独立复跑。主轮 5 组实跑变异自证（[S1] 家族齿）在案不重复。
+- **粒度差声明**：登记面（mutationEvidence 逐条）与执行面（设计态红等价证明，非逐条实跑变异）存在粒度差——追加轮齿量小（2 条）且均为源扫/纯函数齿，设计态红即变异态同形，判读不损失；若 supervisor 判需补实跑变异，可在设备轮窗前补跑（mutation 手法已在 expectedRed 逐字登记）。
+
+### ⑤ 追加轮未覆盖面申报更新（真机 deferred 逐条）
+
+| # | 未覆盖面 | 现状 | 去向 |
+|---|---|---|---|
+| 1 | K5-R3a 真机半——隐藏后目测：状态栏无时钟、其余状态栏元素（温度/电量/wifi/静音）与 P1 辅助条正常 | host 结构半全绿（TEST 7 六齿）；真机目测未跑（新 bin 未烧） | 设备轮窗口，与 3/4 一并复验 |
+| 2 | K5-R3b 真机半——re-inject 读点秒≈0 目测（P1 滞后 <1s） | host 行为半全绿（TEST 8 决策表 + 值域不变量 + 接线齿）；真机目测未跑 | 同上 |
+| 3 | K5-A3 真机半——断电重启 + 断网 → RTC 恢复显示正确时间 | host 半绿（主轮）；真机未做，human 拍板申报「等新 bin 一并复验」 | 同上 |
+| 4 | K5-A3b 真机半——长开机 ≥N 分钟 P1 时间继续走 | host 半绿（主轮）；真机未跑 | 同上 |
+| 5 | K5-A4 真机复证——NTP 不可达降级真机实证 | host 降级语义已闭环（主轮 E3 口径）；真机复证未跑 | 设备轮窗口内补复证 |
+| 6 | 其余面（K5-A1/A2/A5 host 半、契约引用、plan 效果段 host 可判半） | final r4 九闸绿 + host 92/0 双承载 | 无缺口（追加轮零新增 host 侧缺口） |
+
+### 追加轮 closeout 制品刷新与影响面
+
+- `verdict.json`（current/verdict.json 同形副本）+ `verification.json`（advisory 投影，补 r3/r4 双轮 check 记录）已以 final r4 fact 刷新（r1-r3 历史原样保留）；`current/verdict.json`（verify.mjs 程序 fs-write，non-bearing advisory）已随 r4 刷新。bearing fact = `delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r4.json`，本 packet 只引用不复制。pod-retro.md 不动（planner 收尾相位统一重写）。
+- Loop metrics / Pod Journal（post-cutoff dual-format）：不产 `session-digest.md` / `loop-health.md` / `loop-metrics.json` / `pod-journal.jsonl`；`pod-events.jsonl` 在场（追加轮 human-decision fc43063d + acceptance-author/builder dispatch-completed + friction 各 1 条已入账，advisory 检查通过）。
+- 影响面（11b，worktree）：detect_changes 仍 **N/A (worktree 未提交 diff)**（同主轮口径）；追加轮 diff 落在预期闭集（firmware 4 件：lvgl_display.cc / waveshare 板文件 / time_sync.{h,c} + 冻齿 1 件 time_sync.acceptance.c + 治理面：taskpackage ×2 / pod-events / verify-runs / r3/r4 fact / red-baseline wrapper / closeout 制品 ×3 / 本 addendum），无计划外文件。
+- 追加轮 findings：**零新增**（零 BLOCKING / SHOULD / NIT——主轮五轴结论经追加轮 diff 复核全部维持；变更面收敛于两项拍板的实现面，E2 八项逐条 verified）。
+- 本节只追加、不改主轮段落语义；追加轮改动不 push、不 merge（树池惯例：分支领先 main 随下批回 main）。

@@ -14,7 +14,7 @@
   "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1 时间/日期 + AC4 断网本地显示）——设备全部常显时间面显示真实本地时间：联网自动 NTP 对时 + 写回 PCF85063 硬件 RTC（断电续航）+ P1 时间消费面周期 re-inject 修掉 boot 快照冻结（F2）；技术方案见 plan.md（triage F1=(a) human 拍板 2026-09-22）",
   "planRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/plan.md",
   "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/ts_red_runner ../../time_sync.acceptance.c runner.c && /tmp/ts_red_runner（exit=失败 TEST_CASE 数）",
-  "redBaselineResult": "通道① 84 Tests / 0 Failures / exit 0（与上游锚 84 @ 9cae452 零偏移）；通道② 编译零 error + 6 Tests / 6 Failures / exit 6，红全部为本包设计态义务红（[S1] 缝未实现 + SNTP/写回/恢复/re-inject/接线结构 needle 现状零命中），MUST-STAY-GREEN 半（TEST 4 tooth 1-5、TEST 6 tooth 1-4）实跑全绿。红基线实跑 2026-09-22 acceptance-author。",
+  "redBaselineResult": "通道① 84 Tests / 0 Failures / exit 0（与上游锚 84 @ 9cae452 零偏移）；通道② 编译零 error + 6 Tests / 6 Failures / exit 6，红全部为本包设计态义务红（[S1] 缝未实现 + SNTP/写回/恢复/re-inject/接线结构 needle 现状零命中），MUST-STAY-GREEN 半（TEST 4 tooth 1-5、TEST 6 tooth 1-4）实跑全绿。红基线实跑 2026-09-22 acceptance-author。追加轮 R3 修订红基线增补（2026-09-22 acceptance-author 实跑，命令逐字在验收文件头注 R3 追记）：通道①b 强符号线束 8 Tests 2 Failures（TEST 1-6 全绿零偏移 + TEST 7/8 修订齿设计态红）；通道② host runner 92 Tests 2 Failures（红恰 = K5-R3a/R3b 设计态，既有 90 齿零偏移全绿）；编译通道 error/warning 零。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -28,7 +28,9 @@
     "K5-A3: 断电续航恢复齿——boot 读 RTC 后系统时间恢复路径补齐（现状 ReadRtcTime 仅注入 P1、未 settimeofday）：断电重启 + 保持断网 → 状态栏/P1 显示正确时间（S-F1.1 AC4 / NFR-OFF-1 离线口径）；RTC 读出值直接喂 inject 不经 TZ（寄存器存本地 BCD）",
     "K5-A3b: 周期 re-inject 钉——修 F2 boot 快照冻结：P1 时间消费面从 boot 一次 ReadRtcTime→inject 改为周期重读重注入；re-inject 频率与 P1 重绘节拍协调（避免跳字/撕裂）；inject 家族（inject_rtc/s_rtc_hour guard 齿）保持在世零偏移",
     "K5-A4: 失败降级负锚——NTP 不可达：主流程不卡（激活/对话照常）、无 crash、守门拒绝渲染维持（tm_year:70 态）、不重试风暴（退避）、`System time is not set` W 日志节流降噪（现每 10s 一条）",
-    "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）"
+    "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）",
+    "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
+    "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1）+ 板级 TimeSyncPeriodicLoop 节拍改由该函数按墙上分钟边界计算（boot 相位固定节拍退役）；读点秒≈0、滞后 <1s；inject 家族语义零触碰；真机半（读点秒≈0 目测）挂设备轮"
   ],
   "acceptanceTestsFile": [
     "firmware/main/test/time_sync.acceptance.c"
@@ -105,6 +107,18 @@
         "sensitive": true,
         "mutation": "删 HOST_ACCEPTANCE_SRCS 注册行或拆 inject_rtc 函数体",
         "expectedRed": "TEST 6 tooth 2/5 注册与既有齿守卫敏感 turned red；红基线通道② stub（注册行缺失 tooth 5 红）≙ 同一变异态在案独立红"
+      },
+      {
+        "acceptance": "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
+        "sensitive": true,
+        "mutation": "恢复 UpdateStatusBar 区 SetStatus(time_str) 渲染调用（或摘除区内 mute/network/low_battery_popup_ 任一在世 needle）",
+        "expectedRed": "TEST 7 tooth 2 负锚敏感（时钟渲染复活转红）/ teeth 3-5 状态栏元素在世守卫敏感 turned red；红基线通道②（92 Tests 2 Failures 红恰 = TEST 7）≙ 同一变异态在案独立红"
+      },
+      {
+        "acceptance": "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1）+ 板级 TimeSyncPeriodicLoop 节拍改由该函数按墙上分钟边界计算（boot 相位固定节拍退役）；读点秒≈0、滞后 <1s；inject 家族语义零触碰；真机半（读点秒≈0 目测）挂设备轮",
+        "sensitive": true,
+        "mutation": "kidpal_ts_ms_to_next_minute 返回恒 0（忙旋）或恢复板级固定 vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS)) boot 相位节拍",
+        "expectedRed": "TEST 8 tooth 1 决策表敏感（0→60000 边界）/ tooth 5 固定节拍串负锚敏感 turned red；红基线通道②（92 Tests 2 Failures 红恰 = TEST 8）≙ 同一变异态在案独立红"
       }
     ]
   },

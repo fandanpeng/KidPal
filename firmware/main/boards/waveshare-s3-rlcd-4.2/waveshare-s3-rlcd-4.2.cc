@@ -73,9 +73,9 @@ static void ts_sntp_sync_cb(struct timeval *tv)
 #define KIDPAL_ART_VFS_ROOT "/art"
 
 /* K5（TaskPackage 260922-m3-k5-sntp-time-sync）：周期时间维护节拍。分钟级时间语义下
- * 60s 周期 = 重读 RTC + re-inject P1（[S4], 与 P1 重绘分钟粒度节拍协调, 不跳字）+
- * 消费 SNTP 同步成功旗标写回 PCF85063（[S3]）。 */
-#define KIDPAL_TS_PERIODIC_PERIOD_MS 60000
+ * 节拍相位按墙上分钟边界对齐（R3-2/[S6], 读点秒 ≈0、P1 显示滞后 <1s; 退役挂 boot
+ * 相位的固定 60000ms 节拍）——重读 RTC + re-inject P1（[S4], 与 P1 重绘分钟粒度节拍
+ * 协调, 不跳字）+ 消费 SNTP 同步成功旗标写回 PCF85063（[S3]）。 */
 
 /* 包 9b HWV-A4 启动回归修复 (fixer): 开机传感器读与音频 codec 共用同一条 I2C 总线
  * (ESP32_I2C_HOST / SDA=13 / SCL=14)。无应答从设备 (SHTC3 缺席) 会让同步事务在
@@ -577,12 +577,23 @@ private:
                  corr_id, h, m, mon, mday, wday);
     }
 
-    /* K5 周期时间维护 task 体：60s 节拍消费 SNTP 同步旗标（写回 [S3]）+ 周期重读
+    /* K5 周期时间维护 task 体：分钟对齐节拍消费 SNTP 同步旗标（写回 [S3]）+ 周期重读
      * 重注入（[S4]）。独立 task 承载阻塞 I2C 事务, 不占 esp_timer task（render_node
      * 1s tick 同住, 勿互卡）。 */
     void TimeSyncPeriodicLoop() {
         for (;;) {
-            vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS));
+            /* R3-2（260922-m3-k5-sntp-time-sync, human 拍板②）: 节拍相位由 [S6]
+             * 分钟对齐缝计算——距下一墙上分钟边界（epoch ms, CST-8 整分偏移下本地/UTC
+             * 分界同 :00）的毫秒延迟, 使 RTC 读点秒 ≈0、P1 显示滞后 = 唤醒抖动 <1s。
+             * 退役挂 boot 相位的固定 60000ms 节拍。 */
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            long long now_ms = (long long)tv.tv_sec * 1000LL + tv.tv_usec / 1000;
+            long long next_ms = kidpal_ts_ms_to_next_minute(now_ms); /* 防御态 -1 */
+            if (next_ms <= 0) {
+                next_ms = 60000; /* now<0 时钟未就绪兜底, 下轮重算 */
+            }
+            vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms));
             if (s_ts_sntp_synced) {
                 s_ts_sntp_synced = 0;
                 SyncSystemTimeToRtc();

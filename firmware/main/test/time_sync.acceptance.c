@@ -7,7 +7,9 @@
  * 离线口径。设备全部常显时间面（chrome 状态栏 HH:MM + P1 辅助条时间/日期）显示真实本地
  * 时间：联网自动 NTP 对时（SNTP）→ 写回 PCF85063 硬件 RTC（断电由纽扣电池续航）→ boot
  * 从 RTC settimeofday 恢复系统时间（断网重启也正确）→ P1 时间消费面周期 re-inject 修掉
- * boot 快照冻结（F2）。语义权威 = plan.md（triage ②单包 Lite，human 拍板 F1=(a)+F2 随包，
+ * boot 快照冻结（F2）。R3 追加轮重指（human 拍板, 见 REVISION LOG）: chrome 状态栏
+ * 时钟隐藏退役, 唯一常显时间面 = P1 辅助条（时间/日期）; re-inject 读点对齐分钟边界。
+ * 语义权威 = plan.md（triage ②单包 Lite，human 拍板 F1=(a)+F2 随包，
  * 2026-09-22）；验收方向 1-6 与关键接缝（SNTP 挂点 / 写回 / re-inject / TZ / sdkconfig）
  * 以 plan.md 为准。
  *
@@ -84,12 +86,26 @@
  *        （OTA 校时通道不复活）；渲染版式/帧缓冲链路与电池链路 owner 边界零触碰
  *        （lvgl 守门行 `2025 - 1900` 在世为本文件 MUST-STAY-GREEN 钉点）。
  *
+ *   [S6]（R3 追加轮新增, 2026-09-22）分钟对齐纯逻辑缝（home = time_sync.c/.h 第七
+ *        函数; C linkage、零芯片依赖、零 ESP-IDF include, 同 [S1] 纪律）。冻结签名:
+ *         long long kidpal_ts_ms_to_next_minute(long long now_ms);
+ *              -- now_ms < 0 -> -1（防御）; 否则 = 60000 - (now_ms % 60000), 恒在
+ *                 [1,60000]（恰在分钟边界 -> 60000 = 整周期后仍落边界, 禁 0 延迟
+ *                 忙旋）。入参口径 = 毫秒时钟且其分钟边界与墙上分钟边界对齐
+ *                 （epoch ms 满足; CST-8 整分偏移, 本地分界 = UTC 分界）。读点
+ *                 语义 = 按返回值 sleep 后立即读 RTC 并注入 -> P1 显示滞后 = 唤醒
+ *                 抖动 < 1s（human 追加拍板②: 读到秒 ≈0 再读再注入）。
+ *        设备侧消费（真机接线, [S4] 节拍相位修正）: TimeSyncPeriodicLoop 的
+ *        vTaskDelay 由该函数按墙上分钟边界计算（替代挂 boot 相位的固定 60000ms）;
+ *        inject 家族语义零触碰。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: K5-A1 SNTP 校时正锚 -> test 2（host 半：tm_year:70 负锚拒绝 + 守门同阈值
  *             year_ok 行为表）+ test 4（结构半：SNTP 起始符号 + 网络路径挂点 + server
  *             列表 + MAX_SERVERS 前提 + CST-8 TZ）；真机半（串口 SNTP 同步成功日志 +
- *             `tm_year: 70` 清零 + 状态栏 HH:MM 正确渲染）= deferred 设备轮窗口（K5-E3，
+ *             `tm_year: 70` 清零 + P1 辅助条时间/日期正确渲染——R3 重指, chrome 状态
+ *             栏时钟已隐藏退役, 负锚 = test 7）= deferred 设备轮窗口（K5-E3，
  *             语义锚 plan 验收方向 1，不伪造 host 证据）。
  *   coverage: K5-A2 PCF85063 写回 -> test 1（BCD 编解码行为表 + 0..99 round-trip）+
  *             test 2（OS 位降级决策：OS 置位不写回）+ test 5（结构半：WriteRtcTime 写
@@ -115,6 +131,16 @@
  *             DEFERRED 清单）；既有齿零偏移由红基线通道①全量实跑承载。
  *   coverage: K5-E2 铁律 -> test 4 tooth 8/9/10（CheckVersion 零调用 + ota.cc server_time
  *             死代码留置 + lvgl 守门行在世）。
+ *   coverage: K5-R3a 状态栏时钟隐藏（R3 追加轮 human 拍板①, 授权链 pod-events
+ *             human-decision fc43063d）-> test 7（结构半: UpdateStatusBar 区 SetStatus(
+ *             零调用 = chrome 状态栏时钟渲染退役负锚 + mute/网络/低电 popup 渲染路径
+ *             在世齿 + P1 辅助条时间面在世 = A1 重指承载）; 真机半（隐藏后目测: 状态栏
+ *             无时钟、其余状态栏元素与 P1 辅助条正常）= deferred 设备轮窗口。
+ *   coverage: K5-R3b re-inject 分钟对齐（R3 追加轮 human 拍板②, 同授权链）-> test 8
+ *             （行为半: [S6] kidpal_ts_ms_to_next_minute 决策表 + 值域不变量 + 结构半:
+ *             板级 TimeSyncPeriodicLoop 消费接线 + boot 相位固定节拍退役）——滞后 <1s
+ *             的 host 可证部分落纯函数行为表; 真机半（读点秒 ≈0、P1 滞后 <1s 目测）=
+ *             deferred 设备轮窗口。
  *
  * ---------------------------------------------------------------------------
  * 强度申报（契约条目 -> 承载齿 -> 性质档；acceptance-evidence T2 纪律）:
@@ -126,11 +152,22 @@
  *   行为等价假设（显式化）：本文件假设「BcdToDec/DecToBcd 纯函数与寄存器读写分离等价」
  *     （板级 BCD 走 [S1] 单源；若 builder 在板文件旁路自写 BCD，test 5 tooth 2 红）、
  *     「写回与恢复共用同一可信门」（若写回绕过 write_decision，test 5 tooth 3 红）。
+ *   K5-R3a 状态栏时钟隐藏（R3 追加轮）-> test 7 -> 源锚代理（UpdateStatusBar 区渲染
+ *     调用缺失 + 其余元素在世齿; host 无法渲染 lvgl 真帧, 隐藏目测 = deferred 设备轮,
+ *     不以 host 伪证顶替）; 弱于契约处缺口 = 真机「时钟确实不再出现在屏上」仅设备轮
+ *     可证, 显式挂账。
+ *   K5-R3b re-inject 分钟对齐（R3 追加轮）-> test 8 -> 行为级（[S6] 纯函数决策表 +
+ *     值域不变量, host 可判）+ 机制级（板级消费接线 + boot 相位退役）; 行为等价假设
+ *     （显式化）:「按 ms_to_next_minute 返回值 sleep 后立即读注入 = 读点秒 ≈0」——
+ *     唤醒抖动（vTaskDelay tick 粒度）是唯一残差, 真机滞后 <1s 的端到端证实挂设备轮。
  *
  * ---------------------------------------------------------------------------
  * DEFERRED（真机半，挂设备轮窗口收口，human 在场；K5-E3 / plan 验收方向 1-3）:
  *   - K5-A1 真机：SNTP 同步成功事件日志；`System time is not set, tm_year: 70` 清零；
- *     chrome 状态栏 + P1 辅助条 HH:MM 正确。
+ *     P1 辅助条时间/日期 HH:MM 正确（R3 重指）+ chrome 状态栏时钟不再渲染（隐藏后
+ *     目测, test 7 的真机半）。
+ *   - K5-R3b 真机：长开机观察 re-inject 读点落分钟边界（秒 ≈0）、P1 时间滞后 <1s
+ *     （test 8 的真机半）。
  *   - K5-A3b 真机：长开机 >=N 分钟 P1 时间继续走（F2 收口证据）。
  *   - K5-A3 真机：SNTP 写 RTC 成功后断电重启 + 保持断网 → 显示正确时间。
  *   - K5-A4 真机：NTP 不可达 → 激活/对话照常、无 crash、守门拒绝渲染维持。
@@ -159,6 +196,20 @@
  *   8) mutation 自证（mutationRequired=true）：变异命名**不得保留被测符号原字面为子串**
  *      （KR-A3 _TOGGLE_X 教训；用 _STUB 类整词替换），mutationEvidence.perAcceptance
  *      逐条回填。
+ *
+ *   R3 追加轮 BUILDER DUTY（2026-09-22, human 拍板①②, 授权链 pod-events
+ *   human-decision fc43063d; host 接线零改——本文件已注册 HOST_ACCEPTANCE_SRCS、
+ *   time_sync.c 已接强符号源, 修订齿随本文件自动携带进 host runner）:
+ *   R3-1) firmware/main/display/lvgl_display/lvgl_display.cc：摘除 UpdateStatusBar
+ *         区的 chrome 状态栏时钟渲染（SetStatus(time_str) 调用退役, test 7 tooth 2;
+ *         守门行 `2025 - 1900` 与 kidpal_ts_log_throttled 节流分支保留零触碰——
+ *         test 4 teeth 3/14 既有 MUST-STAY-GREEN 齿把住）; mute/网络/低电 popup
+ *         渲染路径零偏移（test 7 teeth 3-5）; 禁整函数退役。
+ *   R3-2) firmware/main/time_sync.{h,c}：按 [S6] 冻结签名实现第七函数
+ *         kidpal_ts_ms_to_next_minute（纯逻辑、零芯片依赖; test 8 teeth 0-3）; 板级
+ *         TimeSyncPeriodicLoop 节拍 vTaskDelay 改由该函数按墙上分钟边界计算（退役
+ *         固定 KIDPAL_TS_PERIODIC_PERIOD_MS 挂 boot 相位调用, test 8 teeth 4/5）;
+ *         inject 家族零触碰。
  *
  * ---------------------------------------------------------------------------
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
@@ -194,6 +245,8 @@ int kidpal_ts_write_decision(int os_bit_set, int year_ok);
 int kidpal_ts_backoff_delay_ms(int consecutive_failures);
 int kidpal_ts_log_throttled(long long now_ms, long long last_ms,
                             long long min_interval_ms);
+/* [S6] R3 追加轮第七函数（分钟对齐缝; time_sync.h 落地后语义一致）。 */
+long long kidpal_ts_ms_to_next_minute(long long now_ms);
 
 /* weak 哨兵（专用哨兵值：-2 / -1，均非任何合法返回值——见 TEST 1/2/3 首齿 require）。 */
 __attribute__((weak)) int kidpal_ts_bcd_encode(int dec)
@@ -227,6 +280,12 @@ __attribute__((weak)) int kidpal_ts_log_throttled(long long now_ms, long long la
     (void)now_ms; (void)last_ms; (void)min_interval_ms;
     return -1;
 }
+/* [S6] 哨兵 -2（合法返回域 = [1,60000] 或防御 -1, -2 非任何合法返回值）。 */
+__attribute__((weak)) long long kidpal_ts_ms_to_next_minute(long long now_ms)
+{
+    (void)now_ms;
+    return -2;
+}
 
 /* -------------------------------------------------------------------------- *
  * 被扫文件（真实工作树，root 自手持 cwd 定位；test 目录排除——本冻结文件自身住
@@ -242,6 +301,7 @@ __attribute__((weak)) int kidpal_ts_log_throttled(long long now_ms, long long la
 #define TS_HOST_CML    "firmware/main/test/host_app/main/CMakeLists.txt"
 #define TS_SDKDEF      "firmware/sdkconfig.defaults"
 #define TS_TIME_SYNC_H "firmware/main/time_sync.h"
+#define TS_HOME_P1_C   "firmware/main/display/home_p1.c"
 
 #define TS_MAX_PATH 1024
 #define TS_MAX_READ (8u * 1024u * 1024u)
@@ -992,6 +1052,143 @@ TEST_CASE("时间同步: 注册接线+inject家族零偏移+回归守卫 (K5-A5)
         "TS RED(infra): occurrence counter cannot count a known literal — 计数器失灵");
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 7 — K5-R3a（R3 追加轮, human 拍板①, 授权链 pod-events human-decision
+ * fc43063d）结构半：chrome 状态栏时钟隐藏退役 + 状态栏其余元素在世齿 + P1 辅助条
+ * 唯一常显时间面在世（A1 锚重指承载）。
+ * RED today: lvgl_display.cc UpdateStatusBar 区仍 SetStatus(time_str) 渲染时钟
+ * （2026-09-22 实测区内恰 1 处调用）。
+ * ------------------------------------------------------------------------ */
+/* coverage: K5-R3a -- 状态栏时钟隐藏（human 追加拍板①）: UpdateStatusBar 区 SetStatus( 零调用（时钟渲染退役负锚）+ mute/网络/低电 popup 渲染路径在世（其余状态栏元素零偏移）+ P1 辅助条时间面在世（A1 重指锚承载） */
+TEST_CASE("时间同步: 状态栏时钟隐藏+其余元素在世 (K5-R3a)",
+          "[time_sync][K5-R3a][structural][r3]")
+{
+    char *region;
+    int n;
+
+    TS_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN): UpdateStatusBar 函数区可切（锚在世）。 */
+    region = ts_region_between(TS_LVGL_CC,
+                               "void LvglDisplay::UpdateStatusBar(",
+                               "void LvglDisplay::SetPreviewImage(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "TS-R3a RED(infra): UpdateStatusBar 函数区切取失败——chrome 状态栏渲染链被"
+        "改动（锚漂移须复核; 本齿负锚范围 = 该函数区, 禁整函数退役绕过）");
+    if (region == NULL) {
+        return;
+    }
+
+    /* tooth 2 (K5-R3a 负锚, RED today): 区内零 SetStatus( 调用——chrome 状态栏时钟
+     * HH:MM 渲染退役（区内现状恰 1 处 SetStatus(time_str); application.cc 的状态
+     * 文案 SetStatus 不在本区、不受影响; 温度/电量不在 chrome 状态栏——P1 辅助条
+     * 承载, 勿混, human 边界注记）。 */
+    TEST_ASSERT_TRUE_MESSAGE(strstr(region, "SetStatus(") == NULL,
+        "TS-R3a RED: UpdateStatusBar 区仍调 SetStatus(——chrome 状态栏时钟仍在渲染"
+        "（human 拍板隐藏未落; 只许摘时钟渲染调用, 不许整函数退役——teeth 3-5 把住"
+        "其余元素零偏移）");
+
+    /* tooth 3 (MUST-STAY-GREEN): mute 图标更新路径在世。 */
+    TEST_ASSERT_TRUE_MESSAGE(strstr(region, "mute_label_") != NULL &&
+                                 strstr(region, "FONT_AWESOME_VOLUME_XMARK") != NULL,
+        "TS-R3a RED: UpdateStatusBar 区 mute 图标路径丢失——「隐藏时钟」被实现成"
+        "状态栏元素连带拆除（其余状态栏元素零偏移义务）");
+
+    /* tooth 4 (MUST-STAY-GREEN): 网络图标更新路径在世（wifi）。 */
+    TEST_ASSERT_TRUE_MESSAGE(strstr(region, "GetNetworkStateIcon") != NULL &&
+                                 strstr(region, "network_label_") != NULL,
+        "TS-R3a RED: UpdateStatusBar 区网络图标路径丢失——状态栏 wifi 元素被连带"
+        "拆除（其余状态栏元素零偏移义务）");
+
+    /* tooth 5 (MUST-STAY-GREEN): 低电 popup 判定链路在世（电池链路零触碰锚; chrome
+     * 电池段本身已由 N1b 摘除, 本齿钉现状形态零偏移）。 */
+    TEST_ASSERT_TRUE_MESSAGE(strstr(region, "low_battery_popup_") != NULL,
+        "TS-R3a RED: UpdateStatusBar 区低电 popup 判定链路丢失——电池链路被触碰"
+        "（本包电量链路/帧缓冲零触碰红线）");
+    free(region);
+
+    /* tooth 6 (MUST-STAY-GREEN, A1 锚重指承载): P1 辅助条时间面在世——p1_draw_aux_time
+     * 定义 + 装配调用 >= 2（重指后的唯一常显时间面承载; 既有在世标识符 needle, 对
+     * home_p1.c 零新增注释要求, canary `upcoming` 子串零引入）。 */
+    n = ts_count_in_file(TS_HOME_P1_C, "p1_draw_aux_time");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        ts_fm("TS-R3a RED: home_p1.c p1_draw_aux_time 仅 %d 处（期望 >= 2: 定义 + "
+              "装配调用）——P1 辅助条时间面（唯一常显时间面）被拆, A1 锚重指落空", n));
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 8 — K5-R3b（R3 追加轮, human 拍板②, 同授权链）：re-inject 读点分钟对齐。
+ * 行为半 = [S6] 第七函数决策表（host 可判）; 结构半 = 板级节拍消费接线 + boot 相位
+ * 固定节拍退役。RED today: kidpal_ts_ms_to_next_minute 全仓零命中（weak 哨兵）;
+ * 板文件仍 vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS)) 挂 boot 相位
+ * （真机实测读点 :44 秒, P1 滞后最大 59s）。
+ * ------------------------------------------------------------------------ */
+/* coverage: K5-R3b -- re-inject 分钟对齐（human 追加拍板②）: kidpal_ts_ms_to_next_minute 决策表（恒 [1,60000] + 分钟边界回卷 + 负入参防御）+ 板级 TimeSyncPeriodicLoop 消费接线 + boot 相位固定节拍退役（读点秒≈0、P1 滞后 <1s 的 host 可证部分） */
+TEST_CASE("时间同步: re-inject分钟对齐决策表+板级相位接线 (K5-R3b)",
+          "[time_sync][K5-R3b][behavior][structural][r3]")
+{
+    static const struct { long long in; long long out; } tbl[] = {
+        {      0LL, 60000LL}, {      1LL, 59999LL}, {  44000LL, 16000LL},
+        {  59999LL,     1LL}, {  60000LL, 60000LL}, {  60001LL, 59999LL},
+        { 119999LL,     1LL}, { 120000LL, 60000LL},
+    };
+    size_t i;
+    long long ms, r;
+    int n;
+
+    /* tooth 0: 哨兵判读（[S6] 第七函数 frozen seam 在世义务）。 */
+    ts_require_implemented((int)kidpal_ts_ms_to_next_minute(44000LL),
+                           "kidpal_ts_ms_to_next_minute");
+
+    /* tooth 1: 决策表——分钟边界对齐（读点 = 按返回值 sleep 后立即读再注入, 滞后 =
+     * 唤醒抖动 < 1s; 恰在边界 -> 整周期 60000, 禁 0 延迟忙旋）。 */
+    for (i = 0; i < sizeof(tbl) / sizeof(tbl[0]); i++) {
+        r = kidpal_ts_ms_to_next_minute(tbl[i].in);
+        TEST_ASSERT_TRUE_MESSAGE(r == tbl[i].out,
+            ts_fm("TS-R3b RED: ms_to_next_minute(%lld)=%lld 期望 %lld——分钟边界"
+                  "对齐语义漂移（读点仍挂 boot 相位, P1 显示滞后最大 59s）",
+                  tbl[i].in, r, tbl[i].out));
+    }
+
+    /* tooth 2: 负入参防御。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_ts_ms_to_next_minute(-1LL) == -1LL,
+        "TS-R3b RED: ms_to_next_minute(-1) 未防御（-1）——非法时钟被接受");
+
+    /* tooth 3: 值域不变量（扫描域内恒 [1,60000] 且补满当前分钟相位）。 */
+    for (ms = 0LL; ms <= 180000LL; ms += 997LL) {
+        r = kidpal_ts_ms_to_next_minute(ms);
+        TEST_ASSERT_TRUE_MESSAGE(r >= 1LL && r <= 60000LL &&
+                                     r + (ms % 60000LL) == 60000LL,
+            ts_fm("TS-R3b RED: ms_to_next_minute(%lld)=%lld 越域/相位失配——返回值"
+                  "须恒在 [1,60000] 且与入参相位补满 60000（分钟边界对齐不变量）",
+                  ms, r));
+    }
+
+    TS_REQUIRE_ROOT();
+
+    /* tooth 4 (structural): 板级节拍消费——TimeSyncPeriodicLoop 相位由 [S6] 缝驱动。 */
+    n = ts_count_in_file(TS_BOARD_CC, "kidpal_ts_ms_to_next_minute(");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        ts_fm("TS-R3b RED: 板级 kidpal_ts_ms_to_next_minute( 仅 %d 处——"
+              "TimeSyncPeriodicLoop 节拍相位未接 [S6] 分钟对齐缝（boot 相位在世, "
+              "真机读点 :44 秒）", n));
+
+    /* tooth 5 (structural, boundary): boot 相位固定节拍退役——精确串零命中（现状恰
+     * 1 处; 相位须按分钟边界计算, 不许保留固定 60000ms 挂 boot 相位形态）。 */
+    n = ts_count_in_file(TS_BOARD_CC,
+                         "vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS))");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        ts_fm("TS-R3b RED: 板级固定节拍 vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_"
+              "PERIODIC_PERIOD_MS)) 仍 %d 处——读点相位仍挂 boot（分钟对齐未落, "
+              "P1 滞后最大 59s）", n));
+
+    /* tooth 6: [S1]/[S6] 头文件声明面在世（第七函数契约）。 */
+    TEST_ASSERT_TRUE_MESSAGE(ts_file_contains(TS_TIME_SYNC_H,
+                                              "kidpal_ts_ms_to_next_minute"),
+        "TS-R3b RED: time_sync.h 无 kidpal_ts_ms_to_next_minute 声明——[S6] 第七"
+        "函数契约未落（行为表与设备消费无处锚定）");
+}
+
 /* ---------------------------------------------------------------------------
  * RED baseline 判读口径（freeze 相位, acceptance-author 2026-09-22 实跑）:
  *   通道① 既有 host runner 全量实跑（本文件未接线前, 既有齿零偏移通道）:
@@ -1023,9 +1220,67 @@ TEST_CASE("时间同步: 注册接线+inject家族零偏移+回归守卫 (K5-A5)
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
  *   test/host_app 均可）。
  *
+ *   R3 追记（2026-09-22 追加轮冻齿修订红基线, acceptance-author 实跑; 授权链 =
+ *   pod-events human-decision fc43063d）:
+ *   通道① 独立 gcc 线束（修订齿设计态红 / 未动面绿, 分离证明）:
+ *     a) 哨兵形态（不链实现, 上棒同款）:
+ *        cd firmware/main/test/acceptance/red-baseline
+ *        gcc -std=c11 -Wall -Wextra -I. -o /tmp/ts_red_r3 ../../time_sync.acceptance.c runner.c
+ *        /tmp/ts_red_r3
+ *        实跑 = 8 CASE / 5 红: TEST 1/2/3 红（[S1] 六函数 weak 哨兵——线束未链
+ *        time_sync.c 的已知判读态, 非本包修订面）; TEST 4/5/6 绿（主轮实现已落地 +
+ *        未动面零偏移, 结构齿扫真实工作树）; TEST 7 红（tooth 2: UpdateStatusBar
+ *        区 SetStatus( 仍 1 处 = 时钟渲染未摘）; TEST 8 红（tooth 0: [S6] 第七函数
+ *        weak 哨兵; teeth 4/5 结构性必红被 Unity abort 屏蔽, 解析性必红）。
+ *     b) 强符号形态（链真实 time_sync.c, 既有行为齿零偏移证明）:
+ *        gcc -std=c11 -Wall -Wextra -I. -o /tmp/ts_red_r3b \
+ *            ../../time_sync.acceptance.c ../../time_sync.c runner.c
+ *        /tmp/ts_red_r3b
+ *        实跑 = TEST 1-6 全绿（既有行为表/结构齿零偏移）; TEST 7 红（同 a）;
+ *        TEST 8 红（tooth 0 哨兵——[S6] 第七函数尚未实现, 设计态）。
+ *   通道② host runner 全量（修订齿已随本文件注册自动携带, CMakeLists 零改）:
+ *     MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-
+ *       key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build
+ *     cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 --
+ *       ./build/host_infra_test.elf
+ *     期望（builder 未落 R3-1/R3-2 时）: 92 Tests / 2 Failures, 红全部 = 本文件
+ *     TEST 7/8 设计态红（在册于通道①判读）; 既有面（主轮 90 齿, 尤其 TEST 1/2/3
+ *     行为齿与 TEST 6 既有守卫）零偏移全绿。
+ *
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-22  initial freeze (acceptance-author, TaskPackage
  *               260922-m3-k5-sntp-time-sync)。六 TEST 钉 K5-A1/A2/A3/A3b/A4/A5 host
  *               可判半; 真机半（A1 tm_year:70 清零 + A3b 长开机 + A3 断电续航 + A4
  *               真机降级）deferred 设备轮窗口（头注 DEFERRED 清单, 不伪造 host 证据）。
+ *   2026-09-22  R3 追加轮冻齿修订（human 两项追加拍板; 授权链 = pod-events
+ *               human-decision fc43063d, 原始拍板 = human 2026-09-22 真机第 1 轮
+ *               目测后口头裁定; 主轮 e5b248a 已全绿: A1 正锚实证过 / K4 五项目测过 /
+ *               wday 链路无缺陷）——纯 additive 补齿 + 锚重指, 零放宽零退役既有齿:
+ *               ① A1 锚重指: 「HH:MM 渲染正确」真机锚从 chrome 状态栏重指 P1 辅助条
+ *               （时间/日期; home_p1.c p1_draw_aux_time 承载, test 7 tooth 6 在世齿）。
+ *               ② 新增 TEST 7（K5-R3a 负锚）: UpdateStatusBar 区 SetStatus( 零调用 =
+ *               chrome 状态栏时钟渲染退役（区内现状恰 1 处 SetStatus(time_str), 红基线
+ *               实红）; 在世齿 teeth 3-5 钉 mute/网络/低电 popup 渲染路径零偏移——防
+ *               「隐藏时钟」实现成「整个状态栏消失」; tooth 6 钉 P1 辅助条时间面在世。
+ *               温度（P1 辅助条「28」）/电量/帧缓冲零触碰边界由既有齿与在世齿把住。
+ *               ③ 守门裁定（保留不退役）: lvgl_display.cc:130 `tm_year >= 2025 - 1900`
+ *               守门行保留——P1 辅助条时间消费面不经该守门（P1 时间 = 板级 RTC 读 →
+ *               inject 家族 → hp1_state, 无年份门; 该守门只辖 chrome SetStatus 渲染）,
+ *               时钟渲染退役后该门仍辖「时间未同步」节流 W 日志分支（非死代码——test 4
+ *               teeth 3/14 既有 MUST-STAY-GREEN 齿零偏移即其负锚语义落点）; 故裁定
+ *               保留, 只摘 then 分支的 SetStatus(time_str) 渲染调用（R3-1 duty）。
+ *               ④ 新增 TEST 8（K5-R3b）: [S6] 第七函数 kidpal_ts_ms_to_next_minute
+ *               决策表 + 值域不变量（行为半, host 可判——滞后 <1s 的可证部分落到纯
+ *               函数行为表）+ 板级 TimeSyncPeriodicLoop 消费接线 + boot 相位固定
+ *               60000ms 节拍退役（结构半）; inject 家族语义零触碰（test 5/6 既有齿
+ *               不变, 只调节拍相位不动 inject）。
+ *               ⑤ 零偏移面: TEST 1-6 全部既有 tooth 零改动（尤其 test 4 tooth 3/14
+ *               守门与节流消费、test 5/6 inject 家族守卫、test 6 注册守卫、OTA 死代码
+ *               守卫）; CMakeLists 零改（本文件已注册 HOST_ACCEPTANCE_SRCS, 修订齿
+ *               随文件自动携带进 host runner）。
+ *               ⑥ canary 纪律: 新增齿 needle 均为在世标识符（SetStatus( / mute_label_ /
+ *               GetNetworkStateIcon / low_battery_popup_ / p1_draw_aux_time /
+ *               kidpal_ts_ms_to_next_minute / KIDPAL_TS_PERIODIC_PERIOD_MS 精确串）,
+ *               对 home_p1.c 零新增注释要求, `upcoming` 字面子串零引入。红基线见
+ *               头注「R3 追记」。
  * --------------------------------------------------------------------------- */

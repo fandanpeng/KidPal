@@ -67,3 +67,17 @@ int kidpal_ts_log_throttled(long long now_ms, long long last_ms,
     }
     return 0; /* 间隔走满 -> 放行 */
 }
+
+/* [S6] R3 追加轮第七函数: 距下一墙上分钟边界的毫秒数。 */
+long long kidpal_ts_ms_to_next_minute(long long now_ms)
+{
+    if (now_ms < 0) {
+        return -1; /* 非法时钟防御 */
+    }
+    long long rem = now_ms % 60000LL;
+    long long d = 60000LL - rem; /* 恰在边界（rem==0）-> 60000, 禁 0 延迟忙旋 */
+    if (d < 1) {
+        d = 60000LL; /* 值域兜底: 恒 [1,60000] */
+    }
+    return d;
+}

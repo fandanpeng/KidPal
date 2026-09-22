@@ -1,37 +1,48 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r2.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r4.json)",
   "changeId": "260922-m3-k5-sntp-time-sync",
   "phase": "final",
-  "round": 2,
-  "invocationId": "eca0824f-5f85-4b2a-88a9-abc4052fac33",
+  "round": 4,
+  "invocationId": "5569266d-5288-450b-8e4d-eea5e94a6bdc",
   "verification": {
     "ok": true,
     "observedGateExit": 0,
     "gatesRun": 9,
     "gatesNotExecuted": [],
-    "evidenceRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r2.json",
+    "evidenceRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r4.json",
     "mechanicalCheck": {
       "script": ".claude/scripts/verifier-evidence-check.mjs",
-      "args": "--change-id 260922-m3-k5-sntp-time-sync --phase final --round 2 --invocation-id eca0824f-5f85-4b2a-88a9-abc4052fac33",
+      "args": "--change-id 260922-m3-k5-sntp-time-sync --phase final --round 4 --invocation-id 5569266d-5288-450b-8e4d-eea5e94a6bdc",
       "exit": 0,
       "factOk": true,
       "runBy": "integrator",
       "date": "2026-09-22",
-      "addendumPriorRoundCheck": "同包 r1（scoped）双查 exit 0：--phase scoped --round 1 --invocation-id 0c3b1298-79ea-4948-8b21-665c580bc328 → factOk:true（integrator 实跑 2026-09-22）"
+      "addendumPriorRoundCheck": "追加轮双轮 integrator 实跑均 exit 0 / factOk:true（2026-09-22）：① r3 scoped：--phase scoped --round 3 --invocation-id a434a4b7-cdcb-4b82-8d72-6fc59b46f054；② r4 final：--phase final --round 4 --invocation-id 5569266d-5288-450b-8e4d-eea5e94a6bdc。主轮双查记录（r1 scoped / r2 final）见 git 历史 62807fc 前版本。",
+      "priorRoundMainCheck": "主轮双查（2026-09-22 主轮收口时实跑）：r1 scoped（0c3b1298-79ea-4948-8b21-665c580bc328）exit 0 / factOk:true；r2 final（eca0824f-5f85-4b2a-88a9-abc4052fac33）exit 0 / factOk:true"
     },
     "priorRoundsCheck": [
       {
         "round": 1,
         "invocationId": "0c3b1298-79ea-4948-8b21-665c580bc328（r1.json 在案）",
-        "producedBy": "verifier（scoped 六闸全绿，机械 fact ok:true / observedGateExit:0）"
+        "producedBy": "verifier（scoped 六闸全绿，机械 fact ok:true / observedGateExit:0；主轮）"
       },
       {
         "round": 2,
         "invocationId": "eca0824f-5f85-4b2a-88a9-abc4052fac33（r2.json 在案）",
-        "producedBy": "verifier（final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e0c0，11% free）/ contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed；fact 副本在本目录，原件在 verifier-evidence/rounds/r2.json）"
+        "producedBy": "verifier（主轮 final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e0c0，11% free）/ contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed）"
+      },
+      {
+        "round": 3,
+        "invocationId": "a434a4b7-cdcb-4b82-8d72-6fc59b46f054（r3.json 在案）",
+        "producedBy": "verifier（追加轮 scoped 六闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，0x61ec0 bytes 11% free）/ contract-lint / acceptance-coverage（acceptance 列表扩至 K5-A1..A5 + K5-R3a/K5-R3b 八条）/ mutation-check / docs-sync / security；fact ok:true / observedGateExit:0，integrator 机械双查 exit 0）"
+      },
+      {
+        "round": 4,
+        "invocationId": "5569266d-5288-450b-8e4d-eea5e94a6bdc（r4.json 在案）",
+        "producedBy": "verifier（追加轮 final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，11% free）/ contract-lint / acceptance-coverage（八条）/ mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed；fact ok:true / observedGateExit:0，fact 副本在本目录，原件在 verifier-evidence/rounds/r4.json）"
       }
     ],
-    "hostRunner": "90 Tests / 0 Failures（既有 84 齿零偏移 vs 上游锚 84 @ 9cae452 + 本包新齿 6 TEST_CASE）；红基线通道② 6 Tests / 6 Failures（设计态义务红）；builder 变异自证 5 组每组 exit=1 / 未变异基线 exit=0",
-    "realDeviceEvidence": "deferred——真机四锚（K5-A1 负锚清零 / K5-A3b 长开机 / K5-A3 断电续航 / K5-A4 真机复证）挂设备轮窗口（exitCriteria K5-E3），非 final verify 相位义务"
+    "hostRunner": "追加轮后 92 Tests（既有 90 齿零偏移 vs 主轮 + 本包新齿 2 TEST_CASE）；追加轮红基线（acceptance-author 实跑 2026-09-22，设计态）：通道①b 强符号线束 8 Tests / 2 Failures（红恰 = TEST 7/8 设计态，TEST 1-6 全绿零偏移）；通道② host runner 92 Tests / 2 Failures（红恰 = K5-R3a/R3b 设计态，既有 90 齿零偏移全绿）。主轮 mutation 自证 5 组每组 exit=1 / 未变异基线 exit=0（在案不重复）；追加轮 R3a/R3b 无实跑变异，mutationEvidence 登记面 + 设计态红≙变异态在案（粒度差如实申报见 review-packet.md 追加轮 addendum 第④节）",
+    "realDeviceEvidence": "deferred——真机第 1 轮已过（2026-09-22，e5b248a bin：A1 正锚实证 + K4 五项全过 + tm_year:70 全窗零条 + wday 转换正确，pod-events fc43063d 在案）；追加轮两项拍板后待复验面（隐藏后目测 / 读点秒≈0 目测 / A3 断电续航 / A3b 长开机）挂设备轮窗口（exitCriteria K5-E3），非 final verify 相位义务"
   }
 }

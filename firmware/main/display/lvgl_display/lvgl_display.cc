@@ -123,14 +123,14 @@ void LvglDisplay::UpdateStatusBar(bool update_all) {
     // Update time
     if (app.GetDeviceState() == kDeviceStateIdle) {
         if (last_status_update_time_ + std::chrono::seconds(10) < std::chrono::system_clock::now()) {
-            // Set status to clock "HH:MM"
             time_t now = time(NULL);
             struct tm* tm = localtime(&now);
             // Check if the we have already set the time
             if (tm->tm_year >= 2025 - 1900) {
-                char time_str[16];
-                strftime(time_str, sizeof(time_str), "%H:%M", tm);
-                SetStatus(time_str);
+                /* R3-1（260922-m3-k5-sntp-time-sync, human 拍板①）: chrome 状态栏时钟
+                 * 渲染退役——唯一常显时间面 = P1 辅助条。守门行保留零触碰（此门仍辖
+                 * 下方节流 W 日志分支, K5-E2 MUST-STAY-GREEN）; 另两渲染元素（mute /
+                 * 网络 / 低电 popup 判定）与节流分支零偏移。 */
             } else {
                 /* K5（260922-m3-k5-sntp-time-sync）K5-A4：`System time is not set` W
                  * 日志经 [S1] kidpal_ts_log_throttled 节流（现状每 10s 一条刷屏 -> 60s
