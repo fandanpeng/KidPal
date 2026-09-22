@@ -250,3 +250,11 @@
 - **合并链**：机械 supervisor 闸 APPROVE（green-channel，provenance v2.0）→ 前置升级闸 PASS 无例外 → merge-driver 本地 `--no-ff` 合并 main（`6d1bec9`，Step 0 治理面收口 `ccae6b2`，pod-events merge-completed `6d1bec9344d4`），human 离席零打断、零拍板请求。
 - **剩余（真机半，挂设备轮窗口 human 在场收口）**：K6-A7 四子锚真机实证（①冷启动建连推送 + P1「接下来」②wifi 闪断自动恢复避 IsTimeout ③宕机静默零错误卡 ④AutoConnect task 栈高水位）→ 真机轮后 progress.md K6 段终账。真机采样注意：退避为 vTaskDelay 时序行为，wifi 闪断子锚至少采两次断连相位（K5 跨多边界采样常识）。
 - **症状 B（课表页冷缓存）**：维持 human 拍板「另走设计入口」，不入本包。
+
+## 2026-09-23 · K6 真机第 1 轮收口（human 在场，主线程烧板 + 串口捕获）
+
+- **烧录**：xiaozhi.bin @ 常驻树 91bcb08（与 main 6d1bec9 固件面同内容）esptool 0x20000 app-only 烧录（K6 无资产变更，单分区合规），hash 校验过；无复位循环（0 RE-ENUM）。
+- **锚 ① 冷启动自动建连 PASS（日志 + 目测双证）**：无按键冷启动时序——激活完成 7.2s → `WS: Connecting wss://8.137.91.16:8000` 7.3s（无按键）→ CA 校验过 8.1s → SNTP ok 8.2s → **front 建连推送 `display_dispatch view=home upcoming_apply ok` 8.6s** → Session ID 8.6s → 首页 `render home render_rc=0` 落屏；human 目测确认 P1「接下来」有内容（原话「有内容了」）。K5 SNTP 功能共存正常（rtc_writeback/reinject 在窗内）。静默面：全程零 Alert 零错误卡零重试。
+- **锚 ④ task 栈水位 PASS**：`AutoConnect task exit, stack high water mark=4912`（8192 栈余 4912，无溢出迹象）。
+- **锚 ②/③ human 知情延期**（原话「那两个我没法测，后面观察吧」——K5 A3 断电续航同款 deferred 口径，账面如实记、后续观察反馈补账）：② wifi 真实闪断重连（含双断连相位采样提醒已留 pod-retro）；③ server 宕机静默零错误卡。证据链原始日志：c:/tmp/k6-coldboot.log（会话临存，关键行已录本段）。
+- **K6 全包状态**：host 半闭环 + 合并（6d1bec9）+ 真机锚 ①④ PASS + ②③ 知情延期——闭环。遗留：① Shape A 立项 ack 补留痕（human 回席未提异议、已按预授权链执行，账面继续挂）；② loop-retro 阈值 20 advisory（主线程 /loop-retro 待发）；③ 症状 B 课表页冷缓存独立设计入口；④ verifier 双坑（brief 双份维护形态 + mutation-check 隐式匹配）升级为闸报错提示的 retro 建议。
