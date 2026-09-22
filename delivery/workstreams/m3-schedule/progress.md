@@ -189,3 +189,10 @@
 - **收口**：commit `14a27f6`（分支领先 main 随批回 main）；review-packet 第 3 追加轮 addendum（因果链/demo 对账/治理收益/未覆盖面）。
 - **治理收益**：设备字体 × 设备解码路径的 host oracle 覆盖永久入册——live 路径字形回归从此免烧板。
 - **遗留**：① 真机第 3 轮复验挂设备轮窗口（seam 乱码消除目测 + 烘焙标签回归 + app+art 双分区烧录）；② loop-retro 阈值 advisory 持续挂账。
+
+## 2026-09-22 · K4 真机第 3 轮 PASS + 合并收尾（planner Pod）
+
+- **human 真机第 3 轮复验 PASS**（原话「这次对了，提交合并吧」pod-events 560daa86）：seam 文字行乱码消除（第 3 追加轮真根因修复生效）、烘焙标签/版式目测通过——A6 真机半闭环，全验收齿闭环。
+- **合并链**：supervisor-verdict-gate 依 fail-loud 指引以新 bearing 轮（final r9 九闸绿）refresh stale verdict → **APPROVE**（riskTier medium，completedRounds 9，provenance v2 全过，supervisor-gate-check exit 0）→ 前置升级闸 PASS → merge-driver --pod：rebase OK / quick-check OK / **merge OK**——merge commit `74b6929`（main @ `29749c0` 簿记），追加轮三批（2d60006+75d01b5、14a27f6+7dec9de）随批回 main，token 释放。
+- **K4 全包闭环**：主轮（合并 f8703d5）→ 追加轮 1（A6 live FAIL 根因 + B 方案 + 版式对齐）→ 追加轮 2/3（设备字体上 host 复现真根因 draw_buf 结构头误读 → 修复 + A11 host oracle 永久入册）→ 真机第 3 轮 PASS。治理遗产：设备字体 × 设备解码路径 host 免烧板覆盖、行流版式 [S3]/[S5] 资产契约、独立 oracle 齿设计先例。
+- **持续挂账（非本包义务）**：loop-retro 阈值 18 advisory（主线程 /loop-retro）；设备时钟缺口（贴纸随时钟恢复另立项）。
