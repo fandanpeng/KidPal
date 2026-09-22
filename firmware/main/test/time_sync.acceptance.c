@@ -98,6 +98,20 @@
  *        设备侧消费（真机接线, [S4] 节拍相位修正）: TimeSyncPeriodicLoop 的
  *        vTaskDelay 由该函数按墙上分钟边界计算（替代挂 boot 相位的固定 60000ms）;
  *        inject 家族语义零触碰。
+ *        [S6] R4 追加轮修订（human 拍板, 授权链 pod-events human-decision
+ *        d2148f66; 根因实证 = 主线程串口捕获 2026-09-22 23:06-23:07 双稳态缺陷）:
+ *        纯函数 kidpal_ts_ms_to_next_minute 语义**保持不动**（60000-(now%60000),
+ *        决策表 8 点零偏移）; 只改板级接线表达式 = 「边界后 +2000ms 偏移」——
+ *        TimeSyncPeriodicLoop 延迟 = kidpal_ts_ms_to_next_minute(now) +
+ *        KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS（=2000）, 唤醒恒落在边界后 ~2s（远
+ *        大于 pdMS_TO_TICKS 向下取整的 tick 量化 ~10ms 与板级 I2C 读 RTC 耗时,
+ *        结构性消灭「错过边界 → 恒慢 60s」的倒霉相位; R3 轮捕获的 <1s 为幸运
+ *        相位, 双稳态缺陷）。最坏显示滞后 = 2s + 1s 重渲 tick ≈ 3s（human 明示
+ *        接受）。常量定义落点裁定 = 板文件（设备时序常量随消费点; time_sync.h
+ *        保持纯逻辑单源、零设备语义）。R3 形态（裸 kidpal_ts_ms_to_next_minute
+ *        无 offset）退役为负锚; 首拍边角裁定 = boot 后首个墙上分钟边界 +2s（循环
+ *        首动作 = 计算延迟后睡眠, 非立即注入; 首拍前显示由构造期 boot 注入承载,
+ *        TEST 5 teeth 5/6 把住）。
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
@@ -139,8 +153,12 @@
  *   coverage: K5-R3b re-inject 分钟对齐（R3 追加轮 human 拍板②, 同授权链）-> test 8
  *             （行为半: [S6] kidpal_ts_ms_to_next_minute 决策表 + 值域不变量 + 结构半:
  *             板级 TimeSyncPeriodicLoop 消费接线 + boot 相位固定节拍退役）——滞后 <1s
- *             的 host 可证部分落纯函数行为表; 真机半（读点秒 ≈0、P1 滞后 <1s 目测）=
- *             deferred 设备轮窗口。
+ *             的 host 可证部分落纯函数行为表; 真机半（读点秒 ≈0、P1 滞后 <1s）=
+ *             deferred 设备轮窗口。R4 追加轮修订（human 拍板, 授权链 d2148f66）:
+ *             板级接线改「边界后 +KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS(=2000)」形态
+ *             （test 8 teeth 7-11; 纯函数 teeth 0-3 零偏移）, 真机判据同步重指 =
+ *             连跨 2-3 分钟边界注入恒带新分钟值 + 滞后 ≤3s 稳定（双稳态缺陷 human
+ *             复观察, R3 判据「滞后 <1s」随修法退役）。
  *
  * ---------------------------------------------------------------------------
  * 强度申报（契约条目 -> 承载齿 -> 性质档；acceptance-evidence T2 纪律）:
@@ -158,16 +176,22 @@
  *     可证, 显式挂账。
  *   K5-R3b re-inject 分钟对齐（R3 追加轮）-> test 8 -> 行为级（[S6] 纯函数决策表 +
  *     值域不变量, host 可判）+ 机制级（板级消费接线 + boot 相位退役）; 行为等价假设
- *     （显式化）:「按 ms_to_next_minute 返回值 sleep 后立即读注入 = 读点秒 ≈0」——
- *     唤醒抖动（vTaskDelay tick 粒度）是唯一残差, 真机滞后 <1s 的端到端证实挂设备轮。
+ *     （显式化, R4 修订）:「按 ms_to_next_minute 返回值 + KIDPAL_TS_INJECT_AFTER_
+ *     BOUNDARY_MS 延迟后读注入 = 注入恒带新分钟值」——依据 = 2s 偏移 >> tick 量化
+ *     ~10ms + 板级 I2C 耗时（结构性消灭边界前唤醒; 双稳态根因实证 2026-09-22 串口
+ *     捕获）; 残差 = 显示滞后 ≤3s（2s 偏移 + 1s 重渲 tick, human 明示接受）; 真机
+ *     端到端证实挂设备轮。弱于契约处缺口 = 「2s 偏移足够大」是设计推断非实测, 由
+ *     DEFERRED 真机项（连跨边界恒新值 + 滞后 ≤3s 稳定）收口。
  *
  * ---------------------------------------------------------------------------
  * DEFERRED（真机半，挂设备轮窗口收口，human 在场；K5-E3 / plan 验收方向 1-3）:
  *   - K5-A1 真机：SNTP 同步成功事件日志；`System time is not set, tm_year: 70` 清零；
  *     P1 辅助条时间/日期 HH:MM 正确（R3 重指）+ chrome 状态栏时钟不再渲染（隐藏后
  *     目测, test 7 的真机半）。
- *   - K5-R3b 真机：长开机观察 re-inject 读点落分钟边界（秒 ≈0）、P1 时间滞后 <1s
- *     （test 8 的真机半）。
+ *   - K5-R3b 真机（R4 重指, human 拍板 d2148f66）：连续跨 2-3 个分钟边界观察
+ *     re-inject 注入恒带新分钟值（无「边界前注入旧值」双稳态倒霉相位; R3 判据
+ *     「滞后 <1s」随 R4 修法退役）、P1 时间滞后 ≤3s 稳定（= 2s 边界后偏移 + 1s
+ *     重渲 tick, human 明示接受; test 8 的真机半）。
  *   - K5-A3b 真机：长开机 >=N 分钟 P1 时间继续走（F2 收口证据）。
  *   - K5-A3 真机：SNTP 写 RTC 成功后断电重启 + 保持断网 → 显示正确时间。
  *   - K5-A4 真机：NTP 不可达 → 激活/对话照常、无 crash、守门拒绝渲染维持。
@@ -210,6 +234,21 @@
  *         TimeSyncPeriodicLoop 节拍 vTaskDelay 改由该函数按墙上分钟边界计算（退役
  *         固定 KIDPAL_TS_PERIODIC_PERIOD_MS 挂 boot 相位调用, test 8 teeth 4/5）;
  *         inject 家族零触碰。
+ *
+ *   R4 追加轮 BUILDER DUTY（2026-09-22, human 拍板, 授权链 pod-events
+ *   human-decision d2148f66; 根因实证 = 主线程串口捕获 2026-09-22 23:06-23:07
+ *   双稳态缺陷; host 接线零改——修订齿随本文件自动携带进 host runner）:
+ *   R4-1) firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc：
+ *         板文件内 `#define KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 2000`（落点裁定 =
+ *         板文件, 值 = human 拍板定值 2000, test 8 teeth 7/10）; TimeSyncPeriodicLoop
+ *         延迟表达式改「边界后偏移」形态 = kidpal_ts_ms_to_next_minute(...) +
+ *         KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS（test 8 tooth 8; 实现自由 = 局部变量
+ *         命名/算术形态, 硬约束 = 偏移常量真进延迟、常与纯函数同在循环区内消费）;
+ *         R3 裸形态 vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms)) 退役（tooth 9
+ *         负锚, 精确串零命中）; 循环内「延迟先于注入」序保持（tooth 11, 首拍 =
+ *         boot 后首个边界 +2s, 非立即注入）; **[S6] 纯函数与 inject 家族零触碰**;
+ *         值偏离 2000 或循环区注释引入 ReinjectRtcTime( / vTaskDelay needle 字面
+ *         均红（canary 纪律）。
  *
  * ---------------------------------------------------------------------------
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
@@ -1122,8 +1161,18 @@ TEST_CASE("时间同步: 状态栏时钟隐藏+其余元素在世 (K5-R3a)",
  * 固定节拍退役。RED today: kidpal_ts_ms_to_next_minute 全仓零命中（weak 哨兵）;
  * 板文件仍 vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS)) 挂 boot 相位
  * （真机实测读点 :44 秒, P1 滞后最大 59s）。
+ *
+ * R4 追加轮修订（human 拍板, 授权链 pod-events human-decision d2148f66; 根因实证 =
+ * 主线程串口捕获 2026-09-22 23:06-23:07 双稳态缺陷——pdMS_TO_TICKS 向下取整使唤醒
+ * 落在边界前 ~10ms, 裸延迟 <10ms 立即返回 + 板级 I2C 读 RTC 耗时吃掉亚 tick 余量,
+ * 稳态落在「每分钟只在边界前注入旧分钟值」的倒霉相位; R3 轮捕获的 <1s 为幸运相位,
+ * 掩盖缺陷; human 原话「这次又慢了一分钟……是不是可以放宽到3s」）: 修法 = 注入点
+ * 从「边界 ±0ms」改「边界后 +2000ms」（ teeth 7-11）; [S6] 纯函数 teeth 0-3 与
+ * 既有结构齿 teeth 4-6 零偏移。RED today（R4 面）: 板文件零 KIDPAL_TS_INJECT_AFTER_
+ * BOUNDARY_MS、循环区无偏移消费、R3 裸形态精确串在世恰 1 处。
  * ------------------------------------------------------------------------ */
 /* coverage: K5-R3b -- re-inject 分钟对齐（human 追加拍板②）: kidpal_ts_ms_to_next_minute 决策表（恒 [1,60000] + 分钟边界回卷 + 负入参防御）+ 板级 TimeSyncPeriodicLoop 消费接线 + boot 相位固定节拍退役（读点秒≈0、P1 滞后 <1s 的 host 可证部分） */
+/* coverage: K5-R3b/R4 -- 边界后注入偏移（human R4 拍板, d2148f66）: KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 板文件定义+消费（值=2000 定值）+ TimeSyncPeriodicLoop 区内偏移真进延迟（R3 裸形态退役负锚 + 首拍相位 = 首个边界后 2s 边角齿）; 滞后 ≤3s = human 接受上限 */
 TEST_CASE("时间同步: re-inject分钟对齐决策表+板级相位接线 (K5-R3b)",
           "[time_sync][K5-R3b][behavior][structural][r3]")
 {
@@ -1187,6 +1236,92 @@ TEST_CASE("时间同步: re-inject分钟对齐决策表+板级相位接线 (K5-R
                                               "kidpal_ts_ms_to_next_minute"),
         "TS-R3b RED: time_sync.h 无 kidpal_ts_ms_to_next_minute 声明——[S6] 第七"
         "函数契约未落（行为表与设备消费无处锚定）");
+
+    /* ---- R4 追加轮修订齿（human 拍板, 授权链 d2148f66; 修法 = 注入点改「边界后
+     * +2000ms」, 双稳态缺陷根因 = 唤醒可落在边界前, 见 TEST 8 头注）---- */
+
+    /* tooth 7 (R4 结构齿, RED today): 边界后注入偏移常量在世且板级真消费——定义 +
+     * 消费同落板文件（落点裁定: 设备时序常量随消费点, time_sync.h 保持纯逻辑单源
+     * 零设备语义）。常量缺席 = 延迟仍可裸用纯函数, 唤醒可落边界前（R3 双稳态形态
+     * 在世）。 */
+    n = ts_count_in_file(TS_BOARD_CC, "KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        ts_fm("TS-R3b/R4 RED: 板文件 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 仅 %d 处"
+              "（期望 >= 2: #define 定义 + TimeSyncPeriodicLoop 延迟消费）——边界后"
+              " +2s 注入偏移未落（human R4 拍板修法未实现, 唤醒仍可落在边界前, "
+              "错过边界恒慢 60s 的双稳态缺陷在世）", n));
+
+    /* tooth 8 (R4 结构齿, RED today): 偏移真接进节拍表达式——TimeSyncPeriodicLoop
+     * 函数区内同时消费 [S6] 纯函数与偏移常量（防「常量定义了但延迟表达式仍裸用
+     * 纯函数」的假接线; 钉形态不钉措辞: 局部变量命名/算术形态自由, 函数区切取）。 */
+    {
+        char *loop = ts_region_between(TS_BOARD_CC,
+                                       "void TimeSyncPeriodicLoop()",
+                                       "static void TimeSyncPeriodicTaskTramp");
+        TEST_ASSERT_NOT_NULL_MESSAGE(loop,
+            "TS-R3b/R4 RED(infra): TimeSyncPeriodicLoop 函数区切取失败——节拍循环"
+            "被改动（锚漂移须复核; 禁整函数退役绕过）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            loop != NULL && strstr(loop, "kidpal_ts_ms_to_next_minute(") != NULL &&
+                strstr(loop, "KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS") != NULL,
+            "TS-R3b/R4 RED: TimeSyncPeriodicLoop 区内未同时消费 "
+            "kidpal_ts_ms_to_next_minute( 与 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS——"
+            "延迟表达式仍裸用纯函数无边界后偏移（唤醒可落边界前, R3 倒霉相位在世）");
+        free(loop);
+    }
+
+    /* tooth 9 (R4 防回归负锚, RED today): R3 裸形态退役——精确串零命中（现状恰 1
+     * 处 = vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms))。廉价精确串卫兵; 主承载 =
+     * tooth 7/8 的常量在世 + 区内真接线）。 */
+    n = ts_count_in_file(TS_BOARD_CC,
+                         "vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms))");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        ts_fm("TS-R3b/R4 RED: 板级 R3 裸形态 vTaskDelay(pdMS_TO_TICKS((uint32_t)"
+              "next_ms)) 仍 %d 处——唤醒延迟未加边界后偏移（pdMS_TO_TICKS 向下取整"
+              "+ I2C 耗时窗口未关, 双稳态缺陷在世）", n));
+
+    /* tooth 10 (R4 值域齿, RED today): 偏移值 = 2000（human 拍板定值; 最坏显示滞后
+     * 2s + 1s 重渲 tick ≈ 3s = human 明示接受上限）。值域依据: 过小回 tick 量化/
+     * I2C 竞速窗（缺陷复发）, 过大超 3s 接受上限; 偏离 2000 须回 planner 重冻结,
+     * 不许实现侧自行取值。 */
+    {
+        char *buf = ts_read(TS_BOARD_CC, NULL);
+        long val = -1;
+        TEST_ASSERT_NOT_NULL_MESSAGE(buf, "TS RED(infra): board file unreadable");
+        {
+            const char *key = "#define KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS";
+            const char *p = buf != NULL ? strstr(buf, key) : NULL;
+            if (p != NULL) {
+                val = strtol(p + strlen(key), NULL, 10);
+            }
+        }
+        free(buf);
+        TEST_ASSERT_TRUE_MESSAGE(val == 2000L,
+            ts_fm("TS-R3b/R4 RED: KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 定义值解析 = "
+                  "%ld（期望 2000, human 拍板定值）——偏移取值偏离冻结语义或定义非"
+                  "简单数值字面（过小回缺陷窗, 过大超 3s 滞后接受上限; 确需偏离回 "
+                  "planner 重冻结）", val));
+    }
+
+    /* tooth 11 (R4 边角齿, MUST-STAY-GREEN): 首拍相位 = boot 后首个墙上分钟边界
+     * +2s——循环内「延迟先于注入」序守卫（每轮先睡到边界+offset 再读注, boot 首拍
+     * 亦然; 进循环立即注入 = boot 相位回归, 边界对齐失效）。裁定: 现行为即「循环首
+     * 动作 = 计算延迟后睡眠」, 零改钉存; 首拍前的显示连续性由构造期 boot 注入承载
+     * （TEST 5 teeth 5/6 把住）。注: 区内注释若在首个 vTaskDelay 前引入 ReinjectRtcTime(
+     * 字面会误红, 注释措辞避让（canary 纪律）。 */
+    {
+        char *loop = ts_region_between(TS_BOARD_CC,
+                                       "void TimeSyncPeriodicLoop()",
+                                       "static void TimeSyncPeriodicTaskTramp");
+        const char *d = loop != NULL ? strstr(loop, "vTaskDelay") : NULL;
+        const char *i = loop != NULL ? strstr(loop, "ReinjectRtcTime(") : NULL;
+        TEST_ASSERT_NOT_NULL_MESSAGE(loop,
+            "TS-R3b/R4 RED(infra): TimeSyncPeriodicLoop 函数区切取失败（tooth 11）");
+        TEST_ASSERT_TRUE_MESSAGE(d != NULL && i != NULL && d < i,
+            "TS-R3b/R4 RED: TimeSyncPeriodicLoop 区内注入先于延迟——首拍相位漂移为"
+            "「进循环立即注入」（boot 相位回归, 分钟边界对齐失效）");
+        free(loop);
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1247,6 +1382,42 @@ TEST_CASE("时间同步: re-inject分钟对齐决策表+板级相位接线 (K5-R
  *     TEST 7/8 设计态红（在册于通道①判读）; 既有面（主轮 90 齿, 尤其 TEST 1/2/3
  *     行为齿与 TEST 6 既有守卫）零偏移全绿。
  *
+ *   R4 追记（2026-09-22 追加轮冻齿修订红基线, acceptance-author 实跑; 授权链 =
+ *   pod-events human-decision d2148f66; 前置核查: R3 面 [S6]/状态栏隐藏已全落地,
+ *   R4 常量 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 全仓零命中, R3 裸形态精确串在板
+ *   文件恰 1 处——新齿必红前提逐 needle 实证）:
+ *   通道① 独立 gcc 线束（ts_red_r4_wrapper.sh, 脚本文件执行规避 WSL inline $?
+ *   坑）:
+ *     a) 哨兵形态（不链实现）:
+ *        cd firmware/main/test/acceptance/red-baseline && bash ts_red_r4_wrapper.sh
+ *        COMPILE_1A_EXIT=0（验收文件实编 error 零, 验收测试纪律 §4）; 实跑 =
+ *        8 Tests / 4 Failures: TEST 1/2/3 红（[S1] 六函数 weak 哨兵——线束未链
+ *        time_sync.c 的已知判读态, 非本包修订面）; TEST 4/5/6/7 绿（主轮实现已
+ *        落地, 未动面零偏移）; TEST 8 红（tooth 0: [S6] 第七函数 weak 哨兵, Unity
+ *        abort 于 tooth 0, R4 新齿解析性判读见 b）。
+ *     b) 强符号形态（链真实 time_sync.c）:
+ *        同脚本 COMPILE_1B_EXIT=0（error 零）; 实跑 = 8 Tests / 1 Failures:
+ *        TEST 1-7 全绿（既有行为表/结构齿零偏移）; TEST 8 红 = **新 R4 tooth 7**
+ *        （逐字: 「TS-R3b/R4 RED: 板文件 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 仅 0
+ *        处（期望 >= 2: #define 定义 + TimeSyncPeriodicLoop 延迟消费）——边界后
+ *        +2s 注入偏移未落」——R4 修法未实现的现状, 设计态红）。teeth 8/9/10 被
+ *        Unity abort 屏蔽, 解析性必红（逐 needle 实证）: tooth 8 = 循环区零偏移
+ *        常量消费; tooth 9 = 退役精确串恰 1 处（≠0）; tooth 10 = 零 #define
+ *        （strtol 解析 = -1 ≠ 2000）。tooth 11 = MUST-STAY-GREEN, 解析性绿（区内
+ *        首个 vTaskDelay 在板文件 :596、首个 ReinjectRtcTime( 在 :601, 延迟先于
+ *        注入序在世）。
+ *   通道② host runner 全量（修订齿随本文件注册自动携带, CMakeLists 零改）:
+ *     MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash .../host_app/espidf_wsl.sh
+ *     build （构建过, time_sync.acceptance.c 重编入 libmain.a）; 运行
+ *     build/host_infra_test.elf 实跑 = **92 Tests / 1 Failures 0 Ignored**, 唯一
+ *     红条目（逐字）: time_sync.acceptance.c:1248 「时间同步: re-inject分钟对齐
+ *     决策表+板级相位接线 (K5-R3b)」红于新 R4 tooth 7（KIDPAL_TS_INJECT_AFTER_
+ *     BOUNDARY_MS 仅 0 处）; 其余 91 齿全绿 = 既有面零偏移。
+ *   MUST-STAY-GREEN at R4 baseline: TEST 4 teeth 1-5（OTA 死代码 + lvgl 守门 +
+ *     需求契约 canary + 扫描器自检）、TEST 5/6 inject 家族与注册守卫、TEST 7
+ *     全齿（R3a 已落地）、TEST 8 teeth 0-6（[S6] 纯函数决策表 + 板级消费 + 裸
+ *     60000 节拍退役 + .h 声明）与 tooth 11（首拍相位边角齿）。
+ *
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-22  initial freeze (acceptance-author, TaskPackage
  *               260922-m3-k5-sntp-time-sync)。六 TEST 钉 K5-A1/A2/A3/A3b/A4/A5 host
@@ -1283,4 +1454,43 @@ TEST_CASE("时间同步: re-inject分钟对齐决策表+板级相位接线 (K5-R
  *               kidpal_ts_ms_to_next_minute / KIDPAL_TS_PERIODIC_PERIOD_MS 精确串）,
  *               对 home_p1.c 零新增注释要求, `upcoming` 字面子串零引入。红基线见
  *               头注「R3 追记」。
+ *   2026-09-22  R4 追加轮冻齿修订（human 拍板; 授权链 = pod-events human-decision
+ *               d2148f66; 根因实证 = 主线程串口捕获 2026-09-22 23:06-23:07——R3b
+ *               双稳态缺陷: pdMS_TO_TICKS 向下取整使唤醒落在边界前 ~10ms（tick
+ *               100Hz 量化）, 裸延迟 <10ms 时 vTaskDelay 立即返回 + 板级 I2C 读
+ *               RTC 耗时（数 ms）吃掉亚 tick 余量, 稳态落在「每分钟只在边界前注入
+ *               旧分钟值」的倒霉相位; R3 轮捕获的 <1s 为幸运相位掩盖缺陷; human
+ *               原话「时间有点不稳定呀, 这次又慢了一分钟, 我怀疑是你为了在1秒内
+ *               对齐, 导致他错过了, 就得差一分钟, 是不是可以放宽到3s」）——纯
+ *               additive 补齿 + 精确串退役负锚, 零放宽, 既有 teeth 0-6 零偏移:
+ *               ① tooth 7（新钉, RED today）: KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS
+ *               板文件内定义 + 消费 >= 2（落点裁定 = 板文件: 设备时序常量随消费
+ *               点, time_sync.h 保持 [S1] 纯逻辑单源、零设备语义）。
+ *               ② tooth 8（新钉, RED today）: TimeSyncPeriodicLoop 函数区内同时
+ *               消费 [S6] 纯函数与偏移常量 = 偏移真进延迟表达式的正锚（钉形态不
+ *               钉措辞: 函数区切取, 局部变量命名/算术形态自由）——防「常量定义了
+ *               但延迟仍裸用纯函数」的假接线。
+ *               ③ tooth 9（新钉负锚, RED today）: R3 裸形态精确串
+ *               vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms)) 退役零命中（现状恰
+ *               1 处; 廉价精确串卫兵, 主承载 = tooth 7/8）。
+ *               ④ tooth 10（新钉值域, RED today）: 偏移定值 = 2000（human 拍板
+ *               定值; 最坏显示滞后 2s + 1s 重渲 tick ≈ 3s = human 明示接受上限;
+ *               过小回 tick 量化/I2C 竞速窗, 过大超接受上限; 偏离 2000 须回
+ *               planner 重冻结, #define 须简单数值字面供 strtol 解析）。
+ *               ⑤ tooth 11（新钉边角, MUST-STAY-GREEN）: 首拍相位裁定 = boot 后
+ *               首个墙上分钟边界 +2s——现行为即「循环首动作 = 计算延迟后睡眠」
+ *               （offset 无条件加在每轮延迟上, 首轮亦然）, 非立即注入, 零改钉存
+ *               （区内延迟先于注入序守卫）; 首拍前的显示连续性由构造期 boot 注入
+ *               承载（TEST 5 teeth 5/6 的 boot+周期双调用点把住）; 钉边界恰好的
+ *               边角 = [S6] 纯函数「恰在边界 -> 60000」+ offset 2s 下唤醒恒在
+ *               边界后, 「错过边界」由 2s >> 量化+I2C 耗时结构性排除（行为等价
+ *               假设显式化, 真机收口挂 DEFERRED）。
+ *               ⑥ 零偏移面: [S6] 纯函数语义保持不动（tooth 1 决策表 8 点零改动）;
+ *               TEST 1-7 全部既有 tooth 零改动; TEST 8 teeth 0-6 零改动; inject
+ *               家族零触碰; CMakeLists 零改（修订齿随本文件自动携带进 host
+ *               runner）; home_p1.c 零接触预期（本轮齿不新增对其要求）。
+ *               ⑦ DEFERRED 同步重指: K5-R3b 真机判据改「连跨 2-3 分钟边界注入
+ *               恒带新分钟值 + 滞后 ≤3s 稳定」（原「滞后 <1s」随修法退役）。红
+ *               基线见头注「R4 追记」（通道① 两形态实跑 8/4 红与 8/1 红、通道②
+ *               92 Tests / 1 Failures, 唯一红 = 新 tooth 7 设计态红）。
  * --------------------------------------------------------------------------- */

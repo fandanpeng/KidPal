@@ -580,20 +580,30 @@ private:
     /* K5 周期时间维护 task 体：分钟对齐节拍消费 SNTP 同步旗标（写回 [S3]）+ 周期重读
      * 重注入（[S4]）。独立 task 承载阻塞 I2C 事务, 不占 esp_timer task（render_node
      * 1s tick 同住, 勿互卡）。 */
+    /* R4-1（260922-m3-k5-sntp-time-sync, human 拍板 d2148f66）: 边界后注入偏移常量。
+     * 落点裁定 = 板文件（设备时序常量随消费点; time_sync.h 保持 [S1]/[S6] 纯逻辑单源,
+     * 零设备语义）。值 = human 拍板定值 2000。 */
+#define KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 2000
+
     void TimeSyncPeriodicLoop() {
         for (;;) {
-            /* R3-2（260922-m3-k5-sntp-time-sync, human 拍板②）: 节拍相位由 [S6]
-             * 分钟对齐缝计算——距下一墙上分钟边界（epoch ms, CST-8 整分偏移下本地/UTC
-             * 分界同 :00）的毫秒延迟, 使 RTC 读点秒 ≈0、P1 显示滞后 = 唤醒抖动 <1s。
-             * 退役挂 boot 相位的固定 60000ms 节拍。 */
+            /* R4-1（260922-m3-k5-sntp-time-sync, human 拍板 d2148f66, R3-2 相位修订）:
+             * 节拍相位由 [S6] 分钟对齐缝计算——基础延迟 = 距下一墙上分钟边界（epoch ms,
+             * CST-8 整分偏移下本地/UTC 分界同 :00）的毫秒数, 再加边界后偏移常量
+             * KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS(2000)——唤醒恒落在边界后 ~2s, 远离
+             * pdMS_TO_TICKS 向下取整的 tick 量化 (~10ms) 与板级 I2C 读 RTC 耗时窗,
+             * 结构性消灭「错过边界 -> 恒慢 60s」双稳态缺陷; 最坏显示滞后 = 2s + 1s
+             * 重渲 tick ≈ 3s（human 明示接受上限）。R3 裸形态（纯函数无偏移, 唤醒可
+             * 落边界前注入旧分钟值）退役。 */
             struct timeval tv;
             gettimeofday(&tv, NULL);
             long long now_ms = (long long)tv.tv_sec * 1000LL + tv.tv_usec / 1000;
-            long long next_ms = kidpal_ts_ms_to_next_minute(now_ms); /* 防御态 -1 */
-            if (next_ms <= 0) {
-                next_ms = 60000; /* now<0 时钟未就绪兜底, 下轮重算 */
+            long long base_ms = kidpal_ts_ms_to_next_minute(now_ms); /* [S6] 防御态 -1 */
+            if (base_ms <= 0) {
+                base_ms = 60000; /* now<0 时钟未就绪兜底, 下轮重算 */
             }
-            vTaskDelay(pdMS_TO_TICKS((uint32_t)next_ms));
+            long long delay_ms = base_ms + KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS;
+            vTaskDelay(pdMS_TO_TICKS((uint32_t)delay_ms));
             if (s_ts_sntp_synced) {
                 s_ts_sntp_synced = 0;
                 SyncSystemTimeToRtc();

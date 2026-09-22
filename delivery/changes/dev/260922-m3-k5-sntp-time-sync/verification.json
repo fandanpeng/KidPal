@@ -1,23 +1,23 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r4.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r6.json)",
   "changeId": "260922-m3-k5-sntp-time-sync",
   "phase": "final",
-  "round": 4,
-  "invocationId": "5569266d-5288-450b-8e4d-eea5e94a6bdc",
+  "round": 6,
+  "invocationId": "9740f5f3-0979-4ce8-9dcd-1a46bd185f64",
   "verification": {
     "ok": true,
     "observedGateExit": 0,
     "gatesRun": 9,
     "gatesNotExecuted": [],
-    "evidenceRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r4.json",
+    "evidenceRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r6.json",
     "mechanicalCheck": {
       "script": ".claude/scripts/verifier-evidence-check.mjs",
-      "args": "--change-id 260922-m3-k5-sntp-time-sync --phase final --round 4 --invocation-id 5569266d-5288-450b-8e4d-eea5e94a6bdc",
+      "args": "--change-id 260922-m3-k5-sntp-time-sync --phase final --round 6 --invocation-id 9740f5f3-0979-4ce8-9dcd-1a46bd185f64",
       "exit": 0,
       "factOk": true,
       "runBy": "integrator",
       "date": "2026-09-22",
-      "addendumPriorRoundCheck": "追加轮双轮 integrator 实跑均 exit 0 / factOk:true（2026-09-22）：① r3 scoped：--phase scoped --round 3 --invocation-id a434a4b7-cdcb-4b82-8d72-6fc59b46f054；② r4 final：--phase final --round 4 --invocation-id 5569266d-5288-450b-8e4d-eea5e94a6bdc。主轮双查记录（r1 scoped / r2 final）见 git 历史 62807fc 前版本。",
+      "addendumPriorRoundCheck": "追加轮多轮 integrator 实跑均 exit 0 / factOk:true（2026-09-22）：① r3 scoped：--phase scoped --round 3 --invocation-id a434a4b7-cdcb-4b82-8d72-6fc59b46f054；② r4 final：--phase final --round 4 --invocation-id 5569266d-5288-450b-8e4d-eea5e94a6bdc；③ r5 scoped（R4）：--phase scoped --round 5 --invocation-id 830472c6-2927-4fce-aff1-9a477c55c12c；④ r6 final（R4）：--phase final --round 6 --invocation-id 9740f5f3-0979-4ce8-9dcd-1a46bd185f64。主轮双查记录（r1 scoped / r2 final）见 git 历史 62807fc 前版本。",
       "priorRoundMainCheck": "主轮双查（2026-09-22 主轮收口时实跑）：r1 scoped（0c3b1298-79ea-4948-8b21-665c580bc328）exit 0 / factOk:true；r2 final（eca0824f-5f85-4b2a-88a9-abc4052fac33）exit 0 / factOk:true"
     },
     "priorRoundsCheck": [
@@ -39,10 +39,20 @@
       {
         "round": 4,
         "invocationId": "5569266d-5288-450b-8e4d-eea5e94a6bdc（r4.json 在案）",
-        "producedBy": "verifier（追加轮 final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，11% free）/ contract-lint / acceptance-coverage（八条）/ mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed；fact ok:true / observedGateExit:0，fact 副本在本目录，原件在 verifier-evidence/rounds/r4.json）"
+        "producedBy": "verifier（追加轮 final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，11% free）/ contract-lint / acceptance-coverage（八条）/ mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed；fact ok:true / observedGateExit:0；R3 主批已人批合并回 main @ dedf986）"
+      },
+      {
+        "round": 5,
+        "invocationId": "830472c6-2927-4fce-aff1-9a477c55c12c（r5.json 在案）",
+        "producedBy": "verifier（R4 追加轮 scoped 六闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，0x61ec0 bytes 11% free）/ contract-lint / acceptance-coverage（八条，K5-R3b 含 R4 修订）/ mutation-check / docs-sync / security；fact ok:true / observedGateExit:0，integrator 机械双查 exit 0）"
+      },
+      {
+        "round": 6,
+        "invocationId": "9740f5f3-0979-4ce8-9dcd-1a46bd185f64（r6.json 在案）",
+        "producedBy": "verifier（R4 追加轮 final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e140，11% free）/ contract-lint / acceptance-coverage（八条）/ mutation-check（K5-R3b R4 形态变异登记）/ docs-sync / security / unit 95 passed / acceptance 41 passed；fact ok:true / observedGateExit:0，fact 副本在本目录，原件在 verifier-evidence/rounds/r6.json）"
       }
     ],
-    "hostRunner": "追加轮后 92 Tests（既有 90 齿零偏移 vs 主轮 + 本包新齿 2 TEST_CASE）；追加轮红基线（acceptance-author 实跑 2026-09-22，设计态）：通道①b 强符号线束 8 Tests / 2 Failures（红恰 = TEST 7/8 设计态，TEST 1-6 全绿零偏移）；通道② host runner 92 Tests / 2 Failures（红恰 = K5-R3a/R3b 设计态，既有 90 齿零偏移全绿）。主轮 mutation 自证 5 组每组 exit=1 / 未变异基线 exit=0（在案不重复）；追加轮 R3a/R3b 无实跑变异，mutationEvidence 登记面 + 设计态红≙变异态在案（粒度差如实申报见 review-packet.md 追加轮 addendum 第④节）",
-    "realDeviceEvidence": "deferred——真机第 1 轮已过（2026-09-22，e5b248a bin：A1 正锚实证 + K4 五项全过 + tm_year:70 全窗零条 + wday 转换正确，pod-events fc43063d 在案）；追加轮两项拍板后待复验面（隐藏后目测 / 读点秒≈0 目测 / A3 断电续航 / A3b 长开机）挂设备轮窗口（exitCriteria K5-E3），非 final verify 相位义务"
+    "hostRunner": "R4 追加轮后 92 Tests / 0 Failures（既有 91 齿零偏移 + R4 板级单点补丁落实现转绿）；R4 红基线（acceptance-author 实跑 2026-09-22，设计态，命令逐字在验收文件头注 R4 追记 + 线束脚本 ts_red_r4_wrapper.sh）：通道①a 哨兵形态 8 Tests / 4 Failures（1/2/3 weak 哨兵 + TEST 8 tooth 0；4-7 绿零偏移）；通道①b 强符号线束 8 Tests / 1 Failures（TEST 1-7 全绿零偏移，红恰 = 新 R4 tooth 7「板文件 KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS 仅 0 处」；teeth 8/9/10 解析性必红、tooth 11 解析性绿）；通道② host runner 终态 rebuild 92 Tests / 1 Failures（唯一红同 tooth 7，其余 91 齿全绿零偏移）。主轮 mutation 自证 5 组每组 exit=1 / 未变异基线 exit=0 在案不重复；R3 轮设计态红自证在案；R4 轮无实跑变异，mutationEvidence R4 形态登记面 + 设计态红≙变异态在案（粒度差如实申报见 review-packet.md R4 addendum 第④节）",
+    "realDeviceEvidence": "deferred——真机 R3 轮已过（2026-09-22，human 目测收口 pod-events 0e07412a：R3a 隐藏 PASS / R3b 相位对齐 <1s PASS（幸运相位）/ A3b 34 分钟长观察无冻结 PASS / A3 断电续航 deferred human 承担；其后 R3b 复观察暴露双稳态缺陷 → R4 修法，pod-events d2148f66）；R4 后待复验面（连跨 2-3 个分钟边界注入恒带新分钟值 + human 目测滞后 ≤3s 稳定 + R3a 隐藏目测 + A3 断电续航 + A3b 复验）挂设备轮窗口（exitCriteria K5-E3，绿后 rebuild + re-flash），非 final verify 相位义务"
   }
 }
