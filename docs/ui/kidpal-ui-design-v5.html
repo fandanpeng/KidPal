@@ -33,6 +33,7 @@ h1,h2,h3,h4,p{text-wrap:pretty}
 /* ── 手绘框族 ── */
 .frm{border:3px solid var(--ink);border-radius:var(--hand-r)}
 .frm-sm{border:3px solid var(--ink);border-radius:var(--hand-r-sm)}
+.rbox{border:3px solid var(--ink);border-radius:10px}
 .frm-flat{border-bottom:3px solid var(--ink);border-radius:var(--hand-r-sm)}
 .tilt1{transform:rotate(-1deg)}.tilt1r{transform:rotate(1deg)}.tilt2{transform:rotate(-2deg)}.tilt2r{transform:rotate(2deg)}
 
@@ -134,7 +135,7 @@ input[type=range].zoom::-moz-range-thumb{width:14px;height:14px;border-radius:50
 /* ── 画布内通用元件（全部绝对定位，单位＝真机像素） ── */
 .pgbuts{left:0;right:0;bottom:0;height:38px;border-top:3px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 9px;background:var(--paper)}
 .pgbuts .cell{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:900;white-space:nowrap}
-.pgbuts .kd{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:26px;padding:0 7px;border:3px solid var(--ink);border-radius:8px;font-family:var(--f-num);font-weight:800;font-size:12px;background:var(--paper)}
+.pgbuts .kd{display:inline-flex;align-items:center;justify-content:center;min-width:52px;height:26px;padding:0 10px;border:3px solid var(--ink);border-radius:8px;font-weight:900;font-size:13px;background:var(--paper)}
 .pgdots{display:flex;gap:7px;align-items:center}
 .pgdots i{width:9px;height:9px;border:2.5px solid var(--ink);border-radius:50%;display:block}
 .pgdots i.on{background:var(--ink);width:11px;height:11px}
@@ -177,7 +178,7 @@ input[type=range].zoom::-moz-range-thumb{width:14px;height:14px;border-radius:50
 .state-item .zoomwrap{--z:.72}
 
 /* ── 双列小画布（P3 子状态等） ── */
-.subshots{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:26px;margin-top:26px;align-items:start}
+.subshots{display:grid;grid-template-columns:repeat(auto-fit,minmax(450px,1fr));gap:26px;margin-top:26px;align-items:start}
 .subshots figure{display:flex;flex-direction:column;align-items:center;gap:9px}
 .subshots .zoomwrap{--z:1.05}
 .subshots figcaption{font-size:14.5px;font-weight:700}
@@ -231,10 +232,12 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
 .ovr-notes{display:flex;flex-direction:column;gap:9px}
 /* P2 课表网格 */
 .sched{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;font-weight:700;text-align:center}
-.sched th,.sched td{border:2px solid var(--ink);vertical-align:top;padding:2px 1px;line-height:1.32}
+.sched th,.sched td{border:1.5px solid var(--ink);vertical-align:top;padding:2px 1px;line-height:1.32}
 .sched th{font-size:11px;font-weight:900;vertical-align:middle;height:20px}
 .sched td.rowh{font-size:12px;font-weight:900;vertical-align:middle;width:26px}
-.sched td.inv,.sched th.inv{border-color:var(--ink)}
+.sched th.tdy,.sched td.tdy{border-left:4px solid var(--ink);border-right:4px solid var(--ink)}
+.sched th.tdy{border-top:4px solid var(--ink)}
+.sched tr:last-child td.tdy{border-bottom:4px solid var(--ink)}
 </style>
 </head>
 <body>
@@ -243,6 +246,12 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
   ② 明日预告改为「明早」标签区：标签与「接下来」同规格小字，下接明日安排——常显页回答「接下来」与「明早」两级；
   ③ P1 辅助条日期英文化：星期三 6月26日 → Tue 22 Sep（星期简写+日+月简写，无「今天」字样），仅 P1；
   ④ 删 canvas-p1 画布内标注针 ①②③④——布局锚图（shoot_design.mjs 截图，给 dev-loop Pod 消费）不再带针，避免开发比对出错。
+-->
+<!-- ══ v5 第二轮修订（2026-09-22 晚，真机可实现性收敛） ══
+  ⑤ 键帽条改动作文字入盒：所有按键盒内直接写动作文字（说话／翻页／问课程…），不显示 KEY/BOOT 键名；
+  ⑥ P2 今天列弃反色：改外轮廓加粗高亮——列外框 4px、列内横线保持 1.5px 细线（默认格线 1.5px；反色真机效果不好）；
+  ⑦ P3 弃倾斜手绘框：框族一律正常圆角矩形（10px 单值圆角、无倾斜——八值圆角＋微倾真机难实现且显乱）；右上角 ★×N 计数去框裸排（圆角框太挤）；
+  ⑧ 查字窗：左侧米字格框改正圆角矩形，右栏弃速查卡框族与静态对照小块、全部纯文本显示。
 -->
 <!-- ══ v4 修订记录（2026-09-14，全面对齐 requirements.md v1.50 + PHASE1-DESIGN-INPUT.md） ══
   ① P1 首页重心重排（WF-F1-01）：「接下来」日程+倒计时为主体，联网/时间/日期/温湿度/电量收进顶部辅助条小字（📶 打头、图标前置）；v3 的 112px 大时间与眨眼冒号、温度计小人/水滴宝宝随重排退场——时间退居辅助位是 v1.4 设备定位调整的既定代价，孩子若怀念可作时段彩蛋另议；
@@ -404,7 +413,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
   <div class="cover-grid">
     <div>
       <h1 data-od-id="cover-title">别像一台闹钟，<br/><em>要像一个住进屏幕的伙伴。</em></h1>
-      <p class="sub" data-od-id="cover-sub">给 8–12 岁的孩子、一块 400×300 的黑白反射屏、两颗物理键——这一版只回答一个问题：<b>孩子第一眼会不会喊出「好可爱」。</b>v5 主刀 P1：「接下来」改文本列表、「明早」标签预告区、辅助条日期英文化（Tue 22 Sep）；其余沿用 v4 对齐 requirements v1.50 的结构底盘，spec 修订随后同步。</p>
+      <p class="sub" data-od-id="cover-sub">给 8–12 岁的孩子、一块 400×300 的黑白反射屏、两颗物理键——这一版只回答一个问题：<b>孩子第一眼会不会喊出「好可爱」。</b>v5 主刀：P1 文本列表化＋「明早」标签区＋日期英文化（Tue 22 Sep）；键帽动作文字入盒（不显示键名）；P2 今天列改边框加粗；P3 与查字窗框族改正常圆角、查字窗右栏纯文本。spec 修订随后同步。</p>
       <div class="meta-stamps" data-od-id="cover-stamps">
         <span class="stamp-tag tilt1r"><b>1bpp</b> 纯黑白</span>
         <span class="stamp-tag tilt1"><b>400×300</b> 真实画布</span>
@@ -573,17 +582,17 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <h3>底部键帽提示条</h3>
       <div class="dev" style="position:relative;transform:none;width:352px;max-width:100%;height:64px;outline-offset:-2.5px">
         <div class="pgbuts" style="top:22px;height:38px">
-          <span class="cell"><span class="kd">KEY</span>说话</span>
+          <span class="cell"><span class="kd">说话</span></span>
           <div class="pgdots"><i></i><i class="on"></i><i></i></div>
-          <span class="cell">翻页<span class="kd">BOOT</span></span>
+          <span class="cell"><span class="kd">翻页</span></span>
         </div>
       </div>
       <table class="spec-table"><tbody>
         <tr><th>高度</th><td>38px，通栏贴底，上沿一条 3px 实线分隔</td></tr>
-        <tr><th>布局</th><td>左槽＝KEY 操作提示；<b>中槽＝3 点页面指示器</b>（当前页实心放大）；右槽＝BOOT 提示</td></tr>
+        <tr><th>布局</th><td>左槽＝左键操作提示；<b>中槽＝3 点页面指示器</b>（当前页实心放大）；右槽＝右键提示——键名（KEY/BOOT）不上屏，盒内直接写动作文字</td></tr>
         <tr><th>页点规则</th><td><b>页点仅 P1–P3 主页面显示</b>；覆盖层（提醒弹窗/查字窗/语音轮演出/删除确认）不显示页点，左右槽照常给操作提示；<b>条本身任何状态常驻</b>（基座 chrome，覆盖层盖不掉）</td></tr>
-        <tr><th>键帽规格</th><td>高 26px、最小宽 40px、圆角 8px、3px 描边、字母用圆胖数字体——这是界面上唯一的「操作控件」长相，但它是<b>提示</b>不是按钮</td></tr>
-        <tr><th>长按注记</th><td>需要长按时在键帽左侧挂小字「长按」，如 <span class="kd" style="height:22px;font-size:11px">BOOT</span><span class="kcap-note">长按</span></td></tr>
+        <tr><th>键帽规格</th><td>高 26px、最小宽 52px、圆角 8px、3px 描边、盒内动作文字（900 字重 13px）——这是界面上唯一的「操作控件」长相，但它是<b>提示</b>不是按钮</td></tr>
+        <tr><th>长按注记</th><td>需要长按时动作文字前缀「长按·」，如 <span class="kd" style="height:22px;font-size:11px">长按·删除</span></td></tr>
       </tbody></table>
     </article>
 
@@ -757,9 +766,9 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <svg style="width:58px;left:18px;bottom:52px" viewBox="0 0 48 14"><use href="#ic-wave"/></svg>
           <!-- 底部键帽条（全局 chrome，非页内元素） -->
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>说话</span>
+            <span class="cell"><span class="kd">说话</span></span>
             <div class="pgdots"><i class="on"></i><i></i><i></i></div>
-            <span class="cell">翻页<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">翻页</span></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="P1 画布缩放"/><output class="zoom-val">1.7×</output></label>
@@ -788,13 +797,13 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
         <div class="bezel"><div class="devsz"><div class="dev" data-od-id="canvas-p2">
           <table class="sched" style="left:5px;top:6px;width:390px;height:250px">
             <tr>
-              <th></th><th>周一</th><th>周二</th><th class="inv">周三</th><th>周四</th><th>周五</th><th>周六</th><th>周日</th>
+              <th></th><th>周一</th><th>周二</th><th class="tdy">周三</th><th>周四</th><th>周五</th><th>周六</th><th>周日</th>
             </tr>
             <tr style="height:96px">
               <td class="rowh">上午</td>
               <td>语文<br/>数学<br/>英语<br/>体育</td>
               <td>语文<br/>英语<br/>体育<br/>美术</td>
-              <td class="inv">数学<br/>语文<br/>英语<br/>音乐</td>
+              <td class="tdy">数学<br/>语文<br/>英语<br/>音乐</td>
               <td>语文<br/>数学<br/>科学<br/>英语</td>
               <td>数学<br/>语文<br/>体育<br/>美术</td>
               <td>英语</td>
@@ -804,7 +813,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
               <td class="rowh">下午</td>
               <td>科学<br/>美术</td>
               <td>数学<br/>科学</td>
-              <td class="inv">体育<br/>★钢琴</td>
+              <td class="tdy">体育<br/>★钢琴</td>
               <td>美术<br/>体育</td>
               <td>音乐<br/>班队</td>
               <td></td>
@@ -814,7 +823,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
               <td class="rowh">晚上</td>
               <td></td>
               <td></td>
-              <td class="inv">书法</td>
+              <td class="tdy">书法</td>
               <td>编程</td>
               <td></td>
               <td>舞蹈</td>
@@ -822,9 +831,9 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
             </tr>
           </table>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>问课程</span>
+            <span class="cell"><span class="kd">问课程</span></span>
             <div class="pgdots"><i></i><i class="on"></i><i></i></div>
-            <span class="cell">翻页<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">翻页</span></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="P2 画布缩放"/><output class="zoom-val">1.7×</output></label>
@@ -832,8 +841,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <aside class="rail">
         <ul class="pts frm-sm" data-od-id="p2-notes">
           <li><b>网格口径</b>：格内逐节列课程名——学校课上午 4 节、下午 2 节逐节列出，课外课（固定培训班＋临时安排）逐门列出；不按具体钟点排，一格多门逐门列出、不做格内滚动</li>
-          <li><b>三种 1bpp 标记</b>：今天列整列反色高亮（图例＝周三）；※＝临时安排；★＝被首页「接下来」标记的课（与 P1「14:00 钢琴课」呼应——跨页叙事连续性）</li>
-          <li><b>页内无标题、无操作提示</b>：省出高度给网格；操作提示归全局键帽条（左「KEY 问课程」／右「BOOT 翻页」）</li>
+          <li><b>三种 1bpp 标记</b>：今天列外轮廓加粗高亮（列外框 4px、列内横线仍 1.5px 细线，默认格线 1.5px；图例＝周三——反色真机效果不好已弃）；※＝临时安排；★＝被首页「接下来」标记的课（与 P1「14:00 钢琴课」呼应——跨页叙事连续性）</li>
+          <li><b>页内无标题、无操作提示</b>：省出高度给网格；操作提示归全局键帽条（左「问课程」／右「翻页」——键帽盒内直接写动作文字，不显示键名）</li>
           <li><b>字号压力</b>：上午格要塞 4 行课程名，格内 12px 小字正撞 1bpp 可读性下限（未实测）——先按可读字号排，实测后回写校准</li>
           <li>问细节用语音（「我下节课在哪」答案走问答框，不嵌回本页）；说「帮我显示课表」才切到本页；周末空格自然留白</li>
         </ul>
@@ -848,12 +857,12 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <div class="zoomwrap">
         <div class="bezel"><div class="devsz"><div class="dev" data-od-id="canvas-p3">
           <!-- 右上角星星计数 = 页身份（页内无标题） -->
-          <span class="frm-sm tilt2r" style="right:12px;top:10px;display:inline-flex;align-items:center;gap:5px;padding:2px 9px;background:#fff">
-            <svg style="width:17px" viewBox="0 0 48 48"><use href="#ic-star"/></svg>
-            <b style="font-family:var(--f-num);font-weight:800;font-size:15px">×5</b>
+          <span style="right:12px;top:10px;display:inline-flex;align-items:center;gap:5px">
+            <svg style="width:19px" viewBox="0 0 48 48"><use href="#ic-star"/></svg>
+            <b style="font-family:var(--f-num);font-weight:800;font-size:17px">×5</b>
           </span>
           <div style="left:14px;top:44px;right:14px;display:flex;flex-direction:column;gap:5px">
-            <div class="frm-sm tilt1" style="display:flex;align-items:center;gap:10px;padding:5px 10px;background:#fff">
+            <div class="rbox" style="display:flex;align-items:center;gap:10px;padding:5px 10px;background:#fff">
               <svg style="width:18px;flex:none" viewBox="0 0 48 48"><use href="#ic-star"/></svg>
               <b style="font-size:16px;font-weight:900">我和小兔子的冒险</b>
               <b style="font-family:var(--f-num);font-weight:800;font-size:12px;margin-left:auto">昨天</b>
@@ -877,9 +886,9 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <span class="voice-chip" style="left:14px;top:210px;font-size:11.5px"><svg style="width:14px" viewBox="0 0 48 48"><use href="#ic-mic"/></svg>说「我要讲故事 / 帮我记下来」开录新的</span>
           <div style="left:0;right:0;bottom:44px;text-align:center;font-family:var(--f-num);font-weight:800;font-size:12px">第 1 屏 · 共 3 屏</div>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>说话·双击看</span>
+            <span class="cell"><span class="kd">说话·双击看</span></span>
             <div class="pgdots"><i></i><i></i><i class="on"></i></div>
-            <span class="cell">下移<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">下移</span></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="P3 画布缩放"/><output class="zoom-val">1.7×</output></label>
@@ -887,7 +896,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <aside class="rail">
         <ul class="pts frm-sm" data-od-id="p3-notes">
           <li><b>页内无标题</b>：右上角 ★×N 计数即页身份——每记一篇集一颗星，收集成就感的种子；计数＝现存篇数（删除会 −1）</li>
-          <li><b>每条＝星星＋标题＋日期</b>；选中行<b>带边框不反白</b>（反白真机效果差，v1.31 human 裁）；进页默认光标落第一条</li>
+          <li><b>每条＝星星＋标题＋日期</b>；选中行<b>带边框不反白</b>（反白真机效果差，v1.31 human 裁）；v5 起全页框族一律正常圆角矩形（10px 单值圆角、无倾斜——手绘八值圆角＋微倾真机难实现且显乱）；进页默认光标落第一条</li>
           <li>超一屏底部「第 x 屏 · 共 y 屏」（与阅读态同心智）；BOOT 下移／双击跳屏／到底 wrap，<b>列表态无按键翻页出口</b>（离开＝KEY 双击看／KEY 长按回首页／语音切页）</li>
           <li>常驻语音入口提示（双指令）：「我要讲故事 / 帮我记下来」；BOOT 长按＝删除选中 → 确认弹窗（见下）</li>
         </ul>
@@ -904,11 +913,11 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           </div>
           <div style="left:180px;top:38px;font-family:var(--f-num);font-weight:800;font-size:44px;letter-spacing:-1px">02:35</div>
           <svg style="left:180px;top:94px;width:206px" viewBox="0 0 48 14" preserveAspectRatio="none" height="34"><path d="M2 7 L8 2 L13 12 L18 4 L24 12 L29 3 L35 11 L41 5 L46 9" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div class="bub tilt1" style="left:180px;top:138px;font-size:14px">跟着感觉说，我在记！</div>
+          <div class="bub" style="left:180px;top:138px;font-size:14px">跟着感觉说，我在记！</div>
           <div style="left:180px;top:184px;right:12px;font-size:12.5px;font-weight:700;line-height:1.65">我：今天我们去了动物园，<br/>我：看到了长颈鹿…</div>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>收尾</span>
-            <span class="cell">结束<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">收尾</span></span>
+            <span class="cell"><span class="kd">结束</span></span>
           </div>
         </div></div></div></div>
         <figcaption>子状态① 录音中（四态同骨架：左小伴 pose-record · 右内容区）——REC 闪点＋大时长＋声波＋整段累积回显；开口前的引导态复用聆听布局、气泡换「需要我帮你记点什么？」</figcaption>
@@ -923,9 +932,9 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <p style="left:16px;right:16px;top:54px;font-size:13.5px;line-height:1.72;font-weight:500;margin:0">今天我和小兔子去森林里探险。我们先找到了一个大蘑菇，小兔子说可以当雨伞。走着走着，天上真的下起雨来，我们躲在蘑菇底下等雨停…</p>
           <div style="left:0;right:0;bottom:52px;text-align:center;font-family:var(--f-num);font-weight:800;font-size:12.5px">第 1 屏 · 共 3 屏</div>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>念给我听</span>
+            <span class="cell"><span class="kd">念给我听</span></span>
             <div class="pgdots"><i></i><i></i><i class="on"></i></div>
-            <span class="cell">翻屏<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">翻屏</span></span>
           </div>
         </div></div></div></div>
         <figcaption>子状态② 阅读态（纯阅读＋朗读一义到底，无会话入口）——标题＋分隔线＋正文分屏（13.5px 起、行高 1.72）；BOOT 翻屏末屏 wrap 永不离页；KEY 长按退出回列表</figcaption>
@@ -933,14 +942,14 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <figure data-od-id="p3-delete-confirm">
         <div class="zoomwrap"><div class="bezel"><div class="devsz"><div class="dev">
           <b style="left:0;right:0;top:66px;text-align:center;font-family:var(--f-disp);font-weight:400;font-size:27px">删掉这篇？</b>
-          <div class="frm-sm" style="left:70px;top:122px;width:260px;display:flex;align-items:center;gap:9px;padding:6px 12px;background:#fff">
+          <div class="rbox" style="left:70px;top:122px;width:260px;display:flex;align-items:center;gap:9px;padding:6px 12px;background:#fff">
             <svg style="width:18px;flex:none" viewBox="0 0 48 48"><use href="#ic-star"/></svg>
             <b style="font-size:16px;font-weight:900">大恐龙的牙齿</b>
             <b style="font-family:var(--f-num);font-weight:800;font-size:12px;margin-left:auto">9月10日</b>
           </div>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>删掉</span>
-            <span class="cell">算了<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">删掉</span></span>
+            <span class="cell"><span class="kd">算了</span></span>
           </div>
         </div></div></div></div>
         <figcaption>子状态③ 删除确认弹窗（整屏覆盖层，与提醒同族）——列表态 BOOT 长按进；KEY＝确认（星星计数 −1）／BOOT 任意手势＝取消；10 秒无操作静默取消（不显示倒计时）</figcaption>
@@ -973,7 +982,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <div class="zoomwrap">
         <div class="bezel"><div class="devsz"><div class="dev" data-od-id="char-window">
           <!-- 左：米字格大字盘 -->
-          <div class="frm" style="left:10px;top:16px;width:236px;height:236px;background:#fff">
+          <div class="rbox" style="left:10px;top:16px;width:236px;height:236px;background:#fff;border-radius:14px">
             <!-- B8 锁定（v3 定稿沿用）：固件侧笔顺字盘打包 = 笔形 3 态（todo/cur/done）叠加复用 + 米字格单份背景，禁逐笔逐态整帧烘烤 -->
               <svg id="charsvg" style="position:absolute;left:10px;top:10px;width:208px;height:208px" viewBox="0 0 200 200">
               <g stroke="#000" stroke-width="1.5" stroke-dasharray="3 9">
@@ -997,22 +1006,14 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           </div>
           <!-- 右栏速查卡 -->
           <div style="left:262px;top:24px;font-family:var(--f-disp);font-weight:400;font-size:34px">xīng</div>
-          <div class="frm-sm" style="left:262px;top:76px;padding:2px 10px;font-size:14px;font-weight:400;font-family:var(--f-disp)">共 <b style="font-family:var(--f-num);font-weight:800;font-size:17px">9</b> 画</div>
-          <div style="left:262px;top:112px;font-size:14px;font-weight:400;font-family:var(--f-disp)">部首：<span class="frm-sm" style="display:inline-block;padding:0 8px;margin-left:4px">日</span></div>
-          <div style="left:262px;top:148px;display:flex;gap:7px">
-            <span class="frm-sm" style="display:inline-block;padding:2px 10px;font-size:15px;font-weight:400;background:#fff;font-family:var(--f-disp)">星星</span>
-            <span class="frm-sm" style="display:inline-block;padding:2px 10px;font-size:15px;font-weight:400;background:#fff;font-family:var(--f-disp)">星空</span>
-          </div>
+          <div style="left:262px;top:78px;font-size:15px;font-weight:400;font-family:var(--f-disp)">共 <b style="font-family:var(--f-num);font-weight:800;font-size:18px">9</b> 画</div>
+          <div style="left:262px;top:114px;font-size:15px;font-weight:400;font-family:var(--f-disp)">部首：日</div>
+          <div style="left:262px;top:150px;font-size:15px;font-weight:400;font-family:var(--f-disp)">组词：星星 · 星空</div>
           <div style="left:262px;top:188px;font-size:15px;font-weight:400;font-family:var(--f-disp)" id="progtext"></div>
           <svg class="bob" style="left:280px;top:226px;width:20px" viewBox="0 0 48 48"><use href="#ic-star"/></svg>
-          <!-- 静态对照小块 -->
-          <div style="left:356px;top:16px;display:flex;flex-direction:column;gap:6px">
-            <svg class="frm-sm" style="width:34px;height:34px;background:#fff" viewBox="0 0 200 200"><g fill="#000" opacity=".18"><path d="M66 20 C70 19 72 21 71 25 L70 74 C70 79 68 82 65 82 C62 82 61 79 61 74 L62 25 C62 21 63 20 66 20 Z"/><path d="M64 18 L136 18 C140 18 141 21 140 24 L138 74 C138 79 135 82 131 82 L131 76 L134 24 L66 24 Z"/><path d="M64 49 L136 49 C139 49 140 51 139 53 L139 55 L63 55 L63 53 C62 51 62 49 64 49 Z"/><path d="M63 78 L137 78 C141 78 143 82 140 84 C133 87 71 87 62 84 C59 82 60 78 63 78 Z"/><path d="M101 89 C104 88 106 90 104 93 L85 131 C83 136 79 137 77 135 C75 133 76 130 78 127 L97 91 C98 89 99 89 101 89 Z"/><path d="M80 131 L137 131 C140 131 141 133 140 135 L140 137 L78 137 L78 135 C77 133 78 131 80 131 Z"/><path d="M79 151 L134 151 C138 151 139 153 138 155 L138 157 L77 157 L77 155 C76 153 77 151 79 151 Z"/><path d="M101 89 C104 89 106 91 106 94 L106 191 C106 195 104 197 100 197 C96 197 94 195 94 191 L94 94 C94 91 96 89 99 89 Z"/><path d="M62 192 L138 192 C143 192 145 196 141 198 C132 201 70 201 61 198 C57 196 58 192 62 192 Z"/></g></svg>
-            <svg class="frm-sm" style="width:34px;height:34px;background:#fff" viewBox="0 0 200 200"><g fill="#000"><path d="M66 20 C70 19 72 21 71 25 L70 74 C70 79 68 82 65 82 C62 82 61 79 61 74 L62 25 C62 21 63 20 66 20 Z"/><path d="M64 18 L136 18 C140 18 141 21 140 24 L138 74 C138 79 135 82 131 82 L131 76 L134 24 L66 24 Z"/><path d="M64 49 L136 49 C139 49 140 51 139 53 L139 55 L63 55 L63 53 C62 51 62 49 64 49 Z"/><path d="M63 78 L137 78 C141 78 143 82 140 84 C133 87 71 87 62 84 C59 82 60 78 63 78 Z"/><path d="M101 89 C104 88 106 90 104 93 L85 131 C83 136 79 137 77 135 C75 133 76 130 78 127 L97 91 C98 89 99 89 101 89 Z"/><path d="M80 131 L137 131 C140 131 141 133 140 135 L140 137 L78 137 L78 135 C77 133 78 131 80 131 Z"/><path d="M79 151 L134 151 C138 151 139 153 138 155 L138 157 L77 157 L77 155 C76 153 77 151 79 151 Z"/><path d="M101 89 C104 89 106 91 106 94 L106 191 C106 195 104 197 100 197 C96 197 94 195 94 191 L94 94 C94 91 96 89 99 89 Z"/><path d="M62 192 L138 192 C143 192 145 196 141 198 C132 201 70 201 61 198 C57 196 58 192 62 192 Z"/></g></svg>
-          </div>
           <div class="pgbuts">
-            <span class="cell"><span class="kd">KEY</span>重播</span>
-            <span class="cell">结束<span class="kd">BOOT</span></span>
+            <span class="cell"><span class="kd">重播</span></span>
+            <span class="cell"><span class="kd">结束</span></span>
           </div>
         </div></div></div>
         <label class="zoom-row"><svg viewBox="0 0 48 48"><use href="#ic-mag"/></svg><input class="zoom" type="range" min="0.6" max="2.2" step="0.05" value="1.7" aria-label="查字窗画布缩放"/><output class="zoom-val">1.7×</output></label>
@@ -1024,7 +1025,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
           <li><b>会话口径</b>：弹窗播 TTS 引导语（「星字一共 9 笔，跟着我一起写吧」——不逐笔念笔名），播完会话即结束、不回聆听态，孩子安静照写</li>
           <li><b>窗口口径</b>：覆盖窗无页点；驻留到按键，或 5 分钟无操作自动关窗回原页；BOOT／KEY 长按＝关窗回原页不翻页（v1.39 隔离）</li>
           <li><b>Teaching 字体红线</b>：只有米字格里的示范「星」字必须规范字形（横平竖直、不抖不斜，孩子照着写）；拼音／部首／组词等说明文字回归可爱体，不当教材</li>
-          <li>右栏拼音／笔画数／部首／组词保持速查卡密度，不做关键词解释墙；右侧两枚小方块＝「未写态／完成态」静态对照，供评审离线核对</li>
+          <li>右栏拼音／笔画数／部首／组词纯文本列出，不做关键词解释墙（v5 弃速查卡框族与静态对照小块——右侧无框、全部文本显示；框族同时改正圆角矩形）</li>
         </ul>
       </aside>
     </div>
@@ -1050,8 +1051,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
         <div class="bub bob" style="left:208px;top:94px;font-size:19px">我在听！</div>
         <div style="left:192px;top:152px;right:14px;font-size:13px;font-weight:700;line-height:1.7">我：今天下午有什么课？<br/>我：那明天呢？</div>
         <div class="pgbuts">
-          <span class="cell"><span class="kd">KEY</span>说完啦</span>
-          <span class="cell">结束<span class="kd">BOOT</span></span>
+          <span class="cell"><span class="kd">说完啦</span></span>
+          <span class="cell"><span class="kd">结束</span></span>
         </div>
       </div></div></div></div>
       <figcaption><b>① 聆听中</b>——三层冗余反馈（竖耳／麦克风／气泡）＋<b>话语回显区</b>：孩子说的话逐句上屏，确认「它听清了没」；回显区滚动、超屏高滚出。记录语境引导态复用本布局、气泡换「需要我帮你记点什么？」</figcaption>
@@ -1065,8 +1066,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
         <b class="bob" style="left:238px;top:98px;font-family:var(--f-disp);font-weight:400;font-size:23px;transform:rotate(-6deg);animation-delay:.6s">?</b>
         <b class="bob" style="left:272px;top:70px;font-family:var(--f-disp);font-weight:400;font-size:19px;transform:rotate(5deg);animation-delay:1s">?</b>
         <div class="pgbuts">
-          <span class="cell"><span class="kd">KEY</span>不等了</span>
-          <span class="cell">结束<span class="kd">BOOT</span></span>
+          <span class="cell"><span class="kd">不等了</span></span>
+          <span class="cell"><span class="kd">结束</span></span>
         </div>
       </div></div></div></div>
       <figcaption><b>② 思考中</b>——孩子说完这一句即弹出（状态切换与页面弹出同一时刻）；挠头＋飘问号把「等待」演成剧情；超 4 秒先开口安抚，绝不冷场</figcaption>
@@ -1079,8 +1080,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
         <div class="eq" style="left:182px;top:66px;display:flex;gap:5px;align-items:flex-end;height:32px;position:absolute"><i style="height:16px"></i><i style="height:28px"></i><i style="height:20px"></i><i style="height:32px"></i><i style="height:12px"></i></div>
         <div class="frm tilt1r" style="left:182px;top:110px;width:204px;padding:8px 12px;background:#fff;font-size:14.5px;font-weight:900;line-height:1.55">明天上午有语文、数学、英语、体育，下午有科学和美术。晚上没有课哦。</div>
         <div class="pgbuts">
-          <span class="cell"><span class="kd">KEY</span>打断</span>
-          <span class="cell">结束<span class="kd">BOOT</span></span>
+          <span class="cell"><span class="kd">打断</span></span>
+          <span class="cell"><span class="kd">结束</span></span>
         </div>
       </div></div></div></div>
       <figcaption><b>③ 播报中（＝问答框）</b>——百科问答与语音问课表的答复都在这里同步上屏；声波条跳动给「还在说」的证据；长文滚动看完；按 KEY 随时可以插嘴</figcaption>
@@ -1096,8 +1097,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
         </div>
         <b style="left:192px;top:104px;right:14px;font-family:var(--f-disp);font-weight:400;font-size:25px;line-height:1.3">记得带画具！</b>
         <div class="pgbuts">
-          <span class="cell"><span class="kd">KEY</span>知道了</span>
-          <span class="cell">关闭<span class="kd">BOOT</span></span>
+          <span class="cell"><span class="kd">知道了</span></span>
+          <span class="cell"><span class="kd">关闭</span></span>
         </div>
       </div></div></div></div>
       <figcaption><b>④ 提醒弹窗（整屏覆盖 · 最高层）</b>——与语音轮同骨架，不再单独设计；提示音＋语音读出＋弹窗三件套同时发生；驻留到按键不设自动消失；录音中到达则排队延后；KEY／BOOT 都是关闭回原页、不翻页</figcaption>

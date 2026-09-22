@@ -44,7 +44,14 @@ async function shootAll(z, suffix, threshold) {
   await page.addStyleTag({ content: `.devsz{--z:${z} !important}` });
   await page.waitForTimeout(150);
   const W = 400 * z, H = 300 * z;
-  for (const { el, id } of shots) {
+  const els = shots.map(s => s.el);
+  for (let i = 0; i < shots.length; i++) {
+    const { el, id } = shots[i];
+    // 邻画隔离：多画布同排时 z=2 的 800px 画布横向溢出、后 DOM 画布叠绘到前画布右半上
+    // （实测子画面/语音态 2x 图被邻居内容污染）。截前隐藏其它画布——visibility 保布局不重排。
+    await page.evaluate(({ list, idx }) => {
+      for (let j = 0; j < list.length; j++) list[j].style.visibility = j === idx ? '' : 'hidden';
+    }, { list: els, idx: i });
     await el.scrollIntoViewIfNeeded();
     // 整数像素吸附 + 整数 clip：el.screenshot() 内部会再滚动，与吸附竞争，且跨版本页面
     // 高度不同会让文字光栅相位漂移（实测未改页面可差到 3%+）。改为手动滚动后按整数
@@ -68,6 +75,7 @@ async function shootAll(z, suffix, threshold) {
     }
     console.log(`  ${out} ${W}x${H}`);
   }
+  await page.evaluate(({ list }) => { for (const e of list) e.style.visibility = ''; }, { list: els });
 }
 
 await shootAll(2, '.png', false);      // 2× 抗锯齿细节版
