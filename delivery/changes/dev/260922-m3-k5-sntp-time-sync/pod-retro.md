@@ -1,28 +1,36 @@
-# pod-retro · 260922-m3-k5-sntp-time-sync（第一人称热记忆，planner）
+# pod-retro · 260922-m3-k5-sntp-time-sync（第一人称热记忆，planner；追加轮 R3 后重写，最后一轮为准）
 
-> 标签：第一人称过程体感，只记主观感受与改进项。tokens/gates/rounds/verdict/test results 以 machine artifacts / verifier-evidence / pod-events 为权威，本文件不复述。escalation themes：本包零 agent-escalation 事件（pod-events 交叉引：dispatch ×3——acceptance-author `a94d76f0da4ff3acb`、builder `a84061c385cfc26c7`、integrator `a1ee382880eb28a45`；friction over-scan ×2 `b1f8768f`/`16f24d4b`；零 human-decision、零 human-correction——human 只出场于 launch 指示，loop 中途零打断）。
+> 标签：第一人称过程体感，只记主观感受与改进项。tokens/gates/rounds/verdict/test results 以 machine artifacts / verifier-evidence / pod-events 为权威，本文件不复述。escalation themes：本包零 agent-escalation 事件（pod-events 交叉引：dispatch ×6——acceptance-author 主轮 `a94d76f0da4ff3acb` + 追加轮 `a4119cd8b31bc25cf`、builder 主轮 `a84061c385cfc26c7` + 追加轮 `a204cd4fc46609197`、integrator 主轮 `a1ee382880eb28a45` + 追加轮 `a8743aa43cda65e10`；friction over-scan ×3 `b1f8768f`/`16f24d4b`/`215edf4d`；human-decision `fc43063d` 追加拍板；零 human-correction）。
 
-## 卡点与体感
+## 追加轮体感（2026-09-22 · 真机第 1 轮 PASS + human 两拍板）
 
-1. **这棒最顺的是「元数据闸判据 checklist 化」直接兑现了 K4 留根**。K4 两轮 verifier 红全是 planner 元数据（contractRefs 空、mutationEvidence 短 id），这棒我在 finalize 前先把 taskpackage-required-check / mutation-check 的源码判据当 checklist 走了一遍——预飞时就抓到三个 K4 同款坑（origin.upstreamType 不在合法闭集、mutationEvidence 记录键名要用 `acceptance` + 全文本值而非短 id、brief 副本要进 current/ 目录），两轮预算净赚，verifier 一次绿。
-2. **acceptance-author 与 builder 的双向诚实是本棒质量的地基**：acceptance-author 冻齿时把真机半 4 项如实标 deferred 不伪造；builder 一次跑绿但报告里主动交了 8 条诚实申报（写回形态实现化、boot 恢复侧 year_ok 代理语义、sdkconfig 生成面陷阱、注释字面子串陷阱）——这些没有一条是验收齿逼出来的，全是自发的。我派单时把「请 verifier/integrator 复核认可」的通道留开，integrator 复核后入 Correctness 轴，链路闭合。
-3. **mutation 执行证明的 provenance 差距还在**：builder 5 组变异自证是临时脚本实跑、原始日志只在 dispatch transcript 里非仓内制品——integrator 如实标注来源后我只能记「转述可信」。K4 Review Packet NIT 说的就是这个粒度差，这棒没有变好也没有变坏。下次值得让 builder 把变异实跑落成一次性仓内 evidence 文件（哪怕用完即标 temp）， provenance 就闭环了。
-4. **launch card 的特记警告（taskpackage 曾截断损坏）让我 intake 时逐字段核对了 taskpackage↔plan 一致性**——虽然最终问题不在截断面（upstreamType 非法值是原始落盘就有的），但「不信任上游落盘、闸判据亲核」的姿势这棒再次划算。
-5. 真机半 4 项挂设备轮窗口，K4 的五项目测复验可同窗顺带（K5 bin 已含 K4 修复）——合并协调点到真机相位再约窗，本相位不动。
+1. **真机第 1 轮一次全过是主轮质量的真实回报**：A1 正锚（rtc_writeback/reinject 节拍/tm_year:70 清零/状态栏首渲染）、K4 五项全过——「齿测不到的路径」这次没有再藏雷，host 齿 + 结构 needle 的覆盖面对时间链路这类纯逻辑+挂点型改动够用。对比 K4 live 轮两次 FAIL 的字形路径（格式语义复杂面），本包的 seam 钉法（纯函数行为表 + 结构在世齿）在真机上兑现率高，这条经验值得记：**能落纯函数的语义尽量落纯函数齿，真机风险面就小**。
+2. **human 两拍板的授权链走法顺畅**：真机目测发现 → 口头拍板 → 主线程转发消息即凭据 → pod-events human-decision 落账 → 冻齿修订 → 实现 → 复验。拍板①（隐藏状态栏时钟）本质是 UI 偏好迭代，但 human 主动给了边界（温度/电量/wifi 零改）——边界即验收语义，acceptance-author 把边界直接钉成 teeth 3-5 在世守卫，派单零损耗转写。
+3. **acceptance-author 的守门裁定（保留 tm_year 守门不退役）是我没有预见的正确裁法**：我原以为隐藏时钟后守门会成死代码要处置，裁定时指出 P1 消费面不经该守门、守门仍辖节流 W 日志分支——冻齿语义裁定的质量直接省了一轮反复。A1 锚重指（状态栏→P1 辅助条）也处理得干净，头注三处 + 承载齿一次钉齐。
+4. **追加轮 mutation 执行面粒度差依旧**：R3a/R3b 未实跑变异，替代证据 = 设计态红≙变异态在案（红恰 = 两新齿、既有 90 零偏移）。integrator 如实申报登记面与执行面差——这个欠账跨了主轮、追加轮两棒，若判官在合并门要执行证明，补跑手法已在 expectedRed 逐字登记。下棒值得把「mutation 实跑落仓内 evidence 文件」变成 builder 收尾标准动作。
+5. 机械 supervisor verdict（ESCALATE）跨追加轮押后不变——机械闸 write-once 语义在多轮场景下的处理（不重跑、不覆盖、随包在案）是首次实操，K4 的 stale-verdict refresh 先例是「真变更后」，本包是「合并门押后」，两种形态都成立。
+
+## 主轮体感（保留要点）
+
+- 元数据闸判据 checklist 化直接兑现 K4 留根：finalize 预飞抓到三个 K4 同款坑（upstreamType 闭集、mutationEvidence 记录形状、brief 进 current/），verifier 主轮一次绿。
+- acceptance-author 与 builder 双向诚实是质量地基：真机半 4 项如实 deferred、builder 8 条主动申报（写回形态实现化、恢复侧 year_ok 代理、sdkconfig 生成面陷阱、注释字面子串陷阱）。
+- mutation 执行证明 provenance 差距跨棒存在（临时脚本实跑、原始日志只在 transcript）——见追加轮第 4 条。
+- launch card 特记（taskpackage 曾截断）促成 intake 逐字段亲核——「不信任上游落盘、闸判据亲核」连续两棒划算。
 
 ## 别扭的 acceptance / 帮倒忙的钩子
 
-- mutation-check 的记录形状（键名 `acceptance` + 整段文本值才能命中字符串型 acceptance 条目）对起包方依然是隐式的——报错只列 missing 全文本、不提示「记录里要包含整段 acceptance 原文」。K4 踩过、这棒靠读源码避掉，但这个判据值得写进报错提示或 DEV-GOVERNANCE 起包前置清单（机械闸改进建议，非阻塞）。
-- required-check 对 brief 在场的判定按 taskpackage 文件路径所在目录找——`current/taskpackage.json` 就要在 current/ 再放一份 brief 副本，双份维护是个小别扭（改判据按 changeId 目录解析更干净，非阻塞建议）。
-- builder 报的 sdkconfig 生成面陷阱（defaults 改了不生效、tracked 生成面 sdkconfig 显式 =1 胜出）是 IDF 侧老坑，齿钉在生成面才算真前提——这类「生成面 vs 源面」双写现状值得在板上留个先例记录（builder 已双改并复验，本包已闭环）。
+- mutation-check 记录形状（`acceptance` 键 + 整段文本值命中字符串型条目）对起包方依然隐式——值得写进报错提示或 DEV-GOVERNANCE 起包前置（非阻塞建议）。
+- required-check 按 taskpackage 文件路径所在目录找 brief——current/ 要副本，双份维护别扭（非阻塞建议）。
+- sdkconfig 生成面陷阱（defaults 改了生成面显式 =1 胜出）——「生成面 vs 源面」双写先例值得留记录（builder 已双改并复验，本包闭环）。
 
 ## 人工纠偏体感
 
-- 本棒 human 只出场一次（launch 指示），loop 中途零打断、零升级——分层出场纪律连续第四棒成立。loop-retro 阈值 19 继续挂账（closeout advisory 已提），发起责任在主线程/human，第四棒提请。
-- 真机相位的人工协调窗口还在前面（约窗 + 在场），这是本包剩余的唯一 human 义务。
+- human 分层出场：主轮零打断；追加轮一次出场（真机第 1 轮后两拍板）且自带边界与流程要求——分层纪律连续第四棒成立。
+- 设备轮窗口协调（隐藏目测/读点秒≈0/A3 断电续航/A3b 长开机）是本包剩余唯一 human 义务，约窗后真机全过回合并门（ESCALATE verdict 押后不变）。
+- loop-retro 阈值 19 advisory 连续第四棒挂账，发起责任在主线程/human。
 
 ## 下次改进
 
-- finalize 预飞 checklist 固化为本棒习惯：taskpackage-required + mutation-check + acceptance-coverage 三闸源码判据逐条对——连续两棒证明净赚。
-- mutation 自证落仓内 evidence 文件，消掉 provenance 转述差。
-- 同 defect 第二次修复不踩中时，把缺失实证面搬到可观测侧（K4 第 3 追加轮教训）——本棒没用上，但仍是 seam 类实现的第一常识。
+- mutation 实跑落仓内 evidence 文件，消掉 provenance 转述差（跨两棒的同一欠账）。
+- finalize 预飞三闸判据 checklist 固化为习惯（连续两棒净赚）。
+- 能落纯函数的语义尽量落纯函数齿——真机一次过的直接经验。
