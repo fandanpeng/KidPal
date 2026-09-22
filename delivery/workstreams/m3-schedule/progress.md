@@ -222,3 +222,23 @@
 - **合并门（human 批准升级合并，pod-events f0d8ca46）**：机械 supervisor-verdict 闸 **ESCALATE**（git diff 重算 riskTier critical：firmware/sdkconfig + sdkconfig.defaults 命中 critical-path 清单；实际 diff = CONFIG_LWIP_SNTP_MAX_SERVERS 1→3，human 知悉上下文后裁决批准）→ merge-driver --pod --human-approval-ref 标准链（off-main/契约/provenance 闸照拦不豁免，全过）：rebase OK / quick-check OK / **merge OK**——merge commit `dedf986`（main @ `3cc37e5` 簿记），token 释放。**K4 收尾落账 commit（`6cb4824`，此前留在常驻分支）经 rebase 随本批一并回 main**（launch 段预告的「随下批 pod 合并回 main」兑现）。
 - **收尾落账**：dev INDEX closed 行（integrator closeout 相位落）、board merged、pod-events merge-completed @dedf98697e82（main 簿记）、pod-retro 主轮/追加轮/真机窗三段（第一人称热记忆）。
 - **持续挂账（非本包义务）**：① loop-retro 阈值 19 advisory（主线程 /loop-retro，连续第四棒提请）；② 图索引 re-index（time_sync [S1]/[S6] 新符号未入图）；③ A3 断电续航真机实证（human 观察，口头反馈补账）；④ reinject 双触发修法（advisory，后续批参考）。
+
+## 2026-09-22 · K5 R4 追加轮闭环 + 合并落账（planner Pod，human 批准合并）
+
+- **R4 起因**：R3b 分钟对齐真机复观察发现**双稳态缺陷**（有时 <1s / 有时恒慢 60s）——根因 = pdMS_TO_TICKS 向下取整 + vTaskDelay(0) 自旋 + 板级 I2C 读 RTC 耗时 → 唤醒落分钟边界前注入旧值；主线程串口捕获（23:06-23:07，边界后 55s 零注入、仅两条注入都带旧分钟 23:06）实锤。human 拍板放宽（pod-events `d2148f66`）：注入点改边界后 +`KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS`(=2000)，最坏滞后 ≈3s 明示接受。
+- **R4 执行（零 fixer 轮）**：acceptance-author 冻齿修订（TEST 8 teeth 7-11：常量定值 strtol==2000 钉死偏离须重冻结 + R3 裸形态退役负锚 + 首拍序守卫；teeth 0-6 零偏移；设计态红通道①b 8/1 + 通道② 92/1 红恰 = tooth 7）→ builder 单点补丁（板文件一处：常量 #define + 延迟表达式 base_ms + 2000，host 92 Tests / 0 Failures，device build 11% free）→ verifier scoped r5 + final r6 九闸全绿 → integrator 零 finding 收口（`8efe520`）。
+- **R4 真机复验 PASS（human 批准合并，pod-events `e8762159`）**：串口捕获 23:48:15→23:51:41 跨 3 边界——writeback 23:48:59.4 ok；reinject 三连边界（23:49:01±1 / 23:50:01±1 / 23:51:01±1）**恒带当分钟新值、单次注入无旧值对、间隔精确 60.02s、无长静默**——R3 双稳态特征（边界前旧值 + 55s 零注入）消失，冻齿真机项达标；human 原话「合并吧」。
+- **合并链**：merge-driver --pod --human-approval-ref 标准链 → rebase OK / quick-check OK / **merge OK**——R4 批回 main，token 释放。
+- **R4 遗留挂账**：① mutation 执行面粒度差跨三棒（R3/R4 均以设计态红≙变异态在案，实跑变异未落仓内 evidence——pod-retro 已记「下棒必须处理」）；② A3 断电续航真机实证（human 观察反馈补账，`0e07412a` deferred 知情）；③ loop-retro 19 advisory（第四棒提请）；④ 图索引 re-index（time_sync [S1]/[S6] 符号）。
+- **验收常识沉淀（pod-retro R4 段）**：睡眠/延时类板级行为 host 齿只能钉形态不能钉时序——时序语义必须设备窗实证且跨多次边界采样（单边界观察会采到幸运相位；双稳态 motif = K4 双分支盲区后第二例）。
+
+## 2026-09-23 · K6 开机自动建连立项 + launch 面就绪（主线程，human 离席夜间自主跑）
+
+- **立项**：human 现场报告「开机/重启后设备与 Front 连接不自动建立，需按键才建连；首页『接下来』无内容、课表页直切无数据」。主线程实证根因——`WebsocketProtocol::Start()` 空桩（小智上游惰性连接语义），`OpenAudioChannel()` 仅四个人工交互点调用（application.cc:712/:745/:784/:986），boot 链路无建连；server 侧 ws_gateway 建连即推首页「接下来」+ 提醒轮询，设备不连全悬空。课表页（症状 B）根因更深：周网格缓存唯一填充源是语音轮 display tool call，三推送触发均不推周网格——**human 拍板 B 另走设计入口（可能触契约），A-only 入包**。
+- **triage**：architect 裁决 **②单包 Lite**（不触契约面——契约 §1.3⑥ 明文建连/推送时机属行为策略不进契约，architect 已核 interface-contract.md）+ **Shape A 形状修订**：弃 Connecting 态互斥（REBUT 两条：Connecting 是承重 UI 语义——voice_begin 弹语音轮层清提醒弹窗；断网 handler 在 Connecting 态 CloseAudioChannel 与后台 task 构成 use-after-free），改「`auto_connect_in_flight_` 标志互斥 + 状态恒 Idle + 主循环 handler 内判起 + OnNetworkError lambda 静默拦截 + 3 次退避重试 + 四人工 call site 加守卫」。human 离席前预授权「技术问题 call architect」，Shape A 按授权落、回席后补 ack（plan.md 留痕）。
+- **建包** `260923-m3-k6-boot-auto-connect`（plan.md reviewed plan + taskpackage.json + launch-card.md），挂本 workstream（attach-existing），排常驻树第 10 棒（K5 已闭环 @b869658）。
+- **上游已知红基线锚（差异判停 2026-09-23，两面分记）**：
+  - server 面锚：`git diff --quiet dc6094a HEAD -- server` 零差异 → 引用 K4 launch 段锚「server 95 @ dc6094a」（量测命令 `python -m pytest -q --import-mode=importlib -m "not live" <repo>/server/acceptance`，2026-09-22 量测于 dc6094a，面域 = server）；
+  - firmware 面锚：`git diff --quiet 9cae452 HEAD -- firmware` **有差异**（K5 批 21 文件）→ **现跑** WSL host runner：**92 Tests / 0 Failures** @ `b869658`（量测命令 `firmware/main/test/host_app espidf_wsl.sh build` + `host_infra_test.elf` run，2026-09-23 量测于 b869658，面域 = firmware）。
+  - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
+- **launch 指示**：human 离席（2026-09-23 夜）预授权主线程准备好后直接启动 dev loop（planner Pod in-process，K5 先例），真机锚挂设备轮窗口不阻塞 host 半收口。

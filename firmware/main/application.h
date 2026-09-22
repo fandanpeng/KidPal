@@ -142,6 +142,10 @@ private:
     bool play_popup_on_listening_ = false;  // Flag to play popup sound after state changes to listening
     int clock_ticks_ = 0;
     TaskHandle_t activation_task_handle_ = nullptr;
+    // K6 (M3-K6 boot-auto-connect, Shape A): 自动建连互斥标志——in-flight 期间恒 true,
+    // 标志互斥替代 Connecting 状态互斥（自动建连全程状态恒 Idle）。置位仅主循环 handler
+    // 判定后、task 所有退出路径必清（泄漏 = 人工按键永久 no-op + 自动建连永久失效）。
+    bool auto_connect_in_flight_ = false;
 
 
     // Event handlers
@@ -156,6 +160,11 @@ private:
 
     // Activation task (runs in background)
     void ActivationTask();
+    // K6 (M3-K6): 自动建连「判 + 起」入口——由两个触发点（激活完成 / 网络重连 Idle）
+    // 在 main-loop handler 内同步调用（TOCTOU 判设闭合）；内部预检 url/token、守卫
+    // 三条件、置 in-flight 标志、xTaskCreate "AutoConnect" 后台 task（task 内 3 次
+    // 退避重试 + 每次重试前重查三条件 + 所有退出路径必清标志）。
+    void TryStartAutoConnect();
 
     // Helper methods
     void CheckAssetsVersion();

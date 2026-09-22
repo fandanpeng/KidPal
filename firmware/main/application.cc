@@ -48,6 +48,13 @@
  * ------------------------------------------------------------------------ */
 static bool s_sntp_started = false;
 
+/* -------------------------------------------------------------------------- *
+ * K6（TaskPackage 260923-m3-k6-boot-auto-connect）[S3] 有界退避决策表：
+ * 自动建连重试 3 次、递增秒序列 5s/10s/20s（封顶 3 次; host 齿钉决策表形态不钉
+ * 时序, 实时节奏归真机窗 K6-A7; vTaskDelay 换算乘法形态见 TryStartAutoConnect task）。
+ * ------------------------------------------------------------------------ */
+static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
+
 /* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
 static void KidPalSntpMonitorTask(void *arg)
 {
@@ -364,6 +371,10 @@ void Application::HandleNetworkConnectedEvent() {
             app->activation_task_handle_ = nullptr;
             vTaskDelete(NULL);
         }, "activation", 4096 * 2, this, 2, &activation_task_handle_);
+    } else if (state == kDeviceStateIdle) {
+        // K6 (M3-K6 boot-auto-connect): 网络重连后 Idle 且通道未开 → 自动建连恢复
+        // （触发点 2——断网重连自动恢复; main-loop handler 内判 + 起）。
+        TryStartAutoConnect();
     }
 
     // Update the status bar immediately to show the network state
@@ -404,6 +415,11 @@ void Application::HandleActivationDoneEvent() {
     ota_.reset();
     auto& board = Board::GetInstance();
     board.SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+
+    // K6 (M3-K6 boot-auto-connect): 激活完成后自动建连（触发点 1——Idle 且通道未开
+    // 时在 main-loop handler 内判 + 起, 后台 task 建连, 不阻塞）。状态已入
+    // kDeviceStateIdle（见本函数上方 SetDeviceState(kDeviceStateIdle)）。
+    TryStartAutoConnect();
 }
 
 void Application::ActivationTask() {
@@ -424,6 +440,53 @@ void Application::ActivationTask() {
 
     // Signal completion to main loop
     xEventGroupSetBits(event_group_, MAIN_EVENT_ACTIVATION_DONE);
+}
+
+void Application::TryStartAutoConnect() {
+    /* [K6-A3] 预检只读（与 websocket_protocol.cc read 形态逐字同款）: namespace
+     * "websocket" 只读 url/token, 任一空 → 单条 log + 完全 no-op（不起 task、不重试、
+     * 不报错; Settings 只读不写——写入口 = WsProvision::EnsureWebsocketToken, activation
+     * 期已跑）。 */
+    Settings settings("websocket", false);
+    std::string url = settings.GetString("url");
+    std::string token = settings.GetString("token");
+    if (url.empty() || token.empty()) {
+        ESP_LOGI(TAG, "AutoConnect: no websocket url/token configured, skip");
+        return;
+    }
+
+    /* [K6-A1] 守卫三条件（main-loop handler 内「判 + 起」, TOCTOU 判设闭合）:
+     * state==Idle && 通道未开 && 非 in-flight。无协议对象时退化 no-op。 */
+    if (GetDeviceState() != kDeviceStateIdle ||
+        (protocol_ && protocol_->IsAudioChannelOpened()) ||
+        auto_connect_in_flight_) {
+        return;
+    }
+    auto_connect_in_flight_ = true;
+
+    /* 后台 task（沿用 activation 模板: 栈 4096*2、优先级 2、lambda 直排——不阻塞主
+     * 循环; [S3] 3 次退避重试、每次尝试前重查守卫三条件、所有退出路径必清标志、
+     * 退出前打栈高水位日志）。 */
+    xTaskCreate([](void* arg) {
+        Application* app = static_cast<Application*>(arg);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            /* 重试前重查守卫三条件（违反即 bail——人工路径已接管或通道已开）。 */
+            if (app->GetDeviceState() != kDeviceStateIdle ||
+                (app->protocol_ && app->protocol_->IsAudioChannelOpened())) {
+                break;
+            }
+            if (app->protocol_->OpenAudioChannel()) {
+                break;  /* 成功: 通道开 + Idle = 首轮对话后稳态, 无状态迁移 */
+            }
+            if (attempt < 2) {
+                vTaskDelay(pdMS_TO_TICKS(kAutoConnectBackoffS[attempt] * 1000));
+            }
+        }
+        app->auto_connect_in_flight_ = false;  /* 所有退出路径（成功/重试耗尽/bail）必清 */
+        ESP_LOGI(TAG, "AutoConnect task exit, stack high water mark=%u",
+                 (unsigned)uxTaskGetStackHighWaterMark(NULL));
+        vTaskDelete(NULL);
+    }, "AutoConnect", 4096 * 2, this, 2, nullptr);
 }
 
 void Application::CheckAssetsVersion() {
@@ -506,6 +569,14 @@ void Application::InitializeProtocol() {
     });
 
     protocol_->OnNetworkError([this](const std::string& message) {
+        // K6 (M3-K6 boot-auto-connect) 静默失败锚: 自动建连 in-flight 期间的网络错误
+        // 拦截豁免——静默（不弹错误卡、保持 Idle; 重试节奏由 AutoConnect task 承担）。
+        // 人工路径错误路由零改动（错误事件位仍在世, 非拦截面; 拦截判定位次先于错误
+        // 事件置位）。
+        if (auto_connect_in_flight_) {
+            ESP_LOGI(TAG, "AutoConnect: suppressing network error while in-flight");
+            return;
+        }
         last_error_message_ = message;
         xEventGroupSetBits(event_group_, MAIN_EVENT_ERROR);
     });
@@ -517,11 +588,15 @@ void Application::InitializeProtocol() {
     });
     
     protocol_->OnAudioChannelOpened([this, codec, &board]() {
-        board.SetPowerSaveLevel(PowerSaveLevel::PERFORMANCE);
-        if (protocol_->server_sample_rate() != codec->output_sample_rate()) {
-            ESP_LOGW(TAG, "Server sample rate %d does not match device output sample rate %d, resampling may cause distortion",
-                protocol_->server_sample_rate(), codec->output_sample_rate());
-        }
+        // K6 (M3-K6 boot-auto-connect): 回调统一回主循环（Schedule 包裹）——自动建连
+        // 路径下该回调在后台 AutoConnect task 线程执行, 人工路径本就在主循环（包裹无害）。
+        Schedule([this, codec, &board]() {
+            board.SetPowerSaveLevel(PowerSaveLevel::PERFORMANCE);
+            if (protocol_->server_sample_rate() != codec->output_sample_rate()) {
+                ESP_LOGW(TAG, "Server sample rate %d does not match device output sample rate %d, resampling may cause distortion",
+                    protocol_->server_sample_rate(), codec->output_sample_rate());
+            }
+        });
     });
     
     protocol_->OnAudioChannelClosed([this, &board]() {
@@ -706,6 +781,13 @@ void Application::HandleToggleChatEvent() {
         return;
     }
 
+    // K6 (M3-K6): 自动建连 in-flight 期间人工按键 no-op（守卫不加锁, 主循环 handler 内
+    // 判设闭合; toggling 既有分支行为语义零改动）。
+    if (auto_connect_in_flight_) {
+        ESP_LOGI(TAG, "AutoConnect in-flight, ignore manual toggle");
+        return;
+    }
+
     if (state == kDeviceStateIdle) {
         if (!protocol_->IsAudioChannelOpened()) {
             SetDeviceState(kDeviceStateConnecting);
@@ -738,7 +820,14 @@ void Application::HandleStartListeningEvent() {
         ESP_LOGE(TAG, "Protocol not initialized");
         return;
     }
-    
+
+    // K6 (M3-K6): 自动建连 in-flight 期间人工 start-listening no-op（守卫; 既有分支
+    // 行为语义零改动）。
+    if (auto_connect_in_flight_) {
+        ESP_LOGI(TAG, "AutoConnect in-flight, ignore manual start listening");
+        return;
+    }
+
     if (state == kDeviceStateIdle) {
         if (!protocol_->IsAudioChannelOpened()) {
             SetDeviceState(kDeviceStateConnecting);
@@ -775,8 +864,15 @@ void Application::HandleWakeWordDetectedEvent() {
     }
 
     auto state = GetDeviceState();
-    
+
     if (state == kDeviceStateIdle) {
+        // K6 (M3-K6): 自动建连 in-flight 期间唤醒 no-op（守卫置于 EncodeWakeWord 之前
+        // ——in-flight 期不启动唤醒音频编码; 既有分支行为语义零改动）。
+        if (auto_connect_in_flight_) {
+            ESP_LOGI(TAG, "AutoConnect in-flight, ignore wake word");
+            return;
+        }
+
         audio_service_.EncodeWakeWord();
 
         if (!protocol_->IsAudioChannelOpened()) {
@@ -977,7 +1073,14 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
     }
 
     auto state = GetDeviceState();
-    
+
+    // K6 (M3-K6): 自动建连 in-flight 期间唤醒 invoke no-op（守卫; 本板非活路径, 一并
+    // 加; 既有分支行为语义零改动）。
+    if (auto_connect_in_flight_) {
+        ESP_LOGI(TAG, "AutoConnect in-flight, ignore wake word invoke");
+        return;
+    }
+
     if (state == kDeviceStateIdle) {
         audio_service_.EncodeWakeWord();
 

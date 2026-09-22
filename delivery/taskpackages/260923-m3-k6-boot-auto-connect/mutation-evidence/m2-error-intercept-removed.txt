@@ -1,0 +1,33 @@
+执行时间: 2026-09-23 (integrator 收尾相位第一方实跑, 非转录——原始输出逐字落盘)
+命令行: MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/acceptance/red-baseline/k6_red_wrapper.sh
+变异内容 (M2, K6-A2): 摘 OnNetworkError lambda 内 auto_connect_in_flight_ 拦截分支（application.cc if 块删除; 退避表/重查不动）
+期望红: TEST 2 红（tooth 3 拦截缺）
+=== MUTATION STATE RUN ===
+=== channel 2: standalone structural harness (boot_auto_connect) ===
+COMPILE_EXIT=0
+Running 开机自动建连: 自动建连缝正锚 (K6-A1) ... PASS
+Running 开机自动建连: 静默失败+有界退避决策表 (K6-A2) ...     FAIL: K6-A2 RED: OnNetworkError lambda 无 auto_connect_in_flight_ 拦截分支——自动建连失败会置 MAIN_EVENT_ERROR 弹错误卡（静默失败语义未落, 开机失败即错误卡回潮）
+  -> FAIL
+Running 开机自动建连: 未配网预检负锚 (K6-A3) ... PASS
+Running 开机自动建连: in-flight生命周期 (K6-A4) ... PASS
+Running 开机自动建连: 人工路径守卫+既有语义零改动 (K6-A5) ... PASS
+Running 开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6-A6) ... PASS
+-----------------------
+6 Tests 1 Failures
+RUN_EXIT=1
+WRAPPER_EXIT=0
+
+=== RESTORED, GREEN RE-RUN ===
+还原方式: 字节级备份副本回拷 application.cc（sha256 复核一致）
+=== channel 2: standalone structural harness (boot_auto_connect) ===
+COMPILE_EXIT=0
+Running 开机自动建连: 自动建连缝正锚 (K6-A1) ... PASS
+Running 开机自动建连: 静默失败+有界退避决策表 (K6-A2) ... PASS
+Running 开机自动建连: 未配网预检负锚 (K6-A3) ... PASS
+Running 开机自动建连: in-flight生命周期 (K6-A4) ... PASS
+Running 开机自动建连: 人工路径守卫+既有语义零改动 (K6-A5) ... PASS
+Running 开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6-A6) ... PASS
+-----------------------
+6 Tests 0 Failures
+RUN_EXIT=0
+WRAPPER_EXIT=0

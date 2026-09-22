@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260923-m3-k6-boot-auto-connect",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "c6d4d764-5753-47fb-af88-dc7afc59d1bf",
+  "startedAt": "2026-09-22T17:18:28.381Z",
+  "completedAt": "2026-09-22T17:18:28.707Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 179,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"input-brief-acceptance-author.md(not in taskpackage dir — planner Step 7 前置一次产双份: node .claude/scripts/brief-inputs.mjs --change-id 260923-m3-k6-boot-auto-connect --role acceptance-author)\",\n    \"input-brief-builder.md(not in taskpackage dir — planner Step 7 前置一次产双份: node .claude/scripts/brief-inputs.mjs --change-id 260923-m3-k6-boot-auto-connect --role builder)\"\n  ],\n  \"coverageErrors\": []\n}\n",
+      "stderr": "",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "aaaaf398918f",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1790097508693-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"input-brief-acceptance-author.md(not in taskpackage dir — planner Step 7 前置一次产双份: node .claude/scripts/brief-inputs.mjs --change-id 260923-m3-k6-boot-auto-connect --role acceptance-author)\",\n    \"input-brief-builder.md(not in taskpackage dir — planner Step 7 前置一次产双份: node .claude/scripts/brief-inputs.mjs --change-id 260923-m3-k6-boot-auto-connect --role builder)\"\n  ],\n  \"coverageErrors\": []\n}\n"
+  }
+}
