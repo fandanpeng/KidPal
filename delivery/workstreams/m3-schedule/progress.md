@@ -222,3 +222,12 @@
 - **合并门（human 批准升级合并，pod-events f0d8ca46）**：机械 supervisor-verdict 闸 **ESCALATE**（git diff 重算 riskTier critical：firmware/sdkconfig + sdkconfig.defaults 命中 critical-path 清单；实际 diff = CONFIG_LWIP_SNTP_MAX_SERVERS 1→3，human 知悉上下文后裁决批准）→ merge-driver --pod --human-approval-ref 标准链（off-main/契约/provenance 闸照拦不豁免，全过）：rebase OK / quick-check OK / **merge OK**——merge commit `dedf986`（main @ `3cc37e5` 簿记），token 释放。**K4 收尾落账 commit（`6cb4824`，此前留在常驻分支）经 rebase 随本批一并回 main**（launch 段预告的「随下批 pod 合并回 main」兑现）。
 - **收尾落账**：dev INDEX closed 行（integrator closeout 相位落）、board merged、pod-events merge-completed @dedf98697e82（main 簿记）、pod-retro 主轮/追加轮/真机窗三段（第一人称热记忆）。
 - **持续挂账（非本包义务）**：① loop-retro 阈值 19 advisory（主线程 /loop-retro，连续第四棒提请）；② 图索引 re-index（time_sync [S1]/[S6] 新符号未入图）；③ A3 断电续航真机实证（human 观察，口头反馈补账）；④ reinject 双触发修法（advisory，后续批参考）。
+
+## 2026-09-22 · K5 R4 追加轮闭环 + 合并落账（planner Pod，human 批准合并）
+
+- **R4 起因**：R3b 分钟对齐真机复观察发现**双稳态缺陷**（有时 <1s / 有时恒慢 60s）——根因 = pdMS_TO_TICKS 向下取整 + vTaskDelay(0) 自旋 + 板级 I2C 读 RTC 耗时 → 唤醒落分钟边界前注入旧值；主线程串口捕获（23:06-23:07，边界后 55s 零注入、仅两条注入都带旧分钟 23:06）实锤。human 拍板放宽（pod-events `d2148f66`）：注入点改边界后 +`KIDPAL_TS_INJECT_AFTER_BOUNDARY_MS`(=2000)，最坏滞后 ≈3s 明示接受。
+- **R4 执行（零 fixer 轮）**：acceptance-author 冻齿修订（TEST 8 teeth 7-11：常量定值 strtol==2000 钉死偏离须重冻结 + R3 裸形态退役负锚 + 首拍序守卫；teeth 0-6 零偏移；设计态红通道①b 8/1 + 通道② 92/1 红恰 = tooth 7）→ builder 单点补丁（板文件一处：常量 #define + 延迟表达式 base_ms + 2000，host 92 Tests / 0 Failures，device build 11% free）→ verifier scoped r5 + final r6 九闸全绿 → integrator 零 finding 收口（`8efe520`）。
+- **R4 真机复验 PASS（human 批准合并，pod-events `e8762159`）**：串口捕获 23:48:15→23:51:41 跨 3 边界——writeback 23:48:59.4 ok；reinject 三连边界（23:49:01±1 / 23:50:01±1 / 23:51:01±1）**恒带当分钟新值、单次注入无旧值对、间隔精确 60.02s、无长静默**——R3 双稳态特征（边界前旧值 + 55s 零注入）消失，冻齿真机项达标；human 原话「合并吧」。
+- **合并链**：merge-driver --pod --human-approval-ref 标准链 → rebase OK / quick-check OK / **merge OK**——R4 批回 main，token 释放。
+- **R4 遗留挂账**：① mutation 执行面粒度差跨三棒（R3/R4 均以设计态红≙变异态在案，实跑变异未落仓内 evidence——pod-retro 已记「下棒必须处理」）；② A3 断电续航真机实证（human 观察反馈补账，`0e07412a` deferred 知情）；③ loop-retro 19 advisory（第四棒提请）；④ 图索引 re-index（time_sync [S1]/[S6] 符号）。
+- **验收常识沉淀（pod-retro R4 段）**：睡眠/延时类板级行为 host 齿只能钉形态不能钉时序——时序语义必须设备窗实证且跨多次边界采样（单边界观察会采到幸运相位；双稳态 motif = K4 双分支盲区后第二例）。
