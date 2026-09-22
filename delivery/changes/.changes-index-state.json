@@ -175,5 +175,9 @@
   "260921-gov-review-canonical-text-align": {
     "date": "2026-09-21",
     "mergedInMain": "yes"
+  },
+  "260922-arch-review-spec-v5-ui-align": {
+    "date": "2026-09-22",
+    "mergedInMain": "yes"
   }
 }

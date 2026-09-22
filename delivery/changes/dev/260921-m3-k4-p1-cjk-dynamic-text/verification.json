@@ -1,0 +1,126 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json)",
+  "changeId": "260921-m3-k4-p1-cjk-dynamic-text",
+  "phase": "final",
+  "round": 9,
+  "invocationId": "0f2c1bc2-4244-43b7-93c5-140452e0b12c",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260921-m3-k4-p1-cjk-dynamic-text --phase final --round 9 --invocation-id 0f2c1bc2-4244-43b7-93c5-140452e0b12c",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-22",
+      "addendumPriorRoundCheck": "同批 r8（scoped）双查 exit 0：--phase scoped --round 8 --invocation-id f0819091-20ca-4702-8956-81be0edec4ac → factOk:true（integrator 实跑 2026-09-22）"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 1,
+        "invocationId": "66424d76（r1.json 在案）",
+        "producedBy": "scoped 红（taskpackage-required：contractRefs 缺失，planner 元数据回填后修复）"
+      },
+      {
+        "round": 2,
+        "invocationId": "dff90e95（r2.json 在案）",
+        "producedBy": "scoped 红（mutation-check：mutationEvidence 登记缺位，acceptance-author 回填六条后修复）"
+      },
+      {
+        "round": 3,
+        "invocationId": "9fcff52a-9b9c-4ba8-9917-e3b7bd4b0870",
+        "producedBy": "verifier（scoped 7 闸全绿，机械 fact ok:true / observedGateExit:0）"
+      },
+      {
+        "round": 4,
+        "invocationId": "8c6aa0de-09e7-42f4-a1ec-97b9ef760be1",
+        "producedBy": "主轮 final 九闸全绿（已合并 main f8703d5；fact 副本在本目录被本 r6 副本按追加轮刷新取代，r4 原件仍在 verifier-evidence/rounds/r4.json）"
+      },
+      {
+        "round": 5,
+        "invocationId": "6e423c35-e688-4c63-bc9e-f7cedfdba74c",
+        "producedBy": "追加轮 scoped 六闸全绿（verifier-evidence-check --phase scoped exit 0，factOk:true）"
+      },
+      {
+        "round": 6,
+        "invocationId": "42db9cf4-d1e1-4bc8-bcd2-3ac5cb551f06",
+        "producedBy": "追加轮 final 九闸全绿（其 fact 副本在本目录被本 r9 副本按第 3 追加轮刷新取代，r6 原件仍在 verifier-evidence/rounds/r6.json）"
+      },
+      {
+        "round": 7,
+        "invocationId": "cbe96239-5f22-44d4-993d-2550bda971cc",
+        "producedBy": "第 3 追加轮 scoped 红（firmware-build：设备 TU C++ const cast 编译红 → fixer 单点补丁后 r8 复验）"
+      },
+      {
+        "round": 8,
+        "invocationId": "f0819091-20ca-4702-8956-81be0edec4ac",
+        "producedBy": "第 3 追加轮 scoped 六闸全绿（verifier-evidence-check --phase scoped exit 0，factOk:true）"
+      }
+    ]
+  },
+  "lifecycle": {
+    "rounds": [
+      {
+        "round": 1,
+        "timing": "scoped",
+        "outcome": "红（taskpackage-required：TaskPackage 缺 contractRefs finalized 字段——planner 元数据回填修复，非实现面红）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r1.json"
+      },
+      {
+        "round": 2,
+        "timing": "scoped",
+        "outcome": "红（mutation-check：mutationEvidence perAcceptance 登记缺位——acceptance-author 回填六条 sensitive+mutation+expectedRed 后修复）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r2.json"
+      },
+      {
+        "round": 3,
+        "timing": "scoped",
+        "outcome": "绿（scoped 7 闸全绿，verifier；实现 + 冻结验收 + 红基线全部在树）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r3.json"
+      },
+      {
+        "round": 4,
+        "timing": "final",
+        "outcome": "绿（9 闸全绿 final，integrator：firmware-build 真编译 xiaozhi.bin 0x30c5b0 / 余量 11%、unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 80 Tests 0 Failures 0 Ignored / OK / rc=0）——主轮，已合并 main f8703d5",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json"
+      },
+      {
+        "round": 5,
+        "timing": "scoped",
+        "outcome": "绿（追加轮 scoped 六闸全绿：A6 live FAIL 修复 B 方案 + 版式对齐 WF-F1-01 后 scoped 复验；invocation 6e423c35-e688-4c63-bc9e-f7cedfdba74c）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r5.json"
+      },
+      {
+        "round": 6,
+        "timing": "final",
+        "outcome": "绿（追加轮 9 闸全绿 final：firmware-build 真编译 xiaozhi.bin 0x30c340 / 余量 0x63cc0 (11%) free——较修复前 0x30c5b0 还小；unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 83 Tests 0 Failures 0 Ignored / OK / rc=0）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json"
+      },
+      {
+        "round": 7,
+        "timing": "scoped",
+        "outcome": "红（firmware-build：设备 TU kidpal_render_node.cc C++ const cast 编译红——A11 同构修复首版笔误；fixer 单点补丁，非设计面返工）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r7.json"
+      },
+      {
+        "round": 8,
+        "timing": "scoped",
+        "outcome": "绿（第 3 追加轮 scoped 六闸全绿：A11 TEST 10 + [S6] seam + 两 TU 真根因修复后 scoped 复验）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r8.json"
+      },
+      {
+        "round": 9,
+        "timing": "final",
+        "outcome": "绿（第 3 追加轮 9 闸全绿 final：firmware-build 真编译 xiaozhi.bin 0x30c340 / 余量 0x63cc0 (11%) free——与 r6 同值，A11 零体积增量；unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 84 Tests 0 Failures 0 Ignored / OK / rc=0）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r9.json"
+      }
+    ],
+    "reworkRounds": 0,
+    "reworkNote": "零实现返工轮——r1/r2 两轮红均为治理元数据面（contractRefs 缺失 / mutationEvidence 登记缺位），实现与冻齿零返工。【追加轮 2026-09-22 补记，追加不改原句语义】主轮合并后 live A6 FAIL（设备字形乱码）触发一轮真实实现返工（B 方案 LVGL 官方解码 + 版式对齐 WF-F1-01，human 拍板 pod-events c4785230）+ 两处冻齿缺陷修订（TEST 2 算术 / TEST 9 tooth 4 帧测量笔误），r5/r6 复验绿，详见本目录 review-packet.md「Post-merge 追加轮 addendum」。【第 3 追加轮 2026-09-22 补记，追加不改原句语义】live 复验第 2 轮 seam 文字行仍乱码（形态改变）→ human 硬要求设备字体上 host 实证复现（pod-events 6ad46b62）→ A11 冻结（TEST 10 + [S6] 追加缝 + 独立参考解码 oracle）→ host 实证复现成功 = 真根因（get_glyph_bitmap 返回 lv_draw_buf_t* 结构指针被强转像素指针读结构头垃圾 + req_raw_bitmap stack 局部未清零旁路官方包装归一化）→ 两 TU 同构修复 + fixer r7 编译补丁 → r8/r9 复验绿，详见本目录 review-packet.md「第 3 追加轮 addendum」。",
+    "redBaseline": "acceptance-author 两通道实跑（2026-09-22 @ eb63c93，redBaselineResult 逐字落账 taskpackage.json）：① 既有 74 齿全量 host runner → 74 Tests 0 Failures 0 Ignored / OK / rc=0（与 91b3b5c 锚零偏移）；② 新齿经 red-baseline stub 脚手架独立编译执行（gcc rc=0、6/6 TEST_CASE 执行零崩溃）→ 6 Tests / 5 Failures / exit 5（TEST 5 = A3 单项守卫 + E2 canary 基线即绿 MUST-STAY-GREEN）；红因全部 = 字形 seam 未实现 → name 不画（真实缺失行为），零链接/编译/环境红。预期红 = 设计态。"
+  }
+}

@@ -1,0 +1,73 @@
+// shoot_design.mjs — 设计稿 HTML → 每画布精确截图（布局锚图片，给 dev-loop Pod 消费）。
+// 原理：无头 Edge 逐 `.dev[data-od-id]` 元素截图（元素级裁剪，绝不手抠区域）。
+// 每画布出一版：
+//   docs/ui/<VER>/<id>.png — 1:1（400×300）阈值化纯黑白，真机 1bpp 观感的唯一真相版
+// 用法：node shoot_design.mjs <html 绝对路径> <输出目录>
+import { chromium } from 'playwright-core';
+import sharp from 'sharp';
+import { mkdirSync } from 'fs';
+import { pathToFileURL } from 'url';
+
+const [htmlPath, outDir] = process.argv.slice(2);
+if (!htmlPath || !outDir) { console.error('usage: node shoot_design.mjs <html> <outdir>'); process.exit(1); }
+mkdirSync(outDir, { recursive: true });
+
+const browser = await chromium.launch({ channel: 'msedge', headless: true });
+const page = await browser.newPage({ viewport: { width: 1600, height: 1200 }, deviceScaleFactor: 1 });
+page.on('console', m => { if (m.type() === 'error') console.warn('[page error]', m.text()); });
+await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'networkidle', timeout: 60000 });
+await page.evaluate(() => document.fonts.ready);
+await page.waitForTimeout(500); // webfont 换装 + SVG <use> 解析余量
+
+// 去掉 .dev 的装饰 outline（画布边框是展示用描边，不属于 400×300 内容）；
+// 冻结动画（.bob/.wiggle 抖动是随机相位的，会污染跨版本像素对比）
+await page.addStyleTag({ content: '.dev{outline:none !important} *{animation:none !important; transition:none !important}' });
+
+// 每个 .dev 取名：自身 data-od-id（主画布），否则向上找最近的 data-od-id 祖先（子画面 figure）
+// 只截布局尺寸为 400×300 的整幅画布；comp-* 组件预览（自定义小尺寸 .dev）跳过
+const meta = await page.$$eval('.dev', els => els.map(e => {
+  let n = e;
+  while (n && !n.dataset.odId) n = n.parentElement;
+  return { id: n?.dataset.odId, w: e.offsetWidth, h: e.offsetHeight };
+}));
+const devs = await page.$$('.dev');
+const shots = [];
+for (let i = 0; i < devs.length; i++) {
+  const { id, w, h } = meta[i];
+  if (w !== 400 || h !== 300) { console.log(`  (skip ${id ?? '<anon>'}: ${w}x${h} 非整幅画布)`); continue; }
+  shots.push({ el: devs[i], id });
+}
+console.log('canvases:', shots.map(s => s.id).join(', '));
+
+// 单一 1:1 阈值化档
+const z = 1, W = 400, H = 300;
+await page.addStyleTag({ content: `.devsz{--z:${z} !important}` });
+await page.waitForTimeout(150);
+const els = shots.map(s => s.el);
+for (let i = 0; i < shots.length; i++) {
+  const { el, id } = shots[i];
+  // 邻画隔离：同排多画布时后 DOM 画布可能叠绘到前画布边缘（语音态网格列窄于 400px）。
+  // 截前隐藏其它画布——visibility 保布局不重排。
+  await page.evaluate(({ list, idx }) => {
+    for (let j = 0; j < list.length; j++) list[j].style.visibility = j === idx ? '' : 'hidden';
+  }, { list: els, idx: i });
+  await el.scrollIntoViewIfNeeded();
+  // 整数像素吸附 + 整数 clip：el.screenshot() 内部会再滚动，与吸附竞争，且跨版本页面
+  // 高度不同会让文字光栅相位漂移。手动滚动后按整数视口 clip 截图，完全接管滚动。
+  const d = await el.evaluate(e => {
+    const r = e.getBoundingClientRect();
+    return { dx: Math.round(r.x) - r.x, dy: Math.round(r.y) - r.y, x: Math.round(r.x), y: Math.round(r.y) };
+  });
+  const t = `translate(${d.dx}px, ${d.dy}px) scale(${z})`;
+  if (d.dx || d.dy) await el.evaluate((e, tr) => { e.style.transform = tr; }, t);
+  const buf = await page.screenshot({ clip: { x: d.x, y: d.y, width: W, height: H } });
+  if (d.dx || d.dy) await el.evaluate(e => { e.style.transform = ''; });
+  // 真机 1bpp 口径：灰度抗锯齿 → 128 阈值化，唯一值 ⊆ {0,255}
+  const out = `${outDir}/${id}.png`;
+  await sharp(buf).extract({ left: 0, top: 0, width: W, height: H }).grayscale().threshold(128).png().toFile(out);
+  console.log(`  ${out} ${W}x${H}`);
+}
+await page.evaluate(({ list }) => { for (const e of list) e.style.visibility = ''; }, { list: els });
+
+await browser.close();
+console.log('done →', outDir);

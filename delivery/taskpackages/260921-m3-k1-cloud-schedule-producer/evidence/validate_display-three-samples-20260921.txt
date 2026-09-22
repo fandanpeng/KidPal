@@ -1,0 +1,25 @@
+== validate_display 三样本回归 · CDQ-260921-m3-k1-schedule-grid ==
+date: 2026-09-21T12:00:01.866792
+surface: server/gateway/display_schema.py (view 白名单 + MAX_DATA_BYTES；本机械门不校验 schedule data 内部形状——形状收紧 = Q5 裁定的 front 侧 to-be 行为，归 K1 实现)
+
+[PASS] sample-1 新周网格形状(完整网格,front 计算后下发)
+   payload = {"view": "schedule", "data": {"week": {"courses": [{"day": 0, "slot": 0, "name": "语文", "flags": 0}, {"day": 0, "slot": 2, "name": "口语", "flags": 1}]}}}
+   validate_display -> (True, 'ok')   expected: PASS
+
+[PASS] sample-2 意图薄载荷(LLM data:{} front 截获展开)
+   payload = {"view": "schedule", "data": {}}
+   validate_display -> (True, 'ok')   expected: PASS
+
+[PASS] sample-3 home 带 data.upcoming
+   payload = {"view": "home", "data": {"upcoming": {"day_key": "今天", "items": [{"time": "14:00", "name": "钢琴课"}], "preview": {"time": "明早", "name": "春游"}}}}
+   validate_display -> (True, 'ok')   expected: PASS
+
+[PASS] sample-3b home 缺 data(向后兼容,行为不变)
+   payload = {"view": "home"}
+   validate_display -> (True, 'ok')   expected: PASS
+
+[PASS] sample-4 旧列表形 schedule data(现状:机械门透传;Q5 裁定 front 实现后拒绝+降级)
+   payload = {"view": "schedule", "data": {"title": "今天下午", "items": [{"time": "14:00", "name": "钢琴课", "location": "琴行"}]}}
+   validate_display -> (True, 'ok')   expected: REJECT-or-PASS(现状透传=PASS,与 packet 影响表『机械门不校验 data 形状会透传』一致)
+
+RESULT: ALL-SAMPLES-GREEN (sample-4 现状行为单独注明,不计入判定)

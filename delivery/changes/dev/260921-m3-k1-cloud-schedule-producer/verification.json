@@ -1,0 +1,83 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
+  "changeId": "260921-m3-k1-cloud-schedule-producer",
+  "phase": "final",
+  "round": 5,
+  "invocationId": "487f57a8-81b8-4d7e-b7c6-a3e294ca9c7a",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r5.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260921-m3-k1-cloud-schedule-producer --phase final --round 5 --invocation-id 487f57a8-81b8-4d7e-b7c6-a3e294ca9c7a",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-21"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 4,
+        "invocationId": "8613ac98-ec23-4430-b226-de36d982241a",
+        "producedBy": "verifier（scoped，7 闸）",
+        "mechanicalCheck": "fact ok:true / observedGateExit:0（r4.json 直读；r5 final 复验 PASS 时级联覆盖同源 fact 流）"
+      }
+    ]
+  },
+  "lifecycle": {
+    "rounds": [
+      { "round": 1, "timing": "scoped", "outcome": "红（taskpackage-required：current 投影未随 launch 刷新/终态字段缺失）", "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r1.json" },
+      { "round": 2, "timing": "scoped", "outcome": "红（同 r1，taskpackage-required）", "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r2.json" },
+      { "round": 3, "timing": "scoped", "outcome": "红（mutation-check：mutationEvidence 缺 sensitive 回填时序）", "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r3.json" },
+      { "round": 4, "timing": "scoped", "outcome": "绿（7 闸全绿，verifier）", "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r4.json" },
+      { "round": 5, "timing": "scoped+full", "outcome": "绿（9 闸全绿 final，unit/acceptance 两 full 闸入场）", "evidenceRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/verifier-evidence/rounds/r5.json" }
+    ],
+    "reworkRounds": 2,
+    "reworkNote": "r1/r2 红因 = 治理投影时序（current/taskpackage.json 未随 launch 刷新，pod-events friction degraded 条 32dcac54 在册）；r3 红因 = taskpackage mutationEvidence sensitive 回填时序——三轮均非实现缺陷红，r4 起 7/9 闸连续两轮全绿",
+    "redBaseline": "17 齿落盘后 acceptance-author 实跑：python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance => 13 failed / 51 passed（13 RED = week_grid_payload/home_upcoming_payload 未实现 + schedule_push.py 缺失 + validate_display Q5 未收紧；4 must-stay-green = 契约门三样本过门齿 ×3 + E1 零偏移守卫齿 ×1）——红名 verbatim 落账 taskpackage.json mutationEvidence",
+    "greenState": "同命令 75 passed / 0 failed（= 既有 47 全绿保持 + 冻结齿 17 + 新单测 11；final r5 unit 闸同口径 + integrator 独立复跑 2026-09-21 一致）+ acceptance 闸 27 passed"
+  },
+  "provenance": {
+    "sourceType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+    "planRef": "delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/plan.md",
+    "launchBaseline": "bade28b（K1 launch 面就绪，基线锚 @ 40aefa4）；契约落地批 24bb1b8 为分支基线第一批",
+    "contractGate": "HUMAN_APPROVED（2026-09-21 human 五问裁定，packet §5）→ gate evidence LANDED（C1–C4 done）→ 契约 diff 随 24bb1b8 落地",
+    "mergeOrder": 33,
+    "dependsOn": [],
+    "workstream": "m3-schedule"
+  },
+  "scopeAudit": {
+    "implementationFiles": [
+      "server/gateway/schedule.py",
+      "server/gateway/schedule_push.py",
+      "server/gateway/front/front_app.py",
+      "server/gateway/display_schema.py",
+      "server/deploy/openclaw-patch/reminder_schedule_lib.py"
+    ],
+    "frozenAcceptanceFiles": [
+      "server/acceptance/test_m3k1_schedule_producer.acceptance.py"
+    ],
+    "unitTestFiles": [
+      "server/tests/test_schedule_producer_units.py"
+    ],
+    "zeroTouchSurfaces": ["docs/requirements.md", "docs/architecture.md", ".claude/", "firmware/"],
+    "contractTouchNote": "docs/contracts/interface-contract.md 唯一命中 = 契约门通道落地批 24bb1b8（+35/−10，human 乙通道授权 git apply，packet §5 留痕）；本包实现批（24bb1b8 之后）git diff -- docs/ docs/contracts/ .claude/ 零命中",
+    "auditCommand": "git diff --stat bade28b..worktree（worktree 降级形态：detect_changes N/A (worktree)，共享符号 trace_path/grep 抽查见 review-packet Verification Evidence）"
+  },
+  "demoReconciliation": {
+    "testHost": "python -m pytest server/acceptance/ offline 齿；live 三触发 deferred 归 M3-K3 设备轮",
+    "offlinePytest": "python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance => 75 passed（47 既有 + 17 冻结齿 + 11 新单测；integrator 独立复跑 + final r5 unit 闸一致）",
+    "contractGatePath": "CLOSED——CCP HUMAN_APPROVED → gate evidence LANDED（C1–C4 done）→ 契约 diff + schedule.py 钉行随 24bb1b8 落地 → CDQ-260921-m3-k1-schedule-grid LANDED；contract-lint 闸绿（r5）",
+    "liveLeg": "M3K1-A5 structural deferred 挂 M3-K3 设备轮（M3K3-A3）——offline 半闭环，不得读成整包已验收",
+    "conclusion": "demo 证据 == roadmap 效果段承诺（offline 齿 + 契约门 evidence 制品 + A5 deferred 挂账三项全对账一致，详见 review-packet Demo 对账行）"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/changes/dev/260921-m3-k1-cloud-schedule-producer/review-packet.md",
+    "docsDelta": "delivery/changes/dev/260921-m3-k1-cloud-schedule-producer/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；其后 pre-merge-escalation-gate 放行 → merge-driver --pod 本地合并"
+}

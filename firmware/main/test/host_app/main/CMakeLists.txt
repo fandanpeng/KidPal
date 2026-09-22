@@ -112,6 +112,54 @@ set(HOST_ACCEPTANCE_SRCS
     # 查字窗列路由的边界与分支补强——冻结齿未穷尽的边界面）。置于 host smoke acceptance 之前。
     "../../char_window.test.c"
 
+    # 包 260921-m3-k2-p2-week-grid-page（P2 一周总览网格页整页重写 + 首页「接下来」
+    # 注入接线）被测实现：schedule_page.c（kidpal_schedule_grid_parse/grid_render 冻结
+    # 离线契约强符号源, 覆盖冻结件 weak 哨兵; schedule_page.h 声明头）+ home_upcoming.c
+    # （kidpal_home_upcoming_apply A5 接线层强符号源; home_upcoming.h 声明头; 只消费
+    # home_p1 冻结 seam——home_p1.c 强符号已在册, 覆盖冻结件 seam 读侧 weak 哨兵,
+    # p1_home_battery 同款）。相对 host_app/main 为 ../../../display/。
+    "../../../display/schedule_page.c"
+    "../../../display/home_upcoming.c"
+
+    # 包 260921-m3-k2-p2-week-grid-page 冻结验收（A1 版式结构 + A4 周网格解析降级 +
+    # A2 今天列注入缝 + A5 upcoming 注入 + A6 回归靶 + LVGL 软渲染真帧探针）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫）。
+    "../../schedule_grid.acceptance.c"
+
+    # 包 260921-m3-k4-p1-cjk-dynamic-text（首页 P1 动态日程名 CJK 渲染）被测实现接线：
+    # 本包追加轮 [S5] 烘焙固定标签（p1_label_jiexialai.bin / p1_label_mingzao.bin）
+    # 由 art_assets.c 提供 kidpal_art_mount/load/pixel 强符号（否则 p1_cjk_name TEST 7/8
+    # 走 HPB 弱桩恒败 = 自诊断 infra 红；BUILDER DUTY 5))。未挂载态 art_assets.c 强符号
+    # 语义 == 既有弱桩（load/glyph -1、advance -1），其余齿兜底路径零扰动。
+    "../../../display/art_assets.c"
+
+    # 包 260921-m3-k4-p1-cjk-dynamic-text（首页 P1 动态日程名 CJK 渲染）冻结验收：
+    # [S1] 字形 seam 三符号 + [S2] UTF-8 解码逐字形 blit + 三钉区墨/截断/截半容错/
+    # 缺字形退化 + 注册接线守卫。被测实现 home_p1.c 已在册（seam weak 由本包新增
+    # host_infra_seam.c 强符号 + kidpal_p1_font.h 声明覆盖）。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 本文件 TEST 6 tooth 4 钉存在性）。
+    "../../p1_cjk_name.acceptance.c"
+
+    # 包 260921-m3-k4-p1-cjk-dynamic-text 第三追加轮（A11, [S6]）设备字体上 host
+    # (human 硬要求 2026-09-22; BUILDER DUTY 8))：把设备字体 font_puhui_14_1.c
+    # 编入 host runner 源清单（纯 C、lv_font_fmt_txt 格式、bpp=1 --no-compress,
+    # lvgl.h include 在 host 通道可达——REQUIRES lvgl 已在 include path）。相对
+    # host_app/main 为 ../../../managed_components/。managed_components 第三方面
+    # 只读：编入 = 消费, 非修改。TEST 10 tooth 0a weak 探针经此编入解析到强定义。
+    "../../../../managed_components/78__xiaozhi-fonts/src/font_puhui_14_1.c"
+
+    # 包 260922-m3-k5-sntp-time-sync（SNTP 校时 + PCF85063 写回 + 断电续航 + 周期
+    # re-inject）被测实现接线：time_sync.c = seam [S1] 纯逻辑时间缝六函数强符号源
+    # （覆盖冻结件 weak 哨兵的关键）。相对 host_app/main 为 ../../../（= firmware/main/）。
+    "../../../time_sync.c"
+
+    # 包 260922-m3-k5-sntp-time-sync 冻结验收（BCD 编解码 + 守门阈值/可信门 + 退避/节流
+    # 决策表行为半 + SNTP 挂点/写回/恢复/re-inject/接线结构半 + 铁律守卫 + 注册序守卫）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本文件 TEST 6 tooth 5 校验此序）。
+    "../../time_sync.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

@@ -6,10 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (34)
+## arch (36)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260922-arch-review-spec-v5-ui-align](260922-arch-review-spec-v5-ui-align/) | 2026-09-22 | frozen | yes |
 | [260921-gov-review-canonical-text-align](260921-gov-review-canonical-text-align/) | 2026-09-21 | landed | yes |
 | [260921-gov-review-launch-pipeline](260921-gov-review-launch-pipeline/) | 2026-09-21 | landed | yes |
 | [260920-gov-review-bearing-strength-align](260920-gov-review-bearing-strength-align/) | 2026-09-20 | landed | yes |

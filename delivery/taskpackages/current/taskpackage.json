@@ -1,155 +1,131 @@
 {
-  "changeId": "260920-m2-charwindow-display-fix",
+  "changeId": "260922-m3-k5-sntp-time-sync",
   "rigor": "lite",
+  "sourceType": null,
   "origin": {
     "type": "human-confirmed-plan",
+    "time": "2026-09-22",
     "upstreamType": "human-confirmed-plan",
-    "upstreamRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
+    "upstreamRef": "delivery/workstreams/m3-schedule/progress.md",
     "upstreamFrozen": "",
-    "workstream": "m2-char-window"
+    "workstream": "m3-schedule"
   },
-  "subsystem": "firmware+server",
-  "story": "查字窗展示面修复——右栏去遮挡（恒显顶部状态带 top_bar_/status_bar_ 压住拼音行）+ 底部提示条让位（bottom_bar_ 同族）+ 右栏定宽换行与空行不显示 + 云端把已播报的中文解释写进 display 块既有 meaning 字段（播报内容零变化）",
-  "planRef": "delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md",
-  "redBaselineCommand": "板端：cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"；云面：python -m pytest -q --import-mode=importlib -m \"not live\" c:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance（elf 相对 host_app/ 目录——从仓根跑 ./build/... 必报 No such file）",
-  "redBaselineResult": "RED（freeze 后现行基线，acceptance-author 实跑 + planner 2026-09-20 独立复跑双证）——【板端】host runner **63 Tests / 2 Failures / 0 Ignored**（was 61/0），唯二红 = 新增 TEST 10（MCD-A1/A2：cardlabel y=8 < 30 病灶在案）+ TEST 11（MCD-A3/A4：拼装区零 radical[0] 判空），其余 61 齿零新增红；【云面】pytest -m \"not live\" server/acceptance = **8 failed / 2 passed**（原面仅 conftest 无齿），8 红 = A5 四齿 + A7 三齿 + prompt 两齿中的行为/结构半（现行 TS helper 无 meaning merge / 无 <details> 剥离、prompt v4 无 meaning 新约无附录禁令 = 真实缺陷信号），2 绿 = must-stay-green 守卫（prompt 两面接线版本无关 + A7 正向不误剥）；server/tests 仍 37 passed 未受影响。",
+  "subsystem": "firmware",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1 时间/日期 + AC4 断网本地显示）——设备全部常显时间面显示真实本地时间：联网自动 NTP 对时 + 写回 PCF85063 硬件 RTC（断电续航）+ P1 时间消费面周期 re-inject 修掉 boot 快照冻结（F2）；技术方案见 plan.md（triage F1=(a) human 拍板 2026-09-22）",
+  "planRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/plan.md",
+  "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/ts_red_runner ../../time_sync.acceptance.c runner.c && /tmp/ts_red_runner（exit=失败 TEST_CASE 数）",
+  "redBaselineResult": "通道① 84 Tests / 0 Failures / exit 0（与上游锚 84 @ 9cae452 零偏移）；通道② 编译零 error + 6 Tests / 6 Failures / exit 6，红全部为本包设计态义务红（[S1] 缝未实现 + SNTP/写回/恢复/re-inject/接线结构 needle 现状零命中），MUST-STAY-GREEN 半（TEST 4 tooth 1-5、TEST 6 tooth 1-4）实跑全绿。红基线实跑 2026-09-22 acceptance-author。追加轮 R3 修订红基线增补（2026-09-22 acceptance-author 实跑，命令逐字在验收文件头注 R3 追记）：通道①b 强符号线束 8 Tests 2 Failures（TEST 1-6 全绿零偏移 + TEST 7/8 修订齿设计态红）；通道② host runner 92 Tests 2 Failures（红恰 = K5-R3a/R3b 设计态，既有 90 齿零偏移全绿）；编译通道 error/warning 零。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
-    "delivery/workstreams/m2-char-window/"
+    "delivery/workstreams/m3-schedule/"
   ],
   "riskTier": "medium",
-  "gateProfile": [
-    "test-quality",
-    "mcp-tool-contract"
-  ],
+  "gateProfile": ["test-quality"],
   "acceptance": [
-    "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）",
-    "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证",
-    "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）",
-    "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case",
-    "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合",
-    "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约",
-    {
-      "id": "MCD-A6: 真机/live 腿 deferred（human 持板）——① 真实遮挡消除（层序渲染结果只有上屏可证，源锚齿只是决策代理）；② 中文释义真机上屏可读、wrap 不溢出；③ 提示条新位置可见且不被键帽条压；④ 播报与屏显一致（human 判据最终裁判）；⑤ live 腿按「probe != exercise」真跑一次查字端到端（真发一问、板子收到中文释义块）",
-      "kind": "structural",
-      "note": "host 无真实层序渲染与设备字体现实，遮挡与观感类判据 host 只能以源锚齿代理——诚实标注归真机腿"
-    }
+    "K5-A1: SNTP 校时正锚——联网后系统时间被设置：SNTP 启动挂 WiFi got IP 后异步（不阻塞激活/主流程），同步成功后系统时间正确（UTC+8 本地时间），状态栏守门 lvgl_display.cc:134 `tm_year >= 2025-1900` 通过、HH:MM 渲染正确；真机负锚点 = `System time is not set, tm_year: 70` 日志清零（真机半挂设备轮窗口）",
+    "K5-A2: PCF85063 写回路径齿——SNTP 成功事件驱动写回：本地时间 BCD 写 0x04–0x09 寄存器（现固件只读，新增 I2C 写路径），BCD 编解码 host 机判；OS 位（oscillator stop）置位 = 晶振曾停振 → 时间不可信 → 不写回、等 SNTP 降级（不把坏时间当权威）",
+    "K5-A3: 断电续航恢复齿——boot 读 RTC 后系统时间恢复路径补齐（现状 ReadRtcTime 仅注入 P1、未 settimeofday）：断电重启 + 保持断网 → 状态栏/P1 显示正确时间（S-F1.1 AC4 / NFR-OFF-1 离线口径）；RTC 读出值直接喂 inject 不经 TZ（寄存器存本地 BCD）",
+    "K5-A3b: 周期 re-inject 钉——修 F2 boot 快照冻结：P1 时间消费面从 boot 一次 ReadRtcTime→inject 改为周期重读重注入；re-inject 频率与 P1 重绘节拍协调（避免跳字/撕裂）；inject 家族（inject_rtc/s_rtc_hour guard 齿）保持在世零偏移",
+    "K5-A4: 失败降级负锚——NTP 不可达：主流程不卡（激活/对话照常）、无 crash、守门拒绝渲染维持（tm_year:70 态）、不重试风暴（退避）、`System time is not set` W 日志节流降噪（现每 10s 一条）",
+    "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）",
+    "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
+    "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1）+ 板级 TimeSyncPeriodicLoop 节拍改由该函数按墙上分钟边界计算（boot 相位固定节拍退役）；读点秒≈0、滞后 <1s；inject 家族语义零触碰；真机半（读点秒≈0 目测）挂设备轮"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/char_window_overlay.acceptance.c",
-    "server/acceptance/test_char_meaning_merge.acceptance.py"
+    "firmware/main/test/time_sync.acceptance.c"
   ],
+  "testHost": "WSL host runner（BCD/写回/恢复/re-inject 注入缝逻辑 host 机判）+ device build 闸 + 真机窗口（挂设备轮，human 在场）",
   "exitCriteria": [
-    "MCD-E1: A1–A5 host/pytest 齿全绿（含负向齿从红转绿），板端 host runner 全量零新增红、云面 pytest 全绿；A6 真机/live 腿闭环（human 裁决落账）",
-    "MCD-E2: 铁律——零契约改动（D3 meaning/words 字段既有，本轮向契约样例中文语义收敛）、零 spec 改动、零 agent 定义/gate 改动；char_stroke.c/.h 纯逻辑合约不动（U 冻结面 + B8 守卫）",
-    "MCD-E3: 落法 B（display 块通用文本通道）不预造、不顺手夹带——本轮零新增字段；冻结件修订只走 acceptance-author 留痕（builder 零写权）"
-  ],
+    "K5-E1: host runner 全量齿零红（新冻结齿 build+run exit 0，既有齿零偏移）；device build 闸过（体积余量证据）",
+    "K5-E2: 铁律——docs/contracts/** 与 spec 零改；协议/server/front 零改；渲染版式/帧缓冲链路零触碰（电池链路 owner 边界不碰）；OTA 校时通道不复活（ota.cc server_time 路径保持现状死代码）；remind 链零改",
+    "K5-E3: 真机锚收口挂设备轮窗口——A1（SNTP 后状态栏/P1 时间正确 + tm_year:70 清零）+ A3b（长开机不冻结）+ A3（断电续航）真机实证；失败降级（A4）真机或 host 可证降级语义",
+    "真机轮后 progress.md K5 段落账 + pod-retro.md（closeout 相位）"
+ ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/requirements.md"
+    "docs/requirements.md#S-F1.1",
+    "docs/requirements.md#NFR-OFF-1"
   ],
   "sourceRefs": [
-    "docs/requirements.md#S-F3.2",
-    "docs/requirements.md#F3",
-    "firmware/main/display/char_page.cc",
-    "firmware/main/display/lcd_display.cc",
+    "delivery/workstreams/m3-schedule/progress.md",
+    "firmware/main/application.cc",
+    "firmware/main/ota.cc",
+    "firmware/main/display/lvgl_display/lvgl_display.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
     "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/char_stroke.h",
-    "firmware/main/test/char_window_overlay.acceptance.c",
-    "server/deploy/openclaw-system-prompt.v4.md",
-    "server/deploy/openclaw-patch/make_openclaw_patch.py",
-    "server/deploy/openclaw-patch/char_stroke_lib.py",
-    "server/deploy/openclaw-patch/warm_char_cache.py",
-    "docs/contracts/interface-contract.md"
+    "firmware/main/display/home_p1.c",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
+    "firmware/main/test/p1_home_battery.acceptance.c"
   ],
-  "iterationBudget": 3,
+  "iterationBudget": 2,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": false,
-  "docsOwner": "integrator",
-  "docsSyncReason": "spec 侧 S-F3.2 与 WF-F3-01 线框现文即目标形状（中文释义/组词本就在线框里），本轮是实现向 spec 收敛——零 docs 面改动。",
-  "mergeOrder": 32,
-  "dependsOn": [
-    "260920-m2-charwindow-card-fix"
-  ],
-  "testHost": "host runner（板端）+ device build 闸 + server pytest（云面 host-fast）+ 真机/live 腿（human 持板）",
+  "docsSyncReason": "时间同步实现缺口收口（spec S-F1.1 既有已验收需求 AC1/AC4 + NFR-OFF-1 的实现补齐，非行为漂移）；时间同步不在任何契约内、契约/spec/协议/server/front 零改，无文档同步义务。",
+  "mergeOrder": null,
+  "dependsOn": [],
   "decisionCoverage": [],
+  "crossPackageBehaviors": [],
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
+        "acceptance": "K5-A1: SNTP 校时正锚——联网后系统时间被设置：SNTP 启动挂 WiFi got IP 后异步（不阻塞激活/主流程），同步成功后系统时间正确（UTC+8 本地时间），状态栏守门 lvgl_display.cc:134 `tm_year >= 2025-1900` 通过、HH:MM 渲染正确；真机负锚点 = `System time is not set, tm_year: 70` 日志清零（真机半挂设备轮窗口）",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "MUT-MCD-A1（builder 实现态三连）：cardlabel y 30→8 / width 160→80 / WRAP→CLIP，逐锚负向变异。",
-        "counterEvidence": "三变异各自使 TEST 10 FAIL（红名逐字：y=8<30 / 未取到 set_width 160 / 未设 LONG_WRAP）；md5=7149722faf988dda2706d95cb8802e66 与绿态逐字节一致、零残留。红→绿链：绿态 63T/0F → 变异态 FAIL → 还原 63T/0F。",
-        "acceptanceId": "MCD-A1: 板端右栏去遮挡源锚齿——char_page.cc 中 cardlabel set_pos 第二参 >= 30（清出顶部状态带 y0-24）、set_width(cardlabel, 160) 在场、LV_LABEL_LONG_WRAP 在场、且行首不含 LV_FONT_DEFAULT 类病灶回归；每条锚配负向变异自证（值改回去 => 齿转红）"
+        "mutation": "变异 kidpal_ts_year_ok 守门阈值（>=125 边界）或删 application.cc SNTP 起始挂点或 TZ CST-8→GMT+0",
+        "expectedRed": "TEST 2 tooth 1 阈值敏感 / TEST 4 tooth 8-9 挂点敏感 / tooth 12 TZ 敏感 turned red；红基线通道② stub（seam 未实现）≙ 同一变异态在案独立红"
       },
       {
+        "acceptance": "K5-A2: PCF85063 写回路径齿——SNTP 成功事件驱动写回：本地时间 BCD 写 0x04–0x09 寄存器（现固件只读，新增 I2C 写路径），BCD 编解码 host 机判；OS 位（oscillator stop）置位 = 晶振曾停振 → 时间不可信 → 不写回、等 SNTP 降级（不把坏时间当权威）",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "MUT-MCD-A2（builder 实现态）：hint_label 244→280（退回 bottom_bar_ 带）。",
-        "counterEvidence": "TEST 10 FAIL（hint y=280 >= 252）；还原复绿。",
-        "acceptanceId": "MCD-A2: 板端提示条让位齿——hint_label 位置避开 bottom_bar_ 带（y252-300），源锚 + 负向变异自证"
+        "mutation": "变异 kidpal_ts_bcd_encode（hi<<4|lo→hi*10+lo）或 kidpal_ts_write_decision 移除 OS 位分支或删板级 WriteRtcTime",
+        "expectedRed": "TEST 1 tooth 1 BCD 敏感 / TEST 2 tooth 2 OS 降级敏感 / TEST 5 tooth 1 写回路径敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
       },
       {
+        "acceptance": "K5-A3: 断电续航恢复齿——boot 读 RTC 后系统时间恢复路径补齐（现状 ReadRtcTime 仅注入 P1、未 settimeofday）：断电重启 + 保持断网 → 状态栏/P1 显示正确时间（S-F1.1 AC4 / NFR-OFF-1 离线口径）；RTC 读出值直接喂 inject 不经 TZ（寄存器存本地 BCD）",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "MUT-MCD-A3（builder 实现态双靶）：radical[0] token 移除 / words[0] token 移除。",
-        "counterEvidence": "TEST 11 两次 FAIL（零 radical 判空 / 零 words 判空）；还原复绿。",
-        "acceptanceId": "MCD-A3: 空行不显示齿——右栏任一行（组词/部首等）数据为空时不拼装该行（无空行、无占位符）；规则可机判（拼装层按字段有无选择拼行）"
+        "mutation": "kidpal_ts_write_decision 移除 year 可信门或删板级 settimeofday boot 恢复",
+        "expectedRed": "TEST 2 tooth 3 可信门敏感 / TEST 5 tooth 4 恢复路径敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
       },
       {
+        "acceptance": "K5-A3b: 周期 re-inject 钉——修 F2 boot 快照冻结：P1 时间消费面从 boot 一次 ReadRtcTime→inject 改为周期重读重注入；re-inject 频率与 P1 重绘节拍协调（避免跳字/撕裂）；inject 家族（inject_rtc/s_rtc_hour guard 齿）保持在世零偏移",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "MUT-MCD-A4（builder 实现态）：「、」分隔字面移除（join 退化）。",
-        "counterEvidence": "TEST 11 FAIL（零「、」字面）；还原复绿。数据面 96B 守卫由 TEST 11 数据面半承载（93B verbatim / 135B 超容恒 NUL）。",
-        "acceptanceId": "MCD-A4: 组词多词拼装齿——words 数组前 N 项以「、」join（非只取 words[0]）；不动 char_stroke.c 纯逻辑合约（U 冻结面 + B8 守卫）；中文多字节截断边界（96B / UTF-8 半字）由 card_build 既有 host 测试形态补中文满长 case"
+        "mutation": "删板级周期 ReadRtcTime 调用点（2→1）或删周期 inject_rtc 重注入（2→1）",
+        "expectedRed": "TEST 5 tooth 5/6 周期性敏感（boot 快照冻结语义回潮）turned red；红基线通道② stub ≙ 同一变异态在案独立红"
       },
       {
+        "acceptance": "K5-A4: 失败降级负锚——NTP 不可达：主流程不卡（激活/对话照常）、无 crash、守门拒绝渲染维持（tm_year:70 态）、不重试风暴（退避）、`System time is not set` W 日志节流降噪（现每 10s 一条）",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "freeze 相位负向变异（影子服务端树 C:/tmp/srvroot 代表实现：scratch TS helper + python 镜像 + v5 prompt 双面接线，先 9/10 全绿证明可满足）：流式路径去 merge（k1cLookupBlock）/ 非流式去 merge。",
-        "counterEvidence": "A5 两齿（python 镜像语义 + TS 两路径行为 + 两函数体结构）FAIL；还原复绿。云面 5/5。",
-        "acceptanceId": "MCD-A5: 云面 merge 齿（host-fast pytest 真跑）——LLM 最小块 meaning 覆盖 cache 值、缺键回落 cache 原值、**流式与非流式两出口路径一致**、替换后 JSON 合法、无最小块泄漏；prompt v5 锚齿（char 段含 meaning 新约 + 「严禁自生成 strokes/medians」约束仍在 + ≤3 句仍在），沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态、避开版本字面耦合"
+        "mutation": "backoff 恒定小值/去封顶，log_throttled 边界 <→<=，或删 lvgl_display.cc log_throttled 消费",
+        "expectedRed": "TEST 3 tooth 2/4/6/7 决策表敏感 / TEST 4 tooth 14 消费接线敏感 turned red；红基线通道② stub ≙ 同一变异态在案独立红"
       },
       {
+        "acceptance": "K5-A5: 回归 + device build 闸——既有 host 齿全绿零偏移（p1_home_battery HPB 齿 + schedule_grid KSG-A2 同查）；xiaozhi.bin 构建过 + 体积余量记录；真机锚（A1 状态栏/P1 时间正确 + A3b 长开机不冻结 + A3 断电续航）挂设备轮窗口收口（单一长捕获 + 就绪信号开窗，不撞车纪律）",
         "sensitive": true,
-        "result": "failed as expected",
-        "mutation": "freeze 相位负向变异（同上影子树）：流式路径去 strip（k1cStreamStep）/ 剥离规则过宽（OPEN=「（」）。",
-        "counterEvidence": "A7 两路径齿 FAIL（附录泄漏）+ 正向不误剥齿 FAIL（过宽误伤）——两个方向都咬得住；还原复绿。",
-        "acceptanceId": "MCD-A7: 播报不夹带非口语内容（human finding③）——含 `<details>…</details>` 附录（自检/来源/明细）的 OpenClaw 回复，经**流式与非流式两出口路径**处理后，TTS 文本与下发内容**均不含该附录**；同时正向 case = 正常口语正文（含普通括号/说明）不被误剥；prompt v5 锚齿含「面向设备回复只含口语正文 + 一个 display 块、禁任何自检/来源/附录/HTML 结构」新约"
+        "mutation": "删 HOST_ACCEPTANCE_SRCS 注册行或拆 inject_rtc 函数体",
+        "expectedRed": "TEST 6 tooth 2/5 注册与既有齿守卫敏感 turned red；红基线通道② stub（注册行缺失 tooth 5 红）≙ 同一变异态在案独立红"
+      },
+      {
+        "acceptance": "K5-R3a: 状态栏时钟隐藏齿（追加轮，human 拍板 2026-09-22 真机第 1 轮后，pod-events fc43063d）——lvgl_display UpdateStatusBar 区 SetStatus(time_str) 渲染调用退役；状态栏其余元素（mute/network/low_battery_popup_）渲染路径零偏移；P1 辅助条时间/日期保留为唯一常显时间面（p1_draw_aux_time 在世）；守门行与 log_throttled 节流分支保留零触碰；真机半（隐藏后目测）挂设备轮",
+        "sensitive": true,
+        "mutation": "恢复 UpdateStatusBar 区 SetStatus(time_str) 渲染调用（或摘除区内 mute/network/low_battery_popup_ 任一在世 needle）",
+        "expectedRed": "TEST 7 tooth 2 负锚敏感（时钟渲染复活转红）/ teeth 3-5 状态栏元素在世守卫敏感 turned red；红基线通道②（92 Tests 2 Failures 红恰 = TEST 7）≙ 同一变异态在案独立红"
+      },
+      {
+        "acceptance": "K5-R3b: re-inject 分钟对齐齿（追加轮，同上授权链）——新冻结缝 [S6] kidpal_ts_ms_to_next_minute（60000-(now%60000) 恒 [1,60000]、负入参 -1）+ 板级 TimeSyncPeriodicLoop 节拍改由该函数按墙上分钟边界计算（boot 相位固定节拍退役）；读点秒≈0、滞后 <1s；inject 家族语义零触碰；真机半（读点秒≈0 目测）挂设备轮",
+        "sensitive": true,
+        "mutation": "kidpal_ts_ms_to_next_minute 返回恒 0（忙旋）或恢复板级固定 vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS)) boot 相位节拍",
+        "expectedRed": "TEST 8 tooth 1 决策表敏感（0→60000 边界）/ tooth 5 固定节拍串负锚敏感 turned red；红基线通道②（92 Tests 2 Failures 红恰 = TEST 8）≙ 同一变异态在案独立红"
       }
     ]
   },
   "crossEnd": {
-    "counterparts": [
-      {
-        "path": "firmware/main/display/char_page.cc",
-        "symbol": "kidpal_char_page_show"
-      },
-      {
-        "path": "server/deploy/openclaw-patch/make_openclaw_patch.py",
-        "symbol": "k1cRewriteText"
-      },
-      {
-        "path": "server/deploy/openclaw-patch/char_stroke_lib.py",
-        "symbol": "assemble_char"
-      }
-    ],
-    "exempt": ""
+    "counterparts": [],
+    "exempt": "单子系统纯固件变更（firmware 时间内聚簇：SNTP 挂点 + PCF85063 读写 + render_node inject + 状态栏守门），无跨包行为对偶面"
   },
-  "notes": "rigor=lite / riskTier=medium（architect /triage-change 2026-09-20 裁决 ② 单包 Lite 合一包 + human 触点①确认）。**跨两端**：板端 firmware/main/display/char_page.cc（单文件：右栏让位 + 提示条让位 + 空行不显示 + words 多词 join）+ 云面 server/deploy/**（prompt v5 bump + 网关双出口 merge + python 镜像 + ECS 部署腿）。human 决策收敛（覆盖 architect 原方案两处）：① 云面只改一件 = 把已播报的中文解释写进 display 块既有 meaning 字段（TTS 播报内容零变化、不新增字段、不改契约、不改板端渲染）；② 撤回组词（播报不读组词 ⇒ 显示面不凭空多行；不补组词数据、不重建 char_cache，architect 备选「中文词典源重建 9574 字 cache」随之作废）。遮挡真凶 = 恒显顶部状态带 top_bar_（LV_OPA_50 半透）+ status_bar_（KidPalReparentChatToLayer 的 chat_top[] reparent 到 lv_layer_top，任何状态恒显）——planner 原指认 voice_page 右内容区**已证伪并纠正**（voice_page 默认 HIDDEN、显隐单点 kidpal_chrome_mid_sync_locked）。修法取**内容让位**（不动 chrome：让状态带随窗隐藏会扩大前台维度显隐面、横跨提醒 K4 最高层与语音轮四态既有闭环）。风险：网关流式/非流式双出口 merge 不一致 = 离线绿真机红（260907-g-relay-fix 同族）→ 齿必须两路径都打。",
-  "notesIntake": [
-    "【triage 裁决链】/triage-change 2026-09-20：architect 比例化 review（只读、同会话返回）→ 第一刀复核零触碰事实源（走落法 A）→ ② 单包 Lite 合一包 + crossEnd 双向申报 → human 触点①四问（档位/拆包、云面范围、组词、旗标项）确认。",
-    "【human 判据（本包验收方向权威）】「板子端就是一个展示的地方，不用限定结构，云端给什么我们显示什么」（pod-events 98c9591f）+「就按语音播报的内容，除了笔画顺序不显示之外，语音播报什么我们就显示什么」（同 84beaf72）+「同意 这一轮走 A，B 另立立项」（b5f4485d）——右栏目标 = 播报内容 − 笔名。",
-    "【落法 B 边界（防夹带）】display 块通用文本通道 = 另立契约门立项（human 已同意，登记于 delivery/workstreams/m2-char-window/progress.md 2026-09-20 节），触发通道 /arch-change；本轮**零新增字段**，builder/acceptance-author 均不得顺手预造通用容器。",
-    "【acceptance-author 义务】① 板端齿落 `firmware/main/test/char_window_overlay.acceptance.c`（在世件，tighten/additive 留痕）；② 云面齿落 `server/acceptance/` **新件（禁落 archive 名目录）**，并同步 `char_stroke_lib.py` docstring 的冻结验收指针（其原指 `server/acceptance/test_char_stroke.acceptance.py` 已归档）；③ 每条源锚齿配负向变异自证（MCF 已证负向齿有效、K3 A5a 正向包含齿假绿教训）。",
-    "【builder 义务】① 板端只动 `char_page.cc`（不触 char_stroke.c/.h 纯逻辑合约）；② 云面 prompt 用 **v5 新文件 bump**（勿回改 v4）+ bump 前核槽位未被并行分支占用（ARQ-260908 教训）+ 同步 OPENCLAW_SYSTEM_PROMPT_CARRIER 与 apply-xiaozhi-overlay.sh 渲染引用；③ 网关 merge 两条出口路径（k1cRewriteText 非流式 / k1cLookupBlock 流式）必须一致；④ ECS 部署按 DEPLOY-RUNBOOK.md，live 腿真跑不得只探端口。",
-    "【旗标项裁决】提示条一并修（human 裁）；米字格大框顶部**不动**（human 未觉碍，50% 半透仍可见）。",
-    "【planner 三点裁决（acceptance-author 报告遗留 1-3，2026-09-20）】① char_stroke_lib.py docstring 指针：维持冻齿转 builder 执行（builder scope allow server/** 覆盖，无须放宽 acceptance-author scope）——齿现红即 builder 靶。② UTF-8 半字截断：**不动 card_build 字节截断冻结语义**（MCF TEST 6 既定），改由 **char_page 装配层的 join 实现侧 UTF-8-aware 封顶**（组词 join 时按 UTF-8 边界截断到安全长度再交 card_build）——card_build 永不见到超长串，冻结面零触碰；设备侧归真机腿。③ MCD-A5 冻结点 = 既有 C1 函数 `replace_minimal_block(text, full_data)`，builder 须沿该函数扩展（另立函数名 = 齿保持红 = 返 planner）。",
-    "【quota 事件】acceptance-author 收尾时撞 5h 配额上限（429，reset 16:25 CST）——工作已全部落盘、报告完整交付，无未落盘工作。"
-  ]
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏，plan.md 边角节）：F2 冻结语义（只 settimeofday 不 re-inject 修不了 P1）、F4 POSIX TZ `CST-8` 符号反转易错 + RTC 寄存器存本地 BCD 读出不经 TZ、F5 失败退避不重试风暴 + `System time is not set` W 日志节流、F3 断电重启须 settimeofday 从 RTC 恢复系统时间、OS 位停振不写回等 SNTP 降级。铁律：OTA 校时通道不复活（ota.cc server_time 保持死代码）、电池链路 owner 边界不触碰、inject 家族 guard 齿零偏移。调度：K4 已合并收尾（74b6929 回 main / 7a5d909 落账），排常驻树续棒；triage = architect 四档裁决 2026-09-22 ②单包 Lite，human 拍板范围 F1=(a) + F2 随包，包 id m3-k5 序号。origin.taskpackage.json 曾截断损坏（.time 残片 + 尾部缺失），launch prep 2026-09-22 主线程对照 K4 骨架修复补齐——intake 时 planner 注意核对本文件与其余制品一致性。",
+  "docsOwner": "integrator"
 }

@@ -62,20 +62,29 @@ OpenClaw 回复文本（示例）
 ```
 板子行为：切到 P4 查字页，整屏显示"勇"，KEY 单击播笔顺动画（沿 medians），可显示拼音/笔画数/组词。
 
-#### ② `schedule` —— 课表查询结果
+#### ② `schedule` —— 课表页「一周总览」网格
+完整网格载荷（front 计算后下发设备）：
 ```json
 {
   "view": "schedule",
   "data": {
-    "title": "今天下午",
-    "items": [
-      { "time": "14:00", "name": "钢琴课", "location": "琴行" },
-      { "time": "16:30", "name": "英语培训", "location": "新东方" }
-    ]
+    "week": {
+      "courses": [
+        { "day": 0, "slot": 0, "name": "语文", "flags": 0 },
+        { "day": 0, "slot": 2, "name": "口语", "flags": 1 }
+      ]
+    }
   }
 }
 ```
-板子行为：切到 P2 课表页，列表显示这些课程。
+
+- `day` = 0..6、`slot` = 0 上午 / 1 下午 / 2 晚上。**day 为 0 基：`day=0` 对应 B1「星期」列「周一」（数组下标自然序）**；一格多门 = 同 (day, slot) 多条，逐门列出。
+- `flags` 位掩码：bit0 = ※ 临时安排（来自 B1「一次性安排」区块）、bit1 = 星标呼应（该课为 group_upcoming 判定的当前「接下来」标记项）。**备注不进网格载荷**（网格/首页只放课程名；备注露面处 = 语音答复 S-F1.3 AC4 + 提醒 speech S-F1.4）。
+- **生产纪律（2026-09-21 契约门裁定）**：网格由 front 机械计算（schedule.py 唯一解析器，B1 三区块），**不由 LLM 生成**；「帮我显示课表」时 LLM 只发意图薄载荷 `{ "view": "schedule", "data": {} }`，front 截获后展开成完整网格再下发。旧「不进反白/星标等 UI 语义态」理念就此修订——※/星标判定信息（一次性安排区块归属、当前接下来标记项）只有云端可知、spec S-F1.2 AC3/AC4 要求板上呈现，故以 `flags` 位承载。
+- **「今天」列不在载荷内**：板端按设备本地日期零点切换自行推导高亮列（spec S-F1.2 补充规则）。
+- 板子行为：切到 P2 课表页渲染一周总览网格（学校课逐节、课外课逐门小字竖排、※/星标按 flags 渲染、今天列整列高亮）；薄载荷不直达设备（front 截获展开）；畸形/旧形状 data 由 front 机械校验拒绝并降级提示，不入板盲渲染（V27）。
+
+- （契约变更记录：2026-09-21 经契约门批准重定义本 view data 形状——旧 `{title, items:[{time,name,location}]}` 列表形即废；定稿 = 周网格扁平形 + flags 位掩码 + 意图薄载荷，随 M3-K1 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md)。）
 
 #### ③ `story_list` —— 故事列表
 ```json
@@ -123,6 +132,22 @@ OpenClaw 回复文本（示例）
 ```
 板子行为：回 P1 首页常显。
 
+**可选 `data.upcoming` 承载「接下来」（2026-09-21 新增，additive——缺 `data` 时设备行为完全不变）**：
+```json
+{ "view": "home", "data": {
+    "upcoming": {
+      "day_key": "今天",
+      "items": [ { "time": "14:00", "name": "钢琴课" } ],
+      "preview": { "time": "明早", "name": "春游" }
+    }
+  } }
+```
+
+- 形状与板端 `home_p1.h` 冻结注入 seam（`hp1_item_t {time,name}` / `kidpal_home_p1_schedule_inject(day_key, items, next_day_preview)`）对齐——payload 即 seam 注入参数的 JSON 化。
+- 分组口径 = 决策 26「接下来」分组（学校课合并「上学」、培训班/一次性逐项、最近项最醒目、再下可带明日预告）；**producer = front 机械计算**（schedule.py `group_upcoming` 单源），OpenClaw（LLM）专注话术、不产此载荷（2026-09-21 契约门裁定）。推送时机（WS 建连 / 每日零点 / 新建日程即时）属行为策略，权威承载 = arch §5.2 场景① + §10 决策 26，不进契约。
+
+- （契约变更记录：2026-09-21 经契约门批准新增可选 `data.upcoming` 承载首页「接下来」，additive 向后兼容；随 M3-K1 同 PR 落地，同上 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md)。）
+
 ### 1.4 控制类指令（OpenClaw 判意图后下发）
 
 控制指令也走 display 块，`view: "control"`：
@@ -139,14 +164,14 @@ OpenClaw 回复文本（示例）
 
 1. 承接设备会话：wss 常驻连接，握手 `Authorization: Bearer <device-token>` 强制鉴权（**token 未设 = 拒绝服务**，不留 validation-mode 后门）。
 2. 上行：Opus 帧 → 服务端 VAD 切句 → 云 ASR → 文字 → 转发 OpenClaw（OpenAI 兼容端点，流式）。
-3. 切分与校验：拿到回复文本用正则切出 ` ```display ` 块，**机械 schema 校验**（view ∈ 白名单 char/schedule/story_list/story_text/text/home/control、data shape/大小上限、脏 JSON 拒绝并降级友好提示）。
+3. 切分与校验：拿到回复文本用正则切出 ` ```display ` 块，**机械 schema 校验**（view ∈ 白名单 char/schedule/story_list/story_text/text/home/control、data shape/大小上限、脏 JSON 拒绝并降级友好提示）；schedule 薄载荷（`data:{}`）由 front 截获展开成完整周网格再下发（§1.3②），旧列表形状 schedule data 拒绝并降级提示。课表解析/网格计算仍由 schedule.py 唯一解析器单源承载（arch §5.1.2 明列课表解析组件归 front）——此为机械计算与校验，非自研业务逻辑，**零自研业务逻辑红线不变**。
 4. 正文送 TTS（edge-tts）→ 句级流水线 → 下行 Opus 帧；display JSON 经 `mcp` kidpal/display 工具调用下发（小智原生 alert/custom 通道弃用）。
 5. 提醒定时推送：`mcp` kidpal/alert，送达/出队语义见 §三。
 
 ### 1.6 对 OpenClaw 的要求（system prompt 约束）
 
 在调 `/v1/chat/completions` 时，通过 system prompt 让 DeepSeek **始终**按此格式回复：
-> "你是儿童学习伙伴。每次回复分两部分：先用口语化、适合8-12岁孩子的话回答（这部分会被念出来）；然后在末尾附一个 ` ```display ` 代码块，内含屏幕显示指令 JSON，view 取 char/schedule/story_list/story_text/text/home/control 之一。"
+> "你是儿童学习伙伴。每次回复分两部分：先用口语化、适合8-12岁孩子的话回答（这部分会被念出来）；然后在末尾附一个 ` ```display ` 代码块，内含屏幕显示指令 JSON，view 取 char/schedule/story_list/story_text/text/home/control 之一。涉及课表时：孩子问课表只用文字回答（备注类提醒在话术里说，如『舞蹈课记得带护膝』），不要生成课表 JSON；需要切到课表页时只发 `{"view":"schedule","data":{}}` 意图薄载荷，完整周网格由网关展开（2026-09-21 契约门改写，见 §1.3②）。"
 
 ---
 
@@ -192,7 +217,7 @@ remind_before_min: 15        # ⚠️ 已废止（legacy，不再消费）——
 - **每周固定课表**：`星期` 取 周一~周日；`时间` 用 `HH:MM-HH:MM` 或 `HH:MM`。查询"今天/明天有什么课"时按星期匹配。
 - **一次性安排**：`日期` 用 `YYYY-MM-DD`，过期自动忽略（查询按当前时间过滤；MVP 不归档，增长治理留后续）。
 - **学校课程表**：可选区块，孩子问"今天第几节什么课"时用。
-- **DeepSeek 解析**：直接读 MD，按"今天星期几/当前时间"筛选，生成自然语言答复 + `schedule` 显示指令。
+- **DeepSeek/OpenClaw 课表职责（2026-09-21 契约门改写）**：读 MD 生成自然语言答复（查询按"今天星期几/当前时间"筛选；备注在话术里读回）；**不再产 `schedule` 显示指令 JSON**——需要切课表页时只发意图薄载荷 `{"view":"schedule","data":{}}`（§1.3②），完整周网格与首页「接下来」载荷均由 front 机械计算（schedule.py 单源，§1.3②/§1.3⑥）。
 - **提醒（2026-09-03 更新）**：见 §三——OpenClaw cron 算三档时刻写 `alerts/pending.json`，网关到点经 `mcp` kidpal/alert 推送、渲染回执出队；提前量模型（`remind_before_min`）废止。
 - **备注列**：携带内容（如"带画具"）复用备注列承载，"备注里哪部分算要带的"由 OpenClaw system prompt 约定（2026-09-02 定，表格主体零变更）。
 

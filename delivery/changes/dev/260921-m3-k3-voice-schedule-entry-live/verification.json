@@ -1,0 +1,93 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "260921-m3-k3-voice-schedule-entry-live",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "d4839306-bfe9-4f4e-9716-d106dbd8ead2",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/verifier-evidence/rounds/r2.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260921-m3-k3-voice-schedule-entry-live --phase final --round 2 --invocation-id d4839306-bfe9-4f4e-9716-d106dbd8ead2",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-21"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 1,
+        "invocationId": "5b656c37-1112-496b-9435-c67e1812e251",
+        "producedBy": "verifier（scoped，7 闸全绿，offline 半程；A3 两齿设计态红待设备轮制品）",
+        "mechanicalCheck": "fact ok:true / observedGateExit:0（r1.json 直读；r2 final 复验 PASS 时级联覆盖同源 fact 流）"
+      }
+    ]
+  },
+  "lifecycle": {
+    "rounds": [
+      {
+        "round": 1,
+        "timing": "scoped",
+        "outcome": "绿（7 闸全绿，verifier，offline 半程；A3 设备轮两齿设计态红 = 制品未落的预期红，落在 acceptance 执行面而非治理闸）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/verifier-evidence/rounds/r1.json"
+      },
+      {
+        "round": 2,
+        "timing": "scoped+full",
+        "outcome": "绿（9 闸全绿 final，unit/acceptance 两 full 闸入场，integrator；A3 两齿随 device-round-record.md 落盘转绿）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/verifier-evidence/rounds/r2.json"
+      }
+    ],
+    "reworkRounds": 0,
+    "reworkNote": "零返工轮——r1 scoped 全绿（offline 半程），r2 final 全绿（设备轮制品落盘后一次通过）",
+    "redBaseline": "14 齿落盘后 acceptance-author 实跑：python -m pytest -q --import-mode=importlib server/acceptance/ => 12 failed / 29 passed（12 RED = v6 未落盘 5 + 接线锚红 1 + 意图展开未实现 4 + 设备轮未落 2；2 must-stay-green = 三面接线一致性齿 + v5 零回改齿）——红名 verbatim 落账 taskpackage.json redBaselineResult",
+    "greenState": "同目录 14/14 全绿（integrator 独立复跑 2026-09-21 一致，final r2 acceptance 闸同口径 41 passed 零新增红）+ unit 闸 95 passed（server/tests 54 + 验收件收集 41）"
+  },
+  "provenance": {
+    "sourceType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+    "planRef": "delivery/taskpackages/260921-m3-k3-voice-schedule-entry-live/plan.md",
+    "launchBaseline": "91b3b5c（K3 launch 面就绪，两面基线重锚 @ 91b3b5c）；分支上 K4 立项 commit 40ce8c7 属预期随批",
+    "contractGate": "不需要——契约形状消费 K1 契约门定稿（HUMAN_APPROVED，24bb1b8 随 K1 落地），本包零契约改动",
+    "mergeOrder": 35,
+    "dependsOn": ["260921-m3-k1-cloud-schedule-producer", "260921-m3-k2-p2-week-grid-page"],
+    "workstream": "m3-schedule"
+  },
+  "scopeAudit": {
+    "implementationFiles": [
+      "server/deploy/openclaw-system-prompt.v6.md",
+      "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+      "server/deploy/apply-xiaozhi-overlay.sh",
+      "server/deploy/provider.config.yaml",
+      "server/gateway/schedule.py",
+      "server/gateway/front/front_app.py",
+      "server/tests/test_schedule_producer_units.py"
+    ],
+    "frozenAcceptanceFiles": [
+      "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py"
+    ],
+    "unitTestFiles": [
+      "server/tests/test_schedule_producer_units.py"
+    ],
+    "zeroTouchSurfaces": ["docs/requirements.md", "docs/architecture.md", "docs/contracts/", ".claude/", "firmware/"],
+    "contractTouchNote": "全生命周期 docs/contracts/**、docs/**、.claude/**、firmware/** 零命中（git diff 实跑零输出）；prompt v5 及以下历史版本零回改（sha256 机制齿在册）",
+    "auditCommand": "git diff --stat（worktree 降级形态：detect_changes N/A (worktree)；新增符号 expand_schedule_intent_payload 消费闭集抽查 = front_app 接线 + 冻结齿/单测，见 review-packet Verification Evidence）"
+  },
+  "demoReconciliation": {
+    "testHost": "pytest offline 齿 + human 持板真机确认轮（三源日志取证）",
+    "offlinePytest": "python -m pytest -q --import-mode=importlib server/acceptance/ => 41 passed（本包 14/14；integrator 独立复跑 + final r2 acceptance 闸一致）",
+    "deviceRound": "M3K3-A3 真机确认轮（2026-09-21 晚，human 目击设备轮 OK）：device-round-record.md 三源逐字对账——AC1/AC2/AC4 目击、三触发①②到端证据、QQ 录入 37→40 全通路实证；缺口逐条显式化（目击粒度四项、③ journalctl 缺位、真零点点位、他包在册缺口）",
+    "liveLeg": "M3K1-A5 / M3K2-A7 随本轮按证据程度收口（K1/K2 deferred 真机半闭环声明见 review-packet）——③ marker 链路机器日志半缺位已显式挂账转 K1 部署面复核，不静默",
+    "conclusion": "demo 证据 == roadmap §3 K3 效果段承诺（offline 齿 RED→GREEN + 真机确认轮三源取证 + 效果段主链全目击，目击粒度差异逐条挂账，详见 review-packet Demo 对账行）"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/review-packet.md",
+    "docsDelta": "delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/docs-delta.md",
+    "deviceRoundRecord": "delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/device-round-record.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；其后 pre-merge-escalation-gate 放行 → merge-driver --pod 本地合并"
+}

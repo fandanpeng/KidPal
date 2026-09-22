@@ -7,8 +7,13 @@ schedule_view_payload / group_upcoming)，本模块不得偏移；行为契约�
 
 - 契约 §二 B1 课表 MD 结构（表体零变更）：每周固定课表 + 一次性安排两类必带,
   学校课程表为可选区块（缺块 -> 空表）。
-- 契约 §1.3 ② schedule view data 形状 {title, items:[{time,name,location}]}
-  —— 零增减（不发明 view、不加字段、不进反白/星标等 UI 语义态）。
+- 契约 §1.3 ② schedule view data 形状（2026-09-21 契约门重定义，随 M3-K1 同 PR，
+  packet = delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/）：
+  完整网格 {week:{courses:[{day,slot,name,flags}]}}——day 0 基（周一=0）、slot
+  0 上午 / 1 下午 / 2 晚上、flags bit0=※ 临时安排 bit1=星标呼应；意图薄载荷
+  data:{}（front 截获展开，不直达设备）；旧 {title, items} 列表形即废（front
+  机械校验拒绝并降级）。备注不进网格载荷；旧「不进反白/星标等 UI 语义态」
+  钉行由 flags 位承载取代（契约 §1.3② 变更记录行）。
 - P2-E4：frontmatter ``remind_before_min`` 已废止（契约 §2.3, 2026-09-03 契约门
   裁定）——解析忽略、永不进入模型；提醒触发逻辑不在本模块（归包 7）。
 - P2-A2：脏行大声拒绝（ValueError），绝不静默丢行。
@@ -27,7 +32,7 @@ start，无下一事项时回退 start-only 规则 start >= now），与「进�
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 契约 §2.3：星期取 周一~周日（周一=1..周日=7；「周天」同义接受）。
 _WEEKDAY_TOKENS = {
@@ -337,3 +342,133 @@ def group_upcoming(model: dict, date_iso: str, now_hhmm: str,
     kept.sort(key=lambda it: it["time"])  # 合并项参与排序
     return [{"time": it["time"], "name": it["name"], "location": it["location"]}
             for it in kept]
+
+
+# --------------------------------------------------------------------------- #
+# 周网格 / home upcoming producer（契约门重定义，M3-K1）
+# --------------------------------------------------------------------------- #
+# 分界常量（契约 §1.3② 未钉明确时刻分界，accepted 显式缺口③——builder 实现处留痕）：
+#   上午 slot0 = 00:00 起、下午 slot1 = 12:00 起、晚上 slot2 = 18:00 起（含）。
+# 只影响无歧义样本之外的分界时刻（10:00→0、16:30→1、18:30/19:00→2 均稳）。
+_PM_START = "12:00"       # slot 1 下午起点（含）
+_EVENING_START = "18:00"  # slot 2 晚上起点（含）
+# 学校课程表第 1..4 节 -> 上午(slot0)、第 5..6 节 -> 下午(slot1)（spec S-F1.2 AC1 4+2）。
+_SCHOOL_AM_PERIODS = 4
+
+
+def _slot_of(hhmm: str) -> int:
+    """开始时刻 -> slot（0 上午 / 1 下午 / 2 晚上）。契约未钉分界、取无歧义留痕常量。"""
+    if hhmm >= _EVENING_START:
+        return 2
+    if hhmm >= _PM_START:
+        return 1
+    return 0
+
+
+def _week_bounds(week_date_iso: str) -> tuple[str, str]:
+    """week_date_iso（周内任意日历日）所在周一..周日周，返回 (周一_iso, 周日_iso)。"""
+    d = datetime.strptime(_parse_date_token(week_date_iso), "%Y-%m-%d").date()
+    monday = d - timedelta(days=d.weekday())
+    return monday.isoformat(), (monday + timedelta(days=6)).isoformat()
+
+
+def week_grid_payload(model: dict, week_date_iso: str,
+                      now_hhmm: str | None = None,
+                      school_start: str | None = None) -> dict:
+    """契约 §1.3② 周网格 producer 载荷 {view:schedule, data:{week:{courses}}}。
+
+    - 学校课（「学校课程表」可选区块）逐节：第 1..4 节 -> slot0 上午、第 5..6 节 ->
+      slot1 下午，逐节各一条，flags 基 0；空白节跳过。
+    - 固定课外课（「每周固定课表」）逐门：day = row weekday-1（周一=0 基），slot 按
+      开始时刻落上午/下午/晚上，flags 基 0。
+    - 临时安排（「一次性安排」）逐门：当周日期落格（同日映射），flags |= 1(※)；
+      周外日期（过期/未到）不出现。
+    - 星标（now_hhmm 给定时）：group_upcoming(model, week_date_iso, now_hhmm,
+      school_start) 首项按 name + day(week_date_iso 星期-1) + slot(其开始时刻) 匹配
+      网格条目 -> 该条目 flags |= 2；合并「上学」项无同名课程 -> 不匹配不炸无星标；
+      无首项（当日无 upcoming）-> 全网格无 bit1。
+
+    输出 {view, data.week.courses} 键集精确；courses 条目键集 {day,slot,name,flags}；
+    「今天」列不在载荷（设备本地日期推导）；备注不进载荷。"""
+    if now_hhmm is not None:
+        _validate_hhmm(now_hhmm)
+    start_iso, end_iso = _week_bounds(week_date_iso)
+
+    courses: list[dict] = []
+    # 学校课逐节（optional 区块；空白节跳过不占格）
+    for row in model.get("school", []):
+        for idx, name in enumerate(row["periods"]):
+            if not name or not name.strip():
+                continue
+            slot = 0 if idx < _SCHOOL_AM_PERIODS else 1
+            courses.append({"day": row["weekday"] - 1, "slot": slot,
+                            "name": name.strip(), "flags": 0})
+    # 固定课外课逐门（按开始时刻落槽）
+    for row in model.get("weekly", []):
+        courses.append({"day": row["weekday"] - 1, "slot": _slot_of(row["start"]),
+                        "name": row["name"], "flags": 0})
+    # 临时安排逐门：仅当周日期落格且带 ※(bit0)；周外过期/未到过滤
+    for row in model.get("onetime", []):
+        if start_iso <= row["date"] <= end_iso:
+            courses.append({"day": _weekday_of_date(row["date"]) - 1,
+                            "slot": _slot_of(row["start"]),
+                            "name": row["name"], "flags": 1})
+
+    # 星标呼应（bit1）：当前「接下来」首项匹配网格条目则叠加
+    if now_hhmm is not None:
+        upcoming = group_upcoming(model, week_date_iso, now_hhmm, school_start)
+        if upcoming:
+            first = upcoming[0]
+            day = _weekday_of_date(week_date_iso) - 1
+            slot = _slot_of(first["time"])
+            for c in courses:
+                if (c["name"] == first["name"] and c["day"] == day
+                        and c["slot"] == slot):
+                    c["flags"] |= 2
+                    break  # 一格多门逐门列出时同名同格只星标其一（当前项）
+
+    return {"view": "schedule", "data": {"week": {"courses": courses}}}
+
+
+def home_upcoming_payload(model: dict, today_iso: str, now_hhmm: str,
+                          tomorrow_iso: str,
+                          school_start: str | None = None) -> dict:
+    """契约 §1.3⑥ home 可选 data.upcoming producer 载荷。
+
+    items = group_upcoming(model, today_iso, now_hhmm, school_start) 逐项剥 location
+    后的 {time,name}（分组口径零偏移复用，含决策 26 合并「上学」项 12:00 在校时段计
+    upcoming 语义）；preview = group_upcoming(model, tomorrow_iso, "00:00",
+    school_start) 首项的 {time,name}（明日预告首项开始时刻）；明日无项 -> preview None。
+    day_key 恒为「今天」。payload 即 home_p1 seam 注入参数的 JSON 化。"""
+    items = [{"time": it["time"], "name": it["name"]}
+             for it in group_upcoming(model, today_iso, now_hhmm, school_start)]
+    nxt = group_upcoming(model, tomorrow_iso, "00:00", school_start)
+    preview = ({"time": nxt[0]["time"], "name": nxt[0]["name"]} if nxt else None)
+    return {"view": "home", "data": {"upcoming": {
+        "day_key": "今天", "items": items, "preview": preview}}}
+
+
+def expand_schedule_intent_payload(payload, model: dict, week_date_iso: str,
+                                   now_hhmm: str | None = None,
+                                   school_start: str | None = None) -> "dict | None":
+    """「帮我显示课表」意图薄载荷 -> front 截获展开的决策面（契约 §1.3② 甲案，
+    TaskPackage 260921-m3-k3-voice-schedule-entry-live M3K3-A2 冻结契约）。
+
+    - payload 恰为意图薄载荷：dict 且 view == "schedule" 且 data == {}（空 dict）
+      -> 返回 week_grid_payload(model, week_date_iso, now_hhmm, school_start)
+      （**单源同算**——直接复用 K1 周网格 producer，绝不另起一套网格计算）。
+    - 其余一切（非 dict / view 非 schedule / data 缺失 / data 非空 dict / data
+      非 dict）-> 返回 None = 不截获，front 原样走既有 relay 链（薄载荷之外形状由
+      display_schema.validate_display 机械门裁决：新周网格放行、旧 {title,items}
+      拒绝降级——Q5，K1 已冻结，本件不重复）。
+    - 脏 B1（model 解析自坏 MD）-> 沿 week_grid_payload 的 ValueError 大声传播，
+      绝不静默产空网格（P2-A2 先例）。
+    """
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("view") != "schedule":
+        return None
+    data = payload.get("data")
+    if not isinstance(data, dict) or data:
+        return None
+    return week_grid_payload(model, week_date_iso, now_hhmm, school_start)

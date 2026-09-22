@@ -40,6 +40,7 @@
 #include "kidpal_render_node.h"
 
 #include "home_p1.h"
+#include "kidpal_p1_font.h"
 #include "schedule_page.h"
 #include "story_page.h"
 #include "char_page.h"
@@ -93,6 +94,10 @@ static int s_temp_c       = 0;
 static int s_humidity_pct = 0;
 static int s_battery_pct  = 100; /* 保守初始值（无 ADC 读数时使用） */
 static int s_charging     = 0;
+/* 设备本地星期（周一=0..周日=6; -1 = 未注入/越域不画假「今天」）。M3-K2 今天列
+ * 推导数据源：板级 RTC 装配点经 kidpal_render_node_inject_weekday 写入, P2 网格
+ * 每次落屏重取（本地零点跨天后板级重读 RTC 即切换, 不依赖云端, NFR-OFF-1）。 */
+static int s_rtc_wday     = -1;
 
 /* 动画 LVGL 定时器（在 init 中创建，每 RN_TICK_MS 触发一次）。仅重渲首页动画帧，
  * 不做任何前台/语音对账（对账已由事件驱动 layer push/pop 接管）。 */
@@ -110,12 +115,11 @@ static const uint32_t RN_TICK_MS = 1000;
 static unsigned long s_char_window_idle_ms = 0;
 static volatile int  s_char_window_key_hit = 0;
 
-/* P2 课表缓存（mcp_server 收到课表数据后调 cache_schedule 填充；cycle_next 读此）。 */
-static char                s_sched_title[64] = "今日课表";
-static kidpal_schedule_item_t s_sched_items[16];
-static int                 s_sched_n = 0;
-static int                 s_sched_is_tomorrow = 0;
-static char                s_sched_now[8] = "";
+/* P2 一周总览网格缓存（mcp_server 收到周网格数据解析成功后调
+ * cache_schedule_grid 填充; cycle_next 读此渲染 P2; cache_schedule 网格化,
+ * 旧 16 项列表缓存作废, 容量 KSG_COURSE_CAP=84 定容冻结值）。 */
+static kidpal_schedule_course_t s_grid_courses[KSG_COURSE_CAP];
+static int                      s_grid_n = 0;
 
 /* P3 故事缓存。 */
 static kidpal_story_view_t s_story_view = {};
@@ -194,6 +198,140 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
     (void)argb; (void)w; (void)h;
     /* 设备侧不应到达此路径（见上注）。返回 -1 与弱默认一致，避免 g_fb 被意外链入。 */
     return -1;
+}
+
+/* -------------------------------------------------------------------------
+ * [S1] 设备字形强符号：kidpal_p1_font_glyph（覆盖 home_p1.c 弱默认）
+ *
+ * ksg_text_font()（schedule_page.c 先例）同款双分支取对话页同款 14px 普通字体
+ * font_puhui_14_1。**方案 B（human 拍板 2026-09-22）**：去掉 req_raw_bitmap=1，
+ * 走 LVGL 官方解码（lv_font_get_glyph_bitmap 把字体 glyph 转成 A8 写入 draw_buf，
+ * 内部按行处理 stride，修掉 live 轮 A6 FAIL 的「fdsc->stride=0 时 bpp=1 PLAIN
+ * 连续位流跨行逐位漂移」根因——旧 raw 位流手解假定字节对齐行）→ A8 阈值 128 化
+ * 1bpp（A8@128 ≡ A4@8 ≡ A2@2 ≡ A1@1 = 50% 覆盖，逐齿期望零偏移）。字形盒上限收
+ * 32×32（对 [S1] 冻结 1..64 的实现收紧子集，非契约变更）。设备 builds 恰一个强
+ * 符号覆盖 home_p1 weak；host 侧由 host_infra_seam.c 提供同符号（本 TU 不编入
+ * host runner）。
+ *
+ * **共享核心同构重构（[S6] 追加 seam，第三追加轮 A11）**：解码+阈值化核心重构为
+ * 字体参数化 p1_glyph_render_core()，[S1] 入口 = 固定设备字体调核心——与 host seam
+ * （host_infra_seam.c p1_glyph_core）同构，两 TU 对同字体输出逐字节一致（TEST 10
+ * tooth 5 承载）。**零新增导出符号**：设备生产路径唯一字体入口仍 kidpal_p1_font_glyph，
+ * [S6] 为测试可达缝，设备 TU 不导出（头注登记面；[S6] 强符号仅 host runner 定义）。
+ * ---------------------------------------------------------------------- */
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
+#elif defined(ESP_PLATFORM)
+LV_FONT_DECLARE(font_puhui_14_1);
+#endif
+
+/* 方案 B A8 静态 draw_buf（LVGL 官方解码 scratch；32×32 盒上限）。每个二进制恰
+ * 一个 TU 持有一份（设备本 TU + host seam TU），静态内存增量 = 本缓冲大小 + 1bpp
+ * 输出（32*((32+7)/8)=128B）。 */
+#define P1_GLYPH_BOX_CAP 32
+static unsigned char s_glyph_a8_data[LV_DRAW_BUF_SIZE(P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP, LV_COLOR_FORMAT_A8)]
+    __attribute__((aligned(LV_DRAW_BUF_ALIGN)));
+static lv_draw_buf_t s_glyph_a8_buf;
+static int s_glyph_a8_ready = 0;
+
+static int p1_glyph_a8_buf_init(void)
+{
+    if (s_glyph_a8_ready) {
+        return 1;
+    }
+    if (lv_draw_buf_init(&s_glyph_a8_buf, P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP,
+                         LV_COLOR_FORMAT_A8, 0,
+                         s_glyph_a8_data, sizeof(s_glyph_a8_data)) != LV_RESULT_OK) {
+        return 0;
+    }
+    s_glyph_a8_ready = 1;
+    return 1;
+}
+
+/* [S6] 共享核心（设备同构副本，host seam 同名态）：字体参数化解码+阈值化核心。
+ * 返回 0 = 字形可用; 非 0 = 不可用。语义与 [S1] 逐字段一致。static——设备 TU
+ * 零新增导出符号（[S6] 仅 host runner 定义，设备单一生产入口仍 [S1]）。 */
+static int p1_glyph_render_core(const lv_font_t *font, uint32_t codepoint,
+                                kidpal_p1_glyph_t *out)
+{
+    lv_font_glyph_dsc_t dsc;
+    const uint8_t *a8;
+    static unsigned char s_bits[P1_GLYPH_BOX_CAP * ((P1_GLYPH_BOX_CAP + 7) / 8)];
+    int byte_stride, a8_stride;
+    int x, y;
+
+    if (out == nullptr || font == nullptr) {
+        return -1; /* [S1]: out == NULL -> 非 0；NULL 字体防御 */
+    }
+    if (!lv_font_get_glyph_dsc(font, &dsc, codepoint, 0)) {
+        return -1;
+    }
+    if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
+        return -1;
+    }
+    if (static_cast<int>(dsc.box_w) > P1_GLYPH_BOX_CAP ||
+        static_cast<int>(dsc.box_h) > P1_GLYPH_BOX_CAP) {
+        return -1; /* 32×32 实现收紧子集（[S1] 冻结 1..64 的实现子集） */
+    }
+    /* 方案 B：req_raw_bitmap 保持 0（默认）——LVGL 官方解码到 A8 draw_buf。
+     * **live 轮乱码根因**（设备 TU 同构修复，host seam 同款注释）：lv_font_get_glyph_dsc
+     * 不初始化 req_raw_bitmap（stack 局部未清零）；直接调 font->get_glyph_bitmap 会
+     * 旁路掉官方包装 lv_font_get_glyph_bitmap 的 req_raw_bitmap=0 归一化，未清零字段
+     * 随机命中 raw 早退 → 返回原图而非解码 A8，文字行乱码。TEST 10（A11）host 实证
+     * 复现（通道④分支1），修复 = 显式清零（两 TU 同构同改）。 */
+    dsc.req_raw_bitmap = 0;
+    if (!p1_glyph_a8_buf_init()) {
+        return -1;
+    }
+    {
+        /* **live 轮乱码根因（设备 TU 同构修复，host seam 同款注释）**：LVGL 9
+         * get_glyph_bitmap 返回 `lv_draw_buf_t *`（struct），须读返回对象 .data；
+         * 旧实现把 struct 指针当 A8 像素读 → 读到 draw_buf 结构头垃圾 → 字形错乱。
+         * TEST 10（A11）host 实证复现（通道④分支1），两 TU 同构同改。 */
+        const lv_draw_buf_t *s_dec_db =
+            static_cast<const lv_draw_buf_t *>(font->get_glyph_bitmap(&dsc, &s_glyph_a8_buf));
+        if (s_dec_db == nullptr) {
+            return -1;
+        }
+        a8 = static_cast<const uint8_t *>(s_dec_db->data);
+    }
+    if (a8 == nullptr) {
+        return -1;
+    }
+    byte_stride = (static_cast<int>(dsc.box_w) + 7) / 8;
+    a8_stride = static_cast<int>(lv_draw_buf_width_to_stride(
+        static_cast<uint32_t>(dsc.box_w), LV_COLOR_FORMAT_A8));
+    std::memset(s_bits, 0, sizeof(s_bits));
+    for (y = 0; y < static_cast<int>(dsc.box_h); y++) {
+        for (x = 0; x < static_cast<int>(dsc.box_w); x++) {
+            if (a8[y * a8_stride + x] >= 128) { /* A8 阈值 128 = 50% 覆盖 */
+                s_bits[y * byte_stride + (x >> 3)] |=
+                    static_cast<unsigned char>(1u << (7 - (x & 7)));
+            }
+        }
+    }
+    out->w = static_cast<int>(dsc.box_w);
+    out->h = static_cast<int>(dsc.box_h);
+    out->advance = static_cast<int>(dsc.adv_w);
+    out->bits = s_bits;
+    return 0;
+}
+
+extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    return p1_glyph_render_core(&lv_font_source_han_sans_sc_14_cjk, codepoint, out);
+#elif defined(ESP_PLATFORM)
+    return p1_glyph_render_core(&font_puhui_14_1, codepoint, out);
+#else
+    if (out != nullptr) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = nullptr;
+    }
+    return -1;
+#endif
 }
 
 /* -------------------------------------------------------------------------
@@ -316,6 +454,28 @@ void kidpal_render_node_inject_battery(int battery_pct, int charging)
      * HOME 分支 / kidpal_render_node_tick 继续消费）。 */
     if (battery_pct >= 0 && battery_pct <= 100) { s_battery_pct = battery_pct; }
     s_charging = (charging != 0) ? 1 : 0;
+}
+
+void kidpal_render_node_inject_weekday(int mon0_wday)
+{
+    /* M3-K2 星期注入缝（inject_rtc/inject_env/inject_battery 家族同款第四缝）：
+     * 0..6 合法写入（周一=0..周日=6, 与 producer day 同基）; 越域忽略保持原值
+     * （防御, 不崩）——未注入/越域时 P2 网格不画假「今天」高亮。 */
+    if (mon0_wday >= 0 && mon0_wday <= 6) { s_rtc_wday = mon0_wday; }
+}
+
+int kidpal_render_node_today_col(void)
+{
+    return s_rtc_wday;
+}
+
+int kidpal_render_node_home_on_screen(void)
+{
+    /* P1 首页在屏 = LOCAL_PAGE 前台且当前页 = HOME（同 kidpal_render_node_tick
+     * 首页动画重渲判据口径）; mcp home 路由「data.upcoming 注入成功且 P1 在屏 ->
+     * 重渲染首页日程主体」的判据单一权威（M3-K2 A5 接线）。 */
+    return (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE &&
+            s_local_page == KP_PAGE_HOME) ? 1 : 0;
 }
 
 void kidpal_render_node_show_home(void)
@@ -573,13 +733,14 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             break;
         }
         case KP_PAGE_SCHEDULE: {
-            /* 把 s_kidpal_scr 设为活动屏，schedule_page_render 在 lv_screen_active()
-             * 上清屏并绘制。 */
+            /* 把 s_kidpal_scr 设为活动屏，kidpal_schedule_grid_render 在
+             * lv_screen_active() 上清屏并绘制一周总览网格（7 列×3 行）。 */
             lv_screen_load(s_kidpal_scr);
-            if (s_sched_n <= 0) {
-                /* #11 数据链根因 (R-S0.2): 缓存仅在语音查询过课表后才填充; 孩子 BOOT
-                 * 翻页切来时可能本开机未查询 -> n=0 空壳页。改画友好空态 (居中提示),
-                 * 不再渲染空壳页; 语音查询路径 (mcp case 4) 不动。 */
+            if (s_grid_n <= 0) {
+                /* #11 数据链根因 (R-S0.2): 缓存仅在云端推送过周网格后才填充; 孩子
+                 * BOOT 翻页切来时可能本开机未收到 -> 空缓存。改画友好空态 (居中
+                 * 提示), 不再渲染空壳页; 云端推送路径 (mcp kidpal/display schedule
+                 * 路由) 不动。 */
                 lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
                 lv_label_set_text(lbl, "还没有课表数据，问我『我的课表』吧");
                 lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
@@ -588,17 +749,13 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                 lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
                 lv_obj_center(lbl);
             } else {
-                kidpal_schedule_page_render(
-                    s_sched_title,
-                    s_sched_n > 0 ? s_sched_items : NULL,
-                    s_sched_n,
-                    s_sched_is_tomorrow,
-                    s_sched_now,
-                    -1 /* locate_row: -1 = 不定位，静态展示 */
-                );
+                /* P2 一周总览网格（today_col = 注入星期列; 未注入/越域 -> 网格面
+                 * 自行不画假「今天」高亮）。 */
+                kidpal_schedule_grid_render(s_grid_courses, s_grid_n, s_rtc_wday);
             }
             s_local_page = KP_PAGE_SCHEDULE;
-            ESP_LOGI(RN_TAG, "render page SCHEDULE (P2) n=%d", s_sched_n);
+            ESP_LOGI(RN_TAG, "render page SCHEDULE (P2 grid) courses=%d wday=%d",
+                     s_grid_n, s_rtc_wday);
             break;
         }
         case KP_PAGE_STORY: {
@@ -785,26 +942,19 @@ void kidpal_render_node_tick(void)
  * 缓存 setter（供 mcp_server.cc 在收到服务端数据后调用）
  * ---------------------------------------------------------------------- */
 
-extern "C" void kidpal_render_node_cache_schedule(const char *title,
-                                                   const kidpal_schedule_item_t *items,
-                                                   int n,
-                                                   int is_tomorrow,
-                                                   const char *now_hhmm)
+extern "C" void kidpal_render_node_cache_schedule_grid(const kidpal_schedule_course_t *courses,
+                                                       int n)
 {
-    if (title != NULL) {
-        strncpy(s_sched_title, title, sizeof(s_sched_title) - 1);
-        s_sched_title[sizeof(s_sched_title) - 1] = '\0';
+    /* cache_schedule 网格化（M3-K2）：n<=0 或 courses==NULL 时清空缓存 = 空态
+     * （BOOT 翻页 cycle_next 落友好空态画面, 绝不盲渲染）; n > KSG_COURSE_CAP
+     * 只拷前 cap 条, 绝不溢出（定容 7 天×3 格×每格 4 门冻结值）。 */
+    if (n <= 0 || courses == NULL) {
+        s_grid_n = 0;
+        return;
     }
-    int copy = (n > 0 && items != NULL) ? (n > 16 ? 16 : n) : 0;
-    if (copy > 0) {
-        memcpy(s_sched_items, items, static_cast<size_t>(copy) * sizeof(s_sched_items[0]));
-    }
-    s_sched_n           = copy;
-    s_sched_is_tomorrow = is_tomorrow;
-    if (now_hhmm != NULL) {
-        strncpy(s_sched_now, now_hhmm, sizeof(s_sched_now) - 1);
-        s_sched_now[sizeof(s_sched_now) - 1] = '\0';
-    }
+    int copy = (n > KSG_COURSE_CAP) ? KSG_COURSE_CAP : n;
+    memcpy(s_grid_courses, courses, static_cast<size_t>(copy) * sizeof(s_grid_courses[0]));
+    s_grid_n = copy;
 }
 
 extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
