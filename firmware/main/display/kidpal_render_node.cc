@@ -40,6 +40,7 @@
 #include "kidpal_render_node.h"
 
 #include "home_p1.h"
+#include "kidpal_p1_font.h"
 #include "schedule_page.h"
 #include "story_page.h"
 #include "char_page.h"
@@ -197,6 +198,90 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
     (void)argb; (void)w; (void)h;
     /* 设备侧不应到达此路径（见上注）。返回 -1 与弱默认一致，避免 g_fb 被意外链入。 */
     return -1;
+}
+
+/* -------------------------------------------------------------------------
+ * [S1] 设备字形强符号：kidpal_p1_font_glyph（覆盖 home_p1.c 弱默认）
+ *
+ * ksg_text_font()（schedule_page.c 先例）同款双分支取对话页同款 14px 普通字体
+ * font_puhui_14_1；lv_font_get_glyph_dsc + 字形位图（A1/A2/A4/A8）alpha 阈值化
+ * 成 1bpp 墨（seam [S1]）。设备 builds 恰一个强符号覆盖 home_p1 weak；host 侧
+ * 由 host_infra_seam.c 提供同符号（本 TU 不编入 host runner）。
+ * ---------------------------------------------------------------------- */
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
+#elif defined(ESP_PLATFORM)
+LV_FONT_DECLARE(font_puhui_14_1);
+#endif
+
+extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
+    static const lv_font_t *s_font = &lv_font_source_han_sans_sc_14_cjk;
+#elif defined(ESP_PLATFORM)
+    static const lv_font_t *s_font = &font_puhui_14_1;
+#else
+    if (out != NULL) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = NULL;
+    }
+    return -1;
+#endif
+    lv_font_glyph_dsc_t dsc;
+    const uint8_t *bits;
+    static unsigned char s_bits[64 * ((64 + 7) / 8)];
+    int bpp, stride, threshold;
+    int x, y;
+
+    if (out == NULL) {
+        return -1; /* [S1]: out == NULL -> 非 0 */
+    }
+    if (!lv_font_get_glyph_dsc(s_font, &dsc, codepoint, 0)) {
+        return -1;
+    }
+    if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
+        return -1;
+    }
+    bpp = static_cast<int>(dsc.format); /* A1=1, A2=2, A4=4, A8=8 */
+    if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8) {
+        return -1;
+    }
+    if (dsc.box_w > 64 || dsc.box_h > 64) {
+        return -1; /* [S1] 盒上限 64 */
+    }
+    dsc.req_raw_bitmap = 1;
+    bits = static_cast<const uint8_t *>(s_font->get_glyph_bitmap(&dsc, nullptr));
+    if (bits == nullptr) {
+        return -1;
+    }
+    stride = (static_cast<int>(dsc.box_w) * bpp + 7) / 8;
+    threshold = (bpp == 1) ? 1 : (bpp == 2 ? 2 : (bpp == 4 ? 8 : 128));
+    std::memset(s_bits, 0, sizeof(s_bits));
+    for (y = 0; y < static_cast<int>(dsc.box_h); y++) {
+        for (x = 0; x < static_cast<int>(dsc.box_w); x++) {
+            int pix = 0;
+            if (bpp == 1) {
+                pix = (bits[y * stride + (x >> 3)] >> (7 - (x & 7))) & 1u;
+            } else if (bpp == 2) {
+                pix = (bits[y * stride + (x >> 2)] >> (6 - 2 * (x & 3))) & 3u;
+            } else if (bpp == 4) {
+                pix = (bits[y * stride + (x >> 1)] >> ((x & 1) ? 0 : 4)) & 15u;
+            } else {
+                pix = bits[y * stride + x];
+            }
+            if (pix >= threshold) {
+                s_bits[y * ((static_cast<int>(dsc.box_w) + 7) / 8) + (x >> 3)] |=
+                    static_cast<unsigned char>(1u << (7 - (x & 7)));
+            }
+        }
+    }
+    out->w = static_cast<int>(dsc.box_w);
+    out->h = static_cast<int>(dsc.box_h);
+    out->advance = static_cast<int>(dsc.adv_w);
+    out->bits = s_bits;
+    return 0;
 }
 
 /* -------------------------------------------------------------------------

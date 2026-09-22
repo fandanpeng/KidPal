@@ -136,3 +136,28 @@
 - **verify 链**：scoped r1（verifier，7 闸全绿，offline 半程）→ final **r2 九闸全绿**（integrator，`d4839306-bfe9-4f4e-9716-d106dbd8ead2`，ok:true / observedGateExit:0；unit 95 passed、acceptance 41 passed 零新增红）+ verifier-evidence-check exit 0（factOk:true）。integrator 独立复跑 `server/acceptance/` 41 passed（本包 14/14）+ `server/tests/` 54 passed。
 - **closeout 制品**：`delivery/changes/dev/260921-m3-k3-voice-schedule-entry-live/`（device-round-record.md + review-packet.md + docs-delta.md + verdict.json + verification.json）；review-packet 零 BLOCKING（1 SHOULD + 2 NIT；demo 对账一致带挂账 + 未覆盖面 8 条逐条显式化）；docsSyncRequired=false 义务核清（spec/契约/prompt 历史版本零触碰）。
 - **状态**：commit 冻结 diff 后交 planner 跑 supervisor-verdict-gate 机械闸；不 push、不 merge。
+
+## 2026-09-21 · K3 合并收尾（planner：机械闸 ESCALATE → human 批准 → merge-driver 进 main）
+
+- **机械合并门**：supervisor-verdict-gate 产 **ESCALATE**（write-once 落盘 supervisor-verdict.json；G6 diff 重算 medium→high：`all-mock:test-files-no-real-db/event-assertion` 判据命中 + adjudicate 规则 critical/high→ESCALATE）；supervisor-gate-check exit 0（provenance v2 全过：mechanicalSupervisorGate.ran=true、bearing fact=r2 ok、closeout refs 安全）。board 置 blocked 停等。
+- **human 批准升级合并**（主线程 AskUserQuestion 拍板，制品过目后确认：ESCALATE 按 high 档接受）→ pod-events human-decision `7a929952`（decision=approve-escalated-merge，eventId 即人批凭据）→ `merge-driver --pod --human-approval-ref`：approval-ref 五要素核验 OK → 升级闸 PASS → rebase OK → quick-check 2 闸绿 → **merge OK**，main tip `72c654a`（merge commit 携 human-approval-ref）；Step 5b merge-completed `56b2557b` 落 pod-events；board 置 merged；token released（next holder: none）。
+- **批内随进**：K4 立项 commit `40ce8c7`（纯 delivery 制品，human 已知悉属预期）；分支实现 commit 以 rebase 形态进 main（`91b9d0c` 收口 + `24d58e5` Step 0 治理面 3 文件 + `b032d39` pod-events 簿记）。
+- **合并后收尾**：dev INDEX K3 行 closed 在场（integrator closeout-check --update-index 刷入，K1/K2/K3 三行齐、arch lane 无涉免重建）；分支 pod-events 同步 merge-completed 事件（受门 Edit 补行，非重定向）；progress 本段；收尾 commit 落分支（树池续跑，分支 vs main 收敛）。
+- **欠账移交（不随本包闭合）**：① `trigger=immediate` ECS 取证——K1 部署面复核项（review-packet SHOULD：journalctl 全量回溯 0 命中、疑 OpenClaw 容器 drop 入口未触达/交接目录错位）；② loop-retro 阈值 advisory 17——主线程发起（run /loop-retro）；③ milestones.jsonl M3-schedule 状态（K3 merged 后是否关里程碑）——主线程判定；④ 设备时钟（OTA 缺 server_time）/ WS ~36s 掉线族——K1 热修轮两独立缺口维持挂账。
+
+## 2026-09-22 · K4 launch 面就绪（本批 = 单包 K4，树池串行复用第 11 棒）
+
+**调度判定**：本批 = 单包 K4（`260921-m3-k4-p1-cjk-dynamic-text`，mergeOrder 36）。依赖图说了算——K4 dependsOn []，K1/K2/K3 全 merged、mergeToken 无持有者；挂账④立项批（triage ②单包 Lite，human 确认）随 K3 合并已进 main。同树同常驻分支续跑（分支收尾 commit dc6094a 领先 main 属树池惯例、树内超集，合并时随批回 main）。
+
+**launch 机械门**：`--check-launch 260921-m3-k4-p1-cjk-dynamic-text --base-ref base/m3-k4` → ok:true，blocking 空、warn 空、本包前置无待核（另 2 条属其他包折叠）。base/m3-k4 新建 @ `40ce8c7`（K4 立项 commit，专用 base ref 非 main 惯例）。
+
+**上游已知红基线（260909 T5 + 260915 T3 差异判停协议）**：
+- **server 面**：`git diff --quiet 91b3b5c HEAD -- server/` 有差异（K3 实现批）→ 重跑 → **95 passed / 0 failed**（2026-09-22；量测 @ dc6094a，面域 = server；K3 新增 20 齿并入基线 75→95）。零红。
+- **firmware host 面**：`git diff --quiet 91b3b5c HEAD -- firmware/` 实测零差异 → **引用不重跑**：74 Tests / 0 Failures / 0 Ignored，exit 0（2026-09-21 @ 91b3b5c，面域 = firmware，上一段锚行 verbatim）。零红。
+- Pod intake 按差异判停协议消费本段：对相应面域先 `git diff --quiet dc6094a HEAD -- <面域>`，零差异引用本行、有差异同命令重跑。
+
+**环境事实**：交接卫生核过（工作树净）；图索引复用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（status ready，随树自动增量）；board 已预填 K4 → 本树（--set-pod queued，mergeOrder 36，mergeToken 无持有者）；`delivery/taskpackages/current/` 指针已刷新指向 K4；milestones.jsonl M3-schedule state planning→**in_delivery**（对齐 M1/M2 词汇；完全关闭无注册表先例，留 human 拍板）。
+
+**launch 侧三件**：① board worktreePath 重指（本段）；② 基线差异判停（上段）；③ 启动卡已落 `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/launch-card.md`（五要素齐 + 交接注记：plan.md 边角 UTF-8 截半容错、E2 铁律冻结面清单、字体双分支实证、真机目测挂窗、在案欠账勿吸清单）。
+
+**遗留 human 项**：K4 launch 执行形态待 human 指定（主线程代跑 / 交互自跑 / headless，命令行见启动卡第五要素）；loop-retro 阈值 advisory 17 待 human 发起（第三次提请）。

@@ -127,6 +127,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫）。
     "../../schedule_grid.acceptance.c"
 
+    # 包 260921-m3-k4-p1-cjk-dynamic-text（首页 P1 动态日程名 CJK 渲染）冻结验收：
+    # [S1] 字形 seam 三符号 + [S2] UTF-8 解码逐字形 blit + 三钉区墨/截断/截半容错/
+    # 缺字形退化 + 注册接线守卫。被测实现 home_p1.c 已在册（seam weak 由本包新增
+    # host_infra_seam.c 强符号 + kidpal_p1_font.h 声明覆盖）。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 本文件 TEST 6 tooth 4 钉存在性）。
+    "../../p1_cjk_name.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

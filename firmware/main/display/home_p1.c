@@ -21,6 +21,7 @@
  */
 #include "home_p1.h"
 #include "art_assets.h"
+#include "kidpal_p1_font.h"
 #include <string.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -86,6 +87,23 @@ __attribute__((weak))
 int host_infra_render_p1_frame(const uint32_t *argb, int w, int h)
 {
     (void)argb; (void)w; (void)h;
+    return -1;
+}
+
+/* ---- [S1] 字形获取弱默认（恒不可用） ----
+ * 强符号落点 = kidpal_render_node.cc（设备 font_puhui_14_1）/ host_infra_seam.c
+ * （host Source Han 子集）。强符号接入前本弱默认恒返回非 0 -> name 不画（现状，
+ * 设计态）。out == NULL -> 非 0（[S1] 防御）。 */
+__attribute__((weak))
+int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
+{
+    (void)codepoint;
+    if (out != NULL) {
+        out->w = 0;
+        out->h = 0;
+        out->advance = 0;
+        out->bits = NULL;
+    }
     return -1;
 }
 
@@ -694,6 +712,113 @@ static int p1_blit_str_scaled(const char *s, int x0, int y0, int pitch,
     return ok;
 }
 
+/* ---- [S2]/[S4] UTF-8 解码 + 动态日程名逐字形 blit（seam [S1]） ----
+ * name 来自 hp1_item_t.name（HP1_NAME_LEN=32），上游注入层按字节截到 31 字节会截半
+ * UTF-8 多字节字符——本解码器遇不完整尾序列安全停笔：截半字符不画、不越界、不崩
+ * （[S4]，容错在 P1 侧重构，K2 注入层本包零改）。
+ * 起笔 x 固定（不随 name 字节数平移）；逐字形按 advance 步进，clip 进钉区。
+ * 字形不可用（[S1] 弱默认/缺字形）-> 跳过该字符、不画垃圾（A5 退化，skip-vs-stop
+ * 不超约束）。返回成功 blit 的字形数。 */
+
+/* 依首字节判 UTF-8 序列字节数；非法首字节 -> 0。 */
+static int p1_utf8_seq_bytes(unsigned char b)
+{
+    if (b < 0x80u) {
+        return 1;
+    }
+    if ((b & 0xE0u) == 0xC0u) {
+        return 2;
+    }
+    if ((b & 0xF0u) == 0xE0u) {
+        return 3;
+    }
+    if ((b & 0xF8u) == 0xF0u) {
+        return 4;
+    }
+    return 0;
+}
+
+static int p1_blit_name(const char *name, int x0, int y0,
+                        int cx0, int cy0, int cx1, int cy1)
+{
+    size_t len;
+    size_t pos;
+    int cur_x;
+    int drawn;
+
+    if (name == NULL) {
+        return 0;
+    }
+    len = strlen(name);
+    pos = 0;
+    cur_x = x0;
+    drawn = 0;
+
+    while (pos < len) {
+        unsigned char b = (unsigned char)name[pos];
+        uint32_t cp;
+        int seq, i;
+
+        if (b < 0x80u) {
+            cp = b;
+            seq = 1;
+        } else {
+            seq = p1_utf8_seq_bytes(b);
+            if (seq < 2 || pos + (size_t)seq > len) {
+                break; /* [S4] 不完整尾序列安全停笔：截半字符不画、不越界 */
+            }
+            cp = (uint32_t)(b & (uint32_t)(seq == 2 ? 0x1Fu : seq == 3 ? 0x0Fu : 0x07u));
+            for (i = 1; i < seq; i++) {
+                unsigned char c = (unsigned char)name[pos + (size_t)i];
+                if ((c & 0xC0u) != 0x80u) {
+                    cp = 0;
+                    break;
+                }
+                cp = (cp << 6) | (uint32_t)(c & 0x3Fu);
+            }
+            if (cp == 0) {
+                break; /* 非法续字节 -> 停笔（退化，不画垃圾） */
+            }
+        }
+        pos += (size_t)seq;
+
+        {
+            kidpal_p1_glyph_t g;
+            int stride;
+            int sy, sx;
+
+            if (kidpal_p1_font_glyph(cp, &g) != 0 || g.bits == NULL) {
+                continue; /* 字形不可用 -> 跳过，不画垃圾 */
+            }
+            if (g.w <= 0 || g.h <= 0 || g.w > 64 || g.h > 64) {
+                continue; /* [S1] 盒上限 64，越界字形视为不可用 */
+            }
+            stride = (g.w + 7) / 8;
+            for (sy = 0; sy < g.h; sy++) {
+                int py = y0 + sy;
+                if (py < cy0 || py > cy1 || py < 0 || py >= P1_FB_H) {
+                    continue;
+                }
+                for (sx = 0; sx < g.w; sx++) {
+                    int px = cur_x + sx;
+                    int bit;
+                    if (px < cx0 || px > cx1 || px < 0 || px >= P1_FB_W) {
+                        continue;
+                    }
+                    bit = (g.bits[(size_t)sy * (size_t)stride + (size_t)(sx >> 3)]
+                           >> (7 - (sx & 7))) & 1u;
+                    if (bit) {
+                        s_p1_fb[py * P1_FB_W + px] = P1_COLOR_INK;
+                    }
+                }
+            }
+            cur_x += g.advance;
+            drawn++;
+        }
+    }
+    return drawn;
+}
+
 /* 整数字【缩放】渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
 static int p1_blit_int_scaled(int value, int x0, int y0, int pitch,
                               int dw, int dh, int cx0, int cy0, int cx1, int cy1)
@@ -947,6 +1072,11 @@ static void p1_draw_next(void)
     if (!drew) {
         p1_stroke_rect(138, 50, 390, 166, 2);
     }
+    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 next 钉区
+     * {136,48,392,168}。 */
+    if (it != NULL) {
+        (void)p1_blit_name(it->name, 136, 143, 136, 48, 392, 168);
+    }
 }
 
 /* ② 倒计时贴纸（接下来卡右部 {268,50,390,130}）：以 "H:MM"（剩余时分）数字表达
@@ -985,6 +1115,11 @@ static void p1_draw_nextlist(void)
     if (!drew) {
         p1_stroke_rect(138, 174, 390, 212, 2);
     }
+    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 nextlist
+     * 钉区 {136,172,392,214}。 */
+    if (it != NULL) {
+        (void)p1_blit_name(it->name, 210, 184, 136, 172, 392, 214);
+    }
 }
 
 /* ③ 明日预告（{136,220,392,242}）：preview item 的 time 数字（V3 「明天 09:00 ·
@@ -996,15 +1131,21 @@ static void p1_draw_preview(void)
 {
     hp1_item_t pv;
     int drew = 0;
+    int has_pv;
 
-    pv.time[0] = '\0';
-    if (kidpal_home_p1_schedule_preview(&pv) == 0 && s_art_ok) {
+    has_pv = (kidpal_home_p1_schedule_preview(&pv) == 0);
+    if (has_pv && s_art_ok) {
         drew |= (p1_blit_str_scaled(pv.time, 140, 228, 14,
                                     P1_DIG_W, P1_DIG_H,
                                     136, 220, 392, 242, 1) > 0);
     }
     if (!drew) {
         p1_stroke_rect(138, 222, 390, 240, 2);
+    }
+    /* 动态日程名（seam [S1]/[S2]）：独立绘制, 不改兜底描边决策；clip 进 preview
+     * 钉区 {136,220,392,242}。 */
+    if (has_pv) {
+        (void)p1_blit_name(pv.name, 210, 228, 136, 220, 392, 242);
     }
 }
 

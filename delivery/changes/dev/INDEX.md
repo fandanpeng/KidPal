@@ -47,3 +47,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260921-m3-k4-p1-cjk-dynamic-text](260921-m3-k4-p1-cjk-dynamic-text/) | 2026-09-21 | delivery/workstreams/m3-schedule/progress.md | closed | m3-schedule |
