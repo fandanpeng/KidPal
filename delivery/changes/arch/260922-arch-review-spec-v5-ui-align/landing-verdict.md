@@ -70,3 +70,22 @@ node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260922-arc
 ## 6. 结论
 
 **RED（仅问题 1）**。语义保真全绿：T1–T6 改法逐 hunk 落到位、验证集 6/6 复跑绿、历史块 append 纪律维持、零契约/架构/实现触面、无未披露私货。修 landing-summary 围栏块（+顺带更正计数）→ 重跑结构门 ok 后，本 verdict 语义核对部分可直接沿用重判 GREEN；merge 决定仍归 human manual-merge 门。
+
+---
+
+## 7. 复判（2026-09-22，blocking 修复后 · append 不覆盖原判）
+
+**复判结论：GREEN**（取代 §6 的 RED）。
+
+**修复核验**（commit 60bbfd6）：
+- `architect-landing-summary.md` diff 仅三处：① 头部新增 ```landing-manifest 围栏块（`docs/requirements.md` 单行，与 PROPOSAL 侧一致）；② 新增 packet-binding 行（packet-id = `260922-arch-review-spec-v5-ui-align` §2（T1–T6）+ §5 验证集；被批 review = `architect-review-r2.md` GREEN @ DRAFT v1.2）；③ T3 键帽计数 20→22 勘正——与本 verdict §5 问题 2 的实证数（11 键帽行 × 2 = 22）一致。
+- `docs/requirements.md` 在 9bd042a → 60bbfd6 间零变化（`git diff 9bd042a..60bbfd6 -- docs/requirements.md` 为空）——**§2 逐文件语义核对、§3 验证集复跑、§4 破坏性自检的原判结论对 60bbfd6 全部沿用有效**。
+- 修复 commit 其余触面 = 本 verdict 文件入库（verifier 制品随批），无 manifest 外 canonical 改动。
+
+**结构门独立复跑**（本 verifier 实跑，非沿用主线程自述）：
+- `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/260922-arch-review-spec-v5-ui-align main` → **ok:true，exit 0**。frozen ✓、packetBinding ✓、proposalTargets == summaryTargets == [docs/requirements.md]、unauthorized/claimedNotLanded/plannedNotLanded 全空、citation/lint/verbatim advisory 无问题。
+- 注：不带 baseRef 跑会因「landing 已提交、HEAD~1..HEAD 只含修复 commit」而误报 claimed-not-landed——按脚本用法传 baseRef=<landing 前 ref>（= main）后判定正确（脚本 hint 明示此用法）。非门缺陷，记录备查。
+
+**复判依据汇总**：blocking（问题 1）已修 + 结构门独立复跑 ok + minor 项 2 已勘正 + 原判语义面 T1–T6 / 验证集六条 / 破坏性自检 / packet-binding 部分沿用。放行建议：可进入升级闸与合并流程；merge 决定归 human manual-merge 门。
+
+**遗留 minor（不阻塞）**：问题 3（T1④ 日期格式口径句落 AC1 而非补充规则）维持原判——实质等价、已披露，不构成漏改。
