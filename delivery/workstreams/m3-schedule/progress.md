@@ -213,3 +213,12 @@
   - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
 - **制品**：launch-card.md（本包特记：taskpackage.json 修复留痕、input-brief 由 intake 补齐）+ current/ 指针刷新为 K5（K4 残留 input-brief/verdict 清除，canonical 存 K4 包目录）+ milestones.jsonl M3 nextAction 增补 K5 进行中。board 预填 queued + worktreePath 本树。
 - **launch 指示**：human 已指示主线程准备好后直接启动 dev loop（planner），不另起交互会话。
+
+## 2026-09-22 · K5 Pod 全程闭环 + 合并落账（planner Pod，合并门 human 批准升级合并）
+
+- **Pod 闭环（主轮 + 追加轮 R3）**：intake 四点探测全命中（基线两面零差异引用 K4 锚 server 95 @ dc6094a / host 84 @ 9cae452，K4 留根逐条评估零 blockingDecision）→ acceptance-author 冻结 `firmware/main/test/time_sync.acceptance.c`（主轮 6 TEST_CASE / 34 tooth：[S1] 纯逻辑时间缝六函数 + [S2] SNTP 挂点 + [S3] PCF85063 写回恢复 + [S4] 周期 re-inject + [S5] 铁律守卫；红基线两通道实跑既有 84 齿零偏移 + 新齿独立红）→ builder 一次跑绿（time_sync.{c,h} 新缝 + SNTP 挂点 esp_sntp 原生 API + 板级 WriteRtcTime/boot settimeofday 恢复/60s 周期 reinject + lvgl 节流 + sdkconfig 双面 SNTP_MAX_SERVERS=3；host 90 齿零偏移全绿 + device build 11% free + mutation 自证 5 组实跑）→ verifier scoped r1 + final r2 九闸全绿（零 fixer 轮）→ integrator 零 finding 收口。
+- **追加轮 R3（真机第 1 轮 A1 正锚全过 + human 两拍板 pod-events fc43063d）**：①隐藏 XiaoZhi chrome 状态栏时钟（lvgl_display UpdateStatusBar 区 SetStatus(time_str) 退役，守门行/节流分支保留裁定在案，P1 辅助条保留为唯一常显时间面）②re-inject 读点对齐分钟边界（新冻结缝 [S6] kidpal_ts_ms_to_next_minute + TimeSyncPeriodicLoop 分钟边界相位，boot 相位固定节拍退役）。冻齿修订 TEST 7/8 + A1 锚重指 P1 辅助条 → builder 一次跑绿（host 92 齿）→ verifier r3/r4 九闸全绿 → integrator 零 finding。
+- **真机窗口收口（human 目测，pod-events 0e07412a）**：R3a 状态栏时钟消失 PASS、R3b P1 滞后 <1s PASS、A3b 长开机 34 分钟日志无断 PASS、1s tick 冒号闪烁佐证；**A3 断电续航 human 明示延期**（「断网现在做不了，跳过，后面观察」——账面如实记 deferred 由 human 承担，后续口头反馈补账）；advisory 挂账：reinject 双触发缺陷（pdMS_TO_TICKS 向下取整 + vTaskDelay(0) 自旋致边界前 ~10ms 双发，显示收敛 <1s 无损，修法留 pod-retro 供后续批）。
+- **合并门（human 批准升级合并，pod-events f0d8ca46）**：机械 supervisor-verdict 闸 **ESCALATE**（git diff 重算 riskTier critical：firmware/sdkconfig + sdkconfig.defaults 命中 critical-path 清单；实际 diff = CONFIG_LWIP_SNTP_MAX_SERVERS 1→3，human 知悉上下文后裁决批准）→ merge-driver --pod --human-approval-ref 标准链（off-main/契约/provenance 闸照拦不豁免，全过）：rebase OK / quick-check OK / **merge OK**——merge commit `dedf986`（main @ `3cc37e5` 簿记），token 释放。**K4 收尾落账 commit（`6cb4824`，此前留在常驻分支）经 rebase 随本批一并回 main**（launch 段预告的「随下批 pod 合并回 main」兑现）。
+- **收尾落账**：dev INDEX closed 行（integrator closeout 相位落）、board merged、pod-events merge-completed @dedf98697e82（main 簿记）、pod-retro 主轮/追加轮/真机窗三段（第一人称热记忆）。
+- **持续挂账（非本包义务）**：① loop-retro 阈值 19 advisory（主线程 /loop-retro，连续第四棒提请）；② 图索引 re-index（time_sync [S1]/[S6] 新符号未入图）；③ A3 断电续航真机实证（human 观察，口头反馈补账）；④ reinject 双触发修法（advisory，后续批参考）。
