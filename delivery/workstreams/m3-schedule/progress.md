@@ -170,3 +170,12 @@
 - **合并门**：机械 supervisor-verdict 闸 APPROVE（riskTier medium，provenance v2 全过）→ 前置升级闸 PASS → merge-driver --pod 本地合并：merge commit `f8703d5`（main @ `6eeb43d` 簿记），token 释放。Review Packet findings 零 BLOCKING（1 NIT：mutation 执行面留痕粒度，planner 裁不阻塞——红基线 stub ≙ A1 变异态在案 + A2 复验在 REVISION LOG）。
 - **E2 铁律全绿**：home_upcoming.{c,h} 零改、docs/contracts/** 与 spec 零改、schedule_page/K2 面零触碰、hp1_item_t 与 11 冻结契约函数零偏移、固定标签烘焙资产零改（diff 闭集 + 冻齿 canary 双证）。
 - **遗留（非阻塞）**：① P1CJK-A6 真机目测三点（课程名可见/与 time 基线协调/14px 1bpp 可读性）挂设备轮窗口——按 kidpal-serial-monitor 协调协议向 human 约开窗（可独立开窗或随下次设备轮）；② loop-retro 阈值 18 advisory 持续挂账（主线程发起责任）。
+
+## 2026-09-22 · K4 live 轮 A6 FAIL 修复 + 版式对齐追加轮（planner Pod，human 两判断点）
+
+- **A6 首轮真机目测 FAIL**：设备侧 CJK 课程名乱码（碎点断笔），ASCII time 正常、host 80 齿全绿。human 指示先只读根因调查再修——planner 调查定案：font_puhui_14_1（bpp=1、PLAIN、fdsc->stride=0）raw A1 位图为跨行连续位流（LVGL lv_font_fmt_txt.c 官方解码循环 stride_in==0 时位计数器不逐行复位），强符号按字节对齐行索引致 box_w 非 8 倍数字形逐行漂移；host Source Han bpp4 偶宽字形两寻址碰巧等价故 host 全绿（假绿盲区）。
+- **human 拍板**（pod-events c4785230）：B 方案（去 req_raw_bitmap=1，走 LVGL 官方解码到 A8 静态 draw_buf、阈值 128 化 1bpp、box 上限收 32×32、双强符号同改）+ 版式对齐 WF-F1-01：大 imgfont 时间退役、「接下来」烘焙大字标签（新资产 p1_label_jiexialai.bin，83×30）、文字行全 14px 逐字形 blit 行流语义（ROW1/2/3 + 正常换行）、末行「明早」烘焙标签（p1_label_mingzao.bin，38×20，文案非「明天」）+ HH:MM + 首项名并入主体第三行、倒计时贴纸随时钟缺口挂账不做；固定标签殿后由 human 显式解除（立项 ack）。
+- **冻齿修订**：PCN 原地修订（A1–A6 重钉行带 + 新增 A7–A10：烘焙标签在场/行内时间值承载/末行预告构成与三重退役负断言/满载换行压力）+ HPB 跨包修订窗口（p1_home_battery tooth2/4/5，授权链 = human 拍板事件原文）。追加轮两处冻齿缺陷均 planner 亲核 + acceptance-author 修（TEST 9 tooth4 live/快照帧测量笔误）。
+- **实现与验证**：builder 一次实现全部设计面 + 资产管线（tools/asset-pipeline/gen_kidpal_labels.py，KAP1 格式照抄先例）+ art_assets.c host 接线；host runner **83 Tests / 0 Failures**（既有 74 零偏移）；verifier scoped r5 + final r6 九闸全绿（xiaozhi.bin 0x30c340、11% free——体积较修复前还小，B 方案静态增量被版式退役对冲）；E2 铁律全绿（既有资产零删改、契约/spec/home_upcoming/schedule_page 零触碰）。
+- **收口**：commit `2d60006`（分支 dev/260915-m1-k1a-key-layer-dispatch，树池惯例领先 main 随下批回 main）；review-packet 追加轮 addendum 五节（因果链/demo 对账/冻齿缺陷入册/E2 表/未覆盖面申报）。
+- **遗留（非阻塞）**：① **真机复验半挂设备轮窗口**（五项目测：B 方案后 1bpp 可读性、「接下来」大字标签、「明早」文案、行流版式与线框一致、右上区三重退役无残墨）——主线程按 kidpal-serial-monitor 协调协议约窗烧板（xiaozhi.bin @ commit 2d60006 构建，0x20000 保 NVS）；② loop-retro 阈值 18 advisory 持续挂账。

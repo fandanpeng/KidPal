@@ -25,3 +25,11 @@
 
 - finalize taskpackage 前把三个元数据闸（taskpackage-required / mutation-check / acceptance-coverage）的判据当 checklist 走一遍，别凭 K 期记忆填字段。
 - 「子 agent 报告断言的缺陷根因，先花一次读代码的功夫亲核再路由」——本棒再次验证划算，升为习惯。
+
+## 追加轮体感（2026-09-22 · live FAIL 修复 + 版式扩展，最后一轮为准）
+
+1. **live 轮的失败本身是这包最有价值的时刻**：host 80 齿全绿、机械闸 APPROVE、真机一烧就乱码——「齿测不到的路径才是风险面」。根因（raw A1 连续位流 vs 字节对齐行）我在派单前用只读调查实锤到 LVGL 解码循环源码级，human 才能一次拍板 B 方案。**只读根因调查先于 fixer 派发，这个 human 介入点救了一轮盲修。**
+2. **host 全绿 ≠ 设备正确的机制这次看清了**：host Source Han bpp4 + 偶宽字形让两种寻址碰巧等价——「双分支强符号同算法」的等价性验证齿对 bpp1 连续位流这类格式语义差异天然盲。方案 B 走 LVGL 官方解码后这个假设面整个消失，比修位寻址多值。
+3. **两处冻齿缺陷（TEST 2 算术、TEST 9 tooth4 live/快照笔误）都是 builder 先红 + planner 亲核 + acceptance-author 修**——「验收测试的缺陷也走所有权链，不经 fixer」这条线三次都走顺了，每次一轮闭合。
+4. HPB 跨包修订窗口是新模式：版式扩展震到别的包的冻结齿（tooth2/4/5），授权链 = human 拍板事件原文逐字核对。tooth 4 前半重钉超出登记面一点（同 tooth 语义随版式演进），acceptance-author 主动申报理由——**跨包修订要的就是这种「超出授权面就明说」**。
+5. human 分层出场依旧：live FAIL 报告 → human 两个判断点（先调查后修 + B 方案 + 版式扩展），loop 内零打断。追加轮 r5/r6 verifier 一次全绿，与主轮的元数据红形成对比——判据 checklist 化起效了。
