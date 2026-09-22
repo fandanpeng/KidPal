@@ -1,22 +1,23 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json)",
   "changeId": "260921-m3-k4-p1-cjk-dynamic-text",
   "phase": "final",
-  "round": 4,
-  "invocationId": "8c6aa0de-09e7-42f4-a1ec-97b9ef760be1",
+  "round": 6,
+  "invocationId": "42db9cf4-d1e1-4bc8-bcd2-3ac5cb551f06",
   "verification": {
     "ok": true,
     "observedGateExit": 0,
     "gatesRun": 9,
     "gatesNotExecuted": [],
-    "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json",
+    "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json",
     "mechanicalCheck": {
       "script": ".claude/scripts/verifier-evidence-check.mjs",
-      "args": "--change-id 260921-m3-k4-p1-cjk-dynamic-text --phase final --round 4 --invocation-id 8c6aa0de-09e7-42f4-a1ec-97b9ef760be1",
+      "args": "--change-id 260921-m3-k4-p1-cjk-dynamic-text --phase final --round 6 --invocation-id 42db9cf4-d1e1-4bc8-bcd2-3ac5cb551f06",
       "exit": 0,
       "factOk": true,
       "runBy": "integrator",
-      "date": "2026-09-22"
+      "date": "2026-09-22",
+      "addendumPriorRoundCheck": "同批 r5（scoped）双查 exit 0：--phase scoped --round 5 --invocation-id 6e423c35-e688-4c63-bc9e-f7cedfdba74c → factOk:true"
     },
     "priorRoundsCheck": [
       {
@@ -33,6 +34,16 @@
         "round": 3,
         "invocationId": "9fcff52a-9b9c-4ba8-9917-e3b7bd4b0870",
         "producedBy": "verifier（scoped 7 闸全绿，机械 fact ok:true / observedGateExit:0）"
+      },
+      {
+        "round": 4,
+        "invocationId": "8c6aa0de-09e7-42f4-a1ec-97b9ef760be1",
+        "producedBy": "主轮 final 九闸全绿（已合并 main f8703d5；fact 副本在本目录被本 r6 副本按追加轮刷新取代，r4 原件仍在 verifier-evidence/rounds/r4.json）"
+      },
+      {
+        "round": 5,
+        "invocationId": "6e423c35-e688-4c63-bc9e-f7cedfdba74c",
+        "producedBy": "追加轮 scoped 六闸全绿（verifier-evidence-check --phase scoped exit 0，factOk:true）"
       }
     ]
   },
@@ -59,12 +70,24 @@
       {
         "round": 4,
         "timing": "final",
-        "outcome": "绿（9 闸全绿 final，integrator：firmware-build 真编译 xiaozhi.bin 0x30c5b0 / 余量 11%、unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 80 Tests 0 Failures 0 Ignored / OK / rc=0）",
+        "outcome": "绿（9 闸全绿 final，integrator：firmware-build 真编译 xiaozhi.bin 0x30c5b0 / 余量 11%、unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 80 Tests 0 Failures 0 Ignored / OK / rc=0）——主轮，已合并 main f8703d5",
         "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r4.json"
+      },
+      {
+        "round": 5,
+        "timing": "scoped",
+        "outcome": "绿（追加轮 scoped 六闸全绿：A6 live FAIL 修复 B 方案 + 版式对齐 WF-F1-01 后 scoped 复验；invocation 6e423c35-e688-4c63-bc9e-f7cedfdba74c）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r5.json"
+      },
+      {
+        "round": 6,
+        "timing": "final",
+        "outcome": "绿（追加轮 9 闸全绿 final：firmware-build 真编译 xiaozhi.bin 0x30c340 / 余量 0x63cc0 (11%) free——较修复前 0x30c5b0 还小；unit 95 passed、acceptance 41 passed；integrator 另独立实跑 host runner 全量 83 Tests 0 Failures 0 Ignored / OK / rc=0）",
+        "evidenceRef": "delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json"
       }
     ],
     "reworkRounds": 0,
-    "reworkNote": "零实现返工轮——r1/r2 两轮红均为治理元数据面（contractRefs 缺失 / mutationEvidence 登记缺位），实现与冻齿零返工",
+    "reworkNote": "零实现返工轮——r1/r2 两轮红均为治理元数据面（contractRefs 缺失 / mutationEvidence 登记缺位），实现与冻齿零返工。【追加轮 2026-09-22 补记，追加不改原句语义】主轮合并后 live A6 FAIL（设备字形乱码）触发一轮真实实现返工（B 方案 LVGL 官方解码 + 版式对齐 WF-F1-01，human 拍板 pod-events c4785230）+ 两处冻齿缺陷修订（TEST 2 算术 / TEST 9 tooth 4 帧测量笔误），r5/r6 复验绿，详见本目录 review-packet.md「Post-merge 追加轮 addendum」。",
     "redBaseline": "acceptance-author 两通道实跑（2026-09-22 @ eb63c93，redBaselineResult 逐字落账 taskpackage.json）：① 既有 74 齿全量 host runner → 74 Tests 0 Failures 0 Ignored / OK / rc=0（与 91b3b5c 锚零偏移）；② 新齿经 red-baseline stub 脚手架独立编译执行（gcc rc=0、6/6 TEST_CASE 执行零崩溃）→ 6 Tests / 5 Failures / exit 5（TEST 5 = A3 单项守卫 + E2 canary 基线即绿 MUST-STAY-GREEN）；红因全部 = 字形 seam 未实现 → name 不画（真实缺失行为），零链接/编译/环境红。预期红 = 设计态。"
   }
 }

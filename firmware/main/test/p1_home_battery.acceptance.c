@@ -70,10 +70,23 @@
  *           HPB_RECT_AUX_BATT_ICON {322,  6, 344,  33}   图标半（前置）
  *           HPB_RECT_AUX_BATT_VAL  {348,  6, 396,  33}   数值半
  *         HPB_RECT_MASCOT     {  8, 48, 128, 208 }  小伴常驻演出（v1.4 内容区左）
- *         HPB_RECT_NEXT       {136, 48, 392, 168 }  「接下来」最近一项（主体）
- *         HPB_RECT_STICKER    {268, 50, 390, 130 }  倒计时贴纸（接下来卡右部）
- *         HPB_RECT_NEXTLIST   {136,172, 392, 214 }  ③后续事项逐项（小一号）
- *         HPB_RECT_PREVIEW    {136,220, 392, 258 }  明日预告
+ *         HPB_RECT_NEXT       {136, 48, 392, 168 }  「接下来」卡整体（R2: 标签带 + 日程行流带）
+ *         HPB_RECT_LABEL      {136, 48, 266,  92 }  「接下来」烘焙大字标签带（固定卡题, R2）
+ *         HPB_RECT_ROWS       {136, 96, 392, 168 }  日程行流带（ROW1..ROW3 域, R2）
+ *         HPB_RECT_STICKER_NEG {268, 50, 390, 92 }  旧倒计时贴纸/大时间右上区（退役负断言, R2）
+ *         HPB_RECT_ROW2       {136,124, 392, 150 }  后续事项行（行流第二行, R2）
+ *         HPB_RECT_MINGZAO    {136,152, 180, 178 }  明早标签槽（预告行左段, R2）
+ *         HPB_RECT_PREVIEW_NEG {136,220, 392, 258}  旧明日预告独立带（退役负断言, R2）
+ *
+ *       R2 跨包冲击修订（2026-09-22, 授权 = pod-events c4785230 human-decision
+ *       plan-B-decode-fix-plus-wireframe-alignment）: 卡内版式改行流语义，权威钉区
+ *       面 = p1_cjk_name.acceptance.c [S3]（本表为其在 HPB 夹具域的投影）——倒计时
+ *       贴纸退役（随时钟缺口挂账不做）、大 imgfont 时间退役、「接下来」改烘焙大字
+ *       标签（p1_label_jiexialai.bin，固定卡题——空日程仍在场）、后续事项行上移
+ *       ROW2 行流带、预告并入主体第三行（明早烘焙标签 p1_label_mingzao.bin 落
+ *       MINGZAO 槽 + 时间起笔 x>=184）。上方 ②③ 描述中的贴纸/旧预告独立带为退役
+ *       面（STICKER_NEG / PREVIEW_NEG 负断言承载）；兜底义务照旧适用于 LABEL /
+ *       MINGZAO 有墨钉区（art 未挂载兜底路径同样有墨）。
  *       兜底义务（host 全量默认跑不挂 art 资产）：每个「有墨」钉区必须在 art 未挂载
  *       的兜底路径下也有墨（描边/兜底字形同款纪律，归档 home_p1 先例）；每个「零墨」
  *       钉区在两条路径下都必须严格零墨。温湿度缺席（env_valid=0）= 整元素隐藏、
@@ -93,9 +106,10 @@
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
- *   coverage: PH-A1 首页版式（接下来主体 + 倒计时贴纸 + 小伴常驻 + v1.4 重排序）
- *             -> test 1（pixel-probe: 主体/贴纸/小伴/后续/预告区在位 + 空日程让位 +
- *             旧版式大时间让位判别——v1.4 重排序落齿）
+ *   coverage: PH-A1 首页版式（接下来主体 + 贴纸退役负断言 + 小伴常驻 + R2 行流
+ *             语义）-> test 1（pixel-probe: 主体/贴纸退役/小伴/ROW2 后续事项/
+ *             明早槽预告在位 + 旧预告带退役零墨 + 空日程固定卡题在场/行流带零墨 +
+ *             旧版式大时间让位判别）
  *   coverage: PH-A2 辅助条小图标前置 -> test 2（pixel-probe: 五元素区 + 温/湿/电
  *             图标半/数值半两两在位 = 图标前置、湿度不裸数字；env 缺席隐藏）+
  *             test 3（结构半: 辅助条渲染消费 hp1_state 电量字段）
@@ -174,6 +188,10 @@
 #define HPB_INK_MIN_ELEM 8
 #define HPB_INK_MIN_HALF 4
 #define HPB_INK_MIN_LARGE 20
+/* R2: 「接下来」标签带 / 明早槽在场下界（与 PCN_INK_MIN_LABEL=30 /
+ * PCN_INK_MIN_MINGZAO=12 同源同值——兜底描边路径同样须过阈，有墨义务两条路径成立）。 */
+#define HPB_INK_MIN_LABEL 30
+#define HPB_INK_MIN_MINGZAO 12
 
 /* 区域矩形 {x1, y1, x2, y2} 含端点（seam [3] 布局在位钉）。 */
 static const int hpb_rect_aux_strip[4]    = {  0,  0, 399,  39 };
@@ -190,9 +208,15 @@ static const int hpb_rect_aux_batt_icon[4]= {322,  6, 344,  33 };
 static const int hpb_rect_aux_batt_val[4] = {348,  6, 396,  33 };
 static const int hpb_rect_mascot[4]       = {  8, 48, 128, 208 };
 static const int hpb_rect_next[4]         = {136, 48, 392, 168 };
-static const int hpb_rect_sticker[4]      = {268, 50, 390, 130 };
-static const int hpb_rect_nextlist[4]     = {136,172, 392, 214 };
-static const int hpb_rect_preview[4]      = {136,220, 392, 258 };
+/* R2 跨包冲击修订（行流语义，PCN [S3] 对齐）: 旧 STICKER/NEXTLIST/PREVIEW 三个
+ * v1.4 正向钉区退役，改标签带 + 日程行流带 + 两退役面负断言区（区域矩形变更的
+ * 授权与逐 tooth 说明见头注 R2 注记与文件尾 REVISION LOG）。 */
+static const int hpb_rect_label[4]        = {136, 48, 266,  92 };
+static const int hpb_rect_rows[4]         = {136, 96, 392, 168 };
+static const int hpb_rect_sticker_neg[4]  = {268, 50, 390,  92 };
+static const int hpb_rect_row2[4]         = {136,124, 392, 150 };
+static const int hpb_rect_mingzao[4]      = {136,152, 180, 178 };
+static const int hpb_rect_preview_neg[4]  = {136,220, 392, 258 };
 
 /* 板级装配文件（seam [2] home）与渲染节点/显示链被扫文件。 */
 #define HPB_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
@@ -660,12 +684,13 @@ static void hpb_inject_schedule_two_items(void)
 
 /* -------------------------------------------------------------------------- *
  * TEST 1 — PH-A1/PH-A3/PH-A4 行为半：注入缝驱动渲染 + 新版式主体在位
- * 「接下来」主体 + 倒计时贴纸 + 小伴常驻 + 后续/预告 + 旧版式大时间让位判别（PH-A1）；
+ * 「接下来」主体（标签带 + 行流带）+ 贴纸退役负断言 + 小伴常驻 + ROW2 后续事项/
+ * 第三行预告 + 旧版式大时间让位判别（PH-A1，R2 行流语义重钉）；
  * 电池注入缝假状态驱动渲染缝（PH-A3 行为半——恒值注入 100 无法满足低电灭相零墨齿，
  * P1-A4 注入假状态教训落齿）；低电 ≤15% 未充电每秒闪 + 充电即停（PH-A4 行为半）。
  * RED today: home_p1.c 未接进 host runner（weak 哨兵 -2）。
  * ------------------------------------------------------------------------ */
-/* coverage: PH-A1 -- 新版式主体在位：接下来卡+倒计时贴纸+小伴常驻+后续/预告区在位；空日程让位 + 旧版式大时间让位判别（v1.4 重排序落齿） */
+/* coverage: PH-A1 -- 新版式主体在位（R2 行流语义）：接下来卡（标签带+行流带）+贴纸退役负断言+小伴常驻+ROW2 后续事项+明早槽/旧预告带退役 + 空日程固定卡题在场/行流带零墨 + 旧版式大时间让位判别 */
 /* coverage: PH-A3 -- 电池注入缝行为半：注入假状态驱动渲染缝——低电灭相窗零墨齿，恒值注入(100)必红 */
 /* coverage: PH-A4 -- 低电闪烁行为半：≤15% 未充电 1s 闪 + 充电即停恒画 */
 TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-A1/PH-A3/PH-A4)",
@@ -689,11 +714,14 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
         hpb_fm("HPB-A1 RED: 接下来主体区墨 %d < %d——最近一项主体未落新版式钉区 "
                "(WF-F1-01 v1.4 ②)", ink, HPB_INK_MIN_LARGE));
 
-    /* tooth 2 (PH-A1): 倒计时贴纸区在位（最近一项带倒计时贴纸）。 */
-    ink = hpb_count_ink(hpb_rect_sticker);
-    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_HALF,
-        hpb_fm("HPB-A1 RED: 倒计时贴纸区墨 %d < %d——贴纸存在性缺失 (AC1)", ink,
-               HPB_INK_MIN_HALF));
+    /* tooth 2 (PH-A1, R2): 倒计时贴纸退役——旧贴纸/大时间右上区任何夹具严格零墨
+     * （260921 追加轮 human 拍板: 贴纸不做随时钟缺口挂账、大 imgfont 时间退役、
+     * 预告不入右上独立区; 口径对齐 PCN [S3] STICKER_NEG = PCN TEST 8 tooth 2）。 */
+    ink = hpb_count_ink(hpb_rect_sticker_neg);
+    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
+        hpb_fm("HPB-A1 RED: 旧贴纸/大时间右上区 {268,50,390,92} 墨 %d != 0——倒计时"
+               "贴纸/大 imgfont 时间未退役，或预告被放进右上独立区（R2 版式退役面"
+               "在世渲染, AC1）", ink));
 
     /* tooth 3 (PH-A1): 小伴常驻演出区在位（姿态/表情保留，非冷冰冰任务清单）。 */
     ink = hpb_count_ink(hpb_rect_mascot);
@@ -701,19 +729,29 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
         hpb_fm("HPB-A1 RED: 小伴常驻演出区墨 %d < %d——常驻演出被新版式挤掉 (AC1)",
                ink, HPB_INK_MIN_LARGE));
 
-    /* tooth 4 (PH-A1): 后续事项区 + 明日预告区在位。 */
-    ink = hpb_count_ink(hpb_rect_nextlist);
+    /* tooth 4 (PH-A1, R2): 后续事项行 + 末行预告新版式语义——后续事项（原③逐项）
+     * 上移 ROW2 行流带在位; 预告并入主体第三行（明早标签槽 {136,152,180,178} 在场
+     * + 旧预告独立带标准夹具严格零墨）。预告时间起笔 x>=184 的构成判别由 PCN
+     * TEST 8 tooth 4 承载（帧 diff 机制），本齿钉在场与退役面。 */
+    ink = hpb_count_ink(hpb_rect_row2);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
-        hpb_fm("HPB-A1 RED: 后续事项区墨 %d < %d——逐项列表缺失 (AC1 ③)", ink,
-               HPB_INK_MIN_ELEM));
-    ink = hpb_count_ink(hpb_rect_preview);
-    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
-        hpb_fm("HPB-A1 RED: 明日预告区墨 %d < %d——预告缺失 (AC1)", ink,
-               HPB_INK_MIN_ELEM));
+        hpb_fm("HPB-A1 RED: 后续事项行 ROW2 {136,124,392,150} 墨 %d < %d——后续事项"
+               "未上行行流第二行（R2 版式未落地）", ink, HPB_INK_MIN_ELEM));
+    ink = hpb_count_ink(hpb_rect_mingzao);
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_MINGZAO,
+        hpb_fm("HPB-A1 RED: 明早标签槽 {136,152,180,178} 墨 %d < %d——预告未并入主体"
+               "第三行（明早烘焙标签缺失, R2 版式未落地）", ink,
+               HPB_INK_MIN_MINGZAO));
+    ink = hpb_count_ink(hpb_rect_preview_neg);
+    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
+        hpb_fm("HPB-A1 RED: 旧预告独立带 {136,220,392,258} 墨 %d != 0——预告未上行"
+               "主体第三行（旧独立钉区版式在世, R2 退役面）", ink));
 
-    /* tooth 5 (PH-A1, v1.4 重排序判别齿): 空日程时主体区零墨——旧版式大时间
-     * 兜底描边（x<=182,y<=92）越界压进主体钉区（x>=136），本齿对旧版式必红；
-     * 新版式下时间已让位辅助条、主体区随空日程严格让位。 */
+    /* tooth 5 (PH-A1, R2, 判别齿): 空日程——「接下来」烘焙大字标签为固定卡题仍在场
+     * （LABEL 带墨 >= 30）+ 日程行流带 {136,96,392,168}（ROW1..ROW3 域）严格零墨
+     * （行流门控——无项则无行）。旧口径「主体区整区零墨」随固定卡题语义退役（跨包
+     * 冲击登记: 线框口径下标签空日程仍画）; 旧版式大时间越界判别语义由 ROW1 落带
+     * 与辅助条时间齿（TEST 3 tooth 1）分头承载。 */
     {
         int rc;
         rc = kidpal_home_p1_schedule_inject("2026-09-15", NULL, 0, NULL);
@@ -725,10 +763,14 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
             hpb_fm("HPB RED(infra): render_frame(empty) rc=%d", rc));
     }
-    ink = hpb_count_ink(hpb_rect_next);
+    ink = hpb_count_ink(hpb_rect_label);
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_LABEL,
+        hpb_fm("HPB-A1 RED: 空日程标签带 {136,48,266,92} 墨 %d < %d——「接下来」固定"
+               "卡题未在场（R2 烘焙标签版式未落地）", ink, HPB_INK_MIN_LABEL));
+    ink = hpb_count_ink(hpb_rect_rows);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        hpb_fm("HPB-A1 RED: 空日程时主体区墨 %d != 0——无待办未让位，或旧版式大时间"
-               "仍压在内容区（v1.4 重排序未落地）", ink));
+        hpb_fm("HPB-A1 RED: 空日程行流带 {136,96,392,168} 墨 %d != 0——无项却画了"
+               "日程行（行流门控被破），或大 imgfont 时间/贴纸未退役压进行带", ink));
 
     /* ---- fixture B: PH-A3 行为半 + PH-A4 行为半（电池注入缝驱动渲染缝） ---- */
     /* tooth 6 (PH-A4): 低电 10% 未充电，灭相窗内（tick=900，周期 1000 可见窗 3/4）
@@ -1152,8 +1194,49 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *         display/home_p1.c 接线行（test 5 tooth 1 红）。
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
  *   test/host_app 均可）。
+ *
+ *   R2 追记（2026-09-22 跨包冲击修订红基线, acceptance-author 实跑; 授权 =
+ *   pod-events c4785230 human-decision plan-B-decode-fix-plus-wireframe-alignment）:
+ *     修订前基线 = 当前树全量 host runner 实跑 83 Tests / 7 Failures——红全部为
+ *     p1_cjk_name 追加轮设计态红（在册于该文件 RED baseline 判读口径通道②, 非本包
+ *     责任）; HPB 五 CASE 全绿（零偏移锚）。
+ *     修订后（builder 未落 [S3]/[S5] 新版式）本包义务红（设计态, builder 落新版式
+ *     后转绿, 不计违约）= 本文件 TEST 1: 实跑红点 tooth 2（旧贴纸/大时间右上区在世
+ *     渲染）; tooth 4/5 同 CASE 内被 Unity abort 屏蔽、解析性必红——tooth 4 旧预告
+ *     独立带含 p1_draw_preview 兜底描边 {138,222,390,240} 带墨（home_p1.c 在世）+
+ *     明早槽零墨, tooth 5 空日程 p1_draw_next 系整体门控不调用 → LABEL 带零墨
+ *     < 30（语义反转: 新版式下标签固定卡题须在场）。其余齿零偏移。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-15  initial freeze (acceptance-author, TaskPackage
  *               260915-m1-n1b-p1-home-battery).
+ *   2026-09-22  跨包冲击修订（planner 派发修订窗口; 授权 = 260921-m3-k4-p1-cjk-
+ *               dynamic-text pod-events 事件 c4785230 human-decision
+ *               plan-B-decode-fix-plus-wireframe-alignment——首页「接下来」卡版式
+ *               对齐 WF-F1-01: 大 imgfont 时间退役、「接下来」改烘焙大字标签、
+ *               文字行 14px 行流语义、预告并入主体第三行、倒计时贴纸随时钟缺口
+ *               挂账不做; 冲击面 = PCN 头注「跨包冲击登记」三齿）:
+ *               ① tooth 2 贴纸在位 -> 退役负断言: 钉区改 STICKER_NEG
+ *               {268,50,390,92} 任何夹具严格零墨（贴纸/大时间/预告右上区三重退役;
+ *               口径对齐 PCN [S3] = PCN TEST 8 tooth 2; 旧正向矩形下界 y130 与
+ *               新 ROW1/ROW2 行带重叠, 不可作零墨区, 故取 PCN 同款退役面）。
+ *               ② tooth 4 后续事项区+预告区在位 -> R2 行流语义: 后续事项半重钉
+ *               ROW2 {136,124,392,150} 在位（原 NEXTLIST {136,172,392,214} 在新版
+ *               式下 = ROW3 尾 + FLOW 承载域, 标准夹具无恒定墨源——保留即对
+ *               builder 落位方式脆断, 故随行流语义重钉）; 预告半重钉明早标签槽
+ *               {136,152,180,178} 墨 >= 12 + 旧预告独立带 {136,220,392,258} 标准
+ *               夹具零墨（预告上行第三行; 时间起笔 x>=184 构成判别由 PCN TEST 8
+ *               tooth 4 承载, 本齿钉在场与退役面）。登记面仅点名预告半, 后续事项
+ *               半的同 tooth 重钉系该 tooth 自身语义随版式演进的必然（非放宽,
+ *               在场义务保留）。
+ *               ③ tooth 5 空日程主体区零墨 -> 固定卡题口径: 「接下来」烘焙大字
+ *               标签为固定卡题, 空日程仍在场（LABEL {136,48,266,92} 墨 >= 30）+
+ *               日程行流带 {136,96,392,168}（ROW1..ROW3 域）严格零墨（行流门控）。
+ *               旧「整区零墨」与固定卡题语义直接冲突（跨包冲击登记第 3 条）。
+ *               ④ 新增 HPB_INK_MIN_LABEL=30 / HPB_INK_MIN_MINGZAO=12（与 PCN
+ *               同名阈值同源同值）; 静态矩形表同步重钉（sticker/nextlist/preview
+ *               三常量替换为 label/rows/sticker_neg/row2/mingzao/preview_neg）。
+ *               ⑤ 零触碰面: teeth 1/3/6-9 与 TEST 2-5 全部零偏移; 被测面 /
+ *               PCN 冻结件 / contracts / requirements 零触碰; CMakeLists 零改
+ *               （HPB 已注册在册）。红基线见头注「R2 追记」。
  * --------------------------------------------------------------------------- */

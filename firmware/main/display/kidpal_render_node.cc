@@ -204,15 +204,43 @@ extern "C" int art_render_blit_frame(const uint32_t *argb, int w, int h)
  * [S1] 设备字形强符号：kidpal_p1_font_glyph（覆盖 home_p1.c 弱默认）
  *
  * ksg_text_font()（schedule_page.c 先例）同款双分支取对话页同款 14px 普通字体
- * font_puhui_14_1；lv_font_get_glyph_dsc + 字形位图（A1/A2/A4/A8）alpha 阈值化
- * 成 1bpp 墨（seam [S1]）。设备 builds 恰一个强符号覆盖 home_p1 weak；host 侧
- * 由 host_infra_seam.c 提供同符号（本 TU 不编入 host runner）。
+ * font_puhui_14_1。**方案 B（human 拍板 2026-09-22）**：去掉 req_raw_bitmap=1，
+ * 走 LVGL 官方解码（lv_font_get_glyph_bitmap 把字体 glyph 转成 A8 写入 draw_buf，
+ * 内部按行处理 stride，修掉 live 轮 A6 FAIL 的「fdsc->stride=0 时 bpp=1 PLAIN
+ * 连续位流跨行逐位漂移」根因——旧 raw 位流手解假定字节对齐行）→ A8 阈值 128 化
+ * 1bpp（A8@128 ≡ A4@8 ≡ A2@2 ≡ A1@1 = 50% 覆盖，逐齿期望零偏移）。字形盒上限收
+ * 32×32（对 [S1] 冻结 1..64 的实现收紧子集，非契约变更）。设备 builds 恰一个强
+ * 符号覆盖 home_p1 weak；host 侧由 host_infra_seam.c 提供同符号（本 TU 不编入
+ * host runner）。
  * ---------------------------------------------------------------------- */
 #if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
 LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
 #elif defined(ESP_PLATFORM)
 LV_FONT_DECLARE(font_puhui_14_1);
 #endif
+
+/* 方案 B A8 静态 draw_buf（LVGL 官方解码 scratch；32×32 盒上限）。每个二进制恰
+ * 一个 TU 持有一份（设备本 TU + host seam TU），静态内存增量 = 本缓冲大小 + 1bpp
+ * 输出（32*((32+7)/8)=128B）。 */
+#define P1_GLYPH_BOX_CAP 32
+static unsigned char s_glyph_a8_data[LV_DRAW_BUF_SIZE(P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP, LV_COLOR_FORMAT_A8)]
+    __attribute__((aligned(LV_DRAW_BUF_ALIGN)));
+static lv_draw_buf_t s_glyph_a8_buf;
+static int s_glyph_a8_ready = 0;
+
+static int p1_glyph_a8_buf_init(void)
+{
+    if (s_glyph_a8_ready) {
+        return 1;
+    }
+    if (lv_draw_buf_init(&s_glyph_a8_buf, P1_GLYPH_BOX_CAP, P1_GLYPH_BOX_CAP,
+                         LV_COLOR_FORMAT_A8, 0,
+                         s_glyph_a8_data, sizeof(s_glyph_a8_data)) != LV_RESULT_OK) {
+        return 0;
+    }
+    s_glyph_a8_ready = 1;
+    return 1;
+}
 
 extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
 {
@@ -230,9 +258,9 @@ extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
     return -1;
 #endif
     lv_font_glyph_dsc_t dsc;
-    const uint8_t *bits;
-    static unsigned char s_bits[64 * ((64 + 7) / 8)];
-    int bpp, stride, threshold;
+    const uint8_t *a8;
+    static unsigned char s_bits[P1_GLYPH_BOX_CAP * ((P1_GLYPH_BOX_CAP + 7) / 8)];
+    int byte_stride, a8_stride;
     int x, y;
 
     if (out == NULL) {
@@ -244,35 +272,26 @@ extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
     if (dsc.is_placeholder || dsc.box_w == 0 || dsc.box_h == 0) {
         return -1;
     }
-    bpp = static_cast<int>(dsc.format); /* A1=1, A2=2, A4=4, A8=8 */
-    if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8) {
+    if (static_cast<int>(dsc.box_w) > P1_GLYPH_BOX_CAP ||
+        static_cast<int>(dsc.box_h) > P1_GLYPH_BOX_CAP) {
+        return -1; /* [S1] 32×32 实现收紧子集 */
+    }
+    /* 方案 B：req_raw_bitmap 保持 0（默认）——LVGL 官方解码到 A8 draw_buf。 */
+    if (!p1_glyph_a8_buf_init()) {
         return -1;
     }
-    if (dsc.box_w > 64 || dsc.box_h > 64) {
-        return -1; /* [S1] 盒上限 64 */
-    }
-    dsc.req_raw_bitmap = 1;
-    bits = static_cast<const uint8_t *>(s_font->get_glyph_bitmap(&dsc, nullptr));
-    if (bits == nullptr) {
+    a8 = static_cast<const uint8_t *>(s_font->get_glyph_bitmap(&dsc, &s_glyph_a8_buf));
+    if (a8 == nullptr) {
         return -1;
     }
-    stride = (static_cast<int>(dsc.box_w) * bpp + 7) / 8;
-    threshold = (bpp == 1) ? 1 : (bpp == 2 ? 2 : (bpp == 4 ? 8 : 128));
+    byte_stride = (static_cast<int>(dsc.box_w) + 7) / 8;
+    a8_stride = static_cast<int>(lv_draw_buf_width_to_stride(
+        static_cast<uint32_t>(dsc.box_w), LV_COLOR_FORMAT_A8));
     std::memset(s_bits, 0, sizeof(s_bits));
     for (y = 0; y < static_cast<int>(dsc.box_h); y++) {
         for (x = 0; x < static_cast<int>(dsc.box_w); x++) {
-            int pix = 0;
-            if (bpp == 1) {
-                pix = (bits[y * stride + (x >> 3)] >> (7 - (x & 7))) & 1u;
-            } else if (bpp == 2) {
-                pix = (bits[y * stride + (x >> 2)] >> (6 - 2 * (x & 3))) & 3u;
-            } else if (bpp == 4) {
-                pix = (bits[y * stride + (x >> 1)] >> ((x & 1) ? 0 : 4)) & 15u;
-            } else {
-                pix = bits[y * stride + x];
-            }
-            if (pix >= threshold) {
-                s_bits[y * ((static_cast<int>(dsc.box_w) + 7) / 8) + (x >> 3)] |=
+            if (a8[y * a8_stride + x] >= 128) { /* A8 阈值 128 = 50% 覆盖 */
+                s_bits[y * byte_stride + (x >> 3)] |=
                     static_cast<unsigned char>(1u << (7 - (x & 7)));
             }
         }

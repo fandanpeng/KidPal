@@ -127,6 +127,13 @@ set(HOST_ACCEPTANCE_SRCS
     # 齿注册序守卫）。
     "../../schedule_grid.acceptance.c"
 
+    # 包 260921-m3-k4-p1-cjk-dynamic-text（首页 P1 动态日程名 CJK 渲染）被测实现接线：
+    # 本包追加轮 [S5] 烘焙固定标签（p1_label_jiexialai.bin / p1_label_mingzao.bin）
+    # 由 art_assets.c 提供 kidpal_art_mount/load/pixel 强符号（否则 p1_cjk_name TEST 7/8
+    # 走 HPB 弱桩恒败 = 自诊断 infra 红；BUILDER DUTY 5))。未挂载态 art_assets.c 强符号
+    # 语义 == 既有弱桩（load/glyph -1、advance -1），其余齿兜底路径零扰动。
+    "../../../display/art_assets.c"
+
     # 包 260921-m3-k4-p1-cjk-dynamic-text（首页 P1 动态日程名 CJK 渲染）冻结验收：
     # [S1] 字形 seam 三符号 + [S2] UTF-8 解码逐字形 blit + 三钉区墨/截断/截半容错/
     # 缺字形退化 + 注册接线守卫。被测实现 home_p1.c 已在册（seam weak 由本包新增

@@ -100,3 +100,62 @@
 - 回滚方式：单 commit revert 本包实现批即可整体回退（display 内聚簇：home_p1.c + kidpal_render_node.cc + kidpal_p1_font.h + host_app 测试面；弱符号 seam 向后兼容，revert 后设备行为回「画不出即丢弃」现状，无跨包耦合、无部署面联动）。
 - supervisor 判读输入：final r4 `ok:true` + evidence-check PASS（factOk:true）+ E2 铁律五项 verified + demo 对账一致（真机目测按 E3 口径显式挂账）+ 未覆盖面 1 条挂账/1 条 none + findings 零 BLOCKING（1 NIT）。
 - 本包不判定通过、不 merge、不 push——supervisor-verdict-gate.mjs 机械闸归 planner 主线程，其后 pre-merge-escalation-gate 放行 → merge-driver --pod 本地合并。
+
+## Post-merge 追加轮 addendum（2026-09-22）
+
+> 主轮已合并（main f8703d5），本节为追加轮收口**追加**——主轮既有段落零改语义。追加轮授权链：human 拍板 `plan-B-decode-fix-plus-wireframe-alignment`（pod-events eventId `c4785230-35f7-41b7-a1c7-86ff94667945`，2026-09-22）——含范围扩展 = 固定标签烘焙资产殿后显式解除 + 首页接下来卡版式对齐 WF-F1-01，该 human-decision 事件即立项 ack。
+
+### 追加轮因果链（A6 live FAIL → 修复 → 收口）
+
+1. **A6 首轮 live FAIL（设备字形乱码）**：主轮合并后设备轮真机复验红。根因（planner 只读调查）：设备字体 glyph 以 raw A1 连续位流吐出（`dsc.req_raw_bitmap=1` + `fdsc->stride=0` 时 lv_font_fmt_txt 解码位计数器不逐行复位），手解代码按字节对齐行假设逐行取样 → 跨行逐位漂移 = 乱码；host 侧 Source Han 子集 bpp4 偶宽碰巧逐行等价，故 host 全绿（假绿掩盖）。
+2. **human 拍板 B 方案（LVGL 官方解码）**：`req_raw_bitmap` 保持 0，`get_glyph_bitmap` 走 LVGL 官方解码把 glyph 转 A8 写 draw_buf（内部按行处理 stride，修掉 stride=0 逐行漂移根因）→ A8 阈值 128 化 1bpp（A8@128 ≡ A4@8 ≡ A2@2 ≡ A1@1 = 50% 覆盖，逐齿期望零偏移）；字形盒上限收 32×32（[S1] 冻结 1..64 的实现收紧子集，非契约变更）；双强符号（设备 `kidpal_render_node.cc` + host `host_infra_seam.c`）同改。静态内存增量如实记：每二进制 A8 draw_buf（32×32，`LV_DRAW_BUF_SIZE` 对齐）+ 1bpp 输出 128B。
+3. **范围扩展（同一拍板授权）**：版式对齐 spec WF-F1-01 v1.21（requirements.md:208-218 线框权威）——大 imgfont 时间退役、「接下来/明早」烘焙大字标签新资产（[S5] 冻结名 `p1_label_jiexialai.bin` / `p1_label_mingzao.bin` + 生成器 `tools/asset-pipeline/gen_kidpal_labels.py` + report png 两枚）、全部文字行 14px `font_puhui_14_1` 逐字形 blit 行流语义（[S3] 行带重钉 ROW1/ROW2/ROW3）、预告并入主体第三行、倒计时贴纸随时钟缺口挂账不做。
+4. **冻齿原地修订 + 跨包冲击授权链**：PCN（`p1_cjk_name.acceptance.c`）原地重钉 A1–A10（旧三钉区退役 → 行流口径 + 负断言区 STICKER_NEG/PREVIEW_NEG，新增 TEST 7/8/9；零新增注册面）；跨包冲击 = HPB（`p1_home_battery.acceptance.c`）TEST 1 tooth 2/4/5 R2 修订窗口——planner 派 HPB 修订、本包不授权改他包冻结件（PCN REVISION LOG ⑤ 同款纪律），授权链同 human 拍板 c4785230。
+5. **追加轮 round 链**：scoped r5 六闸绿（invocation `6e423c35-e688-4c63-bc9e-f7cedfdba74c`）→ **final r6 九闸全绿**（invocation `42db9cf4-d1e1-4bc8-bcd2-3ac5cb551f06`，fact `ok:true` / `observedGateExit:0`，evidenceRef `verifier-evidence/rounds/r6.json`）；verifier-evidence-check 双轮 integrator 实跑 exit 0（r5 `--phase scoped` / r6 `--phase final`，均 `factOk:true`）。
+6. **体积余量重录**：final r6 firmware-build 真编译——xiaozhi.bin **0x30c340 bytes**、app 分区 0x370000 bytes、余量 **0x63cc0 bytes (11%) free**（较修复前 0x30c5b0 还小——B 方案静态增量被版式退役的代码缩减对冲）。
+7. **真机复验半待开窗**：B 方案修复后设备真机复验挂设备轮窗口（E3 口径），目测清单五项：① B 方案解码后 14px CJK 可读性；② 「接下来/明早」大字烘焙标签观感；③ 「明早」文案（spec WF-F1-01 v1.21 权威）与预告行版式；④ 贴纸退役残墨检查；⑤ 贴纸/大时间/预告右上区三重退役目测（STICKER_NEG 负断言 host 侧已绿，真机目测收尾）。
+
+### Demo 对账行（追加轮）
+
+- **全量 83 齿证据行（integrator 独立实跑逐字）**：`wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` → ninja 判定 up-to-date（源与 ELF 同步）build rc=0；`./build/host_infra_test.elf` → **逐字证据行：`83 Tests 0 Failures 0 Ignored` / `OK` / `ELF_RC=0`**。计数口径：既有 74 齿零偏移（含 HPB 5 TEST_CASE——R2 修订为原地改语义、计数不变）+ PCN 9 TEST_CASE（主轮 6 原地修订 + 追加轮新增 3）= 83。
+- **PCN 修订齿 9 TEST_CASE PASS 逐行**（行号 = Unity 输出实际行）：
+  1. `P1CJK rows: 行内容墨落行带 diff 定位 (P1CJK-A1/A8):PASS`（:883）
+  2. `P1CJK rows: 超宽名承载不越卡区 (P1CJK-A2):PASS`（:990）
+  3. `P1CJK name: UTF-8 截半尾序列安全停笔 (P1CJK-A4):PASS`（:1045）
+  4. `P1CJK name: 字形缺失退化不崩 (P1CJK-A5):PASS`（:1104）
+  5. `P1CJK guards: 铁律canary+扫描器自检+单项零墨 (P1CJK-E2/A3):PASS`（:1196）
+  6. `P1CJK structural: 字形 seam 三符号落点+注册接线 (P1CJK-A1/A6):PASS`（:1291）
+  7. `P1CJK bake: 「接下来」烘焙大字标签墨在场 (P1CJK-A7):PASS`（:1342）
+  8. `P1CJK preview: 末行预告构成+版式退役负断言 (P1CJK-A9):PASS`（:1387）
+  9. `P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10):PASS`（:1448）
+- **device build 闸**：final r6 firmware-build 真编译（体积余量见上第 6 条）；设备强符号装配事实半 = TEST 6（P1CJK-A1/A6）PASS。
+
+### 冻齿缺陷修订（如实入册）
+
+- **TEST 2 tooth 2 算术缺陷**：主轮收口时已入册（本 packet「冻结件 REVISION LOG 与红基线脚手架」节 + PCN 文件尾 REVISION LOG 2026-09-22 条），此处跨引用归册——`pcn_diff_stats` 的 out_total 恒为整帧 diff 计数，旧断言 `(b1+b2+b3)==(t1+t2+t3)` 即 D==3D、与前置 total>0 互斥恒红；修复 = total 取单次整帧计数 D、断言改 `in_band==D`，判别力经 P1CJK-A2 去 clip 变异复验保全。
+- **TEST 9 tooth 4 帧测量笔误（追加轮新增修订）**：断言量「极宽名帧」ROW1 以下带，代码却用 `pcn_count_ink` 读 live 帧——tooth 3 刚注入短名（钢琴课）重渲 live 帧，短名不换行 → below_row1 恒 0，任何正确实现必红，且短帧 below_row1 非零会违反同 CASE A3 单项零墨语义（断言与自身契约互斥）。builder 插桩实证换行已在场（31×'W' ROW1 14 字 + 续行 13 字）。修复 = 新增 `pcn_count_ink_snap(rect, frame)` 快照读法 helper（与 `pcn_right_band_ink` 同风格），tooth 4 改量极宽名帧快照 `pcn_f_b`，断言与红名原文语义不变；同 CASE tooth 1/2 快照读法零触碰，判别力不变。两处修订均 planner 核实、非 builder 实现缺陷。
+
+### 追加轮 E2 铁律自查（P1CJK-E2，逐条证据，2026-09-22 integrator 实跑）
+
+| 铁律项 | 证据 | 结论 |
+|---|---|---|
+| `hp1_item_t` 与 11 个冻结契约函数零偏移 | `home_p1.h` 零 diff（不在 git status）；`hp1_item_t`（:41）与 11 函数声明面（schedule_inject/count/item/preview、day_rollover、countdown、blink_visible、doze_state、layout_resolve、set_state、render_frame）全部在未动的 home_p1.h 内；TEST 5 E2 canary PASS（83 齿轮内） | 零偏移 verified |
+| `home_upcoming.{c,h}` 零改 | `git status --short` 两路径零输出、不在 diff stat 闭集 | 零改 verified |
+| `docs/contracts/**` 与 `docs/requirements.md` 零改 | `git status --short -- docs/contracts/ docs/requirements.md` 零输出；contract-lint 闸 r6 绿 | 零改 verified |
+| `schedule_page.c` 零触碰 | 不在 `git diff --stat` 闭集（追加轮 diff 面 = home_p1.c / kidpal_render_node.cc + host_app 测试面 + [S5] 资产/工具） | 零触碰 verified |
+| 既有烘焙资产零删改（只新增两枚） | `git status --short firmware/main/assets/` = 仅 `?? firmware/main/assets/spiffs_root/p1_label_jiexialai.bin` + `?? p1_label_mingzao.bin`（untracked 新增）；`git diff --stat -- firmware/main/assets/` 零输出（既有资产零删改）；两枚新资产按 [S5] 冻结名落盘，殿后解除权威 = human 授权 c4785230 | 零删改 + 授权新增 verified |
+
+### 追加轮未覆盖面申报
+
+| # | 未覆盖面 | 设计性质 + 现状 | 去向 |
+|---|---|---|---|
+| 1 | **P1CJK-A6 真机复验半**（上节第 7 条五项目测） | 设计性质 = 真机屏人眼目测面，host pixel-probe 齿不覆盖设备解码路径观感。现状 = B 方案修复后 device build 闸过（余量 11%）+ host runner 83 齿全绿 + final r6 九闸绿 | **挂设备轮窗口（E3）**——随下一 K 包设备轮或独立开窗；属追加轮收口的半待开窗面，非静默缩水 |
+| 2 | 其余 acceptance 面（A1–A5/A7–A10 行为齿 + E1/E2） | 逐条有行为级/结构级冻结齿承载，final r6 + host runner 83 齿双绿 | **none**（零缺口） |
+
+追加轮 findings：零新增（主轮 NIT 一条不重复列示；冻齿缺陷两处在修订节如实入册，均修复且经追加轮复验）。
+
+### 追加轮 closeout 制品刷新
+
+- `verdict.json`（fact 副本，K3 先例同形）+ `verification.json`（advisory 投影）已以 final r6 fact 刷新（r1–r4 历史原样保留 + 追加 r5/r6）；`current/verdict.json`（verify.mjs 程序 fs-write，non-bearing advisory）已随 r6 刷新。bearing fact = `delivery/taskpackages/260921-m3-k4-p1-cjk-dynamic-text/verifier-evidence/rounds/r6.json`，本 packet 只引用不复制。
+- Loop metrics / Pod Journal（post-cutoff dual-format）：不产 `session-digest.md` / `loop-health.md` / `loop-metrics.json` / `pod-journal.jsonl`；`pod-events.jsonl` 在场（advisory 检查通过）。
+- 本节只追加、不改主轮段落语义；追加轮改动不 push、不 merge（树池惯例：分支领先 main 随下批回 main）。
