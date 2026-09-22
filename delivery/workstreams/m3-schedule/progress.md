@@ -202,3 +202,14 @@
 - K3 设备轮挂账「设备时间错误」立项推进：主线程实测修正根因——引擎 OTA 端点实发正确 `server_time`（timestamp UTC ms + offset 480），真因 = 方向 B 短路激活后 `ActivationTask()` 不再调 `Ota::CheckVersion()`（全固件唯一 settimeofday 点）且固件无 SNTP，真机串口 `tm_year: 70` 实证。
 - `/triage-change` 派 architect 比例化 review → **②单包 Lite**（不触契约面/spec 冻结面，逃生门不命中）；F1 范围裁定 human 拍板 **(a) SNTP + 写回 PCF85063 + 周期 re-inject**、F2（P1 boot 快照冻结）随包一并修。
 - 建包 `260922-m3-k5-sntp-time-sync`（plan.md reviewed plan + taskpackage.json 骨架，intake 时 planner 补齐验收面），挂本 workstream（attach-existing），排常驻树第 9 棒。下一步 = 人类起 planner 会话跑 `/build-feature 260922-m3-k5-sntp-time-sync`。
+
+## 2026-09-22 · K5 launch 面就绪（主线程 launch prep，树池续棒）
+
+- **树池**：常驻树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch` 续棒。launch prep 开树时树面状态：常驻分支落后 main 四笔（ui-v5 gov 批，仅 docs/delivery 面）且领先两笔（K4 收尾落账 `7a5d909` 未回 main——K4 合并后落账 commit 留在了常驻分支）——已 rebase 到 main（`20df3cb`），closeout 现为 `6cb4824`、立项落包 `b054660`。**K4 收尾落账此前未回 main，随本批 pod 合并回 main**（merge-driver rebase 步自然携带）。
+- **launch 侧异常处置**：`delivery/taskpackages/260922-m3-k5-sntp-time-sync/taskpackage.json` 原始落盘截断损坏（` .time": ""` 残片 + iterationBudget 后尾部全缺），launch prep 对照 K4 立项骨架修复补齐（补 contractRefs/docRefs/sourceRefs/fixBudget/notes/crossEnd 等尾部字段），JSON 校验过（35 字段）。plan.md 完好未动。
+- **上游已知红基线锚（差异判停 2026-09-22，两面引用不重跑）**：
+  - server 面锚：`git diff --quiet dc6094a HEAD -- server` 零差异 → 引用 K4 launch 段锚「server 95 @ dc6094a」（量测命令 `python -m pytest -q --import-mode=importlib -m "not live" <repo>/server/acceptance`，2026-09-22 量测于 dc6094a，面域 = server）；
+  - firmware 面锚：`git diff --quiet 9cae452 HEAD -- firmware` 零差异 → 引用 K4 第 3 追加轮段锚「host runner 84 Tests / 0 Failures」（量测命令 WSL host runner `firmware/main/test/host_app espidf_wsl.sh build` + `host_infra_test.elf` run，2026-09-22 量测于 9cae452（main 侧同内容双生 SHA `14a27f6`），面域 = firmware；rebase 后至本段落笔 HEAD `b054660` 复核仍零差异）。
+  - 语义提醒：本包验收红基线（acceptance-author 新冻结齿）恒现跑，无缓存可言。
+- **制品**：launch-card.md（本包特记：taskpackage.json 修复留痕、input-brief 由 intake 补齐）+ current/ 指针刷新为 K5（K4 残留 input-brief/verdict 清除，canonical 存 K4 包目录）+ milestones.jsonl M3 nextAction 增补 K5 进行中。board 预填 queued + worktreePath 本树。
+- **launch 指示**：human 已指示主线程准备好后直接启动 dev loop（planner），不另起交互会话。
