@@ -24,6 +24,11 @@
 #include <esp_adc/adc_cali.h>         /* 包 260915-m1-n1b-p1-home-battery: ADC 校准 */
 #include <esp_adc/adc_cali_scheme.h>  /* 包 260915-m1-n1b-p1-home-battery: 曲线拟合校准 */
 #include "adc_battery_monitor.h"      /* 包 260915-m1-n1b-p1-home-battery: 充电态监测基座 */
+#include <esp_sntp.h>                 /* K5 260922-m3-k5-sntp-time-sync: SNTP 同步成功回调注册 */
+#include <sys/time.h>                 /* K5: settimeofday 断电恢复系统时间 */
+#include <time.h>                     /* K5: time/localtime_r/mktime（RTC <-> 系统时间桥） */
+#include <freertos/task.h>            /* K5: 周期时间维护 task */
+#include "time_sync.h"                /* K5 seam [S1]: bcd_encode / write_decision 纯逻辑单源 */
 
 /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
  * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
@@ -32,6 +37,17 @@
 LV_FONT_DECLARE(font_awesome_14_1);
 
 #define TAG "waveshare_rlcd_4_2"
+
+/* K5（TaskPackage 260922-m3-k5-sntp-time-sync）[S3]：SNTP 同步成功旗标。回调注册于
+ * InitializeSensors（esp_sntp_set_time_sync_notification_cb, 全局唯一消费者——本固件
+ * 无其他 esp_sntp_init 调用点, 不会被覆盖）；回调在 lwip SNTP task 上下文触发, 只置
+ * 旗标不做 I/O, 由板级周期 task（K5-E3 真机面）消费执行 PCF85063 写回。 */
+static volatile int s_ts_sntp_synced = 0;
+static void ts_sntp_sync_cb(struct timeval *tv)
+{
+    (void)tv;
+    s_ts_sntp_synced = 1;
+}
 
 /* 包 260915-m1-n1b-p1-home-battery：板级电池 ADC 采集配置。官方 Demo
  * ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/03_ADC_Test（只读参考，重写进本文件）已验证：
@@ -55,6 +71,11 @@ LV_FONT_DECLARE(font_awesome_14_1);
  * planner 裁定从 ota_1 尾部切 512KB 保 canary 后落地。未烧录/镜像过时时 mount 失败，各页
  * best-effort 降级回占位矩形 (不 panic、不崩)。 */
 #define KIDPAL_ART_VFS_ROOT "/art"
+
+/* K5（TaskPackage 260922-m3-k5-sntp-time-sync）：周期时间维护节拍。分钟级时间语义下
+ * 60s 周期 = 重读 RTC + re-inject P1（[S4], 与 P1 重绘分钟粒度节拍协调, 不跳字）+
+ * 消费 SNTP 同步成功旗标写回 PCF85063（[S3]）。 */
+#define KIDPAL_TS_PERIODIC_PERIOD_MS 60000
 
 /* 包 9b HWV-A4 启动回归修复 (fixer): 开机传感器读与音频 codec 共用同一条 I2C 总线
  * (ESP32_I2C_HOST / SDA=13 / SCL=14)。无应答从设备 (SHTC3 缺席) 会让同步事务在
@@ -251,8 +272,12 @@ private:
      * (BCD/二进制)。真实 I2C 读事务 (写寄存器指针 -> repeated-start -> 读), 非仅挂载。
      * 0x04=Seconds, 0x05=Minutes, 0x06=Hours, 0x07=Days, 0x08=Weekdays, 0x09=Months。
      * 日期字段为 M1-N1b 日期 DD-Mon 扩展带出 (0x07 日 / 0x09 月); 星期字段为 M3-K2
-     * 今天列推导带出 (0x08, 二进制 0..6, PCF85063 口径 0=周日)。 */
-    bool ReadRtcTime(int* hour, int* min, int* sec, int* mday, int* mon, int* wday_mon0) {
+     * 今天列推导带出 (0x08, 二进制 0..6, PCF85063 口径 0=周日)。
+     * K5（260922-m3-k5-sntp-time-sync）: 新增 os_bit 出参——Minutes 寄存器 bit7 =
+     * OS（oscillator stop, 晶振曾停振）标志, 先读出交 [S1] write_decision 做可信门,
+     * 不再掩掉丢弃（plan 边角: OS 置位 = 时间不可信, 不写回/不恢复、等 SNTP）。 */
+    bool ReadRtcTime(int* hour, int* min, int* sec, int* mday, int* mon, int* wday_mon0,
+                     int* os_bit_out) {
         if (pcf85063_dev_ == nullptr) {
             return false;
         }
@@ -265,6 +290,7 @@ private:
             RecoverI2cBus(); /* 失败即清总线, 不污染后续 codec 事务 */
             return false;
         }
+        if (os_bit_out) *os_bit_out = static_cast<int>((rx[1] >> 7) & 0x01); /* Minutes bit7 = OS, 先读不掩 */
         if (sec)  *sec  = BcdToDec(rx[0] & 0x7F); /* 秒: 去 CV(bit7) 后 BCD->dec */
         if (min)  *min  = BcdToDec(rx[1] & 0x7F); /* 分: 去 OS(bit7) 后 BCD->dec */
         if (hour) *hour = BcdToDec(rx[2] & 0x3F); /* 时: 去 AF(bit7)/保留(bit6) 后 BCD->dec */
@@ -276,6 +302,42 @@ private:
             *wday_mon0 = (raw > 6) ? -1 : (raw == 0 ? 6 : raw - 1);
         }
         if (mon)  *mon  = BcdToDec(rx[5] & 0x1F); /* 月=0x09: 去 bit7..5 (century/leap) 后 BCD->dec (1..12) */
+        return true;
+    }
+
+    /* K5（260922-m3-k5-sntp-time-sync）[S3]：PCF85063 I2C 写路径（现固件只读, 本函数
+     * 新增）——UTC+8 本地时间逐字段 BCD 编码写 0x04–0x09（秒/分/时/日/星期/月, 寄存器
+     * 指针自动递增一事务完成）。BCD 编码唯一走 [S1] kidpal_ts_bcd_encode 单源（旁路
+     * 自写一份 = 行为等价假设破坏, 冻结齿 TEST 5 tooth 2 红）。写入值天然 < 60/24/32,
+     * 秒/分寄存器 bit7 标志位（CV/OS）随 0 写入清除。PCF85063 无年寄存器, 年份不写。
+     * 调用前置可信门 = [S1] kidpal_ts_write_decision（OS 位 / year plausibility,
+     * 见 SyncSystemTimeToRtc）。 */
+    bool WriteRtcTime(int hour, int min, int sec, int mday, int wday_sun0, int mon) {
+        if (pcf85063_dev_ == nullptr) {
+            return false;
+        }
+        int es = kidpal_ts_bcd_encode(sec);
+        int em = kidpal_ts_bcd_encode(min);
+        int eh = kidpal_ts_bcd_encode(hour);
+        int ed = kidpal_ts_bcd_encode(mday);
+        int ew = kidpal_ts_bcd_encode(wday_sun0);
+        int eo = kidpal_ts_bcd_encode(mon);
+        if (es < 0 || em < 0 || eh < 0 || ed < 0 || ew < 0 || eo < 0) {
+            ESP_LOGW(TAG, "rtc pcf85063 write rejected: field out of BCD domain "
+                          "(h=%d m=%d s=%d mday=%d wday=%d mon=%d)",
+                     hour, min, sec, mday, wday_sun0, mon);
+            return false;
+        }
+        uint8_t tx[7] = { 0x04, static_cast<uint8_t>(es), static_cast<uint8_t>(em),
+                          static_cast<uint8_t>(eh), static_cast<uint8_t>(ed),
+                          static_cast<uint8_t>(ew), static_cast<uint8_t>(eo) };
+        esp_err_t err = i2c_master_transmit(pcf85063_dev_, tx, sizeof(tx),
+                                            HWV_SENSOR_I2C_TIMEOUT_MS);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "rtc pcf85063 write err=%s", esp_err_to_name(err));
+            RecoverI2cBus(); /* 失败即清总线, 不污染后续 codec 事务 */
+            return false;
+        }
         return true;
     }
 
@@ -334,18 +396,60 @@ private:
         char corr_id[24];
         snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                  static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-        int h = 0, m = 0, s = 0, mday = 0, mon = 0, wday = -1;
-        if (ReadRtcTime(&h, &m, &s, &mday, &mon, &wday)) {
-            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d wday=%d",
-                     corr_id, h, m, s, mon, mday, wday);
+        int h = 0, m = 0, s = 0, mday = 0, mon = 0, wday = -1, os_bit = 0;
+        if (ReadRtcTime(&h, &m, &s, &mday, &mon, &wday, &os_bit)) {
+            ESP_LOGI(TAG, "rtc_pcf85063 corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d wday=%d os=%d",
+                     corr_id, h, m, s, mon, mday, wday, os_bit);
             s_rtc_h = h; /* 包 9b HWV-A6: 暂存供渲染节点注入 */
             s_rtc_m = m;
             s_rtc_mday = mday; /* M1-N1b 日期 DD-Mon: 暂存月/日供注入 */
             s_rtc_mon  = mon;
             s_rtc_wday = wday; /* M3-K2 今天列: 暂存星期供 inject_weekday */
+
+            /* K5（260922-m3-k5-sntp-time-sync）[S3]：boot 读 RTC 后 settimeofday 恢复
+             * 系统时间（现状缺口 = 只注入 P1 不恢复, 断网重启后状态栏时钟仍 1970,
+             * S-F1.1 AC4 / NFR-OFF-1）。恢复前过 [S1] write_decision 统一可信门:
+             *   - os_bit: 晶振曾停振（纽扣电池耗尽）-> 不恢复、等 SNTP;
+             *   - year_ok 入参 = RTC 日期字段 plausibility 代理（minimal: PCF85063 无年
+             *     寄存器, 世纪位保证 20xx 而且芯片只被本机 SNTP 写回路径写过——写回本身
+             *     已过 year_ok 门; 工厂裸片全 0 寄存器 mday=0 在此被拒, 不画假时间）;
+             *   - 系统时钟已 plausible（软重启等）则跳过恢复, 不把正确年份回退到基线。
+             * 恢复年份基线 2025（tm_year=125, 过 lvgl 守门 tm_year>=2025-1900; 显示面
+             * 只消费 HH:MM 与 DD-Mon, 年份不显示, 月/日逐字保留）。 */
+            struct tm tm_cur = {};
+            time_t now_cur = time(NULL);
+            localtime_r(&now_cur, &tm_cur);
+            if (!kidpal_ts_year_ok(tm_cur.tm_year)) {
+                int plausible = (mon >= 1 && mon <= 12 && mday >= 1 && mday <= 31 &&
+                                 h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59);
+                if (kidpal_ts_write_decision(os_bit, plausible)) {
+                    struct tm tm_rtc = {};
+                    tm_rtc.tm_year = 125; /* 基线 2025（RTC 无年寄存器, 见上注） */
+                    tm_rtc.tm_mon = mon - 1;
+                    tm_rtc.tm_mday = mday;
+                    tm_rtc.tm_hour = h;
+                    tm_rtc.tm_min = m;
+                    tm_rtc.tm_sec = s;
+                    tm_rtc.tm_wday = (wday < 0) ? 0 : (wday == 6 ? 0 : wday + 1); /* 周一=0 基 -> tm 周日=0 基 */
+                    tm_rtc.tm_isdst = 0;
+                    struct timeval tv = {};
+                    tv.tv_sec = mktime(&tm_rtc);
+                    tv.tv_usec = 0;
+                    settimeofday(&tv, nullptr);
+                    ESP_LOGI(TAG, "time_restore corr_id=%s boot_rtc_settimeofday ok "
+                                  "rtc=%02d:%02d:%02d date=%02d-%02d os=%d",
+                             corr_id, h, m, s, mon, mday, os_bit);
+                } else {
+                    ESP_LOGW(TAG, "time_restore corr_id=%s rejected_by_write_decision "
+                                  "os=%d plausible_date=%d (等 SNTP, 不把坏时间当权威)",
+                             corr_id, os_bit, plausible);
+                }
+            }
         } else {
             ESP_LOGW(TAG, "rtc_pcf85063 corr_id=%s read_deferred", corr_id);
         }
+        /* K5 [S3]：注册 SNTP 同步成功回调（全局唯一消费者, 见 s_ts_sntp_synced 注）。 */
+        esp_sntp_set_time_sync_notification_cb(ts_sntp_sync_cb);
         float tc = 0.0f, rh = 0.0f;
         if (ReadShtc3(&tc, &rh)) {
             ESP_LOGI(TAG, "shtc3 corr_id=%s ok temp_c=%.2f rh_pct=%.1f", corr_id, tc, rh);
@@ -416,6 +520,79 @@ private:
             *level_out = level;
         }
         return true;
+    }
+
+    /* K5（260922-m3-k5-sntp-time-sync）[S3]：SNTP 对好的系统时间写回 PCF85063（断电
+     * 由纽扣电池续航）。前置双门 = [S1] 单源: 先读 RTC OS 位（ReadRtcTime 不掩掉）,
+     * kidpal_ts_write_decision(os_bit, year_ok(系统时间)) 放行才写（OS 停振不写回等
+     * SNTP 降级; 系统时间未同步 tm_year:70 态 year_ok=0 同样不写）。由周期 task 在
+     * SNTP 同步成功旗标置位后调用（事件驱动写入, 周期节拍消费）。 */
+    void SyncSystemTimeToRtc() {
+        int h = 0, m = 0, s = 0, mday = 0, mon = 0, wday = -1, os_bit = 0;
+        if (!ReadRtcTime(&h, &m, &s, &mday, &mon, &wday, &os_bit)) {
+            return; /* 读失败（I2C）不打扰, 下个周期重试 */
+        }
+        struct tm tm_cur = {};
+        time_t now = time(NULL);
+        localtime_r(&now, &tm_cur);
+        if (!kidpal_ts_write_decision(os_bit, kidpal_ts_year_ok(tm_cur.tm_year))) {
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            ESP_LOGW(TAG, "rtc_writeback corr_id=%s rejected_by_write_decision os=%d "
+                          "sys_year=%d (不把坏时间当权威, 等 SNTP)", corr_id, os_bit,
+                     tm_cur.tm_year + 1900);
+            return;
+        }
+        if (WriteRtcTime(tm_cur.tm_hour, tm_cur.tm_min, tm_cur.tm_sec,
+                         tm_cur.tm_mday, tm_cur.tm_wday, tm_cur.tm_mon + 1)) {
+            char corr_id[24];
+            snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            ESP_LOGI(TAG, "rtc_writeback corr_id=%s ok rtc=%02d:%02d:%02d date=%02d-%02d",
+                     corr_id, tm_cur.tm_hour, tm_cur.tm_min, tm_cur.tm_sec,
+                     tm_cur.tm_mon + 1, tm_cur.tm_mday);
+        }
+    }
+
+    /* K5（260922-m3-k5-sntp-time-sync）[S4]：周期重读 RTC + 重注入（F2 修——现状
+     * boot 一次 ReadRtcTime -> inject 即冻结快照, P1 时间不走的缺陷收口）。重注入经
+     * Application::Schedule 派发到主事件循环 task 执行, 与 boot 注入（构造期主 task）
+     * 同一任务上下文, 渲染态写点无跨任务竞争; 60s 周期与 P1 分钟级时间粒度协调, 不
+     * 跳字/不撕裂（plan 边角 F2）。 */
+    void ReinjectRtcTime() {
+        int h = 0, m = 0, s = 0, mday = 0, mon = 0, wday = -1, os_bit = 0;
+        if (!ReadRtcTime(&h, &m, &s, &mday, &mon, &wday, &os_bit)) {
+            return; /* 读失败保持上一次注入值（渲染节点保守默认, 不画假值） */
+        }
+        auto& app = Application::GetInstance();
+        app.Schedule([h, m, mon, mday, wday]() {
+            kidpal_render_node_inject_rtc(h, m, mon, mday);
+            kidpal_render_node_inject_weekday(wday); /* M3-K2 今天列数据源同步续鲜 */
+        });
+        char corr_id[24];
+        snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        ESP_LOGI(TAG, "rtc_reinject corr_id=%s rtc=%02d:%02d date=%02d-%02d wday=%d",
+                 corr_id, h, m, mon, mday, wday);
+    }
+
+    /* K5 周期时间维护 task 体：60s 节拍消费 SNTP 同步旗标（写回 [S3]）+ 周期重读
+     * 重注入（[S4]）。独立 task 承载阻塞 I2C 事务, 不占 esp_timer task（render_node
+     * 1s tick 同住, 勿互卡）。 */
+    void TimeSyncPeriodicLoop() {
+        for (;;) {
+            vTaskDelay(pdMS_TO_TICKS(KIDPAL_TS_PERIODIC_PERIOD_MS));
+            if (s_ts_sntp_synced) {
+                s_ts_sntp_synced = 0;
+                SyncSystemTimeToRtc();
+            }
+            ReinjectRtcTime();
+        }
+    }
+
+    static void TimeSyncPeriodicTaskTramp(void* arg) {
+        static_cast<CustomBoard*>(arg)->TimeSyncPeriodicLoop();
     }
 
     void InitializeButtons() {
@@ -621,6 +798,10 @@ public:
             }
         }
         kidpal_render_node_show_home();
+        /* K5（260922-m3-k5-sntp-time-sync）：周期时间维护 task（[S3] SNTP 成功写回
+         * PCF85063 + [S4] 周期重读 RTC 重注入修 F2 boot 快照冻结）。须在 LVGL 渲染
+         * 节点就绪后启动（注入走 Application::Schedule 主循环, 首个 tick 在 +60s）。 */
+        xTaskCreate(TimeSyncPeriodicTaskTramp, "ts_periodic", 4096, this, 1, nullptr);
    }
 
     /* 包 260915-m1-n1b-p1-home-battery：Board::GetBatteryLevel 基座默认 return false

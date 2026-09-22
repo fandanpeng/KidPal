@@ -112,6 +112,10 @@ set(SOURCES "audio/audio_codec.cc"
             "ota.cc"
             "settings.cc"
             "device_state_machine.cc"
+            # 纯逻辑时间缝单源 (K5, TaskPackage 260922-m3-k5-sntp-time-sync, seam [S1]):
+            # BCD 编解码 / 守门阈值 / 写回可信门 / NTP 退避 / 日志节流六函数, 零芯片依赖
+            # -> host_app linux target 同源 (接线见 host_app CMakeLists HOST_ACCEPTANCE_SRCS)。
+            "time_sync.c"
             # 会话状态机 + KEY/BOOT 按键手势解析（纯逻辑，包 3；host 单测同源）
             "session_state_machine.cc"
             "key_gesture_parser.cc"

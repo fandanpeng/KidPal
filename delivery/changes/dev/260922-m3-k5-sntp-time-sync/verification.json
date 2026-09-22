@@ -1,0 +1,37 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r2.json)",
+  "changeId": "260922-m3-k5-sntp-time-sync",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "eca0824f-5f85-4b2a-88a9-abc4052fac33",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260922-m3-k5-sntp-time-sync/verifier-evidence/rounds/r2.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260922-m3-k5-sntp-time-sync --phase final --round 2 --invocation-id eca0824f-5f85-4b2a-88a9-abc4052fac33",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-22",
+      "addendumPriorRoundCheck": "同包 r1（scoped）双查 exit 0：--phase scoped --round 1 --invocation-id 0c3b1298-79ea-4948-8b21-665c580bc328 → factOk:true（integrator 实跑 2026-09-22）"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 1,
+        "invocationId": "0c3b1298-79ea-4948-8b21-665c580bc328（r1.json 在案）",
+        "producedBy": "verifier（scoped 六闸全绿，机械 fact ok:true / observedGateExit:0）"
+      },
+      {
+        "round": 2,
+        "invocationId": "eca0824f-5f85-4b2a-88a9-abc4052fac33（r2.json 在案）",
+        "producedBy": "verifier（final 九闸全绿：taskpackage-required / firmware-build（xiaozhi.bin 0x30e0c0，11% free）/ contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit 95 passed / acceptance 41 passed；fact 副本在本目录，原件在 verifier-evidence/rounds/r2.json）"
+      }
+    ],
+    "hostRunner": "90 Tests / 0 Failures（既有 84 齿零偏移 vs 上游锚 84 @ 9cae452 + 本包新齿 6 TEST_CASE）；红基线通道② 6 Tests / 6 Failures（设计态义务红）；builder 变异自证 5 组每组 exit=1 / 未变异基线 exit=0",
+    "realDeviceEvidence": "deferred——真机四锚（K5-A1 负锚清零 / K5-A3b 长开机 / K5-A3 断电续航 / K5-A4 真机复证）挂设备轮窗口（exitCriteria K5-E3），非 final verify 相位义务"
+  }
+}

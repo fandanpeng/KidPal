@@ -12,6 +12,7 @@
 #include "settings.h"
 #include "assets/lang_config.h"
 #include "jpg/image_to_jpeg.h"
+#include "time_sync.h" /* K5 260922-m3-k5-sntp-time-sync: W 日志节流谓词 [S1] 缝消费 */
 
 #define TAG "Display"
 
@@ -131,7 +132,16 @@ void LvglDisplay::UpdateStatusBar(bool update_all) {
                 strftime(time_str, sizeof(time_str), "%H:%M", tm);
                 SetStatus(time_str);
             } else {
-                ESP_LOGW(TAG, "System time is not set, tm_year: %d", tm->tm_year);
+                /* K5（260922-m3-k5-sntp-time-sync）K5-A4：`System time is not set` W
+                 * 日志经 [S1] kidpal_ts_log_throttled 节流（现状每 10s 一条刷屏 -> 60s
+                 * 一条; 时间戳走 esp_log_timestamp 自开机单调, 回拨 fail-open 语义不
+                 * 触发）。守门行与渲染链路零触碰（K5-E2 铁律, 冻结齿 MUST-STAY-GREEN）。 */
+                static long long s_ts_last_warn_ms = 0;
+                long long now_ms = static_cast<long long>(esp_log_timestamp());
+                if (!kidpal_ts_log_throttled(now_ms, s_ts_last_warn_ms, 60000)) {
+                    ESP_LOGW(TAG, "System time is not set, tm_year: %d", tm->tm_year);
+                    s_ts_last_warn_ms = now_ms;
+                }
             }
         }
     }
