@@ -47,7 +47,8 @@ const WHITELIST = [
   'ic_thermo_12', 'ic_drop_12', 'ic_batt_15', 'ic_cloud_40_t2', 'ic_mic_32',
   'ic_bell_24', 'ic_bell_22', 'ic_wave_40', 'ic_star_20', 'rec_wave',
   'p1_chip_jiexialai', 'p1_chip_mingzao', 'voice_chip_p3',
-  'bub_listening', 'bub_recording', 'bub_rec_guide', 'arc_listen', 'ic_mic_22',
+  'bub_listening', 'bub_recording', 'bub_rec_guide', 'bub_thinking', 'bub_speaking', 'arc_listen', 'ic_mic_22',
+  'qmark_trio', 'bell_trio',
   /* 手绘框族 3 */
   'frm_236_236', 'frm_sm_160_120', 'frm_flat_240_96',
   /* 抖动网点 3 */

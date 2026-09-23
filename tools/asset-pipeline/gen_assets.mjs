@@ -312,6 +312,16 @@ jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" view
 // 聆听态声波弧（3 条同心弧自猫嘴向右上散出，56×56；消费方 ic_mic_16 由 gen_voice_chip16.mjs 出，不并入本闭集）
 jobs.push({ name: 'arc_listen', svg: svgUse('arc-listen'), w: 56, h: 56, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_mic_22', svg: svgUse('ic-mic'), w: 22, h: 22, rotate: 0, kind: 'svg' });
+// 思考态三问号组（56×56 一枚资产，与聆听声波弧同尺寸同位；原 32/23/19px 三问号按 0.62 缩放重排、保留原旋转角）
+{
+  const trio = (x, y, fs, rot) => `<g transform="translate(${x} ${y}) rotate(${rot})"><text x="0" y="${fs}" font-family="ZCOOL KuaiLe" font-size="${fs}" fill="#000" stroke="#000" stroke-width="1.6">?</text></g>`;
+  jobs.push({ name: 'qmark_trio', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56">${trio(0, 0, 24, 8)}${trio(22, 28, 17, -6)}${trio(38, 10, 14, 5)}</svg>`, w: 56, h: 56, rotate: 0, kind: 'svg' });
+// 提醒态三铃铛组（56×56，与三问号组同构：24/17/14px 三枚、旋转 8/-6/5，ic-bell 符号直用）
+{
+  const bell = (x, y, size, rot) => `<g transform="translate(${x} ${y})"><g transform="translate(${size / 2} ${size / 2}) rotate(${rot}) scale(${size / 48}) translate(-24 -24)">${symbols['ic-bell'].body}</g></g>`;
+  jobs.push({ name: 'bell_trio', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><defs>${defs}</defs>${bell(0, 0, 26, 8)}${bell(22, 30, 19, -6)}${bell(36, 8, 16, 5)}</svg>`, w: 56, h: 56, rotate: 0, kind: 'svg' });
+}
+}
 
 // V5 静态气泡（框体为八值手绘圆角原生不可做 + 19px 无字体档 → 整块烘：手绘框 + 斜切尾巴 + 文字）
 // 几何复刻 .bub CSS：border 3px、padding 4px 11px、line-height 1.75、::after 11×11 rotate(55°) bottom:-9px left:22px
@@ -338,6 +348,8 @@ function bubbleSvg(text, fontSize) {
     ['bub_listening', '我在听！', 14],          // 聆听态（v5 降 14px 给回显让位；bob 动画运行时做）
     ['bub_recording', '跟着感觉说，我在记！', 14], // 录音态
     ['bub_rec_guide', '需要我帮你记点什么？', 14], // 录音引导态（复用聆听布局换气泡）
+    ['bub_thinking', '让我想想…', 14],          // 思考态（v5 补：显示刚问的问题时的左区气泡）
+    ['bub_speaking', '听我说哦', 14],           // 播报态（v5 补：与聆听同骨架的气泡组）
   ];
   for (const [name, text, fs] of BUBBLES) {
     const w = Math.round(text.length * fs + 28), h = Math.round(fs * 1.75 + 14) + 14;
