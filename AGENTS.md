@@ -40,7 +40,7 @@
 
 | 范围 | 图索引项目名 | 覆盖内容 | 排除 |
 |------|--------------|----------|------|
-| 本仓主索引 | `KidPal` | `firmware` 自有固件 + `server/` 云端 shim | `docs/`、`tools/`（含 LVGL 模拟器）、`delivery/`（交付工件面，260914 批 OQ3(a) 裁定排除）、`build/`、`managed_components/`（排除规则落 `.cbmignore` + `.gitignore`） |
+| 本仓主索引 | `C-AI-KidPal` | `firmware` 自有固件 + `server/` 云端 shim | `docs/`、`tools/`（含 LVGL 模拟器）、`delivery/`（交付工件面，260914 批 OQ3(a) 裁定排除）、`build/`、`managed_components/`（排除规则落 `.cbmignore` + `.gitignore`） |
 | 参考·Arduino | `ESP32-S3-RLCD-4.2-Demo-01_Arduino` | Arduino 示例、LVGL8/9 库 | — |
 | 参考·ESP-IDF | `ESP32-S3-RLCD-4.2-Demo-02_ESP-IDF` | ESP-IDF 官方示例（含 10_FactoryProgram） | — |
 | 参考·XiaoZhi | `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` | 小智 V2.1.0 源码（显示/字体/资源方案参考） | — |
@@ -48,7 +48,7 @@
 | 参考·XiaoZhiServer | `ESP32-S3-RLCD-4.2-Demo-05_XiaoZhiServer` | 小智官方 Python 服务端 `xiaozhi-esp32-server`（流式网关参考实现，MIT；2026-09-02 定向 B 后克隆，部署源在 ECS `/opt/kidpal/xiaozhi-esp32-server`） | — |
 | 治理机检 | `KidPal-claude` | `.claude/hooks` + `.claude/scripts`（治理钩子与机检脚本，2026-09-13 human 裁定入图；2026-09-14 human 裁定维持不扩） | `.claude` 其余内容（agents/skills/rules/settings 等，控噪规则落 `.claude/.cbmignore`；taskpackages 已迁出至 `delivery/taskpackages/`，2026-09-15） |
 
-- 主索引项目名固定为 `KidPal`，改名会导致图工具 project not found。
+- 主索引项目名 = 工具按路径派生（`C:/AI/KidPal` → `C-AI-KidPal`），与全部 Pod worktree / 参考工程条目同格式；`index_repository` 刷主仓**不传 `name`**——手工另传名会在同 root 产生双条目（2026-09-23 实测发生过一次，已删旧人工名条目）。图工具报 project not found 时先 `list_projects` 核对实际条目名，不凭记忆猜。`KidPal-claude` 为唯一人工命名特例（`.claude` 独立建项），不受本条约束。
 - 参考代码的索引不并入主索引，避免第三方代码淹没调用图；参考代码只读，不直接改。
 - `.claude` 整目录被工具内置 skip-list 硬排除（`.cbmignore` 取反压不过根级硬排除）；`KidPal-claude` 项目以 `.claude` 为索引根独立建项绕开，内部 `scripts/` 再靠 `.claude/.cbmignore` 的 `!scripts` 取反放行（「scripts」目录名在同层级 skip-list、可被取反覆盖）。该项目 `persistence=false`——不入 `.codebase-memory` 快照流，本地重建即可。
 - 被排除的目录（如 `tools/simulator/` 的模拟器 UI 源码）不在图内，查它们降级用 Grep。

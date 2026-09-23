@@ -33,13 +33,13 @@ Returns each project with node/edge counts, git info, and database size.
 ### index_status — Check if a project is indexed
 
 ```bash
-codebase-memory-mcp cli index_status '{"project":"KidPal"}'
+codebase-memory-mcp cli index_status '{"project":"C-AI-KidPal"}'
 ```
 
 ### delete_project — Remove a project from the index
 
 ```bash
-codebase-memory-mcp cli delete_project '{"project":"KidPal"}'
+codebase-memory-mcp cli delete_project '{"project":"C-AI-KidPal"}'
 ```
 
 ## Configuration
