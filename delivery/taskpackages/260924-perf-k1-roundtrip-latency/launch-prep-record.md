@@ -11,17 +11,19 @@
 
 ## 基线锚(server 面,五要素)
 
-- 计数:PENDING(launch 前于 Pod 树现跑后 append,见下「基线锚实测」段)
+- 计数:见下「基线锚实测」段(已落,launch 前现跑)。
 
 ## 环境事实
 
 - 运行时 worktree:C:/AI/KidPal-pod-perf-k1-roundtrip-latency(新建;池树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 被本主线程会话占用——一树一会话,不复用)。
 - 常驻分支:dev/260924-perf-k1-roundtrip-latency(自 main 建)。
-- 固件环境等价化:PENDING(新建树必办——sdkconfig/dependencies.lock 镜像 + managed_components 软链 + bootstrap)。
-- 专属图索引:PENDING(项目名按路径派生 C-AI-KidPal-pod-perf-k1-roundtrip-latency;mode 取舍与结果如实记)。
-- board:PENDING(--set-pod queued + worktreePath)。
-- check-launch:PENDING(--base-ref main)。
+- 固件环境等价化:✓——sdkconfig/dependencies.lock 镜像;managed_components 软链(原生 python isdir=True);bootstrap 跑过(跳过 server/shim/.env 与 sdkconfig 源 = 按设计,shim 已退役)。
+- 专属图索引:✓ `C-AI-KidPal-pod-perf-k1-roundtrip-latency`,**mode=full + persistence=true**——nodes/edges = 17952/48502 == expected(完成判据满足),skipped=0,parse_partial=102(集中于 firmware audio codec 面,非本包面域,如实记录)。**mode 偏离注记**:skill/AGENTS.md 写 moderate,但 memory 注记(codebase-memory-index-mode-full)与 ARQ-260923-codemem-mode-doc-drift 实证 moderate 削薄约 44% 符号——取 full(强化非降级);文档漂移待该 ARQ 治理批收口。索引产生的 .codebase-memory 两件为机器再生面,不随包 commit(AGENTS.md 快照流向纪律)。
+- board:✓ `--set-pod queued + worktreePath` 已落(2026-09-23T17:24:17Z,reconciled 40 pods,mergeToken holder=none)。
+- check-launch:✓ `--base-ref main` → ok:true,blocking=[],present=[taskpackage.json](2026-09-24 01:23 CST)。
+- launch 形态:headless(启动卡命令行②),主线程代跑(human 当晚授权,见 §调度判定 launch 代跑注记);进程日志 `C:/tmp/pod-perf-k1-launch.log`。
 
 ## 基线锚实测(launch 前 append)
 
-(待 Pod 树建成后现跑填此段:计数 + 命令 + 日期 + 量测时 HEAD SHA + 面域)
+- **server 面**:57 passed / 0 failed(上游已知红 = 0)· 命令 `python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-perf-k1-roundtrip-latency/server/acceptance"` · 2026-09-24 01:22 CST · 量测时 HEAD = `1746c147e65e2f5d6f561ca32e2e41cb9c4a9c10`(= Pod 分支基线,main tip)· 面域 = server。Pod intake:`git diff --quiet 1746c14 HEAD -- server` 零差异即引用本行,有差异同命令重跑。
+- firmware host 面:本包 subsystem=server、firmware/** 零触碰,不适用。
