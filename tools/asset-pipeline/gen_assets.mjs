@@ -285,6 +285,31 @@ jobs.push({ name: 'ic_wave_58', svg: svgUse('ic-wave'), w: 58, h: 17, rotate: 0,
 jobs.push({ name: 'ic_star_22', svg: svgUse('ic-star'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_star_18', svg: svgUse('ic-star'), w: 18, h: 18, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_star_38', svg: svgUse('ic-star'), w: 38, h: 38, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_thermo_12', svg: svgUse('ic-thermo'), w: 12, h: 12, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_drop_12', svg: svgUse('ic-drop'), w: 12, h: 12, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_batt_15', svg: svgUse('ic-batt'), w: 15, h: 12, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_cloud_40_t2', svg: svgUse('ic-cloud'), w: 40, h: 40, rotate: 2, kind: 'svg' });
+jobs.push({ name: 'ic_mic_32', svg: svgUse('ic-mic'), w: 32, h: 32, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_bell_24', svg: svgUse('ic-bell'), w: 24, h: 24, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_bell_22', svg: svgUse('ic-bell'), w: 22, h: 22, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_wave_40', svg: svgUse('ic-wave'), w: 40, h: 12, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_star_20', svg: svgUse('ic-star'), w: 20, h: 20, rotate: 0, kind: 'svg' });
+// 录音态声波线（路径自 V5 设计稿固化，206×34 非等比缩放同浏览器渲染口径）
+jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 14"><path d="M2 7 L8 2 L13 12 L18 4 L24 12 L29 3 L35 11 L41 5 L46 9" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, w: 206, h: 34, rotate: 0, kind: 'svg' });
+// P1 反白胶囊标签（V5 口径 12.5px：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）
+{
+  const chip = (w, text) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 21"><rect x="0.5" y="0.5" width="${w - 1}" height="20" rx="10" fill="#000"/><text x="${w / 2}" y="15" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="12.5" fill="#fff">${text}</text></svg>`;
+  jobs.push({ name: 'p1_chip_jiexialai', svg: chip(58, '接下来'), w: 58, h: 21, rotate: 0, kind: 'svg' });
+  jobs.push({ name: 'p1_chip_mingzao', svg: chip(46, '明早'), w: 46, h: 21, rotate: 0, kind: 'svg' });
+}
+// P3 语音入口提示条（虚线胶囊原生不可做 + 11.5px 文本无字体档 → 整块烘；文本为静态文案）
+{
+  const voiceChipSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 24"><defs>${defs}</defs>` +
+    `<rect x="1.25" y="1.25" width="249.5" height="21.5" rx="11" fill="none" stroke="#000" stroke-width="2.5" stroke-dasharray="4 4"/>` +
+    `<g transform="translate(11 5) scale(0.292)">${symbols['ic-mic'].body}</g>` +
+    `<text x="34" y="16" font-family="Noto Sans SC, Microsoft YaHei" font-weight="700" font-size="11.5" fill="#000">说「我要讲故事 / 帮我记下来」开录新的</text></svg>`;
+  jobs.push({ name: 'voice_chip_p3', svg: voiceChipSvg, w: 252, h: 24, rotate: 0, kind: 'svg' });
+}
 
 // 框族整框（RGB565 参考整图 + 9 宫格切分父本）：frm 大框 / frm-sm 小框 / frm-flat 底框, 角片 24px。
 const FRAMES = [
@@ -299,14 +324,14 @@ for (const f of FRAMES) jobs.push({
 // 三档网点 4×4（超采样覆盖 + Bayer 抖动）
 for (const cls of ['d50', 'd25', 'd12']) jobs.push({ name: cls, kind: 'dot', cls });
 
-// 成就印章 -8°（128×128 双圈：4px 实线外圈 + inset 6px 2.5px 虚线内圈，-8° 斜盖）
+// 成就印章 -8°（128×128 双圈 + 38px 星 + 「星星徽章」；V5 对齐：旧 V2 文案「故事徽章/第 3 颗」弃，编号 N 动态走文本不烘）
 {
   const stampSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">` +
     `<circle cx="64" cy="64" r="62" fill="none" stroke="#000" stroke-width="4"/>` +
     `<circle cx="64" cy="64" r="54" fill="none" stroke="#000" stroke-width="2.5" stroke-dasharray="5 5"/>` +
-    `<text x="64" y="58" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="24" fill="#000">故事徽章</text>` +
-    `<text x="64" y="84" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="18" fill="#000">第 3 颗</text>` +
-    `<text x="64" y="106" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="18" fill="#000">已入册</text>` +
+    `<defs>${defs}</defs>` +
+    `<g transform="translate(45 16) scale(0.792)">${symbols['ic-star'].body}</g>` +
+    `<text x="64" y="92" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="17" fill="#000">星星徽章</text>` +
     `</svg>`;
   jobs.push({ name: 'stamp_seal_r8', svg: stampSvg, w: 128, h: 128, rotate: -8, kind: 'svg' });
 }
