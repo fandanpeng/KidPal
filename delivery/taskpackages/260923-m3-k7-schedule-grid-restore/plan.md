@@ -35,6 +35,7 @@
 ### firmware 侧（估几十行）
 - `firmware/main/mcp_server.cc` schedule 路由（L620-656）：读 `data.restore` 布尔——true 走新分支：`kidpal_schedule_grid_parse` → 成功则 `kidpal_render_node_cache_schedule_grid` + 若 P2 在屏则重绘 P2（仿 `kidpal_render_node_home_on_screen` 先例补 on-screen 查询/重绘小缝）；**不调 `kidpal_render_node_begin_page`**。降级（parse 失败）= 静默记日志。
 - `firmware/main/display/kidpal_render_node.cc`：on-screen 查询/重绘小缝（谓词沿 home on_screen 先例口径；SERVER_PAGE 接管态下 restore 仅填缓存、不重绘——ADR-005 R10 括注）。
+- `firmware/main/display/schedule_page.c`（**planner 实现期扩展授权，2026-09-23 登记**）：`ksp_copy_str` 拷贝前 `memset(dst,0,cap)`——memcmp 确定化（K7-A7 保真齿对结构体整包 memcmp 的必要条件；对字符串消费方行为中性，既有 schedule_grid / key_layer 零偏移守卫下验证不回归）。超出本 plan §3 原列面的唯一扩展项，其余零扩边。
 - BOOT 翻页读路径（kidpal_render_node.cc:728-748）**零改动**。
 
 ### 验收测试面（acceptance-author 所有，builder/fixer 不改）

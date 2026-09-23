@@ -91,7 +91,7 @@
     ],
     "exempt": ""
   },
-  "notes": "禁止改 docs/contracts/**、spec 冻结面、expand_schedule_intent_payload 输出语义、device_state_machine.cc、protocol.h 接口签名、*.acceptance.*（验收归 acceptance-author）。关键接线事实（上游 review 实证）：建连推送点 front_app.py:762-773；单源委托 schedule_push.py:73-81；schedule 路由 mcp_server.cc:620-656；SERVER_PAGE 接管 kidpal_render_node.cc:586-601；home on_screen 谓词先例 kidpal_render_node.cc:472-477。builder 注意：restore 缓存写路径无 begin_page 隐式持锁，须显式持 LVGL 锁（challenger C3 canary）。",
+  "notes": "禁止改 docs/contracts/**、spec 冻结面、expand_schedule_intent_payload 输出语义、device_state_machine.cc、protocol.h 接口签名、*.acceptance.*（验收归 acceptance-author）。关键接线事实（上游 review 实证）：建连推送点 front_app.py:762-773；单源委托 schedule_push.py:73-81；schedule 路由 mcp_server.cc:620-656；SERVER_PAGE 接管 kidpal_render_node.cc:586-601；home on_screen 谓词先例 kidpal_render_node.cc:472-477。builder 注意：restore 缓存写路径无 begin_page 隐式持锁，须显式持 LVGL 锁（challenger C3 canary）。 | planner 扩展授权登记（2026-09-23，实现期）：firmware/main/display/schedule_page.c ksp_copy_str 增 memset(dst,0,cap)（memcmp 确定化，K7-A7 保真齿必要条件，行为中性）；mutation 证据 K7-A2/K7-A4 由 planner 于实现 commit 后补跑落件（mutation-evidence/ 共 9 件）。",
   "mutationRequired": true,
   "mutationEvidence": [
     {
