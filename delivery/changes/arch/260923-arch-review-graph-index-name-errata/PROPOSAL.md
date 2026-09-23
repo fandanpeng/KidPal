@@ -1,6 +1,6 @@
 # PROPOSAL · 260923-arch-review-graph-index-name-errata
 
-> **状态：FROZEN · 2026-09-23** · 凭据 = ① human 立项 ack（2026-09-23「补治理四件再合」，原话见 §0 引）；② architect review GREEN（`architect-review.md`，2026-09-23，无打回项无条件项）；③ 契约零触点核查通过（`docs/contracts/**` 零改，无需契约门）；④ landing 实况 = commit `5530aee`（4 文件 8 行；落地先于评审、本批为事后收口补件，时序如实记于 architect-review §4）。
+> **状态：FROZEN v1.0 · 2026-09-23** · 凭据 = ① human 立项 ack（2026-09-23「补治理四件再合」，原话见 §0 引）；② architect review GREEN（`architect-review.md`，2026-09-23，无打回项无条件项）；③ 契约零触点核查通过（`docs/contracts/**` 零改，无需契约门）；④ landing 实况 = commit `5530aee`（4 文件 8 行；落地先于评审、本批为事后收口补件，时序如实记于 architect-review §4）。
 > **承载 ARQ**：无（根 = 工具默认命名与文档约定长期错位，属勘误）。
 > **review 轨**：Track B 常驻轻路径（默认路由）——勘误类（非新 idea、不触契约、零 authority/owner/writer/approver 变更）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T5）+ §3 验证集。packet = FROZEN PROPOSAL + architect-landing-summary + landing-verdict。
