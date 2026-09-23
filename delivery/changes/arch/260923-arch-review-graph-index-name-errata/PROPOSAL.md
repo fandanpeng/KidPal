@@ -83,3 +83,8 @@ AGENTS.md
 
 - **正名选谁**：human 已裁 `C-AI-KidPal`（派生名、消灭漂移）；architect 独立复核同意。
 - **顺带发现（未纳入本批，留待 human 定夺）**：① `AGENTS.md` L39 写索引「（moderate 模式）」与实测不符（full/moderate 差约 44% 符号）；② `docs/notes/ui-to-lvgl-pitfalls.md` 写参考索引名 `xiaozhi-rlcd`，与实际条目名 `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi` 不符。
+
+## 7. 裁决机锚（architect GREEN + landing-verifier GREEN）
+
+> **Verdict：`GREEN`**（architect，2026-09-23，`architect-review.md`——正名判据成立 / landing 清单一致 / 副作用处置顺序正确 / 路由归类成立；无打回项、无条件项）
+> **Verdict：`GREEN`**（landing-verifier，2026-09-23，`landing-verdict.md`——结构门独立复跑 ok:true / 语义核 9/9 PASS / 不落地项 1/1 PASS / 偏差清单空；前版五项形态偏差已修且 diff 零改）
