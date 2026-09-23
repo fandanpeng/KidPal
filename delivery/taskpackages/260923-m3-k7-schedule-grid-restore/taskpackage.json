@@ -1,9 +1,9 @@
 {
   "changeId": "260923-m3-k7-schedule-grid-restore",
   "rigor": "full",
-  "sourceType": "arch-change-handoff",
+  "sourceType": "arch-review",
   "origin": {
-    "type": "arch-change-handoff",
+    "type": "arch-review",
     "time": "2026-09-23",
     "upstreamType": "arch-review",
     "upstreamRef": "260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial r1 收口：adjudicator GREEN + F-C5 human 裁 accept-as-risk + R1-R11 回灌 v3 + 契约门批准 C1 挂账 + landing-verifier GREEN，commit 565cb2d）；需求面症状由 triage 门定性（P1 已修于 K6、P2 = 症状 B 独立设计入口，m3-schedule 遗留③）",
@@ -38,7 +38,7 @@
   "acceptanceTestsFile": [
     "server/acceptance/test_schedule_grid_restore.acceptance.py",
     "firmware/main/test/schedule_grid_restore.acceptance.c"
- ],
+  ],
   "testHost": "server pytest（帧序/开关/时序机判）+ WSL host runner（层栈/哨兵/幂等机判）+ device build 闸 + 真机窗口（挂设备轮，human 在场）",
   "exitCriteria": [
     "K7-E1: server pytest 新齿全绿 + 既有 pytest 面零偏移；firmware host runner 新冻结齿 build+run exit 0 + 既有齿零偏移（key_layer_dispatch / schedule_grid / boot_auto_connect 等）；device build 闸过（体积余量证据）",
@@ -72,35 +72,75 @@
   "dependsOn": [],
   "crossEnd": {
     "counterparts": [
-      "server/gateway/schedule_push.py（grid restore 变体 + 开关）+ server/gateway/front/front_app.py（三触发 relay 追加）⇄ firmware/main/mcp_server.cc（data.restore 消费分支）+ firmware/main/display/kidpal_render_node.cc（on-screen 重绘小缝）"
+      {
+        "path": "server/gateway/schedule_push.py",
+        "symbol": "grid_restore_payload"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_schedule_connect"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "schedule 路由 data.restore 消费分支"
+      },
+      {
+        "path": "firmware/main/display/kidpal_render_node.cc",
+        "symbol": "kidpal_render_node_schedule_on_screen"
+      }
     ],
     "exempt": ""
   },
   "notes": "禁止改 docs/contracts/**、spec 冻结面、expand_schedule_intent_payload 输出语义、device_state_machine.cc、protocol.h 接口签名、*.acceptance.*（验收归 acceptance-author）。关键接线事实（上游 review 实证）：建连推送点 front_app.py:762-773；单源委托 schedule_push.py:73-81；schedule 路由 mcp_server.cc:620-656；SERVER_PAGE 接管 kidpal_render_node.cc:586-601；home on_screen 谓词先例 kidpal_render_node.cc:472-477。builder 注意：restore 缓存写路径无 begin_page 隐式持锁，须显式持 LVGL 锁（challenger C3 canary）。",
   "mutationRequired": true,
-  "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptance": "K7-A5 firmware restore 消费锚",
-        "sensitive": true,
-        "mutation": "删 restore 分支（恢复消费回潮接管）或摘层栈守卫或降级路径改 SetChatMessage",
-        "expectedRed": "层栈 needle / SetChatMessage 哨兵 tooth turned red；红基线通道② 设计态红 ≙ 同变异态在案独立红"
-      },
-      {
-        "acceptance": "K7-A3 ECS 开关齿",
-        "sensitive": true,
-        "mutation": "开关默认值翻转（默认开）或摘门控分支",
-        "expectedRed": "默认关断言 tooth turned red"
-      },
-      {
-        "acceptance": "K7-A1 帧序齿",
-        "sensitive": true,
-        "mutation": "对调 upcoming/grid 顺序或删 grid relay try/except（阻断建连）",
-        "expectedRed": "帧序断言 / 不阻断断言 turned red"
-      }
-    ],
-    "realDeviceDeferrals": [
-      "K7-A8 四子锚真机半挂设备轮窗口，不阻塞 host 半收口"
-    ]
-  }
+  "mutationEvidence": [
+    {
+      "acceptanceId": "K7-A1: server 建连帧序——upcoming 先、grid restore 后（fake websocket 注入，K1 三触发模拟齿先例）；schedule.md 缺失/坏不阻断建连（try/except 语义保持）",
+      "sensitive": true,
+      "mutation": "对调 _push_schedule_connect 内 home/grid 推序（grid 先）",
+      "expectedRed": "帧序断言 [schedule,home] != [home,schedule] 红（pytest -k a1 实跑 1 failed / 3 passed）"
+    },
+    {
+      "acceptanceId": "K7-A2: 薄载荷展开恒不置 restore（机械齿）——expand_schedule_intent_payload 输出断言（absent/false 同判，R7 口径）；语音接管路径零偏移",
+      "sensitive": true,
+      "mutation": "摘 expand_schedule_intent_payload 恒不置 restore 纪律（改置 true）",
+      "expectedRed": "薄载荷展开输出断言红（expand 产物出现 restore 键）"
+    },
+    {
+      "acceptanceId": "K7-A3: ECS 开关默认关——默认配置下 grid restore relay 不发出（C1 挂账机判齿）；开关开 = relay 发出（正例齿）",
+      "sensitive": true,
+      "mutation": "grid_restore_enabled 默认偏置翻转（return False 改 return True）",
+      "expectedRed": "默认关嘴齿红（pytest -k K7A3 实跑 1 failed / 1 passed：True is not false）"
+    },
+    {
+      "acceptanceId": "K7-A4: alert 起轮不回归——_register_alert_legs 注册时序零偏移（pytest 时序断言）",
+      "sensitive": true,
+      "mutation": "摘 _register_alert_legs 注册时序（后置到建连推送之后）",
+      "expectedRed": "alert 起轮时序断言红"
+    },
+    {
+      "acceptanceId": "K7-A5: firmware restore 消费——层栈快照不新增 SERVER_PAGE（三前台态：P1/P2 在屏 + 接管态）+ 零 SetChatMessage（weak 哨兵捕获）+ 缓存 memcmp 幂等（重复注入同数据缓存零偏移）",
+      "sensitive": true,
+      "mutation": "摘 restore 分支 lvgl_port_lock 或去 schedule_on_screen 的 LOCAL_PAGE 判定或降级改 SetChatMessage",
+      "expectedRed": "route 区 lvgl_port_lock / 谓词形态 / 哨兵齿红（k7_red_wrapper 实跑 5 Tests 2 Failures，M1/M2 原始输出在 mutation-evidence/）"
+    },
+    {
+      "acceptanceId": "K7-A6: 语音接管回归守卫——薄载荷路径 begin_page + SERVER_PAGE 接管照旧（M3-K3 冻结行为）；P2 在屏重绘语义（本地页前台态重绘、接管态仅填缓存——ADR-005 R10 口径）",
+      "sensitive": true,
+      "mutation": "重排 cache 到 render 前（破 begin_page→render→cache 序，M3-K2 冻结链拆动）",
+      "expectedRed": "K7-A6 调用链缺件红（k7_red_wrapper 实跑 5 Tests 2 Failures，TEST3）"
+    },
+    {
+      "acceptanceId": "K7-A7: 每日 / marker 触发附带——piggyback 路径 grid 附带同型（沿 run_schedule_poll_once 同一 due 判定点、不新增第二套日账）；录入 marker 附带 = SHOULD 级（R8 分层口径）",
+      "sensitive": true,
+      "mutation": "摘 schedule_push.py 的 grid_restore_payload（对端单源 face 缺）",
+      "expectedRed": "piggyback/single-source face 齿红（pytest -k a1_connect_frames 1 failed + native TEST4 tooth4 结构齿红）"
+    },
+    {
+      "acceptanceId": "K7-A8: 真机锚（挂设备轮窗口，human 在场，不阻塞 Pod）——①冷启动 P1 恢复 + grid restore 接收日志（开关开后）；②冷启动直翻 P2 网格有内容（S-F1.2 AC1 冷启动成立）；③语音「我的课表」接管照旧（开关开/关两态）；④旧固件行为复核实测（C1 evidence：烧新固件前旧固件 + 开关开 = 确定性接管顶到 P2 实测记录）",
+      "sensitive": true,
+      "mutation": "杀自动恢复路径（restore 帧不发）——真机观测面随失效 turned red",
+      "expectedRed": "真机变异态 = 冷启动 P2 仍空；host 侧同因红由 K7-A5 变异承载（M1/M2），本锚 native 无齿、deferred 设备轮（非豁免）"
+    }
+  ]
 }

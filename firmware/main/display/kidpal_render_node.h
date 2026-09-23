@@ -215,6 +215,15 @@ int kidpal_render_node_today_col(void);
 int kidpal_render_node_home_on_screen(void);
 
 /*
+ * P2 课表页是否在屏（LOCAL_PAGE 前台且当前页 = SCHEDULE）。沿 home_on_screen 先例
+ * 口径逐字同构：kidpal_layer_top == KIDPAL_LAYER_LOCAL_PAGE && s_local_page ==
+ * KP_PAGE_SCHEDULE。schedule 路由 restore 分支「P2 在屏重绘本页 / 接管态仅填缓存
+ * 不重绘」的判据单一权威（ADR-005 R10）。LOCAL_PAGE 判定使接管态（SERVER_PAGE 等
+ * 非本地页前台）一律返回 0——restore 只填缓存、不接管前台、不重绘。
+ */
+int kidpal_render_node_schedule_on_screen(void);
+
+/*
  * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，
  * 前台 owner 由 layer 栈 top() 单一裁决。
  */

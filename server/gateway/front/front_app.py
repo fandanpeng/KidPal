@@ -538,27 +538,84 @@ async def _relay_schedule_payload(payload: dict, websocket) -> None:
         [json.dumps(payload, ensure_ascii=False)], websocket)
 
 
-async def _push_schedule_refresh_to_legs(model: dict) -> int:
-    """触发①③共用：把 home upcoming payload 推给当前在线设备腿，返回投递腿数。"""
+async def _push_schedule_connect(websocket) -> None:
+    """建连推送缝（ws_gateway 建连点调用的 async helper；把 home 推送收编 + 追加
+    grid restore relay）。
+
+    契约 §1.3② / ADR-005（server schedule_grid_restore.acceptance.py A1/A3 齿）：
+      1) _load_schedule_model() None（缺失/坏 schedule.md）-> 静默 return——零帧、
+         零异常（建连不被课表推送阻断，try/except 语义保持）；
+      2) 推 1 = home upcoming（home_upcoming_payload 同参，与既有建连推送零偏移；
+         K6 锚① home upcoming 零回归面）；
+      3) 推 2 = grid_restore_enabled() 为真时追加 grid restore（grid_restore_payload
+         model/today/now/school_start——单源委托 week_grid_payload，开关门控）。
+      两推各自独立 try/except：单推失败记日志不连坐另一推、不外抛（建连不被推送阻断）。
+
+    grid_restore_payload 的 now_hhmm / school_start 传 None/None——恢复性载荷 = 静态
+    周网格（不含当前时刻星标与合并「上学」实时态，ADR-005「只填缓存」恢复语义），且与
+    frozen A1 齿的参照 face week_grid_payload(model, today)（双 None）逐字段同算。
+    """
+    model = _load_schedule_model()
+    if model is None:
+        return
     today_iso, tomorrow_iso = _today_tomorrow_iso()
-    payload = gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
-                                                tomorrow_iso)
+    # 推 1 = home upcoming（与既有建连推送完全同参，退化环境与现状零偏移）
+    try:
+        await _relay_schedule_payload(
+            gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
+                                              tomorrow_iso),
+            websocket)
+    except Exception as e:  # noqa: BLE001 — 单推失败记日志、不连坐 grid 推/不阻断建连
+        log.warning("schedule_connect_home_push_err err=%s", type(e).__name__)
+    # 推 2 = grid restore（ECS 开关默认关门控；开闸前不发出——C1 挂账）
+    if gw_schedule_push.grid_restore_enabled():
+        try:
+            await _relay_schedule_payload(
+                gw_schedule_push.grid_restore_payload(model, today_iso),
+                websocket)
+        except Exception as e:  # noqa: BLE001 — grid 单推失败不连坐建连
+            log.warning("schedule_connect_grid_push_err err=%s", type(e).__name__)
+
+
+async def _push_schedule_refresh_to_legs(model: dict) -> int:
+    """触发①③共用：把 home upcoming 推给当前在线设备腿，返回投递腿数。
+
+    grid restore piggyback：开关开（grid_restore_enabled）时每腿在 home 之后追加
+    grid restore 帧（home 先 grid 后——本函数单源承载、不新增第二套进程内日账，
+    F3 纪律；grid 走 grid_restore_payload 单源 producer，now/school 双 None = 静态
+    周网格恢复性载荷）。"""
+    today_iso, tomorrow_iso = _today_tomorrow_iso()
+    home_payload = gw_schedule.home_upcoming_payload(model, today_iso,
+                                                     _local_now_hhmm(), tomorrow_iso)
+    grid_payload = None
+    if gw_schedule_push.grid_restore_enabled():
+        grid_payload = gw_schedule_push.grid_restore_payload(model, today_iso)
     sent = 0
     for device_ws, _engine_ws in list(_alert_legs):
         try:
-            await _relay_schedule_payload(payload, device_ws)
+            await _relay_schedule_payload(home_payload, device_ws)
             sent += 1
         except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
             log.warning("schedule_push_leg_err err=%s", type(e).__name__)
+        if grid_payload is not None:
+            try:
+                await _relay_schedule_payload(grid_payload, device_ws)
+                sent += 1
+            except Exception as e:  # noqa: BLE001 — grid 单腿失败不连坐 home/其它腿
+                log.warning("schedule_grid_leg_err err=%s", type(e).__name__)
     return sent
 
 
 async def run_schedule_poll_once(now_utc=None) -> dict:
-    """两轮 piggyback：触发② 每日零点 + 触发③ 录入即时 marker。
+    """piggyback：触发② 每日零点 + 触发③ 录入即时 marker，任一到点即推一批。
 
-    返回可观测计数（K6 correlationId = 触发类别 记账）供日志归因。恰一次语义：
-    触发② 靠 last_push_local_date 记账；触发③ 靠 consume_refresh_marker 恰一次消费
-    （一个 marker -> 至少一次推送，消费即移除不重复）。"""
+    单批语义：本轮内触发器（每日跨天 / 录入 marker）任一命中，就把 home upcoming +
+    (开关开时) grid restore 以**同一 model 快照**合成一批下发给在线设备腿——不因每日
+    与 marker 同一轮同时到点而重复推多批（frozen K7-A7 marker 齿：重置日账 + 置 marker
+    的同一轮只期望 [home, schedule] 一批）。既有日账恰一次语义承载 grid 与 home
+    同批（不新增第二套进程内日账，F3 纪律——日账冻结基线恒 4 处）；marker 消费恰一次。
+
+    返回可观测计数（K6 correlationId = 触发类别 记账）供日志归因。"""
     global _daily_push_local_date
     model = _load_schedule_model()
     if model is None:
@@ -567,21 +624,29 @@ async def run_schedule_poll_once(now_utc=None) -> dict:
     corr = gw_provider.corr_id()
     sent = 0
     tz_name = model.get("timezone") or ""
-    # 触发② 每日零点：本地日历日跨天 -> 只推恰一次
+    trigger = "none"
+    local_date = None
+    # 触发② 每日零点：本地日历日跨天 -> 只推恰一次（记账进位）
     if gw_schedule_push.daily_push_due(tz_name, _daily_push_local_date, now_utc_dt):
         local_date = now_utc_dt.astimezone(_T8).date().isoformat()
         _daily_push_local_date = local_date
-        sent += await _push_schedule_refresh_to_legs(model)
-        log.info("schedule_push trigger=midnight corr=%s local=%s sent=%d",
-                 corr, local_date, sent)
+        trigger = "midnight"
+        log.info("schedule_push trigger=midnight corr=%s local=%s", corr, local_date)
     # 触发③ 录入即时：轮询 piggyback 消费 refresh marker（副通道无 marker -> 不触发）
     immediate = 0
     while gw_schedule_push.consume_refresh_marker(ALERTS_DIR):
         immediate += 1
+        if trigger == "none":
+            trigger = "immediate"
+    # 任一到点：单批下发（home 先 + grid 附随后；grid 开关门控）。标记 trigger 类别记账。
+    if trigger != "none":
         sent += await _push_schedule_refresh_to_legs(model)
-    if immediate:
-        log.info("schedule_push trigger=immediate corr=%s markers=%d sent=%d",
-                 corr, immediate, sent)
+        if trigger == "midnight":
+            log.info("schedule_push sent corr=%s trigger=midnight local=%s sent=%d",
+                     corr, local_date, sent)
+        else:
+            log.info("schedule_push sent corr=%s trigger=immediate markers=%d sent=%d",
+                     corr, immediate, sent)
     return {"trigger2": True, "immediate": immediate, "sent": sent, "corr": corr}
 
 
@@ -759,16 +824,12 @@ async def ws_gateway(websocket: WebSocket):
             # 起每分钟轮询（到点经 kidpal/alert 推送 + 渲染回执接出队方）；断开即摘除、不攒历史。
             _register_alert_legs(websocket, upstream)
             _ensure_alert_loop()
-            # 课表三触发 ①：WS 建连即推首页「接下来」（触发②每日零点/③录入即时 marker 走
-            # 轮询 piggyback）。失败不阻断建连（读不见 schedule.md 等 -> 记日志跳过）。
+            # 课表三触发 ①：WS 建连即推（home upcoming 先 + grid restore 附随后；
+            # 触发②每日零点/③录入即时 marker 走轮询 piggyback）。失败不阻断建连
+            # （读不见 schedule.md 等 -> 静默跳过，_push_schedule_connect 内两推各自
+            # try/except）。
             try:
-                model_op = _load_schedule_model()
-                if model_op is not None:
-                    today_iso, tomorrow_iso = _today_tomorrow_iso()
-                    await _relay_schedule_payload(
-                        gw_schedule.home_upcoming_payload(
-                            model_op, today_iso, _local_now_hhmm(), tomorrow_iso),
-                        websocket)
+                await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
             try:

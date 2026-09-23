@@ -478,6 +478,16 @@ int kidpal_render_node_home_on_screen(void)
             s_local_page == KP_PAGE_HOME) ? 1 : 0;
 }
 
+int kidpal_render_node_schedule_on_screen(void)
+{
+    /* P2 课表页在屏 = LOCAL_PAGE 前台且当前页 = SCHEDULE（home_on_screen 先例逐字
+     * 同构; mcp schedule 路由 restore 分支「P2 在屏重绘本页 / 接管态仅填缓存」的判据
+     * 单一权威, ADR-005 R10）。LOCAL_PAGE 判定使接管态（SERVER_PAGE 等顶层前台）
+     * 一律返回 0——restore 只填缓存、不接管前台、不重绘。只读静态态, 零副作用。 */
+    return (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE &&
+            s_local_page == KP_PAGE_SCHEDULE) ? 1 : 0;
+}
+
 void kidpal_render_node_show_home(void)
 {
     lvgl_port_lock(0);

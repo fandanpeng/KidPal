@@ -29,6 +29,8 @@
                                     * kidpal/alert 载荷解析 + 四态状态机 + 富弹窗渲染 */
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6: 设备渲染节点 show_home/cycle/cache */
 #include "display/home_upcoming.h" /* M3-K2 A5: 首页「接下来」data.upcoming 注入冻结 seam 接线层 */
+#include "esp_lvgl_port.h"         /* K7 restore 分支显式持 LVGL 锁（lvgl_port_lock/unlock）:
+                                      无 begin_page 隐式持锁, 缓存写路径显式取锁/放锁 */
 #include "assets/lang_config.h"    /* Lang::Sounds::OGG_POPUP —— 三件套的提示音音源 */
 
 #define TAG "MCP"
@@ -147,6 +149,24 @@ static std::string mcp_json_get_string(const std::string& json, const char* key)
     if (cJSON_IsString(item)) {
         out = item->valuestring;
     }
+    cJSON_Delete(root);
+    return out;
+}
+
+/* 从一段 E1 display 载荷的嵌套 data JSON 里读一个布尔字段（如 restore）。缺省/非
+ * JSON true 字面 -> false（契约 §1.3② data.restore additive：absent/false 同判,
+ * 只有 JSON true 才算真）。对端 grid restore 载荷 data = json.dumps(对象)，布尔
+ * true/false 字面在数据对象顶层。 */
+static bool mcp_json_get_bool(const std::string& json, const char* key) {
+    if (json.empty()) {
+        return false;
+    }
+    cJSON *root = cJSON_Parse(json.c_str());
+    if (root == nullptr) {
+        return false;
+    }
+    cJSON *item = cJSON_GetObjectItem(root, key);
+    bool out = cJSON_IsTrue(item) == 1;
     cJSON_Delete(root);
     return out;
 }
@@ -610,6 +630,10 @@ void McpServer::AddCommonTools() {
                            * cycle_next 浏览源）；解析失败 -> 显式降级（友好提示, 绝不
                            * 盲渲染, V27 / spec §4.0）。 */
                     cJSON_AddStringToObject(ack, "route", "schedule");
+                    /* 契约 §1.3② data.restore additive（L85）——恢复性载荷标记：true =
+                     * 只填缓存不接管前台（重推周网格恢复冷启动, ADR-005）；缺省/显式
+                     * false = 现行为（接管前台展示）。 */
+                    bool restore = mcp_json_get_bool(data, "restore");
                     char corr_id[24];
                     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
@@ -621,29 +645,57 @@ void McpServer::AddCommonTools() {
                                                        KSG_COURSE_CAP);
                     if (n < 0) {
                         /* 降级：schedule data 畸形/缺字段/旧形状/越界 cap -> 友好提示,
-                         * 不盲渲染（V27） */
+                         * 不盲渲染（V27）。restore 载荷解析失败 = **静默**记日志、不弹
+                         * 提示（ADR-005 板端静默降级, 区别于主动展示路径的弹提示降级——
+                         * 不为恢复性后台载荷打扰前台）。 */
                         cJSON_AddBoolToObject(ack, "degrade", true);
                         ESP_LOGW(TAG, "display_dispatch view=schedule corr_id=%s courses=0 degrade=true",
                                  corr_id);
-                        auto display = Board::GetInstance().GetDisplay();
-                        app.Schedule([display]() {
-                            display->SetChatMessage("system", "课表数据有点问题，稍后再试试");
-                        });
+                        if (!restore) {
+                            auto display = Board::GetInstance().GetDisplay();
+                            app.Schedule([display]() {
+                                display->SetChatMessage("system", "课表数据有点问题，稍后再试试");
+                            });
+                        }
                         break;
                     }
                     cJSON_AddNumberToObject(ack, "courses", n);
                     ESP_LOGI(TAG, "display_dispatch view=schedule corr_id=%s courses=%d degrade=false",
                              corr_id, n);
-                    app.Schedule([courses, n, corr_id]() {
-                        kidpal_render_node_begin_page();
-                        int drawn = kidpal_schedule_grid_render(
-                            courses->data(), n, kidpal_render_node_today_col());
+                    app.Schedule([courses, n, corr_id, restore]() {
+                        if (restore) {
+                            /* restore 恢复性分支：只填缓存、不接管前台。无 begin_page 隐式
+                             * 持锁（begin_page 才推 SERVER_PAGE 接管）, 故**显式持 LVGL 锁**
+                             * 写缓存/重绘。 */
+                            lvgl_port_lock(0);
+                        } else {
+                            kidpal_render_node_begin_page();
+                        }
+                        if (restore) {
+                            /* P2 课表页在屏才重绘本页；否则仅填缓存（ADR-005 R10：接管态、
+                             * 他页前台只填缓存不重绘）。 */
+                            if (kidpal_render_node_schedule_on_screen()) {
+                                kidpal_schedule_grid_render(
+                                    courses->data(), n, kidpal_render_node_today_col());
+                            }
+                        } else {
+                            int drawn = kidpal_schedule_grid_render(
+                                courses->data(), n, kidpal_render_node_today_col());
+                            ESP_LOGI(TAG, "schedule_grid_render corr_id=%s courses=%d drawn=%d",
+                                     corr_id, n, drawn);
+                        }
                         /* M3-K2: 缓存周网格至渲染节点，供 BOOT 双按翻页 cycle_next 读取
-                         * （cache_schedule 网格化）。 */
+                         * （cache_schedule 网格化）。restore 与薄载荷路径共用**唯一**缓存写
+                         * 点——不给恢复性载荷另起第二条缓存路径（frozen K7-A5 tooth: 路由区
+                         * 缓存调用恰一次）。 */
                         kidpal_render_node_cache_schedule_grid(courses->data(), n);
-                        kidpal_render_node_end_page();
-                        ESP_LOGI(TAG, "schedule_grid_render corr_id=%s courses=%d drawn=%d",
-                                 corr_id, n, drawn);
+                        if (restore) {
+                            lvgl_port_unlock();
+                            ESP_LOGI(TAG, "schedule_grid_restore corr_id=%s courses=%d cached=%d",
+                                     corr_id, n, n);
+                        } else {
+                            kidpal_render_node_end_page();
+                        }
                     });
                     break;
                 }

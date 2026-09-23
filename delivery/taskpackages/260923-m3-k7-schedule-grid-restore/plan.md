@@ -3,7 +3,7 @@
 > **性质**：dev 包 reviewed plan——上游 = 260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial，adjudicator GREEN + 契约门批准 + landing GREEN，commit `565cb2d`）。本 plan 是上游 reviewed plan 的实现包转写，不新开设计面。
 > **reviewed-by**：architect（triage 门比例化 review → /arch-change 对抗 review → adjudicator 终裁 + 契约门 human 批准）
 > **date**：2026-09-23
-> **rigor**：full ｜ **riskTier**：medium ｜ **sourceType**：arch-change-handoff
+> **rigor**：full ｜ **riskTier**：medium ｜ **sourceType**：arch-review
 
 ## 1. 目标（业务语言）
 

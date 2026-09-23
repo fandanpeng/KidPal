@@ -49,3 +49,4 @@
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260921-m3-k4-p1-cjk-dynamic-text](260921-m3-k4-p1-cjk-dynamic-text/) | 2026-09-21 | delivery/workstreams/m3-schedule/progress.md | closed | m3-schedule |
 | [260922-m3-k5-sntp-time-sync](260922-m3-k5-sntp-time-sync/) | 2026-09-22 | delivery/workstreams/m3-schedule/progress.md | closed | m3-schedule |
+| [260923-m3-k7-schedule-grid-restore](260923-m3-k7-schedule-grid-restore/) | 2026-09-23 | 260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial r1 收口：adjudicator GREEN + F-C5 human 裁 accept-as-risk + R1-R11 回灌 v3 + 契约门批准 C1 挂账 + landing-verifier GREEN，commit 565cb2d）；需求面症状由 triage 门定性（P1 已修于 K6、P2 = 症状 B 独立设计入口，m3-schedule 遗留③） | closed | m3-schedule |

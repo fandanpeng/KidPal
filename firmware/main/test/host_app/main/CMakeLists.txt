@@ -167,6 +167,16 @@ set(HOST_ACCEPTANCE_SRCS
     # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../boot_auto_connect.acceptance.c"
 
+    # 包 260923-m3-k7-schedule-grid-restore（课表网格冷启动恢复：云端三触发附带推
+    # data.restore 周网格恢复性载荷, 设备只填缓存不接管前台）冻结验收：restore 消费
+    # 分支（读 "restore" + 显式持 LVGL 锁 + on-screen 谓词消费 + begin_page 计数恒 5 +
+    # SetChatMessage 区计数恒 1 静默降级）+ 在屏谓词/缓存幂等形态 + 语音接管回归守卫 +
+    # restore wire 容忍行为齿（weak 哨兵由在世 schedule_page.c 强定义覆盖）+ 注册/canary
+    # 守卫。**必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0
+    # boundary 齿注册序守卫; 本文件 TEST 5 tooth 4 校验此序）。
+
+    "../../schedule_grid_restore.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

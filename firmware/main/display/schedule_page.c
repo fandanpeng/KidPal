@@ -27,7 +27,11 @@
  * 共用小工具
  * ------------------------------------------------------------------------ */
 
-/* safe-truncate 拷贝：恒 NUL 结尾、绝不溢出（frozen contract 要求）。 */
+/* safe-truncate 拷贝：恒 NUL 结尾、绝不溢出（frozen contract 要求）。
+ * planner 扩展授权（260923-m3-k7 裁决，memcmp 确定化）：拷贝前零填充整块目标缓冲，
+ * 令 name 超出 NUL 终止符的字节全部为 0——字符串消费面（strlen/strcmp/渲染取 NUL
+ * 截断）行为完全中性，但使整 struct 的 memcmp（frozen K7-A7 保真齿）确定化，消除
+ * 未初始化填充字节漂移。来自未初始化垃圾的填充在本改动前无法作确定性比对。 */
 static void ksp_copy_str(char *dst, size_t cap, const char *src)
 {
     size_t i;
@@ -35,6 +39,7 @@ static void ksp_copy_str(char *dst, size_t cap, const char *src)
     if (dst == NULL || cap == 0) {
         return;
     }
+    memset(dst, 0, cap); /* 零填充目标缓冲：name 尾部字节确定化（memcmp 保真前提） */
     for (i = 0; src[i] != '\0' && i + 1 < cap; i++) {
         dst[i] = src[i];
     }

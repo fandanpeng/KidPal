@@ -33,6 +33,7 @@ UTC+8（reminder_schedule_lib._TZ8 / story._CN_TZ，B1 唯一在役时区 Asia/S
 from __future__ import annotations
 
 import importlib.util
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -50,6 +51,46 @@ _schedule_src = None
 # OpenClaw 主通道改写 schedule.md 后落刷新 marker 的跨组件协议常量（靠既有 alerts
 # 交接目录 pending.json 同目录承载）。front 轮询循环 piggyback 检查并消费。
 MARKER_FILENAME = "schedule.refresh"
+
+# ---- ECS 网格恢复性推送开关（ADR-005 部署时序：默认关交付；开闸 = 真机验证后
+# ---- human/integrator 人工动作，C1 closeout 职责）。跨组件配置协议同 MARKER_FILENAME
+# ---- 钉法——开关 env 名是开闸留痕/部署文档按此名的单源，改名 = 部署面断线（server
+# ---- pytest K7-A3 断言 GRID_RESTORE_ENV == "KIDPAL_GRID_RESTORE_PUSH" 逐字冻结）。
+GRID_RESTORE_ENV = "KIDPAL_GRID_RESTORE_PUSH"
+
+# grid restore 开关识别集（strip().lower() ∈ 本集 -> True；其余一律 False——默认关
+# 偏置：误配/陈旧环境值永不误开闸，符合 C1 挂账「只填缓存不接管前台」的门控前提）。
+_GRID_RESTORE_TRUE_SET = {"1", "true", "on", "yes"}
+
+
+def grid_restore_enabled(raw: "str | None" = None) -> bool:
+    """ECS 网格恢复性推送开关决策面（纯函数；default None = 读 os.environ）。
+
+    strip().lower() ∈ {"1","true","on","yes"} -> True；unset/""/其它任何值（含
+    "0"/"false"/"off"/"no"）-> False。默认关偏置：不可识别的陈旧环境值绝不误开闸
+    （C1 closeout：开关默认关交付，开闸 = 真机验证后 human 人工动作）。
+    """
+    if raw is None:
+        raw = os.environ.get(GRID_RESTORE_ENV)
+    if not isinstance(raw, str):
+        return False
+    return raw.strip().lower() in _GRID_RESTORE_TRUE_SET
+
+
+def grid_restore_payload(model: dict, week_date_iso: str,
+                         now_hhmm: "str | None" = None,
+                         school_start: "str | None" = None) -> dict:
+    """grid restore 变体 producer（契约 §1.3② data.restore additive 布尔 L85）。
+
+    单源委托 schedule.py week_grid_payload（同参——绝不另起第二套网格计算），在产出
+    上把 data["restore"] 置 True 并保持 data 键集恰 {"week","restore"}（L87 板子行为
+    句：true = 只填缓存不接管前台）。生产纪律：只有本变体（front 后台附带推送路径）可
+    置 restore；薄载荷展开路径（expand 意图）恒不置——两者键集互为反证。
+    """
+    payload = _schedule_callable("week_grid_payload")(
+        model, week_date_iso, now_hhmm, school_start)
+    payload["data"]["restore"] = True
+    return payload
 
 
 def _alerts_marker(alerts_dir) -> Path:
