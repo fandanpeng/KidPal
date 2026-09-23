@@ -82,9 +82,12 @@ OpenClaw 回复文本（示例）
 - `flags` 位掩码：bit0 = ※ 临时安排（来自 B1「一次性安排」区块）、bit1 = 星标呼应（该课为 group_upcoming 判定的当前「接下来」标记项）。**备注不进网格载荷**（网格/首页只放课程名；备注露面处 = 语音答复 S-F1.3 AC4 + 提醒 speech S-F1.4）。
 - **生产纪律（2026-09-21 契约门裁定）**：网格由 front 机械计算（schedule.py 唯一解析器，B1 三区块），**不由 LLM 生成**；「帮我显示课表」时 LLM 只发意图薄载荷 `{ "view": "schedule", "data": {} }`，front 截获后展开成完整网格再下发。旧「不进反白/星标等 UI 语义态」理念就此修订——※/星标判定信息（一次性安排区块归属、当前接下来标记项）只有云端可知、spec S-F1.2 AC3/AC4 要求板上呈现，故以 `flags` 位承载。
 - **「今天」列不在载荷内**：板端按设备本地日期零点切换自行推导高亮列（spec S-F1.2 补充规则）。
-- 板子行为：切到 P2 课表页渲染一周总览网格（学校课逐节、课外课逐门小字竖排、※/星标按 flags 渲染、今天列整列高亮）；薄载荷不直达设备（front 截获展开）；畸形/旧形状 data 由 front 机械校验拒绝并降级提示，不入板盲渲染（V27）。
+- **`data.restore`**（可选布尔，additive——缺省（absent）或显式 `false` 时设备行为完全不变）：`true` = 恢复性载荷，只填网格缓存、不接管前台（P2 在屏时仅重绘本页）。降级双面注记：restore 载荷**板端入板后**解析失败 = 板端静默降级（记日志、缓存零变化、不弹提示、不动前台）；**front 校验面 V27**（脏块拒绝/降级提示、不入板盲渲染）在入板前独立生效——两层降级互不替代。
+- **生产纪律（谁可置 `data.restore`）**：仅 front 后台附带推送路径可置 `restore`（触发时机属行为策略，权威承载 = arch §5.2 / ADR-005，不进契约）；意图薄载荷 `{view:schedule,data:{}}` 的展开（`expand_schedule_intent_payload`）恒不置——展开产物 = 主动展示、接管前台（M3-K3 冻结行为）。
+- 板子行为：切到 P2 课表页渲染一周总览网格（学校课逐节、课外课逐门小字竖排、※/星标按 flags 渲染、今天列整列高亮）；`data.restore: true` 时除外——只填网格缓存、不接管前台，P2 在屏时仅重绘本页；薄载荷不直达设备（front 截获展开）；畸形/旧形状 data 由 front 机械校验拒绝并降级提示，不入板盲渲染（V27）。
 
 - （契约变更记录：2026-09-21 经契约门批准重定义本 view data 形状——旧 `{title, items:[{time,name,location}]}` 列表形即废；定稿 = 周网格扁平形 + flags 位掩码 + 意图薄载荷，随 M3-K1 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md)。）
+- （契约变更记录：2026-09-23 经契约门批准新增可选 `data.restore` 恢复性推送语义——additive 字段 + 既有板子行为条款 modifying；随 260923-m3-k7-schedule-grid-restore 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/changes/arch/260923-arch-review-schedule-grid-cold-boot/CONTRACT-CHANGE-PACKET.md)。）
 
 #### ③ `story_list` —— 故事列表
 ```json
