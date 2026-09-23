@@ -288,7 +288,7 @@ jobs.push({ name: 'ic_star_38', svg: svgUse('ic-star'), w: 38, h: 38, rotate: 0,
 jobs.push({ name: 'ic_thermo_12', svg: svgUse('ic-thermo'), w: 12, h: 12, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_drop_12', svg: svgUse('ic-drop'), w: 12, h: 12, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_batt_15', svg: svgUse('ic-batt'), w: 15, h: 12, rotate: 0, kind: 'svg' });
-jobs.push({ name: 'ic_cloud_40_t2', svg: svgUse('ic-cloud'), w: 40, h: 40, rotate: 2, kind: 'svg' });
+jobs.push({ name: 'ic_cloud_40_t2', svg: svgUse('ic-cloud'), w: 40, h: 40, rotate: -2, kind: 'svg' }); // tilt2 = rotate(-2deg)
 jobs.push({ name: 'ic_mic_32', svg: svgUse('ic-mic'), w: 32, h: 32, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_bell_24', svg: svgUse('ic-bell'), w: 24, h: 24, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_bell_22', svg: svgUse('ic-bell'), w: 22, h: 22, rotate: 0, kind: 'svg' });
@@ -309,6 +309,41 @@ jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" view
     `<g transform="translate(11 5) scale(0.292)">${symbols['ic-mic'].body}</g>` +
     `<text x="34" y="16" font-family="Noto Sans SC, Microsoft YaHei" font-weight="700" font-size="11.5" fill="#000">说「我要讲故事 / 帮我记下来」开录新的</text></svg>`;
   jobs.push({ name: 'voice_chip_p3', svg: voiceChipSvg, w: 252, h: 24, rotate: 0, kind: 'svg' });
+// 聆听态声波弧（3 条同心弧自猫嘴向右上散出，56×56；消费方 ic_mic_16 由 gen_voice_chip16.mjs 出，不并入本闭集）
+jobs.push({ name: 'arc_listen', svg: svgUse('arc-listen'), w: 56, h: 56, rotate: 0, kind: 'svg' });
+jobs.push({ name: 'ic_mic_22', svg: svgUse('ic-mic'), w: 22, h: 22, rotate: 0, kind: 'svg' });
+
+// V5 静态气泡（框体为八值手绘圆角原生不可做 + 19px 无字体档 → 整块烘：手绘框 + 斜切尾巴 + 文字）
+// 几何复刻 .bub CSS：border 3px、padding 4px 11px、line-height 1.75、::after 11×11 rotate(55°) bottom:-9px left:22px
+function bubbleSvg(text, fontSize) {
+  const w = Math.round(text.length * fontSize + 22 + 6);
+  const h = Math.round(fontSize * 1.75 + 8 + 6);
+  const r = scaleRadii(w, h, HAND_R_SM);
+  const d = framePath(w, h, r, 2);
+  const cx = 27.5, cy = h + 3.5; // 尾巴中心（bottom:-9px, left:22px, 11×11）
+  const c = Math.cos(55 * Math.PI / 180), sn = Math.sin(55 * Math.PI / 180);
+  const rot = (x, y) => [cx + x * c - y * sn, cy + x * sn + y * c];
+  const [trx, try_] = rot(5.5, -5.5), [brx, bry] = rot(5.5, 5.5), [blx, bly] = rot(-5.5, 5.5);
+  const poly = [[5.5, -5.5], [5.5, 5.5], [-5.5, 5.5], [-5.5, -5.5]].map(([x, y]) => rot(x, y).join(',')).join(' ');
+  const baseline = Math.round(h / 2 + fontSize * 0.36);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h + 14}">` +
+    `<polygon points="${poly}" fill="#ffffff"/>` +
+    `<path d="${d}" fill="none" stroke="#000" stroke-width="3"/>` +
+    `<polygon points="${poly}" fill="#ffffff"/>` +
+    `<path d="M ${trx.toFixed(2)} ${try_.toFixed(2)} L ${brx.toFixed(2)} ${bry.toFixed(2)} L ${blx.toFixed(2)} ${bly.toFixed(2)}" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>` +
+    `<text x="${w / 2}" y="${baseline}" text-anchor="middle" font-family="Noto Sans SC, Microsoft YaHei" font-weight="900" font-size="${fontSize}" fill="#000">${text}</text></svg>`;
+}
+{
+  const BUBBLES = [
+    ['bub_listening', '我在听！', 14],          // 聆听态（v5 降 14px 给回显让位；bob 动画运行时做）
+    ['bub_recording', '跟着感觉说，我在记！', 14], // 录音态
+    ['bub_rec_guide', '需要我帮你记点什么？', 14], // 录音引导态（复用聆听布局换气泡）
+  ];
+  for (const [name, text, fs] of BUBBLES) {
+    const w = Math.round(text.length * fs + 28), h = Math.round(fs * 1.75 + 14) + 14;
+    jobs.push({ name, svg: bubbleSvg(text, fs), w, h, rotate: 0, kind: 'svg' });
+  }
+}
 }
 
 // 框族整框（RGB565 参考整图 + 9 宫格切分父本）：frm 大框 / frm-sm 小框 / frm-flat 底框, 角片 24px。

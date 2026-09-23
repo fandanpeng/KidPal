@@ -4,7 +4,7 @@
  *
  * 上游母版纪律：单一母版 = tools/simulator/LvglWindowsSimulator/assets/assets.c（由
  * gen_assets.mjs 从 V3 设计稿生成，阈值化 RGB565，唯一值集 ⊆ {0x0000, 0xFFFF}）。
- * 本脚本把 65 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
+ * 本脚本把 68 枚闭集白名单资产逐枚从 RGB565 转成 KAP1 1bpp 位图文件，落入
  * firmware/main/assets/spiffs_root/。文件名 = 上游管线资产名 + ".bin"。
  *
  * KAP1 冻结格式（left firmware/main/test/ui_art_integration.acceptance.c 头）：
@@ -32,7 +32,7 @@ const REPO       = join(__dirname, '..', '..');
 const ASSETS_C   = join(REPO, 'tools', 'simulator', 'LvglWindowsSimulator', 'assets', 'assets.c');
 const OUT_DIR    = join(REPO, 'firmware', 'main', 'assets', 'spiffs_root');
 
-/* 65 枚闭集白名单（= acceptance artt_expected[] 文件根名，= assets.h 符号名） */
+/* 68 枚闭集白名单（= acceptance artt_expected[] 文件根名，= assets.h 符号名） */
 const WHITELIST = [
   /* 吉祥物 7 姿态 */
   'pose_daily_96', 'pose_listen_96', 'pose_think_96', 'pose_talk_96',
@@ -47,6 +47,7 @@ const WHITELIST = [
   'ic_thermo_12', 'ic_drop_12', 'ic_batt_15', 'ic_cloud_40_t2', 'ic_mic_32',
   'ic_bell_24', 'ic_bell_22', 'ic_wave_40', 'ic_star_20', 'rec_wave',
   'p1_chip_jiexialai', 'p1_chip_mingzao', 'voice_chip_p3',
+  'bub_listening', 'bub_recording', 'bub_rec_guide', 'arc_listen', 'ic_mic_22',
   /* 手绘框族 3 */
   'frm_236_236', 'frm_sm_160_120', 'frm_flat_240_96',
   /* 抖动网点 3 */

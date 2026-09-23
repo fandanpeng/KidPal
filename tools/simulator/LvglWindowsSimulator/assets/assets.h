@@ -42,6 +42,11 @@ extern const lv_image_dsc_t rec_wave; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t p1_chip_jiexialai; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t p1_chip_mingzao; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t voice_chip_p3; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t arc_listen; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t ic_mic_22; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t bub_listening; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t bub_recording; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t bub_rec_guide; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t frm_236_236; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t frm_sm_160_120; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t frm_flat_240_96; /* LV_COLOR_FORMAT_RGB565 */
