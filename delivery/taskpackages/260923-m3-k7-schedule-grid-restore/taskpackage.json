@@ -13,8 +13,8 @@
   "subsystem": "firmware+server",
   "story": "S-F1.2 · 课表页看「一周总览」——冷启动/重启后翻到课表页即见网格（AC1 冷启动场景成立）：云端三触发附带推 data.restore 周网格恢复性载荷（只填缓存不接管前台），P1「接下来」同源同机；技术方案见 plan.md（Shape A restore 语义，ADR-005）",
   "planRef": "delivery/taskpackages/260923-m3-k7-schedule-grid-restore/plan.md",
-  "redBaselineCommand": "TODO-acceptance-author（新 acceptance 文件红基线两通道：① 既有齿零偏移全量 host runner；② 新齿独立红编译实跑——沿用 K6 通道①/② 先例，MUTATION REPLAY MAP 落 acceptance 文件尾）",
-  "redBaselineResult": "",
+  "redBaselineCommand": "通道①（既有齿零偏移）: MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf ｜ 通道②（新齿独立红）: MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/acceptance/red-baseline/k7_red_wrapper.sh ｜ server pytest: python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_schedule_grid_restore.acceptance.py",
+  "redBaselineResult": "2026-09-23 acceptance-author 实跑回填。通道①（既有齿零偏移）：espidf_wsl.sh build 过 + host_infra_test.elf = 98 Tests / 0 Failures 0 Ignored（K6 记账 92/0 + K6 六件 = 98，零偏移成立）。通道②（新齿独立红，red-baseline/k7_red_wrapper.sh）：COMPILE_EXIT=0（-Wall -Wextra 零 error）+ 5 Tests / 4 Failures（RUN_EXIT=4）——TEST1 红=tooth3（mcp_server.cc 'restore' 键读取 0 命中，frozen seam 缺 grep 实证）/ TEST2 红=tooth1（schedule_on_screen 全仓 0 命中）/ TEST3 PASS（设计态绿，K7-A6 纯回归守卫，变异敏感点在 M3）/ TEST4 红=tooth1（weak 哨兵 -2 + 对端 face 缺）/ TEST5 红=tooth4（HOST_ACCEPTANCE_SRCS 未接线）。逐 TEST 首红 tooth 与 RED baseline 判读口径固化在 firmware/main/test/schedule_grid_restore.acceptance.c 文件尾。server pytest：收集 16 零错误 + 10 failed / 6 passed——红因逐锚：K7-A1 四齿（无 _push_schedule_connect 建连推送缝）、K7-A3 两齿（无 grid_restore_enabled/GRID_RESTORE_ENV）、K7-A4 时序齿（ws_gateway 区无缝调用）、K7-A7 帧序两齿（piggyback 帧 ['home'] != ['home','schedule']）+ 结构齿（front_app.py 零 grid_restore_payload 引用）；绿 = K7-A2 三齿 + A4 循环序/投递闭环两齿 + A7 默认关门齿（must-stay-green 设计态）。既有面同轮共跑 m3k1+m3k3 = 37 passed 零污染。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
