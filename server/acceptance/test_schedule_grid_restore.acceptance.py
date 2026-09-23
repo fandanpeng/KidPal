@@ -1,6 +1,6 @@
 """Frozen acceptance tests — TaskPackage 260923-m3-k7-schedule-grid-restore
 (subsystem: server; workstream m3-schedule; rigor full; riskTier medium;
-sourceType = arch-change-handoff, upstream frozen 2026-09-23 commit 565cb2d).
+sourceType = arch-review, upstream frozen 2026-09-23 commit 565cb2d).
 
 Scope of record (taskpackage acceptance K7-A1..A4 + K7-A7 server 半; K7-A5/A6/A8
 归 firmware/main/test/schedule_grid_restore.acceptance.c + 真机窗):
