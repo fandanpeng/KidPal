@@ -14,7 +14,7 @@
   "story": "NFR-PERF-1 · 思考响应不冷场 + NFR-PERF-2 · 查字端到端 5 秒档（同根因面，「优化归 Phase 1」的主攻包）——语音问答往返 10~15s（天气 28~31s）优化：大头实证在 OpenClaw 网关内部（reasoning 模型单轮生成 ~9s + agent 多轮工具循环 + 每请求 preflight 2.7~6.1s）。本包 = P0 gateway 重启止血 + P1 模型切换（deepseek-chat 主案 / v4-flash 关 thinking 备案 30min timebox，带 v6 prompt 探针裁决）+ 条件步（preflight 仅测量仪表化 / sessions 运维卫生）；P2 治理拆 k2。技术方案见 plan.md（FROZEN v1.0，architect advisory 评审 D1~D4 修正全吸收）",
   "planRef": "delivery/taskpackages/260924-perf-k1-roundtrip-latency/plan.md",
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/",
-  "redBaselineResult": "PENDING——acceptance-author 冻齿后实跑落账（设计态红：新增机械面齿在实现工件未落盘前红；既有齿零新增红）",
+  "redBaselineResult": "18 failed / 62 passed / 4 deselected——2026-09-24 acceptance-author 实跑；命令 `python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/`（仓根）。18 红全为设计态红（声明工件 / apply / 回滚 / probe_gate / probe_batch 五件未落盘），逐齿映射见 server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md §3。既有齿零新增红（planner 复核：既有 4 文件单跑 57 passed / 0 failed @1746c14；全量 62 passed = 既有 57 + 本包 5 条 must-stay-green 设计态即绿齿）；--collect-only 收集零错误（冻结即冒烟过）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "none",
   "planningRefs": [],
@@ -30,6 +30,35 @@
     "PERF-A3: 晨间真机轮（human 持板，排引擎重启后会话早段——引擎侧历史增长是系统性混淆因子）——引擎日志「大模型收到用户消息」→「发送第一段语音」：保底 闲聊≤8s、课表≤10s；目标 闲聊≤5s、课表≤7s（对齐公式 A3=A1+[1.5,2.5]s TTS 首句+转发）。三源日志取证（串口 COM5 / front journalctl / 引擎 docker logs，kidpal-live-smoke-debug 纪律）",
     "PERF-A4: 回滚与核验——openclaw.json 时间戳备份 + 一步还原脚本 + 回滚后探针复测回基线形态；P0 重启后五项核验全过：①openclaw cron list 的 kidpal-reminder-plan 在册且 Next 正常（提醒=安全面）②qqbot 通道 5 分钟周期内重连 ③18789 仍锁 loopback（V28）④char-stroke dist 补丁 marker 在位（runbook 校验点）⑤引擎容器→18789 可达；清理类条件步专属回滚锚 = 先行 openclaw backup SQLite 快照"
   ],
+  "mutationRequired": true,
+  "mutationEvidence": [
+    {
+      "acceptanceId": "PERF-A1: 探针门（live 证据型，两层）——标准 3 题（闲聊/课表/天气）×N≥3 中位数；探针带生产 v6 system prompt 逐字（仓内 server/deploy/openclaw-system-prompt.v6.md，脚本内 hash 断言，渲染面==被测面）；当晚基线配置重测作对照锚（跨夜数字禁止直接对比）+ 每批探针前后主机状态快照（free -m + memory pressure 告警计数 + session store 计数）。保底门（当晚必须达标，否则回滚或留数据晨判）：闲聊≤6s、课表≤9s、天气≤14s；目标门（达标=当晚收工，未达=k2 立项依据、不算失败）：闲聊≤4s、课表≤6s、天气≤10s。天气题附加条件：答复含真实检索数据（tavily 轮成功证据），否则计时再好也判红",
+      "sensitive": true,
+      "mutation": "改错声明接线的 thinking 值（openclaw-model-declaration.json 的 change.thinkingDefault 'off'→'high'）",
+      "expectedRed": "validate_declaration() 判红 1 条「case=B 要求 change.thinkingDefault ∈ {'off','low'}，实得 'high'」→ 齿 test_a1_declaration_file_present_and_schema / test_a1_declaration_case_semantics_b_and_a_validators 红。同组本轮实测（server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md §6）：删声明文件(M1) / 删 allow 条目(M3) / reasoning 翻真(M4) / 两轴混声明(M5) / 改错 model id(M6) 均转红；apply 摘去 drift-guard 核对循环 → mismatch 场景退出码 3→0，apply 齿亦转红",
+      "note": "A1 接线 mutation 载体 = 声明工件；GREEN 对照 = 合法 B/A 声明 0 violation。当前红基线态 = 声明工件未落盘（builder 落盘后转绿）"
+    },
+    {
+      "acceptanceId": "PERF-A2: 质量守卫（全量判定，非抽检）——每批探针全部响应计 ```display 块出现率与 schema 合法率，要求 100%（front V27 机械兜底=体验已坏，不算过）；课表题答复含备注读回（S-F1.3 AC1/AC4 口径不回退）；语音 ≤3 句纪律；提醒 semantic.json 产物形状冒烟 1 次（当晚）；QQ 录入回归 1 条（晨间 human：MD 改写 + 三档重算触发 + 提醒文案质量）。回滚触发线：切 A 案后任一批 display 块合法率 <100% → 当晚回滚，数据留晨间",
+      "sensitive": true,
+      "mutation": "放宽判定器 probe_gate.evaluate_batch 的质量判定（quality_pass 恒 True，忽略缺 ```display 块 / 脏 view / 缺备注读回）",
+      "expectedRed": "test_a2_quality_decider_display_and_schema_rates 的 assertFalse(quality_pass) 红（实测：缺块批次出现率 0.667 而 quality_pass 仍 True）；test_a2_quality_decider_note_readback 同因红（note_readback_ok=False 而 quality_pass=True）。参考判定器四例：good(1,1,T,T) / 缺块(display<1,qpass F) / 脏 view(schema<1,qpass F) / 缺备注(note_ok F,qpass F)"
+    },
+    {
+      "acceptanceId": "PERF-A3: 晨间真机轮（human 持板，排引擎重启后会话早段——引擎侧历史增长是系统性混淆因子）——引擎日志「大模型收到用户消息」→「发送第一段语音」：保底 闲聊≤8s、课表≤10s；目标 闲聊≤5s、课表≤7s（对齐公式 A3=A1+[1.5,2.5]s TTS 首句+转发）。三源日志取证（串口 COM5 / front journalctl / 引擎 docker logs，kidpal-live-smoke-debug 纪律）",
+      "sensitive": true,
+      "mutation": "a3 层阈值表误用 a1 值（BOTTOM_A3 {chat:8.0,schedule:10.0} → {chat:6.0,schedule:9.0}）",
+      "expectedRed": "test_a3_gate_decider_layer_a3_thresholds 的 assertTrue(bottom_pass) 红（实测：闲聊中位 7.5s 本应过 a3 保底 8s，误用 6s 后 verdict 由 BOTTOM_ONLY 变 FAIL、bottom_pass=False）"
+    },
+    {
+      "acceptanceId": "PERF-A4: 回滚与核验——openclaw.json 时间戳备份 + 一步还原脚本 + 回滚后探针复测回基线形态；P0 重启后五项核验全过：①openclaw cron list 的 kidpal-reminder-plan 在册且 Next 正常（提醒=安全面）②qqbot 通道 5 分钟周期内重连 ③18789 仍锁 loopback（V28）④char-stroke dist 补丁 marker 在位（runbook 校验点）⑤引擎容器→18789 可达；清理类条件步专属回滚锚 = 先行 openclaw backup SQLite 快照",
+      "sensitive": true,
+      "mutation": "回滚脚本恒 no-op（摘去 rollback_model_declaration.py 的 backup→config 还原写入）",
+      "expectedRed": "test_a4_rollback_restores_backup 的 assertEquals(after, {'applied': False}) 红（实测：rc 仍 0 但 config 保持 {'applied': True}）；对照参考实现 rc=0 且 restored_to_pre=True",
+      "note": "A4 附加面「P0 五项核验」由 live 证据读齿 test_live_a4_post_restart_five_point_checklist 承载（缺 cron/qqbot/18789/KidPal C1/可达 任一 marker → 红）；该 live 面不 auto-run，本记录不重复量测"
+    }
+  ],
   "acceptanceTestsFile": [
     "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"
   ],
@@ -44,7 +73,7 @@
   "docRefs": [
     "docs/requirements.md#NFR-PERF-1",
     "docs/requirements.md#NFR-PERF-2",
-    "docs/architecture.md"
+    "docs/ADR.md"
   ],
   "sourceRefs": [
     "delivery/taskpackages/260924-perf-k1-roundtrip-latency/evidence/latency-baseline-260924.md",

@@ -1,0 +1,54 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = delivery/taskpackages/260924-perf-k1-roundtrip-latency/verifier-evidence/rounds/r3.json)",
+  "changeId": "260924-perf-k1-roundtrip-latency",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "1b596a7b-97aa-4a7c-952b-403a66cb6702",
+  "verification": {
+    "ok": true,
+    "observedGateExit": 0,
+    "gatesRun": 9,
+    "gatesNotExecuted": [],
+    "evidenceRef": "delivery/taskpackages/260924-perf-k1-roundtrip-latency/verifier-evidence/rounds/r3.json",
+    "mechanicalCheck": {
+      "script": ".claude/scripts/verifier-evidence-check.mjs",
+      "args": "--change-id 260924-perf-k1-roundtrip-latency --phase final --round 3 --invocation-id 1b596a7b-97aa-4a7c-952b-403a66cb6702",
+      "exit": 0,
+      "factOk": true,
+      "runBy": "integrator",
+      "date": "2026-09-24"
+    },
+    "priorRoundsCheck": [
+      {
+        "round": 1,
+        "phase": "scoped",
+        "invocationId": "c0f65fc6-4071-4c83-9204-93655cc55583（r1.json 在案）",
+        "producedBy": "verifier（scoped 首闸 taskpackage-required 红：canonical 与 current/ 指针副本不一致——planner 改 canonical 后 current/ 尚未写回；observedGateExit:1）"
+      },
+      {
+        "round": 2,
+        "phase": "scoped",
+        "invocationId": "bee71872-5b0b-42cb-9dde-39ce9ebd1916（r2.json 在案）",
+        "producedBy": "verifier（scoped 六闸：taskpackage-required / firmware-build / contract-lint / acceptance-coverage / mutation-check 五绿 + docs-sync 红（docRefs 含 docs/architecture.md 未提及验收 id）；observedGateExit:1。该红为 integrator 相位 docs-sync 义务未履行的预期态，非 P1 实现缺陷）"
+      }
+    ],
+    "finalPhaseGates": {
+      "taskpackage-required": {"ok": true, "exit": 0, "ms": 235},
+      "firmware-build": {"ok": true, "exit": 0, "ms": 28389},
+      "contract-lint": {"ok": true, "exit": 0, "ms": 182},
+      "acceptance-coverage": {"ok": true, "exit": 0, "ms": 191, "structural": [], "suiteGates": []},
+      "mutation-check": {"ok": true, "exit": 0, "ms": 223},
+      "docs-sync": {"ok": true, "exit": 0, "ms": 203, "docsSync落点": "docs/ADR.md ADR-006"},
+      "security": {"ok": true, "exit": 0, "ms": 165, "securityReviewRequired": false},
+      "unit": {"ok": true, "exit": 0, "ms": 5853, "readout": "134 passed / 4 deselected"},
+      "acceptance": {"ok": true, "exit": 0, "ms": 5240, "readout": "80 passed / 4 deselected（firmware 验收件 14 + server 5）"}
+    },
+    "acceptanceReadout": {
+      "PERF-A1": "绿——探针门保底门达标（B 案三批 post-p1-b-final/batch2/norestart 全 BOTTOM_ONLY：闲聊 4.135/4.784/4.258 ≤6、课表 5.369/5.992/5.274 ≤9、天气 8.054/9.553/5.971 ≤14）；目标门课表/天气达标，闲聊（≤4）差 0.1~0.8s 未达（plan 原文「未达 = k2 立项依据、不算失败」）。判定器对全部 8 批复现见 delivery/changes/dev/260924-perf-k1-roundtrip-latency/review-packet.md。",
+      "PERF-A2": "红（如实）——质量守卫 display 出现率 + schema 合法率 100% 未达标，全 8 批 quality_pass=False（pre-P1 0.444 → post-P1 0.222~0.444）；根因 = 基线固有 v6 遵循度 / 「David」人设渗漏（tools.profile=\"coding\" + bootstrap 注入），非本 Pod 引入。planner 已裁（evidence §12.1-1）暂留 B、破线上浮 human 为最高优先晨间决策点；integrator 不自裁合并门处置（review-packet Findings #1，BLOCKING）。",
+      "PERF-A3": "待晨间——human 持板真机轮（门判定对象 = P1 后配置）；同日对照锚 = evidence §10 pre-P1 真机基线轮（闲聊 17.22 / 课表 13.64 / 天气 15.05s）。",
+      "PERF-A4": "绿——回滚脚本 dry-run + 一步还原行为齿在档；P0 五项核验 live 证据齐（§7.3 + §12 复跑全绿）。"
+    },
+    "realDeviceEvidence": "deferred——A3 晨间真机轮（human 持板）+ QQ 录入回归/提醒 semantic.json 冒烟，非本 Pod final verify 相位义务；对照锚见 evidence §10 与 morning-decision-package.md 决策点 2/4。"
+  }
+}

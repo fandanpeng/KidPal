@@ -1,0 +1,20 @@
+{
+  "case": "B",
+  "change": {
+    "thinkingDefault": "off"
+  },
+  "drift_guard": [
+    {
+      "path": "agents.defaults.thinkingDefault",
+      "expect": "unset"
+    }
+  ],
+  "backup": {
+    "dir": "/root/.openclaw",
+    "pattern": "openclaw.json.bak-perf-k1-*"
+  },
+  "rollback": {
+    "script": "rollback_model_declaration.py"
+  },
+  "_note": "260924-perf-k1 P1 声明工件。case=B 主案（B1 裁定：不换模型，关/降 v4-flash thinking 档）。change 一晚只动一个变量；drift_guard 现状锚 = openclaw.json 无 authored thinkingDefault（证据 §8.1 CLI 地面真值 'unset'）。B 案若质量/延迟不达标 → 改本声明为 case=A（换非推理模型）后重跑 apply。"
+}

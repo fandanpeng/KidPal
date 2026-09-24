@@ -1,0 +1,110 @@
+{
+  "segment": "post-p1-b-batch2",
+  "layer": "a1",
+  "samples": {
+    "chat": [
+      {
+        "total_s": 4.784,
+        "reply": "你好呀！🌟 我是星星，你的小助手。今天想做点什么呢？"
+      },
+      {
+        "total_s": 4.024,
+        "reply": "你好呀！🌟 我是星星，随时在这儿。有什么想聊的、想问的，或者要我帮忙处理点什么都行～"
+      },
+      {
+        "total_s": 4.792,
+        "reply": "你好，David！🌟\n\n有什么我可以帮你的吗？\n\n---\n```display\n{\"view\":\"text\",\"text\":\"你好，David！有什么我可以帮你的吗？\"}\n```"
+      }
+    ],
+    "schedule": [
+      {
+        "total_s": 5.992,
+        "reply": "明天是周五，看看课表上有什么安排。明天是**周五**，安排是：\n\n**在校**\n- 第1节 数学\n- 第2节 语文\n- 第3节 美术\n- 第4节 体育\n- 第5节 心健\n- 第6节 音乐\n- 第7节 空着（周五没有兴趣课）\n\n**放学后**\n- 明天没有课外培训班，可以早点休息啦。\n\n```display\n{\"view\":\"text\",\"text\":\"明天（周五）课程\\n\\n在校：\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 空（无兴趣课）\\n\\n放学后：无课外培训\"}\n```",
+        "note_readback": false
+      },
+      {
+        "total_s": 4.738,
+        "reply": "I'll check the schedule file for tomorrow's classes.明天是 **周五（2026-09-25）**，星玥的课程安排如下：\n\n**学校课程（白天）**\n- 第1节 数学\n- 第2节 语文\n- 第3节 美术\n- 第4节 体育\n- 第5节 心健\n- 第6节 音乐\n- 第7节 空（周五没有兴趣课）\n\n**课外培训：周五没有固定课外课**（书法在周三、编程在周四、英语和街舞都在周六）。\n\n所以明天白天正常上学，放学后就自由啦～ 🌟\n\n```display\n{\"view\":\"schedule\",\"data\":{}}\n```",
+        "note_readback": false
+      },
+      {
+        "total_s": 6.239,
+        "reply": "I'll check the schedule file for tomorrow's classes.Tomorrow is Friday (2026-09-25). Let me check the school grid and weekly fixed table for Friday.\n\n**明天（周五 9月25日）的安排：**\n\n**学校课程**（白天在校）：\n- 第1节 数学\n- 第2节 语文\n- 第3节 美术\n- 第4节 体育\n- 第5节 心健\n- 第6节 音乐\n- 第7节 空（兴趣课没有安排，周五下午第三节课空着）\n\n**课外固定课**：周五没有培训班——书法、编程在周三/周四，英语、街舞在周六。\n\n所以明天就是正常上学日：上午数学、语文、美术、体育，下午心健、音乐，第7节空着，放学后没有课外课。备注里提到要带的东西——周五这几项备注都是空的，不用特别准备携带物。\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天（周五 9月25日）课程：\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 空\\n\\n课外课：周五没有固定培训班（书法/编程在周三周四，英语/街舞在周六）。\"}}\n```",
+        "note_readback": true
+      }
+    ],
+    "weather": [
+      {
+        "total_s": 9.553,
+        "reply": "西安今天（9/24）阴雨为主，出门记得带伞。\n\n**现在**：19°C（体感 21°C），附近有零星小雨，湿度 84%，风很轻（西南偏西 4 km/h）。\n\n**今天全天**：17～22°C，云量一直很重。\n- 上午：18°C 左右，雾气/零星小雨，降水概率 30% 上下\n- 中午：20°C，零星小雨\n- **下午 15:00 起转明显**：小雨，降水概率 67%（约 2mm）\n- **傍晚到夜里**：雨最大的时段，中雨、概率 84%～85%（18:00 约 2.8mm、21:00 约 2.6mm），气温降到 17～18°C\n\n**顺带看后面两天**：明天（9/25）16～21°C，上午还有点小雨，下午转阴、基本不下；后天（9/26）17～24°C，以阴天为主，傍晚有零星小雨。\n\n建议：今天下午出门或晚归带伞+薄外套，夜里雨大、路滑，注意别踩水坑。\n\n<details><summary>数据来源</summary>\n\nwttr.in（WorldWeatherOnline 数据），坐标取自西安市区约 34.34N / 108.94E，查询时间 2026-09-24 11:17 GMT+8。\n</details>",
+        "retrieval": true
+      },
+      {
+        "total_s": 10.263,
+        "reply": "**西安今天（9月24日，周四）**：阴到多云、有雨的一天。\n\n- **气温**：17~22℃，上午 18℃ 左右，下午最高约 22℃，傍晚回落到 18℃\n- **降水**：中午前零星小雨（23~28%），**下午 15 点后转明显降雨**，18~21 点降水概率 84~85%，属中雨\n- **风**：西偏南风 3~8 km/h，很轻\n- **湿度**：70~93%，闷湿；日出 06:33，日落 18:39\n\n一句话：上午出门还行，**下午出门记得带伞**，傍晚雨最稳。\n\n<details><summary>数据来源与细节</summary>\n\n来源：wttr.in（World Weather Online 数据），观测点 108.910E / 34.348N（西安城区西南）。\n\n| 时段 | 气温 | 天气 | 降雨概率 |\n|---|---|---|---|\n| 09:00 | 18℃ | 薄雾 | 28% |\n| 12:00 | 20℃ | 附近零星雨 | 23% |\n| 15:00 | 22℃ | 小雨 | 67% |\n| 18:00 | 18℃ | 中雨 | 84% |\n| 21:00 | 17℃ | 中雨 | 85% |\n\n明天（9/25）转好：16~21℃，上午小雨转阴，午后雨概率降到 15% 左右。\n\n</details>",
+        "retrieval": true
+      },
+      {
+        "total_s": 7.98,
+        "reply": "西安今天（9月24日）阴天为主，有小阵雨，气温 17～22℃，当前 19℃、体感约 21℃。\n\n- 湿度比较高（84%），下雨概率白天会升到 **85%**，出门记得带伞 ☔\n- 风很小（西南风 2～3 级），不用太担心\n- 明天（25 日）也差不多，16～21℃，仍有阵雨\n\nSource: wttr.in/Xi'an（worldweatheronline 数据）",
+        "retrieval": true
+      }
+    ]
+  },
+  "host": {
+    "before": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870         901         859           1         273         969\nSwap:          3071         405        2666",
+      "swap_used_mb": 405,
+      "mem_available_mb": 969,
+      "memory_pressure_warnings_30m": 5
+    },
+    "after": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870        1215         478           1         341         655\nSwap:          3071         408        2663",
+      "swap_used_mb": 408,
+      "mem_available_mb": 655,
+      "memory_pressure_warnings_30m": 5
+    }
+  },
+  "sessions": {
+    "before": 521,
+    "after": 530
+  },
+  "prompt_sha256": "425d293d35b106b581785a78055f5718068531b240d52db763591eed68b0cc62",
+  "prompt_name": "openclaw-system-prompt.v6.md",
+  "endpoint": "http://127.0.0.1:18789/v1/chat/completions",
+  "model": "openclaw/default",
+  "n": 3,
+  "user_prefix": "",
+  "decision": {
+    "segment": "post-p1-b-batch2",
+    "layer": "a1",
+    "n_min": 3,
+    "n_ok": true,
+    "medians": {
+      "chat": 4.784,
+      "schedule": 5.992,
+      "weather": 9.553
+    },
+    "bottom": {
+      "chat": true,
+      "schedule": true,
+      "weather": true
+    },
+    "bottom_pass": true,
+    "target": {
+      "chat": false,
+      "schedule": true,
+      "weather": true
+    },
+    "target_pass": false,
+    "quality": {
+      "n": 9,
+      "display_rate": 0.4444444444444444,
+      "schema_rate": 0.2222222222222222,
+      "quality_pass": false,
+      "weather_retrieval_ok": true,
+      "note_readback_ok": false
+    },
+    "verdict": "BOTTOM_ONLY"
+  }
+}
