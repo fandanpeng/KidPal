@@ -19,13 +19,16 @@
 ## ② 列车图（依赖 + 批次）
 
 <!-- render-roadmap:begin -->
-<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m4-star-notebook，渲染时刻 2026-09-24T10:12:31.932Z）。
+<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m4-star-notebook，渲染时刻 2026-09-24T15:10:27.137Z）。
      人工禁改；渲染源唯一 = board + taskpackage JSON。全量重算、幂等。 -->
 <!-- 编号读法：<WS>-<K|N><波次><并行字母?>（如 M1-K2a）——K=承重（被下游依赖或主干终点）、N=游离（无人等待的侧线）；
      波次=依赖深度+1（跨 workstream 外部前置不占波次）；同波次字母=并行占位序、非合并序。编号随依赖重渲染自动重算，确切依赖边以本图为准。 -->
 ```mermaid
 graph LR
-  260924_m4_k1_story_cloud_link["M4-K1｜260924-m4-k1-story-cloud-link (mo38)"]
+  260924_m4_k1_story_cloud_link["M4-K1a｜260924-m4-k1-story-cloud-link (mo38)"]
+  class 260924_m4_k1_story_cloud_link achieved
+  260924_m4_k1_story_cloud_link["M4-K1b｜260924-m4-k1-story-cloud-link (mo38)"]
+  class 260924_m4_k1_story_cloud_link achieved
   260924_m4_k2_p3_star_notebook_ui["M4-K2｜260924-m4-k2-p3-star-notebook-ui (mo39)"]
   260924_m4_k3_record_session_live["M4-K3｜260924-m4-k3-record-session-live (mo40)"]
   260924_m4_k1_story_cloud_link --> 260924_m4_k2_p3_star_notebook_ui
@@ -37,7 +40,8 @@ graph LR
 ```
 | 编号 | changeId | mergeOrder | 达成状态 | deviation 裁定锚 |
 |---|---|---|---|---|
-| M4-K1 | 260924-m4-k1-story-cloud-link | 38 | pending（board: queued） | — |
+| M4-K1a | 260924-m4-k1-story-cloud-link | 38 | achieved | — |
+| M4-K1b | 260924-m4-k1-story-cloud-link | 38 | achieved | — |
 | M4-K2 | 260924-m4-k2-p3-star-notebook-ui | 39 | pending（board: queued） | — |
 | M4-K3 | 260924-m4-k3-record-session-live | 40 | pending（board: queued） | — |
 <!-- render-roadmap:end -->

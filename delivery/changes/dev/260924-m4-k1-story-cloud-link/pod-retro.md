@@ -39,3 +39,11 @@ intake 期我花了不少时间做三件「预读」：docs-sync 闸的判据全
 2. 派单里的机械命令先验 lane/语义再写（§三.1 changes-index 教训）。
 3. K2/K3 integrator 派单前置 C4 处置模板（patch 形态 delta + human spec 批 + gate evidence 保持 pending 的注记格式），直接引本包 docs-delta §4 为先例。
 4. 向 human 的合并报告沿用 perf-k1 §八教训：首段一句白话结论，需要 human 动手的事列成清单置前，制品引用置后、被追问再展开。
+
+## 八、合并门追记（写于 supervisor 闸后、§10e 人合完成时——趁热补记）
+
+- **supervisor 机械闸 ESCALATE（critical）**：G6 从 diff 重派生 riskTier——合并批含契约落地批（「随包同 PR」设计形态）触 critical-path → 一律停人。这是闸按设计工作，human 批准落账（cac7682a）。
+- **前置升级闸结构性 BLOCK → 发现 §10e runbook**：`hasContractGateEvidence` 证据位未接入（脚本 :366 自注「恒 false 向严」），契约面 diff 无机械放行口。升级 human 三通道后裁定「B 一次性跳过流程」——**执行时发现 main 侧同日已落 `pod-coordination §10e` 契约包人合 runbook**（11fb5c1，OQ-3=(a) human 批准）：人合本来就是契约包**唯一合法通道**、固定四步。裁定实质与 runbook 同构，按 §10e 四步执行（预检零相交 + 批准锚 `6faf8b7b` approve-contract-merge-manual + `--no-ff` 双亲 main tip `757ccb3` + Step 5b 三件簿记代记）。**诚实定性更正：本次合并非「跳过流程」，而是走了成文的人合通道**——AGENTS「跳过流程」留痕条款不适用；当时池侧 reference 是旧版（无 §10e、BLOCK 输出无指针），这是留根项触发的摩擦实例第一处。
+- **§10e 留根项触发事实（ARQ-260923-contract-merge-deadpath 建议①，实测摩擦 ≥1 已满足）**：① 池侧旧 reference/BLOCK 输出无 §10e 指针，人合通道靠 planner 读 main 侧脚本源码才定位；② §10e-4b 写的 `changes-index --upsert` 对 dev lane 包 fail-loud（arch 命名断言，integrator 与本棒各实测一次）——runbook 该行与脚本 lane 语义不符；③ 常驻分支落后 main 时 runbook 不可见（拆包/launch 制品在池分支、gov 批在 main，两线同日演进互不可见）。归 human/loop-retro 立项评估。
+- **并行会话工作树摩擦**：main 工作树有 human V5 会话未提交生成件（workstreams INDEX 两件，与本批 diff 同路径）——git 拒 merge。经 human 授权代 checkout 还原两件 hook 再生件（V5 未跟踪面零触碰；hook 下次编辑自动重建 union）。教训：**人合前预检要加一条「main 工作树净度」**（§10e 步骤 1 现只查 diff 相交，不查目标树 dirt）——runbook 增补素材。
+- **体感**：从 BLOCK 到定位 §10e 花了一轮升级 + 一轮 human 裁定的时间，但闸、人、runbook 三方都没有错——错的是版本可见性时差（gov 批与 dev 包同日并行、池树 reference 落后）。这类时差摩擦在多线并行期会再现，机械解（BLOCK 输出带指针）main 侧已落，池侧随本次 ff 同步到位，下一棒受益。
