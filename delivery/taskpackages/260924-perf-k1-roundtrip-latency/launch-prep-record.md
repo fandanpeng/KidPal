@@ -40,3 +40,9 @@
 
 - 归属:八步序列的 P0(gateway 重启止血)+ 探针归因批由主线程在 dev-loop 外代执行。依据:①human 预授权当晚 ECS 生产运维(plan.md 铁律约束节 + architect-review §3「已获 human 授权(任务书口径)」);②P0 = 纯运维动作(重启/核验/探针),不涉仓内实现面,不属「实现动作走 dev-loop」Hard Rule 范围;③launch 阻塞不改变止血价值(清除方差放大器 + 归因第二段数据当晚可得)。**P1(模型切换 + 声明工件落仓)及其后步骤仍归 dev-loop,主线程不越权代跑**——晨间 launch 恢复后 builder 从八步序列第 4 步接续(第 1~3 步证据已由本节落账)。
 - 证据:evidence/latency-baseline-260924.md §7(重启前探针批/备份锚/重启/五项核验/重启后探针批,随做随 append);探针为主线程诊断形态(非验收工件)——带 ECS 渲染件 v6 prompt(与仓内工件 sha256 全等断言,D1 纪律),N=3 中位数,主机快照前后各一次;正式验收探针脚本仍归 builder 落仓。
+
+## human 裁定记录(2026-09-24 晨,append)
+
+- **launch 形态改交互式**(human 原话:「现在不用 headless 跑了」)——启动卡命令行①(human 在场,`claude --settings .claude/dev-loop.settings.json --agent planner`,于 Pod 树 C:/AI/KidPal-pod-perf-k1-roundtrip-latency);headless 形态冻结至 ARQ-260924 修复落地。
+- 注记:交互式带 --settings 是否同样触发 exit 4 未实测(K7 先例两可,见证据 §9)——若交互式 launch 也失败,则 settings 两行修复升级为交互式的前置项。
+- ARQ-260924 已补勘误(成因=形态容忍差非 CLI 升级;main 131cd39);settings 修复的逐字 patch 已呈 human,授权中——批准前 .claude/** 零触碰。
