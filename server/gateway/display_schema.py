@@ -104,6 +104,30 @@ def validate_display(payload) -> tuple[bool, str]:
                 if key not in course:
                     return (False, f"schedule week-grid course entry missing key {key!r}")
 
+    # Q8 story 轻量形状 floor（契约 §1.5 step 3 / 2026-09-24 契约门裁定；schedule floor
+    # 先例对称——同为 shape floor，不作逐字段深度类型校验）。白名单零扩：kidpal_story_delete
+    # 是 §四端云消息、非 display view，不进本表。
+    if view == "story_list":
+        total = data.get("total")
+        if total is not None and (not isinstance(total, int) or isinstance(total, bool)
+                                  or total < 0):
+            # total 在场须为非负整数（对端 kidpal_story_list_parse 非整数 -> -1 整单降级）。
+            return (False, "story_list total must be a non-negative integer")
+        items = data.get("items")
+        if not isinstance(items, list):
+            return (False, "story_list items must be an array")
+        for item in items:
+            if not isinstance(item, dict):
+                return (False, "story_list item must be an object")
+            for key in ("id", "title", "date"):
+                if key not in item:
+                    return (False, f"story_list item missing key {key!r}")
+    elif view == "story_text":
+        seq = data.get("seq")
+        if seq is not None and (not isinstance(seq, int) or isinstance(seq, bool)):
+            # seq 可选（additive）；在场须为整数（入册流水号 N 是整数，契约 §1.3④/Q8）。
+            return (False, "story_text seq must be an integer when present")
+
     size = _data_bytes(data if isinstance(data, dict) else {})
     if size < 0:
         return (False, "data is not JSON-serialisable")
