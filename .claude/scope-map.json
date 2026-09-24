@@ -39,7 +39,8 @@
         "docs/templates",
         "docs/archive",
         "docs/notes",
-        "docs/ui"
+        "docs/ui",
+        "docs/showme"
       ]
     }
   },

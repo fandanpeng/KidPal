@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodebaseMemory 索引拓扑 · KidPal 主仓 ⇄ Pod worktree</title>
+<style>
+  :root{
+    --bg:#faf7f2; --ink:#2b2723; --muted:#6b635b; --line:#d9d1c6;
+    --main:#c8532c; --pod:#2f6f6b; --ref:#8a8577; --cache:#3b6ea5;
+    --ok:#3f7d3a; --warn:#b07a1a;
+    --card:#fffdf9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 56px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  h2{font-size:16px;margin:30px 0 10px;padding-left:9px;border-left:3px solid var(--main)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card h3{margin:0 0 8px;font-size:14px;letter-spacing:.2px}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:1px}
+  code{background:#f2ece3;border-radius:5px;padding:1px 5px;font-size:12.5px}
+  .kv{color:var(--muted);font-size:13px}
+  .kv b{color:var(--ink);font-weight:600}
+  ul{margin:6px 0 0 18px;padding:0}
+  li{margin:3px 0}
+  .flow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:10px 0 0}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  .note{border-left:3px solid var(--warn);background:#fdf6e8;padding:10px 14px;border-radius:0 10px 10px 0;font-size:13.5px;margin-top:14px}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CodebaseMemory 索引拓扑：主仓 ⇄ Pod worktree</h1>
+  <div class="sub">事实核实于 2026-09-23（本机实测：<code>list_projects</code> 31 项、<code>git ls-files -v</code> skip-worktree 标记、<code>~/.cache</code> 逐项目 DB、两份 artifact.json 对照）</div>
+
+  <h2>一、三层结构（谁存什么）</h2>
+  <div class="grid">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--cache)"></span>① 工具缓存（真正的图）</h3>
+      <div class="kv"><b>~/.cache/codebase-memory-mcp/&lt;项目名&gt;.db</b> —— 每个项目一个 SQLite，互不相干</div>
+      <ul class="kv">
+        <li>主仓：<code>C-AI-KidPal.db</code> 41.6 MB · 17952 nodes</li>
+        <li>本 Pod：<code>C-AI-KidPal-pod-m1-k1a-….db</code> 54.8 MB · 17952 nodes</li>
+        <li>另有 5 个参考工程 + <code>KidPal-claude</code>，共 31 个项目</li>
+      </ul>
+      <div class="kv" style="margin-top:6px">图查询（search_graph / trace_path）读的就是这一层。</div>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--ref)"></span>② 仓内快照（可分发的那一份）</h3>
+      <div class="kv"><b>&lt;worktree&gt;/.codebase-memory/</b> —— 随 git 走的压缩快照</div>
+      <ul class="kv">
+        <li><code>graph.db.zst</code>（zstd；主 8.39 MB / 本 Pod 7.16 MB）</li>
+        <li><code>artifact.json</code>（元数据：commit / indexed_at / project / nodes / edges / 大小）</li>
+        <li><code>.gitattributes</code>：<code>graph.db.zst binary merge=ours</code> —— 合并冲突天然免</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>二、谁跟谁同步（流向）</h2>
+  <div class="flow">
+    <pre class="mermaid" style="margin:0">
+flowchart TB
+  subgraph M["主 worktree · C:/AI/KidPal（分支 main）"]
+    MM["项目 C-AI-KidPal<br/>full · 17952 nodes<br/>快照 8.39MB · 普通跟踪（不设 skip-worktree）"]
+  end
+  subgraph P["Pod worktree · C:/AI/KidPal-pod-&lt;slug&gt;（每 Pod 一个）"]
+    PP["项目 C-AI-KidPal-pod-&lt;slug&gt;<br/>full · 17952 nodes<br/>快照 7.16MB · skip-worktree（本机私有）"]
+  end
+  C[("~/.cache/codebase-memory-mcp/<br/>每项目一个 .db")]
+
+  MM -- "索引写入/读取" --> C
+  PP -- "索引写入/读取" --> C
+  MM -- "① 主线程偶发：两件独立 commit 上 main（快照源）" --> SNAP["main 上的快照快照"]
+  SNAP -- "② gov：main→gov 回同步 merge" --> GOV["gov worktree"]
+  SNAP -- "③ Pod：rebase + merge-driver 内容还原<br/>（skip-worktree 幂等维持）" --> PP
+  PP -- "④ Pod launch bootstrap：<br/>index_repository(repo_path=worktree)<br/>从仓内快照导入 + 增量补差" --> C
+    </pre>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--main)"></span>主 worktree（快照的「源」）</span>
+    <span><span class="dot" style="background:var(--pod)"></span>Pod worktree（快照的「分发终点」）</span>
+    <span><span class="dot" style="background:var(--cache)"></span>工具缓存（每项目独立 DB）</span>
+  </div>
+
+  <h2>三、三条关键规则（容易踩的点）</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>命名 = 路径派生</h3>
+      <div class="kv"><code>C:/AI/KidPal</code> → <code>C-AI-KidPal</code>；<code>C:/AI/KidPal-pod-x</code> → <code>C-AI-KidPal-pod-x</code>。<br>
+      刷主仓<b>不要传 <code>name</code></b>——手动另传名会在同 root 造出第二个条目（曾实测发生）。</div>
+    </div>
+    <div class="card">
+      <h3>索引跑哪个 path，就刷哪个 path 的快照</h3>
+      <div class="kv">在 A worktree 里对 B path 建索引，会改写 B 的 <code>.codebase-memory/</code>。跨目录实验要小心（本会话就误改过一次，已复原）。</div>
+    </div>
+    <div class="card">
+      <h3>mode 只在「从零建」生效</h3>
+      <div class="kv">已有索引再跑 <code>index_repository(mode=…)</code> 是空转（实测 node 数逐值不变）。<br>
+      实测差：<b>full 17952 nodes vs moderate 10142</b>——moderate 砍的主要是 Variable 节点（3194→1226，−62%），Function/File 只降 ~9%。</div>
+    </div>
+    <div class="card">
+      <h3>Pod 快照为什么是本机私有</h3>
+      <div class="kv">Pod worktree 的 <code>artifact.json</code> / <code>graph.db.zst</code> 标了 <b>skip-worktree</b>（<code>git ls-files -v</code> 显示 <code>S</code>）——索引器持续自刷新、不进 Pod 的提交；只有主 worktree 那份才上 main 分发。</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>一句话总结</b>：<b>图本体</b>住在工具缓存（每项目一个 DB，互不相干）；<b>可分发的那一份</b>是各 worktree 里 <code>.codebase-memory/</code> 的压缩快照；<b>同步方向是单向的</b>——主 worktree 偶发把快照 commit 上 main，再经 merge 分发到 gov / Pod，Pod 启动时用它做「导入 + 增量补差」建自己的索引。
+  </div>
+
+  <div class="foot">制图：show-me ｜ 事实来源：AGENTS.md（CodebaseMemory 使用纪律 + 快照流向）/ .claude/rules/repo-structure.md:26 / 本机实测</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'base',themeVariables:{primaryColor:'#fffdf9',primaryBorderColor:'#d9d1c6',lineColor:'#6b635b',fontSize:'13px'}});</script>
+</body>
+</html>
