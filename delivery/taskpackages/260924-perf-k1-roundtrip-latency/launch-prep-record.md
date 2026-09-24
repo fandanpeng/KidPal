@@ -46,3 +46,8 @@
 - **launch 形态改交互式**(human 原话:「现在不用 headless 跑了」)——启动卡命令行①(human 在场,`claude --settings .claude/dev-loop.settings.json --agent planner`,于 Pod 树 C:/AI/KidPal-pod-perf-k1-roundtrip-latency);headless 形态冻结至 ARQ-260924 修复落地。
 - 注记:交互式带 --settings 是否同样触发 exit 4 未实测(K7 先例两可,见证据 §9)——若交互式 launch 也失败,则 settings 两行修复升级为交互式的前置项。
 - ARQ-260924 已补勘误(成因=形态容忍差非 CLI 升级;main 131cd39);settings 修复的逐字 patch 已呈 human,授权中——批准前 .claude/** 零触碰。
+
+## human 终裁补记(2026-09-24 晨,append)
+
+- **settings 两行不删**(逐字 patch 撤回、不执行),ARQ-260924 整件留 gov 批处理;**headless 冻结,launch 一律交互式**(启动卡命令行①,human 在 Pod 树自跑)。
+- 待验事项(归 gov 批):交互式带 --settings 是否同样触发 exit 4(K7 两可未实证)——若同病,settings 修复升级为交互式 launch 前置,gov 批优先级回升。
