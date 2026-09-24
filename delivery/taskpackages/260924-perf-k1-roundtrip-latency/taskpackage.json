@@ -14,7 +14,7 @@
   "story": "NFR-PERF-1 · 思考响应不冷场 + NFR-PERF-2 · 查字端到端 5 秒档（同根因面，「优化归 Phase 1」的主攻包）——语音问答往返 10~15s（天气 28~31s）优化：大头实证在 OpenClaw 网关内部（reasoning 模型单轮生成 ~9s + agent 多轮工具循环 + 每请求 preflight 2.7~6.1s）。本包 = P0 gateway 重启止血 + P1 模型切换（deepseek-chat 主案 / v4-flash 关 thinking 备案 30min timebox，带 v6 prompt 探针裁决）+ 条件步（preflight 仅测量仪表化 / sessions 运维卫生）；P2 治理拆 k2。技术方案见 plan.md（FROZEN v1.0，architect advisory 评审 D1~D4 修正全吸收）",
   "planRef": "delivery/taskpackages/260924-perf-k1-roundtrip-latency/plan.md",
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/",
-  "redBaselineResult": "PENDING——acceptance-author 冻齿后实跑落账（设计态红：新增机械面齿在实现工件未落盘前红；既有齿零新增红）",
+  "redBaselineResult": "18 failed / 62 passed / 4 deselected——2026-09-24 acceptance-author 实跑；命令 `python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/`（仓根）。18 红全为设计态红（声明工件 / apply / 回滚 / probe_gate / probe_batch 五件未落盘），逐齿映射见 server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md §3。既有齿零新增红（planner 复核：既有 4 文件单跑 57 passed / 0 failed @1746c14；全量 62 passed = 既有 57 + 本包 5 条 must-stay-green 设计态即绿齿）；--collect-only 收集零错误（冻结即冒烟过）。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "none",
   "planningRefs": [],

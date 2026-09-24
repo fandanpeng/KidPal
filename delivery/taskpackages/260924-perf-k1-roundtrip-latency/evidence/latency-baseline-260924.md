@@ -153,3 +153,16 @@ sessions 批后计数 **529**(511+18,与两批探针数吻合;store 膨胀速率
 - **读数①(双峰生产实锤)**:闲聊轮真机落**慢 mode**(守 v6 纪律、答质量好)= 17.2s;而 §7.4 探针中位 6.64s 是快 mode(David+丢块)采样——**真机儿童体验以慢 mode 为准,P0 重启对守纪律路径无实质提速**。
 - **读数②(对照昨晚 §1)**:闲聊 16.3→17.2s、课表 14.0→13.6s(持平);天气 28.5→15.0s(P0 重启后大降——主机劣化分量主要在多轮工具路径)。
 - **读数③(对门)**:A3 保底门(闲聊≤8s/课表≤10s)当前超 1.7~2.2 倍——**P1(thinking-off,B1 裁定主案)是决定性一刀**;本节即 A3 复跑时的同日对照锚。
+
+## 11. 验收齿冻结(acceptance-author,2026-09-24 本 Pod 树,append)
+
+> 阶段划分 1 产物。齿文件 = `server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py`(27 齿 = 23 offline + 4 live);设计说明 / 逐齿映射 / mutation 原始输出留档 = `server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md`(本节不复制其正文,只记事件与关键读数)。
+> 本棒在池树跑(树迁址见 launch-prep-record.md);任务书 = `input-brief-acceptance-author-round2.md`(B1 修正版)。
+
+- **红基线实测**:`python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/`(仓根)= **18 failed / 62 passed / 4 deselected**。18 红全为**设计态红**(声明工件 / apply / 回滚 / probe_gate / probe_batch 五件未落盘);`--collect-only` **收集零错误**(冻结即冒烟过)。
+- **既有齿零新增红(planner 独立复核)**:既有 4 个 acceptance 文件单跑 = **57 passed / 0 failed**,与上游基线锚「@1746c14」吻合(`git diff --quiet 1746c14 HEAD -- server` 零差异);全量 62 passed = 既有 57 + 本包 5 条 must-stay-green 设计态即绿齿,算术自洽。
+- **机械闸**:`acceptance-coverage-check` = **ok**(PERF-A1~A4 全 functional,无 structural/suite 豁免);`mutation-check` 暂卡「缺 mutationEvidence 字段」——由 acceptance-author 补记录、planner 落 taskpackage 后复跑(见 launch-prep 待办)。
+- **齿形态落位**(评审 §3 + B1 修正):CI 齿只断机械面(声明工件 schema + **B 主案/A fallback 两形态皆可判**、apply 幂等 + drift-guard「锚点不中→exit 3」+ 时间戳备份、回滚 dry-run 与一步还原、探针脚本 v6 注入 + hash 断言、must-stay-green);live 齿取 **evidence-read 形态**(不 SSH,判定器逻辑另有 offline 齿);mutation 打在**配置接线**上而非超时判定。
+- **mutation 实测**(notes §6 原始输出):GREEN 对照组(合法 B/A 声明 = 0 violation)+ 6 条接线 mutation 全转红(M1 删声明文件 / M2 thinking 值改 `high` / M3 删 allow 条目 / M4 `reasoning` 翻真 / M5 两轴混声明 / M6 改错 model id);另以 tempdir 下的**临时参考实现**反证 apply/rollback 四条行为齿非空过、契约可实现(含「摘掉 drift-guard 循环 → mismatch 场景 rc 由 3 变 0 → 该齿转红」的 counterEvidence)。
+- **冻结契约五件**(builder 须实现,路径以齿文件头注 FROZEN OFFLINE CONTRACT 为准):`server/deploy/perf-k1/openclaw-model-declaration.json`(JSON,`case ∈ {B,A}`)+ `apply_model_declaration.py` + `rollback_model_declaration.py` + probe_gate 纯判定器 + probe_batch live 执行器。
+- **planner 裁决留痕**(acceptance-author 提的 5 条歧义):① 写边界拦截未绕行,`redBaselineResult` 与本节由 planner 代落;② apply/rollback 取 **Python 载体**——任务书「照抄 STOP-on-mismatch 形态」按**行为形制**解读(拒绝 + exit 3),形制逐字保留,语言差异非偏离;③ live 面取 **evidence-read、不做 SSH**,真机发 HTTP 的探针批执行器归 builder/verifier live 相位;④ A 案 allow 不钉全集精确相等(避免过度脆性);⑤ 声明工件取 JSON(零依赖 stdlib,K3 先例读 YAML 亦走 regex)。
