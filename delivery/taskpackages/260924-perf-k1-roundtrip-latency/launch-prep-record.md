@@ -51,3 +51,11 @@
 
 - **settings 两行不删**(逐字 patch 撤回、不执行),ARQ-260924 整件留 gov 批处理;**headless 冻结,launch 一律交互式**(启动卡命令行①,human 在 Pod 树自跑)。
 - 待验事项(归 gov 批):交互式带 --settings 是否同样触发 exit 4(K7 两可未实证)——若同病,settings 修复升级为交互式 launch 前置,gov 批优先级回升。
+
+## human 五项业务裁定(2026-09-24 晨,~09:00 CST,append;planner intake 必读)
+
+- **B1 = 甲案批准,P1 主次序翻转为 B 案优先**:不换模型,先关/降 v4-flash thinking 档(探针先以 `/think:off` 内联试跑验质量与延迟;满意则声明工件落 `thinkingDefault: off|low`,经幂等 apply 脚本,不手改)。**builder 步⑤直接以 B 为主案执行,证据 §8.3 弹药适用;A 案三候选(deepseek-chat / deepseek-flash / v4-flash+low)降为 B 不达标时的 fallback 批**,裁决方式不变(带 v6 prompt、N≥3 中位、A2 质量门一视同仁)。plan.md 冻结文本不回改,以本行裁定为准(plan「改法取舍」节 A/B 主次对调)。
+- **B2 = 质量红线维持冻结口径不改**:display 块合法率 100%、任一批破线当场回滚、课表备注读回、天气须含真实检索数据——A2 照 plan.md 原文执行。
+- **B3 = 4GB 升级暂缓**(需购订阅,human 裁「实在不行再升级」):P3 挂起不进今晚/今天动作;零成本过渡项候选(每夜 gateway 重启 cron、sessions 定时维护)归 k2 批次议——P0 重启红利(swap 251MB)先吃着,方差如再放大即升级依据。
+- **B4 = k2 作为独立方案批次处理**(不并入本包、不走预立项快道):范围四件(David 人设渗漏治理 / 静态上下文瘦身 / session store retention / 课表轮次收敛·prompt v7 槽位预约先行)另起 PROPOSAL/拆包流程,携本包 P1 数据立项。
+- **B5 = human 现在即可持板**:执行序 = ①human 交互式 launch Pod(命令行①)→ ②(可选,Pod 跑 P1 前)pre-P1 真机基线对照轮 ~10min(主线程三源取证;价值 = 同日同设备对照锚)→ ③P1 落地后 A3 正式验收轮 + QQ 录入回归 1 条(共 agent 波及面)。**A3/QQ 回归的门判定对象是 P1 后配置,现在跑只作基线对照,不替代 A3**。
