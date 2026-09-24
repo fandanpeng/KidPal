@@ -1,0 +1,41 @@
+# progress · m4-star-notebook
+
+> 执行日志（append-only）：改了什么、测了什么、失败/修复。行不覆盖。
+
+## 2026-09-24 · 拆包（主线程，portfolio-planner 纪律）
+
+- 输入 = `delivery/milestones/milestones.jsonl` 行 `M4-star-notebook` nextAction 两块（sourceType=delivery-story）；story 机查两道通过（S-F2.1/S-F2.2/S-F2.3/S-F2.4 无 §8 已砍命中、可行性全 ✅——S-F2.3 朗读砍除后纯板端渲染 host 已验、S-F2.2 manual 聆听+网关累积态已备）。
+- readiness 调查（Explore 子代理 + 主线程磁盘核对，图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`）关键事实：
+  - 板端 `story_page.c` 四态渲染在世（260829-story-p3 产物、FROZEN OFFLINE CONTRACT 头注）但**页内输入表为 v1.27 前旧口径**（KEY CLICK=光标下移 / KEY 长按录音态=丢弃——均与 v1.47 矩阵相反）；P3 页内按键设备侧**只接了 BOOT 长按一条缝**（`waveshare-s3-rlcd-4.2.cc:674-677` HandleStoryKey 唯一调用点）；列表态 300ms 单双击消歧**无机制**。
+  - **`story_page.c` 全文件 CJK 字体零引用**（LVGL 默认 montserrat_14 纯拉丁——P3 列表/阅读/空态中文真机很可能空白；char_window_overlay.acceptance.c 有 LV_FONT_DEFAULT 负向齿先例）。同族 `home_upcoming.c`/`reminder_page.c` = M1 面，挂账不入本批。
+  - `kidpal_session_ctx` 契约已 LANDED（CDQ-260914）但**双端实现零**（固件无发送原语、front 无拦截）；arch to-be ⑥ 接线点在案（application.cc 会话发起入口读 layer_top / front 上行泵帧解析处）。
+  - front 故事接线半条：control/start_recording → StoryAccumulator.start、stt 帧 → feed、listen-stop → stop 归档 + story_text 下发**在世**；`list_stories()` **零生产调用点**（story_list 从不主动下发——「进页即见列表」无数据源）；收尾词/120s 超时/删除执行面/流水号账本**全缺**；盖章 N 现 only 活在易失 `stamp_index`（重启即失，S-F2.4 AC2「只增不减」不成立）。
+  - 覆盖层基建齐备（layer 栈 + begin/end 夹钳 + dismiss_front_overlay + 查字窗 idle-step 5min 先例）——删除确认弹窗可复用基建，渲染/裁决/10s 超时需新写。
+  - art 资产集内 `ic_star_48/38/22/20/18`、`stamp_seal_r8`、`rec_wave`、`pose_jump` 在世；列表行现用 `●` 与方块堆（非星星图形）。
+  - prompt 现役 v6：故事意图**只有「我要讲故事」单指令**（「帮我记下来」全文零命中）——v7 bump 归 K3。
+- 拆 3 包（M3 镜像切法，D1）：`260924-m4-k1-story-cloud-link`（mergeOrder 38）/ `260924-m4-k2-p3-star-notebook-ui`（39，dependsOn K1）/ `260924-m4-k3-record-session-live`（40，dependsOn K1+K2）。
+- 重叠面核查结论（详 decision-coverage `_doc`）：story_p3 旧冻结验收板/云双侧已 archive 退役（新齿不走 supersede；story_page.h FROZEN 头注随 K2 重写声明退役口径）；在办零冲突（m3-k7 已合并收口 9-23、perf-k1 merged、audio-bargein-hw queued 休眠音频面）；prompt v7 槽位空闲；M1 基建（键路由分层/键帽条三槽/语音轮四态/覆盖层）全 merged 为下游消费非冲突。
+- **契约触点裁定：触契约面三触点**——① §1.3③ story_list `total` 语义拆分（旧「已录总数=故事果计数」兼盖章 N ↔ v1.47 计数=现存篇数、盖章 N=流水号只增不减）+ 板子行为句旧交互（「KEY 选择」）改写 = spec↔contract 漂移；② §1.3④ story_text 增 `seq`（additive，盖章 N 承载）+ 行为句「或仅靠 TTS 朗读」清理（v1.52 砍朗读）= 漂移；③ 删除云端同步（S-F2.1 AC4 / arch §5.4【链路载体待契约】）= 契约新增载体（拟甲案 `kidpal_story_delete` §四私有消息，D2）。三触点合一 CONTRACT-CHANGE-PACKET（草案落 K1 包目录），走 architect-reviewer 四分类预审 + 人类契约门，diff 随 K1 同 PR（launchPreconditions 第 1 条）。`kidpal_session_ctx` 契约既有零改动、只落实现。
+- 真机半安排：K1/K2 的 live 半全部 structural deferred 挂 K3 设备轮（单真机不两轮撞车，M2/M3 先例）；K3 live 确认轮一次性目击全链（双入口开录→收尾三式→归档→盖章 seq→列表+1→阅读→删除→云同步→重启流水号不变）。
+- 四件套（task_plan / roadmap / progress / decision-coverage）+ 三包 taskpackage.json/plan.md + K1 CCP 草案 + 双 input-brief（brief-inputs.mjs 拆包侧同批产物）落盘；roadmap ② 节 render-roadmap.mjs 机械渲染；board 预填三 pod queued（portfolio-reconcile.mjs 单一写者纪律，pods/*.json → board.json）；milestones.jsonl M4 行 planningRefs 挂接（state 保持 planning——翻 in_delivery 归 human 过目/首包 launch 时点，注册表纪律 state 由人/integrator 维护）。
+- 待办（本相位后）：门 1（architect 轻量 checklist）+ 契约预审（architect-reviewer）并行派发 → 修复 → human 两判断点（过目切法 + 契约门裁 CCP 五问）→ 常驻分支同步 main（现 behind 8）→ commit-before-launch + `base/m4-star-notebook`。
+
+## 2026-09-24 · 契约预审 + CCP v2（主线程派发 architect-reviewer，同日）
+
+- **契约预审（architect-reviewer 四分类）**：裁定 **NEEDS_REVISION**——方向正确、Alternatives 可信（删除甲案与 ADR-005「无 device RPC 先例」边界一致性核实），修订清单 7 项 + 漏问点 1–7。四分类拆标：触点① = spec↔contract 漂移；②a seq = **独立契约变更**（spec 只钉 N 语义不钉载体）/ ②b 朗读句 = 漂移；③ kidpal_story_delete = **独立契约变更**（CDQ-260914 判据一致先例）；§1.4 control = 无需改。初版「三触点一律随 spec 携带」误标已撤。
+- **漏问点实质三项（预审批评的核心缺口，主线程对磁盘逐条核实全属实）**：① **16-cap 硬冲突**——板端 `KSTORY_LIST_MAX=16` 超限整单 -1 降级（story_page.h:40 / story_page.c:556-564），初版「story_list 全量载荷建连即推已覆盖」断言与 >16 篇实况矛盾（Q2 三案，拟乙案 K2 抬 cap + front 超 64KB 载荷截最新 N + total 恒全量）；② **真双源窗口**——v6 prompt 仍指示 LLM 产 story 块且 OpenClaw 无 story 工具（臆造），初版「无双源漂移」断言撤回（Q7 拟 front relay 收紧 story_* = 机械推送单源）；③ **删除无应答可靠性**——delete 帧丢失 → 重推复活（Q5 拟隐式 ack + 超时重发，不破 ADR-005 边界）。另有 seq 缺省降级演出（Q4）、硬删/软删与家长通道（Q6）、display_schema story floor（Q8，现状零形状 floor「收紧」表述失真已修）、§1.6 story 段（Q9）、术语统一（Q10）。
+- **CCP v2 落盘**（同日主线程修订并入）：§0 四分类裁定表 + §1 钉行收口面表（story.py:12-13/:181-183/:211 + v6 三处钉行清单）+ Impact 补旧板端盖章面注（stamp_index=counter+1 story_page.c:1071）+ Human Question 五问扩**十问** + 收口义务补 pass-oracle 人工 diff 核对清单。连带修订：K1 plan.md 取舍点 A/E/F + 阶段划分；K1 taskpackage A1/A3/A4 + notes 预审记录；K2 plan.md 隐式 ack + Q2 cap 依赖条；decision-coverage _doc 契约面裁定条 + LP1；review.md 契约预审节（耐久记录）。
+- **门 1（architect 轻量 checklist）**：已并行派发，报告待回——回报后修复落 review.md 门 1 节，再停等 human 两判断点（过目切法 + 契约门裁十问）。
+
+## 2026-09-24 · 门 1 GREEN + findings 吸收（主线程派发 architect，同日）
+
+- **门 1（architect 轻量 checklist）**：首轮 **verdict: GREEN**——checklist 五项全过、实现现状主张 a–g 七条磁盘抽查全属实、无 blocking finding；advisory 4 + nit 5（F1–F9）。裁决耐久记录 = review.md 门 1 节（含处置表）。
+- **findings 同日吸收**：F1（K2 docsSyncReason 补 S-F2.1 AC3 单指令陈旧口径清扫）/ F3（K1 docsSyncReason 补 arch §7 在办① M3-K1 遗留漂移同笔核销）/ F4（K3 plan protocol 枚举修正）/ F5（K3 docsSyncReason 补 §5.5.5 正文 v4 双重漂移注记）/ F7（K2 docsSyncReason 补对账⑤ P3 阅读页内实例点名）——五处文本修订落盘；F6（workstream 级 crossPackageBehaviors 补第 7 条「删除发送原语复用」）已修；F2（m3-k7 pod/board 协调态陈旧 blocked vs 实已 merged——git 实证 main 0fe04bf merge + 73fa08b pod-retro）已按单一写者纪律翻 merged + portfolio-reconcile 重算（43 pods；迟翻原因 = 260923 人工 ff 合并未回写协调态，如实留痕）；F8（brief 契约锚 §1.3③ not-found = 脚本锚模式与「#### ③」标题实形不匹配）留观不改——brief 诚实标注无实害，脚本改进候选登记留 loop-retro 议；F9（K1 合并门对表 gate evidence）在案复述。
+- **input-brief 再生成**：taskpackage 修订后三包 × 双角色六份重跑 brief-inputs.mjs（0 warnings 保持）。
+- **停等 human 两判断点**：① 过目切法（门 1 GREEN 已在案——三包拆法 + mergeOrder 38/39/40 + D1~D8 取舍点 + workType 分流）；② 人类契约门裁 CCP v2 十问（Q2 items 上限三案 / Q5 删除可靠性 / Q6 硬删软删与边界 / Q7 双源窗口为实质裁点，其余六问拟答低争议）。commit-before-launch（常驻分支先同步 main behind 8 + base/m4-star-notebook）在两判断点后执行。
+
+## 2026-09-24 · human 两判断点落定（同日）
+
+- **过目切法**：human 认可三包拆法（门 1 GREEN 在案后过目）。
+- **契约门 HUMAN_APPROVED 十问**：唯一偏差 = **Q2 改判丙案**（最新 16 条窗口 + total 全量、板端 cap 不抬；知情注记含旧条目可达性收窄，CCP §5 逐字）；余九问按拟答（Q5 甲案+隐式 ack 重发 / Q6 硬删+审计+边界仅 story MD+家长通道挂账 / Q7 front relay 收紧 story 块 / Q8 display_schema story floor / Q9 §1.6 story 段随 diff / Q1/Q3/Q4/Q10 认可）。裁定落账 CCP §5 + review.md；传播 K1/K2 plan + acceptance + decision-coverage（LP1 ruling-approved / LP2 verified）。
+- 待办：常驻分支同步 main → commit-before-launch + base/m4-star-notebook → 契约 diff 落地（逐字 patch human 过目 → git apply + 收口义务同批）→ K1 launch prep。
