@@ -25,6 +25,7 @@
 - 既有面零新增红：139 passed = 上游锚 **134 passed / 0 failed / 4 deselected @5e862d0**（`git diff --quiet 5e862d0 HEAD -- server/` 零差异，本树实测成立）+ 本包 5 条现状绿齿。
 - 21 红全为**设计态红**（本包实现工件未落盘，见 §3 逐齿映射）；无一来自环境/依赖/测试写错。
 - **冻结即冒烟**（DEV-GOVERNANCE §3）：`--collect-only` 收集 164 项、**零错误**（执行通道 error 为零；本包无 live 面故无 SSH 线束冒烟项）。§4（C 类实编）不适用（本包无 C 类验收件）。
+- **修订补记（2026-09-24，tighten-only §6 —— 详见 §9）**：本节数字 = 修订前实跑。`test_a6_restart_survival` 经 §9 修订（fixture 补删除步 + 补 `feed`，断言语义零改动），修订后齿数不变（仍 26 齿）、该齿在未实现树上仍设计态红；修订后对 builder 实现的实跑 = **182 passed / 0 failed / 4 deselected**（§9.7）。
 
 ## 3. 逐齿映射（齿 → acceptanceRef / 断言的真实结果 / 红名 ↔ 缺失行为 / 性质档）
 
@@ -56,6 +57,8 @@
 | a6_delete_does_not_rollback_seq | A6 | 存 3 删 1 -> total=2 且下一篇 seq=4 | 红 ↔ 账本缺失 | 行为级 |
 | a6_ledger_missing_rebuilds_without_rollback | A6 | 删账本 -> 新篇 seq>3（不倒退）+ 告警留痕 | 红 ↔ 账本缺失 | 行为级 |
 | e1_existing_story_semantics_zero_offset | E1 | archive/read/list/story_text/StoryAccumulator V31 四回退 + 有界 | 现状绿（must-stay） | 行为级 |
+
+> **修订更正（2026-09-24，tighten-only §6 —— 详见 §9.5）**：本表 `a6_restart_survival` 行原记「红 ↔ 账本缺失」**失准**；实证红因 = 空累积缓冲（fixture 缺 `feed` → 既有 empty-stop -> None 语义；账本有/无两向皆红）。原文按 append-only 纪律不删，更正见 §9.5。
 
 ## 4. 逐齿 mutation 设计 + 实测输出（第一方原始输出）
 
@@ -267,3 +270,146 @@ server/acceptance/M4K1-ACCEPTANCE-NOTES.md §3。既有面零新增红 = 139 pas
 
 **REVISION LOG**：v1（2026-09-24 初版冻结，acceptance-author 本人落盘）。
 sha256（冻结件 `server/acceptance/test_m4k1_story_cloud_link.acceptance.py`）= `61c0501742eda85c50a6c67b0ea399a12c8b273da56daee778e89eb3eb49cc26`。
+**REVISION LOG v2（2026-09-24，tighten-only §6 修订 —— 见 §9）**：冻结件 sha256 = `5d4ebbf28f13cf325483738430f62a60105f54176eba1d85fc15a355c625a287`（含 REVISION LOG 块之交付形态；正文态 `1be76af9…`、前值 `61c05017…` 见 §9.7）。
+
+## 9. tighten-only 修订记录（DEV-GOVERNANCE §6；2026-09-24；append-only）
+
+> 触发：planner 重派（§6 tighten-only 修订窗口任务）。修订件 = 冻结件 `server/acceptance/test_m4k1_story_cloud_link.acceptance.py` 的 `test_a6_restart_survival`；builder 实现期实证 + planner 第二方复核确认 = **acceptance-author 自造 fixture 缺陷、齿不可满足**。builder 其余 25 齿已全部转绿（工作树未提交实现，本 Pod 只读）。
+
+### 9.1 防滥用五件自查（§6 逐件）
+
+| # | 件 | 状态 | 证据 |
+|---|---|---|---|
+| 1 | 纯 additive（`git diff -U0` 删除行 = 0） | ✓ | §9.7 / §9.10（HEAD v1 -> 工作树：三 hunk 全 `+`、`grep -c '^-[^-]'` = 0；行级 `SequenceMatcher` 无 `delete`/`replace`；REVISION LOG 块置于 `__main__` 之前故无 EOF 正规化假象） |
+| 2 | 原变异重放转红（不许另造易过变异） | ✓ | §9.3（原变异 = taskpackage A6 条 mutation；运行期扰动 `_assign_seq` → 转红 `3 != 4`；还原复绿） |
+| 3 | 三件记录（REVISION LOG / notes §3 更正 / 红基线摘要补段） | ✓ | §9.4 / §9.5 / §9.6 |
+| 4 | 范围帽（同 Pod、同件、不新建文件） | ✓ | 仅改本冻结件与本 notes；新增文件 0 |
+| 5 | 意图锚定（钉 M4K1-A6 原意图；`assertIsNotNone` + `seq == 4` 不动） | ✓ | §9.3 修订形态；无新 acceptance id、未改行为定义 ⇒ 非 re-spec |
+
+### 9.2 Reason（fixture 缺陷；两向皆红 = 齿不可满足）
+
+原 fixture：`acc2.start("s-restart")` 后**直接** `stop("s-restart")`，**缺 `feed()`** → 空累积缓冲下 `stop` 依既有冻结语义返回 `None`（先例：已归档 `server/acceptance/archive/test_story_p3.acceptance.py:492-493` 逐字断言 empty-stop -> None；本件 E1 齿亦断言空转写 `archive_story` 抛 `ValueError`）→ `assertIsNotNone` **必红，与账本实现无关**（实现有/无账本皆红）。属冻结件自造 fixture 缺陷，非「改测试让它通过」。
+
+### 9.3 修订形态 + 原变异重放（第一方原始输出）
+
+修订（纯 additive）：
+- **纳入删除步**（`_seed` 3 篇 -> 删中间 1 篇 -> 现存 2 篇）：使本齿真正考到 docstring 自陈意图「**不靠扫描回推（删除后会回退）**」。**必要性（planner 分析预警之落实）**：若仅补一行 `feed` 而无删除步，则原变异（去持久账本、按现存 MD 计数分配）下账本派生与计数派生**同为 4、不可判别** → 齿仍不满足本件第 2 项。
+- **补一行 `feed("s-restart", "重启后新篇")`**：非空累积。
+- 断言语义零改动（`assertIsNotNone` + `rec.get("seq") == 4` 逐字不动）。
+
+判别力（fixture 情形）：现存 MD 篇数 = 2 → 账本续分配 = **4**，计数派生 = **3**。
+
+**原变异**（= taskpackage `mutationEvidence` 的 A6 条 mutation：去持久账本、按现存 MD 计数分配、不回写 `.seq.json`）以**运行期扰动 `story._assign_seq`** 实现（不落文件改动），pytest 级重放原始输出（2026-09-24，本树；`--import-mode=importlib -m "not live"`）：
+
+```
+== 原变异下 test_a6_restart_survival 必须转红 ==
+E   AssertionError: 3 != 4 : M4K1-A6 RED: 重启后 seq = 3 != 4 —— 账本未存活、靠扫描回推（删除后会回退）。
+FAILED server\acceptance\test_m4k1_story_cloud_link.acceptance.py::M4K1LedgerAcceptance::test_a6_restart_survival
+1 failed, 25 deselected in 0.12s
+pytest exit code (mutation) = 1
+
+== 还原后（原实现）必须复绿 ==
+1 passed, 25 deselected in 0.05s
+pytest exit code (restored) = 0
+
+现存 MD 篇数 = 2 | ledger next_seq = 4 | 计数派生 = 3 => 账本续分配 4 vs 计数派生 3（可判别）
+```
+
+### 9.4 冻结件 REVISION LOG 全文（append 块，逐字）
+
+```
+# --------------------------------------------------------------------------- #
+# REVISION LOG (冻结件修订记录；append-only —— 本块之前/之后均不得删除既有行)
+# --------------------------------------------------------------------------- #
+# [2026-09-24 · tighten-only（DEV-GOVERNANCE §6）· 同 Pod / 同件 / 不新建文件 · 范围帽内]
+#   Reason: `test_a6_restart_survival` fixture 缺陷（builder 实现期实证 + planner 第二方复核）
+#   ——原 fixture `start("s-restart")` 后缺 `feed()`，空累积下 `stop` 依既有冻结语义返 None
+#   （先例 = 已归档 story_p3 冻结件逐字断言 empty-stop -> None；本件 E1 齿断言空转写
+#   ValueError）→ `assertIsNotNone` 必红，与账本实现无关（两向皆红 = 齿不可满足）。
+#   修订 = 纯 additive 补 fixture：① 纳入删除步（seed 3 篇后删中间 1 篇 -> 现存 2 篇），使本齿
+#   真正考到 docstring 自陈意图「不靠扫描回推（删除后会回退）」；② 补一行 `feed` 使累积非空。
+#   **断言语义零改动**（`assertIsNotNone` + `seq == 4` 逐字不动）= 钉 M4K1-A6 原意图（账本存活 /
+#   续分配）；无新 acceptance id、未改行为定义 ⇒ 非 re-spec。
+#   原变异重放（= taskpackage mutationEvidence 的 A6 条 mutation：去持久账本、按现存 MD 计数
+#   分配、不回写 .seq.json）= 运行期扰动 `story._assign_seq` -> 本齿转红（`3 != 4`，原始输出见
+#   server/acceptance/M4K1-ACCEPTANCE-NOTES.md §9）；还原复绿。修订前 fixture 若仅补 `feed` 而
+#   无删除步，该变异下账本派生与计数派生同为 4、不可判别 —— 故删除步为达标本件之必要形态。
+#   机判纯 additive: `git diff -U0`（HEAD v1 -> 本修订）**删除行数 = 0**（全 hunk 皆 `+`）。
+#   sha256 核销: 61c0501742eda85c50a6c67b0ea399a12c8b273da56daee778e89eb3eb49cc26 → 1be76af9f3f1076987f44caeb8334688019fae8a191eead57bf62de04a57c2a8
+#   （「后」= 修订后**正文态** sha256（不含本 REVISION LOG 块；去块后复算即得，逐字可验）；
+#    含本块之交付形态最终 sha256 另记于 notes §9.7 —— 块内置自身之 sha 自指不可解，据实分记。）
+# 本块刻意置于 `if __name__ == "__main__":` **之前**（非文件尾）——使 v1 末行保持逐字不变，
+# 纯 additive 机判无 EOF 换行正规化假象（删除行数真为 0）。
+# --------------------------------------------------------------------------- #
+```
+
+> 位置注：本块实际落点 = `if __name__ == "__main__":` **之前**（blob 实态见冻结件），非文件尾；上引为其逐字全文。
+
+### 9.5 notes §3 红因映射更正（原行不删，本条 append 更正）
+
+§3 表内 `a6_restart_survival` 行原记「**红 ↔ 账本缺失**」= **失准**。实证红因 = **空累积缓冲**（fixture 缺 `feed` → 既有 empty-stop -> None 语义）；账本缺失与否**两向皆红**（builder 实现期实证 + planner 第二方复核）。修订后该齿红因（未实现树上）见 §9.6。
+
+### 9.6 红基线摘要补段（修订后该齿在未实现树上的设计态红判别）
+
+- 修订后 `test_a6_restart_survival` 在**未实现树**（无 `seq`/账本）上仍为设计态红，红判据之一已变：齿内 `_story_attr("delete_story")` 前置 fail（红因 = `delete_story` 未落地）；即便 delete 在而账本不在，`rec.get("seq")` = `None` ≠ 4 → 红。
+- 修订**不改变**红基线计数形态（本齿仍 1 红、本件仍 26 齿）；但**强化**了该齿对「账本存活 / 不靠扫描回推」单轴的判别力——原形态对原变异**不可判别**（本件第 2 项之要求）。
+- 修订后对 builder 实现的实跑：**182 passed / 0 failed / 4 deselected**（命令逐字 `python -m pytest -q --import-mode=importlib -m "not live" server/tests server/acceptance`；= 上游锚 134 + 本件 26 + builder 新增 `server/tests/test_story_units.py` 22）。收集零错误。
+
+### 9.7 sha256 核销（本仓首例）与纯 additive 机判
+
+- **前**（修订前冻结件）= `61c0501742eda85c50a6c67b0ea399a12c8b273da56daee778e89eb3eb49cc26`
+- **后**（修订后正文，REVISION LOG 块追加**前**）= `1be76af9f3f1076987f44caeb8334688019fae8a191eead57bf62de04a57c2a8`
+- **最终交付形态**（含 REVISION LOG 块）= `5d4ebbf28f13cf325483738430f62a60105f54176eba1d85fc15a355c625a287`
+- **纯 additive 机判（权威口径 = HEAD v1 -> 工作树）**：`git diff -U0` 三 hunk **全 `+`、删除行数 = 0**（+34 行）。
+- **字节精确核对**：去 REVISION LOG 块后正文态 sha256 复算 = `1be76af9…`（= 上条「后」）；HEAD v1 blob sha256 = `61c05017…`（= 上条「前」）；两值均可复算 → 「前」与「正文态」即对应内容逐字，修订只在两者之间**插入**行。
+- **无 EOF 正规化假象**：REVISION LOG 块刻意置于 `if __name__ == "__main__":` **之前**（非文件尾）——v1 末行（`sys.exit(...)`，无换行终止）逐字未动，故 `git diff -U0` 删除行数**真为 0**（不出现 `\ No newline at end of file` 正规化）；行级 `difflib.SequenceMatcher`（HEAD 正文 vs 工作树正文）opcodes = `equal`×3 + `insert`×3、**无 `delete` / `replace`**。
+- sha 链一致性：`61c05017…`（v1 @HEAD）→ 正文态 `1be76af9…` → 交付（含块）`5d4ebbf2…`；三值均可由对应文件内容复算。
+
+### 9.8 连带修订（advisory 追记；本次不收紧齿 —— 范围帽）
+
+builder 重放实测发现两条 expectedRed **多声明**（不敏感齿），依范围帽**本次不收紧**（收紧评估归 loop-retro 素材），只在 mutationEvidence 的 A5/A6 note 里追记 + 给 corrected 文本（canonical JSON 更正段见 §9.9）：
+
+1. **A5 expectedRed 含 `test_a5_front_wiring_references_timeout_decision`**：实测该**源锚代理**齿（文本子串判据、docstring 提及即满足）对实现变异**不敏感**——已在 §5 缺口 1 自陈「offline 不可验」；本次不收紧。
+2. **A6 expectedRed 含 `test_a6_rearchive_same_id_keeps_seq`**：实测在「计数派生」变异下**偶然保绿**（同 id 重写：计数派生也不涨 → 该齿在变异下仍绿）= advisory；本次不收紧。
+
+### 9.9 corrected `mutationEvidence.perAcceptance`（A5 / A6 两条；canonical 由 planner 代落）
+
+> 仅 note / mutation 文本更正，`acceptanceId` / `sensitive` / 其余字段不变。
+
+```json
+{
+  "A5": {
+    "acceptanceId": "（取 taskpackage.acceptance[] A5 原文逐字，不变）",
+    "sensitive": true,
+    "mutation": "AUTO_STOP_SECONDS 改 999 / 移除 is_finish_phrase / 移除累积态 stt 命中收尾词触发 stop 归档",
+    "expectedRed": "test_a5_finish_phrase_detection / test_a5_finish_phrase_triggers_stop_in_accumulate_only / test_a5_timeout_120s_decision",
+    "expectedRed_notSensitive_advisory": "test_a5_front_wiring_references_timeout_decision（源锚代理齿，文本子串判据、docstring 提及即满足 → 对实现变异不敏感；本次不收紧，范围帽）",
+    "note": "设计态红（is_finish_phrase / timed_out_sessions / AUTO_STOP_SECONDS 均不在位）即 counterEvidence；追记（2026-09-24 tighten-only §6 批次）：expectedRed 中 test_a5_front_wiring_references_timeout_decision 实测对实现变异不敏感（源锚代理齿），本次不收紧齿（范围帽），收紧评估归 loop-retro 素材；**120s 前端计时循环接线 offline 不可验**（仅源锚代理证 front 引用该决策），行为等价假设显式化、live 归 M4-K3。"
+  },
+  "A6": {
+    "acceptanceId": "（取 taskpackage.acceptance[] A6 原文逐字，不变）",
+    "sensitive": true,
+    "mutation": "移除 seq 持久账本（每次从现存 MD 计数分配 seq，不回写 .seq.json）",
+    "expectedRed": "test_a6_archive_assigns_persistent_monotonic_seq / test_a6_restart_survival / test_a6_delete_does_not_rollback_seq / test_a6_ledger_missing_rebuilds_without_rollback",
+    "expectedRed_notSensitive_advisory": "test_a6_rearchive_same_id_keeps_seq（计数派生变异下偶然保绿——同 id 重写计数派生亦不涨；本次不收紧，范围帽）",
+    "note": "设计态红（archive_story 现无 seq、无账本）即 counterEvidence；删除回退方向由 test_a6_delete_does_not_rollback_seq 直接钉（存 3 删 1 -> total=2 且下一篇 seq=4）；test_a6_restart_survival 经 tighten-only §6 修订（纳入删除步 -> 现存 2 篇使账本续分配 4 与计数派生 3 可判别；见 notes §9.3/§9.7）——修订后该齿对标本 mutation **转红实测**（`3 != 4`），故仍列 expectedRed。追记（2026-09-24）：test_a6_rearchive_same_id_keeps_seq 实测在计数派生变异下偶然保绿（advisory），本次不收紧（范围帽）。"
+  }
+}
+```
+
+### 9.10 权威机判（冻结件已被 planner 提交为 v1 → `git diff -U0` vs HEAD 即权威口径）
+
+planner 已把 v1 冻结件提交（`b49309b`，`git show HEAD:… | sha256` = `61c0501742eda85c50a6c67b0ea399a12c8b273da56daee778e89eb3eb49cc26` = §9.7 之「前」值逐字）。故权威纯 additive 机判 = 工作树 vs HEAD：
+
+```
+$ git --no-pager diff -U0 -- server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+@@ -1115,0 +1116,10 @@ class M4K1LedgerAcceptance(unittest.TestCase):
+@@ -1117,0 +1128 @@ class M4K1LedgerAcceptance(unittest.TestCase):
+@@ -1260,0 +1272,23 @@ class M4K1ZeroOffsetGuard(unittest.TestCase):
+DELETED LINES = 0
+ADDED LINES   = 34
+```
+
+- 三个 hunk **全为 `+`**，`grep -c '^-[^-]'` = **0** → 本件第 1 项「删除行数 = 0」**字面成立**（无 EOF 正规化假象；REVISION LOG 块置于 `__main__` 之前、v1 末行逐字未动）。
+- 行级 `difflib.SequenceMatcher`（HEAD 正文 vs 工作树正文）opcodes = `equal`×3 + `insert`×3、**无 `delete` / `replace`** → 无既有行被删/改。
+- 交付形态 sha 链：`61c05017…`（v1 @HEAD）→ `1be76af9…`（正文态，去 REVISION LOG 块后复算）→ `5d4ebbf2…`（含 REVISION LOG 块之交付形态）。

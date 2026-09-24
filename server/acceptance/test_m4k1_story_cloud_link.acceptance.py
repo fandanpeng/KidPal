@@ -1113,8 +1113,19 @@ class M4K1LedgerAcceptance(unittest.TestCase):
         st = _story_module()
         with tempfile.TemporaryDirectory(prefix="m4k1_a6r_") as tmp:
             _seed(Path(tmp), 3)  # seq 1..3
+            # 修订（tighten-only §6，2026-09-24）：纳入删除步，使本齿真正考到 docstring 自陈
+            # 意图「不靠扫描回推（删除后会回退）」——seed 3 篇后删中间 1 篇 -> 现存 2 篇；
+            # 计数派生 = 3，账本续分配 = 4（原变异「去持久账本、按现存 MD 计数分配、不回写
+            # .seq.json」下本齿可判别：seed-only 无删除时两派生同为 4、不可判别）。
+            _del, _del_err = _story_attr("delete_story")
+            if not callable(_del):
+                self.fail("M4K1-A6 RED: " + (_del_err
+                          or "delete_story 非可调用（restart fixture 删除步前置）。"))
+            _before_restart = sorted(Path(tmp).glob("*.md"))
+            _del(str(tmp), _before_restart[1].stem)   # 删中间 1 篇（现存 2 篇）
             acc2 = st.StoryAccumulator(str(tmp))  # 模拟重启：新实例、同目录
             acc2.start("s-restart")
+            acc2.feed("s-restart", "重启后新篇")  # 非空累积（空累积 stop 依既有语义返 None）
             rec = acc2.stop("s-restart")
             self.assertIsNotNone(rec, "M4K1-A6 RED: 重启后 stop 未产归档。")
             self.assertEqual(
@@ -1258,6 +1269,29 @@ class M4K1ZeroOffsetGuard(unittest.TestCase):
                                  "M4K1-E1 RED: 近句环超 sentence_window —— 缓冲无界（内存红线）。")
 
 
+# --------------------------------------------------------------------------- #
+# REVISION LOG (冻结件修订记录；append-only —— 本块之前/之后均不得删除既有行)
+# --------------------------------------------------------------------------- #
+# [2026-09-24 · tighten-only（DEV-GOVERNANCE §6）· 同 Pod / 同件 / 不新建文件 · 范围帽内]
+#   Reason: `test_a6_restart_survival` fixture 缺陷（builder 实现期实证 + planner 第二方复核）
+#   ——原 fixture `start("s-restart")` 后缺 `feed()`，空累积下 `stop` 依既有冻结语义返 None
+#   （先例 = 已归档 story_p3 冻结件逐字断言 empty-stop -> None；本件 E1 齿断言空转写
+#   ValueError）→ `assertIsNotNone` 必红，与账本实现无关（两向皆红 = 齿不可满足）。
+#   修订 = 纯 additive 补 fixture：① 纳入删除步（seed 3 篇后删中间 1 篇 -> 现存 2 篇），使本齿
+#   真正考到 docstring 自陈意图「不靠扫描回推（删除后会回退）」；② 补一行 `feed` 使累积非空。
+#   **断言语义零改动**（`assertIsNotNone` + `seq == 4` 逐字不动）= 钉 M4K1-A6 原意图（账本存活 /
+#   续分配）；无新 acceptance id、未改行为定义 ⇒ 非 re-spec。
+#   原变异重放（= taskpackage mutationEvidence 的 A6 条 mutation：去持久账本、按现存 MD 计数
+#   分配、不回写 .seq.json）= 运行期扰动 `story._assign_seq` -> 本齿转红（`3 != 4`，原始输出见
+#   server/acceptance/M4K1-ACCEPTANCE-NOTES.md §9）；还原复绿。修订前 fixture 若仅补 `feed` 而
+#   无删除步，该变异下账本派生与计数派生同为 4、不可判别 —— 故删除步为达标本件之必要形态。
+#   机判纯 additive: `git diff -U0`（HEAD v1 -> 本修订）**删除行数 = 0**（全 hunk 皆 `+`）。
+#   sha256 核销: 61c0501742eda85c50a6c67b0ea399a12c8b273da56daee778e89eb3eb49cc26 → 1be76af9f3f1076987f44caeb8334688019fae8a191eead57bf62de04a57c2a8
+#   （「后」= 修订后**正文态** sha256（不含本 REVISION LOG 块；去块后复算即得，逐字可验）；
+#    含本块之交付形态最终 sha256 另记于 notes §9.7 —— 块内置自身之 sha 自指不可解，据实分记。）
+# 本块刻意置于 `if __name__ == "__main__":` **之前**（非文件尾）——使 v1 末行保持逐字不变，
+# 纯 additive 机判无 EOF 换行正规化假象（删除行数真为 0）。
+# --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()

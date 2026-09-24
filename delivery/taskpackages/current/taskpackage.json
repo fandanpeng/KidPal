@@ -142,15 +142,17 @@
         "acceptanceId": "M4K1-A5: 收尾与超时齿——累积态收尾词机械检测（stt 文本扫描「我说完了」/「讲完啦」→ stop 归档，仅累积态消费、问答会话零影响）+ 120s 无语音自动收尾归档（front 侧计时、走正常盖章流程不丢弃——requirements §2.1 录音态超时口径）+ BOOT 丢弃路径（设备 listen-stop 前 cancel 语义 / 「讲错啦」V31 回退既有）零偏移核对",
         "sensitive": true,
         "mutation": "AUTO_STOP_SECONDS 改 999 / 移除 is_finish_phrase / 移除累积态 stt 命中收尾词触发 stop 归档",
-        "expectedRed": "test_a5_finish_phrase_detection / test_a5_finish_phrase_triggers_stop_in_accumulate_only / test_a5_timeout_120s_decision / test_a5_front_wiring_references_timeout_decision",
-        "note": "设计态红（is_finish_phrase / timed_out_sessions / AUTO_STOP_SECONDS 均不在位）即 counterEvidence；**120s 前端计时循环接线 offline 不可验**（仅源锚代理证 front 引用该决策），行为等价假设显式化、live 归 M4-K3。"
+        "expectedRed": "test_a5_finish_phrase_detection / test_a5_finish_phrase_triggers_stop_in_accumulate_only / test_a5_timeout_120s_decision",
+        "expectedRed_notSensitive_advisory": "test_a5_front_wiring_references_timeout_decision（源锚代理齿，文本子串判据、docstring 提及即满足 → 对实现变异不敏感；本次不收紧，范围帽）",
+        "note": "设计态红（is_finish_phrase / timed_out_sessions / AUTO_STOP_SECONDS 均不在位）即 counterEvidence；追记（2026-09-24 tighten-only §6 批次）：expectedRed 中 test_a5_front_wiring_references_timeout_decision 实测对实现变异不敏感（源锚代理齿），本次不收紧齿（范围帽），收紧评估归 loop-retro 素材；**120s 前端计时循环接线 offline 不可验**（仅源锚代理证 front 引用该决策），行为等价假设显式化、live 归 M4-K3。"
       },
       {
         "acceptanceId": "M4K1-A6: 流水号账本齿——入册流水号持久账本（归档分配 seq=max+1、删除不回退、front 重启存活——stories 目录账本文件形态归 plan.md 取舍点）+ story_text.data.seq 下发（契约冻结形状，additive）+ story_list.data.total=现存篇数口径分离（两数各自独立断言：存 3 删 1 → total=2 且下一篇 seq=4）",
         "sensitive": true,
         "mutation": "移除 seq 持久账本（每次从现存 MD 计数分配 seq，不回写 .seq.json）",
-        "expectedRed": "test_a6_archive_assigns_persistent_monotonic_seq / test_a6_rearchive_same_id_keeps_seq / test_a6_restart_survival / test_a6_delete_does_not_rollback_seq / test_a6_ledger_missing_rebuilds_without_rollback",
-        "note": "设计态红（archive_story 现无 seq、无账本）即 counterEvidence；删除回退方向由 test_a6_delete_does_not_rollback_seq 直接钉（存 3 删 1 -> total=2 且下一篇 seq=4）。"
+        "expectedRed": "test_a6_archive_assigns_persistent_monotonic_seq / test_a6_restart_survival / test_a6_delete_does_not_rollback_seq / test_a6_ledger_missing_rebuilds_without_rollback",
+        "expectedRed_notSensitive_advisory": "test_a6_rearchive_same_id_keeps_seq（计数派生变异下偶然保绿——同 id 重写计数派生亦不涨；本次不收紧，范围帽）",
+        "note": "设计态红（archive_story 现无 seq、无账本）即 counterEvidence；删除回退方向由 test_a6_delete_does_not_rollback_seq 直接钉（存 3 删 1 -> total=2 且下一篇 seq=4）；test_a6_restart_survival 经 tighten-only §6 修订（纳入删除步 -> 现存 2 篇使账本续分配 4 与计数派生 3 可判别；见 notes §9.3/§9.7）——修订后该齿对标本 mutation **转红实测**（`3 != 4`），故仍列 expectedRed。追记（2026-09-24）：test_a6_rearchive_same_id_keeps_seq 实测在计数派生变异下偶然保绿（advisory），本次不收紧（范围帽）。"
       }
     ]
   },
@@ -171,7 +173,7 @@
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。重叠面核查：story_p3 旧冻结验收双侧已 archive 退役（server/acceptance/archive/test_story_p3.acceptance.py + test_story_wiring.acceptance.py），本包新建齿不走 supersede；prompt 面零触碰（v7 bump 归 K3——「帮我记下来」第二指令现役 v6 零命中已核）。StoryAccumulator 既有语义（start/feed/stop/cancel/redo/recover V31 四回退）零偏移、增量扩展；收尾词检测先查 routing 现状（若已有语义零偏移复用，D5）。OpenClaw 本体（ECS）不在本包改架构——删除/推送/拦截全在 front 机械面（零自研业务逻辑红线：story.py 归档语义既有，增量 = delete/seq 账本/推送接线）。取舍点（删除载体甲乙丙 / seq 账本形态 / 120s 归属 / 推送触发）见 plan.md。 契约预审记录（2026-09-24 architect-reviewer）：NEEDS_REVISION——修订清单 7 项全落 CCP v2（分类拆标 / Scope 补 story.py 三钉行+§1.6+节标题+display_schema 失真修正 / 16-cap 口径纳入 / Impact 撤双源断言+补 v6 钉行清单+旧板端盖章面注 / Alternatives 补可靠性 / Human Question 五问扩十问 / 收口义务补人工 diff 核对清单）；漏问点 1–7 关键主张已对磁盘逐条核实（KSTORY_LIST_MAX=16 story_page.h:40、stamp_index=counter+1 story_page.c:1071、story.py:12-13/:181-183/:211 钉行、v6:75-76/:153-155/:271-273 产块指令、display_schema 仅 schedule floor、§1.6 无 story 段——全属实）。",
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。重叠面核查：story_p3 旧冻结验收双侧已 archive 退役（server/acceptance/archive/test_story_p3.acceptance.py + test_story_wiring.acceptance.py），本包新建齿不走 supersede；prompt 面零触碰（v7 bump 归 K3——「帮我记下来」第二指令现役 v6 零命中已核）。StoryAccumulator 既有语义（start/feed/stop/cancel/redo/recover V31 四回退）零偏移、增量扩展；收尾词检测先查 routing 现状（若已有语义零偏移复用，D5）。OpenClaw 本体（ECS）不在本包改架构——删除/推送/拦截全在 front 机械面（零自研业务逻辑红线：story.py 归档语义既有，增量 = delete/seq 账本/推送接线）。取舍点（删除载体甲乙丙 / seq 账本形态 / 120s 归属 / 推送触发）见 plan.md。 契约预审记录（2026-09-24 architect-reviewer）：NEEDS_REVISION——修订清单 7 项全落 CCP v2（分类拆标 / Scope 补 story.py 三钉行+§1.6+节标题+display_schema 失真修正 / 16-cap 口径纳入 / Impact 撤双源断言+补 v6 钉行清单+旧板端盖章面注 / Alternatives 补可靠性 / Human Question 五问扩十问 / 收口义务补人工 diff 核对清单）；漏问点 1–7 关键主张已对磁盘逐条核实（KSTORY_LIST_MAX=16 story_page.h:40、stamp_index=counter+1 story_page.c:1071、story.py:12-13/:181-183/:211 钉行、v6:75-76/:153-155/:271-273 产块指令、display_schema 仅 schedule floor、§1.6 无 story 段——全属实）。 tighten-only §6 修订（2026-09-24）：test_a6_restart_survival fixture 缺陷修复（纯 additive 0 删除行；原变异重放转红 3!=4；sha256 链 61c05017…→正文态 1be76af9…→交付形态 5d4ebbf2…，核销记冻结件 REVISION LOG + notes §9.7，本仓首例）；mutationEvidence A5/A6 按 builder 重放实测更正（expectedRed 多声明 2 条移出至 advisory 字段）；修订后全套 offline 182 passed / 0 failed / 4 deselected（acceptance-author + planner 双复核）。",
   "docsOwner": "integrator",
   "launchPreconditions": null
 }
