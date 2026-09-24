@@ -45,6 +45,8 @@ node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-re
 
 blocking 非空即停——回 portfolio-planner 补 commit，不绕过。
 
+**settings 合法性机检（260924-gov-review-settings-deny-contract-merge T2）**：`node .claude/scripts/settings-lint.mjs`——扫 settings 族 permissions 规则的已知无效形态（`Write(path)` 文件权限规则被现行 CLI 判非法：零执行力且硬阻塞 headless launch exit 4，ARQ-260924 实证）。RED 即停、先修 settings 再走后续步骤（判停口径与 check-launch blocking 同）；CLI auto-update 常开，本机检是版本漂移的 launch 面前置防线。本机检在 launch 前静态校验 settings 文件内容，不依赖 CLI 各 launch 形态的行为差异，启动卡命令行①②两形态均覆盖（CLI 侧报错打印发生在 settings 加载期——2026-09-24 冒烟实证于 `-p` 无旗标与非 TTY 两形态；真交互 TTY 形态未测，见 ARQ-260924 追注）。
+
 **「上游已知红」计数（260909-gov-review-gate-truthfulness T5 + 260915-gov-review-worktree-pool-reuse T3 锚点/差异判停协议）**：机械来源 = 现跑命令**或带锚引用既有实测**，禁手写散文（存量反例：`260829-story-p3/taskpackage.json` 的 knownRedFloor 手写段）。闸已按条目级两态真跑（`-m "not live"`），launch 前在**仓根**跑：
 
 ```

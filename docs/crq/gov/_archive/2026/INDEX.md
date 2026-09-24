@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 68 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 70 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -77,5 +77,7 @@
 | [ARQ-260923-schedule-grid-restore-gate](ARQ-260923-schedule-grid-restore-gate.md) | `data.restore` 生产纪律运行时闸真空——LLM 幻觉直产带 restore 的完整网格可过 shape floor 静默填缓存，处置分歧（机械闸 vs ADR-005 残余风险记录）adjudicator 判 DEADLOCK 待 human 拍板 | 2026-09-23 | human 裁 accept-as-risk 2026-09-23（docs/ADR.md ADR-005 残余风险段）+ 契约门同日批准 §1.3②；delivery/changes/arch/260923-arch-review-schedule-grid-cold-boot/ |
 | [ARQ-260922-buildfeature-launch-prep-skip](ARQ-260922-buildfeature-launch-prep-skip.md) | `/build-feature` 直启路径不触发 launch-prep——DEV-GOVERNANCE §4 图的 ② launch 面准备阶段（`--check-launch` 门 / worktree 等价化 / 专属图索引 / 已知红基线锚 / 启动卡 / board 预填）在 changeId 直启形状下整段被绕过 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T1（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
 | [ARQ-260922-pod-requirements-not-authority](ARQ-260922-pod-requirements-not-authority.md) | Pod 不先读 requirements story 原文与 AC 就把已定项当开放问题问 human——需求已写明的行为仍给替代推荐让 human 拍板，需求权威被「human 临场偏好」静默替代 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T2（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
+| [ARQ-260923-contract-merge-deadpath](ARQ-260923-contract-merge-deadpath.md) | 契约面 diff 的 merge-driver 机械路径整条封死——升级闸契约门证据硬编码 false 恒 BLOCK，契约包只能现场即兴人合，既无机械消解路径也无成文人合 runbook | 2026-09-24 | 260924-gov-review-settings-deny-contract-merge T3（OQ-3=(a) ②最小改道 runbook，human 裁定 2026-09-24；建议① 接证据留根带量化触发器 → pod-coordination §10e 边界与留根段） |
 | [ARQ-260923-dispatch-oversight-uncodified](ARQ-260923-dispatch-oversight-uncodified.md) | 「派发书过目门」口径未成文——planner 每棒靠解释 human 一句口头授权判断是否免过目，两棒如实标注「这是我的解释、可能超出授权」；human 2026-09-23 明确裁定：不用每次都请示 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T4（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
 | [ARQ-260923-dispatch-prompt-hard-terms](ARQ-260923-dispatch-prompt-hard-terms.md) | 派发书模板缺三条硬约定——子代理 Write 被拦的回执姿势 / scope 写权前置核对 / mutation 执行证据落盘责任人——全活在各棒 retro 的「下次改进」里、每棒重学一遍 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T3（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
+| [ARQ-260924-settings-write-deny-rule-cli-drift](ARQ-260924-settings-write-deny-rule-cli-drift.md) | `.claude/dev-loop.settings.json` + `.claude/review-loop.settings.json` 的 `Write(./docs/contracts/**)` deny 规则被现行 CLI 判非法并**硬阻塞 launch**（exit 4）——CLI settings 校验新口径：文件权限检查只认 `Edit(path)` 规则（Edit 规则覆盖所有文件编辑工具），`Write(path)` 规则不再被匹配 | 2026-09-24 | 260924-gov-review-settings-deny-contract-merge T1+T2（OQ-1=(a) 删两行 + OQ-2=(a) 静态 lint 接线 launch-prep，human 裁定 2026-09-24） |

@@ -1274,6 +1274,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
     } catch (err) {
       const out = `${err.stdout || ''}${err.stderr || ''}`;
       warn(`${changeId}: escalation gate BLOCK:\n${out.split('\n').slice(-12).join('\n')}`);
+      if (out.includes('docs/contracts/** diff 且同批无契约门证据')) warn(`${changeId}: 契约面 BLOCK——无机械放行口，人合走 .claude/references/pod-coordination.md §10e 契约包人合 runbook（四步：预检/批准事件落账/ff 选定/簿记等价代记）`);
       setPod(projectDir, { changeId, status: 'blocked' });
       return false;
     }

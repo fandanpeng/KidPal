@@ -261,7 +261,7 @@ export function evaluate(ctx) {
 
   // 通用 1：contracts diff 无契约门证据
   if (ctx.contractsDiff && !ctx.hasContractGateEvidence) {
-    push('docs/contracts/** diff 且同批无契约门证据（契约面人签字制不动）');
+    push('docs/contracts/** diff 且同批无契约门证据（契约面人签字制不动）——契约包人合 runbook：.claude/references/pod-coordination.md §10e（预检/批准事件落账/ff 选定/簿记等价代记四步）');
   }
 
   // 通用 3：escalation 未 resolve / blocked（blocked 仅在人批豁免成立时视同 resolve，OQ2=(a)）
