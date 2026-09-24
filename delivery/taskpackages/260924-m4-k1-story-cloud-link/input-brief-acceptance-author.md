@@ -2,8 +2,7 @@
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-24T09:59:26.225Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> regenerated-because: 门1 F1/F3/F4/F5/F7 findings 吸收后 taskpackage 修订再生成（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
+> generated-at: 2026-09-24T11:53:23.198Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
 > 来源 TaskPackage: `delivery/taskpackages/260924-m4-k1-story-cloud-link/taskpackage.json` · subsystem: server · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
@@ -12,7 +11,7 @@
 |---|---|---|---|---|
 | `docs/contracts/interface-contract.md` | `§1.3③` | （未定位到标题节） | — | not-found |
 | `docs/contracts/interface-contract.md` | `§1.3④` | （未定位到标题节） | — | not-found |
-| `docs/contracts/interface-contract.md` | `§四` | 四、端云协议剖面（小智协议消息子集，2026-09-03 新增，方向 B） | 251 | ok |
+| `docs/contracts/interface-contract.md` | `§四` | 四、端云协议剖面（小智协议消息子集，2026-09-03 新增，方向 B） | 258 | ok |
 | `docs/requirements.md` | `F2` | F2 星星记录（原「故事记录」，2026-09-14 改名） | 320 | ok |
 | `docs/architecture.md` | `§5.2` | 5.2 运行视图（关键场景端到端） | 203 | ok |
 | `docs/architecture.md` | `§5.4` | 5.4 数据视图（谁拥有、存哪、活多久） | 254 | ok |
