@@ -10,7 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260924-gov-review-settings-deny-contract-merge](260924-gov-review-settings-deny-contract-merge/) | 2026-09-24 | landed | — |
+| [260924-gov-review-settings-deny-contract-merge](260924-gov-review-settings-deny-contract-merge/) | 2026-09-24 | landed | yes |
 | [260924-gov-review-planner-orchestration-align](260924-gov-review-planner-orchestration-align/) | 2026-09-24 | landed | yes |
 | [260924-arch-review-perf-k1-roundtrip-latency](260924-arch-review-perf-k1-roundtrip-latency/) | 2026-09-24 | draft | — |
 | [260923-arch-review-graph-index-name-errata](260923-arch-review-graph-index-name-errata/) | 2026-09-23 | frozen | yes |
