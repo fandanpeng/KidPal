@@ -47,3 +47,22 @@
 - **随包收口义务同批完成**：story.py 三处钉行更新（doc 零行为——pytest `134 passed / 4 deselected / 0 failed` 实证）；CDQ 三行登记（CDQ-260924-m4-k1-storylist-semantics / -storytext-seq / -story-delete，均 LANDED）；ADR-007 追加（seq 账本 + 16 条窗口丙案〔含 Q2 改判备选记录〕+ 删除单向消息/隐式 ack + 单源收紧，ADR-005 边界逐字对齐）；gate evidence 九节落盘（`architecture-gate-evidence.md`，条件 C1–C5 挂 K1/K2/K3）；evidence 四样本（`evidence/validate-display-samples.md`：S1–S3 正 + S4 delete 伪装 display 负样本白名单拒绝；如实注记 Q8 floor 归 C1 未实现）；人工 diff 逐字核对清单过（pass-oracle 第 4 关降级如实记录，ARQ-260827 在册）。
 - **LP1 → verified**（decision-coverage 落账）；**LP2 verified**（门 1 GREEN + human 过目切法）；LP3 = 拆包 commit f05684d + base/m4-star-notebook（rebase 后常驻分支 = main + ops-record c325e89 + 拆包 f05684d + 派生再生 fd67c18）——本落地 commit 为其后继，K1 intake 应将契约 diff 计入基线（M3 同款注记：redBaseline 面无行为变化）。
 - **待办**：K1 launch prep（check-launch / launch-card / 图索引新鲜度 / 环境等价化 / 基线重锚注记）→ launch 由 human 执行；arch §5.2④/§5.4/§5.1.2/§7①②④收口 = K1 integrator docs-sync（C4），不在本批。
+
+## 2026-09-24 · launch 面就绪（本批 = 单包 K1）
+
+**调度判定**：本批 = 单包 K1（mergeOrder 38）。依赖图说了算——K2 dependsOn [K1]、K3 dependsOn [K1,K2] 均未就绪；无 running Pod、mergeToken holder=none。常驻树串行接力续棒（上一棒 m3-k7 已 merged 收口 9-23、pod 态陈旧已翻正；perf-k1 走专树已 merged），同树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`、常驻分支 `dev/260915-m1-k1a-key-layer-dispatch`（rebase 同步 main 完毕：behind 8 清零，链 = main 5cf067f + ops-record c325e89 + 拆包 f05684d + 派生 fd67c18 + 契约落地 5e862d0）。
+
+**commit-before-launch（F-03/F-05）**：拆包制品 commit f05684d、专用 base ref = `base/m4-star-notebook`；契约落地批 5e862d0 与本 launch-prep 批为其后继，base ref 随本批快进（仍含全部拆包制品；check-launch 的 launchPreconditions 读侧 = base 上 decision-coverage，故 LP 形状修正〔canonical {text,scope,status,evidence}，260921 T6 形态〕须 commit 后机械门才见——修正前首跑 ok:true 但 LP summary 读旧形 5 pending，修正后复核 5 verified + LP4 属 K3 折叠）。
+
+**上游已知红基线（260909 T5 机械来源口径，本树现跑 @ 5e862d0，2026-09-24）**：
+- **server 面**：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **80 passed / 0 failed / 4 deselected**（面域 = server；全套 offline 含 server/tests = 134 passed / 0 failed 同日佐证。锚 SHA = 5e862d0）。零红。
+- **firmware host 面**：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash <repo>/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **103 Tests / 0 Failures / 0 Ignored，exit 0**（面域 = firmware；与 m3-k7 期 103 锚零偏移——契约落地批 firmware 零触碰实证。锚 SHA = 5e862d0）。零红。
+- Pod intake 按 260915 T3 差异判停协议消费本段：`git diff --quiet 5e862d0 HEAD -- server/`（或 `-- firmware/`）零差异 → 引用本行不重跑；有差异 → 同命令重跑该面。
+
+**环境事实**：图索引复用树既有项目 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`（index_status ready，18040 nodes / 48690 edges，skipped 0，随树 watcher 增量自刷新）；固件环境等价化沿用树内既有 sdkconfig / dependencies.lock / managed_components 软链（host 构建刚实证 103T/0F，跳过重建）；board worktreePath 已预填本树（--set-pod queued + reconcile 43 pods）。
+
+**launch 启动卡**：已落 `delivery/taskpackages/260924-m4-k1-story-cloud-link/launch-card.md`（五要素齐；含 intake 特别注意 = 契约已先行落地、Q7/Q8 执行面归本包 C1）。双 input-brief 在场核过（拆包侧产、launch 侧核，F1/F3–F7 吸收后已再生成 0 warnings）。
+
+**launchPreconditions 回写**（launch 执行者核验）：LP1 verified（CCP §5 + gate evidence + 5e862d0）；LP2 verified（review.md 门 1 GREEN + human 过目 2026-09-24）；LP3 verified（base/m4-star-notebook，本段 commit-before-launch 注记）；LP4 = K3 真机面 unverified 保持（K3 launch 前再核）；LP5 verified（v7 槽位空闲 / archive 双侧在案 / 层栈 append-only 授权 / 回归靶声明）；LP6 verified（index_status ready 本段）。
+
+**遗留 human 项**：launch 由 human 执行（交互会话形态默认）——本 skill 不代跑 launch，命令行两形态见启动卡第五要素。milestones.jsonl M4 行 state planning→in_delivery 建议随 launch 同笔落账（注册表纪律 state 归 human/integrator 维护，拆包侧未代翻）。

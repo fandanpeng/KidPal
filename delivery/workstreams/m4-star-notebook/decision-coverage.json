@@ -252,40 +252,40 @@
   ],
   "launchPreconditions": [
     {
-      "id": "LP1",
+      "text": "LP1 契约门先行（package:K1）：CCP v2（delivery/taskpackages/260924-m4-k1-story-cloud-link/CONTRACT-CHANGE-PACKET.md）经 architect-reviewer 四分类预审（①漂移 / ②a②b 拆分 / ③独立变更，§0 裁定表）+ human 契约门十问裁定（2026-09-24，Q2 改判丙案、余九问拟答，§5 逐字）后 K1 方可 launch；契约 diff 已随落地批同 PR 形态落盘（逐字 patch human 过目批「落」→ git apply），gate evidence 九节 + CDQ 三行 LANDED + ADR-007 + evidence 四样本同批收口（C1–C5 实现面条件随 K1/K2/K3 dev-loop 收口）。",
       "scope": "package:260924-m4-k1-story-cloud-link",
-      "condition": "契约门 HUMAN_APPROVED：CCP v2（K1 包目录，四分类预审 2026-09-24 已跑 NEEDS_REVISION→v2 修订并入）经 human 契约门裁十问；契约 diff 随 K1 同 PR 落地；gate evidence 十节骨架随包收口（含 CDQ 三行 + ADR 追加 + 契约变更记录行 + 人工 diff 核对清单）。",
-      "status": "verified（2026-09-24：十问 HUMAN_APPROVED = CCP §5 + 逐字 patch human 过目批「落」+ git apply cleanly 两文件 + CDQ 三行 LANDED + ADR-007 + gate evidence 九节落盘〔evidence/validate-display-samples.md 四样本 + pytest 134 passed〕；余 C1–C5 实现面条件随 K1/K2/K3 dev-loop 收口）"
+      "status": "verified",
+      "evidence": "CCP §5 Human Ruling + architecture-gate-evidence.md §4/§7 + landing commit 5e862d0（2026-09-24）"
     },
     {
-      "id": "LP2",
+      "text": "LP2 门 1 GREEN + human 过目切法：architect 轻量 checklist review 五项全过（首轮 GREEN，F1–F9 同日吸收）+ human 认可三包拆法（AskUserQuestion 2026-09-24）。",
       "scope": "workstream",
-      "condition": "门 1（architect 轻量 checklist）GREEN + human 过目切法（三包拆法 + mergeOrder 38/39/40 + D1~D8 取舍点）。",
-      "status": "verified（门 1 GREEN 2026-09-24 review.md 在案 + human 过目切法认可三包拆法同日）"
+      "status": "verified",
+      "evidence": "review.md 门 1 节 + human 两判断点落定节（2026-09-24）"
     },
     {
-      "id": "LP3",
+      "text": "LP3 commit-before-launch（F-03/F-05）：拆包制品（workstream 四件 + 三包 taskpackage/plan/双 brief + roadmap 渲染 + milestones planningRefs 挂接）commit 到常驻分支并打专用 base ref（非 main）；常驻分支先同步 main（rebase，behind 8 清零）。",
       "scope": "workstream",
-      "condition": "commit-before-launch：常驻分支 dev/260915-m1-k1a-key-layer-dispatch 先同步 main（拆包时 behind 8），拆包产物 commit + base/m4-star-notebook ref（M3 base/m3-schedule 先例）。",
-      "status": "pending"
+      "status": "verified",
+      "evidence": "base/m4-star-notebook @ f05684d（rebase 后拆包 commit；派生再生 fd67c18 与契约落地批 5e862d0 为其后继，K1 intake 将契约 diff 计入基线——M3 同款注记）"
     },
     {
-      "id": "LP4",
+      "text": "LP4 K3 真机硬依赖：K3 launch 前核对单真机不撞车 + live 确认轮 human 在场持板（三源取证纪律）；K1/K2 host 半 merged 在案。",
       "scope": "package:260924-m4-k3-record-session-live",
-      "condition": "真机硬依赖：K3 launch 前核对单真机不撞车 + live 确认轮 human 在场持板（串口 + front/引擎日志三源取证纪律）；K1/K2 host 半 merged 在案。",
-      "status": "pending"
+      "status": "unverified",
+      "evidence": ""
     },
     {
-      "id": "LP5",
+      "text": "LP5 冻结面与槽位：prompt v7 槽位空闲（server/deploy 现役 v1–v6，无 v7）+ story_p3 archive 双侧在案（板 test/acceptance/archive/story_p3.acceptance.c + 云 server/acceptance/archive/test_story_p3.acceptance.py / test_story_wiring.acceptance.py）+ kidpal_layer.h append-only 授权（头注「插入+上移符号级安全」）+ key_layer_dispatch.acceptance.c 回归靶声明在 K2 plan 铁律。",
       "scope": "workstream",
-      "condition": "冻结面与槽位：prompt v7 槽位空闲复核 + story_p3 archive 双侧在案 + kidpal_layer.h append-only 授权引用 + key_layer_dispatch.acceptance.c 回归靶声明。",
-      "status": "pending"
+      "status": "verified",
+      "evidence": "门 1 附带实证（review.md 抽查节：deploy 仅 v1–v6 / archive 双侧在盘 / 层栈六值+STACK_MAX=8）+ 2026-09-24 launch prep 复核"
     },
     {
-      "id": "LP6",
+      "text": "LP6 图索引：worktree 专属项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册且新鲜（launch prep index_status 复核；复用树沿用既有项目名，ARQ-260905 worktree 粒度规则）。",
       "scope": "workstream",
-      "condition": "图索引：worktree 专属项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册且新鲜（launch prep 复核，index_status）。",
-      "status": "pending"
+      "status": "verified",
+      "evidence": "index_status 2026-09-24：C-AI-KidPal-pod-m1-k1a-key-layer-dispatch status=ready，18040 nodes / 48690 edges，skipped 0（parse_partial = best-effort 已知信号，随树 watcher 增量自刷新；复用树沿用既有项目名，ARQ-260905）"
     }
   ]
 }
