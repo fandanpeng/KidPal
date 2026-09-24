@@ -166,3 +166,39 @@ sessions 批后计数 **529**(511+18,与两批探针数吻合;store 膨胀速率
 - **mutation 实测**(notes §6 原始输出):GREEN 对照组(合法 B/A 声明 = 0 violation)+ 6 条接线 mutation 全转红(M1 删声明文件 / M2 thinking 值改 `high` / M3 删 allow 条目 / M4 `reasoning` 翻真 / M5 两轴混声明 / M6 改错 model id);另以 tempdir 下的**临时参考实现**反证 apply/rollback 四条行为齿非空过、契约可实现(含「摘掉 drift-guard 循环 → mismatch 场景 rc 由 3 变 0 → 该齿转红」的 counterEvidence)。
 - **冻结契约五件**(builder 须实现,路径以齿文件头注 FROZEN OFFLINE CONTRACT 为准):`server/deploy/perf-k1/openclaw-model-declaration.json`(JSON,`case ∈ {B,A}`)+ `apply_model_declaration.py` + `rollback_model_declaration.py` + probe_gate 纯判定器 + probe_batch live 执行器。
 - **planner 裁决留痕**(acceptance-author 提的 5 条歧义):① 写边界拦截未绕行,`redBaselineResult` 与本节由 planner 代落;② apply/rollback 取 **Python 载体**——任务书「照抄 STOP-on-mismatch 形态」按**行为形制**解读(拒绝 + exit 3),形制逐字保留,语言差异非偏离;③ live 面取 **evidence-read、不做 SSH**,真机发 HTTP 的探针批执行器归 builder/verifier live 相位;④ A 案 allow 不钉全集精确相等(避免过度脆性);⑤ 声明工件取 JSON(零依赖 stdlib,K3 先例读 YAML 亦走 regex)。
+
+## 12. P1 落地(B 案 thinking-off)+ 三段归因探针批(builder,2026-09-24 11:00~11:30 CST,append)
+
+> 执行人 = builder(池树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`,分支内容 == `aa5ec4b`)。设备本轮不碰(A3 真机轮 = human 持板)。原始运行证据仓外暂存 `C:/tmp/perf-k1-run/`。
+> **落位机制(如实记)**:builder 的机器写边界不含 `delivery/taskpackages/**`(同 acceptance-author),故 8 个批次 JSON 由 planner 自仓外暂存**逐字节 `cp`** 落进本目录 `evidence/probe-batches/`(逐件 sha256 源/目标比对全等),不手抄以免证据污染。
+
+- **五件冻结工件落仓** `server/deploy/perf-k1/`(声明 / 幂等 apply / 回滚 / 纯判定器 `probe_gate` / live 执行器 `probe_batch`);`python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/` = **80 passed / 4 deselected**(红基线 18 failed / 62 passed → **18 条设计态红全转绿**,5 条 must-stay-green 与既有 57 条保持绿)。
+- **步④**:B 案声明 `change={thinkingDefault:"off"}`,drift_guard 锚 `agents.defaults.thinkingDefault` == `"unset"`(§8.1 CLI 真值);apply 经幂等脚本(**不手改**)11:14:50 落 `/root/.openclaw/openclaw.json`,写前时间戳备份 `openclaw.json.bak-perf-k1-20260924T031450`;`openclaw backup create` → `/root/2026-09-24T11-14-24.686+08-00-openclaw-backup.tar.gz`。二次 apply 幂等 `SKIP` rc=0。
+- **配置热加载(新实证)**:11:14:51 网关日志逐字 `[reload] config change detected; evaluating reload (agents.defaults.thinkingDefault)` → `[reload] config hot reload applied`——**改 thinking 档无需重启 gateway**(进程启动时刻仍 08:12:37 = P0 那次);故 P1 段无重启混淆因子。
+- **步⑤ B 案裁决**:内联 `/think:off`(不改配置)**未见效**(课表仍 10.49s);**配置档 `thinking=off` 才是真杠杆**(课表 10.7→5.3s)。`thinking=low` 实测 ≈ 无收益(课表 11.87s)→ 取 `off`。timebox 用约 16 分钟。
+- **三段归因(各题 N=3 中位;a1 保底 6/9/14、目标 4/6/10)**:
+
+  | 段 | 闲聊 | 课表 | 天气 | 保底 | 目标 | 备注 |
+  |---|---|---|---|---|---|---|
+  | 当晚基线重测(§7.2) | 13.42 | 11.43 | 9.54 | ✗ | ✗ | 重建自 §7.2(见下「重建件」) |
+  | P0 重启后(§7.4) | 6.64 | 11.21 | 11.68 | ✗ | ✗ | 重建自 §7.4(见下「重建件」) |
+  | **P0 后 / P1 对照锚(实跑)** | 4.492 | 10.707 | 8.773 | ✗ | ✗ | `pre-p1-post-p0` |
+  | **P1 后(实跑,权威)** | **4.135** | **5.369** | **8.054** | **✓** | ✗ | `post-p1-b-final` |
+  | P1 后(实跑,批 2) | 4.784 | 5.992 | 9.553 | ✓ | ✗ | `post-p1-b-batch2` |
+  | P1 后(实跑,`low` 档对照) | 5.4 | 11.868 | 9.951 | ✗ | ✗ | `post-p1-b-low` |
+
+  **B(off) 三批保底门全绿**(课表 5.27~5.99、天气 5.97~9.55、闲聊 4.14~4.78);**目标门课表与天气达标、闲聊差 0.1~0.8s**(接近未达,归 k2 立项依据)。`prompt_sha256` 恒 = `425d293d…cc62`(ECS 渲染件 == 仓内 v6 逐字同一,D1「渲染面 == 被测面」实锚成立)。
+- **五项核验(改配置后复跑)全绿**:① cron `kidpal-reminder-plan` 在册、Next 正常;② qqbot 11:13:18 `READY`(重启/改配置后重连);③ 18789 锁 `127.0.0.1` + `[::1]`(V28);④ char-stroke dist marker `KidPal C1` 在位;⑤ 引擎 → 18789 HTTP 401(端点可达,需 auth)。
+- **步⑦/⑧**:`openclaw backup create`(11:27:55)后 `sessions archive` 63 个探针新建会话(**软操作,store 行数未变**);`docker restart xiaozhi-esp32-server`(11:29)→ 引擎重起,llm/intent/memory/vad/asr 全初始化成功(给晨间 A3 干净起点)。**步⑦「仅测量面仪表化」未执行**——触发条件均未成立(A1 保底**已绿**;网关日志不暴露 preflight 字段,只有上游 POST `elapsedMs=133~339ms`;slow SQLite 3h 内 3 次且 11:05/11:08 两次紧贴探针批,**属探针自污染**,已随 archive 消解)。**如实记「未做 + 原因」,不自裁为达标。**
+- **A2 质量门(display 块出现率 + schema 合法率 100%)P1 前后均不达标**:pre-P1 出现率 0.444、post-P1 0.222~0.444。根因 = 既存 **v6 遵循度 / 「David」人设渗漏**——实测泄漏形态含「你好呀,David」称呼、工具前导 `I'll check the schedule file`、内部注释 `<!-- project: path:/root/.openclaw/workspace -->`、以及 v6 明禁的 `<details>` HTML 明细块。**非 P1 引入**(带 v6 的基线探针同样复现,与 §7.5-1/§7.5-4 一致)。
+- **k2 输入(workspace 注入清单,cheap 版)**:`AGENTS.md` 9795B / **`DREAMS.md` 42117B** / `SOUL.md` 1806B / `TOOLS.md` 920B / `IDENTITY.md` 273B / `HEARTBEAT.md` 226B / `USER.md` 191B / `kidpal/brain-spec.md` 5502B / `kidpal/schedule.md` 1285B;且 **`tools.profile = "coding"`**——解释了编码助手人设与「David」语境的渗漏来源。
+- **重建件标注(勿当原始采样读)**:`night-baseline-remeasure.json` 与 `post-p0-restart.json` 的 `_provenance.reconstructed = true`——总耗时样本逐字取自 §7.2/§7.4 记载,**原始回复正文未留存**,reply 字段为按证据记载的 display 命中情况重建的占位文本。它们的用途 = 三段归因对照锚,不构成新采样证据。
+- **现状(留给晨间)**:live = v4-flash + `thinkingDefault: off`(模型未换);引擎已重启(干净起点);探针会话已 archive;回滚 = `rollback_model_declaration.py --config /root/.openclaw/openclaw.json`(最新备份 `…bak-perf-k1-20260924T032223`)。
+
+### 12.1 planner 裁决留痕(builder 提的 5 条歧义)
+
+1. **A2 破线 + 回滚线冲突 → 暂留 B 已应用,作最高优先晨间决策点上浮 human**。裁据两条:① plan.md A2 的回滚触发线原文为「**切 A 后**任一批 display 块合法率 <100% → 当晚回滚」,而 human B2 裁定明写「A2 照 plan.md **原文**执行」——故该触发线是 **A 案作用域**的,B 案路径不触发(plan「改法取舍」B 案优先的包袱正含此);② A2 未达标是**基线固有**(pre-P1 0.444 → post-P1 0.222~0.444,判据对新旧配置同等严苛),**回滚既不能修复质量、又退回更慢状态**(v4-flash+high,课表 10.7s)。保留 B 与 human B1「甲案批准」一致。**但 A2 破线事实本身不豁免**——B2 的质量红线仍立着,故此项上浮 human 拍板(接受现状 / 回滚 / David 人设渗漏升 k2 首位)。
+2. **A 案 allow 路径形状不一致 → 如实登记为已知缺口,暂不重冻**。冻结齿 fixture 用顶层 `modelPolicy.allow`,而生产 `openclaw.json` 实为 `agents.defaults.modelPolicy.allow`。builder 的 apply 已**双写**兼容(B 案不触该键、当前齿不受影响)。**风险等级 = 潜在假绿**:若日后启用 A 案,齿校验与生产接线可能不同路径而齿仍绿。因 A 案未走、重冻会触发 verifier 全量重跑,故暂不动作,登记交 k2 或 A-fallback 处置时收口。
+3. **drift_guard 一次性锚**:声明锚 `expect="unset"` 在 B 案落 `off` 后即被消耗(再改档需新锚)——**符合设计**,非缺陷;本棒对照测试用仓外 scratch decl(`C:/tmp/perf-k1-run/decl-low.json` / `decl-off.json`),**未污染落仓声明**。
+4. **步⑦仪表化未执行**:接受其触发判据(A1 保底已绿 / 日志无该字段 / slow SQLite 属探针自污染),如实记「未做 + 原因」;preflight 三段时戳若晨间认为仍需,另批回派(网关当前不暴露该字段)。
+5. **sessions**:窄域「探针会话 archive」已做;宽域 `sessions cleanup` 未做——与 B3(过渡项归 k2)/B4 一致,无需补。
