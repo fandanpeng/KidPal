@@ -7,33 +7,29 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 21（待拍板 0 / 待触发 19 / 已接受风险 2）；已结 64（归档索引见下）。
+**摘要**：未结 17（待拍板 0 / 待触发 15 / 已接受风险 2）；已结 68（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（19）
+## 待触发（15）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
 | [ARQ-260908-known-red-count-no-mechanical-source](ARQ-260908-known-red-count-no-mechanical-source.md) | SHOULD | 「上游已知红」计数在 launch 面是**手写快照**、无机械来源，且 evidence 类扫描齿的 root 定位**吃调用 cwd**——同一 ELF 两份数字，红基线与 mutation 判读全靠人肉对口径 | ① 已由 260909-gov-review-gate-truthfulness T5 承接（2026-09-09：launch prep 步骤 2 现跑命令绝对路径口径 + progress.md 落行 + knownRedFloor 改引用制品）；② C 侧 evidence 齿 root 注入**已由 `260920-gov-review-bearing-strength-align` T2 搭车件落地**（`acceptance-evidence.md` 新增「evidence 类扫描齿的 root 注入」节——显式接收仓根 / 禁依赖调用 cwd；landing-verdict `PASS + 3 ADVISORY`、commit `e3b19ee`，2026-09-20）；③ runner 报告头未做——**③ 留下次动 acceptance-evidence 约定的治理批** |
 | [ARQ-260908-versioned-guard-repoint-execution](ARQ-260908-versioned-guard-repoint-execution.md) | SHOULD | 重指执行未做——4 件既有冻结件的版本无关重指待逐件 human 授权 | 发起 = 下一批触碰对应冻结件时（P7 对齐）或 human 专项批 |
 | [ARQ-260913-auto-mode-classifier-legit-workflow](ARQ-260913-auto-mode-classifier-legit-workflow.md) | SHOULD | auto-mode 分类器第三次误伤 dev-loop 合法工作流，每包烧一轮拦截往返 + human 中场出场，已成本模式 | 单开一批（**须双臂一起落**，不得只落口径臂） |
-| [ARQ-260913-current-pointer-implicit-global](ARQ-260913-current-pointer-implicit-global.md) | SHOULD | `delivery/taskpackages/current/` 指针是隐性全局状态：指错包即静默假绿或簿记污染，三包复现；另有指针副本与 canonical 的行尾字节差同族面 | 下次动起包 checklist / dispatch-stamp 解析面的治理批 |
+| [ARQ-260913-current-pointer-implicit-global](ARQ-260913-current-pointer-implicit-global.md) | SHOULD | `delivery/taskpackages/current/` 指针是隐性全局状态：指错包即静默假绿或簿记污染，三包复现；另有指针副本与 canonical 的行尾字节差同族面 | 下次动起包 checklist / dispatch-stamp 解析面的治理批 → **2026-09-24 部分承载**：残余①③+brief 双份投影+调用侧旗标必带文面已由 260924-gov-review-planner-orchestration-align T6 落地；17 解析点常驻报警机械齿 + `--expect-change-id` 闸级强制按该批 OQ-3(a) human 裁定留批 C（门/解析面批），下次动该解析面的治理批承接 |
 | [ARQ-260914-landing-preflight-anchor-parse](ARQ-260914-landing-preflight-anchor-parse.md) | SHOULD | PROPOSAL FROZEN 前无 §2 锚清单干跑——锚行形态错（加粗 `**目标文件**：`、注记夹带路径 token、幻影路径）到 landing 核验期才被结构门抓住，PROPOSAL「落地后不可回改」条款被迫走例外追认 | 部分结（2026-09-20）；③ 连带项**非机械化**半（断言口径 ↔ 保留面对账）**有新实例在案、待排期**；剩余（机械化判据）无排期 |
 | [ARQ-260914-legacy-sxay-story-id-batch](ARQ-260914-legacy-sxay-story-id-batch.md) | SHOULD | `Sx-Ay` 老仓 story id 遗产字样在 260912 批 manifest 外多处存活，与新口径（`S-Fx.y` 节锚 + `S-Fx.y-AC<n>` AC 复合句法 + acceptance 本地 id）并存待批量对齐 | 下次动上述任一文件的治理批，或单开批量对齐小批（可与 ARQ-260914-portfolio-reconcile-launchpreconditions 并批） |
 | [ARQ-260914-portfolio-reconcile-launchpreconditions](ARQ-260914-portfolio-reconcile-launchpreconditions.md) | SHOULD | M-1 机械齿——`portfolio-reconcile.mjs` 读 workstream `decision-coverage.json` 顶层键 `launchPreconditions`（`需修订` spec 落点的 launch 前置清单），当前 `--check-launch` 不读该键、靠 convention + 人读核验 | 下次动 portfolio-reconcile.mjs / launch 检查面的治理批 |
 | [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | SHOULD | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 下一批 launch 前定夺候选① 文面统一（成本低、且是 M2-K3 与后续所有包的共同前置）；候选②③ 的门策略随下次治理批；若本包 K2 收尾相位出现「未跑 supervisor-gate-check 即欲结束」实况，即升 severity 并触发本条立即处理 |
-| [ARQ-260922-buildfeature-launch-prep-skip](ARQ-260922-buildfeature-launch-prep-skip.md) | SHOULD | `/build-feature` 直启路径不触发 launch-prep——DEV-GOVERNANCE §4 图的 ② launch 面准备阶段（`--check-launch` 门 / worktree 等价化 / 专属图索引 / 已知红基线锚 / 启动卡 / board 预填）在 changeId 直启形状下整段被绕过 | 下一治理批（与 ARQ-260922-pod-requirements-not-authority 同批并批——同动 dev-loop 入口/编排文面；与 ARQ-260918-pod-session-settings-identity-unobservable 残余亦同族可同批）；m3-k5 在跑不阻断 |
-| [ARQ-260922-pod-requirements-not-authority](ARQ-260922-pod-requirements-not-authority.md) | SHOULD | Pod 不先读 requirements story 原文与 AC 就把已定项当开放问题问 human——需求已写明的行为仍给替代推荐让 human 拍板，需求权威被「human 临场偏好」静默替代 | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同批并批） |
 | [ARQ-260923-codemem-mode-doc-drift](ARQ-260923-codemem-mode-doc-drift.md) | SHOULD | CodebaseMemory 索引 mode 的文档与实效不符（三处：AGENTS.md:39 / launch-prep SKILL:93 / cli SKILL:42 示例） | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同族可并批——同动 launch-prep 文面；与 ARQ-260918-spec-face-3page-reconcile 同属「文档与实况对齐」族） |
 | [ARQ-260923-contract-merge-deadpath](ARQ-260923-contract-merge-deadpath.md) | SHOULD | 契约面 diff 的 merge-driver 机械路径整条封死——升级闸契约门证据硬编码 false 恒 BLOCK，契约包只能现场即兴人合，既无机械消解路径也无成文人合 runbook | 下一治理批（可与 ARQ-260923-dispatch-prompt-hard-terms 并批——同动 merge / planner 编排文面） |
-| [ARQ-260923-dispatch-oversight-uncodified](ARQ-260923-dispatch-oversight-uncodified.md) | SHOULD | 「派发书过目门」口径未成文——planner 每棒靠解释 human 一句口头授权判断是否免过目，两棒如实标注「这是我的解释、可能超出授权」；human 2026-09-23 明确裁定：不用每次都请示 | 下一治理批（与 ARQ-260923-dispatch-prompt-hard-terms 同族并批——同动 planner.md 派发步文面） |
-| [ARQ-260923-dispatch-prompt-hard-terms](ARQ-260923-dispatch-prompt-hard-terms.md) | SHOULD | 派发书模板缺三条硬约定——子代理 Write 被拦的回执姿势 / scope 写权前置核对 / mutation 执行证据落盘责任人——全活在各棒 retro 的「下次改进」里、每棒重学一遍 | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260922-pod-requirements-not-authority 同族并批——同动 planner.md 编排文面） |
 | [ARQ-260923-gate-tooling-noise-batch](ARQ-260923-gate-tooling-noise-batch.md) | SHOULD | 治理脚本 / 钩子的「用户面」噪声与危险静默小修集合——误导提示 / 静默相位回落 / 传参形态不一 / 非闸守卫脚本漂移无主 | 下一治理批（一行级小修集合，可搭任意批） |
 | [ARQ-260923-planner-roster-reference-drift](ARQ-260923-planner-roster-reference-drift.md) | SHOULD | planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在 | 下一治理批（一文面小修，可搭任意批） |
-| [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | SHOULD | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 下一治理批（① 枚举修正半成本极低可先行；②③ 随批，与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260923-dispatch-prompt-hard-terms 同动 planner 编排文面可并批） |
+| [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | SHOULD | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 下一治理批（① 枚举修正半成本极低可先行；②③ 随批，与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260923-dispatch-prompt-hard-terms 同动 planner 编排文面可并批）→ **2026-09-24 部分承载**：①② 已由 260924-gov-review-planner-orchestration-align T5 落地；③ warn 齿按该批 OQ-3(a) human 裁定留批 C（门/解析面批），下次动 taskpackage-required / brief-inputs 解析面的治理批承接 |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 |
 | [ARQ-260924-settings-write-deny-rule-cli-drift](ARQ-260924-settings-write-deny-rule-cli-drift.md) | SHOULD | `.claude/dev-loop.settings.json` + `.claude/review-loop.settings.json` 的 `Write(./docs/contracts/**)` deny 规则被现行 CLI 判非法并**硬阻塞 launch**（exit 4）——CLI settings 校验新口径：文件权限检查只认 `Edit(path)` 规则（Edit 规则覆盖所有文件编辑工具），`Write(path)` 规则不再被匹配 | 下个治理快批（headless 恢复使用前必须完成；交互式 launch 亦建议先行） |
 
@@ -44,10 +40,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（64）
+## 已结（68）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 64 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 68 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

@@ -55,6 +55,18 @@ TaskPackage 层 `origin` 形状（G3 读取此层，与 workstream 层（task_pl
 
 **小 bug 包 origin 填法**：triage 判②单包小 bug → `origin.upstreamType = regression | ci-failure | drift-report`（按触发源，**非 proposal**），`origin.upstreamRef` 指向触发来源（issue / drift 报告 / 人类指令记录），**无需 FROZEN PROPOSAL**——小 bug 上游不是 proposal。`origin` 仍是一等强键，只是 type 非 proposal。
 
+**milestone 来源包 origin 填法（260924-gov-review-planner-orchestration-align T5，三包收敛先例成文）**：portfolio-planner 拆包以 milestone 为上游来源（`delivery/milestones/**`）时，`origin.type`/`origin.upstreamType` **必须取闸值域内枚举值**——`milestone` 不在 `ORIGIN_TYPES` 闭集（= sourceType 9 枚举 + `human-confirmed-plan`），写出必红（m2-k1 r1 / m2-k3 intake 裸跑 / m3-k1 r1 三包同雷各修一遍的先例）。收敛填法 = `upstreamType` 取 `delivery-story`，milestone 溯源走 `upstreamRef`（指 `delivery/milestones/milestones.jsonl#<milestone-id>`），`workstream` 照常：
+
+```json
+"origin": {
+  "type": "delivery-story",
+  "upstreamType": "delivery-story",
+  "upstreamRef": "delivery/milestones/milestones.jsonl#M3-schedule",
+  "upstreamFrozen": "",
+  "workstream": "m3-schedule"
+}
+```
+
 **hybrid 包 origin 推荐填法（accepted-risk convention，260731-gov-review-artifact-lifecycle-origin-teeth Phase 1 FROZEN）**：多包 regression 经 FROZEN PROPOSAL 拆包（如 260729-s1-chat-interaction-fixes 实例）= **hybrid provenance**（触发源=regression，拆包上游=FROZEN PROPOSAL）。推荐填法：
 
 ```jsonc

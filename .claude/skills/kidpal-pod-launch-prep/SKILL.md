@@ -7,7 +7,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 
 把「下一批 TaskPackage 的 launch 面」从调度判定一路备到 human 可自跑 launch 命令。适用于 kidpal-mvp workstream 多 Pod 模式（PROPOSAL FROZEN v0.4，15 包，WIP=3）；单 Pod 形态是子集。
 
-> **执行主体 = 主线程（human 会话）**；本手册 = [`docs/DEV-GOVERNANCE.md`](../../../docs/DEV-GOVERNANCE.md) §4 Dev Loop 图的 **② launch 面准备** 阶段操作手册（260921-gov-review-launch-pipeline T1 立此坐标）。
+> **执行主体 = 主线程（human 会话）**；本手册 = [`docs/DEV-GOVERNANCE.md`](../../../docs/DEV-GOVERNANCE.md) §4 Dev Loop 图的 **② launch 面准备** 阶段操作手册（260921-gov-review-launch-pipeline T1 立此坐标）。对偶触发源：`/build-feature` 的 launch 面预检（changeId 直启形状核 board 条目 / 启动卡 / 运行时 worktree / 专属图索引四件，任一缺即路由到本手册补齐再回 intake，260924-gov-review-planner-orchestration-align T1）。
 
 ## 产物（完成标准）
 
