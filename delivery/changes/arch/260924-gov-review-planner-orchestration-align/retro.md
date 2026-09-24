@@ -64,3 +64,5 @@
 - commit 后 V5 终证（`git diff --exit-code -- docs/crq/` 于 landing commit 后 + render 复跑）随合并相位补跑，结果追记于本文件末行（append-only）。
 
 **V5 终证追记（2026-09-24，landing commit 9792b1c 后实跑）**：`crq-render.mjs` 复跑输出「未变」×5（全部 INDEX）；`git diff --exit-code -- docs/crq/` → **exit 0**（工作树 == HEAD，幂等终证成立）。§2 V5 口径注的 post-commit 评估时点断言自此闭合。
+
+**摩擦面补遗追记（2026-09-24，合并后登记相位，append-only）**：retro 撰写时未及捕捉的第四类摩擦在 ARQ 登记相位现形——**主线程派判官/核验官时第三次违反「原样携带 canonical 简报」纪律**：两份任务书均手写（引 AGENTS.md/protocol 条文替代 `.claude/references/track-b-{judge,verifier}-brief.md`，派遣时未检索该二件），且**各漏同一条 verdict 行形态机锚义务**（行首 `verdict: <TOKEN>`——升级闸 readGovAnchors / changes-index deriveLanded 的机器消费面），两 officer 均靠自身能力补正、全程静默无实害（升级闸 PASS、INDEX landed/mergedInMain 均正确）。根因非 canonical 缺口（brief 自述「每环复制本简报为派遣 prompt」），是主线程「行动时想不起查记忆」——载体 = memory 条目 `carry-canonical-briefs-verbatim` 追注第三实例 + 动作化升级（触发点绑流程步骤不绑记忆召回），**不登记 ARQ**。本追记为 §3 摩擦面补遗（F5），§5 保险丝判定不变且反获佐证：两 officer 在任务书缺陷下仍各自独立抓出真问题。
