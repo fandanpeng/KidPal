@@ -32,8 +32,9 @@
 
 - **Track A / Track B**：变更评审两档——A = 全对抗 full-adversarial（入口 `/arch-change` 升级走）；B = 常驻轻路径七步闭环。
 - **PROPOSAL / landing / landing-verifier / retro**：Track B 七步闭环的四件制品。
-- **ARQ**：架构评审队列条目（ARCH-REVIEW-QUEUE.md，bug/优化登记与机判 review depth）。
-- **CDQ**：契约决策队列（CONTRACT-DECISION-QUEUE.md，契约门事项）。
+- **CRQ 账本**：未结决策项账本（`docs/crq/`，260923-gov-review-arq-ssot-restructure 起）——三域 `gov/` `tech/` `requirement/`，一条目一文件（frontmatter 机读状态 + append-only 正文），每域 `INDEX.md` 为生成件；已结条目自动归位 `_archive/<结项年>/`。
+- **ARQ**：治理机制域条目 ID 前缀（`ARQ-<YYMMDD>-<slug>`，落 `docs/crq/gov/`；原义 ARCH-REVIEW-QUEUE 单文件队列，已重构为 CRQ 账本，`docs/ARCH-REVIEW-QUEUE.md` 存指路 stub）。**TECH-** / **REQ-** = 技术域（含 contract）/ 需求变更请求域的条目前缀。
+- **CDQ**：契约决策队列（CONTRACT-DECISION-QUEUE.md，契约门事项；契约类条目在 CRQ tech 域以 `cdq:` 指针挂接，门与批准状态仍以 CDQ 为唯一权威）。
 - **ADR**：架构决策记录（ADR.md，append-only 五件格式：日期/决策/理由/备选与放弃原因/关联）。
 - **钉点 / needle**：冻结验收测试中逐字断言的锚点；文案改动必须随 needle 一并更新，否则验收假红。
 - **齿**：验收断言（acceptance teeth）；host 面 = 本机可跑，live 面 = SSH 到 ECS 真环境（`RUN_LIVE=1` 显式放行）。

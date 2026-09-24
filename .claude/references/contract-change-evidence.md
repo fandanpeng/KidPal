@@ -14,7 +14,7 @@ Every contract-gated change must produce these artifacts in the owning change fo
 | `architecture-gate-evidence.md` | Yes | Gate ledger: reviewer classification, human ruling, applied diff inventory, validation, closeout state. |
 | `evidence/` | Yes when commands or audits ran | Raw logs and machine output. Summaries must point here instead of living only in chat. |
 | `ADR-*.md` | When the decision changes durable policy or semantics | Records why, not the schema itself. |
-| Queue update | Yes for nontrivial gates | `docs/ARCH-REVIEW-QUEUE.md` or `docs/CONTRACT-DECISION-QUEUE.md` records status and remaining conditions. |
+| Queue update | Yes for nontrivial gates | `docs/CONTRACT-DECISION-QUEUE.md` records gate status and remaining conditions; the CRQ ledger (`docs/crq/tech/`) records the tech-side item with a `cdq:` pointer (gate authority stays with CDQ). |
 
 Do not call the gate closed from chat alone. The evidence ledger must be in the repo.
 

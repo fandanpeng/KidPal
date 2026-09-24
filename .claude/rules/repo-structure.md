@@ -17,7 +17,8 @@ paths:
 | `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
 | `docs/ui/` | 设计 | UI 设计稿与 brief：kidpal-ui-design HTML、UIUX-DESIGN-BRIEF、brand-spec | 把设计稿当实现代码改（设计稿是资产管线的母版） |
 | `docs/templates/` | 治理 | PROPOSAL / retro 等治理制品骨架 | — |
-| `docs/archive/` | 治理 | 已结项归档（如 ARCH-REVIEW-QUEUE.closed.md） | 把未结项塞进去 |
+| `docs/archive/` | 治理 | 已结项归档（长期不动的历史制品） | 把未结项塞进去 |
+| `docs/crq/` | 主线程（登记）· adjudicator（review 收口）· integrator（scope-map 已授写槽） | **未结决策项账本**（CRQ = change request 账）：三域文件夹 `gov/` `tech/` `requirement/`，**一条目一文件**（YAML frontmatter 机读状态 + 正文 append-only 散文）+ 每域一份**生成件** `INDEX.md`；**已结条目由渲染脚本自动归位 `_archive/<结项年>/`**（镜像 `delivery/workstreams/_archive/<年>/` 先例；位置 = 状态的纯函数，**人不搬文件**，每年一份归档薄行 INDEX） | 手改各 `INDEX.md`（是生成件——改状态去改条目文件再重跑 `.claude/scripts/crq-render.mjs`）；人工移动条目文件（归位/搬回都是渲染器的事）；把 `docs/crq/` 当正式文档面（它是**会持续增长的记录库**，见下方语义说明） |
 | `firmware/` | dev-loop（builder/fixer 等） | 固件实现面：小智 V2.1.0 整树基座 + 板级 overlay | review-loop 角色写入 |
 | `server/` | dev-loop | 云端 shim 实现面（预留未建） | 同上 |
 | `tools/` | dev-loop / 一次性实验 | 模拟器、资产管线等开发工具 | 当正式实现面（实验代码须由 dev-loop 包接管正式化） |
@@ -32,8 +33,22 @@ paths:
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
-文件：`requirements.md`（需求面 SSOT）· `architecture.md`（架构面 SSOT）· `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md` · `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（占位登记，文件尚未创建）
-子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）
+文件：`requirements.md`（需求面 SSOT）· `architecture.md`（架构面 SSOT）· `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md`（**已降为指路 stub**，见下）· `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（术语表，已建）
+子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）· `crq/`（未结决策项账本，见上表行）
+
+### 三种同名物消歧（260923-gov-review-arq-ssot-restructure T6 钉死；仓内同名 `INDEX.md` 现共 8 份且随归档年增长，`find . -name INDEX.md` 可枚举）
+
+| 路径 | 索引什么 | 划分轴 | 谁写 |
+|---|---|---|---|
+| `delivery/changes/{arch,dev}/INDEX.md` | **变更批次的落地状态**（changeId / 日期 / draft→frozen→landed / 已合main） | **lane**（Pod 合并流 vs gov 合并流） | `changes-index.mjs` 生成 |
+| `docs/crq/{gov,tech,requirement}/INDEX.md`（+ 各域 `_archive/<年>/INDEX.md`） | **未结决策项**（未结清单 + 已结指针/薄行） | **域**（写者/裁定线不同） | `crq-render.mjs` 生成 |
+| `delivery/workstreams/INDEX.md` | workstream 清单 | — | hook 自动生成（编辑 workstreams/ 即重建），勿手改 |
+
+> **引用纪律**：任何引用 `INDEX.md` **必须带目录**（写 `docs/crq/gov/INDEX.md` 或 `delivery/changes/arch/INDEX.md`），**禁裸写 `INDEX.md`**——裸写在本仓是歧义的。
+
+### 语义说明：`docs/` 的边界在本批扩了一次（有意识动作）
+
+`docs/` 原定义 = 「仅白名单内的**正式顶层文档**」+ 五类子目录（契约 / 经验 / 设计 / 模板 / 归档）。`docs/crq/` 的加入使它**同时承接一个会持续增长的记录库**（首日 94 条目 + 5 份生成 index〔主 3 + 归档年 2，随归档年增长〕，只增不减）。这是**有意识的边界扩张**，不是顺手放东西：账本原本就住 `docs/`（`ARCH-REVIEW-QUEUE.md` / `CONTRACT-DECISION-QUEUE.md` 都是 docs 根文件），迁进 `docs/crq/` 是**原地铺开**而非换树。**复议触发 = docs 子目录数再增两个，或出现第二个记录库**——届时重新考虑 docs 的边界定义。
 
 > 其它一律不进 docs/ 根。要加新的正式顶层文档 / 类别 → 先登记进 [.claude/scope-map.json](../scope-map.json) 的 `universal.docsTopLevel` 和本表（有意识动作），钩子才放行。
 

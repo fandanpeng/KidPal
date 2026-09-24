@@ -335,6 +335,6 @@ AGENTS.md「输出标准」节要求散文通顺完整，下表所列格式由�
 | pod-events 事件 envelope | `pod-events-append.mjs:42-48` | eventType 闭集 + envelope 校验 |
 | taskpackage 必填字段 | `taskpackage-required-check.mjs:140,:185` | 8 字段必填 + changeId YYMMDD- 前缀 |
 | CodebaseMemory marker 块 | `AGENTS.md` 首部（工具方 re-index 重写面） | marker 块内文由工具托管，非手写面 |
-| 队列表格列结构 | `ARCH-REVIEW-QUEUE.md` §1 表头（6 列约定） | 行内列数错位即坏行（约定非机检，列结构为簿记纪律） |
+| CRQ index 生成件 | `crq-render.mjs`（`docs/crq/*/INDEX.md` 的生成者）+ `crq-doctor.mjs` | 三份 `INDEX.md` 是**生成件**（源 = 同目录条目文件）；doctor 核「盘上 ≠ 应渲染」报 `index-stale`（覆盖手改与 `merge=union` 并出的陈旧计数/乱序）。**本行原为「队列表格列结构（约定非机检，列结构为簿记纪律）」——单文件队列已重构为域账本，该簿记纪律已由机检取代**（260923-gov-review-arq-ssot-restructure） |
 
 **单源注**：围栏块与 Status 行校验的字节级单一源在 `.claude/scripts/lib/governance-gate-shared.mjs`（extractManifestBlock / extractTargets / isFrozen），表内锚点指向 landing-fidelity-check.mjs 的描述与消费面；Status 行契约另有消费方 closeout-check.mjs 与 proposal-consolidation-check.mjs（同一 isFrozen 单源）。修式样者以 lib 单源为准。

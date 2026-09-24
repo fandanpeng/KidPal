@@ -28,7 +28,7 @@ argument-hint: <待审 spec 路径或编号,例如 "docs/systems/S1-leads/spec.m
 5. **落地**:**低影响** CONFIRMED + 明确改法 → 你直接改设计层 spec(docs/systems)+ 追加 `debate-log.md`。
 6. **契约路由**:触契约的 finding → 派 `architect-reviewer` 四分类;`SPEC_CONTRACT_DRIFT`/`CONTRACT_CHANGE_REQUIRED` → 停在人类契约门,spec 改动暂存 packet 不单独落地。
 7. **拍板**:**高影响/跨系统/deadlock** → 用 AskUserQuestion 把 `deadlocks.md` 的拍板包(正反方 + 推荐,**建议即地板**)交人;裁断回灌。**L0 蓝图改动不自动落地**,备改法交人工批。
-8. **收口 + 冻结判定**:确认 `adjudicator` 已将制品**写到 reviewDir 磁盘**——`findings.md` + `review-packet.md` + 更新 `docs/ARCH-REVIEW-QUEUE.md`，`debate-log.md` 已补齐全过程，返回只给结构化摘要（任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口）;过 **pass-oracle 5 关**(轴覆盖 / 场景覆盖 / finding 全结 / spec↔contract 机械门绿 `node .claude/scripts/arch-spec-contract-check.mjs <spec>` / canaries 全中) **+ handoff 出口**(dev-loop handoff 完整;有实现侧修复 finding 时产 `dev-loop-handoff.json`)方可标 spec「可冻结」,交 dev-loop 消费。任一关 RED → 退回重跑,不放过。
+8. **收口 + 冻结判定**:确认 `adjudicator` 已将制品**写到 reviewDir 磁盘**——`findings.md` + `review-packet.md` + 按域写出的 CRQ 账本条目（`docs/crq/{gov,tech,requirement}/`，写完跑过 `node .claude/scripts/crq-render.mjs`），`debate-log.md` 已补齐全过程，返回只给结构化摘要（任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口）;过 **pass-oracle 5 关**(轴覆盖 / 场景覆盖 / finding 全结 / spec↔contract 机械门绿 `node .claude/scripts/arch-spec-contract-check.mjs <spec>` / canaries 全中) **+ handoff 出口**(dev-loop handoff 完整;有实现侧修复 finding 时产 `dev-loop-handoff.json`)方可标 spec「可冻结」,交 dev-loop 消费。任一关 RED → 退回重跑,不放过。
 
 > 一次性 sweep 多个 spec:见计划 `delivery/workstreams/arch-review-sweep/`(独立 spec 多会话并行,只读辩论无写冲突);本会话一次推进一个 spec。
 > 你不改 `docs/contracts/**`、不自动改 L0 蓝图、不直推 main、不自评通过。

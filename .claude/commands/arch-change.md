@@ -39,7 +39,7 @@ argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收�
 6. **落地 / 收口（profile 分叉）**：
    - **spec profile**：低影响 CONFIRMED + 明确改法 → 你直接落设计层 spec（`docs/systems`）；高影响 / 跨系统 / deadlock / L0 → AskUserQuestion 交 human（**建议即地板**）。过 pass-oracle 5 关（+ handoff 出口）方可标 spec「可冻结」；需实现侧修复 → 产 `dev-loop-handoff.json` 交 `/build-feature`。
    - **governance profile**：**不落任何 canonical**；confirmed 治理改法写进 `decision-packet.md`（目标文件 / 改法 / 影响面 / 是否触自改递归·契约·强制层 / 推荐）；治理默认高影响，AskUserQuestion 交 human；改 agent 定义 / 自改递归 / 强制执行层 / 指令根**必 human**。过 governance pass-oracle 6 关方可标「可批准」，human 批后**先定稿冻结 PROPOSAL（architect 回灌改法 → human 冻结 → 你核验 + `proposal-consolidation-check.mjs`）再由主线程 packet-bound canonical landing → 主线程派 `landing-verifier` 独立核验落地保真（`landing-fidelity-check.mjs` + 逐文件 diff，写 `landing-verdict.md`），verdict 绿才 human merge**（见 `arch-review-protocol.md`「Governance profile 定稿」）。
-7. **收尾**：确认 `adjudicator` 已将制品**写到 reviewDir 磁盘**——`findings.md` + `review-packet.md`（governance 另加 `decision-packet.md`）+ 更新 `docs/ARCH-REVIEW-QUEUE.md`，`debate-log.md` 齐备，返回只给结构化摘要；任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口。任一 pass-oracle 关 RED → 退回重跑，不放过。
+7. **收尾**：确认 `adjudicator` 已将制品**写到 reviewDir 磁盘**——`findings.md` + `review-packet.md`（governance 另加 `decision-packet.md`）+ 按域写出的 CRQ 账本条目（`docs/crq/{gov,tech,requirement}/`，写完跑过 `node .claude/scripts/crq-render.mjs`），`debate-log.md` 齐备，返回只给结构化摘要；任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口。任一 pass-oracle 关 RED → 退回重跑，不放过。
 
 > mixed 强耦合必须同一 PR 时：同一会话**先跑完 spec profile 落地，再跑 governance profile**；否则拆两次会话。
 > 你不改 `docs/contracts/**`、不自动改 L0 蓝图、不落 G1/G2/G3 canonical、不直推 main、不自评通过、不替 human 拍板。
