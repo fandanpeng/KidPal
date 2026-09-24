@@ -45,7 +45,7 @@ CCP v2（`CONTRACT-CHANGE-PACKET.md`，含 §5 十问裁定逐字）；architect
 | C4 | arch §5.2④ 推送触发扩展 + §5.4 载体收口 + §7 在办①②④销账 + §5.1.2 现状行 | K1 integrator docs-sync | **pending**（2026-09-24 integrator 处置注记：**delta 已成文，等待 human spec 批**——integrator 对 `docs/architecture.md` 无写权（scope-map `agents.integrator.allow` 含已废弃 `docs/systems/**` 却无 `docs/architecture.md`），故 C4 义务对本包角色结构性不可直达；五处 hunk 以 patch 形态落 `delivery/changes/dev/260924-m4-k1-story-cloud-link/docs-delta.md §4`（§5.2④ `:213` / §5.1.2 front 网关行 `:185` / §5.1.2 故事归档行 `:192` 连带 / §5.4 故事行 `:261` + 新增 `.seq.json` 行 / §7 在办 `:341`），合并后由 human 主线程 spec 批落地（可与 `docs/crq/tech/ARQ-260918-spec-face-3page-reconcile.md` 四处同批搭载），落地后本行翻 done；结构性发现已入本包 review-packet findings，去向 = loop-retro/human） |
 | C5 | prompt v7 三处 v6 钉行文面收口 + carrier 翻转 | K3（M4K3-A4） | pending |
 
-> **C1 实现 commit sha 回填（2026-09-24 integrator）**：`<见本件 §6 尾注下条 commit>`。
+> **C1 实现 commit sha 回填（2026-09-24 integrator）**：**`5ac633a`**（本包 integrator 收口 commit，分支 `dev/260915-m1-k1a-key-layer-dispatch`；`sha` 自指不可解故以「实现 commit + 本回填 commit」两步落账，对齐冻结件 REVISION LOG sha 链「据实分记」先例）。
 > C1 证据链 = 实现面（`server/gateway/display_schema.py` Q8 story floor + `server/gateway/front/front_app.py` Q7 relay 收紧，随 `server/gateway/story.py` 与本包单测同批提交）+ 冻结齿（A1 组 8 齿全绿，sha256 `5d4ebbf2…c625a287`）+ `evidence/mutation-replay.md` MUT-A1 组（4/4 转红、还原复绿 `182 passed, 4 deselected`）+ integrator 全量复跑（`182 passed, 4 deselected in 4.15s`）。
 
 ## 7. Validation Evidence
