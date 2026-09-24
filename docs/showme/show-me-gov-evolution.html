@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KidPal ⇄ AInativecompany · 治理演化全景</title>
+<style>
+  :root{
+    --ink:#1a2233; --muted:#5b6575; --faint:#8b94a3;
+    --bg:#f6f7fa; --card:#ffffff; --line:#e4e7ee;
+    --anc:#4f5bd5; --anc-bg:#eef0fc; --anc-deep:#3944a8;
+    --kp:#0d9488; --kp-bg:#e8f6f3; --kp-deep:#0a6e66;
+    --flow:#d97706; --flow-bg:#fdf3e3;
+    --era1:#8b94a3; --era2:#7c5cd6; --era3:#0d9488;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); line-height:1.65; padding:40px 20px 80px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+
+  h1{font-size:26px; letter-spacing:.5px;}
+  .sub{color:var(--muted); margin:6px 0 22px; font-size:14.5px;}
+  .stats{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:34px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 16px; font-size:13px; color:var(--muted);}
+  .stat b{color:var(--ink); font-size:17px; margin-right:4px;}
+
+  /* ---- 全景条 ---- */
+  .panorama{display:grid; grid-template-columns:1fr 26px 1fr 26px 1.15fr; align-items:stretch; gap:0; margin-bottom:44px;}
+  .era{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  .era h3{font-size:14.5px; margin-bottom:4px;}
+  .era .dates{font-size:11.5px; color:var(--faint); margin-bottom:6px;}
+  .era p{font-size:12.5px; color:var(--muted);}
+  .era.e1 h3{color:var(--era1);} .era.e2 h3{color:var(--era2);} .era.e3 h3{color:var(--era3);}
+  .pan-arrow{display:flex; align-items:center; justify-content:center; color:var(--faint); font-size:18px;}
+  .tag{display:inline-block; font-size:10.5px; padding:1px 8px; border-radius:99px; margin:2px 3px 0 0; font-weight:600;}
+  .tag.anc{background:var(--anc-bg); color:var(--anc-deep);}
+  .tag.kp{background:var(--kp-bg); color:var(--kp-deep);}
+  .tag.flow{background:var(--flow-bg); color:#9a5b07;}
+
+  /* ---- 双泳道时间线 ---- */
+  .timeline{position:relative;}
+  .lane-heads{display:grid; grid-template-columns:1fr 118px 1fr; gap:0; margin-bottom:14px; position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0;}
+  .lane-head{border-radius:10px; padding:10px 16px; font-size:14px; font-weight:700;}
+  .lane-head small{display:block; font-weight:400; font-size:11.5px; margin-top:1px;}
+  .lane-head.anc{background:var(--anc-bg); color:var(--anc-deep); border:1px solid #d5d9f5;}
+  .lane-head.kp{background:var(--kp-bg); color:var(--kp-deep); border:1px solid #c8ebe5;}
+
+  .era-band{display:grid; grid-template-columns:1fr 118px 1fr; margin:26px 0 10px;}
+  .era-band .bar{grid-column:1 / -1; font-size:13px; font-weight:700; padding:7px 14px; border-radius:8px; color:#fff;}
+  .era-band.e1 .bar{background:linear-gradient(90deg,#6b7690,#8b94a3);}
+  .era-band.e2 .bar{background:linear-gradient(90deg,#6a4fd0,#8a6fe0);}
+  .era-band.e3 .bar{background:linear-gradient(90deg,#0a6e66,#12a598);}
+
+  .row{display:grid; grid-template-columns:1fr 118px 1fr; margin-bottom:10px;}
+  .row .gut{position:relative;}
+  .row .gut::before{content:""; position:absolute; left:50%; top:-10px; bottom:-10px; width:2px; background:var(--line); transform:translateX(-50%);}
+  .row .dot{position:absolute; left:50%; top:16px; width:10px; height:10px; border-radius:50%; transform:translateX(-50%); border:2.5px solid var(--bg);}
+  .ev{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13px;}
+  .ev .d{font-size:11px; color:var(--faint); font-weight:600; letter-spacing:.3px;}
+  .ev b{font-size:13.5px;}
+  .ev p{color:var(--muted); font-size:12.5px; margin-top:2px;}
+  .ev.anc{border-left:3.5px solid var(--anc);}
+  .ev.kp{border-left:3.5px solid var(--kp);}
+  .ev.anc .d{color:var(--anc-deep);} .ev.kp .d{color:var(--kp-deep);}
+  .ev.fill{visibility:hidden;}
+
+  /* 跨仓交换行 */
+  .xrow{display:grid; grid-template-columns:1fr 118px 1fr; margin:14px 0;}
+  .xrow .xarrow{grid-column:1 / -1; display:flex; align-items:center; gap:10px; background:var(--flow-bg); border:1px solid #f0d9ac; border-radius:10px; padding:9px 16px; font-size:12.5px;}
+  .xrow .dir{font-size:17px; font-weight:800; flex:0 0 auto;}
+  .xrow .dir.right{color:var(--anc-deep);}   /* 源 → KidPal */
+  .xrow .dir.left{color:var(--kp-deep);}     /* KidPal → 源 */
+  .xrow .xarrow b{color:#8a5306;}
+  .xrow .xarrow span{color:#7c6primary;}
+  .xrow .xarrow span{color:#7d6540;}
+
+  /* ---- 回流清单 ---- */
+  .backflow{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-top:48px;}
+  .backflow h2{font-size:18px; margin-bottom:4px;}
+  .backflow .sub2{color:var(--muted); font-size:13px; margin-bottom:16px;}
+  .bf-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px;}
+  .bf{border:1px solid var(--line); border-radius:10px; padding:12px 15px; font-size:12.5px;}
+  .bf h4{font-size:13px; color:var(--kp-deep); margin-bottom:4px;}
+  .bf .st{font-size:11px; font-weight:700; padding:1px 8px; border-radius:99px; display:inline-block; margin-left:6px; vertical-align:1px;}
+  .st.done{background:var(--kp-bg); color:var(--kp-deep);}
+  .st.draft{background:#fdeaea; color:#a03030;}
+  .bf p{color:var(--muted);}
+
+  /* ---- 尾注 ---- */
+  .coda{margin-top:44px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px;}
+  .coda .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; font-size:13px;}
+  .coda h3{font-size:14.5px; margin-bottom:6px;}
+  .coda p{color:var(--muted); font-size:12.5px;}
+  .coda .lead{color:var(--ink); font-weight:600; font-size:13.5px;}
+  .srcnote{margin-top:34px; font-size:11.5px; color:var(--faint); border-top:1px solid var(--line); padding-top:14px;}
+
+  @media (max-width:760px){
+    .panorama{grid-template-columns:1fr;}
+    .pan-arrow{transform:rotate(90deg); padding:4px 0;}
+    .lane-heads,.row,.era-band,.xrow{grid-template-columns:1fr;}
+    .row .gut{display:none;}
+    .xrow .xarrow{grid-column:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>治理体系演化全景 · AInativecompany ⇄ KidPal</h1>
+  <p class="sub">同一套「AI Native 开发治理机器」在两个仓之间的生长、迁移、分叉与互哺 —— 2026-06-08 → 2026-09-21</p>
+
+  <div class="stats">
+    <div class="stat"><b>3.5 个月</b>源仓治理从萌芽到成熟</div>
+    <div class="stat"><b>130</b>源仓 arch 变更（约 110 批治理自改进）</div>
+    <div class="stat"><b>26 天</b>KidPal 治理从迁入到领先</div>
+    <div class="stat"><b>34</b>KidPal arch 变更（29 批治理自改进）</div>
+    <div class="stat"><b>3+1</b>回流批（3 批已落地 + 1 批起草中）</div>
+  </div>
+
+  <!-- ============ 纪元全景 ============ -->
+  <div class="panorama">
+    <div class="era e1">
+      <h3>纪元一 · 源仓独跑</h3>
+      <div class="dates">2026-06-08 → 08-26 · AInativecompany</div>
+      <p>治理机器从零长成：契约门 → dev-loop → Track B 七步闭环 → 结构打磨，沉淀出迁移指南。</p>
+      <span class="tag anc">治理萌芽</span><span class="tag anc">成文固化</span><span class="tag anc">自改进高密度期</span>
+    </div>
+    <div class="pan-arrow">➜</div>
+    <div class="era e2">
+      <h3>纪元二 · 分批迁移</h3>
+      <div class="dates">2026-08-27 → 09-01 · 双仓交接窗口</div>
+      <p>按「档1 Spec 治理 → 档2/3 dev-loop + portfolio」三档裁剪迁入 KidPal；源仓尾部演进持续同步过去。</p>
+      <span class="tag flow">迁移 + 同步</span>
+    </div>
+    <div class="pan-arrow">➜</div>
+    <div class="era e3">
+      <h3>纪元三 · 双仓互哺</h3>
+      <div class="dates">2026-09-02 → 今 · KidPal 领跑</div>
+      <p>KidPal 实战迭代反超：修法经 Track B 评审后成批<b>回流</b>源仓（backport 1–3 落地、4 起草中）。</p>
+      <span class="tag kp">KidPal 实战自进化</span><span class="tag flow">回流 backport</span>
+    </div>
+  </div>
+
+  <!-- ============ 双泳道时间线 ============ -->
+  <div class="timeline">
+    <div class="lane-heads">
+      <div class="lane-head anc">AInativecompany<small>源仓 · 治理机器的出生地（pnpm monorepo + Prisma 多文件契约）</small></div>
+      <div></div>
+      <div class="lane-head kp">KidPal<small>下游迁移仓 · ESP32 儿童识字硬件（单文件 markdown 契约 + 固件/云端）</small></div>
+    </div>
+
+    <!-- ======== 纪元一 ======== -->
+    <div class="era-band e1"><div class="bar">纪元一 · 源仓独跑（2026-06-08 → 08-26）</div></div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">06-08 → 06-12 · 项目起步</div>
+        <b>App 先行，治理空白期</b>
+        <p>Phase 0–7 应用开发 + monorepo 整合；AGENTS.md / CLAUDE.md 由 GitNexus 自动生成（06-12），尚无治理机器。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">06-13 → 06-17 · 治理萌芽</div>
+        <b>契约门与 dev-loop 诞生</b>
+        <p><b>architect-reviewer</b> agent 诞生（契约变更预筛 human 门，38 项过滤 / 5 项升级）；dev-loop v1 → v2 + S5 交付控制面。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">07-03 · 架构仓合并日</div>
+        <b>治理机器整装入仓</b>
+        <p>独立架构仓的 design/contracts/governance 合并入 main：K0–K9 内核 + S1–S8 系统共 <b>24 项 arch-review 一日收口</b>；supervisor 合并门、review loop、scope-map、verify-gates 同步入仓。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">07-10 → 07-15 · 成文与首战</div>
+        <b>DEV-GOVERNANCE 成文 · K9 openclaw 实战</b>
+        <p>治理文档体系成文（bootstrap-framing、arch-change 入口、architect landing 模式、dev-loop-os RTE）；K9 openclaw Phase-0 以 <b>10 个冻结 TaskPackage</b> 走完 builder→verifier→supervisor APPROVE 全链，dev-loop 首次真实运转。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">07-18 → 08-02 · 自改进高密度期</div>
+        <b>约 70 批 gov-review · 闸的真实度革命</b>
+        <p>landing-fidelity / proposal-consolidation 双结构闸上线；「vacuous-green（假绿）」系列清扫假阳闸；adversarial review 制品链（adjudicator oracle）成型；治理地图中文化；<b>08-02 Track B permanentize——常驻轻路径正式固化</b>。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">08-13 → 08-26 · 结构打磨期</div>
+        <b>七步闭环定型 · 迁移指南沉淀</b>
+        <p>AGENTS.md 重构、统一输出标准、S5 dogfood、Pod worktree launch 基建、TaskPackage 作者约定、Track B 命名约定、ARQ 队列重构；<b>retro 提前至合并前（七步 6↔7 对调，闭环定型）</b>；治理经验写成《迁移指南》v1.0→v1.1。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev fill"><p>.</p></div>
+    </div>
+
+    <!-- ======== 纪元二 ======== -->
+    <div class="era-band e2"><div class="bar">纪元二 · 分批迁移（2026-08-27 → 09-01）</div></div>
+
+    <div class="xrow">
+      <div class="xarrow">
+        <span class="dir right">⟶</span>
+        <div><b>档 1 迁移（08-27）</b>：Spec 治理面整体迁入 —— 8 个 review-loop agents、3 个 commands、3 hooks + 6 scripts、scope-map、G1 指令根；契约规则按 KidPal「单文件 markdown 契约」实况重写。</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">08-27 · 源仓侧</div>
+        <b>worktree 图索引引导落地</b>
+        <p>迁移当天源仓自身也在演进；治理体系从此双仓并行。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev kp">
+        <div class="d">08-27 · KidPal 侧</div>
+        <b>档 1 落地（元级豁免）</b>
+        <p>「建立治理机器的动作先于机器存在」——迁移本身无法走七步闭环，如实记 <b>LANDED-UNREVIEWED</b>，事后建议 landing-verifier 抽核。诚实记录原则首秀。</p>
+      </div>
+    </div>
+
+    <div class="xrow">
+      <div class="xarrow">
+        <span class="dir right">⟶</span>
+        <div><b>档 2/3 迁移（08-29）</b>：dev-loop 全链（planner 派 acceptance-author → builder → verifier↔fixer → integrator）+ portfolio-planner RTE 跨 Pod 编排迁入。</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ev fill"><p>.</p></div>
+      <div class="gut"><div class="dot" style="background:var(--kp);"></div></div>
+      <div class="ev kp">
+        <div class="d">08-30 → 09-02 · 本土化定形</div>
+        <b>从「移植」到「KidPal 的治理」</b>
+        <p>定名 KidPal、去 systems/&lt;sys&gt;/ 层平铺、vendor 改称「参考代码」（第三方树只读）；CodebaseMemory 图索引纪律（主索引 + 5 个参考工程分立）；<b>spec v0.2 FROZEN + 契约方向 B 重写</b>（CDQ 四题批准）。</p>
+      </div>
+    </div>
+
+    <div class="xrow">
+      <div class="xarrow">
+        <span class="dir right">⟶</span>
+        <div><b>源仓尾部演进持续同步（08-31 → 09-01）</b>：agent model tiering（builder/fixer 降 sonnet）、auto-merge-local-main（本地 main 自动合并 + 前置升级闸 + <b>前端对齐/例外反选</b>范式——human 只在两个判断点出场）。</div>
+      </div>
+    </div>
+
+    <!-- ======== 纪元三 ======== -->
+    <div class="era-band e3"><div class="bar">纪元三 · 双仓并行互哺，KidPal 领跑（2026-09-02 → 今）</div></div>
+
+    <div class="row">
+      <div class="ev fill"><p>.</p></div>
+      <div class="gut"><div class="dot" style="background:var(--kp);"></div></div>
+      <div class="ev kp">
+        <div class="d">09-04 → 09-12 · 实战自进化（约 13 批）</div>
+        <b>治理机器开始吃自己的狗粮</b>
+        <p>spec 冻结后首个真实治理批走通全链；merge 放行的 human 通路补齐；INDEX 改真值源现推；<b>architect 恒纯判官、永不 landing</b>；agent-model-guard hook（architect 派发禁 model 覆盖）；<b>熔断机制首战</b>——input-surface-frontload 同判官三轮不绿，human 裁「换新判官再战」→ R4 GREEN。</p>
+      </div>
+    </div>
+
+    <div class="xrow">
+      <div class="xarrow">
+        <span class="dir left">⟵</span>
+        <div><b>首批回流（09-07）· backport-1 + backport-2</b>：KidPal 经 Track B 评审修掉的 6 项机械闸缺陷（merge-driver 在 Pod worktree 拓扑必死、CodebaseMemory 脏树阻塞合并、ESCALATE 无放行通路、off-main 恒假阳、FROZEN 机锚不认 blockquote、changeId 正则八处拷贝）+ 3 项纪律沉淀，源仓逐条实测「确认同病」后照搬回流；同日迁移指南升 v1.6。</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ev anc">
+        <div class="d">09-07 → 09-11 · 源仓回流接收</div>
+        <b>下游修法反哺上游</b>
+        <p>backport-1/2 落地（各 T1–T10）；<b>09-11 backport-3</b>（五闭环批 + 三直落件，T1–T23、25 个 canonical 文件）落地，retro 里还附了一份「反哺 KidPal 清单」——回流本身又生出新回流。</p>
+      </div>
+      <div class="gut"><div class="dot" style="background:var(--anc);"></div></div>
+      <div class="ev kp">
+        <div class="d">09-13 → 09-15 · 结构重整</div>
+        <b>spec 与交付面的大手术</b>
+        <p><b>spec-split</b>：单文件 spec.md 拆为 requirements.md + architecture.md（互相锚定）+ write-story skill；<b>delivery 四顶层收拢</b>（milestones/workstreams/taskpackages/changes，142 锚全仓重组）；INDEX 按 lane 拆分消跨 lane 合并冲突；worktree 池复用。</p>
+      </div>
+    </div>
+
+    <div class="xrow">
+      <div class="xarrow">
+        <span class="dir left">⟵</span>
+        <div><b>backport-4 起草（09-14）</b>：源仓把 KidPal 的 <b>spec-split</b> 作为 S1+S5 的拆分试点搬回（PROPOSAL draft v0.2，四项 OQ 已预裁，等定稿信号）。</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ev fill"><p>.</p></div>
+      <div class="gut"><div class="dot" style="background:var(--kp);"></div></div>
+      <div class="ev kp">
+        <div class="d">09-18 → 09-21 · 摩擦打磨与缝链</div>
+        <b>从批量跑 Pod 的实战摩擦里逐批清偿</b>
+        <p>260918 四批摩擦拆包族（起草 / 派发 / 收口 / 合并链）+ 260920 六批承重对齐（判据锚、引用锚、裁定锚…）；<b>260921 launch-pipeline</b>：把「RTE 拆包 → launch 面准备 → Pod 起步」四段半成品缝成一条有 owner 的链。同期 m2/m3 固件批次经 dev-loop Pod 持续交付——治理机器已在为真产品打工。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 回流清单 ============ -->
+  <div class="backflow">
+    <h2>回流了什么 —— KidPal → AInativecompany 的 backport 批</h2>
+    <p class="sub2">每批回流都不是直接拷文件：源仓先逐条实测「确认同病」，再以源仓自己的 Track B 七步闭环评审后落地。</p>
+    <div class="bf-grid">
+      <div class="bf">
+        <h4>backport-1 <span class="st done">已落地 09-07</span></h4>
+        <p>6 项机械闸缺陷修法（merge-driver worktree 拓扑、图索引脏树、ESCALATE 放行、off-main 假阳、FROZEN 机锚、changeId 正则）+ 3 项纪律沉淀（验收测试纪律节、worktree 建图提醒、.gitattributes 护栏）。</p>
+      </div>
+      <div class="bf">
+        <h4>backport-2 <span class="st done">已落地 09-07</span></h4>
+        <p>第二批治理修法 T1–T10，含结构门判例对齐（PROPOSAL 锚行转行首形态、manifest 块补齐）与 DEV-GOVERNANCE 引证归位。</p>
+      </div>
+      <div class="bf">
+        <h4>backport-3 <span class="st done">已落地 09-11</span></h4>
+        <p>五闭环批 + 三直落件，T1–T23、25 个 canonical 文件；landing-verifier 首轮 RED 后修复复核放行；retro 附「反哺 KidPal 清单」，回流再生回流。</p>
+      </div>
+      <div class="bf">
+        <h4>backport-4 <span class="st draft">起草中 09-14</span></h4>
+        <p>把 KidPal 的 spec-split（requirements + architecture 双文件）作为源仓 S1+S5 的拆分试点回迁；单批合并搬运，OQ 四项已预裁，等 human 定稿信号。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 尾注 ============ -->
+  <div class="coda">
+    <div class="card">
+      <h3>为什么说 KidPal 目前领先</h3>
+      <p class="lead">方向反过来了：上游开始整体搬运下游的创新。</p>
+      <p>① 源仓 9 月的治理动作主体是「接收回流」（backport 1–4），而 KidPal 同期在产出新结构（spec-split、delivery 四顶层、launch 缝链）；② KidPal 26 天走完 34 批 arch 变更，密度约为源仓高峰期的两倍；③ 源仓最新试点（backport-4）直接采 KidPal 的 spec-split 方案。领先与否最终是你的判断，这三条是仓内记录可见的事实。</p>
+    </div>
+    <div class="card">
+      <h3>演化里反复出现的三个机制</h3>
+      <p><b>摩擦驱动</b>：几乎所有 gov-review 批都始于一次真实卡壳（假绿闸、合并必死、判官越权），不预想问题。</p>
+      <p><b>诚实记录</b>：迁移的 LANDED-UNREVIEWED、跳过 Track B 的在册、判官引文误伤的披露——治理史本身就是证据链。</p>
+      <p><b>先评审再回流</b>：双仓之间不直接拷文件，回流也要走接收方自己的七步闭环 + 实测确认同病。</p>
+    </div>
+  </div>
+
+  <div class="srcnote">
+    证据源：AInativecompany <code>changes/INDEX.md</code>（arch 130 批）与 git 提交史（2026-06-08 起）；KidPal <code>delivery/changes/arch/INDEX.md</code>（arch 34 批）与 git 提交史；各批 PROPOSAL / retro / landing-verdict 原文。回流批内容摘自源仓 260907/260911/260914 backport 系列 PROPOSAL。「KidPal 领先」为用户判断，佐证事实如上尾注所列。
+  </div>
+
+</div>
+</body>
+</html>

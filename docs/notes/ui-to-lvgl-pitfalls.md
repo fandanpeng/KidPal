@@ -121,7 +121,7 @@
 
 ## 7.5 真机字体方案：小智的 SPIFFS .bin 字库（调查结果）
 
-> 证据来源：XiaoZhiCode V2.1.0（`ESP32-S3-RLCD-4.2-Demo/03_XiaoZhi/XiaoZhiCode_V2.1.0/`），已建 CodebaseMemory 图索引（项目名 `xiaozhi-rlcd`）。
+> 证据来源：XiaoZhiCode V2.1.0（`ESP32-S3-RLCD-4.2-Demo/03_XiaoZhi/XiaoZhiCode_V2.1.0/`），已建 CodebaseMemory 图索引（项目名 `ESP32-S3-RLCD-4.2-Demo-03_XiaoZhi`）。
 
 ### 方案本质
 小智**不用 FreeType，也不把字库编进固件**，而是第三条路：

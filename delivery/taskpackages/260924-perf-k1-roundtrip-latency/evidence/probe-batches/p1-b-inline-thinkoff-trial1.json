@@ -1,0 +1,110 @@
+{
+  "segment": "p1-b-inline-thinkoff-trial1",
+  "layer": "a1",
+  "samples": {
+    "chat": [
+      {
+        "total_s": 11.628,
+        "reply": "你好呀！我是小伴，很高兴见到你～今天想聊点什么，或者想问点什么呢？\n\n```display\n{\"view\":\"text\",\"text\":\"你好呀！我是小伴，很高兴见到你～今天想聊点什么，或者想问点什么呢？\"}\n```"
+      },
+      {
+        "total_s": 4.098,
+        "reply": "你好呀！🌟 有什么我可以帮你的吗？\n\n想聊点什么、查点东西，还是看看手头的活儿？我都在。"
+      },
+      {
+        "total_s": 4.401,
+        "reply": "你好呀，David 🌟 我在呢。\n\n有什么想聊的、想做的？课表、讲故事、查字，或者别的杂活儿都行——说一声就开干。"
+      }
+    ],
+    "schedule": [
+      {
+        "total_s": 9.753,
+        "reply": "明天是**星期五（9月25日）**，星玥的安排是：\n\n**白天学校课程（6节）**\n- 第1节 数学\n- 第2节 语文\n- 第3节 美术\n- 第4节 体育\n- 第5节 心健\n- 第6节 音乐\n- 第7节 空（周五兴趣课没有安排）\n\n**放学后（每周固定课表）**\n- 周五没有任何课外班 ✅\n\n**一次性安排**：无。\n\n所以明天是个相对轻松的日子——白天六节课，下午没有兴趣课，放学后也没有培训班，直接回家就行。备注里也没有要带的东西。\n\n（数据来源：`kidpal/schedule.md`，按 `date` 实取明天 = Friday 2026-09-25 匹配。）",
+        "note_readback": true
+      },
+      {
+        "total_s": 10.49,
+        "reply": "明天是周五（2026-09-25），我读了课表：\n\n- **学校课程表（周五）**：第1节 数学、第2节 语文、第3节 美术、第4节 体育、第5节 心健、第6节 音乐、第7节（兴趣课）空。\n- **每周固定课表**：周五无课外安排。\n- **一次性安排**：无。\n\n明天是周五，白天学校有数学、语文、美术、体育、心健和音乐六节课，第七节兴趣课空着。放学后没有培训班安排，也没有要带的东西。\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天是周五（9月25日）。\\n\\n【学校课程表】\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 兴趣课：无（周五空）\\n\\n【放学后培训班】无\\n【一次性安排】无\"}}\n```",
+        "note_readback": true
+      },
+      {
+        "total_s": 12.261,
+        "reply": "明天是**周五（2026-09-25）**，学校一共六节课：第1节数学、第2节语文、第3节美术、第4节体育、第5节心健、第6节音乐。周五没有课外班，第7节也是空的，放学就能回家啦。\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天是周五（2026-09-25）\\n\\n学校课程：\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 空\\n\\n课外固定课：无（周五没有培训班）\\n一次性安排：无\\n\\n要带的东西：无\"}}\n```\n\n",
+        "note_readback": true
+      }
+    ],
+    "weather": [
+      {
+        "total_s": 14.681,
+        "reply": "西安今天（9月24日，周四）天气：\n\n- **气温**：17～22°C，当前约 **19°C**（体感 21°C）\n- **概况**：多云为主，上午有雾/零星小雨，**下午和傍晚雨势明显变大**\n- **降水**：15:00 前后小雨（约 2mm，概率 67%）；18:00 前后转中雨（约 2.8mm，概率 84%）\n- **湿度/风**：湿度 84%～93%，西南风 3～8 km/h，风力不大\n- **日出/日落**：06:33 / 18:39\n\n一句话：白天前半段还好，**出门记得带伞**，傍晚下班/放学时段雨最明显。\n\n（数据源：wttr.in，观测点 34.35°N 108.91°E）",
+        "retrieval": true
+      },
+      {
+        "total_s": 11.207,
+        "reply": "西安今天（9月24日，周四）大体是**阴天，可能转小雨**，出门最好带把伞。\n\n- **气温**：18～22℃ 左右，体感偏凉\n- **天气**：全天阴沉，白天到夜间有小雨概率\n- **风力**：微风（1～2 级）\n- **湿度**：83%～85%，比较潮\n- **空气质量**：良（AQI 约 58），可以正常外出\n\n穿衣建议：长袖加件薄外套刚刚好，早晚温差不大但下雨会更凉一点。\n\n",
+        "retrieval": true
+      },
+      {
+        "total_s": 10.263,
+        "reply": "西安今天（9月24日）湿漉漉的一天：早上有雾，现在约 **18°C**（体感 20°C），湿度 89%，风很小（西南风 ~4 km/h）。\n\n- **气温**：17 ~ 22°C，昼夜温差不大\n- **降水**：凌晨有过小雨，下午 15:00 前后转小到中雨，**傍晚 18:00–21:00 雨最明显**（降水概率 84~85%，约 2~3 mm）\n- **日出/日落**：06:33 / 18:39\n\n出门带把伞，傍晚那阵雨别淋着。明天（25 日）16~21°C，仍可能有零星小雨。\n\n",
+        "retrieval": true
+      }
+    ]
+  },
+  "host": {
+    "before": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870         957         661           1         416         913\nSwap:          3071         359        2712",
+      "swap_used_mb": 359,
+      "mem_available_mb": 913,
+      "memory_pressure_warnings_30m": 3
+    },
+    "after": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870        1306         292           1         436         564\nSwap:          3071         356        2715",
+      "swap_used_mb": 356,
+      "mem_available_mb": 564,
+      "memory_pressure_warnings_30m": 4
+    }
+  },
+  "sessions": {
+    "before": 503,
+    "after": 512
+  },
+  "prompt_sha256": "425d293d35b106b581785a78055f5718068531b240d52db763591eed68b0cc62",
+  "prompt_name": "openclaw-system-prompt.v6.md",
+  "endpoint": "http://127.0.0.1:18789/v1/chat/completions",
+  "model": "openclaw/default",
+  "n": 3,
+  "user_prefix": "/think:off",
+  "decision": {
+    "segment": "p1-b-inline-thinkoff-trial1",
+    "layer": "a1",
+    "n_min": 3,
+    "n_ok": true,
+    "medians": {
+      "chat": 4.401,
+      "schedule": 10.49,
+      "weather": 11.207
+    },
+    "bottom": {
+      "chat": true,
+      "schedule": false,
+      "weather": true
+    },
+    "bottom_pass": false,
+    "target": {
+      "chat": false,
+      "schedule": false,
+      "weather": false
+    },
+    "target_pass": false,
+    "quality": {
+      "n": 9,
+      "display_rate": 0.3333333333333333,
+      "schema_rate": 0.2222222222222222,
+      "quality_pass": false,
+      "weather_retrieval_ok": true,
+      "note_readback_ok": true
+    },
+    "verdict": "FAIL"
+  }
+}

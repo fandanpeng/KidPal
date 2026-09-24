@@ -40,7 +40,8 @@
         "docs/archive",
         "docs/notes",
         "docs/ui",
-        "docs/crq"
+        "docs/crq",
+        "docs/showme"
       ]
     }
   },

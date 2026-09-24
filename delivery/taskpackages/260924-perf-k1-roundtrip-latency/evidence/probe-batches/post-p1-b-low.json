@@ -1,0 +1,110 @@
+{
+  "segment": "post-p1-b-low",
+  "layer": "a1",
+  "samples": {
+    "chat": [
+      {
+        "total_s": 8.72,
+        "reply": "你好呀，David！🌟 有什么要我帮忙的？\n\n小提醒一句：我这边上下文里多出了一份「KidPal v6 板子 system prompt」（带 display 块格式的那套）——如果你是有意贴进来测试/调试的，告诉我一声，我就按板子的口径来回；如果是手滑带进来的，我这边照常用普通助手模式就好。"
+      },
+      {
+        "total_s": 5.4,
+        "reply": "你好呀，David！🌟 我是星星，随时在。\n\n今天想做点什么？聊聊近况、理一理 KidPal 那边的活儿，还是随便问点什么都可以。"
+      },
+      {
+        "total_s": 4.086,
+        "reply": "你好呀，David！🌟 有什么我能帮你的吗？"
+      }
+    ],
+    "schedule": [
+      {
+        "total_s": 16.231,
+        "reply": "明天是星期五，白天的课是：第一节数学、第二节语文、第三节美术、第四节体育、第五节心健、第六节音乐，第七节是空的。放学后没有安排课外班，可以早点回家休息啦！\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天（9月25日 星期五）的课表：\\n第一节 数学\\n第二节 语文\\n第三节 美术\\n第四节 体育\\n第五节 心健\\n第六节 音乐\\n第七节 空\\n\\n放学后没有课外班安排。\"}}\n```",
+        "note_readback": false
+      },
+      {
+        "total_s": 11.868,
+        "reply": "明天是9月25日星期五。白天的学校课有数学、语文、美术、体育、心健和音乐，第七节没有兴趣课。放学后也没有安排培训班，可以早点回家啦！\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天 · 9月25日 星期五\\n\\n学校课程\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 空\\n\\n课外安排：无\"}}\n```",
+        "note_readback": false
+      },
+      {
+        "total_s": 8.956,
+        "reply": "明天（周五 2026-09-25）的课我给你理好啦～\n\n明天是周五，学校六节课：第1节数学、第2节语文、第3节美术、第4节体育、第5节心健、第6节音乐，第7节空着。周五没有课外培训班，放学就能回家啦。\n\n```display\n{\"view\":\"text\",\"data\":{\"text\":\"明天（周五 9月25日）课表：\\n\\n【学校课程】\\n第1节 数学\\n第2节 语文\\n第3节 美术\\n第4节 体育\\n第5节 心健\\n第6节 音乐\\n第7节 空\\n\\n【课外课】周五没有安排\\n\\n温馨提示：周五没有要带的特别物品哦～\"}}\n```",
+        "note_readback": true
+      }
+    ],
+    "weather": [
+      {
+        "total_s": 10.709,
+        "reply": "西安今天（9/24）阴凉有雨，出门带伞 🌧️\n\n- **现在**：18°C（体感 20°C），有雾/霾，湿度 89%，风很小（西南偏西 4 km/h），能见度约 3 km\n- **全天**：17 ~ 22°C，上午雾蒙蒙，中午前后零散小雨\n- **重点**：下午 3 点后雨势上来，傍晚 6 点到夜间 9 点最明显（中雨，降雨概率 85% 左右）\n\n建议：白天出门带把伞，傍晚通勤/接娃那会儿雨最大，鞋子挑防滑的。明天转多云、21°C 上下，雨会小很多。",
+        "retrieval": true
+      },
+      {
+        "total_s": 9.898,
+        "reply": "西安今天（9/24）阴雨天，白天 17~22℃，现在 19℃ 左右、体感 21℃，湿度挺高（84%），风很小。\n\n- 上午：阴，有零星小雨和薄雾的可能，18~20℃\n- 下午 15 点后：雨逐渐明显，22℃ 左右\n- 傍晚到夜里（18~21 点）：中雨为主，降水概率 85% 上下，气温回落到 17~18℃\n\n出门记得带伞，傍晚雨最大，路面湿滑注意点。",
+        "retrieval": true
+      },
+      {
+        "total_s": 9.951,
+        "reply": "**西安今天（9月24日，周四）**：阴雨天，体感偏凉。\n\n- **气温**：17~22℃，当前约 19℃，湿度 84%，体感 21℃\n- **天气**：早上有雾＋零星小雨，**下午 15 点后雨势明显加大**，傍晚到夜间是中雨（降水概率 85% 左右）\n- **风**：西南偏西风，很弱（约 4 km/h）\n- **日出/日落**：06:33 / 18:39\n\n带把伞出门，下午和晚上会下得比较大；一件薄外套正好，别穿太薄。明天（25日）17~21℃，还是阴雨为主。",
+        "retrieval": true
+      }
+    ]
+  },
+  "host": {
+    "before": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870         988         628           1         418         882\nSwap:          3071         407        2664",
+      "swap_used_mb": 407,
+      "mem_available_mb": 882,
+      "memory_pressure_warnings_30m": 5
+    },
+    "after": {
+      "free_m": "total        used        free      shared  buff/cache   available\nMem:           1870        1251         342           1         441         619\nSwap:          3071         388        2683",
+      "swap_used_mb": 388,
+      "mem_available_mb": 619,
+      "memory_pressure_warnings_30m": 6
+    }
+  },
+  "sessions": {
+    "before": 530,
+    "after": 539
+  },
+  "prompt_sha256": "425d293d35b106b581785a78055f5718068531b240d52db763591eed68b0cc62",
+  "prompt_name": "openclaw-system-prompt.v6.md",
+  "endpoint": "http://127.0.0.1:18789/v1/chat/completions",
+  "model": "openclaw/default",
+  "n": 3,
+  "user_prefix": "",
+  "decision": {
+    "segment": "post-p1-b-low",
+    "layer": "a1",
+    "n_min": 3,
+    "n_ok": true,
+    "medians": {
+      "chat": 5.4,
+      "schedule": 11.868,
+      "weather": 9.951
+    },
+    "bottom": {
+      "chat": true,
+      "schedule": false,
+      "weather": true
+    },
+    "bottom_pass": false,
+    "target": {
+      "chat": false,
+      "schedule": false,
+      "weather": true
+    },
+    "target_pass": false,
+    "quality": {
+      "n": 9,
+      "display_rate": 0.3333333333333333,
+      "schema_rate": 0.3333333333333333,
+      "quality_pass": false,
+      "weather_retrieval_ok": true,
+      "note_readback_ok": false
+    },
+    "verdict": "FAIL"
+  }
+}

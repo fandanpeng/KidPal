@@ -183,5 +183,9 @@
   "260923-arch-review-schedule-grid-cold-boot": {
     "date": "2026-09-23",
     "mergedInMain": "yes"
+  },
+  "260923-arch-review-graph-index-name-errata": {
+    "date": "2026-09-23",
+    "mergedInMain": "yes"
   }
 }

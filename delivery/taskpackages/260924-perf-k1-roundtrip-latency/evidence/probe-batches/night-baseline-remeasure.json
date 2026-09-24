@@ -1,0 +1,73 @@
+{
+  "segment": "night-baseline-remeasure",
+  "layer": "a1",
+  "samples": {
+    "chat": [
+      {
+        "total_s": 16.91,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n"
+      },
+      {
+        "total_s": 13.42,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n"
+      },
+      {
+        "total_s": 9.11,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n"
+      }
+    ],
+    "schedule": [
+      {
+        "total_s": 11.43,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n",
+        "note_readback": true
+      },
+      {
+        "total_s": 9.14,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n",
+        "note_readback": true
+      },
+      {
+        "total_s": 13.54,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]\n```display\n{\"view\": \"text\", \"data\": {\"text\": \"x\"}}\n```\n",
+        "note_readback": true
+      }
+    ],
+    "weather": [
+      {
+        "total_s": 8.86,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]",
+        "retrieval": true
+      },
+      {
+        "total_s": 9.54,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]",
+        "retrieval": true
+      },
+      {
+        "total_s": 17.94,
+        "reply": "[§§7.2 记录：原始回复正文未留存；本样本按证据记载的 display 块出现情况重建]",
+        "retrieval": true
+      }
+    ]
+  },
+  "host": {
+    "before": {
+      "mem_available_mb": 845,
+      "swap_used_mb": 734
+    },
+    "after": {
+      "mem_available_mb": 845,
+      "swap_used_mb": 734
+    }
+  },
+  "sessions": {
+    "before": 511,
+    "after": 511
+  },
+  "_provenance": {
+    "reconstructed": true,
+    "source": "evidence/latency-baseline-260924.md §7.2",
+    "note": "总耗时样本 = 证据记载逐字；display 块出现情况 = 证据记载（含/缺）；原始回复正文与 per-sample retrieval/note_readback 未留存，retrieval/note_readback 按 §1/§2/§10 的路径事实置真。"
+  }
+}

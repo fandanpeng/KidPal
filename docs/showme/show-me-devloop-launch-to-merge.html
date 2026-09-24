@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dev Loop 全程：从 launch 到合并 · KidPal</title>
+<style>
+  :root{
+    --bg:#faf7f2; --ink:#2b2723; --muted:#6b635b; --line:#d9d1c6;
+    --main:#c8532c; --pod:#2f6f6b; --ref:#8a8577; --cache:#3b6ea5;
+    --ok:#3f7d3a; --warn:#b07a1a;
+    --card:#fffdf9;
+    --planner:#2f6f6b; --acc:#7c5cd6; --build:#3b6ea5;
+    --verify:#c8532c; --fixer:#b07a1a; --integr:#59636e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 56px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+  h2{font-size:16px;margin:32px 0 10px;padding-left:9px;border-left:3px solid var(--main)}
+  h2 .en{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:6px}
+  code{background:#f2ece3;border-radius:5px;padding:1px 5px;font-size:12.5px;
+       font-family:ui-monospace,Consolas,"Courier New",monospace}
+  .kv{color:var(--muted);font-size:13px}
+  .kv b{color:var(--ink);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  ul{margin:6px 0 0 18px;padding:0}
+  li{margin:3px 0}
+  .note{border-left:3px solid var(--warn);background:#fdf6e8;padding:10px 14px;
+        border-radius:0 10px 10px 0;font-size:13.5px;margin-top:14px}
+  .note.ok{border-left-color:var(--ok);background:#f1f7ef}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:28px;line-height:1.7}
+
+  /* ── ① 全景轨道 ── */
+  .rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;
+        background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .stop{flex:1 1 130px;min-width:118px;border:1px solid var(--line);border-radius:10px;
+        padding:9px 10px;background:#fff}
+  .stop .n{display:block;font-size:12px;color:var(--muted);letter-spacing:.5px}
+  .stop b{display:block;font-size:13.5px;margin:1px 0 2px}
+  .stop small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45}
+  .stop.hl{border-color:var(--main);box-shadow:0 0 0 1px var(--main) inset}
+  .stop.hl .n{color:var(--main)}
+  .loopback{margin:8px 0 0;padding:8px 12px;border:1px dashed var(--line);border-radius:10px;
+            font-size:12.5px;color:var(--muted);background:#fffdf6}
+  .loopback b{color:var(--warn)}
+
+  /* ── 步骤条 ── */
+  ol.steps{list-style:none;margin:0;padding:0 0 0 24px;border-left:2px solid var(--line)}
+  ol.steps>li{position:relative;padding:0 0 15px 0}
+  ol.steps>li:last-child{padding-bottom:0}
+  ol.steps>li::before{content:attr(data-n);position:absolute;left:-37px;top:0;
+       width:22px;height:22px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);
+       font-size:11.5px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  ol.steps>li.key::before{border-color:var(--main);color:var(--main);font-weight:700}
+  .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}
+  .head b{font-size:14px}
+  .head .out{color:var(--muted);font-size:12.5px}
+  .body{color:var(--muted);font-size:13px;margin-top:2px}
+  .body b{color:var(--ink);font-weight:600}
+
+  .role{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;
+        color:#fff;letter-spacing:.2px;white-space:nowrap}
+  .r-planner{background:var(--planner)} .r-acc{background:var(--acc)}
+  .r-build{background:var(--build)} .r-verify{background:var(--verify)}
+  .r-fixer{background:var(--fixer)} .r-integr{background:var(--integr)}
+  .r-human{background:#8a8577} .r-mech{background:var(--cache)}
+
+  /* ── 门链 ── */
+  .gate{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:12px 14px;margin-bottom:10px;position:relative}
+  .gate .tag{position:absolute;right:12px;top:11px;font-size:11px;color:var(--muted);
+             border:1px solid var(--line);border-radius:20px;padding:1px 7px}
+  .gate h3{margin:0 0 4px;font-size:14px}
+  .branch{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+  @media(max-width:820px){.branch{grid-template-columns:1fr}}
+  .br{border-radius:10px;padding:9px 11px;font-size:12.5px;border:1px solid}
+  .br b{display:block;font-size:12.5px;margin-bottom:2px}
+  .br-ok{border-color:#bcd9b4;background:#f1f7ef}
+  .br-ok b{color:var(--ok)}
+  .br-block{border-color:#e6cfa0;background:#fdf6e8}
+  .br-block b{color:var(--warn)}
+  .br-esc{border-color:#e3b6a6;background:#fdf0ec}
+  .br-esc b{color:var(--main)}
+  .seq{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:8px;font-size:12.5px}
+  .seq span.s{background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 9px}
+  .seq span.s.hot{border-color:var(--main);color:var(--main)}
+  .seq i{color:var(--muted);font-style:normal}
+
+  .cmd{background:#2b2723;color:#f3ece1;border-radius:10px;padding:11px 14px;
+       font-family:ui-monospace,Consolas,monospace;font-size:12.5px;overflow-x:auto;
+       white-space:pre;line-height:1.75;margin-top:8px}
+  .cmd em{color:#e0a878;font-style:normal}
+  .five{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:10px}
+  .five div{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12.5px}
+  .five b{display:block;font-size:12.5px;margin-bottom:2px;color:var(--main)}
+  .lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .lane h3{margin:0 0 6px;font-size:13.5px}
+  .chip{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:20px;
+        padding:1px 7px;color:var(--muted);margin:0 4px 4px 0}
+  .bar{height:6px;border-radius:6px;background:#efe8dd;margin-top:8px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--pod)}
+
+  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
+  .chips .c{background:var(--card);border:1px solid var(--line);border-radius:10px;
+            padding:8px 11px;font-size:12.5px;color:var(--muted)}
+  .chips .c b{display:block;color:var(--ink);font-size:12.5px;margin-bottom:1px}
+  .chips .c.hot{border-color:var(--main)}
+  .chips .c.hot b{color:var(--main)}
+
+  @media(max-width:520px){
+    .wrap{padding-left:14px;padding-right:14px}
+    ol.steps{padding-left:26px}
+    ol.steps>li::before{left:-34px;width:20px;height:20px;font-size:10.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dev Loop 全程：从 launch 到合并</h1>
+  <div class="sub">事实核实于 2026-09-24（本机实测 board <code>.git/devloop/pods/*.json</code>：40 个 Pod · merged 36 · running 1 · blocked 1 · queued 1 · abandoned 1；逐字对照 <code>build-feature.md</code> / <code>kidpal-pod-launch-prep</code> skill / <code>merge-driver.mjs</code> / <code>pre-merge-escalation-gate.mjs</code> / <code>hooks/verify.mjs</code>）</div>
+
+  <h2>零、一句话 <span class="en">the whole thing</span></h2>
+  <div class="note ok">
+    <b>一个包（TaskPackage）的一生</b>：portfolio-planner 把它拆出来、commit 到一条<b>专用 base 分支</b> → 主线程把它的 launch 面备好（worktree + 环境 + 图索引 + 启动卡）→ <b>人在那棵树里跑一个交互式 planner 会话</b> → 该会话（Pod）内部走「先冻验收 → builder 实现 → verifier↔fixer 磨到绿 → integrator 收拢」→ planner 拿机械合并门 → <b>前置升级闸放行后自动落本地 main</b>；remote push 始终是人的事。
+    <br>全程 5 段、1 个回路；合并是<b>串行</b>的（merge token + mergeOrder），Pod 之间<b>并行上限 3</b>。
+  </div>
+
+  <h2>一、全景：五段 + 一个回路</h2>
+  <div class="rail">
+    <div class="stop"><span class="n">① 拆包调度</span><b>RTE 拆包</b><small>portfolio-planner<br>→ 专用 base 分支</small></div>
+    <div class="stop"><span class="n">② launch 面准备</span><b>主线程备场</b><small>worktree · 环境<br>图索引 · 启动卡</small></div>
+    <div class="stop hl"><span class="n">③ launch</span><b>人启动 Pod</b><small>一树一会话<br>交互式 planner</small></div>
+    <div class="stop hl"><span class="n">④ Pod 内 dev-loop</span><b>十步自治循环</b><small>验收 → 实现<br>验证 ↔ 修复 → 收拢</small></div>
+    <div class="stop hl"><span class="n">⑤ 合并门 → 合并</span><b>机械闸放行</b><small>前置升级闸<br>merge-driver 落 main</small></div>
+    <div class="stop"><span class="n">↻ 跨 Pod 复盘</span><b>loop-retro</b><small>提共性 → ARQ<br>→ 回流 ①</small></div>
+  </div>
+  <div class="loopback">
+    <b>回路在这里闭合</b>：Pod 收尾写的 <code>pod-retro.md</code>（单包教训）+ 周期性的 <code>/loop-retro</code>（跨 Pod 提共性）不是给人看的装饰——共性被提成 <b>architect-owned ARQ</b>，走治理变更，改的是 ①② 的制度本身。这个 loop 会改自己。
+  </div>
+
+  <h2>二、② launch 面准备 <span class="en">launch 前，主线程备场 · 手册 = kidpal-pod-launch-prep skill</span></h2>
+  <div class="kv" style="margin-bottom:8px">包从哪来：上游过 <code>/triage-change</code> 分档（拆包 / 单包 Full / 单包 Lite / 直接修），portfolio-planner 按 <code>dependsOn</code> + <code>mergeOrder</code>（WIP=3）拆成 N 个带 <code>changeId</code> 的包，制品 commit 到<b>专用 base ref</b>（非 main）。本段备的是「让它能被 launch」的场地：</div>
+  <div class="chips">
+    <span class="c"><b>1 调度判定</b>dependsOn 全 merged ∧ mergeOrder 升序 ∧ WIP 余量</span>
+    <span class="c"><b>2 launch 机械门</b><code>--check-launch</code> 绿；上游已知红基线按「带锚三件齐」判停</span>
+    <span class="c"><b>3 worktree</b>复用空闲树 ∨ 按需新建；一树一常驻分支</span>
+    <span class="c"><b>4 环境等价化</b>镜像 sdkconfig / dependencies.lock + <code>managed_components</code> 软链 + bootstrap</span>
+    <span class="c hot"><b>5 专属图索引</b><code>index_repository(worktree)</code>——必办，不得降级「无索引、读文件」</span>
+    <span class="c"><b>6 board 预填</b><code>pods/&lt;id&gt;.json</code> 置 queued + worktreePath（running 归 Pod 自己）</span>
+    <span class="c"><b>7 启动卡</b><code>launch-card.md</code>，git-tracked，随 commit-before-launch 进基准 ref</span>
+    <span class="c"><b>8 记录交接</b>progress.md 追加 → 启动卡交 human 自跑</span>
+  </div>
+  <div class="note">
+    <b>launch 面不做什么</b>（越权即事故）：<b>不代跑 launch、不合并、不 push</b>。launch 之后的一切（intake / builder / verifier / integrator / 合并门）归 planner Pod；跨 Pod 拆包与调度归 portfolio-planner；契约面归契约门。
+  </div>
+
+  <h2>三、③ launch <span class="en">人在场，一树一会话</span></h2>
+  <div class="kv">人在<b>该包对应的 worktree</b> 里自跑交互式会话（一个目录一个会话——并行同树在操作层不可达）：</div>
+  <div class="cmd"><em># 在 Pod worktree 根目录下</em>
+claude --settings .claude/dev-loop.settings.json --agent planner</div>
+  <div class="kv" style="margin-top:10px">启动卡的<b>五要素</b>：</div>
+  <div class="five">
+    <div><b>① 任务</b>跑 <code>&lt;changeId&gt;</code>（workstream，mergeOrder N）</div>
+    <div><b>② 基线锚</b>progress.md 带 SHA 行 —— 各面域判停结论（可引用 / 须重跑）</div>
+    <div><b>③ 上一包留根</b><code>changes/dev/&lt;上一包&gt;/pod-retro.md</code>，intake 逐条评估；构成 blockingDecision → fail-closed 上报</div>
+    <div><b>④ 固件严格模式</b><code>VERIFY_FW_BUILD_REQUIRED=1</code>（无关闭留痕即开）</div>
+    <div><b>⑤ 命令行</b>身份探测 / 包事实 / 环境事实 / 教训全文一律不搬运，planner 凭 changeId 自探测四处</div>
+  </div>
+  <div class="note">
+    <b>headless 路径暂不用</b>：本仓 2026-09-24 human 裁定 launch 一律交互式（无人值守 headless 形态搁置，ARQ-260924 留 gov 批处理）。原因值得记住——<b>headless 与交互式对 CLI 校验口径的容忍度不同</b>，同一份 settings 在 headless 下会 exit 4 阻塞 dev/review-loop launch 面。
+  </div>
+
+  <h2>四、④ Pod 内 dev-loop <span class="en">十步，由 planner 主线程驱动</span></h2>
+  <div class="kv" style="margin-bottom:12px">
+    <span class="role r-planner">planner</span> 编排，全程主线程 ·
+    <span class="role r-acc">acceptance-author</span> 冻验收 ·
+    <span class="role r-build">builder</span> 实现 ·
+    <span class="role r-verify">verifier</span> 判（只读） ·
+    <span class="role r-fixer">fixer</span> 修 ·
+    <span class="role r-integr">integrator</span> 收拢 ·
+    <span class="role r-mech">机械闸</span> 脚本
+  </div>
+  <ol class="steps">
+    <li data-n="1"><div class="head"><span class="role r-planner">planner</span><b>Source intake</b><span class="out">→ board <code>queued</code> → <code>running</code></span></div>
+      <div class="body">先做 <b>portfolio handoff 探测</b>（两段契约）：按 changeId 找 <code>taskpackages/&lt;id&gt;/taskpackage.json</code> / <code>devloop/pods/&lt;id&gt;.json</code> / <code>origin.upstreamRef</code> → PROPOSAL。命中已存在的包 → 以其 <code>sourceType/origin/rigor/riskTier</code> 为权威消费，<b>不重归一、不覆盖 sourceType</b>。然后归一输入来源，定 <code>sourceType</code> / <code>sourceRefs[]</code> / <code>riskTier</code> / <code>gateProfile[]</code> / 子系统与 acceptanceRefs。信息不足就问人，不猜。</div></li>
+    <li data-n="2"><div class="head"><span class="role r-mech">预审</span><b>契约判定</b><span class="out">→ 触契约则停在契约门</span></div>
+      <div class="body">任何疑似要改 <code>docs/contracts/**</code> / events / schema / mcp-tools / shared-types / 系统 spec 的点，先派 <code>architect-reviewer</code> 预审。只有 reviewer 判定<b>必须</b>改契约时，才停在契约变更门交人类架构师。</div></li>
+    <li data-n="3"><div class="head"><span class="role r-planner">planner</span><b>Slicing / Planning 预检</b></div>
+      <div class="body">判 Lite TaskPackage / Full TaskPackage / 挂接已有 workstream / 新建 workstream / <code>needs-triage</code>。<code>planningImpact=needs-triage</code> 或 handoff <code>blockingDecisions[]</code> 未解决 → <b>停下，不得派 builder</b>。开工前确认 <code>.claude/scope-map.json</code> 已允许本包的验收与实现路径，避免中途补 scope。</div></li>
+    <li data-n="4"><div class="head"><span class="role r-planner">planner</span><b>Draft TaskPackage</b><span class="out">→ <code>delivery/taskpackages/&lt;id&gt;/taskpackage.json</code> + <code>current/</code></span></div>
+      <div class="body"><b>必须立刻落盘</b>，不能只在聊天里展示。条件升级触发器自检（触发形状只有 <code>return</code> / <code>propose-drop</code> / <code>notify</code> 三种）；<code>notify</code> 前须完成至少一次有记录的锐化尝试。非交互环境 <code>AskUserQuestion</code> 不可用时 <b>fail-closed</b>：写 <code>pending-human-ruling.md</code> 并以 <code>needs-triage</code> 退出。</div></li>
+    <li data-n="5" class="key"><div class="head"><span class="role r-acc">acceptance-author</span><b>先写验收</b><span class="out">→ 冻结的验收测试 + 红基线</span></div>
+      <div class="body">产出<b>冻结的</b>验收测试（每条断言绑 TaskPackage 的 acceptanceRefs / sourceRefs，断言真实结果——DB 落库 / 事件发出 / 审计 / UI 状态，<b>严禁「没报错就算过」</b>），以及红基线命令与红基线结果。验收测试归 acceptance-author，<b>builder / fixer 改不动</b>。</div></li>
+    <li data-n="6"><div class="head"><span class="role r-planner">planner</span><b>Finalize TaskPackage</b></div>
+      <div class="body">补齐 <code>acceptanceTestsFile[]</code>、<code>redBaselineCommand</code>、<code>redBaselineResult</code>、<code>docsSyncRequired</code>、<code>docsOwner: "integrator"</code>，写回两处。<b>缺任何一项、或缺落盘记录，不得派 builder。</b></div></li>
+    <li data-n="7"><div class="head"><span class="role r-build">builder</span><b>实现</b><span class="out">→ 冻结验收从红转绿</span></div>
+      <div class="body">在<b>单个包边界内</b>（<code>apps/sX-*</code> / 对应实现面）写实现与单元测试。只读消费 contracts 与 <code>*.acceptance.*</code>，<b>绝不改它们</b>；结构化日志带 correlationId。完成交回 planner，由 verifier 判定——<b>不自评通过</b>。</div></li>
+    <li data-n="8" class="key"><div class="head"><span class="role r-verify">verifier</span> ↔ <span class="role r-fixer">fixer</span><b>内循环</b><span class="out">→ <code>&lt;changeId&gt;/current/verdict.json</code>（机器件，程序 fs-write，非 agent 落盘）</span></div>
+      <div class="body">planner invoke <code>verify.mjs</code>（dev-loop deterministic verifier）→ 拿 <code>{ ok, results, error }</code>：<br>
+      · <b>绿</b> → 出循环，进第 9 步。<br>
+      · <b>红</b> → 把 <code>error</code>（ErrorEnvelope）交 fixer 打<b>最小补丁</b>（每轮聚焦一个 failingStep，避免散弹式改动）→ 再 invoke <code>verify.mjs</code>。<br>
+      · 直到绿，或<b>满 3 轮 → 升级给人类</b>（附最后 ErrorEnvelope + 试过的假设）。<br>
+      <b>禁止嵌套派生</b>——内循环由 planner 驱动。oracle 是对抗而非退出码：builder ≠ verifier。</div></li>
+    <li data-n="9"><div class="head"><span class="role r-integr">integrator</span><b>集成 + 文档同步 + closeout 闸</b><span class="out">→ <code>delivery/changes/dev/&lt;id&gt;/</code> 制品 + Review Packet</span></div>
+      <div class="body">全绿后收拢：docs-sync、架构 / 依赖卫生检查、安全证据收口、必要 ADR 归档、<b>全量端到端</b>（含跨子系统事件流），产出标准制品 + Review Packet + 可回滚路径。<br>
+      然后跑 <b>closeout 闸</b> <code>closeout-check.mjs --update-index</code>（<b>唯一授权的 closeout index projection 写路径</b>）——缺三个 blocking 制品、milestones STATUS 漂移、workstream 缺失则红；verdict / verification 机器件缺失只 advisory。闸绿后<b>在 feature 分支 commit 已绿改动（不 push、不在 main/master commit）</b>，供合并门复核已 commit 的 diff。</div></li>
+    <li data-n="10"><div class="head"><span class="role r-planner">planner</span><b>supervisor 合并门</b><span class="out">→ <code>delivery/changes/dev/&lt;id&gt;/supervisor-verdict.json</code></span></div>
+      <div class="body">跑 <code>supervisor-verdict-gate.mjs</code> <b>机械闸</b>（planner invoke，<b>不派 supervisor agent</b>）。输入必须含 TaskPackage source/risk/gate profile、verifier 证据、Review Packet、closeout 结果与<b>已 commit 的 diff</b>。判出 APPROVE / BLOCK / ESCALATE → 见下一节。</div></li>
+  </ol>
+
+  <h2>五、⑤ 合并门 → 落本地 main</h2>
+
+  <div class="gate">
+    <span class="tag">机械闸</span>
+    <h3><span class="role r-mech">机械</span> supervisor-verdict-gate.mjs</h3>
+    <div class="kv">判据 = <b>证据可信 + 风险等级</b>。低 / 中风险且证据完整 → 机器 APPROVE 自动放行；高 / critical → 升级 human。</div>
+    <div class="branch">
+      <div class="br br-ok"><b>APPROVE</b>继续走前置升级闸</div>
+      <div class="br br-block"><b>BLOCK</b>退回 fixer / planner；<b>同一 changeId 连续 2 轮 BLOCK 未转绿 → 熔断 ESCALATE</b>（不外环硬磕）</div>
+      <div class="br br-esc"><b>ESCALATE</b>停下交人类 review / 合并（hd 计数主体 = 机械闸脚本）</div>
+    </div>
+  </div>
+
+  <div class="gate">
+    <span class="tag">必经，不是门</span>
+    <h3><span class="role r-mech">机械</span> pre-merge-escalation-gate.mjs · 前置升级闸</h3>
+    <div class="kv">只重算「<b>例外清单</b>是否命中」，命中即 exit 1 并报命中项；放行 exit 0。<b>它放行，merge-driver 才跑。</b></div>
+    <div class="grid" style="margin-top:10px">
+      <div class="card" style="border-radius:9px">
+        <div class="kv"><b>两档通用</b></div>
+        <ul class="kv">
+          <li>diff 触 <code>docs/contracts/**</code> 且同批无契约门证据</li>
+          <li>源 commit 落在 main / master 上（off-main 隔离被破坏）</li>
+          <li>存在未 resolve 的 <code>agent-escalation</code> 或 <code>blocked</code> 态</li>
+        </ul>
+      </div>
+      <div class="card" style="border-radius:9px">
+        <div class="kv"><b>dev-loop 档</b></div>
+        <ul class="kv">
+          <li><code>riskTier ∈ {high, critical}</code>（读 supervisor-verdict.json）</li>
+          <li>supervisor APPROVE 的 provenance 不可机验</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="gate">
+    <span class="tag">merge token</span>
+    <h3><span class="role r-mech">机械</span> merge-driver.mjs --pod &lt;changeId&gt;</h3>
+    <div class="kv">merge token 的 canonical consumer。<b>串行化</b>：按 <code>mergeOrder</code> 逐个处理，每个走完才轮下一个——所以合并是队列，不是并发的。</div>
+    <div class="seq">
+      <span class="s">rebase 到 main</span><i>→</i>
+      <span class="s">quick-check</span><i>→</i>
+      <span class="s hot">merge</span><i>→</i>
+      <span class="s">释放 token</span><i>→</i>
+      <span class="s">下一个 Pod</span>
+    </div>
+    <div class="kv" style="margin-top:8px">rebase 这步顺带把该树常驻分支 rebase 到 main —— <b>树内治理面即为最新</b>，所以下一包复用同一棵树可以直接续跑。</div>
+  </div>
+
+  <div class="gate" style="border-color:#e3b6a6;background:#fdf7f5">
+    <span class="tag">人批通道</span>
+    <h3><span class="role r-human">human</span> ESCALATE 之后的机械路径</h3>
+    <div class="kv">人批后不停在口头：planner 落 pod-events 人批事件（<code>payload.decision="approve-escalated-merge"</code>）→ 再跑 <code>merge-driver.mjs --pod &lt;changeId&gt; --human-approval-ref &lt;eventId&gt;</code>，凭据透传给前置升级闸核验并进 merge commit message。</div>
+  </div>
+
+  <div class="note">
+    <b>永不 push</b>：入<b>本地 main</b> 是自动的（可回滚），<b>remote push 始终由人经 PR 走</b>。<code>deny-main-push.mjs</code> 钩着这条铁律。planner 也不直推 main、不改契约、不自评通过。
+  </div>
+
+  <h2>六、并行走多快 <span class="en">WIP=3 · 三棵树三个相位</span></h2>
+  <div class="kv">并行发生在 ④——一棵 worktree 一个会话，三个 Pod 可以同时卡在流水线的不同段；但 ① 的依赖图说了算，⑤ 永远是串行队列（merge token / mergeOrder）。</div>
+  <div class="lanes" style="margin-top:12px">
+    <div class="card lane">
+      <h3><span class="chip" style="border-color:#bcd9b4;color:#3f7d3a">building</span>Pod A</h3>
+      <div class="kv">在 builder：让冻结验收从红转绿。产物还没成形。</div>
+      <div class="bar"><i style="width:55%"></i></div>
+    </div>
+    <div class="card lane">
+      <h3><span class="chip" style="border-color:#e6cfa0;color:#b07a1a">磨第 2 轮</span>Pod B</h3>
+      <div class="kv">verifier 红 → fixer 最小补丁 → 再 verify。3 轮不进就升级人类。</div>
+      <div class="bar"><i style="width:75%"></i></div>
+    </div>
+    <div class="card lane">
+      <h3><span class="chip" style="border-color:#bcd9b4;color:#3f7d3a">排队等 token</span>Pod C</h3>
+      <div class="kv">已 APPROVE + 升级闸放行，在 mergeOrder 队列上等前一个释放 token。</div>
+      <div class="bar"><i style="width:95%"></i></div>
+    </div>
+  </div>
+
+  <h2>七、回路：这个 loop 会改自己</h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 8px;font-size:14px">近端：Pod 收尾</h3>
+      <div class="kv">planner 趁热写 <code>delivery/changes/dev/&lt;id&gt;/pod-retro.md</code>——本包的踩坑与摩擦。它是<b>下一包 intake 的输入</b>（启动卡第 ③ 要素），逐条评估，构成 blockingDecision 就 fail-closed 上报。</div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 8px;font-size:14px">远端：跨 Pod 提共性</h3>
+      <div class="kv"><code>/loop-retro</code> 周期性读多个 Pod 的复盘证据，提取<b>共性</b>踩坑 / 升级主题 / 流程债，把治理类发现转成 <b>architect-owned ARQ</b>——不自我批准、不直接开 TaskPackage。ARQ 走治理变更，改的是 ① 拆包调度与 ② launch 面的制度本身。</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>制图</b>：show-me ｜ <b>事实来源</b>：<code>docs/DEV-GOVERNANCE.md</code> §4（Dev Loop OS 五段图 + §5 工程门体系）· <code>.claude/commands/build-feature.md</code>（十步）· <code>.claude/skills/kidpal-pod-launch-prep/SKILL.md</code>（launch 面八步）· <code>.claude/scripts/merge-driver.mjs</code> / <code>pre-merge-escalation-gate.mjs</code> / <code>portfolio-reconcile.mjs</code> / <code>closeout-check.mjs</code> 文件头治理声明 · <code>.claude/skills/merge-to-main/SKILL.md</code> ｜ <b>board 实测</b>：<code>.git/devloop/pods/*.json</code> + <code>board.json</code>（2026-09-24）
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>治理机制成长史 · 诞生 → 实战摔跟头 → 长骨</title>
+<style>
+  :root{
+    --ink:#1a2233; --muted:#5b6575; --faint:#8b94a3;
+    --bg:#f6f7fa; --card:#fff; --line:#e4e7ee;
+    --bad:#c23434; --bad-bg:#fdf0f0; --bad-bd:#eec9c9;
+    --good:#137a5b; --good-bg:#eaf6f0; --good-bd:#c4e5d6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); line-height:1.6; padding:40px 20px 80px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  h1{font-size:25px;} .sub{color:var(--muted); margin:6px 0 10px; font-size:14.5px;}
+  .legend{display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 30px; font-size:12.5px; color:var(--muted); align-items:center;}
+  .lg{display:inline-flex; align-items:center; gap:6px;}
+  .sw{width:14px; height:14px; border-radius:4px; display:inline-block;}
+  .sw.birth{background:#334155;} .sw.prob{background:var(--bad-bg); border:1.5px solid var(--bad);} .sw.fix{background:var(--good-bg); border:1.5px solid var(--good);}
+
+  /* 成长循环条 */
+  .cycle{display:grid; grid-template-columns:1fr 26px 1fr 26px 1fr 26px 1fr 30px 1fr; align-items:center; margin-bottom:40px;}
+  .cyc{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:12.5px; text-align:center;}
+  .cyc b{display:block; font-size:13.5px; margin-bottom:2px;}
+  .cyc p{color:var(--muted);}
+  .cyc.hl{border-color:#b9c6e8; background:#f0f4fc;}
+  .carrow{color:var(--faint); font-size:16px; text-align:center;}
+  .cyc .loop{color:#7c5cd6; font-weight:700; font-size:12px;}
+
+  /* 机制泳道 */
+  .lane{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--ac,#334155); border-radius:12px; padding:16px 20px 12px; margin-bottom:18px;}
+  .lane h2{font-size:16.5px; color:var(--ac,#334155);}
+  .lane .born{font-size:12px; color:var(--faint); font-weight:600; margin:1px 0 12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{border-radius:9px; padding:6px 11px; font-size:12.3px; max-width:100%;}
+  .chip .t{font-weight:700; margin-right:2px;}
+  .chip.birth{background:#334155; color:#fff;}
+  .chip.birth .t{color:#cbd5e1;}
+  .chip.prob{background:var(--bad-bg); border:1px solid var(--bad-bd); color:#7c2424;}
+  .chip.prob .t{color:var(--bad);}
+  .chip.fix{background:var(--good-bg); border:1px solid var(--good-bd); color:#1d5c46;}
+  .chip.fix .t{color:var(--good);}
+  .chip.note{background:#f4f5f8; border:1px dashed #d5d9e2; color:var(--muted);}
+  .lane .why{font-size:12px; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
+  .lane .why b{color:var(--ink);}
+
+  /* 深潜卡 */
+  h2.sec{font-size:19px; margin:44px 0 6px;}
+  p.secsub{color:var(--muted); font-size:13.5px; margin-bottom:16px;}
+  .deep{display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:14px;}
+  .dc{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:16px 18px;}
+  .dc h3{font-size:14px; margin-bottom:8px;}
+  .dc .step{font-size:12.5px; margin-bottom:7px; padding-left:14px; position:relative;}
+  .dc .step::before{content:""; position:absolute; left:0; top:7px; width:7px; height:7px; border-radius:50%;}
+  .dc .s-b .step::before{background:#334155;} .dc .s-p .step::before{background:var(--bad);} .dc .s-f .step::before{background:var(--good);}
+  .dc .step b{font-size:12.8px;}
+  .dc .step span{color:var(--muted); display:block; font-size:12px;}
+  .lab{display:inline-block; font-size:10.5px; font-weight:700; border-radius:99px; padding:1px 8px; margin-right:5px; vertical-align:1px;}
+  .lab.b{background:#e2e8f0; color:#334155;} .lab.p{background:var(--bad-bg); color:var(--bad);} .lab.f{background:var(--good-bg); color:var(--good);}
+
+  /* 规律 */
+  .laws{margin-top:44px; display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;}
+  .law{background:linear-gradient(180deg,#ffffff,#fbfcfe); border:1px solid var(--line); border-radius:12px; padding:15px 17px;}
+  .law h3{font-size:13.5px; margin-bottom:5px;}
+  .law p{font-size:12.3px; color:var(--muted);}
+  .srcnote{margin-top:34px; font-size:11.5px; color:var(--faint); border-top:1px solid var(--line); padding-top:14px;}
+  @media (max-width:760px){ .cycle{grid-template-columns:1fr;} .carrow{transform:rotate(90deg);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>治理机制成长史</h1>
+  <p class="sub">每个机制都不是设计出来的，是被一次真实的失败逼出来的 —— 诞生 → 实战摔跟头 → 长骨，循环三轮半（2026-06-12 → 09-21）</p>
+
+  <div class="legend">
+    <span class="lg"><span class="sw birth"></span>机制诞生</span>
+    <span class="lg"><span class="sw prob"></span>实战暴露的问题</span>
+    <span class="lg"><span class="sw fix"></span>长出的优化</span>
+    <span class="lg" style="margin-left:auto; color:var(--faint);">节奏参考：源仓 7 月变更行 143（含 dev）为密度峰值 · KidPal 9 月 32 批 arch 为单位时间峰值</span>
+  </div>
+
+  <!-- 成长循环 -->
+  <div class="cycle">
+    <div class="cyc"><b>① 实战摩擦</b><p>真跑一次开发 / 评审 / 合并，卡在哪算哪</p></div>
+    <div class="carrow">➜</div>
+    <div class="cyc"><b>② 如实记录</b><p>retro / ARQ 队列 / 「跳过流程在册」，不粉饰</p></div>
+    <div class="carrow">➜</div>
+    <div class="cyc hl"><b>③ Track B 评审</b><p>PROPOSAL → 判官 GREEN → FROZEN</p></div>
+    <div class="carrow">➜</div>
+    <div class="cyc"><b>④ 机制长骨</b><p>新闸 / 新角色 / 新纪律，机械强制优先</p></div>
+    <div class="carrow">↺</div>
+    <div class="cyc"><p class="loop">带着新骨头回到 ①<br>下一轮实战再摔新的跟头</p></div>
+  </div>
+
+  <!-- ================= 泳道 ================= -->
+
+  <div class="lane" style="--ac:#7c5cd6;">
+    <h2>契约门 —— 契约面的守门机制</h2>
+    <div class="born">诞生 2026-06-13 · AInativecompany</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">06-13</span>architect-reviewer 诞生：契约变更预筛 human（首战 38 项过滤 / 5 项升级）</div>
+      <div class="chip prob"><span class="t">✗ 当天</span>发现预批补丁可绕过预筛</div>
+      <div class="chip fix"><span class="t">✓ 06-13</span>红线收紧：所有契约变更强制过预筛，无例外</div>
+      <div class="chip fix"><span class="t">✓ 7月</span>四分类裁定成形（随 spec 携带 / 独立变更 / 漂移 / 无需改）</div>
+      <div class="chip fix"><span class="t">✓ 08-27</span>KidPal 迁移：契约面只读冻结（deny 双拦 + 影子目录禁令）</div>
+      <div class="chip prob"><span class="t">✗ 08-27</span>Prisma 版 spec↔contract 机械门脚本绑旧结构，迁不过来</div>
+      <div class="chip fix"><span class="t">✓ 08-27</span>降级人工核对 + ARQ 登记缺口，如实记录而非静默假装有闸</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：门可以缺，但不能假装在——机械闸缺失时降级人工并留 ARQ，成为「闸真实度」主题的第一次预演。</div>
+  </div>
+
+  <div class="lane" style="--ac:#2563eb;">
+    <h2>dev-loop 开发闭环 —— builder ≠ verifier 分权</h2>
+    <div class="born">诞生 2026-06-12 · AInativecompany</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">06-12</span>planner + acceptance-author 起步（GitNexus 时代）</div>
+      <div class="chip fix"><span class="t">✓ 06-15→17</span>dev-loop v1→v2：verifier↔fixer 内循环 + S5 交付控制面</div>
+      <div class="chip birth"><span class="t">07-12→15</span>首战：K9 openclaw Phase-0，10 个冻结 TaskPackage 走完 supervisor APPROVE</div>
+      <div class="chip prob"><span class="t">✗ 7月</span>假绿验收：测试「没报错就算过」，两次全绿溜过同一缺陷</div>
+      <div class="chip fix"><span class="t">✓ 07-31</span>acceptance / unit 两闸补判别力：断言必须真实结果，反转实现必须变红</div>
+      <div class="chip prob"><span class="t">✗ 7月</span>派发残余 + closeout 漏件：包完成但制品 / 记账不全</div>
+      <div class="chip fix"><span class="t">✓ 07-26 / 08-01</span>closeout hardening + verifier dispatch-residual 清算</div>
+      <div class="chip prob"><span class="t">✗ 7月→9月</span>merge-driver 在 Pod worktree 拓扑下合并必死（07-15 首修未根治）</div>
+      <div class="chip fix"><span class="t">✓ 09-06</span>KidPal 根治（self-check 拓扑自检）→ <b>09-07 修法回流源仓</b></div>
+      <div class="chip prob"><span class="t">✗ 9月</span>launch 链四段半成品：RTE 拆包 / launch 准备 / Pod 起步各管一段，中段无 owner</div>
+      <div class="chip fix"><span class="t">✓ 09-21</span>launch-pipeline 缝链：给中段定 owner、机械语义回收机械面</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：假绿是整个体系里最持久的敌人——「夹具必须能判别」从 7 月的两闸一路沉淀成 KidPal 的常驻记忆纪律。</div>
+  </div>
+
+  <div class="lane" style="--ac:#db2777;">
+    <h2>对抗 review 链 —— challenger ↔ defender ↔ adjudicator</h2>
+    <div class="born">诞生 2026-07-03 · AInativecompany（架构仓合并日，五角色同日入仓）</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">07-03</span>challenger / defender / adjudicator / scenario-author / review-moderator 五角色诞生</div>
+      <div class="chip fix"><span class="t">✓ 07-10</span>统一入口 /arch-change：自动分类路由 + 判 review depth</div>
+      <div class="chip prob"><span class="t">✗ 7月</span>defender 越权写被审对象</div>
+      <div class="chip fix"><span class="t">✓ 07-20</span>write-scope 收紧：只能落自己的 findings 记录</div>
+      <div class="chip prob"><span class="t">✗ 7月</span>裁定无 oracle 制品、证据无锚可查</div>
+      <div class="chip fix"><span class="t">✓ 07-30</span>adjudicator-oracle-artifacts + verdict 承重锚（裁 CONFIRMED / DISMISSED / DEADLOCK）</div>
+      <div class="chip prob"><span class="t">✗ 9月</span>KidPal：architect 既起草又 landing——运动员兼裁判</div>
+      <div class="chip fix"><span class="t">✓ 09-06→07</span>architect 恒纯判官、永不 landing；landing 通道恒 = 主线程 packet-bound 一条</div>
+      <div class="chip prob"><span class="t">✗ 09-09</span>同一判官三轮不 GREEN，死循环空转烧 token</div>
+      <div class="chip fix"><span class="t">✓ 09-09</span>熔断机制：3 轮未 GREEN → human 三选一（转 Track A / 撤回缩圈 / 换新判官）；首战换判官 R4 即 GREEN</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：对抗结构本身也会生病（越权、空转、自证）——对裁判的约束（纯判官 + 熔断 + 换实例）比对红队的武装更花心思。</div>
+  </div>
+
+  <div class="lane" style="--ac:#d97706;">
+    <h2>Track A/B 双轨 —— 治理变更的路由与合并</h2>
+    <div class="born">诞生 2026-07-31（快路径成文）· 固化 08-02（permanentize）· AInativecompany</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">07-31</span>fastpath-protocol-codify：轻路径协议成文</div>
+      <div class="chip fix"><span class="t">✓ 08-02</span>Track B permanentize：七步闭环成为治理变更常驻默认</div>
+      <div class="chip prob"><span class="t">✗ 8月</span>retro 合并后才写，教训已经凉了</div>
+      <div class="chip fix"><span class="t">✓ 08-26</span>retro-before-merge：七步 6↔7 对调，趁热写、先于合并</div>
+      <div class="chip prob"><span class="t">✗ 8月</span>升级闸无人可批（无 human 放行输入口）+ off-main 恒假阳</div>
+      <div class="chip fix"><span class="t">✓ 08-31</span>auto-merge-local-main：本地 main 自动合并 + 前置升级闸（FROZEN 机锚正则锚定状态行）→ 09-01 同步 KidPal</div>
+      <div class="chip fix"><span class="t">✓ 08-31</span>前端对齐 + 例外反选：human 只在「立项 ack + 例外拍板」两个判断点出场</div>
+      <div class="chip prob"><span class="t">✗ 09-04</span>KidPal 首用：升级闸放行路径断线（planner 规程没接上）</div>
+      <div class="chip fix"><span class="t">✓ 09-04</span>escalate-merge-approval：human 事件机械核验补齐放行通路</div>
+      <div class="chip prob"><span class="t">✗ 09-18</span>大批摩擦揉成一包，判官评审负担过重</div>
+      <div class="chip fix"><span class="t">✓ 09-18</span>摩擦拆包族：一包一事、逐批 review（原合并草案拆成四批）</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：自动化的每一步都摔过「断线」的跟头——闸与规程的接线靠 route-regression 自检 + fixture 锁死，不再是散文。</div>
+  </div>
+
+  <div class="lane" style="--ac:#0d9488;">
+    <h2>结构门与 landing 保真 —— 制品即证据</h2>
+    <div class="born">诞生 2026-07-23 · AInativecompany（三件同日）</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">07-23</span>三件同日：landing-fidelity-gate + proposal-consolidation-gate + landing-verifier agent（builder≠verifier 在治理 loop 的补槽）</div>
+      <div class="chip prob"><span class="t">✗ 08-01→03</span>闸假阳系列：supervisor-gate 关键内容误判、auth 轴假阳</div>
+      <div class="chip fix"><span class="t">✓ 08-13</span>gate-accuracy-batch 清算</div>
+      <div class="chip fix"><span class="t">✓ 09-09</span>KidPal gate-truthfulness：完成不凭解释宣布，闸输出必须可对账</div>
+      <div class="chip prob"><span class="t">✗ 9月</span>INDEX 状态被缓存钉死：合了 main 也不翻「已合main」</div>
+      <div class="chip fix"><span class="t">✓ 09-06</span>INDEX 改真值源现推（mergedInMain 由 verdict 行推导，不信缓存）</div>
+      <div class="chip fix"><span class="t">✓ 09-15</span>INDEX lane 拆分：arch / dev 各自维护，消跨 lane 合并冲突</div>
+      <div class="chip fix"><span class="t">✓ 09-20</span>六批承重对齐：判据锚 / 引用锚 / 裁定锚 / verdict 锚 / 读者脚本 / 提案结构逐一对齐</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：从「有闸」到「闸说真话」花了两个月、十几批——治理机器最贵的学费都交在假阳假绿上。</div>
+  </div>
+
+  <div class="lane" style="--ac:#65a30d;">
+    <h2>ARQ 队列 —— 治理改进的账本</h2>
+    <div class="born">诞生 2026-07-03（队列文件随架构仓入仓）· 07-11 起编号密集运转 · AInativecompany</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">07-03</span>ARCH-REVIEW-QUEUE 入仓：治理债有了统一收件箱</div>
+      <div class="chip fix"><span class="t">✓ 07-25</span>retro-convergence：周期复盘共性自动转 ARQ，不自我批准</div>
+      <div class="chip fix"><span class="t">✓ 07-28</span>行格式规范（ID + 日期 + 摘要）</div>
+      <div class="chip prob"><span class="t">✗ 8月</span>队列腐化：僵尸行、处方漂移、已消化项不关行</div>
+      <div class="chip fix"><span class="t">✓ 08-23→25</span>restructure + queue-hygiene 批量清偿；arq-backlog-cleanup workstream 分批排期</div>
+      <div class="chip fix"><span class="t">✓ 9月</span>KidPal gov-arq skill：快路径三要件——已执行测出 + 机判事实齐全，即免重 review 直接进 Track B</div>
+      <div class="chip note"><span class="t">纪律</span>ARQ 处方须实测复证：队列行整条都是待验证假设，先问「是否已被后续批消化」</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：改进建议不能躺在队列里发酵成新的债——快路径让「测出来的小修」不再排队等全套评审。</div>
+  </div>
+
+  <div class="lane" style="--ac:#475569;">
+    <h2>机械强制层与成本分档 —— hooks、scope-map、模型分级</h2>
+    <div class="born">随治理体系入仓 2026-06-13 起 · AInativecompany</div>
+    <div class="chips">
+      <div class="chip birth"><span class="t">06-13起</span>enforce-scope / deny-main-push / commit-safety + scope-map</div>
+      <div class="chip fix"><span class="t">✓ 07-18</span>CodebaseMemory enforcement：trace before edit 入纪律</div>
+      <div class="chip prob"><span class="t">✗ 8→9月</span>图索引两文件常驻脏，阻塞 rebase / merge（fail-closed）</div>
+      <div class="chip fix"><span class="t">✓ 09-09</span>KidPal 快照流向归正：main 捕获 → 各 worktree 分发，禁私带快照 commit → 修法回流源仓</div>
+      <div class="chip prob"><span class="t">✗ 8月</span>全链高配模型，成本失控</div>
+      <div class="chip fix"><span class="t">✓ 08-31</span>agent model tiering：builder / fixer 降 sonnet，planner 按形状升档</div>
+      <div class="chip prob"><span class="t">✗ 09-07</span>architect 派发时被 model 覆盖绕过分档</div>
+      <div class="chip fix"><span class="t">✓ 09-07</span>agent-model-guard hook：deny 硬拦，不再靠散文约束</div>
+    </div>
+    <div class="why"><b>长出的骨头</b>：同一条规律反复验证——散文约束迟早被绕过，能落成 hook + 机检的就不留在文档里。</div>
+  </div>
+
+  <!-- ================= 深潜 ================= -->
+  <h2 class="sec">五个典型跟头 —— 从摔到长的完整过程</h2>
+  <p class="secsub">每张卡 = 一次完整的成长循环：机制在 → 问题现 → 骨头长。</p>
+  <div class="deep">
+    <div class="dc s-b">
+      <h3><span class="lab b">诞生</span><span class="lab p">问题</span><span class="lab f">长骨</span>假绿验收 → 判别力闸</h3>
+      <div class="step"><b>机制在</b><span>07-12 首战：10 个冻结 TaskPackage 走完 dev-loop，全绿交付。</span></div>
+      <div class="step"><b>问题现</b><span>验收测试「没报错就算过」——同一缺陷在两次全绿里溜过，夹具根本不落在差异上。</span></div>
+      <div class="step"><b>骨头长</b><span>07-31 acceptance / unit 两闸补判别力：「断言必须真实结果」；后来沉淀为常驻纪律「反转实现必须变红」。</span></div>
+    </div>
+    <div class="dc">
+      <h3>判官死循环 → 熔断换判官</h3>
+      <div class="step"><b>机制在</b><span>对抗 review：challenger 出 findings、defender 答辩、adjudicator 裁。</span></div>
+      <div class="step"><b>问题现</b><span>09-09 input-surface-frontload：同一判官 R1→R3 三轮 NEEDS-WORK，反复拉扯烧 token 无进展。</span></div>
+      <div class="step"><b>骨头长</b><span>熔断入规：3 轮未 GREEN → human 三选一。首战选「换新判官再战 1 轮」——零上下文新实例 R4 直接 GREEN、零 findings。</span></div>
+    </div>
+    <div class="dc">
+      <h3>运动员兼裁判 → 纯判官原则</h3>
+      <div class="step"><b>机制在</b><span>architect 战略设计 + 评审 + 起草，能力最强的角色什么都干。</span></div>
+      <div class="step"><b>问题现</b><span>既起草又 landing：自己写的方案自己落，对抗形同虚设。</span></div>
+      <div class="step"><b>骨头长</b><span>09-06→07 定死：architect 恒纯判官 / 起草、永不 landing；landing 通道恒 = 主线程 packet-bound 一条。landing-verifier 独立核验补 builder≠verifier 对偶。</span></div>
+    </div>
+    <div class="dc">
+      <h3>retro 凉了 → 先于合并</h3>
+      <div class="step"><b>机制在</b><span>Track B 七步闭环里 retro 是第 7 步——合并之后才写。</span></div>
+      <div class="step"><b>问题现</b><span>合并完心智已切换，教训记录流于形式，「趁热写」落空。</span></div>
+      <div class="step"><b>骨头长</b><span>08-26 retro-before-merge：七步 6↔7 对调，retro 成为合并前置。之后每批制品四件套 = PROPOSAL + landing-summary + landing-verdict + retro。</span></div>
+    </div>
+    <div class="dc">
+      <h3>合并必死 → 修法回流</h3>
+      <div class="step"><b>机制在</b><span>merge-driver 自动合并 Pod 分支——治理机器的自动化骄傲。</span></div>
+      <div class="step"><b>问题现</b><span>Pod worktree 拓扑下 `git checkout main` 必被拒（main 被主 checkout 持有）——07-15 首修没修死，KidPal 迁移后又实测复现。</span></div>
+      <div class="step"><b>骨头长</b><span>KidPal 09-06 根治 + 拓扑自检；09-07 源仓逐条实测「确认同病」后以它自己的 Track B 评审回流。治理 bug 的修复本身走治理流程，形成双仓循环。</span></div>
+    </div>
+  </div>
+
+  <!-- ================= 规律 ================= -->
+  <h2 class="sec">三个月长出来的四条规律</h2>
+  <div class="laws">
+    <div class="law"><h3>摩擦驱动，不预想问题</h3><p>上面每个 ✗ 都是真实卡壳的现场记录，没有一个机制是「提前设计」出来的。设计只发生在问题实测复现之后。</p></div>
+    <div class="law"><h3>最贵的学费都交在「闸说谎」上</h3><p>假绿（vacuous green）与假阳（fail-open 的 FP）清算贯穿 7→9 月，是投入批次最多的单一主题。闸宁可 fail-closed，不可装作在岗。</p></div>
+    <div class="law"><h3>分权是结构性的，不靠自觉</h3><p>builder≠verifier、判官≠landing、scenario 冻结 charter 后 challenger 只读、human 只在两个判断点出场——每次越权都长出一条机械边界。</p></div>
+    <div class="law"><h3>治治理，用治理</h3><p>治理自身的 bug 走同一套 Track B 评审；回流到他仓也要先「确认同病」再走对方的闭环。机器修自己，用的正是自己的规程。</p></div>
+  </div>
+
+  <div class="srcnote">
+    时间与事实核对自：AInativecompany git 提交史（agents 文件 diff-filter=A 起始日期）、changes/INDEX.md、各批 PROPOSAL / retro；KidPal delivery/changes/arch/INDEX.md、各批制品与 git 史。泳道内 ✗/✓ 芯片按时间顺序排列；「7月」「8月」等粗粒度日期表示该问题在多批 retro 中反复出现、难以归于单日。
+  </div>
+
+</div>
+</body>
+</html>

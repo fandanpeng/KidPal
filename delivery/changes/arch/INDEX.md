@@ -10,7 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260923-gov-review-arq-ssot-restructure](260923-gov-review-arq-ssot-restructure/) | 2026-09-23 | landed | — |
+| [260923-arch-review-graph-index-name-errata](260923-arch-review-graph-index-name-errata/) | 2026-09-23 | frozen | yes |
 | [260923-arch-review-schedule-grid-cold-boot](260923-arch-review-schedule-grid-cold-boot/) | 2026-09-23 | draft | yes |
 | [260922-arch-review-spec-v5-ui-align](260922-arch-review-spec-v5-ui-align/) | 2026-09-22 | frozen | yes |
 | [260921-gov-review-canonical-text-align](260921-gov-review-canonical-text-align/) | 2026-09-21 | landed | yes |
