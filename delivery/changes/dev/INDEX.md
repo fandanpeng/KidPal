@@ -6,10 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (42)
+## dev (43)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260924-m4-k1-story-cloud-link](260924-m4-k1-story-cloud-link/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
 | [260924-perf-k1-roundtrip-latency](260924-perf-k1-roundtrip-latency/) | 2026-09-24 | docs/requirements.md#NFR-PERF-1 | closed | — |
 | [260923-m3-k6-boot-auto-connect](260923-m3-k6-boot-auto-connect/) | 2026-09-23 | 本会话 human 现场报告（开机/重启后设备与 Front 连接不自动建立，需按键才建连）+ human 立项 ack（A-only）；architect triage 裁决 ②单包 Lite + Shape A 形状修订（human 离席预授权技术判断，回席后补 ack） | closed | m3-schedule |
 | [260923-m3-k7-schedule-grid-restore](260923-m3-k7-schedule-grid-restore/) | 2026-09-23 | 260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial r1 收口：adjudicator GREEN + F-C5 human 裁 accept-as-risk + R1-R11 回灌 v3 + 契约门批准 C1 挂账 + landing-verifier GREEN，commit 565cb2d）；需求面症状由 triage 门定性（P1 已修于 K6、P2 = 症状 B 独立设计入口，m3-schedule 遗留③） | closed | m3-schedule |
