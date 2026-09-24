@@ -6,12 +6,14 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (36)
+## arch (41)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260924-arch-review-perf-k1-roundtrip-latency](260924-arch-review-perf-k1-roundtrip-latency/) | 2026-09-24 | draft | — |
 | [260923-arch-review-graph-index-name-errata](260923-arch-review-graph-index-name-errata/) | 2026-09-23 | frozen | yes |
 | [260923-arch-review-schedule-grid-cold-boot](260923-arch-review-schedule-grid-cold-boot/) | 2026-09-23 | draft | yes |
+| [260923-gov-review-arq-ssot-restructure](260923-gov-review-arq-ssot-restructure/) | 2026-09-23 | landed | yes |
 | [260922-arch-review-spec-v5-ui-align](260922-arch-review-spec-v5-ui-align/) | 2026-09-22 | frozen | yes |
 | [260921-gov-review-canonical-text-align](260921-gov-review-canonical-text-align/) | 2026-09-21 | landed | yes |
 | [260921-gov-review-launch-pipeline](260921-gov-review-launch-pipeline/) | 2026-09-21 | landed | yes |

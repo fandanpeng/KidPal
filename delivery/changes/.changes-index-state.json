@@ -187,5 +187,9 @@
   "260923-arch-review-graph-index-name-errata": {
     "date": "2026-09-23",
     "mergedInMain": "yes"
+  },
+  "260923-gov-review-arq-ssot-restructure": {
+    "date": "2026-09-23",
+    "mergedInMain": "yes"
   }
 }
