@@ -131,3 +131,10 @@ sessions 批后计数 **529**(511+18,与两批探针数吻合;store 膨胀速率
 - **A 案(并行准备)**:`openclaw models set deepseek/deepseek-chat`(或 deepseek-flash,先查 reasoning 标志与 1000k ctx 真伪)+ modelPolicy.allow 增补——三候选同批探针裁决(A2 质量门一视同仁)。
 - 改档/换模后**首批探针缓存打穿属预期**,N≥3 中位数从第二批起算(避免误判)。
 - 来源:docs.openclaw.ai/tools/thinking · docs.openclaw.ai/concepts/models · github.com/openclaw/openclaw/issues/72407 · github.com/openclaw/openclaw/issues/45880 · betterclaw.io/blog/openclaw-slow · blink.new/blog/openclaw-slow-latency-performance-fix-2026 · answeroverflow.com/m/1508564311746805870 · reddit r/openclaw(gateway slow 帖)。
+
+## 9. 勘误:exit-4 成因不是「CLI 升级」,是 launch 形态差异(2026-09-24 08:40 CST,human 质询触发排查,append)
+
+- **CLI 版本时间线(本机实测)**:npm 全局 `@anthropic-ai/claude-code` = **2.1.268,装于 2026-09-11 12:40**,此后未变(`where claude` 唯一命中 npm shim;AppData 各 Claude 目录为 desktop 配置 6/15、Claude-3p 7/4、cli-nodejs 遥测缓存 4/25——均非 CLI 本体;cli-nodejs/Cache mtime 09-24 01:28 恰为失败 launch 时刻的进程缓存,佐证走的同一安装)。
+- **同二进制、两种形态、两种结果**:K7(260923)= 交互式 launch(pod-events 首事件含 AskUserQuestion「human 当场授权」→ human 在场交互形态),同一份 dev-loop.settings.json 跑通全程;260924 01:28 本包首次用 **headless `-p` 形态** → 同一文件被 settings 校验硬拒 exit 4。
+- **修正结论**:`Write(./docs/contracts/**)` 无效规则**长期潜伏**(至少 9/11 前即在文件里),交互式形态容忍(或 K7 launch 未带 --settings,两可、无法从现存证据判定),headless 形态硬失败——「CLI 校验新口径/疑自动更新」的前说**不成立,撤回**。ARQ-260924 行内「防 CLI 升级再静默炸 launch 面」措辞随本勘误修正为「**headless launch 面的 settings 合法性 dry-run 机检**」(ARQ 行本体不回改,owner=architect 治理批消费本勘误)。
+- **对决策点 0 的影响**:修复必要性不变且更清晰——无人值守/headless 是本包与后续夜间包的既定 launch 形态,settings 必须过 headless 校验;替代路径(不改 settings、由 human 交互式陪跑 launch)与「明早看效果/无人值守」诉求冲突,不取。
