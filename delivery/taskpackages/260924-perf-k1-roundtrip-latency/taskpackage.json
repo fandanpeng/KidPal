@@ -73,7 +73,7 @@
   "docRefs": [
     "docs/requirements.md#NFR-PERF-1",
     "docs/requirements.md#NFR-PERF-2",
-    "docs/architecture.md"
+    "docs/ADR.md"
   ],
   "sourceRefs": [
     "delivery/taskpackages/260924-perf-k1-roundtrip-latency/evidence/latency-baseline-260924.md",
