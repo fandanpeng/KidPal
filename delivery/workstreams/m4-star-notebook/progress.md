@@ -39,3 +39,11 @@
 - **过目切法**：human 认可三包拆法（门 1 GREEN 在案后过目）。
 - **契约门 HUMAN_APPROVED 十问**：唯一偏差 = **Q2 改判丙案**（最新 16 条窗口 + total 全量、板端 cap 不抬；知情注记含旧条目可达性收窄，CCP §5 逐字）；余九问按拟答（Q5 甲案+隐式 ack 重发 / Q6 硬删+审计+边界仅 story MD+家长通道挂账 / Q7 front relay 收紧 story 块 / Q8 display_schema story floor / Q9 §1.6 story 段随 diff / Q1/Q3/Q4/Q10 认可）。裁定落账 CCP §5 + review.md；传播 K1/K2 plan + acceptance + decision-coverage（LP1 ruling-approved / LP2 verified）。
 - 待办：常驻分支同步 main → commit-before-launch + base/m4-star-notebook → 契约 diff 落地（逐字 patch human 过目 → git apply + 收口义务同批）→ K1 launch prep。
+
+## 2026-09-24 · 契约 diff 落地（主线程，human 逐字 patch 过目批「落」，K1 launch 前）
+
+- **落地通道**：CCP v2 §5 十问 HUMAN_APPROVED → 主线程起草逐字 patch（12 处替换全部 assert 单命中；CRLF 以工作树实态生成——i/lf w/crlf 实测，git apply --check 先行绿）→ patch 全文贴示 human 过目 → 批「落」→ `git apply` 两文件 cleanly（+24/−14 与 --stat 自证一致）。
+- **契约 diff**：§1.3③（标题「星星记录本列表」+ 行为句 v1.27 交互 + total=现存篇数 + items 最新 ≤16 窗口条〔Q2 丙案〕+ 变更记录行）/ §1.3④（标题「刚存好/阅读态」+ 示例 seq + 行为句〔朗读清理 + fresh_save 盖章 N=data.seq〕+ seq 条 + 变更记录行）/ §1.5-3（story floor + relay 收紧句）+ §1.5-6（故事面机械职责新条）/ §1.6 模板 story 段 / §四 `kidpal_story_delete` 新条目（隐式 ack + 硬删 + 边界仅 story MD + 家长通道挂账）。
+- **随包收口义务同批完成**：story.py 三处钉行更新（doc 零行为——pytest `134 passed / 4 deselected / 0 failed` 实证）；CDQ 三行登记（CDQ-260924-m4-k1-storylist-semantics / -storytext-seq / -story-delete，均 LANDED）；ADR-007 追加（seq 账本 + 16 条窗口丙案〔含 Q2 改判备选记录〕+ 删除单向消息/隐式 ack + 单源收紧，ADR-005 边界逐字对齐）；gate evidence 九节落盘（`architecture-gate-evidence.md`，条件 C1–C5 挂 K1/K2/K3）；evidence 四样本（`evidence/validate-display-samples.md`：S1–S3 正 + S4 delete 伪装 display 负样本白名单拒绝；如实注记 Q8 floor 归 C1 未实现）；人工 diff 逐字核对清单过（pass-oracle 第 4 关降级如实记录，ARQ-260827 在册）。
+- **LP1 → verified**（decision-coverage 落账）；**LP2 verified**（门 1 GREEN + human 过目切法）；LP3 = 拆包 commit f05684d + base/m4-star-notebook（rebase 后常驻分支 = main + ops-record c325e89 + 拆包 f05684d + 派生再生 fd67c18）——本落地 commit 为其后继，K1 intake 应将契约 diff 计入基线（M3 同款注记：redBaseline 面无行为变化）。
+- **待办**：K1 launch prep（check-launch / launch-card / 图索引新鲜度 / 环境等价化 / 基线重锚注记）→ launch 由 human 执行；arch §5.2④/§5.4/§5.1.2/§7①②④收口 = K1 integrator docs-sync（C4），不在本批。

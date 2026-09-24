@@ -255,7 +255,7 @@
       "id": "LP1",
       "scope": "package:260924-m4-k1-story-cloud-link",
       "condition": "契约门 HUMAN_APPROVED：CCP v2（K1 包目录，四分类预审 2026-09-24 已跑 NEEDS_REVISION→v2 修订并入）经 human 契约门裁十问；契约 diff 随 K1 同 PR 落地；gate evidence 十节骨架随包收口（含 CDQ 三行 + ADR 追加 + 契约变更记录行 + 人工 diff 核对清单）。",
-      "status": "ruling-approved（2026-09-24 human 契约门十问裁定在案 = CCP §5，Q2 改判丙案余九问拟答；待办 = 逐字 patch human 过目 → git apply 落地 + gate evidence/CDQ/ADR 收口义务同批）"
+      "status": "verified（2026-09-24：十问 HUMAN_APPROVED = CCP §5 + 逐字 patch human 过目批「落」+ git apply cleanly 两文件 + CDQ 三行 LANDED + ADR-007 + gate evidence 九节落盘〔evidence/validate-display-samples.md 四样本 + pytest 134 passed〕；余 C1–C5 实现面条件随 K1/K2/K3 dev-loop 收口）"
     },
     {
       "id": "LP2",

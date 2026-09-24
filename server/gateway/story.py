@@ -9,8 +9,9 @@ story_text 块可原样过 gateway.display_schema.validate_display 机械门。
 
 归属边界：归档落盘 stories/*.md 由本模块（云侧网关）承载；设备只消费下发的 story_list /
 story_text（哑终端纯洁性）。S-F2.5「起标题」归 OpenClaw（一回合不读写文件），本模块只在
-停录后把整段转写落盘并对缺标题做非空回退。契约零改动红线：不新增 view、不给 story_list /
-story_text 加字段（生字反白高亮 P3-E4 已裁、不消费）。
+停录后把整段转写落盘并对缺标题做非空回退。契约对齐（2026-09-24 契约门，CDQ-260924 三行）：story_text 含可选 seq（入册
+流水号账本归本模块，只增不减）；story_list items = 最新 ≤16 条窗口 + total =
+现存篇数（盖章 N 不再取 total）；不新增 view（生字反白高亮 P3-E4 已裁、不消费）。
 
 内存叠压红线 (notes.blockingDecision_memoryPressure)：StoryAccumulator 的每会话近句环 +
 累积缓冲双上限、会话数 max_sessions + LRU，绝不无界增长（char-stroke §8.3 19MB 教训）。
@@ -178,8 +179,9 @@ def list_stories(stories_dir, *, limit=None, offset=0) -> dict:
     """契约 §1.3 ③ story_list producer 下发块：total = 全集计数（与分页无关），
     items 按完整日期倒序（同日按 id 倒序）、date 显示 'MM-DD'、杂物文件不计入。
 
-    limit/offset 只切 items 页、绝不动 total（契约 §一 story_list 硬约束：板子右上角 ×N
-    与盖章「第 N 颗」据此渲染）；offset 超界 -> items [] 而 total 原值。整包过
+    limit/offset 只切 items 页、绝不动 total（契约 §1.3③：total = 现存篇数 = 星星
+    计数 ×N；盖章 N 取 story_text.data.seq——2026-09-24 契约门拆分）；offset 超界
+    -> items [] 而 total 原值。整包过
     validate_display（验收机械断言）。"""
     records = _collect_records(stories_dir)
     total = len(records)  # 全集计数，绝不以 len(items) 顶替
@@ -208,8 +210,8 @@ def _collect_records(stories_dir) -> list:
 
 
 def story_text(record) -> dict:
-    """契约 §1.3 ④ story_text 下发块：data keys 恰为 {id,title,text}，无生字标注/
-    高亮字段（P3-E4）。整包过 validate_display（验收机械断言）。"""
+    """契约 §1.3 ④ story_text 下发块：data keys {id,title,text} + 可选 seq（入册
+    流水号、只增不减——2026-09-24 契约门 additive），无生字标注/高亮字段（P3-E4）。整包过 validate_display（验收机械断言）。"""
     return {
         "view": "story_text",
         "data": {
