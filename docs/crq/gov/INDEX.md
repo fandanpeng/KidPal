@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 13（待拍板 0 / 待触发 11 / 已接受风险 2）；已结 64（归档索引见下）。
+**摘要**：未结 21（待拍板 0 / 待触发 19 / 已接受风险 2）；已结 64（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（11）
+## 待触发（19）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -27,7 +27,15 @@ _（无）_
 | [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | SHOULD | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 下一批 launch 前定夺候选① 文面统一（成本低、且是 M2-K3 与后续所有包的共同前置）；候选②③ 的门策略随下次治理批；若本包 K2 收尾相位出现「未跑 supervisor-gate-check 即欲结束」实况，即升 severity 并触发本条立即处理 |
 | [ARQ-260922-buildfeature-launch-prep-skip](ARQ-260922-buildfeature-launch-prep-skip.md) | SHOULD | `/build-feature` 直启路径不触发 launch-prep——DEV-GOVERNANCE §4 图的 ② launch 面准备阶段（`--check-launch` 门 / worktree 等价化 / 专属图索引 / 已知红基线锚 / 启动卡 / board 预填）在 changeId 直启形状下整段被绕过 | 下一治理批（与 ARQ-260922-pod-requirements-not-authority 同批并批——同动 dev-loop 入口/编排文面；与 ARQ-260918-pod-session-settings-identity-unobservable 残余亦同族可同批）；m3-k5 在跑不阻断 |
 | [ARQ-260922-pod-requirements-not-authority](ARQ-260922-pod-requirements-not-authority.md) | SHOULD | Pod 不先读 requirements story 原文与 AC 就把已定项当开放问题问 human——需求已写明的行为仍给替代推荐让 human 拍板，需求权威被「human 临场偏好」静默替代 | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同批并批） |
+| [ARQ-260923-codemem-mode-doc-drift](ARQ-260923-codemem-mode-doc-drift.md) | SHOULD | CodebaseMemory 索引 mode 的文档与实效不符（三处：AGENTS.md:39 / launch-prep SKILL:93 / cli SKILL:42 示例） | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同族可并批——同动 launch-prep 文面；与 ARQ-260918-spec-face-3page-reconcile 同属「文档与实况对齐」族） |
+| [ARQ-260923-contract-merge-deadpath](ARQ-260923-contract-merge-deadpath.md) | SHOULD | 契约面 diff 的 merge-driver 机械路径整条封死——升级闸契约门证据硬编码 false 恒 BLOCK，契约包只能现场即兴人合，既无机械消解路径也无成文人合 runbook | 下一治理批（可与 ARQ-260923-dispatch-prompt-hard-terms 并批——同动 merge / planner 编排文面） |
+| [ARQ-260923-dispatch-oversight-uncodified](ARQ-260923-dispatch-oversight-uncodified.md) | SHOULD | 「派发书过目门」口径未成文——planner 每棒靠解释 human 一句口头授权判断是否免过目，两棒如实标注「这是我的解释、可能超出授权」；human 2026-09-23 明确裁定：不用每次都请示 | 下一治理批（与 ARQ-260923-dispatch-prompt-hard-terms 同族并批——同动 planner.md 派发步文面） |
+| [ARQ-260923-dispatch-prompt-hard-terms](ARQ-260923-dispatch-prompt-hard-terms.md) | SHOULD | 派发书模板缺三条硬约定——子代理 Write 被拦的回执姿势 / scope 写权前置核对 / mutation 执行证据落盘责任人——全活在各棒 retro 的「下次改进」里、每棒重学一遍 | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260922-pod-requirements-not-authority 同族并批——同动 planner.md 编排文面） |
+| [ARQ-260923-gate-tooling-noise-batch](ARQ-260923-gate-tooling-noise-batch.md) | SHOULD | 治理脚本 / 钩子的「用户面」噪声与危险静默小修集合——误导提示 / 静默相位回落 / 传参形态不一 / 非闸守卫脚本漂移无主 | 下一治理批（一行级小修集合，可搭任意批） |
+| [ARQ-260923-planner-roster-reference-drift](ARQ-260923-planner-roster-reference-drift.md) | SHOULD | planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在 | 下一治理批（一文面小修，可搭任意批） |
+| [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | SHOULD | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 下一治理批（① 枚举修正半成本极低可先行；②③ 随批，与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260923-dispatch-prompt-hard-terms 同动 planner 编排文面可并批） |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 |
+| [ARQ-260924-settings-write-deny-rule-cli-drift](ARQ-260924-settings-write-deny-rule-cli-drift.md) | SHOULD | `.claude/dev-loop.settings.json` + `.claude/review-loop.settings.json` 的 `Write(./docs/contracts/**)` deny 规则被现行 CLI 判非法并**硬阻塞 launch**（exit 4）——CLI settings 校验新口径：文件权限检查只认 `Edit(path)` 规则（Edit 规则覆盖所有文件编辑工具），`Write(path)` 规则不再被匹配 | 下个治理快批（headless 恢复使用前必须完成；交互式 launch 亦建议先行） |
 
 ## 已接受风险（2）
 
