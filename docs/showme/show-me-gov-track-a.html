@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track A 对抗重路径 · /arch-change 逐步拆解 · KidPal 治理</title>
+<style>
+  :root{--bg:#faf8f5;--ink:#262a30;--muted:#6b635b;--line:#e0d8cd;--card:#fff;--accent:#c8532c;--ok:#3f7d3a;--warn:#b07a1a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 56px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  h2{font-size:16.5px;margin:30px 0 10px;padding-left:9px;border-left:3px solid var(--accent)}
+  h2 .en{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:6px}
+  code{background:#f2ece3;border-radius:5px;padding:1px 5px;font-size:12.5px;font-family:ui-monospace,Consolas,"Courier New",monospace}
+  .kv{color:var(--muted);font-size:13px}.kv b{color:var(--ink);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  ul{margin:6px 0 0 18px;padding:0}li{margin:3px 0}
+  .note{border-left:3px solid var(--warn);background:#fdf6e8;padding:10px 14px;border-radius:0 10px 10px 0;font-size:13.5px;margin-top:14px}
+  .note.ok{border-left-color:var(--ok);background:#f1f7ef}
+  .note b{color:var(--ink)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:28px;line-height:1.7;border-top:1px solid var(--line);padding-top:14px}
+  .locator{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:18px}
+  .loc-axis{color:var(--muted)}
+  .loc-node{border:1px solid var(--line);border-radius:20px;padding:2px 10px;color:var(--muted);background:#fff}
+  .loc-node.on{border-color:var(--accent);color:#fff;background:var(--accent);font-weight:600}
+  .loc-sep{color:var(--line)}
+  .legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin:10px 0 0;padding:11px 13px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+  .legend .li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .stop{flex:1 1 132px;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
+  .stop .n{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.4px}
+  .stop b{display:block;font-size:13.5px;margin:2px 0}
+  .stop small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45}
+  .stop.hl{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .stop.hl .n{color:var(--accent)}
+  .loopback{margin:8px 0 0;padding:9px 12px;border:1px dashed var(--line);border-radius:10px;font-size:12.5px;color:var(--muted);background:#fffdf6}
+  .loopback b{color:var(--warn)}
+  ol.steps{list-style:none;margin:0;padding:0 0 0 24px;border-left:2px solid var(--line)}
+  ol.steps>li{position:relative;padding:0 0 16px}
+  ol.steps>li:last-child{padding-bottom:0}
+  ol.steps>li::before{content:attr(data-n);position:absolute;left:-37px;top:0;width:23px;height:23px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  ol.steps>li.key::before{border-color:var(--accent);color:var(--accent);font-weight:700}
+  .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}
+  .head b{font-size:14px}
+  .head .out{color:var(--muted);font-size:12.5px}
+  .body{color:var(--muted);font-size:13px;margin-top:3px}
+  .body b{color:var(--ink);font-weight:600}
+  .role{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;color:#fff;letter-spacing:.2px;white-space:nowrap}
+  .r-human{background:#c0392b}.r-main{background:#2c6fbb}.r-mod{background:#3457a5}.r-arch{background:#2f6f6b}.r-arev{background:#7c5cd6}.r-scn{background:#0e7c66}.r-chal{background:#cf5a2a}.r-def{background:#4a7c3f}.r-adj{background:#6a4fb3}.r-lv{background:#b07a1a}.r-mech{background:#59636e}.r-pln{background:#3b6ea5}
+  .gate{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0;position:relative}
+  .gate .tag{position:absolute;right:12px;top:11px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+  .gate h3{margin:0 0 5px;font-size:14px}
+  .branch{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+  .branch.b2{grid-template-columns:1fr 1fr}
+  @media(max-width:820px){.branch,.branch.b2{grid-template-columns:1fr}}
+  .br{border-radius:10px;padding:9px 11px;font-size:12.5px;border:1px solid}
+  .br b{display:block;font-size:12.5px;margin-bottom:2px}
+  .br-ok{border-color:#bcd9b4;background:#f1f7ef}.br-ok b{color:var(--ok)}
+  .br-block{border-color:#e6cfa0;background:#fdf6e8}.br-block b{color:var(--warn)}
+  .br-esc{border-color:#e3b6a6;background:#fdf0ec}.br-esc b{color:var(--accent)}
+  .seq{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px;font-size:12.5px}
+  .seq span.s{background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 9px}
+  .seq span.s.hot{border-color:var(--accent);color:var(--accent)}
+  .seq i{color:var(--muted);font-style:normal}
+  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px}
+  .chips .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;color:var(--muted)}
+  .chips .c b{display:block;color:var(--ink);font-size:12.5px;margin-bottom:2px}
+  .chips .c.hot{border-color:var(--accent)}.chips .c.hot b{color:var(--accent)}
+  .cmd{background:#2b2723;color:#f3ece1;border-radius:10px;padding:11px 14px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;overflow-x:auto;white-space:pre;line-height:1.75;margin-top:8px}
+  .cmd em{color:#e0a878;font-style:normal}
+  @media(max-width:520px){.wrap{padding-left:14px;padding-right:14px}ol.steps{padding-left:26px}ol.steps>li::before{left:-34px;width:20px;height:20px;font-size:10.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Track A 对抗重路径 · <code>/arch-change</code> 逐步拆解</h1>
+  <div class="sub">触发式重路径，入口 = <code>/arch-change</code>（review-moderator 编排）。命中升级判据才启用。<b>编排但不判</b>：找洞归 challenger、裁定归 adjudicator、起草归被派的 architect。</div>
+
+  <div class="locator">
+    <span class="loc-axis">dev 侧实现 →</span>
+    <span class="loc-node">Triage 前置门</span>
+    <span class="loc-sep">｜</span>
+    <span class="loc-axis">事实源侧 →</span>
+    <span class="loc-node">Track B 默认</span>
+    <span class="loc-node on">Track A 判据命中（本篇）</span>
+  </div>
+
+  <div class="legend">
+    <span class="li"><span class="role r-mod">review-moderator</span>主线程编排 + 落地确认（不代起草、不判）</span>
+    <span class="li"><span class="role r-arch">architect</span>起草 subagent（作者，对偶 builder）</span>
+    <span class="li"><span class="role r-arev">architect-reviewer</span>契约预审 / eligibility 四裁断</span>
+    <span class="li"><span class="role r-scn">scenario-author</span>冻 charter</span>
+    <span class="li"><span class="role r-chal">challenger</span>红队找洞</span>
+    <span class="li"><span class="role r-def">defender</span>辩护 / 承认</span>
+    <span class="li"><span class="role r-adj">adjudicator</span>中立判官 · 裁定 + 产物</span>
+    <span class="li"><span class="role r-lv">landing-verifier</span>governance landing 保真核验</span>
+    <span class="li"><span class="role r-human">human</span>高影响 / 契约 / 治理拍板</span>
+  </div>
+
+  <h2>零、一句话 + 什么时候才走 Track A <span class="en">触发判据</span></h2>
+  <div class="note ok">
+    <b>默认路由是 Track B</b>；Track A（full-adversarial 机器）由判据<b>触发式</b>启用。命中任一即走：<b>① 触 <code>docs/contracts/**</code></b>（直走契约门——契约门是独立机器，非 Track A 族）；<b>② 跨系统结构性变更</b>（如固件协议与服务端语义同时动）。<b>「声明红队」= 自愿逃生门</b>（human 或 architect 任一方随时可启，非路由义务）。<b>存疑向严</b>：判据适用存疑默认升 human。
+    <br><b>作者≠判官≠核验</b>：architect≈builder（起草候选）· scenario-author 独立冻 charter · adjudicator≈supervisor（裁）· landing-verifier≈verifier（核）。moderator 编排但不代 architect 起草、不自评通过、不替 human 拍板。
+  </div>
+
+  <h2>一、全景：七步</h2>
+  <div class="rail">
+    <div class="stop hl"><span class="n">① phase-0</span><b>分类</b><small>lane + 契约 flag<br>+ review-depth</small></div>
+    <div class="stop"><span class="n">② 归一</span><b>制品目录</b><small>arch-review / gov-review</small></div>
+    <div class="stop"><span class="n">③ 起草</span><b>architect 候选</b><small>spec 草案 / PROPOSAL<br>不落 canonical</small></div>
+    <div class="stop"><span class="n">④ 契约预审</span><b>仅 contract-touching</b><small>architect-reviewer<br>四分类</small></div>
+    <div class="stop hl"><span class="n">⑤ 对抗 loop</span><b>charter→辩论→裁定</b><small>scenario / chal / def / adj<br>禁止嵌套派生</small></div>
+    <div class="stop hl"><span class="n">⑥ 收口</span><b>profile 分叉</b><small>spec 落地 / gov decision-packet<br>→ human</small></div>
+    <div class="stop"><span class="n">⑦ 收尾</span><b>adjudicator 写盘</b><small>findings + packet<br>+ CRQ + debate-log</small></div>
+  </div>
+  <div class="loopback"><b>profile 已知可直达</b>：<code>/review-arch &lt;spec&gt;</code>（spec profile）、<code>/review-governance &lt;治理变更&gt;</code>（governance profile）跳过 ① 分类。<b>「统一入口 /arch-change」统一的是 Track A 内部的 spec / governance 两个 profile</b>，不是统一 Track A 与 Track B 两条轨。</div>
+
+  <h2>二、逐步：每一步谁干、怎么走到、干嘛、产出什么</h2>
+  <ol class="steps">
+    <li data-n="1" class="key"><div class="head"><span class="role r-mod">review-moderator</span><b>Intake + 分类（phase-0）</b><span class="out">→ 主 lane + contract-touching flag + review-depth</span></div>
+      <div class="body">读 plan，判<b>主 lane</b>（二选一）+ <b>contract-touching flag</b>（横切标记，非独立 lane）：<br>
+      · <b>spec</b>：触 <code>docs/systems/**</code>（canonical = <code>requirements.md</code> + <code>architecture.md</code>）的意图 / 行为 / 拓扑 / 边界 / 阶段。<br>
+      · <b>governance</b>：触 <code>.claude/{agents,commands,references,rules,skills}</code> / <code>scope-map.json</code> / <code>*.settings.json</code> / <code>hooks/**</code> / <code>scripts/**</code> / 指令根。<b>UIUX 不是第 3 个 profile</b>——它是携带 UIUX 轴集的 governance-lane 变更，在既有 governance profile 下审（<b>不判审美</b>，审美是人类品味决策）。<br>
+      · <b>mixed</b>（命中 &gt;1 lane）：<code>AskUserQuestion</code>，<b>默认建议拆两次跑</b>；强耦合到必须同一 PR 时同会话先跑完 spec profile 落地再跑 governance profile。<br>
+      · <b>纯契约面</b>（无 spec/gov 配套）：不在本命令处理 → 直走 <code>architect-reviewer</code> + 人类契约门，本命令收尾。<br>
+      分类结果<b>必须显式展示</b>；含糊用 <code>AskUserQuestion</code>，别猜。随后判 <b>review-depth</b>（见下卡）。</div></li>
+
+    <li data-n="2"><div class="head"><span class="role r-mod">review-moderator</span><b>归一制品目录</b><span class="out">→ reviewDir</span></div>
+      <div class="body">spec profile → <code>delivery/changes/arch/arch-review-&lt;slug&gt;/</code>；governance profile → <code>delivery/changes/arch/gov-review-&lt;id&gt;/</code>。</div></li>
+
+    <li data-n="3"><div class="head"><span class="role r-arch">architect</span><b>派 architect 起草候选（作者阶段）</b><span class="out">→ 候选制品（写入 ≠ 冻结）</span></div>
+      <div class="body">派 <code>architect</code>（起草 subagent，对偶 dev-loop builder）产<b>候选</b>：<b>spec lane</b> → spec 草案 / 候选修订写入 <code>docs/systems</code>（草案面，<b>写入不等于已冻结</b>）；<b>governance lane</b> → <code>gov-review-&lt;id&gt;/PROPOSAL.md</code>（<b>不落 G1/G2/G3 canonical</b>）。architect 只起草候选、备 review 背景 / 候选关注点 / 历史 canary 线索；<b>不写冻结 charter、不自评可冻结、自改递归仍须 human、不自路由</b>。</div></li>
+
+    <li data-n="4"><div class="head"><span class="role r-arev">architect-reviewer</span><b>契约预审（仅当 contract-touching）</b><span class="out">→ 四分类 / ContractChangePacket</span></div>
+      <div class="body">派 <code>architect-reviewer</code> 四分类；<code>SPEC_CONTRACT_DRIFT</code> / <code>CONTRACT_CHANGE_REQUIRED</code> → <b>停在人类契约门</b>，配套 spec / proposal <b>暂存 packet 不单独落地</b>（原子性：与契约改动同一 PR）。</div></li>
+
+    <li data-n="5" class="key"><div class="head"><span class="role r-mod">review-moderator</span><b>路由进 profile 跑完整对抗 loop</b><span class="out">→ findings + 裁定 + debate-log</span></div>
+      <div class="body">按 <code>review-moderator.md</code> Process 推进：<span class="role r-scn">scenario-author</span> 冻 charter → <span class="role r-chal">challenger</span>↔<span class="role r-def">defender</span> 辩论内循环（<b>你驱动，禁止嵌套派生</b>）→ <span class="role r-adj">adjudicator</span> 裁定 + 标 outcome → 级联续问穷尽。全程维护 <code>debate-log.md</code>。辩论节奏 / 收敛 / deadlock / 五要点见下卡。</div></li>
+
+    <li data-n="6" class="key"><div class="head"><span class="role r-mod">review-moderator</span> <span class="role r-human">human</span><b>落地 / 收口（profile 分叉）</b><span class="out">→ spec 落地 / gov decision-packet → human</span></div>
+      <div class="body"><b>spec profile</b>：低影响 CONFIRMED + 明确改法 → moderator 直接落 <code>docs/systems</code>；高影响 / 跨系统 / deadlock / L0 → <code>AskUserQuestion</code> 交 human（<b>建议即地板</b>）。过 <b>pass-oracle 5 关</b>（+ handoff 出口）方可标「可冻结」；需实现侧修复 → 产 <code>dev-loop-handoff.json</code> 交 <code>/build-feature</code>。<br>
+      <b>governance profile</b>：<b>不落任何 canonical</b>；confirmed 改法写进 <code>decision-packet.md</code>；治理默认高影响 → <code>AskUserQuestion</code> 交 human；改 agent 定义 / 自改递归 / 强制层 / 指令根<b>必 human</b>。过 <b>governance pass-oracle 6 关</b>方可标「可批准」。human 批后走<b>定稿五步</b>（见第四节）。</div></li>
+
+    <li data-n="7"><div class="head"><span class="role r-adj">adjudicator</span><b>收尾：制品写盘</b><span class="out">→ 全套制品落 reviewDir 磁盘</span></div>
+      <div class="body">确认 adjudicator 已把制品<b>写到 reviewDir 磁盘</b>——<code>findings.md</code> + <code>review-packet.md</code>（governance 另加 <code>decision-packet.md</code>）+ 按域写出的 CRQ 账本条目（<code>docs/crq/{gov,tech,requirement}/</code>，写完跑 <code>crq-render.mjs</code>），<code>debate-log.md</code> 齐备，返回只给结构化摘要。<b>任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口；任一 pass-oracle 关 RED → 退回重跑，不放过。</b></div></li>
+  </ol>
+
+  <h2>三、① review-depth：lightweight vs full <span class="en">architect-reviewer 判 + moderator 独立复判（双锁）</span></h2>
+  <div class="gate">
+    <span class="tag">Track A 内部 G 层路由</span>
+    <h3><span class="role r-arev">architect-reviewer</span> eligibility 四裁断</h3>
+    <div class="kv"><b>lightweight 仅限小 / 低风险 G2</b>（G1 指令根 + G3 强制层新 idea 恒 full-adversarial + human，永不 lightweight）。合格面 = <b>仅 G2 + 机检硬排除全过 + 主观残留为空</b>。</div>
+    <div class="branch">
+      <div class="br br-ok"><b>LIGHTWEIGHT_OK</b>确属小 / 非契约 / 仅 G2 → moderator <b>独立复判</b>（非 pass-through）→ 主线程 packet-bound landing</div>
+      <div class="br br-block"><b>ESCALATE_FULL_REVIEW</b>有架构语义 / 跨系统 / 歧义 / 落主观残留 → 走 full 对抗 loop</div>
+      <div class="br br-esc"><b>HUMAN_REQUIRED</b>触 G1 / G3 / 自改递归 / 高敏 → human / full governance</div>
+      <div class="br br-esc"><b>CONTRACT_GATE_REQUIRED</b>触 contracts 或 spec-contract drift → 契约门四分类 + 人类契约门</div>
+    </div>
+    <div class="seq" style="margin-top:11px"><span class="s">lane 分类</span><i>→</i><span class="s">派 architect-reviewer 判 eligibility</span><i>→</i><span class="s hot">LIGHTWEIGHT_OK</span><i>→</i><span class="s">moderator 独立复判</span><i>→</i><span class="s">主线程 packet-bound landing</span><i>→</i><span class="s">记 lightweight 证据</span></div>
+    <div class="note" style="margin-top:11px"><b>lightweight 制品</b>（落 reviewDir）：<code>lightweight-intake.md</code> / <code>architect-reviewer-verdict.md</code> / <code>architect-landing-summary.md</code>（引被批 packet-id）/ 验证输出。<b>不得伪造 full-review 制品</b>（<code>review-charter.md</code> / <code>findings.md</code> / <code>review-packet.md</code>）——full loop 没跑就没有。<b>机检硬排除</b>：触契约 / G1 指令根 / G3 强制层 / 改 agent tools·name·model·write scope·authority / 改 self-def·review-loop def / 增删改 gate / mixed·L0 → 一律不合格。</div>
+  </div>
+
+  <h2>四、⑤ 对抗辩论内循环 + ⑥ governance 定稿五步</h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px"><span class="role r-chal">chal</span>↔<span class="role r-def">def</span> 辩论内循环（⑤）</h3>
+      <ul class="kv">
+        <li>每条 finding：challenger↔defender <b>≤ N 轮（默认 2–3）</b>，moderator 主线程驱动、<b>禁止嵌套派生</b></li>
+        <li><b>收敛</b>：defender 承认 → CONFIRMED；defender 引具体 spec/contract 原文完整反驳 → DISMISSED（adjudicator 认证）</li>
+        <li><b>deadlock</b>：满预算仍争 → adjudicator 打包正反最强论点 + 利害 + 各方案代价 + 推荐 → human 拍板</li>
+        <li><b>熔断</b>：同一 finding 反复 deadlock / 堆积超阈 → 升级人类（镜像 dev-loop 2 轮 BLOCK 熔断）</li>
+        <li><b>五要点</b>：falsifiable-first 排序 · 级联续问（finding 是依赖树）· 建议即地板 · elicitation 提问 · 造概念前先查重</li>
+        <li><b>反空过守卫</b>：scenario-author 播 regression-canaries；challenger 没能独立重派生 → RED 换更锋利 challenger，<b>绝不改真 spec 造洞</b></li>
+      </ul>
+      <div class="kv" style="margin-top:8px"><b>finding outcome 六种</b>：FIX-SPEC · FIX-DEV/FIX-IMPLEMENTATION（→ <code>dev-loop-handoff.json</code>）· DISMISS-WITH-GROUNDING · ACCEPT-AS-RISK · HUMAN-RULED · SPAWN-NEW-CONCERN（→ CRQ 账本延迟占位）</div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px"><span class="role r-human">human 批后</span> governance 定稿五步（⑥）</h3>
+      <div class="seq"><span class="s">①定稿 architect 回灌 PROPOSAL</span><i>→</i><span class="s hot">②冻结 human 盖 FROZEN</span><i>→</i><span class="s">③核验 moderator + 机械门</span><i>→</i><span class="s">④landing 主线程 packet-bound</span><i>→</i><span class="s">⑤landing-verifier 保真核验</span></div>
+      <ul class="kv" style="margin-top:9px">
+        <li><b>①定稿</b>：architect 把所有 CONFIRMED 改法 + human 裁决<b>回灌进 <code>PROPOSAL.md</code></b>，标 FROZEN/APPROVED + 加「Review 定稿记录」，必产 <code>landing-manifest</code> 围栏块。<b>只机械回灌已批改动，不夹带新设计、不自冻</b>（PROPOSAL 成单一权威，decision-packet 退化为 delta 记录）</li>
+        <li><b>②冻结</b>：human 盖 FROZEN（版本 / sha）；<b>architect 不能自冻</b>（作者≠判官）</li>
+        <li><b>③核验</b>：moderator（非作者）核对 frozen PROPOSAL ↔ decision-packet ↔ findings ↔ 裁决一致 + 跑 <code>proposal-consolidation-check.mjs</code>；<b>RED 退回定稿，不放行 landing</b></li>
+        <li><b>④landing</b>：主线程 packet-bound canonical landing，<code>architect-landing-summary.md</code> 引 packet-id + frozen 版本</li>
+        <li><b>⑤保真核验</b>：<span class="role r-lv">landing-verifier</span> 跑 <code>landing-fidelity-check.mjs</code> + 逐文件 diff，写 <code>landing-verdict.md</code>；<b>绿才 human merge，RED 退回修 landing</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>五、两套 pass-oracle <span class="en">全过才可冻结 / 可批准</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">spec profile · pass-oracle（5 关 + handoff 出口）</h3>
+      <ul class="kv">
+        <li><b>1 轴覆盖</b>—charter 每条适用轴被 challenger 走过</li>
+        <li><b>2 场景覆盖</b>—每个 ATAM + pre-mortem 场景走过</li>
+        <li><b>3 finding 全结</b>—无未结 BLOCKING/SHOULD</li>
+        <li><b>4 spec↔contract 机械门绿</b>—<code>arch-spec-contract-check.mjs</code>：无 schema 复制 + <code>core.*</code> 引用解析</li>
+        <li><b>5 canaries 全中</b>—regression-canary 被独立重派生</li>
+        <li><b>+ handoff 出口</b>—有实现侧修复时 <code>arch-review-handoff-check.mjs</code> 必须绿</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">governance profile · pass-oracle（6 关）</h3>
+      <ul class="kv">
+        <li><b>1 治理判据覆盖</b>—authority/owner/writer/approver 一致性、G1/G2/G3 归属、自改递归、跨面对齐、门边界、是否触契约</li>
+        <li><b>2 finding 全结</b>—无未结 BLOCKING/SHOULD</li>
+        <li><b>3 高敏项已标 human</b>—触 agent 定义 / 自改递归 / 强制层 / 指令根 → HUMAN-RULED 进 decision-packet</li>
+        <li><b>4 触契约已转门</b>—已派 architect-reviewer 转契约门</li>
+        <li><b>5 canaries 全中</b>—治理 regression-canaries 被独立重派生</li>
+        <li><b>6 decision-packet 完整</b>—每条 confirmed 改法有：目标文件 / 改法 / 影响面 / 是否触自改递归·契约·强制层 / 推荐</li>
+      </ul>
+      <div class="kv" style="margin-top:7px">不复制 spec↔contract 机械门；机械对偶 =「跨治理面一致性」人工核查（agent 定义 ↔ scope-map ↔ command 对齐）。</div>
+    </div>
+  </div>
+
+  <h2>六、底线 <span class="en">moderator 永不越界</span></h2>
+  <div class="note">
+    你（review-moderator）<b>不改 <code>docs/contracts/**</code>、不自动改 L0 蓝图、不落 G1/G2/G3 canonical、不直推 main、不自评通过、不替 human 拍板</b>。governance profile 恒不落 canonical（只产证据 + decision-packet）；spec profile 仅低影响设计层可直接落地。落地通道恒 = 主线程 packet-bound（architect approved-landing mode 已退役）。
+  </div>
+
+  <div class="foot">
+    <b>制图</b>：show-me ｜ <b>事实来源</b>：<code>.claude/commands/arch-change.md</code>（七步）· <code>.claude/references/arch-review-protocol.md</code>（双轨路由 / 路由权归属 / Review-depth + Lightweight / 四裁断 / Eligibility 判据 / 起草阶段 / 辩论内循环 / 五要点 / finding outcome / 反空过 / Pass-oracle / Governance pass-oracle / Governance 定稿→冻结→核验→landing 各节）· <code>.claude/agents/review-moderator.md</code>｜ <b>姊妹篇</b>：<a href="show-me-gov-triage.html">Triage 前置门</a> · <a href="show-me-gov-track-b.html">Track B 轻路径</a>
+  </div>
+</div>
+</body>
+</html>

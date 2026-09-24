@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track B 常驻轻路径 · 七步闭环逐步拆解 · KidPal 治理</title>
+<style>
+  :root{--bg:#faf8f5;--ink:#262a30;--muted:#6b635b;--line:#e0d8cd;--card:#fff;--accent:#c8532c;--ok:#3f7d3a;--warn:#b07a1a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 56px}
+  h1{font-size:23px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  h2{font-size:16.5px;margin:30px 0 10px;padding-left:9px;border-left:3px solid var(--accent)}
+  h2 .en{font-weight:400;color:var(--muted);font-size:12.5px;margin-left:6px}
+  code{background:#f2ece3;border-radius:5px;padding:1px 5px;font-size:12.5px;font-family:ui-monospace,Consolas,"Courier New",monospace}
+  .kv{color:var(--muted);font-size:13px}.kv b{color:var(--ink);font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  ul{margin:6px 0 0 18px;padding:0}li{margin:3px 0}
+  .note{border-left:3px solid var(--warn);background:#fdf6e8;padding:10px 14px;border-radius:0 10px 10px 0;font-size:13.5px;margin-top:14px}
+  .note.ok{border-left-color:var(--ok);background:#f1f7ef}
+  .note b{color:var(--ink)}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:28px;line-height:1.7;border-top:1px solid var(--line);padding-top:14px}
+  .locator{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:18px}
+  .loc-axis{color:var(--muted)}
+  .loc-node{border:1px solid var(--line);border-radius:20px;padding:2px 10px;color:var(--muted);background:#fff}
+  .loc-node.on{border-color:var(--accent);color:#fff;background:var(--accent);font-weight:600}
+  .loc-sep{color:var(--line)}
+  .legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin:10px 0 0;padding:11px 13px;background:var(--card);border:1px solid var(--line);border-radius:10px}
+  .legend .li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .rail{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .stop{flex:1 1 132px;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
+  .stop .n{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.4px}
+  .stop b{display:block;font-size:13.5px;margin:2px 0}
+  .stop small{display:block;color:var(--muted);font-size:11.5px;line-height:1.45}
+  .stop.hl{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .stop.hl .n{color:var(--accent)}
+  .loopback{margin:8px 0 0;padding:9px 12px;border:1px dashed var(--line);border-radius:10px;font-size:12.5px;color:var(--muted);background:#fffdf6}
+  .loopback b{color:var(--warn)}
+  ol.steps{list-style:none;margin:0;padding:0 0 0 24px;border-left:2px solid var(--line)}
+  ol.steps>li{position:relative;padding:0 0 16px}
+  ol.steps>li:last-child{padding-bottom:0}
+  ol.steps>li::before{content:attr(data-n);position:absolute;left:-37px;top:0;width:23px;height:23px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  ol.steps>li.key::before{border-color:var(--accent);color:var(--accent);font-weight:700}
+  .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}
+  .head b{font-size:14px}
+  .head .out{color:var(--muted);font-size:12.5px}
+  .body{color:var(--muted);font-size:13px;margin-top:3px}
+  .body b{color:var(--ink);font-weight:600}
+  .role{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;color:#fff;letter-spacing:.2px;white-space:nowrap}
+  .r-human{background:#c0392b}.r-main{background:#2c6fbb}.r-mod{background:#3457a5}.r-arch{background:#2f6f6b}.r-arev{background:#7c5cd6}.r-scn{background:#0e7c66}.r-chal{background:#cf5a2a}.r-def{background:#4a7c3f}.r-adj{background:#6a4fb3}.r-lv{background:#b07a1a}.r-mech{background:#59636e}.r-pln{background:#3b6ea5}
+  .gate{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0;position:relative}
+  .gate .tag{position:absolute;right:12px;top:11px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+  .gate h3{margin:0 0 5px;font-size:14px}
+  .branch{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+  @media(max-width:820px){.branch{grid-template-columns:1fr}}
+  .br{border-radius:10px;padding:9px 11px;font-size:12.5px;border:1px solid}
+  .br b{display:block;font-size:12.5px;margin-bottom:2px}
+  .br-ok{border-color:#bcd9b4;background:#f1f7ef}.br-ok b{color:var(--ok)}
+  .br-block{border-color:#e6cfa0;background:#fdf6e8}.br-block b{color:var(--warn)}
+  .br-esc{border-color:#e3b6a6;background:#fdf0ec}.br-esc b{color:var(--accent)}
+  .seq{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px;font-size:12.5px}
+  .seq span.s{background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 9px}
+  .seq span.s.hot{border-color:var(--accent);color:var(--accent)}
+  .seq i{color:var(--muted);font-style:normal}
+  .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px}
+  .chips .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;color:var(--muted)}
+  .chips .c b{display:block;color:var(--ink);font-size:12.5px;margin-bottom:2px}
+  .chips .c.hot{border-color:var(--accent)}.chips .c.hot b{color:var(--accent)}
+  @media(max-width:520px){.wrap{padding-left:14px;padding-right:14px}ol.steps{padding-left:26px}ol.steps>li::before{left:-34px;width:20px;height:20px;font-size:10.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Track B 常驻轻路径 · 七步闭环逐步拆解</h1>
+  <div class="sub">治理 / spec 变更的<b>默认路由</b>。<b>无命令入口</b>——入口 = 主线程直接起草 PROPOSAL。human 只在两个真判断点出场，其余全部 agent + 机械闸自动。</div>
+
+  <div class="locator">
+    <span class="loc-axis">dev 侧实现 →</span>
+    <span class="loc-node">Triage 前置门</span>
+    <span class="loc-sep">｜</span>
+    <span class="loc-axis">事实源侧 →</span>
+    <span class="loc-node on">Track B 默认（本篇）</span>
+    <span class="loc-node">Track A 判据命中</span>
+  </div>
+
+  <div class="legend">
+    <span class="li"><span class="role r-main">主线程</span>人类主会话 · 起草 / 落地 / 合并（唯一 landing 通道）</span>
+    <span class="li"><span class="role r-arch">architect</span>评审循环判官（只读 canonical，只写评审记录于 PROPOSAL §7）</span>
+    <span class="li"><span class="role r-lv">landing-verifier</span>独立核验（只读 codebase，只写自己 verdict）</span>
+    <span class="li"><span class="role r-mech">机械闸</span>脚本门（fidelity / escalation / index）</span>
+    <span class="li"><span class="role r-human">human</span>立项 ack · 熔断/例外拍板 · remote push</span>
+  </div>
+
+  <h2>零、一句话 <span class="en">前端对齐 + 例外反选</span></h2>
+  <div class="note ok">
+    <b>human 只在两个真判断点出场</b>（260831-gov-review-auto-merge-local-main 起）：① <b>立项 ack</b>（前端对齐：为什么改 / 往哪改 / 改动多大）；② 命中<b>例外清单</b>时升级拍板。其余（评审 / 实现 / 验证 / 落地核验 / 合并本地 main）全部 agent + 机械闸自动，例外升级，<b>remote push 仍 human</b>。
+    <br>制品 4 件：<b>PROPOSAL + architect-landing-summary + landing-verdict + retro</b>。状态转移时跑 <code>changes-index.mjs --upsert &lt;id&gt;</code> 钉进 <code>delivery/changes/arch/INDEX.md</code>。
+  </div>
+
+  <h2>一、全景：七步 + 一个熔断回路</h2>
+  <div class="rail">
+    <div class="stop hl"><span class="n">① 起草</span><b>PROPOSAL</b><small>主线程<br>→ human 立项 ack</small></div>
+    <div class="stop"><span class="n">② 评审</span><b>architect 循环</b><small>GREEN / 打回<br>至 GREEN</small></div>
+    <div class="stop"><span class="n">③ 冻结</span><b>标 FROZEN</b><small>凭 ack + GREEN<br>主线程</small></div>
+    <div class="stop"><span class="n">④ 落地</span><b>packet-bound</b><small>landing-manifest 绑定<br>+ landing-summary</small></div>
+    <div class="stop"><span class="n">⑤ 核验</span><b>landing-verifier</b><small>diff + fidelity 门<br>→ 绿</small></div>
+    <div class="stop"><span class="n">⑥ 复盘</span><b>retro</b><small>趁热写<br>先于合并</small></div>
+    <div class="stop hl"><span class="n">⑦ 合并</span><b>升级闸 → main</b><small>ff-only 自动<br>remote push 仍 human</small></div>
+  </div>
+  <div class="loopback"><b>熔断回路</b>：② architect 评审 <b>3 轮未 GREEN</b> → 升级 human 三选一：①转 Track A（全套对抗）②撤回 / 缩圈 ③换新判官再战 1 轮——<b>仍不绿自动转 Track A</b>，不再二次升级。human 不定轮数上限（方向 human 裁、数字机械兜底；R1–R3 = 同判官 resume，上下文连续）。</div>
+
+  <h2>二、逐步：每一步谁干、怎么走到、干嘛、产出什么</h2>
+  <ol class="steps">
+    <li data-n="1" class="key"><div class="head"><span class="role r-main">主线程</span> <span class="role r-human">human ack</span><b>起草 PROPOSAL → 立项 ack</b><span class="out">→ <code>PROPOSAL.md</code>（草案）+ 立项授权</span></div>
+      <div class="body">主线程起草 PROPOSAL：<b>业务语言 + 初步技术方案 + human 取舍点标注</b>，骨架 <code>docs/templates/PROPOSAL.template.md</code>。目录命名（起草期硬义务）：governance-lane = <code>&lt;YYMMDD&gt;-gov-review-&lt;slug&gt;</code>、spec-lane = <code>&lt;YYMMDD&gt;-arch-review-&lt;slug&gt;</code>——名字必须命中 scope-map 的 review-agent 写槽 token（<code>gov-review</code>/<code>arch-review</code>），否则评审 / 核验期制品写入被 <code>enforce-scope.mjs</code> 机械拦截。PROPOSAL 须标<b>轨道自评 + 理由</b>（作者不得自路由精神）。随后 <b>human 立项 ack</b> = 前端对齐「为什么改（需求）/ 往哪改（方案）/ 改动多大（量级）」。</div></li>
+
+    <li data-n="2"><div class="head"><span class="role r-arch">architect</span><b>评审循环至 GREEN</b><span class="out">→ GREEN（记 PROPOSAL §7）</span></div>
+      <div class="body">architect <b>只读 canonical、只写评审记录于 PROPOSAL §7</b>；结论二分：<b>GREEN / 打回</b>。<b>影响目标效果的打回项升级 human</b>。打回 → 主线程修订 PROPOSAL 重提 → 再评，循环至 GREEN。评审 3 轮未 GREEN → 触发熔断（见下卡）。</div></li>
+
+    <li data-n="3"><div class="head"><span class="role r-main">主线程</span><b>标 FROZEN</b><span class="out">→ 内容冻结（授权记 Status 行）</span></div>
+      <div class="body">主线程凭「<b>立项 ack + GREEN</b>」标 FROZEN。FROZEN = 内容冻结；此后落地不可回改 PROPOSAL。</div></li>
+
+    <li data-n="4"><div class="head"><span class="role r-main">主线程</span><b>packet-bound 落地</b><span class="out">→ canonical 落地 + <code>architect-landing-summary.md</code></span></div>
+      <div class="body">主线程 <b>packet-bound 落地</b>（G1/G2/G3 全落，<b>landing-manifest 绑定</b>，落地后不可回改 PROPOSAL）+ 写 <code>architect-landing-summary.md</code>（引被批 packet-id，A9 packet-binding，供人类 merge 门 spot-check）。<b>landing 通道恒 = 主线程 packet-bound 一条</b>；architect 恒纯判官 / 起草、<b>永不 landing</b>（其 approved-landing mode 已于 2026-08-02 退役）。</div></li>
+
+    <li data-n="5"><div class="head"><span class="role r-lv">landing-verifier</span><b>独立核验</b><span class="out">→ <code>landing-verdict.md</code>（绿）</span></div>
+      <div class="body">主线程派 <code>landing-verifier</code>（独立于落地者，补 builder≠verifier 缺槽）核验「<b>实际落的 == frozen PROPOSAL 的 landing 清单</b>」：跑结构门 <code>landing-fidelity-check.mjs</code>（未冻结 / 无 packet-binding / scope creep / claimed·planned-but-not-landed 硬失败）+ <b>逐文件人读 diff</b> 核对改法 == PROPOSAL（语义保真，脚本不判）。<b>绿 → commit 分支；RED → 退回主线程修 landing</b>。landing-verifier 只读 codebase、只写自己 verdict——改了被验文件就塌独立性。</div></li>
+
+    <li data-n="6"><div class="head"><span class="role r-main">主线程</span><b>补写 retro（趁热）</b><span class="out">→ retro report</span></div>
+      <div class="body">主线程补写 retro report（骨架 <code>docs/templates/retro.template.md</code>）于提案目录——landing-verifier 绿后<b>趁热写、先于合并</b>。retro <b>不含合并锚</b>（合并落点由 INDEX 的 <code>mergedInMain</code> 列经 <code>changes-index.mjs</code> 机械现推承担）。</div></li>
+
+    <li data-n="7" class="key"><div class="head"><span class="role r-mech">机械闸</span> <span class="role r-main">主线程</span><b>前置升级闸 → 自动合并本地 main</b><span class="out">→ 已合并（可回滚）；remote push 仍 human</span></div>
+      <div class="body">主线程跑 <code>pre-merge-escalation-gate.mjs</code>（含 <b>off-main 校验</b>）。<b>放行 → 自动合并本地 main</b>：治理批恒 <code>git merge --ff-only</code>（main 无独有 commit 时才成立，有分歧即停交 human）；回滚口径 = <code>git revert</code> 逐 commit 或 human 裁。<b>升级闸拦 → 升级人</b>。状态转移时跑 <code>changes-index.mjs --upsert &lt;id&gt;</code> 单行钉进 <code>delivery/changes/arch/INDEX.md</code>（arch 段；dev 段在 <code>delivery/changes/dev/INDEX.md</code>，各 lane 只写自己的）。<b>remote push 始终 human</b>。</div></li>
+  </ol>
+
+  <h2>三、熔断：评审 3 轮未 GREEN <span class="en">human 三选一</span></h2>
+  <div class="gate">
+    <span class="tag">回路</span>
+    <h3><span class="role r-human">human</span> 3 轮未 GREEN → 三选一</h3>
+    <div class="branch">
+      <div class="br br-esc"><b>① 转 Track A</b>全套对抗（<code>/arch-change</code>）</div>
+      <div class="br br-block"><b>② 撤回 / 缩圈</b>提案，回起草</div>
+      <div class="br br-ok"><b>③ 换新判官再战 1 轮</b>仍不绿 → <b>自动转 Track A</b>（不再二次升级）</div>
+    </div>
+  </div>
+
+  <h2>四、⑦ 升级闸在 merge 期重算什么 <span class="en">例外清单 · 只重算可机判项</span></h2>
+  <div class="gate">
+    <span class="tag">必经，不是门</span>
+    <h3><span class="role r-mech">机械闸</span> pre-merge-escalation-gate.mjs</h3>
+    <div class="kv">只重算「merge 期仍可机判的例外」，命中即拦 → 升级人；放行 → merge-driver 落 main。</div>
+    <div class="chips">
+      <span class="c"><b>契约面 diff</b>触 <code>docs/contracts/**</code> 且同批无契约门证据</span>
+      <span class="c"><b>off-main</b>源 commit 落在 main / master（隔离被破坏）</span>
+      <span class="c"><b>escalation 未 resolve</b>存在未结的 <code>agent-escalation</code> / <code>blocked</code> 态</span>
+      <span class="c"><b>riskTier high-critical</b>风险等级触顶</span>
+      <span class="c"><b>supervisor APPROVE provenance</b>批准来源不可机验</span>
+      <span class="c"><b>architect GREEN 机锚</b>GREEN 标记缺失 / 不可验</span>
+    </div>
+    <div class="note" style="margin-top:12px"><b>不在 merge 期重算</b>：跨系统结构性变更、声明红队、自改递归属<b>路由期</b>裁决——在 merge 前已引走人，升级闸不再重算。</div>
+  </div>
+
+  <h2>五、边界与不动清单 <span class="en">本路由不改的东西</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">存疑向严 + 直接 Track A 判据</h3>
+      <ul class="kv">
+        <li>判据适用<b>存疑默认升 human</b>（不猜、不向宽）</li>
+        <li>命中任一 → 绕过 Track B 走 Track A：① 触 <code>docs/contracts/**</code>（直走契约门）② 跨系统结构性变更（固件协议与服务端语义同时动）</li>
+        <li>governance 类变更（含 self-def / review-loop agent defs）<b>不再强制升级</b>——Track B 评审循环的对抗力度即为足额</li>
+        <li>「声明红队」= <b>自愿逃生门</b>：human 或 architect 任一方随时可启，非路由义务</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">不动清单（本路由不改）</h3>
+      <ul class="kv">
+        <li>契约门（contracts Tier-1 → architect-reviewer 四分类 + human 签字）</li>
+        <li><code>landing-fidelity-check.mjs</code> + landing-verifier 独立核验</li>
+        <li>机械强制层（scope-map / hooks / verify-gates）</li>
+        <li>批次目录合法终态 = landed；放弃 / 中断无自动出口，<code>--stale-report</code> 只点名、删除 / 归档恒 human 批准后主线程执行</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>制图</b>：show-me ｜ <b>事实来源</b>：<code>AGENTS.md</code>「治理路由」节（七步闭环 + 升级判据 + 熔断）· <code>.claude/references/arch-review-protocol.md</code>「双轨路由」节（现行路由唯一 SSOT，2026-08-02 永久化）· <code>docs/templates/{PROPOSAL,retro}.template.md</code> · <code>pre-merge-escalation-gate.mjs</code> / <code>landing-fidelity-check.mjs</code> / <code>changes-index.mjs</code>｜ <b>姊妹篇</b>：<a href="show-me-gov-triage.html">Triage 前置门</a> · <a href="show-me-gov-track-a.html">Track A 对抗重路径</a>
+  </div>
+</div>
+</body>
+</html>
