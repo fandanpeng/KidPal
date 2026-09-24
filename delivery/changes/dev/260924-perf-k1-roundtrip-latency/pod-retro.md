@@ -39,6 +39,16 @@ verifier↔fixer 实际**零绕轮**——两轮红都在 planner 面：`current
 
 ## 七、escalation themes（cross-ref pod-events）
 
-- **A2 质量门破线**（`agent-escalation` eventId `d5ee3c75-1ec5-4d63-a868-3dabc9368d9e`）：builder 与 integrator 都按 fail-loud 报了它、都没自裁；planner 裁定「暂留 B 已应用 + 上浮 human」。**待 human 拍板**。
+- **A2 质量门破线**（`agent-escalation` eventId `d5ee3c75-1ec5-4d63-a868-3dabc9368d9e`）：builder 与 integrator 都按 fail-loud 报了它、都没自裁；planner 裁定「暂留 B 已应用 + 上浮 human」。**已由 human 裁定收口（2026-09-24 午间）**：契约与验收条文一字不动、A2 照实判红、不触发回滚、**先观察效果**、归 k2；本包以带债合并收口。裁定全文与判据事实见 `launch-prep-record.md`「human A2 裁定」节；`agent-escalation-resolved` 已落 pod-events。
 - **Pod 树迁址**：human 裁定改在池树续跑；planner 以 rebase 形态迁入（禁 merge commit），图缓存漂移按 `ensureGraphCacheSynced` 源码逐字三拍处置，偏离已留痕。
 - **簿记待办（portfolio 面，非本 Pod 能力）**：`taskpackage.deliveryImpact = milestone-affecting` 但无阶段跳变声明；`delivery/milestones/milestones.jsonl` 的 `M2-char-window` nextAction 提及 NFR-PERF-2。planner 的 scope 不含 `delivery/milestones/**`，未动，如实挂出。
+
+## 八、A2 那场对话：我把问题框错了，而且讲得太绕
+
+human 说「先给我同步一下这次都改了什么」，然后追 A2；我第一反应是把它框成「**这条验收该不该放宽**」，给了 A/B/C 三档、还带实测表。human 一句话把框换掉了：「**现在契约要求 display 里面必须都有，对吧？**」——他要的不是我裁量验收松紧，而是**先把契约读清楚**。
+
+**这一搬是对的**：契约确实要求「每次回复分两部分」，那问题就不在验收条文，而在「模型的格式遵循度」或「契约本身该不该改」。我原先把「该改验收」当成默认出口，属于**把项目决策误当成自己的裁量空间**。
+
+更直接的教训在沟通本身：我前两轮回答都带表格 + 条文引用 + 代码行号，human 回了一句「**真没看懂**」。第三轮我改成一句白话——「契约要求每一次回复都带 display 块；实测只有 22%~67%,**而且分两种毛病:该有块时没块(主因)、有块时块坏了**」——他才接上。
+
+**下次改进（具体到动作）**：向 human 报产品/验收类判断时，**第一段只写一句白话结论**（「是的/不是 + 差多少」），把条文引用、代码行号、批次表**放到后面**，且只在被追问时展开。这次我做反了。
