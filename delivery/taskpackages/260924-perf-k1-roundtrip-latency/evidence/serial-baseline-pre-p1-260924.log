@@ -1,0 +1,109 @@
+I (70976812) SystemInfo: free sram: 75479 minimal sram: 38967
+I (70986862) SystemInfo: free sram: 74963 minimal sram: 38967
+I (70996872) SystemInfo: free sram: 75479 minimal sram: 38967
+I (71006852) SystemInfo: free sram: 74963 minimal sram: 38967
+I (71010092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3901228 rtc=09:41 date=09-24 wday=3
+I (71016862) SystemInfo: free sram: 75479 minimal sram: 38967
+I (71026852) SystemInfo: free sram: 74963 minimal sram: 38967
+I (71036842) SystemInfo: free sram: 75479 minimal sram: 38967
+I (71046862) SystemInfo: free sram: 74963 minimal sram: 38967
+I (71054452) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-3945588 key=0 gesture=1
+I (71054632) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-3945768 action=1
+I (71054852) StateMachine: State: idle -> connecting
+I (71054852) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (71054852) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (71056012) esp-x509-crt-bundle: Certificate validated
+I (71058042) WS: Session ID: 1b88b4c8-2bde-4e7d-9221-74cd412d8c43
+I (71058052) StateMachine: State: connecting -> listening
+I (71058052) kidpal_rn: show_chat: VOICE layer push (top=3)
+I (71058062) MCP: display_dispatch view=schedule corr_id=kdp-3949188 courses=37 degrade=false
+I (71058062) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (71058062) wifi:Set ps type: 0, coexist: 0
+
+W (71058092) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (71058092) LcdDisplay: voice_look scene=0 top=3
+I (71058112) MCP: display_dispatch view=home corr_id=kdp-3949188 upcoming_apply ok
+I (71058112) MCP: schedule_grid_restore corr_id=kdp-3949188 courses=37 cached=37
+I (71064962) Application: >> 早上好
+I (71064972) LcdDisplay: voice_look scene=1 top=3
+I (71066582) SystemInfo: free sram: 69167 minimal sram: 38967
+I (71070092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-3961228 rtc=09:42 date=09-24 wday=3
+I (71076582) SystemInfo: free sram: 69507 minimal sram: 38967
+I (71082182) Application: << 早上好呀
+I (71082182) StateMachine: State: listening -> speaking
+I (71082182) LcdDisplay: voice_look scene=2 top=3
+I (71082262) LcdDisplay: voice_look scene=2 top=3
+I (71083352) I2S_IF: Mode 0 need extend bits 64 to 32
+I (71083352) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (71083352) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (71083372) Adev_Codec: Open codec device OK
+I (71083382) AudioCodec: Set output enable to true
+I (71084782) Application: << 新的一天亮堂堂的，想看课表、查生字还是听故事，我都在
+I (71084782) LcdDisplay: voice_look scene=2 top=3
+I (71091492) StateMachine: State: speaking -> listening
+I (71091492) LcdDisplay: voice_look scene=0 top=3
+I (71096732) Application: >> 帮我查一下明天有什么课
+I (71096732) LcdDisplay: voice_look scene=1 top=3
+I (71100582) SystemInfo: free sram: 69647 minimal sram: 38967
+I (71106362) I2S_IF: Pending out channel for in channel running
+I (71106362) AudioCodec: Set output enable to false
+I (71110372) Application: << 明天是星期五
+I (71110372) StateMachine: State: listening -> speaking
+I (71110372) LcdDisplay: voice_look scene=2 top=3
+I (71110402) LcdDisplay: voice_look scene=2 top=3
+I (71110662) I2S_IF: Mode 0 need extend bits 64 to 32
+I (71110662) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (71110662) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (71110692) Adev_Codec: Open codec device OK
+I (71110692) AudioCodec: Set output enable to true
+I (71112302) Application: << 学校有数学、语文、美术、体育、心健、音乐六节课，下午第三节兴趣课空着。课外没有安排，放学就能直接回家啦
+I (71112322) LcdDisplay: voice_look scene=2 top=3
+I (71119582) SystemInfo: free sram: 69311 minimal sram: 38967
+I (71124742) StateMachine: State: speaking -> listening
+I (71124742) LcdDisplay: voice_look scene=0 top=3
+I (71130092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4021228 rtc=09:43 date=09-24 wday=3
+I (71130352) Application: >> 今天西安的天气怎么样？
+I (71130432) LcdDisplay: voice_look scene=1 top=3
+I (71134592) SystemInfo: free sram: 69415 minimal sram: 38967
+I (71139672) I2S_IF: Pending out channel for in channel running
+I (71139672) AudioCodec: Set output enable to false
+I (71144582) SystemInfo: free sram: 69375 minimal sram: 38967
+I (71145402) Application: << 西安今天有点阴，气温 17℃ 到 25℃，白天常有雾霾
+I (71145402) StateMachine: State: listening -> speaking
+I (71145432) LcdDisplay: voice_look scene=2 top=3
+I (71145442) LcdDisplay: voice_look scene=2 top=3
+I (71145992) I2S_IF: Mode 0 need extend bits 64 to 32
+I (71145992) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (71146002) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (71146022) Adev_Codec: Open codec device OK
+I (71146022) AudioCodec: Set output enable to true
+I (71152172) Application: << 空气有点闷，傍晚前后还可能飘小雨。要出门的话记得带把伞，别淋湿了
+I (71152172) LcdDisplay: voice_look scene=2 top=3
+I (71154582) SystemInfo: free sram: 68715 minimal sram: 38967
+I (71160282) StateMachine: State: speaking -> listening
+I (71160282) LcdDisplay: voice_look scene=0 top=3
+I (71163032) waveshare_rlcd_4_2: key_gesture_parser corr_id=kdp-4054168 key=1 gesture=1
+I (71163212) waveshare_rlcd_4_2: key_route_dispatch corr_id=kdp-4054348 action=4
+E (71163212) Dynamic Impl: mbedtls_ssl_fetch_input error=76
+E (71163212) esp-tls-mbedtls: read error :-0x004C
+E (71163222) EspSsl: SSL receive failed: -76
+I (71163222) WS: Websocket disconnected
+I (71163222) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (71163232) wifi:Set ps type: 2, coexist: 0
+
+I (71163582) kidpal_rn: render page HOME (P1)
+I (71163902) kidpal_rn: dismiss_front_overlay: LOCAL_PAGE front (layer top=2)
+I (71163902) StateMachine: State: listening -> idle
+I (71172602) SystemInfo: free sram: 75327 minimal sram: 38967
+I (71176002) I2S_IF: Pending out channel for in channel running
+I (71176002) AudioCodec: Set output enable to false
+I (71182582) SystemInfo: free sram: 74811 minimal sram: 38967
+I (71190092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4081228 rtc=09:44 date=09-24 wday=3
+I (71192612) SystemInfo: free sram: 75323 minimal sram: 38967
+I (71202592) SystemInfo: free sram: 74807 minimal sram: 38967
+I (71212602) SystemInfo: free sram: 74807 minimal sram: 38967
+I (71222592) SystemInfo: free sram: 75323 minimal sram: 38967
+I (71232602) SystemInfo: free sram: 74807 minimal sram: 38967
+I (71242592) SystemInfo: free sram: 75323 minimal sram: 38967
+I (71250092) waveshare_rlcd_4_2: rtc_reinject corr_id=kdp-4141228 rtc=09:45 date=09-24 wday=3
+I (71252602) SystemInfo: free sram: 74811 minimal sram: 38967
