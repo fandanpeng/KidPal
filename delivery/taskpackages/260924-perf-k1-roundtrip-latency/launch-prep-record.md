@@ -59,3 +59,13 @@
 - **B3 = 4GB 升级暂缓**(需购订阅,human 裁「实在不行再升级」):P3 挂起不进今晚/今天动作;零成本过渡项候选(每夜 gateway 重启 cron、sessions 定时维护)归 k2 批次议——P0 重启红利(swap 251MB)先吃着,方差如再放大即升级依据。
 - **B4 = k2 作为独立方案批次处理**(不并入本包、不走预立项快道):范围四件(David 人设渗漏治理 / 静态上下文瘦身 / session store retention / 课表轮次收敛·prompt v7 槽位预约先行)另起 PROPOSAL/拆包流程,携本包 P1 数据立项。
 - **B5 = human 现在即可持板**:执行序 = ①human 交互式 launch Pod(命令行①)→ ②(可选,Pod 跑 P1 前)pre-P1 真机基线对照轮 ~10min(主线程三源取证;价值 = 同日同设备对照锚)→ ③P1 落地后 A3 正式验收轮 + QQ 录入回归 1 条(共 agent 波及面)。**A3/QQ 回归的门判定对象是 P1 后配置,现在跑只作基线对照,不替代 A3**。
+
+## Pod 树迁址记录(2026-09-24 10:10~10:15 CST,append;planner 执行)
+
+- **human 裁定**:本 Pod 改在**池树** `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch` 继续开发(原话:「把昨晚的改动先merge到池树,然后再继续在池树开发,重新建一个环境很花时间,不想投入这个」)。理由 = 重建 Pod 树环境(固件等价化 / 专属图索引 / bootstrap)成本高于复用既有池树。**池树惯例成立**:查 board 实证该树为长期复用树——近 10 个 Pod(`260915-m1-k2/k3/k4`、`260917-m2-k2/k3`、`260920-m2-*`、`260921-m3-k1..k4`、`260922-m3-k5`、`260923-m3-k6`)的 `worktreePath` 全部指向它,且 `260915-m1-k1a-key-layer-dispatch` 自身 status 已 **merged**(树已释放,非占用中)。故「一 Pod 一树」的担忧不成立,迁址不产生分支混流。
+- **形态 = rebase(非 merge commit)**:依 `pod-coordination.md` §10a 消解纪律五条-1「Pod 分支集成一律 rebase 形态、**禁在 Pod 分支引入 merge commit**」(含「并 main」的 merge commit 与 merge-driver 的朴素 `git rebase main` 结构性不兼容)。执行 `git rebase dev/260924-perf-k1-roundtrip-latency`,池树常驻分支自 `a74f777` → **`aa5ec4b`**,与 Perf 分支内容全等(`git diff --stat` 空)。
+- **图缓存漂移阻断及处置**:merge/rebase 起手被 `.codebase-memory/{graph.db.zst,artifact.json}` 常驻脏挡下(`Your local changes … would be overwritten`;两件 skip-worktree 掩盖下的内容漂移,`git status` 看不见)。处置 = 按 `merge-driver.mjs` 的 `ensureGraphCacheSynced` **源码逐字执行三拍**(①`git update-index --no-skip-worktree`→②`git checkout HEAD --`(index+worktree 双还原)→③`git update-index --skip-worktree`),并与 rebase **同口气连跑**——活索引器会在还原后毫秒级重写回漂移态。**偏离如实记**:§10a-2 要求「调 merge-driver 命名导出、不自行复刻」,但该导出只经 merge-driver CLI 暴露、且其 worktree 解自 board(此刻仍指 Perf 树),无法作用于本树;故按源码逐字手工执行、不另创逻辑,飘移前指纹与还原结果均实测留痕(§下)。
+- **冲突消解**:`docs/ARCH-REVIEW-QUEUE.md` 单文件。成因 = 同一改动在两侧各走一次(池树 `16694e5` vs Perf `00a5f08`),邻域不同故非空补丁。消解 = 取 Perf 侧(= rebase 语境 `--ours`;经 sha256 验证冲突 `:2:` == `aa5ec4b` 版本),**零内容丢失**——池树侧新增的 `ARQ-260923-codemem-mode-doc-drift` 行在 Perf 侧逐字已在。`git diff --cached HEAD` 为空证实该 commit 变空后由 rebase 丢弃;`a74f777` 由 rebase 判「已应用」跳过。
+- **簿记**:board `260924-perf-k1-roundtrip-latency` 由 `queued` → **`running`**,`worktreePath` → 池树(2026-09-24T02:13:25Z)。**差异判停锚不变**:`git diff --quiet 1746c14 HEAD -- server` 零差异成立(实测)→ 基线锚「server 面 57 passed / 0 failed @1746c14」可照引,无需重跑。
+- **残留物**:池树原有两个未跟踪旧副本已挪出仓外留档 `C:/tmp/perf-k1-pool-leftover-260924/`(旧版 launch-prep-record 的 PENDING 版 + evidence §1~§6 前身),不回改、不删除。
+- **续跑接点**:acceptance-author(阶段划分 1)尚未跑(齿文件不在位、`redBaselineResult` 仍 PENDING)→ 树迁址后自该步接续,再进 builder 八步第 4 步(P1 声明工件落仓,B 案优先)。
