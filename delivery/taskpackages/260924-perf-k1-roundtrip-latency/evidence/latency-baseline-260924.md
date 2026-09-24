@@ -110,3 +110,24 @@ sessions 批后计数 **529**(511+18,与两批探针数吻合;store 膨胀速率
 4. **天气题 display 块 0/6(两批全缺)**,而昨晚 live 轮(07:38)有块——display 纪律在天气路径现配置下已不稳;A2 门(100% 合法率)的基线事实:现状本身就过不了 A2,该门对新旧配置同等严苛,判定语义无需放宽、但晨间定案需带此认知。
 5. P0 止血有效面:swap 释放 483MB、pressure 告警清零、轻闲聊轮 preflight 分量下降(快样本 4.4s 含全程);工具轮(课表 11.2s)不受重启影响——与「工具轮大头在上游多轮生成」判断一致。
 6. 门对照(带 v6 中位数,post-restart):闲聊 6.64(保底 6 **未达**,目标 4 未达)/课表 11.21(保底 9 **未达**)/天气 11.68(保底 14 ✓)——**P1 模型切换仍是必需项**,P0 只解决方差放大器。
+
+## 8. 联网调研 + CLI 地面真值:OpenClaw 慢的已知解法(2026-09-24 08:30 CST,append;human 指示联网查)
+
+### 8.1 CLI 地面真值(ECS 只读探查,08:28)
+- `openclaw config get agents.defaults.thinkingDefault` → **unset**,回执逐字:「The runtime default applies until you set an authored value with `openclaw config set agents.defaults.thinkingDefault <value>`」——startup 日志的 `thinking=high` 是**运行时默认**(openclaw.json 无 authored 值;疑随 23 日 22:43 remote catalog 更新而来)。**B 案抓手坐实:`openclaw config set agents.defaults.thinkingDefault off`(或 low)一条命令,无需换模型**。
+- `openclaw models set` = 切默认模型的官方 CLI(A 案机制);`agents.defaults.models` 现仅 v4-flash 的 alias 条目、无 params override。
+- **catalog 已扩到 6 模型**(remote catalog 更新生效):v4-flash / v4-pro / deepseek-chat(131k)/ deepseek-reasoner / **deepseek-flash(1000k,text+image,新)** / v4-flash-vision-exp——**A 案候选从 1 个变 3 个**(chat / flash / v4-flash+thinking-off),A/B 裁决面更宽;各模型 reasoning 标志以 `openclaw models list --json` 为准(builder 步⑤先查)。
+
+### 8.2 网上解法清单(与本包解剖逐条映射)
+1. **thinking/reasoning 档位**(官方 docs「Thinking levels」):级别 `off|minimal|low|medium|high|xhigh`;配置键 `agents.defaults.thinkingDefault` 与 per-model `agents.defaults.models[<key>].params`(GitHub #72407 实证键名);**消息内联指令 `/think:<level>`、`/t <level>` 对任意 inbound body 生效**——探针可在不改配置的情况下先 A/B 测 thinking=off 的效果(builder 步⑤ timebox 首选姿势)。注意(docs concepts/models):thinking 档位是 prompt cache identity 的一部分,**改档会一次性打穿缓存**,首个窗口 input 成本/延迟可能上浮,属预期。
+2. **上下文膨胀 = 14s+ 慢回复的第一大成因**(betterclaw「~80% of the time」)——与我们实测 ~25k tokens/请求(v6 22.5KB + workspace bootstrap,DREAMS.md 40KB/USER.md 等)完全对上;解法 = 精简 bootstrap 文件、减注入工具/skills、会话 /new(HTTP 路径天然每请求新会话,已等效)。**k2「静态上下文瘦身」获社区经验佐证为第一杠杆;USER.md 即 David 人设渗漏源,瘦身与人设治理一石二鸟**。
+3. **小 VPS 的 RAM/swap 先查**(blink 诊断序:RAM/swap → 版本 → 上游 API 延迟 → 网络 RTT)——与我们 P0(重启释放 swap 734→251MB)+ P3(4GB 升级 packet)路径一致。
+4. **新版本含性能修复**(answeroverflow:2026.5.22 事件循环修复、provider-auth prewarm 延迟化、启动期 fs/plugin 操作精简)——本机 2026.8.1 已晚于该批;npm 侧 2.0.4 可升(晨间决策点 6,过 runbook §0 漂移闸)。
+5. **fast mode 不是我们的杠杆**:官方口径 fast=服务档位(OpenAI `service_tier=priority`/Anthropic Fast),对 deepseek openai-completions 自定义 provider 大概率无映射(startup 日志 fast=off);不与 thinking 混淆。
+6. **社区杂项**:并行 skills/plugins 过多、memory thrashing 亦为慢因(reddit gateway-slow 帖);`reasoning` 无 config 级默认、回落 off(GitHub #45880)——治理面在 thinking 键,不在 reasoning 键。
+
+### 8.3 对本包计划的落点(不改冻结范围,只是把步⑤的弹药上膛)
+- **B 案(优先试,timebox 内)**:探针带 `/think:off` 内联指令先测质量与延迟 → 满意则声明工件里落 `thinkingDefault: off`(经幂等 apply 脚本,不手改)。**B 案若成,模型不换、catalog/allowlist 零动,漂移面最小**。
+- **A 案(并行准备)**:`openclaw models set deepseek/deepseek-chat`(或 deepseek-flash,先查 reasoning 标志与 1000k ctx 真伪)+ modelPolicy.allow 增补——三候选同批探针裁决(A2 质量门一视同仁)。
+- 改档/换模后**首批探针缓存打穿属预期**,N≥3 中位数从第二批起算(避免误判)。
+- 来源:docs.openclaw.ai/tools/thinking · docs.openclaw.ai/concepts/models · github.com/openclaw/openclaw/issues/72407 · github.com/openclaw/openclaw/issues/45880 · betterclaw.io/blog/openclaw-slow · blink.new/blog/openclaw-slow-latency-performance-fix-2026 · answeroverflow.com/m/1508564311746805870 · reddit r/openclaw(gateway slow 帖)。
