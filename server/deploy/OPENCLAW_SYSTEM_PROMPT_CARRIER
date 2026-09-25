@@ -23,7 +23,7 @@
   ④ **版本沿革前言外置**：v7 制品本体不带前言（首行即 `## 角色`），沿革只留本文件副本；
   渲染不剥离，保「验收所测 = 生产所用」。
   ⑤ 正文 Pruning：去治理编号、去跨段复述（meaning 单口径 ≤24 字）、提醒节压缩、
-  「接下来」/「增量扩展区」元框架删除（制品 11142 → 4805 字符）。
+  「接下来」/「增量扩展区」元框架删除（制品 11142 → 4853 字符）。
 - 历史版本：`openclaw-system-prompt.v1.md`（260829-voice-roundtrip 基座）→
   `openclaw-system-prompt.v2.md`（260829-schedule-p2 + 260829-char-stroke 合并版）→
   `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版；
