@@ -155,7 +155,7 @@ ls /root/.openclaw/workspace/kidpal/schedule.md  # 真身 549B：只有「每周
 ### 8.2 铺脚本 + 配置（幂等，repo → ECS）
 
 ```bash
-cd server/deploy && bash apply-xiaozhi-overlay.sh   # 渲染 v3 prompt + openclaw-reminder.config.yaml
+cd server/deploy && bash apply-xiaozhi-overlay.sh   # 渲染当前版 system prompt（版本见 OPENCLAW_SYSTEM_PROMPT_CARRIER）+ openclaw-reminder.config.yaml
 # 脚本与配置的目标目录（与 pending.json 同机）：
 export KIDPAL_OPENCLAW_SCRIPT_DIR=/opt/kidpal/openclaw-patch
 export KIDPAL_ALERTS_DIR=/opt/kidpal/alerts         # cron 写、front 读的交接目录（同机）
@@ -179,6 +179,32 @@ python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
 #    semantic.json，脚本按 entry_key 挂载，缺文件=机械兜底不丢提醒）
 openclaw cron list   # 期望新增一条，state.lastRunStatus=ok
 ```
+
+### 8.3b 注册语义回合 cron（agent 型，260925-reminder-semantic-round-not-live 补全）
+
+> 背景：ARQ-260925-reminder-semantic-round-not-live——`kidpal-reminder-plan` 只跑脚本半边，
+> 「agent 回合产 semantic.json」从未上线（semantic.json 长期缺位，提醒一直走机械兜底）。
+> 本任务补 agent 生产侧：agent 型 cron 每 15 分钟唤起 main agent 一次，按
+> `workspace-main/kidpal-reminder-semantic` skill 产语义产物；脚本侧零改动（消费链路
+> `load_semantic`/`bring_items`/title-speech 覆盖本就完整）。
+
+```bash
+openclaw cron add \
+  --name kidpal-reminder-semantic \
+  --every 15m \
+  --agent main \
+  --no-deliver \
+  --message "提醒语义回合：读 kidpal/schedule.md，按 kidpal-reminder-semantic skill 的
+流程全量重写 /opt/kidpal/alerts/semantic.json。收到本消息即执行，无需确认。"
+openclaw cron list   # 期望两条 kidpal-reminder-*：plan（command 型 isolated）+ semantic
+#                    # （agent 型 main）；各跑一个周期后核 /opt/kidpal/alerts/semantic.json
+#                    # 出现且 entry_key 与 schedule.md 行逐字对齐（live L5 证据补课）。
+```
+
+设计要点（为什么是 main agent + skill 承载）：板侧 kidpal agent 只在**设备语音请求**时被
+引擎注入 system prompt（v7 提醒节的读者假设因此只覆盖语音回合），cron 唤起的 agent 回合
+不走引擎注入；main agent 拥有 kidpal/ 写侧与 skill 机制，指示的家 = workspace skill
+（镜像入仓 `server/deploy/openclaw-skills/workspace-main/`）。
 
 ### 8.4 前端投递侧（同机 uvicorn，无需额外进程）
 
@@ -208,6 +234,9 @@ cd server && RUN_LIVE=1 python -m pytest -q --import-mode=importlib \
 
 ```bash
 openclaw cron remove --name kidpal-reminder-plan
+openclaw cron remove --name kidpal-reminder-semantic   # 8.3b 语义回合（如已注册）
 rm -f /opt/kidpal/alerts/pending.json          # 投递侧下一分钟自然读空（缺文件安静）
-# 三档配置与 prompt 回 v2：apply-xiaozhi-overlay.sh 里 PROMPT_SRC 改回 v2 一行即可
+rm -f /opt/kidpal/alerts/semantic.json         # 语义产物一并清（缺文件 = 脚本机械兜底）
+# prompt 回退：apply-xiaozhi-overlay.sh 里 PROMPT_SRC 改指目标历史版一行即可（版本清单见
+# OPENCLAW_SYSTEM_PROMPT_CARRIER；历史版本文件零回改、共存可 diff）
 ```

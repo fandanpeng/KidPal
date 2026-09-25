@@ -8,5 +8,8 @@ ECS 重装/迁移时从本目录恢复。
 - `workspace-kidpal/kidpal-schedule-answer/` → live `/root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/`
   （板侧 kidpal agent 的课表问答流程 skill，2026-09-25 落地，loopback 探针实测生效；
   main workspace 的同名 skill 服务家庭侧/QQ 录入路径，两者分工不同、并存不互斥）
+- `workspace-main/kidpal-reminder-semantic/` → live `/root/.openclaw/workspace/skills/kidpal-reminder-semantic/`
+  （提醒语义回合 skill：cron `kidpal-reminder-semantic` 每 15 分钟唤起 main agent 产
+  semantic.json，见 ARQ-260925-reminder-semantic-round-not-live 与 DEPLOY-RUNBOOK §8.3b）
 
 修改 skill 后：先改本仓镜像（进 review），再同步到 ECS live 路径——顺序别反。
