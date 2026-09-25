@@ -200,24 +200,24 @@ static void charpage_blit(int size)
     lv_obj_invalidate(g_page.canvas);
 }
 
-/* 绘制米字格引导十字 (淡灰) */
+/* 绘制米字格引导线 (ui-v5-align §2 查字窗行 1, 2026-09-26 批; 阶段5 architect 修正:
+ * 母版八向 = 十字 + 两对角**恰四条线**, 无四宫线——旧「灰实线十字+四宫」退役, 四宫
+ * 线一并退役不保留)。点线画法（点距 3px: 1 on 2 off; 母版 dasharray 3 on 9 off,
+ * 密度差与灰两档仅 host 观感, 像素级归真机轮）。色调弱于示范字纯黑
+ * （0x99 十字 / 0xbb 对角; 设备 RLCD 阈值化后呈浅点线）。 */
 static void charpage_draw_grid(int size)
 {
-    for (int line = 0; line < size; line++) {
-        /* 十字 */
-        lv_canvas_set_px(g_page.canvas, line, size / 2,
-                         lv_color_make(0xd0, 0xd0, 0xd0), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, size / 2, line,
-                         lv_color_make(0xd0, 0xd0, 0xd0), LV_OPA_COVER);
-        /* 四宫格细线 */
-        lv_canvas_set_px(g_page.canvas, line, size / 4,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, line, 3 * size / 4,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, size / 4, line,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, 3 * size / 4, line,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
+    for (int i = 0; i < size; i += 3) {
+        /* 十字 (0x99) */
+        lv_canvas_set_px(g_page.canvas, i, size / 2,
+                         lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
+        lv_canvas_set_px(g_page.canvas, size / 2, i,
+                         lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
+        /* 两对角 (0xbb): 主对角 + 副对角。 */
+        lv_canvas_set_px(g_page.canvas, i, i,
+                         lv_color_make(0xbb, 0xbb, 0xbb), LV_OPA_COVER);
+        lv_canvas_set_px(g_page.canvas, i, size - 1 - i,
+                         lv_color_make(0xbb, 0xbb, 0xbb), LV_OPA_COVER);
     }
 }
 
@@ -453,6 +453,49 @@ static void charpage_art_overlay(void)
     }
 }
 
+/* V5 对齐 (ui-v5-align §2 查字窗行 4, 2026-09-26 批): 右栏底部★ (设计稿锚图附加;
+ * ic_star_22 资产, 缺场不画——纯装饰)。dsc/px file-static 存活（lv_image 持 dsc
+ * 指针, 窗重开复用零泄漏——同 frame dsc 先例）。 */
+static lv_image_dsc_t s_cp_star_dsc;
+static uint32_t      *s_cp_star_px = NULL;
+static int            s_cp_star_st = 0; /* 0=未试 1=可用 2=缺场免重试（同 frame 先例） */
+
+static const lv_image_dsc_t *charpage_art_star_dsc(void)
+{
+    kidpal_art_img_t img;
+
+    if (s_cp_star_st == 2) {
+        return NULL;
+    }
+    if (s_cp_star_st == 1) {
+        return &s_cp_star_dsc;
+    }
+    if (kidpal_art_load("ic_star_22.bin", &img) != 0 ||
+        img.w <= 0 || img.h <= 0) {
+        s_cp_star_st = 2;
+        return NULL;
+    }
+    s_cp_star_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (s_cp_star_px == NULL) {
+        return NULL;
+    }
+    for (int y = 0; y < img.h; y++) {
+        for (int x = 0; x < img.w; x++) {
+            int p = kidpal_art_pixel(&img, x, y);
+            s_cp_star_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+        }
+    }
+    memset(&s_cp_star_dsc, 0, sizeof(s_cp_star_dsc));
+    s_cp_star_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    s_cp_star_dsc.header.w      = img.w;
+    s_cp_star_dsc.header.h      = img.h;
+    s_cp_star_dsc.header.stride = (uint32_t)img.w * 4u;
+    s_cp_star_dsc.data          = (const uint8_t *)s_cp_star_px;
+    s_cp_star_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    s_cp_star_st = 1;
+    return &s_cp_star_dsc;
+}
+
 void kidpal_char_page_replay(void)
 {
     g_page.elapsed_ms = 0; /* KEY 短按重播: 从第一笔重新逐笔 (S-F3.3) */
@@ -529,6 +572,39 @@ void kidpal_char_page_show(const char *data_json)
 
     /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
     charpage_art_overlay();
+
+    /* V5 对齐 (ui-v5-align §2 查字窗行 2, 2026-09-26 批): 框内左上「跟着写」黑帽标
+     * （设计稿黑底白字帽标; 无烘焙资产 -> 程序化黑底圆角 + 白字, 同提醒「记得哦」
+     * 气泡先例; 资产化归后续资产轮）。后建于框位图 -> z 序在上不被遮。 */
+    {
+        lv_obj_t *chip = lv_obj_create(g_page.panel);
+        lv_obj_remove_style_all(chip);
+        lv_obj_set_size(chip, LV_SIZE_CONTENT, 20);
+        lv_obj_set_style_bg_color(chip, lv_color_black(), 0);
+        lv_obj_set_style_bg_opa(chip, LV_OPA_COVER, 0);
+        lv_obj_set_style_radius(chip, 4, 0);
+        lv_obj_set_style_pad_hor(chip, 8, 0);
+        lv_obj_set_style_pad_ver(chip, 2, 0);
+        lv_obj_set_pos(chip, 10, 12);
+        lv_obj_clear_flag(chip, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_t *chip_lbl = lv_label_create(chip);
+        lv_label_set_text(chip_lbl, "跟着写");
+        lv_obj_set_style_text_color(chip_lbl, lv_color_white(), 0);
+        lv_obj_set_style_text_font(chip_lbl, &font_puhui_14_1, 0);
+        lv_obj_center(chip_lbl);
+    }
+
+    /* V5 对齐 (ui-v5-align §2 查字窗行 4): 右栏底部★ (阶段5 architect 修正: 母版
+     * (280,226) 悬于右栏速查卡下方; 初版 (232,218) 压框角已纠正)。ic_star_22
+     * 缺场不画——纯装饰。 */
+    {
+        const lv_image_dsc_t *st = charpage_art_star_dsc();
+        if (st != NULL) {
+            lv_obj_t *star = lv_image_create(g_page.panel);
+            lv_image_set_src(star, st);
+            lv_obj_set_pos(star, 280, 226);
+        }
+    }
 
     /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 组词 (数据面委托
      * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
