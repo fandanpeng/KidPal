@@ -199,5 +199,9 @@
   "260924-gov-review-settings-deny-contract-merge": {
     "date": "2026-09-24",
     "mergedInMain": "yes"
+  },
+  "260924-gov-review-gate-parse-teeth": {
+    "date": "2026-09-24",
+    "mergedInMain": "yes"
   }
 }
