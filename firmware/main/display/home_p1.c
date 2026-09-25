@@ -1039,6 +1039,15 @@ static void p1_draw_aux_batt(void)
     }
 }
 
+/* ① 辅助条·WiFi 联网小标（ui-v5-align §2 P1 行 1; spec AC1「📶 联网小标打头」）:
+ * ic_wifi_14.bin 14x14 @ (12,12), 辅助条中线 y≈19。常显家具（设计稿状态栏首部小标;
+ * 联网状态条件显隐需 hp1_state_t 增网络字段 = 契约面, 本批不碰——归登记遗留）。
+ * 加载失败不画（纯装饰件, 无有墨义务）。 */
+static void p1_draw_wifi_icon(void)
+{
+    (void)p1_blit_art_scaled("ic_wifi_14.bin", 12, 12, 14, 14, 12, 12, 25, 25);
+}
+
 /* ② 小伴常驻演出（v1.4 内容区左 {8,48,128,208}）：pose_daily 全尺寸 96x96 blit
  * （落点 (24,80) 收进钉区）；未挂载 thin 描边兜底（有墨 >= 20 pin 两条路径成立）。 */
 static void p1_draw_mascot(void)
@@ -1048,15 +1057,22 @@ static void p1_draw_mascot(void)
     }
 }
 
+/* 分组分隔点状虚线前置声明（实现与画法注释见 render_frame 前 p1_draw_group_dash_sep）。 */
+static void p1_draw_group_dash_sep(int y, int x0, int x1);
+
 /* ②/③ 「接下来」日程卡（[S3] 追加轮行流语义, human 版式扩展 2026-09-22）：
- * 卡顶「接下来」= 烘焙大字标签（[S5] p1_label_jiexialai.bin, 卡题固定、空日程仍在场,
- * 左锚定 LABEL 带 {136,48,266,92}）；倒计时贴纸/大 imgfont 时间本轮退役（不入渲染）；
- * 文字行全部 14px font_puhui_14_1 逐字形 blit + 正常换行——最近项行 ROW1{136,96,392,122}
- * （时间 + 课程名, 行内时间走 [S1] seam ASCII）、后续事项行 ROW2{136,124,392,150}
- * 逐项 时间+名、末行预告 ROW3{136,152,392,178} = 明早标签（[S5] p1_label_mingzao.bin,
- * 文案「明早」非「明天」）+ HH:MM（起笔 x>=184 不侵明早槽）+ 名。行流自 ROW1 起按
- * 行流式下排（换行续行落下一行带），一切墨不越卡区 CARD{136,48,392,242}。
- * 空日程仍画标签 + 行流零墨（HPB tooth 5 语义）。 */
+ * 卡顶「接下来」= 烘焙黑底白字帽标（[S5] p1_chip_jiexialai.bin 58x21, 卡题固定、
+ * 空日程仍在场, ui-v5-align §2 P1 行 5: 设计 = 黑帽标 + 左侧云朵涂鸦; 白底黑字
+ * p1_label_* 退役）+ 左侧云朵涂鸦 doodle_cloud_52.bin；文字行全部 14px
+ * font_puhui_14_1 逐字形 blit + 正常换行——最近项行 ROW1{136,96,392,122}
+ * （时间 + 课程名, 行内时间走 [S1] seam ASCII）、后续事项行 ROW2..（逐项 时间+名,
+ * 行流下排）, 组间点状虚线分组隔（ui-v5-align §2 P1 行 4: 设计虚线在「接下来」组
+ * 与「明天」组之间; 仅两组都在场时画——空日程/无预告不画, 行流带零墨钉不破）,
+ * 末行预告 = 明早帽标（[S5] p1_chip_mingzao.bin 46x21, 文案「明早」非「明天」——
+ * 资产闭集只有明早字样, 「明天」字样资产缺 = 登记遗留, 不画假字样）+
+ * HH:MM（起笔 x>=192 不侵明早帽标槽）+ 名。行流自 ROW1 起按行流式下排（换行续行
+ * 落下一行带），一切墨不越卡区 CARD{136,48,392,242}。
+ * 空日程仍画帽标 + 云朵（卡题固定）、行流零墨（HPB tooth 5 语义）。 */
 static void p1_draw_card(void)
 {
     const int line_h = 28;      /* [S3] 行带 pitch：ROW1 96 -> ROW2 124 -> ROW3 152 */
@@ -1067,12 +1083,17 @@ static void p1_draw_card(void)
     char line[48];
     const hp1_item_t *it;
     hp1_item_t pv;
-    int has_pv;
+    int has_pv = (kidpal_home_p1_schedule_preview(&pv) == 0);
 
-    /* 「接下来」烘焙大字标签（固定卡题；空日程仍在场）。独立于 s_art_ok——kidpal_
-     * art_load 自身决定烘焙 vs 兜底（[S5]: 标签在场义务独立于数字资产挂载）。 */
-    if (!p1_blit_art("p1_label_jiexialai.bin", 136, 55, 130, 44)) {
-        p1_stroke_rect(136, 48, 266, 92, 1); /* 兜底描边撑「标签带有墨 >= 30」 */
+    /* 卡顶「接下来」黑帽标 + 左侧云朵涂鸦（固定卡题；空日程仍在场）。独立于
+     * s_art_ok——kidpal_art_load 自身决定烘焙 vs 兜底（[S5]: 标签在场义务独立于
+     * 数字资产挂载）。云朵/帽标任一缺场 -> 各自描边兜底撑「标签带有墨」pin
+     * （标签带 {136,48,266,92} 墨 >= 30 义务两条路径成立）。 */
+    if (!p1_blit_art("doodle_cloud_52.bin", 136, 40, 52, 52)) {
+        p1_stroke_rect(136, 48, 188, 90, 1); /* 云朵缺场兜底 */
+    }
+    if (!p1_blit_art("p1_chip_jiexialai.bin", 192, 60, 58, 21)) {
+        p1_stroke_rect(192, 55, 250, 76, 1); /* 帽标缺场兜底 */
     }
 
     /* 最近项行 ROW1（time + name, 行内时间 [S2] seam ASCII）。 */
@@ -1096,42 +1117,42 @@ static void p1_draw_card(void)
                                 cx0, cy0, cx1, cy1);
             fy += used * line_h;
         }
+
+        /* 组间点状虚线分组隔（ui-v5-align §2 P1 行 4）：「接下来」组与「明天」组
+         * 之间; 两组都在场才画（行流带零墨钉 = 空日程严格零墨, 不破）。落位 =
+         * 上一行文字底（fy-line_h+6+14 = fy-8）与预告行文字顶（fy+6）之间的空隙。 */
+        if (has_pv) {
+            p1_draw_group_dash_sep(fy - 3, cx0, cx1);
+        }
     }
 
-    /* 末行预告（明早标签 + HH:MM + 名）：明早烘焙标签落行 3 左槽, time 起笔 x>=184。
-     * 行流 y = fy（标准夹具 2 项 + 预告 = 第三行 y=152）。 */
-    has_pv = (kidpal_home_p1_schedule_preview(&pv) == 0);
+    /* 末行预告（明早帽标 + HH:MM + 名）：明早黑帽标落预告行左槽, time 起笔 x>=192
+     * 不侵帽标（帽标墨右界 136+46-1=181）。行流 y = fy（标准夹具 2 项 + 预告 =
+     * 第三行 y=152）。 */
     if (has_pv) {
-        if (!p1_blit_art("p1_label_mingzao.bin", 136, fy + 3, 44, 26)) {
-            p1_stroke_rect(136, fy, 180, fy + 26, 1); /* 兜底描边撑明早槽有墨 */
+        if (!p1_blit_art("p1_chip_mingzao.bin", 136, fy + 2, 46, 21)) {
+            p1_stroke_rect(136, fy, 182, fy + 22, 1); /* 兜底描边撑明早帽标槽有墨 */
         }
         p1_join_time_name(&pv, line, (int)sizeof(line));
-        (void)p1_blit_flow(line, 184, fy + text_yoff, line_h,
+        (void)p1_blit_flow(line, 192, fy + text_yoff, line_h,
                            cx0, cy0, cx1, cy1);
     }
 }
 
-/* 首页底部分隔虚线 (device-round VQ-A7 r3 §A2 起, r5 human 定谳复位): 冻结锚 = 「顶部
- * 信息栏下方 (y=42) 通栏虚线」(design 稿 P1 辅助条节 border-top 2.5px dotted / 左右 6px
- * 内缩)。r4 human 真机复测定性为「底栏分隔线画到中间 (位置/跨度不对)」导致 r4 把落点下移
- * 到 y246 且收窄 x138..389 —— 该次重定位是对 human r3 反馈的误读 (r5 销账): 顶部虚线与
- * 底部键帽条 chrome 上沿 3px 实线是两条不同职责分隔, 前者钉顶部信息栏下、后者钉底槽上沿,
- * 不争位、非双画。现按 r5 human 定谳复位 y42 通栏 6px 内缩。dash/dot 画法 needle 保留在世
- * (TEST 8 tooth 2 不变绿)。设备首页 = home_p1.c 软帧整帧渲染单源 (400×300 帧整帧 blit),
- * LVGL 对象画法会被帧 blit 覆盖 —— mock kidpal_ui.c:197-204 的 lv_line dash 画法为参照
- * 而非设备落点 (r4 偏离/复位声明: 见 r5 review-packet 交付报告)。 */
-static void p1_draw_aux_dash_sep(void)
+/* 分组分隔/辅助条下缘共用点状虚线画法 (ui-v5-align §2 P1 行 4, 2026-09-25 批):
+ * V5 母版两处虚线——①辅助条下 border-bottom dotted（y42, x8..391, 旧通栏虚线同位,
+ * r5 human 定谳锚保留）; ②「接下来」组与「明天」组之间 border-top dotted（组间,
+ * 由 p1_draw_card 调用）。原 p1_draw_aux_dash_sep 泛化成带落位参数的本函数供两处
+ * 消费。dash/dot 画法 needle 保留在世（voice_round_ui TEST 8 tooth 2 扫 home_p1.c
+ * dash/dot/虚线/点线 >= 1）。 */
+static void p1_draw_group_dash_sep(int y, int x0, int x1)
 {
-    /* r5 复位 (r4 误读销账): 恢复 r3 冻结锚 = 顶部信息栏下方 y42 通栏虚线 (左右 6px 内缩,
-     * design 稿 P1 辅助条节 border-top dotted / 左右 6px 内缩)。r4 曾把落点下移到 y246 并
-     * 收窄到右侧内容列 x138..389 (误认「底部键帽条 chrome 实线上沿」为双画要避位的观感),
-     * 实则顶部虚线职责 = 信息栏与日程主体间的分隔、与底槽上沿实线不争位, r5 human 定谳
-     * 复位为顶栏下通栏。dash/dot 画法 needle 保留 (TEST 8 tooth 2 不变绿); 像素级观感
-     * 归真机轮 VQ-A7。 */
-    int y = 42, x0 = 6, x1 = P1_FB_W - 7; /* 通栏 6px 内缩: x6..393 */
     int dash_on = 3, dash_gap = 3;        /* ~3px 线宽段 + 等宽空段 */
     int x = x0, on = 1;
 
+    if (y < 0 || y + 2 >= P1_FB_H || x0 < 0 || x1 >= P1_FB_W || x0 > x1) {
+        return; /* 防御: 出帧不入帧缓冲 */
+    }
     while (x <= x1) {
         int stop = x + (on ? dash_on : dash_gap) - 1;
         if (stop > x1) {
@@ -1147,6 +1168,16 @@ static void p1_draw_aux_dash_sep(void)
         x = stop + 1;
         on = !on;
     }
+}
+
+/* V5 对齐 (ui-v5-align §1.4/§3, 2026-09-25 批): 左下波浪涂鸦 rec_wave.bin (206x34)。
+ * 设计 = 左下角装饰涂鸦; 落位收窄进 x<136 (右列预告退役带 {136,220,392,258} 零墨钉,
+ * 全宽 206px 会侵入; 123px 宽右缘 128 亦不触 PCN left_gap 带 {129..135}——阶段2
+ * architect 修正) -> 最近邻降采样 123x20 @ (6,224)。加载失败 = 不画（纯装饰件,
+ * 无有墨义务——与帽标/图标不同, 兜底描边反而违背设计意图）。 */
+static void p1_draw_wave_doodle(void)
+{
+    (void)p1_blit_art_scaled("rec_wave.bin", 6, 224, 123, 20, 6, 224, 128, 243);
 }
 
 int kidpal_home_p1_render_frame(void)
@@ -1165,7 +1196,9 @@ int kidpal_home_p1_render_frame(void)
      * 接下来额外要求日程缓存非空（空日程让位 -> 主体区严格零墨）。 */
     lr = kidpal_home_p1_layout_resolve(28, 120, 28, P1_FB_H);
 
-    /* ① 辅助条 y[0..39]（v1.4 重排序：时间·日期·温度·湿度·电量，图标前置）。 */
+    /* ① 辅助条 y[0..39]（v1.4 重排序：WiFi 小标打头 + 时间·日期·温度·湿度·电量，
+     * 图标前置; ui-v5-align §2 P1 行 1）。 */
+    p1_draw_wifi_icon();
     p1_draw_aux_time();
     p1_draw_aux_date();
     if (s_state.env_valid == 1 && ((lr & HP1_ELEM_BIT_TH) != 0)) {
@@ -1184,16 +1217,25 @@ int kidpal_home_p1_render_frame(void)
         p1_draw_aux_batt();
     }
 
-    /* 辅助条下缘虚线分隔 (r3 §A2): 信息栏之下、日程主体之上画通栏虚点线。 */
-    p1_draw_aux_dash_sep();
+    /* 辅助条下缘点状虚线（y42, x8..391）：V5 母版 canvas-p1 辅助条 border-bottom
+     * dotted 自首版在世（阶段2 architect 复核: 母版 git log -S + 锚图 y25-26 实测
+     * 点状线）——本批初版误按 findings 行 4「状态栏下无线」退役, 已纠正恢复。
+     * y42 = device-round VQ-A7 r5 human 定谳位（实现侧辅助条文本 14px 较母版 11px
+     * 高, y42 是正确适配位）; 组间虚线另行画在「接下来」与「明天」组之间, 两件
+     * 职责不同、并存不争位。 */
+    p1_draw_group_dash_sep(42, 8, 391);
 
     /* ②/③ 日程卡：[S3] 追加轮行流版式——小伴常驻演出（左）+「接下来」卡（右）：
-     * 标签 + 行流文字（最近项 ROW1 / 后续事项 ROW2.. / 末行预告 ROW3）。倒计时贴纸/
-     * 大 imgfont 时间本轮退役（不入渲染）。空日程仍画标签（卡题固定）、行流零墨。 */
+     * 黑帽标 + 云朵 + 行流文字（最近项 ROW1 / 后续事项 ROW2.. / 组间虚线 /
+     * 末行预告 ROW3）。倒计时贴纸/大 imgfont 时间退役（不入渲染）。空日程仍画
+     * 帽标 + 云朵（卡题固定）、行流零墨。 */
     p1_draw_mascot();
     if ((lr & HP1_ELEM_BIT_NEXT) != 0) {
         p1_draw_card();
     }
+
+    /* V5 对齐: 左下波浪涂鸦（装饰件, 独立于日程卡门控——设计稿常驻位）。 */
+    p1_draw_wave_doodle();
 
     return host_infra_render_p1_frame(s_p1_fb, P1_FB_W, P1_FB_H);
 }

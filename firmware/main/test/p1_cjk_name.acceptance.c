@@ -332,8 +332,11 @@ static const int pcn_band_right_x1 = 399;
 #define PCN_HOST_CMAKE  "firmware/main/test/host_app/main/CMakeLists.txt"
 
 /* [S5] 烘焙固定标签资产冻结名（管线产出名 == home_p1.c 消费名 == 本文件探针名）。 */
-#define PCN_ASSET_LABEL_NEXT    "p1_label_jiexialai.bin"
-#define PCN_ASSET_LABEL_MINGZAO "p1_label_mingzao.bin"
+/* V5 对齐 (ui-v5-align §2 P1 行 5, 2026-09-26): 卡顶标签随 V5 母版换黑底白字帽标
+ * p1_chip_*.bin（白底黑字 p1_label_*.bin 退役）。[S5] 冻结名扩两枚新资产, 钉点
+ * 随之改锚——管线语义不变（固定标签走烘焙资产管线）, 仅资产字面换新。 */
+#define PCN_ASSET_LABEL_NEXT    "p1_chip_jiexialai.bin"
+#define PCN_ASSET_LABEL_MINGZAO "p1_chip_mingzao.bin"
 /* host 夹具私有资产根（只含两枚标签 bin；其余资产维持兜底态——runner 其余齿零扰动）。 */
 #define PCN_ASSET_ROOT_HOST "/tmp/pcj_assets_ft"
 #define PCN_ASSET_SRC_DIR   "firmware/main/assets/spiffs_root"
