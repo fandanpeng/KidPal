@@ -18,15 +18,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
-import { isProposalMdPath, normalizeSourceRef, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
+import { isProposalMdPath, normalizeSourceRef, resolveOriginRef, resolveOriginType, ANCHORABLE_TEST } from './lib/governance-gate-shared.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { resolveCurrentTaskPackage, resolveExplicitTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
-  if (explicit) return resolve(projectDir, explicit);
-  return resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
+  if (explicit) return resolveExplicitTaskPackage('taskpackage-required', projectDir, explicit, '位置参数/环境变量').path;
+  return resolveCurrentTaskPackage('taskpackage-required', projectDir).path;
 }
 
 function print(payload) {
@@ -115,6 +116,58 @@ function gitFirstCommitDate(relPath) {
     return null;
   }
 }
+
+// ── T5（260924-gov-review-gate-parse-teeth）：引用字段磁盘存在性 warn 齿（advisory，不拦门）──
+// 七类引用字段（docRefs / sourceRefs / contractRefs / planningRefs / acceptanceTestsFile /
+// origin.ref(upstreamRef) / crossEnd.counterparts[].path）取 fragment-stripped 路径、过 ANCHORABLE_TEST
+// 形状过滤（非路径 token 如 story id「S-F1.1」跳过——起草期 census 129/694 为非路径），existsFn 不在场者
+// 入 warnings；exit code 与 ok 判定零变更。零追溯姿势继承（头注 :15）：只查本闸实际读取的当前包
+// （current 默认或显式传入），不扫历史（census 87/694 历史包陈旧引用实证——追溯即纯噪声）。
+export function collectRefWarnings(tp, existsFn) {
+  const warnings = [];
+  const checkPath = (field, ref) => {
+    if (typeof ref !== 'string' || !ref.trim()) return;
+    const path = ref.split('#')[0].trim();
+    if (!path || path.startsWith('http') || path.startsWith('<')) return;
+    if (!ANCHORABLE_TEST.test(path)) return;
+    if (!existsFn(path)) warnings.push({ field, ref, reason: 'path-not-on-disk', path });
+  };
+  for (const field of ['docRefs', 'sourceRefs', 'contractRefs', 'planningRefs', 'acceptanceTestsFile']) {
+    for (const ref of Array.isArray(tp[field]) ? tp[field] : []) checkPath(field, ref);
+  }
+  const origin = (tp.origin && typeof tp.origin === 'object') ? tp.origin : {};
+  for (const key of ['ref', 'upstreamRef']) checkPath(`origin.${key}`, origin[key]);
+  const crossEnd = (tp.crossEnd && typeof tp.crossEnd === 'object') ? tp.crossEnd : {};
+  const counterparts = Array.isArray(crossEnd.counterparts) ? crossEnd.counterparts : [];
+  for (const entry of counterparts) {
+    if (entry && typeof entry === 'object') checkPath('crossEnd.counterparts[].path', entry.path);
+  }
+  return warnings;
+}
+
+function selfCheck() {
+  let pass = 0;
+  let failCount = 0;
+  const ok = (cond, name) => { if (cond) pass += 1; else { failCount += 1; console.error(`FAIL [${name}]`); } };
+  const never = () => false;
+  const always = () => true;
+  // 判别：路径形假 ref（盘上无）→ warnings 非空；story-id 非路径 → 不产 warn（形状过滤）
+  const w1 = collectRefWarnings({ docRefs: ['docs/nonexistent-xyz.md'], sourceRefs: ['S-F1.1'], acceptanceTestsFile: ['firmware/no-such.test.c'] }, never);
+  ok(w1.length === 2 && w1.some((w) => w.field === 'docRefs') && w1.some((w) => w.field === 'acceptanceTestsFile'), 'sc-fake-refs-warn');
+  ok(w1.every((w) => w.field !== 'sourceRefs'), 'sc-nonpath-token-skipped');
+  // 判别：在场 ref → 空（反转实现必须变红）
+  ok(collectRefWarnings({ docRefs: ['docs/some-file.md'] }, always).length === 0, 'sc-existing-ref-clean');
+  // fragment 剥离：'#§x' 锚不进路径判定
+  const w4 = collectRefWarnings({ docRefs: ['docs/gone.md#§1.2'] }, never);
+  ok(w4.length === 1 && w4[0].path === 'docs/gone.md', 'sc-fragment-stripped');
+  // crossEnd.counterparts[].path 同齿
+  const w5 = collectRefWarnings({ crossEnd: { counterparts: [{ path: 'server/gone.py', symbol: 'x' }] } }, never);
+  ok(w5.length === 1 && w5[0].field === 'crossEnd.counterparts[].path', 'sc-crossend-path-warn');
+  console.log(JSON.stringify({ selfCheck: 'taskpackage-required-check', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
+  process.exit(failCount === 0 ? 0 : 1);
+}
+
+if (process.argv.includes('--self-check')) selfCheck();
 
 const pathToTaskPackage = taskPackagePath();
 
@@ -393,11 +446,15 @@ if (isFinalizedState) {
   }
 }
 
+// T5：warnings 收集（advisory——ok 与 fail 两路输出均带，exit 判定不动）。
+const refWarnings = collectRefWarnings(taskPackage, (p) => existsSync(resolve(projectDir, p)));
+
 if (missing.length > 0 || coverageErrors.length > 0) {
   fail('TaskPackage is missing required finalized fields or has invalid decisionCoverage', {
     taskPackage: pathToTaskPackage,
     missing,
     coverageErrors,
+    warnings: refWarnings,
   });
 }
 
@@ -406,4 +463,5 @@ print({
   gate: 'taskpackage-required',
   taskPackage: pathToTaskPackage,
   changeId: taskPackage.changeId,
+  warnings: refWarnings,
 });

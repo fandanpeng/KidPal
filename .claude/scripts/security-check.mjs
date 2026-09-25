@@ -3,15 +3,16 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { echoResolution, resolveCurrentTaskPackage, resolveExplicitTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
-  if (explicit) return resolve(projectDir, explicit);
+  if (explicit) return resolveExplicitTaskPackage('security-check', projectDir, explicit, '位置参数/环境变量').path;
 
-  const current = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
-  return existsSync(current) ? current : null;
+  const resolved = resolveCurrentTaskPackage('security-check', projectDir);
+  return existsSync(resolved.path) ? resolved.path : null;
 }
 
 function print(payload) {

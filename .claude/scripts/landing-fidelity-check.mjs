@@ -240,6 +240,15 @@ function preflightFindings(text) {
   return { bodyFound: !!sec, findings };
 }
 
+// T9①（260924-gov-review-gate-parse-teeth）：目录 token advisory——preflight 接受目录锚、
+// landing 门逐文件精确匹配（changed.has）不消费目录锚（260923 批实录：`docs/crq/` FROZEN 后首跑结构门 RED
+// 两条 → human 追认 + 机械展开 99 行）。本 advisory 把反馈前移回起草期；**不入 findings、不动 ok/exit**。
+function dirTokenAdvisories(union) {
+  return [...(union || [])]
+    .filter((t) => String(t).endsWith('/'))
+    .map((t) => `锚并集含目录 token「${t}」：landing 门不消费目录锚（逐文件精确匹配 changed.has），manifest 须逐件枚举成员（迁移批先例：260914 批 139 行全枚举）`);
+}
+
 function runPreflight(proposalPath) {
   const abs = resolve(projectDir, proposalPath);
   if (!existsSync(abs)) {
@@ -259,6 +268,7 @@ function runPreflight(proposalPath) {
     // 治「锚行注记夹带路径 token」那一类（三轮证伪后缩圈移出、判据不机械化）：作者在起草期即可
     // 看到「哪些 token 进了锚集」，260912 那种注记夹带当场可见（该次锚并集 10 项 vs manifest 9 行）。
     anchorUnion: union,
+    advisories: dirTokenAdvisories(union),
     findings,
     note: '只读干跑：只保证 §2 锚清单「形态可解析」，不做 §2↔manifest 对账；不参与任何门判定。',
   });
@@ -325,6 +335,11 @@ function runPreflightSelfCheck() {
   const unionDemo = [...parseSection2AnchorLists(unionOk).union].sort();
   check('anchorUnion·与 anchorCount 一致', unionDemo.length, 1);
   check('anchorUnion·成员名单内容', JSON.stringify(unionDemo), JSON.stringify(['.claude/scripts/a.mjs']));
+  // ⑥ T9①（260924-gov-review-gate-parse-teeth）判别：目录 token advisory——含目录 token 非空、纯文件 token 空
+  // （反转实现必须变红：若 advisory 误入 findings 则 runPreflight 的 ok 翻转，V9 live 断言另有覆盖）。
+  const dirAdv = dirTokenAdvisories(['docs/crq/', '.claude/scripts/a.mjs']);
+  check('目录 token advisory·非空且点名', dirAdv.length === 1 && dirAdv[0].includes('docs/crq/'), true);
+  check('目录 token advisory·纯文件 token 为空', dirTokenAdvisories(['.claude/scripts/a.mjs']).length, 0);
   console.log(JSON.stringify({ selfCheck: 'landing-preflight', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }

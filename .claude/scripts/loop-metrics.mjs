@@ -12,6 +12,7 @@ import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { echoResolution, resolveCurrentTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -59,12 +60,14 @@ function readJsonlLines(path) {
 
 function resolveChangeId() {
   const explicit = process.argv.find((a, i) => a === '--change-id' && i + 1 < process.argv.length);
-  if (explicit) return process.argv[process.argv.indexOf('--change-id') + 1];
+  if (explicit) {
+    const id = process.argv[process.argv.indexOf('--change-id') + 1];
+    echoResolution('loop-metrics', id, '--change-id 旗标');
+    return id;
+  }
 
-  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
-  if (!existsSync(current)) return null;
-  const tp = readJson(current);
-  return tp && tp.changeId ? tp.changeId : null;
+  const resolved = resolveCurrentTaskPackage('loop-metrics', projectDir);
+  return resolved.found && resolved.changeId ? resolved.changeId : null;
 }
 
 function countVerifierRounds(verifyRuns) {

@@ -34,6 +34,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 // import 不触发本目录 supervisor-verdict-gate.mjs 的 main()（其 isMain() 守卫，对偶 verifier-evidence-check:526）。
 import { deriveDiffTier, collectGitDiff } from './supervisor-verdict-gate.mjs';
 import { CHANGE_ID_PREFIX_RE } from '../scripts/lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { echoResolution, CURRENT_TASKPACKAGE_REL } from '../scripts/lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const defaultProjectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -624,6 +625,8 @@ function main(projectDir = defaultProjectDir) {
   } catch {
     process.exit(0);
   }
+  // T6（260924-gov-review-gate-parse-teeth）：回显齿——经 current/ 解析的 changeId 与来源始终可见。
+  echoResolution('supervisor-gate-check', taskPackage.changeId || null, CURRENT_TASKPACKAGE_REL);
 
   const changeId = taskPackage.changeId;
   if (!changeId) process.exit(0);

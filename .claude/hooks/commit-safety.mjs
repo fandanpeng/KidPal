@@ -9,7 +9,8 @@
 //   - 触发：PreToolUse · tool_name=Bash · command 含 `git add` 或 `git commit`（子串级正则；
 //     误报容忍：`echo "git add"` 之类也会触发——advisory 级多提醒一次无害，设计上接受）。
 //   - 时序注：PreToolUse 显示的是**命令执行前**的 staged 状态；`git add` 静默拒绝的实际捕获点
-//     在后续 `git commit` 命令到来时（commit 触发已覆盖该场景）。
+//     在后续 `git commit` 命令到来时（commit 触发已覆盖该场景）。add 相空态文案已按时序分流
+//     （260924-gov-review-gate-parse-teeth T1：见 statLine——add 相空 = 时序常态非异常信号）。
 //   - 动作：跑 `git diff --cached --stat` + `git diff --cached --check`，把结果经
 //     hookSpecificOutput.additionalContext 注入模型上下文（先例 suggest-codebase-memory.mjs；
 //     裸 stdout 模型看不到，会静默失效——恰是本钩子要治的失败模式）。
@@ -57,13 +58,21 @@ export function graphCacheNotice(command, stagedStat) {
   return null;
 }
 
+// 纯函数（self-check 可测；260924-gov-review-gate-parse-teeth T1）：空态文案按触发相分流——
+// add 相的空 = PreToolUse 时序常态（见头注），commit 相的空 = 有效异常信号（保留原警示文案）。
+export function statLine(trigger, stat) {
+  if (stat) return stat;
+  if (trigger === 'add') return '（add 执行前快照：此刻 staged 为空属正常时序，见头注 :11-12；add 后以 git diff --cached --stat 为准核对，commit 触发相将显示 add 后快照）';
+  return '（staged 为空——git add 可能未生效或被静默拒绝，先跑 git status 核对）';
+}
+
 function buildAdvisory(trigger, command) {
   const stat = gitQuiet('diff --cached --stat');
   const check = gitQuiet('diff --cached --check');
   const lines = [
     `【commit-safety 提醒 · 触发 = git ${trigger}】`,
     '当前 staged 内容（命令执行前的快照）：',
-    stat || '（staged 为空——git add 可能未生效或被静默拒绝，先跑 git status 核对）',
+    statLine(trigger, stat),
   ];
   const cacheNote = graphCacheNotice(command, stat);
   if (cacheNote) lines.push(cacheNote);
@@ -114,7 +123,16 @@ function selfCheck() {
   for (const c of noticeCases) {
     if (!c.ok) failures.push(`${c.name}: graphCacheNotice 三态断言失败`);
   }
-  const total = cases.length + noticeCases.length;
+  // 空态文案分流（T1 判别性：add 相空 → 时序常态文案；commit 相空 → 异常警示文案；非空 → 原样返回）
+  const statCases = [
+    { name: 'statline-add-empty', ok: statLine('add', '') === '（add 执行前快照：此刻 staged 为空属正常时序，见头注 :11-12；add 后以 git diff --cached --stat 为准核对，commit 触发相将显示 add 后快照）' },
+    { name: 'statline-commit-empty', ok: statLine('commit', '') === '（staged 为空——git add 可能未生效或被静默拒绝，先跑 git status 核对）' },
+    { name: 'statline-nonempty-passthrough', ok: statLine('add', ' AGENTS.md | 1 +') === ' AGENTS.md | 1 +' },
+  ];
+  for (const c of statCases) {
+    if (!c.ok) failures.push(`${c.name}: statLine 三态断言失败`);
+  }
+  const total = cases.length + noticeCases.length + statCases.length;
   const ok = failures.length === 0;
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'commit-safety', pass: total - failures.length, fail: failures.length, total, ok, failures: ok ? undefined : failures })}\n`,

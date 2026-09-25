@@ -19,7 +19,7 @@
 ## 六项核验清单（逐项过，逐项记 verdict）
 
 1. **逐文件 diff 对照**：landing-manifest 每个文件的实际 diff 对照 FROZEN PROPOSAL §2 对应 T 的改法——语义保真（改法对不对、有无私货），超出 manifest 的 canonical 改动逐一质询。
-2. **packet-binding 一致**：summary 的 packet-id 行 ↔ FROZEN §2 改法集 + §5 验证集；manifest ↔ §2 目标文件锚清单并集（条件锚按 OQ 裁断裁剪）；T2 五件组件 / T3 条目清单若被声明为绑定面，核「落的 == FROZEN 组件清单」。
+2. **packet-binding 一致**：summary 的 packet-id 行 ↔ FROZEN §2 改法集 + §5 验证集；manifest ↔ §2 目标文件锚清单并集（条件锚按 OQ 裁断裁剪）；**summary 骨架 = `docs/templates/architect-landing-summary.template.md`（复制勿手写；缺 `landing-manifest` 围栏块即合法打回——unit-gate F4 + 批 A 两实例在册，同根 ARQ-260924-landing-summary-template-pointer-gap）**；T2 五件组件 / T3 条目清单若被声明为绑定面，核「落的 == FROZEN 组件清单」。
 3. **验证集复跑**：§5 每条机械命令亲跑，输出与 summary 验证证据段声称比对。
 4. **结构门复跑**：`node .claude/scripts/landing-fidelity-check.mjs <change-dir>` 亲跑看退出码。**（本仓无 `cross-surface-check.mjs`**——该件为自源仓迁移带入的悬空引用，本仓从未存在；若你到场的清单里仍见到它，即为本文修订未生效，记 ADVISORY 并按「无此门」处理。260921-canonical-text-align T2 删除。）
 5. **真空绿规约**（三乘客三次现身收口，T4）：

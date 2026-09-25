@@ -3,19 +3,48 @@
 // verifier/fixer workflow; this script rejects missing or insensitive evidence.
 // 260813-gate-accuracy-batch T2：对称 stringify 匹配（OQ-3=(a)）+ 主流程函数化 + argv 触发型 --self-check（ARQ-114 先例）。
 
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { mentionsId, structuralAcceptanceIds } from './lib/acceptance-id-shared.mjs'; // 260731 批：匹配逻辑收敛单源（原本地 mentionsId/structuralAcceptanceIds 拷贝已删；raw-id 有意分歧经 extractId 参数保全，见下注）
+import { echoResolution, resolveCurrentTaskPackage, resolveExplicitTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
-function taskPackagePath() {
-  const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
-  if (explicit) return resolve(projectDir, explicit);
+// T3（260924-gov-review-gate-parse-teeth）：旗标面 + help + unknown-flag 拒绝。
+// m2-k1 病灶 = --change-id 类旗标被 argv[2] 位置参数吞掉、当路径 resolve 后报「TaskPackage file does not exist」。
+const MUTATION_CHECK_USAGE = `用法：node .claude/scripts/mutation-check.mjs [<taskpackage.json 路径>] [--change-id <id>] [--help] [--self-check]
+  <路径>（位置参数）   TaskPackage 文件路径（向后兼容；env DEV_LOOP_TASKPACKAGE / TASKPACKAGE_PATH 同序回退）
+  --change-id <id>     解析为 delivery/taskpackages/<id>/taskpackage.json（优先级最高）
+  --self-check         自检（ARQ-114 先例）
+  --help / -h          本用法（exit 0）
+未知 -- 旗标 = 用法错误 exit 2（260924-gov-review-gate-parse-teeth T3：根治旗标被当路径）。`;
 
-  const current = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
-  return existsSync(current) ? current : null;
+function flagVal(name) {
+  const i = process.argv.indexOf(name);
+  if (i === -1) return undefined;
+  const next = process.argv[i + 1];
+  return next !== undefined && !next.startsWith('--') ? next : undefined;
+}
+
+// 纯函数（self-check 可测）：--change-id → canonical taskpackage 路径。
+export function changeIdTaskPackagePath(changeId) {
+  return resolve(projectDir, 'delivery/taskpackages', changeId, 'taskpackage.json');
+}
+
+function taskPackagePath() {
+  const changeId = flagVal('--change-id');
+  if (changeId) {
+    echoResolution('mutation-check', changeId, '--change-id 旗标');
+    return changeIdTaskPackagePath(changeId);
+  }
+  const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
+  if (explicit) return resolveExplicitTaskPackage('mutation-check', projectDir, explicit, '位置参数/环境变量').path;
+
+  const resolved = resolveCurrentTaskPackage('mutation-check', projectDir);
+  return existsSync(resolved.path) ? resolved.path : null;
 }
 
 function print(payload) {
@@ -79,6 +108,14 @@ function isShallowStatusOnly(content) {
   return !hasBehaviorEvidence;
 }
 
+// T5（260924-gov-review-gate-parse-teeth）：缺失验收文件从静默跳过升级为可见 warnings（advisory，
+// exit/ok 判定零变更）。纯函数（existsFn 注入可测）——判别 case 在 selfCheck。
+export function missingAcceptanceTestFiles(files, existsFn) {
+  return files
+    .filter((f) => typeof f === 'string' && f.trim() && !existsFn(resolve(projectDir, f)))
+    .map((f) => ({ field: 'acceptanceTestsFile', ref: f, reason: 'path-not-on-disk', path: f }));
+}
+
 function main() {
   const pathToTaskPackage = taskPackagePath();
   if (!pathToTaskPackage) {
@@ -105,17 +142,18 @@ function main() {
   const exempt = new Set([...structural, ...suiteGates]);
   const functionalAcceptance = acceptance.filter((id) => !exempt.has(id));
   const files = Array.isArray(taskPackage.acceptanceTestsFile) ? taskPackage.acceptanceTestsFile : [];
+  const fileWarnings = missingAcceptanceTestFiles(files, (p) => existsSync(p));
 
   for (const file of files) {
     const absolutePath = resolve(projectDir, file);
-    if (!existsSync(absolutePath)) continue;
+    if (!existsSync(absolutePath)) continue; // T5：缺失件仍不参与内容扫描（判定零变更），但已入 fileWarnings 可见
     const content = readFileSync(absolutePath, 'utf8');
     if (hasUnpatternedThrow(content)) fail('Acceptance tests contain unpatterned toThrow assertions', { file });
     if (isShallowStatusOnly(content)) fail('Acceptance tests contain status-only shallow assertions', { file });
   }
 
   if (functionalAcceptance.length === 0) {
-    print({ ok: true, gate: 'mutation-check', skipped: true, reason: 'only structural acceptance ids', structural: [...structural], suiteGates: [...suiteGates] });
+    print({ ok: true, gate: 'mutation-check', skipped: true, reason: 'only structural acceptance ids', structural: [...structural], suiteGates: [...suiteGates], warnings: fileWarnings });
     process.exit(0);
   }
 
@@ -130,7 +168,7 @@ function main() {
     fail('Mutation evidence is missing or insensitive for some acceptance ids', { missingSensitive });
   }
 
-  print({ ok: true, gate: 'mutation-check', functionalAcceptance, structural: [...structural], suiteGates: [...suiteGates] });
+  print({ ok: true, gate: 'mutation-check', functionalAcceptance, structural: [...structural], suiteGates: [...suiteGates], warnings: fileWarnings });
 }
 
 // argv 触发型自检（260813-gate-accuracy-batch T2.3，ARQ-114 先例义务；机械化调用方缺位 = ARQ-260731-g3-selfcheck-mechanical-runner 消费面）。
@@ -168,6 +206,29 @@ function selfCheck() {
   const backslashId = '路径 C:\\AI\\x 的验收';
   ok(evidenceMatchesId([{ acceptanceId: backslashId, sensitive: true }], backslashId) === true, 'sc-backslash-id-false-negative-to-hit');
 
+  // T3 判别（260924-gov-review-gate-parse-teeth）：--change-id 解析形态 + 旗标值边界（纯函数面；
+  // live 判别在 V3：--change-id <历史包> 实跑解析 + --bogus → exit 2）。
+  ok(changeIdTaskPackagePath('260829-char-stroke').replace(/\\/g, '/').endsWith('delivery/taskpackages/260829-char-stroke/taskpackage.json'), 'sc-change-id-resolves-canonical-path');
+  ok(flagVal('--not-in-argv') === undefined, 'sc-flagval-absent-undefined');
+  // T5 判别：缺失验收文件 → warnings 一条；在场 → 空（反转实现必须变红）
+  ok(missingAcceptanceTestFiles(['server/no-such.test.py'], () => false).length === 1, 'sc-missing-test-file-warns');
+  ok(missingAcceptanceTestFiles(['server/no-such.test.py'], () => true).length === 0, 'sc-existing-test-file-clean');
+  // T3④ 补齐（260924-gov-review-gate-parse-teeth 核验 ADVISORY 2）：未知旗标 exit 2 + 位置参数兼容
+  // ——两 case 均 spawn 入口面实证（夹具目录，零仓内写入；反转实现必须变红）。
+  const bogusExit = spawnSync(process.execPath, [process.argv[1], '--bogus-selfcheck-probe'], { encoding: 'utf8', timeout: 60000 }).status;
+  ok(bogusExit === 2, 'sc-unknown-flag-exit-2');
+  const posDir = mkdtempSync(join(tmpdir(), 'mc-selfcheck-'));
+  try {
+    const posTp = join(posDir, 'taskpackage.json');
+    writeFileSync(posTp, JSON.stringify({ changeId: 'pos-fixture' }));
+    const pos = spawnSync(process.execPath, [process.argv[1], posTp], {
+      encoding: 'utf8', timeout: 60000, env: { ...process.env, CLAUDE_PROJECT_DIR: posDir },
+    });
+    const posOut = String(pos.stdout || '') + String(pos.stderr || '');
+    ok(pos.status === 0 && posOut.includes('"skipped": true') && posOut.includes('位置参数'),
+      'sc-positional-arg-compat');
+  } finally { try { rmSync(posDir, { recursive: true, force: true }); } catch { /* best effort */ } }
+
   console.log(JSON.stringify({ selfCheck: 'mutation-check', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);
 }
@@ -180,4 +241,18 @@ function isMain() {
 }
 
 if (isMain() && process.argv.includes('--self-check')) selfCheck();
-else if (isMain()) main();
+else if (isMain()) {
+  // T3（260924-gov-review-gate-parse-teeth）：help / unknown-flag 分支先于 main()（本文件结构注同款）。
+  const argv = process.argv.slice(2);
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(MUTATION_CHECK_USAGE);
+    process.exit(0);
+  }
+  const knownFlags = new Set(['--self-check', '--change-id', '--help', '-h']);
+  const unknown = argv.filter((t) => t.startsWith('--') && !knownFlags.has(t));
+  if (unknown.length > 0) {
+    console.error(`未知旗标：${unknown[0]}\n${MUTATION_CHECK_USAGE}`);
+    process.exit(2);
+  }
+  main();
+}

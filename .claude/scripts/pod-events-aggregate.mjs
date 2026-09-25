@@ -14,6 +14,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { echoResolution, resolveCurrentTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -24,16 +25,13 @@ function flagVal(name) {
 
 function resolveChangeId() {
   const explicit = flagVal('--change-id');
-  if (explicit) return explicit;
-
-  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
-  if (!existsSync(current)) return null;
-  try {
-    const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^\uFEFF/, ''));
-    return tp.changeId || null;
-  } catch {
-    return null;
+  if (explicit) {
+    echoResolution('pod-events-aggregate', explicit, '--change-id \u65D7\u6807');
+    return explicit;
   }
+
+  const resolved = resolveCurrentTaskPackage('pod-events-aggregate', projectDir);
+  return resolved.found ? resolved.changeId : null;
 }
 
 function readEventsFile(eventsPath) {

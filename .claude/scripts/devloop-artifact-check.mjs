@@ -33,13 +33,14 @@ import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { isProposalMdPath, normalizeSourceRef, resolveOriginFrozen, resolveOriginRef, resolveOriginType } from './lib/governance-gate-shared.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { echoResolution, resolveCurrentTaskPackage, resolveExplicitTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 function taskPackagePath() {
   const explicit = process.argv[2] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
-  if (explicit) return resolve(projectDir, explicit);
-  return resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
+  if (explicit) return resolveExplicitTaskPackage('devloop-artifact-check', projectDir, explicit, '位置参数/环境变量').path;
+  return resolveCurrentTaskPackage('devloop-artifact-check', projectDir).path;
 }
 
 function print(payload) {

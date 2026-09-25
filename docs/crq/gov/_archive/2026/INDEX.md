@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 70 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 73 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -81,3 +81,6 @@
 | [ARQ-260923-dispatch-oversight-uncodified](ARQ-260923-dispatch-oversight-uncodified.md) | 「派发书过目门」口径未成文——planner 每棒靠解释 human 一句口头授权判断是否免过目，两棒如实标注「这是我的解释、可能超出授权」；human 2026-09-23 明确裁定：不用每次都请示 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T4（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
 | [ARQ-260923-dispatch-prompt-hard-terms](ARQ-260923-dispatch-prompt-hard-terms.md) | 派发书模板缺三条硬约定——子代理 Write 被拦的回执姿势 / scope 写权前置核对 / mutation 执行证据落盘责任人——全活在各棒 retro 的「下次改进」里、每棒重学一遍 | 2026-09-24 | 260924-gov-review-planner-orchestration-align T3（delivery/changes/arch/260924-gov-review-planner-orchestration-align/） |
 | [ARQ-260924-settings-write-deny-rule-cli-drift](ARQ-260924-settings-write-deny-rule-cli-drift.md) | `.claude/dev-loop.settings.json` + `.claude/review-loop.settings.json` 的 `Write(./docs/contracts/**)` deny 规则被现行 CLI 判非法并**硬阻塞 launch**（exit 4）——CLI settings 校验新口径：文件权限检查只认 `Edit(path)` 规则（Edit 规则覆盖所有文件编辑工具），`Write(path)` 规则不再被匹配 | 2026-09-24 | 260924-gov-review-settings-deny-contract-merge T1+T2（OQ-1=(a) 删两行 + OQ-2=(a) 静态 lint 接线 launch-prep，human 裁定 2026-09-24） |
+| [ARQ-260923-gate-tooling-noise-batch](ARQ-260923-gate-tooling-noise-batch.md) | 治理脚本 / 钩子的「用户面」噪声与危险静默小修集合——误导提示 / 静默相位回落 / 传参形态不一 / 非闸守卫脚本漂移无主 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
+| [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
+| [ARQ-260924-landing-summary-template-pointer-gap](ARQ-260924-landing-summary-template-pointer-gap.md) | landing-summary 模板指针在 landing 相位文面缺位——协议七步第 4 步只说「写 architect-landing-summary.md」不指模板，主线程手写漏 landing-manifest 围栏块致核验 FAIL（unit-gate F4 同根第二实例，模板早已固化该教训） | 2026-09-25 | 260924-gov-review-gate-parse-teeth |

@@ -22,7 +22,7 @@
 
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { resolveOriginRef, isFrozen, closeoutRequiredFiles, VERDICT_STATUS_RE, VERDICT_HEADING_RE } from './lib/governance-gate-shared.mjs';
 
@@ -509,6 +509,11 @@ function selfCheck() {
   t('stale: 未落地未超龄 → 非陈旧', staleCandidate({ landed: false, firstCommit: '2026-08-20', thresholdDays: 30, now: '2026-08-26' }), false);
   t('stale: 恰 30 日（未超）→ 非陈旧', staleCandidate({ landed: false, firstCommit: '2026-07-27', thresholdDays: 30, now: '2026-08-26' }), false);
   t('stale: firstCommit 空 → 非陈旧（降级）', staleCandidate({ landed: false, firstCommit: '', thresholdDays: 30, now: '2026-08-26' }), false);
+  // T3（260924-gov-review-gate-parse-teeth）：help / unknown-flag 入口面判别（spawn 子进程断言退出码，
+  // 与主流程互斥——self-check 内 spawn 不会触发全量重建）。rma8 病灶 = 想看用法反触发全量重建。
+  const runExit = (flagArgs) => spawnSync(process.execPath, [process.argv[1], ...flagArgs], { encoding: 'utf8', timeout: 60000 }).status;
+  t('cli: --help → exit 0 且不重建', runExit(['--help']), 0);
+  t('cli: 未知旗标 → exit 2（不静默全量重建）', runExit(['--bogus-selfcheck-probe']), 2);
   const pass = cases.filter(c => c.pass).length;
   const ok = pass === cases.length;
   return { selfCheck: 'changes-index', ok, pass, fail: cases.length - pass, total: cases.length, cases: ok ? undefined : cases.filter(c => !c.pass) };
@@ -523,11 +528,22 @@ function main() {
   return { ok: true, devCount: items.filter(i => i.lane === 'dev').length, archCount: items.filter(i => i.lane === 'arch').length };
 }
 
+const CHANGES_INDEX_USAGE = `用法：node .claude/scripts/changes-index.mjs [--upsert <changeId> | --backfill | --stale-report | --self-check | --help]
+  --upsert <change-id>   arch 单行 upsert（状态转移时 agent 主动跑，只动一行）
+  --backfill             一次性回填（日期/已合main/landed，零 git fork 读缓存）
+  --stale-report         只读列出未落地且首提交超阈的陈旧批次目录（GC 观察面）
+  --self-check           结构化自检（ARQ-114 先例）
+  --help / -h            本用法（exit 0）
+裸跑（无参数）= 幂等全量重建两 lane INDEX；未知 -- 旗标 = 用法错误 exit 2（260924-gov-review-gate-parse-teeth T3：不静默触发全量重建，rma8 病灶闭合）。`;
+
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const args = process.argv.slice(2);
   let result;
-  if (args[0] === '--self-check') {
+  if (args[0] === '--help' || args[0] === '-h') {
+    console.log(CHANGES_INDEX_USAGE);
+    process.exit(0);
+  } else if (args[0] === '--self-check') {
     result = selfCheck();
   } else if (args[0] === '--backfill') {
     result = backfill();
@@ -539,6 +555,10 @@ if (invokedDirectly) {
     const cache = loadStateCache();
     result = upsertArchRow(laneIndexPath('arch'), id, cache);
     saveStateCache(cache);
+  } else if (args[0] !== undefined && args[0].startsWith('--')) {
+    // T3（260924-gov-review-gate-parse-teeth）：未知旗标 = 用法错误 exit 2，不静默落 main() 全量重建。
+    console.error(`未知旗标：${args[0]}\n${CHANGES_INDEX_USAGE}`);
+    process.exit(2);
   } else {
     result = main();
   }

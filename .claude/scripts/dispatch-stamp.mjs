@@ -217,16 +217,23 @@ function run() {
   // T2②（FROZEN §2，含 R1-F6 的交互定义）：`--expect-change-id` 为**可选**硬校验开关——
   // 传了则「不符」与「无上下文」两态均 fail-loud（后者因调用方已明确表达「本包应在场」的期望）；
   // **不传则行为与改前完全一致**（含下方 no-context → exit 0）。
+  // T7（260924-gov-review-gate-parse-teeth，OQ-1=(c)）：校验结果以 `expectCheck` 值入事件 payload——
+  // 含 absent（旗标缺省，既往只能靠污染症状倒推的盲区）、match、mismatch、no-context 四态；
+  // 判定语义零变更（exit 行为逐字不动），纯事件面可观测性增量。
   const expectChangeId = flagVal('--expect-change-id') || null;
+  let expectCheck = 'absent';
   if (expectChangeId) {
     if (!changeId) {
+      expectCheck = 'no-context';
       process.stderr.write(`dispatch-stamp: --expect-change-id ${expectChangeId} 在场但无 TaskPackage 上下文（解析值 = none，来源 ${resolved.source}）——fail-loud\n`);
       process.exit(2);
     }
     if (changeId !== expectChangeId) {
+      expectCheck = 'mismatch';
       process.stderr.write(`dispatch-stamp: changeId 不符——解析值 ${changeId}（来源 ${resolved.source}）≠ 期望值 ${expectChangeId}\n`);
       process.exit(2);
     }
+    expectCheck = 'match';
   }
 
   if (!tpDir || !changeId) {
@@ -307,6 +314,10 @@ function run() {
           ...(model ? { model } : {}),
           ...(modelSource ? { modelSource } : {}),
           ...(mainThreadUsage ? { mainThreadUsage } : {}),
+          // T7（260924-gov-review-gate-parse-teeth，OQ-1=(c)）：上下文来源 + expect 校验结果（additive 双键；
+          // 量化触发器入 ARQ-260913 追注：absent ≥1 → 启动 (b) 闸级强制批 / 累计 30 全 match → settled）。
+          contextSource: resolved.source,
+          expectCheck,
         },
       });
       process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs}ms -> pod-events.jsonl (tokens: ${tokenUsage.status}/${tokenUsage.source || '-'}${model ? `, model: ${model} (${modelSource})` : ''})\n`);

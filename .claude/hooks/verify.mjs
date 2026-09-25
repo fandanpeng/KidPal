@@ -27,6 +27,7 @@ import {
   truncateUtf8,
   validateFactObject,
 } from '../scripts/verifier-evidence-check.mjs';
+import { echoResolution, CURRENT_TASKPACKAGE_REL } from '../scripts/lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const isGateChild = process.argv.includes('--gate-child');
@@ -84,6 +85,26 @@ function phaseFromArgs(args = parseArgs()) {
   return args.phase === 'final' ? 'final' : 'scoped';
 }
 
+// ── 未知 phase fail-loud（260924-gov-review-gate-parse-teeth T2，OQ-2=(a) human 批准向严）──
+// 缺省（不传 --phase）→ scoped 是 :79-81 注释与 phaseFromArgs 的成文 fail-safe 默认，保留；
+// 在场但非法（K7 实烧形态：--phase=full = timing 词汇误用为 phase 值）→ fail-loud，不再静默回落。
+// bearing 路径由 normalizeExpected（verifier-evidence-check.mjs）同判据 fail-loud；本段补 legacy 路径缺口。
+const VALID_PHASES = ['scoped', 'final'];
+function phaseArgError(args) {
+  if (args.phase === undefined) return null;
+  if (typeof args.phase !== 'string' || !VALID_PHASES.includes(args.phase)) {
+    return `[verify.mjs] 未知 --phase 值 ${JSON.stringify(args.phase)} —— 只认 scoped|final（fail-loud，不静默回落；bearing 路径 normalizeExpected 同判据）`;
+  }
+  return null;
+}
+function assertPhaseArg(args) {
+  const message = phaseArgError(args);
+  if (message !== null) {
+    process.stderr.write(`${message}\n`);
+    process.exit(2);
+  }
+}
+
 function gateActive(gate, phase) {
   const timing = gate.timing || 'scoped'; // 未标默认 scoped
   if (timing === 'scoped') return true;
@@ -124,6 +145,9 @@ function persistVerifyRuns(results, phase, caller) {
     if (!existsSync(current)) return; // no TaskPackage context → skip
     const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^﻿/, ''));
     if (!tp.changeId) return;
+    // T6（260924-gov-review-gate-parse-teeth）：回显齿——病例①承载者（home-p1 九闸跑错包实证），
+    // 经 current/ 解析的 changeId 与来源始终可见（纯 stderr，不改任何判定；captured by gate log）。
+    echoResolution('verify.mjs', tp.changeId, CURRENT_TASKPACKAGE_REL);
     const tpDir = resolve(projectDir, 'delivery', 'taskpackages', tp.changeId);
     mkdirSync(tpDir, { recursive: true });
     const record = {
@@ -375,8 +399,32 @@ function runBearing() {
   process.exit(child.status);
 }
 
-if (isGateChild) runGateChild();
+// ── self-check（260924-gov-review-gate-parse-teeth T2 新增；argv 触发型，mutation-check 结构注同款：
+// 分支先于 gate-child/legacy 派发，不真跑闸（valid 值覆盖由纯 case 承担，零 current/ 簿记副作用））──
+function selfCheck() {
+  const pass = [];
+  const fail = [];
+  const check = (name, ok) => (ok ? pass : fail).push(name);
+  // 纯判定面（真空绿：断言输入非空 + 逐 case 预期）
+  check('phase-arg-absent-allows', phaseArgError({}) === null);
+  check('phase-arg-scoped-allows', phaseArgError({ phase: 'scoped' }) === null);
+  check('phase-arg-final-allows', phaseArgError({ phase: 'final' }) === null);
+  check('phase-arg-full-rejects', phaseArgError({ phase: 'full' }).includes('未知 --phase 值'));
+  check('phase-arg-bare-flag-rejects', phaseArgError({ phase: true }).includes('未知 --phase 值'));
+  check('phase-arg-garbage-rejects', phaseArgError({ phase: 'garbage' }).includes('未知 --phase 值'));
+  // 入口面（spawn 子进程断言退出码；非法值校验先于一切派发 ⇒ 零副作用）
+  const child = spawnSync(process.execPath, [scriptPath, '--phase=full'], {
+    cwd: projectDir, encoding: 'utf8', timeout: 30000,
+  });
+  check('entry-full-exit-2', child.status === 2);
+  check('entry-full-stderr-names-value', String(child.stderr || '').includes('未知 --phase 值'));
+  console.log(JSON.stringify({ selfCheck: 'verify.mjs', pass: pass.length, fail: fail.length, total: pass.length + fail.length, ok: fail.length === 0, failures: fail.length ? fail : undefined }));
+  process.exit(fail.length === 0 ? 0 : 1);
+}
 
 const args = parseArgs();
+if (process.argv.includes('--self-check')) selfCheck();
+assertPhaseArg(args);
+if (isGateChild) runGateChild();
 if (args['evidence-mode'] === 'round') runBearing();
 runLegacy();

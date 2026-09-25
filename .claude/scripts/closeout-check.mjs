@@ -37,6 +37,7 @@ import { EVENTS_SCHEMA_CUTOFF } from './pod-events-append.mjs';
 import { computeRetroScope } from './loop-health-report.mjs';
 import { computeFrozenPin, isFrozen, isProposalMdPath, normalizeSourceRef, resolveOriginFrozen, resolveOriginRef, resolveOriginType, CHANGE_ID_CUTOFF, isPostCutoffChangeId, closeoutRequiredFiles } from './lib/governance-gate-shared.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { echoResolution, resolveCurrentTaskPackage, resolveExplicitTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 const cliArgs = process.argv.slice(2);
@@ -46,10 +47,10 @@ const positionalArgs = cliArgs.filter((arg) => !arg.startsWith('--'));
 
 function taskPackagePath() {
   const explicit = positionalArgs[0] || process.env.DEV_LOOP_TASKPACKAGE || process.env.TASKPACKAGE_PATH;
-  if (explicit && !explicit.startsWith('--')) return resolve(projectDir, explicit);
+  if (explicit && !explicit.startsWith('--')) return resolveExplicitTaskPackage('closeout-check', projectDir, explicit, '位置参数/环境变量').path;
 
-  const current = resolve(projectDir, 'delivery/taskpackages/current/taskpackage.json');
-  return existsSync(current) ? current : null;
+  const resolved = resolveCurrentTaskPackage('closeout-check', projectDir);
+  return existsSync(resolved.path) ? resolved.path : null;
 }
 
 function print(payload) {

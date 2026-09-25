@@ -27,6 +27,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { EVENTS_SCHEMA_CUTOFF, appendPodEvent } from './pod-events-append.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
+import { echoResolution, resolveCurrentTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -46,16 +47,13 @@ function required(name) {
 
 function taskPackageDir() {
   const explicit = flagVal('--task-package-id');
-  if (explicit) return resolve(projectDir, 'delivery', 'taskpackages', explicit);
-
-  const current = resolve(projectDir, 'delivery', 'taskpackages', 'current', 'taskpackage.json');
-  if (!existsSync(current)) return null;
-  try {
-    const tp = JSON.parse(readFileSync(current, 'utf8').replace(/^﻿/, ''));
-    return tp.changeId ? resolve(projectDir, 'delivery', 'taskpackages', tp.changeId) : null;
-  } catch {
-    return null;
+  if (explicit) {
+    echoResolution('journal-append', explicit, '--task-package-id 旗标');
+    return resolve(projectDir, 'delivery', 'taskpackages', explicit);
   }
+
+  const resolved = resolveCurrentTaskPackage('journal-append', projectDir);
+  return resolved.found && resolved.changeId ? resolve(projectDir, 'delivery', 'taskpackages', resolved.changeId) : null;
 }
 
 // 闭集事件类型（层 A）

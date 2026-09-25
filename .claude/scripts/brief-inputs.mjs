@@ -124,6 +124,9 @@ function renderAnchorSections(refs, advisories) {
   for (const r of refs) {
     if (!existsSync(resolve(projectDir, r.path))) {
       rows.push({ status: 'missing', ref: r.ref, path: r.path, anchor: r.anchor, title: '（文件不存在）' });
+      // T5（260924-gov-review-gate-parse-teeth）：missing 态补 advisory——与 bare 态同通道，
+      // 引用腐坏（验收文件/冻结件/文档已迁移或归档）在 brief 生成期即报警，不再只在行内可见。
+      advisories.push(`ref 指向的文件不在磁盘上：${r.ref}（引用腐坏——验收文件/冻结件/文档可能已迁移或归档，起包期核对 intake 四问）`);
       continue;
     }
     if (!r.anchor) {
@@ -463,6 +466,10 @@ function selfCheck() {
   ok('① 不抽正文', !/```(py|c|cpp|json)/.test(a.markdown), 'no fenced source bodies');
   ok('① 裸路径标「无锚点（整文件）」', a.markdown.includes('无锚点（整文件）')
       && a.advisories.some((s) => s.includes('无锚点')), 'DEV-GOVERNANCE.md bare ref → bare marker + advisory (R1/F12)');
+  // T5（260924-gov-review-gate-parse-teeth）判别：缺失文件 → missing 行 + advisory（反转实现必须变红）。
+  const miss = renderBrief({ ...fixtureTp, docRefs: [...fixtureTp.docRefs, 'docs/nonexistent-brief-inputs-probe.md#§9'] }, 'acceptance-author');
+  ok('① 缺失文件 → missing 行 + advisory（T5）', miss.markdown.includes('（文件不存在）')
+      && miss.advisories.some((s) => s.includes('不在磁盘上')), 'missing ref → missing row + advisory');
   ok('② 对端面节在场（空骨架分支）', a.markdown.includes('## ② 跨端对端面')
       && a.markdown.includes('finalize 态闸将红点名'), 'skeleton branch text');
   ok('③ 先例封顶 ≤3', (() => {

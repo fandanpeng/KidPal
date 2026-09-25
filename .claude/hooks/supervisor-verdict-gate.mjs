@@ -55,6 +55,7 @@ import { fileURLToPath } from 'node:url';
 // 相对路径显式 .mjs（ESM 必需），对偶 verify.mjs:29 跨目录 import 先例（同 .claude/hooks/ → ../scripts/）。
 import { validateFactObject } from '../scripts/verifier-evidence-check.mjs';
 import { resolveOriginType } from '../scripts/lib/governance-gate-shared.mjs';
+import { resolveCurrentTaskPackage } from '../scripts/lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -465,9 +466,9 @@ function writeVerdictOnce(changeDir, verdictObj) {
 // ---- helpers（real-run I/O）----
 
 function readCurrentChangeId(dir) {
-  const p = resolve(dir, 'delivery/taskpackages/current/taskpackage.json');
-  if (!existsSync(p)) return null;
-  try { return JSON.parse(readFileSync(p, 'utf8').replace(/^﻿/, '')).changeId || null; } catch { return null; }
+  // T6（260924-gov-review-gate-parse-teeth）：回显齿单源化——解析与回显同点，来源恒可见。
+  const resolved = resolveCurrentTaskPackage('supervisor-verdict-gate', dir);
+  return resolved.found ? resolved.changeId : null;
 }
 
 function readTaskPackage(dir, changeId) {
