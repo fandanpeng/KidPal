@@ -84,25 +84,14 @@ ls -la "$OVERLAY"
 
 # OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-# 演进史 (历史版本文件一律不改、可 diff; 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER):
-#   v1 = 260829-voice-roundtrip 基座 (两部分结构 + 7 view 白名单 + 三句纪律 + 硬约束)
-#   v2 = openclaw-system-prompt.v2.md (260829-schedule-p2 + 260829-char-stroke: 课表 producer
-#        扩展 + char C1 最小块/出口拼装)
-#   v3 = openclaw-system-prompt.v3.md (两包并集版: 260829-story-p3 故事 producer 扩展 +
-#        260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定；两并行包各写一份 .v3 抢同槽位
-#        (add/add)，按 human 授权 pod-events dc9a5c15 取并集；槽位预约规则见
-#        ARQ-260908-versioned-artifact-slot-collision)。
-#   v4 = openclaw-system-prompt.v4.md (260829-hardware-validation F4 分工修正:
-#        删模型「回填整段正文」缺陷表述、改为一回合只起 title、story_text 正文+id 由网关下发;
-#        v3 及其下 v1/v2 基座语义逐字保留、可 diff)。
-#   v5 = openclaw-system-prompt.v5.md (260920-m2-charwindow-display-fix MCD-A5/A7:
-#        char 最小意图块 data 增中文释义 meaning (同语音那句中文解释同源同字≤24字) + 面向设备
-#        回复只含口语正文+一个 display 块、禁任何自检/来源/附录/明细/HTML 结构; v4 基座逐字保留)。
-#   v6 = openclaw-system-prompt.v6.md (当前渲染源; 260921-m3-k3-voice-schedule-entry-live:
-#        课表问答口径(答复走问答框含备注读回) + 「帮我显示课表」意图薄载荷 data:{} + 网格数据
-#        不由 LLM 生成(front 机械计算单源); 只动课表段+版本沿革前言, v5 基座逐字保留)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v6.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v6.md"
+# 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
+# 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
+#   v7 = openclaw-system-prompt.v7.md (当前渲染源; 260925-prompt-v7-round-routing:
+#        回合类型路由表修「课表读文件 vs 一回合作答」内部矛盾 + 故事段对齐 2026-09-24 契约门
+#        禁产 story JSON + 语音纪律放宽「简洁不啰嗦」(human 260925 裁, NFR-SAFE-1 同批) +
+#        制品本体无版本沿革前言——首行即 `## 角色`)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v7.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v7.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -120,7 +109,7 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v6.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: wired system prompt not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
 # 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,

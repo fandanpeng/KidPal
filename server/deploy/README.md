@@ -41,21 +41,14 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 - **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
 - 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
-## OpenClaw system prompt 版本化接线（现状 = v3）
+## OpenClaw system prompt 版本化接线（现状 = v7）
 
 脑腿的 system prompt 按「版本化落盘 + overlay 渲染切换 + 历史可 diff」惯例演进，声明件 =
-`OPENCLAW_SYSTEM_PROMPT_CARRIER`。**当前被接线的那一版 = `openclaw-system-prompt.v3.md`**（160 行，
-由 TaskPackage `260829-story-p3` 从 v2 forward-bump）。
-
-| 版本 | 行数 | 承载 | 状态 |
-|---|---|---|---|
-| `.v1.md` | 69 | E1 两部分结构 + F4 三句纪律 + 儿童化 + 7 view 白名单 + 增量扩展区（`260829-voice-roundtrip` / VRT-E4） | 不改，共存可 diff |
-| `.v2.md` | 114 | v1 基座逐字并入 + 课表 producer（决策 26 分组 + QQ 录入改写约定，`260829-schedule-p2` / P2-A6）+ char C1 最小块纪律（`260829-char-stroke` / CHR-E3） | 不改，共存可 diff |
-| `.v3.md` | 160 | v2 基座逐字并入 + **故事 producer 扩展**（`260829-story-p3`）：判「我要讲故事」→ `control/start_recording`、停录整段转写起 ≤12 字标题出 `story_text`（恰 id/title/text 三键、无生字标注位 P3-E4）、`story_list.total` 全集计数、V31 四条回退判断（取消 / 重录 / 漏判挽回 / 讲错回退）、归档落盘归云侧网关而 LLM 一回合不读写文件（契约 §1.4 / S-F2.1..S-F2.5） | **当前接线版** |
-
-v3 相对 v2 的逐字承载（CR 归一后实测）：102 行原样保留、58 行新增、12 行改动全部是文件头
-版本标注与「课表 producer 扩展」小节标题的版本字样（无行为语义删改）——即 char C1 与课表
-producer 两面的行为被 v3 完整继承，仅版本号自述前移。
+`OPENCLAW_SYSTEM_PROMPT_CARRIER`——**它同时是版本演进史的唯一全量副本**，本节与其它散文
+只留「当前 = vN」指针、不复述沿革（260925-prompt-v7-round-routing 收敛，沿革四重复制
+漂移教训见 carrier）。**当前被接线的那一版 = `openclaw-system-prompt.v7.md`**
+（回合类型路由表 + 故事段对齐契约禁产 story JSON + 语音「简洁不啰嗦」纪律 + 制品本体
+无版本沿革前言；human 260925 拍板）。
 
 **接线不变式：渲染面 == 声明面 == 被测面**。同一切换必须同时改两处并保持一致：
 

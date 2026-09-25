@@ -724,26 +724,38 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         )
 
     def test_a1_probe_messages_include_production_prompt(self):
-        """coverage: PERF-A1 — 探针 messages 必带 system(v6 逐字) + user(题)（机制级 / D1）。
+        """coverage: PERF-A1 — 探针 messages 必带 system(被接线版逐字) + user(题)（机制级 / D1）。
 
         裸探针不带生产 prompt 时测的不是生产形态（评审推论甲 / §0.2-9 实证：无 display 块、
-        唤 David）——A1/A2 判定探针必须带仓内 v6 逐字。"""
+        唤 David）——A1/A2 判定探针必须带仓内被接线 prompt 逐字。260925-prompt-v7-round-routing
+        起改解析声明面得出版本（原硬编 v6 字面 = ARQ-260908-versioned-guard-version-literal-coupling
+        族类，bump 后静默测旧版假绿）。"""
         gate = self._gate()
         build = getattr(gate, "build_probe_messages", None)
         self.assertTrue(callable(build), "PERF-A1 RED: probe_gate 缺 build_probe_messages().")
-        prompt = _read_text(PROMPT_V6)
+        declared = _wired_prompt_artifact()
+        self.assertTrue(
+            declared,
+            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
+        )
+        prompt = _read_text(DEPLOY_DIR / declared)
         msgs = build(prompt, "明天有什么课程?")
         self.assertEqual(len(msgs), 2, "PERF-A1 RED: 探针 messages 不是 [system, user] 两元素。")
         self.assertEqual(msgs[0].get("role"), "system", "PERF-A1 RED: 首元素非 system 角色。")
         self.assertEqual(
             msgs[0].get("content"), prompt,
-            "PERF-A1 RED: system 内容 ≠ 仓内 v6 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
+            "PERF-A1 RED: system 内容 ≠ 仓内被接线 prompt 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
         )
         self.assertEqual(msgs[1].get("role"), "user", "PERF-A1 RED: 次元素非 user 角色。")
         self.assertEqual(msgs[1].get("content"), "明天有什么课程?", "PERF-A1 RED: user 题面不符。")
 
     def test_a1_probe_script_check_prompt_runs(self):
-        """coverage: PERF-A1 — 探针脚本 --check-prompt 离线可跑且解析出生产 prompt + 归一 hash（源锚代理）。"""
+        """coverage: PERF-A1 — 探针脚本 --check-prompt 离线可跑且解析出生产 prompt + 归一 hash（源锚代理）。
+
+        hash 断言版本无关（260925-prompt-v7-round-routing 起；原钉 v6 哈希字面 =
+        ARQ-260908-versioned-guard-version-literal-coupling 族类复发实例）——哈希取
+        「探针解析出 == 声明面接线」的那份文件（test_a1_probe_prompt_resolution_version_agnostic
+        已证解析一致性），bump 不再假红。"""
         self.assertTrue(
             PROBE_BATCH_MODULE.is_file(),
             f"PERF-A1 RED: 探针执行器不在位 —— 冻结契约要求 {PROBE_BATCH_MODULE}。",
@@ -758,7 +770,12 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             declared, out,
             f"PERF-A1 RED: --check-prompt 未打印解析出的生产 prompt {declared!r}（渲染面==被测面）。",
         )
-        expected_sha = _sha256_norm(PROMPT_V6)
+        wired = _wired_prompt_artifact()
+        self.assertTrue(
+            wired,
+            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
+        )
+        expected_sha = _sha256_norm(DEPLOY_DIR / wired)
         self.assertIn(
             expected_sha, out.lower(),
             "PERF-A1 RED: --check-prompt 未打印生产 prompt 的归一 sha256（hash 断言缺失）。",

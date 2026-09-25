@@ -24,27 +24,23 @@ gateway:
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
 # apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2/.v3 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v6.md"   # 当前版本化文件 (v6 = v5 版 + M3-K3 课表问答口径:
-                                             #   答复走问答框含备注读回 + 「帮我显示课表」意图薄载荷
-                                             #   data:{} + 网格数据不由 LLM 生成(front 机械单源);
-                                             #   历史 v1..v5 不改可 diff)
-  source: "../deploy/openclaw-system-prompt.v6.md"
-  deploy_target: "openclaw-system-prompt.v6.md"   # ECS data/ 下的渲染目标名
-  # 演进: openclaw-system-prompt.v1.md (基座) → openclaw-system-prompt.v2.md (+课表 producer
-  # + char C1) → openclaw-system-prompt.v3.md (+故事 producer 扩展, 并入本包包 7 提醒备注解析
-  # 约定成并集版——两并行包曾各写一份 v3 抢同槽位，按 human 授权 pod-events dc9a5c15 取并集；
-  # 槽位预约规则见 ARQ-260908-versioned-artifact-slot-collision)。历史版本文件一律不改。
-  # 三处接线（本声明面 / apply-xiaozhi-overlay.sh 渲染面 / OPENCLAW_SYSTEM_PROMPT_CARRIER
-  # 载体前言）同批指 v3 且指向同一在场非空文件；两面一致性由 ADR-001 与 story P3/CHR-E3
-  # 版本无关守卫机检，包 7 提醒段内容由 test_a8_prompt_carrier_v3_reminder_section_anchors 钉。
-
-  # 结构: 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6) + F4 三句纪律
-  # (三句以内/口语化/儿童化 8-12 岁, v2 收紧为显式句数上限计数) + 7 view 白名单
-  # + 增量扩展区 (包 4 char / 包 7 提醒) + 课表 producer 扩展 (决策 26 分组 + QQ 录入
-  # 改写约定) + char C1 扩展 (LLM 只判意图＋提取目标单字、只出最小意图块、禁自生成/
-  # 复述 strokes/medians 坐标, 完整 D3 由查字工具在回复出口自动拼装) + 故事 producer
-  # 扩展 (v3: 判「我要讲故事」→ control/start_recording / 停录整段转写起标题出 story_text
-  # 三键无生字 / story_list.total 全集计数 / V31 四条回退判断 / 归档落盘归云侧网关)。
+  artifact: "openclaw-system-prompt.v7.md"   # 当前版本化文件 (v7 = 260925-prompt-v7-round-routing:
+                                             #   回合类型路由表（修「课表读文件 vs 一回合作答」矛盾）+
+                                             #   故事段对齐 2026-09-24 契约门（禁产 story JSON）+
+                                             #   语音纪律放宽（简洁不啰嗦，human 260925 裁）+
+                                             #   版本沿革前言外置（制品本体无前言）)
+  source: "../deploy/openclaw-system-prompt.v7.md"
+  deploy_target: "openclaw-system-prompt.v7.md"   # ECS data/ 下的渲染目标名
+  # 演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（声明面 / 渲染面 / 本文件三处散文
+  # 一律只留「当前 = vN」指针，不再复述沿革）。三处接线（本声明面 / apply-xiaozhi-overlay.sh
+  # 渲染面 / carrier 载体）指向同一在场非空文件；一致性由 ADR-001 版本无关守卫 +
+  # test_prompt_v7_round_routing.acceptance.py 语义锚齿机检。历史版本文件一律不改、可 diff。
+  # 结构: 回合类型路由表（对话=一回合作答禁工具 / 查字=最小意图块绝对禁工具 /
+  # 课表问答=先读 schedule.md+反编造 / 提醒 cron=语义 JSON；家长 QQ 录入走家庭侧 agent、
+  # 不入表） + 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6)
+  # + 语音简洁不啰嗦（v7 放宽硬性三句，human 260925 裁；讲故事按段落讲不逐段请示）
+  # + 7 view 白名单 + 课表/查字/故事/提醒各域节 (查字最小意图块禁坐标 /
+  # 故事禁产 story JSON / 提醒 entry_key 对齐)。
 
 # 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2 / 决策 20): 时刻的家在**服务端**，
 # 纯配置不进契约 B1、不进固件（改时刻即时生效、永不烧板子）。消费方 = OpenClaw cron 载荷
