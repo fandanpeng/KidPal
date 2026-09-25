@@ -1,92 +1,179 @@
 {
-  "changeId": "260924-perf-k1-roundtrip-latency",
+  "changeId": "260924-m4-k1-story-cloud-link",
   "rigor": "full",
-  "sourceType": "human-ad-hoc",
+  "sourceType": "delivery-story",
   "origin": {
-    "type": "human-ad-hoc",
-    "time": "2026-09-24",
-    "upstreamType": "human-ad-hoc",
-    "upstreamRef": "docs/requirements.md#NFR-PERF-1",
+    "type": "delivery-story",
+    "upstreamType": "delivery-story",
+    "upstreamRef": "delivery/milestones/milestones.jsonl#M4-star-notebook",
     "upstreamFrozen": "",
-    "workstream": ""
+    "workstream": "m4-star-notebook"
   },
   "subsystem": "server",
-  "story": "NFR-PERF-1 · 思考响应不冷场 + NFR-PERF-2 · 查字端到端 5 秒档（同根因面，「优化归 Phase 1」的主攻包）——语音问答往返 10~15s（天气 28~31s）优化：大头实证在 OpenClaw 网关内部（reasoning 模型单轮生成 ~9s + agent 多轮工具循环 + 每请求 preflight 2.7~6.1s）。本包 = P0 gateway 重启止血 + P1 模型切换（deepseek-chat 主案 / v4-flash 关 thinking 备案 30min timebox，带 v6 prompt 探针裁决）+ 条件步（preflight 仅测量仪表化 / sessions 运维卫生）；P2 治理拆 k2。技术方案见 plan.md（FROZEN v1.0，architect advisory 评审 D1~D4 修正全吸收）",
-  "planRef": "delivery/taskpackages/260924-perf-k1-roundtrip-latency/plan.md",
-  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/",
-  "redBaselineResult": "18 failed / 62 passed / 4 deselected——2026-09-24 acceptance-author 实跑；命令 `python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/`（仓根）。18 红全为设计态红（声明工件 / apply / 回滚 / probe_gate / probe_batch 五件未落盘），逐齿映射见 server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md §3。既有齿零新增红（planner 复核：既有 4 文件单跑 57 passed / 0 failed @1746c14；全量 62 passed = 既有 57 + 本包 5 条 must-stay-green 设计态即绿齿）；--collect-only 收集零错误（冻结即冒烟过）。",
+  "story": "S-F2.1 · 看「星星记录本」列表（AC1 数据源半 + AC4 云端同步半）+ S-F2.2 · 开录（双入口）（AC1–AC2 云端累积/收尾半）+ S-F2.4 · 星星保存成就盖章（AC2 流水号账本半）——技术描述见 plan.md（契约三触点对齐 + session_ctx 拦截 + story_list 推送接线 + 删除执行面 + seq 流水号账本 + 收尾词/120s 自动收尾）",
+  "planRef": "delivery/taskpackages/260924-m4-k1-story-cloud-link/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance（offline 冻结齿基线；新增齿在未实现树上 RED，intake 时 acceptance-author 实跑复核落账）",
+  "redBaselineResult": "21 failed / 139 passed / 4 deselected —— 2026-09-24 acceptance-author 实跑（仓根，命令逐字\n`python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance`）。21 红全为\n设计态红（本包实现工件未落盘：story.py 无窗口/seq 账本/delete_story/is_finish_phrase/timed_out_sessions；\ndisplay_schema 无 story floor；build_display_tool_calls 未收紧 story_*；front 泵未拦截 session_ctx/\nkidpal_story_delete 且无 _push_story_list、停录只推 story_text），逐齿映射见\nserver/acceptance/M4K1-ACCEPTANCE-NOTES.md §3。既有面零新增红 = 139 passed = 上游锚 134 passed /\n0 failed / 4 deselected @5e862d0（`git diff --quiet 5e862d0 HEAD -- server/` 零差异）+ 本包 5 条\n现状绿齿（must-stay-green：Q8 正样本 ×2 + Q7 不过宽守卫 + 契约落文锚 + E1 零偏移守卫）。\n收集零错误（--collect-only 164 项、冻结即冒烟 §3 过）。A7 live 面不冻（structural deferred 归 M4-K3）。",
   "deliveryImpact": "milestone-affecting",
-  "planningImpact": "none",
-  "planningRefs": [],
-  "riskTier": "medium",
-  "iterationBudget": 3,
-  "fixBudget": 4,
-  "docsOwner": "integrator",
-  "docsSyncRequired": true,
-  "gateProfile": ["test-quality"],
-  "acceptance": [
-    "PERF-A1: 探针门（live 证据型，两层）——标准 3 题（闲聊/课表/天气）×N≥3 中位数；探针带生产 v6 system prompt 逐字（仓内 server/deploy/openclaw-system-prompt.v6.md，脚本内 hash 断言，渲染面==被测面）；当晚基线配置重测作对照锚（跨夜数字禁止直接对比）+ 每批探针前后主机状态快照（free -m + memory pressure 告警计数 + session store 计数）。保底门（当晚必须达标，否则回滚或留数据晨判）：闲聊≤6s、课表≤9s、天气≤14s；目标门（达标=当晚收工，未达=k2 立项依据、不算失败）：闲聊≤4s、课表≤6s、天气≤10s。天气题附加条件：答复含真实检索数据（tavily 轮成功证据），否则计时再好也判红",
-    "PERF-A2: 质量守卫（全量判定，非抽检）——每批探针全部响应计 ```display 块出现率与 schema 合法率，要求 100%（front V27 机械兜底=体验已坏，不算过）；课表题答复含备注读回（S-F1.3 AC1/AC4 口径不回退）；语音 ≤3 句纪律；提醒 semantic.json 产物形状冒烟 1 次（当晚）；QQ 录入回归 1 条（晨间 human：MD 改写 + 三档重算触发 + 提醒文案质量）。回滚触发线：切 A 案后任一批 display 块合法率 <100% → 当晚回滚，数据留晨间",
-    "PERF-A3: 晨间真机轮（human 持板，排引擎重启后会话早段——引擎侧历史增长是系统性混淆因子）——引擎日志「大模型收到用户消息」→「发送第一段语音」：保底 闲聊≤8s、课表≤10s；目标 闲聊≤5s、课表≤7s（对齐公式 A3=A1+[1.5,2.5]s TTS 首句+转发）。三源日志取证（串口 COM5 / front journalctl / 引擎 docker logs，kidpal-live-smoke-debug 纪律）",
-    "PERF-A4: 回滚与核验——openclaw.json 时间戳备份 + 一步还原脚本 + 回滚后探针复测回基线形态；P0 重启后五项核验全过：①openclaw cron list 的 kidpal-reminder-plan 在册且 Next 正常（提醒=安全面）②qqbot 通道 5 分钟周期内重连 ③18789 仍锁 loopback（V28）④char-stroke dist 补丁 marker 在位（runbook 校验点）⑤引擎容器→18789 可达；清理类条件步专属回滚锚 = 先行 openclaw backup SQLite 快照"
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
   ],
-  "mutationRequired": true,
-  "mutationEvidence": [
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "M4K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET v2（本包目录，四分类预审 2026-09-24 NEEDS_REVISION→v2 修订并入：分类拆标 ①漂移/②a②b 拆分/③独立变更）经 human 契约门 2026-09-24 裁十问（HUMAN_APPROVED，裁定记录 = CCP §5；Q2 改判丙案、余九问按拟答）（含预审漏问点 1–7：16-cap 上限口径 / seq 缺省降级 / 删除可靠性隐式 ack / 硬删软删与连带边界 / 双源窗口 relay 收紧 / display_schema story floor / §1.6 story 段）后，契约 diff 按裁定定稿随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口（CDQ 三行 + ADR 追加 + 契约变更记录行 + 人工 diff 核对清单 = CCP §1 钉行表四处 + Q2/Q5/Q7/Q8/Q9 落文处）",
+    "M4K1-A2: session_ctx 拦截齿——front 上行泵拦截 kidpal_session_ctx（整条消息不下透引擎、无论取值）：source_page=story → 该会话切累积态，与 control/start_recording 收敛同一幂等入口（重复触发不重复开会话）；home/schedule 取值现版本无行为（闭集预留）；省略整条消息 = 普通会话（向后兼容负锚）；引擎不感知（下行透传面零变化）",
+    "M4K1-A3: story_list 推送齿——list_stories() 接线（零生产调用点 → front 推送 producer）：WS 建连 + 归档成功后 + 删除执行后三时点下发 story_list；**items 上限 = 契约门 Q2 丙案定稿（2026-09-24）：恒推最新 16 条窗口（日期倒序）+ total 恒全量现存篇数**（板端 KSTORY_LIST_MAX=16 维持现值；警示句 items.length 不顶替 total load-bearing）；幂等不重复、畸形不推；推送触发时机 = 行为策略（arch §5.2④ 扩展承载，不进契约——Q10 认可）",
+    "M4K1-A4: 删除执行齿——kidpal_story_delete 消费：story.py delete_story（哨兵头校验 kidpal-story:1 + <id>.md 删除 + 不存在 id 幂等 no-op 不报错——隐式 ack 重发承接面，Q5 裁定形态）+ 流水号账本不变（删除不回退 seq——S-F2.4 AC2）+ 删后 story_list 重推对账（计数 −1 可见 = 隐式 ack 载体）；非法/越权 id（路径穿越、无哨兵头文件）拒绝并审计日志留痕；硬删/软删与审计范围按契约门 Q6 裁定",
+    "M4K1-A5: 收尾与超时齿——累积态收尾词机械检测（stt 文本扫描「我说完了」/「讲完啦」→ stop 归档，仅累积态消费、问答会话零影响）+ 120s 无语音自动收尾归档（front 侧计时、走正常盖章流程不丢弃——requirements §2.1 录音态超时口径）+ BOOT 丢弃路径（设备 listen-stop 前 cancel 语义 / 「讲错啦」V31 回退既有）零偏移核对",
+    "M4K1-A6: 流水号账本齿——入册流水号持久账本（归档分配 seq=max+1、删除不回退、front 重启存活——stories 目录账本文件形态归 plan.md 取舍点）+ story_text.data.seq 下发（契约冻结形状，additive）+ story_list.data.total=现存篇数口径分离（两数各自独立断言：存 3 删 1 → total=2 且下一篇 seq=4）",
     {
-      "acceptanceId": "PERF-A1: 探针门（live 证据型，两层）——标准 3 题（闲聊/课表/天气）×N≥3 中位数；探针带生产 v6 system prompt 逐字（仓内 server/deploy/openclaw-system-prompt.v6.md，脚本内 hash 断言，渲染面==被测面）；当晚基线配置重测作对照锚（跨夜数字禁止直接对比）+ 每批探针前后主机状态快照（free -m + memory pressure 告警计数 + session store 计数）。保底门（当晚必须达标，否则回滚或留数据晨判）：闲聊≤6s、课表≤9s、天气≤14s；目标门（达标=当晚收工，未达=k2 立项依据、不算失败）：闲聊≤4s、课表≤6s、天气≤10s。天气题附加条件：答复含真实检索数据（tavily 轮成功证据），否则计时再好也判红",
-      "sensitive": true,
-      "mutation": "改错声明接线的 thinking 值（openclaw-model-declaration.json 的 change.thinkingDefault 'off'→'high'）",
-      "expectedRed": "validate_declaration() 判红 1 条「case=B 要求 change.thinkingDefault ∈ {'off','low'}，实得 'high'」→ 齿 test_a1_declaration_file_present_and_schema / test_a1_declaration_case_semantics_b_and_a_validators 红。同组本轮实测（server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md §6）：删声明文件(M1) / 删 allow 条目(M3) / reasoning 翻真(M4) / 两轴混声明(M5) / 改错 model id(M6) 均转红；apply 摘去 drift-guard 核对循环 → mismatch 场景退出码 3→0，apply 齿亦转红",
-      "note": "A1 接线 mutation 载体 = 声明工件；GREEN 对照 = 合法 B/A 声明 0 violation。当前红基线态 = 声明工件未落盘（builder 落盘后转绿）"
-    },
-    {
-      "acceptanceId": "PERF-A2: 质量守卫（全量判定，非抽检）——每批探针全部响应计 ```display 块出现率与 schema 合法率，要求 100%（front V27 机械兜底=体验已坏，不算过）；课表题答复含备注读回（S-F1.3 AC1/AC4 口径不回退）；语音 ≤3 句纪律；提醒 semantic.json 产物形状冒烟 1 次（当晚）；QQ 录入回归 1 条（晨间 human：MD 改写 + 三档重算触发 + 提醒文案质量）。回滚触发线：切 A 案后任一批 display 块合法率 <100% → 当晚回滚，数据留晨间",
-      "sensitive": true,
-      "mutation": "放宽判定器 probe_gate.evaluate_batch 的质量判定（quality_pass 恒 True，忽略缺 ```display 块 / 脏 view / 缺备注读回）",
-      "expectedRed": "test_a2_quality_decider_display_and_schema_rates 的 assertFalse(quality_pass) 红（实测：缺块批次出现率 0.667 而 quality_pass 仍 True）；test_a2_quality_decider_note_readback 同因红（note_readback_ok=False 而 quality_pass=True）。参考判定器四例：good(1,1,T,T) / 缺块(display<1,qpass F) / 脏 view(schema<1,qpass F) / 缺备注(note_ok F,qpass F)"
-    },
-    {
-      "acceptanceId": "PERF-A3: 晨间真机轮（human 持板，排引擎重启后会话早段——引擎侧历史增长是系统性混淆因子）——引擎日志「大模型收到用户消息」→「发送第一段语音」：保底 闲聊≤8s、课表≤10s；目标 闲聊≤5s、课表≤7s（对齐公式 A3=A1+[1.5,2.5]s TTS 首句+转发）。三源日志取证（串口 COM5 / front journalctl / 引擎 docker logs，kidpal-live-smoke-debug 纪律）",
-      "sensitive": true,
-      "mutation": "a3 层阈值表误用 a1 值（BOTTOM_A3 {chat:8.0,schedule:10.0} → {chat:6.0,schedule:9.0}）",
-      "expectedRed": "test_a3_gate_decider_layer_a3_thresholds 的 assertTrue(bottom_pass) 红（实测：闲聊中位 7.5s 本应过 a3 保底 8s，误用 6s 后 verdict 由 BOTTOM_ONLY 变 FAIL、bottom_pass=False）"
-    },
-    {
-      "acceptanceId": "PERF-A4: 回滚与核验——openclaw.json 时间戳备份 + 一步还原脚本 + 回滚后探针复测回基线形态；P0 重启后五项核验全过：①openclaw cron list 的 kidpal-reminder-plan 在册且 Next 正常（提醒=安全面）②qqbot 通道 5 分钟周期内重连 ③18789 仍锁 loopback（V28）④char-stroke dist 补丁 marker 在位（runbook 校验点）⑤引擎容器→18789 可达；清理类条件步专属回滚锚 = 先行 openclaw backup SQLite 快照",
-      "sensitive": true,
-      "mutation": "回滚脚本恒 no-op（摘去 rollback_model_declaration.py 的 backup→config 还原写入）",
-      "expectedRed": "test_a4_rollback_restores_backup 的 assertEquals(after, {'applied': False}) 红（实测：rc 仍 0 但 config 保持 {'applied': True}）；对照参考实现 rc=0 且 restored_to_pre=True",
-      "note": "A4 附加面「P0 五项核验」由 live 证据读齿 test_live_a4_post_restart_five_point_checklist 承载（缺 cron/qqbot/18789/KidPal C1/可达 任一 marker → 红）；该 live 面不 auto-run，本记录不重复量测"
+      "id": "M4K1-A7: live 全链复证（deferred 归 M4-K3 设备轮）——真机双入口开录、收尾三式、归档盖章 seq、列表推送、删除云同步的云端 live 证据（front/引擎日志关联取证）",
+      "kind": "structural",
+      "note": "live 半 deferred：单真机不两轮撞车，K1 侧 offline 齿先行，live 复证挂 K3 设备轮（crossPackageBehaviors live 承接条）"
     }
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
   ],
   "exitCriteria": [
-    "PERF-E1: offline 机械面齿全绿（模型声明 artifact 在位且字段正确 / apply 脚本幂等 + drift-guard 锚点不中即 exit 3 拒绝 / 探针脚本 v6 hash 断言逻辑 / 回滚脚本 dry-run 可跑 / must-stay-green：引擎 .config.yaml LLM 段声明面与 v6 文件零回改）+ pytest -m \"not live\" 全量零新增红；mutation 证据打在配置接线上（删声明文件/改错 model id/删 allow 条目 → 齿红，RED→GREEN 声明 + counterEvidence 回填）；时延数字不做 CI 齿（timing 齿 flaky——时延门 = live 证据记录 + 冻结阈值判定）",
-    "PERF-E2: 铁律——不改 docs/contracts/**；不改引擎 .config.yaml LLM 段（base_url /v1、model_name openclaw/default、流式禁 max_tokens，契约 §四/V9 保持）；prompt v6 零回改、本包不动 prompt；不动 qqbot 配置、不升 OpenClaw、不加 agent/不做结构隔离（k2 候选）；ECS 运维逐步留痕（evidence append-only）、凭证不入档、动 openclaw.json 前必备份、清理类动作必先 openclaw backup；B 案 timebox≤30min 到时未证实即转 A；contingency 预写（A 败且 B 不可行 → 保 v4-flash + 只留 P0 收益 + 火力转 k2，不现场临时决策）",
-    "PERF-E3: 三段归因证据齐（当晚基线重测 / P0 重启后 / P1 切模型后——各段 N≥3 中位数 + 主机快照 + session 计数，分开记不混算）+ 探针批次后探针新建 session 已 archive（backup 在先）+ 记账义务履行（模型切换成为生产常态 → architecture.md §2 依赖表与决策 19 出网记账的型号名 docsSync，或 ARQ 记账，二选一不许静默漂移；回滚路径则无漂移、如实记录）+ morning-decision-package.md 成文（晨间 6 项：A3 真机轮 / QQ 回归 / 模型定案拍板含成本注记 deepseek-chat input 2x·output 1.5x / P3 4GB 升级 packet / k2 立项材料含仪表化数据 / OpenClaw 2.0.4 升级窗口）"
+    "M4K1-E1: 新增 offline 齿全绿（拦截/推送/删除/收尾/超时/账本），既有冻结语义零偏移——archive_story / StoryAccumulator（start/feed/stop/cancel/redo/recover V31 回退）/ listen-stop 归档下发链路，pytest 全量零新增红",
+    "M4K1-E2: 铁律——契约 diff 仅经契约门通道落地（四分类预审 + human 签字在案，M4K1-A1）；不改 spec、不改 agent 定义/gate；kidpal_story_delete 为 §四端云消息、不进 display view 白名单（display_schema.py 白名单零扩）；OpenClaw 本体（ECS）架构零改动；prompt 面零触碰（v7 bump 归 K3）",
+    "M4K1-E3: live 半 deferred 挂账声明（M4K1-A7 归 K3 设备轮）；docs-sync 面（arch §5.2④/§5.4/§5.1.2/§7 收口）随 integrator 收口义务在案"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md#§1.3③",
+    "docs/contracts/interface-contract.md#§1.3④",
+    "docs/contracts/interface-contract.md#§四"
   ],
   "docRefs": [
-    "docs/requirements.md#NFR-PERF-1",
-    "docs/requirements.md#NFR-PERF-2",
-    "docs/ADR.md"
+    "docs/requirements.md#F2",
+    "docs/architecture.md#§5.2",
+    "docs/architecture.md#§5.4"
   ],
   "sourceRefs": [
-    "delivery/taskpackages/260924-perf-k1-roundtrip-latency/evidence/latency-baseline-260924.md",
-    "delivery/taskpackages/260924-perf-k1-roundtrip-latency/architect-review-260924.md",
-    "server/deploy/openclaw-system-prompt.v6.md",
-    "server/deploy/provider.config.yaml",
-    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md",
-    "server/deploy/openclaw-patch/apply-openclaw-patch.sh"
+    "delivery/workstreams/m4-star-notebook/progress.md",
+    "server/gateway/story.py",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/acceptance/archive/test_story_p3.acceptance.py",
+    "docs/contracts/interface-contract.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/CONTRACT-DECISION-QUEUE.md",
+    "server/deploy/README.md"
   ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "docsSyncRequired": true,
+  "docsSyncReason": "契约 diff（E1 §1.3③/§1.3④/§四/§1.5 连带）随包同 PR 落地（经契约门）；arch 面收口：§5.2 场景④扩展（story_list 推送触发 + 收尾/超时链路口径）、§5.4 故事行【链路载体待契约】收口、§7 契约门在办②④销账 + 在办①同笔核销（E1 schedule 周网格已随 M3-K1 2026-09-21 落地仍列在办 = 遗留漂移，门 1 F3 注记「本笔顺带收」）、§5.1.2 front 故事接线现状行更新。spec 面零改动（requirements v1.26–v1.52 口径已冻结在前）。",
+  "mergeOrder": 38,
   "dependsOn": [],
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "server 单端运维/配置型变更（server/deploy 声明工件 + ECS openclaw.json 模型选择），firmware 零触碰、引擎 .config.yaml LLM 段零改动；display 块消费面（front V27 机械兜底）行为不变——模型切换的质量面由 PERF-A2 全量判定承载，无跨包行为对偶面"
+  "testHost": "python -m pytest server/acceptance/ offline 齿；live 全链 deferred 归 M4-K3 设备轮",
+  "decisionCoverage": [],
+  "crossPackageBehaviors": [
+    {
+      "topic": "story_list 形状与推送（total=现存篇数语义 + items 形状 + 三时点推送）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k1-story-cloud-link",
+      "note": "形状权威 = 契约门签字后的 interface-contract.md §1.3③；K2 消费齿按冻结形状写、不得自定字段；K1 契约 diff 未落地前 K2 acceptance-author 不冻列表形状/计数齿。"
+    },
+    {
+      "topic": "story_text.data.seq（入册流水号 N 唯一权威源）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k2-p3-star-notebook-ui",
+      "note": "seq 语义与账本 owner = K1；板端盖章 N 消费承接 = K2（易失 stamp_index 退役负锚）。"
+    },
+    {
+      "topic": "删除链路（kidpal_story_delete 载体 + front 执行 + 板端覆盖层与发送）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k2-p3-star-notebook-ui",
+      "note": "载体契约与云端执行 owner = K1（M4K1-A4）；板端确认子态 + 发送接线承接 = K2（M4K2-A3）；live 复证挂 K3。"
+    },
+    {
+      "topic": "kidpal_session_ctx 信号双端实现（契约已 LANDED 零改动）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k3-record-session-live",
+      "note": "front 拦截半 = K1（M4K1-A2）；板端发送半 = K3（M4K3-A1）；两端合并前互不阻塞（省略消息 = 普通会话向后兼容）。"
+    },
+    {
+      "topic": "K1/K2 live 真机半（structural deferred 承接）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k3-record-session-live",
+      "note": "单真机不两轮撞车——K1-A7/K2-A7 live 半全部挂 K3 设备轮一次性收口；K3 设备轮前 K1/K2 host 半须 merged。"
+    }
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "M4K1-A1: 契约门齿——CONTRACT-CHANGE-PACKET v2（本包目录，四分类预审 2026-09-24 NEEDS_REVISION→v2 修订并入：分类拆标 ①漂移/②a②b 拆分/③独立变更）经 human 契约门 2026-09-24 裁十问（HUMAN_APPROVED，裁定记录 = CCP §5；Q2 改判丙案、余九问按拟答）（含预审漏问点 1–7：16-cap 上限口径 / seq 缺省降级 / 删除可靠性隐式 ack / 硬删软删与连带边界 / 双源窗口 relay 收紧 / display_schema story floor / §1.6 story 段）后，契约 diff 按裁定定稿随本包同 PR 落地；gate evidence 按 .claude/references/contract-change-evidence.md 十节骨架随包收口（CDQ 三行 + ADR 追加 + 契约变更记录行 + 人工 diff 核对清单 = CCP §1 钉行表四处 + Q2/Q5/Q7/Q8/Q9 落文处）",
+        "sensitive": true,
+        "mutation": "移除 display_schema 的 story_list / story_text 形状 floor（Q8）+ 移除 build_display_tool_calls 对 story_* 的降级过滤（Q7）",
+        "expectedRed": "test_a1_story_list_total_must_be_nonneg_int / test_a1_story_list_items_three_keys_required / test_a1_story_text_seq_must_be_int_when_present / test_a1_relay_rejects_engine_side_story_blocks_q7",
+        "note": "设计态即红（floor/收紧未实现）= counterEvidence；过宽方向（floor 误杀新形状 / 收紧误杀非 story view）由 must-stay-green 齿实测已证敏感：MUT-1 story_list 全拒 -> test_a1_story_list_new_shape_passes_floor 转红；MUT-2 story_text 全拒 -> test_a1_story_text_seq_optional_passes_floor 转红；MUT-3 relay 全降级 -> test_a1_relay_keeps_other_views_unchanged 转红（均 apply 后还原复绿）。"
+      },
+      {
+        "acceptanceId": "M4K1-A2: session_ctx 拦截齿——front 上行泵拦截 kidpal_session_ctx（整条消息不下透引擎、无论取值）：source_page=story → 该会话切累积态，与 control/start_recording 收敛同一幂等入口（重复触发不重复开会话）；home/schedule 取值现版本无行为（闭集预留）；省略整条消息 = 普通会话（向后兼容负锚）；引擎不感知（下行透传面零变化）",
+        "sensitive": true,
+        "mutation": "移除 pump_client_to_upstream 对 kidpal_session_ctx 的拦截（整条恢复透传引擎）+ 移除 source_page=story 切累积态",
+        "expectedRed": "test_a2_session_ctx_intercepted_not_forwarded / test_a2_source_page_values_and_backward_compat / test_a2_idempotent_convergence_with_start_recording",
+        "note": "设计态红（未拦截 = 现行 pump 照原样转发）即 counterEvidence；幂等方向（重复触发清空累积缓冲）MUT-5 属 post-wiring 变异——**待 builder 转绿后重放**（session_ctx 接线后令重复 start cancel+start 应使 test_a2_idempotent_convergence_with_start_recording 转红）。"
+      },
+      {
+        "acceptanceId": "M4K1-A3: story_list 推送齿——list_stories() 接线（零生产调用点 → front 推送 producer）：WS 建连 + 归档成功后 + 删除执行后三时点下发 story_list；**items 上限 = 契约门 Q2 丙案定稿（2026-09-24）：恒推最新 16 条窗口（日期倒序）+ total 恒全量现存篇数**（板端 KSTORY_LIST_MAX=16 维持现值；警示句 items.length 不顶替 total load-bearing）；幂等不重复、畸形不推；推送触发时机 = 行为策略（arch §5.2④ 扩展承载，不进契约——Q10 认可）",
+        "sensitive": true,
+        "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除三时点 story_list 推送（_push_story_list / 归档后 / 删除后）",
+        "expectedRed": "test_a3_list_stories_window_and_total_independent / test_a3_push_seam_connect_and_wire_timepoints",
+        "note": "设计态红（现树 list_stories 无窗口、零 story_list 生产推送点）即 counterEvidence；窗口在 producer（list_stories）+ wire（pump 帧）双层钉。"
+      },
+      {
+        "acceptanceId": "M4K1-A4: 删除执行齿——kidpal_story_delete 消费：story.py delete_story（哨兵头校验 kidpal-story:1 + <id>.md 删除 + 不存在 id 幂等 no-op 不报错——隐式 ack 重发承接面，Q5 裁定形态）+ 流水号账本不变（删除不回退 seq——S-F2.4 AC2）+ 删后 story_list 重推对账（计数 −1 可见 = 隐式 ack 载体）；非法/越权 id（路径穿越、无哨兵头文件）拒绝并审计日志留痕；硬删/软删与审计范围按契约门 Q6 裁定",
+        "sensitive": true,
+        "mutation": "移除 delete_story 的哨兵头 / 路径穿越校验（任意 id 直删）+ 移除删除后 story_list 重推对账",
+        "expectedRed": "test_a4_delete_executes_and_repushes / test_a4_delete_nonexistent_id_idempotent_repush / test_a4_delete_rejects_traversal_and_no_sentinel",
+        "note": "设计态红（kidpal_story_delete 未接线、delete_story 不在位）即 counterEvidence；拒绝路径审计留痕由 test_a4_delete_rejects_traversal_and_no_sentinel 钉。"
+      },
+      {
+        "acceptanceId": "M4K1-A5: 收尾与超时齿——累积态收尾词机械检测（stt 文本扫描「我说完了」/「讲完啦」→ stop 归档，仅累积态消费、问答会话零影响）+ 120s 无语音自动收尾归档（front 侧计时、走正常盖章流程不丢弃——requirements §2.1 录音态超时口径）+ BOOT 丢弃路径（设备 listen-stop 前 cancel 语义 / 「讲错啦」V31 回退既有）零偏移核对",
+        "sensitive": true,
+        "mutation": "AUTO_STOP_SECONDS 改 999 / 移除 is_finish_phrase / 移除累积态 stt 命中收尾词触发 stop 归档",
+        "expectedRed": "test_a5_finish_phrase_detection / test_a5_finish_phrase_triggers_stop_in_accumulate_only / test_a5_timeout_120s_decision",
+        "expectedRed_notSensitive_advisory": "test_a5_front_wiring_references_timeout_decision（源锚代理齿，文本子串判据、docstring 提及即满足 → 对实现变异不敏感；本次不收紧，范围帽）",
+        "note": "设计态红（is_finish_phrase / timed_out_sessions / AUTO_STOP_SECONDS 均不在位）即 counterEvidence；追记（2026-09-24 tighten-only §6 批次）：expectedRed 中 test_a5_front_wiring_references_timeout_decision 实测对实现变异不敏感（源锚代理齿），本次不收紧齿（范围帽），收紧评估归 loop-retro 素材；**120s 前端计时循环接线 offline 不可验**（仅源锚代理证 front 引用该决策），行为等价假设显式化、live 归 M4-K3。"
+      },
+      {
+        "acceptanceId": "M4K1-A6: 流水号账本齿——入册流水号持久账本（归档分配 seq=max+1、删除不回退、front 重启存活——stories 目录账本文件形态归 plan.md 取舍点）+ story_text.data.seq 下发（契约冻结形状，additive）+ story_list.data.total=现存篇数口径分离（两数各自独立断言：存 3 删 1 → total=2 且下一篇 seq=4）",
+        "sensitive": true,
+        "mutation": "移除 seq 持久账本（每次从现存 MD 计数分配 seq，不回写 .seq.json）",
+        "expectedRed": "test_a6_archive_assigns_persistent_monotonic_seq / test_a6_restart_survival / test_a6_delete_does_not_rollback_seq / test_a6_ledger_missing_rebuilds_without_rollback",
+        "expectedRed_notSensitive_advisory": "test_a6_rearchive_same_id_keeps_seq（计数派生变异下偶然保绿——同 id 重写计数派生亦不涨；本次不收紧，范围帽）",
+        "note": "设计态红（archive_story 现无 seq、无账本）即 counterEvidence；删除回退方向由 test_a6_delete_does_not_rollback_seq 直接钉（存 3 删 1 -> total=2 且下一篇 seq=4）；test_a6_restart_survival 经 tighten-only §6 修订（纳入删除步 -> 现存 2 篇使账本续分配 4 与计数派生 3 可判别；见 notes §9.3/§9.7）——修订后该齿对标本 mutation **转红实测**（`3 != 4`），故仍列 expectedRed。追记（2026-09-24）：test_a6_rearchive_same_id_keeps_seq 实测在计数派生变异下偶然保绿（advisory），本次不收紧（范围帽）。"
+      }
+    ]
   },
-  "knownRedFloor": "见 delivery/taskpackages/260924-perf-k1-roundtrip-latency/launch-prep-record.md §基线锚（带 SHA 五要素行，server 面；Pod intake 按差异判停协议引用或重跑）"
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/application.cc",
+        "symbol": "HandleToggleChatEvent"
+      },
+      {
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "kidpal_story_list_parse"
+      },
+      {
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_page_render"
+      }
+    ],
+    "exempt": ""
+  },
+  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。重叠面核查：story_p3 旧冻结验收双侧已 archive 退役（server/acceptance/archive/test_story_p3.acceptance.py + test_story_wiring.acceptance.py），本包新建齿不走 supersede；prompt 面零触碰（v7 bump 归 K3——「帮我记下来」第二指令现役 v6 零命中已核）。StoryAccumulator 既有语义（start/feed/stop/cancel/redo/recover V31 四回退）零偏移、增量扩展；收尾词检测先查 routing 现状（若已有语义零偏移复用，D5）。OpenClaw 本体（ECS）不在本包改架构——删除/推送/拦截全在 front 机械面（零自研业务逻辑红线：story.py 归档语义既有，增量 = delete/seq 账本/推送接线）。取舍点（删除载体甲乙丙 / seq 账本形态 / 120s 归属 / 推送触发）见 plan.md。 契约预审记录（2026-09-24 architect-reviewer）：NEEDS_REVISION——修订清单 7 项全落 CCP v2（分类拆标 / Scope 补 story.py 三钉行+§1.6+节标题+display_schema 失真修正 / 16-cap 口径纳入 / Impact 撤双源断言+补 v6 钉行清单+旧板端盖章面注 / Alternatives 补可靠性 / Human Question 五问扩十问 / 收口义务补人工 diff 核对清单）；漏问点 1–7 关键主张已对磁盘逐条核实（KSTORY_LIST_MAX=16 story_page.h:40、stamp_index=counter+1 story_page.c:1071、story.py:12-13/:181-183/:211 钉行、v6:75-76/:153-155/:271-273 产块指令、display_schema 仅 schedule floor、§1.6 无 story 段——全属实）。 tighten-only §6 修订（2026-09-24）：test_a6_restart_survival fixture 缺陷修复（纯 additive 0 删除行；原变异重放转红 3!=4；sha256 链 61c05017…→正文态 1be76af9…→交付形态 5d4ebbf2…，核销记冻结件 REVISION LOG + notes §9.7，本仓首例）；mutationEvidence A5/A6 按 builder 重放实测更正（expectedRed 多声明 2 条移出至 advisory 字段）；修订后全套 offline 182 passed / 0 failed / 4 deselected（acceptance-author + planner 双复核）。",
+  "docsOwner": "integrator",
+  "launchPreconditions": null
 }

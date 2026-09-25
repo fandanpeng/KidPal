@@ -67,6 +67,12 @@ ENGINE_WS = os.environ.get("KIDPAL_ENGINE_WS", "ws://127.0.0.1:8010/xiaozhi/v1/"
 # engine-internal raw frame to the device.
 SIDE_CHANNEL_TYPE = "kidpal_display_blocks"
 
+# Q7 relay 收紧（契约 §1.5 step 3 / 2026-09-24 契约门裁定）：story_list/story_text 的
+# 数据是 front 机械推送单源（story.py producer），引擎侧（relay 路径）来源的这两个 view
+# 块一律降级为友好 text——绝不把 story 载荷透传给设备。front 自推（_push_story_list /
+# 归档下发）不经 relay、天然豁免。非 story view 零变化。
+_STORY_SINGLE_SOURCE_VIEWS = frozenset({"story_list", "story_text"})
+
 # --- P3 故事 manual 聆听累积态 + 整段转写归档（契约 §1.4 start_recording / P3-A4）------
 # front 见 relay 的 control/start_recording -> 把该连接会话切累积态（不按句送对话）；
 # 停录整段转写经 gateway.story.archive_story 落盘。真实采音殿后 9b (P3-E2)，此处承载
@@ -131,6 +137,105 @@ def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
         return None
     log.info("story_stop corr_id=%s archived=true id=%s", session_id, rec.get("id"))
     return rec
+
+
+async def _push_display_payload(websocket, payload: dict) -> None:
+    """front 机械自推单帧（不经 relay；Q7 天然豁免——自推不属引擎侧来源面）。
+
+    把 payload 以设备 wire 形状的 kidpal/display mcp 帧下发恰一帧；过 display_schema
+    机械门，畸形不推（记日志、零帧、不裸送）。"""
+    ok, reason = gw_display.validate_display(payload)
+    if not ok:
+        log.warning("story_display_push skipped view=%s reason=%s",
+                    (payload or {}).get("view"), reason)
+        return
+    envelope = gw_mcp.display_tool_call(_display_wire_arguments(payload))
+    await websocket.send_text(
+        json.dumps({"type": "mcp", "payload": envelope}, ensure_ascii=False, default=str))
+
+
+async def _push_story_list(websocket) -> None:
+    """front 机械推送 story_list 的下行缝（三时点：WS 建连 / 归档成功后 / 删除执行后）。
+
+    把 list_stories(<STORIES_DIR>) 以 kidpal/display mcp 帧下发**恰一帧**（设备 wire
+    形状 {"view":<str>,"data":<json 串>}）。计数/窗口语义由 story.py producer 单源承载
+    （total=现存篇数 + items 最新 ≤16 窗口），本缝只做接线、不重算。front 自推不经 relay
+    （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。"""
+    await _push_display_payload(websocket, gw_story.list_stories(STORIES_DIR))
+
+
+async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
+    """拦截设备→引擎的 KidPal 私有控制帧（契约 §四：网关消费并拦截、不下透引擎）。
+
+    - kidpal_session_ctx：整条消费（无论取值）；source_page=="story" 时把该会话切累积态
+      （收敛 _get_story_acc().start 同一幂等入口——与 §1.4 control/start_recording 同入口，
+      重复触发不重复开会话）；其余取值现版本无行为（闭集预留）。
+    - kidpal_story_delete：整条消费；机械执行 delete_story（哨兵头校验 + MD 硬删 + 拒绝
+      审计）→ 重推 story_list 对账（隐式 ack：不存在 id 亦重推、total 不变；合法删除
+      total −1 可见）。畸形/非法 id 由 delete_story 内部拒绝、不崩、审计留痕。
+    返回 True = 已消费（调用方不得转发引擎）。"""
+    if not isinstance(obj, dict):
+        return False
+    mtype = obj.get("type")
+    if mtype == "kidpal_session_ctx":
+        if session_id and obj.get("source_page") == "story":
+            _get_story_acc().start(session_id)
+        return True
+    if mtype == "kidpal_story_delete":
+        gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
+        await _push_story_list(websocket)  # 删除执行后重推对账（三时点③）
+        return True
+    return False
+
+
+def _story_finish_on_phrase(session_id, obj) -> "dict | None":
+    """累积态 stt 命中收尾词 -> StoryAccumulator.stop 归档（S-F2.2 收尾；M4K1-A5）。
+
+    仅累积态消费（问答会话零影响）；命中 -> stop 整段归档并返回记录（供上层下发
+    story_text 正文、不丢弃）；未命中 / 非累积态 / 空累积 -> None。"""
+    if not session_id or not isinstance(obj, dict):
+        return None
+    if obj.get("type") != "stt":
+        return None
+    text = obj.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return None
+    if not gw_story.is_finish_phrase(text):
+        return None
+    acc = _get_story_acc()
+    if acc.routing(session_id) != "accumulate":
+        return None
+    rec = acc.stop(session_id)
+    if rec is None:
+        return None
+    log.info("story_finish corr_id=%s archived=true id=%s", session_id, rec.get("id"))
+    return rec
+
+
+async def _story_timeout_sweep(now=None) -> int:
+    """120s 无语音自动收尾（requirements §2.1 录音态超时口径）——累积态 front 侧计时。
+
+    每 tick 调纯决策 StoryAccumulator.timed_out_sessions(now) 取静默 >=120s 的累积会话，
+    对命中会话走正常 stop 归档（不丢弃）并把 story_text 下发给当前在线设备腿（+ story_list
+    对账）。offline 只钉源锚（front 引用该决策）；真计时循环/行为等价假设未验，live 全链
+    复证归 M4-K3（M4K1-A7 deferred）。返回命中并归档的会话数（K6 归因）。"""
+    acc = _get_story_acc()
+    now_dt = now if now is not None else datetime.now(timezone.utc)
+    timed_out = acc.timed_out_sessions(now_dt)
+    swept = 0
+    for sid in timed_out:
+        rec = acc.stop(sid, now=now_dt)
+        if rec is None:
+            continue
+        swept += 1
+        log.info("story_timeout_stop corr_id=%s id=%s", sid, rec.get("id"))
+        for device_ws, _engine_ws in list(_alert_legs):
+            try:
+                await _push_display_payload(device_ws, gw_story.story_text(rec))
+                await _push_story_list(device_ws)
+            except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
+                log.warning("story_timeout_push_err err=%s", type(e).__name__)
+    return swept
 
 
 def _bearer(header: Optional[str]) -> str:
@@ -273,7 +378,13 @@ def build_display_tool_calls(blocks: list) -> list:
         else:
             ok, reason = False, "display block is not JSON-object parseable"
         if ok:
-            display = _display_wire_arguments(payload)
+            # Q7 收紧（story 单源）：引擎侧来源的 story_list/story_text 块降级为友好 text
+            # （与脏块降级同语义），绝不把 story 载荷透传给设备；其它 view 照既有语义中继。
+            if payload.get("view") in _STORY_SINGLE_SOURCE_VIEWS:
+                display = _display_wire_arguments(
+                    _friendly_downgrade_view("story_single_source"))
+            else:
+                display = _display_wire_arguments(payload)
         else:
             display = _display_wire_arguments(_friendly_downgrade_view(reason))
         calls.append(gw_mcp.display_tool_call(display))
@@ -332,6 +443,11 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 continue
             # 云侧累积接线 (包 9b HWV-A10): ASR 上行 stt 帧命中累积态则喂缓冲（旁路消费，转发不变）。
             _story_feed_from_stt(session_id, obj)
+            # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦」-> stop 整段归档
+            # + 下发归档正文（不丢弃）；问答会话零影响（_story_finish_on_phrase 仅累积态消费）。
+            finish_rec = _story_finish_on_phrase(session_id, obj)
+            if finish_rec is not None:
+                await _push_display_payload(websocket, gw_story.story_text(finish_rec))
             if obj.get("type") == SIDE_CHANNEL_TYPE:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
@@ -385,20 +501,24 @@ async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
                 await upstream.send(msg["bytes"])
             else:
                 text = msg.get("text", "")
-                await upstream.send(text)
-                # 云侧停录归档接线 (包 9b HWV-A10/A12)：旁路消费设备 listen/stop 上行帧
-                # （转发不变，决策23）——命中累积态则 StoryAccumulator.stop 整段归档，并把
-                # 归档正文以 story_text(record) 组块下发给设备（F4 分工：正文由网关 story_text
-                # 下发，设备盖章/回看在 story_p3 冻结消费）。单帧单发（每停录至多一次），
-                # 与下行泵各发独立完整 ASGI 消息、不拆帧。
                 try:
                     up_obj = json.loads(text)
                 except (TypeError, ValueError):
                     up_obj = None
+                # 契约 §四：KidPal 私有控制帧（kidpal_session_ctx / kidpal_story_delete）
+                # 由网关整条消费并拦截、不下透引擎（无论取值）。
+                if await _consume_kidpal_control(session_id, up_obj, websocket):
+                    continue
+                await upstream.send(text)
+                # 云侧停录归档接线 (包 9b HWV-A10/A12)：旁路消费设备 listen/stop 上行帧
+                # （转发不变，决策23）——命中累积态则 StoryAccumulator.stop 整段归档，并把
+                # 归档正文以 story_text(record) 下发给设备（F4 分工：正文由网关 story_text
+                # 下发，设备盖章/回看在 story_p3 冻结消费）。front 自推不经 relay（Q7 天然
+                # 豁免）；归档成功后追加 story_list 推送（三时点②）。单帧单发、不拆帧。
                 rec = _story_stop_on_listen_stop(session_id, up_obj)
                 if rec is not None:
-                    await _relay_display_blocks_to_device(
-                        [json.dumps(gw_story.story_text(rec), ensure_ascii=False)], websocket)
+                    await _push_display_payload(websocket, gw_story.story_text(rec))
+                    await _push_story_list(websocket)
                 acked, rid = on_device_receipt(text)
                 if acked:
                     acked_ids.append(rid)
@@ -759,11 +879,16 @@ async def reminder_poll_loop() -> None:
         await run_schedule_poll_once()       # 课表 piggyback：同一循环，容错不连坐
     except Exception as e:  # noqa: BLE001
         log.warning("schedule_poll_error err=%s", type(e).__name__)
+    try:
+        await _story_timeout_sweep()         # 120s 无语音自动收尾：同节拍，容错不连坐
+    except Exception as e:  # noqa: BLE001
+        log.warning("story_timeout_sweep_err err=%s", type(e).__name__)
     while True:
         try:
             await asyncio.sleep(gw_reminders.next_poll_delay(time.time()))
             await run_alert_poll_once()
             await run_schedule_poll_once()
+            await _story_timeout_sweep()
         except asyncio.CancelledError:
             raise
         except Exception as e:  # noqa: BLE001 — 提醒投递不得因单轮异常停摆
@@ -832,6 +957,12 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
+            # 故事三时点 ①：WS 建连即推 story_list（front 自推单源、Q7 天然豁免；arch
+            # §5.2④ 扩展承载）。失败不阻断建连。
+            try:
+                await _push_story_list(websocket)
+            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+                log.warning("story_list_connect_push_err err=%s", type(e).__name__)
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:

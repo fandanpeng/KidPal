@@ -8,12 +8,14 @@
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
 **摘要**：未结 13（待拍板 0 / 待触发 11 / 已接受风险 2）；已结 73（归档索引见下）。
+**摘要**：未结 17（待拍板 0 / 待触发 15 / 已接受风险 2）；已结 70（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
 ## 待触发（11）
+## 待触发（15）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,6 +30,10 @@ _（无）_
 | [ARQ-260923-codemem-mode-doc-drift](ARQ-260923-codemem-mode-doc-drift.md) | SHOULD | CodebaseMemory 索引 mode 的文档与实效不符（三处：AGENTS.md:39 / launch-prep SKILL:93 / cli SKILL:42 示例） | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同族可并批——同动 launch-prep 文面；与 ARQ-260918-spec-face-3page-reconcile 同属「文档与实况对齐」族） |
 | [ARQ-260923-planner-roster-reference-drift](ARQ-260923-planner-roster-reference-drift.md) | SHOULD | planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在 | 下一治理批（一文面小修，可搭任意批） |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
+| [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | SHOULD | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 下一治理批（① 枚举修正半成本极低可先行；②③ 随批，与 ARQ-260922-buildfeature-launch-prep-skip / ARQ-260923-dispatch-prompt-hard-terms 同动 planner 编排文面可并批）→ **2026-09-24 部分承载**：①② 已由 260924-gov-review-planner-orchestration-align T5 落地；③ warn 齿按该批 OQ-3(a) human 裁定留批 C（门/解析面批），下次动 taskpackage-required / brief-inputs 解析面的治理批承接 |
+| [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 |
+| [ARQ-260924-landing-summary-template-pointer-gap](ARQ-260924-landing-summary-template-pointer-gap.md) | SHOULD | landing-summary 模板指针在 landing 相位文面缺位——协议七步第 4 步只说「写 architect-landing-summary.md」不指模板，主线程手写漏 landing-manifest 围栏块致核验 FAIL（unit-gate F4 同根第二实例，模板早已固化该教训） | 下一治理批（文面指针级小修、可搭任意批——与 ARQ-260923-gate-tooling-noise-batch 同为「可搭任意批」候补，批 C 并批候选） |
+| [ARQ-260924-split-order-granularity-gate-gap](ARQ-260924-split-order-granularity-gate-gap.md) | SHOULD | 拆包顺序链（里程碑登记/roadmap 先于 taskpackages）无机械闸且 portfolio-planner 无尺寸模型——ui-v5-align 事故以 21 包建毁与三轮 human 复裁为代价实测显形 | 下一治理批（动 portfolio-planner intake / task-intake-and-slicing Slicing Matrix / workstreams README 任一面时并批；① intake 停等半可先行） |
 
 ## 已接受风险（2）
 
