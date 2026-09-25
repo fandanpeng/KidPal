@@ -647,9 +647,11 @@ int kidpal_schedule_grid_parse(const char *data_json,
  * 真机 1bpp 目测/翻页手感 deferred 归 M3-K3 设备轮（M3K2-A7 挂账）。
  * ------------------------------------------------------------------------ */
 
-#define KSG_COLOR_TEXT 0x222222u
+/* V5 对齐 (ui-v5-align §2 P2): 设计全文纯 1bpp 黑白——旧灰阶 0x222222/0x999999 在
+ * RLCD 阈值化后层次丢失且与设计稿黑白口径不符, 收敛为纯黑墨。 */
+#define KSG_COLOR_TEXT 0x000000u
 #define KSG_COLOR_BG   0xFFFFFFu
-#define KSG_COLOR_SEP  0x999999u
+#define KSG_COLOR_SEP  0x000000u
 #define KSG_FB_W       400
 #define KSG_FB_H       300
 #define KSG_ROW_PITCH  16 /* 格内课程名行 pitch >= KSG_FONT_MIN_PX(14) + 2px 余量 */
@@ -806,15 +808,19 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
 
     /* 家具：表格线 + 表头 + 槽位标签（与课程/今天列无关 -> 帧 diff 相消, 探针
      * 断言只锁差集像素落带）。页内无标题无提示行（v1.20 已删, 操作提示归全局
-     * 键帽条）。 */
+     * 键帽条）。
+     * V5 对齐 (ui-v5-align §2 P2 行 4/5/6): 表线细黑 1px; 外框补全（顶边 y0 +
+     * 最左边 x0, 右边收 1px 齐格）; 行标签改槽位带垂直居中。 */
     for (int k = 0; k < 7; k++) {
-        ksg_rect_obj(scr, 40 + 51 * k - 1, 0, 2, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
+        ksg_rect_obj(scr, 40 + 51 * k, 0, 1, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
     }
-    ksg_rect_obj(scr, 396, 0, 2, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, 29, KSG_FB_W, 2, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, 103, KSG_FB_W, 2, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, 177, KSG_FB_W, 2, KSG_COLOR_SEP);
-    ksg_rect_obj(scr, 0, KSG_GRID_BOTTOM - 1, KSG_FB_W, 2, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 397, 0, 1, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 0, 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 0, 1, KSG_GRID_BOTTOM + 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 29, 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 103, 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, 177, 398, 1, KSG_COLOR_SEP);
+    ksg_rect_obj(scr, 0, KSG_GRID_BOTTOM, 398, 1, KSG_COLOR_SEP);
 
     {
         static const char days[7][7] = { "周一", "周二", "周三", "周四",
@@ -824,8 +830,9 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
         for (int d = 0; d < 7; d++) {
             (void)ksg_label(scr, days[d], 40 + 51 * d + 4, 6);
         }
+        /* 行标签垂直居中: 槽位行带高 74px, 14px 字形行高 ~18px -> y 偏移 (74-18)/2=28。 */
         for (int s = 0; s < 3; s++) {
-            (void)ksg_label(scr, slots[s], 4, ksg_slot_ys[s][0] + 6);
+            (void)ksg_label(scr, slots[s], 4, ksg_slot_ys[s][0] + 28);
         }
     }
 

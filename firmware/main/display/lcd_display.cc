@@ -1067,6 +1067,9 @@ void LcdDisplay::SetupUI() {
         lv_obj_set_style_radius(g_kidpal_keybar_dot[d], 4, 0);
         lv_obj_set_style_bg_color(g_kidpal_keybar_dot[d], lvgl_theme->text_color(), 0);
         lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[d], LV_OPA_COVER, 0);
+        /* V5 对齐 (ui-v5-align §1.3): 非当前页 = 空心环（白芯黑描边）。描边色在此
+         * 一次性钉黑；实心/空心的切换在 kidpal_keybar_sync_locked 按页态写。 */
+        lv_obj_set_style_border_color(g_kidpal_keybar_dot[d], lv_color_black(), 0);
         lv_obj_align(g_kidpal_keybar_dot[d], LV_ALIGN_BOTTOM_MID,
                      (d - ((int)PAGE_COUNT - 1) / 2) * 16, 0);
     }
@@ -1347,7 +1350,17 @@ static void kidpal_keybar_sync_locked(void)
                 int act = (i == d.active);
                 lv_obj_set_size(g_kidpal_keybar_dot[i], act ? 12 : 8, act ? 12 : 8);
                 lv_obj_set_style_radius(g_kidpal_keybar_dot[i], act ? 6 : 4, 0);
-                lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[i], LV_OPA_COVER, 0);
+                if (act) {
+                    /* 当前页 = 实心点（原形态不变）。 */
+                    lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[i], LV_OPA_COVER, 0);
+                    lv_obj_set_style_border_width(g_kidpal_keybar_dot[i], 0, 0);
+                } else {
+                    /* V5 对齐: 非当前页 = 空心环（白芯 + 2px 黑描边），替换旧 8px
+                     * 实心缩点。机制值（visible/total/active）出自 keybar 单源，
+                     * 本处只改呈现。 */
+                    lv_obj_set_style_bg_opa(g_kidpal_keybar_dot[i], LV_OPA_TRANSP, 0);
+                    lv_obj_set_style_border_width(g_kidpal_keybar_dot[i], 2, 0);
+                }
             }
         }
     }
