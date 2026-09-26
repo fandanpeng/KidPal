@@ -384,3 +384,13 @@ merge-driver 未接管（板面该包已是 merged 态，本轮属 workstream �
 
 - 本文件惯例为「追加新节 + 就地订正」，不删既有行；10.1/10.2 两次删除是 human 明确指示的
   唯一例外，特此留痕，其余章节维持原惯例。
+
+### 10.5 合并簿记（2026-09-26）
+
+本批两 commit `f407d1d`（声波条修正）+ `274a645`（findings 收官删除簿记）经 `83724fa`
+（人批事件落账）ff 合入本地 main（`main 71ccc97 → 83724fa`，单链 ff、无双侧撞件、
+`git diff --check` 无残留）。前置升级闸仍拦同两因（taskpackage 级 riskTier=high 与
+supervisor verdict=ESCALATE，均为 2026-09-15 整包级旧记录、非本批新因）→ human 会话内
+拍板覆盖（原话「把你改的提交了，合并到main」），人批事件
+`3533dc0e-0bd3-4294-a76a-d92f5a4a5361`（approve-escalated-merge）落 pod-events.jsonl，
+重跑闸 PASS（human-approval verified）后执行。**remote push 仍留 human 走 PR**。
