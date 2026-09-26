@@ -325,3 +325,12 @@ y262-264，两者之间有 7px 固有间隙——不是硬贴底条）；连带 
 设备树 `idf.py build` 通过（xiaozhi.bin 0x30f2e0）。**烧录面提醒**：本轮新增
 `imgfont_degree.bin` 属 SPIFFS 资产 → 真机核验须 app + art 双分区烧（只烧 ota_0 新资产
 不生效，flash-asset-partition-rule 教训）。
+
+**合并簿记（2026-09-26）**：本批 commit `6ed6b67` 已 ff 合入本地 main（main tip
+`c738879 → 6ed6b67`，单 commit、无双侧撞件、`git diff --check` 无残留）。前置升级闸
+拦两因（taskpackage 级 riskTier=high 与 supervisor verdict=ESCALATE，均为 2026-09-15
+整包记录、非本批新因）→ human 会话内拍板覆盖（原话「merge to main」），人批事件
+`5b17ca6a-ccc5-46d4-8e40-7eebd6b73cb6`（approve-escalated-merge）落
+`delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/pod-events.jsonl`。
+merge-driver 未接管（板面该包已是 merged 态，本轮属 workstream 后续批次，先例
+阶段 2-5 同为直合）。**remote push 仍留 human 走 PR**。
