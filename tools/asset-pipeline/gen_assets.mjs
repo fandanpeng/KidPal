@@ -298,11 +298,15 @@ jobs.push({ name: 'ic_star_20', svg: svgUse('ic-star'), w: 20, h: 20, rotate: 0,
 jobs.push({ name: 'ic_sparkle_22', svg: svgUse('ic-sparkle'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 // 录音态声波线（路径自 V5 设计稿固化，206×34 非等比缩放同浏览器渲染口径）
 jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 14"><path d="M2 7 L8 2 L13 12 L18 4 L24 12 L29 3 L35 11 L41 5 L46 9" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, w: 206, h: 34, rotate: 0, kind: 'svg' });
-// P1 反白胶囊标签（V5 口径 12.5px：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）
+// P1 反白胶囊标签（V5 口径：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）。
+// 2026-09-26 真机对齐轮第二批次：h 21→24、font-size 12.5→14.5 —— 依 canvas-p1 实测
+// （pill 58×24、白字 37×13）与母版 HTML（left:152px;top:36px）重烘；旧 21px 胶囊比设计
+// 矮 3px、白字小 ~15%（human 看屏指出「接下来有点小」）。baseline y=18 使白字墨在
+// 24px 胶囊内垂直居中（目标墨带 y6..18，与设计同心）。
 {
-  const chip = (w, text) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 21"><rect x="0.5" y="0.5" width="${w - 1}" height="20" rx="10" fill="#000"/><text x="${w / 2}" y="15" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="12.5" fill="#fff">${text}</text></svg>`;
-  jobs.push({ name: 'p1_chip_jiexialai', svg: chip(58, '接下来'), w: 58, h: 21, rotate: 0, kind: 'svg' });
-  jobs.push({ name: 'p1_chip_mingzao', svg: chip(46, '明早'), w: 46, h: 21, rotate: 0, kind: 'svg' });
+  const chip = (w, text) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 24"><rect x="0.5" y="0.5" width="${w - 1}" height="23" rx="11.5" fill="#000"/><text x="${w / 2}" y="18" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="14.5" fill="#fff">${text}</text></svg>`;
+  jobs.push({ name: 'p1_chip_jiexialai', svg: chip(58, '接下来'), w: 58, h: 24, rotate: 0, kind: 'svg' });
+  jobs.push({ name: 'p1_chip_mingzao', svg: chip(46, '明早'), w: 46, h: 24, rotate: 0, kind: 'svg' });
 }
 // P3 语音入口提示条（虚线胶囊原生不可做 + 11.5px 文本无字体档 → 整块烘；文本为静态文案）
 {

@@ -1131,10 +1131,10 @@ static void p1_draw_group_dash_sep(int y, int x0, int x1);
  * 空日程仍画帽标 + 云朵（卡题固定）、行流零墨（HPB tooth 5 语义）。 */
 static void p1_draw_card(void)
 {
-    const int line_h = 28;      /* [S3] 行带 pitch：ROW1 62 -> ROW2 90 -> ROW3 118 */
+    const int line_h = 28;      /* [S3] 行带 pitch：ROW1 68 -> ROW2 96 -> ROW3 124 */
     const int text_yoff = 6;    /* 14px 字形在 26px 行带内的垂直对齐偏移 */
-    const int cx0 = 152, cy0 = 36, cx1 = 392, cy1 = 242; /* 卡区 clip */
-    int fy = 62;                /* 行流光标：自 ROW1 顶起, 逐块按占用行数下移 */
+    const int cx0 = 152, cy0 = 42, cx1 = 392, cy1 = 242; /* 卡区 clip */
+    int fy = 68;                /* 行流光标：自 ROW1 顶起, 逐块按占用行数下移 */
     int used, i;
     char line[48];
     const hp1_item_t *it;
@@ -1145,16 +1145,21 @@ static void p1_draw_card(void)
      * s_art_ok——kidpal_art_load 自身决定烘焙 vs 兜底（[S5]: 标签在场义务独立于
      * 数字资产挂载）。云朵/帽标任一缺场 -> 各自描边兜底撑「标签带有墨」pin
      * （标签带墨义务两条路径成立）。
-     * 2026-09-26 对齐轮（canvas-p1 实测）：云朵换 ic_cloud_40_t2（41x41 资产墨盒
-     * (4,6)-(39,31)）放大 46x46 落 (103,29)，墨迹 (107,36)-(147,64) ≈ 设计云墨
-     * (107,36)-(147,62)；帽标 p1_chip_jiexialai 落 (151,41)（墨 152..208 ≈ 设计
-     * x152-209/y42-60）。 */
-    if (!p1_blit_art_scaled("ic_cloud_40_t2.bin", 103, 29, 46, 46,
-                            101, 27, 149, 75)) {
-        p1_stroke_rect(107, 36, 147, 62, 1); /* 云朵缺场兜底 */
+     * 2026-09-26 对齐轮第二/三批次（human 看屏两轮裁定：先「云朵偏高 / 接下来有点小」，
+     * 再「组内关系 OK 了但相对上虚线还是偏高」）——依 canvas-p1 实测 + 母版 HTML 规格：
+     *   云朵 ic_cloud_40_t2 按母版 40px 直出 @ (104,42) → 墨 (108,48)-(143,73)；
+     *   帽标 p1_chip_jiexialai（重烘 58x24、字号 14.5px）@ (151,41) → 墨
+     *   (152,42)-(207,65)。
+     *   落位口径 = 设计实测的**呼吸间距**：设计上虚线底 26 → 帽标顶 36 空 9 行、
+     *   帽标底 59 → 今日首行墨顶 69 空 9 行。实现上虚线重钉在 y30-32（受辅助条
+     *   图标墨底 29 所限），故整卡下移 6px（帽标顶 42 = 32+1+9，行流 fy 62→68）
+     *   保持同口径呼吸——全卡相对设计 +6px 平移，组内关系与呼吸与设计一致。 */
+    if (!p1_blit_art_scaled("ic_cloud_40_t2.bin", 104, 42, 40, 40,
+                            100, 40, 152, 82)) {
+        p1_stroke_rect(107, 48, 143, 73, 1); /* 云朵缺场兜底 */
     }
-    if (!p1_blit_art("p1_chip_jiexialai.bin", 151, 41, 58, 21)) {
-        p1_stroke_rect(151, 41, 209, 61, 1); /* 帽标缺场兜底 */
+    if (!p1_blit_art("p1_chip_jiexialai.bin", 151, 41, 58, 24)) {
+        p1_stroke_rect(151, 41, 209, 65, 1); /* 帽标缺场兜底 */
     }
 
     /* 最近项行 ROW1（time + name, 行内时间 [S2] seam ASCII）。 */
@@ -1195,8 +1200,8 @@ static void p1_draw_card(void)
      * cx0=152 起笔（帽标已独立成行, 不再需要 x>=192 让槽）。fy=118（2 项日程）时：
      * 虚线 140 / 帽标 151 / 项行 178, 与设计逐像素对位。 */
     if (has_pv) {
-        if (!p1_blit_art("p1_chip_mingzao.bin", 151, fy + 33, 46, 21)) {
-            p1_stroke_rect(151, fy + 33, 197, fy + 54, 1); /* 兜底描边撑帽标行有墨 */
+        if (!p1_blit_art("p1_chip_mingzao.bin", 151, fy + 33, 46, 24)) {
+            p1_stroke_rect(151, fy + 33, 197, fy + 57, 1); /* 兜底描边撑帽标行有墨 */
         }
         p1_join_time_name(&pv, line, (int)sizeof(line));
         (void)p1_blit_flow(line, cx0, fy + 60 + text_yoff, line_h,
@@ -1246,13 +1251,21 @@ static void p1_draw_wave_doodle(void)
     (void)p1_blit_art("ic_wave_58.bin", 18, 231, 58, 17);
 }
 
-/* V5 对齐·补缺（2026-09-26 对齐轮）: 猫右下四角星 ic_sparkle_22.bin（22x22 资产、
- * 墨盒 (5,5)-(16,16) = 12x12）放大 28x28 落 (118,208)——墨迹 (124,214)-(138,228)
- * ≈ canvas-p1 实测星墨 y215-228。资产 c738879 已入管线, 本轮起消费。加载失败 = 不画
- * （纯装饰件, 无有墨义务, 同波浪原则）。 */
+/* V5 对齐·补缺 + 闪烁（2026-09-26 对齐轮第二批次，human 要求「四角星做成一闪一闪」）:
+ * 猫右下四角星 ic_sparkle_22.bin（22x22 资产、墨盒 (5,5)-(16,16) = 12x12）。
+ * **一闪一闪** = 1s tick 粒度两相位尺寸脉动：相位 A（tick%2000 < 1000）大 28px、
+ * 相位 B 小 20px，两盒同心（圆心 (132,222) 不动，只胀缩不位移）——首页帧由 tick
+ * 每秒重渲（kidpal_render_node.cc RN_TICK_MS=1000 首页动画重渲路径，与冒号眨眼同
+ * 驱动源），故脉动逐秒可见。加载失败 = 不画（纯装饰件，无有墨义务，同波浪原则）。 */
 static void p1_draw_sparkle_doodle(void)
 {
-    (void)p1_blit_art_scaled("ic_sparkle_22.bin", 118, 208, 28, 28,
+    const int period = 2000;                       /* 脉动周期 2s（1s 大 / 1s 小） */
+    int big = ((s_state.tick_ms % period) < period / 2) ? 1 : 0;
+    int dw = big ? 28 : 20;
+    int x0 = big ? 118 : 122;                      /* 同心缩放：28 盒 (118,208) 与 */
+    int y0 = big ? 208 : 212;                      /* 20 盒 (122,212) 同圆心 (132,222) */
+
+    (void)p1_blit_art_scaled("ic_sparkle_22.bin", x0, y0, dw, dw,
                              118, 208, 145, 235);
 }
 
@@ -1293,14 +1306,16 @@ int kidpal_home_p1_render_frame(void)
         p1_draw_aux_batt();
     }
 
-    /* 辅助条下缘点状虚线（y33, x8..391）：V5 母版 canvas-p1 辅助条 border-bottom
+    /* 辅助条下缘点状虚线（y30, x8..391）：V5 母版 canvas-p1 辅助条 border-bottom
      * dotted 自首版在世（阶段2 architect 复核: 母版 git log -S + 锚图 y25-26 实测
      * 点状线）——本批初版误按 findings 行 4「状态栏下无线」退役, 已纠正恢复。
-     * 2026-09-26 真机对齐轮：y42（VQ-A7 r5 旧定谳位）人看屏判过低（human 指出
-     * 「上虚线位置不对」）, 按设计实测比例重钉 y33——设计虚线 y25-26 在状态栏墨底
-     * (y19) 下 6px; 实现辅助条墨底 ~28, y33-35 即等比贴置, 云墨顶 36 之上 1px 不相触。
-     * 组间虚线另行画在「接下来」与「明天」组之间, 两件职责不同、并存不争位。 */
-    p1_draw_group_dash_sep(33, 8, 391);
+     * 2026-09-26 真机对齐轮：y42（VQ-A7 r5 旧定谳位）人看屏判过低 → 先钉 y33;
+     * 第二批次随云朵/帽标按母版重落（云墨顶 42 / 帽标顶 36）再上移 y33→y30——
+     * 辅助条图标墨底 ~28, y30-32 即贴置; 设计线(25-26)到帽标顶(36)有 10px, 本实现
+     * 受制于辅助条图标（20px 盒 vs 母版 ~13px）只余 ~4px——辅助条图标缩尺可再买空间,
+     * 属像素级观感后议项（findings §9 登记）。组间虚线另行画在「接下来」与「明天」
+     * 组之间, 两件职责不同、并存不争位。 */
+    p1_draw_group_dash_sep(30, 8, 391);
 
     /* ②/③ 日程卡：[S3] 追加轮行流版式——小伴常驻演出（左）+「接下来」卡（右）：
      * 黑帽标 + 云朵 + 行流文字（最近项 ROW1 / 后续事项 ROW2.. / 组间虚线 /

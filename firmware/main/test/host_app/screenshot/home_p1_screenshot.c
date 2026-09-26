@@ -149,6 +149,9 @@ static void set_state(int hour, int minute, int month, int mday, int env, int te
     st.minute = minute;
     st.month = month;
     st.mday = mday;
+    /* 星期显式钉「未知」：memset 后的 0 会静默等于「周一」（wday 零值 = 周一 属结构
+     * footgun），本 harness 不涉星期，显式 -1 走「不画假星期」退回路径（2026-09-26）。 */
+    st.wday = -1;
     st.env_valid = env;
     st.temp_c = temp;
     st.humidity_pct = hum;

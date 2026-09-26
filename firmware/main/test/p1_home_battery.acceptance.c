@@ -58,25 +58,26 @@
  *       元素画进对应区域；钉区是布局在位钉，不是字体/颜色钉——纯美学留 design review）：
  *
  *         HPB_RECT_AUX_STRIP  {  0,  0, 399,  39 }  辅助条横贯带
- *         HPB_RECT_AUX_TIME   { 36,  6, 108,  31 }  时间 "10:24"（小字）
- *         HPB_RECT_AUX_DATE   {112,  6, 208,  31 }  日期星期（"Www DD Mon"/"DD Mon"）
- *         HPB_RECT_AUX_TEMP   {210,  6, 278,  31 }  温度（整元素, 含 °C 后缀）
- *           HPB_RECT_AUX_TEMP_ICON {210,  6, 230,  31}   图标半（前置）
- *           HPB_RECT_AUX_TEMP_VAL  {234,  6, 278,  31}   数值半（含 °C）
- *         HPB_RECT_AUX_HUM    {282,  6, 338,  31 }  湿度（整元素）
- *           HPB_RECT_AUX_HUM_ICON  {282,  6, 302,  31}   图标半（"45%" 不裸数字）
- *           HPB_RECT_AUX_HUM_VAL   {302,  6, 338,  31}   数值半
- *         HPB_RECT_AUX_BATT   {342,  6, 396,  31 }  电量（整元素）
- *           HPB_RECT_AUX_BATT_ICON {342,  6, 362,  31}   图标半（前置）
- *           HPB_RECT_AUX_BATT_VAL  {364,  6, 396,  31}   数值半
- *         （辅助条钉区底缘 31 = 上虚线 y33-35 重钉后不含虚线行, 2026-09-26 对齐轮）
+ *         HPB_RECT_AUX_TIME   { 36,  6, 108,  29 }  时间 "10:24"（小字）
+ *         HPB_RECT_AUX_DATE   {112,  6, 208,  29 }  日期星期（"Www DD Mon"/"DD Mon"）
+ *         HPB_RECT_AUX_TEMP   {210,  6, 278,  29 }  温度（整元素, 含 °C 后缀）
+ *           HPB_RECT_AUX_TEMP_ICON {210,  6, 230,  29}   图标半（前置）
+ *           HPB_RECT_AUX_TEMP_VAL  {234,  6, 278,  29}   数值半（含 °C）
+ *         HPB_RECT_AUX_HUM    {282,  6, 338,  29 }  湿度（整元素）
+ *           HPB_RECT_AUX_HUM_ICON  {282,  6, 302,  29}   图标半（"45%" 不裸数字）
+ *           HPB_RECT_AUX_HUM_VAL   {302,  6, 338,  29}   数值半
+ *         HPB_RECT_AUX_BATT   {342,  6, 396,  29 }  电量（整元素）
+ *           HPB_RECT_AUX_BATT_ICON {342,  6, 362,  29}   图标半（前置）
+ *           HPB_RECT_AUX_BATT_VAL  {364,  6, 396,  29}   数值半
+ *         （辅助条钉区底缘 29 = 上虚线 y30-32 重钉后不含虚线行；元素真实墨底 29（电量图标）
+ *         ——2026-09-26 对齐轮第二批次随虚线 y33→y30 同钉）
  *         HPB_RECT_MASCOT     {  8, 86, 128, 242 }  小伴常驻演出（2026-09-26 下移 (28,116)）
- *         HPB_RECT_NEXT       {103, 29, 392, 242 }  「接下来」卡整体（R2: 标签带 + 日程行流带）
- *         HPB_RECT_LABEL      {103, 29, 250,  92 }  「接下来」标签带（云朵+烘焙帽标, 固定卡题, R2）
- *         HPB_RECT_ROWS       {152, 62, 392, 134 }  日程行流带（ROW1..ROW3 域, R2）
- *         HPB_RECT_STICKER_NEG {236, 36, 390, 60 }  旧倒计时贴纸/大时间右上区（退役负断言, R2; 2026-09-26 重锚）
- *         HPB_RECT_ROW2       {152, 90, 392, 116 }  后续事项行（行流第二行, R2）
- *         HPB_RECT_MINGZAO    {148,148, 200, 175 }  明早标签槽（帽标独立行, R2; 2026-09-26 重构）
+ *         HPB_RECT_NEXT       {103, 35, 392, 242 }  「接下来」卡整体（R2: 标签带 + 日程行流带）
+ *         HPB_RECT_LABEL      {103, 35, 250,  98 }  「接下来」标签带（云朵+烘焙帽标, 固定卡题, R2）
+ *         HPB_RECT_ROWS       {152, 68, 392, 140 }  日程行流带（ROW1..ROW3 域, R2）
+ *         HPB_RECT_STICKER_NEG {236, 42, 390, 66 }  旧倒计时贴纸/大时间右上区（退役负断言, R2; 2026-09-26 重锚）
+ *         HPB_RECT_ROW2       {152, 96, 392, 122 }  后续事项行（行流第二行, R2）
+ *         HPB_RECT_MINGZAO    {148,154, 200, 181 }  明早标签槽（帽标独立行, R2; 2026-09-26 重构）
  *         HPB_RECT_PREVIEW_NEG {152,220, 392, 258}  旧明日预告独立带（退役负断言, R2; 2026-09-26 x0 152）
  *
  *       R2 跨包冲击修订（2026-09-22, 授权 = pod-events c4785230 human-decision
@@ -203,28 +204,28 @@
  * STICKER_NEG 重锚到「帽标右 · 虚线下 · 行流上」空档 {236,36,390,60}（旧右上区已
  * 是行流带合法领空）；PREVIEW_NEG x0 136→152（sparkle 装饰墨 x≤145 让位）。 */
 static const int hpb_rect_aux_strip[4]    = {  0,  0, 399,  39 };
-static const int hpb_rect_aux_time[4]     = { 36,  6, 108,  31 };
-static const int hpb_rect_aux_date[4]     = {112,  6, 208,  31 };
-static const int hpb_rect_aux_temp[4]     = {210,  6, 278,  31 };
-static const int hpb_rect_aux_temp_icon[4]= {210,  6, 230,  31 };
-static const int hpb_rect_aux_temp_val[4] = {234,  6, 278,  31 };
-static const int hpb_rect_aux_hum[4]      = {282,  6, 338,  31 };
-static const int hpb_rect_aux_hum_icon[4] = {282,  6, 302,  31 };
-static const int hpb_rect_aux_hum_val[4]  = {302,  6, 338,  31 };
-static const int hpb_rect_aux_batt[4]     = {342,  6, 396,  31 };
-static const int hpb_rect_aux_batt_icon[4]= {342,  6, 362,  31 };
-static const int hpb_rect_aux_batt_val[4] = {364,  6, 396,  31 };
+static const int hpb_rect_aux_time[4]     = { 36,  6, 108,  29 };
+static const int hpb_rect_aux_date[4]     = {112,  6, 208,  29 };
+static const int hpb_rect_aux_temp[4]     = {210,  6, 278,  29 };
+static const int hpb_rect_aux_temp_icon[4]= {210,  6, 230,  29 };
+static const int hpb_rect_aux_temp_val[4] = {234,  6, 278,  29 };
+static const int hpb_rect_aux_hum[4]      = {282,  6, 338,  29 };
+static const int hpb_rect_aux_hum_icon[4] = {282,  6, 302,  29 };
+static const int hpb_rect_aux_hum_val[4]  = {302,  6, 338,  29 };
+static const int hpb_rect_aux_batt[4]     = {342,  6, 396,  29 };
+static const int hpb_rect_aux_batt_icon[4]= {342,  6, 362,  29 };
+static const int hpb_rect_aux_batt_val[4] = {364,  6, 396,  29 };
 static const int hpb_rect_mascot[4]       = {  8, 86, 128, 242 };
-static const int hpb_rect_next[4]         = {103, 29, 392, 242 };
+static const int hpb_rect_next[4]         = {103, 35, 392, 242 };
 /* R2 跨包冲击修订（行流语义，PCN [S3] 对齐）: 旧 STICKER/NEXTLIST/PREVIEW 三个
  * v1.4 正向钉区退役，改标签带 + 日程行流带 + 两退役面负断言区（区域矩形变更的
  * 授权与逐 tooth 说明见头注 R2 注记与文件尾 REVISION LOG；2026-09-26 对齐轮再钉
  * 见上方注记）。 */
-static const int hpb_rect_label[4]        = {103, 29, 250,  92 };
-static const int hpb_rect_rows[4]         = {152, 62, 392, 134 };
-static const int hpb_rect_sticker_neg[4]  = {236, 36, 390,  60 };
-static const int hpb_rect_row2[4]         = {152, 90, 392, 116 };
-static const int hpb_rect_mingzao[4]      = {148,148, 200, 175 };
+static const int hpb_rect_label[4]        = {103, 35, 250,  98 };
+static const int hpb_rect_rows[4]         = {152, 68, 392, 140 };
+static const int hpb_rect_sticker_neg[4]  = {236, 42, 390,  66 };
+static const int hpb_rect_row2[4]         = {152, 96, 392, 122 };
+static const int hpb_rect_mingzao[4]      = {148,154, 200, 181 };
 static const int hpb_rect_preview_neg[4]  = {152,220, 392, 258 };
 
 /* 板级装配文件（seam [2] home）与渲染节点/显示链被扫文件。 */
@@ -743,16 +744,16 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                ink, HPB_INK_MIN_LARGE));
 
     /* tooth 4 (PH-A1, R2): 后续事项行 + 末行预告新版式语义——后续事项（原③逐项）
-     * 上移 ROW2 行流带在位; 预告并入主体第三行（明早标签槽 {148,148,200,175} 在场
+     * 上移 ROW2 行流带在位; 预告并入主体第三行（明早标签槽 {148,154,200,181} 在场
      * + 旧预告独立带标准夹具严格零墨）。预告时间起笔 x>=184 的构成判别由 PCN
      * TEST 8 tooth 4 承载（帧 diff 机制），本齿钉在场与退役面。 */
     ink = hpb_count_ink(hpb_rect_row2);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
-        hpb_fm("HPB-A1 RED: 后续事项行 ROW2 {152,90,392,116} 墨 %d < %d——后续事项"
+        hpb_fm("HPB-A1 RED: 后续事项行 ROW2 {152,96,392,122} 墨 %d < %d——后续事项"
                "未上行行流第二行（R2 版式未落地）", ink, HPB_INK_MIN_ELEM));
     ink = hpb_count_ink(hpb_rect_mingzao);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_MINGZAO,
-        hpb_fm("HPB-A1 RED: 明早标签槽 {148,148,200,175} 墨 %d < %d——预告未并入主体"
+        hpb_fm("HPB-A1 RED: 明早标签槽 {148,154,200,181} 墨 %d < %d——预告未并入主体"
                "第三行（明早烘焙标签缺失, R2 版式未落地）", ink,
                HPB_INK_MIN_MINGZAO));
     ink = hpb_count_ink(hpb_rect_preview_neg);
@@ -761,7 +762,7 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                "主体第三行（旧独立钉区版式在世, R2 退役面）", ink));
 
     /* tooth 5 (PH-A1, R2, 判别齿): 空日程——「接下来」烘焙大字标签为固定卡题仍在场
-     * （LABEL 带墨 >= 30）+ 日程行流带 {152,62,392,134}（ROW1..ROW3 域）严格零墨
+     * （LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,140}（ROW1..ROW3 域）严格零墨
      * （行流门控——无项则无行）。旧口径「主体区整区零墨」随固定卡题语义退役（跨包
      * 冲击登记: 线框口径下标签空日程仍画）; 旧版式大时间越界判别语义由 ROW1 落带
      * 与辅助条时间齿（TEST 3 tooth 1）分头承载。 */
@@ -778,7 +779,7 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
     }
     ink = hpb_count_ink(hpb_rect_label);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_LABEL,
-        hpb_fm("HPB-A1 RED: 空日程标签带 {103,29,250,92} 墨 %d < %d——「接下来」固定"
+        hpb_fm("HPB-A1 RED: 空日程标签带 {103,35,250,98} 墨 %d < %d——「接下来」固定"
                "卡题未在场（R2 烘焙标签版式未落地）", ink, HPB_INK_MIN_LABEL));
     ink = hpb_count_ink(hpb_rect_rows);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
@@ -1268,7 +1269,7 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *               在场义务保留）。
  *               ③ tooth 5 空日程主体区零墨 -> 固定卡题口径: 「接下来」烘焙大字
  *               标签为固定卡题, 空日程仍在场（LABEL {136,48,266,92} 墨 >= 30）+
- *               日程行流带 {152,62,392,134}（ROW1..ROW3 域）严格零墨（行流门控）。
+ *               日程行流带 {152,68,392,140}（ROW1..ROW3 域）严格零墨（行流门控）。
  *               旧「整区零墨」与固定卡题语义直接冲突（跨包冲击登记第 3 条）。
  *               ④ 新增 HPB_INK_MIN_LABEL=30 / HPB_INK_MIN_MINGZAO=12（与 PCN
  *               同名阈值同源同值）; 静态矩形表同步重钉（sticker/nextlist/preview
