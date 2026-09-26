@@ -656,9 +656,10 @@ int kidpal_schedule_grid_parse(const char *data_json,
 #define KSG_FB_H       300
 #define KSG_ROW_PITCH  16 /* 格内课程名行 pitch >= KSG_FONT_MIN_PX(14) + 2px 余量 */
 
-/* 表头带 y[0..29]; 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..251]
- * （冻结验收文件头版式区钉, 勿偏移）; y>=252 键帽条带零墨。 */
-static const int ksg_slot_ys[3][2] = { { 30, 103 }, { 104, 177 }, { 178, 251 } };
+/* 表头带 y[0..29]; 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..254]
+ * （冻结验收文件头版式区钉, 勿偏移; slot2 下缘 2026-09-26 真机对齐轮 251→254 随
+ * 网格底线重钉）; y>=255 网格外带零墨。 */
+static const int ksg_slot_ys[3][2] = { { 30, 103 }, { 104, 177 }, { 178, 254 } };
 
 /* CJK 文本字体：host = LVGL 内置 Source Han Sans SC 14 子集（CONFIG_LV_FONT_
  * SOURCE_HAN_SANS_SC_14_CJK, host_app/sdkconfig.defaults）; 设备 = 全量 14px 普惠体

@@ -1615,14 +1615,16 @@ TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (M
         "plan.md 改动面 1 同刀钉死; 注释剥离后计数, 注释无法满足）");
     free(region);
 
-    /* ---- A2: hint_label 起点第二参 < 252（避开 bottom_bar_ 带 y252-300）------- */
+    /* ---- A2: hint_label 起点第二参 < 252（避开 bottom_bar_ 带；旧带 y252-300，
+     * 2026-09-26 起底条高 38 -> 带区 y262-300——本齿口径保持保守下界 252 不收紧,
+     * 实测取值 244 两口径皆过）------- */
     n = cwx_ints_after(code, "lv_obj_set_pos(g_page.hint_label,", a, 8);
     TEST_ASSERT_TRUE_MESSAGE(n >= 2,
         cwx_fm("MCD-A2 RED(infra): char_page.cc 未取到 lv_obj_set_pos(g_page.hint_label, "
                "X, Y) 两个整型实参（取到 %d 个）——提示条几何锚漂移或非字面形态", n));
     TEST_ASSERT_TRUE_MESSAGE(a[1] < 252,
         cwx_fm("MCD-A2 RED: hint_label 起点 y=%ld >= 252——底部提示条仍落 bottom_bar_ "
-               "键帽条带（LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压（human 裁: 提示条"
+               "键帽条带（LV_ALIGN_BOTTOM_MID 高 38 -> y262-300, 旧注高 48）内被压（human 裁: 提示条"
                "一并修, 上移到避开该带, plan.md 改动面 2）", a[1]));
 
     /* ---- 扫描器自检: 字面整数取值器对已知在世形态能命中（负向齿机器防假绿）----- */

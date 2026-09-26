@@ -75,10 +75,12 @@
  *       （幂等可反复调用），画 7 列（周一..周日）× 3 行（上午/下午/晚上）整屏网格 +
  *       行首槽位标签列，页内无标题无提示行（v1.20 已删，操作提示归全局键帽条）：
  *       - 版式区钉（布局在位钉，非字体/颜色钉；400×300 减键帽条 chrome）：
- *           网格可用区 y[0..KSG_GRID_BOTTOM=251]；y>=252 = 键帽条带，网格**严格零墨**
+ *           网格可用区 y[0..KSG_GRID_BOTTOM=254]（2026-09-26 真机对齐轮 251→254：设计
+ *           canvas-p2 网格底线实测 y254、底条上缘 y262；旧值系贴旧底条顶 252 的适配位）；
+ *           y>=255 = 网格外带，网格**严格零墨**
  *           （键帽条三槽常驻不被网格遮挡, M3K2-A6）。
  *           表头带 y[0..29]；槽位行带 slot0 y[30..103] / slot1 y[104..177] /
- *           slot2 y[178..251]；标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
+ *           slot2 y[178..254]；标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
  *           (day,slot) 格 = day 列带 × slot 行带；格内多课**逐门竖排**（同格多条目
  *           自上而下堆叠），课程名行 pitch >= KSG_FONT_MIN_PX(14)（NFR-READ-1）；
  *           **不做格内滚动**，格内溢出走截断降级（spec S-F1.2 补充规则口径）。
@@ -237,7 +239,7 @@
 #define KSG_FLAG_STAR  0x2
 #define KSG_FLAGS_MAX  3
 #define KSG_COURSE_CAP 84 /* 7 天 × 3 格 × 每格 4 门（网格缓存定容冻结值） */
-#define KSG_GRID_BOTTOM 251
+#define KSG_GRID_BOTTOM 254
 #define KSG_FONT_MIN_PX 14
 
 typedef struct {
@@ -1276,7 +1278,8 @@ TEST_CASE("schedule grid: 网格版式真帧——格归属与零溢出 (M3K2-A1
             "bands — 网格格归属失真（WF-F1-02 版式区钉）");
     }
 
-    /* 键帽条带零墨：网格可用区下缘 y>=252 严格无墨（键帽条三槽常驻不被遮挡, A6） */
+    /* 网格外带零墨：网格可用区下缘 y>=255 严格无墨（旧口径 y>=252 系贴旧底条顶 252；
+     * 底条顶 2026-09-26 移到 262——本齿只钉网格自身不外溢, 底条带本身由其 chrome 齿钉） */
     dark = 0;
     for (int y = KSG_GRID_BOTTOM + 1; y < KSG_FB_H; y++) {
         for (int x = 0; x < KSG_FB_W; x++) {
@@ -1287,7 +1290,7 @@ TEST_CASE("schedule grid: 网格版式真帧——格归属与零溢出 (M3K2-A1
         }
     }
     TEST_ASSERT_TRUE_MESSAGE(dark == 0,
-        "KSG-A1/A6 render RED: grid frame paints ink below y=252 — 网格侵入了键帽条带 "
+        "KSG-A1/A6 render RED: grid frame paints ink below y=254 — 网格溢出可用区下缘 "
         "（键帽条三槽常驻不被网格遮挡）");
 
     /* 空网格 + 非法参数：不崩 */

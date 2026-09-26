@@ -998,12 +998,14 @@ void LcdDisplay::SetupUI() {
     lv_label_set_text(status_label_, Lang::Strings::INITIALIZING);
     lv_obj_align(status_label_, LV_ALIGN_CENTER, 0, 0);
 
-    /* Top layer: Bottom bar - fixed at bottom, device-round VQ-A7 r5 起高度钉死 48 (设计值,
-     * 弃 adaptive content 撑高——底部键帽条上沿 3px 实线必须锁在屏底 252, 见下方 r5 注)。
-     * min_height 48 既有保守设定一并保留 (双保险, 不触 r3-A1 上沿实线刀)。 */
+    /* Top layer: Bottom bar - fixed at bottom, 高度钉死 38（2026-09-26 真机对齐轮,
+     * canvas-p1/char-window/canvas-p2 设计实测底条上沿实线 y262-264 → bar 高
+     * 300-262=38; 旧值 48 使实线落 252 偏高, human 看屏指出「下实线位置不对」。
+     * 弃 adaptive content 撑高——底部键帽条上沿 3px 实线必须锁在屏底 262, 见下方注)。
+     * min_height 38 同值双保险。 */
     bottom_bar_ = lv_obj_create(screen);
     lv_obj_set_width(bottom_bar_, LV_HOR_RES);
-    lv_obj_set_style_min_height(bottom_bar_, 48, 0); // Set minimum height 48
+    lv_obj_set_style_min_height(bottom_bar_, 38, 0); // Set minimum height 38
     lv_obj_set_style_radius(bottom_bar_, 0, 0);
     lv_obj_set_style_bg_color(bottom_bar_, lvgl_theme->background_color(), 0);
     lv_obj_set_style_text_color(bottom_bar_, lvgl_theme->text_color(), 0);
@@ -1017,19 +1019,19 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_style_border_color(bottom_bar_, lvgl_theme->text_color(), 0);
     lv_obj_set_style_border_width(bottom_bar_, 3, 0);
     lv_obj_set_style_border_side(bottom_bar_, LV_BORDER_SIDE_TOP, 0);
-    /* device-round VQ-A7 r5 (中部实线定谳): 高度钉 48 设计值 (brief §2.3), 弃
-     * lv_obj_set_height(LV_SIZE_CONTENT) —— LV_SIZE_CONTENT + min_height 48 会被子件
+    /* 2026-09-26 对齐轮: 高度钉 38 设计值（V5 canvas 底条上沿实线 y262-264）, 弃
+     * lv_obj_set_height(LV_SIZE_CONTENT) —— LV_SIZE_CONTENT + min_height 会被子件
      * (chat_message_label_ 宽 368 LV_LABEL_LONG_WRAP 居中) 长文本撑高, 上沿随顶边抬到
      * 屏中部 (照片 y≈163 全宽实线根因; 取证 = 静态推演 + 照片 y163 吻合, 见交付报告)。
-     * 钉 48 后上沿 3px 实线固定落在屏底 252 (键槽上沿), 不再随内容漂移。内容溢出裁剪:
+     * 钉 38 后上沿 3px 实线固定落在屏底 262 (键槽上沿), 不再随内容漂移。内容溢出裁剪:
      * lv_obj_create 默认带 LV_OBJ_FLAG_SCROLLABLE (子件可滚出越界不被裁), 需 clear_flag
-     * 使超 48px 内容被底条边界裁剪, 保 keycap/页点 BOTTOM 对齐仍落底部。K3DIAG 打印供
+     * 使超 38px 内容被底条边界裁剪, 保 keycap/页点 BOTTOM 对齐仍落底部。K3DIAG 打印供
      * 主线程烧板复核 lv_obj_get_height。 */
     {
-        lv_obj_set_height(bottom_bar_, 48);                     /* 设计值钉死, 弃自适应撑高 */
+        lv_obj_set_height(bottom_bar_, 38);                     /* 设计值钉死, 弃自适应撑高 */
         lv_obj_clear_flag(bottom_bar_, LV_OBJ_FLAG_SCROLLABLE); /* 溢出裁剪: 超出即被底条截 */
     }
-    lv_obj_set_style_min_height(bottom_bar_, 48, 0); // 保守设定: 固定高 48 与 min 48 双保险
+    lv_obj_set_style_min_height(bottom_bar_, 38, 0); // 保守设定: 固定高 38 与 min 38 双保险
     lv_obj_align(bottom_bar_, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     /* chat_message_label_ placed in bottom_bar_ and vertically centered */
@@ -1123,8 +1125,9 @@ void LcdDisplay::SetupUI() {
      * (boot 期 layer 栈空 -> overlay_top=0, get_page=KP_PAGE_HOME) —— 首页基层即落字。 */
     kidpal_keybar_sync_locked();
 
-    /* device-round VQ-A7 r5 取证 (任务4 中部实线定谳): 烧板复核 —— 高度钉 48 后
-     * lv_obj_get_height(bottom_bar_) 应读 48, 上沿 3px 实线才落在屏底 252 (键槽上沿)。
+    /* 取证注记 (2026-09-26 对齐轮更新): 烧板复核 —— 高度钉 38 后
+     * lv_obj_get_height(bottom_bar_) 应读 38, 上沿 3px 实线才落在屏底 262 (键槽上沿,
+     * V5 canvas 实测位)。
      * 同时打印 chat_message_label_ 当前文本 (若仍内容撑高即此处余量观察), 供主线程核对。
      * 仅诊断打印, 不影响渲染, 不参与任何判定。 */
     ESP_LOGI("K3DIAG", "bottom_bar h=%d text='%s'",

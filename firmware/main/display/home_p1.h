@@ -47,6 +47,10 @@ typedef struct {
      * RTC 日期数据（渲染叠描边框兜底，不画假日期）。month 1..12、mday 1..31。 */
     int month;         /* 1..12 (0 = 未知) */
     int mday;          /* 1..31 (0 = 未知) */
+    /* 星期（2026-09-26 真机对齐轮，canvas-p1 "Tue 22 Sep"）：周一=0..周日=6（与
+     * kidpal_render_node_inject_weekday 同基），-1 = 未注入/越域（日期渲染退回
+     * "DD Mon"，不画假星期）。数据源 = 板级 RTC 星期（inject_weekday 缝, M3-K2 同源）。 */
+    int wday;          /* -1 = 未知; 0..6 = 周一..周日 */
     int env_valid;     /* 1 = 温湿度有效; 0 = 无数据 -> 温湿度区隐藏 */
     int temp_c;        /* -40..60 (env_valid=1 时有效) */
     int humidity_pct;  /* 0..100   (env_valid=1 时有效) */

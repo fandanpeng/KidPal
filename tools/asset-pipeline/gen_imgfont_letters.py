@@ -68,6 +68,14 @@ KAP1_MAGIC = 0x3150414B
 PCT_OUT = "imgfont_pct.bin"
 PCT_CHAR = "%"
 
+# '°' 度符号（2026-09-26 真机对齐轮，canvas-p1 温度 "23°C"）：与字母同母版 Baloo2-800、
+# 同 48x64 cell、同 baseline 锚（° 渲染在 cap 高度处自然落上半格）。固定名
+# imgfont_degree.bin（非字母、避开大小写分流命名；与 gen_art_spiffs.mjs 闭集白名单
+# 不相交，重跑互不覆盖，本脚本独立重跑幂等）。解码侧 art_assets.c kidpal_art_glyph
+# 按 (unsigned char)0xB0 分流取本文件。
+DEGREE_OUT = "imgfont_degree.bin"
+DEGREE_CHAR = "°"
+
 def render_kap1(ch):
     font = ImageFont.truetype(FONT_TTF, BASE_SIZE)
     img = Image.new("L", (CELL_W, CELL_H), 255)
@@ -107,6 +115,11 @@ def main():
     with open(os.path.join(OUT_DIR, PCT_OUT), "wb") as f:
         f.write(pct)
     written.append(PCT_OUT)
+    # '°' 度符号（2026-09-26 真机对齐轮：温度 °C 后缀）；同 cell 同基线锚。
+    deg = render_kap1(DEGREE_CHAR)
+    with open(os.path.join(OUT_DIR, DEGREE_OUT), "wb") as f:
+        f.write(deg)
+    written.append(DEGREE_OUT)
     print(f"WROTE {len(written)} KAP1 letter/pct assets -> {OUT_DIR}")
     for n in written:
         print("  ", n)

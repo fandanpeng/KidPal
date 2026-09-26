@@ -726,7 +726,8 @@ void kidpal_char_page_show(const char *data_json)
      * 共 N 笔」/ 演示写完定格「写完啦·共 N 笔」——S-F3.3 AC2, 本窗零重抄文案格式)。 */
     g_page.hint_label = lv_label_create(g_page.panel);
     /* 提示条让位 (MCD-A2): 底部提示条原 (0,280) 落 bottom_bar_ 键帽条带
-     * （LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压——上移到 y244 避开该带。 */
+     * （LV_ALIGN_BOTTOM_MID；2026-09-26 真机对齐轮起高 38 -> 带区 y262-300，旧注
+     * 载高 48/y252-300）内被压——上移到 y244 避开该带。 */
     lv_obj_set_pos(g_page.hint_label, 0, 244);
     lv_label_set_text(g_page.hint_label, g_page.card.progress);
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);

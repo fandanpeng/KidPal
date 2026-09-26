@@ -62,27 +62,28 @@
  *   [S3] 布局钉区域矩形（含端点；布局在位钉，非字体/颜色钉——纯美学留 design
  *        review；与 p1_home_battery.acceptance.c HPB 区钉 / home_p1.c r4 裁定同纪律。
  *        **本轮重钉**：预告行从独立钉区并入主体流式第三行，旧独立带退役为负断言）:
- *         PCN_RECT_CARD        {136, 48, 392, 242}  日程卡区（版式承载硬边界）
- *         PCN_RECT_LABEL       {136, 48, 266,  92}  「接下来」烘焙大字标签带（左锚定）
- *         PCN_RECT_ROW1        {136, 96, 392, 122}  最近项行（时间 + 课程名）
- *         PCN_RECT_ROW2        {136,124, 392, 150}  后续事项行（逐项 时间 + 名；
+ *         （2026-09-26 真机对齐轮重钉, canvas-p1 实测——云 @103,29 / 帽标 @151,41 /
+ *           内容列 x152 / ROW1 y62 / 帽标独立行 + 项行在下）
+ *         PCN_RECT_CARD        {103, 36, 392, 242}  日程卡区（版式承载硬边界；y0=36 云墨顶,不含辅助条电量墨行）
+ *         PCN_RECT_LABEL       {103, 29, 250,  92}  「接下来」标签带（云朵+烘焙帽标）
+ *         PCN_RECT_ROW1        {152, 62, 392,  88}  最近项行（时间 + 课程名）
+ *         PCN_RECT_ROW2        {152, 90, 392, 116}  后续事项行（逐项 时间 + 名；
  *                                                   标准夹具 = 第 2 项；换行续行亦落
  *                                                   ROW2 及以下流式带）
- *         PCN_RECT_ROW3        {136,152, 392, 178}  末行预告（明早标签 + HH:MM + 名；
- *                                                   标准夹具 2 项 + 预告 = 第三行）
- *         PCN_RECT_FLOW        {136,180, 392, 242}  换行/溢出承载带（仅 containment）
- *         PCN_RECT_MINGZAO     {136,152, 180, 178}  明早标签槽（行 3 左段；时间起笔
- *                                                   x>=184 在槽右——TEST 8 tooth 4）
+ *         PCN_RECT_ROW3        {152,178, 392, 206}  末行预告项行（HH:MM + 名；
+ *                                                   标准夹具 2 项 + 预告, 帽标独立行在下）
+ *         PCN_RECT_FLOW        {152,207, 392, 242}  换行/溢出承载带（仅 containment）
+ *         PCN_RECT_MINGZAO     {148,148, 200, 175}  明早标签槽（帽标独立行, ROW3 上一行）
  *       行流语义（冻结）：文字行自 ROW1 起按行流式下排（行距由 builder 按带内落墨），
  *       预告恒为**末行**（跟随事项数浮动；标准夹具下 = 第三行）；长行换行续行落下一
  *       行带；一切卡内墨（标签 + 文字行）不得越 PCN_RECT_CARD（右界 x=392 / 底界
  *       y=242 / 左界 x=136）。
  *       负断言区（版式退役面）:
- *         PCN_RECT_STICKER_NEG {268, 50, 390,  92}  旧倒计时贴纸/大时间右上区——退役，
+ *         PCN_RECT_STICKER_NEG {236, 36, 390,  60}  旧倒计时贴纸/大时间右上区——退役，
  *                                                   任何夹具严格零墨（本轮「贴纸不做 +
  *                                                   大时间退役 + 预告不入右上独立区」
  *                                                   三重负断言承载）；
- *         PCN_RECT_PREVIEW_NEG {136,220, 392, 242}  旧预告独立钉区——标准夹具（2 项 +
+ *         PCN_RECT_PREVIEW_NEG {152,220, 392, 242}  旧预告独立钉区——标准夹具（2 项 +
  *                                                   预告、短名无换行）下严格零墨
  *                                                   （预告已上行第三行；多行溢出夹具
  *                                                   下本带属 FLOW 承载域，不适用）。
@@ -300,23 +301,28 @@
 /* 换行证据最小墨（ROW1 以下带内，31×'W' 续行下界）。 */
 #define PCN_INK_MIN_WRAP 20
 
-/* 区域矩形 {x1, y1, x2, y2} 含端点（seam [S3] 布局在位钉）。 */
-static const int pcn_rect_card[4]        = {136,  48, 392, 242};
-static const int pcn_rect_label[4]       = {136,  48, 266,  92};
-static const int pcn_rect_row1[4]        = {136,  96, 392, 122};
-static const int pcn_rect_row2[4]        = {136, 124, 392, 150};
-static const int pcn_rect_row3[4]        = {136, 152, 392, 178};
-static const int pcn_rect_flow[4]        = {136, 180, 392, 242};
-static const int pcn_rect_mingzao[4]     = {136, 152, 180, 178};
-static const int pcn_rect_row3_time[4]   = {184, 152, 392, 178};
+/* 区域矩形 {x1, y1, x2, y2} 含端点（seam [S3] 布局在位钉）。
+ * 2026-09-26 真机对齐轮重钉（canvas-p1 实测，授权 = human 看屏比对拍图逐项裁定）：
+ * 卡区整体上移右移（CARD y0=36 = 云墨顶, 不含辅助条电量墨 x393-396/y<=31 行, 右界带才纯净）——云 ic_cloud_40_t2 46px @ (103,29)、帽标 @ (151,41)、内容列
+ * x152、ROW1 y62；预告重构 = 帽标独立行（MINGZAO @148,148）+ 项行在下（ROW3 178）；
+ * 左缝带重锚 {130,80,150,242}（云墨 x107-147 已合法越过旧缝 x[129..135]——新缝 =
+ * 小伴兜底描边右缘 126 与帽标/文字列 151 之间，y 从 80 起避开云墨带）。 */
+static const int pcn_rect_card[4]        = {103,  36, 392, 242};
+static const int pcn_rect_label[4]       = {103,  29, 250,  92};
+static const int pcn_rect_row1[4]        = {152,  62, 392,  88};
+static const int pcn_rect_row2[4]        = {152,  90, 392, 116};
+static const int pcn_rect_row3[4]        = {152, 178, 392, 206};
+static const int pcn_rect_flow[4]        = {152, 207, 392, 242};
+static const int pcn_rect_mingzao[4]     = {148, 148, 200, 175};
+static const int pcn_rect_row3_time[4]   = {152, 178, 392, 206};
 /* 负断言区（版式退役面，[S3]）。 */
-static const int pcn_rect_sticker_neg[4] = {268,  50, 390,  92};
-static const int pcn_rect_preview_neg[4] = {136, 220, 392, 242};
+static const int pcn_rect_sticker_neg[4] = {236,  36, 390,  60};
+static const int pcn_rect_preview_neg[4] = {152, 220, 392, 242};
 /* containment 证据带（[S3] 卡区硬边界的界外带）。 */
-static const int pcn_rect_left_gap[4]    = {129,  48, 135, 242};
+static const int pcn_rect_left_gap[4]    = {130,  80, 150, 242};
 static const int pcn_rect_bottom_band[4] = {136, 243, 392, 251};
-static const int pcn_rect_below_label[4] = {136,  96, 392, 242};
-static const int pcn_rect_below_row1[4]  = {136, 124, 392, 242};
+static const int pcn_rect_below_label[4] = {152,  62, 392, 242};
+static const int pcn_rect_below_row1[4]  = {152,  90, 392, 242};
 
 /* 右界越界检查带：卡区右界之外 x[393..399] x 各行带（帧右缘 7px，任何文字行墨越右界
  * 都会落进本带——P1CJK-A2/A10 的边界证据带）。 */
@@ -798,6 +804,9 @@ static void pcn_set_fixture(void)
     st.minute = 24;
     st.month = 9;
     st.mday = 22;
+    /* 星期显式注入（2026-09-26 对齐轮）：memset 后 0 会静默等于「周一」——本夹具
+     * 与设计 canvas-p1 "Tue 22 Sep" 同款钉周二（1），不靠零值兜底拿假星期。 */
+    st.wday = 1;
     st.env_valid = 1;
     st.temp_c = 22;
     st.humidity_pct = 45;
@@ -948,7 +957,7 @@ TEST_CASE("P1CJK rows: 行内容墨落行带 diff 定位 (P1CJK-A1/A8)",
         "PCN RED(infra): frame not rendered — 探针缝断裂");
 
     /* tooth 1 (A1-row1 name): 仅换 item0 name（钢琴课 -> 游泳课, 9 字节等长）——
-     * diff 必须非零且全部落在 ROW1 {136,96,392,122}。 */
+     * diff 必须非零且全部落在 ROW1 {152,62,392,88}。 */
     pcn_inject_full("游泳课", "英语培训", "春游");
     pcn_render_ok();
     TEST_ASSERT_TRUE_MESSAGE(pcn_snap(pcn_f_b) == 0,
@@ -958,7 +967,7 @@ TEST_CASE("P1CJK rows: 行内容墨落行带 diff 定位 (P1CJK-A1/A8)",
         "PCN-A1 RED: 换 name 帧差为零——日程 name 未被渲染（渲染缝断裂, 非本包"
         "设计态红）");
     TEST_ASSERT_TRUE_MESSAGE(in_band == total,
-        pcn_fm("PCN-A1 RED: 最近项行 name 墨差 %d/%d 落在 ROW1 {136,96,392,122} "
+        pcn_fm("PCN-A1 RED: 最近项行 name 墨差 %d/%d 落在 ROW1 {152,62,392,88} "
                "带外——新版式行流落位缺失（[S3] 重钉未实现, 追加轮设计态红）",
                total - in_band, total));
 
@@ -978,7 +987,7 @@ TEST_CASE("P1CJK rows: 行内容墨落行带 diff 定位 (P1CJK-A1/A8)",
                total));
 
     /* tooth 3 (A1-row2 name): 仅换 item1 name（英语培训 -> 美术书法, 12 字节等长）
-     * —— diff 全部落在 ROW2 {136,124,392,150}。 */
+     * —— diff 全部落在 ROW2 {152,90,392,116}。 */
     pcn_inject_full("钢琴课", "美术书法", "春游");
     pcn_render_ok();
     TEST_ASSERT_TRUE_MESSAGE(pcn_snap(pcn_f_b) == 0,
@@ -1004,7 +1013,7 @@ TEST_CASE("P1CJK rows: 行内容墨落行带 diff 定位 (P1CJK-A1/A8)",
                "红）", total - in_band, total));
 
     /* tooth 5 (A1-row3 name): 仅换 preview name（春游 -> 秋游, 6 字节等长）——
-     * diff 全部落在 ROW3 {136,152,392,178}（预告并入主体第三行）。 */
+     * diff 全部落在 ROW3 {152,178,392,206}（预告并入主体第三行）。 */
     pcn_inject_full("钢琴课", "英语培训", "秋游");
     pcn_render_ok();
     TEST_ASSERT_TRUE_MESSAGE(pcn_snap(pcn_f_b) == 0,
@@ -1078,7 +1087,7 @@ TEST_CASE("P1CJK rows: 超宽名承载不越卡区 (P1CJK-A2)",
         "或 fixture 字形在 host 子集缺场——先核 host Source Han 子集 ASCII/CJK "
         "覆盖再判真红）");
     TEST_ASSERT_TRUE_MESSAGE(in_band == total,
-        pcn_fm("PCN-A2 RED: 超长 name 墨差 %d/%d 落在卡区 {136,48,392,242} 之外"
+        pcn_fm("PCN-A2 RED: 超长 name 墨差 %d/%d 落在卡区 {103,29,392,242} 之外"
                "——name 画到卡区以外（越区非承载）", total - in_band, total));
     pcn_diff_stats(pcn_f_a, pcn_f_b, pcn_rect_below_label, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(in_band == total,
@@ -1425,7 +1434,7 @@ TEST_CASE("P1CJK bake: 「接下来」烘焙大字标签墨在场 (P1CJK-A7)",
 
 /* -------------------------------------------------------------------------- *
  * TEST 8 — P1CJK-A9：末行预告构成 + 版式退役负断言（[S3]/[S5] 新增）
- *   tooth 1: 明早标签槽 {136,152,180,178} 墨 >= 阈值（「明早」烘焙标签在场——
+ *   tooth 1: 明早标签槽 {148,148,200,175} 墨 >= 阈值（「明早」烘焙标签在场——
  *            文案权威 = spec WF-F1-01 v1.21「明早」非「明天」；载荷侧 HH:MM 由
  *            K2 齿 + E2 canary 守, 槽内墨 = 设备渲染标签半）;
  *   tooth 2: 旧贴纸/大时间右上区 {268,50,390,92} 任何夹具严格零墨（倒计时贴纸退役 +
@@ -1455,21 +1464,21 @@ TEST_CASE("P1CJK preview: 末行预告构成+版式退役负断言 (P1CJK-A9)",
     /* tooth 1 (A9 明早标签槽): {136,152,180,178} 墨 >= 阈值。 */
     ink = pcn_count_ink(pcn_rect_mingzao);
     TEST_ASSERT_TRUE_MESSAGE(ink >= PCN_INK_MIN_MINGZAO,
-        pcn_fm("PCN-A9 RED: 明早标签槽 {136,152,180,178} 墨 %d < %d——「明早」烘焙"
+        pcn_fm("PCN-A9 RED: 明早标签槽 {148,148,200,175} 墨 %d < %d——「明早」烘焙"
                "标签未渲染或未落末行左槽（[S5] 版式未实现, 追加轮设计态红）",
                ink, PCN_INK_MIN_MINGZAO));
 
     /* tooth 2 (A9 负断言): 旧贴纸/大时间右上区任何夹具严格零墨。 */
     ink = pcn_count_ink(pcn_rect_sticker_neg);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        pcn_fm("PCN-A9 RED: 右上独立区 {268,50,390,92} 墨 %d != 0——倒计时贴纸/大 "
+        pcn_fm("PCN-A9 RED: 右上独立区 {236,36,390,60} 墨 %d != 0——倒计时贴纸/大 "
                "imgfont 时间未退役（本轮挂账项在世渲染）, 或预告被放进右上独立区",
                ink));
 
     /* tooth 3 (A9 负断言): 旧预告独立带标准夹具下严格零墨。 */
     ink = pcn_count_ink(pcn_rect_preview_neg);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        pcn_fm("PCN-A9 RED: 旧预告独立带 {136,220,392,242} 墨 %d != 0——预告未上行"
+        pcn_fm("PCN-A9 RED: 旧预告独立带 {152,220,392,242} 墨 %d != 0——预告未上行"
                "主体第三行（旧独立钉区版式在世, 钉版式出入未消除）", ink));
 
     /* tooth 4 (A9 预告时间右置): 仅换 preview time（09:00 -> 10:00）——diff 全部
@@ -1482,7 +1491,7 @@ TEST_CASE("P1CJK preview: 末行预告构成+版式退役负断言 (P1CJK-A9)",
     TEST_ASSERT_TRUE_MESSAGE(total > 0,
         "PCN-A9 RED: 换 preview time 帧差为零——预告行时间值未承载");
     TEST_ASSERT_TRUE_MESSAGE(in_band == total,
-        pcn_fm("PCN-A9 RED: 预告 time 墨差 %d/%d 落在标签槽右侧带 {184,152,392,178} "
+        pcn_fm("PCN-A9 RED: 预告 time 墨差 %d/%d 落在预告项行带 {152,178,392,206} "
                "之外——时间侵及明早槽或未落第三行（追加轮设计态红）",
                total - in_band, total));
 }
@@ -1495,7 +1504,7 @@ TEST_CASE("P1CJK preview: 末行预告构成+版式退役负断言 (P1CJK-A9)",
  *   tooth 2: 单项 31×'W' 极宽名——containment 同上（基线即绿）;
  *   tooth 3: 换行证据 gate——极宽名 vs 短名 diff 全部落在 y>=96 域且 ROW1 内有差
  *            （首行画进 ROW1 = 行流落位; 追加轮设计态红: 主轮版式 name 在 y143）;
- *   tooth 4: 换行证据——极宽名帧 ROW1 以下带 {136,124,392,242} 墨 >= 阈值（续行
+ *   tooth 4: 换行证据——极宽名帧 ROW1 以下带 {152,90,392,242} 墨 >= 阈值（续行
  *            落带 = 「正常换行」行为; 几何可达性论证见头注 A10 强度申报）。
  * ------------------------------------------------------------------------ */
 /* coverage: P1CJK-A10 -- 版式承载不越卡区（8 项满载压力 containment）+ 换行行为（31x'W' 极宽名续行落带） */
@@ -1526,7 +1535,7 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
                "卡区底界", ink));
     ink = pcn_count_ink(pcn_rect_left_gap);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        pcn_fm("PCN-A10 RED: 满载帧卡区左缝带 x[129..135] 墨 %d != 0——卡内容侵小伴"
+        pcn_fm("PCN-A10 RED: 满载帧卡区左缝带 x[130..150] 墨 %d != 0——卡内容侵小伴"
                "演出区隔离缝", ink));
 
     /* tooth 2 (A10 极宽名 containment): 单项 31×'W' + 无预告。 */
@@ -1564,7 +1573,7 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
             "（追加轮设计态红: 主轮版式 name 落旧位 y143）");
     }
 
-    /* tooth 4 (A10 换行证据): 极宽名帧 ROW1 以下带 {136,124,392,242} 墨 >= 阈值
+    /* tooth 4 (A10 换行证据): 极宽名帧 ROW1 以下带 {152,90,392,242} 墨 >= 阈值
      * ——31×'W' 续行落带 = 「正常换行」行为（几何可达性论证见头注 A10）。
      * 量极宽名帧快照 pcn_f_b（修订 2026-09-22: 原笔误读 live 帧——tooth 3 已把
      * live 帧重渲为短名单项帧, 短名不换行 -> below_row1 恒 0）。 */
@@ -2127,4 +2136,18 @@ TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A
  *               __has_include("lvgl.h") 门控: host runner 通道在世, 通道③ stub
  *               通道编译出（lvgl 头不可达）——A11 实编通道 = host runner 构建,
  *               显式登记不静默。
+ *               ── 2026-09-26 真机对齐轮追记（P1 拍图↔canvas-p1 逐项对齐,
+ *               human 看屏裁定授权, ui-v5-align workstream 直改批模式）──
+ *               [S3] 钉区整批重钉（canvas-p1 像素实测 2026-09-26）: CARD
+ *               {103,36,392,242}（y0=36 云墨顶, 不含辅助条电量墨 x393-396/y<=31
+ *               行——右界带纯净的前提, 首钉 29 实跑即红两齿后纠正）; LABEL
+ *               {103,29,250,92}; ROW1 {152,62,392,88} / ROW2 {152,90,392,116} /
+ *               ROW3 {152,178,392,206}（预告重构 = 帽标独立行 MINGZAO
+ *               {148,148,200,175} + 项行在下, 时间起笔不再有 x>=184 让槽约束
+ *               ——ROW3_TIME 随 ROW3）; FLOW {152,207,392,242}; STICKER_NEG
+ *               {236,36,390,60}; PREVIEW_NEG {152,220,392,242}; 左缝带重锚
+ *               {130,80,150,242}（云墨 x107-147 合法越过旧缝 x[129..135], 新缝 =
+ *               小伴兜底描边右缘与帽标/文字列之间, y 自 80 起避开云墨带）;
+ *               BELOW_LABEL/BELOW_ROW1 随行流带重钉。实跑 = 103 Tests /
+ *               0 Failures / OK（2026-09-26 主线程实跑锚）。
  * --------------------------------------------------------------------------- */

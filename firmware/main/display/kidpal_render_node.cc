@@ -366,6 +366,7 @@ static void rn_render_home_locked(void)
     st.minute       = s_rtc_minute;
     st.month        = s_rtc_month;
     st.mday         = s_rtc_mday;
+    st.wday         = s_rtc_wday; /* P1 日期星期（2026-09-26 对齐轮, M3-K2 同源缝） */
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;
@@ -729,6 +730,7 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
             st.minute       = s_rtc_minute;
             st.month        = s_rtc_month;
             st.mday         = s_rtc_mday;
+            st.wday         = s_rtc_wday; /* P1 日期星期（2026-09-26 对齐轮） */
             st.env_valid    = s_env_valid;
             st.temp_c       = s_temp_c;
             st.humidity_pct = s_humidity_pct;
@@ -938,6 +940,7 @@ void kidpal_render_node_tick(void)
     st.minute       = s_rtc_minute;
     st.month        = s_rtc_month;
     st.mday         = s_rtc_mday;
+    st.wday         = s_rtc_wday; /* P1 日期星期（2026-09-26 对齐轮） */
     st.env_valid    = s_env_valid;
     st.temp_c       = s_temp_c;
     st.humidity_pct = s_humidity_pct;
