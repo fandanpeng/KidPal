@@ -38,6 +38,7 @@ extern const lv_image_dsc_t ic_bell_24; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t ic_bell_22; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t ic_wave_40; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t ic_star_20; /* LV_COLOR_FORMAT_RGB565 */
+extern const lv_image_dsc_t ic_sparkle_22; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t rec_wave; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t p1_chip_jiexialai; /* LV_COLOR_FORMAT_RGB565 */
 extern const lv_image_dsc_t p1_chip_mingzao; /* LV_COLOR_FORMAT_RGB565 */

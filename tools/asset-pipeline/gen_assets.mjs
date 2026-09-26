@@ -294,6 +294,8 @@ jobs.push({ name: 'ic_bell_24', svg: svgUse('ic-bell'), w: 24, h: 24, rotate: 0,
 jobs.push({ name: 'ic_bell_22', svg: svgUse('ic-bell'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_wave_40', svg: svgUse('ic-wave'), w: 40, h: 12, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_star_20', svg: svgUse('ic-star'), w: 20, h: 20, rotate: 0, kind: 'svg' });
+// 四角星（2026-09-26 human 裁定）：P1 涂鸦星换回 v2–v4 四角星；母版符号 ic-sparkle，与五角星 ic-star 族并存
+jobs.push({ name: 'ic_sparkle_22', svg: svgUse('ic-sparkle'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 // 录音态声波线（路径自 V5 设计稿固化，206×34 非等比缩放同浏览器渲染口径）
 jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 14"><path d="M2 7 L8 2 L13 12 L18 4 L24 12 L29 3 L35 11 L41 5 L46 9" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, w: 206, h: 34, rotate: 0, kind: 'svg' });
 // P1 反白胶囊标签（V5 口径 12.5px：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）
