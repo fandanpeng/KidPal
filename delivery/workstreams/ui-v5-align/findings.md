@@ -228,3 +228,40 @@ spec v1.48 AC4 已定义（BOOT 长按弹/KEY 确认/BOOT 取消/10s 静默取�
   追加轮；**粒度判据三条**（human 三轮复裁钉死）= ① 包间文件所有权不相交 ② 门禁依赖包内同质
   （gated 项走包内轮次）③ 单包验证预算一 Pod 可消化；视觉对齐批不套 dev-loop 功能切片细粒度
   逻辑。载体 = 本节 + CRQ 条目 + 主线程长期记忆（task_plan 已删，此处为仓内唯一承载）。
+
+## 8. 批后簿记（2026-09-26，五阶段直改批收尾）
+
+> human 指定不走 taskpackage 的主线程直改批（跳过 dev-loop 一次性例外，逐阶段
+> architect 评审 + commit），2026-09-25/26 执行：阶段1 全局页点空心环+P2 表格、
+> 阶段2 P1 首页、阶段3 语音三态、阶段4 提醒、阶段5 查字窗。host runner 每阶段
+> 103 Tests 0 Failures，设备树全量构建每阶段通过。行号引用为批前 b35d3ed 实况
+> （各阶段 commit：0ded990 / 70ade0b / 9f4c82a / b50cf5a）。
+
+### 8.1 资产消费回写（§3 表更新）
+
+- **转已消费**（本批接线）：bub_listening/thinking/speaking（语音三态全气泡）、
+  arc_listen、qmark_trio、bell_trio（三态+提醒弧位 56×56 专属件）、doodle_cloud_52
+  （P1 卡顶 + 语音态右上）、rec_wave（P1 左下 + 语音态左下）、
+  p1_chip_jiexialai/mingzao（P1 黑帽标，p1_label_* 转零消费退役）、ic_wifi_14
+  （P1 辅助条打头）、ic_star_22（查字窗右栏★）。
+- **仍零消费**：bub_recording/bub_rec_guide、pose_record_96、voice_chip_p3、
+  stamp_seal_r8、frm_flat_240_96/frm_sm_160_120、ic_star_18/20/38、
+  imgfont_letter_*/colon（随 P3 挂起区 / 字体追加轮 / 删除确认功能债）。
+- **转零消费（退役）**：p1_label_jiexialai/mingzao.bin（白底黑字标签，被 p1_chip_*
+  替换）——收尾时确认无其他消费面后可入退役清单。
+
+### 8.2 遗留登记（后续轮裁量面，本批不扩 scope）
+
+1. **bub_remind「记得哦」烘焙资产**：程序化气泡无尾巴无 3px 描边，资产化归后续
+   资产轮（「跟着写」黑帽标同列候选）。
+2. **提醒多事项聚合**：母版右区两条提醒同框；设备侧 RM-A4 冻结队列逐条弹，聚合
+   需改队列弹出语义（功能裁量，architect 评审注记 3）。
+3. **hp1_state_t 增星期/联网字段**：日期「Tue 22 Sep」星期与 WiFi 条件显隐均需
+   契约面增字段（findings §2 P1 行 2/行 1 半），本批契约面不碰。
+4. **明天帽标字样**：p1_chip_* 闭集只有「明早」，「明天」字样资产缺（§2 P1 行 6
+   半、[冲突 C5] 遗留）。
+5. **字体追加轮**：全局 font_puhui_14_1 → 圆体手写感 + 13px 同字号（§1.1 [冲突
+   C4]）+ 查字窗拼音带调大字（imgfont_letter_* 无带调元音字形缺口）。
+6. **像素级观感清单（真机轮）**：页点环 8/12 vs 母版 9/11、波浪密度/灰两档、
+   chip 胶囊化 (0,4) 骑框 -4° 旋转、mic 回退态相对位、网格线两端缩进、云朵 52
+   vs 母版 40px 等——architect 各阶段评审注记汇总，真机看板时一并裁量。
