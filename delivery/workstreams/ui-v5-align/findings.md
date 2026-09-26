@@ -360,3 +360,10 @@ merge-driver 未接管（板面该包已是 merged 态，本轮属 workstream �
 - **验证**：host runner 103 Tests / 0 Failures（两批各跑一次）；设备树构建通过并已烧录
   真机核验两次（boot 0 RE-ENUM、render_rc=0）。验收钉区常量与文档坐标随版式同步
   （辅助条底缘 29、卡区整体 +6）；harness 的 `wday` 零值陷阱一并修掉。
+
+**合并簿记（第二/三批次，2026-09-26）**：commit `efa8513` 经 `46af830`（簿记）ff 合入
+本地 main（`fcb77d0 → 46af830`，单链 ff、`git diff --check` 无残留）。前置升级闸仍拦
+同两因（taskpackage 级 riskTier=high / supervisor ESCALATE，9-15 旧记录）→ human 会话内
+再次拍板覆盖（原话「ok了，commit merge吧」），人批事件
+`99851e91-4404-44f0-8ac3-03dd67acfff7`（approve-escalated-merge）落 pod-events.jsonl。
+**remote push 仍留 human 走 PR**。
