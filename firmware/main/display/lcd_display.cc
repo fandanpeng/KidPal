@@ -1554,11 +1554,15 @@ static void kidpal_voice_apply_look(int scene)
 
 static void kidpal_voice_wave_anim_cb(void* var, int32_t v)
 {
-    (void)var;
-    /* V5 对齐 (ui-v5-align §2 语音三态行 3, 2026-09-26): 播报态标识件随版式通则进
-     * 56x56 弧位盒贴猫 (旧 18x18 标头后小条带退役), 5 根粗条 (设计: 均势粗条 5 根)。
-     * 高 8..30, 相位错开呈三角起伏; 每条约整帧 ~900ms 一次完整升降 (r4 定值
-     * >= 800ms/条 不变)。a = 三角波 0..127..0 映射高 8..30。 */
+    /* 上下颠倒修正 (2026-09-26 真机看屏, human 报「说话的动态图倒过来了」):
+     * 母版 .eq 是 align-items:flex-end 的**底对齐**条组——五条共底缘、只向上长;
+     * 旧实现把条顶钉死在 y12 只改高, 等于条自顶向下垂, 与设计上下相反。
+     * 现改为底缘恒定 + 高变时同步 set_y。幅度口径同母版 @keyframes eqBar
+     * (scaleY .35..1) 逐条按**自身基准高**缩放, 故 = 各条基准高的 35%..100%。
+     * 相位错开与 900ms 周期不变 (r4 定值)。 */
+    static const int32_t kBaseH[5] = {12, 20, 14, 24, 10}; /* 母版 .eq 五条 inline 高 */
+    const int32_t kBaselineY = 40; /* 盒内底缘 = 末行 39 (88+39 = 锚图实测 y127) */
+
     for (int i = 0; i < 5; i++) {
         int32_t a, h;
         if (g_kidpal_wave_bar[i] == NULL) {
@@ -1568,8 +1572,12 @@ static void kidpal_voice_wave_anim_cb(void* var, int32_t v)
         if (a > 127) {
             a = 256 - a;       /* 三角折返 => 每过多 ~1 帧 v 走完一次上下 */
         }
-        h = 8 + (a * 22) / 127;
+        h = (kBaseH[i] * (35 + (a * 65) / 127)) / 100;
+        if (h < 1) {
+            h = 1;
+        }
         lv_obj_set_height(g_kidpal_wave_bar[i], (lv_coord_t)h);
+        lv_obj_set_y(g_kidpal_wave_bar[i], (lv_coord_t)(kBaselineY - h));
     }
 }
 
@@ -1652,7 +1660,9 @@ static void kidpal_voice_build_emblem_locked(void)
     /* 声波条 (C3, 播报态, LVGL 原生矩形 + lv_anim; V5 对齐: 56x56 弧位盒 @ (132,88)
      * 贴猫身右上, 与 arc/qmark 同槽同位, 5 根粗条——旧 18x18 标头后小条带退役, 载体
      * 形态不变 = LVGL 原生矩形 (TEST 8 tooth 5 lv_anim needle 在 apply_look 区域保持)。
-     * 观感归真机轮。 */
+     * 几何 = 母版 .eq 锚图 state-speaking.png 逐像素实测 (2026-09-26): 条宽 6、节距 11
+     * (x136/147/158/169/180)、五条共底缘 y127、圆角 3 (胶囊端)。底对齐 = 向上长,
+     * 见 kidpal_voice_wave_anim_cb 的颠倒修正。观感归真机轮。 */
     if (g_kidpal_wave_box == NULL && g_kidpal_voice_page != NULL) {
         g_kidpal_wave_box = lv_obj_create(g_kidpal_voice_page);
         lv_obj_remove_style_all(g_kidpal_wave_box);
@@ -1663,9 +1673,9 @@ static void kidpal_voice_build_emblem_locked(void)
         for (int i = 0; i < 5; i++) {
             g_kidpal_wave_bar[i] = lv_obj_create(g_kidpal_wave_box);
             lv_obj_remove_style_all(g_kidpal_wave_bar[i]);
-            lv_obj_set_size(g_kidpal_wave_bar[i], 4, 12);
-            lv_obj_set_pos(g_kidpal_wave_bar[i], 8 + i * 9, 12);
-            lv_obj_set_style_radius(g_kidpal_wave_bar[i], 1, 0);
+            lv_obj_set_size(g_kidpal_wave_bar[i], 6, 12);
+            lv_obj_set_pos(g_kidpal_wave_bar[i], 4 + i * 11, 28); /* 底缘 39 对齐; 4+0*11=abs 136 */
+            lv_obj_set_style_radius(g_kidpal_wave_bar[i], 3, 0);
             lv_obj_set_style_bg_color(g_kidpal_wave_bar[i], lv_color_hex(0x000000), 0);
             lv_obj_set_style_bg_opa(g_kidpal_wave_bar[i], LV_OPA_COVER, 0);
         }
