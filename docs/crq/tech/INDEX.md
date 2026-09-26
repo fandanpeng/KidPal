@@ -26,7 +26,7 @@ _（无）_
 | [ARQ-260907-engine-deploy-patch-drift](ARQ-260907-engine-deploy-patch-drift.md) | SHOULD | 引擎部署副本代码补丁（engine-patch）的漂移治理缺机械门：镜像更新即丢补丁或补丁语义漂移，当前只靠 compose bind-mount 在位 + 启动标记行人工核验 | 下次动 server/deploy 部署面 / 引擎镜像升级前 |
 | [ARQ-260907-openclaw-tools-rejection-rootcause](ARQ-260907-openclaw-tools-rejection-rootcause.md) | SHOULD | live 引擎 `Intent:nointent` 根因未查：OpenClaw 拒收 tools 数组（LLM tool calling 不可用），Intent 能力回开成本待重估 | 下次架构治理批 / OpenClaw 升级或 B 方案重估时 |
 | [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | NIT | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 下一批 spec / 治理批（与 requirements §2.3 台账消解同批）；**不阻断 M2-K2 合并**（本包 review-packet 已如实登记去向） |
-| [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | SHOULD | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 下次 live 冒烟或提醒链路排障时定案：核 OpenClaw cron 会话日志 + 在交接目录观察一个提醒周期内 semantic.json 是否出现；缺位则补注册 agent 语义回合（cron announce 路由或双 cron 形态二选一），并补 L5 类 live 证据 |
+| [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | SHOULD | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 部署执行后定案——注册 agent 型 cron（§8.3b）+ 铺 skill 到 main workspace 后，盯一个完整提醒周期核 semantic.json 出现且 entry_key 对齐、pending.json 变语义版、设备真收带物播报；失败则回退机械兜底维持现状并升级 |
 
 ## 已接受风险（6）
 
