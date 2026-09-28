@@ -1,6 +1,6 @@
 # PROPOSAL · 260928-gov-review-dev-loop-preassess-manifest-scope
 
-> **状态：DRAFT v0.3 · 2026-09-28 · R2 BLOCK（R2-F1/R2-F2 条文级小修）修订完成，待 R3 复核**
+> **状态：FROZEN v1.0 · 2026-09-28 · 凭据：human 立项 ack（plan mode 批准，2026-09-28）+ architect R3 GREEN（2026-09-28，§7；R1 BLOCK B1–B7 → R2 BLOCK F1/F2 → R3 GREEN，判官评审记录在 §7）+ human 裁 OQ-1=(a) / OQ-2=(a)（2026-09-28）；主线程凭据自冻**
 > **human 凭据**：立项 ack = plan mode 批准（2026-09-28）；OQ-1 裁 (a) 接 scope-file、OQ-2 裁 (a) scoped 每轮（2026-09-28，会话内拍板）。
 > **承载 ARQ**：无根——human 2026-09-28 直接立项（立项 ack = plan mode 批准：architect 前置技术评估 + changeManifest + 测试范围收敛三合一）。不关任何既有 ARQ 根。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。
@@ -249,3 +249,20 @@ verdict: BLOCK(R2-F1, R2-F2)（B1–B7 + S1–S5 + N1/N2 闭环承接逐条核�
 **R2-F2 [打回项 · B5 同型] T8 新铁律「图不可用 → 举手」与 integrator.md:53 既有「Pod worktree 内 diff 对索引不可见 → N/A (worktree) + trace_path 替代」降级路径的关系未消解**。:53 的 N/A 降级是既有成文纪律（Pod worktree 内 detect_changes 对索引不可见时，以 git diff --stat + trace_path 抽查替代）；T8 ① 把 detect_changes 升格为范围判定依据并立铁律「缺清单、图不可用或圈定失败 → 升级 human 举手」，T8 ④ 只修 :53 的 checkout 路径锚、不动 N/A 语义——两句并存即 B5 同型矛盾：若 N/A (worktree) 属「图不可用」则 Pod 内 final 相位常态举手（本批目标失效）；若 N/A 的 trace_path 替代算合法圈定则铁律须写明该例外；若锚修正后 per-Pod 索引（`C-AI-KidPal-pod-*` 条目实存、watched 自动刷新）令 Pod 内 detect_changes 可用，则 N/A 路径应收窄或删除。三选一钉死并写进 T8 ①/④，不留两句并存。附带核对：T10 ② 改锚只写主 worktree 合并流用 `C-AI-KidPal`，Pod worktree 侧（若有 detect_changes 消费）用 per-Pod 条目——与 T8 ④ 的「按路径派生条目」口径对齐一句即可。
 
 R2 结论：**BLOCK**。仅 R2-F1 / R2-F2 两条，均为条文级小修（词表 + 行清单 + 一句语义消解），无结构返工；闭环后 R3 直接收口。其余全部核验通过——若主线程愿将两条修订并入 v0.3 且无新引入矛盾，R3 预期 GREEN。
+
+### R3 - 2026-09-28 - architect
+verdict: **GREEN（可冻结）**
+
+复核范围（R3 纪律 = R2 findings 修订到位性 + 修订引入新矛盾）：v0.3 修订段逐条对核 + preflight 独立实跑（零 findings，manifest 17 token 不变）+ T8 新引支撑断言实地核验 + 残留词形终扫。
+
+R2-F1 闭环确认：§3 模式集扩至十二形（补「全量 verify」「全量闸门」「全量闸」「全量门套」「全量复验」）并加**同行多实例**维度（build-feature.md:30 实证入条文）✓；T8 ③ 行清单补 integrator.md:39 ✓；T12 补 planner.md:65/:70（处置 = 改「final 复验（scope 圈定）」）、dev-loop.md:174、build-feature.md:30 两实例勘误（「落地按 §3 全形词表逐形清、防只改一词过 grep」）✓；§5 item 5 正则词表同步扩四形 + 「原句 0 残留、同行多实例逐一清」断言 ✓。R2 所指带病过 grep 失败模式（build-feature.md:30 第二实例不被旧词表命中）已被新词表封死。
+
+R2-F2 闭环确认：T8「图不可用」三分法定案——① per-Pod 专属图索引可用 → 正常圈定、:53「N/A (worktree)」降级路径**收窄删除**；② 索引不可用但 trace_path 可用 → 降级圈定**算合法圈定**（铁律例外注 + 如实留痕）；③ 均不可用 → 真不可用举手 ✓；T8 ④ 锚修正与 N/A 收窄联动 ✓；T10 ② 锚解析口径与 T8 ④ 对齐成一句（主 worktree = 常量、Pod worktree = 按路径派生动态解析）✓。两句并存矛盾消解，三分法三分互斥完备。**T8 新引支撑断言实地核验**：「per-Pod 专属图索引 = launch 面必办项，repo-structure.md 既有治理」——repo-structure.md:28 逐字命中（「每个 Pod worktree 必须有自己的专属图索引，属 launch 面必办项」，ARQ-260905-worktree-graph-index-rules），引据真实。
+
+GREEN 时结构字段核对（Status 头硬条款义务）：landing-manifest 围栏块在场、17 个路径 token 与 §3 sweep 表、§2 各 T 目标文件、preflight anchorUnion 四方一致 ✓；packet-id 行在场（T1–T12 + §5 验证集）✓。终局面核：OQ-1=(a) / OQ-2=(a) 承接忠实（T10 四点 / T6 scoped 每轮）；零触 `docs/contracts/**`、零动契约门 / landing-verifier / 升级闸三类不动件；`.claude/agents/architect.md` self-def 面由 human 立项 ack 覆盖、不动 tools/name/model/write scope；review profile「G1=零」与 DEV-GOVERNANCE 豁免（留根 §6-7）自洽；留根 1–7 均有承载（1→T8 ⑤ 锚、2→观察项、3→既有铁律、4→同批覆盖声明、5→S3 简版 + retro 观察、6→skill 同步义务、7→G1 豁免）。
+
+两条 landing 期注意项（非打回，供 landing-summary 记录）：
+1. dev-loop-operating-system.md:29（角色表 integrator 行「全量 e2e」）不在 T12 行清单内，但该文件在 manifest 且「全量 e2e」在 §5 词表——落地时会被 grep 断言命中、属**预期清理面**（执法网在词表、行清单本就非穷举），landing-summary 记一行处置即可，勿当遗漏事故回打。
+2. loop-metrics.mjs:74 注释「排除 integrator-full-verify 的全量运行」——其语义键于 phase 过滤（integrator final 运行不计 per-round 指标）而非测试集大小，判为词形族外、不入词表合理；如主线程顺手改措辞亦可，非义务。
+
+R3 结论：**GREEN**。三轮评审（R1 BLOCK B1–B7 → R2 BLOCK R2-F1/F2 → R3 GREEN）收敛，无未结 BLOCKING/SHOULD。主线程可凭「立项 ack + 本 GREEN」标 FROZEN（human 冻结），随后按 Track B 常态走 packet-bound 落地 + landing-verifier 独立核验 + retro 闭环。
