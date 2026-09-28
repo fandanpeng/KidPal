@@ -46,7 +46,7 @@ openQ:
     status: resolved
   - id: q6-真机烧录授权
     question: 真机轮 human 是否持板？
-    ruling: human 2026-09-29 预授权离场——headless 开发转绿后由主线程代烧（spiffs 资产变更 = app+art 双分区烧录，flash-asset-partition-rule），目检五项（无星/四行/圆角框无锯齿/米字黑点线可见/右栏不被压）留 human 起床后真机确认，不构成 closeout 真机销账；若烧录异常（boot loop/黑屏）按 kidpal-flash-device 症状表处置并留痕
+    ruling: human 2026-09-29 预授权离场——headless 开发转绿后由主线程代烧（spiffs 资产变更 = app+art 双分区烧录，flash-asset-partition-rule），目检五项（无星/四行/圆角框无锯齿/米字黑点线可见/右栏不被压）留 human 起床后真机确认，不构成 closeout 真机销账；若烧录异常（boot loop/黑屏）按 kidpal-flash-device 症状表处置并留痕。**代烧已执行（2026-09-29 凌晨，主线程）**：全量 idf_run.py flash（app @0x20000 + art @0x780000 + assets @0x800000 均写入且 Hash verified）；boot 观测 = 0 RE-ENUM / RX 50185B / uptime 16.9s→117.7s 平滑、HOME P1 渲染、RTC 回写正常——启动成功；目检五项待 human 确认
     status: resolved
 status: in-flight
 ---
