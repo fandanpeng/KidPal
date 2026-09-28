@@ -57,7 +57,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
   ├─ 派生 builder             单包边界内实现 + 单元测试
   ├─ 内层循环（主线程驱动，非嵌套）：
   │     跑 verify.mjs  →  红则派生 fixer  →  再跑 verify.mjs  →  …直到绿/超预算
-   ├─ 派生 integrator          docs-sync + 全量 e2e + delivery/changes/dev/ 制品 + 备可回滚路径
+   ├─ 派生 integrator          docs-sync + 范围圈定终验（scope 圈定）+ delivery/changes/dev/ 制品 + 备可回滚路径
    ├─ planner 收尾（pod-retro） 第一人称热记忆；integrator closeout 之后、supervisor gate 之前（post-cutoff closeout 完整性条件，Q5=warn）
    └─ 跑机械 supervisor-verdict 闸  合并门复核（supervisor-verdict-gate.mjs，planner invoke 不派 agent）；低/中风险+证据完整机器 APPROVE 授权 planner 本地合并（前置升级闸放行后），高/critical 升级人类
 ```
@@ -125,11 +125,11 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 
 Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.json` **仅存于** `delivery/taskpackages/<id>/`，不晋升到 `delivery/changes/dev/`。Pre-cutoff 包保持兼容（grandfather clause）。标准内容：
 
-- `taskpackage.json`：sourceType、sourceRefs、deliveryImpact、planningImpact、riskTier、gateProfile、story、acceptance、exitCriteria、budget、contractRefs、docRefs。
-- `plan.md`（②单包，可选）：`/triage-change` 分流门 architect 审过的 reviewed plan（sibling 文件，由 taskpackage.json `planRef` 引用，对偶 `acceptanceTestsFile` 引用 `.acceptance.spec.ts`）。planner **只读消费、改需留痕**——完全漂移保护依赖 `origin.upstreamFrozen` + `closeout-check` 的 `UPSTREAM_DRIFT` 检测（已随 artifact-lifecycle 交付，convention-only/warn，ARQ-260723-artifact-lifecycle-teeth）。大 feature 的 reviewed plan 落 `delivery/workstreams/<ws>/PROPOSAL.md`，不在 taskpackage 内。
+- `taskpackage.json`：sourceType、sourceRefs、deliveryImpact、planningImpact、riskTier、gateProfile、story、acceptance、exitCriteria、budget、contractRefs、docRefs、changeManifest（260928 批 T4；产出/消费/扩单细则见下方附加字段节）。
+- `plan.md`（②单包，可选）：`/triage-change` 分流门 architect 审过的 reviewed plan（sibling 文件，由 taskpackage.json `planRef` 引用，对偶 `acceptanceTestsFile` 引用 `.acceptance.spec.ts`）。planner **只读消费、改需留痕**——完全漂移保护依赖 `origin.upstreamFrozen` + `closeout-check` 的 `UPSTREAM_DRIFT` 检测（已随 artifact-lifecycle 交付，convention-only/warn，ARQ-260723-artifact-lifecycle-teeth）。**「技术方案（planner+architect 预评）」节为 F8 唯一例外（260928-gov-review-dev-loop-preassess-manifest-scope T3）**：planner 可在 architect 前置评估（Step 1g 档）后补写该节，须留痕（日期 + architect 档标识）；②单包已有 triage plan.md 则追加该节，③拆包由 planner 建包侧 plan.md 时写入；该节补写属留痕合法改，closeout-check 的 UPSTREAM_DRIFT warn（convention-only）命中时以留痕行解释、不构成漂移。大 feature 的 reviewed plan 落 `delivery/workstreams/<ws>/PROPOSAL.md`，不在 taskpackage 内。
 - `verifier-evidence/rounds/r<round>.json`：**verifier 每轮承重机器事实**，由 `verify.mjs --evidence-mode=round` 程序 fs-write 产出（每轮 scoped/final），非 agent 落盘。identity = `changeId + phase + completed-only round + invocationId`；内部 deterministic gate-child exit 与 fact 配对承重，planner/integrator 只能用 `verifier-evidence-check.mjs` 精确验证该 fact。
 - `verdict.json`：**兼容投影**，由 `verify.mjs` best-effort 写入 `current/verdict.json`，可含 `evidenceRef` / identity，但可覆盖、non-bearing；不能满足 FS-EVIDENCE-2、resume、closeout、supervisor 或 merge-readiness。
-- `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审全量闸仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
+- `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审圈定范围闸（final 按 scope-file 圈定）仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
 - `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。
 - `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/changes/dev/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产双份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
@@ -171,7 +171,8 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 
 - `securityReviewRequired` / `securityAxes` / `securityEvidence`：启用安全闸并记录证据。
 - `adrRequired`：提示 integrator 把架构/边界/契约取舍归档成 ADR 摘要或 `delivery/changes/dev/<change-id>/`。
-- `s2ExploratoryRequired` / `s2ExploratoryReason` / `s2ExploratoryGoals[]`：按风险要求 S2 official exploratory scan；planner 声明目标，integrator 在全量 verify/e2e 绿后执行并把摘要写入 Review Packet。Official scan 必须使用 `run_inline_check` typed fields：`targetPersona` 必填（匿名用 `anonymous`），`metadata.changeId/taskPackageId/goalId/triggeredBy="dev-loop-integrator"` 必填，`allowDestructive=false` 默认；若允许破坏性探索，必须有 `destructiveScope` 与 `safetyReason`。`maxSteps` / `budget` 可省略（Phase 1 bootstrap 默认不限），official scan 默认 `wait=true` 且调用层等待上限 600 秒。
+- `s2ExploratoryRequired` / `s2ExploratoryReason` / `s2ExploratoryGoals[]`：按风险要求 S2 official exploratory scan；planner 声明目标，integrator 在 final 复验（scope 圈定）/e2e 绿后执行并把摘要写入 Review Packet。Official scan 必须使用 `run_inline_check` typed fields：`targetPersona` 必填（匿名用 `anonymous`），`metadata.changeId/taskPackageId/goalId/triggeredBy="dev-loop-integrator"` 必填，`allowDestructive=false` 默认；若允许破坏性探索，必须有 `destructiveScope` 与 `safetyReason`。`maxSteps` / `budget` 可省略（Phase 1 bootstrap 默认不限），official scan 默认 `wait=true` 且调用层等待上限 600 秒。
+- `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T4）：本包预定改动文件/目录 glob 清单（仓根相对）。**产出** = architect 前置评估（planner Step 1g 档）、planner 回填；**消费** = builder/fixer 文件级改动边界（各自 .md 边界节）+ `change-manifest-check.mjs` 闸对账（timing=scoped）+ `taskpackage-required-check.mjs` 完备性齿；**扩单唯一通道** = architect 评估（builder/fixer → planner 带根因假设回评，扩单 append + 评估依据留痕），禁先改后补。
 
 变更包不是新事实源；`contracts/` 和 canonical specs 仍是事实源。它的作用是保留每次 loop 的上下文和证据，避免聊天记录成为唯一记忆。
 

@@ -27,6 +27,7 @@ import {
   readFileSync,
   rmdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';
@@ -135,7 +136,11 @@ function runRetroAdvisorySelfCheck() {
 // F2：since 硬前提 + 假零守卫——无 since 不调用；changed_count==0 而 git diff 非空 → N/A（防虚报已核对，见 AGENTS.md「CodebaseMemory 使用纪律」节）。
 // 降级一律 warn N/A、绝不 errorExit / setPod blocked / return false / 重抛（detect_changes 永不阻塞 merge、永不虚报影响面）。
 const DETECT_CHANGES_BIN = 'codebase-memory-mcp';
-const DETECT_CHANGES_PROJECT = 'C-AI-AInativecompany';
+// 260928-gov-review-dev-loop-preassess-manifest-scope T10②：旧锚 'C-AI-AInativecompany' 指旧仓索引
+// （advisory 时代错锚只 warn 无害；范围判定消费面 fail-closed 后错锚 = 每次合并误判图不可用，收敛失效）。
+// 改本仓主 worktree 锚 `C-AI-KidPal`（合并流在主 worktree 执行）；Pod worktree = 按路径派生专属条目，
+// 与 integrator.md Step 4 同口径；env 可覆盖（MERGE_DRIVER_DETECT_CHANGES_PROJECT）。
+const DETECT_CHANGES_PROJECT = process.env.MERGE_DRIVER_DETECT_CHANGES_PROJECT || 'C-AI-KidPal';
 const DETECT_CHANGES_TIMEOUT_MS = Number(process.env.MERGE_DRIVER_DETECT_CHANGES_TIMEOUT_MS || 60000);
 const DETECT_CHANGES_TOP_K = Number(process.env.MERGE_DRIVER_DETECT_CHANGES_TOP_K || 15);
 
@@ -405,7 +410,7 @@ function findWorktree(pod, projectDir) {
 
 // Quick-check gates: contract-lint + acceptance（rebase 后冒烟闸）。
 // ARQ-097 收敛：命令不再硬编码，改从 verify-gates.json（主仓 canonical 源）按显式 id 表取——
-// 单一源、保当前执行序、保冒烟子集（全量门套已由 verifier 于 ready-to-merge 前跑，不可误扩全门）。
+// 单一源、保当前执行序、保冒烟子集（终审圈定范围闸已由 verifier 于 ready-to-merge 前跑，不可误扩全门）。
 // 260905 对齐（260905-gov-review-verify-gates-align T1，OQ1=(a) 两门案）：QUICK_CHECK_IDS 由源仓
 // 4 门残留（types/schema/contract-lint/acceptance）改为本仓 2 门——firmware-build（types+schema 折算物）
 // 有意不入冒烟：真跑 idf.py build 分钟级不「quick」、无工具链 fail-open、verifier scoped 相位已承担；
@@ -470,10 +475,13 @@ function runQuickChecksSelfCheck(projectDir) {
 }
 
 // 在 worktree 中跑一次 quick check。返回 { ok, failingGate, logTail }。
-function runQuickCheck(worktreePath, quickChecks) {
+function runQuickCheck(worktreePath, quickChecks, scopeFile = null) {
   for (const gate of quickChecks) {
+    // T10①（260928 批 OQ-1=(a)）：acceptance 门透传 scope-file——调用点追加参数，
+    // buildQuickChecks cmd 表与 EXPECTED_QUICK_CHECK_CMDS F4 字面 oracle 不动（S2）。
+    const cmd = gate.id === 'acceptance' && scopeFile ? `${gate.cmd} --scope-file=${scopeFile}` : gate.cmd;
     try {
-      execSync(gate.cmd, { cwd: worktreePath, encoding: 'utf8', stdio: 'pipe' });
+      execSync(cmd, { cwd: worktreePath, encoding: 'utf8', stdio: 'pipe' });
     } catch (err) {
       const out = (err.stdout || '') + (err.stderr || '');
       return {
@@ -484,6 +492,87 @@ function runQuickCheck(worktreePath, quickChecks) {
     }
   }
   return { ok: true, failingGate: null, logTail: null };
+}
+
+// ---- quick-check scope 圈定（260928-gov-review-dev-loop-preassess-manifest-scope T10①，OQ-1=(a)）----
+// acceptance 门按合并 diff 的 blast radius 圈定：changed/impacted 实现面文件 → 同组件/模块目录下的
+// acceptance 测试文件（deterministic 映射；detect_changes 只作并集 enrich，不缩 git diff 面）。
+// fail-closed（R1-B5 分面：quick-check 范围判定消费面允许举手，ARQ-100 非阻塞语义只保留在记账消费面）：
+// git diff 不可用 ∨ detect_changes CLI 不可用/无结果 ∨ 实现面有改动而映射 scope 为空 → { ok:false }。
+// 实现面零改动（纯 docs/治理面）→ scope 空合法（acceptance 交集空 = 诚实绿跳过）。
+const SCOPE_FW_ACC_RE = /\.(acceptance)\.(c|cpp|cc)$/;
+const SCOPE_PY_ACC_RE = /(^|\/)acceptance\/(test_[^/]*|[^/]*_test)\.py$/;
+const SCOPE_SKIP_DIRS = new Set(['node_modules', 'build', 'dist', 'coverage', '.git', 'managed_components', '__pycache__', 'archive', 'ESP32-S3-RLCD-4.2-Demo']);
+
+// 纯映射（self-check 直调）：acceptanceFiles（wt 根相对）+ changedFiles → { scope, implChanged }
+function mapScopeFromPaths(acceptanceFiles, changedFiles) {
+  const comps = new Set();
+  let implChanged = 0;
+  for (const raw of changedFiles) {
+    const n = String(raw).replace(/\\/g, '/');
+    if (!/^(?:firmware|server)\//.test(n)) continue;
+    implChanged += 1;
+    const seg = n.split('/');
+    comps.add(`${seg[0]}/${seg[1]}`);
+    if (seg[0] === 'server' && seg.length === 2) comps.add('server/'); // server 根级改动 → 保守取全 server acceptance
+  }
+  const scope = acceptanceFiles.filter((a) => {
+    const n = a.replace(/\\/g, '/');
+    for (const c of comps) {
+      if (c.endsWith('/') ? n.startsWith(c) : n.startsWith(`${c}/`)) return true;
+    }
+    return false;
+  });
+  return { scope, implChanged };
+}
+
+function listQuickCheckAcceptanceFiles(wt) {
+  const out = [];
+  const walk = (dir, rel) => {
+    let entries;
+    try { entries = readdirSync(dir); } catch { return; }
+    for (const e of entries) {
+      if (SCOPE_SKIP_DIRS.has(e) || e.startsWith('.')) continue;
+      const full = join(dir, e);
+      const relPath = rel ? `${rel}/${e}` : e;
+      let st;
+      try { st = statSync(full); } catch { continue; }
+      if (st.isDirectory()) walk(full, relPath);
+      else if (SCOPE_FW_ACC_RE.test(e) || SCOPE_PY_ACC_RE.test(relPath)) out.push(relPath);
+    }
+  };
+  walk(join(wt, 'firmware'), 'firmware');
+  walk(join(wt, 'server'), 'server');
+  return out.sort();
+}
+
+function buildQuickCheckScope(wt, baseRef, changeId) {
+  let changed = [];
+  try {
+    const out = execSync(`git diff --name-only ${baseRef}..HEAD`, { cwd: wt, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    changed = out.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  } catch (e) {
+    return { ok: false, reason: `git-diff-unavailable: ${e.message}` };
+  }
+  if (changed.length === 0) {
+    return { ok: true, scopeFile: null, reason: 'no-changes' };
+  }
+  const cli = defaultDetectChangesCli({ project: DETECT_CHANGES_PROJECT, since: baseRef });
+  if (cli.error || cli.isError || !cli.result) {
+    return { ok: false, reason: `detect-changes-unavailable: ${cli.error || cli.isError || 'empty-result'}（图不可用 = fail-closed 举手，OQ-1=(a)）` };
+  }
+  let impacted = [];
+  const r = cli.result;
+  const cand = r.filePaths || r.impactedFiles || r.files || (Array.isArray(r.changed) ? r.changed.map((c) => (c && c.path) || c) : null);
+  if (Array.isArray(cand)) impacted = cand.map(String);
+  const acceptanceFiles = listQuickCheckAcceptanceFiles(wt);
+  const { scope, implChanged } = mapScopeFromPaths(acceptanceFiles, [...changed, ...impacted]);
+  if (implChanged > 0 && scope.length === 0) {
+    return { ok: false, reason: 'empty-scope-with-impl-changes（实现面有改动而圈定为空 = 圈定失败，防静默跳过 acceptance）' };
+  }
+  const scopePath = join(tmpdir(), `kidpal-merge-scope-${changeId || 'adhoc'}.txt`);
+  writeFileSync(scopePath, `${scope.join('\n')}\n`, 'utf8');
+  return { ok: true, scopeFile: scopePath, scopeSize: scope.length, implChanged, enriched: impacted.length };
 }
 
 // ---- ARQ-260820-merge-driver-origin-main-stale：rebase 目标改「解析最新基线 ref」（fail-closed）----
@@ -1356,10 +1445,19 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // Step 4: quick check（rebase 冲突 → blocked; quick-check 失败 → 重试一次，再失败 → blocked）
   // 豁免例外（ARQ-260823-red-exemption T1）：acceptance 门红 + --human-approved-exemption <ref> + existing-red-inventory.md 存在非空
   // → 按人类裁决放行该门（其余 contract-lint 已过、照拦；260905 对齐两门案）；制品不在场或非 acceptance 门红 → 不豁免。
+  // scope 圈定（T10①，OQ-1=(a)）：圈定失败（含图不可用）= fail-closed blocked 举手，不退全仓冒烟。
+  const scope = buildQuickCheckScope(wt, target.ref, changeId);
+  if (!scope.ok) {
+    warn(`${changeId}: quick-check scope 圈定失败（${scope.reason}）——fail-closed 举手（260928 批 T10，OQ-1=(a)）：升级 human 手动圈定或人工触发全量`);
+    setPod(projectDir, { changeId, status: 'blocked' });
+    return false;
+  }
+  if (scope.reason === 'no-changes') log(`${changeId}: quick-check scope: no changes → acceptance 交集空合法跳过`);
+  else log(`${changeId}: quick-check scope: ${scope.scopeSize} acceptance file(s) (implChanged=${scope.implChanged}, enriched=${scope.enriched})`);
   let qcOk = false;
   for (let attempt = 0; attempt <= RETRY_MAX; attempt++) {
     if (attempt > 0) log(`${changeId}: quick-check retry ${attempt}/${RETRY_MAX}`);
-    const qc = runQuickCheck(wt, quickChecks);
+    const qc = runQuickCheck(wt, quickChecks, scope.scopeFile);
     if (qc.ok) { qcOk = true; break; }
     if (qc.failingGate === 'acceptance' && HUMAN_EXEMPTION !== null) {
       // 豁免判据（shape-only，对齐 supervisor-gate-check G6）：人类 token（flag）+ 预存红分类制品存在非空。
@@ -1485,6 +1583,19 @@ function main() {
   }
   if (process.argv.includes('--self-check-quick-checks')) {
     runQuickChecksSelfCheck(projectDir);
+    // T10①（260928 批 OQ-1=(a)）scope 映射纯函数断言（防 typo 假绿 / 防越圈）：
+    const acc = ['firmware/main/test/stroke.acceptance.c', 'server/acceptance/test_shim_api.py', 'server/gateway/acceptance/test_ws.py'];
+    const m1 = mapScopeFromPaths(acc, ['firmware/main/storage.c']);
+    if (m1.scope.length !== 1 || !m1.scope[0].includes('firmware/main')) process.exit(1);
+    const m2 = mapScopeFromPaths(acc, ['server/gateway/ws.py', 'server/acceptance/test_shim_api.py']);
+    if (m2.scope.length !== 2 || !m2.scope.some((s) => s.includes('gateway'))) process.exit(1);
+    const m3 = mapScopeFromPaths(acc, ['docs/notes/x.md']);
+    if (m3.implChanged !== 0 || m3.scope.length !== 0) process.exit(1);
+    const m4 = mapScopeFromPaths(acc, ['server/store.py']);
+    if (!m4.scope.includes('server/acceptance/test_shim_api.py')) process.exit(1); // server 根级改动 → 保守取全 server acceptance
+    const m5 = mapScopeFromPaths(acc, ['firmware/other/c.c']);
+    if (m5.implChanged !== 1 || m5.scope.length !== 0) process.exit(1); // 实现面改动无映射 = 圈定失败信号（caller blocked）
+    process.stdout.write(`${JSON.stringify({ selfCheck: 'merge-driver-quick-check-scope-map', ok: true })}\n`);
     return;
   }
   if (process.argv.includes('--self-check-detect-changes')) {

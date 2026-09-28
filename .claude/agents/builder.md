@@ -48,7 +48,8 @@ model: sonnet
 
 ## Boundaries / 权限边界
 
-- 只能写 TaskPackage 指定的 `apps/sX-*` 包内文件。
+- 只能写 TaskPackage 声明的包边界内文件（包边界 = TaskPackage subsystem 面，文件写权以 `.claude/scope-map.json` 为准）。
+- **文件级边界 = `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T5）**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；实现中发现需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。
 - 只读：`docs/contracts/**`、任何 `*.acceptance.*` / `acceptance/**`。
 - 不改 canonical docs/spec；文档漂移标给 integrator。
 - 不把临时 S2 debug run 当完成证据；不调用 `write_knowledge` 持久化 S2 debug 建议。
@@ -64,6 +65,7 @@ model: sonnet
 | “测试绿了就能宣布完成。” | 只有 verifier/integrator 证据能宣布完成。 |
 | “只补 happy path 更快。” | 单元测试必须覆盖分支、边界和至少一个错误路径。 |
 | “验收全 mock 已经绿了。” | 全 mock 对数据副作用是高风险证据；补真实 DB/事件/UI 状态断言，或把 blocker 交回 planner/supervisor 升级。 |
+| “就改一个文件很快，先改了再说。” | 越界改动绕过了 architect 影响面评估；走扩单通道才是受控路径。 |
 
 ## Red Flags / 必须停下升级
 

@@ -128,6 +128,38 @@ const STORY_REF_RE = /^S-F\d+\.\d+(-AC\d+)?$/;
 const AC_TAG_RE = /^(S-F\d+\.\d+)-AC(\d+)$/;
 const AC_BACKREF_CUTOFF = '2026-09-28';
 
+// changeManifest 完备性齿（260928-gov-review-dev-loop-preassess-manifest-scope T7）：
+// 在场 + 非空 + 元素合法仓根相对 glob 形态（禁绝对路径/穿越/反斜杠）；缺失/空 = 红（fail-closed）。
+// 存量 carve-out 对偶 AC_BACKREF_CUTOFF 先例：包目录 gitFirstCommitDate < MANIFEST_CUTOFF = 放行；
+// cutoff 谓词与 change-manifest-check.mjs 的 MANIFEST_CUTOFF 同值共享（T6/T7 双闸同豁免）。
+const MANIFEST_CUTOFF = '2026-09-28';
+const MANIFEST_ENTRY_RE = /^[A-Za-z0-9_./?*\-]+$/;
+
+function manifestEntryInvalid(entry) {
+  if (typeof entry !== 'string' || entry.trim().length === 0) return true;
+  const s = entry.trim().replace(/^\.\//, '');
+  return s.startsWith('/') || s.includes('..') || s.includes('\\') || !MANIFEST_ENTRY_RE.test(s);
+}
+
+function collectManifestErrors(taskPackage, gitFn) {
+  const errors = [];
+  const cid = taskPackage.changeId;
+  if (nonEmptyString(cid)) {
+    let firstCommit = gitFn(`delivery/taskpackages/${cid}`);
+    if (firstCommit === null) firstCommit = gitFn(`delivery/changes/dev/${cid}`);
+    if (firstCommit !== null && firstCommit < MANIFEST_CUTOFF) return errors; // 存量放行（双闸同谓词）
+  }
+  if (!Array.isArray(taskPackage.changeManifest) || taskPackage.changeManifest.length === 0) {
+    errors.push('changeManifest(must be a non-empty array of repo-relative file/dir globs; 产出 = architect 前置评估 planner Step 1g 档；扩单唯一通道 = architect 评估——260928-gov-review-dev-loop-preassess-manifest-scope T4/T7)');
+    return errors;
+  }
+  const bad = taskPackage.changeManifest.filter((e) => manifestEntryInvalid(e));
+  if (bad.length) {
+    errors.push(`changeManifest has illegal glob entries (repo-relative only; no absolute/traversal/backslash): ${JSON.stringify(bad)}`);
+  }
+  return errors;
+}
+
 export function collectAcBackrefErrors(tp, opts = {}) {
   const errors = [];
   const isFinalizedState = nonEmptyArray(tp.acceptanceTestsFile);
@@ -230,6 +262,13 @@ function selfCheck() {
   ok(collectAcBackrefErrors({ ...acTagged, acceptance: ['KR-A1 S-F1.4-AC1', 'KR-A2 S-F1.4-AC3', 'KR-A3 S-F1.4-AC2'] }, { gitFn: () => null }).length === 1, 'sc-ac-extra-red');
   ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1'] }, { gitFn: () => '2026-09-01' }).length === 0, 'sc-ac-legacy-carveout');
   ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1'] }, { gitFn: () => '2026-10-01' }).length === 1, 'sc-ac-new-package-red');
+  // ── changeManifest 完备性齿（260928 批 T7）：缺失红 / 非法 glob 红 / 合法 glob 绿 / 存量放行 ──
+  ok(collectManifestErrors({ changeId: '260930-mf-probe' }, () => null).length === 1, 'sc-manifest-missing-red');
+  ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: [] }, () => null).length === 1, 'sc-manifest-empty-red');
+  ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: ['/abs/path'] }, () => null).length === 1, 'sc-manifest-absolute-red');
+  ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: ['firmware/main/../x'] }, () => null).length === 1, 'sc-manifest-traversal-red');
+  ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: ['firmware/main/**', 'server/app/*.py'] }, () => null).length === 0, 'sc-manifest-globs-ok');
+  ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: [] }, () => '2026-09-01').length === 0, 'sc-manifest-legacy-carveout');
   console.log(JSON.stringify({ selfCheck: 'taskpackage-required-check', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   process.exit(failCount === 0 ? 0 : 1);
 }
@@ -515,6 +554,9 @@ if (isFinalizedState) {
 
 // ── AC 回引齿（260928-gov-review-portfolio-boundary-story-propagation T4）——主流程挂接 ──
 coverageErrors.push(...collectAcBackrefErrors(taskPackage));
+
+// ── changeManifest 完备性齿（260928-gov-review-dev-loop-preassess-manifest-scope T7）——主流程挂接 ──
+coverageErrors.push(...collectManifestErrors(taskPackage, gitFirstCommitDate));
 
 // T5：warnings 收集（advisory——ok 与 fail 两路输出均带，exit 判定不动）。
 const refWarnings = collectRefWarnings(taskPackage, (p) => existsSync(resolve(projectDir, p)));

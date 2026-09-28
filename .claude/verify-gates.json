@@ -12,8 +12,10 @@
     "kind=structural|functional|governance|security 仅用于分类与 ErrorEnvelope 的 category 映射。",
     "",
     "timing 字段：",
-    "  scoped = 每轮 verifier 都跑（结构闸 + 受影响子集功能闸）。",
-    "  full = 仅终审 merge-readiness 跑一次（全量功能套件）。",
+    "  scoped = 每轮 verifier 都跑（结构闸 + 治理闸，含 change-manifest 对账）。",
+    "  full = 仅终审 merge-readiness 跑一次，按 --scope-file 影响面圈定；scope-file 缺失 = 红闸举手",
+    "    （fail-closed），不退全量。全量功能套件 = 人工触发位（如发版前），不在任何自动相位",
+    "    （260928-gov-review-dev-loop-preassess-manifest-scope T10）。",
     "  默认 timing=scoped（未标则每轮跑，fail-safe）。",
     "",
     "降级与缺口（诚实记账，非假绿）：",
@@ -24,8 +26,10 @@
     "    不担保实机已过；实机验收由 acceptance 相位人工/台架触发并落 verifier-evidence。",
     "  - types 闸：server 面 Python 无强制类型闸；如需，后续可加 mypy（当前未启用，记为缺口）。",
     "  - merge-driver quick-check 冒烟子集 = contract-lint + acceptance 两门（260905 对齐，",
-    "    merge-driver QUICK_CHECK_IDS 单源消费）；firmware-build 有意不入冒烟（分钟级 + fail-open），",
-    "    由 verifier scoped 相位承担；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
+    "    merge-driver QUICK_CHECK_IDS 单源消费）；acceptance 门按合并 diff 的 blast radius 圈定",
+    "    （scope-file 由 merge-driver 现算注入；detect_changes/trace_path 均不可用 = fail-closed 举手，",
+    "    OQ-1=(a)，260928-gov-review-dev-loop-preassess-manifest-scope T10）；firmware-build 有意不入冒烟",
+    "    （分钟级 + fail-open），由 verifier scoped 相位承担；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
   ],
   "gates": [
     {
@@ -33,6 +37,13 @@
       "kind": "governance",
       "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
       "timing": "scoped"
+    },
+    {
+      "id": "change-manifest",
+      "kind": "governance",
+      "cmd": "node .claude/scripts/change-manifest-check.mjs",
+      "timing": "scoped",
+      "_doc": "changeManifest 对账（260928-gov-review-dev-loop-preassess-manifest-scope T6）：git diff 涉及的对账面文件 vs changeManifest[] glob 全覆盖断言，清单外实现面文件即红（fail-closed）；对账面 = firmware/** + server/** ∪ TaskPackage 声明的 docs-sync 面，簿记/治理面豁免；与 taskpackage-required-check 共享同一 changeId cutoff 谓词（pre-cutoff 在途包两闸同豁免）。"
     },
     {
       "id": "firmware-build",

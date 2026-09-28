@@ -26,7 +26,7 @@ Dev Loop OS = 开发期 coding-agent 平台（GitHub Copilot / Claude Code / 未
 |---|---|---|
 | `portfolio-planner`（RTE） | 跨 Pod：Decomposition（拆成 N 个排好序 TaskPackage + 依赖）+ Scheduling（WIP limit、merge order、Pod 状态、merge token）。创建/挂接 `delivery/workstreams/<workstream>`。 | 不驱动内层 loop、不写实现、不自己 launch Pod、不 merge、不常驻 |
 | `planner`（收窄） | 单 Pod 编排者：消费**一个** TaskPackage，驱动 acceptance→builder→verifier↔fixer→integrator→supervisor。只往其 workstream append progress。supervisor gate 之前收尾时写 `delivery/changes/dev/<change-id>/pod-retro.md`（**第一人称热记忆**，planner 自著；非「Pod 自总结」——该标签唯属 integrator 的 loop-health）。 | 不做跨 Pod 拆分/调度、不再创建顶层 `delivery/workstreams/<workstream>` |
-| `integrator` | 收拢已绿 Pod、解冲突、全量 e2e、docs-sync、Review Packet、closeout；pre-cutoff 兼容产 session-digest + loop-health，post-cutoff 不产这两项。 | 不 push、不 merge 主干 |
+| `integrator` | 收拢已绿 Pod、解冲突、范围圈定终验（scope 圈定）、docs-sync、Review Packet、closeout；pre-cutoff 兼容产 session-digest + loop-health，post-cutoff 不产这两项。 | 不 push、不 merge 主干 |
 | `supervisor` | per-Pod 合并门：只读复核证据，低/中风险放行，高/critical 升级人类。 | 不写实现、不 push |
 | `architect` | Dev Loop OS 治理 owner：处理 retro/loop-health 产出的 architect-owned ARQ，裁定是否改 Dev Loop OS 定义/agent/gate/边界。 | 不实现、不批契约、不 merge |
 | loop-retro（cadence 复盘） | 跨 Pod 按 cutoff 读 pod-events + pod-retro 或 legacy loop-health，提取共性 → architect-owned ARQ。 | 不重算单 Pod 健康；不自我批准、不直接开 TaskPackage |
@@ -35,7 +35,7 @@ Dev Loop OS = 开发期 coding-agent 平台（GitHub Copilot / Claude Code / 未
 
 ## 3. 控制流（scoped + full 分层）
 
-> gov-review-devloop-evidence-led C1 (FROZEN 2026-07-24)：verifier 每轮 scoped（受影响子集 + 污染组），终审 full（全量 monorepo 功能套件一次）。省量 conditional ~15-20% per-round（DL1 量化，pending P5 实测）。
+> gov-review-devloop-evidence-led C1 (FROZEN 2026-07-24)：verifier 每轮 scoped（受影响子集 + 污染组），终审 full（按 scope-file 影响面圈定跑；scope-file 缺失红闸举手；全量功能套件 = 人工触发位，260928-gov-review-dev-loop-preassess-manifest-scope T10/T12 修订）。省量 conditional ~15-20% per-round（DL1 量化，pending P5 实测）。
 
 ```text
 inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-review handoff / drift / CI / K6 repair-intent
@@ -52,7 +52,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
        各自跑 acceptance→builder→verifier↔fixer→integrator→planner 收尾 pod-retro→supervisor（Pod 内完整闭环）
        pod-retro 相位对齐 §5b：integrator closeout 之后、supervisor gate 之前（第一人称热记忆；post-cutoff closeout 完整性条件）
        verifier 每轮: scoped（结构闸 + 受影响子集功能闸 + 污染组）
-       verifier 终审: full（全量 monorepo 功能套件一次，merge-readiness）
+       verifier 终审: full（按 scope-file 影响面圈定，merge-readiness；缺失红闸举手）
        supervisor APPROVE → 标 ready-to-merge
   -> merge-driver (planner 在 supervisor APPROVE + 前置升级闸放行后自动触发，单 Pod 用 --pod)
        按 mergeOrder 串行消费 ready-to-merge Pod：

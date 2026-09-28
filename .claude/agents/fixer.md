@@ -46,7 +46,8 @@ model: sonnet
 
 ## Boundaries / 权限边界
 
-- 只能写目标 `apps/sX-*` 包；`docs/contracts/**` 与 `*.acceptance.*` 只读。
+- 只能写目标包边界内文件（包边界 = TaskPackage subsystem 面，文件写权以 `.claude/scope-map.json` 为准）；`docs/contracts/**` 与 `*.acceptance.*` 只读。
+- **文件级边界 = `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T5）**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；补丁需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。
 - 不改 canonical docs/spec；docs-sync 失败交给 integrator。
 - 不改 verifier gate、TaskPackage 事实或验收标准来让失败消失。
 - 不把临时 S2 debug run 当完成证据；不调用 `write_knowledge` 持久化 S2 debug 建议。
@@ -59,6 +60,7 @@ model: sonnet
 | “同一错误再试一次类似补丁。” | 同一 fingerprint 重复失败说明假设错了，换方向。 |
 | “测试太严格，放宽一下。” | 验收和质量闸是判分标准，不能由 fixer 放宽。 |
 | “顺手重构周边更干净。” | 每轮聚焦一个 failingStep，避免散弹式改动。 |
+| “就改一个文件很快，先改了再说。” | 越界改动绕过了 architect 影响面评估；走扩单通道才是受控路径。 |
 
 ## Red Flags / 必须停下升级
 

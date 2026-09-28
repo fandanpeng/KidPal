@@ -263,7 +263,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 ### plan.md 全量义务
 
 - 每个 TaskPackage 拆包时必备 `delivery/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
-- plan.md 骨架（260928 批 T1 收窄）：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 可行性判据 + **跨包事实与共享冻结面约束（含跨切片边角）** + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。**判据一句钉死：跨包事实 / 共享冻结面约束（只有 RTE 看全局才知道的跨切片知识，如「唤醒词路径也过会话发起入口」「发送原语复用 K2 冻结缝」）留拆包侧；单包内实现决策（改法取舍、阶段划分、时序细节、渲染接线、包内边角）不进拆包侧 plan.md**——包内细节设计承载位 = 冻结 acceptance 断言化 + TaskPackage `notes`/`exitCriteria`/`decisionCoverage` 备注 + planner 派发 prompt（260928 批 OQ-1 裁定）；阶段划分 = `planner.md` Pod 标准 loop 重述、不重复成文。
+- plan.md 骨架（260928 批 T1 收窄）：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 可行性判据 + **跨包事实与共享冻结面约束（含跨切片边角）** + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。**判据一句钉死：跨包事实 / 共享冻结面约束（只有 RTE 看全局才知道的跨切片知识，如「唤醒词路径也过会话发起入口」「发送原语复用 K2 冻结缝」）留拆包侧；单包内实现决策（改法取舍、阶段划分、时序细节、渲染接线、包内边角）不进拆包侧 plan.md**——包内细节设计承载位 = 冻结 acceptance 断言化 + TaskPackage `notes`/`exitCriteria`/`decisionCoverage` 备注 + planner 派发 prompt（260928 批 OQ-1 裁定）；阶段划分 = `planner.md` Pod 标准 loop 重述、不重复成文。**例外（260928-gov-review-dev-loop-preassess-manifest-scope T3）**：plan.md 的「技术方案（planner+architect 预评）」节承载 architect 前置评估（planner Step 1g 档）产出——改法取舍 / 影响面 / 关键接线决策；该节由 planner 在收到 1g 档评估后补写，**须留痕（日期 + architect 档标识）**；包内其余细节承载位判定照旧。
 
 ### story 锚点引用与转写
 
