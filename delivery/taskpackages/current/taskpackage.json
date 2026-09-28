@@ -26,7 +26,7 @@
     "CWVT-A1: （S-F3.2-AC1 / plan 决策①）char_page.cc 全文零 ic_star_22 / charpage_art_star_dsc / s_cp_star_ 字面——无星删改核证（负向源面字面齿，不剥注释，残留注释一并须清）",
     "CWVT-A2: （S-F3.2-AC1 / plan 决策②）速查卡拼装区（kidpal_char_card_build(&info_o → lv_obj_set_style_text_font(cardlabel 切区）零 words 字面——无组词行删改核证（注释剥离后计数；数据面 words 成员保留、char_stroke.c 零触）",
     "CWVT-A3: （plan 决策③a）charpage_draw_grid 函数区内 0x99 / 0xbb 字面 = 0——引导线灰度撤除（负向 raw；RLCD 阈值化后灰度不可见）",
-    "CWVT-A4: （plan 决策③a）charpage_draw_grid 区内纯黑字面 >= 1（lv_color_make(0x00… / lv_color_black( / 0x000000 任一，注释剥离后）——纯黑点线在世；点距/虚实参数真机轮调不钉",
+    "CWVT-A4: （q7 re-anchor 2026-09-29，plan 决策③a）draw_grid 区（charpage_draw_grid 签名 → charpage_render_frame 签名切区）lv_canvas_set_px 字面 = 0（旧 canvas 直绘机制撤除——q7 缺陷机制本身）+ 区内 rast 引用 >= 1（格点挪 1bpp 光栅域写入在世，纯黑 = ink 位；spine q7 ruling）；render_frame 区（charpage_render_frame 签名 → charpage_refresh_hint 签名切区）lv_canvas_set_px 字面 = 0（:291 PENDING 点链同雷面——帧路径零 canvas 直绘、blit 一次成型）；点距/虚实参数真机轮调不钉。齿修订归 acceptance-author 2026-09-29（REVISION LOG q7 re-anchor 段），新红基线 = 修订时点现状源 107 Tests / 1 Failure（test 14 A4 负向齿）",
     "CWVT-A5: （S-F3.2 / plan 决策④）cardlabel 让位几何：set_pos 第一参 >= 236（清出框右缘 235）+ 第二参 >= 30 + lv_obj_set_width(cardlabel, W) 字面在场且 x + W <= 388 + LV_LABEL_LONG_WRAP 在场 + canvas (4,8) 自检齿不动（几何源锚齿；「右栏不被压」像素呈现归真机轮未覆盖面申报）",
     "CWVT-A6: （plan 决策③ 重烘案）charpage_art_frame_dsc(void) 在世 guard——框消费链保留、ACC-4 末端锚有效性核证（must-stay-green；frm_236_236.bin 重烘像素形状 = 真机轮未覆盖面申报，不出齿）",
     "MCD-A4 回撤修订（非新 ID）：test 11 三齿删除（「、」join 字面齿 / for+GetArraySize 遍历齿 / words[0] 判空闸缩为 radical[0]）；MCD-A3 radical[0] 闸保绿；A4 数据面 guard（96B 中文满长 / 135B 超长截断 / words[96] 容量截断）must-stay-green 保留"

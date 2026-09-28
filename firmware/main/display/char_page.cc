@@ -223,24 +223,38 @@ static void charpage_blit(int size)
     lv_obj_invalidate(g_page.canvas);
 }
 
+/* 1bpp 光栅置 ink 位 (MSB-first, 与 charpage_blit :215 读法同款位序; **只置位不清除**
+ * ——与 kidpal_char_stroke 光栅路径 cs_raster_row 同款)。q7 修法 (spine openQ q7,
+ * human 2026-09-29 真机目检 finding, human-ratified) 共用落点: 米字格点线
+ * (charpage_draw_grid) 与未写笔点链 (charpage_render_frame PENDING) 均写 g_page.rast
+ * 1bpp 光栅域, 由 charpage_blit 每帧兜底一次成型上屏——旧「直绘 canvas」的格点/点链
+ * 必被 blit 全幅 ink?黑:白 覆写吃掉, 真机不可见 (缺陷机制本体)。 */
+static void charpage_rast_ink(uint8_t *rast, int stride, int x, int y)
+{
+    rast[(size_t)y * (size_t)stride + (size_t)(x / 8)] |=
+        (uint8_t)(1u << (7 - (x % 8)));
+}
+
 /* 绘制米字格引导线 (ui-v5-align §2 查字窗行 1, 2026-09-26 批; 阶段5 architect 修正:
  * 母版八向 = 十字 + 两对角**恰四条线**, 无四宫线——旧「灰实线十字+四宫」退役, 四宫
  * 线一并退役不保留)。点线画法（点距 3px: 1 on 2 off; 母版 dasharray 3 on 9 off,
  * 密度差仅 host 观感, 像素级归真机轮）。**纯黑点线** (260929-char-window-v5-trim:
- * 原灰度点在设备 RLCD 阈值化后不可见、真机呈空框——改纯黑, 与示范字同色)。 */
+ * 原灰度点在设备 RLCD 阈值化后不可见、真机呈空框——改纯黑, 与示范字同色)。
+ *
+ * q7 修法: 格点不再直绘 canvas (必被 blit 覆写吃掉), 改写 g_page.rast 1bpp 光栅域
+ * (纯黑 = ink 位 1), 由 charpage_blit 兜底一次成型; 调用点移入 charpage_render_frame
+ * (memset 之后、笔画循环之前——每帧重画格点, 渲染帧路径自洽)。 */
 static void charpage_draw_grid(int size)
 {
+    int stride = (size + 7) / 8;
+
     for (int i = 0; i < size; i += 3) {
-        /* 十字点线 (纯黑) */
-        lv_canvas_set_px(g_page.canvas, i, size / 2,
-                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, size / 2, i,
-                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
-        /* 两对角点线 (纯黑): 主对角 + 副对角。 */
-        lv_canvas_set_px(g_page.canvas, i, i,
-                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, i, size - 1 - i,
-                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
+        /* 十字点线 (纯黑 = 1bpp ink 位) */
+        charpage_rast_ink(g_page.rast, stride, i, size / 2);
+        charpage_rast_ink(g_page.rast, stride, size / 2, i);
+        /* 两对角点线: 主对角 + 副对角 */
+        charpage_rast_ink(g_page.rast, stride, i, i);
+        charpage_rast_ink(g_page.rast, stride, i, size - 1 - i);
     }
 }
 
@@ -257,6 +271,9 @@ static void charpage_render_frame(int cur_stroke, int written)
         return;
     }
     memset(g_page.rast, 0, (size_t)size * (size_t)stride);
+    /* 米字格点线每帧重画 (q7: 格点入 rast 域, 与笔画同帧由 blit 兜底一次成型上屏——
+     * 旧「建窗时直绘 canvas」的格点被 blit 全幅覆写吃掉, 真机不可见缺陷本体)。 */
+    charpage_draw_grid(size);
 
     for (int i = 0; i < g_page.n_strokes; i++) {
         int st = kidpal_char_stroke_state(i, written, cur_stroke);
@@ -281,15 +298,15 @@ static void charpage_render_frame(int cur_stroke, int written)
                 continue;
             }
             for (int s = 0; s < mn; s++) {
-                /* 沿笔尖骨架每隔 pitch(=6px) 点距打一个灰点, 虚线点链 */
+                /* 沿笔尖骨架每隔 pitch(=6px) 点距打一个点, 虚线点链; q7: 写 1bpp
+                 * 光栅域 (呈纯黑点链——1bpp 无灰度, spine q7 ruling 钉此形状)。 */
                 if (s % pitch != 0) {
                     continue;
                 }
                 int dx, dy;
                 charpage_map(size, mids[s].x, mids[s].y, &dx, &dy);
                 if (dx >= 0 && dx < size && dy >= 0 && dy < size) {
-                    lv_canvas_set_px(g_page.canvas, dx, dy,
-                                     lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
+                    charpage_rast_ink(g_page.rast, stride, dx, dy);
                 }
             }
             continue;
@@ -572,15 +589,16 @@ void kidpal_char_page_show(const char *data_json)
     g_page.canvas = lv_canvas_create(g_page.panel);
     lv_obj_set_pos(g_page.canvas, 4, 8);
     /* 画布自绘灰边框撤除 (v5 收敛): 重烘框资产 (frm_236_236 正圆角矩形、纯黑 3px 边框)
-     * 已接管外圈——保留自绘方框会与圆角框叠成双框; 米字格引导线仍自绘 (纯黑点线)。 */
+     * 已接管外圈——保留自绘方框会与圆角框叠成双框; 米字格引导线仍自绘 (纯黑点线,
+     * q7 起入 rast 域由 charpage_render_frame 每帧重画——见 charpage_draw_grid)。 */
     if (g_page.canvas_buf != NULL && g_page.rast != NULL) {
         lv_canvas_set_buffer(g_page.canvas, g_page.canvas_buf,
                              CHARPAGE_CANVAS_SIZE, CHARPAGE_CANVAS_SIZE,
                              LV_COLOR_FORMAT_NATIVE);
-        charpage_draw_grid(CHARPAGE_CANVAS_SIZE);
         /* 建窗首帧 = 静态整字 (v1.59 S-F3.1 AC1 前半): cur_stroke=-1 + written=n_strokes
          * -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字实心黑 (char_stroke.c 相位复用,
-         * 冻结面零触碰)。此时 n_strokes = strokes 数组数 (strokeCount JSON 覆写在其后)。 */
+         * 冻结面零触碰)。此时 n_strokes = strokes 数组数 (strokeCount JSON 覆写在其后)。
+         * 米字格点线不再于建窗时直绘 canvas——由 render_frame 内重画 (q7)。 */
         charpage_render_frame(-1, g_page.n_strokes);
     }
 

@@ -258,7 +258,18 @@
  *          原样保绿。
  *       c) **引导线改纯黑点线（CWVT-A3/A4; 决策③a）**: charpage_draw_grid 区内
  *          灰度 0x99/0xbb 字面撤除 + 纯黑在世（RLCD 阈值化后灰度不可见, 真机呈
- *          空斜框）; 点距/虚实参数真机轮调, 不钉。frame 消费链
+ *          空斜框）; 点距/虚实参数真机轮调, 不钉。
+ *          **2026-09-29 q7 修订（spine openQ q7 human 真机目检 finding——米字黑点线
+ *          仍不可见; spine q7 ruling, human-ratified）**: 纯黑承载机制 re-anchor 到
+ *          1bpp rast 光栅域——建窗 draw_grid 直绘 canvas 的格点被 charpage_blit 全幅
+ *          逐像素覆写吃掉（render_frame PENDING 分支直绘 canvas 的灰点链同雷面）,
+ *          真机不可见根因。修法 = 格点/点链挪 g_page.rast 1bpp 域、blit 兜底一次
+ *          成型（blit 本体零改）; PENDING 灰点链 1bpp 化后呈纯黑点链（1bpp 无灰度,
+ *          ruling 钉此形状）。齿 re-anchor（断言强度对等迁移, 非放宽）: draw_grid
+ *          区零 lv_canvas_set_px（旧 canvas 直绘机制撤除 = q7 缺陷机制本体）+
+ *          rast 引用在世（1bpp 光栅域写入）; 纯黑 = 1bpp ink 位, 颜色字面不再在世;
+ *          render_frame 区零 lv_canvas_set_px（帧路径零 canvas 直绘, blit 一次成型
+ *          语义钉死）。frame 消费链
  *          charpage_art_frame_dsc()/charpage_art_overlay() **零触**（重烘案——
  *          重烘 frm_236_236.bin 为圆角矩形 bin 资产; ACC-4 末端锚
  *          charpage_art_frame_dsc 签名核对仍有效）; frm_236_236.bin 重烘像素形状
@@ -329,7 +340,10 @@
  *   coverage: CWVT-A1/A2/A3/A4/A6（260929-char-window-v5-trim; seam [14]）-> test 14
  *             （删改核证负向齿: 无星 / 无组词行 / 引导线灰度撤除 + 纯黑在世; + 框消费链
  *             保留 guard——frm_236_236.bin 重烘像素形状 host 面测不出, 真机目检归
- *             真机轮未覆盖面申报）
+ *             真机轮未覆盖面申报。**2026-09-29 q7 re-anchor**: A4 纯黑齿改钉 1bpp
+ *             rast 光栅域机制——draw_grid 区零 lv_canvas_set_px + rast 引用在世 +
+ *             render_frame 区零 lv_canvas_set_px; 纯黑 = 1bpp ink 位, 颜色字面不再
+ *             在世; 见 seam [14]c / REVISION LOG 2026-09-29 q7）
  *   coverage: CWVT-A5（同包; seam [14]d）-> test 10（MCD-A1 几何齿修订——set_pos 第一参
  *             >= 236 清出重烘框右缘 235 + x + W <= 388; y>=30 / LONG_WRAP / canvas
  *             (4,8) 自检齿零触）
@@ -2089,10 +2103,14 @@ TEST_CASE("查字窗 v1.59 键帽接线: sync查字窗分支+started外露+show/
  *   ②无组词行（CWVT-A2）: 速查卡拼装区（card_build -> cardlabel 字体锚）零 words
  *     拼装（注释剥离后计数; 数据面 words 成员裁定保留——info_o/refresh_hint 透传
  *     不在本区, char_stroke.c 零触碰）。
- *   ③引导线改纯黑点线（CWVT-A3/A4）: charpage_draw_grid 区内灰度 0x99/0xbb 字面
- *     零在世（负向, raw——区内注释一并须清）+ 纯黑在世（正向, 注释剥离后:
- *     lv_color_make(0x00… / lv_color_black( / 0x000000 任一; 点距/虚实参数真机轮调,
- *     不钉）。
+ *   ③引导线改纯黑点线（CWVT-A3/A4; 2026-09-29 q7 re-anchor——纯黑 = 1bpp ink 位
+ *     （rast 域）, q7 修法后颜色字面不再在世）: charpage_draw_grid 区内灰度
+ *     0x99/0xbb 字面零在世（负向, raw——区内注释一并须清; A3 原样保留）+ 区内
+ *     lv_canvas_set_px 字面零在世（负向, raw——旧 canvas 直绘机制撤除, q7 缺陷机制
+ *     本体）+ rast 引用在世（正向, 注释剥离后——g_page.rast 直写或经参数传 rast
+ *     指针的 helper 均命中; 点距/虚实参数真机轮调, 不钉）+ charpage_render_frame
+ *     区内 lv_canvas_set_px 字面零在世（负向, raw——帧路径零 canvas 直绘, blit
+ *     一次成型语义; blit 本体在区外不受影响）。
  *   ④cardlabel 让位（CWVT-A5）: 几何齿住 test 10（A1-x x >= 236 + A1b x + W <= 388）
  *     ——本齿不重复。
  *   guard（CWVT-A6, must-stay-green）: charpage_art_frame_dsc(void) 在世——重烘案
@@ -2101,12 +2119,18 @@ TEST_CASE("查字窗 v1.59 键帽接线: sync查字窗分支+started外露+show/
  * RED today（设计态, builder 落地后转绿）: ①②③ 现状在世（星消费 :651-658 /
  *   words 拼装 :767-769 / draw_grid 0x99/0xbb :230-237——行号快照非长期事实源,
  *   齿全走符号锚）。
+ * **2026-09-29 q7 修订后义务红（fixer 落地前现状源 = canvas 直绘在世, 先红后绿）**:
+ *   ③ 新齿——draw_grid 区 lv_canvas_set_px 负向齿红 + rast 正向齿红（rast 引用
+ *   缺失）+ render_frame 区 lv_canvas_set_px 负向齿红; A3（0x99/0xbb 负向）原样
+ *   保留、现状绿。真机行为验证归 human 目检（q7 continuation）, host 齿只钉机制
+ *   形状。
  * **不得为让它绿而放宽/改写齿**。
  * ------------------------------------------------------------------------ */
 /* coverage: CWVT-A1 -- 无星（requirements v1.60 S-F3.2-AC1 四行口径 + plan.md 决策①）: char_page.cc 全文零 ic_star_22 / charpage_art_star_dsc / s_cp_star_（负向源面字面齿, 不剥注释——删除面核证, 残留注释一并须清） */
 /* coverage: CWVT-A2 -- 无组词行（requirements v1.60 S-F3.2-AC1 四行口径 + plan.md 决策②）: 速查卡拼装区零 words 字面（注释剥离后计数; 数据面 words 成员裁定保留, 不动 char_stroke.c; MCD-A4 整组回撤的删改核证侧） */
-/* coverage: CWVT-A3 -- 引导线灰度撤除（plan.md 决策③a, human 2026-09-29 真机轮裁）: charpage_draw_grid 区内 0x99 / 0xbb 字面 = 0（负向, raw——RLCD 阈值化后灰度不可见, 真机呈空斜框） */
-/* coverage: CWVT-A4 -- 引导线纯黑在世（plan.md 决策③a）: charpage_draw_grid 区内纯黑字面 >= 1（lv_color_make(0x00… / lv_color_black( / 0x000000 任一, 注释剥离后计数; 点距/虚实参数真机轮调不钉） */
+/* coverage: CWVT-A3 -- 引导线灰度撤除（plan.md 决策③a, human 2026-09-29 真机轮裁）: charpage_draw_grid 区内 0x99 / 0xbb 字面 = 0（负向, raw——RLCD 阈值化后灰度不可见, 真机呈空斜框; q7 修订原样保留） */
+/* coverage: CWVT-A4 -- 引导线纯黑在世（plan.md 决策③a; 2026-09-29 q7 re-anchor——纯黑 = 1bpp ink 位（rast 域）, q7 修法后颜色字面不再在世）: charpage_draw_grid 区内 lv_canvas_set_px 字面 = 0（负向, raw——旧 canvas 直绘机制撤除, 即 q7 缺陷机制本体; 区内注释一并须清）+ rast 引用 >= 1（正向, 注释剥离后计数——g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 不给实现细节过约束; 点距/虚实参数真机轮调不钉） */
+/* coverage: CWVT-A4（q7 帧半） -- 帧路径零 canvas 直绘: charpage_render_frame 区（static void charpage_render_frame(int cur_stroke, int written) -> static void charpage_refresh_hint(int cur_stroke) 切区）内 lv_canvas_set_px 字面 = 0（负向, raw——PENDING 灰点链 1bpp 化后归 rast 域呈纯黑点链（1bpp 无灰度, spine q7 ruling 钉此形状）, blit 兜底一次成型语义钉死; blit 本体在区外零触） */
 /* coverage: CWVT-A6 -- 框消费链保留 guard（plan.md 决策③ 重烘案）: charpage_art_frame_dsc(void) 在世（ACC-4 末端锚有效性核证; frm_236_236.bin 重烘像素形状 host 面测不出 = 真机轮未覆盖面申报） */
 TEST_CASE("查字窗 v5 收敛: 删星+删组词行+引导线纯黑点线 删改核证 (CWVT)",
           "[char_window_overlay][CWVT][structural]")
@@ -2148,25 +2172,60 @@ TEST_CASE("查字窗 v5 收敛: 删星+删组词行+引导线纯黑点线 删改
         "S-F3.2-AC1 四行口径; 注释剥离后计数——注释提及不算删除）");
     free(region);
 
-    /* ---- ③ 引导线改纯黑点线: draw_grid 区灰度字面撤除 + 纯黑在世 ------------- */
+    /* ---- ③ 引导线改纯黑点线: draw_grid 区灰度字面撤除 + 纯黑承载机制在世 -----
+     * 2026-09-29 q7 re-anchor（REVISION LOG 2026-09-29 q7）: 纯黑 = 1bpp ink 位
+     * （rast 域）——修法把格点/点链挪 g_page.rast 1bpp 光栅域、charpage_blit 兜底
+     * 一次成型（blit 本体零改）后, draw_grid 区的颜色字面（lv_color_make 等）不再
+     * 在世, 旧 A4「纯黑颜色字面 >= 1」追踪的是被撤除的旧机制（canvas 直绘 + 颜色
+     * 字面）而非行为意图。re-anchor 非放宽——断言强度对等迁移: 负向齿钉旧机制
+     * 撤除（lv_canvas_set_px = 0, 即 q7 缺陷机制本体）, 正向齿钉新机制在世
+     * （rast 引用 >= 1）。意图不变: 纯黑点线在世; 点距/虚实参数真机轮调不钉。 */
     region = cwx_region_between(CWX_CHAR_CC,
                                 "static void charpage_draw_grid(int size)",
                                 "static void charpage_render_frame(int cur_stroke, int written)");
     TEST_ASSERT_NOT_NULL_MESSAGE(region,
         "CWVT RED(infra): charpage_draw_grid 函数区切取失败（签名锚漂移——须复核本齿锚, "
         "不得改判为绿）");
+    /* A3（q7 修订原样保留）: 灰度字面撤除。 */
     TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "0x99") == 0 &&
                                  cwx_count_in_slice(region, "0xbb") == 0,
         "CWVT RED: charpage_draw_grid 区内仍有灰度 0x99/0xbb 字面——米字引导线未改纯黑"
         "（RLCD 阈值化后灰度不可见, 真机呈空斜框; human 2026-09-29 真机轮裁定改纯黑"
         "点线; 区内注释一并须清——负向齿不剥注释）");
-    TEST_ASSERT_TRUE_MESSAGE(
-        cwx_count_in_slice_code(region, "lv_color_make(0x00") >= 1 ||
-            cwx_count_in_slice_code(region, "lv_color_black(") >= 1 ||
-            cwx_count_in_slice_code(region, "0x000000") >= 1,
-        "CWVT RED: charpage_draw_grid 区内零纯黑字面——引导线改纯黑点线缺正向在世形态"
-        "（lv_color_make(0x00, 0x00, 0x00) / lv_color_black() / 0x000000 任一; "
-        "点距/虚实参数真机轮调, 不钉）");
+    /* A4 负向齿（q7 re-anchor 核心）: draw_grid 区零 lv_canvas_set_px——旧 canvas
+     * 直绘机制撤除。缺陷机制本体: 建窗 draw_grid 直绘 canvas 的格点被 charpage_blit
+     * 全幅逐像素 ink?黑:白 覆写吃掉, 真机米字黑点线不可见（spine q7 human 真机目检
+     * finding）。负向齿不剥注释（区内注释一并须清——sealing pass 纪律）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "lv_canvas_set_px") == 0,
+        "CWVT RED: charpage_draw_grid 区内仍有 lv_canvas_set_px——格点仍走 canvas 直绘"
+        "（旧机制）, 必被 charpage_blit 全幅覆写吃掉、真机米字黑点线不可见（spine q7 "
+        "human 真机目检 finding; 修法 = 格点挪 g_page.rast 1bpp 光栅域、blit 兜底一次"
+        "成型, blit 本体零改; 区内注释一并须清——负向齿不剥注释）");
+    /* A4 正向齿（q7 re-anchor）: draw_grid 区 rast 引用在世——1bpp 光栅域写入在世
+     * （g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 不给实现细节过约束;
+     * 注释剥离后计数——注释无法满足, 防注释假绿）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "rast") >= 1,
+        "CWVT RED: charpage_draw_grid 区零 rast 引用——格点未落 1bpp 光栅域（spine q7 "
+        "修法: 格点写 g_page.rast, blit 兜底一次成型; 现状 canvas 直绘即 q7 缺陷机制; "
+        "注释剥离后计数——注释提及不算实现）");
+    free(region);
+
+    /* ---- ③ 帧（q7 帧半）: render_frame 区零 canvas 直绘 ----------------------
+     * render_frame PENDING 分支直绘 canvas 的灰点链与 draw_grid 同雷面（同被 blit
+     * 覆写吃掉; 1bpp 化后归 rast 域呈纯黑点链——1bpp 无灰度, spine q7 ruling 钉此
+     * 形状）。本齿钉「帧路径零 canvas 直绘 = blit 一次成型」语义; blit 本体在区外
+     * （charpage_blit 定义先于 draw_grid）, 不受本齿影响。负向齿不剥注释。 */
+    region = cwx_region_between(CWX_CHAR_CC,
+                                "static void charpage_render_frame(int cur_stroke, int written)",
+                                "static void charpage_refresh_hint(int cur_stroke)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "CWVT RED(infra): charpage_render_frame 函数区切取失败（签名锚漂移——须复核本齿"
+        "锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "lv_canvas_set_px") == 0,
+        "CWVT RED: charpage_render_frame 区内仍有 lv_canvas_set_px——帧路径仍直绘 canvas"
+        "（PENDING 灰点链被 charpage_blit 全幅覆写吃掉, 真机未写笔点链不可见; spine q7 "
+        "修法: 点链挪 g_page.rast 1bpp 域呈纯黑点链, blit 兜底一次成型; blit 本体在区外"
+        "零触; 区内注释一并须清——负向齿不剥注释）");
     free(region);
 }
 
@@ -2353,4 +2412,43 @@ TEST_CASE("查字窗 v5 收敛: 删星+删组词行+引导线纯黑点线 删改
  *               消费链 guard + test 10 其余齿（y>=30 / LONG_WRAP / canvas 自检 /
  *               MCD-A2）+ test 11 数据面守卫 + 其余既有冻结齿（MCF-A1/A3、M2K3 族、
  *               ACC-1/2/3/4、ACC-6）零新增红。
+ *   2026-09-29  q7 re-anchor revision (acceptance-author, TaskPackage
+ *               260929-char-window-v5-trim fixer 内循环前置; spine openQ q7)。触发 =
+ *               human 2026-09-29 真机目检 finding——米字黑点线仍不可见（spine q7,
+ *               human-ratified ruling）。根因（主线程定位）: charpage_blit 全幅逐像素
+ *               ink?黑:白 覆写 canvas, 吃掉 (a) 建窗 charpage_draw_grid 直绘 canvas
+ *               的格点 (b) render_frame PENDING 分支直绘 canvas 的灰点链——既有 A4
+ *               齿（draw_grid 区纯黑颜色字面 >= 1）字面追踪的是旧机制（canvas 直绘 +
+ *               颜色字面）而非行为意图, 修法落地必转红。修法方向（spine q7 ruling）=
+ *               格点/点链挪 g_page.rast 1bpp 光栅域、charpage_blit 兜底一次成型
+ *               （blit 本体零改）; PENDING 灰点链 1bpp 化后呈纯黑点链（1bpp 无灰度,
+ *               ruling 钉此形状）。齿变化（re-anchor 非放宽——断言强度对等迁移, 仅动
+ *               test 14 ③ 区块, 既有其它齿零触碰）:
+ *               ① A3 原样保留: draw_grid 区 0x99/0xbb 字面 = 0（现状绿）。
+ *               ② A4 re-anchor: 负向齿（核心）= draw_grid 区 lv_canvas_set_px 字面
+ *                  = 0（旧 canvas 直绘机制撤除 = q7 缺陷机制本体; 负向齿不剥注释）;
+ *                  正向齿 = draw_grid 区 rast 引用 >= 1（1bpp 光栅域写入在世——
+ *                  g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 注释剥离后
+ *                  计数; 不给实现细节过约束）; 原纯黑颜色字面正向齿撤除（纯黑 = 1bpp
+ *                  ink 位, q7 修法后颜色字面不再在世——coverage 行与区块头同步注明）。
+ *               ③ 新增 render_frame 区负向齿（覆盖 :291 同雷面）: render_frame 区
+ *                  （static void charpage_render_frame(int cur_stroke, int written)
+ *                  -> static void charpage_refresh_hint(int cur_stroke) 切区; 三签名
+ *                  锚均定义在前、无前向声明干扰, 冻结时点核验）内 lv_canvas_set_px
+ *                  字面 = 0——帧路径零 canvas 直绘, blit 一次成型语义钉死（blit 本体
+ *                  在区外, 不受影响）。
+ *               意图不变: 纯黑点线在世; 点距/虚实参数真机轮调不钉。
+ *               修订后新红基线（freeze 相位义务, 2026-09-29 当场实跑）:
+ *                 命令 = Run protocol（espidf_wsl.sh build + host_infra_test.elf;
+ *                 编译通道 error 为零——§4 C 类冻结验收实编过）。
+ *                 结果 = 107 Tests / 1 Failures / 0 Ignored; 唯一失败 = test 14
+ *                 （CWVT）A4 draw_grid 区 lv_canvas_set_px 负向齿——现状源（canvas
+ *                 直绘在世）即红 = 设计态先红, fixer 落地后转绿; test 14 内既有齿
+ *                 （框消费链 guard / ① 无星 / ② 无组词行 / A3 灰度负向）位于该齿之前
+ *                 已全部实跑 PASS = 既有齿零新增红。同 TEST_CASE 后位 q7 齿（rast
+ *                 正向 / render_frame 区 lv_canvas_set_px 负向）因 Unity abort-on-fail
+ *                 未单独报告, 其红由同一现状源事实确定性承载（draw_grid 区 :231-245
+ *                 零 rast 引用; render_frame 区 :291 lv_canvas_set_px 在世——行号
+ *                 快照非长期事实源）, fixer 逐齿转绿可见。
+ *               真机行为验证仍归 human 目检（q7 continuation）——host 齿只钉机制形状。
  * --------------------------------------------------------------------------- */

@@ -48,6 +48,10 @@ openQ:
     question: 真机轮 human 是否持板？
     ruling: human 2026-09-29 预授权离场——headless 开发转绿后由主线程代烧（spiffs 资产变更 = app+art 双分区烧录，flash-asset-partition-rule），目检五项（无星/四行/圆角框无锯齿/米字黑点线可见/右栏不被压）留 human 起床后真机确认，不构成 closeout 真机销账；若烧录异常（boot loop/黑屏）按 kidpal-flash-device 症状表处置并留痕。**代烧已执行（2026-09-29 凌晨，主线程）**：全量 idf_run.py flash（app @0x20000 + art @0x780000 + assets @0x800000 均写入且 Hash verified）；boot 观测 = 0 RE-ENUM / RX 50185B / uptime 16.9s→117.7s 平滑、HOME P1 渲染、RTC 回写正常——启动成功；目检五项待 human 确认
     status: resolved
+  - id: q7-真机目检结果
+    question: 真机轮目检五项结果（2026-09-29 human 确认）
+    ruling: 四过一缺——无星 ✓ / 四行 ✓ / 圆角框无锯齿 ✓ / 右栏不被压 ✓；**米字黑点线仍不可见**。主线程根因定位 = charpage_blit 全幅逐像素覆写（ink?黑:白）吃掉先画的 canvas 域格点（char_page.cc :580 draw_grid → :584 render_frame→blit 顺序必然擦除；同雷 = PENDING 分支 :291 虚线点链 canvas 直绘同被擦）。修法方向 = 格点/点链挪 rast 1bpp 光栅域、blit 兜底一次成型；接棒 headless planner 跑 verifier→fixer 内循环
+    status: in-flight
 status: in-flight
 ---
 
