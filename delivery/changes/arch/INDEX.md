@@ -10,6 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [260928-gov-review-cross-face-intake-spine](260928-gov-review-cross-face-intake-spine/) | 2026-09-28 | landed | — |
 | [260928-gov-review-requirement-face](260928-gov-review-requirement-face/) | 2026-09-28 | frozen | yes |
 | [260924-gov-review-gate-parse-teeth](260924-gov-review-gate-parse-teeth/) | 2026-09-24 | landed | yes |
 | [260924-gov-review-settings-deny-contract-merge](260924-gov-review-settings-deny-contract-merge/) | 2026-09-24 | landed | yes |
