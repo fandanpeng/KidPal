@@ -69,3 +69,18 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
     }
     return 0;
 }
+
+int kidpal_keybar_char_slots(int started, const char **out_left,
+                             const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    /* 查字窗键帽随态（v1.59 WF-F3-01）: 未起播「播报」（KEY 短按 = 起播）/
+     * 已起播「重播」（KEY 短按 = 从头重播）；右槽 BOOT「结束」恒值（与覆盖层非提醒
+     * 右槽一致, §2.1 结束方式③）。started 语义 = 未起播 0 / 已起播非 0。 */
+    *out_left  = (started != 0) ? "重播" : "播报";
+    *out_right = "结束";
+    return 0;
+}

@@ -1,100 +1,167 @@
 {
-  "changeId": "260928-story-connect-push-defer",
+  "changeId": "260928-char-window-key-triggered-play",
   "rigor": "lite",
   "sourceType": "human-ad-hoc",
   "origin": {
     "type": "human-ad-hoc",
     "time": "2026-09-28",
     "upstreamType": "human-ad-hoc",
-    "upstreamRef": "human 真机发现 + planner 根因报告（2026-09-28 本会话）：M4-K1 三时点①建连即推与设备每会话 WS 重连冲突——设备会话结束关 audio channel（CanEnterSleepMode 要求通道关闭）、按 KEY 重开新 WS，front 建连即推 story_list → 旧固件（K2 未跑）无条件渲染 P3 页盖掉聆听态，且 story_page.c 零 CJK 字体接线 → 半截页面。human 裁定止血方向（AskUserQuestion 后续指令「先止血方案吧」）",
-    "upstreamFrozen": "",
-    "workstream": "m4-star-notebook"
+    "upstreamRef": "delivery/changes/intake/260928-char-window-key-triggered-play.md",
+    "upstreamFrozen": "anchors.req / anchors.arch 已回填 v1.59（2026-09-28 档 2 落稿，commit 546832c）；launchPreconditions 满足",
+    "workstream": ""
   },
-  "subsystem": "server",
-  "story": "M4-K1 缺陷止血——摘除 story_list 三时点①建连即推（front_app.py ws_gateway 连接处理一处调用点）：设备拓扑下「WS 建连」= 每次会话开始而非开机一次，推送时机语义错误；①的恢复语义（设备进 P3 即有列表 + RAM 缓存）归 K3 kidpal_session_ctx 设备半落地后重裁（行为策略、不进契约）；三时点②（归档后）③（删除后）保持在场",
-  "planRef": "delivery/taskpackages/260928-story-connect-push-defer/plan.md",
-  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance",
-  "redBaselineResult": "1 failed / 192 passed / 4 deselected（+2 subtests passed）—— 2026-09-28 acceptance-author 实跑；命令 `python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance`。唯一红 = FIX-A1 负锚齿设计态红（红名 M4K1ConnectPushDeferAcceptance::test_fix_a1_connect_path_emits_zero_story_list，红因「建连路径产生 1 帧 story_list 下行——建连即推未摘除」= 本包 builder 待实现行为）；既有 26 齿零新增红（含 FIX-A2 修订后 a3 齿绿）。收集零错误（197 tests collected）。冻结即冒烟过。",
-  "deliveryImpact": "none",
-  "planningImpact": "attach-existing",
-  "planningRefs": [
-    "delivery/workstreams/m4-star-notebook/"
-  ],
+  "subsystem": "firmware/main/display",
+  "story": "S-F3.1 · 语音查字并看笔顺演示（AC1、AC3、AC5）＋ S-F3.3 · 笔顺演示起播与重播（AC1、AC2）——story 语义权威 = docs/requirements.md v1.59 现文（演示与播报解耦：TTS 播报弹窗即自动播不变，笔顺演示改 KEY 短按起播、再按从头重播、演完定格不循环；初始态 = 米字格静态整字；键帽随态变 未起播「播报」/起播后「重播」）",
+  "planRef": "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md",
+  "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；elf 相对 host_app/ 目录；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "实跑回填（acceptance-author 2026-09-28 冻结相位）。命令 = redBaselineCommand 两条（wsl espidf_wsl.sh build + ./build/host_infra_test.elf）。通道① 编译（DEV-GOVERNANCE 验收纪律 §4 C 类实编）: gcc -std=c11 -Wall -Wextra -fsyntax-only（WSL Ubuntu-24.04）两验收件 → error=0（验收文件本身可编译; runner 构建同过, 仅既有 kkb_is_dir/kkb_is_skipped_dir 未用告警, 非本包引入）。通道② 执行（§3 冻结即冒烟）: 106 Tests / 3 Failures / 0 Ignored——失败全部 = 本包新齿设计态红（运行期红形态, 非编译期红）: ① char_window_overlay.acceptance.c test 12（ACC-1/2/3/4, 首红 tooth = ACC-1: show() 首帧 charpage_render_frame(-1, g_page.n_strokes) 不在世——现状 :570 仍 (-1,0)）; ② test 13（ACC-6, 首红 tooth = sync_locked 区零 KIDPAL_LAYER_CHAR_WINDOW 分流）; ③ keybar_three_slot.acceptance.c test 6（ACC-5, 首红 tooth = weak 哨兵 KKB_UNIMPLEMENTED——kidpal_keybar_char_slots 未落地）。既有齿零新增红: 总 106 = 既有 103（同一次实跑全 PASS 直接核证）+ 本包新齿 3（test 12/13 + keybar test 6）; 既有冻结齿存活复核 MCF-A1 timer 字面锚区段 / MCD-A2 / M2K3-A5/A6 / voice_round_ui sync_locked 签名钉 / schedule_grid rn_keybar_sync_locked 计数同跑全绿。builder 落地方案 A1–A6/B/C 后新齿转绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "none",
+  "planningRefs": [],
   "riskTier": "low",
   "gateProfile": [
     "test-quality"
   ],
   "acceptance": [
-    "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
-    {
-      "id": "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）",
-      "kind": "structural",
-      "note": "语义修订记录齿（acceptance-author 定性：满足面 = REVISION LOG/头注/docstring 落实，已于 73b5d3d 冻结在案；行为敏感由 FIX-A1 负锚齿 + 修订后 a3 齿承载，mutationEvidence A2 条 note 同口径）——非逐 AC 行为判定对象，structural 豁免与 M4K1-A7 同机制。"
-    }
+    "ACC-1: （S-F3.1-AC1 前半）：建窗首帧 = charpage_render_frame(-1, g_page.n_strokes)——米字格静态显示完整示范字（整字实心黑），右栏速查栏同屏；未按 KEY 前零逐笔演示（结构齿：字面在世 + 真机目检归未覆盖面申报）",
+    "ACC-2: （S-F3.1-AC1 后半）：建窗零动画拍——timer 创建即 lv_timer_pause；charpage_refresh_hint(0) 零在世（「第 1 笔」文案不得建窗出现）；初始提示条 = 定格文案「写完啦·共 N 笔」（card_build 单源）",
+    "ACC-3: （S-F3.3-AC1）：replay = elapsed 归零 + started 置位 + lv_timer_resume（首播/重播同路径；结构齿）",
+    "ACC-4: （S-F3.1-AC3）：timer_cb REST 相位渲染定格帧 + 刷新定格文案后 lv_timer_pause 且 return（不推进 elapsed_ms）——演完定格等待按键、不自动重播（结构齿：phase REST 分支含 lv_timer_pause；真机演完 2s+ 无自动重播归未覆盖面申报）",
+    "ACC-5: （WF-F3-01 键帽随态变）：kidpal_keybar_char_slots 行为齿（host 纯逻辑）：(0)→(播报, 结束)、(1)→(重播, 结束)、NULL out 防御返回 -1",
+    "ACC-6: （接线）：lcd_display sync 查字窗分支（CHAR_WINDOW 前台时走 kidpal_keybar_char_slots(kidpal_char_page_started(), ...)，否则既有 kidpal_keybar_slots 路径原样）+ char_page show() 末尾与 replay() 锁外均调 kidpal_lcd_keybar_sync（结构齿）"
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c"
+  ],
+  "requiredLayers": [
+    "unit",
+    "api"
   ],
   "exitCriteria": [
-    "FIX-A1/FIX-A2 全绿（新建负锚齿先红后绿 = builder 摘除调用点后转绿）+ 既有冻结齿零新增红（a3 修订后齿数变化如实落账 redBaselineResult）",
-    "铁律：_push_story_list 函数本体与②③调用点不删不动；契约面/spec 面/agent 定义零触碰；K1 历史制品不改写（supersession 注记落本包 docs-delta，指向生效措辞）",
-    "docs-sync：K1 docs-delta §4 H1 的「WS 建连」三时点措辞 supersession 注记（C4 落地时 arch 措辞以本包修订为准）；arch §5.2④ 时机语义变更留痕"
-  ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md#§1.3③"
-  ],
-  "docRefs": [
-    "docs/architecture.md#§5.2"
-  ],
-  "sourceRefs": [
-    "server/gateway/front/front_app.py",
-    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-    "server/acceptance/M4K1-ACCEPTANCE-NOTES.md",
-    "delivery/changes/dev/260924-m4-k1-story-cloud-link/docs-delta.md",
-    "delivery/workstreams/m4-star-notebook/progress.md"
+    "ACC-1～ACC-6 全绿（新增齿先红后绿；既有冻结齿零新增红——char_window_overlay.acceptance.c MCF-A1 timer 字面锚、MCD-A2、M2K3-A5/A6 头注齿存活）",
+    "firmware-build 设备树编译过（char_page.cc / char_page.h / keybar.c / keybar.h / lcd_display.cc 改动面）",
+    "host 验收全量绿（机械门全量不放松）",
+    "spec-anchor-check 无新漂移（spec 面 v1.59 已落稿 commit 546832c，本包不动 docs/**）",
+    "零改动核证面复核：char_stroke.c（FROZEN 纯逻辑）、char_window.{h,c}、kidpal_render_node.cc、board 文件（KEY 路由）、mcp_server.cc、application.cc、protocols/server/云端、docs/** 全零 diff",
+    "真机轮（human 持板）deferred 登记 review-packet 未覆盖面段，不阻塞 supervisor"
   ],
   "iterationBudget": 1,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
-  "docsOwner": "integrator",
-  "docsSyncRequired": true,
-  "docsSyncReason": "本包是对 M4-K1 三时点①推送时机行为策略的修订（arch §5.2④ 扩展承载面、行为策略不进契约——Q10 既有裁定）。K1 docs-delta §4 H1 hunk 文本含「三时点推送（WS 建连 / 归档成功后 / 删除执行后）」——本包落地后该措辞过时：C4 human spec 批落地时应以本包 docs-delta 的修订措辞为准（建连即推摘除、时机①归 K3 session_ctx 语境）。本包 integrator 落 supersession 双向注记（K1 件不改写，仅本包申报）。",
-  "mergeOrder": 41,
-  "dependsOn": [],
-  "testHost": "python -m pytest server/acceptance/ offline 齿（本包无 live 面）",
-  "decisionCoverage": [],
-  "crossPackageBehaviors": [
-    {
-      "topic": "story_list 三时点①推送时机语义变更（建连即推摘除）",
-      "owner": "260928-story-connect-push-defer",
-      "carriedBy": "260924-m4-k3-record-session-live",
-      "note": "①的恢复时机（设备进 P3 语境推送 / RAM 缓存填充）归 K3 session_ctx 设备半落地后重裁——K3 planner/integrator 消费本包 docs-delta 与 K1 notes §5.2 行为等价假设②的实况教训（「建连」在真机拓扑 = 每会话）。K2（板端 P3）消费面不受影响：②③时点与 wire 形状不变，板端收到 story_list 即渲染/缓存的语义由 K2 设计承载。"
-    }
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3①"
   ],
+  "docRefs": [
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "delivery/changes/intake/260928-char-window-key-triggered-play.md",
+    "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+  ],
+  "sourceRefs": [
+    "S-F3.1",
+    "S-F3.1-AC1",
+    "S-F3.1-AC3",
+    "S-F3.1-AC5",
+    "S-F3.3",
+    "S-F3.3-AC1",
+    "S-F3.3-AC2",
+    "NFR-PERF-2",
+    "delivery/changes/intake/260928-char-window-key-triggered-play.md",
+    "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "spec 面 v1.59 已由需求面档 2 落稿（commit 546832c，requirements + architecture 镜像句同批）；本包纯实现面，不动 docs/**。",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "s2ExploratoryRequired": false,
+  "s2ExploratoryReason": null,
+  "s2ExploratoryGoals": [],
+  "mutationRequired": false,
+  "mutationSkipReason": "Lite 包 + 结构齿为主（ACC-1/2/3/4/6 为源面字面/区间在世齿，变异不改变齿判定语义）；唯一 host 行为齿 ACC-5 面小（kidpal_keybar_char_slots 三输入值域 + NULL 防御，分支由冻结齿 test 6 穷尽覆盖），变异取证 ROI 不成立——先例 260928-tech-260928-school-start-upcoming-empty 同口径",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "仅移除建连时推送调用点一处、零 wire 形状变化；对端固件零触碰（K2/K3 未开跑），story_page 侧消费语义不变"
+    "exempt": "纯板端呈现面改动（char_page 建窗初始态/replay 语义、keybar 键帽值域、lcd_display sync 接线）；不新增或改变任何端→网关消息、帧类型、字段类型与承载、回执语义、序列化形态——TTS 播报链路（application.cc 音频门 / mcp_server.cc view=char 路由 / protocols / server / 云端）零改动，D3 笔顺 JSON 与 E1 display 响应块消费形状不变"
   },
-  "mutationRequired": true,
-  "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
-        "sensitive": true,
-        "mutation": "在 ws_gateway 连接处理段恢复 _push_story_list 调用（建连即推回接）",
-        "expectedRed": "test_fix_a1_connect_path_emits_zero_story_list",
-        "note": "设计态红（建连即推仍在树）即 counterEvidence；变异实测三段（2026-09-28）：摘除态模拟（caller==ws_gateway 跳过）→ 齿 GREEN（可满足性）；原变异（连接段同位注入恢复建连即推）→ 齿 RED；还原现树 → 设计态红。运行期代理口径与源级变异的设备腿可观测效果等同；源级重放归 verifier（builder 摘除后）。时点②③在场断言由修订后 a3 齿承载（不双断言同一面，planner 授权分拆）。"
-      },
-      {
-        "acceptanceId": "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）",
-        "sensitive": true,
-        "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除归档后/删除后 story_list 推送（时点②③）",
-        "expectedRed": "test_a3_push_seam_and_wire_timepoints / test_a3_list_stories_window_and_total_independent",
-        "note": "修订后 a3 齿（更名 test_a3_push_seam_and_wire_timepoints）沿用 M4-K1 A3 条变异设计且敏感面不变（窗口/②③推送），建连时点断言已随语义修订移除、负锚敏感由 FIX-A1 条承载；本条为语义修订记录齿（REVISION LOG/头注/docstring 落实即为满足），行为敏感由前述两齿承载。"
-      }
-    ]
-  },
-  "notes": "scope-map 前置核对：builder/fixer allow server/** ✓（acceptance 目录 deny 照旧）；acceptance-author allow server/**/acceptance/** ✓；本包不触 docs/contracts、不改 K1 冻结件语义（仅 a3 齿按 FIX-A2 修订）。本验收语义修订 = 正常改验收通道（human 方向授权），非 §6 tighten-only 窗口（不满足纯 additive/断言不变件）——REVISION LOG 逐字记理由与 human 锚。K1 的 M4K1-A7（live 全链）deferred 状态不变；本包 = 该 deferred 面提前爆雷的止血，live 复证仍归 K3 设备轮。红基线预期：FIX-A1 负锚齿在现树（建连推仍在）为设计态红，builder 摘除后转绿；其余既有齿全绿零偏移。 finalize 补正（2026-09-28 verify r1 taskpackage-required 红后）：contractRefs 填 §1.3③——本包②③推送与冻结齿仍承载 story_list wire 形状，建连即推摘除不涉契约面（形状零变化）。 finalize 补正2（verify r2 acceptance-coverage 红后）：FIX-A2 归 structural——coverage 标记形态（齿 docstring 为 M4K1-A3 / FIX-A2 复列、闸要求 coverage: 后紧跟短 id）不匹配；FIX-A2 本体 = 语义修订记录齿非行为齿，按框架 structural 豁免（AA notes §10.6 同定性）。",
-  "docsOwner2": "",
-  "launchPreconditions": null
+  "changeManifest": [
+    "firmware/main/display/char_page.cc",
+    "firmware/main/display/char_page.h",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c"
+  ],
+  "impactedTests": [
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/test/char_stroke.acceptance.c",
+    "firmware/main/test/keybar_three_slot.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/schedule_grid.acceptance.c"
+  ],
+  "decisionCoverage": [
+    {
+      "id": "DC-1",
+      "decision": "REST 定格取装配层闸断（char_page.cc timer_cb pause+return），不改 char_stroke.c 纯逻辑合约",
+      "summary": "两实现层对比后取舍：装配层 pause 零触 FROZEN 冻结面、测试面零重钉；改合约则须重钉 char_stroke.acceptance.c 全套冻结齿，代价不成比例",
+      "sourceRefs": [
+        "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+      ],
+      "landsIn": "acceptance:ACC-4"
+    },
+    {
+      "id": "DC-2",
+      "decision": "timer 生命周期取 show 建表即 pause（原位原句），不在 replay 建表",
+      "summary": "char_window_overlay.acceptance.c MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create 须留在 show() 内 hint_label 创建之后——replay 建表会破冻结锚，建表即 pause 原位原句即满足",
+      "sourceRefs": [
+        "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+      ],
+      "landsIn": "acceptance:ACC-2"
+    },
+    {
+      "id": "DC-3",
+      "decision": "初始提示条文案取定格文案单源（card_build「写完啦·共 N 笔」复用），不造新引导文案",
+      "summary": "human 触点①裁定采纳；零新文案零重抄，card.progress 装配态在 cur_stroke=-1 下天然为定格文案分支，无重抄漂移面",
+      "sourceRefs": [
+        "delivery/changes/intake/260928-char-window-key-triggered-play.md",
+        "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+      ],
+      "landsIn": "acceptance:ACC-2"
+    },
+    {
+      "id": "DC-4",
+      "decision": "查字窗键帽值域住 keybar.c 新并行函数 kidpal_keybar_char_slots，不扩 kidpal_keybar_slots 签名",
+      "summary": "additive 取向：既有签名与值域零动，既有冻结齿与调用面零破；新函数行为面独立成齿",
+      "sourceRefs": [
+        "delivery/taskpackages/260928-char-window-key-triggered-play/plan.md"
+      ],
+      "landsIn": "acceptance:ACC-5"
+    },
+    {
+      "id": "DC-5",
+      "decision": "演完歇 2 秒自动重播取消",
+      "landsIn": "dropped",
+      "reason": "human 2026-09-26 明示「同意取消（演完歇 2 秒自动重播）」，节奏交给孩子；S-F3.1 AC3 v1.59 定格不循环语义已承载，无对应断言要求",
+      "sourceRefs": [
+        "delivery/changes/intake/260928-char-window-key-triggered-play.md"
+      ],
+      "summary": "自动重播取消后无对应断言义务：S-F3.1 AC3 v1.59 钉「定格等待按键、不自动重播」，ACC-4 的 REST pause 齿即其承载，歇 2s 重播逻辑不存在于新方案"
+    },
+    {
+      "id": "DC-6",
+      "decision": "不缓存、按 KEY 现取笔顺数据路线撤回",
+      "landsIn": "dropped",
+      "reason": "2026-09-26 提出、同日经三路线对照后由定稿口径取代（播报保持现状、演示数据维持既有缓存路径），现取路线 human 已撤回，零实现动作",
+      "sourceRefs": [
+        "delivery/changes/intake/260928-char-window-key-triggered-play.md"
+      ],
+      "summary": "现取路线撤回后零实现义务：演示数据维持既有缓存路径（查字结果随 E1 响应块一次性下发），本包无对应改动面与断言"
+    }
+  ],
+  "notes": "scope-map 前置核对（C5）：builder/fixer allow firmware/** ✓（deny *.acceptance.c——验收文件归 acceptance-author）；acceptance-author allow firmware/**/*.acceptance.c ✓；两个验收文件均在写权内，零中途撞 enforce-scope 风险。红线：禁止改 docs/contracts/**、docs/**、char_stroke.c（FROZEN 纯逻辑）、char_window.{h,c}、kidpal_render_node.cc、board 文件、mcp_server.cc、application.cc、protocols/server/**。MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create 须留在 show() 内 hint_label 创建之后（方案 A3 即为此设计）。真机轮 human 持板 deferred 到 review-packet 未覆盖面段（launch 指令明示，不阻塞 supervisor）。mutationRequired=false：Lite 包 + 结构齿为主（ACC-1/2/3/4/6）、唯一 host 行为齿 ACC-5 面小（三输入值域函数），变异取证 ROI 不成立——先例 260928-tech-260928-school-start-upcoming-empty 同口径。plan.md 为 architect /triage-change reviewed（只读消费、改需留痕）。跨端判断（1d）：exempt 见 crossEnd 字段。firmware-build 闸前按 .claude/skills/kidpal-idf-env/SKILL.md 准备 ESP-IDF 环境。"
 }

@@ -10,6 +10,8 @@
 #include "reminder_page.h" /* 提醒弹窗消费面 (K4): 时间行单源 kidpal_reminder_hhmm + 载荷形状 */
 #include "key_gesture_parser.h"
 #include "keybar.h"
+#include "kidpal_layer.h" /* KIDPAL_LAYER_CHAR_WINDOW 前台层门控 (键帽查字窗分支) */
+#include "char_page.h"    /* kidpal_char_page_started (查字窗演示起播态外露, ACC-6 接线) */
 
 #include <vector>
 #include <algorithm>
@@ -1347,6 +1349,7 @@ static void kidpal_keybar_sync_locked(void)
     const char *left = NULL, *right = NULL;
     int rn_page = kidpal_render_node_get_page();
     int overlay_top = kidpal_render_node_front_is_overlay();
+    int front_layer = kidpal_render_node_front_layer();
 
     /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
@@ -1354,8 +1357,20 @@ static void kidpal_keybar_sync_locked(void)
     int page = (rn_page >= 0 && rn_page < (int)PAGE_COUNT) ? rn_page : PAGE_P1;
 
     if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
-        if (kidpal_keybar_slots(page, g_kidpal_keybar_scene, overlay_top,
-                                &left, &right) == 0) {
+        int slots_ok;
+        if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
+            /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
+             * 未起播「播报」/ 起播后「重播」, 右槽 BOOT「结束」。值域仍走 keybar 纯逻辑
+             * 单源 (kidpal_keybar_char_slots), 设备侧零重算; started 取 char_page 外露
+             * (kidpal_char_page_started)。提醒弹窗压查字窗时 front = REMINDER, 不进本
+             * 分支 (提醒键帽不受扰)。 */
+            slots_ok = (kidpal_keybar_char_slots(kidpal_char_page_started(),
+                                                 &left, &right) == 0);
+        } else {
+            slots_ok = (kidpal_keybar_slots(page, g_kidpal_keybar_scene, overlay_top,
+                                            &left, &right) == 0);
+        }
+        if (slots_ok) {
             if (left != NULL) {
                 lv_label_set_text(g_kidpal_keybar_left_label, left);
             }

@@ -200,6 +200,40 @@
  *       与语音轮四态既有闭环）——取单文件局部几何改动。
  *       **零新增字段**（落法 B display 块通用文本通道 = 另立契约门立项, 本轮不预造）。
  *
+ *   [12] v1.59 KEY 起播改造呈现面（ACC-1/2/3/4; home = firmware/main/display/
+ *       char_page.cc 单文件; 260928-char-window-key-triggered-play additive 追加;
+ *       需求权威 = requirements v1.59 S-F3.1 AC1/AC3/AC5 + S-F3.3 AC1/AC2 + WF-F3-01
+ *       键帽随态变注 :480; plan.md reviewed 方案 A1–A4）:
+ *       a) 静态整字首帧（A1; ACC-1）: show() 内 charpage_render_frame(-1, 0) 改
+ *          charpage_render_frame(-1, g_page.n_strokes)——cur_stroke=-1 + written=n
+ *          -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字实心（char_stroke.c
+ *          相位复用, 冻结面零触碰——DC-1 同口径）; 旧空白首帧调用零残留。
+ *       b) 建窗零动画拍（A2/A3; ACC-2）: 删 charpage_refresh_hint(0) 首拍调用——
+ *          初始提示条 = hint_label 从 g_page.card.progress 落字（card 以 cur_stroke=-1
+ *          装配 -> 「写完啦·共 N 笔」定格文案单源, 零新文案零重抄——DC-3 human 裁）;
+ *          timer 创建保留原位原句、其后紧跟 lv_timer_pause(g_page.timer)。
+ *          **硬约束: MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create 必须
+ *          留在 show() 内 hint_label 创建之后**（test 12 tooth 5 锚位守卫同刀钉死;
+ *          DC-2 裁定 show 建表即 pause 即为此设计）。
+ *       c) replay 语义扩展（A5 部分; ACC-3）: replay() 区内 elapsed_ms = 0 +
+ *          started = 1 + lv_timer_resume(（首播/重播同路径; started 仅服务键帽态;
+ *          KEY 短按路由已在世——M2K3-A2 查字窗列, 零路由改动）。
+ *       d) REST 定格闸断（A4; ACC-4）: timer_cb 在 REST 相位渲染定格帧 + 刷定格
+ *          文案后 lv_timer_pause 且 return（不推进 elapsed_ms——取模回绕在装配层
+ *          闸断, char_stroke.c 零触碰——DC-1 裁定）。
+ *
+ *   [13] v1.59 键帽随态接线（ACC-6; home = lcd_display.cc + char_page.{h,cc};
+ *       同包 additive; plan.md reviewed 方案 A5/A6 + C）:
+ *       kidpal_keybar_sync_locked（**签名不动**——voice_round_ui.acceptance.c :930
+ *       钉该签名字面为区锚）体内: 查字窗前台（KIDPAL_LAYER_CHAR_WINDOW 门控）改走
+ *       kidpal_keybar_char_slots(kidpal_char_page_started(), ...)（键帽值域仍走
+ *       keybar 纯逻辑单源, 设备侧零重算; 提醒弹窗压查字窗时 front=REMINDER 不进
+ *       本分支, 提醒键帽不受扰）; char_page.h 声明 kidpal_char_page_started;
+ *       char_page.cc show() 末尾与 replay() 均调 kidpal_lcd_keybar_sync（建窗即
+ *       「播报」/ KEY 起播后即「重播」的驱动点; 内部递归取锁安全——kidpal_render_
+ *       node.cc:141 同款先例; 「锁外」位置纪律归实现侧/真机轮, 结构齿钉调用点在世）。
+ *       ACC-5 键帽值域行为齿住 keybar_three_slot.acceptance.c test 6（同批 additive）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: M2K3-A1 层注册 -> test 1（行为半: 新层可入栈/覆盖当前页/pop 回原页不翻页/
@@ -299,6 +333,7 @@
 #define CWX_MCP_CC     "firmware/main/mcp_server.cc"
 #define CWX_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
 #define CWX_KEYBAR_C   "firmware/main/display/keybar.c"
+#define CWX_LCD_CC     "firmware/main/display/lcd_display.cc"
 #define CWX_CMAKELISTS "firmware/main/test/host_app/main/CMakeLists.txt"
 #define CWX_REQUIREMENTS "docs/requirements.md"
 #define CWX_CONTRACT   "docs/contracts/interface-contract.md"
@@ -1748,6 +1783,244 @@ TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节�
                strlen(card.words)));
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 12 — v1.59 KEY 起播改造: 静态整字初始态 + 建窗停表 + replay 语义 + REST 定格
+ * (structural; seam [12]; TaskPackage 260928-char-window-key-triggered-play additive;
+ * char_page.cc 设备装配面非 host 编译——源级树扫承载, 本件既有范式; 正向齿注释剥离后
+ * 计数——sealing pass 纪律)
+ * RED today（设计态, 交 builder 落地的靶; 见 REVISION LOG 2026-09-28 条目）:
+ *   - show() 首帧仍 charpage_render_frame(-1, 0)（米字格空白, 非「整字实心」）;
+ *   - charpage_refresh_hint(0) 在世（「第 1 笔」文案建窗即覆写定格文案——违 S-F3.1
+ *     AC1「未按 KEY 前零逐笔演示」）;
+ *   - timer 创建后零 lv_timer_pause（建窗即起播动画拍）;
+ *   - replay() 零 started 置位 / 零 lv_timer_resume（KEY 起播/重播语义未落）;
+ *   - timer_cb 零 REST 定格闸断（演完取模回绕自动重播——违 S-F3.1 AC3）。
+ * **不得为让它绿而放宽/改写齿**。
+ * ------------------------------------------------------------------------ */
+/* coverage: ACC-1 -- 建窗首帧静态整字（S-F3.1-AC1 前半）: show() 内 charpage_render_frame(-1, g_page.n_strokes) 在世（cur_stroke=-1 + written=n -> 每笔 WRITTEN 整字实心黑, char_stroke.c 相位复用零触碰）+ 旧空白首帧 charpage_render_frame(-1, 0) 零在世; 整字实心/右栏速查栏同屏真机目检归 planner 未覆盖面申报通道, 不钉 host 齿 */
+/* coverage: ACC-2 -- 建窗零动画拍（S-F3.1-AC1 后半）: timer 创建后 lv_timer_pause(g_page.timer) 在世（DC-2: show 建表即 pause, 保 MCF-A1 末端锚）+ hint_label 创建 -> timer 创建区间零 charpage_refresh_hint 调用（「第 1 笔」文案不得建窗出现; 初始提示条 = card_build 单源 card.progress 定格文案「写完啦·共 N 笔」, 消费面由在世齿承载零回归） */
+/* coverage: ACC-3 -- replay 语义扩展（S-F3.3-AC1; S-F3.1-AC5 起播半）: replay() 区内 elapsed_ms = 0 + started = 1 + lv_timer_resume( 三件在世——首播/重播同路径结构齿; KEY 短按路由已在世（M2K3-A2 查字窗列）, 真机起播手感归真机轮 */
+/* coverage: ACC-4 -- 演完定格闸断（S-F3.1-AC3; S-F3.3-AC2 定格等待半）: timer_cb 区内 lv_timer_pause( 在世且先于 elapsed_ms 推进、pause 与推进之间夹 return（REST 相位渲染定格帧 + 刷定格文案后 pause + return, 不推进 elapsed_ms = 不自动重播; 演完 2s+ 无自动重播真机目检归未覆盖面申报） */
+TEST_CASE("查字窗 v1.59 KEY 起播: 静态整字初始态+建窗停表+replay语义+REST定格 (ACC-1/2/3/4)",
+          "[char_window_overlay][ACC-1][ACC-2][ACC-3][ACC-4][structural]")
+{
+    char *region;
+    const char *pp;
+    const char *pe;
+
+    CWX_REQUIRE_ROOT();
+
+    /* ---- ACC-1: 建窗首帧 = 静态整字 ------------------------------------------ */
+    region = cwx_region_between(CWX_CHAR_CC,
+                                "void kidpal_char_page_show(const char *data_json)",
+                                "static const char charpage_dash_contract[1]");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "ACC-1 RED(infra): char_page.cc 的 show() 函数区切取失败（签名锚漂移——须复核"
+        "本齿锚, 不得改判为绿）");
+
+    /* tooth 1 (本包红齿): 首帧 = charpage_render_frame(-1, g_page.n_strokes)——
+     * cur_stroke=-1 + written=n -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字
+     * 实心（char_stroke.c 纯逻辑相位复用, 冻结面零触碰——DC-1 同口径）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region,
+                                "charpage_render_frame(-1, g_page.n_strokes)") >= 1,
+        "ACC-1 RED: show() 首帧未接静态整字——charpage_render_frame(-1, "
+        "g_page.n_strokes) 不在世（cur_stroke=-1 + written=n = 每笔 WRITTEN 整字实心; "
+        "S-F3.1 AC1 前半: 米字格内直接静态显示完整示范字; 注释剥离后计数）");
+
+    /* tooth 2 (负向齿, 本包红齿): 旧空白首帧 charpage_render_frame(-1, 0) 零在世——
+     * 新旧并存时后执行者覆盖先者, 整字初始态被冲回空白格。注释剥离后计数（真实调用
+     * 无法藏进注释, 注释提及不误红）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "charpage_render_frame(-1, 0)") == 0,
+        "ACC-1 RED: show() 内 charpage_render_frame(-1, 0) 仍在世——空白首帧调用未替换"
+        "（若与新调用并存, 后执行者覆盖先者, 整字静态初始态被冲掉; S-F3.1 AC1 前半）");
+
+    /* ---- ACC-2: 建窗零动画拍 ------------------------------------------------- */
+    /* tooth 3 (本包红齿): timer 创建字面之后 lv_timer_pause(g_page.timer) 在世——
+     * 建窗即停表。region 自 timer 创建锚起切 = pause 只可能落锚后（「创建后紧跟
+     * pause」的结构承载; DC-2 裁定 show 建表即 pause, 不移 MCF-A1 末端锚）。 */
+    {
+        char *tr = cwx_region_between(CWX_CHAR_CC,
+                                      "g_page.timer = lv_timer_create",
+                                      "static const char charpage_dash_contract[1]");
+        TEST_ASSERT_NOT_NULL_MESSAGE(tr,
+            "ACC-2 RED(infra): char_page.cc 的 timer 创建锚切取失败（锚漂移——该字面"
+            "同时是 MCF-A1 区域齿末端锚, 不得移走; 须复核本齿锚, 不得改判为绿）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(tr, "lv_timer_pause(g_page.timer") >= 1,
+            "ACC-2 RED: timer 创建后零 lv_timer_pause(g_page.timer)——建窗即起播动画拍"
+            "（S-F3.1 AC1 后半: 未按 KEY 前零逐笔演示; DC-2 裁定 show 建表即 pause）");
+        free(tr);
+    }
+
+    /* tooth 4 (负向齿, 本包红齿): hint_label 创建区 -> timer 创建区之间零
+     * charpage_refresh_hint 调用——「第 1 笔」文案不得建窗出现（A2 删首拍调用;
+     * 初始提示条 = card_build 单源 card.progress 定格文案「写完啦·共 N 笔」, 该消费
+     * 在世且由 M2K3/S-F3.3-AC2 齿承载零回归）。注释剥离后计数（注释提及不误红）。 */
+    {
+        char *hr = cwx_region_between(CWX_CHAR_CC,
+                                      "g_page.hint_label = lv_label_create",
+                                      "g_page.timer = lv_timer_create");
+        TEST_ASSERT_NOT_NULL_MESSAGE(hr,
+            "ACC-2 RED(infra): hint_label 创建 -> timer 创建区切取失败（锚漂移——本区"
+            "即 MCF-A1 区域齿区段, 末端锚不得移走; 须复核本齿锚）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(hr, "charpage_refresh_hint(") == 0,
+            "ACC-2 RED: 建窗首拍出现 charpage_refresh_hint 调用——初始提示条被覆写成"
+            "「第 1 笔」（S-F3.1 AC1 后半: 未按 KEY 前零逐笔演示, 提示条应保持 "
+            "card_build 单源定格文案「写完啦·共 N 笔」; 注释剥离后计数）");
+        free(hr);
+    }
+
+    /* tooth 5 (guard, must-stay-green): MCF-A1 区域齿末端锚位守卫——
+     * g_page.hint_label = lv_label_create 须先于 g_page.timer = lv_timer_create
+     * （硬约束: 末端锚字面必须留在 show() 内 hint_label 创建之后; DC-2 方案 A3
+     * 即为此设计——任何把 timer 创建上提的改法在此红）。 */
+    {
+        const char *ph = strstr(region, "g_page.hint_label = lv_label_create");
+        const char *pt = strstr(region, "g_page.timer = lv_timer_create");
+        TEST_ASSERT_TRUE_MESSAGE(ph != NULL && pt != NULL && ph < pt,
+            "ACC-2 RED(guard): char_page.cc show() 内锚序漂移——g_page.timer = "
+            "lv_timer_create 不在 g_page.hint_label = lv_label_create 之后（MCF-A1 "
+            "区域齿末端锚被移走, 既有冻结齿区段被拆; DC-2 裁定: timer 创建保留原位"
+            "原句）");
+    }
+    free(region);
+
+    /* ---- ACC-3: replay 语义扩展（首播/重播同路径）---------------------------- */
+    {
+        char *rr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_replay(void)",
+                                      "void kidpal_char_page_show(const char *data_json)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(rr,
+            "ACC-3 RED(infra): char_page.cc 的 replay() 函数区切取失败（签名锚漂移——"
+            "须复核本齿锚, 不得改判为绿）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "elapsed_ms = 0") >= 1,
+            "ACC-3 RED: replay 区内零 elapsed_ms = 0——重播未从头起（S-F3.3 AC1: 从头"
+            "起播笔顺动画; 该半在世, 零回归守卫）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "started = 1") >= 1,
+            "ACC-3 RED: replay 区内零 started = 1——演示起播态未置位（WF-F3-01 键帽"
+            "随态变注: 起播后键帽「重播」的态源; S-F3.1 AC5 / S-F3.3 AC1）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "lv_timer_resume(") >= 1,
+            "ACC-3 RED: replay 区内零 lv_timer_resume——KEY 短按不启动逐笔演示（A3 "
+            "建表即 pause 后, resume 是起播/重播唯一启动路径; S-F3.1 AC5 / S-F3.3 AC1）");
+        free(rr);
+    }
+
+    /* ---- ACC-4: REST 定格闸断（演完不自动重播）------------------------------- */
+    {
+        char *tb = cwx_region_between(CWX_CHAR_CC,
+                                      "static void charpage_timer_cb(lv_timer_t *timer)",
+                                      "static const lv_image_dsc_t *charpage_art_frame_dsc(void)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(tb,
+            "ACC-4 RED(infra): char_page.cc 的 timer_cb 函数区切取失败（签名锚漂移——"
+            "须复核本齿锚, 不得改判为绿）");
+        /* REST 相位闸断: lv_timer_pause 在世、先于 elapsed_ms 推进、且与推进之间夹
+         * return（pause 后即返回, 不落穿到推进行 = 演完定格不自动重播）。 */
+        pp = strstr(tb, "lv_timer_pause(");
+        pe = strstr(tb, "elapsed_ms +=");
+        TEST_ASSERT_TRUE_MESSAGE(pp != NULL && pe != NULL && pp < pe,
+            "ACC-4 RED: timer_cb 区内零 REST 定格闸断（lv_timer_pause 不在世, 或不先于 "
+            "elapsed_ms 推进）——演完取模回绕自动重播（S-F3.1 AC3: 定格在「✔ 写完啦 · "
+            "共 N 笔」等待按键, 不自动重播; 演完 2s+ 无自动重播真机目检归未覆盖面申报）");
+        if (pp != NULL && pe != NULL && pp < pe) {
+            size_t span = (size_t)(pe - pp);
+            char *between = (char *)malloc(span + 1);
+            assert(between != NULL); /* logic guard: host OOM must fail loudly */
+            memcpy(between, pp, span);
+            between[span] = '\0';
+            TEST_ASSERT_TRUE_MESSAGE(strstr(between, "return") != NULL,
+                "ACC-4 RED: REST 相位 pause 后未 return——闸断落穿到 elapsed_ms 推进"
+                "（定格帧渲染后计时仍推进 = 下一拍回绕自动重播; S-F3.1 AC3）");
+            free(between);
+        }
+        free(tb);
+    }
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 13 — v1.59 键帽随态接线: sync 查字窗分支 + started 外露 + show/replay 刷键帽
+ * (structural; seam [13]; TaskPackage 260928-char-window-key-triggered-play additive;
+ * lcd_display.cc / char_page.cc 设备装配面非 host 编译——源级树扫承载)
+ * RED today（设计态）: sync_locked 零 CHAR_WINDOW 分流 / 零 char_slots 消费 / 零
+ * started 消费; char_page.h 零 started 外露; char_page.cc 零 keybar_sync 调用点。
+ * ------------------------------------------------------------------------ */
+/* coverage: ACC-6 -- 接线（WF-F3-01 键帽随态变注）: lcd_display.cc kidpal_keybar_sync_locked 区内查字窗前台分支（KIDPAL_LAYER_CHAR_WINDOW 门控 + 消费 kidpal_keybar_char_slots(kidpal_char_page_started(), ...)——键帽随态值域仍走 keybar 纯逻辑单源零重算）+ char_page.h 声明 kidpal_char_page_started + char_page.cc show() 末尾与 replay() 均调 kidpal_lcd_keybar_sync（建窗即「播报」/ KEY 起播后即「重播」的驱动点; 内部递归取锁安全——kidpal_render_node.cc:141 同款先例; 「锁外」位置纪律归实现侧/真机轮, 结构齿钉调用点在世） */
+TEST_CASE("查字窗 v1.59 键帽接线: sync查字窗分支+started外露+show/replay刷键帽 (ACC-6)",
+          "[char_window_overlay][ACC-6][structural]")
+{
+    char *region;
+
+    CWX_REQUIRE_ROOT();
+
+    /* tooth 1 (本包红齿): kidpal_keybar_sync_locked 体内查字窗前台分支——CHAR_WINDOW
+     * 门控 + 双单源消费。region 自 sync_locked 体内首句锚起切（签名行另有 :479 前向
+     * 声明, 签名锚会切错区——避开）; 提醒弹窗压查字窗时 front=REMINDER 不进本分支,
+     * 提醒键帽不受扰（分流前提）。 */
+    region = cwx_region_between(CWX_LCD_CC,
+                                "kidpal_keybar_dots_t d;",
+                                "static void kidpal_voice_apply_look(int scene)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "ACC-6 RED(infra): lcd_display.cc 的 kidpal_keybar_sync_locked 函数区切取失败"
+        "（锚漂移——voice_round_ui.acceptance.c 钉 static void kidpal_keybar_sync_"
+        "locked(void) 签名字面, 签名不动红线; 须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+        "ACC-6 RED: kidpal_keybar_sync_locked 未按前台层 KIDPAL_LAYER_CHAR_WINDOW "
+        "分流——查字窗前台时键帽仍走通用覆盖层列（WF-F3-01 键帽随态变注 v1.59: 未起播"
+        "「播报」/起播后「重播」无落点; 提醒压查字窗时键帽不受扰的分流前提缺失）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_keybar_char_slots(") >= 1,
+        "ACC-6 RED: sync 查字窗分支未消费 kidpal_keybar_char_slots——键帽值域设备侧"
+        "重算（第二真相源; keybar 纯逻辑单源纪律 KB-A1/KB-E2）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_char_page_started(") >= 1,
+        "ACC-6 RED: sync 查字窗分支未消费 kidpal_char_page_started——键帽不随演示起播"
+        "态变（未起播恒「播报」或恒「重播」; WF-F3-01 键帽随态变注）");
+    free(region);
+
+    /* tooth 2 (本包红齿): started 外露——char_page.h 声明 kidpal_char_page_started
+     * （lcd_display.cc 经 include 消费; extern "C" 块内——C 桥）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_CHAR_H, "kidpal_char_page_started") >= 1,
+        "ACC-6 RED: char_page.h 零 kidpal_char_page_started 声明——演示起播态未外露"
+        "（sync 查字窗分支无从取态; 注释剥离后计数）");
+
+    /* tooth 3 (本包红齿): char_page.cc 内 kidpal_lcd_keybar_sync 调用点 >= 2, 且
+     * replay() 区与 show() 区各含 >= 1——建窗末尾刷键帽（此时 CHAR_WINDOW 层已由
+     * begin_char_window 推入, sync 分支可正确裁决; 新查字重开窗 memset 归 0 -> 键帽
+     * 回「播报」）+ KEY 起播/重播后刷键帽。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_CHAR_CC, "kidpal_lcd_keybar_sync(") >= 2,
+        "ACC-6 RED: char_page.cc 零/单点 kidpal_lcd_keybar_sync 调用（期望 >= 2: "
+        "show() 末尾 + replay()）——键帽随态刷新无驱动点（WF-F3-01 键帽随态变注）");
+    {
+        char *rr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_replay(void)",
+                                      "void kidpal_char_page_show(const char *data_json)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(rr,
+            "ACC-6 RED(infra): char_page.cc 的 replay() 函数区切取失败（签名锚漂移）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(rr, "kidpal_lcd_keybar_sync(") >= 1,
+            "ACC-6 RED: replay() 区内零 kidpal_lcd_keybar_sync 调用——KEY 起播/重播后"
+            "键帽不刷新（「播报」不复位为「重播」; WF-F3-01 键帽随态变注）");
+        free(rr);
+    }
+    {
+        char *sr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_show(const char *data_json)",
+                                      "static const char charpage_dash_contract[1]");
+        TEST_ASSERT_NOT_NULL_MESSAGE(sr,
+            "ACC-6 RED(infra): char_page.cc 的 show() 函数区切取失败（签名锚漂移）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(sr, "kidpal_lcd_keybar_sync(") >= 1,
+            "ACC-6 RED: show() 区内零 kidpal_lcd_keybar_sync 调用——建窗末尾键帽不刷新"
+            "（未起播「播报」初始态无驱动点; WF-F3-01 键帽随态变注）");
+        free(sr);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1879,4 +2152,27 @@ TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节�
  *               本包只动 char_window_overlay.acceptance.c（板端）; 云面新建
  *               server/acceptance/test_char_meaning_merge.acceptance.py（MCD-A5/A7）。
  *               每条源锚齿配负向变异自证（锚值改回 => 齿转红）, 证据见交付报告。
+ *   2026-09-28  v1.59 revision (acceptance-author, TaskPackage
+ *               260928-char-window-key-triggered-play; additive, 零既有齿改写):
+ *               ① 追 seam [12] + test 12（ACC-1/2/3/4——char_page.cc 呈现面结构齿:
+ *                  静态整字首帧 charpage_render_frame(-1, g_page.n_strokes) + 旧空白
+ *                  首帧负向齿 / timer 创建后 pause + 首拍 hint 覆写负向齿 + MCF-A1
+ *                  末端锚锚位守卫（tooth 5, 现状绿 = MUST-STAY-GREEN）/ replay 区
+ *                  elapsed=0 + started=1 + resume / timer_cb REST pause 先于 elapsed
+ *                  推进且与推进之间夹 return）。
+ *               ② 追 seam [13] + test 13（ACC-6——lcd_display.cc sync 查字窗分支
+ *                  CHAR_WINDOW 门控 + kidpal_keybar_char_slots / kidpal_char_page_
+ *                  started 消费 + char_page.h started 外露 + char_page.cc show/replay
+ *                  刷键帽驱动点）。
+ *               ACC-5（host 行为齿）钉 keybar_three_slot.acceptance.c test 6（同批
+ *               additive, 见该文件 REVISION LOG）。真机目检类断言（整字实心、演完
+ *               2s+ 无自动重播、KEY 起播手感）不钉 host 齿——归 planner 未覆盖面
+ *               申报通道。
+ *               本包义务红（设计态红, builder 落地后转绿, 不计入「新增红」违约）=
+ *               test 12 除 tooth 5 外全部 tooth + test 13 全部 tooth。
+ *               MUST-STAY-GREEN = test 12 tooth 5（MCF-A1 锚位守卫, 现状绿）。
+ *               硬约束留痕: MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create
+ *               须留在 show() 内 hint_label 创建之后（DC-2 方案 A3; test 12 tooth 5
+ *               同刀钉死）——本包齿的形态（pause 走「timer 创建锚 -> dash_contract」
+ *               区间）不迫使 builder 移动该锚。
  * --------------------------------------------------------------------------- */

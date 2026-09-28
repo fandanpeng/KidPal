@@ -110,6 +110,20 @@
  *       替换），mutationEvidence.perAcceptance 逐条回填，acceptanceId 与 taskpackage
  *       acceptance[] 正文逐字节一致。
  *
+ *   [7] 查字窗键帽槽值域（ACC-5; home = firmware/main/display/keybar.{h,c};
+ *       260928-char-window-key-triggered-play additive 追加; 需求权威 = requirements
+ *       v1.59 WF-F3-01 键帽随态变注 :480——未起播「播报」、起播后「重播」, 右槽 BOOT
+ *       「结束」; plan.md reviewed 方案 B——keybar.c 新并行函数, 既有
+ *       kidpal_keybar_slots 签名与值域零触碰, additive 既有齿不破）:
+ *       int kidpal_keybar_char_slots(int started, const char **out_left,
+ *                                    const char **out_right);
+ *         -- started == 0（演示未起播）-> 左「播报」右「结束」;
+ *            started != 0（演示已起播）-> 左「重播」右「结束」;
+ *            防御: out_left/out_right 任一 NULL -> -1; 成功返回 0。
+ *         keybar.h 同步声明（lcd_display.cc sync 查字窗分支经 include 消费——ACC-6,
+ *         结构齿钉声明在世）。强符号源 keybar.c 已在 runner 在册（既有接线）,
+ *         builder 落地新函数后覆盖本文件 weak 哨兵, 零新增接线。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: KB-A1 三槽结构（通栏贴底三槽 + 常驻 chrome + 旧单行形态替换）-> test 4
@@ -213,6 +227,12 @@ __attribute__((weak)) int kidpal_keybar_slots(int page, int scene, int overlay_t
 __attribute__((weak)) int kidpal_voice_state_look(int scene, kidpal_voice_look_t *out)
 {
     (void)scene; (void)out;
+    return KKB_UNIMPLEMENTED;
+}
+__attribute__((weak)) int kidpal_keybar_char_slots(int started, const char **out_left,
+                                                   const char **out_right)
+{
+    (void)started; (void)out_left; (void)out_right;
     return KKB_UNIMPLEMENTED;
 }
 
@@ -901,6 +921,65 @@ TEST_CASE("键帽条三槽: 注册序守卫+需求契约canary+扫描器自检 (
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 6 — ACC-5 查字窗键帽随态值域（behavioral, frozen seam [7]; 强符号 home =
+ * display/keybar.c——已在 runner 在册, builder 落地新并行函数后覆盖本文件 weak 哨兵,
+ * 零新增接线; TaskPackage 260928-char-window-key-triggered-play additive）
+ * RED today: weak 哨兵 -2（keybar.c 尚无 kidpal_keybar_char_slots——设计态红）。
+ * ------------------------------------------------------------------------ */
+/* coverage: ACC-5 -- 查字窗键帽随态值域行为齿（WF-F3-01 键帽随态变注, requirements v1.59）: kidpal_keybar_char_slots 决策表——started=0 -> (播报, 结束) / started=1 -> (重播, 结束) / 任意非 0 started -> (重播, 结束) / NULL out 防御 -1 + keybar.h 声明在世结构半（ACC-6 接线前提） */
+TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起播后「重播」 (ACC-5)",
+          "[keybar_three_slot][ACC-5][behavior]")
+{
+    const char *left = NULL;
+    const char *right = NULL;
+    int rc;
+
+    /* tooth 1 (本包红齿): started = 0（演示未起播）-> (播报, 结束)。 */
+    rc = kidpal_keybar_char_slots(0, &left, &right);
+    kkb_require_implemented(rc, "kidpal_keybar_char_slots unimplemented");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rc == 0 && left != NULL && right != NULL &&
+            strcmp(left, "播报") == 0 && strcmp(right, "结束") == 0,
+        kkb_fm("ACC-5 RED: kidpal_keybar_char_slots(0) = (rc=%d, 左=%s, 右=%s) 期望 "
+               "(0, 播报, 结束)——查字窗未起播键帽漂移（WF-F3-01 键帽随态变注 v1.59: "
+               "未起播显示「播报」; 右槽 BOOT「结束」）",
+               rc, left ? left : "(null)", right ? right : "(null)"));
+
+    /* tooth 2 (本包红齿): started = 1（演示已起播）-> (重播, 结束)。 */
+    rc = kidpal_keybar_char_slots(1, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(
+        rc == 0 && left != NULL && right != NULL &&
+            strcmp(left, "重播") == 0 && strcmp(right, "结束") == 0,
+        kkb_fm("ACC-5 RED: kidpal_keybar_char_slots(1) = (rc=%d, 左=%s, 右=%s) 期望 "
+               "(0, 重播, 结束)——查字窗已起播键帽漂移（WF-F3-01 键帽随态变注 v1.59: "
+               "起播后显示「重播」）",
+               rc, left ? left : "(null)", right ? right : "(null)"));
+
+    /* tooth 3: started 语义 = 未起播 0 / 已起播非 0——任意非 0 值须落「重播」列
+     * （不为 1 特判留缝）。 */
+    rc = kidpal_keybar_char_slots(2, &left, &right);
+    TEST_ASSERT_TRUE_MESSAGE(
+        rc == 0 && left != NULL && strcmp(left, "重播") == 0,
+        kkb_fm("ACC-5 RED: kidpal_keybar_char_slots(2) 左槽 = %s 期望 重播——started "
+               "非 0 未一律落「重播」列（started 语义 = 未起播 0 / 已起播非 0）",
+               left ? left : "(null)"));
+
+    /* tooth 4 (防御): NULL out 任一 -> -1（从不为 UB）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_keybar_char_slots(0, NULL, &right) == -1,
+        "ACC-5 RED: NULL out_left 未防御（-1）——查字窗键帽槽把空指针当合法");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_keybar_char_slots(0, &left, NULL) == -1,
+        "ACC-5 RED: NULL out_right 未防御（-1）——查字窗键帽槽把空指针当合法");
+
+    /* tooth 5 (结构半, 本包红齿): keybar.h 声明 kidpal_keybar_char_slots 在世
+     * （lcd_display.cc sync 查字窗分支经 include 消费——ACC-6 接线前提）。 */
+    KKB_REQUIRE_ROOT();
+    TEST_ASSERT_TRUE_MESSAGE(
+        kkb_count_in_file(KKB_KEYBAR_H, "kidpal_keybar_char_slots") >= 1,
+        "ACC-5 RED: keybar.h 零 kidpal_keybar_char_slots 声明——查字窗键帽槽值域未进"
+        "纯逻辑单源头（lcd_display.cc 消费无从 include; plan.md 方案 B）");
+}
+
 /* ---------------------------------------------------------------------------
  * KB-A6 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -975,4 +1054,14 @@ TEST_CASE("键帽条三槽: 注册序守卫+需求契约canary+扫描器自检 (
  *               放宽任何本包语义断言；test 3/4/5 与本文件其余齿零改动。红态后果：两处
  *               修订在撤页前后皆绿（不新增红），本包设计态红全部由
  *               firmware/main/test/retract_p4_three_page.acceptance.c 承载。
+ *   2026-09-28  ACC-5 additive（acceptance-author, TaskPackage
+ *               260928-char-window-key-triggered-play）: 追 seam [7] + test 6——查字窗
+ *               键帽随态值域 kidpal_keybar_char_slots 行为齿（started=0 -> 播报 /
+ *               started=1 及任意非 0 -> 重播 / 右槽恒 结束 / NULL 防御 -1）+ keybar.h
+ *               声明在世结构半。需求权威 = requirements v1.59 WF-F3-01 键帽随态变注;
+ *               home = keybar.{h,c} 新并行函数（既有 kidpal_keybar_slots 签名与值域
+ *               零触碰, additive 既有齿不破）。强符号源 keybar.c 已在 runner 在册
+ *               （既有接线）, 零新增接线。本包义务红（设计态红, builder 落地后转绿）
+ *               = test 6 全部（weak 哨兵 + keybar.h 零声明）; MUST-STAY-GREEN =
+ *               本文件其余全部既有齿（值域 additive 不破）。
  * --------------------------------------------------------------------------- */

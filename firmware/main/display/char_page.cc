@@ -10,12 +10,21 @@
  * 绝不缺省回落字体渲染), 伴随文字 (拼音/部首/组词) 才用 LVGL 字体。示范字路径
  * 上零 tilt — 示范字路径上绝不施加文字倾斜样式 (防「教歪」)。
  *
- * 动画状态机 (950ms/笔、演完歇 2s 重来、三态已写/当前/未写虚线点链 6px、KEY 短按
- * 重播) 全部委托 display/char_stroke.c 的纯逻辑合约 (kidpal_char_anim_state 等),
- * 本窗只做 LVGL 呈现。底部提示条文案消费 kidpal_char_card_build 的 out->progress
- * 单源 (演示中「第 X 笔·共 N 笔」/ 定格「写完啦·共 N 笔」, S-F3.3 AC2——本窗零重抄
- * 文案格式)。数据结构由 mcp_server 经 kidpal_char_data_validate 防御降级门校验后喂入;
- * 本函数仍防御 (缺字段/解析失败 -> 不盲渲染直接返回)。
+ * 动画状态机 (950ms/笔、三态已写/当前/未写虚线点链 6px) 全部委托 display/char_stroke.c
+ * 的纯逻辑合约 (kidpal_char_anim_state 等), 本窗只做 LVGL 呈现。
+ *
+ * v1.59 KEY 起播口径 (本包 260928-char-window-key-triggered-play): 建窗即米字格静态
+ * 显示完整示范字 (整字实心黑——charpage_render_frame(-1, n_strokes) 判每笔 WRITTEN;
+ * 未按 KEY 前零逐笔演示——timer 建表即 lv_timer_pause); KEY 短按 = 首次起播 / 从头重播
+ * (replay 归零 elapsed + 置 started + lv_timer_resume, 首播重播同路径); 演完定格
+ * 「写完啦·共 N 笔」等按键、不自动循环 (timer_cb REST 相位渲染定格帧后 lv_timer_pause +
+ * return, 取模回绕在装配层闸断——char_stroke.c 纯逻辑合约零触碰)。键帽随态: 未起播
+ * 「播报」/ 起播后「重播」(show 末尾与 replay 均刷 kidpal_lcd_keybar_sync)。
+ *
+ * 底部提示条文案消费 kidpal_char_card_build 的 out->progress 单源 (演示中「第 X 笔·
+ * 共 N 笔」/ 定格「写完啦·共 N 笔」, S-F3.3 AC2——本窗零重抄文案格式)。数据结构由
+ * mcp_server 经 kidpal_char_data_validate 防御降级门校验后喂入; 本函数仍防御 (缺字段/
+ * 解析失败 -> 不盲渲染直接返回)。
  *
  * v1.38 对账清理 (本包落地): 右栏已砍项死成员清零 + 头注虚标清除; 握笔小手 12px 圆环
  * 占位 (占位绘制函数与尺寸常量整体) 删除——改口径后小手资产不再需要, 当前笔改白衬边。
@@ -30,11 +39,17 @@
 #include <cJSON.h>
 #include <lvgl.h>
 #include <esp_log.h>
+#include <esp_lvgl_port.h> /* replay 持 LVGL 锁 (lvgl_port_lock/unlock): KEY 短按经板级
+                              app.Schedule 在主任务跑、当前无锁; 锁内改动画态 + 启表。 */
 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cstdio>
+
+/* 键帽条三槽刷新 C 桥 (lcd_display.cc 定义; 内部递归取锁安全——kidpal_render_node.cc
+ * :141 同款先例)。show 末尾 (建窗即「播报」) 与 replay (起播后「重播」) 的键帽驱动点。 */
+extern "C" void kidpal_lcd_keybar_sync(void);
 
 LV_FONT_DECLARE(font_puhui_14_1); /* 全量 14px 普惠体: 右栏速查卡 + 底部提示条显式接线
                                      (v1.56 对账④ ——LV_FONT_DEFAULT 内置 montserrat_14 纯拉丁,
@@ -73,6 +88,8 @@ struct CharPageState {
      * 定格文案）。char 数组副本, cJSON 释放后安全。 */
     kidpal_char_card card;
     int elapsed_ms;
+    int started;   /* v1.59 演示起播态 (WF-F3-01 键帽随态变): 0 = 未起播 (键帽「播报」)
+                    * / 非 0 = 已起播 (键帽「重播」)。建窗 memset 归 0, replay 置 1。 */
 };
 
 static struct CharPageState g_page;
@@ -374,6 +391,16 @@ static void charpage_timer_cb(lv_timer_t *timer)
     if (phase < 0) {
         return;
     }
+    if (phase == 1 /* KIDPAL_CS_PHASE_REST */) {
+        /* 演完定格闸断 (v1.59 S-F3.1 AC3 / S-F3.3 AC2): 渲染定格帧 + 刷新定格文案
+         * 后停表并返回——**不推进 elapsed_ms**。取模回绕的自动重播在装配层闸断
+         * (char_stroke.c 纯逻辑合约零触碰, DC-1); 重播唯一路径 = KEY 短按 -> replay
+         * 的 lv_timer_resume。 */
+        charpage_render_frame(cur_stroke, written);
+        charpage_refresh_hint(cur_stroke);
+        lv_timer_pause(timer);
+        return;
+    }
     p->elapsed_ms += CHARPAGE_TIMER_PERIOD_MS;
     /* 每帧重绘: 已写/当前/未写三态; 底部提示条随相位刷新 (演示中进度 / 定格文案)。 */
     charpage_render_frame(cur_stroke, written);
@@ -496,9 +523,30 @@ static const lv_image_dsc_t *charpage_art_star_dsc(void)
     return &s_cp_star_dsc;
 }
 
+int kidpal_char_page_started(void)
+{
+    return g_page.started; /* v1.59 演示起播态外露 (WF-F3-01 键帽随态变; lcd_display.cc
+                            * 键帽条查字窗前台分支经 include 消费) */
+}
+
 void kidpal_char_page_replay(void)
 {
-    g_page.elapsed_ms = 0; /* KEY 短按重播: 从第一笔重新逐笔 (S-F3.3) */
+    /* KEY 短按 = 首次起播 / 从头重播同路径 (v1.59 S-F3.1 AC5 / S-F3.3 AC1)。replay 经
+     * 板级 dispatch 的 app.Schedule 在主任务跑、当前无 LVGL 锁——锁内归零动画态 + 置
+     * 起播位 + 启表, 锁外刷键帽 (「播报」->「重播」; 内部递归取锁安全, kidpal_render_
+     * node.cc:141 同款先例)。 */
+    if (g_page.panel == NULL || g_page.timer == NULL) {
+        return; /* 窗未开 / 表未建: 无重播对象, 防御返回 (不摸悬垂句柄) */
+    }
+    if (!lvgl_port_lock(30000)) {
+        ESP_LOGE(CHARPAGE_TAG, "replay lock timeout started=%d", g_page.started);
+        return;
+    }
+    g_page.elapsed_ms = 0;   /* 从头起播 (首播/重播同路径) */
+    g_page.started = 1;      /* 演示起播态置位 (键帽「播报」->「重播」) */
+    lv_timer_resume(g_page.timer);
+    lvgl_port_unlock();
+    kidpal_lcd_keybar_sync(); /* 锁外刷键帽: 「播报」->「重播」 */
     ESP_LOGI(CHARPAGE_TAG, "char page replay from first stroke");
 }
 
@@ -567,7 +615,10 @@ void kidpal_char_page_show(const char *data_json)
                              CHARPAGE_CANVAS_SIZE, CHARPAGE_CANVAS_SIZE,
                              LV_COLOR_FORMAT_NATIVE);
         charpage_draw_grid(CHARPAGE_CANVAS_SIZE);
-        charpage_render_frame(-1, 0);
+        /* 建窗首帧 = 静态整字 (v1.59 S-F3.1 AC1 前半): cur_stroke=-1 + written=n_strokes
+         * -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字实心黑 (char_stroke.c 相位复用,
+         * 冻结面零触碰)。此时 n_strokes = strokes 数组数 (strokeCount JSON 覆写在其后)。 */
+        charpage_render_frame(-1, g_page.n_strokes);
     }
 
     /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
@@ -734,7 +785,9 @@ void kidpal_char_page_show(const char *data_json)
     /* 底部提示条显式接线 font_puhui_14_1（v1.56 对账④: 不赌 s_kidpal_scr 字体继承——
      * 中文 label 绝不经由继承落到纯拉丁默认字体, 需显式钉全量普惠体）。 */
     lv_obj_set_style_text_font(g_page.hint_label, &font_puhui_14_1, 0);
-    charpage_refresh_hint(0); /* 首拍相位 = 第 1 笔 (与动画 t=0 同源) */
+    /* 建窗零动画拍 (v1.59 S-F3.1 AC1 后半): 不再刷首拍「第 1 笔」文案——初始提示条保持
+     * 上方 card_build 单源定格文案「写完啦·共 N 笔」(g_page.card.progress, card 以
+     * cur_stroke=-1 装配, 零新文案零重抄)。 */
 
     /* 逐笔动画驱动 */
     g_page.timer = lv_timer_create(charpage_timer_cb, CHARPAGE_TIMER_PERIOD_MS, &g_page);
@@ -742,6 +795,19 @@ void kidpal_char_page_show(const char *data_json)
         lv_timer_set_user_data(g_page.timer, &g_page);
     }
     g_page.elapsed_ms = 0;
+
+    /* 建窗即停表 (v1.59 S-F3.1 AC1 后半): timer 创建后立即 pause, 未按 KEY 前零逐笔
+     * 演示——起播/重播唯一启动路径 = replay() 的 lv_timer_resume (DC-2 裁定: 保 MCF-A1
+     * 区域齿末端锚 g_page.timer = lv_timer_create 原位不动, 本句紧跟其后)。 */
+    if (g_page.timer != NULL) {
+        lv_timer_pause(g_page.timer);
+    }
+
+    /* 建窗末尾刷键帽 (v1.59 WF-F3-01 键帽随态变): 此时 CHAR_WINDOW 层已由 begin_char_
+     * window 推入 -> sync 的查字窗分支裁决生效; 新查字重开窗经上方 memset 归 0 ->
+     * started = 0 -> 键帽回「播报」。show 已持 LVGL 锁 (begin/end_char_window 夹钳),
+     * sync 内部递归取锁安全 (kidpal_render_node.cc:141 同款先例)。 */
+    kidpal_lcd_keybar_sync();
 
     ESP_LOGI(CHARPAGE_TAG, "char page open (笔画=%d, 米字格示范字光栅渲染)",
              g_page.n_strokes);

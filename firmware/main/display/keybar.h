@@ -64,6 +64,18 @@ int kidpal_keybar_dots(int page, int overlay_top, kidpal_keybar_dots_t *out);
 int kidpal_keybar_slots(int page, int scene, int overlay_top,
                         const char **out_left, const char **out_right);
 
+/* 查字窗键帽槽裁决（ACC-5, WF-F3-01 键帽随态变注 v1.59; TaskPackage
+ * 260928-char-window-key-triggered-play additive 追加）:
+ *   演示未起播（started == 0）-> 左「播报」右「结束」;
+ *   演示已起播（started != 0）-> 左「重播」右「结束」（started 语义 = 未起播 0 /
+ *     已起播非 0, 不为 1 特判留缝）;
+ *   右槽 BOOT「结束」与覆盖层非提醒右槽一致（§2.1 结束方式③）。
+ *   防御: out_left/out_right 任一 NULL -> -1; 成功返回 0。
+ * 并行函数（不动 kidpal_keybar_slots 既有签名与值域——additive, 既有齿不破）;
+ * 设备侧 lcd_display.cc 查字窗前台分支消费（键帽值域仍走本纯逻辑单源, 零重算）。 */
+int kidpal_keybar_char_slots(int started, const char **out_left,
+                             const char **out_right);
+
 #ifdef __cplusplus
 }
 #endif

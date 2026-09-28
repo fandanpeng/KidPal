@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260928-char-window-key-triggered-play",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "f0379643-ec19-4868-a192-bbc594d766d9",
+  "startedAt": "2026-09-28T14:33:53.316Z",
+  "completedAt": "2026-09-28T14:33:53.884Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 429,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\",\n    \"origin.type(valid: delivery-story|planning-workstream|arch-review|human-ad-hoc|ci-failure|drift-report|regression|maintenance|proposal|human-confirmed-plan)\",\n    \"origin.type (cross-face-intake-spine) must equal sourceType (human-ad-hoc) when both present\"\n  ],\n  \"coverageErrors\": [\n    \"decisionCoverage[0].decision required\",\n    \"decisionCoverage[0].summary required\",\n    \"decisionCoverage[0].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[0].landsIn has invalid format: plan 方案 A4——取装配层闸断，零触冻结面（char_stroke.c FROZEN 纯逻辑）、测试面零重钉\",\n    \"decisionCoverage[1].decision required\",\n    \"decisionCoverage[1].summary required\",\n    \"decisionCoverage[1].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[1].landsIn has invalid format: plan 方案 A3——取 show 建表即 pause，保 char_window_overlay.acceptance.c MCF-A1 区域齿末端锚（g_page.timer = lv_timer_create 字面）\",\n    \"decisionCoverage[2].decision required\",\n    \"decisionCoverage[2].summary required\",\n    \"decisionCoverage[2].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[2].landsIn has invalid format: plan 方案 A2——human 触点①裁定采纳定格文案单源（「写完啦·共 N 笔」card_build 复用），零新文案零重抄\",\n    \"decisionCoverage[3].decision required\",\n    \"decisionCoverage[3].summary required\",\n    \"decisionCoverage[3].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[3].landsIn has invalid format: plan 方案 B——取新并行函数 kidpal_keybar_char_slots（additive，既有齿与调用面零破）\",\n    \"decisionCoverage[4].decision required\",\n    \"decisionCoverage[4].summary required\",\n    \"decisionCoverage[4].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[4].landsIn has invalid format: dropped——human 2026-09-26 明示「同意取消」，节奏交给孩子（S-F3.1 AC3 v1.59 已承载）\",\n    \"decisionCoverage[5].decision required\",\n    \"decisionCoverage[5].summary required\",\n    \"decisionCoverage[5].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[5].landsIn has invalid format: dropped——2026-09-26 提出、同日经三路线对照后由定稿口径取代（播报保持现状，现取路线撤回）\"\n  ],\n  \"warnings\": []\n}\n",
+      "stderr": "[taskpackage-required] TaskPackage 上下文解析：changeId=260928-char-window-key-triggered-play（来源：delivery/taskpackages/current/taskpackage.json）\n",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "6da8d2d677a7",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1790606033869-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\",\n    \"origin.type(valid: delivery-story|planning-workstream|arch-review|human-ad-hoc|ci-failure|drift-report|regression|maintenance|proposal|human-confirmed-plan)\",\n    \"origin.type (cross-face-intake-spine) must equal sourceType (human-ad-hoc) when both present\"\n  ],\n  \"coverageErrors\": [\n    \"decisionCoverage[0].decision required\",\n    \"decisionCoverage[0].summary required\",\n    \"decisionCoverage[0].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[0].landsIn has invalid format: plan 方案 A4——取装配层闸断，零触冻结面（char_stroke.c FROZEN 纯逻辑）、测试面零重钉\",\n    \"decisionCoverage[1].decision required\",\n    \"decisionCoverage[1].summary required\",\n    \"decisionCoverage[1].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[1].landsIn has invalid format: plan 方案 A3——取 show 建表即 pause，保 char_window_overlay.acceptance.c MCF-A1 区域齿末端锚（g_page.timer = lv_timer_create 字面）\",\n    \"decisionCoverage[2].decision required\",\n    \"decisionCoverage[2].summary required\",\n    \"decisionCoverage[2].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[2].landsIn has invalid format: plan 方案 A2——human 触点①裁定采纳定格文案单源（「写完啦·共 N 笔」card_build 复用），零新文案零重抄\",\n    \"decisionCoverage[3].decision required\",\n    \"decisionCoverage[3].summary required\",\n    \"decisionCoverage[3].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[3].landsIn has invalid format: plan 方案 B——取新并行函数 kidpal_keybar_char_slots（additive，既有齿与调用面零破）\",\n    \"decisionCoverage[4].decision required\",\n    \"decisionCoverage[4].summary required\",\n    \"decisionCoverage[4].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[4].landsIn has invalid format: dropped——human 2026-09-26 明示「同意取消」，节奏交给孩子（S-F3.1 AC3 v1.59 已承载）\",\n    \"decisionCoverage[5].decision required\",\n    \"decisionCoverage[5].summary required\",\n    \"decisionCoverage[5].sourceRefs must be a non-empty array\",\n    \"decisionCoverage[5].landsIn has invalid format: dropped——2026-09-26 提出、同日经三路线对照后由定稿口径取代（播报保持现状，现取路线撤回）\"\n  ],\n  \"warnings\": []\n}\n[taskpackage-required] TaskPackage 上下文解析：changeId=260928-char-window-key-triggered-play（来源：delivery/taskpackages/current/taskpackage.json）\n"
+  }
+}

@@ -1,38 +1,185 @@
-# input-brief · acceptance-author · 260928-story-connect-push-defer
+# input-brief · acceptance-author · 260928-char-window-key-triggered-play
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-09-28T04:06:19.037Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> 来源 TaskPackage: `delivery/taskpackages/260928-story-connect-push-defer/taskpackage.json` · subsystem: server · rigor: lite
+> generated-at: 2026-09-28T14:02:24.488Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `delivery/taskpackages/260928-char-window-key-triggered-play/taskpackage.json` · subsystem: firmware/main/display · rigor: lite
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
-| `docs/architecture.md` | `§5.2` | 5.2 运行视图（关键场景端到端） | 203 | ok |
-| `server/gateway/front/front_app.py` | — | 无锚点（整文件） | — | bare |
-| `server/acceptance/test_m4k1_story_cloud_link.acceptance.py` | — | 无锚点（整文件） | — | bare |
-| `server/acceptance/M4K1-ACCEPTANCE-NOTES.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/changes/dev/260924-m4-k1-story-cloud-link/docs-delta.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/workstreams/m4-star-notebook/progress.md` | — | 无锚点（整文件） | — | bare |
+| `docs/requirements.md` | — | 无锚点（整文件） | — | bare |
+| `docs/architecture.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/changes/intake/260928-char-window-key-triggered-play.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/260928-char-window-key-triggered-play/plan.md` | — | 无锚点（整文件） | — | bare |
+| `NFR-PERF-2` | — | （文件不存在） | — | missing |
+
+## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）
+
+### S-F3.1 · 源 = `docs/requirements.md` 节首行 :484
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.1 · 语音查字并看笔顺演示
+
+> 作为孩子，我希望问"勇敢的勇怎么写"，屏幕就超大字显示这个字；想看怎么写时按一下，它就一笔一笔教我写，以便我照着学会。
+
+**验收标准**
+- AC1：Given 孩子说「勇怎么写」，When 查到结果，Then 当前页上弹出查字窗，米字格内直接静态显示完整示范字（超大字、整字实心），右栏速查栏同时上屏；未按 KEY 前不做逐笔演示（v1.59）。
+- AC2：Given 演示中，When 观看，Then 三态可辨：已写笔 = 实心黑、**当前笔 = 白衬边**（沿笔迹白色描边——笔画本体完整可见、不遮挡字形；原「握笔小手领着走」2026-09-14 改，小手会挡字，画法粗细归设计）、未写笔 = 虚线点链。
+- AC3：Given 演完一轮，When 无操作，Then 定格在「✔ 写完啦 · 共 N 笔」等待按键，不自动重播（v1.59 改：起播与重播均由 KEY 触发——human 2026-09-26 裁「把节奏交给孩子」）。
+- AC4（v1.55 恢复；v1.59 改同步子句）：Given 播报中，When 听，Then 逐笔念笔名（「横撇、点、竖…」类，顺序按笔顺）+ 引导语；笔名由 OpenClaw 回复文本承载（试点期，错误率持续核验——详见 F3 窗口交互包）。
+- AC5（v1.59 新增）：Given 查字窗已弹出、演示未起播，When 按 KEY 短按，Then 从头起播逐笔演示；再按 = 从头重播（重播语义归 S-F3.3 AC1），演示独立于 TTS 播报。
+
+**线框**：WF-F3-01（查字窗，米字格 + 速查栏）。
+**补充规则**：内容规范 = 教学字体红线——米字格示范字必须标准规范字形（横平竖直、不抖不斜），拼音/部首/组词等伴随文字可用可爱体。埋点 = 无。
+**锚**：UI = `char-window`（原 canvas-p4——P4 常驻页时代的锚，v1.36 改窗后实现侧随撤页对账改名，Phase 1 dev 修复项） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）、§5.2 场景③（查字链路，云）
+**可行性**：✅（2026-09-15 真机复验定案——live 链路恢复可跑、TTS 引导语完整播报；崩溃根因实证 = 板端 LVGL 任务栈溢出（esp_lvgl_port 默认 7168 栈 < char_page 动画帧 ~6.5KB 需求，16K 补丁真机验证有效），遗留缺陷 = 板端 SVG 解析器缺 C 命令支持（勇 9 笔中 6 笔含 C 被整笔丢弃、示范字残缺）——两项正式修复登记 dev-loop；原「ARQ-260907 OpenClaw tools 拒收」嫌疑排除（该 ARQ 实为 merge-driver 条目，引用有误））
+```
+
+### S-F3.1-AC1 · 源 = `docs/requirements.md` 节首行 :484 · 本包声明 AC 粒度回引：`S-F3.1-AC1`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.1 · 语音查字并看笔顺演示
+
+> 作为孩子，我希望问"勇敢的勇怎么写"，屏幕就超大字显示这个字；想看怎么写时按一下，它就一笔一笔教我写，以便我照着学会。
+
+**验收标准**
+- AC1：Given 孩子说「勇怎么写」，When 查到结果，Then 当前页上弹出查字窗，米字格内直接静态显示完整示范字（超大字、整字实心），右栏速查栏同时上屏；未按 KEY 前不做逐笔演示（v1.59）。
+- AC2：Given 演示中，When 观看，Then 三态可辨：已写笔 = 实心黑、**当前笔 = 白衬边**（沿笔迹白色描边——笔画本体完整可见、不遮挡字形；原「握笔小手领着走」2026-09-14 改，小手会挡字，画法粗细归设计）、未写笔 = 虚线点链。
+- AC3：Given 演完一轮，When 无操作，Then 定格在「✔ 写完啦 · 共 N 笔」等待按键，不自动重播（v1.59 改：起播与重播均由 KEY 触发——human 2026-09-26 裁「把节奏交给孩子」）。
+- AC4（v1.55 恢复；v1.59 改同步子句）：Given 播报中，When 听，Then 逐笔念笔名（「横撇、点、竖…」类，顺序按笔顺）+ 引导语；笔名由 OpenClaw 回复文本承载（试点期，错误率持续核验——详见 F3 窗口交互包）。
+- AC5（v1.59 新增）：Given 查字窗已弹出、演示未起播，When 按 KEY 短按，Then 从头起播逐笔演示；再按 = 从头重播（重播语义归 S-F3.3 AC1），演示独立于 TTS 播报。
+
+**线框**：WF-F3-01（查字窗，米字格 + 速查栏）。
+**补充规则**：内容规范 = 教学字体红线——米字格示范字必须标准规范字形（横平竖直、不抖不斜），拼音/部首/组词等伴随文字可用可爱体。埋点 = 无。
+**锚**：UI = `char-window`（原 canvas-p4——P4 常驻页时代的锚，v1.36 改窗后实现侧随撤页对账改名，Phase 1 dev 修复项） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）、§5.2 场景③（查字链路，云）
+**可行性**：✅（2026-09-15 真机复验定案——live 链路恢复可跑、TTS 引导语完整播报；崩溃根因实证 = 板端 LVGL 任务栈溢出（esp_lvgl_port 默认 7168 栈 < char_page 动画帧 ~6.5KB 需求，16K 补丁真机验证有效），遗留缺陷 = 板端 SVG 解析器缺 C 命令支持（勇 9 笔中 6 笔含 C 被整笔丢弃、示范字残缺）——两项正式修复登记 dev-loop；原「ARQ-260907 OpenClaw tools 拒收」嫌疑排除（该 ARQ 实为 merge-driver 条目，引用有误））
+```
+
+### S-F3.1-AC3 · 源 = `docs/requirements.md` 节首行 :484 · 本包声明 AC 粒度回引：`S-F3.1-AC3`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.1 · 语音查字并看笔顺演示
+
+> 作为孩子，我希望问"勇敢的勇怎么写"，屏幕就超大字显示这个字；想看怎么写时按一下，它就一笔一笔教我写，以便我照着学会。
+
+**验收标准**
+- AC1：Given 孩子说「勇怎么写」，When 查到结果，Then 当前页上弹出查字窗，米字格内直接静态显示完整示范字（超大字、整字实心），右栏速查栏同时上屏；未按 KEY 前不做逐笔演示（v1.59）。
+- AC2：Given 演示中，When 观看，Then 三态可辨：已写笔 = 实心黑、**当前笔 = 白衬边**（沿笔迹白色描边——笔画本体完整可见、不遮挡字形；原「握笔小手领着走」2026-09-14 改，小手会挡字，画法粗细归设计）、未写笔 = 虚线点链。
+- AC3：Given 演完一轮，When 无操作，Then 定格在「✔ 写完啦 · 共 N 笔」等待按键，不自动重播（v1.59 改：起播与重播均由 KEY 触发——human 2026-09-26 裁「把节奏交给孩子」）。
+- AC4（v1.55 恢复；v1.59 改同步子句）：Given 播报中，When 听，Then 逐笔念笔名（「横撇、点、竖…」类，顺序按笔顺）+ 引导语；笔名由 OpenClaw 回复文本承载（试点期，错误率持续核验——详见 F3 窗口交互包）。
+- AC5（v1.59 新增）：Given 查字窗已弹出、演示未起播，When 按 KEY 短按，Then 从头起播逐笔演示；再按 = 从头重播（重播语义归 S-F3.3 AC1），演示独立于 TTS 播报。
+
+**线框**：WF-F3-01（查字窗，米字格 + 速查栏）。
+**补充规则**：内容规范 = 教学字体红线——米字格示范字必须标准规范字形（横平竖直、不抖不斜），拼音/部首/组词等伴随文字可用可爱体。埋点 = 无。
+**锚**：UI = `char-window`（原 canvas-p4——P4 常驻页时代的锚，v1.36 改窗后实现侧随撤页对账改名，Phase 1 dev 修复项） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）、§5.2 场景③（查字链路，云）
+**可行性**：✅（2026-09-15 真机复验定案——live 链路恢复可跑、TTS 引导语完整播报；崩溃根因实证 = 板端 LVGL 任务栈溢出（esp_lvgl_port 默认 7168 栈 < char_page 动画帧 ~6.5KB 需求，16K 补丁真机验证有效），遗留缺陷 = 板端 SVG 解析器缺 C 命令支持（勇 9 笔中 6 笔含 C 被整笔丢弃、示范字残缺）——两项正式修复登记 dev-loop；原「ARQ-260907 OpenClaw tools 拒收」嫌疑排除（该 ARQ 实为 merge-driver 条目，引用有误））
+```
+
+### S-F3.1-AC5 · 源 = `docs/requirements.md` 节首行 :484 · 本包声明 AC 粒度回引：`S-F3.1-AC5`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.1 · 语音查字并看笔顺演示
+
+> 作为孩子，我希望问"勇敢的勇怎么写"，屏幕就超大字显示这个字；想看怎么写时按一下，它就一笔一笔教我写，以便我照着学会。
+
+**验收标准**
+- AC1：Given 孩子说「勇怎么写」，When 查到结果，Then 当前页上弹出查字窗，米字格内直接静态显示完整示范字（超大字、整字实心），右栏速查栏同时上屏；未按 KEY 前不做逐笔演示（v1.59）。
+- AC2：Given 演示中，When 观看，Then 三态可辨：已写笔 = 实心黑、**当前笔 = 白衬边**（沿笔迹白色描边——笔画本体完整可见、不遮挡字形；原「握笔小手领着走」2026-09-14 改，小手会挡字，画法粗细归设计）、未写笔 = 虚线点链。
+- AC3：Given 演完一轮，When 无操作，Then 定格在「✔ 写完啦 · 共 N 笔」等待按键，不自动重播（v1.59 改：起播与重播均由 KEY 触发——human 2026-09-26 裁「把节奏交给孩子」）。
+- AC4（v1.55 恢复；v1.59 改同步子句）：Given 播报中，When 听，Then 逐笔念笔名（「横撇、点、竖…」类，顺序按笔顺）+ 引导语；笔名由 OpenClaw 回复文本承载（试点期，错误率持续核验——详见 F3 窗口交互包）。
+- AC5（v1.59 新增）：Given 查字窗已弹出、演示未起播，When 按 KEY 短按，Then 从头起播逐笔演示；再按 = 从头重播（重播语义归 S-F3.3 AC1），演示独立于 TTS 播报。
+
+**线框**：WF-F3-01（查字窗，米字格 + 速查栏）。
+**补充规则**：内容规范 = 教学字体红线——米字格示范字必须标准规范字形（横平竖直、不抖不斜），拼音/部首/组词等伴随文字可用可爱体。埋点 = 无。
+**锚**：UI = `char-window`（原 canvas-p4——P4 常驻页时代的锚，v1.36 改窗后实现侧随撤页对账改名，Phase 1 dev 修复项） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）、§5.2 场景③（查字链路，云）
+**可行性**：✅（2026-09-15 真机复验定案——live 链路恢复可跑、TTS 引导语完整播报；崩溃根因实证 = 板端 LVGL 任务栈溢出（esp_lvgl_port 默认 7168 栈 < char_page 动画帧 ~6.5KB 需求，16K 补丁真机验证有效），遗留缺陷 = 板端 SVG 解析器缺 C 命令支持（勇 9 笔中 6 笔含 C 被整笔丢弃、示范字残缺）——两项正式修复登记 dev-loop；原「ARQ-260907 OpenClaw tools 拒收」嫌疑排除（该 ARQ 实为 merge-driver 条目，引用有误））
+```
+
+### S-F3.3 · 源 = `docs/requirements.md` 节首行 :512
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.3 · 笔顺演示起播与重播
+
+> 作为孩子，我希望想看的时候按一下就开始演示、没看清能重播这笔，以便按自己的节奏学。
+
+**验收标准**
+- AC1：Given 查字窗已弹出（演示未起播 / 演示中 / 演完），When 按 KEY 短按，Then 从头起播笔顺动画——未起播 = 首次开始，已起播 = 从头重播（v1.59）。
+- AC2：Given 演示写完，When 定格，Then 显示「✔ 写完啦 · 共 9 笔」。
+
+**线框**：WF-F3-01（起播/重播交互 + 定格「✔ 写完啦 · 共 N 笔」）。
+**补充规则**：无。
+**锚**：UI = `char-window`（原锚 canvas-p4 底部提示条，同 S-F3.1 对账改名） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）
+**可行性**：✅（随 S-F3.1 于 2026-09-15 真机复验恢复；重播交互 KEY 短按路径同链，两缺陷修复后复验）
+
+> 变更注记（2026-09-13 human 裁，实质收窄）：原 story 含「还想再查下一个字」（语音说「那『星』字呢」走查字链路）——该半条移出，挂 §7 开放问题「语音查下一个字（指代解析）」；story 原文相应收窄重写。
+```
+
+### S-F3.3-AC1 · 源 = `docs/requirements.md` 节首行 :512 · 本包声明 AC 粒度回引：`S-F3.3-AC1`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.3 · 笔顺演示起播与重播
+
+> 作为孩子，我希望想看的时候按一下就开始演示、没看清能重播这笔，以便按自己的节奏学。
+
+**验收标准**
+- AC1：Given 查字窗已弹出（演示未起播 / 演示中 / 演完），When 按 KEY 短按，Then 从头起播笔顺动画——未起播 = 首次开始，已起播 = 从头重播（v1.59）。
+- AC2：Given 演示写完，When 定格，Then 显示「✔ 写完啦 · 共 9 笔」。
+
+**线框**：WF-F3-01（起播/重播交互 + 定格「✔ 写完啦 · 共 N 笔」）。
+**补充规则**：无。
+**锚**：UI = `char-window`（原锚 canvas-p4 底部提示条，同 S-F3.1 对账改名） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）
+**可行性**：✅（随 S-F3.1 于 2026-09-15 真机复验恢复；重播交互 KEY 短按路径同链，两缺陷修复后复验）
+
+> 变更注记（2026-09-13 human 裁，实质收窄）：原 story 含「还想再查下一个字」（语音说「那『星』字呢」走查字链路）——该半条移出，挂 §7 开放问题「语音查下一个字（指代解析）」；story 原文相应收窄重写。
+```
+
+### S-F3.3-AC2 · 源 = `docs/requirements.md` 节首行 :512 · 本包声明 AC 粒度回引：`S-F3.3-AC2`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F3.3 · 笔顺演示起播与重播
+
+> 作为孩子，我希望想看的时候按一下就开始演示、没看清能重播这笔，以便按自己的节奏学。
+
+**验收标准**
+- AC1：Given 查字窗已弹出（演示未起播 / 演示中 / 演完），When 按 KEY 短按，Then 从头起播笔顺动画——未起播 = 首次开始，已起播 = 从头重播（v1.59）。
+- AC2：Given 演示写完，When 定格，Then 显示「✔ 写完啦 · 共 9 笔」。
+
+**线框**：WF-F3-01（起播/重播交互 + 定格「✔ 写完啦 · 共 N 笔」）。
+**补充规则**：无。
+**锚**：UI = `char-window`（原锚 canvas-p4 底部提示条，同 S-F3.1 对账改名） ｜ 支撑 = arch §5.1（查字组件·笔顺渲染，板）
+**可行性**：✅（随 S-F3.1 于 2026-09-15 真机复验恢复；重播交互 KEY 短按路径同链，两缺陷修复后复验）
+
+> 变更注记（2026-09-13 human 裁，实质收窄）：原 story 含「还想再查下一个字」（语音说「那『星』字呢」走查字链路）——该半条移出，挂 §7 开放问题「语音查下一个字（指代解析）」；story 原文相应收窄重写。
+```
+
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 仅移除建连时推送调用点一处、零 wire 形状变化；对端固件零触碰（K2/K3 未开跑），story_page 侧消费语义不变
+> 纯板端呈现面改动（char_page 建窗初始态/replay 语义、keybar 键帽值域、lcd_display sync 接线）；不新增或改变任何端→网关消息、帧类型、字段类型与承载、回执语义、序列化形态——TTS 播报链路（application.cc 音频门 / mcp_server.cc view=char 路由 / protocols / server / 云端）零改动，D3 笔顺 JSON 与 E1 display 响应块消费形状不变
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
 ## ③ 先例（同 subsystem 已 merged 包，封顶 3 个，按 changeId 日期前缀倒序）
 
-| 先例包 | 冻结验收文件 |
-|---|---|
-| 260924-m4-k1-story-cloud-link | `server/acceptance/test_m4k1_story_cloud_link.acceptance.py` |
-| 260924-perf-k1-roundtrip-latency | `server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py` |
-| 260923-m3-k7-schedule-grid-restore | `server/acceptance/test_schedule_grid_restore.acceptance.py` · `firmware/main/test/schedule_grid_restore.acceptance.c` |
-
-封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
+（无同 subsystem 的已 merged 先例包）
 
 ## ④ 清单外阅读申报（超读是常态动作，不申报才是问题）
 
