@@ -5,6 +5,7 @@
 > 目标用户：8–12 岁小朋友。形态：ESP32-S3-RLCD-4.2 作 Client 端，云端（Aliyun + OpenClaw）作服务端大脑。400×300 黑白 1bpp RLCD 的显示约束贯穿全部 UI 定义。
 > 范围定名（2026-09-13）：**MVP** = 已开发完成、经真机验证的那批开发 Task Package 与功能（历史交付基线，不是本文范围）；**Phase 1** = 即将开发的下一版，本文即 Phase 1 的需求基线——在 MVP 成果之上，对既有 story 做大量改动。原「二期」清单 = Phase 1 之后另立 Epic 的功能。
 > 当前版本 **v1.59**；版本历史与逐次变更见文末 §9「变更记录」。
+> 状态：frozen · v1.59 · 2026-09-29（frozen = 可被下游引用；updating = 需求变更在途、下游禁引——流程见 `.claude/references/requirement-change.md`）
 
 ---
 
@@ -677,7 +678,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 
 ## 9. 变更记录（版本管理）
 
-> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——版本号、日期、改了什么、依据。story 增删改、NFR 变动、砍项、结构重排必须有行；纯勘误也记（标「勘误」）。行只追加、不覆盖既有行。逐次详情可溯 delivery/changes/arch/** 对应制品。语义修改（档 1）与结构性变更（档 2）的变更行以版本号为 changeId（不另铸 ID），该行即 story 修订的定稿载体，实现包引用以其为准；走 requirement-change.md 三档流程的变更，跳过流程的须在依据列写明「跳过 story-author/reviewer」。流程判据见 `.claude/references/requirement-change.md`。
+> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——版本号、日期、改了什么、依据。story 增删改、NFR 变动、砍项、结构重排必须有行；纯勘误也记（标「勘误」）。行只追加、不覆盖既有行。逐次详情可溯 delivery/changes/arch/** 对应制品。语义修改（档 1）与结构性变更（档 2）的变更行以版本号为 changeId（不另铸 ID），该行即 story 修订的定稿载体，实现包引用以其为准；走 requirement-change.md 三档流程的变更，跳过流程的须在依据列写明「跳过 story-author/reviewer」。流程判据见 `.claude/references/requirement-change.md`。头部状态行是盘上在途态标记：story-author 动笔置 updating、主线程在落稿时翻 frozen，翻 frozen 以 §9 版本行在位为准；updating 态本文件不得被实现包 / triage / launchPreconditions 引用。
 
 | 版本 | 日期 | 变更 | 依据 |
 |---|---|---|---|

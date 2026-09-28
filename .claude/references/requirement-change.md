@@ -12,6 +12,15 @@
 
 **升档规则**：档 1 起草期发现牵连面（关联 story / §2 共享底座 / 线框需同步）即携带清单；牵连 ≥2 处或含 NFR/Epic → 升档 2（升档裁定：主线程提呈、human 确认）。
 
+## 头部状态机
+
+requirements.md 头部版本区设状态行（形态 `> 状态：frozen | updating · <版本号> · <日期>`），是盘上在途态标记、**非第二定稿标记**（定稿唯一标记 = §9 版本行，见「定稿载体」节）：
+
+- **置 updating**：story-author 动笔即置，并注在途版本号与日期。
+- **翻 frozen**：只归主线程——档 1 = requirement-reviewer PASS 后（档 1 无 human 终确认，human 已裁）；档 2 = human 终拍后。翻转同时 append §9 版本行。
+- **档 0 勘误不走状态机**：主线程直改即 frozen，勘误无在途态。
+- **边界场景**：① updating 在途期档 0 勘误不并行执行——勘误等 frozen 后补做，或并入在途变更随本批落（主线程裁其一，§9 依据列留痕）；② updating 会话中断的弃/续由主线程在下次入口裁——弃 = 在途改动段经 git 还原、状态行恢复 frozen、不 append §9 版本行；续 = 重新派 author 接着改、状态保持 updating。
+
 ## 各档流程
 
 ### 档 0 · 勘误/措辞
@@ -23,18 +32,18 @@
 ### 档 1 · 语义修改
 
 1. **human 裁意图**——原话即起草依据（含改什么、为什么）。
-2. **story-author 起草**——修订稿 + 完稿自检 + spec-anchor-check + 相邻 story 撞车报告，同会话 return 交主线程。
-3. **requirement-reviewer 四查**——主线程以 dispatch prompt 转「human 意图原话 + 修订稿 + 撞车报告」；不过否回循环至过。
-4. **过即落稿**——主线程写 requirements.md + §9 追加版本行。**无 human 终确认**（human 已裁：意图事前对齐 + reviewer 意图保真核查已覆盖；§9 append-only 可事后否回）。
+2. **story-author 盘上起草**——直接编辑 requirements.md（头部状态行置 updating）+ 完稿自检 + spec-anchor-check + 相邻 story 撞车报告；return 交主线程的内容 = 自检结果 + 撞车报告 + 已改锚行清单 + **改前/改后句级对照**（逐修订段「原句 → 新句」两行式；稿在盘上，不另携修订稿全文，对照不可省——reviewer 意图保真夹带检测的输入）。
+3. **requirement-reviewer 四查**——审稿对象 = 盘上 updating 态文件（不审转交文本）；主线程 dispatch prompt 输入构成显式含「human 意图原话 + author 改前/改后对照」；不过否回循环至过（author 再改盘上文件，状态保持 updating）。
+4. **过即落稿**——主线程翻状态行 frozen + §9 追加版本行。**无 human 终确认**（human 已裁：意图事前对齐 + reviewer 意图保真核查已覆盖；§9 append-only 可事后否回）。
 
 ### 档 2 · 结构性
 
 1. **human 裁意图与取舍倾向**。
-2. **story-author 起草**（含牵连面清单）。
-3. **architect 可行性判断**（出场由 human 指定）：可行性三态 ✅/🟡/🔴 + 实现代价 + 影响面，只出意见不裁语义。
+2. **story-author 盘上起草**（updating 态，含牵连面清单）。
+3. **architect 可行性判断（默认必派）**：固定三件产出——可行性三态 ✅/🟡/🔴 + **逐 story/AC 技术锚**（每个受影响 story/AC 的可实现性判据与实现要点一句话）+ **影响面概貌**（牵连的实现面文件/子系统清单，供下游 triage 分档与 planner 前置技术评估消费）；只出意见不裁语义。免派例外唯一一条：human 明示可行性已有在先评估承载时免派，免派事由记 §9 该行依据列。
 4. **story-author 按可行性修订**——🔴/取舍点升回 human，不带病下行。
-5. **requirement-reviewer 四查**（重点查牵连面）。
-6. **human 终拍**——architect 结论 + reviewer 结论一并呈；拍板 → 主线程落稿 + §9 版本行；review 留痕 = §9 该行依据列浓缩承载 architect 结论 + reviewer 结论。
+5. **requirement-reviewer 四查**（重点查牵连面；审盘上 updating 文件 + 改前/改后对照）。
+6. **human 终拍**——architect 结论 + reviewer 结论一并呈；拍板 → 主线程翻 frozen + §9 版本行；review 留痕 = §9 该行依据列浓缩承载 architect 结论 + reviewer 结论。
 
 分工一句话：architect 管「能不能」、reviewer 管「准不准」、human 拍「要不要」。
 
@@ -42,6 +51,10 @@
 
 - story 修订定稿的标记 = **§9 版本行本身，版本号即 changeId**（不另铸批次 ID——TaskPackage changeId 强语义见 task-intake-and-slicing.md，撞名禁用）。
 - 实现包引用 story 在 write-story 合法形态（`S-Fx.y · 标题`，可选 AC 号集）之上可加「定稿版本号」；launchPreconditions 消费挂点归 ARQ-260928 批（留根）。
+
+## 消费保护规则
+
+updating 态的 requirements.md 不得被下游引用——triage 分流、taskpackage 撰写（story 引用）、launchPreconditions 消费一律只认 frozen 态（机械判据 = §9 对应版本行在位）。引用校验机检齿（taskpackage-required-check 校验引用版本号在 §9 在位）留根至实包跑 2–3 单后按摩擦立项。
 
 ## REQ- 域 CRQ 闭环纪律
 
@@ -55,10 +68,10 @@
 
 | 角色 | 职责 | 禁止 |
 |---|---|---|
-| story-author（起草） | 按意图转五件结构修订 + 自检 + 撞车报告（档 2 加牵连面清单） | 不裁定、不自评、无 Write |
-| requirement-reviewer（审稿） | 四查 + 否回权 + 独立取证 | 不代笔、不落稿、与 story-author 不得互兼 |
-| architect（仅档 2，human 指定） | 可行性意见（三态 + 代价 + 影响面） | 不裁语义、不代起草 |
-| 主线程 | 派发 + 落盘 + §9 记账 | 不改 reviewer 判决、不跳否回循环 |
-| human | 裁意图（恒）+ 档 2 终拍 + 跳过例外授出 | — |
+| story-author（起草） | 盘上起草（updating 态直改 requirements.md，architecture.md 镜像句同批）+ 自检 + 撞车报告 + 改前/改后句级对照（档 2 加牵连面清单） | 不裁定、不自评；写面限 requirements.md + architecture.md（scope-map 强制）；frozen 翻转不归本 agent |
+| requirement-reviewer（审稿） | 四查（审盘上 updating 态文件 + 改前/改后对照）+ 否回权 + 独立取证 | 不代笔、不落稿、不翻状态、恒无 Write、与 story-author 不得互兼 |
+| architect（仅档 2，默认必派） | 可行性三件：三态 + 逐 story/AC 技术锚 + 影响面概貌 | 不裁语义、不代起草；免派例外见档 2 流程 |
+| 主线程 | 派发 + 状态翻转（frozen）+ §9 记账；dispatch 输入构成显式含「human 意图原话 + author 对照」 | 不改 reviewer 判决、不跳否回循环 |
+| human | 裁意图（恒）+ 档 2 终拍 + 跳过例外授出；档 1 事后否回权（§9 append-only）不变 | — |
 
 语义权威恒 = human。触 `docs/contracts/**` 的发现一律路由 architect-reviewer 四分类 + 人类契约门，本流程无权处置。

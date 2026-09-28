@@ -123,8 +123,8 @@
       "deny": ["**"]
     },
     "story-author": {
-      "allow": [],
-      "deny": ["**"]
+      "allow": ["docs/requirements.md", "docs/architecture.md"],
+      "deny": ["docs/contracts/**"]
     },
     "requirement-reviewer": {
       "allow": [],
