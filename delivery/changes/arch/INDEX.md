@@ -14,6 +14,7 @@
 | [260928-gov-review-cross-face-intake-spine](260928-gov-review-cross-face-intake-spine/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-portfolio-boundary-story-propagation](260928-gov-review-portfolio-boundary-story-propagation/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-requirement-face](260928-gov-review-requirement-face/) | 2026-09-28 | frozen | yes |
+| [260926-arch-review-char-window-key-triggered-play](260926-arch-review-char-window-key-triggered-play/) | 2026-09-26 | draft | — |
 | [260924-arch-review-perf-k1-roundtrip-latency](260924-arch-review-perf-k1-roundtrip-latency/) | 2026-09-24 | draft | yes |
 | [260924-gov-review-gate-parse-teeth](260924-gov-review-gate-parse-teeth/) | 2026-09-24 | landed | yes |
 | [260924-gov-review-planner-orchestration-align](260924-gov-review-planner-orchestration-align/) | 2026-09-24 | landed | yes |
