@@ -958,12 +958,13 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
-            # 故事三时点 ①：WS 建连即推 story_list（front 自推单源、Q7 天然豁免；arch
-            # §5.2④ 扩展承载）。失败不阻断建连。
-            try:
-                await _push_story_list(websocket)
-            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
-                log.warning("story_list_connect_push_err err=%s", type(e).__name__)
+            # 故事三时点 ①「建连即推」已摘除（260928-story-connect-push-defer，human 方向锚
+            # b036f554）：设备每会话重开 WS，建连即推会在每次按 KEY 时给设备打 story_list 帧，
+            # 旧固件无条件渲染 P3 页盖掉聆听态（story_page 零 CJK -> 半截页）。①时机归 M4-K3
+            # kidpal_session_ctx 承接（story 会话切累积态时随帧推送）；取舍与依据见
+            # delivery/taskpackages/260928-story-connect-push-defer/plan.md。
+            # `_push_story_list` 函数本体与②（停录归档后）/③（删除执行后）调用点保留不动
+            # （FIX-A2 a3 齿命名缝 + ②③ wire 断言、FIX-A1 建连零帧负锚齿冻结）。
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:

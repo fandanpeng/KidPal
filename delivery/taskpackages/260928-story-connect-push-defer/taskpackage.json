@@ -26,7 +26,11 @@
   ],
   "acceptance": [
     "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
-    "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）"
+    {
+      "id": "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）",
+      "kind": "structural",
+      "note": "语义修订记录齿（acceptance-author 定性：满足面 = REVISION LOG/头注/docstring 落实，已于 73b5d3d 冻结在案；行为敏感由 FIX-A1 负锚齿 + 修订后 a3 齿承载，mutationEvidence A2 条 note 同口径）——非逐 AC 行为判定对象，structural 豁免与 M4K1-A7 同机制。"
+    }
   ],
   "acceptanceTestsFile": [
     "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
@@ -36,7 +40,9 @@
     "铁律：_push_story_list 函数本体与②③调用点不删不动；契约面/spec 面/agent 定义零触碰；K1 历史制品不改写（supersession 注记落本包 docs-delta，指向生效措辞）",
     "docs-sync：K1 docs-delta §4 H1 的「WS 建连」三时点措辞 supersession 注记（C4 落地时 arch 措辞以本包修订为准）；arch §5.2④ 时机语义变更留痕"
   ],
-  "contractRefs": [],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3③"
+  ],
   "docRefs": [
     "docs/architecture.md#§5.2"
   ],
@@ -88,7 +94,7 @@
       }
     ]
   },
-  "notes": "scope-map 前置核对：builder/fixer allow server/** ✓（acceptance 目录 deny 照旧）；acceptance-author allow server/**/acceptance/** ✓；本包不触 docs/contracts、不改 K1 冻结件语义（仅 a3 齿按 FIX-A2 修订）。本验收语义修订 = 正常改验收通道（human 方向授权），非 §6 tighten-only 窗口（不满足纯 additive/断言不变件）——REVISION LOG 逐字记理由与 human 锚。K1 的 M4K1-A7（live 全链）deferred 状态不变；本包 = 该 deferred 面提前爆雷的止血，live 复证仍归 K3 设备轮。红基线预期：FIX-A1 负锚齿在现树（建连推仍在）为设计态红，builder 摘除后转绿；其余既有齿全绿零偏移。",
+  "notes": "scope-map 前置核对：builder/fixer allow server/** ✓（acceptance 目录 deny 照旧）；acceptance-author allow server/**/acceptance/** ✓；本包不触 docs/contracts、不改 K1 冻结件语义（仅 a3 齿按 FIX-A2 修订）。本验收语义修订 = 正常改验收通道（human 方向授权），非 §6 tighten-only 窗口（不满足纯 additive/断言不变件）——REVISION LOG 逐字记理由与 human 锚。K1 的 M4K1-A7（live 全链）deferred 状态不变；本包 = 该 deferred 面提前爆雷的止血，live 复证仍归 K3 设备轮。红基线预期：FIX-A1 负锚齿在现树（建连推仍在）为设计态红，builder 摘除后转绿；其余既有齿全绿零偏移。 finalize 补正（2026-09-28 verify r1 taskpackage-required 红后）：contractRefs 填 §1.3③——本包②③推送与冻结齿仍承载 story_list wire 形状，建连即推摘除不涉契约面（形状零变化）。 finalize 补正2（verify r2 acceptance-coverage 红后）：FIX-A2 归 structural——coverage 标记形态（齿 docstring 为 M4K1-A3 / FIX-A2 复列、闸要求 coverage: 后紧跟短 id）不匹配；FIX-A2 本体 = 语义修订记录齿非行为齿，按框架 structural 豁免（AA notes §10.6 同定性）。",
   "docsOwner2": "",
   "launchPreconditions": null
 }
