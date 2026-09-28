@@ -142,3 +142,9 @@ docs/crq/requirement/INDEX.md
 ## 7. 评审记录
 
 （判官 append-only 区；主线程不预判结论。）
+
+### R2 - 2026-09-28 - architect
+
+verdict: GREEN
+
+R1 BLOCK(F1,F2) 修订核验完毕：两项 BLOCKING（V6/§3 清扫模式改全 ID 三归类、changeId := §9 版本号不另铸）均真解，F3–F10 处置到位，无新矛盾；T6 append-only 注记与 §3 新披露不改变 riskTier medium / G2 profile / Track B 轨道判定。附 4 条 MINOR（V1 路径计数、销项措辞两读、①类示例失实、T2 四查(d) 未随升档规则扩围）供 landing 前顺手修，不阻断。逐 finding 证据与亲核留痕见本目录 `review.md` R1/R2 段。
