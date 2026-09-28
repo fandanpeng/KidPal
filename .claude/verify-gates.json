@@ -43,7 +43,7 @@
       "kind": "governance",
       "cmd": "node .claude/scripts/change-manifest-check.mjs",
       "timing": "scoped",
-      "_doc": "changeManifest 对账（260928-gov-review-dev-loop-preassess-manifest-scope T6）：git diff 涉及的对账面文件 vs changeManifest[] glob 全覆盖断言，清单外实现面文件即红（fail-closed）；对账面 = firmware/** + server/** ∪ TaskPackage 声明的 docs-sync 面，簿记/治理面豁免；与 taskpackage-required-check 共享同一 changeId cutoff 谓词（pre-cutoff 在途包两闸同豁免）。"
+      "_doc": "changeManifest 对账（260928-gov-review-dev-loop-preassess-manifest-scope T6）：git diff 涉及的对账面文件 vs changeManifest[] glob 全覆盖断言，清单外实现面文件即红（fail-closed）；对账面 = firmware/** + server/**（实现面；簿记/治理面豁免——FROZEN 条文的 docs-sync 面子句未实现为代码，landing-verdict FAIL-F2 回改本 _doc 留痕；manifest 显式列入的 docs 路径天然在对账内）。与 taskpackage-required-check 共享同一 changeId cutoff 谓词（pre-cutoff 在途包两闸同豁免）。"
     },
     {
       "id": "firmware-build",

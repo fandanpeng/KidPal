@@ -222,8 +222,9 @@ function runGateChild() {
 
   for (const gate of activeGates) {
     const started = Date.now();
-    // timing=full 闸透传 scope-file（unit/acceptance 自行求交与 fail-closed；scoped 闸行为零变）
-    const cmd = gate.timing === 'full' && scopeFile ? `${gate.cmd} --scope-file=${scopeFile}` : gate.cmd;
+    // timing=full 闸透传 scope-file + phase（unit/acceptance 自行求交与 fail-closed；scoped 闸行为零变）。
+    // --phase 透传 = FAIL-F1 修复的纵深：callee 自身也执行 final 缺 scope-file 红闸判据。
+    const cmd = gate.timing === 'full' && scopeFile ? `${gate.cmd} --phase=${phase} --scope-file=${scopeFile}` : gate.cmd;
     const run = spawnSync(cmd, { cwd: projectDir, shell: true, encoding: 'buffer', maxBuffer: LIMITS.maxFactBytes * 4 });
     const stdout = boundedText(run.stdout, LIMITS.perResultStdoutBytes);
     const stderr = boundedText(run.stderr, LIMITS.perResultStderrBytes);

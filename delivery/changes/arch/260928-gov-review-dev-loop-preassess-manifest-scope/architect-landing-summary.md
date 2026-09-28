@@ -72,3 +72,9 @@ AGENTS.md
 
 - PROPOSAL §6 留根 1–7 照旧生效；新增第 8 项（landing 期发现）：`pod-coordination.md:151` 消解 runbook 镜像句的 floor 注补齐（不在本批 manifest，下批搭车件）。
 - 判官 R3 landing 注两项：dev-loop-operating-system.md:29 角色表「全量 e2e」已随 T12 清（本表 #8）；loop-metrics.mjs:74「全量运行」注释判词形族外、未动（语义键于 phase 过滤）。
+
+## landing-verifier R1 复核退回修复（2026-09-28，landing-verdict FAIL-F1/F2）
+
+- **FAIL-F1（阻断）scope-file 透传链参数形态断裂**：caller（verify.mjs / merge-driver）拼等号形态 `--scope-file=path`，callee 两 run-check 只认空格形态 → 透传静默落空（该圈不圈、该红不红，final 相位静默退化为全仓全量）。修复：两 callee `parseScopeFileArg` 兼容双形态（`--scope-file=` 前缀 ∨ 空格参数）；verify.mjs 对 timing=full 闸追加 `--phase=final` 透传（纵深：callee 自身执行 final 缺 scope-file 红闸判据）；两 callee self-check 各加 3 断言（双形态解析 + 缺参 null）。**三态实证（本机实跑）**：等号形态+坏清单=红(1)、空格形态+坏清单=红(1)、final 缺参=红(1)、等号形态+有效清单=绿(0) 且 phase=executor-skipped（scope 被消费、交集空诚实绿）、acceptance 同构=绿(0)。
+- **FAIL-F2（随批修）T6 对账面 docs-sync 面子句未实现而 _doc 失实**：选「回改 _doc 去子句并留痕」——verify-gates.json 新闸 `_doc` 改为「对账面 = firmware/** + server/**（实现面；簿记/治理面豁免）」+ 留痕注（FROZEN 条文的 docs-sync 面子句未实现为代码；manifest 显式列入的 docs 路径天然在对账内）。未补实现（仓内无「声明的 docs-sync 面」独立字段，实现会是发明新语义——留 PROPOSAL §6 观察项）。
+- 复跑自检全绿：change-manifest 16/16、taskpackage-required 18/18、verify.mjs 10/10、merge-driver F4+scope 5 断言、unit/acceptance self-check exit 0。

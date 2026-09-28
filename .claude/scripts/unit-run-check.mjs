@@ -180,6 +180,11 @@ function runSelfCheck() {
   const allLive = parseCollectSummary('no tests collected (18 deselected) in 0.05s');
   ok('all-live-deselected-reported', allLive.structuralCollected === 0 && allLive.liveDeselected === 18);
 
+  // landing-verdict FAIL-F1 接缝断言：scope-file 双形态解析（等号 = caller 形态；空格 = 人敲形态）
+  ok('scope-arg-equals-form-parsed', parseScopeFileArg(['--scope-file=/tmp/a.txt']) !== null);
+  ok('scope-arg-space-form-parsed', parseScopeFileArg(['--scope-file', '/tmp/a.txt']) !== null);
+  ok('scope-arg-absent-null', parseScopeFileArg(['--phase=final']) === null);
+
   // 实盘 smoke（本仓当前多半无测试 → 决策绿）
   try {
     const real = collectReal(projectDir);
@@ -204,6 +209,10 @@ function runSelfCheck() {
 // scope-file 引用文件在盘上全部不存在 → 红（防 typo 假绿）。交集空 = 诚实绿跳过（对偶 state4 绿）。
 // scoped 相位 / 无 phase 直跑（manual、quick-check）不消费 scope-file，行为不变。
 function parseScopeFileArg(argv) {
+  // 兼容两种形态（landing-verdict FAIL-F1 接缝修复）：caller（verify.mjs / merge-driver）拼等号形态，
+  // 人手敲常用空格形态——只认其一会让透传静默落空（该圈不圈、该红不红）。
+  const eq = argv.find((a) => typeof a === 'string' && a.startsWith('--scope-file='));
+  if (eq) return resolve(projectDir, eq.slice('--scope-file='.length));
   const i = argv.indexOf('--scope-file');
   if (i === -1) return null;
   const v = argv[i + 1];
