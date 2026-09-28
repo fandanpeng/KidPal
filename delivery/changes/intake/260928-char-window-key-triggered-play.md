@@ -1,6 +1,6 @@
 ---
 changeId: 260928-char-window-key-triggered-play
-status: in-flight
+status: in-flight（需求面 + 架构面已收口 v1.59 落稿；实现面 Pod 循环在跑——planner headless 2026-09-28 启动）
 sources:
   human-intent-verbatim:
     - 「（2026-09-26 首提）查字的需求我想调整一下，当问什么字的时候 直接在 田字格里显示出来打字，右侧显示出来解释，按Key键 播报的时候再开始播报」
@@ -41,7 +41,7 @@ anchors:
   req: "v1.59 已落稿（2026-09-28）——docs/requirements.md §9 追加 v1.59 行即定稿标记（requirement-change.md 定稿载体条款）。档 2 全流程走毕：story-author 起草（A1–A14 + 否回补稿 B1–B8）→ requirement-reviewer 四查（首查 FAIL 3 否回 → 补稿后复审 PASS）→ human 终拍批准（2026-09-28：批准落稿 / 架构同批 / 日期列 2026-09-28）；spec-anchor-check 落稿后复跑绿（60/46/13/31、errors=[]，与基线逐字段一致）。"
   arch: "v1.59 同批落稿（2026-09-28）——architecture.md :111 查字延迟句 + :211 场景③ 两处镜像句同步（openQ Q3 裁定，human 终拍确认「确认同批改」）。"
   contract: "none（零触点，无需门，无回填物）"
-  imp: ""
+  imp: "（in-flight）实现面已过 /triage-change：architect 裁决 ②单包 Lite（low，量级上修 5 文件 ~60–80 行——键帽随态变贯通 keybar/lcd_display/char_page；关键取舍 = 演完定格在装配层闸断、char_stroke.c 冻结面零触碰），human 触点①确认 Lite + 启动 dev loop + 提示条用定格文案；reviewed plan 落 delivery/taskpackages/260928-char-window-key-triggered-play/plan.md（2026-09-28）；planner 已 headless 拉起跑 /build-feature 完整循环（2026-09-28），taskpackage.json 建成后回填本锚。"
 openQ:
   - id: Q1
     q: 既有 260926-arch-review-char-window-key-triggered-play PROPOSAL（Track B 草案，DRAFT v2.1）如何处置？
