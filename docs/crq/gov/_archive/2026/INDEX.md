@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 73 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 74 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -84,3 +84,4 @@
 | [ARQ-260923-gate-tooling-noise-batch](ARQ-260923-gate-tooling-noise-batch.md) | 治理脚本 / 钩子的「用户面」噪声与危险静默小修集合——误导提示 / 静默相位回落 / 传参形态不一 / 非闸守卫脚本漂移无主 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
 | [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
 | [ARQ-260924-landing-summary-template-pointer-gap](ARQ-260924-landing-summary-template-pointer-gap.md) | landing-summary 模板指针在 landing 相位文面缺位——协议七步第 4 步只说「写 architect-landing-summary.md」不指模板，主线程手写漏 landing-manifest 围栏块致核验 FAIL（unit-gate F4 同根第二实例，模板早已固化该教训） | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
+| [ARQ-260928-triage-cross-face-intake-gap](ARQ-260928-triage-cross-face-intake-gap.md) | /triage-change 只判实现侧切分大小——跨面 idea（需求+架构+契约+实现）无统一 intake，human 须在 3-4 个窗口以不同留痕格式重复同一意图，跨面触面靠事后逃生门「踢走」而非事前折叠 | 2026-09-28 | 260928-gov-review-cross-face-intake-spine |

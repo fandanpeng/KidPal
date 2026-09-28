@@ -2,13 +2,13 @@
 id: ARQ-260928-triage-cross-face-intake-gap
 title: /triage-change 只判实现侧切分大小——跨面 idea（需求+架构+契约+实现）无统一 intake，human 须在 3-4 个窗口以不同留痕格式重复同一意图，跨面触面靠事后逃生门「踢走」而非事前折叠
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（human 起草 PROPOSAL 经 /arch-change 走 Track A；或动 triage-change / change-triage / write-story / task-intake 任一面时并批）
 opened: 2026-09-28
-closed: ""
-closedBy: ""
+closed: 2026-09-28
+closedBy: 260928-gov-review-cross-face-intake-spine
 paths: [.claude/commands/triage-change.md, .claude/references/change-triage.md, .claude/skills/write-story/SKILL.md, .claude/references/task-intake-and-slicing.md]
 source: [主线程会话 2026-09-28（human idea「查字页进入显示完整打字、按Key播报」逐步 walkthrough 实录 + human 诊断原话）, docs/requirements.md §9 变更记录 v1.55/v1.56/v1.57（单 idea 跨面分头处理先例）, .claude/references/change-triage.md §2/§6, .claude/commands/triage-change.md 第一刀]
 ---
@@ -35,3 +35,5 @@ source: [主线程会话 2026-09-28（human idea「查字页进入显示完整�
 **2026-09-28 注记**：建议 2（需求面比例化入口）已由 260928-gov-review-requirement-face 批 T3 承载——三档判据 + 两档流程落 `.claude/references/requirement-change.md`，定稿载体 = §9 版本行即 changeId；建议 1/3/4（intake 四面申报 / launchPreconditions 推广②路径 / grilling 收敛）与 /arch-change 退役安置仍归本条目后续批。
 
 **2026-09-28 注记（第二批）**：建议 1/3/4（intake 四面申报 / launchPreconditions 推广②路径 / grilling 收敛一次）已由 260928-gov-review-cross-face-intake-spine 批承载——统一 intake 程序 SSOT 落 `.claude/references/change-intake.md`，triage 第一刀改四面探测，spine = `delivery/changes/intake/<changeId>.md`；/arch-change 退役安置仍留根独立批。另：本条目风险节自评 review profile = Track A，经 human 2026-09-28 裁 OQ-1=(b) 改判 Track B（改判原话留痕 PROPOSAL §4），本批按 Track B 执行。
+
+**2026-09-28 结项**：四建议全部落地——建议 2 = 260928-gov-review-requirement-face 批 T3；建议 1/3/4 = 260928-gov-review-cross-face-intake-spine 批 T1/T2/T4（含 T1 facePlan 承载 grilling 收敛）。评审 R1 BLOCK→R2 GREEN、landing-verifier PASS、已合并本地 main（delivery/changes/arch/INDEX.md mergedInMain=yes）。/arch-change 退役安置非本条四建议之一，拆独立条目 `ARQ-260928-arch-change-retirement` 承接。

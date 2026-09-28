@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 16（待拍板 0 / 待触发 14 / 已接受风险 2）；已结 73（归档索引见下）。
+**摘要**：未结 16（待拍板 0 / 待触发 14 / 已接受风险 2）；已结 74（归档索引见下）。
 
 ## 待拍板（0）
 
@@ -30,7 +30,7 @@ _（无）_
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
 | [ARQ-260924-split-order-granularity-gate-gap](ARQ-260924-split-order-granularity-gate-gap.md) | SHOULD | 拆包顺序链（里程碑登记/roadmap 先于 taskpackages）无机械闸且 portfolio-planner 无尺寸模型——ui-v5-align 事故以 21 包建毁与三轮 human 复裁为代价实测显形 | 下一治理批（动 portfolio-planner intake / task-intake-and-slicing Slicing Matrix / workstreams README 任一面时并批；① intake 停等半可先行） |
 | [ARQ-260927-role-boundary-story-propagation](ARQ-260927-role-boundary-story-propagation.md) | SHOULD | 拆包链角色权限换份 + story 语义贯彻无机械保障——portfolio-planner 越界写包级实现设计（plan.md 改法/阶段/边角）、需求蒸馏五跳投影无对账、planner Step 1e 与拆包侧 acceptance 双写点无对账 | 下一治理批（human 起草 PROPOSAL 时经 /arch-change 走 Track A；或动 portfolio-planner.md / planner.md / acceptance-author.md / task-intake-and-slicing.md 任一面时并批） |
-| [ARQ-260928-triage-cross-face-intake-gap](ARQ-260928-triage-cross-face-intake-gap.md) | SHOULD | /triage-change 只判实现侧切分大小——跨面 idea（需求+架构+契约+实现）无统一 intake，human 须在 3-4 个窗口以不同留痕格式重复同一意图，跨面触面靠事后逃生门「踢走」而非事前折叠 | 下一治理批（human 起草 PROPOSAL 经 /arch-change 走 Track A；或动 triage-change / change-triage / write-story / task-intake 任一面时并批） |
+| [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | SHOULD | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 下次动 /arch-change、triage 统一路由面或 arch-review-protocol 的治理批；或 human 专项批 |
 
 ## 已接受风险（2）
 
@@ -39,10 +39,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（73）
+## 已结（74）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 73 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 74 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
