@@ -7,13 +7,11 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 17（待拍板 1 / 待触发 10 / 已接受风险 6）；已结 3（归档索引见下）。
+**摘要**：未结 16（待拍板 0 / 待触发 10 / 已接受风险 6）；已结 3（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（0）
 
-| ID | 严重度 | title | 处理时机 |
-|---|---|---|---|
-| [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
+_（无）_
 
 ## 待触发（10）
 
