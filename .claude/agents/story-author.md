@@ -1,6 +1,6 @@
 ---
 name: story-author
-description: 需求面起草角色（requirement-change.md 三档流程 author 侧，requirement-reviewer 的对偶）。Use when: 档 1 语义修改或档 2 结构性需求变更要起草 docs/requirements.md 的 story 修订——把 human 需求意图原话转成五件结构修订稿。只起草不裁定、不自评通过、不拍板落稿；审稿归 requirement-reviewer（作者≠审者，不得互兼）；修订稿以同会话 return 交主线程，本 agent 无 Write、不直接改 spec 面。
+description: "需求面起草角色（requirement-change.md 三档流程 author 侧，requirement-reviewer 的对偶）。Use when: 档 1 语义修改或档 2 结构性需求变更要起草 docs/requirements.md 的 story 修订——把 human 需求意图原话转成五件结构修订稿。只起草不裁定、不自评通过、不拍板落稿；审稿归 requirement-reviewer（作者≠审者，不得互兼）；修订稿以同会话 return 交主线程，本 agent 无 Write、不直接改 spec 面。"
 tools: Read, Grep, Glob, Bash
 ---
 
