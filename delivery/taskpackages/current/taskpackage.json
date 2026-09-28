@@ -36,7 +36,7 @@
   "acceptanceTestsFile": ["server/acceptance/test_tech260928_school_start_wiring.acceptance.py"],
   "acceptanceRefs": ["TECH-A1", "TECH-A2", "TECH-A3"],
   "contractRefs": ["docs/contracts/interface-contract.md"],
-  "docRefs": ["docs/crq/tech/TECH-260928-school-start-upcoming-empty.md"],
+  "docRefs": ["docs/crq/tech/_archive/2026/TECH-260928-school-start-upcoming-empty.md"],
   "docsSyncRequired": true,
   "docsOwner": "integrator",
   "securityReviewRequired": false,
