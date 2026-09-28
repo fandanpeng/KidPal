@@ -88,6 +88,12 @@ sync_locked 签名钉、schedule_grid rn_keybar_sync_locked 计数同跑全绿�
   覆盖。行为齿仅 ACC-5（kidpal_keybar_char_slots 三输入值域 + NULL 防御）。
 - 本包非 workstream 包，demo 对账行不适用（真机轮即 demo 形态，deferred 已申报）。
 - 除上述两条外无其它未覆盖缺口（明写：无）。
+- **【销账 2026-09-28】真机轮已执行、human 确认功能 OK**：app 分区烧录（ota_0 @ 0x20000，
+  3.2MB hash 校验过、NVS 保留）→ 启动观测 0 复位循环 / RX 48KB / uptime 平滑；串口实录
+  KEY 短按 → `key_route_dispatch action=5`（GLOBAL_ACT_CHAR_REPLAY）→
+  `char page replay from first stroke`，新起播路径实弹触发无崩溃、SRAM 平稳（~63KB）；
+  human 持板逐项验收（上行清单七项）确认「功能 OK」（2026-09-28 会话原话）。本条销账后
+  本包无未覆盖缺口（明写：无）。
 
 ## 6. 五轴语义 review（author 自审）
 

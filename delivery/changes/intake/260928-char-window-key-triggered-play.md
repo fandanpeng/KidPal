@@ -1,6 +1,6 @@
 ---
 changeId: 260928-char-window-key-triggered-play
-status: closed（2026-09-28：需求面档 2 v1.59 落稿 + 架构镜像句同批 + 实现面 Pod 收口（verifier 全绿 + supervisor ESCALATE 人批消解 + closeout 过）；遗留三项均在人侧、非面门 = ① 分支合 main（merge-to-main，human 发起）② remote push（human）③ 真机持板验证轮（deferred 登记）+ loop-retro cadence（advisory 阈值已到，发起责任主线程））
+status: closed（2026-09-28：需求面档 2 v1.59 落稿 + 架构镜像句同批 + 实现面 Pod 收口（verifier 全绿 + supervisor ESCALATE 人批消解 + closeout 过）+ **真机轮销账（human 持板确认功能 OK，review-packet 未覆盖面段已销账）**；遗留两项均人侧非面门 = ① 分支合 main（2026-09-28 human 指示「merge吧」执行中）② remote push（human）+ loop-retro cadence（advisory 阈值已到，发起责任主线程））
 sources:
   human-intent-verbatim:
     - 「（2026-09-26 首提）查字的需求我想调整一下，当问什么字的时候 直接在 田字格里显示出来打字，右侧显示出来解释，按Key键 播报的时候再开始播报」
