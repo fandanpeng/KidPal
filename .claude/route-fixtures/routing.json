@@ -11,7 +11,9 @@
     "challenger": ["红队", "只读"],
     "defender": ["契约审批者", "只读"],
     "adjudicator": ["判官", "只写", "queue"],
-    "architect-reviewer": ["ContractChangePacket", "契约", "预审"]
+    "architect-reviewer": ["ContractChangePacket", "契约", "预审"],
+    "story-author": ["requirement-change.md", "requirement-reviewer", "对偶", "无 Write"],
+    "requirement-reviewer": ["story-author", "四查", "作者≠审者", "不审契约"]
   },
   "agentRequiredToolsAgents": {
     "review-moderator": ["architect", "scenario-author", "challenger", "defender", "adjudicator", "architect-reviewer"]

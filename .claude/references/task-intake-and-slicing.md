@@ -283,6 +283,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **读侧**（`portfolio-reconcile.mjs --check-launch`，260921-gov-review-launch-pipeline T6 落地）：脚本**读**该键——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（blocking 语义不变）**；裸 `string` 旧形态按 `{scope:"workstream", status:"unverified"}` 视之并走汇总行、不逐条报（防永久噪音，且不静默丢失）。**本改动不改任何门的判定语义、不新增工程门。**
 - **核验 = 机械读 + 人读**（260921-gov-review-launch-pipeline T6 取代原「convention + 人读，本门不含机械齿」口径）：**人读义务不变**——launch 执行者（human 点火前）逐条核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果回写 `status` / `evidence`**，使 `--check-launch` 下次不再重复报同一条。
 - **存量迁移不在同批**：两个在册 workstream（`m1-home-qa` / `m2-char-window`，各 6 条裸 `string`）的迁移由建包方在下次动该 workstream 时随批完成（`scope` 机械填、`status` 逐条引源行填）；过渡期由上述旧形态兼容行为承接。
+- **spine 源（② 单包路径，260928-gov-review-cross-face-intake-spine 起）**：带 spine 的变更（`delivery/changes/intake/<changeId>.md` 在场），spine `facePlan` 中**先于实现面**的各面 anchors 未回填 = 上游面未冻结 → 承载包不得 launch（与 ③ 路径「未冻结 → 承载该裁定的包不得 launch」同判、粒度同为包）；核验 = build-feature launch 面预检第五件（文面路由，非机械闸），机检齿留根。
 
 ### TaskPackage 显示编号（承重/游离，机械推导 · 2026-09-15 定，ARQ-260915-taskpackage-display-numbering）
 

@@ -122,6 +122,14 @@
       "allow": [],
       "deny": ["**"]
     },
+    "story-author": {
+      "allow": [],
+      "deny": ["**"]
+    },
+    "requirement-reviewer": {
+      "allow": [],
+      "deny": ["**"]
+    },
     "landing-verifier": {
       "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**"],
       "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
