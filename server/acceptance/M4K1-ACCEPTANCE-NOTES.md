@@ -413,3 +413,75 @@ ADDED LINES   = 34
 - 三个 hunk **全为 `+`**，`grep -c '^-[^-]'` = **0** → 本件第 1 项「删除行数 = 0」**字面成立**（无 EOF 正规化假象；REVISION LOG 块置于 `__main__` 之前、v1 末行逐字未动）。
 - 行级 `difflib.SequenceMatcher`（HEAD 正文 vs 工作树正文）opcodes = `equal`×3 + `insert`×3、**无 `delete` / `replace`** → 无既有行被删/改。
 - 交付形态 sha 链：`61c05017…`（v1 @HEAD）→ `1be76af9…`（正文态，去 REVISION LOG 块后复算）→ `5d4ebbf2…`（含 REVISION LOG 块之交付形态）。
+
+## 10. 修订记录 · 260928-story-connect-push-defer（2026-09-28；**正常改验收通道**，非 §6 tighten-only）
+
+> 触发：planner 重派（Lite 止血批，human 方向锚 pod-events b036f554）。真机发现 M4-K1 三时点①「WS 建连即推 story_list」与设备拓扑冲突——设备**每会话重开 WS**（会话结束关 audio channel、按 KEY 重开），front 建连即推 → 旧固件无条件渲染 P3 页盖掉聆听态，story_page.c 零 CJK → 半截页。根因三方核实记录 = 2026-09-28 会话 + 包 plan.md。human 裁定止血：**摘除建连即推**、①时机归 M4-K3 session_ctx 承接、②③保留。
+
+### 10.1 修订动作（FIX-A2 / FIX-A1）
+
+- **FIX-A2**：`test_a3_push_seam_connect_and_wire_timepoints` → 更名 `test_a3_push_seam_and_wire_timepoints`；移除建连时点断言（含「ws_gateway 引用 `_push_story_list(websocket)`」**源锚代理**——该判据随语义作废）；保留 `_push_story_list` 命名缝行为断言 + 时点②（停录归档后）/③（删除执行后）wire 断言；docstring 记录语义修订与 human 锚。
+- **FIX-A1**：新增负锚齿 `test_fix_a1_connect_path_emits_zero_story_list`（新类 `M4K1ConnectPushDeferAcceptance`）——**行为级**（非源锚代理）：`ws_gateway` 真实连接处理段流程离线走完（鉴权通过 + accept + 假引擎腿 + 两条 pump），断言设备腿 story_list 帧数 = **0**；并钉「连接真实走通」（`dev.accepted` + 设备帧被转发引擎）防空过。时点②③在场由修订后 a3 齿承载（不双断言同一面，planner 授权分拆）。
+- 配套测试基建：`_ensure_fastapi_stub` 升级（恒等路由装饰器与真 fastapi 同形 + **覆盖他件无 `FastAPI` 属性的 permissive stub**）＋ `_fake_engine_ws`（`websockets.asyncio.client` 假模块注入，令 `ws_gateway` 的内联 `ws_connect` 离线可达）＋ `_FakeDeviceSession`（ws_gateway 形状设备腿双桩）。
+- 头注同步：Coverage map（a3 更名 + FIX-A1/FIX-A2 行）、强度申报表（§5.2④ 行改「时点①摘除、归 M4-K3」）、缺口 ② 改写（负锚为行为级、无源锚代理缺口）。
+- **通道声明**：本修订为正常改验收通道的语义修订（human 方向授权的行为策略变更），**非 §6 tighten-only**——a3 齿建连断言移除属语义修订本体（既有行删改在案）。
+
+### 10.2 红基线恒现跑（2026-09-28 实测，仓根）
+
+- 命令（逐字）：`python -m pytest -q --import-mode=importlib -m "not live" server/tests server/acceptance`
+- 尾行（逐字）：**`1 failed, 192 passed, 4 deselected, 2 subtests passed in 2.26s`**
+- 红名（唯一）：`server\acceptance\test_m4k1_story_cloud_link.acceptance.py::M4K1ConnectPushDeferAcceptance::test_fix_a1_connect_path_emits_zero_story_list`
+  红因（逐字）：`AssertionError: 1 != 0 : FIX-A1 RED: 建连路径产生 1 帧 story_list 下行 —— 建连即推未摘除（human 方向锚 b036f554；①时机归 M4-K3 session_ctx 承接）。`
+- 判读：红 = **设计态红**（建连即推仍在树 = 本包 builder 待实现行为），非环境/依赖/测试错。既有 26 齿零新增红（含修订后 a3 齿绿）；其余 192 passed = 上游 134 + 本件 26 绿 + 树上后续包新增面（school-start 等已入树）。
+- 冻结即冒烟：`--collect-only` = `197 tests collected`、**零错误**；standalone `python 本文件` = `Ran 27 tests … FAILED (failures=1)`（仅 FIX-A1 设计态红）。
+
+### 10.3 mutation 证据（FIX-A1；第一方原始输出，2026-09-28）
+
+变异设计（任务书指定）= **在 ws_gateway 连接处理段恢复 `_push_story_list` 调用**。运行期实现口径：以**既有建连推送缝同位注入**代理（包裹 ws_gateway 连接段内被调用的 `_push_schedule_connect`，追加 `await real_push(websocket)`）——与「恢复调用点」的设备腿可观测效果等同（story_list 重新从建连段下发）；源级「重加调用点」变异由 verifier 在 builder 落地后按需重放。因本齿现为**设计态红**，另以「摘除态模拟」（caller==`ws_gateway` 的调用跳过；时点②③调用方不同 → 照常下发）证明**可满足性**（齿非永红/非空过）：
+
+```
+[(1) 摘除态=模拟 builder 修订后（应绿=可满足）] GREEN
+[(2) 原变异=恢复建连即推（应红）] RED | 1 != 0 : FIX-A1 RED: 建连路径产生 1 帧 story_list 下行 —— 建连即推未摘除（human 方向锚 b036f554；①时机归 M4-K3 ses…
+[(3) 还原=现树（设计态红=counterEvidence）] RED | 1 != 0 : FIX-A1 RED: 建连路径产生 1 帧 story_list 下行 —— …（同上）
+```
+
+- 判读：(2) 证齿对「建连即推在场」敏感（原变异转红）；(1) 证齿在摘除态**可满足**（非 vacuous 永红）；(3) = 红基线设计态红（红名即 counterEvidence）。**待 builder 摘除建连即推后重放**：(1) 态即真实 GREEN 态、(2) 即 verifier 源级变异重放。
+- pytest 级重放注意：`pytest.main`/pytest 进程内本验收模块被以**独立模块实例**装载，脚本级对 `m._front()` 所指 front 模块的运行期扰动必须配对**直接方法调用**（`tc.test_…()`）而非 `-k` 选择——后者会用另一实例、扰动落空（本节原始输出即直接调用形态）。
+
+### 10.4 sha256 核销链（同款分记口径）
+
+- **前**（v2 交付形态，planner 手中当前交付）= `5d4ebbf28f13cf325483738430f62a60105f54176eba1d85fc15a355c625a287`
+- **中**（本次修订后**正文态**，剥离全部 REVISION LOG 注释块后复算可验）= `2e33ee943872f5781ab40eb54a58c790004291134a1dffdf6f1ec799516f71dd`
+- **后**（本次修订后交付形态，含全部 REVISION LOG 块）= `78c4e1eac267678c6b51e76550839ba70a0a637198e56c710c6fb1ae79658457`
+- 本次修订**非纯 additive**（a3 齿建连断言移除 = 语义修订本体；正常改验收通道不适用 §6 第 1 件机判），REVISION LOG 已如实声明通道。
+
+### 10.5 notes §3 表 a3 行口径更新指针（原行不删）
+
+§3 表 `a3_push_seam_connect_and_wire_timepoints` 行：齿已更名 `test_a3_push_seam_and_wire_timepoints`；「源锚代理」成分（ws_gateway 引用判据）**随语义作废移除**；现断言面 = 命名缝行为 + 时点②③ wire；建连路径零下行的负锚 = 新增 FIX-A1 齿（行为级）。coverage 标记同步（M4K1-A3 / FIX-A2；FIX-A1 独立齿）。本节为该行的更正记录，原表行按 append-only 纪律不删。
+
+### 10.6 corrected `mutationEvidence.perAcceptance`（本包 260928-story-connect-push-defer；JSON-ready；`acceptanceId` = taskpackage `acceptance[]` 原串直取）
+
+```json
+{
+  "perAcceptance": [
+    {
+      "acceptanceId": "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
+      "sensitive": true,
+      "mutation": "在 ws_gateway 连接处理段恢复 _push_story_list 调用（建连即推回接）",
+      "expectedRed": "test_fix_a1_connect_path_emits_zero_story_list",
+      "note": "设计态红（建连即推仍在树）即 counterEvidence；变异实测三段（2026-09-28）：摘除态模拟（caller==ws_gateway 跳过）→ 齿 GREEN（可满足性）；原变异（连接段同位注入恢复建连即推）→ 齿 RED；还原现树 → 设计态红。运行期代理口径与源级变异的设备腿可观测效果等同；源级重放归 verifier（builder 摘除后）。时点②③在场断言由修订后 a3 齿承载（不双断言同一面，planner 授权分拆）。"
+    },
+    {
+      "acceptanceId": "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）",
+      "sensitive": true,
+      "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除归档后/删除后 story_list 推送（时点②③）",
+      "expectedRed": "test_a3_push_seam_and_wire_timepoints / test_a3_list_stories_window_and_total_independent",
+      "note": "修订后 a3 齿（更名 test_a3_push_seam_and_wire_timepoints）沿用 M4-K1 A3 条变异设计且敏感面不变（窗口/②③推送），建连时点断言已随语义修订移除、负锚敏感由 FIX-A1 条承载；本条为语义修订记录齿（REVISION LOG/头注/docstring 落实即为满足），行为敏感由前述两齿承载。"
+    }
+  ]
+}
+```
+
+### 10.7 连带 advisory（M4-K1 包 taskpackage 的 A3 条）
+
+M4-K1 `taskpackage.json` 的 A3 条 `mutationEvidence.expectedRed` 引用旧齿名 `test_a3_push_seam_connect_and_wire_timepoints` —— 齿已更名，如 planner 回填 M4-K1 包时请同步改为 `test_a3_push_seam_and_wire_timepoints`（mutation 文本中「移除三时点 story_list 推送（_push_story_list / 归档后 / 删除后）」的「_push_story_list /」即建连时点成分已随语义摘除，可改为「移除归档后/删除后 story_list 推送（时点②③）」）。

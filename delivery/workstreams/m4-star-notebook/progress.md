@@ -114,3 +114,20 @@
 - **board/roadmap 收口**：pod status = **merged**（portfolio-reconcile 单一写者，43 pods）；render-roadmap ② 节重渲染，**M4-K1 = achieved**（渲染面 K1a/K1b 拆分显示）。arch INDEX 计数漂移（main committed 41 vs 重建派生 43）= arch lane 陈旧面，按「各 lane 只写自己 INDEX」纪律已还原不代笔、向 human 明示。
 - **§10e 留根项触发事实成立**（ARQ-260923-contract-merge-deadpath 建议①「runbook 实走摩擦 ≥1 次实测」）：三处摩擦——池侧旧 reference 无 §10e 指针（BLOCK 输出指针 main 侧已修、池侧随本次 ff 到位）/ §10e-4b `--upsert` lane 语义不符 / 常驻分支落后 main 时 runbook 不可见（多线同日并行时差）。详 pod-retro §八；归 human / loop-retro 立项评估。
 - **合并入 main 面**：实现四件 + 冻结 26 齿 + notes（含 §9 §6 修订记录）+ mutation-replay 证据 + closeout 两件 + gate evidence（**C1 done / C4 pending 待 human spec 批**，delta 五 hunk 在 docs-delta §4）+ 治理面五 commit（ops-record / 拆包 / 派生 / 契约落地 / launch-prep）随批入 main。**K1 完成判据齐**：landing 完成 + verifier 绿 + retro 齐（含 §八合并门追记）。待 human：remote push / C4 spec 批（ARQ-260918 四处可搭载）/ milestones M4 行 state 翻 in_delivery / K2 launch 时点裁量。
+
+## 2026-09-28 · 止血包 260928-story-connect-push-defer integrator 收口（Lite，单点摘除建连即推）
+
+- **scoped verify round 3**：`verifier-evidence/rounds/r3.json`（bearing、ok:true、observedGateExit=0）**七闸全绿**（taskpackage-required / firmware-build〔真编译 build-pass、firmware 零触碰〕/ contract-lint / acceptance-coverage〔FIX-A1 functional、FIX-A2 structural〕/ mutation-check / docs-sync / security）。轮次史如实：r1 红（taskpackage-required——contractRefs 空，finalize 补正填 §1.3③）→ r2 红（acceptance-coverage——FIX-A2 structural 标记形态，补正2）→ r3 全绿；两轮红均 TaskPackage 元数据口径、非实现/齿面红。
+- **全量复跑**：`python -m pytest -q --import-mode=importlib -m "not live" server/tests server/acceptance` → **`193 passed, 4 deselected, 2 subtests passed in 2.17s`**（exit 0）。红→绿账 = 冻齿态 1F/192P（唯一红 = FIX-A1 设计态红）→ 193P/0F（192→193 即 FIX-A1 一齿）。冻结件 sha256 `78c4e1ea…58457`（@73b5d3d）只读未动。
+- **实现面**：`server/gateway/front/front_app.py` 单文件 **+7/−6**——摘除 ws_gateway 建连即推 `story_list` 调用点（三时点①），原位注释留根因 + human 方向锚 `b036f554` + ①归 K3；`_push_story_list` 本体与②③调用点、wire 形状零变化。detect_changes（since=73b5d3d）：seed_symbols=1、impacted_total=1（新负锚齿自身），blast radius 零既有符号。
+- **closeout 两件落 `delivery/changes/dev/260928-story-connect-push-defer/`**：`docs-delta.md`（核心义务 = **K1 docs-delta §4 H1「三时点推送（WS 建连/归档后/删除后）」supersession 注记 + §5.1.2 H2「三时点自推」连带短语 + K1 review-packet 未覆盖面第 2 条（建连时点①）闭环申报；arch §5.2④ 修订后建议措辞以 patch 形态成文（现役两时点 + ①归 K3 重裁），供 C4 human spec 批先替换 K1 件新文再 apply——K1 件不改写**）+ `review-packet.md`（demo 对账 = 一致；未覆盖面 5 条含「设备侧实际停弹页面 = 真机复验项归 K3」明写 + none 项 = 跨子系统 e2e/correlationId）；`closeout-check.mjs` 只读 exit 0。
+- **commit 冻结批**（分支现 HEAD 起）：实现一件 + closeout 两件 + 本包 pod 簿记面（taskpackage.json〔含 planner finalize 补正×2〕/ pod-events.jsonl / verifier-evidence/ r1-r3 / evidence/ / verify-runs.jsonl + current/taskpackage.json 投影对）；**排除他会话脏件 5 面**（.changes-index-state.json / arch/INDEX.md / 260926-arch-review 目录 / TECH-260928 crq 件 / current/verdict.json——不触碰不 stage 不还原）。
+- **changes-index**：无参全量重建（dev lane 正典路径；`--upsert` 为 arch lane 专属）——本包 dev INDEX 行在案即达成；arch/INDEX.md 与 .changes-index-state.json 若被重建波及**维持不 commit**（他会话纠缠面，如实申报）。
+- **等待 supervisor 机械合并门**：supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并；真机复验（设备侧停弹页面）归 M4-K3 设备轮。
+
+## 2026-09-28 · 止血包生产部署（合并前真机验证，human 指令「先部署，我测试一下」锚 766df538）
+
+- **部署面**：ECS `kidpal-front.service`（/opt/kidpal/front，uvicorn wss:8000）。远端此前为混装态（front_app 含 m4-k1 建连即推、story.py/display_schema 疑 m3 期旧版）——本次按**分支被测一致态**（193P/0F，HEAD 8ca0e85）整体同步 5 件：`gateway/story.py`、`gateway/display_schema.py`、`gateway/schedule.py`、`gateway/schedule_push.py`、`front/front_app.py`（md5 逐一与仓内比对一致；schedule 两件 = school-start 修复 545aa7a 随批就位）。远端原件备份 `.bak-260928-story-fix`。
+- **重启核验**：systemctl restart → active，Uvicorn https://0.0.0.0:8000 监听在位，启动日志零 import 错误（2026-09-28 13:18 CST）。
+- **部署机制注记**：Windows 命令行 32KB 上限 → base64 分块（20KB/块）经 ssh_helper 上传；story.py 首传因超限静默失败，分块后成功（md5 校验兜底抓到）。
+- **合并门状态**：supervisor 机械闸 ESCALATE（high：all-mock 启发式标定错配嫌疑，verdict 落仓 3f63b0b）→ human 裁「先部署测后裁」→ 合并保持 blocked 待真机结论。

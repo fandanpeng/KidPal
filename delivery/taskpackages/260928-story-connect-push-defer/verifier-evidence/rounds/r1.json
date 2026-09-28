@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "260928-story-connect-push-defer",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "ea36958c-acd3-4df2-8b45-b4556d81ef28",
+  "startedAt": "2026-09-28T04:44:40.517Z",
+  "completedAt": "2026-09-28T04:44:40.817Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 161,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\"\n  ],\n  \"coverageErrors\": [],\n  \"warnings\": []\n}\n",
+      "stderr": "[taskpackage-required] TaskPackage 上下文解析：changeId=260928-story-connect-push-defer（来源：delivery/taskpackages/current/taskpackage.json）\n",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "38a877ca6982",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1790570680803-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\"\n  ],\n  \"coverageErrors\": [],\n  \"warnings\": []\n}\n[taskpackage-required] TaskPackage 上下文解析：changeId=260928-story-connect-push-defer（来源：delivery/taskpackages/current/taskpackage.json）\n"
+  }
+}

@@ -124,7 +124,8 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
   契约 §1.5-3 Q7 relay 收紧           → A1 齿（build_display_tool_calls 真跑降级）→ 行为级
   契约 §1.5-3 Q8 story floor          → A1 齿（validate_display 真门拒绝/放行）→ 行为级
   契约 §1.3③④/§1.6 story 段落文        → A1 契约锚齿（读契约正文钉前锚点串）→ 源锚代理
-  arch §5.2④ 三时点推送（行为策略）      → A3 齿（时点②③ = pump wire；时点① = 命名缝 + 源锚代理）
+  arch §5.2④ 三时点推送（行为策略；2026-09-28 修订 = 时点①建连即推摘除、归 M4-K3 session_ctx）
+                                        → A3 齿（时点②③ = pump wire）+ FIX-A1 负锚齿（建连路径零下行）
   requirements §2.1 120s 录音态超时     → A5 齿（纯决策面真跑）+ 前端接线缺口（见下）
   spec S-F2.4 AC2 流水号只增不减        → A6 齿（删除不回退/重启存活真跑）→ 行为级
 
@@ -132,9 +133,11 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
     ① **120s 前端计时循环接线 offline 不可验**——只冻纯决策（timed_out_sessions）+ 源锚代理
        （front 引用该决策）。行为等价假设「front 轮询每 tick 调 timed_out_sessions 并对命中
        会话 stop + 下发」**显式化、未验** → live 全链复证归 M4-K3（M4K1-A7 deferred）。
-    ② **WS 建连时点（三时点①）**：真 ws 建连面 offline 不跑——_push_story_list 行为齿直接调该缝，
-       建连点接线以源锚代理（ws_gateway 引用）钉。行为等价假设「ws_gateway 调 _push_story_list
-       ≙ 建连即推」显式化。
+    ② **WS 建连时点（三时点①）= 2026-09-28 真机缺陷止血摘除**（human 方向锚 b036f554，包
+       260928-story-connect-push-defer）：设备每会话重开 WS（会话结束关 audio channel、按 KEY
+       重开）→ 建连即推 story_list 会盖掉聆听态、旧固件 story_page.c 零 CJK 渲染半截页 ——
+       ①摘除、归 M4-K3 session_ctx 承接；FIX-A1 负锚齿以**真实连接处理段流程**（离线装机 +
+       假引擎腿 + pump I/O 双桩）钉「建连路径零 story_list 下行」，无源锚代理缺口。
     ③ **Q7「引擎侧来源」判据**：offline 只钉 relay 路径对 story_* 降级；不断言真实引擎帧的
        来源标记（该标记在 side-channel 类型）。行为等价假设「relay 路径（build_display_tool_calls）
        = 引擎侧来源面」显式化——front 自推走 _push_story_list、不经 relay（天然豁免）。
@@ -159,7 +162,10 @@ Coverage map (acceptanceRef -> test):
            -> test_a2_source_page_values_and_backward_compat
            -> test_a2_idempotent_convergence_with_start_recording
   M4K1-A3 -> test_a3_list_stories_window_and_total_independent
-           -> test_a3_push_seam_connect_and_wire_timepoints
+           -> test_a3_push_seam_and_wire_timepoints
+  FIX-A1 -> test_fix_a1_connect_path_emits_zero_story_list（260928-story-connect-push-defer：
+           建连即推摘除负锚；时点②③在场由修订后 a3 齿承载，不双断言同一面）
+  FIX-A2 -> （a3 齿时机语义修订，承载于上两齿；见 REVISION LOG v3）
   M4K1-A4 -> test_a4_delete_executes_and_repushes
            -> test_a4_delete_nonexistent_id_idempotent_repush
            -> test_a4_delete_rejects_traversal_and_no_sentinel
@@ -248,10 +254,22 @@ def _story_attr(name: str):
 
 
 def _ensure_fastapi_stub() -> None:
-    """front_app.py 离线装载的 fastapi stub（g-relay-fix / RMD 验收件同款先例）。"""
+    """front_app.py 离线装载的 fastapi stub（g-relay-fix / RMD 验收件同款先例）。
+
+    FIX-A1（260928-story-connect-push-defer）追加：路由装饰器用**恒等装饰器**（返回原函数，
+    与真 fastapi 的 `@app.websocket(...)` 返回原函数同形）——建连路径负锚齿需直调
+    `front.ws_gateway(...)` 走真实连接处理段流程，Mock 装饰会把该名字吞成 Mock。
+    跨件 stub 共存（2026-09-28 实测）：他件（server/tests/test_reminder_units.py 等）用
+    `sys.modules.setdefault("fastapi", permissive)` 先装**无 FastAPI 属性**的宽松 stub，
+    本件在其后运行时必须**覆盖**之（否则 `from fastapi import FastAPI` 得 Mock、ws_gateway
+    被装饰吞名）。宽松 stub 的消费方只取 WebSocketDisconnect/HTTPException/未知属性 Mock，
+    本 stub 为其超集（同款宽松 getattr + 真异常类 + 恒等路由装饰）→ 覆盖向后兼容。"""
     try:
         import fastapi  # noqa: F401
-        return  # real fastapi present — even better, use it
+        # 仅真 fastapi（或等价 stub）在场才复用：他件 permissive stub 的 __getattr__ 对任何
+        # 属性都返 Mock（FastAPI「存在」但是 Mock 实例、非类），本件必须覆盖之。
+        if isinstance(getattr(fastapi, "FastAPI", None), type):
+            return  # real fastapi（或带可用 FastAPI 类的 stub）在场 — use it
     except ImportError:
         pass
 
@@ -259,11 +277,24 @@ def _ensure_fastapi_stub() -> None:
         def __getattr__(self, name):  # noqa: D105
             return Mock()
 
-    if "fastapi" not in sys.modules:
-        stub = _PermissiveModule("fastapi")
-        stub.WebSocketDisconnect = type("WebSocketDisconnect", (Exception,), {})
-        stub.HTTPException = type("HTTPException", (Exception,), {})
-        sys.modules["fastapi"] = stub
+    class _StubFastAPI:
+        """路由装饰器恒等（get/post/websocket 均返回原函数；与真 fastapi 装饰语义同形）。"""
+
+        def __init__(self, *args, **kwargs):  # noqa: D107
+            pass
+
+        def _identity(self, *args, **kwargs):  # noqa: ANN202
+            def deco(fn):
+                return fn
+            return deco
+
+        get = post = websocket = _identity
+
+    stub = _PermissiveModule("fastapi")
+    stub.WebSocketDisconnect = type("WebSocketDisconnect", (Exception,), {})
+    stub.HTTPException = type("HTTPException", (Exception,), {})
+    stub.FastAPI = _StubFastAPI
+    sys.modules["fastapi"] = stub
     if "fastapi.responses" not in sys.modules:
         sys.modules["fastapi.responses"] = _PermissiveModule("fastapi.responses")
 
@@ -803,20 +834,19 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
             self.assertEqual(empty["data"], {"total": 0, "items": []},
                              "M4K1-A3 RED: 空目录语义偏移。")
 
-    def test_a3_push_seam_connect_and_wire_timepoints(self):
-        """coverage: M4K1-A3 / arch §5.2④ — 三时点：① WS 建连（_push_story_list 命名缝
-        + 源锚代理）；② 归档成功后；③ 删除执行后。wire 时点②③ 走真 pump（层无关）。"""
+    def test_a3_push_seam_and_wire_timepoints(self):
+        """coverage: M4K1-A3 / FIX-A2（260928-story-connect-push-defer）/ arch §5.2④（修订）—
+        时机语义修订（2026-09-28 真机缺陷止血，human 方向锚 b036f554）：三时点① WS 建连即推
+        **摘除**（设备每会话重开 WS → 建连即推盖掉聆听态、旧固件 story_page.c 零 CJK 渲染半截
+        页；①归 M4-K3 session_ctx 承接）。本齿保留 _push_story_list 命名缝行为断言 + 三时点②
+        （归档成功后）③（删除执行后）wire 断言；建连路径零 story_list 下行由 FIX-A1 负锚齿
+        承载（不双断言同一面）。wire 时点②③ 走真 pump（层无关）。"""
         front = _front()
         push = getattr(front, "_push_story_list", None)
         self.assertTrue(
             callable(push),
-            "M4K1-A3 RED: front_app.py 无 async _push_story_list(websocket) —— 三时点推送的"
-            "下行缝未实现（frozen seam；先例 _push_schedule_connect）。")
-        # 源锚代理：建连点（ws_gateway）引用该缝（真 ws 建连面 offline 不跑）。
-        self.assertIn(
-            "_push_story_list(websocket)", _front_source(),
-            "M4K1-A3 源锚代理 RED: ws_gateway 未在 WS 建连点调用 _push_story_list(websocket)"
-            " —— 三时点① 建连即推未接线。")
+            "M4K1-A3 RED: front_app.py 无 async _push_story_list(websocket) —— 二/三时点推送"
+            "的下行缝未实现（frozen seam；先例 _push_schedule_connect）。")
         with tempfile.TemporaryDirectory(prefix="m4k1_a3w_") as tmp:
             with _front_with_stories(tmp) as front:
                 _seed(Path(tmp), 2)
@@ -828,9 +858,9 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
                     f"M4K1-A3 RED: _push_story_list 下发 {len(frames)} 帧 story_list "
                     "（应恰一帧）。")
                 self.assertEqual(frames[0]["data"]["total"], 2,
-                                 "M4K1-A3 RED: 建连推送 total != 现存篇数。")
+                                 "M4K1-A3 RED: 缝直调下发 total != 现存篇数。")
                 self.assertLessEqual(len(frames[0]["data"]["items"]), 16,
-                                     "M4K1-A3 RED: 建连推送 items 超窗口。")
+                                     "M4K1-A3 RED: 缝直调下发 items 超窗口。")
                 # 时点② 归档成功后：session_ctx -> stt -> listen-stop 后除 story_text 外
                 # 必须**追加** story_list 推送。
                 sid = "sess-a3-tp2"
@@ -849,6 +879,131 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
                     " —— 三时点② 未接线/非幂等不重复。")
                 self.assertEqual(pushes[0]["data"]["total"], 3,
                                  "M4K1-A3 RED: 归档后推送 total != 更新后现存篇数。")
+
+
+# =========================================================================== #
+# FIX-A1（260928-story-connect-push-defer）— 建连即推摘除负锚                    #
+# =========================================================================== #
+
+class _FakeDeviceSession:
+    """ws_gateway 形状的设备腿双桩（headers/accept/receive/send_text/send_bytes/close）。"""
+
+    def __init__(self, incoming=(), token=None, disconnect_exc=None):
+        self.headers = {"authorization": f"Bearer {token}"} if token else {}
+        self._incoming = [{"type": "websocket.receive", "text": t} for t in incoming]
+        self._pos = 0
+        self._disconnect_exc = disconnect_exc or RuntimeError
+        self.accepted = False
+        self.closed = None
+        self.sent_text = []
+        self.sent_bytes = []
+
+    async def accept(self):
+        self.accepted = True
+
+    async def receive(self):
+        if self._pos >= len(self._incoming):
+            raise self._disconnect_exc()
+        msg = self._incoming[self._pos]
+        self._pos += 1
+        return msg
+
+    async def send_text(self, text):
+        self.sent_text.append(text)
+
+    async def send_bytes(self, data):
+        self.sent_bytes.append(data)
+
+    async def close(self, code=1000):
+        self.closed = code
+
+
+@contextlib.contextmanager
+def _fake_engine_ws(upstream):
+    """假引擎腿：注入 websockets.asyncio.client 假模块（ws_gateway 在连接处理段内联 import
+    `from websockets.asyncio.client import connect`），使 `async with ws_connect(ENGINE_WS,…)`
+    离线可达 —— 建连流程真实走完。这是 FIX-A1 行为级负锚的前提：否则「连接早退 -> 零帧」
+    会让负锚空过（vacuous）。"""
+
+    class _Conn:
+        def __init__(self, up):
+            self._up = up
+
+        async def __aenter__(self):
+            return self._up
+
+        async def __aexit__(self, *exc):
+            return False
+
+    def _connect(*args, **kwargs):
+        return _Conn(upstream)
+
+    mod_client = ModuleType("websockets.asyncio.client")
+    mod_client.connect = _connect
+    mod_asyncio = ModuleType("websockets.asyncio")
+    mod_asyncio.client = mod_client
+    mod_ws = ModuleType("websockets")
+    mod_ws.asyncio = mod_asyncio
+    wanted = (("websockets", mod_ws), ("websockets.asyncio", mod_asyncio),
+              ("websockets.asyncio.client", mod_client))
+    added = [name for name, _mod in wanted if name not in sys.modules]
+    for name, mod in wanted:
+        sys.modules[name] = mod
+    try:
+        yield
+    finally:
+        for name in added:
+            sys.modules.pop(name, None)
+
+
+class M4K1ConnectPushDeferAcceptance(unittest.TestCase):
+    """FIX-A1（260928-story-connect-push-defer，human 方向锚 pod-events b036f554）:
+    建连即推摘除负锚。
+
+    行为级（非源锚代理）：真实连接处理段流程 —— `ws_gateway` 全程离线走完（鉴权通过 +
+    accept + 假引擎腿 + 两条 pump），断言设备腿收到的 story_list 下行帧数 = 0；同时钉
+    「连接真实走通」（设备帧被转发引擎）防「流程早退 -> 零帧」空过。三时点②（归档成功后）
+    ③（删除执行后）在场由修订后 a3 齿承载 —— 本齿不双断言同一面。"""
+
+    maxDiff = None
+
+    def test_fix_a1_connect_path_emits_zero_story_list(self):
+        """coverage: FIX-A1 — 建连路径（ws_gateway 连接处理段）零 story_list 下行帧。"""
+        front = _front()
+        push = getattr(front, "_push_story_list", None)
+        self.assertTrue(
+            callable(push),
+            "FIX-A1 RED: front_app.py 无 async _push_story_list(websocket) —— 时点②③仍依赖"
+            "该缝，摘除建连即推不得拆缝。")
+        token = "F" * 24
+        old_token = front.DEVICE_TOKEN
+        with tempfile.TemporaryDirectory(prefix="m4k1_fixa1_") as tmp:
+            with _front_with_stories(tmp) as front:
+                front.DEVICE_TOKEN = token
+                # 预置 2 篇故事：若建连即推仍在树，设备腿必收到帧 —— 负锚非空过。
+                _seed(Path(tmp), 2)
+                up = _FakeUpstream()
+                dev = _FakeDeviceSession(
+                    incoming=[json.dumps({"type": "listen", "state": "start"})],
+                    token=token)
+                with _fake_engine_ws(up):
+                    asyncio.run(front.ws_gateway(dev))
+                # 连接真实走通（防「流程早退 -> 零帧」空过）。
+                self.assertTrue(
+                    dev.accepted,
+                    "FIX-A1 RED: 设备腿未被 accept —— 连接处理段流程未走通（鉴权/装机问题），"
+                    "负锚零帧断言失效。")
+                self.assertIn(
+                    "listen", _forwarded_frame_types(up.sent),
+                    "FIX-A1 RED: 设备帧未被转发引擎 —— 连接处理段流程未走通（pump 未跑），"
+                    "负锚零帧断言失效。")
+                # 负锚本体：建连路径零 story_list 下行帧（真机缺陷：每会话重开 WS 拓扑下
+                # 建连即推会盖掉聆听态、旧固件 story_page.c 零 CJK 渲染半截页）。
+                self.assertEqual(
+                    len(_story_list_frames(dev.sent_text)), 0,
+                    f"FIX-A1 RED: 建连路径产生 {len(_story_list_frames(dev.sent_text))} 帧 "
+                    "story_list 下行 —— 建连即推未摘除（human 方向锚 b036f554；①时机归 "
+                    "M4-K3 session_ctx 承接）。")
 
 
 # =========================================================================== #
@@ -1292,13 +1447,39 @@ class M4K1ZeroOffsetGuard(unittest.TestCase):
 # 本块刻意置于 `if __name__ == "__main__":` **之前**（非文件尾）——使 v1 末行保持逐字不变，
 # 纯 additive 机判无 EOF 换行正规化假象（删除行数真为 0）。
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# [2026-09-28 · 正常改验收通道（非 §6 tighten-only）· 包 260928-story-connect-push-defer
+#  · human 方向锚 pod-events b036f554 · 范围：本冻结件内 a3 齿时机语义修订 + FIX-A1 负锚新增]
+#   修订理由（真机缺陷 + 设备拓扑）：M4-K1 三时点①「WS 建连即推 story_list」与设备拓扑冲突
+#   —— 设备**每会话重开 WS**（会话结束关 audio channel、按 KEY 重开），front 建连即推会在
+#   每次会话建立时无条件下发 story_list，设备渲染 P3 页盖掉聆听态；且旧固件 story_page.c
+#   零 CJK → 半截页。根因三方核实记录 = 2026-09-28 会话 + 包 plan.md。
+#   human 裁定止血：**摘除建连即推**；三时点①时机归 M4-K3 session_ctx 承接；②③保留。
+#   修订动作：FIX-A2 = `test_a3_push_seam_connect_and_wire_timepoints` 更名
+#   `test_a3_push_seam_and_wire_timepoints`，移除建连时点断言（含「ws_gateway 引用」源锚
+#   代理——判据随语义作废），保留 _push_story_list 命名缝行为断言 + ②③ wire 断言；
+#   FIX-A1 = 新增负锚齿 `test_fix_a1_connect_path_emits_zero_story_list`（**行为级**：
+#   ws_gateway 真实连接处理段流程离线走完——鉴权 + accept + 假引擎腿（websockets 假模块
+#   注入 `_fake_engine_ws`）+ 两条 pump，断言设备腿 story_list 帧数 = 0 + 连接活性防空过；
+#   时点②③在场由修订后 a3 齿承载，不双断言同一面）；配套 `_ensure_fastapi_stub` 升级
+#   （恒等路由装饰器与真 fastapi 同形 + 覆盖他件无 FastAPI 属性的 permissive stub）。
+#   通道声明：本修订为**正常改验收通道**的语义修订（human 方向授权的行为策略变更），
+#   **非 §6 tighten-only** —— 建连时点断言的移除属语义修订本体（既有行删改在案）。
+#   红基线恒现跑（2026-09-28 实测）：FIX-A1 设计态红（建连推仍在树）+ 其余 26 齿全绿零
+#   新增红；尾行与红名见 notes §10。mutation：恢复建连即推（连接处理段同位注入）→ 负锚
+#   齿转红；摘除态（模拟修订后）→ 绿（可满足性），原始输出见 notes §10。
+#   sha256 核销链: 5d4ebbf28f13cf325483738430f62a60105f54176eba1d85fc15a355c625a287（v2 交付
+#   形态）→ 2e33ee943872f5781ab40eb54a58c790004291134a1dffdf6f1ec799516f71dd（本次修订后
+#   正文态，剥离全部 REVISION LOG 注释块后复算可验）→ 交付形态（含本条）见 notes §10
+#   —— 本条自身计入正文、自指不可解，据实分记（同上条口径）。
+# --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for cls in (M4K1ContractGateAcceptance, M4K1SessionCtxAcceptance,
-                M4K1StoryListPushAcceptance, M4K1DeleteAcceptance,
-                M4K1FinishTimeoutAcceptance, M4K1LedgerAcceptance,
-                M4K1ZeroOffsetGuard):
+                M4K1StoryListPushAcceptance, M4K1ConnectPushDeferAcceptance,
+                M4K1DeleteAcceptance, M4K1FinishTimeoutAcceptance,
+                M4K1LedgerAcceptance, M4K1ZeroOffsetGuard):
         suite.addTests(loader.loadTestsFromTestCase(cls))
     runner = unittest.TextTestRunner(verbosity=2)
     sys.exit(0 if runner.run(suite).wasSuccessful() else 1)

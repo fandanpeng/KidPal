@@ -683,7 +683,7 @@ async def _push_schedule_connect(websocket) -> None:
     try:
         await _relay_schedule_payload(
             gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
-                                              tomorrow_iso),
+                                              tomorrow_iso, _schedule_school_start()),
             websocket)
     except Exception as e:  # noqa: BLE001 — 单推失败记日志、不连坐 grid 推/不阻断建连
         log.warning("schedule_connect_home_push_err err=%s", type(e).__name__)
@@ -706,7 +706,8 @@ async def _push_schedule_refresh_to_legs(model: dict) -> int:
     周网格恢复性载荷）。"""
     today_iso, tomorrow_iso = _today_tomorrow_iso()
     home_payload = gw_schedule.home_upcoming_payload(model, today_iso,
-                                                     _local_now_hhmm(), tomorrow_iso)
+                                                     _local_now_hhmm(), tomorrow_iso,
+                                                     _schedule_school_start())
     grid_payload = None
     if gw_schedule_push.grid_restore_enabled():
         grid_payload = gw_schedule_push.grid_restore_payload(model, today_iso)
@@ -957,12 +958,13 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
-            # 故事三时点 ①：WS 建连即推 story_list（front 自推单源、Q7 天然豁免；arch
-            # §5.2④ 扩展承载）。失败不阻断建连。
-            try:
-                await _push_story_list(websocket)
-            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
-                log.warning("story_list_connect_push_err err=%s", type(e).__name__)
+            # 故事三时点 ①「建连即推」已摘除（260928-story-connect-push-defer，human 方向锚
+            # b036f554）：设备每会话重开 WS，建连即推会在每次按 KEY 时给设备打 story_list 帧，
+            # 旧固件无条件渲染 P3 页盖掉聆听态（story_page 零 CJK -> 半截页）。①时机归 M4-K3
+            # kidpal_session_ctx 承接（story 会话切累积态时随帧推送）；取舍与依据见
+            # delivery/taskpackages/260928-story-connect-push-defer/plan.md。
+            # `_push_story_list` 函数本体与②（停录归档后）/③（删除执行后）调用点保留不动
+            # （FIX-A2 a3 齿命名缝 + ②③ wire 断言、FIX-A1 建连零帧负锚齿冻结）。
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:
