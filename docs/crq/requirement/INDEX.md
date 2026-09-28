@@ -21,7 +21,7 @@ _（无）_
 
 | ID | 严重度 | title | 复议触发 |
 |---|---|---|---|
-| [ARQ-260916-home-date-format-english](ARQ-260916-home-date-format-english.md) | SHOULD | 首页辅助条日期显示为中文（真机无中文字形 → 框占位）——human 裁定改英文 `DD Mon` 格式（如 16 Sep），requirements.md S-F1.1 / WF-F1-01 设计稿殿后同步 | human 完成 requirements.md S-F1.1 / WF-F1-01 设计稿同步时销行 |
+| [REQ-260916-home-date-format-english](REQ-260916-home-date-format-english.md) | SHOULD | 首页辅助条日期显示为中文（真机无中文字形 → 框占位）——human 裁定改英文 `DD Mon` 格式（如 16 Sep），requirements.md S-F1.1 / WF-F1-01 设计稿殿后同步 | human 完成 requirements.md S-F1.1 / WF-F1-01 设计稿同步时销行 |
 
 ## 已结（0）
 

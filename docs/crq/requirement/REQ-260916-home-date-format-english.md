@@ -1,5 +1,5 @@
 ---
-id: ARQ-260916-home-date-format-english
+id: REQ-260916-home-date-format-english
 title: 首页辅助条日期显示为中文（真机无中文字形 → 框占位）——human 裁定改英文 `DD Mon` 格式（如 16 Sep），requirements.md S-F1.1 / WF-F1-01 设计稿殿后同步
 domain: requirement
 status: accepted-risk
