@@ -2,13 +2,13 @@
 id: ARQ-260924-split-order-granularity-gate-gap
 title: 拆包顺序链（里程碑登记/roadmap 先于 taskpackages）无机械闸且 portfolio-planner 无尺寸模型——ui-v5-align 事故以 21 包建毁与三轮 human 复裁为代价实测显形
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
-trigger: 下一治理批（动 portfolio-planner intake / task-intake-and-slicing Slicing Matrix / workstreams README 任一面时并批；① intake 停等半可先行）
+trigger: （已结项）原触发条款由 260928-gov-review-portfolio-boundary-story-propagation 承接完毕
 opened: 2026-09-24
-closed: ""
-closedBy: ""
+closed: 2026-09-28
+closedBy: 260928-gov-review-portfolio-boundary-story-propagation（T5 intake 停等三件拒拆 + T6 Slicing Matrix 尺寸维四判据 + 视觉对齐三判例 + T7 workstreams README 顺序链成文——三条建议全落）
 paths: [.claude/agents/portfolio-planner.md, .claude/references/task-intake-and-slicing.md, delivery/workstreams/README.md]
 source: [delivery/workstreams/ui-v5-align/findings.md §7（260924 执行记录逐时点）, delivery/workstreams/INDEX.md（hook 2026-09-24 重建行 = workstream 建目录迹）]
 ---
@@ -20,3 +20,5 @@ source: [delivery/workstreams/ui-v5-align/findings.md §7（260924 执行记录�
 **建议改动**（候选，交 review、不自批）：① portfolio-planner.md Step 1 intake fail-closed 从「输入为 PROPOSAL.md 才核验」扩为拆包类派遣三件停等拒拆：milestones.jsonl 已登记 / workstream 有 roadmap（task_plan phases 节或 roadmap.md）/ 有 PROPOSAL 或等价业务目的清单——缺任一 AskUserQuestion 停、打回主线程补齐（与既有 PROPOSAL 符合性核验同打回出口，不猜不代写）；② task-intake-and-slicing.md Slicing Matrix 增尺寸维（改动行数 / 文件面 / 单包验证预算 / N 上下界）+ 视觉对齐类切法判例（260924 三包终裁：页单位、文件面不相交、跨页串面项走合并后串行追加轮；视觉批不套功能切片细粒度逻辑）；③ delivery/workstreams/README.md 明写「task_plan phases 为必备节；里程碑登记先于拆包派遣」（M1–M4 先例链成文）。
 
 **风险**：riskTier: medium——治理过程面、每倡议复现，但不触契约与实现面、单批可修。改动面 = G2（agent 定义 + reference）+ G4（workstreams README）mixed，且 ① 属新增前置门（gate 新增/修改 = lightweight 机检硬排除项）；Track B 三要件 ① yes（本条执行记录齐全）/ ② no（强制点存在真设计分叉：intake 停等 vs hook 机械闸 vs 模板纪律）/ ③ yes（爆炸半径本轮实测）→ **review profile = full-adversarial + human（Track A，/arch-change 入口）**，不美化快路径。owner: architect。
+
+**结项记录（2026-09-28 append）**：并批进 260928-gov-review-portfolio-boundary-story-propagation 结项——三条建议 → T5（portfolio-planner Step 1「拆包顺序链停等三件」fail-closed，与 README 顺序链节互为表里）/ T6（task-intake 新增「尺寸维与视觉对齐判例」节：四判据 + 视觉三判例，引据 ui-v5-align 终裁记录）/ T7（workstreams README「拆包顺序链」节成文）。Track A 原判经 human 2026-09-28 改裁 Track B 全环完成（评审 R1→R2 GREEN、landing-verdict PASS、Fast-forward 合并 main）。

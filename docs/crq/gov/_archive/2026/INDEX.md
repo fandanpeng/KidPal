@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 74 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 77 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -84,4 +84,7 @@
 | [ARQ-260923-gate-tooling-noise-batch](ARQ-260923-gate-tooling-noise-batch.md) | 治理脚本 / 钩子的「用户面」噪声与危险静默小修集合——误导提示 / 静默相位回落 / 传参形态不一 / 非闸守卫脚本漂移无主 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
 | [ARQ-260923-portfolio-decomposer-drift](ARQ-260923-portfolio-decomposer-drift.md) | portfolio-planner 拆包产物是「有保质期的快照」——元数据与磁盘现实腐坏（非闸值域枚举 / sourceRefs 漏真实改动面 / 引用指向已不存在物）无任何机械闸可拦，intake 逐字段读代码面是唯一提前手段但纯 planner 习惯未成文 | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
 | [ARQ-260924-landing-summary-template-pointer-gap](ARQ-260924-landing-summary-template-pointer-gap.md) | landing-summary 模板指针在 landing 相位文面缺位——协议七步第 4 步只说「写 architect-landing-summary.md」不指模板，主线程手写漏 landing-manifest 围栏块致核验 FAIL（unit-gate F4 同根第二实例，模板早已固化该教训） | 2026-09-25 | 260924-gov-review-gate-parse-teeth |
+| [ARQ-260914-legacy-sxay-story-id-batch](ARQ-260914-legacy-sxay-story-id-batch.md) | `Sx-Ay` 老仓 story id 遗产字样在 260912 批 manifest 外多处存活，与新口径（`S-Fx.y` 节锚 + `S-Fx.y-AC<n>` AC 复合句法 + acceptance 本地 id）并存待批量对齐 | 2026-09-28 | 260928-gov-review-portfolio-boundary-story-propagation（T8：census 权威详单 + 例句换新 10 文件 + acceptance-id-shared 兼容夹具钉「S-F1.4-AC3 不被误拆、解析面零代码改动」结论；排除 2 条 historical 真引用） |
+| [ARQ-260924-split-order-granularity-gate-gap](ARQ-260924-split-order-granularity-gate-gap.md) | 拆包顺序链（里程碑登记/roadmap 先于 taskpackages）无机械闸且 portfolio-planner 无尺寸模型——ui-v5-align 事故以 21 包建毁与三轮 human 复裁为代价实测显形 | 2026-09-28 | 260928-gov-review-portfolio-boundary-story-propagation（T5 intake 停等三件拒拆 + T6 Slicing Matrix 尺寸维四判据 + 视觉对齐三判例 + T7 workstreams README 顺序链成文——三条建议全落） |
+| [ARQ-260927-role-boundary-story-propagation](ARQ-260927-role-boundary-story-propagation.md) | 拆包链角色权限划分 + story 语义贯彻无机械保障——portfolio-planner 越界写包级实现设计（plan.md 改法/阶段/边角）、需求蒸馏五跳投影无对账、planner Step 1e 与拆包侧 acceptance 双写点无对账 | 2026-09-28 | 260928-gov-review-portfolio-boundary-story-propagation（Track B 全环：R1 BLOCK→闭环→R2 GREEN → landing T1–T9 manifest 18 文件 → landing-verdict PASS → 合并 main；建议 1 权限划分 = T1+OQ-1 裁定 (b)+三承载位、建议 2 = T2①+T4②（③ 语义对账 human 裁不做，记留根）、建议 3 = T3 写点下沉 + 写者换人（核对钉 Step 8b）） |
 | [ARQ-260928-triage-cross-face-intake-gap](ARQ-260928-triage-cross-face-intake-gap.md) | /triage-change 只判实现侧切分大小——跨面 idea（需求+架构+契约+实现）无统一 intake，human 须在 3-4 个窗口以不同留痕格式重复同一意图，跨面触面靠事后逃生门「踢走」而非事前折叠 | 2026-09-28 | 260928-gov-review-cross-face-intake-spine |

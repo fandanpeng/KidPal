@@ -2,13 +2,13 @@
 id: ARQ-260927-role-boundary-story-propagation
 title: 拆包链角色权限划分 + story 语义贯彻无机械保障——portfolio-planner 越界写包级实现设计（plan.md 改法/阶段/边角）、需求蒸馏五跳投影无对账、planner Step 1e 与拆包侧 acceptance 双写点无对账
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
-trigger: 下一治理批（human 起草 PROPOSAL 时经 /arch-change 走 Track A；或动 portfolio-planner.md / planner.md / acceptance-author.md / task-intake-and-slicing.md 任一面时并批）
+trigger: （已结项）原触发条款由 260928-gov-review-portfolio-boundary-story-propagation 承接完毕
 opened: 2026-09-27
-closed: ""
-closedBy: ""
+closed: 2026-09-28
+closedBy: 260928-gov-review-portfolio-boundary-story-propagation（Track B 全环：R1 BLOCK→闭环→R2 GREEN → landing T1–T9 manifest 18 文件 → landing-verdict PASS → 合并 main；建议 1 权限划分 = T1+OQ-1 裁定 (b)+三承载位、建议 2 = T2①+T4②（③ 语义对账 human 裁不做，记留根）、建议 3 = T3 写点下沉 + 写者换人（核对钉 Step 8b））
 paths: [.claude/agents/portfolio-planner.md, .claude/agents/planner.md, .claude/agents/acceptance-author.md, .claude/references/task-intake-and-slicing.md]
 source: [delivery/taskpackages/260924-m4-k3-record-session-live/plan.md（commit 498e3c2 chore(portfolio) 拆包落盘）, delivery/taskpackages/260924-m4-k3-record-session-live/taskpackage.json, .claude/agents/planner.md:47（Step 1e）, .claude/agents/portfolio-planner.md:37（Step 2）, .claude/scripts/brief-inputs.mjs]
 ---
@@ -29,3 +29,5 @@ source: [delivery/taskpackages/260924-m4-k3-record-session-live/plan.md（commit
 3. **消解双写点**：Step 1e 与拆包侧 acceptance 骨架的写点合并或明确定位（谁写骨架、谁核保真、核的机械牙在哪）。
 
 **风险**：riskTier: medium——治理过程面、每批复现，不触契约/实现面、单批可修。改动面 = G2（agent 定义 + reference）为主，若走候选①触 brief-inputs.mjs 则升 G2+G3 mixed。Track B 三要件：① yes（现象 file:line 可点开）／② no（真设计分叉：角色权限怎么换、story 怎么贯彻均有多方案）／③ no（爆炸半径未被执行实测揭示，系结构推断 + human 2026-09-27 会话诊断）→ **review profile = full-adversarial + human（Track A，/arch-change 入口）**，不美化快路径。owner: architect。
+
+**结项记录（2026-09-28 append）**：经 260928-gov-review-portfolio-boundary-story-propagation Track B 全环结项——human 立项会话改裁 Track B + 主线程亲起草；评审 R1 BLOCK(F1–F4)→v0.3 闭环（含本条证据 4 的 planner.md:39 转引失真勘误：Step 1① 现文不含 acceptance 权威句，双写点结论由 :37/:40 ↔ :47 独立支撑）→ R2 GREEN → landing T1–T9（manifest 18 文件）→ landing-verdict FAIL→PASS（summary 格件两行修）→ Fast-forward 合并 main。建议 1→T1+T9（human 立项会话另增 input-brief 生成时点归还 Pod 内，翻转 260921 批 T5 裁定）、建议 2→T2①+T4②（候选③ 语义对账 human 裁不做）、建议 3→T3（写点下沉 + 写者换人，核对钉 Step 8b）。笔误「权限换份→权限划分」已改（title + 正文两处）。

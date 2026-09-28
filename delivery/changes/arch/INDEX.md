@@ -6,17 +6,17 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (41)
+## arch (47)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260928-gov-review-portfolio-boundary-story-propagation](260928-gov-review-portfolio-boundary-story-propagation/) | 2026-09-28 | frozen | — |
 | [260928-gov-review-cross-face-intake-spine](260928-gov-review-cross-face-intake-spine/) | 2026-09-28 | landed | yes |
+| [260928-gov-review-portfolio-boundary-story-propagation](260928-gov-review-portfolio-boundary-story-propagation/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-requirement-face](260928-gov-review-requirement-face/) | 2026-09-28 | frozen | yes |
+| [260924-arch-review-perf-k1-roundtrip-latency](260924-arch-review-perf-k1-roundtrip-latency/) | 2026-09-24 | draft | yes |
 | [260924-gov-review-gate-parse-teeth](260924-gov-review-gate-parse-teeth/) | 2026-09-24 | landed | yes |
-| [260924-gov-review-settings-deny-contract-merge](260924-gov-review-settings-deny-contract-merge/) | 2026-09-24 | landed | yes |
 | [260924-gov-review-planner-orchestration-align](260924-gov-review-planner-orchestration-align/) | 2026-09-24 | landed | yes |
-| [260924-arch-review-perf-k1-roundtrip-latency](260924-arch-review-perf-k1-roundtrip-latency/) | 2026-09-24 | draft | — |
+| [260924-gov-review-settings-deny-contract-merge](260924-gov-review-settings-deny-contract-merge/) | 2026-09-24 | landed | yes |
 | [260923-arch-review-graph-index-name-errata](260923-arch-review-graph-index-name-errata/) | 2026-09-23 | frozen | yes |
 | [260923-arch-review-schedule-grid-cold-boot](260923-arch-review-schedule-grid-cold-boot/) | 2026-09-23 | draft | yes |
 | [260923-gov-review-arq-ssot-restructure](260923-gov-review-arq-ssot-restructure/) | 2026-09-23 | landed | yes |
