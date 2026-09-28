@@ -124,3 +124,10 @@
 - **commit 冻结批**（分支现 HEAD 起）：实现一件 + closeout 两件 + 本包 pod 簿记面（taskpackage.json〔含 planner finalize 补正×2〕/ pod-events.jsonl / verifier-evidence/ r1-r3 / evidence/ / verify-runs.jsonl + current/taskpackage.json 投影对）；**排除他会话脏件 5 面**（.changes-index-state.json / arch/INDEX.md / 260926-arch-review 目录 / TECH-260928 crq 件 / current/verdict.json——不触碰不 stage 不还原）。
 - **changes-index**：无参全量重建（dev lane 正典路径；`--upsert` 为 arch lane 专属）——本包 dev INDEX 行在案即达成；arch/INDEX.md 与 .changes-index-state.json 若被重建波及**维持不 commit**（他会话纠缠面，如实申报）。
 - **等待 supervisor 机械合并门**：supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并；真机复验（设备侧停弹页面）归 M4-K3 设备轮。
+
+## 2026-09-28 · 止血包生产部署（合并前真机验证，human 指令「先部署，我测试一下」锚 766df538）
+
+- **部署面**：ECS `kidpal-front.service`（/opt/kidpal/front，uvicorn wss:8000）。远端此前为混装态（front_app 含 m4-k1 建连即推、story.py/display_schema 疑 m3 期旧版）——本次按**分支被测一致态**（193P/0F，HEAD 8ca0e85）整体同步 5 件：`gateway/story.py`、`gateway/display_schema.py`、`gateway/schedule.py`、`gateway/schedule_push.py`、`front/front_app.py`（md5 逐一与仓内比对一致；schedule 两件 = school-start 修复 545aa7a 随批就位）。远端原件备份 `.bak-260928-story-fix`。
+- **重启核验**：systemctl restart → active，Uvicorn https://0.0.0.0:8000 监听在位，启动日志零 import 错误（2026-09-28 13:18 CST）。
+- **部署机制注记**：Windows 命令行 32KB 上限 → base64 分块（20KB/块）经 ssh_helper 上传；story.py 首传因超限静默失败，分块后成功（md5 校验兜底抓到）。
+- **合并门状态**：supervisor 机械闸 ESCALATE（high：all-mock 启发式标定错配嫌疑，verdict 落仓 3f63b0b）→ human 裁「先部署测后裁」→ 合并保持 blocked 待真机结论。
