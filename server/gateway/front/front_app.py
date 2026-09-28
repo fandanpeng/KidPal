@@ -683,7 +683,7 @@ async def _push_schedule_connect(websocket) -> None:
     try:
         await _relay_schedule_payload(
             gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
-                                              tomorrow_iso),
+                                              tomorrow_iso, _schedule_school_start()),
             websocket)
     except Exception as e:  # noqa: BLE001 — 单推失败记日志、不连坐 grid 推/不阻断建连
         log.warning("schedule_connect_home_push_err err=%s", type(e).__name__)
@@ -706,7 +706,8 @@ async def _push_schedule_refresh_to_legs(model: dict) -> int:
     周网格恢复性载荷）。"""
     today_iso, tomorrow_iso = _today_tomorrow_iso()
     home_payload = gw_schedule.home_upcoming_payload(model, today_iso,
-                                                     _local_now_hhmm(), tomorrow_iso)
+                                                     _local_now_hhmm(), tomorrow_iso,
+                                                     _schedule_school_start())
     grid_payload = None
     if gw_schedule_push.grid_restore_enabled():
         grid_payload = gw_schedule_push.grid_restore_payload(model, today_iso)

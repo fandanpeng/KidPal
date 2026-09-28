@@ -7,11 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 16（待拍板 0 / 待触发 10 / 已接受风险 6）；已结 2（归档索引见下）。
+**摘要**：未结 17（待拍板 1 / 待触发 10 / 已接受风险 6）；已结 3（归档索引见下）。
 
-## 待拍板（0）
+## 待拍板（1）
 
-_（无）_
+| ID | 严重度 | title | 处理时机 |
+|---|---|---|---|
+| [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
 
 ## 待触发（10）
 
@@ -39,10 +41,10 @@ _（无）_
 | [ARQ-260901-openclaw-chatcompletions-public](ARQ-260901-openclaw-chatcompletions-public.md) | SHOULD | OpenClaw chatCompletions 端点为 full operator access 且随网关公网可达，仅 Bearer 保护 | 生产上线前安全加固 / 任何非验证用途对外暴露时。2026-09-03 更新：方向 B 重切已把「18789 锁 127.0.0.1」钉为 G 包（260903-gateway-directionB）launch 硬前置（V28，PROPOSAL v0.4 §4 门簇①、GWA-E3 部署期断言），锁执行完成即移已结 |
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 
-## 已结（2）
+## 已结（3）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 2 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 3 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
