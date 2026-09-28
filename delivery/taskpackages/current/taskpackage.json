@@ -14,7 +14,7 @@
   "story": "M4-K1 缺陷止血——摘除 story_list 三时点①建连即推（front_app.py ws_gateway 连接处理一处调用点）：设备拓扑下「WS 建连」= 每次会话开始而非开机一次，推送时机语义错误；①的恢复语义（设备进 P3 即有列表 + RAM 缓存）归 K3 kidpal_session_ctx 设备半落地后重裁（行为策略、不进契约）；三时点②（归档后）③（删除后）保持在场",
   "planRef": "delivery/taskpackages/260928-story-connect-push-defer/plan.md",
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance",
-  "redBaselineResult": "",
+  "redBaselineResult": "1 failed / 192 passed / 4 deselected（+2 subtests passed）—— 2026-09-28 acceptance-author 实跑；命令 `python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance`。唯一红 = FIX-A1 负锚齿设计态红（红名 M4K1ConnectPushDeferAcceptance::test_fix_a1_connect_path_emits_zero_story_list，红因「建连路径产生 1 帧 story_list 下行——建连即推未摘除」= 本包 builder 待实现行为）；既有 26 齿零新增红（含 FIX-A2 修订后 a3 齿绿）。收集零错误（197 tests collected）。冻结即冒烟过。",
   "deliveryImpact": "none",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -28,7 +28,9 @@
     "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
     "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）"
   ],
-  "acceptanceTestsFile": [],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
+  ],
   "exitCriteria": [
     "FIX-A1/FIX-A2 全绿（新建负锚齿先红后绿 = builder 摘除调用点后转绿）+ 既有冻结齿零新增红（a3 修订后齿数变化如实落账 redBaselineResult）",
     "铁律：_push_story_list 函数本体与②③调用点不删不动；契约面/spec 面/agent 定义零触碰；K1 历史制品不改写（supersession 注记落本包 docs-delta，指向生效措辞）",
@@ -69,7 +71,22 @@
   },
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
+        "sensitive": true,
+        "mutation": "在 ws_gateway 连接处理段恢复 _push_story_list 调用（建连即推回接）",
+        "expectedRed": "test_fix_a1_connect_path_emits_zero_story_list",
+        "note": "设计态红（建连即推仍在树）即 counterEvidence；变异实测三段（2026-09-28）：摘除态模拟（caller==ws_gateway 跳过）→ 齿 GREEN（可满足性）；原变异（连接段同位注入恢复建连即推）→ 齿 RED；还原现树 → 设计态红。运行期代理口径与源级变异的设备腿可观测效果等同；源级重放归 verifier（builder 摘除后）。时点②③在场断言由修订后 a3 齿承载（不双断言同一面，planner 授权分拆）。"
+      },
+      {
+        "acceptanceId": "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）",
+        "sensitive": true,
+        "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除归档后/删除后 story_list 推送（时点②③）",
+        "expectedRed": "test_a3_push_seam_and_wire_timepoints / test_a3_list_stories_window_and_total_independent",
+        "note": "修订后 a3 齿（更名 test_a3_push_seam_and_wire_timepoints）沿用 M4-K1 A3 条变异设计且敏感面不变（窗口/②③推送），建连时点断言已随语义修订移除、负锚敏感由 FIX-A1 条承载；本条为语义修订记录齿（REVISION LOG/头注/docstring 落实即为满足），行为敏感由前述两齿承载。"
+      }
+    ]
   },
   "notes": "scope-map 前置核对：builder/fixer allow server/** ✓（acceptance 目录 deny 照旧）；acceptance-author allow server/**/acceptance/** ✓；本包不触 docs/contracts、不改 K1 冻结件语义（仅 a3 齿按 FIX-A2 修订）。本验收语义修订 = 正常改验收通道（human 方向授权），非 §6 tighten-only 窗口（不满足纯 additive/断言不变件）——REVISION LOG 逐字记理由与 human 锚。K1 的 M4K1-A7（live 全链）deferred 状态不变；本包 = 该 deferred 面提前爆雷的止血，live 复证仍归 K3 设备轮。红基线预期：FIX-A1 负锚齿在现树（建连推仍在）为设计态红，builder 摘除后转绿；其余既有齿全绿零偏移。",
   "docsOwner2": "",

@@ -127,8 +127,8 @@
       {
         "acceptanceId": "M4K1-A3: story_list 推送齿——list_stories() 接线（零生产调用点 → front 推送 producer）：WS 建连 + 归档成功后 + 删除执行后三时点下发 story_list；**items 上限 = 契约门 Q2 丙案定稿（2026-09-24）：恒推最新 16 条窗口（日期倒序）+ total 恒全量现存篇数**（板端 KSTORY_LIST_MAX=16 维持现值；警示句 items.length 不顶替 total load-bearing）；幂等不重复、畸形不推；推送触发时机 = 行为策略（arch §5.2④ 扩展承载，不进契约——Q10 认可）",
         "sensitive": true,
-        "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除三时点 story_list 推送（_push_story_list / 归档后 / 删除后）",
-        "expectedRed": "test_a3_list_stories_window_and_total_independent / test_a3_push_seam_connect_and_wire_timepoints",
+        "mutation": "list_stories 返回全量（去 STORY_LIST_WINDOW 窗口）+ 移除归档后/删除后 story_list 推送（时点②③）——建连时点成分已随 260928-story-connect-push-defer 摘除（supersession 见该包）",
+        "expectedRed": "test_a3_list_stories_window_and_total_independent / test_a3_push_seam_and_wire_timepoints",
         "note": "设计态红（现树 list_stories 无窗口、零 story_list 生产推送点）即 counterEvidence；窗口在 producer（list_stories）+ wire（pump 帧）双层钉。"
       },
       {
