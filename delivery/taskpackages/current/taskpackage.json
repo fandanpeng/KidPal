@@ -1,63 +1,77 @@
 {
-  "changeId": "260928-tech-260928-school-start-upcoming-empty",
-  "sourceType": "maintenance",
+  "changeId": "260928-story-connect-push-defer",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
   "origin": {
-    "type": "maintenance",
-    "upstreamType": "maintenance",
-    "upstreamRef": "docs/crq/tech/TECH-260928-school-start-upcoming-empty.md",
+    "type": "human-ad-hoc",
+    "time": "2026-09-28",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "human 真机发现 + planner 根因报告（2026-09-28 本会话）：M4-K1 三时点①建连即推与设备每会话 WS 重连冲突——设备会话结束关 audio channel（CanEnterSleepMode 要求通道关闭）、按 KEY 重开新 WS，front 建连即推 story_list → 旧固件（K2 未跑）无条件渲染 P3 页盖掉聆听态，且 story_page.c 零 CJK 字体接线 → 半截页面。human 裁定止血方向（AskUserQuestion 后续指令「先止血方案吧」）",
     "upstreamFrozen": "",
-    "workstream": ""
+    "workstream": "m4-star-notebook"
   },
-  "sourceRefs": ["TECH-260928-school-start-upcoming-empty"],
+  "subsystem": "server",
+  "story": "M4-K1 缺陷止血——摘除 story_list 三时点①建连即推（front_app.py ws_gateway 连接处理一处调用点）：设备拓扑下「WS 建连」= 每次会话开始而非开机一次，推送时机语义错误；①的恢复语义（设备进 P3 即有列表 + RAM 缓存）归 K3 kidpal_session_ctx 设备半落地后重裁（行为策略、不进契约）；三时点②（归档后）③（删除后）保持在场",
+  "planRef": "delivery/taskpackages/260928-story-connect-push-defer/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance",
+  "redBaselineResult": "",
   "deliveryImpact": "none",
-  "planningImpact": "none",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
+  ],
   "riskTier": "low",
-  "gateProfile": ["test-quality"],
-  "subsystem": "server/gateway/front",
-  "story": "TECH-260928-school-start-upcoming-empty · 周中 upcoming 恒空（代码半）——front_app.py 建连推 :685 与 refresh 推 :708 两处 home_upcoming_payload 调用漏传 school_start，与意图展开路径 :642 同参对齐修复。story 语义权威 = docs/crq/tech/TECH-260928-school-start-upcoming-empty.md 现文",
-  "planRef": "",
-  "redBaselineCommand": "PYTHONIOENCODING=utf-8 python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_tech260928_school_start_wiring.acceptance.py server/acceptance/test_m3k1_schedule_producer.acceptance.py server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py server/acceptance/test_m4k1_story_cloud_link.acceptance.py server/tests/test_schedule_producer_units.py",
-  "redBaselineResult": "2 failed / 76 passed / 2 subtests passed —— 2026-09-28 acceptance-author 实跑（仓根，命令逐字同 redBaselineCommand 字段）。2 红全为设计态红：TECH-A1（建连推 school_start=None != '08:00'）、TECH-A2（refresh 推同形态）——正是本包要修的漏参；TECH-A1 边界齿（配置缺失降级 None）+ TECH-A3（grid restore 双 None 守卫）绿 must-stay-green；既有面 M3K1(17)/M3K3(14)/M4K1(26)/units(17) 全绿零新增红，收集零错误。验收文件 = server/acceptance/test_tech260928_school_start_wiring.acceptance.py（新建，行为级，M4K1 fastapi-stub 离线装载先例）",
-  "requiredLayers": ["unit", "api"],
-  "iterationBudget": 1,
-  "fixBudget": 3,
-  "supervisorBlockBudget": 2,
-  "exitCriteria": [
-    "冻结验收 TECH-A1/A2 转绿（两处补参后建连推与 refresh 推 school_start='08:00' 同参对齐）",
-    "TECH-A1 边界齿与 TECH-A3 守卫齿保持绿（配置缺失降级 None；grid restore 双 None 零偏移）",
-    "既有验收/单测相关子集零回归（M3K1/M3K3/M4K1/units 全绿）",
-    "docs-sync：CRQ 条目 TECH-260928-school-start-upcoming-empty 状态收口（integrator 阶段，代码半修绿、运维半移交留痕）"
+  "gateProfile": [
+    "test-quality"
   ],
   "acceptance": [
-    "TECH-A1: 建连推同参齿——_push_schedule_connect 内 home_upcoming_payload 调用传 school_start=_schedule_school_start()（与意图展开路径 :642 同参对齐）",
-    "TECH-A2: refresh 推同参齿——_push_schedule_refresh_to_legs 内 home_upcoming_payload 调用传 school_start=_schedule_school_start()（与 :642 同参对齐）",
-    "TECH-A3: grid restore 零偏移守卫齿——front_app.py 的 grid_restore_payload 调用保持双 None（now_hhmm/school_start），grid restore 恢复语义零回归"
+    "FIX-A1: 建连即推摘除负锚——WS 建连路径（ws_gateway 连接处理段）不再产生任何 story_list 下行帧（行为级负锚：离线装机模拟建连流程、断言设备腿收到 story_list 帧数 = 0）；三时点②（停录归档后）③（删除执行后）推送保持在场且 wire 形状不变",
+    "FIX-A2: a3 齿时机语义修订——test_a3_push_seam_connect_and_wire_timepoints 按新时机语义修订：移除建连时点断言、保留 _push_story_list 命名缝 + 归档后/删除后 wire 断言；冻结件 REVISION LOG append 修订理由 + human 方向锚（本验收语义修订走正常改验收通道、非 §6 tighten-only——行为语义变更由 human 方向授权，decisionCoverage 锚 = 本包 human-decision 事件）"
   ],
-  "acceptanceTestsFile": ["server/acceptance/test_tech260928_school_start_wiring.acceptance.py"],
-  "acceptanceRefs": ["TECH-A1", "TECH-A2", "TECH-A3"],
-  "contractRefs": ["docs/contracts/interface-contract.md"],
-  "docRefs": ["docs/crq/tech/_archive/2026/TECH-260928-school-start-upcoming-empty.md"],
-  "docsSyncRequired": true,
+  "acceptanceTestsFile": [],
+  "exitCriteria": [
+    "FIX-A1/FIX-A2 全绿（新建负锚齿先红后绿 = builder 摘除调用点后转绿）+ 既有冻结齿零新增红（a3 修订后齿数变化如实落账 redBaselineResult）",
+    "铁律：_push_story_list 函数本体与②③调用点不删不动；契约面/spec 面/agent 定义零触碰；K1 历史制品不改写（supersession 注记落本包 docs-delta，指向生效措辞）",
+    "docs-sync：K1 docs-delta §4 H1 的「WS 建连」三时点措辞 supersession 注记（C4 落地时 arch 措辞以本包修订为准）；arch §5.2④ 时机语义变更留痕"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "docs/architecture.md#§5.2"
+  ],
+  "sourceRefs": [
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+    "server/acceptance/M4K1-ACCEPTANCE-NOTES.md",
+    "delivery/changes/dev/260924-m4-k1-story-cloud-link/docs-delta.md",
+    "delivery/workstreams/m4-star-notebook/progress.md"
+  ],
+  "iterationBudget": 1,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
   "docsOwner": "integrator",
-  "securityReviewRequired": false,
-  "adrRequired": false,
-  "planningWorkstreamRequired": false,
-  "planningRefs": [],
-  "s2ExploratoryRequired": false,
-  "s2ExploratoryReason": null,
-  "s2ExploratoryGoals": [],
-  "mutationRequired": false,
-  "mutationSkipReason": "低风险接线补参修复（两处调用补传既有函数第五参，无新逻辑分支）：行为级验收齿直接真跑 _push_schedule_connect/_push_schedule_refresh_to_legs 并断言设备可见载荷内容（合并「上学」项在场/缺席 = bug 症状本体），变异存活空间已被行为断言覆盖；TECH-A3 守卫齿 + 既有 76 齿零回归提供回归面。",
-  "mutationEvidence": { "perAcceptance": [] },
+  "docsSyncRequired": true,
+  "docsSyncReason": "本包是对 M4-K1 三时点①推送时机行为策略的修订（arch §5.2④ 扩展承载面、行为策略不进契约——Q10 既有裁定）。K1 docs-delta §4 H1 hunk 文本含「三时点推送（WS 建连 / 归档成功后 / 删除执行后）」——本包落地后该措辞过时：C4 human spec 批落地时应以本包 docs-delta 的修订措辞为准（建连即推摘除、时机①归 K3 session_ctx 语境）。本包 integrator 落 supersession 双向注记（K1 件不改写，仅本包申报）。",
+  "mergeOrder": 41,
+  "dependsOn": [],
+  "testHost": "python -m pytest server/acceptance/ offline 齿（本包无 live 面）",
+  "decisionCoverage": [],
+  "crossPackageBehaviors": [
+    {
+      "topic": "story_list 三时点①推送时机语义变更（建连即推摘除）",
+      "owner": "260928-story-connect-push-defer",
+      "carriedBy": "260924-m4-k3-record-session-live",
+      "note": "①的恢复时机（设备进 P3 语境推送 / RAM 缓存填充）归 K3 session_ctx 设备半落地后重裁——K3 planner/integrator 消费本包 docs-delta 与 K1 notes §5.2 行为等价假设②的实况教训（「建连」在真机拓扑 = 每会话）。K2（板端 P3）消费面不受影响：②③时点与 wire 形状不变，板端收到 story_list 即渲染/缓存的语义由 K2 设计承载。"
+    }
+  ],
   "crossEnd": {
-    "counterparts": [
-      {
-        "path": "firmware/main/display/home_upcoming.c",
-        "symbol": "kidpal_home_upcoming_apply"
-      }
-    ],
-    "exempt": "跨端 wire 形状（E1 home 响应块帧类型/字段承载/序列化形态）零变化：school_start 只影响 server 侧 upcoming 分组内容（周中合并「上学」项恢复出现），payload 结构与固件消费面 kidpal_home_upcoming_apply 解析逻辑零改动，固件端零配合改动——对端条目按存疑向严申报而非 exempt。",
-    "wire-shape-change": false
+    "counterparts": [],
+    "exempt": "仅移除建连时推送调用点一处、零 wire 形状变化；对端固件零触碰（K2/K3 未开跑），story_page 侧消费语义不变"
   },
-  "notes": "验收测试归 acceptance-author，builder/fixer 改不动；grid restore 双 None 是故意语义（ADR-005 恢复性载荷），勿「顺手修复」；禁改 docs/contracts/**；ECS 运维半（openclaw-schedule.config.yaml 部署到 KIDPAL_SCHEDULE_CONFIG 指向路径 + kidpal-front.service 加 Environment=KIDPAL_SCHEDULE_CONFIG）不在本包范围，代码修绿后移交运维步骤。"
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "notes": "scope-map 前置核对：builder/fixer allow server/** ✓（acceptance 目录 deny 照旧）；acceptance-author allow server/**/acceptance/** ✓；本包不触 docs/contracts、不改 K1 冻结件语义（仅 a3 齿按 FIX-A2 修订）。本验收语义修订 = 正常改验收通道（human 方向授权），非 §6 tighten-only 窗口（不满足纯 additive/断言不变件）——REVISION LOG 逐字记理由与 human 锚。K1 的 M4K1-A7（live 全链）deferred 状态不变；本包 = 该 deferred 面提前爆雷的止血，live 复证仍归 K3 设备轮。红基线预期：FIX-A1 负锚齿在现树（建连推仍在）为设计态红，builder 摘除后转绿；其余既有齿全绿零偏移。",
+  "docsOwner2": "",
+  "launchPreconditions": null
 }
