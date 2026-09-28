@@ -26,7 +26,7 @@ packet-id：FROZEN PROPOSAL §2 改法集（T1–T7）+ §5 验证集 · 评审�
 | V4 | `node .claude/scripts/spec-anchor-check.mjs` | `"storyCount": 13, "anchorLines": 31, "errors": [], "ok": true`——与 260928 spine anchors 段基线（60/46/13/31 四组数）一致 | 绿 |
 | V5 | `grep -n "^> 状态：" docs/requirements.md` | 恰一行 `:8`，`frozen` 态在位（名实注记：状态行在场自检；消费保护 = 约定级成文，F3 口径） | 绿 |
 | V6 | 三文件残留 grep（`同会话 return` / `无 Write` / `不落任何文件` / `交回修订稿`） | 三命中全为合法存活句：requirement-change.md:72（reviewer 行「恒无 Write」——reviewer 本就无写权，语义正确）、story-author.md:29（「同会话 return 交主线程的内容」——新交付形态正文用词，无旧语义）、requirement-reviewer.md:27（reviewer 无 Write——正确语义）；`不落任何文件` / `交回修订稿` 零命中 | 绿（三归类销项成立） |
-| V7 | enforce-scope 行为探针（story-author 写 requirements 放行 / 写 contracts 拦截） | 待本 commit 落盘后执行（post-commit 项，探针结果随 verdict 补录） | 待执行 |
+| V7 | enforce-scope 行为探针（commit 146ccbd 后实测） | story-author Write `docs/requirements.md` → exit 0 放行；Write `docs/contracts/interface-contract.md` → exit 2 拦截，理由句「被 .claude/scope-map.json 的 deny 命中」 | 绿 |
 | — | `node -e "JSON.parse(scope-map)"` | `scope-map JSON ok`（T4 改后形态合法） | 绿 |
 
 真空绿规约：V1/V3/V4 均为真实脚本实跑、非重放断言；V6 输入非空（三文件在盘、模式四条全跑）；无新增自检依赖。
