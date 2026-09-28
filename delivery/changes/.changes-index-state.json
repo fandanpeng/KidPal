@@ -166,49 +166,75 @@
   },
   "260920-gov-review-dispatch-telemetry-source": {
     "date": "2026-09-20",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260921-gov-review-launch-pipeline": {
     "date": "2026-09-21",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260921-gov-review-canonical-text-align": {
     "date": "2026-09-21",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260922-arch-review-spec-v5-ui-align": {
     "date": "2026-09-22",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": false
   },
   "260923-arch-review-schedule-grid-cold-boot": {
     "date": "2026-09-23",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": false
   },
   "260923-arch-review-graph-index-name-errata": {
     "date": "2026-09-23",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": false
   },
   "260923-gov-review-arq-ssot-restructure": {
     "date": "2026-09-23",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260924-gov-review-planner-orchestration-align": {
     "date": "2026-09-24",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260924-gov-review-settings-deny-contract-merge": {
     "date": "2026-09-24",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260924-gov-review-gate-parse-teeth": {
     "date": "2026-09-24",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": true
   },
   "260928-gov-review-requirement-face": {
     "date": "2026-09-28",
-    "mergedInMain": "yes"
+    "mergedInMain": "yes",
+    "landed": false
   },
   "260928-gov-review-cross-face-intake-spine": {
+    "date": "2026-09-28",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "260924-arch-review-perf-k1-roundtrip-latency": {
+    "date": "2026-09-24",
+    "mergedInMain": "yes",
+    "landed": false
+  },
+  "260928-gov-review-portfolio-boundary-story-propagation": {
+    "date": "2026-09-28",
+    "mergedInMain": "yes",
+    "landed": true
+  },
+  "260928-gov-review-dev-loop-preassess-manifest-scope": {
     "date": "2026-09-28",
     "mergedInMain": "yes"
   }

@@ -10,7 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260928-gov-review-dev-loop-preassess-manifest-scope](260928-gov-review-dev-loop-preassess-manifest-scope/) | 2026-09-28 | frozen | yes |
+| [260928-gov-review-dev-loop-preassess-manifest-scope](260928-gov-review-dev-loop-preassess-manifest-scope/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-cross-face-intake-spine](260928-gov-review-cross-face-intake-spine/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-portfolio-boundary-story-propagation](260928-gov-review-portfolio-boundary-story-propagation/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-requirement-face](260928-gov-review-requirement-face/) | 2026-09-28 | frozen | yes |
