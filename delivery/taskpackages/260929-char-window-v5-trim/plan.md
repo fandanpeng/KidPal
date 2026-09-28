@@ -43,6 +43,22 @@ storyRefs: "S-F3.2 · 看拼音/笔画/部首/释义（定稿 v1.60）"
 - `frm_236_236.bin` 重烘为圆角矩形（源 = 设计母版 v5 查字窗框段）；管线入口在 tools/ 资产管线，出图替换 spiffs 资产。
 - `ic_star_22.bin` 成孤儿资产：本包不删文件（烧录面最小变更），账面注记（ui-v5-align findings §3 资产账 + 收口 summary）。
 
+## 技术方案（planner+architect 预评）
+
+> 2026-09-29 · ARCH-ADVISORY 1g 档（Lite 简版，architect agentId a5a71fcb1636dede5，planner 代存落盘）。效力：advisory 输入——不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据；后续 fixer / architect-reviewer 可拿证据反驳。
+
+**对盘核验**：plan.md 全部行号/符号对磁盘实况成立。补充精确定位：words 默认值 `"?"` 在 :664、`info_o.words` 传参 :731（一并改空串）、五行口径注释 :739-755；cardlabel `set_pos(228,30)`+`set_width(160)` 在 :743-744；`charpage_art_frame_dsc` 签名 :433 在世且本包保留，ACC-4 末端锚（验收件 :1915）有效。**char_page.h 零改确认**（只导出 show/replay/started，四件改动全在 static/局部层）。
+
+**重烘管线实况**（增值核对）：斜框父本 = `gen_assets.mjs` :100 `HAND_R`（CSS 八值不对称圆角，只被 :369 frm_236_236 消费；frm_sm/frm_flat 用 `HAND_R_SM` :337 不波及）。产物链 = gen_assets.mjs（SVG→assets.c RGB565 阈值化 + PNG + 9slice）→ gen_art_spiffs.mjs（读 assets.c → KAP1 1bpp bin）。frm_236_236.bin 实测 7096B = 16B 头 + 236×30 行扫；ic_star_22.bin 在世（82B）。
+
+**实现顺序建议：先资产轮后代码轮**——改 HAND_R 对称圆角 → 跑两段管线 → 目检出图，回炉调参不与代码删改纠缠。
+
+**风险三点**：① gen_art_spiffs **每次全量重写 47 枚 bin**——重烘后须 git diff 核证其余 46 枚零字节漂移、只落 frm_236_236.bin 一枚 diff；② **manifest 漏面补齐**：`tools/simulator/LvglWindowsSimulator/assets/` 下 assets.c、png/frm_236_236.png、9slice/frm_236_236_*（json+9png，全 git tracked）是重烘必然刷新的中间母版；③ `verify_art_assets.mjs` :127-130 A4.1-rot 用 frm_236_236.png 做 rotate(-2) 演示——正圆角矩形后仍非平凡、预期仍绿，重烘后跑一次核证、脚本预期零改。1bpp 伪影重点目检位 = 圆角与直边相接处断线（236px 尺度 14px 圆角曲率平缓、锯齿可控）。
+
+**changeManifest（architect 定稿，已回填 taskpackage）**：char_page.cc / char_window_overlay.acceptance.c / frm_236_236.bin / tools/asset-pipeline/gen_assets.mjs / simulator assets.c + png/frm_236_236.png + 9slice/frm_236_236_* / report snapshots（report/snapshots 若不重刷则撤除并登记「快照陈旧」；gen_art_spiffs.mjs / verify_art_assets.mjs / make_snapshots.mjs 本身预期零改只执行）。
+
+**impactedTests 种子（已回填 taskpackage）**：char_window_overlay.acceptance.c = 修订（test 10 width 齿换新值、test 11 删 MCD-A4 三齿、A3 保绿、A4 meaning 半 guard 齿 must-stay-green、ACC-4 锚零改确认、REVISION LOG append-only）；char_stroke.acceptance.c = 零改确认（words 成员保留，:1022/:1033/:1061 verbatim 齿不触）；char_window.test.c = 零改确认。
+
 ## 明确不动
 
 - `char_stroke.c`/`char_stroke.h`（U 冻结纯逻辑合约）——**kidpal_char_card.words 成员裁定保留**（删成员触冻结面 + char_stroke.acceptance.c :1022/:1033/:1061 verbatim 齿，零行为收益换大爆炸半径；死成员清理登记 residual 后续包）。

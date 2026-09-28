@@ -1,13 +1,13 @@
 /*
  * char_page.cc — KidPal 查字窗 `char-window` (LVGL 9.3, 设备侧): 米字格大字盘 (左) +
- * 右栏速查卡 (拼音带声调 / 共 N 画 / 部首 / 组词) + 底部提示条 + 逐笔动画驱动
+ * 右栏速查卡 (拼音带声调 / 共 N 画 / 部首 / 释义) + 底部提示条 + 逐笔动画驱动
  * (沿 medians 笔尖移动 + 当前笔白衬边)。**会话内覆盖窗**（M2-K3 页→窗改造）: 在当前页
  * 之上叠一层窗面板、**不清屏**——关窗（dismiss_front_overlay 清 transient 回基层）后
  * 原页原样回来、不翻页。
  *
  * 教学设计红线 (spec §5.6 v3 / S-F3.1, CHR-A7): 米字格示范字【只走 strokes 数据
  * 光栅渲染路径】(kidpal_char_raster_stroke, 字库数据即标准规范字形,
- * 绝不缺省回落字体渲染), 伴随文字 (拼音/部首/组词) 才用 LVGL 字体。示范字路径
+ * 绝不缺省回落字体渲染), 伴随文字 (拼音/部首/释义) 才用 LVGL 字体。示范字路径
  * 上零 tilt — 示范字路径上绝不施加文字倾斜样式 (防「教歪」)。
  *
  * 动画状态机 (950ms/笔、三态已写/当前/未写虚线点链 6px) 全部委托 display/char_stroke.c
@@ -29,6 +29,12 @@
  * v1.38 对账清理 (本包落地): 右栏已砍项死成员清零 + 头注虚标清除; 握笔小手 12px 圆环
  * 占位 (占位绘制函数与尺寸常量整体) 删除——改口径后小手资产不再需要, 当前笔改白衬边。
  * 锚 = `char-window` (原 canvas-p4, v1.38 对账改名收尾)。
+ *
+ * v5 收敛 (本包 260929-char-window-v5-trim, human 2026-09-29 真机轮裁定): ①去右栏底部
+ * 装饰星 (星资产消费整删, 资产转孤儿账面注记); ②去组词行——运行时 words 恒空、口径
+ * 收敛 S-F3.2 四行 (拼音/共 N 画/部首/释义; card.words 成员保留, 本窗 info 传空串);
+ * ③米字格引导线原灰度点在设备 RLCD 阈值化后不可见 -> 改纯黑点线; ④右栏 cardlabel
+ * 让位清出重烘圆角框右缘 (x 228 -> 244)。外框 frm_236_236.bin 重烘为正圆角矩形 (资产轮)。
  */
 
 #include "char_page.h"
@@ -84,8 +90,8 @@ struct CharPageState {
                                     M2-K1 缺陷②去栈机制面——帧路径零解析调用零大栈数组) */
     int *pre_counts;             /* 每笔预解析点数 (<=0 = 该笔不可用; 帧路径复用) */
     /* 速查卡单源 (S-F3.2 AC1 / S-F3.3 AC2)：kidpal_char_card_build 装配结果——pinyin/
-     * radical/stroke_total/words 供 label 拼装, progress 供底部提示条（演示中进度 vs
-     * 定格文案）。char 数组副本, cJSON 释放后安全。 */
+     * radical/stroke_total/meaning 供 label 拼装 (v5 收敛: 组词行删), progress 供底部
+     * 提示条（演示中进度 vs 定格文案）。char 数组副本, cJSON 释放后安全。 */
     kidpal_char_card card;
     int elapsed_ms;
     int started;   /* v1.59 演示起播态 (WF-F3-01 键帽随态变): 0 = 未起播 (键帽「播报」)
@@ -220,21 +226,21 @@ static void charpage_blit(int size)
 /* 绘制米字格引导线 (ui-v5-align §2 查字窗行 1, 2026-09-26 批; 阶段5 architect 修正:
  * 母版八向 = 十字 + 两对角**恰四条线**, 无四宫线——旧「灰实线十字+四宫」退役, 四宫
  * 线一并退役不保留)。点线画法（点距 3px: 1 on 2 off; 母版 dasharray 3 on 9 off,
- * 密度差与灰两档仅 host 观感, 像素级归真机轮）。色调弱于示范字纯黑
- * （0x99 十字 / 0xbb 对角; 设备 RLCD 阈值化后呈浅点线）。 */
+ * 密度差仅 host 观感, 像素级归真机轮）。**纯黑点线** (260929-char-window-v5-trim:
+ * 原灰度点在设备 RLCD 阈值化后不可见、真机呈空框——改纯黑, 与示范字同色)。 */
 static void charpage_draw_grid(int size)
 {
     for (int i = 0; i < size; i += 3) {
-        /* 十字 (0x99) */
+        /* 十字点线 (纯黑) */
         lv_canvas_set_px(g_page.canvas, i, size / 2,
-                         lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
+                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
         lv_canvas_set_px(g_page.canvas, size / 2, i,
-                         lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
-        /* 两对角 (0xbb): 主对角 + 副对角。 */
+                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
+        /* 两对角点线 (纯黑): 主对角 + 副对角。 */
         lv_canvas_set_px(g_page.canvas, i, i,
-                         lv_color_make(0xbb, 0xbb, 0xbb), LV_OPA_COVER);
+                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
         lv_canvas_set_px(g_page.canvas, i, size - 1 - i,
-                         lv_color_make(0xbb, 0xbb, 0xbb), LV_OPA_COVER);
+                         lv_color_make(0x00, 0x00, 0x00), LV_OPA_COVER);
     }
 }
 
@@ -417,7 +423,7 @@ static void charpage_timer_cb(lv_timer_t *timer)
  * 成一枚 ARGB8888 lv_image_dsc（墨=不透明黑、纸/非阈值化=透明），叠在米字格画布外圈
  * 作静态 chrome —— 示范字本身仍走 kidpal_char_raster_stroke 数据光栅路径（教学字体
  * 红线 CHR-A7：绝不以整帧预烘焙位图替换逐笔演示）。未 mount / 加载失败 -> 静默降级，
- * 画布既有灰边框 + 米字格引导线仍在。
+ * 米字格引导线仍在（画布自绘灰边框已随 v5 收敛撤除——重烘框资产接管外圈, 见 show()）。
  *
  * 为何查字窗的资产消费落在此 .cc 装配面而非 char_stroke.c：char_stroke.c 是 U 冻结的纯
  * 逻辑合约，B8 守卫禁止其引 loader；而参数化整帧缝 (draw_nine_slice/draw_dots) 会把
@@ -478,49 +484,6 @@ static void charpage_art_overlay(void)
         lv_image_set_src(fim, fr);
         lv_obj_set_pos(fim, 0, 4);
     }
-}
-
-/* V5 对齐 (ui-v5-align §2 查字窗行 4, 2026-09-26 批): 右栏底部★ (设计稿锚图附加;
- * ic_star_22 资产, 缺场不画——纯装饰)。dsc/px file-static 存活（lv_image 持 dsc
- * 指针, 窗重开复用零泄漏——同 frame dsc 先例）。 */
-static lv_image_dsc_t s_cp_star_dsc;
-static uint32_t      *s_cp_star_px = NULL;
-static int            s_cp_star_st = 0; /* 0=未试 1=可用 2=缺场免重试（同 frame 先例） */
-
-static const lv_image_dsc_t *charpage_art_star_dsc(void)
-{
-    kidpal_art_img_t img;
-
-    if (s_cp_star_st == 2) {
-        return NULL;
-    }
-    if (s_cp_star_st == 1) {
-        return &s_cp_star_dsc;
-    }
-    if (kidpal_art_load("ic_star_22.bin", &img) != 0 ||
-        img.w <= 0 || img.h <= 0) {
-        s_cp_star_st = 2;
-        return NULL;
-    }
-    s_cp_star_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
-    if (s_cp_star_px == NULL) {
-        return NULL;
-    }
-    for (int y = 0; y < img.h; y++) {
-        for (int x = 0; x < img.w; x++) {
-            int p = kidpal_art_pixel(&img, x, y);
-            s_cp_star_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
-        }
-    }
-    memset(&s_cp_star_dsc, 0, sizeof(s_cp_star_dsc));
-    s_cp_star_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
-    s_cp_star_dsc.header.w      = img.w;
-    s_cp_star_dsc.header.h      = img.h;
-    s_cp_star_dsc.header.stride = (uint32_t)img.w * 4u;
-    s_cp_star_dsc.data          = (const uint8_t *)s_cp_star_px;
-    s_cp_star_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
-    s_cp_star_st = 1;
-    return &s_cp_star_dsc;
 }
 
 int kidpal_char_page_started(void)
@@ -608,8 +571,8 @@ void kidpal_char_page_show(const char *data_json)
                                            (size_t)CHARPAGE_CANVAS_SIZE);
     g_page.canvas = lv_canvas_create(g_page.panel);
     lv_obj_set_pos(g_page.canvas, 4, 8);
-    lv_obj_set_style_border_width(g_page.canvas, 1, 0);
-    lv_obj_set_style_border_color(g_page.canvas, lv_color_make(0xbb, 0xbb, 0xbb), 0);
+    /* 画布自绘灰边框撤除 (v5 收敛): 重烘框资产 (frm_236_236 正圆角矩形、纯黑 3px 边框)
+     * 已接管外圈——保留自绘方框会与圆角框叠成双框; 米字格引导线仍自绘 (纯黑点线)。 */
     if (g_page.canvas_buf != NULL && g_page.rast != NULL) {
         lv_canvas_set_buffer(g_page.canvas, g_page.canvas_buf,
                              CHARPAGE_CANVAS_SIZE, CHARPAGE_CANVAS_SIZE,
@@ -645,23 +608,11 @@ void kidpal_char_page_show(const char *data_json)
         lv_obj_center(chip_lbl);
     }
 
-    /* V5 对齐 (ui-v5-align §2 查字窗行 4): 右栏底部★ (阶段5 architect 修正: 母版
-     * (280,226) 悬于右栏速查卡下方; 初版 (232,218) 压框角已纠正)。ic_star_22
-     * 缺场不画——纯装饰。 */
-    {
-        const lv_image_dsc_t *st = charpage_art_star_dsc();
-        if (st != NULL) {
-            lv_obj_t *star = lv_image_create(g_page.panel);
-            lv_image_set_src(star, st);
-            lv_obj_set_pos(star, 280, 226);
-        }
-    }
-
-    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 组词 (数据面委托
+    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 释义 (数据面委托
      * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
     {
         cJSON *root = cJSON_Parse(data_json);
-        const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ,
+        const char *pinyin = "?" , *radical = "?" , *ch = "?" ,
                    *meaning = "?";
         int stroke_count = g_page.n_strokes;
         if (root != NULL) {
@@ -673,49 +624,6 @@ void kidpal_char_page_show(const char *data_json)
             if (j && cJSON_IsString(j)) ch = j->valuestring;
             j = cJSON_GetObjectItem(root, "strokeCount");
             if (j && cJSON_IsNumber(j) && j->valueint > 0) stroke_count = j->valueint;
-            j = cJSON_GetObjectItem(root, "words");
-            if (j && cJSON_IsArray(j) && cJSON_GetArraySize(j) > 0) {
-                /* 组词多词 join (MCD-A4): words 数组前 N 项以「、」顿号 join（非只取
-                 * [0]——kidpal_char_info.words 注释本就写明「、-joined」、card.words[96]
-                 * 容量按多词设计）。装配落 char_page 层, 不动 char_stroke.c 纯逻辑合约。
-                 * UTF-8 边界封顶 (planner 裁决②, 装配面义务): 先按 96B 容量域逐词拷贝,
-                 * 若容限截断劈了多字节半字（末字节是 0x80-0xBF 连续字节）则回退到完整
-                 * 字符边界, 绝不交 card_build 半字（card_build 的 96B 字节截断冻结语义
-                 * 不动, 超长串永不到它手上）。 */
-                static char joined[96];                 /* 对齐 card.words[96] 容量 */
-                static const char ws[] = "、";          /* 「、」= E3 80 81, 3 字节 */
-                const size_t wslen = sizeof(ws) - 1;
-                const int nw = cJSON_GetArraySize(j);
-                size_t used = 0;
-                int truncated = 0;
-                for (int wi = 0; wi < nw; wi++) {
-                    cJSON *w = cJSON_GetArrayItem(j, wi);
-                    if (!w || !cJSON_IsString(w)) continue;
-                    const char *s = w->valuestring;
-                    if (used > 0) {                     /* 非首项先加顿号 */
-                        if (used + wslen + 1 >= sizeof(joined)) { truncated = 1; break; }
-                        memcpy(joined + used, ws, wslen);
-                        used += wslen;
-                    }
-                    size_t sl = strlen(s);
-                    if (used + sl + 1 >= sizeof(joined)) {
-                        sl = sizeof(joined) - 1 - used;  /* 容量封顶 */
-                        truncated = 1;
-                    }
-                    if (sl > 0) { memcpy(joined + used, s, sl); used += sl; }
-                }
-                joined[used] = '\0';
-                if (truncated) {
-                    /* UTF-8 半字回退: **只在真发生容量截断时**回退到完整字符边界——
-                     * 否则末尾合法 CJK 字符的末字节（本身是 0x80-0xBF）会被误删。 */
-                    while (used > 0 &&
-                           ((unsigned char)joined[used - 1] & 0xC0) == 0x80) {
-                        used--;
-                    }
-                    joined[used] = '\0';
-                }
-                words = joined;
-            }
             j = cJSON_GetObjectItem(root, "meaning");
             if (j && cJSON_IsString(j)) meaning = j->valuestring;
         }
@@ -728,7 +636,8 @@ void kidpal_char_page_show(const char *data_json)
             .pinyin       = pinyin,
             .radical      = radical,
             .stroke_count = stroke_count,
-            .words        = words,
+            .words        = "",   /* 组词行整删 (v5 收敛): 空串满足 card_build 非 NULL,
+                                   * card.words 成员保留 (char_stroke.c 零触, DC-1)。 */
             .meaning      = meaning,
         };
         memset(&g_page.card, 0, sizeof(g_page.card));
@@ -738,21 +647,23 @@ void kidpal_char_page_show(const char *data_json)
         lv_obj_t *cardlabel = lv_label_create(g_page.panel);
         /* 右栏去遮挡 (MCD-A1): 恒显顶部状态带 top_bar_/status_bar_（LV_OPA_50 半透,
          * y0-24 任何状态恒显）压住拼音行——起点 y8 -> y30 清出状态带 + 余量 (内容让位,
-         * 不动 chrome)。配定宽 + wrap: 释义改中文后变长必冲出右缘被裁 (右缘 388 - x228
-         * = 160), 同刀钉死。 */
-        lv_obj_set_pos(cardlabel, 228, 30);
-        lv_obj_set_width(cardlabel, 160);
+         * 不动 chrome)。右栏让位 (v5 收敛 CWVT-A5): 文本左缘 x 228 -> 244 清出重烘圆角
+         * 框右缘 235 (旧 228 被框右缘压住, human 2026-09-29 真机轮 finding④); 配定宽 +
+         * wrap: 释义改中文后变长必冲出右缘被裁 (右缘 388 - x244 = 144), 同刀钉死。 */
+        lv_obj_set_pos(cardlabel, 244, 30);
+        lv_obj_set_width(cardlabel, 144);
         lv_label_set_long_mode(cardlabel, LV_LABEL_LONG_WRAP);
-        /* 五行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
-         * meaning 95 + words 95 + 标签/换行，编译分析最坏 ~354B）——五行不能因缓冲太小被
-         * 尾部截断（S-F3.2 AC1 五行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
+        /* 四行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
+         * meaning 95 + 标签/换行，编译分析最坏 ~259B）——四行不能因缓冲太小被尾部截断
+         * （S-F3.2 AC1 四行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
         char buf[384];
-        /* 右栏速查卡五行拼装 (S-F3.2 AC1 v1.56 五行口径): 拼音带声调 + 共 N 画 + 部首 +
-         * 释义 + 组词。MCD-A3 空行不显示: 任一行（组词/部首等）数据为空 -> 该行不拼装
-         * （无空行、无占位符）。释义行保留 MCF 裁定的「释义：—」缺义兜底（human 裁:
-         * 缺义只损右栏一行、不降级整窗——形态钉死不留现场裁量; — = U+2014 全角破折号）。
-         * 五行 < buf[384] 容量（拼音/部首 47 + stroke 47 + 释义 95 + words 95 + 标签/
-         * 换行，编译分析最坏 ~354B; 部首行条件化后恒不大于原无条件最坏值）。 */
+        /* 右栏速查卡四行拼装 (S-F3.2 AC1 v1.60 四行口径): 拼音带声调 + 共 N 画 + 部首 +
+         * 释义 (组词行整删——运行时 words 恒空、口径收敛, human 2026-09-29 真机轮裁定)。
+         * MCD-A3 空行不显示: 部首数据为空 -> 该行不拼装（无空行、无占位符）。释义行保留
+         * MCF 裁定的「释义：—」缺义兜底（human 裁: 缺义只损右栏一行、不降级整窗——
+         * 形态钉死不留现场裁量; — = U+2014 全角破折号）。四行 < buf[384] 容量（拼音/
+         * 部首 47 + stroke 47 + 释义 95 + 标签/换行，编译分析最坏 ~259B; 部首行条件化后
+         * 恒不大于原无条件最坏值）。 */
         {
             size_t w = 0;
             w += (size_t)snprintf(buf + w, sizeof(buf) - w, "%s\n%s\n",
@@ -761,12 +672,9 @@ void kidpal_char_page_show(const char *data_json)
                 w += (size_t)snprintf(buf + w, sizeof(buf) - w, "部首：%s\n",
                                       g_page.card.radical);
             }
-            w += (size_t)snprintf(buf + w, sizeof(buf) - w, "释义：%s\n",
-                                  (g_page.card.meaning[0] != '\0')
-                                      ? g_page.card.meaning : "—");
-            if (g_page.card.words[0] != '\0') {          /* 组词非空才拼该行 */
-                (void)snprintf(buf + w, sizeof(buf) - w, "%s", g_page.card.words);
-            }
+            (void)snprintf(buf + w, sizeof(buf) - w, "释义：%s\n",
+                           (g_page.card.meaning[0] != '\0')
+                               ? g_page.card.meaning : "—");
         }
         lv_label_set_text(cardlabel, buf);
         lv_obj_set_style_text_font(cardlabel, &font_puhui_14_1, 0);

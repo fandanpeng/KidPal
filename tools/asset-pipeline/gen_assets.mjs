@@ -97,7 +97,11 @@ async function writeThresholdPng(path, pngData, w, h) {
 
 // ── 4. 手绘框族：CSS 八值 border-radius → SVG 父本 ──
 // 母版 = 设计稿 CSS class（非 symbol）：.frm / .frm-sm / .frm-flat。从八值不对称圆角构造 SVG path。
-const HAND_R = { tl: [255, 15], tr: [15, 225], br: [225, 15], bl: [15, 255] };      // --hand-r
+// 260929-char-window-v5-trim：frm_236_236（查字窗米字格外框）在 v5 设计稿改走 .rbox 正圆角矩形
+//   （border-radius:14px, border 3px solid ink；v5 html 行 990），故 HAND_R 由 --hand-r 八值不对称
+//   改对称 14px。HAND_R 仅被 frm_236_236 消费；HAND_R_SM（--hand-r-sm）仍供 frm_sm/frm_flat 与
+//   静态气泡，本包不波及。
+const HAND_R = { tl: [14, 14], tr: [14, 14], br: [14, 14], bl: [14, 14] };          // v5 查字窗正圆角矩形 (rbox border-radius:14px)
 const HAND_R_SM = { tl: [125, 14], tr: [12, 135], br: [145, 12], bl: [14, 125] };   // --hand-r-sm
 
 // CSS border-radius 比例缩放（radii 之和超 box 尺寸时整体按 f 缩小）

@@ -1,0 +1,160 @@
+{
+  "changeId": "260929-char-window-v5-trim",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "time": "2026-09-29",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/changes/intake/260929-char-window-v5-trim.md",
+    "upstreamFrozen": "spine anchors.req 已回填（requirements v1.60 定稿 2026-09-29，requirement-change 档 1 全程走毕 story-author→requirement-reviewer 四查全 PASS→主线程落稿，spec-anchor-check ok:true 复跑）；anchors.contract/arch = 不动（architect 分流 review 四分类=无需改）；launchPreconditions 满足",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/display",
+  "story": "S-F3.2 · 看拼音/笔画/部首/释义（AC1）——story 语义权威 = docs/requirements.md v1.60 现文（右栏速查栏纯文本逐行收敛四行：拼音带声调/「共 N 画」/部首标签/释义，去「组词」行——运行时组词数据恒空、口径收敛非缺陷修复；视觉归设计稿 v5：外框正圆角矩形、米字引导线保留改黑点线；同批去底部装饰星——零 spec 面，human 真机轮裁）",
+  "planRef": "delivery/taskpackages/260929-char-window-v5-trim/plan.md",
+  "redBaselineCommand": "cd firmware/main/test/host_app && wsl -d Ubuntu-24.04 -- bash ./espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/host_app && ./build/host_infra_test.elf\"（host runner 全量既有齿基线；elf 相对 host_app/ 目录；intake 时 acceptance-author 实跑复核）",
+  "redBaselineResult": "实跑回填（acceptance-author 2026-09-29 冻结相位）。通道① 编译（DEV-GOVERNANCE §4 C 类实编）: gcc -std=c11 -Wall -Wextra -fsyntax-only 验收件 0 errors + espidf_wsl.sh build Done（验收件重编通过）。通道② 执行（冻结即冒烟 §3）: host_infra_test.elf = 107 Tests / 2 Failures / 0 Ignored——唯二 FAIL = 本包设计态义务红（运行期红形态）: ① char_window_overlay :2128（CWVT-A1 星齿: ic_star_22 消费仍在世）② :1736（MCD-A1 A1-x 让位齿: x=228 < 236）。既有冻结齿同次实跑零新增红（char_window_overlay 12 PASS 含 MCF-A1/A3、MCD-A2/A3、M2K3 全族、ACC-1/2/3/4/6 + char_stroke 6 + char_window.test 4 + keybar_three_slot 6 + schedule_grid 11 + schedule_grid_restore 5 + voice_round_ui 8 + key_layer_dispatch 5 + reminder_overlay_unify 9 + p1_home_battery 5 + retract_p4_three_page 7 + host_infra_smoke 3 全绿）。已知遮蔽（如实记）: Unity abort-on-fail 下 test 14 内 A1 首红即中止，CWVT-A2/A3/A4 未在本轮实跑到位（其红性在现状源面必然命中——words 拼装/灰度字面在世，首红只是时序），随 builder 逐件落地在 verifier 轮渐进兑现；final 轮全量绿为判定权威。builder 落地方案①②③③a④ + 重烘后新齿转绿。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality"
+  ],
+  "acceptance": [
+    "CWVT-A1: （S-F3.2-AC1 / plan 决策①）char_page.cc 全文零 ic_star_22 / charpage_art_star_dsc / s_cp_star_ 字面——无星删改核证（负向源面字面齿，不剥注释，残留注释一并须清）",
+    "CWVT-A2: （S-F3.2-AC1 / plan 决策②）速查卡拼装区（kidpal_char_card_build(&info_o → lv_obj_set_style_text_font(cardlabel 切区）零 words 字面——无组词行删改核证（注释剥离后计数；数据面 words 成员保留、char_stroke.c 零触）",
+    "CWVT-A3: （plan 决策③a）charpage_draw_grid 函数区内 0x99 / 0xbb 字面 = 0——引导线灰度撤除（负向 raw；RLCD 阈值化后灰度不可见）",
+    "CWVT-A4: （plan 决策③a）charpage_draw_grid 区内纯黑字面 >= 1（lv_color_make(0x00… / lv_color_black( / 0x000000 任一，注释剥离后）——纯黑点线在世；点距/虚实参数真机轮调不钉",
+    "CWVT-A5: （S-F3.2 / plan 决策④）cardlabel 让位几何：set_pos 第一参 >= 236（清出框右缘 235）+ 第二参 >= 30 + lv_obj_set_width(cardlabel, W) 字面在场且 x + W <= 388 + LV_LABEL_LONG_WRAP 在场 + canvas (4,8) 自检齿不动（几何源锚齿；「右栏不被压」像素呈现归真机轮未覆盖面申报）",
+    "CWVT-A6: （plan 决策③ 重烘案）charpage_art_frame_dsc(void) 在世 guard——框消费链保留、ACC-4 末端锚有效性核证（must-stay-green；frm_236_236.bin 重烘像素形状 = 真机轮未覆盖面申报，不出齿）",
+    "MCD-A4 回撤修订（非新 ID）：test 11 三齿删除（「、」join 字面齿 / for+GetArraySize 遍历齿 / words[0] 判空闸缩为 radical[0]）；MCD-A3 radical[0] 闸保绿；A4 数据面 guard（96B 中文满长 / 135B 超长截断 / words[96] 容量截断）must-stay-green 保留"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/char_window_overlay.acceptance.c"
+  ],
+  "requiredLayers": [
+    "unit",
+    "api"
+  ],
+  "exitCriteria": [
+    "新增齿全绿（先红后绿；既有冻结齿零新增红——MCF-A1 timer 字面锚区段、MCD-A2 等既有齿存活）",
+    "firmware-build 设备树编译过（char_page.cc 改动面 + spiffs 资产重烘）",
+    "host 验收全量绿（机械门全量不放松）",
+    "spec-anchor-check 无新漂移（spec 面 v1.60 已由需求面档 1 落稿，本包不动 docs/**）",
+    "零改动核证面复核：char_stroke.c（FROZEN 纯逻辑，含 kidpal_char_card.words 成员保留裁定）、char_window.{h,c}、kidpal_render_node.cc、board 文件（KEY 路由）、mcp_server.cc、application.cc、server/**、docs/**（含 docs/contracts/**）全零 diff",
+    "重烘资产目检：frm_236_236 圆角矩形 1bpp 阈值化无锯齿/断线（重点 = 圆角与直边相接处）；ic_star_22.bin 孤儿资产零删（账面注记）",
+    "重烘零漂移核证：gen_art_spiffs.mjs 全量重写 47 枚 bin——重烘后 git diff 核证其余 46 枚零字节漂移、只落 frm_236_236.bin 一枚 diff；重烘后跑 verify_art_assets.mjs 核证（脚本预期零改）",
+    "真机轮目检（human 持板）deferred 登记 review-packet 未覆盖面段，不阻塞 supervisor；烧录纪律 = app+art 双分区（K4 教训入包）"
+  ],
+  "iterationBudget": 1,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "docs/ui/kidpal-ui-design-v5.html",
+    "delivery/changes/intake/260929-char-window-v5-trim.md",
+    "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+  ],
+  "sourceRefs": [
+    "S-F3.2",
+    "S-F3.2-AC1",
+    "delivery/changes/intake/260929-char-window-v5-trim.md",
+    "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "spec 面 v1.60 已由需求面档 1 落稿（五处枚举同步 + §8 已砍登记 + 实现侧对账 ⑥ 归本包收账已在 v1.60 登记）；落地后实现侧对账 ⑥ 状态收账与 ui-v5-align findings §2 行4/§3 资产账注记属需求面/账面维护，走主线程（planner/integrator 对 docs/requirements.md 无写权，scope-map 实况）——integrator 仅在 review-packet 记录资产账注记与收账 residual，不改 docs/**。",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "s2ExploratoryRequired": false,
+  "s2ExploratoryReason": null,
+  "s2ExploratoryGoals": [],
+  "mutationRequired": false,
+  "mutationSkipReason": "Lite 包 + 本包改动主体为删改（删装饰星/删组词行）与资产重烘（frm_236_236），结构齿为主；host 行为齿面小（cardlabel 让位区间 / 删除性负向齿），变异取证 ROI 不成立——先例 260928-char-window-key-triggered-play 同口径",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端呈现面与本地资产改动（char_page 删星/删组词行/cardlabel 让位/引导线改黑点线、frm_236_236.bin 重烘）；server payload words 继续下发零改、wire 形状（D3 笔顺 JSON / E1 display 响应块）零触碰——architect 分流 review 四分类=无需改，spine anchors.contract 已钉"
+  },
+  "changeManifest": [
+    "firmware/main/display/char_page.cc",
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/assets/spiffs_root/frm_236_236.bin",
+    "tools/asset-pipeline/gen_assets.mjs",
+    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+    "tools/simulator/LvglWindowsSimulator/assets/png/frm_236_236.png",
+    "tools/simulator/LvglWindowsSimulator/assets/9slice/frm_236_236_*",
+    "tools/asset-pipeline/report/snapshots/frm_236_236_stretch_*.png"
+  ],
+  "impactedTests": [
+    "firmware/main/test/char_window_overlay.acceptance.c",
+    "firmware/main/test/char_stroke.acceptance.c",
+    "firmware/main/test/char_window.test.c"
+  ],
+  "decisionCoverage": [
+    {
+      "id": "DC-1",
+      "decision": "组词行回撤为删除性改动（words 解析/join/拼装整删，info_o.words 改传空串满足 card_build 非 NULL），kidpal_char_card.words 成员保留",
+      "summary": "删成员触 char_stroke.c FROZEN 冻结面 + char_stroke.acceptance.c verbatim 齿，零行为收益换大爆炸半径；words 运行时恒空（OpenClaw 意图块只带 char+meaning），human 2026-09-29 真机轮裁口径收敛为释义",
+      "sourceRefs": [
+        "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+      ],
+      "landsIn": "acceptance:CWVT-A2"
+    },
+    {
+      "id": "DC-2",
+      "decision": "外框圆角矩形走重烘 frm_236_236 资产案（human 触点① 2026-09-29 裁，不采 architect 推荐的程序化画框案）",
+      "summary": "保留 charpage_art_frame_dsc()/charpage_art_overlay() 消费链代码形状不动，只换 bin 资产；连带义务 = 1bpp 阈值化目检（锯齿/断线回管线调参）+ app+art 双分区烧录（K4 教训）",
+      "sourceRefs": [
+        "delivery/changes/intake/260929-char-window-v5-trim.md",
+        "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+      ],
+      "landsIn": "acceptance:CWVT-A6"
+    },
+    {
+      "id": "DC-3",
+      "decision": "米字引导线保留改纯黑点线（human 触点①裁），灰度 0x99/0xbb 阈值化后不可见为根因",
+      "summary": "charpage_draw_grid 十字/对角改纯黑点线，点距/虚实参数归真机轮调；设计口径 = 母版 v5 框内八向点线保留",
+      "sourceRefs": [
+        "delivery/changes/intake/260929-char-window-v5-trim.md"
+      ],
+      "landsIn": "acceptance:CWVT-A4"
+    },
+    {
+      "id": "DC-4",
+      "decision": "右栏让位数值（cardlabel 起点 x 与 width）终判归 builder + 真机轮，原则 = 文本左缘不与框右缘重叠",
+      "summary": "architect 建议 244/144 或对齐母版 262/126，host 面钉结构齿（起点不在旧值 228），真机目检归未覆盖面申报",
+      "sourceRefs": [
+        "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+      ],
+      "landsIn": "acceptance:CWVT-A5"
+    },
+    {
+      "id": "DC-5",
+      "decision": "设计母版 v5 HTML 查字窗段仍画组词行与星——不同批更新母版，留收口阶段呈 human 裁",
+      "landsIn": "dropped",
+      "reason": "spine openQ q3 human 2026-09-29 裁 deferred（非 blocking，实现包收口时随 ui-align 账面注记一并呈）——本包零实现义务，仅 review-packet residual 登记",
+      "sourceRefs": [
+        "delivery/changes/intake/260929-char-window-v5-trim.md"
+      ],
+      "summary": "母版更新与否属设计稿面，deferred 裁定后本包无对应改动面与断言"
+    },
+    {
+      "id": "DC-6",
+      "decision": "ic_star_22.bin 孤儿资产不删文件（烧录面最小变更），账面注记",
+      "summary": "human 真机轮裁去装饰星后 ic_star_22 成孤儿；删文件扩大烧录 diff 面，零行为收益——plan.md 裁定账面注记（ui-v5-align findings §3 资产账 + 收口 summary）",
+      "sourceRefs": [
+        "delivery/taskpackages/260929-char-window-v5-trim/plan.md"
+      ],
+      "landsIn": "acceptance:CWVT-A1"
+    }
+  ],
+  "notes": "scope-map 前置核对（C5）：builder/fixer allow firmware/** + tools/** ✓（deny *.acceptance.c——验收文件归 acceptance-author，正规 authorship 成立）；acceptance-author allow firmware/**/*.acceptance.c ✓；改动面全在写权内，零中途撞 enforce-scope 风险。红线：禁止改 docs/contracts/**、docs/**（含 docs/ui 设计母版）、char_stroke.c（FROZEN 纯逻辑，words 成员保留）、char_window.{h,c}、kidpal_render_node.cc、board 文件、mcp_server.cc、application.cc、server/**。char_window_overlay.acceptance.c 的 ACC-4 区域末端锚 = charpage_art_frame_dsc 签名（本包保留该函数，重烘案不删，锚仍有效；builder 若重构改名则同批换锚——acceptance-author 钉齿时核对）。canvas 自带 1px 0xbb 边框去留归 builder 裁（框资产已含边则删避免双框）。真机轮 human 持板 deferred 到 review-packet 未覆盖面段（launch 指令明示，不阻塞 supervisor）；烧录 = app+art 双分区。mutationRequired=false 见 mutationSkipReason。plan.md 为 architect /triage-change reviewed（只读消费、改需留痕）。跨端判断（1d）：exempt 见 crossEnd 字段。launch-card.md 缺失（目录仅 plan.md）——已如实记 pod-events，不设门。firmware-build 闸前按 .claude/skills/kidpal-idf-env/SKILL.md 准备 ESP-IDF 环境。"
+}
