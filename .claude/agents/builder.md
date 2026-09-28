@@ -76,7 +76,7 @@ model: sonnet
 
 ## Verification / 交付证据
 
-- 改了哪些文件、实现了哪些 `Sx-Ay`。
+- 改了哪些文件、实现了哪些 `S-Fx.y`。
 - 新增/更新哪些单元或集成测试，覆盖了哪些分支和边界。
 - 本地 tsc/相关测试结果。
 - docs/security/ADR 发现项，供 integrator 或 planner 处理。

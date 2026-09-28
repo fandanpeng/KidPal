@@ -74,6 +74,13 @@ changes:                  # 挂在本 workstream 下的 change-id（体现 1:N�
 ---
 ```
 
+## 拆包顺序链（260928-gov-review-portfolio-boundary-story-propagation T7，M1–M4 先例链成文）
+
+两条顺序纪律（agent 侧的 fail-closed 停等 = `portfolio-planner.md` Step 1「拆包顺序链停等三件」，与本节互为表里——本节管人读纪律、intake 停等管 agent 行为）：
+
+1. **task_plan 的 `phase` 节为 workstream 必备节**——建 workstream 即落目标 / phase（分波交付计划），不后补；无 phases = 拆包派遣的前置件缺失。
+2. **里程碑登记（`delivery/milestones/milestones.jsonl`）先于拆包派遣**——workstream 建目录、派 portfolio-planner 之前，本倡议必须已在 milestones.jsonl 登记（含 nextAction）；ui-v5-align 事故（2026-09-24，21 包建毁、3 轮 human 复裁）即「建 workstream 当日直接派遣拆包」的实证。
+
 ## 生命周期
 
 1. 人 / planner 在顶层建 `<slug>/`，`status: active`。

@@ -34,7 +34,7 @@ dev loop 采用 progressive rigor：低风险小修可以用 Lite TaskPackage，
 planner 在 Draft TaskPackage 前必须按 `.claude/references/task-intake-and-slicing.md` 做 source intake，写入：
 
 - `sourceType`：`delivery-story`、`planning-workstream`、`arch-review`、`human-ad-hoc`、`ci-failure`、`drift-report`、`regression`、`maintenance`、`proposal`。
-- `sourceRefs[]`：稳定可追溯来源，如 `S1-A1`、`D-A1`、`ARQ-063-C1`、`TEMP-2026-07-05-*`。对于 `sourceType=proposal`，`sourceRefs[]` 必须包含 proposal `.md` 路径，且该路径必须同时出现在 `docRefs[]` 中。
+- `sourceRefs[]`：稳定可追溯来源，如 `S-F1.4`、`S-F1.4-AC3`、`D-A1`、`ARQ-063-C1`、`TEMP-2026-07-05-*`。对于 `sourceType=proposal`，`sourceRefs[]` 必须包含 proposal `.md` 路径，且该路径必须同时出现在 `docRefs[]` 中。
 - `deliveryImpact`：是否影响 `delivery/milestones` 里程碑健康。
 - `planningImpact`：`none` / `attach-existing` / `create-workstream` / `needs-triage`。
 - `riskTier` 与 `gateProfile[]`：决定必须启用哪些 verifier / integrator / supervisor 证据。
@@ -106,7 +106,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 
 **防空过（让「做完」对故事负责）**
 1. **验收先行且冻结**：`acceptance-author` 在 builder 之前把故事翻译成可执行验收测试，
-   每条断言绑定一个 TaskPackage acceptanceRef/sourceRef（例如 `Sx-Ay`、`D-A1`、`ARQ-063-C1`、`TEMP-*`）；builder/fixer **只读**这些测试（钩子强制）。
+   每条断言绑定一个 TaskPackage acceptanceRef/sourceRef（例如 `S-Fx.y`、`S-Fx.y-AC<n>`、`D-A1`、`ARQ-063-C1`、`TEMP-*`）；builder/fixer **只读**这些测试（钩子强制）。
 2. **反「200=过」**：API 测试必须断言响应体过 zod + 关键取值 + **DB 副作用** + **事件已发**
    +（必要时）审计/成本。UI 测试（仅当子系统声明有 UI）用 Playwright 断言**状态变化与内容**，
    禁止「页面能打开就算过」。
@@ -132,7 +132,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审全量闸仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
 - `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。
-- `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/changes/dev/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = 拆包侧**（portfolio-planner Step 4 落盘时一次产双份，随 commit-before-launch 进基准 ref）；Pod 内 planner Step 7 **核在场**、refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
+- `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/changes/dev/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产双份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。
 - `loop-metrics.json` / `pod-journal.jsonl`：post-cutoff 退役、不提交；pre-cutoff 保留原生产、晋升与读取兼容。
@@ -271,7 +271,7 @@ ADR 只记录 why，不复制 contracts/spec 的 what。以下情况需要 `adrR
 # 在子系统对应的工作树根目录
 claude --settings .claude/dev-loop.settings.json --agent planner
 # 然后在会话里：
-/build-feature S1-A1 销售提交线索后能在列表中看到该线索
+/build-feature S-F1.4 孩子到点收到日程提醒弹窗
 ```
 
 planner 会按 `commands/build-feature.md` 推进，并在契约人工门或 supervisor ESCALATE 时停下等你。

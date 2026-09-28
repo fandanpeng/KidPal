@@ -117,6 +117,63 @@ function gitFirstCommitDate(relPath) {
   }
 }
 
+// ── AC 回引齿（260928-gov-review-portfolio-boundary-story-propagation T4，finalize 态向严）──
+// sourceRefs 命中 requirements story（`S-Fx.y` / `S-Fx.y-AC<n>`）的包：回引 AC 号集须 ==
+// sourceRefs 声明的 AC 号集（对齐 planner Step 8b「多引、少引都是方向偏差信号」）；sourceRefs
+// 未带 AC 号集 = 只核「至少一条 AC 回引在场」（回引来源 = sourceRefs AC 复合句法 ∨ acceptance
+// 齿内 `S-Fx.y-AC<n>` token，二者居一即合 FROZEN 语义「acceptance 齿 / sourceRefs 必须带」）。
+// Draft 态放行（finalize 代理 = `acceptanceTestsFile` 非空）。存量 carve-out（FROZEN T4 钉死，
+// 对偶 DP-2 / CHANGE_ID_CUTOFF 先例）：包目录 gitFirstCommitDate < AC_BACKREF_CUTOFF = 存量放行。
+const STORY_REF_RE = /^S-F\d+\.\d+(-AC\d+)?$/;
+const AC_TAG_RE = /^(S-F\d+\.\d+)-AC(\d+)$/;
+const AC_BACKREF_CUTOFF = '2026-09-28';
+
+export function collectAcBackrefErrors(tp, opts = {}) {
+  const errors = [];
+  const isFinalizedState = nonEmptyArray(tp.acceptanceTestsFile);
+  const sourceRefs = (Array.isArray(tp.sourceRefs) ? tp.sourceRefs : []).filter(nonEmptyString).map((r) => String(r).trim());
+  const storyRefs = sourceRefs.filter((r) => STORY_REF_RE.test(r));
+  if (!isFinalizedState || storyRefs.length === 0) return errors; // Draft 态放行 / 非 story 命中包不适用
+  const cutoff = opts.cutoffDate || AC_BACKREF_CUTOFF;
+  const gitFn = opts.gitFn || ((rel) => gitFirstCommitDate(rel));
+  const cid = nonEmptyString(tp.changeId) ? String(tp.changeId) : '';
+  let firstCommit = gitFn(`delivery/taskpackages/${cid}`);
+  if (firstCommit === null) firstCommit = gitFn(`delivery/changes/dev/${cid}`);
+  if (firstCommit !== null && firstCommit < cutoff) return errors; // 存量放行（landing-summary 记抽查处置）
+  const declared = new Map(); // base -> Set<ac>（sourceRefs AC 复合句法声明的号集）
+  const backref = new Set(); // `${base}#${ac}`：sourceRefs tags ∪ acceptance 齿内回引
+  for (const r of storyRefs) {
+    const m = AC_TAG_RE.exec(r);
+    if (m) {
+      if (!declared.has(m[1])) declared.set(m[1], new Set());
+      declared.get(m[1]).add(m[2]);
+      backref.add(`${m[1]}#${m[2]}`);
+    }
+  }
+  const accBlob = (Array.isArray(tp.acceptance) ? tp.acceptance : [])
+    .map((e) => (e && typeof e === 'object' ? JSON.stringify(e) : String(e))).join('\n');
+  for (const m of accBlob.matchAll(/(S-F\d+\.\d+)-AC(\d+)/g)) backref.add(`${m[1]}#${m[2]}`);
+  for (const base of new Set(storyRefs.map((r) => r.replace(/-AC\d+$/, '')))) {
+    const declaredSet = declared.get(base);
+    const baseBackrefs = new Set([...backref].filter((s) => s.startsWith(`${base}#`)).map((s) => s.split('#')[1]));
+    if (!declaredSet || declaredSet.size === 0) {
+      if (baseBackrefs.size === 0) {
+        errors.push(`AC backref missing: story ${base}（sourceRefs 裸 story id 且 sourceRefs/acceptance 无任何 S-Fx.y-AC<n> 回引——finalize 态闸红，planner Step 8b 同口径）`);
+      }
+      continue;
+    }
+    const missingAcs = [...declaredSet].filter((ac) => !baseBackrefs.has(ac));
+    const extraAcs = [...baseBackrefs].filter((ac) => !declaredSet.has(ac));
+    if (missingAcs.length > 0) {
+      errors.push(`AC backref set != declared set for ${base}: missing AC${missingAcs.join(', AC')}（少引 = 方向偏差信号）`);
+    }
+    if (extraAcs.length > 0) {
+      errors.push(`AC backref set != declared set for ${base}: extra AC${extraAcs.join(', AC')}（多引 = 方向偏差信号）`);
+    }
+  }
+  return errors;
+}
+
 // ── T5（260924-gov-review-gate-parse-teeth）：引用字段磁盘存在性 warn 齿（advisory，不拦门）──
 // 七类引用字段（docRefs / sourceRefs / contractRefs / planningRefs / acceptanceTestsFile /
 // origin.ref(upstreamRef) / crossEnd.counterparts[].path）取 fragment-stripped 路径、过 ANCHORABLE_TEST
@@ -163,6 +220,16 @@ function selfCheck() {
   // crossEnd.counterparts[].path 同齿
   const w5 = collectRefWarnings({ crossEnd: { counterparts: [{ path: 'server/gone.py', symbol: 'x' }] } }, never);
   ok(w5.length === 1 && w5[0].field === 'crossEnd.counterparts[].path', 'sc-crossend-path-warn');
+  // ── AC 回引齿（260928 批 T4）：Draft 放行 / finalize 缺回引红 / 号集相等绿 / 多引红 / 存量放行 ──
+  const acBase = { changeId: '260930-ac-probe', sourceRefs: ['S-F1.4'], acceptance: [], acceptanceTestsFile: [], exitCriteria: [] };
+  ok(collectAcBackrefErrors(acBase, { gitFn: () => null }).length === 0, 'sc-ac-draft-passthrough');
+  ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1 提醒弹窗驻留'] }, { gitFn: () => null }).length === 1, 'sc-ac-finalize-missing-backref-red');
+  ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1 S-F1.4-AC2 断言'] }, { gitFn: () => null }).length === 0, 'sc-ac-bare-one-backref-ok');
+  const acTagged = { ...acBase, sourceRefs: ['S-F1.4-AC1', 'S-F1.4-AC3'], acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1 S-F1.4-AC1', 'KR-A2 S-F1.4-AC3'] };
+  ok(collectAcBackrefErrors(acTagged, { gitFn: () => null }).length === 0, 'sc-ac-tagged-equal-ok');
+  ok(collectAcBackrefErrors({ ...acTagged, acceptance: ['KR-A1 S-F1.4-AC1', 'KR-A2 S-F1.4-AC3', 'KR-A3 S-F1.4-AC2'] }, { gitFn: () => null }).length === 1, 'sc-ac-extra-red');
+  ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1'] }, { gitFn: () => '2026-09-01' }).length === 0, 'sc-ac-legacy-carveout');
+  ok(collectAcBackrefErrors({ ...acBase, acceptanceTestsFile: ['x.acceptance.c'], acceptance: ['KR-A1'] }, { gitFn: () => '2026-10-01' }).length === 1, 'sc-ac-new-package-red');
   console.log(JSON.stringify({ selfCheck: 'taskpackage-required-check', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   process.exit(failCount === 0 ? 0 : 1);
 }
@@ -445,6 +512,9 @@ if (isFinalizedState) {
     }
   }
 }
+
+// ── AC 回引齿（260928-gov-review-portfolio-boundary-story-propagation T4）——主流程挂接 ──
+coverageErrors.push(...collectAcBackrefErrors(taskPackage));
 
 // T5：warnings 收集（advisory——ok 与 fail 两路输出均带，exit 判定不动）。
 const refWarnings = collectRefWarnings(taskPackage, (p) => existsSync(resolve(projectDir, p)));

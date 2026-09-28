@@ -199,8 +199,8 @@ function selfCheck() {
   ok(evidenceMatchesId([plainRecord], plainId) === true, 'sc-plain-id-invariant-hit');
 
   // raw-id 有意分歧保全（ARQ-097 deliberate divergence）——acceptanceId 提取器不走 extractShortId，返回 raw 全 id
-  ok(acceptanceId('S1-A1: 整句描述') === 'S1-A1: 整句描述', 'sc-raw-id-divergence-preserved');
-  ok(acceptanceId({ id: 'S1-A1: 整句描述' }) === 'S1-A1: 整句描述', 'sc-raw-id-object-form-preserved');
+  ok(acceptanceId('S-F1.1: 整句描述') === 'S-F1.1: 整句描述', 'sc-raw-id-divergence-preserved');
+  ok(acceptanceId({ id: 'S-F1.1: 整句描述' }) === 'S-F1.1: 整句描述', 'sc-raw-id-object-form-preserved');
 
   // 方向案——含 `\` 不含 `"` 的 id：既有假阴转命中（向严无害，F5(v) 声明方向）
   const backslashId = '路径 C:\\AI\\x 的验收';

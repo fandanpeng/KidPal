@@ -194,6 +194,21 @@ Lite/Full 讲大小与风险；本维讲**包边界的形状**：每个 TaskPack
 - 默认不按 DB→API→UI 这种不能独立闭合能力/行为的技术层横切。这里约束的是**包边界**，不是要求每包必须同时改 schema/API/UI；只触一层但该层改动本身就是完整交付结果（例如修正一个 API 错误响应、一个事件投递 bug、一个可运行 CLI 行为）的 bugfix/internal-service/tooling change 仍是合法垂直切片。仅仅「这批 DB/API/UI 改动各自有测试」不足以证明它是垂直切片。
 - **wide refactor 例外**：rename/retype shared symbol、schema/contract evolution 等单次机械改动若 blast radius 使任何 tracer bullet 都无法独立保持 green，可按 `expand → migrate batches → contract` 拆包。expand/migrate 中间包不必 user-visible，但必须有独立可验证状态并声明 blocking edges。若连 migrate batch 都无法独立保持 green，本维不定义额外分支/集成机制；需另开治理变更设计集成策略。
 
+### 尺寸维与视觉对齐判例（260928-gov-review-portfolio-boundary-story-propagation T6）
+
+垂直切片维管**包边界的形状**，本维管**大小**——ui-v5-align 21 包建毁实证的缺口面（两轮粒度实质等于派遣方喂入的批次提案、human 三轮复裁充当缺失的粒度门）。四判据：
+
+- **改动行数量级**：单包改动行数量级应在一个 Pod 的验证预算内可消化；量级失衡（一包覆盖其余包总和）= 切法失衡信号，重切。
+- **文件面**：包间文件所有权不相交——同文件被多包认领 = merge order 冲突面 + 冻结面互踩，须显式 blocking edges 或重切。
+- **单包验证预算**：一包的验收面（齿数 + live/真机半）一 Pod 在 fixBudget 内可消化；超出 = 拆细，或降验收密度升 human。
+- **N 上下界**：单 workstream 包数无机械硬限，但 N 超过 Pod 并行度（WIP limit 量级）须显式论证——只按派遣方批次提案定粒度而无独立论证 = 粒度门缺失。
+
+**视觉对齐类切法判例**（260924 ui-v5-align human 终裁判据成文，引据源 = `delivery/workstreams/ui-v5-align/` 终裁记录；视觉批不套功能切片细粒度逻辑）：
+
+- **页单位粗包**：视觉对齐批按页切粗包，不按功能点/AC 逐条细切（粒度错配）。
+- **包间文件面不相交**：页 → 资产/渲染文件映射保持单包独占；同文件跨页复用时认领关系显式登记。
+- **跨页串面项走合并后串行追加轮**：横跨多页的系统性调整（字体/间距/主题级）不塞进任何单页包，等页包合并后单开追加轮，防每包都碰共享面。
+
 Use a Lite TaskPackage when all are true:
 
 - one source ref or a small tightly-coupled cluster;
@@ -248,11 +263,12 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 ### plan.md 全量义务
 
 - 每个 TaskPackage 拆包时必备 `delivery/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
-- plan.md 骨架：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 改法取舍 + 阶段划分 + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。
+- plan.md 骨架（260928 批 T1 收窄）：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 可行性判据 + **跨包事实与共享冻结面约束（含跨切片边角）** + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。**判据一句钉死：跨包事实 / 共享冻结面约束（只有 RTE 看全局才知道的跨切片知识，如「唤醒词路径也过会话发起入口」「发送原语复用 K2 冻结缝」）留拆包侧；单包内实现决策（改法取舍、阶段划分、时序细节、渲染接线、包内边角）不进拆包侧 plan.md**——包内细节设计承载位 = 冻结 acceptance 断言化 + TaskPackage `notes`/`exitCriteria`/`decisionCoverage` 备注 + planner 派发 prompt（260928 批 OQ-1 裁定）；阶段划分 = `planner.md` Pod 标准 loop 重述、不重复成文。
 
 ### story 锚点引用与转写
 
 - story 在 plan.md / taskpackage 中**只以锚点引用出现**：`S-Fx.y · <标题>`（可选带 AC 号集）。**不内嵌原文、不改写、不复述语义**；story 语义权威 = `docs/requirements.md` 现文。
+- **acceptance 唯一写点（260928-gov-review-portfolio-boundary-story-propagation T3）**：story 命中包的 acceptance 由 Pod 内 acceptance-author 唯一产出（input-brief 带 `brief-inputs.mjs` 的 story 整节照录投影，见该脚本「story 语义权威」段）；拆包侧**不写 acceptance 骨架**（taskpackage `acceptance` 拆包期为空骨架 `[]`）；planner 在 **Step 8b** 核对忠实度（AC 回引号集与 sourceRefs AC 号集一致 + story 补充规则逐条有无落点 + 断言方向不弱于、不钉反），核对不通过退回 acceptance-author 重钉、planner 不代写；机械号集对账由 `taskpackage-required-check.mjs` AC 回引齿承载（T4，两道不互替）。
 - taskpackage `story` 字段承**锚点引用**，技术描述归 plan.md（治 260829 期 story 字段写成技术方案的真实翻车——write-story 纪律 1 反例在册）。
 - **AC 级回引复合句法（全仓首钉）**：`S-Fx.y-AC<n>`（如 `S-F1.4-AC3`）——验收齿 / `sourceRefs` 的 AC 粒度回引按此形态填。
 - **句法分工注记**：prose 锚点引用形态的权威 = skill `write-story`（其 description「拆包引用 story 的合法形态以本 skill 为准」管 prose 层）；AC 粒度机器引用的复合 token 句法 = **本节首钉**（write-story 边界节已把「TaskPackage 怎么承载/转写 story」委派拆包链治理）。两句并存、各管一层，不互为违规依据。

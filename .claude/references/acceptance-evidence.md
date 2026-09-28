@@ -4,7 +4,7 @@
 
 ## 必要证据
 
-- 每条验收必须绑定一个 TaskPackage acceptanceRef/sourceRef，用测试名或注释标记 `coverage: <ref>`。正式产品故事通常是 `Sx-Ay`；架构 review 修复、临时任务或 CI/drift 修复可以是 `D-A1`、`ARQ-063-C1`、`TEMP-*`、`DRIFT-*` 等稳定引用。
+- 每条验收必须绑定一个 TaskPackage acceptanceRef/sourceRef，用测试名或注释标记 `coverage: <ref>`。正式产品故事通常是 `S-Fx.y`（AC 粒度回引用 `S-Fx.y-AC<n>` 复合句法）；架构 review 修复、临时任务或 CI/drift 修复可以是 `D-A1`、`ARQ-063-C1`、`TEMP-*`、`DRIFT-*` 等稳定引用。
 - API 验收必须同时断言响应 schema、关键字段、DB 副作用、领域事件；必要时断言审计/成本记录。
 - UI 验收必须断言状态变化与具体内容，例如列表新增、详情跳转、错误态呈现；不能只断言页面能打开。
 - AI 功能验收必须捕获工具调用、校验工具参数、校验作用域约束（如只读 scope 不得调用 mutating 工具），并确认响应没有编造工具结果。

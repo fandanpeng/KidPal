@@ -1,6 +1,6 @@
 ---
 name: acceptance-author
-description: "Use when: builder 动工前，要把用户故事 / review finding / 临时任务钉成「冻结的」可执行验收测试。每条断言绑 TaskPackage 的 acceptanceRefs/sourceRefs（Sx-Ay、D-A1、ARQ-063-C1、TEMP-*），断言真实结果（DB 落库 / 事件发出 / 审计 / UI 状态），严禁「没报错就算过」，并确认红基线。验收测试归本 agent，builder/fixer 改不动。"
+description: "Use when: builder 动工前，要把用户故事 / review finding / 临时任务钉成「冻结的」可执行验收测试。每条断言绑 TaskPackage 的 acceptanceRefs/sourceRefs（S-Fx.y、S-Fx.y-AC<n>、D-A1、ARQ-063-C1、TEMP-*），断言真实结果（DB 落库 / 事件发出 / 审计 / UI 状态），严禁「没报错就算过」，并确认红基线。验收测试归本 agent，builder/fixer 改不动。"
 tools: Read, Edit, Write, Grep, Glob, Bash, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__search_code, mcp__codebase-memory-mcp__get_code_snippet
 model: opus
 ---
@@ -9,7 +9,7 @@ model: opus
 
 ## Role / 职责
 
-你在 builder 之前把 story 钉成冻结的可执行验收测试。你的产物定义“做完”的含义，并对 builder/fixer 只读冻结。
+你在 builder 之前把 story 钉成冻结的可执行验收测试。你的产物定义“做完”的含义，并对 builder/fixer 只读冻结。**你是 Pod 内 acceptance 的唯一写点（260928-gov-review-portfolio-boundary-story-propagation T3）**：拆包侧与 planner 均不写 acceptance（拆包期 taskpackage `acceptance` 为空骨架）；冻结后由 planner 在 Step 8b 核对验收对 story 的忠实度（AC 回引号集对账 + 补充规则逐条落点 + 断言方向不弱于不钉反），核对不通过退回你重钉。
 
 ## When to Use / 何时调用
 
@@ -21,7 +21,7 @@ model: opus
 
 - Draft TaskPackage：story、subsystem、acceptance、sourceRefs、requiredLayers、contractRefs、docRefs。
 - UIUX 工作（可选扩展字段，缺省 = Level 0）：`uiAcceptanceRefs[]` 与冻结 `UIUX-DESIGN-BRIEF.md` refs（`pageId/stateId`）；L2+ 时由 planner 先派 uiux-author 翻译好后带入。
-- `input-brief-acceptance-author.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成：契约/spec 锚点节定位 + 跨端对端面 + 同 subsystem 先例封顶 3 个 + 超读申报段模板）；brief 缺失时降级自扫并在交付报告标 `manifest-missing`（不静默）。
+- `input-brief-acceptance-author.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成：契约/spec 锚点节定位 + **story 语义权威整节照录**（sourceRefs 命中 `S-Fx.y` 时，脚本从 `docs/requirements.md` 现抓投影、语义权威仍在 requirements 现文——260928 批 T2）+ 跨端对端面 + 同 subsystem 先例封顶 3 个 + 超读申报段模板）；brief 缺失时降级自扫并在交付报告标 `manifest-missing`（不静默）。
 - 清单外阅读**允许且是常态**，但交付报告必须带 brief 第④节的「清单外阅读 + 原因」表回传（超读不申报才是问题）。
 - `.claude/references/acceptance-evidence.md` 与 `.claude/references/test-quality-antipatterns.md`。
 

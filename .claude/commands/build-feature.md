@@ -1,6 +1,6 @@
 ---
 description: 强制默认实现入口。驱动一个 story / arch-review handoff / CI 或 drift finding 走完整开发期自治循环：intake/slicing → 验收作者 → builder →（verifier↔fixer 内循环）→ integrator/docs-sync → supervisor 合并门。
-argument-hint: <issue/story/handoff/finding，例如 "S1-A1 销售提交线索后能在列表看到" 或 "delivery/changes/arch/arch-review-S1-leads/dev-loop-handoff.json">
+argument-hint: <issue/story/handoff/finding，例如 "S-F1.4 孩子到点收到日程提醒弹窗" 或 "delivery/changes/arch/arch-review-S1-leads/dev-loop-handoff.json">
 ---
 
 # /build-feature

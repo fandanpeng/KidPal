@@ -25,7 +25,7 @@ builder 与 fixer 在写实现 / 打补丁时消费本规则，避免过度设�
 - 防数据丢失的错误处理、ErrorEnvelope、correlationId（见 `observability-k6.md`）。
 - 安全与权限 / secret 处理（见 `security-hardening.md`）。
 - 可达性基础。
-- 任一声明的 `Sx-Ay` 验收点的真实断言（见 `acceptance-evidence.md`）。
+- 任一声明的 `S-Fx.y` 验收点的真实断言（见 `acceptance-evidence.md`）。
 - 用户或契约明确要求的行为。
 
 非平凡逻辑（分支、循环、解析、money / 安全路径）必须留下一个能跑的 guard——这是最小实现的一部分，不是冗余，verifier / review 不得当成可删项。

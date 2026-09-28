@@ -55,7 +55,7 @@ function hasCoverageMarker(content, acceptanceId) {
 /**
  * Extract the short acceptance ref from a full acceptance string.
  * E.g. "TP-7-A1: S1 existing acceptance..." -> "TP-7-A1"
- *      "S1-A2" -> "S1-A2"
+ *      "S-F1.2" -> "S-F1.2"
  * The short ref is the first whitespace-delimited or colon-terminated token
  * that matches the sourceRef pattern (alphanum-hyphen).
  */
@@ -66,7 +66,7 @@ function shortAcceptanceRef(fullId) {
   if (colonIdx === -1 && fullId.length <= 20) return fullId;
   // Extract the token before the colon or first space
   const token = colonIdx >= 0 ? fullId.slice(0, colonIdx).trim() : fullId.split(/\s+/)[0];
-  // Validate it looks like a ref: e.g. TP-7-A1, S1-A2, ARQ-063-C1, TEMP-*
+  // Validate it looks like a ref: e.g. TP-7-A1, S-F1.2, ARQ-063-C1, TEMP-*
   if (/^[A-Za-z]+[-\d]+/.test(token) && token.length >= 4) return token;
   return fullId;
 }

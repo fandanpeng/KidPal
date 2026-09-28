@@ -1,6 +1,6 @@
 ---
 id: ARQ-260927-role-boundary-story-propagation
-title: 拆包链角色权限换份 + story 语义贯彻无机械保障——portfolio-planner 越界写包级实现设计（plan.md 改法/阶段/边角）、需求蒸馏五跳投影无对账、planner Step 1e 与拆包侧 acceptance 双写点无对账
+title: 拆包链角色权限划分 + story 语义贯彻无机械保障——portfolio-planner 越界写包级实现设计（plan.md 改法/阶段/边角）、需求蒸馏五跳投影无对账、planner Step 1e 与拆包侧 acceptance 双写点无对账
 domain: gov
 status: deferred
 severity: SHOULD
@@ -24,7 +24,7 @@ source: [delivery/taskpackages/260924-m4-k3-record-session-live/plan.md（commit
 **影响面**：每个经 portfolio-planner 拆包的包都复现（改法/阶段/边角前置到拆包，与倡议内容无关）。dev loop 需求漂移：五跳投影每跳 lossy、下游无 ground truth、锚 2 只拦结构不拦语义——漂移静默累积且无纠错点。不修代价 = RTE 职责臃肿 + 链路多一层无对账投影 + 「脱需求」无任何机械闸可拦。频率 = 每批一次。
 
 **建议改动**（候选，交 review、不自批）：
-1. **权限换份**：portfolio-planner 收窄到「scope 划分 + 技术可行性判据 + 跨包冻结边界 + demo 证据形态」；plan.md 的改法取舍 / 阶段划分 / 边角下沉到 Pod 内 planner / acceptance-author / builder 自己准备（plan.md 切成拆包侧「可行性判据」与 Pod 侧「实现设计」两层）。
+1. **权限划分**：portfolio-planner 收窄到「scope 划分 + 技术可行性判据 + 跨包冻结边界 + demo 证据形态」；plan.md 的改法取舍 / 阶段划分 / 边角下沉到 Pod 内 planner / acceptance-author / builder 自己准备（plan.md 切成拆包侧「可行性判据」与 Pod 侧「实现设计」两层）。
 2. **story 贯彻**（三候选，任选或组合）：① 给 builder/verifier 输入面带「story 原文 / 关键 AC 判据」的可读锚（堵下游全盲，可能触 brief-inputs.mjs）；② 机械化 planner Step 1e（acceptance 强制带 AC 回引 + 原文判据，缺则闸红）；③ verifier / supervisor 加一道「story↔acceptance 语义对账」机械牙（堵语义漂移，现有锚 2 只堵编号漂移）。
 3. **消解双写点**：Step 1e 与拆包侧 acceptance 骨架的写点合并或明确定位（谁写骨架、谁核保真、核的机械牙在哪）。
 

@@ -75,6 +75,62 @@ export function isWireRef(ref) {
   return WIRE_SECTIONS.some((w) => anchor === w || anchor.startsWith(w));
 }
 
+// story 照录路（260928-gov-review-portfolio-boundary-story-propagation T2）：裸 story id
+// （`S-Fx.y` / `S-Fx.y-ACn`）→ 定位 `docs/requirements.md` 的 `##### S-Fx.y · <标题>` 节 →
+// 整节照录进 brief（machine-derived 投影、语义权威仍在 requirements 现文）。节定位失败走
+// advisory 通道（不 exit 1，与第①路 missing/not-found 态同构，不猜）。
+const STORY_ID_RE = /^S-F\d+\.\d+(-AC\d+)?$/;
+const REQUIREMENTS_FILE = 'docs/requirements.md';
+
+export function isStoryRef(ref) {
+  return STORY_ID_RE.test(String(ref).trim());
+}
+
+function storySectionText(storyId) {
+  const hs = headingsOf(REQUIREMENTS_FILE);
+  const needle = storyId.replace(/-AC\d+$/, '').trim();
+  const hit = hs.find((h) => h.title.split('·')[0].trim() === needle);
+  if (!hit) return null;
+  const next = hs.find((h) => h.line > hit.line && h.level <= hit.level);
+  const lines = readLines(REQUIREMENTS_FILE);
+  return { title: hit.title, line: hit.line, text: lines.slice(hit.line - 1, next ? next.line - 1 : undefined).join('\n').trimEnd() };
+}
+
+function renderStoryRoad(storyRefs, advisories) {
+  const seen = new Set();
+  const ids = [];
+  for (const r of storyRefs) {
+    const id = String(r.path).trim();
+    if (!seen.has(id)) { seen.add(id); ids.push(id); }
+  }
+  if (ids.length === 0) return null;
+  const L = [];
+  L.push('## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）');
+  L.push('');
+  for (const id of ids) {
+    const base = id.replace(/-AC\d+$/, '');
+    const acTag = id !== base ? ` · 本包声明 AC 粒度回引：\`${id}\`` : '';
+    const sec = storySectionText(base);
+    if (!sec) {
+      L.push(`### ${id}`);
+      L.push('');
+      L.push('> ⚠ 未在 `docs/requirements.md` 定位到该 story 节（story id 可能写错或该节已迁移）——如实呈现、不猜；起包期核对 sourceRefs。');
+      L.push('');
+      advisories.push(`story ref 未定位到节：${id}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`);
+      continue;
+    }
+    L.push(`### ${id} · 源 = \`docs/requirements.md\` 节首行 :${sec.line}${acTag}`);
+    L.push('');
+    L.push('> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。');
+    L.push('');
+    L.push('```markdown');
+    L.push(sec.text);
+    L.push('```');
+    L.push('');
+  }
+  return L;
+}
+
 function collectRefs(tp) {
   const buckets = ['contractRefs', 'docRefs', 'sourceRefs'];
   const seen = new Set();
@@ -346,7 +402,8 @@ function renderBrief(tp, role, opts = {}) {
   const advisories = [];
   const repoRoot = opts.repoRoot || projectDir;
   const now = new Date().toISOString();
-  const anchorRows = renderAnchorSections(collectRefs(tp), advisories);
+  const anchorRows = renderAnchorSections(collectRefs(tp).filter((r) => !isStoryRef(r.path)), advisories);
+  const storyRoad = renderStoryRoad(collectRefs(tp).filter((r) => isStoryRef(r.path)), advisories);
   const ce = renderCounterparts(tp, errors);
   const precedents = findPrecedents(tp);
   const carry = collectCrossPackageCarry(tp, repoRoot);
@@ -372,6 +429,10 @@ function renderBrief(tp, role, opts = {}) {
     L.push(`| \`${r.path}\` | ${r.anchor ? `\`${r.anchor}\`` : '—'} | ${r.title} | ${r.secLine != null ? r.secLine : '—'} | ${r.status} |`);
   }
   L.push('');
+  if (storyRoad) {
+    for (const l of storyRoad) L.push(l);
+    L.push('');
+  }
   L.push(`## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）`);
   L.push('');
   if (!ce.present) {
@@ -591,6 +652,25 @@ function selfCheck() {
   const cpbNone = renderBrief({ ...cpbTp, changeId: '260930-nothing-carry' }, 'builder', { repoRoot: cpbDir });
   ok('⑤ 零命中明写 `none`（不是省略）', cpbNone.markdown.includes('`none` —— 两写面'));
   rmSync(cpbDir, { recursive: true, force: true });
+
+  // ①b story 照录路（260928-gov-review-portfolio-boundary-story-propagation T2）：整节照录 + AC
+  // 复合句法加亮 + not-found advisory（不阻断、brief 仍产出，R2-F2 语义 = advisory 非 fail-loud）。
+  ok('①b 夹具非空（docs/requirements.md 在盘且含 S-F1.4 节）', (() => {
+    const p = join(projectDir, REQUIREMENTS_FILE);
+    return existsSync(p) && readFileSync(p, 'utf8').includes('##### S-F1.4 · ');
+  })());
+  const storyTp = { ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4', 'S-F1.4-AC3'] };
+  const story = renderBrief(storyTp, 'builder');
+  ok('①b story ref 整节照录（节标题 + AC1 在投影内）', story.markdown.includes('## ①b · story 语义权威')
+      && story.markdown.includes('日程提醒') && /AC1[：:]/.test(story.markdown), 'verbatim section excerpted');
+  ok('①b story ref 不再落 ① 路 missing 表', !story.markdown.includes('（文件不存在）')
+      && !/\| `S-F1\.4` \|/.test(story.markdown), 'routed out of anchor table (ARQ-260927 证据 5 缺口闭合)');
+  ok('①b AC 复合句法加亮 + 照录语义声明', story.markdown.includes('`S-F1.4-AC3`')
+      && story.markdown.includes('语义权威仍在 requirements 现文'), 'AC tag + authority note');
+  const storyMiss = renderBrief({ ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F9.9'] }, 'builder');
+  ok('①b not-found → advisory、不阻断（brief 仍产出）', storyMiss.markdown.includes('## ①b · story 语义权威')
+      && storyMiss.advisories.some((s) => s.includes('story ref 未定位到节'))
+      && storyMiss.errors.length === 0, 'advisory channel, no exit-1 class error');
   const failed = checks.filter((c) => !c.pass);
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
 

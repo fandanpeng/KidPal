@@ -22,7 +22,7 @@ integrator 在合并门前产出 Review Packet。它先供 supervisor 自动复�
 
 ## Five axes
 
-1. Correctness: 是否满足每个声明的 `Sx-Ay`，边界条件是否缺失。
+1. Correctness: 是否满足每个声明的 `S-Fx.y`，边界条件是否缺失。
 2. Test quality: 是否断言真实行为，包括 DB、事件、审计、UI 状态、schema、错误路径。
 3. Contract/boundary safety: 是否漂移 `docs/contracts/**`、events、tools、shared types 或系统 spec。
 4. Operability/security: ErrorEnvelope、correlationId、权限、输入、secret、日志是否正确。
@@ -48,7 +48,7 @@ integrator 在合并门前产出 Review Packet。它先供 supervisor 自动复�
 
 - **不把结构闸证据重新包装成 code-review finding**：tsc/lint/contract-lint 等 gate 的 PASS/FAIL 归 verifier evidence；gate failure 直接阻断，不能进入 integrator 后再被 code review「跳过」或重报。进入 integrator 时即使 gate 全绿，仍须完整执行五轴语义 review——PASS 只证明已配置检查通过，不证明类型/规范/契约/安全领域已被穷尽。advisory、未执行、降级或配置未覆盖的边界照常 review。去掉的是 Review Packet 对 gate 结果的复述，不是任何 review 轴。**此为约定级（convention）约束，与既有五轴纪律同一保全层级，无 G3 verification。**
 - **每条 finding 标 Kind = `hard-violation` vs `judgement-call`**：硬违反文档规则/契约边界 = hard-violation；smell / simplicity 提示 = judgement-call。既有 severity 阶梯不变，只加这层标注。
-- **每条 finding 写 `Basis`**：hard-violation 必须引稳定规则/spec/contract/`Sx-Ay`；judgement-call 必须引 changed-code hunk + heuristic/tag（如 `Feature Envy` / `yagni`，或 `deletion test` 作为判断证据），不得为没有规范来源的判断伪造 rule citation。
+- **每条 finding 写 `Basis`**：hard-violation 必须引稳定规则/spec/contract/`S-Fx.y`；judgement-call 必须引 changed-code hunk + heuristic/tag（如 `Feature Envy` / `yagni`，或 `deletion test` 作为判断证据），不得为没有规范来源的判断伪造 rule citation。
 - 五轴与 simplicity tags 全保留、不减、不新增第 6 轴。
 
 ## Review Packet
