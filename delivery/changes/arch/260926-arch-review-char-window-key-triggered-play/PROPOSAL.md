@@ -1,6 +1,6 @@
 # PROPOSAL · 260926-arch-review-char-window-key-triggered-play
 
-> **状态：DRAFT v2.1 · 2026-09-26 · OQ1 已由 human 裁定（取 (a) 删同步子句）+ human 表示采用本方案（「同意删掉，用这个方案」）；立项 ack 待 human 看完改动量级后正式确认，未开始 architect 评审**（v2.0 = 按 human 2026-09-26 最终口径整体重写；v1.x 三条路线已作废，见 §0 沿革）
+> **状态：SUPERSEDED-BY-INTAKE · 2026-09-28**——本 PROPOSAL（Track B 草案）因 260928 治理新规（requirement-change.md 三档流程 + 跨面 intake spine）停走 Track B 评审；本变更改由 intake spine `delivery/changes/intake/260928-char-window-key-triggered-play.md` 承载路由，其 T1–T6 byte 对账改法集已转作需求面起草参考材料并被消费。原 Status 记录保留如下：DRAFT v2.1 · 2026-09-26 · OQ1 已由 human 裁定（取 (a) 删同步子句）+ human 表示采用本方案（「同意删掉，用这个方案」）；立项 ack 待 human 看完改动量级后正式确认，未开始 architect 评审（v2.0 = 按 human 2026-09-26 最终口径整体重写；v1.x 三条路线已作废，见 §0 沿革）
 > **承载 ARQ**：无（根 = human 2026-09-26 现场需求调整，直接指示；无既有 CRQ 条目）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。**升级判据核对：① 触契约面 = 否、② 跨系统结构性变更 = 否**——两条均不命中，**无契约门、无 full-adversarial**（判据与逐字证据见 §3 契约行）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T6）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
