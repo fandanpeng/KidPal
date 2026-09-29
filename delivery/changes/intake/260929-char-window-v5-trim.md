@@ -64,7 +64,10 @@ openQ:
     question: 大字映射域假设 [0,1024] ≠ makemeahanzi 实测墨迹域（约 [-66,860]）——顶部恒 33~49px 留白 + 底部墨迹越界裁切（控制点包络上限 7~13px，实裁几像素，human 真机细看证实「一点点」）
     ruling: human 2026-09-29 裁「按真实墨迹域修」（先撤过一版纯平移居中案，本次重开改为域修正案）。方案 = 每字预解析期算墨迹 bbox（strokes 轮廓点 + medians 全点），**单一等比因子 s = min((size-1)/Δx, (size-1)/Δy)** fit 入格 + bbox 中心对齐格心（等比锁形不变胖瘦；bbox 含控制点天然留安全边）；替换现 charpage_map 的 0..1024 假设域直映；三态渲染路径与 medians 点链同用一套变换；越界 guard 保留。真机判据 = 勇底部钩不再削、顶部留白对称。**修复已落地（q9 轮 2026-09-29 上午）**：验收件零齿钉映射面（grep 核证，无需 re-anchor）→ fixer 单文件 char_page.cc（map_s 解析期算定 + bbox 居中 + 退化回退 + guard 保留；中间留平移案 ef87624、最终等比拟合 e70c63d）→ r7 八闸绿 + firmware-build 实编过 + host 107/0；主线程复烧 boot 观测过（0 RE-ENUM / RTC 09:02）；真机墨迹域效果待 human 确认。fixer 升级建议（不阻塞）：映射语义现无验收齿，是否补 guard case 待 human 裁
     status: resolved
-    status: in-flight
+  - id: q10-真机全项确认
+    question: 查字窗收敛包真机全项销账（human 终确认）
+    ruling: human 2026-09-29「可以了 commit」——q7 米字线 ✓ / q8 帽标摘除 ✓ / q9 墨迹域映射（底部不削、顶底对称）✓ + 此前四项（无星/四行/圆角框/右栏不被压）✓，真机轮全项过；closeout 真机销账成立；fixer 升级建议（映射语义补 guard 齿）human 未置评，留后续包通道不入本包
+    status: resolved
 status: in-flight
 ---
 
