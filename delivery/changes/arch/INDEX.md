@@ -10,7 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [260929-gov-review-agent-def-alignment](260929-gov-review-agent-def-alignment/) | 2026-09-29 | frozen | — |
+| [260929-gov-review-agent-def-alignment](260929-gov-review-agent-def-alignment/) | 2026-09-29 | frozen | yes |
 | [260928-gov-review-requirement-loop](260928-gov-review-requirement-loop/) | 2026-09-28 | frozen | yes |
 | [260928-gov-review-dev-loop-preassess-manifest-scope](260928-gov-review-dev-loop-preassess-manifest-scope/) | 2026-09-28 | landed | yes |
 | [260928-gov-review-cross-face-intake-spine](260928-gov-review-cross-face-intake-spine/) | 2026-09-28 | landed | yes |
