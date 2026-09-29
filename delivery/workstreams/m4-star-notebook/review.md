@@ -108,3 +108,10 @@ a) story_page.c 输入表旧口径（:790-796/:840-843/:812-814）+ HandleStoryK
 - **milestones M4 行 state 补翻**：planning → in_delivery（human 裁「现在翻」——K1 已 merged 本地 main、补落 09-24 应随 launch 翻账的欠账）。
 - **C4 arch 收口**：human 裁「现在就批」——主线程备 patch 材料（K1 包 docs-delta.md 五 hunk、措辞以 defer 包修订版为准：先替换陈旧新文再 apply）→ human 过目批「落」→ git apply；契约 §1.5 括注漂移（story_list 三时点枚举陈旧）维持登记、走契约门路径（architect-reviewer 四分类预审 + human 契约门），不在本批顺手改。
 - **launchPreconditions 状态转移**：LP2 → verified（门 1 重审 GREEN + human 过目）；LP3 待重拆批 commit 后回写。
+
+## C4 arch 收口落地（2026-09-29）
+
+- **human spec 批「落」**（AskUserQuestion）：K1 docs-delta §4 五 hunk 落 docs/architecture.md——H1 §5.2④ 场景句重写 / H2 front 机械面行 / H3 story.py 现状行 / H4 §5.4 故事行 + 新增 .seq.json 账本行 / H5 契约门在办已销三留一；H1/H2 三时点句按止血包修订句先置换（现役两时点 + ①恢复归 K3）。
+- **落地工具如实记录**：git apply 在本环境对 CRLF 文件连「同文替换探针」都拒（autocrlf 交互；GNU patch 全档行尾归一不可取）——转 node 字节级直写，副本先验（五 hunk 内容断言全 TRUE、其余 419 行零触碰、CRLF 保全、6+/5- 精确）。
+- **落地 commit c735062**；回填同批 = K1 gate-evidence §6 C4 pending→done（引 c735062）+ K3 docsSyncReason 摘除 C4 承载半 + DC _doc ⑨ 更新 + roadmap ③ 注记。
+- **契约 §1.5 括注漂移**（story_list 时点枚举陈旧）维持登记、不在本批——处置走契约门（architect-reviewer 四分类预审 + human 契约门）。
