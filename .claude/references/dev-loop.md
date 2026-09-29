@@ -52,7 +52,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 ```
 主线程 = planner（claude --settings .claude/dev-loop.settings.json --agent planner）
    ├─ 派生 architect-reviewer  预审疑似契约变更，过滤实现侧误判
-   ├─ 派生 uiux-author（条件）  仅当 uiuxRequired && uiuxLevel>=2：从冻结的系统 brief 译出 TaskPackage uiux 块，在 acceptance-author 之前
+   ├─ UI-ready 前置检查（条件）  触 UI 包（L1+）：planner 核 frozen 页图 PNG 在位 + 版本行判据，缺 → fail-closed 停包路由 requirement-change（梯子 L3）
    ├─ 派生 acceptance-author   先把故事钉成冻结的验收测试（红基线）
   ├─ 派生 builder             单包边界内实现 + 单元测试
   ├─ 内层循环（主线程驱动，非嵌套）：
@@ -65,7 +65,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 `verifier↔fixer` 的内层循环由**主线程逐轮 invoke `verify.mjs`**实现，不是 verifier 自行调用 fixer
 （它不能）。这点和蓝图 §7.3 的方框图一致，只是把「自验/修复」展开成了可执行的轮次。
 
-`uiux-author` 是**条件步骤**：仅当 TaskPackage 声明 `uiuxRequired && uiuxLevel>=2` 时，在 acceptance-author 之前派生一次，把冻结的系统 `UIUX-DESIGN-BRIEF.md` 译成 TaskPackage 的 `uiux` 块 / `uiux-brief.md`（refs、状态矩阵、验收映射）。它**只翻译**，不发明系统 UI，不写实现或契约。Level 0/1 不派生它。
+**UI-ready 前置检查**是**条件步骤**：凡触 UI 的包（L1+），planner 在起 Pod 前逐页核 `docs/ui/` frozen 页图 PNG 在位（文件名对齐 pageId/stateId）+ 版本行判据分形（判据权威 = requirement-change.md「消费保护规则」节 launchPreconditions 句：需求批出生的包对齐本批版本号，非需求批出生的包对齐版本不晚于当前 frozen 最新版本行）。齐 → L2 消费：planner 把逐页 PNG ref 写进 TaskPackage `uiux` block `designRefs[]`（builder 侧经 brief-inputs ①c 透传，PNG = 布局坐标定位权威）。缺 → **fail-closed 停在起包前**：pod-events 落 `agent-escalation`，路由 requirement-change（承接形态 = 原 story 的档 2 触 UI 修订批），frozen 后重核再续包。系统级 UI 生成不在 dev-loop 内发生——设计供给链在 requirement-change 档 2 流程 4b（生成模式，主线程派）。Level 0/1 不跑本检查。
 
 ---
 

@@ -20,7 +20,7 @@ model: opus
 ## Inputs / 输入
 
 - Draft TaskPackage：story、subsystem、acceptance、sourceRefs、requiredLayers、contractRefs、docRefs。
-- UIUX 工作（可选扩展字段，缺省 = Level 0）：`uiAcceptanceRefs[]` 与冻结 `UIUX-DESIGN-BRIEF.md` refs（`pageId/stateId`）；L2+ 时由 planner 先派 uiux-author 翻译好后带入。
+- UIUX 工作（可选扩展字段，缺省 = Level 0）：`uiAcceptanceRefs[]` 与 TaskPackage `uiux` block 的 `designRefs[]`（planner 起包期写入；acceptance-author 直读 TaskPackage，builder 侧才经 brief-inputs ①c 透传；refs = 冻结页级 PNG，`pageId/stateId`）。
 - `input-brief-acceptance-author.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成：契约/spec 锚点节定位 + **story 语义权威整节照录**（sourceRefs 命中 `S-Fx.y` 时，脚本从 `docs/requirements.md` 现抓投影、语义权威仍在 requirements 现文）+ 跨端对端面 + 同 subsystem 先例封顶 3 个 + 超读申报段模板）；brief 缺失时降级自扫并在交付报告标 `manifest-missing`（不静默）。
 - 清单外阅读**允许且是常态**，但交付报告必须带 brief 第④节的「清单外阅读 + 原因」表回传（超读不申报才是问题）。
 - `.claude/references/acceptance-evidence.md` 与 `.claude/references/test-quality-antipatterns.md`。

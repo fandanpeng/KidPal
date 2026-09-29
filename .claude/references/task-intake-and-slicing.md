@@ -317,25 +317,25 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 ## UIUX Depth Ladder and Optional TaskPackage Fields
 
-When a slice touches user-visible UI, planner detects a UIUX depth level and, from Level 2 up, records UIUX context on the TaskPackage. Depth drives whether a `uiux-author` step runs and what design-review evidence integrator owes at closeout.
+When a slice touches user-visible UI, planner detects a UIUX depth level and records UIUX context on the TaskPackage. Depth drives whether the **pre-launch UI-ready check** applies (T2 · planner Step 6b) and what design-review evidence integrator owes at closeout.
 
 | Level | Use when | Required action |
 |---|---|---|
 | L0 | Pure backend/contract/script/migration/internal service; no user-visible UI | `uiuxRequired=false` (or key absent); no UIUX author or design review |
-| L1 | Existing blueprint + component pattern; small status/field/button/message change | UI-state acceptance only |
-| L2 | New local user flow or complex states; visual direction follows existing system | `uiux-author` creates an interaction brief from the frozen system brief |
-| L3 | New page skeleton, key dashboard/workbench, important IA change, or human needs to see it first | OpenDesign visual reference + human design direction as needed |
-| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first; then `portfolio-planner` slices TaskPackages |
+| L1 | Existing blueprint + component pattern; small status/field/button/message change | UI-state acceptance only（小视觉微调——不产生新设计语义——亦在此档走 designReview） |
+| L2 | Package touches UI and upstream frozen per-page PNGs **exist** for every affected page/state | Consume: planner writes per-page PNG refs into the TaskPackage `uiux` block `designRefs[]` at packaging time（no translation role dispatched — upstream supply = requirement-change 档 2 流程 4b 生成模式） |
+| L3 | Package touches UI and upstream frozen per-page PNGs are **missing**（new page / new IA / new state without art） | **Design-gap signal**: fail-closed **before Pod launch** — stop the package, log pod-events `agent-escalation`（缺口页清单 + 路由去向），route to `requirement-change`（承接形态 = 原 story 的档 2 触 UI 修订批；human 裁意图入口照常、§9 版本行照常 append）；after the requirement batch freezes, planner re-runs the UI-ready check（对齐新版本行）then resumes the package |
+| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first — **drawn** via requirement-change 档 2 流程 4b 生成模式（same supply chain；human 设计方向裁定恒在人）；a blueprint change that constitutes a governance change is **reviewed** via `/arch-change` governance profile UIUX 轴集（只审不画）; then `portfolio-planner` slices TaskPackages（蓝图先行与拆包是先后两动作、不互斥——planner 停包、不越权拆包） |
 
-Existing systems without a full blueprint may continue L1 work. L2+ requires at least a **baseline** `UIUX-DESIGN-BRIEF.md`, which may be reverse-engineered from current implementation/spec — no full OpenDesign recreation required.
+Existing systems without a full blueprint may continue L1 work. The **UI-ready launch preconditions** for any UI-touching package（frozen per-page PNGs present + brief version-row alignment，分形判据：需求批出生的包对齐本批 requirements 版本号，非需求批出生的包对齐版本不晚于当前 frozen requirements 最新版本行）are **authoritatively defined in requirement-change.md「消费保护规则」节 launchPreconditions 句** — this section points, it does not restate.
 
-The UIUX fields are an **OPTIONAL extension**, not part of the required intake field set. `taskpackage-required-check.mjs` is unchanged and its hardcoded required list excludes them; a Level-0 package needs no `uiuxRequired` key at all. Add them only from Level 1+ (some) / Level 2+ (interaction brief):
+The UIUX fields are an **OPTIONAL extension**, not part of the required intake field set. `taskpackage-required-check.mjs` is unchanged and its hardcoded required list excludes them; a Level-0 package needs no `uiuxRequired` key at all. Add them only from Level 1+ (some: `uiAcceptanceRefs`) / Level 2+ (`designRefs` per-page PNGs):
 
 ```json
 {
   "uiuxRequired": true,
   "uiuxLevel": 2,
-  "designRefs": ["docs/ui/UIUX-DESIGN-BRIEF.md#pageId-x"],
+  "designRefs": ["docs/ui/V5/canvas-p1.png"],
   "sharedUiRefs": ["docs/ui/design.md#component-action-card"],
   "localDesignArtifactRefs": ["delivery/changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
   "artifactPackageRef": "<external zip path or future S5 artifactId>",
@@ -346,7 +346,7 @@ The UIUX fields are an **OPTIONAL extension**, not part of the required intake f
 }
 ```
 
-`designRefs[]` primarily point to stable `UIUX-DESIGN-BRIEF.md` sections/IDs; OpenDesign artifact refs are supporting visual context and cannot replace the frozen textual contract. If `UIUX-DESIGN-BRIEF.md` changes **semantically** while a UI TaskPackage is in flight, affected packages pause and update their design refs/acceptance; unaffected packages continue.
+`designRefs[]` point to frozen per-page PNGs（400×300，布局坐标定位权威——builder layout 常量按图定，brief 文本节仅作口径补充）. If `UIUX-DESIGN-BRIEF.md` changes **semantically** while a UI TaskPackage is in flight, affected packages pause and update their design refs/acceptance; unaffected packages continue.
 
 ## Distillation Integrity (decisionCoverage)
 

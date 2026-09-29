@@ -123,7 +123,7 @@
       "deny": ["**"]
     },
     "uiux-author": {
-      "allow": ["delivery/taskpackages/**", "docs/ui/**"],
+      "allow": ["docs/ui/**"],
       "deny": ["docs/contracts/**", "docs/requirements.md", "docs/architecture.md", ".claude/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "story-author": {
