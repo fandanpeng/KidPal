@@ -1,6 +1,7 @@
 # landing-verdict · 260929-gov-review-req-loop-ui-author
 
 > landing-verifier 独立核验（Track B 常驻轻路径第 5 步）。判定依据 = 结构门脚本退出码 + 九文件人读 diff（`git diff HEAD -- <file>`），不采信 landing-summary 自述。核验时点：2026-09-29，landing 在工作树未 commit。
+> verdict: GREEN
 
 ## 1. 结构门（机器）
 
