@@ -23,7 +23,7 @@ argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收�
 1. **Intake + 分类（phase-0）**：读 plan，判 **主 lane** 与 **contract-touching flag**：
    - **spec**：触 `docs/requirements.md` + `docs/architecture.md`（KidPal canonical spec）的意图 / 行为 / 拓扑 / 边界 / 阶段（将来若立 L0 级蓝图文件，是 spec 特例，不自动落地）。
    - **governance**：触 `.claude/{agents,commands,references,rules,skills}`、`scope-map.json`、`*.settings.json`、`hooks/**`、`scripts/**`、或指令根（AGENTS / CLAUDE / DEV-GOVERNANCE）。治理面定义 + 四元组 + G1–G4 见 [docs/DEV-GOVERNANCE.md](../../docs/DEV-GOVERNANCE.md)。
-     - **UIUX** 不是第 3 个对抗 profile、也不是 phase-0 的新分类分支：它是一个**携带 UIUX 轴集**的 governance-lane 变更，在既有 governance profile 下审。轴集 = 流程覆盖、page map、IA/导航、状态矩阵、共享组件复用、a11y/响应式、可切片性（结构/可执行性，**不判审美**）。视觉审美/品牌是**人类品味决策**，不由机器裁定。系统级 UIUX blueprint 的起草执行角色是 `uiux-designer`（design-execution role）；把它接进 review-moderator 派发链是**待办的第五阀 follow-up**，当前 UIUX 轴集直接在既有 governance lane 下审，本命令**不**声称 moderator 已派发 `uiux-designer`。
+     - **UIUX** 不是第 3 个对抗 profile、也不是 phase-0 的新分类分支：它是一个**携带 UIUX 轴集**的 governance-lane 变更，在既有 governance profile 下审。轴集 = 流程覆盖、page map、IA/导航、状态矩阵、共享组件复用、a11y/响应式、可切片性（结构/可执行性，**不判审美**）。视觉审美/品牌是**人类品味决策**，不由机器裁定。系统级 UIUX blueprint 的起草执行已接线 = requirement-change loop 档 2 的 `uiux-author` 生成模式（主线程派，见 requirement-change.md 档 2 流程 4b）——本命令只审 UIUX 轴集、不派起草执行。
    - **contract-touching flag**：plan 是否实际触 `docs/contracts/**`（shim API / display 块 / 笔顺 JSON / 课表 MD）—— 这是**横切标记**，不是独立 lane；命中则在所属 profile 内触发 `architect-reviewer` 路由。
    - **mixed**（命中 >1 lane）：用 AskUserQuestion 呈现分类，**默认建议拆成两次 `/arch-change` 跑**（spec 一次、governance 一次），除非强耦合到必须同一 PR 原子落地；由 human 定。
    - **纯契约面**（`docs/contracts/**`，无 spec/governance 配套）**：不在本命令处理 —— 直接派 `architect-reviewer` + 人类契约门，告知用户走契约门，本命令收尾。

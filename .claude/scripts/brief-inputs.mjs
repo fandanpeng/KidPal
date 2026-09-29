@@ -148,6 +148,24 @@ function collectRefs(tp) {
   return out;
 }
 
+// uiux 设计 refs 透传（260929-gov-review-req-loop-ui-author T5.3）：uiux block 的设计 refs + uiux-brief.md
+// → builder 封闭输入面。在位才列、缺席不脑补（none = 结论不是省略）；悬空 ref 报 advisory 不入列。
+function collectUiuxRefs(tp, repoRoot) {
+  const out = [];
+  const uiux = tp.uiux && typeof tp.uiux === 'object' ? tp.uiux : null;
+  for (const key of ['designRefs', 'sharedUiRefs']) {
+    const arr = uiux && Array.isArray(uiux[key]) ? uiux[key] : [];
+    for (const raw of arr) {
+      if (!nonEmptyString(raw)) continue;
+      const p = String(raw).trim();
+      out.push({ kind: key, path: p, present: existsSync(resolve(repoRoot, p)) });
+    }
+  }
+  const briefPath = `delivery/taskpackages/${tp.changeId}/uiux-brief.md`;
+  if (existsSync(resolve(repoRoot, briefPath))) out.push({ kind: 'uiuxBrief', path: briefPath, present: true });
+  return out;
+}
+
 // 读目标文件的 markdown 标题索引（进程内缓存）
 const headingCache = new Map();
 function headingsOf(relPath) {
@@ -433,6 +451,25 @@ function renderBrief(tp, role, opts = {}) {
     for (const l of storyRoad) L.push(l);
     L.push('');
   }
+  // ①c（260929-gov-review-req-loop-ui-author T5.3）：uiux 设计 refs 专列 builder——refs 入清单即入视野
+  if (role === 'builder') {
+    const uiuxRefs = collectUiuxRefs(tp, repoRoot);
+    for (const d of uiuxRefs.filter((r) => !r.present)) {
+      advisories.push(`uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`);
+    }
+    L.push(`## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威）`);
+    L.push('');
+    if (uiuxRefs.some((r) => r.present)) {
+      L.push('| 类别 | 路径 |');
+      L.push('|---|---|');
+      for (const r of uiuxRefs.filter((r) => r.present)) L.push(`| ${r.kind} | \`${r.path}\` |`);
+      L.push('');
+      L.push('页级 PNG（400×300）= **布局坐标定位权威**：layout 常量按图定，文字线框仅口径补充。');
+    } else {
+      L.push('`none` —— uiux block 不在场或无在盘设计 refs（`designRefs[]` / `sharedUiRefs[]` / `uiux-brief.md`）。本包若实有 UI 面，回报 planner 补挂——不脑补。');
+    }
+    L.push('');
+  }
   L.push(`## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）`);
   L.push('');
   if (!ce.present) {
@@ -546,6 +583,25 @@ function selfCheck() {
       'R2-F1 误计实例须判 false');
   ok('isWireRef 反例（裸路径无锚）', !isWireRef(CONTRACT_WIRE_FILE), 'bare path not wire');
   ok('wire WARN 触发', a.warnings.length === 1 && a.warnings[0].includes('crossEnd'), 'warn when counterparts empty & no exempt');
+
+  // ①c uiux 设计 refs 透传（260929-gov-review-req-loop-ui-author T5.3）：两臂 + builder 专列 + 悬空 advisory
+  const uiuxTp = { ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/UIUX-DESIGN-BRIEF.md'], sharedUiRefs: [] } };
+  const ub = renderBrief(uiuxTp, 'builder');
+  ok('uiux-refs 在位列（builder brief 含设计 ref 与定位权威句）', ub.markdown.includes('## ①c · UI 设计 refs')
+      && ub.markdown.includes('docs/ui/UIUX-DESIGN-BRIEF.md')
+      && ub.markdown.includes('布局坐标定位权威'), 'designRef listed with authority note');
+  ok('uiux-refs 专列 builder（acceptance-author brief 不含 ①c）', !renderBrief(uiuxTp, 'acceptance-author').markdown.includes('## ①c · UI 设计 refs'), 'builder-only section');
+  ok('uiux-refs 缺席 → none 结论（不脑补）', renderBrief(fixtureTp, 'builder').markdown.includes('`none` —— uiux block 不在场'), 'absent arm renders none');
+  const uDangle = renderBrief({ ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/no-such-page-probe.png'], sharedUiRefs: [] } }, 'builder');
+  ok('uiux-refs 悬空 ref → advisory（在位才列）', uDangle.advisories.some((s) => s.includes('uiux 设计 ref 指向的文件不在盘上'))
+      && !uDangle.markdown.includes('docs/ui/no-such-page-probe.png'), 'dangling ref excluded + advisory');
+  const uxDir = mkdtempSync(join(tmpdir(), 'brief-uiux-'));
+  mkdirSync(join(uxDir, 'delivery', 'taskpackages', fixtureTp.changeId), { recursive: true });
+  writeFileSync(join(uxDir, 'delivery', 'taskpackages', fixtureTp.changeId, 'uiux-brief.md'), '# uiux-brief fixture\n', 'utf8');
+  ok('uiux-brief.md 在位入列', renderBrief(fixtureTp, 'builder', { repoRoot: uxDir }).markdown
+      .includes(`delivery/taskpackages/${fixtureTp.changeId}/uiux-brief.md`), 'uiux-brief listed when present');
+  ok('uiux-refs 夹具非空（设计 ref 指向的母版在盘）', existsSync(resolve(projectDir, 'docs/ui/UIUX-DESIGN-BRIEF.md')), 'fixture ref targets real file');
+  rmSync(uxDir, { recursive: true, force: true });
 
   // fail-loud 路径（§8-B1）
   const badTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'firmware/main/nonexistent_xxx.cc', symbol: 'NoSuchSymbol' }] } };
