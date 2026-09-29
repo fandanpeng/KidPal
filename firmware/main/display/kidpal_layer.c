@@ -14,9 +14,10 @@
 
 #include <stddef.h> /* NULL */
 
-/* 前台栈成员合法域 = LOCAL_PAGE..PROVISION（2..7, 闭集 6 种）。CHAT 常驻非栈成员、
+/* 前台栈成员合法域 = LOCAL_PAGE..PROVISION（2..8, 闭集 7 种）。CHAT 常驻非栈成员、
  * NONE 空栈 owner，均非可入栈/可查询编码。上界取符号 KIDPAL_LAYER_PROVISION，随闭集
- * 自动跟随（2026-09-19 插入查字窗层 + REMINDER/PROVISION 上移后仍是符号引用）。 */
+ * 自动跟随（2026-09-19 插入查字窗层 + REMINDER/PROVISION 上移后仍是符号引用；
+ * 2026-09-29 插入删除确认层 STORY_DELETE=6 + 二次上移同款, seam [K10]）。 */
 static int kidpal_layer_is_stackable(int layer)
 {
     return layer >= KIDPAL_LAYER_LOCAL_PAGE && layer <= KIDPAL_LAYER_PROVISION;
@@ -37,7 +38,7 @@ int kidpal_layer_push(kidpal_layer_stack_t *st, int layer)
         }
     }
 
-    /* 防御（合法编码最多 6 种不同层，正常不可达）：栈满不得越界写。 */
+    /* 防御（合法编码最多 7 种不同层，正常不可达）：栈满不得越界写。 */
     if (st->n >= KIDPAL_LAYER_STACK_MAX) {
         return -1;
     }
@@ -133,14 +134,18 @@ int kidpal_layer_chat_clear_event(int event)
  * 本步骤（设备侧由 kidpal_render_node dismiss_front_overlay / cycle_next 消费）。
  * 2026-09-19 留痕修订（260917-m2-k3-char-window-overlay, seam [1]）: transient 集纳入
  * KIDPAL_LAYER_CHAR_WINDOW——查字窗是 transient 覆盖层，关窗 = 出清层回基层（回原页、
- * 不翻页；s_local_page 不被本层改动）。 */
+ * 不翻页；s_local_page 不被本层改动）。
+ * 2026-09-29 留痕修订（260924-m4-k2-p3-star-notebook-ui, seam [K10]）: transient 集纳入
+ * KIDPAL_LAYER_STORY_DELETE——删除确认覆盖层是 transient 覆盖层，取消/确认后的关层 =
+ * 出清层回基层（回列表、不翻页）。 */
 int kidpal_layer_pop_transients(kidpal_layer_stack_t *st)
 {
     static const int s_transient[] = {
         KIDPAL_LAYER_VOICE,        /* 语音轮（覆盖层） */
         KIDPAL_LAYER_SERVER_PAGE,  /* 服务端推送页（覆盖层） */
         KIDPAL_LAYER_REMINDER,     /* 提醒弹窗（最高层覆盖） */
-        KIDPAL_LAYER_CHAR_WINDOW   /* 查字窗（会话内覆盖窗） */
+        KIDPAL_LAYER_CHAR_WINDOW,  /* 查字窗（会话内覆盖窗） */
+        KIDPAL_LAYER_STORY_DELETE  /* P3 删除确认覆盖层（seam [K10]） */
     };
     int popped = 0;
     size_t i;

@@ -1146,6 +1146,17 @@ void Application::SendMcpMessage(const std::string& payload) {
     });
 }
 
+void Application::SendKidpalStoryDelete(const char* id) {
+    // Always schedule to run in main task for thread safety (SendMcpMessage 同款).
+    // id 拷贝进闭包——调用方缓冲（mcp_server pending 记账区）可能先于发送被改写。
+    std::string safe_id = (id != nullptr) ? id : "";
+    Schedule([this, safe_id]() {
+        if (protocol_) {
+            protocol_->SendKidpalStoryDelete(safe_id.c_str());
+        }
+    });
+}
+
 void Application::SetAecMode(AecMode mode) {
     aec_mode_ = mode;
     Schedule([this]() {

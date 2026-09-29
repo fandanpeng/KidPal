@@ -73,6 +73,12 @@ public:
     virtual void SendStopListening();
     virtual void SendAbortSpeaking(AbortReason reason);
     virtual void SendMcpMessage(const std::string& message);
+    /* §四 KidPal 私有扩展消息（2026-09-24 契约门 Q5/Q6; TaskPackage
+     * 260924-m4-k2-p3-star-notebook-ui）: 端→网关单向通知, 无应答消息——可靠性 =
+     * 隐式 ack（超时重发由 mcp_server tick 驱动, story_list 重推对账冲销;
+     * front 幂等承接）。id 闭集纪律: 只发 story_list items 下发过的 id。
+     * K3 的 kidpal_session_ctx 发送同缝复用（原语形态一次做对）。 */
+    virtual void SendKidpalStoryDelete(const char* id);
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;

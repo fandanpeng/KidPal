@@ -108,6 +108,10 @@ public:
     bool UpgradeFirmware(const std::string& url, const std::string& version = "");
     bool CanEnterSleepMode();
     void SendMcpMessage(const std::string& payload);
+    /* §四 kidpal_story_delete 公开委托（SendMcpMessage 同款 Schedule→protocol;
+     * TaskPackage 260924-m4-k2-p3-star-notebook-ui 发送原语四件套之二）。id 闭集
+     * 纪律由调用方（mcp_server 确认路径）承接: 只发 story_list items 下发过的 id。 */
+    void SendKidpalStoryDelete(const char* id);
     void SetAecMode(AecMode mode);
     AecMode GetAecMode() const { return aec_mode_; }
     void PlaySound(const std::string_view& sound);

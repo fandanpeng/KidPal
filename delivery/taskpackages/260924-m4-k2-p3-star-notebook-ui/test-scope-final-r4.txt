@@ -1,0 +1,26 @@
+# test-scope 圈定清单 · 260924-m4-k2-p3-star-notebook-ui · final round 4
+# 合成来源 = taskpackage.impactedTestsSeed ∪ detect_changes blast radius 映射测试（base/m4-star-notebook…工作树，2026-09-30）
+# 范围判定 = 影响面圈定（integrator Step 4 ①）；执行面 = host runner 全量单 ELF（host_infra_test.elf）一次覆盖下列全部文件
+# 本包冻结齿（acceptanceTestsFile）
+firmware/main/test/story_page_v2.acceptance.c
+# 新增 unit 齿（detect_changes 变更面映射）
+firmware/main/test/story_page_v2.test.c
+# impactedTestsSeed · special-append-only（层值接线回归靶）
+firmware/main/test/key_layer_dispatch.acceptance.c
+# impactedTestsSeed · 回归靶（层栈/键帽/切区/路由面）
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c
+# impactedTestsSeed · boundary（包 0 边界守卫）
+firmware/main/test/host_infra_smoke.acceptance.c
+# blast radius 映射测试（detect_changes impacted，seed 之外增量）
+firmware/main/test/char_window.test.c
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+# 排除项（如实留痕）：detect_changes impacted 亦含 firmware/main/test/acceptance/archive/happy_flow_capture.test.c
+# —— archive 面按 sweep 77b6c0「移位即退役」口径非现役测试面（host_app CMake 不收录、两 full 闸 SKIP_DIRS 同判），不入 scope。
+# server/ = taskpackage seed not-impacted（K2 纯固件包，117P 基线零触碰），server 面 scope 交集 = 空（诚实绿跳过语义）。

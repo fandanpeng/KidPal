@@ -1358,7 +1358,18 @@ static void kidpal_keybar_sync_locked(void)
 
     if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
         int slots_ok;
-        if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
+        /* P3 子态键帽随态（260924-m4-k2-p3-star-notebook-ui; 260928 查字窗并行缝
+         * 先例形态）: 删除确认覆盖层前台 / 阅读态本地基层时, 左右槽经
+         * kidpal_keybar_story_slots 纯逻辑单源取随态值（[删掉]/[算了] /
+         * [长按退出]/[翻屏], WF-F2-04/05）; LIST/STAMP 等不落子态表的场景回落既有
+         * 路径（基层页槽表 / 语音场景槽表）。设备侧零重算。
+         * minimal: 录音态键帽 [收尾]/[结束]（WF-F2-02）值域已在 keybar 单源备好,
+         * 设备接线随 K3 录音会话动作接线同批落（录音态前台 = VOICE 会话 chrome,
+         * 本包抢写会与 apply_look 场景键帽双写冲突——缝切分见 plan K2/K3）。 */
+        int story_sub = kidpal_render_node_story_substate();
+        if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER) {
+            slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
+        } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
              * 未起播「播报」/ 起播后「重播」, 右槽 BOOT「结束」。值域仍走 keybar 纯逻辑
              * 单源 (kidpal_keybar_char_slots), 设备侧零重算; started 取 char_page 外露

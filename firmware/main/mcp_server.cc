@@ -28,6 +28,7 @@
 #include "display/reminder_page.h" /* 提醒弹窗消费面 (包 260829-schedule-reminder):
                                     * kidpal/alert 载荷解析 + 四态状态机 + 富弹窗渲染 */
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6: 设备渲染节点 show_home/cycle/cache */
+#include "display/kidpal_layer.h" /* 260924-m4-k2: KIDPAL_LAYER_STORY_DELETE 前台判据（动作码 7 双语义位页态消歧） */
 #include "display/home_upcoming.h" /* M3-K2 A5: 首页「接下来」data.upcoming 注入冻结 seam 接线层 */
 #include "esp_lvgl_port.h"         /* K7 restore 分支显式持 LVGL 锁（lvgl_port_lock/unlock）:
                                       无 begin_page 隐式持锁, 缓存写路径显式取锁/放锁 */
@@ -59,34 +60,26 @@ kidpal_story_text_t g_story_text = {};
 }  // namespace
 
 /* -------------------------------------------------------------------------- *
- * P3 故事页生产接线辅助 (包 260829-story-p3 §9 F7 殿后 / 包 9b HWV-A9 承接)。
- * 录音态演出 tick 的 LVGL 定时器 + 页态重渲染 + 页内输入动作码。story_page.h 是
- * 冻结头、未导出 KSA_ACT_*，此处按冻结验收 story_p3 与 story_page.c:740-748 的
- * 文档化数值码本地镜像一份（升级路径 = story_page.h 一旦导出即转用之；双源风险由
- * 本注释钉明，页内输入动作语义的**单源**仍在冻结实现 kidpal_story_page_input 内）。
+ * P3 星星记录本生产接线辅助（TaskPackage 260924-m4-k2-p3-star-notebook-ui 重写面;
+ * 前身 = 包 260829-story-p3 §9 F7 / 包 9b HWV-A9）。
+ * 页内输入动作码：story_page.h 现已导出冻结闭集 kidpal_story_act_t（KSPV2_ACT_*,
+ * seam [K1]）——本文件按旧注释自declared 的「升级路径」转用头文件单源，不再本地
+ * 镜像数值枚举；镜像注释块同步于此：旧闭集 DEGRADE-3/GLOBAL-2/NONE0/CURSOR_NEXT1/
+ * OPEN_READER2/PAGE_TURN3/TTS_READ4/STOP_RECORD5/CANCEL_RECORD6 退役，新闭集 =
+ * KSPV2_ACT_DEGRADE(-3)/GLOBAL(-2)/NONE(0)/OPEN_READER(2)/CURSOR_NEXT(3)/
+ * SCREEN_JUMP(4)/DELETE_ENTER(5)/DELETE_CONFIRM(6)/DELETE_CANCEL(7)=REC_SESSION(7,
+ * 页态消歧)/PAGE_TURN(8)/READER_EXIT(9)/STOP_RECORD(10)/DISCARD_RECORD(11)。
  * LVGL 定时器在 LVGL 主处理任务回调（= Schedule 目标线程），与 g_story_* 单例无竞态
  * （对偶 AlertDrainTimer 既有约定）。
  * ------------------------------------------------------------------------ */
 namespace {
-enum {
-    kStoryActGlobal       = -2, /* 页不拥有该手势 -> 交回全局路由层 */
-    kStoryActDegrade      = -3, /* 越界键位/NULL -> 降级、视图零改动 */
-    kStoryActNone         = 0,  /* 无副作用 */
-    kStoryActCursorNext   = 1,  /* 列表光标移动 */
-    kStoryActOpenReader   = 2,  /* 进阅读态 */
-    kStoryActPageTurn     = 3,  /* 阅读态翻屏 */
-    kStoryActTtsRead      = 4,  /* 朗读请求（声学殿后 9b，仅计数） */
-    kStoryActStopRecord   = 5,  /* 停录 -> 归档请求（archive_pend++ 由冻结实现置位） */
-    kStoryActCancelRecord = 6,  /* 录音中取消 -> 丢弃、不归档 */
-};
-
 /* 录音态演出驱动：page==RECORDING 期间每 ~100ms 用冻结 kidpal_story_rec_tick 就地推
  * elapsed/闪点/声波并重绘；一旦离开录音态即自删（无常驻定时器开销）。 */
 lv_timer_t* g_story_rec_timer = nullptr;
 uint32_t    g_story_rec_start_ms = 0;
 
 /* 故事页三态快照（列表视图 + 列表载荷 + 正文载荷）打包成**一个堆对象**。
- * 尺寸：view 108B + list 2824B + text 2208B ≈ 5.1KB —— 绝不可作栈对象（见本文件
+ * 尺寸：view ~180B + list 2824B + text 2212B ≈ 5.2KB —— 绝不可作栈对象（见本文件
  * 头「ssl_receive 栈纪律」注）；Schedule 闭包按 shared_ptr 捕获，渲染线程侧读快照。 */
 struct StorySnapshot {
     kidpal_story_view_t v;
@@ -100,14 +93,18 @@ void ScheduleStoryRender() {
     snap->l = g_story_list;
     snap->t = g_story_text;
     Application::GetInstance().Schedule([snap]() {
-        /* 崩溃修复（包 260829-hardware-validation）：服务端推送页面渲染必须夹在
-         * begin/end 之间 → 画到 s_kidpal_scr + 持 LVGL 锁，避免 clean 聊天屏致
-         * SetStatus 悬空崩溃，并消除与 LVGL 任务的竞态。 */
+        /* 崩溃修复（包 260829-hardware-validation）语义保留：页面渲染必须夹在
+         * begin/end 之间 → 画到 s_kidpal_scr + 持 LVGL 锁。
+         * 双通道拆分（260924-m4-k2 seam 裁法）：本函数 = **本地导航通道**——渲染走
+         * 云端夹钳纪律（崩溃修复语义零回退），夹钳后经 story_local_front 把前台
+         * 回落 LOCAL_PAGE 基层（页点可见、板级 P3 页内分流基层判据成立）；云端
+         * 推送路径（story_list/story_text 路由）维持夹钳后 SERVER_PAGE 前台现状。 */
         kidpal_render_node_begin_page();
         kidpal_story_page_render(&snap->v, &snap->l, &snap->t);
         /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。 */
         kidpal_render_node_cache_story(&snap->v, &snap->l, &snap->t);
         kidpal_render_node_end_page();
+        kidpal_render_node_story_local_front();
     });
 }
 
@@ -131,6 +128,209 @@ void StartStoryRecTimer() {
     }
     g_story_rec_start_ms = lv_tick_get();
     g_story_rec_timer = lv_timer_create(StoryRecTimerCb, 100, nullptr);
+}
+
+/* ---- 删除确认子态 + 消歧 + 隐式 ack 重发的设备驱动状态（260924-m4-k2 seam
+ * [K2]/[K3]/[K4]/[K5] 消费侧; 纯逻辑决策表住 story_page.c, 这里只持有调用方侧
+ * 状态并做 tick 驱动）。单实例消费现实 = 主线程串行（HandleStoryKey 由板级按键
+ * 回调任务调用, 但 g_story_* 语义上归主线程; 消歧/重发状态 32 位对齐读写）。
+ * 注：板级按键回调任务 ≠ main task——与既有 AlertTagLookup 同级宽松度, 32 位
+ * 对齐的标量读写不撕裂；跨任务序由「先记账后驱动」的单写者纪律保证。 ---- */
+bool     g_story_debounce_armed = false;     /* 300ms 消歧挂起单击（仅 LIST 态 arm） */
+uint32_t g_story_debounce_arm_ms = 0;        /* 挂起时间戳（lv_tick_get） */
+key_id_t g_story_debounce_key = KEY_ID_KEY;  /* 挂起单击的键位（冲销后按同键执行双击） */
+unsigned long g_story_delete_idle_ms = 0;    /* 删除子态 10s idle 累计（seam [K3] 调用方侧） */
+char     g_story_pending_delete_id[64] = {0}; /* 隐式 ack 待账 id（seam [K4]/[K5]） */
+int      g_story_pending_tries = 0;          /* 已重发次数 */
+uint32_t g_story_pending_sent_ms = 0;        /* 最近一次发送时刻 */
+lv_timer_t* g_story_tick_timer = nullptr;    /* ~100ms tick：消歧冲销/idle/重发三驱动 */
+
+/* 前置声明（StoryTickTimerCb 与 StoryDispatchAct 互序） */
+bool StoryDispatchAct(int act);
+
+/* ~100ms tick 三驱动（seam [K2] 消歧冲销执行 / [K3] 10s idle 静默取消 / [K4] 5s
+ * 重发）——禁 1s tick 驱动消歧（300ms 死线粒度不够, plan 机制形态注记）。全部
+ * 驱动完空转即自删（无常驻开销）。 */
+void StoryTickTimerCb(lv_timer_t* timer) {
+    uint32_t now = lv_tick_get();
+    bool busy = false;
+
+    /* ① 消歧到期冲销（seam [K2]）: 挂起单击过 300ms 死线 -> 直发单击动作
+     * （经 input + dispatch 单点, 绝不经 HandleStoryKey——否则单击会被重新挂起）。 */
+    if (g_story_debounce_armed) {
+        if (kidpal_story_debounce_expired(g_story_debounce_arm_ms, now) == 1) {
+            key_id_t key = g_story_debounce_key;
+            g_story_debounce_armed = false;
+            (void)StoryDispatchAct(
+                kidpal_story_page_input(&g_story_view, key, KEY_GESTURE_CLICK));
+        } else {
+            busy = true;
+        }
+    }
+
+    /* ② 删除子态 10s idle（seam [K3]）: 到点静默取消回列表（手势重计由
+     * HandleStoryKey 消费侧复位累计）。取消 = 任意 BOOT 手势同径（输入函数 DELETE
+     * 态消费侧）经 dispatch 单点关层回列表。 */
+    if (g_story_view.page == KSTORY_PAGE_DELETE) {
+        if (kidpal_story_delete_idle_step(&g_story_delete_idle_ms, 100UL) == 1) {
+            g_story_delete_idle_ms = 0;
+            (void)StoryDispatchAct(
+                kidpal_story_page_input(&g_story_view, KEY_ID_BOOT, KEY_GESTURE_CLICK));
+        } else {
+            busy = true;
+        }
+    } else {
+        g_story_delete_idle_ms = 0; /* 非删除子态: 不计时（防历史累计误取消） */
+    }
+
+    /* ③ 隐式 ack 重发（seam [K4]）: 5s 间隔上限 3 次重发同一 id; 放弃后静默停发
+     * （对账冲销 = story_list 重推到达时路由侧消费）。 */
+    if (g_story_pending_delete_id[0] != '\0') {
+        if (kidpal_story_delete_resend_due(g_story_pending_tries,
+                                           now - g_story_pending_sent_ms) == 1) {
+            ESP_LOGW(TAG, "story_delete_resend corr_id=kdp-%u id=%s tries=%d",
+                     static_cast<unsigned>(now & 0xFFFFFFu),
+                     g_story_pending_delete_id, g_story_pending_tries);
+            Application::GetInstance().SendKidpalStoryDelete(g_story_pending_delete_id);
+            g_story_pending_tries++;
+            g_story_pending_sent_ms = now;
+        }
+        busy = true;
+    }
+
+    if (!busy) {
+        lv_timer_delete(timer); /* 三驱动全空 -> 自删, 绝不常驻 */
+        g_story_tick_timer = nullptr;
+    }
+}
+
+void EnsureStoryTickTimer() {
+    if (g_story_tick_timer == nullptr) {
+        g_story_tick_timer = lv_timer_create(StoryTickTimerCb, 100, nullptr);
+    }
+}
+
+/* 删除确认覆盖层渲染（DELETE_ENTER 消费侧）：STORY_DELETE 层夹钳 + DELETE 态
+ * 渲染面（「删掉这篇？」+ 待删条目; WF-F2-05 整屏覆盖, 页点经 front_is_overlay
+ * 隐藏）。Schedule 闭包内成对调用（与 begin/end_page 同纪律）。 */
+void ScheduleStoryDeleteOverlay() {
+    auto snap = std::make_shared<StorySnapshot>();
+    snap->v = g_story_view;
+    snap->l = g_story_list;
+    snap->t = g_story_text;
+    Application::GetInstance().Schedule([snap]() {
+        kidpal_render_node_begin_story_delete();
+        kidpal_story_page_render(&snap->v, &snap->l, &snap->t);
+        kidpal_render_node_end_story_delete();
+    });
+}
+
+/* 页内动作码 dispatch 单点（HandleStoryKey 与消歧 tick 到期直发共用; 返回 = 是否
+ * 消费）。单源纪律：动作码语义除输入函数外只落本函数一处。 */
+bool StoryDispatchAct(int act) {
+    switch (act) {
+        /* 数值 7 = 双语义位（DELETE_CANCEL == REC_SESSION 同码, 页态消歧——C++ 单一
+         * case 标签, 枚举双名在此合并消费）。 */
+        case KSPV2_ACT_REC_SESSION:
+            if (kidpal_render_node_front_layer() == KIDPAL_LAYER_STORY_DELETE) {
+                /* 取消回列表（DELETE 态 BOOT 任一手势 / 零副作用）: 关删除覆盖层 +
+                 * 回列表重渲。 */
+                ESP_LOGI(TAG, "story_key delete_cancel");
+                Application::GetInstance().Schedule([]() {
+                    kidpal_render_node_dismiss_front_overlay();
+                });
+                ScheduleStoryRender();
+            } else {
+                /* 记录语境会话语义位（S-F2.2 双入口; K3 会话动作接线消费位——本包
+                 * 只钉页内缝, 消费即返回、绝不落回全局 SESSION_TOGGLE）。 */
+                ESP_LOGI(TAG, "story_key rec_session_slot page=%d", g_story_view.page);
+            }
+            return true;
+        case KSPV2_ACT_DELETE_ENTER:
+            /* 进删除确认子态: 页态已切 DELETE; 推 STORY_DELETE 覆盖层（整屏、页点
+             * 隐藏）+ 渲染删除确认面。启动 10s idle / 消歧 tick。 */
+            ESP_LOGI(TAG, "story_key delete_enter cursor=%d", g_story_view.cursor);
+            EnsureStoryTickTimer();
+            ScheduleStoryDeleteOverlay();
+            return true;
+        case KSPV2_ACT_DELETE_CONFIRM: {
+            /* 确认删除（边角⑨）: 本地即时移除已由输入函数置账（pending_delete_id /
+             * count-- / counter--）; 此处（a）把列表载荷同步本地移除（渲染一致性,
+             * 云端 story_list 重推到达后以 total 校准）;（b）发送 kidpal_story_delete
+             * （id 只发 story_list items 下发过的 id——闭集来源 = view_init 捕获影子）;
+             * （c）记 pending {id, tries=0, sent_ts} 进隐式 ack 重发对账;（d）关删除
+             * 覆盖层回列表重渲。 */
+            const char* pid = kidpal_story_pending_delete_id(&g_story_view);
+            if (pid != nullptr && pid[0] != '\0') {
+                int i;
+                for (i = 0; i < g_story_list.count; i++) {
+                    if (std::strcmp(g_story_list.items[i].id, pid) == 0) {
+                        int j;
+                        for (j = i; j + 1 < g_story_list.count; j++) {
+                            g_story_list.items[j] = g_story_list.items[j + 1];
+                        }
+                        std::memset(&g_story_list.items[g_story_list.count - 1], 0,
+                                    sizeof(g_story_list.items[0]));
+                        g_story_list.count--;
+                        break;
+                    }
+                }
+                ESP_LOGI(TAG, "story_key delete_confirm corr_id=kdp-%u id=%s count=%d",
+                         static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), pid,
+                         g_story_list.count);
+                std::snprintf(g_story_pending_delete_id,
+                              sizeof(g_story_pending_delete_id), "%s", pid);
+                g_story_pending_tries = 0;
+                g_story_pending_sent_ms = lv_tick_get();
+                Application::GetInstance().SendKidpalStoryDelete(pid);
+                EnsureStoryTickTimer();
+            }
+            Application::GetInstance().Schedule([]() {
+                kidpal_render_node_dismiss_front_overlay();
+            });
+            ScheduleStoryRender();
+            return true;
+        }
+        case KSPV2_ACT_OPEN_READER:
+            /* 进阅读态: 消费侧配对 kidpal_story_open_reader（正文 = 缓存 g_story_text
+             * ——回看正文由云端 story_text 路由预先装载; 输入函数只产请求语义位、
+             * 不就地切页）。无正文缓存（本开机未查过该故事正文）-> 消费不动留在
+             * 列表态（V27 友好降级, 不盲渲染空阅读面）。 */
+            if (g_story_text.id[0] != '\0') {
+                (void)kidpal_story_open_reader(&g_story_view, &g_story_text,
+                                               KSTORY_READER_LINES_PER_SCREEN);
+                ScheduleStoryRender();
+            } else {
+                ESP_LOGW(TAG, "story_key open_reader_no_text -> stay list");
+            }
+            return true;
+        case KSPV2_ACT_CURSOR_NEXT:
+        case KSPV2_ACT_SCREEN_JUMP:
+        case KSPV2_ACT_PAGE_TURN:
+        case KSPV2_ACT_READER_EXIT:
+        case KSPV2_ACT_STOP_RECORD:
+        case KSPV2_ACT_DISCARD_RECORD:
+            /* 本地导航/子态动作: 页态变更已由输入函数就地完成——双通道本地路径
+             * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。
+             * STOP_RECORD / DISCARD_RECORD 的演出 tick timer 在下个回调发现已非
+             * RECORDING -> 自删。 */
+            if (act == KSPV2_ACT_STOP_RECORD) {
+                ESP_LOGI(TAG, "story_key stop_rec archive_pend=%d",
+                         g_story_view.archive_pend);
+            } else if (act == KSPV2_ACT_DISCARD_RECORD) {
+                ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
+                         g_story_view.cancel_count);
+            }
+            ScheduleStoryRender();
+            return true;
+        case KSPV2_ACT_NONE:
+            /* 页拥有该手势但无副作用（不响应 = 消费不动）——返回 true 吃掉手势,
+             * 绝不交回全局路由（删除子态 NONE 漏网 = 误开会话, K1 层派发教训）。 */
+            return true;
+        default:
+            /* KSPV2_ACT_GLOBAL / KSPV2_ACT_DEGRADE -> 交回全局路由。 */
+            return false;
+    }
 }
 }  // namespace
 
@@ -440,35 +640,40 @@ void McpServer::EmitRenderReceipt(const std::string& business_id) {
 
 
 bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
-    /* 页内特例优先消费 (spec §4.0「页内特例」列)：把 KEY/BOOT 手势交进冻结消费面
-     * kidpal_story_page_input，按其返回动作码驱动页态。页不拥有该手势 (GLOBAL/NONE/
-     * DEGRADE) -> 返回 false，交回全局路由层 (翻页/会话切换语义不变)。 */
-    int act = kidpal_story_page_input(&g_story_view, key, g);
-    switch (act) {
-        case kStoryActStopRecord:
-            /* 停录: 冻结实现已置 archive_pend++ 并把页态切回 LIST、rec_seconds 定格;
-             * 演出 tick 的 LVGL timer 在下个回调发现已非 RECORDING -> 自删。回列表渲染。 */
-            ESP_LOGI(TAG, "story_key stop_rec archive_pend=%d", g_story_view.archive_pend);
-            ScheduleStoryRender();
-            return true;
-        case kStoryActCancelRecord:
-            /* 录音中取消 -> 丢弃、不归档 (V31)。回列表渲染。 */
-            ESP_LOGI(TAG, "story_key cancel_rec cancel_count=%d", g_story_view.cancel_count);
-            ScheduleStoryRender();
-            return true;
-        case kStoryActCursorNext:
-        case kStoryActOpenReader:
-        case kStoryActPageTurn:
-            ScheduleStoryRender();
-            return true;
-        case kStoryActTtsRead:
-            /* 朗读请求 (声学殿后 9b): 冻结实现已递增 tts_requests; 此处不外呼播报,
-             * 页态不变 -> 不做无副作用重渲染。 */
-            return true;
-        default:
-            /* kStoryActGlobal / kStoryActNone / kStoryActDegrade -> 交回全局路由。 */
-            return false;
+    /* 页内特例优先消费（spec §4.0「页内特例」列; seam [K1] v1.47 矩阵）：把 KEY/BOOT
+     * 手势交进冻结消费面 kidpal_story_page_input，按其返回动作码驱动页态。页不拥有
+     * 该手势 (GLOBAL/DEGRADE) -> 返回 false，交回全局路由层（翻页/会话切换语义不变）。
+     * 板级以「front == STORY_DELETE 先交本函数、消费即返回」前置拦截（keya_overlay_
+     * consume 同款）——删除子态裁决必须吞掉全部手势（NONE 也消费, 绝不漏网误开会话）。 */
+    if (g == KEY_GESTURE_NONE) {
+        return false;
     }
+
+    /* 删除子态任意手势消费 = idle 重计（seam [K3] 消费侧义务: 每次手势驱动即复位
+     * 累计; host 行为齿不可达半, 盲区申报在案）。 */
+    if (g_story_view.page == KSTORY_PAGE_DELETE) {
+        g_story_delete_idle_ms = 0;
+    }
+
+    /* 300ms 单双击消歧（seam [K2]; 仅 LIST 态挂起, notes 边角②）: 单击先挂起不直发,
+     * 双击到达窗内冲销挂起单击; 其余态 gate=0 单击零延迟直发。双击迟到（>死线,
+     * 罕见: 板端双击窗 350 > 死线 300 的边缘带）同样冲销挂起并直发双击——挂起位
+     * 清除, 绝不双触发。 */
+    if (g == KEY_GESTURE_CLICK && kidpal_story_debounce_gate(g_story_view.page) == 1) {
+        g_story_debounce_armed = true;
+        g_story_debounce_arm_ms = lv_tick_get();
+        g_story_debounce_key = key;
+        EnsureStoryTickTimer();
+        return true; /* 消费（挂起）; 到期由 ~100ms tick 直发 */
+    }
+    if (g == KEY_GESTURE_DOUBLE_CLICK && g_story_debounce_armed &&
+        kidpal_story_debounce_gate(g_story_view.page) == 1) {
+        g_story_debounce_armed = false; /* 冲销挂起单击（窗内 -> cancel 判 1; 迟到
+                                         * -> 单击已直发/由本处清除, 双击直发） */
+    }
+
+    int act = kidpal_story_page_input(&g_story_view, key, g);
+    return StoryDispatchAct(act);
 }
 
 void McpServer::AddCommonTools() {
@@ -760,8 +965,33 @@ void McpServer::AddCommonTools() {
                         });
                         break;
                     }
-                    kidpal_story_view_init(&g_story_view, parsed.get());
-                    g_story_list = *parsed;
+                    {
+                        /* story_list 重推对账冲销（seam [K5]/[K4]; 契约 §四 Q5）:
+                         * pending 待账 id 不在重推 items 窗口 -> 冲销（删除已由 front
+                         * 执行, 隐式 ack 成立, 重发停）; 仍在窗口 -> 不冲销（重发
+                         * 继续, 上限 3 次后静默停发）。冲销后计数由 view_init 以
+                         * list->total 重装校准——counter 恒信 total（板端零本地推）。 */
+                        if (g_story_pending_delete_id[0] != '\0' &&
+                            kidpal_story_delete_reconcile_hit(
+                                g_story_pending_delete_id, parsed.get()) == 0) {
+                            ESP_LOGI(TAG, "story_delete_reconcile corr_id=%s id=%s cleared=true",
+                                     corr_id, g_story_pending_delete_id);
+                            g_story_pending_delete_id[0] = '\0';
+                            g_story_pending_tries = 0;
+                        }
+                    }
+                    {
+                        bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
+                        kidpal_story_view_init(&g_story_view, parsed.get());
+                        g_story_list = *parsed;
+                        if (was_delete) {
+                            /* 云端重推到达时删除覆盖层仍在前台 -> view_init 已把页态
+                             * 重装回 LIST; 覆盖层随之关层（回列表, 不留幽灵弹窗）。 */
+                            app.Schedule([]() {
+                                kidpal_render_node_dismiss_front_overlay();
+                            });
+                        }
+                    }
                     cJSON_AddNumberToObject(ack, "items", items_n);
                     cJSON_AddNumberToObject(ack, "counter", kidpal_story_counter(parsed.get()));
                     ESP_LOGI(TAG, "story_list_dispatch corr_id=%s items=%d counter=%d degrade=false",
@@ -812,13 +1042,19 @@ void McpServer::AddCommonTools() {
                             (g_story_view.archive_pend > 0) && parsed->id[0] != '\0' &&
                             std::strcmp(parsed->id, g_story_view.last_saved_id) != 0;
                         if (fresh_save) {
-                            if (kidpal_story_on_saved(&g_story_view, parsed->id) == 0) {
+                            /* 盖章 N = 入册流水号 seq（seam [K6]/[K7]; 契约 §1.3④ 唯一
+                             * 权威源, 账本 owner = K1; 旧「counter+1 本地推」D3 与
+                             * 易失本地盖章流水号退役）。seq 缺省/畸形 -> 探针回 ABSENT,
+                             * on_saved 降级演出不带 N（契约 Q4 板端自定）。 */
+                            int stamp_seq = kidpal_story_text_seq(data.c_str());
+                            parsed->seq = stamp_seq;
+                            if (kidpal_story_on_saved(&g_story_view, parsed->id, stamp_seq) == 0) {
                                 if (g_story_view.archive_pend > 0) {
                                     g_story_view.archive_pend--; /* 消费一次待归档请求 */
                                 }
                                 cJSON_AddStringToObject(ack, "stamp", parsed->id);
-                                ESP_LOGI(TAG, "story_saved_stamp corr_id=%s id=%s stamp_index=%d",
-                                         corr_id, parsed->id, g_story_view.stamp_index);
+                                ESP_LOGI(TAG, "story_saved_stamp corr_id=%s id=%s seq=%d",
+                                         corr_id, parsed->id, stamp_seq);
                                 kidpal_story_view_t stamp_view = g_story_view; /* 108B，留栈 */
                                 /* Schedule 闭包需可拷贝 -> unique_ptr 转 shared_ptr 捕获；
                                  * 列表快照同样上堆（2824B 不再落栈）。 */

@@ -647,6 +647,38 @@ void kidpal_render_node_end_char_window(void)
     lvgl_port_unlock();
 }
 
+/* -------------------------------------------------------------------------
+ * P3 删除确认覆盖层的持锁夹钳（TaskPackage 260924-m4-k2-p3-star-notebook-ui,
+ * seam [K10]; WF-F2-05 整屏覆盖层）：与 begin_char_window/end_char_window 同形,
+ * 但推的是 STORY_DELETE 层——删除确认覆盖当前页之上、提醒之下（提醒最高层压删除
+ * 弹窗, 序不变），键路由据此把全部手势先交故事页裁决（板级前置拦截）、键帽条中槽
+ * 页点经 front_is_overlay 自动隐藏。关层（确认/取消/10s idle 静默取消）统一走
+ * dismiss_front_overlay（pop_transients 已纳入本层——kidpal_layer.c seam [K10]）。
+ * 覆盖层内容（「删掉这篇？」+ 待删条目）由 mcp_server 在本夹钳内经
+ * kidpal_story_page_render(DELETE) 绘制。
+ * ---------------------------------------------------------------------- */
+void kidpal_render_node_begin_story_delete(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        /* 未 init：保持持锁状态交调用方 end_story_delete 释放，渲染函数自行降级。 */
+        return;
+    }
+    /* 删除确认接管前台：推 STORY_DELETE。不 pop 任何既有层：提醒弹窗等上层驻留时
+     * 保持原位（层级由 kidpal_layer 优先级承载）。 */
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_STORY_DELETE);
+    lv_screen_load(s_kidpal_scr);
+    /* 五态姿态/气泡退隐（chrome 显隐前台维度）；中槽页点隐藏（覆盖层不显示页点）。 */
+    rn_voice_chrome_front_locked();
+    rn_keybar_sync_locked();
+}
+
+void kidpal_render_node_end_story_delete(void)
+{
+    lvgl_port_unlock();
+}
+
 void kidpal_render_node_begin_reminder(void)
 {
     lvgl_port_lock(0);
@@ -776,9 +808,10 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                 /* #11 数据链根因同族 (R-S0.2, schedule 空态同款): 故事缓存仅在语音
                  * 查询过故事后才填充; BOOT 翻页切来时可能本开机未查询 -> count=0
                  * 空壳页。改画友好空态 (居中提示), 不再渲染空壳页; 语音查询路径
-                 * 不动。 */
+                 * 不动。文案单源 = KSTORY_EMPTY_HINT（notes 边角③: 空态渲染入口
+                 * 两处——本处与 story_page.c——必须同源一致, 不得双写文案）。 */
                 lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
-                lv_label_set_text(lbl, "还没有故事，说『我要讲故事』开录吧");
+                lv_label_set_text(lbl, KSTORY_EMPTY_HINT);
                 lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
                 lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
                 lv_obj_set_width(lbl, 380);
@@ -802,16 +835,18 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 }
 
 /* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层
- * （VOICE / SERVER_PAGE / REMINDER / CHAR_WINDOW）-> 1；LOCAL_PAGE / PROVISION /
- * CHAT / NONE -> 0。（2026-09-19 M2-K3：闭集纳入 CHAR_WINDOW——查字窗前台时页点隐藏
- * 与键路由同源。） */
+ * （VOICE / SERVER_PAGE / REMINDER / CHAR_WINDOW / STORY_DELETE）-> 1；LOCAL_PAGE /
+ * PROVISION / CHAT / NONE -> 0。（2026-09-19 M2-K3：闭集纳入 CHAR_WINDOW——查字窗
+ * 前台时页点隐藏与键路由同源。2026-09-29 seam [K10]：闭集纳入 STORY_DELETE——删除
+ * 确认覆盖层前台时页点隐藏（WF-F2-05 无页点）与键路由同源成立。） */
 int kidpal_render_node_front_is_overlay(void)
 {
     int top = kidpal_layer_top(&s_layer_stack);
     return (top == KIDPAL_LAYER_VOICE ||
             top == KIDPAL_LAYER_SERVER_PAGE ||
             top == KIDPAL_LAYER_REMINDER ||
-            top == KIDPAL_LAYER_CHAR_WINDOW) ? 1 : 0;
+            top == KIDPAL_LAYER_CHAR_WINDOW ||
+            top == KIDPAL_LAYER_STORY_DELETE) ? 1 : 0;
 }
 
 /* 前台顶层是否为会话类覆盖层（VOICE）：OVERLAY_CLOSE 关层级联判据（KD-A5 真机 r1
@@ -977,4 +1012,60 @@ extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
     if (v != NULL) { memcpy(&s_story_view, v, sizeof(s_story_view)); }
     if (l != NULL) { memcpy(&s_story_list, l, sizeof(s_story_list)); }
     if (t != NULL) { memcpy(&s_story_text, t, sizeof(s_story_text)); }
+}
+
+/* -------------------------------------------------------------------------
+ * P3 本地导航重渲 + 子态查询（TaskPackage 260924-m4-k2-p3-star-notebook-ui 双通道
+ * 方案：列表/阅读/盖章 = P3 本地页内容, 前台保持 LOCAL_PAGE -> 页点自然可见;
+ * 云端推送路径维持 begin_page 现状——双通道拆分, plan「P3 子态 × 层模型 × 页点」）。
+ * ---------------------------------------------------------------------- */
+void kidpal_render_node_refresh_story(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+    /* 本地导航落屏：消费 cache_story 缓存重渲基层当前页（P3 键路由补全后的页内
+     * 输入动作——光标/跳屏/阅读翻屏/退出阅读——均经本函数落屏, 不推 SERVER_PAGE）。
+     * 层栈零改动：前台保持现状（本地导航不接管前台、不关任何覆盖层——删除确认
+     * 覆盖层的关层走 dismiss_front_overlay 唯一入口）。 */
+    rn_render_kidpal_page_locked(KP_PAGE_STORY);
+
+    lvgl_port_unlock();
+}
+
+void kidpal_render_node_story_local_front(void)
+{
+    lvgl_port_lock(0);
+
+    if (s_kidpal_scr == NULL) {
+        lvgl_port_unlock();
+        return;
+    }
+    /* 云端渲染夹钳（begin_page）用过后的前台回落基层：SERVER_PAGE 出栈、LOCAL_PAGE
+     * 回位 + 键帽条刷新（页点可见性随 front_is_overlay 恢复）。只回落本夹钳产生的
+     * SERVER_PAGE 单层——REMINDER / STORY_DELETE 等其它层不碰（各自唯一入口管理）。 */
+    kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
+    kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+    rn_keybar_sync_locked();
+
+    lvgl_port_unlock();
+}
+
+int kidpal_render_node_story_substate(void)
+{
+    /* 删除确认覆盖层为前台 -> 删除子态（覆盖层身份与 front_is_overlay 同源）。 */
+    if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_STORY_DELETE) {
+        return KSTORY_PAGE_DELETE;
+    }
+    /* 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）。
+     * 前台为其它覆盖层（VOICE/SERVER_PAGE/REMINDER/CHAR_WINDOW）时缓存页态不可
+     * 见 -> -1（消费方回落既有键帽路径, 不抢语音 chrome 键帽）。 */
+    if (kidpal_layer_top(&s_layer_stack) != KIDPAL_LAYER_LOCAL_PAGE ||
+        s_local_page != KP_PAGE_STORY) {
+        return -1;
+    }
+    return s_story_view.page;
 }

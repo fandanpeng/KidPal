@@ -177,6 +177,26 @@ set(HOST_ACCEPTANCE_SRCS
 
     "../../schedule_grid_restore.acceptance.c"
 
+    # 包 260924-m4-k2-p3-star-notebook-ui（P3 星星记录本展示面重构）被测实现接线：
+    # display/story_page.c = 新冻结齿 story_page_v2 的行为齿强符号源（v1.47 输入表
+    # 矩阵 + 列表分屏/消歧/删除子态/重发对账/seq 消费纯逻辑 + 渲染面重写；其
+    # kidpal_art_* 引用由在世 art_assets.c 强符号覆盖、font_puhui_14_1 由本清单
+    # 在世字体源覆盖，无需另接）。相对 host_app/main 为 ../../../display/。
+    "../../../display/story_page.c"
+
+    # 包 260924-m4-k2-p3-star-notebook-ui 冻结验收（LIST 态 v1.47 决策表 + 分屏/
+    # 消歧/删除子态/重发对账/阅读/计数双口径/盖章 seq 行为半 + CJK 真帧 + 渲染面/
+    # 删除链路结构半 + 层值接线 + 注册序守卫）。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫; 本文件 SPV2-C1
+    # tooth 1 校验此序）。
+    "../../story_page_v2.acceptance.c"
+
+    # 包 260924-m4-k2-p3-star-notebook-ui builder 单元测试（冻结齿未穷尽的边角：
+    # cursor_step 跨屏普通步进 / 局部末屏跳屏钳制 / stamp_text 恰好满 cap /
+    # text_seq 空白与负值 / 输入表未知页值兜底 / 消歧窗回绕边界）。置于 host
+    # smoke acceptance 之前。
+    "../../story_page_v2.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
