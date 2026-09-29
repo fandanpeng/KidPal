@@ -18,7 +18,7 @@
 1. **双向声明** — 每个 expose/喂给/只读投影 都有匹配的消费方声明；每个事件 producer ↔ 已声明的 consumers。漏一边 = 毛利缺口类断链。
 2. **相位 / 依赖自洽** — 没有能力依赖一个更晚相位的系统却不写降级/defer 说明（例：产能校验需要更晚的 S7）。引用务必写明「公司 Pn」或「Sx Stage n」（蓝图 §8 相位术语）。
 3. **命名 / 词汇冲突** — 公司 P0–P6 vs 系统内部 Stage/Phase;同名异义（Account vs LedgerAccount)。命名漂移会让 builder 乱接。
-4. **单一事实源 / 无漂移** — 不手抄 `core.*`;图（mermaid/数据模型）反映 contracts 而不偏离;单一 client/source。spec 引用的契约名必须真实存在（见 A7 机械门 + `contracts/README.md` 铁律）。
+4. **单一事实源 / 无漂移** — 不手抄 `core.*`;图（mermaid/数据模型）反映 contracts 而不偏离;单一 client/source。spec 引用的契约名必须真实存在（见 A7 机械门 + `docs/contracts/interface-contract.md` 铁律）。
 5. **所有权 & Tier** — Tier-1（跨系统消费者 / `core.*` / events·tools·shared-types）vs Tier-2（系统私有 `@@schema`、无跨系统消费者）判定正确;数据所有权落对系统（成本在 AiRun、毛利在 S6、薪资在 S7）。
 6. **门 / 编排正确性** — 门→责任系统映射显式;下游**绝不**订阅门控事件，只订后置事件;handshake 范式一致（蓝图 §5 六关卡;开票门是唯一跨系统门）。
 7. **DEFER 纪律** — 每个 DEFER 都有 forcing-function + owner + 相位，不是「永不」;后置能力有触发条件，不是幽灵。

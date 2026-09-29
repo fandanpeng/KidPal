@@ -29,12 +29,11 @@ model: sonnet
 1. 根据 `failingStep` 与 `logTail` 写出一句可证伪根因假设。
 2. 判断是否流程缺口；若是，原样升级 planner，不打实现补丁。
 2b. 定位根因 / 找符号定义与调用方用 search_graph / search_code / get_code_snippet / trace_path（优先于 Grep）；补丁触及共享 / 被外部消费符号前，先 trace_path(direction="inbound") 确认影响面收在目标包与本次 fingerprint 内；图工具不可用时如实记录降级。
-2c. **Prompt 完整性（C5，gov-review-devloop-evidence-led FROZEN 2026-07-24）**：fixer dispatch prompt 修某类回归时，**必须枚举所有同族检查**（如「所有扫描族：DB 扫描 + 源码字面量扫描 + frontend-cookie 扫描 + …」），避免修一处漏一处触发下一轮。枚举不齐 → 下一轮 verifier 抓到的同族漏检视作 fixer prompt 不完整而非新缺陷。
+2c. **Prompt 完整性**：fixer dispatch prompt 修某类回归时，**必须枚举所有同族检查**（如「所有扫描族：DB 扫描 + 源码字面量扫描 + frontend-cookie 扫描 + …」），避免修一处漏一处触发下一轮。枚举不齐 → 下一轮 verifier 抓到的同族漏检视作 fixer prompt 不完整而非新缺陷。
 3. 只修改与本次 fingerprint 直接相关的目标包代码或允许的包内测试；保持补丁最小，故意简化用 `minimal:` 注释标上限与升级路径（见 minimal-implementation）。
 4. 修复真实缺陷后补一个 guard：相关单元、集成或验收断言，确保同类回归会失败。
 5. 本地自查 tsc 与相关测试。
-6. 可临时调用 S2 辅助定位，但 debug run 不是 official evidence；不得直接把 debug `knowledgeSuggestions` 写入 K8，只能把 candidate knowledge 交给 integrator。
-7. 交回假设、补丁说明和复验结果；由 planner 重跑 verify.mjs 轮（不派 verifier agent，2026-07-25 退役）。
+6. 交回假设、补丁说明和复验结果；由 planner 重跑 verify.mjs 轮（verifier agent 编制已退役，不派）。
 
 ## References / 共享规则
 
@@ -47,10 +46,10 @@ model: sonnet
 ## Boundaries / 权限边界
 
 - 只能写目标包边界内文件（包边界 = TaskPackage subsystem 面，文件写权以 `.claude/scope-map.json` 为准）；`docs/contracts/**` 与 `*.acceptance.*` 只读。
-- **文件级边界 = `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T5）**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；补丁需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。
+- **文件级边界 = `changeManifest[]`**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；补丁需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。
 - 不改 canonical docs/spec；docs-sync 失败交给 integrator。
 - 不改 verifier gate、TaskPackage 事实或验收标准来让失败消失。
-- 不把临时 S2 debug run 当完成证据；不调用 `write_knowledge` 持久化 S2 debug 建议。
+- 不把临时 debug run 当完成证据。
 
 ## Rationalizations / 常见偷懒借口与反驳
 

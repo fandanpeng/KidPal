@@ -242,7 +242,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 **Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。** 验收先行、红基线、verifier 证据、closeout、supervisor 合并门——一道都不跳。
 
 - **不可省**（守 dev-loop 铁律）：`changeId` / `rigor` / `sourceType` / `sourceRefs` / `riskTier` / `gateProfile` / `story` / `planRef` / `acceptance`（含红基线）/ `exitCriteria` / `crossEnd` 骨架（T5，260908-gov-review-input-surface-frontload：动机包本身即 Lite，Lite 豁免这条就等于放过动机案例）/ `scope` / 合并门。
-- **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、S2/design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。
+- **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。
 - **`crossEnd` 字段级定义（T5，260908-gov-review-input-surface-frontload）**：形状 = 对象 `{ "counterparts": [ { "path": "...", "symbol": "..." } ], "exempt": "<可选，不适用理由>" }`。**Draft 态：字段必须在场，空骨架 `{"counterparts": []}` 也算在场**（同 mutationEvidence 条）。**finalize 态（`acceptanceTestsFile` 非空）：`counterparts` 非空（每条含 path+symbol）∨ `exempt` 非空理由，二选一，双缺 = 闸红点名**；用作不适用分支时 **`exempt` 长度地板 ≥12 字符**（对齐闸内 `decisionCoverage.landsIn=dropped` 的 reason 地板，防「—」混关）——起草侧就要看到地板，否则短 exempt 撞闸红再反推，正是本清单要消灭的形态。**语义**：跨端性是设计判断、不是可推导属性（实测反例 `260907-g-relay-fix` 标 `subsystem=server`、全字段零 firmware 路径，却在改设备侧要解的帧），故走申报 + 留痕而非硬谓词；**判断不了按存疑向严填 counterparts，不填 exempt**。**本批覆盖档 = 自有实现面消费方**（`firmware/**`、`server/**`，`{path,symbol}` 可被 `brief-inputs.mjs` grep 解析；解析不到 = 脚本 fail-loud 非零退出、不静默产空锚）；只读参考树与无源码黑盒消费方（OpenClaw 引擎、物理声/显）两档 **留 ARQ 未覆盖**，越界填法脚本给 advisory。**advisory（非门）**：包 refs 引契约 wire 节（`interface-contract.md` 的 §1.5/§三/§四，常量单源在 `brief-inputs.mjs`）而 `counterparts` 空且无 exempt → stderr WARN 提示 planner 复核。消费方 = `brief-inputs.mjs` 第②路展开成对端面必读清单 + `taskpackage-required-check.mjs` 判定。
 - **`planRef` 指向 sibling `plan.md`**：taskpackage.json 是机器解析的，reviewed plan 是长 prose，prose 归 markdown（与验收是 sibling `.acceptance.spec.ts`、由 `acceptanceTestsFile` 引用同模式）。plan.md 是 `/triage-change` 分流门 architect 审过的，planner **只读消费、改需留痕**。**③拆包路径下 plan.md = 全量义务**（「装配型豁免」已全取消），骨架与门 1 checklist 见下文「拆包链」节。
 - **`crossPackageBehaviors` 字段级定义（260920-gov-review-bearing-strength-align T1，FROZEN v1.0）**：形状 = 数组，每项 `{ "topic": "...", "owner": "...", "note": "...", "carriedBy": "..." }`，四项语义——**`topic`** = 行为名（**包面存量键名为 `behavior`**）；**`owner`** = **语义 owner**（谁定这个行为的语义 / 裁决）；**`carriedBy`** = **实际承接包 `changeId`**（缺省回落 = `owner`）；**`note`** = 移交判据与验收归属。**「承接包」的判定统一为 `carriedBy ?? owner`**——「谁承接」这个位在两写面用的是不同的键（workstream 面 = `carriedBy`、包面 = `owner`），读侧**不得按 `owner` 单键判承接**（否则在 workstream 面把「谁定语义」当成「谁承接」，实测反例见下）。**写侧归一 canonical 四键；读侧兼容 `behavior` ∨ `topic` 作行为名**（包面存量 8 包全写 `behavior`，不回改）。
@@ -335,7 +335,7 @@ The UIUX fields are an **OPTIONAL extension**, not part of the required intake f
 {
   "uiuxRequired": true,
   "uiuxLevel": 2,
-  "designRefs": ["docs/systems/<S>/UIUX-DESIGN-BRIEF.md#pageId-x"],
+  "designRefs": ["docs/ui/UIUX-DESIGN-BRIEF.md#pageId-x"],
   "sharedUiRefs": ["docs/ui/design.md#component-action-card"],
   "localDesignArtifactRefs": ["delivery/changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
   "artifactPackageRef": "<external zip path or future S5 artifactId>",
@@ -409,7 +409,7 @@ decisionCoverage / 必填字段的机检是**两闸分层**，口径不同、不
 
 ## 声明可兑现性（执行层能力声明须有兑现方）
 
-TaskPackage 声明执行层能力需求时（`s2ExploratoryRequired` 类布尔声明字段，以及 prose 中声明的能力要求），建包方须在起包期把每个声明映射到当前仓内现存的兑现方（角色 + 工具 / 闸路径，如 `s2ExploratoryRequired` → integrator 经 `run_inline_check` 执行 S2 official scan，见 dev-loop.md §3 / integrator.md Step 5），逐一列明；映射不上的声明不得裸交——要么不声明，要么在包内显式写明执行期降级预案（降级路径 + 「降级不亏证据」条款）。降级本身合法，「声明一个兑现不了的要求且无预案」不合法。（先例：loop-retro-2026-07-28 R8——260727-chat 声明 `s2ExploratoryRequired=true` 而当时 integrator 工具集无 S2 explorer，执行期才撞缺口、靠预案降级真 DB 证据。）本条为起包 convention、不入机械门（声明字段面小且开放新增；声明漂移复发时升机检，见 ARQ-260728-taskpackage-declaration-feasibility 留根）。
+TaskPackage 声明执行层能力需求时（布尔声明字段，以及 prose 中声明的能力要求），建包方须在起包期把每个声明映射到当前仓内现存的兑现方（角色 + 工具 / 闸路径），逐一列明；映射不上的声明不得裸交——要么不声明，要么在包内显式写明执行期降级预案（降级路径 + 「降级不亏证据」条款）。降级本身合法，「声明一个兑现不了的要求且无预案」不合法。（先例：loop-retro-2026-07-28 R8——曾有声明的执行层能力无对应工具，执行期才撞缺口、靠预案降级真 DB 证据；相关声明字段已随 260929 对齐批退役，先例留作纪律出处。）本条为起包 convention、不入机械门（声明字段面小且开放新增；声明漂移复发时升机检，见 ARQ-260728-taskpackage-declaration-feasibility 留根）。
 
 ## Arch Review Handoff
 

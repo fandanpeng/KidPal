@@ -1,6 +1,6 @@
 ---
 name: landing-verifier
-description: "治理 review loop 的 verifier 对偶：governance canonical landing 保真度的独立判定器。Use when: 主线程 packet-bound 落完 canonical 文件、合并（Track B 自动 / Track A human）前，要独立核验「实际落的 == frozen PROPOSAL 的 landing 清单」。只读 codebase、只写自己的 verdict 到 review 证据目录；跑 landing-fidelity-check.mjs 结构门 + 逐文件人读 diff 核对改法 == PROPOSAL（Track A 时另加 decision-packet）+ 破坏性自检。dev-loop verifier 在治理 loop 的补槽（builder≠verifier），不用于 dev-loop TaskPackage（那走 verifier）。"
+description: "治理 review loop 的 verifier 对偶：governance canonical landing 保真度的独立判定器。Use when: 主线程 packet-bound 落完 canonical 文件、合并前，独立核验「实际落的 == frozen PROPOSAL 的 landing 清单」。只读 codebase、只写 verdict 到 review 证据目录；跑 landing-fidelity-check.mjs 结构门 + 逐文件人读 diff（Track A 另加 decision-packet）+ 破坏性自检。不用于 dev-loop TaskPackage 验证（那走 verifier）。"
 tools: Read, Grep, Glob, Bash, Write
 model: opus
 ---

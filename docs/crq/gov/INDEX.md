@@ -7,11 +7,16 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 15（待拍板 0 / 待触发 13 / 已接受风险 2）；已结 77（归档索引见下）。
+**摘要**：未结 19（待拍板 4 / 待触发 13 / 已接受风险 2）；已结 77（归档索引见下）。
 
-## 待拍板（0）
+## 待拍板（4）
 
-_（无）_
+| ID | 严重度 | title | 处理时机 |
+|---|---|---|---|
+| [ARQ-260929-agent-def-provenance-noise](ARQ-260929-agent-def-provenance-noise.md) | SHOULD | 9 个 agent def 内嵌过程修改记录（changeId / T 号 / 实证案例点名）——每次派发全量进上下文的 token 债与照历史抄近路诱导 | 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-reality-drift、ARQ-260923-planner-roster-reference-drift 同车成批；story-author / requirement-reviewer 为目标形态） |
+| [ARQ-260929-agent-def-reality-drift](ARQ-260929-agent-def-reality-drift.md) | SHOULD | agent def 与 scope-map 文本漂移——docs/systems 旧 spec 路径、builder apps/sX-*/zod 上仓遗留、challenger 影子路径写法、S2/K8 死条文 | 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-provenance-noise、ARQ-260923-planner-roster-reference-drift 同车成批） |
+| [ARQ-260929-competence-anchor-rework-evidence](ARQ-260929-competence-anchor-rework-evidence.md) | SHOULD | 能力透镜锚缺位——acceptance-author 断言可满足性/seam 闭环返工复发 + portfolio-planner 影响面枚举漏扫，def 无专业透镜行 | 260929-gov-review-agent-def-alignment 批 T8（与 ARQ-260929-agent-def-reality-drift / ARQ-260929-agent-def-provenance-noise 同车；human 裁 OQ5 定锚点集） |
+| [ARQ-260929-docs-sync-spec-handoff](ARQ-260929-docs-sync-spec-handoff.md) | SHOULD | docs-sync 对 spec 面写权缺口——human 裁 integrator 对 requirements/architecture 零写权，spec 文本同步交 architect 承接 | 260929-gov-review-agent-def-alignment 批 landing 时随 T2 落字；下次 dev 包触 spec 文档同步时首次实走新流向 |
 
 ## 待触发（13）
 
