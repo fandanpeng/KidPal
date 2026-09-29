@@ -87,7 +87,7 @@
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": true,
-  "docsSyncReason": "arch 面收口：§5.2 场景④ live 实证态更新（「host 验收过、live 面部分在办」→ live 端到端实证）+ §5.5.4 记录会话演出改名对账【修复项】收口 + to-be ⑥（session_ctx 端网关接线）销账注记 + §5.5.5 prompt 现役版收口——arch 正文现写「现状 = v4」为双重漂移（v5/v6 两级未记，门 1 F5），docs-sync 实际动作 = 正文 v4→v7 + 补 v5/v6 沿革 + 视情更新 §8.1 债 7。**重拆增补（2026-09-29）**：K1 遗留 C4 arch 收口半随本包 docs-sync 一并落地（K1 integrator 无 arch 写权、五 hunk 留 docs-delta.md §4 待 spec 批；落地措辞以 defer 包 260928-story-connect-push-defer 修订后口径为准——「现役两时点 + ①归 K3 重裁」，须先替换 K1 件陈旧新文再 apply，本包 docs-sync 执行时核对）；§5.4 故事数据行「【链路载体待契约】」陈旧锚一并清扫（契约 §四 kidpal_story_delete 已 LANDED）。**漂移登记（门 1 重拆批 2026-09-29 新发现，非本包制品缺陷）**：契约 §1.5 第 6 行括注仍枚举「story_list 三时点推送（WS 建连 / 归档成功后 / 删除执行后）」——defer 摘除建连即推后括注陈旧；defer 批「契约零触碰、时点权威 = arch §5.2④」立场维持，本括注处置 = 随 C4 human spec 批经 architect-reviewer 四分类预判（漂移/无需改），**不在包内自改契约**。requirements 面零改动（F2 对账销账半归 K2）。",
+  "docsSyncReason": "arch 面收口：§5.2 场景④ live 实证态更新（「host 验收过、live 面部分在办」→ live 端到端实证）+ §5.5.4 记录会话演出改名对账【修复项】收口 + to-be ⑥（session_ctx 端网关接线）销账注记 + §5.5.5 prompt 现役版收口——arch 正文现写「现状 = v4」为双重漂移（v5/v6 两级未记，门 1 F5），docs-sync 实际动作 = 正文 v4→v7 + 补 v5/v6 沿革 + 视情更新 §8.1 债 7。**重拆增补（2026-09-29，同日更新）**：K1 遗留 C4 arch 收口已提前落地（human spec 批「落」，commit c735062，2026-09-29）——本包 docs-sync 不再承载 C4，仅剩 arch §5.2④ live 实证态 / §5.5.4 / §5.5.5 / to-be ⑥ 常规面；契约 §1.5 括注漂移（story_list 时点枚举陈旧）维持登记、处置走契约门四分类（architect-reviewer + human 契约门），不在包内自改契约。requirements 面零改动（F2 对账销账半归 K2）。",
   "mergeOrder": 40,
   "dependsOn": [
     "260924-m4-k1-story-cloud-link",
