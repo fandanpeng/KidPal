@@ -3,7 +3,7 @@
 > 这是蓝图 §7.3「开发期编排」的**可执行落地**。它使用**当前** Claude Code 原语
 > （子 agent + permissions.deny + 钩子 + worktree）运行，**不依赖**尚未建成的
 > K9/K6/K3——避免依赖尚未建成的工具来构建工具，形成循环前置。唯一允许共享的依赖是
-> `contracts/`（纯 zod，无运行时依赖）。这套脚手架**先于**内核存在，未来才反哺成 K9。
+> `docs/contracts/**`（本仓契约面，单文件 interface-contract.md）。这套脚手架**先于**内核存在，未来才反哺成 K9。
 >
 > **定位**：本文件是「**Dev Loop OS · Loop 内部层**」的可执行落地（单 Pod 内部 + 门强制）。编排层（RTE / 多 Pod / retro）见 [dev-loop-operating-system.md](dev-loop-operating-system.md)；四流程路由与伞状入口见 [DEV-GOVERNANCE §4](../../docs/DEV-GOVERNANCE.md)。
 
@@ -107,7 +107,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 **防空过（让「做完」对故事负责）**
 1. **验收先行且冻结**：`acceptance-author` 在 builder 之前把故事翻译成可执行验收测试，
    每条断言绑定一个 TaskPackage acceptanceRef/sourceRef（例如 `S-Fx.y`、`S-Fx.y-AC<n>`、`D-A1`、`ARQ-063-C1`、`TEMP-*`）；builder/fixer **只读**这些测试（钩子强制）。
-2. **反「200=过」**：API 测试必须断言响应体过 zod + 关键取值 + **DB 副作用** + **事件已发**
+2. **反「200=过」**：API 测试必须断言响应体 schema 合法 + 关键取值 + **DB 副作用** + **事件已发**
    +（必要时）审计/成本。UI 测试（仅当子系统声明有 UI）用 Playwright 断言**状态变化与内容**，
    禁止「页面能打开就算过」。
 3. **验收覆盖闸**：每个声明的 acceptanceRef/sourceRef 至少被一条断言覆盖，否则红。
@@ -171,10 +171,9 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 
 - `securityReviewRequired` / `securityAxes` / `securityEvidence`：启用安全闸并记录证据。
 - `adrRequired`：提示 integrator 把架构/边界/契约取舍归档成 ADR 摘要或 `delivery/changes/dev/<change-id>/`。
-- `s2ExploratoryRequired` / `s2ExploratoryReason` / `s2ExploratoryGoals[]`：按风险要求 S2 official exploratory scan；planner 声明目标，integrator 在 final 复验（scope 圈定）/e2e 绿后执行并把摘要写入 Review Packet。Official scan 必须使用 `run_inline_check` typed fields：`targetPersona` 必填（匿名用 `anonymous`），`metadata.changeId/taskPackageId/goalId/triggeredBy="dev-loop-integrator"` 必填，`allowDestructive=false` 默认；若允许破坏性探索，必须有 `destructiveScope` 与 `safetyReason`。`maxSteps` / `budget` 可省略（Phase 1 bootstrap 默认不限），official scan 默认 `wait=true` 且调用层等待上限 600 秒。
 - `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T4）：本包预定改动文件/目录 glob 清单（仓根相对）。**产出** = architect 前置评估（planner Step 1g 档）、planner 回填；**消费** = builder/fixer 文件级改动边界（各自 .md 边界节）+ `change-manifest-check.mjs` 闸对账（timing=scoped）+ `taskpackage-required-check.mjs` 完备性齿；**扩单唯一通道** = architect 评估（builder/fixer → planner 带根因假设回评，扩单 append + 评估依据留痕），禁先改后补。
 
-变更包不是新事实源；`contracts/` 和 canonical specs 仍是事实源。它的作用是保留每次 loop 的上下文和证据，避免聊天记录成为唯一记忆。
+变更包不是新事实源；`docs/contracts/**` 和 canonical spec（两文件）仍是事实源。它的作用是保留每次 loop 的上下文和证据，避免聊天记录成为唯一记忆。
 
 **硬要求**：TaskPackage 必须落盘。planner 在 Draft 阶段创建 `delivery/taskpackages/<change-id>/taskpackage.json`，并刷新 `delivery/taskpackages/current/taskpackage.json`；Finalize 后必须再次写回。verifier 第一闸会检查当前 TaskPackage 是否存在且字段完整；integrator 必须运行 `node .claude/scripts/closeout-check.mjs --update-index` 确认 `delivery/changes/dev/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`；TaskPackage 从 `delivery/taskpackages/<id>/taskpackage.json` 解析，post-cutoff 包不再要求 delivery/changes/dev/ 内副本）、`delivery/milestones` STATUS、`delivery/workstreams` workstream 收口，并显式执行 best-effort `delivery/changes/dev/INDEX.md` projection。**post-cutoff 包 closeout 完整性条件另含 `pod-retro.md`**（planner 收尾相位，第一人称热记忆；**Q5=warn**：closeout 相位 warn advisory + 零追溯白名单，**非 blocking**——见「closeout 制品 SSOT」表）。planner/supervisor 的复核调用使用默认只读 `node .claude/scripts/closeout-check.mjs`。没有文件记录的实现不能声明 loop 完成。
 
@@ -232,7 +231,7 @@ acceptance-author→验收放行、verifier→全量禁写、未登记 agent/主
 | 收口闸 | `closeout-check`（integrator 显式 `--update-index`；planner/supervisor 默认只读复核） | 合并门前必须有 `delivery/changes/dev/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`）、`delivery/milestones` STATUS 无漂移、`delivery/workstreams` workstream 记录完整；TaskPackage 从 `delivery/taskpackages/<id>/` 解析；**承重字段/decisionCoverage 校验由 closeout 相位程序化调用 `taskpackage-required-check` 单源承重**（F-04，本体不浅版重实现）；**post-cutoff 包 closeout 完整性条件含 `pod-retro.md`（Q5=warn advisory + 零追溯白名单，非 blocking）**；verdict/verification、loop metrics、pod journal 缺失为 advisory。 |
 
 判定**确定**（来自退出码），LLM 只把失败解读成 ErrorEnvelope + 根因假设。
-`verify.mjs` 产出的 immutable verifier-round fact 以本地 closed schema 承载 ErrorEnvelope 关系；ErrorEnvelope 形状与 `contracts/shared-types`（K6）方向对齐，
+`verify.mjs` 产出的 immutable verifier-round fact 以本地 closed schema 承载 ErrorEnvelope 关系；ErrorEnvelope 形状与 `docs/contracts/**` 的共享类型约定方向对齐（K6），
 但**不 import K6 运行时**——保持循环对内核零依赖。
 `fixer` 修复真实缺陷后必须补 guard 测试/断言；如果无权修改该测试层，则升级回 planner。
 
@@ -247,7 +246,6 @@ integrator 在 supervisor 合并门前必须产出 Review Packet，辅助 superv
 - five-axis review：correctness、test quality、contract/boundary safety、operability/security、maintainability/simplicity。
 - **未覆盖面申报（260920-gov-review-bearing-strength-align T3，FROZEN v1.0）**：对照本包 `acceptance[]` 集合 + 本包引用的契约条目 + roadmap §3 效果段，列出**本次无齿 / 未跑的设计性质**，逐条一行写「性质 + 现状 + 去向（deferred 到哪包 / `structural` 豁免 id / 由真机轮或 human 持板兜 / 明确接受不覆盖）」。**零缺口时明写 `none`**（防「没写」与「没有」混同）。本段管**齿覆盖轴**，与锚 3 demo 对账行（管**证据形态轴**）正交、同址（口径见 `pod-coordination.md` §11）；**义务的生产者可达性由 planner Step 11 的 dispatch prompt 携带**（与锚 3 同构，`integrator.md` 不因此改）。既存实况：本仓 33 份 dev review-packet 中 23 份出现过未闭环类措辞，但**位置与粒度各异**（如 `260920-m2-charwindow-display-fix/review-packet.md:43` 的 MCD-A6「未做、deferred」写在 Demo 对账行表内）——本段把该申报固定到统一位置。
 - residual risk：已知限制、后续建议、人类决策点。
-- S2 exploratory evidence（若 TaskPackage 声明）：required/executed、runId、goals、终态 status、structured runResult summary、integrator triage、采纳进 findings 的项目、knowledge persisted / not persisted with reason，以及可选 artifact refs；不复制 raw screenshots / traces / logs。`queued` / `running` 不得作为 pending evidence 进入 supervisor；`cancelled` / `interrupted` 默认 evidence incomplete，除非 integrator 采纳其本身为 finding。
 
 任何 `BLOCKING` finding 都意味着不能进入合并门，必须交回 planner / fixer / 人类裁决。supervisor 合并门（机械闸 `supervisor-verdict-gate.mjs`）的低/中风险自动放行需要同时满足：真库/真实结果验收可信、mutation 逐 AC 敏感、closeout 全绿。全 mock、跨系统、core.*、安全轴触发为高风险；docs/contracts/**、迁移、删数据为 critical。**本行是 riskTier 机械判据的 SSOT**：`supervisor-verdict-gate.mjs` 是本判据的机械投影（非第二权威），改判据先改本行再同步该脚本（反漂移 C-5）。
 
@@ -300,9 +298,9 @@ cd ../wt-s5; claude --settings .claude/dev-loop.settings.json --agent planner
 
 | 层 | 形态 | 依赖 |
 |---|---|---|
-| **L0** | 人手在终端跑 `/build-feature`，主线程编排 | 只需 Claude Code + `contracts/`（zod） |
+| **L0** | 人手在终端跑 `/build-feature`，主线程编排 | 只需 Claude Code + `docs/contracts/**` |
 | **L1** | 薄编排：本文件这套 `.claude/` 脚手架 | 同上 |
-| **L2** | 独立的循环引擎（自带任务队列/并发，脱离单会话） | 仍只依赖 `contracts/` |
+| **L2** | 独立的循环引擎（自带任务队列/并发，脱离单会话） | 仍只依赖 `docs/contracts/**` |
 | **L3** | 接入自家 K6：把 `verify.mjs` 的 ErrorEnvelope/日志写进 `LogEntry`，按 correlationId 串链 | 需要 K6 已建成（**后期奖励**，非前置） |
 
 K6/K9 是这条循环的**产物**，不是它的前置依赖。L3「吃狗粮」是锦上添花，不是起点。
@@ -314,7 +312,7 @@ K6/K9 是这条循环的**产物**，不是它的前置依赖。L3「吃狗粮�
 这套开发期范式与产品侧「K9 编排 + 事件驱动 + 6 人工门控 + K6 可观测性」**同构**：
 
 - planner ↔ K9 orchestrator；契约变更门 ↔ 6 人工门控的「事先冻结」；
-- verify 闸门 ↔ S2 AI Tester 的判分；ErrorEnvelope ↔ S2 failure-analyzer 的公司级提升；
+- verify 闸门 ↔ 产品侧 AI Tester 的判分；ErrorEnvelope ↔ failure-analyzer 的公司级提升；
 - 多 worktree 并行 ↔ 模块按所有权边界并行。
 
 未来内核成形后，可把 L2 引擎并入 K9，把 `verify.mjs` 的输出灌进 K6——届时「公司建造自己」

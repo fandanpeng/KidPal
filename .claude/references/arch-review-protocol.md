@@ -9,7 +9,7 @@
 
 同一 loop(intake+draft → charter → challenger↔defender → adjudicator → pass-oracle)跑两个 profile:
 
-- **spec profile**(`/review-arch`):审 spec(`docs/systems/**`、`docs/systems/**`、L0)是否可冻结。低影响 confirmed spec 文本由 moderator 落地。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
+- **spec profile**(`/review-arch`):审 spec(`docs/requirements.md` + `docs/architecture.md`、L0)是否可冻结。低影响 confirmed spec 文本由 moderator 落地。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
 - **governance profile**(`/review-governance`):审 G1/G2/G3 开发治理变更是否自洽、可批准。**不落 canonical**,只产证据 + decision packet,human 批后由主线程 packet-bound landing（landing 通道见「双轨路由」节）。证据落 `delivery/changes/arch/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
 
 **统一入口 `/arch-change`**(对偶 dev-loop `/build-feature`):把一个 plan/想法丢给 moderator,先 phase-0 分类再路由进上面某个 profile;`/review-arch`、`/review-governance` 是 profile 已知时的直达入口。**⚠「统一」的所指（本句即「`/arch-change` = 统一入口」这一定位的定义句）**：统一的**不是** Track A 与 Track B 两条轨，而是 **Track A 内部的 spec / governance 两个 profile**——`/arch-change` **是 Track A 的入口**；**Track B 常驻轻路径没有命令入口**，其入口 = 主线程直接起草 PROPOSAL（见「双轨路由」节）。故「命中升级判据 / 声明红队 → `/arch-change`」与「默认 Track B → 主线程起草」两句各指其一、并不冲突。**（边界 · 承 R2-F9）**「统一入口」在本仓是一个**通用短语**而非本命令的专名：`docs/DEV-GOVERNANCE.md` §7 的「**统一入口**」段标题指的是**治理 / spec 变更的入口总览**（同一段同时讲两条轨），`.claude/agents/portfolio-planner.md:25` 的「repair-intent 统一入口」指的是**修复意图的收口处**——二者各由本处上下文定义，**不在本句的覆盖范围内**；本句只定义「用作 `/arch-change` 标签时」的所指。
@@ -34,7 +34,7 @@
 
 **主 lane(二选一)+ 一个横切 flag**—— 分类器只挑车道,不混两个 oracle:
 
-- **spec lane**:触 `docs/systems/**`、`docs/systems/**` 的意图 / 行为 / 拓扑 / 边界 / 阶段(L0 蓝图是 spec 特例,不自动落地)。
+- **spec lane**:触 `docs/requirements.md` + `docs/architecture.md` 的意图 / 行为 / 拓扑 / 边界 / 阶段(L0 蓝图是 spec 特例,不自动落地)。
 - **governance lane**:触 `.claude/{agents,commands,references,rules,skills}`、`scope-map.json`、`*.settings.json`、`verify-gates.json`、`hooks/**`、`scripts/**`、或指令根(README/AGENTS/CLAUDE/DEV-GOVERNANCE)。
 - **contract-touching flag(横切,非独立 lane)**:plan 是否实际触 `docs/contracts/**`;命中则在所属 profile 内触发 `architect-reviewer` 四分类 + 人类契约门(原子性:配套 spec/proposal 与契约同一 PR)。
 - **mixed(命中 >1 lane)**:AskUserQuestion 展示分类,**默认建议拆两次跑**(spec 一次、governance 一次);强耦合到必须同一 PR 时,同会话先跑完 spec profile 落地再跑 governance profile。
@@ -135,7 +135,7 @@ review-moderator: lane 分类 → review-depth 分类
 
 ## 起草阶段（architect = 作者 subagent，对偶 builder）
 
-输入是 plan/想法时,moderator 派 `architect` 当**起草 subagent** 产候选(spec lane → `docs/systems` 草案面,**写入不等于冻结**;governance lane → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`,**不落 canonical**)。输入已是现成 spec/proposal 则跳过起草。
+输入是 plan/想法时,moderator 派 `architect` 当**起草 subagent** 产候选(spec lane → `docs/requirements.md` + `docs/architecture.md`,**写入不等于冻结**;governance lane → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`,**不落 canonical**)。输入已是现成 spec/proposal 则跳过起草。
 
 **作者 ≠ 判官(中立性铁律,对偶 dev-loop builder≠verifier/supervisor)**:architect 只产**候选制品**;判据(charter)由 `scenario-author` 独立冻结,攻与裁由 `challenger`/`adjudicator`。architect 不写冻结 charter、不自评可冻结/可批准、不落 governance canonical、自改递归仍须 human;moderator 编排但不代 architect 起草。**路由权同——作者不得自路由（见上节「路由权归属」）。**
 
@@ -185,12 +185,12 @@ scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 fin
 
 ## Spec↔Contract 一致性保障（铁律）
 
-本 loop 改 spec(docs/,设计层),但 `contracts/` 是单一事实源、全程冻结(同 dev-loop 的 `permissions.deny` + enforce-scope 钩子),**永不**拥有契约权威 → 挂到 dev-loop 同一个契约门。
+本 loop 改 spec(docs/,设计层),但 `docs/contracts/**` 是单一事实源、全程冻结(同 dev-loop 的 `permissions.deny` + enforce-scope 钩子),**永不**拥有契约权威 → 挂到 dev-loop 同一个契约门。
 
 1. **冻结**:所有 review agent 不能写 `docs/contracts/**`。
 2. **单一门**:对每条 CONFIRMED 的 spec 改动按 `architect-reviewer` 四分类定性 —— `NO_CONTRACT_CHANGE`(纯措辞/阶段/边界,或 spec 漂了改 spec 消除漂移)/ `IMPLEMENTATION_ADAPTER` / `SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED`。后两类 → moderator 主线程派 architect-reviewer → ContractChangePacket → 人类契约门;spec 改动**暂存在 packet 里,不单独落地**。
 3. **原子性**:触契约的 spec 改动与契约改动**同一个 PR** 落地(monorepo 原则),不先合 spec;契约未批前 spec 不可冻结。
-4. **机械门**:`node .claude/scripts/arch-spec-contract-check.mjs <spec>` —— 不复制 schema(铁律,硬失败);`core.*` 引用必须在 `contracts/` 解析(硬失败);`<system>.*` 引用未解析记为 advisory(可能是 Tier-2 私有/未契约化事件,challenger 按轴 4 核),`--strict` 下升为硬失败。这是 pass-oracle 第 4 关。
+4. **机械门**:`node .claude/scripts/arch-spec-contract-check.mjs <spec>` —— 不复制 schema(铁律,硬失败);`core.*` 引用必须在 `docs/contracts/**` 解析(硬失败);`<system>.*` 引用未解析记为 advisory(可能是 Tier-2 私有/未契约化事件,challenger 按轴 4 核),`--strict` 下升为硬失败。这是 pass-oracle 第 4 关。
 
 ## Pass-oracle（5 关 + handoff 出口全过才可冻结）
 

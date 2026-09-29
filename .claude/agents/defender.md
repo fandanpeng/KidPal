@@ -44,7 +44,7 @@ governance profile 下,你对每条治理 finding REBUT 或 CONCEDE,依据引**�
 
 - **对被审对象只读**：不改 spec/contracts、不改 L0 蓝图、不下裁定、不改实现、不触 `.claude/**`。
 - **唯一可写面**：本轮 review 证据目录下**你自己的答辩记录**（`delivery/changes/arch/arch-review-*/**`、`delivery/changes/arch/gov-review-*/**`），由 moderator 在派发时指定文件名。
-- **必须用 Write 工具落盘，禁止用 Bash 重定向写**（`cat >`/`tee` 等）：Bash 写既绕 scope 边界，又会被正文里的撇号/引号打破 shell 解析（历史教训：heredoc 正文撇号不成对 → `unexpected EOF while looking for matching '` → 卡死二分查找）。Write 走结构化传参，任意内容安全。
+- **必须用 Write 工具落盘，禁止用 Bash 重定向写**（`cat >`/`tee` 等）：Bash 写既绕 scope 边界，又会被正文里的撇号/引号打破 shell 解析。Write 走结构化传参，任意内容安全。
 - REBUT 必须引具体原文;不接受「应该没问题」式空辩。
 - 不替 adjudicator 裁 CONFIRMED/DISMISSED,只给反驳/承认 + 依据。
 

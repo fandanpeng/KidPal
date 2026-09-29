@@ -1,21 +1,98 @@
 {
   "_doc": "Route-regression config for route-regression-check.mjs — KidPal 档1 净版。Static proxy gate — asserts command→entry routing + required routing-signal substrings preserved in agent descriptions + tools:Agent() dispatch whitelists. NOT a real LLM-routing proof. owner=architect (G3). Landing-time/manual verification tool. 档2 迁入 dev-loop 时补 build-feature/planner 行。",
   "commandEntry": [
-    { "command": ".claude/commands/arch-change.md", "entryAgent": "review-moderator" },
-    { "command": ".claude/commands/review-arch.md", "entryAgent": "review-moderator" },
-    { "command": ".claude/commands/review-governance.md", "entryAgent": "review-moderator" }
+    {
+      "command": ".claude/commands/arch-change.md",
+      "entryAgent": "review-moderator"
+    },
+    {
+      "command": ".claude/commands/review-arch.md",
+      "entryAgent": "review-moderator"
+    },
+    {
+      "command": ".claude/commands/review-governance.md",
+      "entryAgent": "review-moderator"
+    }
   ],
   "agentRequiredSignals": {
-    "review-moderator": ["/review-arch", "/review-governance", "/arch-change", "profile", "起草候选", "主线程"],
-    "scenario-author": ["charter", "challenger", "冻结"],
-    "challenger": ["红队", "只读"],
-    "defender": ["契约审批者", "只读"],
-    "adjudicator": ["判官", "只写", "queue"],
-    "architect-reviewer": ["ContractChangePacket", "契约", "预审"],
-    "story-author": ["requirement-change.md", "requirement-reviewer", "对偶", "无 Write"],
-    "requirement-reviewer": ["story-author", "四查", "作者≠审者", "不审契约"]
+    "review-moderator": [
+      "/review-arch",
+      "/review-governance",
+      "/arch-change",
+      "profile",
+      "起草候选",
+      "主线程"
+    ],
+    "scenario-author": [
+      "charter",
+      "challenger",
+      "冻结"
+    ],
+    "challenger": [
+      "红队",
+      "只读"
+    ],
+    "defender": [
+      "契约审批者",
+      "只读"
+    ],
+    "adjudicator": [
+      "判官",
+      "只写",
+      "queue"
+    ],
+    "architect-reviewer": [
+      "ContractChangePacket",
+      "契约",
+      "预审"
+    ],
+    "story-author": [
+      "requirement-change.md",
+      "requirement-reviewer",
+      "对偶",
+      "frozen 翻转不归本 agent"
+    ],
+    "requirement-reviewer": [
+      "story-author",
+      "四查",
+      "作者≠审者",
+      "不审契约"
+    ],
+    "builder": [
+      "TaskPackage",
+      "verifier 判定",
+      "不自评通过",
+      "changeManifest"
+    ],
+    "planner": [
+      "主线程",
+      "portfolio-planner",
+      "architect-reviewer",
+      "TaskPackage"
+    ],
+    "landing-verifier": [
+      "verifier 对偶",
+      "landing 清单",
+      "frozen PROPOSAL"
+    ]
   },
   "agentRequiredToolsAgents": {
-    "review-moderator": ["architect", "scenario-author", "challenger", "defender", "adjudicator", "architect-reviewer"]
+    "review-moderator": [
+      "architect",
+      "scenario-author",
+      "challenger",
+      "defender",
+      "adjudicator",
+      "architect-reviewer"
+    ],
+    "planner": [
+      "architect",
+      "architect-reviewer",
+      "uiux-author",
+      "acceptance-author",
+      "builder",
+      "fixer",
+      "integrator"
+    ]
   }
 }

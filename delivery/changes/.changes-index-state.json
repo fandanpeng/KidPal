@@ -237,5 +237,13 @@
   "260928-gov-review-dev-loop-preassess-manifest-scope": {
     "date": "2026-09-28",
     "mergedInMain": "yes"
+  },
+  "260928-gov-review-requirement-loop": {
+    "date": "2026-09-28",
+    "mergedInMain": "yes"
+  },
+  "260929-gov-review-agent-def-alignment": {
+    "date": "2026-09-29",
+    "mergedInMain": "yes"
   }
 }
