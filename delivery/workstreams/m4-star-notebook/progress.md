@@ -131,3 +131,15 @@
 - **重启核验**：systemctl restart → active，Uvicorn https://0.0.0.0:8000 监听在位，启动日志零 import 错误（2026-09-28 13:18 CST）。
 - **部署机制注记**：Windows 命令行 32KB 上限 → base64 分块（20KB/块）经 ssh_helper 上传；story.py 首传因超限静默失败，分块后成功（md5 校验兜底抓到）。
 - **合并门状态**：supervisor 机械闸 ESCALATE（high：all-mock 启发式标定错配嫌疑，verdict 落仓 3f63b0b）→ human 裁「先部署测后裁」→ 合并保持 blocked 待真机结论。
+
+## 2026-09-29 · K2 launch prep（主线程 skill：kidpal-pod-launch-prep；launch 由 human 执行）
+
+- **调度判定**：本批 = K2 单包——K1 已 merged（2026-09-24，dependsOn 实存）；K3 dependsOn K1+K2、K2 未 merged → K3 不可入批（依赖图说了算，不硬凑并行）。perf-k1 树（C:/AI/KidPal-pod-perf-k1-roundtrip-latency，分支 dev/260924-perf-k1-roundtrip-latency）分支未入 main 且 board 无对应在途包——来历待核，本批不复用，留 human（遗留项）。
+- **机械门**：`portfolio-reconcile --check-launch` ok:true / blocking 空 / warn 空（base ref = `base/m4-star-notebook` 随本批 ff 快进至 5575a23，仍含重拆批 d2b331c 全部拆包制品；本包相关 launchPreconditions 5 verified / 0 pending——LP7 UI-ready 含其中，P3 五面 PNG 在盘核过 + 重拆门 1 已裁 uiux L2 成立）；`settings-lint.mjs` 0 RED / 0 WARN。
+- **双面基线重锚 @ 5575a23（本树实测；launch 批仅触 delivery/ 治理面，面域差异判停预期零差异）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **117 passed / 0 failed / 4 deselected, 2 subtests passed**（全套 offline 含 server/tests = 193 passed 同日佐证，与 defer 包 193 零偏移）。面域 = server；锚 SHA = 5575a23。零红。旧锚 80 passed @ 5e862d0 因 K1/defer 批新齿全绿而偏移，作废。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **107 Tests / 0 Failures / 0 Ignored，exit 0**。面域 = firmware；锚 SHA = 5575a23。零红。旧锚 103T0F @ 5e862d0 作废（char-window-v5-trim / char-window-key-triggered-play 等固件批新增齿全绿）。
+- **树与环境**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K1 merged → 直接续跑零复位）；常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 5575a23 = main HEAD、tracked 净 + untracked 零残留（交接卫生过）；managed_components 软链在位 + host build ELF 热缓存保住。图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 强制刷新（18296 节点 / 49896 边与刷新前一致 = 已最新；parse_partial 102 件 = 既有 best-effort 信号非新增；skipped 0）。
+- **board 预填**：260924-m4-k2-p3-star-notebook-ui → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/launch-card.md`（五要素齐 + intake 特别注意：契约三触点纯消费零改 / story_page.h 旧 FROZEN 头注退役勿误守 / 拆包侧 brief 撤回 planner Step 7 自产）。
+- **遗留 human 项**：① launch 由 human 在常驻树自跑（命令行两形态见启动卡第五要素；本 prep 会话占用树内会话位，launch 前先收本会话）；② perf-k1 树来历待核（分支 dev/260924-perf-k1-roundtrip-latency 未入 main、board 无对应在途包——留池 or 复位归 human 裁）；③ milestones.jsonl M4 行 state 收口时点沿 K1 遗留同批裁量。
