@@ -96,9 +96,99 @@ struct CharPageState {
     int elapsed_ms;
     int started;   /* v1.59 演示起播态 (WF-F3-01 键帽随态变): 0 = 未起播 (键帽「播报」)
                     * / 非 0 = 已起播 (键帽「重播」)。建窗 memset 归 0, replay 置 1。 */
+    /* spine openQ q9 (human 2026-09-29, 大字系统性偏下修复): 整字墨迹居中平移偏移,
+     * **源 1024 坐标域单位**。解析期 (charpage_parse_data) 由整字墨迹 bbox 中心一次
+     * 算定 (off = 512 - 中心), 三态渲染路径 (WRITTEN/CURRENT) 与 medians 点链
+     * (PENDING) 经 charpage_map 一致消费; 只平移不缩放 (教学红线锁形不锁位)。
+     * 墨迹全空 -> 保持 0 (行为回退 = 现状直映)。free_state 归零防跨字残留。 */
+    float off_x, off_y;
 };
 
 static struct CharPageState g_page;
+
+/* ------------------------------------------------------------------------- *
+ * spine openQ q9 (human 2026-09-29, 大字在米字格内系统性偏下修复): 整字墨迹居中
+ * 平移偏移计算 —— **只在解析路径调用** (帧路径零新增解析调用)。
+ *
+ * 机制: 扫全部笔画轮廓点集 (g_page.pre_pts, 已预解析落堆, 源 1024 域) ∪ 全部
+ * medians 点 (对每笔 median_jsons[i] 调 kidpal_char_medians_parse 解到临时数组;
+ * 同一 1024 坐标域, WRITTEN/CURRENT/PENDING 三态消费的同一坐标域), 求整字墨迹
+ * bbox 中心 (cx, cy); 偏移 off = (512 - cx, 512 - cy) 使映射后墨迹中心落
+ * (size-1)/2 (格线交点 size/2 的 1px 内 —— (int) 截断 + size-1 缩放的固有 103.5
+ * 差, ruling 明示可接受, 不引额外缩放/非对称修正)。**只平移不缩放**。
+ *
+ * bbox 在源坐标域对原始点求 (不对已翻转/已缩放值做); off 对 x 与 y 同式成立 ——
+ * 映射的 y 翻转 (1024 - sy) 对称于 512, 加源域偏移后墨迹中心落 512 等价于映射后
+ * 落 (size-1)/2。偏移为源域常量, 经 charpage_map 对三态 + medians 点链一致生效。
+ *
+ * 防御: 墨迹全空 (pre_counts 全 0 且 medians 解析 0 点) -> 偏移保持 0 (行为回退 =
+ * 现状直映, 不崩)。calloc 失败路径不涉本函数 (parse_data 在调用前已 fail 返回)。
+ * ------------------------------------------------------------------------ */
+static void charpage_compute_ink_offset(void)
+{
+    float minx = 0.0f, miny = 0.0f, maxx = 0.0f, maxy = 0.0f;
+    int has = 0;
+
+    g_page.off_x = 0.0f;
+    g_page.off_y = 0.0f;
+
+    /* 源 1: 全部笔画轮廓点集 (预解析落堆, 逐笔折入 bbox)。 */
+    for (int i = 0; i < g_page.n_strokes; i++) {
+        int n = (g_page.pre_pts != NULL && g_page.pre_counts != NULL)
+                    ? g_page.pre_counts[i]
+                    : 0;
+        if (n <= 0) {
+            continue;
+        }
+        const kidpal_cs_point *pts =
+            g_page.pre_pts + (size_t)i * CHARPAGE_MAX_PTS;
+        for (int k = 0; k < n; k++) {
+            float x = pts[k].x, y = pts[k].y;
+            if (!has) {
+                minx = maxx = x;
+                miny = maxy = y;
+                has = 1;
+            } else {
+                if (x < minx) minx = x;
+                if (x > maxx) maxx = x;
+                if (y < miny) miny = y;
+                if (y > maxy) maxy = y;
+            }
+        }
+    }
+
+    /* 源 2: 全部 medians 点 (骨架; 轮廓解析失败的笔的唯一墨迹参照)。临时缓冲复用
+     * 一块、逐笔解析后折入 bbox; 解析失败/超容 -> 该笔 medians 跳过 (其轮廓点已在
+     * 源 1 兜底)。缓冲容量对齐 CHARPAGE_MAX_PTS (与 pre_pts 同口径)。 */
+    {
+        kidpal_cs_point mids[CHARPAGE_MAX_PTS];
+        for (int i = 0; i < g_page.n_strokes; i++) {
+            int mn = (g_page.median_jsons != NULL && g_page.median_jsons[i] != NULL)
+                         ? kidpal_char_medians_parse(g_page.median_jsons[i], mids,
+                                                     CHARPAGE_MAX_PTS)
+                         : -1;
+            for (int s = 0; s < mn; s++) {
+                float x = mids[s].x, y = mids[s].y;
+                if (!has) {
+                    minx = maxx = x;
+                    miny = maxy = y;
+                    has = 1;
+                } else {
+                    if (x < minx) minx = x;
+                    if (x > maxx) maxx = x;
+                    if (y < miny) miny = y;
+                    if (y > maxy) maxy = y;
+                }
+            }
+        }
+    }
+
+    if (!has) {
+        return; /* 墨迹全空: 偏移保持 0 (行为回退 = 现状直映) */
+    }
+    g_page.off_x = 512.0f - (minx + maxx) * 0.5f;
+    g_page.off_y = 512.0f - (miny + maxy) * 0.5f;
+}
 
 /* ------------------------------------------------------------------------- *
  * cJSON data 解析: 取必需字段 + 逐笔 strokes/medians 字符串。成功返回 1。
@@ -169,6 +259,10 @@ static int charpage_parse_data(const char *data_json)
             g_page.pre_counts[i] = (pc > 0) ? pc : 0;
         }
     }
+    /* spine openQ q9: 整字墨迹 bbox -> 居中平移偏移, 解析期一次算好 (帧路径零新增
+     * 解析调用; 三态 + medians 点链经 charpage_map 一致消费)。须在 pre_pts 与
+     * median_jsons 均就绪后调用 (本行即在两者之后)。 */
+    charpage_compute_ink_offset();
     cJSON_Delete(root);
     return 1;
 }
@@ -195,13 +289,23 @@ static void charpage_free_state(void)
     free(g_page.rast);
     g_page.canvas_buf = NULL;
     g_page.rast = NULL;
+    /* spine openQ q9: 居中平移偏移归零, 防跨字残留 (下一字由 parse_data 重算;
+     * 此处归零是「无墨迹数据」时的直映兜底态)。 */
+    g_page.off_x = 0.0f;
+    g_page.off_y = 0.0f;
 }
 
 /* ------------------------------------------------------------------------- *
  * 把源点 (1024 坐标) 缩放到 canvas 坐标。Y 翻转 (字库坐标与屏幕 Y 朝相反)。
+ * spine openQ q9: 消费 g_page 整字墨迹居中平移偏移 (源域常量, 解析期算定) ——
+ * 三态路径共用本函数 (PENDING medians / WRITTEN / CURRENT), 故偏移在此一处加即对
+ * 三态 + medians 点链一致生效; **只平移不缩放, 不改翻转语义**。偏移为 0 时行为
+ * 与旧直映完全一致 (墨迹全空/无数据时的回退态)。
  * ------------------------------------------------------------------------ */
 static void charpage_map(int size, float sx, float sy, int *dx, int *dy)
 {
+    sx += g_page.off_x;
+    sy += g_page.off_y;
     *dx = (int)(sx * (float)(size - 1) / 1024.0f);
     *dy = (int)((1024.0f - sy) * (float)(size - 1) / 1024.0f);
 }
