@@ -70,9 +70,9 @@ openQ:
     status: resolved
   - id: q11-合并门处置
     question: 合并门 tier3（requirements.md 并行重叠消解）三条路如何走
-    ruling: human 2026-09-29 裁「③ 暂缓」——不合并、不消解；包状态全部落盘可随时续；重开时从 planner 退出报告三选项（① architect 消解评审 / ② human 拍板并集 / ③ 暂缓）起案
+    ruling: human 2026-09-29 先裁「③ 暂缓」，随后重开放行（「main 已经合并了，你继续合并吧」）——主线程按并集消解执行回同步合并：dev v1.60 全量内容 + main 状态行翻 `frozen · v1.60` + main §9 纪律行扩句（merge 8cd40da，唯一冲突文件 requirements.md、零标记残留、EOF 空白两处顺手清）→ main ff 到 8cd40da；changes-index 全量重建投影，dev INDEX 行 closed。**变更闭卷（closed）**；remote push 归 human
     status: resolved
-status: awaiting-human:merge-gate
+status: closed
 ---
 
 # spine · 260929-char-window-v5-trim

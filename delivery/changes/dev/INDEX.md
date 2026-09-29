@@ -6,10 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (45)
+## dev (47)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [260929-char-window-v5-trim](260929-char-window-v5-trim/) | 2026-09-29 | delivery/changes/intake/260929-char-window-v5-trim.md | closed | — |
+| [260928-char-window-key-triggered-play](260928-char-window-key-triggered-play/) | 2026-09-28 | delivery/changes/intake/260928-char-window-key-triggered-play.md | closed | — |
 | [260928-story-connect-push-defer](260928-story-connect-push-defer/) | 2026-09-28 | human 真机发现 + planner 根因报告（2026-09-28 本会话）：M4-K1 三时点①建连即推与设备每会话 WS 重连冲突——设备会话结束关 audio channel（CanEnterSleepMode 要求通道关闭）、按 KEY 重开新 WS，front 建连即推 story_list → 旧固件（K2 未跑）无条件渲染 P3 页盖掉聆听态，且 story_page.c 零 CJK 字体接线 → 半截页面。human 裁定止血方向（AskUserQuestion 后续指令「先止血方案吧」） | closed | m4-star-notebook |
 | [260928-tech-260928-school-start-upcoming-empty](260928-tech-260928-school-start-upcoming-empty/) | 2026-09-28 | docs/crq/tech/TECH-260928-school-start-upcoming-empty.md | closed | — |
 | [260924-m4-k1-story-cloud-link](260924-m4-k1-story-cloud-link/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
@@ -55,4 +57,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [260928-char-window-key-triggered-play](260928-char-window-key-triggered-play/) | 2026-09-28 | delivery/changes/intake/260928-char-window-key-triggered-play.md | closed | — |
