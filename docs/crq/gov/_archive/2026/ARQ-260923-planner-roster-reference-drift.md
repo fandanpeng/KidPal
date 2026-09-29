@@ -2,13 +2,13 @@
 id: ARQ-260923-planner-roster-reference-drift
 title: planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（一文面小修，可搭任意批）
 opened: 2026-09-23
-closed: ""
-closedBy: ""
+closed: 2026-09-29
+closedBy: "260929-gov-review-agent-def-alignment 批 T6 承载本条（OQ1=(b) 采补编制而非删引用），commit d5927e8 landing：新增 .claude/agents/uiux-author.md（def + scope-map 条目，翻译者定位、sonnet 档），planner.md frontmatter Agent 列表与 Step 6b 引用自此有实况对应；planner.md:61 uiux-designer 保留「尚未接线」限定，漂移消除。主线程按批闭卷翻 closed。"
 paths: []
 source: "loop-retro-2026-09-23（k3 pod-retro 卡点 5 + 实核 .claude/agents 清单与 planner.md:4/:54 现行文本；报告 delivery/changes/retro/2026-09-23-loop-retro.md）"
 ---

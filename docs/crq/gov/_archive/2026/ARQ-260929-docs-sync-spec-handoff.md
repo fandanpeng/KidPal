@@ -2,13 +2,13 @@
 id: ARQ-260929-docs-sync-spec-handoff
 title: docs-sync 对 spec 面写权缺口——human 裁 integrator 对 requirements/architecture 零写权，spec 文本同步交 architect 承接
 domain: gov
-status: blocker
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 260929-gov-review-agent-def-alignment 批 landing 时随 T2 落字；下次 dev 包触 spec 文档同步时首次实走新流向
 opened: 2026-09-29
-closed: ""
-closedBy: ""
+closed: 2026-09-29
+closedBy: "260929-gov-review-agent-def-alignment 批 landing（commit d5927e8）随 T2 落字核验在位：scope-map integrator.allow 已去 docs/systems/** 且未增 spec 文件；integrator.md docs-sync 句已含「spec 面漂移 → 交 architect、零自改」；architect.allow / review-moderator.allow 换授两 spec 文件同批落地。按条目自设关闭条件（批 landing 后翻 closed）主线程翻闭；新流向首次实走待下一个触 spec 文档同步的 dev 包。"
 hardExclusions: true
 paths: [.claude/scope-map.json, .claude/agents/integrator.md]
 source: "260929 批 FROZEN 前 human 定稿裁定（AskUserQuestion 原话「这个缺口让 architect 去更新，你记一条 ARQ，这两个都不能有 integrator 更新」，2026-09-29）；背景辩论 = 同批 F3/F5（delivery/changes/arch/260929-gov-review-agent-def-alignment/findings.md）"

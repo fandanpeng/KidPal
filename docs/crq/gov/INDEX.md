@@ -7,18 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 19（待拍板 4 / 待触发 13 / 已接受风险 2）；已结 77（归档索引见下）。
+**摘要**：未结 13（待拍板 0 / 待触发 11 / 已接受风险 2）；已结 83（归档索引见下）。
 
-## 待拍板（4）
+## 待拍板（0）
 
-| ID | 严重度 | title | 处理时机 |
-|---|---|---|---|
-| [ARQ-260929-agent-def-provenance-noise](ARQ-260929-agent-def-provenance-noise.md) | SHOULD | 9 个 agent def 内嵌过程修改记录（changeId / T 号 / 实证案例点名）——每次派发全量进上下文的 token 债与照历史抄近路诱导 | 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-reality-drift、ARQ-260923-planner-roster-reference-drift 同车成批；story-author / requirement-reviewer 为目标形态） |
-| [ARQ-260929-agent-def-reality-drift](ARQ-260929-agent-def-reality-drift.md) | SHOULD | agent def 与 scope-map 文本漂移——docs/systems 旧 spec 路径、builder apps/sX-*/zod 上仓遗留、challenger 影子路径写法、S2/K8 死条文 | 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-provenance-noise、ARQ-260923-planner-roster-reference-drift 同车成批） |
-| [ARQ-260929-competence-anchor-rework-evidence](ARQ-260929-competence-anchor-rework-evidence.md) | SHOULD | 能力透镜锚缺位——acceptance-author 断言可满足性/seam 闭环返工复发 + portfolio-planner 影响面枚举漏扫，def 无专业透镜行 | 260929-gov-review-agent-def-alignment 批 T8（与 ARQ-260929-agent-def-reality-drift / ARQ-260929-agent-def-provenance-noise 同车；human 裁 OQ5 定锚点集） |
-| [ARQ-260929-docs-sync-spec-handoff](ARQ-260929-docs-sync-spec-handoff.md) | SHOULD | docs-sync 对 spec 面写权缺口——human 裁 integrator 对 requirements/architecture 零写权，spec 文本同步交 architect 承接 | 260929-gov-review-agent-def-alignment 批 landing 时随 T2 落字；下次 dev 包触 spec 文档同步时首次实走新流向 |
+_（无）_
 
-## 待触发（13）
+## 待触发（11）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -30,10 +25,8 @@
 | [ARQ-260914-portfolio-reconcile-launchpreconditions](ARQ-260914-portfolio-reconcile-launchpreconditions.md) | SHOULD | M-1 机械齿——`portfolio-reconcile.mjs` 读 workstream `decision-coverage.json` 顶层键 `launchPreconditions`（`需修订` spec 落点的 launch 前置清单），当前 `--check-launch` 不读该键、靠 convention + 人读核验 | 下次动 portfolio-reconcile.mjs / launch 检查面的治理批 |
 | [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | SHOULD | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 下一批 launch 前定夺候选① 文面统一（成本低、且是 M2-K3 与后续所有包的共同前置）；候选②③ 的门策略随下次治理批；若本包 K2 收尾相位出现「未跑 supervisor-gate-check 即欲结束」实况，即升 severity 并触发本条立即处理 |
 | [ARQ-260923-codemem-mode-doc-drift](ARQ-260923-codemem-mode-doc-drift.md) | SHOULD | CodebaseMemory 索引 mode 的文档与实效不符（三处：AGENTS.md:39 / launch-prep SKILL:93 / cli SKILL:42 示例） | 下一治理批（与 ARQ-260922-buildfeature-launch-prep-skip 同族可并批——同动 launch-prep 文面；与 ARQ-260918-spec-face-3page-reconcile 同属「文档与实况对齐」族） |
-| [ARQ-260923-planner-roster-reference-drift](ARQ-260923-planner-roster-reference-drift.md) | SHOULD | planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在 | 下一治理批（一文面小修，可搭任意批） |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
 | [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | SHOULD | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 下次动 /arch-change、triage 统一路由面或 arch-review-protocol 的治理批；或 human 专项批 |
-| [ARQ-260928-devloop-landing-manifest](ARQ-260928-devloop-landing-manifest.md) | SHOULD | dev-loop 无文件级改动面预告与对账——改动面约束只有粗粒度三件套（subsystem 声明路径 + scope-map allow 面 + neverTouch），builder 在 allow 面内摸到声明路径外的文件无牙可拦 | 下次动 taskpackage 格式 / closeout-check / supervisor-gate 闸面的治理批；或攒到一次实测证据（Pod 实际 diff vs 预告面差集）后开批 |
 | [ARQ-260928-landing-summary-skeleton-template](ARQ-260928-landing-summary-skeleton-template.md) | SHOULD | landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮 | 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批） |
 
 ## 已接受风险（2）
@@ -43,10 +36,10 @@
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（77）
+## 已结（83）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 77 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 83 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

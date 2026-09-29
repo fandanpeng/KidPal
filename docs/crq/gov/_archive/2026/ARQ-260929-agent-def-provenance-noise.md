@@ -2,13 +2,13 @@
 id: ARQ-260929-agent-def-provenance-noise
 title: 9 个 agent def 内嵌过程修改记录（changeId / T 号 / 实证案例点名）——每次派发全量进上下文的 token 债与照历史抄近路诱导
 domain: gov
-status: blocker
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-reality-drift、ARQ-260923-planner-roster-reference-drift 同车成批；story-author / requirement-reviewer 为目标形态）
 opened: 2026-09-29
-closed: ""
-closedBy: ""
+closed: 2026-09-29
+closedBy: "260929-gov-review-agent-def-alignment 批 T7 承载本条（PROPOSAL §4 明载承载关系），commit d5927e8 landing。census 复跑 62 → 白名单外零命中：约束句留、溯源注记删；defender.md:47 trim-not-delete（F12 硬条款，must-never 禁令句保留、去括注历史教训）；[MODEL-TIER]/[DISPATCH-STAMP]/[JOURNAL-APPEND]/FS-EVIDENCE 运行时合同段按 PROPOSAL 白名单整段不动；散文型人工清单（review-moderator:12/:104、adjudicator 卡点 D）按 HQ-1 判据逐条销账。planner.md:67 残余两处 changeId 属白名单内运行时合同段。主线程按批闭卷翻 closed。"
 hardExclusions: true
 paths: [.claude/agents/planner.md, .claude/agents/acceptance-author.md, .claude/agents/portfolio-planner.md, .claude/agents/integrator.md, .claude/agents/builder.md, .claude/agents/architect.md, .claude/agents/fixer.md, .claude/agents/review-moderator.md, .claude/agents/architect-reviewer.md, .claude/agents/adjudicator.md, .claude/agents/defender.md]
 source: "主线程 2026-09-29 agent def 全量核查（16 个 def 逐文件人读 + census 机检；prompt-authoring rule Pruning 原则对读）"

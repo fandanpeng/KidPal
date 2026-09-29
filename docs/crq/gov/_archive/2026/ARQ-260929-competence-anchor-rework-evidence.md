@@ -2,13 +2,13 @@
 id: ARQ-260929-competence-anchor-rework-evidence
 title: 能力透镜锚缺位——acceptance-author 断言可满足性/seam 闭环返工复发 + portfolio-planner 影响面枚举漏扫，def 无专业透镜行
 domain: gov
-status: blocker
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 260929-gov-review-agent-def-alignment 批 T8（与 ARQ-260929-agent-def-reality-drift / ARQ-260929-agent-def-provenance-noise 同车；human 裁 OQ5 定锚点集）
 opened: 2026-09-29
-closed: ""
-closedBy: ""
+closed: 2026-09-29
+closedBy: "260929-gov-review-agent-def-alignment 批 landing（commit d5927e8）随 T8 落字核验在位：acceptance-author.md Process 6b「断言设计透镜」（两向可满足性推演 + fixture 自含性 + seam 驱动/消费闭环 + host/真机近似假设显式化）与 portfolio-planner.md Step 2a「影响面机械辅证」（trace_path / get_architecture 交叉验证、禁脑内清单）均已落，Leading Words 一行式、语义引用不复制，与建议改动一致。主线程按批闭卷翻 closed。"
 hardExclusions: true
 paths: [.claude/agents/acceptance-author.md, .claude/agents/portfolio-planner.md]
 source: "主线程 2026-09-29 返工普查（pod-events 全量 57 条 friction + 25 条 escalation 聚合 + verifier-evidence 轮次红数 + pod-retro / delivery/changes/retro/2026-09-23-loop-retro.md 主题对读）"

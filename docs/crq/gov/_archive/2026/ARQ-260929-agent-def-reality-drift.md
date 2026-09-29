@@ -2,13 +2,13 @@
 id: ARQ-260929-agent-def-reality-drift
 title: agent def 与 scope-map 文本漂移——docs/systems 旧 spec 路径、builder apps/sX-*/zod 上仓遗留、challenger 影子路径写法、S2/K8 死条文
 domain: gov
-status: blocker
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（/arch-change 入口；与 ARQ-260929-agent-def-provenance-noise、ARQ-260923-planner-roster-reference-drift 同车成批）
 opened: 2026-09-29
-closed: ""
-closedBy: ""
+closed: 2026-09-29
+closedBy: "260929-gov-review-agent-def-alignment 批 T1–T5 承载本条（PROPOSAL §4 明载），commit d5927e8 landing：T1 docs/systems 旧路径清扫（architect ×3 / review-moderator ×4 / architect-reviewer ×3，F4 地板句保留）；T2 scope-map 写域对齐；T3 builder 包边界表述（zod 句删）；T4 challenger 影子路径统一 docs/contracts/**；T5 S2/K8 死条文全链删除。landing-verifier 六关 GREEN。主线程按批闭卷翻 closed。"
 hardExclusions: true
 paths: [.claude/agents/architect.md, .claude/agents/review-moderator.md, .claude/agents/architect-reviewer.md, .claude/agents/builder.md, .claude/agents/challenger.md, .claude/agents/fixer.md, .claude/agents/integrator.md, .claude/agents/planner.md, .claude/scope-map.json]
 source: "主线程 2026-09-29 agent def 全量核查（16 个 def 逐文件人读 + 机检对账；route-regression-check.mjs 36 ok / lint-descriptions.mjs 1 warn 基线；census 命令与输出见正文证据段）"
