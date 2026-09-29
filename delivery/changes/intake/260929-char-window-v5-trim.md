@@ -52,6 +52,10 @@ openQ:
     question: 真机轮目检五项结果（2026-09-29 human 确认）
     ruling: 四过一缺——无星 ✓ / 四行 ✓ / 圆角框无锯齿 ✓ / 右栏不被压 ✓；**米字黑点线仍不可见**。主线程根因定位 = charpage_blit 全幅逐像素覆写（ink?黑:白）吃掉先画的 canvas 域格点（char_page.cc :580 draw_grid → :584 render_frame→blit 顺序必然擦除；同雷 = PENDING 分支 :291 虚线点链 canvas 直绘同被擦）。修法方向 = 格点/点链挪 rast 1bpp 光栅域、blit 兜底一次成型。**修复已落地（q7 轮，headless 接棒 2026-09-29 晨）**：acceptance-author 先 re-anchor 齿（A4 负向齿 lv_canvas_set_px=0 + 正向齿 rast 引用）→ fixer 最小补丁 charpage_rast_ink helper + draw_grid/PENDING 点链入 rast 域（+35/-17）→ r4 十闸全绿 + host 107/0 → commit 02cb8bf；主线程复烧（全量 app+art Hash verified）+ boot 观测过（0 RE-ENUM / uptime 平滑 / RTC 正常）；真机米字线可见性待 human 再确认
     status: resolved
+  - id: q8-跟着写帽标
+    question: 框内左上「跟着写」黑帽标去留（human 2026-09-29：感觉大字显示位置偏下，帽标可去掉不要）
+    ruling: human 2026-09-29 裁——摘除「跟着写」帽标（V5 对齐批加入项，human 为设计权威、推翻稿面）；主线程核实帽标不物理影响大字位置（独立叠层），「偏下」感若摘后仍在则下一刀 = 字在格内垂直居中调整（映射层，q9 预留）；设计母版 v5 同步随 q3 批。**修复已落地（q8 轮 2026-09-29 晨）**：验收件零齿钉 chip（全量 grep 核证）→ fixer 纯删 char_page.cc 21 行零新增 → host 107/0 零新红 + r5 八闸绿 → commit a730ee3；主线程复烧 boot 观测过（0 RE-ENUM / RTC 08:07 正常）；偏下感是否消解待 human 真机复看（仍在则开 q9）
+    status: resolved
 status: in-flight
 ---
 
