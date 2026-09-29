@@ -68,7 +68,11 @@ openQ:
     question: 查字窗收敛包真机全项销账（human 终确认）
     ruling: human 2026-09-29「可以了 commit」——q7 米字线 ✓ / q8 帽标摘除 ✓ / q9 墨迹域映射（底部不削、顶底对称）✓ + 此前四项（无星/四行/圆角框/右栏不被压）✓，真机轮全项过；closeout 真机销账成立；fixer 升级建议（映射语义补 guard 齿）human 未置评，留后续包通道不入本包
     status: resolved
-status: in-flight
+  - id: q11-合并门处置
+    question: 合并门 tier3（requirements.md 并行重叠消解）三条路如何走
+    ruling: human 2026-09-29 裁「③ 暂缓」——不合并、不消解；包状态全部落盘可随时续；重开时从 planner 退出报告三选项（① architect 消解评审 / ② human 拍板并集 / ③ 暂缓）起案
+    status: resolved
+status: awaiting-human:merge-gate
 ---
 
 # spine · 260929-char-window-v5-trim
