@@ -245,5 +245,13 @@
   "260929-gov-review-agent-def-alignment": {
     "date": "2026-09-29",
     "mergedInMain": "yes"
+  },
+  "260929-gov-review-req-loop-ui-author": {
+    "date": "2026-09-29",
+    "mergedInMain": "yes"
+  },
+  "260929-gov-review-ui-ladder-remap": {
+    "date": "2026-09-29",
+    "mergedInMain": "yes"
   }
 }
