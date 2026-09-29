@@ -40,6 +40,7 @@ changes:
 3. **human 两判断点**：① 过目切法（门 1 GREEN 后）；② 人类契约门裁 CCP Human Question（K1 launch 硬前置）。
 4. **commit-before-launch + launch prep**：常驻分支同步 main → 拆包产物 commit → `base/m4-star-notebook` ref → kidpal-pod-launch-prep（check-launch / launch-card / 图索引 / 环境等价化）。K1 先行（依赖图 K1→K2→K3 串行，单常驻树接力棒形态，M3 先例）。
 5. **执行与收口**：各包 dev-loop 闭环 → K3 live 真机轮一次性收口（含 K1/K2 live 半 deferred 复证）→ integrator 收口填 closed → 归档。
+6. **重拆**（2026-09-29，human 指示「M4 只开发 K1，剩下的按新定义的拆包规则重新拆包、覆盖」）：K1 维持不动（已 merged 本地 main，merge-completed e12a8b94）；剩余 K2/K3 按 260928/260929 拆包新规覆盖重写——切法维持两包边界（09-24 门 1 + human 三包切法维持，尺寸维四判据复核通过：story_page.{c,h} 文件面 K2 独占、fixBudget=2 验证预算内、N=2 无并行度争议），制品形态翻新（acceptance 空骨架化→acceptance-author 唯一写点 / plan.md 五件骨架收窄 / 拆包侧 brief 撤回→Pod planner Step 7 自产 / changeManifest 粗填（1g 档精化）/ K2 uiux L2 纯消费挂图 docs/ui/V5 P3 五面 PNG / sourceRefs 补 S-Fx.y-ACn 复合句法）；defer 包 260928-story-connect-push-defer 后果吸收（①建连即推摘除→恢复语义重裁落 K3；C4 arch 收口半随 K3 docs-sync）。门 1 重审 + human 重过目切法 → 重拆批 commit → K2/K3 依序 launch。cutoff 诚实注记：目录 git 首提 09-24 < 09-28 机器齿 cutoff，两包机器放行、制品自觉按 post-cutoff 全量合规（DC _doc 重拆记录⑧）。
 
 ## 决策（拆包级取舍点，human 判断点材料）
 

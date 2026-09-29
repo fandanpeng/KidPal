@@ -1,7 +1,7 @@
 # 阶段四·星星记录本（P3 四态 + F2 改名对账）（M4-star-notebook）· roadmap
 
 > workstream：`m4-star-notebook` ｜ 设计权威 = `docs/requirements.md` F2 节现文（S-F2.1~S-F2.4 + WF-F2-01~05 + F2 intro 改名对账块 v1.33）+ §2.1 记录会话段 + §2.3 手势全矩阵（P3 五行 + 消歧 dev 注记）+ §2.4 P3 行 + §6 阶段四 + NFR-READ-1（story 语义权威恒为 requirements 现文）｜ 里程碑注册表行 = `delivery/milestones/milestones.jsonl` M4-star-notebook（state=planning）｜ 本件 ② 节由 `render-roadmap.mjs` 机械渲染、人工禁改；包集与达成状态权威 = board + `delivery/taskpackages/<changeId>/taskpackage.json`。
-> 拆包输入 = 里程碑注册表 M4-star-notebook nextAction 两块（无 PROPOSAL 输入，`sourceType=delivery-story`）。契约触点三处（E1 §1.3③ story_list total 语义拆分与行为句改写 + §1.3④ story_text seq 承载与朗读句清理 + 删除载体新增【拟 §四 `kidpal_story_delete`】）合一走 architect-reviewer 四分类 + 人类契约门，随 K1 同 PR（launchPreconditions LP1）；`kidpal_session_ctx`（§四）契约已 LANDED（CDQ-260914）零改动、只落双端实现。
+> 拆包输入 = 里程碑注册表 M4-star-notebook nextAction 两块（无 PROPOSAL 输入，`sourceType=delivery-story`）。**重拆（2026-09-29，human 指示）**：K1 已 merged 本地 main（含契约三触点落地批 + 止血包 260928-story-connect-push-defer 摘除建连即推）；剩余 K2/K3 按 260928/260929 拆包新规覆盖重写——切法维持两包边界（尺寸维四判据复核过），制品形态翻新（acceptance 空骨架 / plan 五件骨架 / brief 撤回 / changeManifest / K2 uiux L2 挂图），defer 包「①建连即推摘除→恢复重裁」后果吸收进 K3。契约触点三处（E1 §1.3③ story_list total 语义拆分与行为句改写 + §1.3④ story_text seq 承载与朗读句清理 + 删除载体新增【拟 §四 `kidpal_story_delete`】）合一走 architect-reviewer 四分类 + 人类契约门，随 K1 同 PR（launchPreconditions LP1）；`kidpal_session_ctx`（§四）契约已 LANDED（CDQ-260914）零改动、只落双端实现。
 
 ## ① 效果目标投影
 
@@ -19,7 +19,7 @@
 ## ② 列车图（依赖 + 批次）
 
 <!-- render-roadmap:begin -->
-<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m4-star-notebook，渲染时刻 2026-09-24T15:10:27.137Z）。
+<!-- 本区块由 .claude/scripts/render-roadmap.mjs 机械渲染（workstream=m4-star-notebook，渲染时刻 2026-09-29T12:10:18.187Z）。
      人工禁改；渲染源唯一 = board + taskpackage JSON。全量重算、幂等。 -->
 <!-- 编号读法：<WS>-<K|N><波次><并行字母?>（如 M1-K2a）——K=承重（被下游依赖或主干终点）、N=游离（无人等待的侧线）；
      波次=依赖深度+1（跨 workstream 外部前置不占波次）；同波次字母=并行占位序、非合并序。编号随依赖重渲染自动重算，确切依赖边以本图为准。 -->
@@ -27,10 +27,10 @@
 graph LR
   260924_m4_k1_story_cloud_link["M4-K1a｜260924-m4-k1-story-cloud-link (mo38)"]
   class 260924_m4_k1_story_cloud_link achieved
-  260924_m4_k1_story_cloud_link["M4-K1b｜260924-m4-k1-story-cloud-link (mo38)"]
-  class 260924_m4_k1_story_cloud_link achieved
   260924_m4_k2_p3_star_notebook_ui["M4-K2｜260924-m4-k2-p3-star-notebook-ui (mo39)"]
   260924_m4_k3_record_session_live["M4-K3｜260924-m4-k3-record-session-live (mo40)"]
+  260928_story_connect_push_defer["M4-N1b｜260928-story-connect-push-defer (mo41)"]
+  class 260928_story_connect_push_defer achieved
   260924_m4_k1_story_cloud_link --> 260924_m4_k2_p3_star_notebook_ui
   260924_m4_k1_story_cloud_link --> 260924_m4_k3_record_session_live
   260924_m4_k2_p3_star_notebook_ui --> 260924_m4_k3_record_session_live
@@ -41,9 +41,9 @@ graph LR
 | 编号 | changeId | mergeOrder | 达成状态 | deviation 裁定锚 |
 |---|---|---|---|---|
 | M4-K1a | 260924-m4-k1-story-cloud-link | 38 | achieved | — |
-| M4-K1b | 260924-m4-k1-story-cloud-link | 38 | achieved | — |
 | M4-K2 | 260924-m4-k2-p3-star-notebook-ui | 39 | pending（board: queued） | — |
 | M4-K3 | 260924-m4-k3-record-session-live | 40 | pending（board: queued） | — |
+| M4-N1b | 260928-story-connect-push-defer | 41 | achieved | — |
 <!-- render-roadmap:end -->
 
 ## ③ 每包条目
@@ -54,7 +54,7 @@ graph LR
 - **完成后人能看到什么**：云端成为星星记录本的数据权威——设备一连上网、每存一篇、每删一篇，P3 列表数据都被推到位（「翻到即见列表」从此有源头）；在 P3 按 KEY 开的会话云端立刻知道是「记录语境」（session_ctx 拦截切累积态、不当问答逐句回）；说「我说完了」或静默 120 秒，云端自动收尾归档、起好标题、带着只增不减的入册流水号 seq 发回设备；删除在云端真删（MD 落盘文件移除、流水号账本不回退）并即时重推列表对账。契约面同批收口：story_list 计数语义拆分、story_text 增 seq、删除载体 kidpal_story_delete 三触点经人类契约门随本包同 PR 落地。这是 K2 板端展示面与 K3 记录会话链路共同的地基。
 - **回指**：`S-F2.1 · 看「星星记录本」列表`（AC1 数据源半 + AC4 云端同步半）+ `S-F2.2 · 开录（双入口）`（AC1–AC2 云端累积/收尾半）+ `S-F2.4 · 星星保存成就盖章`（AC2 流水号账本半）+ arch §5.2 场景④ / §5.4
 - **demo 证据形态**：python -m pytest server/acceptance/ offline 齿（拦截/推送/删除/收尾/超时/账本模拟）+ 契约门 evidence 制品（十节骨架）；live 全链复证 deferred 归 K3 设备轮
-- **达成状态**：pending
+- **达成状态**：merged（mergedInMain 2026-09-29 账面回写；e12a8b94 人合 Step 5b 收口 + 契约三触点随落地批进现文；建连即推时点后经止血包摘除、①恢复重裁归 K3）
 
 ### 260924-m4-k2-p3-star-notebook-ui
 
@@ -62,7 +62,7 @@ graph LR
 - **完成后人能看到什么**：P3 整页焕然一新且中文真正可见（story_page CJK 字体接线修复）：列表 = 星星图标+标题+日期、选中带边框、右上 ×N 计数、分屏指示、页名「我的故事」消失、提示条双指令；BOOT 手势全家就位（短按下移/屏底翻屏/双击跳屏/长按删除——300ms 消歧仅列表态、永不离页）；删除确认整屏覆盖弹窗（KEY 删掉/BOOT 算了/10 秒静默取消）确认后条目消失计数 −1；KEY 双击进阅读态（正文分屏排版达标、BOOT 翻屏 wrap、KEY 长按退回列表、短按装死）；盖章演出文案改「星星徽章·第 N 颗已入册！」、N 来自云端 seq、0.8 秒定格真的定格。
 - **回指**：`S-F2.1 · 看「星星记录本」列表`（AC1–AC4 板端半）+ `S-F2.3 · 回看记录`（AC1–AC2）+ `S-F2.4 · 星星保存成就盖章`（AC1–AC2 演出半）+ F2 intro 对账块四项 + §2.3 矩阵 P3 三行
 - **demo 证据形态**：host runner（WSL linux target）渲染/输入/覆盖层齿 + device build 闸；真机 1bpp 目测 + 手势手感 deferred 归 K3 设备轮
-- **达成状态**：pending
+- **达成状态**：pending（board: queued）——2026-09-29 按新拆包规覆盖重拆：acceptance 空骨架（Pod 内 acceptance-author 唯一写点）、plan.md 五件骨架、uiux L2 纯消费挂图（designRefs = docs/ui/V5/ P3 五面 PNG）、changeManifest 粗填；launch 前过 UI-ready 前置（LP7）
 
 ### 260924-m4-k3-record-session-live
 
@@ -70,7 +70,7 @@ graph LR
 - **完成后人能看到什么**：记录会话全链活起来——孩子在 P3 按一下 KEY 就见「需要我帮你记点什么？」、开口即录（REC 闪点+大时长+声波跳动、说的话整段累积回显、AI 闭嘴不插话）；说「我说完了」/再按 KEY/静默 120 秒三种方式都能收尾，保存瞬间星星徽章盖章、回列表新星+1；任意页说「我要讲故事」或「帮我记下来」（prompt v7 新指令）同样开录；按 BOOT 丢弃则内容真的消失。真机确认轮一次性看全：双入口、累积回显、收尾三式、盖章 seq、删除云同步、重启流水号不回退——阶段四的最终目击。
 - **回指**：`S-F2.2 · 开录（双入口）`（AC1–AC4 板端与跨端半）+ `S-F2.1 · 看「星星记录本」列表`（live 复证）+ `S-F2.3 · 回看记录`（live 复证）+ `S-F2.4 · 星星保存成就盖章`（live 复证）+ arch §5.2 场景④（live 实证态）
 - **demo 证据形态**：host 齿（session_ctx 发送缝/手势表/回显消费）+ prompt v7 版本化 offline 断言 + human 持板真机确认轮（串口 + front/引擎日志三源关联取证，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）
-- **达成状态**：pending
+- **达成状态**：pending（board: queued）——2026-09-29 按新拆包规覆盖重拆（形态同 K2）；**重拆增补承载面**：defer 包 260928-story-connect-push-defer 摘除 K1 建连即推（现役推送两时点），①恢复语义归本包重裁（候选缝 = 引导态会话建立同拍）+ defer 遗留「真机复验设备侧停弹页面」随设备轮目击 + K1 遗留 C4 arch 收口半随本包 docs-sync 落地
 
 ## ④ 非目标与批次归属
 
