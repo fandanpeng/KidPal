@@ -234,8 +234,8 @@
     {
       "text": "LP3 commit-before-launch（F-03/F-05）：重拆批制品（两包 taskpackage/plan + DC 重拆记录 + roadmap 重渲染 + brief 撤回）commit 到常驻分支（base/m4-star-notebook ref 续用或重拆批后新打，随 launch prep 定）后回写 verified。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "重拆批 commit d2b331c（2026-09-29，门1 GREEN + human 过目后落）；base/m4-star-notebook tag 推进至 LP3 回写 commit（K2/K3 Pod launch 基线）"
     },
     {
       "text": "LP4 K3 真机硬依赖：K3 launch 前核对单真机不撞车 + live 确认轮 human 在场持板（三源取证纪律）；K1/K2 host 半 merged 在案。",
