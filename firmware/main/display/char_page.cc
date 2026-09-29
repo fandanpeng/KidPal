@@ -605,27 +605,6 @@ void kidpal_char_page_show(const char *data_json)
     /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
     charpage_art_overlay();
 
-    /* V5 对齐 (ui-v5-align §2 查字窗行 2, 2026-09-26 批): 框内左上「跟着写」黑帽标
-     * （设计稿黑底白字帽标; 无烘焙资产 -> 程序化黑底圆角 + 白字, 同提醒「记得哦」
-     * 气泡先例; 资产化归后续资产轮）。后建于框位图 -> z 序在上不被遮。 */
-    {
-        lv_obj_t *chip = lv_obj_create(g_page.panel);
-        lv_obj_remove_style_all(chip);
-        lv_obj_set_size(chip, LV_SIZE_CONTENT, 20);
-        lv_obj_set_style_bg_color(chip, lv_color_black(), 0);
-        lv_obj_set_style_bg_opa(chip, LV_OPA_COVER, 0);
-        lv_obj_set_style_radius(chip, 4, 0);
-        lv_obj_set_style_pad_hor(chip, 8, 0);
-        lv_obj_set_style_pad_ver(chip, 2, 0);
-        lv_obj_set_pos(chip, 10, 12);
-        lv_obj_clear_flag(chip, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_t *chip_lbl = lv_label_create(chip);
-        lv_label_set_text(chip_lbl, "跟着写");
-        lv_obj_set_style_text_color(chip_lbl, lv_color_white(), 0);
-        lv_obj_set_style_text_font(chip_lbl, &font_puhui_14_1, 0);
-        lv_obj_center(chip_lbl);
-    }
-
     /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 释义 (数据面委托
      * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
     {
