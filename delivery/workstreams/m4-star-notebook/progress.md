@@ -167,3 +167,12 @@
 - **board 预填**：260924-m4-k3-record-session-live → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
 - **启动卡**：已落 `delivery/taskpackages/260924-m4-k3-record-session-live/launch-card.md`（五要素齐 + intake 特别注意七条：时点①重裁必答题 / K2 冻结面零偏移 / prompt v7 版本化演进 / 板端零新增计时器 / KEY 长按语义反转负锚 / 拆包 brief 撤回 / LP4 live 轮 human 在场）。
 - **遗留 human 项**：① milestones.jsonl M4 行 state 收口时点沿 K1/K2 遗留同批裁量；② perf-k1 树来历待核（沿 K2 prep 遗留）；③ live 确认轮真机时点由 human 裁量（单真机不撞车核对归设备轮前）。
+
+## 2026-09-30 · K3 合并 + 部署 + 真机初测处置（planner 代记；human 指令「立马执行烧录和部署」授权，pod-events 260b1f48）
+
+- **合并**：supervisor 机械闸 ESCALATE（high riskTier 必升面）→ human 批（91bb853b 五要素凭据）→ 升级闸两拦两解（①人批事件 actor 归属修正 ②review-packet :95 否定句与契约字面同行共现触 T5 扫描假阳性——gate-tooling-bug 第三例 e3395f1a，措辞修正 69be42d 解除）→ merge-driver 本地合并 `ae480ec`，main tip `4cb77a8`。M4K3-DC-1（P3 冷浏览无列表数据源）human 裁接受 dropped。
+- **根因判定（真机初测两问题）**：human 初测「我要讲故事只有录音波浪 / 录完 P3 无故事」= **K1/K2/K3 三包零烧录零部署**（板子跑 M3 期旧固件、ECS 服务旧代码），非新代码缺陷；live 轮照 LP4 顺延。
+- **烧录**：全量 flash（bootloader/partition/ota_data/app@0x20000/art@0x780000/generated_assets@0x800000，NVS 不擦），bin = 136T0F 构建产物（3,215,584 B）；启动观测零 RE-ENUM + kidpal render home 正常。
+- **ECS 部署**：front_app.py（ctx 条件推送）+ apply-xiaozhi-overlay.sh + prompt v8 + provider.config.yaml 四件 SFTP（md5 逐件核对一致，远端备份 .bak-260930-m4k3-deploy）；overlay 重渲（v8 prompt 注入 .config.yaml，「帮我记下来」双指令在文）；kidpal-front 重启 active + 0.0.0.0:8000 在听；引擎容器重启后设备 23:31 重连、display-strip 补丁标记在役。
+- **部署面摩擦留根**：MSYS 路径转换把首传四件改写进远端伪路径（MSYS_NO_PATHCONV=1 重传解除，误写面已清）；c:/tmp 写入被 enforce-scope 拦（改用现成 ssh_put/ecs_put 工具链，未新写脚本）；SFTP 子系统路径受限（ecs_put base64-over-exec 既有解）。
+- **live 轮重点目击项（部署后新增一条）**：触发词入口（非 P3 页说「我要讲故事」）的记录语境置位/演出切页与 P3 KEY 入口不同源——host 齿为纯逻辑决策表、真机沿未目击，初测复验时重点看。
