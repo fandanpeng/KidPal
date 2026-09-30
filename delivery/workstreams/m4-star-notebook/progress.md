@@ -154,3 +154,16 @@
 - **commit 冻结批**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：实现 16 tracked 文件（+1635/−513）+ 新齿 2 件 + closeout 两件 + gate evidence C2/C3 + pod 簿记面（taskpackage.json / pod-events.jsonl / verifier-evidence r1–r4 / verify-runs.jsonl / test-scope 清单 / mutation .md / 双 brief）+ current/ 投影四件 + dev INDEX + 本 progress 节。
 - **遗留**：① spec 批七 hunk 待 human 逐字过目落地（合并后，ARQ-260918 剩余处可同批）；② milestones M4 行 state 沿 K1 遗留同批裁量；③ 真机目测半 + 手感 + wire 真发 + 时点①重裁归 K3 设备轮；④ 代存 mutation .md 投影陈旧（Findings #1，planner 择机同步）。
 - **等待 supervisor 机械合并门**：integrator 不 push、不 merge；supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并。
+
+## 2026-09-30 · K3 launch prep（主线程 skill：kidpal-pod-launch-prep；launch 由 human 指令代跑）
+
+- **调度判定**：本批 = K3 单包接力棒——dependsOn K1+K2 均 merged（K2 2026-09-30T00:36 入 main，merge commit ddf2492）；mergeOrder 40 升序合法；WIP 余量足；依赖图说了算不硬凑并行。
+- **机械门**：`portfolio-reconcile --check-launch` ok:true / blocking 空 / warn 空（base ref = `base/m4-star-notebook`）；`settings-lint.mjs` 3 files / 0 RED / 0 WARN。launchPreconditions 4 verified / 1 pending（LP4 = 真机不撞车 + live 轮 human 在场持板——live 确认轮前置项，设备轮前核对，不阻 host/实现相位）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K2 merged → 续跑零复位）；发现常驻分支与 main 分叉（两侧各 1 笔 K2 后簿记 commit，均为 pod-events.jsonl 单行追加）→ rebase main 同步（2c7343a = main ddd3875 + 簿记 1 笔，rebase 干净无冲突）；tracked 净 + untracked 零残留；managed_components 软链在位 + host build 热缓存保住（ninja no work to do）。
+- **双面基线锚**：
+  - server 面：**引用既有锚**——launch 批至 HEAD 对 `server/` 零差异（`git diff --quiet 5575a23 HEAD -- server` 实测），引 K2 prep 锚行：117 passed / 0 failed / 4 deselected（server/acceptance；全套 offline 193P 同日佐证）@ 5575a23，面域 = server，命令见 K2 prep 锚行。零红。
+  - firmware host 面：重锚实测——`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **128 Tests / 0 Failures / 0 Ignored，exit 0**（2026-09-30，本树 HEAD 2c7343a 实测；面域 = firmware；与 K2 final r4 128T0F 一致 = K2 merged 后零偏移）。零红。旧锚 107T0F @ 5575a23 因 K2 新齿 21 入账作废。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新（18414 节点 / 50277 边，含 K2 增量；skipped 0；parse_partial 104 = 既有 best-effort 信号非新增）。
+- **board 预填**：260924-m4-k3-record-session-live → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/260924-m4-k3-record-session-live/launch-card.md`（五要素齐 + intake 特别注意七条：时点①重裁必答题 / K2 冻结面零偏移 / prompt v7 版本化演进 / 板端零新增计时器 / KEY 长按语义反转负锚 / 拆包 brief 撤回 / LP4 live 轮 human 在场）。
+- **遗留 human 项**：① milestones.jsonl M4 行 state 收口时点沿 K1/K2 遗留同批裁量；② perf-k1 树来历待核（沿 K2 prep 遗留）；③ live 确认轮真机时点由 human 裁量（单真机不撞车核对归设备轮前）。
