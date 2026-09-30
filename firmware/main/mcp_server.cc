@@ -244,6 +244,17 @@ bool StoryDispatchAct(int act) {
                 /* 记录语境会话语义位（S-F2.2 双入口; K3 会话动作接线消费位——本包
                  * 只钉页内缝, 消费即返回、绝不落回全局 SESSION_TOGGLE）。 */
                 ESP_LOGI(TAG, "story_key rec_session_slot page=%d", g_story_view.page);
+                /* K3 [S6]/[S2]: 会话发起接线——置记录语境标志（引导气泡覆写 / 开口
+                 * 切录音态 / stt 旁路喂入的消费门; 清位 = 会话收尾 Idle 分支）+
+                 * 回显区清零（防上一轮话语串味）+ 推语音层前台（GLOBAL_ACT_SESSION_
+                 * TOGGLE 先例, Schedule 内层操作）+ manual 聆听入口（-> Listening
+                 * 分支 -> kidpal_session_ctx 发送点; 双入口 KEY 半汇入）。 */
+                kidpal_story_session_ctx_set(1);
+                kidpal_story_echo_reset();
+                Application::GetInstance().Schedule([]() {
+                    kidpal_render_node_show_chat();
+                });
+                Application::GetInstance().StartListening();
             }
             return true;
         case KSPV2_ACT_DELETE_ENTER:
@@ -308,19 +319,32 @@ bool StoryDispatchAct(int act) {
         case KSPV2_ACT_SCREEN_JUMP:
         case KSPV2_ACT_PAGE_TURN:
         case KSPV2_ACT_READER_EXIT:
-        case KSPV2_ACT_STOP_RECORD:
-        case KSPV2_ACT_DISCARD_RECORD:
             /* 本地导航/子态动作: 页态变更已由输入函数就地完成——双通道本地路径
-             * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。
-             * STOP_RECORD / DISCARD_RECORD 的演出 tick timer 在下个回调发现已非
-             * RECORDING -> 自删。 */
-            if (act == KSPV2_ACT_STOP_RECORD) {
-                ESP_LOGI(TAG, "story_key stop_rec archive_pend=%d",
-                         g_story_view.archive_pend);
-            } else if (act == KSPV2_ACT_DISCARD_RECORD) {
-                ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
-                         g_story_view.cancel_count);
-            }
+             * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。 */
+            ScheduleStoryRender();
+            return true;
+        case KSPV2_ACT_STOP_RECORD:
+            /* K3 [S5]: KEY 兜底收尾（短按 & 长按同义, v1.47 防毁稿）= 收尾保存——
+             * 调 Application StopListening 面（MAIN_EVENT_STOP_LISTENING ->
+             * SendStopListening + Idle; front _story_stop_on_listen_stop 消费
+             * listen/state=stop 上行触发 stop 归档 + story_text/story_list 下发）。
+             * 负锚（notes (e), 两条 front 路径不混的板端根）: 严禁走会话 toggle/
+             * 断连路径——toggle 的 Listening 分支直接关通道不发 listen stop ->
+             * front 走 ws_disconnect cancel 丢弃路径而非归档 = 毁稿。 */
+            ESP_LOGI(TAG, "story_key stop_rec archive_pend=%d",
+                     g_story_view.archive_pend);
+            Application::GetInstance().StopListening();
+            ScheduleStoryRender();
+            return true;
+        case KSPV2_ACT_DISCARD_RECORD:
+            /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）——关通道
+             * 即达 front 断开钩子 acc.cancel(session_id, reason="ws_disconnect")
+             * （弹缓冲不落盘）。负锚: 严禁走收尾保存面（listen stop 上行会触发
+             * front stop 归档 = 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=
+             * 丢弃」已退役）。 */
+            ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
+                     g_story_view.cancel_count);
+            Application::GetInstance().CloseAudioChannel();
             ScheduleStoryRender();
             return true;
         case KSPV2_ACT_NONE:
@@ -333,6 +357,24 @@ bool StoryDispatchAct(int act) {
     }
 }
 }  // namespace
+
+/* -------------------------------------------------------------------------- *
+ * K3 (260924-m4-k3-record-session-live): VAD 沿切录音态的视图动作桥。
+ * application.cc 主循环消费 kidpal_story_recording_enter 决策出参（==1）后经此桥
+ * 执行视图半——复用 control/start_recording 冻结消费语义（kidpal_story_on_control
+ * 幂等: 非 RECORDING 才切页; 已在录音态重入 = no-op + 录音态渲染 + 演出 tick）。
+ * 不进 mcp_server.h 公共头（冻结面零改动, 消费方 extern 声明; 变更清单不含该头,
+ * 免扩公共面）。主线程串行消费现实与 g_story_* 既有约定一致。
+ * ------------------------------------------------------------------------ */
+void KidpalStoryVadEnterRecording() {
+    int consumed = kidpal_story_on_control(&g_story_view, VRT_CTRL_START_RECORDING);
+    ESP_LOGI(TAG, "story_vad_recording_enter consumed=%d page=%d",
+             consumed, g_story_view.page);
+    if (consumed == 1) {
+        ScheduleStoryRender();
+        StartStoryRecTimer();
+    }
+}
 
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
  * 取不到/非字符串 -> 空串 (调用方按降级或空内容处理, 不崩)。 */
@@ -997,15 +1039,31 @@ void McpServer::AddCommonTools() {
                     ESP_LOGI(TAG, "story_list_dispatch corr_id=%s items=%d counter=%d degrade=false",
                              corr_id, items_n, kidpal_story_counter(parsed.get()));
                     {
-                        kidpal_story_view_t view_snapshot = g_story_view;   /* 108B，留栈 */
-                        /* 列表快照 2824B 上堆后按 shared_ptr 捕获（闭包可拷贝）。 */
-                        auto list_snapshot = std::make_shared<kidpal_story_list_t>(g_story_list);
-                        app.Schedule([view_snapshot, list_snapshot]() {
-                            kidpal_render_node_begin_page();
-                            kidpal_story_page_render(&view_snapshot, list_snapshot.get(),
-                                                     &g_story_text);
-                            kidpal_render_node_end_page();
-                        });
+                        /* K3 [S4]: story_list 推送 gating（defer 包 260928-story-connect-
+                         * push-defer ①恢复重裁板端消费半, plan T5）——记录语境前台
+                         * （VOICE 层 = 引导态/录音态/问答会话, 或视图已入录音态）只装
+                         * 缓存绝不推前台（防 story_list 帧盖掉引导/录音演出, defer 真机
+                         * 缺陷形态的板端防护半）; 其余页态照旧推前台（K2 消费面零偏移
+                         * 红线: LIST 冷浏览/READER/STAMP/DELETE 渲染不变）。 */
+                        int story_voice_front =
+                            (kidpal_render_node_front_layer() == KIDPAL_LAYER_VOICE) ? 1 : 0;
+                        if (kidpal_story_list_gate(story_voice_front,
+                                                   g_story_view.page) == 0) {
+                            kidpal_story_view_t view_snapshot = g_story_view;   /* 108B，留栈 */
+                            /* 列表快照 2824B 上堆后按 shared_ptr 捕获（闭包可拷贝）。 */
+                            auto list_snapshot = std::make_shared<kidpal_story_list_t>(g_story_list);
+                            app.Schedule([view_snapshot, list_snapshot]() {
+                                kidpal_render_node_begin_page();
+                                kidpal_story_page_render(&view_snapshot, list_snapshot.get(),
+                                                         &g_story_text);
+                                kidpal_render_node_end_page();
+                            });
+                        } else {
+                            /* gated: 缓存已在上方 g_story_list 装载, 前台不动（页态/
+                             * 层值零触碰——下次前台回落时以最新缓存渲染）。 */
+                            ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d",
+                                     g_story_view.page, story_voice_front);
+                        }
                     }
                     break;
                 }

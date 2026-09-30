@@ -7,6 +7,7 @@
 #include "voice_round.h"
 #include "art_assets.h"
 #include "kidpal_render_node.h"
+#include "story_page.h" /* K3: 记录语境引导气泡单源 kidpal_story_guide_bubble（apply_look 覆写缝） */
 #include "reminder_page.h" /* 提醒弹窗消费面 (K4): 时间行单源 kidpal_reminder_hhmm + 载荷形状 */
 #include "key_gesture_parser.h"
 #include "keybar.h"
@@ -1451,6 +1452,18 @@ static void kidpal_voice_apply_look(int scene)
     /* 五态内容选择单源 (weak 哨兵被强符号覆盖后为真实映射)。 */
     if (kidpal_voice_state_look(scene, &look) != 0 || look.keycap == NULL) {
         return;
+    }
+
+    /* K3 [S2]/[S6]: 记录语境引导态气泡覆写缝——LISTEN 场景 + 记录语境标志在位时,
+     * 本次 look 的 bubble 换取 story 冻结单源（kidpal_story_guide_bubble = AC1
+     * 逐字唯一文案来源; 写点单源纪律不变, 标头仍经 look.bubble 写点落; M1 冻结
+     * 映射 kidpal_voice_states 零触碰, 不落第二写点文案）。非记录语境 / 非 LISTEN
+     * 场景照旧走闭集原值。 */
+    if (scene == KVST_SCENE_LISTEN && kidpal_story_session_ctx_active()) {
+        const char* guide = kidpal_story_guide_bubble();
+        if (guide != NULL) {
+            look.bubble = guide;
+        }
     }
 
     /* 演出活跃期: 姿态顶替笑脸位 (chrome 中部显隐纪律, RP-A5 r2)。 */

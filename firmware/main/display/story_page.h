@@ -239,6 +239,50 @@ int kidpal_story_delete_reconcile_hit(const char *pending_id,
  * ——正文照常入阅读态）; 非负整数 -> 值。 */
 int kidpal_story_text_seq(const char *data_json);
 
+/* ---- ⑮ K3 冻结缝追加（TaskPackage 260924-m4-k3-record-session-live; additive
+ * 尾部追加, 冻结纪律只增不改/移。seam contract [S1]-[S4] 权威 =
+ * firmware/main/test/record_session_live.acceptance.c 文件头） ---- */
+
+/* 回显区容量（seam [S3] 冻结值 4; 行数机理恒 FIFO 滚出, 行高视觉拟合归真机轮）。
+ * record_session_live.acceptance.c 以 RSL_ECHO_MAX_LINES=4 字面镜像断言, 两处
+ * 不一致 = 行为齿红即实现偏移。 */
+#define KSTORY_ECHO_MAX_LINES 4
+
+/* [S1] source_page 映射单点（契约 §四闭集 story/schedule/home 一次做全）: KP_PAGE_*
+ * 数值镜像（M2K2-A2 冻结等值: HOME=0/SCHEDULE=1/STORY=2）; 越界/未知 -> "home"
+ * （闭集缺省兜底, 绝不外溢第四取值）。返回静态串字面指针, 永不 NULL。 */
+const char *kidpal_story_ctx_source_page(int page);
+
+/* [S2] 引导态纯逻辑二缝: 气泡逐字单源（S-F2.2-AC1「需要我帮你记点什么？」; lcd
+ * 覆写缝消费此单源, 文案不落 M1 冻结映射不双写）。 */
+const char *kidpal_story_guide_bubble(void);
+/* 开口切录音态决策（notes ⑨ UTT_START 事件沿的纯逻辑承载）: ctx_active != 0 &&
+ * page == KSTORY_PAGE_LIST && speaking != 0 -> 1（调用方把 story 页切
+ * KSTORY_PAGE_RECORDING）; 其余 -> 0（幂等/非记录语境/阅读态/越界全不切）。 */
+int kidpal_story_recording_enter(int page, int ctx_active, int speaking);
+
+/* [S3] story 录音态话语回显纯逻辑缝（参照 voice_round.c kidpal_voice_echo_* 行数
+ * 模型; 与 kidpal_voice_echo_* 零共享态、零重命名）: reset 清零返回 0; push 逐句
+ * 入列满容量挤最旧（FIFO）返回当前句数, NULL/空串/全空白 -> -1; count 当前句数;
+ * line idx 0 = 最旧, 越界/out NULL -> -1, 命中 -> 0 且 *out 指向该句。 */
+int kidpal_story_echo_reset(void);
+int kidpal_story_echo_push(const char *text);
+int kidpal_story_echo_count(void);
+int kidpal_story_echo_line(int idx, const char **out);
+
+/* [S4] story_list 推送 gating 纯逻辑（defer ①恢复重裁板端消费半）: voice_front != 0
+ * （VOICE 层前台——引导态/录音态/问答会话）|| page_state == KSTORY_PAGE_RECORDING
+ * -> 1（仅装 g_story_* 缓存, 绝不 begin_page 推前台）; 其余 -> 0（推前台, K2 消费面
+ * 零偏移——LIST 冷浏览/READER/STAMP/DELETE 照旧渲染）。 */
+int kidpal_story_list_gate(int voice_front, int page_state);
+
+/* 记录语境标志（builder 侧消费门; 冻结齿不钉标志本体——验收盲区申报③: 置位/
+ * 清位时机 = 实现细节, 可观测后果由 guide_bubble 消费链 + recording_enter 决策表
+ * + stt 旁路喂入承载）。置位单点 = mcp_server REC_SESSION 消费位; 清位 = 会话收尾
+ * （Application Idle 分支）。 */
+int kidpal_story_session_ctx_active(void);
+void kidpal_story_session_ctx_set(int active);
+
 #ifdef __cplusplus
 }
 #endif

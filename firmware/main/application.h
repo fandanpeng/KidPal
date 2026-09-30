@@ -112,6 +112,11 @@ public:
      * TaskPackage 260924-m4-k2-p3-star-notebook-ui 发送原语四件套之二）。id 闭集
      * 纪律由调用方（mcp_server 确认路径）承接: 只发 story_list items 下发过的 id。 */
     void SendKidpalStoryDelete(const char* id);
+    /* K3 (260924-m4-k3-record-session-live) [S5]: 录音态丢弃（BOOT 任一手势）断连面
+     * ——直接关音频通道即达 front 断开钩子 acc.cancel（弹缓冲不落盘, 不发 listen
+     * stop）。语义单点直连 protocol, 不经 toggle 状态机（STOP 收尾保存面走
+     * StopListening, 两路径不混——notes (e)）。 */
+    void CloseAudioChannel();
     void SetAecMode(AecMode mode);
     AecMode GetAecMode() const { return aec_mode_; }
     void PlaySound(const std::string_view& sound);

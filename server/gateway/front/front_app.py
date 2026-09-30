@@ -170,6 +170,11 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     - kidpal_session_ctx：整条消费（无论取值）；source_page=="story" 时把该会话切累积态
       （收敛 _get_story_acc().start 同一幂等入口——与 §1.4 control/start_recording 同入口，
       重复触发不重复开会话）；其余取值现版本无行为（闭集预留）。
+      三时点①恢复重裁（TaskPackage 260924-m4-k3-record-session-live / plan T5）：
+      routing 沿触发条件推送——本帧 ctx 把会话从 chat 切入累积态（acc.start 之前自查
+      routing != "accumulate"，story.py 零改动）才推恰一帧 story_list；重复 ctx(story)
+      （已 accumulate）零新增帧（契约 §四「重复发送安全」）；推送失败不阻断 ctx 消费
+      （ctx 整条拦截语义优先, 推送为增强, K1 建连推送 try/except 同款先例）。
     - kidpal_story_delete：整条消费；机械执行 delete_story（哨兵头校验 + MD 硬删 + 拒绝
       审计）→ 重推 story_list 对账（隐式 ack：不存在 id 亦重推、total 不变；合法删除
       total −1 可见）。畸形/非法 id 由 delete_story 内部拒绝、不崩、审计留痕。
@@ -179,7 +184,17 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     mtype = obj.get("type")
     if mtype == "kidpal_session_ctx":
         if session_id and obj.get("source_page") == "story":
-            _get_story_acc().start(session_id)
+            acc = _get_story_acc()
+            # routing 沿自查在 acc.start 之前（routing() 查询不改状态, K1 冻结;
+            # story.py 零改动）：chat -> accumulate 沿 = 首帧 ctx, 才条件推送①。
+            ctx_push_edge = acc.routing(session_id) != "accumulate"
+            acc.start(session_id)
+            if ctx_push_edge:
+                try:
+                    await _push_story_list(websocket)  # ①恢复 = 引导态会话建立同拍
+                except Exception:  # noqa: BLE001 — 推送失败不阻断 ctx 拦截消费
+                    log.warning("story_ctx_push failed session_id=%s (ctx 拦截语义优先)",
+                                session_id)
         return True
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)

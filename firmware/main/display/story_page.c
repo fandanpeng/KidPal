@@ -1837,3 +1837,132 @@ int kidpal_story_stamp_text(int serial, char *out, size_t cap)
     }
     return 0;
 }
+
+/* ========================================================================== *
+ * K3 冻结缝追加区（TaskPackage 260924-m4-k3-record-session-live; additive 尾部
+ * 追加, 冻结纪律只增不改/移）。seam contract [S1]-[S4] 权威 =
+ * firmware/main/test/record_session_live.acceptance.c 文件头; host runner 把本
+ * 文件编入源清单, 本区强符号覆盖该验收件 weak 哨兵。
+ * ========================================================================== */
+
+/* ---- [S1] source_page 映射单点（notes ④: 映射散落 = 漏入口根因, 一次做全） ---- */
+
+const char *kidpal_story_ctx_source_page(int page)
+{
+    /* KP_PAGE_* 数值镜像 = M2K2-A2 冻结等值（HOME=0/SCHEDULE=1/STORY=2）;
+     * kidpal_render_node.h 枚举漂移时 M2K2-A2 先红、本行为齿随之红。 */
+    switch (page) {
+    case 2: /* KP_PAGE_STORY */
+        return "story";
+    case 1: /* KP_PAGE_SCHEDULE */
+        return "schedule";
+    case 0: /* KP_PAGE_HOME */
+    default: /* 负值/未知 -> 闭集缺省兜底, 绝不外溢第四取值 */
+        return "home";
+    }
+}
+
+/* ---- [S2] 引导态纯逻辑二缝（S-F2.2-AC1 屏显引导 + 开口切录音态） ---- */
+
+const char *kidpal_story_guide_bubble(void)
+{
+    /* AC1 逐字单源; lcd_display.cc apply_look 区覆写缝消费（M1 冻结映射零触碰）。 */
+    return "需要我帮你记点什么？";
+}
+
+int kidpal_story_recording_enter(int page, int ctx_active, int speaking)
+{
+    /* 决策表: LIST+记录语境+开口 -> 切; 未开口/非记录语境/已录音态（幂等）/阅读态/
+     * 越界 -> 不切。 */
+    if (page != KSTORY_PAGE_LIST || ctx_active == 0 || speaking == 0) {
+        return 0;
+    }
+    return 1;
+}
+
+/* ---- [S3] story 录音态话语回显纯逻辑缝（与 kidpal_voice_echo_* 零共享态） ---- */
+
+#define KSTORY_ECHO_LINE_CAP 128 /* builder 定容（单句上限; 冻结值只钉行数 4） */
+static char s_story_echo[KSTORY_ECHO_MAX_LINES][KSTORY_ECHO_LINE_CAP];
+static int s_story_echo_head = 0;  /* 下一写入位（环形） */
+static int s_story_echo_n = 0;     /* 当前句数（<= KSTORY_ECHO_MAX_LINES） */
+
+int kidpal_story_echo_reset(void)
+{
+    memset(s_story_echo, 0, sizeof(s_story_echo));
+    s_story_echo_head = 0;
+    s_story_echo_n = 0;
+    return 0;
+}
+
+int kidpal_story_echo_push(const char *text)
+{
+    size_t i;
+
+    if (text == NULL || text[0] == '\0') {
+        return -1; /* NULL/空串拒绝, 不污染计数 */
+    }
+    for (i = 0; text[i] != '\0'; i++) {
+        if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' &&
+            text[i] != '\r' && text[i] != '\v' && text[i] != '\f') {
+            break;
+        }
+    }
+    if (text[i] == '\0') {
+        return -1; /* 全空白（VAD 切句尾噪）拒绝 */
+    }
+    /* 满容量挤最旧 = 覆写 head 位（FIFO 环）; 未满则累加。 */
+    ksy_copy_str(s_story_echo[s_story_echo_head], KSTORY_ECHO_LINE_CAP, text);
+    s_story_echo_head = (s_story_echo_head + 1) % KSTORY_ECHO_MAX_LINES;
+    if (s_story_echo_n < KSTORY_ECHO_MAX_LINES) {
+        s_story_echo_n++;
+    }
+    return s_story_echo_n;
+}
+
+int kidpal_story_echo_count(void)
+{
+    return s_story_echo_n;
+}
+
+int kidpal_story_echo_line(int idx, const char **out)
+{
+    int pos;
+
+    if (out == NULL || idx < 0 || idx >= s_story_echo_n) {
+        return -1;
+    }
+    /* idx 0 = 最旧: 环上最旧位 = head - n（模容量）。 */
+    pos = (s_story_echo_head - s_story_echo_n + idx + KSTORY_ECHO_MAX_LINES) %
+          KSTORY_ECHO_MAX_LINES;
+    *out = s_story_echo[pos];
+    return 0;
+}
+
+/* ---- [S4] story_list 推送 gating 纯逻辑（defer ①恢复重裁板端消费半） ---- */
+
+int kidpal_story_list_gate(int voice_front, int page_state)
+{
+    /* VOICE 层前台（引导态/录音态/问答会话）或视图已入录音态 -> 只装缓存不推前台
+     * （防 story_list 帧盖演出, defer 真机缺陷形态的板端防护）; 其余（LIST 冷浏览/
+     * READER/STAMP/DELETE/未知态）-> 推前台（K2 消费面零偏移, 未知态不吞推送）。 */
+    if (voice_front != 0 || page_state == KSTORY_PAGE_RECORDING) {
+        return 1;
+    }
+    return 0;
+}
+
+/* ---- 记录语境标志（builder 侧消费门; 置位单点 = mcp_server REC_SESSION 消费位,
+ * 清位 = 会话收尾 Idle 分支; 盲区申报③: 标志本体不钉） ---- */
+
+static int s_story_ctx_active = 0;
+
+int kidpal_story_session_ctx_active(void)
+{
+    return s_story_ctx_active;
+}
+
+void kidpal_story_session_ctx_set(int active)
+{
+    s_story_ctx_active = (active != 0) ? 1 : 0;
+}

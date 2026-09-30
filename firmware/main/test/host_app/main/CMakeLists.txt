@@ -197,6 +197,14 @@ set(HOST_ACCEPTANCE_SRCS
     # smoke acceptance 之前。
     "../../story_page_v2.test.c"
 
+    # 包 260924-m4-k3-record-session-live（记录会话跨端链路：session_ctx 发送缝 +
+    # 引导态/录音态 + 手势会话接线 + 回显消费 + story_list 推送 gating）冻结验收。
+    # 行为齿 [S1]-[S4] 强符号源 = display/story_page.c（已在册，尾部追加缝覆盖
+    # weak 哨兵）；[S5]-[S7] 为 needle 结构齿，扫真实工作树。**必须置于 host
+    # smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序
+    # 守卫; 本文件 RSL-C1 tooth 4 校验此序）。
+    "../../record_session_live.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

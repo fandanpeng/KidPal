@@ -20,6 +20,15 @@
  * 既有回显通道。设备侧零重抄映射。 */
 #include "display/voice_round.h"
 #include "display/kidpal_voice_states.h"
+#include "display/story_page.h"  /* K3: source_page 映射/引导态/回显/记录语境标志冻结缝 */
+
+/* K3 (260924-m4-k3-record-session-live): 记录会话消费状态（文件级静态; 单写者——
+ * on_vad_change 回调写 speaking / 主循环读, 32 位标量, 与既有跨任务宽松度同级）。
+ * s_story_rec_entered = 引导态->录音态已切换镜像（幂等防重切; Idle 收尾与标志同步清）。 */
+void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.cc（mcp_server.h
+                                       * 冻结面零改动——变更清单不含该头, 免扩公共面） */
+static bool s_vad_speaking = false;
+static bool s_story_rec_entered = false;
 
 #include <cstring>
 #include <esp_log.h>
@@ -174,6 +183,9 @@ void Application::Initialize() {
         xEventGroupSetBits(event_group_, MAIN_EVENT_WAKE_WORD_DETECTED);
     };
     callbacks.on_vad_change = [this](bool speaking) {
+        /* K3 [S2]: VAD 沿值留档（引导态开口切录音态决策入参; notes ⑨ UTT_START
+         * 事件沿——主循环消费, 零新增计时器）。 */
+        s_vad_speaking = speaking;
         xEventGroupSetBits(event_group_, MAIN_EVENT_VAD_CHANGE);
     };
     audio_service_.SetCallbacks(callbacks);
@@ -324,6 +336,21 @@ void Application::Run() {
             if (GetDeviceState() == kDeviceStateListening) {
                 auto led = Board::GetInstance().GetLed();
                 led->OnStateChanged();
+                /* K3 [S2]: 开口切录音态（S-F2.2-AC1 第一句即进录音态; notes ⑨）——
+                 * 决策住 story_page.c 纯逻辑缝 kidpal_story_recording_enter, 应用层
+                 * 只供页态镜像 + speaking 沿; 决策 1 -> 视图动作经 mcp_server 桥
+                 * （复用 start_recording 冻结消费面）。AFE VAD 真沿 = live 目击项
+                 * （host 不可机判, 不造 offline 假齿）。 */
+                if (kidpal_story_session_ctx_active()) {
+                    int story_page = s_story_rec_entered ? KSTORY_PAGE_RECORDING
+                                                         : KSTORY_PAGE_LIST;
+                    if (kidpal_story_recording_enter(story_page, 1,
+                                                     s_vad_speaking ? 1 : 0) == 1 &&
+                        !s_story_rec_entered) {
+                        s_story_rec_entered = true;
+                        KidpalStoryVadEnterRecording();
+                    }
+                }
             }
         }
 
@@ -666,6 +693,12 @@ void Application::InitializeProtocol() {
                      * 回显 (SetChatMessage("user") 既有通道) 与思考切换同一回调。manual
                      * 记录语境 (LISTEN_MANUAL) 切句只回显不逐句进思考。 */
                     display->SetChatMessage("user", message.c_str());
+                    /* K3 [S6]: 记录语境旁路喂入（与 front _story_feed_from_stt 旁路
+                     * 同构, 不改 wire）——录音态话语回显区逐句入列（kidpal_story_echo_*,
+                     * 零共享 kidpal_voice_echo 态）; 非记录语境零消费。 */
+                    if (kidpal_story_session_ctx_active()) {
+                        (void)kidpal_story_echo_push(message.c_str());
+                    }
                     kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
                                         ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
                     int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
@@ -758,6 +791,14 @@ void Application::StartListening() {
 
 void Application::StopListening() {
     xEventGroupSetBits(event_group_, MAIN_EVENT_STOP_LISTENING);
+}
+
+void Application::CloseAudioChannel() {
+    /* K3 [S5]: 录音态丢弃面（BOOT 任一手势）——断连即达 front ws_disconnect
+     * cancel 钩子（弹缓冲不落盘）; 不发 listen stop（丢弃不是归档）。 */
+    if (protocol_) {
+        protocol_->CloseAudioChannel();
+    }
 }
 
 void Application::HandleToggleChatEvent() {
@@ -926,6 +967,11 @@ void Application::HandleStateChangedEvent() {
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
             kidpal_render_node_voice_end();
+            /* K3: 会话收尾 -> 记录语境标志清位 + 录音态切换镜像复位（引导气泡覆写/
+             * 开口切录音态/stt 旁路喂入的消费门; 置位单点 = mcp_server REC_SESSION
+             * 消费位。盲区申报③: 清位时机 = 实现细节, 可观测后果由消费链承载）。 */
+            kidpal_story_session_ctx_set(0);
+            s_story_rec_entered = false;
             /* M1-K4 RM-A3「录音会话结束立刻弹」触发（触发点路由不锁）：录音态提醒到点
              * 排队延后，会话/录音收尾回 Idle 即调 RaiseReminderQueue —— 此刻录音态已
              * 消除、gate 判 RAISE，把排队提醒立即弹出（无排队或弹窗已驻留时其内部
@@ -946,6 +992,14 @@ void Application::HandleStateChangedEvent() {
         case kDeviceStateListening:
             display->SetStatus(Lang::Strings::LISTENING);
             display->SetEmotion("neutral");
+
+            /* K3 [S7]: 会话发起信号 kidpal_session_ctx（契约 §四）——首帧音频前、
+             * 音频处理器启动门之外无条件执行（门外 = 通道复用会话不短路漏发, notes
+             * ②③; 调用恰一次, 发送失败降级普通会话不重试）。source_page 单点映射
+             * 消费（notes ④: KEY 按经 REC_SESSION 消费位聆听入口与唤醒词双入口都
+             * 汇入本分支）。负锚: 本信号只住会话发起, 会话收尾/中断路径零 ctx。 */
+            protocol_->SendKidpalSessionCtx(
+                kidpal_story_ctx_source_page(kidpal_render_node_get_page()));
 
             // Make sure the audio processor is running
             if (!audio_service_.IsAudioProcessorRunning()) {
