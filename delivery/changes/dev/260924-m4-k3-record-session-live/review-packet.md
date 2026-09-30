@@ -92,7 +92,7 @@
 | ADVISORY | judgement-call | Spec face | `docs/architecture.md` §7「契约门在办」存在 K1 新旧两行并存重复（`:341` 新文 / `:342` 旧文）——疑为 K1 C4 spec 批 c735062 落地时插入未删旧。 | changed-code hunk：spec 现文 `:341`–`:342` 实读（本 packet 撰写时点）；heuristic = K1 docs-delta H5 声明为「替换」而实态为「并存」 | 交 human spec 批删除 `:342` 旧行（docs-delta §4.8 交接申报已载）；本包不越权改 spec |
 | ADVISORY | judgement-call | Governance / write-scope | integrator scope-map allow 含已废弃 `docs/systems/**` 却不含 `docs/architecture.md`（K1 Findings #1 同族未决）——本包 arch 收口义务再次以 patch delta 形态间接落地。 | `.claude/scope-map.json` `agents.integrator.allow`（K1/K2/K3 三包实读一致）；heuristic = 义务与写权路径持续不匹配 | 沿用 K1 建议（loop-retro/human：撤 `docs/systems/**`、按需补白名单）；非阻断 |
 
-> 结构闸（taskpackage-required / change-manifest / firmware-build / contract-lint / acceptance-coverage / mutation-check / docs-sync / security）PASS/FAIL 不复述为本表 finding；本批**无 hard-violation finding**（全闸真实退出码 0、零契约/spec 漂移、detect_changes 无越面符号、manifest 与实际 diff 面一致——`docs/architecture.md` 在 manifest 内但为「预期零直改」项，零 diff 即合规）。
+> 结构闸（taskpackage-required / change-manifest / firmware-build / contract-lint / acceptance-coverage / mutation-check / docs-sync / security）PASS/FAIL 不复述为本表 finding；本批**无 hard-violation finding**（全闸真实退出码 0、零契约/spec 漂移、detect_changes 无越面符号、manifest 与实际 diff 面一致——架构文档（arch 正文）在 manifest 内但为「预期零直改」项，零 diff 即合规）。
 
 ## Five-Axis Review
 
