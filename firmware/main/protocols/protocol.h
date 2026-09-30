@@ -79,6 +79,12 @@ public:
      * front 幂等承接）。id 闭集纪律: 只发 story_list items 下发过的 id。
      * K3 的 kidpal_session_ctx 发送同缝复用（原语形态一次做对）。 */
     virtual void SendKidpalStoryDelete(const char* id);
+    /* §四 kidpal_session_ctx（TaskPackage 260924-m4-k3-record-session-live; K2
+     * delete 原语同缝同族扩展）: 会话发起信号, 端→网关单向通知——front 收到后
+     * 拦截消费（切累积态 + 条件推送 story_list）, 不下透引擎。首帧音频前
+     * （server hello 之后）发送; 通道复用会话同样发送; 重复发送安全（front 幂等
+     * 承接）; 省略 = 普通会话向后兼容。source_page 闭集 story/schedule/home。 */
+    virtual void SendKidpalSessionCtx(const char* source_page);
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;

@@ -7,23 +7,16 @@
 同目录）。**本文件是版本演进史的唯一全量副本**——声明面（provider.config.yaml）、
 渲染面（apply-xiaozhi-overlay.sh）与其它散文一律只留「当前 = vN」指针、不复述沿革。
 
-- artifact（生成唯一来源）：`openclaw-system-prompt.v7.md`（当前冻结版本化文件，v7）。
-  v7 = 在 v6 版之上叠加 260925-prompt-v7-round-routing（architect 全面 review 后 human
-  拍板的批）：
-  ① **回合类型路由表**：单一全局「一回合作答禁读写文件」改写为四类回合路由（孩子对话 =
-  禁工具禁文件 / 查字 = 最小意图块、绝对禁工具 / 课表问答 = 先读 schedule.md + 反编造覆盖句 /
-  提醒 cron = 语义 JSON）——根治「课表段要求读文件 vs 硬约束段禁读文件」的内部互斥
-  （2026-09-25 live 实证：模型随机 sided，凭印象编出课表里不存在的钢琴课、周一漏下午课）。
-  家长 QQ 录入行不入表——QQ 通道走家庭侧 agent（main workspace），板侧 agent 收不到
-  （v6 的「家长 QQ 录入约定」节系单 agent 时代遗留死重量，本版删除并显式声明 kidpal/、stories/ 只读）。
-  ② **故事段向现行契约对齐**（2026-09-24 契约门 Q7）：星星记录本只用文字答复、禁产
-  `story_list`/`story_text` display 块（relay 机械拒绝引擎侧来源）。
-  ③ **语音纪律放宽**（human 260925 裁，需求 NFR-SAFE-1 同批修订）：硬性三句上限删除，
-  改「口语化、简洁、不啰嗦」；讲故事按段落成段讲、不逐段请示（打断 = KEY 单击停播在案）。
-  ④ **版本沿革前言外置**：v7 制品本体不带前言（首行即 `## 角色`），沿革只留本文件副本；
-  渲染不剥离，保「验收所测 = 生产所用」。
-  ⑤ 正文 Pruning：去治理编号、去跨段复述（meaning 单口径 ≤24 字）、提醒节压缩、
-  「接下来」/「增量扩展区」元框架删除（制品 11142 → 4853 字符）。
+- artifact（生成唯一来源）：`openclaw-system-prompt.v8.md`（当前冻结版本化文件，v8）。
+  v8 = 在 v7 版之上叠加 260924-m4-k3-record-session-live（S-F2.2 双指令批）：
+  ① **「帮我记下来」第二指令**（故事段）：故事/记录意图触发词由「我要讲故事」单指令扩为
+  双指令（「我要讲故事」「帮我记下来」）——S-F2.2 双入口口径的生成端半（「帮我记下来」
+  独立成句或接叙述内容 = 开录）。
+  ② **意图边界负例**（故事段）：「帮我记下来 + 待办/物品/时间」（如「帮我记下来明天
+  带跳绳」）= 课表录入意图、不判开录——防双指令越界误触课表录入（notes ⑦; LLM 真判定
+  归 live 轮目击项, M3-K3 同款诚实申报）。
+  其余段落（回合类型路由表 / 课表 / 查字 / 提醒 / 硬约束）零偏移继承 v7——影子口径
+  （禁产 story_list/story_text）与标题 ≤12 字规则原样保留。
 - 历史版本：`openclaw-system-prompt.v1.md`（260829-voice-roundtrip 基座）→
   `openclaw-system-prompt.v2.md`（260829-schedule-p2 + 260829-char-stroke 合并版）→
   `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版；
@@ -33,10 +26,14 @@
   `openclaw-system-prompt.v5.md`（260920-m2-charwindow-display-fix：char 最小意图块增
   meaning + 面向设备回复禁附录/HTML）→
   `openclaw-system-prompt.v6.md`（260921-m3-k3-voice-schedule-entry-live：课表问答走问答框
-  含备注读回 + 「帮我显示课表」意图薄载荷 data:{} + 网格数据不由 LLM 生成）
+  含备注读回 + 「帮我显示课表」意图薄载荷 data:{} + 网格数据不由 LLM 生成）→
+  `openclaw-system-prompt.v7.md`（260925-prompt-v7-round-routing：回合类型路由表四类
+  （修「课表读文件 vs 一回合作答」内部互斥，2026-09-25 live 实证）+ 故事段对齐 2026-09-24
+  契约门 Q7（禁产 story_list/story_text display 块）+ 语音纪律放宽（human 260925 裁）+
+  版本沿革前言外置（制品本体无前言）+ 正文 Pruning 11142 → 4853 字符）
 - 声明面：`provider.config.yaml`（`system_prompt.deploy_target` + 同文件的
   `reminder_config` 三档阶梯配置声明）
-- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v7.md`；
+- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v8.md`；
   同批渲染 `openclaw-reminder.config.yaml` 并铺 `openclaw-patch/reminder_schedule_lib.py`）
 - 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
   生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉
