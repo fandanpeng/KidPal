@@ -53,3 +53,43 @@ date: 2026-09-29
 ## demo 证据形态复述
 
 host：新冻结齿 RED→GREEN 全程留痕（红名 verbatim + mutation 应用/还原记录）+ device build 绿；真机半不在本包——demo 口径 = host 全量绿 + 真机目测半 deferred 挂账声明（挂 M4-K3 设备轮，human 在场一次性目击：WF-F2-01/03/04/05 版式 1bpp 目测 + 300ms 消歧手感）。
+
+## 技术方案（planner+architect 预评）
+
+> 留痕：2026-09-29 · Step 1g ARCH-ADVISORY 前置技术预评档（architect agentId `a28d9aa740e45c832`，只读 advisory；效力声明：不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据，与冻结验收冲突时以验收为准）。本节由 planner 据回执补写。
+
+### 总判断与模块切分
+
+代码面基建比拆包侧描述更齐：四态渲染函数、story_list/story_text 解析路由、`fresh_save` 判定、`kidpal_render_node_cache_story` 缓存 seam、覆盖层夹钳两样板（reminder/char_window）、层栈 append 授权、`dismiss_front_overlay`、查字窗 `idle_step` 先例全部在世可直接消费。实现风险集中在四个接线决策（本节 §裁读）。模块切分按「纯逻辑层（host 可测）/ 设备接线层 / 契约发送层」三段：story_page.{c,h} 纯逻辑主体 + kidpal_layer 层栈 + mcp_server.cc 接线 + kidpal_render_node 覆盖层夹钳与子态 getter + 板级 HandleStoryKey 分流 + keybar/lcd_display 键帽并行缝 + **protocol.{h,cc} + application.{h,cc} 发送原语四件套**（拆包侧 manifest 完全遗漏、architect 补出——K3 的 kidpal_session_ctx 发送同缝复用，一次做对）。
+
+### story_page.c 重写策略：保留底座、重写两翼（不整文件推倒）
+
+自足式最小 JSON 扫描器（`ksy_*` 族约 400 行，历经真机栈腐蚀修复 + surrogate-pair 防御）= 已验证资产逐字保留。重写两翼：① 输入表 `kidpal_story_page_input` 整体重写（现口径与 v1.47 矩阵方向相反，逐 case 对不上；新动作码族数值重钉——旧权威 story_p3.acceptance.c 已 archive 不构成约束，mcp_server.cc 本地镜像注释块同步）；② 渲染函数结构性重写（列表去页名标题/星星计数右上角裸排/选中行带边框/分屏指示；阅读去 >12 屏截断；盖章文案「星星徽章」）。视图结构 additive 扩（list_screen/list_screens、`kidpal_story_text_t` 增 `seq` 字段带缺省哨兵），mcp_server 头部结构尺寸参考注释同步更新，list/text 大对象维持堆分配纪律。CJK 字体：全 label 显式 `font_puhui_14_1` 接线（lcd_display.cc 五处先例），不赌继承。
+
+### 层值接线：插入而非追加（planner 裁读，决策点 1）
+
+「append-only、低于 REMINDER」双约束的唯一解 = 仿 M2-K3 char-window seam 先例的**符号级插入 + 上移**：新层值 `KIDPAL_LAYER_STORY_DELETE` = 6，REMINDER 6→7、PROVISION 7→8。planner 裁定采纳：约束「append-only」的精神 = 既有齿零触碰 + 新层值走冻结纪律，非数值字面追加；直接追加 8 会顶破「低于 REMINDER」违反矩阵口径。全仓消费点已核均为符号常量引用（is_stackable 上界自动跟随、char_window_overlay.acceptance.c 无 REMINDER==6 数值断言、key_layer_dispatch 的 `#ifndef` 兜底 define 不受伤），STACK_MAX=8 仍够（防御注释「最多 6 种」同步改 7）。连带：`kidpal_layer.c` 的 pop_transients transient 集纳入新层（manifest 粗值漏实现文件，已补）；`front_is_overlay` 闭集纳入；kidpal_layer 头注「现役权威」指针迁本包新齿。
+
+### P3 子态 × 层模型 × 页点（本包最大接线决策，architect 裁法采纳）
+
+WF-F2-01/04 线框都画了页点，WF-F2-02/05 明写无页点；现状 `ScheduleStoryRender` 恒走 `begin_page()`（推 SERVER_PAGE、页点必藏）与线框矛盾。裁法：**列表/阅读/盖章 = P3 本地页内容**（本地导航经 render_node 本地路径重渲、消费 cache_story 缓存、前台保持 LOCAL_PAGE → 页点自然可见）；**录音态 = 会话覆盖路径维持现状**（会话期前台本就是 VOICE/SERVER_PAGE，无页点自动成立）；**删除确认 = 新层值覆盖层**（无页点由 front_is_overlay 同源成立）。云端推送路径维持 begin_page 现状；`ScheduleStoryRender` 按来源拆双通道 = mcp_server.cc 本包改动量最大一处。
+
+### 三个机制形态
+
+- **300ms 单双击消歧（仅列表态）**：全新机制（查字窗无同族可抄），两半形态——纯逻辑 defer helper 进 story_page.c（arm/double_arrived/poll 三函数、时间戳显式注入同 rec_tick 纪律、状态门控内置：仅 LIST 态才 arm，其余态 poll 恒空单击零延迟直发）；设备驱动挂既有 OnClick/OnDoubleClick 回调 story 分支 + ~100ms LVGL timer poll 冲销执行（不能用 1s tick，粒度不够）。注意双击窗既有配置 350ms 与 300ms 死线关系（死线应短于 iot_button 双击判定窗，防重复触发——board 631-634 行同族时序教训）；**具体取值留 acceptance-author 冻齿时定**（决策点 3）。
+- **删除确认覆盖层**：复用面全在世（层栈 push/pop、begin/end 夹钳样板、dismiss_front_overlay、idle_step 纯逻辑+tick 驱动缩参成 10s、1s tick 粒度够驱动）。手势裁决放 story_page.c 纯逻辑删除子态（planner 裁定采纳 architect 推荐方案，key_route_layer 本体零触——决策点 2），板级「front == STORY_DELETE 先交裁决、消费即返回」前置拦截（keya_overlay_consume 同款）；**关键防线：裁决必须吞掉全部手势**，任何漏网手势会被 key_route_layer 通用覆盖层列误映射成 GLOBAL_ACT_SESSION_TOGGLE（删除确认里绝不能开会话）。
+- **发送原语（§四 kidpal_story_delete）四件套单缝**：① protocol.h/.cc 加 `SendKidpalStoryDelete(id)`（逐字仿 SendAbortSpeaking 形态）；② application.h/.cc 公开委托（SendMcpMessage 同款 Schedule→protocol）；③ mcp_server.cc 确认路径 = 本地即时移除（边角⑨）→ 发送 → 记 pending_delete{id, sent_ts}；④ 隐式 ack 重发 = 纯逻辑 resend decision（注入 now，超时值/上限留 acceptance-author 冻）+ tick 驱动，story_list 重推到达对账冲销（消费幂等由 front 承接，板端不造状态机第二真相）。id 闭集纪律：只发 story_list items 下发过的 id，板端不造 id。
+
+### 键帽子态缝：additive 并行函数（planner 裁读，决策点 4）
+
+WF-F2-02/04/05 的子态键帽文案（[收尾]/[结束]、[长按退出]/[翻屏]、[删掉]/[算了]）都不在现 keybar 值域。planner 裁定：约束「键帽条三槽只消费零修改」读作**机制与既有值域零修改、additive 并行缝允许**——260928 查字窗键帽批（`kidpal_keybar_char_slots`）就是在这个框架下落的同款改动，先例直接在案。落法 = keybar.{c,h} additive 并行函数 + lcd_display.cc `kidpal_keybar_sync_locked` story 分支 + render_node 暴露子态 getter。若后续核对该读法与既有齿冲突 → 升级 human，不硬裁。
+
+### 决策点 3/5/6 残留
+
+- 决策点 3（数值/文案三件：消歧死线、隐式 ack 重发超时/上限、seq 缺省降级文案〔契约 Q4 板端自定〕）→ acceptance-author 冻齿时定。
+- 决策点 5（art 资产）：判定**零新增**——ic_star_48/38/22/20/18、stamp_seal_r8、rec_wave、pose_record_96/pose_jump_96 全在 47 资产集且 art 分区已烧；art_assets.c 与 tools/asset-pipeline/** 从 manifest 摘除。builder 对 v5 PNG 发现需新形态 → 走扩单通道回评（届时回补 manifest + 双分区烧录义务）。
+- 决策点 6：K2 冻齿**禁预钉「建连即推 story_list」时点**（已被 defer 包摘除，现役 = 归档后 + 删除后两时点；恢复归 K3 重裁）——acceptance 派发显式承载。
+
+### changeManifest 精化与 impactedTests 种子
+
+精化后 manifest 见 taskpackage.json（本批回填）：增 kidpal_layer.c / protocol.{h,cc} / application.{h,cc} / keybar.* / lcd_display.cc；render_node 扩为 .*；删 art_assets.c、tools/asset-pipeline/**、key_gesture_parser.cc（裁决位置裁定后路由表零触）。impactedTestsSeed 已回填 taskpackage.json（integrator Step 4 影响面圈定消费；key_layer_dispatch.acceptance.c 单列 special-append-only 面 + CMakeLists 注册序纪律 + 七件回归靶 + server/ not-impacted）。

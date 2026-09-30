@@ -5,9 +5,11 @@
  * 阶段 B：BOOT 双按 → home→schedule→story→home 三页循环（P4 查字常驻页已撤销，
  * 包 260917-m2-k2-retract-p4-three-page；页序对齐 spec P1→P2→P3）。
  * 前台归属 = kidpal_layer 前台 layer 栈管理单一权威（取代原三散标志 + 1s tick 对账）：
- * 语音轮页(3) / 服务端推送页(4) / 查字窗(5) / 本地浏览页(2) / 提醒弹窗(6) / 配网(7)
+ * 语音轮页(3) / 服务端推送页(4) / 查字窗(5) / 删除确认弹窗(6) / 本地浏览页(2) / 提醒弹窗(7) / 配网(8)
  * 按优先级表由 layer 栈 push/pop 事件驱动进出；聊天 layer(1) 常驻非栈成员。
- * （2026-09-19 M2-K3 页→窗改造：插入查字窗层，REMINDER 5→6 / PROVISION 6→7。）
+ * （2026-09-19 M2-K3 页→窗改造：插入查字窗层，REMINDER 5→6 / PROVISION 6→7。
+ * 2026-09-29 260924-m4-k2-p3-star-notebook-ui seam [K10]：插入删除确认层
+ * STORY_DELETE=6，REMINDER 6→7 / PROVISION 7→8——符号级插入 + 上移，注释数值随动。）
  *
  * 实现文件（kidpal_render_node.cc）是设备专属（不进入 host 构建），
  * 在此头声明 C linkage 供 board .cc / application.cc / mcp_server.cc 调用。
@@ -95,6 +97,17 @@ void kidpal_render_node_end_page(void);
  */
 void kidpal_render_node_begin_char_window(void);
 void kidpal_render_node_end_char_window(void);
+
+/*
+ * P3 删除确认覆盖层的持锁夹钳（TaskPackage 260924-m4-k2-p3-star-notebook-ui,
+ * seam [K10]; WF-F2-05 整屏覆盖层）：持锁 + 把 KIDPAL_LAYER_STORY_DELETE 推入
+ * layer 栈（覆盖当前页之上、提醒之下——提醒最高层压删除弹窗序不变），切活动屏到
+ * s_kidpal_scr。与 end_story_delete() 配对释放锁。设备侧由 mcp_server.cc 的
+ * story 删除确认子态（DELETE_ENTER）渲染路径调用。关层（确认/取消/10s idle）
+ * 走 kidpal_render_node_dismiss_front_overlay（pop_transients 已纳入本层）。
+ */
+void kidpal_render_node_begin_story_delete(void);
+void kidpal_render_node_end_story_delete(void);
 
 /*
  * 提醒弹窗渲染的持锁夹钳：持锁 + 把 REMINDER 推入 layer 栈（REMINDER > VOICE/SERVER_PAGE，
@@ -254,6 +267,36 @@ void kidpal_render_node_cache_schedule_grid(const kidpal_schedule_course_t *cour
 void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
                                     const kidpal_story_list_t *l,
                                     const kidpal_story_text_t *t);
+
+/*
+ * P3 本地导航重渲（TaskPackage 260924-m4-k2-p3-star-notebook-ui 双通道方案）：
+ * 持锁 + 经 rn_render_kidpal_page_locked(KP_PAGE_STORY) 消费 cache_story 缓存重渲
+ * 基层当前页。本地导航（页内输入驱动：光标/跳屏/阅读翻屏/退出阅读）经本函数落屏、
+ * 前台保持 LOCAL_PAGE（页点自然可见）——与云端推送路径（begin_page 夹钳、SERVER_PAGE
+ * 前台）拆双通道（plan「P3 子态 × 层模型 × 页点」裁法）。调用方在 Schedule 闭包内
+ * 先 cache_story 再调本函数。内部持 lvgl_port_lock，调用方无需预加锁。
+ */
+void kidpal_render_node_refresh_story(void);
+
+/*
+ * P3 本地导航通道的前台回落（260924-m4-k2 双通道方案配套）：把云端渲染夹钳
+ * （begin_page 推 SERVER_PAGE）用过后的前台回落 LOCAL_PAGE 基层（pop SERVER_PAGE +
+ * push LOCAL_PAGE + 键帽条刷新）。本地导航（页内输入动作）经 ScheduleStoryRender 的
+ * begin_page 夹钳完成渲染后调用——渲染仍走云端夹钳纪律（260829 崩溃修复语义保留），
+ * 前台在动作落定后保持 LOCAL_PAGE（页点可见、板级 P3 页内分流基层判据成立）。
+ * 只回落本夹钳产生的 SERVER_PAGE 单层，其它层（REMINDER/STORY_DELETE 等）不碰。
+ * 内部持 lvgl_port_lock，调用方无需预加锁。
+ */
+void kidpal_render_node_story_local_front(void);
+
+/*
+ * P3 子态查询（键帽随态变 getter，TaskPackage 260924-m4-k2-p3-star-notebook-ui）：
+ * 删除确认覆盖层为前台（STORY_DELETE 层 top）-> KSTORY_PAGE_DELETE；
+ * 本地基层当前页 = STORY -> 缓存视图的页态（LIST/READER/RECORDING/STAMP）；
+ * 其余（非 P3 页 / 前台为其它覆盖层）-> -1（消费方回落既有键帽路径）。
+ * 无锁整数读，可跨任务调用。
+ */
+int kidpal_render_node_story_substate(void);
 
 #ifdef __cplusplus
 }

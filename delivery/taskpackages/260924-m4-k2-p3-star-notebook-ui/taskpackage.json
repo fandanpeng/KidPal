@@ -12,8 +12,8 @@
   "subsystem": "firmware",
   "story": "S-F2.1 · 看「星星记录本」列表（AC1–AC4 板端半）+ S-F2.3 · 回看记录（AC1–AC2）+ S-F2.4 · 星星保存成就盖章（AC1–AC2 演出半）+ F2 intro 改名对账四项（v1.33 登记）——跨包事实与共享冻结面见 plan.md（P3 键路由补全 + 列表态重构 + 删除确认覆盖层 + 阅读态对齐 + 盖章对账 + story_page CJK 字体接线）",
   "planRef": "delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/plan.md",
-  "redBaselineCommand": "通道①（既有齿零偏移）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash <worktree>/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（新齿独立红）：intake 时 acceptance-author 落定并实跑落账",
-  "redBaselineResult": "",
+  "redBaselineCommand": "通道①既有齿零偏移：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build（launch prep 锚 5575a23 双面零差异已判停，intake 未重跑）；通道②新齿独立红（acceptance-author 已实跑）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash -c 'cd <worktree>/firmware/main/test/acceptance/red-baseline && gcc -std=gnu11 -Wall -Wextra -Wno-unused-parameter -I. -o /mnt/c/tmp/spv2_red_runner ../../story_page_v2.acceptance.c runner.c && cd <worktree> && /mnt/c/tmp/spv2_red_runner'（exit 13 = 13 失败 TEST_CASE 数；红跑日志 C:/tmp/spv2_red.log）",
+  "redBaselineResult": "C 类冻结实编（DEV-GOVERNANCE 验收纪律 §4）：gcc 编译通道 error=0 warning=0（复用 red-baseline 存根 unity.h/runner.c 在世先例设施，零新建）。独立红跑：13 Tests 13 Failures（exit 13）。RED 名 verbatim 13 条：SPV2-A1（frozen seam NOT implemented — kidpal_story_view_init）/ A2（— kidpal_story_list_cursor_step）/ A3（LIST 态消歧门控 = -9999 期望 1）/ A4（— kidpal_story_view_init）/ A5（— kidpal_story_delete_resend_due）/ A6（— kidpal_story_view_init）/ A7（— kidpal_story_counter）/ A8（— kidpal_story_text_seq）/ A9（层值接线未落 STORY_DELETE=6 REMINDER=6 PROVISION=7 期望 6/7/8）/ B1（— kidpal_story_view_init，接线后缺字体转 CJK 零墨红）/ B2（story_page.c font_puhui_14_1 仅 0 处期望 >=5）/ B3（SendKidpalStoryDelete 仅 0 文件命中）/ C1（story_page_v2.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS）。红因归因自查通过：零 fixture 缺陷红、零环境红；B 组红因与冻结前 grep 计数独立复核一致（font=0 / 帮我记下来=0 / stamp_index=5+1+2 / HandleStoryKey=1）。决策点 6 已守：全文件零「建连即推 story_list」时点断言。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -24,8 +24,24 @@
     "test-quality",
     "docs-sync"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
+  "acceptance": [
+    "SPV2-A1: （S-F2.1-AC2 / S-F2.2-AC1 / plan 决策①）LIST 态 v1.47 决策表——六手势动作码闭集 KSPV2_ACT_* 重钉（DEGRADE-3/GLOBAL-2/NONE0/CURSOR_NEXT1/OPEN_READER2/PAGE_TURN3/STOP_RECORD5/CANCEL_RECORD6/CONFIRM_DELETE/DELETE_CANCEL）+ 空列表特例",
+    "SPV2-A2: （S-F2.1-AC1 / S-F2.1-AC2）LIST 分屏纯逻辑——kidpal_story_list_cursor_step 屏底翻屏落该屏首项 / wrap 回首项永不离页 / 分屏指示「第 x 屏 · 共 y 屏」",
+    "SPV2-A3: （S-F2.1-AC2 / plan 决策点3-a / notes 边角②）300ms 消歧纯逻辑——kidpal_story_debounce_gate 状态门控仅 LIST 态生效、其余态单击零延迟直发；死线 300 与板端双击窗 350 关系恒断言（300<350）",
+    "SPV2-A4: （S-F2.1-AC4 / 契约§四 kidpal_story_delete / plan 决策②）删除确认子态——KEY 短按确认 / BOOT 任一手势取消回列表 / 其余手势不响应（GLOBAL 漏网负锚）/ 10s idle-step 静默取消不显示倒计时",
+    "SPV2-A5: （契约§四-Q5）隐式 ack 重发决策表——5000ms 间隔上限 3 次超时重发、放弃后静默停发、story_list 重推到达对账冲销（载荷不含该 id 即 ack）",
+    "SPV2-A6: （S-F2.3-AC1 / S-F2.3-AC2 / notes 边角④⑧）阅读态决策表——末屏 wrap 永不离页 / KEY 短按不响应（朗读退役负锚）/ KEY 长按回列表 / 排版常量重冻 / >12 屏截断回收",
+    "SPV2-A7: （S-F2.1-AC1 / S-F2.4-AC2 / 契约§1.3③ load-bearing）计数双口径 guard——计数恒信 total（total=23 窗口 16 时计数=23 非 16）/ 星星计数=现存篇数（删除 −1）/ kidpal_story_counter 在世零改",
+    "SPV2-A8: （S-F2.4-AC1 / S-F2.4-AC2 / 契约§1.3④）盖章 seq 消费 + 文案逐字二值——带 N「星星徽章·第 %d 颗已入册！」/ seq 缺省降级「星星徽章已入册！」不带 N / N=入册流水号只增不减",
+    "SPV2-A9: （S-F2.1-AC4 / plan 1g 裁读①）层值接线——KIDPAL_LAYER_STORY_DELETE=6 符号级插入 + REMINDER→7 / PROVISION→8 上移 + 提醒最高层压删除弹窗序不变 + #ifndef fallback 值断言",
+    "SPV2-B1: （S-F2.1-AC1 / S-F2.1-AC3 / S-F2.4-AC1）CJK 非空白真帧探针——列表标题带 + 盖章文案带（font_puhui_14_1 显式接线，LVGL 软渲染 seam p1_cjk_name 先例形态）",
+    "SPV2-B2: （S-F2.1-AC1 / S-F2.1-AC3 / S-F2.3-AC2 / S-F2.4-AC1 / notes 边角①③）渲染面结构齿——story_page.c font_puhui_14_1 接线 >=5 处 / 双指令提示「我要讲故事」+「帮我记下来」/ 页内无标题 / 反白退役负锚 / 空态单源 / story_page.h FROZEN 头注退役声明现役权威指针迁本齿",
+    "SPV2-B3: （S-F2.1-AC4 / S-F2.4-AC2 / 契约§四 / plan 决策④）删除链路接线结构齿——SendKidpalStoryDelete 原语（protocol+application 委托）+ mcp_server.cc reconcile/resend/idle/debounce 消费调用 + stamp_index 退役负锚",
+    "SPV2-C1: （S-F2.1 / S-F2.3 / S-F2.4）注册序守卫——story_page_v2.acceptance.c 接线进 HOST_ACCEPTANCE_SRCS 须置于 host_infra_smoke 之前 + 需求契约 canary + 扫描器自检"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/story_page_v2.acceptance.c"
+  ],
   "exitCriteria": [
     "M4K2-E1: host runner 全量齿零红（新冻结齿 build+run exit 0，既有齿零偏移）；device build 闸过（体积余量证据）",
     "M4K2-E2: 铁律——docs/contracts/** 与 spec 零改（消费契约现文已冻结形状：K1 落地批 5e862d0 已把 story_list 语义拆分 / story_text seq / kidpal_story_delete 三触点写进 interface-contract.md）；story_page.h FROZEN OFFLINE CONTRACT 头注退役声明落文件头（旧 offline 契约随 archive 验收退役，新冻结面 = 本包新齿）；key_layer_dispatch.acceptance.c 既有断言零触碰（新层值 append 走冻结纪律）；M1 基建 seam（kidpal_voice_states/键帽条三槽/覆盖层夹钳）只消费零修改；提醒/查字/课表/P1 四页渲染路径零触碰",
@@ -68,16 +84,86 @@
   ],
   "changeManifest": [
     "firmware/main/display/story_page.*",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/kidpal_layer.h",
-    "firmware/main/display/art_assets.c",
+    "firmware/main/display/kidpal_render_node.*",
+    "firmware/main/display/kidpal_layer.*",
+    "firmware/main/display/keybar.*",
+    "firmware/main/display/lcd_display.cc",
     "firmware/main/mcp_server.cc",
-    "firmware/main/key_gesture_parser.cc",
+    "firmware/main/application.h",
+    "firmware/main/application.cc",
+    "firmware/main/protocols/protocol.h",
+    "firmware/main/protocols/protocol.cc",
     "firmware/main/boards/waveshare-s3-rlcd-4.2/**",
     "firmware/main/test/**",
-    "tools/asset-pipeline/**",
     "docs/requirements.md",
     "docs/architecture.md"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/key_layer_dispatch.acceptance.c",
+      "kind": "special-append-only",
+      "note": "既有断言零触碰；仅 append 新层值/新接线结构齿；改动前先跑通道①既有齿零偏移基线"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring",
+      "note": "新齿注册须置于 host_infra_smoke 之前（注册序纪律）；story_page.c 新增字体/资产引用可能需补源清单"
+    },
+    {
+      "path": "firmware/main/test/char_window_overlay.acceptance.c",
+      "kind": "regression",
+      "note": "层栈 seam 现役权威：REMINDER 6→7 / PROVISION 7→8 上移后须全绿（码上全符号引用、无数值断言；文件头 6/7 字面注释陈旧属预期零触碰）"
+    },
+    {
+      "path": "firmware/main/test/reminder_overlay_unify.acceptance.c",
+      "kind": "regression",
+      "note": "kidpal_reminder_gate front_layer 消费 + 提醒最高层压删除弹窗的序不变断言归本包新齿"
+    },
+    {
+      "path": "firmware/main/test/keybar_three_slot.acceptance.c",
+      "kind": "regression",
+      "note": "keybar.c additive 并行函数落地时既有 slots/dots 断言零偏移（KB-E2/E3 单源纪律回归靶）"
+    },
+    {
+      "path": "firmware/main/test/retract_p4_three_page.acceptance.c",
+      "kind": "regression",
+      "note": "render_node/mcp_server 切区结构齿 + 页点行为回归；story 渲染区大改可能落进其扫描区，改动后全量重跑"
+    },
+    {
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "kind": "regression",
+      "note": "lcd_display.cc 键帽分支改动 + voice_round 切区扫描回归靶"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "regression",
+      "note": "mcp_server.cc 同文件路由区结构齿（story 路由改形不触 schedule 区，同文件改动一律重跑）"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid_restore.acceptance.c",
+      "kind": "regression",
+      "note": "mcp_server.cc 消费分支结构齿，同上"
+    },
+    {
+      "path": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "kind": "boundary",
+      "note": "包 0 边界守卫（注册序 + runner 健康度），全量绿门"
+    },
+    {
+      "path": "firmware/main/test/<story-p3-v2 新齿，acceptance-author 落名>.acceptance.c",
+      "kind": "new-red-green",
+      "note": "通道②独立红：输入表 v1.47 矩阵决策表 + 列表分屏 + 删除子态/10s idle-step/隐式 ack 重发决策表 + 300ms 消歧（纯逻辑注入时间戳）+ seq 消费与缺省降级 + CJK 非空白真帧探针 + 文案逐字（星星徽章/双指令提示）。RED 名 verbatim + mutation 应用/还原留痕"
+    },
+    {
+      "path": "server/",
+      "kind": "not-impacted",
+      "note": "K2 纯固件包：server/ 零改动（crossEnd counterparts story.py list_stories / front_app.py _relay_display_blocks_to_device 只读消费形状），117P 基线不受影响，不进影响面"
+    },
+    {
+      "path": "device build 闸（VERIFY_FW_BUILD_REQUIRED=1）",
+      "kind": "build-gate",
+      "note": "设备树编译 + 体积余量证据；真机目测四面 + 300ms 手感 deferred 挂 M4-K3 设备轮"
+    }
   ],
   "uiux": {
     "uiuxRequired": true,
@@ -147,9 +233,112 @@
     }
   ],
   "mutationRequired": true,
-  "mutationEvidence": {
-    "perAcceptance": []
-  },
+  "mutationEvidence": [
+    {
+      "id": "SPV2-A1",
+      "mutation": "输入表 LIST 列回退旧码（KEY 短按→旧 CURSOR_NEXT）",
+      "expectedRed": "「KEY 短按动作码 = 1, 期望 REC_SESSION(=7)」",
+      "counterEvidence": "RED verbatim: LIST 态 KEY 短按动作码 = 1, 期望 REC_SESSION(=7)——旧码残留（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A1: （S-F2.1-AC2 / S-F2.2-AC1 / plan 决策①）LIST 态 v1.47 决策表——六手势动作码闭集 KSPV2_ACT_* 重钉（DEGRADE-3/GLOBAL-2/NONE0/CURSOR_NEXT1/OPEN_READER2/PAGE_TURN3/STOP_RECORD5/CANCEL_RECORD6/CONFIRM_DELETE/DELETE_CANCEL）+ 空列表特例"
+    },
+    {
+      "id": "SPV2-A2",
+      "mutation": "cursor_step 屏底分支删「落首项」",
+      "expectedRed": "「屏底步进 cursor=5, 期望 4（落该屏首项）」",
+      "counterEvidence": "RED verbatim: 屏底步进 r=1 cursor=4 screen=0, 期望 1/4/1（落该屏首项）（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A2: （S-F2.1-AC1 / S-F2.1-AC2）LIST 分屏纯逻辑——kidpal_story_list_cursor_step 屏底翻屏落该屏首项 / wrap 回首项永不离页 / 分屏指示「第 x 屏 · 共 y 屏」"
+    },
+    {
+      "id": "SPV2-A3",
+      "mutation": "debounce_gate 改恒 1（消歧全局生效）",
+      "expectedRed": "「非 LIST 态门控非 0」（notes 边角②咬合）",
+      "counterEvidence": "RED verbatim: 非 LIST 态消歧门控非 0——全局生效违反状态门控（边角②）（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A3: （S-F2.1-AC2 / plan 决策点3-a / notes 边角②）300ms 消歧纯逻辑——kidpal_story_debounce_gate 状态门控仅 LIST 态生效、其余态单击零延迟直发；死线 300 与板端双击窗 350 关系恒断言（300<350）"
+    },
+    {
+      "id": "SPV2-A4",
+      "mutation": "DELETE 态 KEY 双击改返 GLOBAL(-2)",
+      "expectedRed": "「动作码 = -2 期望 NONE——GLOBAL 漏网误开会话」",
+      "counterEvidence": "RED verbatim: 删除子态 KEY 双击动作码 = -2 page=4, 期望 NONE(=0) 且页态保持——GLOBAL 漏网误开会话（builder 补做轮实做，还原位 128/0）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A4: （S-F2.1-AC4 / 契约§四 kidpal_story_delete / plan 决策②）删除确认子态——KEY 短按确认 / BOOT 任一手势取消回列表 / 其余手势不响应（GLOBAL 漏网负锚）/ 10s idle-step 静默取消不显示倒计时"
+    },
+    {
+      "id": "SPV2-A5",
+      "mutation": "resend_due 上限判 tries<MAX 改 tries<=MAX",
+      "expectedRed": "「tries=3 仍判重发」",
+      "counterEvidence": "RED verbatim: tries=3 仍判重发——重发无界（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A5: （契约§四-Q5）隐式 ack 重发决策表——5000ms 间隔上限 3 次超时重发、放弃后静默停发、story_list 重推到达对账冲销（载荷不含该 id 即 ack）"
+    },
+    {
+      "id": "SPV2-A6",
+      "mutation": "READER 末屏 wrap 改钳制 NONE（旧语义回归）",
+      "expectedRed": "「末屏再翻动作码 = 0, 期望 PAGE_TURN」",
+      "counterEvidence": "RED verbatim: 末屏再翻动作码 = 8 screen=5 page=1, 期望 PAGE_TURN/0/READER——wrap 永不离页缺失（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A6: （S-F2.3-AC1 / S-F2.3-AC2 / notes 边角④⑧）阅读态决策表——末屏 wrap 永不离页 / KEY 短按不响应（朗读退役负锚）/ KEY 长按回列表 / 排版常量重冻 / >12 屏截断回收"
+    },
+    {
+      "id": "SPV2-A7",
+      "mutation": "counter 钉①删去（total 权威退位）",
+      "expectedRed": "「total=23/count=16 时计数 = 16」（契约 §1.3③ load-bearing）",
+      "counterEvidence": "RED verbatim: total=23/count=16 时计数 = 16——items.length 顶替 total（契约 §1.3③）（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A7: （S-F2.1-AC1 / S-F2.4-AC2 / 契约§1.3③ load-bearing）计数双口径 guard——计数恒信 total（total=23 窗口 16 时计数=23 非 16）/ 星星计数=现存篇数（删除 −1）/ kidpal_story_counter 在世零改"
+    },
+    {
+      "id": "SPV2-A8",
+      "mutation": "stamp_text 降级分支删去",
+      "expectedRed": "「seq 缺省降级文案 = 带N格式, 期望不带N」",
+      "counterEvidence": "RED verbatim: seq 缺省降级文案带 N（第 -1 颗）, 期望「星星徽章已入册！」（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A8: （S-F2.4-AC1 / S-F2.4-AC2 / 契约§1.3④）盖章 seq 消费 + 文案逐字二值——带 N「星星徽章·第 %d 颗已入册！」/ seq 缺省降级「星星徽章已入册！」不带 N / N=入册流水号只增不减"
+    },
+    {
+      "id": "SPV2-A9",
+      "mutation": "层值改直接追加 8（不插入上移）",
+      "expectedRed": "「STORY_DELETE=8≠6 / REMINDER 仍 6」",
+      "counterEvidence": "RED verbatim: STORY_DELETE=8 REMINDER=6 PROVISION=7, 期望 6/7/8——插入+上移未执行（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-A9: （S-F2.1-AC4 / plan 1g 裁读①）层值接线——KIDPAL_LAYER_STORY_DELETE=6 符号级插入 + REMINDER→7 / PROVISION→8 上移 + 提醒最高层压删除弹窗序不变 + #ifndef fallback 值断言"
+    },
+    {
+      "id": "SPV2-B1",
+      "mutation": "story_page.c 单个 label 字体接线抽掉",
+      "expectedRed": "「标题带 CJK 墨点 < 30」",
+      "counterEvidence": "mutation=story_page.c 摘出 host runner 源清单 → 变红 RED verbatim: SPV2 RED: frozen seam NOT implemented — kidpal_story_view_init（中止 story_page_v2.acceptance.c:462 require_impl 哨兵；变体跑 128/17 @ C:/tmp/spv2_b1_mutant.log，还原位 128/0 @ spv2_b1_restored.log）。旁注：抽字体接线 mutation 不可咬（LV_USE_FONT_PLACEHOLDER 豆腐块遮蔽，baseline 1940 vs mutant 768 均 > 阈值 30，如实记录），字体接线子义务由 SPV2-B2 结构计数齿承载",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-B1: （S-F2.1-AC1 / S-F2.1-AC3 / S-F2.4-AC1）CJK 非空白真帧探针——列表标题带 + 盖章文案带（font_puhui_14_1 显式接线，LVGL 软渲染 seam p1_cjk_name 先例形态）"
+    },
+    {
+      "id": "SPV2-B2",
+      "mutation": "story_page.c「帮我记下来」标签删除",
+      "expectedRed": "「常驻语音入口无双指令」",
+      "counterEvidence": "RED verbatim: 常驻语音入口无双指令——「帮我记下来」被删（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-B2: （S-F2.1-AC1 / S-F2.1-AC3 / S-F2.3-AC2 / S-F2.4-AC1 / notes 边角①③）渲染面结构齿——story_page.c font_puhui_14_1 接线 >=5 处 / 双指令提示「我要讲故事」+「帮我记下来」/ 页内无标题 / 反白退役负锚 / 空态单源 / story_page.h FROZEN 头注退役声明现役权威指针迁本齿"
+    },
+    {
+      "id": "SPV2-B3",
+      "mutation": "mcp_server.cc reconcile/resend/idle/debounce 消费调用删除",
+      "expectedRed": "「mcp_server.cc 未消费删除链路/消歧新缝」",
+      "counterEvidence": "RED verbatim: mcp_server.cc 未消费删除链路/消歧新缝——四针眼失效（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-B3: （S-F2.1-AC4 / S-F2.4-AC2 / 契约§四 / plan 决策④）删除链路接线结构齿——SendKidpalStoryDelete 原语（protocol+application 委托）+ mcp_server.cc reconcile/resend/idle/debounce 消费调用 + stamp_index 退役负锚"
+    },
+    {
+      "id": "SPV2-C1",
+      "mutation": "CMakeLists 注册行删除",
+      "expectedRed": "「story_page_v2.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS」",
+      "counterEvidence": "RED verbatim: story_page_v2.acceptance.c 未接线进 HOST_ACCEPTANCE_SRCS（builder 迭代1 实做，见 mutation-evidence-story-page-v2.md）",
+      "sensitive": true,
+      "acceptanceEntry": "SPV2-C1: （S-F2.1 / S-F2.3 / S-F2.4）注册序守卫——story_page_v2.acceptance.c 接线进 HOST_ACCEPTANCE_SRCS 须置于 host_infra_smoke 之前 + 需求契约 canary + 扫描器自检"
+    }
+  ],
   "crossEnd": {
     "counterparts": [
       {
@@ -163,7 +352,7 @@
     ],
     "exempt": ""
   },
-  "notes": "重拆留痕（2026-09-29，按 260928/260929 拆包新规覆盖重写）：acceptance 改空骨架（唯一写点 = Pod 内 acceptance-author；拆包侧不预写齿）、plan.md 收窄五件骨架（改法取舍/阶段划分撤出）、拆包侧 brief 撤回（Pod planner Step 7 自产）、增 changeManifest（拆包期粗填，Pod planner Step 1g architect 预评后精化）、增 uiux 块（L2 纯消费挂图：P3 组五面 frozen PNG 在 docs/ui/V5/，builder layout 常量按 PNG 定坐标）。原拆包侧实现决策要点压缩备查（acceptance-author 断言化与 planner 派发 prompt 承接）：① 300ms 单双击消歧 = 列表态状态门控（其余状态单击零延迟）；② 列表 = KSTORY_LIST_MAX=16 窗口内分屏浏览、计数恒信 total（items.length 不顶替）；③ 删除覆盖层 = 新层值 append-only（低于 REMINDER）+ 10s idle-step 静默取消不显示倒计时 + 隐式 ack 超时重发（契约 Q5 形态）；④ 阅读排版常量按 NFR-READ-1 实测重冻（KSTORY_READER_LINES_PER_SCREEN=4 老包最小估算回收）；⑤ CJK 字体全 label 显式接线 font_puhui_14_1（lcd_display.cc 五处真机先例）、不赌继承；⑥ 星星徽章美术先按 v5 PNG 核对——可拼既有 ic_star_* 则零新增、需新形态走资产管线子任务（双分区烧录规则）；⑦ 录音态渲染/输入表落表在本包、会话动作接线归 K3（缝切分见 plan.md）；⑧ 阅读态分屏数 >12 截断回收（真实分栏、长文全篇可达——旧 KSTORY_READER_LINES_PER_SCREEN 头注自陈的最小估算只配短文，截断语义须随实测排版常量一并重冻，防 builder 保留旧截断）；⑨ 删除确认后本地即时移除 + story_list 重推到达校准（缓存刷新幂等消费、最终一致）。mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：① story_page.h FROZEN 头注 = 老包 offline 契约、验收已 archive 退役——重写页内输入表按 v1.47 矩阵，勿误守旧冻结（KEY 长按录音态=丢弃是旧语义、矩阵内会话动作属 K3 面但同文件头注一并声明）；② 300ms 消歧仅列表态（消歧逻辑带状态门控，不得全局生效）；③ 空态文案渲染入口在 kidpal_render_node.cc 非 story_page——两处都要改；④ fresh_save 判定语义保持——盖章触发链不动，只换 N 源与文案；⑤ 键帽条三槽消费 + v5 键名不上屏口径。调度：K1 已 merged（依赖前置实存），launch 前过 UI-ready 检查（workstream LP7）；常驻树接力棒形态（M3 先例）。",
+  "notes": "重拆留痕（2026-09-29，按 260928/260929 拆包新规覆盖重写）：acceptance 改空骨架（唯一写点 = Pod 内 acceptance-author；拆包侧不预写齿）、plan.md 收窄五件骨架（改法取舍/阶段划分撤出）、拆包侧 brief 撤回（Pod planner Step 7 自产）、增 changeManifest（拆包期粗填，Pod planner Step 1g architect 预评后精化——已于 2026-09-29 精化：增 kidpal_layer.c/protocol.*/application.*/keybar.*/lcd_display.cc，删 art_assets.c/tools 资产管线/key_gesture_parser.cc，依据 = plan.md「技术方案（planner+architect 预评）」节，architect 档 a28d9aa740e45c832）、增 impactedTestsSeed（integration 影响面圈定输入）、增 uiux 块（L2 纯消费挂图：P3 组五面 frozen PNG 在 docs/ui/V5/，builder layout 常量按 PNG 定坐标）。1g 预评 planner 裁读三条（派发 prompt 承载）：① 层值接线 = M2-K3 先例符号级插入+上移（STORY_DELETE=6，REMINDER→7，PROVISION→8，「append-only」读作既有齿零触碰+新层走冻结纪律，非数值字面）；② 删除子态手势裁决 = story_page.c 纯逻辑（key_route_layer 本体零触，板级前置拦截吞全手势防 GLOBAL_ACT 误开）；③ 键帽三槽约束读作机制与既有值域零修改、additive 并行缝允许（260928 查字窗 kidpal_keybar_char_slots 先例）；冲突时升级 human 不硬裁。原拆包侧实现决策要点压缩备查（acceptance-author 断言化与 planner 派发 prompt 承接）：① 300ms 单双击消歧 = 列表态状态门控（其余状态单击零延迟）；② 列表 = KSTORY_LIST_MAX=16 窗口内分屏浏览、计数恒信 total（items.length 不顶替）；③ 删除覆盖层 = 新层值 append-only（低于 REMINDER）+ 10s idle-step 静默取消不显示倒计时 + 隐式 ack 超时重发（契约 Q5 形态）；④ 阅读排版常量按 NFR-READ-1 实测重冻（KSTORY_READER_LINES_PER_SCREEN=4 老包最小估算回收）；⑤ CJK 字体全 label 显式接线 font_puhui_14_1（lcd_display.cc 五处真机先例）、不赌继承；⑥ 星星徽章美术按 1g 预评判定零新增（47 资产集全覆盖+art 分区已烧，art_assets.c 与 tools/asset-pipeline 出 manifest）——builder 对 v5 PNG 发现需新形态走扩单通道回评（届时回补 manifest + 双分区烧录义务）；⑦ 录音态渲染/输入表落表在本包、会话动作接线归 K3（缝切分见 plan.md）；⑧ 阅读态分屏数 >12 截断回收（真实分栏、长文全篇可达——旧 KSTORY_READER_LINES_PER_SCREEN 头注自陈的最小估算只配短文，截断语义须随实测排版常量一并重冻，防 builder 保留旧截断）；⑨ 删除确认后本地即时移除 + story_list 重推到达校准（缓存刷新幂等消费、最终一致）。mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：① story_page.h FROZEN 头注 = 老包 offline 契约、验收已 archive 退役——重写页内输入表按 v1.47 矩阵，勿误守旧冻结（KEY 长按录音态=丢弃是旧语义、矩阵内会话动作属 K3 面但同文件头注一并声明）；② 300ms 消歧仅列表态（消歧逻辑带状态门控，不得全局生效）；③ 空态文案渲染入口在 kidpal_render_node.cc 非 story_page——两处都要改；④ fresh_save 判定语义保持——盖章触发链不动，只换 N 源与文案；⑤ 键帽条三槽消费 + v5 键名不上屏口径。调度：K1 已 merged（依赖前置实存），UI-ready 检查已过（launch prep LP7 verified，P3 五面 PNG 在盘 2026-09-29 planner 第二方复核）；常驻树接力棒形态（M3 先例）；K1 retro §五 C4 处置模板前置 integrator 派单（docs/architecture.md 与 docs/requirements.md 均不在 integrator scope-map allow 面 → patch 形态 delta 落 docs-delta + human spec 批，引 K1 docs-delta §4 先例）。",
   "docsOwner": "integrator",
   "launchPreconditions": null
 }

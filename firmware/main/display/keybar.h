@@ -30,6 +30,8 @@
 #include "../key_gesture_parser.h"
 /* 随态左槽值域单源（闭集 + look 结构 + 五态场景码）。 */
 #include "kidpal_voice_states.h"
+/* P3 子态键帽槽裁决的 substate 入参枚举（KSTORY_PAGE_*）。 */
+#include "story_page.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +77,20 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
  * 设备侧 lcd_display.cc 查字窗前台分支消费（键帽值域仍走本纯逻辑单源, 零重算）。 */
 int kidpal_keybar_char_slots(int started, const char **out_left,
                              const char **out_right);
+
+/* P3 星星记录本子态键帽槽裁决（WF-F2-02/04/05 键帽随态变; TaskPackage
+ * 260924-m4-k2-p3-star-notebook-ui additive 追加, 260928 查字窗
+ * kidpal_keybar_char_slots 先例形态——并行函数, 不动 kidpal_keybar_slots 既有
+ * 签名与值域, 既有齿不破）:
+ *   substate = KSTORY_PAGE_DELETE -> 左「删掉」右「算了」（WF-F2-05）;
+ *   substate = KSTORY_PAGE_READER -> 左「长按退出」右「翻屏」（WF-F2-04, v1.52
+ *     朗读已砍——旧「念给我听」设计稿口径退役）;
+ *   substate = KSTORY_PAGE_RECORDING -> 左「收尾」右「结束」（WF-F2-02）;
+ *   其余（LIST = 基层页槽表 / STAMP = 演出帧无键帽）-> -1（消费方回落既有路径）。
+ *   防御: out_left/out_right 任一 NULL -> -1; 成功返回 0。
+ * 设备侧 lcd_display.cc story 子态分支消费（键帽值域仍走本纯逻辑单源, 零重算）。 */
+int kidpal_keybar_story_slots(int substate, const char **out_left,
+                              const char **out_right);
 
 #ifdef __cplusplus
 }

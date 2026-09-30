@@ -16,6 +16,7 @@
 #include "lvgl.h"
 #include "custom_lcd_display.h"
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6 渲染节点 */
+#include "display/kidpal_layer.h" /* 260924-m4-k2-p3-star-notebook-ui: KIDPAL_LAYER_STORY_DELETE 前置拦截判据 */
 #include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
 #include "display/char_page.h" /* 包 260917-m2-k3-char-window-overlay: 查字窗 KEY 短按重播 kidpal_char_page_replay 设备侧消费 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
@@ -185,6 +186,23 @@ static int keya_overlay_consume(key_id_t key, key_gesture_t g)
         return 1;
     }
     return 0;
+}
+
+/* P3 星星记录本页内手势分流前置判据（260924-m4-k2-p3-star-notebook-ui）：
+ * ① 删除确认覆盖层前台（STORY_DELETE 层 top）-> true：**全部手势**先交页内裁决
+ *    HandleStoryKey（消费即返回; 裁决吞掉全部手势——任何漏网手势会被 key_route_layer
+ *    通用覆盖层列误映射 SESSION_TOGGLE, 删除确认里绝不能开会话）;
+ * ② 基层当前页 = P3（星星记录本）-> true：页内手势族优先（v1.47 矩阵）; 页不拥有
+ *    该手势时 HandleStoryKey 返回 false、落全局路由（主页面路径零回归）。 */
+static bool keya_story_page_wants(int overlay_top)
+{
+    if (overlay_top == KIDPAL_LAYER_STORY_DELETE) {
+        return true;
+    }
+    if (overlay_top == 0 && kidpal_render_node_get_page() == KP_PAGE_STORY) {
+        return true;
+    }
+    return false;
 }
 
 /* 冻结解析器（key_gesture_parser）设备侧产出手势的一致性观测日志（K6 结构化 + corr_id）。
@@ -666,42 +684,80 @@ private:
                 return;
             }
             int overlay = keya_front_route_top();
+            /* P3 星星记录本页内手势族前置分流（260924-m4-k2; 删除覆盖层吞全手势 +
+             * 基层 P3 页内特例; LIST 态 BOOT 单击 = 挂起 300ms 消歧光标下移, 绝不
+             * 落全局翻页——「列表态无按键翻页出口」v1.29 口径）。 */
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_CLICK)) {
+                return;
+            }
             if (overlay && keya_overlay_consume(KEY_ID_BOOT, KEY_GESTURE_CLICK)) {
                 return; /* 顶层覆盖层已消费 BOOT（关层回原页、不翻页） */
             }
             keya_dispatch_global_action(key_route_layer(KEY_ID_BOOT, KEY_GESTURE_CLICK, overlay));
         });
-        /* BOOT 长按: 故事阅读态翻屏（P3 页内特例，KR-E1 零触碰红线，接缝原样保留）。 */
+        /* BOOT 长按: P3 页内手势族前置分流（260924-m4-k2; LIST 态 BOOT 长按 = 删除
+         * 确认子态入口 DELETE_ENTER, 基层 P3 之外的页保持原 no-op 净效果——旧输入表
+         * 对非 P3 页返回 GLOBAL 未被消费）。 */
         boot_button_.OnLongPress([this]() {
+            int overlay = keya_front_route_top();
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS)) {
+                return;
+            }
             McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS);
         });
-        /* BOOT 双击既有一键过渡接线（OnDoubleClick->cycle_next）已移除：layer-aware 路由
-         * 覆盖层/基层 BOOT 双击均 GLOBAL_ACT_NONE 无语义，且 BOOT 单击已主司翻页、
-         * 双击过渡冗余；无任何冻结验收齿钉该过渡（regression-safe，判断详见交付报告）。 */
+        /* BOOT 双击: P3 页内手势族前置分流（260924-m4-k2 对账③: 「翻下一屏落该屏
+         * 首项」语义实现侧首次接线; 既有「一键过渡接线已移除」口径保持——基层非 P3
+         * 页仍无语义）。 */
+        boot_button_.OnDoubleClick([this]() {
+            int overlay = keya_front_route_top();
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_DOUBLE_CLICK)) {
+                return;
+            }
+        });
 
         /* KEY 单击：重点对话（layer-aware 分流）。覆盖层顶层先交顶层裁决函数——提醒弹窗
          * KEY 单击 = 关闭回当前页，DISMISS 即消费；未消费落 key_route_layer（KEY 单击：
          * 覆盖层/基层均 SESSION_TOGGLE，会话主轴零回归）。 */
         key_button_.OnClick([this]() {
             int overlay = keya_front_route_top();
+            /* P3 星星记录本页内手势族前置分流（260924-m4-k2; LIST 态 KEY 单击 =
+             * 记录语境会话语义位 REC_SESSION 挂起消歧, K3 接线消费——绝不落全局
+             * SESSION_TOGGLE）。 */
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_KEY, KEY_GESTURE_CLICK)) {
+                return;
+            }
             if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_CLICK)) {
                 return;
             }
             keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_CLICK, overlay));
         });
         /* KEY 双击：注册接缝（KR-A1 三手势全注册），layer-aware 路由（覆盖层/基层双击
-         * 均 GLOBAL_ACT_NONE，全局层无语义）。 */
+         * 均 GLOBAL_ACT_NONE，全局层无语义）。P3 页内前置分流（260924-m4-k2: LIST 态
+         * KEY 双击 = 进阅读态 OPEN_READER——「KEY 双击看」实现侧首次接线）。 */
         key_button_.OnDoubleClick([this]() {
             int overlay = keya_front_route_top();
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK)) {
+                return;
+            }
             keya_dispatch_global_action(key_route_layer(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK, overlay));
         });
         /* KEY 长按：返回上一层（v1.36 layer-aware 裁决, 260915-m1-k1a KD-A3；覆盖层顶层
          * 先交顶层裁决函数——提醒弹窗 KEY 长按 = 关层回原页，DISMISS 即消费；未消费落
          * key_route_layer：覆盖层->OVERLAY_CLOSE 返回上一层 / 基层->HOME 回首页，原
          * GLOBAL_ACT_HOME->show_home 硬路由改为 layer-aware 裁决，主页面 KEY 长按回首页
-         * 映射零回归）。 */
+         * 映射零回归）。P3 页内前置分流（260924-m4-k2: LIST 态 KEY 长按 = 回首页
+         * GLOBAL 交全局（列表 = P3 顶层一层到家）/ READER 态 = 退出阅读回列表）。 */
         key_button_.OnLongPress([this]() {
             int overlay = keya_front_route_top();
+            if (keya_story_page_wants(overlay) &&
+                McpServer::GetInstance().HandleStoryKey(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)) {
+                return;
+            }
             if (overlay && keya_overlay_consume(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)) {
                 return;
             }

@@ -161,6 +161,17 @@ function defaultDetectChangesCli(args) {
   if (!result && outer && outer.content && outer.content[0] && outer.content[0].text) {
     try { result = JSON.parse(outer.content[0].text); } catch { result = null; }
   }
+  // Hot-fix #2（human 侧主线程落笔 2026-09-30，human 裁方案 1，gate-tooling-bug escalation 9b1181bc，
+  // 同源于 260928 批 T10；先例 0303e98 / 85667b2a，gov 侧待追认）：codebase-memory-mcp 0.10.8
+  // `cli --json detect_changes` 成功输出无 structuredContent、content[0].text 为纯文本（非 JSON）
+  // → result 恒 null → buildQuickCheckScope 判 detect-changes-unavailable → 每次真实合并 Step 4 卡死。
+  // 诚实降级：仅当 isError:false（CLI 真成功）而文本非 JSON 时返回空 enrichment + warn 留痕——
+  // 圈定主输入 = git diff baseRef..HEAD 本就独立工作，CLI 仅 enrichment 叠加（且锚主仓项目、
+  // 合并前 diff 恒空注定为 0），降级无损；error / isError / stdout 非 JSON（真不可达形态）仍 fail-closed。
+  if (!result && outer && outer.isError === false) {
+    warn('detect_changes cli: success output not JSON-parseable (mcp 0.10.x prose shape) — degrade to empty enrichment (escalation 9b1181bc)');
+    result = { filePaths: [] };
+  }
   return { result: result || null };
 }
 
@@ -1383,6 +1394,12 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // T6：rebase 步（Pod worktree 内）之前幂等设 skip-worktree——置于 if (!DRY_RUN) 守卫之外（R1-F9）。
   ensureGraphCacheSynced(wt, changeId);
   log(`${changeId}: fetching origin...`);
+  // ARQ-260820：rebase 目标改「解析最新基线 ref」（本地 main 优先、origin 领先切 origin、单缺降级存活 ref、分叉/俱缺 fail-closed）。
+  // Hot-fix（human 侧主线程落笔 2026-09-30，gate-tooling-bug escalation a8a3b44c）：声明上提出 if (!DRY_RUN) 块——
+  // 260928 批 T10 引入的 Step 4 quick-check（buildQuickCheckScope）在块外引用 target，块内声明致 ReferenceError
+  // 确定性崩溃（其后每次真实合并 Step 4 必崩）；resolveRebaseTargetLive 为只读解析、上提无副作用，闸语义零改
+  // （85667b2a 热修先例同形态，gov 侧待追认入档）。
+  const target = resolveRebaseTargetLive(wt);
   if (!DRY_RUN) {
     // Hot-fix（human 裁定 2026-09-05，pod-events 85667b2a）：本地开发 worktree/branch 不保证有远端——
     // 无 origin remote 时跳过 fetch（不再 fail-closed），rebase 目标由 resolveRebaseTargetLive 的
@@ -1401,8 +1418,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
       log(`${changeId}: no origin remote — skip fetch (local-only worktree), rebase target falls back to local main`);
     }
 
-    // ARQ-260820：rebase 目标改「解析最新基线 ref」（本地 main 优先、origin 领先切 origin、单缺降级存活 ref、分叉/俱缺 fail-closed）。
-    const target = resolveRebaseTargetLive(wt);
+    // （target 声明已上提至 fetch 之前——gate-tooling 热修 a8a3b44c，见上方注记。）
     if (!target.ok) {
       warn(`${changeId}: rebase target unresolved (${target.reason}) — fail-closed, human adjudication required`);
       setPod(projectDir, { changeId, status: 'blocked' });

@@ -131,3 +131,26 @@
 - **重启核验**：systemctl restart → active，Uvicorn https://0.0.0.0:8000 监听在位，启动日志零 import 错误（2026-09-28 13:18 CST）。
 - **部署机制注记**：Windows 命令行 32KB 上限 → base64 分块（20KB/块）经 ssh_helper 上传；story.py 首传因超限静默失败，分块后成功（md5 校验兜底抓到）。
 - **合并门状态**：supervisor 机械闸 ESCALATE（high：all-mock 启发式标定错配嫌疑，verdict 落仓 3f63b0b）→ human 裁「先部署测后裁」→ 合并保持 blocked 待真机结论。
+
+## 2026-09-29 · K2 launch prep（主线程 skill：kidpal-pod-launch-prep；launch 由 human 执行）
+
+- **调度判定**：本批 = K2 单包——K1 已 merged（2026-09-24，dependsOn 实存）；K3 dependsOn K1+K2、K2 未 merged → K3 不可入批（依赖图说了算，不硬凑并行）。perf-k1 树（C:/AI/KidPal-pod-perf-k1-roundtrip-latency，分支 dev/260924-perf-k1-roundtrip-latency）分支未入 main 且 board 无对应在途包——来历待核，本批不复用，留 human（遗留项）。
+- **机械门**：`portfolio-reconcile --check-launch` ok:true / blocking 空 / warn 空（base ref = `base/m4-star-notebook` 随本批 ff 快进至 5575a23，仍含重拆批 d2b331c 全部拆包制品；本包相关 launchPreconditions 5 verified / 0 pending——LP7 UI-ready 含其中，P3 五面 PNG 在盘核过 + 重拆门 1 已裁 uiux L2 成立）；`settings-lint.mjs` 0 RED / 0 WARN。
+- **双面基线重锚 @ 5575a23（本树实测；launch 批仅触 delivery/ 治理面，面域差异判停预期零差异）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **117 passed / 0 failed / 4 deselected, 2 subtests passed**（全套 offline 含 server/tests = 193 passed 同日佐证，与 defer 包 193 零偏移）。面域 = server；锚 SHA = 5575a23。零红。旧锚 80 passed @ 5e862d0 因 K1/defer 批新齿全绿而偏移，作废。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **107 Tests / 0 Failures / 0 Ignored，exit 0**。面域 = firmware；锚 SHA = 5575a23。零红。旧锚 103T0F @ 5e862d0 作废（char-window-v5-trim / char-window-key-triggered-play 等固件批新增齿全绿）。
+- **树与环境**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K1 merged → 直接续跑零复位）；常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 5575a23 = main HEAD、tracked 净 + untracked 零残留（交接卫生过）；managed_components 软链在位 + host build ELF 热缓存保住。图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 强制刷新（18296 节点 / 49896 边与刷新前一致 = 已最新；parse_partial 102 件 = 既有 best-effort 信号非新增；skipped 0）。
+- **board 预填**：260924-m4-k2-p3-star-notebook-ui → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/launch-card.md`（五要素齐 + intake 特别注意：契约三触点纯消费零改 / story_page.h 旧 FROZEN 头注退役勿误守 / 拆包侧 brief 撤回 planner Step 7 自产）。
+- **遗留 human 项**：① launch 由 human 在常驻树自跑（命令行两形态见启动卡第五要素；本 prep 会话占用树内会话位，launch 前先收本会话）；② perf-k1 树来历待核（分支 dev/260924-perf-k1-roundtrip-latency 未入 main、board 无对应在途包——留池 or 复位归 human 裁）；③ milestones.jsonl M4 行 state 收口时点沿 K1 遗留同批裁量。
+
+## 2026-09-30 · K2 integrator 收口（final r4 十闸全绿 → closeout 制品 → commit 冻结）
+
+- **影响面圈定终验（final 相位两步走）**：① 圈定 = detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since=base/m4-star-notebook：changed_files 32 / seed_symbols 163 / impacted 34 全在 firmware/main）∪ impactedTestsSeed 合成 test-scope 清单落 `delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/test-scope-final-r4.txt`（14 现役测试文件 + archive 排除留痕；正常圈定路径非降级）；② final bearing verification = `verify.mjs --evidence-mode=round --phase=final --scope-file <清单> --round 4 --invocation-id 2322f6f7-2608-40c7-88e3-de91b0f1ea73` → **r4 fact ok:true 十闸全绿**（8 scoped + unit/acceptance full 档求交），`verifier-evidence-check.mjs` → `{"ok":true,"factOk":true}` exit 0。
+- **host 全量回归（真实退出码）**：`wsl espidf_wsl.sh build && ./build/host_infra_test.elf` → **128 Tests / 0 Failures / 0 Ignored，EXIT_CODE=0**（基线 107T0F @ 5575a23 + 新齿 21 = acceptance 13 + unit 8，既有齿零偏移）；device build 闸过（`xiaozhi.bin` 0x310b20 / 余 11%）；mutation 13/13（B1 摘源清单敏感路径 + tofu 遮蔽旁注如实）。
+- **closeout 两件落 `delivery/changes/dev/260924-m4-k2-p3-star-notebook-ui/`**：`docs-delta.md`（spec patch 形态七 hunk：requirements 版本行 v1.61 / F2 对账块四项销账 / §2.3 键位对账 P3 半销账 + 门1 F7⑤点名 / AC3 双指令清扫（门1 F1）/ 变更记录行；arch §5.3 story_page 现状行 + §5.5.4 改名对账销账——基线 = c735062 落地后现文）+ `review-packet.md`（demo 对账 = 一致 + 未覆盖面 9 条 + 真机目测半 deferred 挂 K3 声明 + UI 文本证据 + pod-events 交叉引用 12 事件 + minimal 债务 5 处全登记 + Findings 3 NIT 零 hard-violation）。`closeout-check --update-index` ok:true（advisory 3 条：verdict/verification 按 SSOT advisory 不晋升包目录〔r4 fact 承载〕/ pod-retro 归 planner 收尾相位 / loop-retro 阈值触发归主线程）。
+- **gate evidence 跨包条件代落**：K1 包 `architecture-gate-evidence.md §6` **C2 → done**（SPV2-A7/A8/B3 证据）+ **C3 → K2 半 done / K3 live 半 pending** 注记（先例 = K1 integrator 对 C1/C4 同路径）。
+- **changes-index**：无参全量重建（dev lane 正典路径）——本包行在案（closed，devCount 48）；`arch/INDEX.md` 重建波及维持不 commit（他 lane 纠缠面，defer 包先例）。
+- **commit 冻结批**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：实现 16 tracked 文件（+1635/−513）+ 新齿 2 件 + closeout 两件 + gate evidence C2/C3 + pod 簿记面（taskpackage.json / pod-events.jsonl / verifier-evidence r1–r4 / verify-runs.jsonl / test-scope 清单 / mutation .md / 双 brief）+ current/ 投影四件 + dev INDEX + 本 progress 节。
+- **遗留**：① spec 批七 hunk 待 human 逐字过目落地（合并后，ARQ-260918 剩余处可同批）；② milestones M4 行 state 沿 K1 遗留同批裁量；③ 真机目测半 + 手感 + wire 真发 + 时点①重裁归 K3 设备轮；④ 代存 mutation .md 投影陈旧（Findings #1，planner 择机同步）。
+- **等待 supervisor 机械合并门**：integrator 不 push、不 merge；supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并。
