@@ -161,6 +161,17 @@ function defaultDetectChangesCli(args) {
   if (!result && outer && outer.content && outer.content[0] && outer.content[0].text) {
     try { result = JSON.parse(outer.content[0].text); } catch { result = null; }
   }
+  // Hot-fix #2（human 侧主线程落笔 2026-09-30，human 裁方案 1，gate-tooling-bug escalation 9b1181bc，
+  // 同源于 260928 批 T10；先例 0303e98 / 85667b2a，gov 侧待追认）：codebase-memory-mcp 0.10.8
+  // `cli --json detect_changes` 成功输出无 structuredContent、content[0].text 为纯文本（非 JSON）
+  // → result 恒 null → buildQuickCheckScope 判 detect-changes-unavailable → 每次真实合并 Step 4 卡死。
+  // 诚实降级：仅当 isError:false（CLI 真成功）而文本非 JSON 时返回空 enrichment + warn 留痕——
+  // 圈定主输入 = git diff baseRef..HEAD 本就独立工作，CLI 仅 enrichment 叠加（且锚主仓项目、
+  // 合并前 diff 恒空注定为 0），降级无损；error / isError / stdout 非 JSON（真不可达形态）仍 fail-closed。
+  if (!result && outer && outer.isError === false) {
+    warn('detect_changes cli: success output not JSON-parseable (mcp 0.10.x prose shape) — degrade to empty enrichment (escalation 9b1181bc)');
+    result = { filePaths: [] };
+  }
   return { result: result || null };
 }
 
