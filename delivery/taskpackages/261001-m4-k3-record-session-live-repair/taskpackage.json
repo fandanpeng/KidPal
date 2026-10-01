@@ -1,0 +1,76 @@
+{
+  "changeId": "261001-m4-k3-record-session-live-repair",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "upstreamFrozen": "",
+    "workstream": "m4-star-notebook"
+  },
+  "subsystem": "firmware",
+  "story": "260924-m4-k3-record-session-live 落地后 2026-10-01 真机 P3 冒烟暴露的四缺陷止血（纯固件面：D1 星星记录本列表不出现〔延迟推送无消费方〕/ D2 按 KEY 进声波层而非法录音页〔会话层压住录音页〕/ D4a 录音态 KEY 落全局会话 toggle 致毁稿 / D4b 录音演出定时器致首页图像悬垂 LVGL panic 重启）——语音收尾「说完了」缺陷 D3 触需求/架构/契约三面，已拆 Package B，不在本包",
+  "planRef": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/plan.md",
+  "redBaselineCommand": "通道①（既有齿零偏移，含 K2/K3 新冻齿）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash <worktree>/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（server 面）：python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance；intake 时 acceptance-author 实跑复核落账",
+  "redBaselineResult": "pending——launch prep 相位只落基线锚（见 progress.md「2026-10-01 · K3-repair launch prep」段带 SHA 行）；本包新增冻结齿的红基线由 acceptance-author 在 intake Step 5 实跑复核落账",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "K3R-A1（D4a 正/负双齿）：录音语境下的键手势归属——录音页态 + kidpal_story_session_ctx_active() 时 KEY 必产 KSPV2_ACT_STOP_RECORD、绝不产 GLOBAL_ACT_SESSION_TOGGLE；非录音语境零偏移（键路由前置判据闭集扩项不改既有分歧）",
+    "K3R-A2（D2 层栈让位）：P3 按 KEY 进录音态时录音页与「● 录音中」可见、VOICE 层不再压住录音页（层栈让位形态与 D4a 判据闭集同一次设计决策内一致选定；本包不含逐句回显内容——回显依赖 stt 帧属 Package B）",
+    "K3R-A3（D4b-1）：会话收尾后录音演出定时器必停、g_story_view.page 必回 LIST（不依赖页态自删）",
+    "K3R-A4（D4b-3 渲染不变量）：任何外部 kidpal_*_page_render 清屏后，渲染节点不得以悬垂对象出帧（lv_obj_is_valid 守卫）",
+    "K3R-A5（D1 defer 缓存消费方）：kidpal_story_list_gate 的 defer 分支缓存存在驱动方——VOICE 层弹出 / 前台回落 LOCAL_PAGE 且本地页 == P3 时以缓存重渲（沿用既有「纯逻辑函数无驱动方」反齿形状）"
+  ],
+  "exitCriteria": [
+    "K3R-E1: host 齿全量零红（D1/D2/D4a/D4b 四族正负齿 + K2/K3 冻结面零偏移）+ device build 闸过（体积余量证据）",
+    "K3R-E2: 铁律——docs/contracts/** 与系统 spec 零改（本包纯固件实现面）；D3「说完了」与逐句回显内容不在本包验收面",
+    "K3R-E3: 真机复验矩阵四窗目击（BOOT 翻页进 P3 列表显示 / P3 KEY 见录音页非声波层 / 录音中 KEY 正常归档不崩溃 / 唤醒词问答+P2 课表+P3 删除回归）+ closeout 三件 + docs-delta 随 integrator 收口"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "docs/requirements.md#S-F2.2",
+    "docs/architecture.md#§5.2"
+  ],
+  "sourceRefs": [
+    "S-F2.2-AC2",
+    "S-F2.2-AC4",
+    "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "delivery/taskpackages/260924-m4-k3-record-session-live/plan.md",
+    "delivery/changes/dev/260924-m4-k3-record-session-live/pod-retro.md",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
+  ],
+  "changeManifest": [
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/**"
+  ],
+  "impactedTestsSeed": [
+    { "path": "firmware/main/test/record_session_live.acceptance.c", "kind": "regression", "note": "K3 冻结齿（defer 缓存消费方反齿同族 / 键路由 / 录音态）——本包修复对其为增量，零偏移复验" },
+    { "path": "firmware/main/test/story_page_v2.acceptance.c", "kind": "regression", "note": "K2 冻结齿层栈/输入表/渲染面零偏移" },
+    { "path": "firmware/main/test/key_layer_dispatch.acceptance.c", "kind": "regression", "note": "M1-K1a 键路由分层冻结面零偏移" },
+    { "path": "firmware/main/test/host_app/main/CMakeLists.txt", "kind": "wiring", "note": "HOST_ACCEPTANCE_SRCS 接线随新齿" }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsSyncReason": "arch 面收口：§5.2 场景④ 记录会话演出与层栈让位对账（K3 落地后的实况修正）；requirements 面零改动（本包不改需求语义，仅在 D3-甲 随 Package B 触需求注记）。具体 docs-delta 由 integrator 依实际改动圈定。"
+}
