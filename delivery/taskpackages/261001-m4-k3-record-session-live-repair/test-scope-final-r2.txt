@@ -1,0 +1,18 @@
+# test-scope 清单 · 261001-m4-k3-record-session-live-repair（integrator Step 4 范围圈定，2026-10-01）
+# 合成来源 = detect_changes（project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base base/m4-star-notebook
+#   / merge_base 4cb77a8）changed_files 26 / impacted 7 节点（firmware/main 面：Application::Initialize/Run、
+#   CustomBoard、main、test 模块）
+#   + taskpackage impactedTestsSeed[] + 共享 seam 冻结面回归 + 安全余量；格式 = 仓根相对路径一行一件（# 注释）。
+# 范围性质：影响面圈定清单（非全量回归替代物）；本包纯固件面，落 firmware/main/test 的 host ELF 全量注册齿，
+#   本清单为 floor（终跑 = host ELF 全量 + 双面基线，恒覆盖本清单下限）。
+# ── 本包新冻验收件（acceptanceTestsFile + builder 单测）──
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+# ── blast radius 映射测试（changed: story_page.c/.h + kidpal_render_node.cc + mcp_server.cc + application.cc + board cc）──
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/story_page_v2.test.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+# ── 安全余量（host runner + 接线注册序守卫 RSR-C1 tooth4 承载面）──
+firmware/main/test/host_infra_smoke.acceptance.c

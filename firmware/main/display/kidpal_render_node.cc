@@ -172,6 +172,17 @@ extern "C" int host_infra_render_p1_frame(const uint32_t *argb, int w, int h)
     if (s_kidpal_img == NULL || argb == NULL) {
         return -1;
     }
+    /* K3R D4b-3 对象有效性守卫（261001-m4-k3-record-session-live-repair）: 外部
+     * kidpal_*_page_render（如 kidpal_story_page_render 的 lv_obj_clean）会销毁
+     * s_kidpal_img 所指图像对象却**不置空** s_kidpal_img（仅 rn_render_home_locked /
+     * rn_render_kidpal_page_locked 置空）——悬垂对象出帧致 LoadProhibited panic
+     * （backtrace: lv_obj_get_screen <- lv_obj_get_display <- lv_obj_invalidate_area
+     * <- lv_obj_invalidate <- lv_image_set_src <- 本函数）。出帧前以
+     * lv_obj_is_valid 守卫, 悬垂时复位 NULL 交 tick NULL 守卫, 绝不 lv_image_set_src。 */
+    if (!lv_obj_is_valid(s_kidpal_img)) {
+        s_kidpal_img = NULL;
+        return -1;
+    }
     memset(&s_p1_dsc, 0, sizeof(s_p1_dsc));
     s_p1_dsc.header.cf     = LV_COLOR_FORMAT_XRGB8888;
     s_p1_dsc.header.w      = static_cast<uint32_t>(w);
@@ -347,6 +358,10 @@ static void rn_reconcile_foreground_locked(void)
         lv_screen_load(s_kidpal_scr);
     }
 }
+
+/* 前置声明（rn_render_kidpal_page_locked 定义在后方本地浏览层区; voice_end 的
+ * [R3] P3 前台回落重渲在此提前消费, 须先前向声明）。 */
+static void rn_render_kidpal_page_locked(kidpal_page_id_t page);
 
 /* 重建并渲染首页 P1 帧，再把它切到前台。s_kidpal_scr 必须已存在。 */
 static void rn_render_home_locked(void)
@@ -574,9 +589,24 @@ void kidpal_render_node_voice_end(void)
     kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
 
     if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE) {
-        /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。 */
+        /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。
+         * K3R D1/[R3]（261001-m4-k3-record-session-live-repair）: 例外——本地页 = P3
+         * 时前台回落 P3（**不**回家页）, 令键路由的 kidpal_render_node_story_substate
+         * 见 P3 页态（D4a 归属判据成立）、录音页不被声波层压住（D2）、键帽随态正确。
+         * [R3] defer 缓存消费判据（P3 基页 + 列表态）命中时, 本次 P3 重渲即以 g_story_list
+         * 最新缓存落屏（defer 分支缓存的消费方; 缓存由 story_list gating 分支 / 会话收尾
+         * cache_story 预同步至渲染节点）; 子态/未命中则回落 P3 当前缓存页。VOICE 层已
+         * 弹出, 故 voice_front 传 0。 */
         if (s_kidpal_scr != NULL) {
-            rn_render_home_locked();
+            if (s_local_page == KP_PAGE_STORY) {
+                int list_flush = kidpal_story_list_deferred_flush(0, KP_PAGE_STORY,
+                                                                  s_story_view.page);
+                ESP_LOGI(RN_TAG, "voice_end: story front list_flush=%d page_state=%d",
+                         list_flush, s_story_view.page);
+                rn_render_kidpal_page_locked(KP_PAGE_STORY);
+            } else {
+                rn_render_home_locked();
+            }
         }
     } else {
         /* 服务端回答页驻留前台（OQ3=c：回答后屏幕落点确定、非随机回退；语音不拦内容页）。 */

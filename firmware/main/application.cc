@@ -27,6 +27,11 @@
  * s_story_rec_entered = 引导态->录音态已切换镜像（幂等防重切; Idle 收尾与标志同步清）。 */
 void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.cc（mcp_server.h
                                        * 冻结面零改动——变更清单不含该头, 免扩公共面） */
+/* K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1; 定义
+ * 住 mcp_server.cc, 同款免扩公共头纪律）: 读 story 视图页态供 kidpal_story_session_end
+ * 判据 + 复位录音页态并停录音演出定时器。 */
+int  KidpalStoryViewPageState();
+void KidpalStorySessionEndApply(int list_page);
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
@@ -964,6 +969,19 @@ void Application::HandleStateChangedEvent() {
             display->SetEmotion("neutral");
             audio_service_.EnableVoiceProcessing(false);
             audio_service_.EnableWakeWordDetection(true);
+            /* K3R [R2]（261001-m4-k3-record-session-live-repair, D4b-1）: 会话收尾复位
+             * 录音页态 + 停录音演出定时器——**先于**前台回落, 令 voice_end 的 [R3] 缓存
+             * 重渲判定见 LIST 页态; 复位不依赖页态自删（录音定时器即时停, 防其在首页
+             * 重建后仍每 100ms 清屏砸毁首页图像对象致悬垂 panic）。判据住 story_page.c
+             * 纯逻辑缝 kidpal_story_session_end（seam [R2] 权威 = record_session_repair.
+             * acceptance.c 文件头; 页态/定时器为设备运行态, 经 mcp 桥执行）。 */
+            {
+                int story_end_page = -1;
+                if (kidpal_story_session_end(KidpalStoryViewPageState(),
+                                             &story_end_page) == 1) {
+                    KidpalStorySessionEndApply(story_end_page);
+                }
+            }
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
             kidpal_render_node_voice_end();

@@ -283,6 +283,40 @@ int kidpal_story_list_gate(int voice_front, int page_state);
 int kidpal_story_session_ctx_active(void);
 void kidpal_story_session_ctx_set(int active);
 
+/* ---- ⑯ K3R 冻结缝追加（TaskPackage 261001-m4-k3-record-session-live-repair;
+ * additive 尾部追加, 冻结纪律只增不改/移。seam contract [R1]-[R3] 权威 =
+ * firmware/main/test/record_session_repair.acceptance.c 文件头; host runner 把本
+ * 头对应的 story_page.c 编入源清单, 本区声明由其中强符号定义覆盖验收件 weak
+ * 哨兵） ---- */
+
+/* [R1] 录音语境键手势归属判据（D4a/D2 同一设计决策内一致选定）: 返回 1 = 故事页
+ * 拥有该键手势（板级路由进 HandleStoryKey, KEY 由 kidpal_story_page_input 在
+ * RECORDING 页态映 KSPV2_ACT_STOP_RECORD, **绝不**落 key_route_layer ->
+ * GLOBAL_ACT_SESSION_TOGGLE 毁稿路径）; 0 = 交回全局路由。规则（形参 = 判据全输入）:
+ *   (a) page_state == KSTORY_PAGE_RECORDING && ctx_active != 0 -> 1
+ *       （记录语境录音态; **形态无关**——甲 VOICE 已让位 / 乙 VOICE 前台两形态同
+ *       结论）;
+ *   (b) front_layer == KIDPAL_LAYER_STORY_DELETE -> 1（删除覆盖层吞全手势）;
+ *   (c) front_layer == KIDPAL_LAYER_NONE && kidpal_page == KP_PAGE_STORY -> 1
+ *       （基层 P3 故事页既有语义零偏移）;
+ *   其余 -> 0（含 VOICE/其它覆盖层前台且非记录语境 / 基层非 P3 / 记录语境标志未置）。 */
+int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state,
+                          int ctx_active);
+
+/* [R2] 会话收尾录音态复位判据（D4b-1）: page_state == KSTORY_PAGE_RECORDING ->
+ * *out_page = KSTORY_PAGE_LIST, 返回 1（调用方据此复位 g_story_view.page 并停录音
+ * 演出定时器——页态回落 LIST 后 StoryRecTimerCb 的 page != RECORDING 自删条件成立,
+ * 定时器终停）; 其余 -> *out_page 不改, 返回 0（幂等 no-op, 非录音态零动作）;
+ * out_page == NULL -> -1。 */
+int kidpal_story_session_end(int page_state, int *out_page);
+
+/* [R3] defer 缓存消费判据（D1）: 返回 1 = 以 g_story_list 最新缓存重渲 P3 前台
+ * （defer 分支缓存被消费）: voice_front == 0（VOICE 层已弹出/前台回落基层）&&
+ * kidpal_page == KP_PAGE_STORY && page_state == KSTORY_PAGE_LIST; 其余 -> 0
+ * （VOICE 仍前台不抢推 / 本地页非 P3 / 已入子态不覆盖）。 */
+int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page,
+                                     int page_state);
+
 #ifdef __cplusplus
 }
 #endif

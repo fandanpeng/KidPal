@@ -190,3 +190,13 @@
 - **启动卡**：已落 `delivery/taskpackages/261001-m4-k3-record-session-live-repair/launch-card.md`（五要素齐 + intake 特别注意五条：本包纯固件四缺陷 D3/逐句回显不在验收面 / D2-D4a 同一次决策一致选定 / D4b 三修并行 / 契约零改 + Package C 独立 / live 轮 human 持板）。
 - **本批 commit**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：72ce58f（kidpal-ecs-gateway skill 记录 OpenClaw 400 根因，human 裁随本批）+ cdc04c5（spine + Package A 三件 + Package C 计划）；专用 base ref `base/m4-star-notebook` ff 至 8ea3bce（main 4cb77a8 + 制品 cherry-pick commit）。
 - **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族，单真机不撞车）；② Package B（D3-甲）受 spec/contract anchors 门控，Track A 定形后另立包；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量；④ perf-k1 树来历待核（沿 K2/K3 遗留）。
+
+## 2026-10-01 · K3-repair（Package A）integrator closeout（host 面绿；真机轮 deferred）
+
+- **本批**：261001-m4-k3-record-session-live-repair = K3 落地后真机 P3 冒烟四缺陷止血（D1 列表无消费方 / D2 层栈让位 / D4a 键路由毁稿 / D4b 悬垂 panic）；纯固件面（`firmware/main/**` 7 文件 +230/−17 + 新齿 3 件）；契约/spec/服务端零改。分支 dev/260915-m1-k1a-key-layer-dispatch（未 push/未 merge）。
+- **影响面圈定终验**（Step 4）：detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since `base/m4-star-notebook`，merge_base 4cb77a8；changed_files 26 / impacted 7 节点[firmware/main]）∪ impactedTestsSeed → 清单 `delivery/taskpackages/261001-m4-k3-record-session-live-repair/test-scope-final-r2.txt`。**scoped r1 全绿（8 闸）+ final r2 全绿（10 闸含 full unit/acceptance）**，`verifier-evidence-check` → `{"ok":true,"factOk":true}`。
+- **真跑 host 齿**：`145 Tests / 0 Failures / 0 Ignored，exit 0`（RSR-A1..A5 + RSR-C1 逐齿 PASS，K1/K2/K3 既有齿零回归）。5 条真实变异逐 AC 敏感（真红→真绿）。
+- **docs-delta**：requirements/契约/spec 零自改；检出两处 spec 面归属他项（§5.2④ 机制对账归 Package B / §5.2④① consumer 补正随 K3 pending delta）。
+- **未覆盖面申报**：真机四窗目击 E3 + AFE VAD 真沿 + 120s 静默归档 = **设备轮盲区，本相位 deferred，如实申报**；逐句回显/D3 = Package B；server 面 N/A。
+- **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；supervisor APPROVE/ESCALATE-human 后由 planner 主线程 `merge-driver --pod` 本地合并。
+- **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族）；② §5.2④① consumer 补正文本与 K3 pending delta 同批交 human spec 批；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量。

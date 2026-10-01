@@ -1,0 +1,32 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "261001-m4-k3-record-session-live-repair",
+  "ts": "2026-10-01T02:07:49.760Z",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "98ffded6-3d8c-4abb-8599-3aca72142896",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r2.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 10,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "acceptance-author 红基线 6 齿设计态红（COMPILE_EXIT=0 / RUN_EXIT=6，零 fixture 缺陷红；零偏移基线 136T0F @5490a5c）→ final host 145 Tests/0 Failures/0 Ignored（RSR-A1..A5 + RSR-C1 逐齿 PASS）；5 条真实变异逐 AC 敏感（真红→真绿）在案",
+    "redTrajectory": "scoped r1 全绿（8 闸）/ final r2 全绿（10 闸）——本包零 fixer 绕轮",
+    "demoReconciliation": "见 review-packet.md「demo 对账行」——host 齿四缺陷逐条 PASS；真机四窗目击（K3R-E3）deferred（设备轮盲区，如实申报）",
+    "detectChanges": "Step 9b：project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，since base/m4-star-notebook（merge_base 4cb77a8）——changed_files 26 / impacted 7 节点（firmware/main 面）；改动只影响预期符号，无越界面",
+    "scopeFile": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/test-scope-final-r2.txt",
+    "deferredFaces": "真机四窗目击 E3 / AFE VAD 真沿 / 120s 静默归档 = 设备轮盲区；逐句回显 + D3 说完了 = Package B；server 面 N/A",
+    "docsSync": "requirements/契约/spec 零自改（git status docs/ 零输出）；检出两处 spec 面归属他项（§5.2④ 机制对账归 Package B / §5.2④① consumer 补正随 K3 pending delta）",
+    "adr": "零改（无新决策；D2 甲 = 包内局部 UI 选择）"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载，本件与其下 verification.json 仅为投影。riskTier=high → 机械闸必产 ESCALATE（合并须 human 批）。"
+}

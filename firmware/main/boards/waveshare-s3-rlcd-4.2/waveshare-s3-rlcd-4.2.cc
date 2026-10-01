@@ -16,7 +16,7 @@
 #include "lvgl.h"
 #include "custom_lcd_display.h"
 #include "display/kidpal_render_node.h" /* 包 9b HWV-A6 渲染节点 */
-#include "display/kidpal_layer.h" /* 260924-m4-k2-p3-star-notebook-ui: KIDPAL_LAYER_STORY_DELETE 前置拦截判据 */
+#include "display/kidpal_layer.h" /* K3R [R1]: 层值闭集供 kidpal_story_key_owns 判据（front_layer 入参语义）*/
 #include "display/reminder_page.h" /* 包 260915-m1-k1a-key-layer-dispatch: 顶层覆盖层裁决函数 kidpal_reminder_key 设备侧首次接线 */
 #include "display/char_page.h" /* 包 260917-m2-k3-char-window-overlay: 查字窗 KEY 短按重播 kidpal_char_page_replay 设备侧消费 */
 #include "key_gesture_parser.h" /* 包 260911-key-route-a1 冻结按键手势解析 + 全局路由表 */
@@ -188,21 +188,27 @@ static int keya_overlay_consume(key_id_t key, key_gesture_t g)
     return 0;
 }
 
-/* P3 星星记录本页内手势分流前置判据（260924-m4-k2-p3-star-notebook-ui）：
- * ① 删除确认覆盖层前台（STORY_DELETE 层 top）-> true：**全部手势**先交页内裁决
- *    HandleStoryKey（消费即返回; 裁决吞掉全部手势——任何漏网手势会被 key_route_layer
- *    通用覆盖层列误映射 SESSION_TOGGLE, 删除确认里绝不能开会话）;
- * ② 基层当前页 = P3（星星记录本）-> true：页内手势族优先（v1.47 矩阵）; 页不拥有
- *    该手势时 HandleStoryKey 返回 false、落全局路由（主页面路径零回归）。 */
+/* P3 星星记录本页内手势分流前置判据（260924-m4-k2-p3-star-notebook-ui）
+ * + K3R [R1] 单源归属判据接线（261001-m4-k3-record-session-live-repair）：
+ * 归属决策统一收敛到 story_page.c 纯逻辑缝 kidpal_story_key_owns（seam [R1] 权威 =
+ * record_session_repair.acceptance.c 文件头），板级只供全输入：
+ *   ① front_layer = keya_front_route_top()（覆盖层归一化值; 基层/配网/无前台 = 0 ==
+ *      KIDPAL_LAYER_NONE, 覆盖层前台 = 其层值）;
+ *   ② kidpal_page = kidpal_render_node_get_page()（本地浏览页）;
+ *   ③ page_state = kidpal_render_node_story_substate()（P3 子态; 非 P3/它覆盖层/-1）;
+ *   ④ ctx_active = kidpal_story_session_ctx_active()（记录语境标志）。
+ * [R1] 三支（记录语境录音态 / 删除确认覆盖层吞全手势 / 基层 P3）即原两分支 +
+ * D4a 修复支：录音时 VOICE 让位后基层无覆盖层, 判据自然成立 -> KEY 交故事页 ->
+ * kidpal_story_page_input 在 RECORDING 页态映 KSPV2_ACT_STOP_RECORD, **绝不**落
+ * key_route_layer -> GLOBAL_ACT_SESSION_TOGGLE 毁稿路径（D4a 根）。页不拥有该
+ * 手势时 HandleStoryKey 返回 false、落全局路由（主页面路径零回归）。 */
 static bool keya_story_page_wants(int overlay_top)
 {
-    if (overlay_top == KIDPAL_LAYER_STORY_DELETE) {
-        return true;
-    }
-    if (overlay_top == 0 && kidpal_render_node_get_page() == KP_PAGE_STORY) {
-        return true;
-    }
-    return false;
+    int kidpal_page = kidpal_render_node_get_page();
+    int page_state = kidpal_render_node_story_substate();
+    int ctx_active = kidpal_story_session_ctx_active();
+    return kidpal_story_key_owns(overlay_top, kidpal_page, page_state,
+                                 ctx_active) == 1;
 }
 
 /* 冻结解析器（key_gesture_parser）设备侧产出手势的一致性观测日志（K6 结构化 + corr_id）。

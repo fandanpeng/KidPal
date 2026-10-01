@@ -205,6 +205,19 @@ set(HOST_ACCEPTANCE_SRCS
     # 守卫; 本文件 RSL-C1 tooth 4 校验此序）。
     "../../record_session_live.acceptance.c"
 
+    # 包 261001-m4-k3-record-session-live-repair（K3 落地后真机 P3 冒烟四缺陷止血：
+    # D1 列表延迟推送无消费方 / D2 会话层压录音页 / D4a 录音态 KEY 落全局 toggle 毁稿 /
+    # D4b 录音定时器致首页图像对象悬垂 panic）冻结验收。行为齿 [R1]-[R3] 强符号源 =
+    # display/story_page.c（已在册，尾部追加缝覆盖 weak 哨兵）；结构齿扫真实工作树。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本文件 RSR-C1 tooth 4 校验此序）。
+    "../../record_session_repair.acceptance.c"
+
+    # 包 261001-m4-k3-record-session-live-repair builder 单元测试（冻结齿未穷尽的分支/
+    # 边界：R1 规则优先级与 ctx 非零语义 / R2 越界与幂等 / R3 非零与非列表态）。置于
+    # host smoke acceptance 之前。
+    "../../record_session_repair.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
