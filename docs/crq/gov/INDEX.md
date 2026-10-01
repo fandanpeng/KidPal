@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 14（待拍板 0 / 待触发 12 / 已接受风险 2）；已结 73（归档索引见下）。
+**摘要**：未结 15（待拍板 0 / 待触发 13 / 已接受风险 2）；已结 73（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（12）
+## 待触发（13）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -29,6 +29,7 @@ _（无）_
 | [ARQ-260923-planner-roster-reference-drift](ARQ-260923-planner-roster-reference-drift.md) | SHOULD | planner.md 可派编制引用与 .claude/agents 实况漂移——frontmatter Agent 列表与正文 Step 6b 仍引 uiux-author / uiux-designer，而编制文件不存在 | 下一治理批（一文面小修，可搭任意批） |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
 | [ARQ-260924-split-order-granularity-gate-gap](ARQ-260924-split-order-granularity-gate-gap.md) | SHOULD | 拆包顺序链（里程碑登记/roadmap 先于 taskpackages）无机械闸且 portfolio-planner 无尺寸模型——ui-v5-align 事故以 21 包建毁与三轮 human 复裁为代价实测显形 | 下一治理批（动 portfolio-planner intake / task-intake-and-slicing Slicing Matrix / workstreams README 任一面时并批；① intake 停等半可先行） |
+| [ARQ-261001-host-blind-outcome-device-gate](ARQ-261001-host-blind-outcome-device-gate.md) | SHOULD | 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门 | 下一治理批（dev-loop 门 / 纪律文面；或下一个声明「用户可见结果」的包 launch 前） |
 
 ## 已接受风险（2）
 
