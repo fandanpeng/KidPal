@@ -176,3 +176,17 @@
 - **ECS 部署**：front_app.py（ctx 条件推送）+ apply-xiaozhi-overlay.sh + prompt v8 + provider.config.yaml 四件 SFTP（md5 逐件核对一致，远端备份 .bak-260930-m4k3-deploy）；overlay 重渲（v8 prompt 注入 .config.yaml，「帮我记下来」双指令在文）；kidpal-front 重启 active + 0.0.0.0:8000 在听；引擎容器重启后设备 23:31 重连、display-strip 补丁标记在役。
 - **部署面摩擦留根**：MSYS 路径转换把首传四件改写进远端伪路径（MSYS_NO_PATHCONV=1 重传解除，误写面已清）；c:/tmp 写入被 enforce-scope 拦（改用现成 ssh_put/ecs_put 工具链，未新写脚本）；SFTP 子系统路径受限（ecs_put base64-over-exec 既有解）。
 - **live 轮重点目击项（部署后新增一条）**：触发词入口（非 P3 页说「我要讲故事」）的记录语境置位/演出切页与 P3 KEY 入口不同源——host 齿为纯逻辑决策表、真机沿未目击，初测复验时重点看。
+
+## 2026-10-01 · K3-repair launch prep（主线程 skill：kidpal-pod-launch-prep；launch 面补齐）
+
+- **调度判定**：本批 = Package A 单包（纯固件修复）——前序 K3 包（260924-m4-k3-record-session-live）已 merged（ae480ec，main tip 4cb77a8）；本包为 K3 落地后 2026-10-01 真机冒烟暴露的四缺陷止血（D1 列表无消费方 / D2 层栈让位 / D4a 键路由毁稿 / D4b 悬垂 panic），dependsOn 实存、mergeOrder 42（K3=40、defer=41 后）。Package B（D3-甲，跨面）受 spec/contract anchors 门控暂停；Package C（openclaw model_name 冲刷）独立小包，未 launch。
+- **机械门**：`portfolio-reconcile --check-launch 261001-m4-k3-record-session-live-repair --base-ref base/m4-star-notebook` ok:true / blocking 空 / warn 空（base ref 随本批 ff 至 8ea3bce = main + 本批拆包制品 commit）；launchPreconditions 4 verified / 0 pending（另 3 条属其他包、折叠不逐条列）。`settings-lint.mjs` 3 files / 0 RED / 0 WARN。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K3 merged → 续跑零复位）；常驻分支与 main 分叉（各 2 笔，均 m4-k3 pod-events/progress 簿记）→ `git rebase main` 同步（干净无冲突，HEAD 72ce58f）；tracked 净 + untracked 零残留；managed_components 软链在位 + host build 热缓存保住（ninja no work to do）。
+- **双面基线锚 @ 72ce58f（本树实测）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **127 passed / 0 failed / 4 deselected, 2 subtests passed**（@72ce58f；面域 = server）。零红。旧锚 117P @ 5575a23 因 K3 新齿 10 入账作废。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **136 Tests / 0 Failures / 0 Ignored，exit 0**（@72ce58f；面域 = firmware）。零红。旧锚 128T0F @ 2c7343a 作废（K3 新齿 8 入账）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 复用树沿用（index_status ready，18553 节点 / 50753 边，parse_partial 105 = 既有 best-effort 信号；本批只触 delivery/ 治理面 + .claude/skills/，均在索引排除面内 → 无增量，未强制重刷）。
+- **board 预填**：261001-m4-k3-record-session-live-repair → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 42（45 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/261001-m4-k3-record-session-live-repair/launch-card.md`（五要素齐 + intake 特别注意五条：本包纯固件四缺陷 D3/逐句回显不在验收面 / D2-D4a 同一次决策一致选定 / D4b 三修并行 / 契约零改 + Package C 独立 / live 轮 human 持板）。
+- **本批 commit**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：72ce58f（kidpal-ecs-gateway skill 记录 OpenClaw 400 根因，human 裁随本批）+ cdc04c5（spine + Package A 三件 + Package C 计划）；专用 base ref `base/m4-star-notebook` ff 至 8ea3bce（main 4cb77a8 + 制品 cherry-pick commit）。
+- **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族，单真机不撞车）；② Package B（D3-甲）受 spec/contract anchors 门控，Track A 定形后另立包；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量；④ perf-k1 树来历待核（沿 K2/K3 遗留）。
