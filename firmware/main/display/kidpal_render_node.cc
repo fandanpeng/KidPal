@@ -126,6 +126,15 @@ static kidpal_story_view_t s_story_view = {};
 static kidpal_story_list_t s_story_list = {};
 static kidpal_story_text_t s_story_text = {};
 
+/* K3R [R5] 权威会话页态镜像（261001-m4-k3-record-session-live-repair, 真机轮架构修）:
+ * 渲染节点自身不持 g_story_view（住 mcp_server.cc）, 由 mcp 录音/收尾路径经本 C 桥写入
+ * 权威会话页态——voice_end 的 [R5] 以此作 session_page 权威源, 与节点缓存分叉时取之
+ * （取代「裸读节点缓存」的潜伏 bug; 不再依赖 cache_story 掩盖）。 */
+static int s_story_session_page = 0;
+extern "C" void kidpal_render_node_story_session_page(int page) {
+    s_story_session_page = page;
+}
+
 /* ------------------------------------------------------------------------- *
  * 五态 chrome 显隐的前台维度桥 (RP-A5 r3/r4)：姿态/气泡仅当 VOICE 层为前台层时显示，
  * 任何内容页（SERVER_PAGE 答案 / REMINDER / LOCAL_PAGE 浏览）前台时隐藏—— chrome
@@ -139,13 +148,30 @@ static kidpal_story_text_t s_story_text = {};
  * ---------------------------------------------------------------------- */
 extern "C" void kidpal_lcd_voice_chrome_front(int front);
 extern "C" void kidpal_lcd_keybar_sync(void);
+/* K3R D2 (2026-10-01 真机轮架构修): 录音态强屏蔽桥（render_node -> lcd_display.cc 的
+ * sync 执行点）。 */
+extern "C" void kidpal_lcd_recording_force_hide(int hide);
 
 static void rn_voice_chrome_front_locked(void)
 {
     if (s_kidpal_scr == NULL) {
         return;
     }
-    kidpal_lcd_voice_chrome_front(kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE);
+    /* K3R D2 录音态强屏蔽（261001-m4-k3-record-session-live-repair, 真机轮架构修）:
+     * 把权威录音态（渲染节点缓存 s_story_view.page == RECORDING, 录音 enter 路径已
+     * cache_story 预同步）**直接投递 LCD 的 sync 执行点**（kidpal_chrome_mid_sync_locked
+     * 的 voice_live 与）——真机现场证「[R4] 判据返回 0 -> front 桥 -> sync 生效」这条链
+     * runtime 不生效（弹层后 front=false 而 voice_page 仍驻留）, 故屏蔽必须落执行点。 */
+    int force_hide = (s_story_view.page == KSTORY_PAGE_RECORDING) ? 1 : 0;
+    kidpal_lcd_recording_force_hide(force_hide);
+    /* K3R [R4]: chrome 前台判据含录音页态维度（普通聆听轮 VOICE 前台 chrome 照前,
+     * 既有 RP-A5 r3 语义零偏移; 录音态退隐——与层值无关）。 */
+    int front = kidpal_story_voice_chrome_front(kidpal_layer_top(&s_layer_stack),
+                                                s_story_view.page);
+    /* K3R D2 诊断（保留诊断债务）: 层值 + 录音屏蔽位 + 判据出参。 */
+    ESP_LOGI(RN_TAG, "chrome_front layer_top=%d force_hide=%d front=%d",
+             kidpal_layer_top(&s_layer_stack), force_hide, front);
+    kidpal_lcd_voice_chrome_front(front);
 }
 
 /* 键帽条三槽刷新 (260915-m1-k2-keybar-three-slot R1 / ①④根修): 由本模块的页面渲染权威
@@ -590,19 +616,24 @@ void kidpal_render_node_voice_end(void)
 
     if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE) {
         /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。
-         * K3R D1/[R3]（261001-m4-k3-record-session-live-repair）: 例外——本地页 = P3
-         * 时前台回落 P3（**不**回家页）, 令键路由的 kidpal_render_node_story_substate
-         * 见 P3 页态（D4a 归属判据成立）、录音页不被声波层压住（D2）、键帽随态正确。
-         * [R3] defer 缓存消费判据（P3 基页 + 列表态）命中时, 本次 P3 重渲即以 g_story_list
-         * 最新缓存落屏（defer 分支缓存的消费方; 缓存由 story_list gating 分支 / 会话收尾
-         * cache_story 预同步至渲染节点）; 子态/未命中则回落 P3 当前缓存页。VOICE 层已
-         * 弹出, 故 voice_front 传 0。 */
+         * K3R D1/[R3] + D2/[R5]（261001-m4-k3-record-session-live-repair）: 例外——
+         * 本地页 = P3 时前台回落 P3（**不**回家页）: 令键路由的 story_substate 见 P3
+         * 页态（D4a）、录音页不被声波层压住（D2）、键帽随态正确。渲 P3 前以 [R5] 解析
+         * 渲染页态（on_story_front 时取权威会话页态 session_page——录音 enter 路径已
+         * cache_story 预同步 g_story_view 页态进节点缓存, 取代裸读可能陈旧的
+         * s_story_view.page）, 并以解析结果喂 [R3] 的 page_state 入参（defer 缓存消费
+         * 判据）与渲染页态（页态同步先于渲染）。VOICE 层已弹出, 故 [R3] voice_front 传 0。 */
         if (s_kidpal_scr != NULL) {
-            if (s_local_page == KP_PAGE_STORY) {
+            int on_story_front = (s_local_page == KP_PAGE_STORY) ? 1 : 0;
+            if (on_story_front) {
+                int page_state = kidpal_story_render_page_state(s_story_view.page,
+                                                                s_story_session_page,
+                                                                on_story_front);
+                s_story_view.page = page_state; /* 页态同步先于渲染（真值落缓存） */
                 int list_flush = kidpal_story_list_deferred_flush(0, KP_PAGE_STORY,
-                                                                  s_story_view.page);
+                                                                  page_state);
                 ESP_LOGI(RN_TAG, "voice_end: story front list_flush=%d page_state=%d",
-                         list_flush, s_story_view.page);
+                         list_flush, page_state);
                 rn_render_kidpal_page_locked(KP_PAGE_STORY);
             } else {
                 rn_render_home_locked();

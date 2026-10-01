@@ -7,10 +7,15 @@
  * 承载 acceptance（taskpackage.json acceptance[]）: K3R-A1..A5。
  *   K3R-A1（D4a）: 录音语境键手势归属——录音页态 + ctx active 时 KEY 必产
  *        KSPV2_ACT_STOP_RECORD、绝不产 GLOBAL_ACT_SESSION_TOGGLE（正/负双齿）。
- *   K3R-A2（D2）: 录音页与「● 录音中」可见、VOICE 层不再压住录音页（形态无关）。
+ *   K3R-A2（D2）: 录音页与「● 录音中」可见、VOICE 层不再压住录音页。2026-10-01 真机轮
+ *        修订后由三齿共同承载: RSR-A2（[R1] 形态无关代理）+ RSR-A6（[R4] 录音态覆盖层
+ *        不驻留, 直接可观察）+ RSR-A7（[R5] voice_end 页态同步, 直接可观察）。
  *   K3R-A3（D4b-1）: 会话收尾后录音演出定时器必停、页态必回 LIST（不依赖页态自删）。
  *   K3R-A4（D4b-3）: 外部 kidpal_*_page_render 清屏后渲染节点不得以悬垂对象出帧。
  *   K3R-A5（D1）: story_list defer 缓存存在消费方（VOICE 弹出/前台回落 P3 时以缓存重渲）。
+ *
+ * 注: 2026-10-01 真机轮「补严齿」纯 additive 修订（D2 两根因 [R4]/[R5] + RSR-A6/A7），
+ *     详见文件尾 REVISION LOG R1; 既有 RSR-A1..A5 / RSR-C1 断言逐字未动（tighten-only）。
  *
  * 缺陷根因（plan.md §1，逐行 file:line 证据）:
  *   D4a  board keya_story_page_wants 判据 overlay_top == 0 && page == P3 才交故事页；
@@ -77,12 +82,65 @@
  *               分支——「VOICE 弹出 / 前台回落 LOCAL_PAGE 且本地页 == P3」时以缓存重渲,
  *               plan §1 D1 修法方向）。
  *
+ *   [R4] LCD 声波 chrome 前台判据（home = display/story_page.{c,h}; D2 根因 1, 2026-10-01
+ *        真机轮 REVISION）：D2「弹层 ≠ 隐屏」的决策单源。甲形态只弹逻辑层栈
+ *        （kidpal_layer_pop）不改设备状态机——录音期间状态机仍 listening, LCD 照画
+ *        listening 态（声波/聆听 chrome 驻留盖住录音页）。故 chrome 前台判据须含
+ *        **录音页态维度**（不能只读层值）:
+ *          int kidpal_story_voice_chrome_front(int layer_top, int page_state);
+ *            -- 返回 1 = LCD 声波/聆听 chrome 应前台可见（姿态 + voice_page 整页容器）;
+ *               0 = 退隐（录音页/内容页前台, 覆盖层不驻留）。
+ *            -- 规则（形参 = 判据全输入）:
+ *               (a) page_state == KSTORY_PAGE_RECORDING(2) -> 0（**录音态覆盖层不驻留**:
+ *                   录音页态即令 chrome 退隐, 与 layer_top 无关——甲形态层已弹仍须防
+ *                   状态机 listening 残影, 乙形态层未弹亦须显式退隐; 这是真机现场
+ *                   「声波覆盖层一直盖着」的机判翻转点）;
+ *               (b) layer_top == KIDPAL_LAYER_VOICE(3) -> 1（普通聆听轮 chrome 前台,
+ *                   既有 RP-A5 r3 语义零偏移）;
+ *               其余 -> 0（内容页/其它覆盖层前台, chrome 退隐——既有语义零偏移）。
+ *            -- 判别位（对旧内联逻辑的翻转）: 旧逻辑 = `layer_top == VOICE`（无录音
+ *               维度）——(VOICE, RECORDING) 旧答 1（chrome 驻留 = 缺陷）; 本判据答 0。
+ *            -- 消费点（home = kidpal_render_node.cc rn_voice_chrome_front_locked:
+ *               以本判据取代内联的 `layer_top == KIDPAL_LAYER_VOICE`, 喂当前前台层值
+ *               + 当前会话页态; 且进录音态路径须触发一次 chrome 重算, 令退隐即时生效）。
+ *
+ *   [R5] voice_end 前台回落渲染页态解析判据（home = display/story_page.{c,h}; D2 根因 2,
+ *        2026-10-01 真机轮 REVISION）：D2「页态同步须先于渲染」的决策单源。渲染节点
+ *        （kidpal_render_node_voice_end, kidpal_render_node.cc:581）读自身缓存
+ *        s_story_view.page, 但录音 enter 只更新权威会话页态 g_story_view.page=2
+ *        （RECORDING）, 节点缓存尚未经 kidpal_render_node_cache_story 同步（同步点不在
+ *        voice_end 路径）——按陈旧 page_state=0（LIST）渲出**列表页**而非录音页:
+ *          int kidpal_story_render_page_state(int node_cached_page, int session_page,
+ *                                             int on_story_front);
+ *            -- 返回应据此渲染 P3 的页态。
+ *            -- 规则: on_story_front != 0（本地页 == P3 前台回落）-> session_page
+ *               （**以权威会话页态为准**, 节点缓存落后亦取真值——页态同步先于渲染）;
+ *               其余 -> node_cached_page（非 P3 前台不加干预, 零回归）。
+ *            -- 判别位（对旧内联逻辑的翻转）: 旧逻辑 = 直接用 s_story_view.page（节点
+ *               缓存）——(node=LIST, session=RECORDING, front=1) 旧答 LIST（渲列表页 =
+ *               缺陷）; 本判据答 RECORDING。
+ *            -- 消费点（home = kidpal_render_node.cc kidpal_render_node_voice_end:
+ *               渲 P3 前以本判据解析页态, 并把解析结果喂 rn_render_kidpal_page_locked
+ *               与 [R3] 的 page_state 入参——取代裸读 s_story_view.page）。
+ *            -- session_page 可达机制（builder 择一, 契约只钉决策不钉机制）: 渲染节点
+ *               自身不含权威会话视图（g_story_view 住 mcp_server.cc, 节点只持缓存
+ *               s_story_view）——builder 可 (i) 在录音 enter 路径先 kidpal_render_node_
+ *               cache_story(&g_story_view,...) 预同步, 再调 voice_end（此时两参一致,
+ *               判据仍恒取权威值）; 或 (ii) 经镜像 setter / 形参把权威页态喂入节点。
+ *               两机制均须经本判据落渲染页态（真值 = 渲染页态由本判据产出）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: K3R-A1 -- 录音语境键手势归属（[R1] 决策表正/负 + 板级消费接线）
  *             -> RSR-A1
  *   coverage: K3R-A2 -- D2 层栈让位形态无关（[R1] 对 VOICE 前台/无前台两态一致 +
  *             录音路径让位接线）-> RSR-A2
+ *   coverage: K3R-A2 -- D2 录音态覆盖层不驻留（[R4] LCD 声波 chrome 前台判据: 录音页态
+ *             令 chrome 退隐, 与层值无关 = 「弹层 ≠ 隐屏」机判翻转 + render_node 消费点）
+ *             -> RSR-A6
+ *   coverage: K3R-A2 -- D2 voice_end 渲染页态同步（[R5] 前台回落页态解析: 以权威会话
+ *             页态取代渲染节点陈旧缓存 = 「页态同步先于渲染」机判翻转 + voice_end 消费点）
+ *             -> RSR-A7
  *   coverage: K3R-A3 -- 会话收尾复位（[R2] 行为 + Idle 消费 + 定时器自删条件在世）
  *             -> RSR-A3
  *   coverage: K3R-A4 -- 渲染不变量（host_infra_render_p1_frame 对象有效性守卫）
@@ -97,8 +155,10 @@
  *      firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS
  *      （相对 host_app/main 为 "../../record_session_repair.acceptance.c"），**置于
  *      "../../host_infra_smoke.acceptance.c" 之前**（smoke 末位 = 最先执行, 注册序
- *      守卫; RSR-C1 tooth 4 校验此序）。[R1]-[R3] 强符号落 display/story_page.c
- *      （host runner 已编入）——本文件零被测实现新接线（结构齿扫真实工作树）。
+ *      守卫; RSR-C1 tooth 4 校验此序）。[R1]-[R5] 强符号落 display/story_page.c
+ *      （host runner 已编入）——[R1]-[R3] 零被测实现新接线（结构齿扫真实工作树）;
+ *      [R4]/[R5] 为 2026-10-01 真机轮「补严齿」新增（D2 两条根因）, 需 builder 在
+ *      display/story_page.{c,h} 落强符号并在 kidpal_render_node.cc 消费点接线。
  *   1) MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/
  *      espidf_wsl.sh build
  *   2) MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/
@@ -122,6 +182,20 @@
  *         出现 VOICE 让位调用; 乙（录音页提到 VOICE 之上）-> 录音路径出现层提升调用。
  *         本齿断言**可观察结果**（录音中故事页归属不因 VOICE 前台而失效），不钉具体
  *         形态; 视觉「VOICE 不压顶/录音页可见」为设备轮目击（host 无真层合成）。
+ *   K3R-A2 D2 录音态覆盖层不驻留 -> RSR-A6 行为级（[R4] chrome 前台判据决策表全承载,
+ *         **判别位 = (VOICE, RECORDING) 由旧答 1 翻转为 0**——真机「声波覆盖层一直盖着」
+ *         的机判翻转点）+ 结构级（kidpal_render_node.cc 消费点 needle）。**强于旧
+ *         RSR-A2**: 旧齿只测 [R1] 两态同结论（形态无关性）, 测不到屏上覆盖层是否退隐;
+ *         本齿直接钉 chrome 退隐判据须含录音页态维度。**弱于契约**: LCD 真层合成 +
+ *         状态机 listening 残影的真实消除为设备运行态, host 无真层合成——决策函数输出为
+ *         行为缝, 真机屏幕目击挂设备轮 M4K3R-E3 窗 2。
+ *   K3R-A2 D2 voice_end 页态同步 -> RSR-A7 行为级（[R5] 页态解析判据决策表全承载,
+ *         **判别位 = (node=LIST, session=RECORDING, front=1) 由旧答 LIST 翻转为
+ *         RECORDING**——真机「渲列表页而非录音页」的机判翻转点）+ 结构级
+ *         （kidpal_render_node.cc voice_end 消费点 needle）。**弱于契约**: 渲染节点
+ *         s_story_view/g_story_view 为设备侧状态（render_node 不可 host 编）, host 以纯
+ *         逻辑判据输出为行为缝; 真机「P3 显示录音页（非列表页）」逐字复证挂设备轮
+ *         M4K3R-E3 窗 2。
  *   K3R-A3 会话收尾复位 -> RSR-A3 行为级（[R2] 决策表全承载）+ 结构级（Idle 消费 +
  *         定时器自删条件 must-stay-green）。**弱于契约**: 录音定时器生命周期为设备
  *         运行态（lv_timer 不可 host 编），「定时器必停」由「页态复位 -> 自删条件成立」
@@ -138,7 +212,15 @@
  *   盲区申报: ① 真机四窗（列表显示 / 录音页非声波层 / KEY 归档不崩溃 / 回归）=
  *         设备轮 M4K3R-E3; ② AFE VAD 真沿切页与层合成 = 设备轮; ③ 定时器真实生命周期
  *         = 设备轮; ④ [R1] 在板级被消费后的真实键路由（真按 KEY 出 stop_rec 日志）=
- *         设备轮（串口 story_key stop_rec archive_pend= 目击）。
+ *         设备轮（串口 story_key stop_rec archive_pend= 目击）; ⑤ **D2 的 host 边界
+ *         （2026-10-01 真机轮 REVISION 显式化）**: LCD 真层合成（voice_page 在
+ *         lv_layer_top 覆盖活动屏）+ 设备状态机 listening 残影的真实消除 + 渲染节点
+ *         s_story_view/g_story_view 真实缓存竞态 —— 三者均为设备运行态, host 无真层
+ *         合成、render_node/lcd_display 不可 host 编。本文件以 [R4]/[R5] 纯逻辑判据的
+ *         **决策输出**为行为缝（判别位对旧内联逻辑翻转, 见各齿）+ 消费点 needle; 但
+ *         「判据正确 + 消费点在世」仍**不充分证明屏上覆盖层真的没了**（旧 RSR-A2 正是
+ *         栽在此不充分上）——设备轮 M4K3R-E3 窗 2（P3 KEY -> 须见录音页与「● 录音中」,
+ *         不再是声波层）为不可省目击。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>
@@ -365,6 +447,22 @@ __attribute__((weak)) int kidpal_story_list_deferred_flush(int voice_front,
                                                             int page_state)
 {
     (void)voice_front; (void)kidpal_page; (void)page_state;
+    return RSR_UNIMPLEMENTED;
+}
+
+/* [R4]/[R5] = 2026-10-01 真机轮 REVISION 新增（D2 两条根因）。同样由 display/
+ * story_page.c 强符号覆盖。签名漂移 = 链接期显式失败（比哨兵假绿更响）。 */
+__attribute__((weak)) int kidpal_story_voice_chrome_front(int layer_top, int page_state)
+{
+    (void)layer_top; (void)page_state;
+    return RSR_UNIMPLEMENTED;
+}
+
+__attribute__((weak)) int kidpal_story_render_page_state(int node_cached_page,
+                                                          int session_page,
+                                                          int on_story_front)
+{
+    (void)node_cached_page; (void)session_page; (void)on_story_front;
     return RSR_UNIMPLEMENTED;
 }
 
@@ -698,8 +796,107 @@ TEST_CASE("record_session_repair: canary+注册序守卫 (RSR-C1)",
     free(cm);
 }
 
+/* ========================================================================== *
+ * TEST 7 — RSR-A6: D2 录音态覆盖层不驻留 [R4]（2026-10-01 真机轮 REVISION 补严齿;
+ * D2 根因 1「弹层 ≠ 隐屏」）。seam [R4]（LCD 声波 chrome 前台判据）。
+ * RED today（@5950bb7）: [R4] 哨兵 -2（判据未实现）; 且现 kidpal_render_node.cc 内联
+ *   逻辑 `layer_top == KIDPAL_LAYER_VOICE` 无录音维度 —— 真机现场「声波覆盖层一直
+ *   盖着」: 甲形态只弹逻辑层栈不改状态机, 录音期间状态机仍 listening, LCD 照画 listening
+ *   态。判别位 = (VOICE, RECORDING): 旧内联逻辑答 1（驻留 = 缺陷）/ 本判据答 0（退隐）。
+ * ========================================================================== */
+/* coverage: K3R-A2 -- D2 录音态覆盖层不驻留（[R4] LCD 声波 chrome 前台判据: 录音页态
+ *           令 chrome 退隐, 与层值无关 = 「弹层 ≠ 隐屏」机判翻转 + render_node 消费点） */
+TEST_CASE("record_session_repair: D2 录音态覆盖层不驻留 [R4] (RSR-A6)",
+          "[record_session_repair][RSR-A6][behavior][structural]")
+{
+    RSR_REQUIRE_ROOT();
+
+    /* tooth 1 (行为 · D2 根因 1 命门/判别位): VOICE 层前台 + 录音页态 -> LCD 声波 chrome
+     * 必退隐（0）。旧内联逻辑（layer_top == VOICE, 无录音维度）此支答 1 = chrome 驻留
+     * （真机现场）; 本判据答 0 = chrome 退隐。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_voice_chrome_front(RSR_LAYER_VOICE, RSR_PAGE_RECORDING) == 0,
+        "RSR-A6 RED: [R4] 录音页态 + VOICE 层前台未令 LCD 声波 chrome 退隐（期望 0, 得 -2 = "
+        "frozen seam [R4] 未实现）——D2 真机现场「声波覆盖层一直盖着」: 甲形态只弹逻辑层"
+        "栈不改状态机, 录音期间状态机仍 listening, chrome 判据须含录音页态维度方能退隐");
+
+    /* tooth 2 (行为 · 形态无关): VOICE 已让位/无覆盖层 + 录音页态 -> 仍退隐（0）——
+     * 甲（层已弹）与乙（层未弹）两形态同一结论 = 录音页态恒令 chrome 退隐。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_voice_chrome_front(RSR_LAYER_NONE, RSR_PAGE_RECORDING) == 0,
+        "RSR-A6 RED: [R4] 录音页态 + 无覆盖层前台未令 chrome 退隐（期望 0）——录音页态"
+        "须与层值无关地令 chrome 退隐（甲/乙两形态一致）");
+
+    /* tooth 3 (负锚 · 零偏移): 非录音页态 + VOICE 前台 -> chrome 前台（1, 既有聆听轮语义）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_voice_chrome_front(RSR_LAYER_VOICE, RSR_PAGE_LIST) == 1,
+        "RSR-A6 RED(负锚): 普通聆听轮（VOICE 前台 + 列表页态）被误令 chrome 退隐（期望 1）——"
+        "既有 RP-A5 r3「VOICE 前台则 chrome 前台」语义零回归红线");
+
+    /* tooth 4 (负锚 · 零偏移): 内容页/其它覆盖层前台 -> chrome 退隐（0, 既有语义）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_voice_chrome_front(RSR_LAYER_NONE, RSR_PAGE_LIST) == 0 &&
+        kidpal_story_voice_chrome_front(RSR_LAYER_REMINDER, RSR_PAGE_LIST) == 0 &&
+        kidpal_story_voice_chrome_front(RSR_LAYER_STORY_DELETE, RSR_PAGE_READER) == 0,
+        "RSR-A6 RED(负锚): 内容页/更高覆盖层前台被误令 chrome 前台（期望全 0, 得 -2）——"
+        "既有「内容页前台 chrome 退隐」语义零回归红线");
+
+    /* tooth 5 (结构 · 源锚代理): 生产消费点 —— 渲染节点前台桥（rn_voice_chrome_front_
+     * locked）消费本判据（不是纯逻辑函数无驱动方）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsr_file_contains(RSR_RN_CC, "kidpal_story_voice_chrome_front("),
+        "RSR-A6 RED: kidpal_render_node.cc 未消费 kidpal_story_voice_chrome_front——"
+        "chrome 前台判据无驱动方（实现但未接线的死码 = 真机 chrome 仍按旧层值驻留）");
+}
+
+/* ========================================================================== *
+ * TEST 8 — RSR-A7: D2 voice_end 前台回落渲染页态同步 [R5]（2026-10-01 真机轮
+ * REVISION 补严齿; D2 根因 2「页态同步先于渲染」）。seam [R5]（页态解析判据）。
+ * RED today（@5950bb7）: [R5] 哨兵 -2（判据未实现）; 且现 kidpal_render_node_voice_end
+ *   裸读 s_story_view.page（陈旧 LIST, 未经 cache_story 同步）—— 真机现场
+ *   「voice_end: story front list_flush=1 page_state=0 -> render page STORY (P3)」
+ *   渲出列表页而非录音页。判别位 = (node=LIST, session=RECORDING, front=1): 旧内联逻辑
+ *   答 LIST（渲列表页 = 缺陷）/ 本判据答 RECORDING（渲录音页）。
+ * ========================================================================== */
+/* coverage: K3R-A2 -- D2 voice_end 渲染页态同步（[R5] 前台回落页态解析: 以权威会话
+ *           页态取代渲染节点陈旧缓存 = 「页态同步先于渲染」机判翻转 + voice_end 消费点） */
+TEST_CASE("record_session_repair: D2 voice_end 渲染页态同步 [R5] (RSR-A7)",
+          "[record_session_repair][RSR-A7][behavior][structural]")
+{
+    RSR_REQUIRE_ROOT();
+
+    /* tooth 1 (行为 · D2 根因 2 命门/判别位): 节点缓存陈旧 LIST + 权威会话 RECORDING +
+     * 本地页 = P3 -> 解析出 RECORDING（页态同步先于渲染）。旧内联逻辑（直接用节点缓存）
+     * 此支答 LIST（渲陈旧列表页 = 真机现场）; 本判据答 RECORDING（渲录音页）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_render_page_state(RSR_PAGE_LIST, RSR_PAGE_RECORDING, 1) == RSR_PAGE_RECORDING,
+        "RSR-A7 RED: [R5] 节点缓存陈旧（LIST）+ 权威会话录音态未解析为 RECORDING（期望 2, "
+        "得 -2 = frozen seam [R5] 未实现）——D2 真机现场「voice_end: story front list_flush=1 "
+        "page_state=0 -> render page STORY (P3)」渲出列表页而非录音页（页态同步须先于渲染）");
+
+    /* tooth 2 (行为 · 幂等/零偏移): 缓存与权威一致 -> 取该值（录音态取录音态, 列表态取列表态）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_render_page_state(RSR_PAGE_RECORDING, RSR_PAGE_RECORDING, 1) == RSR_PAGE_RECORDING &&
+        kidpal_story_render_page_state(RSR_PAGE_LIST, RSR_PAGE_LIST, 1) == RSR_PAGE_LIST,
+        "RSR-A7 RED: [R5] 缓存与权威一致时解析值漂移（期望各自原值）——零偏移红线");
+
+    /* tooth 3 (负锚 · 零回归): 非 P3 前台（on_story_front=0）-> 节点缓存不被权威值覆盖。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kidpal_story_render_page_state(RSR_PAGE_RECORDING, RSR_PAGE_LIST, 0) == RSR_PAGE_RECORDING,
+        "RSR-A7 RED(负锚): 非 P3 前台时节点缓存被权威值覆盖（期望 0 支返回节点缓存 RECORDING, "
+        "得 -2）——非 P3 前台不得被 P3 会话页态篡改（零回归红线）");
+
+    /* tooth 4 (结构 · 源锚代理): 生产消费点 —— voice_end 渲 P3 前消费本判据（取代裸读
+     * s_story_view.page）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsr_file_contains(RSR_RN_CC, "kidpal_story_render_page_state("),
+        "RSR-A7 RED: kidpal_render_node_voice_end 未消费 kidpal_story_render_page_state——"
+        "页态解析判据无驱动方（voice_end 仍裸读陈旧 s_story_view.page = 真机渲列表页）");
+}
+
 /* --------------------------------------------------------------------------- *
- * RED baseline 判读口径（acceptance-author 冻结期实跑, 2026-10-01; 现状树 @5490a5c）:
+ * RED baseline 判读口径（acceptance-author 冻结期实跑, 2026-10-01; 现状树 @5490a5c;
+ * 2026-10-01 真机轮「补严齿」修订后重跑, 现状树 @5950bb7）:
  *   设计态红（= 声明的缺失行为, 非环境/依赖/fixture 缺陷）:
  *     RSR-A1  [R1] 哨兵 -2（归属判据未实现）+ 板级 keya_story_page_wants 区零消费。
  *     RSR-A2  [R1] 哨兵 -2（形态无关判据未实现）+ 录音路径零让位接线。
@@ -707,15 +904,45 @@ TEST_CASE("record_session_repair: canary+注册序守卫 (RSR-C1)",
  *             （must-stay-green）。
  *     RSR-A4  函数区零 lv_obj_is_valid（守卫未落）; tooth 2 现状绿（must-stay-green）。
  *     RSR-A5  [R3] 哨兵 -2（defer 判据未实现）+ 前台回落路径零消费。
+ *     RSR-A6  [R4] 哨兵 -2（chrome 前台判据未实现）+ rn_voice_chrome_front_locked 零消费
+ *             （D2 根因 1「弹层 ≠ 隐屏」——真机「声波覆盖层一直盖着」机判翻转点）。
+ *     RSR-A7  [R5] 哨兵 -2（页态解析判据未实现）+ voice_end 零消费
+ *             （D2 根因 2「页态同步先于渲染」——真机「渲列表页而非录音页」机判翻转点）。
  *     RSR-C1  tooth 4 注册序红（未进 HOST_ACCEPTANCE_SRCS——builder FIRST ACTION）;
  *             tooth 1-3 canary/K3 面守卫现状绿（must-stay-green）。
- *   独立红跑通道（red-baseline/unity.h stub + runner.c, 非冻结门 runner）:
- *     cd firmware/main/test/acceptance/red-baseline
- *     gcc -std=c11 -I. -o /tmp/rsr_red_runner ../../record_session_repair.acceptance.c
- *         runner.c    （行为齿走哨兵红、结构齿扫真实工作树）
- *   GREEN 后门面 = host_app linux ELF（CMakeLists 接线后全量, 既有齿零偏移 + 本文件
- *   6 TEST_CASE 转绿）。
+ *   通道 A（独立红跑, red-baseline/unity.h stub + runner.c, 非冻结门 runner; exit code =
+ *   失败数, 可靠）:
+ *     wsl -d Ubuntu-24.04 -- bash firmware/main/test/acceptance/red-baseline/
+ *       rsr_red_wrapper.sh
+ *     @5950bb7 结果: COMPILE_EXIT=0（8 齿实编零错, §4 C 类实编）; 8 Tests 6 Failures
+ *     （RUN_EXIT=6）: RSR-A1/A2/A3/A5/A6/A7 红（frozen seam 哨兵）; RSR-A4/C1 绿。
+ *   通道 B（冻结门 runner = host_app linux ELF, 链真实实现 story_page.c 强符号;
+ *   **exit code 不可靠**——linux port 恒 0, 判读以 "N Tests M Failures" 行为准）:
+ *     MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/
+ *       espidf_wsl.sh build && cd firmware/main/test/host_app && ./build/host_infra_test.elf
+ *     @5950bb7 结果: **147 Tests 2 Failures**（基线 145 全绿 + 新增 2 齿 RSR-A6/A7 红）——
+ *     证 [R4]/[R5] 未被实现（story_page.c 无强符号 -> 弱哨兵 -2）, 且既有 145 齿零回归。
+ *   GREEN 后门面 = 通道 B 全量（既有 145 齿零偏移 + 本文件 8 TEST_CASE 转绿）。
  * --------------------------------------------------------------------------- *
  * REVISION LOG（tighten-only 修订窗口; 纯 additive / 零断言语义变化才可追加）:
- *   （冻结时点无修订。）
+ *   R1（2026-10-01, 真机轮「补严齿」, human 已批）— **纯 additive, 零既有断言语义变化**:
+ *     背景: 2026-10-01 真机（烧本分支构建）四窗复验——D4a/D4b 已修（story_key stop_rec
+ *     archive_pend=1、零 panic）, 但 D2 未修（user 确认「声波覆盖层一直盖着」）。旧齿
+ *     RSR-A2 全绿却没抓到: 它只测「[R1] 两态同结论 + 录音路径让位接线**存在**」, 测不到
+ *     屏上覆盖层是否真的没了（接线存在性软齿, 真机代价）。
+ *     新增（additive）:
+ *       - seam [R4] int kidpal_story_voice_chrome_front(int layer_top, int page_state)
+ *         + TEST 7 RSR-A6（行为 + 结构, D2 根因 1: 录音态覆盖层不驻留）。
+ *       - seam [R5] int kidpal_story_render_page_state(int node_cached_page,
+ *         int session_page, int on_story_front) + TEST 8 RSR-A7（行为 + 结构, D2 根因 2:
+ *         voice_end 渲染页态同步 = 以权威会话页态取代陈旧节点缓存）。
+ *       - header seam contract [R4]/[R5] 节 + coverage map 两行 + 强度申报两行 +
+ *         盲区申报⑤（D2 host 边界显式化）+ RED baseline 双通道口径。
+ *     未动: RSR-A1..A5 / RSR-C1 全部既有断言逐字不变（tighten-only 只增不改）。
+ *     语义变化（如实申报）: 覆盖集扩大——K3R-A2 现由 RSR-A2 + RSR-A6 + RSR-A7 三齿共同
+ *     承载, 后两者为 D2 的**直接可观察决策**（判别位对旧内联逻辑翻转）, 强于旧 RSR-A2
+ *     的形态无关代理齿。seam [R1]-[R3] 语义零偏移; 新增 [R4]/[R5] 为纯追加。
+ *     红基线: 通道 A 8 Tests 6 Failures（RUN_EXIT=6）; 通道 B 147 Tests 2 Failures
+ *     （新增 2 齿红, 既有 145 齿零回归）。
+ *   （前冻结时点无修订。）
  * --------------------------------------------------------------------------- */

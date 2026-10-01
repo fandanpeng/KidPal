@@ -317,6 +317,26 @@ int kidpal_story_session_end(int page_state, int *out_page);
 int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page,
                                      int page_state);
 
+/* ---- ⑰ K3R D2 补严缝追加（2026-10-01 真机轮 REVISION; TaskPackage
+ * 261001-m4-k3-record-session-live-repair; additive 尾部追加, 冻结纪律只增不改/移。
+ * seam contract [R4]/[R5] 权威 = record_session_repair.acceptance.c 文件头 REPO
+ * LOG R1） ---- */
+
+/* [R4] LCD 声波 chrome 前台判据（D2 根因 1「弹层 ≠ 隐屏」决策单源）: 返回 1 = LCD
+ * 声波/聆听 chrome 应前台可见（姿态 + voice_page 整页容器）; 0 = 退隐。规则:
+ *   (a) page_state == KSTORY_PAGE_RECORDING -> 0（录音态覆盖层不驻留, 与 layer_top
+ *       无关——甲形态层已弹仍须防状态机 listening 残影, 乙形态层未弹亦须显式退隐）;
+ *   (b) layer_top == KIDPAL_LAYER_VOICE -> 1（普通聆听轮 chrome 前台, 既有语义零偏移）;
+ *   其余 -> 0。消费点 = kidpal_render_node.cc 的 rn_voice_chrome_front_locked。 */
+int kidpal_story_voice_chrome_front(int layer_top, int page_state);
+
+/* [R5] voice_end 前台回落渲染页态解析判据（D2 根因 2「页态同步先于渲染」）:
+ * on_story_front != 0 -> session_page（以权威会话页态为准, 节点缓存陈旧亦取真值）;
+ * 其余 -> node_cached_page。消费点 = kidpal_render_node.cc 的 kidpal_render_node_voice_end
+ * （渲 P3 前解析页态, 喂 rn_render_kidpal_page_locked + [R3] 入参）。 */
+int kidpal_story_render_page_state(int node_cached_page, int session_page,
+                                   int on_story_front);
+
 #ifdef __cplusplus
 }
 #endif

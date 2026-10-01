@@ -406,6 +406,12 @@ static lv_obj_t*   g_kidpal_emoji_label  = NULL; /* 笑脸 label (SetupUI 纪元
 static lv_obj_t*   g_kidpal_emoji_image  = NULL; /* 表情图 (SetupUI 纪元, 中部显隐纪律用) */
 static int         g_kidpal_mid_mode     = 0; /* chrome 中部显隐: 0=未接管 1=五态演出 2=idle 清空 */
 static int         g_kidpal_voice_front  = 0; /* VOICE 层是否前台 (render_node 桥写入; 姿态显隐第二维) */
+/* K3R D2 录音态强屏蔽位（261001-m4-k3-record-session-live-repair, 2026-10-01 真机轮
+ * 架构修）: render_node 经 C 桥写入（来源 = 权威故事视图页态 s_story_view.page ==
+ * KSTORY_PAGE_RECORDING）。**屏蔽落在 sync 执行点**（kidpal_chrome_mid_sync_locked 的
+ * voice_live 与), 不只落在「判据返回 0 -> 寄望 sync 生效」链上——真机现场该链被证
+ * runtime 不生效（弹层后 front=false 而 voice_page 仍驻留）。1 = 强制隐声波 chrome。*/
+static int         g_kidpal_recording_force_hide = 0;
 static LcdDisplay* s_kidpal_lcd_self     = NULL; /* self 注册 (RP-A5 r4): 前台维度桥不得经
     Board::GetInstance() —— boot 期 render_node_init 跑在 CustomBoard 构造期内, 函数内
     static 单例重入会 __cxa_guard 永久阻塞 (r3 真机砖机根因)。SetupUI 构造期登记 this。 */
@@ -2093,19 +2099,47 @@ static void kidpal_chrome_mid_sync_locked(void)
      * LISTEN/THINK -> 回显区 (WF-B-01/02), TALK -> 问答框 (WF-B-03); 提醒态 -> 问答框
      * 承载大字事项+时间 (WF-B-04)。场景值取 g_kidpal_keybar_scene (apply_look 刷新)。 */
     {
+        /* K3R D2（261001-m4-k3-record-session-live-repair, 2026-10-01 真机轮架构修）:
+         * 录音态强屏蔽（force_hide）**落在本 sync 执行点**——即便 g_kidpal_voice_front /
+         * reminder_shell 为真, 录音态一律令 voice_live=0 隐整页 chrome。真机现场
+         * 「弹层后 front=false 而 voice_page 仍驻留」= 上层判据链 runtime 不生效, 故屏蔽
+         * 必须落此, 不寄望「判据返回 0 -> sync 生效」那条链。 */
         int voice_live = (g_kidpal_mid_mode == 1 &&
-                          (g_kidpal_voice_front || reminder_shell)) ? 1 : 0;
+                          (g_kidpal_voice_front || reminder_shell) &&
+                          !g_kidpal_recording_force_hide) ? 1 : 0;
         int show_echo = (voice_live &&
                          (g_kidpal_keybar_scene == KVST_SCENE_LISTEN ||
                           g_kidpal_keybar_scene == KVST_SCENE_THINK)) ? 1 : 0;
         int show_answer = (voice_live &&
                            (g_kidpal_keybar_scene == KVST_SCENE_TALK ||
                             g_kidpal_keybar_scene == KVST_SCENE_REMIND)) ? 1 : 0;
+        /* K3R D2 诊断（有意保留的诊断债务, 真机一刀切定位三支: ①桥断 ②sync 未生效
+         * ③第二画源）。 */
+        ESP_LOGI(TAG, "chrome_mid_sync mid_mode=%d front=%d reminder=%d force_hide=%d voice_live=%d",
+                 g_kidpal_mid_mode, g_kidpal_voice_front, reminder_shell,
+                 g_kidpal_recording_force_hide, voice_live);
         if (g_kidpal_voice_page != NULL) {
             if (voice_live) {
                 lv_obj_remove_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
             } else {
                 lv_obj_add_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN);
+                if (g_kidpal_recording_force_hide) {
+                    /* 录音态强屏蔽加固（architect 建议, 仅 force_hide 下, 免伤常规隐显
+                     * 复现）: 父容器 HIDDEN 之外**显式逐件隐**声波/姿态/标识叶子件, 绕过
+                     * 「父 HIDDEN 未传导」版本坑。NULL 守卫, 关信后由各场景函数复显。 */
+                    if (g_kidpal_pose_img != NULL)         lv_obj_add_flag(g_kidpal_pose_img, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_bubble_img != NULL)       lv_obj_add_flag(g_kidpal_bubble_img, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_mic_img != NULL)          lv_obj_add_flag(g_kidpal_mic_img, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_q_img[0] != NULL)         lv_obj_add_flag(g_kidpal_q_img[0], LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_wave_box != NULL)         lv_obj_add_flag(g_kidpal_wave_box, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_emblem_img != NULL)       lv_obj_add_flag(g_kidpal_emblem_img, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_remind_bubble_obj != NULL) lv_obj_add_flag(g_kidpal_remind_bubble_obj, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_cloud_img != NULL)        lv_obj_add_flag(g_kidpal_cloud_img, LV_OBJ_FLAG_HIDDEN);
+                    if (g_kidpal_wave_doodle_img != NULL)  lv_obj_add_flag(g_kidpal_wave_doodle_img, LV_OBJ_FLAG_HIDDEN);
+                }
+                ESP_LOGI(TAG, "chrome_mid_sync voice_page hidden readback=%d force_hide=%d",
+                         (int)lv_obj_has_flag(g_kidpal_voice_page, LV_OBJ_FLAG_HIDDEN),
+                         g_kidpal_recording_force_hide);
             }
         }
         if (g_kidpal_voice_echo_box != NULL) {
@@ -2431,10 +2465,30 @@ void LcdDisplay::KidPalVoiceChromeFront(bool voice_front) {
      * 亦兼容未来未持锁调用方)。只翻前台维度标志并重断言中部显隐 —— 「armed &&
      * front」两条件与: SetStatus(LISTENING) 在语音轮中反复触发时, apply_look 的
      * sync 也不会在内容页前台把姿态重新显示出来。键帽条/聊天文本不动。 */
+    /* K3R D2 诊断（保留诊断债务）: chrome 前台桥入口——front 入参 + 当前 mid_mode。 */
+    ESP_LOGI(TAG, "chrome_front_in front=%d mid_mode=%d force_hide=%d",
+             voice_front ? 1 : 0, g_kidpal_mid_mode, g_kidpal_recording_force_hide);
     g_kidpal_voice_front = voice_front ? 1 : 0;
     if (lvgl_port_lock(30000)) {
         kidpal_chrome_mid_sync_locked();
         kidpal_keybar_sync_locked();
+        lvgl_port_unlock();
+    }
+}
+
+/* C 桥 (K3R D2, 261001-m4-k3-record-session-live-repair 真机轮架构修): render_node (C++
+ * 但不同编译单元) 经本接口投递录音态强屏蔽位（来源 = 权威故事视图页态 ==
+ * KSTORY_PAGE_RECORDING）。与 kidpal_lcd_voice_chrome_front 同款 s_kidpal_lcd_self 守卫。
+ * 起效点 = kidpal_chrome_mid_sync_locked 的 voice_live 与（**sync 执行点**, 不寄望上层
+ * 判据链）。set 后立即重 sync 令屏蔽即时生效。 */
+extern "C" void kidpal_lcd_recording_force_hide(int hide)
+{
+    g_kidpal_recording_force_hide = hide ? 1 : 0;
+    if (s_kidpal_lcd_self == NULL) {
+        return;
+    }
+    if (lvgl_port_lock(30000)) {
+        kidpal_chrome_mid_sync_locked();
         lvgl_port_unlock();
     }
 }

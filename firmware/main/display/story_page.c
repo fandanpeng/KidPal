@@ -2038,3 +2038,37 @@ int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page,
     }
     return 0;
 }
+
+/* ---- [R4] LCD 声波 chrome 前台判据（D2 根因 1「弹层 ≠ 隐屏」） ---- */
+
+int kidpal_story_voice_chrome_front(int layer_top, int page_state)
+{
+    /* (a) 录音页态 -> chrome 退隐（**判别位**: 旧内联逻辑 = layer_top == VOICE 无录音
+     * 维度, (VOICE, RECORDING) 旧答 1 = chrome 驻留盖住录音页; 本判据答 0）。与 layer
+     * 无关——甲形态 VOICE 已弹仍须防状态机 listening 残影, 乙形态 VOICE 未弹亦须显式
+     * 退隐。 */
+    if (page_state == KSTORY_PAGE_RECORDING) {
+        return 0;
+    }
+    /* (b) 普通聆听轮 chrome 前台（既有 RP-A5 r3 语义零偏移）。 */
+    if (layer_top == KIDPAL_LAYER_VOICE) {
+        return 1;
+    }
+    /* 其余（内容页/其它覆盖层前台 / 基层浏览）chrome 退隐。 */
+    return 0;
+}
+
+/* ---- [R5] voice_end 前台回落渲染页态解析判据（D2 根因 2） ---- */
+
+int kidpal_story_render_page_state(int node_cached_page, int session_page,
+                                   int on_story_front)
+{
+    /* 本地页 = P3 前台回落 -> 以权威会话页态为准（**判别位**: 旧内联逻辑裸读节点缓存
+     * s_story_view.page——(node=LIST, session=RECORDING, front=1) 旧答 LIST = 渲陈旧
+     * 列表页; 本判据答 RECORDING = 渲录音页。页态同步先于渲染）。非 P3 前台 -> 节点
+     * 缓存零回归。 */
+    if (on_story_front != 0) {
+        return session_page;
+    }
+    return node_cached_page;
+}
