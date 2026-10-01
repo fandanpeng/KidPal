@@ -1,25 +1,22 @@
-# input-brief · acceptance-author · 261001-m4-k3-record-session-live-repair
+# input-brief · acceptance-author · 261001-m4-k3-story-archive-order
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-01T01:29:29.448Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> regenerated-because: 初次派发缺 brief，acceptance-author 降级自扫完成；本件补生成以闭合 manifest-missing 取证缺口（advisory）（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
-> 来源 TaskPackage: `delivery/taskpackages/261001-m4-k3-record-session-live-repair/taskpackage.json` · subsystem: firmware · rigor: full
+> generated-at: 2026-10-01T04:38:48.571Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `delivery/taskpackages/261001-m4-k3-story-archive-order/taskpackage.json` · subsystem: server/gateway/front · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
+| `docs/contracts/interface-contract.md` | `§1.4` | 1.4 控制类指令（OpenClaw 判意图后下发） | 160 | ok |
 | `docs/requirements.md` | `S-F2.2` | S-F2.2 · 开录（双入口）（原「一键开录」「一键录故事」） | 418 | ok |
 | `docs/architecture.md` | `§5.2` | 5.2 运行视图（关键场景端到端） | 203 | ok |
 | `delivery/changes/intake/261001-m4-k3-record-session-live-repair.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/260924-m4-k3-record-session-live/plan.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/changes/dev/260924-m4-k3-record-session-live/pod-retro.md` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/mcp_server.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/application.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/display/kidpal_render_node.cc` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/display/story_page.c` | — | 无锚点（整文件） | — | bare |
-| `firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/changes/dev/261001-m4-k3-record-session-live-repair/pod-retro.md` | — | 无锚点（整文件） | — | bare |
+| `server/gateway/front/front_app.py` | — | 无锚点（整文件） | — | bare |
+| `server/gateway/story.py` | — | 无锚点（整文件） | — | bare |
 
 ## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）
 
@@ -68,17 +65,15 @@
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
-`crossEnd` 字段**不在场**。起包期必须补骨架 `{ "counterparts": [] }`（空骨架也行，字段必须在场）——见 DEV-GOVERNANCE「起包格式期望前置」第 6 条。
+本包声明 **exempt**（不适用跨端对端阅读）：
+
+> 纯 front（server 面）实现修复：不改任何 wire 消息、不触固件与契约/spec 面；聆听形态变更与引擎侧抑制逐句回复随 Package B（D3-甲）另立，不在本包
+
+豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
 ## ③ 先例（同 subsystem 已 merged 包，封顶 3 个，按 changeId 日期前缀倒序）
 
-| 先例包 | 冻结验收文件 |
-|---|---|
-| 260924-m4-k2-p3-star-notebook-ui | `firmware/main/test/story_page_v2.acceptance.c` |
-| 260924-m4-k3-record-session-live | `firmware/main/test/record_session_live.acceptance.c` · `server/acceptance/test_m4k3_record_session_live.acceptance.py` |
-| 260923-m3-k6-boot-auto-connect | `firmware/main/test/boot_auto_connect.acceptance.c` |
-
-封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
+（无同 subsystem 的已 merged 先例包）
 
 ## ④ 清单外阅读申报（超读是常态动作，不申报才是问题）
 

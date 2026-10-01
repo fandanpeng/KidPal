@@ -1,0 +1,23 @@
+# test-scope 清单 · 261001-m4-k3-story-archive-order（integrator Step 4 范围圈定，2026-10-01 final r3）
+# 合成来源 = detect_changes（project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base base/m4-star-notebook /
+#   merge_base 60744cb）changed_files 25 / seed_symbols 48 / impacted_total 76 节点
+#   （server/gateway 44 · server/acceptance 20 · firmware/main 3〔名碰撞 loose 边，非真影响——is_file 类〕 · builtins 9）
+#   ∪ taskpackage impactedTestsSeed[] ∪ 共享 seam（front_app / story 模块装载面）∪ 安全余量。
+# 格式 = 仓根相对路径一行一件（# 注释；verify.mjs unit/acceptance 闸 scopeFilter 消费，交集外不跑）。
+# 范围性质：影响面圈定清单（非全量回归替代物）——server 面 12 个在职测试件取 7（blast radius ∪ 共享 seam），
+#   无关面 5 件（test_char_meaning_merge / test_m3k1_schedule_producer / test_perf_k1_roundtrip_latency /
+#   test_prompt_v7_round_routing / test_schedule_producer_units）不引 front_app/story，圈定外。
+#   archive/ 面退役（acceptance/unit 闸 SKIP_DIRS 含 archive），detect_changes 命中的
+#   server/acceptance/archive/test_schedule_reminder.acceptance.py 不收集，故不入清单。
+# ── 本包验收件（acceptanceTestsFile：SAO-A1..A4 新齿 + 既有归档链齿改真机序）──
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+# ── 本包单元齿（story.py pending-stop 态 / 剔词，builder 新增）──
+server/tests/test_story_units.py
+# ── blast radius 映射测试（changed：front_app pump_upstream_to_client / _story_stop_on_listen_stop /
+#    _story_feed_from_stt / _story_finish_on_phrase / _story_timeout_sweep + story.py StoryAccumulator/剔词）──
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+# ── 共享 seam 相关测试（装载 front_app 模块：pump / relay / story 接线面）──
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py
+server/tests/test_reminder_units.py

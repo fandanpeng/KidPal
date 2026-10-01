@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 17（待拍板 1 / 待触发 10 / 已接受风险 6）；已结 3（归档索引见下）。
+**摘要**：未结 18（待拍板 1 / 待触发 11 / 已接受风险 6）；已结 3（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
 
-## 待触发（10）
+## 待触发（11）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -29,6 +29,7 @@
 | [ARQ-260907-openclaw-tools-rejection-rootcause](ARQ-260907-openclaw-tools-rejection-rootcause.md) | SHOULD | live 引擎 `Intent:nointent` 根因未查：OpenClaw 拒收 tools 数组（LLM tool calling 不可用），Intent 能力回开成本待重估 | 下次架构治理批 / OpenClaw 升级或 B 方案重估时 |
 | [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | NIT | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 下一批 spec / 治理批（与 requirements §2.3 台账消解同批）；**不阻断 M2-K2 合并**（本包 review-packet 已如实登记去向） |
 | [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | SHOULD | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 部署执行后定案——注册 agent 型 cron（§8.3b）+ 铺 skill 到 main workspace 后，盯一个完整提醒周期核 semantic.json 出现且 entry_key 对齐、pending.json 变语义版、设备真收带物播报；失败则回退机械兜底维持现状并升级 |
+| [ARQ-261001-openclaw-model-name-overlay-drift](ARQ-261001-openclaw-model-name-overlay-drift.md) | SHOULD | 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400 | TaskPackage 261001-openclaw-model-name-overlay-drift 落地（修仓内模板 + 重钉 PERF-K1 冻结齿）后转 closed |
 
 ## 已接受风险（6）
 

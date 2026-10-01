@@ -60,3 +60,4 @@
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |

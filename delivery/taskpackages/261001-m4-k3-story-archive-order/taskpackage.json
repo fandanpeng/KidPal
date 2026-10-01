@@ -1,0 +1,120 @@
+{
+  "changeId": "261001-m4-k3-story-archive-order",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "upstreamFrozen": "",
+    "workstream": "m4-star-notebook"
+  },
+  "subsystem": "server/gateway/front",
+  "story": "记录会话归档时序缺陷修复（261001 真机 r2 实录）：孩子按 KEY 停录后故事未被归档、内容丢失。根因 = front 在 listen/state=stop 上行帧上立即 acc.stop()，而转写只在引擎收到该 stop 之后才产生（manual 模式 ASR 由 listen stop 触发）、1.7s 后才经下行 stt 到达 → 归档瞬间累积缓冲必空（front 报 empty_accum）。修法 = 停录挂起 pending-stop + 转写到达后归档；附正文剔除尾随收尾词、10s 超时兜底。",
+  "planRef": "delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
+  "redBaselineResult": "acceptance-author 实跑 2026-10-01（本树 @7df4487）。**新齿红跑**：12 failed / 124 passed / 4 deselected / 2 subtests passed —— 失败 = 9 独立齿 + test_sao_a4 的 3 个 subtest；红因 = 真机序下旧实现归档早于转写（归档成 0 篇，旧 stop 帧立即 acc.stop() 且 accum 空）。两向可满足性核验：参考实现（pending-stop 挂起 + 转写到达归档 + story_text/story_list 双推 + 正文剔尾随收尾词 + 10s 超时释放）回放 15 齿全绿，非线束假象。冻结即冒烟：--collect-only 137 collected / collection error 0；py_compile error 0。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "SAO-A1: 归档时序正齿——listen/state=stop 先到、stt 后到（真机序）——归档须产出恰一篇、正文为转写内容；既有归档链齿全部由 stt→stop 序改写为本序，不得再以旧序过闸",
+    "SAO-A2: 负锚齿·防复发，本缺陷冻结 oracle——listen/state=stop 到达且累积缓冲为空时，stop() 不得立即返回 None 并把会话打回 chat；须存在 pending-stop 态，后续 stt 到达才归档",
+    "SAO-A3: 边界齿——pending 超时（10s 无转写）→ 不写空故事、释放会话态；超时后迟到的 stt 不污染；重复 stop / stop 与 cancel 交错不双归档、不泄漏会话态",
+    "SAO-A4: 正文齿——归档正文不含尾随收尾词（「我说完了」/「讲完啦」及子串「说完了」）"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
+  ],
+  "exitCriteria": [
+    "SAO-E1: server 面验收全绿（新齿 + 改写序后的既有归档链齿）+ 全量回归零新增红（对基线锚差异判停）",
+    "SAO-E2: 铁律——docs/contracts/** 与系统 spec 零改（本包仅 front/story.py 实现面；归档时点属 arch §5.2④ 行为面，不触契约）",
+    "SAO-E3: 真机复验（human 持板）：P3 按 KEY 停录 → 列表新增一篇 + 盖章；串口判据 = story_key stop_rec archive_pend=1 之后出现转写、front 不再报 empty_accum"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.4"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F2.2",
+    "docs/architecture.md#§5.2"
+  ],
+  "sourceRefs": [
+    "S-F2.2-AC2",
+    "S-F2.2-AC4",
+    "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md",
+    "delivery/changes/dev/261001-m4-k3-record-session-live-repair/pod-retro.md",
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py"
+  ],
+  "changeManifest": [
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py",
+    "server/acceptance/**",
+    "server/tests/test_story_units.py"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "regression",
+      "note": "K1 冻结验收件的归档链齿固化错误时序（stt→listen-stop），须改写为真机序 + 新增负锚齿 SAO-A2；改已 merged 包冻结 oracle，签字成本经 closeout 承载"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "new",
+      "note": "SAO-A1..A4 齿落点（时序正齿 / 负锚齿 / 边界齿 / 正文齿）"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsSyncReason": "arch 面收口：§5.2④「listen-stop 归档」的实现口径补正（触发仍是 listen-stop，归档动作等转写到达）——architect 判不构成 spec 漂移，是否落文本由 integrator 依实际改动圈定。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯 front（server 面）实现修复：不改任何 wire 消息、不触固件与契约/spec 面；聆听形态变更与引擎侧抑制逐句回复随 Package B（D3-甲）另立，不在本包"
+  },
+  "docsOwner": "integrator",
+  "mutationEvidence": [
+    {
+      "id": "SAO-A1",
+      "sensitive": true,
+      "mutation": "server/gateway/front/front_app.py:153 · _story_stop_on_listen_stop 去掉 pending 挂起分支（accum 空时直接 return None）→ 回到旧「stop 帧立即归档」语义",
+      "expectedRed": "SAO-A1 真机序归档正齿（真机 listen-stop 先于转写，旧语义归档成 0 篇）；同变异下 SAO-A2/SAO-A3 亦红（同缝）",
+      "counterEvidence": "exit 1 / 9 failed / 125 passed 变红 —— test_m4k1_story_cloud_link.acceptance.py::SAOArchiveOrderAcceptance::test_sao_a1_stop_before_stt_archives_transcript: AssertionError: 0 != 1 : SAO-A1 RED: 真机序（listen-stop 先、stt 后）未产出恰一篇归档（得 0）—— 归档早于转写（旧缺陷：stop 帧上立即 acc.stop()）。",
+      "acceptanceEntry": "SAO-A1: 归档时序正齿——listen/state=stop 先到、stt 后到（真机序）——归档须产出恰一篇、正文为转写内容；既有归档链齿全部由 stt→stop 序改写为本序，不得再以旧序过闸"
+    },
+    {
+      "id": "SAO-A2",
+      "sensitive": true,
+      "mutation": "server/gateway/story.py:658 · mark_pending 把 routing 置 chat（旧缺陷复现：空 stop 会话被打回闲聊态）",
+      "expectedRed": "SAO-A2 本缺陷冻结 oracle 负锚（routing 回 chat 即复现旧缺陷）",
+      "counterEvidence": "exit 1 变红 —— test_sao_a2_empty_stop_holds_pending_not_bail_to_chat: AssertionError: 'chat' == 'chat' : SAO-A2 RED: listen-stop 空累积时会话被打回 chat —— 旧缺陷复现（stop() 立即返 None 并把会话回闲聊态）；须挂起 pending-stop 等转写到达（本缺陷冻结 oracle）。（验收件 :1546）",
+      "acceptanceEntry": "SAO-A2: 负锚齿·防复发，本缺陷冻结 oracle——listen/state=stop 到达且累积缓冲为空时，stop() 不得立即返回 None 并把会话打回 chat；须存在 pending-stop 态，后续 stt 到达才归档"
+    },
+    {
+      "id": "SAO-A3",
+      "sensitive": true,
+      "mutation": "server/gateway/front/front_app.py:267 · _story_timeout_sweep 去掉 pending 释放环（挂起态永不超时释放）",
+      "expectedRed": "SAO-A3 pending 窗口边界齿（②窗口外 → 释放回闲聊）",
+      "counterEvidence": "exit 1 变红 —— test_sao_a3_pending_window_boundary: AssertionError: 'pending_stop' != 'chat' : SAO-A3 RED: pending 超时后会话未释放回闲聊态（泄漏挂起态）。（验收件 :1631）",
+      "acceptanceEntry": "SAO-A3: 边界齿——pending 超时（10s 无转写）→ 不写空故事、释放会话态；超时后迟到的 stt 不污染；重复 stop / stop 与 cancel 交错不双归档、不泄漏会话态"
+    },
+    {
+      "id": "SAO-A4",
+      "sensitive": true,
+      "mutation": "server/gateway/front/front_app.py:118 · pending 归档路径停用剔词（strip_finish=False）",
+      "expectedRed": "SAO-A4 正文剔尾随收尾词（3 subTest）；同变异下 M4K1-A5 亦红",
+      "counterEvidence": "exit 1 / 3 subtest failed 变红 —— test_sao_a4_body_excludes_trailing_finish_words: AssertionError: '我说完了' unexpectedly found in '从前有一只小猫去公园玩。我说完了' : SAO-A4 RED(我说完了): 归档正文含尾随收尾词 —— 正文剔词未落（plan §2 正文剔尾随收尾词）。",
+      "acceptanceEntry": "SAO-A4: 正文齿——归档正文不含尾随收尾词（「我说完了」/「讲完啦」及子串「说完了」）"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "261001-m4-k3-story-archive-order",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "9b8db103-a158-4676-8c63-a73e1f48f861",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261001-m4-k3-story-archive-order/verifier-evidence/rounds/r3.json",
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "startedAt": "2026-10-01T05:07:04.500Z",
+    "completedAt": "2026-10-01T05:07:19.693Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 336, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 395, "timing": "scoped", "note": "pre-cutoff 存量放行（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 8308, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 0x311920，app 分区余量 11%）；本包不用固件" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 138, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 149, "timing": "scoped", "note": "SAO-A1..A4 coverage 齐；structural/suiteGates 两清单均空" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 143, "timing": "scoped", "note": "4 条 mutationEvidence 逐功能 AC 敏感" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 146, "timing": "scoped" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 163, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 2832, "timing": "full", "note": "149 passed / 5 subtests（scope 内 7 文件，executor-run）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 2472, "timing": "full", "note": "77 passed / 5 subtests（scope 内 5 文件，serverAcceptanceFiles=5 / firmwareAcceptanceFiles=0）" }
+  ],
+  "mechanicalCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261001-m4-k3-story-archive-order --phase final --round 3 --invocation-id 9b8db103-a158-4676-8c63-a73e1f48f861",
+    "exit": 0,
+    "output": {"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/261001-m4-k3-story-archive-order/verifier-evidence/rounds/r3.json","factOk":true,"observedGateExit":0,"phase":"final","round":3}
+  },
+  "scopedRun": {
+    "scopeFile": "delivery/taskpackages/261001-m4-k3-story-archive-order/test-scope-final-r3.txt",
+    "fullAcceptanceDirAnchor": "server/acceptance 全目录 133 passed / 0 failed / 4 deselected / 5 subtests（integrator 真跑）",
+    "fullUnitDirAnchor": "server/tests 89 passed（integrator 真跑）"
+  },
+  "note": "advisory-only projection；closeout 判断必须来自 validated final fact（r3.json，bearing）。轨迹 r1（scoped 红=mutation-check 元数据缺口）/r2（scoped 全绿）/r3（final 全绿）在案。"
+}
