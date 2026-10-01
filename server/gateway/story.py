@@ -54,9 +54,21 @@ STORY_LIST_WINDOW = 16
 # requirements §2.1 录音态超时口径：累积态无语音 >= AUTO_STOP_SECONDS 秒自动收尾归档。
 AUTO_STOP_SECONDS = 120
 
+# pending-stop 挂起窗口（plan §2 / 261001-m4-k3-story-archive-order）：listen/state=stop
+# 到达时累积为空 -> 挂起等转写，真机转写延迟 ~1.7s，留足抖动余量故 10s。越过该窗口仍无
+# 转写 -> 释放回闲聊、不写空故事（迟到的 stt 因 routing 已回 chat 被自然丢弃）。
+PENDING_STOP_SECONDS = 10.0
+
 # 累积态收尾词（S-F2.2 收尾，front 机械扫描 stt 文本命中）——精确短语 + 末尾标点不
 # 阻断（见 is_finish_phrase 子串语义）。
 _FINISH_PHRASES = ("我说完了", "讲完啦")
+
+# 归档正文剔除的**尾随**收尾词（plan §2 / SAO-A4）：含子串「说完了」（真机转写尾带
+# 「说完了」；is_finish_phrase 只认「我说完了/讲完啦」）。仅剥尾随、不剥正文中间出现，
+# 正常转写（不以收尾词结尾）零改动。
+_TRAILING_FINISH_WORDS = ("我说完了", "讲完啦", "说完了")
+# 剔词时一并剥掉的尾随句读/空白（收尾词后常跟句号：「…玩。我说完了。」）。
+_TRAILING_TRIM_CHARS = "。．.！!？?，,、；;：:～~…· \t\r\n　"
 
 # 入册流水号持久账本（plan 取舍点 B 甲案）：<stories_dir>/.seq.json，原子写、front 单写者。
 _LEDGER_NAME = ".seq.json"
@@ -121,6 +133,25 @@ def is_finish_phrase(text) -> bool:
     if not stripped:
         return False
     return any(phrase in stripped for phrase in _FINISH_PHRASES)
+
+
+def strip_trailing_finish_words(text: str) -> str:
+    """归档正文剔除**尾随**收尾词（plan §2 / SAO-A4；含子串「说完了」）。
+
+    只剥字符串末尾出现的收尾词（可带尾随句读/空白），反复剥到尾部不再是收尾词为止；
+    正文中间出现的收尾词一律保留（不误伤叙述内容）。非 str / 不以收尾词结尾 -> 原样返回
+    （正常转写零改动——先例 E1「正文 == 转写内容」不受影响）。"""
+    if not isinstance(text, str):
+        return text
+    s = text
+    while True:
+        trimmed = s.rstrip(_TRAILING_TRIM_CHARS)
+        for word in _TRAILING_FINISH_WORDS:
+            if trimmed.endswith(word):
+                s = trimmed[: -len(word)]
+                break
+        else:
+            return s
 
 
 # --------------------------------------------------------------------------- #
@@ -437,7 +468,8 @@ def delete_story(stories_dir, story_id, *, corr_id=None) -> bool:
 
 class _SessionState:
     __slots__ = ("routing", "accum", "accum_chars", "ring", "ring_chars",
-                 "last_record", "last_stop_now", "last_transcript", "last_activity")
+                 "last_record", "last_stop_now", "last_transcript", "last_activity",
+                 "pending", "pending_since")
 
     def __init__(self) -> None:
         self.routing = "chat"
@@ -450,6 +482,10 @@ class _SessionState:
         self.last_transcript: str | None = None
         # 最近活动时刻（start()/feed() 传入 now 或墙钟）——timed_out_sessions 的纯决策输入。
         self.last_activity = None
+        # pending-stop 挂起态（listen/state=stop 空累积 -> 等转写到达才归档；SAO-A1/A2）：
+        # pending=True 时 routing 恒为 "pending_stop"（!= "chat"），pending_since 为挂起时刻。
+        self.pending = False
+        self.pending_since = None
 
 
 class StoryAccumulator:
@@ -552,12 +588,20 @@ class StoryAccumulator:
             return len(st.ring)  # 空句不入库、不计一句（不抛）
         sentence = str(text)
         self._push_ring(st, sentence)
-        if st.routing == "accumulate":
-            # 累积态：进累积缓冲（供停录整段归档），同时进有界近句环；不按句送对话
+        if st.routing in ("accumulate", "pending_stop"):
+            # 累积态 / pending-stop 态：进累积缓冲（供停录整段归档），同时进有界近句环；
+            # pending-stop 下仍须累积——真机序的转写恰在挂起之后才到（SAO-A1）。
             self._push_accum(st, sentence)
         return len(st.ring)
 
-    def stop(self, session_id, now=None, *, title=None, slug=None, date=None):
+    def stop(self, session_id, now=None, *, title=None, slug=None, date=None,
+             strip_finish=False):
+        """停录归档：累积非空 -> 落盘（幂等重写）+ 回闲聊态，返回 record；累积为空 ->
+        None 且不写文件（V31 边界，M4K1/P3 冻结语义零偏移）。
+
+        strip_finish（additive，默认 False 保既有语义零偏移）：真 = 归档正文剔尾随收尾词
+        （plan §2 / SAO-A4）；故事收尾路径传 True，剔除后仅剩收尾词 -> 不写空故事、释放会话。
+        任一路径均清 pending-stop 挂起态（st.pending/pending_since）。"""
         st = self._get(session_id)
         if st is None or not st.accum:
             # 累积为空 -> None 且不写文件；会话回闲聊态
@@ -565,8 +609,22 @@ class StoryAccumulator:
                 st.routing = "chat"
                 st.accum = []
                 st.accum_chars = 0
+                st.pending = False
+                st.pending_since = None
             return None
         transcript = "\n".join(st.accum)
+        if strip_finish:
+            transcript = strip_trailing_finish_words(transcript)
+            if not transcript.strip():
+                # 剔词后无实质正文（整段只有收尾词）-> 不写空故事，释放会话（SAO-A4 边界）
+                st.accum = []
+                st.accum_chars = 0
+                st.ring = deque()
+                st.ring_chars = 0
+                st.pending = False
+                st.pending_since = None
+                st.routing = "chat"
+                return None
         rec = archive_story(self._dir, transcript, title=title, slug=slug, date=date)
         # 记录撤销凭据（供 redo 在窗口内撤销）
         st.last_record = rec
@@ -578,8 +636,63 @@ class StoryAccumulator:
         st.accum_chars = 0
         st.ring = deque()
         st.ring_chars = 0
+        st.pending = False
+        st.pending_since = None
         st.routing = "chat"
         return rec
+
+    # --- pending-stop 挂起态（真机序：listen/state=stop 先到、转写后到） --------------
+
+    def has_accum(self, session_id) -> bool:
+        """该会话是否有非空累积缓冲（停录分支判据：非空 -> 立即归档；空 -> 挂起）。"""
+        st = self._get(session_id)
+        return bool(st is not None and st.accum)
+
+    def mark_pending(self, session_id, now=None) -> None:
+        """listen/state=stop 到达且累积为空 -> 挂起 pending-stop（SAO-A1/A2）。
+
+        routing 置 "pending_stop"（!= "chat" —— SAO-A2 负锚：不得立即打回闲聊态）；
+        pending_since 记挂起时刻（pending 超时决策输入）。幂等：已在 pending 不重置挂起时刻。"""
+        st = self._ensure(session_id)
+        now_dt = now if now is not None else datetime.now(timezone.utc)
+        if st.routing != "pending_stop":
+            st.pending_since = now_dt
+        st.pending = True
+        st.routing = "pending_stop"
+        st.last_activity = now_dt
+
+    def pending_timed_out_sessions(self, now, *, timeout_s=None) -> list:
+        """pending-stop 挂起超时的纯决策面（plan §2：10s 无转写 -> 释放、不写空故事）。
+
+        返回 pending 态且 pending_since 距 now >= timeout_s（缺省 PENDING_STOP_SECONDS）的
+        会话 id 列表。非 pending / 无挂起时刻 -> 不返回；查询不改状态（与 timed_out_sessions
+        同缝，供 front 轮询 _story_timeout_sweep 巡检）。"""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        threshold = PENDING_STOP_SECONDS if timeout_s is None else float(timeout_s)
+        out = []
+        for sid, st in self._sessions.items():
+            if st.routing != "pending_stop" or st.pending_since is None:
+                continue
+            try:
+                elapsed = (now - st.pending_since).total_seconds()
+            except TypeError:
+                continue
+            if elapsed >= threshold:
+                out.append(sid)
+        return out
+
+    def release_pending(self, session_id, now=None) -> bool:
+        """pending-stop 超时释放：清挂起态、回闲聊态、不写空故事（SAO-A3 ②）。
+
+        释放后 routing == "chat" -> 迟到 stt 被上层 gate 自然丢弃（不污染）。返回是否真释放。"""
+        st = self._get(session_id)
+        if st is None or st.routing != "pending_stop":
+            return False
+        st.pending = False
+        st.pending_since = None
+        st.routing = "chat"
+        return True
 
     def cancel(self, session_id, now=None, *, reason="") -> bool:
         st = self._get(session_id)

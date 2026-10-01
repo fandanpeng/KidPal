@@ -1,0 +1,32 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "261001-m4-k3-story-archive-order",
+  "ts": "2026-10-01T05:07:19.703Z",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "9b8db103-a158-4676-8c63-a73e1f48f861",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/261001-m4-k3-story-archive-order/verifier-evidence/rounds/r3.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 10,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "acceptance-author 红基线（scoped r1 红 = mutation-check taskpackage 元数据缺口）→ scoped r2 全绿 → final r3 十闸全绿；验收套件红基线 12 failed / 124 passed → 修后 133 passed / 0 failed（server/acceptance 全目录）+ 单测 89 passed；4 条 SAO mutationEvidence 逐 AC 敏感",
+    "redTrajectory": "scoped r1（d9448957-c7ad-4bde-9c4b-bc032ae264d8，mutation-check 红：taskpackage 缺 mutationEvidence）→ scoped r2（a425a698-bd2a-4186-af85-543365431e0c，8 闸全绿）→ final r3（9b8db103-a158-4676-8c63-a73e1f48f861，10 闸全绿）",
+    "demoReconciliation": "见 review-packet.md「demo 对账行」——machine-demo（验收红→绿）+ 缺陷本源真机实录 c:/tmp/serial-live-repair-r2.log；SAO-E3 真机复验（human 持板）尚未跑、如实标 pending",
+    "detectChanges": "Step 9b：project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，since base/m4-star-notebook（merge_base 60744cb）——changed_files 25 / seed_symbols 48 / impacted_total 76 节点（server/gateway 44 · server/acceptance 20 · firmware/main 3〔名碰撞 loose 边〕 · builtins 9）",
+    "scopeFile": "delivery/taskpackages/261001-m4-k3-story-archive-order/test-scope-final-r3.txt",
+    "deferredFaces": "120s sweep 剔词（B2/B3）/ 逐句回显 + 说「我说完了」自动收尾 + 120s sweep 复活（B2/B3）/ 收尾后引擎播报（B3）/ _story_finish_on_phrase 正齿随 B2/B3 补 / SAO-E3 真机复验 human 持板 pending",
+    "docsSync": "requirements/契约/spec 零自改（git status docs/ 零输出）；§5.2④ 判不需要文本补正（architect 判不构成漂移）+ 检出归他项（§5.2④ 机制对账归 Package B / 收尾后播报归 B3 / 120s sweep 归 B2/B3）",
+    "adr": "零改（无新决策）"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载。riskTier=high → 机械闸必产 ESCALATE（合并须 human 批）。"
+}

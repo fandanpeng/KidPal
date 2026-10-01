@@ -222,3 +222,13 @@
 - **启动卡**：`delivery/taskpackages/261001-m4-k3-story-archive-order/launch-card.md` 与 `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/launch-card.md`（五要素齐）。
 - **本批制品**：B1（plan.md + taskpackage.json + input-brief 双份 + 启动卡）、C（plan.md + taskpackage.json + input-brief 双份 + 启动卡 + 上游 CRQ `docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md`）。
 - **遗留 human 项**：① B1 转绿后真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章）；② 并行与否（C 是否移至 perf 树）；③ B1 须改写已 merged 包（K1）冻结验收的时序假设——改冻结 oracle 的签字走 dev-loop 常规人门。
+
+## 2026-10-01 · B1（story-archive-order）integrator closeout（host/验收面绿；真机轮 deferred）
+
+- **本批**：261001-m4-k3-story-archive-order = 「归档早于转写」顺序缺陷修复（缺 261001 真机 r2 实录——listen/state=stop 上行帧先到、转写 stt 1.7s 后才到；旧实现于 stop 帧立即 `acc.stop()`，累积必空 → 返 None + 打回 chat → 转写丢弃 → 内容彻底丢失）。修法 = pending-stop 挂起 + 转写到达后归档（+ accum 非空立即归档兼容分支）+ 正文剔尾随收尾词 + 10s 超时释放。**纯 server 面**（`server/gateway/front/front_app.py` + `server/gateway/story.py` + 验收件改真机序 + 单测）；契约/spec/固件零改。分支 dev/260915-m1-k1a-key-layer-dispatch（未 push/未 merge）。
+- **影响面圈定终验**（Step 4）：detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since `base/m4-star-notebook`，merge_base 60744cb；changed_files 25 / seed_symbols 48 / impacted_total 76 节点[server/gateway 44 · server/acceptance 20 · firmware/main 3 名碰撞 · builtins 9]）∪ impactedTestsSeed → 清单 `delivery/taskpackages/261001-m4-k3-story-archive-order/test-scope-final-r3.txt`（server 面 12 在职测试件圈 7）。**scoped r1 红=taskpackage 元数据缺口 → scoped r2 全绿 → final r3 全绿（10 闸含 full unit/acceptance）**，`verifier-evidence-check` → `{"ok":true,"factOk":true}`。
+- **真跑**：final r3 unit 闸 149 passed / acceptance 闸 77 passed（scope 7+5 文件）；全量锚 = `server/acceptance` 133 passed / 0 failed / 4 deselected（红基线 12 failed / 124 passed）+ `server/tests` 89 passed。4 条 SAO mutation 逐 AC 敏感（真红→真绿）。
+- **docs-delta**：requirements/契约/spec 零自改（`git status docs/` 零输出）；§5.2④ 判不需要文本补正（architect 判不构成漂移）；检出三处 spec 面归属他项（§5.2④ 机制对账归 Package B / 收尾后引擎播报归 B3 / 120s sweep 剔词归 B2/B3）。
+- **未覆盖面申报**：120s sweep 剔词 + 逐句回显/自动收尾/sweep 复活（B2/B3）；收尾后引擎播报（B3）；`_story_finish_on_phrase` 正齿（随 B2/B3 补）；**SAO-E3 真机复验（human 持板）尚未跑、如实标 pending**；固件/跨端 N/A。
+- **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；ESCALATE-human 批后由 planner 主线程 `merge-driver --pod` 本地合并。
+- **遗留 human 项**：① SAO-E3 真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章；串口判据 `stop_rec archive_pend=1` 后出现转写、front 不再 `empty_accum`）；② §5.2④「归档动作等转写到达」文本补正（advisory）随 spec 批交 human；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量（本包无跳变）。

@@ -101,29 +101,45 @@ def _story_route_display_payload(session_id, payload) -> None:
         _get_story_acc().start(session_id)
 
 
-def _story_feed_from_stt(session_id, obj) -> None:
-    """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7)：引擎回带的 ASR 上行 stt 帧
-    (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，供停录时整段归档。
-    仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。"""
+def _story_feed_from_stt(session_id, obj) -> "dict | None":
+    """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7 / 261001-m4-k3-story-archive-order)：
+    引擎回带的 ASR 上行 stt 帧 (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，
+    供停录时整段归档。仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。
+
+    真机序挂起态接通（261001）：routing == "pending_stop"（listen/state=stop 先到、accum 空）
+    时，本条 stt（~1.7s 后到）即转写到达 -> feed + 归档（正文剔尾随收尾词）-> 返回 record，
+    供上层下发 story_text + story_list（三时点②）；routing == "accumulate" -> 只 feed、
+    返回 None；聊态 -> 无行为返回 None。"""
     if not session_id or not isinstance(obj, dict):
-        return
+        return None
     if obj.get("type") != "stt":
-        return
+        return None
     text = obj.get("text")
     if not isinstance(text, str) or not text.strip():
-        return
+        return None
     acc = _get_story_acc()
-    if acc.routing(session_id) != "accumulate":
-        return
-    acc.feed(session_id, text)
+    routing = acc.routing(session_id)
+    if routing == "pending_stop":
+        acc.feed(session_id, text)
+        rec = acc.stop(session_id, strip_finish=True)
+        if rec is not None:
+            log.info("story_pending_archive corr_id=%s id=%s", session_id, rec.get("id"))
+        return rec
+    if routing == "accumulate":
+        acc.feed(session_id, text)
+    return None
 
 
 def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
-    """云侧停录归档接线 (包 9b HWV-A10/A12)：设备「聆听停止」上行帧 (listen/state=stop,
-    手动录完一段叙述的自然信号) 命中累积态时 -> StoryAccumulator.stop 整段归档
-    (内部经 archive_story 落盘 stories/<id>.md)，返回记录供上层以 story_text(record)
-    组块下发正文 (F4 分工：正文由网关下发、设备盖章/回看消费由 story_p3 冻结)。
-    非累积态 / 累积为空 -> None（V31 边界，不编造归档、不写空故事）。"""
+    """云侧停录归档接线 (包 9b HWV-A10/A12 / 261001-m4-k3-story-archive-order)：
+    设备「聆听停止」上行帧 (listen/state=stop) 命中累积态时按下法处置：
+
+    - 累积**非空** -> 立即 StoryAccumulator.stop 整段归档 (兼容 B2/B3 auto 模式：录音期间
+      stt 已喂入 accum)，返回记录供上层以 story_text(record) 组块下发正文；
+    - 累积**空** -> 真机序（manual 模式 ASR 由 listen stop 触发，转写 ~1.7s 后才经下行到达）
+      -> 挂起 pending-stop（acc.mark_pending，routing="pending_stop" != "chat"），返回 None；
+      下一条 stt 到达时由 _story_feed_from_stt 归档（SAO-A1/A2）。
+    非累积态 / 已挂起 / 累积为空且已 pending -> None（不编造归档、不写空故事）。"""
     if not session_id or not isinstance(obj, dict):
         return None
     if not (obj.get("type") == "listen" and obj.get("state") == "stop"):
@@ -131,9 +147,15 @@ def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
     acc = _get_story_acc()
     if acc.routing(session_id) != "accumulate":
         return None
-    rec = acc.stop(session_id)
+    if not acc.has_accum(session_id):
+        # 累积空 -> 真机序：转写尚未到达，挂起 pending-stop 等它（旧实现此处立即 stop()
+        # 返 None 并把会话打回 chat -> 转写被丢弃 = 本缺陷，SAO-A2 冻结 oracle）。
+        acc.mark_pending(session_id)
+        log.info("story_stop corr_id=%s archived=false reason=pending_stop", session_id)
+        return None
+    rec = acc.stop(session_id, strip_finish=True)
     if rec is None:
-        log.warning("story_stop corr_id=%s archived=false reason=empty_accum", session_id)
+        log.warning("story_stop corr_id=%s archived=false reason=empty_after_strip", session_id)
         return None
     log.info("story_stop corr_id=%s archived=true id=%s", session_id, rec.get("id"))
     return rec
@@ -220,7 +242,7 @@ def _story_finish_on_phrase(session_id, obj) -> "dict | None":
     acc = _get_story_acc()
     if acc.routing(session_id) != "accumulate":
         return None
-    rec = acc.stop(session_id)
+    rec = acc.stop(session_id, strip_finish=True)
     if rec is None:
         return None
     log.info("story_finish corr_id=%s archived=true id=%s", session_id, rec.get("id"))
@@ -228,14 +250,23 @@ def _story_finish_on_phrase(session_id, obj) -> "dict | None":
 
 
 async def _story_timeout_sweep(now=None) -> int:
-    """120s 无语音自动收尾（requirements §2.1 录音态超时口径）——累积态 front 侧计时。
+    """120s 无语音自动收尾（requirements §2.1 录音态超时口径）+ pending-stop 10s 窗口——
+    累积态 front 侧计时（同缝，261001-m4-k3-story-archive-order）。
 
-    每 tick 调纯决策 StoryAccumulator.timed_out_sessions(now) 取静默 >=120s 的累积会话，
-    对命中会话走正常 stop 归档（不丢弃）并把 story_text 下发给当前在线设备腿（+ story_list
-    对账）。offline 只钉源锚（front 引用该决策）；真计时循环/行为等价假设未验，live 全链
-    复证归 M4-K3（M4K1-A7 deferred）。返回命中并归档的会话数（K6 归因）。"""
+    每 tick 先巡检 pending-stop 挂起超时：纯决策 StoryAccumulator.pending_timed_out_sessions
+    取挂起 >=10s（PENDING_STOP_SECONDS）的会话，release_pending 释放回闲聊态（不写空故事；
+    迟到 stt 因 routing 已回 chat 被自然丢弃——SAO-A3②）。再走 120s 累积态自动收尾：
+    纯决策 timed_out_sessions(now) 取静默 >=120s 的累积会话，对命中会话走正常 stop 归档
+    （不丢弃）并把 story_text 下发给当前在线设备腿（+ story_list 对账）。
+
+    offline 只钉源锚（front 引用该决策）；真计时循环/行为等价假设未验，live 全链复证归
+    M4-K3（M4K1-A7 deferred）。返回命中并归档的会话数（K6 归因）。"""
     acc = _get_story_acc()
     now_dt = now if now is not None else datetime.now(timezone.utc)
+    # pending-stop 挂起超时（10s 无转写）-> 释放挂起态、不写空故事（SAO-A3②）
+    for sid in acc.pending_timed_out_sessions(now_dt):
+        if acc.release_pending(sid):
+            log.info("story_pending_timeout corr_id=%s released=true", sid)
     timed_out = acc.timed_out_sessions(now_dt)
     swept = 0
     for sid in timed_out:
@@ -456,8 +487,14 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
             if not isinstance(obj, dict):
                 await websocket.send_text(frame)  # non-object JSON: forward verbatim
                 continue
-            # 云侧累积接线 (包 9b HWV-A10): ASR 上行 stt 帧命中累积态则喂缓冲（旁路消费，转发不变）。
-            _story_feed_from_stt(session_id, obj)
+            # 云侧累积接线 (包 9b HWV-A10 / 261001)：ASR 上行 stt 帧命中累积态则喂缓冲
+            # （旁路消费，转发不变，决策23）；pending-stop 态（listen/state=stop 先到、转写后到
+            # 的真机序 SAO-A1）的转写到达 -> feed + 归档 -> 返回记录，除正文外**追加** story_list
+            # 推送（三时点②）。
+            feed_rec = _story_feed_from_stt(session_id, obj)
+            if feed_rec is not None:
+                await _push_display_payload(websocket, gw_story.story_text(feed_rec))
+                await _push_story_list(websocket)
             # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦」-> stop 整段归档
             # + 下发归档正文（不丢弃）；问答会话零影响（_story_finish_on_phrase 仅累积态消费）。
             finish_rec = _story_finish_on_phrase(session_id, obj)
