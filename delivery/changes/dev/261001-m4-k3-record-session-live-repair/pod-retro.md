@@ -1,45 +1,51 @@
 # pod-retro · 261001-m4-k3-record-session-live-repair（planner 第一人称热记忆）
 
-> 写于 integrator closeout 完成、final r2 十闸全绿之后、supervisor 机械闸出 ESCALATE（high riskTier）待人类批之前。机器事实（轮次/闸/verdict/测试计数）以 verifier-evidence/rounds、supervisor-verdict.json、closeout 制品为权威，本件不复述数字。
+> 写于 re-closeout（final r4 十闸全绿）之后、supervisor 机械闸 ESCALATE（high）待人类批之前。机器事实以 verifier-evidence/rounds、supervisor-verdict.json、closeout 制品为权威，本件不复述数字。
 
-## 一、本棒形态：回归修复包的「launch 面从零补齐」
+## 一、本棒最值钱的一笔：D2 走了三段弯路，最后靠「一次定死」的诊断日志翻案
 
-本包是 `/build-feature 261001-...` 直启，但 launch 面五件里 ①board 条目 ②启动卡 ③worktree 记录三件缺——于是先跑 `kidpal-pod-launch-prep` 补齐再进 intake。关键判断：**这不是 portfolio-planner 的拆包产物**（spine 明写「taskpackage.json/origin 归 planner intake 建」），却要过 commit-before-launch 的 base ref 门（`check-launch` 读 `base/m4-star-notebook:<id>/taskpackage.json`）。牙关在：**自建包要先把制品落到专用 base ref，check-launch 才绿**。我按 K2/K3 先例做：常驻分支 rebase main → 在 base ref 上 cherry-pick 一个「main + 制品」commit（`8ea3bce`）。human 授权「本会话全套补齐」，未走 portfolio-planner 回补。
+**真根因 = 键帽派发漏 `KSTORY_PAGE_RECORDING` 分支**（`lcd_display.cc` `kidpal_keybar_sync_locked`；K2 注释明写「录音态键帽 [收尾]/[结束] 设备接线随 K3 录音会话接线同批落」——K3 没落）+ **REC 指示相位算术恒 off**（`flash=(rec_seconds*1000/250)%2 ≡ 0`，黑块从不可见）。
 
-## 二、元数据形态红是本棒的主要摩擦（连红 4 轮，全是形态非实现）
+**前两轮全打偏**：round 2 的缝 [R4]/[R5]（architect 后判对 D2 为 no-op——R5 恒等、R4 甲形态返回值同旧判据）、round 2.1 的 `lcd_display` force_hide——都在攻「VOICE 覆盖层」，而 **`voice_end: top=2` 早在 round-1 就证明 VOICE 已让位**。三轮烧版、真机三轮「还是声波」，直到 human 批了**纯日志诊断轮**（`PAGE_RENDER`/`STORY_RENDER`/`RECORDING render`/`KEYBAR`），机器一次报出：录音页一直在画、键帽 substate=2 却出基层文案。
 
-内循环 4 轮红，**没有一轮是实现/齿面红**，全是 TaskPackage 字段口径：
+**教训（具体到动作）**：现象级 bug 连续两轮静态推演失败后，**立刻转「日志定死」**，别再猜形状。human 那句「可以考虑先把代码 commit 了，更新图索引，通过图调用查看」也是对的——图追证把「屏上结构 = s_kidpal_scr（渲染页）+ lv_layer_top（chrome 恒浮）」摊开了，定位到 `KidPalReparentChatToLayer` 那条 reparent 线。
 
-1. `taskpackage-required`：`contractRefs` 空数组不算在场（要非空）；`acceptance[].kind` 只认 `structural`（我写了 `regression`）；缺 `crossEnd` 骨架（finalize 须 counterparts 非空 ∨ exempt ≥12 字）。
-2. `acceptance-coverage`：红跑 wrapper `.sh` 误入 `acceptanceTestsFile[]`（该字段只收「有断言的文件」）。
-3. `acceptance-coverage` 二红：acceptance 条目 id 因**全角括号**未被切出（提取正则认 `ID: ` 半角冒号+空格），我写的是 `K3R-A1（D4a…）：…` → 提取成 `K3R-A1（D4a`。改 `K3R-A1: D4a…` 即愈。
-4. `mutation-check`：缺 `mutationEvidence`。
+## 二、两处「以齿代现象」的实证（与 K3 retro 同族，但这次反了方向）
 
-**教训（可机械化的）**：`planner.md`/intake 的 TaskPackage 草案模板若内置「contractRefs∋非空 / acceptance 字符串 `ID: ` 形态 / crossEnd 骨架 / kind 白名单」四条预检，本棒能省 3 轮。建议进 loop-retro 素材池。
+- round 2 的齿 RSR-A6/A7 测 [R4]/[R5] 两个**纯逻辑缝**——**它们对 D2 的证明力为零**（architect 证：那两缝对 D2 是 no-op）。**齿全绿 ≠ 现象对**，这条在 host 147T0F 与真机三轮失败并存的现实里再次坐实。
+- 反向教训：**D2 的真修点（键帽派发）在 `lcd_display.cc`，host 不可编 → 根本机判不到**。所以正确的收口不是「再加软齿」，而是 architect 建议的 **把设备轮窗口升为阻断合并的硬门**（已写入 review-packet human 项，归 human 裁）。
 
-## 三、mutationEvidence 的一处真教训：设计态红 ≠ 变异证据
+## 三、D1 的 plan 口径差（如实记）
 
-K3 先例把「设计态红」当 counterEvidence（并注「GREEN 后 builder 实做重放」）。本棒我一度想照抄，但止住了：本包的 RSR 齿是**行为齿调 seam**，seam 被 builder 实现后，「seam 缺失的设计态红」**不再证明当前实现对变异敏感**——若 builder 把 `[R1]` 实现错，齿可能照样绿。故我回退 builder 跑**5 次真实变异重放**（破坏实现点 → 确认对应齿转红 → 还原），取真 RED verbatim。代价 = 一轮 builder；收益 = evidenceComplete 站得住。**建议成文**：`mutationEvidence.counterEvidence` 必须是「实现后重放测得的红」，设计态红只能作为「齿敏感性的先验假设」，不能顶替。
+plan 的 D1 **证据行是冷浏览**（`t=18845 render page STORY (P3) count=0`），**修法却是「补 defer 缓存消费方」**——两者不同源。真机两照证实：本包 D1 的后半（推送到达后可显示）**生效**（退出录音态 → 列表出 2 行），但前半（冷浏览一进去就有列表）**本包不覆盖**，human 复裁维持 K3 `M4K3-DC-1` dropped。要修需 (A) 恢复推送时点〔行为策略〕或 (B) 契约门加设备 fetch 消息。
 
-## 四、两处 builder 侧诚实申报（都成立）
+## 四、D3 原表述被真机反驳（Package B 订正项）
 
-- **`story_page.h` 清单外**：builder 未自行扩清单而**举手**——正解。裁决依据来自**冻结验收件文件头**（seam 契约明写 home = `story_page.{c,h}`）+ 姊妹包 K3 manifest 含 `.h`；planner 裁定 append，非越权。
-- **RSL-A4 tooth 3 张力**：acceptance-author 事先定位（D2 让位须落录音进入桥、保留 REC_SESSION case 的 `show_chat`），builder 选甲形态时遵此、零触碰 K3 冻结齿。**前置把「形态选择可能与既有冻结齿冲突」说清 = 省了一整轮 revision**。
+原写「manual 聆听 + NON_STREAM ASR 产不出 stt 帧」——真机 r2 日志有 `>> 今天是10/01…说完了` 转写 + `<< 放假还有作业` 回复，**stt 明明回来了**；front 侧却报 `empty_accum`。真实缺口在 **front 的 story 累积/回传接线**，不是「补 stt 帧」。已在 docs-delta 记，供 Package B 立项订正（免得朝错方向修）。
 
-## 五、escalation themes（cross-ref 交接回执）
+## 五、human 三判（pod-events）
 
-- **agent-escalation / 内循环 fixer 轮：零**。verify 4 轮全是元数据形态，无需 fixer 打补丁。
-- **supervisor：ESCALATE**（high riskTier，机械闸 priority-before-evidence）→ 停在人类批。
-- **spec 面零写权移交**：integrator 检出两处 spec 事项（§5.2④ 引擎 manual 聆听机制对账归 Package B；§5.2④① 恢复时机文本收口归 K3 pending delta），**均未自改**，以 advisory 补正文本交 human spec 批——遵 `ARQ-260929-docs-sync-spec-handoff`。
+- `ef280e1a` defer-merge-pending-live-round（先真机复验再裁）；
+- `64a4012d` scope-exclude-record-page-ui-fidelity（设计图 UI 还原度另立包）；
+- `e2ce7911` accept-device-round-d2-fixed（v6 目视三样齐）；
+- `97c36553` accept-coldbrowse-dropped-per-k3（D1 冷浏览维持 dropped，不返工）。
 
-## 六、本棒未覆盖（如实挂账，不伪装）
+## 六、内循环 friction（诚实）
 
-1. **真机复验四窗**（K3R-E3）：无真机证据，deferred 归 live 确认轮（human 持板）。
-2. **AFE VAD 真沿** / **120s 静默自动归档**：设备轮盲区 / 时长窗未覆盖。
-3. **D3「说完了」+ 逐句回显**：属 Package B（触需求/架构/契约三面），受 spec/contract anchors 门控。
+- **元数据形态红 ×4**（三版 D2 修复期间反复）：`taskpackage-required`（contractRefs/crossEnd/kind）、`acceptance-coverage`（wrapper 误入/全角括号 id）、`mutation-check`（换 acceptance 文案后 acceptanceEntry 失配）。**建议成文**：TaskPackage 元数据四条预检（参见首版 pod-retro §二）。
+- **mutationEvidence 必须「实现后重放」**：本轮 K3R-A2 的 [R4]/[R5] 两条是真变异重放（builder 实测 RED verbatim），非设计态红。
+- **诊断日志是「有意保留的债」**：`PAGE_RENDER`/`STORY_RENDER`/`RECORDING render`/`KEYBAR`/`chrome_*` 留在代码里，同族缺陷下次直接用。
 
-## 七、下次改进（具体到动作）
+## 七、本棒未覆盖（如实挂账）
 
-1. TaskPackage 草案落盘前，自查四条形态（见 §二）——或推动把四条并进 `taskpackage-required` 的前置草图模板。
-2. `mutationEvidence` 生产纪律成文：实现绿后重放，不抄设计态红（见 §三）。
-3. 回归修复包 launch 面：`check-launch` 对「spine 自建包」应有一条明路（把「base ref 制品 cherry-pick」写进 launch-prep skill 的步骤），避免每棒临场想。
+1. D2 真修派发点（`lcd_display.cc`）host 不可编 → **只能设备轮目击**（已过 v6，但机制上不可机判）。
+2. D1 冷浏览空态（human 裁接受，`M4K3-DC-1`）。
+3. 录音页 UI 还原度（设计图小伴/折线波/气泡/回显行，human 裁出包）。
+4. D3「说完了」+ 逐句回显 + 120s 静默归档（Package B / 单验）。
+
+## 八、下次改进（具体到动作）
+
+1. **现象级 bug 两轮不中即转日志定死**（本轮实证有效）。
+2. 收口前**先重跑 supervisor 闸**（write-once，旧 verdict 在盘会 fail-loud；新轮需显式移除旧件）。
+3. 回归修复包 start 面：把「base ref 制品 cherry-pick」写进 launch-prep skill（首版 retro §七 已提，本棒再次临场想）。
+4. 归 loop-retro 素材池：「以齿代现象」正反两面实例 + plan 证据/修法不同源口径差。
