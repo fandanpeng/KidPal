@@ -57,6 +57,14 @@ openQ:
     question: requirements.md:431 注记（「manual 聆听 + 网关累积态已备」）走需求面 /requirement-change，还是并入本 arch 批顺带？
     ruling: 待订（architect-reviewer 指出路由归需求面/human；注记-only 不阻塞 Package A）
     status: deferred
+  - id: q8-D3根因复核准（261001 包A收口后主线程复核 r2 真机日志）
+    question: Package B 立项前的 D3 根因口径——retro/docs-delta 记「stt 帧产出正常、AI 也逐句回复，真实缺口在 front 累积/回传接线」，与主线程原判「manual + NON_STREAM 产不出 stt 帧」不一致，哪条对？
+    ruling: 主线程复核 `c:/tmp/serial-live-repair-r2.log` 原始行序，两条各对一半、真因是**第三件**：① 录音**期间**确无 stt（manual 模式 ASR 在 listen stop 才触发），故收尾词前置检测物理上不可能——原判方向对；② stt 在 `story_key stop_rec archive_pend=1`(t=131012) **之后** 1.7s 才回（t=132772），而 front 的 `_story_stop_on_listen_stop` 在同一条 `listen/state=stop` 上行帧上**立即** `acc.stop()` → 累积缓冲此时必然为空 → `empty_accum` 是**顺序缺陷（归档早于转写结果），不是竞态、也不是「没 stt」**；③ 收尾后引擎把整段当**一轮**回答并 TTS（`<< 放假还有作业` 等，是同一轮的多句），故「逐句回复」表述不精确——实录是「收尾后整段回一轮」，同样违反「收尾即盖章、AI 闭嘴」口径。r2 另证 ctx 到达正常（t=69242 `story_list_dispatch` 于 ctx 沿推送）。**Package B 立项据此订正**：除聆听形态/抑制面的 Track A 外，须含 front 归档时序修法（等转写结果再归档）。retro/docs-delta 的表述订正随 B 的 docs-sync 落地
+    status: resolved（供 Package B 立项消费）
+  - id: q9-B1归档时序包（q8 的直接产物）
+    question: q8 复核出的「归档早于转写」缺陷如何立项？
+    ruling: human 261001 触点②同意先开；architect 分流判 ② 单包 Full（riskTier=high / rigor=full / sourceType=regression；存疑向严理由 = 数据丢失 + 触累积态状态机 + 改写已 merged 包的冻结验收时序假设），human 复确认档位。plan 落 `delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md`（修法 = 停录挂起 pending-stop + 转写到达后归档 + 正文剔收尾词 + 10s 超时兜底；120s sweep 同源缺陷划 B2/B3）。**不建独立 spine**（单面实现）
+    status: resolved
 status: in-flight
 ---
 

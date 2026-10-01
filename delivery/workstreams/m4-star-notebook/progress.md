@@ -209,3 +209,16 @@
 - **re-closeout 验证**：影响面圈定 project 同上（changed_files 39 / impacted 45 节点）→ `test-scope-final-r4.txt`；**scoped r3 + final r4 全绿（10 闸）**，`verifier-evidence-check` `{"ok":true,"factOk":true}`；真跑 host 齿 **147 Tests / 0 Failures**（RSR-A1..A7 + RSR-C1）。实现面 = 8 改（含 `lcd_display.cc`，planner 已扩 changeManifest）+ 新齿 3 件。
 - **未覆盖面**：D2 派发点 `lcd_display.cc` **host 不可编 → 无法机判**，architect 建议升「设备轮硬门」（治理面改动，**归 human 裁**）；D1 冷浏览 dropped（human 接受）；录音页 UI 还原度出包；逐句回显 + D3（原「manual 聆听产不出 stt 帧」被真机反驳，真缺口在 front story 累积/回传接线）= Package B。
 - **等待 supervisor 机械合并门**：stale `supervisor-verdict.json`（45ddc85 落，验证旧码）须 planner 在 re-closeout 后重跑 `supervisor-verdict-gate.mjs` 覆盖；`riskTier=high` → 必产 ESCALATE，合并须 human 批。
+
+## 2026-10-01 · B1/C launch prep（归档时序包 + model_name 冲刷包）
+
+- **调度判定**：两包均无 `dependsOn`、各为单 owning 包，可即时开工。顺序 = **B1 `261001-m4-k3-story-archive-order`（mergeOrder 43，workstream m4-star-notebook）先行 → C `261001-openclaw-model-name-overlay-drift`（mergeOrder 44，独立变更、无 workstream）其后**。两包均预填**同一常驻树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`**（一树一会话 → 串行跑，沿 M1–M4 单常驻树接力棒形态）；若要并行，C 可移至空闲树 `C:/AI/KidPal-pod-perf-k1l-roundtrip-latency`（**建/移树决策归 human**，本批未动）。
+- **launch 机械门**：`node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-ref base/m4-star-notebook`——首跑 blocking = 缺 `taskpackage.json`，补齐（含 input-brief 双份 + `docsOwner`）后**两包复跑绿**。`settings-lint.mjs` 未跑（本批未改 settings）。
+- **基线锚（producer 五要素）** @**60744cb**（面域分别记）：
+  - **server 面**：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **127 passed / 0 failed / 4 deselected / 2 subtests passed，exit 0**。
+  - **firmware host 面**：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **147 Tests / 0 Failures / 0 Ignored，exit 0**。旧锚 136T0F @72ce58f 因 K3-repair 落地有固件差异而作废（差异判停：`git diff --quiet 72ce58f HEAD -- firmware` 非空）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 复用树沿用（无需重建）。
+- **board 预填**：两包 `status=queued` + `worktreePath` + `mergeOrder 43/44`（47 pods，mergeToken holder=none）。
+- **启动卡**：`delivery/taskpackages/261001-m4-k3-story-archive-order/launch-card.md` 与 `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/launch-card.md`（五要素齐）。
+- **本批制品**：B1（plan.md + taskpackage.json + input-brief 双份 + 启动卡）、C（plan.md + taskpackage.json + input-brief 双份 + 启动卡 + 上游 CRQ `docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md`）。
+- **遗留 human 项**：① B1 转绿后真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章）；② 并行与否（C 是否移至 perf 树）；③ B1 须改写已 merged 包（K1）冻结验收的时序假设——改冻结 oracle 的签字走 dev-loop 常规人门。

@@ -1,0 +1,76 @@
+{
+  "changeId": "261001-openclaw-model-name-overlay-drift",
+  "rigor": "lite",
+  "sourceType": "drift-report",
+  "origin": {
+    "type": "drift-report",
+    "upstreamType": "drift-report",
+    "upstreamRef": "docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy",
+  "story": "引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default 导致 OpenClaw 400（双 agent + ownership explicit 下 default 无法唯一定位答主）的仓内回流修复：改仓内声明面/渲染面/探针与 provider 默认值四处，重钉 PERF-K1 冻结验收并订正其失准的「契约 §四」文案，新增 ADR-007 amend ADR-006。活配置已于 261001 热修，本包只防下次部署复现。",
+  "planRef": "delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
+  "redBaselineResult": "pending——launch prep 相位只落基线锚（见 delivery/workstreams/m4-star-notebook/progress.md「2026-10-01 · B1/C launch prep」段带 SHA 行）；本包重钉齿的红基线由 acceptance-author 在 intake Step 5 实跑复核落账",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "low",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "MNF-A1（基线与模板一致）：仓内 openclaw/default 零残留（模板/渲染面/探针默认值/provider 默认值四处均为 openclaw/kidpal；历史变更记录类文本除外）",
+    "MNF-A2（冻结验收重钉）：PERF-K1 的 PERF-E1/E2 齿期望值改为 openclaw/kidpal 且转绿；同额订正 :917/:939 的「契约 §四钉 openclaw/default」失准文案（契约对 model_name 零命中）",
+    "MNF-A3（部署演练，可选 human 授权）：overlay 在 ECS 重跑一次渲染，核验引擎 .config.yaml 落 openclaw/kidpal 且不覆盖其它段"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"
+  ],
+  "exitCriteria": [
+    "MNF-E1: 上列齿全绿 + 全量 server 面回归零新增红（对基线锚差异判停）",
+    "MNF-E2: 铁律——docs/contracts/** 与系统 spec 零改（契约与 architecture.md 对 model_name 零命中；本包只触 server/deploy 模板族 + 验收 + ADR）",
+    "MNF-E3: ADR-007 落 docs/ADR.md（append-only 新增，amend ADR-006 的「model_name 零改/对引擎不可见」支撑句；核心决策不受影响）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/ADR.md#ADR-006"
+  ],
+  "sourceRefs": [
+    "ARQ-261001-openclaw-model-name-overlay-drift",
+    "delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/deploy/provider.config.yaml"
+  ],
+  "changeManifest": [
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/perf-k1/probe_batch.py",
+    "server/gateway/provider.py",
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+    "docs/ADR.md"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+      "kind": "regression",
+      "note": "PERF-E1/E2 齿期望值重钉（openclaw/default → openclaw/kidpal）+ :917/:939 失准文案订正；改已 merged 包冻结 oracle，签字成本经 closeout 承载"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "新增 ADR-007（amend ADR-006 的引擎 model_name 支撑句）；architecture.md / requirements.md / 契约零改（architect 快审已复核零命中）。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "单面实现变更（server/deploy 模板族 + 验收 + ADR）：不改 wire、不触固件、不触契约与 spec 面；ECS 活配置已热修，本包只做仓内回流"
+  },
+  "docsOwner": "integrator"
+}

@@ -1,0 +1,85 @@
+{
+  "changeId": "261001-m4-k3-story-archive-order",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "upstreamFrozen": "",
+    "workstream": "m4-star-notebook"
+  },
+  "subsystem": "server/gateway/front",
+  "story": "记录会话归档时序缺陷修复（261001 真机 r2 实录）：孩子按 KEY 停录后故事未被归档、内容丢失。根因 = front 在 listen/state=stop 上行帧上立即 acc.stop()，而转写只在引擎收到该 stop 之后才产生（manual 模式 ASR 由 listen stop 触发）、1.7s 后才经下行 stt 到达 → 归档瞬间累积缓冲必空（front 报 empty_accum）。修法 = 停录挂起 pending-stop + 转写到达后归档；附正文剔除尾随收尾词、10s 超时兜底。",
+  "planRef": "delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
+  "redBaselineResult": "pending——launch prep 相位只落基线锚（见 delivery/workstreams/m4-star-notebook/progress.md「2026-10-01 · B1/C launch prep」段带 SHA 行）；本包新增/改序冻结齿的红基线由 acceptance-author 在 intake Step 5 实跑复核落账",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "SAO-A1（归档时序正齿）：listen/state=stop 先到、stt 后到（真机序）——归档须产出恰一篇、正文为转写内容；既有归档链齿全部由 stt→stop 序改写为本序，不得再以旧序过闸",
+    "SAO-A2（负锚齿·防复发，本缺陷冻结 oracle）：listen/state=stop 到达且累积缓冲为空时，stop() 不得立即返回 None 并把会话打回 chat；须存在 pending-stop 态，后续 stt 到达才归档",
+    "SAO-A3（边界齿）：pending 超时（10s 无转写）→ 不写空故事、释放会话态；超时后迟到的 stt 不污染；重复 stop / stop 与 cancel 交错不双归档、不泄漏会话态",
+    "SAO-A4（正文齿）：归档正文不含尾随收尾词（「我说完了」/「讲完啦」及子串「说完了」）"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py"
+  ],
+  "exitCriteria": [
+    "SAO-E1: server 面验收全绿（新齿 + 改写序后的既有归档链齿）+ 全量回归零新增红（对基线锚差异判停）",
+    "SAO-E2: 铁律——docs/contracts/** 与系统 spec 零改（本包仅 front/story.py 实现面；归档时点属 arch §5.2④ 行为面，不触契约）",
+    "SAO-E3: 真机复验（human 持板）：P3 按 KEY 停录 → 列表新增一篇 + 盖章；串口判据 = story_key stop_rec archive_pend=1 之后出现转写、front 不再报 empty_accum"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.4"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F2.2",
+    "docs/architecture.md#§5.2"
+  ],
+  "sourceRefs": [
+    "S-F2.2-AC2",
+    "S-F2.2-AC4",
+    "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md",
+    "delivery/changes/dev/261001-m4-k3-record-session-live-repair/pod-retro.md",
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py"
+  ],
+  "changeManifest": [
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py",
+    "server/acceptance/**"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "regression",
+      "note": "K1 冻结验收件的归档链齿固化错误时序（stt→listen-stop），须改写为真机序 + 新增负锚齿 SAO-A2；改已 merged 包冻结 oracle，签字成本经 closeout 承载"
+    },
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "new",
+      "note": "SAO-A1..A4 齿落点（时序正齿 / 负锚齿 / 边界齿 / 正文齿）"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsSyncReason": "arch 面收口：§5.2④「listen-stop 归档」的实现口径补正（触发仍是 listen-stop，归档动作等转写到达）——architect 判不构成 spec 漂移，是否落文本由 integrator 依实际改动圈定。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯 front（server 面）实现修复：不改任何 wire 消息、不触固件与契约/spec 面；聆听形态变更与引擎侧抑制逐句回复随 Package B（D3-甲）另立，不在本包"
+  },
+  "docsOwner": "integrator"
+}
