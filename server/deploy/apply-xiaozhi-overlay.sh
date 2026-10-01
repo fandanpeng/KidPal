@@ -69,7 +69,7 @@ LLM:
     # type:openai 流式接 OpenClaw (决策18 / 契约 §四)
     type: openai
     base_url: http://127.0.0.1:18789/v1   # OpenClaw loopback (V28 18789 锁 127.0.0.1)
-    model_name: openclaw/default
+    model_name: openclaw/kidpal
     api_key: "$OPENCLAW_TOKEN"
     # NOTE: stream 请求禁带 max_tokens (契约 §四 / V9) — enforced by provider.openclaw_stream_request
 TTS:

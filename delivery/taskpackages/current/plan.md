@@ -1,80 +1,90 @@
 ---
-changeId: 261001-m4-k3-story-archive-order
-rigor: full
-riskTier: high
-sourceType: regression
+changeId: 261001-openclaw-model-name-overlay-drift
+rigor: lite
+riskTier: low
+sourceType: drift-report
 reviewed-by: architect
 date: 2026-10-01
 ---
 
-# TaskPackage plan · 261001-m4-k3-story-archive-order（② 单包 Full）
+# TaskPackage plan · 261001-openclaw-model-name-overlay-drift（② 单包 Lite）
 
-> `/triage-change` 分流快审（architect，2026-10-01）+ human 触点①确认 ② 单包 Full 后落盘。
-> 边界：本包**纯 front / story.py / 验收**，不触固件、不触契约、不触 spec 面；与 B2/B3（聆听形态 + 引擎侧抑制）分界见 §6。
+> `/triage-change` 分流快审（architect，2026-10-01）+ human 触点①确认「另立独立小包 / ② 单包 Lite」后落盘。
+> 与 `261001-m4-k3-record-session-live-repair`（Package A/B）边界干净：本包不含任何固件或 front 修复。
 
-## 1. 缺陷与根因
+## 1. 问题与根因
 
-**现象**：孩子在 P3 按 KEY 停录后，录下的故事**没有被归档、彻底丢失**。
+2026-10-01 真机部署后 OpenClaw 返回 400：
 
-现场证据（`c:/tmp/serial-live-repair-r2.log`，261001 包 A 真机轮实录）：
+> Multiple agents are configured, but this operation has no explicit owner. Select an agent explicitly; …
 
-```
-130832  key_gesture_parser key=0 gesture=1                    ← KEY 单击
-131012  MCP: story_key stop_rec archive_pend=1                ← 已走到 STOP_RECORD（包A D4a 已修好）
-131062  StateMachine: State: listening -> idle                ← 关会话，上行 listen/state=stop
-132772  Application: >> 今天是10/01放假了还要写作业，真不开心。说完了   ← 转写 1.7s 后才回
-140512  Application: << 放假还有作业（引擎把整段当一轮回答并播报）      ← 另见 §6 残项
-```
+根因：OpenClaw 上跑 `main` + `kidpal` **双 agent**、`ownership: explicit`，而引擎活配置 `.config.yaml` 的 `model_name` 是 `openclaw/default`（无法唯一定位）→ OpenAI 兼容端点 400。该值在 2026-09-25 曾被手工修为 `openclaw/kidpal`，但只落在 ECS 活配置、未回流仓内；261001 的 ECS 重部署用仓内 overlay 重写活配置，把它冲回旧值。
 
-**根因（顺序缺陷，非竞态）**：
+- **活配置已热修**（261001，`/opt/kidpal/.../.config.yaml` → `openclaw/kidpal` + `docker restart`，探针 `model: openclaw/kidpal` 返回 200；备份 `.config.yaml.bak-260930-modelname-clobber`）。
+- **本包修的是仓内**：模板与冻结验收仍钉旧值，下次 overlay 重部署会再次冲掉。
 
-- front 在**同一条** `listen/state=stop` 上行帧上立即归档：`server/gateway/front/front_app.py:533` → `_story_stop_on_listen_stop`（`:121-139`）→ `acc.stop()`。
-- 但转写只在**引擎收到该 stop 之后**才产生（manual 模式下 ASR 由 listen stop 触发），1.7 秒后才经下行 stt 到达。
-- 归档瞬间 `st.accum` 必为空 → `server/gateway/story.py:561` `stop()` 返回 None，并把 routing 打回 `chat`。
-- 随后到达的 stt 被 `_story_feed_from_stt`（`:104-118`，要求 routing == `accumulate`）丢弃；`_story_finish_on_phrase`（`:206-227`）同样因 routing 已回 chat 而不触发。**内容彻底丢失**。
+性质为 **drift**（外部演进 —— OpenClaw 由单 agent 变双 agent —— 造成的仓内配置漂移），非某次改动引入的回归。
 
-**为什么验收没拦住**：`server/acceptance/test_m4k1_story_cloud_link.acceptance.py` 的全部归档链齿喂数顺序都是 **stt → listen-stop**（`:709-712`、`:769-778`、`:869-871`、`:1164-1166`），与真机 **listen-stop → stt** 相反——冻结 oracle 固化了错误的时序假设。
+## 2. changeManifest
 
-## 2. 修法（architect 裁定：甲为主 + 乙兼容分支）
+**live 渲染链（核心修复点，必改）**
+- `server/deploy/provider.config.yaml:62`（声明面 `model: "openclaw/default"`）
+- `server/deploy/apply-xiaozhi-overlay.sh:72`（渲染面 `model_name: openclaw/default`）→ 引擎 `.config.yaml`
 
-核心不变式：**归档动作恒发生在转写 stt 到达之后**；`listen/state=stop` 与 finish-phrase 都只是「该归档了」的信号。
+**一致性同步（非 live wire，仅改默认值）**
+- `server/gateway/provider.py:32`（`OPENCLAW_MODEL` 默认值）—— **消费方口径钉死**：该模块的 LLM 面**无 live 调用方**（`front_app.py` 仅用 `gw_provider.corr_id()` 与 `FEATURE_STREAMING_FORBIDS_MAX_TOKENS`）；live model_name 由引擎读自己的 `.config.yaml` 发起。本处改动只保声明一致，**不动 `openclaw_stream_request` 结构**。
+- `server/deploy/perf-k1/probe_batch.py:42`（`DEFAULT_MODEL`）
 
-- `listen/state=stop` 到达时：
-  - `accum` **非空** → 立即归档（此分支是兼容 B2/B3 auto 模式的必要形态：auto 下录音期间 stt 已喂入 accum）；
-  - `accum` **空** → 标记 **pending-stop**，**下一条 stt 到达**时 feed → 归档 → 下发 `story_text(seq)` + `story_list`（三时点②）。
-- **pending 超时 = 10 秒**（实录转写延迟 1.7s，留足抖动余量）。超时后 routing 回 `chat`、释放 pending、**不写空故事**（V31 边界）。超时后迟到的 stt 因 routing 已回 chat 被自然丢弃，不污染。
-- **pending 态须纳入 `StoryAccumulator` 状态机**，与 `stop()` / `cancel()` / `timed_out_sessions` 互斥协调（不双归档、不泄漏会话态）。
-- **正文剔除收尾词**：归档正文剔除尾随收尾词（「我说完了」/「讲完啦」及其子串「说完了」）——实录转写尾带「说完了」，不剔除会污染故事正文。标题由模型另起（不直取正文首字），不受影响。
+**冻结验收重钉 + 文案订正（归 acceptance-author）**
+- `server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py:916/:938` —— 期望值 `openclaw/default` → `openclaw/kidpal`
+- 同文件 `:917/:939` —— **文案失准订正**：两处写「契约 §四钉 openclaw/default」，但 `docs/contracts/interface-contract.md` 对 `openclaw|model|model_name` **零命中**（契约从不钉 model_name）。订正为「model_name 基线 = openclaw/kidpal（双 agent 唯一定位；非契约面——契约 §四不钉 model_name）」。
+- 同文件 `:929`（`test_e1_overlay_llm_segment_unchanged` docstring「E2 铁律：…model_name openclaw/default…」）—— **planner 起包期补入**（原列举漏）：重钉 `:938` 期望值后此 docstring 与断言自相矛盾，须一并对齐为 `openclaw/kidpal`。
 
-## 3. changeManifest
+**ADR（append-only）**
+- `docs/ADR.md` 新增 **ADR-008**，注明 **amend ADR-006**（ADR.md:5 明令「不覆盖、不改写既有条目；推翻旧决策 = 新增一条并注明 supersedes/amend」）。**注**：plan/启动卡原文写「ADR-007」，但 ADR-007 已被 `260924-m4-k1-story-cloud-link` 占用（ADR.md「星星记录本数据面收口」）→ 起包 1f 核验改判 **ADR-008**（详见 §8）。
 
-- `server/gateway/front/front_app.py`（listen-stop 挂起 + 转写到达后的归档接线 + 正文剔词）
-- `server/gateway/story.py`（`StoryAccumulator` 新增 pending-stop 态与相关流转）
-- `server/acceptance/test_m4k1_story_cloud_link.acceptance.py`（归档链齿时序改真机序 + 补一条负锚齿）
+**重钉依据（供 acceptance-author 引用）**：PERF-E1/E2 齿原钉 `openclaw/default` 的成立前提 = 「OpenClaw 单 agent、`default` 可唯一定位」；261001 真机实测 OpenClaw 已为 main + kidpal 双 agent（`ownership: explicit`），该前提不成立，正确基线为 `openclaw/kidpal`。
 
-**不在本包**：`server/gateway/front/front_app.py` 的 120s sweep 分支（同源缺陷，划 B2/B3，见 §6）；固件；契约 / spec 面。
+## 3. ADR-008 草案要点（正文按 ADR.md 五节格式补齐）
 
-## 4. 验收方案
+- **决策**：引擎 `.config.yaml` LLM 段 `model_name` 由 `openclaw/default` 修为 `openclaw/kidpal`；同步改声明面 / 渲染面 / 探针默认值 / provider 默认值四处。
+- **amend 关系**：修订 ADR-006 的支撑句「model_name `openclaw/default` 零改、模型选择对引擎与契约 §四完全不可见」——双 agent 下**对引擎可见**（必须点名 agent）；「对契约 §四不可见」仍成立。ADR-006 的**核心决策**（降 thinking 档、模型 primary `deepseek/deepseek-v4-flash` 不变、出网记账型号名零变动）不受影响。
+- 理由 / 备选与放弃原因 / 关联：由包内 builder/integrator 按格式补齐。
 
-- **时序改真机序**：全部归档链齿改为「先 `listen/state=stop` → 后到达 stt → 归档产出恰一篇」。
-- **负锚齿（防复发，本缺陷的冻结 oracle）**：`listen/state=stop` 到达且 accum 为空时，`stop()` **不得**立即返回 None 打回 chat；须存在 pending-stop 态，后续 stt 到达才归档。
-- **边界齿**：pending 超时（10s 无转写）→ 不写空故事、释放会话态；超时后迟到 stt 不污染；重复 stop / stop 与 cancel 交错不双归档。
-- **正文齿**：归档正文不含尾随收尾词。
+## 4. 不在本包
 
-## 5. 风险与人门
+- 引擎 overlay 的**活配置热修**（已执行，ECS 侧，仓内无此面）；
+- `261001-m4-k3-record-session-live-repair` 的任何固件 / front 修复。
 
-- 改写已 merged 包的**冻结验收时序假设**（ADR-001:15 已知的人签字成本）→ 经 dev-loop 常规 human 门（supervisor riskTier=high 升级 + closeout）承载。
-- 真机复验：P3 按 KEY 停录 → 列表新增一篇 + 盖章（`story_text(seq)`）；串口判据 = `story_key stop_rec archive_pend=1` 之后出现 `>>` 转写、随后 front 侧归档成功（不再 `empty_accum`）。
+## 5. 验证方案
 
-## 6. 与 B2/B3 的边界
+1. 静态核对：仓内 `openclaw/default` 仅应剩 carve-out 两类——**退役面**（`server/shim.py`〔ARCHIVED 头注〕、`server/kidpal-shim.service`、`server/acceptance/archive/*`）与**历史记录**（`server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md`、`docs/ADR.md` ADR-006 正文、`docs/crq/**`、`.claude/skills/kidpal-ecs-gateway/SKILL.md`〔已为 kidpal，`default` 仅历史解释身份〕）；模板/渲染/探针/provider/验收五处应为 `openclaw/kidpal`。
+2. 冻结验收回归：PERF-K1 验收件重钉后全绿（含文案订正）。
+3. 部署演练（可选，需 human 授权）：overlay 在 ECS 上重跑一次渲染，核验引擎 `.config.yaml` 落 `openclaw/kidpal` 且不覆盖其它段。
 
-- **本包交付到**：KEY 兜底收尾在当前 **manual 模式**下可用（stop → 引擎转写 → stt 到达 → 归档 → 下发）。
-- **不交付**（依赖 B2/B3 的聆听形态变更）：逐句回显、说「我说完了」自动收尾、**120s 静默 sweep 复活**（manual 模式下 accum 恒空、无 stop 无 ASR 无 stt，B1 的 defer 机制救不了它）。
-- **接口约定**：B1 的 pending-stop 判据含「stop 时 accum 非空 → 立即归档」分支，使 B2/B3 落地 auto 模式后 B1 机制无需返工。
-- **残项（归 B3）**：收尾后引擎仍把整段当一轮回答并播报（实录 `<< 放假还有作业`），违反「收尾即盖章、AI 闭嘴」口径——属引擎侧抑制面，随 B2/B3 的 Track A。
+## 6. 风险与人门
 
-## 7. 证据
+- **改已 merged 包的冻结验收 oracle**：重钉 + 文案订正的人签字成本经 dev-loop 常规人门（supervisor 升级 + closeout）承载，不单设门。
+- 未来新增 agent 时 `openclaw/kidpal` 仍唯一定位（点名 agent），不随 agent 数量变化。
 
-- 真机实录：`c:/tmp/serial-live-repair-r2.log`
-- 分流 review：architect（2026-10-01，同会话 return）
-- 相关 spine：`delivery/changes/intake/261001-m4-k3-record-session-live-repair.md`（openQ q8 = D3 根因复核准）
+## 7. 技术方案（planner+architect 预评）
+
+> 本节由 planner 于 **2026-10-01** 补写，内容源 = **architect 前置技术预评档（planner.md Step 1g，只读 advisory）**。效力声明：architect 意见为 advisory 输入，不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据。本节是「planner 只读消费 plan.md」规则的唯一例外（见 task-intake-and-slicing.md plan.md 条例外条款）。
+
+- **取向成立，live/声明面识别完整、无遗漏 live wire**。关键接线逐点复核：
+  - `apply-xiaozhi-overlay.sh:72` = **唯一 live 渲染真源**（heredoc 直接写出引擎 `.config.yaml` LLM 段）→ 必改，改它才是「防下次 overlay 重部署冲掉」的实质修复。
+  - `provider.config.yaml:62` = **声明面**，与渲染面成对（ADR-001「渲染面 == 声明面 == 被测面」不变式）→ 须同步，否则两面再漂移。
+  - `provider.py:32` 的「无 live 消费方」判决**经 grep 实证**：live `front_app.py` 只 import `gw_provider.corr_id()`（:332/:797）与 `FEATURE_STREAMING_FORBIDS_MAX_TOKENS`（:306）；`OPENCLAW_MODEL` 仅被 `provider_config()`（:75）/`openclaw_stream_request()`（:105）引用，而这两函数**无任何 live 调用方** → 改 :32 = 纯声明一致、零 live 行为变化；:75/:105 引用同名常量自动跟随，plan「不动 `openclaw_stream_request` 结构」正确。
+  - `probe_batch.py:42`（PERF-A1 探针默认值）= live 测试工具面，不改则探针继续发 `openclaw/default` → 双 agent 下同样 400，须改。
+- **changeManifest 六件覆盖全部 live/声明面，成立**；`impactedTestsSeed` 单条（PERF-K1 验收件）正确（`archive/` 两件 `openclaw/default` 是 `norecursedirs` 排除的退役面，不进回归集）。
+- **无阻塞性风险**；唯一需 builder 留意的前提 = 「`provider.py` 无 live 消费方」已由 architect grep 坐实，不需额外动作。
+
+## 8. planner 起包修正留痕（2026-10-01，intake 1f 快照保鲜核验 + 1g architect 预评）
+
+> plan.md 原为 `/triage-change` reviewed 稿；以下修正在起包期由 planner 依 1f/1g 结果就地订正并留痕（未改技术取向，只订正腐坏引用与补漏）。
+
+1. **ADR 号 ADR-007 → ADR-008**：原稿写「新增 ADR-007」，但 ADR-007 已被 `260924-m4-k1-story-cloud-link` 占用 → 改判 ADR-008（amend ADR-006）。同步已改 taskpackage 的 story/exitCriteria/docsSyncReason。
+2. **补 `:929` docstring**（§2 已补）：冻结验收件内原列举漏此一处。
+3. **补 carve-out `server/kidpal-shim.service`**（§5 已补）：architect 1g 捞出——退役 shim 的 systemd 单（`OPENCLAW_MODEL=openclaw/default`），与 `shim.py` 同源退役面，正确在 manifest 之外、`零残留` 静态核对须显式排除。
+4. **carve-out 措辞两轨**（§5 已改）：原「历史变更记录类文本」易与「退役面」混淆，改分「退役面」（shim.py / kidpal-shim.service / archive/*）与「历史记录」（PERF-K1-ACCEPTANCE-NOTES.md / ADR-006 正文 / crq / skill 注）两类，供 acceptance-author/verifier 判据清晰。
+5. **`PERF-K1-ACCEPTANCE-NOTES.md` 处理**：自证为承载包 260924 的冻结设计/红基线/mutation 记录，**不应改写**（改写会伪造红基线与 mutation 证据）；其 :63-64 逐齿映射表陈旧为可接受的历史快照，closeout 时可 append 一行「260924 冻结快照，261001 已重钉」注记或于证据中显式记录「故意留作历史快照」（**可选、非阻塞**，由 integrator 定）。

@@ -10,10 +10,10 @@
     "workstream": ""
   },
   "subsystem": "server/deploy",
-  "story": "引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default 导致 OpenClaw 400（双 agent + ownership explicit 下 default 无法唯一定位答主）的仓内回流修复：改仓内声明面/渲染面/探针与 provider 默认值四处，重钉 PERF-K1 冻结验收并订正其失准的「契约 §四」文案，新增 ADR-007 amend ADR-006。活配置已于 261001 热修，本包只防下次部署复现。",
+  "story": "引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default 导致 OpenClaw 400（双 agent + ownership explicit 下 default 无法唯一定位答主）的仓内回流修复：改仓内声明面/渲染面/探针与 provider 默认值四处，重钉 PERF-K1 冻结验收并订正其失准的「契约 §四」文案，新增 ADR-008 amend ADR-006。活配置已于 261001 热修，本包只防下次部署复现。",
   "planRef": "delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md",
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
-  "redBaselineResult": "pending——launch prep 相位只落基线锚（见 delivery/workstreams/m4-star-notebook/progress.md「2026-10-01 · B1/C launch prep」段带 SHA 行）；本包重钉齿的红基线由 acceptance-author 在 intake Step 5 实跑复核落账",
+  "redBaselineResult": "重钉后实跑（命令 = redBaselineCommand 逐字）：7 failed, 133 passed, 4 deselected, 5 subtests passed in 1.77s —— 7 红全为设计态红（MNF-A1 四处正钉 4 subTest 红 + 残留扫描命中四处 live 面红 + PERF-E1/E2 两行为齿红）；MNF-A2 落盘齿设计态即绿（钉的是已重钉的冻结件文本）。重钉前基线 = 133 passed / 4 deselected（旧值下 PERF-E1/E2 绿）。残留扫描 offender 集合恰为四处 live 面、无 carve-out 假阳性；收集零错误（--collect-only 136/140 collected）。",
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
@@ -23,17 +23,18 @@
     "docs-sync"
   ],
   "acceptance": [
-    "MNF-A1（基线与模板一致）：仓内 openclaw/default 零残留（模板/渲染面/探针默认值/provider 默认值四处均为 openclaw/kidpal；历史变更记录类文本除外）",
-    "MNF-A2（冻结验收重钉）：PERF-K1 的 PERF-E1/E2 齿期望值改为 openclaw/kidpal 且转绿；同额订正 :917/:939 的「契约 §四钉 openclaw/default」失准文案（契约对 model_name 零命中）",
-    "MNF-A3（部署演练，可选 human 授权）：overlay 在 ECS 重跑一次渲染，核验引擎 .config.yaml 落 openclaw/kidpal 且不覆盖其它段"
+    "MNF-A1: 基线与模板一致——仓内 openclaw/default 零残留（声明面/渲染面/探针默认值/provider 默认值四处均为 openclaw/kidpal；退役面与历史记录两类 carve-out 除外；扫描面 = server/** 现役代码/配置）",
+    "MNF-A2: 冻结验收重钉——PERF-K1 的 PERF-E1/E2 齿期望值改为 openclaw/kidpal 且转绿；同额订正 :917/:939 的「契约 §四钉 openclaw/default」失准文案（契约对 model_name 零命中）",
+    { "id": "MNF-A3", "kind": "structural", "note": "部署演练（可选 human 授权）：overlay 在 ECS 重跑一次渲染，核验引擎 .config.yaml 落 openclaw/kidpal 且不覆盖其它段" }
   ],
   "acceptanceTestsFile": [
+    "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
     "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"
   ],
   "exitCriteria": [
     "MNF-E1: 上列齿全绿 + 全量 server 面回归零新增红（对基线锚差异判停）",
     "MNF-E2: 铁律——docs/contracts/** 与系统 spec 零改（契约与 architecture.md 对 model_name 零命中；本包只触 server/deploy 模板族 + 验收 + ADR）",
-    "MNF-E3: ADR-007 落 docs/ADR.md（append-only 新增，amend ADR-006 的「model_name 零改/对引擎不可见」支撑句；核心决策不受影响）"
+    "MNF-E3: ADR-008 落 docs/ADR.md（append-only 新增，amend ADR-006 的「model_name 零改/对引擎不可见」支撑句；核心决策不受影响）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
@@ -53,6 +54,7 @@
     "server/deploy/perf-k1/probe_batch.py",
     "server/gateway/provider.py",
     "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+    "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
     "docs/ADR.md"
   ],
   "impactedTestsSeed": [
@@ -66,11 +68,14 @@
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "mutationRequired": false,
+  "mutationSkipReason": "纯声明/配置默认值改动（四处 live 面 openclaw/default → openclaw/kidpal），无分支/逻辑可 mutation；敏感性由 MNF-A1/A2 冻结齿双向断言承载（正钉 assertIn 目标值 + 负钉 assertNotIn 旧值），acceptance-author 已对 HEAD 版重放 MNF-A2 的 assertNotIn 三连实证转红（回退即红，非空过）。",
+  "adrRequired": true,
   "docsSyncRequired": true,
-  "docsSyncReason": "新增 ADR-007（amend ADR-006 的引擎 model_name 支撑句）；architecture.md / requirements.md / 契约零改（architect 快审已复核零命中）。",
+  "docsSyncReason": "新增 ADR-008（amend ADR-006 的引擎 model_name 支撑句）；architecture.md / requirements.md / 契约零改（architect 快审已复核零命中）。",
   "crossEnd": {
     "counterparts": [],
     "exempt": "单面实现变更（server/deploy 模板族 + 验收 + ADR）：不改 wire、不触固件、不触契约与 spec 面；ECS 活配置已热修，本包只做仓内回流"
   },
-  "docsOwner": "integrator"
+  "docsOwner": "integrator",
+  "notes": "1f 拆包快照保鲜核验（2026-10-01 planner，起包期）+ 1g architect 技术预评：① ADR 号腐坏——plan/启动卡/ARQ 均写「新增 ADR-007」，但 ADR-007 已被 260924-m4-k1-story-cloud-link 占用（docs/ADR.md「星星记录本数据面收口」）→ 新增条目改为 ADR-008（amend ADR-006），本包 story/exitCriteria/docsSyncReason 已改正，派单同步携带。② carve-out 两类（均在 changeManifest 六件之外、判出范围）：『退役面』= server/shim.py（ARCHIVED 头注 2026-09-05 台阶退役）、server/kidpal-shim.service（退役 shim 的 systemd 单，architect 1g 补捞）、server/acceptance/archive/*（pytest.ini norecursedirs 排除）；『历史记录』= server/acceptance/PERF-K1-ACCEPTANCE-NOTES.md（承载包 260924-perf-k1-roundtrip-latency 的冻结验收设计/红基线/mutation 记录，不改写防伪造证据）、docs/ADR.md:54（ADR-006 正文·append-only，amend 由 ADR-008 承载）、docs/crq/**、.claude/skills/kidpal-ecs-gateway/SKILL.md:36（已为 openclaw/kidpal，default 仅历史解释身份）。③ 同冻结验收件内 plan 未点到的残留：test_perf_k1_roundtrip_latency.acceptance.py:929 docstring 亦含「model_name openclaw/default」，须随重钉一并对齐（plan 原仅点 :916/:938 值 + :917/:939 文案）。④ scope-map 已核：builder(server/**)/acceptance-author(server/**/acceptance/**)/integrator(docs/ADR.md) 写权齐；单包 Lite·L0 无 UI 面。⑤ 契约面经独立复核 + architect 复核双重零命中（docs/contracts/** 对 model_name/openclaw/model 零命中），§四钉 base_url/loopback + 禁 max_tokens 而非 model_name，零契约改动、无契约门。"
 }

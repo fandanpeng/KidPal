@@ -1,0 +1,23 @@
+# test-scope · 261001-openclaw-model-name-overlay-drift · final r3（integrator Step 4 圈定）
+# 范围 = 本包 acceptanceTestsFile ∪ blast radius 映射测试 ∪ 共享 seam 相关测试 ∪ 安全余量。
+# 每行 = 仓根相对路径；unit/acceptance 两闸按 --scope-file 求交（# 注释行忽略）。
+#
+# ① 本包 acceptanceTestsFile（taskpackage.acceptanceTestsFile 逐字）：
+#   · 本包新档 MNF-A1/A2 冻结齿
+#   · 本包重钉的 PERF-K1 冻结件（PERF-E1/E2 期望值重钉 + 失准文案订正）
+#
+# ② blast radius 映射测试（detect_changes project=C-AI-KidPal-pod-m1-k1a-key-layer-dispatch）：
+#   impacted_total=0、seed_symbols=25——改动为配置/默认值字面（无源符号语义变更），无映射单测。
+#   server/tests 三件（reminder/schedule/story）不触本包改动面，诚实不入范围。
+#
+# ③ 共享 seam 相关测试（读同一 deploy 面文件 provider.config.yaml / apply-xiaozhi-overlay.sh 者）：
+#   本包只改这两文件的 model/model_name 单行；下列三件读同文件断言 prompt-carrier 接线（同文件安全余量），
+#   纳入以防单行改动意外移位/破坏同文件其它段（防御纵深，非本包 acceptance 面）。
+#
+# ④ 安全余量：firmware 面零触碰（本包 server/deploy 单面，crossEnd.exempt 明载无跨端对偶面）→
+#   不含 firmware acceptance；上述 ③ 三件即同文件安全余量。
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py

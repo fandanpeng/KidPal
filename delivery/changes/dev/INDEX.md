@@ -61,3 +61,4 @@
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
 | [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-openclaw-model-name-overlay-drift](261001-openclaw-model-name-overlay-drift/) | 2026-10-01 | docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md | closed | — |

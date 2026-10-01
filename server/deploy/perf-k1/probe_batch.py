@@ -39,7 +39,7 @@ def _default_repo_root() -> Path:
 
 REPO_ROOT = _default_repo_root()
 DEFAULT_ENDPOINT = "http://127.0.0.1:18789/v1/chat/completions"
-DEFAULT_MODEL = "openclaw/default"
+DEFAULT_MODEL = "openclaw/kidpal"
 
 # 标准 3 题（冻结口径）。
 QUESTIONS = {

@@ -1,0 +1,32 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; supervisor-verdict.json by mechanical gate is the sole blocking machine artifact)",
+  "changeId": "261001-openclaw-model-name-overlay-drift",
+  "ts": "2026-10-01T05:43:57.337Z",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "f49b13d2-e99b-4a9e-84df-488d70c12977",
+  "ok": true,
+  "evidenceRef": "delivery/taskpackages/261001-openclaw-model-name-overlay-drift/verifier-evidence/rounds/r3.json",
+  "currentProjectionRef": "delivery/taskpackages/current/verdict.json",
+  "observedGateExit": 0,
+  "legacyNonBearing": false,
+  "gatesNotExecuted": [],
+  "gatesRun": 10,
+  "sourceProvenance": {
+    "factArtifactType": "verifier-round-fact",
+    "factAuthority": "bearing",
+    "factProducedBy": "verify.mjs (script fs-write, R11)",
+    "projectionRule": "verdict.json = supervisor-compatible non-bearing compatibility projection of the validated final round fact; closeout judgment must come from the fact itself"
+  },
+  "closeoutDeclarations": {
+    "redToGreen": "设计态红基线（redBaselineCommand 逐字）= 7 failed / 133 passed / 4 deselected / 5 subtests（4 subTest 红 = 四处正钉；3 齿级红 = MNF-A1 残留扫描 + PERF-E1/E2 两行为齿）→ 修后 136 passed / 4 deselected / 9 subtests / 0 failed（server/acceptance 全目录，integrator 真跑）；final r3 scope 内 60 passed",
+    "redTrajectory": "scoped r1 → scoped r2（19855200-f814-4f72-8342-1f14d611b757，8 闸全绿）→ final r3（f49b13d2-e99b-4a9e-84df-488d70c12977，10 闸全绿）",
+    "demoReconciliation": "见 review-packet.md「demo 对账行」——demo 证据形态 = 冻结验收 pytest 输出（RED→GREEN 轨迹）；MNF-A3 部署演练为 ECS live 面（human 授权）未跑、如实标 pending",
+    "detectChanges": "Step 9b：project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base=main（merge_base b191efb）——changed_files 16 / seed_symbols 25 / impacted_total 0；共享符号 trace_path 抽查 openclaw_stream_request·provider_config callers_total=0（坐实 provider.py 无 live 消费方）",
+    "scopeFile": "delivery/taskpackages/261001-openclaw-model-name-overlay-drift/test-scope-final-r3.txt",
+    "deferredFaces": "MNF-A3 部署演练（ECS + human 授权）/ 引擎 live 真发请求（归 MNF-A3）/ PERF-K1-ACCEPTANCE-NOTES.md 陈旧映射（故意留作 260924 历史快照）",
+    "docsSync": "docs/ADR.md 新增 ADR-008（append-only，amend ADR-006）；requirements/架构/契约零改（git status docs/ 零输出；契约对 model_name 零命中）",
+    "adr": "新增 ADR-008（amend ADR-006，docs/ADR.md append-only 不改既有条目）"
+  },
+  "note": "advisory-only；merge gate 由 supervisor-verdict.json（机械闸 fs-write）承载。riskTier=low → 机械闸预期走常规 APPROVE 路径。"
+}

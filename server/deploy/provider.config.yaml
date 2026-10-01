@@ -59,7 +59,7 @@ providers:
     provider: "openai"                  # type:openai 流式接 OpenClaw
     target: "openclaw"                  # OpenClaw OpenAI-compatible endpoint
     base_url: "http://127.0.0.1:18789/v1"  # loopback (V28); /v1 required (live 260906: without it engine hits 404)
-    model: "openclaw/default"
+    model: "openclaw/kidpal"
     stream: true
     forbid_max_tokens: true             # 契约 §四 / V9 硬约束
   tts:
