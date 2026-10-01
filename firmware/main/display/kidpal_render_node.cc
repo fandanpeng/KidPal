@@ -809,6 +809,12 @@ void kidpal_render_node_end_provision(void)
  * 经 layer 栈裁决，函数体零层栈副作用（不含任何 kidpal_layer_pop）。 */
 static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 {
+    /* K3R D2 真机轮诊断（纯日志, 零渲染改动）: 页渲染入口——入参 page + 本地页 +
+     * 故事节点缓存/权威会话页态 + 活动屏是否已切到 s_kidpal_scr。 */
+    ESP_LOGI(RN_TAG, "PAGE_RENDER in=%d local=%d sview=%d ssess=%d active_ok=%d",
+             (int)page, s_local_page, s_story_view.page, s_story_session_page,
+             (s_kidpal_scr != NULL && lv_screen_active() == s_kidpal_scr) ? 1 : 0);
+
     lv_obj_clean(s_kidpal_scr);
     s_kidpal_img = NULL; /* clean 已销毁，避免悬垂 */
 
@@ -893,6 +899,10 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
     /* 各基础页落屏后驱动键帽条三槽刷新 (keybar R1 / ①根修: 页槽表与页点随翻页更新,
      * 覆盖层关层回原页也走本函数)。调用方已持 lvgl 锁。 */
     rn_keybar_sync_locked();
+
+    /* K3R D2 真机轮诊断（纯日志）: 页渲染出口——本地页按入参 page 定后回读。 */
+    ESP_LOGI(RN_TAG, "PAGE_RENDER out=%d local=%d sview=%d ssess=%d",
+             (int)page, s_local_page, s_story_view.page, s_story_session_page);
 }
 
 /* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层

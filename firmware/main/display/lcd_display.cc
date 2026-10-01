@@ -1366,15 +1366,18 @@ static void kidpal_keybar_sync_locked(void)
     if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
         int slots_ok;
         /* P3 子态键帽随态（260924-m4-k2-p3-star-notebook-ui; 260928 查字窗并行缝
-         * 先例形态）: 删除确认覆盖层前台 / 阅读态本地基层时, 左右槽经
-         * kidpal_keybar_story_slots 纯逻辑单源取随态值（[删掉]/[算了] /
-         * [长按退出]/[翻屏], WF-F2-04/05）; LIST/STAMP 等不落子态表的场景回落既有
-         * 路径（基层页槽表 / 语音场景槽表）。设备侧零重算。
-         * minimal: 录音态键帽 [收尾]/[结束]（WF-F2-02）值域已在 keybar 单源备好,
-         * 设备接线随 K3 录音会话动作接线同批落（录音态前台 = VOICE 会话 chrome,
-         * 本包抢写会与 apply_look 场景键帽双写冲突——缝切分见 plan K2/K3）。 */
+         * 先例形态）: 删除确认覆盖层前台 / 阅读态本地基层 / **录音态** 时, 左右槽经
+         * kidpal_keybar_story_slots 纯逻辑单源取随态值（[删掉]/[算了] / [长按退出]/[翻屏] /
+         * [收尾]/[结束], WF-F2-02/04/05）; LIST/STAMP 等不落子态表的场景回落既有路径
+         * （基层页槽表 / 语音场景槽表）。设备侧零重算。
+         * K3R 补落（261001-m4-k3-record-session-live-repair, 2026-10-01 真机轮）: 原 K2
+         * 期此处刻意留 RECORDING 给 K3 落设备接线（旧注「随 K3 录音会话动作接线同批落」,
+         * 本包补落）; 旧注担心的「录音态前台 = VOICE 会话 chrome 双写冲突」**已消除**——
+         * D2 甲形态进录音态弹出 VOICE 层后, 录音期 front_layer = LOCAL_PAGE, 键帽无
+         * apply_look 场景双写, 故 RECORDING 子态可直接出 [收尾]/[结束]。 */
         int story_sub = kidpal_render_node_story_substate();
-        if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER) {
+        if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
+            story_sub == KSTORY_PAGE_RECORDING) {
             slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
         } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
@@ -1396,6 +1399,12 @@ static void kidpal_keybar_sync_locked(void)
                 lv_label_set_text(g_kidpal_keybar_right_label, right);
             }
         }
+        /* K3R D2 真机轮诊断（纯日志）: 键帽三槽裁决输入（overlay 归一位 / 页 / P3 子态）
+         * + 解出的左右槽文案指针内容（真机照片底栏 = 基层 P3 槽 vs 设计 RECORDING 槽的
+         * 机读对账点）。 */
+        ESP_LOGI(TAG, "KEYBAR ovl=%d page=%d substate=%d left=%s right=%s",
+                 overlay_top, page, story_sub,
+                 left != NULL ? left : "(null)", right != NULL ? right : "(null)");
     }
 
     if (kidpal_keybar_dots(page, overlay_top, &d) == 0 &&

@@ -200,3 +200,12 @@
 - **未覆盖面申报**：真机四窗目击 E3 + AFE VAD 真沿 + 120s 静默归档 = **设备轮盲区，本相位 deferred，如实申报**；逐句回显/D3 = Package B；server 面 N/A。
 - **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；supervisor APPROVE/ESCALATE-human 后由 planner 主线程 `merge-driver --pod` 本地合并。
 - **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族）；② §5.2④① consumer 补正文本与 K3 pending delta 同批交 human spec 批；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量。
+
+## 2026-10-01 · K3-repair（Package A）integrator **re-closeout**（D2 真机诊断定死后重收）
+
+- **背景**：首收 5950bb7 后 supervisor 机械闸 ESCALATE（声明 high / 实 diffTier low）→ human 裁「先真机复验再裁」（pod-events `ef280e1a`），保持 5950bb7 冻结、烧本分支跑 K3R-E3。
+- **D2 走了两轮弯路后由真机日志定死**：真根因 = **键帽派发漏 `KSTORY_PAGE_RECORDING` 分支**（`lcd_display.cc` `kidpal_keybar_sync_locked`，K2 留给 K3 未落）+ **REC 指示相位算术恒 off**（`story_page.c` `(rec_seconds*1000/250)%2 ≡ 0`）；前两轮攻「VOICE 覆盖层驻留」为弯路（VOICE 层 round-1 即已让位，`voice_end: top=2`）。补严缝 [R4]/[R5] 经 architect 判对 D2 no-op、作历史留根（齿 RSR-A6/A7 冻结）。
+- **真机验收**：human 目视 v6 通过（底栏「收尾/结束」+ `00:14` + 常亮黑 REC 方块）；D4a `story_key stop_rec archive_pend=1`、D4b 零 panic（早前已过）；D1 推送到达后可显示已证（r6 `count=2`）。证据 `c:/tmp/serial-live-repair-r{2..6}.log`；pod-events `e2ce7911`（D2 定死过）/ `64a4012d`（UI 还原度出包）/ `97c36553`（D1 冷浏览 dropped 复裁接受）。
+- **re-closeout 验证**：影响面圈定 project 同上（changed_files 39 / impacted 45 节点）→ `test-scope-final-r4.txt`；**scoped r3 + final r4 全绿（10 闸）**，`verifier-evidence-check` `{"ok":true,"factOk":true}`；真跑 host 齿 **147 Tests / 0 Failures**（RSR-A1..A7 + RSR-C1）。实现面 = 8 改（含 `lcd_display.cc`，planner 已扩 changeManifest）+ 新齿 3 件。
+- **未覆盖面**：D2 派发点 `lcd_display.cc` **host 不可编 → 无法机判**，architect 建议升「设备轮硬门」（治理面改动，**归 human 裁**）；D1 冷浏览 dropped（human 接受）；录音页 UI 还原度出包；逐句回显 + D3（原「manual 聆听产不出 stt 帧」被真机反驳，真缺口在 front story 累积/回传接线）= Package B。
+- **等待 supervisor 机械合并门**：stale `supervisor-verdict.json`（45ddc85 落，验证旧码）须 planner 在 re-closeout 后重跑 `supervisor-verdict-gate.mjs` 覆盖；`riskTier=high` → 必产 ESCALATE，合并须 human 批。

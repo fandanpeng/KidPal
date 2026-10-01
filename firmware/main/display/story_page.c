@@ -27,6 +27,11 @@
 
 #include "lvgl.h"
 
+/* K3R D2 真机轮「一次定死」诊断（2026-10-01）: 纯日志, 零渲染行为改动。host 与设备
+ * 两侧 log 组件均在场（host linux target comps 含 log）。 */
+#include <esp_log.h>
+static const char *KSR_TAG = "story_page";
+
 /* CJK 字体显式接线（seam [K9]: 全 label 不赌继承——LVGL 默认 montserrat_14 纯拉丁,
  * P3 全部中文面真机空白; lcd_display.cc 五处先例同款）。 */
 LV_FONT_DECLARE(font_puhui_14_1);
@@ -1089,6 +1094,10 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         return -1;
     }
 
+    /* K3R D2 真机轮诊断（纯日志）: story 渲染入口——子态 id + 双 count + 录音秒。 */
+    ESP_LOGI(KSR_TAG, "STORY_RENDER page=%d vcount=%d lcount=%d rec=%d",
+             v->page, v->count, list != NULL ? list->count : -1, v->rec_seconds);
+
     lv_obj_clean(scr);
     lv_obj_set_style_pad_all(scr, 0, 0);
     ksy_box(scr, 0, 0, LV_HOR_RES, LV_VER_RES, KSY_COLOR_BG);
@@ -1243,18 +1252,26 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
              * 不回写视图（render 入参为 const，不得改 rec_seconds —— 演出帧由调用方
              * 的 tick 驱动，此处只做无副作用绘制）。 */
             uint32_t elapsed = (uint32_t)(v->rec_seconds < 0 ? 0 : v->rec_seconds) * 1000u;
-            int flash = (int)((elapsed / 250u) % 2u);
             int wave = (int)((elapsed / 100u) % 4u);
             int i;
-            /* REC 反白点（点亮时画实心块）。 */
-            if (flash) {
-                ksy_box(scr, 20, 20, 24, 24, KSY_COLOR_INK);
-            } else {
-                ksy_box(scr, 20, 20, 24, 24, 0xDDDDDDu);
-            }
-            /* 大时长文本。 */
+            /* K3R D2 真机轮 v5 诊断（纯日志, 保留）: 证明录音态分支被走 + REC 指示现状。 */
+            ESP_LOGI(KSR_TAG,
+                     "RECORDING render wave=%d rec_seconds=%d rec_block=(20,52,24,24) steady=1",
+                     wave, v->rec_seconds);
+            /* REC 指示（常亮实心黑块）。K3R D2 真机轮 v5（2026-10-01）:
+             * 旧 `flash = (elapsed/250)%2`, `elapsed = rec_seconds*1000`（rec_seconds 为
+             * **整秒**）-> `(rec_seconds*4)%2 ≡ 0` 恒 off -> 永远画浅灰 `0xDDDDDD`（1bpp
+             * RLCD 面板 = 白 = 不可见）; **黑块那一相从未出现**（真机照片 v4/v5 报 REC
+             * 不可见, 时长可见）。
+             * 选**常亮**（architect 二选一之固相支）: 1bpp 面板上 off 相 = 白（不可见）,
+             * 闪动会周期性令指示消失（照片轮易再报不可见）; 设计稿亦为实心点（● REC）。
+             * 常亮与 rec_seconds 解耦、零时间依赖、**无条件可见**, 最稳。位置 y=52 落
+             * 顶部 chrome 带（top_bar_/status_bar_ 经 lv_layer_top 恒浮）之下安全区,
+             * 与时长(y=48)/声波条(y≥70)零重叠。 */
+            ksy_box(scr, 20, 52, 24, 24, KSY_COLOR_INK);
+            /* 大时长文本（同上避顶部 chrome 带, y 由 18 下移至 48）。 */
             if (kidpal_story_rec_time(v, buf, sizeof(buf)) == 0) {
-                ksy_label(scr, buf, 60, 18, KSY_COLOR_TEXT);
+                ksy_label(scr, buf, 60, 48, KSY_COLOR_TEXT);
             }
             /* 手绘声波：随 wave 相位档跳动的高度条。 */
             for (i = 0; i < 6; i++) {

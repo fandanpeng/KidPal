@@ -1,38 +1,38 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r4.json)",
   "changeId": "261001-m4-k3-record-session-live-repair",
   "phase": "final",
-  "round": 2,
-  "invocationId": "98ffded6-3d8c-4abb-8599-3aca72142896",
+  "round": 4,
+  "invocationId": "e9448712-5602-49d8-a669-024385feecbe",
   "outcome": "ok",
   "observedGateExit": 0,
   "gatesRun": 10,
-  "evidenceRef": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r2.json",
+  "evidenceRef": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r4.json",
   "evidenceFact": {
     "artifactType": "verifier-round-fact",
     "authority": "bearing",
     "producedBy": "verify.mjs",
     "ok": true,
-    "startedAt": "2026-10-01T02:07:42.532Z",
-    "completedAt": "2026-10-01T02:07:49.760Z"
+    "startedAt": "2026-10-01T04:05:50.774Z",
+    "completedAt": "2026-10-01T04:05:58.091Z"
   },
   "gateSummary": [
-    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 331, "timing": "scoped" },
-    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 393, "timing": "scoped", "note": "pre-cutoff 存量放行" },
-    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 5326, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 0x311350，app 分区余量 11%）" },
-    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 123, "timing": "scoped" },
-    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 135, "timing": "scoped", "note": "K3R-A1..A5 + K3R-C1（structural=K3R-C1）" },
-    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 136, "timing": "scoped", "note": "5 条功能 AC 逐条有 mutationEvidence" },
-    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 137, "timing": "scoped" },
-    { "gate": "security", "kind": "security", "ok": true, "ms": 126, "timing": "scoped", "note": "securityReviewRequired=false" },
-    { "gate": "unit", "kind": "functional", "ok": true, "ms": 206, "timing": "full", "note": "oracle-pass（固件 host runner 在位；scope 内 fwUnitFiles 非空）" },
-    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 198, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=6 / serverAcceptanceFiles=0" }
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 338, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 388, "timing": "scoped", "note": "changeManifest 含 lcd_display.cc" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 5338, "timing": "scoped", "note": "真编译通过（xiaozhi.bin 0x311350，app 分区余量 11%）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 143, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 140, "timing": "scoped", "note": "K3R-A1..A5 + K3R-C1（RSR-A6/A7 不挂独立 AC id，随 K3R-A2）" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 142, "timing": "scoped", "note": "7 条 mutationEvidence 逐功能 AC 敏感" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 156, "timing": "scoped" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 136, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "ms": 226, "timing": "full", "note": "oracle-pass（固件 host runner 在位）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "ms": 197, "timing": "full", "note": "oracle-pass; firmwareAcceptanceFiles=6 / serverAcceptanceFiles=0" }
   ],
   "mechanicalCheck": {
     "tool": ".claude/scripts/verifier-evidence-check.mjs",
-    "args": "--change-id 261001-m4-k3-record-session-live-repair --phase final --round 2 --invocation-id 98ffded6-3d8c-4abb-8599-3aca72142896",
+    "args": "--change-id 261001-m4-k3-record-session-live-repair --phase final --round 4 --invocation-id e9448712-5602-49d8-a669-024385feecbe",
     "exit": 0,
-    "output": {"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r2.json","factOk":true,"observedGateExit":0,"phase":"final","round":2}
+    "output": {"ok":true,"gate":"verifier-evidence","evidenceRef":"delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r4.json","factOk":true,"observedGateExit":0,"phase":"final","round":4}
   },
-  "note": "advisory-only projection；closeout 判断必须来自 validated final fact（r2.json，bearing）。scoped r1（8 闸，invocationId 8c3ecba9-8bab-4bb3-a252-ccedbd162b29）轨迹在案。"
+  "note": "advisory-only projection；closeout 判断必须来自 validated final fact（r4.json，bearing）。轨迹 r1（scoped 旧码）/r2（final 旧码）/r3（scoped 725...，invocationId 7fccbab3-e289-444c-8230-0e969bf112d6）/r4 在案。"
 }
