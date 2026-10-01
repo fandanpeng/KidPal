@@ -145,6 +145,20 @@ live 证据（PERF-A1/A2/A4 判定器的输入，builder/verifier live 相位产
 Run protocol（文件名两点须 importlib 模式）:
   python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/
   live 面（@pytest.mark.live）不 auto-run（conftest 机械 skip，ARQ-260901-g3）。
+
+REVISION LOG
+  2026-10-01 · TaskPackage 261001-openclaw-model-name-overlay-drift（② 单包 Lite /
+  sourceType=drift-report）。改本冻结件由 planner 派 acceptance-author 授权重钉（非 §6
+  tighten-only 窗口：本节改动断言语义，非纯 additive）。
+  · 重钉 PERF-E1/E2 齿期望值：:916 声明面 model 与 :938 渲染面 model_name 由旧值
+    （openclaw 单 agent 时代的 default 后缀定位）改为 openclaw/kidpal（点名 agent，双
+    agent 下唯一定位）。
+  · 订正 :917/:939 失准文案（原文案误把 model_name 归到契约 §四——失准：契约对 model_name
+    零命中，§四只钉 base_url/loopback + 禁 max_tokens）与 :929 docstring 旧值。
+  · Reason：原钉旧值的成立前提 = OpenClaw 单 agent、default 可唯一定位；261001 真机实测
+    已为 main + kidpal 双 agent（ownership: explicit），前提不成立，正确基线 = openclaw/kidpal。
+    改已 merged 包冻结 oracle 的签字成本经 dev-loop 常规人门（supervisor 升级 + closeout）承载。
+  · guard-class: landing（重钉 = 落盘基线值类别，非接线守卫）。
 """
 
 from __future__ import annotations
@@ -913,8 +927,9 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             "PERF-E1 RED: LLM base_url 声明被改 —— 契约 §四要求 /v1（live 260906：缺 /v1 引擎 404）。",
         )
         self.assertIn(
-            'model: "openclaw/default"', src,
-            "PERF-E1 RED: LLM model 声明被改 —— 契约 §四钉 openclaw/default。",
+            'model: "openclaw/kidpal"', src,
+            "PERF-E1 RED: LLM model 声明被改 —— model_name 基线 = openclaw/kidpal"
+            "（双 agent 唯一定位；非契约面——契约 §四不钉 model_name）。",
         )
         self.assertRegex(src, r"stream:\s*true", "PERF-E1 RED: LLM stream 声明被改。")
         self.assertRegex(
@@ -926,7 +941,7 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         """coverage: PERF-E1
         coverage: PERF-E2 —— apply-xiaozhi-overlay.sh 引擎 LLM 段渲染面零回改（机制级）。
 
-        E2 铁律：不改引擎 .config.yaml LLM 段（base_url /v1、model_name openclaw/default、
+        E2 铁律：不改引擎 .config.yaml LLM 段（base_url /v1、model_name openclaw/kidpal、
         流式禁 max_tokens）；本齿钉其仓内渲染源面。"""
         src = _read_text(OVERLAY_SH)
         self.assertTrue(src, f"PERF-E1 RED: {OVERLAY_SH} 不在场。")
@@ -935,8 +950,9 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             "PERF-E1 RED: overlay 引擎 LLM base_url 被改（契约 §四 / V28 loopback）。",
         )
         self.assertIn(
-            "model_name: openclaw/default", src,
-            "PERF-E1 RED: overlay 引擎 LLM model_name 被改（契约 §四）。",
+            "model_name: openclaw/kidpal", src,
+            "PERF-E1 RED: overlay 引擎 LLM model_name 被改 —— model_name 基线 = openclaw/kidpal"
+            "（双 agent 唯一定位；非契约面——契约 §四不钉 model_name）。",
         )
         self.assertIn(
             "max_tokens", src,
