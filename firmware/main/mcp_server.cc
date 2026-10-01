@@ -366,14 +366,60 @@ bool StoryDispatchAct(int act) {
  * 不进 mcp_server.h 公共头（冻结面零改动, 消费方 extern 声明; 变更清单不含该头,
  * 免扩公共面）。主线程串行消费现实与 g_story_* 既有约定一致。
  * ------------------------------------------------------------------------ */
+/* K3R [R5] 权威会话页态镜像投递桥（定义住 kidpal_render_node.cc; mcp_server.h 冻结面
+ * 零改动, 消费方 extern 声明——与 KidpalStoryVadEnterRecording 同款免扩公共头纪律）。 */
+extern "C" void kidpal_render_node_story_session_page(int page);
+
 void KidpalStoryVadEnterRecording() {
     int consumed = kidpal_story_on_control(&g_story_view, VRT_CTRL_START_RECORDING);
     ESP_LOGI(TAG, "story_vad_recording_enter consumed=%d page=%d",
              consumed, g_story_view.page);
     if (consumed == 1) {
+        /* K3R [R5]（2026-10-01 真机轮架构修）: 录音 enter 路径把权威会话页态
+         * （g_story_view.page == RECORDING）(a) 经镜像桥投递进渲染节点, 作 voice_end
+         * [R5] 的 session_page 权威源（与节点缓存分叉时取真值）; (b) cache_story 预同步
+         * 节点缓存（令 [R4]/chrome 判据见 RECORDING）。页态同步先于渲染。 */
+        kidpal_render_node_story_session_page(g_story_view.page);
+        kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
+        /* K3R D2（甲形态）: 开口进录音态 -> VOICE 层让位（REC_SESSION 位在**会话发起**
+         * 时推 VOICE 层 [kidpal_render_node_show_chat]; 开口切录音态时让位——基层无覆盖层,
+         * 录音页前台可见 + D4a 基层判据天然成立）。voice_end 弹 VOICE 后顶层 = LOCAL_PAGE
+         * （本地页 = P3 时回落 P3）; 其 rn_voice_chrome_front_locked 经 D2 强屏蔽桥把手
+         * 段投到 LCD sync 执行点, 录音态强制隐声波 chrome（不寄望判据链 runtime 生效）。
+         * ScheduleStoryRender 随后把录音页渲染落屏, 录音页不再被声波层压住。 */
+        kidpal_render_node_voice_end();
         ScheduleStoryRender();
         StartStoryRecTimer();
     }
+}
+
+/* -------------------------------------------------------------------------- *
+ * K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1）。
+ * application.cc Idle 分支消费 story_page.c 纯逻辑缝 kidpal_story_session_end 出参
+ * 后经此二桥执行设备半——读 g_story_view.page 供判据（KidpalStoryViewPageState）+
+ * 复位录音页态并停录音演出定时器（KidpalStorySessionEndApply）。不进 mcp_server.h
+ * 公共头（冻结面零改动, 消费方 extern 声明; 变更清单不含该头, 免扩公共面, 与
+ * KidpalStoryVadEnterRecording 同款纪律）。主线程串行消费现实与 g_story_* 既有约定一致。
+ * ------------------------------------------------------------------------ */
+int KidpalStoryViewPageState() {
+    return g_story_view.page;
+}
+
+void KidpalStorySessionEndApply(int list_page) {
+    g_story_view.page = list_page; /* [R2] 出参 = LIST; 页态回落 -> 定时器自删条件成立 */
+    if (g_story_rec_timer != nullptr) {
+        /* 即时停录音演出定时器（不依赖下一拍 page != RECORDING 自删——收尾即停,
+         * 防其在首页重建后仍每 100ms 清屏砸毁首页图像对象, D4b 根）。 */
+        lv_timer_delete(g_story_rec_timer);
+        g_story_rec_timer = nullptr;
+    }
+    /* 同步渲染节点缓存 + 权威会话页态镜像（令前台回落路径 voice_end 的 [R3]/[R5] 判据
+     * 见 LIST 真值; 录音态强屏蔽随之复位——voice_end 重算 chrome 时 page_state != RECORDING
+     * -> 强屏蔽位落 0, 声波 chrome 按常规语义恢复）。 */
+    kidpal_render_node_story_session_page(g_story_view.page);
+    kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
+    ESP_LOGI(TAG, "story_session_end corr_id=kdp-%u page=%d",
+             static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), list_page);
 }
 
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
@@ -1060,7 +1106,13 @@ void McpServer::AddCommonTools() {
                             });
                         } else {
                             /* gated: 缓存已在上方 g_story_list 装载, 前台不动（页态/
-                             * 层值零触碰——下次前台回落时以最新缓存渲染）。 */
+                             * 层值零触碰——下次前台回落时以最新缓存渲染）。K3R D1/[R3]
+                             * （261001-m4-k3-record-session-live-repair）: 把最新缓存
+                             * 同步进渲染节点（kidpal_render_node_cache_story），令前台
+                             * 回落路径（kidpal_render_node_voice_end, [R3] 判据消费点）
+                             * 重渲 P3 时消费到本缓存——defer 分支不再是无驱动方的纯缓存。 */
+                            kidpal_render_node_cache_story(&g_story_view, &g_story_list,
+                                                           &g_story_text);
                             ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d",
                                      g_story_view.page, story_voice_front);
                         }

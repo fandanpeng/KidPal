@@ -33,7 +33,7 @@ A config edit needs `docker restart` to take effect. Verify reload via startup l
 `docker ps` "(unhealthy)" is a cosmetic healthcheck-definition artifact (exit 1, empty output) — engine is fine if it's listening + initializing providers.
 
 ## Config keys that bit us (live values)
-- `selected_module.LLM: OpenClawOpenAI`, `type: openai`, `base_url: http://127.0.0.1:18789/v1` (**`/v1` is required** — without it the openai SDK hits 404 "Not Found"), `model_name: openclaw/default`.
+- `selected_module.LLM: OpenClawOpenAI`, `type: openai`, `base_url: http://127.0.0.1:18789/v1` (**`/v1` is required** — without it the openai SDK hits 404 "Not Found"), `model_name: openclaw/kidpal` (**must name the agent explicitly** — OpenClaw runs `main` + `kidpal` two agents with `ownership: explicit`; `openclaw/default` (the old repo-overlay value) yields 400 "Multiple agents are configured, but this operation has no explicit owner", hit 2026-09-30 when a redeploy clobbered the live value with the stale template — repo overlay `server/deploy/apply-xiaozhi-overlay.sh` still carries the stale value).
 - `selected_module.Intent: nointent` — **must be nointent, not function_call.** function_call sends the tools array (device MCP tools + server tools) to OpenClaw, which rejects it: `LLM stream processing error: invalid tool configuration` → device shows fallback「小智现在有点忙」. nointent = plain streaming chat (correct for the smoke).
 - `selected_module.ASR: Qwen3ASRFlash` (`type: qwen3_asr_flash`, dashscope key); `TTS: EdgeTTS` (`type: edge`, NOT `edge-tts` — the value must match the engine provider module filename).
 

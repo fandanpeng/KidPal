@@ -1,0 +1,150 @@
+{
+  "changeId": "261001-m4-k3-record-session-live-repair",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "upstreamFrozen": "",
+    "workstream": "m4-star-notebook"
+  },
+  "subsystem": "firmware",
+  "story": "260924-m4-k3-record-session-live 落地后 2026-10-01 真机 P3 冒烟暴露的四缺陷止血（纯固件面：D1 星星记录本列表不出现〔延迟推送无消费方〕/ D2 按 KEY 进声波层而非法录音页〔会话层压住录音页〕/ D4a 录音态 KEY 落全局会话 toggle 致毁稿 / D4b 录音演出定时器致首页图像悬垂 LVGL panic 重启）——语音收尾「说完了」缺陷 D3 触需求/架构/契约三面，已拆 Package B，不在本包",
+  "planRef": "delivery/taskpackages/261001-m4-k3-record-session-live-repair/plan.md",
+  "redBaselineCommand": "新齿独立红跑通道（行为齿走 frozen-seam weak 哨兵红，结构齿扫真实工作树）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/acceptance/red-baseline/rsr_red_wrapper.sh；零偏移基线（既有齿全量，回归面）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 实跑 2026-10-01（本树 @5490a5c）。**新齿红跑**：COMPILE_EXIT=0（6 齿实编零错，§4 C 类冻结验收实编）+ RUN_EXIT=6（6 Tests 6 Failures，全部设计态红、零 fixture 缺陷红）。逐齿红名 verbatim：RSR-A1「[R1] kidpal_story_key_owns 哨兵 -2（归属判据未实现）——D4a 现场（VOICE 前台判据不成立 → KEY 落 GLOBAL_ACT_SESSION_TOGGLE → 关通道不发声 → ws_disconnect 丢弃毁稿）」/ RSR-A2「[R1] 哨兵 -2——D2 让位未达成形态无关」/ RSR-A3「[R2] kidpal_story_session_end 哨兵 rc=-2 page=-7——D4b-1 现场（页态不回落 → 定时器自删条件恒不成立）」/ RSR-A4「host_infra_render_p1_frame 函数区零 lv_obj_is_valid——D4b-3 现场（悬垂对象出帧 panic）」/ RSR-A5「[R3] kidpal_story_list_deferred_flush 哨兵 -2——D1 现场（defer 缓存无消费方，P3 空态 count=0）」/ RSR-C1「注册序红（未进 HOST_ACCEPTANCE_SRCS = builder FIRST ACTION 未执行）；canary/K3 面三守卫现状绿 must-stay-green」。红因归因：6 齿红名与 plan §1 声明的缺失行为逐条对上，无环境/依赖/fixture 缺陷红。编译唯一告警 = -Wformat-truncation（良性，CMakeLists 已 -Wno-error 降级）。**零偏移基线（既有齿全量）** @5490a5c = **136 Tests / 0 Failures / 0 Ignored，exit 0**（K1/K2/K3 既有齿全绿，新增件未 wiring 故不扰动冻结面）。**K3 冻结件一致性**：record_session_live.acceptance.c 零语义冲突、未改一字；唯一张力 RSL-A4 tooth 3 已定位（D2 让位须落录音进入桥、保留 REC_SESSION case 的 show_chat；若某形态须摘除即触冻结件修订纪律，须显式升级）。**2026-10-01 真机轮补严（冻结件 REVISION R1）**：真机四窗复验 D4a/D4b 过（story_key stop_rec archive_pend=1、零 panic）、**D2 未修**（user 确认声波覆盖层驻留）且 D1 属 K3 已裁 dropped（M4K3-DC-1）→ acceptance-author 修订 `record_session_repair.acceptance.c`（纯 additive：新增 RSR-A6 覆盖层退隐缝 [R4] + RSR-A7 渲染页态缝 [R5]；既有 RSR-A1..A5/C1 断言逐字未动）。新红基线：通道 A `rsr_red_wrapper.sh` → COMPILE_EXIT=0 / 8 Tests 6 Failures / RUN_EXIT=6；通道 B host ELF → 147 Tests 2 Failures（唯一 2 红 = RSR-A6/A7，对当前码 5950bb7 必红）。K3/K2 冻结面零回归（145 既有齿全绿）。设备轮 K3R-E3 窗 2 为不可省目击。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "K3R-A1: D4a 正/负双齿（齿 = RSR-A1）——录音语境下的键手势归属——录音页态 + kidpal_story_session_ctx_active() 时 KEY 必产 KSPV2_ACT_STOP_RECORD、绝不产 GLOBAL_ACT_SESSION_TOGGLE；非录音语境零偏移。冻结 seam [R1] int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state, int ctx_active)",
+    "K3R-A2: D2 层栈让位（齿 = RSR-A2，**2026-10-01 真机诊断定死**）——P3 按 KEY 进录音态时录音页与「● 录音中」可见、声波覆盖层不驻留。真机定死：录音页**一直在正常渲染**（`STORY_RENDER page=2` + `RECORDING render`），D2 真缺陷两处：① **键帽派发漏 KSTORY_PAGE_RECORDING 分支**（lcd_display.cc kitpal_keybar_sync_locked，K2 留给 K3 未落）→ 录音态底栏错出基层「说话·双击看/下移」，应「收尾/结束」；② **REC 指示相位算术恒 off**（story_page.c `flash=(rec_seconds*1000/250)%2 ≡ 0`）→ 黑块从不可见，改常亮黑块。补严缝 [R4]/[R5] 保留（architect 判其对 D2 为 no-op，历史留根）。本包不含逐句回显（Package B），不含设计图 UI 还原度（小伴/折线波/气泡/回显行，human 裁定另立包）",
+    "K3R-A3: D4b-1（齿 = RSR-A3）——会话收尾后录音演出定时器必停、g_story_view.page 必回 LIST（不依赖页态自删）。冻结 seam [R2] int kidpal_story_session_end(int page_state, int *out_page)",
+    "K3R-A4: D4b-3 渲染不变量（齿 = RSR-A4）——任何外部 kidpal_*_page_render 清屏后，渲染节点不得以悬垂对象出帧（host_infra_render_p1_frame 消费 lv_obj_is_valid 守卫）",
+    "K3R-A5: D1 defer 缓存消费方（齿 = RSR-A5）——kidpal_story_list_gate 的 defer 分支缓存存在驱动方——VOICE 层弹出 / 前台回落 LOCAL_PAGE 且本地页 == P3 时以缓存重渲（沿用既有「纯逻辑函数无驱动方」反齿形状）。冻结 seam [R3] int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page, int page_state)",
+    { "id": "K3R-C1", "kind": "structural", "text": "K3R-C1（回归/注册守卫，齿 = RSR-C1）：canary（requirements S-F2.2 + kidpal_session_ctx 锚在世）+ K3 冻结面零偏移（record_session_live.acceptance.c 未改一字）+ HOST_ACCEPTANCE_SRCS 注册序守卫（record_session_repair.acceptance.c 置于 host_infra_smoke.acceptance.c 之前 = builder FIRST ACTION 机判）" }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/record_session_repair.acceptance.c"
+  ],
+  "exitCriteria": [
+    "K3R-E1: host 齿全量零红（D1/D2/D4a/D4b 四族正负齿 + K2/K3 冻结面零偏移）+ device build 闸过（体积余量证据）",
+    "K3R-E2: 铁律——docs/contracts/** 与系统 spec 零改（本包纯固件实现面）；D3「说完了」与逐句回显内容不在本包验收面",
+    "K3R-E3: 真机复验矩阵四窗目击（BOOT 翻页进 P3 列表显示 / P3 KEY 见录音页非声波层 / 录音中 KEY 正常归档不崩溃 / 唤醒词问答+P2 课表+P3 删除回归）+ closeout 三件 + docs-delta 随 integrator 收口"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§四"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F2.2",
+    "docs/architecture.md#§5.2"
+  ],
+  "sourceRefs": [
+    "S-F2.2-AC2",
+    "S-F2.2-AC4",
+    "delivery/changes/intake/261001-m4-k3-record-session-live-repair.md",
+    "delivery/taskpackages/260924-m4-k3-record-session-live/plan.md",
+    "delivery/changes/dev/260924-m4-k3-record-session-live/pod-retro.md",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
+  ],
+  "changeManifest": [
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/**"
+  ],
+  "impactedTestsSeed": [
+    { "path": "firmware/main/test/record_session_repair.acceptance.c", "kind": "new", "note": "本包新冻结验收件：RSR-A1..A5（D1/D2/D4a/D4b 四族）+ RSR-C1（回归/注册守卫）；冻结 seam [R1]/[R2]/[R3] 见件头" },
+    { "path": "firmware/main/test/record_session_live.acceptance.c", "kind": "regression", "note": "K3 冻结齿零偏移（RSL-A1..A9 + RSL-C1；本包零改动，唯一张力 RSL-A4 tooth 3 已定位规避）" },
+    { "path": "firmware/main/test/story_page_v2.acceptance.c", "kind": "regression", "note": "K2 冻结齿层栈/输入表/渲染面零偏移" },
+    { "path": "firmware/main/test/key_layer_dispatch.acceptance.c", "kind": "regression", "note": "M1-K1a 键路由分层冻结面零偏移" },
+    { "path": "firmware/main/test/host_app/main/CMakeLists.txt", "kind": "wiring", "note": "HOST_ACCEPTANCE_SRCS 接线随新齿（builder FIRST ACTION，置于 host_infra_smoke 之前）" },
+    { "path": "firmware/main/test/acceptance/red-baseline/rsr_red_wrapper.sh", "kind": "baseline", "note": "新齿红跑独立通道（red-baseline 先例形态）" }
+  ],
+  "mutationEvidence": [
+    {
+      "id": "K3R-A1",
+      "sensitive": true,
+      "mutation": "firmware/main/display/story_page.c · [R1] kidpal_story_key_owns 决策表规则 (a)（记录语境录音态支）return 1 -> return 0",
+      "expectedRed": "RSR-A1 tooth1/2（behavior）；同族 RSR-A2 tooth1 亦红（[R1] 为 A1/A2 共享缝，预期内）",
+      "counterEvidence": "exit 3 / 145 Tests 3 Failures —— record_session_repair.acceptance.c:386:record_session_repair: 录音语境键手势归属 [R1] (RSR-A1):FAIL:Function [record_session_repair][RSR-A1][behavior][structural].  RSR-A1 RED: [R1] 记录语境录音态（VOICE 前台）未判故事页拥有 KEY（期望 1）——D4a 毁稿根: 判据不成立 -> KEY 落 key_route_layer -> GLOBAL_ACT_SESSION_TOGGLE -> Listening 关通道不发 listen stop -> front ws_disconnect 丢弃（哨兵 -2 = frozen seam [R1] 未实现）",
+      "acceptanceEntry": "K3R-A1: D4a 正/负双齿（齿 = RSR-A1）——录音语境下的键手势归属——录音页态 + kidpal_story_session_ctx_active() 时 KEY 必产 KSPV2_ACT_STOP_RECORD、绝不产 GLOBAL_ACT_SESSION_TOGGLE；非录音语境零偏移。冻结 seam [R1] int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state, int ctx_active)"
+    },
+    {
+      "id": "K3R-A2",
+      "sensitive": true,
+      "mutation": "firmware/main/mcp_server.cc · KidpalStoryVadEnterRecording() 内移除让位调用 kidpal_render_node_voice_end()（甲形态录音路径 VOICE 让位）",
+      "expectedRed": "RSR-A2 tooth2（structural·录音路径层让位接线）",
+      "counterEvidence": "exit 1 / 145 Tests 1 Failures —— record_session_repair.acceptance.c:493:record_session_repair: D2 层栈让位形态无关 (RSR-A2):FAIL:Function [record_session_repair][RSR-A2][behavior][structural].  RSR-A2 RED: 录音路径（KidpalStoryVadEnterRecording / application.cc VAD 分支）零层让位/提升接线——D2 进录音态 VOICE 层未让位（录音页被压在下层, 孩子看不到录音页; 甲=弹 VOICE / 乙=录音页提到 VOICE 之上, 两形态须至少一处接线）",
+      "acceptanceEntry": "K3R-A2: D2 层栈让位（齿 = RSR-A2，**2026-10-01 真机诊断定死**）——P3 按 KEY 进录音态时录音页与「● 录音中」可见、声波覆盖层不驻留。真机定死：录音页**一直在正常渲染**（`STORY_RENDER page=2` + `RECORDING render`），D2 真缺陷两处：① **键帽派发漏 KSTORY_PAGE_RECORDING 分支**（lcd_display.cc kitpal_keybar_sync_locked，K2 留给 K3 未落）→ 录音态底栏错出基层「说话·双击看/下移」，应「收尾/结束」；② **REC 指示相位算术恒 off**（story_page.c `flash=(rec_seconds*1000/250)%2 ≡ 0`）→ 黑块从不可见，改常亮黑块。补严缝 [R4]/[R5] 保留（architect 判其对 D2 为 no-op，历史留根）。本包不含逐句回显（Package B），不含设计图 UI 还原度（小伴/折线波/气泡/回显行，human 裁定另立包）"
+    },
+    {
+      "id": "K3R-A2",
+      "sensitive": true,
+      "mutation": "[R4] firmware/main/display/story_page.c · kidpal_story_voice_chrome_front 的记录语境支由 `if (page_state == KSTORY_PAGE_RECORDING) return 0;` 改为 `return 1;`（录音态不再令 chrome 退隐）",
+      "expectedRed": "RSR-A6",
+      "counterEvidence": "exit 1 / 147 Tests 1 Failures —— record_session_repair.acceptance.c:817:record_session_repair: D2 录音态覆盖层不驻留 [R4] (RSR-A6):FAIL:Function [record_session_repair][RSR-A6][behavior][structural].  RSR-A6 RED: [R4] 录音页态 + VOICE 层前台未令 LCD 声波 chrome 退隐（期望 0, 得 -2 = frozen seam [R4] 未实现）",
+      "acceptanceEntry": "K3R-A2: D2 层栈让位（齿 = RSR-A2，**2026-10-01 真机诊断定死**）——P3 按 KEY 进录音态时录音页与「● 录音中」可见、声波覆盖层不驻留。真机定死：录音页**一直在正常渲染**（`STORY_RENDER page=2` + `RECORDING render`），D2 真缺陷两处：① **键帽派发漏 KSTORY_PAGE_RECORDING 分支**（lcd_display.cc kitpal_keybar_sync_locked，K2 留给 K3 未落）→ 录音态底栏错出基层「说话·双击看/下移」，应「收尾/结束」；② **REC 指示相位算术恒 off**（story_page.c `flash=(rec_seconds*1000/250)%2 ≡ 0`）→ 黑块从不可见，改常亮黑块。补严缝 [R4]/[R5] 保留（architect 判其对 D2 为 no-op，历史留根）。本包不含逐句回显（Package B），不含设计图 UI 还原度（小伴/折线波/气泡/回显行，human 裁定另立包）"
+    },
+    {
+      "id": "K3R-A2",
+      "sensitive": true,
+      "mutation": "[R5] firmware/main/display/story_page.c · kidpal_story_render_page_state 的 `if (on_story_front != 0) return session_page;` 改为 `return node_cached_page;`（P3 前台回落不再取权威会话页态）",
+      "expectedRed": "RSR-A7",
+      "counterEvidence": "exit 1 / 147 Tests 1 Failures —— record_session_repair.acceptance.c:871:record_session_repair: D2 voice_end 渲染页态同步 [R5] (RSR-A7):FAIL:Function [record_session_repair][RSR-A7][behavior][structural].  RSR-A7 RED: [R5] 节点缓存陈旧（LIST）+ 权威会话录音态未解析为 RECORDING（期望 2, 得 -2 = frozen seam [R5] 未实现）",
+      "acceptanceEntry": "K3R-A2: D2 层栈让位（齿 = RSR-A2，**2026-10-01 真机诊断定死**）——P3 按 KEY 进录音态时录音页与「● 录音中」可见、声波覆盖层不驻留。真机定死：录音页**一直在正常渲染**（`STORY_RENDER page=2` + `RECORDING render`），D2 真缺陷两处：① **键帽派发漏 KSTORY_PAGE_RECORDING 分支**（lcd_display.cc kitpal_keybar_sync_locked，K2 留给 K3 未落）→ 录音态底栏错出基层「说话·双击看/下移」，应「收尾/结束」；② **REC 指示相位算术恒 off**（story_page.c `flash=(rec_seconds*1000/250)%2 ≡ 0`）→ 黑块从不可见，改常亮黑块。补严缝 [R4]/[R5] 保留（architect 判其对 D2 为 no-op，历史留根）。本包不含逐句回显（Package B），不含设计图 UI 还原度（小伴/折线波/气泡/回显行，human 裁定另立包）"
+    },
+    {
+      "id": "K3R-A3",
+      "sensitive": true,
+      "mutation": "firmware/main/display/story_page.c · [R2] kidpal_story_session_end 录音态复位支 return 1 -> return 0（复位信号消失）",
+      "expectedRed": "RSR-A3 tooth1（behavior·录音态复位 LIST + rc=1）",
+      "counterEvidence": "exit 2 / 145 Tests 2 Failures —— record_session_repair.acceptance.c:519:record_session_repair: 会话收尾复位录音态 [R2] (RSR-A3):FAIL:Function [record_session_repair][RSR-A3][behavior][structural].  RSR-A3 RED: 会话收尾未复位录音页态（rc=0 page=0, 期望 rc=1 page=0）——D4b 根: 页态不回落 -> 录音定时器 page!=RECORDING 自删条件恒不成立 -> 每 100ms 清屏砸毁首页图像对象 -> 悬垂 LVGL panic（哨兵 -2 = frozen seam [R2] 未实现）",
+      "acceptanceEntry": "K3R-A3: D4b-1（齿 = RSR-A3）——会话收尾后录音演出定时器必停、g_story_view.page 必回 LIST（不依赖页态自删）。冻结 seam [R2] int kidpal_story_session_end(int page_state, int *out_page)"
+    },
+    {
+      "id": "K3R-A4",
+      "sensitive": true,
+      "mutation": "firmware/main/display/kidpal_render_node.cc · host_infra_render_p1_frame 移除对象有效性守卫（if(!lv_obj_is_valid(s_kidpal_img)){...} 及其含该 token 的注释整块）",
+      "expectedRed": "RSR-A4 tooth1（structural·函数区消费 lv_obj_is_valid）",
+      "counterEvidence": "exit 1 / 145 Tests 1 Failures —— record_session_repair.acceptance.c:583:record_session_repair: 渲染不变量对象有效性守卫 (RSR-A4):FAIL:Function [record_session_repair][RSR-A4][structural].  RSR-A4 RED: host_infra_render_p1_frame 函数区零 lv_obj_is_valid——渲染节点对s_kidpal_img 出帧前无对象有效性守卫（D4b-3: 外部 page_render 的 lv_obj_clean 令图像对象悬垂 -> lv_image_set_src -> LoadProhibited panic 重启）",
+      "acceptanceEntry": "K3R-A4: D4b-3 渲染不变量（齿 = RSR-A4）——任何外部 kidpal_*_page_render 清屏后，渲染节点不得以悬垂对象出帧（host_infra_render_p1_frame 消费 lv_obj_is_valid 守卫）"
+    },
+    {
+      "id": "K3R-A5",
+      "sensitive": true,
+      "mutation": "firmware/main/display/story_page.c · [R3] kidpal_story_list_deferred_flush 命中支 return 1 -> return 0（前台回落缓存重渲判据失效）",
+      "expectedRed": "RSR-A5 tooth1（behavior·VOICE 弹出 + P3 + 列表态 -> 1）",
+      "counterEvidence": "exit 2 / 145 Tests 2 Failures —— record_session_repair.acceptance.c:620:record_session_repair: defer 缓存消费方 [R3] (RSR-A5):FAIL:Function [record_session_repair][RSR-A5][behavior][structural].  RSR-A5 RED: 前台回落 P3 时未判以 defer 缓存重渲（期望 1）——D1 现场: defer 分支只装缓存无消费方 -> P3 切页空态 count=0（哨兵 -2 = frozen seam [R3] 未实现）",
+      "acceptanceEntry": "K3R-A5: D1 defer 缓存消费方（齿 = RSR-A5）——kidpal_story_list_gate 的 defer 分支缓存存在驱动方——VOICE 层弹出 / 前台回落 LOCAL_PAGE 且本地页 == P3 时以缓存重渲（沿用既有「纯逻辑函数无驱动方」反齿形状）。冻结 seam [R3] int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page, int page_state)"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯固件实现面：本包只改 firmware/main（D1/D2/D4a/D4b 板端），不触跨端面；跨面改动（front 累积态压制 / 引擎侧抑制 / story.py）随 Package B（D3-甲）拆出另立"
+  },
+  "docsSyncReason": "arch 面收口：§5.2 场景④ 记录会话演出与层栈让位对账（K3 落地后的实况修正）；requirements 面零改动（本包不改需求语义，仅在 D3-甲 随 Package B 触需求注记）。具体 docs-delta 由 integrator 依实际改动圈定。"
+}

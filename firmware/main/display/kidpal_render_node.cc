@@ -126,6 +126,15 @@ static kidpal_story_view_t s_story_view = {};
 static kidpal_story_list_t s_story_list = {};
 static kidpal_story_text_t s_story_text = {};
 
+/* K3R [R5] 权威会话页态镜像（261001-m4-k3-record-session-live-repair, 真机轮架构修）:
+ * 渲染节点自身不持 g_story_view（住 mcp_server.cc）, 由 mcp 录音/收尾路径经本 C 桥写入
+ * 权威会话页态——voice_end 的 [R5] 以此作 session_page 权威源, 与节点缓存分叉时取之
+ * （取代「裸读节点缓存」的潜伏 bug; 不再依赖 cache_story 掩盖）。 */
+static int s_story_session_page = 0;
+extern "C" void kidpal_render_node_story_session_page(int page) {
+    s_story_session_page = page;
+}
+
 /* ------------------------------------------------------------------------- *
  * 五态 chrome 显隐的前台维度桥 (RP-A5 r3/r4)：姿态/气泡仅当 VOICE 层为前台层时显示，
  * 任何内容页（SERVER_PAGE 答案 / REMINDER / LOCAL_PAGE 浏览）前台时隐藏—— chrome
@@ -139,13 +148,30 @@ static kidpal_story_text_t s_story_text = {};
  * ---------------------------------------------------------------------- */
 extern "C" void kidpal_lcd_voice_chrome_front(int front);
 extern "C" void kidpal_lcd_keybar_sync(void);
+/* K3R D2 (2026-10-01 真机轮架构修): 录音态强屏蔽桥（render_node -> lcd_display.cc 的
+ * sync 执行点）。 */
+extern "C" void kidpal_lcd_recording_force_hide(int hide);
 
 static void rn_voice_chrome_front_locked(void)
 {
     if (s_kidpal_scr == NULL) {
         return;
     }
-    kidpal_lcd_voice_chrome_front(kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_VOICE);
+    /* K3R D2 录音态强屏蔽（261001-m4-k3-record-session-live-repair, 真机轮架构修）:
+     * 把权威录音态（渲染节点缓存 s_story_view.page == RECORDING, 录音 enter 路径已
+     * cache_story 预同步）**直接投递 LCD 的 sync 执行点**（kidpal_chrome_mid_sync_locked
+     * 的 voice_live 与）——真机现场证「[R4] 判据返回 0 -> front 桥 -> sync 生效」这条链
+     * runtime 不生效（弹层后 front=false 而 voice_page 仍驻留）, 故屏蔽必须落执行点。 */
+    int force_hide = (s_story_view.page == KSTORY_PAGE_RECORDING) ? 1 : 0;
+    kidpal_lcd_recording_force_hide(force_hide);
+    /* K3R [R4]: chrome 前台判据含录音页态维度（普通聆听轮 VOICE 前台 chrome 照前,
+     * 既有 RP-A5 r3 语义零偏移; 录音态退隐——与层值无关）。 */
+    int front = kidpal_story_voice_chrome_front(kidpal_layer_top(&s_layer_stack),
+                                                s_story_view.page);
+    /* K3R D2 诊断（保留诊断债务）: 层值 + 录音屏蔽位 + 判据出参。 */
+    ESP_LOGI(RN_TAG, "chrome_front layer_top=%d force_hide=%d front=%d",
+             kidpal_layer_top(&s_layer_stack), force_hide, front);
+    kidpal_lcd_voice_chrome_front(front);
 }
 
 /* 键帽条三槽刷新 (260915-m1-k2-keybar-three-slot R1 / ①④根修): 由本模块的页面渲染权威
@@ -170,6 +196,17 @@ static void rn_keybar_sync_locked(void)
 extern "C" int host_infra_render_p1_frame(const uint32_t *argb, int w, int h)
 {
     if (s_kidpal_img == NULL || argb == NULL) {
+        return -1;
+    }
+    /* K3R D4b-3 对象有效性守卫（261001-m4-k3-record-session-live-repair）: 外部
+     * kidpal_*_page_render（如 kidpal_story_page_render 的 lv_obj_clean）会销毁
+     * s_kidpal_img 所指图像对象却**不置空** s_kidpal_img（仅 rn_render_home_locked /
+     * rn_render_kidpal_page_locked 置空）——悬垂对象出帧致 LoadProhibited panic
+     * （backtrace: lv_obj_get_screen <- lv_obj_get_display <- lv_obj_invalidate_area
+     * <- lv_obj_invalidate <- lv_image_set_src <- 本函数）。出帧前以
+     * lv_obj_is_valid 守卫, 悬垂时复位 NULL 交 tick NULL 守卫, 绝不 lv_image_set_src。 */
+    if (!lv_obj_is_valid(s_kidpal_img)) {
+        s_kidpal_img = NULL;
         return -1;
     }
     memset(&s_p1_dsc, 0, sizeof(s_p1_dsc));
@@ -347,6 +384,10 @@ static void rn_reconcile_foreground_locked(void)
         lv_screen_load(s_kidpal_scr);
     }
 }
+
+/* 前置声明（rn_render_kidpal_page_locked 定义在后方本地浏览层区; voice_end 的
+ * [R3] P3 前台回落重渲在此提前消费, 须先前向声明）。 */
+static void rn_render_kidpal_page_locked(kidpal_page_id_t page);
 
 /* 重建并渲染首页 P1 帧，再把它切到前台。s_kidpal_scr 必须已存在。 */
 static void rn_render_home_locked(void)
@@ -574,9 +615,29 @@ void kidpal_render_node_voice_end(void)
     kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_VOICE);
 
     if (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE) {
-        /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。 */
+        /* 语音结束且无服务端页驻留 -> 回家页常显（重建首页帧再切前台）。
+         * K3R D1/[R3] + D2/[R5]（261001-m4-k3-record-session-live-repair）: 例外——
+         * 本地页 = P3 时前台回落 P3（**不**回家页）: 令键路由的 story_substate 见 P3
+         * 页态（D4a）、录音页不被声波层压住（D2）、键帽随态正确。渲 P3 前以 [R5] 解析
+         * 渲染页态（on_story_front 时取权威会话页态 session_page——录音 enter 路径已
+         * cache_story 预同步 g_story_view 页态进节点缓存, 取代裸读可能陈旧的
+         * s_story_view.page）, 并以解析结果喂 [R3] 的 page_state 入参（defer 缓存消费
+         * 判据）与渲染页态（页态同步先于渲染）。VOICE 层已弹出, 故 [R3] voice_front 传 0。 */
         if (s_kidpal_scr != NULL) {
-            rn_render_home_locked();
+            int on_story_front = (s_local_page == KP_PAGE_STORY) ? 1 : 0;
+            if (on_story_front) {
+                int page_state = kidpal_story_render_page_state(s_story_view.page,
+                                                                s_story_session_page,
+                                                                on_story_front);
+                s_story_view.page = page_state; /* 页态同步先于渲染（真值落缓存） */
+                int list_flush = kidpal_story_list_deferred_flush(0, KP_PAGE_STORY,
+                                                                  page_state);
+                ESP_LOGI(RN_TAG, "voice_end: story front list_flush=%d page_state=%d",
+                         list_flush, page_state);
+                rn_render_kidpal_page_locked(KP_PAGE_STORY);
+            } else {
+                rn_render_home_locked();
+            }
         }
     } else {
         /* 服务端回答页驻留前台（OQ3=c：回答后屏幕落点确定、非随机回退；语音不拦内容页）。 */
@@ -748,6 +809,12 @@ void kidpal_render_node_end_provision(void)
  * 经 layer 栈裁决，函数体零层栈副作用（不含任何 kidpal_layer_pop）。 */
 static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 {
+    /* K3R D2 真机轮诊断（纯日志, 零渲染改动）: 页渲染入口——入参 page + 本地页 +
+     * 故事节点缓存/权威会话页态 + 活动屏是否已切到 s_kidpal_scr。 */
+    ESP_LOGI(RN_TAG, "PAGE_RENDER in=%d local=%d sview=%d ssess=%d active_ok=%d",
+             (int)page, s_local_page, s_story_view.page, s_story_session_page,
+             (s_kidpal_scr != NULL && lv_screen_active() == s_kidpal_scr) ? 1 : 0);
+
     lv_obj_clean(s_kidpal_scr);
     s_kidpal_img = NULL; /* clean 已销毁，避免悬垂 */
 
@@ -832,6 +899,10 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
     /* 各基础页落屏后驱动键帽条三槽刷新 (keybar R1 / ①根修: 页槽表与页点随翻页更新,
      * 覆盖层关层回原页也走本函数)。调用方已持 lvgl 锁。 */
     rn_keybar_sync_locked();
+
+    /* K3R D2 真机轮诊断（纯日志）: 页渲染出口——本地页按入参 page 定后回读。 */
+    ESP_LOGI(RN_TAG, "PAGE_RENDER out=%d local=%d sview=%d ssess=%d",
+             (int)page, s_local_page, s_story_view.page, s_story_session_page);
 }
 
 /* 前台归一化查询（layer 栈 owner 侧，层 top 单一裁决）：前台 owner ∈ 覆盖层

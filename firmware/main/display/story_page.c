@@ -20,7 +20,17 @@
 #include <stdio.h>
 #include <string.h>
 
+/* K3R 冻结缝 [R1] 判据的层值/页值单源（additive; kidpal_layer.h = 前台层值闭集权威,
+ * kidpal_render_node.h = KP_PAGE_* 页值权威, M2K2-A2 冻结等值；两处漂移由既有冻结齿先红）。 */
+#include "kidpal_layer.h"
+#include "kidpal_render_node.h"
+
 #include "lvgl.h"
+
+/* K3R D2 真机轮「一次定死」诊断（2026-10-01）: 纯日志, 零渲染行为改动。host 与设备
+ * 两侧 log 组件均在场（host linux target comps 含 log）。 */
+#include <esp_log.h>
+static const char *KSR_TAG = "story_page";
 
 /* CJK 字体显式接线（seam [K9]: 全 label 不赌继承——LVGL 默认 montserrat_14 纯拉丁,
  * P3 全部中文面真机空白; lcd_display.cc 五处先例同款）。 */
@@ -1084,6 +1094,10 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         return -1;
     }
 
+    /* K3R D2 真机轮诊断（纯日志）: story 渲染入口——子态 id + 双 count + 录音秒。 */
+    ESP_LOGI(KSR_TAG, "STORY_RENDER page=%d vcount=%d lcount=%d rec=%d",
+             v->page, v->count, list != NULL ? list->count : -1, v->rec_seconds);
+
     lv_obj_clean(scr);
     lv_obj_set_style_pad_all(scr, 0, 0);
     ksy_box(scr, 0, 0, LV_HOR_RES, LV_VER_RES, KSY_COLOR_BG);
@@ -1238,18 +1252,26 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
              * 不回写视图（render 入参为 const，不得改 rec_seconds —— 演出帧由调用方
              * 的 tick 驱动，此处只做无副作用绘制）。 */
             uint32_t elapsed = (uint32_t)(v->rec_seconds < 0 ? 0 : v->rec_seconds) * 1000u;
-            int flash = (int)((elapsed / 250u) % 2u);
             int wave = (int)((elapsed / 100u) % 4u);
             int i;
-            /* REC 反白点（点亮时画实心块）。 */
-            if (flash) {
-                ksy_box(scr, 20, 20, 24, 24, KSY_COLOR_INK);
-            } else {
-                ksy_box(scr, 20, 20, 24, 24, 0xDDDDDDu);
-            }
-            /* 大时长文本。 */
+            /* K3R D2 真机轮 v5 诊断（纯日志, 保留）: 证明录音态分支被走 + REC 指示现状。 */
+            ESP_LOGI(KSR_TAG,
+                     "RECORDING render wave=%d rec_seconds=%d rec_block=(20,52,24,24) steady=1",
+                     wave, v->rec_seconds);
+            /* REC 指示（常亮实心黑块）。K3R D2 真机轮 v5（2026-10-01）:
+             * 旧 `flash = (elapsed/250)%2`, `elapsed = rec_seconds*1000`（rec_seconds 为
+             * **整秒**）-> `(rec_seconds*4)%2 ≡ 0` 恒 off -> 永远画浅灰 `0xDDDDDD`（1bpp
+             * RLCD 面板 = 白 = 不可见）; **黑块那一相从未出现**（真机照片 v4/v5 报 REC
+             * 不可见, 时长可见）。
+             * 选**常亮**（architect 二选一之固相支）: 1bpp 面板上 off 相 = 白（不可见）,
+             * 闪动会周期性令指示消失（照片轮易再报不可见）; 设计稿亦为实心点（● REC）。
+             * 常亮与 rec_seconds 解耦、零时间依赖、**无条件可见**, 最稳。位置 y=52 落
+             * 顶部 chrome 带（top_bar_/status_bar_ 经 lv_layer_top 恒浮）之下安全区,
+             * 与时长(y=48)/声波条(y≥70)零重叠。 */
+            ksy_box(scr, 20, 52, 24, 24, KSY_COLOR_INK);
+            /* 大时长文本（同上避顶部 chrome 带, y 由 18 下移至 48）。 */
             if (kidpal_story_rec_time(v, buf, sizeof(buf)) == 0) {
-                ksy_label(scr, buf, 60, 18, KSY_COLOR_TEXT);
+                ksy_label(scr, buf, 60, 48, KSY_COLOR_TEXT);
             }
             /* 手绘声波：随 wave 相位档跳动的高度条。 */
             for (i = 0; i < 6; i++) {
@@ -1965,4 +1987,105 @@ int kidpal_story_session_ctx_active(void)
 void kidpal_story_session_ctx_set(int active)
 {
     s_story_ctx_active = (active != 0) ? 1 : 0;
+}
+
+/* ========================================================================== *
+ * K3R 冻结缝追加区（TaskPackage 261001-m4-k3-record-session-live-repair;
+ * additive 尾部追加, 冻结纪律只增不改/移）。seam contract [R1]-[R3] 权威 =
+ * firmware/main/test/record_session_repair.acceptance.c 文件头; host runner 把本
+ * 文件编入源清单, 本区强符号覆盖该验收件 weak 哨兵。
+ * ========================================================================== */
+
+/* ---- [R1] 录音语境键手势归属判据（D4a/D2 同一设计决策内一致选定） ---- */
+
+int kidpal_story_key_owns(int front_layer, int kidpal_page, int page_state,
+                          int ctx_active)
+{
+    /* (a) 记录语境录音态 -> 故事页拥有 KEY（**形态无关**: 甲 VOICE 已让位
+     * front_layer 到此处已归一为 NONE, 本支冗余但无害; 乙 VOICE 前台, 本支是判据
+     * 命门。两形态同结论）。若不判此支, KEY 会落 key_route_layer ->
+     * GLOBAL_ACT_SESSION_TOGGLE -> Listening 关通道不发 listen stop -> front
+     * ws_disconnect cancel 丢弃 = 毁稿。 */
+    if (page_state == KSTORY_PAGE_RECORDING && ctx_active != 0) {
+        return 1;
+    }
+    /* (b) 删除确认覆盖层吞全手势（任何漏网手势会被通用覆盖层列误映射
+     * SESSION_TOGGLE, 删除确认里绝不能开会话; K2 既有语义零偏移）。 */
+    if (front_layer == KIDPAL_LAYER_STORY_DELETE) {
+        return 1;
+    }
+    /* (c) 基层 P3 故事页既有语义（keya_story_page_wants 原「overlay_top == 0 &&
+     * page == P3」逐字等价, K2/K3 主页面路径零回归）。 */
+    if (front_layer == KIDPAL_LAYER_NONE && kidpal_page == KP_PAGE_STORY) {
+        return 1;
+    }
+    /* 其余（VOICE/其它覆盖层前台且非记录语境 / 基层非 P3 / 记录语境标志未置）-> 0。 */
+    return 0;
+}
+
+/* ---- [R2] 会话收尾录音态复位判据（D4b-1） ---- */
+
+int kidpal_story_session_end(int page_state, int *out_page)
+{
+    if (out_page == NULL) {
+        return -1; /* 畸形入参拒绝, 不崩 */
+    }
+    if (page_state == KSTORY_PAGE_RECORDING) {
+        /* 录音态 -> 复位 LIST（调用方据此停录音演出定时器; 页态回落 LIST 后
+         * StoryRecTimerCb 的 page != RECORDING 自删条件成立, 定时器终停）。 */
+        *out_page = KSTORY_PAGE_LIST;
+        return 1;
+    }
+    /* 非录音态幂等 no-op（不得误清列表/阅读/删除子态; out_page 零触碰）。 */
+    return 0;
+}
+
+/* ---- [R3] defer 缓存消费判据（D1; defer 分支缓存 <-> 前台回落重渲的闸门） ---- */
+
+int kidpal_story_list_deferred_flush(int voice_front, int kidpal_page,
+                                     int page_state)
+{
+    /* VOICE 层已弹出（前台回落基层, voice_front == 0）&& 本地页 == P3 && 列表态 ->
+     * 以 g_story_list 最新缓存重渲 P3 前台（defer 分支缓存的消费方; 260928-story-
+     * connect-push-defer 摘除建连即推后, 「下次前台回落时以最新缓存渲染」的驱动方
+     * 缺陷修复）。其余: VOICE 仍前台不抢推 / 本地页非 P3 / 已入子态不覆盖 -> 0。 */
+    if (voice_front == 0 && kidpal_page == KP_PAGE_STORY &&
+        page_state == KSTORY_PAGE_LIST) {
+        return 1;
+    }
+    return 0;
+}
+
+/* ---- [R4] LCD 声波 chrome 前台判据（D2 根因 1「弹层 ≠ 隐屏」） ---- */
+
+int kidpal_story_voice_chrome_front(int layer_top, int page_state)
+{
+    /* (a) 录音页态 -> chrome 退隐（**判别位**: 旧内联逻辑 = layer_top == VOICE 无录音
+     * 维度, (VOICE, RECORDING) 旧答 1 = chrome 驻留盖住录音页; 本判据答 0）。与 layer
+     * 无关——甲形态 VOICE 已弹仍须防状态机 listening 残影, 乙形态 VOICE 未弹亦须显式
+     * 退隐。 */
+    if (page_state == KSTORY_PAGE_RECORDING) {
+        return 0;
+    }
+    /* (b) 普通聆听轮 chrome 前台（既有 RP-A5 r3 语义零偏移）。 */
+    if (layer_top == KIDPAL_LAYER_VOICE) {
+        return 1;
+    }
+    /* 其余（内容页/其它覆盖层前台 / 基层浏览）chrome 退隐。 */
+    return 0;
+}
+
+/* ---- [R5] voice_end 前台回落渲染页态解析判据（D2 根因 2） ---- */
+
+int kidpal_story_render_page_state(int node_cached_page, int session_page,
+                                   int on_story_front)
+{
+    /* 本地页 = P3 前台回落 -> 以权威会话页态为准（**判别位**: 旧内联逻辑裸读节点缓存
+     * s_story_view.page——(node=LIST, session=RECORDING, front=1) 旧答 LIST = 渲陈旧
+     * 列表页; 本判据答 RECORDING = 渲录音页。页态同步先于渲染）。非 P3 前台 -> 节点
+     * 缓存零回归。 */
+    if (on_story_front != 0) {
+        return session_page;
+    }
+    return node_cached_page;
 }
