@@ -6,10 +6,13 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (49)
+## dev (52)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-openclaw-model-name-overlay-drift](261001-openclaw-model-name-overlay-drift/) | 2026-10-01 | docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md | closed | — |
 | [260929-char-window-v5-trim](260929-char-window-v5-trim/) | 2026-09-29 | delivery/changes/intake/260929-char-window-v5-trim.md | closed | — |
 | [260928-char-window-key-triggered-play](260928-char-window-key-triggered-play/) | 2026-09-28 | delivery/changes/intake/260928-char-window-key-triggered-play.md | closed | — |
 | [260928-story-connect-push-defer](260928-story-connect-push-defer/) | 2026-09-28 | human 真机发现 + planner 根因报告（2026-09-28 本会话）：M4-K1 三时点①建连即推与设备每会话 WS 重连冲突——设备会话结束关 audio channel（CanEnterSleepMode 要求通道关闭）、按 KEY 重开新 WS，front 建连即推 story_list → 旧固件（K2 未跑）无条件渲染 P3 页盖掉聆听态，且 story_page.c 零 CJK 字体接线 → 半截页面。human 裁定止血方向（AskUserQuestion 后续指令「先止血方案吧」） | closed | m4-star-notebook |
@@ -32,11 +35,11 @@
 | [260917-m2-k2-retract-p4-three-page](260917-m2-k2-retract-p4-three-page/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
 | [260917-m2-k3-char-window-overlay](260917-m2-k3-char-window-overlay/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
 | [260915-m1-k1a-key-layer-dispatch](260915-m1-k1a-key-layer-dispatch/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
-| [260915-m1-k2-keybar-three-slot](260915-m1-k2-keybar-three-slot/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | open | m1-home-qa |
+| [260915-m1-k2-keybar-three-slot](260915-m1-k2-keybar-three-slot/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-k3-voice-round-ui](260915-m1-k3-voice-round-ui/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-k4-reminder-overlay-unify](260915-m1-k4-reminder-overlay-unify/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-n1b-p1-home-battery](260915-m1-n1b-p1-home-battery/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
-| [260913-happy-flow-host-capture](260913-happy-flow-host-capture/) | 2026-09-13 | — | open | — |
+| [260913-happy-flow-host-capture](260913-happy-flow-host-capture/) | 2026-09-13 | — | closed | — |
 | [260911-display-first-m1](260911-display-first-m1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260911-ecs-deploy-convergence](260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
 | [260911-key-route-a1](260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
@@ -59,6 +62,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
-| [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
-| [261001-openclaw-model-name-overlay-drift](261001-openclaw-model-name-overlay-drift/) | 2026-10-01 | docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md | closed | — |
