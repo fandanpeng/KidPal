@@ -17,6 +17,10 @@
 #       spec §A1 双候选之一). credentials injected from env (DASHSCOPE_API_KEY); if unset the
 #       structural shape is still declared, live ASR is a known credential gap ->
 #       escalate (human 待办). Never forged.
+#   * 决策 21 两键（arch §6.4）: close_connection_no_voice_time: 86400 + end_prompt.enable: false
+#       — 引擎不主动断连（24h 纯兜底、告别语关闭）。260914 的 live 修正曾只落在活配置、
+#       无渲染面，1001 overlay 再生即丢 → 告别语复活 + 120/180s 断连（TECH-261010）；
+#       本块 = 该两键的持久渲染面。
 #
 set -euo pipefail
 
@@ -78,6 +82,12 @@ TTS:
     voice: zh-CN-XiaoxiaoNeural
 ASR:
   Qwen3ASRFlash: {api_key: "$DASHSCOPE_API_KEY", model_name: qwen3-asr-flash, type: qwen3_asr_flash}
+# 决策 21（arch §6.4）: 引擎不主动断连 — 两道超时 24h 纯兜底 + 告别语关闭。
+# 缺此块 = 引擎回落源码默认（120s 无语音告别语 + 180s 硬断，receiveAudioHandle.py:114/123）
+# → 提醒推送黑洞（设备常驻在线假设被击穿）。持久化面 = 本 heredoc，TECH-261010 仓内根治。
+close_connection_no_voice_time: 86400
+end_prompt:
+  enable: false
 EOF
 echo "rendered $OVERLAY"
 ls -la "$OVERLAY"

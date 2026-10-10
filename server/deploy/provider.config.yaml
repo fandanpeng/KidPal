@@ -53,6 +53,16 @@ reminder_config:
   consumer: "openclaw-patch/reminder_schedule_lib.py"   # 三档算术 + 幂等 id + 原子写
   deliverer: "gateway/reminders.py"                     # 每分钟轮询 + 重试到确认 60s×3 + 静默作废
 
+# 引擎连接超时（决策 21 / arch §6.4）: 引擎不主动断连——两道超时 24h 纯兜底 + 告别语关闭，
+# 保「设备常驻在线（提醒推送可达）」假设。渲染面 = apply-xiaozhi-overlay.sh heredoc 顶层两键。
+# 病史：260914 修正曾只落活配置（无渲染面），260930/1001 overlay 再生即丢 → 告别语复活 +
+# 120/180s 断连（TECH-261010-engine-decision21-keys-not-persistent）；本块 = 声明面持久化，
+# 机检齿 = test_261010_engine_decision21_overlay_persist.acceptance.py。
+engine_timeout:
+  close_connection_no_voice_time: 86400   # 24h 纯兜底（引擎源码默认 120，勿回落）
+  end_prompt:
+    enable: false                          # 告别语关闭（引擎源码默认 true，勿回落）
+
 providers:
   llm:
     family: "llm"
