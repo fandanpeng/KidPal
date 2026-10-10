@@ -7,15 +7,16 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 18（待拍板 1 / 待触发 11 / 已接受风险 6）；已结 3（归档索引见下）。
+**摘要**：未结 21（待拍板 2 / 待触发 13 / 已接受风险 6）；已结 3（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
+| [TECH-261010-engine-decision21-keys-not-persistent](TECH-261010-engine-decision21-keys-not-persistent.md) | BLOCKING | 引擎决策 21 两键（24h 兜底 + 告别语关闭）未入 overlay 渲染源——线上已回落默认 120s 断连 + 告别语复活 | human 放行线上配置恢复；仓内 overlay 模板补键走 dev-loop（与 ARQ-260907-engine-deploy-patch-drift 同类病，可同批治） |
 
-## 待触发（11）
+## 待触发（13）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -30,6 +31,8 @@
 | [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | NIT | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 下一批 spec / 治理批（与 requirements §2.3 台账消解同批）；**不阻断 M2-K2 合并**（本包 review-packet 已如实登记去向） |
 | [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | SHOULD | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 部署执行后定案——注册 agent 型 cron（§8.3b）+ 铺 skill 到 main workspace 后，盯一个完整提醒周期核 semantic.json 出现且 entry_key 对齐、pending.json 变语义版、设备真收带物播报；失败则回退机械兜底维持现状并升级 |
 | [ARQ-261001-openclaw-model-name-overlay-drift](ARQ-261001-openclaw-model-name-overlay-drift.md) | SHOULD | 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400 | TaskPackage 261001-openclaw-model-name-overlay-drift 落地（修仓内模板 + 重钉 PERF-K1 冻结齿）后转 closed |
+| [TECH-261010-device-no-reconnect-on-server-close](TECH-261010-device-no-reconnect-on-server-close.md) | SHOULD | 固件对「服务端主动断连」无自动重连——OnAudioChannelClosed 只进低功耗回 Idle，断线自动重连仅覆盖网络重连事件路径 | 下个动 websocket_protocol / application 会话生命周期的包；与 arch §8「闲置约 3 分钟休眠断连」待裁产品决策（同一推送可达性问题面）合并裁定 |
+| [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | SHOULD | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前 |
 
 ## 已接受风险（6）
 
