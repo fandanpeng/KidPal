@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "84c04d5d-e337-4099-946b-f950a71e7bb6",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\candidate.json",
+  "output": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.html",
+  "specification": {
+    "sha256": "f8dd38f1c9501c20078fd0b60917568f1b21a42c373c2ebba09ee9608d049f09",
+    "bytes": 3955
+  },
+  "artifact": {
+    "sha256": "8e187d5061a5de9a97d7931a2c690601a4bb13a4376e3bb55f49f7e317e4df52",
+    "bytes": 754450
+  }
+}

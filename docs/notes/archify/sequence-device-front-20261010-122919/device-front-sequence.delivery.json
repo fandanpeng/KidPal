@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f1b89223-cd9f-4c32-83d7-2c6a9ab7713b",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\sequence-device-front-20261010-122919\\candidate.json",
+  "output": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\sequence-device-front-20261010-122919\\device-front-sequence.html",
+  "specification": {
+    "sha256": "af7d4b043e865d763588570f550a94df4a3403ac11e28789296ce1909ff61e27",
+    "bytes": 9979
+  },
+  "artifact": {
+    "sha256": "c93d4b50e06f3b27d501f301bc30d2f0ca4c5af26c5c26b103b54ba085276d57",
+    "bytes": 770834
+  }
+}

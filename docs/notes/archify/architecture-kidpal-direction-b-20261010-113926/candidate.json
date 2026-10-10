@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "KidPal 方向 B 运行时拓扑",
+    "locale": "zh-CN",
+    "output": ".archify/architecture-kidpal-direction-b-20261010-113926/kidpal-direction-b.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "device",
+      "type": "external",
+      "label": "KidPal 设备",
+      "sublabel": "ESP32-S3 终端",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "front",
+      "type": "security",
+      "label": "kidpal-front",
+      "sublabel": "TLS + Bearer · :8000",
+      "pos": [
+        260,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "xiaozhi-esp32-server",
+      "sublabel": "docker · ws :8010",
+      "pos": [
+        550,
+        60
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "openclaw",
+      "type": "backend",
+      "label": "OpenClaw",
+      "sublabel": "LLM :18789 · 仅回环",
+      "pos": [
+        880,
+        60
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "asr",
+      "type": "external",
+      "label": "Qwen3ASRFlash",
+      "sublabel": "DashScope 云识别",
+      "pos": [
+        500,
+        300
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "tts",
+      "type": "external",
+      "label": "EdgeTTS",
+      "sublabel": "微软云合成",
+      "pos": [
+        700,
+        300
+      ],
+      "size": [
+        140,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "阿里云 ECS · 8.137.91.16",
+      "wraps": [
+        "front",
+        "engine",
+        "openclaw"
+      ],
+      "pad": 26
+    },
+    {
+      "kind": "security-group",
+      "label": "仅回环 127.0.0.1 · 不对公网",
+      "wraps": [
+        "engine",
+        "openclaw"
+      ],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "from": "device",
+      "to": "front",
+      "label": "WSS :8000",
+      "variant": "emphasis"
+    },
+    {
+      "from": "front",
+      "to": "engine",
+      "label": "ws 127.0.0.1:8010",
+      "variant": "emphasis"
+    },
+    {
+      "from": "engine",
+      "to": "openclaw",
+      "label": "OpenAI /v1",
+      "variant": "emphasis"
+    },
+    {
+      "from": "engine",
+      "to": "asr",
+      "label": "语音识别",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "engine",
+      "to": "tts",
+      "label": "语音合成",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "关键运行配置（live）",
+      "items": [
+        "engine LLM: OpenClawOpenAI · base_url http://127.0.0.1:18789/v1 · model openclaw/kidpal",
+        "Intent = nointent（禁 function_call：tools 数组会被 OpenClaw 拒绝，设备播「小智现在有点忙」）",
+        "ASR = Qwen3ASRFlash（DashScope）· TTS = EdgeTTS",
+        "OpenClaw 跑 main + kidpal 双 agent（ownership: explicit，模型名须显式指到 kidpal）"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "安全边界（V28 不变量）",
+      "items": [
+        "公网仅开安全组 8000：设备 → front（WSS，TLS + Bearer 认证）",
+        "engine 为 docker host 网络，只监听 127.0.0.1:8010 / 8003",
+        "OpenClaw 127.0.0.1:18789 仅回环，永不对公网可达"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "退役组件",
+      "items": [
+        "kidpal-shim 已停止并禁用；端口 8080 安全组已关"
+      ]
+    }
+  ]
+}

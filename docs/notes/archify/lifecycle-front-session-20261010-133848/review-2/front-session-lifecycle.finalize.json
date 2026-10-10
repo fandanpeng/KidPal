@@ -1,0 +1,577 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "startedAt": "2026-10-10T05:43:04.266Z",
+  "specification": {
+    "path": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\candidate.json",
+    "sha256": "da5cd76aaa8cee3f6ecda6adae18d7a386cbbb403040138f8f07a122b97cbf48",
+    "bytes": 4548
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\front-session-lifecycle.html",
+    "sha256": "ac31f2897ed0c83014579c0d42e91afc1355cc6c218d90f0891ed6f5715df780",
+    "bytes": 759171
+  },
+  "stages": {
+    "validate": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": null,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.claude\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "lifecycle",
+        "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\candidate.json",
+        "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\front-session-lifecycle.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "deliver",
+        "receiptId": "913d6b2e-ff67-42d9-b0c0-4a4d45e2c7f7",
+        "stage": "render",
+        "type": "lifecycle",
+        "input": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\candidate.json",
+        "output": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\front-session-lifecycle.html",
+        "error": "Lifecycle layout validation failed:\n- [composition/proper-crossing] showcase lifecycle transitions[3] id \"t-archive\" \"accumulate\" -> \"archived\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 180] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.\n- [composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[6] id \"t-kill-acc\" \"accumulate\" -> \"destroyed\" at [455, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.\n- [composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.\n- [composition/label-route-clearance] showcase lifecycle label \"ctx(story) / start_recording → start()\" on transitions[0] id \"t-enter\" \"chat\" -> \"accumulate\" label \"ctx(story) / start_recording → start()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 2 [230, 20] -> [230, 88] (label rect [153, 29, 198, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.\n- [composition/label-route-clearance] showcase lifecycle label \"listen stop 且累积空 → mark_pending()\" on transitions[1] id \"t-pend\" \"accumulate\" -> \"pending_stop\" label \"listen stop 且累积空 → mark_pending()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 0 [500, 88] -> [500, 20] (label rect [379, 29, 193, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.\n- [composition/label-canvas-containment] showcase lifecycle label \"10s 无转写释放（不写空故事）\" on transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" extends past the top edge by 1px (label rect [290, -1, 149, 16]; viewBox 1238x400) — if the authored route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise enlarge meta.viewBox.",
+        "diagnostics": [
+          {
+            "code": "composition/proper-crossing",
+            "severity": "error",
+            "message": "[composition/proper-crossing] showcase lifecycle transitions[3] id \"t-archive\" \"accumulate\" -> \"archived\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 180] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 3,
+              "id": "t-archive",
+              "from": "accumulate",
+              "to": "archived"
+            },
+            "evidence": {
+              "otherRelationship": {
+                "diagramType": "lifecycle",
+                "collection": "transitions",
+                "index": 7,
+                "id": "t-kill-pend",
+                "from": "pending_stop",
+                "to": "destroyed"
+              },
+              "point": [
+                715,
+                180
+              ],
+              "segmentIndex": 1,
+              "otherSegmentIndex": 0
+            },
+            "supportedFixes": [
+              "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+            ]
+          },
+          {
+            "code": "composition/proper-crossing",
+            "severity": "error",
+            "message": "[composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[6] id \"t-kill-acc\" \"accumulate\" -> \"destroyed\" at [455, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 4,
+              "id": "t-back",
+              "from": "archived",
+              "to": "chat"
+            },
+            "evidence": {
+              "otherRelationship": {
+                "diagramType": "lifecycle",
+                "collection": "transitions",
+                "index": 6,
+                "id": "t-kill-acc",
+                "from": "accumulate",
+                "to": "destroyed"
+              },
+              "point": [
+                455,
+                204
+              ],
+              "segmentIndex": 1,
+              "otherSegmentIndex": 0
+            },
+            "supportedFixes": [
+              "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+            ]
+          },
+          {
+            "code": "composition/proper-crossing",
+            "severity": "error",
+            "message": "[composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 4,
+              "id": "t-back",
+              "from": "archived",
+              "to": "chat"
+            },
+            "evidence": {
+              "otherRelationship": {
+                "diagramType": "lifecycle",
+                "collection": "transitions",
+                "index": 7,
+                "id": "t-kill-pend",
+                "from": "pending_stop",
+                "to": "destroyed"
+              },
+              "point": [
+                715,
+                204
+              ],
+              "segmentIndex": 1,
+              "otherSegmentIndex": 0
+            },
+            "supportedFixes": [
+              "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+            ]
+          },
+          {
+            "code": "composition/label-route-clearance",
+            "severity": "error",
+            "message": "[composition/label-route-clearance] showcase lifecycle label \"ctx(story) / start_recording → start()\" on transitions[0] id \"t-enter\" \"chat\" -> \"accumulate\" label \"ctx(story) / start_recording → start()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 2 [230, 20] -> [230, 88] (label rect [153, 29, 198, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 0,
+              "id": "t-enter",
+              "from": "chat",
+              "to": "accumulate"
+            },
+            "evidence": {
+              "label": "ctx(story) / start_recording → start()",
+              "otherRelationship": {
+                "diagramType": "lifecycle",
+                "collection": "transitions",
+                "index": 5,
+                "id": "t-release",
+                "from": "pending_stop",
+                "to": "chat"
+              },
+              "segmentIndex": 2,
+              "clearancePx": 0,
+              "minimumPx": 4,
+              "labelRect": {
+                "relation": {
+                  "id": "t-enter",
+                  "from": "chat",
+                  "to": "accumulate",
+                  "label": "ctx(story) / start_recording → start()",
+                  "labelAt": [
+                    252,
+                    40
+                  ]
+                },
+                "relationIndex": 0,
+                "label": "ctx(story) / start_recording → start()",
+                "x": 152.89999999999998,
+                "y": 29,
+                "width": 198.20000000000002,
+                "height": 16,
+                "lx": 252,
+                "ly": 40
+              },
+              "from": [
+                230,
+                20
+              ],
+              "to": [
+                230,
+                88
+              ]
+            },
+            "supportedFixes": [
+              "if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+            ]
+          },
+          {
+            "code": "composition/label-route-clearance",
+            "severity": "error",
+            "message": "[composition/label-route-clearance] showcase lifecycle label \"listen stop 且累积空 → mark_pending()\" on transitions[1] id \"t-pend\" \"accumulate\" -> \"pending_stop\" label \"listen stop 且累积空 → mark_pending()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 0 [500, 88] -> [500, 20] (label rect [379, 29, 193, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 1,
+              "id": "t-pend",
+              "from": "accumulate",
+              "to": "pending_stop"
+            },
+            "evidence": {
+              "label": "listen stop 且累积空 → mark_pending()",
+              "otherRelationship": {
+                "diagramType": "lifecycle",
+                "collection": "transitions",
+                "index": 5,
+                "id": "t-release",
+                "from": "pending_stop",
+                "to": "chat"
+              },
+              "segmentIndex": 0,
+              "clearancePx": 0,
+              "minimumPx": 4,
+              "labelRect": {
+                "relation": {
+                  "id": "t-pend",
+                  "from": "accumulate",
+                  "to": "pending_stop",
+                  "label": "listen stop 且累积空 → mark_pending()",
+                  "labelAt": [
+                    476,
+                    40
+                  ]
+                },
+                "relationIndex": 1,
+                "label": "listen stop 且累积空 → mark_pending()",
+                "x": 379.35,
+                "y": 29,
+                "width": 193.3,
+                "height": 16,
+                "lx": 476,
+                "ly": 40
+              },
+              "from": [
+                500,
+                88
+              ],
+              "to": [
+                500,
+                20
+              ]
+            },
+            "supportedFixes": [
+              "if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+            ]
+          },
+          {
+            "code": "composition/label-canvas-containment",
+            "severity": "error",
+            "message": "[composition/label-canvas-containment] showcase lifecycle label \"10s 无转写释放（不写空故事）\" on transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" extends past the top edge by 1px (label rect [290, -1, 149, 16]; viewBox 1238x400) — if the authored route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise enlarge meta.viewBox.",
+            "subject": {
+              "diagramType": "lifecycle",
+              "collection": "transitions",
+              "index": 5,
+              "id": "t-release",
+              "from": "pending_stop",
+              "to": "chat"
+            },
+            "evidence": {
+              "label": "10s 无转写释放（不写空故事）",
+              "labelRect": {
+                "x": 290.4,
+                "y": -1,
+                "width": 149.20000000000002,
+                "height": 16
+              },
+              "viewBox": [
+                1238,
+                400
+              ],
+              "overflowPx": {
+                "top": 1
+              },
+              "tolerancePx": 0.5
+            },
+            "supportedFixes": [
+              "if the authored route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise enlarge meta.viewBox"
+            ]
+          }
+        ],
+        "provenance": "failed",
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      },
+      "execution": "embedded-in-deliver"
+    },
+    "deliver": {
+      "status": "not-run",
+      "execution": "blocked-by-validate"
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "composition/proper-crossing",
+      "severity": "error",
+      "message": "[composition/proper-crossing] showcase lifecycle transitions[3] id \"t-archive\" \"accumulate\" -> \"archived\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 180] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 3,
+        "id": "t-archive",
+        "from": "accumulate",
+        "to": "archived"
+      },
+      "evidence": {
+        "otherRelationship": {
+          "diagramType": "lifecycle",
+          "collection": "transitions",
+          "index": 7,
+          "id": "t-kill-pend",
+          "from": "pending_stop",
+          "to": "destroyed"
+        },
+        "point": [
+          715,
+          180
+        ],
+        "segmentIndex": 1,
+        "otherSegmentIndex": 0
+      },
+      "supportedFixes": [
+        "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+      ]
+    },
+    {
+      "code": "composition/proper-crossing",
+      "severity": "error",
+      "message": "[composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[6] id \"t-kill-acc\" \"accumulate\" -> \"destroyed\" at [455, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 4,
+        "id": "t-back",
+        "from": "archived",
+        "to": "chat"
+      },
+      "evidence": {
+        "otherRelationship": {
+          "diagramType": "lifecycle",
+          "collection": "transitions",
+          "index": 6,
+          "id": "t-kill-acc",
+          "from": "accumulate",
+          "to": "destroyed"
+        },
+        "point": [
+          455,
+          204
+        ],
+        "segmentIndex": 1,
+        "otherSegmentIndex": 0
+      },
+      "supportedFixes": [
+        "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+      ]
+    },
+    {
+      "code": "composition/proper-crossing",
+      "severity": "error",
+      "message": "[composition/proper-crossing] showcase lifecycle transitions[4] id \"t-back\" \"archived\" -> \"chat\" crosses transitions[7] id \"t-kill-pend\" \"pending_stop\" -> \"destroyed\" at [715, 204] (segments 1 and 0) — if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 4,
+        "id": "t-back",
+        "from": "archived",
+        "to": "chat"
+      },
+      "evidence": {
+        "otherRelationship": {
+          "diagramType": "lifecycle",
+          "collection": "transitions",
+          "index": 7,
+          "id": "t-kill-pend",
+          "from": "pending_stop",
+          "to": "destroyed"
+        },
+        "point": [
+          715,
+          204
+        ],
+        "segmentIndex": 1,
+        "otherSegmentIndex": 0
+      },
+      "supportedFixes": [
+        "if the authored route are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust route/via or channelX/channelY so the transitions use separate lifecycle corridors"
+      ]
+    },
+    {
+      "code": "composition/label-route-clearance",
+      "severity": "error",
+      "message": "[composition/label-route-clearance] showcase lifecycle label \"ctx(story) / start_recording → start()\" on transitions[0] id \"t-enter\" \"chat\" -> \"accumulate\" label \"ctx(story) / start_recording → start()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 2 [230, 20] -> [230, 88] (label rect [153, 29, 198, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 0,
+        "id": "t-enter",
+        "from": "chat",
+        "to": "accumulate"
+      },
+      "evidence": {
+        "label": "ctx(story) / start_recording → start()",
+        "otherRelationship": {
+          "diagramType": "lifecycle",
+          "collection": "transitions",
+          "index": 5,
+          "id": "t-release",
+          "from": "pending_stop",
+          "to": "chat"
+        },
+        "segmentIndex": 2,
+        "clearancePx": 0,
+        "minimumPx": 4,
+        "labelRect": {
+          "relation": {
+            "id": "t-enter",
+            "from": "chat",
+            "to": "accumulate",
+            "label": "ctx(story) / start_recording → start()",
+            "labelAt": [
+              252,
+              40
+            ]
+          },
+          "relationIndex": 0,
+          "label": "ctx(story) / start_recording → start()",
+          "x": 152.89999999999998,
+          "y": 29,
+          "width": 198.20000000000002,
+          "height": 16,
+          "lx": 252,
+          "ly": 40
+        },
+        "from": [
+          230,
+          20
+        ],
+        "to": [
+          230,
+          88
+        ]
+      },
+      "supportedFixes": [
+        "if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+      ]
+    },
+    {
+      "code": "composition/label-route-clearance",
+      "severity": "error",
+      "message": "[composition/label-route-clearance] showcase lifecycle label \"listen stop 且累积空 → mark_pending()\" on transitions[1] id \"t-pend\" \"accumulate\" -> \"pending_stop\" label \"listen stop 且累积空 → mark_pending()\" is 0px from transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" label \"10s 无转写释放（不写空故事）\" segment 0 [500, 88] -> [500, 20] (label rect [379, 29, 193, 16]; minimum 4px) — if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 1,
+        "id": "t-pend",
+        "from": "accumulate",
+        "to": "pending_stop"
+      },
+      "evidence": {
+        "label": "listen stop 且累积空 → mark_pending()",
+        "otherRelationship": {
+          "diagramType": "lifecycle",
+          "collection": "transitions",
+          "index": 5,
+          "id": "t-release",
+          "from": "pending_stop",
+          "to": "chat"
+        },
+        "segmentIndex": 0,
+        "clearancePx": 0,
+        "minimumPx": 4,
+        "labelRect": {
+          "relation": {
+            "id": "t-pend",
+            "from": "accumulate",
+            "to": "pending_stop",
+            "label": "listen stop 且累积空 → mark_pending()",
+            "labelAt": [
+              476,
+              40
+            ]
+          },
+          "relationIndex": 1,
+          "label": "listen stop 且累积空 → mark_pending()",
+          "x": 379.35,
+          "y": 29,
+          "width": 193.3,
+          "height": 16,
+          "lx": 476,
+          "ly": 40
+        },
+        "from": [
+          500,
+          88
+        ],
+        "to": [
+          500,
+          20
+        ]
+      },
+      "supportedFixes": [
+        "if the authored labelAt/route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise adjust the other relationship route/via/channel"
+      ]
+    },
+    {
+      "code": "composition/label-canvas-containment",
+      "severity": "error",
+      "message": "[composition/label-canvas-containment] showcase lifecycle label \"10s 无转写释放（不写空故事）\" on transitions[5] id \"t-release\" \"pending_stop\" -> \"chat\" extends past the top edge by 1px (label rect [290, -1, 149, 16]; viewBox 1238x400) — if the authored route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise enlarge meta.viewBox.",
+      "subject": {
+        "diagramType": "lifecycle",
+        "collection": "transitions",
+        "index": 5,
+        "id": "t-release",
+        "from": "pending_stop",
+        "to": "chat"
+      },
+      "evidence": {
+        "label": "10s 无转写释放（不写空故事）",
+        "labelRect": {
+          "x": 290.4,
+          "y": -1,
+          "width": 149.20000000000002,
+          "height": 16
+        },
+        "viewBox": [
+          1238,
+          400
+        ],
+        "overflowPx": {
+          "top": 1
+        },
+        "tolerancePx": 0.5
+      },
+      "supportedFixes": [
+        "if the authored route/channelY are not required by the user, remove them so the renderer can re-plan; otherwise preserve that intent and adjust labelAt, labelDx, labelDy, or labelSegment; otherwise enlarge meta.viewBox"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\review-2\\front-session-lifecycle.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\review-2\\front-session-lifecycle.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "validate",
+  "finishedAt": "2026-10-10T05:43:05.063Z",
+  "durationMs": 797,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-10T03:39:52.897Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}
