@@ -2,13 +2,13 @@
 id: ARQ-261001-openclaw-model-name-overlay-drift
 title: 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: ""
 trigger: TaskPackage 261001-openclaw-model-name-overlay-drift 落地（修仓内模板 + 重钉 PERF-K1 冻结齿）后转 closed
 opened: 2026-10-01
-closed: ""
-closedBy: ""
+closed: "2026-10-10"
+closedBy: 主线程（261010 部署演练闭环，见文末结项记录）
 paths:
   - server/deploy/apply-xiaozhi-overlay.sh
   - server/deploy/provider.config.yaml
@@ -32,3 +32,5 @@ source: 261001 真机部署后 OpenClaw 400（ECS 活配置为唯一真值来源
 - `docs/ADR.md` ADR-006 的支撑句「model_name `openclaw/default` 零改、模型选择对引擎完全不可见」随之失效（ADR 为 append-only → 新增条目 amend，不改正文）
 
 活配置已于 261001 热修（ECS `.config.yaml` → `openclaw/kidpal` + `docker restart`，探针 200；备份 `.config.yaml.bak-260930-modelname-clobber`）。本条目管的是**仓内回流**：不修则下次重部署必然复现。修法见 `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md`（② 单包 Lite / riskTier=low，architect 分流快审 2026-10-01）。
+
+**结项记录（2026-10-10，主线程部署演练）**：仓内回流已由 TaskPackage 261001 落地（声明/渲染/探针/provider 四面重钉 `openclaw/kidpal` + MNF 齿在场，`test_261001_openclaw_model_name_overlay_drift.acceptance.py` 绿）。261010 部署演练（TECH-261010 决策 21 键同批）发现**最后一处残余**：ECS 部署副本 `/opt/kidpal/xiaozhi-esp32-server/deploy/apply-xiaozhi-overlay.sh` 仍载修前旧值 `model_name: openclaw/default`（仓内已修但副本从未随部署刷新，md5 对账实证）——若直接重跑会把 live 再冲回旧值 400。已同步修复版（含本条重钉 + 决策 21 两键），重跑渲染核验：渲染产物 `model_name: openclaw/kidpal` 在场（plan §MNF-A3 部署演练至此完成）。备份 `apply-xiaozhi-overlay.sh.bak-261010-decision21`。

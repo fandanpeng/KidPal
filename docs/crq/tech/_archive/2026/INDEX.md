@@ -7,10 +7,12 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 3 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 5 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
 | [ARQ-260902-shim-401-gate-bypass](ARQ-260902-shim-401-gate-bypass.md) | server/shim.py `require_device` 依赖 `return JSONResponse` 不短路，无 token 直通 OpenClaw（401 门穿透），并否定 TP-A 报告「无 token → 401」实测结论 | 2026-09-06 | — |
 | [ARQ-260916-server-mvp-teeth-sweep](ARQ-260916-server-mvp-teeth-sweep.md) | server 面可能仍有 MVP 验证期孪生/伴随验收齿未随 544a804 归档批退役——已实证一例：`test_voice_roundtrip_b.acceptance.py` server 半边（设备半边 C 孪生已归档，VRT-A2 孪生对齐齿钉旧址故红，human 裁定 `bba7d239` 模块级 skip 退出现役销账） | 2026-09-16 | — |
 | [TECH-260928-school-start-upcoming-empty](TECH-260928-school-start-upcoming-empty.md) | 周中 upcoming 恒空：school_start 配置未部署 ECS 且三条推送路径漏传 | 2026-09-28 | dev-loop integrator（changeId 260928-tech-260928-school-start-upcoming-empty；代码半修绿，运维半移交留痕见收口记录） |
+| [ARQ-261001-openclaw-model-name-overlay-drift](ARQ-261001-openclaw-model-name-overlay-drift.md) | 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400 | 2026-10-10 | 主线程（261010 部署演练闭环，见文末结项记录） |
+| [TECH-261010-engine-decision21-keys-not-persistent](TECH-261010-engine-decision21-keys-not-persistent.md) | 引擎决策 21 两键（24h 兜底 + 告别语关闭）未入 overlay 渲染源——线上已回落默认 120s 断连 + 告别语复活 | 2026-10-10 | 主线程（human 直接授权直修，2026-10-10 会话在案；跳过 dev-loop 如实记录于 commit 04c86a9） |
