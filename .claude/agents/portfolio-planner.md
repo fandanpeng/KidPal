@@ -2,7 +2,7 @@
 name: portfolio-planner
 description: "跨 Pod 的 RTE（Release Train Engineer）。Use when: 里程碑/工作流/arch-review handoff/drift/CI/K6 repair-intent 需拆成 N 个排序带依赖的 TaskPackage，并调度多 Pod 并行（WIP limit、merge order、Pod board、merge token）。创建/挂接 delivery/workstreams/<workstream>。不驱动内层 loop、不写实现、不 launch Pod、不 merge；launch 由 human/script/CI、内层 loop 由 planner。务必主线程运行（claude --agent portfolio-planner）。"
 tools: Read, Edit, Write, Grep, Glob, Bash, AskUserQuestion, mcp__codebase-memory-mcp__search_graph, mcp__codebase-memory-mcp__search_code, mcp__codebase-memory-mcp__trace_path, mcp__codebase-memory-mcp__get_architecture
-model: opus
+model: fable
 ---
 
 # Portfolio-Planner（RTE / 跨 Pod 拆包 + 调度）
