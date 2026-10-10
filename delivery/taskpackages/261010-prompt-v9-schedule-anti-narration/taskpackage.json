@@ -1,0 +1,90 @@
+{
+  "changeId": "261010-prompt-v9-schedule-anti-narration",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261010-schedule-round-narration-leak.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy",
+  "story": "真机课表问答把模型内部推理（回合判定/文件路径/流程步骤）当语音播出的仓内根治：prompt v9 版本化 bump，课表问答回合行补对称反叙述纪律（v7 修对话行时漏了课表行），防 deepseek-v4-flash 输出风格漂移把 prompt 回合表词汇当工具调用前导文本念出；四面接线同步（CARRIER/provider.config.yaml/apply-xiaozhi-overlay.sh/arch 指针）+ arch §5.5.5 现写 v7 与实际 v8 接线的既有漂移顺带收敛。部署 = v9 + overlay 重跑上 ECS（261010 决策 21 键同款先例）。",
+  "planRef": "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/plan.md",
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
+  "redBaselineResult": "launch prep 实测（命令 = redBaselineCommand 逐字）：139 passed, 4 deselected, 9 subtests passed in 2.07s（@2d94c36，2026-10-10，面域 = server）。零红。含本批新增 test_261010_engine_decision21_overlay_persist 3 齿 + subtests。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "PN-A1: v9 落盘非空 + 首行 ## 角色（无前言结构齿，V7-A1 同形态）",
+    "PN-A2: 课表问答回合行含对称反叙述纪律锚（内容驱动选节、并集窗口不钉措辞——先读 schedule.md 既有锚保持 + 反叙述纪律入窗）",
+    "PN-A3: v8 sha256 零回改齿（V7 形态复刻）",
+    "PN-A4: 三面接线一致 = v9（CARRIER == provider.config 三键 == overlay PROMPT_SRC）",
+    {
+      "id": "PN-A5",
+      "kind": "structural",
+      "note": "live 观测项（非确定性断言，诚实申报）：ECS 部署后真机问明天有什么课——TTS 无回合判定/文件路径/流程步骤类前导叙述（模型风格漂移无法离线断言根治；journalctl + docker logs 双侧逐句对账留痕）"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py"
+  ],
+  "exitCriteria": [
+    "PN-E1: 上列齿全绿 + server 面全量回归零新增红（对基线锚差异判停）",
+    "PN-E2: 契约 docs/contracts/** 零改（contract :184 prompt 意图摘要不涉语音纪律；display 块规则零变）；requirements.md 零改（NFR-SAFE-1 within-spec）",
+    "PN-E3: docs-sync 落地——arch §5.5.5（:297）与 §5.1（:196）现状指针刷 v9，顺带收敛 v7 残留漂移（v8 批漏刷，记入 docs-delta）；server/deploy/README.md prompt 指针节同核",
+    "PN-E4: 历史 v1..v8 文件零回改（PN-A3 钉死）；ECS 部署记录留痕（v9 + overlay 重跑，上传前核远端 == 基线）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/architecture.md#§5.5.5",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER"
+  ],
+  "sourceRefs": [
+    "TECH-261010-schedule-round-narration-leak",
+    "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/plan.md",
+    "server/deploy/openclaw-system-prompt.v8.md",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh"
+  ],
+  "changeManifest": [
+    "server/deploy/openclaw-system-prompt.v9.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "docs/architecture.md",
+    "server/deploy/README.md"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "kind": "regression",
+      "note": "既有冻结件纯 additive 补齿优先走 tighten-only 窗口；需改既有齿语义则正常改验收通道留痕"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": false,
+  "mutationSkipReason": "纯 prompt 文本 bump + 三面指针接线 + docs-sync 指针刷新，无分支/逻辑可 mutation；敏感性由 PN-A1~A4 冻结齿双向断言承载（正钉 v9 纪律锚 + PN-A3 v8 sha256 零回改负锚）。",
+  "adrRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "arch §5.5.5/§5.1 现状指针刷 v9 + 顺带收敛 v7 残留漂移（v8 批漏刷）；README prompt 指针节同核。契约与 requirements 零改（architect review 已核零命中）。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "单面实现变更（server/deploy prompt 族 + 验收 + arch 指针 docs-sync）：不改 wire、不触固件、不触契约与需求面；部署面 = ECS overlay 重跑（261010 决策 21 键同款先例，上传前核远端 == 基线）"
+  },
+  "docsOwner": "integrator",
+  "notes": "已知地雷前置申报：本包验收全为文件内容锚、无 DB/事件断言——若 supervisor 机械闸判 all-mock 触发 riskTier 重算 high → 需 human 放行（先例在案）。reviewed plan = /triage-change 分流（architect 2026-10-10 + human 触点①确认 Lite）。"
+}

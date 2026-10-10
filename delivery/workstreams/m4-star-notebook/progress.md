@@ -232,3 +232,16 @@
 - **未覆盖面申报**：120s sweep 剔词 + 逐句回显/自动收尾/sweep 复活（B2/B3）；收尾后引擎播报（B3）；`_story_finish_on_phrase` 正齿（随 B2/B3 补）；**SAO-E3 真机复验（human 持板）尚未跑、如实标 pending**；固件/跨端 N/A。
 - **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；ESCALATE-human 批后由 planner 主线程 `merge-driver --pod` 本地合并。
 - **遗留 human 项**：① SAO-E3 真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章；串口判据 `stop_rec archive_pend=1` 后出现转写、front 不再 `empty_accum`）；② §5.2④「归档动作等转写到达」文本补正（advisory）随 spec 批交 human；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量（本包无跳变）。
+
+## 2026-10-10 · 261010 真机 bug 批 launch prep（主线程 skill：kidpal-pod-launch-prep；triage 批 = ②Lite + ②Full 串行，launch 按 human 指示 headless 代跑）
+
+- **调度判定**：本批 = 261010 真机使用 bug 台账 dev 面两包（triage 分流 = architect review + human 触点①确认：② `261010-prompt-v9-schedule-anti-narration` 单包 Lite〔mergeOrder 45〕→ ① `261010-device-reconnect-on-server-close` 单包 Full riskTier high〔mergeOrder 46〕，串行接力——同常驻树一树一会话，沿 M1–M4 单常驻树接力棒形态）。两包零文件交集，理论可并行但建/移树决策归 human 未动；perf-k1 空闲树不可复用（常驻分支 dev/260924-perf-k1-roundtrip-latency 压两笔未合 main 的证据/裁定 commit，aa5ec4b 非主谱系，留待 human 裁）。第三包 `261010-p3-storylist-cold-start-restore`（Full + spine 261010-p3-storylist-cold-start）受 launchPreconditions 门控（需求/架构/契约 anchors 未回填）不在本批。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch` 两包结果见下（base-ref = main，随本批 ff 至 prep 制品 commit）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 沿用；main（348c681）落后常驻分支 7 笔（261010 会话治理批：CRQ 登记 ×3 + 决策 21 仓内根治 04c86a9 + 结项 + portfolio 模型 + triage 落盘）且零独有提交 → 纯 ff 同步，无 rebase 无冲突；tracked 净（.codebase-memory 两件 = 索引器常驻脏，AGENTS.md 口径不追交）；固件环境在位（sdkconfig / dependencies.lock / managed_components 软链 / host build 热缓存 ninja no work to do）。
+- **双面基线锚 @ 2d94c36（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **139 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-10；面域 = server）。零红。旧锚 127P @60744cb 作废（决策 21 批新齿 test_261010_engine_decision21_overlay_persist 3 齿 + subtests 入账）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **147 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-10；面域 = firmware；热缓存 no work to do）。零红。与 B1/C prep 锚 147T0F @60744cb 持平（其后 firmware 面零差异）。
+- **建包件**：两包 taskpackage.json 随本批补齐（triage 建包职责：origin regression 型 upstreamRef 指 CRQ 条目 + planRef 回指 sibling plan.md）；check-launch blocking 件 = taskpackage.json 在 base-ref 可及。
+- **board 预填**：两包 queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 45/46（前批 C=44 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（决策 21 批 server/deploy 改动入索引面）。
+- **遗留 human 项**：① 包（device-reconnect）真机轮 human 在场持板 + riskTier high 合并人批为硬前置；② 包（prompt-v9）supervisor 若判 all-mock 需 human 放行 + PN-A5 真机课表问答观测 human 在场；③ 包 spine 上游面（需求面与 REQ-261010-P1 并批 /requirement-change → 契约门 data.restore additive → anchors 回填后 launch）另行推进；perf-k1 树两笔未合 commit 去向待裁。
