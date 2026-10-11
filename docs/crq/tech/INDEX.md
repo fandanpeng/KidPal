@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 20（待拍板 1 / 待触发 13 / 已接受风险 6）；已结 5（归档索引见下）。
+**摘要**：未结 21（待拍板 1 / 待触发 14 / 已接受风险 6）；已结 5（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
 
-## 待触发（13）
+## 待触发（14）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -32,6 +32,7 @@
 | [TECH-261010-device-no-reconnect-on-server-close](TECH-261010-device-no-reconnect-on-server-close.md) | SHOULD | 固件对「服务端主动断连」无自动重连——OnAudioChannelClosed 只进低功耗回 Idle，断线自动重连仅覆盖网络重连事件路径 | 下个动 websocket_protocol / application 会话生命周期的包；与 arch §8「闲置约 3 分钟休眠断连」待裁产品决策（同一推送可达性问题面）合并裁定 |
 | [TECH-261010-p3-storylist-cold-start-empty](TECH-261010-p3-storylist-cold-start-empty.md) | SHOULD | P3 星星记录本冷启动空态——story_list 建连即推被 260928 止血摘除后「进页即见列表」语义重裁至今未做，重启后翻 P3 恒空 | 下个动 story 链路 / P3 页渲染的包；与 REQ-261010-p1-schedule-empty-state 同属「冷启动空态」族，可并批裁定 |
 | [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | SHOULD | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前 |
+| [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
 
 ## 已接受风险（6）
 

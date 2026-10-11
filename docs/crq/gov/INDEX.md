@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 13（待拍板 0 / 待触发 11 / 已接受风险 2）；已结 83（归档索引见下）。
+**摘要**：未结 14（待拍板 0 / 待触发 12 / 已接受风险 2）；已结 83（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（11）
+## 待触发（12）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,6 +28,7 @@ _（无）_
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
 | [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | SHOULD | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 下次动 /arch-change、triage 统一路由面或 arch-review-protocol 的治理批；或 human 专项批 |
 | [ARQ-260928-landing-summary-skeleton-template](ARQ-260928-landing-summary-skeleton-template.md) | SHOULD | landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮 | 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批） |
+| [ARQ-261011-contract-gate-literal-selfquote-false-positive](ARQ-261011-contract-gate-literal-selfquote-false-positive.md) | COULD | 前置升级闸 contract-findings 字面扫描在「自述无 finding」行上误中——review-packet 复述闸字面集的合法行被当成 finding 拦合并 | 下次治理批 / 下个动 pre-merge-escalation-gate.mjs 的批；两次合并（261010 两包）各拦一次，人批凭据已留 pod-events |
 
 ## 已接受风险（2）
 
