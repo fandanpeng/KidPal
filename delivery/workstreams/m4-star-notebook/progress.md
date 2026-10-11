@@ -245,3 +245,16 @@
 - **board 预填**：两包 queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 45/46（前批 C=44 后继）。
 - **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（决策 21 批 server/deploy 改动入索引面）。
 - **遗留 human 项**：① 包（device-reconnect）真机轮 human 在场持板 + riskTier high 合并人批为硬前置；② 包（prompt-v9）supervisor 若判 all-mock 需 human 放行 + PN-A5 真机课表问答观测 human 在场；③ 包 spine 上游面（需求面与 REQ-261010-P1 并批 /requirement-change → 契约门 data.restore additive → anchors 回填后 launch）另行推进；perf-k1 树两笔未合 commit 去向待裁。
+
+## 2026-10-11 · 261011-p1-home-v5-rework launch prep（单包批，requirement v1.61 落地）
+
+- **调度判定**：本批 = 单包 `261011-p1-home-v5-rework`（②单包 Full riskTier high；triage 分流 = architect review + human 触点①三答确认：②单包 Full / preview 数组+空数组语义 / V5 范围收窄知悉）。来源链 = requirement v1.61（S-F1.1 空态 + 明天区改判，档 1 全程走毕 REQ-261010/260916 双销行）→ spine 261011-p1-home-v5-rework → 契约门 CCP HUMAN_APPROVED（preview 多项数组 + 三态语义四触点，先批后落）。串行接力沿常驻树（上一包 device-reconnect 已 merged）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 沿用；main（7d337f6）含 device-reconnect merge 2 笔独有 → 本批**回同步 rebase**（4 笔线性重放 017c542/5478b41/a9bd4db/4a9e87f，零冲突）→ main 纯落后、prep 制品 commit 后 ff。tracked 净、untracked 0；固件环境在位（sdkconfig / dependencies.lock / managed_components 软链 / host build 热缓存）。
+- **双面基线锚 @ 4a9e87f（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **144 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-11；面域 = server）。零红。旧锚 139P @2d94c36 作废（两面差异判停均命中重跑：device-reconnect 批 firmware/server 两面均有改动）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **153 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-11；面域 = firmware；增量编译 boot_auto_connect 齿入链）。零红。旧锚 147T0F @2d94c36 作废（firmware 面 +6 齿）。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch 261011-p1-home-v5-rework --base-ref main` → prep 制品 commit + main ff 后复跑（首轮 blocking = taskpackage.json 未进基准 ref，属时序预期）。
+- **建包件**：taskpackage.json 随本批补齐（triage 建包职责：origin human-ad-hoc 型 upstreamRef 指 spine + planRef 回指 sibling plan.md；字段给值取 architect 分流裁决；acceptance 齿/红基线字段留 acceptance-author 冻结轮回填）。check-launch blocking 件 = taskpackage.json 在 base-ref 可及。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 47（前批 device-reconnect=46 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（requirement/契约/spree prep 制品入索引面）。
+- **遗留 human 项**：① 真机轮 human 在场持板（空态两态 + 明天区多项 + chip「明天」）+ riskTier high 合并人批为硬前置；② headless 启动由主线程代跑（human 2026-10-11 指示「拆好包后准备好环境，然后 headless 启动开发」）；③ spine openQ q4（v1.57 对账注过时勘误候选）另行批。

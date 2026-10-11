@@ -1,0 +1,110 @@
+{
+  "changeId": "261011-p1-home-v5-rework",
+  "rigor": "full",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/changes/intake/261011-p1-home-v5-rework.md",
+    "upstreamFrozen": "spine anchors.req 已回填（requirements v1.61 frozen 2026-10-11，§9 v1.61 行在位 = 定稿载体，commit 谱系见 spine）；anchors.contract 已回填（CONTRACT-CHANGE-PACKET.md HUMAN_APPROVED 2026-10-11，先批后落随包同 PR git apply）；anchors.arch = 不动（无镜像句，architect 取证在案）",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/display + server/gateway",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC2/AC5/AC6/AC7）· 定稿版本号 v1.61（docs/requirements.md §9 v1.61 行 2026-10-11）：P1 首页落地空态话术两态分叉（AC5 无安排「今天接下来没有安排啦」/ AC6 明天区「明天没有什么课喽」+ 上学日由「XX:XX 上学」项承载必然非空 / AC7 数据未达按「有无日程数据」判、不清屏换提示）+ 明天区多项化（preview 单项→数组：学校课合并「上学」+ 课外班 + 临时事件同列、按开始时间升序）+ chip「明早」→「明天」定名（spiffs 资产重烘，V5 重排收窄后剩余项）。契约同步 = CCP 四触点（preview 多项数组 + 三态语义 / 示例值 HH:MM / :155 seam 引用签名 / 变更记录行），HUMAN_APPROVED 先批后落。",
+  "planRef": "delivery/taskpackages/261011-p1-home-v5-rework/plan.md",
+  "redBaselineCommand": "",
+  "redBaselineResult": "launch prep 期基线锚（两面实测 @4a9e87f，2026-10-11，producer 五要素登 progress.md）：server 面 144 passed / 0 failed / 4 deselected / 9 subtests passed exit 0；firmware host 面 153 Tests / 0 Failures / 0 Ignored exit 0。acceptance 冻结齿红基线 = acceptance-author 冻结后实跑回填本字段。",
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "high",
+  "gateProfile": [
+    "contract-drift",
+    "test-quality",
+    "docs-sync"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md:S-F1.1",
+    "S-F1.1-AC2",
+    "S-F1.1-AC5",
+    "S-F1.1-AC6",
+    "S-F1.1-AC7",
+    "delivery/changes/intake/261011-p1-home-v5-rework.md",
+    "delivery/taskpackages/261011-p1-home-v5-rework/CONTRACT-CHANGE-PACKET.md"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F1.1",
+    "docs/ADR.md",
+    "docs/CONTRACT-DECISION-QUEUE.md"
+  ],
+  "changeManifest": [
+    "docs/contracts/interface-contract.md",
+    "server/gateway/schedule.py",
+    "firmware/main/display/home_p1.h",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/home_upcoming.h",
+    "firmware/main/display/home_upcoming.c",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c",
+    "server/tests/test_schedule_producer_units.py",
+    "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
+    "docs/ui/kidpal-ui-design-v5.html",
+    "firmware/main/assets/spiffs_root/p1_chip_mingzao.bin",
+    "firmware/main/assets/spiffs_root/p1_label_mingzao.bin"
+  ],
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "firmware",
+        "path": "firmware/main/display/home_upcoming.c",
+        "symbol": "kidpal_home_upcoming_apply"
+      },
+      {
+        "face": "server",
+        "path": "server/gateway/schedule.py",
+        "symbol": "home_upcoming_payload"
+      }
+    ],
+    "exempt": ""
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "A5 语义权威段 + seam 签名一致性齿 :1037 重钉——超出 tighten-only 窗口，修订授权链 = CCP id + requirements §9 v1.61 行（plan R3），REVISION LOG 留痕"
+    },
+    {
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "inject 调用点 :693/:771 seam 形改适配，同 R3 授权链"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "inject 调用点 :748-791 seam 形改适配，同 R3 授权链"
+    },
+    {
+      "path": "server/tests/test_schedule_producer_units.py",
+      "kind": "revision",
+      "note": "preview 齿 :117-135 改多项形状 + 空数组齿"
+    },
+    {
+      "path": "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
+      "kind": "frozen-revision",
+      "note": "M3K1-A3 frozen shape 齿更新，同 R3 授权链"
+    }
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "adrRequired": true,
+  "adrReason": "preview 形状重定义 + 三态语义 = durable semantics 变化（CCP 收口义务④，ADR 追加裁定行）",
+  "docsSyncRequired": true,
+  "docsSyncReason": "契约 diff 逐字 git apply（CCP §3，CRLF 保全）+ CDQ 行 + docs/crq/tech 记账（cdq: 指针）+ ADR 追加 + architecture-gate-evidence C1/C2/C3 closeout + V5 设计稿母版三处内容级同步——全部归包内 integrator（gate evidence §6/§8 在案）。",
+  "docsOwner": "integrator",
+  "notes": "riskTier high 触发口径（architect triage 裁决 + human 触点①确认）：触契约（CCP 已批）+ 跨固件/云端两子面 + 新增空态行为状态机（AC5/AC6/AC7 三态判据）→ supervisor 对 high 仍升 human，合并须人批；真机轮 human 在场持板为硬前置（app+art 双分区烧录——chip 资产重烘，flash-asset-partition-rule）。冻结件修订授权（plan R3）：acceptance-author 派发 prompt 明示 CCP id + §9 v1.61 行，防 tighten-only 误拦。板端旧单对象 preview 过渡容忍一个版本（CCP 触点②，部署缓冲）。producer 明日无项改发 [] 不再 None（plan R1——不改则 AC6 话术永不触发）。TECH-260928 school_start 同参齿保绿勿重复修（plan R5）。"
+}
