@@ -84,6 +84,52 @@
  *        （smoke 末位序守卫）；protocol 层零触碰（Start() 空桩惰性注释在世 +
  *        IsAudioChannelOpened 的 !IsTimeout() 120s 覆盖式重连既有行为不顺手修）。
  *
+ *   [S7] 本地关分类标记缝（home = firmware/main/protocols/websocket_protocol.h/.cc,
+ *        261010-device-reconnect-on-server-close 包新增; 关闭事件分类的协议层载体）:
+ *     - websocket_protocol.h 新成员 `bool local_close_pending_ = false;`（needle 字面
+ *       不变; 「本地主动关」分类标记）。
+ *     - CloseAudioChannel() 区内 `local_close_pending_ = true;` 置位先于
+ *       websocket_.reset()——reset 析构若回调 OnDisconnected（plan 实现前核项）,
+ *       标记已覆盖析构路径。
+ *     - OpenAudioChannel() 区内 `local_close_pending_ = false;` 清位——每条新连接
+ *       基线 = 非本地关, 上一连接的陈旧标记不污染新连接分类。
+ *     - OnDisconnected lambda 区: 先消费标记（本地关 = Application 主动 close, 不调
+ *       on_audio_channel_closed_ → A 路径零触发）再走服务端/网络侧断分支调回调——
+ *       消费位次先于回调（分类互斥的协议层半）。
+ *     - 全 ws.cc `local_close_pending_ = true` 恰 1 处（分类写点单点 = CloseAudioChannel;
+ *       第二写点 = 分类面被旁路）。
+ *
+ *   [S8] A 路径触发缝（home = application.cc OnAudioChannelClosed lambda 区）:
+ *     - lambda 区内 Schedule 排入 TryStartAutoConnect() 恰 1 处——非本地关 = 服务端/
+ *       网络侧断, 自动重连; 复用既有 AutoConnect task 守卫与退避（零第二条 task）。
+ *     - lambda 区内 OpenAudioChannel( / ScheduleResidentRebuild() 恒 0——连接只经
+ *       既有 AutoConnect task; A 区永不调 B helper（分类互斥的 application 半）。
+ *     - lambda 区内 SetDeviceState( 恰 1 处——既有 Idle 收尾零偏移; 新增即屏显触碰,
+ *       requirements.md:67「重连尝试期间维持 Idle 屏显」语义。
+ *
+ *   [S9] 常驻重建缝（B 路径, home = application.h + application.cc 新私有方法）:
+ *     - application.h 声明 + application.cc 定义 `void ScheduleResidentRebuild();`。
+ *     - application.cc 冻结命名常量 `kResidentRebuildDelayS`，冻结值 = 5（T 秒, plan
+ *       「退避表首档 5s 量级」定值冻结进验收件; 修改须回 planner 重冻结; 定义须为
+ *       该 needle 在 application.cc 的首次出现——定义片段切片判读前提）。
+ *     - helper 区内: 消费 kResidentRebuildDelayS + 排入 TryStartAutoConnect()（复用
+ *       守卫三条件与退避——重建连接只经既有 AutoConnect task）+ 经 Schedule( 回主循环
+ *       （判+起在主循环上下文, 与 K6 [S1] 判设同源）; 区内 OpenAudioChannel( /
+ *       kAutoConnectBackoffS / SetDeviceState( 恒 0——零第二条重连路径 / 零新退避
+ *       消费 / 屏显零触碰。
+ *     - 三个会话收尾类本地关调用点（plan 归类表: application.cc :805
+ *       Application::CloseAudioChannel（K3 [S5] 录音态丢弃面）/:849
+ *       HandleToggleChatEvent Listening 分支/:1189 WakeWordInvoke Listening 分支;
+ *       builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰
+ *       1 次; 各区 TryStartAutoConnect() 恒 0（触发只经 helper——同点直调 = 双触发）。
+ *       全 application.cc ScheduleResidentRebuild() 恰 4 处（定义 + 三调用点, 零泄漏）。
+ *
+ *   [S10] 五负锚路径（plan 归类表零重建类）: HandleNetworkDisconnectedEvent（:422
+ *       网络断关, 恢复走既有 K6 触发点 2）/ Reboot（:1081）/ UpgradeFirmware（:1100
+ *       OTA）/ SetAecMode（:1254）/ ResetProtocol（:1267）五函数区内
+ *       ScheduleResidentRebuild() 与 TryStartAutoConnect() 恒 0; 各区既有 close 语义
+ *       token 在世锚（既有语义零偏移）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: K6-A1 自动建连缝正锚 -> test 1（守卫入口三条件 token + 双触发点接线 +
@@ -115,6 +161,25 @@
  *             避开 IsTimeout 120s 路径；③server 宕机开机静默零错误卡、此后人工建连
  *             可用；④AutoConnect task 栈高水位无溢出）。挂设备轮窗口，human 在场，
  *             不阻塞 Pod（K6-E3）。
+ *   coverage: RC-A1 服务端断自动重连 -> test 7（[S7] 分类标记三态: 置位先于 reset /
+ *             清位 / 消费先于回调 + [S8] A 区 Schedule TryStartAutoConnect 恰一次;
+ *             既有 Idle 收尾零偏移锚）。真机半（服务端断退避窗内自发 hello 建连序列 +
+ *             P1 屏显不变）= deferred 设备轮（RC-A4）。
+ *   coverage: RC-A2 分类互斥 -> test 8（分类写点单点 + OnDisconnected 消费先于回调 +
+ *             A 区零 ScheduleResidentRebuild + 三会话收尾点零直调缝 + 全文件 helper
+ *             恰 4 处）。真机半 = deferred 设备轮（RC-B4/B5 对账）。
+ *   coverage: RC-A3 复用守卫 -> test 9（B helper 区复用 TryStartAutoConnect + 经
+ *             Schedule( 回主循环 + 零 OpenAudioChannel/零退避消费/零 SetDeviceState
+ *             + kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel）。
+ *   coverage: RC-B1 永不休眠 -> test 10（板级文件零休眠接线 needle + 直连 sleep API
+ *             零命中 + common 层休眠入口文件在世 canary + CanEnterSleepMode 既有门
+ *             在世）。设计态绿（现状结构事实钉死; 变异敏感 = 板级加接线即红）。
+ *   coverage: RC-B2 常驻重建 -> test 11（T=5 冻结进首定义片段 + 三会话收尾点各恰
+ *             一次 + 各区既有 close token 零偏移锚）。真机半（收尾 T 秒内重建、跨夜
+ *             提醒可达）= deferred 设备轮（RC-B4）。
+ *   coverage: RC-B3 负锚 -> test 12（五路径零重建排程 + 既有 close token 在世）。
+ *             实现前 trivially green（负锚在 B 缝在世后才承载）; 变异敏感 = 任一负锚
+ *             区新增重建排程即红。
  *
  * ---------------------------------------------------------------------------
  * 强度申报（契约条目 -> 承载齿 -> 性质档；acceptance-evidence T2 纪律）:
@@ -144,6 +209,21 @@
  *   K6-A6 回归 -> 机制级（注册序 + protocol 零触碰文本锚）; 行为等价假设（显式化）:
  *     「Start() 空桩注释在世 ≙ protocol 层零触碰」——廉价文本卫兵，主承载 = 通道①
  *     既有齿全绿零偏移（行为面）。
+ *   RC-A1/A2/B2 -> 机制级（分类标记置位/清位/消费位次 + 触发点接线恰一次计数）+
+ *     源锚代理（既有语义 token 在世）; 弱于契约处缺口（显式挂账）: ①「同一关闭事件
+ *     恰归一类」的运行时判定（reset 析构是否回调 OnDisconnected、异步时序）host 扫描
+ *     不可证 = verifier 逐点核对 + RC-A4/B4 真机窗; ②「T 秒内重建」的实时节奏 host
+ *     不钉（K5 留根②纪律: 钉 T 定值冻结 = 5, 节奏归真机 RC-B4）; ③「判+起在主循环
+ *     上下文」由 helper 区 Schedule( 在世承载文本级, 完全兜底 = verifier 核对调用栈。
+ *   RC-A3 -> 机制级（复用缝 needle + 负 needle: 零新退避消费 / 零直连
+ *     OpenAudioChannel( / 零 SetDeviceState(）; 屏显零触碰的完全证明 =
+ *     requirements.md:67 真机回归（RC-A4）。
+ *   RC-B1 -> 源锚代理（结构事实钉死; 板级零休眠接线是「永不休眠」的编译面载体）。
+ *     行为等价假设（显式化）: 「板级零休眠接线 且 common 层入口不接 ≙ 永不休眠」
+ *     ——若板级任何代码 include sleep/power_save 头或起 timer, needle 红; Wi-Fi
+ *     modem 省电档兼容性不在本齿面（RC-B6 观测项, 结论进 docs-delta）。
+ *   RC-B3 -> 负锚机制级（五区零重建 needle）; 实现前 trivially green 申报: 负锚齿在
+ *     B 缝在世前不承载, 变异敏感 = 任一区加排程即红。
  *
  * ---------------------------------------------------------------------------
  * DEFERRED（真机半 + 相位义务，不阻塞 host 半收口）:
@@ -157,6 +237,12 @@
  *   - mutation 实跑: mutationEvidence.perAcceptance 六条 expectedRed 补跑（builder/
  *     收尾相位），原始输出逐 acceptance 落 delivery/taskpackages/
  *     260923-m3-k6-boot-auto-connect/mutation-evidence/（K5 留根欠账①）。
+ *   - RC-A4 / RC-B4 / RC-B5 / RC-B6（261010 包真机轮, taskpackage acceptance[] 登记,
+ *     human 在场持板）: host 侧零齿、不伪造 host 证据。RC-A4 服务端断退避窗内自发
+ *     hello 建连序列 + P1 屏显不变; RC-B4 会话收尾 T 秒内常驻重建 + 跨夜静置提醒
+ *     可达（front/引擎无 alert_skip no_online_device）; RC-B5 复用通道会话回归
+ *     （story ctx + reminder 四态 + 引导态演出既有齿真机回归）; RC-B6 Idle 常驻
+ *     modem 档位/keepalive 观测（结论进 docs-delta）。
  *
  * ---------------------------------------------------------------------------
  * BUILDER DUTY 清单（接线 + 实现落点，HOST_TEST_CONVENTIONS.md [C4.2] 约定）:
@@ -221,6 +307,10 @@
 #define KAC_HOST_CML  "firmware/main/test/host_app/main/CMakeLists.txt"
 #define KAC_REQ_MD    "docs/requirements.md"
 #define KAC_CONTRACT  "docs/contracts/interface-contract.md"
+#define KAC_WS_H      "firmware/main/protocols/websocket_protocol.h"
+#define KAC_BOARD_CC  "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
+#define KAC_SLEEP_CC  "firmware/main/boards/common/sleep_timer.cc"
+#define KAC_PST_CC    "firmware/main/boards/common/power_save_timer.cc"
 
 #define KAC_MAX_PATH 1024
 #define KAC_MAX_READ (8u * 1024u * 1024u)
@@ -239,6 +329,15 @@
 #define KAC_SEAM_FN_ND         "void Application::TryStartAutoConnect()"
 #define KAC_SEAM_CALL_ND       "TryStartAutoConnect()"
 #define KAC_BACKOFF_ND         "kAutoConnectBackoffS"
+
+/* RC 批 needle（261010-device-reconnect-on-server-close 包新增; 值 = 2026-10-11
+ * 冻结基线逐 needle 实证——`local_close_pending_` / `ScheduleResidentRebuild` /
+ * `kResidentRebuildDelayS` 全仓零命中, 2026-10-11 grep 实证 = 设计态红前提）。 */
+#define KAC_LC_PENDING_ND      "local_close_pending_"
+#define KAC_B_HELPER_ND        "ScheduleResidentRebuild"
+#define KAC_B_HELPER_CALL_ND   "ScheduleResidentRebuild()"
+#define KAC_B_HELPER_FN_ND     "void Application::ScheduleResidentRebuild()"
+#define KAC_REBUILD_DELAY_ND   "kResidentRebuildDelayS"
 
 static char kac_root[KAC_MAX_PATH];
 static int kac_root_ready;
@@ -971,6 +1070,454 @@ TEST_CASE("开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6
         "（K6-E2: protocol.h 接口签名零改, 违反须回 triage 升 Full）");
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 7 — RC-A1 服务端断自动重连排程（[S7] 本地关分类标记 + [S8] A 路径触发）。
+ * MUST-STAY-GREEN 半：扫描器自检 + OnAudioChannelClosed lambda 区既有语义锚在世
+ * （SetPowerSaveLevel + SetDeviceState( 恰 1 = 既有 Idle 收尾零偏移）。
+ * RED today：local_close_pending_ 全仓零命中（设计态红前提, 2026-10-11 grep 实证）
+ * + A 区零 TryStartAutoConnect（根因现状在世: OnAudioChannelClosed 仅收尾零重连）。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-A1 -- 非本地关（服务端断）→ 自动重连排程在场：websocket_protocol 本地关分类标记三态（CloseAudioChannel 置位先于 reset / OpenAudioChannel 清位 / OnDisconnected 消费先于回调）+ OnAudioChannelClosed lambda 区 Schedule TryStartAutoConnect 恰一次（既有 Idle 收尾零偏移锚） */
+TEST_CASE("断线重连常驻: 服务端断自动重连排程 (RC-A1)",
+          "[boot_auto_connect][RC-A1][structural]")
+{
+    char *a_region, *lc_region, *open_region, *dis_region;
+    const char *p_m, *p_c, *p_set, *p_reset;
+    int n;
+
+    KAC_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN, 扫描器自检): 新增扫描面可读（websocket_protocol.h +
+     * 板级文件; 防假绿）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kac_exists(KAC_WS_H) && kac_exists(KAC_BOARD_CC),
+        "RC RED(infra): scanner cannot see known-good files — 扫描器失灵");
+
+    /* tooth 2 (MUST-STAY-GREEN): A 区（OnAudioChannelClosed lambda 区）可切 + 既有
+     * 语义锚在世——SetPowerSaveLevel 在世 + SetDeviceState( 恰 1（既有 Idle 收尾;
+     * RC-A3 屏显零触碰的基线载体: 重连触发区新增状态迁移即 2 → 红）。 */
+    a_region = kac_region_between(KAC_APP_CC,
+                                  "protocol_->OnAudioChannelClosed(",
+                                  "protocol_->OnIncomingJson(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(a_region,
+        "RC-A1 RED(infra): OnAudioChannelClosed lambda 区切取失败——锚漂移须复核"
+        "（禁整 lambda 退役绕过）");
+    TEST_ASSERT_TRUE_MESSAGE(kac_contains(a_region, "SetPowerSaveLevel"),
+        "RC-A1 RED: A 区 SetPowerSaveLevel 既有收尾锚丢失——既有语义零偏移义务破");
+    n = kac_count_in_slice(a_region, "SetDeviceState(");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kac_fm("RC-A1 RED: A 区 SetDeviceState( = %d 处（冻结基线恰 1 = 既有 Idle "
+               "收尾）——重连触发区新增状态迁移 = 屏显触碰（requirements.md:67 语义, "
+               "重连尝试期间维持 Idle 屏显）", n));
+
+    /* tooth 3 (RED today): websocket_protocol.h 声明本地关标记 local_close_pending_。 */
+    TEST_ASSERT_TRUE_MESSAGE(kac_file_contains(KAC_WS_H, KAC_LC_PENDING_ND),
+        "RC-A1 RED: websocket_protocol.h 无 local_close_pending_ 成员——本地主动关"
+        "分类标记未落（[S7]; 服务端断与本地关不可分 = 分类互斥无从谈起）");
+
+    /* tooth 4 (RED today): CloseAudioChannel 区置位先于 websocket_.reset()（reset
+     * 析构若回调 OnDisconnected, 标记须覆盖析构路径——plan 实现前核项的结构解）。 */
+    lc_region = kac_region_between(KAC_WS_CC,
+                                   "void WebsocketProtocol::CloseAudioChannel()",
+                                   "bool WebsocketProtocol::OpenAudioChannel()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(lc_region,
+        "RC-A1 RED(infra): CloseAudioChannel 函数区切取失败——锚漂移须复核");
+    p_set = lc_region != NULL ? strstr(lc_region, KAC_LC_PENDING_ND) : NULL;
+    p_reset = lc_region != NULL ? strstr(lc_region, "websocket_.reset()") : NULL;
+    TEST_ASSERT_TRUE_MESSAGE(p_set != NULL && p_reset != NULL && p_set < p_reset,
+        "RC-A1 RED: CloseAudioChannel 未在 websocket_.reset() 之前置位 "
+        "local_close_pending_——析构路径回调时分类标记未覆盖（本地关误判服务端断, "
+        "重连风暴入口）");
+    free(lc_region);
+
+    /* tooth 5 (RED today): OpenAudioChannel 区清位——每条新连接基线 = 非本地关, 陈旧
+     * 标记不污染新连接分类。 */
+    open_region = kac_region_between(KAC_WS_CC,
+                                     "bool WebsocketProtocol::OpenAudioChannel()",
+                                     "std::string WebsocketProtocol::GetHelloMessage()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(open_region,
+        "RC-A1 RED(infra): OpenAudioChannel 函数区切取失败——锚漂移须复核");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kac_contains(open_region, "local_close_pending_ = false"),
+        "RC-A1 RED: OpenAudioChannel 区无 local_close_pending_ = false 清位——新连接"
+        "分类基线未复位（陈旧标记 = 建连后被误判本地关, A 路径失效）");
+    free(open_region);
+
+    /* tooth 6 (RED today): OnDisconnected lambda 区先消费标记再走回调分支（本地关
+     * 不调 on_audio_channel_closed_ → A 路径零触发; 服务端/网络侧断回调在世）——
+     * 消费位次先于回调（分类互斥的协议层半, [S7]）。 */
+    dis_region = kac_region_between(KAC_WS_CC,
+                                    "websocket_->OnDisconnected(",
+                                    "ESP_LOGI(TAG, \"Connecting to websocket server");
+    TEST_ASSERT_NOT_NULL_MESSAGE(dis_region,
+        "RC-A1 RED(infra): OnDisconnected lambda 区切取失败——锚漂移须复核");
+    TEST_ASSERT_TRUE_MESSAGE(kac_contains(dis_region, KAC_LC_PENDING_ND) &&
+                                 kac_contains(dis_region, "on_audio_channel_closed_"),
+        "RC-A1 RED: OnDisconnected 区无 local_close_pending_ 消费 + "
+        "on_audio_channel_closed_ 回调——关闭事件分类未落协议层");
+    p_m = dis_region != NULL ? strstr(dis_region, KAC_LC_PENDING_ND) : NULL;
+    p_c = dis_region != NULL ? strstr(dis_region, "on_audio_channel_closed_") : NULL;
+    TEST_ASSERT_TRUE_MESSAGE(p_m != NULL && p_c != NULL && p_m < p_c,
+        "RC-A1 RED: OnDisconnected 区标记消费未先于回调——本地关会触发 "
+        "on_audio_channel_closed_（分类互斥破: 同一关闭事件双类入口）");
+    free(dis_region);
+
+    /* tooth 7 (RED today): A 区 Schedule 排入 TryStartAutoConnect() 恰 1 次——非本地
+     * 关（服务端/网络侧断）自动重连; 复用既有 AutoConnect task 守卫与退避（零第二条
+     * task）。 */
+    n = kac_count_in_slice(a_region, KAC_SEAM_CALL_ND);
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kac_fm("RC-A1 RED: A 区 TryStartAutoConnect( = %d 处（冻结恰 1）——服务端断"
+               "自动重连排程缺席（0 = 根因现状在世）或多排程（不双触发破）", n));
+    TEST_ASSERT_TRUE_MESSAGE(kac_contains(a_region, "Schedule("),
+        "RC-A1 RED: A 区无 Schedule(——重连排程脱离主循环统一派发（回调线程纪律）");
+
+    free(a_region);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 8 — RC-A2 分类互斥（同一关闭事件恰归一类、不双触发）。
+ * MUST-STAY-GREEN 半：三会话收尾点区 + A 区 + OnDisconnected 区可切（锚在世）。
+ * RED today：分类写点计数 0 ≠ 1（标记未落）。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 4 处（定义 + 三调用点, 零泄漏面） */
+TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
+          "[boot_auto_connect][RC-A2][structural]")
+{
+    static const struct {
+        const char *start;
+        const char *end;
+        const char *label;
+    } sites[] = {
+        { "void Application::CloseAudioChannel()",
+          "void Application::HandleToggleChatEvent()", "CloseAudioChannel(:805)" },
+        { "void Application::HandleToggleChatEvent()",
+          "void Application::HandleStartListeningEvent()",
+          "ToggleChat Listening(:849)" },
+        { "void Application::WakeWordInvoke(",
+          "bool Application::CanEnterSleepMode()", "WakeWordInvoke Listening(:1189)" },
+    };
+    char *region;
+    const char *p_m, *p_c;
+    int n;
+    size_t i;
+
+    KAC_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN): 三会话收尾点区可切。 */
+    for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
+        region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            kac_fm("RC-A2 RED(infra): %s 函数区切取失败——锚漂移须复核", sites[i].label));
+        free(region);
+    }
+
+    /* tooth 2 (RED today): 分类写点单点——ws.cc `local_close_pending_ = true` 恰 1
+     * （唯一写点 = CloseAudioChannel; 第二写点 = 分类面被旁路）。 */
+    n = kac_count_in_file(KAC_WS_CC, "local_close_pending_ = true");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kac_fm("RC-A2 RED: ws.cc local_close_pending_ = true = %d 处（冻结恰 1 = "
+               "CloseAudioChannel 单点）——分类写点多点 = 关闭事件分类面被旁路", n));
+
+    /* tooth 3 (RED today): OnDisconnected 消费先于回调（与 TEST 7 tooth 6 互为独立
+     * 承载; 本齿 = 互斥判定位次钉）。 */
+    region = kac_region_between(KAC_WS_CC, "websocket_->OnDisconnected(",
+                                "ESP_LOGI(TAG, \"Connecting to websocket server");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "RC-A2 RED(infra): OnDisconnected 区切取失败——锚漂移须复核");
+    p_m = region != NULL ? strstr(region, KAC_LC_PENDING_ND) : NULL;
+    p_c = region != NULL ? strstr(region, "on_audio_channel_closed_") : NULL;
+    TEST_ASSERT_TRUE_MESSAGE(p_m != NULL && p_c != NULL && p_m < p_c,
+        "RC-A2 RED: OnDisconnected 区标记消费未先于 on_audio_channel_closed_ 回调"
+        "——本地关与服务端断同走回调 = 同一关闭事件双类（互斥破）");
+    free(region);
+
+    /* tooth 4 (guard, B 缝在世后承载): A 区零 ScheduleResidentRebuild——A 触发区永不
+     * 调 B helper（非本地关路径不产生常驻重建触发）。 */
+    region = kac_region_between(KAC_APP_CC, "protocol_->OnAudioChannelClosed(",
+                                "protocol_->OnIncomingJson(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region, "RC-A2 RED(infra): A 区切取失败");
+    n = kac_count_in_slice(region, KAC_B_HELPER_CALL_ND);
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kac_fm("RC-A2 RED: A 区出现 ScheduleResidentRebuild = %d 处——服务端断路径调 "
+               "B helper（分类互斥破: 非本地关触发常驻重建）", n));
+    free(region);
+
+    /* tooth 5 (guard, B 缝在世后承载): 三会话收尾点零直调 TryStartAutoConnect——触发
+     * 只经 helper（同点直调 = 双触发入口, 恰归一类破）。 */
+    for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
+        region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            kac_fm("RC-A2 RED(infra): %s 函数区切取失败（tooth 5）", sites[i].label));
+        n = kac_count_in_slice(region, KAC_SEAM_CALL_ND);
+        TEST_ASSERT_TRUE_MESSAGE(n == 0,
+            kac_fm("RC-A2 RED: %s 区直调 TryStartAutoConnect = %d 处——会话收尾点绕过 "
+                   "B helper 双触发（恰归一类破）", sites[i].label, n));
+        free(region);
+    }
+
+    /* tooth 6 (RED today): 全 application.cc ScheduleResidentRebuild() 恰 4 处
+     * （定义 + 三调用点; 泄漏到其它路径 = 分类面破）。 */
+    n = kac_count_in_file(KAC_APP_CC, KAC_B_HELPER_CALL_ND);
+    TEST_ASSERT_TRUE_MESSAGE(n == 4,
+        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（冻结恰 4: "
+               "定义 + 三会话收尾点）——触发点泄漏或缺失", n));
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 9 — RC-A3 重连复用 TryStartAutoConnect（零第二条 task / 零新退避表 / 屏显
+ * 零触碰）。
+ * MUST-STAY-GREEN 半：A 区既有零直连 OpenAudioChannel(（现状即绿）。
+ * RED today：B helper 未实现（声明/定义/常量全零命中）。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-A3 -- 重连复用 TryStartAutoConnect：B helper 区消费 kResidentRebuildDelayS + 排入 TryStartAutoConnect + 经 Schedule( 回主循环 + 区内 OpenAudioChannel(/kAutoConnectBackoffS/SetDeviceState( 恒 0（零第二条重连路径 / 零新退避消费 / 屏显零触碰）+ kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel（连接只经既有 AutoConnect task） */
+TEST_CASE("断线重连常驻: 重连复用守卫 (RC-A3)",
+          "[boot_auto_connect][RC-A3][structural]")
+{
+    char *region, *helper;
+    int n;
+
+    KAC_REQUIRE_ROOT();
+
+    /* tooth 1 (RED today): B helper 声明 + 定义在世。 */
+    TEST_ASSERT_TRUE_MESSAGE(kac_file_contains(KAC_APP_H, KAC_B_HELPER_ND),
+        "RC-A3 RED: application.h 无 ScheduleResidentRebuild 声明——常驻重建缝未落"
+        "（[S9]; 会话收尾类本地关零重建 = 根因现状在世）");
+    TEST_ASSERT_TRUE_MESSAGE(kac_file_contains(KAC_APP_CC, KAC_B_HELPER_FN_ND),
+        "RC-A3 RED: application.cc 无 void Application::ScheduleResidentRebuild() "
+        "定义——常驻重建缝未实现");
+
+    /* tooth 2 (RED today): helper 区可切 + 复用守卫在世——消费 kResidentRebuildDelayS
+     * + 排入 TryStartAutoConnect() + 经 Schedule( 回主循环（判+起与 K6 [S1] 同源）。 */
+    helper = kac_region_member_fn(KAC_APP_CC, KAC_B_HELPER_FN_ND);
+    TEST_ASSERT_NOT_NULL_MESSAGE(helper,
+        "RC-A3 RED(infra): ScheduleResidentRebuild 函数区切取失败——形态漂移须复核"
+        "（禁改名绕过）");
+    TEST_ASSERT_TRUE_MESSAGE(kac_contains(helper, KAC_REBUILD_DELAY_ND) &&
+                                 kac_contains(helper, KAC_SEAM_CALL_ND) &&
+                                 kac_contains(helper, "Schedule("),
+        "RC-A3 RED: ScheduleResidentRebuild 区未同时消费 kResidentRebuildDelayS + 排入 "
+        "TryStartAutoConnect + 经 Schedule( 回主循环——常驻重建未复用既有守卫与退避"
+        "（第二条重连路径入口）或判+起脱离主循环上下文");
+
+    /* tooth 3 (RED today, 复用负 needle): helper 区零 OpenAudioChannel( / 零
+     * kAutoConnectBackoffS / 零 SetDeviceState(——连接只经既有 AutoConnect task,
+     * 重试退避只消费既有表, 屏显零触碰。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(helper, "OpenAudioChannel(") == NULL &&
+            strstr(helper, KAC_BACKOFF_ND) == NULL &&
+            strstr(helper, "SetDeviceState(") == NULL,
+        "RC-A3 RED: ScheduleResidentRebuild 区出现 OpenAudioChannel( / "
+        "kAutoConnectBackoffS / SetDeviceState(——第二条重连路径 / 新退避消费 / "
+        "屏显触碰（[S9] 负 needle 破）");
+
+    /* tooth 4 (RED today): kResidentRebuildDelayS 定义 + 消费 >= 2 处（[S9] 冻结命名
+     * 缝, 与 K5 kidpal_ts_* / K6 kAutoConnectBackoffS 命名常量先例同款）。 */
+    n = kac_count_in_file(KAC_APP_CC, KAC_REBUILD_DELAY_ND);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kac_fm("RC-A3 RED: kResidentRebuildDelayS 在 application.cc 仅 %d 处（下界 2: "
+               "定义 + helper 消费）——T 秒延迟常量未落", n));
+
+    /* tooth 5 (MUST-STAY-GREEN, 既有语义零偏移): A 区零 OpenAudioChannel(——A 路径
+     * 连接也只经既有 AutoConnect task（既有 4 人工 call site 不减由 K6-A5 承载）。 */
+    region = kac_region_between(KAC_APP_CC, "protocol_->OnAudioChannelClosed(",
+                                "protocol_->OnIncomingJson(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region, "RC-A3 RED(infra): A 区切取失败");
+    n = kac_count_in_slice(region, "OpenAudioChannel(");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kac_fm("RC-A3 RED: A 区出现 OpenAudioChannel( = %d 处——服务端断路径绕过 "
+               "AutoConnect task 直连（守卫与退避被旁路, 第二条重连路径）", n));
+    free(region);
+
+    free(helper);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 10 — RC-B1 永不休眠结构事实（板级零休眠接线 needle; 设计态绿——现状结构
+ * 事实钉死, 变异敏感 = 板级加休眠接线即红）。
+ * MUST-STAY-GREEN：全部（设计态绿申报: 零接线是现状事实, 齿的作用 = 钉死不回潮;
+ * 强度申报见头注 RC-B1 行）。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-B1 -- 永不休眠结构事实：板级文件零休眠 timer 接线（power_save_timer / sleep_timer / OnEnterSleepMode / OnEnterLightSleepMode 零命中）+ 直连 sleep API 零命中（esp_light_sleep_start / esp_deep_sleep_start / esp_sleep_enable）+ common 层休眠入口源文件在世 canary（零命中非 vacuous）+ Application::CanEnterSleepMode 既有休眠门在世零偏移 */
+TEST_CASE("断线重连常驻: 永不休眠结构事实 (RC-B1)",
+          "[boot_auto_connect][RC-B1][structural]")
+{
+    static const char *const sleep_needles[] = {
+        "power_save_timer", "sleep_timer", "OnEnterSleepMode",
+        "OnEnterLightSleepMode", "esp_light_sleep_start", "esp_deep_sleep_start",
+        "esp_sleep_enable"
+    };
+    char *sleep_gate;
+    size_t i;
+    int n;
+
+    KAC_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN, canary): common 层休眠入口源文件在世——证明板级零
+     * 命中非 vacuous（缝在树上, 只是本板不接 = 编译面不可达留痕）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kac_exists(KAC_SLEEP_CC) && kac_exists(KAC_PST_CC),
+        "RC-B1 RED(infra): boards/common 休眠入口源文件缺席——扫描器失灵或 common 层"
+        "被重构（canary 失效 = 板级零命中断言 vacuous 风险）");
+
+    /* tooth 2 (设计态绿, 结构事实钉死): 板级文件零休眠接线（include/实例化/回调接线/
+     * 直连 sleep API 全族零命中; 「永不休眠」= human 2026-10-10 触点①裁定）。 */
+    for (i = 0; i < sizeof(sleep_needles) / sizeof(sleep_needles[0]); i++) {
+        n = kac_count_in_file(KAC_BOARD_CC, sleep_needles[i]);
+        TEST_ASSERT_TRUE_MESSAGE(n == 0,
+            kac_fm("RC-B1 RED: 板级文件出现休眠接线 needle \"%s\" = %d 处——「永不"
+                   "休眠」（决策 29）破: 板级休眠路径在接线面可达, 须回 planner 重冻结",
+                   sleep_needles[i], n));
+    }
+
+    /* tooth 3 (MUST-STAY-GREEN): Application::CanEnterSleepMode 既有休眠门零偏移
+     * （Idle + 通道未开条件在世; 本包零触碰面, 漂移须复核）。 */
+    sleep_gate = kac_region_member_fn(KAC_APP_CC,
+                                      "bool Application::CanEnterSleepMode()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(sleep_gate,
+        "RC-B1 RED(infra): CanEnterSleepMode 函数区切取失败——锚漂移须复核");
+    TEST_ASSERT_TRUE_MESSAGE(kac_contains(sleep_gate, "kDeviceStateIdle") &&
+                                 kac_contains(sleep_gate, "IsAudioChannelOpened"),
+        "RC-B1 RED: CanEnterSleepMode 既有休眠门条件缺失——既有语义零偏移义务破");
+    free(sleep_gate);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 11 — RC-B2 会话收尾常驻重建（T = 5 冻结 + 三调用点恰一次 + 既有语义零偏移）。
+ * MUST-STAY-GREEN 半：三调用点区既有 close token 在世（现状即绿）。
+ * RED today：kResidentRebuildDelayS / ScheduleResidentRebuild 全仓零命中。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-B2 -- 会话收尾类本地关 → T 秒内恰一次常驻重建排程：kResidentRebuildDelayS 首定义片段含 5（T 冻结值, 改值须回 planner 重冻结）+ 定义消费下界 + 三会话收尾点（:805/:849/:1189 plan 归类表, builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰 1 + 各区既有 close token 零偏移锚 */
+TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
+          "[boot_auto_connect][RC-B2][structural]")
+{
+    static const struct {
+        const char *start;
+        const char *end;
+        const char *label;
+        const char *existing_token;
+    } sites[] = {
+        { "void Application::CloseAudioChannel()",
+          "void Application::HandleToggleChatEvent()",
+          "CloseAudioChannel(:805)", "protocol_->CloseAudioChannel()" },
+        { "void Application::HandleToggleChatEvent()",
+          "void Application::HandleStartListeningEvent()",
+          "ToggleChat Listening(:849)", "protocol_->CloseAudioChannel()" },
+        { "void Application::WakeWordInvoke(",
+          "bool Application::CanEnterSleepMode()",
+          "WakeWordInvoke Listening(:1189)", "CloseAudioChannel()" },
+    };
+    char *region, *def;
+    const char *p5;
+    int n;
+    size_t i;
+
+    KAC_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN): 三调用点区既有 close token 在世——既有语义零偏移
+     * （:805 = K3 [S5] 录音态丢弃面, :849 = toggle 收尾, :1189 = 唤醒词收尾）。 */
+    for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
+        region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            kac_fm("RC-B2 RED(infra): %s 函数区切取失败——锚漂移须复核", sites[i].label));
+        TEST_ASSERT_TRUE_MESSAGE(kac_contains(region, sites[i].existing_token),
+            kac_fm("RC-B2 RED: %s 区既有 close token 丢失——既有语义零偏移义务破",
+                   sites[i].label));
+        free(region);
+    }
+
+    /* tooth 2 (RED today): T 冻结——kResidentRebuildDelayS 首定义片段含 5（plan
+     * 「退避表首档 5s 量级」定值; 定义须为该 needle 首次出现, [S9]）。 */
+    def = kac_region_between(KAC_APP_CC, KAC_REBUILD_DELAY_ND, ";");
+    TEST_ASSERT_NOT_NULL_MESSAGE(def,
+        "RC-B2 RED: application.cc 无 kResidentRebuildDelayS 定义——常驻重建 T 秒"
+        "延迟常量未落（[S9]）");
+    p5 = def != NULL ? strstr(def, "5") : NULL;
+    TEST_ASSERT_TRUE_MESSAGE(p5 != NULL,
+        "RC-B2 RED: kResidentRebuildDelayS 首定义片段不含 5——T 值偏离冻结值 5"
+        "（退避表首档 5s 量级; 偏离回 planner 重冻结）");
+    free(def);
+
+    /* tooth 3 (RED today): 定义 + helper 消费 >= 2 处。 */
+    n = kac_count_in_file(KAC_APP_CC, KAC_REBUILD_DELAY_ND);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kac_fm("RC-B2 RED: kResidentRebuildDelayS 在 application.cc 仅 %d 处（下界 2: "
+               "定义 + helper 消费）——T 常量未接重建路径", n));
+
+    /* tooth 4 (RED today): 三调用点各调 ScheduleResidentRebuild() 恰 1 次。 */
+    for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
+        region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            kac_fm("RC-B2 RED(infra): %s 函数区切取失败（tooth 4）", sites[i].label));
+        n = kac_count_in_slice(region, KAC_B_HELPER_CALL_ND);
+        TEST_ASSERT_TRUE_MESSAGE(n == 1,
+            kac_fm("RC-B2 RED: %s 区 ScheduleResidentRebuild() = %d 处（冻结恰 1）——"
+                   "会话收尾常驻重建排程缺席（0 = 根因现状）或多次（不双触发破）",
+                   sites[i].label, n));
+        free(region);
+    }
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 12 — RC-B3 负锚：五条零重建路径（网络断关/Reboot/OTA/AEC/ResetProtocol）。
+ * MUST-STAY-GREEN：全部（负锚实现前 trivially green 申报——B 缝在世前不承载, 见头注
+ * 强度申报 RC-B3 行; 变异敏感 = 任一负锚区新增重建排程即红）。
+ * ------------------------------------------------------------------------ */
+/* coverage: RC-B3 -- 网络断关(:422)/Reboot(:1081)/OTA(:1100)/AEC 切换(:1254)/ResetProtocol(:1267) 五路径零重建排程（ScheduleResidentRebuild 与 TryStartAutoConnect 恒 0）+ 各路径既有 close 语义 token 在世（既有语义零偏移锚; 网络断关恢复走既有 K6 触发点 2, 不自发重建） */
+TEST_CASE("断线重连常驻: 负锚五路径零重建 (RC-B3)",
+          "[boot_auto_connect][RC-B3][structural]")
+{
+    static const struct {
+        const char *start;
+        const char *end;
+        const char *label;
+        const char *existing_token;
+    } paths[] = {
+        { "void Application::HandleNetworkDisconnectedEvent()",
+          "void Application::HandleActivationDoneEvent()",
+          "NetworkDisconnected(:422)", "protocol_->CloseAudioChannel()" },
+        { "void Application::Reboot()",
+          "bool Application::UpgradeFirmware(",
+          "Reboot(:1081)", "protocol_.reset()" },
+        { "bool Application::UpgradeFirmware(",
+          "void Application::WakeWordInvoke(",
+          "UpgradeFirmware(:1100)", "protocol_->CloseAudioChannel()" },
+        { "void Application::SetAecMode(",
+          "void Application::PlaySound(",
+          "SetAecMode(:1254)", "protocol_->CloseAudioChannel()" },
+        { "void Application::ResetProtocol()",
+          NULL,
+          "ResetProtocol(:1267)", "protocol_->CloseAudioChannel()" },
+    };
+    char *region;
+    int n;
+    size_t i;
+
+    KAC_REQUIRE_ROOT();
+
+    for (i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
+        region = kac_region_between(KAC_APP_CC, paths[i].start, paths[i].end);
+        TEST_ASSERT_NOT_NULL_MESSAGE(region,
+            kac_fm("RC-B3 RED(infra): %s 函数区切取失败——锚漂移须复核"
+                   "（禁整函数退役绕过）", paths[i].label));
+
+        /* 既有语义零偏移锚 (MUST-STAY-GREEN): 各区既有 close token 在世。 */
+        TEST_ASSERT_TRUE_MESSAGE(kac_contains(region, paths[i].existing_token),
+            kac_fm("RC-B3 RED: %s 区既有 close 语义 token 丢失——既有路径语义零偏移"
+                   "义务破", paths[i].label));
+
+        /* 负锚 (guard, B 缝在世后承载): 零重建排程。 */
+        n = kac_count_in_slice(region, KAC_B_HELPER_CALL_ND);
+        TEST_ASSERT_TRUE_MESSAGE(n == 0,
+            kac_fm("RC-B3 RED: %s 区出现 ScheduleResidentRebuild() = %d 处——该路径"
+                   "被误归会话收尾（plan 归类表破）或误加重建排程", paths[i].label, n));
+        n = kac_count_in_slice(region, KAC_SEAM_CALL_ND);
+        TEST_ASSERT_TRUE_MESSAGE(n == 0,
+            kac_fm("RC-B3 RED: %s 区出现 TryStartAutoConnect() = %d 处——零重建路径"
+                   "被误接自动重连（网络断关恢复须走既有 K6 触发点 2 网络重连事件）",
+                   paths[i].label, n));
+        free(region);
+    }
+}
+
 /* ---------------------------------------------------------------------------
  * RED baseline 判读口径（freeze 相位, acceptance-author 2026-09-23 实跑回填）:
  *   通道① 既有 host runner 全量实跑（本文件未接线前, 既有齿零偏移通道）:
@@ -1044,4 +1591,50 @@ TEST_CASE("开机自动建连: 回归注册+Schedule包裹+protocol零触碰 (K6
  *        → 期望 TEST 5 红（对应区守卫齿; 循环体四区逐一独立断言, 摘哪区红哪条）。
  *     M6 (K6-A6) 摘 HOST_ACCEPTANCE_SRCS 注册行或摘 OnAudioChannelOpened 的
  *        Schedule() 包裹 → 期望 TEST 6 红（tooth 7 注册缺 / tooth 6 包裹缺）。
+ * --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+ * RED baseline 判读口径（RC 批, 261010-device-reconnect-on-server-close 包,
+ * acceptance-author 2026-10-11 实跑回填）:
+ *   通道① 全量 host runner（taskpackage redBaselineCommand 逐字）:
+ *     MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/
+ *       espidf_wsl.sh build
+ *     cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 --
+ *       ./build/host_infra_test.elf
+ *   通道② standalone harness（与 K6 通道②同款, red-baseline/k6_red_wrapper.sh）:
+ *     cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra
+ *       -I. -o /tmp/rc_red_runner ../../boot_auto_connect.acceptance.c runner.c
+ *       && /tmp/rc_red_runner  （exit code = 失败 TEST_CASE 数）
+ *   设计态红判读（TEST 7-12; TEST 1-6 既有齿全绿零破坏 = 通道①既有面零偏移）:
+ *     TEST 7 (RC-A1) 红 = tooth 3 起（local_close_pending_ 全仓零命中——frozen seam
+ *       not implemented, 真实缺失; tooth 1/2 MUST-STAY-GREEN 先行）;
+ *     TEST 8 (RC-A2) 红 = tooth 2 起（分类写点计数 0 ≠ 1; tooth 1 先行）;
+ *     TEST 9 (RC-A3) 红 = tooth 1 起（helper 声明/定义零命中）;
+ *     TEST 10 (RC-B1) 绿（设计态绿: 板级零休眠接线是现状结构事实, 齿 = 钉死不回潮;
+ *       tooth 1 canary 证明零命中非 vacuous）;
+ *     TEST 11 (RC-B2) 红 = tooth 2 起（kResidentRebuildDelayS 零命中; tooth 1 既有
+ *       close token 锚先行）;
+ *     TEST 12 (RC-B3) 绿（负锚实现前 trivially green; B 缝在世后承载）。
+ *   期望冻结相位通道②: 12 Tests / 4 Failures（TEST 7/8/9/11 红, 其余绿）。
+ *
+ *   MUTATION REPLAY MAP（RC 批, 冻结轮 vacuity 自证; 手法 = 假实现全绿态 + 单点变异
+ *   令齿红 + 还原复跑回绿 + sha256 核对还原一致; 通道②独立命令, 变异编辑不得顺手
+ *   改动既有齿与未列面）:
+ *     假实现（全绿态, 四文件最小缝实现）: ws.h 加 local_close_pending_ 成员; ws.cc
+ *       CloseAudioChannel 置位 / OpenAudioChannel 清位 / OnDisconnected 消费后回调;
+ *       app.cc A 区 Schedule 体尾接 TryStartAutoConnect() + kResidentRebuildDelayS=5
+ *       定义 + ScheduleResidentRebuild 定义（task 延迟 T 后 Schedule TryStartAutoConnect）
+ *       + application.h 声明 + 三调用点各接 helper 一次 → 通道② 12 Tests / 0 Failures。
+ *     M7 (RC-A1) 摘 A 区 Schedule 体尾 TryStartAutoConnect() → 期望 TEST 7 红
+ *        （tooth 7 计数 0 ≠ 1）。
+ *     M8 (RC-A2) 摘 OnDisconnected 区 local_close_pending_ 消费块（本地关直走回调）→
+ *        期望 TEST 8 红（tooth 3 位次破; TEST 7 tooth 6 连带红 = 同缝独立承载正常）。
+ *     M9 (RC-A3) helper 内改直调 protocol_->OpenAudioChannel()（绕过 AutoConnect
+ *        task）→ 期望 TEST 9 红（tooth 3 直连 needle; tooth 2 复用 needle 连带）。
+ *     M10 (RC-B1) 板文件加一行 `#include "power_save_timer.h"` → 期望 TEST 10 红
+ *        （tooth 2 零接线 needle 破）。
+ *     M11 (RC-B2) kResidentRebuildDelayS 定义值 5 改 10 → 期望 TEST 11 红（tooth 2
+ *        首定义片段无 5, T 冻结破）。
+ *     M12 (RC-B3) Reboot 区加 ScheduleResidentRebuild() 调用 → 期望 TEST 12 红
+ *        （Reboot 区 helper 计数 1 ≠ 0; TEST 8 tooth 6 恰 4 破连带 = 泄漏面独立承载）。
  * --------------------------------------------------------------------------- */

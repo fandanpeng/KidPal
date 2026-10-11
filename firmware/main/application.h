@@ -175,6 +175,11 @@ private:
     // 退避重试 + 每次重试前重查三条件 + 所有退出路径必清标志）。
     void TryStartAutoConnect();
 
+    /* 261010 [S9] 常驻重建排程（B 路径, 决策 29「永不休眠」）: 会话收尾类本地关后延迟
+     * kResidentRebuildDelayS 秒经 Schedule 回主循环排入 TryStartAutoConnect（复用守卫
+     * 三条件与退避——重建只经既有 AutoConnect task）。 */
+    void ScheduleResidentRebuild();
+
     // Helper methods
     void CheckAssetsVersion();
     void InitializeProtocol();
