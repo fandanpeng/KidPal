@@ -6,11 +6,12 @@
 
 | 面 | 动作 | 状态 |
 |---|---|---|
-| `docs/architecture.md` §5.5.5（:297）现状指针 | 刷 v7→v9 + 补 v8/v9 沿革两项 | **未落（handoff architect）**——enforce-scope 钩子拦截 integrator 写入 |
-| `docs/architecture.md` §5.1（:196）现状指针 | 刷 v7→v9 | **未落（同上，随 §5.5.5 一并 handoff）** |
+| `docs/architecture.md` §5.5.5（:297）现状指针 | 刷 v7→v9 + 补 v8/v9 沿革两项 | **已落（architect 回执）** |
+| `docs/architecture.md` §5.1（:196）现状指针 | 刷 v7→v9 | **已落（architect 回执，随 §5.5.5 一并）** |
 | `server/deploy/README.md` prompt 指针节（:44-51） | 核对（builder 已刷「现状 = v9」） | 核对通过 |
 | `docs/contracts/**` | 零改（PN-E2） | 零改（本包 diff 无契约面文件） |
 | `docs/requirements.md` | 零改（NFR-SAFE-1 within-spec） | 零改 |
+| `docs/architecture.md` §4 NFR 表（:150）NFR-SAFE-1 行 | 「system prompt v7」版本字面残留收敛为版本无关指针式表述（「现行版本以 §5.5.5 现状指针为准」），防未来 bump 再腐坏 | 已落（handoff architect 追加任务，PN-E3「顺带收敛 v7 残留漂移」） |
 
 ## spec 面 handoff（arch 指针刷新，交 architect）
 
