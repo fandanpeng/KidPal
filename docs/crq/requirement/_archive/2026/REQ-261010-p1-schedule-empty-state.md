@@ -2,13 +2,13 @@
 id: REQ-261010-p1-schedule-empty-state
 title: P1 首页「接下来 / 明天」两区空态未定义——无值时整区不渲染，孩子分不清「没课」还是「坏了」；human 已提默认提示话术方向（如「明天没有什么课喽」）
 domain: requirement
-status: deferred
+status: closed
 severity: SHOULD
 owner: /requirement-change loop（story-author 起草）→ dev-loop（渲染落地）
 trigger: 下一次需求面变更批 / human 指示即刻起草（话术方向已给，档 1 语义修改即可动）
 opened: 2026-10-10
-closed: ""
-closedBy: ""
+closed: 2026-10-11
+closedBy: docs/requirements.md §9 v1.61 版本行（需求面定稿；渲染落地归 P1 dev 包）
 paths: ["docs/requirements.md"]
 source: 2026-10-10 human 真机使用反馈第 4 条（主线程代登记）
 ---
@@ -22,3 +22,5 @@ source: 2026-10-10 human 真机使用反馈第 4 条（主线程代登记）
 2. **数据未达空态**（断网/未收到推送）→ 与 AC4 断网小标联动，回引 P2 空态口径（友好提示、引导语音问课表），不与「无安排」话术混淆——这正是本次用户「分不清没课还是坏了」的病根，两态必须在需求面显式分叉。
 
 需求定稿后 dev-loop 落地：空态话术渲染归 P1 dev 包（若与 v1.57 登记的 V5 版式重排批〔home_p1.c 按 V4 实现〕同批做可省一轮烧录）。**riskTier: low**。
+
+**结项（2026-10-11，主线程销行，§9 v1.61 定稿）**：human 指示起草后走 requirement-change 档 1，两轮 author/reviewer 闭环定稿 v1.61。起草期口径升级：human 三答改判「明天区并学校课」（翻转 v1.57 OQ2「仅课外班与临时事件」）——学校课合并「XX:XX 上学」项进明天区，上学日必然非空、「空态联动上学日」由该项承载；空态话术定稿「今天接下来没有安排啦」/「明天没有什么课喽」，数据未达空态判据落「有无日程数据」非「断网与否」（AC7 与 AC4 分层）。渲染落地 + 明天区多项化 + V5 版式重排 human 裁同包一块做（含契约门：`data.upcoming.preview` 单项→多项 + 「明早」示例旧漂移，对账登记在 S-F1.1 补充规则 6c）——本条需求面义务已毕，落地追踪转 dev 侧（triage → 拆包 → launch），不再挂本账。
