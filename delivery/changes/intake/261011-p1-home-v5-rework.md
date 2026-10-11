@@ -27,7 +27,7 @@ facePlan:
   - launchPrecondition: anchors.contract 未回填（契约门未签）前承载包不得 launch；spine anchors.req = v1.61 已在位
 anchors:
   req: "requirements.md 定稿 v1.61（§9 v1.61 行 2026-10-11 = 定稿载体，commit 7f68b51）：S-F1.1 AC2 明天区改判（学校课「XX:XX 上学」并入、多项升序）+ AC5/AC6/AC7 空态两态分叉 + WF-F1-01 线框同步 + 补充规则 6a/6b/6c（含实现侧对账与契约门登记）；requirement-change 档 1 全程走毕（story-author 两轮 → requirement-reviewer 两轮四查复审 PASS）；spec-anchor-check ok=true（落稿后复跑）"
-  contract: ""  # 待契约门签后回填 packet id（facePlan 顺序2）
+  contract: "CONTRACT-CHANGE-PACKET.md（delivery/taskpackages/261011-p1-home-v5-rework/，packet id = 同 changeId）——human 契约门 AskUserQuestion 批准 2026-10-11（HUMAN_APPROVED，四触点：preview 多项数组+三态语义 / 示例值 HH:MM 顺修 / :155 seam 引用签名同形顺修 / 变更记录行 append；先批后落，随包同 PR git apply，CRLF 保全）；架构门证据 = architecture-gate-evidence.md（十节 ledger，C1/C2/C3 closeout 归包内 integrator）；pod-events human-decision approve-contract-change-packet 在案（喂 pre-merge-escalation-gate contracts-block）"
   arch: "不动——architecture.md 零镜像句（triage 分流 review 独立取证 2026-10-11）"
   imp: "taskpackage 261011-p1-home-v5-rework 建包（plan.md 落盘 2026-10-11，②单包 Full：rigor=full / riskTier=high / sourceType=human-ad-hoc；taskpackage.json/origin 归 planner /build-feature intake 时建）"
 openQ:
@@ -47,6 +47,10 @@ openQ:
     question: requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注（「大字+倒计时贴纸+中文日期与 V5 不符」）与 home_p1.c 实现已漂移（architect triage 取证）——本批不动需求面（human 已拍），是否后续勘误批修
     ruling: 登记为后续勘误批候选（档 0 勘误通道），不阻塞本批
     status: deferred
+  - id: q5-契约门签
+    question: CONTRACT-CHANGE-PACKET.md 四触点（preview 多项数组+三态 / 示例值 HH:MM / :155 seam 引用顺修 / 变更记录行）签不签？
+    ruling: human 2026-10-11 契约门 AskUserQuestion 批准（无附加条件；预审另新发现 :155 seam 引用签名触点并入 packet、示例终形按 K1 口径 HH:MM 数组「明天」不入 wire）
+    status: resolved
 status: in-flight
 ---
 
