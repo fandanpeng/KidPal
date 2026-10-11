@@ -13,7 +13,7 @@
   "story": "真机课表问答把模型内部推理（回合判定/文件路径/流程步骤）当语音播出的仓内根治：prompt v9 版本化 bump，课表问答回合行补对称反叙述纪律（v7 修对话行时漏了课表行），防 deepseek-v4-flash 输出风格漂移把 prompt 回合表词汇当工具调用前导文本念出；四面接线同步（CARRIER/provider.config.yaml/apply-xiaozhi-overlay.sh/arch 指针）+ arch §5.5.5 现写 v7 与实际 v8 接线的既有漂移顺带收敛。部署 = v9 + overlay 重跑上 ECS（261010 决策 21 键同款先例）。",
   "planRef": "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/plan.md",
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance",
-  "redBaselineResult": "launch prep 实测（命令 = redBaselineCommand 逐字）：139 passed, 4 deselected, 9 subtests passed in 2.07s（@2d94c36，2026-10-10，面域 = server）。零红。含本批新增 test_261010_engine_decision21_overlay_persist 3 齿 + subtests。",
+  "redBaselineResult": "acceptance 冻结后实跑（命令 = redBaselineCommand 逐字，2026-10-11）：4 failed, 140 passed, 4 deselected, 9 subtests passed in 2.42s —— 4 红全为新增 PN 齿设计态红（PN-A1 两齿 v9 未建、PN-A2 v9 缺席、PN-A4 纪律锚半红，失败点逐一核对为真实缺失行为）；140 passed = launch-prep 基线 139 绿 + PN-A3 负锚绿，既有绿零降；收集零错误。launch prep 期基线锚 = 139 passed / 0 failed / 4 deselected / 9 subtests @2d94c36（server 面零差异引用）。",
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
@@ -51,7 +51,7 @@
     "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER"
   ],
   "sourceRefs": [
-    "TECH-261010-schedule-round-narration-leak",
+    "docs/crq/tech/TECH-261010-schedule-round-narration-leak.md",
     "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/plan.md",
     "server/deploy/openclaw-system-prompt.v8.md",
     "server/deploy/provider.config.yaml",

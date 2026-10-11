@@ -96,11 +96,11 @@ ls -la "$OVERLAY"
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
 # 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
 # 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
-#   v8 = openclaw-system-prompt.v8.md (当前渲染源; 260924-m4-k3-record-session-live:
-#        「帮我记下来」第二指令（S-F2.2 双指令批）+ 意图边界负例「帮我记下来明天带跳绳」
-#        = 课表录入不判开录; 影子口径/标题规则零偏移继承 v7)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v8.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v8.md"
+#   v9 = openclaw-system-prompt.v9.md (当前渲染源; 261010-prompt-v9-schedule-anti-narration:
+#        课表问答回合行补对称反叙述纪律（TECH-261010 真机课表问答内部推理当语音播出根治）;
+#        其余段落零偏移继承 v8)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v9.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v9.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
