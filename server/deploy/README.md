@@ -41,14 +41,14 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 - **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
 - 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
-## OpenClaw system prompt 版本化接线（现状 = v8）
+## OpenClaw system prompt 版本化接线（现状 = v9）
 
 脑腿的 system prompt 按「版本化落盘 + overlay 渲染切换 + 历史可 diff」惯例演进，声明件 =
 `OPENCLAW_SYSTEM_PROMPT_CARRIER`——**它同时是版本演进史的唯一全量副本**，本节与其它散文
 只留「当前 = vN」指针、不复述沿革（260925-prompt-v7-round-routing 收敛，沿革四重复制
-漂移教训见 carrier）。**当前被接线的那一版 = `openclaw-system-prompt.v8.md`**
-（「帮我记下来」第二指令双指令批 + 意图边界负例「帮我记下来明天带跳绳」= 课表录入
-不判开录；影子口径/标题规则零偏移继承 v7；260924-m4-k3-record-session-live）。
+漂移教训见 carrier）。**当前被接线的那一版 = `openclaw-system-prompt.v9.md`**
+（课表问答回合行补对称反叙述纪律，TECH-261010 真机课表问答内部推理当语音播出根治；
+其余段落零偏移继承 v8；261010-prompt-v9-schedule-anti-narration）。
 
 **接线不变式：渲染面 == 声明面 == 被测面**。同一切换必须同时改两处并保持一致：
 

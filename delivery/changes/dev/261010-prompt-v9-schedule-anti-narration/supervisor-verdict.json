@@ -1,0 +1,130 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "high",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-10-11T01:27:21.528Z",
+  "changeId": "261010-prompt-v9-schedule-anti-narration",
+  "originType": "regression",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "high",
+    "reasons": [
+      "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+      "security-axis-diff:auth",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "high",
+      "declaredTier": "medium",
+      "effectiveTier": "high",
+      "ambiguous": false,
+      "diffReasons": [
+        "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+        "security-axis-diff:auth"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 2,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "high",
+        "declaredTier": "medium",
+        "effectiveTier": "high",
+        "ambiguous": false,
+        "diffReasons": [
+          "all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)",
+          "security-axis-diff:auth"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/verifier-evidence/rounds/r2.json",
+        "bearingFactOk": true,
+        "completedRounds": 2,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/261010-prompt-v9-schedule-anti-narration/docs-delta.md",
+          "delivery/changes/dev/261010-prompt-v9-schedule-anti-narration/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "regression"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1789461743284-unit.log",
+      ".claude/verify-logs/1789461748978-acceptance.log",
+      ".claude/verify-logs/1789463118540-unit.log",
+      ".claude/verify-logs/1789463124418-acceptance.log",
+      ".claude/verify-logs/1789485860043-mutation-check.log",
+      ".claude/verify-logs/1789488468744-unit.log",
+      ".claude/verify-logs/1789488475385-acceptance.log",
+      ".claude/verify-logs/1789490261700-unit.log",
+      ".claude/verify-logs/1789490267507-acceptance.log",
+      ".claude/verify-logs/1789537345305-unit.log",
+      ".claude/verify-logs/1789537352187-acceptance.log",
+      ".claude/verify-logs/1789538611975-unit.log",
+      ".claude/verify-logs/1789538618055-acceptance.log",
+      ".claude/verify-logs/1789548112570-firmware-build.log",
+      ".claude/verify-logs/1789548407775-mutation-check.log",
+      ".claude/verify-logs/1789548424958-mutation-check.log",
+      ".claude/verify-logs/1789549791318-unit.log",
+      ".claude/verify-logs/1789549816257-unit.log",
+      ".claude/verify-logs/1789549865424-unit.log",
+      ".claude/verify-logs/1789549898693-unit.log",
+      ".claude/verify-logs/1789564558139-unit.log",
+      ".claude/verify-logs/1789564618306-unit.log",
+      ".claude/verify-logs/1789564696672-unit.log",
+      ".claude/verify-logs/1789564723662-unit.log",
+      ".claude/verify-logs/1789575144417-firmware-build.log",
+      ".claude/verify-logs/1789575308744-firmware-build.log",
+      ".claude/verify-logs/1789575608196-mutation-check.log",
+      ".claude/verify-logs/1789630001813-mutation-check.log",
+      ".claude/verify-logs/1789652478142-acceptance-coverage.log",
+      ".claude/verify-logs/1789652881681-mutation-check.log",
+      ".claude/verify-logs/1789690844101-taskpackage-required.log",
+      ".claude/verify-logs/1789776158467-mutation-check.log",
+      ".claude/verify-logs/1789967552652-taskpackage-required.log",
+      ".claude/verify-logs/1789967631094-taskpackage-required.log",
+      ".claude/verify-logs/1789967805780-mutation-check.log",
+      ".claude/verify-logs/1789989389509-taskpackage-required.log",
+      ".claude/verify-logs/1790040914186-taskpackage-required.log",
+      ".claude/verify-logs/1790041038913-mutation-check.log",
+      ".claude/verify-logs/1790060212280-firmware-build.log",
+      ".claude/verify-logs/1790097508693-taskpackage-required.log",
+      ".claude/verify-logs/1790097567927-mutation-check.log",
+      ".claude/verify-logs/1790139012724-taskpackage-required.log",
+      ".claude/verify-logs/1790139341482-mutation-check.log",
+      ".claude/verify-logs/1790221746381-taskpackage-required.log",
+      ".claude/verify-logs/1790221992112-docs-sync.log",
+      ".claude/verify-logs/1790563847053-taskpackage-required.log",
+      ".claude/verify-logs/1790564128994-mutation-check.log",
+      ".claude/verify-logs/1790564970990-docs-sync.log",
+      ".claude/verify-logs/1790570680803-taskpackage-required.log",
+      ".claude/verify-logs/1790570813916-acceptance-coverage.log",
+      ".claude/verify-logs/1790606033869-taskpackage-required.log",
+      ".claude/verify-logs/1790606196707-mutation-check.log",
+      ".claude/verify-logs/1790638909162-taskpackage-required.log",
+      ".claude/verify-logs/1790638919425-acceptance-coverage.log",
+      ".claude/verify-logs/1790701691062-acceptance-coverage.log",
+      ".claude/verify-logs/1790701949962-mutation-check.log",
+      ".claude/verify-logs/1790819698441-taskpackage-required.log",
+      ".claude/verify-logs/1790819744759-acceptance-coverage.log",
+      ".claude/verify-logs/1790819758847-acceptance-coverage.log",
+      ".claude/verify-logs/1790819820267-mutation-check.log",
+      ".claude/verify-logs/1790823243486-mutation-check.log",
+      ".claude/verify-logs/1790830996602-mutation-check.log",
+      ".claude/verify-logs/1790833196975-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/verifier-evidence/rounds/r2.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/261010-prompt-v9-schedule-anti-narration/docs-delta.md",
+      "delivery/changes/dev/261010-prompt-v9-schedule-anti-narration/review-packet.md"
+    ]
+  }
+}

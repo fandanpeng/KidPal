@@ -1,0 +1,16 @@
+# test-scope-final · 261010-prompt-v9-schedule-anti-narration
+# 圈定方法（integrator 2026-10-11）：detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，正常圈定路径）
+#   + changeManifest（server/acceptance 面 = test_prompt_v7_round_routing）+ impactedTestsSeed
+#   + 接线消费方实证 grep（server/acceptance 非 archive 全集内引用
+#   apply-xiaozhi-overlay.sh / provider.config.yaml / OPENCLAW_SYSTEM_PROMPT_CARRIER 的文件）
+#   + 任务指名 must-stay-green 冻结件（m3k3 / m4k3 / perf-k1）。
+# detect_changes inbound blast radius = 0（测试为叶子符号、prompt/载体为数据文件），故圈定面
+# 以「结构化消费接线三面的守卫齿」为准（面比符号图可靠）；含安全余量（261001 先例件 + 261010 决策21 件）。
+# 全量回归 = 人工触发位，不在本 scope（final 相位按此清单求交）。
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
