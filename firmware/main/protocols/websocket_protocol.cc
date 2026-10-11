@@ -79,10 +79,15 @@ bool WebsocketProtocol::IsAudioChannelOpened() const {
 }
 
 void WebsocketProtocol::CloseAudioChannel() {
+    /* [S7] 本地主动关分类标记: 置位先于 reset——reset 析构若回调 OnDisconnected
+     * （plan 实现前核项）, 标记已覆盖析构路径（本地关不被误判服务端/网络侧断）。 */
+    local_close_pending_ = true;
     websocket_.reset();
 }
 
 bool WebsocketProtocol::OpenAudioChannel() {
+    /* [S7] 新连接分类基线复位: 上一连接的陈旧「本地关」标记不污染新连接分类。 */
+    local_close_pending_ = false;
     Settings settings("websocket", false);
     std::string url = settings.GetString("url");
     std::string token = settings.GetString("token");
@@ -200,6 +205,13 @@ bool WebsocketProtocol::OpenAudioChannel() {
 
     websocket_->OnDisconnected([this]() {
         ESP_LOGI(TAG, "Websocket disconnected");
+        /* [S7] 先消费标记再走回调分支: 本地主动关（Application CloseAudioChannel 置位）
+         * 消费后不触发关闭回调（A 路径零触发——本地关非服务端/网络侧断, 不自动重连）;
+         * 服务端/网络侧断走回调分支。消费位次先于回调（分类互斥的协议层半）。 */
+        if (local_close_pending_) {
+            local_close_pending_ = false;
+            return;
+        }
         if (on_audio_channel_closed_ != nullptr) {
             on_audio_channel_closed_();
         }

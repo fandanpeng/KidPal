@@ -1,22 +1,23 @@
-# input-brief · builder · 261010-prompt-v9-schedule-anti-narration
+# input-brief · builder · 261010-device-reconnect-on-server-close
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-11T00:52:10.251Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
-> 来源 TaskPackage: `delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/taskpackage.json` · subsystem: server/deploy · rigor: lite
+> generated-at: 2026-10-11T01:55:26.383Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
+> 来源 TaskPackage: `delivery/taskpackages/261010-device-reconnect-on-server-close/taskpackage.json` · subsystem: firmware · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
-| `docs/architecture.md` | `§5.5.5` | 5.5.5 OpenClaw system prompt 版本化 | 295 | ok |
-| `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` | — | 无锚点（整文件） | — | bare |
-| `docs/crq/tech/TECH-261010-schedule-round-narration-leak.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/plan.md` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/openclaw-system-prompt.v8.md` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/provider.config.yaml` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/apply-xiaozhi-overlay.sh` | — | 无锚点（整文件） | — | bare |
+| `docs/architecture.md` | `§3` | 3. 架构目标与约束 | 104 | ok |
+| `docs/architecture.md` | `§6.4` | 6.4 断线重连与常驻连接 | 321 | ok |
+| `docs/architecture.md` | `§8` | 8. 风险·技术债·开放问题 | 346 | ok |
+| `docs/architecture.md` | `§10` | 10. 决策记录 | 388 | ok |
+| `docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261010-device-reconnect-on-server-close/plan.md` | — | 无锚点（整文件） | — | bare |
+| `firmware/main/application.cc` | — | 无锚点（整文件） | — | bare |
+| `firmware/main/protocols/websocket_protocol.cc` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威）
 
@@ -26,7 +27,7 @@
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 单面实现变更（server/deploy prompt 族 + 验收 + arch 指针 docs-sync）：不改 wire、不触固件、不触契约与需求面；部署面 = ECS overlay 重跑（261010 决策 21 键同款先例，上传前核远端 == 基线）
+> 单面固件实现变更：server 面零改动、WS wire 形状零变化（重连复用既有 hello 建连序列）；常驻在线改变每会话重开 WS 拓扑 → 复用通道 seam（application.cc:1014-1020 / front ctx_push_edge front_app.py:212）以既有 story ctx / reminder 齿回归覆盖，front 零改
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
@@ -34,7 +35,9 @@
 
 | 先例包 | 冻结验收文件 |
 |---|---|
-| 261001-openclaw-model-name-overlay-drift | `server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py` · `server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py` |
+| 261001-m4-k3-record-session-live-repair | `firmware/main/test/record_session_repair.acceptance.c` |
+| 260924-m4-k2-p3-star-notebook-ui | `firmware/main/test/story_page_v2.acceptance.c` |
+| 260924-m4-k3-record-session-live | `firmware/main/test/record_session_live.acceptance.c` · `server/acceptance/test_m4k3_record_session_live.acceptance.py` |
 
 封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
 

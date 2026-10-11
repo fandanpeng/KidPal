@@ -69,6 +69,13 @@ static bool s_sntp_started = false;
  * ------------------------------------------------------------------------ */
 static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
 
+/* -------------------------------------------------------------------------- *
+ * 261010 [S9] 常驻重建 T 秒延迟（B 路径, 决策 29「永不休眠」）: 会话收尾类本地关后
+ * 延迟重建常驻连接——值 5（退避表首档 5s 量级, plan 定值并冻结进验收件; 改值须回
+ * planner 重冻结）。本 needle 首现即本定义。
+ * ------------------------------------------------------------------------ */
+static const int kResidentRebuildDelayS = 5;
+
 /* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
 static void KidPalSntpMonitorTask(void *arg)
 {
@@ -420,6 +427,15 @@ void Application::HandleNetworkDisconnectedEvent() {
     if (state == kDeviceStateConnecting || state == kDeviceStateListening || state == kDeviceStateSpeaking) {
         ESP_LOGI(TAG, "Closing audio channel due to network disconnection");
         protocol_->CloseAudioChannel();
+        /* 261010 [S9] 网络断关收尾补偿: wifi 骤断 TCP 未察觉时 OnDisconnected 回调
+         * 亦被抑制（[S7] 本地关标记 + TCP 静默）→ 设备态停留非 Idle，网络恢复后
+         * HandleNetworkConnectedEvent 仅 Idle 支路接自动建连 = K6 既有重连语义被静默
+         * 破坏。此处主循环 handler 内同步补回 Idle + LOW_POWER 剖面。网络断关仍零
+         * 重建排程（恢复走既有 K6 触发点 2 网络重连事件, RC-B3 负锚）。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "net_disconnect_settle corr_id=kdp-%u state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
     }
 
     // Update the status bar immediately to show the network state
@@ -519,6 +535,21 @@ void Application::TryStartAutoConnect() {
                  (unsigned)uxTaskGetStackHighWaterMark(NULL));
         vTaskDelete(NULL);
     }, "AutoConnect", 4096 * 2, this, 2, nullptr);
+}
+
+void Application::ScheduleResidentRebuild() {
+    /* [S9] 常驻重建缝（B 路径; 决策 29「永不休眠」）: 会话收尾类本地关后 T 秒
+     * （kResidentRebuildDelayS）重建常驻连接。延迟在独立短命线程内睡眠（不阻塞主
+     * 循环——helper 由主循环 handler / Schedule lambda 调用）; 到点经 Schedule( 回主
+     * 循环上下文排入 TryStartAutoConnect()（复用既有 AutoConnect task 守卫三条件与
+     * 退避——重建只经既有 AutoConnect task, 零第二条重连路径; 判 + 起在主循环, 与
+     * K6 [S1] 判设同源）。 */
+    std::thread([this]() {
+        vTaskDelay(pdMS_TO_TICKS(kResidentRebuildDelayS * 1000));
+        Schedule([this]() {
+            TryStartAutoConnect();
+        });
+    }).detach();
 }
 
 void Application::CheckAssetsVersion() {
@@ -637,6 +668,11 @@ void Application::InitializeProtocol() {
             auto display = Board::GetInstance().GetDisplay();
             display->SetChatMessage("system", "");
             SetDeviceState(kDeviceStateIdle);
+            /* [S8] A 路径: 非本地关（服务端/网络侧断）→ 排入自动重连（复用既有
+             * AutoConnect task 守卫与退避; 零第二条 task; 重连区零 SetDeviceState——
+             * 屏显维持 Idle）。本地关不达本 lambda（协议层分类, [S7]）——分类互斥的
+             * application 半。 */
+            TryStartAutoConnect();
         });
     });
     
@@ -803,7 +839,19 @@ void Application::CloseAudioChannel() {
      * cancel 钩子（弹缓冲不落盘）; 不发 listen stop（丢弃不是归档）。 */
     if (protocol_) {
         protocol_->CloseAudioChannel();
+        /* 261010 [S9] 本地关收尾补偿（[S7] 令 OnDisconnected 对本地关提前 return，
+         * A 区 lambda 的 Idle 收尾 + LOW_POWER 剖面被抑制 → 设备态停留
+         * Listening/Speaking，常驻重建守卫 state!=Idle 直 return = 重建永不触发）:
+         * 主循环上下文（按键 dispatch 栈）内同步补回设备态 + 省电剖面（Connecting/
+         * Listening/Speaking→Idle 全合法, device_state_machine.cc:80-93）。收尾落
+         * 调用点，不入 helper（[S9] helper 区零 SetDeviceState 负锚）。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=discard_record state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
     }
+    /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+    ScheduleResidentRebuild();
 }
 
 void Application::HandleToggleChatEvent() {
@@ -847,6 +895,14 @@ void Application::HandleToggleChatEvent() {
         AbortSpeaking(kAbortReasonNone);
     } else if (state == kDeviceStateListening) {
         protocol_->CloseAudioChannel();
+        /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: 主循环 handler
+         * 内同步补回 Idle + LOW_POWER 剖面。收尾落调用点，不入 helper。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=toggle_chat state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+        ScheduleResidentRebuild();
     }
 }
 
@@ -1183,11 +1239,19 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
         Schedule([this]() {
             AbortSpeaking(kAbortReasonNone);
         });
-    } else if (state == kDeviceStateListening) {   
+    } else if (state == kDeviceStateListening) {
         Schedule([this]() {
             if (protocol_) {
                 protocol_->CloseAudioChannel();
             }
+            /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: Schedule
+             * lambda = 主循环上下文，同步补回 Idle + LOW_POWER 剖面。收尾落调用点。 */
+            SetDeviceState(kDeviceStateIdle);
+            Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+            ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=wake_invoke state=idle",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+            ScheduleResidentRebuild();
         });
     }
 }
