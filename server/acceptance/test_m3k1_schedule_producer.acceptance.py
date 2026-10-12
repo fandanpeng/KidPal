@@ -19,8 +19,15 @@ Shape authority = CONTRACT-CHANGE-PACKET.md §1/§5 (E1 §1.3② 周网格重定
     (S-F1.2 线框口径：备注露面处 = 语音答复/提醒 speech)。一格多门 = 同
     (day,slot) 多条逐门列出。
   home: {"view":"home","data":{"upcoming":{"day_key":"今天",
-          "items":[{"time","name"}],"preview":{"time","name"}|None}}}
-    (additive，缺 data 行为不变; preview = None 表无明日预告)。
+          "items":[{"time","name"}],
+          "preview":[{"time","name"},…] | [] }}}
+    (additive，缺 data 行为不变; 2026-10-11 契约门多项数组化——CCP
+    261011-p1-home-v5-rework 触点① HUMAN_APPROVED + requirements v1.61
+    S-F1.1 AC2/AC6/AC7: preview = 明日全量 {time,name} 数组按开始时间升序（学校课
+    合并「XX:XX 上学」与课外班、临时事件同列, AC2）; `[]` = 云端确认明日无项（AC6
+    「明天没有什么课喽」话术的显式 wire 载体——producer 明日无项改发 [] 不再 None,
+    plan R1）; producer 恒发数组、不发 null（null/键缺省 = 未提供, 板端数据未达态
+    AC7——板端对旧单对象形状保留一个过渡版的解析容忍, producer 不发该形状）。
 
 FROZEN OFFLINE CONTRACT (builder MUST implement; pure python, no fastapi/gateway
 imports at import time, offline-importable anywhere):
@@ -51,11 +58,11 @@ imports at import time, offline-importable anywhere):
       home producer 载荷(上形)。items = group_upcoming(model, today_iso, now_hhmm,
       school_start) 逐项剥 location 后的 {time,name}(分组口径**零偏移复用**，
       含决策 26 合并「上学」项 12:00 在校时段计 upcoming 语义)；preview =
-      group_upcoming(model, tomorrow_iso, "00:00", school_start) 首项的
-      {time,name}(明日预告, time = 明日首项开始 HH:MM —— 依据 packet「payload
-      即 seam 注入参数的 JSON 化」+ 板端 hp1_item_t.time 缓冲仅容 "HH:MM"，packet
-      §1 示例中 "明早" 字样是渲染标签不是载荷值)；明日无项 -> preview is None。
-      day_key 恒为 "今天"(payload 即 home_p1 seam 注入参数 JSON 化)。
+      group_upcoming(model, tomorrow_iso, "00:00", school_start) 全量逐项剥 location
+      后的 {time,name} 数组(2026-10-11 多项化——明日日程全量进区, 按开始时间升序,
+      学校课合并「XX:XX 上学」项在列; **明日无项 -> preview == [] 不再 None**,
+      plan R1: None 会使 AC6 话术永不触发)。day_key 恒为 "今天"(payload 即
+      home_p1 seam 注入参数 JSON 化)。
 
   server/gateway/schedule_push.py — 新纯模块(三触发 producer 决策面; 触发调度/
   接线属实现细节，本面只钉「模拟条件下到达且不重复」的可观测决策):
@@ -121,6 +128,15 @@ Coverage map (acceptanceRef -> test):
   M3K1-A3 -> test_a3_home_upcoming_payload_frozen_shape
            -> test_a3_decision26_merged_school_1200_regression
            -> test_a3_preview_tomorrow_and_empty_cases
+           -> test_a3_preview_multi_item_ascending_school_merged (2026-10-11)
+  HV5-AC2 (preview 明日全量进区/升序/「上学」合并项在列, requirements v1.61 AC2)
+           -> test_a3_preview_multi_item_ascending_school_merged
+  HV5-AC6 (producer 半: 上学日明天区必然非空且含「上学」项——空态话术仅非上学日
+           可达的 wire 侧闭环, 防 vacuous) -> test_a3_preview_multi_item_ascending_
+           school_merged（上学日场景）+ test_a3_preview_tomorrow_and_empty_cases
+           （非上学日无项场景 -> preview == [] = 板端话术态唯一可达 wire 值）
+  HV5-AC7 (producer 半: producer 恒发数组不发 None——null 语义退役于 producer,
+           「未提供」只可能来自未推送) -> test_a3_preview_tomorrow_and_empty_cases
   M3K1-A4 -> test_a4_connect_push_payload_single_source
            -> test_a4_daily_push_due_local_midnight_b1_timezone
            -> test_a4_refresh_marker_main_channel_only_and_exactly_once
@@ -132,6 +148,20 @@ week_grid_payload/home_upcoming_payload、无 schedule_push.py = 真实缺失行
 A1 中 legacy-reject / malformed-week 两齿 RED(现行 validate_display 放行旧形状 =
 Q5 收紧未实现)，A1 三样本 pass 齿现状绿(must-stay-green —— builder 收紧时不得
 打破)；零偏移守卫齿现状绿。收集零错误(冻结即冒烟，DEV-GOVERNANCE §3)。
+
+REVISION LOG (acceptance-author only; 冻结件修订授权链):
+  2026-09-21  initial freeze (acceptance-author, TaskPackage 260921-m3-k1-cloud-schedule-producer).
+  2026-10-11  冻结件修订（TaskPackage 261011-p1-home-v5-rework; 授权链双引用 =
+              「CCP id 261011-p1-home-v5-rework（HUMAN_APPROVED 2026-10-11）+
+              docs/requirements.md §9 v1.61 版本行（2026-10-11）」, plan R3）:
+              ① M3K1-A3 frozen shape 齿更新——preview 单对象 → 多项数组（AC2 全量
+              进区/升序/「上学」合并项在列）+ 明日无项改发 [] 不再 None（plan R1,
+              AC6 话术的 wire 载体）; ② 新增 test_a3_preview_multi_item_ascending_
+              school_merged（HV5-AC2/AC6 producer 半）; ③ A1 schema 样本随 CCP
+              触点①/② 顺修（数组形状 + HH:MM, 「明早」旧漂移收回）; ④ 头注
+              FROZEN OFFLINE CONTRACT preview 文本同步。零触碰面：M3K1-A1/A2/A4/
+              E1 既有齿断言零偏移（A1 样本形状更新不触 validate_display 判据——
+              home view 无 upcoming shape floor, 样本过门性质不变）。
 
 Run protocol:
   python -m pytest -q --import-mode=importlib -m "not live" server/tests server/acceptance
@@ -380,7 +410,7 @@ class M3K1ContractGateAcceptance(unittest.TestCase):
         with_data = {"view": "home", "data": {"upcoming": {
             "day_key": "今天",
             "items": [{"time": "14:00", "name": "钢琴课"}],
-            "preview": {"time": "明早", "name": "春游"},
+            "preview": [{"time": "08:00", "name": "上学"}],
         }}}
         ok, reason = ds.validate_display(with_data)
         self.assertTrue(ok, f"M3K1-A1 RED: home+data rejected ({reason}) — §1.3⑥ "
@@ -531,7 +561,8 @@ class M3K1HomeUpcomingAcceptance(unittest.TestCase):
     maxDiff = None
 
     def test_a3_home_upcoming_payload_frozen_shape(self):
-        """coverage: M3K1-A3 / contract §1.3⑥ — 冻结 home data 形状逐字段。"""
+        """coverage: M3K1-A3 / contract §1.3⑥（2026-10-11 多项数组化）— 冻结 home
+        data 形状逐字段。preview = 明日全量 {time,name} 数组（周日单项）。"""
         model = _parse(B1_HOME)
         payload = _home(model, MON, "12:00", SUN, school_start="08:00")
         self.assertEqual(
@@ -543,11 +574,11 @@ class M3K1HomeUpcomingAcceptance(unittest.TestCase):
                     {"time": "14:00", "name": "牙医复诊"},
                     {"time": "16:30", "name": "钢琴课"},
                 ],
-                "preview": {"time": "10:00", "name": "美术班"},
+                "preview": [{"time": "10:00", "name": "美术班"}],
             }}},
             "M3K1-A3 RED: home payload 形状/内容错误 — items = group_upcoming 零偏移"
             "结果剥 location({time,name} 恰两键, hp1_item_t seam)，day_key=今天，"
-            "preview = 明日(周日)首项 {time,name}。")
+            "preview = 明日(周日)全量 {time,name} 数组（2026-10-11 多项化, CCP 触点①）。")
         ok, reason = _display_schema().validate_display(payload)
         self.assertTrue(ok, f"M3K1-A3 RED: producer home payload failed the real gate "
                             f"({reason}) — 三触发下发必须原样过机械门。")
@@ -569,12 +600,19 @@ class M3K1HomeUpcomingAcceptance(unittest.TestCase):
                 "hp1_item_t seam 形状 (location 不进 home 载荷)。")
 
     def test_a3_preview_tomorrow_and_empty_cases(self):
-        """coverage: M3K1-A3 — preview 取明日首项；明日无项 -> preview is None。"""
+        """coverage: M3K1-A3 / HV5-AC7 — 明日无项 -> preview == []（不再 None, plan
+        R1：不改则 AC6「明天没有什么课喽」话术永不触发）；非上学日（周二无学校行、
+        无课外班与临时事件）= 板端话术态唯一可达 wire 值的场景构造（防 vacuous）。"""
         model = _parse(B1_HOME)
         empty_prev = _home(model, MON, "12:00", TUE, school_start="08:00")
-        self.assertIsNone(
-            empty_prev["data"]["upcoming"]["preview"],
-            "M3K1-A3 RED: 明日(周二)无项时 preview 必须为 None — 设备不渲染假预告。")
+        self.assertIsInstance(
+            empty_prev["data"]["upcoming"]["preview"], list,
+            "HV5-AC6 RED: preview 必须恒为数组（三态语义: 数组/[]/null 只在前两者 "
+            "出现于 producer wire）——单项对象/None 均为旧形状残留。")
+        self.assertEqual(
+            empty_prev["data"]["upcoming"]["preview"], [],
+            "M3K1-A3 RED: 明日(周二)无项时 preview 必须为 []（云端确认明日无项, "
+            "AC6 话术的显式 wire 载体）——旧 None 会使板端空态话术永不触发 (plan R1)。")
         self.assertEqual(
             empty_prev["data"]["upcoming"]["day_key"], "今天",
             "M3K1-A3 RED: day_key 恒为「今天」(payload 即 home_p1 seam 注入参数)。")
@@ -585,6 +623,36 @@ class M3K1HomeUpcomingAcceptance(unittest.TestCase):
             [{"time": "14:00", "name": "牙医复诊"}, {"time": "16:30", "name": "钢琴课"}],
             "M3K1-A3 RED: school_start=None 时 items 必须与 group_upcoming 同口径"
             "(无合并项) — 单源复用不得另算一套。")
+
+    def test_a3_preview_multi_item_ascending_school_merged(self):
+        """coverage: HV5-AC2/HV5-AC6 — 明日全量进区：学校课合并「XX:XX 上学」与
+        课外班、临时事件同列，按开始时间升序（requirements v1.61 AC2, 2026-10-11
+        human 改判翻转 v1.57「仅课外班与临时事件」OQ2 口径）；上学日明天区必然
+        非空（AC6 话术仅非上学日可达的 wire 侧闭环, 防 vacuous）。样本 = B1_GRID
+        明日周三：学校周三行（合并「上学」08:00）+ 周三英语培训 19:00 + 周三一次性
+        口语课 18:30 → 三项升序。"""
+        model = _parse(B1_GRID)
+        payload = _home(model, MON, "12:00", WED, school_start="08:00")
+        preview = payload["data"]["upcoming"]["preview"]
+        self.assertEqual(
+            preview,
+            [
+                {"time": "08:00", "name": "上学"},
+                {"time": "18:30", "name": "口语课"},
+                {"time": "19:00", "name": "英语培训"},
+            ],
+            "HV5-AC2 RED: preview 必须为明日全量 {time,name} 数组、按开始时间升序、"
+            "学校课合并「上学」项与课外班、临时事件同列 — "
+            f"actual={preview!r} (requirements v1.61 AC2 / CCP 触点①)。")
+        for it in preview:
+            self.assertEqual(
+                set(it), {"time", "name"},
+                f"HV5-AC2 RED: preview item keys {sorted(it)} != {{time,name}} — "
+                "hp1_item_t seam 形状（location 不进 home 载荷, 与 items 同形）。")
+        self.assertRegex(
+            preview[0]["time"], r"\d{2}:\d{2}",
+            "HV5-AC2 RED: preview.time 必须钉 HH:MM 字面（K1 裁决: 自然语言标签不入 "
+            "wire——「明早」旧漂移已随 CCP 触点② 收回）。")
 
 
 # --------------------------------------------------------------------------- #

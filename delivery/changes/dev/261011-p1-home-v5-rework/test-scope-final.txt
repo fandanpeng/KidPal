@@ -1,0 +1,28 @@
+# test-scope-final —— 261011-p1-home-v5-rework（final verify --scope-file 消费）
+# 圈定方法（integrator 2026-10-12，Step 4 两步走之①）：
+#   detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base=main，
+#     merge_base 1660248，inbound depth=2）= 53 seed symbols / 16 impacted：
+#     firmware/main 7（schedule_grid / p1_home_battery / p1_cjk_name 三冻结验收件 + home_p1
+#     render_frame + screenshot main + archive happy_flow_capture）+ server gateway 4
+#     （front_app 三推送点 _push_schedule_connect / _push_schedule_refresh_to_legs /
+#     run_schedule_poll_once / ws_gateway）+ server tests 1 + server acceptance 4
+#     （TECH-260928 school_start 同参齿 TechA1/A2/A3）——零跨模块越界、零预期外符号；
+#     Pod 专属图索引用常，无降级。
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子（HV5-AC2/AC5/AC6/AC7/SEAM 承载件）。
+#   ∪ 共享 seam 相关（home_p1 seam 消费面 = host 全量单 ELF 承载）+ 安全余量注记：
+#     host 套件为单 ELF（host_infra_test.elf 155 Tests 全量），圈定清单与实跑天然对齐
+#     「套件级全量」；server 面 final verify 按 scope 求交跑。
+# 语义铁律留痕：范围 = 影响面圈定清单（非全量、非本包档缩水）；圈定降级 = 无
+#   （detect_changes 正常圈定 + trace_path 可用）。真机看屏轮 = human 持板硬前置，不在本清单。
+
+# ── firmware 冻结验收件（acceptanceTestsFile + impactedTestsSeed，R3 授权链修订）──
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+# blast radius hop1（archive 归档件，gate 求交不在役则诚实绿跳过）
+firmware/main/test/acceptance/archive/happy_flow_capture.test.c
+
+# ── server（producer 多项化直接承载 + blast radius 三推送点同参齿）──
+server/acceptance/test_m3k1_schedule_producer.acceptance.py
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py
+server/tests/test_schedule_producer_units.py

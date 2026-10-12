@@ -7,15 +7,16 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 21（待拍板 1 / 待触发 14 / 已接受风险 6）；已结 5（归档索引见下）。
+**摘要**：未结 23（待拍板 2 / 待触发 15 / 已接受风险 6）；已结 5（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
+| [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | MAJOR | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | human 拍板修法方向后按 /triage-change 分流（方向 A 预判 ②单包 Lite prompt v10 批，同型先例 261010-prompt-v9-schedule-anti-narration） |
 
-## 待触发（14）
+## 待触发（15）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -33,6 +34,7 @@
 | [TECH-261010-p3-storylist-cold-start-empty](TECH-261010-p3-storylist-cold-start-empty.md) | SHOULD | P3 星星记录本冷启动空态——story_list 建连即推被 260928 止血摘除后「进页即见列表」语义重裁至今未做，重启后翻 P3 恒空 | 下个动 story 链路 / P3 页渲染的包；与 REQ-261010-p1-schedule-empty-state 同属「冷启动空态」族，可并批裁定 |
 | [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | SHOULD | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前 |
 | [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
+| [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
 
 ## 已接受风险（6）
 

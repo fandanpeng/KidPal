@@ -1,171 +1,180 @@
 {
-  "changeId": "261010-device-reconnect-on-server-close",
+  "changeId": "261011-p1-home-v5-rework",
   "rigor": "full",
-  "sourceType": "regression",
+  "sourceType": "human-ad-hoc",
   "origin": {
-    "type": "regression",
-    "upstreamType": "regression",
-    "upstreamRef": "docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md",
-    "upstreamFrozen": "",
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/changes/intake/261011-p1-home-v5-rework.md",
+    "upstreamFrozen": "spine anchors.req 已回填（requirements v1.61 frozen 2026-10-11，§9 v1.61 行在位 = 定稿载体，commit 谱系见 spine）；anchors.contract 已回填（CONTRACT-CHANGE-PACKET.md HUMAN_APPROVED 2026-10-11，先批后落随包同 PR git apply）；anchors.arch = 不动（无镜像句，architect 取证在案）",
     "workstream": ""
   },
-  "subsystem": "firmware",
-  "story": "固件连接生命周期根治（真机 bug 1 设备侧根因 + arch §8 休眠产品决策落档）：子项 A 服务端/网络侧断连自动重连（OnAudioChannelClosed 现零重连、唯一恢复路径 = 网络重连事件；复用 TryStartAutoConnect 守卫与退避，本地主动关 8 调用点分流零误重连）；子项 B 永不休眠常驻在线（human 2026-10-10 触点①裁定原话——会话收尾本地关后短延迟常驻重建，设备 Idle 态恒持活 WS、提醒任意时刻可达；本板实核零休眠 timer 接线，结构齿钉死）。docs-sync = 裁定落 arch 四投影点（§10 新增决策 29 + §3/§6.4/§8 残余闭账）。电池代价（Wi-Fi 常供电、续航转随用随充）已随裁定接受，plan 内如实申报不重开。",
-  "planRef": "delivery/taskpackages/261010-device-reconnect-on-server-close/plan.md",
-  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance 冻结后实跑（命令 = redBaselineCommand 逐字，2026-10-11）：build 过（仅 boot_auto_connect.acceptance.c 重编 + relink，-Werror 通道零 error——验收文件实编门过）→ 153 Tests / 4 Failures / 0 Ignored。4 红恰 = RC-A1 / RC-A2 / RC-A3 / RC-B2（设计态红：分类标记零命中 / 分类写点 0≠1 / helper 零命中 / kResidentRebuildDelayS 零命中——全部对应当前 story 缺失的真实行为，非环境错误）；153 = 147 既有 + 6 新 TEST_CASE，既有 147 全绿零损失。RC-B1（现状结构守卫）与 RC-B3（实现前负锚 trivially green）设计使然绿，空过风险由冻结轮变异自证 M10/M12 消解（头注强度申报在案）。launch prep 期基线锚 = 147 Tests / 0 Failures @2d94c36（firmware 面零差异引用）。",
-  "deliveryImpact": "none",
+  "subsystem": "firmware/main/display + server/gateway",
+  "acceptance": [
+    "HV5-AC2: （S-F1.1-AC2；原编 ACC-1）：preview 多项数组端到端——producer 明日全量进区（学校课合并「XX:XX 上学」与课外班、临时事件同列、按开始时间升序）逐项精确断言 + 板端数组解析 verbatim 读回 + 超容 HP1_PREVIEW_MAX(8) 整包拒 + 项缺 name 拒收",
+    "HV5-AC5: （S-F1.1-AC5；原编 ACC-2）：接下来区无安排话术「今天接下来没有安排啦」——s_has_day=1 && count==0 话术态 seam 可驱动 + 渲染源字面在世齿 + 空日程行流带话术在场（不再留白）",
+    "HV5-AC6: （S-F1.1-AC6；原编 ACC-3）：明天区空态话术「明天没有什么课喽」——wire [] = 确认明日无项 → preview_count()==0 话术态 + producer 上学日明天区必然非空且含「上学」项（话术仅非上学日可达，两侧场景构造防 vacuous）+ 渲染源字面在世齿",
+    "HV5-AC7: （S-F1.1-AC7；原编 ACC-4）：数据未达态——preview null/键缺省 → preview_count()==-1 未提供态不出无安排话术 + producer 恒发数组不发 None + day_rollover 跨 0:00 清缓存后两区转未达态（0:00 到零点推送间隙绝不误显话术）+ 拒包后 seam 状态零变化（两区已有数据维持显示）+ 话术态/未达态渲染帧分叉（孩子分得清）",
+    "HV5-SEAM: （seam 终形；原编 ACC-5）：5 参 inject 终形 + next_day_count 单值三态（>=1 列表 / ==0 确认空 / ==-1 未提供 / 其它负值拒）+ HP1_PREVIEW_MAX 8 定容 + preview_count/preview_item 访问族 + 旧单项访问族退役反向 canary（结构齿）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c",
+    "server/acceptance/test_m3k1_schedule_producer.acceptance.py"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "exitCriteria": [
+    "两面红基线 20 红逐条归属清账——builder 落地后全转绿、守卫齿（server A1/A2/A4/E1 + firmware 6 绿）零新增红",
+    "三推送点同参调用保绿（TECH-260928 齿 + K6 推 1 齿零偏移，plan R5）",
+    "核证面零 diff 实证（front_app.py / schedule_push.py / display_schema.py / mcp_server.cc / 其余四件 server acceptance / 归档件零触碰）",
+    "重烘后全量 bin 仅 chip 一枚 diff（R4）+ app+art 双分区烧录留痕",
+    "真机看屏轮 human 持板（空态两态、明天区多项、chip「明天」）"
+  ],
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC2/AC5/AC6/AC7）· 定稿版本号 v1.61（docs/requirements.md §9 v1.61 行 2026-10-11）：P1 首页落地空态话术两态分叉（AC5 无安排「今天接下来没有安排啦」/ AC6 明天区「明天没有什么课喽」+ 上学日由「XX:XX 上学」项承载必然非空 / AC7 数据未达按「有无日程数据」判、不清屏换提示）+ 明天区多项化（preview 单项→数组：学校课合并「上学」+ 课外班 + 临时事件同列、按开始时间升序）+ chip「明早」→「明天」定名（spiffs 资产重烘，V5 重排收窄后剩余项）。契约同步 = CCP 四触点（preview 多项数组 + 三态语义 / 示例值 HH:MM / :155 seam 引用签名 / 变更记录行），HUMAN_APPROVED 先批后落。",
+  "planRef": "delivery/taskpackages/261011-p1-home-v5-rework/plan.md",
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash /mnt/c/AI/KidPal-pod-m1-k1a-key-layer-dispatch/firmware/main/test/acceptance/red-baseline/hv5_red_wrapper.sh  ;  cd server && python -m pytest -q --import-mode=importlib -m \"not live\" tests acceptance",
+  "redBaselineResult": "冻结齿红基线（acceptance-author 实跑 2026-10-11）：server 面 3 failed / 231 passed / 4 deselected / 9 subtests——3 红全属 A3 族（producer preview 多项数组化未实现单一缺失行为：frozen_shape / multi_item_ascending_school_merged / tomorrow_and_empty_cases），A1 样本齿与全部其余套件绿（守卫）。firmware 面 gcc 编译零 error 零告警 + 执行 23 Tests / 17 Failures / exit 17（输出留痕 /c/tmp/hv5_red_out.txt）——17 红三类：(a) 新契约红 5 件（apply 三态、5 参 seam、home_p1.h 定容/访问族、HPB TEST4.5、PH-E1 tooth2）；(b) 独立脚手架 weak 哨兵类 13 件（stub 刻意不链实现源防 ABI 错配假绿，红语义 = frozen seam not implemented）；(c) 守卫绿 6 件零意外。REVISION LOG 四件已双引用授权链（CCP id + §9 v1.61 行）。builder 必读过渡警告：新 home_p1.h/home_p1.c 落地前勿跑 host runner（旧 4 参强定义与 5 参调用 ABI 错配），独立脚手架 hv5_red_wrapper 不受影响。launch-prep 基线锚 @4a9e87f 两面零红系修订前状态，与本设计态红不矛盾。",
+  "deliveryImpact": "milestone-affecting",
   "planningImpact": "none",
   "planningRefs": [],
   "riskTier": "high",
   "gateProfile": [
+    "contract-drift",
     "test-quality",
     "docs-sync"
   ],
-  "acceptance": [
-    "RC-A1: 非本地关（服务端断）→ 自动重连排程在场（红基线 host 纯逻辑）",
-    "RC-A2: 服务端断路径与常驻重建路径触发分类互斥（同一关闭事件恰归一类、不双触发）",
-    "RC-A3: 重连复用 TryStartAutoConnect——零第二条 task / 零新退避表；新触发点区零 SetDeviceState（屏显零触碰）",
-    "RC-B1: 永不休眠结构事实——本板板级文件零休眠 timer 接线（needle 钉 waveshare-s3-rlcd-4.2.cc）；common 层休眠入口编译面不可达留痕",
-    "RC-B2: 会话收尾类本地关（:805/:849/:1189 按 builder 归类表）→ T 秒内恰一次常驻重建排程（复用守卫三条件）；T 值实现期定并冻结进齿",
-    "RC-B3: 网络断关（:422）/Reboot（:1081）/OTA（:1100）/AEC 切换（:1254）/ResetProtocol（:1267）零重建排程——各路径既有语义零偏移",
-    {
-      "id": "RC-A4",
-      "kind": "structural",
-      "note": "真机轮 live 观测：手动断服务端（重启 front/引擎容器）→ 退避窗内设备日志自发完整 hello 建连序列（三日志源对账，复刻 10-10 对账法）；期间 P1 屏显不变"
-    },
-    {
-      "id": "RC-B4",
-      "kind": "structural",
-      "note": "真机轮 live 观测：会话结束后 T 秒内重建并常驻在线——静置 >3 分钟乃至跨夜后 front 发提醒可达（无 alert_skip no_online_device，设备渲染且回执）；P1 常显不受影响"
-    },
-    {
-      "id": "RC-B5",
-      "kind": "structural",
-      "note": "真机轮回归：常驻在线下 KEY 开新会话在复用通道正常（story ctx 发送短路防 + reminder 四态 + 引导态演出既有齿真机回归）"
-    },
-    {
-      "id": "RC-B6",
-      "kind": "structural",
-      "note": "真机轮观测项：Idle 常驻连接 modem 档位与 keepalive 稳定性观测（LOW_POWER/BALANCED 下 ping/pong 长稳则取低档，冻结结论进 docs-delta）"
-    }
-  ],
-  "acceptanceTestsFile": [
-    "firmware/main/test/boot_auto_connect.acceptance.c",
-    "firmware/main/test/key_layer_dispatch.acceptance.c"
-  ],
-  "exitCriteria": [
-    "RC-E1: 上列 host 齿全绿 + 固件 unit/acceptance 全量闸零新增红（对基线锚差异判停）；boot_auto_connect 既有 27 齿零破坏",
-    "RC-E2: 契约与 requirements.md 零改（requirements.md:67、arch §6.4 已钉语义——本包 = 兑现）；会话结束关 audio channel 既有拓扑不改",
-    "RC-E3: docs-sync 落地——arch 四投影点（§10 决策 29 append + §3:133 残余注改写 + §8:354 待裁闭账 + §6.4:322 残余句改写）；决策编号核 = 29（27/28 已占用，建包修正 architect 原稿笔误，留痕）",
-    "RC-E4: 本地关 8 调用点 builder 逐点归类留痕为验收前提；真机轮四场景证据（服务端断恢复 / 常驻重建跨夜提醒可达 / 功能性关零重建 / 复用通道回归）"
+  "sourceRefs": [
+    "docs/requirements.md:S-F1.1",
+    "S-F1.1-AC2",
+    "S-F1.1-AC5",
+    "S-F1.1-AC6",
+    "S-F1.1-AC7",
+    "delivery/changes/intake/261011-p1-home-v5-rework.md",
+    "delivery/taskpackages/261011-p1-home-v5-rework/CONTRACT-CHANGE-PACKET.md"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/architecture.md#§3",
-    "docs/architecture.md#§6.4",
-    "docs/architecture.md#§8",
-    "docs/architecture.md#§10"
-  ],
-  "sourceRefs": [
-    "docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md",
-    "delivery/taskpackages/261010-device-reconnect-on-server-close/plan.md",
-    "firmware/main/application.cc",
-    "firmware/main/protocols/websocket_protocol.cc"
+    "docs/requirements.md#S-F1.1",
+    "docs/ADR.md",
+    "docs/CONTRACT-DECISION-QUEUE.md"
   ],
   "changeManifest": [
-    "firmware/main/application.cc",
-    "firmware/main/application.h",
-    "firmware/main/protocols/websocket_protocol.cc",
-    "firmware/main/protocols/websocket_protocol.h",
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
-    "firmware/main/test/boot_auto_connect.acceptance.c",
-    "docs/architecture.md"
+    "docs/contracts/interface-contract.md",
+    "server/gateway/schedule.py",
+    "firmware/main/display/home_p1.h",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/home_upcoming.h",
+    "firmware/main/display/home_upcoming.c",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c",
+    "server/tests/test_schedule_producer_units.py",
+    "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
+    "docs/ui/kidpal-ui-design-v5.html",
+    "firmware/main/assets/spiffs_root/p1_chip_mingzao.bin",
+    "firmware/main/assets/spiffs_root/p1_label_mingzao.bin"
   ],
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "firmware",
+        "path": "firmware/main/display/home_upcoming.c",
+        "symbol": "kidpal_home_upcoming_apply"
+      },
+      {
+        "face": "server",
+        "path": "server/gateway/schedule.py",
+        "symbol": "home_upcoming_payload"
+      }
+    ],
+    "exempt": ""
+  },
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/boot_auto_connect.acceptance.c",
-      "kind": "regression",
-      "note": "K6 冻结件——新触发点（A 服务端断 + B 会话收尾重建）如撞既有 needle 触发点=2 类结构钉，走正常改验收通道 + human 方向锚留痕（260928 FIX-A2 先例形态）；既有 27 齿零破坏红线"
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "A5 语义权威段 + seam 签名一致性齿 :1037 重钉——超出 tighten-only 窗口，修订授权链 = CCP id + requirements §9 v1.61 行（plan R3），REVISION LOG 留痕"
+    },
+    {
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "inject 调用点 :693/:771 seam 形改适配，同 R3 授权链"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "kind": "frozen-revision",
+      "note": "inject 调用点 :748-791 seam 形改适配，同 R3 授权链"
+    },
+    {
+      "path": "server/tests/test_schedule_producer_units.py",
+      "kind": "revision",
+      "note": "preview 齿 :117-135 改多项形状 + 空数组齿"
+    },
+    {
+      "path": "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
+      "kind": "frozen-revision",
+      "note": "M3K1-A3 frozen shape 齿更新，同 R3 授权链"
     }
   ],
   "iterationBudget": 3,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
+  "adrRequired": true,
+  "adrReason": "preview 形状重定义 + 三态语义 = durable semantics 变化（CCP 收口义务④，ADR 追加裁定行）",
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "RC-A1: 非本地关（服务端断）→ 自动重连排程在场（红基线 host 纯逻辑）",
-        "mutation": "M7：摘 OnAudioChannelClosed Schedule 体尾 TryStartAutoConnect() 调用",
-        "affectedTest": "boot_auto_connect 新 TEST_CASE「服务端断自动重连排程」tooth 7（A 区计数 0≠1；通道② 12 Tests 1 Failures）",
+        "acceptance": "HV5-AC2: （S-F1.1-AC2；原编 ACC-1）：preview 多项数组端到端——producer 明日全量进区（学校课合并「XX:XX 上学」与课外班、临时事件同列、按开始时间升序）逐项精确断言 + 板端数组解析 verbatim 读回 + 超容 HP1_PREVIEW_MAX(8) 整包拒 + 项缺 name 拒收",
+        "mutation": "home_upcoming.c kup_parse_preview 数组分支 *count = n; → *count = (n>0)?1:n;（数组只报首项，破多项进区）",
+        "affectedTest": "firmware/main/test/schedule_grid.acceptance.c TEST_CASE「home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)」[HV5-AC2]",
         "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "摘排程即红 = RC-A1 非空过；还原后 12/0，五文件 sha256 还原一致。"
+        "sensitive": false,
+        "notes": "1 fail: 'HV5-AC2 RED: preview 非空数组必须进 preview 列表（preview_count()==2）——明天区多项化未落地'；日志 /c/tmp/mut_acc1.log；变异已还原，复原后 host 全量 155 Tests / 0 Failures（builder 续做轮 2026-10-12 取证，planner 代落）"
       },
       {
-        "acceptanceId": "RC-A2: 服务端断路径与常驻重建路径触发分类互斥（同一关闭事件恰归一类、不双触发）",
-        "mutation": "M8：摘 OnDisconnected 区 local_close_pending_ 消费块",
-        "affectedTest": "「本地关分类互斥」消费位次断言红（连带 RC-A1 同缝独立承载；12 Tests 2 Failures）",
+        "acceptance": "HV5-AC5: （S-F1.1-AC5；原编 ACC-2）：接下来区无安排话术「今天接下来没有安排啦」——s_has_day=1 && count==0 话术态 seam 可驱动 + 渲染源字面在世齿 + 空日程行流带话术在场（不再留白）",
+        "mutation": "home_p1.c p1_draw_card AC5 分支话术渲染短路 if(0){ p1_blit_flow(HP1_TEXT_TODAY_EMPTY,…); }（AC5 态整区留白；话术常量单引用 + -Werror=unused-const-variable 逼迫 if(0) 死代码守卫形态保编译通过）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c「首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)」+「首页电量…(PH-A1/PH-A3/PH-A4)」",
         "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "消费缺席 → 位次断言红。"
+        "sensitive": false,
+        "notes": "2 fail: 'HV5-AC5 RED: AC5 态行流带墨 0 < 8——无安排话术未渲染（整区留白）' / 'HPB-A5 RED: 空日程行流带墨 0 < 8'；日志 /c/tmp/mut_acc2.log；变异已还原，复原绿"
       },
       {
-        "acceptanceId": "RC-A3: 重连复用 TryStartAutoConnect——零第二条 task / 零新退避表；新触发点区零 SetDeviceState（屏显零触碰）",
-        "mutation": "M9：helper 改直调 protocol_->OpenAudioChannel()（绕过 AutoConnect task）",
-        "affectedTest": "「重连复用守卫」复用 needle 破红（12 Tests 1 Failures）",
+        "acceptance": "HV5-AC6: （S-F1.1-AC6；原编 ACC-3）：明天区空态话术「明天没有什么课喽」——wire [] = 确认明日无项 → preview_count()==0 话术态 + producer 上学日明天区必然非空且含「上学」项（话术仅非上学日可达，两侧场景构造防 vacuous）+ 渲染源字面在世齿",
+        "mutation": "home_p1.c p1_draw_card AC6 分支改渲染 AC7 文案（pv_count==0 态与未达态混同）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c「首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)」",
         "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "第二条重连路径被负 needle 拦截。"
+        "sensitive": false,
+        "notes": "1 fail: 'HV5-AC6 RED: preview [] (确认空话术态) 与 preview null (未达态) 在明天区宽域带逐像素相同——两态渲染混同'；日志 /c/tmp/mut_acc3.log；变异已还原，复原绿"
       },
       {
-        "acceptanceId": "RC-B1: 永不休眠结构事实——本板板级文件零休眠 timer 接线（needle 钉 waveshare-s3-rlcd-4.2.cc）；common 层休眠入口编译面不可达留痕",
-        "mutation": "M10：板文件加 #include \"power_save_timer.h\"",
-        "affectedTest": "「永不休眠结构事实」零接线 needle 命中红（12 Tests 1 Failures）",
+        "acceptance": "HV5-AC7: （S-F1.1-AC7；原编 ACC-4）：数据未达态——preview null/键缺省 → preview_count()==-1 未提供态不出无安排话术 + producer 恒发数组不发 None + day_rollover 跨 0:00 清缓存后两区转未达态（0:00 到零点推送间隙绝不误显话术）+ 拒包后 seam 状态零变化（两区已有数据维持显示）+ 话术态/未达态渲染帧分叉（孩子分得清）",
+        "mutation": "home_p1.c kidpal_home_p1_day_rollover 删 s_preview_count = -1;（跨 0:00 未转未达态）",
+        "affectedTest": "firmware/main/test/schedule_grid.acceptance.c「home upcoming: preview 三态 seam 直注 + day_rollover 未达态 (HV5)」[HV5-AC7]",
         "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "RC-B1 绿态（现状守卫）的空过风险由此消解。"
+        "sensitive": false,
+        "notes": "1 fail: 'HV5-AC7 RED: after rollover preview must fall to the not-provided state (preview_count()==-1 = 数据未达态)'；日志 /c/tmp/mut_acc4.log；变异已还原，复原绿"
       },
       {
-        "acceptanceId": "RC-B2: 会话收尾类本地关（:805/:849/:1189 按 builder 归类表）→ T 秒内恰一次常驻重建排程（复用守卫三条件）；T 值实现期定并冻结进齿",
-        "mutation": "M11：kResidentRebuildDelayS 5→10",
-        "affectedTest": "「常驻重建T值冻结」首定义片段无 5 红（12 Tests 1 Failures）",
+        "acceptance": "HV5-SEAM: （seam 终形；原编 ACC-5）：5 参 inject 终形 + next_day_count 单值三态（>=1 列表 / ==0 确认空 / ==-1 未提供 / 其它负值拒）+ HP1_PREVIEW_MAX 8 定容 + preview_count/preview_item 访问族 + 旧单项访问族退役反向 canary（结构齿）",
+        "mutation": "home_p1.c kidpal_home_p1_schedule_inject 其它负值分支 return -1; → 放行（三态守卫失效）",
+        "affectedTest": "firmware/main/test/schedule_grid.acceptance.c「home upcoming: preview 三态 seam 直注 + day_rollover 未达态 (HV5)」",
         "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "T 冻结值漂移被钉；T=5 为 acceptance-author 冻结相位定值（退避首档同量级），改值走 tighten-only 修订窗口回 planner 重冻结。"
-      },
-      {
-        "acceptanceId": "RC-B3: 网络断关（:422）/Reboot（:1081）/OTA（:1100）/AEC 切换（:1254）/ResetProtocol（:1267）零重建排程——各路径既有语义零偏移",
-        "mutation": "M12：Reboot 区加 ScheduleResidentRebuild()",
-        "affectedTest": "「负锚五路径零重建」Reboot 区计数 1≠0 + 全文件 5≠4 红（连带 RC-A2 全局恰 4 泄漏面；12 Tests 2 Failures）",
-        "turnedRed": true,
-        "sensitive": true,
-        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
-        "executedAt": "2026-10-11",
-        "notes": "负锚承载实证；实现前 trivially green 的空过风险消解。"
+        "sensitive": false,
+        "notes": "1 fail: 'HV5 RED: next_day_count=-2 (non-ternary negative) must be rejected (-1)'；日志 /c/tmp/mut_acc5.log；变异已还原，复原绿。判读注（builder 提出、verifier 裁定）：结构齿（schedule_grid.acceptance.c:1346-1368 字面扫描）未做纯结构变异，选 ACC-5 显式行为「其它负值拒」做行为变异；如需可补 HP1_PREVIEW_MAX 8→9 纯结构变异"
       }
     ]
   },
-  "adrRequired": false,
   "docsSyncRequired": true,
-  "docsSyncReason": "「永不休眠」human 裁定落 arch 四投影点（§10 新增决策 29 + §3 假设表残余注改写 + §8 待裁项闭账 + §6.4 残余句改写）——裁定已由 human 在触点①显式作出，本包 integrator docs-sync 为机械转写 + 残余闭账（先例：决策 21 的 arch §6.4 更新随 04c86a9 dev 包 docs-sync 落地）。",
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "单面固件实现变更：server 面零改动、WS wire 形状零变化（重连复用既有 hello 建连序列）；常驻在线改变每会话重开 WS 拓扑 → 复用通道 seam（application.cc:1014-1020 / front ctx_push_edge front_app.py:212）以既有 story ctx / reminder 齿回归覆盖，front 零改"
-  },
+  "docsSyncReason": "契约 diff 逐字 git apply（CCP §3，CRLF 保全）+ CDQ 行 + docs/crq/tech 记账（cdq: 指针）+ ADR 追加 + architecture-gate-evidence C1/C2/C3 closeout + V5 设计稿母版三处内容级同步——全部归包内 integrator（gate evidence §6/§8 在案）。",
   "docsOwner": "integrator",
-  "notes": "riskTier high 触发口径（architect 触点①裁决 + human 确认 Full）：连接生命周期状态机（本地主动关 8 调用点 vs 服务端断须区分，误判即每会话尾重连风暴/打架休眠门 CanEnterSleepMode）+ 业务影响面（提醒必达依赖常驻在线）→ supervisor 对 riskTier=high 仍升 human，合并须人批。真机轮 human 在场持板为硬前置。reviewed plan = /triage-change 分流（architect 2026-10-10 修订版，含「永远不休眠」裁定扩范围）。1f 快照保鲜核验（2026-10-11 Pod intake）：acceptanceTestsFile 的 key_layer_dispatch.acceptance.c 路径漂移已修正（host_app/ 层级为拆包笔误，实际在 firmware/main/test/ 根）；其余四问全过——引用文件全在、冻结件 boot_auto_connect 未归档、红基线命令 cwd 基准 = firmware/main/test/host_app 正确、firmware 面对锚 2d94c36 零差异。"
+  "notes": "riskTier high 触发口径（architect triage 裁决 + human 触点①确认）：触契约（CCP 已批）+ 跨固件/云端两子面 + 新增空态行为状态机（AC5/AC6/AC7 三态判据）→ supervisor 对 high 仍升 human，合并须人批；真机轮 human 在场持板为硬前置（app+art 双分区烧录——chip 资产重烘，flash-asset-partition-rule）。冻结件修订授权（plan R3）：acceptance-author 派发 prompt 明示 CCP id + §9 v1.61 行，防 tighten-only 误拦。板端旧单对象 preview 过渡容忍一个版本（CCP 触点②，部署缓冲）。producer 明日无项改发 [] 不再 None（plan R1——不改则 AC6 话术永不触发）。TECH-260928 school_start 同参齿保绿勿重复修（plan R5）。【intake 留痕 2026-10-11】① 基线锚差异判停：git diff 4a9e87f..HEAD -- server/ firmware/ 零差异 → 引用 progress.md 锚行（两面零红）不重跑。② 上包 261010-device-reconnect pod-retro 三条改进已消费：builder 派单加「行为面观察单列一节」、taskpackage 字段回填逐字复制源串、Full 包 verifier 序列 scoped→integrator 圈定→final。③ scope-map 写权核对（1c）：acceptance-author（firmware/**/*.acceptance.c + server/**/acceptance/** ✓）/ builder（firmware+server+spiffs bins ✓；**docs/ui/kidpal-ui-design-v5.html 不在其 allow 面**——triage facePlan 顺序4 归 builder 属取证出入，scope-map 禁写会中途撞钩子）→ 设计稿三处内容级同步改派 uiux-author（docs/ui/** 唯一写权角色，内容由 v1.61 口径钉死、与实现解耦），planner 代改 plan 判定留痕于此；builder deny *.acceptance.* 与验收齿 authorship 正交 ✓。④ 契约落地通道：builder git apply CCP §3（Bash 无重定向、settings deny 仅 Edit 形态、260921-m3-k1 先例通道），CRLF 保全 + 人工 diff 逐字核对留痕。⑤ mutationRequired=true（mutation-check 在机器门清单）；perAcceptance 骨架由 acceptance-author 冻结轮产出后 planner 代落（逐字复制 acceptanceId）。【finalize 修正留痕 2026-10-12 planner】acceptance 本地 id 原编 ACC-1..ACC-5 与 acceptance-author 冻结件在用名 HV5-AC2/AC5/AC6/AC7/SEAM 错位（scoped round 1 acceptance-coverage 闸红 ad7c99ea9f55 实证）——id 前缀改判为冻结件在用名、原编号「原编 ACC-n」留痕保溯，冻结验收件零触碰；mapping：ACC-1→HV5-AC2 / ACC-2→HV5-AC5 / ACC-3→HV5-AC6 / ACC-4→HV5-AC7 / ACC-5→HV5-SEAM。"
 }

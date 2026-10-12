@@ -278,8 +278,21 @@
 #include <stdarg.h>
 
 /* home_p1 冻结契约头（在世实现面；hp1_item_t / hp1_state_t / seam 注入 API 形状
- * 零偏移消费）。 */
+ * 零偏移消费）。
+ * 2026-10-11 注：home_p1.h 在本包 builder 落地前仍带旧 4 参 inject 声明——本冻结件
+ * 按修订后冻结契约（授权链见文件尾 REVISION LOG 2026-10-11 条）钉 5 参终形。宏改写
+ * 把头内旧声明改名旁路（仅声明面、无链接语义），使本文件在落地前旧头与落地后新头
+ * 两侧都可编（DEV-GOVERNANCE 验收测试纪律 §4 C 类实编通道）。 */
+#define kidpal_home_p1_schedule_inject kidpal_home_p1_schedule_inject_hdr_decl
 #include "../display/home_p1.h"
+#undef kidpal_home_p1_schedule_inject
+
+/* seam 终形声明（5 参 inject, CCP 261011-p1-home-v5-rework 触点③; 与 home_p1.h
+ * 落地后声明一致）。 */
+int kidpal_home_p1_schedule_inject(const char *day_key,
+                                   const hp1_item_t *items, int count,
+                                   const hp1_item_t *next_day_items,
+                                   int next_day_count);
 /* art 资产契约头（[S5] 烘焙标签资产加载自检用；声明 only——本文件不定义 kidpal_art_*）。 */
 #include "../display/art_assets.h"
 
@@ -312,7 +325,7 @@ static const int pcn_rect_label[4]       = {103,  29, 250,  92};
 static const int pcn_rect_row1[4]        = {152,  68, 392,  94};
 static const int pcn_rect_row2[4]        = {152,  96, 392, 122};
 static const int pcn_rect_row3[4]        = {152, 184, 392, 212};
-static const int pcn_rect_flow[4]        = {152, 213, 392, 242};
+__attribute__((unused)) static const int pcn_rect_flow[4] = {152, 213, 392, 242}; /* 2026-10-11 齿退役保留（REVISION LOG: FLOW 零墨齿随 v1.61 明天区语义退役, 常量留档） */
 static const int pcn_rect_mingzao[4]     = {148, 154, 200, 181};
 static const int pcn_rect_row3_time[4]   = {152, 184, 392, 212};
 /* 负断言区（版式退役面，[S3]）。 */
@@ -364,6 +377,31 @@ __attribute__((weak)) int kidpal_p1_font_glyph(uint32_t codepoint,
 {
     (void)codepoint; (void)out;
     return -1; /* 弱默认 = 字形不可用（与 [S1] 弱默认语义一致） */
+}
+
+/* home_p1 seam 弱哨兵（2026-10-11 追加, HPB/schedule_grid 同款）：本文件夹具消费
+ * inject/set_state/render_frame 三缝——强定义在 host runner 由 home_p1.c 覆盖;
+ * 独立 stub 编译路径（红基线脚手架）下哨兵 -2 = 「frozen seam not implemented」
+ * 解析性红（绝不红在链接错误）。seam 终形 5 参见 REVISION LOG 2026-10-11 条。 */
+#define PCN_UNIMPLEMENTED (-2)
+__attribute__((weak)) int kidpal_home_p1_schedule_inject(const char *day_key,
+                                                         const hp1_item_t *items,
+                                                         int count,
+                                                         const hp1_item_t *next_day_items,
+                                                         int next_day_count)
+{
+    (void)day_key; (void)items; (void)count;
+    (void)next_day_items; (void)next_day_count;
+    return PCN_UNIMPLEMENTED;
+}
+__attribute__((weak)) int kidpal_home_p1_set_state(const hp1_state_t *st)
+{
+    (void)st;
+    return PCN_UNIMPLEMENTED;
+}
+__attribute__((weak)) int kidpal_home_p1_render_frame(void)
+{
+    return PCN_UNIMPLEMENTED;
 }
 
 /* host 渲染缝（host_app/main/host_infra_seam.c 提供，恒链入 runner）。只探针。 */
@@ -607,6 +645,20 @@ static const char *pcn_fm(const char *fmt, ...)
     return pcn_fm_buf;
 }
 
+/* Shared red-string for the frozen seam not being implemented/wired yet
+ * （2026-10-11 追加, HPB 同款——weak 哨兵 -2 必须「解析性红」而非夹具拒绝红）。 */
+static void pcn_require_implemented(int value, const char *what)
+{
+    if (value == PCN_UNIMPLEMENTED) {
+        char msg[512];
+        snprintf(msg, sizeof(msg),
+                 "PCN RED: frozen seam NOT implemented/wired — %s (builder must land "
+                 "the 5-arg seam per the contract in p1_cjk_name.acceptance.c / "
+                 "schedule_grid.acceptance.c REVISION LOG 2026-10-11)", what);
+        TEST_ASSERT_TRUE_MESSAGE(0, msg);
+    }
+}
+
 /* -------------------------------------------------------------------------- *
  * Pixel-probe helpers（HPB/KSG 先例同款）:
  *   pcn_count_ink(rect)  — 区内墨像素计数；-1 = 探针失败（帧未渲染/缝断裂），
@@ -727,13 +779,14 @@ static void pcn_copy_name(char *dst, size_t cap, const char *src)
 static const char *PCN_NAME_FULL10 = "一二三四五六七八九十";
 static const char *PCN_NAME_TRUNC_TAIL = "\xE9";
 
-/* 全量注入（时间可调版）：2 项今日日程 + 次日预告，时间/名全由调用方给定。 */
+/* 全量注入（时间可调版）：2 项今日日程 + 次日 preview 1 项列表（2026-10-11 seam
+ * 终形 5 参——preview 由单指针改数组+计数, REVISION LOG 2026-10-11 条）。 */
 static void pcn_inject_full_t(const char *t0, const char *n0,
                               const char *t1, const char *n1,
                               const char *pt, const char *pn)
 {
     hp1_item_t items[2];
-    hp1_item_t pv;
+    hp1_item_t pv[1];
     int rc;
 
     memset(items, 0, sizeof(items));
@@ -741,11 +794,12 @@ static void pcn_inject_full_t(const char *t0, const char *n0,
     pcn_copy_name(items[0].name, sizeof(items[0].name), n0);
     snprintf(items[1].time, sizeof(items[1].time), "%s", t1);
     pcn_copy_name(items[1].name, sizeof(items[1].name), n1);
-    memset(&pv, 0, sizeof(pv));
-    snprintf(pv.time, sizeof(pv.time), "%s", pt);
-    pcn_copy_name(pv.name, sizeof(pv.name), pn);
+    memset(pv, 0, sizeof(pv));
+    snprintf(pv[0].time, sizeof(pv[0].time), "%s", pt);
+    pcn_copy_name(pv[0].name, sizeof(pv[0].name), pn);
 
-    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, 2, &pv);
+    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, 2, pv, 1);
+    pcn_require_implemented(rc, "kidpal_home_p1_schedule_inject");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         pcn_fm("PCN RED(infra): schedule_inject fixture rejected (rc=%d)——合法夹具"
                "被拒，渲染面无法驱动", rc));
@@ -766,16 +820,18 @@ static void pcn_inject_one(const char *n0)
     snprintf(items[0].time, sizeof(items[0].time), "14:00");
     pcn_copy_name(items[0].name, sizeof(items[0].name), n0);
 
-    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, 1, NULL);
+    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, 1, NULL, -1);
+    pcn_require_implemented(rc, "kidpal_home_p1_schedule_inject");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         pcn_fm("PCN RED(infra): schedule_inject(one item) rejected (rc=%d)", rc));
 }
 
-/* 满载压力夹具：HP1_ITEM_MAX(8) 项 + 预告，全部 10 字 CJK 长名（P1CJK-A10）。 */
+/* 满载压力夹具：HP1_ITEM_MAX(8) 项 + preview 1 项列表，全部 10 字 CJK 长名
+ * （P1CJK-A10）。 */
 static void pcn_inject_max_load(void)
 {
     hp1_item_t items[HP1_ITEM_MAX];
-    hp1_item_t pv;
+    hp1_item_t pv[1];
     int rc;
     int i;
 
@@ -784,11 +840,12 @@ static void pcn_inject_max_load(void)
         snprintf(items[i].time, sizeof(items[i].time), "%02d:00", 8 + i);
         pcn_copy_name(items[i].name, sizeof(items[i].name), PCN_NAME_FULL10);
     }
-    memset(&pv, 0, sizeof(pv));
-    snprintf(pv.time, sizeof(pv.time), "09:00");
-    pcn_copy_name(pv.name, sizeof(pv.name), PCN_NAME_FULL10);
+    memset(pv, 0, sizeof(pv));
+    snprintf(pv[0].time, sizeof(pv[0].time), "09:00");
+    pcn_copy_name(pv[0].name, sizeof(pv[0].name), PCN_NAME_FULL10);
 
-    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, HP1_ITEM_MAX, &pv);
+    rc = kidpal_home_p1_schedule_inject("2026-09-22", items, HP1_ITEM_MAX, pv, 1);
+    pcn_require_implemented(rc, "kidpal_home_p1_schedule_inject");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         pcn_fm("PCN RED(infra): schedule_inject(max load) rejected (rc=%d)", rc));
 }
@@ -814,6 +871,7 @@ static void pcn_set_fixture(void)
     st.charging = 0;
     st.tick_ms = 0;
     rc = kidpal_home_p1_set_state(&st);
+    pcn_require_implemented(rc, "kidpal_home_p1_set_state");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         pcn_fm("PCN RED(infra): set_state fixture rejected (rc=%d)", rc));
 }
@@ -821,6 +879,7 @@ static void pcn_set_fixture(void)
 static void pcn_render_ok(void)
 {
     int rc = kidpal_home_p1_render_frame();
+    pcn_require_implemented(rc, "kidpal_home_p1_render_frame");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         pcn_fm("PCN RED(infra): render_frame rc=%d——P1 帧渲染失败（渲染缝断裂, "
                "非本包设计态红）", rc));
@@ -1311,7 +1370,9 @@ TEST_CASE("P1CJK guards: 铁律canary+扫描器自检+单项零墨 (P1CJK-E2/A3)
                                                "kidpal_home_p1_render_frame") >= 1,
         "PCN RED(infra): occurrence counter cannot count a known literal — 计数器失灵");
 
-    /* ---- A3 单项半（新版式行带口径）: 1 项日程 + 无预告 -------------------- */
+    /* ---- A3 单项半（新版式行带口径; 2026-10-11 随 v1.61 明天区语义重钉）----
+     * 夹具 = 1 项日程 + preview 未提供（NULL, -1）——明天区落 AC7 数据未达态
+     * （requirements v1.61: 未提供态必须渲染友好提示、绝不留白）。 */
     pcn_set_fixture();
     pcn_inject_one("钢琴课");
     pcn_render_ok();
@@ -1330,14 +1391,19 @@ TEST_CASE("P1CJK guards: 铁律canary+扫描器自检+单项零墨 (P1CJK-E2/A3)
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
         pcn_fm("PCN-A3 RED: 单项日程 ROW2 墨 %d != 0——行流门控被破（无第 2 项却画"
                "了行, 或大 imgfont 时间/贴纸未退役压进行带）", ink));
+    /* 2026-10-11 重钉（授权链见 REVISION LOG）: 旧齿「无预告 ROW3 严格零墨
+     * （s_has_preview 门控）」前提被 v1.61 supersede——明天区在 preview 未提供时
+     * 必须渲染 AC7 数据未达提示（非留白）; preview 任意态（列表/确认空话术/未达
+     * 提示）下明天区恒有墨, 三态可区分性由 HPB HV5 CASE 帧分叉齿承载。 */
     ink = pcn_count_ink(pcn_rect_row3);
-    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        pcn_fm("PCN-A3 RED: 单项日程无预告 ROW3 墨 %d != 0——s_has_preview 门控被破"
-               "（预告缺位仍画行）", ink));
-    ink = pcn_count_ink(pcn_rect_flow);
-    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        pcn_fm("PCN-A3 RED: 单项日程 FLOW 带墨 %d != 0——无换行/溢出内容却画进承载带",
-               ink));
+    TEST_ASSERT_TRUE_MESSAGE(ink >= PCN_INK_MIN_ELEM,
+        pcn_fm("PCN-A3 RED: 单项日程 preview 未提供态明天区行带 {152,184,392,212} 墨"
+               " %d < %d——AC7 数据未达提示未渲染（v1.61: 未达态非留白）", ink,
+               PCN_INK_MIN_ELEM));
+    /* FLOW 零墨齿退役（同上 REVISION LOG 条）：FLOW {152,213,392,242} 与明天区
+     * 宽域带 y213-218 重叠, 明天区合法内容可入该 sliver——卡区底界硬 containment
+     * 义务由 A10 底界外带 {y243..251} 零墨齿 + HPB HV5 明天区 clip containment 齿
+     * 分头承载, 不留真空。 */
 }
 
 /* -------------------------------------------------------------------------- *
@@ -2148,6 +2214,29 @@ TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A
  *               {236,36,390,60}; PREVIEW_NEG {152,220,392,242}; 左缝带重锚
  *               {130,80,150,242}（云墨 x107-147 合法越过旧缝 x[129..135], 新缝 =
  *               小伴兜底描边右缘与帽标/文字列之间, y 自 80 起避开云墨带）;
- *               BELOW_LABEL/BELOW_ROW1 随行流带重钉。实跑 = 103 Tests /
+ *               实跑 = 103 Tests /
  *               0 Failures / OK（2026-09-26 主线程实跑锚）。
+ *               ── 2026-10-11 冻结件修订（TaskPackage 261011-p1-home-v5-rework;
+ *               授权链双引用 = 「CCP id 261011-p1-home-v5-rework（HUMAN_APPROVED
+ *               2026-10-11）+ docs/requirements.md §9 v1.61 版本行（2026-10-11）」,
+ *               plan R3 明示派发; 修订面 = inject 调用点适配, :748-791 快照域）──
+ *               ① seam 终形适配：三处 inject 调用点（full_t / one / max_load）
+ *               改 5 参——preview 由单指针改 1 项数组 + 计数（next_day_items,
+ *               next_day_count）; home_p1.h 旧 4 参声明以宏改写旁路 + 本文件内
+ *               5 参终形声明（builder 落地新头后本文件零改续编）。
+ *               ② weak 哨兵追加（additive, HPB/schedule_grid 同款）：inject(5 参)/
+ *               set_state/render_frame 三缝 weak -2 哨兵 + pcn_require_implemented
+ *               helper——独立 stub 编译路径（红基线脚手架）下夹具红 = 「frozen seam
+ *               not implemented」解析性红, 绝不红在链接错误、也不误读成夹具拒绝。
+ *               ③ A3 单项半重钉（TEST 5 后段, 授权链同上）：旧齿「无预告 ROW3 严格
+ *               零墨（s_has_preview 门控）」与「FLOW 严格零墨」两前提被 requirements
+ *               v1.61 supersede——明天区在 preview 未提供时必须渲染 AC7 数据未达
+ *               提示（非留白）, 任意 preview 态明天区恒有墨。重钉 = ROW3 改在位齿
+ *               （墨 >= 8 = 未达提示在场, AC7）; FLOW 零墨齿退役（常量留档 unused）
+ *               ——卡区底界硬 containment 义务由 A10 底界外带 {y243..251} 零墨齿 +
+ *               p1_home_battery HV5 明天区 clip containment 齿分头承载。ROW2 零墨
+ *               （today 区第 2 项门控）、MINGZAO/STICKER_NEG/PREVIEW_NEG/A9 tooth 4
+ *               预告项行带 diff 各齿前提在 v1.61 下仍成立, 零偏移保留。
+ *               零触碰面：[S1]-[S5] 既有钉区常量值、TEST 1-4/6-9 既有齿断言、
+ *               渲染语义、扫描基础设施。
  * --------------------------------------------------------------------------- */

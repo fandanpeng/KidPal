@@ -433,17 +433,24 @@ def week_grid_payload(model: dict, week_date_iso: str,
 def home_upcoming_payload(model: dict, today_iso: str, now_hhmm: str,
                           tomorrow_iso: str,
                           school_start: str | None = None) -> dict:
-    """契约 §1.3⑥ home 可选 data.upcoming producer 载荷。
+    """契约 §1.3⑥ home 可选 data.upcoming producer 载荷（2026-10-11 多项数组化，
+    CCP 261011-p1-home-v5-rework 触点① HUMAN_APPROVED；requirements v1.61 S-F1.1
+    AC2/AC6/AC7）。
 
     items = group_upcoming(model, today_iso, now_hhmm, school_start) 逐项剥 location
     后的 {time,name}（分组口径零偏移复用，含决策 26 合并「上学」项 12:00 在校时段计
     upcoming 语义）；preview = group_upcoming(model, tomorrow_iso, "00:00",
-    school_start) 首项的 {time,name}（明日预告首项开始时刻）；明日无项 -> preview None。
-    day_key 恒为「今天」。payload 即 home_p1 seam 注入参数的 JSON 化。"""
+    school_start) **全量**逐项剥 location 后的 {time,name} **数组**——明日日程全量
+    进区：学校课合并「XX:XX 上学」与课外班、临时事件同列，按开始时间升序（升序由
+    单源 group_upcoming 保证，零新排序逻辑）；**明日无项 -> preview == []（不再
+    None）**——`[]` = 云端确认明日无项，是 AC6「明天没有什么课喽」空态话术的显式
+    wire 载体（plan R1：发 None 会使话术永不触发）。producer 恒发数组、不发 null
+    （null/键缺省 = 未提供，板端数据未达态 AC7，只可能来自未推送）。day_key 恒为
+    「今天」。payload 即 home_p1 seam 注入参数的 JSON 化。"""
     items = [{"time": it["time"], "name": it["name"]}
              for it in group_upcoming(model, today_iso, now_hhmm, school_start)]
-    nxt = group_upcoming(model, tomorrow_iso, "00:00", school_start)
-    preview = ({"time": nxt[0]["time"], "name": nxt[0]["name"]} if nxt else None)
+    preview = [{"time": it["time"], "name": it["name"]}
+               for it in group_upcoming(model, tomorrow_iso, "00:00", school_start)]
     return {"view": "home", "data": {"upcoming": {
         "day_key": "今天", "items": items, "preview": preview}}}
 
