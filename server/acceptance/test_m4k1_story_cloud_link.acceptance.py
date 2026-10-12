@@ -124,8 +124,12 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
   契约 §1.5-3 Q7 relay 收紧           → A1 齿（build_display_tool_calls 真跑降级）→ 行为级
   契约 §1.5-3 Q8 story floor          → A1 齿（validate_display 真门拒绝/放行）→ 行为级
   契约 §1.3③④/§1.6 story 段落文        → A1 契约锚齿（读契约正文钉前锚点串）→ 源锚代理
-  arch §5.2④ 三时点推送（行为策略；2026-09-28 修订 = 时点①建连即推摘除、归 M4-K3 session_ctx）
-                                        → A3 齿（时点②③ = pump wire）+ FIX-A1 负锚齿（建连路径零下行）
+  arch §5.2④ 三时点推送（行为策略；2026-09-28 修订 = 时点①建连即推摘除、归 M4-K3 session_ctx；
+  2026-10-12 v1.63 赎回 = 时点①重立为 WS 建连恢复推送（data.restore 标记只填缓存不抢前台），
+  ctx(story) 同拍推送保留由 M4K3-A7 冻结齿承载）
+                                        → A3 齿（时点②③ = pump wire + restore 缺省零偏移）+
+                                        FIX-A1 翻正齿（建连恰一帧 data.restore==true story_list）
+                                        + SL-A6 齿（恢复推送失败不阻断建连）
   requirements §2.1 120s 录音态超时     → A5 齿（纯决策面真跑）+ 前端接线缺口（见下）
   spec S-F2.4 AC2 流水号只增不减        → A6 齿（删除不回退/重启存活真跑）→ 行为级
 
@@ -155,6 +159,12 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
        重开）→ 建连即推 story_list 会盖掉聆听态、旧固件 story_page.c 零 CJK 渲染半截页 ——
        ①摘除、归 M4-K3 session_ctx 承接；FIX-A1 负锚齿以**真实连接处理段流程**（离线装机 +
        假引擎腿 + pump I/O 双桩）钉「建连路径零 story_list 下行」，无源锚代理缺口。
+       【2026-10-12 翻正】v1.63（requirements §9 frozen 2026-10-12）赎回 260928 挂起的时点①
+       重裁：建连恢复推送回接，data.restore 标记 + 板端 restore 分流（只填缓存不抢前台、P3
+       在屏仅重绘本页）消解旧缺陷复现路径（restore 分流 = schedule :926-991 在役形态复刻）；
+       FIX-A1 齿翻正为「建连恰一帧 data.restore==true story_list」，授权链（CCP 261010-
+       p3-storylist-cold-start HUMAN_APPROVED 2026-10-12 + §9 v1.63 行 + human 方向锚留痕）
+       逐字见 REVISION LOG 2026-10-12 条。
     ③ **Q7「引擎侧来源」判据**：offline 只钉 relay 路径对 story_* 降级；不断言真实引擎帧的
        来源标记（该标记在 side-channel 类型）。行为等价假设「relay 路径（build_display_tool_calls）
        = 引擎侧来源面」显式化——front 自推走 _push_story_list、不经 relay（天然豁免）。
@@ -180,9 +190,13 @@ Coverage map (acceptanceRef -> test):
            -> test_a2_idempotent_convergence_with_start_recording
   M4K1-A3 -> test_a3_list_stories_window_and_total_independent
            -> test_a3_push_seam_and_wire_timepoints
-  FIX-A1 -> test_fix_a1_connect_path_emits_zero_story_list（260928-story-connect-push-defer：
-           建连即推摘除负锚；时点②③在场由修订后 a3 齿承载，不双断言同一面）
-  FIX-A2 -> （a3 齿时机语义修订，承载于上两齿；见 REVISION LOG v3）
+  FIX-A1 -> test_fix_a1_connect_path_emits_exactly_one_restore_story_list（2026-10-12 翻正：
+           v1.63 冷启动恢复赎回——建连恰一帧 data.restore==true story_list；原「建连零帧」
+           负锚形态沿革与授权链见 REVISION LOG 2026-10-12 条）
+  FIX-A2 -> （a3 齿时机语义修订，承载于上两齿；见 REVISION LOG v3；2026-10-12 时点①建连
+           恢复推送回接由 FIX-A1 翻正齿承载）
+  SL-A1  -> test_fix_a1_connect_path_emits_exactly_one_restore_story_list（同 FIX-A1 翻正齿）
+  SL-A6  -> test_sla6_connect_push_failure_does_not_block_connect
   M4K1-A4 -> test_a4_delete_executes_and_repushes
            -> test_a4_delete_nonexistent_id_idempotent_repush
            -> test_a4_delete_rejects_traversal_and_no_sentinel
@@ -919,6 +933,13 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
                     " —— 三时点② 未接线/非幂等不重复。")
                 self.assertEqual(pushes[0]["data"]["total"], 3,
                                  "M4K1-A3 RED: 归档后推送 total != 更新后现存篇数。")
+                # 2026-10-12 additive（SL-A1 同批）：时点②主动推送 restore 缺省零偏移
+                # （契约 §1.3③ D1 生产纪律——仅 WS 建连恢复推送可置 data.restore；缺省
+                # absent/显式 false 同判，②③调用点零偏移）。
+                self.assertFalse(
+                    pushes[0]["data"].get("restore"),
+                    "M4K1-A3 RED: 归档后（时点②）推送带 data.restore —— 生产纪律破"
+                    "（契约 §1.3③ D1: 仅 WS 建连恢复推送可置 restore; 主动推送缺省零偏移）。")
 
 
 # =========================================================================== #
@@ -997,30 +1018,36 @@ def _fake_engine_ws(upstream):
 
 
 class M4K1ConnectPushDeferAcceptance(unittest.TestCase):
-    """FIX-A1（260928-story-connect-push-defer，human 方向锚 pod-events b036f554）:
-    建连即推摘除负锚。
+    """FIX-A1（260928-story-connect-push-defer → 2026-10-12 翻正, 见 REVISION LOG）:
+    建连恢复推送齿（原「建连即推摘除负锚」）。
 
     行为级（非源锚代理）：真实连接处理段流程 —— `ws_gateway` 全程离线走完（鉴权通过 +
-    accept + 假引擎腿 + 两条 pump），断言设备腿收到的 story_list 下行帧数 = 0；同时钉
-    「连接真实走通」（设备帧被转发引擎）防「流程早退 -> 零帧」空过。三时点②（归档成功后）
-    ③（删除执行后）在场由修订后 a3 齿承载 —— 本齿不双断言同一面。"""
+    accept + 假引擎腿 + 两条 pump），断言设备腿收到的 story_list 下行帧数 = 恰 1 且
+    data.restore 字面 true（v1.63 冷启动恢复：恢复性推送只填缓存不抢前台——restore 标记
+    是板端 restore 分流的 wire 载体, 缺它 = 板端按主动展示接管前台, 旧缺陷复现）；同时钉
+    「连接真实走通」（设备帧被转发引擎）防「流程早退 -> 零帧/单帧」空过。三时点②（归档
+    成功后）③（删除执行后）在场由修订后 a3/a4 齿承载（restore 缺省零偏移断言随批
+    additive）——本齿不双断言同一面。SL-A6 = 恢复推送失败不阻断建连（try/except 同
+    schedule connect push 先例）。"""
 
     maxDiff = None
 
-    def test_fix_a1_connect_path_emits_zero_story_list(self):
-        """coverage: FIX-A1 — 建连路径（ws_gateway 连接处理段）零 story_list 下行帧。"""
+    def test_fix_a1_connect_path_emits_exactly_one_restore_story_list(self):
+        """coverage: SL-A1 + FIX-A1 — 建连路径（ws_gateway 连接处理段）恰一帧 story_list
+        下行且 data.restore == true（2026-10-12 翻正; 原「零 story_list 下行」负锚形态
+        沿革与授权链见 REVISION LOG 2026-10-12 条）。"""
         front = _front()
         push = getattr(front, "_push_story_list", None)
         self.assertTrue(
             callable(push),
-            "FIX-A1 RED: front_app.py 无 async _push_story_list(websocket) —— 时点②③仍依赖"
-            "该缝，摘除建连即推不得拆缝。")
+            "FIX-A1 RED: front_app.py 无 async _push_story_list(websocket) —— 建连恢复"
+            "推送与时点②③共用该下行缝, 缝不在世。")
         token = "F" * 24
         old_token = front.DEVICE_TOKEN
         with tempfile.TemporaryDirectory(prefix="m4k1_fixa1_") as tmp:
             with _front_with_stories(tmp) as front:
                 front.DEVICE_TOKEN = token
-                # 预置 2 篇故事：若建连即推仍在树，设备腿必收到帧 —— 负锚非空过。
+                # 预置 2 篇故事：建连恢复推送必下发且 total = 现存篇数 —— 断言非空过。
                 _seed(Path(tmp), 2)
                 up = _FakeUpstream()
                 dev = _FakeDeviceSession(
@@ -1032,18 +1059,71 @@ class M4K1ConnectPushDeferAcceptance(unittest.TestCase):
                 self.assertTrue(
                     dev.accepted,
                     "FIX-A1 RED: 设备腿未被 accept —— 连接处理段流程未走通（鉴权/装机问题），"
-                    "负锚零帧断言失效。")
+                    "建连推送断言失效。")
                 self.assertIn(
                     "listen", _forwarded_frame_types(up.sent),
                     "FIX-A1 RED: 设备帧未被转发引擎 —— 连接处理段流程未走通（pump 未跑），"
-                    "负锚零帧断言失效。")
-                # 负锚本体：建连路径零 story_list 下行帧（真机缺陷：每会话重开 WS 拓扑下
-                # 建连即推会盖掉聆听态、旧固件 story_page.c 零 CJK 渲染半截页）。
+                    "建连推送断言失效。")
+                # 翻正本体：建连路径恰一帧 story_list 下行（三时点① WS 建连恢复推送,
+                # requirements v1.63 S-F2.1 补充规则 + arch §5.2④ 三时点①）。
+                frames = _story_list_frames(dev.sent_text)
                 self.assertEqual(
-                    len(_story_list_frames(dev.sent_text)), 0,
-                    f"FIX-A1 RED: 建连路径产生 {len(_story_list_frames(dev.sent_text))} 帧 "
-                    "story_list 下行 —— 建连即推未摘除（human 方向锚 b036f554；①时机归 "
-                    "M4-K3 session_ctx 承接）。")
+                    len(frames), 1,
+                    f"FIX-A1 RED: 建连路径产生 {len(frames)} 帧 story_list 下行（应恰"
+                    "一帧恢复推送）—— 时点①建连恢复推送未回接（v1.63 赎回缺口）或非单帧。")
+                # restore 标记 = 板端 restore 分流的 wire 载体（契约 §1.3③ data.restore
+                # additive, CCP D1——缺它板端按主动展示确定性接管前台顶到 P3, 260928 旧
+                # 缺陷形态复现; 板端 mcp_json_get_bool absent/false 同判 false, 须字面 true）。
+                self.assertIs(
+                    frames[0]["data"].get("restore"), True,
+                    f"FIX-A1 RED: 建连恢复推送 data.restore = "
+                    f"{frames[0]['data'].get('restore')!r}（应字面 true）—— 恢复性标记缺失"
+                    "时板端 restore 分流无载体（旧固件确定性接管前台 = 旧缺陷复现）。")
+                self.assertEqual(
+                    frames[0]["data"]["total"], 2,
+                    "FIX-A1 RED: 恢复推送 total != 现存篇数 —— producer 语义偏移。")
+                ok, reason = _display_schema().validate_display(frames[0])
+                self.assertTrue(
+                    ok,
+                    f"FIX-A1 RED: 带 data.restore 的恢复推送被 V27 真门拒绝 ({reason}) —— "
+                    "story_list floor 未随契约门 D3 联动扩 restore 可选布尔（CCP D3）。")
+
+    def test_sla6_connect_push_failure_does_not_block_connect(self):
+        """coverage: SL-A6 — 建连恢复推送失败（_push_story_list 抛异常）不阻断建连：
+        try/except 同 schedule connect push（front_app.py 建连段 :1009-1012 先例）——
+        鉴权/accept/pump/连接生命周期照常。must-stay-green 守卫（现状树无建连推送 =
+        平凡绿; builder 落裸调（无 try/except）即红——变异敏感面, REVISION LOG
+        2026-10-12 条显式申报）。"""
+        front = _front()
+        token = "F" * 24
+        with tempfile.TemporaryDirectory(prefix="m4k1_sla6_") as tmp:
+            with _front_with_stories(tmp) as front:
+                front.DEVICE_TOKEN = token
+                _seed(Path(tmp), 2)
+
+                async def _boom(websocket, *args, **kwargs):
+                    raise RuntimeError("restore push boom")
+
+                original = front._push_story_list
+                front._push_story_list = _boom
+                try:
+                    up = _FakeUpstream()
+                    dev = _FakeDeviceSession(
+                        incoming=[json.dumps({"type": "listen", "state": "start"})],
+                        token=token)
+                    with _fake_engine_ws(up):
+                        asyncio.run(front.ws_gateway(dev))
+                finally:
+                    front._push_story_list = original
+                self.assertTrue(
+                    dev.accepted,
+                    "SL-A6 RED: 恢复推送异常时设备腿未 accept —— 建连被推送失败阻断"
+                    "（try/except 先例缺失; 建连推送是增强, 不因它拒服务——schedule "
+                    "connect push :1009-1012 同款先例）。")
+                self.assertIn(
+                    "listen", _forwarded_frame_types(up.sent),
+                    "SL-A6 RED: 恢复推送异常时设备帧未转发引擎 —— 泵未跑（建连被推送"
+                    "失败阻断; 连接语义优先于增强推送）。")
 
 
 # =========================================================================== #
@@ -1089,6 +1169,12 @@ class M4K1DeleteAcceptance(unittest.TestCase):
                 self.assertEqual(
                     pushes[0]["data"]["total"], 2,
                     "M4K1-A4 RED: 删除后重推 total != 现存篇数（删除即 −1 可见 = 隐式 ack）。")
+                # 2026-10-12 additive（SL-A1 同批）：时点③主动重推 restore 缺省零偏移
+                # （契约 §1.3③ D1 生产纪律——仅 WS 建连恢复推送可置 data.restore）。
+                self.assertFalse(
+                    pushes[0]["data"].get("restore"),
+                    "M4K1-A4 RED: 删除后（时点③）重推带 data.restore —— 生产纪律破"
+                    "（契约 §1.3③ D1: 仅 WS 建连恢复推送可置 restore; ③缺省 False 零偏移）。")
                 ids = {it["id"] for it in pushes[0]["data"]["items"]}
                 self.assertNotIn(b["id"], ids,
                                  "M4K1-A4 RED: 重推列表仍含被删 id。")
@@ -1741,6 +1827,52 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
 #   sha256 核销链: 2e33ee943872f5781ab40eb54a58c790004291134a1dffdf6f1ec799516f71dd（v3 交付
 #   形态）→ 本次修订后正文态 sha256 见 notes（剥离全部 REVISION LOG 注释块后复算可验）→
 #   交付形态（含本条）自身计入正文、自指不可解，据实分记（同上两条口径）。
+# --------------------------------------------------------------------------- #
+# [2026-10-12 · 正常改验收通道（非 §6 tighten-only）· 包 261010-p3-storylist-cold-start-restore
+#  · 范围：本冻结件内 FIX-A1 负锚齿翻正 + SL-A1/SL-A6 齿 + a3/a4 齿 restore 缺省零偏移
+#  断言 additive]
+#   修订授权链（三件齐备, 逐字留痕——260928 FIX-A2 先例形态）:
+#     1) 契约门 = CONTRACT-CHANGE-PACKET 261010-p3-storylist-cold-start（delivery/
+#        taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/
+#        CONTRACT-CHANGE-PACKET.md）HUMAN_APPROVED 2026-10-12——story_list data.restore
+#        additive（D1 字段定义 + 生产纪律「仅 front 后台附带推送路径（WS 建连恢复推送）
+#        可置 restore」/ D2 板子行为句例外子句 / D3 §1.5-3 floor 联动 / D4 变更记录行）。
+#     2) 需求面 = docs/requirements.md §9 v1.63 行（frozen 2026-10-12）——S-F2.1 AC1
+#        「正常接收与冷启动恢复推送均算」+ 补充规则「冷启动恢复 = WS 建连附带重推（恢复性
+#        推送、只填缓存不抢前台、P3 在屏时刷新本页）」+ AC5/AC6 空态两态定稿。
+#     3) human 方向锚留痕：v1.63 赎回 260928-story-connect-push-defer 挂起的时点①重裁
+#        （spine delivery/changes/intake/261010-p3-storylist-cold-start.md OQ-1 human 裁
+#        restore 标记方案）——260928 摘除的止血前提（旧固件无条件渲染 P3 盖聆听态）已被
+#        「data.restore 标记 + 板端 restore 分流（只填缓存不抢前台、P3 在屏仅重绘本页,
+#        复刻 schedule mcp_server.cc :926-991 在役形态）」消解, 摘除理由不再成立。三方
+#        核实记录 = spine + contract-gate/architecture-gate-evidence.md §4（HUMAN_APPROVED
+#        问答原文留痕于主线程会话）。
+#   修订动作:
+#     ① FIX-A1 翻正 = test_fix_a1_connect_path_emits_zero_story_list 更名
+#       test_fix_a1_connect_path_emits_exactly_one_restore_story_list, 「建连路径零
+#       story_list 下行」负锚断言改为「恰一帧 + data.restore 字面 true + total 语义 +
+#       V27 真门放行（D3 floor 联动）」; 类 docstring、coverage map、强度申报行、
+#       弱于契约② 同步翻正注记（历史沿革原文保留）。连接活性防空过双断言（accepted +
+#       listen 转发）逐字保留。
+#     ② SL-A6 新增 = test_sla6_connect_push_failure_does_not_block_connect（行为级守卫:
+#       monkeypatch _push_story_list 抛异常 -> 建连照常完成; 现状树无建连推送 = 平凡绿,
+#       builder 落裸调（无 try/except）即红——变异敏感面显式申报, 非设计态红）。
+#     ③ a3/a4 齿 additive: 时点②③推送帧 restore 缺省零偏移断言（assertFalse(data.get
+#       ("restore"))——D1 生产纪律「仅建连恢复推送可置 restore」; absent/显式 false 同判,
+#       既有断言零触碰）。
+#   红基线恒现跑（2026-10-12 实跑, 逐字结果见 taskpackage redBaselineResult）: FIX-A1
+#   翻正齿设计态红（建连现零帧）+ 其余齿全绿零新增红; 收集零错误（冻结即冒烟,
+#   DEV-GOVERNANCE §3）。
+#   mutation: 摘除建连段 _push_story_list(restore=True) 调用 -> 翻正齿转红（0 帧）; 置
+#   restore=False -> restore 字面断言红; ②③调用点误置 restore -> a3/a4 零偏移断言红;
+#   建连推送裸调（摘 try/except）-> SL-A6 齿红。
+#   sha256 核销链: v3 正文态 -> 本次修订后正文态 sha256 见 notes（剥离全部 REVISION LOG
+#   注释块后复算可验）——本条自身计入正文、自指不可解, 据实分记（同前三条口径）。
+#   追记（同日, verifier 内循环 scoped r2）: 翻正齿 docstring coverage 标记
+#   `coverage: FIX-A1 + SL-A1` 调序为 `coverage: SL-A1 + FIX-A1`——acceptance-coverage
+#   闸（acceptance-coverage-check.mjs hasCoverageMarker 正则 `coverage\s*:?\s*SL-A1\b`）
+#   要求 coverage 与验收 ID 紧邻, `FIX-A1 + ` 隔中不命中致 SL-A1 误报未覆盖; 纯
+#   cosmetic coverage-marker 修正（闸红 ad 实证驱动）, 断言零触碰。
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()

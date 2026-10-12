@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 13 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 14 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -22,5 +22,6 @@
 | [ARQ-260904-v23-asr-swap-quota-recheck](ARQ-260904-v23-asr-swap-quota-recheck.md) | V23 ASR 换型 + token-plan 配额重置后补验（流式/VAD 切句兼容性与引擎 provider 可行性） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
 | [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
 | [TECH-261010-device-no-reconnect-on-server-close](TECH-261010-device-no-reconnect-on-server-close.md) | 固件对「服务端主动断连」无自动重连——OnAudioChannelClosed 只进低功耗回 Idle，断线自动重连仅覆盖网络重连事件路径 | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [TECH-261010-p3-storylist-cold-start-empty](TECH-261010-p3-storylist-cold-start-empty.md) | P3 星星记录本冷启动空态——story_list 建连即推被 260928 止血摘除后「进页即见列表」语义重裁至今未做，重启后翻 P3 恒空 | 2026-10-12 | integrator（261010-p3-storylist-cold-start-restore closeout——修法三件全落：front 建连恢复推送 + 板端 restore 分流 + 空态两态渲染；证据 = delivery/changes/dev/261010-p3-storylist-cold-start-restore/） |
 | [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
 | [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | 2026-10-12 | delivery/changes/dev/261012-kidpal-realtime-facts/（②单包 Lite 落地 + 真机轮 RF-A5 过：2026-10-12 14:27 引擎日志双路径实证——带城市真查「我查了一下西安……多云转晴，白天最高大概 24 度」（真实预报，对比早上幻觉版），无城市诚实降级「今天我这里没拿到天气数据……再问我一次试试，或者告诉我你在哪个城市」零编造；human 目击「问天气好了」；TTS 层故障另立 TECH-261012-edgetts-403-hotpatch、首按键问题另立 TECH-261012-first-keypress-no-listening，均不属本条目域） |

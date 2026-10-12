@@ -199,3 +199,81 @@ TEST_CASE("story_page_v2_ut: 对账/装载/盖章畸形入参", "[story_page_v2]
         TEST_ASSERT_EQUAL_STRING("第 3 屏 · 共 3 屏", buf);
     }
 }
+
+/* ===========================================================================
+ * [SL] 261010-p3-storylist-cold-start-restore additive 单元测试（冻结齿未穷尽的
+ * restore 分流纯逻辑值类/位序 + 空态两态判据底座; 非冻结件）。
+ * ======================================================================== */
+
+/* ---- restore 键容忍（值类/位序）: list_parse 对 data.restore 键（true/false/字符串/
+ * 数字/数组/对象/null, 前/中/后位序）经 ksy_skip_value 忽略不降级 —— 各帧解析 == 无键
+ * 同参（契约 §1.3③ D1 additive; 对端 WS 建连恢复帧真实形状）。冻结齿 SLP-SLA4 tooth
+ * 4/5 只钉 true 前位序 + false 后位序, 本测补其余值类与位序。 ---- */
+TEST_CASE("story_page_v2_ut: list_parse restore 键容忍（值类/位序）", "[story_page_v2][ut]")
+{
+    static const char *const plain =
+        "{\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\",\"date\":\"08-20\"},"
+        "{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}";
+    static const char *const variants[] = {
+        "{\"restore\":true,\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+        "{\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\",\"date\":\"08-20\"},"
+        "{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}],\"restore\":false}",
+        "{\"total\":2,\"restore\":\"yes\",\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+        "{\"restore\":1,\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+        "{\"restore\":[1,2],\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+        "{\"restore\":{\"x\":1},\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+        "{\"restore\":null,\"total\":2,\"items\":[{\"id\":\"a\",\"title\":\"甲\","
+        "\"date\":\"08-20\"},{\"id\":\"b\",\"title\":\"乙\",\"date\":\"08-25\"}]}",
+    };
+    kidpal_story_list_t ref;
+    kidpal_story_list_t got;
+    size_t k;
+
+    memset(&ref, 0, sizeof(ref));
+    TEST_ASSERT_EQUAL_INT(2, kidpal_story_list_parse(plain, &ref));
+    for (k = 0; k < sizeof(variants) / sizeof(variants[0]); k++) {
+        memset(&got, 0, sizeof(got));
+        TEST_ASSERT_EQUAL_INT_MESSAGE(
+            2, kidpal_story_list_parse(variants[k], &got),
+            "restore 键值被当畸形整单拒收 —— ksy_skip_value 对 restore 键容忍破"
+            "（additive 字段须忽略不降级）");
+        TEST_ASSERT_EQUAL_INT(ref.total, got.total);
+        TEST_ASSERT_EQUAL_INT(ref.count, got.count);
+        TEST_ASSERT_EQUAL_INT(
+            0, memcmp(got.items, ref.items, sizeof(ref.items[0]) * (size_t)ref.count));
+    }
+}
+
+/* ---- 空态两态判据底座: 空 items 帧（数据已送达、确无篇目）-> total 0/count 0; view_init
+ * -> counter 0（AC5 ×0 诚实计数数据源）。 ---- */
+TEST_CASE("story_page_v2_ut: 空态判据底座（AC5 ×0 / 空 items）", "[story_page_v2][ut]")
+{
+    kidpal_story_list_t l;
+    kidpal_story_view_t v;
+
+    memset(&l, 0xFF, sizeof(l));
+    TEST_ASSERT_EQUAL_INT(0, kidpal_story_list_parse("{\"total\":0,\"items\":[]}", &l));
+    TEST_ASSERT_EQUAL_INT(0, l.total);
+    TEST_ASSERT_EQUAL_INT(0, l.count);
+    TEST_ASSERT_EQUAL_INT(0, kidpal_story_counter(&l));
+
+    memset(&v, 0xFF, sizeof(v));
+    TEST_ASSERT_EQUAL_INT(0, kidpal_story_view_init(&v, &l));
+    TEST_ASSERT_EQUAL_INT(0, v.counter);
+    TEST_ASSERT_EQUAL_INT(0, v.count);
+    TEST_ASSERT_EQUAL_INT(KSTORY_PAGE_LIST, v.page);
+}
+
+/* ---- 空态话术双 macro 单源在世 + 两态互异（防误合并成单态）。值绑定归冻结齿
+ * SLP-SLA5 tooth 1/2 结构扫描; 本测钉在世非空 + 两态不同。 ---- */
+TEST_CASE("story_page_v2_ut: 空态话术双 macro 单源在世", "[story_page_v2][ut]")
+{
+    TEST_ASSERT_TRUE(strlen(KSTORY_EMPTY_HINT) > 0);
+    TEST_ASSERT_TRUE(strlen(KSTORY_EMPTY_HINT_UNREACHED) > 0);
+    TEST_ASSERT_TRUE(strcmp(KSTORY_EMPTY_HINT, KSTORY_EMPTY_HINT_UNREACHED) != 0);
+}

@@ -113,6 +113,13 @@ def validate_display(payload) -> tuple[bool, str]:
                                   or total < 0):
             # total 在场须为非负整数（对端 kidpal_story_list_parse 非整数 -> -1 整单降级）。
             return (False, "story_list total must be a non-negative integer")
+        # data.restore 可选布尔（additive；契约 §1.3③ D1 / §1.5-3 floor 联动，2026-10-12
+        # 契约门）——true = 恢复性载荷（WS 建连附带重推，只填缓存不接管前台）。缺省（absent）
+        # 或显式 false 设备行为完全不变；在场须为 JSON 布尔（非布尔字面 -> 拒绝并降级，
+        # 畸形 restore 帧不入板盲渲染）。
+        restore = data.get("restore")
+        if restore is not None and not isinstance(restore, bool):
+            return (False, "story_list restore must be a boolean when present")
         items = data.get("items")
         if not isinstance(items, list):
             return (False, "story_list items must be an array")

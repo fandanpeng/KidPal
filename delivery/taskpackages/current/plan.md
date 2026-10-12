@@ -1,102 +1,51 @@
 ---
-changeId: 261010-device-reconnect-on-server-close
+changeId: 261010-p3-storylist-cold-start-restore
 rigor: full
-riskTier: high
+riskTier: medium
 sourceType: regression
-reviewed-by: architect（/triage-change 分流 review；触点① human 裁定「永远不休眠」扩范围修订，2026-10-10）
+reviewed-by: architect（/triage-change 分流 review，2026-10-10）
 date: 2026-10-10
+launchPreconditions: 见「上游门」节——spine 面板 anchors 未回填不得 launch（spine 源条款）
 ---
 
-# 固件断线自动重连 + 永不休眠常驻在线（TECH-261010-device-no-reconnect-on-server-close；arch §8 休眠产品决策同批落档）
+# P3 story_list 冷启动恢复性推送（TECH-261010-p3-storylist-cold-start-empty · dev 面）
 
-## human 裁定记录（触点①，2026-10-10）
-
-- 四档裁决确认：①Full / ②Lite / ③spine+restore。
-- 本包呈报项新裁定（原话）：**「永远不休眠」**——设备常驻在线、永不休眠，替代 architect 推荐项「先修重连、休眠留账」。电池代价取舍随此裁定一并由 human 裁定（见「电池代价注记」），plan 只申报、不重开讨论。
-
-## 触面复核（扩入「永不休眠」后）
-
-触面仍 = 实现面单面，**不建 spine、不升 Track A**。理由：① 裁定已由 human 在治理触点（触点①）显式作出，arch 文本落档是机械转写 + 残余闭账，非新设计（作者≠判官无虞：判官 = human 已裁，本包只转写）；② 残余行（arch §3:133 / §8:354）描述的正是本包根治的行为，spec 行随实现落地同步是 dev-loop docs-sync 门既有职责；③ 先例：决策 21（引擎 24h 兜底）的 arch §6.4 更新即随 dev 包 docs-sync 落地（04c86a9 同批）；④ 契约面零触（WS wire 形状零变化）、需求面零触（提醒必达语义已钉，本包是兑现）。**备选呈报（存疑向严）**：若 human 认为该产品决策落档应另走正式 Track B 治理小批（独立 PROPOSAL + 评审循环），可拆出——推荐不拆（触点①已是显式裁定 + 落档指示）。
+## 上游门（launchPreconditions，先于本包）
+spine = delivery/changes/intake/261010-p3-storylist-cold-start.md。launch 前须回填：
+1. 需求面 anchor：S-F2.1 补充规则定稿（「进页即见列表 + RAM 缓存」+ 冷启动恢复 = WS 建连附带重推〔恢复性推送、只填缓存不抢前台、P3 在屏时刷新本页〕+ P3 空态两态分叉话术）——/requirement-change loop，可与 REQ-261010-p1-schedule-empty-state 并批裁定。
+2. 架构面 anchor：arch §5.2 场景④（:213）「现役两时点」重载含恢复时点①——随需求面批同批落。
+3. 契约面 anchor（若取 restore 标记方案——推荐）：story_list data.restore additive（复刻 §1.3② L85 / ADR-005 先例）——architect-reviewer 四分类 + human 契约门后与实现同批原子落。若 human 裁「固件本地页 gating、wire 零变化」备选则本条豁免（该备选改 K2 消费面「非 VOICE 前台一律推前台」既有语义——取舍呈 human，存疑向严）。
 
 ## 根因假设
+- 三时点①建连即推已于 260928 摘除（front_app.py:1013-1019 注释 + FIX-A1 负锚齿 test_m4k1_story_cloud_link.acceptance.py:1000-1044）；现役触发点 = ②归档后（:573）/③删除后（:223）/①恢复 = ctx(story) 会话建立同拍（:216；固件 application.cc:1014-1020 已接通）。
+- BOOT 翻页浏览路径无任何触发点；板端 RAM 缓存重启即失（决策 24）→ 重启后翻 P3 恒走 count<=0 空态分支（kidpal_render_node.cc:874-886）。
+- 摘除原因（旧固件无条件渲染 P3 盖聆听态）的约束面已半变：固件 K3 [S4] gating 在场（mcp_server.cc:1088-1118；story_page.c:1966-1975）——但**只覆盖「记录语境前台」半，缺「非 P3 本地页前台」半**（实现前核项已核，见 faceMap）。恢复帧不带标记会在 HOME/P1/P2 前台推 P3 抢前台 = 原缺陷形态复发；带 restore 标记则天然只填缓存（schedule 先例 mcp_server.cc:926-991 实核在场：restore=true → cache_story 只装缓存不 end_page）。
 
-- **子项 A（断线自动重连缺口）**：application.cc:634-641 OnAudioChannelClosed 仅 SetPowerSaveLevel(LOW_POWER) + SetDeviceState(Idle)，零重连；唯一自动建连恢复路径 = 网络重连事件（application.cc:406-410 → TryStartAutoConnect，K6）。websocket_protocol.cc:201-206 OnDisconnected → on_audio_channel_closed_ 不分本地主动关与服务端/网络侧断；IsTimeout() 120s（websocket_protocol.cc:77-79）只令 IsAudioChannelOpened() 返回 false（覆盖式）、不自发重连——机制上解释 10-10 日志的 13 分钟黑洞。
-- **子项 B（休眠/离线驻留残余的物理载体，重核）**：**本板（waveshare-s3-rlcd-4.2.cc）零 power_save_timer / sleep_timer 实例化、零 OnEnterSleepMode / OnEnterLightSleepMode 接线**（实核）——「闲置约 3 分钟休眠断连 → alert_skip no_online_device」（arch §3:133 / §8:354）的可观察实质是**复合观察**：旧引擎 120s 主动关（主因，已闭环）+ 本地关通道后的**离线驻留**（每次会话收尾本地关 WS → 设备离线直到下一次交互）+ LOW_POWER modem 省电（wifi_board.cc:302-317 → WifiManager 档位）。common 层休眠入口（sleep_timer.cc:37 / power_save_timer.cc:33，NVS `sleep_mode` 默认 true）在本板编译面不可达。子项 B 落地后该残余自然闭账（见 docs-sync）。
-- 既有可复用基建：TryStartAutoConnect（application.cc:477-517）= 守卫三条件（Idle && 通道未开 && 非 in-flight）+ 3 次退避 {5,10,20}s 后台 task + 每次重试前重查守卫。
-
-## 修复方案
-
-### 子项 A：服务端/网络侧断 → 自动重连（原范围）
-
-- websocket_protocol 增「本地主动关」标记：CloseAudioChannel()（:81-83）置位；OnDisconnected 据此分流——本地主动关不触发 A 路径，服务端/网络侧断触发。（实现前核项：Websocket 对象 reset 析构是否回调 OnDisconnected——是则标记须覆盖析构路径。）
-- OnAudioChannelClosed 在非本地关路径 Schedule 排入 TryStartAutoConnect：复用既有守卫与退避、不另起第二条重连路径、不新增退避表；3 次穷尽后静默停（不自旋）。
-- 屏显不受影响口径（requirements.md:67）：重连尝试期间维持 Idle 屏显、不闪 CONNECTING、不弹错误卡——新触发点沿用「重连区零 SetDeviceState」负锚纪律。
-
-### 子项 B：永不休眠 · 常驻在线（裁定落地的可观察语义）
-
-- **语义**：设备在 Idle 态恒持一条活 WS 连接（常驻在线），front 推送（kidpal/alert、story_list 等）任意时刻可达；不再存在「会话收尾后离线驻留窗口」。
-- **实现 = 会话收尾本地关后的短延迟常驻重建**（不动「会话结束关 audio channel」既有拓扑）：会话收尾类本地关后 T 秒（退避表首档 5s 量级，实现期定值并冻结进齿）Schedule 排入 TryStartAutoConnect 重建常驻连接——复用 A 的同款基建与守卫，触发语义独立、验收齿分开钉。
-- **本地关调用点归类表（8 处，实核；builder 逐点归类留痕为验收前提）**：
-
-| 调用点 | 归类 | 处置 |
-|---|---|---|
-| application.cc:422 网络断关（HandleNetworkDisconnectedEvent） | 网络断 | **零重建**（网络没了重建必刷日志；恢复走既有 K6 网络重连事件） |
-| application.cc:805 Application::CloseAudioChannel（K3 [S5] 录音态丢弃面） | 会话收尾 | **B 重建**（丢弃后回 Idle → 常驻在线） |
-| application.cc:849 HandleToggleChatEvent Listening 分支（会话 toggle 收尾） | 会话收尾 | **B 重建** |
-| application.cc:1081 Reboot | 生命周期 | **零重建**（重启流程接管） |
-| application.cc:1100 OTA 升级前关 | 生命周期 | **零重建**（升级流程接管） |
-| application.cc:1189 Listening 态关（handler 内） | 会话收尾 | **B 重建**（builder 复核该 handler 语义后归类留痕） |
-| application.cc:1254 AEC 模式切换关 | 功能性 | **零重建**（切换后下个会话重开通道，既有语义零偏移；builder 复核留痕） |
-| application.cc:1267 ResetProtocol | 功能性 | **零重建**（protocol_.reset() 后由激活路径接管） |
-
-- **休眠入口禁用（「永不休眠」结构面）**：本板休眠路径现状 = 零实例化（结构事实）；本包以结构齿钉死「本板永不接线休眠 timer」（needle 形态），common 层 `sleep_mode` 设置保持编译面不可达——若实现期发现任何休眠入口在接线面可达，显式禁并留痕。
-- **常驻在线省电档（实现自由度，不改裁定语义）**：常驻连接的 Wi-Fi modem 档位（LOW_POWER/BALANCED 与 WS keepalive 的兼容性）真机核——若 LOW_POWER 下 ping/pong 稳定，Idle 常驻可不开 PERFORMANCE 档以缓解电池代价；前提 = keepalive 稳定，值真机验证后冻结。
-- **交互核验面（零改动、回归齿覆盖）**：常驻在线改变「每会话重开 WS」既有拓扑（260928 plan 记录的拓扑事实）→ KEY 在复用通道上开会话的 seam 已按通道复用设计（application.cc:1014-1020 注释「门外 = 通道复用会话不短路漏发，notes ②③」；front ctx_push_edge 为会话基非通道基，front_app.py:212）——既有 story ctx / reminder 齿回归即可，不新增设计。
-
-## docs-sync 落档（「永不休眠」裁定 → arch 四投影点，integrator 收口步承载）
-
-1. `docs/architecture.md` §10 决策表 append 新决策行：「决策 29 · 设备永不休眠、常驻在线——提醒推送可达性优先于闲置功耗；板载电池续航代价随裁定接受（human 2026-10-10 触点①裁定，原话『永远不休眠』）」。
-2. `docs/architecture.md:133`（§3 假设表「设备常驻在线」行）：残余注改写——「残余 = 闲置约 3 分钟休眠断连【产品决策待裁】」→「已裁：永不休眠（决策 29）；重连 + 常驻重建已落（260910 包）」。
-3. `docs/architecture.md:354`（§8 风险债 3 行）：待裁项闭账（已裁 + 本包根治）。
-4. `docs/architecture.md:322`（§6.4 已知残余句）：同步删除/改写休眠残余表述，补常驻在线口径。
-- 本包不落 requirements.md（提醒必达语义已钉，无新增语义）；不触契约。
-
-## 电池代价注记（诚实申报，已裁不重开）
-
-常驻在线 = WS keepalive 常开 + Wi-Fi modem 常供电，板载 18650 电池（arch §5.3.1 电池行）**续航显著缩短**，使用形态实际转为随用随充。此取舍已由 human 以「永远不休眠」裁定一并接受（2026-10-10 触点①，原话）；本 plan 只申报不重开讨论。缓解自由度（不改裁定语义）= 上文 Idle 常驻连接 modem 档位真机调优。
+## 修复方案（推荐 = restore 标记，P2 先例复刻）
+- front：连接处理段（front_app.py:1005-1012 schedule connect push 同位）追加 _push_story_list(websocket, restore=True)（函数加 restore 形参、下行 data 带 restore: true；②③调用点默认 False 零偏移）；失败不阻断建连（try/except 同 :1009-1012 先例）。
+- 固件：mcp_server.cc story_list 分支（:1034-1119）按 data.restore 分流——restore=true → 解析装载缓存 + kidpal_render_node_cache_story 同步 + 若 P3 在屏（s_local_page == KP_PAGE_STORY）刷新本页，否则前台零触碰（复刻 schedule :926-991 形态）；restore 缺省/false = 现行为零偏移（K2 消费面 + K3 [S4] gating 全保持）。
+- 验收翻正（正常改验收通道 + human 方向锚留痕，260928 FIX-A2 先例形态）：FIX-A1 负锚齿「建连零 story_list 帧」→「建连恰一帧 restore story_list」；test_m4k3_record_session_live.acceptance.py:25 跨包负锚同批翻正。
+- 空态话术按需求面定稿落（两态分叉）；固件空态渲染入口两处同源纪律（kidpal_render_node.cc:875-886 注记）不破。
+- crossPackageBehaviors 登记：「story_list 恢复性推送语义」owner = 本包（260928 defer 挂起的「①恢复时机重裁」由本包赎回，ARQ-260911 纪律）；crossEnd counterparts = front_app.py::_push_story_list ↔ mcp_server.cc story_list 分支。
 
 ## 影响面
-
-- 文件：firmware/main/application.cc（OnAudioChannelClosed + 会话收尾重建触发 + 调用点归类注记）、firmware/main/protocols/websocket_protocol.{cc,h}（本地关标记）；firmware/main/boards/waveshare-s3-rlcd-4.2/（休眠入口结构 needle 如需）；server 面零改动。
-- docs-sync：arch §3/§6.4/§8/§10 四投影点（见上节）。
-- 需求/契约面零改动（requirements.md:67、arch §6.4 已钉语义——本包 = 兑现）。
-- 触发点新增（A 服务端断 + B 会话收尾重建）如撞 boot_auto_connect.acceptance.c 既有 needle「触发点 = 2」类结构钉 → 走正常改验收通道 + human 方向锚留痕（260928 FIX-A2 先例形态）。
+- 文件：server/gateway/front/front_app.py；firmware/main/mcp_server.cc；server/acceptance/test_m4k1_story_cloud_link.acceptance.py + test_m4k3_record_session_live.acceptance.py（FIX-A1 翻正）；firmware story 面测试（restore 分流纯逻辑齿 additive）；契约 docs/contracts/interface-contract.md §1.3③（restore additive——经契约门后落，本包不直改契约）。
+- 语义零偏移面：ctx(story) 同拍推送（:216）、②③时点、items ≤16 窗口 / total 语义（契约既有）。
+- planningImpact 建议：attach-existing → delivery/workstreams/m4-star-notebook（planner intake 定夺）。
 
 ## acceptance 种子
+impactedTests：server/acceptance/test_m4k1_story_cloud_link.acceptance.py（FIX-A1 翻正 + ②③ wire 断言零偏移复跑 + restore 帧新断言）；server/acceptance/test_m4k3_record_session_live.acceptance.py（跨包负锚翻正 + K1 27 齿零偏移套件全量）；firmware story 面测试（story_page_v2 + restore 分流纯逻辑新齿）；契约落地后 drift 人工核对如实记录（本仓无机械门，ARQ-260827 口径）。
 
-impactedTests：firmware/main/test/boot_auto_connect.acceptance.c（K6 冻结件——新触发点结构核 + 既有 27 齿零破坏红线）；新增 host 纯逻辑齿（本地关标记判别 / 触发分类纯函数 / 常驻重建排程守卫）；story ctx 与 reminder 既有齿回归（复用通道 seam：application.cc:1014-1020、front ctx_push_edge 既有断言件）；固件 unit/acceptance 全量闸照跑（机械门禁全量不放松）。
-
-**子项 A 验收齿草案**：
-- RC-A1（红基线, host 纯逻辑）：非本地关（服务端断）→ 自动重连排程在场。
-- RC-A2（host 纯逻辑）：服务端断路径与 B 路径触发分类互斥（同一关闭事件恰归一类、不双触发）。
-- RC-A3（host 结构齿）：重连复用 TryStartAutoConnect（零第二条 task/零新退避表；新触发点区零 SetDeviceState——屏显零触碰）。
-- RC-A4（真机轮, live 观测）：手动断服务端（重启 front/引擎容器）→ 退避窗内设备日志自发出现完整 hello 建连序列（三日志源对账，复刻 10-10 对账法）；期间 P1 屏显不变。
-
-**子项 B 验收齿草案（新语义）**：
-- RC-B1（host 结构齿）：「永不休眠」结构事实——本板板级文件零休眠 timer 接线（needle 钉 waveshare-s3-rlcd-4.2.cc）；common 层休眠入口编译面不可达留痕。
-- RC-B2（host 纯逻辑）：会话收尾类本地关（:805/:849/:1189，按 builder 归类表）→ T 秒内恰一次常驻重建排程（复用守卫三条件）；T 值实现期定并冻结进齿。
-- RC-B3（host 纯逻辑, 负锚）：网络断关（:422）/Reboot（:1081）/OTA（:1100）/AEC 切换（:1254）/ResetProtocol（:1267）零重建排程——各路径既有语义零偏移。
-- RC-B4（真机轮，替代原 RC-A5）：会话结束后 T 秒内重建并**常驻在线**——静置 >3 分钟乃至跨夜后 front 发提醒可达（front/引擎日志无 `alert_skip no_online_device`，设备渲染且回执）；P1 常显不受影响。
-- RC-B5（真机轮, 回归）：常驻在线下 KEY 开新会话在复用通道上正常（story ctx 发送短路防 + reminder 四态 + 引导态演出既有齿真机回归）。
-- RC-B6（真机轮, 观测项）：Idle 常驻连接 modem 档位与 keepalive 稳定性观测（LOW_POWER/BALANCED 下 ping/pong 长稳则取低档，冻结结论进 docs-delta）。
+验收齿草案：
+- SL-A1（翻正, host offline）：建连路径恰一帧 story_list 且 data.restore == true（先红〔现零帧〕后绿）。
+- SL-A2（固件 host 纯逻辑）：restore 帧 + 非 P3 前台 → 只装缓存零前台接管（cache_story 被调、begin/end_page 不被调）。
+- SL-A3（固件 host 纯逻辑）：restore 帧 + P3 在屏（LIST 冷浏览）→ 重渲本页。
+- SL-A4（固件 host 回归）：记录语境（VOICE 前台/录音态）收到 restore 帧 → 缓存不抢前台（K3 [S4] gating 与 restore 分流叠加语义钉死）；非 restore 帧（②③）→ K2 消费面零偏移。
+- SL-A5（真机轮）：重启设备（云端现存 ≥1 篇）→ 翻到 P3 显示已归档列表（含计数）而非空态；期间任意页前台无 P3 抢占；空态两态话术按需求面定稿验收。
+- SL-A6（front host）：恢复推送失败不阻断建连。
 
 ## 非目标
-
-- ~~「闲置 ~3 分钟休眠断连」产品决策~~——**已裁（永不休眠），随包落档闭账**（docs-sync 节），不再留账。
-- 「会话结束关 audio channel」既有拓扑（会话生命周期语义）不改——常驻在线经收尾重建达成，不改为「会话不关通道」方案。
-- 网络断路径既有行为（HandleNetworkDisconnectedEvent:417-428）零改动；server 面零改动。
-- 电池/充电形态的产品面方案（如低电量策略）——不在本包，如真机观测暴露续航不可接受，升级 human 另行裁定（不在本包内自裁）。
+- ctx(story) 会话同拍推送、②③时点零改动；P1 首页空态（REQ-261010-p1 需求面另批）；「闲置休眠断连」产品决策；story_list items 窗口 / total 语义。
 
 ## demo 证据形态
-
-host 红基线先红后绿全程留痕 + 真机轮（human 在场）四场景：服务端断自发恢复（A）/ 会话收尾后常驻重建 + 跨夜静置提醒可达（B）/ 各功能性关零重建（B 负锚）/ 复用通道会话回归（B 交互面）。烧录 = 仅 app 分区（无资产变更，不触双分区烧录规则）。
+host 双面（front + 固件）红基线先红后绿留痕 + 真机轮（human 在场）：重启冷启动翻 P3 见列表 + 空态两态 + 无前台抢占。烧录 = app 分区（无资产变更）。

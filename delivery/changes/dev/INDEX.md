@@ -65,3 +65,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261010-p3-storylist-cold-start-restore](261010-p3-storylist-cold-start-restore/) | 2026-10-10 | docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md | closed | m4-star-notebook |

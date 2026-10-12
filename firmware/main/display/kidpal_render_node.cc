@@ -126,6 +126,13 @@ static kidpal_story_view_t s_story_view = {};
 static kidpal_story_list_t s_story_list = {};
 static kidpal_story_text_t s_story_text = {};
 
+/* P3 列表数据是否已送达（seam [SL3], TaskPackage 261010-p3-storylist-cold-start-restore）:
+ * 「有无列表数据」判据载体——列表缓存经 kidpal_render_node_cache_story 装载过 = 1。
+ * 空态两态分叉用: 1（数据已送达、确无篇目）= AC5 无内容空态（×0 + AC5 话术）;
+ * 0（列表缓存从未装载 = 重启后恢复推送未到/失败）= AC6 数据未达空态（不显计数 +
+ * AC6 话术）。判据落在「有无列表数据」而非「断网与否」（requirements v1.63 逐字）。 */
+static int s_story_data_received = 0;
+
 /* K3R [R5] 权威会话页态镜像（261001-m4-k3-record-session-live-repair, 真机轮架构修）:
  * 渲染节点自身不持 g_story_view（住 mcp_server.cc）, 由 mcp 录音/收尾路径经本 C 桥写入
  * 权威会话页态——voice_end 的 [R5] 以此作 session_page 权威源, 与节点缓存分叉时取之
@@ -530,6 +537,18 @@ int kidpal_render_node_schedule_on_screen(void)
             s_local_page == KP_PAGE_SCHEDULE) ? 1 : 0;
 }
 
+int kidpal_render_node_story_on_screen(void)
+{
+    /* P3 故事列表页在屏 = LOCAL_PAGE 前台且当前页 = STORY（home_on_screen /
+     * schedule_on_screen 先例逐字同构; mcp story_list 路由 restore 分支「P3 在屏仅
+     * 重绘本页 / 记录语境前台与接管态只填缓存」的判据单一权威, seam [SL2]）。
+     * LOCAL_PAGE 判定使记录语境前台（VOICE 层 = 引导态/录音态/问答会话）与接管态
+     * （SERVER_PAGE 等非本地页前台）一律返回 0——restore 帧只填缓存、不重绘、不推
+     * 前台（K3 [S4] 叠加语义的谓词承载）。只读静态态, 零副作用。 */
+    return (kidpal_layer_top(&s_layer_stack) == KIDPAL_LAYER_LOCAL_PAGE &&
+            s_local_page == KP_PAGE_STORY) ? 1 : 0;
+}
+
 void kidpal_render_node_show_home(void)
 {
     lvgl_port_lock(0);
@@ -872,13 +891,31 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
         case KP_PAGE_STORY: {
             lv_screen_load(s_kidpal_scr);
             if (s_story_list.count <= 0) {
-                /* #11 数据链根因同族 (R-S0.2, schedule 空态同款): 故事缓存仅在语音
-                 * 查询过故事后才填充; BOOT 翻页切来时可能本开机未查询 -> count=0
-                 * 空壳页。改画友好空态 (居中提示), 不再渲染空壳页; 语音查询路径
-                 * 不动。文案单源 = KSTORY_EMPTY_HINT（notes 边角③: 空态渲染入口
-                 * 两处——本处与 story_page.c——必须同源一致, 不得双写文案）。 */
+                /* 空态两态分叉（seam [SL3]; requirements v1.63 S-F2.1 AC5/AC6）——判据
+                 * = 「有无列表数据」（s_story_data_received）而非「断网与否」:
+                 *   AC5 无内容空态（数据已送达、确无篇目）= ×0 诚实计数（计数画法照常、
+                 *       不隐瞒, 页身份保持）+ AC5 话术（story_page.h 单源宏）;
+                 *   AC6 数据未达空态（列表缓存从未装载 = 重启后恢复推送未到/失败）=
+                 *       不显计数 + AC6 话术（story_page.h 单源新宏）。
+                 * 话术单源 = story_page.h 双 macro（notes 边角③ 空态渲染入口两处同源
+                 * 纪律不破——本处与 story_page.c 消费同一单源, 不得双写文案）。 */
                 lv_obj_t *lbl = lv_label_create(s_kidpal_scr);
-                lv_label_set_text(lbl, KSTORY_EMPTY_HINT);
+                if (s_story_data_received) {
+                    lv_label_set_text(lbl, KSTORY_EMPTY_HINT);
+                    /* AC5 ×0 诚实计数（数据已送达、确无篇目——显 ×0 不隐瞒）。 */
+                    lv_obj_t *star = lv_label_create(s_kidpal_scr);
+                    lv_label_set_text(star, "★");
+                    lv_obj_set_pos(star, 316, 8);
+                    lv_obj_set_style_text_color(star, lv_color_black(), 0);
+                    lv_obj_t *cnt = lv_label_create(s_kidpal_scr);
+                    lv_label_set_text_fmt(cnt, "×%d", kidpal_story_counter(&s_story_list));
+                    lv_obj_set_pos(cnt, 344, 8);
+                    lv_obj_set_style_text_color(cnt, lv_color_black(), 0);
+                } else {
+                    /* AC6 数据未达空态（列表缓存从未装载——不显计数, 篇数未知不显 ×0
+                     * 误导）+ AC6 话术（story_page.h 单源新宏）。 */
+                    lv_label_set_text(lbl, KSTORY_EMPTY_HINT_UNREACHED);
+                }
                 lv_obj_set_style_text_color(lbl, lv_color_black(), 0);
                 lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
                 lv_obj_set_width(lbl, 380);
@@ -1081,7 +1118,12 @@ extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
                                                 const kidpal_story_text_t *t)
 {
     if (v != NULL) { memcpy(&s_story_view, v, sizeof(s_story_view)); }
-    if (l != NULL) { memcpy(&s_story_list, l, sizeof(s_story_list)); }
+    if (l != NULL) {
+        memcpy(&s_story_list, l, sizeof(s_story_list));
+        /* seam [SL3]: 列表数据装载 = 送达标志置位（空态两态分叉判据载体——
+         * 已送达（含空篇目）-> AC5; 从未装载 -> AC6）。 */
+        s_story_data_received = 1;
+    }
     if (t != NULL) { memcpy(&s_story_text, t, sizeof(s_story_text)); }
 }
 
