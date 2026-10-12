@@ -194,7 +194,7 @@
 | 提醒投递 | `gateway/reminders.py` | AlertDispatcher：每分钟轮询 pending.json → 到点推送 → 60s 超时重推 ×3 → 过期作废；`MAX_PENDING=64/MAX_TRACKED=256` |
 | **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚** |
 | **OpenClaw 侧补丁** | `server/deploy/openclaw-patch/` | 提醒生产侧混合分层（ADR-002）：`reminder_schedule_lib.py` 确定性脚本（三档算术 20:30/07:45/前 15min + 幂等 id 确定性散列 ≤40 字符 + `pending.json` 原子写 + 坏输入降级）；语义判断 = agent 回合产 `semantic.json`（缺/坏降级机械兜底文案）；`char_stroke_lib.py` + `warm_char_cache.py`（9574 字缓存）；`make_openclaw_patch.py`（OpenClaw dist hold-and-replace 补丁，drift-guard） |
-| OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/记忆/工具/QQ 录入）；system prompt 版本化 v9（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
+| OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/记忆/工具/QQ 录入）；system prompt 版本化 v10（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
 | shim（已退役） | `server/shim.py` | HTTP 四端点台阶，头部 ARCHIVED（2026-09-05 退役）；`kidpal-shim.service` 为历史单，ECS 侧停服 + 8080 安全组关闭待清【遗留待办】 |
 
 #### 5.1.3 组件依赖方向
@@ -295,7 +295,7 @@
 
 #### 5.5.5 OpenClaw system prompt 版本化
 
-声明件 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（无扩展名）显式声明当前接线版 + **承载版本演进史唯一全量副本**（260925-prompt-v7-round-routing 起：声明面/渲染面散文只留「当前 = vN」指针，沿革不再四处复述）；**现状 = v9**（v1 基座 → v2 +课表 producer+char C1 → v3 +故事 producer+提醒并集 → v4 +F4 故事分工修正 → v5 +char meaning/禁附录 → v6 +M3-K3 课表问答口径 → v7 回合类型路由表 + 故事段对齐 2026-09-24 契约门禁产 story JSON + 语音「简洁不啰嗦」纪律 + **制品本体不带前言**〔沿革外置 carrier，渲染不剥离保「验收所测 = 生产所用」〕 → v8 +故事段「帮我记下来」第二指令 + 意图边界负例〔M4-K3 双指令批〕 → v9 +课表问答回合行对称反叙述纪律〔v7 修对话行时漏课表行对称条款，TECH-261010 真机内部推理当语音播出根治〕）。历史文件不改、共存可 diff。**接线不变式：渲染面（overlay PROMPT_SRC）== 声明面（provider.config 三键）== 被测面**（ADR-001：守卫从结构化指向解析当前版，禁版本字面断言）。
+声明件 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（无扩展名）显式声明当前接线版 + **承载版本演进史唯一全量副本**（260925-prompt-v7-round-routing 起：声明面/渲染面散文只留「当前 = vN」指针，沿革不再四处复述）；**现状 = v10**（v1 基座 → v2 +课表 producer+char C1 → v3 +故事 producer+提醒并集 → v4 +F4 故事分工修正 → v5 +char meaning/禁附录 → v6 +M3-K3 课表问答口径 → v7 回合类型路由表 + 故事段对齐 2026-09-24 契约门禁产 story JSON + 语音「简洁不啰嗦」纪律 + **制品本体不带前言**〔沿革外置 carrier，渲染不剥离保「验收所测 = 生产所用」〕 → v8 +故事段「帮我记下来」第二指令 + 意图边界负例〔M4-K3 双指令批〕 → v9 +课表问答回合行对称反叙述纪律〔v7 修对话行时漏课表行对称条款，TECH-261010 真机内部推理当语音播出根治〕 → v10 +回合类型路由表新增「实时事实回合」行〔先播提示→联网真查→只依据查询结果作答+降级诚实，TECH-261012 真机天气幻觉根治〕+ 对话行通用反编造 + 底线节第三不变量）。历史文件不改、共存可 diff。**接线不变式：渲染面（overlay PROMPT_SRC）== 声明面（provider.config 三键）== 被测面**（ADR-001：守卫从结构化指向解析当前版，禁版本字面断言）。
 
 #### 5.5.6 构建与测试基建
 

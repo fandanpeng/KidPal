@@ -7,16 +7,15 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 23（待拍板 2 / 待触发 15 / 已接受风险 6）；已结 5（归档索引见下）。
+**摘要**：未结 24（待拍板 1 / 待触发 17 / 已接受风险 6）；已结 6（归档索引见下）。
 
-## 待拍板（2）
+## 待拍板（1）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
-| [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | MAJOR | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | human 立项 ack 后走 /triage-change 分流（预判 ②单包，跨 prompt v10 + OpenClaw kidpal 环境两面） |
 
-## 待触发（15）
+## 待触发（17）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -35,6 +34,8 @@
 | [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | SHOULD | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前 |
 | [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
 | [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
+| [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
+| [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 
 ## 已接受风险（6）
 
@@ -47,10 +48,10 @@
 | [ARQ-260901-openclaw-chatcompletions-public](ARQ-260901-openclaw-chatcompletions-public.md) | SHOULD | OpenClaw chatCompletions 端点为 full operator access 且随网关公网可达，仅 Bearer 保护 | 生产上线前安全加固 / 任何非验证用途对外暴露时。2026-09-03 更新：方向 B 重切已把「18789 锁 127.0.0.1」钉为 G 包（260903-gateway-directionB）launch 硬前置（V28，PROPOSAL v0.4 §4 门簇①、GWA-E3 部署期断言），锁执行完成即移已结 |
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 
-## 已结（5）
+## 已结（6）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 5 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 6 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

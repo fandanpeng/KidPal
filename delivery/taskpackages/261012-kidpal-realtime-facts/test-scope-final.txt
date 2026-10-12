@@ -1,0 +1,17 @@
+# test-scope-final · 261012-kidpal-realtime-facts
+# 圈定方法（integrator 2026-10-12）：detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，
+#   正常圈定路径；inbound blast radius = 0——验收齿为叶子符号、prompt/carrier 为数据文件，同 v9 先例形态）
+#   + changeManifest（server/acceptance 面 = test_prompt_v7_round_routing additive 宿主）+ impactedTestsSeed
+#   + 接线消费方实证（四面接线 CARRIER / provider.config.yaml / apply-xiaozhi-overlay.sh 的版本无关守卫齿）
+#   + 安全余量（261001 冲刷先例件 + 261010 决策 21 件）。
+# detect_changes（base=main, merge_base=19004c5, inbound, depth=2）：impacted_total = 0，
+#   故圈定面以「结构化消费接线面的守卫齿」为准（面比符号图可靠）；全量回归 = 152 passed 已实证
+#   （2026-10-12 integrator 实跑，superset 覆盖本清单，不作为圈定替代、只作更强旁证）。
+# final bearing verification（phase=final + 本 scope-file）待 planner 以本清单执行。
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py

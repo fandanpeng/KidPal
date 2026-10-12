@@ -24,18 +24,20 @@ gateway:
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
 # apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2/.v3 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v9.md"   # 当前版本化文件 (v9 = 261010-prompt-v9-schedule-anti-narration:
-                                             #   课表问答回合行补对称反叙述纪律（TECH-261010 真机课表问答
-                                             #   内部推理当语音播出根治）+ 其余段落零偏移继承 v8)
-  source: "../deploy/openclaw-system-prompt.v9.md"
-  deploy_target: "openclaw-system-prompt.v9.md"   # ECS data/ 下的渲染目标名
+  artifact: "openclaw-system-prompt.v10.md"   # 当前版本化文件 (v10 = 261012-kidpal-realtime-facts:
+                                             #   回合路由表新增「实时事实回合」行（先播提示→联网真查→只依据
+                                             #   查询结果作答、查不到诚实引导、禁编造/禁虚称已查）+ 对话行通用
+                                             #   反编造 + 底线节第三不变量（TECH-261012 真机天气幻觉根治）)
+  source: "../deploy/openclaw-system-prompt.v10.md"
+  deploy_target: "openclaw-system-prompt.v10.md"   # ECS data/ 下的渲染目标名
   # 演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（声明面 / 渲染面 / 本文件三处散文
   # 一律只留「当前 = vN」指针，不再复述沿革）。三处接线（本声明面 / apply-xiaozhi-overlay.sh
   # 渲染面 / carrier 载体）指向同一在场非空文件；一致性由 ADR-001 版本无关守卫 +
   # test_prompt_v7_round_routing.acceptance.py 语义锚齿机检。历史版本文件一律不改、可 diff。
   # 结构: 回合类型路由表（对话=一回合作答禁工具 / 查字=最小意图块绝对禁工具 /
-  # 课表问答=先读 schedule.md+反编造 / 提醒 cron=语义 JSON；家长 QQ 录入走家庭侧 agent、
-  # 不入表） + 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6)
+  # 课表问答=先读 schedule.md+反编造 / 实时事实=先播提示→联网真查→只依据查询结果作答+
+  # 查不到诚实引导 / 提醒 cron=语义 JSON；家长 QQ 录入走家庭侧 agent、不入表）
+  # + 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6)
   # + 语音简洁不啰嗦（v7 放宽硬性三句，human 260925 裁；讲故事按段落讲不逐段请示）
   # + 7 view 白名单 + 课表/查字/故事/提醒各域节 (查字最小意图块禁坐标 /
   # 故事禁产 story JSON / 提醒 entry_key 对齐)。
