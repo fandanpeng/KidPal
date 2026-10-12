@@ -2,7 +2,7 @@
 id: TECH-261012-first-keypress-no-listening
 title: 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复
 domain: tech
-status: open
+status: deferred
 severity: SHOULD
 owner: dev 批（261010 device-reconnect 谱系 follow-up——常驻在线的通道保活/首按恢复语义）
 trigger: 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥）

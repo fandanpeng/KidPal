@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 24（待拍板 1 / 待触发 16 / 已接受风险 6）；已结 6（归档索引见下）。
+**摘要**：未结 24（待拍板 1 / 待触发 17 / 已接受风险 6）；已结 6（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
 
-## 待触发（16）
+## 待触发（17）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -35,6 +35,7 @@
 | [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
 | [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
+| [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 
 ## 已接受风险（6）
 
