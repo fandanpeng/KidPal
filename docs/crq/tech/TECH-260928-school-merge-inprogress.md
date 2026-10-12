@@ -2,10 +2,10 @@
 id: TECH-260928-school-merge-inprogress
 title: 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤）
 domain: tech
-status: blocker
+status: accepted-risk
 severity: SHOULD
-owner: dev-loop（server 面，含语义参数化设计决断）
-trigger: [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change
+owner: 主线程（human 2026-10-12 裁 accept-as-risk）
+trigger: 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议
 opened: 2026-09-28
 paths: [server/gateway/schedule.py, server/deploy/openclaw-schedule.config.yaml]
 source: [主线程 2026-09-28 现场诊断中代码级推演（本条目「证据」段留 file:line；live 实证待前条修复落地后取得）]
@@ -43,3 +43,11 @@ item 形状不变）；影响为显示体验降级非数据错误。Track B 三�
 来源三选一），no；③ 爆炸半径已被执行揭示——no。→ **review profile =
 full-adversarial + human（Track A）**，绝不回标快路径。owner = dev-loop（server 面，
 含语义参数化设计决断）。
+
+---
+
+## human 裁定：维持现状，accept-as-risk（候选丙，2026-10-12）
+
+human 现场裁定并给业务理由：纯在校日（现行周一/二/五）白天「上学」项被过滤、首页不显示**可接受且合理**——8 点孩子已到校上课，终端不在孩子身边，没显示正符合实际使用场景。三个候选（甲 school_end 参数化 / 乙 end=23:59 / 丙维持现状）取**丙**，不修代码、不改配置。
+
+复议触发：决策 26「在校时段计为 upcoming」口径重裁，或需求面对「纯在校日白天首页显示」重提（如设备使用场景变化——带终端到校等）。

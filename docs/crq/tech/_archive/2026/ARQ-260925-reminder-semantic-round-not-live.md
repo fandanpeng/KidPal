@@ -2,13 +2,13 @@
 id: ARQ-260925-reminder-semantic-round-not-live
 title: 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现）
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: planner
 trigger: 部署执行后定案——注册 agent 型 cron（§8.3b）+ 铺 skill 到 main workspace 后，盯一个完整提醒周期核 semantic.json 出现且 entry_key 对齐、pending.json 变语义版、设备真收带物播报；失败则回退机械兜底维持现状并升级
 opened: 2026-09-25
-closed: ""
-closedBy: ""
+closed: 2026-10-12
+closedBy: 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节）
 paths:
   - server/deploy/openclaw-patch/reminder_schedule_lib.py
   - server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md
@@ -60,3 +60,9 @@ announce 无路由（last -> no route, will fail-closed）；交接目录 `/opt/
   的自然候补，v8 时 prompt 侧改一句指针或全删。
 - **S-B/S-C**：skill 读路径以 `KIDPAL_SCHEDULE_MD` 实际指向为核对口；写路径硬编
   `/opt/kidpal/alerts/semantic.json` 默认值与 plan cron 声明一致，alerts 目录迁移时两处同改。
+
+---
+
+## 收口（2026-10-12 主线程盘点，ECS live 实证）
+
+「语义半边从未上线」的登记事由已消解——2026-10-12 ECS 实证：① agent 型 cron `kidpal-reminder-semantic`（every 15m，status=ok）已注册在跑（与 `kidpal-reminder-plan` 双任务并行，即修复设计定案的载体）；② `/opt/kidpal/alerts/semantic.json` 存在且当日 14:40 有产出，entry_key（`weekly|3|18:40-19:50|书法|小区半墨书院7-1-2401` 等）与脚本键算法逐字对齐，speech/title 均语义版（「18:40 的书法课，提前 15 分钟准备哦」，非机械兜底缺省文案）；③ `pending.json` alerts 的 speech 已是语义版。skill 铺位 `server/deploy/openclaw-skills/workspace-main/kidpal-reminder-semantic/`。**残余注记（不另立条）**：「设备真收带物播报」的端到端全周期 L5 证据未在本次盘点逐字核（推送可达性面另有 TECH-261010 系在案跟踪），下次真机轮遇提醒播报顺带核即可。

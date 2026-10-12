@@ -7,31 +7,23 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 24（待拍板 1 / 待触发 17 / 已接受风险 6）；已结 6（归档索引见下）。
+**摘要**：未结 17（待拍板 0 / 待触发 11 / 已接受风险 6）；已结 13（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（0）
 
-| ID | 严重度 | title | 处理时机 |
-|---|---|---|---|
-| [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
+_（无）_
 
-## 待触发（17）
+## 待触发（11）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
-| [ARQ-260831-p4-stroke-dasharray-visual-check](ARQ-260831-p4-stroke-dasharray-visual-check.md) | COULD | P4 笔顺「未写笔画的虚线点链」dasharray 观感与契约 D3 canvas 折线渲染需视觉对齐核验 | P4 dev-loop 包验收阶段 |
-| [ARQ-260902-multiturn-continuity](ARQ-260902-multiturn-continuity.md) | SHOULD | OpenClaw 多轮连续性「自带」vs「待部署验证」相位矛盾 + 协议剖面无会话连续性承载（S2） | 方向 B 落地首验（spec §6.3「部署期第一件事」即触发点）定案；失败则 A4/S-F3.3 指代降级单轮问答并 ACCEPT-AS-RISK 记账。重切已钉（2026-09-03）：承载 = G 包 GWA-A8 部署期首验双探针（mergeOrder 3） |
-| [ARQ-260904-v23-asr-swap-quota-recheck](ARQ-260904-v23-asr-swap-quota-recheck.md) | SHOULD | V23 ASR 换型 + token-plan 配额重置后补验（流式/VAD 切句兼容性与引擎 provider 可行性） | token-plan 配额重置（2026-09-07 14:19 UTC）+ 阿里云 ASR 凭据开通后补 live 实测与换型拍板 |
 | [ARQ-260906-nvs-csv-wifi-injection](ARQ-260906-nvs-csv-wifi-injection.md) | COULD | NVS CSV 直注 WiFi 凭据后设备连不上（根因未查，本包绕行走设备配网口） | 下个涉及配网/NVS 直注的包 |
 | [ARQ-260906-protocol-version-pinned-constant](ARQ-260906-protocol-version-pinned-constant.md) | SHOULD | websocket 协议 version 是可漂移的 NVS 数据键，但方向 B 网关恒讲 version=1——它该是代码钉死的常量（或配网写入面强校验），不是能被刷错/刷漂移的运维数据 | 下个动 websocket_protocol/ws_provision 的包 / 下次架构治理批 |
 | [ARQ-260907-contract-1-5-strip-wording](ARQ-260907-contract-1-5-strip-wording.md) | COULD | 契约 §1.5「display 切分」职责措辞与实况存在精度差：物理摘取在引擎部署副本，契约只写了网关职责 | 下次契约门（触及 interface-contract.md 的任何批次顺带校准） |
 | [ARQ-260907-engine-deploy-patch-drift](ARQ-260907-engine-deploy-patch-drift.md) | SHOULD | 引擎部署副本代码补丁（engine-patch）的漂移治理缺机械门：镜像更新即丢补丁或补丁语义漂移，当前只靠 compose bind-mount 在位 + 启动标记行人工核验 | 下次动 server/deploy 部署面 / 引擎镜像升级前 |
 | [ARQ-260907-openclaw-tools-rejection-rootcause](ARQ-260907-openclaw-tools-rejection-rootcause.md) | SHOULD | live 引擎 `Intent:nointent` 根因未查：OpenClaw 拒收 tools 数组（LLM tool calling 不可用），Intent 能力回开成本待重估 | 下次架构治理批 / OpenClaw 升级或 B 方案重估时 |
 | [ARQ-260918-spec-face-3page-reconcile](ARQ-260918-spec-face-3page-reconcile.md) | NIT | spec 面两文件仍写撤页前的旧实现态：`docs/architecture.md` 三处过时叙述 + 一处未收回的【修复项】标记，`docs/requirements.md` 行 166 ② 页序漂移台账行未消解 | 下一批 spec / 治理批（与 requirements §2.3 台账消解同批）；**不阻断 M2-K2 合并**（本包 review-packet 已如实登记去向） |
-| [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | SHOULD | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 部署执行后定案——注册 agent 型 cron（§8.3b）+ 铺 skill 到 main workspace 后，盯一个完整提醒周期核 semantic.json 出现且 entry_key 对齐、pending.json 变语义版、设备真收带物播报；失败则回退机械兜底维持现状并升级 |
-| [TECH-261010-device-no-reconnect-on-server-close](TECH-261010-device-no-reconnect-on-server-close.md) | SHOULD | 固件对「服务端主动断连」无自动重连——OnAudioChannelClosed 只进低功耗回 Idle，断线自动重连仅覆盖网络重连事件路径 | 下个动 websocket_protocol / application 会话生命周期的包；与 arch §8「闲置约 3 分钟休眠断连」待裁产品决策（同一推送可达性问题面）合并裁定 |
 | [TECH-261010-p3-storylist-cold-start-empty](TECH-261010-p3-storylist-cold-start-empty.md) | SHOULD | P3 星星记录本冷启动空态——story_list 建连即推被 260928 止血摘除后「进页即见列表」语义重裁至今未做，重启后翻 P3 恒空 | 下个动 story 链路 / P3 页渲染的包；与 REQ-261010-p1-schedule-empty-state 同属「冷启动空态」族，可并批裁定 |
-| [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | SHOULD | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前 |
 | [TECH-261011-front-half-open-proxy](TECH-261011-front-half-open-proxy.md) | SHOULD | front 代理半开洞——引擎死而设备空闲无流量时泵不收场（设备腿挂死、设备不知情、alert legs 指向死引擎腿） | 下个动 server/gateway/front 的包；与提醒可达性问题族（决策 21 / 常驻在线批）同族，可与 TECH-261010-device-no-reconnect-on-server-close 后续小批并议 |
 | [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
@@ -45,13 +37,13 @@
 | [ARQ-260831-simulator-lvgl-version-drift](ARQ-260831-simulator-lvgl-version-drift.md) | SHOULD | 模拟器↔固件 LVGL 版本错位是常驻风险（本次 9.5→9.3 已对齐，构建期校验待自动化） | 固件 LVGL 组件锁变更 / 下次 simulator 相关 dev-loop 包立项（补构建期版本校验） |
 | [ARQ-260831-simulator-truecolor-vs-1bpp](ARQ-260831-simulator-truecolor-vs-1bpp.md) | COULD | 模拟器（真彩灰度）与真机（1bpp 阈值化）的显色差异是第二类失真 | simulator 相关 dev-loop 包立项 / 真机字体子集化任务 |
 | [ARQ-260831-small-cjk-1bpp-readability](ARQ-260831-small-cjk-1bpp-readability.md) | SHOULD | 16px 以下 CJK 文字在 1bpp 真机的可读性下限未实测，直接锁死 V3 设计稿字号下限 | 真机字体子集化任务 / V3 设计稿字号定稿前 |
-| [ARQ-260901-openclaw-chatcompletions-public](ARQ-260901-openclaw-chatcompletions-public.md) | SHOULD | OpenClaw chatCompletions 端点为 full operator access 且随网关公网可达，仅 Bearer 保护 | 生产上线前安全加固 / 任何非验证用途对外暴露时。2026-09-03 更新：方向 B 重切已把「18789 锁 127.0.0.1」钉为 G 包（260903-gateway-directionB）launch 硬前置（V28，PROPOSAL v0.4 §4 门簇①、GWA-E3 部署期断言），锁执行完成即移已结 |
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
+| [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（6）
+## 已结（13）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 6 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 13 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

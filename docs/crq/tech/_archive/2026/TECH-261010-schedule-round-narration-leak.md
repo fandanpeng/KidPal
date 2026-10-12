@@ -2,13 +2,13 @@
 id: TECH-261010-schedule-round-narration-leak
 title: 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出）
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: dev-loop（prompt v9 bump 或引擎侧 strip）
 trigger: 下个动 openclaw-system-prompt / 引擎 TTS 出口的包；再现率高（课表是高频问句）可提前
 opened: 2026-10-10
-closed: ""
-closedBy: ""
+closed: 2026-10-12
+closedBy: 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节）
 paths: ["server/deploy/openclaw-system-prompt.v8.md", "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER"]
 source: 2026-10-10 真机使用反馈（问「明天有什么课」，播报把思考过程念出来）+ 引擎/OpenClaw 网关日志逐句对账
 ---
@@ -20,3 +20,9 @@ source: 2026-10-10 真机使用反馈（问「明天有什么课」，播报把�
 **影响面**：孩子听到机器内部独白（「这是课表问答回合」「需要先读 kidpal/schedule.md」），高频课表问句下随时可再现；查字回合同理暴露（v8 反叙述纪律只在对话行，查字行靠「语音照常口语讲字义」正面要求兜着）。
 
 **修法候选**：① prompt v9（首选，dev-loop 走版本化 bump 槽位规则）：课表问答回合行补对称纪律——工具/文件动作照做，但语音只播最终面向孩子的答复，任何回合判定、文件路径、流程步骤不得进入语音部分（v7「任何『先查一下/先确认一下』的内部动作都是违规」句式扩行）。② 引擎侧兜底（engine-patch 面扩大，成本高）：strip 工具调用轮次间的前导文本段，只 TTS 末轮输出。**riskTier: medium**。
+
+---
+
+## 收口（2026-10-12 主线程盘点）
+
+修法候选 ① 已落地：261010-prompt-v9-schedule-anti-narration 批 bump v9，课表问答回合行补对称反叙述纪律——「任何『这是课表问答回合』『需要先读 schedule.md』式的回合判定、文件路径、流程步骤、内部动作叙述都不得进入语音部分」（v10 第 14 行在世实证）；v10（261012-kidpal-realtime-facts）零偏移继承，carrier `OPENCLAW_SYSTEM_PROMPT_CARRIER` 指向 v10 且 261012 真机轮已按 v10 验证（RF-A5 双路径实证）。引擎侧兜底 ② 未启用（prompt 侧根治后无需要）。关闭。
