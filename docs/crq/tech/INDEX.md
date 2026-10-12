@@ -7,13 +7,14 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 22（待拍板 1 / 待触发 15 / 已接受风险 6）；已结 5（归档索引见下）。
+**摘要**：未结 23（待拍板 2 / 待触发 15 / 已接受风险 6）；已结 5（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | [[TECH-260928-school-start-upcoming-empty]] 修复批落地后随批处理或另行走 /arch-change |
+| [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | MAJOR | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | human 拍板修法方向后按 /triage-change 分流（方向 A 预判 ②单包 Lite prompt v10 批，同型先例 261010-prompt-v9-schedule-anti-narration） |
 
 ## 待触发（15）
 
