@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 5 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 6 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -16,3 +16,4 @@
 | [TECH-260928-school-start-upcoming-empty](TECH-260928-school-start-upcoming-empty.md) | 周中 upcoming 恒空：school_start 配置未部署 ECS 且三条推送路径漏传 | 2026-09-28 | dev-loop integrator（changeId 260928-tech-260928-school-start-upcoming-empty；代码半修绿，运维半移交留痕见收口记录） |
 | [ARQ-261001-openclaw-model-name-overlay-drift](ARQ-261001-openclaw-model-name-overlay-drift.md) | 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400 | 2026-10-10 | 主线程（261010 部署演练闭环，见文末结项记录） |
 | [TECH-261010-engine-decision21-keys-not-persistent](TECH-261010-engine-decision21-keys-not-persistent.md) | 引擎决策 21 两键（24h 兜底 + 告别语关闭）未入 overlay 渲染源——线上已回落默认 120s 断连 + 告别语复活 | 2026-10-10 | 主线程（human 直接授权直修，2026-10-10 会话在案；跳过 dev-loop 如实记录于 commit 04c86a9） |
+| [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | 2026-10-12 | delivery/changes/dev/261012-kidpal-realtime-facts/（②单包 Lite 落地 + 真机轮 RF-A5 过：2026-10-12 14:27 引擎日志双路径实证——带城市真查「我查了一下西安……多云转晴，白天最高大概 24 度」（真实预报，对比早上幻觉版），无城市诚实降级「今天我这里没拿到天气数据……再问我一次试试，或者告诉我你在哪个城市」零编造；human 目击「问天气好了」；TTS 层故障另立 TECH-261012-edgetts-403-hotpatch、首按键问题另立 TECH-261012-first-keypress-no-listening，均不属本条目域） |

@@ -2,13 +2,13 @@
 id: TECH-261012-weather-fabrication
 title: 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造
 domain: tech
-status: deferred
+status: closed
 severity: MAJOR
 owner: dev-loop（261012-kidpal-realtime-facts 修法已落地；deferred 等真机轮 human 观测收尾）
 trigger: RF-A5 真机轮（human 在场：问天气全链路 + 降级路径一次，双侧日志对账）；延迟阈值先观测后钉
 opened: 2026-10-12
-closed: ""
-closedBy: ""
+closed: 2026-10-12
+closedBy: delivery/changes/dev/261012-kidpal-realtime-facts/（②单包 Lite 落地 + 真机轮 RF-A5 过：2026-10-12 14:27 引擎日志双路径实证——带城市真查「我查了一下西安……多云转晴，白天最高大概 24 度」（真实预报，对比早上幻觉版），无城市诚实降级「今天我这里没拿到天气数据……再问我一次试试，或者告诉我你在哪个城市」零编造；human 目击「问天气好了」；TTS 层故障另立 TECH-261012-edgetts-403-hotpatch、首按键问题另立 TECH-261012-first-keypress-no-listening，均不属本条目域）
 paths: ["server/deploy/openclaw-system-prompt.v9.md"]
 source: 2026-10-12 human 真机看屏轮口述 + 串口捕获 c:/tmp/hv5-eyeball-round.log（603065-732415ms 段三源对账：设备 STT/回复 + ECS 引擎日志 08:34:24 轮 + v9 提示词 grep 取证）
 ---
