@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 17（待拍板 0 / 待触发 11 / 已接受风险 6）；已结 13（归档索引见下）。
+**摘要**：未结 18（待拍板 0 / 待触发 12 / 已接受风险 6）；已结 13（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（11）
+## 待触发（12）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,6 +28,7 @@ _（无）_
 | [TECH-261011-spec-v5-reconcile-note-drift](TECH-261011-spec-v5-reconcile-note-drift.md) | COULD | requirements v1.61 补充规则内 v1.57 时代 ⚠️ V5 版式对账注与 home_p1.c 实现已漂移（大字+倒计时贴纸+中文日期描述过时） | 下个需求面变更批顺带（requirement-change 档 0 勘误通道；不阻塞任何实现面在办批） |
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
 | [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
+| [TECH-261012-qq-schedule-write-format-gap](TECH-261012-qq-schedule-write-format-gap.md) | MAJOR | QQ 课表录入链路缺口——家庭侧 main agent 无写课表 skill 钉 B1 格式，一个脏日期格致整份 schedule.md 解析失败、「接下来」三触发全静默停摆；连带实测刷新 marker 链（触发③）从未 live 部署 | dev 侧在途课表链路批 landing 前对账合并处理；或下次 QQ 录入复现时 |
 
 ## 已接受风险（6）
 
