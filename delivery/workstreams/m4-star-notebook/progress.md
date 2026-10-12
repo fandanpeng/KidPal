@@ -271,3 +271,17 @@
 - **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 48（前批 47 后继）。
 - **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
 - **遗留 human 项**：① 真机轮 human 在场（问天气全链路 + 降级路径一次）；② supervisor 若判 all-mock 需 human 放行（launch-card ⑦ 前置申报）；③ headless 启动由主线程代跑（human 既定口径）；④ loop-retro advisory 持续在账（17 ≥ 3 阈值）。
+
+## 2026-10-12 · 261010-p3-storylist-cold-start-restore launch prep（单包批；spine 三面本会话收齐 + requirements v1.63 定稿 + 契约门 HUMAN_APPROVED）
+
+- **调度判定**：本批 = 单包 `261010-p3-storylist-cold-start-restore`（②单包 Full riskTier medium；triage 2026-10-10 architect review + human 触点①裁：restore 标记方案、②单包 Full）。来源链 = TECH-261010-p3-storylist-cold-start-empty（真机反馈第 5 条「P3 停默认空态、没有把已有的 story list 列出来」）→ spine 261010-p3-storylist-cold-start 三面 2026-10-12 本会话收齐：需求面档 1 走毕（story-author 起草 → requirement-reviewer 四查 PASS → v1.63 frozen；human 话术三答在案）→ 架构镜像同批落（§5.1.2 :186 + §5.2 场景④ :214）→ 契约面 architect-reviewer 四分类（面 A CONTRACT_CHANGE_REQUIRED / 面 B NO_CONTRACT_CHANGE）→ human 契约门 **批准**（CCP = taskpackage contract-gate/，D1–D4 先批后落、与本包同批原子落）。串行接力沿常驻树（上一包 261012-kidpal-realtime-facts 已 merged）；**launch 形态 = 本树既有会话即 Pod 本体就地起 loop**（m2-char-window 先例；human 2026-10-12 指示「我们开始处理这个吧」）。
+- **树同步**：常驻分支 dev/260915-m1-k1a-key-layer-dispatch = main tip fde1eb9、零独有提交；本批 prep 制品 commit 后 main 纯落后 ff。
+- **双面基线锚 @ fde1eb9（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **152 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-12；面域 = server）。零红。旧锚 145P @9d07329 作废（差异判停命中：realtime-facts 批 server 面 8 文件入账须重跑，实测 +7 齿）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **155 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-12；面域 = firmware；热缓存 ninja no work to do）。零红。firmware 面 git diff 9d07329..fde1eb9 零差异，与 261012 锚 155T0F @9d07329 持平。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch 261010-p3-storylist-cold-start-restore --base-ref main` → prep 制品 commit + main ff 后复跑（首轮 blocking = taskpackage.json 未进基准 ref，属时序预期）。
+- **建包件**：taskpackage.json 随本批补齐（triage 建包职责：origin regression 型 upstreamRef 指 TECH CRQ 条目 + upstreamFrozen 记 spine 三 anchors + planRef 回指 sibling plan.md；acceptance 齿 SL-A1~A6 预填、红基线/变异骨架字段留 acceptance-author 冻结轮回填）。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 49（前批 261012=48 后继）。
+- **启动卡**：`delivery/taskpackages/261010-p3-storylist-cold-start-restore/launch-card.md`（五要素 + intake 特别注意 ⑧ 条：CCP 先批后落通道 / FIX-A1 翻正授权链 / schedule :926-991 分流形态复刻 / ECS 开关默认关 / all-mock 前置申报 / 真机轮 human 在场 / ctx(story) 归并处置归本包）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
+- **遗留 human 项**：① SL-A5 真机轮 human 在场持板（重启冷启动翻 P3 见列表 + 空态两态 + 无前台抢占）；② supervisor 若判 all-mock 触 riskTier 重算 high → 需 human 放行；③ ECS 恢复推送开关烧板验证后 human 人工开闸（gate evidence C1）；④ 契约 diff 逐字 patch 过目 → git apply（CCP 先例通道，人工 diff 核对留痕）。

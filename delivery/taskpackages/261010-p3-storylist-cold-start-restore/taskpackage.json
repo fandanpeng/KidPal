@@ -1,0 +1,127 @@
+{
+  "changeId": "261010-p3-storylist-cold-start-restore",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md",
+    "upstreamFrozen": "spine anchors 三面已回填（delivery/changes/intake/261010-p3-storylist-cold-start.md）：anchors.req = requirements §9 v1.63 frozen 2026-10-12（S-F2.1 AC1 限定 + AC5/AC6 空态两态 + 补充规则冷启动恢复）；anchors.arch = arch §5.1.2 :186 + §5.2 场景④ :214 镜像随 v1.63 批同拍落；anchors.contract = CONTRACT-CHANGE-PACKET HUMAN_APPROVED 2026-10-12（story_list data.restore additive D1–D4，先批后落、与本包同批原子 git apply）",
+    "workstream": "m4-star-notebook"
+  },
+  "subsystem": "server/gateway/front + firmware/main (mcp_server story_list 分流 + kidpal_render_node P3 空态)",
+  "story": "S-F2.1 · 看「星星记录本」列表（AC1/AC5/AC6）· 定稿版本号 v1.63（docs/requirements.md §9 v1.63 行 2026-10-12）：P3 story_list 冷启动恢复推送赎回（TECH-261010-p3-storylist-cold-start-empty = 根因与 scoping 权威，260928-story-connect-push-defer 挂起的时点①重裁由本包赎回）——front WS 建连附带重推（data.restore 标记、失败不阻断建连、②归档后/③删除后调用点缺省 False 零偏移）+ 板端 restore 分流（只填 RAM 列表缓存不接管前台、P3 在屏时仅重绘本页，复刻 schedule restore :926-991 形态）+ 空态两态分叉渲染（AC5 ×0 计数 +「本子空空的，讲个故事点亮第一颗星吧」/ AC6 不显计数 +「本子还没翻开，等等再来看看吧」）+ FIX-A1 负锚齿翻正（「建连零 story_list 帧」→「建连恰一帧 restore story_list」）。契约同步 = story_list data.restore additive（CCP D1–D4，HUMAN_APPROVED 2026-10-12 先批后落、同批原子落）+ ADR-010 + display_schema V27 floor 联动扩。",
+  "planRef": "delivery/taskpackages/261010-p3-storylist-cold-start-restore/plan.md",
+  "acceptance": [
+    "SL-A1: （FIX-A1 翻正）：front 建连路径恰一帧 story_list 且 data.restore == true——先红（现零帧）后绿；M4K1 ②③ wire 断言零偏移复跑",
+    "SL-A2: 板端 restore 帧 + 非 P3 前台 → 只装缓存零前台接管（kidpal_render_node_cache_story 被调、begin/end_page 不被调）host 纯逻辑",
+    "SL-A3: 板端 restore 帧 + P3 在屏（LIST 冷浏览）→ 重渲本页 host 纯逻辑",
+    "SL-A4: 记录语境（VOICE 前台/录音态）收到 restore 帧 → 缓存不抢前台（K3 [S4] gating 与 restore 分流叠加语义钉死）；非 restore 帧（②③）→ K2 消费面零偏移 host 回归",
+    {
+      "id": "SL-A5",
+      "kind": "structural",
+      "note": "真机轮（human 在场持板，live-manual 观测项不计入 pytest 通过面）：重启设备（云端现存 ≥1 篇）→ 翻到 P3 显示已归档列表（含计数）而非空态；期间任意页前台无 P3 抢占；空态两态话术按 v1.63 验收（AC5 ×0 + 话术 / AC6 不显计数 + 话术）"
+    },
+    "SL-A6: front 恢复推送失败不阻断建连（try/except 同 schedule connect push :1009-1012 先例）host"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "firmware/main/test/story_page_v2.acceptance.c"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "redBaselineCommand": "acceptance-author 冻结轮回填",
+  "redBaselineResult": "acceptance-author 冻结轮回填",
+  "deliveryImpact": "none",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/m4-star-notebook/task_plan.md"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "contract-drift",
+    "test-quality",
+    "docs-sync"
+  ],
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md",
+    "docs/requirements.md:S-F2.1",
+    "S-F2.1-AC1",
+    "S-F2.1-AC5",
+    "S-F2.1-AC6",
+    "delivery/changes/intake/261010-p3-storylist-cold-start.md",
+    "delivery/taskpackages/261010-p3-storylist-cold-start-restore/plan.md",
+    "delivery/taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/CONTRACT-CHANGE-PACKET.md"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F2.1",
+    "docs/architecture.md",
+    "docs/ADR.md",
+    "docs/CONTRACT-DECISION-QUEUE.md"
+  ],
+  "changeManifest": [
+    "docs/contracts/interface-contract.md",
+    "docs/ADR.md",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/story_page_v2.test.c"
+  ],
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "server",
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_push_story_list"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "McpServer::AddCommonTools story_list 分支（:1033-1119，restore 分流；缓存装载 kidpal_render_node_cache_story）"
+      }
+    ],
+    "exempt": ""
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+      "kind": "frozen-revision",
+      "note": "FIX-A1 负锚齿翻正（:1000-1044「建连零 story_list 帧」→「建连恰一帧 restore」）+ ②③ wire 断言零偏移 + restore 帧新断言；修订授权链 = CCP id + §9 v1.63 行 + human 方向锚留痕（260928 FIX-A2 先例形态），REVISION LOG 留痕"
+    },
+    {
+      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "kind": "frozen-revision",
+      "note": ":25 跨包负锚「建连零 story_list 帧」同批翻正；K1 27 齿零偏移套件全量复跑（must-stay-green）"
+    },
+    {
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "kind": "additive-host",
+      "note": "restore 分流纯逻辑新齿（SL-A2/A3/A4）+ 空态两态渲染齿（SL-A5 的 host 可测前置：AC5/AC6 话术与计数画法）additive 落此；既有齿零触碰（tighten-only 窗口）"
+    }
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "reason": "骨架由 acceptance-author 冻结轮产出后 planner 代落（261011 先例⑤）。本批变异面实存且行为可断言（front 建连推送分支 / 板端 restore 分流路由 / 空态两态渲染分叉），非纯文本锚包；live 行为观测归 SL-A5 真机轮 human 在场（structural 豁免，非自动断言）"
+  },
+  "adrRequired": true,
+  "adrReason": "story_list 冷启动恢复 = 「数据面更新 vs 前台接管分离」模式第三实例（home upcoming / schedule grid 之后）——durable semantics，ADR-010 随批新增（CCP §7 建议；与 §1.3② 的两点差异 = relay 收紧使 LLM 绕过残余风险不适用 + 260928 摘除→v1.63 赎回沿革）",
+  "docsSyncRequired": true,
+  "docsSyncReason": "契约 diff 逐字 git apply（CCP D1–D4，CRLF 保全 + 人工 diff 逐字核对留痕，260921-m3-k1 先例通道）+ ADR-010 新增 + CONTRACT-DECISION-QUEUE 门行登记 + architecture-gate-evidence closeout（C1 ECS 开关默认关→烧板验证→human 开闸 / C2 同批原子落核证）+ arch :186/:214「随契约门落、尚未落地」挂法句翻既成 + spine anchors.contract 落地态回填 + TECH CRQ 收口——全部归包内 integrator（gate evidence §6/§8 在案）",
+  "docsOwner": "integrator",
+  "notes": "riskTier=medium 口径（triage reviewed plan frontmatter 权威）：推送时机与前台抢占语义重裁、跨固件/云端两子面，但不新增行为状态机（restore 分流复刻 schedule :926-991 在役形态）且契约已先批（CCP HUMAN_APPROVED）→ 未触 high 轴（security/DB/状态机零新增）。已知地雷前置申报：SL-A1~A4/A6 为 wire 帧与 host 纯逻辑断言、无 DB/事件断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012 v9 同款先例申报）。ECS live ops：恢复推送开关默认关（schedule grid_restore_enabled 先例形态），板端 SL-A5 真机验证后 human 人工开闸（gate evidence C1）。ctx(story) 条件推送（front_app.py :216，defer 时代「①恢复 = 会话建立同拍」）与新建连推送的归并处置 = 行为策略归本包（arch :186 三时点对齐，plan.md :29 ARQ-260911 owner 登记）。FIX-A1 翻正走正常改验收通道 + human 方向锚留痕（260928 FIX-A2 先例形态），tighten-only 拦截预期命中、REVISION LOG 授权链 = CCP id + §9 v1.63 行。烧录 = app 分区单烧（本批无 spiffs 资产变更——flash-asset-partition-rule 口径核对）。knownRedFloor 引 progress.md 带 SHA 锚行（launch prep 记录），不手写数字。固件空态渲染入口两处同源纪律（kidpal_render_node.cc :874-886 注记）不破。supervisor-verdict write-once：verdict 在盘时重跑须先显式删旧件。"
+}
