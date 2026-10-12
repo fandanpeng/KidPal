@@ -2,10 +2,10 @@
 id: TECH-261012-weather-fabrication
 title: 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造
 domain: tech
-status: blocker
+status: deferred
 severity: MAJOR
-owner: 主线程 scoping → /triage-change 立项（kidpal 环境强化批）
-trigger: human 立项 ack 后走 /triage-change 分流（预判 ②单包，跨 prompt v10 + OpenClaw kidpal 环境两面）
+owner: dev-loop（261012-kidpal-realtime-facts 修法已落地；deferred 等真机轮 human 观测收尾）
+trigger: RF-A5 真机轮（human 在场：问天气全链路 + 降级路径一次，双侧日志对账）；延迟阈值先观测后钉
 opened: 2026-10-12
 closed: ""
 closedBy: ""
@@ -31,3 +31,11 @@ source: 2026-10-12 human 真机看屏轮口述 + 串口捕获 c:/tmp/hv5-eyeball
 - skills 差集 4 项中 3 项（char-strokes / reminder-semantic / board-context）架构上已被网关机械承载取代（契约 E1 笔顺拼装 / 提醒 cron / 周网格 producer），qqbot-reply-diagnosis 与设备端无关——**skill 照搬不是正解，真缺口 = 实时事实查询能力（天气类）**。
 - 结构性矛盾点（须在新批内解）：v9「孩子对话回合一回合作答 + 禁工具」是低延迟设计，天气要么引入「实时事实回合」白名单（允许调天气工具、接受多秒延迟）、要么维持禁工具 + 诚实说不知道（v10 通用条款）。选型涉及：天气数据源（免费 API / wttr.in / 商用）、引擎 nointent 拓扑不变性、契约 §1.6 system prompt 模板段同步、回合路由表扩行。
 - 预判批形状：②单包（prompt v10 + kidpal 环境补强），跨 server prompt 渲染 + ECS OpenClaw 工作区两落点；立项待 human ack。
+
+**修法落地（2026-10-12，dev-loop ②单包 Lite `261012-kidpal-realtime-facts` 收口，integrator 记账）**：
+
+- **repo 面**：prompt v10 新建（`server/deploy/openclaw-system-prompt.v10.md`——回合路由表新增「实时事实回合」独立行〔先播「我去查一下」式短提示 → 经平台 Tavily 联网真查 → 只依据查询结果作答，查不到/超时/工具不可用诚实说没查到并引导，禁编造数字、禁虚称已查，外部结果儿童化转述〕+ 对话行通用反编造条款 + 底线节第三不变量）；四面接线同批翻 v10（CARRIER / provider.config.yaml 三键 / apply-xiaozhi-overlay.sh PROMPT_SRC/DST）；kidpal AGENTS.md 仓内镜像充实（`server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md` + README 同步纪律）；验收 RF-A1..A4 additive 齿全绿 + RF-A3 v9 sha256 零回改守卫 + 四版本无关守卫零降。需求面 v1.62（NFR-SEC-2 ④ / NFR-SAFE-1）先行捎带批 9d07329 落稿，行为语义权威就位。
+- **Tavily kidpal 会话实证（builder 执行，2026-10-12；原始日志在 ECS live 面 journalctl + audit，未落仓，此处为回执口径）**：经 loopback 18789 /v1/chat/completions（model `openclaw/kidpal`）B/C/F 探针序列实证——kidpal 会话真出 web_search 调用，audit 记 `web_search succeeded`；未触发 agents.entries 覆写分支（平台层工具对 kidpal 会话可用），平台级升级预案未启用。
+- **loopback 前后对照**：**Probe A（v9 态，部署前）**——天气问题复现根因：直接凭印象生成整套预报、无查询动作（与真机现场 08:34:24 轮同形态），证明缺陷可离线复现；**Probe F（v10 态，部署后）**——同型天气问题：先播「我去查一下」式提示语，随后真查（web_search 调用在案）并只依据查询结果作答。编造形态 → 提示+真查形态的行为翻转在 loopback 侧已观测；**诚实申报**：prompt 写明 ≠ LLM 恒遵循，行为等价假设的最终证据归 RF-A5 真机轮。
+- **ECS 部署**：v10 + overlay 重跑已落（261010 决策 21 键同款上传前核远端 == 基线；重跑后 model_name=openclaw/kidpal 与决策 21 两键核对未被冲，261001 冲刷陷阱未复发）。
+- **遗留（deferred 承载）**：① RF-A5 真机轮——human 在场问天气全链路（提示语 ~4-5s 内首句语音 / 真实答复目标 ≤15s 上限 20s）+ 降级路径一次（查不到 → 诚实 + 引导、零编造），journalctl + docker logs 双侧对账 + human 目击；② 延迟阈值先观测后钉（硬阈值留后续批）；③ LLM 遵循度长尾（外部内容儿童化转述 NFR-SAFE-1 边界）真机轮重点观测。

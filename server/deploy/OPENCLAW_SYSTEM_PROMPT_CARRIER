@@ -7,16 +7,20 @@
 同目录）。**本文件是版本演进史的唯一全量副本**——声明面（provider.config.yaml）、
 渲染面（apply-xiaozhi-overlay.sh）与其它散文一律只留「当前 = vN」指针、不复述沿革。
 
-- artifact（生成唯一来源）：`openclaw-system-prompt.v9.md`（当前冻结版本化文件，v9）。
-  v9 = 在 v8 版之上叠加 261010-prompt-v9-schedule-anti-narration（TECH-261010-schedule-
-  round-narration-leak 真机课表问答内部推理当语音播出根治）：
-  ① **课表问答回合行补对称反叙述纪律**（回合类型路由表）：v7 修对话行（:11「先查一下/
-  先确认一下的内部动作都是违规」）时漏了课表行的对称条款——v9 给课表问答回合行补上
-  「工具/文件动作照做（先读 schedule.md、反编造、备注读回全保持），但语音只播最终面向
-  孩子的答复；任何回合判定 / 文件路径 / 流程步骤 / 内部动作叙述不得进入语音部分」的
-  对称纪律（v7 对话行句式扩行）。
-  其余段落（角色 / 两部分结构 / 查字 / 故事 / 提醒 / 硬约束）零偏移继承 v8——查字行
-  既有「语音照常口语讲字义」正面要求原样保留。
+- artifact（生成唯一来源）：`openclaw-system-prompt.v10.md`（当前冻结版本化文件，v10）。
+  v10 = 在 v9 版之上叠加 261012-kidpal-realtime-facts（TECH-261012-weather-fabrication
+  真机实测天气幻觉根治：v9 反编造纪律逐域枚举漏「通用实时事实」域，天气问题落对话回合
+  = 既无数据源又禁工具，结构性逼出编造）：
+  ① **回合类型路由表新增「实时事实回合」独立行**（识别特征 = 天气 / 新闻 / 今日热点 /
+  比分等当下实时信息）：先播「我去查一下」式短提示 → 经平台联网搜索（Tavily）真查 →
+  只依据查询结果作答；查不到 / 超时 / 查询失败 / 工具不可用诚实说没查到并引导（换个问法
+  再试）；严禁编造数字、严禁虚称已查；外部查询结果面向孩子转述守 NFR-SAFE-1 儿童化改写
+  边界（不逐字照搬网页原文）；日期 / 星期类当下事实固件 RTC 可答、不进本回合。
+  ② **对话回合行补通用反编造条款**（v9 逐域枚举漏的通用实时事实域补死）：涉及实时信息
+  （天气 / 新闻 / 今日热点等）不得凭印象编造、改走「实时事实回合」处理。
+  ③ **底线节扩第三不变量**（与既有两条并列同段）：实时信息无查询支撑永不编造、永不
+  虚称已查询。
+  其余段落（角色 / 两部分结构 / 查字 / 故事 / 提醒 / 硬约束）零偏移继承 v9。
 - 历史版本：`openclaw-system-prompt.v1.md`（260829-voice-roundtrip 基座）→
   `openclaw-system-prompt.v2.md`（260829-schedule-p2 + 260829-char-stroke 合并版）→
   `openclaw-system-prompt.v3.md`（260829-story-p3 + 260829-schedule-reminder 并集版；
@@ -33,10 +37,12 @@
   版本沿革前言外置（制品本体无前言）+ 正文 Pruning 11142 → 4853 字符）→
   `openclaw-system-prompt.v8.md`（260924-m4-k3-record-session-live：故事段「帮我记下来」
   第二指令（S-F2.2 双指令批）+ 意图边界负例「帮我记下来明天带跳绳」= 课表录入不判开录；
-  其余段落（回合类型路由表 / 课表 / 查字 / 提醒 / 硬约束）零偏移继承 v7）
+  其余段落（回合类型路由表 / 课表 / 查字 / 提醒 / 硬约束）零偏移继承 v7）→
+  `openclaw-system-prompt.v9.md`（261010-prompt-v9-schedule-anti-narration：课表问答回合行
+  补对称反叙述纪律（TECH-261010 真机课表问答内部推理当语音播出根治）；其余段落零偏移继承 v8）
 - 声明面：`provider.config.yaml`（`system_prompt.deploy_target` + 同文件的
   `reminder_config` 三档阶梯配置声明）
-- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v9.md`；
+- 渲染面：`apply-xiaozhi-overlay.sh`（下发给 ECS `data/openclaw-system-prompt.v10.md`；
   同批渲染 `openclaw-reminder.config.yaml` 并铺 `openclaw-patch/reminder_schedule_lib.py`）
 - 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
   生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉

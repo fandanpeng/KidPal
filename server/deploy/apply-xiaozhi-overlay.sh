@@ -96,11 +96,12 @@ ls -la "$OVERLAY"
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
 # 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
 # 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
-#   v9 = openclaw-system-prompt.v9.md (当前渲染源; 261010-prompt-v9-schedule-anti-narration:
-#        课表问答回合行补对称反叙述纪律（TECH-261010 真机课表问答内部推理当语音播出根治）;
-#        其余段落零偏移继承 v8)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v9.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v9.md"
+#   v10 = openclaw-system-prompt.v10.md (当前渲染源; 261012-kidpal-realtime-facts:
+#        回合类型路由表新增「实时事实回合」行（先播提示→联网真查→只依据查询结果作答、
+#        查不到诚实引导、禁编造/禁虚称已查）+ 对话行通用反编造 + 底线节第三不变量
+#        （TECH-261012 真机天气幻觉根治）; 其余段落零偏移继承 v9)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v10.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v10.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
