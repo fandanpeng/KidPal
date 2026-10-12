@@ -29,7 +29,7 @@ anchors:
   req: "requirements.md 定稿 v1.61（§9 v1.61 行 2026-10-11 = 定稿载体，commit 7f68b51）：S-F1.1 AC2 明天区改判（学校课「XX:XX 上学」并入、多项升序）+ AC5/AC6/AC7 空态两态分叉 + WF-F1-01 线框同步 + 补充规则 6a/6b/6c（含实现侧对账与契约门登记）；requirement-change 档 1 全程走毕（story-author 两轮 → requirement-reviewer 两轮四查复审 PASS）；spec-anchor-check ok=true（落稿后复跑）"
   contract: "CONTRACT-CHANGE-PACKET.md（delivery/taskpackages/261011-p1-home-v5-rework/，packet id = 同 changeId）——human 契约门 AskUserQuestion 批准 2026-10-11（HUMAN_APPROVED，四触点：preview 多项数组+三态语义 / 示例值 HH:MM 顺修 / :155 seam 引用签名同形顺修 / 变更记录行 append；先批后落，随包同 PR git apply，CRLF 保全）；架构门证据 = architecture-gate-evidence.md（十节 ledger，C1/C2/C3 closeout 归包内 integrator）；pod-events human-decision approve-contract-change-packet 在案（喂 pre-merge-escalation-gate contracts-block）"
   arch: "不动——architecture.md 零镜像句（triage 分流 review 独立取证 2026-10-11）"
-  imp: "taskpackage 261011-p1-home-v5-rework 建包（plan.md 落盘 2026-10-11，②单包 Full：rigor=full / riskTier=high / sourceType=human-ad-hoc；taskpackage.json/origin 归 planner /build-feature intake 时建）"
+  imp: "taskpackage 261011-p1-home-v5-rework 建包 → dev-loop 全程走毕 → 契约包人合 merged（main 952b855，2026-10-12 --no-ff 双亲合并、批准锚 e5a90c17/c8f4a2b1）：acceptance 冻齿（HV5-AC2/AC5/AC6/AC7/SEAM）→ builder（含 429 中断接棒续做：chip 重烘 + 两面全绿 server 236P / fw host 155T0F）→ verifier↔fixer r1-r3 绿 → integrator 101629e（契约 diff 逐字核对 C1 + ADR-009 + closeout）→ supervisor ESCALATE effective critical 人批 → 真机看屏轮过（chip「明天」/ 空态话术）→ 合并 + 簿记收口（changes-index dev lane closed + board merged）；交付制品归 delivery/changes/dev/261011-p1-home-v5-rework/"
 openQ:
   - id: q1-四档路由
     question: 四档路由确认
@@ -51,7 +51,11 @@ openQ:
     question: CONTRACT-CHANGE-PACKET.md 四触点（preview 多项数组+三态 / 示例值 HH:MM / :155 seam 引用顺修 / 变更记录行）签不签？
     ruling: human 2026-10-11 契约门 AskUserQuestion 批准（无附加条件；预审另新发现 :155 seam 引用签名触点并入 packet、示例终形按 K1 口径 HH:MM 数组「明天」不入 wire）
     status: resolved
-status: in-flight
+  - id: q6-合并与看屏
+    question: supervisor ESCALATE（effective critical）人批 + 真机看屏轮先后？
+    ruling: human 2026-10-12 裁——先看屏后合并；看屏过（chip「明天」✓ 空态话术 ✓，ECS front 部署 + app/art 双分区烧录 + 串口 600s 窗口证据）；合并人批同日两锚（approve-escalated-merge c8f4a2b1 + approve-contract-merge-manual e5a90c17，§10e 契约包人合 --no-ff 合并 952b855）；设计稿母版同步 human 裁主线程直落（升级 fe6c3f46 闭合）、CDQ 行主线程直落（升级 930257e5 闭合）
+    status: resolved
+status: closed
 ---
 
 # spine · 261011-p1-home-v5-rework
