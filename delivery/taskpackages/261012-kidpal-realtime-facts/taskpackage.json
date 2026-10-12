@@ -1,0 +1,100 @@
+{
+  "changeId": "261012-kidpal-realtime-facts",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261012-weather-fabrication.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy + ECS OpenClaw 工作区",
+  "story": "TECH-261012-weather-fabrication · 真机实测天气幻觉修法（ requirements v1.62 NFR-SEC-2 ④ / NFR-SAFE-1 转述边界 = 行为语义权威）：prompt v9→v10 新增「实时事实回合」路由行——先播「我去查一下」式提示再经 OpenClaw 平台联网搜索（Tavily）真查、只依据查询结果作答，查不到/失败诚实说不知道并引导、不编造不虚称已查；对话行补通用反编造条款 + 底线节第三不变量；kidpal AGENTS.md 仓内镜像充实 + ECS 同步；Tavily kidpal 会话实证先行（无工具则 agents.entries 覆写、平台级不可用升级 human）。工具面平台层已启用、禁令在 v9 prompt——本批开闸不开新工具设施。",
+  "planRef": "delivery/taskpackages/261012-kidpal-realtime-facts/plan.md",
+  "redBaselineCommand": "",
+  "redBaselineResult": "launch prep 期基线锚（双面实测 @9d07329，2026-10-12，producer 五要素登 progress.md）：server 面 145 passed / 0 failed / 4 deselected / 9 subtests passed exit 0；firmware host 面 155 Tests / 0 Failures / 0 Ignored exit 0（本批固件零改动，面域零 diff 可引用）。acceptance 冻结齿红基线 = acceptance-author 冻结后实跑回填本字段。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261012-weather-fabrication.md",
+    "requirements v1.62 NFR-SEC-2-4",
+    "requirements v1.62 NFR-SAFE-1",
+    "delivery/changes/intake/261012-kidpal-realtime-facts.md",
+    "delivery/taskpackages/261012-kidpal-realtime-facts/plan.md"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "docs/requirements.md#NFR-SEC-2",
+    "docs/requirements.md#NFR-SAFE-1",
+    "docs/architecture.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER"
+  ],
+  "changeManifest": [
+    "server/deploy/openclaw-system-prompt.v10.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/openclaw-agents/README.md",
+    "docs/architecture.md",
+    "server/deploy/README.md"
+  ],
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "server",
+        "path": "server/deploy/apply-xiaozhi-overlay.sh",
+        "symbol": "PROMPT_SRC"
+      },
+      {
+        "face": "server",
+        "path": "server/deploy/openclaw-system-prompt.v10.md",
+        "symbol": "实时事实回合"
+      }
+    ],
+    "exempt": ""
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "kind": "additive-host",
+      "note": "RF-A1..A5 新齿 additive 落此（tighten-only 窗口、既有齿零触碰）"
+    },
+    {
+      "path": "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "test_a1_prompt_wired_three_faces_version_agnostic——四面接线同批翻即绿、漏翻必红"
+    },
+    {
+      "path": "server/acceptance/test_char_meaning_merge.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "MCD prompt wired two faces 版本无关守卫"
+    },
+    {
+      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "M4K3-A8 三面 + 故事段锚"
+    },
+    {
+      "path": "server/acceptance/test_261010_prompt_v9_schedule_anti_narration.acceptance.py",
+      "kind": "must-stay-green",
+      "note": "PN-A4 三面 + 课表行纪律 + 世系锚（v9 谱系零回改）"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "adrRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "arch §5.5.5 + §5.1（:196）prompt 指针刷 v10（docs-delta，v9 先例同款）+ server/deploy/README.md prompt 指针节核证；TECH-261012 CRQ 收口（integrator 阶段）。",
+  "docsOwner": "integrator",
+  "notes": "riskTier=medium 口径（architect 快审）：儿童面 live 行为放宽 + 新出网路径（NFR-SEC-2 ④ 已记账）+ 条件性 openclaw.json 改动；不升 Full 轴已核（security/DB/状态机零触、AI 成本审计轴不触发——Tavily 是平台既有计费能力）。**已知地雷前置申报**：全文件内容锚 + live 观测项、无 DB/事件断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（v9 同款先例申报）。E4 冻结件已退役（2026-09-16 archive），零冻结件修订授权链；四个版本无关守卫（m3k3 A1 / MCD / M4K3-A8 / PN-A4）四面同批翻即绿。ECS live ops 纪律：overlay 重跑后必核 model_name=openclaw/kidpal 与决策 21 两键未被冲（261001 冲刷陷阱）；AGENTS.md 同步「先改仓内镜像进 review，再同步 live」。"
+}

@@ -258,3 +258,16 @@
 - **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 47（前批 device-reconnect=46 后继）。
 - **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（requirement/契约/spree prep 制品入索引面）。
 - **遗留 human 项**：① 真机轮 human 在场持板（空态两态 + 明天区多项 + chip「明天」）+ riskTier high 合并人批为硬前置；② headless 启动由主线程代跑（human 2026-10-11 指示「拆好包后准备好环境，然后 headless 启动开发」）；③ spine openQ q4（v1.57 对账注过时勘误候选）另行批。
+
+## 2026-10-12 · 261012-kidpal-realtime-facts launch prep（单包批，TECH-261012 修法 + requirements v1.62 先行捎带）
+
+- **调度判定**：本批 = 单包 `261012-kidpal-realtime-facts`（②单包 Lite riskTier medium；triage 快审 + human 触点①三答确认）。来源链 = TECH-261012（天气幻觉，真机看屏轮新发现）→ human 定向「补 kidpal 环境：AGENTS.md 充实 + 工具对齐」→ triage 裁 prompt v10「实时事实回合」+ Tavily 实证 + AGENTS.md 仓内镜像；需求面档 1 先行捎带已落稿 v1.62（NFR-SEC-2 ④ / NFR-SAFE-1）；契约面 NO_CONTRACT_CHANGE（§1.6 四分类留痕 spine anchors.contract）。串行接力沿常驻树（上一包 261011 已 merged）。
+- **树同步**：常驻树沿用；main 含 261011 契约包人合 merge（952b855）+ 簿记（0654b5b/850f409）→ 回同步 rebase（2 笔线性重放 7c8cd50/9d07329 零冲突）→ main 纯落后、prep 制品 commit 后 ff。固件环境在位（host build 热缓存 no work to do）。
+- **双面基线锚 @ 9d07329（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **145 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-12；面域 = server）。零红。旧锚 144P @4a9e87f 作废（261011 批 preview 多项齿入账）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **155 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-12；面域 = firmware；ninja no work to do 热缓存）。零红。本批固件零改动。
+- **机械门**：`settings-lint.mjs` 0 RED（本批未复跑前值 0 RED 在册，prep commit 后随 check-launch 复核）；槽位核验 server/deploy/ 无并行 .v10 占用（ARQ-260908 纪律）绿；`portfolio-reconcile --check-launch --base-ref main` → prep 制品 commit + main ff 后复跑。
+- **建包件**：taskpackage.json 随本批补齐（origin regression 型 upstreamRef 指 TECH-261012 条目 + planRef 回指 sibling plan.md；RF 齿/红基线字段留 acceptance-author 冻结轮回填）。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 48（前批 47 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
+- **遗留 human 项**：① 真机轮 human 在场（问天气全链路 + 降级路径一次）；② supervisor 若判 all-mock 需 human 放行（launch-card ⑦ 前置申报）；③ headless 启动由主线程代跑（human 既定口径）；④ loop-retro advisory 持续在账（17 ≥ 3 阈值）。
