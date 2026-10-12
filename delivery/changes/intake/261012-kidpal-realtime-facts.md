@@ -22,8 +22,8 @@ facePlan:
   - 顺序3 实现面：②单包 Lite（rigor=lite / riskTier=medium / sourceType=regression）→ delivery/taskpackages/261012-kidpal-realtime-facts/plan.md → planner /build-feature 完整 dev-loop；launchPreconditions：Tavily kidpal 会话实证先于 ECS 部署 v10（包内 builder 承载）；槽位核验 server/deploy/ 无并行 .v10 占用
   - launchPrecondition: 顺序1/2 未闭（契约分类留痕 + 需求面 frozen）不阻塞 repo 制齿（architect 裁：轻面不阻塞），但 ECS 部署步骤须在契约分类落痕 + Tavily 实证后；真机轮 human 在场（问天气全链路 + 一次降级观测）
 anchors:
-  req: ""  # 待档 1 落稿后回填（v1.62）
-  contract: ""  # 待 architect-reviewer 四分类留痕
+  req: "requirements.md 定稿 v1.62（§9 v1.62 行 2026-10-12 = 定稿载体）：NFR-SEC-2 出网路径 ④（kidpal agent 实时事实查询回合经 Tavily 真查 + 诚实降级）+ NFR-SAFE-1 联网转述边界 + architecture.md 五处镜像（§1.1 枚举/§1.2 表/§3.1 投影/§6 QA/决策 19 append 子注）；requirement-change 档 1 全程走毕（story-author 两轮 → requirement-reviewer 四查 + R1 否回复审 PASS）；spec-anchor-check ok=true"
+  contract: 不动 = NO_CONTRACT_CHANGE（architect-reviewer 四分类，2026-10-12，同会话 return）——契约唯一 prompt 锚点 §1.6（interface-contract.md :182-185）逐字引文只钉四语义面（两部分格式 / display 七 view 白名单 / 课表只文字答+薄载荷 / 星星只文字答），v10 additive（实时事实回合新行 / 对话行通用反编造 / 底线节第三不变量）逐面核对零冲突、引文未枚举回合路由与工具政策，无需改写；全篇巡查 :233（备注携带判断）与 :277（格式遵循度）两相邻锚均不受 v10 影响；docs/contracts/** 零触碰，不升级 human。
   arch: "动=指针刷（§5.5.5/§5.1 v9→v10），归包内 integrator docs-sync，非独立批"
   imp: "taskpackage 261012-kidpal-realtime-facts 建包（plan.md 落盘 2026-10-12，②单包 Lite：rigor=lite / riskTier=medium / sourceType=regression；taskpackage.json 归 prep/planner intake）"
 openQ:
