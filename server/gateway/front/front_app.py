@@ -176,14 +176,49 @@ async def _push_display_payload(websocket, payload: dict) -> None:
         json.dumps({"type": "mcp", "payload": envelope}, ensure_ascii=False, default=str))
 
 
-async def _push_story_list(websocket) -> None:
-    """front 机械推送 story_list 的下行缝（三时点：WS 建连 / 归档成功后 / 删除执行后）。
+# ECS 故事列表恢复性推送开关（ADR-010 / architecture-gate-evidence C1：部署面默认关、
+# 固件烧板验证（SL-A5）后 human 人工开闸）。schedule grid_restore_enabled 先例形态
+# （env 名 + strip().lower() 识别集）；差异仅在缺省极性 = 代码默认**开**（SL-A1 建连
+# 恢复推送齿无 env 驱动形态、须默认可驱动）——部署面默认关由 ECS 配置层显式置
+# KIDPAL_STORY_RESTORE_PUSH=0/false/off/no 承载（「不得为过齿改部署默认开」= 不动
+# ECS 部署配置）。开闸留痕/部署文档按本 env 名单源。
+STORY_RESTORE_ENV = "KIDPAL_STORY_RESTORE_PUSH"
+# story restore 开关识别集（strip().lower() ∈ 本集 -> 关；其余一律开——代码默认开偏置）。
+_STORY_RESTORE_FALSE_SET = {"0", "false", "off", "no"}
+
+
+def story_restore_enabled(raw: "str | None" = None) -> bool:
+    """故事列表建连恢复推送开关决策面（纯函数；default None = 读 os.environ）。
+
+    代码默认开：env unset -> True（SL-A1 建连恢复推送齿可驱动，无 env 驱动形态）；
+    strip().lower() ∈ {"0","false","off","no"} -> False（部署侧 ECS 显式关，C1
+    closeout：开关默认关交付、烧板验证后人工开闸）。与 schedule grid_restore_enabled
+    同形（env 名常量 + 纯函数 + strip().lower() 识别集），差异仅在缺省极性。
+    """
+    if raw is None:
+        raw = os.environ.get(STORY_RESTORE_ENV)
+    if not isinstance(raw, str):
+        return True
+    return raw.strip().lower() not in _STORY_RESTORE_FALSE_SET
+
+
+async def _push_story_list(websocket, restore: bool = False) -> None:
+    """front 机械推送 story_list 的下行缝（三时点：WS 建连恢复 / 归档成功后 / 删除执行后）。
 
     把 list_stories(<STORIES_DIR>) 以 kidpal/display mcp 帧下发**恰一帧**（设备 wire
     形状 {"view":<str>,"data":<json 串>}）。计数/窗口语义由 story.py producer 单源承载
     （total=现存篇数 + items 最新 ≤16 窗口），本缝只做接线、不重算。front 自推不经 relay
-    （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。"""
-    await _push_display_payload(websocket, gw_story.list_stories(STORIES_DIR))
+    （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。
+
+    restore（契约 §1.3③ D1 生产纪律）：仅 WS 建连恢复推送路径传 restore=True——下行
+    data 带 `restore: true`（板端 restore 分流载体：只填 RAM 列表缓存、不接管前台、P3
+    在屏仅重绘本页）；②归档后（:573 一带）/③删除后（:223）的主动推送缺省 restore=False
+    ——下行 data **不带** restore 键（契约缺省语义：absent 或显式 false 设备行为完全
+    一致，主动展示接管前台既有行为零偏移）。"""
+    payload = gw_story.list_stories(STORIES_DIR)
+    if restore:
+        payload["data"]["restore"] = True
+    await _push_display_payload(websocket, payload)
 
 
 async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
@@ -993,6 +1028,18 @@ async def ws_gateway(websocket: WebSocket):
             ws_connect = _ws_legacy_client.connect
             headers_kwarg = "extra_headers"
         async with ws_connect(ENGINE_WS, open_timeout=10, **{headers_kwarg: hdrs}) as upstream:
+            # 故事三时点 ①：WS 建连恢复推送（requirements v1.63 S-F2.1 补充规则 / arch
+            # §5.2 场景④ 三时点①——2026-10-12 赎回 260928-story-connect-push-defer 挂起
+            # 的时点①重裁）。data.restore 标记 = 板端 restore 分流载体（只填 RAM 列表缓存、
+            # 不接管前台、P3 在屏仅重绘本页），消解 260928 摘除理由（旧固件无条件渲染 P3
+            # 盖聆听态）。②归档后 / ③删除后的主动推送缺省零偏移。开关
+            # story_restore_enabled()（ECS 配置层默认关由部署侧显式置 0 承载，C1）。
+            # 失败不阻断建连（SL-A6，schedule connect push 同位 try/except 先例）。
+            if story_restore_enabled():
+                try:
+                    await _push_story_list(websocket, restore=True)
+                except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+                    log.warning("story_connect_push_err err=%s", type(e).__name__)
             # both proxy legs now run through the takeover pumps (text-face interception):
             # engine->device strips ```display fences + relays kidpal/display tools/call;
             # device->engine forwards receipts unchanged and consumes them as delivery acks.
@@ -1010,13 +1057,14 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
-            # 故事三时点 ①「建连即推」已摘除（260928-story-connect-push-defer，human 方向锚
-            # b036f554）：设备每会话重开 WS，建连即推会在每次按 KEY 时给设备打 story_list 帧，
-            # 旧固件无条件渲染 P3 页盖掉聆听态（story_page 零 CJK -> 半截页）。①时机归 M4-K3
-            # kidpal_session_ctx 承接（story 会话切累积态时随帧推送）；取舍与依据见
-            # delivery/taskpackages/260928-story-connect-push-defer/plan.md。
-            # `_push_story_list` 函数本体与②（停录归档后）/③（删除执行后）调用点保留不动
-            # （FIX-A2 a3 齿命名缝 + ②③ wire 断言、FIX-A1 建连零帧负锚齿冻结）。
+            # 故事三时点 ①「建连即推」沿革（260928-story-connect-push-defer 摘除 ->
+            # 261010-p3-storylist-cold-start-restore v1.63 赎回）：旧摘除理由 = 设备每会话
+            # 重开 WS、建连即推无条件给设备打 story_list 帧，旧固件无条件渲染 P3 页盖掉
+            # 聆听态（story_page 零 CJK -> 半截页）。赎回 = data.restore 标记（板端 restore
+            # 分流：只填 RAM 列表缓存不接管前台、P3 在屏仅重绘本页）消解该复现路径——见上方
+            # ws_connect 块内的建连恢复推送调用（story_restore_enabled 门控）。ctx(story)
+            # 同拍条件推送（_consume_kidpal_control 内）保留 = M4K3-A7 冻结齿硬约束。
+            # ②（停录归档后）/③（删除执行后）调用点缺省 restore=False 零偏移。
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:

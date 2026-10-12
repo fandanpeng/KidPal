@@ -174,6 +174,77 @@
  *          front_is_overlay 闭集纳入 STORY_DELETE（删除弹窗无页点同源成立）。
  *
  * ---------------------------------------------------------------------------
+ * [SL] 261010-p3-storylist-cold-start-restore additive（2026-10-12 冻结; 头注原文与
+ *      既有 [K1]-[K10] 零触碰, 本节纯追加——additive-host, 既有齿零触碰）:
+ *
+ *   [SL1] story_list restore 分流（home = firmware/main/mcp_server.cc
+ *        VRT_ROUTE_STORY_LIST 分支, 复刻 schedule restore 分支 :926-991 在役形态;
+ *        mcp_server.cc 设备组件树 host 不可链 -> 结构代理齿, schedule_grid_restore
+ *        K7-A5 先例形态）:
+ *          - 路由内读 data.restore 布尔（复用既有 helper mcp_json_get_bool,
+ *            :444-446——absent/非 true 字面同判 false, 与契约 CCP D1「缺省（absent）
+ *            或显式 false 设备行为完全不变」逐字对齐; 不另写第二套布尔解析）;
+ *          - restore=true → 解析装载缓存（既有 view_init + g_story_list 路径）+
+ *            kidpal_render_node_cache_story 同步（唯一缓存同步缝, 不给恢复性载荷
+ *            另起第二条缓存路径——K7-A5「唯一缓存写点」同纪律）+ 若 [SL2]
+ *            kidpal_render_node_story_on_screen() 真 → kidpal_render_node_refresh_
+ *            story() 仅重绘本页（自持锁单入口, kidpal_render_node.h :277 在世契约
+ *            「先 cache_story 再调本函数」）; restore 分支零 begin_page/end_page
+ *            （story 路由区计数冻结基线恒 1/1——不接管前台、不推 SERVER_PAGE）;
+ *          - [SL4] K3 [S4] gating 叠加: restore=true 时记录语境前台（VOICE 层 =
+ *            引导态/录音态/问答会话）收帧 = 只装缓存绝不重渲/推前台——[SL2] 谓词
+ *            形态天然承载（top != KIDPAL_LAYER_LOCAL_PAGE 即 0）; restore 缺省/
+ *            false = K2 消费面 + K3 [S4] gating 全保持零偏移（gate==0 → begin_page
+ *            push 照旧——既有门控与调用序零触碰）。
+ *
+ *   [SL2] P3 在屏谓词缝（home = firmware/main/display/kidpal_render_node.{h,cc}）:
+ *          int kidpal_render_node_story_on_screen(void);
+ *            -- home_on_screen/schedule_on_screen 逐字同构（kidpal_layer_top ==
+ *               KIDPAL_LAYER_LOCAL_PAGE && s_local_page == KP_PAGE_STORY）; .h 声明
+ *               + .cc 定义, 只读静态态零副作用。VOICE/接管态/覆盖层前台恒 0。
+ *
+ *   [SL3] 空态两态分叉（AC5/AC6, requirements v1.63 S-F2.1; home = story_page.h
+ *        单源 + story_page.c / kidpal_render_node.cc 消费——边角③空态渲染入口两处
+ *        同源纪律不破）:
+ *          - KSTORY_EMPTY_HINT 宏名保留、值更新 = AC5 无内容空态话术
+ *            「本子空空的，讲个故事点亮第一颗星吧」（SPV2-B2 tooth 7 单源载体宏名
+ *            不变——该齿续绿）;
+ *          - 新增 #define KSTORY_EMPTY_HINT_UNREACHED「本子还没翻开，等等再来看
+ *            看吧」（AC6 数据未达空态话术, story_page.h 单源——冻结宏名）;
+ *          - AC5 半 = 数据已送达空态（story_page.c LIST n<=0 分支——render 路径必有
+ *            数据在手）: ×0 诚实计数（计数画法照常, 计数 = 0 不隐瞒）+ AC5 话术;
+ *          - AC6 半 = 数据未达（kidpal_render_node.cc KP_PAGE_STORY 渲染入口, 列表
+ *            缓存从未装载态——判据落在「有无列表数据」而非「断网与否」, v1.63 逐字）:
+ *            不显计数 + AC6 话术;
+ *          - 分叉状态判据的机制载体（数据已送达标志/total 哨兵）= builder 实现自由,
+ *            本文件只钉两话术字面单源在世 + 渲染入口两态双 macro 消费 + AC5 ×0 计数
+ *            真帧（不钉判据机制——强度申报见 [SL] 追加申报段）。
+ *
+ *   [SL4] restore wire 容忍（在世行为守卫, K7-A7 同型）: kidpal_story_list_parse
+ *          对 data 对象级 restore 键（true/false、任意位序）经 ksy_skip_value 忽略
+ *          不降级（story_page.c :351 在世 true/false literal 分支）——restore:true
+ *          帧解析 == 无键同参（count/total/逐字段保真）。host runner 强定义覆盖后
+ *          真验; standalone 线束红在哨兵（-9999）。
+ *
+ *   [SL] 强度申报追加（契约条目 -> 承载齿 -> 性质档）:
+ *     契约 §1.3③ data.restore（CCP D1/D2）-> SLP-SLA2/SLA3 结构齿 + SLP-SLA4 wire
+ *       容忍 -> 机制级 + 行为级（wire 容忍半）。行为等价假设显式化: ①「restore 分支
+ *       谓词消费 ≙ 非 P3/记录语境前台只装缓存」——依据 = 谓词形态 == 判定（SLA3
+ *       tooth 3）; 真实 restore 帧 → 缓存装载/前台零触碰的行为本体归真机 SL-A5 轮。
+ *       ②「区内 begin_page 恒 1 ≙ restore 分支零接管」——依据 = K2 主动推送既有
+ *       恰 1 对（区钉）; restore 分支加接管调用即计数 2 -> 红（敏感）。
+ *     契约 §1.3③ D1 生产纪律（②③恒不置 restore）-> server K1 件 a3/a4 齿
+ *       assertFalse(data.get("restore")) -> 行为级（本文件无齿——server 侧承载）。
+ *     requirements v1.63 AC5/AC6 空态两态 -> SLP-SLA5 结构齿 + ×0 真帧 -> 机制级 +
+ *       源锚代理（话术字面）+ 真帧级（×0 计数带墨）; AC6「不显计数」负半 host 不可达
+ *       （render_node 未编入 runner）-> live-manual SL-A5 真机轮承载（structural 豁免,
+ *       不计入 runner 通过面）。
+ *     弱于契约处（逐条）: ① AC6 数据未达判据机制（缓存从未装载 vs total 哨兵）不钉
+ *       （builder 实现自由）; ② restore 分流与 K3 gate 的执行先后（restore 先于 gate
+ *       判定 vs gate 内叠加）不钉——行为齿只钉谓词形态与计数基线, 执行序归真机轮;
+ *       ③ ×0 计数带坐标/版式不钉（粗带探针, 版式归 design review + 真机轮）。
+ *
+ * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: S-F2.1-AC1 列表呈现/计数/分屏 -> SPV2-A7（counter 恒信 total 守卫）+
  *             SPV2-A2（分屏纯逻辑 + 分屏指示逐字）+ SPV2-B1（CJK 真帧）+ SPV2-B2
@@ -201,6 +272,16 @@
  *   coverage: 跨包承接（K1 seq 账本/删除链路, carriedBy = 本包）-> SPV2-A8 + SPV2-A5
  *             + SPV2-B3
  *   coverage: SPV2-C1 注册序守卫 + 需求/契约 canary + 扫描器自检
+ *   coverage: SL-A2 restore 分流非 P3 前台半 -> SLP-SLA2（restore 读取 + cache_story
+ *             同步 + on-screen 谓词消费 + 区内 begin_page/end_page 恒 1/1）
+ *   coverage: SL-A3 restore P3 在屏重渲半 -> SLP-SLA3（refresh_story 单入口消费 +
+ *             story_on_screen 谓词 .h/.cc 落缝与形态）
+ *   coverage: SL-A4 K3 [S4] gating 叠加 + K2 消费面零偏移 + restore wire 容忍 ->
+ *             SLP-SLA4（gate/VOICE 判据在世 + 计数基线 + parse restore 键容忍行为齿;
+ *             全 must-stay-green 设计态）
+ *   coverage: SL-A5 空态两态分叉 host 前置 -> SLP-SLA5（两话术字面单源 + 渲染入口双
+ *             macro 消费 + AC5 ×0 计数带真帧）; 真机轮 = live-manual 观测项
+ *             （structural 豁免, 不计入 runner 通过面, 见 REVISION LOG revision 3）
  *
  * ---------------------------------------------------------------------------
  * Run protocol:
@@ -666,6 +747,48 @@ static int kspv2_count_in_slice(const char *slice, const char *needle)
         count++;
     }
     return count;
+}
+
+/* [SL] additive（261010-p3-storylist-cold-start-restore）: 函数区切取——start_needle
+ * 起至最近的下一个函数定义头（多前缀候选取最早者）或 EOF。供新缝函数（无既有尾锚）
+ * 使用（schedule_grid_restore ksr_region_until_next_fn 同款形态）。 */
+static char *kspv2_region_until_next_fn(const char *rel, const char *start_needle)
+{
+    static const char *const sigs[] = {
+        "\nvoid kidpal_render_node_", "\nint kidpal_render_node_",
+        "\nstatic void rn_", "\nstatic int rn_", "\nextern \"C\" void",
+        "\nextern \"C\" int", "\nstatic void ", "\nstatic int "
+    };
+    char *buf = kspv2_read(rel, NULL);
+    const char *s;
+    const char *e = NULL;
+    char *slice;
+    size_t span;
+
+    if (buf == NULL) {
+        return NULL;
+    }
+    s = strstr(buf, start_needle);
+    if (s == NULL) {
+        free(buf);
+        return NULL;
+    }
+    for (size_t i = 0; i < sizeof(sigs) / sizeof(sigs[0]); i++) {
+        const char *hit = strstr(s + strlen(start_needle), sigs[i]);
+        if (hit != NULL && (e == NULL || hit < e)) {
+            e = hit;
+        }
+    }
+    if (e == NULL) {
+        e = buf + strlen(buf);
+    }
+    span = (size_t)(e - s);
+    slice = (char *)malloc(span + 1);
+    assert(slice != NULL);
+    memcpy(slice, s, span);
+    slice[span] = '\0';
+    free(buf);
+    return slice;
 }
 
 /* 递归树扫描: 统计 rel_dir 下命中 needle 的文件数（test/build/.git/assets 目录跳过
@@ -1851,6 +1974,315 @@ TEST_CASE("story_page_v2: 注册序守卫+需求契约canary+扫描器自检 (SP
     }
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 14 — SLP-SLA2: story_list restore 分流——非 P3 前台只装缓存零前台接管
+ * （structural, seam [SL1]; mcp_server.cc 设备组件树 host 不可链 -> 结构代理,
+ * schedule_grid_restore K7-A5 先例形态）。既有齿零触碰（additive-host）。
+ * RED today: story 路由区 mcp_json_get_bool / "restore" / story_on_screen 零命中。
+ * ------------------------------------------------------------------------ */
+/* coverage: SL-A2 -- restore 分流非 P3 前台半：story 路由区读 data.restore（mcp_json_get_bool 复用）+ cache_story 装缓存同步在世 + P3 在屏谓词消费（非 P3/VOICE 前台 -> 0 -> 只装缓存零前台触碰）+ 区内 begin_page/end_page 恒 1/1（restore 分支零接管调用） */
+TEST_CASE("story_page_v2: story_list restore 分流——只装缓存零前台接管 (SLP-SLA2)",
+          "[story_page_v2][SLP-SLA2][structural]")
+{
+    char *region;
+    int n;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN, 扫描器自检): 已知文件可读 + 永不存在 needle 零命中。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_exists("firmware/main/mcp_server.cc") &&
+            kspv2_exists("firmware/main/display/kidpal_render_node.cc"),
+        "SLP-SLA2 RED(infra): scanner cannot see known-good files — 扫描器失灵");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file("firmware/main/mcp_server.cc", "__slp_no_such_needle__") == 0,
+        "SLP-SLA2 RED(infra): scan matched an impossible needle — 负向断言会假绿");
+
+    /* tooth 2 (MUST-STAY-GREEN, story 路由区既有锚零偏移): 路由区切取成功 + K3 [S4]
+     * gating 消费 + cache_story 装缓存同步在世（restore 装缓存复用同一同步缝）。 */
+    region = kspv2_region_between("firmware/main/mcp_server.cc",
+                                  "VRT_ROUTE_STORY_LIST", "VRT_ROUTE_STORY_TEXT");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-SLA2 RED(infra): story 路由区切取失败——VRT_ROUTE_STORY_LIST/TEXT 锚"
+        "漂移须复核（禁整路由退役绕过）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_contains(region, "kidpal_story_list_gate") &&
+            kspv2_contains(region, "kidpal_render_node_cache_story"),
+        "SLP-SLA2 RED: story 路由区既有锚偏移（K3 [S4] gating / cache_story 同步）"
+        "——K2/K3 冻结消费面被 restore 改造连带拆动（零回归义务）");
+
+    /* tooth 3 (RED today): 路由区读 data.restore——mcp_json_get_bool 在 story 区
+     * >= 1（现状 0, 仅 schedule 区 :929 在世; 区 scoped 防跨区假绿）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kspv2_contains(region, "mcp_json_get_bool"),
+        "SLP-SLA2 RED: story 路由区无 mcp_json_get_bool——data.restore 布尔读取缺失"
+        "（restore 分流无判据, BUILDER DUTY [SL1]; 复用 :444-446 在世 helper, "
+        "absent/显式 false 同判 false = 契约 CCP D1 缺省语义）");
+
+    /* tooth 4 (RED today): P3 在屏谓词消费——restore 分流经 story_on_screen 分流
+     * （非 P3 前台 -> 0 -> 只装缓存; VOICE 记录语境前台同判 0 = K3 [S4] 叠加语义
+     * 的谓词承载, [SL2]）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kspv2_contains(region, "kidpal_render_node_story_on_screen"),
+        "SLP-SLA2 RED: story 路由区未消费 kidpal_render_node_story_on_screen——"
+        "P3 在屏分流缺失（restore 到达无法区分「只装缓存」与「重绘本页」; [SL2]）");
+
+    /* tooth 5 (MUST-STAY-GREEN 计数钉, mutation 敏感): 区内 begin_page 恒 1、
+     * end_page 恒 1——restore 分支零接管调用（只填缓存不接管前台; K2 主动推送既有
+     * 恰 1 对保留; 文件级 begin_page == 5 基线由 schedule_grid_restore K7-A5
+     * tooth 6 承载, 本齿不重复断言）。 */
+    n = kspv2_count_in_slice(region, "kidpal_render_node_begin_page");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kspv2_fm("SLP-SLA2 RED: story 路由区 kidpal_render_node_begin_page = %d 处"
+                 "（冻结基线恒 1）——restore 分支引入接管调用（恢复性推送顶前台回潮, "
+                 "260928 摘除理由复现）或 K2 消费面被拆", n));
+    n = kspv2_count_in_slice(region, "kidpal_render_node_end_page");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kspv2_fm("SLP-SLA2 RED: story 路由区 kidpal_render_node_end_page = %d 处"
+                 "（冻结基线恒 1）——K2 消费面 begin/end 对被拆", n));
+
+    free(region);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 15 — SLP-SLA3: restore + P3 在屏（LIST 冷浏览）→ 重绘本页（structural,
+ * seam [SL1]/[SL2]）。RED today: story 区 refresh_story 零命中 + story_on_screen
+ * 全仓零命中（新缝未实现, 2026-10-12 grep 实证）。
+ * ------------------------------------------------------------------------ */
+/* coverage: SL-A3 -- restore P3 在屏重渲半：refresh_story 单入口消费（自持锁重绘本页, .h 在世契约「先 cache_story 再调本函数」）+ story_on_screen 谓词 .h 声明/.cc 定义（home/schedule on_screen 逐字同构形态, == LOCAL_PAGE 判定钉记录语境/接管态恒 0） */
+TEST_CASE("story_page_v2: story_list restore——P3 在屏重绘本页 (SLP-SLA3)",
+          "[story_page_v2][SLP-SLA3][structural]")
+{
+    char *region;
+    char *seam;
+    int n;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (RED today): story 路由区消费 refresh_story——P3 在屏重绘本页的
+     * 唯一入口（自持锁; restore 分支不得另起第二条重渲路径）。 */
+    region = kspv2_region_between("firmware/main/mcp_server.cc",
+                                  "VRT_ROUTE_STORY_LIST", "VRT_ROUTE_STORY_TEXT");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-SLA3 RED(infra): story 路由区切取失败");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_contains(region, "kidpal_render_node_refresh_story"),
+        "SLP-SLA3 RED: story 路由区无 kidpal_render_node_refresh_story——restore + "
+        "P3 在屏（LIST 冷浏览）重绘本页缺失（restore 到达 P3 在屏也只装缓存 = 冷浏览"
+        "看不到恢复数据; requirements v1.63 S-F2.1 补充规则「P3 在屏时刷新本页」逐字）");
+    free(region);
+
+    /* tooth 2 (RED today): .h 声明在世。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_file_contains("firmware/main/display/kidpal_render_node.h",
+                            "kidpal_render_node_story_on_screen"),
+        "SLP-SLA3 RED: kidpal_render_node.h 无 kidpal_render_node_story_on_screen "
+        "声明——P3 在屏谓词缝未落（BUILDER DUTY [SL2]）");
+
+    /* tooth 3 (RED today): .cc 定义区谓词形态齐——LOCAL_PAGE 顶层判定 + KP_PAGE_STORY
+     * 页判定 + layer_top 单一裁决（home/schedule on_screen 先例逐字同构）。 */
+    seam = kspv2_region_until_next_fn("firmware/main/display/kidpal_render_node.cc",
+                                      "int kidpal_render_node_story_on_screen(void)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(seam,
+        "SLP-SLA3 RED: kidpal_render_node.cc 无 int kidpal_render_node_story_on_"
+        "screen(void) 定义——在屏谓词缝未实现（BUILDER DUTY [SL2]）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        (n = kspv2_count_in_slice(seam, "KIDPAL_LAYER_LOCAL_PAGE")) >= 1 &&
+            kspv2_contains(seam, "KP_PAGE_STORY") &&
+            kspv2_contains(seam, "kidpal_layer_top"),
+        kspv2_fm("SLP-SLA3 RED: story_on_screen 谓词形态缺件（LOCAL_PAGE=%d/"
+                 "KP_PAGE_STORY/top）——必须沿 home/schedule on_screen 先例口径"
+                 "（layer_top == LOCAL_PAGE && s_local_page == KP_PAGE_STORY）", n));
+    TEST_ASSERT_TRUE_MESSAGE(kspv2_contains(seam, "== KIDPAL_LAYER_LOCAL_PAGE"),
+        "SLP-SLA3 RED: 谓词缺 == KIDPAL_LAYER_LOCAL_PAGE 判定——VOICE 记录语境前台/"
+        "接管态会被误判 P3 在屏而重渲（K3 [S4] gating 叠加语义破: restore 帧盖引导/"
+        "录音演出 = defer 缺陷形态复潮）");
+    free(seam);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 16 — SLP-SLA4: K3 [S4] gating 叠加 + K2 消费面零偏移 + restore wire 容忍
+ * （structural + behavioral, seam [SL1]/[SL4]）。全齿 must-stay-green 设计态
+ * （红基线通道① 即绿; K7-A6 TEST 3 先例——回归守卫的设计态, 变异敏感面见文件尾）。
+ * ------------------------------------------------------------------------ */
+/* coverage: SL-A4 -- K3 [S4] gating 叠加（记录语境前台收 restore 帧只装缓存: VOICE 判据/谓词形态承载）+ K2 消费面零偏移（gate 消费/begin-end 对/cache_story 恰 1 在世）+ restore wire 容忍（parse 对 data.restore 键 true/false 任意位序忽略不降级 == 无键同参） */
+TEST_CASE("story_page_v2: K3 gating 叠加+K2 零偏移+restore wire 容忍 (SLP-SLA4)",
+          "[story_page_v2][SLP-SLA4][structural][behavioral]")
+{
+    static const char *const plain =
+        "{\"total\":2,\"items\":[{\"id\":\"2026-08-20-a\",\"title\":\"小兔子找朋友\","
+        "\"date\":\"08-20\"},{\"id\":\"2026-08-25-b\",\"title\":\"勇敢的小明\","
+        "\"date\":\"08-25\"}]}";
+    static const char *const restore_first =
+        "{\"restore\": true, \"total\":2,\"items\":[{\"id\":\"2026-08-20-a\","
+        "\"title\":\"小兔子找朋友\",\"date\":\"08-20\"},{\"id\":\"2026-08-25-b\","
+        "\"title\":\"勇敢的小明\",\"date\":\"08-25\"}]}";
+    static const char *const restore_last_false =
+        "{\"total\":2,\"items\":[{\"id\":\"2026-08-20-a\",\"title\":\"小兔子找朋友\","
+        "\"date\":\"08-20\"},{\"id\":\"2026-08-25-b\",\"title\":\"勇敢的小明\","
+        "\"date\":\"08-25\"}], \"restore\": false}";
+    kspv2_story_list_t ref;
+    kspv2_story_list_t got;
+    char *region;
+    int n;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* ---- 结构半: K3 [S4] gating 与 K2 消费面零偏移（must-stay-green） ---- */
+    /* tooth 1: 路由区 K3 [S4] gating 消费 + KIDPAL_LAYER_VOICE 记录语境判据在世
+     * （restore=true 亦不得绕过「记录语境前台绝不推前台」——谓词形态承载, SLA3
+     * tooth 3 钉 == 判定; 本齿钉 gate 判据在世 = 叠加的前提）。 */
+    region = kspv2_region_between("firmware/main/mcp_server.cc",
+                                  "VRT_ROUTE_STORY_LIST", "VRT_ROUTE_STORY_TEXT");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-SLA4 RED(infra): story 路由区切取失败");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_contains(region, "kidpal_story_list_gate") &&
+            kspv2_contains(region, "KIDPAL_LAYER_VOICE"),
+        "SLP-SLA4 RED: story 路由区 K3 [S4] gating 偏移（kidpal_story_list_gate/"
+        "KIDPAL_LAYER_VOICE 判据缺失）——记录语境前台防护半被 restore 改造连带拆动"
+        "（defer 真机缺陷的板端防护半, 零回归义务）");
+
+    /* tooth 2 (计数钉, mutation 敏感): 区内 begin_page 恒 1 / end_page 恒 1 /
+     * cache_story 调用点恒 1——K2 主动推送消费面（gate==0 -> begin_page push 照旧）
+     * 与 gated 半缓存同步点（唯一同步缝）零偏移; restore 分支不得新增任一处。
+     * cache_story 钉**调用形**（带实参 &g_story_view）——:1110-1113 gated 分支注释
+     * 合法提及裸符号（冻结基线 = 裸符号 2 处/调用形 1 处, 2026-10-12 实跑实证）,
+     * 裸符号计数会误伤注释命中。 */
+    n = kspv2_count_in_slice(region, "kidpal_render_node_begin_page");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kspv2_fm("SLP-SLA4 RED: story 路由区 begin_page = %d 处（冻结基线恒 1）"
+                 "——K2 消费面被 restore 改造偏移", n));
+    n = kspv2_count_in_slice(region, "kidpal_render_node_end_page");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kspv2_fm("SLP-SLA4 RED: story 路由区 end_page = %d 处（冻结基线恒 1）", n));
+    n = kspv2_count_in_slice(region, "kidpal_render_node_cache_story(&g_story_view");
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kspv2_fm("SLP-SLA4 RED: story 路由区 cache_story 调用点 = %d 处（冻结基线"
+                 "恒 1, 唯一缓存同步缝）——restore 改造另起第二条缓存路径（K7-A5 "
+                 "唯一缓存写点纪律破）", n));
+    free(region);
+
+    /* ---- 行为半: restore wire 容忍（[SL4], host runner 内 story_page.c 强定义
+     * 覆盖 weak 哨兵后真验; standalone 线束红在哨兵 -9999） ---- */
+    memset(&ref, 0, sizeof(ref));
+    memset(&got, 0, sizeof(got));
+    /* tooth 3: 无键基线可解析且恰 2 条（wire 空白容忍随 canonical 载荷实测）。 */
+    n = kidpal_story_list_parse(plain, &ref);
+    kspv2_require_impl(n, "kidpal_story_list_parse");
+    TEST_ASSERT_TRUE_MESSAGE(n == 2 && ref.total == 2,
+        kspv2_fm("SLP-SLA4 RED(infra): 无键基线解析 = %d total=%d——解析底座回归",
+                 n, ref.total));
+    /* tooth 4 (跨端锚核心): restore:true 前位序帧解析 == 无键同参（count/total/
+     * 逐字段保真）——对端建连恢复帧的真实形状（CCP D1 示例帧）。 */
+    memset(&got, 0, sizeof(got));
+    n = kidpal_story_list_parse(restore_first, &got);
+    TEST_ASSERT_TRUE_MESSAGE(
+        n == 2 && got.total == ref.total &&
+            memcmp(got.items, ref.items,
+                   sizeof(ref.items[0]) * (size_t)ref.count) == 0,
+        "SLP-SLA4 RED: restore:true 前位序帧解析 != 无键同参——data.restore 键不被"
+        "容忍（对端恢复性载荷整帧 -1 降级, 冷启动恢复死在解析门, g-relay-fix 同型"
+        "跨端断裂）");
+    /* tooth 5 (R7 false 态): restore:false 后位序帧解析 == 无键同参（absent/false
+     * 同判——显式 false 不得当未知畸形拒收）。 */
+    memset(&got, 0, sizeof(got));
+    n = kidpal_story_list_parse(restore_last_false, &got);
+    TEST_ASSERT_TRUE_MESSAGE(
+        n == 2 && got.total == ref.total &&
+            memcmp(got.items, ref.items,
+                   sizeof(ref.items[0]) * (size_t)ref.count) == 0,
+        "SLP-SLA4 RED: restore:false 后位序帧解析 != 无键同参——显式 false 未同判"
+        "（CCP D1: absent/false 设备行为完全一致）");
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 17 — SLP-SLA5: 空态两态分叉——AC5/AC6 话术与计数画法（structural +
+ * pixel-probe, seam [SL3]; SL-A5 host 可测前置）。真机轮本体（重启冷启动翻 P3 见
+ * 列表 / 无前台抢占 / AC6 不显计数负半）= live-manual 观测项, structural 豁免,
+ * 不计入 runner 通过面（REVISION LOG revision 3 登记）。
+ * RED today: 两话术字面零命中（在世 KSTORY_EMPTY_HINT = 旧单态话术）+ AC6 macro
+ * 零命中 + 空态半计数带零墨（break 跳过计数画法）。
+ * ------------------------------------------------------------------------ */
+/* coverage: SL-A5 -- 空态两态分叉 host 前置：AC5 无内容空态（×0 诚实计数 + 话术「本子空空的，讲个故事点亮第一颗星吧」字面单源）与 AC6 数据未达空态（不显计数 + 话术「本子还没翻开，等等再来看看吧」字面单源 KSTORY_EMPTY_HINT_UNREACHED）渲染入口双 macro 消费 + AC5 ×0 计数带真帧 */
+TEST_CASE("story_page_v2: 空态两态分叉——AC5/AC6 话术与计数画法 (SLP-SLA5)",
+          "[story_page_v2][SLP-SLA5][structural][pixel-probe]")
+{
+    kspv2_story_view_t v;
+    kspv2_story_list_t l;
+    char *region;
+    int x;
+    int y;
+    int ink;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (RED today): AC5 无内容空态话术字面单源在世（KSTORY_EMPTY_HINT 值
+     * 更新 = v1.63 定稿话术; SPV2-B2 tooth 7 单源载体宏名保留）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_file_contains("firmware/main/display/story_page.h",
+                            "本子空空的，讲个故事点亮第一颗星吧"),
+        "SLP-SLA5 RED: story_page.h 无 AC5 话术「本子空空的，讲个故事点亮第一颗星"
+        "吧」——无内容空态话术未按 v1.63 定稿更新（S-F2.1 AC5 逐字）");
+
+    /* tooth 2 (RED today): AC6 数据未达空态话术 + 冻结宏名 KSTORY_EMPTY_HINT_
+     * UNREACHED（story_page.h 单源）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_file_contains("firmware/main/display/story_page.h",
+                            "本子还没翻开，等等再来看看吧") &&
+            kspv2_file_contains("firmware/main/display/story_page.h",
+                                "KSTORY_EMPTY_HINT_UNREACHED"),
+        "SLP-SLA5 RED: story_page.h 无 AC6 话术「本子还没翻开，等等再来看看吧」/"
+        "KSTORY_EMPTY_HINT_UNREACHED 单源——数据未达空态话术缺失（S-F2.1 AC6 逐字; "
+        "冻结宏名 [SL3]）");
+
+    /* tooth 3 (RED today): 渲染入口两态双 macro 消费——kidpal_render_node.cc
+     * KP_PAGE_STORY 空态区同时消费 AC5/AC6 两 macro（判据「有无列表数据」两态
+     * 分叉在渲染入口; 单态旧口径 = AC6 态显 ×0 误导性计数）。 */
+    region = kspv2_region_between("firmware/main/display/kidpal_render_node.cc",
+                                  "case KP_PAGE_STORY", "default:");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-SLA5 RED(infra): KP_PAGE_STORY 渲染区切取失败——case/default 锚漂移"
+        "须复核本齿锚");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_slice(region, "KSTORY_EMPTY_HINT") >= 2 &&
+            kspv2_contains(region, "KSTORY_EMPTY_HINT_UNREACHED"),
+        "SLP-SLA5 RED: kidpal_render_node.cc P3 空态区未两态分叉（KSTORY_EMPTY_HINT/"
+        "KSTORY_EMPTY_HINT_UNREACHED 双 macro 消费）——AC6 数据未达态与 AC5 无内容态"
+        "未在渲染入口分流（数据未达显 ×0 = 明明有故事却显 0 颗的误导, requirements "
+        "v1.63 两态显式分叉）");
+    free(region);
+
+    /* tooth 4 (RED today, pixel probe): AC5 ×0 诚实计数——view_init(空数据 total=0)
+     * + LIST 渲染 → 计数带（右上角 ×N 带, 与正常半同画法）必须落墨; 现状空态半
+     * break 跳过计数画法 = 零墨红。判定带粗带（版式坐标不钉, SPV2-B1 同口径;
+     * 越界像素经 px >= 0 过滤安全跳过）。 */
+    TEST_ASSERT_TRUE_MESSAGE(host_infra_render_frame() == 0,
+        "SLP-SLA5 RED(infra): host_infra_render_frame 返回值非 0——host 渲染 seam "
+        "未接（在世 seam 成功契约: 返回 0 == 出帧, SPV2-B1 同口径）");
+    memset(&l, 0, sizeof(l));
+    l.total = 0;
+    l.count = 0;
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_story_view_init(&v, &l) == 0,
+        "SLP-SLA5 RED(infra): 空列表 view_init 失败——fixture 前提被破坏"
+        "（SPV2-A1 tooth 7 同 fixture 形态）");
+    kspv2_require_impl(kidpal_story_page_render(&v, &l, NULL),
+                       "kidpal_story_page_render LIST 空态半");
+    kspv2_refr_now();
+    ink = 0;
+    for (y = 0; y <= 40; y++) {
+        for (x = 280; x <= 470; x++) {
+            int32_t px = host_infra_read_pixel(x, y);
+            if (px >= 0 && (px & 0xFF) < 0x80) {
+                ink++;
+            }
+        }
+    }
+    TEST_ASSERT_TRUE_MESSAGE(ink >= 3,
+        kspv2_fm("SLP-SLA5 RED: 空数据 LIST 计数带墨点 = %d, 期望 >= 3——AC5 空态"
+                 "无 ×0 诚实计数（数据已送达、确无篇目 = 显 ×0 不隐瞒, requirements "
+                 "S-F2.1 AC5「诚实计数、页身份保持」; 旧空态半 break 跳过计数画法）",
+                 ink));
+}
+
 /* ---------------------------------------------------------------------------
  * RED baseline 判读口径（freeze 相位, acceptance-author; SPV2 全套设计态红清单）:
  *
@@ -1877,6 +2309,30 @@ TEST_CASE("story_page_v2: 注册序守卫+需求契约canary+扫描器自检 (SP
  * 真机证据要求（本文件不承载, deferred 挂 M4-K3 设备轮, human 在场）:
  *   WF-F2-01/03/04/05 四面 1bpp 目测 + 300ms 消歧手感 + 删除弹窗 10s 静默取消 +
  *   盖章定格 0.8s——版式/手感/观感半; host 半 = 本文件 + device build 闸。
+ * ---------------------------------------------------------------------------
+ * [SL additive 2026-10-12] 本文件新齿（TEST 14-17, 包 261010-p3-storylist-cold-start-
+ * restore）红基线判读: 现状树（restore 分流未落 / 空态两态未落）通道① host runner
+ * 全量 = 既有齿零偏移 + SLP-SLA2 红（tooth 3 起: story 路由区无 mcp_json_get_bool——
+ * restore 读取缺失, tooth 1/2/5 MUST-STAY-GREEN 先行证明绿）+ SLP-SLA3 红（tooth 1
+ * 起: 区无 refresh_story 消费; tooth 2/3 同因 story_on_screen 新缝未实现）+
+ * SLP-SLA4 **GREEN（设计态）**——SL-A4 纯回归守卫, 全齿 must-stay-green（wire 容忍半
+ * = ksy_skip_value true/false literal 分支在世; 变异敏感性见 MUTATION REPLAY 追加条）+
+ * SLP-SLA5 红（tooth 1 起: AC5 话术字面零命中——在世 KSTORY_EMPTY_HINT 为旧单态话术;
+ * tooth 4 ×0 计数带探针随 builder 落地转绿）。SL-A5 真机轮 = live-manual 观测项
+ * （human 在场持板）: 重启设备（云端现存 >=1 篇）→ 翻到 P3 显示已归档列表（含计数）
+ * 而非空态; 期间任意页前台无 P3 抢占; 空态两态话术（AC5 ×0 + 话术 / AC6 不显计数 +
+ * 话术）——structural 齿登记, 不计入 runner 通过面。
+ *
+ * MUTATION REPLAY 追加（SL 齿, builder 实现全绿后补跑; 260923-m3-k7 M1-M5 同纪律）:
+ *   M-SLA2 摘 story 区 restore 读取（mcp_json_get_bool/"restore"）或 restore 分支加
+ *     kidpal_render_node_begin_page → TEST 14 红（tooth 3 / tooth 5 计数 2 != 1）。
+ *   M-SLA3 摘 refresh_story 消费或 story_on_screen 谓词（含去 == KIDPAL_LAYER_LOCAL_
+ *     PAGE 判定）→ TEST 15 红（tooth 1/2/3 缺件 / == 判定缺）。
+ *   M-SLA4 摘 ksy_skip_value true/false literal 分支（restore 键值 -> 未知畸形拒收）
+ *     → TEST 16 tooth 4/5 红; 摘 gate/VOICE 判据或动 begin-end/cache_story 计数 →
+ *     TEST 16 tooth 1/2 红（基线绿, 红即真回归）。
+ *   M-SLA5 摘 ×0 计数画法（空态半仍 break 不画计数）→ TEST 17 tooth 4 红; 摘 AC6
+ *     macro/双 macro 消费 → TEST 17 tooth 2/3 红。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-29  initial freeze (acceptance-author, TaskPackage
@@ -1944,6 +2400,24 @@ TEST_CASE("story_page_v2: 注册序守卫+需求契约canary+扫描器自检 (SP
  *        TEST_CASE 头注释各追加一行直配标记 `coverage: SPV2-<id> -- <作用域描述>`
  *        （纯注释追加, 零断言零语义变化; 既有 AC 面 coverage 行原样保留, 对应关系
  *        沿用本头注既有 coverage map, 不新增不缩水任何承载）。
+ *   2026-10-12  revision 3 (additive-host, 包 261010-p3-storylist-cold-start-restore;
+ *               授权链 = CCP 261010-p3-storylist-cold-start HUMAN_APPROVED 2026-10-12
+ *               〔D1-D4 story_list data.restore additive〕+ requirements §9 v1.63 行
+ *               frozen 2026-10-12 + human 方向锚留痕〔260928 FIX-A2 先例形态; v1.63
+ *               赎回 260928 defer 挂起的时点①重裁〕——授权链逐字见 server 件
+ *               test_m4k1_story_cloud_link.acceptance.py REVISION LOG 2026-10-12 条):
+ *     R7 纯 additive: 头注 [SL] seam 契约节 + 强度申报追加段 + coverage map 四行 +
+ *        helper kspv2_region_until_next_fn + TEST 14-17 四齿（SLP-SLA2 story_list
+ *        restore 分流结构代理 / SLP-SLA3 P3 在屏谓词缝 / SLP-SLA4 K3 [S4] gating
+ *        叠加 + K2 零偏移 + restore wire 容忍 / SLP-SLA5 空态两态分叉 host 前置 +
+ *        AC5 ×0 真帧）。既有 TEST 1-13 断言零触碰（git diff -U0 既有 hunk 零删除行
+ *        可机判）; SPV2-B2 tooth 7（KSTORY_EMPTY_HINT 三处单源）宏名保留设计 = 与
+ *        [SL3] 宏值更新不冲突（值更新话术、名不动——该齿续绿）。
+ *     SL-A5 真机轮 = live-manual 观测项（human 在场持板, structural 豁免不计入
+ *        runner 通过面）: 重启设备（云端现存 >=1 篇）→ 翻到 P3 显示已归档列表（含
+ *        计数）而非空态; 期间任意页前台无 P3 抢占; 空态两态话术（AC5 ×0 + 话术 /
+ *        AC6 不显计数 + 话术）。红基线判读与 MUTATION REPLAY 追加条见上方 [SL
+ *        additive] 段。
  * --------------------------------------------------------------------------- */
 
 

@@ -126,9 +126,15 @@ typedef enum {
 } kidpal_story_act_t;
 
 /* ---- ⑥ 空态文案单源（notes 边角③: 列表态空态渲染入口两处——story_page.c 与
- * kidpal_render_node.cc——必须同源一致, 不得双写文案）。逐字内容归 PNG/design
- * review, 冻结齿不锁文案只锁单源。 */
-#define KSTORY_EMPTY_HINT "还没有星星记录，说「我要讲故事」开录吧"
+ * kidpal_render_node.cc——必须同源一致, 不得双写文案）。两态分叉（v1.63 S-F2.1
+ * AC5/AC6, TaskPackage 261010-p3-storylist-cold-start-restore seam [SL3]）:
+ *   KSTORY_EMPTY_HINT          = AC5 无内容空态（数据已送达、确无篇目, ×0 计数 +
+ *                                本话术）——宏名保留（SPV2-B2 tooth 7 单源载体宏名
+ *                                不变）, 值更新为 v1.63 定稿话术;
+ *   KSTORY_EMPTY_HINT_UNREACHED = AC6 数据未达空态（未收到列表数据、篇数未知,
+ *                                不显计数 + 本话术）——新宏单源（冻结宏名）。 */
+#define KSTORY_EMPTY_HINT "本子空空的，讲个故事点亮第一颗星吧"
+#define KSTORY_EMPTY_HINT_UNREACHED "本子还没翻开，等等再来看看吧"
 
 /* ---- ⑦ 列表态分屏行数单源（400x300 版面行流区约 4 行/屏, 与阅读态分屏同心智;
  * cursor_step/screen_next 及渲染窗口共用本单源, 不得第二处魔数）。 */

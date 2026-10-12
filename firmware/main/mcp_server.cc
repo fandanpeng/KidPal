@@ -1087,14 +1087,37 @@ void McpServer::AddCommonTools() {
                     {
                         /* K3 [S4]: story_list 推送 gating（defer 包 260928-story-connect-
                          * push-defer ①恢复重裁板端消费半, plan T5）——记录语境前台
-                         * （VOICE 层 = 引导态/录音态/问答会话, 或视图已入录音态）只装
-                         * 缓存绝不推前台（防 story_list 帧盖掉引导/录音演出, defer 真机
-                         * 缺陷形态的板端防护半）; 其余页态照旧推前台（K2 消费面零偏移
-                         * 红线: LIST 冷浏览/READER/STAMP/DELETE 渲染不变）。 */
+                         * （引导态/录音态/问答会话, 或视图已入录音态）只装缓存绝不推前台
+                         * （防 story_list 帧盖掉引导/录音演出, defer 真机缺陷形态的板端
+                         * 防护半）; 其余页态照旧推前台（K2 消费面零偏移红线: LIST 冷浏览/
+                         * READER/STAMP/DELETE 渲染不变）。
+                         *
+                         * [SL1] restore 分流（261010-p3-storylist-cold-start-restore;
+                         * 复刻同文件 schedule restore 分支 :926-991 在役形态）：恢复性载荷
+                         * （WS 建连恢复推送, 契约 §1.3③ D1）-> 只填 RAM 列表缓存、不接管
+                         * 前台（P3 在屏时仅重绘本页）; 缺省/显式 false -> 现行为零偏移。
+                         * 布尔解析复用 :444-446 在世 helper（absent/非 true 字面同判
+                         * false = 契约缺省语义）。 */
                         int story_voice_front =
                             (kidpal_render_node_front_layer() == KIDPAL_LAYER_VOICE) ? 1 : 0;
-                        if (kidpal_story_list_gate(story_voice_front,
-                                                   g_story_view.page) == 0) {
+                        bool story_restore = mcp_json_get_bool(data, "restore");
+                        if (story_restore ||
+                            kidpal_story_list_gate(story_voice_front,
+                                                   g_story_view.page) != 0) {
+                            /* restore 或记录语境前台 gated: 只装缓存（唯一缓存同步缝,
+                             * 不给恢复性载荷另起第二条缓存路径——K7-A5「唯一缓存写点」
+                             * 纪律）、零前台夹钳（不接管前台、不推 SERVER_PAGE——260928
+                             * 摘除理由的板端消解路径）。restore 且 P3 在屏（LIST 冷浏览）
+                             * -> 经重绘本页单入口仅重绘（自持锁、先缓存后调——.h :277
+                             * 在世契约）。 */
+                            kidpal_render_node_cache_story(&g_story_view, &g_story_list,
+                                                           &g_story_text);
+                            if (story_restore && kidpal_render_node_story_on_screen()) {
+                                kidpal_render_node_refresh_story();
+                            }
+                            ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d restore=%d",
+                                     g_story_view.page, story_voice_front, story_restore ? 1 : 0);
+                        } else {
                             kidpal_story_view_t view_snapshot = g_story_view;   /* 108B，留栈 */
                             /* 列表快照 2824B 上堆后按 shared_ptr 捕获（闭包可拷贝）。 */
                             auto list_snapshot = std::make_shared<kidpal_story_list_t>(g_story_list);
@@ -1104,17 +1127,6 @@ void McpServer::AddCommonTools() {
                                                          &g_story_text);
                                 kidpal_render_node_end_page();
                             });
-                        } else {
-                            /* gated: 缓存已在上方 g_story_list 装载, 前台不动（页态/
-                             * 层值零触碰——下次前台回落时以最新缓存渲染）。K3R D1/[R3]
-                             * （261001-m4-k3-record-session-live-repair）: 把最新缓存
-                             * 同步进渲染节点（kidpal_render_node_cache_story），令前台
-                             * 回落路径（kidpal_render_node_voice_end, [R3] 判据消费点）
-                             * 重渲 P3 时消费到本缓存——defer 分支不再是无驱动方的纯缓存。 */
-                            kidpal_render_node_cache_story(&g_story_view, &g_story_list,
-                                                           &g_story_text);
-                            ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d",
-                                     g_story_view.page, story_voice_front);
                         }
                     }
                     break;

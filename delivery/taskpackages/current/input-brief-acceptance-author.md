@@ -1,38 +1,111 @@
-# input-brief · acceptance-author · 261012-kidpal-realtime-facts
+# input-brief · acceptance-author · 261010-p3-storylist-cold-start-restore
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-12T04:30:02.226Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
-> 来源 TaskPackage: `delivery/taskpackages/261012-kidpal-realtime-facts/taskpackage.json` · subsystem: server/deploy + ECS OpenClaw 工作区 · rigor: lite
+> generated-at: 2026-10-12T09:20:57.304Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author
+> 来源 TaskPackage: `delivery/taskpackages/261010-p3-storylist-cold-start-restore/taskpackage.json` · subsystem: server/gateway/front + firmware/main (mcp_server story_list 分流 + kidpal_render_node P3 空态) · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
-| `docs/requirements.md` | `NFR-SEC-2` | NFR-SEC-2 · 儿童数据出网记账 | 588 | ok |
-| `docs/requirements.md` | `NFR-SAFE-1` | NFR-SAFE-1 · 内容安全 | 600 | ok |
+| `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
+| `docs/requirements.md` | `S-F2.1` | S-F2.1 · 看「星星记录本」列表 | 409 | ok |
 | `docs/architecture.md` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` | — | 无锚点（整文件） | — | bare |
-| `docs/crq/tech/TECH-261012-weather-fabrication.md` | — | 无锚点（整文件） | — | bare |
-| `requirements v1.62 NFR-SEC-2-4` | — | （文件不存在） | — | missing |
-| `requirements v1.62 NFR-SAFE-1` | — | （文件不存在） | — | missing |
-| `delivery/changes/intake/261012-kidpal-realtime-facts.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261012-kidpal-realtime-facts/plan.md` | — | 无锚点（整文件） | — | bare |
+| `docs/ADR.md` | — | 无锚点（整文件） | — | bare |
+| `docs/CONTRACT-DECISION-QUEUE.md` | — | 无锚点（整文件） | — | bare |
+| `docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md` | — | 无锚点（整文件） | — | bare |
+| `docs/requirements.md:S-F2.1` | — | （文件不存在） | — | missing |
+| `delivery/changes/intake/261010-p3-storylist-cold-start.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261010-p3-storylist-cold-start-restore/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/CONTRACT-CHANGE-PACKET.md` | — | 无锚点（整文件） | — | bare |
+
+## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）
+
+### S-F2.1-AC1 · 源 = `docs/requirements.md` 节首行 :409 · 本包声明 AC 粒度回引：`S-F2.1-AC1`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F2.1 · 看「星星记录本」列表
+
+> 作为孩子，我希望看到我记下来的所有内容排成列表、每篇都是一颗星星，以便有收集的成就感。
+
+**验收标准**
+- AC1：Given 进星星记录本且列表数据已送达（正常接收与冷启动恢复推送均算——冷启动恢复口径见补充规则），When 看列表，Then 星星计数（×N，右上角），每条 = 星星图标 + 标题 + 日期；**光标默认选中第一条**，选中行**带边框**（不反白——反白真机效果差，2026-09-14 human 裁）；**列表超一屏时底部显示「第 x 屏 · 共 y 屏」**（与阅读态分屏同心智，v1.28）。
+- AC2：Given 列表中，When BOOT 短按，Then 选中项下移——光标到当前屏底再按翻下一屏并落该屏首项，列表到底 wrap 回首项（永不离页）；When BOOT 双击，Then 直接翻下一屏、光标落该屏首项（长列表快速跳屏；最后一屏再双击 wrap 回首屏）；When KEY 双击，Then 进入阅读态（见 S-F2.3）。
+- AC3：Given 星星记录本任意时刻，When 孩子看屏，Then 常驻语音入口提示「说『我要讲故事』开录新的」。
+- AC4：Given 列表选中某篇，When BOOT 长按，Then 弹出删除确认弹窗（**整屏覆盖层，WF-F2-05**，大字「删掉这篇？」+ 待删条目，页点消失同覆盖层口径；v1.48 human 裁全屏形态）：KEY 短按 = 确认删除（条目移除、星星计数 −1、云端同步）；BOOT 任一手势 = 取消回列表；10 秒无操作静默取消回列表；其余手势不响应。
+- AC5（无内容空态，v1.63）：Given 列表数据已送达且现存篇数为零（新设备或全部删除后），When 孩子看列表，Then 星星计数显示 **×0**（诚实计数、页身份保持），列表体区显示「本子空空的，讲个故事点亮第一颗星吧」；AC3 常驻语音入口提示**照常保留**——空态话术与入口提示两句话术并存、不互相顶替。
+- AC6（数据未达空态，v1.63）：Given 未收到列表数据、现存篇数未知（典型 = 设备重启后恢复推送未到或失败），When 孩子看列表，Then **不显示星星计数**（篇数未知，×0 会误导——明明有故事却显 0 颗），屏显「本子还没翻开，等等再来看看吧」；联网恢复、恢复推送到达后本页刷新为正常列表（按 AC1）。两态判据落在「有无列表数据」而非「断网与否」，与无内容空态（AC5）显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）。
+
+**线框**：WF-F2-01（实存）+ WF-F2-05（删除确认弹窗，v1.48）。
+**补充规则**：出路口径（v1.29 human 裁）= 列表态**无按键翻页出口**（BOOT 本页不翻页——多屏列表里「到底翻页」与「翻下一屏」直觉冲突），离开 = KEY 双击进阅读 / KEY 长按回首页（列表 = P3 顶层，长按一层即到家）/ 语音切页（「打开课表页」等）——页循环在本页断开，对话为主产品可接受。冷启动恢复（v1.63，复刻 S-F1.2 周网格先例口径）= 板端列表数据属内存缓存、重启即失，WS 建连时云端附带重推星星列表（恢复性推送，只填缓存不抢前台，P3 在屏时刷新本页；触发时机权威承载见 arch §5.2 场景④）；数据未达（恢复推送未到/失败）时翻到本页 = 数据未达空态（AC6），恢复推送到达后自动补齐。空态口径（v1.63）= 两态显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）：**无内容空态**（数据已送达、确无篇目——新设备或全删后）计数显 ×0 + 话术「本子空空的，讲个故事点亮第一颗星吧」（AC5），AC3 常驻提示照常并存；**数据未达空态**（未收到列表数据、篇数未知）不显计数 + 话术「本子还没翻开，等等再来看看吧」（AC6）——判据落在「有无列表数据」而非「断网与否」。埋点 = 无。
+**锚**：UI = `canvas-p3` ｜ 支撑 = arch §5.5.4（UI 演出·星星记录本渲染，板）、§5.1（服务端组件·故事数据链路，云）
+**可行性**：✅
+```
+
+### S-F2.1-AC5 · 源 = `docs/requirements.md` 节首行 :409 · 本包声明 AC 粒度回引：`S-F2.1-AC5`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F2.1 · 看「星星记录本」列表
+
+> 作为孩子，我希望看到我记下来的所有内容排成列表、每篇都是一颗星星，以便有收集的成就感。
+
+**验收标准**
+- AC1：Given 进星星记录本且列表数据已送达（正常接收与冷启动恢复推送均算——冷启动恢复口径见补充规则），When 看列表，Then 星星计数（×N，右上角），每条 = 星星图标 + 标题 + 日期；**光标默认选中第一条**，选中行**带边框**（不反白——反白真机效果差，2026-09-14 human 裁）；**列表超一屏时底部显示「第 x 屏 · 共 y 屏」**（与阅读态分屏同心智，v1.28）。
+- AC2：Given 列表中，When BOOT 短按，Then 选中项下移——光标到当前屏底再按翻下一屏并落该屏首项，列表到底 wrap 回首项（永不离页）；When BOOT 双击，Then 直接翻下一屏、光标落该屏首项（长列表快速跳屏；最后一屏再双击 wrap 回首屏）；When KEY 双击，Then 进入阅读态（见 S-F2.3）。
+- AC3：Given 星星记录本任意时刻，When 孩子看屏，Then 常驻语音入口提示「说『我要讲故事』开录新的」。
+- AC4：Given 列表选中某篇，When BOOT 长按，Then 弹出删除确认弹窗（**整屏覆盖层，WF-F2-05**，大字「删掉这篇？」+ 待删条目，页点消失同覆盖层口径；v1.48 human 裁全屏形态）：KEY 短按 = 确认删除（条目移除、星星计数 −1、云端同步）；BOOT 任一手势 = 取消回列表；10 秒无操作静默取消回列表；其余手势不响应。
+- AC5（无内容空态，v1.63）：Given 列表数据已送达且现存篇数为零（新设备或全部删除后），When 孩子看列表，Then 星星计数显示 **×0**（诚实计数、页身份保持），列表体区显示「本子空空的，讲个故事点亮第一颗星吧」；AC3 常驻语音入口提示**照常保留**——空态话术与入口提示两句话术并存、不互相顶替。
+- AC6（数据未达空态，v1.63）：Given 未收到列表数据、现存篇数未知（典型 = 设备重启后恢复推送未到或失败），When 孩子看列表，Then **不显示星星计数**（篇数未知，×0 会误导——明明有故事却显 0 颗），屏显「本子还没翻开，等等再来看看吧」；联网恢复、恢复推送到达后本页刷新为正常列表（按 AC1）。两态判据落在「有无列表数据」而非「断网与否」，与无内容空态（AC5）显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）。
+
+**线框**：WF-F2-01（实存）+ WF-F2-05（删除确认弹窗，v1.48）。
+**补充规则**：出路口径（v1.29 human 裁）= 列表态**无按键翻页出口**（BOOT 本页不翻页——多屏列表里「到底翻页」与「翻下一屏」直觉冲突），离开 = KEY 双击进阅读 / KEY 长按回首页（列表 = P3 顶层，长按一层即到家）/ 语音切页（「打开课表页」等）——页循环在本页断开，对话为主产品可接受。冷启动恢复（v1.63，复刻 S-F1.2 周网格先例口径）= 板端列表数据属内存缓存、重启即失，WS 建连时云端附带重推星星列表（恢复性推送，只填缓存不抢前台，P3 在屏时刷新本页；触发时机权威承载见 arch §5.2 场景④）；数据未达（恢复推送未到/失败）时翻到本页 = 数据未达空态（AC6），恢复推送到达后自动补齐。空态口径（v1.63）= 两态显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）：**无内容空态**（数据已送达、确无篇目——新设备或全删后）计数显 ×0 + 话术「本子空空的，讲个故事点亮第一颗星吧」（AC5），AC3 常驻提示照常并存；**数据未达空态**（未收到列表数据、篇数未知）不显计数 + 话术「本子还没翻开，等等再来看看吧」（AC6）——判据落在「有无列表数据」而非「断网与否」。埋点 = 无。
+**锚**：UI = `canvas-p3` ｜ 支撑 = arch §5.5.4（UI 演出·星星记录本渲染，板）、§5.1（服务端组件·故事数据链路，云）
+**可行性**：✅
+```
+
+### S-F2.1-AC6 · 源 = `docs/requirements.md` 节首行 :409 · 本包声明 AC 粒度回引：`S-F2.1-AC6`
+
+> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
+
+```markdown
+##### S-F2.1 · 看「星星记录本」列表
+
+> 作为孩子，我希望看到我记下来的所有内容排成列表、每篇都是一颗星星，以便有收集的成就感。
+
+**验收标准**
+- AC1：Given 进星星记录本且列表数据已送达（正常接收与冷启动恢复推送均算——冷启动恢复口径见补充规则），When 看列表，Then 星星计数（×N，右上角），每条 = 星星图标 + 标题 + 日期；**光标默认选中第一条**，选中行**带边框**（不反白——反白真机效果差，2026-09-14 human 裁）；**列表超一屏时底部显示「第 x 屏 · 共 y 屏」**（与阅读态分屏同心智，v1.28）。
+- AC2：Given 列表中，When BOOT 短按，Then 选中项下移——光标到当前屏底再按翻下一屏并落该屏首项，列表到底 wrap 回首项（永不离页）；When BOOT 双击，Then 直接翻下一屏、光标落该屏首项（长列表快速跳屏；最后一屏再双击 wrap 回首屏）；When KEY 双击，Then 进入阅读态（见 S-F2.3）。
+- AC3：Given 星星记录本任意时刻，When 孩子看屏，Then 常驻语音入口提示「说『我要讲故事』开录新的」。
+- AC4：Given 列表选中某篇，When BOOT 长按，Then 弹出删除确认弹窗（**整屏覆盖层，WF-F2-05**，大字「删掉这篇？」+ 待删条目，页点消失同覆盖层口径；v1.48 human 裁全屏形态）：KEY 短按 = 确认删除（条目移除、星星计数 −1、云端同步）；BOOT 任一手势 = 取消回列表；10 秒无操作静默取消回列表；其余手势不响应。
+- AC5（无内容空态，v1.63）：Given 列表数据已送达且现存篇数为零（新设备或全部删除后），When 孩子看列表，Then 星星计数显示 **×0**（诚实计数、页身份保持），列表体区显示「本子空空的，讲个故事点亮第一颗星吧」；AC3 常驻语音入口提示**照常保留**——空态话术与入口提示两句话术并存、不互相顶替。
+- AC6（数据未达空态，v1.63）：Given 未收到列表数据、现存篇数未知（典型 = 设备重启后恢复推送未到或失败），When 孩子看列表，Then **不显示星星计数**（篇数未知，×0 会误导——明明有故事却显 0 颗），屏显「本子还没翻开，等等再来看看吧」；联网恢复、恢复推送到达后本页刷新为正常列表（按 AC1）。两态判据落在「有无列表数据」而非「断网与否」，与无内容空态（AC5）显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）。
+
+**线框**：WF-F2-01（实存）+ WF-F2-05（删除确认弹窗，v1.48）。
+**补充规则**：出路口径（v1.29 human 裁）= 列表态**无按键翻页出口**（BOOT 本页不翻页——多屏列表里「到底翻页」与「翻下一屏」直觉冲突），离开 = KEY 双击进阅读 / KEY 长按回首页（列表 = P3 顶层，长按一层即到家）/ 语音切页（「打开课表页」等）——页循环在本页断开，对话为主产品可接受。冷启动恢复（v1.63，复刻 S-F1.2 周网格先例口径）= 板端列表数据属内存缓存、重启即失，WS 建连时云端附带重推星星列表（恢复性推送，只填缓存不抢前台，P3 在屏时刷新本页；触发时机权威承载见 arch §5.2 场景④）；数据未达（恢复推送未到/失败）时翻到本页 = 数据未达空态（AC6），恢复推送到达后自动补齐。空态口径（v1.63）= 两态显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）：**无内容空态**（数据已送达、确无篇目——新设备或全删后）计数显 ×0 + 话术「本子空空的，讲个故事点亮第一颗星吧」（AC5），AC3 常驻提示照常并存；**数据未达空态**（未收到列表数据、篇数未知）不显计数 + 话术「本子还没翻开，等等再来看看吧」（AC6）——判据落在「有无列表数据」而非「断网与否」。埋点 = 无。
+**锚**：UI = `canvas-p3` ｜ 支撑 = arch §5.5.4（UI 演出·星星记录本渲染，板）、§5.1（服务端组件·故事数据链路，云）
+**可行性**：✅
+```
+
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
-本包声明 **exempt**（不适用跨端对端阅读）：
+| 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
+|---|---|---|---|
+| `server/gateway/front/front_app.py` | `_push_story_list` | :179-183 | 216, 223, 281, 497, 573 |
+| `firmware/main/mcp_server.cc` | `McpServer::AddCommonTools` | :767-807 | — |
 
-> 单面实现变更（server/deploy prompt 族 + 验收 additive 齿 + arch 指针 docs-sync）：不改 wire、固件零改动、契约 NO_CONTRACT_CHANGE 四分类留痕；同端三个 sync 面（声明/渲染/carrier）由 changeManifest + 四个版本无关守卫承载；部署面 = ECS overlay 重跑（v9 同款先例 exempt 形态，261010 决策 21 键同款上传前核远端==基线）
-
-豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
+上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
 
 ## ③ 先例（同 subsystem 已 merged 包，封顶 3 个，按 changeId 日期前缀倒序）
 
 | 先例包 | 冻结验收文件 |
 |---|---|
-| 261010-prompt-v9-schedule-anti-narration | `server/acceptance/test_prompt_v7_round_routing.acceptance.py` · `server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py` |
-| 261001-openclaw-model-name-overlay-drift | `server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py` · `server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py` |
+| 261001-m4-k3-story-archive-order | `server/acceptance/test_m4k1_story_cloud_link.acceptance.py` |
 
 封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
 

@@ -237,6 +237,17 @@ int kidpal_render_node_home_on_screen(void);
 int kidpal_render_node_schedule_on_screen(void);
 
 /*
+ * P3 故事列表页是否在屏（LOCAL_PAGE 前台且当前页 = STORY）。沿 home_on_screen /
+ * schedule_on_screen 先例口径逐字同构：kidpal_layer_top == KIDPAL_LAYER_LOCAL_PAGE &&
+ * s_local_page == KP_PAGE_STORY。story_list 路由 restore 分支「P3 在屏仅重绘本页 /
+ * 接管态与记录语境前台只填缓存」的判据单一权威（TaskPackage
+ * 261010-p3-storylist-cold-start-restore, seam [SL2]）。LOCAL_PAGE 判定使记录语境
+ * 前台（VOICE 层 = 引导态/录音态/问答会话）与接管态（SERVER_PAGE 等非本地页前台）
+ * 一律返回 0——restore 帧只填缓存、不重绘、不推前台。只读静态态，零副作用。
+ */
+int kidpal_render_node_story_on_screen(void);
+
+/*
  * 返回当前本地浏览页（kidpal_page_id_t）。仅记录 LOCAL_PAGE 基层当前画的是哪一页，
  * 前台 owner 由 layer 栈 top() 单一裁决。
  */

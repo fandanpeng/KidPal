@@ -1116,9 +1116,20 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 n = KSTORY_LIST_MAX;
             }
             if (n <= 0) {
-                /* 空态单源（notes 边角③: 空态渲染入口在 kidpal_render_node.cc 与
-                 * 本处两处, 同源 KSTORY_EMPTY_HINT——两处口径一致）。 */
+                /* AC5 无内容空态（数据已送达、确无篇目——requirements v1.63 S-F2.1
+                 * AC5; seam [SL3]）: ×0 诚实计数（计数画法照常、不隐瞒, 页身份保持）
+                 * + AC5 话术 + AC3 常驻语音入口提示照常并存（两句话术不互相顶替）。
+                 * 空态话术单源 = KSTORY_EMPTY_HINT（notes 边角③: 空态渲染入口在
+                 * kidpal_render_node.cc 与 本处两处, 同源——两处口径一致）。
+                 * AC6 数据未达空态（不显计数 + KSTORY_EMPTY_HINT_UNREACHED）走
+                 * kidpal_render_node.cc 渲染入口（列表缓存从未装载态）, 不经本路径
+                 * ——本 render 路径必有数据在手（list != NULL）。 */
+                ksy_label(scr, "★", 316, 8, KSY_COLOR_INK);
+                snprintf(buf, sizeof(buf), "×%d", v->counter);
+                ksy_label(scr, buf, 344, 8, KSY_COLOR_INK);
                 ksy_label(scr, KSTORY_EMPTY_HINT, 60, 140, KSY_COLOR_INK);
+                ksy_label(scr, "说「我要讲故事」/「帮我记下来」开录新的",
+                          12, KSTORY_LIST_FOOTER_Y, KSY_COLOR_INK);
                 break;
             }
             /* 无页名标题（列表 = 星星记录本, v1.27 交互改写）; 右上角星星计数 ×N

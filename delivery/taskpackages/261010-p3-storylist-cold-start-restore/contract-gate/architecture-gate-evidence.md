@@ -2,7 +2,7 @@
 
 > Gate: 261010-p3-storylist-cold-start（spine）/ TECH-261010-p3-storylist-cold-start-empty
 > Date: 2026-10-12
-> Status: HUMAN_APPROVED（2026-10-12 human 契约门批准；diff 与实现同批原子落，落地时翻 LANDED/CLOSED）
+> Status: LANDED·CLOSED（2026-10-12 human 契约门批准；契约 diff 已随 261010-p3-storylist-cold-start-restore 实现同批原子落——落地核证见 §5/§7，verdict 见 §10）
 
 ## 1. Gate Scope
 
@@ -37,9 +37,11 @@
 
 ## 5. Applied Diff Inventory
 
-- 待批准后回填：D1（§1.3③ 插入 2 bullet，additive）/ D2（:105 板子行为句句尾追加，modifying）/ D3（:177 floor 枚举追加，modifying）/ D4（变更记录 bullet，append-only）。全部 additive 或注记级，零破坏（缺省/false 行为不变论证见 packet §4）。
-- 迁移/数据风险：无（无持久化 schema；wire 字段 additive）。docs sync：requirements v1.63 与 arch :186/:214 已先行落（挂法「随契约门落、尚未落地」，契约落本批后两句自动转既成——无需回改）。
-- Batch gatekeeper sync：census 待主线程落批前复核（预审未发现扫描 `docs/contracts/**` 的现役批级结构门；如实记录，见 §8）。
+- **已落地核证（2026-10-12 integrator 实测）**：`git diff main...HEAD -- docs/contracts/interface-contract.md` = **5 insertions / 2 deletions**（两处 modifying = D2/D3 各 1−1+，两处插入 = D1 两 bullet + D4 变更记录行），全部落 §1.3③ 与 §1.5 第 3 条两个预期区域、零 packet 外契约字符。
+- **逐字核对留痕（CCP §2 → 落地文本，程序 needle 比对 2026-10-12 integrator 实跑）**：D1-L1（241 字）HIT / D1-L2（263 字）HIT / D2 新句整行 HIT / D3 新句整行 HIT / D4 变更记录行（398 字）HIT——五条净内容行逐字一致；D2/D3 各删原句一行 + 插新句一行（modifying 形态与 packet 声明一致）。
+- **CRLF 保全字节级实证**：落地后工作副本 282 行全 CRLF、0 裸 LF（`file` 报 CRLF line terminators；字节级计数实证）——260921-m3-k1 先例的 CRLF 陷阱未复发。
+- 迁移/数据风险：无（无持久化 schema；wire 字段 additive）。docs sync：requirements v1.63 已先行落；arch :186/:214「随契约门落、尚未落地」挂法句翻既成——**翻法 = 最小改动只翻挂法**，patch 文本已拟（见本包 review-packet「交 planner 代办」），integrator Edit 被 enforce-scope 拦截（scope-map integrator allow 面不含 docs/architecture.md，机械闸优先未绕行），**落盘 pending-planner**。
+- Batch gatekeeper sync：census 已录（见 §8）。
 
 ## 6. Closeout Conditions
 
@@ -48,15 +50,19 @@
 
 ## 7. Validation Evidence
 
-- 待批准后回填：契约 diff 逐字人工核对记录；JSON 示例回归（restore / 非 restore / 畸形 restore 三例过 display_schema story_list floor）；plan.md SL-A1~A6 验收齿执行记录。
-- 本仓无 spec↔contract 机械门（ARQ-260827 口径：降级为人工核对并如实记录）。
+- **契约 diff 逐字人工核对记录**：见 §5（五条净内容行程序 needle 逐字 HIT + 5 added/2 removed 实测 + CRLF 保全字节级实证）。
+- **JSON 示例回归（2026-10-12 integrator 实跑，CCP §6.2 三例过 display_schema story_list floor）**：① restore 帧（`{"restore":true,...}`）→ PASS ok；② 非 restore 帧（data 无 restore 键）→ PASS ok；③ 畸形 restore 帧（`"restore":"yes"` 非 bool 字面）→ REJECT（`story_list restore must be a boolean when present`，V27 脏块拒绝不入板盲渲染）。三例结果与 packet §6 预期逐条吻合。
+- **两面测试执行**：verifier final 轮（scoped r4 全绿后，final phase 以 test-scope-final.txt 圈定跑）承载——server 面 pytest 求交与 firmware host 单 ELF 全量，逐轮 fact = `verifier-evidence/rounds/`；两面测试末行数字与 final fact 引用见本包 review-packet「Verification Evidence」节（单一权威，此处不重述数字）。
+- **变异取证**：taskpackage `mutationEvidence.perAcceptance` 六条（SL-A1~A6）全 `turnedRed:true` 且还原复绿（mutation-check 闸 scoped r4 PASS；SL-A6 变异在 builder 落地后重放取证、SL-A5 host 可测前置半含前序 MUTANT 残留还原取证）——诚实留痕见 review-packet provenance 申报。
+- 本仓无 spec↔contract 机械门（ARQ-260827 口径：降级为人工核对并如实记录；本节即人工核对记录）。
 
 ## 8. Docs / Queue Sync
 
-- spine anchors.contract：批准后回填（gate = HUMAN_APPROVED，diff 落地时点 = 实现批）。
-- ADR-010：批准后随批新增（packet §7 建议）。
-- CDQ/CRQ：TECH-261010-p3-storylist-cold-start-empty 保持 open 至实现落地；`docs/CONTRACT-DECISION-QUEUE.md` 门行登记 = 批准后随批。
-- Batch gatekeeper census：预审未发现现役批级契约 diff 结构门（evidence reference §5 要求如实记录；主线程落批前复核确认，无则记「census 无、无需 whitelist sync」）。
+- spine anchors.contract：**pending-planner 回填**（落地态文本已拟，见 review-packet「交 planner 代办」；integrator Edit 被 enforce-scope 拦截——delivery/changes/intake/** 不在 scope-map integrator allow 面，机械闸优先未绕行）。
+- ADR-010：**已随批新增**（docs/ADR.md 末，2026-10-12 integrator 落——第三实例泛化 + 与 §1.3② 两点差异 + 被否备选三项 + ADR-005 :46 泛化立场履行节；append-only 未覆盖 ADR-001..009）。
+- CDQ：**pending-planner 代落**——`CDQ-261010-p3-storylist-cold-start-restore` LANDED 行全文已拟（见 review-packet「交 planner 代办」）；integrator Edit 被 enforce-scope 拦截（scope-map 不含 docs/CONTRACT-DECISION-QUEUE.md，261011 同款先例）。
+- CRQ：TECH-261010-p3-storylist-cold-start-empty **已收口 closed**（2026-10-12 closedBy=integrator closeout、正文 append 收口节；`crq-render.mjs` 重跑归档 `_archive/2026/` + INDEX 再生）。
+- Batch gatekeeper census（2026-10-12 integrator grep 实录）：`.claude/scripts/` + `.claude/hooks/` 全量扫描 `docs/contracts` 引用——命中 **contract-lint.mjs**（verify 闸集内，markdown 契约结构完整性 lint：节标题/围栏闭合/断链，非 diff 扫描门）+ brief-inputs.mjs / crq-ledger-shared.mjs / merge-driver.mjs / pre-merge-escalation-gate.mjs / settings-lint.mjs / enforce-scope.mjs（路径边界与 needle 核验引用，非契约 diff 结构门）。**census 结论：存在一个扫描 `docs/contracts/**` 的闸级门 = contract-lint（本批 scoped r4 PASS），无批级契约 diff 结构门、无 whitelist sync 义务**。
 
 ## 9. Rollback / Follow-up
 
@@ -65,4 +71,5 @@
 
 ## 10. Verdict
 
-- 未结（PRECHECKED）。human 批准 + 与实现同批落 + 验证证据齐 → CLOSED；实现包在此之前不得以「契约已定」自居 launch（launch 前置 = 本门 HUMAN_APPROVED 在案）。
+- **CLOSED（LANDED · 2026-10-12）**：human 批准在案（§4）+ 契约 diff 与实现同批原子落（C2 兑现，§5 核证）+ 验证证据齐（§7：逐字核对 + JSON 三例回归 + 两面测试 final 轮 + 变异取证全 turnedRed）→ 门闭环。
+- C1（开闸时序）**仍未结、按设计保持**：ECS front 恢复推送开关默认关 → SL-A5 真机冷启动轮（human 在场持板）→ human 人工开闸。C1 是运行面开闸条件、非契约门条件——门 CLOSED 不受其 pending 影响（schedule `grid_restore_enabled` 先例同型）。

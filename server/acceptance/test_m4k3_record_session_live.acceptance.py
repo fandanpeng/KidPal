@@ -18,14 +18,19 @@ Scope of record（taskpackage acceptance M4K3-A4/A7/A8/A9-server 半）：
   M4K3-A8 prompt v8 齿（ADR-001 无版本字面断言：解析 carrier/声明/渲染三面得版本再
           断言一致；内容锚钉当前版本文件故事段双指令 + 意图边界负例 + 影子口径/标题
           规则零偏移；v7 本体 sha256 零回改 = E2「新文件不回改 v7」铁律齿）。
-  M4K3-A9 server 半零偏移守卫（条件推送落点 = _consume_kidpal_control 而非 ws_gateway
-          建连段——FIX-A1 负锚齿语义保持的结构面; K1 27 齿零偏移由套件全量运行承载,
-          不在本文件重复断言）。
+  M4K3-A9 server 半零偏移守卫（条件推送落点 = _consume_kidpal_control ctx 分支; 建连
+          恢复推送落点 = ws_gateway 建连段——2026-10-12 翻正（v1.63 时点①回接）后两落点
+          并存, 结构守卫双钉; K1 27 齿零偏移由套件全量运行承载, 不在本文件重复断言）。
 
-跨包负锚（不得冲突）：FIX-A1（human 方向锚 b036f554）= 建连路径零 story_list 下行帧，
-冻齿在 test_m4k1_story_cloud_link.acceptance.py::test_fix_a1_connect_path_emits_zero_
-story_list（套件内继续运行）。本文件条件推送全部钉 ctx 触发时点，与建连路径零帧天然
-不交；test_a7_push_seam_lands_in_ctx_consume_not_connect 以源结构守卫该边界。
+跨包边界（2026-10-12 翻正, 包 261010-p3-storylist-cold-start-restore）：FIX-A1 原为
+「建连路径零 story_list 下行帧」负锚（human 方向锚 b036f554）；v1.63（requirements §9
+frozen 2026-10-12）赎回时点①重裁——建连恢复推送回接（data.restore 标记、只填缓存不抢
+前台），翻正齿 = test_m4k1_story_cloud_link.acceptance.py::
+test_fix_a1_connect_path_emits_exactly_one_restore_story_list（授权链三件逐字见该件
+REVISION LOG 2026-10-12 条）。本文件条件推送行为齿全部钉 ctx 触发时点、零触碰（ctx
+同拍推送保留 = M4K3-A7 冻结齿对 builder 归并处置的硬约束）；落点结构守卫
+test_a7_push_seam_lands_in_ctx_consume_not_connect 同批翻正：建连段**含**建连恢复
+推送调用（>=1 处 _push_story_list）+ ctx 分支仍在（双落点并存）。
 
 ===========================================================================
 FROZEN OFFLINE CONTRACT (builder MUST implement) — front_app.py 面（接线半增量）：
@@ -139,6 +144,19 @@ REVISION LOG（冻结期修订窗; 只记 fixture/线束自身缺陷闭环, 零�
               二版函数体切片仍假绿（delete 分支 ③重推既有调用在函数体内）。修正 =
               切片收紧到 kidpal_session_ctx 分支行 → delete 分支行（①条件推送的
               真实落点）; 断言语义零变化（落点 = ctx 分支）。
+  2026-10-12  R3 test_a7_push_seam_lands 建连段断言翻正（正常改验收通道, 非 §6
+              tighten-only; 包 261010-p3-storylist-cold-start-restore）——FIX-A1
+              负锚「建连零 story_list 帧」由 v1.63（requirements §9 frozen
+              2026-10-12）赎回翻正为「建连恰一帧 data.restore==true 恢复推送」
+              （授权链三件 = CCP 261010-p3-storylist-cold-start HUMAN_APPROVED
+              2026-10-12 + §9 v1.63 行 + human 方向锚留痕, 逐字见 K1 件 REVISION
+              LOG 2026-10-12 条）。本件动作 = test_a7_push_seam_lands_in_ctx_
+              consume_not_connect 建连段断言 == 0 → >= 1（落点在场）+ 头注跨包
+              边界段 / M4K3-A9 描述 / 类 docstring / 守卫齿措辞同步翻正; ctx 分支
+              落点断言与全部行为齿零触碰（M4K3-A7 ctx 条件推送保留 = 本件冻结齿
+              对 builder 归并处置的硬约束——ctx 同拍推送不得摘除）。红基线恒现跑
+              （2026-10-12 实跑, 见 taskpackage redBaselineResult）: 本齿设计态红
+              （建连段现 0 命中）+ 其余齿零新增红。
 """
 
 from __future__ import annotations
@@ -426,9 +444,10 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
     """M4K3-A7: front 收 kidpal_session_ctx(story) 切累积态同帧 routing 沿条件推送。
 
     行为级（真 pump + 真帧计数 + 真归档链 producer）; 负锚齿（非 story / 普通会话
-    零帧）= 守卫, 防实现过宽（每帧都推 / 建连即推回潮）。FIX-A1 建连零帧负锚齿在
-    K1 文件继续运行, 本类不双断言同一面; 落点边界由 test_a7_push_seam_lands_in_
-    ctx_consume_not_connect 结构守卫。"""
+    泵级零帧）= 守卫, 防实现过宽（每帧都推 / 泵级无 ctx 推送）。FIX-A1 翻正齿（建连
+    恰一帧 restore, K1 文件）与 ctx 条件推送两落点并存（2026-10-12 翻正, 见 REVISION
+    LOG R3）; 落点边界由 test_a7_push_seam_lands_in_ctx_consume_not_connect 结构
+    守卫承载。"""
 
     maxDiff = None
 
@@ -498,8 +517,9 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
                         "非 story 取值零行为被破（过宽实现: 无累积态切换不推送）。")
 
     def test_a7_plain_chat_session_pushes_zero_frames(self):
-        """coverage: M4K3-A7 守卫 — 省略 ctx = 普通会话（向后兼容）零 story_list
-        下行（防「每会话都推」回潮——defer 摘除建连即推的缺陷形态）。"""
+        """coverage: M4K3-A7 守卫 — 省略 ctx = 普通会话（向后兼容）泵级零 story_list
+        下行（防「每会话都推」回潮——推送只许 ctx(story) 沿触发与建连恢复两落点,
+        2026-10-12 翻正后口径; 建连段断言归结构守卫齿, 本齿钉泵级零帧）。"""
         with tempfile.TemporaryDirectory(prefix="m4k3_a7d_") as tmp:
             with _front_with_stories(tmp) as front:
                 _seed(Path(tmp), 2)
@@ -512,13 +532,15 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
                     "普通会话）。")
                 self.assertEqual(
                     len(_story_list_frames(dev.sent_text)), 0,
-                    "M4K3-A7 RED: 无 ctx 普通会话产生 story_list 下行 —— 建连即推"
-                    "回潮形态（FIX-A1 语义破; 推送只许 ctx(story) 沿触发）。")
+                    "M4K3-A7 RED: 无 ctx 普通会话泵级产生 story_list 下行 —— 推送"
+                    "过宽（只许 ctx(story) 沿触发与建连恢复两落点, 2026-10-12 翻正后"
+                    "口径; 泵级无 ctx 推送 = 守卫）。")
 
     def test_a7_push_seam_lands_in_ctx_consume_not_connect(self):
         """coverage: M4K3-A7 / M4K3-A9（结构守卫）— 条件推送落点 = _consume_kidpal_
-        control ctx 分支; ws_gateway 建连段零 _push_story_list 调用（FIX-A1 摘除
-        语义的结构面保持——human 方向锚 b036f554）。"""
+        control ctx 分支; ws_gateway 建连段含建连恢复推送调用（2026-10-12 翻正:
+        v1.63 三时点①回接——原「零调用」负锚随 FIX-A1 翻正同步翻正, 授权链见
+        REVISION LOG R3; 建连推送的 wire 形态断言归 K1 翻正齿, 本齿只钉落点在场）。"""
         src = _front_source()
         self.assertTrue(
             bool(src), "M4K3-A7 RED(infra): front_app.py 源码读取失败。")
@@ -546,10 +568,13 @@ class M4K3CtxConditionalPushAcceptance(unittest.TestCase):
             "—— 须复核本齿锚。")
         ctx_branch = src[ctx_pos:delete_pos]
         consume_seg = src[consume_pos:consume_end]
-        self.assertEqual(
-            connect_seg.count("_push_story_list"), 0,
-            "M4K3-A7 RED: ws_gateway 建连段出现 _push_story_list 调用 —— FIX-A1 "
-            "摘除语义被回接（human 方向锚 b036f554; 建连零帧负锚齿必红）。")
+        # 2026-10-12 翻正（v1.63 三时点①回接, 授权链见 REVISION LOG R3 与 K1 件
+        # REVISION LOG 2026-10-12 条）：建连段**含**建连恢复推送调用。
+        self.assertGreaterEqual(
+            connect_seg.count("_push_story_list"), 1,
+            "M4K3-A7 RED: ws_gateway 建连段无 _push_story_list 调用 —— 建连恢复推送"
+            "（三时点①, requirements v1.63 赎回）未回接（K1 FIX-A1 翻正齿必红; 授权链"
+            "见该件 REVISION LOG 2026-10-12 条）。")
         self.assertIn(
             "_push_story_list", ctx_branch,
             "M4K3-A7 RED: _consume_kidpal_control 的 kidpal_session_ctx 分支无 "
