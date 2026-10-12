@@ -253,6 +253,10 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
   ⑦ P3 弃倾斜手绘框：框族一律正常圆角矩形（10px 单值圆角、无倾斜——八值圆角＋微倾真机难实现且显乱）；右上角 ★×N 计数去框裸排（圆角框太挤）；
   ⑧ 查字窗：左侧米字格框改正圆角矩形，右栏弃速查卡框族与静态对照小块、全部纯文本显示。
 -->
+<!-- ══ v5 第三轮修订（2026-10-11，随 requirements v1.61 对齐——S-F1.1 AC2/AC5/AC6/AC7） ══
+  ⑨ 明天区口径改判（翻转第二轮②「仅课外班与临时事件」）：明日日程全量进区——学校课合并「XX:XX 上学」一项与课外班、临时事件同列，多项逐行、按开始时间升序；示例行「08:00 上学」置首；
+  ⑩ 空态话术占位（v1.61 新增）：无安排空态——接下来区「今天接下来没有安排啦」／明天区「明天没有什么课喽」（非上学日且无课外班/临时事件才空；上学日必有「上学」项），话术按常规字号纯文本、占位不破布局优先级；数据未达空态（推送未送达、两区无日程数据）显示友好提示引导语音问课表、不清屏换提示——两态按「有无日程数据」分叉，断网另有辅助条 WiFi 斜杠小标（AC4）。
+-->
 <!-- ══ v4 修订记录（2026-09-14，全面对齐 requirements.md v1.50 + PHASE1-DESIGN-INPUT.md） ══
   ① P1 首页重心重排（WF-F1-01）：「接下来」日程+倒计时为主体，联网/时间/日期/温湿度/电量收进顶部辅助条小字（📶 打头、图标前置）；v3 的 112px 大时间与眨眼冒号、温度计小人/水滴宝宝随重排退场——时间退居辅助位是 v1.4 设备定位调整的既定代价，孩子若怀念可作时段彩蛋另议；
   ② P2 改一周总览网格（WF-F1-02）：周一~周日 × 上午/下午/晚上，格内逐节列课程名；今天列反色高亮、※ 临时标记、★ 与首页「接下来」呼应；页内标题与语音提示删除、归全局键帽条（v1.20）；
@@ -415,7 +419,7 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
   <div class="cover-grid">
     <div>
       <h1 data-od-id="cover-title">别像一台闹钟，<br/><em>要像一个住进屏幕的伙伴。</em></h1>
-      <p class="sub" data-od-id="cover-sub">给 8–12 岁的孩子、一块 400×300 的黑白反射屏、两颗物理键——这一版只回答一个问题：<b>孩子第一眼会不会喊出「好可爱」。</b>v5 主刀：P1 文本列表化＋「明天」预告区（多项、仅课外班与临时事件）＋日期英文化（Tue 22 Sep）；键帽动作文字入盒（不显示键名）；P2 今天列改边框加粗；P3 与查字窗框族改正常圆角、查字窗右栏纯文本。spec 修订随后同步。</p>
+      <p class="sub" data-od-id="cover-sub">给 8–12 岁的孩子、一块 400×300 的黑白反射屏、两颗物理键——这一版只回答一个问题：<b>孩子第一眼会不会喊出「好可爱」。</b>v5 主刀：P1 文本列表化＋「明天」预告区（多项、明日日程全量——学校课并入，v1.61 改判）＋日期英文化（Tue 22 Sep）；键帽动作文字入盒（不显示键名）；P2 今天列改边框加粗；P3 与查字窗框族改正常圆角、查字窗右栏纯文本。spec 修订随后同步。</p>
       <div class="meta-stamps" data-od-id="cover-stamps">
         <span class="stamp-tag tilt1r"><b>1bpp</b> 纯黑白</span>
         <span class="stamp-tag tilt1"><b>400×300</b> 真实画布</span>
@@ -758,10 +762,11 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
             <div><b style="font-family:var(--f-num);font-weight:800">14:00</b> 钢琴课</div>
             <div><b style="font-family:var(--f-num);font-weight:800">16:30</b> 英语培训</div>
           </div>
-          <!-- ③ 明天：明日预告区（多项列出，仅课外班与临时事件——学校课不上此区），标签与「接下来」同规格 -->
+          <!-- ③ 明天：明日预告区（多项逐行——明日日程全量：学校课合并「上学」+ 课外班 + 临时事件，按开始时间升序，v1.61；无项时空态话术占位），标签与「接下来」同规格 -->
           <div style="left:152px;top:140px;width:234px;border-top:3px dotted #000"></div>
           <div class="inv" style="left:152px;top:152px;font-size:12.5px;font-weight:900;padding:1px 10px;border-radius:999px">明天</div>
           <div style="left:152px;top:176px;width:234px;font-size:14px;font-weight:900;line-height:1.9">
+            <div><b style="font-family:var(--f-num);font-weight:800">08:00</b> 上学</div>
             <div><b style="font-family:var(--f-num);font-weight:800">08:00</b> 春游 <span style="font-size:12px">※临时</span></div>
             <div><b style="font-family:var(--f-num);font-weight:800">19:00</b> 编程</div>
           </div>
@@ -781,8 +786,8 @@ footer small{display:block;margin-top:8px;font-size:12px;font-weight:500}
       <aside class="rail">
         <ul class="pts frm-sm" data-od-id="p1-notes">
           <li><b>① 辅助条</b>：📶 联网打头、每项图标前置——湿度 45% 不裸数字挨电池；日期英文化 <b style="font-family:var(--f-num)">Tue 22 Sep</b>（星期简写+日+月简写，无「今天」字样，仅 P1）；断网变 WiFi 斜杠；低电（≤15%）电池图标每秒闪、充电即停（唯一低电信号）</li>
-          <li><b>② 接下来</b>：文本列表——最近一项时间+课名同行、后续安排正常换行逐行列出，常规字号；学校课合并为一项「XX:XX 上学」，培训班/一次性逐项列出</li>
-          <li><b>③ 明天</b>：明日预告区——多项逐行列出，<b>仅课外班与临时事件</b>（学校课不上此区，看课表页）；标签与「接下来」同规格小字；常显页回答「接下来」与「明天」两级</li>
+          <li><b>② 接下来</b>：文本列表——最近一项时间+课名同行、后续安排正常换行逐行列出，常规字号；学校课合并为一项「XX:XX 上学」，培训班/一次性逐项列出；无安排空态（数据已送达、今日无剩余项）显示「今天接下来没有安排啦」、数据未达（推送未送达、无日程数据）显示友好提示引导语音问课表——两态按「有无数据」分叉，不清屏换提示（v1.61）</li>
+          <li><b>③ 明天</b>：明日预告区——多项逐行列出，<b>明日日程全量进区</b>：学校课合并「XX:XX 上学」与课外班、临时事件同列、按开始时间升序（v1.61 改判，翻转 v5 第二轮「仅课外班与临时事件」口径）；无项空态（非上学日且无课外班/临时事件）显示「明天没有什么课喽」，上学日必有「上学」项不空；标签与「接下来」同规格小字；常显页回答「接下来」与「明天」两级</li>
           <li><b>④ 小伴常驻</b>：姿态/表情随时段与日程变化——图为临近上课的出门准备状；它是常显页的构成部分，不是装饰</li>
         </ul>
         <ul class="pts frm-sm">

@@ -147,15 +147,16 @@ OpenClaw 回复文本（示例）
     "upcoming": {
       "day_key": "今天",
       "items": [ { "time": "14:00", "name": "钢琴课" } ],
-      "preview": { "time": "明早", "name": "春游" }
+      "preview": [ { "time": "08:00", "name": "上学" }, { "time": "19:00", "name": "编程" } ]
     }
   } }
 ```
 
-- 形状与板端 `home_p1.h` 冻结注入 seam（`hp1_item_t {time,name}` / `kidpal_home_p1_schedule_inject(day_key, items, next_day_preview)`）对齐——payload 即 seam 注入参数的 JSON 化。
-- 分组口径 = 决策 26「接下来」分组（学校课合并「上学」、培训班/一次性逐项、最近项最醒目、再下可带明日预告）；**producer = front 机械计算**（schedule.py `group_upcoming` 单源），OpenClaw（LLM）专注话术、不产此载荷（2026-09-21 契约门裁定）。推送时机（WS 建连 / 每日零点 / 新建日程即时）属行为策略，权威承载 = arch §5.2 场景① + §10 决策 26，不进契约。
+- 形状与板端 `home_p1.h` 冻结注入 seam（`hp1_item_t {time,name}` / `kidpal_home_p1_schedule_inject(day_key, items, count, next_day_items, next_day_count)`）对齐——payload 即 seam 注入参数的 JSON 化。
+- **`preview` 三态语义（2026-10-11 契约门改多项数组）**：明日「接下来」全量逐项 `{time,name}` 数组、按开始时间升序（requirements S-F1.1 AC2——明日日程全量进区：学校课合并「XX:XX 上学」与课外班、临时事件同列）。三态：**非空数组** = 明日项列表；**`[]`（空数组）= 云端确认明日无项**，板端据此显示「明天没有什么课喽」空态话术（AC6——上学日明天区必然非空，话术仅非上学日可达）；**`null` 或缺省 = 未推送/未提供**，板端显示数据未达提示、不显示无安排话术（AC7，与空态话术显式分叉）。`time` 钉 HH:MM 字面（K1 裁决：自然语言标签不入 wire，板端解析拒绝非 HH:MM 值）。
+- 分组口径 = 决策 26「接下来」分组（学校课合并「上学」、培训班/一次性逐项、最近项最醒目、再下可带明日预告——`preview` 形状与明日分组口径见上条，2026-10-11 改多项全量）；**producer = front 机械计算**（schedule.py `group_upcoming` 单源），OpenClaw（LLM）专注话术、不产此载荷（2026-09-21 契约门裁定）。推送时机（WS 建连 / 每日零点 / 新建日程即时）属行为策略，权威承载 = arch §5.2 场景① + §10 决策 26，不进契约。
 
-- （契约变更记录：2026-09-21 经契约门批准新增可选 `data.upcoming` 承载首页「接下来」，additive 向后兼容；随 M3-K1 同 PR 落地，同上 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md)。）
+- （契约变更记录：2026-10-11 经契约门批准 `data.upcoming.preview` 由单 `{time,name}` 对象改多项数组 + 三态语义（非空数组 = 明日全量升序列表 / `[]` = 确认明日无项承载 AC6 空态话术 / `null`·缺省 = 未推送承载 AC7 未达态）——requirements v1.61 S-F1.1 AC2/AC6/AC7；示例值 `"time": "明早"` 旧漂移顺修，K1 裁决载荷钉 HH:MM、自然语言标签不入 wire；板端 seam 同形改（`home_p1.h`），板端对旧单对象形状保留一个过渡版的解析容忍（部署缓冲防御，不入契约形状定义）；随 261011-p1-home-v5-rework 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/261011-p1-home-v5-rework/CONTRACT-CHANGE-PACKET.md)。）
 
 ### 1.4 控制类指令（OpenClaw 判意图后下发）
 

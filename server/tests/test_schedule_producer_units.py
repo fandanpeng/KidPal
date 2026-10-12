@@ -114,14 +114,38 @@ class WeekGridProducerBoundaries(unittest.TestCase):
 
 
 class HomeUpcomingProducerBoundaries(unittest.TestCase):
-    def test_preview_time_is_start_hhmm_not_label(self):
-        """preview.time = 明日首项开始 HH:MM（板端 hp1_item_t.time 缓冲仅容 HH:MM）。"""
+    def test_preview_is_multi_item_hhmm_array(self):
+        """preview = 明日全量 {time,name} 数组、按开始时间升序、学校课合并「上学」在列
+        （2026-10-11 多项化, CCP 触点①; requirements v1.61 AC2）；time 恒 HH:MM
+        （板端 hp1_item_t.time 缓冲仅容 HH:MM, 自然语言标签不入 wire）。"""
         model = schedule.parse_schedule_md(GRID)
         payload = schedule.home_upcoming_payload(model, MON, "12:00", WED, "08:00")
         preview = payload["data"]["upcoming"]["preview"]
-        # 周三首项：合并上学(明天? 不, 周三 wd=3) + 学校周三行 合并「上学」08:00
-        self.assertIsNotNone(preview)
-        self.assertRegex(preview["time"], r"\d{2}:\d{2}")
+        self.assertIsInstance(preview, list)
+        for it in preview:
+            self.assertEqual(set(it), {"time", "name"})
+            self.assertRegex(it["time"], r"^\d{2}:\d{2}$")
+        # 周三明日：学校课合并「上学」08:00 + 周三英语培训 13:00（升序）。
+        self.assertEqual(
+            preview,
+            [{"time": "08:00", "name": "上学"},
+             {"time": "13:00", "name": "英语培训"}])
+
+    def test_preview_empty_when_tomorrow_has_no_items(self):
+        """明日无项 -> preview == []（不再 None）——AC6 空态话术的显式 wire 载体
+        （plan R1：发 None 会使板端话术永不触发）。"""
+        model = schedule.parse_schedule_md(GRID)
+        # 2026-09-26 周六：GRID 无周六行/无周六课外班/无当周周六一次性安排。
+        payload = schedule.home_upcoming_payload(model, MON, "12:00", "2026-09-26", "08:00")
+        self.assertEqual(payload["data"]["upcoming"]["preview"], [])
+
+    def test_preview_always_array_never_none(self):
+        """producer 恒发数组、不发 null——「未提供」只可能来自未推送（AC7 板端未达态）。"""
+        model = schedule.parse_schedule_md(GRID)
+        for tomorrow in (MON, WED, SUN, "2026-09-26"):
+            payload = schedule.home_upcoming_payload(model, MON, "12:00", tomorrow, "08:00")
+            self.assertIsInstance(payload["data"]["upcoming"]["preview"], list)
+            self.assertIsNotNone(payload["data"]["upcoming"]["preview"])
 
 
 class DailyPushDueBoundaries(unittest.TestCase):

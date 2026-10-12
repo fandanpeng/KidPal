@@ -19,6 +19,9 @@ extern "C" {
 
 /* ---- 冻结数值码 / 常量（== 冻结验收 home_p1.acceptance.c，不得偏移） ---- */
 #define HP1_ITEM_MAX 8                    /* 缓存容量上限（today 分组项） */
+#define HP1_PREVIEW_MAX 8                 /* 明天区 preview 缓存容量上限（超容整包拒收,
+                                           * 与 HP1_ITEM_MAX 同纪律; CCP 261011-p1-home-
+                                           * v5-rework 触点③ + requirements v1.61 AC2/AC6） */
 #define HP1_TIME_LEN 6                    /* "H:MM"=4 / "HH:MM"=5 chars + NUL */
 #define HP1_NAME_LEN 32                   /* 31 chars + NUL */
 
@@ -59,13 +62,35 @@ typedef struct {
     int tick_ms;       /* 动画相位 tick, >= 0 */
 } hp1_state_t;
 
-/* ---- FROZEN OFFLINE CONTRACT 声明（签名以验收文件头注为准） ---- */
+/* ---- FROZEN OFFLINE CONTRACT 声明（签名以验收文件头注为准） ----
+ *
+ * 2026-10-11 seam 同形改（CCP 261011-p1-home-v5-rework 触点③ HUMAN_APPROVED +
+ * requirements v1.61 S-F1.1 AC2/AC5/AC6/AC7）——**supersede 旧 4 参 inject
+ * kidpal_home_p1_schedule_inject(day_key, items, next_day_preview) 与旧单项 preview
+ * 访问族 kidpal_home_p1_schedule_preview(hp1_item_t*) 同批退役**（旧形与本形不共存）：
+ *   - next_day_preview 单指针 -> next_day_items + next_day_count 数组+计数（明天区
+ *     多项化：学校课合并「XX:XX 上学」与课外班、临时事件同列，按开始时间升序）；
+ *   - preview 访问族改多项：preview_count() / preview_item(index)（单项访问族退役,
+ *     防双访问族语义漂移）。
+ * next_day_count 单值三态（与读侧 preview_count() 返回域同构, 无第四态可漂移）：
+ *   >= 1  = preview 列表（next_day_items 非 NULL 且逐项 valid; > HP1_PREVIEW_MAX -> -1）
+ *   == 0  = 云端确认明日无项（wire preview:[] 的 seam 形; next_day_items 必须 NULL）
+ *   == -1 = 本推未提供 preview（wire preview:null/键缺省 的 seam 形; next_day_items
+ *           必须 NULL）
+ *   其它负值 -> -1 拒收。任一半区畸形 -> 整包拒 -1 且状态零变化（全量替换语义不变）。
+ * 归档件 firmware/main/test/acceptance/archive/home_p1.acceptance.c 仍零触碰（archive
+ * 纪律：移位即退役）; supersede 由本注记 + schedule_grid.acceptance.c REVISION LOG 承载。 */
 int kidpal_home_p1_schedule_inject(const char *day_key,
                                    const hp1_item_t *items, int count,
-                                   const hp1_item_t *next_day_preview);
+                                   const hp1_item_t *next_day_items,
+                                   int next_day_count);
 int kidpal_home_p1_schedule_count(void);
 const hp1_item_t *kidpal_home_p1_schedule_item(int index);
-int kidpal_home_p1_schedule_preview(hp1_item_t *out);
+/* 明天区三态读侧（2026-10-11 preview 多项访问族）: >=1 = 列表项数; ==0 = 确认空
+ * （AC6 话术态）; ==-1 = 未提供/从未注入/day_rollover 已清（AC7 数据未达态）。 */
+int kidpal_home_p1_schedule_preview_count(void);
+/* 0 <= index < preview_count() 时返回项指针（{time,name} verbatim），否则 NULL。 */
+const hp1_item_t *kidpal_home_p1_schedule_preview_item(int index);
 int kidpal_home_p1_day_rollover(const char *now_day);
 int kidpal_home_p1_countdown(const hp1_item_t *items, int count, int now_h,
                              int now_m, int *out_index, int *out_hours,

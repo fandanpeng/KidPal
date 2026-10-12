@@ -115,27 +115,28 @@ static int write_bmp(const char *name)
     return 0;
 }
 
-/* 注入两项目程 + 明日预告（对应验收 hpb_inject_schedule_two_items 的 producer 结果）。 */
+/* 注入两项目程 + 明日预告（对应验收 hpb_inject_schedule_two_items 的 producer 结果；
+ * 2026-10-11 seam 终形 5 参——preview 由单指针改 1 项数组 + 计数）。 */
 static void inject_two_items(void)
 {
     hp1_item_t items[2];
-    hp1_item_t preview;
+    hp1_item_t preview[1];
 
     memset(items, 0, sizeof(items));
     snprintf(items[0].time, sizeof(items[0].time), "14:00");
     snprintf(items[0].name, sizeof(items[0].name), "钢琴课");
     snprintf(items[1].time, sizeof(items[1].time), "16:30");
     snprintf(items[1].name, sizeof(items[1].name), "英语培训");
-    memset(&preview, 0, sizeof(preview));
-    snprintf(preview.time, sizeof(preview.time), "09:00");
-    snprintf(preview.name, sizeof(preview.name), "游泳课");
-    kidpal_home_p1_schedule_inject("2026-09-15", items, 2, &preview);
+    memset(preview, 0, sizeof(preview));
+    snprintf(preview[0].time, sizeof(preview[0].time), "09:00");
+    snprintf(preview[0].name, sizeof(preview[0].name), "游泳课");
+    kidpal_home_p1_schedule_inject("2026-09-15", items, 2, preview, 1);
 }
 
-/* 注入空日程（无日键时 count=0/preview=NULL 拒绝 -> 用有效日键 + 0 项）。 */
+/* 注入空日程（有效日键 + 0 项 + preview 未提供态 -1）。 */
 static void inject_empty(void)
 {
-    kidpal_home_p1_schedule_inject("2026-09-15", NULL, 0, NULL);
+    kidpal_home_p1_schedule_inject("2026-09-15", NULL, 0, NULL, -1);
 }
 
 /* 设代表态（hour/minute/month/mday/env/temp/hum/battery/charging/tick）。

@@ -1,7 +1,8 @@
 /*
  * home_upcoming.c — KidPal 首页「接下来」注入接线层实现（A5 纯逻辑面,
  * TaskPackage 260921-m3-k2-p2-week-grid-page, 契约 §1.3⑥ home 可选 data.upcoming
- * / S-F1.1 AC1–AC2 消费接线半）。
+ * / S-F1.1 AC1–AC2 消费接线半；2026-10-11 preview 多项数组化 + 三态语义, CCP
+ * 261011-p1-home-v5-rework 触点① + requirements v1.61 AC2/AC6/AC7）。
  *
  * 语义权威 = 冻结验收 firmware/main/test/schedule_grid.acceptance.c 文件头 A5 段；
  * 强定义在 host runner 里覆盖验收文件内的 weak 哨兵 (-2) 后被真测（同
@@ -9,7 +10,8 @@
  *
  * 纯逻辑、零芯片/零 LVGL 依赖 -> host_app linux target 与设备树两侧同源可编。
  * 自足式最小 JSON 扫描（无外部 JSON 库, schedule_page.c 同款纪律）；只消费
- * home_p1 冻结 seam（kidpal_home_p1_schedule_inject），home_p1.{c,h} 零修改。
+ * home_p1 冻结 seam（kidpal_home_p1_schedule_inject 5 参终形, 2026-10-11 CCP 触点③
+ * 同形改）。
  *
  * 降级语义：任何畸形/越界/seam 拒收 -> -1 且 seam 状态零变化（绝不半写、绝不盲
  * 渲染, V27）；缺/空 data -> 0 且 seam 状态零变化（旧行为完全不变, 向后兼容）。
@@ -398,9 +400,17 @@ static int kup_parse_entry(kup_json_cursor *c, hp1_item_t *it)
     return 0;
 }
 
-/* preview 值解析：null / 缺省 = 无预告（返回 1, *has 置 0）；对象 = 同项校验
- * （返回 0）；其它类型 = 畸形 -1。 */
-static int kup_parse_preview(kup_json_cursor *c, hp1_item_t *pv, int *has)
+/* preview 值解析（2026-10-11 契约门多项数组化 + 三态语义, CCP 261011-p1-home-v5-
+ * rework 触点①；requirements v1.61 AC2/AC6/AC7）。写 pv[0..]（容量 cap）并置
+ * *count：
+ *   null / 键缺省 -> *count = -1（未提供, AC7 数据未达态）
+ *   []（空数组）  -> *count = 0（云端确认明日无项, AC6 话术态——producer 明日无项发
+ *                    [] 不再 None, plan R1）
+ *   [ {time,name}, … ] -> *count = n（明日全量列表, 1..cap；超容整包拒 -1）
+ *   旧单对象 {time,name} -> *count = 1（部署缓冲过渡容忍一个版本, CCP 触点②；server
+ *                    先部署、固件后烧的错配窗口防御；producer 不发该形状）
+ *   其它标量（数字/字符串）-> 返回 -1（畸形）。成功返回 0；畸形返回 -1。 */
+static int kup_parse_preview(kup_json_cursor *c, hp1_item_t *pv, int *count, int cap)
 {
     kup_ws(c);
     char ch = kup_peek(c);
@@ -409,14 +419,51 @@ static int kup_parse_preview(kup_json_cursor *c, hp1_item_t *pv, int *has)
         if (!kup_skip_value(c)) {
             return -1;
         }
-        *has = 0;
-        return 1; /* preview:null 容忍（明日无项 = 无预告, 不降级） */
+        *count = -1;
+        return 0; /* preview:null 容忍（未提供, AC7——与确认空话术态显式分叉） */
     }
-    if (ch != '{') {
-        return -1; /* 非 object/null preview -> -1 */
+    if (ch == '{') {
+        /* 旧单对象过渡容忍 -> 1 项列表（板端防御一个过渡版）。 */
+        if (kup_parse_entry(c, &pv[0]) != 0) {
+            return -1;
+        }
+        *count = 1;
+        return 0;
     }
-    *has = 1;
-    return kup_parse_entry(c, pv);
+    if (ch == '[') {
+        int n = 0;
+
+        c->pos++;
+        kup_ws(c);
+        if (kup_peek(c) == ']') {
+            c->pos++;
+            *count = 0; /* 空数组 = 确认明日无项 */
+            return 0;
+        }
+        for (;;) {
+            if (n >= cap) {
+                return -1; /* 超容整包拒（与 items 同纪律, HP1_PREVIEW_MAX） */
+            }
+            if (kup_parse_entry(c, &pv[n]) != 0) {
+                return -1; /* 项形状与 items 同校验（time/name 必带, time 恒 HH:MM） */
+            }
+            n++;
+            kup_ws(c);
+            char d = kup_peek(c);
+            if (d == ',') {
+                c->pos++;
+                continue;
+            }
+            if (d == ']') {
+                c->pos++;
+                break;
+            }
+            return -1;
+        }
+        *count = n;
+        return 0;
+    }
+    return -1; /* 数字/字符串/其它标量 preview = 畸形 */
 }
 
 /* -------------------------------------------------------------------------- *
@@ -430,12 +477,12 @@ int kidpal_home_upcoming_apply(const char *data_json)
 {
     kup_json_cursor c = { data_json, 0 };
     hp1_item_t items[HP1_ITEM_MAX];
-    hp1_item_t pv;
+    hp1_item_t pv[HP1_PREVIEW_MAX];
     char day_key[KUP_DAYKEY_BUF];
     int count = 0;
     int has_items = 0;
     int has_key = 0;
-    int has_pv = 0;
+    int pv_count = -1;   /* 三态: >=1 列表 / 0 确认空 / -1 未提供（键缺省 = -1, AC7） */
     int has_upcoming = 0;
 
     /* 缺/空 data -> 0 且 seam 状态零变化（旧 {view:home} 行为完全不变, 向后兼容） */
@@ -534,7 +581,8 @@ int kidpal_home_upcoming_apply(const char *data_json)
                             }
                             has_items = 1;
                         } else if (strcmp(ukey, "preview") == 0) {
-                            if (kup_parse_preview(&c, &pv, &has_pv) < 0) {
+                            if (kup_parse_preview(&c, pv, &pv_count,
+                                                  HP1_PREVIEW_MAX) < 0) {
                                 return -1;
                             }
                         } else {
@@ -601,7 +649,10 @@ int kidpal_home_upcoming_apply(const char *data_json)
     }
 
     /* 全量校验通过后才经冻结 seam 注入（seam 自身亦全量校验, 拒绝即整包拒,
-     * 绝不半写）。 */
+     * 绝不半写）。next_day_count 单值三态承载（pv_count 直传——>=1 列表 / 0 确认空
+     * / -1 未提供）。 */
     return kidpal_home_p1_schedule_inject(day_key, (count > 0) ? items : NULL,
-                                          count, has_pv ? &pv : NULL);
+                                          count,
+                                          (pv_count >= 1) ? pv : NULL,
+                                          pv_count);
 }

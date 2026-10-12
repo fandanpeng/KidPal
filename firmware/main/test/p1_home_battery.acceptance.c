@@ -101,10 +101,11 @@
  *       **已砍项零触碰**：低电不占小伴姿态通道——home_p1.c / kidpal_render_node.cc
  *       零 pose_sleep 词（§8 已砍清单）。
  *
- *   [5] 范围纪律（PH-E1）：首页日程数据口径零改动——home_p1.h 六个 schedule API
- *       （schedule_inject/count/item/preview + day_rollover + countdown）签名面在世，
- *       本包只动版式与辅助条，不触数据链路（课表数据接首页归 M3 决策 26）。需求/契约
- *       面零修订 canary。
+ *   [5] 范围纪律（PH-E1）：首页日程数据口径声明面在世——home_p1.h schedule API 族
+ *       （schedule_inject/count/item/preview 访问族 + day_rollover + countdown;
+ *       2026-10-11 起含 preview_count/preview_item 多项访问族, 5 参 inject 终形,
+ *       REVISION LOG 2026-10-11 条），本包只动版式与辅助条，不触数据链路（课表数据
+ *       接首页归 M3 决策 26）。需求/契约面零修订 canary。
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
@@ -128,6 +129,11 @@
  *             「PH-A7 终跑判读」段（suite 级判读：相对有效基线零新增红 + 本包新齿全绿）
  *   coverage: PH-E1 范围纪律 -> test 5 tooth 2/3（schedule API 面零触碰 + 需求契约
  *             canary）
+ *   coverage: HV5-AC5/AC6/AC7 空态三态渲染（2026-10-11, requirements v1.61）->
+ *             tooth 5 重钉（AC5 话术在场——空日程不再留白）+ test 4.5（帧分叉:
+ *             AC5 话术态 vs rollover 驱动的 AC7 未达态行流带显式分叉; 明天区
+ *             preview []/null 两态显式分叉 + 切换不扰他区 + preview 满载 clip
+ *             containment; 状态机数据半归 schedule_grid.acceptance.c test 4/4b）
  *
  * ---------------------------------------------------------------------------
  * BUILDER DUTY 清单（接线 + 实现落点，HOST_TEST_CONVENTIONS.md [C4.2] 约定）：
@@ -171,8 +177,20 @@
 #include <assert.h>
 #include <stdarg.h>
 
-/* home_p1 冻结契约头（归档 home_p1.acceptance.c 的在世实现面；形状/常量零偏移）。 */
+/* home_p1 冻结契约头（归档 home_p1.acceptance.c 的在世实现面；形状/常量零偏移）。
+ * 2026-10-11 注：home_p1.h 在本包 builder 落地前仍带旧 4 参 inject 声明——本冻结件
+ * 按修订后冻结契约（授权链见文件尾 REVISION LOG 2026-10-11 条）钉 5 参终形。宏改写
+ * 把头内旧声明改名旁路（仅声明面、无链接语义），使本文件在落地前旧头与落地后新头
+ * 两侧都可编（DEV-GOVERNANCE 验收测试纪律 §4 C 类实编通道）。 */
+#define kidpal_home_p1_schedule_inject kidpal_home_p1_schedule_inject_hdr_decl
 #include "../display/home_p1.h"
+#undef kidpal_home_p1_schedule_inject
+
+/* HP1_PREVIEW_MAX（明天区缓存定容冻结值）在 home_p1.h 落地前本文件自持同值；
+ * #ifdef 守卫——builder 落地新头后以头内值为准（两侧同值, REVISION LOG 2026-10-11）。 */
+#ifndef HP1_PREVIEW_MAX
+#define HP1_PREVIEW_MAX 8
+#endif
 /* art 资产契约头（仅为 weak 哨兵签名一致；被测面 = home_p1.c 消费的 5 原语）。 */
 #include "../display/art_assets.h"
 
@@ -227,6 +245,10 @@ static const int hpb_rect_sticker_neg[4]  = {236, 42, 390,  66 };
 static const int hpb_rect_row2[4]         = {152, 96, 392, 122 };
 static const int hpb_rect_mingzao[4]      = {148,154, 200, 181 };
 static const int hpb_rect_preview_neg[4]  = {152,220, 392, 258 };
+/* 2026-10-11 HV5: 明天区宽域带（MINGZAO 槽 y148..181 在内, 下缘 218 与 PREVIEW_NEG
+ * 上缘 220 间 2px 缓冲）。宽域只用于「两态帧分叉/溢出 containment」判读——明天区
+ * 多项行流的具体落位是 builder 版式自由度, 不钉行位。 */
+static const int hpb_rect_tomorrow[4]     = {136,142, 392, 218 };
 
 /* 板级装配文件（seam [2] home）与渲染节点/显示链被扫文件。 */
 #define HPB_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
@@ -247,9 +269,11 @@ static const int hpb_rect_preview_neg[4]  = {152,220, 392, 258 };
 __attribute__((weak)) int kidpal_home_p1_schedule_inject(const char *day_key,
                                                          const hp1_item_t *items,
                                                          int count,
-                                                         const hp1_item_t *next_day_preview)
+                                                         const hp1_item_t *next_day_items,
+                                                         int next_day_count)
 {
-    (void)day_key; (void)items; (void)count; (void)next_day_preview;
+    (void)day_key; (void)items; (void)count;
+    (void)next_day_items; (void)next_day_count;
     return HPB_UNIMPLEMENTED;
 }
 __attribute__((weak)) int kidpal_home_p1_schedule_count(void)
@@ -261,9 +285,18 @@ __attribute__((weak)) const hp1_item_t *kidpal_home_p1_schedule_item(int index)
     (void)index;
     return NULL;
 }
-__attribute__((weak)) int kidpal_home_p1_schedule_preview(hp1_item_t *out)
+__attribute__((weak)) int kidpal_home_p1_schedule_preview_count(void)
 {
-    (void)out;
+    return HPB_UNIMPLEMENTED;
+}
+__attribute__((weak)) const hp1_item_t *kidpal_home_p1_schedule_preview_item(int index)
+{
+    (void)index;
+    return NULL;
+}
+__attribute__((weak)) int kidpal_home_p1_day_rollover(const char *now_day)
+{
+    (void)now_day;
     return HPB_UNIMPLEMENTED;
 }
 __attribute__((weak)) int kidpal_home_p1_countdown(const hp1_item_t *items, int count,
@@ -646,6 +679,50 @@ static int hpb_count_ink(const int rect[4])
     return ink;
 }
 
+/* -------------------------------------------------------------------------- *
+ * 2026-10-11 HV5 帧快照/分叉 helpers（additive）：区域帧快照 + 两帧差异像素计数。
+ * AC7「数据未达提示与无安排话术显式分叉——孩子分得清」的 render 半证据：两态各渲染
+ * 一帧, 帧必须在判读带内可区分（diff > 0）。探针失败（未渲染/越界）返回 -1 让调用方
+ * 大声红, 绝不把缺帧读成「零差异」。
+ * ------------------------------------------------------------------------ */
+static uint32_t hpb_snap_buf[HPB_FRAME_W * HPB_FRAME_H];
+
+static int hpb_snap_region(const int rect[4])
+{
+    int x, y;
+
+    for (y = rect[1]; y <= rect[3]; y++) {
+        for (x = rect[0]; x <= rect[2]; x++) {
+            int32_t px = host_infra_read_pixel(x, y);
+            if (px == HPB_NOT_RENDERED_SENTINEL) {
+                return -1;
+            }
+            hpb_snap_buf[(size_t)y * HPB_FRAME_W + (size_t)x] = (uint32_t)px;
+        }
+    }
+    return 0;
+}
+
+static int hpb_diff_region(const int rect[4])
+{
+    int x, y;
+    int diff = 0;
+
+    for (y = rect[1]; y <= rect[3]; y++) {
+        for (x = rect[0]; x <= rect[2]; x++) {
+            int32_t px = host_infra_read_pixel(x, y);
+            if (px == HPB_NOT_RENDERED_SENTINEL) {
+                return -1;
+            }
+            if ((uint32_t)px !=
+                hpb_snap_buf[(size_t)y * HPB_FRAME_W + (size_t)x]) {
+                diff++;
+            }
+        }
+    }
+    return diff;
+}
+
 /* Fixture: full-state inject（时间/温湿度/电量/充电/tick 全注入，P1-E2 硬件殿后纪律）。 */
 static void hpb_set_fixture(int hour, int minute, int env_valid, int temp_c,
                             int humidity_pct, int battery_pct, int charging,
@@ -674,11 +751,13 @@ static void hpb_set_fixture(int hour, int minute, int env_valid, int temp_c,
                "当非法，渲染面无法驱动", rc));
 }
 
-/* Fixture: schedule inject（2 项今日日程 + 次日预告，producer 分组结果 verbatim）。 */
+/* Fixture: schedule inject（2 项今日日程 + 次日 preview 1 项列表, producer 分组结果
+ * verbatim; 2026-10-11 seam 终形 5 参——preview 由单指针改数组+计数, REVISION LOG
+ * 2026-10-11 条）。 */
 static void hpb_inject_schedule_two_items(void)
 {
     hp1_item_t items[2];
-    hp1_item_t preview;
+    hp1_item_t pv[1];
     int rc;
 
     memset(items, 0, sizeof(items));
@@ -686,11 +765,11 @@ static void hpb_inject_schedule_two_items(void)
     snprintf(items[0].name, sizeof(items[0].name), "钢琴课");
     snprintf(items[1].time, sizeof(items[1].time), "16:30");
     snprintf(items[1].name, sizeof(items[1].name), "英语培训");
-    memset(&preview, 0, sizeof(preview));
-    snprintf(preview.time, sizeof(preview.time), "09:00");
-    snprintf(preview.name, sizeof(preview.name), "游泳课");
+    memset(pv, 0, sizeof(pv));
+    snprintf(pv[0].time, sizeof(pv[0].time), "09:00");
+    snprintf(pv[0].name, sizeof(pv[0].name), "游泳课");
 
-    rc = kidpal_home_p1_schedule_inject("2026-09-15", items, 2, &preview);
+    rc = kidpal_home_p1_schedule_inject("2026-09-15", items, 2, pv, 1);
     hpb_require_implemented(rc, "kidpal_home_p1_schedule_inject unimplemented");
     TEST_ASSERT_TRUE_MESSAGE(rc == 0,
         hpb_fm("HPB RED(infra): schedule_inject fixture rejected (rc=%d)", rc));
@@ -761,17 +840,18 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
         hpb_fm("HPB-A1 RED: 旧预告独立带 {152,220,392,258} 墨 %d != 0——预告未上行"
                "主体第三行（旧独立钉区版式在世, R2 退役面）", ink));
 
-    /* tooth 5 (PH-A1, R2, 判别齿): 空日程——「接下来」烘焙大字标签为固定卡题仍在场
-     * （LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,140}（ROW1..ROW3 域）严格零墨
-     * （行流门控——无项则无行）。旧口径「主体区整区零墨」随固定卡题语义退役（跨包
-     * 冲击登记: 线框口径下标签空日程仍画）; 旧版式大时间越界判别语义由 ROW1 落带
-     * 与辅助条时间齿（TEST 3 tooth 1）分头承载。 */
+    /* tooth 5 (PH-A1, R2; 2026-10-11 AC5 语义重钉): 空日程——「接下来」烘焙大字标签
+     * 为固定卡题仍在场（LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,140} 墨 >= 8 =
+     * AC5 无安排话术「今天接下来没有安排啦」在场（requirements v1.61: 「不再整区
+     * 留白」——supersede R2 行流门控空语义; 授权链见 REVISION LOG 2026-10-11 条）。
+     * 话术与数据未达提示的显式分叉（AC7）由文件尾 HV5 CASE 帧分叉齿承载; 旧版式
+     * 大时间越界判别语义仍由 ROW1 落带与辅助条时间齿（TEST 3 tooth 1）分头承载。 */
     {
         int rc;
-        rc = kidpal_home_p1_schedule_inject("2026-09-15", NULL, 0, NULL);
+        rc = kidpal_home_p1_schedule_inject("2026-09-15", NULL, 0, NULL, -1);
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
             hpb_fm("HPB RED(infra): schedule_inject(count=0) rc=%d——「今日无待办」"
-                   "清空路径回归", rc));
+                   "确认空（AC5 话术态数据半）路径回归", rc));
         hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
         rc = kidpal_home_p1_render_frame();
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
@@ -782,9 +862,10 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
         hpb_fm("HPB-A1 RED: 空日程标签带 {103,35,250,98} 墨 %d < %d——「接下来」固定"
                "卡题未在场（R2 烘焙标签版式未落地）", ink, HPB_INK_MIN_LABEL));
     ink = hpb_count_ink(hpb_rect_rows);
-    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        hpb_fm("HPB-A1 RED: 空日程行流带 {136,96,392,168} 墨 %d != 0——无项却画了"
-               "日程行（行流门控被破），或大 imgfont 时间/贴纸未退役压进行带", ink));
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
+        hpb_fm("HPB-A5 RED: 空日程行流带 {152,68,392,140} 墨 %d < %d——AC5 无安排话术"
+               "未渲染、整区留白（requirements v1.61「不再整区留白」, 旧行流门控空"
+               "语义已随 v1.61 退役）", ink, HPB_INK_MIN_ELEM));
 
     /* ---- fixture B: PH-A3 行为半 + PH-A4 行为半（电池注入缝驱动渲染缝） ---- */
     /* tooth 6 (PH-A4): 低电 10% 未充电，灭相窗内（tick=900，周期 1000 可见窗 3/4）
@@ -1099,6 +1180,121 @@ TEST_CASE("断网态: WiFi斜杠钉点+本地数据照常 (PH-A5)",
 }
 
 /* -------------------------------------------------------------------------- *
+ * TEST 4.5 (2026-10-11 HV5) — 空态三态渲染分叉：AC5 话术 vs AC7 未达提示 vs AC6
+ *   明天区话术/未达 提示的显式分叉（帧分叉齿）+ 明天区多项溢出 containment。
+ *   状态机数据半（wire 三态 → preview_count 三态映射、rollover 清缓存转未达态）由
+ *   schedule_grid.acceptance.c test 4/4b 承载; 本 CASE 钉渲染可观察半。
+ * ------------------------------------------------------------------------ */
+/* coverage: HV5-AC5 -- 无安排话术 vs 数据未达提示在「接下来」行流带显式分叉（帧 diff）+ rollover 驱动跨 0:00 转未达态（AC5×AC7 冲突点） */
+/* coverage: HV5-AC6 -- 明天区 preview []（确认空）vs null（未提供）两态渲染显式分叉（明天区宽域帧 diff） */
+/* coverage: HV5-AC7 -- 未达提示在场（非留白）+ 明天区状态切换不扰「接下来」区（占位不破布局 containment）+ preview 8 项满载不越明天区宽域（clip containment） */
+TEST_CASE("首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)",
+          "[p1_home_battery][HV5-AC5][HV5-AC6][HV5-AC7][behavior]")
+{
+    hp1_item_t items[1];
+    hp1_item_t pv_full[HP1_PREVIEW_MAX];
+    int rc, ink, diff;
+    int i;
+
+    /* fixture: 1 项今日日程（明天区状态切换时「接下来」区内容恒定, 分叉判读不混入） */
+    memset(items, 0, sizeof(items));
+    snprintf(items[0].time, sizeof(items[0].time), "14:00");
+    snprintf(items[0].name, sizeof(items[0].name), "钢琴课");
+
+    /* ---- tooth 1 (HV5-AC5/AC7): 接下来区 话术态 vs 未达态 显式分叉 ----------------
+     * AC5 态 = inject(count=0)（s_has_day=1 && count==0）→ 话术「今天接下来没有
+     * 安排啦」; AC7 态 = day_rollover 跨 0:00 清缓存（s_has_day 清零）→ 数据未达
+     * 友好提示（不出话术）。两态在行流带必须逐像素可区分（孩子分得清「没课」还是
+     * 「没连上网」, AC7 显式分叉）且未达态也非留白（友好提示在场）。 */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", NULL, 0, NULL, -1);
+    hpb_require_implemented(rc, "kidpal_home_p1_schedule_inject unimplemented");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): schedule_inject(count=0) rc=%d — AC5 话术态数据半",
+               rc));
+    hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
+    rc = kidpal_home_p1_render_frame();
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): render_frame(AC5 idle) rc=%d", rc));
+    ink = hpb_count_ink(hpb_rect_rows);
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
+        hpb_fm("HV5-AC5 RED: AC5 态行流带墨 %d < %d——无安排话术未渲染（整区留白, "
+               "requirements v1.61）", ink, HPB_INK_MIN_ELEM));
+    TEST_ASSERT_TRUE_MESSAGE(hpb_snap_region(hpb_rect_rows) == 0,
+        "HPB RED(infra): rows-region frame snapshot failed — 探针缝失灵");
+    rc = kidpal_home_p1_day_rollover("2026-10-12");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 1,
+        hpb_fm("HPB RED(infra): day_rollover rc=%d != 1——跨 0:00 清缓存路径回归", rc));
+    rc = kidpal_home_p1_render_frame();
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): render_frame(AC7 rollover) rc=%d", rc));
+    ink = hpb_count_ink(hpb_rect_rows);
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
+        hpb_fm("HV5-AC7 RED: rollover 未达态行流带墨 %d < %d——数据未达友好提示缺失"
+               "（整区留白, AC7）", ink, HPB_INK_MIN_ELEM));
+    diff = hpb_diff_region(hpb_rect_rows);
+    TEST_ASSERT_TRUE_MESSAGE(diff > 0,
+        "HV5-AC7 RED: AC7 未达态帧与 AC5 话术态帧在行流带逐像素相同——两态渲染混同"
+        "（孩子分不清「没课」还是「没连上网」, AC7 显式分叉被破）");
+
+    /* ---- tooth 2 (HV5-AC6/AC7): 明天区 确认空话术态 vs 未提供未达态 显式分叉 -----
+     * preview []（AC6 话术）vs preview null（AC7 未达提示）——「接下来」区夹具恒定,
+     * 两帧差异必须全部落在明天区宽域带（分叉真实发生在明天区, 不扰他区）。 */
+    rc = kidpal_home_p1_schedule_inject("2026-10-12", items, 1, NULL, 0);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): schedule_inject(preview=[]) rc=%d — AC6 话术态", rc));
+    rc = kidpal_home_p1_render_frame();
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): render_frame(AC6 tomorrow empty) rc=%d", rc));
+    TEST_ASSERT_TRUE_MESSAGE(hpb_snap_region(hpb_rect_tomorrow) == 0,
+        "HPB RED(infra): tomorrow-region frame snapshot failed — 探针缝失灵");
+    /* 行流带快照同样取自 AC6 帧（与明天区带判读域不相交, 共享缓冲按绝对坐标存取）:
+     * 之后 diff(rows) == 0 才是「明天区状态切换不扰接下来区」的有效判读。 */
+    TEST_ASSERT_TRUE_MESSAGE(hpb_snap_region(hpb_rect_rows) == 0,
+        "HPB RED(infra): rows-region frame snapshot failed — 探针缝失灵");
+    /* 占位不破布局 containment：明天区两态切换不得扰「接下来」行流带（夹具恒定 →
+     * 行流带两帧必须逐像素相同）。 */
+    rc = kidpal_home_p1_schedule_inject("2026-10-12", items, 1, NULL, -1);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): schedule_inject(preview=null) rc=%d — AC7 未达态", rc));
+    rc = kidpal_home_p1_render_frame();
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): render_frame(AC7 tomorrow null) rc=%d", rc));
+    diff = hpb_diff_region(hpb_rect_tomorrow);
+    TEST_ASSERT_TRUE_MESSAGE(diff > 0,
+        "HV5-AC6 RED: preview [] (确认空话术态) 与 preview null (未达态) 在明天区"
+        "宽域带逐像素相同——两态渲染混同（AC6/AC7 显式分叉被破, 孩子分不清「明天"
+        "没课」还是「没收到课表」）");
+    diff = hpb_diff_region(hpb_rect_rows);
+    TEST_ASSERT_TRUE_MESSAGE(diff == 0,
+        "HV5-AC7 RED: 明天区两态切换扰动了「接下来」行流带（占位不破布局优先级 "
+        "containment 被破, requirements S-F1.1 补充规则）");
+
+    /* ---- tooth 3 (HV5-AC2 containment): preview 8 项满载 → 明天区行流 clip 进宽域
+     * 带（渲染溢出走截断降级, 不越带压 PREVIEW_NEG 退役面/不破卡区） */
+    memset(pv_full, 0, sizeof(pv_full));
+    for (i = 0; i < HP1_PREVIEW_MAX; i++) {
+        snprintf(pv_full[i].time, sizeof(pv_full[i].time), "%02d:00", 8 + i);
+        snprintf(pv_full[i].name, sizeof(pv_full[i].name), "课%d", i + 1);
+    }
+    rc = kidpal_home_p1_schedule_inject("2026-10-12", items, 1, pv_full,
+                                        HP1_PREVIEW_MAX);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): schedule_inject(preview max) rc=%d", rc));
+    rc = kidpal_home_p1_render_frame();
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        hpb_fm("HPB RED(infra): render_frame(preview max) rc=%d", rc));
+    ink = hpb_count_ink(hpb_rect_tomorrow);
+    TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
+        hpb_fm("HV5-AC2 RED: preview 满载明天区宽域带墨 %d < %d——多项行流未渲染",
+               ink, HPB_INK_MIN_ELEM));
+    ink = hpb_count_ink(hpb_rect_preview_neg);
+    TEST_ASSERT_TRUE_MESSAGE(ink == 0,
+        hpb_fm("HV5-AC2 RED: preview 满载溢出压入 PREVIEW_NEG 退役面 {152,220,392,"
+               "258} 墨 %d != 0——明天区行流未 clip 进宽域带（渲染溢出必须截断降级, "
+               "plan 要点 3 containment）", ink));
+}
+
+/* ---------------------------------------------------------------------------
  * TEST 5 — PH-A7/PH-E1 终跑守卫：注册接线 + 数据口径零触碰 + 需求契约 canary +
  * 扫描器自检
  *   PH-A7 结构半（本验收文件 + home_p1.c 是否被 builder 接线进 HOST_ACCEPTANCE_SRCS）
@@ -1140,9 +1336,10 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
     }
     free(mk);
 
-    /* tooth 2 (PH-E1 guard): 日程数据口径零改动——home_p1.h 六个 schedule API
-     * 声明面在世（inject/count/item/preview/day_rollover/countdown），home_p1.c
-     * 实现在世。本包只动版式与辅助条，不触数据链路（课表接首页归 M3 决策 26）。 */
+    /* tooth 2 (PH-E1 guard): 日程数据口径声明面在世——home_p1.h schedule API 族
+     * （inject/count/item/preview 访问族/day_rollover/countdown）。2026-10-11 随
+     * CCP 触点③ 追加 preview_count/preview_item 多项访问族（REVISION LOG 2026-10-11
+     * 条; 旧单项 preview 子串被 preview_count 天然覆盖, 声明面在世判据 additive）。 */
     TEST_ASSERT_TRUE_MESSAGE(hpb_file_contains(HPB_HOME_P1_H,
                                                "kidpal_home_p1_schedule_inject") &&
                                  hpb_file_contains(HPB_HOME_P1_H,
@@ -1150,13 +1347,17 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
                                  hpb_file_contains(HPB_HOME_P1_H,
                                                    "kidpal_home_p1_schedule_item") &&
                                  hpb_file_contains(HPB_HOME_P1_H,
-                                                   "kidpal_home_p1_schedule_preview") &&
+                                                   "kidpal_home_p1_schedule_preview"
+                                                   "_count") &&
+                                 hpb_file_contains(HPB_HOME_P1_H,
+                                                   "kidpal_home_p1_schedule_preview"
+                                                   "_item") &&
                                  hpb_file_contains(HPB_HOME_P1_H,
                                                    "kidpal_home_p1_day_rollover") &&
                                  hpb_file_contains(HPB_HOME_P1_H,
                                                    "kidpal_home_p1_countdown"),
-        "PH-E1 RED: home_p1.h schedule API 声明面缺失——日程数据口径被本包触碰"
-        "（PH-E1 零改动红线：数据链路归 M3 决策 26）");
+        "PH-E1 RED: home_p1.h schedule API 声明面缺失——日程数据口径被触碰"
+        "（含 2026-10-11 preview 多项访问族）");
     TEST_ASSERT_TRUE_MESSAGE(hpb_file_contains(HPB_HOME_P1_C,
                                                "kidpal_home_p1_schedule_inject"),
         "PH-E1 RED: home_p1.c schedule_inject 实现缺失——日程数据链路被拆");
@@ -1294,4 +1495,30 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *               周一=0 基; set_state 门 -1..6）。波浪涂鸦换 ic_wave_58（原
  *               rec_wave 折线系误用, human 指出）。实跑 = 103 Tests / 0 Failures
  *               / OK（2026-09-26 主线程实跑锚）。
+ *               ── 2026-10-11 冻结件修订（TaskPackage 261011-p1-home-v5-rework;
+ *               授权链双引用 = 「CCP id 261011-p1-home-v5-rework（HUMAN_APPROVED
+ *               2026-10-11）+ docs/requirements.md §9 v1.61 版本行（2026-10-11）」,
+ *               plan R3 明示派发）──
+ *               ① seam 终形适配：weak inject 哨兵改 5 参（next_day_items/
+ *               next_day_count）+ 旧单项 preview 哨兵退役 → preview_count/
+ *               preview_item 双哨兵; home_p1.h 旧 4 参声明以宏改写旁路（仅声明面,
+ *               builder 落地新头后本文件零改续编）; 标准夹具 preview 改 1 项数组
+ *               （5 参调用）; 空日程夹具 preview 半改未提供态（NULL, -1）。
+ *               ② tooth 5 语义重钉（AC5, v1.61「不再整区留白」supersede R2 行流
+ *               门控空语义）：空日程 → 行流带 {152,68,392,140} 墨 >= 8（AC5 话术
+ *               「今天接下来没有安排啦」在场）; LABEL 带在场半零偏移保留。
+ *               ③ 新增 TEST 4.5（HV5-AC5/AC6/AC7, additive）：空态三态渲染分叉帧
+ *               diff 齿——AC5 话术态 vs rollover 驱动的 AC7 未达态在行流带逐像素
+ *               可区分且两态均非留白; 明天区 preview []（确认空）vs null（未提供）
+ *               两态在明天区宽域带 {136,142,392,218} 逐像素可区分 + 切换不扰行流带
+ *               （占位不破布局 containment）+ preview 8 项满载不越宽域压 PREVIEW_NEG
+ *               退役面（clip containment）; 新增 hpb_rect_tomorrow 宽域常量与
+ *               hpb_snap_region/hpb_diff_region 帧快照 helpers（additive, 探针失败
+ *               大声红）。帧 diff 钉「两态可区分」; 话术↔态的绑定由
+ *               schedule_grid.acceptance.c apply 三态映射齿 + 渲染源话术字面齿共同
+ *               承载（行为等价假设显式化: 帧分叉不验文字内容本身）。
+ *               ④ TEST 5 tooth 2 additive：schedule API 声明面判据补 preview_count/
+ *               preview_item（旧 preview 子串被 preview_count 天然覆盖）。
+ *               零触碰面：teeth 1-4/6-8 与 TEST 2-4 既有齿、钉区常量既有值、
+ *               CMakeLists（HPB 已注册在册）、被测面零触碰。
  * --------------------------------------------------------------------------- */
