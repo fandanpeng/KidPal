@@ -343,6 +343,15 @@ int kidpal_story_voice_chrome_front(int layer_top, int page_state);
 int kidpal_story_render_page_state(int node_cached_page, int session_page,
                                    int on_story_front);
 
+/* ---- ⑱ P3 计数画点颜色单源（TaskPackage 261012-p3-topbar-ink-bleach-fix; seam
+ * [TB3]）: AC5 两渲染入口——story_page.c 空态/非空两分支 + kidpal_render_node.cc
+ * AC5 分支（s_story_data_received 真）——的 ★/×N 计数画点色值同源消费, 不双写色值
+ * （「话术单源 = story_page.h」纪律同款; story_page.c 本地 #define 退役, C/C++ 混编
+ * 单定义防重定义）。本板 1bpp 阈值下 0x333333 与 0x000000 同渲黑、零视觉差
+ * （TECH-261012 根因链: 漂白根因是 top_bar_ 蒙层、非色值本身——色值归一是实现层
+ * 常数归一, requirements v1.63 空态注记钉「画法照常」不钉色值）。 */
+#define KSY_COLOR_INK 0x333333u
+
 #ifdef __cplusplus
 }
 #endif

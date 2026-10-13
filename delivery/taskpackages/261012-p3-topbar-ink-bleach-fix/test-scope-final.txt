@@ -1,0 +1,35 @@
+# test-scope-final —— 261012-p3-topbar-ink-bleach-fix（final verify --scope-file 消费）
+# 圈定方法（integrator detect_changes 2026-10-13 实跑在案，review-packet §影响面记账；
+#   清单合成 = planner 代落——integrator 未落 scope-file 制品，detect_changes 结果
+#   87 seed / 26 impacted 全落 firmware/main 单模块、零跨模块越界为既定事实，清单合成
+#   为机械投影，pod-retro 留痕）：
+#   detect_changes（Pod 专属图索引，base=main，merge_base 3e5de94）= 87 seed / 26 impacted：
+#   firmware/main 显示面 story_page / kidpal_render_node / custom_lcd_display 函数族 +
+#   既有消费方（四 acceptance 套件探针族、emoji 板件、mcp_server story 族）——零预期外符号。
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子（TB-A1~A4 承载件）。
+#   host 套件为单 ELF（host_infra_test.elf 全量），圈定清单与实跑天然对齐
+#   「套件级全量」（261010 包先例口径）；本包零 server 面改动 → server 交集诚实绿跳过。
+# 语义铁律留痕：范围 = 影响面圈定清单（非全量、非本包档缩水）；圈定降级 = 无。
+#   真机轮 TB-A4 = human 持板硬前置，不在本清单（live-manual 面不计入 runner 通过面）。
+
+# ── firmware 冻结验收件（acceptanceTestsFile + impactedTestsSeed）──
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/story_page_v2.test.c
+
+# ── blast radius 命中的结构齿探针族（detect_changes + 源面扫描 grep 双确认：
+#    各件含对 story_page / kidpal_render_node / KSY_COLOR / custom_lcd_display /
+#    top_bar 的结构断言或源扫描，改动面影响其探针对象）──
+firmware/main/test/char_stroke.acceptance.c
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c
+firmware/main/test/time_sync.acceptance.c
