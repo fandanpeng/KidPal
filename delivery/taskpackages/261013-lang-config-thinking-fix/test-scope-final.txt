@@ -17,6 +17,11 @@
 #   程序 fs-write，r3 顶层 phase=scoped 如实留痕）。未另跑 final 相位轮（派单未含）；planner 如补跑
 #   final 轮，在下一行占位回填一行终态：
 #   [final 轮占位——待 planner 回填]
+#   planner 回填（2026-10-14）：final bearing round 4 = docs-sync 闸红（TECH-261013 条目随 closed 归档致
+#   docRefs 陈旧）→ planner 1f 权内修正 sourceRefs/docRefs 指向 _archive/2026/ 归档位 + notes 留痕后复跑；
+#   final bearing round 5 全绿（invocationId=1909033c-470b-40f3-9996-b75f739a3b91，ok=true、
+#   observedGateExit=0，十闸全 PASS：scoped 八闸 + unit/acceptance full 相位按本清单圈定透传绿）——
+#   终审 merge-readiness fact = delivery/taskpackages/261013-lang-config-thinking-fix/verifier-evidence/rounds/r5.json。
 #   test-scope 清单落盘路径（一行记入 final verifier fact results 元数据锚）：本文件。
 
 # ── 本包冻结验收件（acceptanceTestsFile，圈定 floor）──
