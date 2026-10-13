@@ -5,7 +5,7 @@
   "origin": {
     "type": "regression",
     "upstreamType": "regression",
-    "upstreamRef": "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
+    "upstreamRef": "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
     "workstream": ""
   },
   "subsystem": "firmware/main 显示面（display/story_page.c + display/kidpal_render_node.cc + boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc）",
@@ -48,7 +48,7 @@
     "evidence-integrity"
   ],
   "sourceRefs": [
-    "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
+    "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
     "docs/requirements.md:S-F2.1",
     "S-F2.1-AC1",
     "S-F2.1-AC5",
@@ -59,7 +59,7 @@
   ],
   "docRefs": [
     "docs/requirements.md#S-F2.1",
-    "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
+    "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
     "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md"
   ],
   "changeManifest": [
@@ -119,5 +119,5 @@
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change proportionate review 2026-10-12，frontmatter reviewed-by 行为证）：技术方案意见（修复=候选 A、B 排除理由）+ changeManifest 种子 + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①档位确认（②单包 Lite）2026-10-12 会话内 AskUserQuestion 已裁（pod-events human-decision 留痕）。【TEMP-DIAG 处置时序调整】起包归一期 planner 快照未提交诊断 diff（temp-diag-snapshot.diff，36 行全量）后 git checkout 还原净 HEAD——事由 = 诊断 diff 含修复行（SetTheme bg_opa），不还原则 TB-A1 结构齿红基线假绿；plan.md「删前 git diff 逐行核对仅删诊断行」义务由快照比对 + TB-A2 结构负断言承载（builder 净面起步、无既有诊断可删，落地 diff 不得复活任何诊断行）；快照证据另锚 c:/tmp/diag-ink.log、diag-flush.log（TECH 条目正文引用）。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 全部源面；firmware/main/test/story_page_v2.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① host harness 无 chrome（top_bar_ 不在 host 面）——TB-A1 结构齿为源面常量断言非像素探真，真机探真归 TB-A4；② TB-A1~A3 全为 host 结构断言、无 DB/事件断言——supervisor 机械闸可能判 all-mock 触 riskTier 重算 high，需 human 放行（261012 prompt-v9 / 261010 storylist 两包同款先例申报）；③ 真机轮烧录 = app 分区单烧（本批无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；④ KSY_COLOR_INK 上提 story_page.h 须核 story_page.c 与 kidpal_render_node.cc 两侧 include 关系（C/C++ 混编，宏放头文件避免重定义）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = TECH-261012 CRQ 条目 + /triage-change 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261010 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261010 包 closeout 后 host 全绿；本包红基线红全部为设计态红（新增结构齿对净 HEAD 断言缺失行为），无上游已知红需要消解。"
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change proportionate review 2026-10-12，frontmatter reviewed-by 行为证）：技术方案意见（修复=候选 A、B 排除理由）+ changeManifest 种子 + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①档位确认（②单包 Lite）2026-10-12 会话内 AskUserQuestion 已裁（pod-events human-decision 留痕）。【TEMP-DIAG 处置时序调整】起包归一期 planner 快照未提交诊断 diff（temp-diag-snapshot.diff，36 行全量）后 git checkout 还原净 HEAD——事由 = 诊断 diff 含修复行（SetTheme bg_opa），不还原则 TB-A1 结构齿红基线假绿；plan.md「删前 git diff 逐行核对仅删诊断行」义务由快照比对 + TB-A2 结构负断言承载（builder 净面起步、无既有诊断可删，落地 diff 不得复活任何诊断行）；快照证据另锚 c:/tmp/diag-ink.log、diag-flush.log（TECH 条目正文引用）。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 全部源面；firmware/main/test/story_page_v2.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① host harness 无 chrome（top_bar_ 不在 host 面）——TB-A1 结构齿为源面常量断言非像素探真，真机探真归 TB-A4；② TB-A1~A3 全为 host 结构断言、无 DB/事件断言——supervisor 机械闸可能判 all-mock 触 riskTier 重算 high，需 human 放行（261012 prompt-v9 / 261010 storylist 两包同款先例申报）；③ 真机轮烧录 = app 分区单烧（本批无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；④ KSY_COLOR_INK 上提 story_page.h 须核 story_page.c 与 kidpal_render_node.cc 两侧 include 关系（C/C++ 混编，宏放头文件避免重定义）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = TECH-261012 CRQ 条目 + /triage-change 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261010 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261010 包 closeout 后 host 全绿；本包红基线红全部为设计态红（新增结构齿对净 HEAD 断言缺失行为），无上游已知红需要消解。【docRefs 归档路径修正（round 3 docs-sync 红闸后）】TECH-261012 收口后经 crq-render.mjs 自动归位 docs/crq/tech/_archive/2026/（位置=状态纯函数），taskpackage sourceRefs/docRefs/upstreamRef 同步改指归档现址——引用精度修正非语义变更（round 3 final 轮 docs-sync missingDocs 红因，planner 代修正并留痕）。"
 }

@@ -1,6 +1,6 @@
 # Review Packet —— 261012-p3-topbar-ink-bleach-fix
 
-> integrator 制品轮产出（2026-10-13）。状态：verifier scoped round 2 全绿（八闸 PASS，本包证据态 = 派单在案）+ docs-sync 收口 + closeout 制品齐，feature 分支 commit 待合并门；supervisor 裁断与 merge-driver 归 planner 主线程。rigor=lite 单包、sourceType=regression。
+> integrator 制品轮产出（2026-10-13）。状态：verifier scoped round 2 全绿（八闸 PASS，本包证据态 = 派单在案）+ docs-sync 收口 + closeout 制品齐 + TB-A4 真机轮已执行（计数 PASS / AC5 空态 deferred / 阅读态标题 BLOCKED 归因 TECH-261013 / 顶带无回归 PASS，pod-events dd77c762 留痕），feature 分支 commit 待合并门；supervisor 裁断与 merge-driver 归 planner 主线程。rigor=lite 单包、sourceType=regression。
 
 ## 来源链
 
@@ -24,11 +24,12 @@
 ## 未覆盖面申报（对照 acceptance[] + exitCriteria 逐条）
 
 - **TB-A1 / TB-A2 / TB-A3：已覆盖**（host 三齿承载 + 变异取证齐 + r2 闸全绿），零缺口。
-- **TB-A4（真机轮 live-manual structural 豁免）——状态 = pending-human，尚未执行（非缺口豁免、非豁免通过）**，四项逐项（human 在场持板执行，261010 包 SL-A5 同款先例口径）：
-  1. SL-A5 计数分项复验——翻 P3 右上角 ★/×N 可见（TECH 条目根因修复的直接真机目击项）；
-  2. AC5 无内容空态 ×0 两入口可见——story_page.c 空态分支 + kidpal_render_node.cc AC5 分支各验一次（TECH 条目正文更正③的「一个入口显示一个不显示」同类缺陷面随本修归一后目测）；
-  3. 阅读态标题顺带目测（story_page.c:1216，y=8 / 0x222222——TECH 条目连带预测：修复 A 后自愈）；
-  4. P1 顶带与聊天态顶带无回归目测（top_bar_ 透明化作用于全部页顶带，跨页副作用确认；wifi/mute 图标为 bar 子件、不透明字形直画不受影响的口径核验）。
+- **TB-A4（真机轮 live-manual structural 豁免）——状态 = 已执行（human 在场持板，2026-10-13，正式构建烧录复验；pod-events human-decision dd77c762-55fa-4506-a4c0-3f083caeccf0 留痕），四项逐项结果**：
+  1. SL-A5 计数分项复验——**PASS**：human 观测翻 P3 右上角 ★/×N 可见（原话「可以看到星星 *2了」；定案试验轮已证实，本轮正式构建复验同证）；
+  2. AC5 无内容空态 ×0 两入口可见——**deferred**：板上无空态可造（无空态场景可进入），如实记录、不构成缺口豁免；该观测面随 TECH-261013 缺陷修包顺带承接；
+  3. 阅读态标题顺带目测——**BLOCKED（归因于既有缺陷、非本包回归）**：KEY 双击进阅读态静默无反应，串口捕获得根因 = OPEN_READER 消费侧对无正文缓存故事按设计降级且无用户可见反馈（story_key `open_reader_no_text -> stay list` ×4 逐字证据）；系首次真机验证暴露的既有缺陷，已登记 TECH-261013-p3-reader-entry-no-text-silent-noop（docs/crq/tech/），本项观测归该缺陷修包顺带闭环；
+  4. P1 顶带与聊天态顶带无回归目测——**PASS**：P1 顶带（wifi 小标/温湿电条）与聊天态顶带外观正常，跨页副作用确认通过。
+  **结论：bleach 修复 A 四项验证口径满足（计数主验收项真机可见 + 跨页无回归；② 为场景不可达 deferred、③ 为既有缺陷归因 BLOCKED，均如实归因不折算为本包 PASS）。**
 - exitCriteria 其余各条：①（设计态红转绿 + 既有齿零新增红）已满足；②（temp-diag-snapshot.diff 比对留痕）由 TB-A2 负断言绿机械承载 + 快照件在包目录；③（变异取证 perAcceptance）已满足；⑤（docs-sync）本批完成——TECH 条目收口 + INDEX 重渲染（见 docs-delta.md）。
 - host 结构断言无 chrome / 无像素探真（TECH 条目「host 覆盖洞补注」口径）：TB-A1~A3 为源面常量/负断言，真机探真唯一归 TB-A4——上述 pending-human 项即该覆盖洞的承接口，无替位证据（host 全绿不构成真机目击）。
 
@@ -51,7 +52,7 @@
 | NIT | judgement-call | taskpackage-required | sourceRefs 含锚点形态 `docs/requirements.md:S-F2.1`，闸报 warning「path-not-on-disk」（锚点形态非文件路径，warning 级不红）——锚点形态引用约定与闸解析能力的历史错配（261010 包同款，r1–r2 恒现） | gate stdout hunk（r2 taskpackage-required warnings）+ 留痕诚实性 heuristic | 无（warning 不阻塞；如后续静默化可在 anchor 解析层收口，非本批义务） |
 | NIT | judgement-call | TECH 条目 trigger 字段 | 条目 frontmatter `trigger` 与 `title` 内「260912 第四轮 TEMP-DIAG」为笔误留存（事件实为 2026-10-12，正文与追加段均记 2026-10-12）——收口段以 2026-10-13 closed 日期为权威，讹误不承载机读状态 | changed-artifact hunk（frontmatter trigger 行 vs 正文追加段日期）+ 一致性 heuristic | 无（append-only 纪律下不回改既有行；归档件正文已自明，记录在案即可） |
 
-结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。无 hard-violation finding——如出现将以 `docs/contracts/**` / `docs/requirements.md` / `docs/architecture.md` 字面前缀起引 Basis；本轮 none。
+结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。无 hard-violation finding——如出现将以契约/spec canonical 路径字面前缀起引 Basis（字面集同 pre-merge-escalation-gate 的 CONTRACT_SPEC_LITERALS 定义）；本轮 none。
 
 ## Five-Axis Review
 
@@ -63,7 +64,7 @@
 
 ## Residual Risk
 
-- Known limitation: TB-A4 真机轮四项 pending-human（修复效果的真机目击尚未取得——TECH 条目定案试验一行已由 human 真机观测证实候选 A 有效，但完整四项复验待执行）；AC5 空态两入口真机可见性归该轮。
+- Known limitation: TB-A4 真机轮已执行（2026-10-13，human 在场持板）——计数分项与顶带无回归 PASS；残留观测面两项如实归因：AC5 空态 ×0（板上无空态可造，deferred，随 TECH-261013 修包顺带承接）+ 阅读态标题（BLOCKED 归因既有缺陷 TECH-261013-p3-reader-entry-no-text-silent-noop，非本包回归）。
 - Follow-up recommended: 无新增（261010 包遗留改进项不受本批影响）。
 - Human decision needed: TB-A4 真机轮持板（human）；all-mock 申报下 riskTier=medium 如被 supervisor 机械闸重算 high 则升 human 放行（同上地雷申报）。taskpackage 未启用 decisionCoverage 字段——`landsIn: dropped && reason: risk-accepted` 条目 = 零，Residual Risk 节按模板申报零条目。
 
