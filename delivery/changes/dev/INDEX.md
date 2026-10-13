@@ -6,11 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (59)
+## dev (60)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
 | [261013-p1-tomorrow-row-sliver-fix](261013-p1-tomorrow-row-sliver-fix/) | 2026-10-13 | delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md | closed | — |
+| [261013-qq-schedule-write-closure](261013-qq-schedule-write-closure/) | 2026-10-13 | docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md | closed | — |
 | [261012-kidpal-realtime-facts](261012-kidpal-realtime-facts/) | 2026-10-12 | docs/crq/tech/TECH-261012-weather-fabrication.md | closed | — |
 | [261012-p3-topbar-ink-bleach-fix](261012-p3-topbar-ink-bleach-fix/) | 2026-10-12 | docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md | closed | — |
 | [261011-p1-home-v5-rework](261011-p1-home-v5-rework/) | 2026-10-11 | delivery/changes/intake/261011-p1-home-v5-rework.md | closed | — |
@@ -69,4 +70,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261013-qq-schedule-write-closure](261013-qq-schedule-write-closure/) | 2026-10-13 | docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md | closed | — |
