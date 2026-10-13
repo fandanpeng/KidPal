@@ -1,0 +1,18 @@
+{
+  "changeId": "261013-lang-config-thinking-fix",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "firmware/lang-generation-chain",
+  "story": "",
+  "planRef": "delivery/taskpackages/261013-lang-config-thinking-fix/plan.md",
+  "riskTier": "medium",
+  "sourceRefs": ["docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md"],
+  "notes": "/triage-change 裁决 ② 单包 Lite（architect 同会话 return 2026-10-13，human 触点①确认）；T1 locale 补键 + T2 生成链加固（build 目录迁移 + 全依赖 + 编译排序）+ T3 全量对账（基线：仅 THINKING 一颗缺）+ T4 双干净复现 + IDF 全量编译包内执行；真机轮 deferred 归 Phase-1 语音轮；TECH 建议③（launch-prep 首建自检）裁撤。"
+}
