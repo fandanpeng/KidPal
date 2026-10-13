@@ -22,8 +22,8 @@ facePlan:
   - 顺序：T1 .gitattributes 钉 → T2 V6 常量重算 → T3 skill 注记；landing 后统一跑齿验证（immutable 五齿 + 全 acceptance 目录）；V6 常量修正与 eol 钉互为前置（钉生效重物化 v6 为 LF 后旧常量必红，故同批不可拆）
   - TECH-① 条目 closed 翻转随本批 landing 完成 + verifier 绿 + retro 后由主线程执行（crq-render 重建 INDEX）；TECH-② 不在本 spine 内，固件批另行开变更（human 已裁 /triage-change 路由 + 本批一并做 CMake 必生成）
 anchors:
-  arch: ""
-  imp: ""
+  arch: "PROPOSAL FROZEN v0.2（R1→R2 GREEN）→ packet-bound landing（commit 5f2e431）→ landing-verifier GREEN（首验 RED 仅制品件形态、canonical 零返工）→ retro 齐；制品五件 = delivery/changes/arch/261013-gov-review-lf-eol-teeth-pin/"
+  imp: "V6 齿常量重算按 triage 地板 ① 直接修并批（零行为变更，openQ q2 L0 裁定在案）；随 T2 落地于 test_prompt_v7_round_routing.acceptance.py（:122–124 + :354–355），landing-verifier 25/25 断言核过"
 openQ:
   - id: q1-批量形态
     question: V6 齿常量毒化怎么纳入？（分两批 dev 先行 / 合并一批走 spine / Track B 先行齿修 defer）
@@ -33,4 +33,4 @@ openQ:
     question: 实现面一行常量修正走独立 triage 还是并入 Track B？
     ruling: L0 主线程裁——triage 地板判据「不改实现面行为 → ① 直接修免门」适用（冻结常量对齐 canonical 零行为变更）；并入 Track B 单批，architect 评审对 T2 改法实质把关（依据：change-intake §1 比例化）
     status: resolved
-status: in-flight
+status: closed
