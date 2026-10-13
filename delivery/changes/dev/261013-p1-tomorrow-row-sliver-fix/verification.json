@@ -1,0 +1,50 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
+  "changeId": "261013-p1-tomorrow-row-sliver-fix",
+  "phase": "scoped",
+  "round": 5,
+  "invocationId": "4d95d1af-f0b4-4233-b9c1-66dae00af339",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 8,
+  "evidenceRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r5.json",
+  "provenance": {
+    "sourceType": "regression",
+    "triage": "architect /triage-change 分流 review 2026-10-13（plan.md frontmatter reviewed-by 行为证）+ human triage 触点①（triage 分流确认）已裁；补充轮 = architect /triage-change 二次 review 修订版（② Lite/low/human-ad-hoc）",
+    "rigor": "lite",
+    "riskTier": "low"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "scoped",
+    "round": 5,
+    "invocationId": "4d95d1af-f0b4-4233-b9c1-66dae00af339",
+    "observedGateExit": 0,
+    "startedAt": "2026-10-13T04:48:27.306Z",
+    "completedAt": "2026-10-13T04:49:30.352Z"
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "ms": 575, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "ms": 504, "timing": "scoped", "note": "pre-cutoff 存量放行（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "ms": 60974, "timing": "scoped", "note": "设备侧真编译通过（xiaozhi.bin 0x312120 bytes、app 分区余量 0x5dee0 = 11%）——「host 全绿 ≠ 设备能编」担保面在案" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "ms": 157, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "ms": 169, "timing": "scoped", "note": "functional = TR-A1~A4 + TR-A6~A8；structural 豁免 = TR-A5 + TR-A9（真机轮 live-manual，TB-A4 261012 同款先例口径，不计入 runner 通过面）；files = p1_home_battery.acceptance.c + p1_cjk_name.acceptance.c（补充轮载体改判）" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "ms": 212, "timing": "scoped", "note": "7 functional acceptance，mutationEvidence 三条补充轮实测 turnedRed=true（TR-A6 参数族整族回退 / TR-A7 摘组级容纳门 / TR-A8 重锚判别力同源承载）+ 主轮三条（TR-A1/TR-A4 共源 + TR-A2 摘守卫 + TR-A3 重锚回滚）；TR-A3 重锚与 TR-A5/TR-A9 为取证豁免面" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "ms": 166, "timing": "scoped", "note": "docsSyncRequired=false（plan 修订 A 明确零触碰 docs/**；行距/容量非需求钉面）" },
+    { "gate": "security", "kind": "security", "ok": true, "ms": 153, "timing": "scoped", "note": "securityReviewRequired=false" }
+  ],
+  "hostRunnerIntegratorRerun": {
+    "date": "2026-10-13",
+    "result": "165 Tests / 0 Failures / 0 Ignored, OK",
+    "note": "integrator 补充轮终验独立复跑（命令 = taskpackage redBaselineCommand 逐字；build 通道 ninja no-work-to-do = elf 与当前源面同 fresh）；与 r5.json 终态一致；补充轮红基线 165T/4F 为推导表内设计态红（重锚齿对净 HEAD 未落地实现），builder 落 A1 后全数转绿"
+  },
+  "impactAudit": {
+    "detectChanges": "72 seed / 4 impacted（base=main，merge_base=2a58ca2，inbound depth=2，含工作树未 commit diff）——impacted 全落 firmware/main 单模块零跨模块越界：kidpal_home_p1_render_frame（唯一调用方）、happy_flow_capture.test.c（归档快照测试）、home_p1_screenshot.c（截图工具）、p1_cjk_name.acceptance.c（补充轮新纳载体）",
+    "closedSet": "git diff 面 == 补充轮 changeManifest 三文件（home_p1.c / p1_home_battery.acceptance.c / p1_cjk_name.acceptance.c）+ delivery/ 簿记（taskpackage 本包目录 + current/ 投影 + changes/dev/ 本 closeout 目录）；零触碰面（home_p1.h / schedule_grid.acceptance.c / host_app / docs/** / contracts/** / server/** / .claude/**）git status 零命中",
+    "testScopeFile": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/test-scope-final.txt"
+  },
+  "residual": "TR-A5（主轮）+ TR-A9（补充轮）真机轮 pending（human 持板；TR-A9 四项：①容量达成 ②紧凑上浮语义 ③行距 22px 全量观感 ④布局优先级在世）——host 面闭环、真机探真未闭环，本包收尾停门等 human、不停等烧录；TECH CRQ 三项非目标留 human/后续布局包裁量"
+}

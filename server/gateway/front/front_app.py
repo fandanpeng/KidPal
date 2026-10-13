@@ -675,6 +675,31 @@ SCHEDULE_CFG = os.environ.get(
 _daily_push_local_date: "str | None" = None   # 触发②记账：已推本地日（每 local 日恰一次）
 
 
+def _write_schedule_parse_alert(err_type: str, detail: str) -> None:
+    """把 schedule.md 解析失败落 alerts/schedule-parse-error.json（QSW-A3 / TECH-261012 建议④）。
+
+    与 deploy-drift.json 同族机器可读告警件（checked_at / error / detail 三字段；checked_at
+    口径对齐 verify-deploy.sh 的 UTC ISO8601）。front 每分钟轮询命中解析失败即覆写一次 ->
+    checked_at 持续刷新；解析恢复后不再写 -> checked_at 冻结（kidpal-schedule-health skill
+    据此判「已恢复」，front 无需在成功路径删件）。**自身全吞写失败**（至多 debug 日志）——
+    _load_schedule_model 契约是「返回 None、不炸轮询循环」，写告警件失败不得反向上抛。
+    不加 ack 字段：本件每轮被覆写，ack 归 health skill 自有状态件（plan §4.2）。"""
+    try:
+        os.makedirs(ALERTS_DIR, exist_ok=True)
+        target = os.path.join(ALERTS_DIR, "schedule-parse-error.json")
+        tmp = f"{target}.tmp"
+        payload = {
+            "checked_at": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+            "error": err_type,
+            "detail": detail,
+        }
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False)
+        os.replace(tmp, target)
+    except Exception:  # noqa: BLE001 — 写告警件失败静默吞，不炸轮询循环
+        log.debug("schedule_parse_alert_write_err", exc_info=True)
+
+
 def _load_schedule_model() -> "dict | None":
     """读 schedule.md -> B1 模型；读/解析失败返回 None（产出可归因，不炸轮询循环）。"""
     try:
@@ -684,7 +709,9 @@ def _load_schedule_model() -> "dict | None":
     try:
         return gw_schedule.parse_schedule_md(text)
     except ValueError as e:  # noqa: BLE001 — 脏 B1 大声拒绝传日志，轮询照走
-        log.warning("schedule_md_err err=%s detail=%s", type(e).__name__, str(e)[:120])
+        detail = str(e)[:120]
+        log.warning("schedule_md_err err=%s detail=%s", type(e).__name__, detail)
+        _write_schedule_parse_alert(type(e).__name__, detail)
         return None
 
 

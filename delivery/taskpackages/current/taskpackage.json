@@ -1,28 +1,39 @@
 {
-  "changeId": "261012-p3-topbar-ink-bleach-fix",
+  "changeId": "261013-p1-tomorrow-row-sliver-fix",
   "rigor": "lite",
   "sourceType": "regression",
   "origin": {
     "type": "regression",
     "upstreamType": "regression",
-    "upstreamRef": "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
+    "upstreamRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
+    "upstreamFrozen": "Lite bug 实况：无上游 PROPOSAL——方案冻结面 = sibling plan.md（architect /triage-change 分流 review 产出 2026-10-13，human 触点① 档位确认已裁，含冻结件钉区重锚 + REVISION LOG append 授权）",
     "workstream": ""
   },
-  "subsystem": "firmware/main 显示面（display/story_page.c + display/kidpal_render_node.cc + boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc）",
-  "planRef": "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md",
-  "story": "S-F2.1 · 看「星星记录本」列表（AC1/AC5）——P3 计数带真机漂白修复（TECH-261012 承接）：chrome 顶带 top_bar_ 50% 白蒙层（lcd_display.cc:944-959）经 KidPalReparentChatToLayer(lv_layer_top()) 恒浮于所有 KidPal 页，1bpp flush 阈值 <0x7fff × LVGL 9.3 lv_color_16_16_mix 把 KSY_COLOR_INK 灰 0x333333 漂白过阈、纯黑侥幸存活——P3 计数 ★/×N 整段落 bar 覆盖区 y[0..28] 真机不可见（S-F2.1 AC1 页身份载体缺失）。修复 = 候选 A：top_bar_ 背景透明化转正（真机一行定案试验已证实，human 观测「可以看到星星 *2 了」）。story 语义权威 = docs/requirements.md 现文；技术方案权威 = plan.md（architect /triage-change 产出 2026-10-12）",
+  "subsystem": "firmware/main 显示面（display/home_p1.c p1_draw_card + test/p1_home_battery.acceptance.c 冻结件钉区）",
+  "planRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC2、AC5）——首页 P1「明天」区第 2 日程项被剃成 1px 残线修复（triage 分流 human-confirmed bug，sourceType=regression）：根因 = home_p1.c p1_draw_card L1173 明天区行流独立 clip 底界 pv_cy1=218 硬编码（约束来源是已退役的旧 PREVIEW_NEG 负断言带），叠加 p1_blit_flow 逐像素行 clip 使部分越界行只画顶部 1px 墨线。story 语义权威 = docs/requirements.md 现文；技术方案权威 = plan.md（architect /triage-change 产出 2026-10-13）",
   "acceptance": [
-    "TB-A1: top_bar_ 背景透明化转正——custom_lcd_display.cc SetTheme 中 top_bar_ bg opacity 常驻 LV_OPA_TRANSP、注释为正式根因/解耦注释（TEMP-DIAG 措辞清除）；host 结构齿承载常量存在性（host harness 无 chrome、像素探真不可达归 TB-A4 真机轮，TECH 条目已定口径）",
-    "TB-A2: TEMP-DIAG 诊断残留归零——custom_lcd_display.cc / display/story_page.c / display/kidpal_render_node.cc 三源文件不含 TEMP-DIAG 字样（结构负断言承载；起包前 36 行未提交诊断 diff 已由 planner 快照 temp-diag-snapshot.diff 并还原净 HEAD，builder 净面起步）",
-    "TB-A3: AC5 两入口颜色统一到 KSY_COLOR_INK——kidpal_render_node.cc AC5 分支 lv_color_black() 改 INK、KSY_COLOR_INK 宏上提 story_page.h 单源（话术单源纪律同款）；story_page.c 非空分支画法照常零偏移（requirements v1.63 空态注记钉「画法照常」、色值为实现层归一）；本板 1bpp 阈值下 0x333333 与 0x000000 同渲黑零视觉差；既有 host 齿逐齿复核零新增红",
+    "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
+    "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
+    "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
+    "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
     {
-      "id": "TB-A4",
+      "id": "TR-A5",
       "kind": "structural",
-      "note": "真机轮 live-manual structural 豁免（261010 包 SL-A5 同款：SLP-SLA5 真机轮先例口径，不计入 runner 通过面）：SL-A5 计数分项复验（翻 P3 右上角 ★/×N 可见）+ AC5 无内容空态 ×0 两入口可见 + 阅读态标题（story_page.c:1216，修复 A 后自愈）顺带目测 + P1 顶带与聊天态顶带无回归目测（top_bar_ 透明化作用于全部页顶带，跨页副作用确认）；对象化事由 = mutation-check 豁免通道显式标记（kind:'structural'），语义由 acceptance-author 冻结件头注 [TB4] 段在先申报"
+      "note": "真机轮 live-manual structural 豁免（TB-A4 261012 同款先例口径，不计入 runner 通过面）：human 持板验收——①复现场景（今天空 AC5 话术 + 明天 ≥2 项）明天区第 2 项完整字形渲染无 1px 残线（截图与修复前对比留证）；②明天 ≥3 项第 3 项起整行让位干净不出现；③今天 ≥7 项卡底 y=242 无残线、放不下项整行让位；④烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更）；host 面转绿后停该门等 human"
+    },
+    "TR-A6: 行距参数族压缩（补充轮；home_p1.c p1_draw_card）——line_h 28→22 / text_yoff 6→4 / 组间虚线 ty+22→ty+8 / 明天帽标 ty+33→ty+13（46x24 资产原尺寸直出，兜底描边 rect 同步 151,ty+13,197,ty+37）/ 明天项行与 AC6/AC7 话术起点 ty+60→ty+43；锚点 rows=max(2,s_count) 保持零改（human 裁定紧凑上浮，版式随数据浮动为选定语义）；整行容纳守卫语义零改随新 L 平移；函数头注释几何描述按新参数族重写",
+    "TR-A7: 组级容纳门（补充轮新增语义）——明天区整块（组间虚线 + 帽标 + 项行/AC6/AC7 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty ≤ 178）：今天 ≥6 项时整区让位、不画半截帽标/孤儿虚线；结构性关闭锚点下推越卡隐患（旧参数 s_count≥7 越卡绘制）",
+    "TR-A8: 两冻结件重锚批（补充轮）——p1_home_battery.acceptance.c 常量随公式平移（row2 {152,90,392,111} / mingzao {148,124,200,149} / rows {152,68,392,133} / tomorrow {136,118,392,242} / pv_row1 {152,155,392,176} / pv_row2 {152,177,392,198} / today_bot {152,222,392,242} 语义重锚）+ 齿重锚两处（tooth 4 改明天区多行容量回归齿：今天空 + preview 3 项，断言 155-176 / 177-198 / 199-220 三行带墨达标；tooth 5 夹具 7→8 项、负断言带 {152,222,392,242} 零墨 = 第 8 项整行让位）；p1_cjk_name.acceptance.c 4 常量重锚（row2 {152,90,392,111} / row3+row3_time {152,155,392,176} / mingzao {148,124,200,149} / below_row1 {152,90,392,242}；本文件首次入本包 changeManifest = human 载体改判）；两文件 REVISION LOG append（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕）；阈值按 R<T<F 纪律重标定实测记载；preview_neg {152,244,392,258} 与 PCN preview_neg {152,220,392,242} 等零改动清单逐齿验证保持",
+    {
+      "id": "TR-A9",
+      "kind": "structural",
+      "note": "真机轮 live-manual structural 豁免（补充轮；TR-A5 同款先例口径，不计入 runner 通过面）：human 持板四项——①容量达成（今天空/≤2 + 明天 ≥3 → 明天 3-4 行全显、第 4 行带底贴卡底 242；今天 3 + 明天 3 → 3+3 全显）②紧凑上浮语义（今天空 vs 今天 3 项两档虚线/帽标位不同为预期行为）③行距 22px 全量数据态观感复核（已预览轮拍板）④布局优先级在世（今天 4 项→明天 2 行 / 5 项→1 行 / ≥6 项→明天整区让位无半截帽标）；烧录 = 纯代码变更仅 app 分区；host 面转绿后停门等 human"
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/story_page_v2.acceptance.c"
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c"
   ],
   "requiredLayers": [
     "unit",
@@ -30,54 +41,68 @@
     "live-manual"
   ],
   "exitCriteria": [
-    "host 结构齿（TB-A1/TB-A2/TB-A3 承载）设计态红全数转绿；既有齿（SPV2 全套等）零新增红",
-    "temp-diag-snapshot.diff 比对结论留痕：36 行诊断插入中除 SetTheme bg_opa 一行以正式注释转正外全部未复活（TB-A2 负断言绿即机械承载）",
-    "变异取证 perAcceptance 落实：TB-A1 摘 bg_opa 行 / TB-A3 摘 INK 宏消费，均 turnedRed=true 且还原复绿；TB-A4 live-manual structural 豁免自动断言面",
-    "TB-A4 真机轮留痕：human 在场持板四项逐项（计数分项 / AC5 ×0 两入口 / 阅读态标题 / P1 与聊天态顶带目测）",
-    "docs-sync 完成（docsOwner=integrator）：TECH-261012 CRQ 收口（status deferred → closed）+ docs/crq/tech/INDEX.md 重渲染（crq-render.mjs 生成件，禁手改）"
+    "p1_home_battery.acceptance.c 全绿（含重锚后的 TEST 1 tooth 4、HV5-AC2 tooth 3、及回归齿若采纳）；红基线设计态红全数转绿",
+    "p1_cjk_name.acceptance.c 全绿（补充轮载体改判后本文件已入 changeManifest——主轮「零改动回归观察面」口径由补充轮重锚批取代，逐齿按 plan 修订 A 改动点 A3 推导表复核；重锚后仍全绿）",
+    "schedule_grid.acceptance.c 全绿（数据半零扰动 canary，零改动）；home_p1.h 与 schedule 数据链路零触碰（PH-E1 canary 须绿）",
+    "相对有效基线零新增红；阈值重标定（HPB_INK_MIN_PV_ROW2 族）按 R<T<F 纪律实测记载进 REVISION LOG；任何「推导表之外变红」的齿 = 越界信号停下回评",
+    "补充轮两冻结件 REVISION LOG append 新条目在场（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕），含逐齿推导表与 mutation 面迁移记载",
+    "REVISION LOG 2026-10-13 条目在场（append 不覆盖），钉区重锚授权链与判别力保全论证在案",
+    "docs-sync 显式裁定：plan 明确零触碰 docs/** 零 diff——docsSyncRequired=false，closeout docs-delta 声明「无 docs 面」即可；TECH CRQ 登记建议（非目标三项）不绑本包义务、留 human/后续包裁量",
+    "TR-A5 真机轮留痕：human 持板三项场景逐项目测 + 截图对比（本包收尾停门项，不自行烧录）"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑（命令 = redBaselineCommand 逐字，2026-10-13，净 HEAD + 新增三齿）：build 通道 error 零；实跑 165 Tests / 2 Failures / 0 Ignored / 163 PASS——2 红全为设计态红：SLP-TB1 tooth 2（「SetTheme 区无 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0)」——top_bar_ 透明化转正未落，TB-A1）+ SLP-TB3 tooth 1（「story_page.h 无 #define KSY_COLOR_INK」——INK 宏未上提单源，TB-A3）；SLP-TB2 设计态绿守卫 PASS（净 HEAD 无 TEMP-DIAG 残留，负向齿前提成立）；既有齿（SPV2 全套 + SLP-SLA2/3/4/5）零新增红（261010 closeout 全绿基线保持）。TB-A3 改色预期不破冻结时逐齿复核证实：全文件无既有齿断言精确色值，SPV2-B1 / SLP-SLA5 tooth 4 均为带内墨量计数型探针（暗度阈 0x33 < 0x80 同判暗），INK 改色零新增红。",
+  "redBaselineResult": "【补充轮实跑（acceptance-author，2026-10-13，重锚批落盘后、builder 落 A1 前，实现仍主轮 28px 参数）】165 Tests / 4 Failures / 0 Ignored（exit 4）——4 红全为推导表内设计态红、推导表之外变红：无。红名 verbatim：① p1_home_battery.acceptance.c:1422 TEST 4.5 tooth 4「TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 673/246/84 分别须 >= 110（今天空 + preview 3 项, ty=112, 行带 155-176/177-198/199-220）」；② p1_cjk_name.acceptance.c:1066 TEST 1 tooth 3「PCN-A1 RED: 后续事项行 name 墨差 16/79 落在 ROW2 带外」；③ p1_cjk_name.acceptance.c:1407 TEST 5 A3「PCN-A3 RED: 单项日程 preview 未提供态明天区行带 {152,155,392,176} 墨 0 < 8」；④ p1_cjk_name.acceptance.c:1567 TEST 8 tooth 4「PCN-A9 RED: 预告 time 墨差 46/46 落在预告项行带 {152,155,392,176} 之外」。阈值重标定（HPB_INK_MIN_PV_ROW2 族 R<T<F）：R=84（旧 28px 几何新行带残/错位墨 min 三带实测 673/246/84）/ F≈157（完整 14px 行流整行墨）/ T=110∈(84,157)——原 T=80 在旧几何下假绿（三带均 ≥80），抬至 110 恢复判别力；方法记两 REVISION LOG。schedule_grid 零改动 canary 绿。tooth 5 同 CASE abort 解析性红（单测 today_bot 墨 37≠0）。新增 TEST 4.5 tooth 6（组级容纳门齿，净 HEAD 基线即绿——今天 6 项 ty=236 明天区越宽域带、带内 diff 0）。主轮证据（历史，main=4279f95）：165/1（残线 tooth 4 墨 15<80）。",
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "medium",
+  "riskTier": "low",
   "gateProfile": [
     "types",
     "test-quality",
     "evidence-integrity"
   ],
   "sourceRefs": [
-    "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
-    "docs/requirements.md:S-F2.1",
-    "S-F2.1-AC1",
-    "S-F2.1-AC5",
-    "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md"
+    "docs/requirements.md#S-F1.1",
+    "S-F1.1-AC2",
+    "S-F1.1-AC5",
+    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/requirements.md#S-F2.1",
-    "docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md",
-    "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md"
+    "docs/requirements.md#S-F1.1",
+    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
   ],
   "changeManifest": [
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
-    "firmware/main/display/story_page.c",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/story_page.h",
-    "firmware/main/test/story_page_v2.acceptance.c"
+    "firmware/main/display/home_p1.c",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c"
   ],
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯板端显示行为修复——不触 wire 形状：story_list 载荷与 counter 语义零变更（plan.md 逃生门检查在案），无对端面"
+    "exempt": "纯板端显示渲染修复——零 wire 面：preview 数据形状（data.upcoming.preview）与 schedule 链路零触碰（plan 明确零触碰面 + PH-E1 canary 承载），无对端面"
   },
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/story_page_v2.acceptance.c",
-      "kind": "additive-host",
-      "note": "新结构齿 additive 落此：TB-A1 top_bar_ bg_opa 常量存在性 / TB-A2 三源文件 TEMP-DIAG 负断言 / TB-A3 AC5 入口颜色常量不变式（INK 单源消费）；既有齿（SPV2 全套）零触碰，TB-A3 改色后逐齿复核（既有齿为带内墨量计数型探针、非精确色值断言，预期不破——acceptance-author 冻结时确认）"
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "kind": "re-anchor-plus-additive-host",
+      "note": "钉区重锚（PREVIEW_NEG / tomorrow 两常量 + 头注 + 区域注 + 断言消息）+ REVISION LOG append + 回归齿 additive（TR-A4 若采纳）；既有齿逐齿判别力重排由 plan 回归风险 1 论证承载"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "kind": "regression-watch-zero-touch",
+      "note": "零改动回归观察面——pcn_rect_preview_neg 限定标准夹具 preview 单行 184..211 修复后仍零墨；红了 = 修复越界"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "canary",
+      "note": "数据半零扰动 canary"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring-confirm",
+      "note": "接线面不动，仅确认在册"
     }
   ],
   "iterationBudget": 2,
@@ -87,37 +112,69 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "TB-A1: top_bar_ 背景透明化转正——custom_lcd_display.cc SetTheme 中 top_bar_ bg opacity 常驻 LV_OPA_TRANSP、注释为正式根因/解耦注释（TEMP-DIAG 措辞清除）；host 结构齿承载常量存在性（host harness 无 chrome、像素探真不可达归 TB-A4 真机轮，TECH 条目已定口径）",
-        "mutation": "摘 custom_lcd_display.cc SetTheme 中 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0) 行（或改回 LV_OPA_50）",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 18 SLP-TB1 tooth 2（守卫块内 bg_opa 常量行存在性 + 位置序；挪出守卫块亦红）",
+        "acceptance": "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
+        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红——acceptance-author 冻结件 BUILDER DUTY 5) 申报齿）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13：LV_OPA_TRANSP 改回 LV_OPA_50 → SLP-TB1 tooth 2 红（红名 verbatim「SetTheme 区无 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0)」，165 Tests / 1 Failures）；还原复绿 165/0。无 MUTATION 残留"
+        "notes": "builder 实测 2026-10-13：改回 pv_cy1=218 → TEST 4.5 tooth 4 红（165 Tests / 1 Failures，红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；此变异下守卫因 212+27=239>218 亦触发 break 故墨 0 非 15，红仍由 tooth 4 承载判别力成立）；还原复绿 165/0；grep MUTATION 零残留"
       },
       {
-        "acceptance": "TB-A2: TEMP-DIAG 诊断残留归零——custom_lcd_display.cc / display/story_page.c / display/kidpal_render_node.cc 三源文件不含 TEMP-DIAG 字样（结构负断言承载；起包前 36 行未提交诊断 diff 已由 planner 快照 temp-diag-snapshot.diff 并还原净 HEAD，builder 净面起步）",
-        "mutation": "任一源文件临时插入含 TEMP-DIAG 字样行（本轮 = story_page.c 第 23 行注释 /* TEMP-DIAG mutation replay */）",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 19 SLP-TB2 tooth 2（三源文件零命中断言，:2439）",
+        "acceptance": "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
+        "mutation": "摘今天区后续事项行循环整行容纳守卫 break（明天区守卫在 pv_cy1=242 下摘除后第 3 行整行越出 clip 零墨、像素不可观测——守卫变异判别由今天区承载，acceptance-author 冻结时逐齿推演论证在案）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 5（今天区卡底残线带 {152,242,392,242} 严格零墨——摘守卫后第 7 项 y=242 出 1px 残线即红；同时是真机判定③的 host 帧回归代理）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13（补跑轮）：运行时读盘结构齿、不重编直跑 elf——插入后 SLP-TB2 tooth 2 红（红名 verbatim「三源文件仍有 TEMP-DIAG 字样——诊断残留未清」，165 Tests / 1 Failures，仅 1 处失败非塌陷式全红）；按字节备份还原（md5 17c926de0967f4e628df9e55ffe9940f 前后一致——任务书 git checkout 指令被正确否决，该文件带在飞实现 diff、checkout 会摧毁实现）；复跑 165/0；grep 全树 TEMP-DIAG 仅命中冻结件自带文本，零残留"
+        "notes": "builder 实测 2026-10-13：摘今天区整行容纳守卫 → TEST 4.5 tooth 5 红（165 Tests / 1 Failures，红名 verbatim「TR-A2 RED: 今天区卡底残线带 {152,242,392,242} 墨 18 != 0——第 7 项1px 残线画在卡底（整行容纳守卫缺失, 261013 regression）」）；还原复绿 165/0；grep MUTATION 零残留"
       },
       {
-        "acceptance": "TB-A3: AC5 两入口颜色统一到 KSY_COLOR_INK——kidpal_render_node.cc AC5 分支 lv_color_black() 改 INK、KSY_COLOR_INK 宏上提 story_page.h 单源（话术单源纪律同款）；story_page.c 非空分支画法照常零偏移（requirements v1.63 空态注记钉「画法照常」、色值为实现层归一）；本板 1bpp 阈值下 0x333333 与 0x000000 同渲黑零视觉差；既有 host 齿逐齿复核零新增红",
-        "mutation": "摘 kidpal_render_node.cc AC5 分支 INK 消费（改回 lv_color_black() 或直拆 KSY_COLOR_INK 宏引用），或摘 story_page.h 单源定义",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 20 SLP-TB3 tooth 2（lv_color_black 复现 / INK 计数回落 <2）+ tooth 1（单源摘除红）",
+        "acceptance": "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
+        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）——与 TR-A4 变异同源（同一变异承载 TR-A1 底界对齐与 TR-A4 回归齿两面）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13：① tooth 2 主证——AC5 分支两处 lv_color_hex(KSY_COLOR_INK) 改回 lv_color_black() → SLP-TB3 红（「AC5 分支仍有 lv_color_black」，165/1）；② tooth 1 另测——story_page.h 摘 #define + story_page.c 还原本地 define（保持可编译）→ SLP-TB3 红（「story_page.h 无 #define KSY_COLOR_INK」，165/1）；两变异各自还原复绿 165/0。无 MUTATION 残留"
+        "notes": "builder 实测 2026-10-13（变异①同源取证，见 TR-A4 条目）：红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；还原复绿 165/0"
+      },
+      {
+        "acceptance": "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
+        "mutation": "p1_home_battery.acceptance.c 钉区常量回滚 hpb_rect_preview_neg {152,244,392,258}→{152,220,392,258}（变异面在冻结件自身——重锚判别力的实证闭环：旧锚回滚会把修复后合法画进 220..242 域的第 2 行墨误判为溢出）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 3（HV5-AC2 preview 满载重锚带零墨断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "acceptance-author 实测 2026-10-13（变异执行者 = 唯一 *.acceptance.c 写点角色）：165 Tests / 1 Failures，红名 verbatim「HV5-AC2 RED: preview 满载溢出压入卡底之下重锚带 {152,244,392,258}墨 105 != 0——明天区行流未 clip 进宽域带且越出卡区底界 y242（渲染溢出必须截断降级, plan 要点 3 containment; 2026-10-13 重锚语义）」（红点 :1354；TEST 1 tooth 4 其夹具下未红——该场景明天区无第 2 行墨）；还原复绿 165/0；sha256 260b02fb...8c5cebd 变异前后逐字节一致零残留；红跑日志留档 c:/tmp/tr_a3_mutation_run.log"
+      },
+      {
+        "acceptance": "TR-A6: 行距参数族压缩（补充轮；home_p1.c p1_draw_card）——line_h 28→22 / text_yoff 6→4 / 组间虚线 ty+22→ty+8 / 明天帽标 ty+33→ty+13（46x24 资产原尺寸直出，兜底描边 rect 同步 151,ty+13,197,ty+37）/ 明天项行与 AC6/AC7 话术起点 ty+60→ty+43；锚点 rows=max(2,s_count) 保持零改（human 裁定紧凑上浮，版式随数据浮动为选定语义）；整行容纳守卫语义零改随新 L 平移；函数头注释几何描述按新参数族重写",
+        "mutation": "home_p1.c 参数族回退任一形状（line_h 22→28 / 组头偏移 ty+8·ty+13·ty+43 改回旧值族 / pv_cy1 回退）——行带错位必红",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（多行容量回归齿：行带 {152,155,392,176}/{152,177,392,198}/{152,199,392,220} 墨 ≥ 110——参数族回退即坍缩 < 阈值；acceptance-author 补充轮定稿）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13（补充轮）：参数族整族回退（line_h 22→28 + text_yoff 4→6 + 虚线 ty+22 + 帽标 ty+33 + 项行 ty+60）→ 165/4 红，目标齿 verbatim「TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 673/246/84 分别须 >= 110」（673/246/84 与标定 R=84/T=110 逐字吻合）；还原复绿 165/0；grep MUTATION 零残留"
+      },
+      {
+        "acceptance": "TR-A7: 组级容纳门（补充轮新增语义）——明天区整块（组间虚线 + 帽标 + 项行/AC6/AC7 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty ≤ 178）：今天 ≥6 项时整区让位、不画半截帽标/孤儿虚线；结构性关闭锚点下推越卡隐患（旧参数 s_count≥7 越卡绘制）",
+        "mutation": "摘组级容纳门（移除 if 包裹）→ 今天 ≥6 项时半截帽标/孤儿虚线入判读带必红",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 6（新增组级容纳门齿：今天 6 项 ty=200>178 时 preview 3 项帧 vs 0 项帧在 hpb_rect_tomorrow 带逐像素相同 == 整区让位；摘门 → 帽标入带 diff≠0 必红；净 HEAD 基线即绿）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13（补充轮）：摘组级容纳门（if 条件 → if(1)）→ 165/1 孤立红，红名 verbatim「TR-A7 RED: 今天 6 项时 preview 3 项帧 vs 0 项帧在明天区宽域带 diff 799 != 0——组级容纳门缺失, 明天区未整体让位（半截帽标/孤儿虚线入带; ty=200 > 178 应整区让位）」；还原复绿 165/0；grep MUTATION 零残留"
+      },
+      {
+        "acceptance": "TR-A8: 两冻结件重锚批（补充轮）——p1_home_battery.acceptance.c 常量随公式平移（row2 {152,90,392,111} / mingzao {148,124,200,149} / rows {152,68,392,133} / tomorrow {136,118,392,242} / pv_row1 {152,155,392,176} / pv_row2 {152,177,392,198} / today_bot {152,222,392,242} 语义重锚）+ 齿重锚两处（tooth 4 改明天区多行容量回归齿：今天空 + preview 3 项，断言 155-176 / 177-198 / 199-220 三行带墨达标；tooth 5 夹具 7→8 项、负断言带 {152,222,392,242} 零墨 = 第 8 项整行让位）；p1_cjk_name.acceptance.c 4 常量重锚（row2 {152,90,392,111} / row3+row3_time {152,155,392,176} / mingzao {148,124,200,149} / below_row1 {152,90,392,242}；本文件首次入本包 changeManifest = human 载体改判）；两文件 REVISION LOG append（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕）；阈值按 R<T<F 纪律重标定实测记载；preview_neg {152,244,392,258} 与 PCN preview_neg {152,220,392,242} 等零改动清单逐齿验证保持",
+        "mutation": "冻结件任一重锚常量回退旧值（如 hpb_rect_pv_row2 {152,177,392,198}→旧值 / pcn_rect_row2 回退）→ 对应行带断言错位必红",
+        "affectedTest": "p1_home_battery tooth 4/5 + p1_cjk_name.acceptance.c TEST 1 tooth 3 / TEST 5 A3 / TEST 8 tooth 4（重锚常量回退 → 对应行带断言错位红；acceptance-author 补充轮定稿）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13（补充轮）：重锚判别力由参数族回退变异同源承载（变体①：整族回退同时平移今天/明天锚点 → HPB tooth 4 红 + PCN TEST 1 tooth 3「墨差 16/79 落 ROW2 带外」/ TEST 5 A3「墨 0 < 8」/ TEST 8 tooth 4「墨差 46/46 落预告项行带之外」三齿附带红——重锚常量之意义即令几何错位可测，判别力实证）；冻结件常量回退变异（改 *.acceptance.c）越 builder 写权、如实 deferred（builder 申报）；还原复绿 165/0。TR-A2 tooth 5 补充轮新带变异另证：摘今天区守卫 → 165/1 红「TR-A2 RED: 今天区卡底残线带 {152,222,392,242} 墨 128 != 0——第 8 项（行带 222-243）跨卡底未整行让位」"
       }
     ],
-    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；TB-A4 live-manual structural 豁免自动断言面（真机观测项，对象 kind:'structural' 显式标记）；perAcceptance.acceptance = acceptance[] 全文逐字复制（261010 包先例⑤——round 1 mutation-check 全文匹配教训落地）；SLP-TB2 变异敏感已补跑取证（TB-A2 条目 turnedRed=true）"
+    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；mutation 断言面齿名已由 acceptance-author 冻结件 BUILDER DUTY 5) 申报（tooth 4 = pv_cy1 回退 / tooth 5 = 摘守卫·今天区承载 / TEST 1 tooth 4 + TEST 4.5 tooth 3 = 越卡底溢出）；perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤——round 1 mutation-check 全文匹配教训落地）；TR-A3 重锚与 TR-A5 真机轮为取证豁免面（TR-A3 判别力由回归齿 mutation 间接承载 + REVISION LOG 留痕；TR-A5 structural 豁免）"
   },
   "adrRequired": false,
-  "docsSyncRequired": true,
-  "docsSyncReason": "TECH-261012 CRQ 收口（条目文件 status deferred → closed + closedBy/closed 回填）+ docs/crq/tech/INDEX.md 重渲染（crq-render.mjs 生成件）——归包内 integrator；契约面零触（story_list 载荷与 counter 语义零变更，无 CCP/ADR 面）",
+  "docsSyncRequired": false,
+  "docsSyncReason": "plan 明确零触碰 docs/**（requirements / architecture / contracts 零 diff）；TECH CRQ 登记建议（明天区锚点下推 / 续行跨底界残线 / 明天区容量三项非目标）不绑本包义务，留 human/后续布局包裁量",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change proportionate review 2026-10-12，frontmatter reviewed-by 行为证）：技术方案意见（修复=候选 A、B 排除理由）+ changeManifest 种子 + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①档位确认（②单包 Lite）2026-10-12 会话内 AskUserQuestion 已裁（pod-events human-decision 留痕）。【TEMP-DIAG 处置时序调整】起包归一期 planner 快照未提交诊断 diff（temp-diag-snapshot.diff，36 行全量）后 git checkout 还原净 HEAD——事由 = 诊断 diff 含修复行（SetTheme bg_opa），不还原则 TB-A1 结构齿红基线假绿；plan.md「删前 git diff 逐行核对仅删诊断行」义务由快照比对 + TB-A2 结构负断言承载（builder 净面起步、无既有诊断可删，落地 diff 不得复活任何诊断行）；快照证据另锚 c:/tmp/diag-ink.log、diag-flush.log（TECH 条目正文引用）。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 全部源面；firmware/main/test/story_page_v2.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① host harness 无 chrome（top_bar_ 不在 host 面）——TB-A1 结构齿为源面常量断言非像素探真，真机探真归 TB-A4；② TB-A1~A3 全为 host 结构断言、无 DB/事件断言——supervisor 机械闸可能判 all-mock 触 riskTier 重算 high，需 human 放行（261012 prompt-v9 / 261010 storylist 两包同款先例申报）；③ 真机轮烧录 = app 分区单烧（本批无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；④ KSY_COLOR_INK 上提 story_page.h 须核 story_page.c 与 kidpal_render_node.cc 两侧 include 关系（C/C++ 混编，宏放头文件避免重定义）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = TECH-261012 CRQ 条目 + /triage-change 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261010 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261010 包 closeout 后 host 全绿；本包红基线红全部为设计态红（新增结构齿对净 HEAD 断言缺失行为），无上游已知红需要消解。【docRefs 归档路径修正（round 3 docs-sync 红闸后）】TECH-261012 收口后经 crq-render.mjs 自动归位 docs/crq/tech/_archive/2026/（位置=状态纯函数），taskpackage sourceRefs/docRefs/upstreamRef 同步改指归档现址——引用精度修正非语义变更（round 3 final 轮 docs-sync missingDocs 红因，planner 代修正并留痕）。"
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-13，frontmatter reviewed-by 行为证）：技术方案意见（pv_cy1 对齐卡底 + 整行守卫 + 冻结件重锚）+ changeManifest + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①（triage 分流确认）已裁。【1f 快照保鲜核验】plan 引用源码行逐条对磁盘核验通过：home_p1.c L1166-1260（pv_cy1=218 / 两行循环位置）与 p1_home_battery.acceptance.c（L81 头注表 / L223 区注 / L247-251 两常量 / L840、L1292 断言消息 / 文件尾 REVISION LOG）全部在位无漂移；红基线 cwd 基准沿用上包 host runner 命令（elf 在 firmware/main/test/host_app/build）无归档漂移。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 源面 home_p1.c；p1_home_battery.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明；acceptance-author allow firmware/**/*.acceptance.c 覆盖冻结件。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① 本包 host 齿为真实渲染帧像素墨量断言（hpb_count_ink 探真），非纯结构断言——all-mock 风险低于 261012/261010 两包，仍如实申报：若机械闸判 all-mock 触 riskTier 重算 high 需 human 放行（先例申报口径）；② 真机轮烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；③ host runner 相关子集 = p1_home_battery / p1_cjk_name / schedule_grid（不跑全量——测试跑相关子集纪律）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = 本会话 triage review 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261012 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261012 包 closeout 后 host 全绿（165/0）；本包红基线红全部为设计态红（重锚/新增齿对净 HEAD 未修复行为），无上游已知红需要消解。【真机门】host 面转绿后停 human 持板门（TR-A5），不自行烧录。【补充轮（2026-10-13，human 裁定不开新包、并入本包）】plan.md 修订 A = 行距压缩（line_h 28→22 / text_yoff 6→4 / 虚线 ty+8 / 帽标 ty+13 / 项行 ty+43 / 组级容纳门）+ 紧凑上浮锚点保留（max(2,·) 零改，human 真机预览定稿，见 sibling preview-round.md）；architect 二次 review 已过（② Lite/low/human-ad-hoc）。**载体改判留痕（human 作者性直令）**：changeManifest 增量扩展加 firmware/main/test/p1_cjk_name.acceptance.c（主轮「零改动回归观察面」口径由补充轮重锚批取代——行距几何平移使 PCN 4 常量必随动，human 裁定载体改判）；acceptance 新增 TR-A6/A7/A8 + TR-A9（真机轮 structural 豁免）；acceptanceTestsFile 加 p1_cjk_name.acceptance.c；mutationEvidence 补三条骨架（TR-A6/A7/A8）。authority 注记：本补充轮由 human 直令（非 proposal 来源），sourceType 保留 regression（主轮溯源不变）、不改 origin。验收要点见 plan 修订 A「A2. 验收要点」；真机判定四项见 TR-A9。【补充轮真机门】同 TR-A5 口径——host 转绿后停门等 human 持板，不自行烧录。"
 }

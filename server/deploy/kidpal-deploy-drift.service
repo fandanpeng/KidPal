@@ -1,0 +1,12 @@
+[Unit]
+Description=KidPal deploy drift check (manifest vs live, server/deploy/manifest.yaml)
+Documentation=file:///opt/kidpal/deploy-clone/server/deploy/ecs-bootstrap.md
+
+[Service]
+Type=oneshot
+# deploy clone 内跑核验（clone 位置见 ecs-bootstrap.md；漂移报告落 alerts）
+WorkingDirectory=/opt/kidpal/deploy-clone
+ExecStart=/bin/bash /opt/kidpal/deploy-clone/server/deploy/verify-deploy.sh
+# 退出 1 = 有漂移（写 alerts 后非零退出，timer 面可见）；退出 2 = 脚本自身错误
+# 两者都不算 unit 失败到需要告警链的程度——告警载体是 alerts/deploy-drift.json
+SuccessExitStatus=0

@@ -19,6 +19,16 @@ KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.
 - **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `delivery/changes/dev/260903-device-ws-switch/`。）
 - **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；`network_mode: host` 下容器经**真 loopback `127.0.0.1:18789`** 直达宿主 OpenClaw（原 `host.docker.internal:18789` 网桥随 host 模式移除，260903-device-ws-switch live）。
 
+## 部署入口（manifest + deploy.sh · 261013-gov-review-deploy-single-source-loop 起）
+
+ECS 三件套的部署已从手工拷贝切为「GitHub 单源 → ECS 拉取 → manifest 铺放 → 机械核验」闭环：
+
+- **清单**：[manifest.yaml](manifest.yaml) =「什么该在 live 上」的唯一权威（front 源 / overlay 输入与渲染产物 / OpenClaw 创作面 / reminder 消费位 / 漂移 timer / cron 作业核验）。加改部署面 = 改清单进 review。
+- **部署**：`cd /opt/kidpal/deploy-clone && bash server/deploy/deploy.sh [--ref origin/main]`——fetch + checkout → 按清单铺放（变更集决定重启面，引擎重启 = 设备全断只在引擎面变更时发生）→ 引擎面变更时跑 `apply-xiaozhi-overlay.sh` 渲染 → 落 `.deployed-commit` 戳 + 快照 → 自检。
+- **核验**：[verify-deploy.sh](verify-deploy.sh) 三时机共用——部署前拦截（有未对账漂移拒铺，`--first-run` 例外）、部署后自检、每日 04:17 systemd timer（`kidpal-deploy-drift.timer`）落 `/opt/kidpal/alerts/deploy-drift.json`。
+- **一次性 bootstrap**（deploy key / clone / 首铺 / timer 安装）见 [ecs-bootstrap.md](ecs-bootstrap.md)。
+- **纪律**：live 紧急热修允许，但下次部署被 verify fail-loud 拦截直至回流仓；OpenClaw 运行态（DREAMS.md / memory / sessions）不入清单、部署不碰；secrets 仅存 ECS。
+
 ## 引擎部署副本补丁（engine-patch · 260907-g-relay-fix）
 
 方向 B 的 display fence 剥离以「引擎为主剥离、front 为校验/relay 权威」分工落地（TaskPackage `260907-g-relay-fix`，human 批准首例部署副本代码补丁，pod-events decision `engine-patch-approval` 事件 `37469170`）。补丁形态：官方镜像不动，`server/deploy/engine-patch/` 下两个部署副本文件经 `docker-compose.yml` bind-mount 原位覆盖镜像内 `core/`：
@@ -101,7 +111,7 @@ owner=architect + acceptance-author）登记了「语义耦合在版本字面文
 
 | 变量 | 含义 | 典型值 / 说明 |
 |---|---|---|
-| `GATEWAY_DEPLOY_DIR` | 部署源 | `/opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server`（CONFIG 在这里；`docker-compose` 卷把 data/.config.yaml 映射进容器 `/opt/xiaozhi-esp32-server/data`） |
+| `GATEWAY_DEPLOY_DIR` | 部署源 | **live 引擎配置真身在 `deploy/xiaozhi-docker-data/`**（bind-mount 进容器 `data/`；`main/xiaozhi-server` 是 stale decoy，勿读勿写——261013 批修正本行旧注记）；manifest 化后该变量仅 overlay 渲染期内部使用 |
 | `GATEWAY_SERVICE` | systemd 单元名 | `xiaozhi`（容器引擎） / `kidpal-front`（TLS front） |
 | `GATEWAY_CERT_PATH` | 证书路径（frozen） | `/opt/kidpal/xiaozhi-esp32-server/cert/server.pem`（+ 同名 `server.key`，chmod 640） |
 | `DAEMON_ENV` 等渲染源 | overlay 渲染输入 | 由 `apply-xiaozhi-overlay.sh` 从 `secrets.env` 注入 provider 配置 |

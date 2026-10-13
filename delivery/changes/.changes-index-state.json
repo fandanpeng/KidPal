@@ -253,5 +253,9 @@
   "260929-gov-review-ui-ladder-remap": {
     "date": "2026-09-29",
     "mergedInMain": "yes"
+  },
+  "261013-gov-review-deploy-single-source-loop": {
+    "date": "2026-10-13",
+    "mergedInMain": "yes"
   }
 }

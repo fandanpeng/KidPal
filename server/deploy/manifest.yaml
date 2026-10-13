@@ -1,0 +1,170 @@
+# KidPal ECS 部署清单（单一事实源）——「什么该在 live 上」的唯一权威
+# 261013-gov-review-deploy-single-source-loop 落地件。
+#
+# 纪律（PROPOSAL T1）：
+#   - 加 / 改部署面 = 改本清单进 review，再 deploy.sh 铺放——顺序别反；
+#   - OpenClaw 运行态（DREAMS.md / memory/ / sessions/ / agent sqlite）永不入清单；
+#   - secrets（secrets.env / 各 API key）仅存 ECS，不入清单、不入仓。
+#
+# 字段语义：
+#   src:     仓内源路径（仓根相对）
+#   dst:     ECS live 绝对路径
+#   owner:   deploy.sh = deploy.sh 铺放；overlay = apply-xiaozhi-overlay.sh 渲染
+#            （deploy.sh 不碰、仅核验——单一写者原则）
+#   verify:  md5 = 行尾归一 md5 比对；marker = 标记行锚（secret 承载件专用，
+#            禁 md5——secrets 注入差异使 md5 恒假；禁锚定 secret 期望值）
+#   anchors: verify=marker 时逐锚 grep，须在 dst 命中 ≥1 次
+#   restart: src 变更时 deploy.sh 触发的重启面——front = systemctl restart
+#            kidpal-front；engine = docker restart xiaozhi-esp32-server（设备
+#            全断，仅引擎面变更才动）；none = 无服务重启面
+#   note:    人读备注
+#
+# 核验方式（verify-deploy.sh 三个时机共用）：部署前前置（有未对账漂移则拒绝
+# 铺放；--first-run 例外——首铺对账基线）、部署后自检、每日 systemd timer
+# （kidpal-deploy-drift.timer）落 /opt/kidpal/alerts/deploy-drift.json。
+
+version: 1
+
+entries:
+  # ── front 源（OQ-2(a) 拷贝制：deploy clone → 本清单 → /opt/kidpal/front）──
+  - {src: server/gateway/front/front_app.py,
+     dst: /opt/kidpal/front/front/front_app.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/auth.py,
+     dst: /opt/kidpal/front/gateway/auth.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/display_schema.py,
+     dst: /opt/kidpal/front/gateway/display_schema.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/fallback.py,
+     dst: /opt/kidpal/front/gateway/fallback.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/__init__.py,
+     dst: /opt/kidpal/front/gateway/__init__.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/log.py,
+     dst: /opt/kidpal/front/gateway/log.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/mcp_relay.py,
+     dst: /opt/kidpal/front/gateway/mcp_relay.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/provider.py,
+     dst: /opt/kidpal/front/gateway/provider.py,
+     owner: deploy.sh, verify: md5, restart: front,
+     note: live 旧值 OPENCLAW_MODEL 默认值为 stale 别名（260930 事故值），首铺归一为仓内 openclaw/kidpal}
+  - {src: server/gateway/reminders.py,
+     dst: /opt/kidpal/front/gateway/reminders.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/schedule.py,
+     dst: /opt/kidpal/front/gateway/schedule.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/schedule_push.py,
+     dst: /opt/kidpal/front/gateway/schedule_push.py,
+     owner: deploy.sh, verify: md5, restart: front}
+  - {src: server/gateway/story.py,
+     dst: /opt/kidpal/front/gateway/story.py,
+     owner: deploy.sh, verify: md5, restart: front}
+
+  # ── 引擎 overlay 输入面（deploy.sh 铺 → overlay 渲染消费）──
+  - {src: server/deploy/engine-patch/connection.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/connection.py,
+     owner: deploy.sh, verify: md5, restart: engine,
+     note: bind-mount 覆盖容器 core/，生效标记行 = docker logs 里 'kidpal display-strip patch active'}
+  - {src: server/deploy/engine-patch/kidpal_display_strip.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/kidpal_display_strip.py,
+     owner: deploy.sh, verify: md5, restart: engine}
+  - {src: server/deploy/provider.config.yaml,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/provider.config.yaml,
+     owner: deploy.sh, verify: md5, restart: engine,
+     note: overlay 渲染 .config.yaml 的声明面输入（声明已改指 manifest/deploy.sh 直管）}
+  - {src: server/deploy/docker-compose.yml,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/docker-compose.yml,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 变更需 docker compose up -d 才生效——deploy.sh 只提示不自动执行（容器重建 = 设备全断 + 重建时长不可控）}
+  - {src: server/deploy/openclaw-system-prompt.v10.md,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/openclaw-system-prompt.v10.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: overlay 渲染 prompt 的输入副本（overlay 把它拷进 data/ 并注入 .config.yaml 的 prompt 键）}
+
+  # ── 引擎渲染产物（overlay 渲染 / 注入；deploy.sh 只核验不铺）──
+  - {src: server/deploy/openclaw-system-prompt.v10.md,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/openclaw-system-prompt.v10.md,
+     owner: overlay, verify: md5, restart: engine,
+     note: 与上行同源——上行铺输入、本行核验 overlay 渲染出的 data/ 副本}
+  - {dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/.config.yaml,
+     owner: overlay, verify: marker,
+     anchors: ["实时事实回合", "engine_timeout"],
+     restart: engine,
+     note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = prompt v10 版本锚 + decision-21 引擎超时键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
+
+  # ── OpenClaw 创作面（运行态不入清单，见文件头纪律）──
+  - {src: server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md,
+     dst: /root/.openclaw/workspace-kidpal/AGENTS.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 板侧 kidpal agent 工作区护栏（次要承载，冲突以注入 prompt 为准）}
+  - {src: server/deploy/openclaw-skills/workspace-main/AGENTS.md,
+     dst: /root/.openclaw/workspace/AGENTS.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 家庭侧 main agent 工作区护栏（QQ 录入路径）}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-board-context/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-board-context/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-char-strokes/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-char-strokes/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-reminder-semantic/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-reminder-semantic/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-answer/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-schedule-answer/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: main 侧课表问答 skill（含改课表运维须知段）——与 kidpal 侧同名 skill 分工不同，各占一镜像位}
+  - {src: server/deploy/openclaw-skills/workspace-main/qqbot-reply-diagnosis/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/qqbot-reply-diagnosis/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-schedule-write/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: QQ 课表录入写入 skill（B1 写入纪律 + 写后机检 + 通过后即时重算落 marker；TECH-261012 建议①）}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-schedule-health/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 课表解析失败 QQ 转告巡检 skill（cron kidpal-schedule-health 每 15m 唤起 main；TECH-261012 建议④）}
+  - {src: server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md,
+     dst: /root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 板侧课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效）}
+
+  # ── reminder 面（cron 消费位直管，OQ-1(a)——本批修复的路径分裂落点）──
+  - {src: server/deploy/openclaw-patch/reminder_schedule_lib.py,
+     dst: /opt/kidpal/openclaw-patch/reminder_schedule_lib.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: cron kidpal-reminder-plan 每 15 分钟拉起自读（无服务重启面）；含 drop_refresh_marker（触发③ marker 链）——2026-10-13 前该位停旧版是「触发③从未 live」根因}
+  - {src: server/deploy/openclaw-reminder.config.yaml,
+     dst: /opt/kidpal/openclaw-reminder.config.yaml,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 三档时刻配置的真实消费位（lib KIDPAL_REMINDER_CONFIG 默认 dirname/../ 派生）——2026-10-13 前该位缺文件、被 DEFAULT_LADDER_CONFIG 同值回退掩盖}
+  - {src: server/deploy/openclaw-schedule.config.yaml,
+     dst: /opt/kidpal/front/deploy/openclaw-schedule.config.yaml,
+     owner: deploy.sh, verify: md5, restart: front,
+     note: "school_start 配置的真实消费位（front_app.py parents[2]/deploy 派生）——2026-10-13 前该位缺文件、静默回退 None"}
+
+  # ── 漂移 timer（ecs-bootstrap.md 一次性安装；此后 deploy.sh 铺）──
+  - {src: server/deploy/kidpal-deploy-drift.service,
+     dst: /etc/systemd/system/kidpal-deploy-drift.service,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 铺放后需 systemctl daemon-reload && systemctl enable --now kidpal-deploy-drift.timer}
+  - {src: server/deploy/kidpal-deploy-drift.timer,
+     dst: /etc/systemd/system/kidpal-deploy-drift.timer,
+     owner: deploy.sh, verify: md5, restart: none}
+
+# ── openclaw cron 作业（verify-only：命令串/归属核验，铺放走 openclaw CLI 不在本批面）──
+cron_jobs:
+  - name: kidpal-reminder-plan
+    expect_argv: "KIDPAL_SERVER_DIR=/opt/kidpal/front KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md KIDPAL_ALERTS_DIR=/opt/kidpal/alerts KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+  - name: kidpal-reminder-semantic
+    expect_agent: main
+    expect_schedule: "every 15m"
+  - name: kidpal-schedule-health
+    expect_agent: main
+    expect_schedule: "every 15m"

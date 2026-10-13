@@ -154,12 +154,14 @@ ls /root/.openclaw/workspace/kidpal/schedule.md  # 真身 549B：只有「每周
 
 ### 8.2 铺脚本 + 配置（幂等，repo → ECS）
 
+> 261013-gov-review-deploy-single-source-loop 起：脚本与配置由 `deploy.sh` 按
+> `server/deploy/manifest.yaml` 铺放（消费位直管——`/opt/kidpal/openclaw-patch/`、
+> `/opt/kidpal/openclaw-reminder.config.yaml`、`/opt/kidpal/front/deploy/`），本节不再有手工铺放步骤。交接目录语义保留：
+
 ```bash
-cd server/deploy && bash apply-xiaozhi-overlay.sh   # 渲染当前版 system prompt（版本见 OPENCLAW_SYSTEM_PROMPT_CARRIER）+ openclaw-reminder.config.yaml
-# 脚本与配置的目标目录（与 pending.json 同机）：
-export KIDPAL_OPENCLAW_SCRIPT_DIR=/opt/kidpal/openclaw-patch
 export KIDPAL_ALERTS_DIR=/opt/kidpal/alerts         # cron 写、front 读的交接目录（同机）
 mkdir -p "$KIDPAL_ALERTS_DIR"
+# 部署入口：cd /opt/kidpal/deploy-clone && bash server/deploy/deploy.sh（见 README「部署入口」节）
 ```
 
 ### 8.3 注册 cron（定期重算 + 录入即时触发）
@@ -173,7 +175,10 @@ openclaw cron add \
 KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md \
 KIDPAL_ALERTS_DIR=/opt/kidpal/alerts \
 KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json \
-python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+# 解释器钉绝对路径（261013-gov-review-deploy-single-source-loop T4）：SSH shell 的裸
+# `python3` 解析到 /usr/bin/python3 = 3.6.8，跑不动脚本（`from __future__ import
+# annotations` SyntaxError）；live cron 实际命令已钉 venv 3.11，此处对齐。
 # 即时：家长 QQ 录入 → OpenClaw 自改写 schedule.md 后，同一 --command 载荷再跑一次
 #   （cron 支持 --command 载荷已在 class-reminder-0529 先例实测；语义产物由 agent 回合写
 #    semantic.json，脚本按 entry_key 挂载，缺文件=机械兜底不丢提醒）
@@ -205,6 +210,40 @@ openclaw cron list   # 期望两条 kidpal-reminder-*：plan（command 型 isola
 引擎注入 system prompt（v7 提醒节的读者假设因此只覆盖语音回合），cron 唤起的 agent 回合
 不走引擎注入；main agent 拥有 kidpal/ 写侧与 skill 机制，指示的家 = workspace skill
 （镜像入仓 `server/deploy/openclaw-skills/workspace-main/`）。
+
+### 8.3c 注册课表解析健康巡检 cron（agent 型，TECH-261012 建议④）
+
+> 背景：front 对 `schedule_md_err`（脏 B1 格致整份 schedule.md 解析失败）此前只在 journal
+> 记日志、家长零感知。本任务补 agent 生产侧——`kidpal-schedule-health` cron 每 15 分钟唤起
+> main agent，读 front 写的 `/opt/kidpal/alerts/schedule-parse-error.json` 告警件，命中未确认
+> 的解析失败时经 QQ 主动告知家长坏 token 与正确格式；ack 去重靠 skill 自有的
+> `/opt/kidpal/alerts/schedule-parse-health.json` 状态件（front 每分钟覆写告警件、不碰该状态件）。
+> skill 文本 = `server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md`。
+
+```bash
+openclaw cron add \
+  --name kidpal-schedule-health \
+  --every 15m \
+  --agent main \
+  --no-deliver \
+  --message "课表解析健康巡检：读 /opt/kidpal/alerts/schedule-parse-error.json，按
+kidpal-schedule-health skill 四分支判定，命中未确认解析失败则经 QQ 告知家长坏 token 与正确格式。
+收到即执行，无需确认。"
+openclaw cron list   # 期望新增一条 kidpal-schedule-health（agent 型 main / every 15m）
+```
+
+**频率必须 15m**：`verify-deploy.sh` 的 cron 核验把 `expect_schedule` 硬编成 `every_min == 15`
+（`verify-deploy.sh` :123-127），非 15m 会假报漂移；manifest `cron_jobs` 的 `kidpal-schedule-health`
+期望条目同步钉 `expect_schedule: "every 15m"`。
+
+**QQ 路由目标前置（如实两层，不虚诺）**：该 cron 是「无入站消息要回」的主动 announce——
+
+1. **路由未配时**：health 回合仍跑、仍能读到告警件，但主动告知 **fail-closed 投不出**；**可观测面
+   降级** = 告警件 `schedule-parse-error.json` + `journalctl -u kidpal-front.service | grep
+   schedule_md_err`（不是「什么都不会发生」，而是「转告投不出、但件与日志都在」）。
+2. **路由配置** = human post-deploy 动作，指向 260924 ops-record 的 accounts 映射位（家长 openid =
+   accounts.dad 的 allowFrom 唯一项；mom 仍 `enabled:false` 占位）。**配好路由才谈得上家长能收到**
+   ——本节只给动作位、不承诺「配好即达」。
 
 ### 8.4 前端投递侧（同机 uvicorn，无需额外进程）
 
