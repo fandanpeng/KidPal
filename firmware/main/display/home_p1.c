@@ -1163,14 +1163,16 @@ static const char HP1_TEXT_TOMORROW_UNKNOWN[] = "还没收到明天的课表";
  *     多项列表（学校课合并「XX:XX 上学」与课外班、临时事件同列，按开始时间升序——
  *     producer 单源保证，设备照单渲染不重排；帽标 p1_chip_mingzao.bin「明天」独立行
  *     + 逐项行流）/ 确认空话术（AC6）/ 数据未达提示（AC7）。
- * 明天区行流独立 clip 进宽域带底界 y218（containment，不越 PREVIEW_NEG 退役面）；
- * 今天区行流 clip 进卡区底界 y242；一切墨不越卡区 CARD{103,42,392,242}。 */
+ * 明天区行流 clip 进卡区底界 y242（containment，底界依据 = 卡区底界 containment）；
+ * 旧 PREVIEW_NEG 退役面约束随本包（261013-p1-tomorrow-row-sliver-fix）退役、HPB 负
+ * 断言带已重锚至卡底之下 y244；今天区行流 clip 进卡区底界 y242；两区后续项行整行容纳
+ * 守卫（行带底越界即整行让位）；一切墨不越卡区 CARD{103,42,392,242}。 */
 static void p1_draw_card(void)
 {
     const int line_h = 28;      /* 行带 pitch：ROW1 68 -> ROW2 96 -> ROW3 184 */
     const int text_yoff = 6;    /* 14px 字形在行带内的垂直对齐偏移 */
     const int cx0 = 152, cy0 = 42, cx1 = 392, cy1 = 242; /* 卡区 clip */
-    const int pv_cy1 = 218;     /* 明天区独立底界 clip（宽域带 {136,142,392,218}） */
+    const int pv_cy1 = 242;     /* 明天区底界 clip（对齐卡区底界 cy1；旧 PREVIEW_NEG 退役面约束随本包退役） */
     int fy_today = 68;          /* 今天区行流光标 */
     int ty;                     /* 明天区锚点（帽标 ty+33 / 项行 ty+60） */
     int fy_pv;
@@ -1202,8 +1204,12 @@ static void p1_draw_card(void)
                                 cx0, cy0, cx1, cy1);
             fy_today += used * line_h;
         }
-        /* 后续事项行 ROW2..（逐项 时间+名, 行流下排）。 */
+        /* 后续事项行 ROW2..（逐项 时间+名, 行流下排）。整行容纳守卫：行带底越卡底
+         * 即整行让位（break——行流顺序下排, 前项放不下后项必放不下）。 */
         for (i = 1; i < s_count; i++) {
+            if (fy_today + line_h - 1 > cy1) {
+                break;
+            }
             it = kidpal_home_p1_schedule_item(i);
             if (it == NULL) {
                 break;
@@ -1239,6 +1245,9 @@ static void p1_draw_card(void)
         }
         fy_pv = ty + 60;
         for (i = 0; i < pv_count; i++) {
+            if (fy_pv + line_h - 1 > pv_cy1) {
+                break; /* 整行容纳守卫：行带底越界即整行让位（同今天区语义） */
+            }
             it = kidpal_home_p1_schedule_preview_item(i);
             if (it == NULL) {
                 break;

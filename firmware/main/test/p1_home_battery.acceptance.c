@@ -78,7 +78,11 @@
  *         HPB_RECT_STICKER_NEG {236, 42, 390, 66 }  旧倒计时贴纸/大时间右上区（退役负断言, R2; 2026-09-26 重锚）
  *         HPB_RECT_ROW2       {152, 96, 392, 122 }  后续事项行（行流第二行, R2）
  *         HPB_RECT_MINGZAO    {148,154, 200, 181 }  明早标签槽（帽标独立行, R2; 2026-09-26 重构）
- *         HPB_RECT_PREVIEW_NEG {152,220, 392, 258}  旧明日预告独立带（退役负断言, R2; 2026-09-26 x0 152）
+ *         HPB_RECT_PREVIEW_NEG {152,244, 392, 258}  卡底之下退役负断言带（退役负断言, R2;
+ *                                                   2026-09-26 x0 152; 2026-10-13 重锚
+ *                                                   y220→244 = 卡底 242 + 2px 缓冲）
+ *         HPB_RECT_PV_ROW2    {152,212, 392, 239 }  明天区第 2 行带（整行容纳回归齿, 2026-10-13）
+ *         HPB_RECT_TODAY_BOT  {152,242, 392, 242 }  今天区卡底残线带（守卫负断言, 2026-10-13）
  *
  *       R2 跨包冲击修订（2026-09-22, 授权 = pod-events c4785230 human-decision
  *       plan-B-decode-fix-plus-wireframe-alignment）: 卡内版式改行流语义，权威钉区
@@ -107,6 +111,16 @@
  *       REVISION LOG 2026-10-11 条），本包只动版式与辅助条，不触数据链路（课表数据
  *       接首页归 M3 决策 26）。需求/契约面零修订 canary。
  *
+ *   [TR5] 真机轮 live-manual structural 豁免（2026-10-13, TaskPackage
+ *       261013-p1-tomorrow-row-sliver-fix; TB-A4 261012 story_page_v2 同款先例口径,
+ *       **不计入 runner 通过面**）: human 持板验收四项——①复现场景（今天空 AC5 话术 +
+ *       明天 >= 2 项）明天区第 2 项完整字形渲染、无 1px 残线（截图与修复前对比留证）;
+ *       ②明天 >= 3 项第 3 项起整行让位、干净不出现; ③今天 >= 7 项卡底 y=242 无残线、
+ *       放不下的项整行让位; ④烧录 = app 分区单烧（纯代码变更、无 spiffs 资产变更）。
+ *       host 帧像素齿（TEST 4.5 tooth 4/5）只钉 host 回归语义（TR-A4/TR-A2）, 不替代
+ *       真机探真——真机字形渲染/让位观感仍归本豁免段 human 在场确认; host 侧不为
+ *       [TR5] 四项另立像素断言。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: PH-A1 首页版式（接下来主体 + 贴纸退役负断言 + 小伴常驻 + R2 行流
@@ -134,6 +148,23 @@
  *             AC5 话术态 vs rollover 驱动的 AC7 未达态行流带显式分叉; 明天区
  *             preview []/null 两态显式分叉 + 切换不扰他区 + preview 满载 clip
  *             containment; 状态机数据半归 schedule_grid.acceptance.c test 4/4b）
+ *   coverage: TR-A1 行流底界对齐卡底（2026-10-13 regression 包
+ *             261013-p1-tomorrow-row-sliver-fix, 实现面 = home_p1.c p1_draw_card,
+ *             本文件不触实现）-> TEST 4.5 tooth 4（明天区第 2 行带整行容纳回归齿:
+ *             pv_cy1 未对齐卡底 242 即红）
+ *   coverage: TR-A2 整行容纳守卫（2026-10-13 regression 包
+ *             261013-p1-tomorrow-row-sliver-fix, 实现面 = home_p1.c p1_draw_card,
+ *             本文件不触实现）-> TEST 4.5 tooth 5（mutation 断言面: 摘整行容纳
+ *             守卫必红）
+ *   coverage: TR-A4 明天区第 2 行带整行容纳回归齿（2026-10-13 regression 包
+ *             261013-p1-tomorrow-row-sliver-fix, 实现面 = home_p1.c p1_draw_card,
+ *             本文件不触实现）-> TEST 4.5 tooth 4（mutation 断言面: 改回
+ *             pv_cy1=218 必红）
+ *   coverage: TR-A3 冻结件钉区重锚 + 授权链留痕 -> 头注表 / 区域注 / TEST 1 tooth 4
+ *             与 TEST 4.5 tooth 3 断言消息矩形数值同步 + 文件尾 REVISION LOG
+ *             2026-10-13 条（append 不覆盖）
+ *   coverage: TR-A5 真机轮 live-manual -> structural 豁免（头注 [TR5] 段在先申报,
+ *             TB-A4 261012 story_page_v2 同款先例口径, 不计入 runner 通过面）
  *
  * ---------------------------------------------------------------------------
  * BUILDER DUTY 清单（接线 + 实现落点，HOST_TEST_CONVENTIONS.md [C4.2] 约定）：
@@ -153,6 +184,10 @@
  *   5) mutation 自证（mutationRequired=true）：变异命名**不得保留被测符号原字面为
  *      子串**（KR-A3 _TOGGLE_X 教训——strstr 子串仍命中则变异不红；用 _STUB 类整词
  *      替换），mutationEvidence.perAcceptance 逐条回填。
+ *      mutation 断言面齿名（2026-10-13 申报, 取证由 builder/fixer 实测、planner 代落）:
+ *      TEST 4.5 tooth 4（明天区第 2 行带回归齿——改回 pv_cy1=218 必红）+ tooth 5
+ *      （今天区卡底残线负断言——摘整行容纳守卫必红）+ 重锚 PREVIEW_NEG 负断言
+ *      （TEST 1 tooth 4 / TEST 4.5 tooth 3——越卡底溢出必红）。
  *
  * ---------------------------------------------------------------------------
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
@@ -212,6 +247,11 @@
  * PCN_INK_MIN_MINGZAO=12 同源同值——兜底描边路径同样须过阈，有墨义务两条路径成立）。 */
 #define HPB_INK_MIN_LABEL 30
 #define HPB_INK_MIN_MINGZAO 12
+/* 2026-10-13 TR-A4: 明天区第 2 行带整行容纳下界。阈值标定 = 净 HEAD 实跑实测
+ *（2026-10-13 host runner TEMP-CALIB 一次测量）: 1px 残线墨 R=15 < T=80 < 同夹具
+ * 第 1 行整行墨 F=157（第 1/2 行同为「时间+课名」14px 行流文本, 整行墨同量级,
+ * T=80 对 R 约 5× 裕度、对 F 约 2× 裕度）——1px 残线红 / 整行绿。 */
+#define HPB_INK_MIN_PV_ROW2 80
 
 /* 区域矩形 {x1, y1, x2, y2} 含端点（seam [3] 布局在位钉）。
  * 2026-09-26 真机对齐轮重钉（canvas-p1 实测，授权 = human 看屏比对拍图逐项裁定）：
@@ -220,7 +260,11 @@
  * 墨误触发）；卡区整体上移右移（云 ic_cloud_40_t2 @103,29 / 帽标 @151,41 / 内容列
  * x152 / ROW1 y62）；预告重构为帽标独立行（MINGZAO @148,148）+ 项行在下；
  * STICKER_NEG 重锚到「帽标右 · 虚线下 · 行流上」空档 {236,36,390,60}（旧右上区已
- * 是行流带合法领空）；PREVIEW_NEG x0 136→152（sparkle 装饰墨 x≤145 让位）。 */
+ * 是行流带合法领空）；PREVIEW_NEG x0 136→152（sparkle 装饰墨 x≤145 让位）。
+ * 2026-10-13 regression 包重锚（授权链见文件尾 REVISION LOG 2026-10-13 条）:
+ * PREVIEW_NEG 上缘 220→244（pv_cy1 对齐卡底 242 后 220..242 段退役为明天区第 2 行
+ * 合法域, 负断言语义改「不越卡区底界」）; 新增 PV_ROW2 第 2 行带与 TODAY_BOT 卡底
+ * 残线带。 */
 static const int hpb_rect_aux_strip[4]    = {  0,  0, 399,  39 };
 static const int hpb_rect_aux_time[4]     = { 36,  6, 108,  29 };
 static const int hpb_rect_aux_date[4]     = {112,  6, 208,  29 };
@@ -244,11 +288,28 @@ static const int hpb_rect_rows[4]         = {152, 68, 392, 140 };
 static const int hpb_rect_sticker_neg[4]  = {236, 42, 390,  66 };
 static const int hpb_rect_row2[4]         = {152, 96, 392, 122 };
 static const int hpb_rect_mingzao[4]      = {148,154, 200, 181 };
-static const int hpb_rect_preview_neg[4]  = {152,220, 392, 258 };
-/* 2026-10-11 HV5: 明天区宽域带（MINGZAO 槽 y148..181 在内, 下缘 218 与 PREVIEW_NEG
- * 上缘 220 间 2px 缓冲）。宽域只用于「两态帧分叉/溢出 containment」判读——明天区
- * 多项行流的具体落位是 builder 版式自由度, 不钉行位。 */
-static const int hpb_rect_tomorrow[4]     = {136,142, 392, 218 };
+/* 2026-10-13 重锚（regression 包 261013, 授权链见 REVISION LOG 同日条）: 上缘
+ * 220→244 = 卡底 242 + 2px 缓冲（沿用「合法底界 + 2px」既有纪律）。pv_cy1 对齐卡底
+ * 后 220..242 段退役为明天区第 2 行合法域, 负断言语义从「不压旧预告退役带」改
+ * 「不越卡区底界」——判别力保持: 任何越卡底溢出仍红（逐齿推演 + 实跑复核见头注
+ * 2026-10-13 追记）。 */
+static const int hpb_rect_preview_neg[4]  = {152,244, 392, 258 };
+/* 2026-10-13 TR-A4 回归齿: 明天区第 2 行带。复现几何（真机截图 261013）: 今天空
+ * AC5 话术态 ty=124 → 项行 fy_pv=184 起, 第 2 行带 212..239（文字 218..231）——
+ * 修复前被 pv_cy1=218 剃成 y=218 一条 1px 残线, 修复后整行入卡区。 */
+static const int hpb_rect_pv_row2[4]      = {152,212, 392, 239 };
+/* 2026-10-13 TR-A4 阈值标定参照: 明天区第 1 行带（同夹具下完整渲染的 14px 行流文本
+ * 整行墨 = HPB_INK_MIN_PV_ROW2 标定上界参照 F）。 */
+static const int hpb_rect_pv_row1[4]      = {152,184, 392, 211 };
+/* 2026-10-13 TR-A2 守卫负断言: 今天区卡底残线带（1px 行）。今天 >= 7 项时第 7 项
+ * 行带 236..263（文字 242..255）恰跨卡底——修复前残线画在 y=242, 守卫落地后整行
+ * 让位、卡底干净（TR-A5 真机判定③的 host 帧回归代理）。 */
+static const int hpb_rect_today_bot[4]    = {152,242, 392, 242 };
+/* 2026-10-11 HV5: 明天区宽域带（MINGZAO 槽 y148..181 在内）; 2026-10-13 下缘
+ * 218→242（对齐明天区真实足迹——pv_cy1 对齐卡底后第 2 行带 212..239 为合法域, 旧
+ * 下缘 218 系已退役 PREVIEW_NEG 带的缓冲）。宽域只用于「两态帧分叉/溢出 containment」
+ * 判读——明天区多项行流的具体落位是 builder 版式自由度, 不钉行位。 */
+static const int hpb_rect_tomorrow[4]     = {136,142, 392, 242 };
 
 /* 板级装配文件（seam [2] home）与渲染节点/显示链被扫文件。 */
 #define HPB_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
@@ -837,8 +898,9 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                HPB_INK_MIN_MINGZAO));
     ink = hpb_count_ink(hpb_rect_preview_neg);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        hpb_fm("HPB-A1 RED: 旧预告独立带 {152,220,392,258} 墨 %d != 0——预告未上行"
-               "主体第三行（旧独立钉区版式在世, R2 退役面）", ink));
+        hpb_fm("HPB-A1 RED: 卡底之下重锚负断言带 {152,244,392,258} 墨 %d != 0——"
+               "墨越出卡区底界 y242（旧预告独立带版式在世 R2 退役面, 或渲染溢出越"
+               "卡底; 2026-10-13 重锚语义「不越卡区底界」）", ink));
 
     /* tooth 5 (PH-A1, R2; 2026-10-11 AC5 语义重钉): 空日程——「接下来」烘焙大字标签
      * 为固定卡题仍在场（LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,140} 墨 >= 8 =
@@ -1270,7 +1332,8 @@ TEST_CASE("首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)",
         "containment 被破, requirements S-F1.1 补充规则）");
 
     /* ---- tooth 3 (HV5-AC2 containment): preview 8 项满载 → 明天区行流 clip 进宽域
-     * 带（渲染溢出走截断降级, 不越带压 PREVIEW_NEG 退役面/不破卡区） */
+     * 带（渲染溢出走截断降级, 不越带压卡底之下重锚负断言带/不破卡区; 2026-10-13
+     * 重锚后判读域只放宽, 断言语义零偏移） */
     memset(pv_full, 0, sizeof(pv_full));
     for (i = 0; i < HP1_PREVIEW_MAX; i++) {
         snprintf(pv_full[i].time, sizeof(pv_full[i].time), "%02d:00", 8 + i);
@@ -1289,9 +1352,74 @@ TEST_CASE("首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)",
                ink, HPB_INK_MIN_ELEM));
     ink = hpb_count_ink(hpb_rect_preview_neg);
     TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-        hpb_fm("HV5-AC2 RED: preview 满载溢出压入 PREVIEW_NEG 退役面 {152,220,392,"
-               "258} 墨 %d != 0——明天区行流未 clip 进宽域带（渲染溢出必须截断降级, "
-               "plan 要点 3 containment）", ink));
+        hpb_fm("HV5-AC2 RED: preview 满载溢出压入卡底之下重锚带 {152,244,392,258}"
+               "墨 %d != 0——明天区行流未 clip 进宽域带且越出卡区底界 y242（渲染溢出"
+               "必须截断降级, plan 要点 3 containment; 2026-10-13 重锚语义）", ink));
+
+    /* ---- tooth 4 (TR-A4 回归齿, 2026-10-13): 明天区第 2 行整行容纳防复发 ---------
+     * 复现几何（真机截图 261013）: 今天空（AC5 话术态）→ ty = 68 + max(2,0)*28 = 124,
+     * 帽标 157..180, 项行 fy_pv = 184 起; 第 2 行带 212..239（文字 218..231）在卡区
+     * cy1=242 之内, 修复前被 pv_cy1=218 剃成 y=218 一条 1px 残线。本齿钉第 2 行带
+     * {152,212,392,239} 墨 >= HPB_INK_MIN_PV_ROW2（阈值标定: 净 HEAD 残线墨实测 R <
+     * T < 同夹具第 1 行整行墨实测 F, 见 REVISION LOG 2026-10-13 条）——1px 残线红 /
+     * 整行绿; 改回 pv_cy1=218 的变异对本齿必红（mutation 断言面承载齿, BUILDER DUTY
+     * 5)）。 */
+    {
+        hp1_item_t pv2[2];
+        int row1_ink;
+
+        memset(pv2, 0, sizeof(pv2));
+        snprintf(pv2[0].time, sizeof(pv2[0].time), "09:00");
+        snprintf(pv2[0].name, sizeof(pv2[0].name), "游泳课");
+        snprintf(pv2[1].time, sizeof(pv2[1].time), "10:30");
+        snprintf(pv2[1].name, sizeof(pv2[1].name), "英语课");
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", NULL, 0, pv2, 2);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): schedule_inject(AC5+pv2) rc=%d — TR-A4 夹具", rc));
+        hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
+        rc = kidpal_home_p1_render_frame();
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): render_frame(TR-A4) rc=%d", rc));
+        /* 第 1 行带 {152,184,392,211} 对照测量: 修复前第 1 行完整（未越任何 clip）,
+         * 其整行墨 = 同款 14px 行流文本「时间+课名」的整行墨下界参照（阈值标定 F）。 */
+        row1_ink = hpb_count_ink(hpb_rect_pv_row1);
+        TEST_ASSERT_TRUE_MESSAGE(row1_ink >= HPB_INK_MIN_ELEM,
+            hpb_fm("TR-A4 RED(infra): 明天区第 1 行带 {152,184,392,211} 墨 %d < %d——"
+                   "回归齿夹具第 1 行未渲染, 阈值判读失锚", row1_ink,
+                   HPB_INK_MIN_ELEM));
+        ink = hpb_count_ink(hpb_rect_pv_row2);
+        TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_PV_ROW2,
+            hpb_fm("TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 %d < %d——第 2 行"
+                   "被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因"
+                   "未修）", ink, HPB_INK_MIN_PV_ROW2));
+    }
+
+    /* ---- tooth 5 (TR-A2 守卫负断言, 2026-10-13): 今天区卡底 y=242 零残线 -----------
+     * 今天 >= 7 项: 第 7 项行带 236..263（文字 242..255）恰跨卡底——修复前逐像素行
+     * clip 把它剃成 y=242 一条 1px 残线; 整行容纳守卫落地后第 7 项整行让位、卡底
+     * 干净。零墨断言 = TR-A5 真机判定③的 host 帧回归代理（真机探真仍归 [TR5] 豁免
+     * 段）; 摘整行容纳守卫的变异对本齿必红（mutation 断言面, BUILDER DUTY 5)）。 */
+    {
+        hp1_item_t many[7];
+        int i;
+
+        memset(many, 0, sizeof(many));
+        for (i = 0; i < 7; i++) {
+            snprintf(many[i].time, sizeof(many[i].time), "%02d:00", 8 + i);
+            snprintf(many[i].name, sizeof(many[i].name), "课%d", i + 1);
+        }
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", many, 7, NULL, -1);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): schedule_inject(today7) rc=%d", rc));
+        hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
+        rc = kidpal_home_p1_render_frame();
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): render_frame(today7) rc=%d", rc));
+        ink = hpb_count_ink(hpb_rect_today_bot);
+        TEST_ASSERT_TRUE_MESSAGE(ink == 0,
+            hpb_fm("TR-A2 RED: 今天区卡底残线带 {152,242,392,242} 墨 %d != 0——第 7 项"
+                   "1px 残线画在卡底（整行容纳守卫缺失, 261013 regression）", ink));
+    }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1445,6 +1573,18 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *     独立带含 p1_draw_preview 兜底描边 {138,222,390,240} 带墨（home_p1.c 在世）+
  *     明早槽零墨, tooth 5 空日程 p1_draw_next 系整体门控不调用 → LABEL 带零墨
  *     < 30（语义反转: 新版式下标签固定卡题须在场）。其余齿零偏移。
+ *
+ *   2026-10-13 追记（regression 包 261013-p1-tomorrow-row-sliver-fix 冻结红基线,
+ *   acceptance-author 实跑; 状态 = 净 HEAD + 未修复实现 + 重锚齿/新齿, 命令 =
+ *   Run protocol 1)+2)）:
+ *     设计态义务红 = TEST 4.5 tooth 4（TR-A4 明天区第 2 行带回归齿——净 HEAD 实测
+ *     带内墨 15 < 阈值 80, 残线行为未修复）; tooth 5（今天区卡底零残线负断言）与
+ *     tooth 4 同 CASE, 被 Unity abort 屏蔽、解析性必红（守卫未落, 残线在 y=242）,
+ *     builder 落地后两齿同转绿。
+ *     重锚齿 MUST-STAY-GREEN at baseline: TEST 1 tooth 4 与 TEST 4.5 tooth 1-3 在
+ *     净 HEAD + 重锚后实跑全绿（重锚只放宽判读域——新增域 220..242 在净 HEAD 全部
+ *     既有夹具下零墨, 逐齿推演与实跑一致; 标定会话 165 Tests / 1 Failure, 唯一红
+ *     即 tooth 4 设计态红, 终跑计数与红名 verbatim 见 REVISION LOG 2026-10-13 条）。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-15  initial freeze (acceptance-author, TaskPackage
@@ -1521,4 +1661,51 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *               preview_item（旧 preview 子串被 preview_count 天然覆盖）。
  *               零触碰面：teeth 1-4/6-8 与 TEST 2-4 既有齿、钉区常量既有值、
  *               CMakeLists（HPB 已注册在册）、被测面零触碰。
+ *               ── 2026-10-13 冻结件修订（TaskPackage 261013-p1-tomorrow-row-sliver-fix;
+ *               授权链 = 「TaskPackage 261013-p1-tomorrow-row-sliver-fix（human triage
+ *               触点① 确认）」; sourceType=regression, rigor=lite, riskTier=low）──
+ *               根因 = 明天区行流独立 clip 底界 pv_cy1=218 硬编码（约束来源已退役的
+ *               旧 PREVIEW_NEG 负断言带, 非当前布局必需）+ p1_blit_flow 逐像素行 clip
+ *               （py > cy1 跳过）把部分越界行剃成 1px 残线; 真机截图实证: 今天区空
+ *               （AC5 话术）时明天区第 2 项剩 y=218 一条 1px 墨线。
+ *               ① 钉区重锚（TR-A3）: hpb_rect_preview_neg {152,220,392,258} →
+ *               {152,244,392,258}（pv_cy1 对齐卡底 242 后 220..242 段退役为明天区
+ *               第 2 行合法域; 负断言语义从「不压旧预告退役带」改「不越卡区底界」
+ *               = 卡底 242 + 2px 缓冲, 沿用「合法底界 + 2px」既有纪律）;
+ *               hpb_rect_tomorrow {136,142,392,218} → {136,142,392,242}（宽域带对齐
+ *               明天区真实足迹, 仍只判读不钉行位, 既有用法逐齿推演均成立）。同步面 =
+ *               头注表 / 区域注 / TEST 1 tooth 4 与 TEST 4.5 tooth 3 断言消息矩形
+ *               数值（断言语义不弱化: 零墨义务保留, 判读域语义随重锚换锚）。
+ *               判别力保全论证: 220..242 段退役为合法域后, 卡底 containment 改由
+ *               三重承载——重锚后 PREVIEW_NEG {152,244,392,258}（越卡底溢出仍红）+
+ *               整行容纳守卫行为齿（tooth 4/5）+ 既有 PCN A10 底界外带齿（p1_cjk_name
+ *               零触碰回归观察面）。逐齿推演: 既有齿判读域只放宽——新增域 220..242
+ *               在净 HEAD 全部既有夹具下零墨或行为不变（标准夹具明天区仅 1 行
+ *               184..211、卡区 clip cy1=242 本就无墨越界）, 无齿漂移; 实跑复核一致
+ *               （见头注 2026-10-13 追记）。
+ *               ② 新增回归齿（TR-A4 采纳 + TR-A2 守卫负断言, additive）:
+ *               TEST 4.5 tooth 4——明天区第 2 行带 {152,212,392,239} 墨 >=
+ *               HPB_INK_MIN_PV_ROW2=80（阈值标定 = 冻结会话净 HEAD 实跑 TEMP-CALIB
+ *               一次测量: 残线墨 R=15 < T=80 < 同夹具第 1 行整行墨 F=157; 第 1/2 行
+ *               同为「时间+课名」14px 行流文本, 整行墨同量级, T=80 对 R 约 5× 裕度、
+ *               对 F 约 2× 裕度——1px 残线红 / 整行绿; 附第 1 行带 {152,184,392,211}
+ *               在场下界参照齿, 防夹具失锚假红）+ tooth 5——今天区卡底残线带
+ *               {152,242,392,242} 严格零墨（今天 >= 7 项第 7 项跨卡底同病同修的
+ *               负断言; 兼承「摘守卫」变异面——明天区守卫在 pv_cy1=242 下摘除后
+ *               第 3 行整行越界零墨、像素不可观测, 今天区 1px 残线可观测故由
+ *               tooth 5 承载守卫变异判别）。两齿均为净 HEAD 设计态红（残线行为
+ *               未修复）, builder 落地后转绿。
+ *               mutation 断言面（BUILDER DUTY 5) 申报; 取证由 builder/fixer 实测、
+ *               planner 代落 taskpackage mutationEvidence, 本文件不落取证）:
+ *               改回 pv_cy1=218 → tooth 4 红; 摘整行容纳守卫 → tooth 5 红;
+ *               越卡底溢出 → 重锚 PREVIEW_NEG 负断言（TEST 1 tooth 4 / TEST 4.5
+ *               tooth 3）红。
+ *               ③ TR-A5 真机轮 live-manual structural 豁免（头注 [TR5] 段在先申报,
+ *               TB-A4 261012 story_page_v2 同款先例口径, 不计入 runner 通过面）;
+ *               host 帧像素齿（tooth 4/5）只钉 host 回归语义, 不替代真机探真,
+ *               host 侧不为 [TR5] 四项另立像素断言。
+ *               零触碰面: p1_cjk_name.acceptance.c / schedule_grid.acceptance.c 零改
+ *               （回归观察面, 同 runner 实跑确认不因重锚破）; TEST 1-4 既有齿断言
+ *               语义零偏移（仅 tooth 4 / tooth 3 断言消息矩形数值与措辞随重锚同步）;
+ *               CMakeLists 零改（HPB 已注册在册）; 被测面本文件不触（实现归 builder）。
  * --------------------------------------------------------------------------- */
