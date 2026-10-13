@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 18（待拍板 0 / 待触发 12 / 已接受风险 6）；已结 15（归档索引见下）。
+**摘要**：未结 20（待拍板 0 / 待触发 14 / 已接受风险 6）；已结 15（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（12）
+## 待触发（14）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,6 +28,8 @@ _（无）_
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
 | [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 | [TECH-261012-qq-schedule-write-format-gap](TECH-261012-qq-schedule-write-format-gap.md) | MAJOR | QQ 课表录入链路缺口——家庭侧 main agent 无写课表 skill 钉 B1 格式，一个脏日期格致整份 schedule.md 解析失败、「接下来」三触发全静默停摆；连带实测刷新 marker 链（触发③）从未 live 部署 | dev 侧在途课表链路批 landing 前对账合并处理；或下次 QQ 录入复现时 |
+| [TECH-261013-lang-config-thinking-key-regen-landmine](TECH-261013-lang-config-thinking-key-regen-landmine.md) | MAJOR | 固件 lang_config.h 生成物与 locale 源不一致——Lang::Strings::THINKING 键只存在于手工补丁的未跟踪生成头，任何触发重新生成的干净构建（新 worktree 首建 / json mtime 更新后构建）必编译红 | 下次固件批动工前对账处理；或新 worktree/clone 首建踩雷时 |
+| [TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout](TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout.md) | MAJOR | 冻结齿按 LF 原始字节哈希钉 prompt 版本文件，但 .gitattributes 未钉这些文件的 eol=lf——Windows autocrlf=true 检出即 CRLF，三条不可变齿恒红并拦死 merge-driver 合并通道 | 下次 gov 批顺带处理；或 Windows 检出/合并再踩时 |
 | [TECH-261013-p3-reader-entry-no-text-silent-noop](TECH-261013-p3-reader-entry-no-text-silent-noop.md) | SHOULD | P3 KEY 双击进阅读态对「无正文缓存」故事静默无反应——设计降级缺用户可见反馈，且冷启动恢复的老故事无正文获取通路（S-F2.1 AC2 承诺不可兑现） | 下个动 P3 显示面 / story_text 通路 / front story 推送面的包；修复分两层（固件可见降级提示 = 纯固件；正文按需获取通路 = 疑触 front/契约，走 intake 裁），修完随包真机复验「双击进阅读 + 阅读态标题」 |
 
 ## 已接受风险（6）
