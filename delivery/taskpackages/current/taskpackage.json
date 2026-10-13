@@ -1,108 +1,92 @@
 {
-  "changeId": "261013-p1-tomorrow-row-sliver-fix",
+  "changeId": "261013-lang-config-thinking-fix",
   "rigor": "lite",
   "sourceType": "regression",
   "origin": {
     "type": "regression",
     "upstreamType": "regression",
-    "upstreamRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
-    "upstreamFrozen": "Lite bug 实况：无上游 PROPOSAL——方案冻结面 = sibling plan.md（architect /triage-change 分流 review 产出 2026-10-13，human 触点① 档位确认已裁，含冻结件钉区重锚 + REVISION LOG append 授权）",
+    "upstreamRef": "docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md",
+    "upstreamFrozen": "",
     "workstream": ""
   },
-  "subsystem": "firmware/main 显示面（display/home_p1.c p1_draw_card + test/p1_home_battery.acceptance.c 冻结件钉区）",
-  "planRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
-  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC2、AC5）——首页 P1「明天」区第 2 日程项被剃成 1px 残线修复（triage 分流 human-confirmed bug，sourceType=regression）：根因 = home_p1.c p1_draw_card L1173 明天区行流独立 clip 底界 pv_cy1=218 硬编码（约束来源是已退役的旧 PREVIEW_NEG 负断言带），叠加 p1_blit_flow 逐像素行 clip 使部分越界行只画顶部 1px 墨线。story 语义权威 = docs/requirements.md 现文；技术方案权威 = plan.md（architect /triage-change 产出 2026-10-13）",
+  "subsystem": "firmware/lang-generation-chain（locale 源 + gen_lang.py + main/CMakeLists.txt 生成链）",
+  "planRef": "delivery/taskpackages/261013-lang-config-thinking-fix/plan.md",
+  "story": "TECH-261013-lang-config-thinking-key-regen-landmine · 固件 lang_config.h 生成物与 locale 源不一致（THINKING 键缺）——语义权威 = docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md 现文；技术方案权威 = plan.md（architect /triage-change reviewed plan 2026-10-13，human 触点①确认）；非 requirements story 来源，无 S-Fx.y 回引面",
   "acceptance": [
-    "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
-    "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
-    "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
-    "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
-    {
-      "id": "TR-A5",
-      "kind": "structural",
-      "note": "真机轮 live-manual structural 豁免（TB-A4 261012 同款先例口径，不计入 runner 通过面）：human 持板验收——①复现场景（今天空 AC5 话术 + 明天 ≥2 项）明天区第 2 项完整字形渲染无 1px 残线（截图与修复前对比留证）；②明天 ≥3 项第 3 项起整行让位干净不出现；③今天 ≥7 项卡底 y=242 无残线、放不下项整行让位；④烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更）；host 面转绿后停该门等 human"
-    },
-    "TR-A6: 行距参数族压缩（补充轮；home_p1.c p1_draw_card）——line_h 28→22 / text_yoff 6→4 / 组间虚线 ty+22→ty+8 / 明天帽标 ty+33→ty+13（46x24 资产原尺寸直出，兜底描边 rect 同步 151,ty+13,197,ty+37）/ 明天项行与 AC6/AC7 话术起点 ty+60→ty+43；锚点 rows=max(2,s_count) 保持零改（human 裁定紧凑上浮，版式随数据浮动为选定语义）；整行容纳守卫语义零改随新 L 平移；函数头注释几何描述按新参数族重写",
-    "TR-A7: 组级容纳门（补充轮新增语义）——明天区整块（组间虚线 + 帽标 + 项行/AC6/AC7 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty ≤ 178）：今天 ≥6 项时整区让位、不画半截帽标/孤儿虚线；结构性关闭锚点下推越卡隐患（旧参数 s_count≥7 越卡绘制）",
-    "TR-A8: 两冻结件重锚批（补充轮）——p1_home_battery.acceptance.c 常量随公式平移（row2 {152,90,392,111} / mingzao {148,124,200,149} / rows {152,68,392,133} / tomorrow {136,118,392,242} / pv_row1 {152,155,392,176} / pv_row2 {152,177,392,198} / today_bot {152,222,392,242} 语义重锚）+ 齿重锚两处（tooth 4 改明天区多行容量回归齿：今天空 + preview 3 项，断言 155-176 / 177-198 / 199-220 三行带墨达标；tooth 5 夹具 7→8 项、负断言带 {152,222,392,242} 零墨 = 第 8 项整行让位）；p1_cjk_name.acceptance.c 4 常量重锚（row2 {152,90,392,111} / row3+row3_time {152,155,392,176} / mingzao {148,124,200,149} / below_row1 {152,90,392,242}；本文件首次入本包 changeManifest = human 载体改判）；两文件 REVISION LOG append（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕）；阈值按 R<T<F 纪律重标定实测记载；preview_neg {152,244,392,258} 与 PCN preview_neg {152,220,392,242} 等零改动清单逐齿验证保持",
-    {
-      "id": "TR-A9",
-      "kind": "structural",
-      "note": "真机轮 live-manual structural 豁免（补充轮；TR-A5 同款先例口径，不计入 runner 通过面）：human 持板四项——①容量达成（今天空/≤2 + 明天 ≥3 → 明天 3-4 行全显、第 4 行带底贴卡底 242；今天 3 + 明天 3 → 3+3 全显）②紧凑上浮语义（今天空 vs 今天 3 项两档虚线/帽标位不同为预期行为）③行距 22px 全量数据态观感复核（已预览轮拍板）④布局优先级在世（今天 4 项→明天 2 行 / 5 项→1 行 / ≥6 项→明天整区让位无半截帽标）；烧录 = 纯代码变更仅 app 分区；host 面转绿后停门等 human"
-    }
+    "LG-A1 (T1): 两 locale 正源补 THINKING 键——zh-CN strings 节补 \"THINKING\": \"思考中...\"（与手补头 lang_config.h:60 逐字一致）、en-US 补 \"THINKING\": \"Thinking...\"（gen_lang.py fallback 基准，补它覆盖其余 35 locale）。判定 = python json 断言两键值逐字相等（get 返回 None 即红）+ grep 行号落在各自 strings 节内。当前红：两 locale 源均无该键。",
+    "LG-A2 (T2-①): 生成头迁 build 目录——CMakeLists set(LANG_HEADER ${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h) + INCLUDE_DIRS 追加 ${CMAKE_CURRENT_BINARY_DIR}。判定 = grep LANG_HEADER/INCLUDE_DIRS 键值 + 全树 include 字面量去重恰 1 种（#include \"assets/lang_config.h\"）+ 站点计数 = 冻结快照 62（11 main 子树 + 51 boards；零 include 站点改动，按形态唯一+计数一致钉、不按数钉）。当前红：LANG_HEADER 现指源树（firmware/main/CMakeLists.txt:775）。",
+    "LG-A3 (T2-②): gen_lang.py 加 --assets-dir 可选参——判定 = --help 含 assets-dir（非 required）+ 显式传参骨架生成通 + 不传参旧反推逻辑保留（向后兼容，骨架双跑 exit 0）+ CMake 命令行传 --assets-dir ${CMAKE_CURRENT_SOURCE_DIR}/assets。当前红：argparse 仅 --language/--output（gen_lang.py:176-180），反推块 :54-60 在位。",
+    "LG-A4 (T2-③): DEPENDS 补全 + 编译排序接线——add_custom_command DEPENDS 三项 = ${LANG_JSON} + en-US 基准 json（现行漏）+ ${PROJECT_DIR}/scripts/gen_lang.py；target_sources(${COMPONENT_LIB} PRIVATE ${LANG_HEADER}) + set_source_files_properties(GENERATED TRUE HEADER_FILE_ONLY TRUE) 挂组件目标封死编译/生成无序；add_custom_target(lang_header ALL) 撤除（单机制勿双挂）。当前红：DEPENDS 漏 en-US、接线 grep 零命中、ALL target 在 CMakeLists.txt:844。",
+    "LG-A5 (T2-④): 收尾——源树 firmware/main/assets/lang_config.h 不存在（untracked 手补头删除，git log 空、无历史损失）+ firmware/.gitignore 的 main/assets/lang_config.h 忽略行已撤（grep 计数 = 0，冻结时点在 :11）。当前红：手补头在位存活、ignore 行在位。",
+    "LG-A6 (T3): 全量对账差集为空——TaskPackage redBaselineCommand 原文重跑（cwd=仓根），判定 UNDEFINED: []——固件全树 Lang::Strings::*/Sounds::* 引用集 ⊆ 生成器可产出集（en-US ∪ zh-CN strings 键大写 ∪ OGG_<词干>.upper()）。当前红：UNDEFINED = ['THINKING']（refs 49 / producible 70，与 triage 及 planner intake 基线逐字一致）。",
+    "LG-A7 (T4 host): host 生成复现——骨架目录（两 locale json 拷贝）跑 gen_lang.py --language zh-CN --output <tmp>/main/assets/lang_config.h --assets-dir <骨架>/assets，判定产物含 constexpr const char* THINKING = \"思考中...\"；--language en-US 重跑含 \"Thinking...\"；strings 常量区相对仅缺 THINKING 的旧产物增量恰一行。当前红：冻结实测骨架产物 THINKING 命中 = 0。",
+    "LG-A8 (T4-①): 增量复现（验 DEPENDS 补 en-US）——touch firmware/main/assets/locales/en-US/language.json 后 IDF 增量构建 exit 0，且 build/esp-idf/main/assets/lang_config.h（= ${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h）mtime 晚于 touch + THINKING 命中 1。当前红：现行 DEPENDS 无 en-US 项，touch 不触发再生成。",
+    "LG-A9 (T4-②): 全量首建绿（新 worktree 首建形态 = 本雷触发条件）——rm -rf firmware/build 后 IDF 全量首建（IDF venv python 调 c:/tmp/idf_run.py build，~9 分钟）exit 0 + build/esp-idf/main/assets/lang_config.h 非空且 THINKING 命中 1 + 源树无生成物回潮（LG-A5 保持）。当前红：现行生成链删 build 后重生成产物必缺 THINKING（雷本体）。"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/p1_home_battery.acceptance.c",
-    "firmware/main/test/p1_cjk_name.acceptance.c"
+    "firmware/main/test/acceptance/lang-config-gen.acceptance.md"
   ],
   "requiredLayers": [
-    "unit",
-    "acceptance-offline",
-    "live-manual"
+    "build",
+    "reconciliation"
   ],
   "exitCriteria": [
-    "p1_home_battery.acceptance.c 全绿（含重锚后的 TEST 1 tooth 4、HV5-AC2 tooth 3、及回归齿若采纳）；红基线设计态红全数转绿",
-    "p1_cjk_name.acceptance.c 全绿（补充轮载体改判后本文件已入 changeManifest——主轮「零改动回归观察面」口径由补充轮重锚批取代，逐齿按 plan 修订 A 改动点 A3 推导表复核；重锚后仍全绿）",
-    "schedule_grid.acceptance.c 全绿（数据半零扰动 canary，零改动）；home_p1.h 与 schedule 数据链路零触碰（PH-E1 canary 须绿）",
-    "相对有效基线零新增红；阈值重标定（HPB_INK_MIN_PV_ROW2 族）按 R<T<F 纪律实测记载进 REVISION LOG；任何「推导表之外变红」的齿 = 越界信号停下回评",
-    "补充轮两冻结件 REVISION LOG append 新条目在场（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕），含逐齿推导表与 mutation 面迁移记载",
-    "REVISION LOG 2026-10-13 条目在场（append 不覆盖），钉区重锚授权链与判别力保全论证在案",
-    "docs-sync 显式裁定：plan 明确零触碰 docs/** 零 diff——docsSyncRequired=false，closeout docs-delta 声明「无 docs 面」即可；TECH CRQ 登记建议（非目标三项）不绑本包义务、留 human/后续包裁量",
-    "TR-A5 真机轮留痕：human 持板三项场景逐项目测 + 截图对比（本包收尾停门项，不自行烧录）"
+    "T3 全量对账差集为空：固件全树 Lang::Strings::* / Lang::Sounds::* 引用集 ⊆ 生成器可产出集（en-US ∪ zh-CN strings 键 ∪ OGG_<词干>），triage 基线唯一缺键 THINKING 修复后归零",
+    "firmware/build 生成目录内的 lang_config.h（${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h）含 THINKING 键，源树 firmware/main/assets/lang_config.h 已删、firmware/.gitignore:11 忽略行已撤、include 站点零改动（冻结快照 62 处 = 11 main 子树 + 51 boards，字面量形态唯一；plan 记 19 处为核验面收窄口径，冻结实测 62 为准——acceptance-author 事实修正已内置于 LG-A2）",
+    "T4-① 增量复现：touch en-US language.json 后增量构建触发 lang_config.h 再生成（DEPENDS 补 en-US 基准 json 生效）",
+    "T4-② 全量复现：删 firmware/build 后全量首建绿（新 worktree 首建形态 = 本雷触发条件，生成头必然自生成）",
+    "host 生成复现：temp 骨架目录 gen_lang.py --assets-dir 产物含 THINKING；不传 --assets-dir 时旧反推逻辑向后兼容",
+    "docs-sync：docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md 条目随本修复收口（integrator append/状态回写）；TECH 连带第 6 条（sdkconfig 装饰性空节）与建议③（launch-prep 首建自检，正形落地后裁撤）留档不进本包"
   ],
-  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "【补充轮实跑（acceptance-author，2026-10-13，重锚批落盘后、builder 落 A1 前，实现仍主轮 28px 参数）】165 Tests / 4 Failures / 0 Ignored（exit 4）——4 红全为推导表内设计态红、推导表之外变红：无。红名 verbatim：① p1_home_battery.acceptance.c:1422 TEST 4.5 tooth 4「TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 673/246/84 分别须 >= 110（今天空 + preview 3 项, ty=112, 行带 155-176/177-198/199-220）」；② p1_cjk_name.acceptance.c:1066 TEST 1 tooth 3「PCN-A1 RED: 后续事项行 name 墨差 16/79 落在 ROW2 带外」；③ p1_cjk_name.acceptance.c:1407 TEST 5 A3「PCN-A3 RED: 单项日程 preview 未提供态明天区行带 {152,155,392,176} 墨 0 < 8」；④ p1_cjk_name.acceptance.c:1567 TEST 8 tooth 4「PCN-A9 RED: 预告 time 墨差 46/46 落在预告项行带 {152,155,392,176} 之外」。阈值重标定（HPB_INK_MIN_PV_ROW2 族 R<T<F）：R=84（旧 28px 几何新行带残/错位墨 min 三带实测 673/246/84）/ F≈157（完整 14px 行流整行墨）/ T=110∈(84,157)——原 T=80 在旧几何下假绿（三带均 ≥80），抬至 110 恢复判别力；方法记两 REVISION LOG。schedule_grid 零改动 canary 绿。tooth 5 同 CASE abort 解析性红（单测 today_bot 墨 37≠0）。新增 TEST 4.5 tooth 6（组级容纳门齿，净 HEAD 基线即绿——今天 6 项 ty=236 明天区越宽域带、带内 diff 0）。主轮证据（历史，main=4279f95）：165/1（残线 tooth 4 墨 15<80）。",
+  "redBaselineCommand": "python -c \"import json,os; refs={l.strip().split('::')[-1] for l in os.popen('grep -rhoE \\\"Lang::(Strings|Sounds)::[A-Z_0-9]+\\\" firmware/main')}; prod=set(); [prod.update(k.upper() for k in json.load(open(f'firmware/main/assets/locales/{loc}/language.json',encoding='utf-8')).get('strings',{})) for loc in ['zh-CN','en-US']]; [prod.update('OGG_'+os.path.splitext(f)[0].upper() for f in os.listdir(sub) if f.endswith('.ogg')) for sub in ['firmware/main/assets/locales/zh-CN','firmware/main/assets/locales/en-US','firmware/main/assets/locales/common','firmware/main/assets/common'] if os.path.isdir(sub)]; print('UNDEFINED:', sorted(refs-prod))\"",
+  "redBaselineResult": "intake 期实跑（planner，2026-10-13，HEAD 0ee420c）：refs 49 / producible 70，UNDEFINED 差集 = ['THINKING']——与 triage 期基线逐字一致（唯一一颗）；引用站点 = firmware/main/application.cc:747 + firmware/main/display/lcd_display.cc:2180；现编译存活依赖 untracked 手补头 firmware/main/assets/lang_config.h:60（.gitignore:11 忽略中）；zh-CN/en-US 两 locale 源均无 THINKING 键（实测 False/False）。修后判定 = 差集须为空 []",
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "low",
+  "riskTier": "medium",
   "gateProfile": [
     "types",
     "test-quality",
     "evidence-integrity"
   ],
   "sourceRefs": [
-    "docs/requirements.md#S-F1.1",
-    "S-F1.1-AC2",
-    "S-F1.1-AC5",
-    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
+    "docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md",
+    "delivery/taskpackages/261013-lang-config-thinking-fix/plan.md"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/requirements.md#S-F1.1",
-    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
+    "docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md",
+    "delivery/taskpackages/261013-lang-config-thinking-fix/plan.md"
   ],
   "changeManifest": [
-    "firmware/main/display/home_p1.c",
-    "firmware/main/test/p1_home_battery.acceptance.c",
-    "firmware/main/test/p1_cjk_name.acceptance.c"
+    "firmware/main/assets/locales/zh-CN/language.json",
+    "firmware/main/assets/locales/en-US/language.json",
+    "firmware/main/CMakeLists.txt",
+    "firmware/scripts/gen_lang.py",
+    "firmware/.gitignore",
+    "firmware/main/test/acceptance/lang-config-gen.acceptance.md"
   ],
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯板端显示渲染修复——零 wire 面：preview 数据形状（data.upcoming.preview）与 schedule 链路零触碰（plan 明确零触碰面 + PH-E1 canary 承载），无对端面"
+    "exempt": "固件本地化资源键与构建生成链内部修复——locale JSON 与 lang_config.h 均为板端私有资产/生成物，server/ 零消费（无 wire 帧类型/字段承载/回执语义/序列化形态变化）；T1 补键只影响板端渲染文案，对端面不存在"
   },
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/p1_home_battery.acceptance.c",
-      "kind": "re-anchor-plus-additive-host",
-      "note": "钉区重锚（PREVIEW_NEG / tomorrow 两常量 + 头注 + 区域注 + 断言消息）+ REVISION LOG append + 回归齿 additive（TR-A4 若采纳）；既有齿逐齿判别力重排由 plan 回归风险 1 论证承载"
+      "path": "firmware/main/test/acceptance/lang-config-gen.acceptance.md",
+      "kind": "additive-acceptance-md",
+      "note": "本包验收载体（.acceptance.md 先例：260831-simulator-lvgl-align / 260831-ui-art-assets）——T1–T4 断言钉死 + 红基线 ['THINKING']；编译层包无 .acceptance.c 承载面"
     },
     {
-      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "path": "firmware/main/application.cc",
       "kind": "regression-watch-zero-touch",
-      "note": "零改动回归观察面——pcn_rect_preview_neg 限定标准夹具 preview 单行 184..211 修复后仍零墨；红了 = 修复越界"
+      "note": "THINKING 引用站点（:747）零改动——修复后编译解析走 build 目录生成头"
     },
     {
-      "path": "firmware/main/test/schedule_grid.acceptance.c",
-      "kind": "canary",
-      "note": "数据半零扰动 canary"
-    },
-    {
-      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
-      "kind": "wiring-confirm",
-      "note": "接线面不动，仅确认在册"
+      "path": "firmware/main/display/lcd_display.cc",
+      "kind": "regression-watch-zero-touch",
+      "note": "THINKING 引用站点（:2180）零改动"
     }
   ],
   "iterationBudget": 2,
@@ -112,69 +96,85 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
-        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红——acceptance-author 冻结件 BUILDER DUTY 5) 申报齿）",
+        "acceptance": "LG-A6 (T3): 全量对账差集为空——TaskPackage redBaselineCommand 原文重跑（cwd=仓根），判定 UNDEFINED: []——固件全树 Lang::Strings::*/Sounds::* 引用集 ⊆ 生成器可产出集（en-US ∪ zh-CN strings 键大写 ∪ OGG_<词干>.upper()）。当前红：UNDEFINED = ['THINKING']（refs 49 / producible 70，与 triage 及 planner intake 基线逐字一致）。",
+        "mutation": "从 en-US 与 zh-CN language.json 摘除 THINKING 键（撤销 T1/LG-A1），重跑 T3 对账 + 增量重生成",
+        "affectedTest": "LG-A6 对账差集复现 ['THINKING']；LG-A5 形态下（无手补头）增量重编译即 'THINKING' is not a member of 'Lang::Strings'（编译器即时接住，§3-B1）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13：改回 pv_cy1=218 → TEST 4.5 tooth 4 红（165 Tests / 1 Failures，红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；此变异下守卫因 212+27=239>218 亦触发 break 故墨 0 非 15，红仍由 tooth 4 承载判别力成立）；还原复绿 165/0；grep MUTATION 零残留"
+        "notes": "builder 实测 2026-10-13（planner 代存 delivery/taskpackages/261013-lang-config-thinking-fix/mutation-evidence.md，全文 verbatim）：对账红 UNDEFINED=['THINKING']（producible 回落 71→70）+ 增量重编译红 application.cc:747:59 'THINKING' is not a member of 'Lang::Strings'（B1 BUILD EXIT 2）——编译器即时接住；还原复绿（对账 [] + 构建 exit 0 + THINKING 命中 1）；grep MUTATION 零残留"
       },
       {
-        "acceptance": "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
-        "mutation": "摘今天区后续事项行循环整行容纳守卫 break（明天区守卫在 pv_cy1=242 下摘除后第 3 行整行越出 clip 零墨、像素不可观测——守卫变异判别由今天区承载，acceptance-author 冻结时逐齿推演论证在案）",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 5（今天区卡底残线带 {152,242,392,242} 严格零墨——摘守卫后第 7 项 y=242 出 1px 残线即红；同时是真机判定③的 host 帧回归代理）",
+        "acceptance": "LG-A8 (T4-①): 增量复现（验 DEPENDS 补 en-US）——touch firmware/main/assets/locales/en-US/language.json 后 IDF 增量构建 exit 0，且 build/esp-idf/main/assets/lang_config.h（= ${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h）mtime 晚于 touch + THINKING 命中 1。当前红：现行 DEPENDS 无 en-US 项，touch 不触发再生成。",
+        "mutation": "CMakeLists.txt add_custom_command DEPENDS 摘除 en-US language.json 条目（撤销 T2-③/LG-A4），touch en-US json 后增量构建",
+        "affectedTest": "build 目录 lang_config.h 不再生成（mtime/THINKING 命中不更新）——LG-A8 红（§3-B2）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13：摘今天区整行容纳守卫 → TEST 4.5 tooth 5 红（165 Tests / 1 Failures，红名 verbatim「TR-A2 RED: 今天区卡底残线带 {152,242,392,242} 墨 18 != 0——第 7 项1px 残线画在卡底（整行容纳守卫缺失, 261013 regression）」）；还原复绿 165/0；grep MUTATION 零残留"
+        "notes": "builder 实测 2026-10-13（planner 代存 mutation-evidence.md B2 节，全文 verbatim）：DEPENDS 摘 en-US 后 touch en-US → 增量构建 exit 0 但生成头 mtime 不变（1791904596 前后相同）且 THINKING 命中不变——LG-A8 红实证；还原复验绿（mtime 1791904889 > touch，REGENERATED，THINKING 命中 1）；grep MUTATION 零残留"
       },
       {
-        "acceptance": "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
-        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）——与 TR-A4 变异同源（同一变异承载 TR-A1 底界对齐与 TR-A4 回归齿两面）",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红）",
+        "acceptance": "LG-A1 (T1): 两 locale 正源补 THINKING 键——zh-CN strings 节补 \"THINKING\": \"思考中...\"（与手补头 lang_config.h:60 逐字一致）、en-US 补 \"THINKING\": \"Thinking...\"（gen_lang.py fallback 基准，补它覆盖其余 35 locale）。判定 = python json 断言两键值逐字相等（get 返回 None 即红）+ grep 行号落在各自 strings 节内。当前红：两 locale 源均无该键。",
+        "mutation": "从 en-US 与 zh-CN language.json 摘除 THINKING 键（撤销 T1）——与 B1 同源（同一变异承载 LG-A1 正源补键与 LG-A6 对账两面）",
+        "affectedTest": "LG-A1 json 判定（get 返回 None 即红）+ 冻结件 §6.1 assert（zh['THINKING']=='思考中...' and en['THINKING']=='Thinking...'）在该变异态必红",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13（变异①同源取证，见 TR-A4 条目）：红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；还原复绿 165/0"
+        "notes": "同源承载（B1 已实证，见 mutation-evidence.md B1 节）：摘键后对账差集复现 ['THINKING'] + 增量重编译红 application.cc:747:59；LG-A1 判定面与 §6.1 assert 直接消费键缺失态，红机制同源成立；还原复绿见 B1"
       },
       {
-        "acceptance": "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
-        "mutation": "p1_home_battery.acceptance.c 钉区常量回滚 hpb_rect_preview_neg {152,244,392,258}→{152,220,392,258}（变异面在冻结件自身——重锚判别力的实证闭环：旧锚回滚会把修复后合法画进 220..242 域的第 2 行墨误判为溢出）",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 3（HV5-AC2 preview 满载重锚带零墨断言）",
+        "acceptance": "LG-A2 (T2-①): 生成头迁 build 目录——CMakeLists set(LANG_HEADER ${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h) + INCLUDE_DIRS 追加 ${CMAKE_CURRENT_BINARY_DIR}。判定 = grep LANG_HEADER/INCLUDE_DIRS 键值 + 全树 include 字面量去重恰 1 种（#include \"assets/lang_config.h\"）+ 站点计数 = 冻结快照 62（11 main 子树 + 51 boards；零 include 站点改动，按形态唯一+计数一致钉、不按数钉）。当前红：LANG_HEADER 现指源树（firmware/main/CMakeLists.txt:775）。",
+        "mutation": "CMakeLists.txt set(LANG_HEADER ...) 回退 ${CMAKE_CURRENT_SOURCE_DIR}/assets/lang_config.h（撤销 T2-①），增量构建",
+        "affectedTest": "LG-A2 §6.2 assert（LANG_HEADER 行指 binary dir + sites=62 形态断言）红 + LG-A5 判据 1（源树生成物回潮）红",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "acceptance-author 实测 2026-10-13（变异执行者 = 唯一 *.acceptance.c 写点角色）：165 Tests / 1 Failures，红名 verbatim「HV5-AC2 RED: preview 满载溢出压入卡底之下重锚带 {152,244,392,258}墨 105 != 0——明天区行流未 clip 进宽域带且越出卡区底界 y242（渲染溢出必须截断降级, plan 要点 3 containment; 2026-10-13 重锚语义）」（红点 :1354；TEST 1 tooth 4 其夹具下未红——该场景明天区无第 2 行墨）；还原复绿 165/0；sha256 260b02fb...8c5cebd 变异前后逐字节一致零残留；红跑日志留档 c:/tmp/tr_a3_mutation_run.log"
+        "notes": "builder 真实变异实跑 M-A2（2026-10-13，mutation-evidence.md M-A2 节）：增量构建 exit 0 但生成物写源树（10697 bytes 回潮）→ §6.2 assert AssertionError（exit 1）+ §6.5 assert 红；还原复绿（RESTORE BUILD EXIT 0 + LG-A2 PASS sites=62 + LG-A5 PASS + 源树无生成物）"
       },
       {
-        "acceptance": "TR-A6: 行距参数族压缩（补充轮；home_p1.c p1_draw_card）——line_h 28→22 / text_yoff 6→4 / 组间虚线 ty+22→ty+8 / 明天帽标 ty+33→ty+13（46x24 资产原尺寸直出，兜底描边 rect 同步 151,ty+13,197,ty+37）/ 明天项行与 AC6/AC7 话术起点 ty+60→ty+43；锚点 rows=max(2,s_count) 保持零改（human 裁定紧凑上浮，版式随数据浮动为选定语义）；整行容纳守卫语义零改随新 L 平移；函数头注释几何描述按新参数族重写",
-        "mutation": "home_p1.c 参数族回退任一形状（line_h 22→28 / 组头偏移 ty+8·ty+13·ty+43 改回旧值族 / pv_cy1 回退）——行带错位必红",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（多行容量回归齿：行带 {152,155,392,176}/{152,177,392,198}/{152,199,392,220} 墨 ≥ 110——参数族回退即坍缩 < 阈值；acceptance-author 补充轮定稿）",
+        "acceptance": "LG-A3 (T2-②): gen_lang.py 加 --assets-dir 可选参——判定 = --help 含 assets-dir（非 required）+ 显式传参骨架生成通 + 不传参旧反推逻辑保留（向后兼容，骨架双跑 exit 0）+ CMake 命令行传 --assets-dir ${CMAKE_CURRENT_SOURCE_DIR}/assets。当前红：argparse 仅 --language/--output（gen_lang.py:176-180），反推块 :54-60 在位。",
+        "mutation": "gen_lang.py argparse 摘除 --assets-dir add_argument（撤销 T2-②），增量构建（CMake 仍传 --assets-dir）",
+        "affectedTest": "增量构建红：gen_lang.py: error: unrecognized arguments: --assets-dir（argparse exit 2 → ninja build stopped）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13（补充轮）：参数族整族回退（line_h 22→28 + text_yoff 4→6 + 虚线 ty+22 + 帽标 ty+33 + 项行 ty+60）→ 165/4 红，目标齿 verbatim「TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 673/246/84 分别须 >= 110」（673/246/84 与标定 R=84/T=110 逐字吻合）；还原复绿 165/0；grep MUTATION 零残留"
+        "notes": "builder 真实变异实跑 M-A3（mutation-evidence.md M-A3 节）：BUILD EXIT 2 红证据 verbatim 在案；还原复绿 RESTORE BUILD EXIT 0"
       },
       {
-        "acceptance": "TR-A7: 组级容纳门（补充轮新增语义）——明天区整块（组间虚线 + 帽标 + 项行/AC6/AC7 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty ≤ 178）：今天 ≥6 项时整区让位、不画半截帽标/孤儿虚线；结构性关闭锚点下推越卡隐患（旧参数 s_count≥7 越卡绘制）",
-        "mutation": "摘组级容纳门（移除 if 包裹）→ 今天 ≥6 项时半截帽标/孤儿虚线入判读带必红",
-        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 6（新增组级容纳门齿：今天 6 项 ty=200>178 时 preview 3 项帧 vs 0 项帧在 hpb_rect_tomorrow 带逐像素相同 == 整区让位；摘门 → 帽标入带 diff≠0 必红；净 HEAD 基线即绿）",
+        "acceptance": "LG-A4 (T2-③): DEPENDS 补全 + 编译排序接线——add_custom_command DEPENDS 三项 = ${LANG_JSON} + en-US 基准 json（现行漏）+ ${PROJECT_DIR}/scripts/gen_lang.py；target_sources(${COMPONENT_LIB} PRIVATE ${LANG_HEADER}) + set_source_files_properties(GENERATED TRUE HEADER_FILE_ONLY TRUE) 挂组件目标封死编译/生成无序；add_custom_target(lang_header ALL) 撤除（单机制勿双挂）。当前红：DEPENDS 漏 en-US、接线 grep 零命中、ALL target 在 CMakeLists.txt:844。",
+        "mutation": "CMakeLists.txt add_custom_command DEPENDS 摘除 en-US language.json 条目（撤销 T2-③）——与 B2 同源；target_sources/set_source_files_properties 接线摘除变异无稳定红判据（编译/生成时序竞态非确定性），如实申报不单独实跑",
+        "affectedTest": "LG-A8 判定（touch en-US 后生成头 mtime/THINKING 不更新）+ §6.4 assert（DEPENDS 三项 grep，en-US 项缺失即 AssertionError）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13（补充轮）：摘组级容纳门（if 条件 → if(1)）→ 165/1 孤立红，红名 verbatim「TR-A7 RED: 今天 6 项时 preview 3 项帧 vs 0 项帧在明天区宽域带 diff 799 != 0——组级容纳门缺失, 明天区未整体让位（半截帽标/孤儿虚线入带; ty=200 > 178 应整区让位）」；还原复绿 165/0；grep MUTATION 零残留"
+        "notes": "同源承载（B2 已实证，mutation-evidence.md B2 节）：DEPENDS 摘 en-US 后 touch 不再触发再生成（mtime 不变 verbatim）→ LG-A8 红；§6.4 assert 的 DEPENDS 面同源红成立。接线摘除面（撤 target_sources）为非确定性时序竞态、无稳定机判红，诚实 deferred——排序正确性由行为侧承载：LG-A8 增量构建日志实证生成完成先于对象编译（application.cc.obj 在生成头更新后重编）+ LG-A9 全量首建绿"
       },
       {
-        "acceptance": "TR-A8: 两冻结件重锚批（补充轮）——p1_home_battery.acceptance.c 常量随公式平移（row2 {152,90,392,111} / mingzao {148,124,200,149} / rows {152,68,392,133} / tomorrow {136,118,392,242} / pv_row1 {152,155,392,176} / pv_row2 {152,177,392,198} / today_bot {152,222,392,242} 语义重锚）+ 齿重锚两处（tooth 4 改明天区多行容量回归齿：今天空 + preview 3 项，断言 155-176 / 177-198 / 199-220 三行带墨达标；tooth 5 夹具 7→8 项、负断言带 {152,222,392,242} 零墨 = 第 8 项整行让位）；p1_cjk_name.acceptance.c 4 常量重锚（row2 {152,90,392,111} / row3+row3_time {152,155,392,176} / mingzao {148,124,200,149} / below_row1 {152,90,392,242}；本文件首次入本包 changeManifest = human 载体改判）；两文件 REVISION LOG append（授权链 = TaskPackage 261013 补充轮〔human triage 触点① + 真机预览定稿裁定 + 载体改判并入本包〕）；阈值按 R<T<F 纪律重标定实测记载；preview_neg {152,244,392,258} 与 PCN preview_neg {152,220,392,242} 等零改动清单逐齿验证保持",
-        "mutation": "冻结件任一重锚常量回退旧值（如 hpb_rect_pv_row2 {152,177,392,198}→旧值 / pcn_rect_row2 回退）→ 对应行带断言错位必红",
-        "affectedTest": "p1_home_battery tooth 4/5 + p1_cjk_name.acceptance.c TEST 1 tooth 3 / TEST 5 A3 / TEST 8 tooth 4（重锚常量回退 → 对应行带断言错位红；acceptance-author 补充轮定稿）",
+        "acceptance": "LG-A5 (T2-④): 收尾——源树 firmware/main/assets/lang_config.h 不存在（untracked 手补头删除，git log 空、无历史损失）+ firmware/.gitignore 的 main/assets/lang_config.h 忽略行已撤（grep 计数 = 0，冻结时点在 :11）。当前红：手补头在位存活、ignore 行在位。",
+        "mutation": "firmware/.gitignore 回填 main/assets/lang_config.h 忽略行（撤销 T2-④ 收尾撤行）",
+        "affectedTest": "LG-A5 §6.5 assert（gitignore 计数 ==0）红（AssertionError）；兼证判据 1（源树生成物回潮）由 M-A2 承载",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-13（补充轮）：重锚判别力由参数族回退变异同源承载（变体①：整族回退同时平移今天/明天锚点 → HPB tooth 4 红 + PCN TEST 1 tooth 3「墨差 16/79 落 ROW2 带外」/ TEST 5 A3「墨 0 < 8」/ TEST 8 tooth 4「墨差 46/46 落预告项行带之外」三齿附带红——重锚常量之意义即令几何错位可测，判别力实证）；冻结件常量回退变异（改 *.acceptance.c）越 builder 写权、如实 deferred（builder 申报）；还原复绿 165/0。TR-A2 tooth 5 补充轮新带变异另证：摘今天区守卫 → 165/1 红「TR-A2 RED: 今天区卡底残线带 {152,222,392,242} 墨 128 != 0——第 8 项（行带 222-243）跨卡底未整行让位」"
+        "notes": "builder 真实变异实跑 M-A5（mutation-evidence.md M-A5 节）：回填行 :12 → §6.5 assert AssertionError（exit 1）；还原复绿 LG-A5 PASS（exit 0）；源树回潮判据另由 M-A2 实证（生成头 10697 bytes 回潮 + THINKING 命中 1）"
+      },
+      {
+        "acceptance": "LG-A7 (T4 host): host 生成复现——骨架目录（两 locale json 拷贝）跑 gen_lang.py --language zh-CN --output <tmp>/main/assets/lang_config.h --assets-dir <骨架>/assets，判定产物含 constexpr const char* THINKING = \"思考中...\"；--language en-US 重跑含 \"Thinking...\"；strings 常量区相对仅缺 THINKING 的旧产物增量恰一行。当前红：冻结实测骨架产物 THINKING 命中 = 0。",
+        "mutation": "gen_lang.py 摘除 --assets-dir（M-A3 摘除态复用）后跑骨架 --assets-dir 通道命令（撤销 T2-② host 面）",
+        "affectedTest": "LG-A7 判据 2（显式 --assets-dir 通道通）红：host exit 2，gen_lang.py: error: unrecognized arguments: --assets-dir",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 真实变异实跑 M-A7（mutation-evidence.md M-A7 节）：M-A7 HOST EXIT 2 红证据 verbatim；还原后同命令复跑 exit 0 + THINKING 命中 1"
+      },
+      {
+        "acceptance": "LG-A9 (T4-②): 全量首建绿（新 worktree 首建形态 = 本雷触发条件）——rm -rf firmware/build 后 IDF 全量首建（IDF venv python 调 c:/tmp/idf_run.py build，~9 分钟）exit 0 + build/esp-idf/main/assets/lang_config.h 非空且 THINKING 命中 1 + 源树无生成物回潮（LG-A5 保持）。当前红：现行生成链删 build 后重生成产物必缺 THINKING（雷本体）。",
+        "mutation": "T1 摘除态（两 locale 无 THINKING 键）下全量首建——与 B1 同源（同一缺键态，首建与增量重生成走同一 add_custom_command 生成命令）",
+        "affectedTest": "LG-A9 §6.9 assert（build 目录生成头 THINKING count==1）在该态必红（首建产物缺 THINKING = 雷本体复现）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "同源承载（B1 已实证生成命令产物缺 THINKING，mutation-evidence.md B1 节）：B1 红证据 = 重生成产物缺键 → 编译红（application.cc:747）；首建与增量重生成同一生成命令，缺键态下首建产物必缺 THINKING，判别力成立。不重复 9 分钟全量首建（bounded 取证纪律）；LG-A9 正向绿证据 = builder 主回执两次独立全量首建（rm -rf build → exit 0 + THINKING 命中 1 + 源树无回潮）"
       }
     ],
-    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；mutation 断言面齿名已由 acceptance-author 冻结件 BUILDER DUTY 5) 申报（tooth 4 = pv_cy1 回退 / tooth 5 = 摘守卫·今天区承载 / TEST 1 tooth 4 + TEST 4.5 tooth 3 = 越卡底溢出）；perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤——round 1 mutation-check 全文匹配教训落地）；TR-A3 重锚与 TR-A5 真机轮为取证豁免面（TR-A3 判别力由回归齿 mutation 间接承载 + REVISION LOG 留痕；TR-A5 structural 豁免）"
+    "reason": "Lite 包变异判别全景（mutation-check r2 反馈后补齐）：真实变异实跑 6 条（B1=摘键/B2=DEPENDS 摘除/M-A2=头回退/M-A3=参数摘除/M-A5=ignore 回填/M-A7=host 摘除态）+ 同源承载 3 条（LG-A1←B1、LG-A4←B2、LG-A9←B1）；接线摘除变异无稳定红判据（时序竞态）如实申报 deferred，排序行为由 LG-A8 构建日志 + LG-A9 首建绿兜底。perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤口径，程序化注入防转录漂移）；全部证据 verbatim 落 mutation-evidence.md（planner 代存，builder 无 delivery/ 写权）"
   },
   "adrRequired": false,
-  "docsSyncRequired": false,
-  "docsSyncReason": "plan 明确零触碰 docs/**（requirements / architecture / contracts 零 diff）；TECH CRQ 登记建议（明天区锚点下推 / 续行跨底界残线 / 明天区容量三项非目标）不绑本包义务，留 human/后续布局包裁量",
+  "docsSyncRequired": true,
+  "docsSyncReason": "docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md 条目随本修复收口（integrator）；docs/requirements.md、docs/architecture.md、docs/contracts/** 零触碰（plan 逃生门结论：不触契约/spec/agent 面）",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-13，frontmatter reviewed-by 行为证）：技术方案意见（pv_cy1 对齐卡底 + 整行守卫 + 冻结件重锚）+ changeManifest + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①（triage 分流确认）已裁。【1f 快照保鲜核验】plan 引用源码行逐条对磁盘核验通过：home_p1.c L1166-1260（pv_cy1=218 / 两行循环位置）与 p1_home_battery.acceptance.c（L81 头注表 / L223 区注 / L247-251 两常量 / L840、L1292 断言消息 / 文件尾 REVISION LOG）全部在位无漂移；红基线 cwd 基准沿用上包 host runner 命令（elf 在 firmware/main/test/host_app/build）无归档漂移。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 源面 home_p1.c；p1_home_battery.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明；acceptance-author allow firmware/**/*.acceptance.c 覆盖冻结件。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① 本包 host 齿为真实渲染帧像素墨量断言（hpb_count_ink 探真），非纯结构断言——all-mock 风险低于 261012/261010 两包，仍如实申报：若机械闸判 all-mock 触 riskTier 重算 high 需 human 放行（先例申报口径）；② 真机轮烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；③ host runner 相关子集 = p1_home_battery / p1_cjk_name / schedule_grid（不跑全量——测试跑相关子集纪律）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = 本会话 triage review 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261012 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261012 包 closeout 后 host 全绿（165/0）；本包红基线红全部为设计态红（重锚/新增齿对净 HEAD 未修复行为），无上游已知红需要消解。【真机门】host 面转绿后停 human 持板门（TR-A5），不自行烧录。【补充轮（2026-10-13，human 裁定不开新包、并入本包）】plan.md 修订 A = 行距压缩（line_h 28→22 / text_yoff 6→4 / 虚线 ty+8 / 帽标 ty+13 / 项行 ty+43 / 组级容纳门）+ 紧凑上浮锚点保留（max(2,·) 零改，human 真机预览定稿，见 sibling preview-round.md）；architect 二次 review 已过（② Lite/low/human-ad-hoc）。**载体改判留痕（human 作者性直令）**：changeManifest 增量扩展加 firmware/main/test/p1_cjk_name.acceptance.c（主轮「零改动回归观察面」口径由补充轮重锚批取代——行距几何平移使 PCN 4 常量必随动，human 裁定载体改判）；acceptance 新增 TR-A6/A7/A8 + TR-A9（真机轮 structural 豁免）；acceptanceTestsFile 加 p1_cjk_name.acceptance.c；mutationEvidence 补三条骨架（TR-A6/A7/A8）。authority 注记：本补充轮由 human 直令（非 proposal 来源），sourceType 保留 regression（主轮溯源不变）、不改 origin。验收要点见 plan 修订 A「A2. 验收要点」；真机判定四项见 TR-A9。【补充轮真机门】同 TR-A5 口径——host 转绿后停门等 human 持板，不自行烧录。"
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change reviewed plan，frontmatter reviewed-by 行为证，human 触点①确认 2026-10-13）：技术方案意见（T1 补键 + T2 生成头迁 build 目录/全依赖化/排序接线 + 收尾）齐备；changeManifest 由 planner 按 plan 改动面推导（Lite 简版权）；impactedTestsSeed 如上。不再重复派 architect。【1f 快照保鲜核验（intake 逐条对磁盘）】plan 引用行号逐条核验通过：CMakeLists.txt LANG_HEADER 定义 :775、custom_command :830-840、add_custom_target :843-845（plan 记 831-846 族，实况同域）；gen_lang.py 反推块 :54-60 实测在位；.gitignore:11 = main/assets/lang_config.h 实测在位；两 locale 源无 THINKING 键实测。**事实修正（acceptance-author 冻结实测 2026-10-13）**：plan 记「include 形态枚举 19 处」与全树实测 62 处（11 main 子树 + 51 boards）不符——字面量形态仍唯一，方案正确性不受影响，LG-A2 按「形态唯一 + 站点计数 62 零改动」钉；后续文面以 62 为准。【acceptance 冻结（Step 8，acceptance-author aae472c17c4866020，2026-10-13）】LG-A1..A9 九条落盘 firmware/main/test/acceptance/lang-config-gen.acceptance.md（FROZEN，冻结即冒烟：对账 + host 生成命令当场实跑 error=0）；红基线独立复跑与 intake 基线逐字一致（UNDEFINED=['THINKING']，refs 49/producible 70）；红基线性质 = 对账红 + host 生成红 + 形态缺陷，非编译红（手补头存活，净 HEAD firmware-build 闸应绿）——verifier 以 LG-A6 + LG-A7/A9 + 编译绿三面判转绿。真机轮 deferred 豁免声明已写入冻结件头（plan T4 已裁）。【8b 核对（planner，Step 8b）】sourceRefs 无 requirements story（regression/TECH 来源）→ AC 回引号集对账不适用；TECH 条目核心事实（THINKING 键缺 + 生成链结构缺陷 + 收尾面）逐条有 LG-A1..A9 承载无遗漏；断言方向不弱于 plan（LG-A2 站点计数快照钉 + LG-A9 全量首建 = 雷触发条件直验）。【scope-map 核对（intake checklist 1c）】builder/fixer allow firmware/** 覆盖 changeManifest 全部源面；验收载体 firmware/main/test/acceptance/** 命中 builder deny（**/acceptance/**）——归 acceptance-author 写（allow firmware/**/acceptance/** 覆盖，实测 Write 成功未被拦），builder 只读消费，分权即设计；integrator allow docs/crq/** 覆盖 TECH 收口。【UIUX】Level 0（构建链修复，无用户可见 UI 设计面）。【intake 形状】自建 regression 形状（/triage-change 分流）：无 portfolio taskpackage、无 devloop/pods/<changeId> 条目（单 Pod 模式）、无 PROPOSAL；launch-card.md 缺失如实记录不设门（Step 1① 口径）；current/ 指针刷新前指 261013-p1-tomorrow-row-sliver-fix（board status=merged，投影陈旧非活跃冲突），本包落盘即字节级复制刷新（taskpackage + plan + 双 brief 三件已投影）。【T4 构建入口】cd firmware && \"C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe\" c:/tmp/idf_run.py build（IDF venv python 调 wrapper，勿裸 python）；全量首建 ~9 分钟量级，长命令 run_in_background + 轮询；firmware/build/ 不进仓。【真机轮】deferred（plan 已裁）：本修复为编译层修复，行为面与手补头存活时代等价；思考页真机表现归 Phase-1 语音轮 workstream。【范围外残留】TECH 连带第 6 条（sdkconfig 装饰性空节）另开轻量 CRQ；TECH 建议③（launch-prep 首建自检）裁撤（T2 正形落地后自检对象不存在，绑定条件不预期发生）。"
 }

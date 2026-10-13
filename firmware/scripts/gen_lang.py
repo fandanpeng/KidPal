@@ -50,15 +50,18 @@ def get_sound_files(directory):
         return []
     return [f for f in os.listdir(directory) if f.endswith('.ogg')]
 
-def generate_header(lang_code, output_path):
-    # 从输出路径推导项目结构
-    # output_path 通常是 main/assets/lang_config.h
-    main_dir = os.path.dirname(output_path)  # main/assets
-    if os.path.basename(main_dir) == 'assets':
-        main_dir = os.path.dirname(main_dir)  # main
-    project_dir = os.path.dirname(main_dir)  # 项目根目录
-    assets_dir = os.path.join(main_dir, 'assets')
-    
+def generate_header(lang_code, output_path, assets_dir=None):
+    # assets 目录解析：优先用显式传入的 --assets-dir；
+    # 未传入时保留旧的「从输出路径反推」逻辑（向后兼容，旧调用方 output 落 <main>/assets/ 形态）。
+    if assets_dir is None:
+        # 从输出路径推导项目结构
+        # output_path 通常是 main/assets/lang_config.h
+        main_dir = os.path.dirname(output_path)  # main/assets
+        if os.path.basename(main_dir) == 'assets':
+            main_dir = os.path.dirname(main_dir)  # main
+        project_dir = os.path.dirname(main_dir)  # 项目根目录
+        assets_dir = os.path.join(main_dir, 'assets')
+
     # 构建语言JSON文件路径
     input_path = os.path.join(assets_dir, 'locales', lang_code, 'language.json')
     
@@ -177,10 +180,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate language configuration header file with en-US fallback")
     parser.add_argument("--language", required=True, help="Language code (e.g: zh-CN, en-US, ja-JP)")
     parser.add_argument("--output", required=True, help="Output header file path")
+    parser.add_argument("--assets-dir", default=None, help="Path to the assets directory (parent of locales/ and common/). When omitted, the assets directory is derived from --output for backward compatibility.")
     args = parser.parse_args()
 
     try:
-        generate_header(args.language, args.output)
+        generate_header(args.language, args.output, args.assets_dir)
         print(f"Successfully generated language config file: {args.output}")
     except Exception as e:
         print(f"Error: {e}")

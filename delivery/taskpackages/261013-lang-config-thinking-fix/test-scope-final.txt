@@ -1,0 +1,31 @@
+# test-scope-final —— 261013-lang-config-thinking-fix（影响面圈定清单，integrator 落盘 2026-10-14）
+# 圈定方法（三分法：per-Pod 专属图索引可用 → 正常圈定，无降级）：
+#   detect_changes 实跑（Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，merge_base=f6cb61f，
+#   direction=inbound、depth=2，含工作树未 commit diff）：10 seed symbols / 2 impacted，
+#   impacted 全落 firmware 两个已改模块（firmware/scripts = gen_lang 模块、firmware/main = CMakeLists 模块），
+#   零跨模块越界、零额外测试文件命中——本包为编译层/生成链修复（locale json 数据键 + CMake 生成链参数面），
+#   无运行时符号消费方被影响，blast radius 即改动模块自身。
+#   ∪ taskpackage impactedTestsSeed 种子（验收载体 + 两个零改动回归观察面）。
+# 语义铁律留痕：范围 = 影响面圈定清单（非默认全量、非缩到只剩本包档）；圈定降级 = 无。
+#   本包零 server 面改动 → server 交集诚实绿跳过（taskpackage crossEnd.exempt 在案：locale JSON 与
+#   lang_config.h 均为板端私有资产/生成物，server/ 零消费、无 wire 面）。
+#   单包无对端冻结件 → 圈定 floor = 本包冻结验收件一件（本清单首条）。
+# 终验执行记录（integrator 2026-10-14 收口）：本包为编译层包、无 .acceptance.c runner 承载面——
+#   verifier 终态 fact = delivery/taskpackages/261013-lang-config-thinking-fix/verifier-evidence/rounds/r3.json
+#   （phase=scoped、round=3、invocationId=860711b3-d466-49d5-ac85-b78e8e0ee021、ok=true、
+#   observedGateExit=0，八闸全 PASS，含 firmware-build 真编译绿）；integrator 只消费不重跑（verify fact
+#   程序 fs-write，r3 顶层 phase=scoped 如实留痕）。未另跑 final 相位轮（派单未含）；planner 如补跑
+#   final 轮，在下一行占位回填一行终态：
+#   [final 轮占位——待 planner 回填]
+#   test-scope 清单落盘路径（一行记入 final verifier fact results 元数据锚）：本文件。
+
+# ── 本包冻结验收件（acceptanceTestsFile，圈定 floor）──
+firmware/main/test/acceptance/lang-config-gen.acceptance.md
+
+# ── impactedTestsSeed 种子（两个零改动回归观察面——THINKING 引用站点，修复后编译解析走 build 目录生成头）──
+firmware/main/application.cc
+firmware/main/display/lcd_display.cc
+
+# ── blast radius 命中面（detect_changes 实跑，impacted = 已改模块自身，无新增测试面）──
+firmware/main/CMakeLists.txt
+firmware/scripts/gen_lang.py
