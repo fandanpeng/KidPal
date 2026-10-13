@@ -1,0 +1,73 @@
+I (7452) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (7452) WifiStation: Got IP: 192.168.3.36
+I (7452) WifiBoard: Connected to WiFi: 701
+I (7882) Application: Network connected
+I (7882) Application: sntp_time_sync corr_id=kdp-7882 started servers=ntp.aliyun.com,ntp1.aliyun.com,pool.ntp.org tz=CST-8
+I (7892) StateMachine: State: starting -> activating
+create static modelsI (7892) MODEL_LOADER: Successfully load srmodels
+I (7902) Assets: Refreshing display theme...
+I (7902) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (7922) Application: Activation done
+I (7922) SystemInfo: free sram: 100787 minimal sram: 91927
+I (7932) StateMachine: State: activating -> idle
+I (7932) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (7942) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (7942) AudioService: Resampling audio from 16000 to 24000
+I (7952) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (7962) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7972) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (7972) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (7982) AudioService: audio_output task stack HWM: 2656 words
+I (7992) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (7992) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (8002) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (8002) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (8012) wifi:Set ps type: 2, coexist: 0
+
+I (8022) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (8032) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (8032) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (8052) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8062) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8062) wifi:<ba-add>idx:1 (ifx:0, a2:7b:52:84:30:ba), tid:6, ssn:2, winSize:64
+I (8072) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8082) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8092) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (8092) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+I (8092) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (8182) AFE: AFE Version: (1MIC_V250121)
+I (8192) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (8192) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (8212) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (8222) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8222) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8232) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8242) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8892) Application: sntp_time_sync corr_id=kdp-8892 ok year=2026
+I (9152) esp-x509-crt-bundle: Certificate validated
+I (11122) MCP: story_list_dispatch corr_id=kdp-11122 items=1 counter=1 degrade=false
+I (11122) MCP: story_list_gate defer_front page=0 voice_front=0 restore=1
+I (11122) MCP: display_dispatch view=home corr_id=kdp-11122 upcoming_apply ok
+I (11172) WS: Session ID: cbbd40db-f5cc-4835-b344-3a242c485c2b
+I (11172) Application: AutoConnect task exit, stack high water mark=4924
+I (11732) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=10966
+I (11732) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (11742) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (11742) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (11752) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+I (11762) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+I (11762) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (11772) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (11782) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (11822) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (11962) MCP: display_dispatch view=schedule corr_id=kdp-11962 courses=38 degrade=false
+I (11962) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (11972) wifi:Set ps type: 0, coexist: 0
+
+W (11972) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (12672) MCP: schedule_grid_restore corr_id=kdp-11962 courses=38 cached=38
+I (17692) SystemInfo: free sram: 74647 minimal sram: 51631
+I (24142) I2S_IF: Pending out channel for in channel running
+I (24142) AudioCodec: Set output enable to false
+I (27732) SystemInfo: free sram: 74647 minimal sram: 51631
