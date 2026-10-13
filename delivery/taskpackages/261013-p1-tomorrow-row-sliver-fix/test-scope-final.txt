@@ -1,0 +1,29 @@
+# test-scope-final —— 261013-p1-tomorrow-row-sliver-fix（影响面圈定清单，integrator 落盘 2026-10-13）
+# 圈定方法（三分法：per-Pod 专属图索引可用 → 正常圈定，无降级）：
+#   detect_changes 实跑（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，
+#   base=main，merge_base=0e457f0，inbound depth=2，含工作树未 commit diff）：
+#   3 seed / 3 impacted，impacted 全落 firmware/main 单模块、零跨模块越界——
+#     ① kidpal_home_p1_render_frame（firmware/main/display/home_p1.c，p1_draw_card 唯一调用方）
+#     ② test 模块（firmware/main/test/acceptance/archive/happy_flow_capture.test.c，归档快照测试）
+#     ③ main（firmware/test/host_app/screenshot/home_p1_screenshot.c，截图工具）
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子（TR-A1~A5 承载件 + 回归观察面 + canary）。
+#   host 套件为单 ELF（host_infra_test.elf 全量），圈定清单与实跑天然对齐
+#   「套件级全量」（261010/261012 包先例口径）；本包零 server 面改动 → server 交集诚实绿跳过。
+#   圈定 floor：本包冻结验收件 p1_home_battery.acceptance.c 在清单内（单包无对端冻结件）。
+# 语义铁律留痕：范围 = 影响面圈定清单（非默认全量、非缩到只剩本包档）；圈定降级 = 无。
+#   真机轮 TR-A5 = human 持板硬前置，不在本清单（live-manual 面不计入 runner 通过面）。
+# 终验执行记录（integrator 2026-10-13）：host runner 命令 = taskpackage redBaselineCommand 逐字，
+#   build 通道 ninja no-work-to-do（elf 与当前源面同 fresh）→ 实跑 **165 Tests / 0 Failures / 0 Ignored / OK**——
+#   与 r3.json（scoped round 3 全绿）终态一致。
+
+# ── 本包冻结验收件（acceptanceTestsFile）──
+firmware/main/test/p1_home_battery.acceptance.c
+
+# ── impactedTestsSeed 种子（回归观察面 + canary + 接线确认）──
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/host_app/main/CMakeLists.txt
+
+# ── blast radius 命中面（detect_changes 实跑，runner 全量实跑覆盖）──
+firmware/main/test/acceptance/archive/happy_flow_capture.test.c
+firmware/main/test/host_app/screenshot/home_p1_screenshot.c

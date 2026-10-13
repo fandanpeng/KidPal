@@ -1,0 +1,35 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "261013-p1-tomorrow-row-sliver-fix",
+  "phase": "scoped",
+  "round": 3,
+  "invocationId": "4fb758f7-9553-4ccc-adb4-240f01c53b94",
+  "outcome": "ok",
+  "ok": true,
+  "observedGateExit": 0,
+  "gatesRun": 8,
+  "gatesNotExecuted": [],
+  "evidenceRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r3.json",
+  "lifecycle": {
+    "rounds": [
+      { "round": 1, "timing": "scoped", "outcome": "红（acceptance-coverage 闸红，fixer 轮入点）", "evidenceRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r1.json" },
+      { "round": 2, "timing": "scoped", "outcome": "红（mutation-check 闸红，fixer 轮入点）", "evidenceRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r2.json" },
+      { "round": 3, "timing": "scoped", "outcome": "全绿（八闸 PASS，收口证据态）", "evidenceRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r3.json" }
+    ],
+    "reworkRounds": 2,
+    "budgetNote": "iterationBudget=2 / fixBudget=3——round 1→2→3 两次返工均在预算内收敛",
+    "redBaseline": "acceptance-author 冻结实跑（命令 = redBaselineCommand 逐字，2026-10-13，净 HEAD + 重锚齿 + 新增回归齿）：165 Tests / 1 Failures——唯一设计态红 = TEST 4.5 tooth 4（TR-A4 明天区第 2 行带 {152,212,392,239} 墨 15 < 80，1px 残线未修复；阈值 HPB_INK_MIN_PV_ROW2=80 由 TEMP-CALIB 探针实测标定 R=15/F=157）；tooth 5 为同 CASE Unity abort 屏蔽的解析性红；重锚齿（TEST 1 tooth 4 / TEST 4.5 tooth 1-3）净 HEAD 实证绿无齿漂移",
+    "greenState": "host runner 165 Tests / 0 Failures / 0 Ignored, OK（integrator 终验独立复跑 2026-10-13，与 r3 终态一致；设计态红全数转绿、回归观察面 p1_cjk_name / canary schedule_grid 全绿、相对 261012 closeout 基线零新增红）"
+  },
+  "scopeAudit": {
+    "firmwareFiles": ["firmware/main/display/home_p1.c", "firmware/main/test/p1_home_battery.acceptance.c"],
+    "deliveryFiles": ["delivery/changes/dev/INDEX.md", "delivery/taskpackages/current/taskpackage.json", "delivery/taskpackages/current/verdict.json", "delivery/taskpackages/current/input-brief-acceptance-author.md", "delivery/taskpackages/current/input-brief-builder.md", "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/", "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/"],
+    "zeroTouchSurfaces": ["firmware/main/test/p1_cjk_name.acceptance.c", "firmware/main/display/home_p1.h", "schedule 数据链路", "docs/contracts/**", "docs/requirements.md", "docs/architecture.md", "server/**", ".claude/**"],
+    "auditCommand": "git status --porcelain + git diff --stat（工作树态，分支 dev/260915-m1-k1a-key-layer-dispatch）"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/review-packet.md",
+    "docsDelta": "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；TR-A5 真机轮 human 持板为本包停门项（host 面转绿后停该门等 human，不自行烧录）"
+}

@@ -1,0 +1,145 @@
+{
+  "changeId": "261013-p1-tomorrow-row-sliver-fix",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
+    "upstreamFrozen": "Lite bug 实况：无上游 PROPOSAL——方案冻结面 = sibling plan.md（architect /triage-change 分流 review 产出 2026-10-13，human 触点① 档位确认已裁，含冻结件钉区重锚 + REVISION LOG append 授权）",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main 显示面（display/home_p1.c p1_draw_card + test/p1_home_battery.acceptance.c 冻结件钉区）",
+  "planRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC2、AC5）——首页 P1「明天」区第 2 日程项被剃成 1px 残线修复（triage 分流 human-confirmed bug，sourceType=regression）：根因 = home_p1.c p1_draw_card L1173 明天区行流独立 clip 底界 pv_cy1=218 硬编码（约束来源是已退役的旧 PREVIEW_NEG 负断言带），叠加 p1_blit_flow 逐像素行 clip 使部分越界行只画顶部 1px 墨线。story 语义权威 = docs/requirements.md 现文；技术方案权威 = plan.md（architect /triage-change 产出 2026-10-13）",
+  "acceptance": [
+    "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
+    "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
+    "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
+    "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
+    {
+      "id": "TR-A5",
+      "kind": "structural",
+      "note": "真机轮 live-manual structural 豁免（TB-A4 261012 同款先例口径，不计入 runner 通过面）：human 持板验收——①复现场景（今天空 AC5 话术 + 明天 ≥2 项）明天区第 2 项完整字形渲染无 1px 残线（截图与修复前对比留证）；②明天 ≥3 项第 3 项起整行让位干净不出现；③今天 ≥7 项卡底 y=242 无残线、放不下项整行让位；④烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更）；host 面转绿后停该门等 human"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/p1_home_battery.acceptance.c"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "exitCriteria": [
+    "p1_home_battery.acceptance.c 全绿（含重锚后的 TEST 1 tooth 4、HV5-AC2 tooth 3、及回归齿若采纳）；红基线设计态红全数转绿",
+    "p1_cjk_name.acceptance.c 全绿且零文件改动——本包最重要的回归观察面（冻结件未被本包触碰却红了 = 修复越界）",
+    "schedule_grid.acceptance.c 全绿（数据半零扰动 canary）；home_p1.h 与 schedule 数据链路零触碰（PH-E1 canary 须绿）",
+    "相对有效基线零新增红",
+    "REVISION LOG 2026-10-13 条目在场（append 不覆盖），钉区重锚授权链与判别力保全论证在案",
+    "docs-sync 显式裁定：plan 明确零触碰 docs/** 零 diff——docsSyncRequired=false，closeout docs-delta 声明「无 docs 面」即可；TECH CRQ 登记建议（非目标三项）不绑本包义务、留 human/后续包裁量",
+    "TR-A5 真机轮留痕：human 持板三项场景逐项目测 + 截图对比（本包收尾停门项，不自行烧录）"
+  ],
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑（命令 = redBaselineCommand 逐字，2026-10-13，净 HEAD + 重锚齿 + 新增回归齿）：build 通道 error 零；实跑 165 Tests / 1 Failures / 0 Ignored——唯一设计态红 verbatim「p1_home_battery.acceptance.c:1384 首页空态三态渲染分叉 (HV5-AC5/AC6/AC7):FAIL — TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 15 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」（TEST 4.5 tooth 4，阈值 HPB_INK_MIN_PV_ROW2=80 由 TEMP-CALIB 探针实测标定：净 HEAD 残线墨 15 / 整行墨 157，定稿前探针已移除）；tooth 5（今天区卡底残线带 {152,242,392,242} 严格零墨守卫齿）为同 CASE Unity abort 屏蔽的解析性红——builder 落地后两齿同绿；重锚齿（TEST 1 tooth 4 / TEST 4.5 tooth 1-3，PREVIEW_NEG {152,244,392,258} / tomorrow {136,142,392,242}）净 HEAD 实证绿无齿漂移（重锚只放宽判读域、新增域 220..242 净 HEAD 全夹具零墨）；回归观察面 p1_cjk_name / schedule_grid 零触碰同跑全 PASS（其余 164 case 零新增红，261012 closeout 基线保持）",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "low",
+  "gateProfile": [
+    "types",
+    "test-quality",
+    "evidence-integrity"
+  ],
+  "sourceRefs": [
+    "docs/requirements.md#S-F1.1",
+    "S-F1.1-AC2",
+    "S-F1.1-AC5",
+    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md#S-F1.1",
+    "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md"
+  ],
+  "changeManifest": [
+    "firmware/main/display/home_p1.c",
+    "firmware/main/test/p1_home_battery.acceptance.c"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端显示渲染修复——零 wire 面：preview 数据形状（data.upcoming.preview）与 schedule 链路零触碰（plan 明确零触碰面 + PH-E1 canary 承载），无对端面"
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "kind": "re-anchor-plus-additive-host",
+      "note": "钉区重锚（PREVIEW_NEG / tomorrow 两常量 + 头注 + 区域注 + 断言消息）+ REVISION LOG append + 回归齿 additive（TR-A4 若采纳）；既有齿逐齿判别力重排由 plan 回归风险 1 论证承载"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "kind": "regression-watch-zero-touch",
+      "note": "零改动回归观察面——pcn_rect_preview_neg 限定标准夹具 preview 单行 184..211 修复后仍零墨；红了 = 修复越界"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "canary",
+      "note": "数据半零扰动 canary"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring-confirm",
+      "note": "接线面不动，仅确认在册"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptance": "TR-A4: 回归齿防复发（采纳与否 acceptance-author 按 Lite 比例与判别力裁量）——明天区第 2 行带 {152,212,392,239} 墨量阈值断言（阈值须满足「1px 残线墨 < 阈值 < 完整行墨」，修复前红/修复后绿）；注意：本包 mutationRequired=true 的 mutation 断言面依赖此齿承载（改回 pv_cy1=218 或摘守卫须有齿红）——不采纳则 mutation 取证形状须在冻结件头注显式申报替代承载齿",
+        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红——acceptance-author 冻结件 BUILDER DUTY 5) 申报齿）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13：改回 pv_cy1=218 → TEST 4.5 tooth 4 红（165 Tests / 1 Failures，红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；此变异下守卫因 212+27=239>218 亦触发 break 故墨 0 非 15，红仍由 tooth 4 承载判别力成立）；还原复绿 165/0；grep MUTATION 零残留"
+      },
+      {
+        "acceptance": "TR-A2: 行流整行容纳守卫——明天区 preview 行循环与今天区后续事项行循环在每次 blit 前加「行带底越界即整行让位」守卫（fy + line_h - 1 > 底界 → break，break 而非 continue：行流顺序下排前项放不下后项必放不下）；今天区第 1 项与 AC5/AC6/AC7 话术单行免守卫（plan 改动点 1 第 3 条口径）",
+        "mutation": "摘今天区后续事项行循环整行容纳守卫 break（明天区守卫在 pv_cy1=242 下摘除后第 3 行整行越出 clip 零墨、像素不可观测——守卫变异判别由今天区承载，acceptance-author 冻结时逐齿推演论证在案）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 5（今天区卡底残线带 {152,242,392,242} 严格零墨——摘守卫后第 7 项 y=242 出 1px 残线即红；同时是真机判定③的 host 帧回归代理）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13：摘今天区整行容纳守卫 → TEST 4.5 tooth 5 红（165 Tests / 1 Failures，红名 verbatim「TR-A2 RED: 今天区卡底残线带 {152,242,392,242} 墨 18 != 0——第 7 项1px 残线画在卡底（整行容纳守卫缺失, 261013 regression）」）；还原复绿 165/0；grep MUTATION 零残留"
+      },
+      {
+        "acceptance": "TR-A1: 明天区行流底界对齐卡区底界——home_p1.c p1_draw_card pv_cy1 218→242（=卡区 cy1），函数头注释与行注释同步改（底界依据改为「卡区底界 containment」，注明旧 PREVIEW_NEG 退役面约束随本包退役、HPB 负断言带已重锚至卡底之下）；既有今天区 clip cy1=242 不变",
+        "mutation": "home_p1.c 改回 pv_cy1=218（撤销改动点 1 第 1 条底界对齐）——与 TR-A4 变异同源（同一变异承载 TR-A1 底界对齐与 TR-A4 回归齿两面）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 4（明天区第 2 行带 {152,212,392,239} 墨 < 80 红）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "builder 实测 2026-10-13（变异①同源取证，见 TR-A4 条目）：红名 verbatim「TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 0 < 80——第 2 行被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因未修）」；还原复绿 165/0"
+      },
+      {
+        "acceptance": "TR-A3: 冻结件钉区重锚 + 授权链留痕——p1_home_battery.acceptance.c hpb_rect_preview_neg {152,220,392,258}→{152,244,392,258}（卡底 242 + 2px 缓冲，负断言语义改「不越卡区底界」，判别力保持：越卡底溢出仍红）+ hpb_rect_tomorrow {136,142,392,218}→{136,142,392,242}（宽域带对齐明天区真实足迹，仅判读用不钉行位）；L81 头注区表行 / L223 区域注释 / L840、L1292 断言消息矩形数值同步；文件尾 REVISION LOG 2026-10-13 条目 append（不覆盖既有行，授权链 = TaskPackage 261013-p1-tomorrow-row-sliver-fix，human triage 触点① 确认）",
+        "mutation": "p1_home_battery.acceptance.c 钉区常量回滚 hpb_rect_preview_neg {152,244,392,258}→{152,220,392,258}（变异面在冻结件自身——重锚判别力的实证闭环：旧锚回滚会把修复后合法画进 220..242 域的第 2 行墨误判为溢出）",
+        "affectedTest": "firmware/main/test/p1_home_battery.acceptance.c TEST 4.5 tooth 3（HV5-AC2 preview 满载重锚带零墨断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "acceptance-author 实测 2026-10-13（变异执行者 = 唯一 *.acceptance.c 写点角色）：165 Tests / 1 Failures，红名 verbatim「HV5-AC2 RED: preview 满载溢出压入卡底之下重锚带 {152,244,392,258}墨 105 != 0——明天区行流未 clip 进宽域带且越出卡区底界 y242（渲染溢出必须截断降级, plan 要点 3 containment; 2026-10-13 重锚语义）」（红点 :1354；TEST 1 tooth 4 其夹具下未红——该场景明天区无第 2 行墨）；还原复绿 165/0；sha256 260b02fb...8c5cebd 变异前后逐字节一致零残留；红跑日志留档 c:/tmp/tr_a3_mutation_run.log"
+      }
+    ],
+    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；mutation 断言面齿名已由 acceptance-author 冻结件 BUILDER DUTY 5) 申报（tooth 4 = pv_cy1 回退 / tooth 5 = 摘守卫·今天区承载 / TEST 1 tooth 4 + TEST 4.5 tooth 3 = 越卡底溢出）；perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤——round 1 mutation-check 全文匹配教训落地）；TR-A3 重锚与 TR-A5 真机轮为取证豁免面（TR-A3 判别力由回归齿 mutation 间接承载 + REVISION LOG 留痕；TR-A5 structural 豁免）"
+  },
+  "adrRequired": false,
+  "docsSyncRequired": false,
+  "docsSyncReason": "plan 明确零触碰 docs/**（requirements / architecture / contracts 零 diff）；TECH CRQ 登记建议（明天区锚点下推 / 续行跨底界残线 / 明天区容量三项非目标）不绑本包义务，留 human/后续布局包裁量",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "planningWorkstreamRequired": false,
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-13，frontmatter reviewed-by 行为证）：技术方案意见（pv_cy1 对齐卡底 + 整行守卫 + 冻结件重锚）+ changeManifest + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①（triage 分流确认）已裁。【1f 快照保鲜核验】plan 引用源码行逐条对磁盘核验通过：home_p1.c L1166-1260（pv_cy1=218 / 两行循环位置）与 p1_home_battery.acceptance.c（L81 头注表 / L223 区注 / L247-251 两常量 / L840、L1292 断言消息 / 文件尾 REVISION LOG）全部在位无漂移；红基线 cwd 基准沿用上包 host runner 命令（elf 在 firmware/main/test/host_app/build）无归档漂移。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 源面 home_p1.c；p1_home_battery.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明；acceptance-author allow firmware/**/*.acceptance.c 覆盖冻结件。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① 本包 host 齿为真实渲染帧像素墨量断言（hpb_count_ink 探真），非纯结构断言——all-mock 风险低于 261012/261010 两包，仍如实申报：若机械闸判 all-mock 触 riskTier 重算 high 需 human 放行（先例申报口径）；② 真机轮烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；③ host runner 相关子集 = p1_home_battery / p1_cjk_name / schedule_grid（不跑全量——测试跑相关子集纪律）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = 本会话 triage review 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261012 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261012 包 closeout 后 host 全绿（165/0）；本包红基线红全部为设计态红（重锚/新增齿对净 HEAD 未修复行为），无上游已知红需要消解。【真机门】host 面转绿后停 human 持板门（TR-A5），不自行烧录。"
+}
