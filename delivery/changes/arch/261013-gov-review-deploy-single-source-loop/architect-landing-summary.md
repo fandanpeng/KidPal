@@ -58,3 +58,18 @@ server/deploy/openclaw-reminder.config.yaml
 server/deploy/openclaw-schedule.config.yaml
 server/deploy/provider.config.yaml
 docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md
+
+---
+
+## 附：post-landing 段执行留痕（2026-10-13，ECS bootstrap 实况）
+
+§5 第 4–11 条于当日 bootstrap 执行完毕，关键结果：
+
+- **bootstrap**：只读 deploy key（ed25519，human 在 GitHub Deploy keys 贴入）+ `/opt/kidpal/deploy-clone`（shallow，`6fc7eef`）建成；`deploy.sh --first-run` 首铺 11 件（dry-run 预演清单与实跑一致）。
+- **第 4–9 条**：`verify-deploy.sh` 首跑报 3 漂移 → 全部定性处置：① `.config.yaml` 锚 `engine_timeout` = 本批 manifest 自编锚错（真实键 `close_connection_no_voice_time`）；② `kidpal-reminder-semantic` agent 漂移 = 本批 verify 脚本读键错（实际 JSON 顶层 `agentId`）——①②修复 commit `c98a511`（经 PR #2 合入，clone 复拉复验）；③ `kidpal-schedule-health` 未注册 = §8.3c post-deploy 步骤，当日注册（every 15m / agent main）后自然消解。
+- **终验**：`verify-deploy.sh` 复跑 **`{"drift_count": 0}` exit 0**（全 34 条目 + 3 cron 核验绿）。
+- **第 10 条**：engine-patch 标记行在位（引擎重启后组件全初始化成功，`unhealthy` 为已知装饰性）；live 实况另证：reminder lib 新版在位（`drop_refresh_marker` ×2，**触发③ marker 链首次真 live**）、两配置消费位就位、main workspace 7 skill、front active 且 TEMP-DIAG 归零（OQ-4 执行）、provider 默认值归一。
+- **timer**：`kidpal-deploy-drift.timer` 已 enable（首跳 2026-10-14 04:17）。
+- **部署戳**：`.deployed-commit` = `6fc7eef`；备份 `/opt/kidpal/deploy-backups/20261013-135900/`（回滚可用）。
+
+**遗留（human 面）**：QQ 路由目标（家长 openid，TECH-261012 证据 5 既有缺口，非本批新增）配置后 health 主动转告方可投出；QQ 录入真机轮（TECH-261012 的 QSW-A5）待人工执行留痕。
