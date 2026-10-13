@@ -1,0 +1,110 @@
+{
+  "changeId": "261013-qq-schedule-write-closure",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md",
+    "upstreamFrozen": "TECH-261012 剩余修复项 ①④（②③已由 261013-gov-review-deploy-single-source-loop 承接收口，条目补记钉死归属）；④ 形态 human 2026-10-13 会话裁定 = alerts 件 + agent QQ 转告",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy（OpenClaw main workspace skill 面）+ server/gateway（front schedule 解析告警面）",
+  "story": "QQ 课表录入链路缺口收口（TECH-261012 ①④）：家长经 QQ 让 main agent 改写 kidpal/schedule.md 时无 B1 格式纪律、无写后机检、无即时刷新——一个脏日期格（如 '2026-10-12 周一'）令整份 schedule.md 解析失败、首页「接下来」三触发/提醒重算/课表意图全部静默停摆且家长零感知（2026-10-12 live 实录）；B1 契约 §2.4 已明文「主通道自知改写、即时触发三档重算与推送」，本包补齐该契约期待的操作层。B1 写入格式权威 = docs/contracts/interface-contract.md §2.2/§2.3（只读消费，零契约改动）",
+  "acceptance": [
+    "QSW-A1: 新增 server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md——钉死 B1 写入纪律（每周固定区块「星期」列周一~周日、一次性安排区块「日期」列纯 YYYY-MM-DD 严禁星期后缀、时间 HH:MM 或 HH:MM-HH:MM、五列形状、表头逐字范本「日期/时间/事项/地点/备注」与「星期/时间/课程/地点/备注」）+ 写后机检步骤（KIDPAL_SERVER_DIR=/opt/kidpal/front 下用 front 单源 gateway.schedule 的 parse_schedule_md + group_upcoming 实际解析并确认新行在列）+ 通过后即时重算落 marker（/opt/kidpal/venv/bin/python3 + cron 同款 env 跑 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py，设备「接下来」≈1 分钟刷新）+ 失败处置（还原本次编辑、QQ 回复家长正确格式范本）",
+    "QSW-A2: server/deploy/manifest.yaml 增 kidpal-schedule-write 与 kidpal-schedule-health 两条 skill 条目（live 落点 /root/.openclaw/workspace/skills/<name>/SKILL.md）+ cron_jobs 增 kidpal-schedule-health 核验条目；yaml.safe_load 解析通过、新增条目字段完整（src/dst/owner/verify/restart）",
+    "QSW-A3: front schedule 解析失败 surfaced 告警——server/gateway 新增告警写函数（alerts 目录写 schedule-parse-error.json，字段含 checked_at/error/detail，形状与 deploy-drift.json 同构），front_app.py 既有 schedule_md_err 日志位（:687 catch 块）挂接调用、日志行为不回改；单元测试：脏日期格（带星期后缀）经 front 单源解析触发告警件写入且字段可判，合法文件不写告警件",
+    "QSW-A4: 新增 server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md——main agent 经轻量 cron 检测 /opt/kidpal/alerts/schedule-parse-error.json，命中未确认的解析失败时 QQ 主动告知家长（含坏 token 详情与正确格式引导话术），确认后置 ack 语义防重复打扰",
+    {
+      "id": "QSW-A5",
+      "kind": "structural",
+      "note": "live-manual structural 豁免（真机轮殿后，不计入 offline runner 通过面）：post-deploy（ECS bootstrap 后）QQ 录入 round 留痕——①家长 QQ 录入一条脏格式课表，main agent 按 skill 纠格式或引导重录，写后机检通过 + 重算落 marker，front 日志 schedule_push trigger=immediate、设备「接下来」≈1 分钟内更新；②人为注入脏行（ECS 手改）后 front 落 schedule-parse-error.json，下一跳 health cron 后家长 QQ 收到转告。依赖：ECS bootstrap（261013-gov-review-deploy-single-source-loop 的 ecs-bootstrap.md）+ openclaw cron 注册 + QQ 路由目标配置（家长 openid，TECH-261012 已记的既有缺口）"
+    }
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "exitCriteria": [
+    "QSW-A1~A4 冻结齿全绿（9 设计态红全数转绿；2 守卫齿保持绿）",
+    "server/tests 既有面零新增红（test_reminder_units.py = 37 passed；server/tests 全档 91 passed 基线保持）",
+    "跨包回归：test_mnf_a1（261001 残留扫描齿）转绿——manifest.yaml provider note 字面残留清零",
+    "manifest.yaml 变更后既有条目零破坏（8→10 条 entries + 3 条 cron_jobs，yaml 解析 via verify-deploy.sh 语义兼容）",
+    "docs-sync：TECH-261012 收口 append + openclaw-skills README 两行 + DEPLOY-RUNBOOK §8.3c（含 QQ 路由两层如实写）",
+    "acceptanceTestsFile 归位 server/acceptance/（写槽先例链，非 server/tests/）",
+    "QSW-A5 真机轮留痕：post-deploy 人工执行、证据入 closeout 制品（不绑 offline 通过面）"
+  ],
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md",
+    "docs/contracts/interface-contract.md#2.4"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md",
+    "docs/contracts/interface-contract.md",
+    "server/deploy/ecs-bootstrap.md"
+  ],
+  "changeManifest": [
+    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md",
+    "server/deploy/manifest.yaml",
+    "server/deploy/openclaw-skills/README.md",
+    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md",
+    "server/gateway/front/front_app.py",
+    "docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "server 面内闭环：skill 文本（OpenClaw 消费）+ front python（同仓同面）；wire 面（display/设备载荷）零触碰——B1 MD 结构与 E1 响应块均只读消费。live 效果依赖 post-deploy（QSW-A5），非跨端契约面"
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py",
+      "kind": "frozen-acceptance",
+      "note": "本包冻结验收 11 齿（9 设计态红全落缺件 / 2 守卫齿天然绿）；QSW-A1~A4 offline 面，QSW-A5 live 殿后不落 runner"
+    },
+    {
+      "path": "server/tests/test_reminder_units.py",
+      "kind": "regression-watch-zero-touch",
+      "note": "零改动回归观察面（近邻）——红了 = 改动越界"
+    },
+    {
+      "path": "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
+      "kind": "cross-package-regression-fix",
+      "note": "test_mnf_a1 转绿 = 261013 部署批并入的 manifest.yaml provider note 字面残留（openclaw/default 事故说明写法）清零——本包同文件顺手修，披露于 review packet"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": false,
+  "mutationSkipReason": "本包为 additive 闭环（两 skill 新增文本 + front 告警 additive 函数 + manifest 条目）：红基线即缺件设计态红（函数/文件缺席 = 测试红），承载判别力；无既有行为改写面需要 mutation 探针（261010 prompt-v9 同类先例 mutationRequired=false）——与下方 mutationEvidence.reason 同源（机械补齐顶层键，内容零变，integrator closeout 补正）。",
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "reason": "本包为 additive 闭环（两 skill 新增文本 + front 告警 additive 函数 + manifest 条目）：红基线即缺件设计态红（函数/文件缺席 = 测试红），承载判别力；无既有行为改写面需要 mutation 探针（261010 prompt-v9 同类先例 mutationRequired=false）"
+  },
+  "adrRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "TECH-261012 收口 append（append-only）+ 两 README 表行 + runbook health cron 注册节；requirements/architecture/contracts 零 diff（B1 只读消费）",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "planningWorkstreamRequired": false,
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py"
+  ],
+  "redBaselineCommand": "cd server && PYTHONIOENCODING=utf-8 python -m pytest -q --import-mode=importlib -m \"not live\" acceptance/test_261013_qq_schedule_write_closure.acceptance.py",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-10-13，净 HEAD + 冻结件落盘）：9 failed, 2 passed in 0.21s（EXIT=1）；--collect-only = 11 collected / 0 error；红全落缺件设计态（两 SKILL.md 不在位 ×4、manifest 无条目/无 health cron/两 src 不存在 ×3、front 无告警件写入 ×2），零环境/装载红；2 守卫齿（合法文件不写告警 / 告警写失败静默吞）天然绿为 must-stay-green。近邻面 server/tests 全档 91 passed 零新增红。",
+  "notes": "【1g 前置技术预评】完成（architect 1g lite 档，2026-10-13，意见全文 = plan.md §4，planner 代落〔architect scope-map 写槽不含 delivery/taskpackages/**，经 enforce-scope 机械边界确认〕）：① `parse_schedule_md(md_text)`/`group_upcoming(model, date, now)` 真实签名 + importlib 绝对路径加载形态（KIDPAL_SERVER_DIR 非 sys.path 注入、不能用 from gateway import）+ 还原优先失败处置 + 编辑前必先备份；② 告警写落 front_app.py（schedule.py 冻结纯解析零改动，changeManifest 已相应收敛）+ :687 catch 旁挂接 + 字段 {checked_at,error,detail} 无 ack（front 每分钟覆写）+ 写失败静默吞；③ health cron 恒 15m（verify-deploy.sh 硬编核验）+ ack 独立状态件 schedule-parse-health.json + fingerprint=error|detail 四分支检测 + QQ 路由缺口 runbook 两层如实写；④ manifest 条目字段与既有 5 skill 同款、与 SKILL.md 同批原子落（否则 verify 报源缺失）；⑤ 单测坑 = front_app 模块级 env 常量 import 时读，须先置 env 再 _load_front()。【intake 形状】raw human-adhoc + TECH CRQ 驱动（无 portfolio taskpackage、无 PROPOSAL）；④ 形态分叉 human 2026-10-13 已裁（alerts 件 + agent QQ 转告），① 无分叉。【契约判定】零疑似契约变更：skill 钉 B1 §2.2/§2.3 既有格式（只读消费）；alerts 告警件 = 内部运维面（非契约四大面）。【scope-map 核对】builder allow server/** 覆盖 changeManifest 源面；server/tests/** 验收文件归 acceptance-author 写、builder 只读消费（分权即设计）。【UIUX】Level 0（无新页/新态）。【已知依赖前置申报】QSW-A5 依赖 ECS bootstrap（261013 部署批产物）+ openclaw cron 注册 + QQ 路由目标（家长 openid 配置为既有缺口、TECH-261012 证据 5 在案——runbook 指引承载、live 配置归 human post-deploy）。【真机门】offline 面转绿后合并收口不停真机门——QSW-A5 为殿后 structural 项，post-deploy 由 human 触发留痕【Finalize 记录 2026-10-13（planner）】① 写槽归位：acceptance-author scope-map 写槽不含 server/tests/**（enforce-scope 实测拦截），冻结件按仓内先例链（260829-voice-roundtrip / 260829-schedule-reminder）落 server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py；taskpackage 原 server/tests/test_schedule_alert_units.py 行撤回（冻结件已行为级覆盖 QSW-A3，避免同面双写；acceptance-author 建议 (a) 采纳）。② ambient 红盘点（HEAD 基线、非本包）：本包冻结件 9 红 + 既有 4 红——test_mnf_a1（= 261013 部署批 manifest note 字面残留，本包同文件修、入 exitCriteria）+ test_a8_v7/test_pn_a3_v8/test_rf_a3_v9 三条提示词不可变齿（260925/261010 批哈希期望未随 bump 更新的历史红，非本包领地、不越界修，入 review packet ambient 清单建议 CRQ 登记）。③ input-brief-acceptance-author.md 缺失（raw intake 形状未走 launch 面）——acceptance-author 标 manifest-missing 降级自扫，如实记录；builder 派发前本包补 input-brief-builder.md。④ 真机门：offline 转绿后不停 live 门（QSW-A5 殿后 post-deploy）。"
+}

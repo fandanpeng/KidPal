@@ -1,0 +1,66 @@
+{
+  "verdict": "APPROVE",
+  "riskTier": "medium",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-10-13T04:48:41.994Z",
+  "changeId": "261013-qq-schedule-write-closure",
+  "originType": "regression",
+  "adjudication": {
+    "verdict": "APPROVE",
+    "riskTier": "medium",
+    "reasons": [
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:medium",
+      "adjudicate:low/med∧evidence-complete→APPROVE(restore-auto-merge)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "low",
+      "declaredTier": "medium",
+      "effectiveTier": "medium",
+      "ambiguous": false,
+      "diffReasons": [
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 2,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "low",
+        "declaredTier": "medium",
+        "effectiveTier": "medium",
+        "ambiguous": false,
+        "diffReasons": [
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/261013-qq-schedule-write-closure/verifier-evidence/rounds/r2.json",
+        "bearingFactOk": true,
+        "completedRounds": 2,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/261013-qq-schedule-write-closure/docs-delta.md",
+          "delivery/changes/dev/261013-qq-schedule-write-closure/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "regression"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1791866549756-firmware-build.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/261013-qq-schedule-write-closure/verifier-evidence/rounds/r2.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/261013-qq-schedule-write-closure/docs-delta.md",
+      "delivery/changes/dev/261013-qq-schedule-write-closure/review-packet.md"
+    ]
+  }
+}
