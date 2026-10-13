@@ -906,11 +906,14 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
                     lv_obj_t *star = lv_label_create(s_kidpal_scr);
                     lv_label_set_text(star, "★");
                     lv_obj_set_pos(star, 316, 8);
-                    lv_obj_set_style_text_color(star, lv_color_black(), 0);
+                    /* 颜色统一到 KSY_COLOR_INK 单源（seam [TB3]; 与 story_page.c 计数
+                     * 画点同源——「话术单源 = story_page.h」纪律同款, 偏离侧旧纯黑调用
+                     * 退役; 本板 1bpp 阈值下与纯黑同渲, 零视觉差）。 */
+                    lv_obj_set_style_text_color(star, lv_color_hex(KSY_COLOR_INK), 0);
                     lv_obj_t *cnt = lv_label_create(s_kidpal_scr);
                     lv_label_set_text_fmt(cnt, "×%d", kidpal_story_counter(&s_story_list));
                     lv_obj_set_pos(cnt, 344, 8);
-                    lv_obj_set_style_text_color(cnt, lv_color_black(), 0);
+                    lv_obj_set_style_text_color(cnt, lv_color_hex(KSY_COLOR_INK), 0);
                 } else {
                     /* AC6 数据未达空态（列表缓存从未装载——不显计数, 篇数未知不显 ×0
                      * 误导）+ AC6 话术（story_page.h 单源新宏）。 */

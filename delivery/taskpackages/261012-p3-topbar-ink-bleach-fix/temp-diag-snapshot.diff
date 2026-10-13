@@ -1,0 +1,94 @@
+# TEMP-DIAG 未提交诊断 diff 快照（2026-10-13 起包时 planner 留痕）
+
+> 快照时点：起包归一期（acceptance 冻结前）。快照事由 = 诊断 diff 中含修复行（SetTheme bg_opa TRANSP），
+> 不还原则 TB-A1 结构齿红基线假绿；还原前全量快照至此，承载 TECH-261012 条目
+> 「删前 git diff 逐行核对仅删诊断行」的证据义务（evidence-integrity）。
+> builder 落地后由 planner 比对：本快照 36 行插入中，除 SetTheme bg_opa 一行以正式注释转正重写外，
+> 其余诊断行不得以任何形式复活（TB-A2 结构负断言：三源文件不含 TEMP-DIAG 字样）。
+> 串口原始捕获另存 c:/tmp/diag-ink.log、c:/tmp/diag-flush.log（TECH-261012 正文引用）。
+> 共 36 行插入：custom_lcd_display.cc ×32（SetTheme 7 / flush_cb 6 / RLCD_Display 19）、
+> kidpal_render_node.cc ×2（:925-926 渲染诊断日志）、story_page.c ×2（:1140-1141 画齿日志）。
+
+diff --git a/firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc b/firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc
+index 29bd0ea..add7518 100644
+--- a/firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc
++++ b/firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc
+@@ -44,6 +44,13 @@ void CustomLcdDisplay::SetTheme(Theme* theme) {
+     }
+     if (top_bar_ != nullptr) {
+         lv_obj_set_style_pad_top(top_bar_, 12, 0);
++        /* TEMP-DIAG (TECH-261012 P3 计数带排查④, 一行定案试验, 诊断完即删):
++         * 把 chrome 顶带 50% 白底改全透明。根因假设 = top_bar_ 半透明白底浮于
++         * lv_layer_top 恒盖 y[0..28], 经 lv_color_16_16_mix 混合后 INK 灰
++         * (0x333333→0x94B2) 被 1bpp flush 的 <0x7fff 阈值整段漂白、纯黑
++         * (0x000000→0x7BEF) 侥幸存活。若翻 P3 后右上角 ★/×N 随之可见且面板
++         * 墨量探针 topright_ink 从 3000 全白回落, 即证实; 仍不可见则证伪。 */
++        lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0);
+     }
+ }
+
+@@ -52,6 +59,11 @@ void CustomLcdDisplay::Lvgl_flush_cb(lv_display_t * disp, const lv_area_t * area
+     assert(disp != NULL);
+     CustomLcdDisplay *Disp = (CustomLcdDisplay *)lv_display_get_user_data(disp);
+     uint16_t *buffer = (uint16_t *)color_p;
++    /* TEMP-DIAG (261010 P3 计数带排查): 顶带相关 flush 的区域矩形逐次打印。 */
++    if (area->y1 <= 40) {
++        ESP_LOGI("RLCD", "flush_diag TEMP-DIAG area x[%d..%d] y[%d..%d]",
++                 area->x1, area->x2, area->y1, area->y2);
++    }
+   	for(int y = area->y1; y <= area->y2; y++)
+   	{
+   	 	for(int x = area->x1; x <= area->x2; x++)
+@@ -367,6 +379,26 @@ void CustomLcdDisplay::RLCD_SetPixel(uint16_t x, uint16_t y, uint8_t color) {
+ }
+
+ void CustomLcdDisplay::RLCD_Display() {
++    /* TEMP-DIAG (261010 P3 计数带排查, 诊断完即删): 每次推面板前统计右上角
++     * 计数带 (x 300..399, y 0..29) 墨量, 变化才打——判定 LVGL flush 里该带
++     * 是否真有 ★/×N 墨（设备侧像素实锤, 区分「没画」vs「画了被覆盖」）。 */
++    {
++        static int s_last_ink = -1;
++        int ink = 0;
++        for (int y = 0; y <= 29; y++) {
++            for (int x = 300; x <= 399; x++) {
++                uint32_t idx = PixelIndexLUT[x][y];
++                uint8_t mask = PixelBitLUT[x][y];
++                if (DispBuffer[idx] & mask) {
++                    ink++;
++                }
++            }
++        }
++        if (ink != s_last_ink) {
++            s_last_ink = ink;
++            ESP_LOGI("RLCD", "disp_diag TEMP-DIAG topright_ink=%d", ink);
++        }
++    }
+     RLCD_SendCommand(0x2A);     // Column Address Set
+   	RLCD_SendData(0x12);
+   	RLCD_SendData(0x2A);
+diff --git a/firmware/main/display/kidpal_render_node.cc b/firmware/main/display/kidpal_render_node.cc
+index f7e6bb7..350e806 100644
+--- a/firmware/main/display/kidpal_render_node.cc
++++ b/firmware/main/display/kidpal_render_node.cc
+@@ -922,6 +922,8 @@ static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
+                 lv_label_set_long_mode(lbl, LV_LABEL_LONG_WRAP);
+                 lv_obj_center(lbl);
+             } else {
++                ESP_LOGI(RN_TAG, "story_render_diag TEMP-DIAG view counter=%d count=%d page=%d list_count=%d",
++                         s_story_view.counter, s_story_view.count, s_story_view.page, s_story_list.count);
+                 kidpal_story_page_render(&s_story_view, &s_story_list, &s_story_text);
+             }
+             s_local_page = KP_PAGE_STORY;
+diff --git a/firmware/main/display/story_page.c b/firmware/main/display/story_page.c
+index a3bad5a..7266cc2 100644
+--- a/firmware/main/display/story_page.c
++++ b/firmware/main/display/story_page.c
+@@ -1137,6 +1137,8 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
+             ksy_label(scr, "★", 316, 8, KSY_COLOR_INK);
+             snprintf(buf, sizeof(buf), "×%d", v->counter);
+             ksy_label(scr, buf, 344, 8, KSY_COLOR_INK);
++            ESP_LOGI("KSY", "story_list_draw_diag TEMP-DIAG counter=%d n=%d drawn_star=1 drawn_cnt=1",
++                     v->counter, n);
+             start = (v->screen > 0 ? v->screen : 0) * KSTORY_LIST_ROWS_PER_SCREEN;
+             for (i = 0; i < KSTORY_LIST_ROWS_PER_SCREEN; i++) {
+                 int idx = start + i;

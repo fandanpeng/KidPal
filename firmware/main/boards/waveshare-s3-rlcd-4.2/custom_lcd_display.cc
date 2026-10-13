@@ -44,6 +44,15 @@ void CustomLcdDisplay::SetTheme(Theme* theme) {
     }
     if (top_bar_ != nullptr) {
         lv_obj_set_style_pad_top(top_bar_, 12, 0);
+        /* 根因修复（TECH-261012 承接, 候选 A 定案）: chrome 顶带 top_bar_ 原为 50%
+         * 白蒙层, 经 KidPalReparentChatToLayer(lv_layer_top()) 恒浮于所有 KidPal 页;
+         * 本板 1bpp flush 阈值（*buffer < 0x7fff -> 黑）× LVGL lv_color_16_16_mix
+         * 混 50% 白把 KSY_COLOR_INK 灰 0x333333 漂白过阈（纯黑侥幸存活）——落
+         * y[0..28] 的 P3 计数 ★/×N 真机整段不可见（S-F2.1 AC1 页身份载体缺失）。
+         * 解耦修复: 背景透明化断根——顶带内容不再被蒙层漂白, 与落在本带的内容色值
+         * 解耦（单一 choke point）, 免去「所有现在/将来落 y[0..28] 的 INK/TEXT 内容
+         * 逐个跟改」的敞口义务。 */
+        lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0);
     }
 }
 

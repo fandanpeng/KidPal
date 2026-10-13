@@ -1,32 +1,27 @@
 {
-  "changeId": "261010-p3-storylist-cold-start-restore",
-  "rigor": "full",
+  "changeId": "261012-p3-topbar-ink-bleach-fix",
+  "rigor": "lite",
   "sourceType": "regression",
   "origin": {
     "type": "regression",
     "upstreamType": "regression",
-    "upstreamRef": "docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md",
-    "upstreamFrozen": "spine anchors 三面已回填（delivery/changes/intake/261010-p3-storylist-cold-start.md）：anchors.req = requirements §9 v1.63 frozen 2026-10-12（S-F2.1 AC1 限定 + AC5/AC6 空态两态 + 补充规则冷启动恢复）；anchors.arch = arch §5.1.2 :186 + §5.2 场景④ :214 镜像随 v1.63 批同拍落；anchors.contract = CONTRACT-CHANGE-PACKET HUMAN_APPROVED 2026-10-12（story_list data.restore additive D1–D4，先批后落、与本包同批原子 git apply）",
-    "workstream": "m4-star-notebook"
+    "upstreamRef": "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
+    "workstream": ""
   },
-  "subsystem": "server/gateway/front + firmware/main (mcp_server story_list 分流 + kidpal_render_node P3 空态)",
-  "story": "S-F2.1 · 看「星星记录本」列表（AC1/AC5/AC6）· 定稿版本号 v1.63（docs/requirements.md §9 v1.63 行 2026-10-12）：P3 story_list 冷启动恢复推送赎回（TECH-261010-p3-storylist-cold-start-empty = 根因与 scoping 权威，260928-story-connect-push-defer 挂起的时点①重裁由本包赎回）——front WS 建连附带重推（data.restore 标记、失败不阻断建连、②归档后/③删除后调用点缺省 False 零偏移）+ 板端 restore 分流（只填 RAM 列表缓存不接管前台、P3 在屏时仅重绘本页，复刻 schedule restore :926-991 形态）+ 空态两态分叉渲染（AC5 ×0 计数 +「本子空空的，讲个故事点亮第一颗星吧」/ AC6 不显计数 +「本子还没翻开，等等再来看看吧」）+ FIX-A1 负锚齿翻正（「建连零 story_list 帧」→「建连恰一帧 restore story_list」）。契约同步 = story_list data.restore additive（CCP D1–D4，HUMAN_APPROVED 2026-10-12 先批后落、同批原子落）+ ADR-010 + display_schema V27 floor 联动扩。",
-  "planRef": "delivery/taskpackages/261010-p3-storylist-cold-start-restore/plan.md",
+  "subsystem": "firmware/main 显示面（display/story_page.c + display/kidpal_render_node.cc + boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc）",
+  "planRef": "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md",
+  "story": "S-F2.1 · 看「星星记录本」列表（AC1/AC5）——P3 计数带真机漂白修复（TECH-261012 承接）：chrome 顶带 top_bar_ 50% 白蒙层（lcd_display.cc:944-959）经 KidPalReparentChatToLayer(lv_layer_top()) 恒浮于所有 KidPal 页，1bpp flush 阈值 <0x7fff × LVGL 9.3 lv_color_16_16_mix 把 KSY_COLOR_INK 灰 0x333333 漂白过阈、纯黑侥幸存活——P3 计数 ★/×N 整段落 bar 覆盖区 y[0..28] 真机不可见（S-F2.1 AC1 页身份载体缺失）。修复 = 候选 A：top_bar_ 背景透明化转正（真机一行定案试验已证实，human 观测「可以看到星星 *2 了」）。story 语义权威 = docs/requirements.md 现文；技术方案权威 = plan.md（architect /triage-change 产出 2026-10-12）",
   "acceptance": [
-    "SL-A1: （FIX-A1 翻正）：front 建连路径恰一帧 story_list 且 data.restore == true——先红（现零帧）后绿；M4K1 ②③ wire 断言零偏移复跑",
-    "SL-A2: 板端 restore 帧 + 非 P3 前台 → 只装缓存零前台接管（kidpal_render_node_cache_story 被调、begin/end_page 不被调）host 纯逻辑",
-    "SL-A3: 板端 restore 帧 + P3 在屏（LIST 冷浏览）→ 重渲本页 host 纯逻辑",
-    "SL-A4: 记录语境（VOICE 前台/录音态）收到 restore 帧 → 缓存不抢前台（K3 [S4] gating 与 restore 分流叠加语义钉死）；非 restore 帧（②③）→ K2 消费面零偏移 host 回归",
+    "TB-A1: top_bar_ 背景透明化转正——custom_lcd_display.cc SetTheme 中 top_bar_ bg opacity 常驻 LV_OPA_TRANSP、注释为正式根因/解耦注释（TEMP-DIAG 措辞清除）；host 结构齿承载常量存在性（host harness 无 chrome、像素探真不可达归 TB-A4 真机轮，TECH 条目已定口径）",
+    "TB-A2: TEMP-DIAG 诊断残留归零——custom_lcd_display.cc / display/story_page.c / display/kidpal_render_node.cc 三源文件不含 TEMP-DIAG 字样（结构负断言承载；起包前 36 行未提交诊断 diff 已由 planner 快照 temp-diag-snapshot.diff 并还原净 HEAD，builder 净面起步）",
+    "TB-A3: AC5 两入口颜色统一到 KSY_COLOR_INK——kidpal_render_node.cc AC5 分支 lv_color_black() 改 INK、KSY_COLOR_INK 宏上提 story_page.h 单源（话术单源纪律同款）；story_page.c 非空分支画法照常零偏移（requirements v1.63 空态注记钉「画法照常」、色值为实现层归一）；本板 1bpp 阈值下 0x333333 与 0x000000 同渲黑零视觉差；既有 host 齿逐齿复核零新增红",
     {
-      "id": "SL-A5",
+      "id": "TB-A4",
       "kind": "structural",
-      "note": "真机轮（human 在场持板，live-manual 观测项不计入 pytest 通过面）：重启设备（云端现存 ≥1 篇）→ 翻到 P3 显示已归档列表（含计数）而非空态；期间任意页前台无 P3 抢占；空态两态话术按 v1.63 验收（AC5 ×0 + 话术 / AC6 不显计数 + 话术）"
-    },
-    "SL-A6: front 恢复推送失败不阻断建连（try/except 同 schedule connect push :1009-1012 先例）host"
+      "note": "真机轮 live-manual structural 豁免（261010 包 SL-A5 同款：SLP-SLA5 真机轮先例口径，不计入 runner 通过面）：SL-A5 计数分项复验（翻 P3 右上角 ★/×N 可见）+ AC5 无内容空态 ×0 两入口可见 + 阅读态标题（story_page.c:1216，修复 A 后自愈）顺带目测 + P1 顶带与聊天态顶带无回归目测（top_bar_ 透明化作用于全部页顶带，跨页副作用确认）；对象化事由 = mutation-check 豁免通道显式标记（kind:'structural'），语义由 acceptance-author 冻结件头注 [TB4] 段在先申报"
+    }
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
     "firmware/main/test/story_page_v2.acceptance.c"
   ],
   "requiredLayers": [
@@ -35,152 +30,94 @@
     "live-manual"
   ],
   "exitCriteria": [
-    "两面红基线设计态红全数转绿（server 2 红 / firmware 3 红）；既有守卫齿（K1 27 齿 / SPV2 / KD / K7 / SAO）零新增红",
-    "契约 CCP D1–D4 git apply 落地逐字核对留痕（packet 原句逐行命中 added-lines、CRLF 保全、无 packet 外契约字符）",
-    "FIX-A1 翻正 REVISION LOG 授权链三件齐（CCP id + requirements §9 v1.63 行 + human 方向锚留痕）在冻结件留痕",
-    "变异取证 perAcceptance 全条 turnedRed=true 且还原复绿（mutation-check 闸绿；SL-A6 变异在 builder 落地后重放取证）",
-    "SL-A5 live-manual 真机轮留痕（human 在场持板：重启冷启动翻 P3 见列表含计数 + 任意页无 P3 抢占 + 空态两态话术各验收一次）；ECS 恢复推送开关烧板验证后 human 人工开闸（gate evidence C1）",
-    "docs-sync 完成（docsOwner=integrator）：ADR-010 新增 + CONTRACT-DECISION-QUEUE 门行登记 + architecture-gate-evidence closeout（C1/C2）+ arch :186/:214「随契约门落、尚未落地」挂法句翻既成 + spine anchors.contract 落地态回填 + TECH-261010-p3-storylist-cold-start-empty CRQ 收口",
-    "provenance 留痕：前序 builder 重试轮半成品（含 kidpal_render_node.cc AC6 分支 MUTANT 残留）由续跑 builder 还原并全量复核——诚实记录于 taskpackage notes 与 review-packet"
+    "host 结构齿（TB-A1/TB-A2/TB-A3 承载）设计态红全数转绿；既有齿（SPV2 全套等）零新增红",
+    "temp-diag-snapshot.diff 比对结论留痕：36 行诊断插入中除 SetTheme bg_opa 一行以正式注释转正外全部未复活（TB-A2 负断言绿即机械承载）",
+    "变异取证 perAcceptance 落实：TB-A1 摘 bg_opa 行 / TB-A3 摘 INK 宏消费，均 turnedRed=true 且还原复绿；TB-A4 live-manual structural 豁免自动断言面",
+    "TB-A4 真机轮留痕：human 在场持板四项逐项（计数分项 / AC5 ×0 两入口 / 阅读态标题 / P1 与聊天态顶带目测）",
+    "docs-sync 完成（docsOwner=integrator）：TECH-261012 CRQ 收口（status deferred → closed）+ docs/crq/tech/INDEX.md 重渲染（crq-render.mjs 生成件，禁手改）"
   ],
-  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance/test_m4k1_story_cloud_link.acceptance.py acceptance/test_m4k3_record_session_live.acceptance.py ; MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-12 @63c49cc569b25b1fa510f341ffbc26ac699f1f80（两面仅验收文件改动态）：server 面 2 failed / 42 passed / 3 subtests passed（44 collected）——2 红全属设计态（SL-A1 test_fix_a1_connect_path_emits_exactly_one_restore_story_list：建连 0 帧 story_list〔应恰一帧恢复推送〕；SL-A1b M4K3-A7 test_a7_push_seam_lands_in_ctx_consume_not_connect：建连段无 _push_story_list 调用）；SL-A6 must-stay-green 平凡绿、②③零偏移 additive（assertNot restore）绿、K1 27 齿绿。firmware host 面 159 Tests / 3 Failures / 0 Ignored（既有 155T 零偏移全 PASS + 新增 4 齿）——3 红全属设计态（SLP-SLA2 story 路由区无 mcp_json_get_bool / SLP-SLA3 区无 refresh_story 消费 / SLP-SLA5 story_page.h 无 AC5 话术字面）；SLP-SLA4 全齿 must-stay-green 设计态绿。无非设计态红。firmware 验收件 diff 纯 additive（474 insertions / 0 deletions）。",
-  "_redBaselineNote": "上游已知红参照 = launch prep 双面锚 @fde1eb9 全绿（server 152P / firmware 155T）；本红基线红全部为本包设计态红（新增行为缺失），无上游已知红需要消解。",
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑（命令 = redBaselineCommand 逐字，2026-10-13，净 HEAD + 新增三齿）：build 通道 error 零；实跑 165 Tests / 2 Failures / 0 Ignored / 163 PASS——2 红全为设计态红：SLP-TB1 tooth 2（「SetTheme 区无 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0)」——top_bar_ 透明化转正未落，TB-A1）+ SLP-TB3 tooth 1（「story_page.h 无 #define KSY_COLOR_INK」——INK 宏未上提单源，TB-A3）；SLP-TB2 设计态绿守卫 PASS（净 HEAD 无 TEMP-DIAG 残留，负向齿前提成立）；既有齿（SPV2 全套 + SLP-SLA2/3/4/5）零新增红（261010 closeout 全绿基线保持）。TB-A3 改色预期不破冻结时逐齿复核证实：全文件无既有齿断言精确色值，SPV2-B1 / SLP-SLA5 tooth 4 均为带内墨量计数型探针（暗度阈 0x33 < 0x80 同判暗），INK 改色零新增红。",
   "deliveryImpact": "none",
-  "planningImpact": "attach-existing",
-  "planningRefs": [
-    "delivery/workstreams/m4-star-notebook/task_plan.md"
-  ],
+  "planningImpact": "none",
+  "planningRefs": [],
   "riskTier": "medium",
   "gateProfile": [
-    "contract-drift",
+    "types",
     "test-quality",
-    "docs-sync"
+    "evidence-integrity"
   ],
   "sourceRefs": [
-    "docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md",
+    "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
     "docs/requirements.md:S-F2.1",
     "S-F2.1-AC1",
     "S-F2.1-AC5",
-    "S-F2.1-AC6",
-    "delivery/changes/intake/261010-p3-storylist-cold-start.md",
-    "delivery/taskpackages/261010-p3-storylist-cold-start-restore/plan.md",
-    "delivery/taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/CONTRACT-CHANGE-PACKET.md"
+    "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
     "docs/requirements.md#S-F2.1",
-    "docs/architecture.md",
-    "docs/ADR.md",
-    "docs/CONTRACT-DECISION-QUEUE.md"
+    "docs/crq/tech/TECH-261012-p3-star-count-invisible-on-device.md",
+    "delivery/taskpackages/261012-p3-topbar-ink-bleach-fix/plan.md"
   ],
   "changeManifest": [
-    "docs/contracts/interface-contract.md",
-    "docs/ADR.md",
-    "server/gateway/front/front_app.py",
-    "server/gateway/display_schema.py",
-    "firmware/main/mcp_server.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
+    "firmware/main/display/story_page.c",
     "firmware/main/display/kidpal_render_node.cc",
-    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
-    "firmware/main/test/story_page_v2.acceptance.c",
-    "firmware/main/test/story_page_v2.test.c"
+    "firmware/main/display/story_page.h",
+    "firmware/main/test/story_page_v2.acceptance.c"
   ],
   "crossEnd": {
-    "counterparts": [
-      {
-        "face": "server",
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_push_story_list"
-      },
-      {
-        "face": "firmware",
-        "path": "firmware/main/mcp_server.cc",
-        "symbol": "McpServer::AddCommonTools"
-      }
-    ],
-    "exempt": ""
+    "counterparts": [],
+    "exempt": "纯板端显示行为修复——不触 wire 形状：story_list 载荷与 counter 语义零变更（plan.md 逃生门检查在案），无对端面"
   },
   "impactedTestsSeed": [
     {
-      "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
-      "kind": "frozen-revision",
-      "note": "FIX-A1 负锚齿翻正（:1000-1044「建连零 story_list 帧」→「建连恰一帧 restore」）+ ②③ wire 断言零偏移 + restore 帧新断言；修订授权链 = CCP id + §9 v1.63 行 + human 方向锚留痕（260928 FIX-A2 先例形态），REVISION LOG 留痕"
-    },
-    {
-      "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py",
-      "kind": "frozen-revision",
-      "note": ":25 跨包负锚「建连零 story_list 帧」同批翻正；K1 27 齿零偏移套件全量复跑（must-stay-green）"
-    },
-    {
       "path": "firmware/main/test/story_page_v2.acceptance.c",
       "kind": "additive-host",
-      "note": "restore 分流纯逻辑新齿（SL-A2/A3/A4）+ 空态两态渲染齿（SL-A5 的 host 可测前置：AC5/AC6 话术与计数画法）additive 落此；既有齿零触碰（tighten-only 窗口）"
+      "note": "新结构齿 additive 落此：TB-A1 top_bar_ bg_opa 常量存在性 / TB-A2 三源文件 TEMP-DIAG 负断言 / TB-A3 AC5 入口颜色常量不变式（INK 单源消费）；既有齿（SPV2 全套）零触碰，TB-A3 改色后逐齿复核（既有齿为带内墨量计数型探针、非精确色值断言，预期不破——acceptance-author 冻结时确认）"
     }
   ],
-  "iterationBudget": 3,
+  "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "mutationRequired": true,
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "SL-A1: （FIX-A1 翻正）：front 建连路径恰一帧 story_list 且 data.restore == true——先红（现零帧）后绿；M4K1 ②③ wire 断言零偏移复跑",
-        "mutation": "建连推送 restore=True → restore=False",
-        "affectedTest": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py::M4K1ConnectPushDeferAcceptance::test_fix_a1_connect_path_emits_exactly_one_restore_story_list",
+        "acceptance": "TB-A1: top_bar_ 背景透明化转正——custom_lcd_display.cc SetTheme 中 top_bar_ bg opacity 常驻 LV_OPA_TRANSP、注释为正式根因/解耦注释（TEMP-DIAG 措辞清除）；host 结构齿承载常量存在性（host harness 无 chrome、像素探真不可达归 TB-A4 真机轮，TECH 条目已定口径）",
+        "mutation": "摘 custom_lcd_display.cc SetTheme 中 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0) 行（或改回 LV_OPA_50）",
+        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 18 SLP-TB1 tooth 2（守卫块内 bg_opa 常量行存在性 + 位置序；挪出守卫块亦红）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测 2026-10-12：红（AssertionError None is not True——assertIs(restore, True) 捕获）；变异已还原，复原复绿（44 passed）"
+        "notes": "builder 实测 2026-10-13：LV_OPA_TRANSP 改回 LV_OPA_50 → SLP-TB1 tooth 2 红（红名 verbatim「SetTheme 区无 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0)」，165 Tests / 1 Failures）；还原复绿 165/0。无 MUTATION 残留"
       },
       {
-        "acceptance": "SL-A2: 板端 restore 帧 + 非 P3 前台 → 只装缓存零前台接管（kidpal_render_node_cache_story 被调、begin/end_page 不被调）host 纯逻辑",
-        "mutation": "story 路由区摘 mcp_json_get_bool \"restore\" 读取；另测 restore 分支注入 kidpal_render_node_begin_page",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 14 SLP-SLA2",
+        "acceptance": "TB-A2: TEMP-DIAG 诊断残留归零——custom_lcd_display.cc / display/story_page.c / display/kidpal_render_node.cc 三源文件不含 TEMP-DIAG 字样（结构负断言承载；起包前 36 行未提交诊断 diff 已由 planner 快照 temp-diag-snapshot.diff 并还原净 HEAD，builder 净面起步）",
+        "mutation": "任一源文件临时插入含 TEMP-DIAG 字样行（本轮 = story_page.c 第 23 行注释 /* TEMP-DIAG mutation replay */）",
+        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 19 SLP-TB2 tooth 2（三源文件零命中断言，:2439）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测：摘读取 → tooth 3 红；注入 begin_page → tooth 5 红（区内计数 2≠1）+ SLP-SLA4 tooth 2 + 跨套件 K7-A5（文件级 begin_page 计数）红；变异已还原复绿"
+        "notes": "builder 实测 2026-10-13（补跑轮）：运行时读盘结构齿、不重编直跑 elf——插入后 SLP-TB2 tooth 2 红（红名 verbatim「三源文件仍有 TEMP-DIAG 字样——诊断残留未清」，165 Tests / 1 Failures，仅 1 处失败非塌陷式全红）；按字节备份还原（md5 17c926de0967f4e628df9e55ffe9940f 前后一致——任务书 git checkout 指令被正确否决，该文件带在飞实现 diff、checkout 会摧毁实现）；复跑 165/0；grep 全树 TEMP-DIAG 仅命中冻结件自带文本，零残留"
       },
       {
-        "acceptance": "SL-A3: 板端 restore 帧 + P3 在屏（LIST 冷浏览）→ 重渲本页 host 纯逻辑",
-        "mutation": "摘 kidpal_render_node_refresh_story 消费；另测摘 kidpal_render_node_story_on_screen 谓词消费",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 15 SLP-SLA3",
+        "acceptance": "TB-A3: AC5 两入口颜色统一到 KSY_COLOR_INK——kidpal_render_node.cc AC5 分支 lv_color_black() 改 INK、KSY_COLOR_INK 宏上提 story_page.h 单源（话术单源纪律同款）；story_page.c 非空分支画法照常零偏移（requirements v1.63 空态注记钉「画法照常」、色值为实现层归一）；本板 1bpp 阈值下 0x333333 与 0x000000 同渲黑零视觉差；既有 host 齿逐齿复核零新增红",
+        "mutation": "摘 kidpal_render_node.cc AC5 分支 INK 消费（改回 lv_color_black() 或直拆 KSY_COLOR_INK 宏引用），或摘 story_page.h 单源定义",
+        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 20 SLP-TB3 tooth 2（lv_color_black 复现 / INK 计数回落 <2）+ tooth 1（单源摘除红）",
         "turnedRed": true,
         "sensitive": true,
-        "notes": "builder 实测：摘 refresh_story 消费 → tooth 1 红；摘谓词消费 → SLP-SLA2 tooth 4 红；变异已还原复绿"
-      },
-      {
-        "acceptance": "SL-A4: 记录语境（VOICE 前台/录音态）收到 restore 帧 → 缓存不抢前台（K3 [S4] gating 与 restore 分流叠加语义钉死）；非 restore 帧（②③）→ K2 消费面零偏移 host 回归",
-        "mutation": "摘 ksy_skip_value true/false literal 分支（story_page.c，restore 键值 → 拒收）",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 16 SLP-SLA4",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "builder 实测：tooth 4/5 红（2 failures——wire 容忍面失守）；变异已还原复绿。SL-A4 全齿 must-stay-green 设计态绿（基线绿、红即真回归）"
-      },
-      {
-        "acceptance": "SL-A5",
-        "mutation": "摘 ×0 计数画法（空态半仍 break 不画计数）；另测摘 AC6 macro 消费（builder 还原前序残留 MUTANT 时取证）",
-        "affectedTest": "firmware/main/test/story_page_v2.acceptance.c TEST 17 SLP-SLA5",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "builder 实测：摘 ×0 计数 → tooth 4 真帧探针红（墨=0<3）；摘 AC6 macro 消费 → tooth 3 红。host 可测前置半；AC6 不显计数半 host 不可达归 live-manual（structural kind 豁免自动断言面）"
-      },
-      {
-        "acceptance": "SL-A6: front 恢复推送失败不阻断建连（try/except 同 schedule connect push :1009-1012 先例）host",
-        "mutation": "建连推送裸调（摘 try/except）",
-        "affectedTest": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py::M4K1ConnectPushDeferAcceptance::test_sla6_connect_push_failure_does_not_block_connect",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "builder 实测（builder 落地后重放取证）：红（listen 未转发，建连被推送失败阻断）；变异已还原复绿"
+        "notes": "builder 实测 2026-10-13：① tooth 2 主证——AC5 分支两处 lv_color_hex(KSY_COLOR_INK) 改回 lv_color_black() → SLP-TB3 红（「AC5 分支仍有 lv_color_black」，165/1）；② tooth 1 另测——story_page.h 摘 #define + story_page.c 还原本地 define（保持可编译）→ SLP-TB3 红（「story_page.h 无 #define KSY_COLOR_INK」，165/1）；两变异各自还原复绿 165/0。无 MUTATION 残留"
       }
     ],
-    "reason": "骨架由 acceptance-author 冻结轮产出、builder 落地后实跑变异取证、planner 逐字代落（261011 先例⑤；acceptance 字段 = acceptance[] 全文逐字复制）。本批变异面实存且行为可断言；live 行为观测归 SL-A5 真机轮 human 在场（structural 豁免，非自动断言）"
+    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；TB-A4 live-manual structural 豁免自动断言面（真机观测项，对象 kind:'structural' 显式标记）；perAcceptance.acceptance = acceptance[] 全文逐字复制（261010 包先例⑤——round 1 mutation-check 全文匹配教训落地）；SLP-TB2 变异敏感已补跑取证（TB-A2 条目 turnedRed=true）"
   },
-  "adrRequired": true,
-  "adrReason": "story_list 冷启动恢复 = 「数据面更新 vs 前台接管分离」模式第三实例（home upcoming / schedule grid 之后）——durable semantics，ADR-010 随批新增（CCP §7 建议；与 §1.3② 的两点差异 = relay 收紧使 LLM 绕过残余风险不适用 + 260928 摘除→v1.63 赎回沿革）",
+  "adrRequired": false,
   "docsSyncRequired": true,
-  "docsSyncReason": "契约 diff 逐字 git apply（CCP D1–D4，CRLF 保全 + 人工 diff 逐字核对留痕，260921-m3-k1 先例通道）+ ADR-010 新增 + CONTRACT-DECISION-QUEUE 门行登记 + architecture-gate-evidence closeout（C1 ECS 开关默认关→烧板验证→human 开闸 / C2 同批原子落核证）+ arch :186/:214「随契约门落、尚未落地」挂法句翻既成 + spine anchors.contract 落地态回填 + TECH CRQ 收口——全部归包内 integrator（gate evidence §6/§8 在案）",
+  "docsSyncReason": "TECH-261012 CRQ 收口（条目文件 status deferred → closed + closedBy/closed 回填）+ docs/crq/tech/INDEX.md 重渲染（crq-render.mjs 生成件）——归包内 integrator；契约面零触（story_list 载荷与 counter 语义零变更，无 CCP/ADR 面）",
   "docsOwner": "integrator",
-  "notes": "riskTier=medium 口径（triage reviewed plan frontmatter 权威）：推送时机与前台抢占语义重裁、跨固件/云端两子面，但不新增行为状态机（restore 分流复刻 schedule :926-991 在役形态）且契约已先批（CCP HUMAN_APPROVED）→ 未触 high 轴（security/DB/状态机零新增）。已知地雷前置申报：SL-A1~A4/A6 为 wire 帧与 host 纯逻辑断言、无 DB/事件断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012 v9 同款先例申报）。ECS live ops：恢复推送开关默认关（schedule grid_restore_enabled 先例形态），板端 SL-A5 真机验证后 human 人工开闸（gate evidence C1）。ctx(story) 条件推送（front_app.py :216，defer 时代「①恢复 = 会话建立同拍」）与新建连推送的归并处置 = 行为策略归本包（arch :186 三时点对齐，plan.md :29 ARQ-260911 owner 登记）。FIX-A1 翻正走正常改验收通道 + human 方向锚留痕（260928 FIX-A2 先例形态），tighten-only 拦截预期命中、REVISION LOG 授权链 = CCP id + §9 v1.63 行。烧录 = app 分区单烧（本批无 spiffs 资产变更——flash-asset-partition-rule 口径核对）。knownRedFloor 引 progress.md 带 SHA 锚行（launch prep 记录），不手写数字。固件空态渲染入口两处同源纪律（kidpal_render_node.cc :874-886 注记）不破。supervisor-verdict write-once：verdict 在盘时重跑须先显式删旧件。【acceptance-author 冻结轮回执要点 2026-10-12 planner 代记】① SL-A2/A3 裁剪申报：mcp_server.cc host 不可链（HOST_ACCEPTANCE_SRCS 无此源），按「不发明新基建」裁为结构代理齿（schedule_grid_restore K7-A5 先例形态），真实 restore 分流行为本体归 SL-A5 真机轮；强度假设已在该件头注 [SL] 申报段显式化。② ctx(story) 条件推送保留 = test_m4k3_record_session_live 冻结齿对 builder 归并处置的硬约束（ctx 分支不得摘除，建连段新推 ≥1 帧、ctx 段既有断言零触碰）。③ SL-A6 现状平凡绿，变异取证 builder 落地后重放。④ 既有冻结件陈旧注释指针（record_session_live.acceptance.c:16-22 / M4K1-ACCEPTANCE-NOTES.md 引旧齿名 test_fix_a1_connect_path_emits_zero_story_list）= 纯注释零断言承载，planner 裁不修（历史记录不动），留档备查。⑤ 冻结 seam 四件宣告（builder 落点）：mcp_json_get_bool(data,\"restore\") 复用 / kidpal_render_node_story_on_screen()（home/schedule on_screen 逐字同构）/ restore+P3 在屏走 kidpal_render_node_refresh_story() 单入口（自持锁、先 cache_story 后调）/ KSTORY_EMPTY_HINT_UNREACHED 新宏 story_page.h 单源（KSTORY_EMPTY_HINT 宏名保留、值更新为 AC5 话术——SPV2-B2 tooth 7 续绿）。⑥ input-brief-acceptance-author.md 本轮 manifest-missing（planner Step 5 前置漏跑），author 按角色规范降级自扫并在交付报告标注（未静默）；builder 派发前 brief-inputs.mjs 补跑。"
+  "securityReviewRequired": false,
+  "planningWorkstreamRequired": false,
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change proportionate review 2026-10-12，frontmatter reviewed-by 行为证）：技术方案意见（修复=候选 A、B 排除理由）+ changeManifest 种子 + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①档位确认（②单包 Lite）2026-10-12 会话内 AskUserQuestion 已裁（pod-events human-decision 留痕）。【TEMP-DIAG 处置时序调整】起包归一期 planner 快照未提交诊断 diff（temp-diag-snapshot.diff，36 行全量）后 git checkout 还原净 HEAD——事由 = 诊断 diff 含修复行（SetTheme bg_opa），不还原则 TB-A1 结构齿红基线假绿；plan.md「删前 git diff 逐行核对仅删诊断行」义务由快照比对 + TB-A2 结构负断言承载（builder 净面起步、无既有诊断可删，落地 diff 不得复活任何诊断行）；快照证据另锚 c:/tmp/diag-ink.log、diag-flush.log（TECH 条目正文引用）。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** 覆盖 changeManifest 全部源面；firmware/main/test/story_page_v2.acceptance.c 命中 builder deny（*.acceptance.c）——验收测试归 acceptance-author 落盘、builder 只读消费，分权即设计无冲突声明。【UIUX】Level 0（既有页显示行为修复，无新页/新态设计面）。【已知地雷前置申报】① host harness 无 chrome（top_bar_ 不在 host 面）——TB-A1 结构齿为源面常量断言非像素探真，真机探真归 TB-A4；② TB-A1~A3 全为 host 结构断言、无 DB/事件断言——supervisor 机械闸可能判 all-mock 触 riskTier 重算 high，需 human 放行（261012 prompt-v9 / 261010 storylist 两包同款先例申报）；③ 真机轮烧录 = app 分区单烧（本批无 spiffs 资产变更，flash-asset-partition-rule 口径核对）；④ KSY_COLOR_INK 上提 story_page.h 须核 story_page.c 与 kidpal_render_node.cc 两侧 include 关系（C/C++ 混编，宏放头文件避免重定义）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = TECH-261012 CRQ 条目 + /triage-change 产出 plan.md；launch-card.md 缺失如实记录、不设门（Step 1① 口径）；current/ 指针刷新前指 261010 包，本包落盘即字节级复制刷新。【已知红参照】上游基线 = 261010 包 closeout 后 host 全绿；本包红基线红全部为设计态红（新增结构齿对净 HEAD 断言缺失行为），无上游已知红需要消解。"
 }

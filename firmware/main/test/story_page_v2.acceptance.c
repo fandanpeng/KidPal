@@ -245,6 +245,68 @@
  *       ③ ×0 计数带坐标/版式不钉（粗带探针, 版式归 design review + 真机轮）。
  *
  * ---------------------------------------------------------------------------
+ * [TB] 261012-p3-topbar-ink-bleach-fix additive（2026-10-13 冻结; 头注原文与既有
+ *      [K1]-[K10]/[SL1]-[SL4] 零触碰, 本节纯追加——additive-host, 既有齿零触碰）:
+ *
+ *   [TB0] 包语义（TECH-261012 承接, S-F2.1 AC1/AC5）: chrome 顶带 top_bar_ 50% 白
+ *        蒙层（lcd_display.cc:944-959）经 KidPalReparentChatToLayer(lv_layer_top())
+ *        恒浮于所有 KidPal 页; 本板 1bpp flush 阈值 <0x7fff × LVGL 9.3
+ *        lv_color_16_16_mix 把 KSY_COLOR_INK 灰 0x333333 漂白（→0x94B2 过阈）、
+ *        纯黑侥幸存活（0x000000→0x7BEF）——P3 计数带 y[0..28] 真机不可见。修复 =
+ *        候选 A top_bar_ 背景透明化转正（真机一行定案试验已证实）+ TEMP-DIAG 清理
+ *        + AC5 两入口颜色统一到 KSY_COLOR_INK。根因权威 = docs/crq/tech/
+ *        TECH-261012-p3-star-count-invisible-on-device.md。
+ *
+ *   [TB1] top_bar_ 透明化转正结构齿（home = firmware/main/boards/waveshare-s3-rlcd-4.2/
+ *        custom_lcd_display.cc SetTheme）: host harness 无 chrome（top_bar_ 不在 host
+ *        面）——本齿 = 源面常量断言, 非像素探真（TECH 条目「host 覆盖洞补注」定口径;
+ *        像素探真只能落真机轮）:
+ *          - SetTheme 区内 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0) 常驻
+ *            （TEMP-DIAG 定案试验行转正, 注释改写为正式根因/解耦注释——锚 = 注释回引
+ *            TECH-261012 + 区内 TEMP-DIAG 措辞零残留）;
+ *          - 行落位在既有 if (top_bar_ != nullptr) 守卫块内（位置序断言, 防散放裸调）。
+ *   [TB2] TEMP-DIAG 诊断残留归零负向齿: custom_lcd_display.cc / display/story_page.c /
+ *        display/kidpal_render_node.cc 三源文件 + firmware/main 全树 TEMP-DIAG 字样
+ *        零命中（test/ host_app/ build/ assets/ 目录经既有 skip 表不可见——本冻结
+ *        文件注释合法提及 needle）。设计态绿守卫: 净 HEAD 无诊断残留, 诊断行以任何
+ *        形式复活即红——承载快照比对义务的机械半（temp-diag-snapshot.diff 36 行插入
+ *        中除 SetTheme bg_opa 一行正式转正外全部不得复活; 语义级逐行比对 = planner
+ *        快照半, 机械半本齿承载）。
+ *   [TB3] AC5 两入口颜色统一结构齿: KSY_COLOR_INK 宏上提 story_page.h 单源（话术
+ *        单源纪律同款; story_page.c 本地 #define 退役, C/C++ 混编单定义防重定义）
+ *        + kidpal_render_node.cc AC5 分支（s_story_data_received 真 = 数据已送达
+ *        空态）★/×0 两计数 label 消费 KSY_COLOR_INK、lv_color_black 零残留
+ *        + story_page.c 空态/非空两分支画法照常零偏移（★ (316,8) / ×N (344,8)
+ *        ksy_label 画点两分支各一处恒 INK）。本板 1bpp 阈值下 0x333333 与 0x000000
+ *        同渲黑零视觉差; 居中话术 label（lv_obj_center, y≈140+, 不在漂白带
+ *        y[0..28]）颜色不钉（视觉细节, 归 design review）。
+ *   [TB4] 真机轮 live-manual（human 在场持板, structural 豁免, 不计入 runner 通过面）:
+ *        SL-A5 计数分项复验（翻 P3 右上角 ★/×N 可见）+ AC5 无内容空态 ×0 两入口可见
+ *        + 阅读态标题（story_page.c:1216, 修复 A 后自愈）顺带目测 + P1 顶带与聊天态
+ *        顶带无回归目测（top_bar_ 透明化作用于全部页顶带, 跨页副作用确认）。
+ *
+ *   [TB] 强度申报追加（契约条目 -> 承载齿 -> 性质档）:
+ *     TECH-261012 根因修复（top_bar_ bg_opa 透明化）-> SLP-TB1 结构齿 -> 机制级/
+ *       源锚代理——**弱于「真机可见」处显式申报**: host harness 无 chrome, 像素探真
+ *       半 host 不可达 -> TB-A4 live-manual 承载（真机可见 = 行为本体的真验半）。
+ *     TEMP-DIAG 清理（快照 36 行比对义务）-> SLP-TB2 负向结构齿 -> 机制级（字样归零
+ *       承载「诊断行不得复活」; 语义级逐行比对 = planner 快照半）。
+ *     requirements S-F2.1 AC5 ×0 两入口 -> SLP-TB3 结构齿 -> 机制级（常量归一 +
+ *       画法零偏移）。行为等价假设显式化: ①「INK 0x333333 ≙ 真机可见计数」——依据
+ *       = 根因链: 漂白根因是 top_bar_ 蒙层非 INK 色值本身, 1bpp 阈值下 0x333333 与
+ *       0x000000 同渲黑（真机半归 TB-A4）; ②「既有齿不破」假设——SPV2-B1 /
+ *       SLP-SLA5 tooth 4 为带内墨量计数型探针（px & 0xFF < 0x80 暗度阈, 非精确色值
+ *       断言）, INK 0x333333 暗半字节 0x33 < 0x80 同判暗, 改色零新增红（冻结时逐齿
+ *       复核 + 红基线实跑复核）。
+ *     弱于契约处（逐条）: ① TB-A1 真机可见半（计数带真有墨）host 不可达 -> TB-A4
+ *       live-manual; ② top_bar_ 透明化跨页副作用（P1/P2/聊天态 chrome 观感）host
+ *       不可达 -> TB-A4 目测项; ③ AC5/AC6 话术 label 颜色不钉（不在漂白带, 视觉
+ *       细节）。
+ *     fixture 自含性: SLP-TB1/2/3 全为真实工作树文件扫描（无 fixture 依赖——无资产/
+ *       时间真值/环境前提）; 依赖 = 仓根可定位 + 三源文件在世。盲区申报: 话术 label
+ *       颜色（上③）; 本包纯显示面, 恢复推送/删除链路行为零触。
+ *
+ * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: S-F2.1-AC1 列表呈现/计数/分屏 -> SPV2-A7（counter 恒信 total 守卫）+
  *             SPV2-A2（分屏纯逻辑 + 分屏指示逐字）+ SPV2-B1（CJK 真帧）+ SPV2-B2
@@ -282,6 +344,17 @@
  *   coverage: SL-A5 空态两态分叉 host 前置 -> SLP-SLA5（两话术字面单源 + 渲染入口双
  *             macro 消费 + AC5 ×0 计数带真帧）; 真机轮 = live-manual 观测项
  *             （structural 豁免, 不计入 runner 通过面, 见 REVISION LOG revision 3）
+ *   coverage: TB-A1 (S-F2.1-AC1 页身份载体计数修复根因半) top_bar_ 背景透明化转正 ->
+ *             SLP-TB1（SetTheme bg_opa 常量存在性 + top_bar_ 守卫块内落位 + 正式
+ *             注释锚）; 真机探真半 = live-manual 观测项（structural 豁免, 不计入
+ *             runner 通过面）
+ *   coverage: TB-A2 TEMP-DIAG 诊断残留归零 -> SLP-TB2（三源文件 + firmware/main
+ *             全树 TEMP-DIAG 零命中; 设计态绿守卫, 诊断行复活即红）
+ *   coverage: TB-A3 (S-F2.1-AC5 ×0 两入口) AC5 两入口颜色统一 -> SLP-TB3
+ *             （KSY_COLOR_INK story_page.h 单源 + render_node AC5 分支 INK 消费/
+ *             lv_color_black 退役 + story_page.c 画法照常零偏移）
+ *   coverage: TB-A4 真机轮 live-manual -> structural 豁免（SLP-SLA5 真机轮先例同
+ *             口径, 不计入 runner 通过面; human 在场持板四项逐项）
  *
  * ---------------------------------------------------------------------------
  * Run protocol:
@@ -2283,6 +2356,177 @@ TEST_CASE("story_page_v2: 空态两态分叉——AC5/AC6 话术与计数画法 
                  ink));
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 18 — SLP-TB1: top_bar_ 背景透明化转正结构齿（structural, TB-A1; TECH-261012
+ * 承接）。host harness 无 chrome（top_bar_ 不在 host 面）——本齿 = 源面常量断言,
+ * 非像素探真（TECH 条目「host 覆盖洞补注」定口径）; 真机探真归 TB-A4 live-manual
+ * （human 在场持板, structural 豁免, 不计入 runner 通过面）。
+ * RED today: SetTheme 区无 bg_opa 透明化行——TEMP-DIAG 定案试验行已随快照还原净 HEAD。
+ * ------------------------------------------------------------------------ */
+/* coverage: TB-A1 -- top_bar_ 背景透明化转正：custom_lcd_display.cc SetTheme 中 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0) 常驻 + top_bar_ 守卫块内落位（位置序）+ 正式根因/解耦注释锚（TECH-261012 引用, 区内 TEMP-DIAG 措辞零残留） */
+TEST_CASE("story_page_v2: top_bar_ 背景透明化转正结构齿 (SLP-TB1)",
+          "[story_page_v2][SLP-TB1][structural]")
+{
+    char *region;
+    const char *guard;
+    const char *needle;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN, 扫描器自检): SetTheme 区切取成功 + 既有 top_bar_
+     * 样式装配块在世（pad_top=12 在世装配零回归锚）。 */
+    region = kspv2_region_between(
+        "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
+        "void CustomLcdDisplay::SetTheme", "void CustomLcdDisplay::Lvgl_flush_cb");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-TB1 RED(infra): SetTheme 区切取失败——custom_lcd_display.cc 函数锚漂移"
+        "（须复核本齿锚, 禁整文件退役绕过）");
+    guard = strstr(region, "if (top_bar_ != nullptr)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(guard,
+        "SLP-TB1 RED: SetTheme 区无 if (top_bar_ != nullptr) 守卫块——既有 top_bar_ "
+        "样式装配被拆（pad_top=12 零回归义务）");
+
+    /* tooth 2 (RED today, mutation 敏感 M-TB1): bg_opa 透明化行常驻——且落位在
+     * 守卫块**之后**（位置序断言: 防文件别处散放同名行假绿; top_bar_ 背景透明化 =
+     * TECH-261012 根因修复——50% 白蒙层 × 1bpp <0x7fff 阈值把 INK 灰漂白, P3 计数
+     * 带真机不可见; 像素探真半归 TB-A4 真机轮）。 */
+    needle = strstr(region, "lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, 0)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(needle,
+        "SLP-TB1 RED: SetTheme 区无 lv_obj_set_style_bg_opa(top_bar_, LV_OPA_TRANSP, "
+        "0)——top_bar_ 50% 白蒙层透明化转正未落（TB-A1; TECH-261012 根因修复）");
+    TEST_ASSERT_TRUE_MESSAGE(guard < needle,
+        "SLP-TB1 RED: bg_opa 透明化行未落在 if (top_bar_ != nullptr) 守卫块内"
+        "（散放裸调对 nullptr 不设防, 不随既有装配块维护）");
+
+    /* tooth 3 (RED today): 正式根因/解耦注释锚——注释回引 TECH-261012（TEMP-DIAG
+     * 措辞清除, 诊断注释转正为正式根因/解耦说明; 区 scoped 复核防转正注释仍带
+     * 诊断措辞, 全文件归零归 SLP-TB2 承载）。 */
+    TEST_ASSERT_TRUE_MESSAGE(kspv2_contains(region, "TECH-261012"),
+        "SLP-TB1 RED: SetTheme 透明化落点无正式根因/解耦注释（须回引 TECH-261012）"
+        "——TEMP-DIAG 措辞清除、注释转正义务未落（TB-A1）");
+    TEST_ASSERT_TRUE_MESSAGE(kspv2_count_in_slice(region, "TEMP-DIAG") == 0,
+        "SLP-TB1 RED: SetTheme 区仍有 TEMP-DIAG 措辞——诊断注释未转正（TB-A1）");
+    free(region);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 19 — SLP-TB2: TEMP-DIAG 诊断残留归零负向齿（structural, TB-A2; **设计态绿
+ * 守卫**——净 HEAD 无诊断残留, 诊断行以任何形式复活即红）。承载快照比对义务的
+ * 机械半: temp-diag-snapshot.diff 36 行插入中除 SetTheme bg_opa 一行以正式注释转正
+ * 外全部不得复活; 语义级逐行比对 = planner 快照半（机械半本齿 + 语义半文档义务）。
+ * ------------------------------------------------------------------------ */
+/* coverage: TB-A2 -- TEMP-DIAG 诊断残留归零：custom_lcd_display.cc / display/story_page.c / display/kidpal_render_node.cc 三源文件 + firmware/main 全树 TEMP-DIAG 字样零命中（test/ host_app/ build/ assets/ 目录经既有 skip 表不可见——本冻结文件注释合法提及 needle） */
+TEST_CASE("story_page_v2: TEMP-DIAG 诊断残留归零 (SLP-TB2)",
+          "[story_page_v2][SLP-TB2][structural]")
+{
+    char hit[KSPV2_MAX_PATH];
+    int n;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (MUST-STAY-GREEN): 三源文件在世可读（负断言前提）+ 扫描器负向自检。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_exists("firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc") &&
+            kspv2_exists("firmware/main/display/story_page.c") &&
+            kspv2_exists("firmware/main/display/kidpal_render_node.cc"),
+        "SLP-TB2 RED(infra): 三源文件不可读——负断言前提被破坏");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "__kspv2_no_such_needle__") == 0,
+        "SLP-TB2 RED(infra): scan matched an impossible needle — 负向断言会假绿");
+
+    /* tooth 2 (设计态绿, mutation 敏感): 三源文件 TEMP-DIAG 字样零命中。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file(
+            "firmware/main/boards/waveshare-s3-rlcd-4.2/custom_lcd_display.cc",
+            "TEMP-DIAG") == 0 &&
+            kspv2_count_in_file("firmware/main/display/story_page.c",
+                                "TEMP-DIAG") == 0 &&
+            kspv2_count_in_file("firmware/main/display/kidpal_render_node.cc",
+                                "TEMP-DIAG") == 0,
+        "SLP-TB2 RED: 三源文件仍有 TEMP-DIAG 字样——诊断残留未清（TB-A2; 快照 36 行"
+        "插入中除 SetTheme bg_opa 一行正式转正外全部不得以任何形式复活）");
+
+    /* tooth 3 (设计态绿, mutation 敏感): firmware/main 全树 TEMP-DIAG 零命中——
+     * 防诊断行复活到第四处文件逃逸三源文件清单（test/ host_app/ build/ assets/
+     * 目录经 kspv2_is_skipped_dir 既有跳表不可见, 本冻结文件自身注释合法提及
+     * needle 不误伤）。 */
+    n = kspv2_scan_count("firmware/main", "TEMP-DIAG", hit, sizeof(hit));
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kspv2_fm("SLP-TB2 RED: firmware/main 全树 TEMP-DIAG 命中 %d 文件（首命中 %s）"
+                 "——诊断残留逃逸三源文件清单（TB-A2 全树半）", n, hit));
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 20 — SLP-TB3: AC5 两入口颜色统一 KSY_COLOR_INK 单源结构齿（structural,
+ * TB-A3）。两入口 = story_page.c 空态半（n<=0 分支）与 kidpal_render_node.cc AC5
+ * 分支（s_story_data_received 真）的 ★/×0 计数画点; 颜色统一 = INK 单源（plan.md
+ * 连带面裁决 2: render_node 侧 lv_color_black() 是偏离侧、改 INK; 宏上提
+ * story_page.h 随「话术单源 = story_page.h」既有单源纪律）。
+ * RED today: story_page.h 无 INK 宏定义 + story_page.c 本地定义未摘 + AC5 分支
+ * lv_color_black 在世。
+ * ------------------------------------------------------------------------ */
+/* coverage: TB-A3 -- AC5 两入口颜色统一到 KSY_COLOR_INK：宏上提 story_page.h 单源（story_page.c 本地 #define 退役）+ kidpal_render_node.cc AC5 分支 lv_color_black 退役 / KSY_COLOR_INK 消费 >= 2 + story_page.c 空态/非空两分支画法照常零偏移（★ (316,8) / ×N (344,8) 恒 INK） */
+TEST_CASE("story_page_v2: AC5 两入口颜色统一 KSY_COLOR_INK 单源 (SLP-TB3)",
+          "[story_page_v2][SLP-TB3][structural]")
+{
+    char *region;
+    int n;
+
+    KSPV2_REQUIRE_ROOT();
+
+    /* tooth 1 (RED today, mutation 敏感 M-TB3): KSY_COLOR_INK 单源上提 story_page.h
+     * （C/C++ 混编单定义防重定义——taskpackage notes 边角④）; story_page.c 本地
+     * #define 退役（单源, 不双写）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_file_contains("firmware/main/display/story_page.h",
+                            "#define KSY_COLOR_INK"),
+        "SLP-TB3 RED: story_page.h 无 #define KSY_COLOR_INK——INK 宏未上提单源"
+        "（TB-A3; 「话术单源 = story_page.h」纪律同款, 两渲染入口同源消费不双写色值）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "#define KSY_COLOR_INK") == 0,
+        "SLP-TB3 RED: story_page.c 仍本地 #define KSY_COLOR_INK——旧本地定义未摘"
+        "（单源上提后双定义 = C/C++ 混编重定义风险）");
+
+    /* tooth 2 (RED today, mutation 敏感 M-TB3): render_node AC5 分支区 scoped
+     * （if (s_story_data_received) .. 首个 } else { 之间 = 数据已送达空态半）——
+     * lv_color_black 零残留 + KSY_COLOR_INK 消费 >= 2（★ 与 ×0 两计数 label）。
+     * 居中话术 label（lv_obj_center, y≈140+, 不在漂白带 y[0..28]）颜色不钉（视觉
+     * 细节, 归 design review——强度申报弱于契约处③）。 */
+    region = kspv2_region_between("firmware/main/display/kidpal_render_node.cc",
+                                  "if (s_story_data_received)", "} else {");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "SLP-TB3 RED(infra): AC5 分支区切取失败——s_story_data_received 锚漂移"
+        "（须复核本齿锚）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kspv2_count_in_slice(region, "lv_color_black") == 0,
+        "SLP-TB3 RED: kidpal_render_node.cc AC5 分支仍有 lv_color_black——×0 计数"
+        "两入口颜色未统一到 KSY_COLOR_INK（TB-A3; 偏离侧改 INK, plan.md 连带面裁决 2）");
+    n = kspv2_count_in_slice(region, "KSY_COLOR_INK");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kspv2_fm("SLP-TB3 RED: kidpal_render_node.cc AC5 分支 KSY_COLOR_INK 消费 = "
+                 "%d 处（期望 >= 2: ★ 与 ×0 两计数 label）——INK 消费缺失（TB-A3）",
+                 n));
+    free(region);
+
+    /* tooth 3 (MUST-STAY-GREEN 零偏移锚): story_page.c 空态/非空两分支画法照常——
+     * ★ (316,8) 与 ×N (344,8) 的 ksy_label 画点两分支各一处、色值恒 INK（计数画法
+     * 照常零偏移, requirements v1.63 空态注记「画法照常」; 颜色统一只归一常量、
+     * 不动画点坐标与调用形态）。 */
+    n = kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "ksy_label(scr, \"★\", 316, 8, KSY_COLOR_INK)");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kspv2_fm("SLP-TB3 RED: story_page.c ★ 画点（316,8 INK）= %d 处（期望 >= 2: "
+                 "空态/非空两分支各一）——计数画法被改形（「画法照常」零偏移义务破）",
+                 n));
+    n = kspv2_count_in_file("firmware/main/display/story_page.c",
+                            "344, 8, KSY_COLOR_INK");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
+        kspv2_fm("SLP-TB3 RED: story_page.c ×N 画点（344,8 INK）= %d 处（期望 >= 2）"
+                 "——计数画法被改形（「画法照常」零偏移义务破）", n));
+}
+
 /* ---------------------------------------------------------------------------
  * RED baseline 判读口径（freeze 相位, acceptance-author; SPV2 全套设计态红清单）:
  *
@@ -2323,6 +2567,19 @@ TEST_CASE("story_page_v2: 空态两态分叉——AC5/AC6 话术与计数画法 
  * 而非空态; 期间任意页前台无 P3 抢占; 空态两态话术（AC5 ×0 + 话术 / AC6 不显计数 +
  * 话术）——structural 齿登记, 不计入 runner 通过面。
  *
+ * [TB additive 2026-10-13] 本文件新齿（TEST 18-20, 包 261012-p3-topbar-ink-bleach-fix）
+ * 红基线判读: SLP-TB1 红（tooth 2: SetTheme 区无 bg_opa 透明化行——TEMP-DIAG 定案
+ * 试验行已随快照还原净 HEAD; tooth 3 正式注释锚同因红; tooth 1 MUST-STAY-GREEN 先行
+ * 绿）+ SLP-TB2 **GREEN（设计态）**——负向归零守卫, 净 HEAD 无诊断残留, 诊断行复活
+ * 即红（变异敏感; 快照比对义务机械半）+ SLP-TB3 红（tooth 1: story_page.h 无 INK 宏
+ * 定义 + story_page.c 本地定义未摘; tooth 2: AC5 分支 lv_color_black 在世; tooth 3
+ * MUST-STAY-GREEN 画法零偏移锚先行绿）。既有齿（SPV2/SLP-SLA 全套）零新增红 = 零
+ * 回归义务; 既有带内墨量计数型探针（SPV2-B1/SLP-SLA5 tooth 4, 暗度阈非精确色值）
+ * 改色预期不破——冻结时逐齿复核 + 红基线实跑复核（结论: 不破, 强度申报 ②）。
+ * TB-A4 真机轮 = live-manual 观测项（human 在场持板, structural 豁免不计入 runner
+ * 通过面）: SL-A5 计数分项复验 / AC5 ×0 两入口可见 / 阅读态标题自愈目测 / P1 与
+ * 聊天态顶带无回归目测。
+ *
  * MUTATION REPLAY 追加（SL 齿, builder 实现全绿后补跑; 260923-m3-k7 M1-M5 同纪律）:
  *   M-SLA2 摘 story 区 restore 读取（mcp_json_get_bool/"restore"）或 restore 分支加
  *     kidpal_render_node_begin_page → TEST 14 红（tooth 3 / tooth 5 计数 2 != 1）。
@@ -2333,6 +2590,13 @@ TEST_CASE("story_page_v2: 空态两态分叉——AC5/AC6 话术与计数画法 
  *     TEST 16 tooth 1/2 红（基线绿, 红即真回归）。
  *   M-SLA5 摘 ×0 计数画法（空态半仍 break 不画计数）→ TEST 17 tooth 4 红; 摘 AC6
  *     macro/双 macro 消费 → TEST 17 tooth 2/3 红。
+ *   M-TB1 摘 custom_lcd_display.cc SetTheme 中 lv_obj_set_style_bg_opa(top_bar_,
+ *     LV_OPA_TRANSP, 0) 行（或改回 LV_OPA_50）→ TEST 18 红（tooth 2 常量行缺失;
+ *     挪出守卫块 → 位置序断言红）。
+ *   M-TB3 摘 kidpal_render_node.cc AC5 分支 INK 消费（改回 lv_color_black() 或直拆
+ *     KSY_COLOR_INK 宏引用）→ TEST 20 红（tooth 2 lv_color_black 复现 / INK 计数
+ *     回落 < 2）; 摘 story_page.h 单源定义 → TEST 20 tooth 1 红。SLP-TB2 三齿均
+ *     变异敏感（诊断行以任何形式复活即红）。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-29  initial freeze (acceptance-author, TaskPackage
@@ -2418,6 +2682,18 @@ TEST_CASE("story_page_v2: 空态两态分叉——AC5/AC6 话术与计数画法 
  *        计数）而非空态; 期间任意页前台无 P3 抢占; 空态两态话术（AC5 ×0 + 话术 /
  *        AC6 不显计数 + 话术）。红基线判读与 MUTATION REPLAY 追加条见上方 [SL
  *        additive] 段。
+ *   2026-10-13  revision 4 (additive-host, 包 261012-p3-topbar-ink-bleach-fix;
+ *               TECH-261012 承接, sourceType=regression, rigor=lite; 授权链 =
+ *               /triage-change plan.md 2026-10-12 + human ①档位确认「② 单包 Lite」
+ *               2026-10-12 AskUserQuestion 留痕):
+ *     R8 纯 additive: 头注 [TB] seam 契约节 + 强度申报追加段 + coverage map 四行 +
+ *        TEST 18-20 三齿（SLP-TB1 top_bar_ 背景透明化转正结构齿 / SLP-TB2 TEMP-DIAG
+ *        诊断残留归零负向齿 / SLP-TB3 AC5 两入口颜色统一 KSY_COLOR_INK 单源结构齿）
+ *        + 红基线判读 [TB additive] 段 + MUTATION REPLAY M-TB1/M-TB3 条。既有
+ *        TEST 1-17 断言零触碰（git diff -U0 既有 hunk 零删除行可机判）。SLP-TB2 =
+ *        设计态绿守卫（净 HEAD 无诊断残留, 变异敏感）; TB-A1/TB-A3 红基线 = 设计态
+ *        红（新增结构齿对净 HEAD 断言缺失行为）。TB-A4 = live-manual structural 豁免
+ *        （SLP-SLA5 真机轮先例同口径, 不计入 runner 通过面）。
  * --------------------------------------------------------------------------- */
 
 

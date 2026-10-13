@@ -989,7 +989,9 @@ int kidpal_story_text_parse(const char *data_json, kidpal_story_text_t *out)
  * ------------------------------------------------------------------------ */
 
 #define KSY_COLOR_TEXT   0x222222u
-#define KSY_COLOR_INK    0x333333u
+/* KSY_COLOR_INK 已上提 story_page.h 单源（seam [TB3], 包 261012-p3-topbar-ink-bleach-fix）
+ * ——本地定义退役, 两渲染入口（本文件 + kidpal_render_node.cc）同源消费、不双写色值;
+ * 防 C/C++ 混编重定义（story_page.c 经 :17 include 该头取用）。 */
 #define KSY_COLOR_BG     0xFFFFFFu
 #define KSY_COLOR_FAINT  0xDDDDDDu
 #define KSY_COLOR_BORDER 0x222222u
