@@ -93,7 +93,7 @@ entries:
      note: 与上行同源——上行铺输入、本行核验 overlay 渲染出的 data/ 副本}
   - {dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/.config.yaml,
      owner: overlay, verify: marker,
-     anchors: ["实时事实回合", "engine_timeout"],
+     anchors: ["实时事实回合", "close_connection_no_voice_time"],
      restart: engine,
      note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = prompt v10 版本锚 + decision-21 引擎超时键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
 

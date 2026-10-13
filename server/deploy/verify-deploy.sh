@@ -118,8 +118,8 @@ for job in manifest.get("cron_jobs", []):
         expect = job["expect_argv"].split()
         if joined != expect:
             drift("cron", name, "命令串漂移（期望 %s）" % job["expect_argv"][:80])
-    if "expect_agent" in job and payload.get("agent") != job["expect_agent"]:
-        drift("cron", name, f"agent 漂移: live={payload.get('agent')!r} 期望={job['expect_agent']!r}")
+    if "expect_agent" in job and payload.get("agentId") != job["expect_agent"]:
+        drift("cron", name, f"agent 漂移: live={payload.get('agentId')!r} 期望={job['expect_agent']!r}")
     if "expect_schedule" in job:
         live_sched = payload.get("schedule", {})
         every_min = live_sched.get("everyMs", 0) // 60000
