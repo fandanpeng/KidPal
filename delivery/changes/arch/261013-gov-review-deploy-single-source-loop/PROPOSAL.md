@@ -147,3 +147,5 @@ docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md
 **r2 · 2026-10-13 · verdict: RED（轻量打回，1 major + 2 minor）**。r1 全 findings 闭合核验通过（撤块行边界 125-146 精确、钉值实证可证伪、preflight 17 锚）；F9 major：三个仓内文件的「随 overlay 上 ECS」渲染面声明在撤块后失实且未入 sweep（`provider.config.yaml:47-53` / 两 config 头注）；F10 minor：runbook §8.2 清理范围收窄；F11 minor：§5 第 12 条锚法示例死臂。无结构性缺口、不需升级 human。
 
 **r3 · 2026-10-13 · verdict: GREEN**。DRAFT v1.2 复审：preflight 20 锚与围栏块逐 token 一致；F9/F10/F11 全部闭合（含钉值测试 `test_reminder_units.py:132` 守值约束核对属实）；无未结 BLOCKING/SHOULD；一条非阻断注记（§5 第 12 条示例单锚 vs 散文双锚集，已收口「具体锚集随 manifest 定稿」，landing-summary 核验时顺带看一眼）。三轮累计实证义务复核（md5 ×3、ls-remote、secret 扫描、全部 file:line 引据、撤除行边界、钉值测试名）全过，sweep UNCLASSIFIED=0（真零），验证集 13 条双时点机械可判。**结论：GREEN，可冻结（以 human 立项 ack + OQ 终裁为前提，主线程报两者均已达成）**。回炉条款未触发：OQ-1 终裁 = (a)（r3 尾注的「终裁非 (a) 须回炉 r4」条款不生效，无需 r4）；OQ-2 亦 (a)。GREEN 后流程照协议：主线程标 FROZEN → packet-bound landing → landing-verifier 独立核验 → retro → 前置升级闸。
+
+**verdict: GREEN**（r3 · 2026-10-13 · Track B 评审循环收口——判官终判；r1 RED / r2 RED 轻量轨迹与完整 findings 见上及 `architect-review.md`）
