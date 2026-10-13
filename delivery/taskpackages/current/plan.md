@@ -1,51 +1,56 @@
 ---
-changeId: 261010-p3-storylist-cold-start-restore
-rigor: full
+rigor: lite
 riskTier: medium
 sourceType: regression
-reviewed-by: architect（/triage-change 分流 review，2026-10-10）
-date: 2026-10-10
-launchPreconditions: 见「上游门」节——spine 面板 anchors 未回填不得 launch（spine 源条款）
+reviewed-by: architect（/triage-change 比例化 review，2026-10-13，同会话 return；四档裁决 ② 单包 Lite + reviewed plan 四件，human 触点①确认 2026-10-13）
+date: 2026-10-13
+changeId: 261013-lang-config-thinking-fix
+origin:
+  type: regression
+  upstreamType: regression
+  upstreamRef: docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md
+  upstreamFrozen: ""
+  workstream: ""
 ---
 
-# P3 story_list 冷启动恢复性推送（TECH-261010-p3-storylist-cold-start-empty · dev 面）
+# plan · 261013-lang-config-thinking-fix
 
-## 上游门（launchPreconditions，先于本包）
-spine = delivery/changes/intake/261010-p3-storylist-cold-start.md。launch 前须回填：
-1. 需求面 anchor：S-F2.1 补充规则定稿（「进页即见列表 + RAM 缓存」+ 冷启动恢复 = WS 建连附带重推〔恢复性推送、只填缓存不抢前台、P3 在屏时刷新本页〕+ P3 空态两态分叉话术）——/requirement-change loop，可与 REQ-261010-p1-schedule-empty-state 并批裁定。
-2. 架构面 anchor：arch §5.2 场景④（:213）「现役两时点」重载含恢复时点①——随需求面批同批落。
-3. 契约面 anchor（若取 restore 标记方案——推荐）：story_list data.restore additive（复刻 §1.3② L85 / ADR-005 先例）——architect-reviewer 四分类 + human 契约门后与实现同批原子落。若 human 裁「固件本地页 gating、wire 零变化」备选则本条豁免（该备选改 K2 消费面「非 VOICE 前台一律推前台」既有语义——取舍呈 human，存疑向严）。
+> 承载 TECH-261013-lang-config-thinking-key-regen-landmine（固件 lang_config.h 生成物与 locale 源不一致）。本 plan = /triage-change architect reviewed plan 搬运（主线程零改写）；逃生门结论 = 不触契约/spec/agent 面，留在 dev 分流道。
 
-## 根因假设
-- 三时点①建连即推已于 260928 摘除（front_app.py:1013-1019 注释 + FIX-A1 负锚齿 test_m4k1_story_cloud_link.acceptance.py:1000-1044）；现役触发点 = ②归档后（:573）/③删除后（:223）/①恢复 = ctx(story) 会话建立同拍（:216；固件 application.cc:1014-1020 已接通）。
-- BOOT 翻页浏览路径无任何触发点；板端 RAM 缓存重启即失（决策 24）→ 重启后翻 P3 恒走 count<=0 空态分支（kidpal_render_node.cc:874-886）。
-- 摘除原因（旧固件无条件渲染 P3 盖聆听态）的约束面已半变：固件 K3 [S4] gating 在场（mcp_server.cc:1088-1118；story_page.c:1966-1975）——但**只覆盖「记录语境前台」半，缺「非 P3 本地页前台」半**（实现前核项已核，见 faceMap）。恢复帧不带标记会在 HOME/P1/P2 前台推 P3 抢前台 = 原缺陷形态复发；带 restore 标记则天然只填缓存（schedule 先例 mcp_server.cc:926-991 实核在场：restore=true → cache_story 只装缓存不 end_page）。
+## T1 · 正源补 THINKING 键
 
-## 修复方案（推荐 = restore 标记，P2 先例复刻）
-- front：连接处理段（front_app.py:1005-1012 schedule connect push 同位）追加 _push_story_list(websocket, restore=True)（函数加 restore 形参、下行 data 带 restore: true；②③调用点默认 False 零偏移）；失败不阻断建连（try/except 同 :1009-1012 先例）。
-- 固件：mcp_server.cc story_list 分支（:1034-1119）按 data.restore 分流——restore=true → 解析装载缓存 + kidpal_render_node_cache_story 同步 + 若 P3 在屏（s_local_page == KP_PAGE_STORY）刷新本页，否则前台零触碰（复刻 schedule :926-991 形态）；restore 缺省/false = 现行为零偏移（K2 消费面 + K3 [S4] gating 全保持）。
-- 验收翻正（正常改验收通道 + human 方向锚留痕，260928 FIX-A2 先例形态）：FIX-A1 负锚齿「建连零 story_list 帧」→「建连恰一帧 restore story_list」；test_m4k3_record_session_live.acceptance.py:25 跨包负锚同批翻正。
-- 空态话术按需求面定稿落（两态分叉）；固件空态渲染入口两处同源纪律（kidpal_render_node.cc:875-886 注记）不破。
-- crossPackageBehaviors 登记：「story_list 恢复性推送语义」owner = 本包（260928 defer 挂起的「①恢复时机重裁」由本包赎回，ARQ-260911 纪律）；crossEnd counterparts = front_app.py::_push_story_list ↔ mcp_server.cc story_list 分支。
+`firmware/main/assets/locales/zh-CN/language.json` strings 节补 `"THINKING": "思考中..."`（与手补行逐字一致），`firmware/main/assets/locales/en-US/language.json` 补 `"THINKING": "Thinking..."`。en-US 是 gen_lang.py 的 fallback 基准（gen_lang.py:80-86），补它即覆盖其余 35 个 locale；zh-CN 是当前构建语言（`CONFIG_LANGUAGE_ZH_CN=y`）。其余 locale 无需逐个补。
 
-## 影响面
-- 文件：server/gateway/front/front_app.py；firmware/main/mcp_server.cc；server/acceptance/test_m4k1_story_cloud_link.acceptance.py + test_m4k3_record_session_live.acceptance.py（FIX-A1 翻正）；firmware story 面测试（restore 分流纯逻辑齿 additive）；契约 docs/contracts/interface-contract.md §1.3③（restore additive——经契约门后落，本包不直改契约）。
-- 语义零偏移面：ctx(story) 同拍推送（:216）、②③时点、items ≤16 窗口 / total 语义（契约既有）。
-- planningImpact 建议：attach-existing → delivery/workstreams/m4-star-notebook（planner intake 定夺）。
+## T2 · 生成链加固（正形：生成头迁 build 目录 + 全依赖化 + 编译排序接线）
 
-## acceptance 种子
-impactedTests：server/acceptance/test_m4k1_story_cloud_link.acceptance.py（FIX-A1 翻正 + ②③ wire 断言零偏移复跑 + restore 帧新断言）；server/acceptance/test_m4k3_record_session_live.acceptance.py（跨包负锚翻正 + K1 27 齿零偏移套件全量）；firmware story 面测试（story_page_v2 + restore 分流纯逻辑新齿）；契约落地后 drift 人工核对如实记录（本仓无机械门，ARQ-260827 口径）。
+`firmware/main/CMakeLists.txt:831-846` 现行三个结构缺陷的正形修法：
 
-验收齿草案：
-- SL-A1（翻正, host offline）：建连路径恰一帧 story_list 且 data.restore == true（先红〔现零帧〕后绿）。
-- SL-A2（固件 host 纯逻辑）：restore 帧 + 非 P3 前台 → 只装缓存零前台接管（cache_story 被调、begin/end_page 不被调）。
-- SL-A3（固件 host 纯逻辑）：restore 帧 + P3 在屏（LIST 冷浏览）→ 重渲本页。
-- SL-A4（固件 host 回归）：记录语境（VOICE 前台/录音态）收到 restore 帧 → 缓存不抢前台（K3 [S4] gating 与 restore 分流叠加语义钉死）；非 restore 帧（②③）→ K2 消费面零偏移。
-- SL-A5（真机轮）：重启设备（云端现存 ≥1 篇）→ 翻到 P3 显示已归档列表（含计数）而非空态；期间任意页前台无 P3 抢占；空态两态话术按需求面定稿验收。
-- SL-A6（front host）：恢复推送失败不阻断建连。
+1. **生成头落 build 目录**：`LANG_HEADER` 改 `${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h`；`INCLUDE_DIRS` 追加 `${CMAKE_CURRENT_BINARY_DIR}`——全部 include 形态枚举（19 处）均为同一字面量 `#include "assets/lang_config.h"`（相对 main/ 解析），加 binary dir 后零 include 站点改动。迁移后「untracked 手补生成物」形态与跨 worktree 拷贝传播载体物理消失，每个 worktree 首建必然自生成。
+2. **gen_lang.py 加 `--assets-dir` 可选参**：现行脚本从 output 路径反推 assets 目录（gen_lang.py:54-60，实测 output 指别处即报错），迁 build 目录必炸——加显式 `--assets-dir`（不传时保留旧反推逻辑，向后兼容）；CMake 命令行传 `--assets-dir ${CMAKE_CURRENT_SOURCE_DIR}/assets`。
+3. **DEPENDS 补全 + 编译排序接线**（编译红两个机制根因）：① 现行 DEPENDS（CMakeLists.txt:837-839）漏 en-US 基准 json——改 en-US 不触发再生成，补；② `add_custom_target(lang_header ALL)`（:844）与组件库零 `add_dependencies` 接线（grep 全文件零命中），ninja 编译与生成无序——正形 = 把 OUTPUT 以 `target_sources(${COMPONENT_LIB} PRIVATE ${LANG_HEADER})` + `set_source_files_properties(... GENERATED TRUE HEADER_FILE_ONLY TRUE)` 挂进组件目标，使对象文件编译排序在生成完成之后；冗余 ALL custom target 撤（单机制，勿双挂）。
+4. **收尾**：删磁盘陈旧 `firmware/main/assets/lang_config.h`（untracked，无历史损失）；`firmware/.gitignore:11` 的 `main/assets/lang_config.h` 忽略行一并撤——此后源树再塞生成物以 untracked 噪音显形。
 
-## 非目标
-- ctx(story) 会话同拍推送、②③时点零改动；P1 首页空态（REQ-261010-p1 需求面另批）；「闲置休眠断连」产品决策；story_list items 窗口 / total 语义。
+已驳回替代形（留档）：保留源树 output 只补 DEPENDS + 排序——改动更小但保全「untracked 手补」形态与拷贝载体，不取。
 
-## demo 证据形态
-host 双面（front + 固件）红基线先红后绿留痕 + 真机轮（human 在场）：重启冷启动翻 P3 见列表 + 空态两态 + 无前台抢占。烧录 = app 分区（无资产变更）。
+## T3 · 全量对账（验收基线在案）
+
+判定标准 = 固件源码全部 `Lang::Strings::*` / `Lang::Sounds::*` 引用集 ⊆ 生成器可产出集，零差集。对账命令：
+
+```bash
+# 引用侧（firmware 全树 vs main 子树 diff = 空，即 main 之外零引用）
+grep -rhoE "Lang::(Strings|Sounds)::[A-Z_0-9]+" firmware/main | sort -u
+# 可产出侧 = en-US ∪ zh-CN strings 键（大写）∪ OGG_<词干>.upper()（locales/{zh-CN,en-US}/*.ogg + common/*.ogg）
+```
+
+triage 期实测基线：引用未定义 = **仅 THINKING 一颗**；Sounds 九个引用常量全部可产出零缺口；10 个可产出未引用 strings 键（ACTIVATION / BATTERY_CHARGING / BATTERY_FULL / BATTERY_LOW / CHECKING_NEW_VERSION / CHECK_NEW_VERSION_FAILED / CONNECTION_SUCCESSFUL / HELLO_MY_FRIEND / INFO / WARNING）无害余量不修。包内验收时重跑一次（防窗口期新引用）。
+
+## T4 · 验证
+
+- **host 生成复现**（快速回路）：temp 骨架目录跑 `python firmware/scripts/gen_lang.py --language zh-CN --output <tmp>/main/assets/lang_config.h --assets-dir <骨架>/assets`，断言 THINKING 在产物中（triage 期已复现反向版：骨架产物 vs 手补头 strings 节 diff = 恰一行 THINKING）。
+- **全量编译（包内执行，不 defer）**：入口 = kidpal-idf-env skill——`cd firmware && "C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe" c:/tmp/idf_run.py build`（IDF venv python 调 wrapper，勿裸 python）。**两次干净复现**：① 改 en-US json mtime（touch）后增量构建 → 断言触发再生成（验证新 DEPENDS）；② 删 build 目录全量首建 → 断言绿（模拟新 worktree 首建 = 本雷触发条件）。
+- **真机轮：deferred**，不进本包验收线——本修复为编译层修复，行为面与手补头存活时代等价（接线 8a3fc07 已在）；思考页真机表现归 Phase-1 语音轮 workstream（requirements v1.12 §2.2 已标 Phase 1 修复项）。
+
+## 范围外残留（不进本包）
+
+- TECH 条目连带第 6 条（构建对 `firmware/sdkconfig` 追加空节「Image Effects Configuration」装饰性噪音）：另开轻量 CRQ 或并入将来 housekeeping 批。
+- TECH 建议③（launch-prep skill 首建自检）：**裁撤**——T2 正形落地后自检对象不存在；单键硬编码自检必腐化；未定义键由编译器即时指名接住。绑定条件：若实施退回「源树 output」替代形则恢复必要性（正形已裁，不预期发生）。
