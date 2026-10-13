@@ -37,6 +37,7 @@ human 真机观测（今天区空 AC5 话术时首页 P1「明天」区第 2 个
   3. 今天 ≥7 项：卡底 y=242 无残线、放不下的项整行让位（host 侧回归代理 = tooth 5，已绿；真机字形/观感仍归 human 在场确认）；
   4. 烧录 = app 分区单烧（纯代码变更、无 spiffs 资产变更，flash-asset-partition-rule 口径核对通过；r3 firmware-build 的 art.bin 仅为 spiffsgen 常规重打包）。
   **本包不停等烧录**——host 面转绿后停该门等 human，真机轮四项归后续真机轮承接（demo 对账归真机轮；本包非 workstream 包，workstream 增锚两条不适用）。
+  **真机轮留痕（2026-10-13 human 持板，主线程 append）**：①app 分区单烧 0x20000 完成、hash verified（esptool 输出在案）；②30s 追端口捕获启动干净——`render home render_rc=0 state_rc=0`、uptime 平滑推进、0 个 RE-ENUM（启动成功判据全过，c:/tmp/boot-check-261013.log）；③场景 1 **PASS**——今天空 AC5 话术 + 明天 2 项（08:00 上学 / 18:40 书法）两项完整字形渲染、无 1px 残线，修复前后照片对已留证（`delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/device-round/{before-fix-sliver.jpg, TR-A5-scenario1-pass.jpg}`）；④场景 2/3 数据依赖（明日仅 2 项、今日无 7 项夹具）——host 侧回归代理 tooth 4/5 已绿 + 变异取证三条 turnedRed 实证判别力，真机目击 deferred 至相应数据自然出现（如实申报，不虚报全过）。
 - exitCriteria 其余各条：①设计态红转绿已满足；②p1_cjk_name 零改动全绿已满足；③schedule_grid canary 绿已满足；④零新增红已满足；⑤REVISION LOG 2026-10-13 条在场（append，授权链与判别力保全论证在冻结件尾）；⑥docs-sync 显式裁定 = docsSyncRequired=false（见 docs-delta.md）；⑦TR-A5 真机轮留痕 = 停门项如实申报（上文）。
 - Lite 包 workstream 增锚两条（demo 对账行 + 未覆盖面申报）不适用（非 workstream 包）——demo 对账归真机轮；未覆盖面申报即本节。
 
