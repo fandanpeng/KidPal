@@ -1154,27 +1154,43 @@ static const char HP1_TEXT_TOMORROW_UNKNOWN[] = "还没收到明天的课表";
 
 /* ②/③ 「接下来」日程卡（[S3] 追加轮行流语义, human 版式扩展 2026-09-22；
  * 2026-09-26 真机对齐轮按 canvas-p1 实测重排；2026-10-11 v1.61 空态三态 + 明天区
- * 多项化）：
+ * 多项化；2026-10-13 补充轮行距压缩 line_h 28→22 + 组级容纳门）：
  * 卡顶「接下来」= 烘焙黑底白字帽标（[S5] p1_chip_jiexialai.bin, 卡题固定、空日程
  * 仍在场）+ 左侧云朵涂鸦；文字行全部 14px font_puhui_14_1 逐字形 blit + 正常换行。
  *   - 今天区（ROW1 y68 起）三态：列表（逐项 时间+名 行流下排）/ 无安排话术（AC5）/
  *     数据未达提示（AC7）。组间点状虚线分组隔（ui-v5-align §2 P1 行 4）。
- *   - 明天区（锚点 ty = 68 + max(2, s_count)*28，帽标 ty+33 / 项行 ty+60 起）三态：
- *     多项列表（学校课合并「XX:XX 上学」与课外班、临时事件同列，按开始时间升序——
- *     producer 单源保证，设备照单渲染不重排；帽标 p1_chip_mingzao.bin「明天」独立行
- *     + 逐项行流）/ 确认空话术（AC6）/ 数据未达提示（AC7）。
+ *   - 明天区（锚点 ty = 68 + max(2, s_count)*22，虚线 ty+8 / 帽标 ty+13 / 项行 ty+43
+ *     起）三态：多项列表（学校课合并「XX:XX 上学」与课外班、临时事件同列，按开始时间
+ *     升序——producer 单源保证，设备照单渲染不重排；帽标 p1_chip_mingzao.bin「明天」
+ *     独立行 + 逐项行流）/ 确认空话术（AC6）/ 数据未达提示（AC7）。
+ * 参数族（2026-10-13 补充轮 line_h 28→22 / text_yoff 6→4）落位几何：
+ *   今天区行带 68-89 / 90-111 / 112-133 / 134-155 / 156-177 / 178-199 / 200-221
+ *   （文字 = 带顶 +4..+17，行间净空 8px = 1.57 倍字号）。
+ *   明天区（随锚点 ty 浮动，项行 = ty+43 起）容量表：
+ *     s_count≤2 → ty=112 → 虚线 120-122 / 帽标 125-148 / 项行带 155-176·177-198·
+ *                 199-220·221-242（4 行容量）
+ *     s_count=3 → ty=134 → 项行带 177-198·199-220·221-242（3 行容量）
+ *     s_count=4 → ty=156 → 项行带 199-220·221-242（2 行容量）
+ *     s_count=5 → ty=178 → 项行带 221-242（1 行容量）
+ *     s_count≥6 → ty≥200 → 组级门整区让位（0 行容量）
+ *   AC6/AC7 话术落位 = ty+43+4（s≤2 档 159-172）。
+ * 组级容纳门（2026-10-13 补充轮新增）：明天区整块（组间虚线 + 帽标 + 项行/AC6/AC7
+ * 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty ≤ 178）——今天 ≥6 项时整区
+ * 让位，不画半截帽标 / 孤儿虚线；结构性关闭「锚点下推越卡」隐患（虚线/帽标 blit 无
+ * 卡区 clip，旧参数下 s_count≥7 越卡绘制）。
  * 明天区行流 clip 进卡区底界 y242（containment，底界依据 = 卡区底界 containment）；
  * 旧 PREVIEW_NEG 退役面约束随本包（261013-p1-tomorrow-row-sliver-fix）退役、HPB 负
  * 断言带已重锚至卡底之下 y244；今天区行流 clip 进卡区底界 y242；两区后续项行整行容纳
  * 守卫（行带底越界即整行让位）；一切墨不越卡区 CARD{103,42,392,242}。 */
 static void p1_draw_card(void)
 {
-    const int line_h = 28;      /* 行带 pitch：ROW1 68 -> ROW2 96 -> ROW3 184 */
-    const int text_yoff = 6;    /* 14px 字形在行带内的垂直对齐偏移 */
+    const int line_h = 22;      /* 行带 pitch（2026-10-13 补充轮 28→22）：今天行带
+                                 * 68-89/90-111/...；明天项行带 155-176/177-198/... */
+    const int text_yoff = 4;    /* 14px 字形在行带内的垂直对齐偏移（2026-10-13 补充轮 6→4） */
     const int cx0 = 152, cy0 = 42, cx1 = 392, cy1 = 242; /* 卡区 clip */
     const int pv_cy1 = 242;     /* 明天区底界 clip（对齐卡区底界 cy1；旧 PREVIEW_NEG 退役面约束随本包退役） */
     int fy_today = 68;          /* 今天区行流光标 */
-    int ty;                     /* 明天区锚点（帽标 ty+33 / 项行 ty+60） */
+    int ty;                     /* 明天区锚点（虚线 ty+8 / 帽标 ty+13 / 项行 ty+43） */
     int fy_pv;
     int rows, used, i;
     char line[48];
@@ -1229,42 +1245,50 @@ static void p1_draw_card(void)
                            cx0, cy0, cx1, cy1);
     }
 
-    /* ---- 明天区锚点：今天区至少占 2 行（话术 / 单项时明天区仍落 ROW3 域，与设计
-     * 帽标行 / 项行结构对位） ---- */
+    /* ---- 明天区锚点：今天区至少占 2 行（话术 / 单项时明天区仍落第三行域，与设计
+     * 帽标行 / 项行结构对位）。紧凑上浮锚点 max(2, s_count) 保留——版式随数据浮动
+     * 是选定语义（human 真机预览定稿, 2026-10-13 补充轮）。 ---- */
     rows = (s_count < 2) ? 2 : s_count;
     ty = 68 + rows * line_h;
 
-    /* 组间点状虚线分组隔（今天组与明天组之间, ui-v5-align §2 P1 行 4）。 */
-    p1_draw_group_dash_sep(ty + 22, cx0, cx1);
+    /* 组级容纳门（2026-10-13 补充轮新增）：明天区整块（组间虚线 + 帽标 + 项行/话术
+     * 三态）包在门内——整块项行带底越卡底即整区让位（ty ≤ 178），今天 ≥6 项时不画
+     * 半截帽标 / 孤儿虚线；同时结构性关闭「锚点下推越卡」（虚线/帽标 blit 无卡区
+     * clip，旧参数下 s_count≥7 会越卡绘制）。 */
+    if (ty + 43 + line_h - 1 <= pv_cy1) {
+        /* 组间点状虚线分组隔（今天组与明天组之间, ui-v5-align §2 P1 行 4）。 */
+        p1_draw_group_dash_sep(ty + 8, cx0, cx1);
 
-    /* ---- 明天区：三态（多项列表 / 确认空话术 AC6 / 数据未达 AC7） ---- */
-    if (pv_count >= 1) {
-        /* 帽标「明天」独立行 + 逐项项行在下（设计结构：帽标行与项行分行）。 */
-        if (!p1_blit_art("p1_chip_mingzao.bin", 151, ty + 33, 46, 24)) {
-            p1_stroke_rect(151, ty + 33, 197, ty + 57, 1); /* 兜底描边撑帽标行有墨 */
-        }
-        fy_pv = ty + 60;
-        for (i = 0; i < pv_count; i++) {
-            if (fy_pv + line_h - 1 > pv_cy1) {
-                break; /* 整行容纳守卫：行带底越界即整行让位（同今天区语义） */
+        /* ---- 明天区：三态（多项列表 / 确认空话术 AC6 / 数据未达 AC7） ---- */
+        if (pv_count >= 1) {
+            /* 帽标「明天」独立行 + 逐项项行在下（设计结构：帽标行与项行分行；
+             * 46x24 资产原尺寸直出）。 */
+            if (!p1_blit_art("p1_chip_mingzao.bin", 151, ty + 13, 46, 24)) {
+                p1_stroke_rect(151, ty + 13, 197, ty + 37, 1); /* 兜底描边撑帽标行有墨 */
             }
-            it = kidpal_home_p1_schedule_preview_item(i);
-            if (it == NULL) {
-                break;
+            fy_pv = ty + 43;
+            for (i = 0; i < pv_count; i++) {
+                if (fy_pv + line_h - 1 > pv_cy1) {
+                    break; /* 整行容纳守卫：行带底越界即整行让位（同今天区语义） */
+                }
+                it = kidpal_home_p1_schedule_preview_item(i);
+                if (it == NULL) {
+                    break;
+                }
+                p1_join_time_name(it, line, (int)sizeof(line));
+                used = p1_blit_flow(line, cx0, fy_pv + text_yoff, line_h,
+                                    cx0, cy0, cx1, pv_cy1);
+                fy_pv += used * line_h;
             }
-            p1_join_time_name(it, line, (int)sizeof(line));
-            used = p1_blit_flow(line, cx0, fy_pv + text_yoff, line_h,
-                                cx0, cy0, cx1, pv_cy1);
-            fy_pv += used * line_h;
+        } else if (pv_count == 0) {
+            /* AC6：云端确认明日无项 -> 「明天没有什么课喽」（话术的显式 wire 载体）。 */
+            (void)p1_blit_flow(HP1_TEXT_TOMORROW_EMPTY, cx0, ty + 43 + text_yoff, line_h,
+                               cx0, cy0, cx1, pv_cy1);
+        } else {
+            /* AC7：未推送 / 未提供 -> 明天区数据未达友好提示（与 AC6 话术显式分叉）。 */
+            (void)p1_blit_flow(HP1_TEXT_TOMORROW_UNKNOWN, cx0, ty + 43 + text_yoff, line_h,
+                               cx0, cy0, cx1, pv_cy1);
         }
-    } else if (pv_count == 0) {
-        /* AC6：云端确认明日无项 -> 「明天没有什么课喽」（话术的显式 wire 载体）。 */
-        (void)p1_blit_flow(HP1_TEXT_TOMORROW_EMPTY, cx0, ty + 60 + text_yoff, line_h,
-                           cx0, cy0, cx1, pv_cy1);
-    } else {
-        /* AC7：未推送 / 未提供 -> 明天区数据未达友好提示（与 AC6 话术显式分叉）。 */
-        (void)p1_blit_flow(HP1_TEXT_TOMORROW_UNKNOWN, cx0, ty + 60 + text_yoff, line_h,
-                           cx0, cy0, cx1, pv_cy1);
     }
 }
 

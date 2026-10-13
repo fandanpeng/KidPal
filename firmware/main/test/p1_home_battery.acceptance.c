@@ -74,15 +74,20 @@
  *         HPB_RECT_MASCOT     {  8, 86, 128, 242 }  小伴常驻演出（2026-09-26 下移 (28,116)）
  *         HPB_RECT_NEXT       {103, 35, 392, 242 }  「接下来」卡整体（R2: 标签带 + 日程行流带）
  *         HPB_RECT_LABEL      {103, 35, 250,  98 }  「接下来」标签带（云朵+烘焙帽标, 固定卡题, R2）
- *         HPB_RECT_ROWS       {152, 68, 392, 140 }  日程行流带（ROW1..ROW3 域, R2）
+ *         HPB_RECT_ROWS       {152, 68, 392, 133 }  日程行流带（ROW1..ROW3 域, R2;
+ *                                                   2026-10-13 补充轮随 22px pitch 重锚）
  *         HPB_RECT_STICKER_NEG {236, 42, 390, 66 }  旧倒计时贴纸/大时间右上区（退役负断言, R2; 2026-09-26 重锚）
- *         HPB_RECT_ROW2       {152, 96, 392, 122 }  后续事项行（行流第二行, R2）
- *         HPB_RECT_MINGZAO    {148,154, 200, 181 }  明早标签槽（帽标独立行, R2; 2026-09-26 重构）
+ *         HPB_RECT_ROW2       {152, 90, 392, 111 }  后续事项行（行流第二行, R2;
+ *                                                   2026-10-13 补充轮随 22px pitch 重锚）
+ *         HPB_RECT_MINGZAO    {148,124, 200, 149 }  明早标签槽（帽标独立行, R2; 2026-09-26 重构）
  *         HPB_RECT_PREVIEW_NEG {152,244, 392, 258}  卡底之下退役负断言带（退役负断言, R2;
  *                                                   2026-09-26 x0 152; 2026-10-13 重锚
  *                                                   y220→244 = 卡底 242 + 2px 缓冲）
- *         HPB_RECT_PV_ROW2    {152,212, 392, 239 }  明天区第 2 行带（整行容纳回归齿, 2026-10-13）
- *         HPB_RECT_TODAY_BOT  {152,242, 392, 242 }  今天区卡底残线带（守卫负断言, 2026-10-13）
+ *         HPB_RECT_PV_ROW1    {152,155, 392, 176 }  明天区第 1 行带（多行容量回归齿参照齿, 2026-10-13 补充轮）
+ *         HPB_RECT_PV_ROW2    {152,177, 392, 198 }  明天区第 2 行带（多行容量回归齿, 2026-10-13 补充轮）
+ *         HPB_RECT_PV_ROW3    {152,199, 392, 220 }  明天区第 3 行带（多行容量回归齿, 2026-10-13 补充轮）
+ *         HPB_RECT_TODAY_BOT  {152,222, 392, 242 }  今天区卡底残线带（守卫负断言, 2026-10-13 补充轮语义重锚）
+ *         HPB_RECT_TOMORROW   {136,118, 392, 242 }  明天区宽域带（两态分叉/containment 判读, 2026-10-13 补充轮重锚）
  *
  *       R2 跨包冲击修订（2026-09-22, 授权 = pod-events c4785230 human-decision
  *       plan-B-decode-fix-plus-wireframe-alignment）: 卡内版式改行流语义，权威钉区
@@ -117,7 +122,7 @@
  *       明天 >= 2 项）明天区第 2 项完整字形渲染、无 1px 残线（截图与修复前对比留证）;
  *       ②明天 >= 3 项第 3 项起整行让位、干净不出现; ③今天 >= 7 项卡底 y=242 无残线、
  *       放不下的项整行让位; ④烧录 = app 分区单烧（纯代码变更、无 spiffs 资产变更）。
- *       host 帧像素齿（TEST 4.5 tooth 4/5）只钉 host 回归语义（TR-A4/TR-A2）, 不替代
+ *       host 帧像素齿（TEST 4.5 tooth 4/5/6）只钉 host 回归语义（TR-A4/A6/A7/A8）, 不替代
  *       真机探真——真机字形渲染/让位观感仍归本豁免段 human 在场确认; host 侧不为
  *       [TR5] 四项另立像素断言。
  *
@@ -165,6 +170,18 @@
  *             2026-10-13 条（append 不覆盖）
  *   coverage: TR-A5 真机轮 live-manual -> structural 豁免（头注 [TR5] 段在先申报,
  *             TB-A4 261012 story_page_v2 同款先例口径, 不计入 runner 通过面）
+ *   coverage: TR-A6 行距参数族压缩（2026-10-13 补充轮, 实现面 = home_p1.c
+ *             p1_draw_card, 本文件不触实现）-> TEST 4.5 tooth 4（重锚后明天项行带
+ *             155-176 / 177-198 / 199-220 墨达标; 参数族回退 line_h / 组头偏移族任一
+ *             形状变更 -> 行带错位红）
+ *   coverage: TR-A7 组级容纳门（2026-10-13 补充轮新增语义, 实现面 = home_p1.c
+ *             p1_draw_card, 本文件不触实现）-> TEST 4.5 tooth 6（今天 >= 6 项时明天区
+ *             整块让位: preview 3 项帧 vs preview 0 项帧在明天区宽域带逐像素相同;
+ *             摘组级门 -> 半截帽标入带必红）
+ *   coverage: TR-A8 两冻结件重锚批（2026-10-13 补充轮; p1_home_battery.acceptance.c
+ *             7 常量 + 齿重锚两处 + p1_cjk_name.acceptance.c 4 常量重锚）-> 头注表 /
+ *             区域注 / TEST 1 tooth 4/5 与 TEST 4.5 tooth 3/4/5 消息矩形数值同步 +
+ *             文件尾 REVISION LOG 同日补充轮条（append 不覆盖）
  *
  * ---------------------------------------------------------------------------
  * BUILDER DUTY 清单（接线 + 实现落点，HOST_TEST_CONVENTIONS.md [C4.2] 约定）：
@@ -184,10 +201,16 @@
  *   5) mutation 自证（mutationRequired=true）：变异命名**不得保留被测符号原字面为
  *      子串**（KR-A3 _TOGGLE_X 教训——strstr 子串仍命中则变异不红；用 _STUB 类整词
  *      替换），mutationEvidence.perAcceptance 逐条回填。
- *      mutation 断言面齿名（2026-10-13 申报, 取证由 builder/fixer 实测、planner 代落）:
- *      TEST 4.5 tooth 4（明天区第 2 行带回归齿——改回 pv_cy1=218 必红）+ tooth 5
- *      （今天区卡底残线负断言——摘整行容纳守卫必红）+ 重锚 PREVIEW_NEG 负断言
+ *      mutation 断言面齿名（2026-10-13 主轮申报, 取证由 builder/fixer 实测、planner
+ *      代落）: TEST 4.5 tooth 4（明天区第 2 行带回归齿——改回 pv_cy1=218 必红）+
+ *      tooth 5（今天区卡底残线负断言——摘整行容纳守卫必红）+ 重锚 PREVIEW_NEG 负断言
  *      （TEST 1 tooth 4 / TEST 4.5 tooth 3——越卡底溢出必红）。
+ *      mutation 断言面齿名（2026-10-13 补充轮申报）: TEST 4.5 tooth 4（多行容量回归齿
+ *      ——参数族回退 line_h 22→28 / 组头偏移族 ty+8·ty+13·ty+43 改回旧值 / pv_cy1 回退
+ *      -> 行带错位墨 < 阈值必红）+ tooth 5（负断言带 {152,222,392,242}——摘今天区整行
+ *      容纳守卫 -> 第 8 项残墨入带必红）+ tooth 6（组级容纳门——摘 if 包裹 -> 今天 >= 6
+ *      项时半截帽标入明天区宽域带必红）+ 重锚常量回退（hpb_rect_pv_row2 / pcn_rect_row2
+ *      等重锚常量回退旧值 -> 对应行带断言错位必红）。
  *
  * ---------------------------------------------------------------------------
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
@@ -247,11 +270,13 @@
  * PCN_INK_MIN_MINGZAO=12 同源同值——兜底描边路径同样须过阈，有墨义务两条路径成立）。 */
 #define HPB_INK_MIN_LABEL 30
 #define HPB_INK_MIN_MINGZAO 12
-/* 2026-10-13 TR-A4: 明天区第 2 行带整行容纳下界。阈值标定 = 净 HEAD 实跑实测
- *（2026-10-13 host runner TEMP-CALIB 一次测量）: 1px 残线墨 R=15 < T=80 < 同夹具
- * 第 1 行整行墨 F=157（第 1/2 行同为「时间+课名」14px 行流文本, 整行墨同量级,
- * T=80 对 R 约 5× 裕度、对 F 约 2× 裕度）——1px 残线红 / 整行绿。 */
-#define HPB_INK_MIN_PV_ROW2 80
+/* 2026-10-13 补充轮 TR-A4/A8: 明天区行带整行容纳下界（多行容量回归齿）。阈值
+ * 按 R < T < F 纪律重标定（方法 + 实测值见文件尾 REVISION LOG 2026-10-13 补充轮条）:
+ * R = 净 HEAD 旧 28px 几何下新行带内的残/错位墨实测 min 三带 = 84（673/246/84,
+ * 今天空 + preview 3 项夹具, 帽标 + 首行残墨入带）; F = 完整 14px 行流文本整行墨
+ * （同文本族, 主轮同夹具实测锚 157）。T=110 ∈ (84, 157) —— 行带错位（参数族回退
+ * line_h/组头偏移/pv_cy1）-> 首/次行带墨坍缩 < T 红 / 整行绿。 */
+#define HPB_INK_MIN_PV_ROW2 110
 
 /* 区域矩形 {x1, y1, x2, y2} 含端点（seam [3] 布局在位钉）。
  * 2026-09-26 真机对齐轮重钉（canvas-p1 实测，授权 = human 看屏比对拍图逐项裁定）：
@@ -264,7 +289,13 @@
  * 2026-10-13 regression 包重锚（授权链见文件尾 REVISION LOG 2026-10-13 条）:
  * PREVIEW_NEG 上缘 220→244（pv_cy1 对齐卡底 242 后 220..242 段退役为明天区第 2 行
  * 合法域, 负断言语义改「不越卡区底界」）; 新增 PV_ROW2 第 2 行带与 TODAY_BOT 卡底
- * 残线带。 */
+ * 残线带。
+ * 2026-10-13 补充轮重锚（授权链 = TaskPackage 261013 补充轮, 见文件尾 REVISION LOG
+ * 同日补充轮条 + sibling preview-round.md）: 行距压缩 line_h 22 / 组头偏移族（虚线
+ * ty+8 / 帽标 ty+13 / 项行 ty+43）使 rows/row2/mingzao/tomorrow 及 pv_row1/2 随公式
+ * 平移（明天项行带 155/177/199, 今天第 2 行 90-111, 帽标 124-149）; TODAY_BOT 语义
+ * 重锚 {152,222,392,242}（今天第 8 项越卡底整行让位带）; 新增 PV_ROW3 第 3 行带;
+ * PREVIEW_NEG 及 PCN preview_neg 等零改动清单逐齿验证保持。 */
 static const int hpb_rect_aux_strip[4]    = {  0,  0, 399,  39 };
 static const int hpb_rect_aux_time[4]     = { 36,  6, 108,  29 };
 static const int hpb_rect_aux_date[4]     = {112,  6, 208,  29 };
@@ -284,32 +315,32 @@ static const int hpb_rect_next[4]         = {103, 35, 392, 242 };
  * 授权与逐 tooth 说明见头注 R2 注记与文件尾 REVISION LOG；2026-09-26 对齐轮再钉
  * 见上方注记）。 */
 static const int hpb_rect_label[4]        = {103, 35, 250,  98 };
-static const int hpb_rect_rows[4]         = {152, 68, 392, 140 };
+static const int hpb_rect_rows[4]         = {152, 68, 392, 133 };
 static const int hpb_rect_sticker_neg[4]  = {236, 42, 390,  66 };
-static const int hpb_rect_row2[4]         = {152, 96, 392, 122 };
-static const int hpb_rect_mingzao[4]      = {148,154, 200, 181 };
+static const int hpb_rect_row2[4]         = {152, 90, 392, 111 };
+static const int hpb_rect_mingzao[4]      = {148,124, 200, 149 };
 /* 2026-10-13 重锚（regression 包 261013, 授权链见 REVISION LOG 同日条）: 上缘
  * 220→244 = 卡底 242 + 2px 缓冲（沿用「合法底界 + 2px」既有纪律）。pv_cy1 对齐卡底
  * 后 220..242 段退役为明天区第 2 行合法域, 负断言语义从「不压旧预告退役带」改
  * 「不越卡区底界」——判别力保持: 任何越卡底溢出仍红（逐齿推演 + 实跑复核见头注
  * 2026-10-13 追记）。 */
 static const int hpb_rect_preview_neg[4]  = {152,244, 392, 258 };
-/* 2026-10-13 TR-A4 回归齿: 明天区第 2 行带。复现几何（真机截图 261013）: 今天空
- * AC5 话术态 ty=124 → 项行 fy_pv=184 起, 第 2 行带 212..239（文字 218..231）——
- * 修复前被 pv_cy1=218 剃成 y=218 一条 1px 残线, 修复后整行入卡区。 */
-static const int hpb_rect_pv_row2[4]      = {152,212, 392, 239 };
-/* 2026-10-13 TR-A4 阈值标定参照: 明天区第 1 行带（同夹具下完整渲染的 14px 行流文本
- * 整行墨 = HPB_INK_MIN_PV_ROW2 标定上界参照 F）。 */
-static const int hpb_rect_pv_row1[4]      = {152,184, 392, 211 };
-/* 2026-10-13 TR-A2 守卫负断言: 今天区卡底残线带（1px 行）。今天 >= 7 项时第 7 项
- * 行带 236..263（文字 242..255）恰跨卡底——修复前残线画在 y=242, 守卫落地后整行
- * 让位、卡底干净（TR-A5 真机判定③的 host 帧回归代理）。 */
-static const int hpb_rect_today_bot[4]    = {152,242, 392, 242 };
-/* 2026-10-11 HV5: 明天区宽域带（MINGZAO 槽 y148..181 在内）; 2026-10-13 下缘
- * 218→242（对齐明天区真实足迹——pv_cy1 对齐卡底后第 2 行带 212..239 为合法域, 旧
- * 下缘 218 系已退役 PREVIEW_NEG 带的缓冲）。宽域只用于「两态帧分叉/溢出 containment」
- * 判读——明天区多项行流的具体落位是 builder 版式自由度, 不钉行位。 */
-static const int hpb_rect_tomorrow[4]     = {136,142, 392, 242 };
+/* 2026-10-13 补充轮 TR-A8: 明天区行带族。行距压缩 line_h 28→22 + 组头偏移族
+ * (虚线 ty+8 / 帽标 ty+13 / 项行 ty+43) 后, 今天空（AC5 话术, s_count=0）档
+ * ty=112 → 明天项行带 155-176 / 177-198 / 199-220（文字 = 带顶 +4..+17）。三带
+ * 为 TEST 4.5 tooth 4 多行容量回归齿判读面（阈值见 HPB_INK_MIN_PV_ROW2 注）。 */
+static const int hpb_rect_pv_row1[4]      = {152,155, 392, 176 };
+static const int hpb_rect_pv_row2[4]      = {152,177, 392, 198 };
+static const int hpb_rect_pv_row3[4]      = {152,199, 392, 220 };
+/* 2026-10-13 补充轮 TR-A8 语义重锚: 今天区卡底残线带。今天 >= 8 项时第 8 项行带
+ * 222..243（文字 226..239）越卡底 242 达 1px——整行容纳守卫落地后第 8 项整行让位、
+ * 带 222..242 干净（摘守卫变异 = 第 8 项文字 226..239 入带必红）。 */
+static const int hpb_rect_today_bot[4]    = {152,222, 392, 242 };
+/* 2026-10-11 HV5: 明天区宽域带; 2026-10-13 补充轮上缘 142→118（对齐紧凑上浮后明天区
+ * 真实足迹: s<=2 档虚线 120-122 / 帽标 125-148 / 项行 155-242, 旧 y0=142 漏虚线与帽标
+ * 顶）。宽域只用于「两态帧分叉/溢出 containment/组级让位」判读——明天区多项行流的
+ * 具体落位是 builder 版式自由度, 不钉行位。 */
+static const int hpb_rect_tomorrow[4]     = {136,118, 392, 242 };
 
 /* 板级装配文件（seam [2] home）与渲染节点/显示链被扫文件。 */
 #define HPB_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
@@ -884,16 +915,18 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                ink, HPB_INK_MIN_LARGE));
 
     /* tooth 4 (PH-A1, R2): 后续事项行 + 末行预告新版式语义——后续事项（原③逐项）
-     * 上移 ROW2 行流带在位; 预告并入主体第三行（明早标签槽 {148,154,200,181} 在场
+     * 上移 ROW2 行流带在位; 预告并入主体第三行（明早标签槽 {148,124,200,149} 在场
      * + 旧预告独立带标准夹具严格零墨）。预告时间起笔 x>=184 的构成判别由 PCN
-     * TEST 8 tooth 4 承载（帧 diff 机制），本齿钉在场与退役面。 */
+     * TEST 8 tooth 4 承载（帧 diff 机制），本齿钉在场与退役面。
+     * 2026-10-13 补充轮: ROW2/MINGZAO 随 22px pitch 重锚（90-111 / 124-149）——净
+     * HEAD（28px）下 ROW2 半带残墨 >= 8 仍绿、MINGZAO 带错位零墨红（设计态）。 */
     ink = hpb_count_ink(hpb_rect_row2);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
-        hpb_fm("HPB-A1 RED: 后续事项行 ROW2 {152,96,392,122} 墨 %d < %d——后续事项"
+        hpb_fm("HPB-A1 RED: 后续事项行 ROW2 {152,90,392,111} 墨 %d < %d——后续事项"
                "未上行行流第二行（R2 版式未落地）", ink, HPB_INK_MIN_ELEM));
     ink = hpb_count_ink(hpb_rect_mingzao);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_MINGZAO,
-        hpb_fm("HPB-A1 RED: 明早标签槽 {148,154,200,181} 墨 %d < %d——预告未并入主体"
+        hpb_fm("HPB-A1 RED: 明早标签槽 {148,124,200,149} 墨 %d < %d——预告未并入主体"
                "第三行（明早烘焙标签缺失, R2 版式未落地）", ink,
                HPB_INK_MIN_MINGZAO));
     ink = hpb_count_ink(hpb_rect_preview_neg);
@@ -903,7 +936,7 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                "卡底; 2026-10-13 重锚语义「不越卡区底界」）", ink));
 
     /* tooth 5 (PH-A1, R2; 2026-10-11 AC5 语义重钉): 空日程——「接下来」烘焙大字标签
-     * 为固定卡题仍在场（LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,140} 墨 >= 8 =
+     * 为固定卡题仍在场（LABEL 带墨 >= 30）+ 日程行流带 {152,68,392,133} 墨 >= 8 =
      * AC5 无安排话术「今天接下来没有安排啦」在场（requirements v1.61: 「不再整区
      * 留白」——supersede R2 行流门控空语义; 授权链见 REVISION LOG 2026-10-11 条）。
      * 话术与数据未达提示的显式分叉（AC7）由文件尾 HV5 CASE 帧分叉齿承载; 旧版式
@@ -925,7 +958,7 @@ TEST_CASE("首页电量: 注入缝驱动渲染+新版式主体+低电闪停 (PH-
                "卡题未在场（R2 烘焙标签版式未落地）", ink, HPB_INK_MIN_LABEL));
     ink = hpb_count_ink(hpb_rect_rows);
     TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_ELEM,
-        hpb_fm("HPB-A5 RED: 空日程行流带 {152,68,392,140} 墨 %d < %d——AC5 无安排话术"
+        hpb_fm("HPB-A5 RED: 空日程行流带 {152,68,392,133} 墨 %d < %d——AC5 无安排话术"
                "未渲染、整区留白（requirements v1.61「不再整区留白」, 旧行流门控空"
                "语义已随 v1.61 退役）", ink, HPB_INK_MIN_ELEM));
 
@@ -1356,69 +1389,122 @@ TEST_CASE("首页空态三态渲染分叉 (HV5-AC5/AC6/AC7)",
                "墨 %d != 0——明天区行流未 clip 进宽域带且越出卡区底界 y242（渲染溢出"
                "必须截断降级, plan 要点 3 containment; 2026-10-13 重锚语义）", ink));
 
-    /* ---- tooth 4 (TR-A4 回归齿, 2026-10-13): 明天区第 2 行整行容纳防复发 ---------
-     * 复现几何（真机截图 261013）: 今天空（AC5 话术态）→ ty = 68 + max(2,0)*28 = 124,
-     * 帽标 157..180, 项行 fy_pv = 184 起; 第 2 行带 212..239（文字 218..231）在卡区
-     * cy1=242 之内, 修复前被 pv_cy1=218 剃成 y=218 一条 1px 残线。本齿钉第 2 行带
-     * {152,212,392,239} 墨 >= HPB_INK_MIN_PV_ROW2（阈值标定: 净 HEAD 残线墨实测 R <
-     * T < 同夹具第 1 行整行墨实测 F, 见 REVISION LOG 2026-10-13 条）——1px 残线红 /
-     * 整行绿; 改回 pv_cy1=218 的变异对本齿必红（mutation 断言面承载齿, BUILDER DUTY
-     * 5)）。 */
+    /* ---- tooth 4 (TR-A4/A6/A8 明天区多行容量回归齿, 2026-10-13 补充轮重锚) ---------
+     * 夹具 = 今天空（AC5 话术态, s_count=0）+ preview 3 项 -> 新几何 ty = 68 + 2*22 =
+     * 112, 项行带 155-176 / 177-198 / 199-220（文字 = 带顶 +4..+17）。本齿钉三行带墨
+     * 均 >= HPB_INK_MIN_PV_ROW2（阈值按 R < T < F 重标定, 见文件尾 REVISION LOG
+     * 2026-10-13 补充轮条: R = 净 HEAD 28px 几何下三带内残/错位墨实测 min, F = 完整
+     * 14px 行流文本整行墨）。净 HEAD 下带错位（帽标 157-181 / 项行 184 起）-> 首行带墨
+     * 坍缩 < 阈值 = 设计态红; builder 落 line_h=22 + 组头偏移族（ty+8/ty+13/ty+43）后三
+     * 带各含完整一行 -> 转绿。参数族回退（line_h 22→28 / 组头偏移族改回旧值 / pv_cy1
+     * 回退）-> 行带错位 -> 本齿必红（mutation 断言面承载齿, BUILDER DUTY 5)）。 */
     {
-        hp1_item_t pv2[2];
-        int row1_ink;
+        hp1_item_t pv3[3];
+        int ink1, ink2, ink3;
 
-        memset(pv2, 0, sizeof(pv2));
-        snprintf(pv2[0].time, sizeof(pv2[0].time), "09:00");
-        snprintf(pv2[0].name, sizeof(pv2[0].name), "游泳课");
-        snprintf(pv2[1].time, sizeof(pv2[1].time), "10:30");
-        snprintf(pv2[1].name, sizeof(pv2[1].name), "英语课");
-        rc = kidpal_home_p1_schedule_inject("2026-10-13", NULL, 0, pv2, 2);
+        memset(pv3, 0, sizeof(pv3));
+        snprintf(pv3[0].time, sizeof(pv3[0].time), "09:00");
+        snprintf(pv3[0].name, sizeof(pv3[0].name), "游泳课");
+        snprintf(pv3[1].time, sizeof(pv3[1].time), "10:30");
+        snprintf(pv3[1].name, sizeof(pv3[1].name), "英语课");
+        snprintf(pv3[2].time, sizeof(pv3[2].time), "11:00");
+        snprintf(pv3[2].name, sizeof(pv3[2].name), "美术课");
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", NULL, 0, pv3, 3);
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            hpb_fm("HPB RED(infra): schedule_inject(AC5+pv2) rc=%d — TR-A4 夹具", rc));
+            hpb_fm("HPB RED(infra): schedule_inject(AC5+pv3) rc=%d — 多行容量夹具", rc));
         hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
         rc = kidpal_home_p1_render_frame();
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            hpb_fm("HPB RED(infra): render_frame(TR-A4) rc=%d", rc));
-        /* 第 1 行带 {152,184,392,211} 对照测量: 修复前第 1 行完整（未越任何 clip）,
-         * 其整行墨 = 同款 14px 行流文本「时间+课名」的整行墨下界参照（阈值标定 F）。 */
-        row1_ink = hpb_count_ink(hpb_rect_pv_row1);
-        TEST_ASSERT_TRUE_MESSAGE(row1_ink >= HPB_INK_MIN_ELEM,
-            hpb_fm("TR-A4 RED(infra): 明天区第 1 行带 {152,184,392,211} 墨 %d < %d——"
-                   "回归齿夹具第 1 行未渲染, 阈值判读失锚", row1_ink,
-                   HPB_INK_MIN_ELEM));
-        ink = hpb_count_ink(hpb_rect_pv_row2);
-        TEST_ASSERT_TRUE_MESSAGE(ink >= HPB_INK_MIN_PV_ROW2,
-            hpb_fm("TR-A4 RED: 明天区第 2 行带 {152,212,392,239} 墨 %d < %d——第 2 行"
-                   "被剃成 1px 残线（pv_cy1 未对齐卡底 242, 261013 regression 根因"
-                   "未修）", ink, HPB_INK_MIN_PV_ROW2));
+            hpb_fm("HPB RED(infra): render_frame(多行容量) rc=%d", rc));
+        ink1 = hpb_count_ink(hpb_rect_pv_row1);
+        ink2 = hpb_count_ink(hpb_rect_pv_row2);
+        ink3 = hpb_count_ink(hpb_rect_pv_row3);
+        TEST_ASSERT_TRUE_MESSAGE(ink1 >= HPB_INK_MIN_PV_ROW2 &&
+                                     ink2 >= HPB_INK_MIN_PV_ROW2 &&
+                                     ink3 >= HPB_INK_MIN_PV_ROW2,
+            hpb_fm("TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 %d/%d/%d 分别须 >= "
+                   "%d（今天空 + preview 3 项, ty=112, 行带 155-176/177-198/199-220）; 行带"
+                   "错位（参数族回退 line_h/组头偏移/pv_cy1）即坍缩 < 阈值",
+                   ink1, ink2, ink3, HPB_INK_MIN_PV_ROW2));
     }
 
-    /* ---- tooth 5 (TR-A2 守卫负断言, 2026-10-13): 今天区卡底 y=242 零残线 -----------
-     * 今天 >= 7 项: 第 7 项行带 236..263（文字 242..255）恰跨卡底——修复前逐像素行
-     * clip 把它剃成 y=242 一条 1px 残线; 整行容纳守卫落地后第 7 项整行让位、卡底
-     * 干净。零墨断言 = TR-A5 真机判定③的 host 帧回归代理（真机探真仍归 [TR5] 豁免
-     * 段）; 摘整行容纳守卫的变异对本齿必红（mutation 断言面, BUILDER DUTY 5)）。 */
+    /* ---- tooth 5 (TR-A2/A8 今天区卡底守卫负断言, 2026-10-13 补充轮语义重锚) ---------
+     * 今天 8 项: 第 8 项行带 222..243（文字 226..239）越卡底 242 达 1px——整行容纳守卫
+     * 落地后第 8 项整行让位、带 {152,222,392,242} 干净。零墨断言 = TR-A9 真机判定④的
+     * host 帧回归代理（真机探真仍归 [TR5] 豁免段）; 摘整行容纳守卫的变异对本齿必红
+     * （第 8 项文字 226..239 入带, mutation 断言面, BUILDER DUTY 5)）。
+     * 净 HEAD（28px）下今天 6 项满行至 y235、第 6 项文字 214..227 残墨入带 = 设计态红。 */
     {
-        hp1_item_t many[7];
+        hp1_item_t many[8];
         int i;
 
         memset(many, 0, sizeof(many));
-        for (i = 0; i < 7; i++) {
+        for (i = 0; i < 8; i++) {
             snprintf(many[i].time, sizeof(many[i].time), "%02d:00", 8 + i);
             snprintf(many[i].name, sizeof(many[i].name), "课%d", i + 1);
         }
-        rc = kidpal_home_p1_schedule_inject("2026-10-13", many, 7, NULL, -1);
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", many, 8, NULL, -1);
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            hpb_fm("HPB RED(infra): schedule_inject(today7) rc=%d", rc));
+            hpb_fm("HPB RED(infra): schedule_inject(today8) rc=%d", rc));
         hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
         rc = kidpal_home_p1_render_frame();
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            hpb_fm("HPB RED(infra): render_frame(today7) rc=%d", rc));
+            hpb_fm("HPB RED(infra): render_frame(today8) rc=%d", rc));
         ink = hpb_count_ink(hpb_rect_today_bot);
         TEST_ASSERT_TRUE_MESSAGE(ink == 0,
-            hpb_fm("TR-A2 RED: 今天区卡底残线带 {152,242,392,242} 墨 %d != 0——第 7 项"
-                   "1px 残线画在卡底（整行容纳守卫缺失, 261013 regression）", ink));
+            hpb_fm("TR-A2 RED: 今天区卡底残线带 {152,222,392,242} 墨 %d != 0——第 8 项"
+                   "（行带 222-243）跨卡底未整行让位（整行容纳守卫缺失, 261013 regression）",
+                   ink));
+    }
+
+    /* ---- tooth 6 (TR-A7 组级容纳门, 2026-10-13 补充轮新增语义) ----------------------
+     * 组级门语义（plan 修订 A 改动点 A1 第 6 条）: 明天区整块（组间虚线 + 帽标 +
+     * 项行/AC6/AC7 三态）包在 if (ty + 43 + line_h - 1 <= pv_cy1) 内（ty <= 178）——
+     * 今天 >= 6 项时 ty >= 200、整区让位（不画半截帽标/孤儿虚线）。判别: 同一 6 项今天
+     * 日程下, preview 3 项帧 vs preview 0 项帧在明天区宽域带必须逐像素相同（两帧明天区
+     * 均整体让位 = 无明天墨源）; 摘门 -> preview 3 帧帽标入带、两帧分叉 -> diff != 0 必红。
+     * 净 HEAD（28px, 无组级门）下今天 6 项 ty=236 -> 明天区内容（帽标 269..）越出宽域带
+     * 下缘, 带内 diff 为零 —— 本齿基线即绿（MUST-STAY-GREEN, 见文件尾 REVISION LOG 推导表）。 */
+    {
+        hp1_item_t six[6];
+        hp1_item_t pv3[3];
+        int i, dv;
+
+        memset(six, 0, sizeof(six));
+        for (i = 0; i < 6; i++) {
+            snprintf(six[i].time, sizeof(six[i].time), "%02d:00", 8 + i);
+            snprintf(six[i].name, sizeof(six[i].name), "课%d", i + 1);
+        }
+        memset(pv3, 0, sizeof(pv3));
+        snprintf(pv3[0].time, sizeof(pv3[0].time), "09:00");
+        snprintf(pv3[0].name, sizeof(pv3[0].name), "游泳课");
+        snprintf(pv3[1].time, sizeof(pv3[1].time), "10:30");
+        snprintf(pv3[1].name, sizeof(pv3[1].name), "英语课");
+        snprintf(pv3[2].time, sizeof(pv3[2].time), "11:00");
+        snprintf(pv3[2].name, sizeof(pv3[2].name), "美术课");
+
+        /* preview 3 项帧（今天 6 项 —— 组级门在世则明天区整体让位）。 */
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", six, 6, pv3, 3);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): schedule_inject(today6+pv3) rc=%d — TR-A7 夹具", rc));
+        hpb_set_fixture(10, 24, 0, 0, 0, 85, 0, 0);
+        rc = kidpal_home_p1_render_frame();
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): render_frame(today6+pv3) rc=%d", rc));
+        TEST_ASSERT_TRUE_MESSAGE(hpb_snap_region(hpb_rect_tomorrow) == 0,
+            "HPB RED(infra): tomorrow-region frame snapshot failed — 探针缝失灵");
+        /* preview 0 项帧（今天同 6 项, 明天区改 AC6 确认空话术 —— 组级门在世同样整区让位）。 */
+        rc = kidpal_home_p1_schedule_inject("2026-10-13", six, 6, NULL, 0);
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): schedule_inject(today6+pv0) rc=%d", rc));
+        rc = kidpal_home_p1_render_frame();
+        TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+            hpb_fm("HPB RED(infra): render_frame(today6+pv0) rc=%d", rc));
+        dv = hpb_diff_region(hpb_rect_tomorrow);
+        TEST_ASSERT_TRUE_MESSAGE(dv == 0,
+            hpb_fm("TR-A7 RED: 今天 6 项时 preview 3 项帧 vs 0 项帧在明天区宽域带 diff %d "
+                   "!= 0——组级容纳门缺失, 明天区未整体让位（半截帽标/孤儿虚线入带; "
+                   "ty=200 > 178 应整区让位）", dv));
     }
 }
 
@@ -1585,6 +1671,17 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *     净 HEAD + 重锚后实跑全绿（重锚只放宽判读域——新增域 220..242 在净 HEAD 全部
  *     既有夹具下零墨, 逐齿推演与实跑一致; 标定会话 165 Tests / 1 Failure, 唯一红
  *     即 tooth 4 设计态红, 终跑计数与红名 verbatim 见 REVISION LOG 2026-10-13 条）。
+ *
+ *   2026-10-13 补充轮追记（TaskPackage 261013 补充轮行距压缩 + 组级容纳门冻结红基线,
+ *   acceptance-author 实跑; 状态 = 净 HEAD 28px 实现 + 重锚齿/新齿, 命令 = Run
+ *   protocol 1)+2)）:
+ *     全量 = 165 Tests / 4 Failures / 0 Ignored（exit 4）。本文件设计态义务红 = TEST 4.5
+ *     tooth 4：TR-A8 RED: 明天区多行容量回归齿——第 1/2/3 行带墨 673/246/84 分别须 >=
+ *     110（今天空 + preview 3 项, ty=112, 行带 155-176/177-198/199-220）; 行带错位（参数
+ *     族回退 line_h/组头偏移/pv_cy1）即坍缩 < 阈值。tooth 5 与 tooth 4 同 CASE, 被 Unity
+ *     abort 屏蔽、解析性必红。另 3 红在 sibling p1_cjk_name.acceptance.c（重锚批设计态红,
+ *     单在彼文件 REVISION LOG 记; 非本文件新增红）。MUST-STAY-GREEN at baseline 见
+ *     REVISION LOG 2026-10-13 补充轮条⑤; 推导表之外变红: 无。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-15  initial freeze (acceptance-author, TaskPackage
@@ -1708,4 +1805,53 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *               （回归观察面, 同 runner 实跑确认不因重锚破）; TEST 1-4 既有齿断言
  *               语义零偏移（仅 tooth 4 / tooth 3 断言消息矩形数值与措辞随重锚同步）;
  *               CMakeLists 零改（HPB 已注册在册）; 被测面本文件不触（实现归 builder）。
+ *   ── 2026-10-13 补充轮冻结件修订（TaskPackage 261013-p1-tomorrow-row-sliver-fix 补充
+ *   轮; 授权链 = 「TaskPackage 261013 补充轮（human triage 触点① 确认 + 真机预览定稿
+ *   裁定 + 载体改判并入本包, 见 sibling preview-round.md）」; human 裁定不开新包、并入
+ *   本包; plan 修订 A = 行距压缩 line_h 28→22 + 组头偏移族（虚线 ty+8 / 帽标 ty+13 /
+ *   项行 ty+43）+ 组级容纳门; 紧凑上浮锚点 max(2,s_count) 保留）──
+ *               ① 钉区常量重锚（TR-A8, 随 22px pitch 公式平移）: hpb_rect_row2
+ *               {152,96,392,122} → {152,90,392,111}; hpb_rect_mingzao {148,154,200,181}
+ *               → {148,124,200,149}; hpb_rect_rows {152,68,392,140} → {152,68,392,133}
+ *               （取语义纯净域, 排除 s<=2 档虚线 120-122 卷入带）; hpb_rect_tomorrow
+ *               {136,142,392,242} → {136,118,392,242}（上缘对齐明天区真实足迹）;
+ *               hpb_rect_pv_row1 {152,184,392,211} → {152,155,392,176}; hpb_rect_pv_row2
+ *               {152,212,392,239} → {152,177,392,198}; 新增 hpb_rect_pv_row3
+ *               {152,199,392,220}; hpb_rect_today_bot {152,242,392,242} → {152,222,392,242}
+ *               （语义重锚 = 今天第 8 项越卡底整行让位带）。零改动: hpb_rect_preview_neg
+ *               {152,244,392,258} / next / label / mascot / sticker_neg / row1 族 / aux 族。
+ *               ② 齿重锚（TR-A4/A6）: TEST 4.5 tooth 4 重定为**明天区多行容量回归齿**
+ *               ——夹具今天空（AC5 话术态, s_count=0）+ preview 3 项, 新几何 ty=112,
+ *               项行带 155-176 / 177-198 / 199-220; 断言三行带墨均 >=
+ *               HPB_INK_MIN_PV_ROW2（重标定值见下）；TEST 4.5 tooth 5 夹具 7→8 项,
+ *               负断言带改 {152,222,392,242} 零墨 = 第 8 项（行带 222-243）整行让位。
+ *               ③ 新增 TEST 4.5 tooth 6（TR-A7, 组级容纳门）: 今天 6 项时 preview 3 项帧
+ *               vs 0 项帧在明天区宽域带逐像素相同（组级门整区让位, ty=200 > 178）;
+ *               摘门 -> 半截帽标入带 diff != 0 必红。
+ *               ④ 阈值重标定（TR-A8, HPB_INK_MIN_PV_ROW2 80 → 110, R<T<F 纪律）:
+ *               R = 净 HEAD 旧 28px 几何下新行带内残/错位墨实测 min 三带 = 84（实跑
+ *               verbatim「第 1/2/3 行带墨 673/246/84」——帽标 + 首/次行残墨入带, 今天空
+ *               + preview 3 项夹具, ty=124 档）; F = 完整 14px 行流文本整行墨（同文本族,
+ *               主轮同夹具实测锚 157）。T=110 ∈ (84,157): 净 HEAD -> 第 3 行带 84 < 110 红
+ *               / 新几何三带各含完整一行（≈157）-> 绿。
+ *               ⑤ 红基线（2026-10-13 补充轮, acceptance-author 实跑; 状态 = 净 HEAD 28px
+ *               实现 + 重锚齿/新齿, 命令 = Run protocol 1)+2)）: 165 Tests / 4 Failures。
+ *               本文件设计态红 = TEST 4.5 tooth 4（TR-A8 多行容量, 三带 673/246/84,
+ *               min < 110）; tooth 5（TR-A2 today_bot {152,222,392,242} 旧几何残墨 != 0）
+ *               与 tooth 4 同 CASE, 被 Unity abort 屏蔽、解析性必红（builder 落 22px 后
+ *               同转绿）。**MUST-STAY-GREEN at baseline（实跑绿）**: TEST 1 tooth 4/5（R2
+ *               重锚带恰含旧几何虚线段 -> >= 12/8 绿）; TEST 4.5 tooth 1/2/3（HV5 分叉齿,
+ *               pv_cy1 已由主轮修）; TEST 4.5 tooth 6（TR-A7; probe 实跑验证绿——旧几何
+ *               今天 6 项 ty=236 明天区内容越出宽域带下缘、带内 diff 0）。**推导表之外
+ *               变红: 无**。
+ *               ⑥ 跨文件: p1_cjk_name.acceptance.c 同批重锚（本包首次入 changeManifest;
+ *               授权链同——human 载体改判）, 其红色单在彼文件 REVISION LOG 记（pcn TEST 1
+ *               tooth 3 / TEST 5 A3 / TEST 8 tooth 4 三处设计态红——band 位置 vs 28px
+ *               实现错位）。schedule_grid.acceptance.c 零改动 canary 实跑绿。两冻结件
+ *               REVISION LOG append 不覆盖既有行。
+ *               ⑦ mutation 面迁移（TR-A6/A7/A8）: 参数族回退 line_h / 组头偏移族 /
+ *               pv_cy1 -> tooth 4 红; 摘今天区整行容纳守卫 -> tooth 5 红; 摘组级容纳门 ->
+ *               tooth 6 红; 重锚常量回退 hpb_rect_pv_row2 / pcn_rect_row2 等 -> 对应行带
+ *               断言错位红（取证由 builder/fixer 实测、planner 代落 taskpackage）。
+ *               预申报面见 BUILDER DUTY 5)。
  * --------------------------------------------------------------------------- */
