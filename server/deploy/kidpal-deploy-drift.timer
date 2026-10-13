@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily KidPal deploy drift check timer
+
+[Timer]
+# 每日一查（错开整点分钟，降低与其它定时任务同拍）
+OnCalendar=*-*-* 04:17:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

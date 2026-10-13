@@ -154,12 +154,14 @@ ls /root/.openclaw/workspace/kidpal/schedule.md  # 真身 549B：只有「每周
 
 ### 8.2 铺脚本 + 配置（幂等，repo → ECS）
 
+> 261013-gov-review-deploy-single-source-loop 起：脚本与配置由 `deploy.sh` 按
+> `server/deploy/manifest.yaml` 铺放（消费位直管——`/opt/kidpal/openclaw-patch/`、
+> `/opt/kidpal/openclaw-reminder.config.yaml`、`/opt/kidpal/front/deploy/`），本节不再有手工铺放步骤。交接目录语义保留：
+
 ```bash
-cd server/deploy && bash apply-xiaozhi-overlay.sh   # 渲染当前版 system prompt（版本见 OPENCLAW_SYSTEM_PROMPT_CARRIER）+ openclaw-reminder.config.yaml
-# 脚本与配置的目标目录（与 pending.json 同机）：
-export KIDPAL_OPENCLAW_SCRIPT_DIR=/opt/kidpal/openclaw-patch
 export KIDPAL_ALERTS_DIR=/opt/kidpal/alerts         # cron 写、front 读的交接目录（同机）
 mkdir -p "$KIDPAL_ALERTS_DIR"
+# 部署入口：cd /opt/kidpal/deploy-clone && bash server/deploy/deploy.sh（见 README「部署入口」节）
 ```
 
 ### 8.3 注册 cron（定期重算 + 录入即时触发）
@@ -173,7 +175,10 @@ openclaw cron add \
 KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md \
 KIDPAL_ALERTS_DIR=/opt/kidpal/alerts \
 KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json \
-python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
+# 解释器钉绝对路径（261013-gov-review-deploy-single-source-loop T4）：SSH shell 的裸
+# `python3` 解析到 /usr/bin/python3 = 3.6.8，跑不动脚本（`from __future__ import
+# annotations` SyntaxError）；live cron 实际命令已钉 venv 3.11，此处对齐。
 # 即时：家长 QQ 录入 → OpenClaw 自改写 schedule.md 后，同一 --command 载荷再跑一次
 #   （cron 支持 --command 载荷已在 class-reminder-0529 先例实测；语义产物由 agent 回合写
 #    semantic.json，脚本按 entry_key 挂载，缺文件=机械兜底不丢提醒）

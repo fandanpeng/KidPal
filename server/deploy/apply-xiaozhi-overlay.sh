@@ -122,25 +122,8 @@ else
   echo "WARN: wired system prompt not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
-# 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,
-# 随本 overlay 一起上 ECS，由 OpenClaw cron 载荷脚本
-# (openclaw-patch/reminder_schedule_lib.py::load_ladder_config) 读取。改时刻即时生效、
-# 永不需烧板子（固件侧零引用 = C 孪生档 RMD-A7 齿负向钉死；不进契约 B1）。
-# 缺文件不停摆（脚本回退 DEFAULT_LADDER_CONFIG），但「落盘 ≠ 孤儿」——本行渲染即接线。
-REMINDER_CFG="$HERE/openclaw-reminder.config.yaml"
-if [ -f "$REMINDER_CFG" ]; then
-  cp "$REMINDER_CFG" "$DATA_DIR/openclaw-reminder.config.yaml"
-  echo "rendered openclaw-reminder.config.yaml -> $DATA_DIR/"
-  # 提醒排程脚本随 openclaw-patch 一起铺到 OpenClaw 侧可读目录，供 cron --command 调用。
-  # 路径全部 env 可配（KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON / KIDPAL_SEMANTIC_JSON /
-  # KIDPAL_REMINDER_CONFIG / KIDPAL_SERVER_DIR）—— 禁止硬编 /root/.openclaw/**。
-  for script in reminder_schedule_lib.py; do
-    if [ -f "$HERE/openclaw-patch/$script" ]; then
-      mkdir -p "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}"
-      cp "$HERE/openclaw-patch/$script" "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/$script"
-      echo "staged $script -> ${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/"
-    fi
-  done
-else
-  echo "WARN: openclaw-reminder.config.yaml not found at $REMINDER_CFG — 三档时刻没有渲染面 (RMD-A2)" >&2
-fi
+# 提醒三档配置 / 排程脚本的铺放已移交 manifest 直管（261013-gov-review-deploy-
+# single-source-loop T4——原「渲染 openclaw-reminder.config.yaml 到 $DATA_DIR + staging
+# reminder_schedule_lib.py」块撤除：两处落点均非真实消费位，属双写者漂移源；消费位
+# /opt/kidpal/openclaw-reminder.config.yaml、/opt/kidpal/openclaw-patch/、
+# /opt/kidpal/front/deploy/ 由 server/deploy/manifest.yaml 登记、deploy.sh 铺放）。

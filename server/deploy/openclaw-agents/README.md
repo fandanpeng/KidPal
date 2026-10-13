@@ -9,8 +9,16 @@
 |---|---|
 | `workspace-kidpal/AGENTS.md` | `/root/.openclaw/workspace-kidpal/AGENTS.md` |
 
+## workspace-main（261013-gov-review-deploy-single-source-loop 补齐）
+
+| 仓内镜像（`../openclaw-skills/workspace-main/AGENTS.md`） | live 位置（ECS） |
+|---|---|
+| `workspace-main/AGENTS.md` | `/root/.openclaw/workspace/AGENTS.md` |
+
+两 workspace 的 AGENTS.md 均由 [manifest.yaml](../manifest.yaml) 登记、`deploy.sh` 铺放（`verify-deploy.sh` 每日核验）。
+
 护栏主阵地 = 每次会话注入的 system prompt（渲染源 `server/deploy/openclaw-system-prompt.vN.md`，
-经 `apply-xiaozhi-overlay.sh` 上 ECS）；`workspace-kidpal/AGENTS.md` 是**次要承载**，其自声明
+经 `apply-xiaozhi-overlay.sh` 上 ECS）；两侧 `AGENTS.md` 是**次要承载**，其自声明
 「冲突时以注入 prompt 为准」。
 
 ## 同步纪律（顺序别反）

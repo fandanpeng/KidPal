@@ -29,3 +29,11 @@ handoff: dev 批 / server+deploy 面（在途课表链路改动收口时合并�
 **建议改动**（候选，交 review、不自批）：① main workspace 补 `kidpal-schedule-write` skill：钉 B1 写入格式（日期纯 `YYYY-MM-DD` 不带星期、时间 `HH:MM(-HH:MM)`、五列形状、表头用契约范本）+ 写后机检（过 front 单源 `parse_schedule_md` + `group_upcoming`）+ 通过后立即跑 `reminder_schedule_lib.py` 重算落 marker（≈1 分钟内设备刷新）；② 同步仓内新版 `reminder_schedule_lib.py` 到 `/opt/kidpal/openclaw-patch/`（补 `drop_refresh_marker`），runbook cron 命令钉绝对路径 `python3.11`；③ main 侧 3 个未镜像 skill 补进仓内镜像；④ 评估 front 对 `schedule_md_err` 的 surfaced 告警（消「静默停摆」，形态有设计分叉）。dev 侧在途批正动课表链路，落地前先对账避免冲突（human 2026-10-12 指示：先登记不实施）。
 
 **风险**：riskTier: medium——修复面全在部署面 / OpenClaw skill 文面，不触 `.claude` 治理面、不触 `docs/contracts/**`；但②换 ECS 部署脚本、①改 live agent 行为，均需真机复证，且与 dev 在途批有撞面。review profile：Track B 三要件——① 执行测出 yes（上列 live 实录）；② 修复明确 no 分叉（①②③）/ ④ 含设计分叉（若纳入须小裁定）；③ 爆炸半径已被执行揭示 yes → ①②③ 走 Track B，④ 单独裁定。owner = dev 批（课表录入链路在途改动方）。
+
+---
+
+**补记（2026-10-13，261013-gov-review-deploy-single-source-loop 落地时 append，修正证据 3 第 2 条表述并钉修复项归属）**：
+
+1. **证据 3 第 2 条表述修正**：「仓内新版 reminder_schedule_lib.py 未同步到 ECS」不准确——新版**已在 ECS**（`/opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/openclaw-patch/`，md5 与仓内一致），但落在无人消费的孤儿位置；cron 实际消费位 `/opt/kidpal/openclaw-patch/` 停 2026-09-11 旧版。真根因 = **overlay 铺放目标与 cron 消费路径分裂**（`apply-xiaozhi-overlay.sh` 原 125–146 行按固定 `$DATA_DIR` 铺放、从不按消费者路径解析规则对账）。
+2. **同型第二处分裂（评审新发现）**：`openclaw-reminder.config.yaml` 的真实消费位 `/opt/kidpal/openclaw-reminder.config.yaml` 无文件（lib `KIDPAL_REMINDER_CONFIG` 默认 `dirname/../` 派生；当前被 `DEFAULT_LADDER_CONFIG` 同值回退掩盖）；`openclaw-schedule.config.yaml` 的消费位 `/opt/kidpal/front/deploy/` 亦无文件（front `parents[2]/deploy` 派生，`school_start` 静默回退 None）。
+3. **修复项归属钉死（防双做）**：建议②（新版 lib 同步 + runbook 钉绝对路径）与本补记第 1/2 条的部署一致性根因已由 261013-gov-review-deploy-single-source-loop（FROZEN 2026-10-13，含 manifest/deploy.sh/verify 三件套）承接；建议③（仓内镜像补齐）同由该批 T1 承接。**dev 批课表链路收口时只对账建议①（main workspace 补 kidpal-schedule-write skill）与建议④（front 对 schedule_md_err 的 surfaced 告警）**。
