@@ -6,12 +6,15 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (55)
+## dev (58)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261012-kidpal-realtime-facts](261012-kidpal-realtime-facts/) | 2026-10-12 | docs/crq/tech/TECH-261012-weather-fabrication.md | closed | — |
+| [261012-p3-topbar-ink-bleach-fix](261012-p3-topbar-ink-bleach-fix/) | 2026-10-12 | docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md | closed | — |
 | [261011-p1-home-v5-rework](261011-p1-home-v5-rework/) | 2026-10-11 | delivery/changes/intake/261011-p1-home-v5-rework.md | closed | — |
 | [261010-device-reconnect-on-server-close](261010-device-reconnect-on-server-close/) | 2026-10-10 | docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md | closed | — |
+| [261010-p3-storylist-cold-start-restore](261010-p3-storylist-cold-start-restore/) | 2026-10-10 | docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md | closed | m4-star-notebook |
 | [261010-prompt-v9-schedule-anti-narration](261010-prompt-v9-schedule-anti-narration/) | 2026-10-10 | docs/crq/tech/TECH-261010-schedule-round-narration-leak.md | closed | — |
 | [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
 | [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
@@ -65,4 +68,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261010-p3-storylist-cold-start-restore](261010-p3-storylist-cold-start-restore/) | 2026-10-10 | docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md | closed | m4-star-notebook |
