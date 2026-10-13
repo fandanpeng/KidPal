@@ -16,8 +16,19 @@
 
 - 本包零 agent-escalation 事件（全程无 Red Flag / blocker / out-of-scope）。红闸全在 verifier 机械面内消化，没出过 Pod 边界。
 
+## 补充轮补记（2026-10-13 晚，human 裁定并入本包）
+
+- **载体改判是这轮最值得记的形态**：human 用「作为上一个包的补充，别再出一个包了，太小了」把行距压缩并进本包，`p1_cjk_name.acceptance.c` 从「零改动回归观察面」变成「必须重锚的载体」——主轮我还特意把它当越界探针，补充轮它成了正面验收面。同一文件在一个包里先当哨兵后当载体，靠的是 human 直令 + taskpackage 留痕，不是流程自己会想到的。下次遇到「上轮零触碰面因几何变化必须随动」，记得先问一句这是不是载体改判，别硬扛零改动口径。
+- **阈值假绿是 acceptance-author 自己揪出来的**：主轮 T=80 在旧几何下三带均 ≥80 仍绿（残墨+资产 cap 抬墨），ta 实测 R=84 后抬到 110 才恢复判别力。如果我按「照抄主轮阈值」放行，这个包会带着一个假绿齿合并——这是本批最实质的质量守住。
+- **组级门需要新齿**：plan 明载「无既有齿覆盖」，acceptance-author 自己裁「需新齿」并立 tooth 6，净 HEAD 基线即绿（组级门在旧实现下天然成立）。把「该不该为新语义立齿」的裁量权交给验收作者、只要判别力论证到位，产出比我派单写的细。
+- **builder 如实申报 deferred 的那条（重锚常量回退变异越其写权）**：他没糊弄成「做了」，而是说清越权 + 由参族回退同源承载判别力。诚实申报比凑数取证有价值。
+- **合并门的 INDEX 撞面这轮又来一次**：与前一轮同构（分支侧 INDEX 是 rebase 时取的 main 快照，main 又推进了新行）。同一机制第二次手工解，进一步印证「changes INDEX 单文件 union 登记」是真实缺口——已建议另批治理立项，本包不越权动 .gitattributes。
+- **模型档位**：补充轮的 acceptance-author 重锚批（72 tool-uses）与 builder A1 均默认档完成，无需升档；上游把几何推导表写进 plan 是这轮能压缩轮次的直接原因。
+
 ## 下次改进（攒给 loop-retro）
 
 1. 起包 mutationEvidence 骨架 = acceptance[] 全集逐条（占位 turnedRed=false），不给 verifier mutation-check 留形状红的机会。
 2. 派单前把「变异面落谁的写权域」作为 scope 核对的一问（本次答案 = acceptance-author，差点派错 fixer）。
 3. final 轮 --scope-file 参数：先读 integrator 回执拿制品路径再跑闸，不凭记忆裸跑。
+4. 「上轮零改动面 + 本轮几何平移」= 载体改判信号：主动向 human 确认是否并入本包 changeManifest，别默认零改动。
+5. 生成件（INDEX 类）双渲染撞面：合并前一律先取 target 侧消文本壳 + 合并后重建归位——同一手法第二次用，已固化。

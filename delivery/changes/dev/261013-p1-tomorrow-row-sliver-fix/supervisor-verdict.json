@@ -3,7 +3,7 @@
   "riskTier": "low",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-10-13T02:19:29.678Z",
+  "ts": "2026-10-13T04:55:08.824Z",
   "changeId": "261013-p1-tomorrow-row-sliver-fix",
   "originType": "regression",
   "adjudication": {
@@ -22,7 +22,7 @@
         "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
       ]
     },
-    "circuitBreakerCompletedRounds": 4,
+    "circuitBreakerCompletedRounds": 6,
     "evidenceComplete": true
   },
   "provenance": {
@@ -40,9 +40,9 @@
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r4.json",
+        "bearingFactRef": "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r6.json",
         "bearingFactOk": true,
-        "completedRounds": 4,
+        "completedRounds": 6,
         "closeoutArtifactsChecked": [
           "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/docs-delta.md",
           "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/review-packet.md"
@@ -128,7 +128,7 @@
       ".claude/verify-logs/1791856807805-mutation-check.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r4.json"
+      "delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/verifier-evidence/rounds/r6.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/changes/dev/261013-p1-tomorrow-row-sliver-fix/docs-delta.md",
