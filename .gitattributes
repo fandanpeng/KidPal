@@ -27,3 +27,11 @@ delivery/taskpackages/**/pod-events.jsonl merge=union
 # 起草期合并实演（两场景：异日期 / 同日期）实证：零人工解冲突、零行丢失、零重复、重渲染精确归位。
 docs/crq/*/INDEX.md merge=union
 docs/crq/*/_archive/*/INDEX.md merge=union
+
+# 钉死 prompt 版本文件 LF 换行（TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout，261013-gov-review-lf-eol-teeth-pin 批）：
+# prompt v6–v9 被四条 raw sha256 冻结齿（sha256(read_bytes()) 口径）钉历史版本零回改，但检出换行属环境态：
+# Windows autocrlf=true 检出即 CRLF，raw 哈希与冻结值（LF 口径）必异，齿恒红（2026-10-13 merge-driver
+# 内嵌校验 3 红拦死合并通道实录，per-checkout 复现）。eol=lf 从 checkout 侧消灭换行漂移，raw 口径
+# 稳定指向 canonical 字节；家族 glob 使未来 prompt 新版本的冻结齿出生即钉（消「每遇新齿复发一次」）。
+# 与上方 *.sh 条目（ARQ-260906，同型缺口成年期补齐）及 .codebase-memory/.gitattributes 无路径交集。
+server/deploy/openclaw-system-prompt.*.md text eol=lf

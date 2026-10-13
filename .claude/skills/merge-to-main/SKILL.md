@@ -31,5 +31,6 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
 
 - `git merge --ff-only` 报 `Not possible to fast-forward` → 目标分支有独有 commit；`git log --oneline <source>..<target>` 看是什么，交 human 定（rebase / 本地 `--no-ff` 合并 / 走 remote PR）。
 - `git diff --check` 报 conflict marker → 停，定位残留文件交 human；**不要**直接 commit。
+- 不可变齿（raw sha256 类）拦红 → 先核工作树换行（`git ls-files --eol`）再疑内容回改：Windows autocrlf 检出 CRLF 即伪红（TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout 实录）；eol 钉集见 `.gitattributes`。
 - `git merge` 报 `Your local changes to the following files would be overwritten by merge` 且命中 `.codebase-memory/` 两件 → 对这两件 `git checkout HEAD --` 还原后重试（indexer 可再生漂移，零损失）；不要 stash、不要把它们 commit 进分支。
 - 合并后 `git status` 有意料外文件 → 多为 CRLF/换行噪音，pathspec 重暂存（步骤 3）。
