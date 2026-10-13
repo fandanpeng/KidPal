@@ -59,7 +59,7 @@ mutationRequired=true 满足：9 条 perAcceptance 全部 `turnedRed=true && sen
 | NIT | judgement-call | verifier 终态相位 | r3 顶层 `phase=scoped`（非 final）——派单口径以 r3 为证据态收口、integrator 未另跑 final 相位轮；test-scope-final.txt 已留占位行待 planner 补跑回填 | r3.json hunk（phase 字段）+ 留痕诚实性 heuristic | planner 合并门前可补跑 final 相位轮（scope-file = test-scope-final.txt）回填占位；不阻塞（r3 ok=true 八闸全绿为 bearing fact） |
 | NIT | judgement-call | 工作树卫生 | `firmware/sdkconfig` 工作树 M 态（构建期回写「Image Effects Configuration」5 行装饰性空节）不进本包 commit、留工作树——每构建必脏的既有卫生债 | changed-artifact hunk（git diff firmware/sdkconfig）+ 范围帽 heuristic（taskpackage 连带第 6 条划出） | 已立 TECH-261014-sdkconfig-decorative-empty-section 跟踪；本包收口人工排除即可 |
 
-结构闸 PASS/FAIL 不复述为 finding（r3 八闸全绿仍完整执行五轴语义 review，见下）。无 hard-violation finding——如出现将以 `docs/contracts/**`、`docs/requirements.md`、`docs/architecture.md` 或 `docs/spec.md`（已归档件，仅历史 findings）字面前缀起引 Basis；本轮 none。
+结构闸 PASS/FAIL 不复述为 finding（r3 八闸全绿仍完整执行五轴语义 review，见下）。本轮 findings 表 = 上方两条 NIT，无任何升级级（hard-violation 等级）finding；亦无触及治理 spec 面（契约/需求/架构）的 Basis 引用。
 
 ## Five-Axis Review
 
@@ -90,3 +90,5 @@ mutationRequired=true 满足：9 条 perAcceptance 全部 `turnedRed=true && sen
 - `verdict.json` / `verification.json` 投影：advisory-only 未另产——compatibility 投影已在 `delivery/taskpackages/current/verdict.json`（程序 fs-write），closeout 判断以 r3 bearing fact 为准（closeout SSOT 表口径，缺失不阻塞）。
 - TECH-261013 条目收口（closed 归档 `_archive/2026/`）+ TECH-261014 新立 + 两 INDEX 重渲染（见 docs-delta.md）。
 - post-cutoff 纪律：不产 session-digest / loop-health / loop-metrics / pod-journal 晋升；`pod-events.jsonl` 在场（8 events，advisory non-blocking）；`pod-retro.md` 归 planner 收尾相位。
+
+> 修订注记（2026-10-14）：Findings 节元描述句改写——pre-merge-escalation-gate 字面集误报消解（门语义 = hard-violation finding 必须有 CONTRACT-DECISION-QUEUE 对账行或 human defer 锚；本轮零 hard-violation，误报源于元描述句自身含治理文档字面路径，被门正则同句命中）。授权：planner 裁定 + 闸反馈通道。仅改该句并补本注记，其余内容零触碰。
