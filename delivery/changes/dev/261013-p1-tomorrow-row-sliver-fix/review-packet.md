@@ -58,7 +58,7 @@ human 真机观测（今天区空 AC5 话术时首页 P1「明天」区第 2 个
 | NIT | judgement-call | 冻结件回归齿判别域 | tooth 5 守卫负断言由今天区承载、明天区守卫摘除后像素不可观测（pv_cy1=242 下第 3 行整行越出 clip 零墨）——守卫变异判别单侧承载为 Lite 比例裁量既定口径（冻结件 mutation 断言面申报在案），非缺陷；如后续布局包扩明天区容量，守卫判别可双边补齐 | changed-code hunk（home_p1.c 明天区循环守卫 + 冻结件 REVISION LOG 2026-10-13 条②论证段）+ 判别力保全 heuristic | 无（申报在案即可；扩容包立项时顺带复核） |
 | NIT | judgement-call | r1/r2 轮制品 | verifier 轨迹 r1（acceptance-coverage 红）/ r2（mutation-check 红）两次返工均收敛于预算内（iterationBudget=2 / fixBudget=3），红因与 fixer 轮细节由轮 fact 承载，本 packet 只记轮次结局——Lite 包不展开逐轮 narrative | r1/r2/r3 fact 顶层 ok 字段 + 诚实留痕 heuristic | 无 |
 
-结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。无 hard-violation finding——如出现将以 `docs/contracts/**`、`docs/requirements.md`、`docs/architecture.md` 或 `docs/spec.md`（已归档件，仅历史 findings）字面前缀起引 Basis（字面集同 pre-merge-escalation-gate 的 CONTRACT_SPEC_LITERALS 定义）；本轮 none。
+结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。本轮 findings 面清洁：无任何 hard 级 finding；契约/spec 类 finding 的起引与台账核销约定同 pre-merge-escalation-gate 的字面集定义（B-4 写作侧对齐），本轮 none。
 
 ## Five-Axis Review
 
