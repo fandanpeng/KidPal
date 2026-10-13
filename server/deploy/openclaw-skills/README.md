@@ -10,6 +10,8 @@
 | `workspace-main/kidpal-reminder-semantic/` | `/root/.openclaw/workspace/skills/kidpal-reminder-semantic/` | 提醒语义回合 skill：cron `kidpal-reminder-semantic` 每 15 分钟唤起 main agent 产 semantic.json（ARQ-260925-reminder-semantic-round-not-live 与 DEPLOY-RUNBOOK §8.3b） |
 | `workspace-main/kidpal-schedule-answer/` | `/root/.openclaw/workspace/skills/kidpal-schedule-answer/` | **main 侧**课表问答 skill（含改课表运维须知段）——与下行 kidpal 侧同名 skill 分工不同、各占一镜像位 |
 | `workspace-main/qqbot-reply-diagnosis/` | `/root/.openclaw/workspace/skills/qqbot-reply-diagnosis/` | QQ 回复诊断 skill |
+| `workspace-main/kidpal-schedule-write/` | `/root/.openclaw/workspace/skills/kidpal-schedule-write/` | QQ 课表录入写入 skill：B1 写入纪律（日期纯 `YYYY-MM-DD` 严禁星期后缀）+ 写后机检（front 单源 parser）+ 通过后即时重算落 marker（TECH-261012 建议①） |
+| `workspace-main/kidpal-schedule-health/` | `/root/.openclaw/workspace/skills/kidpal-schedule-health/` | 课表解析失败 QQ 转告巡检 skill：cron `kidpal-schedule-health` 每 15m 唤起 main 读告警件、QQ 主动告知家长、ack 状态件防重复打扰（TECH-261012 建议④） |
 | `workspace-kidpal/kidpal-schedule-answer/` | `/root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/` | **板侧** kidpal agent 的课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效） |
 
 修改 skill 后：先改本仓镜像（进 review），再 `deploy.sh` 铺放到 ECS live 路径——顺序别反。新增 live skill 时同步加 manifest 条目 + 本表一行。

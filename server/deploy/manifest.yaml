@@ -51,7 +51,7 @@ entries:
   - {src: server/gateway/provider.py,
      dst: /opt/kidpal/front/gateway/provider.py,
      owner: deploy.sh, verify: md5, restart: front,
-     note: live 旧值 OPENCLAW_MODEL 默认 openclaw/default 为 stale，首铺归一为仓内 openclaw/kidpal}
+     note: live 旧值 OPENCLAW_MODEL 默认值为 stale 别名（260930 事故值），首铺归一为仓内 openclaw/kidpal}
   - {src: server/gateway/reminders.py,
      dst: /opt/kidpal/front/gateway/reminders.py,
      owner: deploy.sh, verify: md5, restart: front}
@@ -122,6 +122,14 @@ entries:
   - {src: server/deploy/openclaw-skills/workspace-main/qqbot-reply-diagnosis/SKILL.md,
      dst: /root/.openclaw/workspace/skills/qqbot-reply-diagnosis/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-write/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-schedule-write/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: QQ 课表录入写入 skill（B1 写入纪律 + 写后机检 + 通过后即时重算落 marker；TECH-261012 建议①）}
+  - {src: server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md,
+     dst: /root/.openclaw/workspace/skills/kidpal-schedule-health/SKILL.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 课表解析失败 QQ 转告巡检 skill（cron kidpal-schedule-health 每 15m 唤起 main；TECH-261012 建议④）}
   - {src: server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md,
      dst: /root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
@@ -155,5 +163,8 @@ cron_jobs:
   - name: kidpal-reminder-plan
     expect_argv: "KIDPAL_SERVER_DIR=/opt/kidpal/front KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md KIDPAL_ALERTS_DIR=/opt/kidpal/alerts KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
   - name: kidpal-reminder-semantic
+    expect_agent: main
+    expect_schedule: "every 15m"
+  - name: kidpal-schedule-health
     expect_agent: main
     expect_schedule: "every 15m"

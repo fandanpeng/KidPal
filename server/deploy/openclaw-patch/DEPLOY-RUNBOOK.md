@@ -211,6 +211,40 @@ openclaw cron list   # 期望两条 kidpal-reminder-*：plan（command 型 isola
 不走引擎注入；main agent 拥有 kidpal/ 写侧与 skill 机制，指示的家 = workspace skill
 （镜像入仓 `server/deploy/openclaw-skills/workspace-main/`）。
 
+### 8.3c 注册课表解析健康巡检 cron（agent 型，TECH-261012 建议④）
+
+> 背景：front 对 `schedule_md_err`（脏 B1 格致整份 schedule.md 解析失败）此前只在 journal
+> 记日志、家长零感知。本任务补 agent 生产侧——`kidpal-schedule-health` cron 每 15 分钟唤起
+> main agent，读 front 写的 `/opt/kidpal/alerts/schedule-parse-error.json` 告警件，命中未确认
+> 的解析失败时经 QQ 主动告知家长坏 token 与正确格式；ack 去重靠 skill 自有的
+> `/opt/kidpal/alerts/schedule-parse-health.json` 状态件（front 每分钟覆写告警件、不碰该状态件）。
+> skill 文本 = `server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md`。
+
+```bash
+openclaw cron add \
+  --name kidpal-schedule-health \
+  --every 15m \
+  --agent main \
+  --no-deliver \
+  --message "课表解析健康巡检：读 /opt/kidpal/alerts/schedule-parse-error.json，按
+kidpal-schedule-health skill 四分支判定，命中未确认解析失败则经 QQ 告知家长坏 token 与正确格式。
+收到即执行，无需确认。"
+openclaw cron list   # 期望新增一条 kidpal-schedule-health（agent 型 main / every 15m）
+```
+
+**频率必须 15m**：`verify-deploy.sh` 的 cron 核验把 `expect_schedule` 硬编成 `every_min == 15`
+（`verify-deploy.sh` :123-127），非 15m 会假报漂移；manifest `cron_jobs` 的 `kidpal-schedule-health`
+期望条目同步钉 `expect_schedule: "every 15m"`。
+
+**QQ 路由目标前置（如实两层，不虚诺）**：该 cron 是「无入站消息要回」的主动 announce——
+
+1. **路由未配时**：health 回合仍跑、仍能读到告警件，但主动告知 **fail-closed 投不出**；**可观测面
+   降级** = 告警件 `schedule-parse-error.json` + `journalctl -u kidpal-front.service | grep
+   schedule_md_err`（不是「什么都不会发生」，而是「转告投不出、但件与日志都在」）。
+2. **路由配置** = human post-deploy 动作，指向 260924 ops-record 的 accounts 映射位（家长 openid =
+   accounts.dad 的 allowFrom 唯一项；mom 仍 `enabled:false` 占位）。**配好路由才谈得上家长能收到**
+   ——本节只给动作位、不承诺「配好即达」。
+
 ### 8.4 前端投递侧（同机 uvicorn，无需额外进程）
 
 `server/gateway/front/front_app.py` 在首个已鉴权设备连接建立时起**每分钟轮询**（对齐整
