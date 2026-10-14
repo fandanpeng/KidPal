@@ -257,5 +257,9 @@
   "261013-gov-review-deploy-single-source-loop": {
     "date": "2026-10-13",
     "mergedInMain": "yes"
+  },
+  "261014-gov-review-crq-debt-rename": {
+    "date": "2026-10-14",
+    "mergedInMain": "yes"
   }
 }
