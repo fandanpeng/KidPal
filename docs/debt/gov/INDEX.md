@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 15（待拍板 0 / 待触发 13 / 已接受风险 2）；已结 83（归档索引见下）。
+**摘要**：未结 16（待拍板 0 / 待触发 14 / 已接受风险 2）；已结 83（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（13）
+## 待触发（14）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -30,6 +30,7 @@ _（无）_
 | [ARQ-260928-landing-summary-skeleton-template](ARQ-260928-landing-summary-skeleton-template.md) | SHOULD | landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮 | 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批） |
 | [ARQ-261001-host-blind-outcome-device-gate](ARQ-261001-host-blind-outcome-device-gate.md) | SHOULD | 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门 | 下一治理批（dev-loop 门 / 纪律文面；或下一个声明「用户可见结果」的包 launch 前） |
 | [ARQ-261011-contract-gate-literal-selfquote-false-positive](ARQ-261011-contract-gate-literal-selfquote-false-positive.md) | COULD | 前置升级闸 contract-findings 字面扫描在「自述无 finding」行上误中——review-packet 复述闸字面集的合法行被当成 finding 拦合并 | 下次治理批 / 下个动 pre-merge-escalation-gate.mjs 的批；两次合并（261010 两包）各拦一次，人批凭据已留 pod-events |
+| [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 
 ## 已接受风险（2）
 
