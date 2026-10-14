@@ -166,7 +166,7 @@ function isHeadMergedIntoMain(projectDir, changeId) {
     return false; // HEAD∉main / main 不存在 / git 失败
   }
   try {
-    execSync(`git cat-file -e main:delivery/changes/dev/${changeId}/docs-delta.md`, { cwd: projectDir, stdio: 'pipe' });
+    execSync(`git cat-file -e main:delivery/taskpackages/${changeId}/docs-delta.md`, { cwd: projectDir, stdio: 'pipe' });
     return true;
   } catch {
     return false; // closeout 不在 main（fork-point 幻觉形：制品只在盘）
@@ -260,7 +260,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
     // 豁免制品 = i1 先例（260801-i1-test-script-wiring）自发产出的分类清单，钩子只查形状（存在且非空），
     // 内容真实性由 human 裁合并时审（PROPOSAL §6 接受风险）。
     if (verdictValue === 'ESCALATE' && fact.ok === false) {
-      const inventoryPath = resolve(projectDir, 'delivery', 'changes', 'dev', changeId, 'existing-red-inventory.md');
+      const inventoryPath = resolve(projectDir, 'delivery', 'taskpackages', changeId, 'existing-red-inventory.md');
       if (existsSync(inventoryPath) && statSync(inventoryPath).size > 0) {
         warn(
           `G6 red-evidence ESCALATE exemption: bearing fact is red (${ref}) and existing-red-inventory.md present — ` +
@@ -271,7 +271,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
       block(
         `verifier evidence ref is not green final evidence: ${ref}. ` +
         `Red-evidence ESCALATE can stop legally only with the exemption artifact: produce ` +
-        `delivery/changes/dev/${changeId}/existing-red-inventory.md (classified inventory of pre-existing reds + repair-intent ` +
+        `delivery/taskpackages/${changeId}/existing-red-inventory.md (classified inventory of pre-existing reds + repair-intent ` +
         `registration; precedent: 260801-i1-test-script-wiring) and stop again, or merge via human ruling. ` +
         `APPROVE never qualifies for this exemption.`,
       );
@@ -281,7 +281,7 @@ function validateVerifierEvidenceRefs(provenance, changeId, verdictValue, projec
 }
 
 function validateCloseoutArtifactRefs(provenance, changeId, closeoutFiles, projectDir) {
-  const prefix = `delivery/changes/dev/${changeId}/`;
+  const prefix = `delivery/taskpackages/${changeId}/`;
   const refs = validateRefArray(provenance.closeoutArtifactsChecked, 'provenance.closeoutArtifactsChecked', projectDir, { prefix });
   const present = new Set(refs.map(({ ref }) => ref));
   for (const file of closeoutFiles) {
@@ -413,8 +413,8 @@ function setupPodBase(fixtureDir, changeId, { pastPodDir = false } = {}) {
 }
 
 function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }) {
-  writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/docs-delta.md`, '# docs-delta fixture\n');
-  writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/review-packet.md`, '# review-packet fixture\n');
+  writeFixtureFile(fixtureDir, `delivery/taskpackages/${changeId}/docs-delta.md`, '# docs-delta fixture\n');
+  writeFixtureFile(fixtureDir, `delivery/taskpackages/${changeId}/review-packet.md`, '# review-packet fixture\n');
   writeFixtureFile(fixtureDir, '.claude/verify-logs/fixture.log', 'fixture gate log\n');
   writeFixtureFile(
     fixtureDir,
@@ -435,7 +435,7 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
   );
   writeFixtureFile(
     fixtureDir,
-    `delivery/changes/dev/${changeId}/supervisor-verdict.json`,
+    `delivery/taskpackages/${changeId}/supervisor-verdict.json`,
     JSON.stringify(
       {
         verdict: verdictValue,
@@ -447,8 +447,8 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
           verifyLogRefs: ['.claude/verify-logs/fixture.log'],
           verifierEvidenceRefs: [`delivery/taskpackages/${changeId}/verifier-evidence/rounds/r1.json`],
           closeoutArtifactsChecked: [
-            `delivery/changes/dev/${changeId}/docs-delta.md`,
-            `delivery/changes/dev/${changeId}/review-packet.md`,
+            `delivery/taskpackages/${changeId}/docs-delta.md`,
+            `delivery/taskpackages/${changeId}/review-packet.md`,
           ],
         },
       },
@@ -457,7 +457,7 @@ function setupCloseout(fixtureDir, changeId, { verdictValue, factOk, inventory }
     ),
   );
   if (inventory) {
-    writeFixtureFile(fixtureDir, `delivery/changes/dev/${changeId}/existing-red-inventory.md`, '# existing red inventory fixture\n');
+    writeFixtureFile(fixtureDir, `delivery/taskpackages/${changeId}/existing-red-inventory.md`, '# existing red inventory fixture\n');
   }
 }
 
@@ -631,12 +631,12 @@ function main(projectDir = defaultProjectDir) {
   const changeId = taskPackage.changeId;
   if (!changeId) process.exit(0);
 
-  const changeDir = resolve(projectDir, 'delivery', 'changes', 'dev', changeId);
+  const changeDir = resolve(projectDir, 'delivery', 'taskpackages', changeId);
 
   // G1: Closeout artifact existence check (C4: retired test-evidence.md + final-summary.md)
   // CF-9/F-01 (gov-review-devloop-closeout-hardening §3.3, 2026-07-27 human-approved): cutoff-aware 去快照。
   // post-cutoff（isPostCutoff，基准 CHANGE_ID_CUTOFF 对齐 closeout-check.mjs:72 / isPostCutoff:225，非 EVENTS_SCHEMA_CUTOFF）
-  // → delivery/changes/dev/ 下 taskpackage.json 快照退役（活文件 delivery/taskpackages/<id>/ 唯一承载）→ closeoutFiles 去快照项；
+  // → delivery/taskpackages/ 下 taskpackage.json 快照退役（活文件 delivery/taskpackages/<id>/ 唯一承载）→ closeoutFiles 去快照项；
   // pre-cutoff 保留三件（含 taskpackage.json 快照）。单数组驱动 G1 早退 / G5 mtime 循环 / G6 validateCloseoutArtifactRefs
   // 三处一致变更——防合规 post-cutoff v2 包过早退却在 G6 被错索 taskpackage.json 快照 ref 而 block。
   const closeoutFiles = isPostCutoff(changeId)
@@ -671,7 +671,7 @@ function main(projectDir = defaultProjectDir) {
   const verdictPath = resolve(changeDir, 'supervisor-verdict.json');
   if (!existsSync(verdictPath)) {
     block(
-      `delivery/changes/dev/${changeId} has closeout artifacts but no supervisor-verdict.json. ` +
+      `delivery/taskpackages/${changeId} has closeout artifacts but no supervisor-verdict.json. ` +
       `Run supervisor and persist APPROVE/BLOCK/ESCALATE before stopping.`,
     );
   }

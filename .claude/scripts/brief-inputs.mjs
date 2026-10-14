@@ -290,7 +290,7 @@ function renderCounterparts(tp, errors) {
 // 该形态源①（认 APPROVE）与源②（认 merge 事件名）皆不认；起草期实测为 **7 个存量包**的净缺口。
 // `dir` 参数为自检注入用（默认 projectDir；不改既有调用方）。
 function isMerged(changeId, dir = projectDir) {
-  const verdictPath = resolve(dir, 'delivery/changes/dev', changeId, 'supervisor-verdict.json');
+  const verdictPath = resolve(dir, 'delivery/taskpackages', changeId, 'supervisor-verdict.json');
   if (existsSync(verdictPath)) {
     try {
       const v = JSON.parse(readFileSync(verdictPath, 'utf8').replace(/^﻿/, ''));

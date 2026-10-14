@@ -31,7 +31,7 @@
 //   **不抗恶意内部人**（planner 物理仍可经任意 Bash/内部 fs 手写绕过，与 bearing 同残余面，对称接受 R-1）。
 //
 // 用法：
-//   node .claude/hooks/supervisor-verdict-gate.mjs [--change-id <id>]      # planner invoke，产 delivery/changes/dev/<id>/supervisor-verdict.json（write-once）
+//   node .claude/hooks/supervisor-verdict-gate.mjs [--change-id <id>]      # planner invoke，产 delivery/taskpackages/<id>/supervisor-verdict.json（write-once）
 //   node .claude/hooks/supervisor-verdict-gate.mjs --self-check            # ARQ-114 结构化自检（必带，非可选）
 
 import {
@@ -541,7 +541,7 @@ function main() {
 
   // 证据完整度（FIX-4 单源 fail-loud + FIX-5 缺失→BLOCK）。consumeFinalBearingFact 对 invalid fact fail-loud exit 2。
   const bearing = consumeFinalBearingFact(projectDir, changeId);
-  const closeoutArtifacts = ['docs-delta.md', 'review-packet.md'].map((f) => `delivery/changes/dev/${changeId}/${f}`);
+  const closeoutArtifacts = ['docs-delta.md', 'review-packet.md'].map((f) => `delivery/taskpackages/${changeId}/${f}`);
   const closeoutPresent = closeoutArtifacts.every((ref) => existsSync(resolve(projectDir, ref)));
   const verifyLogs = collectVerifyLogs(projectDir);
   const evidenceComplete = bearing.present && bearing.ok === true && closeoutPresent && verifyLogs.length > 0;
@@ -561,7 +561,7 @@ function main() {
     provenance,
   };
 
-  writeVerdictOnce(resolve(projectDir, 'delivery', 'changes', 'dev', changeId), verdictObj);
+  writeVerdictOnce(resolve(projectDir, 'delivery', 'taskpackages', changeId), verdictObj);
   console.log(JSON.stringify({
     ok: decision.verdict === 'APPROVE',
     gate: 'supervisor-verdict-gate',
@@ -571,7 +571,7 @@ function main() {
     reasons: decision.reasons,
     evidenceComplete,
     completedRounds,
-    verdictRef: `delivery/changes/dev/${changeId}/supervisor-verdict.json`,
+    verdictRef: `delivery/taskpackages/${changeId}/supervisor-verdict.json`,
   }, null, 2));
   process.exit(0);
 }
@@ -682,8 +682,8 @@ function selfCheck() {
   ok(deriveDiffTier(['firmware/main/test/storage.acceptance.test.c'], 'esp_partition_erase_range(part, 0, size);', { subsystem: 'firmware/main' }, { perFile: attrSpec }).tier === 'low', 'fp-attr-spec-partition-erase-not-hit');
   const attrRaw = new Map([['firmware/main/test/store.test.c', '+nvs_flash_erase(); // fixture reset']]);
   ok(deriveDiffTier(['firmware/main/test/store.test.c'], 'nvs_flash_erase();', { subsystem: 'firmware/main' }, { perFile: attrRaw }).tier === 'low', 'fp-attr-spec-nvs-erase-not-hit');
-  const attrPacket = new Map([['delivery/changes/dev/x/review-packet.md', '+cleanup uses nvs_flash_erase on test data']]);
-  ok(deriveDiffTier(['delivery/changes/dev/x/review-packet.md'], 'cleanup uses nvs_flash_erase on test data', {}, { perFile: attrPacket }).tier === 'low', 'fp-attr-changes-prose-not-hit');
+  const attrPacket = new Map([['delivery/taskpackages/x/review-packet.md', '+cleanup uses nvs_flash_erase on test data']]);
+  ok(deriveDiffTier(['delivery/taskpackages/x/review-packet.md'], 'cleanup uses nvs_flash_erase on test data', {}, { perFile: attrPacket }).tier === 'low', 'fp-attr-changes-prose-not-hit');
   const attrEvents = new Map([['delivery/taskpackages/x/pod-events.jsonl', '+{"summary":"nvs_flash_erase cleanup"}']]);
   ok(deriveDiffTier(['delivery/taskpackages/x/pod-events.jsonl'], '{"summary":"nvs_flash_erase cleanup"}', {}, { perFile: attrEvents }).tier === 'low', 'fp-attr-taskpackages-prose-not-hit');
   const attrPlanning = new Map([['delivery/workstreams/ws/progress.md', '+gate hit nvs_flash_erase token']]);
@@ -708,8 +708,8 @@ function selfCheck() {
   ok(deriveDiffTier(['firmware/main/a.c', 'firmware/main/b.c'], 'esp_partition_erase_range(p,0,n)', {}, { perFile: attrPartial }).tier === 'critical', 'attr-fallback-partial-coverage-whole-body');
 
   // auth 轴归因电池（假阳重放 + 正案保全 + 固话 + 混合回退）
-  const authAttrChanges = new Map([['delivery/changes/dev/x/review-packet.md', '+authz 轴证据：worker 以 SYSTEM_AUTH 运行，无新增 auth 面']]);
-  ok(deriveDiffTier(['delivery/changes/dev/x/review-packet.md'], 'authz 轴证据：worker 以 SYSTEM_AUTH 运行，无新增 auth 面', {}, { perFile: authAttrChanges }).tier === 'low', 'fp-auth-attr-changes-prose-not-hit');
+  const authAttrChanges = new Map([['delivery/taskpackages/x/review-packet.md', '+authz 轴证据：worker 以 SYSTEM_AUTH 运行，无新增 auth 面']]);
+  ok(deriveDiffTier(['delivery/taskpackages/x/review-packet.md'], 'authz 轴证据：worker 以 SYSTEM_AUTH 运行，无新增 auth 面', {}, { perFile: authAttrChanges }).tier === 'low', 'fp-auth-attr-changes-prose-not-hit');
   const authAttrEvents = new Map([['delivery/taskpackages/x/pod-events.jsonl', '+{"summary":"security-axis-diff:auth 假阳记录"}']]);
   ok(deriveDiffTier(['delivery/taskpackages/x/pod-events.jsonl'], '{"summary":"security-axis-diff:auth 假阳记录"}', {}, { perFile: authAttrEvents }).tier === 'low', 'fp-auth-attr-taskpackages-prose-not-hit');
   const authAttrPlanning = new Map([['delivery/workstreams/ws/progress.md', '+前次假阳记录行：security-axis-diff:auth，human 风险接受']]);
@@ -723,14 +723,14 @@ function selfCheck() {
   ok(deriveDiffTier(['firmware/main/x.c'], 'int x = 1;', { subsystem: 'firmware/main', securityReviewRequired: true }, { perFile: new Map([['firmware/main/x.c', '+int x = 1;']]) }).tier === 'high', 'auth-declared-axis-still-hit');
   ok(deriveDiffTier(['firmware/main/x.c'], 'worker runs with auth context', {}, { perFile: null }).tier === 'high', 'auth-fallback-null-perFile-whole-body');
   // 自产 reason 旧形态被制品面引用 + 归因 → 不触发
-  const authSelfReason = new Map([['delivery/changes/dev/x/progress.md', '+gate reason 引用：security-axis-diff:auth（前次实例记录）']]);
-  ok(deriveDiffTier(['delivery/changes/dev/x/progress.md'], 'gate reason 引用：security-axis-diff:auth（前次实例记录）', {}, { perFile: authSelfReason }).tier === 'low', 'auth-self-reason-quoted-attributed-not-hit');
+  const authSelfReason = new Map([['delivery/taskpackages/x/progress.md', '+gate reason 引用：security-axis-diff:auth（前次实例记录）']]);
+  ok(deriveDiffTier(['delivery/taskpackages/x/progress.md'], 'gate reason 引用：security-axis-diff:auth（前次实例记录）', {}, { perFile: authSelfReason }).tier === 'low', 'auth-self-reason-quoted-attributed-not-hit');
   // 生产面 prose（固件 CLAUDE.md 形态）含 auth 词汇 + 归因 → 仍触发（向严保全）
   const authResidualClaudeMd = new Map([['firmware/main/CLAUDE.md', '+Local Auth guard covers device routes']]);
   ok(deriveDiffTier(['firmware/main/CLAUDE.md'], 'Local Auth guard covers device routes', { subsystem: 'firmware/main' }, { perFile: authResidualClaudeMd }).tier === 'high', 'auth-residual-prod-claudemd-still-hit');
   // 混合回退——归因覆盖不全 → 全量扫描 = 向严
-  const authAttrPartial = new Map([['delivery/changes/dev/x/review-packet.md', '+auth prose']]); // 第二路径未覆盖
-  ok(deriveDiffTier(['delivery/changes/dev/x/review-packet.md', 'firmware/main/y.c'], 'auth prose', {}, { perFile: authAttrPartial }).tier === 'high', 'auth-fallback-partial-coverage-whole-body');
+  const authAttrPartial = new Map([['delivery/taskpackages/x/review-packet.md', '+auth prose']]); // 第二路径未覆盖
+  ok(deriveDiffTier(['delivery/taskpackages/x/review-packet.md', 'firmware/main/y.c'], 'auth prose', {}, { perFile: authAttrPartial }).tier === 'high', 'auth-fallback-partial-coverage-whole-body');
 
   // ARQ-260916-supervisor-auth-fp-author 路径轴收窄电池（paths 轴消费测试/制品面排除闭集，与 content 轴共享单源）
   // 假阳重放（实证形态）：input-brief 制品路径含 author 子串，归因可用 → paths 轴跳过、content 轴跳过 → low

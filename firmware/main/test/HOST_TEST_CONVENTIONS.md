@@ -44,7 +44,7 @@ host-vs-device 编译矩阵落在「INF-E2 兼容矩阵」一节（同一文档�
   不再编入 host runner 每轮全量跑。
 - 2026-09-15 两批归档（human 裁定，M1 阶段一已进入）：首批 13 件冻结验收（260829–
   260911 批），随归档自然消红 4 条在册既存红（SU-E3 / KR-A6 / WSA-A4 / WSA-A6，见
-  `delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/existing-red-inventory.md`
+  `delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/existing-red-inventory.md`
   R3–R6）；第二批 6 件普通 .test.c/.cpp 单测 + 仅被它们消费的 6 个被测实现。归档后
   host runner 现役 = key_layer_dispatch（M1-K1a 冻结验收）+ host_infra_smoke（包 0
   守卫）两件。
@@ -169,7 +169,7 @@ manifest 事实，不臆测。
 ## Host 整帧截图办法（HOST CAPTURE，2026-09-13 起各 pod 通用）
 
 > 动机与首用：human 一次性授权把 Happy Flow 各页在 host 真渲染后整帧落盘存档
-> （`delivery/changes/dev/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
+> （`delivery/taskpackages/260913-happy-flow-host-capture/`）。本节把该办法固化成可复用配方：
 > 任何 pod 想给「host 可渲染的页面/控件」留截图证据，照此办理，不必重新趟坑。
 > 参考实现 = `firmware/main/test/acceptance/archive/happy_flow_capture.test.c`
 > （2026-09-15 归档移位，配方仍有效；需要截图时按本节配方接线复活或照抄写新测试文件）。

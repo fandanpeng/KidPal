@@ -82,4 +82,4 @@ E1 回归守卫首版选 voice_roundtrip_b 套件，实测发现其 **VRT-A4 证
 
 - 编译通道：C 侧冻结验收文件 `-Wall -Wextra` BUILD_CLEAN（零告警零错误）；python 侧 pytest 收集零 error。
 - 执行通道：两侧各自当场执行一次（stub ELF + pytest），error = 0（全部 failure 为断言 failure = 设计态红基线，非 error）。
-- live 面：`@pytest.mark.live` 不 auto-run；真录一轮（QQ 录入→改写→问课消费, probe ≠ exercise）由 operator 在本包相位内执行并把证据落 `delivery/changes/dev/260829-schedule-p2/`。
+- live 面：`@pytest.mark.live` 不 auto-run；真录一轮（QQ 录入→改写→问课消费, probe ≠ exercise）由 operator 在本包相位内执行并把证据落 `delivery/taskpackages/260829-schedule-p2/`。

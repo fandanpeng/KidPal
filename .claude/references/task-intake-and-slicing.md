@@ -123,7 +123,7 @@ Use one of:
 - CI/drift: `CI-types-2026-07-05`, `DRIFT-D6-CREATE-TABLE-IN-TEST`
 - Proposal: `delivery/changes/(arch|dev)/<id>/PROPOSAL.md#§x.y`，或大 feature `delivery/workstreams/<ws>/PROPOSAL.md#§x.y`
 
-For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/changes/dev/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
+For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/taskpackages/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
 
 > **DP-1 过渡 carve-out**：上述规则仅适用于既有 sourceType=proposal 老包（无 origin 或其 type 非 proposal）。新包（`origin.upstreamType=proposal`）的 proposal→docRefs back-check 由 **`origin.upstreamRef` 接管**——`origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`，`sourceRefs` 不再承载 proposal 路径（退本职为代码范围锚点）。详见 [task-intake-and-slicing.md](#origin) `### origin` 节。
 
@@ -359,25 +359,25 @@ Shape:
   {
     "decision": "D1",
     "summary": "Polish only runs when substantive content changes (three-way check).",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
     "landsIn": "acceptance:POL-B2"
   },
   {
     "decision": "D2",
     "summary": "Unit tests cover debounce merge and failure fallback.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
     "landsIn": "exitCriteria:E2"
   },
   {
     "decision": "D3",
     "summary": "Cross-slice delay to another package.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
     "landsIn": "package:s1-ai-summary-polish"
   },
   {
     "decision": "D4",
     "summary": "A dropped decision.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
     "landsIn": "dropped",
     "reason": "risk-accepted: human accepted on 2026-07-19 that X is out of scope for this slice."
   }

@@ -53,7 +53,7 @@
 | P3 | **测试命令** | `vitest`、`pnpm test`、Playwright、Prisma | 目标的测试运行器 | verify-gates.json、unit-run-check、acceptance-run-check |
 | P4 | **包管理/构建** | `pnpm` workspace | 目标构建体系 | verify-gates、worktree-bootstrap |
 | P5 | **文档骨架** | `docs/kernel`、`docs/systems`、`docs/templates` | 目标的 spec 目录结构（单系统项目可为 `docs/systems/<产品名>/`，无需 kernel 层则并入 systems） | scope-map universal.docsTopLevel、agent 定义里的设计面表述 |
-| P6 | **变更证据目录** | `delivery/changes/arch/*`、`delivery/changes/dev/*` | 可保持同名（语言无关） | changes-index、merge-driver、pod-events |
+| P6 | **变更证据目录** | `delivery/changes/arch/*`、`delivery/taskpackages/*` | 可保持同名（语言无关） | changes-index、merge-driver、pod-events |
 | P7 | **项目名 / 图索引名** | `C-AI-AInativecompany` | 新项目名（**必须与目录名一致**，否则图工具报 project not found——本仓已实证踩过） | CodebaseMemory 索引、AGENTS.md marker、skills 内 CLI 示例 |
 
 > ⚠️ **P2 是最容易被低估的一项**：契约面的物理形态由目标项目决定。「契约」不一定是一个 TypeScript 包——对一个端云协议驱动的项目，一页 markdown 格式约定就是它的全部契约。认准「改了必须走人类门的单一事实源」这个语义来选文件，别照抄本仓的目录形状。
@@ -107,7 +107,7 @@
 4. **新写指令根与强制层配置**：AGENTS / CLAUDE / DEV-GOVERNANCE（档位裁剪版）/ scope-map / settings×2 / fixtures 净版。
 5. **定义契约面并落冻结**：确认 P2 选出的契约文件归位到契约面目录，登记进 scope-map `bashDenyWrite` + loop settings `permissions.deny`；配套 rule 写清楚「影子目录禁令」（防有人另起炉灶建同名平行目录）。
 6. **全部文本替换走工程纪律**：不用裸 sed 连环替换（实测多条 `-e` 表达式遇分隔符冲突整批静默跳过）；用 Python 脚本一次执行互斥的替换规则（重叠规则会产生双重替换坏链），替换完全量 grep 验证清零后才算完。
-7. **建变更证据骨架 + 冒烟验证**：`delivery/changes/dev/INDEX.md` + `delivery/changes/arch/INDEX.md` 空骨架（INDEX 按 lane 拆分）+ 跑全套冒烟（见 §6.M）。全绿才提交。
+7. **建变更证据骨架 + 冒烟验证**：`delivery/taskpackages/INDEX.md` + `delivery/changes/arch/INDEX.md` 空骨架（INDEX 按 lane 拆分）+ 跑全套冒烟（见 §6.M）。全绿才提交。
 8. **建图索引 + 记账收尾**：按 P7 建索引（多分支 worktree 时每支手动建）；为本批写 bootstrap PROPOSAL 记账（见 §6.F），状态钉进 INDEX。
 
 ---

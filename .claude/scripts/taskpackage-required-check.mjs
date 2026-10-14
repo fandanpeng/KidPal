@@ -146,7 +146,7 @@ function collectManifestErrors(taskPackage, gitFn) {
   const cid = taskPackage.changeId;
   if (nonEmptyString(cid)) {
     let firstCommit = gitFn(`delivery/taskpackages/${cid}`);
-    if (firstCommit === null) firstCommit = gitFn(`delivery/changes/dev/${cid}`);
+    if (firstCommit === null) firstCommit = gitFn(`delivery/taskpackages/${cid}`);
     if (firstCommit !== null && firstCommit < MANIFEST_CUTOFF) return errors; // 存量放行（双闸同谓词）
   }
   if (!Array.isArray(taskPackage.changeManifest) || taskPackage.changeManifest.length === 0) {
@@ -170,7 +170,7 @@ export function collectAcBackrefErrors(tp, opts = {}) {
   const gitFn = opts.gitFn || ((rel) => gitFirstCommitDate(rel));
   const cid = nonEmptyString(tp.changeId) ? String(tp.changeId) : '';
   let firstCommit = gitFn(`delivery/taskpackages/${cid}`);
-  if (firstCommit === null) firstCommit = gitFn(`delivery/changes/dev/${cid}`);
+  if (firstCommit === null) firstCommit = gitFn(`delivery/taskpackages/${cid}`);
   if (firstCommit !== null && firstCommit < cutoff) return errors; // 存量放行（landing-summary 记抽查处置）
   const declared = new Map(); // base -> Set<ac>（sourceRefs AC 复合句法声明的号集）
   const backref = new Set(); // `${base}#${ac}`：sourceRefs tags ∪ acceptance 齿内回引
@@ -378,7 +378,7 @@ if (nonEmptyString(taskPackage.changeId)) {
   } else {
     // 无前缀 → 判白名单：git 首提 < cutoff = 老包放行
     let isGrandfathered = false;
-    let firstCommit = gitFirstCommitDate(`delivery/changes/dev/${cid}`);
+    let firstCommit = gitFirstCommitDate(`delivery/taskpackages/${cid}`);
     if (firstCommit === null) firstCommit = gitFirstCommitDate(`delivery/taskpackages/${cid}`);
     if (firstCommit === null) {
       // git 不可用 / 新 dir 无历史 → degrade: 放行（convention 兜底，不误红）

@@ -619,7 +619,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 
 ## 6. 路线图（Phase 1 · 按页面/阶段排，v1.42 重写）
 
-> 背景：MVP 基线已闭环（delivery/changes/dev/INDEX.md 22 包 closed——语音链路 live 全通、四页旧形态渲染、RTC 提醒、渲染/键路由/云部署基建，另有 happy-flow-host-capture 在办）。旧 M0–M6 里程碑（v0.1 拆分基线）已全部达成或被本轮 Phase 1 需求覆盖，v1.42 起由下表取代。**本表只定开发推进顺序，story 权威不变**（仍 = 共享底座 §2 + F1–F3 全集）。
+> 背景：MVP 基线已闭环（delivery/taskpackages/INDEX.md 22 包 closed——语音链路 live 全通、四页旧形态渲染、RTC 提醒、渲染/键路由/云部署基建，另有 happy-flow-host-capture 在办）。旧 M0–M6 里程碑（v0.1 拆分基线）已全部达成或被本轮 Phase 1 需求覆盖，v1.42 起由下表取代。**本表只定开发推进顺序，story 权威不变**（仍 = 共享底座 §2 + F1–F3 全集）。
 
 ### 阶段一 · 首页 + 百科问答（把对话主路径的体验立起来）
 - **全局 UI 基建先行**：键帽条三槽 + 页点、覆盖层 BOOT 隔离（含 `schedule_reminder_b` 验收钉点成批改）、KEY 长按「返回上一层」接线——§2.3 ⚠️ 键位对账相关项，不做则后续每页返工；

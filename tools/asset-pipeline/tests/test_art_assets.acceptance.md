@@ -25,7 +25,7 @@
 | UAA-A8 (B7) | §8 | Baloo 2 动态时间 imgfont（0–9 + 冒号 11 枚），等宽/同高/基线对齐 |
 | UAA-A9 (B8) | §9 | 资产总量逐尺寸×2 字节求和对照 SPIFFS 分区 8M，出预算报告并判定是否必须 I1 |
 | UAA-E1 | （structural 占位） | 无行为断言 |
-| UAA-E2 / E3 / E4 | §10 | 管线唯一母版 + 三处修复保留 / 验收图一律阈值化 PNG / 可行性报告落 `delivery/changes/dev/` |
+| UAA-E2 / E3 / E4 | §10 | 管线唯一母版 + 三处修复保留 / 验收图一律阈值化 PNG / 可行性报告落 `delivery/taskpackages/` |
 | （边界/错误） | §11 | 母版 symbol 缺失、出图不全、网点/框族/印章写空过、授权缺条目、imgfont 不等宽、预算未对账 → 必须红 |
 | （机器断言载体） | §12 | 与 `tools/asset-pipeline/verify_art_assets.mjs`（30 项机判）逐条对齐的真实 `assert`/`expect` 断言 + `coverage:` 标记（机械闸 `hasRealAssertion`/`hasCoverageMarker` 的承载体） |
 | （决策承载反查） | §13 | decisionCoverage 4 决策逐条落 acceptance |
@@ -271,7 +271,7 @@ ls <落档路径>/ | grep -iE 'ofl|license'
 grep -n 'SIL OPEN FONT LICENSE' <落档路径>/*OFL*
 ```
 
-**通过判据**（机判）：仓库内（建议 `tools/asset-pipeline/fonts/` 或 `delivery/changes/dev/260831-ui-art-assets/`，builder 定并
+**通过判据**（机判）：仓库内（建议 `tools/asset-pipeline/fonts/` 或 `delivery/taskpackages/260831-ui-art-assets/`，builder 定并
 写死路径）存在 ZCOOL KuaiLe 的 SIL OFL 1.1 授权原文文件（含 `SIL OPEN FONT LICENSE Version 1.1` 字样）。缺失即红。
 
 ### A7.2 免费商用条款逐字引用 + 改名禁则记录
@@ -383,7 +383,7 @@ grep -oE '\.data_size = [0-9]+' tools/simulator/LvglWindowsSimulator/assets/asse
 ### E3 观感验收一律以 1bpp 阈值化 PNG 为准
 `coverage: UAA-E3`
 
-**通过判据**（机判）：落档的验收/出样图（`delivery/changes/dev/260831-ui-art-assets/` 下）全部为阈值化 PNG——sharp 逐像素
+**通过判据**（机判）：落档的验收/出样图（`delivery/taskpackages/260831-ui-art-assets/` 下）全部为阈值化 PNG——sharp 逐像素
 扫描唯一值集合 ⊆ `{0,0,0},{255,255,255}`（每像素 RGB 三通道同值且 ∈ {0,255}），**任何 1..254 中间灰度值即红**。
 **不得提交非阈值化的真彩 ARGB 截图作为「验收图」**（对齐 TP-C §A4.4 口径）。
 
@@ -391,7 +391,7 @@ grep -oE '\.data_size = [0-9]+' tools/simulator/LvglWindowsSimulator/assets/asse
 `coverage: UAA-E4`
 
 **通过判据**（机判）：
-1. `delivery/changes/dev/260831-ui-art-assets/` 下存在《UI 资产可行性报告》（文件可定位），含：B1–B8 各元素
+1. `delivery/taskpackages/260831-ui-art-assets/` 下存在《UI 资产可行性报告》（文件可定位），含：B1–B8 各元素
    「可行/不可行 + 备选」结论 + B8 预算结论（§9）+ A4.4 的 -8° 单列结论 + A6.3 的图像字取舍；
 2. 全量资产（`assets.c/h` + `png/*`）与阈值化渲染截图（§E3）同落该目录，作为 V3 设计稿的可行性输入。
 

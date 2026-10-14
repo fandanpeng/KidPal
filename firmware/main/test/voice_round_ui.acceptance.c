@@ -177,7 +177,7 @@
  *
  *   [10] 真机轮回归增补第 3 轮（2026-09-17 device-round VQ-A7 r3 增补齿, 单独成节 =
  *       TEST 8; 既有齿 [1]-[9] 与 TEST 1-7 零改动）——human 拍板「静态盘点先干、
- *       真机照片后置精修」（delivery/changes/dev/260915-m1-k3-voice-round-ui/
+ *       真机照片后置精修」（delivery/taskpackages/260915-m1-k3-voice-round-ui/
  *       device-round-vqa7-r3.md）四类 Chrome/演出面缺口（零状态机/逻辑改动）:
  *       a. r3-A1 底部键帽条上沿 3px 实线: lcd_display.cc bottom_bar_ 创建区域内
  *          LV_BORDER_SIDE_TOP + border_width 3 双 needle（brief §2.3「上沿 3px
@@ -299,7 +299,7 @@
  *             安抚句到达即播已由 260829-voice-roundtrip VRT-A5 闭环）
  *   coverage: VQ-A7 真机确认轮（human 持板, kind=structural 对象条目）-> test 3
  *             （真机前置接缝断言: 思考页活侧可弹 + 回显/滚动/打断三手感的前置接线
- *             全部在世）; 真机轮证据落 delivery/changes/dev/260915-m1-k3-voice-round-ui/
+ *             全部在世）; 真机轮证据落 delivery/taskpackages/260915-m1-k3-voice-round-ui/
  *             ——见文件尾「VQ-A7 真机证据要求」段
  *   coverage: VQ-A8 host runner 终跑 -> test 5（注册接线结构守卫）+ 本文件尾
  *             「VQ-A8 终跑判读」段（suite 级判读: 相对有效基线零新增红 + 本包新齿全绿）
@@ -994,7 +994,7 @@ TEST_CASE("语音轮场景映射: 话语回显区逐句机制——push/滚出/�
 /* coverage: VQ-A2 -- 聆听回显区结构半：回显区容器 + echo push 消费 + user 路由入活 SetChatMessage */
 /* coverage: VQ-A3 -- 问答框长文滚动结构齿：问答框容器可滚动 + assistant 全文路由（非一行字幕） */
 /* coverage: VQ-A5 -- 四态骨架结构半：骨架对象（回显区/问答框）+ kidpal_voice_state_look 单源接线在世（骨架 owner = 本包, VQ-E4） */
-/* coverage: VQ-A7 -- 真机确认轮前置接缝断言（思考页可弹/回显/滚动/打断四接缝在世; 真机轮证据落 changes/dev, human 持板） */
+/* coverage: VQ-A7 -- 真机确认轮前置接缝断言（思考页可弹/回显/滚动/打断四接缝在世; 真机轮证据落 delivery/taskpackages, human 持板） */
 TEST_CASE("语音轮场景映射: 活侧渲染接线——思考页首接+回显/问答框布线 (VQ-A1/VQ-A2/VQ-A3/VQ-A5/VQ-A7)",
           "[voice_round_ui][VQ-A1][VQ-A2][VQ-A3][VQ-A5][VQ-A7][structural]")
 {
@@ -2074,7 +2074,7 @@ TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
  *     测试意图缺的真实行为）。test 4 对现状即绿（消费在世件: K1a 键位语义 /
  *     K2 闭集 / session_state_machine 冻结边——零回归守卫本性, 不是假绿）。
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
- *   test/host_app 均可）; delivery/changes/dev/ 下证据路径一律按相对路径 + 仓根
+ *   test/host_app 均可）; delivery/taskpackages/ 下证据路径一律按相对路径 + 仓根
  *   cwd 前提（C 侧遗留指针纪律, root 定位吃 cwd）。
  * ---------------------------------------------------------------------------
  * 增补齿义务红形态（2026-09-17 device-round VQ-A7 r1 增补, acceptance-author）:
@@ -2203,15 +2203,15 @@ TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
  *   GetHelloMessage 函数体）漂移以 RED(infra) 报出, 返 acceptance-author 复核, 不得由
  *   builder/fixer 改齿。
  * ---------------------------------------------------------------------------
- * VQ-A7 真机证据要求（本文件不承载, human 持板轮; enforce-scope 拦 changes/dev
- * 写入——本段由 planner 转写进 delivery/changes/dev/260915-m1-k3-voice-round-ui/）:
+ * VQ-A7 真机证据要求（本文件不承载, human 持板轮; 证据面 = 包内收尾制品
+ * ——本段由 planner 转写进 delivery/taskpackages/260915-m1-k3-voice-round-ui/）:
  *   ① 思考页真机首次可弹（说完一句即弹、与状态切换同刻, 不分离）;
  *   ② 聆听回显三手感: 逐句回显在「我在听！」下方 / 滚动 / 超屏高滚出;
  *   ③ 问答框长文滚动: 答案全文上屏、超出屏高滚动看完（NFR-READ-1 字号下限观感）;
  *   ④ 打断手感: 播报中 KEY 单击立即停播并聆听（100% 可靠）; KEY 长按 / BOOT =
  *      结束会话回原页。
  *   证据形态 = 模拟器截图（三态演出各态）+ 真机轮日志/照片, 落
- *   delivery/changes/dev/260915-m1-k3-voice-round-ui/。
+ *   delivery/taskpackages/260915-m1-k3-voice-round-ui/。
  * ---------------------------------------------------------------------------
  * 范围注记（无齿条目）:
  *   VQ-E1 后半——语音喊停（AEC 调优）归二期零触碰: 本包无任何 AEC/VAD 实时喊停

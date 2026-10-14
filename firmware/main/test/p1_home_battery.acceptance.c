@@ -143,7 +143,7 @@
  *   coverage: PH-A5 断网态钉点 -> test 4（WiFi 斜杠链路在世钉点 + chrome 消费守卫 +
  *             首页本地渲染零网络依赖）
  *   coverage: PH-A6 真机确认轮 -> 不在本文件（kind:structural 对象条目，human 持板
- *             ADC 实测；证据落 delivery/changes/dev/260915-m1-n1b-p1-home-battery/）
+ *             ADC 实测；证据落 delivery/taskpackages/260915-m1-n1b-p1-home-battery/）
  *   coverage: PH-A7 host runner 终跑 -> test 5（注册/接线结构守卫）+ 本文件尾
  *             「PH-A7 终跑判读」段（suite 级判读：相对有效基线零新增红 + 本包新齿全绿）
  *   coverage: PH-E1 范围纪律 -> test 5 tooth 2/3（schedule API 面零触碰 + 需求契约
@@ -1625,7 +1625,7 @@ TEST_CASE("终跑守卫: 注册接线+数据口径零触碰+需求契约canary+�
  *     - test 4 全部（PH-A5 钉点: 断网链路已实现, 本包只钉点）;
  *     - test 5 tooth 2/3/4（数据口径零触碰 + 需求契约 canary + 扫描器自检）。
  *   PH-A6 真机确认轮: human 持板 ADC 实测（电量值合理、低电闪烁/充电停闪真机可见）,
- *   证据落 delivery/changes/dev/260915-m1-n1b-p1-home-battery/。
+ *   证据落 delivery/taskpackages/260915-m1-n1b-p1-home-battery/。
  *
  * RED baseline 判读口径（freeze 相位, acceptance-author）:
  *   通道① 既有 host runner 全量实跑（新齿未接线前）= 有效基线（见 PH-A7 终跑判读）。

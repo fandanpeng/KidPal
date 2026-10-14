@@ -23,7 +23,7 @@ $(git rev-parse --git-common-dir)/devloop/reconcile.lock        # advisory lock�
 
 > 实现备注：主 worktree 下该命令返回**相对** `.git`，linked worktree 返回**绝对**路径；脚本必须对结果做 `path.resolve(cwd, commonDir)`（或用 `--path-format=absolute`），否则主 worktree 在非 repo-root cwd 下解析错。
 
-**耐久证据**仍入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；pre-cutoff 继续兼容 session-digest / loop-health / pod-journal。它们落 `delivery/changes/dev/<change-id>/` 与 `delivery/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
+**耐久证据**仍入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；pre-cutoff 继续兼容 session-digest / loop-health / pod-journal。它们落 `delivery/taskpackages/<change-id>/` 与 `delivery/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
 
 启动卡（`delivery/taskpackages/<changeId>/launch-card.md`）按**耐久证据**归类（随拆包 commit 进基准 ref），**不在**上述协调态清单内——它是包的一部分，不是运行时状态。（260921-gov-review-launch-pipeline T2 立此归类。）
 
@@ -156,8 +156,8 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 ### 10b. post-merge 簿记落点口径
 
 - **pod-events 的 merge-completed 事件**：merge-driver Step 5b 机械落 main（合并现场单文件 pathspec commit）——main 自持、feature 分支可删，planner 无需手动补（home-p1 `46d99b5` / schedule-p2 `7717eea` 的手动簿记由此机械化）。簿记失败为 advisory warn、不阻塞合并链。
-- **delivery/changes/dev/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。INDEX 已按 lane 拆分（dev / arch 各一份），Pod 合并流只触 dev 侧。
-- **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`delivery/taskpackages/<pod-id>/**` + `delivery/changes/dev/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
+- **delivery/taskpackages/INDEX.md**：不由 Step 5b 动；一致性由下批 `changes-index.mjs` 全量重建收敛（INDEX 头声明全量重建为纠偏手段）。INDEX 已按 lane 拆分（dev / arch 各一份），Pod 合并流只触 dev 侧。
+- **merge 前收尾制品**（pod-retro / supervisor-verdict / pod-events 追加）：Step 0 白名单自动收口 commit（`delivery/taskpackages/<pod-id>/**` + `delivery/taskpackages/<pod-id>/**`，目录段精确等值）；白名单外变更不吞、维持 fail。
 
 ## 10c. 版本化制品 `.vN` 槽位预约与登记表（260908 批，A-7/B-2/B-0 已裁）
 

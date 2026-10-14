@@ -1,10 +1,10 @@
 # pending-human-ruling · 260917-m1-k4-rma8-fixbatch（workstream m1-home-qa）
 
-> 状态：**待人类裁决**。写入时点：2026-09-17，机械 supervisor 合并门 ESCALATE 之后、merge-driver 之前。planner 无 AskUserQuestion 通道（非交互 fail-closed），按纪律落盘停等，不静默推进。包 closeout 制品已齐（`delivery/changes/dev/260917-m1-k4-rma8-fixbatch/`）。
+> 状态：**待人类裁决**。写入时点：2026-09-17，机械 supervisor 合并门 ESCALATE 之后、merge-driver 之前。planner 无 AskUserQuestion 通道（非交互 fail-closed），按纪律落盘停等，不静默推进。包 closeout 制品已齐（`delivery/taskpackages/260917-m1-k4-rma8-fixbatch/`）。
 
 ## 裁决事项 1（本包收口主门）· ESCALATED MERGE 批准与否
 
-- 机械闸 verdict = **ESCALATE**（`delivery/changes/dev/260917-m1-k4-rma8-fixbatch/supervisor-verdict.json`，producedBy=supervisor-verdict-gate.mjs，write-once）。升裁原因 = declared riskTier=high（triage 既定：F2 共享骨架回归半径 + 状态机轴），非发现新缺陷；机械判据 `adjudicate:critical/high→ESCALATE(priority-before-evidence)`，diffTier 实为 low、evidenceComplete=true、final r4 九闸全绿。
+- 机械闸 verdict = **ESCALATE**（`delivery/taskpackages/260917-m1-k4-rma8-fixbatch/supervisor-verdict.json`，producedBy=supervisor-verdict-gate.mjs，write-once）。升裁原因 = declared riskTier=high（triage 既定：F2 共享骨架回归半径 + 状态机轴），非发现新缺陷；机械判据 `adjudicate:critical/high→ESCALATE(priority-before-evidence)`，diffTier 实为 low、evidenceComplete=true、final r4 九闸全绿。
 - 人类若批准合并：planner 落 pod-events `human-decision` 事件（`payload.decision="approve-escalated-merge"`，eventId 即人批凭据）→ `node .claude/scripts/merge-driver.mjs --pod 260917-m1-k4-rma8-fixbatch --human-approval-ref <eventId>` 走标准合并链（merge token 串行化）。人批不豁免 off-main/契约/provenance，闸照拦。
 - 人类若驳回：指示退回路径（fixer / 撤包 / 缩圈），board 已置 blocked。
 

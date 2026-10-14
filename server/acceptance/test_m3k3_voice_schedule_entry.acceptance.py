@@ -189,7 +189,7 @@ PROMPT_DECL_YAML = DEPLOY_DIR / "provider.config.yaml"
 PROMPT_CARRIER = DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER"
 
 V6_NAME = "openclaw-system-prompt.v6.md"
-DEVICE_ROUND_RECORD = (REPO_ROOT / "delivery" / "changes" / "dev"
+DEVICE_ROUND_RECORD = (REPO_ROOT / "delivery" / "taskpackages"
                        / "260921-m3-k3-voice-schedule-entry-live"
                        / "device-round-record.md")
 
@@ -691,7 +691,7 @@ class M3K3DeviceRoundRecordAcceptance(unittest.TestCase):
 
     def test_a3_device_round_record_lands(self):
         """coverage: M3K3-A3 / M3K3-E3 — 设备轮记录文件落地（标准 closeout 制品位，
-        先例 = delivery/changes/dev/<changeId>/device-round-record.md）。"""
+        先例 = delivery/taskpackages/<changeId>/device-round-record.md）。"""
         self.assertTrue(
             DEVICE_ROUND_RECORD.is_file(),
             f"M3K3-A3 RED: 设备轮记录未落地（{DEVICE_ROUND_RECORD}）——human 持板真机"

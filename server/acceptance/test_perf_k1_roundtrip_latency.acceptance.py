@@ -103,7 +103,7 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
 
 live 证据（PERF-A1/A2/A4 判定器的输入，builder/verifier live 相位产出）：
   结构化批次 JSON 落 `probe-batches/<segment>.json`（schema 同 evaluate_batch 的 batch）,
-  位于 delivery/changes/dev/260924-perf-k1-roundtrip-latency/ 或
+  位于 delivery/taskpackages/260924-perf-k1-roundtrip-latency/ 或
   delivery/taskpackages/260924-perf-k1-roundtrip-latency/evidence/ 之下。
 
 ===========================================================================
@@ -201,7 +201,7 @@ PROMPT_V6 = DEPLOY_DIR / "openclaw-system-prompt.v6.md"
 
 CHANGE_ID = "260924-perf-k1-roundtrip-latency"
 LIVE_EVIDENCE_DIRS = [
-    REPO_ROOT / "delivery" / "changes" / "dev" / CHANGE_ID,
+    REPO_ROOT / "delivery" / "taskpackages" / CHANGE_ID,
     REPO_ROOT / "delivery" / "taskpackages" / CHANGE_ID / "evidence",
 ]
 PROBE_BATCH_DIRNAME = "probe-batches"

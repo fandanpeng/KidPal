@@ -21,7 +21,7 @@ board 已初始化（三包 queued）；workstream roadmap ② 节机械渲染�
 **边界外移交项（portfolio-planner scope 拦截，主线程执行）**：
 1. `delivery/milestones/milestones.jsonl` M2-char-window 行 planningRefs 挂 `delivery/workstreams/m2-char-window`（enforce-scope 拦：本角色只可写 taskpackages/** 与 workstreams/**）；
 2. 挂接后跑 `node .claude/scripts/delivery-status.mjs` 重建 STATUS.md；
-3. dev INDEX 行在包晋升 `delivery/changes/dev/<changeId>/` 时由 closeout 流自动刷入（changes-index `--upsert` 为 arch lane 专用，dev 新包无需也无法预先钉行）。
+3. dev INDEX 行在包晋升 `delivery/taskpackages/<changeId>/` 时由 closeout 流自动刷入（changes-index `--upsert` 为 arch lane 专用，dev 新包无需也无法预先钉行）。
 
 ## 2026-09-17 · 门 1 GREEN，launch 面就绪（本批 = 单包 K1）
 
