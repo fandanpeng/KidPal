@@ -119,9 +119,11 @@ V6_NAME = "openclaw-system-prompt.v6.md"
 V8_NAME = "openclaw-system-prompt.v8.md"
 V9_NAME = "openclaw-system-prompt.v9.md"
 
-# 冻结时点 v6 内容 hash（raw bytes 口径，v6 为 LF 落盘；v7 bump 与一切后续包不得改 v6 本体）。
-# 计算式 = sha256(read_bytes())。
-V6_SHA256 = "bf5c6b4c11fd155241a0c5e51adbe2cbcce82768426e12e1a135dfa573f6197b"
+# 冻结时点 v6 内容 hash（raw bytes 口径 = canonical blob 口径，eol=lf 钉后检出即 LF；
+# v7 bump 与一切后续包不得改 v6 本体）。
+# 计算式 = sha256(read_bytes())。261013-gov-review-lf-eol-teeth-pin 批重算：原冻结值
+# bf5c6b4c… 为 Windows CRLF 检出伪影（census 实测），重算对齐 canonical blob 425d293d…。
+V6_SHA256 = "425d293d35b106b581785a78055f5718068531b240d52db763591eed68b0cc62"
 
 # 冻结时点 v8 内容 hash（raw bytes 口径；v8 为 LF 落盘，raw == 换行归一双口径同值，
 # 2026-10-11 PN 批冻结实测）。v9 bump 与一切后续包不得改 v8 本体（V7 ⑤ 形态复刻）。
@@ -352,7 +354,8 @@ class TestPromptV7RoundRouting(unittest.TestCase):
 
     def test_a1_v6_prompt_file_immutable(self):
         """coverage: V7-A1 — v6 本体零回改（E2 铁律同形态；v1..v5 由既有各包齿钉）。
-        v6 冻结时点 sha256 = bf5c6b4c…（260925-prompt-v7-round-routing 批冻结）。"""
+        v6 冻结时点 sha256 = 425d293d…（260925-prompt-v7-round-routing 批冻结；
+        261013-gov-review-lf-eol-teeth-pin 批重算对齐 canonical blob——原值 bf5c6b4c… 为 Windows CRLF 检出伪影）。"""
         self.assertTrue(
             self.v6_path.is_file(),
             "V7-A1 RED: v6 文件被删除——历史版本共存可 diff 铁律被破坏。",

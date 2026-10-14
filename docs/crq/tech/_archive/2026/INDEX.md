@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 15 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 17 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -26,3 +26,5 @@
 | [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
 | [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | 2026-10-12 | delivery/changes/dev/261012-kidpal-realtime-facts/（②单包 Lite 落地 + 真机轮 RF-A5 过：2026-10-12 14:27 引擎日志双路径实证——带城市真查「我查了一下西安……多云转晴，白天最高大概 24 度」（真实预报，对比早上幻觉版），无城市诚实降级「今天我这里没拿到天气数据……再问我一次试试，或者告诉我你在哪个城市」零编造；human 目击「问天气好了」；TTS 层故障另立 TECH-261012-edgetts-403-hotpatch、首按键问题另立 TECH-261012-first-keypress-no-listening，均不属本条目域） |
 | [TECH-261012-p3-star-count-invisible-on-device](TECH-261012-p3-star-count-invisible-on-device.md) | P3 星星记录本列表右上角 ★/×N 计数真机不显示——根因已钉死（chrome 顶带 top_bar_ 50% 白蒙层 × 1bpp 0x7fff 阈值漂白 INK 灰；四轮 TEMP-DIAG bar 透明一行试验真机证实） | 2026-10-13 | 261012-p3-topbar-ink-bleach-fix（dev-loop integrator closeout，修复随包落地） |
+| [TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout](TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout.md) | 冻结齿按 LF 原始字节哈希钉 prompt 版本文件，但 .gitattributes 未钉这些文件的 eol=lf——Windows autocrlf=true 检出即 CRLF，三条不可变齿恒红并拦死 merge-driver 合并通道 | 2026-10-13 | 261013-gov-review-lf-eol-teeth-pin（Track B 全环：frozen v0.2 + R1→R2 GREEN + landing-verifier GREEN；eol=lf 族钉 + V6 齿常量毒化重算 + skill 注记） |
+| [TECH-261013-lang-config-thinking-key-regen-landmine](TECH-261013-lang-config-thinking-key-regen-landmine.md) | 固件 lang_config.h 生成物与 locale 源不一致——Lang::Strings::THINKING 键只存在于手工补丁的未跟踪生成头，任何触发重新生成的干净构建（新 worktree 首建 / json mtime 更新后构建）必编译红 | 2026-10-14 | 261013-lang-config-thinking-fix（dev-loop integrator closeout，修复随包落地） |
