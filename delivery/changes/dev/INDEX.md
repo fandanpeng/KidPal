@@ -71,3 +71,4 @@
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261014-voice-round-entry-exit-fixes](261014-voice-round-entry-exit-fixes/) | 2026-10-14 | delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md | closed | — |
+| [261014-engine-stop-truncation-asr-filter](261014-engine-stop-truncation-asr-filter/) | 2026-10-14 | docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md | closed | — |
