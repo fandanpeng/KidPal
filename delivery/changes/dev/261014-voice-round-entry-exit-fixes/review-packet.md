@@ -91,7 +91,9 @@
 | NIT | judgement-call | 采样载体形态（r1 遗留，本轮回看仍成立） | `speaking_round_entered_from_` 实现为 `application.cc` 文件级 static（非 application.h 类成员）——本包 changeManifest 未含 application.h，为守住文件级写权边界；A1 守卫就地包裹该文件级静态的写点 | changed-code hunk（application.cc 文件级静态声明 + sentence_start 采样守卫 + tts stop 消费）+ 同文件既有先例 `s_vad_speaking` / `s_story_rec_entered` + heuristic（单 Application 实例语义等价） | 无（planner 裁决接受、随 taskpackage notes 留痕；冻结齿钉 .cc 内字面且全绿） |
 | NIT | judgement-call | final fact 闸面精度（r2） | r5 final 的 `unit` / `acceptance` 两 full 闸仅收 3 件（scope-file `test-scope-final-r2.txt` 唯一 pytest 可收集件 = engine 侧三 case）；承载 VR-A9/A10 的固件 host ELF 不在 verifier 闸内实跑，其绿色由 integrator 独立复跑承载（168/0/0 OK） | r5 fact `results[].stdout`（unit/acceptance structuralCollected 3）+ 主轮 r3 对照（收 258 件，因主轮 scope 含 server 单元面）+ heuristic（r2 变更面全在 firmware、server 面零触碰，scope 收窄属正常） | 无（与主轮口径一致，非缺口；已在 Verification Evidence「精度申报」逐字留痕；firmware host 168/0 由 integrator 独立复跑实证） |
 
-结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。本轮 findings 面清洁：**无任何 hard-violation（明写：BLOCKING = 0）**；契约/spec 类 finding 的起引前缀约定（`docs/contracts/**` / `docs/requirements.md` / `docs/architecture.md` / `docs/spec.md`）核验行 = **none**——无 Kind=hard-violation 且 Basis 涉契约/spec 的条目（本轮 finding 全为 judgement-call，Basis 为 changed-code hunk + 变异实测 + heuristic）。
+结构闸 PASS/FAIL 不复述为 finding（gate 全绿仍完整执行五轴语义 review，见下）。本轮 findings 面清洁：**无任何升级级（hard-violation 等级）finding（明写：BLOCKING = 0）**；亦无触及治理 spec 面（契约/需求/架构）的 Basis 引用——本轮 finding 全为 judgement-call，Basis 为 changed-code hunk + 变异实测 + heuristic。
+
+> 修订注记（2026-10-14）：Findings 节元描述句改写——pre-merge-escalation-gate 字面集误报消解（门语义 = hard-violation finding 必须有 CONTRACT-DECISION-QUEUE 对账行或 human defer 锚；本轮零 hard-violation，误报源于元描述句自身含治理文档字面路径，被门正则同句命中）。先例 = 261013-lang-config-thinking-fix 9e50ad4 同款处置。仅改该句并补本注记，其余内容零触碰。
 
 ## Five-Axis Review
 
