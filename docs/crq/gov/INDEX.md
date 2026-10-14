@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 14（待拍板 0 / 待触发 12 / 已接受风险 2）；已结 83（归档索引见下）。
+**摘要**：未结 19（待拍板 0 / 待触发 17 / 已接受风险 2）；已结 83（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（12）
+## 待触发（17）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -29,6 +29,11 @@ _（无）_
 | [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | SHOULD | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 下次动 /arch-change、triage 统一路由面或 arch-review-protocol 的治理批；或 human 专项批 |
 | [ARQ-260928-landing-summary-skeleton-template](ARQ-260928-landing-summary-skeleton-template.md) | SHOULD | landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮 | 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批） |
 | [ARQ-261011-contract-gate-literal-selfquote-false-positive](ARQ-261011-contract-gate-literal-selfquote-false-positive.md) | COULD | 前置升级闸 contract-findings 字面扫描在「自述无 finding」行上误中——review-packet 复述闸字面集的合法行被当成 finding 拦合并 | 下次治理批 / 下个动 pre-merge-escalation-gate.mjs 的批；两次合并（261010 两包）各拦一次，人批凭据已留 pod-events |
+| [ARQ-261014-closeout-obligation-write-authority-vacuum](ARQ-261014-closeout-obligation-write-authority-vacuum.md) | SHOULD | 收口义务清单的写权承载缺位——CDQ 行 / 设计稿母版同步 / spine 回填 / 收口挂法句等义务无登记角色可写，撞 enforce-scope 成跨包常态 | 下次治理批；或下个触 DEV-GOVERNANCE 收口节文面的批 |
+| [ARQ-261014-device-round-de-facto-hard-gate](ARQ-261014-device-round-de-facto-hard-gate.md) | SHOULD | 真机轮已成 high tier 事实上的阻断合并硬门——defer-merge-pending-live-round 常态链高频复现，但真机验证责任位（烧录/部署）与成文缺位 | 下次治理批；或下个动 DEV-GOVERNANCE 合并门节 / launch-prep 文面的批 |
+| [ARQ-261014-merge-gate-tooling-hotfix-batch](ARQ-261014-merge-gate-tooling-hotfix-batch.md) | COULD | 合并闸工具链热修两例未入账留痕 + 生成件（INDEX.md）与手写相撞的渲染器权威口径缺口 | 下次治理批 / 下个动 merge-driver.mjs 或 pre-merge-escalation-gate.mjs 的批（与 ARQ-261011 同脚本可同批） |
+| [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
+| [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
 
 ## 已接受风险（2）
 
