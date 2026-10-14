@@ -86,6 +86,15 @@ void WebsocketProtocol::CloseAudioChannel() {
 }
 
 bool WebsocketProtocol::OpenAudioChannel() {
+    /* 261014-r2 A2 次因修正: 旧通道（IsAudioChannelOpened()==false 但 TCP 未断、超时
+     * 120s）若在下方新建套接字处裸重赋值析构, 其断连回调会因本地关标记已被复位而误判
+     * 服务端/网络侧断 -> Schedule(SetDeviceState(Idle)) 积压到主循环解阻后压在新会话之后,
+     * 产生 listening->idle 毛刺。故函数顶部先按本地关分类拆除旧通道, 其 reset() 同步等
+     * receive task 退出, stale 回调当场抑制。真服务端/网络侧断分支（本地关分类未置位的
+     * 路径）零改动。 */
+    if (websocket_) {
+        CloseAudioChannel();
+    }
     /* [S7] 新连接分类基线复位: 上一连接的陈旧「本地关」标记不污染新连接分类。 */
     local_close_pending_ = false;
     Settings settings("websocket", false);

@@ -1,0 +1,68 @@
+# test-scope-final —— 261014-voice-round-entry-exit-fixes（影响面圈定清单，integrator 落盘 2026-10-14）
+# 格式：一行一个仓根相对测试文件路径；注释行须以 # 起行（不支持行内注释——gate 读入不剥离行尾）。
+# 圈定方法（三分法：per-Pod 专属图索引可用 → 正常圈定，无降级）：
+#   detect_changes 实跑（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，
+#   base=main，merge_base=0baab93，inbound depth=2，含工作树未 commit diff）：
+#   29 seed / 90 impacted。impacted_modules 全貌 = firmware/main(5) / firmware/scripts(19) /
+#   server/gateway(20) / server/shim.py(3) / server/acceptance(24) / server/tests(19)。
+#   firmware/scripts 19 件为通用符号名（main / create_widgets / test / __init__ 等）
+#   over-approximation 噪声——script 工具面与本包状态分发改动零真实调用关系，剔除；
+#   真实测试面收窄为：firmware voice_round_ui.acceptance.c（模块，hop1）+ server acceptance
+#   8 件（hop2，非 archive）+ server tests 3 件（hop2）；archive/ 命中（test_schedule_reminder /
+#   test_g_relay_fix / test_cloud_link）按 sweep「移位即退役」剔除。server/gateway + server/shim
+#   为 engine↔设备提醒/会话链路的实现面 caller（detect_changes over-approximation），其回归面
+#   由下列 server acceptance/tests 实跑覆盖。
+#   ∪ taskpackage acceptanceTestsFile（frozen）+ impactedTestsSeed（种子/canary）+ 共享 seam 安全余量。
+#   firmware host 套件为单 ELF（host_infra_test.elf，WHOLE_ARCHIVE，见 host_app/main/CMakeLists.txt
+#   HOST_ACCEPTANCE_SRCS）——圈定清单与实跑天然对齐「套件级全量」；server 面 pytest 按文件选集跑。
+#   圈定 floor：本包冻结验收件 voice_round_ui.acceptance.c + test_kidpal_speak_sync.acceptance.py
+#   均在清单内（单包无对端冻结件）。
+# 语义铁律留痕：范围 = 影响面圈定清单（非默认全量、非缩到只剩本包档）；圈定降级 = 无（per-Pod 索引可用）。
+#   VR-A8 真机轮 = human 持板 / 主线程联测硬前置，不在本清单（live-manual 面不计入 runner 通过面）。
+# 终验执行记录（integrator 2026-10-14，逐字结果见 review-packet「Verification Evidence」段）。
+
+# ── 本包冻结验收件（acceptanceTestsFile）──
+# firmware/main/test/voice_round_ui.acceptance.c = frozen（VR-A1/A2/A3 新齿 + VR-A4 VQ-E1 冻结齿）/ seed / blast(hop1)
+firmware/main/test/voice_round_ui.acceptance.c
+# server/acceptance/test_kidpal_speak_sync.acceptance.py = frozen（VR-A6 三 case）/ seed / new-host
+server/acceptance/test_kidpal_speak_sync.acceptance.py
+
+# ── impactedTestsSeed 种子（回归观察面 + canary）──
+# firmware/main/test/record_session_live.acceptance.c = VR-A5 canary（零 diff，会话收尾缝邻接面）
+firmware/main/test/record_session_live.acceptance.c
+# firmware/main/test/host_app/main/CMakeLists.txt = 接线面在册确认（非测试文件；本包未新增 seam 文件 = 零改动）
+firmware/main/test/host_app/main/CMakeLists.txt
+
+# ── blast radius 命中测试面（detect_changes 实跑）──
+# server/acceptance/test_schedule_grid_restore.acceptance.py = hop2（reminder/schedule 链）
+server/acceptance/test_schedule_grid_restore.acceptance.py
+# server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py = hop2（alert 触发链）
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
+# server/acceptance/test_prompt_v7_round_routing.acceptance.py = hop2（轮路由）
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+# server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py = hop2
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+# server/acceptance/test_m4k1_story_cloud_link.acceptance.py = hop2（connect push 链）
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+# server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py = hop2
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+# server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py = hop2
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+# server/acceptance/test_m4k3_record_session_live.acceptance.py = hop2（会话收尾缝）
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+# server/tests/test_story_units.py = hop2（unit）
+server/tests/test_story_units.py
+# server/tests/test_reminder_units.py = hop2（unit，reminder 链核心）
+server/tests/test_reminder_units.py
+# server/tests/test_schedule_producer_units.py = hop2（unit）
+server/tests/test_schedule_producer_units.py
+
+# ── 共享 seam 安全余量（fix 语义面邻接：S-F1.4 提醒弹窗/播报 + tts 出口回 Idle + 会话状态分发）──
+# server/acceptance/test_m3k1_schedule_producer.acceptance.py = 课表生产者链（alert 上游）
+server/acceptance/test_m3k1_schedule_producer.acceptance.py
+# server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py = 语音排课入口（会话状态邻接）
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+# server/acceptance/test_tech260928_school_start_wiring.acceptance.py = school-start 注入（提醒链邻接）
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py
+# server/acceptance/test_char_meaning_merge.acceptance.py = 查字链（VR-A2 查字守卫邻接）
+server/acceptance/test_char_meaning_merge.acceptance.py
