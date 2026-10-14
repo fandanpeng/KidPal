@@ -25,3 +25,7 @@ handoff: 下一个动 server/deploy 的 dev 批；复验与 TECH-261014-post-spe
 **复验**：提醒轮引擎日志无该 ERROR 且语音仍出（`语音生成成功`/`发送第一段语音` 照常）——与 TECH-261014-post-speak-listening-lingering 的提醒复验轮天然同轮，顺带闭账。
 
 **风险**：riskTier: low——一行改动、降级路径不动、ECS 侧重启容器即生效；Track B 三要件齐（执行测出三轮逐字 / 修法明确无分叉 / 爆炸半径 = 引擎日志噪音与诊断误导，已揭示）。
+
+---
+
+**触发留痕（2026-10-14）**：承接批 = 单包 **`261014-voice-round-entry-exit-fixes`**（/triage-change 比例化 review 过门，与 TECH-261014-wakeword-connecting-voice-layer、TECH-261014-post-speak-listening-lingering 三条合流一包；「不值得单开包」判断由合流承接实现——随批 commit、不独立成包）。**human 已裁执行边界：engine-patch 改动只 commit 到分支、不部署 ECS，联测时人工部署**；引擎侧复验（无 ERROR 且语音照常下发）为该包 exit criterion，与 post-speak-listening-lingering 提醒复验轮同轮闭账。

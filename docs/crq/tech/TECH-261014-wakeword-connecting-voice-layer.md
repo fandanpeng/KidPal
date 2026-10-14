@@ -52,3 +52,7 @@ human 同日目击：KEY 单击可正常进入聆听页（KEY 路径走 [wavesha
 - **复验清单（评估后扩）**：真机轮除「闲置 >137s 唤醒 → 语音页应切 + KEY 路径回归对照」外必加四条——① 对话中服务端回答页（view=schedule 类）语音播完后仍驻留；② 查字窗播完后驻留；③ 提醒弹窗播完驻留到按键；④ 新唤醒轮不残留上一轮聊天文字。③④ 与 TECH-261014-post-speak-listening-lingering 复验轮重叠，同包一轮全覆盖。附带观察项两条（与本条同批测出，独立登记或随修复包顺带查）：① wake_round2.log 155765 段——服务端 `story_list_dispatch`（items=1）+ `display_dispatch view=schedule`（courses=39）与 `listening -> idle` 异常弹跳同帧，其后 `idle -> speaking`；② WS 重连 3.2s 期间 `AFE: Ringbuffer of AFE(FEED) is full` 刷约 50 行——重连路径音频喂入积压。
 
 **风险**：riskTier: low —— 候选 A″ 为入口直推（KEY 路径同构先例）、无新状态、不改层栈与事件机制；复验便宜（真机轮清单见建议改动末段，与 post-speak-listening-lingering 复验轮重叠）。Track B 三要件：① 执行测出 = yes（两轮真机串口捕获，见证据）；② 问题清晰修复明确无真设计分叉 = yes（候选 B 已有明确否决理由，非悬而未决分叉）；③ 爆炸半径已被执行揭示 = yes（触发条件、影响范围、绕行路径均由真机实测确认）。review profile = Track B；裁定人 = 各面 owner（固件面）。
+
+---
+
+**触发留痕（2026-10-14）**：触发条件成立——同日 /triage-change 比例化 review 过门，三条合流立单包 **`261014-voice-round-entry-exit-fixes`**（②单包 Full / riskTier medium / sourceType regression，architect 裁决 + human 触点①预授权确认；reviewed plan 落 `delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md`）。修法采纳本条**候选 A″ 薄修**（置于唤醒词 idle 分支通道判断之前、聊天清屏+voice_begin 同补；A′/B 维持否决）。条目状态保持 deferred，闭账条件 = 包 merge + 真机复验轮（条目复验清单已并入包 plan 真机节，去重合并）。

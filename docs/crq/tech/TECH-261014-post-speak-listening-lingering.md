@@ -53,3 +53,7 @@ handoff: dev-loop（/triage-change 过比例化 review 后立修复包，建议�
 **复验**：提醒轮带串口捕获 + 人在场——修后提醒播完设备应回 idle（不回聆听）、弹窗驻留与提示音不变；顺带定死「设备侧是否真出声」：引擎侧已证三轮均合成下发（上引 07:45 轮两段「18:40 的书法课」「提前 15 分钟准备哦」），设备侧播放无证据、human 目击为没听到，本轮一并闭账。查字轮修后播完即结束会话（不再聆听）、查字窗驻留不受影响。
 
 **风险**：riskTier: medium——①为局部新增收尾触发；②触及「播完回聆听」这一小智原生多轮底座语义，须区分提醒 speak 与对话 speak、改错会伤正常问答连续追问（§2.1「继续聆听；可连续追问」），且设备侧/引擎侧二选一为真分叉（存疑向严）。Track B 三要件：① 执行测出 = yes（引擎日志三轮 + 插话实证 + human 目击）；② 问题清晰但修复有真分叉（见②）；③ 爆炸半径已执行揭示 = yes（每轮提醒必发、插话后果实证）。review profile = Track B（分叉在包计划期裁，非悬而未决的设计空洞）；裁定人 = 各面 owner（固件面 + 引擎部署面）。
+
+---
+
+**触发留痕（2026-10-14）**：触发条件成立——同日 /triage-change 比例化 review 过门，三条合流立单包 **`261014-voice-round-entry-exit-fixes`**（②单包 Full / riskTier medium / sourceType regression；reviewed plan 落 `delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md`）。**真分叉②已裁：设备侧**（human 授权 architect 裁 + 主线程确认）——决定性机制事实：引擎从不向设备发 listen 类消息（上游 listenMessageHandler.py 只收不发、设备 OnIncomingJson 无 listen 分支），「引擎侧补 listen stop」生效前提是两侧同动 + 新 wire 语义、将命中跨系统结构性升级判据；设备侧判别器 =「Speaking 轮是否从 Listening 进入」，对话轮结构性不可误伤（完整论证见包 plan「fork② 裁定」节）。①查字收尾按 plan 改动点 2 实装（SendStopListening + 回 Idle）。60 秒 timer 维持不并入（非目标 1）。条目状态保持 deferred，闭账条件 = 包 merge + 提醒轮/查字轮真机复验（与 wakeword 条目复验轮同轮去重；引擎侧子项延后至 human 人工部署 ECS 后同轮闭账——human 已裁 engine-patch 只 commit 不部署）。
