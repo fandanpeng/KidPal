@@ -119,3 +119,87 @@ date: 2026-10-14
 # crossEnd 种子（planner 消费）
 
 - counterparts: firmware/main/application.cc（tts stop 出口守卫 / sentence_start 轮来源采样）↔ server/deploy/engine-patch/connection.py（_kidpal_try_speak）——提醒语音链两端（kidpal_speak 下行 / 设备收尾），本批改动不触碰 wire 语义、两端行为契约各自闭环。
+
+---
+
+# 补充轮 261014-r2（2026-10-14 真机联测后立；architect 重裁，human 授权 architect 裁 + 主线程确认）
+
+## 触发
+
+首轮真机联测（human 持板 + 串口全程捕获 `/c/tmp/live-261014-round1.log`）暴露两个正交根因，均由本轮改动面引入或放大；本补充轮 = 返修 + 闭掉既有观察项。**rigor: lite（按 human 裁定，见「载体」节）；riskTier: medium**（②c 触共享断连分类路径，不宜标 trivial）。
+
+## A1（主因，CONFIRMED）· 轮来源采样逐句覆写
+
+`sentence_start` 是**逐句**消息（application.cc:725-751），而 `speaking_round_entered_from_ = GetDeviceState()` 写在同一分支内（:740，紧邻 :741 `SetDeviceState(kDeviceStateSpeaking)`）——注释自称「每轮重置 single write point」，**实为逐句写点**：
+
+- 第 1 句：状态仍 Listening → 采样 = Listening（正确）；
+- 第 2 句起：状态已 Speaking → **覆写采样 = Speaking**。
+
+收尾判据③（:718）吃到被覆写的 Speaking → 对话轮回 Idle。**凡多句回答的轮次播完即结束会话**（真机证据：7 句妖怪轮 / 5 句天气轮末段 `speaking -> idle`；单句打招呼采样正确、行为正常）。
+
+**修法（候选 3，优于 tts start 采样与状态机侧改造）**——:740 前加一行守卫：
+
+```c
+if (GetDeviceState() != kDeviceStateSpeaking) {
+    speaking_round_entered_from_ = GetDeviceState();
+}
+SetDeviceState(kDeviceStateSpeaking);
+```
+
+「逐轮一次」由「状态离场 Speaking 才重采」自然保证：轮间 tts stop 已把状态推出 Speaking，下一轮首句必重采；abort 后同样自然重采，与原注释意图一致。
+
+## A2（次因，CONFIRMED）· 冷通道旧回调迟到打回 Idle
+
+唤醒时通道超时（`Protocol::IsTimeout()` 120s；`IsAudioChannelOpened()` 为 false 但 TCP 未断）→ idle 分支 `OpenAudioChannel()` 阻塞主循环于 TLS 握手（:1018-1024；websocket_protocol.cc:224）；其间 `CreateWebSocket(1)`（:102）裸重赋值析构旧 WebSocket → 其断连回调走 `local_close_pending_ == false` 路径（该标志刚在 :90 被复位）→ 误判「服务端/网络侧断」→ `Schedule(SetDeviceState(Idle))` 积压到主循环解阻后才跑 → 压在新会话 `connecting -> listening` 之后，产生 `listening -> idle` 毛刺。两处核验：`TryStartAutoConnect()` 该时刻为 no-op；**无通道代次判据**。附带观察项①（story_list_dispatch/display_dispatch 与 listening→idle 同帧）＝同一根因，MCP 推送时间巧合、非因果。
+
+**修法（②c）**——websocket_protocol.cc `OpenAudioChannel()` 顶部、:90 `local_close_pending_ = false` **之前**加：
+
+```c
+if (websocket_) {
+    CloseAudioChannel();   // 旧通道按本地关分类 → 抑制 stale OnDisconnected
+}
+```
+
+复用既有 `local_close_pending_` 分类；`CloseAudioChannel()` 的 `websocket_.reset()` 同步等 receive task 退出（esp_ssl.cc:77 上限 10s），stale 回调当场抑制、不再延后入队。真服务端断分支（`local_close_pending_ == false` 路径）零改动。
+
+## A3 · 正交矩阵（缺一不可）
+
+| 修的 | 未修 | 残留错 |
+|---|---|---|
+| A1 | A2 | 冷通道毛刺仍把首句前状态打成 Idle → 判据③ 回 Idle（冷通道单句打招呼仍错） |
+| A2 | A1 | 暖通道多句轮第 2 句覆写 Speaking → 回 Idle（连续追问仍错） |
+
+## 明确不做（残余登记，不扩本包）
+
+1. **F2 查字轮漏一轮 ASR**：判据② 设备侧已正确生效（SendStopListening + Idle + 查字窗 top=5 驻留）；「Hmm」音频在聆听期已送达引擎、stop 不可撤回 → 属引擎侧「stop 后丢弃 in-flight audio」缺失，设备侧无解。主线程登记 CRQ 残余项。
+2. **阻塞式 OpenAudioChannel 未动**：冷重连 3.2s 主循环阻塞仍在（附带观察项② AFE Ringbuffer full 由它而来），②c 不解决 → 独立项登记。
+3. **MQTT 协议同族潜伏**：mqtt_protocol.cc 若同构则同有 stale 回调隐患；本包只修 WS（现役方向 B 路径），登记不动。
+
+## changeManifest 增量
+
+- `firmware/main/application.cc`（A1，在原 manifest 内）
+- `firmware/main/protocols/websocket_protocol.cc`（A2，**新增**）
+- `firmware/main/test/voice_round_ui.acceptance.c`（新增齿）
+
+## 验收要点（补充轮）
+
+### host 齿
+
+1. **A1 结构齿**（形态 1，零新文件，与既有 structural 齿同款）：切 application.cc sentence_start Schedule lambda 内采样区，断言写点受 `!= kDeviceStateSpeaking` 守卫；另加负向断言防 builder 把守卫误删回无条件逐句写。
+2. **A2 结构齿**：切 websocket_protocol.cc `OpenAudioChannel` 函数体，断言 `CloseAudioChannel()` 出现在 `local_close_pending_ = false` 与 `CreateWebSocket` 之前。
+3. （acceptance-author 可选）形态 2 行为齿：抽纯 seam `kidpal_voice_round_sample_entered_from(cur, keep)`，host 三断言 R<T<F：`(Speaking,Listening)->Listening`、`(Listening,X)->Listening`、`(Idle,X)->Idle`。
+4. VQ-E1 冻结齿保持绿；相对有效基线零新增红。
+
+### 真机复验（human 持板；冷/暖双路径 + 回归）
+
+1. **暖通道多句连续追问（A1 必现路径）**：多句回答轮末段须 `speaking -> listening`（非 Idle）、可连续追问、语音页全程在位。
+2. **冷通道单句唤醒（A2 必现路径）**：闲置 >137s 后唤醒 → 无 `listening -> idle` 中间毛刺，`connecting -> listening -> speaking -> listening` 直进。
+3. **KEY 单击冷通道回归**（②c 同路径）：闲置 >137s 后 KEY → 无毛刺。
+4. **服务端/网络侧断连回归（②c 关键回归面）**：会话中服务端关会话或短暂断网 → 仍落 Idle + 自动重连。
+5. **提醒轮回归**：提醒 speak 从 Idle 插入 → 播完回 Idle 不回聆听、弹窗驻留（判据③ entered_from=Idle 正向）。
+6. **查字轮回归**：播完回 Idle、查字窗驻留；F2 只记录不复现要求。
+
+## 机械口径
+
+- 原包已 supervisor APPROVE（write-once）→ 补轮须**先显式删旧 `supervisor-verdict.json`** 再重跑闸（write-once 先例）。
+- 原包已烧录/部署的制品被本补轮取代：补轮绿后重烧 app 分区（engine-patch 无增量改动，无需重新部署）。

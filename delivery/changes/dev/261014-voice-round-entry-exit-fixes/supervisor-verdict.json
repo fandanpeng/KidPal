@@ -3,7 +3,7 @@
   "riskTier": "medium",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-10-14T04:42:10.797Z",
+  "ts": "2026-10-14T06:13:37.934Z",
   "changeId": "261014-voice-round-entry-exit-fixes",
   "originType": "regression",
   "adjudication": {
@@ -23,7 +23,7 @@
         "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
       ]
     },
-    "circuitBreakerCompletedRounds": 3,
+    "circuitBreakerCompletedRounds": 5,
     "evidenceComplete": true
   },
   "provenance": {
@@ -41,9 +41,9 @@
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json",
+        "bearingFactRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r5.json",
         "bearingFactOk": true,
-        "completedRounds": 3,
+        "completedRounds": 5,
         "closeoutArtifactsChecked": [
           "delivery/changes/dev/261014-voice-round-entry-exit-fixes/docs-delta.md",
           "delivery/changes/dev/261014-voice-round-entry-exit-fixes/review-packet.md"
@@ -131,7 +131,7 @@
       ".claude/verify-logs/1791952662753-acceptance.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json"
+      "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r5.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/changes/dev/261014-voice-round-entry-exit-fixes/docs-delta.md",
