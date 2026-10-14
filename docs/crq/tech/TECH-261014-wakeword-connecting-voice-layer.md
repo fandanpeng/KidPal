@@ -56,3 +56,9 @@ human 同日目击：KEY 单击可正常进入聆听页（KEY 路径走 [wavesha
 ---
 
 **触发留痕（2026-10-14）**：触发条件成立——同日 /triage-change 比例化 review 过门，三条合流立单包 **`261014-voice-round-entry-exit-fixes`**（②单包 Full / riskTier medium / sourceType regression，architect 裁决 + human 触点①预授权确认；reviewed plan 落 `delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md`）。修法采纳本条**候选 A″ 薄修**（置于唤醒词 idle 分支通道判断之前、聊天清屏+voice_begin 同补；A′/B 维持否决）。条目状态保持 deferred，闭账条件 = 包 merge + 真机复验轮（条目复验清单已并入包 plan 真机节，去重合并）。
+
+**真机联测留痕（2026-10-14，同日）**：首轮真机（`/c/tmp/live-261014-round1.log`）确认 **A″ 生效**（`voice_begin: new round (top=3)` 精确出现在 `idle -> connecting` 之前）。同轮暴露两个新根因（均由本包改动引入/放大），立**补充轮 261014-r2**（同包 append，plan.md「补充轮 261014-r2」节）：① `speaking_round_entered_from_` 采样写点在逐句 sentence_start 分支被覆写 → 判据③ 误伤全部多句对话轮（主因，同包返修）；② 冷通道 `OpenAudioChannel()` 裸析构旧 WebSocket → 断连回调误判为服务端断、迟到打回 Idle（次因，websocket_protocol.cc 修）。
+
+**本条目「附带观察项」处置（2026-10-14 更新）**：
+- **观察项①（story_list_dispatch + display_dispatch 与 listening→idle 异常弹跳同帧）＝根因已定**：即上述次因②的毛刺，两个 MCP 推送时间巧合、非因果——**由补充轮 261014-r2 的 ②c 修法闭账**。
+- **观察项②（WS 重连 3.2s 期间 AFE Ringbuffer full 刷屏）＝根因已定**：冷重连的 `OpenAudioChannel()` **阻塞主循环**（TLS 握手期）致音频喂入积压；`OpenAudioChannel` 阻塞形态本包未动（②c 只改旧通道拆除分类），**登记为独立残余项**（「主循环 TLS 重连阻塞」），不扩本包。

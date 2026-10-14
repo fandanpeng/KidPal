@@ -57,3 +57,9 @@ handoff: dev-loop（/triage-change 过比例化 review 后立修复包，建议�
 ---
 
 **触发留痕（2026-10-14）**：触发条件成立——同日 /triage-change 比例化 review 过门，三条合流立单包 **`261014-voice-round-entry-exit-fixes`**（②单包 Full / riskTier medium / sourceType regression；reviewed plan 落 `delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md`）。**真分叉②已裁：设备侧**（human 授权 architect 裁 + 主线程确认）——决定性机制事实：引擎从不向设备发 listen 类消息（上游 listenMessageHandler.py 只收不发、设备 OnIncomingJson 无 listen 分支），「引擎侧补 listen stop」生效前提是两侧同动 + 新 wire 语义、将命中跨系统结构性升级判据；设备侧判别器 =「Speaking 轮是否从 Listening 进入」，对话轮结构性不可误伤（完整论证见包 plan「fork② 裁定」节）。①查字收尾按 plan 改动点 2 实装（SendStopListening + 回 Idle）。60 秒 timer 维持不并入（非目标 1）。条目状态保持 deferred，闭账条件 = 包 merge + 提醒轮/查字轮真机复验（与 wakeword 条目复验轮同轮去重；引擎侧子项延后至 human 人工部署 ECS 后同轮闭账——human 已裁 engine-patch 只 commit 不部署）。
+
+**真机联测留痕（2026-10-14，同日）**——三项观察，前两项已入补充轮 261014-r2 / 残余登记：
+
+1. **判据③（本条目②的设备侧修法）在真机首轮误伤多句对话轮**——根因 = `speaking_round_entered_from_` 采样写点落在逐句 `sentence_start` 分支被覆写（第 2 句起状态已 Speaking）；**由补充轮 261014-r2 主修 A1（加 `!= kDeviceStateSpeaking` 守卫）返修**，见包 plan「补充轮 261014-r2」节。本条目②的**提醒轮语义未被破坏**（提醒 speak 从 Idle 插入 → entered_from=Idle → 播完回 Idle，正是设计意图），故提醒轮复验项照旧有效。
+2. **查字轮（本条目①）设备侧修法生效**（真机：`SendStopListening` + Idle + 查字窗 `layer_top=5` 驻留 ✓），但发现**引擎侧残余 F2**：查字播报停止后仍漏转写一轮 ASR（0.9s 后「Hmm」→ 引擎回「我在这儿呢」）——根因 = 该帧音频在聆听期已送达引擎、stop 不可撤回，引擎侧缺「stop 后丢弃 in-flight audio」；**设备侧无解，登记为引擎侧残余项**，不在本包修。
+3. **提醒轮（本条目②）真机复验未完成**：等 18:25 真实提醒轮（engine-patch 部署后同轮闭账 ERROR 消除）。
