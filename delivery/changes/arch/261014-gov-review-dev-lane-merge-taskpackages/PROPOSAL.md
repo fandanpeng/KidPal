@@ -370,3 +370,5 @@ R2 结论：打回（2 项：0 BLOCKING / 1 SHOULD / 1 NOTE）
 **GREEN 前提清单核对**（模板结构字段硬条款）：landing-manifest 围栏块在场（69 行）、packet-id 行在场、preflight 干跑全绿。R1 三项 BLOCKING、R2 一项 SHOULD 与一项 NOTE 全部落结。
 
 R3 结论：GREEN
+
+Verdict：GREEN（机锚补行 · 2026-10-14 · 本行为 R3 结论「GREEN」的 VERDICT_STATUS_RE 行首形态归位，不构成新裁决——闸 pre-merge-escalation-gate.mjs 行首判据消费此行）

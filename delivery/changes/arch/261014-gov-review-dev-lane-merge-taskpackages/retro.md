@@ -39,6 +39,7 @@
 - **F2 · V1 子检 B 过滤自噬**：现象 「预期零命中」子检对主流三段形空断言 → 根因 `-v "['\"]delivery['\"]"` 剔除的对象恰是本该抓的残留 → 证据锚 PROPOSAL §7 R1 F2（探针实证 closeout-check.mjs:183 形被吞）。教训：零命中断言禁止无差别 -v，判别力探针（现跑应命中、迁移后应零）应成子检标配。
 - **F3 · 同日改名批失察**：现象 T4/V1 仍写 docs/crq（本日 14:51 已改名 docs/debt）→ 根因 起草期 census 与改名批落地存在时序重叠，起草者未复跑改名影响 → 证据锚 PROPOSAL §7 R1 F3。教训：同日多批并行时，起草 census 须以「动工时点」重跑而非沿用早间快照。
 - **F4 · 子检 D 执行通道吞反斜杠**：现象 R2 新设的转义形子检经 agent Bash 通道退化成 plain 形（误红 + 逃检）→ 根因 工具通道层吞反斜杠（非 bash 单引号行为）→ 证据锚 PROPOSAL §7 R2 F8（两路探针复现）。教训：模式含反斜杠的验证命令须注明字节保真通道（Grep 工具 / Write+bash）。
+- **F5 · 判官结论行机锚格式坑**：现象 前置升级闸报「§7 无 architect GREEN verdict」而 R3 结论行明明在场 → 根因 本环判官结论行写 `R<n> 结论：GREEN`，闸的机锚判据 `VERDICT_STATUS_RE` 是**行首**判据（`.claude/scripts/lib/governance-gate-shared.mjs:629`），前缀致匹配不中 → 证据锚 本判官 node 权威通道验证（全文件唯一命中 = 补行、token=GREEN）。教训：判官结论行须含一行首 `Verdict：GREEN` 形态（建议钉进 PROPOSAL 模板判官产出纪律，载体见 §4 建议 6）。
 - **near-miss（最险一刻）**：机械形态批量替换把 scope-map 的两个「待删除」allow 项改写成 `delivery/taskpackages/**` 重复项、portfolio-sync 删支变成同串条件、repo-structure taskpackages 行变成自指句——若直接全量提交，撤销晋升的变更会带着「晋升语义残影」上库且子检 B 抓不到（形式上已无旧串）。没出事的原因 = T2 改法清单预先点名了这些位（删除项逐处可对）+ 提交前逐件 diff 复核。教训：纯字符串批量替换对「删除型改法」天然失明，删除项必须人工核、不能进批量脚本。
 - **另一险（通道陷阱）**：landing-fidelity-check 消费 `d5194c9^` 时 `^` 被 agent Bash→cmd.exe 通道转义吞掉、全量假红——核验官换全 SHA 自愈并留档。baseRef 形态宜用全 SHA。
 
@@ -49,6 +50,7 @@
 3. **删除型改法禁入批量替换脚本**：治 near-miss · 载体 = 登记不硬治（path-form-family 已载八形态；「删除项人工核」并入其批改纪律节，随下次实质修订携带）。
 4. **含反斜杠模式须注字节保真通道**：治 F4 · 载体 = 登记不硬治（V1 子检 D 注记已示范；path-form-family 随批携带）。
 5. **landing-fidelity-check baseRef 全 SHA 形态**：治通道陷阱 · 载体 = ARQ 收件箱（消费 ref 处注记 `^` 通道陷阱，或脚本内防御）。
+6. **判官结论行行首机锚形态纪律**：治 F5 · 载体 = ARQ 收件箱（PROPOSAL 模板判官产出纪律节补一句「§7 结论行须含一行首 `Verdict：GREEN|打回` 机锚形态」）· 预期收益 消灭升级闸 GREEN 解析盲区类 BLOCK。
 
 ## 5. 一句总结
 
