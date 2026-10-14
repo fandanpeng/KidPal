@@ -64,6 +64,38 @@ KIDPAL_DISPLAY_BLOCKS = "kidpal_display_blocks"
 # 二进制音频帧（设备腿 send_bytes 恒空），出音全部走这条既有链。
 KIDPAL_SPEAK_TYPE = "kidpal_speak"
 
+# KidPal ASR 静音幻听串表 (TaskPackage 261014-engine-stop-truncation-asr-filter /
+# 改动点 3)。Qwen/Whisper 系 ASR 在低能量/静音段的已知幻听模式——引擎收到 listen
+# stop 后对缓冲尾音（本质是停止后的静音）整段识别，恒产 "Thank you." 一类串，被当
+# 用户话送 LLM。来源：CRQ defect of record TECH-261014-engine-asr-hallucination-after-stop
+# （2026-10-14 真机两轮逐字命中）+ ECS 引擎容器 24h 日志证据。
+#   "thank you" / "thanks for watching" / "thank you for watching" = 真机逐字命中 + Whisper 系已知静音幻听
+#   "谢谢观看" / "请不吝点赞" = 同族中文视频结尾语幻听（同 ASR 家族低能量段已知模式）
+_KIDPAL_ASR_HALLUCINATIONS = frozenset({
+    "thank you",
+    "thanks for watching",
+    "thank you for watching",
+    "谢谢观看",
+    "请不吝点赞",
+})
+
+# 归一化用标点剥离器：去掉一切非「词字符 / 空白」的字符（ASCII 标点 + 中英标点），
+# **保留空格**——删空格会让「让我们一起说thank you吧」这类合法话被误判为子串命中。
+_KIDPAL_ASR_HALLUCINATION_STRIP_RE = re.compile(r"[^\w\s]")
+
+
+def _kidpal_is_asr_hallucination(text):
+    """整串相等匹配已知 ASR 幻听串（绝不子串）。
+
+    归一化：去中英标点（保留空格）→ strip → lower 后与表**整串相等**。放 LLM 入口
+    （chat）而非 ASR 结果入口：单收口在 patch 文件内、离线可测；stt 下行与意图判定
+    在 chat 之前、不受扰。
+    """
+    if not isinstance(text, str):
+        return False
+    normalized = _KIDPAL_ASR_HALLUCINATION_STRIP_RE.sub("", text).strip().lower()
+    return normalized in _KIDPAL_ASR_HALLUCINATIONS
+
 
 TAG = __name__
 
@@ -135,6 +167,11 @@ class ConnectionHandler:
         self.client_is_speaking = False
         self.client_listen_mode = "auto"
         self.client_aec = False  # 是否启用了服务端AEC
+        # KidPal listen stop 收尾截断态 (261014-engine-stop-truncation-asr-filter 改动点 2):
+        # listen stop（非 manual）置 True、listen start 复位 False。chat depth==0 入口据此
+        # 丢弃 stop 收尾后在途的 ASR 轮（自有标志，不动 client_abort——避免波及 stop 后
+        # front 注入的合法 speak/story 下发）。
+        self._kidpal_listen_closed = False
 
         # 线程任务相关
         self.loop = None  # 在 handle_connection 中获取运行中的事件循环
@@ -393,6 +430,43 @@ class ConnectionHandler:
                 f"kidpal_speak 播报注入失败: {speak_error} (提醒降级：弹窗+提示音仍必达)")
         return True
 
+    async def _kidpal_on_listen_message(self, message):
+        """listen 帧旁路截断 (261014-engine-stop-truncation-asr-filter 改动点 1)。
+
+        病灶：listenMessageHandler stop 分支在非流式 ASR 下直接触发缓冲尾音整段识别
+        （stop 分支无 auto 路径的最短音频门），设备正常收尾后引擎仍产出一条幻听 ASR
+        并送 LLM/TTS。本钩子在 _route_message 内、handleTextMessage **之前**把该会话
+        在途 asr_audio 与 asr_audio_queue 清空——先清后转，handleTextMessage 的 stop
+        分支读到空 asr_audio 经 len()>0 门不进，stop 触发的整段识别整体不发生。
+
+        manual 模式（故事录音会话）豁免：其 stop 触发 ASR 是 front pending-stop 归档的
+        承重通道（SAO-A2），截断即毁稿。消息照常转 handleTextMessage，上游语义零改。
+        解析失败/非 listen/未知 state 一律静默返回，绝不扰动上游路由。
+        """
+        try:
+            obj = json.loads(message)
+        except (TypeError, ValueError):
+            return
+        if not isinstance(obj, dict) or obj.get("type") != "listen":
+            return
+        state = obj.get("state")
+        if state == "start":
+            # 新聆听窗：复位截断态（正常对话轮不被上一轮截断误杀）。
+            self._kidpal_listen_closed = False
+            return
+        if state == "stop" and self.client_listen_mode != "manual":
+            # 承重顺序 = 先清后转：置标志 + 清缓冲尾音 + 非阻塞排空在途 PCM 帧
+            # （get_nowait 循环，循 clear_queues 先例）。
+            self._kidpal_listen_closed = True
+            self.asr_audio.clear()
+            while True:
+                try:
+                    self.asr_audio_queue.get_nowait()
+                except queue.Empty:
+                    break
+            self.logger.bind(tag=TAG).info(
+                "kidpal stop-truncation: listen stop 收尾，丢弃在途音频")
+
     async def _route_message(self, message):
         """消息路由"""
         # 检查是否已经获取到真实的绑定状态
@@ -417,6 +491,10 @@ class ConnectionHandler:
             # 提醒语音内部指令先被认领（裁定二），其余文本仍走原生 handleTextMessage
             if await self._kidpal_try_speak(message):
                 return
+            # listen 帧旁路截断（261014 改动点 1）：先清后转——认领的内部指令不被截断
+            # 扰动；handleTextMessage 的 stop 分支随后读到已清空的 asr_audio 经 len()>0
+            # 门不进，stop 触发的整段识别整体不发生。
+            await self._kidpal_on_listen_message(message)
             await handleTextMessage(self, message)
         elif isinstance(message, bytes):
             if self.vad is None or self.asr is None:
@@ -679,6 +757,8 @@ class ConnectionHandler:
             self.logger = create_connection_logger(self.selected_module_str)
             # KidPal engine-side display-strip patch ACTIVE — startup marker / drift anchor
             self.logger.bind(tag=TAG).info("kidpal display-strip patch active")
+            # KidPal stop-truncation / asr-filter patch ACTIVE — startup marker / drift anchor
+            self.logger.bind(tag=TAG).info("kidpal stop-truncation/asr-filter patch active")
 
             """初始化组件"""
             if self.config.get("prompt") is not None:
@@ -1122,6 +1202,19 @@ class ConnectionHandler:
 
         # 为最顶层时新建会话ID和发送FIRST请求
         if depth == 0:
+            # KidPal 入口守卫（261014 改动点 2）：仅 depth==0（递归工具子轮不拦）。
+            # ① stop 收尾后仍在途的 ASR 轮（~1s 竞态窗）——flag 置位即丢弃；
+            # ② ASR 静音幻听串——整串命中即丢弃。二者都在 dialogue.put / TTS FIRST
+            # 入队之前 return，绝不置 client_abort（避免波及 stop 后 front 注入的合法
+            # speak/story 下发）。
+            if self._kidpal_listen_closed:
+                self.logger.bind(tag=TAG).info(
+                    f"kidpal stop-truncation: 丢弃收尾后 ASR 轮: {query}")
+                return
+            if _kidpal_is_asr_hallucination(query):
+                self.logger.bind(tag=TAG).info(
+                    f"kidpal asr-hallucination filter: 丢弃幻听串: {query}")
+                return
             current_sentence_id = str(uuid.uuid4().hex)
             self.sentence_id = current_sentence_id  # 更新共享属性
             self.dialogue.put(Message(role="user", content=query))

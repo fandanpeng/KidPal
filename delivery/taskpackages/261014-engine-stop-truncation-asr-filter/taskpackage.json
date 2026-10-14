@@ -1,0 +1,76 @@
+{
+  "changeId": "261014-engine-stop-truncation-asr-filter",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 分流 review 产出 2026-10-14，human 触点①「顺势把它跟 engine-patch 一起做成一个小批，做吧」已确认并留痕于 plan.md frontmatter）",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy/engine-patch（connection.py 三处改动：listen 帧旁路截断 + chat 入口守卫 + 幻听串表）+ server/acceptance（新增验收件）",
+  "planRef": "delivery/taskpackages/261014-engine-stop-truncation-asr-filter/plan.md",
+  "story": "TECH-261014-engine-asr-hallucination-after-stop · 查字/播报收尾后引擎对尾音幻听出「不客气」寒暄（ET-a..g）——story 语义权威 = reviewed plan.md（architect /triage-change 2026-10-14）+ CRQ 条目；非 requirements story 命中包（sourceRefs 不含 S-Fx.y）",
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md",
+    "server/deploy/engine-patch/connection.py"
+  ],
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTier": "medium",
+  "gateProfile": ["types", "contract-drift", "test-quality", "evidence-integrity"],
+  "acceptance": [
+    "ET-a: stop 截断（auto 模式）——client_listen_mode != manual 下 listen state=stop 后：_kidpal_listen_closed 置 True、asr_audio 清空、asr_audio_queue 排空（非阻塞 get_nowait 循环）、记 info「kidpal stop-truncation: listen stop 收尾，丢弃在途音频」；消息照常转 handleTextMessage，stop 分支读到空 asr_audio 经 len()>0 门不进（stop 触发的 ASR 整体不发生）",
+    "ET-b: manual 豁免（承重齿，毁稿级）——client_listen_mode=\"manual\" 下同一 stop 消息：_kidpal_listen_closed 不置位、asr_audio/asr_audio_queue 不动（故事归档转写通道零扰动；漏做即 SAO-A2 转写被丢弃回归）",
+    "ET-c: start 复位——listen state=start 后 _kidpal_listen_closed 复位 False（新聆听窗）",
+    "ET-d: 非 listen / 畸形消息零扰动零异常——非 listen type 或畸形 JSON：静默返回、状态与 buffer/queue 零扰动、不抛异常",
+    "ET-e: 幻听串表——归一化（strip/lower/去中英标点）后整串相等匹配：\"thank you\"/\"thanks for watching\"/\"thank you for watching\"/\"谢谢观看\"/\"请不吝点赞\" 命中（含大小写/标点变体）；「谢谢你，这个字怎么写」「让我们一起说thank you吧」不命中（整串保护负锚，绝不子串）",
+    "ET-f: chat 入口守卫结构齿——depth==0 时守卫（_kidpal_listen_closed 丢弃 + 幻听串过滤）在 self.dialogue.put 与 TTS FIRST 入队之前；守卫仅 depth==0、不置 client_abort",
+    "ET-g: _route_message 拦截结构齿——_kidpal_on_listen_message 调用在 kidpal_speak 认领之后、handleTextMessage 之前（先清后转承重顺序）"
+  ],
+  "acceptanceTestsFile": ["server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py"],
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py server/acceptance/test_kidpal_speak_sync.acceptance.py（host 相关子集，循 test_kidpal_speak_sync.run protocol；真机轮 = human 手工部署 ECS 后 live-manual，不在本 Pod 跑）",
+  "redBaselineResult": "【acceptance-author 冻结落账 2026-10-14（planner 代录；改前 HEAD 实跑）】命令 = python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py server/acceptance/test_kidpal_speak_sync.acceptance.py → 退出码 1，7 failed / 3 passed / 0 error（3 passed = canary test_kidpal_speak_sync 全绿，connection.py 邻改 canary 面零回归）。逐齿红因（均设计态红，对应当前 story 缺失行为，非环境错误）：ET-a/b/c/d 红 = connection.py 无 _kidpal_on_listen_message（改动点 1 未落地）；ET-e 红 = 缺 _KIDPAL_ASR_HALLUCINATIONS 与 _kidpal_is_asr_hallucination（改动点 3 未落地）；ET-f 红 = chat depth==0 块内无 _kidpal_listen_closed 丢弃守卫（改动点 2 缺失）；ET-g 红 = _route_message 无 _kidpal_on_listen_message 拦截调用（改动点 1 未接线）。验证注记：双向可满足性实证——按 plan 改动点 1-3 逐字落地的模拟 connection.py 上 7/7 全绿；删 manual 豁免条件的变异形态恰 ET-b 独红（承重齿「不动」断言非空过）。",
+  "requiredLayers": ["unit", "acceptance-offline", "live-manual"],
+  "exitCriteria": [
+    "新 acceptance 件 ET-a..g 全绿（AST 抽取真实方法体 + SimpleNamespace 替身，循 speak_sync harness 先例）",
+    "test_kidpal_speak_sync.acceptance.py 零改动回归绿（connection.py 邻改 canary）",
+    "host 相关子集相对有效基线零新增红（不跑全量）",
+    "四零触碰面核实零 diff：firmware/**、manifest/deploy.sh/manifest.yaml/docker-compose.yml、wire 协议、manual 模式行为",
+    "all-mock 申报如实：本包含真机轮（human 手工部署后），不应 all-mock；机械闸判 all-mock 按既有纪律升 human 放行，不静默"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "docRefs": [
+    "delivery/taskpackages/261014-engine-stop-truncation-asr-filter/plan.md",
+    "docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "改动面收在 server/deploy/engine-patch/connection.py + 新增 host 验收件：docs/requirements.md、docs/architecture.md、docs/contracts/** 零 diff（plan 包边界显式零触碰面）；引擎内部处置无用户可见 spec 语义变化，真机复验结论归 CRQ 条目记账",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "planningRefs": [],
+  "mutationRequired": false,
+  "mutationSkipReason": "plan 无 mutation 取证要求：证据链由 host 离线验收件（ET-a..g 行为/结构齿，AST 抽真实方法体）+ live-manual 真机轮（human 手工部署 ECS 后五项复验）双层承载；纯引擎侧内部处置、无对端契约面",
+  "mutationEvidence": { "perAcceptance": [] },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯引擎侧内部处置：wire 协议零变更（listen start/stop 为既有消息，front 旁路消费转发不变），无 firmware 对应面；真机复验项为判定标准非改动面（plan 包边界 + crossEnd 节）"
+  },
+  "changeManifest": [
+    "server/deploy/engine-patch/connection.py",
+    "server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py"
+  ],
+  "impactedTests": [
+    "server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py",
+    "server/acceptance/test_kidpal_speak_sync.acceptance.py"
+  ],
+  "uiux": { "uiuxRequired": false, "uiuxLevel": 0 },
+  "notes": "scope-map 预检已核（Step 6）：builder allow server/** 覆盖 connection.py；acceptance-author allow server/**/acceptance/** 覆盖新验收件（enforce-scope glob 语义 ** 吞后斜杠，server/acceptance/ 命中）。1g 前置技术预评 = reviewed plan.md 本体（architect /triage-change 2026-10-14，changeManifest/impactedTests 种子已回填）。承重边界：ET-b manual 豁免漏做 = 故事毁稿回归；改动点 1 先清后转顺序依赖 handleTextMessage stop 分支 len(conn.asr_audio) 门（0.9.6 参考树已核验，部署时容器内再核）。边界留痕：只 commit 本分支，不部署 ECS（主线程手工通道）、不 push、不合并 main。mutationRequired=false：plan 无 mutation 取证要求（host 离线验收件 + 真机 live-manual 双层承载证据链）。",
+  "launchCardMissing": "delivery/taskpackages/261014-engine-stop-truncation-asr-filter/launch-card.md 不在位（launch-argument 形状探测四址之一缺）——按 plan.md frontmatter 权威推进，如实记 pod-events，不设门"
+}
