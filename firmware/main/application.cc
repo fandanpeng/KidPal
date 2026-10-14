@@ -35,6 +35,13 @@ void KidpalStorySessionEndApply(int list_page);
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
+/* 261014 VR-A2/A3 轮来源采样（fork② 判别器依据）: sentence_start 分支进 Speaking 前取
+ * 真实设备态、每轮重置（single write point）; tts stop 出口据其判「出会话 speak 不回
+ * 聆听」。文件级静态（单 Application 实例, 单写者 = sentence_start 回调 / 主循环读,
+ * 与 s_vad_speaking 同级宽松度）——本包 changeManifest 未含 application.h, 故不落类
+ * 成员以守住文件级写权边界。 */
+static DeviceState speaking_round_entered_from_ = kDeviceStateIdle;
+
 #include <cstring>
 #include <esp_log.h>
 #include <cJSON.h>
@@ -693,7 +700,22 @@ void Application::InitializeProtocol() {
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
                     if (GetDeviceState() == kDeviceStateSpeaking) {
+                        /* 261014 VR-A2 tts stop 出口三守卫（序即优先级）:
+                         * ① 手动模式既有语义（出口回 Idle, 优先级最高）;
+                         * ② 查字收尾（查字窗在前台时 tts stop -> 结束会话回 Idle, 查字窗
+                         *    驻留到按键/5 分钟兜底语义零改 —— requirements v1.37 :652
+                         *    「播完会话即结束、不回聆听态」）;
+                         * ③ 出会话 speak 不回聆听（fork② 设备侧: 轮来源非聆听态的旁路注入
+                         *    〔提醒/查字播报〕回 Idle, 不发 listen start、不开麦 ——
+                         *    TECH-261014-post-speak-listening-lingering 本体）;
+                         * else 正向路径保留: 对话轮（轮来源 == 聆听态）播完回聆听 =
+                         *    连续追问保护（requirements §2.1 :39）。 */
                         if (listening_mode_ == kListeningModeManualStop) {
+                            SetDeviceState(kDeviceStateIdle);
+                        } else if (kidpal_render_node_front_layer() == KIDPAL_LAYER_CHAR_WINDOW) {
+                            protocol_->SendStopListening();
+                            SetDeviceState(kDeviceStateIdle);
+                        } else if (speaking_round_entered_from_ != kDeviceStateListening) {
                             SetDeviceState(kDeviceStateIdle);
                         } else {
                             SetDeviceState(kDeviceStateListening);
@@ -712,6 +734,17 @@ void Application::InitializeProtocol() {
                          * sentence_start 再 sendAudio), 状态先行不丢首包。喂入经冻结映射
                          * 单源 kidpal_voice_round_scene (映射表零改动, 只动触发点), 消费
                          * 链形态与 stt 分支同款。 */
+                        /* 261014 VR-A2 轮来源采样（fork② 判别器依据）: 进 Speaking 前取真实
+                         * 设备态, 每轮 sentence_start 重置（single write point, 无 stale
+                         * 轮来源残留）——tts stop 出口据其判「出会话 speak 不回聆听」。 */
+                        /* 261014-r2 A1 主因修正: sentence_start 是逐句消息, 无条件写点会使第
+                         * 2 句起状态已 Speaking 覆写采样 -> 收尾判据③ 误伤多句对话轮回 Idle;
+                         * 加状态守卫后「逐轮一次」由「状态离场 Speaking 才重采」自然保证
+                         * （轮间 tts stop 已把状态推出 Speaking, 下一轮首句必重采; abort 后
+                         * 同样自然重采）——与原注释意图一致。 */
+                        if (GetDeviceState() != kDeviceStateSpeaking) {
+                            speaking_round_entered_from_ = GetDeviceState();
+                        }
                         SetDeviceState(kDeviceStateSpeaking);
                         kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
                                             ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
@@ -976,6 +1009,18 @@ void Application::HandleWakeWordDetectedEvent() {
         }
 
         audio_service_.EncodeWakeWord();
+
+        /* 261014 VR-A1 唤醒词 A″ 入口直推: connecting 态事件经状态合并被跳过致 VOICE 层
+         * 不推入——idle 分支在通道判断前直推轮首 UI 两件（与 connecting 分支同款语义、
+         * 与 KEY 路径入口直推同构）。置于通道判断前 = 同时覆盖「通道已温直跳 listening」
+         * 子路径（无合并也照样漏推的第二活实例）。 */
+        {
+            auto display = Board::GetInstance().GetDisplay();
+            if (kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE)) {
+                display->SetChatMessage("system", "");
+            }
+        }
+        kidpal_render_node_voice_begin();
 
         if (!protocol_->IsAudioChannelOpened()) {
             SetDeviceState(kDeviceStateConnecting);

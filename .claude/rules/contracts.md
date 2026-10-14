@@ -12,4 +12,4 @@
 ## 本仓实况注记
 
 - 契约已归位为 `docs/contracts/interface-contract.md`（2026-08-27 主线程按 human 指示归位，spec.md 链接同步改指新址）。
-- pass-oracle 第 4 关（spec↔contract 机械门）本仓暂无脚本兜底（原仓脚本绑 Prisma 结构未迁），降级为人工核对并如实记录——见 CRQ 账本条目 `docs/crq/gov/ARQ-260827-contract-mech-gate-gap.md`。
+- pass-oracle 第 4 关（spec↔contract 机械门）本仓暂无脚本兜底（原仓脚本绑 Prisma 结构未迁），降级为人工核对并如实记录——见 debt 账本条目 `docs/debt/gov/ARQ-260827-contract-mech-gate-gap.md`。

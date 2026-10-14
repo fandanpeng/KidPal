@@ -58,7 +58,7 @@ review-moderator: lane 分类 → review-depth 分类
 
 - **plan / 想法**(`/arch-change` 入口),或**已存在的 spec 路径 / governance proposal**(`/review-arch`、`/review-governance` 直达)。输入是 plan/想法时,先分类再派 architect 起草候选。
 - 蓝图 §1 北极星 / §3 七条DNA / §5 关卡纪律(charter 必载的公司原则)。
-- 可选:既往 review 的 charter/findings、CONTRACT-DECISION-QUEUE、CRQ 账本现存条目（`docs/crq/{gov,tech,requirement}/INDEX.md`）。
+- 可选:既往 review 的 charter/findings、CONTRACT-DECISION-QUEUE、debt 账本现存条目（`docs/debt/{gov,tech,requirement}/INDEX.md`）。
 
 ## Process / 步骤
 

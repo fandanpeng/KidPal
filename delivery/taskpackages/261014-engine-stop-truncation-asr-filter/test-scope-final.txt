@@ -1,0 +1,36 @@
+# test-scope-final —— 261014-engine-stop-truncation-asr-filter final 相位影响面圈定清单
+# （integrator 落盘 2026-10-14；planner 消费：node .claude/hooks/verify.mjs --evidence-mode=round
+#   --phase=final --change-id 261014-engine-stop-truncation-asr-filter --round 5
+#   --invocation-id <uuid> --scope-file <本文件>）
+# 格式：一行一个仓根相对测试文件路径；注释行须以 # 起行（acceptance-run-check / unit-run-check
+#   readScopeList 同款解析：按行读入、trim、剥 # 注释与空行）。
+#
+# ── 圈定方法（Step 4 三分法：per-Pod 图索引可用 → 正常圈定）──
+# 1. detect_changes（project=C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base=main，
+#    merge_base 0baab93b5530765ffabf3a12ae4b2c0de5fdf4a2，2026-10-14 实跑，未截断）：
+#    本包 diff 面 = server/deploy/engine-patch/connection.py（+93/−0，六 hunk）+
+#    server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py（新）。
+#    detect_changes 返回的 blast radius 混入同分支已收口包 261014-voice-round-entry-exit-fixes
+#    的改动面（front_app.py / application.cc / reminders 等测试映射，其终验已由该包
+#    test-scope-final-r2 + r5 final bearing 轮独立承载），不属于本包影响面，不并入。
+# 2. connection.py 图符号化核验：search_graph（name_pattern/_route_message/ConnectionHandler/
+#    _kidpal_on_listen_message）0 命中——engine-patch 补丁文件不入图符号集（deploy 面），
+#    其可执行测试缝 = AST 抽取真实方法体的 acceptance 件（即下方两件）。
+# 3. blast radius 映射测试（本包 diff 面）：除下方 canary 外无新增映射——图谱对
+#    connection.py 无符号级 caller 可走，trace_path 抽查不可用于该文件（如实留痕，非降级）。
+# 4. 子集口径（TaskPackage redBaselineCommand 命令面，相关子集不跑全量；
+#    全量回归 = 人工触发位）：
+#    python -m pytest -q --import-mode=importlib -m "not live"
+#      server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py
+#      server/acceptance/test_kidpal_speak_sync.acceptance.py
+# 5. 安全余量评估：manual 豁免（SAO-A2 故事归档保护面）由 ET-b 承重齿在本包冻结验收件内
+#    钉住；front 侧故事归档源（server/gateway/front/front_app.py）本包零 diff，其对应
+#    test_m4k3_record_session_live / test_m4k1_story_cloud_link 属 live/front 面、不因本包
+#    diff 面触发，不并入（并入即跨包全量爬坡）。真机五项复验 = live-manual 轮（human 手工
+#    部署 ECS 后执行），不计入 runner 通过面，本清单不含。
+
+# ── 本包冻结验收件（acceptanceTestsFile，ET-a..g 七齿全绿）──
+server/acceptance/test_engine_stop_truncation_asr_filter.acceptance.py
+
+# ── canary（connection.py 邻改零改动回归观察面，impactedTests 种子第二件）──
+server/acceptance/test_kidpal_speak_sync.acceptance.py

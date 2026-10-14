@@ -155,7 +155,7 @@ cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)�
 - ② **事件触发**：任一 Pod 出现 `human-correction` 事件（pod-events 存在叠加）→ 下一 Pod 起包前必跑（纠偏 = 流程缺口信号，不等阈值）。
 - **发起责任 = 主线程**（supervisor verdict advisory 或 closeout-check 提示位触发，**不新增工程门**，DEV-GOVERNANCE §5 保持 6 门）。`closeout-check.mjs` 的 pending 计数 advisory 提示位**程序化调用 `computeRetroScope`、不复制其求和逻辑**（F-13，防计数漂移；源桶排除使 3 消费方——closeout-check / retro-staleness-check / merge-driver——单源自动传导，零重算）。`/loop-retro` 命令步骤权威指本节、不重述条文。
 
-**凡涉及修改 Dev Loop OS 定义、agent 角色、gate、scope-map、K9/DevLoop 边界、merge 标准的输出，先成为 architect-owned ARQ candidate，交 `architect` 处理**——不直接进普通 planning/taskpackage，retro 不自我批准。**登记动作 = 主线程**（human-approved 2026-07-28）：主线程先查同根项（`grep -l "<关键词>" docs/crq/*/*.md`），有 → 追加证据注记（不新立），无 → 新立；architect 经 `/arch-change` 处理已登记 ARQ、不做登记。只有 architect outcome 明确要求实现侧（`firmware/**` / `server/**` / 测试）改动，才转实现侧 dev-loop。ARQ 出口 = CRQ 账本 [`docs/crq/gov/`](../../docs/crq/gov/)（一条目一文件 + `crq-render.mjs` 生成 `INDEX.md`）。
+**凡涉及修改 Dev Loop OS 定义、agent 角色、gate、scope-map、K9/DevLoop 边界、merge 标准的输出，先成为 architect-owned ARQ candidate，交 `architect` 处理**——不直接进普通 planning/taskpackage，retro 不自我批准。**登记动作 = 主线程**（human-approved 2026-07-28）：主线程先查同根项（`grep -l "<关键词>" docs/debt/*/*.md`），有 → 追加证据注记（不新立），无 → 新立；architect 经 `/arch-change` 处理已登记 ARQ、不做登记。只有 architect outcome 明确要求实现侧（`firmware/**` / `server/**` / 测试）改动，才转实现侧 dev-loop。ARQ 出口 = debt 账本 [`docs/debt/gov/`](../../docs/debt/gov/)（一条目一文件 + `debt-render.mjs` 生成 `INDEX.md`）。
 
 ## 7. 协调 + 合并串行化（摘要，机制见 pod-coordination.md）
 
@@ -170,4 +170,4 @@ cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)�
 - [`.claude/references/dev-loop.md`](dev-loop.md)（loop 内部机制）
 - [`.claude/references/pod-coordination.md`](pod-coordination.md)（blackboard / merge token / reconcile 机制）
 - [`.claude/references/task-intake-and-slicing.md`](task-intake-and-slicing.md)（intake / slicing / `delivery/workstreams` 归属）
-- [`docs/crq/`](../../docs/crq/)（architect-owned ARQ 出口 = CRQ 账本 gov 域：`docs/crq/gov/INDEX.md`）
+- [`docs/debt/`](../../docs/debt/)（architect-owned ARQ 出口 = debt 账本 gov 域：`docs/debt/gov/INDEX.md`）

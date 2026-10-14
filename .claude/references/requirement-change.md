@@ -57,13 +57,13 @@ requirements.md 头部版本区设状态行（形态 `> 状态：frozen | updati
 
 updating 态的 requirements.md 不得被下游引用——triage 分流、taskpackage 撰写（story 引用）、launchPreconditions 消费一律只认 frozen 态（机械判据 = §9 对应版本行在位）。**触 UI 批次的 docs/ui 在途产物同护**：下游（triage / taskpackage / dev-loop）只认 frozen，机械判据 = §9 版本行在位**且** UIUX-DESIGN-BRIEF 版本行注明对齐的本批 requirements 版本号。**launchPreconditions · UI-ready 消费**：dev-loop 起 Pod 前的触 UI 包前置检查（frozen 页图在位 + 版本行判据分形：需求批出生的包对齐本批 requirements 版本号，非需求批出生的包对齐版本不晚于当前 frozen requirements 最新版本行）以本节机械判据为权威，判据修订只改本节（防双源）。引用校验机检齿（taskpackage-required-check 校验引用版本号在 §9 在位）留根至实包跑 2–3 单后按摩擦立项。
 
-## REQ- 域 CRQ 闭环纪律
+## REQ- 域 debt 账本闭环纪律
 
-`docs/crq/requirement/` 条目（前缀 `REQ-`）必填三件：
+`docs/debt/requirement/` 条目（前缀 `REQ-`）必填三件：
 
 - **owner**：指向需求变更流程某档或 human——禁空。
 - **trigger**：何种事件触发捡起——须可判，禁「human 想起」形态。
-- **销行条件**：满足何状态可销——通常 = 对应需求变更 §9 定稿；销行跑 `node .claude/scripts/crq-render.mjs` 自动归档。
+- **销行条件**：满足何状态可销——通常 = 对应需求变更 §9 定稿；销行跑 `node .claude/scripts/debt-render.mjs` 自动归档。
 
 ## 角色分工
 

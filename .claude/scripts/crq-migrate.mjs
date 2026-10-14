@@ -1,4 +1,5 @@
-// crq-migrate.mjs — 一次性迁移：docs/ARCH-REVIEW-QUEUE.md 的 95 条表格行 → 去重后 94 个条目文件 docs/crq/<域>/<ID>.md
+// crq-migrate.mjs — 一次性迁移（已完成，retained 历史件）：docs/ARCH-REVIEW-QUEUE.md 的 95 条表格行 → 去重后 94 个条目文件（账本域目录）。
+// 261014 批随账本改名，路径与依赖已迁 `docs/debt` / `debt-ledger-shared.mjs`——本件不复跑，仅存档。
 //
 // 260923-gov-review-arq-ssot-restructure（T1 改法 4）落地。
 //   node .claude/scripts/crq-migrate.mjs --dry-run          # 只报计划（计数 + 域分布 + 逐条归类），不落盘
@@ -9,7 +10,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DOMAINS, DOMAIN_KEYS, domainDir, serializeItem, parseItem, readItems, ID_RE } from './crq-ledger-shared.mjs';
+import { DOMAINS, DOMAIN_KEYS, domainDir, serializeItem, parseItem, readItems, ID_RE } from './debt-ledger-shared.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 // 迁移源：默认工作树的 docs/ARCH-REVIEW-QUEUE.md；但该文件在 T2 已被 stub 取代，

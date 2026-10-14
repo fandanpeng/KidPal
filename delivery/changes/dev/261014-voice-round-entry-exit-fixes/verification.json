@@ -1,0 +1,64 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
+  "changeId": "261014-voice-round-entry-exit-fixes",
+  "phase": "final",
+  "round": 5,
+  "invocationId": "cce95c7c-779e-4e8c-9b1a-5ea904d56a34",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r5.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r4.json",
+  "provenance": {
+    "sourceType": "regression",
+    "triage": "主轮：architect /triage-change 分流 review 2026-10-14（plan.md frontmatter reviewed-by 行为证；fork② 真分叉裁设备侧，human 授权 architect 裁 + 主线程确认）+ human triage 触点① 已裁。补充轮 261014-r2：真机首轮联测暴露两正交根因后 architect /triage-change 二次 review（plan.md「补充轮 261014-r2」节，human 授权 architect 裁 + 主线程确认；rigor full→lite 按 human 裁定）",
+    "rigor": "lite",
+    "riskTier": "medium",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "final",
+    "round": 5,
+    "invocationId": "cce95c7c-779e-4e8c-9b1a-5ea904d56a34",
+    "observedGateExit": 0
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "timing": "scoped", "note": "pre-cutoff 存量放行（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "timing": "scoped", "note": "设备侧真编译通过（xiaozhi.bin 0x3121c0 bytes、app 分区余量 0x5de40 = 11%）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "timing": "scoped", "note": "functional = VR-A1~A7 + A9/A10；structural 豁免 = VR-A8/A11（真机轮 live-manual）；files = voice_round_ui.acceptance.c + test_kidpal_speak_sync.acceptance.py" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "timing": "scoped", "note": "9 functional acceptance；mutationEvidence functional 六条（VR-A1/A2/A3/A6 + VR-A9/A10）turnedRed=true；VR-A4/A5/A7/A8/A11 为 canary/豁免面" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "timing": "scoped", "note": "docsSyncRequired=false（plan 不动清单明载 requirements/architecture/contracts 零 diff）" },
+    { "gate": "security", "kind": "security", "ok": true, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "timing": "full", "note": "scope-file test-scope-final-r2.txt：structuralCollected 3（engine 侧 test_kidpal_speak_sync.acceptance.py 三 case）、liveDeselected 0 → 3 passed" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "timing": "full", "note": "oracle-pass（firmwareAcceptanceFiles 2 / serverAcceptanceFiles 1）+ executor-run（structuralCollected 3）→ 3 passed" }
+  ],
+  "gateSummaryPrecision": "r5 final 的 unit/acceptance 两 full 闸只收 3 件（scope-file 唯一 pytest 可收集件 = engine 侧三 case）；承载 VR-A9/A10 的固件 host ELF 不在 verifier 闸内实跑，其绿色由 integrator 独立复跑承载（见 hostRunnerIntegratorRerun）。与主轮 r3 口径一致（主轮 r3 的 unit 闸收 258 件，因主轮 scope 清单含 server 单元面；本轮 r2 变更面全在 firmware、server 面零触碰，scope 收窄属正常）。",
+  "hostRunnerIntegratorRerun": {
+    "date": "2026-10-14",
+    "firmwareHostFace": {
+      "command": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd firmware/main/test/host_app && ./build/host_infra_test.elf\"",
+      "result": "168 Tests / 0 Failures / 0 Ignored, OK",
+      "note": "VERIFY_FW_BUILD_REQUIRED=1；build 通道 ninja no-work-to-do = elf 与当前源面同 fresh——补充轮两设计态红全数转绿，与 r5 终态一致"
+    },
+    "engineFace": {
+      "command": "r5 final 的 unit/acceptance 两闸实跑（engine 侧 test_kidpal_speak_sync.acceptance.py 三 case）",
+      "result": "3 passed",
+      "note": "本轮 r2 engine-patch 零增量改动（只 commit 不部署），server 面零触碰"
+    },
+    "baseline": "补充轮立盘 HEAD（5811a7e）firmware host 166/0 → 修后 168/0（增量恰为 +2 新齿）；主轮基线锚 = launch-card 2026-10-14 @ bf96904（server 164/0/4 + firmware host 165/0）——零新增红"
+  },
+  "impactAudit": {
+    "detectChanges": "36 seed / 90 impacted（base=main，merge_base=0baab93，inbound depth=2，含工作树未 commit diff）——impacted_modules = firmware/main(5) / firmware/scripts(19，通用符号名 over-approximation 噪声) / server/gateway(20) / server/shim.py(3) / server/acceptance(24) / server/tests(19)。口径说明：该 blast radius 为整分支 vs main 的并集（含主轮 r1 的 connection.py engine-patch seed），故含 server 面命中；r2 轮增量（working-tree diff）的 seed 面全部落 firmware/main、零跨模块越界",
+    "closedSet": "git status --porcelain 实证本轮改动面 == changeManifest 增量（application.cc / websocket_protocol.cc / voice_round_ui.acceptance.c）+ delivery/ 簿记；累计 changeManifest 六文件逐一对账（host_app/main/CMakeLists.txt 零改动 = 未抽 seam 文件在册确认）；零触碰面 git status 零命中",
+    "testScopeFile": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/test-scope-final-r2.txt",
+    "scopingMethod": "三分法：per-Pod 专属图索引可用 → 正常圈定，无降级；floor = 本包两冻结验收件（单包无对端冻结件）"
+  },
+  "residual": "VR-A8（主轮真机轮六项）+ VR-A11（补充轮真机复验六项）未闭环（human 裁本 Pod 终点不含真机轮；host 面转绿即为终点）+ engine 侧真实 edge-tts 出声与「无 ERROR 且语音照常下发」延后至 human 人工部署 ECS 后闭账（执行边界；r2 零增量改动不重新部署）+ VR-A3 三边角行为 oracle 归真机轮（application.cc 不可 host 编）+ A2 触共享断连分类路径（riskTier medium 由来，行为 oracle = 真机复验节第 4 项）+ 补充轮三项残余（F2 引擎侧 ASR 丢弃 / 阻塞式 OpenAudioChannel / MQTT 同族）+ 三条 TECH CRQ 闭账条件 = 包 merge + 真机复验轮（本 integrator 未翻转 CRQ 状态）"
+}

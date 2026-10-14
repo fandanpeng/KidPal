@@ -204,6 +204,80 @@
  *       e. r3-D 内容区边框精修 + 三态元素位置精调 = 后置项, 本轮零齿（human 明令
  *          「本轮不新增内容区边框」, 等真机照片比对下一轮）。
  *
+ *   [11] 261014 入口/出口三缺口修复（TaskPackage 261014-voice-round-entry-exit-fixes,
+ *       structural 齿 = 单独成节 TEST 9; 既有齿 [1]-[10] 与 TEST 1-8 零改动）。三条
+ *       TECH CRQ 合流: TECH-261014-wakeword-connecting-voice-layer /
+ *       -post-speak-listening-lingering / -kidpal-speak-await-nonetype。本文件钉设备侧
+ *       两条（VR-A1/A2/A3）; 引擎侧（VR-A6）落 server/acceptance/
+ *       test_kidpal_speak_sync.acceptance.py。application.cc 不可 host 编，故本包走
+ *       源文本结构齿（同 TEST 3 :901 / TEST 6 :1197 先例），**不抽纯逻辑 seam**——
+ *       host_app/main/CMakeLists.txt 零改动在册确认（plan 改动点 2 的 seam 建议非硬性、
+ *       本包未采用）。真机行为 oracle 归真机轮（plan 真机节, VR-A8 structural 豁免）。
+ *
+ *       a. VR-A1 唤醒词 A″ 入口直推（HandleWakeWordDetectedEvent idle 分支, K6
+ *          auto-connect 守卫 + EncodeWakeWord() 之后、IsAudioChannelOpened() 判断之前）:
+ *          聊天清屏两件（kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE) 守卫内
+ *          SetChatMessage("system", "")）+ kidpal_render_node_voice_begin() 同补在位——
+ *          与 connecting 分支 :1058-1064 同款语义、与 KEY 路径 show_chat 直推同构；位置
+ *          在通道判断前 = 同时覆盖「通道已温直跳 listening」子路径（合并路径同时漏掉了
+ *          聊天清屏，只补压层会留上轮回显文字成新可见 bug，三件须同补）。**不碰 listening
+ *          分支**（候选 A′ 否决——voice_begin 非副作用幂等，会 pop 当轮回答页违反 OQ3=c
+ *          驻留；TEST 9 tooth 3 钉 listening 分支零 voice_begin）。
+ *
+ *       b. VR-A2 tts stop 出口三守卫（**序即优先级**）+ 轮来源采样:
+ *          ① ManualStop 既有（listening_mode_ == kListeningModeManualStop → Idle）;
+ *          ② 查字收尾（判据 = acceptance-author 定:
+ *             kidpal_render_node_front_layer() == KIDPAL_LAYER_CHAR_WINDOW →
+ *             protocol_->SendStopListening() + SetDeviceState(kDeviceStateIdle)；查字窗
+ *             驻留到按键/5 分钟兜底语义零改，requirements v1.37 :652「播完会话即结束、
+ *             不回聆听态」）;
+ *          ③ 出会话 speak 不回聆听（fork② 设备侧: sentence_start 处 SetDeviceState(
+ *             Speaking) **之前**采样冻结成员 speaking_round_entered_from_ =
+ *             GetDeviceState()；tts stop 处 entered_from != kDeviceStateListening →
+ *             SetDeviceState(kDeviceStateIdle)，不发 listen start/不开麦）。
+ *          正向路径（entered_from == kDeviceStateListening → SetDeviceState(Listening)）
+ *          保留 = 连续追问保护（requirements §2.1 :39）。采样每轮 sentence_start 重置
+ *          （single write point，无 stale 轮来源残留）。
+ *
+ *       c. VR-A3 判别器边角（fork② 不误伤连续追问的判定面，plan 回归风险 1 推演义务）:
+ *          三边角落齿——a) abort 后新一轮: 采样每轮从真实设备态取（single write point，
+ *          abort 不改写采样，下一轮 sentence_start 重采）；b) realtime(AEC) 模式: 判别器
+ *          为状态否定式（entered_from != kDeviceStateListening），不按 listening_mode_
+ *          枚举分流——realtime 对话轮同样恒从 Listening 进入 Speaking，经同一判据落正向
+ *          路径不误伤（ManualStop 是唯一 listening_mode_ 守卫）; c) ManualStop 模式:
+ *          ManualStop 守卫序首、优先级不变（既有语义）。结构性事实「对话轮恒从 Listening
+ *          进入 Speaking」使判别器不可误伤；真机行为 oracle 归真机轮。
+ *
+ *       锚漂移防护: TEST 9 各区域切取锚（HandleWakeWordDetectedEvent / kDeviceState
+ *       Listening-Speaking / tts stop-sentence_start / sentence_start-stt 帧分派）漂移时
+ *       以 RED(infra) 形态报出，须返 acceptance-author 复核钉锚，不得由 builder/fixer 改齿。
+ *
+ *   [12] 补充轮 261014-r2 真机首轮根因返修（TaskPackage 261014-voice-round-entry-exit-fixes
+ *       补充轮; VR-A9/A10 → structural 齿 = 单独成节 TEST 10/11; 既有齿 TEST 1-9 零改动）。
+ *       真机首轮联测（human 持板 + 串口捕获 /c/tmp/live-261014-round1.log）两正交根因，
+ *       均由 261014 改动面引入/放大（plan「补充轮 261014-r2」节）:
+ *       a. VR-A9（A1 主因）application.cc sentence_start Schedule lambda 内采样写点
+ *          `speaking_round_entered_from_ = GetDeviceState()` 须受 `if (GetDeviceState()
+ *          != kDeviceStateSpeaking)` 守卫包裹且紧邻 `SetDeviceState(kDeviceStateSpeaking)`
+ *          之前——sentence_start 是**逐句**消息, 无条件写点使第 2 句起状态已 Speaking
+ *          覆写采样, 收尾判据③（tts stop entered_from != Listening -> Idle）误伤多句
+ *          对话轮回 Idle（真机证: 7 句妖怪轮 / 5 句天气轮末段 speaking -> idle; 单句轮
+ *          采样正确行为正常）。负向齿钉「无条件逐句写」形态不存在（防 builder 误删守卫
+ *          回退）。
+ *       b. VR-A10（A2 次因）websocket_protocol.cc OpenAudioChannel() 函数顶部、
+ *          `local_close_pending_ = false` 复位与 `network->CreateWebSocket` 之前加
+ *          `if (websocket_) { CloseAudioChannel(); }`——唤醒时旧通道（IsAudioChannelOpened()
+ *          ==false 但 TCP 未断）按本地关分类先拆, 抑制 stale OnDisconnected 迟到
+ *          Schedule(SetDeviceState(Idle)) 压在新会话 connecting/listening 之后（冷通道
+ *          listening -> idle 毛刺）; 真服务端/网络侧断分支（local_close_pending_ ==
+ *          false 路径）零改动。
+ *       c. VR-A11（真机复验, structural 豁免）= VR-A8 同款先例, 无 runner 齿
+ *          （判定标准 = plan「补充轮 261014-r2」真机复验节六项, 由主线程在 human 回来后
+ *          组织联测）。
+ *       锚漂移防护: TEST 10 各区域切取锚（sentence_start-stt 帧分派 / OpenAudioChannel-
+ *       GetHelloMessage 函数体）漂移以 RED(infra) 报出, 须返 acceptance-author 复核钉锚,
+ *       不得由 builder/fixer 改齿。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: VQ-A1 思考页接线机制齿（渲染映射激活 + 弹出时机同刻）-> test 1（行为半:
@@ -250,6 +324,31 @@
  *   coverage: r3-C3 声波条载体于播报态渲染路径 -> test 8 tooth 5
  *   coverage: r3-D 内容区边框精修 -> 无齿条目（human 明令后置, 等真机照片比对
  *             下一轮; 本轮不新增内容区边框, 零触碰）
+ *   coverage: VR-A1 唤醒词 A″ 入口直推（application.cc HandleWakeWordDetectedEvent
+ *             idle 分支通道判断前两件同补 + listening 分支零触碰）-> test 9 tooth 1/2/3
+ *   coverage: VR-A2 tts stop 出口三守卫（序即优先级）+ sentence_start 轮来源采样 ->
+ *             test 9 tooth 4/5/6/7
+ *   coverage: VR-A3 判别器边角（abort 后新一轮 / realtime(AEC) / ManualStop 三边角）-> test 9 tooth 8/9/10
+ *   coverage: VR-A4 VQ-E1 冻结齿保持绿（60 秒 timer 零活侧 producer 未被本批改变,
+ *             不接线）-> test 5 tooth 2（零改动, 本包零触碰）
+ *   coverage: VR-A5 record_session_live.acceptance.c 零改动回归绿（会话收尾缝邻接面
+ *             canary）-> 独立文件 record_session_live.acceptance.c（零 diff + 全绿即判据,
+ *             本文件零齿）
+ *   coverage: VR-A6 engine host 断言（同步 speak_txt 驱动 _kidpal_try_speak）-> 独立文件
+ *             server/acceptance/test_kidpal_speak_sync.acceptance.py（本文件零齿）
+ *   coverage: VR-A7 相对有效基线零新增红 -> 文件尾「VQ-A8 终跑判读」段（suite 级判读,
+ *             本包新齿全绿 + 推导表外零新增红）
+ *   coverage: VR-A8 真机轮 live-manual structural 豁免 -> 无 runner 内测试（plan 真机节
+ *             六项为判定标准权威, 由主线程在 human 回来后组织联测执行）
+ *   coverage: VR-A9 补充轮 A1（主因）采样写点状态守卫（application.cc sentence_start
+ *             采样受 `!= kDeviceStateSpeaking` 守卫包裹且紧邻 SetDeviceState(Speaking)
+ *             之前 + 负向防回退「无条件逐句写」形态不存在）-> test 10 tooth 1/2/3
+ *   coverage: VR-A10 补充轮 A2（次因）旧通道拆除序（websocket_protocol.cc
+ *             OpenAudioChannel 内 CloseAudioChannel() 在 local_close_pending_ = false
+ *             复位与 network->CreateWebSocket 之前）-> test 11 tooth 1/2
+ *   coverage: VR-A11 补充轮真机复验（live-manual structural 豁免, VR-A8 同款先例）
+ *             -> 无 runner 内测试（plan「补充轮 261014-r2」真机复验节六项为判定标准权威,
+ *             由主线程在 human 回来后组织联测执行）
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   0) builder wiring 见 [6]。
@@ -284,6 +383,7 @@
 /* 被扫文件（结构齿锚, 相对仓根）。 */
 #define KVR_LCD_CC       "firmware/main/display/lcd_display.cc"
 #define KVR_APP_CC       "firmware/main/application.cc"
+#define KVR_WS_CC        "firmware/main/protocols/websocket_protocol.cc"
 #define KVR_SES_CC       "firmware/main/session_state_machine.cc"
 #define KVR_VOICE_ROUND_H "firmware/main/display/voice_round.h"
 #define KVR_VOICE_ROUND_C "firmware/main/display/voice_round.c"
@@ -670,6 +770,32 @@ static int kvr_count_in_slice(const char *slice, const char *needle)
         count++;
     }
     return count;
+}
+
+/* Whitespace-normalized slice copy（TEST 10 消费）: 去掉全部空白（空格/Tab/换行/
+ * 回车/换页/垂直制表）——冻结 needle 以去空白形态匹配, 不受 builder 缩进/折行影响
+ * （守卫/写点/拆除序判据落在「代码语义字面」而非「排版字面」）。Caller frees;
+ * slice NULL -> NULL。 */
+static char *kvr_strip_ws(const char *slice)
+{
+    size_t i, j = 0, n;
+    char *out;
+
+    if (slice == NULL) {
+        return NULL;
+    }
+    n = strlen(slice);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL); /* logic guard: host OOM must fail loudly, not read as "red" */
+    for (i = 0; i < n; i++) {
+        char c = slice[i];
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v') {
+            continue;
+        }
+        out[j++] = c;
+    }
+    out[j] = '\0';
+    return out;
 }
 
 #define KVR_REQUIRE_ROOT() TEST_ASSERT_TRUE_MESSAGE(kvr_locate_root(), \
@@ -1583,6 +1709,343 @@ TEST_CASE("语音轮场景映射: 真机轮r3静态盘点增补——Chrome分�
                q_asset));
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 9 — 261014 入口/出口三缺口修复（VR-A1/A2/A3; structural, seam [11];
+ * 单独成节, 既有齿 TEST 1-8 零改动）
+ * 三条 TECH-261014 CRQ 合流设备侧两条:
+ *   VR-A1 唤醒词 A″ 入口直推（idle 分支通道判断前两件同补 + listening 分支零触碰）;
+ *   VR-A2 tts stop 出口三守卫（序即优先级）+ sentence_start 轮来源采样;
+ *   VR-A3 判别器边角（abort 后新一轮 / realtime(AEC) / ManualStop）。
+ * RED today（设计态红, 义务红形态见文件尾「增补齿义务红形态（261014）」段）。
+ * ------------------------------------------------------------------------ */
+/* coverage: VR-A1 -- 唤醒词 A" 入口直推：application.cc HandleWakeWordDetectedEvent idle 分支、K6 auto-connect 守卫与 EncodeWakeWord() 之后、IsAudioChannelOpened() 判断之前，聊天清屏两件 + kidpal_render_node_voice_begin() 同补在位；listening 分支零触碰（候选 A′ 否决） */
+/* coverage: VR-A2 -- tts stop 出口三守卫（序即优先级: ManualStop / 查字收尾 / 出会话 speak 不回聆听）+ sentence_start 轮来源采样（每轮重置） */
+/* coverage: VR-A3 -- 判别器边角：abort 后新一轮（采样 single write point）/ realtime(AEC)（状态否定式判据不按模式枚举）/ ManualStop（守序首） */
+#define KVR_AR_SAMPLE_MEMBER "speaking_round_entered_from_"
+#define KVR_AR_SAMPLE_WRITE  "speaking_round_entered_from_ = GetDeviceState()"
+#define KVR_AR_CHAR_PRED     "kidpal_render_node_front_layer()"
+
+static long kvr_index_of(const char *hay, const char *needle)
+{
+    const char *p;
+    if (hay == NULL || needle == NULL) {
+        return -1;
+    }
+    p = strstr(hay, needle);
+    return (p == NULL) ? -1 : (long)(p - hay);
+}
+
+TEST_CASE("语音轮入口出口: 唤醒词直推+tts stop三守卫+轮来源采样 (VR-A1/VR-A2/VR-A3)",
+          "[voice_round_ui][VR-A1][VR-A2][VR-A3][structural]")
+{
+    char *region;
+    long i_enc, i_begin, i_chan, i_manual, i_char, i_enter;
+    int n, n_manual;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ===== VR-A1: 唤醒词 A″ 入口直推 ===== */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "void Application::HandleWakeWordDetectedEvent()",
+                                   "void Application::HandleStateChangedEvent()", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A1 RED(infra): application.cc HandleWakeWordDetectedEvent 区域切取失败"
+        "（锚漂移——唤醒词处理器结构被改动须复核本齿锚）");
+
+    /* ---- tooth 1 (VR-A1): VOICE 层推入 + 聊天清屏两件同补在位（与 connecting 分支
+     * :1058-1064 同款语义、与 KEY 路径 show_chat 直推同构）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "kidpal_render_node_voice_begin()") >= 1,
+        "VR-A1 RED: 唤醒词 idle 分支零 kidpal_render_node_voice_begin()——合并路径漏推 "
+        "VOICE 层（语音页整轮不显示, TECH-261014-wakeword-connecting-voice-layer 本体）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region,
+            "kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE)") >= 1 &&
+        kvr_count_in_slice(region, "SetChatMessage(\"system\", \"\")") >= 1,
+        "VR-A1 RED: 唤醒词 idle 分支聊天清屏两件缺失（chat_clear_event 守卫 + "
+        "SetChatMessage(\"system\", \"\")）——只补压层不补清屏会留上轮回显文字成新可见 bug"
+        "（三件须同补）");
+
+    /* ---- tooth 2 (VR-A1): 三件位次 = EncodeWakeWord() 之后、IsAudioChannelOpened() 之前
+     * （通道判断前 -> 同时覆盖「通道已温直跳 listening」子路径 :980-986）。 */
+    i_enc = kvr_index_of(region, "EncodeWakeWord()");
+    i_begin = kvr_index_of(region, "kidpal_render_node_voice_begin()");
+    i_chan = kvr_index_of(region, "IsAudioChannelOpened()");
+    TEST_ASSERT_TRUE_MESSAGE(
+        i_enc >= 0 && i_begin >= 0 && i_chan >= 0 && i_enc < i_begin && i_begin < i_chan,
+        kvr_fm("VR-A1 RED: A\" 三件位次错（EncodeWakeWord@%ld, voice_begin@%ld, "
+               "IsAudioChannelOpened@%ld）——须在 K6 守卫/EncodeWakeWord 之后、通道判断"
+               "之前（通道判断前 = 同时覆盖通道已温直跳 listening 子路径）",
+               i_enc, i_begin, i_chan));
+    free(region);
+
+    /* ---- tooth 3 (VR-A1): listening 分支零触碰（候选 A′ 否决——voice_begin 非副作用
+     * 幂等，会 pop 当轮回答页违反 OQ3=c 驻留；对话中段回切与提醒场景行为原样）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "case kDeviceStateListening:",
+                                   "case kDeviceStateSpeaking:", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A1 RED(infra): application.cc kDeviceStateListening 分支切取失败（锚漂移"
+        "——HandleStateChangedEvent 结构被改动须复核本齿锚）");
+    n = kvr_count_in_slice(region, "kidpal_render_node_voice_begin()");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("VR-A1 RED: listening 分支出现 kidpal_render_node_voice_begin() %d 处——"
+               "候选 A′（守卫式 ensure）已否决（voice_begin 非副作用幂等, 会 pop 当轮"
+               "回答页违反 OQ3=c 驻留; 对话中段回切与提醒场景零新增交互面）", n));
+    free(region);
+
+    /* ===== VR-A2: tts stop 出口三守卫 + sentence_start 轮来源采样 ===== */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"stop\") == 0",
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A2 RED(infra): application.cc tts stop 分支区域切取失败（锚漂移——tts 帧"
+        "分派结构被改动须复核本齿锚）");
+
+    /* ---- tooth 4 (VR-A2/VR-A3 corner c): 三守卫在位——ManualStop / 查字收尾 /
+     * entered_from。 */
+    TEST_ASSERT_TRUE_MESSAGE(kvr_count_in_slice(region, "kListeningModeManualStop") >= 1,
+        "VR-A2 RED: tts stop 出口缺 ManualStop 既有守卫（listening_mode_ == "
+        "kListeningModeManualStop -> Idle）——手动模式出口语义破坏（VR-A3 corner c）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, KVR_AR_CHAR_PRED) >= 1 &&
+        kvr_count_in_slice(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1 &&
+        kvr_count_in_slice(region, "SendStopListening()") >= 1,
+        kvr_fm("VR-A2 RED: tts stop 出口缺查字收尾守卫（%s == KIDPAL_LAYER_CHAR_WINDOW -> "
+               "SendStopListening + Idle）——查字窗播完会话未结束（requirements v1.37 :652"
+               "「播完会话即结束、不回聆听态」）", KVR_AR_CHAR_PRED));
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, KVR_AR_SAMPLE_MEMBER) >= 1 &&
+        kvr_count_in_slice(region, "kDeviceStateListening") >= 1,
+        "VR-A2 RED: tts stop 出口缺「出会话 speak 不回聆听」守卫（speaking_round_entered_"
+        "from_ != kDeviceStateListening -> Idle）——提醒/查字播后滞留聆听（TECH-261014-"
+        "post-speak-listening-lingering 本体）");
+
+    /* ---- tooth 5 (VR-A2): 正向路径保留——entered_from == Listening -> Listening
+     * （连续追问保护, requirements §2.1 :39）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "SetDeviceState(kDeviceStateListening)") >= 1,
+        "VR-A2 RED: tts stop 出口正向路径（entered_from == Listening -> "
+        "SetDeviceState(kDeviceStateListening)）丢失——对话轮播完回聆听被破坏, 连续追问"
+        "（§2.1 :39）回归");
+
+    /* ---- tooth 6 (VR-A2): 三守卫序即优先级（ManualStop 首 -> 查字 -> entered_from）。 */
+    i_manual = kvr_index_of(region, "kListeningModeManualStop");
+    i_char = kvr_index_of(region, KVR_AR_CHAR_PRED);
+    i_enter = kvr_index_of(region, KVR_AR_SAMPLE_MEMBER);
+    TEST_ASSERT_TRUE_MESSAGE(
+        i_manual >= 0 && i_char >= 0 && i_enter >= 0 &&
+        i_manual < i_char && i_char < i_enter,
+        kvr_fm("VR-A2 RED: 三守卫序错（ManualStop@%ld, 查字@%ld, entered_from@%ld）——"
+               "序即优先级: ①ManualStop 既有 ②查字收尾 ③出会话 speak 不回聆听",
+               i_manual, i_char, i_enter));
+    free(region);
+
+    /* ---- tooth 7 (VR-A2): sentence_start 处 SetDeviceState(Speaking) 之前采样轮来源
+     * （speaking_round_entered_from_ = GetDeviceState()）——每轮重置。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0",
+                                   "strcmp(type->valuestring, \"stt\") == 0", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A2 RED(infra): application.cc sentence_start 分支区域切取失败（锚漂移"
+        "——tts 帧分派结构被改动须复核本齿锚）");
+    i_begin = kvr_index_of(region, "SetDeviceState(kDeviceStateSpeaking)");
+    {
+        long i_sample = kvr_index_of(region, KVR_AR_SAMPLE_MEMBER);
+        long i_get = kvr_index_of(region, "GetDeviceState()");
+        TEST_ASSERT_TRUE_MESSAGE(
+            i_sample >= 0 && i_get >= 0 && i_begin >= 0 && i_sample < i_begin,
+            kvr_fm("VR-A2 RED: sentence_start 未在 SetDeviceState(Speaking) 之前采样轮来源"
+                   "（sample@%ld, GetDeviceState@%ld, setSpeaking@%ld）——采样须取进入 "
+                   "Speaking 前的真实设备态（fork② 判别器依据）", i_sample, i_get, i_begin));
+    }
+    free(region);
+
+    /* ===== VR-A3: 判别器边角（abort 后新一轮 / realtime(AEC) / ManualStop） ===== */
+
+    /* ---- tooth 8 (VR-A3 corner a — abort 后新一轮): 采样每轮重置 = single write point
+     * （唯一写点 = sentence_start 采样; 无 stale 轮来源残留, abort 不改写采样）。 */
+    n = kvr_count_in_file(KVR_APP_CC, KVR_AR_SAMPLE_WRITE);
+    TEST_ASSERT_TRUE_MESSAGE(n == 1,
+        kvr_fm("VR-A3 RED: 轮来源采样写点「%s」%d 处（期望恰 1: sentence_start 每轮采样）"
+               "——多写点/缺写点 = stale 轮来源残留, abort 后新一轮判别误伤",
+               KVR_AR_SAMPLE_WRITE, n));
+
+    /* ---- tooth 9 (VR-A3 corner b — realtime(AEC)): 判别器为状态否定式, 不按
+     * listening_mode_ 枚举分流——realtime 对话轮同样恒从 Listening 进入 Speaking, 经同一
+     * entered_from 判据落正向路径, 不特例误伤（ManualStop 是唯一 listening_mode_ 守卫,
+     * 见 tooth 4/6）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"stop\") == 0",
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A3 RED(infra): application.cc tts stop 分支区域切取失败（与 tooth 4/6 同锚）");
+    n = kvr_count_in_slice(region, "kListeningModeRealtime");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("VR-A3 RED: tts stop 出口按 realtime 模式特例分流 %d 处——判别器须为状态"
+               "否定式（entered_from != kDeviceStateListening）, 不按 listening_mode_ 枚举"
+               "（realtime 对话轮恒从 Listening 进入, 经同一判据不误伤; 若确需 realtime "
+               "特例请返 acceptance-author 重钉）", n));
+    free(region);
+
+    /* ---- tooth 10 (VR-A3 corner c — ManualStop): ManualStop 守卫唯一（既有语义不变）
+     * 且序首（优先级最高, 不因新守卫降级）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"stop\") == 0",
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A3 RED(infra): application.cc tts stop 分支区域切取失败（与 tooth 4/6 同锚）");
+    n_manual = kvr_count_in_slice(region, "kListeningModeManualStop");
+    i_manual = kvr_index_of(region, "kListeningModeManualStop");
+    i_char = kvr_index_of(region, KVR_AR_CHAR_PRED);
+    i_enter = kvr_index_of(region, KVR_AR_SAMPLE_MEMBER);
+    TEST_ASSERT_TRUE_MESSAGE(
+        n_manual == 1 && i_manual >= 0 && i_manual < i_char && i_manual < i_enter,
+        kvr_fm("VR-A3 RED: ManualStop 守卫异常（count=%d, ManualStop@%ld, 查字@%ld, "
+               "entered_from@%ld）——须唯一且序首（优先级最高, 既有语义不变）",
+               n_manual, i_manual, i_char, i_enter));
+    free(region);
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 10/11 — 补充轮 261014-r2（VR-A9/A10; structural, seam [12]; 单独成节,
+ * 既有齿 TEST 1-9 零改动）
+ * 真机首轮联测（human 持板 + 串口捕获 /c/tmp/live-261014-round1.log）暴露两正交
+ * 根因（均由 261014 改动面引入/放大, architect 重裁 plan「补充轮 261014-r2」节）:
+ *   A1（主因）轮来源采样逐句覆写——sentence_start 是逐句消息, 无条件写点使第 2 句起
+ *     状态已 Speaking 覆写采样, 收尾判据③ 误伤多句对话轮回 Idle; 修法 = 采样加
+ *     `!= kDeviceStateSpeaking` 守卫（application.cc, 在原 manifest 内）;
+ *   A2（次因）冷通道旧回调迟到打回 Idle——OpenAudioChannel 裸重赋值析构旧 WebSocket
+ *     致 stale OnDisconnected 走 local_close_pending_==false 路径, Schedule(Idle) 积压
+ *     到主循环解阻后压在新会话之后, 产生 listening->idle 毛刺; 修法 = OpenAudioChannel
+ *     顶部、local_close_pending_ = false 复位之前 CloseAudioChannel() 先拆旧通道
+ *     （websocket_protocol.cc, changeManifest 新增）。
+ * 判据以「去空白字面」钉（kvr_strip_ws）: 守卫/写点/拆除序判据落在代码语义字面,
+ * 不受 builder 缩进/折行影响。
+ * RED today（设计态红, 义务红形态见文件尾「增补齿义务红形态（261014-r2）」段）。
+ * 强度申报（源锚代理档, .claude/references/acceptance-evidence.md 口径）: TEST 10 两齿
+ * 均为针对**不可 host 编源文件**（application.cc / websocket_protocol.cc）的源文本结构齿,
+ * 强度档 = 源锚代理（弱于机制级/行为级）——真机行为 oracle 归真机轮（plan「补充轮
+ * 261014-r2」真机复验节, VR-A11 structural 豁免）; 实现形态的行为等价假设已在备选返钉
+ * 路径显式化。
+ * ------------------------------------------------------------------------ */
+/* coverage: VR-A9 -- 补充轮 A1（主因）: application.cc sentence_start 采样写点受 `if (GetDeviceState() != kDeviceStateSpeaking)` 守卫包裹且紧邻 SetDeviceState(Speaking) 之前 + 负向齿钉「无条件逐句写」形态不存在 */
+/* coverage: VR-A10 -- 补充轮 A2（次因）: websocket_protocol.cc OpenAudioChannel 内 CloseAudioChannel() 出现在 local_close_pending_ = false 复位与 network->CreateWebSocket 之前 */
+#define KVR_WS_SAMPLE "speaking_round_entered_from_=GetDeviceState();"
+#define KVR_WS_GUARD  "if(GetDeviceState()!=kDeviceStateSpeaking){"
+#define KVR_WS_UNGUARDED \
+    "speaking_round_entered_from_=GetDeviceState();SetDeviceState(kDeviceStateSpeaking)"
+
+TEST_CASE("语音轮入口出口: 补充轮A1 采样写点状态守卫 (VR-A9)",
+          "[voice_round_ui][VR-A9][structural]")
+{
+    char *region;
+    char *strip;
+    long i_guard, i_sample, i_set, i_guard_close;
+    int n;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ===== VR-A9（A1 主因）: sentence_start 采样写点状态守卫 ===== */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "strcmp(state->valuestring, \"sentence_start\") == 0",
+                                   "strcmp(type->valuestring, \"stt\") == 0", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A9 RED(infra): application.cc sentence_start 分支区域切取失败（锚漂移"
+        "——tts 帧分派结构被改动须复核本齿锚）");
+    strip = kvr_strip_ws(region);
+    TEST_ASSERT_NOT_NULL_MESSAGE(strip,
+        "VR-A9 RED(infra): 去空白归一化器失灵（kvr_strip_ws 返回 NULL）");
+
+    /* ---- tooth 1 (VR-A9): 采样写点受 `if (GetDeviceState() != kDeviceStateSpeaking)`
+     * 守卫包裹——现状无条件逐句写 = 第 2 句起状态已 Speaking 覆写采样。 */
+    n = kvr_count_in_slice(strip, KVR_WS_GUARD);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("VR-A9 RED: sentence_start 采样写点零状态守卫「%s」（现 %d 处）——"
+               "无条件逐句写使第 2 句起状态已 Speaking 覆写采样, 收尾判据③ 误伤多句"
+               "对话轮回 Idle（补充轮 A1 主因; 真机证: 7 句妖怪轮 / 5 句天气轮末段 "
+               "speaking -> idle）", KVR_WS_GUARD, n));
+
+    /* ---- tooth 2 (VR-A9): 守卫序 = 守卫开括号 -> 采样 -> 守卫闭括号, 且采样在
+     * SetDeviceState(kDeviceStateSpeaking) 之前（写点受守卫包裹 + 紧邻 setSpeaking 之前;
+     * plan 修法: `if (GetDeviceState() != kDeviceStateSpeaking) { speaking_round_entered_
+     * from_ = GetDeviceState(); } SetDeviceState(kDeviceStateSpeaking);`）。 */
+    i_guard = kvr_index_of(strip, KVR_WS_GUARD);
+    i_sample = kvr_index_of(strip, KVR_WS_SAMPLE);
+    i_set = kvr_index_of(strip, "SetDeviceState(kDeviceStateSpeaking)");
+    i_guard_close = (i_guard >= 0) ? (i_guard + kvr_index_of(strip + i_guard, "}")) : -1;
+    TEST_ASSERT_TRUE_MESSAGE(
+        i_guard >= 0 && i_sample >= 0 && i_set >= 0 &&
+        i_guard < i_sample && i_sample < i_guard_close && i_sample < i_set,
+        kvr_fm("VR-A9 RED: 采样写点未受状态守卫包裹（guard@%ld, sample@%ld, "
+               "guardClose@%ld, setSpeaking@%ld）——采样须在 `if (GetDeviceState() != "
+               "kDeviceStateSpeaking) {` 块内、且紧邻 `SetDeviceState(kDeviceStateSpeaking)` "
+               "之前（补充轮 A1 修法形态）", i_guard, i_sample, i_guard_close, i_set));
+
+    /* ---- tooth 3 (VR-A9 负向): 「无条件逐句写」形态不存在——防 builder 把守卫误删
+     * 回无条件写（回退即本齿转红: 采样 `;` 直接 `SetDeviceState` = 无守卫夹层）。 */
+    n = kvr_count_in_slice(strip, KVR_WS_UNGUARDED);
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("VR-A9 RED(负向): 采样写点仍为无条件逐句写形态（现 %d 处）——守卫被误删"
+               "回无条件写, 第 2 句起覆写采样复发, 收尾判据③ 重新误伤多句对话轮"
+               "（补充轮 A1 防回退齿）", n));
+    free(strip);
+    free(region);
+}
+
+TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
+          "[voice_round_ui][VR-A10][structural]")
+{
+    char *region;
+    char *strip;
+    long i_close, i_reset, i_create;
+    int n;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ===== VR-A10（A2 次因）: OpenAudioChannel 旧通道拆除序 ===== */
+    region = kvr_region_between_ex(KVR_WS_CC,
+                                   "bool WebsocketProtocol::OpenAudioChannel() {",
+                                   "std::string WebsocketProtocol::GetHelloMessage() {",
+                                   0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "VR-A10 RED(infra): websocket_protocol.cc OpenAudioChannel 区域切取失败（锚漂移"
+        "——函数签名/相邻函数被改动须复核本齿锚）");
+
+    /* ---- tooth 4 (VR-A10): 旧通道先拆——函数体内 CloseAudioChannel() 调用在位, 且为
+     * 条件形态（`if (websocket_)`）, 抑制 stale OnDisconnected（裸重赋值析构旧 WebSocket
+     * 致其回调走 local_close_pending_==false 路径打回 Idle）。 */
+    n = kvr_count_in_slice(region, "CloseAudioChannel();");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("VR-A10 RED: OpenAudioChannel 函数体零 CloseAudioChannel() 调用（现 %d "
+               "处）——裸重赋值析构旧 WebSocket, stale OnDisconnected 迟到 "
+               "Schedule(SetDeviceState(Idle)) 压在新会话之后（补充轮 A2 次因; 冷通道 "
+               "listening -> idle 毛刺）", n));
+    strip = kvr_strip_ws(region);
+    TEST_ASSERT_NOT_NULL_MESSAGE(strip,
+        "VR-A10 RED(infra): 去空白归一化器失灵（kvr_strip_ws 返回 NULL）");
+    TEST_ASSERT_TRUE_MESSAGE(kvr_count_in_slice(strip, "if(websocket_)") >= 1,
+        "VR-A10 RED: 旧通道拆除缺条件守卫「if (websocket_)」——须仅在旧 websocket_ 在世"
+        "时先拆（plan 补充轮 A2 修法: `if (websocket_) { CloseAudioChannel(); }`）");
+    free(strip);
+
+    /* ---- tooth 5 (VR-A10): 拆除序——CloseAudioChannel() 在 `local_close_pending_ =
+     * false` 复位与 `network->CreateWebSocket` 之前（旧通道按本地关分类先拆, 抑制 stale
+     * 回调; 真服务端/网络侧断分支零改动）。取首个匹配（复位 = 函数顶部 :90 处, 与
+     * OnDisconnected 回调内同名写点区分——后者在函数体后段, 不作序锚）。 */
+    i_close = kvr_index_of(region, "CloseAudioChannel();");
+    i_reset = kvr_index_of(region, "local_close_pending_ = false");
+    i_create = kvr_index_of(region, "CreateWebSocket");
+    TEST_ASSERT_TRUE_MESSAGE(
+        i_close >= 0 && i_reset >= 0 && i_create >= 0 &&
+        i_close < i_reset && i_reset < i_create,
+        kvr_fm("VR-A10 RED: 旧通道拆除序错（close@%ld, reset@%ld, create@%ld）——"
+               "CloseAudioChannel() 须在 `local_close_pending_ = false` 复位与 "
+               "`network->CreateWebSocket` 之前（plan 补充轮 A2 修法: 顶部先拆旧通道）",
+               i_close, i_reset, i_create));
+    free(region);
+}
+
 /* ---------------------------------------------------------------------------
  * VQ-A8 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -1678,6 +2141,68 @@ TEST_CASE("语音轮场景映射: 真机轮r3静态盘点增补——Chrome分�
  *   锚（与 TEST 7 同锚）/ home_p1.c 存在性锚漂移以 RED(infra) 报出, 返 acceptance-
  *   author 复核, 不得由 builder/fixer 改齿。
  * ---------------------------------------------------------------------------
+ * 增补齿义务红形态（261014）（2026-10-14 261014-voice-round-entry-exit-fixes 冻结,
+ * acceptance-author）:
+ *   TEST 9 = 设计态红（现实现下 FAIL 为预期, builder 接线后转绿, verifier 终验;
+ *   不计入「新增红」违约——真实缺失行为红, 与 freeze 相位义务红同性质）:
+ *     - TEST 9 tooth 1/2（唤醒词 idle 分支零 kidpal_render_node_voice_begin() +
+ *       聊天清屏两件缺失——A″ 三件未接线）;
+ *     - TEST 9 tooth 3（listening 分支现状零 voice_begin = 现状绿守卫; 钉候选 A′ 不进
+ *       该分支, 不构成假绿——同节红半承载真实缺失行为）;
+ *     - TEST 9 tooth 4/5/6（tts stop 出口现仅 ManualStop + else->Listening 两分支,
+ *       零查字收尾 / 零 entered_from / 零 SendStopListening——三守卫未接线; 正向路径
+ *       else->Listening 现状绿守卫）;
+ *     - TEST 9 tooth 7（sentence_start 分支现状零轮来源采样——sampling 未接线）;
+ *     - TEST 9 tooth 8（应用内 speaking_round_entered_from_ = GetDeviceState() 写点
+ *       现状 0 处）;
+ *     - TEST 9 tooth 9（现状绿守卫: tts stop 出口零 kListeningModeRealtime——钉判别器
+ *       不引入模式特例）;
+ *     - TEST 9 tooth 10（ManualStop 现状唯一, 但序首判据因新守卫缺失而 red——与
+ *       tooth 4/6 同族设计态红）。
+ *   义务红消除判据 = TEST 9 全齿绿（A″ 三件在通道判断前同补且 listening 分支零触碰 /
+ *   tts stop 三守卫序即优先级在位且正向 Listening 路径保留 / sentence_start 采样每轮重置
+ *   且 single write point / 无 realtime 特例 / ManualStop 唯一序首）; suite 终跑判读同
+ *   VQ-A8 段口径（相对有效基线零新增红 + 本包齿全绿, 261014 增补齿并入本包齿集）。
+ *   备选返钉路径（任一被 fixer 采用须报告 + acceptance-author 复核返钉, 不得由
+ *   builder/fixer 改齿）:
+ *     - 查字窗判据: fixer 取「view=char 驻留查询」路线（非 kidpal_render_node_front_layer()
+ *       == KIDPAL_LAYER_CHAR_WINDOW）——本齿返钉为该查询消费 needle;
+ *     - 采样成员名/形态: fixer 取非 speaking_round_entered_from_ = GetDeviceState() 的
+ *       采样形态（如按 aborted_ 分派）——返 acceptance-author 重钉（fork② 判别器判据面）。
+ *   锚漂移防护: TEST 9 各区域切取锚（HandleWakeWordDetectedEvent / kDeviceState
+ *   Listening-Speaking / tts stop-sentence_start / sentence_start-stt 帧分派）漂移以
+ *   RED(infra) 报出, 返 acceptance-author 复核, 不得由 builder/fixer 改齿。
+ *   强度申报（源锚代理档, .claude/references/acceptance-evidence.md 口径）: TEST 9 为针对
+ *   application.cc（不可 host 编）的**源文本结构齿**, 强度档 = 源锚代理（弱于机制级/行为级）
+ *   ——真机行为 oracle 归真机轮（plan 真机节六项, VR-A8 structural 豁免）; 查询面/采样形态
+ *   的行为等价假设已在备选返钉路径显式化。引擎侧 VR-A6 走**行为级**（server/acceptance/
+ *   test_kidpal_speak_sync.acceptance.py 以 stub speak_txt 驱动真实方法体）。
+ * ---------------------------------------------------------------------------
+ * 增补齿义务红形态（261014-r2）（2026-10-14 补充轮 261014-r2 冻结, acceptance-author）:
+ *   TEST 10/11 = 设计态红（现实现下 FAIL 为预期, builder 接线后转绿, verifier 终验;
+ *   不计入「新增红」违约——真实缺失行为红, 与 freeze 相位义务红同性质）:
+ *     - TEST 10（VR-A9）tooth 1/2/3: application.cc sentence_start 采样现为**无条件
+ *       逐句写**（零 `if (GetDeviceState() != kDeviceStateSpeaking)` 守卫）——tooth 1
+ *       守卫缺失; tooth 2 包裹序判据因守卫缺失而 red; tooth 3 负向齿（无条件逐句写
+ *       形态在世, count >= 1）同红;
+ *     - TEST 11（VR-A10）tooth 1/2: websocket_protocol.cc OpenAudioChannel 现函数顶部
+ *       直落 `local_close_pending_ = false`、零 CloseAudioChannel() 调用——tooth 1
+ *       （旧通道先拆/条件守卫缺失）与 tooth 2（拆除序判据因 close 缺失而 red）同红。
+ *   义务红消除判据 = TEST 10/11 全齿绿（采样写点受 `!= kDeviceStateSpeaking` 守卫包裹且
+ *   紧邻 SetDeviceState(Speaking) 之前、无条件逐句写形态销账 / OpenAudioChannel 顶部
+ *   条件先拆旧通道, 序在复位与 CreateWebSocket 之前）; suite 终跑判读同 VQ-A8 段口径
+ *   （相对有效基线零新增红 + 本包齿全绿, 补充轮齿并入本包齿集）。
+ *   备选返钉路径（任一被 fixer 采用须报告 + acceptance-author 复核返钉, 不得由
+ *   builder/fixer 改齿）:
+ *     - VR-A9: 采样形态若非 `speaking_round_entered_from_ = GetDeviceState()` 守卫式
+ *       （如按 aborted_/句序分派）——返 acceptance-author 重钉（fork② 判别器判据面）;
+ *     - VR-A10: 旧通道拆除若取非 `if (websocket_) { CloseAudioChannel(); }` 形态
+ *       （如显式 `websocket_ != nullptr` / 先置 local_close_pending_ 再 reset 的内联
+ *       等价）——返 acceptance-author 重钉（抑制 stale 回调的机制等价面）。
+ *   锚漂移防护: TEST 10 各区域切取锚（sentence_start-stt 帧分派 / OpenAudioChannel-
+ *   GetHelloMessage 函数体）漂移以 RED(infra) 报出, 返 acceptance-author 复核, 不得由
+ *   builder/fixer 改齿。
+ * ---------------------------------------------------------------------------
  * VQ-A7 真机证据要求（本文件不承载, human 持板轮; enforce-scope 拦 changes/dev
  * 写入——本段由 planner 转写进 delivery/changes/dev/260915-m1-k3-voice-round-ui/）:
  *   ① 思考页真机首次可弹（说完一句即弹、与状态切换同刻, 不分离）;
@@ -1720,4 +2245,41 @@ TEST_CASE("语音轮场景映射: 真机轮r3静态盘点增补——Chrome分�
  *               mic 半按实况改钉消费接线——ic_mic_48.bin 已在世）
  *               （acceptance-author, planner 补齐轮增补派单, 红基线模型同 r1/r2:
  *               增补齿 = 设计态红, fixer 实现后转绿）。
+ *   2026-10-14  augment: 261014-voice-round-entry-exit-fixes（入口/出口三缺口修复,
+ *               三条 TECH-261014 CRQ 合流）新齿（TEST 9 单独成节, seam [11] + 尾注
+ *               「增补齿义务红形态（261014）」段 + coverage map 同步; VR-A1 唤醒词 A″
+ *               入口直推 / VR-A2 tts stop 三守卫序即优先级 + 轮来源采样 / VR-A3 判别器
+ *               边角 abort/realtime/ManualStop; 既有齿 TEST 1-8 一字未动 = 纯 additive
+ *               收紧, 语义零放松——VR-A4 VQ-E1 冻结齿（TEST 5 tooth 2）零触碰保持绿、
+ *               VR-A5 record_session_live.acceptance.c 零改动 canary 本文件零齿）。
+ *               授权链: 本 TaskPackage（acceptance-author 冻结）+ human 触点①（triage
+ *               分流确认, 本包 261014 已预授权）; 261013 先例模式（齿区随 application.cc
+ *               邻近改动重锚须逐齿推导表留痕 + REVISION LOG append）。查字窗判据
+ *               = acceptance-author 定 = kidpal_render_node_front_layer() ==
+ *               KIDPAL_LAYER_CHAR_WINDOW（plan 改动点 2 授权「判据实现期由
+ *               acceptance-author 定」; 备选返钉路径见尾注）。采样成员名冻结 =
+ *               speaking_round_entered_from_（plan 改动点 2 指定名）。RM: 红基线模型 =
+ *               设计态红, builder 接线后转绿, verifier 终验（acceptance-author,
+ *               TaskPackage 261014-voice-round-entry-exit-fixes 冻结派单）。
+ *   2026-10-14  augment: 补充轮 261014-r2（真机首轮联测两正交根因返修; plan「补充轮
+ *               261014-r2」节 + TaskPackage acceptance VR-A9/A10/A11）新齿（TEST 10/11
+ *               单独成节, seam [12] + 尾注「增补齿义务红形态（261014-r2）」段 +
+ *               coverage map 同步; VR-A9 采样写点状态守卫（正向 + 负向防回退
+ *               「无条件逐句写」形态销账）/ VR-A10 旧通道拆除序（CloseAudioChannel
+ *               在 local_close_pending_ = false 复位与 CreateWebSocket 之前）;
+ *               VR-A11 真机复验 = VR-A8 同款 structural 豁免, 零 runner 齿——coverage
+ *               map 补一行说明）。既有齿 TEST 1-9 一字未动 = 纯 additive 收紧, 语义零
+ *               放松; r1 既有 166 host 齿零倒退。
+ *               重锚判定（逐齿推导表 = 空, 零重锚）: r1 TEST 9 tooth 7（VR-A2
+ *               sentence_start 采样齿——断言 sample 在 SetDeviceState(kDeviceStateSpeaking)
+ *               之前）在 A1 守卫式采样落地后仍满足判据（守卫只加一层 `!= Speaking`
+ *               夹层, 采样写点相对 setSpeaking 的位次不变）; TEST 9 tooth 8（全文件
+ *               采样写点计数 == 1）亦不变（守卫条件不新增采样写点）——故无既有齿需
+ *               重锚, 授权链留痕（本 TaskPackage 补充轮 + human 裁补充轮立盘; 261013
+ *               先例模式: 齿区随 application.cc 邻近改动重锚须逐齿推导表留痕 + REVISION
+ *               LOG append——本轮重锚表空）。VQ-E1 冻结齿（TEST 5 tooth 2）零触碰保持
+ *               绿; record_session_live.acceptance.c 零改动 canary 本文件零齿。
+ *               RM: 红基线模型 = 设计态红, builder 接线后转绿, verifier 终验
+ *               （acceptance-author, TaskPackage 261014-voice-round-entry-exit-fixes
+ *               补充轮 261014-r2 冻结派单）。
  * --------------------------------------------------------------------------- */

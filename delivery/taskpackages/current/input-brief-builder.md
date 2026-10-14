@@ -1,17 +1,17 @@
-# input-brief · builder · 261013-lang-config-thinking-fix
+# input-brief · builder · 261014-engine-stop-truncation-asr-filter
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-13T14:55:47.625Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
-> 来源 TaskPackage: `delivery/taskpackages/261013-lang-config-thinking-fix/taskpackage.json` · subsystem: firmware/lang-generation-chain（locale 源 + gen_lang.py + main/CMakeLists.txt 生成链） · rigor: lite
+> generated-at: 2026-10-14T07:18:21.930Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
+> 来源 TaskPackage: `delivery/taskpackages/261014-engine-stop-truncation-asr-filter/taskpackage.json` · subsystem: server/deploy/engine-patch（connection.py 三处改动：listen 帧旁路截断 + chat 入口守卫 + 幻听串表）+ server/acceptance（新增验收件） · rigor: lite
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
-| `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
-| `docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261013-lang-config-thinking-fix/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261014-engine-stop-truncation-asr-filter/plan.md` | — | 无锚点（整文件） | — | bare |
+| `docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md` | — | 无锚点（整文件） | — | bare |
+| `server/deploy/engine-patch/connection.py` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威）
 
@@ -21,7 +21,7 @@
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 固件本地化资源键与构建生成链内部修复——locale JSON 与 lang_config.h 均为板端私有资产/生成物，server/ 零消费（无 wire 帧类型/字段承载/回执语义/序列化形态变化）；T1 补键只影响板端渲染文案，对端面不存在
+> 纯引擎侧内部处置：wire 协议零变更（listen start/stop 为既有消息，front 旁路消费转发不变），无 firmware 对应面；真机复验项为判定标准非改动面（plan 包边界 + crossEnd 节）
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
