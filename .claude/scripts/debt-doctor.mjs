@@ -1,17 +1,17 @@
-// crq-doctor.mjs — CRQ 账本检查器（告警级 / 只读；不注册钩子、不进任何闸链）。
+// debt-doctor.mjs — debt 账本检查器（告警级 / 只读；不注册钩子、不进任何闸链）。
 //
 // 260923-gov-review-arq-ssot-restructure（T5）落地。把「簿记纪律」变成机检事实。
-//   node .claude/scripts/crq-doctor.mjs               # 检查真实仓
-//   node .claude/scripts/crq-doctor.mjs --self-check  # 结构化自检（每项检查各带反转夹具）
+//   node .claude/scripts/debt-doctor.mjs               # 检查真实仓
+//   node .claude/scripts/debt-doctor.mjs --self-check  # 结构化自检（每项检查各带反转夹具）
 // 两档：red = 结构性错误（阻断级语义，须修）；advisory = 内容性待补（迁移项普遍命中，不阻断，只计数）。
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   DOMAINS, DOMAIN_KEYS, domainDir, readItems, checkItems, parseItem,
-  gateLayersOf, hardExclusionsOf, DOMAIN_KEYS as ALL_DOMAINS,
-} from './crq-ledger-shared.mjs';
-import { expectedIndexes, renderIndex } from './crq-render.mjs';
+  gateLayersOf, hardExclusionsOf, DOMAIN_KEYS as ALL_DOMAINS, LEDGER_ROOT,
+} from './debt-ledger-shared.mjs';
+import { expectedIndexes, renderIndex } from './debt-render.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const isDirectRun = () => process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
@@ -40,7 +40,7 @@ export function runChecks(items, { indexTextOf } = {}) {
     for (const domain of ALL_DOMAINS) {
       for (const [rel, want] of expectedIndexes(domain, items)) {
         const have = indexTextOf(domain, rel);
-        const at = `docs/crq/${DOMAINS[domain].dir}/${rel}`;
+        const at = `${LEDGER_ROOT.join('/')}/${DOMAINS[domain].dir}/${rel}`;
         if (have === null) out.red.push({ at, code: 'index-missing', msg: '生成件不在场' });
         else if (have !== want) out.red.push({ at, code: 'index-stale', msg: '待重渲染（渲染后 git diff 非空）' });
       }
@@ -111,14 +111,14 @@ function selfCheck() {
   const closedArchived = { ...closedTop, rel: '_archive/2026/ARQ-260902-y.md' };
   if (runChecks([closedArchived]).red.some((r) => r.code === 'mislocated')) fails.push('mislocated-false-positive');
 
-  console.log(fails.length === 0 ? 'crq-doctor --self-check: ok (13/13)' : `crq-doctor --self-check: FAIL\n  ${fails.join('\n  ')}`);
+  console.log(fails.length === 0 ? 'debt-doctor --self-check: ok (13/13)' : `debt-doctor --self-check: FAIL\n  ${fails.join('\n  ')}`);
   return fails.length === 0;
 }
 
 function main() {
   if (process.argv.includes('--self-check')) process.exit(selfCheck() ? 0 : 1);
   const items = readItems(REPO);
-  if (items.length === 0) { console.error('FATAL docs/crq/** 下 0 条目——真空输入，拒绝判绿（防真空绿）'); process.exit(1); }
+  if (items.length === 0) { console.error(`FATAL ${LEDGER_ROOT.join('/')}/** 下 0 条目——真空输入，拒绝判绿（防真空绿）`); process.exit(1); }
   const { red, advisory } = runChecks(items, { indexTextOf: realIndexReader() });
   console.log(`条目 ${items.length} 条：${DOMAIN_KEYS.map((d) => `${d}=${items.filter((x) => x.domain === d).length}`).join(' ')}`);
   if (advisory.length) {

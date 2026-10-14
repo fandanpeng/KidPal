@@ -1,9 +1,9 @@
-# crq-item.template · CRQ 条目文件骨架（canonical · 260923-gov-review-arq-ssot-restructure T1 落地）
+# debt-item.template · debt 条目文件骨架（canonical · 260923-gov-review-arq-ssot-restructure T1 落地）
 
-> 用法：复制本件为 `docs/crq/<域>/<ID>.md`，替换 `<尖括号>` 占位，删掉本注与示例正文。
-> **字段 schema 的单一事实源是 `.claude/scripts/crq-ledger-shared.mjs`**（闭集与必填项以它为准，本件只教怎么填、不重复定义）。
-> 三份 `INDEX.md` 由 `node .claude/scripts/crq-render.mjs` 从条目文件生成，**勿手改**；写完跑一次渲染，再跑 `node .claude/scripts/crq-doctor.mjs` 自检。
-> 引用条目文件的路径**必须带目录**（`docs/crq/gov/ARQ-xxxxxx-yyy.md`），仓内共有多个同名 `INDEX.md`。
+> 用法：复制本件为 `docs/debt/<域>/<ID>.md`，替换 `<尖括号>` 占位，删掉本注与示例正文。
+> **字段 schema 的单一事实源是 `.claude/scripts/debt-ledger-shared.mjs`**（闭集与必填项以它为准，本件只教怎么填、不重复定义）。
+> 三份 `INDEX.md` 由 `node .claude/scripts/debt-render.mjs` 从条目文件生成，**勿手改**；写完跑一次渲染，再跑 `node .claude/scripts/debt-doctor.mjs` 自检。
+> 引用条目文件的路径**必须带目录**（`docs/debt/gov/ARQ-xxxxxx-yyy.md`），仓内共有多个同名 `INDEX.md`。
 
 ## 域怎么选（三值，判据 = 谁裁 / 落哪个门）
 
@@ -50,8 +50,8 @@ source: [<provenance：可点开的执行记录，如就地的 review-packet / p
 ## 三条纪律
 
 1. **正文只追加、不改既有段**——历史证据不可被重写（`AGENTS.md` Hard Rules）。要更正，就在尾部追加一段并写明更正理由。
-2. **结项 = 原地翻字段**（`status: closed` + `closed` + `closedBy`，正文尾追加一行「**结项**：…」），**不重打 ID、不换结构**；已结条目由 `crq-render.mjs` **自动归位** `_archive/<结项年>/`（**人不搬文件**——位置是状态的纯函数，重开自动搬回，`crq-doctor.mjs` 核「位置 == f(状态)」）。
-3. **登记前先查重**：`grep -l "<关键词>" docs/crq/*/*.md`——命中即已有条目，**在既例行追加证据注记、不新立**。
+2. **结项 = 原地翻字段**（`status: closed` + `closed` + `closedBy`，正文尾追加一行「**结项**：…」），**不重打 ID、不换结构**；已结条目由 `debt-render.mjs` **自动归位** `_archive/<结项年>/`（**人不搬文件**——位置是状态的纯函数，重开自动搬回，`debt-doctor.mjs` 核「位置 == f(状态)」）。
+3. **登记前先查重**：`grep -l "<关键词>" docs/debt/*/*.md`——命中即已有条目，**在既例行追加证据注记、不新立**。
 
 ## 正文段落名（渲染与检查不依赖，但保持同形便于人读与产物一致）
 

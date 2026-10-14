@@ -40,7 +40,7 @@
         "docs/archive",
         "docs/notes",
         "docs/ui",
-        "docs/crq",
+        "docs/debt",
         "docs/showme"
       ]
     }
@@ -80,7 +80,7 @@
       "deny": ["**"]
     },
     "integrator": {
-      "allow": ["firmware/**", "server/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/crq/**", "docs/ADR.md", "delivery/changes/dev/**", "delivery/taskpackages/**", "delivery/workstreams/**"],
+      "allow": ["firmware/**", "server/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**", "docs/ADR.md", "delivery/changes/dev/**", "delivery/taskpackages/**", "delivery/workstreams/**"],
       "deny": ["docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
     },
     "architect": {
@@ -115,7 +115,7 @@
       "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
     },
     "adjudicator": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/crq/**"],
+      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**"],
       "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "docs/DEV-GOVERNANCE.md"]
     },
     "architect-reviewer": {

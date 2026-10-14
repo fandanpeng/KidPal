@@ -1,9 +1,9 @@
-// crq-render.mjs — 从 docs/crq/** 渲染每域 INDEX.md + 归档年 INDEX.md（生成件），并执行归档归位。
+// debt-render.mjs — 从 docs/debt/** 渲染每域 INDEX.md + 归档年 INDEX.md（生成件），并执行归档归位。
 //
 // 260923-gov-review-arq-ssot-restructure（T2）落地。
-//   node .claude/scripts/crq-render.mjs               # 归档归位 + 渲染全部 index
-//   node .claude/scripts/crq-render.mjs --check       # 只检「盘上 == 应渲染」，不写盘不搬文件（doctor 件 6 复用）
-//   node .claude/scripts/crq-render.mjs --self-check  # 结构化自检
+//   node .claude/scripts/debt-render.mjs               # 归档归位 + 渲染全部 index
+//   node .claude/scripts/debt-render.mjs --check       # 只检「盘上 == 应渲染」，不写盘不搬文件（doctor 件 6 复用）
+//   node .claude/scripts/debt-render.mjs --self-check  # 结构化自检
 // 纪律：INDEX.md 是**生成件**，勿手改；改状态去改条目文件再重跑本脚本。
 //
 // 归档（human 2026-09-24 裁定机制）：**位置 = 状态的纯函数，搬文件只有本脚本干，人永远不搬**。
@@ -20,8 +20,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   DOMAINS, DOMAIN_KEYS, STATUS_SECTIONS, indexFile, domainDir, readItems,
   sortForRender, GENERATED_MARKER, checkItems, ARCHIVE_DIR, expectedRel,
-  computeRelocations, applyRelocations, archiveIndexRel,
-} from './crq-ledger-shared.mjs';
+  computeRelocations, applyRelocations, archiveIndexRel, LEDGER_ROOT,
+} from './debt-ledger-shared.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const isDirectRun = () => process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url;
@@ -38,17 +38,17 @@ const closedYear = (fm) => {
 };
 
 function indexHeader(domain, rel, extra) {
-  const depth = rel.split('/').length - 1; // INDEX.md 相对仓根的深度差（docs/crq/<域>/ 或再深一层）
+  const depth = rel.split('/').length - 1; // INDEX.md 相对仓根的深度差（docs/debt/<域>/ 或再深一层）
   const up = '../'.repeat(3 + depth);
   const out = [
     GENERATED_MARKER,
     '',
     `# ${DOMAINS[domain].prefix} · ${domain} 域账${extra || ''}（自动生成，勿手改）`,
     '',
-    `> 由 [${up}.claude/scripts/crq-render.mjs](${up}.claude/scripts/crq-render.mjs) 从条目文件生成。`,
-    `> **单一事实源 = 条目文件**（一条目一文件）。改状态去改条目文件再重跑：\`node .claude/scripts/crq-render.mjs\`。`,
-    `> **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，\`crq-doctor.mjs\` 会报「待重渲染」。`,
-    `> 引用本文件必须带目录（\`docs/crq/${DOMAINS[domain].dir}/${rel}\`）——仓内有多份同名 \`INDEX.md\`。`,
+    `> 由 [${up}.claude/scripts/debt-render.mjs](${up}.claude/scripts/debt-render.mjs) 从条目文件生成。`,
+    `> **单一事实源 = 条目文件**（一条目一文件）。改状态去改条目文件再重跑：\`node .claude/scripts/debt-render.mjs\`。`,
+    `> **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，\`debt-doctor.mjs\` 会报「待重渲染」。`,
+    `> 引用本文件必须带目录（\`${LEDGER_ROOT.join('/')}/${DOMAINS[domain].dir}/${rel}\`）——仓内有多份同名 \`INDEX.md\`。`,
   ];
   return out;
 }
@@ -175,7 +175,7 @@ function selfCheck() {
   if (JSON.stringify(got) !== JSON.stringify(wantMoves)) fails.push(`relocation:got=${got.join(' ; ')}`);
   // 夹具 7：expectedRel 与 computeRelocations 同源一致（防两处判据漂移）
   if (expectedRel({ status: 'closed', closed: '2026-01-02', id: 'X' }) !== '_archive/2026/X.md') fails.push('expectedRel');
-  console.log(fails.length === 0 ? 'crq-render --self-check: ok (8/8)' : `crq-render --self-check: FAIL\n  ${fails.join('\n  ')}`);
+  console.log(fails.length === 0 ? 'debt-render --self-check: ok (8/8)' : `debt-render --self-check: FAIL\n  ${fails.join('\n  ')}`);
   return fails.length === 0;
 }
 
@@ -198,7 +198,7 @@ function writeGuarded(dst, want, label) {
 function main() {
   if (process.argv.includes('--self-check')) process.exit(selfCheck() ? 0 : 1);
   let items = readItems(REPO);
-  if (items.length === 0) { console.error('FATAL docs/crq/** 下 0 条目——真空输入，拒绝渲染（防真空绿）'); process.exit(1); }
+  if (items.length === 0) { console.error(`FATAL ${LEDGER_ROOT.join('/')}/** 下 0 条目——真空输入，拒绝渲染（防真空绿）`); process.exit(1); }
   const checkOnly = process.argv.includes('--check');
 
   if (!checkOnly) {
@@ -217,14 +217,14 @@ function main() {
       const label = `${DOMAINS[domain].dir}/${rel}`;
       if (checkOnly) {
         const have = existsSync(dst) ? readFileSync(dst, 'utf8').replace(/\r\n/g, '\n') : null;
-        if (have !== want) { console.log(`待重渲染：docs/crq/${label}`); drift++; }
+        if (have !== want) { console.log(`待重渲染：${LEDGER_ROOT.join('/')}/${label}`); drift++; }
         continue;
       }
       writeGuarded(dst, want, label);
     }
   }
   const { red } = checkItems(items);
-  if (red.length) console.log(`注：doctor 级红项 ${red.length} 条（本脚本不判定，跑 crq-doctor.mjs 看详情）`);
+  if (red.length) console.log(`注：doctor 级红项 ${red.length} 条（本脚本不判定，跑 debt-doctor.mjs 看详情）`);
   if (checkOnly && drift) process.exit(2);
 }
 

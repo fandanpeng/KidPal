@@ -18,15 +18,15 @@ delivery/workstreams/_archive/2026/kidpal-mvp/progress.md merge=union
 # human 点火授权（pod-events cb1f859f/7b87494f）在案。与 .codebase-memory/.gitattributes 无路径交集。
 delivery/taskpackages/**/pod-events.jsonl merge=union
 
-# docs/crq/*/INDEX.md 生成件双追加（T2 件2，260923-gov-review-arq-ssot-restructure）：
-# 三份 INDEX.md 是**生成件**（源 = 同目录条目文件），两条分支各新增条目并各自重跑 crq-render 时，
+# docs/debt/*/INDEX.md 生成件双追加（T2 件2，260923-gov-review-arq-ssot-restructure；目录 261014 批改名 debt）：
+# 三份 INDEX.md 是**生成件**（源 = 同目录条目文件），两条分支各新增条目并各自重跑 debt-render 时，
 # 双方各在节尾追加一行 = 结构性双追加，人工每次解冲突往返（同 changes INDEX 单文件之病）。
 # union 双侧保留即正解（同 progress.md / pod-events.jsonl 两处先例形态）。**本件不单独成立**：
-# union 会产出内部不自洽的中间态（摘要计数陈旧、行序未按排序规则）——配套件3 = crq-doctor.mjs
-# 的「盘上 index ≠ 应渲染」检测把该中间态**显式报出**（`index-stale` 红），重跑 crq-render 即归位。
+# union 会产出内部不自洽的中间态（摘要计数陈旧、行序未按排序规则）——配套件3 = debt-doctor.mjs
+# 的「盘上 index ≠ 应渲染」检测把该中间态**显式报出**（`index-stale` 红），重跑 debt-render 即归位。
 # 起草期合并实演（两场景：异日期 / 同日期）实证：零人工解冲突、零行丢失、零重复、重渲染精确归位。
-docs/crq/*/INDEX.md merge=union
-docs/crq/*/_archive/*/INDEX.md merge=union
+docs/debt/*/INDEX.md merge=union
+docs/debt/*/_archive/*/INDEX.md merge=union
 
 # 钉死 prompt 版本文件 LF 换行（TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout，261013-gov-review-lf-eol-teeth-pin 批）：
 # prompt v6–v9 被四条 raw sha256 冻结齿（sha256(read_bytes()) 口径）钉历史版本零回改，但检出换行属环境态：

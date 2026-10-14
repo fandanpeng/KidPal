@@ -10,7 +10,7 @@ argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "�
 
 - **门性质**：Part-2 **工程门 / bootstrap 临时信任门**（权威在 K9 §11），**不是业务门、不进 DEV-GOVERNANCE §5 六门清单**；与业务运行时 6 门无涉。
 - **你编排但落盘归你（主线程）**：判断归被你派发的 `architect`（只读+审+返回裁决，零写入）；**落盘归你这个主线程**（主线程不受 per-agent enforce-scope 限，dev-loop.md §4）。作者≠判官：architect 审+起草，FROZEN 归人类。
-- **四面探测（intake，程序 SSOT 见 `change-intake.md`）**：变更进来先做跨面探测——对照 requirements / architecture / contracts + CRQ 未结账 + governance 面逐面查触面事实（枚举以 SSOT 为准），主线程落盘 spine（触面 ≥2 时）；命中升级判据（触 `docs/contracts/**` 或跨系统结构性）→ 按 facePlan 把该变更的架构/契约面路由 Track A/契约门，实现面留本门分档，不再整单踢走；纯实现面变更 → 照旧判四档。
+- **四面探测（intake，程序 SSOT 见 `change-intake.md`）**：变更进来先做跨面探测——对照 requirements / architecture / contracts + debt 未结账 + governance 面逐面查触面事实（枚举以 SSOT 为准），主线程落盘 spine（触面 ≥2 时）；命中升级判据（触 `docs/contracts/**` 或跨系统结构性）→ 按 facePlan 把该变更的架构/契约面路由 Track A/契约门，实现面留本门分档，不再整单踢走；纯实现面变更 → 照旧判四档。
 
 本次输入 plan：
 

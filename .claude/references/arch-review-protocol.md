@@ -167,7 +167,7 @@ architect(起草 subagent,仅当输入是 plan/想法,产候选不判)· review-
 | DISMISS-WITH-GROUNDING | defender 引 spec/contract 原文完整反驳 → 记理由,关闭 |
 | ACCEPT-AS-RISK | 真缺口但有意接受 → 记入 ADR/decision-log,标 owner+相位 |
 | HUMAN-RULED | deadlock/高影响 → 人类拍板,裁断回灌 |
-| SPAWN-NEW-CONCERN | finding 揭示缺一个内核/公司级关注点 → 登记**延迟占位**(forcing-function 追踪),不在本 spec 过度设计;入 CRQ 账本按域落条目(`docs/crq/{gov,tech,requirement}/`,一条目一文件 + 跑 `crq-render.mjs`)(S1 Inbound Router 即此类) |
+| SPAWN-NEW-CONCERN | finding 揭示缺一个内核/公司级关注点 → 登记**延迟占位**(forcing-function 追踪),不在本 spec 过度设计;入 debt 账本按域落条目(`docs/debt/{gov,tech,requirement}/`,一条目一文件 + 跑 `debt-render.mjs`)(S1 Inbound Router 即此类) |
 
 ## 严重度 → 可冻结性
 
