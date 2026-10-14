@@ -1,0 +1,19 @@
+# test-scope-final-r2 —— 261014-voice-round-entry-exit-fixes 补充轮 261014-r2（影响面圈定清单，planner 落盘 2026-10-14）
+# 格式：一行一个仓根相对测试文件路径；注释行须以 # 起行（gate 读入不剥离行尾）。
+# 圈定方法（补充轮口径）：本轮变更面 = firmware/main/application.cc（A1 采样守卫）
+#   + firmware/main/protocols/websocket_protocol.cc（A2 旧通道拆除序）——全在 firmware；两文件均非 host 可编源，
+#   其行为由 voice_round_ui.acceptance.c 的源文本结构齿（TEST 10 VR-A9 / TEST 11 VR-A10）承载。
+#   engine-patch（server/deploy/engine-patch/connection.py）本轮零增量改动（只 commit 不部署），server 面零触碰。
+# 子集口径（human 裁）：voice_round_ui.acceptance.c 邻区 + record_session_live canary；不跑全量。
+#   本包冻结验收件 test_kidpal_speak_sync.acceptance.py 一并列入（廉价、保 VR-A6 引擎侧 acceptance 在场）。
+#   VR-A11 真机复验 = 主线程联测硬前置，不在本清单（live-manual 面不计入 runner 通过面）。
+
+# ── 本包冻结验收件（acceptanceTestsFile）──
+# firmware/main/test/voice_round_ui.acceptance.c = frozen（r1 TEST 9 VR-A1/A2/A3 + r2 TEST 10 VR-A9 / TEST 11 VR-A10 + VQ-E1 冻结齿）
+firmware/main/test/voice_round_ui.acceptance.c
+# server/acceptance/test_kidpal_speak_sync.acceptance.py = frozen（VR-A6 三 case；本轮零 diff，保在场）
+server/acceptance/test_kidpal_speak_sync.acceptance.py
+
+# ── canary（零改动回归观察面）──
+# firmware/main/test/record_session_live.acceptance.c = VR-A5 canary（会话收尾缝邻接面）
+firmware/main/test/record_session_live.acceptance.c

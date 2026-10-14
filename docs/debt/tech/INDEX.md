@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 19（待拍板 0 / 待触发 13 / 已接受风险 6）；已结 17（归档索引见下）。
+**摘要**：未结 26（待拍板 0 / 待触发 20 / 已接受风险 6）；已结 17（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（13）
+## 待触发（20）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -29,7 +29,14 @@ _（无）_
 | [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 | [TECH-261012-qq-schedule-write-format-gap](TECH-261012-qq-schedule-write-format-gap.md) | MAJOR | QQ 课表录入链路缺口——家庭侧 main agent 无写课表 skill 钉 B1 格式，一个脏日期格致整份 schedule.md 解析失败、「接下来」三触发全静默停摆；连带实测刷新 marker 链（触发③）从未 live 部署 | dev 侧在途课表链路批 landing 前对账合并处理；或下次 QQ 录入复现时 |
 | [TECH-261013-p3-reader-entry-no-text-silent-noop](TECH-261013-p3-reader-entry-no-text-silent-noop.md) | SHOULD | P3 KEY 双击进阅读态对「无正文缓存」故事静默无反应——设计降级缺用户可见反馈，且冷启动恢复的老故事无正文获取通路（S-F2.1 AC2 承诺不可兑现） | 下个动 P3 显示面 / story_text 通路 / front story 推送面的包；修复分两层（固件可见降级提示 = 纯固件；正文按需获取通路 = 疑触 front/契约，走 intake 裁），修完随包真机复验「双击进阅读 + 阅读态标题」 |
+| [TECH-261014-autoconnect-gives-up-silently](TECH-261014-autoconnect-gives-up-silently.md) | SHOULD | 自动重连任务固定 3 次尝试后静默退出——服务端重启/断网窗口超过约 15 秒即设备离线且不自愈，须用户动作（KEY/唤醒）才重建连；后果：离线期间提醒推送（MCP 下发）全丢 | 下一次动 application.cc 连接/重连面的批顺带评估；或排期后的可靠性小包（判据 = 是否要求「持续重试到连上」的产品口径先定） |
+| [TECH-261014-engine-asr-hallucination-after-stop](TECH-261014-engine-asr-hallucination-after-stop.md) | SHOULD | 引擎在收到 listen stop 后仍处理尾音、ASR 于静音/杂音上幻听（典型 "Thank you."），LLM 顺口回复并被推成 TTS——表现为查字/播报结束后设备多播一段「不客气呀」之类无关寒暄 | 下一次动引擎部署面（server/deploy / engine-patch）的批顺带；或提醒/播报链路的可靠性小包 |
+| [TECH-261014-host-app-sdkconfig-env-drift](TECH-261014-host-app-sdkconfig-env-drift.md) | SHOULD | host_app sdkconfig 为 gitignored 环境态且只在构建发生的 worktree 演进——其它树（含 main）陈旧配置致冻结齿成批假红（实测 main 冷构建 10 红：CJK 字体未链接 → P1 渲染齿「渲染缝断裂」假象），非代码回归 | 下次同样假红出现时按本条处置；或启动面/环境等价化批顺带把 host_app sdkconfig 纳入镜像清单 |
+| [TECH-261014-kidpal-speak-await-nonetype](TECH-261014-kidpal-speak-await-nonetype.md) | SHOULD | engine-patch 对同步 speak_txt 误 await——每轮提醒语音注入必报 ERROR「播报注入失败」但主链仍通（语音在报错后照常合成下发），2026-09-11 live 轮已测出、记「归后续修复」后未修未登记，本条补登 | 下一次动 server/deploy 引擎部署面的批顺带（与 TECH-261012-edgetts-403-hotpatch 耐久化同批的先例模式）；修复一行级，不值得单开包 |
+| [TECH-261014-post-speak-listening-lingering](TECH-261014-post-speak-listening-lingering.md) | MAJOR | 查字/提醒播报后设备滞留聆听态——会话出口三缺口：查字收尾缝零接线、提醒语音链尾随 auto-listen 把设备拉进会话（叠加已登记的 60 秒 timer 零 producer），实证后果 = AI 插话家庭对话 | human 排期后的固件修复包（/triage-change 路由，与 TECH-261014-wakeword-connecting-voice-layer 同包分流——后者移交条款「下一个动 application.cc 状态分发的包顺带承接」正好覆盖本条）；或阶段一「问答演出补齐」批一并带 |
 | [TECH-261014-sdkconfig-decorative-empty-section](TECH-261014-sdkconfig-decorative-empty-section.md) | NIT | firmware/sdkconfig 每次固件构建被追加装饰性空节（「Image Effects Configuration」块）——Kconfig 构建期回写使跟踪文件常驻脏、git status 噪音与误提交风险 | 下个固件 sdkconfig / 构建治理批顺带；或 sdkconfig 脏噪再次干扰收口对账（人工排除复现）时 |
+| [TECH-261014-session-end-channels-unwired](TECH-261014-session-end-channels-unwired.md) | MAJOR | 会话结束三通道有两通道未接线——60 秒超时设备侧零 timer producer、结束意图（云端判）WS 链路无下发，致一轮聊完后设备常驻聆听（实测：说「拜拜」后仍开着麦直到 WS 通道超时约 137 秒） | human 排期后的会话生命周期修复包；或下次动 session_state_machine / 会话收尾链的包顺带评估（本条体量含双阈值与云端判据取舍，不建议纯顺带） |
+| [TECH-261014-wakeword-connecting-voice-layer](TECH-261014-wakeword-connecting-voice-layer.md) | MAJOR | 唤醒词路径 connecting 态事件被合并跳过致 VOICE 层不推入、语音页整轮不显示 | human 排期后的固件修复包（/triage-change 路由）；或下一个动 application.cc 状态分发 / display 前台桥的包顺带承接 |
 
 ## 已接受风险（6）
 
