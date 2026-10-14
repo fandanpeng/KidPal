@@ -737,7 +737,14 @@ void Application::InitializeProtocol() {
                         /* 261014 VR-A2 轮来源采样（fork② 判别器依据）: 进 Speaking 前取真实
                          * 设备态, 每轮 sentence_start 重置（single write point, 无 stale
                          * 轮来源残留）——tts stop 出口据其判「出会话 speak 不回聆听」。 */
-                        speaking_round_entered_from_ = GetDeviceState();
+                        /* 261014-r2 A1 主因修正: sentence_start 是逐句消息, 无条件写点会使第
+                         * 2 句起状态已 Speaking 覆写采样 -> 收尾判据③ 误伤多句对话轮回 Idle;
+                         * 加状态守卫后「逐轮一次」由「状态离场 Speaking 才重采」自然保证
+                         * （轮间 tts stop 已把状态推出 Speaking, 下一轮首句必重采; abort 后
+                         * 同样自然重采）——与原注释意图一致。 */
+                        if (GetDeviceState() != kDeviceStateSpeaking) {
+                            speaking_round_entered_from_ = GetDeviceState();
+                        }
                         SetDeviceState(kDeviceStateSpeaking);
                         kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
                                             ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;

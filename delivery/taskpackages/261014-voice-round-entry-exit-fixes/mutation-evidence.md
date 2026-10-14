@@ -41,3 +41,36 @@ Unity `TEST_ASSERT` 首失败即中止该 TEST_CASE，故 M2 只报 tooth 4 红�
 ## 取证豁免面
 
 VR-A4（VQ-E1 冻结齿保持绿）/ VR-A5（record_session_live 零改动 canary）/ VR-A7（相对基线零新增红，套件级）/ VR-A8（真机轮 live-manual structural 豁免）——无逐 AC 变异对应物，取证豁免（口径同 261013 先例）。
+
+---
+
+# 补充轮 261014-r2 mutation 取证（2026-10-14）
+
+> 取证责任人 = builder（变异面 `firmware/main/application.cc` / `firmware/main/protocols/websocket_protocol.cc` 均在其写权域内）；本文件由 planner 代落（builder 对 `delivery/taskpackages/**` 无写权，按派发书硬约定①回执代存，内容逐字取自 builder 回执）。
+> 全部变异经「变异 → 跑受影响齿 → 完全回退」三步；回退后以同一命令复核 `168 Tests 0 Failures 0 Ignored`（`OK` / exit=0），末态工作树零残留。
+> firmware 结构齿在运行时读磁盘源码（源文本 structural 齿），故变异后无需重编译即反映。
+
+## M5 · VR-A9：摘除 A1 采样状态守卫 → 回退无条件逐句写
+
+- 变异：把 `application.cc` L745-747 的 `if (GetDeviceState() != kDeviceStateSpeaking) { ... }` 守卫整块摘除，还原为原始两行无条件写（`speaking_round_entered_from_ = GetDeviceState();` / `SetDeviceState(kDeviceStateSpeaking);`）。
+- 命令：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c "cd firmware/main/test/host_app && ./build/host_infra_test.elf"`
+- 逐字红输出：`168 Tests 1 Failures 0 Ignored` / `FAIL`
+  `voice_round_ui.acceptance.c:1963:语音轮入口出口: 补充轮A1 采样写点状态守卫 (VR-A9):FAIL:Function [voice_round_ui][VR-A9][structural].  VR-A9 RED: sentence_start 采样写点零状态守卫「if(GetDeviceState()!=kDeviceStateSpeaking){」（现 0 处）——无条件逐句写使第 2 句起状态已 Speaking 覆写采样, 收尾判据③ 误伤多句对话轮回 Idle（补充轮 A1 主因; 真机证: 7 句妖怪轮 / 5 句天气轮末段 speaking -> idle）`
+  首失败落 TEST 10 tooth 1（文件 :1963）；同变异下负向齿 tooth 3 亦应红（Unity 首失败即中止）。
+- 回退确认：守卫块完整还原至 L745-747；回退后复核 `168 Tests 0 Failures 0 Ignored` / `OK` / exit=0。
+
+## M6 · VR-A10：摘除 OpenAudioChannel 内 CloseAudioChannel() → 回退裸重赋值
+
+- 变异：把 `websocket_protocol.cc` L95-97 的 `if (websocket_) { CloseAudioChannel(); }` 整块摘除（回退为裸重赋值旧 WebSocket 析构形态）。
+- 逐字红输出：`168 Tests 1 Failures 0 Ignored` / `FAIL`
+  `voice_round_ui.acceptance.c:2019:语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10):FAIL:Function [voice_round_ui][VR-A10][structural].  VR-A10 RED: OpenAudioChannel 函数体零 CloseAudioChannel() 调用（现 0 处）——裸重赋值析构旧 WebSocket, stale OnDisconnected 迟到 Schedule(SetDeviceState(Idle)) 压在新会话之后（补充轮 A2 次因; 冷通道 listening -> idle 毛刺）`
+  首失败落 TEST 11 tooth 4（文件 :2019）。
+- 回退确认：`if (websocket_) { CloseAudioChannel(); }` 完整还原至 L95-97；回退后复核 `168 Tests 0 Failures 0 Ignored` / `OK` / exit=0。
+
+## 取证豁免面（补充轮）
+
+VR-A11（真机复验 live-manual structural 豁免）——无逐 AC 变异对应物，取证豁免（口径同 r1 VR-A8 / 261013 先例）。
+
+## builder advisory 登记（非阻断，超包外风险）
+
+TEST 11 tooth 5 以 `kvr_index_of(region, "CreateWebSocket")`（取 `OpenAudioChannel` 体内首个匹配）作序锚；builder 初版注释曾含字面 token「CreateWebSocket」致误红（命中注释而非真调用点），已改注释措辞消解、本轮绿。登记风险：将来任何在 `OpenAudioChannel` 体内、真 `CreateWebSocket` 之前出现 `CreateWebSocket` / `local_close_pending_ = false` / `CloseAudioChannel();` 字面的注释或代码，都可能使 tooth 4/5 误判。

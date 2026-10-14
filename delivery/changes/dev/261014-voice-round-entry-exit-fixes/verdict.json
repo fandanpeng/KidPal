@@ -1,36 +1,45 @@
 {
-  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r5.json)",
   "changeId": "261014-voice-round-entry-exit-fixes",
   "phase": "final",
-  "round": 3,
-  "invocationId": "afd5d3d1-efc3-40ce-ad5c-c7212523d38c",
+  "round": 5,
+  "invocationId": "cce95c7c-779e-4e8c-9b1a-5ea904d56a34",
   "outcome": "ok",
   "ok": true,
   "observedGateExit": 0,
   "gatesRun": 10,
   "gatesNotExecuted": [],
-  "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json",
+  "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r5.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r4.json",
   "lifecycle": {
     "rounds": [
-      { "round": 1, "timing": "scoped", "outcome": "全绿（八闸 PASS，收口前 scoped 证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r1.json" },
+      { "round": 1, "timing": "scoped", "outcome": "全绿（八闸 PASS，主轮收口前 scoped 证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r1.json" },
       { "round": 2, "timing": "final", "outcome": "红（unit + acceptance 两闸 fail-closed「scope-file 引用文件全部不存在」——首版圈定清单行内注释形态致误读，非被测代码红；清单格式修正后转绿）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r2.json" },
-      { "round": 3, "timing": "final", "outcome": "全绿（十闸 PASS，收口证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json" }
+      { "round": 3, "timing": "final", "outcome": "全绿（十闸 PASS，主轮收口证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json" },
+      { "round": 4, "timing": "scoped", "outcome": "全绿（八闸 PASS，补充轮 261014-r2 scoped 证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r4.json" },
+      { "round": 5, "timing": "final", "outcome": "全绿（十闸 PASS，补充轮 261014-r2 收口证据态）", "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r5.json" }
     ],
     "reworkRounds": 0,
-    "budgetNote": "iterationBudget=2 / fixBudget=3 / supervisorBlockBudget=2——scoped r1 一次过（零 verifier 返工）；final r2 红为 integrator 制品（圈定清单格式）缺陷、非代码返工，修正后 r3 一次过",
-    "redBaseline": "【acceptance-author 冻结落账 2026-10-14，未修复 HEAD 实跑】变更前锚核验逐字命中原锚（server 164 passed / 4 deselected；firmware host 165 Tests / 0 Failures）；新齿落盘后设计态红 = server 1 failed/166 passed/4 deselected（唯一红 test_vr_a6_sync_speak_txt_takes_no_error_path）+ firmware host 166 Tests/1 Failures（唯一红 TEST 9 首齿 VR-A1 tooth 1, voice_round_ui.acceptance.c:1695）；既有 165 条齿全绿；推导表之外变红 = 0",
-    "greenState": "integrator final 相位终验独立跑 2026-10-14：r3 十闸全绿（unit 258 passed / acceptance 167 passed）+ server 面独立复跑 167 passed/4 deselected + firmware host 独立复跑 166 Tests/0 Failures/0 Ignored OK——设计态红全数转绿、相对有效基线零新增红"
+    "budgetNote": "iterationBudget=2 / fixBudget=3 / supervisorBlockBudget=2——主轮 scoped r1 一次过（零 verifier 返工）；主轮 final r2 红为 integrator 制品（圈定清单格式）缺陷、非代码返工，修正后 r3 一次过；补充轮 r4 scoped / r5 final 均一次过（零返工）",
+    "redBaseline": "【补充轮 r2：acceptance-author 冻结落账 + builder 返修 2026-10-14】变更前锚 = 补充轮立盘 HEAD（5811a7e，主轮三项修法已在树）firmware host 166 Tests / 0 Failures / 0 Ignored；新齿落盘后（HEAD 未修复）设计态红 = 168 Tests / 2 Failures / 0 Ignored（TEST 10 VR-A9 @ :1963 / TEST 11 VR-A10 @ :2019），既有 166 齿零倒退、推导表之外变红 = 0；修后 = 168 Tests / 0 Failures / 0 Ignored。【主轮：acceptance-author 冻结落账 2026-10-14】变更前锚 = server 164 passed / 4 deselected、firmware host 165 Tests / 0 Failures；新齿落盘后设计态红 = server 1 failed/166 passed/4 deselected + firmware host 166 Tests/1 Failures（TEST 9 首齿 VR-A1 tooth 1 @ :1695）；既有 165 条齿全绿；推导表之外变红 = 0",
+    "greenState": "补充轮 integrator 独立复跑 2026-10-14：r5 final 十闸全绿 + firmware host 单 ELF 168 Tests / 0 Failures / 0 Ignored / OK（ninja no work to do）——两设计态红全数转绿、相对有效基线（166/0）零新增红；主轮 r3 final 十闸全绿 + server 面 167 passed/4 deselected + firmware host 166/0/0 OK"
   },
   "scopeAudit": {
-    "implementationFiles": ["firmware/main/application.cc", "server/deploy/engine-patch/connection.py"],
+    "implementationFiles": ["firmware/main/application.cc", "firmware/main/protocols/websocket_protocol.cc", "server/deploy/engine-patch/connection.py"],
     "acceptanceFiles": ["firmware/main/test/voice_round_ui.acceptance.c", "server/acceptance/test_kidpal_speak_sync.acceptance.py"],
     "deliveryFiles": ["delivery/taskpackages/current/{taskpackage.json,verdict.json,input-brief-acceptance-author.md,input-brief-builder.md,plan.md}", "delivery/taskpackages/261014-voice-round-entry-exit-fixes/", "delivery/changes/dev/261014-voice-round-entry-exit-fixes/"],
-    "zeroTouchSurfaces": ["docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "docs/crq/**", "firmware/main/test/record_session_live.acceptance.c", "firmware/main/session_state_machine.cc", "firmware/main/display/kidpal_render_node.cc", "firmware/main/display/kidpal_layer.*", "firmware/main/test/host_app/main/CMakeLists.txt", ".claude/**", "tools/**"],
+    "zeroTouchSurfaces": ["docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "docs/crq/**", "firmware/main/test/record_session_live.acceptance.c", "firmware/main/session_state_machine.cc", "firmware/main/display/kidpal_render_node.cc", "firmware/main/display/kidpal_layer.*", "firmware/main/protocols/mqtt_protocol.cc", "firmware/main/test/host_app/main/CMakeLists.txt", ".claude/**", "tools/**"],
     "auditCommand": "git status --porcelain + git diff --stat（工作树态，分支 dev/260915-m1-k1a-key-layer-dispatch）"
+  },
+  "testScope": {
+    "scopeFile": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/test-scope-final-r2.txt",
+    "entries": ["firmware/main/test/voice_round_ui.acceptance.c", "server/acceptance/test_kidpal_speak_sync.acceptance.py", "firmware/main/test/record_session_live.acceptance.c"],
+    "floor": "本包两冻结验收件（voice_round_ui.acceptance.c + test_kidpal_speak_sync.acceptance.py）；单包无对端冻结件",
+    "scopingMethod": "三分法：per-Pod 专属图索引可用 → 正常圈定，无降级；本轮 r2 变更面全在 firmware，固件 host 单 ELF 套件级全量、清单与实跑天然对齐"
   },
   "blockingArtifacts": {
     "reviewPacket": "delivery/changes/dev/261014-voice-round-entry-exit-fixes/review-packet.md",
     "docsDelta": "delivery/changes/dev/261014-voice-round-entry-exit-fixes/docs-delta.md"
   },
-  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；VR-A8 真机轮六项 + engine ECS 部署闭账为 human/主线程联测项（human 已裁真机轮不在本 Pod 范围）"
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push；重跑前须显式删旧 write-once supervisor-verdict.json）；VR-A8 + VR-A11 真机联测 + engine ECS 部署闭账 + 补充轮三项残余登记为 human/主线程联测项（human 已裁真机轮不在本 Pod 范围）"
 }

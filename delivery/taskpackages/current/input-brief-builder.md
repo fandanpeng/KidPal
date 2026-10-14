@@ -2,9 +2,8 @@
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-14T04:19:35.445Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
-> regenerated-because: planner Step 8b AC 回引修正：sourceRefs 补 S-F1.4-AC1/AC6 复合句法（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
-> 来源 TaskPackage: `delivery/taskpackages/261014-voice-round-entry-exit-fixes/taskpackage.json` · subsystem: firmware/main 会话状态分发面（application.cc：唤醒词入口直推 / tts stop 出口守卫 / sentence_start 轮来源采样）+ server/deploy/engine-patch（connection.py _kidpal_try_speak 误 await 修正） · rigor: full
+> generated-at: 2026-10-14T05:45:11.089Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: builder
+> 来源 TaskPackage: `delivery/taskpackages/261014-voice-round-entry-exit-fixes/taskpackage.json` · subsystem: firmware/main 会话状态分发面（application.cc：唤醒词入口直推 / tts stop 出口守卫 / sentence_start 轮来源采样）+ server/deploy/engine-patch（connection.py _kidpal_try_speak 误 await 修正） · rigor: lite
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
@@ -75,8 +74,8 @@
 
 | 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
 |---|---|---|---|
-| `firmware/main/application.cc` | `Application::InitializeProtocol` | :613-803 | — |
-| `server/deploy/engine-patch/connection.py` | `_kidpal_try_speak` | :363-366 | 414 |
+| `firmware/main/application.cc` | `Application::InitializeProtocol` | :620-829 | — |
+| `server/deploy/engine-patch/connection.py` | `_kidpal_try_speak` | :363-366 | 418 |
 
 上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
 
