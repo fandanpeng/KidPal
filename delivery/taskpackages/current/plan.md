@@ -1,56 +1,121 @@
 ---
-rigor: lite
+changeId: 261014-voice-round-entry-exit-fixes
+title: 语音轮入口/出口三缺口修复——唤醒词合并路径 VOICE 层直推 + 查字/提醒播报后不回聆听 + engine-patch 误 await
+rigor: full
 riskTier: medium
 sourceType: regression
-reviewed-by: architect（/triage-change 比例化 review，2026-10-13，同会话 return；四档裁决 ② 单包 Lite + reviewed plan 四件，human 触点①确认 2026-10-13）
-date: 2026-10-13
-changeId: 261013-lang-config-thinking-fix
-origin:
-  type: regression
-  upstreamType: regression
-  upstreamRef: docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md
-  upstreamFrozen: ""
-  workstream: ""
+reviewed-by: architect (/triage-change 分流 review，fork② 真分叉裁设备侧——human 授权 architect 裁 + 主线程确认)
+date: 2026-10-14
 ---
 
-# plan · 261013-lang-config-thinking-fix
+# 根因与来源
 
-> 承载 TECH-261013-lang-config-thinking-key-regen-landmine（固件 lang_config.h 生成物与 locale 源不一致）。本 plan = /triage-change architect reviewed plan 搬运（主线程零改写）；逃生门结论 = 不触契约/spec/agent 面，留在 dev 分流道。
+三条根因、证据链、代码锚点已在 CRQ 条目内闭环，本 plan 不复制，逐条引用：
 
-## T1 · 正源补 THINKING 键
+1. 唤醒词 connecting 态事件被合并跳过致 VOICE 层不推入 —— [TECH-261014-wakeword-connecting-voice-layer](docs/crq/tech/TECH-261014-wakeword-connecting-voice-layer.md)（修法取条目内**候选 A″ 薄修**，A′/B 及否决理由见条目）。
+2. 查字/提醒播报后设备滞留聆听态（会话出口三缺口中的 ①②）—— [TECH-261014-post-speak-listening-lingering](docs/crq/tech/TECH-261014-post-speak-listening-lingering.md)（真分叉②本 plan 裁**设备侧**，理由见下「fork② 裁定」节）。
+3. engine-patch 对同步 speak_txt 误 await —— [TECH-261014-kidpal-speak-await-nonetype](docs/crq/tech/TECH-261014-kidpal-speak-await-nonetype.md)。
 
-`firmware/main/assets/locales/zh-CN/language.json` strings 节补 `"THINKING": "思考中..."`（与手补行逐字一致），`firmware/main/assets/locales/en-US/language.json` 补 `"THINKING": "Thinking..."`。en-US 是 gen_lang.py 的 fallback 基准（gen_lang.py:80-86），补它即覆盖其余 35 个 locale；zh-CN 是当前构建语言（`CONFIG_LANGUAGE_ZH_CN=y`）。其余 locale 无需逐个补。
+# 包边界
 
-## T2 · 生成链加固（正形：生成头迁 build 目录 + 全依赖化 + 编译排序接线）
+## 动
 
-`firmware/main/CMakeLists.txt:831-846` 现行三个结构缺陷的正形修法：
+- `firmware/main/application.cc`（唯一固件实现文件）：唤醒词 idle 分支（A″）+ tts stop Schedule lambda（出口守卫）+ sentence_start 处轮来源采样（fork② 判别器）。
+- `server/deploy/engine-patch/connection.py`：`_kidpal_try_speak` 内一处 await 改同步调用（connection.py:383-390）。**human 已裁执行边界：只 commit 到分支，不部署 ECS；联测时人工部署。**
+- `firmware/main/test/voice_round_ui.acceptance.c`：新增齿/齿区重锚（须授权链 append REVISION LOG，同 261013 先例模式；其 VQ-E1 冻结齿〔:1081，60 秒 timer 零活侧 producer〕**本批不接线不受扰、须保持绿**）。
+- （acceptance-author 酌情）新纯逻辑 seam 文件 + `firmware/main/test/host_app/main/CMakeLists.txt` 接线。
 
-1. **生成头落 build 目录**：`LANG_HEADER` 改 `${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h`；`INCLUDE_DIRS` 追加 `${CMAKE_CURRENT_BINARY_DIR}`——全部 include 形态枚举（19 处）均为同一字面量 `#include "assets/lang_config.h"`（相对 main/ 解析），加 binary dir 后零 include 站点改动。迁移后「untracked 手补生成物」形态与跨 worktree 拷贝传播载体物理消失，每个 worktree 首建必然自生成。
-2. **gen_lang.py 加 `--assets-dir` 可选参**：现行脚本从 output 路径反推 assets 目录（gen_lang.py:54-60，实测 output 指别处即报错），迁 build 目录必炸——加显式 `--assets-dir`（不传时保留旧反推逻辑，向后兼容）；CMake 命令行传 `--assets-dir ${CMAKE_CURRENT_SOURCE_DIR}/assets`。
-3. **DEPENDS 补全 + 编译排序接线**（编译红两个机制根因）：① 现行 DEPENDS（CMakeLists.txt:837-839）漏 en-US 基准 json——改 en-US 不触发再生成，补；② `add_custom_target(lang_header ALL)`（:844）与组件库零 `add_dependencies` 接线（grep 全文件零命中），ninja 编译与生成无序——正形 = 把 OUTPUT 以 `target_sources(${COMPONENT_LIB} PRIVATE ${LANG_HEADER})` + `set_source_files_properties(... GENERATED TRUE HEADER_FILE_ONLY TRUE)` 挂进组件目标，使对象文件编译排序在生成完成之后；冗余 ALL custom target 撤（单机制，勿双挂）。
-4. **收尾**：删磁盘陈旧 `firmware/main/assets/lang_config.h`（untracked，无历史损失）；`firmware/.gitignore:11` 的 `main/assets/lang_config.h` 忽略行一并撤——此后源树再塞生成物以 untracked 噪音显形。
+## 不动（显式零触碰面）
 
-已驳回替代形（留档）：保留源树 output 只补 DEPENDS + 排序——改动更小但保全「untracked 手补」形态与拷贝载体，不取。
+- `firmware/main/display/kidpal_render_node.cc` / `kidpal_layer.*` / 各板级驱动（A″ 只在调用点接线，voice_begin 与 chat_clear_event 语义零改）。
+- `firmware/main/session_state_machine.cc`——60 秒 timer 接线是已另案登记的 Phase 1 项（requirements.md:47 ⚠️），本批**不得**顺带接线。
+- wire 协议零变更：不新增、不修改任何引擎↔设备消息（fork② 裁设备侧的直接推论）。
+- `docs/requirements.md` / `docs/architecture.md` / `docs/contracts/**`：零 diff（修法全部实现既有口径：requirements.md:39 / :295 / :300 / :652）。
+- 邻接未结 CRQ 不并入：TECH-261012-edgetts-403-hotpatch 耐久化、TECH-261012-first-keypress-no-listening、60 秒 timer 项（裁定留档见分流 review）。
 
-## T3 · 全量对账（验收基线在案）
+# fork② 裁定：设备侧（真分叉收口）
 
-判定标准 = 固件源码全部 `Lang::Strings::*` / `Lang::Sounds::*` 引用集 ⊆ 生成器可产出集，零差集。对账命令：
+**裁设备侧——对无会话上下文的 speak 不回 auto-listen。** 承重依据（完整论证见分流 review §C，此处存目）：① 决定性机制事实——引擎从不向设备发 listen 类消息（上游 listenMessageHandler.py 只收不发；设备 OnIncomingJson 无 listen 分支，application.cc:682-799），「引擎侧 listen stop」生效前提是设备新增 wire 消费＝两侧同动 + 新消息语义（命中跨系统结构性升级判据，本批将升 Track A）；auto-listen 决策点整个住在设备 tts stop handler（application.cc:693-702）。② 连续追问（§2.1，requirements.md:39）保护：判别器 = 「Speaking 轮是否从 Listening 进入」，对话轮结构性恒从 Listening 进入、不可误伤；引擎侧迟发 stop 有竞态误伤面。③ ECS 部署延后：设备侧本批真机轮即可全量验证；引擎侧须等人工部署、验证拆场。④ 半径/回滚：~15 行单 handler、app 单分区重烧 vs 引擎 patch 手动部署 + 容器重启。
 
-```bash
-# 引用侧（firmware 全树 vs main 子树 diff = 空，即 main 之外零引用）
-grep -rhoE "Lang::(Strings|Sounds)::[A-Z_0-9]+" firmware/main | sort -u
-# 可产出侧 = en-US ∪ zh-CN strings 键（大写）∪ OGG_<词干>.upper()（locales/{zh-CN,en-US}/*.ogg + common/*.ogg）
-```
+# 修复
 
-triage 期实测基线：引用未定义 = **仅 THINKING 一颗**；Sounds 九个引用常量全部可产出零缺口；10 个可产出未引用 strings 键（ACTIVATION / BATTERY_CHARGING / BATTERY_FULL / BATTERY_LOW / CHECKING_NEW_VERSION / CHECK_NEW_VERSION_FAILED / CONNECTION_SUCCESSFUL / HELLO_MY_FRIEND / INFO / WARNING）无害余量不修。包内验收时重跑一次（防窗口期新引用）。
+## 改动点 1：唤醒词 A″（application.cc HandleWakeWordDetectedEvent idle 分支，:970-1003）
 
-## T4 · 验证
+在 K6 auto-connect in-flight 守卫与 `EncodeWakeWord()` 之后、`if (!protocol_->IsAudioChannelOpened())` **之前**，直接执行轮首 UI 三件（与 connecting 分支 :1058-1064 同款语义、与 KEY 路径入口直推 show_chat 同构）：
+1. `kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE)` 为真时 `SetChatMessage("system", "")`（聊天清屏——合并路径同时漏掉了它，只补压层不补清屏会显形后残留上轮回显文字成新可见 bug，三件须同补）；
+2. `kidpal_render_node_voice_begin()`（VOICE 层推入；层栈 push 幂等）。
 
-- **host 生成复现**（快速回路）：temp 骨架目录跑 `python firmware/scripts/gen_lang.py --language zh-CN --output <tmp>/main/assets/lang_config.h --assets-dir <骨架>/assets`，断言 THINKING 在产物中（triage 期已复现反向版：骨架产物 vs 手补头 strings 节 diff = 恰一行 THINKING）。
-- **全量编译（包内执行，不 defer）**：入口 = kidpal-idf-env skill——`cd firmware && "C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe" c:/tmp/idf_run.py build`（IDF venv python 调 wrapper，勿裸 python）。**两次干净复现**：① 改 en-US json mtime（touch）后增量构建 → 断言触发再生成（验证新 DEPENDS）；② 删 build 目录全量首建 → 断言绿（模拟新 worktree 首建 = 本雷触发条件）。
-- **真机轮：deferred**，不进本包验收线——本修复为编译层修复，行为面与手补头存活时代等价（接线 8a3fc07 已在）；思考页真机表现归 Phase-1 语音轮 workstream（requirements v1.12 §2.2 已标 Phase 1 修复项）。
+置于通道判断前 = 同时覆盖「通道已温直跳 listening」子路径（:980-986，无合并也照样漏推的第二活实例）。失败路径语义与现状 connecting 分支一致（连接失败时语音页已推、与今日行为对齐）。**不碰 listening 分支**——对话中段 speaking→listening 回切与提醒场景行为原样，零新增交互面（候选 A′ 的守卫式 ensure 及其 REMINDER pop 顾虑因此整支不触发）。
 
-## 范围外残留（不进本包）
+## 改动点 2：tts stop 出口守卫（application.cc :693-702 的 Schedule lambda 区域）
 
-- TECH 条目连带第 6 条（构建对 `firmware/sdkconfig` 追加空节「Image Effects Configuration」装饰性噪音）：另开轻量 CRQ 或并入将来 housekeeping 批。
-- TECH 建议③（launch-prep skill 首建自检）：**裁撤**——T2 正形落地后自检对象不存在；单键硬编码自检必腐化；未定义键由编译器即时指名接住。绑定条件：若实施退回「源树 output」替代形则恢复必要性（正形已裁，不预期发生）。
+现行逻辑：`Speaking + listening_mode_==ManualStop → Idle；否则 → Listening`。改为三守卫（序即优先级）：
+
+1. **ManualStop（既有）**：不变。
+2. **查字收尾（lingering ①）**：tts stop 时查字窗在前台（判据实现期决策：`kidpal_render_node_front_layer()==KIDPAL_LAYER_CHAR_WINDOW` 或 view=char 驻留态查询，acceptance-author 定）→ 结束会话：`protocol_->SendStopListening()`（引擎侧 ASR/VAD 收到标准收尾、防 24h 兜底下会话悬置）+ `SetDeviceState(kDeviceStateIdle)`；查字窗驻留到按键/5 分钟兜底语义**零改**（requirements v1.37，:652）。
+3. **出会话 speak 不回聆听（fork② 设备侧，lingering ②）**：sentence_start（:715 SetDeviceState(Speaking) 之前）采样 `speaking_round_entered_from_ = GetDeviceState()`；tts stop 处消费——`entered_from != kDeviceStateListening` → `SetDeviceState(kDeviceStateIdle)`（不发 listen start、不开麦；提醒弹窗驻留与提示音不受扰，Idle 分支既有 voice_end/REMINDER 层管理承接前台回落）。每轮 sentence_start 重置采样；abort 路径同现行 aborted_ 语义。
+
+**建议（非硬性）**：出口目标态判据（listening_mode / char_front / entered_from 三入参 → 目标态）抽纯逻辑 seam（kidpal_voice_round_scene 同款先例），host 验收可直接断言。回 Idle 触发的 Idle 分支副作用（voice_end、story session end、RaiseReminderQueue）在提醒/查字两场景均为幂等 no-op 或预期行为，acceptance-author 推演留痕。
+
+## 改动点 3：engine-patch 误 await（connection.py :383-390）
+
+`await speak_txt(self, text.strip())` → 同步调用 `speak_txt(self, text.strip())`（或按返回值是否 coroutine 判别以兼容引擎未来改异步，builder 取简形即可）。外层 try/except 降级语义（V20「弹窗+提示音必达」）保持不变。
+
+## 执行边界（human 已裁，随包留痕）
+
+- engine-patch 改动**只 commit 到分支，不部署 ECS**；联测（复验清单第 3 项引擎侧子项）时 human 人工部署。
+- 固件烧录：纯代码变更、无 spiffs 资产变更，仅烧 app 分区即可。
+
+# 验收要点
+
+## host（相关子集，不全量）
+
+1. `voice_round_ui.acceptance.c` 全绿：新增齿钉改动点 1/2 的接线在位（A″ 三件套在通道判断前、tts stop 三守卫在位——源文本 structural 齿先例见该文件 :901/:1198）；若抽纯 seam，行为齿按 R<T<F 标定。齿区若因 application.cc 邻近改动需重锚，REVISION LOG append 授权链（本 TaskPackage + human 触点①确认）。
+2. VQ-E1 冻结齿保持绿（60 秒 timer 零活侧 producer 事实未被本批改变——本批不接线 timer）。
+3. `record_session_live.acceptance.c` 零改动回归绿（会话收尾缝邻接面 canary）。
+4. engine 项 host 断言：以 stub speak_txt（同步、返回 None）驱动 `_kidpal_try_speak`，断言无异常、返回 True、认领路径不回归（`server/acceptance/archive/test_g_relay_fix.acceptance.py` 有既有 harness 模式可循；落 `server/tests/` 或 `server/acceptance/` 由 planner/acceptance-author 定）。
+5. 相对有效基线零新增红。
+6. **all-mock 申报**：本包计划含真机轮 + host structural/行为齿，**不应**是 all-mock 包；若验证期机械闸判 all-mock（如真机轮证据未落），按既有纪律升 riskTier high → human 放行，不得静默。
+
+## 真机（判定标准；human 在场，串口捕获 kidpal-serial-monitor 规程；三条复验项去重合并）
+
+1. **唤醒词入口（wakeword 条目主验 + 扩版四条）**：闲置 >137s（通道必断）后喊唤醒词 → 语音页整轮显示（VOICE 层上台）+ 聊天清屏、无上一轮残留文字；KEY 单击路径回归对照（不受扰）。通道已温（常驻窗口内）立即唤醒 → 语音页同样显示（A″ 覆盖的第二活实例）。
+2. **连续追问回归（fork② 不误伤的判定面）**：正常问答 → 播完设备回聆听、可连续追问（§2.1）；多轮追问全程语音页在位。
+3. **提醒轮（lingering ② + engine 项闭账）**：提醒到点 → 提示音 + 弹窗 + 语音播报 → 播完设备**回 idle 不回聆听**（串口无 `listen start mode=auto` 上报、麦克风关闭）+ 弹窗驻留到按键（AC1/AC6）+ 环境对话不再被接进会话（AI 插话实证不复现）；顺带定死「设备侧是否真出声」（条目遗留观察项）。引擎侧子项（无 `kidpal_speak 播报注入失败` ERROR 且语音照常下发）**延后至 human 人工部署 ECS 后同轮闭账**，为 exit criterion 非本轮验收门。
+4. **查字轮（lingering ①）**：问「X 怎么写」→ 查字窗 + 播报 → 播完**不回聆听**、查字窗驻留不受影响（关窗仍可用）；想查下一个字须关窗后说全句（v1.37 口径）。
+5. **驻留面合并回归（wakeword 扩版①②③④与 lingering 重叠去重）**：对话中服务端回答页（view=schedule 类）播完仍驻留；查字窗播完驻留；提醒弹窗播完驻留到按键；新唤醒轮不残留上一轮聊天文字。
+6. **附带观察项两条（wakeword 条目同批测出，只查不改）**：wake_round2 155765 段 story_list_dispatch + display_dispatch 与 listening→idle 异常弹跳同帧现象；WS 重连 3.2s 期间 AFE Ringbuffer full 刷屏。发现即登记，不扩包。
+
+# 回归风险
+
+1. **判别器错杀连续追问**（fork② 最大风险）：结构性不可达（对话轮恒从 Listening 进入 Speaking），但 acceptance-author 须推演 abort 后新一轮、realtime（AEC）模式、ManualStop 模式三边角并在齿中钉住。
+2. **提醒播报中用户恰起对话**：出会话 speak 守卫按 entered_from 判——提醒 speak 若在 Listening 中插入（front 注入不看设备态），行为同今日（回 Listening），不劣化；engine 侧 kidpal_speak 与对话 TTS 交错的治理不在本批。
+3. **查字窗显示晚于 tts stop 的竞态**（display_dispatch 与 TTS 时序）：守卫漏触发则维持现状（回聆听）——已知残余，非新缺陷；wire 时序（display 先行）由既有网关保证。
+4. **冻结件重锚面**：voice_round_ui.acceptance.c 邻区齿若需随 application.cc 改动重锚，逐齿推导表随包留痕（261013 先例）。
+5. **engine 项部署时点漂移**：commit-only 状态下若容器因故重建（edgetts 热补丁丢失场景，TECH-261012 同族风险），engine 修复随部署源漂移暴露——联测部署时一并核 manifest。
+
+# 非目标 / 已知残余（不扩本包）
+
+1. 60 秒 timer 活侧 producer 接线（Phase 1 已登记项；其缺失使本批修复后的残余滞留仍可达「无限期」——查字守卫的竞态残余 §回归风险 3 即被它放大）。
+2. TECH-261012-edgetts-403-hotpatch 耐久化（触发条款名义命中本批，裁定留给真正的 ECS 部署动作批；如 human 愿意随联测部署一并落，另起 Lite 小包或补充轮，不混入本包）。
+3. TECH-261012-first-keypress-no-listening（会话生命周期同族，独立批）。
+4. 观察项两条（见真机 6）只登记不修。
+5. 提醒语音与活跃对话 TTS 交错的引擎侧治理。
+
+# changeManifest（预定改动面，仓根相对）
+
+- firmware/main/application.cc
+- server/deploy/engine-patch/connection.py
+- firmware/main/test/voice_round_ui.acceptance.c
+- firmware/main/test/host_app/main/CMakeLists.txt（仅当新增 seam 文件时）
+
+# impactedTests 种子
+
+- firmware/main/test/voice_round_ui.acceptance.c（新增齿 + 可能的齿区重锚；VQ-E1 齿保持绿）
+- firmware/main/test/record_session_live.acceptance.c（零改动 canary）
+- firmware/main/test/host_app/main/CMakeLists.txt（接线面在册确认）
+- server 侧 host 单测（_kidpal_try_speak stub 断言；落点 planner 定）
+
+# crossEnd 种子（planner 消费）
+
+- counterparts: firmware/main/application.cc（tts stop 出口守卫 / sentence_start 轮来源采样）↔ server/deploy/engine-patch/connection.py（_kidpal_try_speak）——提醒语音链两端（kidpal_speak 下行 / 设备收尾），本批改动不触碰 wire 语义、两端行为契约各自闭环。

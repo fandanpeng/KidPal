@@ -1,0 +1,211 @@
+{
+  "changeId": "261014-voice-round-entry-exit-fixes",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md",
+    "upstreamFrozen": "三条 TECH CRQ（TECH-261014-wakeword-connecting-voice-layer / TECH-261014-post-speak-listening-lingering / TECH-261014-kidpal-speak-await-nonetype）经 /triage-change 比例化 review 合流立单包；reviewed plan 落 sibling plan.md（architect 产出 2026-10-14，fork② 真分叉裁设备侧——human 授权 architect 裁 + 主线程确认，触发留痕已 append 进各 CRQ 条目）",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main 会话状态分发面（application.cc：唤醒词入口直推 / tts stop 出口守卫 / sentence_start 轮来源采样）+ server/deploy/engine-patch（connection.py _kidpal_try_speak 误 await 修正）",
+  "planRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md",
+  "story": "TECH-261014 三条合流（① 唤醒词 connecting 态事件合并跳过致 VOICE 层不推入、语音页整轮不显示；② 查字/提醒播报后设备滞留聆听态——会话出口缺口；③ engine-patch 对同步 speak_txt 误 await 每轮提醒必报 ERROR）——story 语义权威 = docs/requirements.md 现文（S-F1.4 AC1/AC6 提醒覆盖与驻留、§2.1 :39 连续追问保护、§7 v1.37 :652 查字窗播完会话即结束）；技术方案权威 = sibling plan.md（architect /triage-change 2026-10-14）",
+  "acceptance": [
+    "VR-A1: 唤醒词 A″ 入口直推接线（structural 齿）——application.cc HandleWakeWordDetectedEvent idle 分支、K6 auto-connect in-flight 守卫与 EncodeWakeWord() 之后、IsAudioChannelOpened() 判断之前：聊天清屏（kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE) 守卫内 SetChatMessage(\"system\", \"\")）与 kidpal_render_node_voice_begin() 两件同补在位（与 connecting 分支同款语义、与 KEY 路径 show_chat 直推同构）；位置在通道判断前 = 同时覆盖通道已温直跳 listening 子路径；listening 分支零触碰（对话中段回切与提醒场景行为原样）",
+    "VR-A2: tts stop 出口三守卫 + 轮来源采样（structural/行为齿）——sentence_start 处 SetDeviceState(Speaking) 之前采样 speaking_round_entered_from_ = GetDeviceState()，每轮重置；tts stop Schedule lambda 改三守卫序即优先级：① ManualStop 既有语义不变；② 查字收尾——tts stop 时查字窗在前台（判据实现期由 acceptance-author 定：front layer == CHAR_WINDOW 或 view=char 驻留查询）→ protocol_->SendStopListening() + SetDeviceState(kDeviceStateIdle)，查字窗驻留到按键/5 分钟兜底语义零改；③ 出会话 speak 不回聆听——entered_from != kDeviceStateListening → SetDeviceState(kDeviceStateIdle)（不发 listen start、不开麦；提醒弹窗驻留与提示音不受扰——回引 S-F1.4-AC1 弹窗驻留到按键 / S-F1.4-AC6 提醒最高层覆盖当前内容）",
+    "VR-A3: 判别器边角齿（fork② 不误伤连续追问的判定面）——abort 后新一轮、realtime（AEC）模式、ManualStop 模式三边角在齿中钉住（对话轮结构性恒从 Listening 进入 Speaking 不可误伤，plan 回归风险 1 推演义务落齿）",
+    "VR-A4: VQ-E1 冻结齿保持绿——60 秒 timer 零活侧 producer 事实未被本批改变（本批不接线 timer，voice_round_ui.acceptance.c :1081 coverage 行语义不受扰）",
+    "VR-A5: record_session_live.acceptance.c 零改动回归绿（会话收尾缝邻接面 canary——本批动 application.cc 状态分发，该文件零 diff 且全绿）",
+    "VR-A6: engine host 断言——以 stub speak_txt（同步、返回 None）驱动 connection.py _kidpal_try_speak：断言无异常、返回 True、认领路径不回归（命中 kidpal_speak 认领 + 空文案认领两形态；落 server/acceptance/ 新 acceptance 测试文件，harness 模式可循 server/acceptance/archive/test_g_relay_fix.acceptance.py；HEAD 设计态红 = 现行 await 对 None 求值抛 TypeError 进 except 记 ERROR）",
+    "VR-A7: 相对有效基线零新增红——基线锚 = launch-card 2026-10-14 bf96904：server 面 164 passed / 0 failed / 4 deselected（裸 pytest 必带 --ignore=server/acceptance/archive 口径）、firmware host 面 165 Tests / 0 Failures / 0 Ignored；新增齿设计态红全数转绿、推导表之外变红 = 越界信号停下回评",
+    {
+      "id": "VR-A8",
+      "kind": "structural",
+      "note": "真机轮 live-manual structural 豁免（不计入 runner 通过面；human 已裁：真机轮不在本 Pod 范围，host 面转绿 + 结构齿在位 + commit 本分支即本轮终点，Pod 不因真机复验等待 human 挂起）——真机判定标准权威 = plan 真机节六项（唤醒词入口含通道已温子路径 + KEY 回归对照 / 连续追问回归 / 提醒轮回 idle 不回聆听 + 弹窗驻留 + 引擎侧子项延后至 human 人工部署 ECS 后闭账 / 查字轮播完不回聆听且窗驻留 / 驻留面合并回归 / 附带观察项两条只登记），由主线程在 human 回来后组织联测执行；固件烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更），由主线程执行（human 预授权本轮自主烧板）"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "server/acceptance/test_kidpal_speak_sync.acceptance.py"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "exitCriteria": [
+    "voice_round_ui.acceptance.c 全绿：VR-A1/A2/A3 新增齿转绿 + 既有齿零推导表外红；VQ-E1 冻结齿保持绿（VR-A4）；齿区若因 application.cc 邻近改动需重锚，逐齿推导表随包留痕 + REVISION LOG append 授权链（本 TaskPackage + human 触点①确认，261013 先例模式）",
+    "server/acceptance 新 acceptance 测试全绿（VR-A6 转绿）且 server 面相对基线零新增红（--ignore=server/acceptance/archive 口径恒带）",
+    "record_session_live.acceptance.c 零改动回归绿（VR-A5 canary）",
+    "改动点 1/2/3 接线在位且与 plan 一致：A″ 两件在 idle 分支通道判断前（listening 分支零触碰）、tts stop 三守卫序即优先级、sentence_start 采样每轮重置、connection.py 同步调用 + 外层 try/except 降级语义不变（V20 弹窗+提示音必达）",
+    "wire 协议零变更：不新增、不修改任何引擎↔设备消息；docs/requirements.md / docs/architecture.md / docs/contracts/** 零 diff",
+    "相对有效基线零新增红（server 164/0/4 + firmware host 165/0 锚，launch-card bf96904）；任何推导表外变红停下回评",
+    "engine-patch 改动只 commit 到本分支、不部署 ECS（human 裁执行边界）；分支 commit 在场、不 push",
+    "VR-A8 真机轮留痕：判定标准 = plan 真机节（已随 plan 冻结），执行 = 主线程在 human 回来后组织联测——本 Pod 终点 = host 转绿 + 结构齿在位 + commit 本分支，不挂起等待"
+  ],
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" --ignore=server/acceptance/archive server/acceptance  （server 面，⚠️ 裸 pytest 会递归收集 archive/ 必带 --ignore）＋ MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd firmware/main/test/host_app && ./build/host_infra_test.elf\"  （firmware host 面，VERIFY_FW_BUILD_REQUIRED=1 默认开）",
+  "redBaselineResult": "【acceptance-author 冻结落账 2026-10-14（未修复 HEAD 实跑）】变更前锚核验逐字命中原锚：server 164 passed / 4 deselected / 9 subtests passed（命令 = python -m pytest -q --import-mode=importlib -m \"not live\" --ignore=server/acceptance/archive server/acceptance）；firmware host 165 Tests / 0 Failures / 0 Ignored（命令 = MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd firmware/main/test/host_app && ./build/host_infra_test.elf\"，VERIFY_FW_BUILD_REQUIRED=1）。新齿落盘后（HEAD 未修复）设计态红：server = 1 failed / 166 passed / 4 deselected（唯一红 = server/acceptance/test_kidpal_speak_sync.acceptance.py::KidpalSpeakSyncAcceptance::test_vr_a6_sync_speak_txt_takes_no_error_path，断言实况 = ERROR 日志 \"kidpal_speak 播报注入失败: 'NoneType' object can't be awaited (提醒降级：弹窗+提示音仍必达)\" != []，即 defect of record 本体）；firmware host = 166 Tests / 1 Failures / 0 Ignored（唯一红 = TEST 9「语音轮入口出口: 唤醒词直推+tts stop三守卫+轮来源采样 (VR-A1/VR-A2/VR-A3)」首齿 VR-A1 tooth 1，voice_round_ui.acceptance.c:1695）。既有 165 条齿全部保持绿（含 VR-A4 的 VQ-E1 齿、VR-A5 的 record_session_live）。推导表之外变红 = 0。增量算式 = server 164→166 passed (+2 新绿) + 1 设计态红；firmware 165→166 Tests (+1 TEST 9) + 1 设计态红。基线锚（launch-card 2026-10-14 HEAD bf96904）差异判停已过：git diff bf96904 HEAD -- server/ firmware/ 零差异。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "types",
+    "contract-drift",
+    "test-quality",
+    "evidence-integrity"
+  ],
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261014-wakeword-connecting-voice-layer.md",
+    "docs/crq/tech/TECH-261014-post-speak-listening-lingering.md",
+    "docs/crq/tech/TECH-261014-kidpal-speak-await-nonetype.md",
+    "docs/requirements.md#S-F1.4",
+    "S-F1.4-AC1",
+    "S-F1.4-AC6",
+    "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/requirements.md",
+    "docs/crq/tech/TECH-261014-wakeword-connecting-voice-layer.md",
+    "docs/crq/tech/TECH-261014-post-speak-listening-lingering.md",
+    "docs/crq/tech/TECH-261014-kidpal-speak-await-nonetype.md",
+    "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md"
+  ],
+  "changeManifest": [
+    "firmware/main/application.cc",
+    "server/deploy/engine-patch/connection.py",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "server/acceptance/test_kidpal_speak_sync.acceptance.py",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "firmware/main/application.cc",
+        "symbol": "Application::InitializeProtocol"
+      },
+      {
+        "path": "server/deploy/engine-patch/connection.py",
+        "symbol": "_kidpal_try_speak"
+      }
+    ],
+    "exempt": ""
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "kind": "re-anchor-plus-additive-host",
+      "note": "新增齿钉改动点 1/2 接线在位（A″ 三件套在通道判断前、tts stop 三守卫在位——structural 齿先例 :901/:1198）+ 齿区重锚（若 application.cc 邻近改动需要，REVISION LOG append 授权链随包留痕）；VQ-E1 冻结齿（:1081，60 秒 timer 零活侧 producer）保持绿不接线不受扰"
+    },
+    {
+      "path": "server/acceptance/test_kidpal_speak_sync.acceptance.py",
+      "kind": "new-host",
+      "note": "stub speak_txt（同步、返回 None）驱动 _kidpal_try_speak：无异常 / 返回 True / 认领路径不回归；HEAD 设计态红（现行 await 对 None 求值抛 TypeError）fixer 转绿；文件名可由 acceptance-author 按既有命名惯例微调（微调 = changeManifest 与 acceptanceTestsFile 同步增补 + 投影刷新）"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "canary",
+      "note": "零改动回归观察面——会话收尾缝邻接面 canary，红了 = 状态分发改动越界"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring-confirm",
+      "note": "仅当 acceptance-author 裁定抽纯逻辑 seam 文件时接线（plan 改动点 2 建议，非硬性）；不抽则零改动在册确认"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptance": "VR-A1: 唤醒词 A″ 入口直推接线（structural 齿）——application.cc HandleWakeWordDetectedEvent idle 分支、K6 auto-connect in-flight 守卫与 EncodeWakeWord() 之后、IsAudioChannelOpened() 判断之前：聊天清屏（kidpal_layer_chat_clear_event(KIDPAL_LAYER_EVT_NEW_VOICE) 守卫内 SetChatMessage(\"system\", \"\")）与 kidpal_render_node_voice_begin() 两件同补在位（与 connecting 分支同款语义、与 KEY 路径 show_chat 直推同构）；位置在通道判断前 = 同时覆盖通道已温直跳 listening 子路径；listening 分支零触碰（对话中段回切与提醒场景行为原样）",
+        "mutation": "application.cc idle 分支摘除 A″ 直推（kidpal_render_node_voice_begin + 聊天清屏两件从通道判断前移除/回移）",
+        "affectedTest": "firmware/main/test/voice_round_ui.acceptance.c TEST 9「语音轮入口出口: 唤醒词直推+tts stop三守卫+轮来源采样 (VR-A1/VR-A2/VR-A3)」tooth 1/2/3",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "骨架占位（起包格式期望前置：perAcceptance 按 acceptance 全集起骨架）；变异面在 application.cc = builder/fixer 写权域，取证责任人 = builder",
+        "evidenceRedObserved": "166 Tests 1 Failures 0 Ignored / voice_round_ui.acceptance.c:1695 VR-A1 RED: 唤醒词 idle 分支零 kidpal_render_node_voice_begin()——合并路径漏推 VOICE 层",
+        "evidenceCommand": "firmware host 全量（espidf_wsl.sh build + host_infra_test.elf）"
+      },
+      {
+        "acceptance": "VR-A2: tts stop 出口三守卫 + 轮来源采样（structural/行为齿）——sentence_start 处 SetDeviceState(Speaking) 之前采样 speaking_round_entered_from_ = GetDeviceState()，每轮重置；tts stop Schedule lambda 改三守卫序即优先级：① ManualStop 既有语义不变；② 查字收尾——tts stop 时查字窗在前台（判据实现期由 acceptance-author 定：front layer == CHAR_WINDOW 或 view=char 驻留查询）→ protocol_->SendStopListening() + SetDeviceState(kDeviceStateIdle)，查字窗驻留到按键/5 分钟兜底语义零改；③ 出会话 speak 不回聆听——entered_from != kDeviceStateListening → SetDeviceState(kDeviceStateIdle)（不发 listen start、不开麦；提醒弹窗驻留与提示音不受扰——回引 S-F1.4-AC1 弹窗驻留到按键 / S-F1.4-AC6 提醒最高层覆盖当前内容）",
+        "mutation": "application.cc tts stop 守卫摘除其一（查字收尾守卫回退 else → Listening / entered_from 守卫摘除回退无条件回 Listening）或 sentence_start 采样回退",
+        "affectedTest": "firmware/main/test/voice_round_ui.acceptance.c TEST 9 tooth 4/5/6/7（三守卫源文本 + 顺序优先级 + sentence_start 采样）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "骨架占位；变异面在 application.cc = builder/fixer 写权域，取证责任人 = builder",
+        "evidenceRedObserved": "166 Tests 1 Failures 0 Ignored / voice_round_ui.acceptance.c:1748 VR-A2 RED: tts stop 出口缺查字收尾守卫；另 M3 仅摘除采样 → :1794 VR-A2 RED: sentence_start 未在 SetDeviceState(Speaking) 之前采样轮来源",
+        "evidenceCommand": "firmware host 全量"
+      },
+      {
+        "acceptance": "VR-A3: 判别器边角齿（fork② 不误伤连续追问的判定面）——abort 后新一轮、realtime（AEC）模式、ManualStop 模式三边角在齿中钉住（对话轮结构性恒从 Listening 进入 Speaking 不可误伤，plan 回归风险 1 推演义务落齿）",
+        "mutation": "与 VR-A2 同源变异（守卫/采样摘除）——边角齿由同族守卫变异承载判别力，acceptance-author 冻结时逐齿推演论证在案",
+        "affectedTest": "firmware/main/test/voice_round_ui.acceptance.c TEST 9 tooth 8/9/10（abort 后新一轮 / realtime（AEC） / ManualStop 三边角）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "骨架占位；同源变异取证可与 VR-A2 合并执行（同一变异多齿红）",
+        "evidenceRedObserved": "与 VR-A2 同源变异合并执行（同一变异多齿红），Unity 首失败落 tooth 4；同族判别力集合 tooth 4/5/6/7",
+        "evidenceCommand": "firmware host 全量"
+      },
+      {
+        "acceptance": "VR-A4: VQ-E1 冻结齿保持绿——60 秒 timer 零活侧 producer 事实未被本批改变（本批不接线 timer，voice_round_ui.acceptance.c :1081 coverage 行语义不受扰）",
+        "mutation": "不适用——canary 保持绿面（本批对 60 秒 timer 零触碰，无对应变异面；判别力 = 若本批越界接线 timer 该齿即红）",
+        "affectedTest": "firmware/main/test/voice_round_ui.acceptance.c :1081 VQ-E1 冻结齿",
+        "turnedRed": false,
+        "sensitive": false,
+        "notes": "取证豁免面：canary 性质，无 mutation 义务（reason 段同 261013 先例口径）"
+      },
+      {
+        "acceptance": "VR-A5: record_session_live.acceptance.c 零改动回归绿（会话收尾缝邻接面 canary——本批动 application.cc 状态分发，该文件零 diff 且全绿）",
+        "mutation": "不适用——零改动 canary 面",
+        "affectedTest": "firmware/main/test/record_session_live.acceptance.c（零 diff + 全绿即为判据）",
+        "turnedRed": false,
+        "sensitive": false,
+        "notes": "取证豁免面：零改动 canary"
+      },
+      {
+        "acceptance": "VR-A6: engine host 断言——以 stub speak_txt（同步、返回 None）驱动 connection.py _kidpal_try_speak：断言无异常、返回 True、认领路径不回归（命中 kidpal_speak 认领 + 空文案认领两形态；落 server/acceptance/ 新 acceptance 测试文件，harness 模式可循 server/acceptance/archive/test_g_relay_fix.acceptance.py；HEAD 设计态红 = 现行 await 对 None 求值抛 TypeError 进 except 记 ERROR）",
+        "mutation": "connection.py await speak_txt 回退（恢复误 await 形状）",
+        "affectedTest": "server/acceptance/test_kidpal_speak_sync.acceptance.py::KidpalSpeakSyncAcceptance::test_vr_a6_sync_speak_txt_takes_no_error_path（首红齿）+ test_vr_a6_claim_paths_non_regression + test_vr_a6_speak_failure_degrades_reminder_still_delivered",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "骨架占位；变异面在 server/deploy/engine-patch/connection.py = builder/fixer 写权域，取证责任人 = builder",
+        "evidenceRedObserved": "1 failed, 2 passed / test_vr_a6_sync_speak_txt_takes_no_error_path；AssertionError: Lists differ: [\"kidpal_speak 播报注入失败: 'NoneType' object can't be awaited (提醒降级：弹窗+提示音仍必达)\"] != []",
+        "evidenceCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" --ignore=server/acceptance/archive server/acceptance/test_kidpal_speak_sync.acceptance.py"
+      },
+      {
+        "acceptance": "VR-A7: 相对有效基线零新增红——基线锚 = launch-card 2026-10-14 bf96904：server 面 164 passed / 0 failed / 4 deselected（裸 pytest 必带 --ignore=server/acceptance/archive 口径）、firmware host 面 165 Tests / 0 Failures / 0 Ignored；新增齿设计态红全数转绿、推导表之外变红 = 越界信号停下回评",
+        "mutation": "不适用——基线回归面（判据 = 全量相对基线零新增红）",
+        "affectedTest": "两基线命令全量跑（server 面 --ignore=archive 口径 + firmware host 面）",
+        "turnedRed": false,
+        "sensitive": false,
+        "notes": "取证豁免面：基线面无单一变异对应物"
+      },
+      {
+        "acceptance": "VR-A8: 真机轮 live-manual structural 豁免（不计入 runner 通过面；human 已裁：真机轮不在本 Pod 范围，host 面转绿 + 结构齿在位 + commit 本分支即本轮终点，Pod 不因真机复验等待 human 挂起）——真机判定标准权威 = plan 真机节六项（唤醒词入口含通道已温子路径 + KEY 回归对照 / 连续追问回归 / 提醒轮回 idle 不回聆听 + 弹窗驻留 + 引擎侧子项延后至 human 人工部署 ECS 后闭账 / 查字轮播完不回聆听且窗驻留 / 驻留面合并回归 / 附带观察项两条只登记），由主线程在 human 回来后组织联测执行；固件烧录 = app 分区单烧（纯代码变更无 spiffs 资产变更），由主线程执行（human 预授权本轮自主烧板）",
+        "mutation": "不适用——structural 豁免面（真机轮由主线程在 human 回来后组织联测执行）",
+        "affectedTest": "无 runner 内测试（plan 真机节六项为判定标准权威）",
+        "turnedRed": false,
+        "sensitive": false,
+        "notes": "取证豁免面：structural 真机轮豁免（TB-A4 261012 / TR-A5 261013 先例口径）"
+      }
+    ],
+    "reason": "Full 包骨架前置（起包格式期望前置第①条）：perAcceptance = acceptance[] 全集逐条骨架、turnedRed=false 占位（261013 r2 形状红教训——起包给全量骨架省 verifier mutation-check 一轮）；perAcceptance.acceptance = acceptance[] 对应条目原文完整照录（不转述不缩写，taskpackage-authoring.md §5 约定 + 261010 包先例⑤；对象条目取 id + note 全文）；全部可变异面（VR-A1/A2/A3/A6）落 builder/fixer 写权域（application.cc / connection.py 均 allow），无「变异面在冻结件」分权问题；VR-A4/A5/A7/A8 为 canary/豁免面取证豁免；齿名定稿权 = acceptance-author 冻结时（骨架齿名即占位声明）",
+    "evidenceFile": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/mutation-evidence.md",
+    "evidenceNote": "四项变异逐条取证（M1..M4），取证责任人 = builder，逐字红输出与回退确认见 evidenceFile；全部变异已完全回退，工作树零残留。VR-A4/A5/A7/A8 为 canary/豁免面，无 mutation 义务。"
+  },
+  "adrRequired": false,
+  "docsSyncRequired": false,
+  "docsSyncReason": "plan 不动清单明载 docs/requirements.md / docs/architecture.md / docs/contracts/** 零 diff（修法全部实现既有口径：requirements.md:39 / :295 / :300 / :652）；docs/crq 三条 TECH 条目闭账条件 = 包 merge + 真机复验轮——合并与真机轮均不在本轮范围（human 裁），CRQ 状态翻转与闭账留痕留待主线程联测轮处理，非本 Pod 义务",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "planningWorkstreamRequired": false,
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-14，frontmatter reviewed-by 行为证）：技术方案意见（A″ 薄修 + 三守卫 + 判别器采样 + 同步调用修正）+ changeManifest + impactedTests 种子 + crossEnd 种子三件齐备，fork② 真分叉已在计划期裁决（设备侧，human 授权 architect 裁 + 主线程确认）——不再重复派 architect。human 触点①（triage 分流确认）已预授权。【1f 快照保鲜核验（2026-10-14 intake 实测）】plan 引用锚点逐条对磁盘核验通过零漂移：application.cc 唤醒词 idle 分支（K6 守卫/EncodeWakeWord/IsAudioChannelOpened 位置吻合）、tts stop handler（Speaking + ManualStop → Idle else Listening 现状吻合）、sentence_start SetDeviceState(Speaking)、connecting 分支三件套（chat_clear + voice_begin）、connection.py :383-390 await speak_txt、voice_round_ui.acceptance.c :1081 VQ-E1 coverage 行 + :901/:1198 结构齿先例 + :1698 REVISION LOG、requirements.md :39/:47/:295/:300/:652 全部在位；基线锚 bf96904 对 server/ firmware/ 零差异（差异判停过，直接引用 launch-card 两行）。【scope-map 核对（intake checklist）】builder/fixer allow firmware/** + server/** 覆盖 changeManifest 实现面（application.cc / connection.py / CMakeLists）；voice_round_ui.acceptance.c 命中 builder deny（*.acceptance.c）、server/acceptance/** 命中 builder deny（**/acceptance/**）——验收测试归 acceptance-author（allow firmware/**/*.acceptance.c + server/**/acceptance/** 覆盖两处），分权即设计无冲突；engine host 测试落 server/acceptance/（非 server/tests/）正是为使 acceptance-author 有落盘写权；planner 自身不写实现面。mutation 变异面全部在 builder/fixer 写权域（261013 retro 第 2 条教训已过查）。【UIUX】Level 0（会话状态分发行为修复，无新页/新态设计面）。【crossEnd】按 plan 种子填 counterparts 非空（application.cc ↔ connection.py，提醒语音链两端各自闭环）；wire 协议零变更为本包断言（fork② 裁设备侧的直接推论），契约面 docs/contracts/** 零 diff、仅作 canary 引用——契约变更门不触发。【执行边界（human 已裁，随包留痕）】① engine-patch 改动只 commit 到分支、不部署 ECS，联测时 human 人工部署；② 固件烧录 = host 转绿后由主线程执行（human 预授权本轮自主烧板，app 分区单烧）；③ 真机轮不在本 Pod 范围——host 面转绿 + 结构齿在位 + commit 本分支即本轮终点，Pod 不因真机复验等待 human 挂起，真机判定标准已随 plan 真机节冻结、由主线程组织联测；④ 合并 main 不在本次范围——supervisor 机械闸判定落盘即可，不做 merge 事件；⑤ 固件严格模式 VERIFY_FW_BUILD_REQUIRED=1 默认开（launch-card 声明行）；⑥ 不 push。【all-mock 申报】本包计划含真机轮（VR-A8），不应判 all-mock；但本轮真机证据确实不落（执行边界③）——若验证期机械闸判 all-mock，以 human launch 边界③（「host 面转绿 + 结构齿在位 + commit 本分支即为本轮终点」）为既有 human 裁定留痕，pod-events 落 human-decision 引用，不静默、不升门挂起（261012/261013 先例申报口径）。【intake 形状】自建形状（无 portfolio taskpackage、无 devloop/pods 条目、无 PROPOSAL）——上游 = 三条 TECH CRQ + reviewed plan.md；launch-card.md 在场已读；current/ 指针刷新前指 261013 包，本包落盘即字节级复制刷新。【host runner 注意】两基线命令形态见 redBaselineCommand；server 面裸 pytest 会递归收集 archive/（launch-card 量测口径警示沿袭）；firmware host 跑全量（165 锚为全量口径，基线差异判停按 launch-card）。【真机门】VR-A8 structural 豁免——本 Pod 不停门等 human。【已知红参照】两基线全绿锚在案（launch-card 2026-10-14 bf96904）；本包红基线红全部为新增齿设计态红，无上游已知红需要消解。【相邻未结项（不并入，plan 非目标）】60 秒 timer 活侧 producer 接线（Phase 1 已登记）/ edgetts-403 耐久化 / first-keypress-no-listening / 观察项两条 / 提醒语音与对话 TTS 交错治理。【Step 8b 锚 2 核对（planner，2026-10-14）】① AC 回引号集对账：sourceRefs 补 `S-F1.4-AC1` / `S-F1.4-AC6` 复合句法（原仅带锚点路径 `docs/requirements.md#S-F1.4`，机械 AC 回引齿不激活、属方向偏差信号——已修），acceptance VR-A2 齿内同步回引两 AC，号集一致（declared == backref = {AC1, AC6}）。② story 补充规则逐条落点：弹窗驻留口径（驻留到按键、不设自动消失）↔ VR-A2 guard ③ + exitCriteria「提醒弹窗驻留与提示音不受扰」承载；录音态例外（录音期间提醒排队延后）与三档时刻/过期口径/权限不在本包作用域（`application.cc` 会话状态分发面零 diff 面），判据 = 相对基线零新增红（VR-A7）+ VR-A5 canary。③ 断言方向：不弱于 story 语义——唤醒词入口双入口（S-F1.4 :49 / §2.1 :36-39 入口直推）与连续追问保护（§2.1 :39）均以正向路径保留断言（TEST 9 tooth 5）钉住，未反向。核对者 = planner（验收语义方向核对），核对对象 = acceptance-author 产出。【acceptance-author 冻结结果（2026-10-14）】voice_round_ui.acceptance.c +315 行纯 additive（TEST 9，10 齿，含 coverage map 补 VR-A1..VR-A8 行 + REVISION LOG append 授权链）；server/acceptance/test_kidpal_speak_sync.acceptance.py 新建 420 行（三个 case）；两文件均落各角色写权域，实现面（application.cc / connection.py / record_session_live.acceptance.c / host_app CMakeLists）零 diff 已核。affectedTest 定稿齿名已由 planner 代填（acceptance-author 对 delivery/taskpackages/** 无写权，按派发书硬约定①回执代存）。【builder 存疑点 planner 裁决（2026-10-14）】① 采样载体形态：builder 将 speaking_round_entered_from_ 实现为 application.cc 文件级 static（非 application.h 类成员）——**裁决 = 接受**。理由：冻结齿只钉 .cc 内字面（齿全绿已证）；与同文件既有先例（s_vad_speaking / s_story_rec_entered 均为文件级静态）同款；单 Application 实例语义等价；扩 changeManifest 补 application.h 需走 architect 扩单通道（成本 > 收益，判定不扩）。② unit 层义务与 manifest 张力：builder 未新增独立 unit 文件（changeManifest[] 无 unit 文件且 change-manifest 对账面 fail-closed）——**裁决 = 接受**。理由：requiredLayers 的 unit 义务由在册测试文件承载——engine 侧 server/acceptance/test_kidpal_speak_sync.acceptance.py 是 unittest.TestCase 且经 AST 抽取驱动 connection.py 真实方法体（真控制流、真 except 分支）；firmware 侧 host runner 走 voice_round_ui.acceptance.c TEST 9；plan 对「抽纯逻辑 seam」明载「建议（非硬性）」，本包按派发书未采用。unit 闸实跑 258 passed（scoped 3 passed），机械面已绿。两裁决均属 planner 边界内裁定（非 human 门）：无越界、无契约面、无写权扩张。【mutation 取证落盘】四项变异（VR-A1/A2/A3/A6）逐条取证，逐字红输出与回退确认落 delivery/taskpackages/261014-voice-round-entry-exit-fixes/mutation-evidence.md（取证责任人 = builder，planner 按派发书硬约定①代存）；perAcceptance turnedRed 已置 true + evidenceRedObserved/evidenceCommand 回填；全部变异完全回退、工作树零残留。"
+}

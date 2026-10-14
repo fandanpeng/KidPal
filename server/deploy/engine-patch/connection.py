@@ -383,7 +383,11 @@ class ConnectionHandler:
         try:
             from core.handle.intentHandler import speak_txt
 
-            await speak_txt(self, text.strip())
+            # speak_txt 是引擎原生同步函数（core/handle/intentHandler.py）: 调用先行完成
+            # （语音发送任务已排队）、返回 None——不可 await（261014 VR-A6: 旧形态 await
+            # 对 None 求值抛 TypeError 进 except 每轮提醒必报 ERROR「播报注入失败」,
+            # 与实际相反）。同步直调; 外层 except 降级语义（V20 弹窗+提示音必达）不变。
+            speak_txt(self, text.strip())
         except Exception as speak_error:  # noqa: BLE001 — 出音失败不影响提醒送达
             self.logger.bind(tag=TAG).error(
                 f"kidpal_speak 播报注入失败: {speak_error} (提醒降级：弹窗+提示音仍必达)")

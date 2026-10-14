@@ -1,0 +1,54 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "261014-voice-round-entry-exit-fixes",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "afd5d3d1-efc3-40ce-ad5c-c7212523d38c",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/verifier-evidence/rounds/r3.json",
+  "provenance": {
+    "sourceType": "regression",
+    "triage": "architect /triage-change 分流 review 2026-10-14（plan.md frontmatter reviewed-by 行为证；fork② 真分叉裁设备侧，human 授权 architect 裁 + 主线程确认）+ human triage 触点①（triage 分流确认）已裁",
+    "rigor": "full",
+    "riskTier": "medium",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "final",
+    "round": 3,
+    "invocationId": "afd5d3d1-efc3-40ce-ad5c-c7212523d38c",
+    "observedGateExit": 0
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "timing": "scoped", "note": "pre-cutoff 存量放行（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "timing": "scoped", "note": "设备侧真编译通过（xiaozhi.bin 0x312190 bytes、app 分区余量 0x5de70 = 11%）" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "timing": "scoped" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "timing": "scoped", "note": "functional = VR-A1~A7；structural 豁免 = VR-A8（真机轮 live-manual）；files = voice_round_ui.acceptance.c + test_kidpal_speak_sync.acceptance.py" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "timing": "scoped", "note": "7 functional acceptance；mutationEvidence functional 四条（VR-A1/A2/A3/A6）turnedRed=true；VR-A4/A5/A7/A8 为 canary/豁免面" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "timing": "scoped", "note": "docsSyncRequired=false（plan 不动清单明载 requirements/architecture/contracts 零 diff）" },
+    { "gate": "security", "kind": "security", "ok": true, "timing": "scoped", "note": "securityReviewRequired=false" },
+    { "gate": "unit", "kind": "functional", "ok": true, "timing": "full", "note": "scope 内 16 件、structuralCollected 258、liveDeselected 4 → 258 passed, 4 deselected, 9 subtests passed" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "timing": "full", "note": "oracle-pass（firmware 2 / server 13）+ executor-run（structuralCollected 167）→ 167 passed, 4 deselected, 9 subtests passed" }
+  ],
+  "hostRunnerIntegratorRerun": {
+    "date": "2026-10-14",
+    "serverFace": { "command": "python -m pytest -q --import-mode=importlib -m \"not live\" --ignore=server/acceptance/archive server/acceptance", "result": "167 passed, 4 deselected, 9 subtests passed" },
+    "firmwareHostFace": { "command": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- bash -c \"cd firmware/main/test/host_app && ./build/host_infra_test.elf\"", "result": "166 Tests / 0 Failures / 0 Ignored, OK", "note": "VERIFY_FW_BUILD_REQUIRED=1；build 通道 ninja no-work-to-do = elf 与当前源面同 fresh" },
+    "baseline": "server 164/0/4 + firmware host 165/0（launch-card 2026-10-14 @ bf96904）——增量恰为新增齿、零新增红"
+  },
+  "impactAudit": {
+    "detectChanges": "29 seed / 90 impacted（base=main，merge_base=0baab93，inbound depth=2，含工作树未 commit diff）——impacted_modules = firmware/main(5) / firmware/scripts(19，通用符号名 over-approximation 噪声) / server/gateway(20) / server/shim.py(3) / server/acceptance(24) / server/tests(19)；真实测试面收窄 = firmware voice_round_ui.acceptance.c + server acceptance 8 + server tests 3（非 archive）",
+    "closedSet": "git diff 面 == changeManifest（application.cc / connection.py / voice_round_ui.acceptance.c / test_kidpal_speak_sync.acceptance.py；host_app CMakeLists 零改动在册确认）+ delivery/ 簿记；零触碰面 git status 零命中",
+    "testScopeFile": "delivery/taskpackages/261014-voice-round-entry-exit-fixes/test-scope-final.txt",
+    "scopingMethod": "三分法：per-Pod 专属图索引可用 → 正常圈定，无降级；floor = 本包两冻结验收件（单包无对端冻结件）"
+  },
+  "residual": "VR-A8 真机轮六项未闭环（human 裁本 Pod 终点不含真机轮；host 面转绿即为终点）+ engine 侧真实 edge-tts 出声与「无 ERROR 且语音照常下发」延后至 human 人工部署 ECS 后闭账（执行边界①）+ VR-A3 三边角行为 oracle 归真机轮（application.cc 不可 host 编）；三条 TECH CRQ 闭账条件 = 包 merge + 真机复验轮（本 integrator 未翻转 CRQ 状态）"
+}
