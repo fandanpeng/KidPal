@@ -9,6 +9,7 @@
 
 **摘要**：未结 19（待拍板 0 / 待触发 13 / 已接受风险 6）；已结 17（归档索引见下）。
 **摘要**：未结 23（待拍板 0 / 待触发 17 / 已接受风险 6）；已结 15（归档索引见下）。
+**摘要**：未结 24（待拍板 0 / 待触发 18 / 已接受风险 6）；已结 15（归档索引见下）。
 
 ## 待拍板（0）
 
@@ -16,6 +17,7 @@ _（无）_
 
 ## 待触发（13）
 ## 待触发（17）
+## 待触发（18）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -34,6 +36,7 @@ _（无）_
 | [TECH-261014-sdkconfig-decorative-empty-section](TECH-261014-sdkconfig-decorative-empty-section.md) | NIT | firmware/sdkconfig 每次固件构建被追加装饰性空节（「Image Effects Configuration」块）——Kconfig 构建期回写使跟踪文件常驻脏、git status 噪音与误提交风险 | 下个固件 sdkconfig / 构建治理批顺带；或 sdkconfig 脏噪再次干扰收口对账（人工排除复现）时 |
 | [TECH-261014-kidpal-speak-await-nonetype](TECH-261014-kidpal-speak-await-nonetype.md) | SHOULD | engine-patch 对同步 speak_txt 误 await——每轮提醒语音注入必报 ERROR「播报注入失败」但主链仍通（语音在报错后照常合成下发），2026-09-11 live 轮已测出、记「归后续修复」后未修未登记，本条补登 | 下一次动 server/deploy 引擎部署面的批顺带（与 TECH-261012-edgetts-403-hotpatch 耐久化同批的先例模式）；修复一行级，不值得单开包 |
 | [TECH-261014-post-speak-listening-lingering](TECH-261014-post-speak-listening-lingering.md) | MAJOR | 查字/提醒播报后设备滞留聆听态——会话出口三缺口：查字收尾缝零接线、提醒语音链尾随 auto-listen 把设备拉进会话（叠加已登记的 60 秒 timer 零 producer），实证后果 = AI 插话家庭对话 | human 排期后的固件修复包（/triage-change 路由，与 TECH-261014-wakeword-connecting-voice-layer 同包分流——后者移交条款「下一个动 application.cc 状态分发的包顺带承接」正好覆盖本条）；或阶段一「问答演出补齐」批一并带 |
+| [TECH-261014-session-end-channels-unwired](TECH-261014-session-end-channels-unwired.md) | MAJOR | 会话结束三通道有两通道未接线——60 秒超时设备侧零 timer producer、结束意图（云端判）WS 链路无下发，致一轮聊完后设备常驻聆听（实测：说「拜拜」后仍开着麦直到 WS 通道超时约 137 秒） | human 排期后的会话生命周期修复包；或下次动 session_state_machine / 会话收尾链的包顺带评估（本条体量含双阈值与云端判据取舍，不建议纯顺带） |
 | [TECH-261014-wakeword-connecting-voice-layer](TECH-261014-wakeword-connecting-voice-layer.md) | MAJOR | 唤醒词路径 connecting 态事件被合并跳过致 VOICE 层不推入、语音页整轮不显示 | human 排期后的固件修复包（/triage-change 路由）；或下一个动 application.cc 状态分发 / display 前台桥的包顺带承接 |
 
 ## 已接受风险（6）
