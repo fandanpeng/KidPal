@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# verify-deploy.sh — KidPal ECS 部署漂移机检（manifest 驱动）
+# 261013-gov-review-deploy-single-source-loop 落地件（PROPOSAL T3）。
+#
+# 读 server/deploy/manifest.yaml，逐条核验 live 与仓内源一致：
+#   - verify=md5    → 行尾归一 md5 比对（src vs dst）
+#   - verify=marker → 逐锚 grep dst（secret 承载件；禁 md5 禁期望值）
+#   - cron_jobs     → openclaw cron show <name> --json 与期望命令串/归属比对
+#
+# 三个时机共用本脚本：部署前前置（deploy.sh 调）、部署后自检（deploy.sh 调）、
+# 每日 systemd timer（kidpal-deploy-drift.timer）。
+# 漂移时：写 /opt/kidpal/alerts/deploy-drift.json（机器可读告警面）+ exit 1。
+#
+# 用法：bash server/deploy/verify-deploy.sh [--alerts-dir DIR] [--no-alerts]
+# 退出码：0 = 全绿；1 = 有漂移；2 = 脚本自身错误（manifest 缺失/解析失败等）。
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "ERROR: 不在 git clone 内运行（deploy clone = /opt/kidpal/deploy-clone，见 ecs-bootstrap.md）" >&2
+  exit 2
+}
+MANIFEST="$REPO_ROOT/server/deploy/manifest.yaml"
+[ -f "$MANIFEST" ] || { echo "ERROR: manifest 不存在：$MANIFEST" >&2; exit 2; }
+
+# python 解释器：ECS venv 优先（3.11 + PyYAML），退化裸 python3
+if [ -x /opt/kidpal/venv/bin/python3 ]; then
+  PY=/opt/kidpal/venv/bin/python3
+else
+  PY=python3
+fi
+
+# openclaw CLI 可达性（cron 核验用）；PATH 兜底 npm-global
+export PATH="/root/.npm-global/bin:$PATH"
+
+ALERTS_DIR="${KIDPAL_ALERTS_DIR:-/opt/kidpal/alerts}"
+NO_ALERTS=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --alerts-dir) ALERTS_DIR="$2"; shift 2 ;;
+    --no-alerts)  NO_ALERTS=1; shift ;;
+    *) echo "ERROR: 未知参数 $1" >&2; exit 2 ;;
+  esac
+done
+
+"$PY" - "$MANIFEST" "$ALERTS_DIR" "$NO_ALERTS" <<'PYEOF'
+import hashlib
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+import yaml
+
+manifest_path, alerts_dir, no_alerts = sys.argv[1], sys.argv[2], int(sys.argv[3])
+repo = Path(manifest_path).resolve().parents[2]
+
+try:
+    manifest = yaml.safe_load(Path(manifest_path).read_text(encoding="utf-8"))
+except Exception as exc:  # noqa: BLE001
+    print(f"ERROR: manifest 解析失败: {exc}", file=sys.stderr)
+    sys.exit(2)
+
+def norm_md5(path: Path) -> str:
+    """行尾归一 md5——repo（Windows CRLF）与 ECS（LF）两侧可比。"""
+    raw = path.read_bytes()
+    return hashlib.md5(raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")).hexdigest()
+
+findings = []
+
+def drift(kind: str, ident: str, detail: str) -> None:
+    findings.append({"kind": kind, "id": ident, "detail": detail})
+    print(f"DRIFT [{kind}] {ident}: {detail}")
+
+for entry in manifest.get("entries", []):
+    dst = Path(entry["dst"])
+    src = entry.get("src")
+    ident = entry["dst"]
+    if not dst.exists():
+        drift("missing", ident, "live 缺文件（src=%s）" % src)
+        continue
+    if entry.get("verify") == "marker":
+        for anchor in entry.get("anchors", []):
+            if anchor not in dst.read_text(encoding="utf-8", errors="replace"):
+                drift("anchor", ident, f"锚未命中: {anchor!r}")
+    else:  # md5（须有 src）
+        if not src:
+            drift("config", ident, "verify=md5 但无 src——manifest 配置错误")
+            continue
+        src_path = repo / src
+        if not src_path.exists():
+            drift("config", ident, f"仓内源缺失: {src}")
+            continue
+        want, got = norm_md5(src_path), norm_md5(dst)
+        if want != got:
+            drift("md5", ident, f"src={src} 仓内 {want[:8]}… != live {got[:8]}…")
+
+for job in manifest.get("cron_jobs", []):
+    name = job["name"]
+    proc = subprocess.run(
+        ["openclaw", "cron", "show", name, "--json"],
+        capture_output=True, text=True, timeout=120,
+    )
+    if proc.returncode != 0:
+        drift("cron", name, f"openclaw cron show 失败: {proc.stderr.strip()[:200]}")
+        continue
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        drift("cron", name, "cron JSON 解析失败")
+        continue
+    if "expect_argv" in job:
+        argv = " ".join(payload.get("payload", {}).get("argv", []))
+        # argv[2] 是 sh -lc 的整条命令串；与期望串做去空白比对
+        cmd = payload.get("payload", {}).get("argv", ["", "", ""])[2] if len(
+            payload.get("payload", {}).get("argv", [])) >= 3 else ""
+        joined = (cmd or argv).split()
+        expect = job["expect_argv"].split()
+        if joined != expect:
+            drift("cron", name, "命令串漂移（期望 %s）" % job["expect_argv"][:80])
+    if "expect_agent" in job and payload.get("agentId") != job["expect_agent"]:
+        drift("cron", name, f"agent 漂移: live={payload.get('agentId')!r} 期望={job['expect_agent']!r}")
+    if "expect_schedule" in job:
+        live_sched = payload.get("schedule", {})
+        every_min = live_sched.get("everyMs", 0) // 60000
+        if live_sched.get("kind") == "every" and every_min != 15:
+            drift("cron", name, f"调度漂移: live=every {every_min}min 期望={job['expect_schedule']}")
+
+report = {
+    "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    "repo_commit": subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        capture_output=True, text=True).stdout.strip(),
+    "drift_count": len(findings),
+    "findings": findings,
+}
+
+print(json.dumps({"drift_count": len(findings)}, ensure_ascii=False))
+for f in findings:
+    print(f"  [{f['kind']}] {f['id']}")
+
+if not no_alerts:
+    alerts = Path(alerts_dir)
+    alerts.mkdir(parents=True, exist_ok=True)
+    (alerts / "deploy-drift.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+sys.exit(1 if findings else 0)
+PYEOF

@@ -204,7 +204,15 @@ function runGateChild() {
   const cfg = loadGates();
   const results = [];
   const failures = []; // 260813-gate-accuracy-batch T3：final 相位全红清单收集（scoped 相位不用，遇红即停）
+  const args = parseArgs();
+  const scopeFile = typeof args['scope-file'] === 'string' && args['scope-file'] ? args['scope-file'] : null;
   const phase = phaseFromArgs();
+  // ── final 相位 scope-file fail-closed（260928-gov-review-dev-loop-preassess-manifest-scope T9）──
+  // 缺清单/圈定失败 → 红闸举手（不退全量、不静默缩水）；scoped 相位不消费 scope-file。
+  if (phase === 'final' && !scopeFile) {
+    process.stderr.write(`[verify.mjs] final 相位缺 --scope-file（红闸举手，260928 批 T9 fail-closed）：范围 = 影响面圈定清单（detect_changes + impactedTests 种子合成，integrator Step 4）；全量回归 = 人工触发位。缺清单/圈定失败 → 升级 human，不默认全量\n`);
+    process.exit(2);
+  }
 
   const activeGates = (cfg.gates || []).filter((gate) => gateActive(gate, phase));
   const skippedCount = (cfg.gates || []).length - activeGates.length;
@@ -214,7 +222,10 @@ function runGateChild() {
 
   for (const gate of activeGates) {
     const started = Date.now();
-    const run = spawnSync(gate.cmd, { cwd: projectDir, shell: true, encoding: 'buffer', maxBuffer: LIMITS.maxFactBytes * 4 });
+    // timing=full 闸透传 scope-file + phase（unit/acceptance 自行求交与 fail-closed；scoped 闸行为零变）。
+    // --phase 透传 = FAIL-F1 修复的纵深：callee 自身也执行 final 缺 scope-file 红闸判据。
+    const cmd = gate.timing === 'full' && scopeFile ? `${gate.cmd} --phase=${phase} --scope-file=${scopeFile}` : gate.cmd;
+    const run = spawnSync(cmd, { cwd: projectDir, shell: true, encoding: 'buffer', maxBuffer: LIMITS.maxFactBytes * 4 });
     const stdout = boundedText(run.stdout, LIMITS.perResultStdoutBytes);
     const stderr = boundedText(run.stderr, LIMITS.perResultStderrBytes);
     const out = stdout + stderr;
@@ -271,8 +282,9 @@ function runGateChild() {
   process.exit(0);
 }
 
-function runGateChildProcess(phase) {
-  return spawnSync(process.execPath, [scriptPath, '--gate-child', `--phase=${phase}`], {
+function runGateChildProcess(phase, scopeFile = null) {
+  const extra = scopeFile ? [`--scope-file=${scopeFile}`] : [];
+  return spawnSync(process.execPath, [scriptPath, '--gate-child', `--phase=${phase}`, ...extra], {
     cwd: projectDir,
     env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
     encoding: 'utf8',
@@ -294,7 +306,8 @@ function parseChildPayload(child) {
 
 function runLegacy() {
   const phase = phaseFromArgs();
-  const child = runGateChildProcess(phase);
+  const legacyArgs = parseArgs();
+  const child = runGateChildProcess(phase, typeof legacyArgs['scope-file'] === 'string' ? legacyArgs['scope-file'] : null);
   const payload = parseChildPayload(child);
   persistVerifyRuns(payload.results || [], 'verifier-round', 'verifier');
   writeVerdictJson(payload.results || [], !!payload.ok, payload.error || null, phase, { legacyNonBearing: true, ...summarizeNotExecuted(payload.results || []) });
@@ -341,7 +354,7 @@ function runBearing() {
   }
 
   const startedAt = new Date().toISOString();
-  const child = runGateChildProcess(expected.phase);
+  const child = runGateChildProcess(expected.phase, typeof args['scope-file'] === 'string' ? args['scope-file'] : null);
   const completedAt = new Date().toISOString();
   if (![0, 1].includes(child.status)) {
     process.stderr.write(truncateUtf8(`[verify.mjs] gate child infrastructure failure\n${child.stderr || ''}`, LIMITS.parentStderrBytes));
@@ -418,6 +431,12 @@ function selfCheck() {
   });
   check('entry-full-exit-2', child.status === 2);
   check('entry-full-stderr-names-value', String(child.stderr || '').includes('未知 --phase 值'));
+  // ── final 相位 scope-file fail-closed（260928 批 T9）：缺 scope-file 的 final child 必须 exit 2 + 点名 ──
+  const finalNoScope = spawnSync(process.execPath, [scriptPath, '--gate-child', '--phase=final'], {
+    cwd: projectDir, encoding: 'utf8', timeout: 30000,
+  });
+  check('final-missing-scope-file-exit-2', finalNoScope.status === 2);
+  check('final-missing-scope-file-stderr-names', String(finalNoScope.stderr || '').includes('缺 --scope-file'));
   console.log(JSON.stringify({ selfCheck: 'verify.mjs', pass: pass.length, fail: fail.length, total: pass.length + fail.length, ok: fail.length === 0, failures: fail.length ? fail : undefined }));
   process.exit(fail.length === 0 ? 0 : 1);
 }

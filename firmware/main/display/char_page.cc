@@ -1,25 +1,40 @@
 /*
  * char_page.cc — KidPal 查字窗 `char-window` (LVGL 9.3, 设备侧): 米字格大字盘 (左) +
- * 右栏速查卡 (拼音带声调 / 共 N 画 / 部首 / 组词) + 底部提示条 + 逐笔动画驱动
+ * 右栏速查卡 (拼音带声调 / 共 N 画 / 部首 / 释义) + 底部提示条 + 逐笔动画驱动
  * (沿 medians 笔尖移动 + 当前笔白衬边)。**会话内覆盖窗**（M2-K3 页→窗改造）: 在当前页
  * 之上叠一层窗面板、**不清屏**——关窗（dismiss_front_overlay 清 transient 回基层）后
  * 原页原样回来、不翻页。
  *
  * 教学设计红线 (spec §5.6 v3 / S-F3.1, CHR-A7): 米字格示范字【只走 strokes 数据
  * 光栅渲染路径】(kidpal_char_raster_stroke, 字库数据即标准规范字形,
- * 绝不缺省回落字体渲染), 伴随文字 (拼音/部首/组词) 才用 LVGL 字体。示范字路径
+ * 绝不缺省回落字体渲染), 伴随文字 (拼音/部首/释义) 才用 LVGL 字体。示范字路径
  * 上零 tilt — 示范字路径上绝不施加文字倾斜样式 (防「教歪」)。
  *
- * 动画状态机 (950ms/笔、演完歇 2s 重来、三态已写/当前/未写虚线点链 6px、KEY 短按
- * 重播) 全部委托 display/char_stroke.c 的纯逻辑合约 (kidpal_char_anim_state 等),
- * 本窗只做 LVGL 呈现。底部提示条文案消费 kidpal_char_card_build 的 out->progress
- * 单源 (演示中「第 X 笔·共 N 笔」/ 定格「写完啦·共 N 笔」, S-F3.3 AC2——本窗零重抄
- * 文案格式)。数据结构由 mcp_server 经 kidpal_char_data_validate 防御降级门校验后喂入;
- * 本函数仍防御 (缺字段/解析失败 -> 不盲渲染直接返回)。
+ * 动画状态机 (950ms/笔、三态已写/当前/未写虚线点链 6px) 全部委托 display/char_stroke.c
+ * 的纯逻辑合约 (kidpal_char_anim_state 等), 本窗只做 LVGL 呈现。
+ *
+ * v1.59 KEY 起播口径 (本包 260928-char-window-key-triggered-play): 建窗即米字格静态
+ * 显示完整示范字 (整字实心黑——charpage_render_frame(-1, n_strokes) 判每笔 WRITTEN;
+ * 未按 KEY 前零逐笔演示——timer 建表即 lv_timer_pause); KEY 短按 = 首次起播 / 从头重播
+ * (replay 归零 elapsed + 置 started + lv_timer_resume, 首播重播同路径); 演完定格
+ * 「写完啦·共 N 笔」等按键、不自动循环 (timer_cb REST 相位渲染定格帧后 lv_timer_pause +
+ * return, 取模回绕在装配层闸断——char_stroke.c 纯逻辑合约零触碰)。键帽随态: 未起播
+ * 「播报」/ 起播后「重播」(show 末尾与 replay 均刷 kidpal_lcd_keybar_sync)。
+ *
+ * 底部提示条文案消费 kidpal_char_card_build 的 out->progress 单源 (演示中「第 X 笔·
+ * 共 N 笔」/ 定格「写完啦·共 N 笔」, S-F3.3 AC2——本窗零重抄文案格式)。数据结构由
+ * mcp_server 经 kidpal_char_data_validate 防御降级门校验后喂入; 本函数仍防御 (缺字段/
+ * 解析失败 -> 不盲渲染直接返回)。
  *
  * v1.38 对账清理 (本包落地): 右栏已砍项死成员清零 + 头注虚标清除; 握笔小手 12px 圆环
  * 占位 (占位绘制函数与尺寸常量整体) 删除——改口径后小手资产不再需要, 当前笔改白衬边。
  * 锚 = `char-window` (原 canvas-p4, v1.38 对账改名收尾)。
+ *
+ * v5 收敛 (本包 260929-char-window-v5-trim, human 2026-09-29 真机轮裁定): ①去右栏底部
+ * 装饰星 (星资产消费整删, 资产转孤儿账面注记); ②去组词行——运行时 words 恒空、口径
+ * 收敛 S-F3.2 四行 (拼音/共 N 画/部首/释义; card.words 成员保留, 本窗 info 传空串);
+ * ③米字格引导线原灰度点在设备 RLCD 阈值化后不可见 -> 改纯黑点线; ④右栏 cardlabel
+ * 让位清出重烘圆角框右缘 (x 228 -> 244)。外框 frm_236_236.bin 重烘为正圆角矩形 (资产轮)。
  */
 
 #include "char_page.h"
@@ -30,11 +45,17 @@
 #include <cJSON.h>
 #include <lvgl.h>
 #include <esp_log.h>
+#include <esp_lvgl_port.h> /* replay 持 LVGL 锁 (lvgl_port_lock/unlock): KEY 短按经板级
+                              app.Schedule 在主任务跑、当前无锁; 锁内改动画态 + 启表。 */
 
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cstdio>
+
+/* 键帽条三槽刷新 C 桥 (lcd_display.cc 定义; 内部递归取锁安全——kidpal_render_node.cc
+ * :141 同款先例)。show 末尾 (建窗即「播报」) 与 replay (起播后「重播」) 的键帽驱动点。 */
+extern "C" void kidpal_lcd_keybar_sync(void);
 
 LV_FONT_DECLARE(font_puhui_14_1); /* 全量 14px 普惠体: 右栏速查卡 + 底部提示条显式接线
                                      (v1.56 对账④ ——LV_FONT_DEFAULT 内置 montserrat_14 纯拉丁,
@@ -69,13 +90,148 @@ struct CharPageState {
                                     M2-K1 缺陷②去栈机制面——帧路径零解析调用零大栈数组) */
     int *pre_counts;             /* 每笔预解析点数 (<=0 = 该笔不可用; 帧路径复用) */
     /* 速查卡单源 (S-F3.2 AC1 / S-F3.3 AC2)：kidpal_char_card_build 装配结果——pinyin/
-     * radical/stroke_total/words 供 label 拼装, progress 供底部提示条（演示中进度 vs
-     * 定格文案）。char 数组副本, cJSON 释放后安全。 */
+     * radical/stroke_total/meaning 供 label 拼装 (v5 收敛: 组词行删), progress 供底部
+     * 提示条（演示中进度 vs 定格文案）。char 数组副本, cJSON 释放后安全。 */
     kidpal_char_card card;
     int elapsed_ms;
+    int started;   /* v1.59 演示起播态 (WF-F3-01 键帽随态变): 0 = 未起播 (键帽「播报」)
+                    * / 非 0 = 已起播 (键帽「重播」)。建窗 memset 归 0, replay 置 1。 */
+    /* spine openQ q9 (human 2026-09-29 重开裁, 等比缩放拟合案——取代先期「只平移不
+     * 缩放」案): 整字墨迹等比缩放 + bbox 中心对齐格心变换, 解析期 (charpage_parse_data)
+     * 一次算定, 三态渲染路径 (WRITTEN/CURRENT) 与 medians 点链 (PENDING) 经
+     * charpage_map 一致消费同一变换 (不得分叉)。
+     *   map_s: 单一等比因子 min((size-1)/Δx, (size-1)/Δy), 单位 = canvas px / 源 1024 域
+     *          单位 (size = CHARPAGE_CANVAS_SIZE)。**等比**——非 x/y 各自缩放 (锁形: 绝不
+     *          把字形拉胖拉瘦, 教学红线)。
+     *   off_x/off_y: 源 1024 域平移量 (加在源点后再乘 map_s, 与旧直映同构)。
+     * 回退 (墨迹全空 / 两维退化): map_s = (size-1)/1024、off_x=off_y=0 (等价旧直映)。
+     * free_state 复位到回退缺省, 防跨字残留。 */
+    float map_s;
+    float off_x, off_y;
 };
 
 static struct CharPageState g_page;
+
+/* ------------------------------------------------------------------------- *
+ * spine openQ q9 (human 2026-09-29 重开裁, 等比缩放拟合案——取代先期「只平移不
+ * 缩放」案): 整字墨迹 bbox -> 等比缩放 + 居中变换参数计算 —— **只在解析路径调用**
+ * (帧路径零新增解析调用)。
+ *
+ * 机制: 扫全部笔画轮廓点集 (g_page.pre_pts, 已预解析落堆, 源 1024 域) ∪ 全部
+ * medians 点 (对每笔 median_jsons[i] 调 kidpal_char_medians_parse 解到临时数组;
+ * 同一 1024 坐标域, WRITTEN/CURRENT/PENDING 三态消费的同一坐标域), 求整字墨迹
+ * bbox [minx,maxx]×[miny,maxy] (源 1024 域对原始点求, 不对已翻转/已缩放值做)。
+ * 再由 bbox 算:
+ *   等比因子 map_s = min((size-1)/Δx, (size-1)/Δy)  (Δx=maxx-minx, Δy=maxy-miny;
+ *     size = CHARPAGE_CANVAS_SIZE)。**单一因子等比缩放**——绝不对 x/y 各自缩放
+ *     (锁形: 不把字形拉胖拉瘦, 教学红线)。
+ *   源域平移 off_x/off_y 使映射后墨迹 bbox 中心落 (size/2, size/2) (对齐格心):
+ *     off_x = size/(2·map_s) - cx,  off_y = 1024 - cy - size/(2·map_s)  (cx/cy = bbox
+ *     中心)。y 翻转 (1024 - sy) 对称于 512, 平移为源域常量、经 charpage_map 对三态 +
+ *     medians 点链一致生效。
+ *
+ * 退化与回退 (不崩、不除零):
+ *   Δx 或 Δy 为 0 (单点/单线退化) -> 用另一维的因子 (退化维不参与 min);
+ *   两维均 0 (单点) 或墨迹全空 -> 回退现状直映 (map_s=(size-1)/1024, off=0)。
+ * calloc 失败路径不涉本函数 (parse_data 在调用前已 fail 返回)。
+ * ------------------------------------------------------------------------ */
+static void charpage_compute_ink_fit(void)
+{
+    float minx = 0.0f, miny = 0.0f, maxx = 0.0f, maxy = 0.0f;
+    int has = 0;
+
+    /* 回退缺省 = 现状直映 (墨迹全空 / 两维退化时保持此值): scale=(size-1)/1024, off=0。 */
+    g_page.map_s = (float)(CHARPAGE_CANVAS_SIZE - 1) / 1024.0f;
+    g_page.off_x = 0.0f;
+    g_page.off_y = 0.0f;
+
+    /* 源 1: 全部笔画轮廓点集 (预解析落堆, 逐笔折入 bbox)。 */
+    for (int i = 0; i < g_page.n_strokes; i++) {
+        int n = (g_page.pre_pts != NULL && g_page.pre_counts != NULL)
+                    ? g_page.pre_counts[i]
+                    : 0;
+        if (n <= 0) {
+            continue;
+        }
+        const kidpal_cs_point *pts =
+            g_page.pre_pts + (size_t)i * CHARPAGE_MAX_PTS;
+        for (int k = 0; k < n; k++) {
+            float x = pts[k].x, y = pts[k].y;
+            if (!has) {
+                minx = maxx = x;
+                miny = maxy = y;
+                has = 1;
+            } else {
+                if (x < minx) minx = x;
+                if (x > maxx) maxx = x;
+                if (y < miny) miny = y;
+                if (y > maxy) maxy = y;
+            }
+        }
+    }
+
+    /* 源 2: 全部 medians 点 (骨架; 轮廓解析失败的笔的唯一墨迹参照)。临时缓冲复用
+     * 一块、逐笔解析后折入 bbox; 解析失败/超容 -> 该笔 medians 跳过 (其轮廓点已在
+     * 源 1 兜底)。缓冲容量对齐 CHARPAGE_MAX_PTS (与 pre_pts 同口径)。 */
+    {
+        kidpal_cs_point mids[CHARPAGE_MAX_PTS];
+        for (int i = 0; i < g_page.n_strokes; i++) {
+            int mn = (g_page.median_jsons != NULL && g_page.median_jsons[i] != NULL)
+                         ? kidpal_char_medians_parse(g_page.median_jsons[i], mids,
+                                                     CHARPAGE_MAX_PTS)
+                         : -1;
+            for (int s = 0; s < mn; s++) {
+                float x = mids[s].x, y = mids[s].y;
+                if (!has) {
+                    minx = maxx = x;
+                    miny = maxy = y;
+                    has = 1;
+                } else {
+                    if (x < minx) minx = x;
+                    if (x > maxx) maxx = x;
+                    if (y < miny) miny = y;
+                    if (y > maxy) maxy = y;
+                }
+            }
+        }
+    }
+
+    if (!has) {
+        return; /* 墨迹全空: 回退现状直映 (缺省已置) */
+    }
+
+    /* 单一等比因子 s = min((size-1)/Δx, (size-1)/Δy); 退化维 (Δ==0) 不参与 min;
+     * 两维均退化 (单点) -> 回退现状直映 (缺省已置)。 */
+    {
+        float lim = (float)(CHARPAGE_CANVAS_SIZE - 1);
+        float spanx = maxx - minx;
+        float spany = maxy - miny;
+        float s = 0.0f;
+        int ok = 1;
+
+        if (spanx > 0.0f && spany > 0.0f) {
+            float fx = lim / spanx;
+            float fy = lim / spany;
+            s = (fx < fy) ? fx : fy;
+        } else if (spanx > 0.0f) {
+            s = lim / spanx; /* Δy == 0: 用 x 维因子 */
+        } else if (spany > 0.0f) {
+            s = lim / spany; /* Δx == 0: 用 y 维因子 */
+        } else {
+            ok = 0; /* 两维均退化 (单点): 回退现状直映 */
+        }
+
+        if (ok) {
+            float cx = (minx + maxx) * 0.5f;
+            float cy = (miny + maxy) * 0.5f;
+            /* q = size/(2·s): 使 (cx + off_x)·s 与 (1024 - cy - off_y)·s 均落 size/2。 */
+            float q = (float)CHARPAGE_CANVAS_SIZE * 0.5f / s;
+            g_page.map_s = s;
+            g_page.off_x = q - cx;
+            g_page.off_y = 1024.0f - cy - q;
+        }
+    }
+}
 
 /* ------------------------------------------------------------------------- *
  * cJSON data 解析: 取必需字段 + 逐笔 strokes/medians 字符串。成功返回 1。
@@ -146,6 +302,10 @@ static int charpage_parse_data(const char *data_json)
             g_page.pre_counts[i] = (pc > 0) ? pc : 0;
         }
     }
+    /* spine openQ q9 (等比缩放拟合案): 整字墨迹 bbox -> 等比因子 + 居中平移参数,
+     * 解析期一次算好 (帧路径零新增解析调用; 三态 + medians 点链经 charpage_map 一致
+     * 消费)。须在 pre_pts 与 median_jsons 均就绪后调用 (本行即在两者之后)。 */
+    charpage_compute_ink_fit();
     cJSON_Delete(root);
     return 1;
 }
@@ -172,15 +332,32 @@ static void charpage_free_state(void)
     free(g_page.rast);
     g_page.canvas_buf = NULL;
     g_page.rast = NULL;
+    /* spine openQ q9: 等比变换参数复位到回退缺省 (scale=(size-1)/1024、off=0, 等价
+     * 旧直映), 防跨字残留 (下一字由 parse_data 重算; 此处是「无墨迹数据」的直映兜底
+     * 态)。 */
+    g_page.map_s = (float)(CHARPAGE_CANVAS_SIZE - 1) / 1024.0f;
+    g_page.off_x = 0.0f;
+    g_page.off_y = 0.0f;
 }
 
 /* ------------------------------------------------------------------------- *
- * 把源点 (1024 坐标) 缩放到 canvas 坐标。Y 翻转 (字库坐标与屏幕 Y 朝相反)。
+ * 把源点 (1024 坐标) 等比缩放 + 平移映射到 canvas 坐标。Y 翻转保留 (字库坐标 Y
+ * 朝上、屏幕 Y 朝下: dy 用 (1024 - sy) —— **翻转语义不得改**)。
+ * spine openQ q9 (等比缩放拟合案, human 2026-09-29 重开裁): 消费 g_page 解析期算定的
+ * map_s (单一等比因子) + off_x/off_y (源 1024 域平移量) —— 三态路径共用本函数
+ * (PENDING medians / WRITTEN / CURRENT), 故变换在此一处施加即对三态 + medians 点链
+ * 一致生效, 不得分叉。**等比** (非 x/y 各自缩放——锁形: 不把字形拉胖拉瘦)。
+ * map_s=(size-1)/1024 且 off=0 时 (墨迹全空/退化的回退态) 与旧直映完全一致。
+ * size 形参: 变换已在解析期按 CHARPAGE_CANVAS_SIZE 烘入 map_s/off, 此处不再消费
+ * (渲染路径唯一消费值 = CHARPAGE_CANVAS_SIZE, 两处恒等); 保留形参以稳调用点签名。
  * ------------------------------------------------------------------------ */
 static void charpage_map(int size, float sx, float sy, int *dx, int *dy)
 {
-    *dx = (int)(sx * (float)(size - 1) / 1024.0f);
-    *dy = (int)((1024.0f - sy) * (float)(size - 1) / 1024.0f);
+    (void)size; /* 尺寸已烘入 map_s/off_x/off_y (解析期按 CHARPAGE_CANVAS_SIZE 算定) */
+    sx += g_page.off_x;
+    sy += g_page.off_y;
+    *dx = (int)(sx * g_page.map_s);
+    *dy = (int)((1024.0f - sy) * g_page.map_s);
 }
 
 /* 把 canvas 1bpp 光栅 blit 到 canvas 像素 (ink=黑) */
@@ -200,24 +377,38 @@ static void charpage_blit(int size)
     lv_obj_invalidate(g_page.canvas);
 }
 
-/* 绘制米字格引导十字 (淡灰) */
+/* 1bpp 光栅置 ink 位 (MSB-first, 与 charpage_blit :215 读法同款位序; **只置位不清除**
+ * ——与 kidpal_char_stroke 光栅路径 cs_raster_row 同款)。q7 修法 (spine openQ q7,
+ * human 2026-09-29 真机目检 finding, human-ratified) 共用落点: 米字格点线
+ * (charpage_draw_grid) 与未写笔点链 (charpage_render_frame PENDING) 均写 g_page.rast
+ * 1bpp 光栅域, 由 charpage_blit 每帧兜底一次成型上屏——旧「直绘 canvas」的格点/点链
+ * 必被 blit 全幅 ink?黑:白 覆写吃掉, 真机不可见 (缺陷机制本体)。 */
+static void charpage_rast_ink(uint8_t *rast, int stride, int x, int y)
+{
+    rast[(size_t)y * (size_t)stride + (size_t)(x / 8)] |=
+        (uint8_t)(1u << (7 - (x % 8)));
+}
+
+/* 绘制米字格引导线 (ui-v5-align §2 查字窗行 1, 2026-09-26 批; 阶段5 architect 修正:
+ * 母版八向 = 十字 + 两对角**恰四条线**, 无四宫线——旧「灰实线十字+四宫」退役, 四宫
+ * 线一并退役不保留)。点线画法（点距 3px: 1 on 2 off; 母版 dasharray 3 on 9 off,
+ * 密度差仅 host 观感, 像素级归真机轮）。**纯黑点线** (260929-char-window-v5-trim:
+ * 原灰度点在设备 RLCD 阈值化后不可见、真机呈空框——改纯黑, 与示范字同色)。
+ *
+ * q7 修法: 格点不再直绘 canvas (必被 blit 覆写吃掉), 改写 g_page.rast 1bpp 光栅域
+ * (纯黑 = ink 位 1), 由 charpage_blit 兜底一次成型; 调用点移入 charpage_render_frame
+ * (memset 之后、笔画循环之前——每帧重画格点, 渲染帧路径自洽)。 */
 static void charpage_draw_grid(int size)
 {
-    for (int line = 0; line < size; line++) {
-        /* 十字 */
-        lv_canvas_set_px(g_page.canvas, line, size / 2,
-                         lv_color_make(0xd0, 0xd0, 0xd0), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, size / 2, line,
-                         lv_color_make(0xd0, 0xd0, 0xd0), LV_OPA_COVER);
-        /* 四宫格细线 */
-        lv_canvas_set_px(g_page.canvas, line, size / 4,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, line, 3 * size / 4,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, size / 4, line,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
-        lv_canvas_set_px(g_page.canvas, 3 * size / 4, line,
-                         lv_color_make(0xe6, 0xe6, 0xe6), LV_OPA_COVER);
+    int stride = (size + 7) / 8;
+
+    for (int i = 0; i < size; i += 3) {
+        /* 十字点线 (纯黑 = 1bpp ink 位) */
+        charpage_rast_ink(g_page.rast, stride, i, size / 2);
+        charpage_rast_ink(g_page.rast, stride, size / 2, i);
+        /* 两对角点线: 主对角 + 副对角 */
+        charpage_rast_ink(g_page.rast, stride, i, i);
+        charpage_rast_ink(g_page.rast, stride, i, size - 1 - i);
     }
 }
 
@@ -234,6 +425,9 @@ static void charpage_render_frame(int cur_stroke, int written)
         return;
     }
     memset(g_page.rast, 0, (size_t)size * (size_t)stride);
+    /* 米字格点线每帧重画 (q7: 格点入 rast 域, 与笔画同帧由 blit 兜底一次成型上屏——
+     * 旧「建窗时直绘 canvas」的格点被 blit 全幅覆写吃掉, 真机不可见缺陷本体)。 */
+    charpage_draw_grid(size);
 
     for (int i = 0; i < g_page.n_strokes; i++) {
         int st = kidpal_char_stroke_state(i, written, cur_stroke);
@@ -258,15 +452,15 @@ static void charpage_render_frame(int cur_stroke, int written)
                 continue;
             }
             for (int s = 0; s < mn; s++) {
-                /* 沿笔尖骨架每隔 pitch(=6px) 点距打一个灰点, 虚线点链 */
+                /* 沿笔尖骨架每隔 pitch(=6px) 点距打一个点, 虚线点链; q7: 写 1bpp
+                 * 光栅域 (呈纯黑点链——1bpp 无灰度, spine q7 ruling 钉此形状)。 */
                 if (s % pitch != 0) {
                     continue;
                 }
                 int dx, dy;
                 charpage_map(size, mids[s].x, mids[s].y, &dx, &dy);
                 if (dx >= 0 && dx < size && dy >= 0 && dy < size) {
-                    lv_canvas_set_px(g_page.canvas, dx, dy,
-                                     lv_color_make(0x99, 0x99, 0x99), LV_OPA_COVER);
+                    charpage_rast_ink(g_page.rast, stride, dx, dy);
                 }
             }
             continue;
@@ -374,6 +568,16 @@ static void charpage_timer_cb(lv_timer_t *timer)
     if (phase < 0) {
         return;
     }
+    if (phase == 1 /* KIDPAL_CS_PHASE_REST */) {
+        /* 演完定格闸断 (v1.59 S-F3.1 AC3 / S-F3.3 AC2): 渲染定格帧 + 刷新定格文案
+         * 后停表并返回——**不推进 elapsed_ms**。取模回绕的自动重播在装配层闸断
+         * (char_stroke.c 纯逻辑合约零触碰, DC-1); 重播唯一路径 = KEY 短按 -> replay
+         * 的 lv_timer_resume。 */
+        charpage_render_frame(cur_stroke, written);
+        charpage_refresh_hint(cur_stroke);
+        lv_timer_pause(timer);
+        return;
+    }
     p->elapsed_ms += CHARPAGE_TIMER_PERIOD_MS;
     /* 每帧重绘: 已写/当前/未写三态; 底部提示条随相位刷新 (演示中进度 / 定格文案)。 */
     charpage_render_frame(cur_stroke, written);
@@ -390,7 +594,7 @@ static void charpage_timer_cb(lv_timer_t *timer)
  * 成一枚 ARGB8888 lv_image_dsc（墨=不透明黑、纸/非阈值化=透明），叠在米字格画布外圈
  * 作静态 chrome —— 示范字本身仍走 kidpal_char_raster_stroke 数据光栅路径（教学字体
  * 红线 CHR-A7：绝不以整帧预烘焙位图替换逐笔演示）。未 mount / 加载失败 -> 静默降级，
- * 画布既有灰边框 + 米字格引导线仍在。
+ * 米字格引导线仍在（画布自绘灰边框已随 v5 收敛撤除——重烘框资产接管外圈, 见 show()）。
  *
  * 为何查字窗的资产消费落在此 .cc 装配面而非 char_stroke.c：char_stroke.c 是 U 冻结的纯
  * 逻辑合约，B8 守卫禁止其引 loader；而参数化整帧缝 (draw_nine_slice/draw_dots) 会把
@@ -453,9 +657,30 @@ static void charpage_art_overlay(void)
     }
 }
 
+int kidpal_char_page_started(void)
+{
+    return g_page.started; /* v1.59 演示起播态外露 (WF-F3-01 键帽随态变; lcd_display.cc
+                            * 键帽条查字窗前台分支经 include 消费) */
+}
+
 void kidpal_char_page_replay(void)
 {
-    g_page.elapsed_ms = 0; /* KEY 短按重播: 从第一笔重新逐笔 (S-F3.3) */
+    /* KEY 短按 = 首次起播 / 从头重播同路径 (v1.59 S-F3.1 AC5 / S-F3.3 AC1)。replay 经
+     * 板级 dispatch 的 app.Schedule 在主任务跑、当前无 LVGL 锁——锁内归零动画态 + 置
+     * 起播位 + 启表, 锁外刷键帽 (「播报」->「重播」; 内部递归取锁安全, kidpal_render_
+     * node.cc:141 同款先例)。 */
+    if (g_page.panel == NULL || g_page.timer == NULL) {
+        return; /* 窗未开 / 表未建: 无重播对象, 防御返回 (不摸悬垂句柄) */
+    }
+    if (!lvgl_port_lock(30000)) {
+        ESP_LOGE(CHARPAGE_TAG, "replay lock timeout started=%d", g_page.started);
+        return;
+    }
+    g_page.elapsed_ms = 0;   /* 从头起播 (首播/重播同路径) */
+    g_page.started = 1;      /* 演示起播态置位 (键帽「播报」->「重播」) */
+    lv_timer_resume(g_page.timer);
+    lvgl_port_unlock();
+    kidpal_lcd_keybar_sync(); /* 锁外刷键帽: 「播报」->「重播」 */
     ESP_LOGI(CHARPAGE_TAG, "char page replay from first stroke");
 }
 
@@ -517,24 +742,28 @@ void kidpal_char_page_show(const char *data_json)
                                            (size_t)CHARPAGE_CANVAS_SIZE);
     g_page.canvas = lv_canvas_create(g_page.panel);
     lv_obj_set_pos(g_page.canvas, 4, 8);
-    lv_obj_set_style_border_width(g_page.canvas, 1, 0);
-    lv_obj_set_style_border_color(g_page.canvas, lv_color_make(0xbb, 0xbb, 0xbb), 0);
+    /* 画布自绘灰边框撤除 (v5 收敛): 重烘框资产 (frm_236_236 正圆角矩形、纯黑 3px 边框)
+     * 已接管外圈——保留自绘方框会与圆角框叠成双框; 米字格引导线仍自绘 (纯黑点线,
+     * q7 起入 rast 域由 charpage_render_frame 每帧重画——见 charpage_draw_grid)。 */
     if (g_page.canvas_buf != NULL && g_page.rast != NULL) {
         lv_canvas_set_buffer(g_page.canvas, g_page.canvas_buf,
                              CHARPAGE_CANVAS_SIZE, CHARPAGE_CANVAS_SIZE,
                              LV_COLOR_FORMAT_NATIVE);
-        charpage_draw_grid(CHARPAGE_CANVAS_SIZE);
-        charpage_render_frame(-1, 0);
+        /* 建窗首帧 = 静态整字 (v1.59 S-F3.1 AC1 前半): cur_stroke=-1 + written=n_strokes
+         * -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字实心黑 (char_stroke.c 相位复用,
+         * 冻结面零触碰)。此时 n_strokes = strokes 数组数 (strokeCount JSON 覆写在其后)。
+         * 米字格点线不再于建窗时直绘 canvas——由 render_frame 内重画 (q7)。 */
+        charpage_render_frame(-1, g_page.n_strokes);
     }
 
     /* 换皮消费接线 (包 9b)：田字格大框位图 + 整帧缝生产调用点。 */
     charpage_art_overlay();
 
-    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 组词 (数据面委托
+    /* 右栏速查卡: 拼音带声调 + 共 N 画 + 部首 + 释义 (数据面委托
      * kidpal_char_card_build 装配语义, 窗内呈现; S-F3.2 AC1 四行) */
     {
         cJSON *root = cJSON_Parse(data_json);
-        const char *pinyin = "?" , *radical = "?" , *ch = "?" , *words = "?" ,
+        const char *pinyin = "?" , *radical = "?" , *ch = "?" ,
                    *meaning = "?";
         int stroke_count = g_page.n_strokes;
         if (root != NULL) {
@@ -546,49 +775,6 @@ void kidpal_char_page_show(const char *data_json)
             if (j && cJSON_IsString(j)) ch = j->valuestring;
             j = cJSON_GetObjectItem(root, "strokeCount");
             if (j && cJSON_IsNumber(j) && j->valueint > 0) stroke_count = j->valueint;
-            j = cJSON_GetObjectItem(root, "words");
-            if (j && cJSON_IsArray(j) && cJSON_GetArraySize(j) > 0) {
-                /* 组词多词 join (MCD-A4): words 数组前 N 项以「、」顿号 join（非只取
-                 * [0]——kidpal_char_info.words 注释本就写明「、-joined」、card.words[96]
-                 * 容量按多词设计）。装配落 char_page 层, 不动 char_stroke.c 纯逻辑合约。
-                 * UTF-8 边界封顶 (planner 裁决②, 装配面义务): 先按 96B 容量域逐词拷贝,
-                 * 若容限截断劈了多字节半字（末字节是 0x80-0xBF 连续字节）则回退到完整
-                 * 字符边界, 绝不交 card_build 半字（card_build 的 96B 字节截断冻结语义
-                 * 不动, 超长串永不到它手上）。 */
-                static char joined[96];                 /* 对齐 card.words[96] 容量 */
-                static const char ws[] = "、";          /* 「、」= E3 80 81, 3 字节 */
-                const size_t wslen = sizeof(ws) - 1;
-                const int nw = cJSON_GetArraySize(j);
-                size_t used = 0;
-                int truncated = 0;
-                for (int wi = 0; wi < nw; wi++) {
-                    cJSON *w = cJSON_GetArrayItem(j, wi);
-                    if (!w || !cJSON_IsString(w)) continue;
-                    const char *s = w->valuestring;
-                    if (used > 0) {                     /* 非首项先加顿号 */
-                        if (used + wslen + 1 >= sizeof(joined)) { truncated = 1; break; }
-                        memcpy(joined + used, ws, wslen);
-                        used += wslen;
-                    }
-                    size_t sl = strlen(s);
-                    if (used + sl + 1 >= sizeof(joined)) {
-                        sl = sizeof(joined) - 1 - used;  /* 容量封顶 */
-                        truncated = 1;
-                    }
-                    if (sl > 0) { memcpy(joined + used, s, sl); used += sl; }
-                }
-                joined[used] = '\0';
-                if (truncated) {
-                    /* UTF-8 半字回退: **只在真发生容量截断时**回退到完整字符边界——
-                     * 否则末尾合法 CJK 字符的末字节（本身是 0x80-0xBF）会被误删。 */
-                    while (used > 0 &&
-                           ((unsigned char)joined[used - 1] & 0xC0) == 0x80) {
-                        used--;
-                    }
-                    joined[used] = '\0';
-                }
-                words = joined;
-            }
             j = cJSON_GetObjectItem(root, "meaning");
             if (j && cJSON_IsString(j)) meaning = j->valuestring;
         }
@@ -601,7 +787,8 @@ void kidpal_char_page_show(const char *data_json)
             .pinyin       = pinyin,
             .radical      = radical,
             .stroke_count = stroke_count,
-            .words        = words,
+            .words        = "",   /* 组词行整删 (v5 收敛): 空串满足 card_build 非 NULL,
+                                   * card.words 成员保留 (char_stroke.c 零触, DC-1)。 */
             .meaning      = meaning,
         };
         memset(&g_page.card, 0, sizeof(g_page.card));
@@ -611,21 +798,23 @@ void kidpal_char_page_show(const char *data_json)
         lv_obj_t *cardlabel = lv_label_create(g_page.panel);
         /* 右栏去遮挡 (MCD-A1): 恒显顶部状态带 top_bar_/status_bar_（LV_OPA_50 半透,
          * y0-24 任何状态恒显）压住拼音行——起点 y8 -> y30 清出状态带 + 余量 (内容让位,
-         * 不动 chrome)。配定宽 + wrap: 释义改中文后变长必冲出右缘被裁 (右缘 388 - x228
-         * = 160), 同刀钉死。 */
-        lv_obj_set_pos(cardlabel, 228, 30);
-        lv_obj_set_width(cardlabel, 160);
+         * 不动 chrome)。右栏让位 (v5 收敛 CWVT-A5): 文本左缘 x 228 -> 244 清出重烘圆角
+         * 框右缘 235 (旧 228 被框右缘压住, human 2026-09-29 真机轮 finding④); 配定宽 +
+         * wrap: 释义改中文后变长必冲出右缘被裁 (右缘 388 - x244 = 144), 同刀钉死。 */
+        lv_obj_set_pos(cardlabel, 244, 30);
+        lv_obj_set_width(cardlabel, 144);
         lv_label_set_long_mode(cardlabel, LV_LABEL_LONG_WRAP);
-        /* 五行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
-         * meaning 95 + words 95 + 标签/换行，编译分析最坏 ~354B）——五行不能因缓冲太小被
-         * 尾部截断（S-F3.2 AC1 五行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
+        /* 四行拼装缓冲: 各字段 snprintf 截断上限和（pinyin/radical 47 + stroke_total +
+         * meaning 95 + 标签/换行，编译分析最坏 ~259B）——四行不能因缓冲太小被尾部截断
+         * （S-F3.2 AC1 四行全见; 并满足 -Werror=format-truncation 设备构建闸）。 */
         char buf[384];
-        /* 右栏速查卡五行拼装 (S-F3.2 AC1 v1.56 五行口径): 拼音带声调 + 共 N 画 + 部首 +
-         * 释义 + 组词。MCD-A3 空行不显示: 任一行（组词/部首等）数据为空 -> 该行不拼装
-         * （无空行、无占位符）。释义行保留 MCF 裁定的「释义：—」缺义兜底（human 裁:
-         * 缺义只损右栏一行、不降级整窗——形态钉死不留现场裁量; — = U+2014 全角破折号）。
-         * 五行 < buf[384] 容量（拼音/部首 47 + stroke 47 + 释义 95 + words 95 + 标签/
-         * 换行，编译分析最坏 ~354B; 部首行条件化后恒不大于原无条件最坏值）。 */
+        /* 右栏速查卡四行拼装 (S-F3.2 AC1 v1.60 四行口径): 拼音带声调 + 共 N 画 + 部首 +
+         * 释义 (组词行整删——运行时 words 恒空、口径收敛, human 2026-09-29 真机轮裁定)。
+         * MCD-A3 空行不显示: 部首数据为空 -> 该行不拼装（无空行、无占位符）。释义行保留
+         * MCF 裁定的「释义：—」缺义兜底（human 裁: 缺义只损右栏一行、不降级整窗——
+         * 形态钉死不留现场裁量; — = U+2014 全角破折号）。四行 < buf[384] 容量（拼音/
+         * 部首 47 + stroke 47 + 释义 95 + 标签/换行，编译分析最坏 ~259B; 部首行条件化后
+         * 恒不大于原无条件最坏值）。 */
         {
             size_t w = 0;
             w += (size_t)snprintf(buf + w, sizeof(buf) - w, "%s\n%s\n",
@@ -634,12 +823,9 @@ void kidpal_char_page_show(const char *data_json)
                 w += (size_t)snprintf(buf + w, sizeof(buf) - w, "部首：%s\n",
                                       g_page.card.radical);
             }
-            w += (size_t)snprintf(buf + w, sizeof(buf) - w, "释义：%s\n",
-                                  (g_page.card.meaning[0] != '\0')
-                                      ? g_page.card.meaning : "—");
-            if (g_page.card.words[0] != '\0') {          /* 组词非空才拼该行 */
-                (void)snprintf(buf + w, sizeof(buf) - w, "%s", g_page.card.words);
-            }
+            (void)snprintf(buf + w, sizeof(buf) - w, "释义：%s\n",
+                           (g_page.card.meaning[0] != '\0')
+                               ? g_page.card.meaning : "—");
         }
         lv_label_set_text(cardlabel, buf);
         lv_obj_set_style_text_font(cardlabel, &font_puhui_14_1, 0);
@@ -650,14 +836,17 @@ void kidpal_char_page_show(const char *data_json)
      * 共 N 笔」/ 演示写完定格「写完啦·共 N 笔」——S-F3.3 AC2, 本窗零重抄文案格式)。 */
     g_page.hint_label = lv_label_create(g_page.panel);
     /* 提示条让位 (MCD-A2): 底部提示条原 (0,280) 落 bottom_bar_ 键帽条带
-     * （LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压——上移到 y244 避开该带。 */
+     * （LV_ALIGN_BOTTOM_MID；2026-09-26 真机对齐轮起高 38 -> 带区 y262-300，旧注
+     * 载高 48/y252-300）内被压——上移到 y244 避开该带。 */
     lv_obj_set_pos(g_page.hint_label, 0, 244);
     lv_label_set_text(g_page.hint_label, g_page.card.progress);
     lv_obj_set_style_text_align(g_page.hint_label, LV_TEXT_ALIGN_CENTER, 0);
     /* 底部提示条显式接线 font_puhui_14_1（v1.56 对账④: 不赌 s_kidpal_scr 字体继承——
      * 中文 label 绝不经由继承落到纯拉丁默认字体, 需显式钉全量普惠体）。 */
     lv_obj_set_style_text_font(g_page.hint_label, &font_puhui_14_1, 0);
-    charpage_refresh_hint(0); /* 首拍相位 = 第 1 笔 (与动画 t=0 同源) */
+    /* 建窗零动画拍 (v1.59 S-F3.1 AC1 后半): 不再刷首拍「第 1 笔」文案——初始提示条保持
+     * 上方 card_build 单源定格文案「写完啦·共 N 笔」(g_page.card.progress, card 以
+     * cur_stroke=-1 装配, 零新文案零重抄)。 */
 
     /* 逐笔动画驱动 */
     g_page.timer = lv_timer_create(charpage_timer_cb, CHARPAGE_TIMER_PERIOD_MS, &g_page);
@@ -665,6 +854,19 @@ void kidpal_char_page_show(const char *data_json)
         lv_timer_set_user_data(g_page.timer, &g_page);
     }
     g_page.elapsed_ms = 0;
+
+    /* 建窗即停表 (v1.59 S-F3.1 AC1 后半): timer 创建后立即 pause, 未按 KEY 前零逐笔
+     * 演示——起播/重播唯一启动路径 = replay() 的 lv_timer_resume (DC-2 裁定: 保 MCF-A1
+     * 区域齿末端锚 g_page.timer = lv_timer_create 原位不动, 本句紧跟其后)。 */
+    if (g_page.timer != NULL) {
+        lv_timer_pause(g_page.timer);
+    }
+
+    /* 建窗末尾刷键帽 (v1.59 WF-F3-01 键帽随态变): 此时 CHAR_WINDOW 层已由 begin_char_
+     * window 推入 -> sync 的查字窗分支裁决生效; 新查字重开窗经上方 memset 归 0 ->
+     * started = 0 -> 键帽回「播报」。show 已持 LVGL 锁 (begin/end_char_window 夹钳),
+     * sync 内部递归取锁安全 (kidpal_render_node.cc:141 同款先例)。 */
+    kidpal_lcd_keybar_sync();
 
     ESP_LOGI(CHARPAGE_TAG, "char page open (笔画=%d, 米字格示范字光栅渲染)",
              g_page.n_strokes);

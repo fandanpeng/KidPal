@@ -97,7 +97,11 @@ async function writeThresholdPng(path, pngData, w, h) {
 
 // ── 4. 手绘框族：CSS 八值 border-radius → SVG 父本 ──
 // 母版 = 设计稿 CSS class（非 symbol）：.frm / .frm-sm / .frm-flat。从八值不对称圆角构造 SVG path。
-const HAND_R = { tl: [255, 15], tr: [15, 225], br: [225, 15], bl: [15, 255] };      // --hand-r
+// 260929-char-window-v5-trim：frm_236_236（查字窗米字格外框）在 v5 设计稿改走 .rbox 正圆角矩形
+//   （border-radius:14px, border 3px solid ink；v5 html 行 990），故 HAND_R 由 --hand-r 八值不对称
+//   改对称 14px。HAND_R 仅被 frm_236_236 消费；HAND_R_SM（--hand-r-sm）仍供 frm_sm/frm_flat 与
+//   静态气泡，本包不波及。
+const HAND_R = { tl: [14, 14], tr: [14, 14], br: [14, 14], bl: [14, 14] };          // v5 查字窗正圆角矩形 (rbox border-radius:14px)
 const HAND_R_SM = { tl: [125, 14], tr: [12, 135], br: [145, 12], bl: [14, 125] };   // --hand-r-sm
 
 // CSS border-radius 比例缩放（radii 之和超 box 尺寸时整体按 f 缩小）
@@ -294,13 +298,19 @@ jobs.push({ name: 'ic_bell_24', svg: svgUse('ic-bell'), w: 24, h: 24, rotate: 0,
 jobs.push({ name: 'ic_bell_22', svg: svgUse('ic-bell'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_wave_40', svg: svgUse('ic-wave'), w: 40, h: 12, rotate: 0, kind: 'svg' });
 jobs.push({ name: 'ic_star_20', svg: svgUse('ic-star'), w: 20, h: 20, rotate: 0, kind: 'svg' });
+// 四角星（2026-09-26 human 裁定）：P1 涂鸦星换回 v2–v4 四角星；母版符号 ic-sparkle，与五角星 ic-star 族并存
+jobs.push({ name: 'ic_sparkle_22', svg: svgUse('ic-sparkle'), w: 22, h: 22, rotate: 0, kind: 'svg' });
 // 录音态声波线（路径自 V5 设计稿固化，206×34 非等比缩放同浏览器渲染口径）
 jobs.push({ name: 'rec_wave', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 14"><path d="M2 7 L8 2 L13 12 L18 4 L24 12 L29 3 L35 11 L41 5 L46 9" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`, w: 206, h: 34, rotate: 0, kind: 'svg' });
-// P1 反白胶囊标签（V5 口径 12.5px：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）
+// P1 反白胶囊标签（V5 口径：无字体档，整块烘位图规避；文字 ZCOOL 替 Noto-900，装饰件可接受）。
+// 2026-09-26 真机对齐轮第二批次：h 21→24、font-size 12.5→14.5 —— 依 canvas-p1 实测
+// （pill 58×24、白字 37×13）与母版 HTML（left:152px;top:36px）重烘；旧 21px 胶囊比设计
+// 矮 3px、白字小 ~15%（human 看屏指出「接下来有点小」）。baseline y=18 使白字墨在
+// 24px 胶囊内垂直居中（目标墨带 y6..18，与设计同心）。
 {
-  const chip = (w, text) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 21"><rect x="0.5" y="0.5" width="${w - 1}" height="20" rx="10" fill="#000"/><text x="${w / 2}" y="15" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="12.5" fill="#fff">${text}</text></svg>`;
-  jobs.push({ name: 'p1_chip_jiexialai', svg: chip(58, '接下来'), w: 58, h: 21, rotate: 0, kind: 'svg' });
-  jobs.push({ name: 'p1_chip_mingzao', svg: chip(46, '明早'), w: 46, h: 21, rotate: 0, kind: 'svg' });
+  const chip = (w, text) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} 24"><rect x="0.5" y="0.5" width="${w - 1}" height="23" rx="11.5" fill="#000"/><text x="${w / 2}" y="18" text-anchor="middle" font-family="ZCOOL KuaiLe" font-size="14.5" fill="#fff">${text}</text></svg>`;
+  jobs.push({ name: 'p1_chip_jiexialai', svg: chip(58, '接下来'), w: 58, h: 24, rotate: 0, kind: 'svg' });
+  jobs.push({ name: 'p1_chip_mingzao', svg: chip(46, '明早'), w: 46, h: 24, rotate: 0, kind: 'svg' });
 }
 // P3 语音入口提示条（虚线胶囊原生不可做 + 11.5px 文本无字体档 → 整块烘；文本为静态文案）
 {

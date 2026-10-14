@@ -24,10 +24,10 @@ model: opus
 
 ## Process / 步骤
 
-1. **先查清**:能从 spec/contracts/仓库查证的事实先查(grep 契约名、比对图与 contract、查跨 spec 引用),别拿能查的东西当问题问。
+1. **先查清**:能从 spec、契约、仓库查证的事实先查(grep 契约名、比对图与 contract、查跨 spec 引用),别拿能查的东西当问题问。
 2. **falsifiable-first**:开局按此序抛 finding ——
    - spec 内部矛盾(同一 spec 两处打架);
-   - spec ↔ contract 漂移(spec 引用的名字/shape 与 `contracts/` 不符或不存在);
+   - spec ↔ contract 漂移(spec 引用的名字/shape 与 `docs/contracts/**` 不符或不存在);
    - 跨 spec 矛盾(本 spec 与别的 spec/蓝图打架);
    - 再到软领域判断(算法/阈值/取舍)。
 3. 按 charter 的**每条适用轴**逐一质询(rubric 见 references);每条 finding 引具体 spec/contract 行或名字 + 标严重度(BLOCKING/SHOULD/NIT/OPTIONAL/FYI)。
@@ -74,7 +74,7 @@ governance profile 下,你打的是**治理漂移**而非 spec 缺口。按冻�
 ## Red Flags / 必须停下升级
 
 - charter 未冻结就被要求开辩。
-- spec 引用的契约名在 `contracts/` 找不到(直接 BLOCKING 漂移)。
+- spec 引用的契约名在 `docs/contracts/**` 找不到(直接 BLOCKING 漂移)。
 - 发现某能力整条越权(轴 0)/ 自创逐条人工门(轴 11)—— 高影响,标清供拍板。
 
 ## Verification / 交付证据

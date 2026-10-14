@@ -24,32 +24,31 @@ gateway:
 # (VRT-A4 / VRT-A7) 的唯一 prompt 源 —— 「验收所测 = 生产所用」。落盘与渲染:
 # apply-xiaozhi-overlay.sh 将其渲染到 ECS data 目录; 版本化 .v1/.v2/.v3 切换即换。
 system_prompt:
-  artifact: "openclaw-system-prompt.v6.md"   # 当前版本化文件 (v6 = v5 版 + M3-K3 课表问答口径:
-                                             #   答复走问答框含备注读回 + 「帮我显示课表」意图薄载荷
-                                             #   data:{} + 网格数据不由 LLM 生成(front 机械单源);
-                                             #   历史 v1..v5 不改可 diff)
-  source: "../deploy/openclaw-system-prompt.v6.md"
-  deploy_target: "openclaw-system-prompt.v6.md"   # ECS data/ 下的渲染目标名
-  # 演进: openclaw-system-prompt.v1.md (基座) → openclaw-system-prompt.v2.md (+课表 producer
-  # + char C1) → openclaw-system-prompt.v3.md (+故事 producer 扩展, 并入本包包 7 提醒备注解析
-  # 约定成并集版——两并行包曾各写一份 v3 抢同槽位，按 human 授权 pod-events dc9a5c15 取并集；
-  # 槽位预约规则见 ARQ-260908-versioned-artifact-slot-collision)。历史版本文件一律不改。
-  # 三处接线（本声明面 / apply-xiaozhi-overlay.sh 渲染面 / OPENCLAW_SYSTEM_PROMPT_CARRIER
-  # 载体前言）同批指 v3 且指向同一在场非空文件；两面一致性由 ADR-001 与 story P3/CHR-E3
-  # 版本无关守卫机检，包 7 提醒段内容由 test_a8_prompt_carrier_v3_reminder_section_anchors 钉。
-
-  # 结构: 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6) + F4 三句纪律
-  # (三句以内/口语化/儿童化 8-12 岁, v2 收紧为显式句数上限计数) + 7 view 白名单
-  # + 增量扩展区 (包 4 char / 包 7 提醒) + 课表 producer 扩展 (决策 26 分组 + QQ 录入
-  # 改写约定) + char C1 扩展 (LLM 只判意图＋提取目标单字、只出最小意图块、禁自生成/
-  # 复述 strokes/medians 坐标, 完整 D3 由查字工具在回复出口自动拼装) + 故事 producer
-  # 扩展 (v3: 判「我要讲故事」→ control/start_recording / 停录整段转写起标题出 story_text
-  # 三键无生字 / story_list.total 全集计数 / V31 四条回退判断 / 归档落盘归云侧网关)。
+  artifact: "openclaw-system-prompt.v10.md"   # 当前版本化文件 (v10 = 261012-kidpal-realtime-facts:
+                                             #   回合路由表新增「实时事实回合」行（先播提示→联网真查→只依据
+                                             #   查询结果作答、查不到诚实引导、禁编造/禁虚称已查）+ 对话行通用
+                                             #   反编造 + 底线节第三不变量（TECH-261012 真机天气幻觉根治）)
+  source: "../deploy/openclaw-system-prompt.v10.md"
+  deploy_target: "openclaw-system-prompt.v10.md"   # ECS data/ 下的渲染目标名
+  # 演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（声明面 / 渲染面 / 本文件三处散文
+  # 一律只留「当前 = vN」指针，不再复述沿革）。三处接线（本声明面 / apply-xiaozhi-overlay.sh
+  # 渲染面 / carrier 载体）指向同一在场非空文件；一致性由 ADR-001 版本无关守卫 +
+  # test_prompt_v7_round_routing.acceptance.py 语义锚齿机检。历史版本文件一律不改、可 diff。
+  # 结构: 回合类型路由表（对话=一回合作答禁工具 / 查字=最小意图块绝对禁工具 /
+  # 课表问答=先读 schedule.md+反编造 / 实时事实=先播提示→联网真查→只依据查询结果作答+
+  # 查不到诚实引导 / 提醒 cron=语义 JSON；家长 QQ 录入走家庭侧 agent、不入表）
+  # + 两部分回复 (先口语儿童答案 + 末尾 ```display 块, 契约 §1.6)
+  # + 语音简洁不啰嗦（v7 放宽硬性三句，human 260925 裁；讲故事按段落讲不逐段请示）
+  # + 7 view 白名单 + 课表/查字/故事/提醒各域节 (查字最小意图块禁坐标 /
+  # 故事禁产 story JSON / 提醒 entry_key 对齐)。
 
 # 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2 / 决策 20): 时刻的家在**服务端**，
 # 纯配置不进契约 B1、不进固件（改时刻即时生效、永不烧板子）。消费方 = OpenClaw cron 载荷
-# 脚本 server/deploy/openclaw-patch/reminder_schedule_lib.py::load_ladder_config；渲染面 =
-# apply-xiaozhi-overlay.sh（与 prompt 同批上 ECS）；缺文件回退脚本内 DEFAULT_LADDER_CONFIG。
+# 脚本 server/deploy/openclaw-patch/reminder_schedule_lib.py::load_ladder_config；铺放面 =
+# server/deploy/manifest.yaml 登记、deploy.sh 直管消费位
+# /opt/kidpal/openclaw-reminder.config.yaml（261013-gov-review-deploy-single-source-loop，
+# 原写「渲染面 = apply-xiaozhi-overlay.sh」——该渲染落 $DATA_DIR 非消费位，已废）；
+# 缺文件回退脚本内 DEFAULT_LADDER_CONFIG。
 reminder_config:
   artifact: "openclaw-reminder.config.yaml"
   source: "../deploy/openclaw-reminder.config.yaml"
@@ -58,13 +57,23 @@ reminder_config:
   consumer: "openclaw-patch/reminder_schedule_lib.py"   # 三档算术 + 幂等 id + 原子写
   deliverer: "gateway/reminders.py"                     # 每分钟轮询 + 重试到确认 60s×3 + 静默作废
 
+# 引擎连接超时（决策 21 / arch §6.4）: 引擎不主动断连——两道超时 24h 纯兜底 + 告别语关闭，
+# 保「设备常驻在线（提醒推送可达）」假设。渲染面 = apply-xiaozhi-overlay.sh heredoc 顶层两键。
+# 病史：260914 修正曾只落活配置（无渲染面），260930/1001 overlay 再生即丢 → 告别语复活 +
+# 120/180s 断连（TECH-261010-engine-decision21-keys-not-persistent）；本块 = 声明面持久化，
+# 机检齿 = test_261010_engine_decision21_overlay_persist.acceptance.py。
+engine_timeout:
+  close_connection_no_voice_time: 86400   # 24h 纯兜底（引擎源码默认 120，勿回落）
+  end_prompt:
+    enable: false                          # 告别语关闭（引擎源码默认 true，勿回落）
+
 providers:
   llm:
     family: "llm"
     provider: "openai"                  # type:openai 流式接 OpenClaw
     target: "openclaw"                  # OpenClaw OpenAI-compatible endpoint
     base_url: "http://127.0.0.1:18789/v1"  # loopback (V28); /v1 required (live 260906: without it engine hits 404)
-    model: "openclaw/default"
+    model: "openclaw/kidpal"
     stream: true
     forbid_max_tokens: true             # 契约 §四 / V9 硬约束
   tts:

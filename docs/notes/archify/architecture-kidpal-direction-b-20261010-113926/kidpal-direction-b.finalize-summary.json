@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\candidate.json",
+    "sha256": "f8dd38f1c9501c20078fd0b60917568f1b21a42c373c2ebba09ee9608d049f09",
+    "bytes": 3955
+  },
+  "artifact": {
+    "path": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.html",
+    "sha256": "8e187d5061a5de9a97d7931a2c690601a4bb13a4376e3bb55f49f7e317e4df52",
+    "bytes": 754450
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/evidence-path-conflict",
+      "severity": "error",
+      "message": "browser-check will not replace the existing unowned evidence path \"C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.browser-check.json\".",
+      "subject": {
+        "artifact": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.html",
+        "evidencePath": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.browser-check.json"
+      },
+      "evidence": {
+        "reason": {
+          "code": "ownership-artifact-mismatch"
+        }
+      },
+      "supportedFixes": [
+        "move the conflicting file aside, or choose a separate --out-dir, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.finalize.json",
+    "summaryReceipt": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.finalize-summary.json",
+    "browserCheckReceipt": "C:\\tmp\\.archify\\architecture-kidpal-direction-b-20261010-113926\\kidpal-direction-b.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-10T03:39:52.897Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1472
+}

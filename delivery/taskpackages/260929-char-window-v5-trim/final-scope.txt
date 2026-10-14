@@ -1,0 +1,13 @@
+# final-scope 清单 — 260929-char-window-v5-trim（planner 按 integrator Step 4 范围圈定合成，2026-09-29）
+# 生成方式（dev-loop Step 4 范围圈定）：种子 = taskpackage.json impactedTests[]（三件全列）
+#   ∪ 本包 acceptanceTestsFile[]（char_window_overlay——已含于种子）；
+#   本包源码面（char_page.cc 四件删改 + gen_assets.mjs + frm_236_236.bin 重烘 + simulator 中间母版）
+#   映射测试全部落在上述验收件内，无额外测试文件（keybar/lcd_display/schedule 等 260928 影响面本包零触）。
+# 语义：本清单 = 影响面圈定清单，供 final bearing verification（verify.mjs --scope-file）与
+#   unit/acceptance runner 求交用；**全量回归 = 人工触发位，不圈全仓**。
+# floor 注：本包无跨包 counterparts（crossEnd.exempt 申报纯板端呈现面与本地资产、零跨端消息），
+#   无对端包冻结件并入 floor；char_stroke.acceptance.c 与 char_window.test.c 为零改确认 must-stay-green 件。
+# 落盘前核证：三件 .acceptance.c/.test.c 路径在盘上逐一核对存在（防 typo 假绿，2026-09-29 planner）。
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/char_stroke.acceptance.c
+firmware/main/test/char_window.test.c

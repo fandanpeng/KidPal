@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>拆包→执行链 · 治理方案草案</title>
+<title>拆包 → 执行链 · 治理方案（已落地 FROZEN v1.0）</title>
 <style>
   :root{
     --ink:#1a2233; --ink-soft:#4a5568; --line:#d9dee8; --bg:#f5f7fb; --card:#ffffff;
@@ -72,6 +72,13 @@
   .hit .f{color:#a61e1e}
   .hit .f b{display:block;font-size:12.5px}
 
+  .readchain{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}
+  .readchain th,.readchain td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top;background:#fff}
+  .readchain th{background:#f0f3f9;font-weight:700;color:var(--ink)}
+  .readchain td:first-child{white-space:nowrap;font-weight:600;color:var(--ink)}
+  .readchain td.reader{color:#a61e1e}
+  .notecaveat{margin-top:10px;font-size:12px;color:var(--ink-soft);background:#fffbe6;border:1px solid #f1e1a6;border-left:3px solid #d0b200;border-radius:6px;padding:7px 11px}
+
   @media (max-width:1000px){
     .chain{grid-template-columns:1fr}
     .arrowcol{transform:rotate(90deg);padding:2px 0}
@@ -81,26 +88,24 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>拆包 → 执行链 · 治理方案草案</h1>
-  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ 草案 <code>changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（DRAFT v0.1，讨论中）</div>
+  <h1>拆包 → 执行链 · 治理方案</h1>
+  <div class="sub">PROPOSAL 出什么 → portfolio-planner 拆出什么 → planner 拿到什么做什么 ｜ 已落地 <code>delivery/changes/arch/260912-gov-review-portfolio-decomposition-chain/PROPOSAL.md</code>（FROZEN v1.0 · 2026-09-13 · 9 文件落地 + landing-verifier GREEN）</div>
 
   <div class="chain">
 
     <!-- 第①步 -->
     <div class="card c1">
       <div class="stepno">第 ① 步 · 立项</div>
-      <h2>PROPOSAL（主线程起草 + human grilling）</h2>
-      <div class="actor">主线程起草 → human 裁 OQ → <b>architect 分流 review</b>（/triage-change，已有，不动）→ 冻结</div>
-      <div class="role"><b>角色：裁决记录 · 冻结后不动</b>只回答「为什么改、人裁了什么」。切包怎么切不归它管。</div>
+      <h2>workstream PROPOSAL（主线程起草 + human grilling）</h2>
+      <div class="actor">输入 = human 与主线程讨论的 <b>plan/idea</b> → architect 分流 review（/triage-change 判 ③档）→ human 确认路由 → 主线程按模板起草 + grilling 裁 OQ → human 盖 FROZEN</div>
+      <div class="role"><b>角色：裁决记录 · 冻结后不动</b>只回答「为什么改、人裁了什么」。切包怎么切不归它管；起草权也不下放给 portfolio-planner。<code>delivery/workstreams/&lt;ws&gt;/</code> 目录在 triage 时由主线程建（设计权威落家），拆包调度态才归 portfolio-planner。</div>
       <div class="art">
-        <div class="fname">.planning/&lt;ws&gt;/PROPOSAL.md 包含：</div>
+        <div class="fname">delivery/workstreams/&lt;ws&gt;/PROPOSAL.md 含「通用三问 + 分型」：</div>
         <ul>
-          <li>效果与差距（目标一句话 + 现状四差距 + 非目标）</li>
-          <li>问题与根因（file:line 证据锚）</li>
-          <li>方案空间 + 四 OQ 裁定（人裁，冻结凭据）</li>
-          <li>契约 / spec 触面申报（逃生门）</li>
-          <li>留根清单（不做的归哪批）</li>
-          <li><s>§4 拆包预判</s><span class="tag hot">降级</span>→ 只作意图提示，不再当拆包权威</li>
+          <li><b>要达成什么</b>——业务目的清单（枚举式，每条带可观察判据，禁一句概括）</li>
+          <li><b>现在在哪</b>——三子形（新建型=现状盘点 / 整改型=问题与根因 / 重构型=结构性痛点），由 frontmatter 字段 <code>workType</code>（字符串数组：new-capability / remediation / refactor，可混合）驱动</li>
+          <li><b>怎么走</b>——方案空间 + OQ 裁定 + 非目标 + 逃生门申报</li>
+          <li>每条裁定标 <b>spec 关系</b>：<code>within-spec</code> / <code>需修订</code>（受影响包硬 launch 依赖）/ <code>spec-silent</code></li>
         </ul>
       </div>
     </div>
@@ -112,26 +117,27 @@
       <div class="stepno">第 ② 步 · 拆包</div>
       <h2>portfolio-planner（RTE）拆包</h2>
       <div class="actor">输入 = 冻结 PROPOSAL（+ 图索引只读探查）</div>
-      <div class="role"><b>角色：把裁决变成列车计划</b>一次拆包产出「四件套」，缺一不齐不得交 launch。</div>
+      <div class="role"><b>角色：把裁决变成列车计划</b>拆包产出「四件套 + ⑤」，缺一不齐不得交 launch。</div>
       <div class="art">
-        <div class="fname">拆包四件套：</div>
+        <div class="fname">拆包产物（四件套 + ⑤，260921 起）：</div>
         <ul>
-          <li><b>roadmap.md</b> <span class="tag new">新增·活文档</span>——效果目标 × 包、列车图（机械渲染）、每包「完成后人能看到什么」、demo 证据形态、达成状态</li>
-          <li><b>taskpackage.json × N</b> <span class="tag frozen">已有</span>——机器骨架（dependsOn / mergeOrder / acceptance）</li>
-          <li><b>plan.md × N</b> <span class="tag hot">收紧</span>——每包必备初步设计，装配型豁免取消（MVP 19/19 缺位的根治）</li>
-          <li><b>decision-coverage.json</b> <span class="tag frozen">已有</span>——决策 → 包 → 验收，机器对账</li>
+          <li><b>roadmap.md</b> <span class="tag new">活文档</span>——效果目标 × 包、列车图（render-roadmap.mjs 机械渲染）、每包「完成后人能看到什么」、demo 证据形态、达成状态</li>
+          <li><b>taskpackage.json × N</b> <span class="tag frozen">机器骨架</span>——dependsOn / mergeOrder / acceptance</li>
+          <li><b>plan.md × N</b> <span class="tag hot">全量义务</span>——每包必备包级设计，装配型豁免全取消（MVP 19/19 缺位的根治）</li>
+          <li><b>decision-coverage.json</b> <span class="tag frozen">机器对账</span>——决策 → 包 → 验收，含 <code>launchPreconditions</code></li>
+          <li><b>input-brief × 2</b> <span class="tag new">260921 增</span>——acceptance-author / builder 双份 brief，随 commit-before-launch 进基准 ref；脚本派生五节（契约/spec 锚点定位 · 跨端对端面 · 先例封顶 3 · 超读申报 · 跨包承接），<b>不承载 story 蒸馏</b></li>
         </ul>
       </div>
       <div class="gate">
-        <div class="gname">门 1 · 拆包 review（新增，GREEN 才 commit-before-launch）</div>
+        <div class="gname">门 1 · 拆包 review（GREEN + human 过目切法，才 commit-before-launch）</div>
         <ol>
-          <li>切片逻辑：按行为切还是按页/按问题切？图上见，偏离须有显式理由</li>
+          <li>切片逻辑：按行为切还是按页/按问题切？图上见，偏离垂直切片须有显式理由</li>
           <li>依赖序 + WIP 合理性</li>
           <li>decision-coverage 完备（含跨包行为 owner）</li>
           <li>每包意图与 PROPOSAL 冻结裁定一致</li>
           <li>demo 证据形态可行（真机轮配额仅核心包）</li>
         </ol>
-        <div class="who">architect 轻量 review（OQ1 可裁改对抗档）→ GREEN 后 <b>human 过目切法</b>——方向 + 切法一次前端对齐，切法自此有票</div>
+        <div class="who">human / 主线程派 architect 轻量 review（存疑向严升 Track A）→ GREEN 后 <b>human 过目切法</b>——方向 + 切法一次前端对齐，切法自此有票；裁决耐久记 <code>review.md</code>「门 1」节</div>
       </div>
     </div>
 
@@ -143,26 +149,27 @@
       <h2>planner（单 Pod 开发循环）</h2>
       <div class="actor">拿到并消费：<b>plan.md</b>（只读，包级设计）+ <b>roadmap 本包效果段</b>（意图锚）+ taskpackage.json 骨架 + 冻结 PROPOSAL</div>
       <ul class="flow">
-        <li><b>派 acceptance-author</b>——brief 必须携带 roadmap 本包效果段（「回答期间图表前台可见」这类可观察不变式的稳定落点）</li>
-        <li class="anchor"><b>锚 2 · 验收方向核（新增）</b>acceptance 冻结后、builder 动工前，对照 roadmap 效果段核一遍方向<span class="detail">一分钟人读，拦「验收语义钉反」于动工前</span></li>
-        <li><b>builder → verifier ↔ fixer</b>（内循环，不动）</li>
+        <li><b>intake · 通读 story（Step 1e）</b>——sourceRefs 命中 story 时通读全节，蒸馏进 acceptance / decisionCoverage</li>
+        <li><b>派 acceptance-author</b>——brief 携带 roadmap 本包效果段的路径 + 节锚引用（<code>roadmap.md#&lt;changeId&gt;</code>，不整段转抄）</li>
+        <li class="anchor"><b>锚 2 · 验收方向核</b>acceptance 冻结后、builder 动工前，<b>planner（agent）</b>对照 roadmap 效果段核一遍方向<span class="detail">含 AC 回引对账（按 workType 分流）；核对者 = planner 非 human，拦「验收语义钉反」于动工前</span></li>
+        <li><b>builder → verifier ↔ fixer</b>（内循环）</li>
         <li><b>integrator 收口</b></li>
-        <li class="anchor"><b>锚 3 · demo 对账（新增）</b>收口必含 demo 证据（形态拆包时已定）+ 与效果段的一致性结论<span class="detail">对不上 → 就地升裁（deputy 预裁成文化），禁攒到集成夜</span></li>
-        <li><b>supervisor 合并门 → merge-driver 合并</b>（已有，不动）</li>
+        <li class="anchor"><b>锚 3 · demo 对账</b>review-packet 必含 demo 证据（形态拆包时已定）+ 与效果段的一致性结论<span class="detail">对不上 → 走既有升级通道就地升裁，裁断记 pod-events（human-decision + anchor3-deviation-ruling），禁攒到集成夜</span></li>
+        <li><b>supervisor 合并门 → merge-driver 合并</b></li>
       </ul>
     </div>
   </div>
 
   <!-- 闭环 -->
   <div class="loopband">
-    <b>闭环（列车视角常驻化）</b>——拆包者离场后不再悬空：
+    <b>闭环（列车视角常驻化）</b>——拆包者离场后不再悬空，<b>绿路径上 portfolio-planner 沉默</b>：
     <div class="steps">
       <span class="chip">包 merge</span><span class="ar">→</span>
-      <span class="chip">reconcile 唤起 portfolio-planner（episodic 再触发）</span><span class="ar">→</span>
-      <span class="chip">roadmap 标状态：achieved / deviation+裁定锚</span><span class="ar">→</span>
-      <span class="chip">下一包</span><span class="ar">→</span>
+      <span class="chip">roadmap 达成状态由 render-roadmap.mjs 机械渲染（board/merge → achieved，deviation 记录 → 标注）</span><span class="ar">→</span>
+      <span class="chip">下一包 ready 由 reconcile 机械计算 + human 点火</span><span class="ar">→</span>
       <span class="chip">全列 achieved → workstream 收口轮</span>
     </div>
+    <div style="margin-top:5px">portfolio-planner 再出场仅调度异常：锚 3 deviation 影响后续包 / 依赖与实际不符 / WIP·mergeOrder 需重排（human 唤起重裁）。</div>
   </div>
 
   <!-- 失败映射 -->
@@ -182,6 +189,30 @@
         <div class="f"><b>SU-RULING-02 + 集成夜爆雷</b>只交付 layer 机制、聊天屏仍双物理屏并存——「聊天内容任何页可见」的效果对账当场翻红，不必等真机轮</div>
       </div>
     </div>
+  </div>
+
+  <!-- 谁读需求 -->
+  <div class="hits">
+    <h3>谁具体读需求（story 语义 = <code>docs/requirements.md</code> 现文）<span>story 只锚点引用、不内嵌原文 → 谁要语义谁去读现文</span></h3>
+    <table class="readchain">
+      <tr><th>角色 / 相位</th><th>读不读 · 读成什么</th></tr>
+      <tr><td>主线程起草 PROPOSAL</td><td>读 story 提业务目的清单（只加可观察判据、不改语义）</td></tr>
+      <tr><td>portfolio-planner（拆包）</td><td><b>不读语义</b>——只机查两道（编号不命中「已砍清单」节、🔴 须有立项处置）</td></tr>
+      <tr><td>planner（Pod 内 Step 1e）</td><td class="reader"><b>通读 story 全节（AC + 补充规则 + 线框），蒸馏进 acceptance / decisionCoverage</b>——行为权威进包内的第一读点</td></tr>
+      <tr><td>acceptance-author</td><td class="reader"><b>读原文钉成可执行断言</b>——链上最后一个同时看到 story 与断言集的角色</td></tr>
+      <tr><td>builder / verifier / fixer</td><td>不读 story——只消费冻结 acceptance + plan.md 技术描述</td></tr>
+    </table>
+    <p style="margin-top:14px"><b>读完蒸馏出的内容落在哪（「需求蒸馏」无独立文件）</b></p>
+    <table class="readchain">
+      <tr><th>内容</th><th>物理落点</th></tr>
+      <tr><td>story 原文</td><td>只在 <code>docs/requirements.md</code>；taskpackage 里只锚点引用、不落原文</td></tr>
+      <tr><td>acceptance 骨架（portfolio-planner 拆包写）</td><td><code>taskpackage.json</code> 的 <code>acceptance[]</code></td></tr>
+      <tr><td>planner Step 1e 蒸馏</td><td>同一 <code>taskpackage.json</code> 的 <code>acceptance[]</code> / <code>decisionCoverage[]</code>（Step 5/8 重写回，不开新文件）</td></tr>
+      <tr><td>可执行验收（acceptance-author）</td><td><code>acceptanceTestsFile[]</code> 指向的 <code>.acceptance.c/.py</code></td></tr>
+      <tr><td>current 指针投影</td><td><code>delivery/taskpackages/current/taskpackage.json</code>（active 包字节级副本）</td></tr>
+    </table>
+    <p class="notecaveat">「需求蒸馏后的语义」没有一个可单独打开的家——拆散在 <code>taskpackage.json.acceptance[]</code>（技术验收）+ <code>plan.md</code>（技术描述）+ roadmap 效果段（业务效果）三份里，没有一份是 story 原文；要看「本包承接的需求到底是什么」，得同时翻 requirements + taskpackage + plan.md + roadmap 四份。且 <code>acceptance[]</code> 上有两个写点——portfolio-planner 拆包写、planner Step 1e 再「通读蒸馏」，Step 1①「以其为权威不回退」与 Step 1e「蒸馏进」字面有张力，中间无机械牙让两个投影互相对账。</p>
+    <p class="notecaveat">input-brief ① 节是「契约/spec 锚点定位」，只对带 <code>#§锚点</code> 的契约/spec 引用有效；story 裸 ID（<code>S-F1.4</code>）进 brief 会落成 missing / bare advisory。story 的定位与蒸馏靠 planner Step 1e + acceptance-author 按 <code>taskpackage.story</code> / <code>docRefs</code> 自己找——这条线是纯散文纪律承载，无机器派生的 story 阅读面清单兜底。</p>
   </div>
 </div>
 </body>

@@ -89,15 +89,15 @@ export function structuralAcceptanceIds(taskPackage, acceptance, { extractId = a
 // 负例（正则需 `:\s` 冒号后空白）/ null / 非串非对象。
 // structural 类（260731 批 7 类必载，负例 assert 方向非可选）：
 //  ① 对象 kind:'structural' 豁免 ② suiteGate:true 豁免（入 suiteGates 集）
-//  ③ 后缀碰撞不豁免（k8 形负例：S1-A1 准则 + S2-A1 不被洗）④ prose-governance-词不豁免（CS-7 形负例）
+//  ③ 后缀碰撞不豁免（k8 形负例：S-F1.1 准则 + S-F2.1 不被洗）④ prose-governance-词不豁免（CS-7 形负例）
 //  ⑤ structural 准则全 id 提及豁免（K7-S5 形，OQ3 保留路径）⑥ 全 id/short ref 兼容 + 裸后缀负例
 //  ⑦ 对象条目 id 提取回归（M-6 联动：对象条目 id 可入 acceptanceIds）。
 //  另：mutation raw-id 变体用例（F-07③：extractId=raw 时对象 kind/suiteGate 仍按 raw id 豁免）。
 export function runAcceptanceIdSelfCheck() {
   const cases = [
     { input: 'TP-7-A1: S1 existing acceptance...', expect: 'TP-7-A1', label: 'string-full-sentence' },
-    { input: 'S1-A2', expect: 'S1-A2', label: 'string-bare-short-id' },
-    { input: { id: 'S3-A1' }, expect: 'S3-A1', label: 'object-id' },
+    { input: 'S-F1.2', expect: 'S-F1.2', label: 'string-bare-short-id' },
+    { input: { id: 'S-F3.1' }, expect: 'S-F3.1', label: 'object-id' },
     { input: { acceptanceId: 'X' }, expect: 'X', label: 'object-acceptanceId' },
     { input: { name: 'Y' }, expect: 'Y', label: 'object-name' },
     { input: { id: 'TP-9-A3: long desc' }, expect: 'TP-9-A3', label: 'object-id-is-full-sentence (tp8-s2-adapter A5)' },
@@ -127,14 +127,14 @@ export function runAcceptanceIdSelfCheck() {
     const { structural, suiteGates } = structuralAcceptanceIds({ acceptance: [{ id: 'LP-14', suiteGate: true }] }, ['LP-14']);
     check('structural-2: suiteGate exempt into suiteGates set', suiteGates.has('LP-14') && !structural.has('LP-14'), true);
   }
-  // ③ 后缀碰撞不豁免（k8 形负例）：S1-A1 准则含 prisma + S2-A1 不得被 \bA1\b 连带洗
+  // ③ 后缀碰撞不豁免（k8 形负例）：S-F1.1 准则含 prisma + S-F2.1 不得被 \bA1\b 连带洗
   {
     const { structural } = structuralAcceptanceIds(
-      { acceptance: ['S1-A1', 'S2-A1'], exitCriteria: ['contract-lint gate: S1-A1 clean'] },
-      ['S1-A1', 'S2-A1'],
+      { acceptance: ['S-F1.1', 'S-F2.1'], exitCriteria: ['contract-lint gate: S-F1.1 clean'] },
+      ['S-F1.1', 'S-F2.1'],
     );
-    check('structural-3a: full-id mention still exempts S1-A1', structural.has('S1-A1'), true);
-    check('structural-3b: NEGATIVE suffix collision must NOT wash S2-A1', structural.has('S2-A1'), false);
+    check('structural-3a: full-id mention still exempts S-F1.1', structural.has('S-F1.1'), true);
+    check('structural-3b: NEGATIVE suffix collision must NOT wash S-F2.1', structural.has('S-F2.1'), false);
   }
   // ④ prose-governance-词不豁免（CS-7 形负例）：acceptance 字符串含 "integrator" 无显式标记 → 仍须覆盖
   {
@@ -153,8 +153,8 @@ export function runAcceptanceIdSelfCheck() {
     check('structural-5: exitCriteria structuralWords + full-id mention exempts K7-S5', structural.has('K7-S5'), true);
   }
   // ⑥ mentionsId 全 id / short ref 兼容 + 裸后缀负例
-  check('structural-6a: mentionsId full-id substring', mentionsId('criterion S1-A1 ok', 'S1-A1'), true);
-  check('structural-6b: NEGATIVE bare suffix no match (A1..A14 interval)', mentionsId('S1-A1..A14 all green', 'P1-A14'), false);
+  check('structural-6a: mentionsId full-id substring', mentionsId('criterion S-F1.1 ok', 'S-F1.1'), true);
+  check('structural-6b: NEGATIVE bare suffix no match (A1..A14 interval)', mentionsId('S-F1.1..A14 all green', 'P1-A14'), false);
   // ⑦ 对象条目 id 提取回归（M-6 联动：对象条目 id 可入 acceptanceIds）
   check('structural-7: object entry id extraction (suiteGate entry)', acceptanceId({ id: 'LP-14', suiteGate: true }), 'LP-14');
   // mutation raw-id 变体（F-07③）：raw 提取器（不 extractShortId）下对象标记仍豁免、id 形态为 raw
@@ -165,13 +165,19 @@ export function runAcceptanceIdSelfCheck() {
       return null;
     };
     const { structural, suiteGates } = structuralAcceptanceIds(
-      { acceptance: [{ id: 'S1-A1: full raw sentence', kind: 'structural' }, { id: 'LP-14', suiteGate: true }] },
-      ['S1-A1: full raw sentence', 'LP-14'],
+      { acceptance: [{ id: 'S-F1.1: full raw sentence', kind: 'structural' }, { id: 'LP-14', suiteGate: true }] },
+      ['S-F1.1: full raw sentence', 'LP-14'],
       { extractId: rawExtractId },
     );
-    check('structural-8a: mutation raw-id variant kind exempt (raw form)', structural.has('S1-A1: full raw sentence'), true);
+    check('structural-8a: mutation raw-id variant kind exempt (raw form)', structural.has('S-F1.1: full raw sentence'), true);
     check('structural-8b: mutation raw-id variant suiteGate exempt', suiteGates.has('LP-14'), true);
   }
+  // ⑨ T8 兼容性夹具（260928-gov-review-portfolio-boundary-story-propagation T8）：`S-Fx.y-AC<n>`
+  // 复合句法**不被误拆**——extractShortId 正则字符类 [A-Za-z0-9._-] 完整覆盖 token、整段返回；
+  // mentionsId 全 id 子串匹配对齿内回引成立。结论 = 解析面零代码改动（夹具钉结论防回归）。
+  check('structural-9a: compound story-AC token survives extractShortId (整句提取短 id = token 本体)', acceptanceId('S-F1.4-AC3: 到点提醒断言'), 'S-F1.4-AC3');
+  check('structural-9b: compound bare token round-trips', acceptanceId('S-F1.4-AC3'), 'S-F1.4-AC3');
+  check('structural-9c: mentionsId sees tooth backref compound token', mentionsId('验收齿回引 S-F1.4-AC3', 'S-F1.4-AC3'), true);
 
   process.stdout.write(`${JSON.stringify({ selfCheck: 'acceptance-id-shared', pass, fail, total: pass + fail, ok: fail === 0 })}\n`);
   if (fail > 0) process.exit(1);

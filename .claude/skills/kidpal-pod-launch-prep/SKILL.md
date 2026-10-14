@@ -18,8 +18,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（moderate + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
 6. board（`devloop/pods/<changeId>.json`）预填 worktreePath
 7. 启动卡落 `delivery/taskpackages/<changeId>/launch-card.md`
-8. 每个包：双 `input-brief-*.md` 在场（拆包侧产、launch 侧核）
-9. **不代跑 launch、不合并、不 push**——launch 命令交 human 自跑
+8. **不代跑 launch、不合并、不 push**——launch 命令交 human 自跑
 
 ## 步骤
 

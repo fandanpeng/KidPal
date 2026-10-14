@@ -220,6 +220,12 @@ int kidpal_art_glyph(char ch, kidpal_art_img_t *out)
          * cell 几何（48x64），由 tools/asset-pipeline/gen_imgfont_letters.py 生成 fixed
          * 名 imgfont_pct.bin（避开字母大小写分流命名；不在 gen_art_spiffs.mjs 白名单）。 */
         snprintf(name, sizeof(name), "imgfont_pct.bin");
+    } else if ((unsigned char)ch == 0xB0) {
+        /* '°' 度符号（2026-09-26 真机对齐轮：P1 温度 °C 后缀）。非 ASCII，调用方以
+         * (char)0xB0 传入（ARM signed char 下为负值，故按 unsigned char 比对）。同 cell
+         * 几何（48x64），由 gen_imgfont_letters.py 生成 fixed 名 imgfont_degree.bin
+         * （避开字母大小写分流命名；不在 gen_art_spiffs.mjs 白名单）。 */
+        snprintf(name, sizeof(name), "imgfont_degree.bin");
     } else if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
         /* 字母字形扩展（包 260915-m1-k1a-key-layer-dispatch，M1-N1b 日期 DD-Mon）：
          * 字母按大小写分流文件（NTFS 大小写不敏感属跨端缺陷——同名模板会使小写

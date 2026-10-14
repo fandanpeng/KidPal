@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\candidate.json",
+    "sha256": "7c49d8cf3218864a2331798ba9d8dc1f7770e5dab8368db1aeff6a3c004ceba6",
+    "bytes": 4430
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\front-session-lifecycle.html",
+    "sha256": "ac31f2897ed0c83014579c0d42e91afc1355cc6c218d90f0891ed6f5715df780",
+    "bytes": 759171
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\review-3\\front-session-lifecycle.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\review-3\\front-session-lifecycle.finalize-summary.json",
+    "browserCheckReceipt": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\review-3\\front-session-lifecycle.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-10T03:39:52.897Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3141,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 3
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "t-late-archive",
+            "from": "pending_stop",
+            "to": "archived",
+            "label": "stt 到达 → feed + stop 归档",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "right": {
+            "id": "t-kill-acc",
+            "from": "accumulate",
+            "to": "destroyed",
+            "label": "断开 cancel：丢弃缓冲",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            607.5,
+            182
+          ]
+        },
+        {
+          "left": {
+            "id": "t-archive",
+            "from": "accumulate",
+            "to": "archived",
+            "label": "stop 归档：停录 / 收尾词 / 120s",
+            "collectionIndex": 3,
+            "artifactIndex": 4
+          },
+          "right": {
+            "id": "t-release",
+            "from": "pending_stop",
+            "to": "chat",
+            "label": "10s 无转写释放（不写空故事）",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "point": [
+            350,
+            138
+          ]
+        },
+        {
+          "left": {
+            "id": "t-release",
+            "from": "pending_stop",
+            "to": "chat",
+            "label": "10s 无转写释放（不写空故事）",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "id": "t-kill-acc",
+            "from": "accumulate",
+            "to": "destroyed",
+            "label": "断开 cancel：丢弃缓冲",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            380,
+            138
+          ]
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "hints": [
+      "pending_stop → archived crosses accumulate → destroyed: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "accumulate → archived crosses pending_stop → chat: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "pending_stop → chat crosses accumulate → destroyed: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

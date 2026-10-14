@@ -1,0 +1,17 @@
+# final-scope 清单 — 260928-char-window-key-triggered-play（integrator 合成，2026-09-28）
+# 生成方式（dev-loop Step 4 范围圈定）：种子 = taskpackage.json impactedTests[]（六件全列）
+#   ∪ 本包 acceptanceTestsFile[]（char_window_overlay / keybar_three_slot——已含于种子）
+#   ∪ changeManifest 七文件映射测试（全部落在上述两验收文件内，无额外测试文件）；
+#   advisory 辅证 = detect_changes（per-Pod 图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 可用，
+#   changed_files 27 与本包申报面一致，无溢出符号面——记账见 review-packet §影响面核对）。
+# 语义：本清单 = 影响面圈定清单，供 final bearing verification（verify.mjs --scope-file）与
+#   unit/acceptance runner 求交用；**全量回归 = 人工触发位，不圈全仓**（守 Rationalizations 反驳）。
+# floor 注：本包无跨包 counterparts（crossEnd.exempt 申报纯板端呈现面、零跨端消息），
+#   无对端包冻结件并入 floor；本包自身两冻结验收件已全列。
+# 落盘前核证：四件 .acceptance.c 路径在盘上逐一核对存在（防 typo 假绿，2026-09-28 integrator）。
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/char_stroke.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c

@@ -102,12 +102,15 @@ OpenClaw 回复文本（示例）
   }
 }
 ```
-板子行为：切到 P3 星星记录本，渲染列表（每条 = 星星图标 + 标题 + 日期、选中行带边框、超一屏分屏指示；手势族权威 = requirements §2.3 矩阵——契约不复制交互细节，只钉数据消费与降级：畸形/缺字段拒绝并友好降级、不盲渲染（V27））。
+板子行为：切到 P3 星星记录本，渲染列表（每条 = 星星图标 + 标题 + 日期、选中行带边框、超一屏分屏指示；手势族权威 = requirements §2.3 矩阵——契约不复制交互细节，只钉数据消费与降级：畸形/缺字段拒绝并友好降级、不盲渲染（V27））；**`data.restore: true` 时除外——只填列表缓存、不接管前台，P3 在屏时仅重绘本页**。
 
 - **`total`**（可选，整数）：**现存篇数 = 星星计数**（S-F2.1 AC1；确认删除即 −1——S-F2.4 AC2 v1.47 拆分口径：盖章 N = 入册流水号，不再取本字段，见 §1.3④ `data.seq`），由云端计算下发。板子据此渲染 P3 右上角星星计数器（×N）。**缺省时板子回退用 `items.length`**（向后兼容防御，常态不可达——front 机械推送恒带 total）。
 - **`items` = 最新 ≤16 条窗口**（日期倒序；2026-09-24 契约门 Q2 裁定丙案——板端 `KSTORY_LIST_MAX=16` 维持现值，解析超限整单降级为防御面）。若 `items` 分页/截断，不得以 `items.length` 顶替 `total` 作正式数据源（load-bearing 警示句：>16 篇时窗口条数 ≠ 星星计数）。窗口外旧条目云端仍在（`total` 计入）、设备端可达性以窗口为限；旧条目设备端可达面如需扩展属新需求另立（触 device RPC 边界须再裁，ADR-005/007）。
+- **`data.restore`**（可选布尔，additive——缺省（absent）或显式 `false` 时设备行为完全不变）：`true` = 恢复性载荷（WS 建连附带重推），只填 RAM 列表缓存、不接管前台（P3 在屏时仅重绘本页）。降级双面注记：restore 载荷**板端入板后**解析失败 = 板端静默降级（记日志、缓存零变化、不弹提示、不动前台）；**front 校验面 V27**（脏块拒绝/降级提示、不入板盲渲染）在入板前独立生效——两层降级互不替代。
+- **生产纪律（谁可置 `data.restore`）**：仅 front 后台附带推送路径（WS 建连恢复推送）可置 `restore`；归档成功后 / 删除执行后的主动推送恒不置（缺省 = 主动展示、接管前台，K2 消费面既有语义）。触发时机属行为策略，权威承载 = arch §5.2 场景④，不进契约。story_list 引擎侧来源已被 relay 收紧拒绝（§1.5 第 3 条 Q7 单源），不存在 LLM 直产 restore 载荷路径（区别于 §1.3② 的 LLM 绕过残余风险面，ADR-010 记）。
 - （契约变更记录：2026-08-29 经契约门批准新增 `total`，additive 可选字段，见 delivery/changes/arch/260829-arch-review-kidpal-spec-stories。）
 - （契约变更记录：2026-09-24 经契约门批准——`total` 语义收窄 = 现存篇数（盖章 N 迁出至 §1.3④ `data.seq`）+ `items` 最新 ≤16 条窗口口径（Q2 丙案）+ 板子行为句按 v1.27 交互改写（旧「KEY 选择」句废，手势权威引 requirements §2.3）+ 节标题术语对账（故事列表→星星记录本列表，v1.26）；随 260924-m4-k1-story-cloud-link 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260924-m4-k1-story-cloud-link/CONTRACT-CHANGE-PACKET.md) §5。）
+- （契约变更记录：2026-10-12 经契约门批准新增可选 `data.restore` 恢复性推送语义（additive——缺省/false 设备行为完全不变）+ 板子行为句随批 modifying——复刻 §1.3② data.restore / ADR-005 先例；requirements v1.63 S-F2.1 补充规则冷启动恢复赎回 260928-story-connect-push-defer 挂起的时点①重裁；随 261010-p3-storylist-cold-start-restore 同 PR 落地，见 CONTRACT-CHANGE-PACKET.md〔delivery/taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/CONTRACT-CHANGE-PACKET.md〕。）
 
 #### ④ `story_text` —— 故事正文（刚存好/阅读态）
 ```json
@@ -147,15 +150,16 @@ OpenClaw 回复文本（示例）
     "upcoming": {
       "day_key": "今天",
       "items": [ { "time": "14:00", "name": "钢琴课" } ],
-      "preview": { "time": "明早", "name": "春游" }
+      "preview": [ { "time": "08:00", "name": "上学" }, { "time": "19:00", "name": "编程" } ]
     }
   } }
 ```
 
-- 形状与板端 `home_p1.h` 冻结注入 seam（`hp1_item_t {time,name}` / `kidpal_home_p1_schedule_inject(day_key, items, next_day_preview)`）对齐——payload 即 seam 注入参数的 JSON 化。
-- 分组口径 = 决策 26「接下来」分组（学校课合并「上学」、培训班/一次性逐项、最近项最醒目、再下可带明日预告）；**producer = front 机械计算**（schedule.py `group_upcoming` 单源），OpenClaw（LLM）专注话术、不产此载荷（2026-09-21 契约门裁定）。推送时机（WS 建连 / 每日零点 / 新建日程即时）属行为策略，权威承载 = arch §5.2 场景① + §10 决策 26，不进契约。
+- 形状与板端 `home_p1.h` 冻结注入 seam（`hp1_item_t {time,name}` / `kidpal_home_p1_schedule_inject(day_key, items, count, next_day_items, next_day_count)`）对齐——payload 即 seam 注入参数的 JSON 化。
+- **`preview` 三态语义（2026-10-11 契约门改多项数组）**：明日「接下来」全量逐项 `{time,name}` 数组、按开始时间升序（requirements S-F1.1 AC2——明日日程全量进区：学校课合并「XX:XX 上学」与课外班、临时事件同列）。三态：**非空数组** = 明日项列表；**`[]`（空数组）= 云端确认明日无项**，板端据此显示「明天没有什么课喽」空态话术（AC6——上学日明天区必然非空，话术仅非上学日可达）；**`null` 或缺省 = 未推送/未提供**，板端显示数据未达提示、不显示无安排话术（AC7，与空态话术显式分叉）。`time` 钉 HH:MM 字面（K1 裁决：自然语言标签不入 wire，板端解析拒绝非 HH:MM 值）。
+- 分组口径 = 决策 26「接下来」分组（学校课合并「上学」、培训班/一次性逐项、最近项最醒目、再下可带明日预告——`preview` 形状与明日分组口径见上条，2026-10-11 改多项全量）；**producer = front 机械计算**（schedule.py `group_upcoming` 单源），OpenClaw（LLM）专注话术、不产此载荷（2026-09-21 契约门裁定）。推送时机（WS 建连 / 每日零点 / 新建日程即时）属行为策略，权威承载 = arch §5.2 场景① + §10 决策 26，不进契约。
 
-- （契约变更记录：2026-09-21 经契约门批准新增可选 `data.upcoming` 承载首页「接下来」，additive 向后兼容；随 M3-K1 同 PR 落地，同上 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/260921-m3-k1-cloud-schedule-producer/CONTRACT-CHANGE-PACKET.md)。）
+- （契约变更记录：2026-10-11 经契约门批准 `data.upcoming.preview` 由单 `{time,name}` 对象改多项数组 + 三态语义（非空数组 = 明日全量升序列表 / `[]` = 确认明日无项承载 AC6 空态话术 / `null`·缺省 = 未推送承载 AC7 未达态）——requirements v1.61 S-F1.1 AC2/AC6/AC7；示例值 `"time": "明早"` 旧漂移顺修，K1 裁决载荷钉 HH:MM、自然语言标签不入 wire；板端 seam 同形改（`home_p1.h`），板端对旧单对象形状保留一个过渡版的解析容忍（部署缓冲防御，不入契约形状定义）；随 261011-p1-home-v5-rework 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/261011-p1-home-v5-rework/CONTRACT-CHANGE-PACKET.md)。）
 
 ### 1.4 控制类指令（OpenClaw 判意图后下发）
 
@@ -173,7 +177,7 @@ OpenClaw 回复文本（示例）
 
 1. 承接设备会话：wss 常驻连接，握手 `Authorization: Bearer <device-token>` 强制鉴权（**token 未设 = 拒绝服务**，不留 validation-mode 后门）。
 2. 上行：Opus 帧 → 服务端 VAD 切句 → 云 ASR → 文字 → 转发 OpenClaw（OpenAI 兼容端点，流式）。
-3. 切分与校验：拿到回复文本用正则切出 ` ```display ` 块，**机械 schema 校验**（view ∈ 白名单 char/schedule/story_list/story_text/text/home/control、data shape/大小上限、脏 JSON 拒绝并降级友好提示）；schedule 薄载荷（`data:{}`）由 front 截获展开成完整周网格再下发（§1.3②），旧列表形状 schedule data 拒绝并降级提示；story_list/story_text 轻量形状 floor（total 整数 ≥0 / items 三键 {id,title,date} / seq 可选整数——2026-09-24 契约门 Q8）+ relay 拒绝引擎侧来源的 story_list/story_text display 块（story 数据只走 front 机械推送单源，Q7——front 自推不经 relay、天然豁免）。课表解析/网格计算仍由 schedule.py 唯一解析器单源承载（arch §5.1.2 明列课表解析组件归 front）——此为机械计算与校验，非自研业务逻辑，**零自研业务逻辑红线不变**。
+3. 切分与校验：拿到回复文本用正则切出 ` ```display ` 块，**机械 schema 校验**（view ∈ 白名单 char/schedule/story_list/story_text/text/home/control、data shape/大小上限、脏 JSON 拒绝并降级友好提示）；schedule 薄载荷（`data:{}`）由 front 截获展开成完整周网格再下发（§1.3②），旧列表形状 schedule data 拒绝并降级提示；story_list/story_text 轻量形状 floor（total 整数 ≥0 / items 三键 {id,title,date} / seq 可选整数 / story_list 另认 data.restore 可选布尔——2026-09-24 契约门 Q8 + 2026-10-12 契约门 restore additive）+ relay 拒绝引擎侧来源的 story_list/story_text display 块（story 数据只走 front 机械推送单源，Q7——front 自推不经 relay、天然豁免）。课表解析/网格计算仍由 schedule.py 唯一解析器单源承载（arch §5.1.2 明列课表解析组件归 front）——此为机械计算与校验，非自研业务逻辑，**零自研业务逻辑红线不变**。
 4. 正文送 TTS（edge-tts）→ 句级流水线 → 下行 Opus 帧；display JSON 经 `mcp` kidpal/display 工具调用下发（小智原生 alert/custom 通道弃用）。
 5. 提醒定时推送：`mcp` kidpal/alert，送达/出队语义见 §三。
 6. 故事面机械职责（2026-09-24 契约门新增）：`story_list` 三时点推送 producer（WS 建连 / 归档成功后 / 删除执行后——触发时机属行为策略，权威承载 = arch §5.2 场景④，不进契约）+ `kidpal_story_delete` 机械执行（哨兵头校验 + MD 硬删 + 审计日志 + story_list 重推对账，§四）+ 入册流水号账本（story.py 单源，只增不减）——此为机械计算与校验，非自研业务逻辑，**零自研业务逻辑红线不变**。

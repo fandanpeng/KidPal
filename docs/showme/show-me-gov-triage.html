@@ -72,18 +72,29 @@
   .tier.t3{border-color:#bcd9b4}.tier.t3 .t{color:var(--ok)}
   .tier.t2{border-color:#cfe0f0}.tier.t2 .t{color:#2c6fbb}
   .tier.t1{border-color:var(--line)}.tier.t1 .t{color:var(--muted)}
+  .lanes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+  @media(max-width:980px){.lanes{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.lanes{grid-template-columns:1fr}}
+  .lane{border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+  .lane .lt{font-size:13px;font-weight:700;color:#fff;border-radius:8px;padding:4px 9px;text-align:center}
+  .ln-req .lt{background:#2c6fbb}.ln-arc .lt{background:#2f6f6b}.ln-con .lt{background:#8a5aa8}.ln-imp .lt{background:#b07a1a}
+  .lane .ls{font-size:12px;color:var(--ink);line-height:1.6;flex:1}
+  .lane .ls b{color:var(--accent)}
+  .lane .la{font-size:11px;color:var(--ok);font-weight:600}
   @media(max-width:520px){.wrap{padding-left:14px;padding-right:14px}ol.steps{padding-left:26px}ol.steps>li::before{left:-34px;width:20px;height:20px;font-size:10.5px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Triage 前置门 · <code>/triage-change</code> 逐步拆解</h1>
-  <div class="sub">dev 侧变更（改 <code>firmware/**</code> 行为）开工前的分流前置门。大 feature / 小 feature / bug 不分入口，先过 architect 一次<b>比例化 review</b>，判四档、把 reviewed plan 落到它的家。</div>
+  <div class="sub">变更开工前的分流前置门——<b>不是只判包大小，是分面路由器</b>：变更进来先四面探测（intake），产出 facePlan 决定哪些面要动、按什么顺序动，然后<b>扇出最多四条 flow</b>（需求 / 架构 / 契约 / 实现，各面跑各自的完整流程和门），实现面才判四档拆包。</div>
 
   <div class="locator">
-    <span class="loc-axis">dev 侧实现 →</span>
-    <span class="loc-node on">Triage 前置门（本篇）</span>
-    <span class="loc-sep">｜碰事实源升级→</span>
+    <span class="loc-axis">变更进来 →</span>
+    <span class="loc-node on">四面探测 intake（本篇第①步）</span>
+    <span class="loc-sep">｜需求面那格→</span>
+    <span class="loc-node">需求三档流程</span>
+    <span class="loc-sep">｜升级判据→</span>
     <span class="loc-axis">事实源侧 →</span>
     <span class="loc-node">Track B 默认</span>
     <span class="loc-node">Track A 判据命中</span>
@@ -99,28 +110,46 @@
 
   <h2>零、一句话 <span class="en">what this gate is</span></h2>
   <div class="note ok">
-    <b>它是「dev 侧」的入口闸，不是业务门。</b>变更进来先问<b>碰不碰单一事实源</b>（<code>docs/contracts/**</code> / kernel·systems spec / <code>.claude/agents</code> 定义 / gate）——<b>碰 → 跟大小无关，一律直走 <code>/arch-change</code>，根本不进本门</b>；不碰（纯 firmware/server/docs）→ 进本门由 architect 判四档，human 确认后主线程把 reviewed plan 落到它的家，再报下一步该起哪个会话。
+    <b>它是变更入口闸，不是业务门。</b>变更进来先做<b>四面探测（intake）</b>——按 <code>change-intake.md</code> 对照 requirements / architecture / contracts + CRQ 未结账 + governance 面逐面查触面事实（<b>触面是查出来的，不是申报出来的</b>）。<b>触面 ≥2 → 建 spine</b>（<code>delivery/changes/intake/&lt;changeId&gt;.md</code>），命中升级判据（触 <code>docs/contracts/**</code> / 跨系统结构性 / 存疑向严）→ 按 facePlan 分面路由：架构/契约面走 Track A / 契约门，<b>实现面留本门继续分档，不再整单踢走</b>；governance 面命中 → 路由 <code>/arch-change</code> 治理 profile；需求面那格 → 需求三档流程（<code>requirement-change.md</code>）；纯实现面 → 照旧判四档。<b>统一 intake ≠ 统一门</b>——四面门照旧各归各裁。
     <br>本门 <b>convention-only</b>（当前无机器牙齿，靠约定 + 多层人工兜底）。作者≠判官：<b>architect 审 + 起草，FROZEN 归人类，落盘归主线程</b>。
   </div>
 
-  <h2>一、全景：一刀 + 六步</h2>
-  <div class="rail">
-    <div class="stop hl"><span class="n">第一刀</span><b>事实源分区</b><small>碰 → 升级 /arch-change<br>不碰 → 进本门</small></div>
-    <div class="stop"><span class="n">② review</span><b>architect 比例化</b><small>只读 + 审<br>判四档 + reviewed plan</small></div>
-    <div class="stop hl"><span class="n">③ 触点①</span><b>human 确认 / 改判</b><small>落盘前必过<br>Lite↔Full backstop</small></div>
-    <div class="stop"><span class="n">④ 落盘</span><b>主线程搬运</b><small>只搬不改内容<br>三个落点</small></div>
-    <div class="stop hl"><span class="n">⑤ 触点②</span><b>human 冻结</b><small>仅大 feature<br>盖 FROZEN</small></div>
-    <div class="stop hl"><span class="n">⑥ 触点③</span><b>报下一步命令</b><small>human 起新会话<br>planner / portfolio</small></div>
+  <h2>一、全景：一次 intake，扇出最多四条 flow</h2>
+  <div class="note ok">
+    <b>triage 不是只判拆分包大小。</b>四面探测产出 faceMap + facePlan：<b>哪些面要动 · 每面谁裁 · 什么顺序</b>。之后按 facePlan <b>扇出</b>——每个被触的面跑<b>自己那条完整 flow</b>（自己的角色链、自己的门），轻面在 triage 会话内联跑、重面 headless 拉起跑；每面定稿回填 spine anchor。<b>「判四档拆包」只是实现面那条 flow 的第一步</b>——把它当全部，就退回了升级前的旧门。
   </div>
-  <div class="loopback"><b>为什么触点①必过</b>：Lite / Full 是<b>安全相关</b>判断，architect 误判需人类 backstop；单向守卫 <code>riskTier overrides rigor</code> 也靠这一关 + supervisor 升级兜底。落盘前不过这一关 = 越权。</div>
+  <div class="lanes">
+    <div class="lane ln-req">
+      <div class="lt">需求面 flow</div>
+      <div class="ls">human 裁意图 → story-author 起草 → requirement-reviewer 四查（否回循环）→ 档 2 加 human 终拍 → 落稿 + §9 版本行</div>
+      <div class="la">↩ anchor: §9 版本号</div>
+    </div>
+    <div class="lane ln-arc">
+      <div class="lt">架构面 flow</div>
+      <div class="ls">/arch-change（Track B 七步闭环 / Track A 对抗重路径）→ PROPOSAL → human FROZEN</div>
+      <div class="la">↩ anchor: changeId</div>
+    </div>
+    <div class="lane ln-con">
+      <div class="lt">契约面 flow</div>
+      <div class="ls">architect-reviewer 四分类（faceMap 契约行作输入）→ ContractChangePacket → <b>human 契约门</b></div>
+      <div class="la">↩ anchor: packet id</div>
+    </div>
+    <div class="lane ln-imp">
+      <div class="lt">实现面 flow（§二逐步）</div>
+      <div class="ls">architect 比例化<b>判四档</b> → human 触点① → 落盘 plan.md / PROPOSAL →（大 feature 触点② FROZEN）→ planner / portfolio dev-loop</div>
+      <div class="la">↩ anchor: taskpackage id</div>
+    </div>
+  </div>
+  <div class="loopback"><b>顺序由 spine 机查兜底</b>：facePlan 中先于实现面的各面 anchors 未回填 = 上游未冻结 → 实现包不得 launch（launchPreconditions ② 路径）。<b>触面没到的面 = flow 不存在，不是被跳过</b>——纯实现面变更就只有一条 flow，照旧轻快。</div>
 
-  <h2>二、逐步：每一步谁干、怎么走到、干嘛、产出什么</h2>
+  <h2>二、实现面那条 flow 的六步 <span class="en">facePlan 的实现面行怎么跑——其余面见 §一扇出，各跑各的</span></h2>
+  <div class="note" style="margin-top:0"><b>读法</b>：下面六步是<b>实现面 flow</b> 的逐步拆解（含 intake 入口）。需求 / 架构 / 契约面被触时，它们的 flow 按 facePlan 顺序在别的会话跑（内联或 headless），<b>不在这六步里</b>——别把这条当成整个门的全部。</div>
   <ol class="steps">
     <li data-n="0"><div class="head"><span class="role r-main">主线程</span><b>输入 = plan / 想法</b><span class="out">→ 你是人类主线程编排者</span></div>
       <div class="body">输入是 plan mode 产出的实现思路、一句话（如「修复线索 SSE 重复行」）、或一份 plan 文件路径。你按 <code>.claude/references/change-triage.md</code> 的程序推进，<b>每步显式说明「派给谁、为什么、期望产物」</b>。</div></li>
 
-    <li data-n="1" class="key"><div class="head"><span class="role r-main">主线程</span><b>第一刀：事实源分区</b><span class="out">→ 碰 → 升级；不碰 → 继续</span></div>
-      <div class="body">读 plan，判它<b>碰不碰单一事实源</b>。<b>碰</b>（触 <code>docs/contracts/**</code> / kernel·systems spec / <code>.claude/agents</code> 定义 / gate）→ 告知用户直走 <code>/arch-change</code>，<b>本门收尾</b>（跟大小无关，根本不进本门）。<b>不碰</b>（纯 firmware/server/docs）→ 进第 ② 步。这一刀把「事实源侧（Track A/B 地盘）」与「dev 侧（本门地盘）」分开。</div></li>
+    <li data-n="1" class="key"><div class="head"><span class="role r-main">主线程</span><b>四面探测（intake）</b><span class="out">→ 触面≥2 建 spine；升级判据命中 → facePlan 分面路由；纯实现面 → 继续</span></div>
+      <div class="body">派 <code>architect</code>（只读 + 同会话 return）按 <code>change-intake.md</code> 做跨面探测：语料 = requirements（含 §9 账）/ architecture / <code>docs/contracts/**</code> / CRQ 未结账三域 / governance 面；<b>触面事实是查出来的，不是申报出来的</b>。产出 = faceMap + facePlan，主线程落盘 spine（触面 ≥2 时，建档前先查重既有 spine）。<b>升级判据命中</b>（触契约 / 跨系统结构性 / 存疑向严）→ facePlan 把架构/契约面路由 Track A / 契约门，<b>实现面留本门继续分档——不再整单踢走</b>；governance 命中 → /arch-change 治理 profile、不建实现面档；<b>需求面那格 → 需求三档流程</b>（<code>requirement-change.md</code> 档 0/1/2）。intake 收尾有<b>唯一必停触点：立项 ack</b>——四面对齐「为什么改 / 往哪改 / 改动多大」。</div></li>
 
     <li data-n="2"><div class="head"><span class="role r-arch">architect</span><b>派 architect 比例化 review</b><span class="out">→ 四档裁决 + reviewed plan（会话内，未落盘）</span></div>
       <div class="body">派 <code>architect</code>（只读 + 审），按 <code>change-triage.md</code> 判四档 + 出 reviewed plan。architect <b>只审 + 返回</b>（同会话 return，非跨会话 prose），<b>不写任何文件</b>。力度按档比例化：<b>大 feature（③拆包）</b>= 实质单轮 review（findings 逐条 + 处置），生成 <code>delivery/workstreams/&lt;ws&gt;/review.md</code> 内容（findings + architect sign-off）；<b>小 feature / bug（②单包）</b>= 快审（确认判据 + 路由裁决），裁决写进 <code>plan.md</code> frontmatter、不单独成件。</div></li>
@@ -137,11 +166,11 @@
     <li data-n="5" class="key"><div class="head"><span class="role r-human">human</span><b>人类触点②：仅大 feature 冻结</b><span class="out">→ FROZEN PROPOSAL（版本 / sha）</span></div>
       <div class="body">人类盖 <b>FROZEN</b>。<b>作者≠判官：architect 不能自冻</b>（scope 机器兜住——architect 的 allow 不含 <code>delivery/workstreams</code>）。portfolio-planner <b>只拆 FROZEN 的 PROPOSAL</b>。</div></li>
 
-    <li data-n="6" class="key"><div class="head"><span class="role r-human">human</span><b>人类触点③：报告下一步命令</b><span class="out">→ human 起自己的主线程会话</span></div>
-      <div class="body">打出人类要起的下一段会话命令：<b>② 单包</b> → <code>planner</code> 跑 <code>/build-feature &lt;id&gt;</code>（从 <code>plan.md</code> 读 reviewed plan 做 intake）；<b>③ 大 feature</b> → <code>portfolio-planner</code>（指 <code>&lt;ws&gt;</code>，从 <code>PROPOSAL.md</code> 拆包）。planner / portfolio <b>必须是自己的主线程会话</b>——子 agent 不能再派子 agent，本门拉不起那个会话；dev loop 本就该人类在场。</div></li>
+    <li data-n="6" class="key"><div class="head"><span class="role r-human">human</span><b>人类触点③：报告下一步命令（runbook）</b><span class="out">→ 按 facePlan 顺序，human 起对应会话</span></div>
+      <div class="body">按 <b>facePlan 顺序</b>打出各面执行命令——轻面注明内联执行（本会话继续一级派发），重面给出 headless 拉起命令（<code>claude -p</code> 完整顶层会话，显式 <code>--agent</code> + 匹配 settings + changeId；<b>到人类门即停</b>，禁递归、禁跨门，纪律见 <code>change-intake.md</code> 三铁律）。下游会话<b>开场先读 spine</b> 的 faceMap/facePlan，不要求 human 重述意图。实现面命令映射保留：<b>② 单包</b> → <code>planner</code> 跑 <code>/build-feature &lt;id&gt;</code>（从 <code>plan.md</code> 读 reviewed plan 做 intake）；<b>③ 大 feature</b> → <code>portfolio-planner</code>（指 <code>&lt;ws&gt;</code>，从 <code>PROPOSAL.md</code> 拆包）。headless 拉起的是<b>完整顶层会话</b>（非子 agent），「子 agent 不能再派子 agent」约束不变；dev loop 关键人类门 human 仍必须在场。</div></li>
   </ol>
 
-  <h2>三、四档裁决 <span class="en">architect 判 → human 确认 → 三个落点</span></h2>
+  <h2>三、四档裁决 <span class="en">实现面 flow 的分档：architect 判 → human 确认 → 三个落点</span></h2>
   <div class="tiers">
     <div class="tier t3"><div class="t">③ 大 feature · 拆包</div><small>实质单轮 review → <code>workstreams/&lt;ws&gt;/PROPOSAL.md</code> + <code>review.md</code>（<code>pending-human</code>）→ human FROZEN → <b>portfolio-planner</b> 拆成 N 个带依赖的 TaskPackage</small></div>
     <div class="tier t2"><div class="t">② 单包 · Full</div><small>快审（确认判据 + 路由裁决）→ <code>taskpackages/&lt;id&gt;/plan.md</code>（<code>rigor=full</code>）→ <b>planner</b> 跑 <code>/build-feature</code></small></div>
@@ -157,11 +186,33 @@
     <div class="branch">
       <div class="br br-esc"><b>CONTRACT_CHANGE_REQUIRED</b>转契约门 + <b>停</b>，升级 <code>delivery/changes/arch/</code>（本门无权批准）</div>
       <div class="br br-esc"><b>SPEC_CONTRACT_DRIFT</b>同上：转契约门 + 停 + 升级</div>
-      <div class="br br-ok"><b>NO_CONTRACT_CHANGE / ADAPTER</b>不触契约 → 回本门按四档继续</div>
+      <div class="br br-ok"><b>NO_CONTRACT_CHANGE / IMPLEMENTATION_ADAPTER</b>不触契约 → 回本门按四档继续</div>
+    </div>
+    <div class="note ok" style="margin-top:12px"><b>intake 前置后逃生门仍在</b>：四面探测已把跨面触面前置折叠进 facePlan，但 review 中仍可能新发现疑似触面（探测漏网 / 改着改着触到）——reviewer-first 逃生门保留兜底，处置不变。</div>
+  </div>
+
+  <h2>五、spine 制品速览 <span class="en">统一 intake ≠ 统一门</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">制品形态（<code>delivery/changes/intake/&lt;changeId&gt;.md</code>）</h3>
+      <ul class="kv">
+        <li>一变更一文件、lane 中立；写者恒 = 主线程（anchors 回填也是）</li>
+        <li>frontmatter 七字段：<code>changeId</code> / <code>sources</code>（human 意图原话逐字）/ <code>faceMap</code>（四面触面事实 + governance 命中行）/ <code>facePlan</code>（各面谁裁 + 顺序 + grilling 一次收敛）/ <code>anchors</code>（per-face 回填槽）/ <code>openQ</code>（疑问裁定留痕）/ <code>status</code></li>
+        <li>各面 changeId 映射：req = §9 版本号 · contract = packet · arch = changeId · imp = taskpackage id</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:14px">状态机与冻结语义</h3>
+      <ul class="kv">
+        <li><code>intake</code> → <code>in-flight</code> → <code>awaiting-human:&lt;gate&gt;</code> / <code>awaiting-upstream</code> / <code>awaiting-human:&lt;openQ&gt;</code> → <code>closed</code></li>
+        <li><b>spine 免冻</b>——它是路由账本不是设计文档；冻结语义由各面制品承载（§9 版本行 / 契约 packet / FROZEN PROPOSAL / origin.frozen），anchors 只记冻结事实</li>
+        <li><b>launch 前置</b>：facePlan 中先于实现面的各面 anchors 未回填 = 上游未冻结 → 实现包不得 launch</li>
+        <li>疑问三级处置 L0 就地 / L1 主线程 / L2 呈 human（存疑向严）</li>
+      </ul>
     </div>
   </div>
 
-  <h2>五、关键不变量与边界 <span class="en">convention-only</span></h2>
+  <h2>六、关键不变量与边界 <span class="en">convention-only</span></h2>
   <div class="grid">
     <div class="card">
       <h3 style="margin:0 0 6px;font-size:14px">convention-only 不变量（当前无机器牙齿）</h3>
@@ -178,14 +229,14 @@
       <ul class="kv">
         <li><b>Part-2 工程门 / bootstrap 临时信任门</b>（权威在 K9 §11），<b>不是业务门</b>、不进 DEV-GOVERNANCE §5 六门清单，与业务运行时 6 门无涉</li>
         <li>你不改 <code>docs/contracts/**</code>、不改 L0 蓝图、不直推 main</li>
-        <li><b>触事实源一律升级 <code>/arch-change</code></b></li>
-        <li>对偶：事实源侧 <code>/arch-change</code> · 实现侧 <code>/build-feature</code></li>
+        <li><b>升级判据命中 → facePlan 分面路由</b>（架构/契约面走 Track A / 契约门，实现面留本门分档）；governance 命中 → <code>/arch-change</code> 治理 profile；需求面 → 需求三档流程</li>
+        <li>对偶：统一 intake（四面探测 + spine）折叠跨面 · 各面门照旧各归各裁——统一 intake ≠ 统一门</li>
       </ul>
     </div>
   </div>
 
   <div class="foot">
-    <b>制图</b>：show-me ｜ <b>事实来源</b>：<code>.claude/commands/triage-change.md</code>（六步 + 四档 + 三触点 + 逃生门）· <code>.claude/references/change-triage.md</code>（比例化 review 判据 · convention-only 不变量 · §F4 设计权威落家）｜ <b>姊妹篇</b>：<a href="show-me-gov-track-b.html">Track B 轻路径</a> · <a href="show-me-gov-track-a.html">Track A 对抗重路径</a>
+    <b>制图</b>：show-me ｜ <b>事实来源</b>：<code>.claude/commands/triage-change.md</code>（四面探测 + 六步 + 四档 + 三触点 + 逃生门 + runbook）· <code>.claude/references/change-triage.md</code>（比例化 review 判据 · convention-only 不变量）· <code>.claude/references/change-intake.md</code>（四面探测程序 · spine 制品 · 三铁律 · 疑问三级处置）｜ <b>姊妹篇</b>：<a href="show-me-requirement-change.html">需求修改流程三档</a> · <a href="show-me-gov-track-b.html">Track B 轻路径</a> · <a href="show-me-gov-track-a.html">Track A 对抗重路径</a>
   </div>
 </div>
 </body>

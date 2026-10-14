@@ -31,6 +31,8 @@ paths:
 | `delivery/taskpackages/` | dev-loop | 单切片在途验收包（含 `current/` 活工作面） | 当长期归档用（长期在 `delivery/changes/dev/`）；Bash 重定向写（scope-map bashDenyWrite 红线） |
 | `delivery/changes/arch/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
 | `delivery/changes/dev/**` | dev-loop | 实现变更证据归档 | 当 live 工作区用（live 在 `delivery/taskpackages/`） |
+| `delivery/changes/intake/**` | 主线程（跨面 intake 落盘） | spine 制品：`delivery/changes/intake/<changeId>.md`（触面 ≥2 的变更入口记录；程序 SSOT = `.claude/references/change-intake.md`） | 当各面门制品的家（各面制品落各自既有家，spine 只记 anchors）；手改各面 anchors 以外的历史字段 |
+| `delivery/changes/retro/**` | 主线程（loop-retro cadence） | cadence retro 制品归档（loop-retro 产出） | 当 live 工作区用；当各面门制品用 |
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 

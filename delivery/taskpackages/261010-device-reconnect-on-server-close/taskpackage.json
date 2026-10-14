@@ -1,0 +1,171 @@
+{
+  "changeId": "261010-device-reconnect-on-server-close",
+  "rigor": "full",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "firmware",
+  "story": "固件连接生命周期根治（真机 bug 1 设备侧根因 + arch §8 休眠产品决策落档）：子项 A 服务端/网络侧断连自动重连（OnAudioChannelClosed 现零重连、唯一恢复路径 = 网络重连事件；复用 TryStartAutoConnect 守卫与退避，本地主动关 8 调用点分流零误重连）；子项 B 永不休眠常驻在线（human 2026-10-10 触点①裁定原话——会话收尾本地关后短延迟常驻重建，设备 Idle 态恒持活 WS、提醒任意时刻可达；本板实核零休眠 timer 接线，结构齿钉死）。docs-sync = 裁定落 arch 四投影点（§10 新增决策 29 + §3/§6.4/§8 残余闭账）。电池代价（Wi-Fi 常供电、续航转随用随充）已随裁定接受，plan 内如实申报不重开。",
+  "planRef": "delivery/taskpackages/261010-device-reconnect-on-server-close/plan.md",
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "acceptance 冻结后实跑（命令 = redBaselineCommand 逐字，2026-10-11）：build 过（仅 boot_auto_connect.acceptance.c 重编 + relink，-Werror 通道零 error——验收文件实编门过）→ 153 Tests / 4 Failures / 0 Ignored。4 红恰 = RC-A1 / RC-A2 / RC-A3 / RC-B2（设计态红：分类标记零命中 / 分类写点 0≠1 / helper 零命中 / kResidentRebuildDelayS 零命中——全部对应当前 story 缺失的真实行为，非环境错误）；153 = 147 既有 + 6 新 TEST_CASE，既有 147 全绿零损失。RC-B1（现状结构守卫）与 RC-B3（实现前负锚 trivially green）设计使然绿，空过风险由冻结轮变异自证 M10/M12 消解（头注强度申报在案）。launch prep 期基线锚 = 147 Tests / 0 Failures @2d94c36（firmware 面零差异引用）。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "high",
+  "gateProfile": [
+    "test-quality",
+    "docs-sync"
+  ],
+  "acceptance": [
+    "RC-A1: 非本地关（服务端断）→ 自动重连排程在场（红基线 host 纯逻辑）",
+    "RC-A2: 服务端断路径与常驻重建路径触发分类互斥（同一关闭事件恰归一类、不双触发）",
+    "RC-A3: 重连复用 TryStartAutoConnect——零第二条 task / 零新退避表；新触发点区零 SetDeviceState（屏显零触碰）",
+    "RC-B1: 永不休眠结构事实——本板板级文件零休眠 timer 接线（needle 钉 waveshare-s3-rlcd-4.2.cc）；common 层休眠入口编译面不可达留痕",
+    "RC-B2: 会话收尾类本地关（:805/:849/:1189 按 builder 归类表）→ T 秒内恰一次常驻重建排程（复用守卫三条件）；T 值实现期定并冻结进齿",
+    "RC-B3: 网络断关（:422）/Reboot（:1081）/OTA（:1100）/AEC 切换（:1254）/ResetProtocol（:1267）零重建排程——各路径既有语义零偏移",
+    {
+      "id": "RC-A4",
+      "kind": "structural",
+      "note": "真机轮 live 观测：手动断服务端（重启 front/引擎容器）→ 退避窗内设备日志自发完整 hello 建连序列（三日志源对账，复刻 10-10 对账法）；期间 P1 屏显不变"
+    },
+    {
+      "id": "RC-B4",
+      "kind": "structural",
+      "note": "真机轮 live 观测：会话结束后 T 秒内重建并常驻在线——静置 >3 分钟乃至跨夜后 front 发提醒可达（无 alert_skip no_online_device，设备渲染且回执）；P1 常显不受影响"
+    },
+    {
+      "id": "RC-B5",
+      "kind": "structural",
+      "note": "真机轮回归：常驻在线下 KEY 开新会话在复用通道正常（story ctx 发送短路防 + reminder 四态 + 引导态演出既有齿真机回归）"
+    },
+    {
+      "id": "RC-B6",
+      "kind": "structural",
+      "note": "真机轮观测项：Idle 常驻连接 modem 档位与 keepalive 稳定性观测（LOW_POWER/BALANCED 下 ping/pong 长稳则取低档，冻结结论进 docs-delta）"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/key_layer_dispatch.acceptance.c"
+  ],
+  "exitCriteria": [
+    "RC-E1: 上列 host 齿全绿 + 固件 unit/acceptance 全量闸零新增红（对基线锚差异判停）；boot_auto_connect 既有 27 齿零破坏",
+    "RC-E2: 契约与 requirements.md 零改（requirements.md:67、arch §6.4 已钉语义——本包 = 兑现）；会话结束关 audio channel 既有拓扑不改",
+    "RC-E3: docs-sync 落地——arch 四投影点（§10 决策 29 append + §3:133 残余注改写 + §8:354 待裁闭账 + §6.4:322 残余句改写）；决策编号核 = 29（27/28 已占用，建包修正 architect 原稿笔误，留痕）",
+    "RC-E4: 本地关 8 调用点 builder 逐点归类留痕为验收前提；真机轮四场景证据（服务端断恢复 / 常驻重建跨夜提醒可达 / 功能性关零重建 / 复用通道回归）"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "docs/architecture.md#§3",
+    "docs/architecture.md#§6.4",
+    "docs/architecture.md#§8",
+    "docs/architecture.md#§10"
+  ],
+  "sourceRefs": [
+    "docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md",
+    "delivery/taskpackages/261010-device-reconnect-on-server-close/plan.md",
+    "firmware/main/application.cc",
+    "firmware/main/protocols/websocket_protocol.cc"
+  ],
+  "changeManifest": [
+    "firmware/main/application.cc",
+    "firmware/main/application.h",
+    "firmware/main/protocols/websocket_protocol.cc",
+    "firmware/main/protocols/websocket_protocol.h",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "docs/architecture.md"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/boot_auto_connect.acceptance.c",
+      "kind": "regression",
+      "note": "K6 冻结件——新触发点（A 服务端断 + B 会话收尾重建）如撞既有 needle 触发点=2 类结构钉，走正常改验收通道 + human 方向锚留痕（260928 FIX-A2 先例形态）；既有 27 齿零破坏红线"
+    }
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "RC-A1: 非本地关（服务端断）→ 自动重连排程在场（红基线 host 纯逻辑）",
+        "mutation": "M7：摘 OnAudioChannelClosed Schedule 体尾 TryStartAutoConnect() 调用",
+        "affectedTest": "boot_auto_connect 新 TEST_CASE「服务端断自动重连排程」tooth 7（A 区计数 0≠1；通道② 12 Tests 1 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "摘排程即红 = RC-A1 非空过；还原后 12/0，五文件 sha256 还原一致。"
+      },
+      {
+        "acceptanceId": "RC-A2: 服务端断路径与常驻重建路径触发分类互斥（同一关闭事件恰归一类、不双触发）",
+        "mutation": "M8：摘 OnDisconnected 区 local_close_pending_ 消费块",
+        "affectedTest": "「本地关分类互斥」消费位次断言红（连带 RC-A1 同缝独立承载；12 Tests 2 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "消费缺席 → 位次断言红。"
+      },
+      {
+        "acceptanceId": "RC-A3: 重连复用 TryStartAutoConnect——零第二条 task / 零新退避表；新触发点区零 SetDeviceState（屏显零触碰）",
+        "mutation": "M9：helper 改直调 protocol_->OpenAudioChannel()（绕过 AutoConnect task）",
+        "affectedTest": "「重连复用守卫」复用 needle 破红（12 Tests 1 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "第二条重连路径被负 needle 拦截。"
+      },
+      {
+        "acceptanceId": "RC-B1: 永不休眠结构事实——本板板级文件零休眠 timer 接线（needle 钉 waveshare-s3-rlcd-4.2.cc）；common 层休眠入口编译面不可达留痕",
+        "mutation": "M10：板文件加 #include \"power_save_timer.h\"",
+        "affectedTest": "「永不休眠结构事实」零接线 needle 命中红（12 Tests 1 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "RC-B1 绿态（现状守卫）的空过风险由此消解。"
+      },
+      {
+        "acceptanceId": "RC-B2: 会话收尾类本地关（:805/:849/:1189 按 builder 归类表）→ T 秒内恰一次常驻重建排程（复用守卫三条件）；T 值实现期定并冻结进齿",
+        "mutation": "M11：kResidentRebuildDelayS 5→10",
+        "affectedTest": "「常驻重建T值冻结」首定义片段无 5 红（12 Tests 1 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "T 冻结值漂移被钉；T=5 为 acceptance-author 冻结相位定值（退避首档同量级），改值走 tighten-only 修订窗口回 planner 重冻结。"
+      },
+      {
+        "acceptanceId": "RC-B3: 网络断关（:422）/Reboot（:1081）/OTA（:1100）/AEC 切换（:1254）/ResetProtocol（:1267）零重建排程——各路径既有语义零偏移",
+        "mutation": "M12：Reboot 区加 ScheduleResidentRebuild()",
+        "affectedTest": "「负锚五路径零重建」Reboot 区计数 1≠0 + 全文件 5≠4 红（连带 RC-A2 全局恰 4 泄漏面；12 Tests 2 Failures）",
+        "turnedRed": true,
+        "sensitive": true,
+        "executedBy": "acceptance-author（冻结轮 vacuity 自证，planner 代落）",
+        "executedAt": "2026-10-11",
+        "notes": "负锚承载实证；实现前 trivially green 的空过风险消解。"
+      }
+    ]
+  },
+  "adrRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "「永不休眠」human 裁定落 arch 四投影点（§10 新增决策 29 + §3 假设表残余注改写 + §8 待裁项闭账 + §6.4 残余句改写）——裁定已由 human 在触点①显式作出，本包 integrator docs-sync 为机械转写 + 残余闭账（先例：决策 21 的 arch §6.4 更新随 04c86a9 dev 包 docs-sync 落地）。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "单面固件实现变更：server 面零改动、WS wire 形状零变化（重连复用既有 hello 建连序列）；常驻在线改变每会话重开 WS 拓扑 → 复用通道 seam（application.cc:1014-1020 / front ctx_push_edge front_app.py:212）以既有 story ctx / reminder 齿回归覆盖，front 零改"
+  },
+  "docsOwner": "integrator",
+  "notes": "riskTier high 触发口径（architect 触点①裁决 + human 确认 Full）：连接生命周期状态机（本地主动关 8 调用点 vs 服务端断须区分，误判即每会话尾重连风暴/打架休眠门 CanEnterSleepMode）+ 业务影响面（提醒必达依赖常驻在线）→ supervisor 对 riskTier=high 仍升 human，合并须人批。真机轮 human 在场持板为硬前置。reviewed plan = /triage-change 分流（architect 2026-10-10 修订版，含「永远不休眠」裁定扩范围）。1f 快照保鲜核验（2026-10-11 Pod intake）：acceptanceTestsFile 的 key_layer_dispatch.acceptance.c 路径漂移已修正（host_app/ 层级为拆包笔误，实际在 firmware/main/test/ 根）；其余四问全过——引用文件全在、冻结件 boot_auto_connect 未归档、红基线命令 cwd 基准 = firmware/main/test/host_app 正确、firmware 面对锚 2d94c36 零差异。"
+}

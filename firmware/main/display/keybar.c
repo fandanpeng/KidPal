@@ -69,3 +69,49 @@ int kidpal_keybar_slots(int page, int scene, int overlay_top,
     }
     return 0;
 }
+
+int kidpal_keybar_char_slots(int started, const char **out_left,
+                             const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    /* 查字窗键帽随态（v1.59 WF-F3-01）: 未起播「播报」（KEY 短按 = 起播）/
+     * 已起播「重播」（KEY 短按 = 从头重播）；右槽 BOOT「结束」恒值（与覆盖层非提醒
+     * 右槽一致, §2.1 结束方式③）。started 语义 = 未起播 0 / 已起播非 0。 */
+    *out_left  = (started != 0) ? "重播" : "播报";
+    *out_right = "结束";
+    return 0;
+}
+
+int kidpal_keybar_story_slots(int substate, const char **out_left,
+                              const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    /* P3 子态键帽随态（WF-F2-02/04/05; 260924-m4-k2-p3-star-notebook-ui）:
+     * 录音态「收尾」（KEY 短按 = 停录保存, v1.47）/ 阅读态「长按退出」（KEY 长按 =
+     * 退出阅读回列表）/ 删除确认「删掉」（KEY 短按 = 确认删除）; 右槽 BOOT 提示
+     * 随态（「结束」= 录音中兜底收尾与全局会话结束手势一致 /「翻屏」= BOOT 短按
+     * 翻屏 /「算了」= BOOT 任一手势取消回列表）。LIST/STAMP 不落本表（基层页槽表 /
+     * 演出帧无键帽）-> -1, 消费方回落既有路径。 */
+    switch (substate) {
+        case KSTORY_PAGE_RECORDING:
+            *out_left  = "收尾";
+            *out_right = "结束";
+            return 0;
+        case KSTORY_PAGE_READER:
+            *out_left  = "长按退出";
+            *out_right = "翻屏";
+            return 0;
+        case KSTORY_PAGE_DELETE:
+            *out_left  = "删掉";
+            *out_right = "算了";
+            return 0;
+        default:
+            return -1;
+    }
+}

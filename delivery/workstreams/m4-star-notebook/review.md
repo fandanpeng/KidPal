@@ -93,3 +93,25 @@ a) story_page.c 输入表旧口径（:790-796/:840-843/:812-814）+ HandleStoryK
 - **契约门 HUMAN_APPROVED（十问）**：Q1/Q3/Q4/Q5/Q6/Q7/Q8/Q9/Q10 按拟答认可；**Q2 改判丙案**（≠拟答乙案）——story_list items = front 恒推最新 16 条窗口 + total 恒全量、板端 `KSTORY_LIST_MAX=16` 维持现值不抬；知情注记（长列表跳屏动机面收窄 + 旧条目设备端浏览/删除可达性收窄）已在 CCP §5 Q2 行显式登记，旧条目可达面如未来需要 = 新需求另立（甲案族触 device RPC 边界届时再裁）。裁定逐字落账 = CCP §5；传播面 = K1 plan 取舍点 E / K1-A3 / K2 plan cap 条 / K2-A2 / decision-coverage _doc 追记（同日）。
 - **launchPreconditions 状态转移**：LP2 → verified（门 1 GREEN + human 过目）；LP1 → ruling-approved（十问裁定在案；待逐字 patch human 过目 → git apply 落地 + 收口义务同批）。
 - **下一步（M3 先例序）**：常驻分支同步 main（behind 8 实测 + ahead 1 = 260924 ops-record 留档 commit，先核内容是否已在 main）→ commit-before-launch（拆包制品 + base/m4-star-notebook ref）→ 契约 diff 落地（乙通道：patch 过目 → git apply → CDQ/ADR/变更记录行/gate evidence/钉行收口同批）→ K1 launch prep（check-launch / launch-card / 图索引 / 环境等价化）→ launch 由 human 执行。
+
+## 门 1 · 重拆轻量 checklist 重审（2026-09-29）
+
+- **背景**：human 指示「M4 只开发 K1，剩下的按新定义的拆包规则重新拆包、覆盖」——剩余 K2/K3 按 260928/260929 拆包新规覆盖重写（切法维持两包边界、制品形态翻新 + defer 包后果吸收），K1 不动。判官 = architect（独立实例、只读审、git show HEAD 对照旧版）；本节由主线程代录裁决。
+- **verdict：GREEN**（五项全过；附 4 项机械级建议，已同批全部落盘，无需重开门 1）。
+- **checklist 逐项**：① 切片逻辑 PASS（K2/K3 边界与 09-24 human 裁定一致且 DC _doc ⑦ 显式记录非静默沿用；垂直切片 + 尺寸维四判据复核过——story_page.{c,h} 文件面 K2 独占、mcp_server.cc 39→40 串行、fixBudget=2、N=2）；② 依赖序与 WIP PASS（render-roadmap --json 实跑核证 4 包模型含 defer 包 M4-N1b achieved；LP4 与 dependsOn 自洽；K1 merged 前提逐条核到契约现文 §1.3③:92/§1.3④:112/§四:266–267）；③ decision-coverage 完备 PASS（15 决策条 landsIn 全闭合、重裁条双登记、8 跨包条 carriedBy 显式、packageAcceptance 退役后承载核经逐条比对无 load-bearing 丢失；WARN 一条 = 跨包条 1 note 陈旧——已刷新）；④ 意图一致 PASS（story 锚点逐字核对 S-F2.1/2.2/2.3/2.4 现文标题与 AC 号集；defer 后果吸收与 defer 制品逐项一致；uiux L2 判级成立——PNG 五面在盘 + 版本行分形 v1.57≤v1.60 零 P3 牵连；误删核查结论 = 无「只有 RTE 知道的跨切片约束」丢失）；⑤ demo 证据形态 PASS（K2 host+device build+deferred 挂账；K3 offline 齿+prompt v7 断言+live 八步目击，唯一真机包成立；LP7 判据指针正确）。
+- **建议小修落盘记录（本批同日）**：① K2 uiAcceptanceRefs 两枚 ID 对齐权威锚名（p3-list→canvas-p3、p3-stamp→p3-stamp-frame）；② DC 跨包条 1 note 刷新对齐 K1-merged 现实（③ 项 WARN 消解）；③ K3 plan「LANLED」笔误改 LANDED；④ 契约 §1.5 第 6 行括注（story_list 三时点枚举）陈旧漂移登记进 K3 docsSyncReason——处置路由 = 随 C4 human spec 批经 architect-reviewer 四分类预判，不在包内自改契约。
+- **实现级细节回补（判官点名最值得两条，已落 taskpackage notes）**：K2 ⑧ 阅读分屏 >12 截断回收（防 builder 保留旧截断）、⑨ story_list 重推到达校准幂等消费；K3 ⑧ 标题 ≤12 字、⑨ UTT_START 边、⑩ LLM 意图不可 offline 机判诚实声明。另补 K2 sourceRefs 一枚 S-F2.2-AC1（录音态渲染半锚覆盖完备化）。
+
+## human 判断点落定（重拆批，2026-09-29）
+
+- **过目切法**：human 认可两包切法并落 commit（AskUserQuestion「认可，落 commit」；门 1 重审 GREEN 前提下 K2/K3 边界维持、新规制品形态翻新 + defer 后果吸收进 K3 均在认可面内）。
+- **milestones M4 行 state 补翻**：planning → in_delivery（human 裁「现在翻」——K1 已 merged 本地 main、补落 09-24 应随 launch 翻账的欠账）。
+- **C4 arch 收口**：human 裁「现在就批」——主线程备 patch 材料（K1 包 docs-delta.md 五 hunk、措辞以 defer 包修订版为准：先替换陈旧新文再 apply）→ human 过目批「落」→ git apply；契约 §1.5 括注漂移（story_list 三时点枚举陈旧）维持登记、走契约门路径（architect-reviewer 四分类预审 + human 契约门），不在本批顺手改。
+- **launchPreconditions 状态转移**：LP2 → verified（门 1 重审 GREEN + human 过目）；LP3 待重拆批 commit 后回写。
+
+## C4 arch 收口落地（2026-09-29）
+
+- **human spec 批「落」**（AskUserQuestion）：K1 docs-delta §4 五 hunk 落 docs/architecture.md——H1 §5.2④ 场景句重写 / H2 front 机械面行 / H3 story.py 现状行 / H4 §5.4 故事行 + 新增 .seq.json 账本行 / H5 契约门在办已销三留一；H1/H2 三时点句按止血包修订句先置换（现役两时点 + ①恢复归 K3）。
+- **落地工具如实记录**：git apply 在本环境对 CRLF 文件连「同文替换探针」都拒（autocrlf 交互；GNU patch 全档行尾归一不可取）——转 node 字节级直写，副本先验（五 hunk 内容断言全 TRUE、其余 419 行零触碰、CRLF 保全、6+/5- 精确）。
+- **落地 commit c735062**；回填同批 = K1 gate-evidence §6 C4 pending→done（引 c735062）+ K3 docsSyncReason 摘除 C4 承载半 + DC _doc ⑨ 更新 + roadmap ③ 注记。
+- **契约 §1.5 括注漂移**（story_list 时点枚举陈旧）维持登记、不在本批——处置走契约门（architect-reviewer 四分类预审 + human 契约门）。

@@ -19,11 +19,17 @@
  *     json.dumps(data, ensure_ascii=False) 字符串 → **默认分隔符含空格**（": " / ", "），
  *     解析必须容忍空白（本文件 canonical 载荷按 wire 实况带空格钉）。
  *   - home data wire = {"upcoming":{"day_key":"今天","items":[{time,name},…],
- *     "preview":{time,name}|null}}；**preview 可为 JSON null**（明日无项时 producer
- *     发 null，设备必须容忍 = 无预告，不降级）；preview.time 恒 "HH:MM"（K1 pod-retro
- *     裁决口径：载荷钉明日首项 HH:MM；「明早」等自然语言标签是设备渲染标签——而
- *     home_p1 冻结 seam p1_valid_item 只接受可解析 H:MM/HH:MM，故任何非 HH:MM 的
- *     preview.time（含「明早」字面）在 seam 处被拒、设备 -1 降级，绝不盲渲染）。
+ *     "preview":[{time,name},…]|[]|null}}（2026-10-11 契约门多项数组化, CCP
+ *     261011-p1-home-v5-rework 触点① HUMAN_APPROVED; requirements v1.61 AC2/AC6/AC7）。
+ *     **preview 三态语义**：非空数组 = 明日全量项列表（学校课合并「XX:XX 上学」与
+ *     课外班、临时事件同列, 按开始时间升序——producer group_upcoming 单源保证, 设备
+ *     照单渲染不重排）；`[]` = 云端确认明日无项（AC6「明天没有什么课喽」话术的显式
+ *     wire 载体——producer 明日无项改发 [] 不再 None, plan R1）；`null`/键缺省 =
+ *     未推送/未提供（AC7 数据未达提示态, 与无安排话术显式分叉）。preview.time 恒
+ *     "HH:MM"（K1 裁决口径不变：任何非 HH:MM 的 preview.time——含「明早」字面——在
+ *     解析处被拒、设备 -1 降级，绝不盲渲染）。**旧单对象 {time,name} 过渡容忍**：
+ *     板端解析对旧形状容忍为 1 项列表（部署缓冲防御, CCP 触点②；不入契约形状定义,
+ *     producer 不发该形状）。
  *   - 薄载荷 {view:schedule, data:{}} 若泄漏直达设备 → data="{}" → 解析 -1 降级
  *     （front 正常截获展开；设备侧绝不盲渲染，V27）。旧列表形状
  *     {title,items} 同样无 "week" 键 → -1。
@@ -75,10 +81,12 @@
  *       （幂等可反复调用），画 7 列（周一..周日）× 3 行（上午/下午/晚上）整屏网格 +
  *       行首槽位标签列，页内无标题无提示行（v1.20 已删，操作提示归全局键帽条）：
  *       - 版式区钉（布局在位钉，非字体/颜色钉；400×300 减键帽条 chrome）：
- *           网格可用区 y[0..KSG_GRID_BOTTOM=251]；y>=252 = 键帽条带，网格**严格零墨**
+ *           网格可用区 y[0..KSG_GRID_BOTTOM=254]（2026-09-26 真机对齐轮 251→254：设计
+ *           canvas-p2 网格底线实测 y254、底条上缘 y262；旧值系贴旧底条顶 252 的适配位）；
+ *           y>=255 = 网格外带，网格**严格零墨**
  *           （键帽条三槽常驻不被网格遮挡, M3K2-A6）。
  *           表头带 y[0..29]；槽位行带 slot0 y[30..103] / slot1 y[104..177] /
- *           slot2 y[178..251]；标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
+ *           slot2 y[178..254]；标签列 x[0..39]；day 列带 x[40+51*d .. 90+51*d]（d=0..6）。
  *           (day,slot) 格 = day 列带 × slot 行带；格内多课**逐门竖排**（同格多条目
  *           自上而下堆叠），课程名行 pitch >= KSG_FONT_MIN_PX(14)（NFR-READ-1）；
  *           **不做格内滚动**，格内溢出走截断降级（spec S-F1.2 补充规则口径）。
@@ -109,22 +117,65 @@
  *
  *   int kidpal_home_upcoming_apply(const char *data_json);
  *       A5 接线层纯逻辑面（家 = firmware/main/display/home_upcoming.{c,h}；**只消费
- *       home_p1 冻结 seam，home_p1.{c,h} 零修改**）。data_json = home 路由 `data`
+ *       home_p1 冻结 seam，home_upcoming 之外零回写**）。data_json = home 路由 `data`
  *       参数字符串。形状 = {"upcoming":{"day_key":…,"items":[{time,name}…],
- *       "preview":{time,name}|null}}。语义：
+ *       "preview":[{time,name}…]|[]|null}}（2026-10-11 多项数组化, 见头注跨端对端
+ *       事实）。语义：
  *       - data_json NULL / "" / "{}" / 无 "upcoming" 键 → 返回 0 且 seam 状态零变化
  *         （旧 {view:home} 无 data 行为完全不变，向后兼容——契约 §1.3⑥ additive）。
  *       - "upcoming" 在：day_key 必须为 1..15 字节字符串；items 数组每项 {time,name}
- *         且 time 可解析 H:MM/HH:MM、name 非空；count <= HP1_ITEM_MAX；preview 可缺/
- *         null（= 无预告）或 {time,name} 同项校验 → 经 kidpal_home_p1_schedule_inject
- *         注入（seam 全量校验，拒绝即整包拒）。成功返回 0；任何畸形/越界/seam 拒收
- *         → 返回 -1 且 seam 状态零变化（绝不半写、绝不盲渲染）。**preview.time 非
- *         H:MM/HH:MM（如「明早」字面）→ -1**（K1 裁决口径：载荷钉 HH:MM；自然语言
- *         标签不入 seam）。
+ *         且 time 可解析 H:MM/HH:MM、name 非空；count <= HP1_ITEM_MAX；preview 三态
+ *         （非空数组 = 全量列表 / [] = 确认明日无项 / null·键缺省 = 未提供；旧单对象
+ *         容忍为 1 项列表——过渡防御）→ 经 kidpal_home_p1_schedule_inject 注入（seam
+ *         全量校验，拒绝即整包拒）。成功返回 0；任何畸形/越界/seam 拒收 → 返回 -1
+ *         且 seam 状态零变化（绝不半写、绝不盲渲染）。**preview.time 非 H:MM/HH:MM
+ *         （如「明早」字面）→ -1**（K1 裁决口径：载荷钉 HH:MM；自然语言标签不入
+ *         seam）。preview 数组超 HP1_PREVIEW_MAX(8) → -1（整包拒, 与 items 同纪律）。
  *       - 设备接线：mcp_server home 路由 data 非空时调 apply；注入成功且 P1 首页在
  *         屏（LOCAL_PAGE HOME 前台）→ 重渲染首页日程主体（云端一推首页跟着换）；
  *         缺/空 data 行为不变（既有 show_home 路径零偏移）。断网无推送 = 日程区不
  *         更新（NFR-OFF-1 语义保持：apply 只在推送到达时被调，设备零轮询）。
+ *
+ *   -- home_p1 冻结 seam 终形（CCP 261011-p1-home-v5-rework 触点③ 同形改 +
+ *      requirements v1.61 AC5/AC6/AC7 三态空态语义; 旧 4 参 inject 与单项 preview
+ *      访问族 kidpal_home_p1_schedule_preview(hp1_item_t*) 同批退役, supersede）：
+ *
+ *   #define HP1_PREVIEW_MAX 8   -- 明天区 preview 缓存容量上限（home_p1.h 定容冻结
+ *                                   值; 超容整包拒收, 与 HP1_ITEM_MAX 同纪律）
+ *
+ *   int kidpal_home_p1_schedule_inject(const char *day_key,
+ *                                      const hp1_item_t *items, int count,
+ *                                      const hp1_item_t *next_day_items,
+ *                                      int next_day_count);
+ *       day_key / items / count 语义不变（count==0 且 items==NULL = 今日无待办确认
+ *       空——AC5「今天接下来没有安排啦」话术态, s_has_day=1 && count==0）。
+ *       **next_day_count 单值三态承载**（与读侧 preview_count() 返回域同构, wire↔
+ *       seam↔accessor 三层同形、无第四态可漂移）：
+ *       - >= 1：preview 列表——next_day_items 必须非 NULL 且逐项 valid（同 today 项
+ *         校验）；> HP1_PREVIEW_MAX → -1 整包拒。
+ *       - == 0：云端确认明日无项（wire preview:[] 的 seam 形）→ 明天区「明天没有
+ *         什么课喽」话术态（AC6）；next_day_items 必须为 NULL（形状歧义防御）。
+ *       - == -1：本推未提供 preview（wire preview:null/键缺省 的 seam 形）→ 明天区
+ *         数据未达提示态（AC7, 不出无安排话术）；next_day_items 必须为 NULL。
+ *       - 其它负值 → -1 拒收。任一半区畸形 → 整包拒 -1 且状态零变化（全量替换
+ *         语义不变：绝不半写）。
+ *       （三态编码取舍留痕：today 半区 (NULL,0) 已被「今日无待办」占用——preview
+ *       半区若复用 (NULL,0) 表「确认空」则「未提供」无处落地；-1 哨兵是 5 参终形下
+ *       唯一不增参的解，且与读侧「-1 = 无 preview」既有惯例同型。）
+ *
+ *   int kidpal_home_p1_schedule_preview_count(void);
+ *       明天区三态读侧：>=1 = 列表项数；==0 = 确认空（AC6 话术态）；==-1 = 未提供/
+ *       从未注入/day_rollover 已清（AC7 数据未达态）。
+ *   const hp1_item_t *kidpal_home_p1_schedule_preview_item(int index);
+ *       0 <= index < preview_count() 时返回项指针（{"time","name"} verbatim），否则
+ *       NULL。
+ *
+ *   int kidpal_home_p1_day_rollover(const char *now_day);
+ *       既有签名/返回语义不变（同日/从未注入 → 0 缓存原样；跨 0:00 → 清 items +
+ *       更新日键 + 返回 1），**追认语义**：跨日清缓存时 s_has_day 一并清零、preview
+ *       回 -1（未提供）态——0:00 到每日零点推送的间隙两区必须落 AC7 数据未达态，
+ *       绝不误显「今天接下来没有安排啦」（AC5×AC7 冲突点, plan 要点 4；验收齿
+ *       HV5-AC7 rollover 半承载）。
  * ===========================================================================
  *
  * M3K2-A7（真机网格目测 + 翻页手感）挂账声明：真机半 deferred 归 M3-K3 设备轮
@@ -152,9 +203,33 @@
  *             + 缓存 setter 接线）+ test 2（行为半: canonical/空白容忍/空课表/薄载荷/
  *             旧形状/畸形矩阵/cap 越界/safe-truncate 全覆盖）
  *   coverage: M3K2-A5（首页「接下来」注入齿: 冻结 seam 消费 + 缺/空 data 行为不变 +
- *             NFR-OFF-1）-> test 4（行为半: canonical 注入/previewer null/缺 data
+ *             NFR-OFF-1）-> test 4（行为半: canonical 注入/preview 三态/缺 data
  *             零变化/畸形 -1 零变化/「明早」拒收）+ test 5（结构半: apply 接线 +
  *             home_p1 seam 零改 canary）
+ *   coverage: HV5-AC2（明天区多项化齿, S-F1.1 AC2: preview 非空数组全量进区 + 按开始
+ *             时间升序 + 「XX:XX 上学」合并项在列）-> test 4（canonical 数组逐项
+ *             verbatim 读回）+ test 4b（preview 数组超 HP1_PREVIEW_MAX 拒收 +
+ *             项缺 name 拒收 = 容量/形状防御半）
+ *   coverage: HV5-AC6（明天区空态话术 wire 载体齿, S-F1.1 AC6: [] = 确认明日无项 →
+ *             话术态）-> test 4（preview:[] → preview_count()==0）+ test 4b（seam
+ *             直注 next_day_count==0 → 话术态读侧）+ test 5（渲染源「明天没有什么
+ *             课喽」字面在世结构齿）; 上学日联动 producer 半 = server 面冻结件
+ *             test_m3k1_schedule_producer.acceptance.py A3 齿（上学日 preview 非空
+ *             且含「上学」项——板端话术态仅 [] 可达, 防 vacuous 的 wire 侧闭环）
+ *   coverage: HV5-AC7（数据未达态齿, S-F1.1 AC7: preview null/键缺省 → 未提供态
+ *             不出无安排话术; rollover 跨 0:00 → 未达态; 拒包 → 维持显示）->
+ *             test 4（preview:null 与键缺省 → preview_count()==-1）+ test 4b
+ *             （seam 直注 next_day_count==-1/-2 边界）+ test 4b（day_rollover 跨日
+ *             清缓存 → count()==0 且 preview_count()==-1 = 未达态, AC5×AC7 冲突点）
+ *             + test 4（畸形拒收后 seam 状态零变化 = 两区已有数据在屏维持显示的
+ *             seam 半）; render 分叉半 = p1_home_battery.acceptance.c HV5 CASE
+ *   coverage: HV5-AC5（接下来区无安排话术态齿, S-F1.1 AC5: s_has_day=1 && count==0
+ *             语义）-> test 4b（seam 直注 count==0 → 话术态读侧可驱动）+ test 5
+ *             （渲染源「今天接下来没有安排啦」字面在世结构齿）; render 半 =
+ *             p1_home_battery.acceptance.c tooth 5 重钉 + HV5 CASE
+ *   coverage: HV5-SEAM（seam 终形结构齿, CCP 触点③）-> test 5（home_p1.h 5 参签名
+ *             + next_day_items/next_day_count 参数名 + HP1_PREVIEW_MAX 8 定容 +
+ *             preview_count/preview_item 访问族声明在世）
  *   coverage: M3K2-A6（页循环/键帽条回归靶，非修订面）-> test 6（三页循环 PAGE_COUNT/
  *             路由续接/cycle 模步/键帽条刷新在世/key_layer_dispatch 齿接线在世/
  *             keybar P2 槽表在世——既有齿零偏移通过）+ test 8 键帽条带零墨齿
@@ -174,9 +249,13 @@
  *      kidpal_schedule_grid_render 渲染（today_col = 注入星期列；缓存空 → 友好空态）。
  *   3) firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc：板级 RTC
  *      装配点（inject_rtc/inject_env 同点）调用 kidpal_render_node_inject_weekday。
- *   4) firmware/main/display/home_upcoming.{c,h} 新建（A5 纯逻辑接线层）+ mcp_server.cc
- *      home 路由 data 非空时消费 kidpal_home_upcoming_apply + P1 在屏重渲染接线；
- *      home_p1.{c,h} 与归档 home_p1.acceptance.c **零修改**（铁律）。
+ *   4) firmware/main/display/home_upcoming.{c,h} preview 数组解析（三态 + 旧单对象
+ *      过渡容忍 + 超容整包拒）+ mcp_server.cc home 路由 data 非空时消费
+ *      kidpal_home_upcoming_apply + P1 在屏重渲染接线（既有在世面零偏移续用）。
+ *      home_p1.{c,h} 本包按 CCP 触点③ 同形改（5 参 inject + HP1_PREVIEW_MAX +
+ *      preview_count/preview_item 访问族 + 空态两态渲染 + rollover 清 s_has_day）,
+ *      旧 4 参 inject 与单项 preview 访问族退役——修订授权链见 REVISION LOG 2026-10-11
+ *      条（归档 home_p1.acceptance.c 仍零触碰, archive 纪律不变）。
  *   5) host 接线：firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS
  *      加 "../../schedule_grid.acceptance.c" 与被测实现源（schedule_page.c 重写体 +
  *      home_upcoming.c；home_p1.c 已在册），置于 "../../host_infra_smoke.acceptance.c"
@@ -221,8 +300,21 @@
 /* 共享底座契约头（相对路径, host runner 与独立 stub 编译都可达）。 */
 #include "../key_gesture_parser.h"
 #include "../display/view_router.h"
-/* home_p1 冻结契约头（seam 形状/常量零偏移；A5 行为齿经本头类型消费 seam 状态）。 */
+/* home_p1 冻结契约头（seam 形状/常量零偏移；A5 行为齿经本头类型消费 seam 状态）。
+ * 2026-10-11 注：home_p1.h 在本包 builder 落地前仍带旧 4 参 inject 声明——本冻结件
+ * 按修订后冻结契约（授权链见文件尾 REVISION LOG 2026-10-11 条）钉 5 参终形。宏改写
+ * 把头内旧声明改名旁路（仅声明面、无链接语义），使本文件在落地前旧头与落地后新头
+ * 两侧都可编（DEV-GOVERNANCE 验收测试纪律 §4 C 类实编通道）。 */
+#define kidpal_home_p1_schedule_inject kidpal_home_p1_schedule_inject_hdr_decl
 #include "../display/home_p1.h"
+#undef kidpal_home_p1_schedule_inject
+
+/* seam 终形声明（5 参 inject, CCP 261011-p1-home-v5-rework 触点③; 与 home_p1.h
+ * 落地后声明一致）。 */
+int kidpal_home_p1_schedule_inject(const char *day_key,
+                                   const hp1_item_t *items, int count,
+                                   const hp1_item_t *next_day_items,
+                                   int next_day_count);
 
 #define KSG_MAX_PATH 1024
 #define KSG_MAX_READ (8u * 1024u * 1024u)
@@ -237,7 +329,7 @@
 #define KSG_FLAG_STAR  0x2
 #define KSG_FLAGS_MAX  3
 #define KSG_COURSE_CAP 84 /* 7 天 × 3 格 × 每格 4 门（网格缓存定容冻结值） */
-#define KSG_GRID_BOTTOM 251
+#define KSG_GRID_BOTTOM 254
 #define KSG_FONT_MIN_PX 14
 
 typedef struct {
@@ -269,7 +361,19 @@ __attribute__((weak)) int kidpal_home_upcoming_apply(const char *data_json)
 }
 
 /* home_p1 seam 读侧哨兵（stub 编译链路用；host runner 由在世 home_p1.c 强定义覆盖，
- * p1_home_battery.acceptance.c 亦持同型 weak——多重 weak 合法、语义一致）。 */
+ * p1_home_battery.acceptance.c 亦持同型 weak——多重 weak 合法、语义一致）。
+ * 2026-10-11：preview 单项哨兵退役 → preview_count/preview_item 双哨兵 + inject
+ * 5 参终形哨兵（签名与 home_p1.h 落地后声明一致）。 */
+__attribute__((weak)) int kidpal_home_p1_schedule_inject(const char *day_key,
+                                                         const hp1_item_t *items,
+                                                         int count,
+                                                         const hp1_item_t *next_day_items,
+                                                         int next_day_count)
+{
+    (void)day_key; (void)items; (void)count;
+    (void)next_day_items; (void)next_day_count;
+    return KSG_UNIMPLEMENTED;
+}
 __attribute__((weak)) int kidpal_home_p1_schedule_count(void)
 {
     return KSG_UNIMPLEMENTED;
@@ -279,9 +383,18 @@ __attribute__((weak)) const hp1_item_t *kidpal_home_p1_schedule_item(int index)
     (void)index;
     return NULL;
 }
-__attribute__((weak)) int kidpal_home_p1_schedule_preview(hp1_item_t *out)
+__attribute__((weak)) int kidpal_home_p1_schedule_preview_count(void)
 {
-    (void)out;
+    return KSG_UNIMPLEMENTED;
+}
+__attribute__((weak)) const hp1_item_t *kidpal_home_p1_schedule_preview_item(int index)
+{
+    (void)index;
+    return NULL;
+}
+__attribute__((weak)) int kidpal_home_p1_day_rollover(const char *now_day)
+{
+    (void)now_day;
     return KSG_UNIMPLEMENTED;
 }
 
@@ -627,13 +740,15 @@ static const char *KSG_PAYLOAD_CANONICAL =
     "{\"day\": 5, \"slot\": 2, \"name\": \"舞蹈\", \"flags\": 2}, "
     "{\"day\": 6, \"slot\": 2, \"name\": \"编程\", \"flags\": 3}]}}";
 
-/* Canonical home upcoming data payload（契约 §1.3⑥ + schedule.py home_upcoming_payload
- * 实测 wire 形状：day_key 恒「今天」、preview.time 恒 HH:MM）。 */
+/* Canonical home upcoming data payload（契约 §1.3⑥ 2026-10-11 多项数组化 +
+ * schedule.py home_upcoming_payload 实测 wire 形状：day_key 恒「今天」、preview =
+ * 明日全量 {time,name} 数组按开始时间升序、上学合并项在列——AC2）。 */
 static const char *KSG_UPCOMING_CANONICAL =
     "{\"upcoming\": {\"day_key\": \"今天\", "
     "\"items\": [{\"time\": \"14:00\", \"name\": \"钢琴课\"}, "
     "{\"time\": \"16:30\", \"name\": \"英语培训\"}], "
-    "\"preview\": {\"time\": \"08:30\", \"name\": \"春游\"}}}";
+    "\"preview\": [{\"time\": \"08:00\", \"name\": \"上学\"}, "
+    "{\"time\": \"19:00\", \"name\": \"编程\"}]}}";
 
 /* -------------------------------------------------------------------------- *
  * M3K2-A1/A4 (+A7 结构半) — P2 周网格消费面装配结构（structural, WF-F1-02 /
@@ -912,17 +1027,18 @@ TEST_CASE("schedule grid: 今天列推导注入 seam 接线 (M3K2-A2 structural)
 
 /* -------------------------------------------------------------------------- *
  * M3K2-A5 (behavioral) — 首页「接下来」data.upcoming 消费注入冻结 seam。
- * seam = home_p1 冻结面（零修改, 只消费）; preview null 容忍; 缺/空 data 行为不变;
- * 「明早」等非 HH:MM preview.time 拒收（K1 裁决口径）。RED today: weak sentinel.
+ * seam = home_p1 冻结面终形（5 参三态, 只消费）; preview 三态（数组/[]/null·缺省）
+ * + 旧单对象过渡容忍; 缺/空 data 行为不变; 「明早」等非 HH:MM preview.time 拒收
+ * （K1 裁决口径不变）。RED today: weak sentinel.
  * ------------------------------------------------------------------------ */
 TEST_CASE("home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)",
-          "[home_upcoming][M3K2-A5]")
+          "[home_upcoming][M3K2-A5][HV5-AC2][HV5-AC6][HV5-AC7]")
 {
     const hp1_item_t *it;
-    hp1_item_t pv;
     int before, n;
 
-    /* canonical payload -> seam 注入成功, 逐字段可读回 */
+    /* canonical payload（preview = 明日全量升序数组, 上学合并项在列——AC2）
+     * -> seam 注入成功, today 项与 preview 项逐字段可读回 */
     n = kidpal_home_upcoming_apply(KSG_UPCOMING_CANONICAL);
     ksg_require_implemented(n, "kidpal_home_upcoming_apply unimplemented");
     TEST_ASSERT_TRUE_MESSAGE(n == 0,
@@ -934,22 +1050,72 @@ TEST_CASE("home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)",
                                  strcmp(it->name, "钢琴课") == 0,
         "KSG-A5 RED: seam item 0 must carry 14:00 钢琴课 verbatim (payload 即 seam 注入"
         "参数的 JSON 化, 契约 §1.3⑥)");
-    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview(&pv) == 0 &&
-                                 strcmp(pv.time, "08:30") == 0 &&
-                                 strcmp(pv.name, "春游") == 0,
-        "KSG-A5 RED: preview must land in the frozen seam verbatim (08:30 春游)");
+    /* HV5-AC2: preview 数组全量进区、升序、上学合并项在列——逐项 verbatim 读回 */
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == 2,
+        "HV5-AC2 RED: preview 非空数组必须进 preview 列表（preview_count()==2）——"
+        "明天区多项化未落地 (requirements v1.61 AC2 / CCP 触点①)");
+    it = kidpal_home_p1_schedule_preview_item(0);
+    TEST_ASSERT_TRUE_MESSAGE(it != NULL && strcmp(it->time, "08:00") == 0 &&
+                                 strcmp(it->name, "上学") == 0,
+        "HV5-AC2 RED: preview_item(0) must carry 08:00 上学 verbatim — 学校课合并"
+        "「XX:XX 上学」项必须在明天区列表（AC2, 升序首项）");
+    it = kidpal_home_p1_schedule_preview_item(1);
+    TEST_ASSERT_TRUE_MESSAGE(it != NULL && strcmp(it->time, "19:00") == 0 &&
+                                 strcmp(it->name, "编程") == 0,
+        "HV5-AC2 RED: preview_item(1) must carry 19:00 编程 verbatim — 明日全量进区"
+        "（课外班/临时事件同列, AC2）");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_item(2) == NULL,
+        "HV5-AC2 RED: preview_item(2) beyond list length must be NULL — 越界读不外溢");
 
-    /* preview null（producer 明日无项时发 null）-> 成功且预告清空, 不降级 */
+    /* preview:[]（云端确认明日无项——AC6 话术的显式 wire 载体, plan R1: producer
+     * 明日无项发 [] 不再 None）-> 成功且 preview 进确认空话术态（读侧 0）, 不降级 */
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", "
+        "\"items\": [{\"time\": \"09:00\", \"name\": \"上学\"}], \"preview\": []}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        "HV5-AC6 RED: preview:[] must be tolerated as confirmed-empty (0) — 云端确认"
+        "明日无项的显式 wire 载体 (CCP 触点①, AC6「明天没有什么课喽」)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == 1,
+        "KSG-A5 RED: seam item count must be 1 after empty-preview apply");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == 0,
+        "HV5-AC6 RED: preview:[] must land the confirmed-empty state "
+        "(preview_count()==0 = 话术态) — 不是未提供态(-1)、更不是拒收");
+
+    /* preview:null 与键缺省（未推送/未提供——AC7）-> 成功且 preview 进数据未达态
+     * （读侧 -1）, 绝不落话术态（与 AC6 显式分叉） */
     n = kidpal_home_upcoming_apply(
         "{\"upcoming\": {\"day_key\": \"今天\", "
         "\"items\": [{\"time\": \"09:00\", \"name\": \"上学\"}], \"preview\": null}}");
     TEST_ASSERT_TRUE_MESSAGE(n == 0,
-        "KSG-A4/A5 RED: preview:null must be tolerated (明日无项 = 无预告, 不降级) — "
-        "producer wire 实况 (schedule.py home_upcoming_payload)");
-    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == 1,
-        "KSG-A5 RED: seam item count must be 1 after null-preview apply");
-    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview(&pv) == -1,
-        "KSG-A5 RED: after null preview the seam must report no preview (-1)");
+        "HV5-AC7 RED: preview:null must be tolerated as not-provided (0) — legacy "
+        "wire 值容忍 (CCP 触点①: null = 未推送/未提供)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == -1,
+        "HV5-AC7 RED: preview:null must land the not-provided state "
+        "(preview_count()==-1 = 数据未达态) — 绝不落确认空话术态(0), AC6/AC7 显式分叉");
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", "
+        "\"items\": [{\"time\": \"09:00\", \"name\": \"上学\"}]}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        "HV5-AC7 RED: missing preview key must be tolerated as not-provided (0) — "
+        "键缺省与 null 同态 (CCP 触点①)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == -1,
+        "HV5-AC7 RED: missing preview key must land the not-provided state (-1)");
+
+    /* 旧单对象 {time,name} 过渡容忍（板端防御一个过渡版, CCP 触点②; producer 不发）
+     * -> 成功且容忍为 1 项列表 */
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", "
+        "\"items\": [{\"time\": \"09:00\", \"name\": \"上学\"}], "
+        "\"preview\": {\"time\": \"10:00\", \"name\": \"美术班\"}}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        "HV5 RED: legacy single-object preview must be tolerated (0) — 部署缓冲防御 "
+        "(CCP 触点②: server 先部署、固件后烧的错配窗口)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == 1,
+        "HV5 RED: legacy single-object preview must be adopted as a 1-item list");
+    it = kidpal_home_p1_schedule_preview_item(0);
+    TEST_ASSERT_TRUE_MESSAGE(it != NULL && strcmp(it->time, "10:00") == 0 &&
+                                 strcmp(it->name, "美术班") == 0,
+        "HV5 RED: legacy preview item must carry {time,name} verbatim");
 
     /* 缺/空 data -> 0 且 seam 状态零变化（旧 {view:home} 行为完全不变, 向后兼容） */
     before = kidpal_home_p1_schedule_count();
@@ -965,7 +1131,8 @@ TEST_CASE("home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)",
         "KSG-A5 RED: no-op applies must leave the frozen seam state untouched "
         "（缺/空 data 行为不变, 向后兼容）");
 
-    /* 畸形/越界/seam 拒收 -> -1 且 seam 状态零变化（绝不半写、绝不盲渲染） */
+    /* 畸形/越界/seam 拒收 -> -1 且 seam 状态零变化（绝不半写、绝不盲渲染;
+     * 拒收零变化 = AC7「两区已有数据在屏维持显示、不清屏换提示」的 seam 半） */
     before = kidpal_home_p1_schedule_count();
     n = kidpal_home_upcoming_apply("{\"upcoming\": {\"items\": []}}");
     TEST_ASSERT_TRUE_MESSAGE(n == -1,
@@ -976,10 +1143,32 @@ TEST_CASE("home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)",
         "KSG-A5 RED: item missing time must degrade (-1) — time 必带");
     n = kidpal_home_upcoming_apply(
         "{\"upcoming\": {\"day_key\": \"今天\", \"items\": [{\"time\": \"14:00\", "
-        "\"name\": \"钢琴课\"}], \"preview\": {\"time\": \"明早\", \"name\": \"春游\"}}}");
+        "\"name\": \"钢琴课\"}], \"preview\": [{\"time\": \"明早\", \"name\": \"春游\"}]}}}");
     TEST_ASSERT_TRUE_MESSAGE(n == -1,
         "KSG-A5 RED: non-HH:MM preview.time (明早 literal) must be rejected (-1) — "
-        "K1 裁决口径: 载荷钉明日首项 HH:MM, 自然语言标签不入冻结 seam, 绝不盲渲染");
+        "K1 裁决口径不变: 载荷钉 HH:MM, 自然语言标签不入冻结 seam, 绝不盲渲染");
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", \"items\": [{\"time\": \"14:00\", "
+        "\"name\": \"钢琴课\"}], \"preview\": [{\"time\": \"08:00\", \"name\": \"x\"}, "
+        "{\"time\": \"09:00\", \"name\": \"2\"}, {\"time\": \"10:00\", \"name\": \"3\"}, "
+        "{\"time\": \"11:00\", \"name\": \"4\"}, {\"time\": \"12:00\", \"name\": \"5\"}, "
+        "{\"time\": \"13:00\", \"name\": \"6\"}, {\"time\": \"14:00\", \"name\": \"7\"}, "
+        "{\"time\": \"15:00\", \"name\": \"8\"}, {\"time\": \"16:00\", \"name\": \"9\"}]}}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == -1,
+        "HV5-AC2 RED: 9 preview items beyond HP1_PREVIEW_MAX(8) must degrade (-1) — "
+        "明天区缓存容量越界整包拒收（与 items 同纪律）");
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", \"items\": [{\"time\": \"14:00\", "
+        "\"name\": \"钢琴课\"}], \"preview\": [{\"time\": \"08:00\"}]}}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == -1,
+        "HV5-AC2 RED: preview item missing name must degrade (-1) — 项形状与 items "
+        "同校验（time/name 必带）");
+    n = kidpal_home_upcoming_apply(
+        "{\"upcoming\": {\"day_key\": \"今天\", \"items\": [{\"time\": \"14:00\", "
+        "\"name\": \"钢琴课\"}], \"preview\": 42}}}");
+    TEST_ASSERT_TRUE_MESSAGE(n == -1,
+        "HV5 RED: non-array/non-null/non-object preview must degrade (-1) — 数组化后 "
+        "数字/字符串等标量 preview 形状 = 畸形");
     n = kidpal_home_upcoming_apply(
         "{\"upcoming\": {\"day_key\": \"今天\", \"items\": ["
         "{\"time\": \"09:00\", \"name\": \"1\"}, {\"time\": \"10:00\", \"name\": \"2\"}, "
@@ -993,6 +1182,123 @@ TEST_CASE("home upcoming: data.upcoming 消费注入冻结 seam (M3K2-A5)",
     TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == before,
         "KSG-A5 RED: every rejected apply must leave the seam state untouched "
         "（拒绝整包不半写, home_p1 seam 冻结语义）");
+}
+
+/* -------------------------------------------------------------------------- *
+ * HV5-AC5/AC6/AC7 (behavioral) — preview 三态 seam 终形直注 + day_rollover 未达态。
+ * wire 三态已由 test 4 经 apply 钉（数组/[]/null·缺省）; 本 CASE 用 seam 直注钉
+ * next_day_count 单值三态承载 + rollover 跨 0:00 清缓存后转数据未达态（AC5×AC7
+ * 冲突点, plan 要点 4: 0:00 到零点推送间隙绝不误显无安排话术）。
+ * RED today: weak sentinel.
+ * ------------------------------------------------------------------------ */
+TEST_CASE("home upcoming: preview 三态 seam 直注 + day_rollover 未达态 (HV5)",
+          "[home_upcoming][HV5-AC5][HV5-AC6][HV5-AC7]")
+{
+    hp1_item_t items[2];
+    hp1_item_t pv[2];
+    int rc;
+
+    memset(items, 0, sizeof(items));
+    snprintf(items[0].time, sizeof(items[0].time), "14:00");
+    snprintf(items[0].name, sizeof(items[0].name), "钢琴课");
+    snprintf(items[1].time, sizeof(items[1].time), "16:30");
+    snprintf(items[1].name, sizeof(items[1].name), "英语培训");
+    memset(pv, 0, sizeof(pv));
+    snprintf(pv[0].time, sizeof(pv[0].time), "08:00");
+    snprintf(pv[0].name, sizeof(pv[0].name), "上学");
+    snprintf(pv[1].time, sizeof(pv[1].time), "19:00");
+    snprintf(pv[1].name, sizeof(pv[1].name), "编程");
+
+    /* 三态① 列表：next_day_count>=1（非 NULL + 逐项 valid）-> preview_count()==n */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 2, pv, 2);
+    ksg_require_implemented(rc, "kidpal_home_p1_schedule_inject unimplemented");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        "HV5 RED: 5-arg seam inject(list) rejected — seam 终形未实现 (CCP 触点③)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == 2,
+        "HV5 RED: preview list inject must report preview_count()==2");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_item(0) != NULL &&
+                                 strcmp(kidpal_home_p1_schedule_preview_item(0)->name,
+                                        "上学") == 0,
+        "HV5 RED: preview_item(0) must carry the injected item verbatim");
+
+    /* 三态② 确认空：next_day_count==0（wire preview:[] 的 seam 形）-> 读侧 0 =
+     * 明天区话术态（AC6）——不是 -1（那是未提供） */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, NULL, 0);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        "HV5-AC6 RED: inject(next_day_count=0) must succeed as confirmed-empty — "
+        "「明天没有什么课喽」话术态的 seam 载体");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == 0,
+        "HV5-AC6 RED: confirmed-empty inject must report preview_count()==0");
+
+    /* 三态③ 未提供：next_day_count==-1（wire preview:null/缺省 的 seam 形）-> 读侧
+     * -1 = 数据未达态（AC7）——绝不落话术态 */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, NULL, -1);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        "HV5-AC7 RED: inject(next_day_count=-1) must succeed as not-provided — "
+        "数据未达态的 seam 载体");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == -1,
+        "HV5-AC7 RED: not-provided inject must report preview_count()==-1 — "
+        "与确认空话术态(0)显式分叉");
+
+    /* today 半区 AC5 语义: count==0 注入成功（今日无待办确认空 = 话术态数据半,
+     * render 半由 p1_home_battery tooth 5 / HV5 CASE 承载） */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", NULL, 0, pv, 1);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        "HV5-AC5 RED: inject(count=0) must succeed — 今日无待办确认空（AC5 话术态）"
+        "seam 语义保持");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == 0,
+        "HV5-AC5 RED: count==0 inject must leave schedule_count()==0");
+
+    /* 畸形矩阵: 全部 -1 且状态零变化 */
+    {
+        int c_before = kidpal_home_p1_schedule_count();
+        int p_before = kidpal_home_p1_schedule_preview_count();
+
+        rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, NULL, -2);
+        TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+            "HV5 RED: next_day_count=-2 (non-ternary negative) must be rejected (-1)");
+        rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, NULL, 9);
+        TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+            "HV5-AC2 RED: next_day_count=9 beyond HP1_PREVIEW_MAX(8) must be rejected");
+        rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, NULL, 1);
+        TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+            "HV5 RED: next_day_count>=1 with NULL next_day_items must be rejected");
+        rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 1, pv, -1);
+        TEST_ASSERT_TRUE_MESSAGE(rc == -1,
+            "HV5 RED: next_day_count=-1 with non-NULL next_day_items must be rejected");
+        TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == c_before &&
+                                     kidpal_home_p1_schedule_preview_count() == p_before,
+            "HV5 RED: rejected injects must leave the seam state untouched "
+            "（整包拒不半写）");
+    }
+
+    /* day_rollover 跨 0:00：清缓存后两区必须转数据未达态（AC5×AC7 冲突点——
+     * 0:00 到每日零点推送间隙绝不误显「今天接下来没有安排啦」） */
+    rc = kidpal_home_p1_schedule_inject("2026-10-11", items, 2, pv, 2);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0, "HV5 RED(infra): full inject fixture rejected");
+    rc = kidpal_home_p1_day_rollover("2026-10-12");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 1,
+        "HV5 RED: day_rollover across midnight must report 1 (cache cleared)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == 0,
+        "HV5-AC7 RED: after rollover today items must be cleared (count==0)");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_preview_count() == -1,
+        "HV5-AC7 RED: after rollover preview must fall to the not-provided state "
+        "(preview_count()==-1 = 数据未达态) — 绝不停留在列表态/确认空话术态 "
+        "(AC5×AC7 冲突点, plan 要点 4)");
+
+    /* rollover 同日：0 且缓存原样（既有语义零偏移） */
+    rc = kidpal_home_p1_schedule_inject("2026-10-12", items, 1, pv, 1);
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0, "HV5 RED(infra): re-inject fixture rejected");
+    rc = kidpal_home_p1_day_rollover("2026-10-12");
+    TEST_ASSERT_TRUE_MESSAGE(rc == 0,
+        "HV5 RED: same-day rollover must be a no-op (0) — 既有语义零偏移");
+    TEST_ASSERT_TRUE_MESSAGE(kidpal_home_p1_schedule_count() == 1 &&
+                                 kidpal_home_p1_schedule_preview_count() == 1,
+        "HV5 RED: same-day rollover must preserve the seam state");
+    /* 「从未注入」半注记：fresh boot 与 rollover 清缓存后落同一状态机节点
+     * （s_has_day=0 / count=0 / preview 未提供——home_p1.c 内部构造同源）,
+     * 本进程内 seam 已带状态的运行序里以 rollover 半承载该节点; render 未达提示
+     * 在场与 AC5/AC6 话术的显式分叉由 p1_home_battery.acceptance.c HV5 CASE 钉。 */
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1029,15 +1335,51 @@ TEST_CASE("home upcoming: 注入接线结构 + home_p1 seam 零改 canary (M3K2-
             "firmware/main/CMakeLists.txt — 接线层未编入设备构建");
     }
 
-    /* canary (must stay green): home_p1 冻结 seam 零修改（E2 铁律——仅消费） */
+    /* canary (must stay green): home_p1 冻结 seam 签名在世（E2 铁律——签名漂移即红）。
+     * 2026-10-11 随 CCP 触点③ 同形改重钉：前缀 canary 保留 + 5 参终形参数名/
+     * preview 多项访问族/HP1_PREVIEW_MAX 定容三齿（旧单项访问族退役 = 反向 canary）。 */
     TEST_ASSERT_TRUE_MESSAGE(ksg_file_contains(
                                  "firmware/main/display/home_p1.h",
                                  "kidpal_home_p1_schedule_inject(const char *day_key,"),
         "KSG-E2 RED(infra): home_p1.h frozen seam signature drifted — "
         "冻结 seam 签名不得偏移");
+    TEST_ASSERT_TRUE_MESSAGE(ksg_file_contains(
+                                 "firmware/main/display/home_p1.h", "next_day_items") &&
+                                 ksg_file_contains("firmware/main/display/home_p1.h",
+                                                   "next_day_count"),
+        "HV5-SEAM RED: home_p1.h carries no 5-arg inject seam (next_day_items/"
+        "next_day_count) — preview 多项化 seam 终形未落地 (CCP 261011-p1-home-v5-"
+        "rework 触点③)");
+    TEST_ASSERT_TRUE_MESSAGE(ksg_file_contains("firmware/main/display/home_p1.h",
+                                               "#define HP1_PREVIEW_MAX 8"),
+        "HV5-SEAM RED: home_p1.h carries no HP1_PREVIEW_MAX 8 定容 — 明天区缓存容量"
+        "冻结值缺失（超容整包拒齿无锚）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        ksg_file_contains("firmware/main/display/home_p1.h",
+                          "kidpal_home_p1_schedule_preview_count(") &&
+            ksg_file_contains("firmware/main/display/home_p1.h",
+                              "kidpal_home_p1_schedule_preview_item("),
+        "HV5-SEAM RED: home_p1.h carries no preview_count/preview_item accessor "
+        "family — preview 多项访问族未落地");
+    TEST_ASSERT_FALSE_MESSAGE(ksg_file_contains(
+                                  "firmware/main/display/home_p1.h",
+                                  "kidpal_home_p1_schedule_preview(hp1_item_t *out)"),
+        "HV5-SEAM RED: retired single-item preview accessor still declared in "
+        "home_p1.h — 旧单项访问族必须随 CCP 触点③ 同批退役（防双访问族语义漂移）");
+    /* HV5-AC5/AC6 渲染源字面齿: 两句无安排话术必须真存在于渲染源面（孩子们看到的
+     * 是这两句, 不是别的; AC7 未达提示文案语义归 P2 空态口径改写——其措辞不钉字面,
+     * 由 HPB HV5 CASE 帧分叉齿钉「与话术可区分」）。 */
+    TEST_ASSERT_TRUE_MESSAGE(ksg_scan_count("firmware/main", "今天接下来没有安排啦",
+                                            hit, sizeof(hit)) >= 1,
+        "HV5-AC5 RED: 「今天接下来没有安排啦」话术字面在渲染源面缺失 — AC5 无安排"
+        "空态话术未落地 (requirements v1.61)");
+    TEST_ASSERT_TRUE_MESSAGE(ksg_scan_count("firmware/main", "明天没有什么课喽",
+                                            hit, sizeof(hit)) >= 1,
+        "HV5-AC6 RED: 「明天没有什么课喽」话术字面在渲染源面缺失 — AC6 明天区空态"
+        "话术未落地");
     TEST_ASSERT_FALSE_MESSAGE(ksg_file_contains("firmware/main/display/home_p1.c", "upcoming"),
-        "KSG-E2 RED: home_p1.c consumes upcoming — home_p1 冻结 seam 必须零修改 "
-        "（A5 接线层在 home_upcoming 模块, 不回写冻结面）");
+        "KSG-E2 RED: home_p1.c consumes upcoming — home_p1 冻结 seam 必须经注入缝消费 "
+        "wire 数据（A5 接线层在 home_upcoming 模块, 不回写冻结面解析）");
     TEST_ASSERT_FALSE_MESSAGE(
         ksg_file_contains("firmware/main/display/home_p1.c", "kidpal_home_upcoming_apply"),
         "KSG-E2 RED: home_p1.c references kidpal_home_upcoming_apply — 冻结面零修改 "
@@ -1276,7 +1618,8 @@ TEST_CASE("schedule grid: 网格版式真帧——格归属与零溢出 (M3K2-A1
             "bands — 网格格归属失真（WF-F1-02 版式区钉）");
     }
 
-    /* 键帽条带零墨：网格可用区下缘 y>=252 严格无墨（键帽条三槽常驻不被遮挡, A6） */
+    /* 网格外带零墨：网格可用区下缘 y>=255 严格无墨（旧口径 y>=252 系贴旧底条顶 252；
+     * 底条顶 2026-09-26 移到 262——本齿只钉网格自身不外溢, 底条带本身由其 chrome 齿钉） */
     dark = 0;
     for (int y = KSG_GRID_BOTTOM + 1; y < KSG_FB_H; y++) {
         for (int x = 0; x < KSG_FB_W; x++) {
@@ -1287,7 +1630,7 @@ TEST_CASE("schedule grid: 网格版式真帧——格归属与零溢出 (M3K2-A1
         }
     }
     TEST_ASSERT_TRUE_MESSAGE(dark == 0,
-        "KSG-A1/A6 render RED: grid frame paints ink below y=252 — 网格侵入了键帽条带 "
+        "KSG-A1/A6 render RED: grid frame paints ink below y=254 — 网格溢出可用区下缘 "
         "（键帽条三槽常驻不被网格遮挡）");
 
     /* 空网格 + 非法参数：不崩 */
@@ -1482,4 +1825,32 @@ TEST_CASE("schedule grid: ※/星标标记真帧 (M3K2-A3 render)",
 /* --------------------------------------------------------------------------- *
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-21  initial freeze (acceptance-author, TaskPackage 260921-m3-k2-p2-week-grid-page).
+ *   2026-10-11  冻结件修订（TaskPackage 261011-p1-home-v5-rework; 授权链双引用 =
+ *               「CCP id 261011-p1-home-v5-rework（HUMAN_APPROVED 2026-10-11）+
+ *               docs/requirements.md §9 v1.61 版本行（2026-10-11）」, plan R3 明示
+ *               派发——seam 形改超出 tighten-only 窗口, 防误拦留痕）:
+ *               ① A5 语义权威段重钉（FROZEN OFFLINE CONTRACT + 头注跨端对端事实 +
+ *               test 4）：wire preview 单对象 → 多项数组三态（非空数组 = 明日全量
+ *               升序列表 AC2 / [] = 确认明日无项 AC6 / null·键缺省 = 未提供 AC7）+
+ *               旧单对象过渡容忍（板端防御一个过渡版, 不入契约形状）+ 非 HH:MM
+ *               preview.time 拒收口径不变 + preview 超容（HP1_PREVIEW_MAX=8）整包拒。
+ *               ② seam 终形齿（test 4b 新增）：5 参 inject 直注三态（next_day_count
+ *               >=1 列表 / ==0 确认空 / ==-1 未提供 / 其它负值拒）+ 畸形矩阵 + 状态
+ *               零变化 + day_rollover 跨日清缓存 → 未达态（AC5×AC7 冲突点: 0:00 到
+ *               零点推送间隙绝不误显话术）+ 同日 no-op 既有语义零偏移。
+ *               ③ 结构齿重钉（test 5）：签名 canary 前缀保留 + next_day_items/
+ *               next_day_count 参数名 + HP1_PREVIEW_MAX 8 + preview_count/preview_item
+ *               访问族声明三齿 + 旧单项访问族退役反向 canary + 两句话术字面渲染源
+ *               在世齿（AC5/AC6）; home_p1.c "upcoming" 零消费 canary 语义保留
+ *               （消息措辞随访问面更新, needle 零偏移）。
+ *               ④ weak 哨兵同步 + 可编适配：kidpal_home_p1_schedule_preview 单项
+ *               哨兵退役 → preview_count/preview_item 双哨兵; inject 5 参终形哨兵与
+ *               day_rollover 哨兵追加（home_p1.h 落地前 stub 编译链路所需, 多重
+ *               weak 合法）; home_p1.h 旧 4 参声明以宏改写旁路 + 本文件内 5 参终形
+ *               声明（builder 落地新头后本文件零改续编）。
+ *               零触碰面：test 1/2/3（A1/A2/A4 族）、test 6（A6 回归靶）、test 8-11
+ *               （LVGL render 族）、schedule grid 冻结契约块、scan 基础设施——全部
+ *               零偏移。red baseline 判读：行为齿红在 weak 哨兵（seam 终形未实现），
+ *               结构齿红在树扫描真实缺失（HP1_PREVIEW_MAX/访问族/话术字面均不在世），
+ *               A1/A4/A6/A2-structural 族必须保持绿（既有实现在世）。
  * --------------------------------------------------------------------------- */

@@ -9,7 +9,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 
 本 skill 是**单条、按需**的条目起草器，与 `/loop-retro`（跨 Pod 周期性批量 retro）互补、字段 convention 完全一致；它不是批量 retro，也不是新 idea 入口。登记进账本是**主线程职责**（human-approved 2026-07-28），本 skill 由主线程执行即落该职责。
 
-> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程起草 PROPOSAL → human 立项 ack → architect 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（触 `contracts/**` / 跨系统结构性变更 / 声明红队）的交 `/arch-change`（Track A）。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
+> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程起草 PROPOSAL → human 立项 ack → architect 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（触 `docs/contracts/**` / 跨系统结构性变更 / 声明红队）的交 `/arch-change`（Track A）。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
 
 <HARD-GATE>
 没有**至少一条可识别的执行记录**（provenance）前，不起草条目——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的改进项」，停：是新 idea 就交 `/arch-change`，或先去补执行证据再回来。产物只有账本里的**一个条目文件**（或对既有条目的证据注记）；其余边界见「约束」节。
@@ -41,7 +41,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    - 若要自报 G 层（可选字段 `gateLayers`），**必须与机推一致**，不一致 doctor 报红。
    - 手感对照（机推规则见 `.claude/scripts/crq-ledger-shared.mjs` 的 `GATE_LAYER_RULES`）：`.claude/{agents,commands,references,rules,skills}/` = G2；`.claude/{scope-map.json,hooks/,scripts/,*.settings.json}` = G3；`AGENTS.md`/`CLAUDE.md`/`README.md`/`docs/DEV-GOVERNANCE.md` = G1；`delivery/{changes,taskpackages,workstreams}/` = G4。
    - **便宜验证计划**：例如复跑 `route-regression-check.mjs` / `lint-descriptions.mjs` / `landing-fidelity-check.mjs`。
-   **终点**：`paths[]` 已列全 + 验证计划点名 + 触 G1/G3/contracts/gate/self-def/mixed 者 profile 已标 full。
+   **终点**：`paths[]` 已列全 + 验证计划点名 + 触 G1/G3/契约面/gate/self-def/mixed 者 profile 已标 full。
 
 5. **查重（登记前纪律）** — `grep -l "<根因关键词>" docs/crq/*/*.md` 找同根项。
    - 有同根已登项 → **在既有条目正文尾部追加证据注记，不新立**（引本次 provenance）。
@@ -73,7 +73,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 ## 约束（must / never，不可省）
 
 - **MUST**：每条改进项带至少一条可识别 provenance——Track B 资格的客观载体。
-- **MUST**：review profile 写实。三要件任一不满足、或触 G1/G3/contracts/gate/self-def/mixed，就标 `full-adversarial + human`，绝不美化成快路径。
+- **MUST**：review profile 写实。三要件任一不满足、或触 G1/G3/契约面/gate/self-def/mixed，就标 `full-adversarial + human`，绝不美化成快路径。
 - **MUST**：查重在前；同根在既有条目追加证据注记，不新立。
 - **MUST**：写完跑 `crq-render.mjs`（否则 生成的 INDEX 与账本不一致，doctor 会报 `index-stale`）。
 - **NEVER**：不自批、不开 TaskPackage、不改任何 canonical（`.claude/{agents,commands,references,rules,skills}/**`、`docs/contracts/**`、docs 蓝图与指令根）——本 skill 只写条目文件与既有条目注记。
@@ -85,7 +85,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 本 skill 的 terminal state = 「条目写进 `docs/crq/<域>/` + 渲染已跑」（边界即「约束」节 NEVER，不重复）。按 review profile 交下游：
 
 - **已登记条目（默认）** → 走 **Track B 默认路由**（主线程起草 PROPOSAL 走起，见文首路由注）。
-- **命中升级判据（触 `contracts/**` / 跨系统结构性变更）或声明红队** → 交 **`/arch-change`**（Track A）。
+- **命中升级判据（触 `docs/contracts/**` / 跨系统结构性变更）或声明红队** → 交 **`/arch-change`**（Track A）。
 - **provenance 不足 / 其实是新设计 idea** → 不登记，交 **`/arch-change`**（新 idea 走 Track A）。
 - **是跨 Pod 周期性共性、应批量 retro** → 交 **`/loop-retro`**（其 triage 第 4 步同样产出 ARQ candidate，字段一致）。
 - **tech 域条目**：登记后工作本身交出去（`handoff` 字段写去向 + 移交触发）——账本存的是「已交 X 面、去向 Y、触发 Z」，不是「活在我这儿」。

@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "设备 ⇄ front 时序：KidPal direction-B WSS 网关",
+    "locale": "zh-CN",
+    "output": ".archify/sequence-device-front-20261010-122919/device-front-sequence.html",
+    "column_fit": "spread",
+    "animation": "none",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "dev",
+      "type": "external",
+      "label": "ESP32-S3 设备",
+      "sublabel": "固件 Application + WebsocketProtocol"
+    },
+    {
+      "id": "front",
+      "type": "backend",
+      "label": "front 网关",
+      "sublabel": "server/gateway/front/front_app.py · ws_gateway"
+    },
+    {
+      "id": "engine",
+      "type": "cloud",
+      "label": "小智引擎",
+      "sublabel": "ws://127.0.0.1:8010（ECS 容器）"
+    },
+    {
+      "id": "poll",
+      "type": "messagebus",
+      "label": "front 常驻轮询",
+      "sublabel": "reminder_poll_loop · 每分钟一拍"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 420,
+      "label": "① 建连与 hello 握手"
+    },
+    {
+      "from": 430,
+      "to": 620,
+      "label": "② 语音对话轮（opus 二进制双向）"
+    },
+    {
+      "from": 630,
+      "to": 770,
+      "label": "③ 显示中继与渲染回执"
+    },
+    {
+      "from": 780,
+      "to": 850,
+      "label": "④ front 机械自推"
+    },
+    {
+      "from": 862,
+      "to": 912,
+      "label": "⑤ 断开清理"
+    }
+  ],
+  "messages": [
+    {
+      "id": "ws-upgrade",
+      "from": "dev",
+      "to": "front",
+      "y": 175,
+      "label": "WSS upgrade：Bearer token + Device-Id / Client-Id / Protocol-Version 头",
+      "variant": "emphasis",
+      "note": "固件自 NVS settings 读 url/token/version 并 pin 自签 CA（websocket_protocol.cc:86-116）；front 在 HTTP upgrade 层常时比较鉴权，失败 403 且不 accept（front_app.py:969-975）"
+    },
+    {
+      "id": "accept",
+      "from": "front",
+      "to": "dev",
+      "y": 205,
+      "label": "鉴权通过 → accept()",
+      "variant": "return",
+      "note": "token 未设 = refuse-service（front_app.py:62、9-10）"
+    },
+    {
+      "id": "engine-connect",
+      "from": "front",
+      "to": "engine",
+      "y": 235,
+      "label": "connect 引擎 loopback ws（透传白名单头）",
+      "variant": "default",
+      "note": "引擎在 ECS 容器、不在本仓（front_app.py:62-63）；每连接生成不可复用 session_id，白名单头 authorization / device-id / client-id / protocol-version 原值透传（front_app.py:979、986-995）；引擎未起 → close 1011（front_app.py:1032-1034）"
+    },
+    {
+      "id": "schedule-connect-push",
+      "from": "front",
+      "to": "dev",
+      "y": 268,
+      "label": "建连推送：home upcoming mcp 帧",
+      "variant": "dashed",
+      "note": "课表三触发①（grid restore 开关门控）：schedule.md 缺失/损坏 → 零帧静默、不阻断建连（front_app.py:713-749、1009-1012）"
+    },
+    {
+      "id": "hello",
+      "from": "dev",
+      "to": "front",
+      "y": 300,
+      "label": "hello JSON：version + features.mcp + audio_params（opus/16kHz）",
+      "variant": "emphasis",
+      "note": "GetHelloMessage 组 {type:hello, transport:websocket, audio_params}（websocket_protocol.cc:239-262）；仅在需要音频通道时才建连（websocket_protocol.cc:26-29）"
+    },
+    {
+      "id": "hello-fwd",
+      "from": "front",
+      "to": "engine",
+      "y": 332,
+      "label": "hello 原样转发",
+      "variant": "default",
+      "note": "无 text 字段帧 verbatim 直通（front_app.py:522-523）"
+    },
+    {
+      "id": "server-hello",
+      "from": "engine",
+      "to": "front",
+      "y": 364,
+      "label": "server hello（session_id + audio_params）",
+      "variant": "default"
+    },
+    {
+      "id": "server-hello-fwd",
+      "from": "front",
+      "to": "dev",
+      "y": 396,
+      "label": "server hello 原样转发",
+      "variant": "return",
+      "note": "ParseServerHello 存 session_id 与下行采样率；10s 未收到 = SERVER_TIMEOUT（websocket_protocol.cc:225-230、264-290）"
+    },
+    {
+      "id": "audio-up",
+      "from": "dev",
+      "to": "front",
+      "y": 450,
+      "label": "上行 opus 音频帧（v2/v3 二进制封装）",
+      "variant": "emphasis",
+      "note": "SendAudio 按版本封装 BinaryProtocol2/3（websocket_protocol.cc:31-61）"
+    },
+    {
+      "id": "audio-up-fwd",
+      "from": "front",
+      "to": "engine",
+      "y": 480,
+      "label": "二进制原样转发",
+      "variant": "default",
+      "note": "front 不解音频、不注入音频帧（front_app.py:552-553）"
+    },
+    {
+      "id": "stt-down",
+      "from": "engine",
+      "to": "front",
+      "y": 510,
+      "label": "stt 帧 {type:stt, text}",
+      "variant": "default",
+      "note": "front 旁路喂故事累积器（累积态才入库，wire 转发不变，front_app.py:494-497）"
+    },
+    {
+      "id": "stt-fwd",
+      "from": "front",
+      "to": "dev",
+      "y": 540,
+      "label": "stt 原样转发",
+      "variant": "return",
+      "note": "设备回显用户话 + 场景单源切思考态（application.cc:690-714）"
+    },
+    {
+      "id": "audio-down",
+      "from": "engine",
+      "to": "front",
+      "y": 570,
+      "label": "下行 opus 音频二进制帧",
+      "variant": "default"
+    },
+    {
+      "id": "audio-down-fwd",
+      "from": "front",
+      "to": "dev",
+      "y": 600,
+      "label": "二进制原样转发",
+      "variant": "return",
+      "note": "设备 on_incoming_audio_ 按 v2/v3 解封喂解码链（websocket_protocol.cc:114-180）"
+    },
+    {
+      "id": "llm-text-down",
+      "from": "engine",
+      "to": "front",
+      "y": 650,
+      "label": "tts/llm 文字帧（含 display 围栏）",
+      "variant": "default"
+    },
+    {
+      "id": "speech-fwd",
+      "from": "front",
+      "to": "dev",
+      "y": 682,
+      "label": "剥围栏后语音文字沿原帧转发",
+      "variant": "return",
+      "note": "无围栏帧 verbatim 直通；strip_display_fences 纯语法切分、语音轨零残留（front_app.py:365-379、510-519）"
+    },
+    {
+      "id": "display-relay",
+      "from": "front",
+      "to": "dev",
+      "y": 714,
+      "label": "kidpal/display tools/call mcp 帧（每块一帧）",
+      "variant": "emphasis",
+      "note": "过 display_schema 机械门；脏块降级友好提示不透传；story_list/story_text 引擎侧来源一律降级（Q7 单源）；data 以 JSON 字符串下发 = 设备 wire 形状（front_app.py:388-437、520-521）"
+    },
+    {
+      "id": "receipt-up",
+      "from": "dev",
+      "to": "front",
+      "y": 748,
+      "label": "渲染回执 {type:mcp, payload:ack:true}",
+      "variant": "security",
+      "note": "设备侧 McpServer::ParseMessage → DoToolCall → 渲染完成 EmitRenderReceipt（application.cc:722-726、mcp_server.cc:692-711，一 id 一回执）；front 侧 on_device_receipt → relay_ack 消费、提醒回执入队出队，只消费不重发（决策23，front_app.py:574-602）；「已受理 ack:false」同步帧不算送达确认（front_app.py:535-543）"
+    },
+    {
+      "id": "alert-push",
+      "from": "poll",
+      "to": "dev",
+      "y": 800,
+      "label": "到点提醒 kidpal/alert mcp 帧",
+      "variant": "dashed",
+      "note": "60s×3 重试窗口、超窗静默作废；经登记设备腿 _alert_legs 下发，无在线设备腿不排队攒历史（front_app.py:605-613、849-867）"
+    },
+    {
+      "id": "schedule-poll-push",
+      "from": "poll",
+      "to": "dev",
+      "y": 832,
+      "label": "课表 home upcoming（零点/marker 触发）",
+      "variant": "dashed",
+      "note": "提醒 + 课表 + 故事 120s 收尾同拍容错，单轮异常不杀循环（front_app.py:782-823、923-948）"
+    },
+    {
+      "id": "close",
+      "from": "dev",
+      "to": "front",
+      "y": 884,
+      "label": "断开（CloseAudioChannel → websocket_.reset）",
+      "variant": "default",
+      "note": "websocket_protocol.cc:81-83、201-206；front 侧随后注销设备腿 + StoryAccumulator.cancel(session_id)，未停录即断开的会话释放累积缓冲（front_app.py:1021-1031）"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "dev",
+      "from": 170,
+      "to": 890,
+      "type": "external"
+    },
+    {
+      "participant": "front",
+      "from": 170,
+      "to": 892,
+      "type": "backend"
+    },
+    {
+      "participant": "engine",
+      "from": 230,
+      "to": 890,
+      "type": "cloud"
+    },
+    {
+      "participant": "poll",
+      "from": 794,
+      "to": 840,
+      "type": "messagebus"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "鉴权与代理边界",
+      "items": [
+        "front 在 HTTP upgrade 层做常时比较 Bearer 鉴权，失败 403 且不 accept；token 未设 = refuse-service",
+        "建连后 front 是双泵代理：二进制双向原样转发，JSON 文本帧才按类型拦截 / 中继",
+        "设备私有控制帧（kidpal_session_ctx / kidpal_story_delete）由 front 整条消费，不下透引擎"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "显示中继链（契约 §1.5）",
+      "items": [
+        "引擎 LLM 文字里的 ```display 围栏由 front 剥离，语音轨零残留",
+        "每块过 display_schema 机械门后以 kidpal/display tools/call 下发，脏块降级友好提示、绝不透传",
+        "story_list / story_text 引擎侧来源一律降级——故事载荷单源在 front producer（Q7 收紧）"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "回执与机械自推",
+      "items": [
+        "设备渲染完成才回 ack:true JSON-RPC；「已受理 ack:false」不算送达确认",
+        "front 对回执只消费不重发（决策23）",
+        "home upcoming / 提醒 / 故事正文由 front 机械自推，不经引擎 relay"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 # KidPal 提醒三档阶梯配置 (TaskPackage 260829-schedule-reminder, 决策 20 / S-F1.4)
 
-# 本文件是三段阶梯时刻的**家**：纯服务端配置，随 server/deploy overlay 上 ECS（与
-# openclaw-schedule.config.yaml 同目录渲染面），由 OpenClaw 侧 cron 载荷脚本
+# 本文件是三段阶梯时刻的**家**：纯服务端配置，由 server/deploy/manifest.yaml 登记、
+# deploy.sh 直管消费位 /opt/kidpal/openclaw-reminder.config.yaml
+# （261013-gov-review-deploy-single-source-loop——原写「随 overlay 上 ECS」，该渲染
+# 落点非消费位，已废），由 OpenClaw 侧 cron 载荷脚本
 # server/deploy/openclaw-patch/reminder_schedule_lib.py 的 load_ladder_config 读取。
 #
 # 契约与红线（spec S-F1.4 明写、C 孪生档 RMD-A7 齿负向钉死）：

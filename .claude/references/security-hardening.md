@@ -4,7 +4,7 @@
 
 ## Review axes
 
-- Boundary validation: 所有系统边界输入用 zod/schema 校验，错误形态稳定。
+- Boundary validation: 所有系统边界输入做 schema 校验，错误形态稳定。
 - AuthN/AuthZ: 用户身份、角色、机会/租户/作用域权限被明确检查。
 - Data isolation: 查询和写入不能跨租户、跨 opportunity 或越过 scope。
 - Secrets: secret 只从受控环境读取，不进日志、响应、测试快照或事件 payload。

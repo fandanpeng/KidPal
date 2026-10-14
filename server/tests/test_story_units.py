@@ -236,5 +236,131 @@ class DisplayFloorUnits(unittest.TestCase):
         self.assertTrue(ds.validate_display({"view": "schedule", "data": {}})[0])
 
 
+class StripFinishWordsUnits(unittest.TestCase):
+    """归档正文剔尾随收尾词（plan §2 / SAO-A4）：只剥尾随、正文中间不误伤。"""
+
+    def test_trailing_words_stripped(self):
+        for tail in ("我说完了", "讲完啦", "说完了"):
+            self.assertEqual(
+                story.strip_trailing_finish_words(f"从前有一只小猫。{tail}"),
+                "从前有一只小猫。", tail)
+
+    def test_trailing_punctuation_after_word_stripped(self):
+        self.assertEqual(story.strip_trailing_finish_words("小猫回家了。我说完了。"),
+                         "小猫回家了。")
+
+    def test_middle_word_and_normal_text_untouched(self):
+        # 正文中间出现的收尾词不剥（不误伤叙述内容）
+        self.assertEqual(story.strip_trailing_finish_words("我说完了之后又讲了一段。"),
+                         "我说完了之后又讲了一段。")
+        self.assertEqual(story.strip_trailing_finish_words("从前有一只小猫去公园玩。"),
+                         "从前有一只小猫去公园玩。")
+
+    def test_non_str_passthrough(self):
+        self.assertIsNone(story.strip_trailing_finish_words(None))
+        self.assertEqual(story.strip_trailing_finish_words(""), "")
+
+
+class PendingStopUnits(unittest.TestCase):
+    """pending-stop 挂起态机（261001-m4-k3-story-archive-order）：mark/routing/超时/释放/
+    与 stop·cancel 互斥；stop(strip_finish) 剔词与默认零偏移。"""
+
+    def _acc(self, tag):
+        return story.StoryAccumulator(str(Path(tempfile.gettempdir()) / f"sao_ut_{tag}"))
+
+    def test_mark_pending_routing_not_chat_and_has_accum_false(self):
+        acc = self._acc("mark")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.mark_pending("s", now=t0)
+        self.assertEqual(acc.routing("s"), "pending_stop")   # SAO-A2 负锚：!= chat
+        self.assertNotEqual(acc.routing("s"), "chat")
+        self.assertFalse(acc.has_accum("s"))
+
+    def test_pending_timeout_boundary_and_exclusions(self):
+        acc = self._acc("tmo")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("p", now=t0)
+        acc.mark_pending("p", now=t0)
+        acc.start("a", now=t0)
+        acc.feed("a", "内容", now=t0)                 # accumulate（非 pending）
+        acc.feed("c", "闲聊", now=t0)                 # chat
+        self.assertNotIn("p", acc.pending_timed_out_sessions(t0 + timedelta(seconds=9)))
+        self.assertIn("p", acc.pending_timed_out_sessions(t0 + timedelta(seconds=10)))
+        at20 = acc.pending_timed_out_sessions(t0 + timedelta(seconds=20))
+        self.assertIn("p", at20)
+        self.assertNotIn("a", at20)                   # 非 pending 会话不返回
+        self.assertNotIn("c", at20)
+        self.assertEqual(acc.routing("p"), "pending_stop")  # 查询不改状态
+
+    def test_pending_timeout_s_override(self):
+        acc = self._acc("tmo2")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("p", now=t0)
+        acc.mark_pending("p", now=t0)
+        self.assertNotIn("p", acc.pending_timed_out_sessions(
+            t0 + timedelta(seconds=2), timeout_s=3))
+        self.assertIn("p", acc.pending_timed_out_sessions(
+            t0 + timedelta(seconds=3), timeout_s=3))
+
+    def test_mark_pending_idempotent_keeps_since(self):
+        acc = self._acc("idem")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.mark_pending("s", now=t0)
+        acc.mark_pending("s", now=t0 + timedelta(seconds=5))   # 重复不重置挂起时刻
+        self.assertNotIn("s", acc.pending_timed_out_sessions(t0 + timedelta(seconds=9)))
+        self.assertIn("s", acc.pending_timed_out_sessions(t0 + timedelta(seconds=10)))
+
+    def test_release_pending_resets_to_chat_and_idempotent(self):
+        acc = self._acc("rel")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.mark_pending("s", now=t0)
+        self.assertTrue(acc.release_pending("s"))
+        self.assertEqual(acc.routing("s"), "chat")     # SAO-A3②：释放回闲聊态
+        self.assertFalse(acc.release_pending("s"))     # 非 pending -> False
+
+    def test_pending_feed_accumulates_then_stop_archives_stripped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            acc = story.StoryAccumulator(tmp)
+            acc.start("s")
+            acc.mark_pending("s")
+            acc.feed("s", "从前有一只小猫。我说完了")   # pending 态仍进 accum（真机序）
+            self.assertTrue(acc.has_accum("s"))
+            rec = acc.stop("s", strip_finish=True)
+            self.assertIsInstance(rec, dict)
+            self.assertEqual(rec["text"], "从前有一只小猫。")   # 正文剔尾随收尾词
+            self.assertEqual(acc.routing("s"), "chat")          # stop 清 pending 挂起态
+            self.assertEqual(story.list_stories(tmp)["data"]["total"], 1)
+
+    def test_stop_default_does_not_strip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            acc = story.StoryAccumulator(tmp)
+            acc.start("s")
+            acc.feed("s", "从前有一只小猫。我说完了")
+            rec = acc.stop("s")                                  # 默认 strip_finish=False
+            self.assertEqual(rec["text"], "从前有一只小猫。我说完了")  # 零偏移
+
+    def test_stop_strip_to_empty_no_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            acc = story.StoryAccumulator(tmp)
+            acc.start("s")
+            acc.feed("s", "我说完了")                            # 整段只有收尾词
+            self.assertIsNone(acc.stop("s", strip_finish=True))  # 不写空故事
+            self.assertEqual(story.list_stories(tmp)["data"]["total"], 0)
+            self.assertEqual(acc.routing("s"), "chat")
+
+    def test_cancel_pending_releases_session(self):
+        acc = self._acc("cancel")
+        t0 = datetime(2026, 10, 1, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.mark_pending("s", now=t0)
+        acc.cancel("s", reason="test_discard")
+        self.assertNotIn("s", acc.active_sessions())            # 挂起态不泄漏
+        self.assertEqual(acc.routing("s"), "chat")
+        self.assertNotIn("s", acc.pending_timed_out_sessions(t0 + timedelta(seconds=60)))
+
+
 if __name__ == "__main__":
     unittest.main()

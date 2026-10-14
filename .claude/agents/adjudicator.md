@@ -60,7 +60,7 @@ model: opus
 | 「challenger 没提 canary,可能 spec 真没那问题。」 | 没重新派生 canary = 辩论浅,RED 重跑,不是放过。 |
 | 「触契约的我顺手判该改。」 | 你不批契约;标「需 architect-reviewer + 人」。 |
 | 「机械门没跑,引用看着没问题。」 | pass-oracle 第 4 关必须跑脚本,凭看不算。 |
-| 「harness 让我以文本返回制品。」 | 制品必须写盘、返回只给摘要;写盘受阻就 RED 退 moderator 报原文——文本返回使 moderator 成转写者,塌作者≠判官(卡点 D 实证:260729-portfolio-handoff flow retro)。 |
+| 「harness 让我以文本返回制品。」 | 制品必须写盘、返回只给摘要;写盘受阻就 RED 退 moderator 报原文——文本返回使 moderator 成转写者,塌作者≠判官。 |
 
 ## Red Flags / 必须停下升级
 

@@ -104,3 +104,184 @@
 - **commit 冻结批**（分支 `dev/260915-m1-k1a-key-layer-dispatch`，未 push/未 merge）：实现四件（`story.py` / `display_schema.py` / `front_app.py` / 新增 `server/tests/test_story_units.py`）+ closeout 制品 + pod 簿记面（`evidence/`、`verifier-evidence/`、`verify-runs.jsonl`、`pod-events.jsonl`）+ gate evidence C1/C4 注记 + 本 progress 节；`changes-index.mjs --upsert 260924-m4-k1-story-cloud-link` 钉 dev INDEX 单行（生成件勿手改）。
 - **结构性发现去向**：scope-map integrator allow 与 AGENTS.md「docs 平铺」不一致（C4 类义务结构性不可直达）→ review-packet Findings #1，去向 = loop-retro / human（**不自登记 ARQ、不动 `docs/crq/**`**）。
 - **等待 supervisor 机械合并门**：integrator 不 push、不 merge；supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后由 planner 主线程 `merge-driver --pod` 本地合并（可回滚）。
+
+## 2026-09-24 · K1 合并完成（§10e 契约包人合，planner 代 merge-driver 簿记）
+
+- **supervisor 机械闸 = ESCALATE（riskTier critical）**：G6 从合并批 diff 重派生——含契约落地批（`3a9ff24`）触 `docs/contracts/**` critical 面 → critical 一律停人（向严设计；final 九闸绿 + evidenceComplete 在 verdict 与 r2 bearing fact）。human 批准本地 main 合并（pod-events `cac7682a`，approve-escalated-merge）。
+- **前置升级闸结构性 BLOCK → §10e 人合通道**：通用条 1 的 `hasContractGateEvidence` 证据位未接入（脚本自注「恒 false 向严」）→ 契约面 diff 恒 BLOCK、无机械放行口；planner 落 escalation `988f78e9`（gate-tooling-bug）升 human 三通道，human 裁 = B（一次性人合）。执行时发现 **main 侧同日已落 `pod-coordination §10e` 契约包人合 runbook**（gov 批 `11fb5c1`，OQ-3=(a) human 批准）——人合 = 契约包**唯一合法通道、非流程跳过**，裁定实质与 runbook 同构，按 §10e 四步执行。
+- **§10e 四步留痕**：① 预检 = main 新增 5 commit（23aed35..b35d3ed）与本批**零路径相交**（comm 实测）+ 契约门凭据在案（CCP §5 HUMAN_APPROVED / CDQ 三行 LANDED / gate evidence LANDED）；② 批准锚 pod-events `6faf8b7b`（`approve-contract-merge-manual`，§10e 首立专用 decision 值）+ escalation `988f78e9` resolved（`c2a73805`，留根项触发事实同录）；③ `git merge --no-ff ed5af0e` 入本地 main → **merge commit `757ccb3`**（双亲 b35d3ed + ed5af0e，message 注明人合 + 双批准锚 + 「remote push 归 human」）；④ Step 5b 三件代记 = merge-completed 事件 `e12a8b94`（payload 注「非 merge-driver：契约包人合（§10e）」）+ changes-index（`--upsert` 对 dev lane fail-loud = §10e-4b 与脚本 lane 语义不符**实测留痕**，改走 dev lane 正典全量重建 devCount 43）+ merge message 锚（③）。
+- **并行工作树处置（human 授权留痕）**：main 工作树有 V5 会话未提交 hook 再生件（`delivery/workstreams/INDEX.md`/`index.jsonl`，与本批 diff 同路径）→ git 拒 merge；human AskUserQuestion 授权后代 checkout 还原两件再生件（V5 未跟踪面零触碰；hook 下次编辑 workstreams/ 自动重建 union 含 ui-v5-align 行）。§10e 步骤 1 预检增补素材：应加「main 工作树净度」一条。
+- **board/roadmap 收口**：pod status = **merged**（portfolio-reconcile 单一写者，43 pods）；render-roadmap ② 节重渲染，**M4-K1 = achieved**（渲染面 K1a/K1b 拆分显示）。arch INDEX 计数漂移（main committed 41 vs 重建派生 43）= arch lane 陈旧面，按「各 lane 只写自己 INDEX」纪律已还原不代笔、向 human 明示。
+- **§10e 留根项触发事实成立**（ARQ-260923-contract-merge-deadpath 建议①「runbook 实走摩擦 ≥1 次实测」）：三处摩擦——池侧旧 reference 无 §10e 指针（BLOCK 输出指针 main 侧已修、池侧随本次 ff 到位）/ §10e-4b `--upsert` lane 语义不符 / 常驻分支落后 main 时 runbook 不可见（多线同日并行时差）。详 pod-retro §八；归 human / loop-retro 立项评估。
+- **合并入 main 面**：实现四件 + 冻结 26 齿 + notes（含 §9 §6 修订记录）+ mutation-replay 证据 + closeout 两件 + gate evidence（**C1 done / C4 pending 待 human spec 批**，delta 五 hunk 在 docs-delta §4）+ 治理面五 commit（ops-record / 拆包 / 派生 / 契约落地 / launch-prep）随批入 main。**K1 完成判据齐**：landing 完成 + verifier 绿 + retro 齐（含 §八合并门追记）。待 human：remote push / C4 spec 批（ARQ-260918 四处可搭载）/ milestones M4 行 state 翻 in_delivery / K2 launch 时点裁量。
+
+## 2026-09-28 · 止血包 260928-story-connect-push-defer integrator 收口（Lite，单点摘除建连即推）
+
+- **scoped verify round 3**：`verifier-evidence/rounds/r3.json`（bearing、ok:true、observedGateExit=0）**七闸全绿**（taskpackage-required / firmware-build〔真编译 build-pass、firmware 零触碰〕/ contract-lint / acceptance-coverage〔FIX-A1 functional、FIX-A2 structural〕/ mutation-check / docs-sync / security）。轮次史如实：r1 红（taskpackage-required——contractRefs 空，finalize 补正填 §1.3③）→ r2 红（acceptance-coverage——FIX-A2 structural 标记形态，补正2）→ r3 全绿；两轮红均 TaskPackage 元数据口径、非实现/齿面红。
+- **全量复跑**：`python -m pytest -q --import-mode=importlib -m "not live" server/tests server/acceptance` → **`193 passed, 4 deselected, 2 subtests passed in 2.17s`**（exit 0）。红→绿账 = 冻齿态 1F/192P（唯一红 = FIX-A1 设计态红）→ 193P/0F（192→193 即 FIX-A1 一齿）。冻结件 sha256 `78c4e1ea…58457`（@73b5d3d）只读未动。
+- **实现面**：`server/gateway/front/front_app.py` 单文件 **+7/−6**——摘除 ws_gateway 建连即推 `story_list` 调用点（三时点①），原位注释留根因 + human 方向锚 `b036f554` + ①归 K3；`_push_story_list` 本体与②③调用点、wire 形状零变化。detect_changes（since=73b5d3d）：seed_symbols=1、impacted_total=1（新负锚齿自身），blast radius 零既有符号。
+- **closeout 两件落 `delivery/changes/dev/260928-story-connect-push-defer/`**：`docs-delta.md`（核心义务 = **K1 docs-delta §4 H1「三时点推送（WS 建连/归档后/删除后）」supersession 注记 + §5.1.2 H2「三时点自推」连带短语 + K1 review-packet 未覆盖面第 2 条（建连时点①）闭环申报；arch §5.2④ 修订后建议措辞以 patch 形态成文（现役两时点 + ①归 K3 重裁），供 C4 human spec 批先替换 K1 件新文再 apply——K1 件不改写**）+ `review-packet.md`（demo 对账 = 一致；未覆盖面 5 条含「设备侧实际停弹页面 = 真机复验项归 K3」明写 + none 项 = 跨子系统 e2e/correlationId）；`closeout-check.mjs` 只读 exit 0。
+- **commit 冻结批**（分支现 HEAD 起）：实现一件 + closeout 两件 + 本包 pod 簿记面（taskpackage.json〔含 planner finalize 补正×2〕/ pod-events.jsonl / verifier-evidence/ r1-r3 / evidence/ / verify-runs.jsonl + current/taskpackage.json 投影对）；**排除他会话脏件 5 面**（.changes-index-state.json / arch/INDEX.md / 260926-arch-review 目录 / TECH-260928 crq 件 / current/verdict.json——不触碰不 stage 不还原）。
+- **changes-index**：无参全量重建（dev lane 正典路径；`--upsert` 为 arch lane 专属）——本包 dev INDEX 行在案即达成；arch/INDEX.md 与 .changes-index-state.json 若被重建波及**维持不 commit**（他会话纠缠面，如实申报）。
+- **等待 supervisor 机械合并门**：supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并；真机复验（设备侧停弹页面）归 M4-K3 设备轮。
+
+## 2026-09-28 · 止血包生产部署（合并前真机验证，human 指令「先部署，我测试一下」锚 766df538）
+
+- **部署面**：ECS `kidpal-front.service`（/opt/kidpal/front，uvicorn wss:8000）。远端此前为混装态（front_app 含 m4-k1 建连即推、story.py/display_schema 疑 m3 期旧版）——本次按**分支被测一致态**（193P/0F，HEAD 8ca0e85）整体同步 5 件：`gateway/story.py`、`gateway/display_schema.py`、`gateway/schedule.py`、`gateway/schedule_push.py`、`front/front_app.py`（md5 逐一与仓内比对一致；schedule 两件 = school-start 修复 545aa7a 随批就位）。远端原件备份 `.bak-260928-story-fix`。
+- **重启核验**：systemctl restart → active，Uvicorn https://0.0.0.0:8000 监听在位，启动日志零 import 错误（2026-09-28 13:18 CST）。
+- **部署机制注记**：Windows 命令行 32KB 上限 → base64 分块（20KB/块）经 ssh_helper 上传；story.py 首传因超限静默失败，分块后成功（md5 校验兜底抓到）。
+- **合并门状态**：supervisor 机械闸 ESCALATE（high：all-mock 启发式标定错配嫌疑，verdict 落仓 3f63b0b）→ human 裁「先部署测后裁」→ 合并保持 blocked 待真机结论。
+
+## 2026-09-29 · K2 launch prep（主线程 skill：kidpal-pod-launch-prep；launch 由 human 执行）
+
+- **调度判定**：本批 = K2 单包——K1 已 merged（2026-09-24，dependsOn 实存）；K3 dependsOn K1+K2、K2 未 merged → K3 不可入批（依赖图说了算，不硬凑并行）。perf-k1 树（C:/AI/KidPal-pod-perf-k1-roundtrip-latency，分支 dev/260924-perf-k1-roundtrip-latency）分支未入 main 且 board 无对应在途包——来历待核，本批不复用，留 human（遗留项）。
+- **机械门**：`portfolio-reconcile --check-launch` ok:true / blocking 空 / warn 空（base ref = `base/m4-star-notebook` 随本批 ff 快进至 5575a23，仍含重拆批 d2b331c 全部拆包制品；本包相关 launchPreconditions 5 verified / 0 pending——LP7 UI-ready 含其中，P3 五面 PNG 在盘核过 + 重拆门 1 已裁 uiux L2 成立）；`settings-lint.mjs` 0 RED / 0 WARN。
+- **双面基线重锚 @ 5575a23（本树实测；launch 批仅触 delivery/ 治理面，面域差异判停预期零差异）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **117 passed / 0 failed / 4 deselected, 2 subtests passed**（全套 offline 含 server/tests = 193 passed 同日佐证，与 defer 包 193 零偏移）。面域 = server；锚 SHA = 5575a23。零红。旧锚 80 passed @ 5e862d0 因 K1/defer 批新齿全绿而偏移，作废。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **107 Tests / 0 Failures / 0 Ignored，exit 0**。面域 = firmware；锚 SHA = 5575a23。零红。旧锚 103T0F @ 5e862d0 作废（char-window-v5-trim / char-window-key-triggered-play 等固件批新增齿全绿）。
+- **树与环境**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K1 merged → 直接续跑零复位）；常驻分支 dev/260915-m1-k1a-key-layer-dispatch @ 5575a23 = main HEAD、tracked 净 + untracked 零残留（交接卫生过）；managed_components 软链在位 + host build ELF 热缓存保住。图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 强制刷新（18296 节点 / 49896 边与刷新前一致 = 已最新；parse_partial 102 件 = 既有 best-effort 信号非新增；skipped 0）。
+- **board 预填**：260924-m4-k2-p3-star-notebook-ui → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/launch-card.md`（五要素齐 + intake 特别注意：契约三触点纯消费零改 / story_page.h 旧 FROZEN 头注退役勿误守 / 拆包侧 brief 撤回 planner Step 7 自产）。
+- **遗留 human 项**：① launch 由 human 在常驻树自跑（命令行两形态见启动卡第五要素；本 prep 会话占用树内会话位，launch 前先收本会话）；② perf-k1 树来历待核（分支 dev/260924-perf-k1-roundtrip-latency 未入 main、board 无对应在途包——留池 or 复位归 human 裁）；③ milestones.jsonl M4 行 state 收口时点沿 K1 遗留同批裁量。
+
+## 2026-09-30 · K2 integrator 收口（final r4 十闸全绿 → closeout 制品 → commit 冻结）
+
+- **影响面圈定终验（final 相位两步走）**：① 圈定 = detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since=base/m4-star-notebook：changed_files 32 / seed_symbols 163 / impacted 34 全在 firmware/main）∪ impactedTestsSeed 合成 test-scope 清单落 `delivery/taskpackages/260924-m4-k2-p3-star-notebook-ui/test-scope-final-r4.txt`（14 现役测试文件 + archive 排除留痕；正常圈定路径非降级）；② final bearing verification = `verify.mjs --evidence-mode=round --phase=final --scope-file <清单> --round 4 --invocation-id 2322f6f7-2608-40c7-88e3-de91b0f1ea73` → **r4 fact ok:true 十闸全绿**（8 scoped + unit/acceptance full 档求交），`verifier-evidence-check.mjs` → `{"ok":true,"factOk":true}` exit 0。
+- **host 全量回归（真实退出码）**：`wsl espidf_wsl.sh build && ./build/host_infra_test.elf` → **128 Tests / 0 Failures / 0 Ignored，EXIT_CODE=0**（基线 107T0F @ 5575a23 + 新齿 21 = acceptance 13 + unit 8，既有齿零偏移）；device build 闸过（`xiaozhi.bin` 0x310b20 / 余 11%）；mutation 13/13（B1 摘源清单敏感路径 + tofu 遮蔽旁注如实）。
+- **closeout 两件落 `delivery/changes/dev/260924-m4-k2-p3-star-notebook-ui/`**：`docs-delta.md`（spec patch 形态七 hunk：requirements 版本行 v1.61 / F2 对账块四项销账 / §2.3 键位对账 P3 半销账 + 门1 F7⑤点名 / AC3 双指令清扫（门1 F1）/ 变更记录行；arch §5.3 story_page 现状行 + §5.5.4 改名对账销账——基线 = c735062 落地后现文）+ `review-packet.md`（demo 对账 = 一致 + 未覆盖面 9 条 + 真机目测半 deferred 挂 K3 声明 + UI 文本证据 + pod-events 交叉引用 12 事件 + minimal 债务 5 处全登记 + Findings 3 NIT 零 hard-violation）。`closeout-check --update-index` ok:true（advisory 3 条：verdict/verification 按 SSOT advisory 不晋升包目录〔r4 fact 承载〕/ pod-retro 归 planner 收尾相位 / loop-retro 阈值触发归主线程）。
+- **gate evidence 跨包条件代落**：K1 包 `architecture-gate-evidence.md §6` **C2 → done**（SPV2-A7/A8/B3 证据）+ **C3 → K2 半 done / K3 live 半 pending** 注记（先例 = K1 integrator 对 C1/C4 同路径）。
+- **changes-index**：无参全量重建（dev lane 正典路径）——本包行在案（closed，devCount 48）；`arch/INDEX.md` 重建波及维持不 commit（他 lane 纠缠面，defer 包先例）。
+- **commit 冻结批**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：实现 16 tracked 文件（+1635/−513）+ 新齿 2 件 + closeout 两件 + gate evidence C2/C3 + pod 簿记面（taskpackage.json / pod-events.jsonl / verifier-evidence r1–r4 / verify-runs.jsonl / test-scope 清单 / mutation .md / 双 brief）+ current/ 投影四件 + dev INDEX + 本 progress 节。
+- **遗留**：① spec 批七 hunk 待 human 逐字过目落地（合并后，ARQ-260918 剩余处可同批）；② milestones M4 行 state 沿 K1 遗留同批裁量；③ 真机目测半 + 手感 + wire 真发 + 时点①重裁归 K3 设备轮；④ 代存 mutation .md 投影陈旧（Findings #1，planner 择机同步）。
+- **等待 supervisor 机械合并门**：integrator 不 push、不 merge；supervisor APPROVE + 前置升级闸放行后由 planner 主线程 `merge-driver --pod` 本地合并。
+
+## 2026-09-30 · K3 launch prep（主线程 skill：kidpal-pod-launch-prep；launch 由 human 指令代跑）
+
+- **调度判定**：本批 = K3 单包接力棒——dependsOn K1+K2 均 merged（K2 2026-09-30T00:36 入 main，merge commit ddf2492）；mergeOrder 40 升序合法；WIP 余量足；依赖图说了算不硬凑并行。
+- **机械门**：`portfolio-reconcile --check-launch` ok:true / blocking 空 / warn 空（base ref = `base/m4-star-notebook`）；`settings-lint.mjs` 3 files / 0 RED / 0 WARN。launchPreconditions 4 verified / 1 pending（LP4 = 真机不撞车 + live 轮 human 在场持板——live 确认轮前置项，设备轮前核对，不阻 host/实现相位）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K2 merged → 续跑零复位）；发现常驻分支与 main 分叉（两侧各 1 笔 K2 后簿记 commit，均为 pod-events.jsonl 单行追加）→ rebase main 同步（2c7343a = main ddd3875 + 簿记 1 笔，rebase 干净无冲突）；tracked 净 + untracked 零残留；managed_components 软链在位 + host build 热缓存保住（ninja no work to do）。
+- **双面基线锚**：
+  - server 面：**引用既有锚**——launch 批至 HEAD 对 `server/` 零差异（`git diff --quiet 5575a23 HEAD -- server` 实测），引 K2 prep 锚行：117 passed / 0 failed / 4 deselected（server/acceptance；全套 offline 193P 同日佐证）@ 5575a23，面域 = server，命令见 K2 prep 锚行。零红。
+  - firmware host 面：重锚实测——`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **128 Tests / 0 Failures / 0 Ignored，exit 0**（2026-09-30，本树 HEAD 2c7343a 实测；面域 = firmware；与 K2 final r4 128T0F 一致 = K2 merged 后零偏移）。零红。旧锚 107T0F @ 5575a23 因 K2 新齿 21 入账作废。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新（18414 节点 / 50277 边，含 K2 增量；skipped 0；parse_partial 104 = 既有 best-effort 信号非新增）。
+- **board 预填**：260924-m4-k3-record-session-live → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch（44 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/260924-m4-k3-record-session-live/launch-card.md`（五要素齐 + intake 特别注意七条：时点①重裁必答题 / K2 冻结面零偏移 / prompt v7 版本化演进 / 板端零新增计时器 / KEY 长按语义反转负锚 / 拆包 brief 撤回 / LP4 live 轮 human 在场）。
+- **遗留 human 项**：① milestones.jsonl M4 行 state 收口时点沿 K1/K2 遗留同批裁量；② perf-k1 树来历待核（沿 K2 prep 遗留）；③ live 确认轮真机时点由 human 裁量（单真机不撞车核对归设备轮前）。
+
+## 2026-09-30 · K3 合并 + 部署 + 真机初测处置（planner 代记；human 指令「立马执行烧录和部署」授权，pod-events 260b1f48）
+
+- **合并**：supervisor 机械闸 ESCALATE（high riskTier 必升面）→ human 批（91bb853b 五要素凭据）→ 升级闸两拦两解（①人批事件 actor 归属修正 ②review-packet :95 否定句与契约字面同行共现触 T5 扫描假阳性——gate-tooling-bug 第三例 e3395f1a，措辞修正 69be42d 解除）→ merge-driver 本地合并 `ae480ec`，main tip `4cb77a8`。M4K3-DC-1（P3 冷浏览无列表数据源）human 裁接受 dropped。
+- **根因判定（真机初测两问题）**：human 初测「我要讲故事只有录音波浪 / 录完 P3 无故事」= **K1/K2/K3 三包零烧录零部署**（板子跑 M3 期旧固件、ECS 服务旧代码），非新代码缺陷；live 轮照 LP4 顺延。
+- **烧录**：全量 flash（bootloader/partition/ota_data/app@0x20000/art@0x780000/generated_assets@0x800000，NVS 不擦），bin = 136T0F 构建产物（3,215,584 B）；启动观测零 RE-ENUM + kidpal render home 正常。
+- **ECS 部署**：front_app.py（ctx 条件推送）+ apply-xiaozhi-overlay.sh + prompt v8 + provider.config.yaml 四件 SFTP（md5 逐件核对一致，远端备份 .bak-260930-m4k3-deploy）；overlay 重渲（v8 prompt 注入 .config.yaml，「帮我记下来」双指令在文）；kidpal-front 重启 active + 0.0.0.0:8000 在听；引擎容器重启后设备 23:31 重连、display-strip 补丁标记在役。
+- **部署面摩擦留根**：MSYS 路径转换把首传四件改写进远端伪路径（MSYS_NO_PATHCONV=1 重传解除，误写面已清）；c:/tmp 写入被 enforce-scope 拦（改用现成 ssh_put/ecs_put 工具链，未新写脚本）；SFTP 子系统路径受限（ecs_put base64-over-exec 既有解）。
+- **live 轮重点目击项（部署后新增一条）**：触发词入口（非 P3 页说「我要讲故事」）的记录语境置位/演出切页与 P3 KEY 入口不同源——host 齿为纯逻辑决策表、真机沿未目击，初测复验时重点看。
+
+## 2026-10-01 · K3-repair launch prep（主线程 skill：kidpal-pod-launch-prep；launch 面补齐）
+
+- **调度判定**：本批 = Package A 单包（纯固件修复）——前序 K3 包（260924-m4-k3-record-session-live）已 merged（ae480ec，main tip 4cb77a8）；本包为 K3 落地后 2026-10-01 真机冒烟暴露的四缺陷止血（D1 列表无消费方 / D2 层栈让位 / D4a 键路由毁稿 / D4b 悬垂 panic），dependsOn 实存、mergeOrder 42（K3=40、defer=41 后）。Package B（D3-甲，跨面）受 spec/contract anchors 门控暂停；Package C（openclaw model_name 冲刷）独立小包，未 launch。
+- **机械门**：`portfolio-reconcile --check-launch 261001-m4-k3-record-session-live-repair --base-ref base/m4-star-notebook` ok:true / blocking 空 / warn 空（base ref 随本批 ff 至 8ea3bce = main + 本批拆包制品 commit）；launchPreconditions 4 verified / 0 pending（另 3 条属其他包、折叠不逐条列）。`settings-lint.mjs` 3 files / 0 RED / 0 WARN。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 接力棒复用（K3 merged → 续跑零复位）；常驻分支与 main 分叉（各 2 笔，均 m4-k3 pod-events/progress 簿记）→ `git rebase main` 同步（干净无冲突，HEAD 72ce58f）；tracked 净 + untracked 零残留；managed_components 软链在位 + host build 热缓存保住（ninja no work to do）。
+- **双面基线锚 @ 72ce58f（本树实测）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" "C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance"` → **127 passed / 0 failed / 4 deselected, 2 subtests passed**（@72ce58f；面域 = server）。零红。旧锚 117P @ 5575a23 因 K3 新齿 10 入账作废。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **136 Tests / 0 Failures / 0 Ignored，exit 0**（@72ce58f；面域 = firmware）。零红。旧锚 128T0F @ 2c7343a 作废（K3 新齿 8 入账）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 复用树沿用（index_status ready，18553 节点 / 50753 边，parse_partial 105 = 既有 best-effort 信号；本批只触 delivery/ 治理面 + .claude/skills/，均在索引排除面内 → 无增量，未强制重刷）。
+- **board 预填**：261001-m4-k3-record-session-live-repair → queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 42（45 pods，mergeToken holder=none）。
+- **启动卡**：已落 `delivery/taskpackages/261001-m4-k3-record-session-live-repair/launch-card.md`（五要素齐 + intake 特别注意五条：本包纯固件四缺陷 D3/逐句回显不在验收面 / D2-D4a 同一次决策一致选定 / D4b 三修并行 / 契约零改 + Package C 独立 / live 轮 human 持板）。
+- **本批 commit**（分支 dev/260915-m1-k1a-key-layer-dispatch，未 push/未 merge）：72ce58f（kidpal-ecs-gateway skill 记录 OpenClaw 400 根因，human 裁随本批）+ cdc04c5（spine + Package A 三件 + Package C 计划）；专用 base ref `base/m4-star-notebook` ff 至 8ea3bce（main 4cb77a8 + 制品 cherry-pick commit）。
+- **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族，单真机不撞车）；② Package B（D3-甲）受 spec/contract anchors 门控，Track A 定形后另立包；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量；④ perf-k1 树来历待核（沿 K2/K3 遗留）。
+
+## 2026-10-01 · K3-repair（Package A）integrator closeout（host 面绿；真机轮 deferred）
+
+- **本批**：261001-m4-k3-record-session-live-repair = K3 落地后真机 P3 冒烟四缺陷止血（D1 列表无消费方 / D2 层栈让位 / D4a 键路由毁稿 / D4b 悬垂 panic）；纯固件面（`firmware/main/**` 7 文件 +230/−17 + 新齿 3 件）；契约/spec/服务端零改。分支 dev/260915-m1-k1a-key-layer-dispatch（未 push/未 merge）。
+- **影响面圈定终验**（Step 4）：detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since `base/m4-star-notebook`，merge_base 4cb77a8；changed_files 26 / impacted 7 节点[firmware/main]）∪ impactedTestsSeed → 清单 `delivery/taskpackages/261001-m4-k3-record-session-live-repair/test-scope-final-r2.txt`。**scoped r1 全绿（8 闸）+ final r2 全绿（10 闸含 full unit/acceptance）**，`verifier-evidence-check` → `{"ok":true,"factOk":true}`。
+- **真跑 host 齿**：`145 Tests / 0 Failures / 0 Ignored，exit 0`（RSR-A1..A5 + RSR-C1 逐齿 PASS，K1/K2/K3 既有齿零回归）。5 条真实变异逐 AC 敏感（真红→真绿）。
+- **docs-delta**：requirements/契约/spec 零自改；检出两处 spec 面归属他项（§5.2④ 机制对账归 Package B / §5.2④① consumer 补正随 K3 pending delta）。
+- **未覆盖面申报**：真机四窗目击 E3 + AFE VAD 真沿 + 120s 静默归档 = **设备轮盲区，本相位 deferred，如实申报**；逐句回显/D3 = Package B；server 面 N/A。
+- **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；supervisor APPROVE/ESCALATE-human 后由 planner 主线程 `merge-driver --pod` 本地合并。
+- **遗留 human 项**：① live 真机复验矩阵四窗须 human 在场持板（LP4 同族）；② §5.2④① consumer 补正文本与 K3 pending delta 同批交 human spec 批；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量。
+
+## 2026-10-01 · K3-repair（Package A）integrator **re-closeout**（D2 真机诊断定死后重收）
+
+- **背景**：首收 5950bb7 后 supervisor 机械闸 ESCALATE（声明 high / 实 diffTier low）→ human 裁「先真机复验再裁」（pod-events `ef280e1a`），保持 5950bb7 冻结、烧本分支跑 K3R-E3。
+- **D2 走了两轮弯路后由真机日志定死**：真根因 = **键帽派发漏 `KSTORY_PAGE_RECORDING` 分支**（`lcd_display.cc` `kidpal_keybar_sync_locked`，K2 留给 K3 未落）+ **REC 指示相位算术恒 off**（`story_page.c` `(rec_seconds*1000/250)%2 ≡ 0`）；前两轮攻「VOICE 覆盖层驻留」为弯路（VOICE 层 round-1 即已让位，`voice_end: top=2`）。补严缝 [R4]/[R5] 经 architect 判对 D2 no-op、作历史留根（齿 RSR-A6/A7 冻结）。
+- **真机验收**：human 目视 v6 通过（底栏「收尾/结束」+ `00:14` + 常亮黑 REC 方块）；D4a `story_key stop_rec archive_pend=1`、D4b 零 panic（早前已过）；D1 推送到达后可显示已证（r6 `count=2`）。证据 `c:/tmp/serial-live-repair-r{2..6}.log`；pod-events `e2ce7911`（D2 定死过）/ `64a4012d`（UI 还原度出包）/ `97c36553`（D1 冷浏览 dropped 复裁接受）。
+- **re-closeout 验证**：影响面圈定 project 同上（changed_files 39 / impacted 45 节点）→ `test-scope-final-r4.txt`；**scoped r3 + final r4 全绿（10 闸）**，`verifier-evidence-check` `{"ok":true,"factOk":true}`；真跑 host 齿 **147 Tests / 0 Failures**（RSR-A1..A7 + RSR-C1）。实现面 = 8 改（含 `lcd_display.cc`，planner 已扩 changeManifest）+ 新齿 3 件。
+- **未覆盖面**：D2 派发点 `lcd_display.cc` **host 不可编 → 无法机判**，architect 建议升「设备轮硬门」（治理面改动，**归 human 裁**）；D1 冷浏览 dropped（human 接受）；录音页 UI 还原度出包；逐句回显 + D3（原「manual 聆听产不出 stt 帧」被真机反驳，真缺口在 front story 累积/回传接线）= Package B。
+- **等待 supervisor 机械合并门**：stale `supervisor-verdict.json`（45ddc85 落，验证旧码）须 planner 在 re-closeout 后重跑 `supervisor-verdict-gate.mjs` 覆盖；`riskTier=high` → 必产 ESCALATE，合并须 human 批。
+
+## 2026-10-01 · B1/C launch prep（归档时序包 + model_name 冲刷包）
+
+- **调度判定**：两包均无 `dependsOn`、各为单 owning 包，可即时开工。顺序 = **B1 `261001-m4-k3-story-archive-order`（mergeOrder 43，workstream m4-star-notebook）先行 → C `261001-openclaw-model-name-overlay-drift`（mergeOrder 44，独立变更、无 workstream）其后**。两包均预填**同一常驻树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`**（一树一会话 → 串行跑，沿 M1–M4 单常驻树接力棒形态）；若要并行，C 可移至空闲树 `C:/AI/KidPal-pod-perf-k1l-roundtrip-latency`（**建/移树决策归 human**，本批未动）。
+- **launch 机械门**：`node .claude/scripts/portfolio-reconcile.mjs --check-launch <changeId> --base-ref base/m4-star-notebook`——首跑 blocking = 缺 `taskpackage.json`，补齐（含 input-brief 双份 + `docsOwner`）后**两包复跑绿**。`settings-lint.mjs` 未跑（本批未改 settings）。
+- **基线锚（producer 五要素）** @**60744cb**（面域分别记）：
+  - **server 面**：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **127 passed / 0 failed / 4 deselected / 2 subtests passed，exit 0**。
+  - **firmware host 面**：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **147 Tests / 0 Failures / 0 Ignored，exit 0**。旧锚 136T0F @72ce58f 因 K3-repair 落地有固件差异而作废（差异判停：`git diff --quiet 72ce58f HEAD -- firmware` 非空）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 复用树沿用（无需重建）。
+- **board 预填**：两包 `status=queued` + `worktreePath` + `mergeOrder 43/44`（47 pods，mergeToken holder=none）。
+- **启动卡**：`delivery/taskpackages/261001-m4-k3-story-archive-order/launch-card.md` 与 `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/launch-card.md`（五要素齐）。
+- **本批制品**：B1（plan.md + taskpackage.json + input-brief 双份 + 启动卡）、C（plan.md + taskpackage.json + input-brief 双份 + 启动卡 + 上游 CRQ `docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md`）。
+- **遗留 human 项**：① B1 转绿后真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章）；② 并行与否（C 是否移至 perf 树）；③ B1 须改写已 merged 包（K1）冻结验收的时序假设——改冻结 oracle 的签字走 dev-loop 常规人门。
+
+## 2026-10-01 · B1（story-archive-order）integrator closeout（host/验收面绿；真机轮 deferred）
+
+- **本批**：261001-m4-k3-story-archive-order = 「归档早于转写」顺序缺陷修复（缺 261001 真机 r2 实录——listen/state=stop 上行帧先到、转写 stt 1.7s 后才到；旧实现于 stop 帧立即 `acc.stop()`，累积必空 → 返 None + 打回 chat → 转写丢弃 → 内容彻底丢失）。修法 = pending-stop 挂起 + 转写到达后归档（+ accum 非空立即归档兼容分支）+ 正文剔尾随收尾词 + 10s 超时释放。**纯 server 面**（`server/gateway/front/front_app.py` + `server/gateway/story.py` + 验收件改真机序 + 单测）；契约/spec/固件零改。分支 dev/260915-m1-k1a-key-layer-dispatch（未 push/未 merge）。
+- **影响面圈定终验**（Step 4）：detect_changes（project `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch`，since `base/m4-star-notebook`，merge_base 60744cb；changed_files 25 / seed_symbols 48 / impacted_total 76 节点[server/gateway 44 · server/acceptance 20 · firmware/main 3 名碰撞 · builtins 9]）∪ impactedTestsSeed → 清单 `delivery/taskpackages/261001-m4-k3-story-archive-order/test-scope-final-r3.txt`（server 面 12 在职测试件圈 7）。**scoped r1 红=taskpackage 元数据缺口 → scoped r2 全绿 → final r3 全绿（10 闸含 full unit/acceptance）**，`verifier-evidence-check` → `{"ok":true,"factOk":true}`。
+- **真跑**：final r3 unit 闸 149 passed / acceptance 闸 77 passed（scope 7+5 文件）；全量锚 = `server/acceptance` 133 passed / 0 failed / 4 deselected（红基线 12 failed / 124 passed）+ `server/tests` 89 passed。4 条 SAO mutation 逐 AC 敏感（真红→真绿）。
+- **docs-delta**：requirements/契约/spec 零自改（`git status docs/` 零输出）；§5.2④ 判不需要文本补正（architect 判不构成漂移）；检出三处 spec 面归属他项（§5.2④ 机制对账归 Package B / 收尾后引擎播报归 B3 / 120s sweep 剔词归 B2/B3）。
+- **未覆盖面申报**：120s sweep 剔词 + 逐句回显/自动收尾/sweep 复活（B2/B3）；收尾后引擎播报（B3）；`_story_finish_on_phrase` 正齿（随 B2/B3 补）；**SAO-E3 真机复验（human 持板）尚未跑、如实标 pending**；固件/跨端 N/A。
+- **等待 supervisor 机械合并门**：`riskTier=high` → 机械闸必产 ESCALATE，合并须 human 批；integrator 不 push、不 merge；ESCALATE-human 批后由 planner 主线程 `merge-driver --pod` 本地合并。
+- **遗留 human 项**：① SAO-E3 真机复验须 human 持板（P3 按 KEY 停录 → 列表新增 + 盖章；串口判据 `stop_rec archive_pend=1` 后出现转写、front 不再 `empty_accum`）；② §5.2④「归档动作等转写到达」文本补正（advisory）随 spec 批交 human；③ milestones.jsonl M4 行 state 收口时点沿 K1/K2/K3 遗留同批裁量（本包无跳变）。
+
+## 2026-10-10 · 261010 真机 bug 批 launch prep（主线程 skill：kidpal-pod-launch-prep；triage 批 = ②Lite + ②Full 串行，launch 按 human 指示 headless 代跑）
+
+- **调度判定**：本批 = 261010 真机使用 bug 台账 dev 面两包（triage 分流 = architect review + human 触点①确认：② `261010-prompt-v9-schedule-anti-narration` 单包 Lite〔mergeOrder 45〕→ ① `261010-device-reconnect-on-server-close` 单包 Full riskTier high〔mergeOrder 46〕，串行接力——同常驻树一树一会话，沿 M1–M4 单常驻树接力棒形态）。两包零文件交集，理论可并行但建/移树决策归 human 未动；perf-k1 空闲树不可复用（常驻分支 dev/260924-perf-k1-roundtrip-latency 压两笔未合 main 的证据/裁定 commit，aa5ec4b 非主谱系，留待 human 裁）。第三包 `261010-p3-storylist-cold-start-restore`（Full + spine 261010-p3-storylist-cold-start）受 launchPreconditions 门控（需求/架构/契约 anchors 未回填）不在本批。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch` 两包结果见下（base-ref = main，随本批 ff 至 prep 制品 commit）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 沿用；main（348c681）落后常驻分支 7 笔（261010 会话治理批：CRQ 登记 ×3 + 决策 21 仓内根治 04c86a9 + 结项 + portfolio 模型 + triage 落盘）且零独有提交 → 纯 ff 同步，无 rebase 无冲突；tracked 净（.codebase-memory 两件 = 索引器常驻脏，AGENTS.md 口径不追交）；固件环境在位（sdkconfig / dependencies.lock / managed_components 软链 / host build 热缓存 ninja no work to do）。
+- **双面基线锚 @ 2d94c36（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **139 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-10；面域 = server）。零红。旧锚 127P @60744cb 作废（决策 21 批新齿 test_261010_engine_decision21_overlay_persist 3 齿 + subtests 入账）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **147 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-10；面域 = firmware；热缓存 no work to do）。零红。与 B1/C prep 锚 147T0F @60744cb 持平（其后 firmware 面零差异）。
+- **建包件**：两包 taskpackage.json 随本批补齐（triage 建包职责：origin regression 型 upstreamRef 指 CRQ 条目 + planRef 回指 sibling plan.md）；check-launch blocking 件 = taskpackage.json 在 base-ref 可及。
+- **board 预填**：两包 queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 45/46（前批 C=44 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（决策 21 批 server/deploy 改动入索引面）。
+- **遗留 human 项**：① 包（device-reconnect）真机轮 human 在场持板 + riskTier high 合并人批为硬前置；② 包（prompt-v9）supervisor 若判 all-mock 需 human 放行 + PN-A5 真机课表问答观测 human 在场；③ 包 spine 上游面（需求面与 REQ-261010-P1 并批 /requirement-change → 契约门 data.restore additive → anchors 回填后 launch）另行推进；perf-k1 树两笔未合 commit 去向待裁。
+
+## 2026-10-11 · 261011-p1-home-v5-rework launch prep（单包批，requirement v1.61 落地）
+
+- **调度判定**：本批 = 单包 `261011-p1-home-v5-rework`（②单包 Full riskTier high；triage 分流 = architect review + human 触点①三答确认：②单包 Full / preview 数组+空数组语义 / V5 范围收窄知悉）。来源链 = requirement v1.61（S-F1.1 空态 + 明天区改判，档 1 全程走毕 REQ-261010/260916 双销行）→ spine 261011-p1-home-v5-rework → 契约门 CCP HUMAN_APPROVED（preview 多项数组 + 三态语义四触点，先批后落）。串行接力沿常驻树（上一包 device-reconnect 已 merged）。
+- **树同步**：常驻树 C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 沿用；main（7d337f6）含 device-reconnect merge 2 笔独有 → 本批**回同步 rebase**（4 笔线性重放 017c542/5478b41/a9bd4db/4a9e87f，零冲突）→ main 纯落后、prep 制品 commit 后 ff。tracked 净、untracked 0；固件环境在位（sdkconfig / dependencies.lock / managed_components 软链 / host build 热缓存）。
+- **双面基线锚 @ 4a9e87f（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **144 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-11；面域 = server）。零红。旧锚 139P @2d94c36 作废（两面差异判停均命中重跑：device-reconnect 批 firmware/server 两面均有改动）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **153 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-11；面域 = firmware；增量编译 boot_auto_connect 齿入链）。零红。旧锚 147T0F @2d94c36 作废（firmware 面 +6 齿）。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch 261011-p1-home-v5-rework --base-ref main` → prep 制品 commit + main ff 后复跑（首轮 blocking = taskpackage.json 未进基准 ref，属时序预期）。
+- **建包件**：taskpackage.json 随本批补齐（triage 建包职责：origin human-ad-hoc 型 upstreamRef 指 spine + planRef 回指 sibling plan.md；字段给值取 architect 分流裁决；acceptance 齿/红基线字段留 acceptance-author 冻结轮回填）。check-launch blocking 件 = taskpackage.json 在 base-ref 可及。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 47（前批 device-reconnect=46 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行（requirement/契约/spree prep 制品入索引面）。
+- **遗留 human 项**：① 真机轮 human 在场持板（空态两态 + 明天区多项 + chip「明天」）+ riskTier high 合并人批为硬前置；② headless 启动由主线程代跑（human 2026-10-11 指示「拆好包后准备好环境，然后 headless 启动开发」）；③ spine openQ q4（v1.57 对账注过时勘误候选）另行批。
+
+## 2026-10-12 · 261012-kidpal-realtime-facts launch prep（单包批，TECH-261012 修法 + requirements v1.62 先行捎带）
+
+- **调度判定**：本批 = 单包 `261012-kidpal-realtime-facts`（②单包 Lite riskTier medium；triage 快审 + human 触点①三答确认）。来源链 = TECH-261012（天气幻觉，真机看屏轮新发现）→ human 定向「补 kidpal 环境：AGENTS.md 充实 + 工具对齐」→ triage 裁 prompt v10「实时事实回合」+ Tavily 实证 + AGENTS.md 仓内镜像；需求面档 1 先行捎带已落稿 v1.62（NFR-SEC-2 ④ / NFR-SAFE-1）；契约面 NO_CONTRACT_CHANGE（§1.6 四分类留痕 spine anchors.contract）。串行接力沿常驻树（上一包 261011 已 merged）。
+- **树同步**：常驻树沿用；main 含 261011 契约包人合 merge（952b855）+ 簿记（0654b5b/850f409）→ 回同步 rebase（2 笔线性重放 7c8cd50/9d07329 零冲突）→ main 纯落后、prep 制品 commit 后 ff。固件环境在位（host build 热缓存 no work to do）。
+- **双面基线锚 @ 9d07329（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **145 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-12；面域 = server）。零红。旧锚 144P @4a9e87f 作废（261011 批 preview 多项齿入账）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **155 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-12；面域 = firmware；ninja no work to do 热缓存）。零红。本批固件零改动。
+- **机械门**：`settings-lint.mjs` 0 RED（本批未复跑前值 0 RED 在册，prep commit 后随 check-launch 复核）；槽位核验 server/deploy/ 无并行 .v10 占用（ARQ-260908 纪律）绿；`portfolio-reconcile --check-launch --base-ref main` → prep 制品 commit + main ff 后复跑。
+- **建包件**：taskpackage.json 随本批补齐（origin regression 型 upstreamRef 指 TECH-261012 条目 + planRef 回指 sibling plan.md；RF 齿/红基线字段留 acceptance-author 冻结轮回填）。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 48（前批 47 后继）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
+- **遗留 human 项**：① 真机轮 human 在场（问天气全链路 + 降级路径一次）；② supervisor 若判 all-mock 需 human 放行（launch-card ⑦ 前置申报）；③ headless 启动由主线程代跑（human 既定口径）；④ loop-retro advisory 持续在账（17 ≥ 3 阈值）。
+
+## 2026-10-12 · 261010-p3-storylist-cold-start-restore launch prep（单包批；spine 三面本会话收齐 + requirements v1.63 定稿 + 契约门 HUMAN_APPROVED）
+
+- **调度判定**：本批 = 单包 `261010-p3-storylist-cold-start-restore`（②单包 Full riskTier medium；triage 2026-10-10 architect review + human 触点①裁：restore 标记方案、②单包 Full）。来源链 = TECH-261010-p3-storylist-cold-start-empty（真机反馈第 5 条「P3 停默认空态、没有把已有的 story list 列出来」）→ spine 261010-p3-storylist-cold-start 三面 2026-10-12 本会话收齐：需求面档 1 走毕（story-author 起草 → requirement-reviewer 四查 PASS → v1.63 frozen；human 话术三答在案）→ 架构镜像同批落（§5.1.2 :186 + §5.2 场景④ :214）→ 契约面 architect-reviewer 四分类（面 A CONTRACT_CHANGE_REQUIRED / 面 B NO_CONTRACT_CHANGE）→ human 契约门 **批准**（CCP = taskpackage contract-gate/，D1–D4 先批后落、与本包同批原子落）。串行接力沿常驻树（上一包 261012-kidpal-realtime-facts 已 merged）；**launch 形态 = 本树既有会话即 Pod 本体就地起 loop**（m2-char-window 先例；human 2026-10-12 指示「我们开始处理这个吧」）。
+- **树同步**：常驻分支 dev/260915-m1-k1a-key-layer-dispatch = main tip fde1eb9、零独有提交；本批 prep 制品 commit 后 main 纯落后 ff。
+- **双面基线锚 @ fde1eb9（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch/server/acceptance` → **152 passed / 0 failed / 4 deselected / 9 subtests passed，exit 0**（2026-10-12；面域 = server）。零红。旧锚 145P @9d07329 作废（差异判停命中：realtime-facts 批 server 面 8 文件入账须重跑，实测 +7 齿）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **155 Tests / 0 Failures / 0 Ignored，exit 0**（2026-10-12；面域 = firmware；热缓存 ninja no work to do）。零红。firmware 面 git diff 9d07329..fde1eb9 零差异，与 261012 锚 155T0F @9d07329 持平。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch 261010-p3-storylist-cold-start-restore --base-ref main` → prep 制品 commit + main ff 后复跑（首轮 blocking = taskpackage.json 未进基准 ref，属时序预期）。
+- **建包件**：taskpackage.json 随本批补齐（triage 建包职责：origin regression 型 upstreamRef 指 TECH CRQ 条目 + upstreamFrozen 记 spine 三 anchors + planRef 回指 sibling plan.md；acceptance 齿 SL-A1~A6 预填、红基线/变异骨架字段留 acceptance-author 冻结轮回填）。
+- **board 预填**：queued + worktreePath = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch + mergeOrder 49（前批 261012=48 后继）。
+- **启动卡**：`delivery/taskpackages/261010-p3-storylist-cold-start-restore/launch-card.md`（五要素 + intake 特别注意 ⑧ 条：CCP 先批后落通道 / FIX-A1 翻正授权链 / schedule :926-991 分流形态复刻 / ECS 开关默认关 / all-mock 前置申报 / 真机轮 human 在场 / ctx(story) 归并处置归本包）。
+- **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
+- **遗留 human 项**：① SL-A5 真机轮 human 在场持板（重启冷启动翻 P3 见列表 + 空态两态 + 无前台抢占）；② supervisor 若判 all-mock 触 riskTier 重算 high → 需 human 放行；③ ECS 恢复推送开关烧板验证后 human 人工开闸（gate evidence C1）；④ 契约 diff 逐字 patch 过目 → git apply（CCP 先例通道，人工 diff 核对留痕）。

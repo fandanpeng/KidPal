@@ -75,6 +75,62 @@ export function isWireRef(ref) {
   return WIRE_SECTIONS.some((w) => anchor === w || anchor.startsWith(w));
 }
 
+// story 照录路（260928-gov-review-portfolio-boundary-story-propagation T2）：裸 story id
+// （`S-Fx.y` / `S-Fx.y-ACn`）→ 定位 `docs/requirements.md` 的 `##### S-Fx.y · <标题>` 节 →
+// 整节照录进 brief（machine-derived 投影、语义权威仍在 requirements 现文）。节定位失败走
+// advisory 通道（不 exit 1，与第①路 missing/not-found 态同构，不猜）。
+const STORY_ID_RE = /^S-F\d+\.\d+(-AC\d+)?$/;
+const REQUIREMENTS_FILE = 'docs/requirements.md';
+
+export function isStoryRef(ref) {
+  return STORY_ID_RE.test(String(ref).trim());
+}
+
+function storySectionText(storyId) {
+  const hs = headingsOf(REQUIREMENTS_FILE);
+  const needle = storyId.replace(/-AC\d+$/, '').trim();
+  const hit = hs.find((h) => h.title.split('·')[0].trim() === needle);
+  if (!hit) return null;
+  const next = hs.find((h) => h.line > hit.line && h.level <= hit.level);
+  const lines = readLines(REQUIREMENTS_FILE);
+  return { title: hit.title, line: hit.line, text: lines.slice(hit.line - 1, next ? next.line - 1 : undefined).join('\n').trimEnd() };
+}
+
+function renderStoryRoad(storyRefs, advisories) {
+  const seen = new Set();
+  const ids = [];
+  for (const r of storyRefs) {
+    const id = String(r.path).trim();
+    if (!seen.has(id)) { seen.add(id); ids.push(id); }
+  }
+  if (ids.length === 0) return null;
+  const L = [];
+  L.push('## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）');
+  L.push('');
+  for (const id of ids) {
+    const base = id.replace(/-AC\d+$/, '');
+    const acTag = id !== base ? ` · 本包声明 AC 粒度回引：\`${id}\`` : '';
+    const sec = storySectionText(base);
+    if (!sec) {
+      L.push(`### ${id}`);
+      L.push('');
+      L.push('> ⚠ 未在 `docs/requirements.md` 定位到该 story 节（story id 可能写错或该节已迁移）——如实呈现、不猜；起包期核对 sourceRefs。');
+      L.push('');
+      advisories.push(`story ref 未定位到节：${id}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`);
+      continue;
+    }
+    L.push(`### ${id} · 源 = \`docs/requirements.md\` 节首行 :${sec.line}${acTag}`);
+    L.push('');
+    L.push('> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。');
+    L.push('');
+    L.push('```markdown');
+    L.push(sec.text);
+    L.push('```');
+    L.push('');
+  }
+  return L;
+}
+
 function collectRefs(tp) {
   const buckets = ['contractRefs', 'docRefs', 'sourceRefs'];
   const seen = new Set();
@@ -87,6 +143,23 @@ function collectRefs(tp) {
       if (seen.has(key)) continue;
       seen.add(key);
       out.push({ bucket: b, ref: key, ...splitRef(key) });
+    }
+  }
+  return out;
+}
+
+// uiux 设计 refs 透传（260929-gov-review-req-loop-ui-author T5.3 立；260929-gov-review-ui-ladder-remap T7
+// 剥离已撤并制品的子源检查——本函数只收 uiux block 的 designRefs/sharedUiRefs）。
+// 在位才列、缺席不脑补（none = 结论不是省略）；悬空 ref 报 advisory 不入列。
+function collectUiuxRefs(tp, repoRoot) {
+  const out = [];
+  const uiux = tp.uiux && typeof tp.uiux === 'object' ? tp.uiux : null;
+  for (const key of ['designRefs', 'sharedUiRefs']) {
+    const arr = uiux && Array.isArray(uiux[key]) ? uiux[key] : [];
+    for (const raw of arr) {
+      if (!nonEmptyString(raw)) continue;
+      const p = String(raw).trim();
+      out.push({ kind: key, path: p, present: existsSync(resolve(repoRoot, p)) });
     }
   }
   return out;
@@ -346,7 +419,8 @@ function renderBrief(tp, role, opts = {}) {
   const advisories = [];
   const repoRoot = opts.repoRoot || projectDir;
   const now = new Date().toISOString();
-  const anchorRows = renderAnchorSections(collectRefs(tp), advisories);
+  const anchorRows = renderAnchorSections(collectRefs(tp).filter((r) => !isStoryRef(r.path)), advisories);
+  const storyRoad = renderStoryRoad(collectRefs(tp).filter((r) => isStoryRef(r.path)), advisories);
   const ce = renderCounterparts(tp, errors);
   const precedents = findPrecedents(tp);
   const carry = collectCrossPackageCarry(tp, repoRoot);
@@ -372,6 +446,29 @@ function renderBrief(tp, role, opts = {}) {
     L.push(`| \`${r.path}\` | ${r.anchor ? `\`${r.anchor}\`` : '—'} | ${r.title} | ${r.secLine != null ? r.secLine : '—'} | ${r.status} |`);
   }
   L.push('');
+  if (storyRoad) {
+    for (const l of storyRoad) L.push(l);
+    L.push('');
+  }
+  // ①c（260929-gov-review-req-loop-ui-author T5.3）：uiux 设计 refs 专列 builder——refs 入清单即入视野
+  if (role === 'builder') {
+    const uiuxRefs = collectUiuxRefs(tp, repoRoot);
+    for (const d of uiuxRefs.filter((r) => !r.present)) {
+      advisories.push(`uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`);
+    }
+    L.push(`## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威）`);
+    L.push('');
+    if (uiuxRefs.some((r) => r.present)) {
+      L.push('| 类别 | 路径 |');
+      L.push('|---|---|');
+      for (const r of uiuxRefs.filter((r) => r.present)) L.push(`| ${r.kind} | \`${r.path}\` |`);
+      L.push('');
+      L.push('页级 PNG（400×300）= **布局坐标定位权威**：layout 常量按图定，文字线框仅口径补充。');
+    } else {
+      L.push('`none` —— uiux block 不在场或无在盘设计 refs（`designRefs[]` / `sharedUiRefs[]`）。本包若实有 UI 面，回报 planner 补挂——不脑补。');
+    }
+    L.push('');
+  }
   L.push(`## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）`);
   L.push('');
   if (!ce.present) {
@@ -486,6 +583,19 @@ function selfCheck() {
   ok('isWireRef 反例（裸路径无锚）', !isWireRef(CONTRACT_WIRE_FILE), 'bare path not wire');
   ok('wire WARN 触发', a.warnings.length === 1 && a.warnings[0].includes('crossEnd'), 'warn when counterparts empty & no exempt');
 
+  // ①c uiux 设计 refs 透传（260929-gov-review-req-loop-ui-author T5.3）：两臂 + builder 专列 + 悬空 advisory
+  const uiuxTp = { ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/UIUX-DESIGN-BRIEF.md'], sharedUiRefs: [] } };
+  const ub = renderBrief(uiuxTp, 'builder');
+  ok('uiux-refs 在位列（builder brief 含设计 ref 与定位权威句）', ub.markdown.includes('## ①c · UI 设计 refs')
+      && ub.markdown.includes('docs/ui/UIUX-DESIGN-BRIEF.md')
+      && ub.markdown.includes('布局坐标定位权威'), 'designRef listed with authority note');
+  ok('uiux-refs 专列 builder（acceptance-author brief 不含 ①c）', !renderBrief(uiuxTp, 'acceptance-author').markdown.includes('## ①c · UI 设计 refs'), 'builder-only section');
+  ok('uiux-refs 缺席 → none 结论（不脑补）', renderBrief(fixtureTp, 'builder').markdown.includes('`none` —— uiux block 不在场'), 'absent arm renders none');
+  const uDangle = renderBrief({ ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/no-such-page-probe.png'], sharedUiRefs: [] } }, 'builder');
+  ok('uiux-refs 悬空 ref → advisory（在位才列）', uDangle.advisories.some((s) => s.includes('uiux 设计 ref 指向的文件不在盘上'))
+      && !uDangle.markdown.includes('docs/ui/no-such-page-probe.png'), 'dangling ref excluded + advisory');
+  ok('uiux-refs 夹具非空（设计 ref 指向的母版在盘）', existsSync(resolve(projectDir, 'docs/ui/UIUX-DESIGN-BRIEF.md')), 'fixture ref targets real file');
+
   // fail-loud 路径（§8-B1）
   const badTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'firmware/main/nonexistent_xxx.cc', symbol: 'NoSuchSymbol' }] } };
   const bad = renderBrief(badTp, 'builder');
@@ -591,6 +701,25 @@ function selfCheck() {
   const cpbNone = renderBrief({ ...cpbTp, changeId: '260930-nothing-carry' }, 'builder', { repoRoot: cpbDir });
   ok('⑤ 零命中明写 `none`（不是省略）', cpbNone.markdown.includes('`none` —— 两写面'));
   rmSync(cpbDir, { recursive: true, force: true });
+
+  // ①b story 照录路（260928-gov-review-portfolio-boundary-story-propagation T2）：整节照录 + AC
+  // 复合句法加亮 + not-found advisory（不阻断、brief 仍产出，R2-F2 语义 = advisory 非 fail-loud）。
+  ok('①b 夹具非空（docs/requirements.md 在盘且含 S-F1.4 节）', (() => {
+    const p = join(projectDir, REQUIREMENTS_FILE);
+    return existsSync(p) && readFileSync(p, 'utf8').includes('##### S-F1.4 · ');
+  })());
+  const storyTp = { ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4', 'S-F1.4-AC3'] };
+  const story = renderBrief(storyTp, 'builder');
+  ok('①b story ref 整节照录（节标题 + AC1 在投影内）', story.markdown.includes('## ①b · story 语义权威')
+      && story.markdown.includes('日程提醒') && /AC1[：:]/.test(story.markdown), 'verbatim section excerpted');
+  ok('①b story ref 不再落 ① 路 missing 表', !story.markdown.includes('（文件不存在）')
+      && !/\| `S-F1\.4` \|/.test(story.markdown), 'routed out of anchor table (ARQ-260927 证据 5 缺口闭合)');
+  ok('①b AC 复合句法加亮 + 照录语义声明', story.markdown.includes('`S-F1.4-AC3`')
+      && story.markdown.includes('语义权威仍在 requirements 现文'), 'AC tag + authority note');
+  const storyMiss = renderBrief({ ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F9.9'] }, 'builder');
+  ok('①b not-found → advisory、不阻断（brief 仍产出）', storyMiss.markdown.includes('## ①b · story 语义权威')
+      && storyMiss.advisories.some((s) => s.includes('story ref 未定位到节'))
+      && storyMiss.errors.length === 0, 'advisory channel, no exit-1 class error');
   const failed = checks.filter((c) => !c.pass);
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
 

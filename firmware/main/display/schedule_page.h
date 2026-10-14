@@ -29,7 +29,10 @@ extern "C" {
 #define KSG_FLAG_TEMP  0x1 /* bit0 ※ 临时安排（B1 一次性安排区块） */
 #define KSG_FLAG_STAR  0x2 /* bit1 星标呼应（group_upcoming 当前「接下来」项） */
 #define KSG_COURSE_CAP 84  /* 周网格缓存容量 = 7 天 × 3 格 × 每格 4 门（定容冻结值） */
-#define KSG_GRID_BOTTOM 251 /* 网格可用区下缘；y>=252 = 键帽条带，网格严格零墨 */
+#define KSG_GRID_BOTTOM 254 /* 网格可用区下缘（2026-09-26 真机对齐轮 251→254：设计 canvas-p2
+                              * 实测网格底线 y254、底条上沿实线 y262-264 之间有 7px 固有间隙——旧
+                              * 值 251 系贴旧底条顶 252 的适配位，底条改 262 后不再成立）；
+                              * y>=255 = 网格外带（底条之上一段），网格严格零墨 */
 #define KSG_FONT_MIN_PX 14 /* NFR-READ-1 格内课程名行 pitch 下限（1bpp CJK 实测） */
 
 /* 契约 §1.3② schedule view 周网格课程条目（data.week.courses 元素）。 */
@@ -55,7 +58,7 @@ int kidpal_schedule_grid_parse(const char *data_json,
 /* P2 一周总览网格渲染面（纯 LVGL 画在 ACTIVE screen）：先清屏（幂等可反复调用），
  * 画 7 列（周一..周日）× 3 行（上午/下午/晚上）整屏网格 + 行首槽位标签列，页内无
  * 标题无提示行（v1.20 已删，操作提示归全局键帽条）。版式区钉（== 冻结验收文件头）：
- * 网格可用区 y[0..KSG_GRID_BOTTOM]；y>=252 键帽条带严格零墨；表头带 y[0..29]；
+ * 网格可用区 y[0..KSG_GRID_BOTTOM]；y>=255（底条顶 262 之上外带）严格零墨；表头带 y[0..29]；
  * 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..251]；标签列
  * x[0..39]；day 列带 x[40+51*d .. 90+51*d]。(day,slot) 格内多课逐门竖排，课程名行
  * pitch >= KSG_FONT_MIN_PX；不做格内滚动，格内溢出走截断降级。

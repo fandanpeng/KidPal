@@ -7,9 +7,24 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`crq-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/crq/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 2 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 17 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
 | [ARQ-260902-shim-401-gate-bypass](ARQ-260902-shim-401-gate-bypass.md) | server/shim.py `require_device` 依赖 `return JSONResponse` 不短路，无 token 直通 OpenClaw（401 门穿透），并否定 TP-A 报告「无 token → 401」实测结论 | 2026-09-06 | — |
 | [ARQ-260916-server-mvp-teeth-sweep](ARQ-260916-server-mvp-teeth-sweep.md) | server 面可能仍有 MVP 验证期孪生/伴随验收齿未随 544a804 归档批退役——已实证一例：`test_voice_roundtrip_b.acceptance.py` server 半边（设备半边 C 孪生已归档，VRT-A2 孪生对齐齿钉旧址故红，human 裁定 `bba7d239` 模块级 skip 退出现役销账） | 2026-09-16 | — |
+| [TECH-260928-school-start-upcoming-empty](TECH-260928-school-start-upcoming-empty.md) | 周中 upcoming 恒空：school_start 配置未部署 ECS 且三条推送路径漏传 | 2026-09-28 | dev-loop integrator（changeId 260928-tech-260928-school-start-upcoming-empty；代码半修绿，运维半移交留痕见收口记录） |
+| [ARQ-261001-openclaw-model-name-overlay-drift](ARQ-261001-openclaw-model-name-overlay-drift.md) | 引擎 overlay 的 model_name 被重部署冲刷成 openclaw/default，OpenClaw 双 agent 下返 400 | 2026-10-10 | 主线程（261010 部署演练闭环，见文末结项记录） |
+| [TECH-261010-engine-decision21-keys-not-persistent](TECH-261010-engine-decision21-keys-not-persistent.md) | 引擎决策 21 两键（24h 兜底 + 告别语关闭）未入 overlay 渲染源——线上已回落默认 120s 断连 + 告别语复活 | 2026-10-10 | 主线程（human 直接授权直修，2026-10-10 会话在案；跳过 dev-loop 如实记录于 commit 04c86a9） |
+| [ARQ-260831-p4-stroke-dasharray-visual-check](ARQ-260831-p4-stroke-dasharray-visual-check.md) | P4 笔顺「未写笔画的虚线点链」dasharray 观感与契约 D3 canvas 折线渲染需视觉对齐核验 | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [ARQ-260901-openclaw-chatcompletions-public](ARQ-260901-openclaw-chatcompletions-public.md) | OpenClaw chatCompletions 端点为 full operator access 且随网关公网可达，仅 Bearer 保护 | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [ARQ-260902-multiturn-continuity](ARQ-260902-multiturn-continuity.md) | OpenClaw 多轮连续性「自带」vs「待部署验证」相位矛盾 + 协议剖面无会话连续性承载（S2） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [ARQ-260904-v23-asr-swap-quota-recheck](ARQ-260904-v23-asr-swap-quota-recheck.md) | V23 ASR 换型 + token-plan 配额重置后补验（流式/VAD 切句兼容性与引擎 provider 可行性） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [ARQ-260925-reminder-semantic-round-not-live](ARQ-260925-reminder-semantic-round-not-live.md) | 提醒三档「agent 回合产 semantic.json」疑似从未上线——live 只见机械兜底半边（260925-prompt-v7-round-routing 批 S2 实证附带发现） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [TECH-261010-device-no-reconnect-on-server-close](TECH-261010-device-no-reconnect-on-server-close.md) | 固件对「服务端主动断连」无自动重连——OnAudioChannelClosed 只进低功耗回 Idle，断线自动重连仅覆盖网络重连事件路径 | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [TECH-261010-p3-storylist-cold-start-empty](TECH-261010-p3-storylist-cold-start-empty.md) | P3 星星记录本冷启动空态——story_list 建连即推被 260928 止血摘除后「进页即见列表」语义重裁至今未做，重启后翻 P3 恒空 | 2026-10-12 | integrator（261010-p3-storylist-cold-start-restore closeout——修法三件全落：front 建连恢复推送 + 板端 restore 分流 + 空态两态渲染；证据 = delivery/changes/dev/261010-p3-storylist-cold-start-restore/） |
+| [TECH-261010-schedule-round-narration-leak](TECH-261010-schedule-round-narration-leak.md) | 课表问答回合把模型内部推理当语音播报（deepseek-v4-flash 把 prompt 回合表词汇当工具调用前导文本念出） | 2026-10-12 | 主线程（2026-10-12 tech 域 CRQ 盘点，human 指示；证据见各条目收口节） |
+| [TECH-261012-weather-fabrication](TECH-261012-weather-fabrication.md) | 真机实测：孩子问天气 LLM 凭印象编造整套预报（晴到多云 26 度）且虚称「我去查一下」——v9 提示词反编造纪律逐域枚举漏「通用实时事实」域，「孩子对话回合」禁工具 + 无数据源结构性逼出编造 | 2026-10-12 | delivery/changes/dev/261012-kidpal-realtime-facts/（②单包 Lite 落地 + 真机轮 RF-A5 过：2026-10-12 14:27 引擎日志双路径实证——带城市真查「我查了一下西安……多云转晴，白天最高大概 24 度」（真实预报，对比早上幻觉版），无城市诚实降级「今天我这里没拿到天气数据……再问我一次试试，或者告诉我你在哪个城市」零编造；human 目击「问天气好了」；TTS 层故障另立 TECH-261012-edgetts-403-hotpatch、首按键问题另立 TECH-261012-first-keypress-no-listening，均不属本条目域） |
+| [TECH-261012-p3-star-count-invisible-on-device](TECH-261012-p3-star-count-invisible-on-device.md) | P3 星星记录本列表右上角 ★/×N 计数真机不显示——根因已钉死（chrome 顶带 top_bar_ 50% 白蒙层 × 1bpp 0x7fff 阈值漂白 INK 灰；四轮 TEMP-DIAG bar 透明一行试验真机证实） | 2026-10-13 | 261012-p3-topbar-ink-bleach-fix（dev-loop integrator closeout，修复随包落地） |
+| [TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout](TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout.md) | 冻结齿按 LF 原始字节哈希钉 prompt 版本文件，但 .gitattributes 未钉这些文件的 eol=lf——Windows autocrlf=true 检出即 CRLF，三条不可变齿恒红并拦死 merge-driver 合并通道 | 2026-10-13 | 261013-gov-review-lf-eol-teeth-pin（Track B 全环：frozen v0.2 + R1→R2 GREEN + landing-verifier GREEN；eol=lf 族钉 + V6 齿常量毒化重算 + skill 注记） |
+| [TECH-261013-lang-config-thinking-key-regen-landmine](TECH-261013-lang-config-thinking-key-regen-landmine.md) | 固件 lang_config.h 生成物与 locale 源不一致——Lang::Strings::THINKING 键只存在于手工补丁的未跟踪生成头，任何触发重新生成的干净构建（新 worktree 首建 / json mtime 更新后构建）必编译红 | 2026-10-14 | 261013-lang-config-thinking-fix（dev-loop integrator closeout，修复随包落地） |

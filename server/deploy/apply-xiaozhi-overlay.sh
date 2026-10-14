@@ -17,6 +17,10 @@
 #       spec §A1 双候选之一). credentials injected from env (DASHSCOPE_API_KEY); if unset the
 #       structural shape is still declared, live ASR is a known credential gap ->
 #       escalate (human 待办). Never forged.
+#   * 决策 21 两键（arch §6.4）: close_connection_no_voice_time: 86400 + end_prompt.enable: false
+#       — 引擎不主动断连（24h 纯兜底、告别语关闭）。260914 的 live 修正曾只落在活配置、
+#       无渲染面，1001 overlay 再生即丢 → 告别语复活 + 120/180s 断连（TECH-261010）；
+#       本块 = 该两键的持久渲染面。
 #
 set -euo pipefail
 
@@ -69,7 +73,7 @@ LLM:
     # type:openai 流式接 OpenClaw (决策18 / 契约 §四)
     type: openai
     base_url: http://127.0.0.1:18789/v1   # OpenClaw loopback (V28 18789 锁 127.0.0.1)
-    model_name: openclaw/default
+    model_name: openclaw/kidpal
     api_key: "$OPENCLAW_TOKEN"
     # NOTE: stream 请求禁带 max_tokens (契约 §四 / V9) — enforced by provider.openclaw_stream_request
 TTS:
@@ -78,31 +82,26 @@ TTS:
     voice: zh-CN-XiaoxiaoNeural
 ASR:
   Qwen3ASRFlash: {api_key: "$DASHSCOPE_API_KEY", model_name: qwen3-asr-flash, type: qwen3_asr_flash}
+# 决策 21（arch §6.4）: 引擎不主动断连 — 两道超时 24h 纯兜底 + 告别语关闭。
+# 缺此块 = 引擎回落源码默认（120s 无语音告别语 + 180s 硬断，receiveAudioHandle.py:114/123）
+# → 提醒推送黑洞（设备常驻在线假设被击穿）。持久化面 = 本 heredoc，TECH-261010 仓内根治。
+close_connection_no_voice_time: 86400
+end_prompt:
+  enable: false
 EOF
 echo "rendered $OVERLAY"
 ls -la "$OVERLAY"
 
 # OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-# 演进史 (历史版本文件一律不改、可 diff; 声明见 OPENCLAW_SYSTEM_PROMPT_CARRIER):
-#   v1 = 260829-voice-roundtrip 基座 (两部分结构 + 7 view 白名单 + 三句纪律 + 硬约束)
-#   v2 = openclaw-system-prompt.v2.md (260829-schedule-p2 + 260829-char-stroke: 课表 producer
-#        扩展 + char C1 最小块/出口拼装)
-#   v3 = openclaw-system-prompt.v3.md (两包并集版: 260829-story-p3 故事 producer 扩展 +
-#        260829-schedule-reminder RMD-A8 包 7 提醒备注解析约定；两并行包各写一份 .v3 抢同槽位
-#        (add/add)，按 human 授权 pod-events dc9a5c15 取并集；槽位预约规则见
-#        ARQ-260908-versioned-artifact-slot-collision)。
-#   v4 = openclaw-system-prompt.v4.md (260829-hardware-validation F4 分工修正:
-#        删模型「回填整段正文」缺陷表述、改为一回合只起 title、story_text 正文+id 由网关下发;
-#        v3 及其下 v1/v2 基座语义逐字保留、可 diff)。
-#   v5 = openclaw-system-prompt.v5.md (260920-m2-charwindow-display-fix MCD-A5/A7:
-#        char 最小意图块 data 增中文释义 meaning (同语音那句中文解释同源同字≤24字) + 面向设备
-#        回复只含口语正文+一个 display 块、禁任何自检/来源/附录/明细/HTML 结构; v4 基座逐字保留)。
-#   v6 = openclaw-system-prompt.v6.md (当前渲染源; 260921-m3-k3-voice-schedule-entry-live:
-#        课表问答口径(答复走问答框含备注读回) + 「帮我显示课表」意图薄载荷 data:{} + 网格数据
-#        不由 LLM 生成(front 机械计算单源); 只动课表段+版本沿革前言, v5 基座逐字保留)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v6.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v6.md"
+# 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
+# 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
+#   v10 = openclaw-system-prompt.v10.md (当前渲染源; 261012-kidpal-realtime-facts:
+#        回合类型路由表新增「实时事实回合」行（先播提示→联网真查→只依据查询结果作答、
+#        查不到诚实引导、禁编造/禁虚称已查）+ 对话行通用反编造 + 底线节第三不变量
+#        （TECH-261012 真机天气幻觉根治）; 其余段落零偏移继承 v9)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v10.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v10.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -120,28 +119,11 @@ if [ -f "$PROMPT_SRC" ]; then
     echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
   fi
 else
-  echo "WARN: openclaw-system-prompt.v6.md not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+  echo "WARN: wired system prompt not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
-# 提醒三档阶梯配置 (260829-schedule-reminder / RMD-A2): 三档时刻的家 = 纯服务端配置,
-# 随本 overlay 一起上 ECS，由 OpenClaw cron 载荷脚本
-# (openclaw-patch/reminder_schedule_lib.py::load_ladder_config) 读取。改时刻即时生效、
-# 永不需烧板子（固件侧零引用 = C 孪生档 RMD-A7 齿负向钉死；不进契约 B1）。
-# 缺文件不停摆（脚本回退 DEFAULT_LADDER_CONFIG），但「落盘 ≠ 孤儿」——本行渲染即接线。
-REMINDER_CFG="$HERE/openclaw-reminder.config.yaml"
-if [ -f "$REMINDER_CFG" ]; then
-  cp "$REMINDER_CFG" "$DATA_DIR/openclaw-reminder.config.yaml"
-  echo "rendered openclaw-reminder.config.yaml -> $DATA_DIR/"
-  # 提醒排程脚本随 openclaw-patch 一起铺到 OpenClaw 侧可读目录，供 cron --command 调用。
-  # 路径全部 env 可配（KIDPAL_ALERTS_DIR / KIDPAL_PENDING_JSON / KIDPAL_SEMANTIC_JSON /
-  # KIDPAL_REMINDER_CONFIG / KIDPAL_SERVER_DIR）—— 禁止硬编 /root/.openclaw/**。
-  for script in reminder_schedule_lib.py; do
-    if [ -f "$HERE/openclaw-patch/$script" ]; then
-      mkdir -p "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}"
-      cp "$HERE/openclaw-patch/$script" "${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/$script"
-      echo "staged $script -> ${KIDPAL_OPENCLAW_SCRIPT_DIR:-$DATA_DIR/openclaw-patch}/"
-    fi
-  done
-else
-  echo "WARN: openclaw-reminder.config.yaml not found at $REMINDER_CFG — 三档时刻没有渲染面 (RMD-A2)" >&2
-fi
+# 提醒三档配置 / 排程脚本的铺放已移交 manifest 直管（261013-gov-review-deploy-
+# single-source-loop T4——原「渲染 openclaw-reminder.config.yaml 到 $DATA_DIR + staging
+# reminder_schedule_lib.py」块撤除：两处落点均非真实消费位，属双写者漂移源；消费位
+# /opt/kidpal/openclaw-reminder.config.yaml、/opt/kidpal/openclaw-patch/、
+# /opt/kidpal/front/deploy/ 由 server/deploy/manifest.yaml 登记、deploy.sh 铺放）。

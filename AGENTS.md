@@ -23,12 +23,15 @@
 
 **升级判据（命中任一 → Track A full-adversarial，入口 `/arch-change`）**：① 触契约面 `docs/contracts/**`（直走契约门）；② 跨系统结构性变更（如固件协议与服务端语义同时动）。governance 类变更不强制升级；「声明红队」= 自愿逃生门（human 或 architect 任一方随时可启）。**熔断**：评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A）。**存疑向严**：判据适用存疑默认升 human。
 
+**需求面变更**：走 `/requirement-change` loop（260928-gov-review-requirement-loop 立；流程 SSOT `.claude/references/requirement-change.md`，story-author 盘上 updating 起草 + requirement-reviewer 审稿 + 档 2 architect 必派〔免派例外见 SSOT〕；260928-gov-review-requirement-face 立三档判据与定稿载体）。
+**跨面 intake**：触面 ≥2 的跨面 idea 先过统一 intake 建 spine（`delivery/changes/intake/<changeId>.md`；程序 SSOT `.claude/references/change-intake.md`，260928-gov-review-cross-face-intake-spine 立）——统一 intake ≠ 统一门，各面门照旧各归各裁；spine 免冻，anchors 记录各面自己的冻结态。CLAUDE.md 经 `@AGENTS.md` 导入传导，不另改。
+
 **landing 通道（常态规则）**：恒 = 主线程 packet-bound 一条；architect 恒纯判官 / 起草、永不 landing。
 **不动**：契约门（architect-reviewer 四分类 + human 签字）、landing-verifier 独立核验、机械强制层（scope-map / hooks）。
 
 ## Hard Rules
 
-- 主 AI 不直改自有实现面做正式工作——实现动作走 dev-loop（planner Pod 派 acceptance-author → builder → verifier↔fixer → integrator → supervisor）；唯一例外 = human 明确说跳过流程的一次性操作，且须诚实记录「跳过流程」。
+- 主 AI 不直改自有实现面做正式工作——实现动作走 dev-loop（planner Pod 派 architect（前置技术预评）→ acceptance-author → builder → verifier↔fixer → integrator → supervisor）；唯一例外 = human 明确说跳过流程的一次性操作，且须诚实记录「跳过流程」。
 - **契约冻结**：任何会话不得用 Write/Edit/Bash 重定向写 `docs/contracts/**`，改动走 architect-reviewer 四分类 + 人类契约门。
 - Completion 不凭解释宣布——治理变更完成 = landing 完成 + landing-verifier 绿 + retro 齐。
 - After `git add`, verify with `git diff --cached --stat` before committing. 历史记录类文件一律 append，不覆盖既有行。

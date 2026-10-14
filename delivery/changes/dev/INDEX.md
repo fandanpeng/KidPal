@@ -6,11 +6,28 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (43)
+## dev (60)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261013-p1-tomorrow-row-sliver-fix](261013-p1-tomorrow-row-sliver-fix/) | 2026-10-13 | delivery/taskpackages/261013-p1-tomorrow-row-sliver-fix/plan.md | closed | — |
+| [261013-qq-schedule-write-closure](261013-qq-schedule-write-closure/) | 2026-10-13 | docs/crq/tech/TECH-261012-qq-schedule-write-format-gap.md | closed | — |
+| [261012-kidpal-realtime-facts](261012-kidpal-realtime-facts/) | 2026-10-12 | docs/crq/tech/TECH-261012-weather-fabrication.md | closed | — |
+| [261012-p3-topbar-ink-bleach-fix](261012-p3-topbar-ink-bleach-fix/) | 2026-10-12 | docs/crq/tech/_archive/2026/TECH-261012-p3-star-count-invisible-on-device.md | closed | — |
+| [261011-p1-home-v5-rework](261011-p1-home-v5-rework/) | 2026-10-11 | delivery/changes/intake/261011-p1-home-v5-rework.md | closed | — |
+| [261010-device-reconnect-on-server-close](261010-device-reconnect-on-server-close/) | 2026-10-10 | docs/crq/tech/TECH-261010-device-no-reconnect-on-server-close.md | closed | — |
+| [261010-p3-storylist-cold-start-restore](261010-p3-storylist-cold-start-restore/) | 2026-10-10 | docs/crq/tech/TECH-261010-p3-storylist-cold-start-empty.md | closed | m4-star-notebook |
+| [261010-prompt-v9-schedule-anti-narration](261010-prompt-v9-schedule-anti-narration/) | 2026-10-10 | docs/crq/tech/TECH-261010-schedule-round-narration-leak.md | closed | — |
+| [261001-m4-k3-record-session-live-repair](261001-m4-k3-record-session-live-repair/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-m4-k3-story-archive-order](261001-m4-k3-story-archive-order/) | 2026-10-01 | delivery/changes/intake/261001-m4-k3-record-session-live-repair.md | closed | m4-star-notebook |
+| [261001-openclaw-model-name-overlay-drift](261001-openclaw-model-name-overlay-drift/) | 2026-10-01 | docs/crq/tech/ARQ-261001-openclaw-model-name-overlay-drift.md | closed | — |
+| [260929-char-window-v5-trim](260929-char-window-v5-trim/) | 2026-09-29 | delivery/changes/intake/260929-char-window-v5-trim.md | closed | — |
+| [260928-char-window-key-triggered-play](260928-char-window-key-triggered-play/) | 2026-09-28 | delivery/changes/intake/260928-char-window-key-triggered-play.md | closed | — |
+| [260928-story-connect-push-defer](260928-story-connect-push-defer/) | 2026-09-28 | human 真机发现 + planner 根因报告（2026-09-28 本会话）：M4-K1 三时点①建连即推与设备每会话 WS 重连冲突——设备会话结束关 audio channel（CanEnterSleepMode 要求通道关闭）、按 KEY 重开新 WS，front 建连即推 story_list → 旧固件（K2 未跑）无条件渲染 P3 页盖掉聆听态，且 story_page.c 零 CJK 字体接线 → 半截页面。human 裁定止血方向（AskUserQuestion 后续指令「先止血方案吧」） | closed | m4-star-notebook |
+| [260928-tech-260928-school-start-upcoming-empty](260928-tech-260928-school-start-upcoming-empty/) | 2026-09-28 | docs/crq/tech/TECH-260928-school-start-upcoming-empty.md | closed | — |
 | [260924-m4-k1-story-cloud-link](260924-m4-k1-story-cloud-link/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
+| [260924-m4-k2-p3-star-notebook-ui](260924-m4-k2-p3-star-notebook-ui/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
+| [260924-m4-k3-record-session-live](260924-m4-k3-record-session-live/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
 | [260924-perf-k1-roundtrip-latency](260924-perf-k1-roundtrip-latency/) | 2026-09-24 | docs/requirements.md#NFR-PERF-1 | closed | — |
 | [260923-m3-k6-boot-auto-connect](260923-m3-k6-boot-auto-connect/) | 2026-09-23 | 本会话 human 现场报告（开机/重启后设备与 Front 连接不自动建立，需按键才建连）+ human 立项 ack（A-only）；architect triage 裁决 ②单包 Lite + Shape A 形状修订（human 离席预授权技术判断，回席后补 ack） | closed | m3-schedule |
 | [260923-m3-k7-schedule-grid-restore](260923-m3-k7-schedule-grid-restore/) | 2026-09-23 | 260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial r1 收口：adjudicator GREEN + F-C5 human 裁 accept-as-risk + R1-R11 回灌 v3 + 契约门批准 C1 挂账 + landing-verifier GREEN，commit 565cb2d）；需求面症状由 triage 门定性（P1 已修于 K6、P2 = 症状 B 独立设计入口，m3-schedule 遗留③） | closed | m3-schedule |
@@ -26,11 +43,11 @@
 | [260917-m2-k2-retract-p4-three-page](260917-m2-k2-retract-p4-three-page/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
 | [260917-m2-k3-char-window-overlay](260917-m2-k3-char-window-overlay/) | 2026-09-17 | delivery/milestones/milestones.jsonl#M2-char-window | closed | m2-char-window |
 | [260915-m1-k1a-key-layer-dispatch](260915-m1-k1a-key-layer-dispatch/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
-| [260915-m1-k2-keybar-three-slot](260915-m1-k2-keybar-three-slot/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | open | m1-home-qa |
+| [260915-m1-k2-keybar-three-slot](260915-m1-k2-keybar-three-slot/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-k3-voice-round-ui](260915-m1-k3-voice-round-ui/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-k4-reminder-overlay-unify](260915-m1-k4-reminder-overlay-unify/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
 | [260915-m1-n1b-p1-home-battery](260915-m1-n1b-p1-home-battery/) | 2026-09-15 | delivery/milestones/milestones.jsonl#M1-home-qa | closed | m1-home-qa |
-| [260913-happy-flow-host-capture](260913-happy-flow-host-capture/) | 2026-09-13 | — | open | — |
+| [260913-happy-flow-host-capture](260913-happy-flow-host-capture/) | 2026-09-13 | — | closed | — |
 | [260911-display-first-m1](260911-display-first-m1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |
 | [260911-ecs-deploy-convergence](260911-ecs-deploy-convergence/) | 2026-09-11 | changes/dev/260829-hardware-validation/review-packet.md#F3 | closed | kidpal-mvp |
 | [260911-key-route-a1](260911-key-route-a1/) | 2026-09-11 | .planning/260911-display-interaction-sovereignty/PROPOSAL.md | closed | 260911-display-interaction-sovereignty |

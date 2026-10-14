@@ -25,6 +25,10 @@ private:
     EventGroupHandle_t event_group_handle_;
     std::unique_ptr<WebSocket> websocket_;
     int version_ = 1;
+    /* [S7] 本地主动关分类标记（261010-device-reconnect-on-server-close）: Application
+     * 主动 CloseAudioChannel 置位——OnDisconnected 据此把「本地主动关」与「服务端/
+     * 网络侧断」分流（本地关不触发 A 路径自动重连; 分类互斥的协议层载体）。 */
+    bool local_close_pending_ = false;
 
     void ParseServerHello(const cJSON* root);
     bool SendText(const std::string& text) override;

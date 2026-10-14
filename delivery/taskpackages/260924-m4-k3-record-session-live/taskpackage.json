@@ -10,10 +10,10 @@
     "workstream": "m4-star-notebook"
   },
   "subsystem": "firmware",
-  "story": "S-F2.2 · 开录（双入口）（AC1–AC4 板端与跨端半）+ S-F2.1 · 看「星星记录本」列表（live 复证）+ S-F2.3 · 回看记录（live 复证）+ S-F2.4 · 星星保存成就盖章（live 复证）——技术描述见 plan.md（板端 kidpal_session_ctx 发送 + 引导态/录音态演出对齐 + 录音手势族会话接线 + prompt v7 双指令 + live 真机确认轮一次性收口）",
+  "story": "S-F2.2 · 开录（双入口）（AC1–AC4 板端与跨端半）+ S-F2.1 · 看「星星记录本」列表（live 复证）+ S-F2.3 · 回看记录（live 复证）+ S-F2.4 · 星星保存成就盖章（live 复证）——跨包事实与共享冻结面见 plan.md（板端 kidpal_session_ctx 发送 + 引导态/录音态演出对齐 + 录音手势族会话接线 + prompt v8 双指令 + story_list 推送触发重裁 + live 真机确认轮一次性收口）",
   "planRef": "delivery/taskpackages/260924-m4-k3-record-session-live/plan.md",
   "redBaselineCommand": "通道①（既有齿零偏移，含 K2 新冻齿）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash <worktree>/firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf；通道②（server 面）：python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance；intake 时 acceptance-author 实跑复核落账",
-  "redBaselineResult": "",
+  "redBaselineResult": "acceptance-author 实跑 2026-09-30（现状树 @5d58eb9；firmware 自 2c7343a 零差异实测 git diff --quiet 2c7343a HEAD -- firmware —— 通道①既有齿零偏移按引用锚行判停: launch prep 实测 128T0F，不重跑全套 host build）。通道①新齿独立红跑通道（firmware/main/test/acceptance/red-baseline/rsl_red_wrapper.sh: unity stub + runner.c 无实现链接，行为齿走 frozen-seam weak 哨兵、结构齿扫真实工作树）: COMPILE_EXIT=0（C 类冻结验收实编 §4——验收文件本身编译零错误）+ RUN_EXIT=8（8 Tests 8 Failures，全部设计态红、零 fixture 缺陷红）。逐齿红名 verbatim: RSL-A1「SendKidpalSessionCtx 仅 0/3 文件命中（期望 >= 3: protocol.h/.cc + application.cc）」/ RSL-A2「Listening 分支内 SendKidpalSessionCtx 调用数 != 1（0 = 会话发起发送半未接线）」/ RSL-A3「kidpal_story_ctx_source_page(KP_PAGE_STORY) != story（哨兵 NULL = frozen seam [S1] 未实现）」/ RSL-A4「kidpal_story_guide_bubble() 返回 NULL（frozen seam [S2] 未实现）」/ RSL-A5「KSPV2_ACT_STOP_RECORD case 零 StopListening 接线」/ RSL-A6「kidpal_story_echo_reset 返回 != 0（哨兵 -2 = frozen seam [S3] 未实现）」/ RSL-A7「VOICE 前台 + LIST 页未判只装缓存（期望 1）」/ RSL-C1「record_session_live.acceptance.c 未注册进 HOST_ACCEPTANCE_SRCS（builder FIRST ACTION）」（RSL-C1 tooth 1-3 canary 现状绿 must-stay-green）。红因归因: 8 齿红名与声明的缺失行为（plan T1-T5 + notes ①-⑪）逐条对上，无环境/依赖/fixture 缺陷红。通道②（python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance）: 4 failed / 199 passed / 4 deselected / 2 subtests passed（基线 193P + 本件 10 齿 = 203）；设计态红 4 齿 = test_a7_ctx_story_first_pushes_exactly_one_story_list（M4K3-A7 RED: 首帧 ctx(story) 产生 0 帧 story_list 下行）、test_a7_ctx_duplicate_pushes_no_extra_frame（M4K3-A7 RED: 重复 ctx(story) 共产生 0 帧 story_list）、test_a7_push_seam_lands_in_ctx_consume_not_connect（M4K3-A7 RED: _consume_kidpal_control 的 kidpal_session_ctx 分支无 _push_story_list）、test_a8_current_prompt_dual_trigger_and_boundary（M4K3-A8 RED: 故事段无「帮我记下来」第二指令 + 无「帮我记下来明天带跳绳」边界负例）；守卫齿 6 条现状绿 must-stay-green；K1 27 齿 + 全部既有齿零新增红；收集零错误（§3 冻结即冒烟）。冻结期修订窗闭环 2 条（REVISION LOG 逐条在 server 件头注）: R1 = a4 两齿驱动通道修正（泵直调不可达 ws_gateway 断连 cancel 钩子——首跑红是线束假象非被测语义，改走真实连接流程，断言语义零变化）；R2 = a7 落点结构齿切片收紧两轮（整函数切片被注释字面假绿 → 函数体切片被 delete 分支既有 ③重推调用假绿 → 收紧到 ctx 分支行→delete 分支行，断言语义零变化）。两条均为 fixture/线束自身缺陷修正、纯 additive、零断言语义变化、零 fixture 缺陷红残留。test_prompt_v7_round_routing.acceptance.py 复核（v8 翻转初判确认不破，无需修订）: 该文件无「当前接线 = v7」版本字面断言（头注明示 ADR-001 纪律），内容锚全部钉 v7 文件本体（v8 批零回改 v7）+ v6 sha256（v8 批零触碰），v8 翻转后逐齿仍绿。",
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -21,26 +21,28 @@
   ],
   "riskTier": "high",
   "gateProfile": [
-    "test-quality"
+    "test-quality",
+    "docs-sync"
   ],
   "acceptance": [
-    "M4K3-A1: session_ctx 发送齿——protocol 层私有消息发送原语（K2 delete 原语同族扩展）+ application.cc 会话发起入口接线（HandleToggleChatEvent 等）：每次会话建立、首帧音频前发送 {type:kidpal_session_ctx, source_page:<当前页映射>}（P3→story；home/schedule 闭集映射；时序 = server hello 之后，wss 通道复用后续会话同样发送、重复安全）；读取面 = kidpal_layer_top()/页枚举（不在会话载荷里猜页）；发送失败不阻塞会话建立（降级 = 普通会话，向后兼容负锚）",
-    "M4K3-A2: 引导态与录音态演出齿——P3 按 KEY = 记录语境会话：引导态复用 WF-B-01 聆听布局（kidpal_voice_states 场景消费零修改）+ 气泡文案「需要我帮你记点什么？」；开口第一句（UTT_START 边）进录音态；录音态演出对齐 WF-F2-02（REC 闪点 + 大时长计时秒起 + 声波说话即动 + 话语回显区整段累积回显——stt 帧 story 视图消费接线，K2 占位缝落地；AI 不逐句回复 = front 累积态语义，板端只消费回显）",
-    "M4K3-A3: 录音手势族会话接线齿——v1.47 矩阵录音态行在会话侧落地：KEY 短按 = 收尾保存（listen-stop 既有语义 → front 归档链）；KEY 长按 = 同短按（保存——K2 输入表语义位的会话动作接线，旧丢弃语义负锚）；BOOT 短/长/双击同义 = 丢弃退回列表（cancel 语义 → front acc.cancel 既有；已录内容不出现负锚）；语音「讲错啦」丢弃（V31 回退既有、链路核对零偏移）；引导态全手势 = 结束会话回列表无归档（矩阵引导态行）",
-    "M4K3-A4: prompt v7 齿——第二指令「帮我记下来」判意图 → control/start_recording（S-F2.2 双入口触发词半；v6 单指令现状扩双指令）；故事分工/标题 ≤12 字规则 v6 既有零偏移继承；误判挽回「刚才那段是故事」口径在位核对；story 类 display 块影子口径收口（story_list/story_text 由 front 机械推送，v7 故事段不产 story JSON——CCP §3 影子契约收口面断言）；v7 新文件 + OPENCLAW_SYSTEM_PROMPT_CARRIER 声明翻转 + provider.config 三键同步（ADR-001 接线不变式：渲染面==声明面==被测面；v6 不回改）",
-    "M4K3-A5: 120s 自动收尾板端收口齿——front 驱动（K1-A5）自动收尾归档 → story_text(seq) 下发 → 板端退 REC、盖章演出、回列表（演出链复用 fresh_save 判定，板端零新增计时器负锚——设备侧不产 120s 超时逻辑）；问答会话 60s 语义零触碰（M1 遗留 to-be ② 不复活）",
-    "M4K3-A6: live 真机确认轮（human 持板，一次性收口 K1-A7/K2-A7/K3 live 半）——三源取证（串口 + front + 引擎日志，kidpal-serial-monitor / kidpal-live-smoke-debug 纪律）目击全链：① 双入口开录三式（P3 按 KEY / 任意页「我要讲故事」/「帮我记下来」）→ 引导态 → 录音态累积回显、AI 不逐句回复；② 收尾三式（「我说完了」/再按 KEY / 120s 静默）各自归档起标题（≤12 字）；③ 盖章（文案逐字 + seq 正确 + 0.8s 定格）→ 列表 +1 计数对账；④ BOOT 丢弃负证（已录内容不出现、列表不增）；⑤ 阅读翻屏/KEY 长按退出；⑥ 删除确认 → 云端同步（MD 实删证据 + story_list 重推）→ 计数 −1；⑦ 重启设备流水号不回退（seq 账本持久证据）；⑧ P3 中文全面可见（CJK 字体真机目测）+ 300ms 消歧手感确认",
-    {
-      "id": "M4K3-A7: prompt v7 live 意图半（deferred 并入 A6 轮）——「帮我记下来」真机语音开录实证 + 误判挽回口径真机或日志证据",
-      "kind": "structural",
-      "note": "LLM 意图判定不可 offline 机判归真机目击（M3-K3 同款诚实声明）；A6 轮内一并收口不另开轮"
-    }
+    "M4K3-A1: session_ctx 发送缝（firmware host 齿 RSL-A1/A2/A3，coverage: S-F2.2-AC1 技术信号板端半 + 契约 §四）——protocol 层新增 SendKidpalSessionCtx 原语（逐字仿 SendAbortSpeaking 形态、websocket_protocol 零改动负锚），wire 形状 session_id + type kidpal_session_ctx + source_page 三片段走 SendText（机制级代理，逐字节复证挂设备轮）；发送点 = application.cc HandleStateChangedEvent Listening 分支内 SendStartListening 之前、IsAudioProcessorRunning 门之外无条件执行（通道复用会话不短路漏发、调用恰一次无重试环 = notes ②③）；HandleToggleChatEvent 函数区零 ctx 负锚（会话收尾/中断路径不发会话发起信号）；source_page 映射单点 kidpal_story_ctx_source_page(kidpal_render_node_get_page()) 闭集一次做全（story/schedule/home + 越界兜底 home 绝不外溢第四取值 = notes ④）",
+    "M4K3-A2: 引导态（firmware host 齿 RSL-A4，coverage: S-F2.2-AC1 屏显引导半 + requirements §2.3 引导态行）——kidpal_story_guide_bubble 单源逐字「需要我帮你记点什么？」+ lcd_display.cc apply_look 区覆写消费 needle（M1 冻结映射零触碰）；kidpal_story_recording_enter 开口切录音态决策表（LIST+ctx+speaking → 切；未开口/非记录语境/已录音态幂等/阅读态/越界 → 不切）+ application.cc VAD 事件沿消费 needle（notes ⑨ UTT_START 事件沿；AFE VAD 真沿 = live 目击项，不造 offline 假齿）；REC_SESSION 消费位会话发起接线（show_chat 推语音层前台 + StartListening manual 入口，双入口 KEY 半汇入 Listening 发送点）",
+    "M4K3-A3: 录音手势会话接线（firmware host 齿 RSL-A5，coverage: S-F2.2-AC4 KEY 兜底收尾/BOOT 丢弃 + S-F2.2-AC2 停录保存链板端半 + notes (e) 两 front 路径不混负锚）——STOP_RECORD case → StopListening 收尾保存面（listen stop 上行触发 front 归档）且 case 区零 CloseAudioChannel/零 ToggleChatState（负锚: toggle 断连不发 listen stop → front disconnect cancel 丢弃 = 毁稿根）；DISCARD_RECORD case → CloseAudioChannel 丢弃面且 case 区零 StopListening（负锚: 丢弃不得走归档面 = 语义反转回潮防护）；KEY 长按同短按 = K2 输入表冻结面只消费不重钉",
+    "M4K3-A4: 引导态结束 ≠ 录音态丢弃 front 双路径守卫（server pytest 两齿，coverage: S-F2.2-AC4 丢弃不落盘 + §2.3 引导态行 + notes 边角⑪）——真实连接流程（ws_gateway 全程离线: 鉴权 + accept + 假引擎腿 + 两泵 + 断连收尾 cancel 钩子）: 引导态结束（ctx 后未开口断连）零归档零 story_text 下行；录音态丢弃（有累积断连）零归档 + 同会话键重开停录不复活已丢弃内容（cancel 弹缓冲 = v1.49 不设重录恢复的 front 侧后果）；两齿全 must-stay-green 守卫（K1 cancel 冻结语义零触碰，只核对零偏移）",
+    "M4K3-A5: story 录音态话语回显（firmware host 齿 RSL-A6，coverage: S-F2.2-AC2 切句只用于话语回显板端半）——kidpal_story_echo_* 行数机理全承载（reset 清零/push 逐句入列满容量 FIFO 挤最旧 KSTORY_ECHO_MAX_LINES=4/count/line idx0=最旧；NULL/空串/全空白拒绝且不污染计数）+ application.cc stt 分支记录语境旁路喂入 needle（与 front _story_feed_from_stt 旁路同构、不改 wire）；「AI 不逐句回复」会话半 = K1 累积态 + LISTEN_MANUAL M1 冻结面消费零偏移不重钉",
+    "M4K3-A6: story_list 推送 gating 板端半（firmware host 齿 RSL-A7，coverage: defer 包 260928-story-connect-push-defer ①恢复重裁承接 + plan T5）——kidpal_story_list_gate 决策表（VOICE 前台或录音态页 → 只装缓存不推前台 = defer 真机缺陷形态的板端防护；LIST 冷浏览/阅读/盖章/删除/未知态 → 推前台 = K2 消费面零偏移红线）+ mcp_server VRT_ROUTE_STORY_LIST 路由消费 needle（决策有驱动方）；「P3 冷浏览无列表数据源」残余缺口 = M4K3-DC-1 dropped 显式取舍（见 decisionCoverage，review-packet 提示 human 项）",
+    "M4K3-A7: session_ctx 条件推送 front 半（server pytest 五齿，coverage: S-F2.2-AC1 技术信号 front 半 + defer ①恢复重裁 + FIX-A1 语义保持）——首帧 ctx(story)（chat→accumulate 沿）恰一帧 story_list 下行（total = 现存篇数，producer 单源零改）；重复 ctx(story) 零新增帧（契约重复发送安全）；ctx(home/schedule/未知) 与无 ctx 普通会话零帧双守卫（防过宽实现/建连即推回潮）；落点结构守卫 = 条件推送落 _consume_kidpal_control ctx 分支、ws_gateway 建连段零 _push_story_list 调用（FIX-A1 负锚齿在 K1 文件套件内继续运行，不双断言同一面）",
+    "M4K3-A8: prompt v8 双指令批（server pytest 三齿，coverage: S-F2.2-AC1 触发词入口 v8 承载 + notes ⑦⑧ + E2 版本化铁律）——三面接线一致版本无关解析齿（carrier artifact 行解析当前版本 V → provider.config.yaml 三键 + apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST 同 V + V 文件在世 + carrier 保留 v7 沿革条目；ADR-001 零版本字面断言，漏翻任一面必红、后续 bump 不假红）；当前版本文件故事段内容锚（双指令「我要讲故事」+「帮我记下来」+ 意图边界负例「帮我记下来明天带跳绳」= 课表录入不得判开录 + 影子口径禁产 story 块 + 标题 ≤12 字零偏移继承）；v7 本体 sha256 零回改铁律齿（E2 新文件不回改 v7）；LLM 真判定（真机开录/误触课表）= live 轮目击项（notes ⑩，M3-K3 同款诚实申报，无 offline 假齿）",
+    { "id": "M4K3-A9", "kind": "structural", "text": "M4K3-A9: 零偏移与注册守卫（firmware RSL-C1 + server 守卫齿 + 双通道全量，coverage: E1/K1-K2 冻结面）——spec canary（requirements S-F2.2 + kidpal_session_ctx 锚在世）、契约 canary（§四 kidpal_session_ctx/source_page 在世，本包零契约改动）、K2 动作码语义位零偏移（story_page.h REC_SESSION/STOP_RECORD/DISCARD_RECORD 在世）、HOST_ACCEPTANCE_SRCS 注册序守卫（本文件置于 smoke 之前 = builder FIRST ACTION 机判）；K1 27 齿 + K2 冻结齿零偏移由通道①②全量运行承载（既有齿零偏移佐证 = 引用锚行判停: 2c7343a 实测 128T0F，git diff 2c7343a HEAD -- firmware 零差异 2026-09-30 实证）" }
   ],
-  "acceptanceTestsFile": [],
+  "acceptanceTestsFile": [
+    "firmware/main/test/record_session_live.acceptance.c",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py"
+  ],
   "exitCriteria": [
     "M4K3-E1: host 齿全量零红（板端发送缝/引导态/手势接线/回显消费 + K2 冻结面零偏移）+ server 面 pytest 零新增红（front 拦截/累积链路回归，K1 冻结语义零偏移）+ device build 闸过（体积余量证据）",
-    "M4K3-E2: 铁律——docs/contracts/** 与 spec 零改；prompt v7 新文件不回改 v6（版本化演进 + carrier 声明翻转 + ADR-001 接线不变式）；OpenClaw 本体架构零改动（prompt 载荷 = 部署制品模式）；板端零新增计时器（60s/120s 设备侧 timer 不复活）；StoryAccumulator/front 拦截 K1 冻结语义零触碰（消费不重写）",
-    "M4K3-E3: live 确认轮证据落账（三源日志关联 + human 目击记名）；真机轮后 progress.md K3 段落账 + pod-retro.md（closeout 相位）；docs-sync 面（arch §5.2④ live 实证态 + §5.5.4 记录会话演出收口 + §5.5.5 prompt 现役 v7 + to-be ⑥ 销账注记）随 integrator 收口义务在案；milestones.jsonl M4 行 state 收口提议（human/integrator 维护纪律——本包只备证据不直改 state）"
+    "M4K3-E2: 铁律——docs/contracts/** 与 spec 零改；prompt v8 新文件不回改 v7（版本化演进 + carrier 声明翻转 + 渲染脚本 apply-xiaozhi-overlay.sh 版本行翻转 + ADR-001 接线不变式）；OpenClaw 本体架构零改动（prompt 载荷 = 部署制品模式）；板端零新增计时器（60s/120s 设备侧 timer 不复活）；StoryAccumulator/front 拦截 K1 冻结语义零触碰（消费不重写）",
+    "M4K3-E3: live 确认轮证据落账（三源日志关联 + human 目击记名）；真机轮后 progress.md K3 段落账 + pod-retro.md（closeout 相位）；docs-sync 面（arch §5.2④ live 实证态 + §5.5.4 记录会话演出收口 + §5.5.5 prompt 现役 v8 + to-be ⑥ 销账注记——C4 arch 收口已提前落地 c735062 不再由本包承载，2026-09-30 E3 措辞同步收窄）随 integrator 收口义务在案；milestones.jsonl M4 行 state 收口提议（human/integrator 维护纪律——本包只备证据不直改 state）"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md#§四",
@@ -53,7 +55,20 @@
     "docs/architecture.md#§5.5.5"
   ],
   "sourceRefs": [
+    "S-F2.2-AC1",
+    "S-F2.2-AC2",
+    "S-F2.2-AC3",
+    "S-F2.2-AC4",
+    "S-F2.1-AC1",
+    "S-F2.1-AC2",
+    "S-F2.1-AC3",
+    "S-F2.1-AC4",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
+    "S-F2.4-AC1",
+    "S-F2.4-AC2",
     "delivery/workstreams/m4-star-notebook/progress.md",
+    "delivery/changes/dev/260928-story-connect-push-defer/review-packet.md",
     "firmware/main/application.cc",
     "firmware/main/protocols/websocket_protocol.cc",
     "firmware/main/protocols/protocol.cc",
@@ -64,33 +79,77 @@
     "server/gateway/front/front_app.py",
     "server/gateway/story.py",
     "server/deploy/openclaw-system-prompt.v6.md",
+    "server/deploy/openclaw-system-prompt.v7.md",
     "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
-    "server/deploy/provider.config.yaml"
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh"
+  ],
+  "changeManifest": [
+    "firmware/main/protocols/protocol.h",
+    "firmware/main/protocols/protocol.cc",
+    "firmware/main/application.cc",
+    "firmware/main/application.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/test/**",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/**",
+    "server/tests/**",
+    "server/deploy/**",
+    "docs/architecture.md"
+  ],
+  "impactedTestsSeed": [
+    { "path": "firmware/main/test/record_session_live.acceptance.c", "kind": "new", "note": "本包新冻结验收件（名可由 acceptance-author 定）：发送缝/引导态/手势接线/回显消费/推送 gating 五族齿" },
+    { "path": "firmware/main/test/story_page_v2.acceptance.c", "kind": "regression", "note": "K2 冻结齿零偏移复验（含 story_page_v2.test.c 伴件）" },
+    { "path": "firmware/main/test/key_layer_dispatch.acceptance.c", "kind": "regression", "note": "M1-K1a 冻结 + P3 分流回归" },
+    { "path": "firmware/main/test/voice_round_ui.acceptance.c", "kind": "regression", "note": "语音轮冻结面 + LISTEN_MANUAL 语境回归" },
+    { "path": "firmware/main/test/host_app/main/CMakeLists.txt", "kind": "wiring", "note": "HOST_ACCEPTANCE_SRCS 接线随新齿" },
+    { "path": "firmware/main/test/acceptance/red-baseline/", "kind": "baseline", "note": "red-baseline summary 落账面" },
+    { "path": "server/acceptance/test_m4k3_record_session_live.acceptance.py", "kind": "new", "note": "ctx 条件推送正负锚 + FIX-A1 语义保持 + K1 27 齿零偏移" },
+    { "path": "server/acceptance/test_m4k1_story_cloud_link.acceptance.py", "kind": "regression", "note": "K1 冻结齿零偏移（含 FIX-A1/FIX-A2）" },
+    { "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "kind": "review", "note": "v8 翻转潜在修订对象——初判不破（无版本字面断言），acceptance-author 须复核" },
+    { "path": "server/tests/test_story_units.py", "kind": "regression", "note": "StoryAccumulator 回归" }
   ],
   "iterationBudget": 2,
   "fixBudget": 2,
   "supervisorBlockBudget": 2,
   "docsSyncRequired": true,
-  "docsSyncReason": "arch 面收口：§5.2 场景④ live 实证态更新（「host 验收过、live 面部分在办」→ live 端到端实证）+ §5.5.4 记录会话演出改名对账【修复项】收口 + to-be ⑥（session_ctx 端网关接线）销账注记 + §5.5.5 prompt 现役版收口——**arch 正文现写「现状 = v4」为双重漂移（v5/v6 两级未记，门 1 F5），docs-sync 实际动作 = 正文 v4→v7 + 补 v5/v6 沿革 + 视情更新 §8.1 债 7**。requirements 面零改动（F2 对账销账半归 K2；server/deploy/README.md v3 文档债既有 ARQ 在册不属本包）。",
+  "docsSyncReason": "arch 面收口：§5.2 场景④ live 实证态更新（「host 验收过、live 面部分在办」→ live 端到端实证）+ §5.5.4 记录会话演出改名对账【修复项】收口 + to-be ⑥（session_ctx 端网关接线）销账注记 + §5.5.5 prompt 现役版收口——arch 正文现写「现状 = v4」为双重漂移（v5/v6 两级未记，门 1 F5），docs-sync 实际动作 = 正文 v4→v8 + 补 v5/v6/v7 沿革 + 视情更新 §8.1 债 7。**重拆增补（2026-09-29，同日更新）**：K1 遗留 C4 arch 收口已提前落地（human spec 批「落」，commit c735062，2026-09-29）——本包 docs-sync 不再承载 C4，仅剩 arch §5.2④ live 实证态 / §5.5.4 / §5.5.5 / to-be ⑥ 常规面；契约 §1.5 括注漂移（story_list 时点枚举陈旧）维持登记、处置走契约门四分类（architect-reviewer + human 契约门），不在包内自改契约。requirements 面零改动（F2 对账销账半归 K2）。",
   "mergeOrder": 40,
   "dependsOn": [
     "260924-m4-k1-story-cloud-link",
     "260924-m4-k2-p3-star-notebook-ui"
   ],
   "testHost": "WSL host runner（发送缝/引导态/手势接线/回显消费 host 机判）+ pytest server offline 齿 + device build 闸 + human 持板真机确认轮（三源取证，单真机不撞车纪律）",
-  "decisionCoverage": [],
+  "decisionCoverage": [
+    { "id": "M4K3-DC-1",
+      "sourceRefs": ["S-F2.1-AC1"],
+      "decision": "「P3 冷浏览（无会话翻页）无列表数据源」残余缺口——三时点①恢复重裁为 ctx(story) 沿条件推送后，未开会话直接翻到 P3 浏览列表仍无数据源",
+      "landsIn": "dropped",
+      "reason": "契约零改铁律约束下无干净缝（story_list 为 front→设备下行、设备无请求消息，加 fetch 消息 = 契约改动越界；hello 后条件推送不可行——front 无法预知记录语境，条件化只能等 ctx、退化为 ctx 时点）；补偿语义 = plan T5: 首次开录（ctx 沿推送）/归档后（②）/删除后（③）三时点可见 + K2 影子缓存跨会话留存，冷浏览空态由 KSTORY_EMPTY_HINT 既有空态承载",
+      "summary": "显式取舍条目: acceptance 冻齿不为其造断言（无干净缝下造假齿 = 空过）；若 human 要求冷浏览有列表 = 需开契约门新增设备请求消息（非本包面）——review-packet 提示 human 项" }
+  ],
   "crossPackageBehaviors": [
     {
       "topic": "kidpal_session_ctx 信号双端实现（契约已 LANDED 零改动）",
       "owner": "260924-m4-k1-story-cloud-link",
       "carriedBy": "260924-m4-k3-record-session-live",
-      "note": "板端发送半 = K3（M4K3-A1，protocol 原语 K2 delete 同族扩展 + application.cc 会话发起入口读 layer_top）；front 拦截半 K1 已 merged 为前提（dependsOn）。"
+      "note": "板端发送半 = K3（protocol 原语 K2 delete 同族扩展 + application.cc 会话发起入口读 layer_top）；front 拦截半 K1 已 merged 为前提（dependsOn 实存）。"
+    },
+    {
+      "topic": "story_list 推送触发重裁（K1 建连即推时点被 defer 包摘除后的①恢复语义）",
+      "owner": "260924-m4-k1-story-cloud-link",
+      "carriedBy": "260924-m4-k3-record-session-live",
+      "note": "260928-story-connect-push-defer 实证：建连即推与设备每会话 WS 重连冲突（旧固件无条件渲染 P3 页盖聆听态 + 零 CJK 字体半截页）→ 摘除建连调用点，现役推送 = 归档后 + 删除后两时点。①（建连时点）是否恢复/以何形态恢复（如 hello 后条件推送、或仅 K3 引导态会话建立时推）= K3 重裁，重裁结论归 acceptance 冻齿断言；K3 session_ctx 接线（引导态会话建立）是恢复时点的天然候选缝。"
     },
     {
       "topic": "K1/K2 live 真机半（structural deferred 承接）",
       "owner": "260924-m4-k1-story-cloud-link",
       "carriedBy": "260924-m4-k3-record-session-live",
-      "note": "K1-A7/K2-A7 live 半全部在本包 A6 确认轮一次性收口；设备轮前 K1/K2 host 半须 merged（LP4）。"
+      "note": "K1-A7/K2 真机目测半 live 全部在本包 live 确认轮一次性收口；设备轮前 K1/K2 host 半须 merged（LP4）——K2 host 半 merged 为 dependsOn 实存前提。"
     },
     {
       "topic": "mcp_server.cc story 路由面双写串行",
@@ -106,9 +165,17 @@
     }
   ],
   "mutationRequired": true,
-  "mutationEvidence": {
-    "perAcceptance": []
-  },
+  "mutationEvidence": [
+    { "id": "M4K3-A1", "sensitive": true, "mutation": "移除 SendKidpalSessionCtx 原语（protocol.h/.cc 任一）或摘 application.cc Listening 分支发送调用，或把发送调用移入 IsAudioProcessorRunning 门内（通道复用会话短路漏发）", "expectedRed": "RSL-A1/RSL-A2 转红（0/3 文件命中 / Listening 分支调用数 != 1）", "counterEvidence": "设计态红即 counterEvidence（GREEN 后 builder 实做重放）——RED verbatim: RSL-A1「SendKidpalSessionCtx 仅 0/3 文件命中（期望 >= 3: protocol.h/.cc + application.cc）」/ RSL-A2「Listening 分支内 SendKidpalSessionCtx 调用数 != 1（0 = 会话发起发送半未接线）」", "acceptanceEntry": "M4K3-A1: session_ctx 发送缝（firmware host 齿 RSL-A1/A2/A3，coverage: S-F2.2-AC1 技术信号板端半 + 契约 §四）——protocol 层新增 SendKidpalSessionCtx 原语（逐字仿 SendAbortSpeaking 形态、websocket_protocol 零改动负锚），wire 形状 session_id + type kidpal_session_ctx + source_page 三片段走 SendText（机制级代理，逐字节复证挂设备轮）；发送点 = application.cc HandleStateChangedEvent Listening 分支内 SendStartListening 之前、IsAudioProcessorRunning 门之外无条件执行（通道复用会话不短路漏发、调用恰一次无重试环 = notes ②③）；HandleToggleChatEvent 函数区零 ctx 负锚（会话收尾/中断路径不发会话发起信号）；source_page 映射单点 kidpal_story_ctx_source_page(kidpal_render_node_get_page()) 闭集一次做全（story/schedule/home + 越界兜底 home 绝不外溢第四取值 = notes ④）" },
+    { "id": "M4K3-A2", "sensitive": true, "mutation": "移除 kidpal_story_guide_bubble / kidpal_story_recording_enter / REC_SESSION 会话发起接线三针任一", "expectedRed": "RSL-A4 转红（气泡 NULL / 决策表错判）", "counterEvidence": "设计态红即 counterEvidence——RED verbatim: RSL-A4「kidpal_story_guide_bubble() 返回 NULL（frozen seam [S2] 未实现）」", "acceptanceEntry": "M4K3-A2: 引导态（firmware host 齿 RSL-A4，coverage: S-F2.2-AC1 屏显引导半 + requirements §2.3 引导态行）——kidpal_story_guide_bubble 单源逐字「需要我帮你记点什么？」+ lcd_display.cc apply_look 区覆写消费 needle（M1 冻结映射零触碰）；kidpal_story_recording_enter 开口切录音态决策表（LIST+ctx+speaking → 切；未开口/非记录语境/已录音态幂等/阅读态/越界 → 不切）+ application.cc VAD 事件沿消费 needle（notes ⑨ UTT_START 事件沿；AFE VAD 真沿 = live 目击项，不造 offline 假齿）；REC_SESSION 消费位会话发起接线（show_chat 推语音层前台 + StartListening manual 入口，双入口 KEY 半汇入 Listening 发送点）" },
+    { "id": "M4K3-A3", "sensitive": true, "mutation": "STOP_RECORD case 改走 CloseAudioChannel/ToggleChatState（不发 listen stop）或 DISCARD_RECORD case 改走 StopListening（丢弃误走归档面）", "expectedRed": "RSL-A5 双负锚转红", "counterEvidence": "设计态红即 counterEvidence——RED verbatim: RSL-A5「KSPV2_ACT_STOP_RECORD case 零 StopListening 接线」", "acceptanceEntry": "M4K3-A3: 录音手势会话接线（firmware host 齿 RSL-A5，coverage: S-F2.2-AC4 KEY 兜底收尾/BOOT 丢弃 + S-F2.2-AC2 停录保存链板端半 + notes (e) 两 front 路径不混负锚）——STOP_RECORD case → StopListening 收尾保存面（listen stop 上行触发 front 归档）且 case 区零 CloseAudioChannel/零 ToggleChatState（负锚: toggle 断连不发 listen stop → front disconnect cancel 丢弃 = 毁稿根）；DISCARD_RECORD case → CloseAudioChannel 丢弃面且 case 区零 StopListening（负锚: 丢弃不得走归档面 = 语义反转回潮防护）；KEY 长按同短按 = K2 输入表冻结面只消费不重钉" },
+    { "id": "M4K3-A4", "sensitive": true, "mutation": "front 侧断连 cancel 面回潮（引导态结束断连误走归档/不弹缓冲——K1 cancel 语义回潮）或守卫齿断言被放松", "expectedRed": "M4K3-A4 两守卫齿转红（引导态结束出现归档/story_text 下行；丢弃会话停录复活已弃内容）+ K1 件 A2/A5 齿同转红", "counterEvidence": "守卫齿现状绿 must-stay-green（K1 冻结面零偏移核对面）；敏感性由真实连接流程齿承载——front cancel 语义回潮必红。planner 代存适配注：acceptance-author 回执原报 sensitive:false（无独立变异面），planner Step 8 finalize 按齿自身行为面改判 sensitive:true（断连语义回潮即红，判定诚实可复核）", "acceptanceEntry": "M4K3-A4: 引导态结束 ≠ 录音态丢弃 front 双路径守卫（server pytest 两齿，coverage: S-F2.2-AC4 丢弃不落盘 + §2.3 引导态行 + notes 边角⑪）——真实连接流程（ws_gateway 全程离线: 鉴权 + accept + 假引擎腿 + 两泵 + 断连收尾 cancel 钩子）: 引导态结束（ctx 后未开口断连）零归档零 story_text 下行；录音态丢弃（有累积断连）零归档 + 同会话键重开停录不复活已丢弃内容（cancel 弹缓冲 = v1.49 不设重录恢复的 front 侧后果）；两齿全 must-stay-green 守卫（K1 cancel 冻结语义零触碰，只核对零偏移）" },
+    { "id": "M4K3-A5", "sensitive": true, "mutation": "移除 kidpal_story_echo_* 缝任一/破 FIFO 语义（满容量不挤最旧）/摘 application.cc stt 分支旁路喂入", "expectedRed": "RSL-A6 转红（哨兵/机理断言失败）", "counterEvidence": "设计态红即 counterEvidence——RED verbatim: RSL-A6「kidpal_story_echo_reset 返回 != 0（哨兵 -2 = frozen seam [S3] 未实现）」", "acceptanceEntry": "M4K3-A5: story 录音态话语回显（firmware host 齿 RSL-A6，coverage: S-F2.2-AC2 切句只用于话语回显板端半）——kidpal_story_echo_* 行数机理全承载（reset 清零/push 逐句入列满容量 FIFO 挤最旧 KSTORY_ECHO_MAX_LINES=4/count/line idx0=最旧；NULL/空串/全空白拒绝且不污染计数）+ application.cc stt 分支记录语境旁路喂入 needle（与 front _story_feed_from_stt 旁路同构、不改 wire）；「AI 不逐句回复」会话半 = K1 累积态 + LISTEN_MANUAL M1 冻结面消费零偏移不重钉" },
+    { "id": "M4K3-A6", "sensitive": true, "mutation": "kidpal_story_list_gate 恒 0/恒 1，或 VRT_ROUTE_STORY_LIST 路由不消费 gate 结果", "expectedRed": "RSL-A7 决策表转红（VOICE 前台误推前台 / LIST 冷浏览误装缓存）", "counterEvidence": "设计态红即 counterEvidence（GREEN 后重放）——RED verbatim: RSL-A7「VOICE 前台 + LIST 页未判只装缓存（期望 1）」", "acceptanceEntry": "M4K3-A6: story_list 推送 gating 板端半（firmware host 齿 RSL-A7，coverage: defer 包 260928-story-connect-push-defer ①恢复重裁承接 + plan T5）——kidpal_story_list_gate 决策表（VOICE 前台或录音态页 → 只装缓存不推前台 = defer 真机缺陷形态的板端防护；LIST 冷浏览/阅读/盖章/删除/未知态 → 推前台 = K2 消费面零偏移红线）+ mcp_server VRT_ROUTE_STORY_LIST 路由消费 needle（决策有驱动方）；「P3 冷浏览无列表数据源」残余缺口 = M4K3-DC-1 dropped 显式取舍（见 decisionCoverage，review-packet 提示 human 项）" },
+    { "id": "M4K3-A7", "sensitive": true, "mutation": "摘除 _consume_kidpal_control ctx 分支条件推送，或改无条件每帧推/建连回推（过宽方向）", "expectedRed": "摘除 → 两行为齿 + 落点结构齿红；过宽 → 守卫齿 + K1 件 FIX-A1 齿红", "counterEvidence": "设计态红即 counterEvidence——RED verbatim: test_a7_ctx_story_first_pushes_exactly_one_story_list「M4K3-A7 RED: 首帧 ctx(story) 产生 0 帧 story_list 下行」/ test_a7_ctx_duplicate_pushes_no_extra_frame「M4K3-A7 RED: 重复 ctx(story) 共产生 0 帧 story_list」/ test_a7_push_seam_lands_in_ctx_consume_not_connect「M4K3-A7 RED: _consume_kidpal_control 的 kidpal_session_ctx 分支无 _push_story_list」", "acceptanceEntry": "M4K3-A7: session_ctx 条件推送 front 半（server pytest 五齿，coverage: S-F2.2-AC1 技术信号 front 半 + defer ①恢复重裁 + FIX-A1 语义保持）——首帧 ctx(story)（chat→accumulate 沿）恰一帧 story_list 下行（total = 现存篇数，producer 单源零改）；重复 ctx(story) 零新增帧（契约重复发送安全）；ctx(home/schedule/未知) 与无 ctx 普通会话零帧双守卫（防过宽实现/建连即推回潮）；落点结构守卫 = 条件推送落 _consume_kidpal_control ctx 分支、ws_gateway 建连段零 _push_story_list 调用（FIX-A1 负锚齿在 K1 文件套件内继续运行，不双断言同一面）" },
+    { "id": "M4K3-A8", "sensitive": true, "mutation": "v8 故事段删「帮我记下来」第二指令或删「帮我记下来明天带跳绳」边界负例，或回改 v7 本体，或 carrier/provider/overlay 渲染脚本任一面漏翻版本", "expectedRed": "内容齿红 / v7 sha256 铁律齿红 / 三面一致解析齿红", "counterEvidence": "设计态红即 counterEvidence——RED verbatim: test_a8_current_prompt_dual_trigger_and_boundary「M4K3-A8 RED: 故事段无「帮我记下来」第二指令 + 无「帮我记下来明天带跳绳」边界负例」", "acceptanceEntry": "M4K3-A8: prompt v8 双指令批（server pytest 三齿，coverage: S-F2.2-AC1 触发词入口 v8 承载 + notes ⑦⑧ + E2 版本化铁律）——三面接线一致版本无关解析齿（carrier artifact 行解析当前版本 V → provider.config.yaml 三键 + apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST 同 V + V 文件在世 + carrier 保留 v7 沿革条目；ADR-001 零版本字面断言，漏翻任一面必红、后续 bump 不假红）；当前版本文件故事段内容锚（双指令「我要讲故事」+「帮我记下来」+ 意图边界负例「帮我记下来明天带跳绳」= 课表录入不得判开录 + 影子口径禁产 story 块 + 标题 ≤12 字零偏移继承）；v7 本体 sha256 零回改铁律齿（E2 新文件不回改 v7）；LLM 真判定（真机开录/误触课表）= live 轮目击项（notes ⑩，M3-K3 同款诚实申报，无 offline 假齿）" },
+    { "id": "M4K3-A9", "suiteGate": true, "note": "套件级回归门（M-4 成文：非逐 AC 敏感判定对象）——K1 27 齿 + K2 冻结齿零偏移由通道①②全量运行承载；canary/注册序守卫的敏感性由 RSL-C1 tooth 1-3（现状绿 must-stay-green）与 K1/K2 件自身齿承载", "acceptanceEntry": "M4K3-A9: 零偏移与注册守卫（suiteGate，见 acceptance[] 对象条目）" }
+  ],
   "crossEnd": {
     "counterparts": [
       {
@@ -126,7 +193,7 @@
     ],
     "exempt": ""
   },
-  "notes": "mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏，plan.md 边角节）：① session_ctx 时序 = 首帧音频前（hello 之后）——发晚了 front 已按普通会话切句送 LLM；② 通道复用会话（wss 常驻第 2+ 次会话）同样发送，不只首连；③ 板端零新增计时器（120s 全在 front，板端只消费收尾结果）；④ KEY 长按=保存的语义反转负锚（旧冻结表长按=丢弃）；⑤ prompt v7 影子口径（LLM 不再产 story 类 display 块——front 机械推送单源）；⑥ 引导态「无归档结束」（矩阵引导态行全手势 = 结束会话回列表，不触发累积/归档）。调度：K1+K2 merged 后启动；live 确认轮 = human 在场持板（LP4），单真机不撞车；常驻树接力棒形态（M3 先例）。",
+  "notes": "重拆留痕（2026-09-29，按 260928/260929 拆包新规覆盖重写）：acceptance 改空骨架（唯一写点 = Pod 内 acceptance-author）、plan.md 收窄五件骨架、拆包侧 brief 撤回（Pod planner Step 7 自产）、增 changeManifest（拆包期粗填，Pod planner Step 1g architect 预评后精化）。defer 包后果吸收：260928-story-connect-push-defer 摘除 K1 建连即推后，①恢复语义归本包重裁（见 crossPackageBehaviors 重裁条）——设备每会话 WS 重连与推送时点的冲突形态是真机轮前置必答题。原拆包侧实现决策要点压缩备查（acceptance-author 断言化与 planner 派发 prompt 承接）：① session_ctx 时序 = 首帧音频前（server hello 之后）——发晚了 front 已按普通会话切句送 LLM；② 通道复用会话（wss 常驻第 2+ 次会话）同样发送，不只首连；③ 发送失败降级普通会话不阻塞（向后兼容负锚，不重试风暴）；④ source_page 映射单点 = 会话发起入口（KEY 按与唤醒词「你好，小智」两入口都过，kidpal_layer_top() 读取，闭集映射一次做全）；⑤ 板端零新增计时器（120s 全在 front，板端只消费收尾结果）；⑥ KEY 长按=保存的语义反转负锚（旧冻结表长按=丢弃）；⑦ prompt v8 影子口径（LLM 不再产 story 类 display 块——front 机械推送单源）+ 双指令判定不得越界误触课表录入意图（「帮我记下来明天带跳绳」边界随冻齿断言）；⑧ 归档起标题 ≤12 字规则 = v7 故事段既有零偏移继承；⑨ 开口第一句边界 = UTT_START 事件沿（板端切录音态的触发锚）；⑩ LLM 意图判定不可 offline 机判（「帮我记下来」真机开录实证 = live 轮目击项，M3-K3 同款诚实声明）；⑪ 引导态「无归档结束」≠ 录音态丢弃（前者零 cancel 副作用、后者 acc.cancel）。mutationEvidence 空骨架前置（DEV-GOVERNANCE 起包前置第 1 条）；counterEvidence 红名由 acceptance-author 冻齿时回填。边角（builder 易漏）：① 「讲错啦」语音丢弃 = V31 回退既有链路，只核对零偏移、不重接；② prompt v8 新文件不回改 v7（版本化演进 + OPENCLAW_SYSTEM_PROMPT_CARRIER 声明翻转 + provider.config 三键同步 + apply-xiaozhi-overlay.sh 版本行翻转——动作四件，预评补渲染脚本一件）。调度：K1+K2 merged 后启动（K2 host 半 merged 为真机轮前置）；live 确认轮 = human 在场持板（LP4），单真机不撞车；常驻树接力棒形态（M3 先例）。**2026-09-30 Pod intake 修正留痕（finalize 权内，origin 零触碰）**：(a) prompt 版本号全局 v7→v8——1g architect 预评实证 v7 槽已被 260925-prompt-v7-round-routing 批占用（v7 文件在树 + carrier 声明现役 v7 + provider 三键指 v7 + v7 验收件在世），本批双指令批须落 v8 否则 add/add 槽位冲突（carrier :50-52 ARQ-260808 预约规则正中此案）；story/E2/E3/notes/docsSyncReason 措辞已同步改写。(b) changeManifest 精化：protocols 收窄至 protocol.{h,cc}（websocket_protocol 零改动实证）；增 application.h / story_page.h / lcd_display.cc（引导态气泡写点）；移出 session_state_machine.h（零改动预期：UTT_START 走 VAD 事件不走状态机，acceptance 若需承载齿经扩单通道加回）。(c) sourceRefs 增 v7.md 与 apply-xiaozhi-overlay.sh（渲染面版本硬编码 :93-94 两行必翻）。(d) ①重裁预评推荐形态（acceptance 冻齿关键输入）：front 收 kidpal_session_ctx 后 routing-沿条件推送（acc.routing != \"accumulate\" 时才推，story.py 零改动）+ 板端记录语境前台 story_list 只装缓存不切前台（gating）；FIX-A1 建连路径负锚天然保持；「P3 冷浏览（无会话翻页）无列表数据源」残余缺口须 acceptance 冻齿时显式记录取舍。(e) 发送点 = Listening 分支 SendStartListening 之前、IsAudioProcessorRunning 门之外无条件执行（通道复用会话漏发防护）；STOP_RECORD 必须走 StopListening（listen stop 上行触发 front 归档），严禁走 ToggleChatState（CloseAudioChannel 不发 listen stop → front 走 disconnect cancel 丢弃路径——两条 front 路径不混的板端根）。(f) scope-map 核对（1c）：builder/fixer allow 覆盖实现面；验收齿归 acceptance-author（builder deny **/acceptance/**）；integrator 无 docs/architecture.md 写权 → arch 面走 patch 形态 docs-delta.md + human spec 批后治理批落地（K1/K2 先例，integrator 派单前置模板）。**acceptance 冻结代存留痕（2026-09-30，Step 8）**：acceptance-author 回填本文件被 enforce-scope 拦截（其 allow 不含 delivery/taskpackages/**），全文回执由 planner 代存——acceptance[]（9 条）/acceptanceTestsFile[]/redBaselineResult/mutationEvidence（回执 perAcceptance 形态适配为 K2 先例扁平数组：acceptanceEntry 挂条目原文逐字 + sensitive 信号；M4K3-A4 由回执原报 sensitive:false 改判 true（齿自身行为面可变异，适配理由写进该记录）/M4K3-A9 转 suiteGate 对象条目（套件级回归门 M-4 成文））/decisionCoverage M4K3-DC-1（dropped 显式取舍，review-packet 提示 human 项）。冻结期修订窗 2 条（R1/R2）零 fixture 缺陷红残留；live 轮目击项清单见 acceptance-author 回执（AFE VAD 真沿/ctx 逐字节/LLM 真判定/演出冲突/defer 复验/K1/K2 deferred 半）。",
   "docsOwner": "integrator",
   "launchPreconditions": null
 }

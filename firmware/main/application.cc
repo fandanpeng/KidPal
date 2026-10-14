@@ -20,6 +20,20 @@
  * 既有回显通道。设备侧零重抄映射。 */
 #include "display/voice_round.h"
 #include "display/kidpal_voice_states.h"
+#include "display/story_page.h"  /* K3: source_page 映射/引导态/回显/记录语境标志冻结缝 */
+
+/* K3 (260924-m4-k3-record-session-live): 记录会话消费状态（文件级静态; 单写者——
+ * on_vad_change 回调写 speaking / 主循环读, 32 位标量, 与既有跨任务宽松度同级）。
+ * s_story_rec_entered = 引导态->录音态已切换镜像（幂等防重切; Idle 收尾与标志同步清）。 */
+void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.cc（mcp_server.h
+                                       * 冻结面零改动——变更清单不含该头, 免扩公共面） */
+/* K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1; 定义
+ * 住 mcp_server.cc, 同款免扩公共头纪律）: 读 story 视图页态供 kidpal_story_session_end
+ * 判据 + 复位录音页态并停录音演出定时器。 */
+int  KidpalStoryViewPageState();
+void KidpalStorySessionEndApply(int list_page);
+static bool s_vad_speaking = false;
+static bool s_story_rec_entered = false;
 
 #include <cstring>
 #include <esp_log.h>
@@ -54,6 +68,13 @@ static bool s_sntp_started = false;
  * 时序, 实时节奏归真机窗 K6-A7; vTaskDelay 换算乘法形态见 TryStartAutoConnect task）。
  * ------------------------------------------------------------------------ */
 static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
+
+/* -------------------------------------------------------------------------- *
+ * 261010 [S9] 常驻重建 T 秒延迟（B 路径, 决策 29「永不休眠」）: 会话收尾类本地关后
+ * 延迟重建常驻连接——值 5（退避表首档 5s 量级, plan 定值并冻结进验收件; 改值须回
+ * planner 重冻结）。本 needle 首现即本定义。
+ * ------------------------------------------------------------------------ */
+static const int kResidentRebuildDelayS = 5;
 
 /* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
 static void KidPalSntpMonitorTask(void *arg)
@@ -174,6 +195,9 @@ void Application::Initialize() {
         xEventGroupSetBits(event_group_, MAIN_EVENT_WAKE_WORD_DETECTED);
     };
     callbacks.on_vad_change = [this](bool speaking) {
+        /* K3 [S2]: VAD 沿值留档（引导态开口切录音态决策入参; notes ⑨ UTT_START
+         * 事件沿——主循环消费, 零新增计时器）。 */
+        s_vad_speaking = speaking;
         xEventGroupSetBits(event_group_, MAIN_EVENT_VAD_CHANGE);
     };
     audio_service_.SetCallbacks(callbacks);
@@ -324,6 +348,21 @@ void Application::Run() {
             if (GetDeviceState() == kDeviceStateListening) {
                 auto led = Board::GetInstance().GetLed();
                 led->OnStateChanged();
+                /* K3 [S2]: 开口切录音态（S-F2.2-AC1 第一句即进录音态; notes ⑨）——
+                 * 决策住 story_page.c 纯逻辑缝 kidpal_story_recording_enter, 应用层
+                 * 只供页态镜像 + speaking 沿; 决策 1 -> 视图动作经 mcp_server 桥
+                 * （复用 start_recording 冻结消费面）。AFE VAD 真沿 = live 目击项
+                 * （host 不可机判, 不造 offline 假齿）。 */
+                if (kidpal_story_session_ctx_active()) {
+                    int story_page = s_story_rec_entered ? KSTORY_PAGE_RECORDING
+                                                         : KSTORY_PAGE_LIST;
+                    if (kidpal_story_recording_enter(story_page, 1,
+                                                     s_vad_speaking ? 1 : 0) == 1 &&
+                        !s_story_rec_entered) {
+                        s_story_rec_entered = true;
+                        KidpalStoryVadEnterRecording();
+                    }
+                }
             }
         }
 
@@ -388,6 +427,15 @@ void Application::HandleNetworkDisconnectedEvent() {
     if (state == kDeviceStateConnecting || state == kDeviceStateListening || state == kDeviceStateSpeaking) {
         ESP_LOGI(TAG, "Closing audio channel due to network disconnection");
         protocol_->CloseAudioChannel();
+        /* 261010 [S9] 网络断关收尾补偿: wifi 骤断 TCP 未察觉时 OnDisconnected 回调
+         * 亦被抑制（[S7] 本地关标记 + TCP 静默）→ 设备态停留非 Idle，网络恢复后
+         * HandleNetworkConnectedEvent 仅 Idle 支路接自动建连 = K6 既有重连语义被静默
+         * 破坏。此处主循环 handler 内同步补回 Idle + LOW_POWER 剖面。网络断关仍零
+         * 重建排程（恢复走既有 K6 触发点 2 网络重连事件, RC-B3 负锚）。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "net_disconnect_settle corr_id=kdp-%u state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
     }
 
     // Update the status bar immediately to show the network state
@@ -487,6 +535,21 @@ void Application::TryStartAutoConnect() {
                  (unsigned)uxTaskGetStackHighWaterMark(NULL));
         vTaskDelete(NULL);
     }, "AutoConnect", 4096 * 2, this, 2, nullptr);
+}
+
+void Application::ScheduleResidentRebuild() {
+    /* [S9] 常驻重建缝（B 路径; 决策 29「永不休眠」）: 会话收尾类本地关后 T 秒
+     * （kResidentRebuildDelayS）重建常驻连接。延迟在独立短命线程内睡眠（不阻塞主
+     * 循环——helper 由主循环 handler / Schedule lambda 调用）; 到点经 Schedule( 回主
+     * 循环上下文排入 TryStartAutoConnect()（复用既有 AutoConnect task 守卫三条件与
+     * 退避——重建只经既有 AutoConnect task, 零第二条重连路径; 判 + 起在主循环, 与
+     * K6 [S1] 判设同源）。 */
+    std::thread([this]() {
+        vTaskDelay(pdMS_TO_TICKS(kResidentRebuildDelayS * 1000));
+        Schedule([this]() {
+            TryStartAutoConnect();
+        });
+    }).detach();
 }
 
 void Application::CheckAssetsVersion() {
@@ -605,6 +668,11 @@ void Application::InitializeProtocol() {
             auto display = Board::GetInstance().GetDisplay();
             display->SetChatMessage("system", "");
             SetDeviceState(kDeviceStateIdle);
+            /* [S8] A 路径: 非本地关（服务端/网络侧断）→ 排入自动重连（复用既有
+             * AutoConnect task 守卫与退避; 零第二条 task; 重连区零 SetDeviceState——
+             * 屏显维持 Idle）。本地关不达本 lambda（协议层分类, [S7]）——分类互斥的
+             * application 半。 */
+            TryStartAutoConnect();
         });
     });
     
@@ -666,6 +734,12 @@ void Application::InitializeProtocol() {
                      * 回显 (SetChatMessage("user") 既有通道) 与思考切换同一回调。manual
                      * 记录语境 (LISTEN_MANUAL) 切句只回显不逐句进思考。 */
                     display->SetChatMessage("user", message.c_str());
+                    /* K3 [S6]: 记录语境旁路喂入（与 front _story_feed_from_stt 旁路
+                     * 同构, 不改 wire）——录音态话语回显区逐句入列（kidpal_story_echo_*,
+                     * 零共享 kidpal_voice_echo 态）; 非记录语境零消费。 */
+                    if (kidpal_story_session_ctx_active()) {
+                        (void)kidpal_story_echo_push(message.c_str());
+                    }
                     kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
                                         ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
                     int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
@@ -760,6 +834,26 @@ void Application::StopListening() {
     xEventGroupSetBits(event_group_, MAIN_EVENT_STOP_LISTENING);
 }
 
+void Application::CloseAudioChannel() {
+    /* K3 [S5]: 录音态丢弃面（BOOT 任一手势）——断连即达 front ws_disconnect
+     * cancel 钩子（弹缓冲不落盘）; 不发 listen stop（丢弃不是归档）。 */
+    if (protocol_) {
+        protocol_->CloseAudioChannel();
+        /* 261010 [S9] 本地关收尾补偿（[S7] 令 OnDisconnected 对本地关提前 return，
+         * A 区 lambda 的 Idle 收尾 + LOW_POWER 剖面被抑制 → 设备态停留
+         * Listening/Speaking，常驻重建守卫 state!=Idle 直 return = 重建永不触发）:
+         * 主循环上下文（按键 dispatch 栈）内同步补回设备态 + 省电剖面（Connecting/
+         * Listening/Speaking→Idle 全合法, device_state_machine.cc:80-93）。收尾落
+         * 调用点，不入 helper（[S9] helper 区零 SetDeviceState 负锚）。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=discard_record state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    }
+    /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+    ScheduleResidentRebuild();
+}
+
 void Application::HandleToggleChatEvent() {
     auto state = GetDeviceState();
     
@@ -801,6 +895,14 @@ void Application::HandleToggleChatEvent() {
         AbortSpeaking(kAbortReasonNone);
     } else if (state == kDeviceStateListening) {
         protocol_->CloseAudioChannel();
+        /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: 主循环 handler
+         * 内同步补回 Idle + LOW_POWER 剖面。收尾落调用点，不入 helper。 */
+        SetDeviceState(kDeviceStateIdle);
+        Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+        ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=toggle_chat state=idle",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+        ScheduleResidentRebuild();
     }
 }
 
@@ -923,9 +1025,27 @@ void Application::HandleStateChangedEvent() {
             display->SetEmotion("neutral");
             audio_service_.EnableVoiceProcessing(false);
             audio_service_.EnableWakeWordDetection(true);
+            /* K3R [R2]（261001-m4-k3-record-session-live-repair, D4b-1）: 会话收尾复位
+             * 录音页态 + 停录音演出定时器——**先于**前台回落, 令 voice_end 的 [R3] 缓存
+             * 重渲判定见 LIST 页态; 复位不依赖页态自删（录音定时器即时停, 防其在首页
+             * 重建后仍每 100ms 清屏砸毁首页图像对象致悬垂 panic）。判据住 story_page.c
+             * 纯逻辑缝 kidpal_story_session_end（seam [R2] 权威 = record_session_repair.
+             * acceptance.c 文件头; 页态/定时器为设备运行态, 经 mcp 桥执行）。 */
+            {
+                int story_end_page = -1;
+                if (kidpal_story_session_end(KidpalStoryViewPageState(),
+                                             &story_end_page) == 1) {
+                    KidpalStorySessionEndApply(story_end_page);
+                }
+            }
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
             kidpal_render_node_voice_end();
+            /* K3: 会话收尾 -> 记录语境标志清位 + 录音态切换镜像复位（引导气泡覆写/
+             * 开口切录音态/stt 旁路喂入的消费门; 置位单点 = mcp_server REC_SESSION
+             * 消费位。盲区申报③: 清位时机 = 实现细节, 可观测后果由消费链承载）。 */
+            kidpal_story_session_ctx_set(0);
+            s_story_rec_entered = false;
             /* M1-K4 RM-A3「录音会话结束立刻弹」触发（触发点路由不锁）：录音态提醒到点
              * 排队延后，会话/录音收尾回 Idle 即调 RaiseReminderQueue —— 此刻录音态已
              * 消除、gate 判 RAISE，把排队提醒立即弹出（无排队或弹窗已驻留时其内部
@@ -946,6 +1066,14 @@ void Application::HandleStateChangedEvent() {
         case kDeviceStateListening:
             display->SetStatus(Lang::Strings::LISTENING);
             display->SetEmotion("neutral");
+
+            /* K3 [S7]: 会话发起信号 kidpal_session_ctx（契约 §四）——首帧音频前、
+             * 音频处理器启动门之外无条件执行（门外 = 通道复用会话不短路漏发, notes
+             * ②③; 调用恰一次, 发送失败降级普通会话不重试）。source_page 单点映射
+             * 消费（notes ④: KEY 按经 REC_SESSION 消费位聆听入口与唤醒词双入口都
+             * 汇入本分支）。负锚: 本信号只住会话发起, 会话收尾/中断路径零 ctx。 */
+            protocol_->SendKidpalSessionCtx(
+                kidpal_story_ctx_source_page(kidpal_render_node_get_page()));
 
             // Make sure the audio processor is running
             if (!audio_service_.IsAudioProcessorRunning()) {
@@ -1111,11 +1239,19 @@ void Application::WakeWordInvoke(const std::string& wake_word) {
         Schedule([this]() {
             AbortSpeaking(kAbortReasonNone);
         });
-    } else if (state == kDeviceStateListening) {   
+    } else if (state == kDeviceStateListening) {
         Schedule([this]() {
             if (protocol_) {
                 protocol_->CloseAudioChannel();
             }
+            /* 261010 [S9] 本地关收尾补偿（同 CloseAudioChannel 丢弃面）: Schedule
+             * lambda = 主循环上下文，同步补回 Idle + LOW_POWER 剖面。收尾落调用点。 */
+            SetDeviceState(kDeviceStateIdle);
+            Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+            ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=wake_invoke state=idle",
+                     static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+            /* 261010 [S9] 会话收尾类本地关 → T 秒内常驻重建（B 路径）。 */
+            ScheduleResidentRebuild();
         });
     }
 }
@@ -1142,6 +1278,17 @@ void Application::SendMcpMessage(const std::string& payload) {
     Schedule([this, payload = std::move(payload)]() {
         if (protocol_) {
             protocol_->SendMcpMessage(payload);
+        }
+    });
+}
+
+void Application::SendKidpalStoryDelete(const char* id) {
+    // Always schedule to run in main task for thread safety (SendMcpMessage 同款).
+    // id 拷贝进闭包——调用方缓冲（mcp_server pending 记账区）可能先于发送被改写。
+    std::string safe_id = (id != nullptr) ? id : "";
+    Schedule([this, safe_id]() {
+        if (protocol_) {
+            protocol_->SendKidpalStoryDelete(safe_id.c_str());
         }
     });
 }

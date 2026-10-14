@@ -101,29 +101,45 @@ def _story_route_display_payload(session_id, payload) -> None:
         _get_story_acc().start(session_id)
 
 
-def _story_feed_from_stt(session_id, obj) -> None:
-    """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7)：引擎回带的 ASR 上行 stt 帧
-    (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，供停录时整段归档。
-    仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。"""
+def _story_feed_from_stt(session_id, obj) -> "dict | None":
+    """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7 / 261001-m4-k3-story-archive-order)：
+    引擎回带的 ASR 上行 stt 帧 (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，
+    供停录时整段归档。仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。
+
+    真机序挂起态接通（261001）：routing == "pending_stop"（listen/state=stop 先到、accum 空）
+    时，本条 stt（~1.7s 后到）即转写到达 -> feed + 归档（正文剔尾随收尾词）-> 返回 record，
+    供上层下发 story_text + story_list（三时点②）；routing == "accumulate" -> 只 feed、
+    返回 None；聊态 -> 无行为返回 None。"""
     if not session_id or not isinstance(obj, dict):
-        return
+        return None
     if obj.get("type") != "stt":
-        return
+        return None
     text = obj.get("text")
     if not isinstance(text, str) or not text.strip():
-        return
+        return None
     acc = _get_story_acc()
-    if acc.routing(session_id) != "accumulate":
-        return
-    acc.feed(session_id, text)
+    routing = acc.routing(session_id)
+    if routing == "pending_stop":
+        acc.feed(session_id, text)
+        rec = acc.stop(session_id, strip_finish=True)
+        if rec is not None:
+            log.info("story_pending_archive corr_id=%s id=%s", session_id, rec.get("id"))
+        return rec
+    if routing == "accumulate":
+        acc.feed(session_id, text)
+    return None
 
 
 def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
-    """云侧停录归档接线 (包 9b HWV-A10/A12)：设备「聆听停止」上行帧 (listen/state=stop,
-    手动录完一段叙述的自然信号) 命中累积态时 -> StoryAccumulator.stop 整段归档
-    (内部经 archive_story 落盘 stories/<id>.md)，返回记录供上层以 story_text(record)
-    组块下发正文 (F4 分工：正文由网关下发、设备盖章/回看消费由 story_p3 冻结)。
-    非累积态 / 累积为空 -> None（V31 边界，不编造归档、不写空故事）。"""
+    """云侧停录归档接线 (包 9b HWV-A10/A12 / 261001-m4-k3-story-archive-order)：
+    设备「聆听停止」上行帧 (listen/state=stop) 命中累积态时按下法处置：
+
+    - 累积**非空** -> 立即 StoryAccumulator.stop 整段归档 (兼容 B2/B3 auto 模式：录音期间
+      stt 已喂入 accum)，返回记录供上层以 story_text(record) 组块下发正文；
+    - 累积**空** -> 真机序（manual 模式 ASR 由 listen stop 触发，转写 ~1.7s 后才经下行到达）
+      -> 挂起 pending-stop（acc.mark_pending，routing="pending_stop" != "chat"），返回 None；
+      下一条 stt 到达时由 _story_feed_from_stt 归档（SAO-A1/A2）。
+    非累积态 / 已挂起 / 累积为空且已 pending -> None（不编造归档、不写空故事）。"""
     if not session_id or not isinstance(obj, dict):
         return None
     if not (obj.get("type") == "listen" and obj.get("state") == "stop"):
@@ -131,9 +147,15 @@ def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
     acc = _get_story_acc()
     if acc.routing(session_id) != "accumulate":
         return None
-    rec = acc.stop(session_id)
+    if not acc.has_accum(session_id):
+        # 累积空 -> 真机序：转写尚未到达，挂起 pending-stop 等它（旧实现此处立即 stop()
+        # 返 None 并把会话打回 chat -> 转写被丢弃 = 本缺陷，SAO-A2 冻结 oracle）。
+        acc.mark_pending(session_id)
+        log.info("story_stop corr_id=%s archived=false reason=pending_stop", session_id)
+        return None
+    rec = acc.stop(session_id, strip_finish=True)
     if rec is None:
-        log.warning("story_stop corr_id=%s archived=false reason=empty_accum", session_id)
+        log.warning("story_stop corr_id=%s archived=false reason=empty_after_strip", session_id)
         return None
     log.info("story_stop corr_id=%s archived=true id=%s", session_id, rec.get("id"))
     return rec
@@ -154,14 +176,49 @@ async def _push_display_payload(websocket, payload: dict) -> None:
         json.dumps({"type": "mcp", "payload": envelope}, ensure_ascii=False, default=str))
 
 
-async def _push_story_list(websocket) -> None:
-    """front 机械推送 story_list 的下行缝（三时点：WS 建连 / 归档成功后 / 删除执行后）。
+# ECS 故事列表恢复性推送开关（ADR-010 / architecture-gate-evidence C1：部署面默认关、
+# 固件烧板验证（SL-A5）后 human 人工开闸）。schedule grid_restore_enabled 先例形态
+# （env 名 + strip().lower() 识别集）；差异仅在缺省极性 = 代码默认**开**（SL-A1 建连
+# 恢复推送齿无 env 驱动形态、须默认可驱动）——部署面默认关由 ECS 配置层显式置
+# KIDPAL_STORY_RESTORE_PUSH=0/false/off/no 承载（「不得为过齿改部署默认开」= 不动
+# ECS 部署配置）。开闸留痕/部署文档按本 env 名单源。
+STORY_RESTORE_ENV = "KIDPAL_STORY_RESTORE_PUSH"
+# story restore 开关识别集（strip().lower() ∈ 本集 -> 关；其余一律开——代码默认开偏置）。
+_STORY_RESTORE_FALSE_SET = {"0", "false", "off", "no"}
+
+
+def story_restore_enabled(raw: "str | None" = None) -> bool:
+    """故事列表建连恢复推送开关决策面（纯函数；default None = 读 os.environ）。
+
+    代码默认开：env unset -> True（SL-A1 建连恢复推送齿可驱动，无 env 驱动形态）；
+    strip().lower() ∈ {"0","false","off","no"} -> False（部署侧 ECS 显式关，C1
+    closeout：开关默认关交付、烧板验证后人工开闸）。与 schedule grid_restore_enabled
+    同形（env 名常量 + 纯函数 + strip().lower() 识别集），差异仅在缺省极性。
+    """
+    if raw is None:
+        raw = os.environ.get(STORY_RESTORE_ENV)
+    if not isinstance(raw, str):
+        return True
+    return raw.strip().lower() not in _STORY_RESTORE_FALSE_SET
+
+
+async def _push_story_list(websocket, restore: bool = False) -> None:
+    """front 机械推送 story_list 的下行缝（三时点：WS 建连恢复 / 归档成功后 / 删除执行后）。
 
     把 list_stories(<STORIES_DIR>) 以 kidpal/display mcp 帧下发**恰一帧**（设备 wire
     形状 {"view":<str>,"data":<json 串>}）。计数/窗口语义由 story.py producer 单源承载
     （total=现存篇数 + items 最新 ≤16 窗口），本缝只做接线、不重算。front 自推不经 relay
-    （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。"""
-    await _push_display_payload(websocket, gw_story.list_stories(STORIES_DIR))
+    （Q7 天然豁免——直调 _push_display_payload，与引擎侧 build_display_tool_calls 无关）。
+
+    restore（契约 §1.3③ D1 生产纪律）：仅 WS 建连恢复推送路径传 restore=True——下行
+    data 带 `restore: true`（板端 restore 分流载体：只填 RAM 列表缓存、不接管前台、P3
+    在屏仅重绘本页）；②归档后（:573 一带）/③删除后（:223）的主动推送缺省 restore=False
+    ——下行 data **不带** restore 键（契约缺省语义：absent 或显式 false 设备行为完全
+    一致，主动展示接管前台既有行为零偏移）。"""
+    payload = gw_story.list_stories(STORIES_DIR)
+    if restore:
+        payload["data"]["restore"] = True
+    await _push_display_payload(websocket, payload)
 
 
 async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
@@ -170,6 +227,11 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     - kidpal_session_ctx：整条消费（无论取值）；source_page=="story" 时把该会话切累积态
       （收敛 _get_story_acc().start 同一幂等入口——与 §1.4 control/start_recording 同入口，
       重复触发不重复开会话）；其余取值现版本无行为（闭集预留）。
+      三时点①恢复重裁（TaskPackage 260924-m4-k3-record-session-live / plan T5）：
+      routing 沿触发条件推送——本帧 ctx 把会话从 chat 切入累积态（acc.start 之前自查
+      routing != "accumulate"，story.py 零改动）才推恰一帧 story_list；重复 ctx(story)
+      （已 accumulate）零新增帧（契约 §四「重复发送安全」）；推送失败不阻断 ctx 消费
+      （ctx 整条拦截语义优先, 推送为增强, K1 建连推送 try/except 同款先例）。
     - kidpal_story_delete：整条消费；机械执行 delete_story（哨兵头校验 + MD 硬删 + 拒绝
       审计）→ 重推 story_list 对账（隐式 ack：不存在 id 亦重推、total 不变；合法删除
       total −1 可见）。畸形/非法 id 由 delete_story 内部拒绝、不崩、审计留痕。
@@ -179,7 +241,17 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     mtype = obj.get("type")
     if mtype == "kidpal_session_ctx":
         if session_id and obj.get("source_page") == "story":
-            _get_story_acc().start(session_id)
+            acc = _get_story_acc()
+            # routing 沿自查在 acc.start 之前（routing() 查询不改状态, K1 冻结;
+            # story.py 零改动）：chat -> accumulate 沿 = 首帧 ctx, 才条件推送①。
+            ctx_push_edge = acc.routing(session_id) != "accumulate"
+            acc.start(session_id)
+            if ctx_push_edge:
+                try:
+                    await _push_story_list(websocket)  # ①恢复 = 引导态会话建立同拍
+                except Exception:  # noqa: BLE001 — 推送失败不阻断 ctx 拦截消费
+                    log.warning("story_ctx_push failed session_id=%s (ctx 拦截语义优先)",
+                                session_id)
         return True
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
@@ -205,7 +277,7 @@ def _story_finish_on_phrase(session_id, obj) -> "dict | None":
     acc = _get_story_acc()
     if acc.routing(session_id) != "accumulate":
         return None
-    rec = acc.stop(session_id)
+    rec = acc.stop(session_id, strip_finish=True)
     if rec is None:
         return None
     log.info("story_finish corr_id=%s archived=true id=%s", session_id, rec.get("id"))
@@ -213,14 +285,23 @@ def _story_finish_on_phrase(session_id, obj) -> "dict | None":
 
 
 async def _story_timeout_sweep(now=None) -> int:
-    """120s 无语音自动收尾（requirements §2.1 录音态超时口径）——累积态 front 侧计时。
+    """120s 无语音自动收尾（requirements §2.1 录音态超时口径）+ pending-stop 10s 窗口——
+    累积态 front 侧计时（同缝，261001-m4-k3-story-archive-order）。
 
-    每 tick 调纯决策 StoryAccumulator.timed_out_sessions(now) 取静默 >=120s 的累积会话，
-    对命中会话走正常 stop 归档（不丢弃）并把 story_text 下发给当前在线设备腿（+ story_list
-    对账）。offline 只钉源锚（front 引用该决策）；真计时循环/行为等价假设未验，live 全链
-    复证归 M4-K3（M4K1-A7 deferred）。返回命中并归档的会话数（K6 归因）。"""
+    每 tick 先巡检 pending-stop 挂起超时：纯决策 StoryAccumulator.pending_timed_out_sessions
+    取挂起 >=10s（PENDING_STOP_SECONDS）的会话，release_pending 释放回闲聊态（不写空故事；
+    迟到 stt 因 routing 已回 chat 被自然丢弃——SAO-A3②）。再走 120s 累积态自动收尾：
+    纯决策 timed_out_sessions(now) 取静默 >=120s 的累积会话，对命中会话走正常 stop 归档
+    （不丢弃）并把 story_text 下发给当前在线设备腿（+ story_list 对账）。
+
+    offline 只钉源锚（front 引用该决策）；真计时循环/行为等价假设未验，live 全链复证归
+    M4-K3（M4K1-A7 deferred）。返回命中并归档的会话数（K6 归因）。"""
     acc = _get_story_acc()
     now_dt = now if now is not None else datetime.now(timezone.utc)
+    # pending-stop 挂起超时（10s 无转写）-> 释放挂起态、不写空故事（SAO-A3②）
+    for sid in acc.pending_timed_out_sessions(now_dt):
+        if acc.release_pending(sid):
+            log.info("story_pending_timeout corr_id=%s released=true", sid)
     timed_out = acc.timed_out_sessions(now_dt)
     swept = 0
     for sid in timed_out:
@@ -441,8 +522,14 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
             if not isinstance(obj, dict):
                 await websocket.send_text(frame)  # non-object JSON: forward verbatim
                 continue
-            # 云侧累积接线 (包 9b HWV-A10): ASR 上行 stt 帧命中累积态则喂缓冲（旁路消费，转发不变）。
-            _story_feed_from_stt(session_id, obj)
+            # 云侧累积接线 (包 9b HWV-A10 / 261001)：ASR 上行 stt 帧命中累积态则喂缓冲
+            # （旁路消费，转发不变，决策23）；pending-stop 态（listen/state=stop 先到、转写后到
+            # 的真机序 SAO-A1）的转写到达 -> feed + 归档 -> 返回记录，除正文外**追加** story_list
+            # 推送（三时点②）。
+            feed_rec = _story_feed_from_stt(session_id, obj)
+            if feed_rec is not None:
+                await _push_display_payload(websocket, gw_story.story_text(feed_rec))
+                await _push_story_list(websocket)
             # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦」-> stop 整段归档
             # + 下发归档正文（不丢弃）；问答会话零影响（_story_finish_on_phrase 仅累积态消费）。
             finish_rec = _story_finish_on_phrase(session_id, obj)
@@ -588,6 +675,31 @@ SCHEDULE_CFG = os.environ.get(
 _daily_push_local_date: "str | None" = None   # 触发②记账：已推本地日（每 local 日恰一次）
 
 
+def _write_schedule_parse_alert(err_type: str, detail: str) -> None:
+    """把 schedule.md 解析失败落 alerts/schedule-parse-error.json（QSW-A3 / TECH-261012 建议④）。
+
+    与 deploy-drift.json 同族机器可读告警件（checked_at / error / detail 三字段；checked_at
+    口径对齐 verify-deploy.sh 的 UTC ISO8601）。front 每分钟轮询命中解析失败即覆写一次 ->
+    checked_at 持续刷新；解析恢复后不再写 -> checked_at 冻结（kidpal-schedule-health skill
+    据此判「已恢复」，front 无需在成功路径删件）。**自身全吞写失败**（至多 debug 日志）——
+    _load_schedule_model 契约是「返回 None、不炸轮询循环」，写告警件失败不得反向上抛。
+    不加 ack 字段：本件每轮被覆写，ack 归 health skill 自有状态件（plan §4.2）。"""
+    try:
+        os.makedirs(ALERTS_DIR, exist_ok=True)
+        target = os.path.join(ALERTS_DIR, "schedule-parse-error.json")
+        tmp = f"{target}.tmp"
+        payload = {
+            "checked_at": datetime.now(tz=timezone.utc).isoformat(timespec="seconds"),
+            "error": err_type,
+            "detail": detail,
+        }
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False)
+        os.replace(tmp, target)
+    except Exception:  # noqa: BLE001 — 写告警件失败静默吞，不炸轮询循环
+        log.debug("schedule_parse_alert_write_err", exc_info=True)
+
+
 def _load_schedule_model() -> "dict | None":
     """读 schedule.md -> B1 模型；读/解析失败返回 None（产出可归因，不炸轮询循环）。"""
     try:
@@ -597,7 +709,9 @@ def _load_schedule_model() -> "dict | None":
     try:
         return gw_schedule.parse_schedule_md(text)
     except ValueError as e:  # noqa: BLE001 — 脏 B1 大声拒绝传日志，轮询照走
-        log.warning("schedule_md_err err=%s detail=%s", type(e).__name__, str(e)[:120])
+        detail = str(e)[:120]
+        log.warning("schedule_md_err err=%s detail=%s", type(e).__name__, detail)
+        _write_schedule_parse_alert(type(e).__name__, detail)
         return None
 
 
@@ -683,7 +797,7 @@ async def _push_schedule_connect(websocket) -> None:
     try:
         await _relay_schedule_payload(
             gw_schedule.home_upcoming_payload(model, today_iso, _local_now_hhmm(),
-                                              tomorrow_iso),
+                                              tomorrow_iso, _schedule_school_start()),
             websocket)
     except Exception as e:  # noqa: BLE001 — 单推失败记日志、不连坐 grid 推/不阻断建连
         log.warning("schedule_connect_home_push_err err=%s", type(e).__name__)
@@ -706,7 +820,8 @@ async def _push_schedule_refresh_to_legs(model: dict) -> int:
     周网格恢复性载荷）。"""
     today_iso, tomorrow_iso = _today_tomorrow_iso()
     home_payload = gw_schedule.home_upcoming_payload(model, today_iso,
-                                                     _local_now_hhmm(), tomorrow_iso)
+                                                     _local_now_hhmm(), tomorrow_iso,
+                                                     _schedule_school_start())
     grid_payload = None
     if gw_schedule_push.grid_restore_enabled():
         grid_payload = gw_schedule_push.grid_restore_payload(model, today_iso)
@@ -940,6 +1055,18 @@ async def ws_gateway(websocket: WebSocket):
             ws_connect = _ws_legacy_client.connect
             headers_kwarg = "extra_headers"
         async with ws_connect(ENGINE_WS, open_timeout=10, **{headers_kwarg: hdrs}) as upstream:
+            # 故事三时点 ①：WS 建连恢复推送（requirements v1.63 S-F2.1 补充规则 / arch
+            # §5.2 场景④ 三时点①——2026-10-12 赎回 260928-story-connect-push-defer 挂起
+            # 的时点①重裁）。data.restore 标记 = 板端 restore 分流载体（只填 RAM 列表缓存、
+            # 不接管前台、P3 在屏仅重绘本页），消解 260928 摘除理由（旧固件无条件渲染 P3
+            # 盖聆听态）。②归档后 / ③删除后的主动推送缺省零偏移。开关
+            # story_restore_enabled()（ECS 配置层默认关由部署侧显式置 0 承载，C1）。
+            # 失败不阻断建连（SL-A6，schedule connect push 同位 try/except 先例）。
+            if story_restore_enabled():
+                try:
+                    await _push_story_list(websocket, restore=True)
+                except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
+                    log.warning("story_connect_push_err err=%s", type(e).__name__)
             # both proxy legs now run through the takeover pumps (text-face interception):
             # engine->device strips ```display fences + relays kidpal/display tools/call;
             # device->engine forwards receipts unchanged and consumes them as delivery acks.
@@ -957,12 +1084,14 @@ async def ws_gateway(websocket: WebSocket):
                 await _push_schedule_connect(websocket)
             except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
                 log.warning("schedule_connect_push_err err=%s", type(e).__name__)
-            # 故事三时点 ①：WS 建连即推 story_list（front 自推单源、Q7 天然豁免；arch
-            # §5.2④ 扩展承载）。失败不阻断建连。
-            try:
-                await _push_story_list(websocket)
-            except Exception as e:  # noqa: BLE001 — 建连推送增强，不因它拒服务
-                log.warning("story_list_connect_push_err err=%s", type(e).__name__)
+            # 故事三时点 ①「建连即推」沿革（260928-story-connect-push-defer 摘除 ->
+            # 261010-p3-storylist-cold-start-restore v1.63 赎回）：旧摘除理由 = 设备每会话
+            # 重开 WS、建连即推无条件给设备打 story_list 帧，旧固件无条件渲染 P3 页盖掉
+            # 聆听态（story_page 零 CJK -> 半截页）。赎回 = data.restore 标记（板端 restore
+            # 分流：只填 RAM 列表缓存不接管前台、P3 在屏仅重绘本页）消解该复现路径——见上方
+            # ws_connect 块内的建连恢复推送调用（story_restore_enabled 门控）。ctx(story)
+            # 同拍条件推送（_consume_kidpal_control 内）保留 = M4K3-A7 冻结齿硬约束。
+            # ②（停录归档后）/③（删除执行后）调用点缺省 restore=False 零偏移。
             try:
                 await asyncio.gather(pump_up, pump_dn)
             finally:

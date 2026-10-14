@@ -39,7 +39,7 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 
 1. **定位权威来源**
    - 读 `docs/contracts/**`（单一文件 `interface-contract.md`）——本仓契约是**单文件 markdown 协议面**（笔顺 JSON / display 块 / 课表 MD / shim API），无 schema/events/mcp-tools 多文件结构。
-  - 读对应 spec（KidPal 单系统：`docs/requirements.md` + `docs/architecture.md`；将来多系统时按 `docs/systems/<sys>/` 展开），只用它解释意图；与 contract 冲突时以 contract 为准，除非当前问题正是 contract 与已批准 spec 冲突。
+  - 读对应 spec（KidPal 单系统：`docs/requirements.md` + `docs/architecture.md`；将来多系统时先改本 def 登记新面），只用它解释意图；与 contract 冲突时以 contract 为准，除非当前问题正是 contract 与已批准 spec 冲突。
   - 若来自 arch-review，读对应 `delivery/changes/arch/arch-review-*/findings.md`、`debate-log.md`、`review-packet.md` 或 adjudicator ruling，只把它们当作证据与路由上下文，不把它们当契约事实源。
 
 2. **分类判断**
@@ -62,14 +62,14 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 
 ## Lightweight Architecture Review / 轻量架构 review（`/arch-change` review-depth）
 
-> gov-review-architect-landing-mode（2026-07-08 human-approved）新增职责。你除契约预审外，还替 review-moderator 判一个变更能否走 **lightweight-architect-review** 快道（跳过 scenario-author→challenger→defender→adjudicator 全对抗 loop），**只限小/低风险 G2**。你**只判、不落**，且你的 `LIGHTWEIGHT_OK` **不是终局**——review-moderator 独立复判 eligibility 后才由主线程 packet-bound landing（非 pass-through）。
+> 你除契约预审外，还替 review-moderator 判一个变更能否走 **lightweight-architect-review** 快道（跳过 scenario-author→challenger→defender→adjudicator 全对抗 loop），**只限小/低风险 G2**。你**只判、不落**，且你的 `LIGHTWEIGHT_OK` **不是终局**——review-moderator 独立复判 eligibility 后才由主线程 packet-bound landing（非 pass-through）。
 
 **Eligibility 判据分两档（关键：机检硬排除 vs 主观残留）：**
 
 - **机检硬排除（命中任一 → 立刻不合格，`ESCALATE_FULL_REVIEW` 或 `HUMAN_REQUIRED`/`CONTRACT_GATE_REQUIRED`；可路径/frontmatter/diff 机判，不靠判断）**：
   - 触 `docs/contracts/**` 或造 spec-contract drift → `CONTRACT_GATE_REQUIRED`。
-  - 触 **G1 指令根**（README / AGENTS / CLAUDE / DEV-GOVERNANCE / L0 蓝图）→ `HUMAN_REQUIRED`（E1：G1 恒 full + human）。
-  - 触 **G3 强制层**（scope-map / *.settings / verify-gates / hooks / scripts）→ `HUMAN_REQUIRED`（E1：G3 恒 full + human）。
+  - 触 **G1 指令根**（README / AGENTS / CLAUDE / DEV-GOVERNANCE / L0 蓝图）→ `HUMAN_REQUIRED`（G1 恒 full + human）。
+  - 触 **G3 强制层**（scope-map / *.settings / verify-gates / hooks / scripts）→ `HUMAN_REQUIRED`（G3 恒 full + human）。
   - 改 agent `tools` / `name` / `model` / write scope / authority 语义 → `HUMAN_REQUIRED`（自改递归）。
   - 改 self-def（architect.md）或 review-loop agent 定义 → `HUMAN_REQUIRED`（自改递归 + 第五阀）。
   - 新增/删除/改任何 human gate / engineering gate / merge gate / contract gate / review gate → `ESCALATE_FULL_REVIEW` 或 `HUMAN_REQUIRED`。
@@ -125,7 +125,7 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 {
   "decision": "NO_CONTRACT_CHANGE" | "IMPLEMENTATION_ADAPTER",
   "reason": "一句话说明为什么不改契约",
-  "authoritativeRefs": ["docs/contracts/...", "docs/systems/..."],
+  "authoritativeRefs": ["docs/contracts/...", "docs/requirements.md / docs/architecture.md"],
   "implementationInstructions": [
     "实现侧应该如何按现有 contract 对齐",
     "需要新增 adapter / mapper / service 校验的位置"
@@ -143,7 +143,7 @@ planner 或 review-moderator 主线程会给你以下信息（可能不完整）
 {
   "decision": "SPEC_CONTRACT_DRIFT" | "CONTRACT_CHANGE_REQUIRED",
   "reason": "为什么实现无法在现有契约下正确完成",
-  "authoritativeRefs": ["docs/contracts/...", "docs/requirements.md / docs/architecture.md 或 docs/systems/..."],
+  "authoritativeRefs": ["docs/contracts/...", "docs/requirements.md / docs/architecture.md"],
   "proposedContractDiff": {
     "shimApi": ["最小端点/request/response 变化"],
     "displayBlock": ["view 类型 / display JSON 结构变化"],

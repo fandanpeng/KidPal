@@ -19,6 +19,16 @@ KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.
 - **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `delivery/changes/dev/260903-device-ws-switch/`。）
 - **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；`network_mode: host` 下容器经**真 loopback `127.0.0.1:18789`** 直达宿主 OpenClaw（原 `host.docker.internal:18789` 网桥随 host 模式移除，260903-device-ws-switch live）。
 
+## 部署入口（manifest + deploy.sh · 261013-gov-review-deploy-single-source-loop 起）
+
+ECS 三件套的部署已从手工拷贝切为「GitHub 单源 → ECS 拉取 → manifest 铺放 → 机械核验」闭环：
+
+- **清单**：[manifest.yaml](manifest.yaml) =「什么该在 live 上」的唯一权威（front 源 / overlay 输入与渲染产物 / OpenClaw 创作面 / reminder 消费位 / 漂移 timer / cron 作业核验）。加改部署面 = 改清单进 review。
+- **部署**：`cd /opt/kidpal/deploy-clone && bash server/deploy/deploy.sh [--ref origin/main]`——fetch + checkout → 按清单铺放（变更集决定重启面，引擎重启 = 设备全断只在引擎面变更时发生）→ 引擎面变更时跑 `apply-xiaozhi-overlay.sh` 渲染 → 落 `.deployed-commit` 戳 + 快照 → 自检。
+- **核验**：[verify-deploy.sh](verify-deploy.sh) 三时机共用——部署前拦截（有未对账漂移拒铺，`--first-run` 例外）、部署后自检、每日 04:17 systemd timer（`kidpal-deploy-drift.timer`）落 `/opt/kidpal/alerts/deploy-drift.json`。
+- **一次性 bootstrap**（deploy key / clone / 首铺 / timer 安装）见 [ecs-bootstrap.md](ecs-bootstrap.md)。
+- **纪律**：live 紧急热修允许，但下次部署被 verify fail-loud 拦截直至回流仓；OpenClaw 运行态（DREAMS.md / memory / sessions）不入清单、部署不碰；secrets 仅存 ECS。
+
 ## 引擎部署副本补丁（engine-patch · 260907-g-relay-fix）
 
 方向 B 的 display fence 剥离以「引擎为主剥离、front 为校验/relay 权威」分工落地（TaskPackage `260907-g-relay-fix`，human 批准首例部署副本代码补丁，pod-events decision `engine-patch-approval` 事件 `37469170`）。补丁形态：官方镜像不动，`server/deploy/engine-patch/` 下两个部署副本文件经 `docker-compose.yml` bind-mount 原位覆盖镜像内 `core/`：
@@ -41,21 +51,15 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 - **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
 - 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
-## OpenClaw system prompt 版本化接线（现状 = v3）
+## OpenClaw system prompt 版本化接线（现状 = v10）
 
 脑腿的 system prompt 按「版本化落盘 + overlay 渲染切换 + 历史可 diff」惯例演进，声明件 =
-`OPENCLAW_SYSTEM_PROMPT_CARRIER`。**当前被接线的那一版 = `openclaw-system-prompt.v3.md`**（160 行，
-由 TaskPackage `260829-story-p3` 从 v2 forward-bump）。
-
-| 版本 | 行数 | 承载 | 状态 |
-|---|---|---|---|
-| `.v1.md` | 69 | E1 两部分结构 + F4 三句纪律 + 儿童化 + 7 view 白名单 + 增量扩展区（`260829-voice-roundtrip` / VRT-E4） | 不改，共存可 diff |
-| `.v2.md` | 114 | v1 基座逐字并入 + 课表 producer（决策 26 分组 + QQ 录入改写约定，`260829-schedule-p2` / P2-A6）+ char C1 最小块纪律（`260829-char-stroke` / CHR-E3） | 不改，共存可 diff |
-| `.v3.md` | 160 | v2 基座逐字并入 + **故事 producer 扩展**（`260829-story-p3`）：判「我要讲故事」→ `control/start_recording`、停录整段转写起 ≤12 字标题出 `story_text`（恰 id/title/text 三键、无生字标注位 P3-E4）、`story_list.total` 全集计数、V31 四条回退判断（取消 / 重录 / 漏判挽回 / 讲错回退）、归档落盘归云侧网关而 LLM 一回合不读写文件（契约 §1.4 / S-F2.1..S-F2.5） | **当前接线版** |
-
-v3 相对 v2 的逐字承载（CR 归一后实测）：102 行原样保留、58 行新增、12 行改动全部是文件头
-版本标注与「课表 producer 扩展」小节标题的版本字样（无行为语义删改）——即 char C1 与课表
-producer 两面的行为被 v3 完整继承，仅版本号自述前移。
+`OPENCLAW_SYSTEM_PROMPT_CARRIER`——**它同时是版本演进史的唯一全量副本**，本节与其它散文
+只留「当前 = vN」指针、不复述沿革（260925-prompt-v7-round-routing 收敛，沿革四重复制
+漂移教训见 carrier）。**当前被接线的那一版 = `openclaw-system-prompt.v10.md`**
+（回合类型路由表新增「实时事实回合」行：先播「我去查一下」式提示 → 经平台联网搜索真查 →
+只依据查询结果作答、查不到诚实引导，禁编造 / 禁虚称已查；对话行通用反编造 + 底线节第三
+不变量；其余段落零偏移继承 v9；261012-kidpal-realtime-facts）。
 
 **接线不变式：渲染面 == 声明面 == 被测面**。同一切换必须同时改两处并保持一致：
 
@@ -107,7 +111,7 @@ owner=architect + acceptance-author）登记了「语义耦合在版本字面文
 
 | 变量 | 含义 | 典型值 / 说明 |
 |---|---|---|
-| `GATEWAY_DEPLOY_DIR` | 部署源 | `/opt/kidpal/xiaozhi-esp32-server/main/xiaozhi-server`（CONFIG 在这里；`docker-compose` 卷把 data/.config.yaml 映射进容器 `/opt/xiaozhi-esp32-server/data`） |
+| `GATEWAY_DEPLOY_DIR` | 部署源 | **live 引擎配置真身在 `deploy/xiaozhi-docker-data/`**（bind-mount 进容器 `data/`；`main/xiaozhi-server` 是 stale decoy，勿读勿写——261013 批修正本行旧注记）；manifest 化后该变量仅 overlay 渲染期内部使用 |
 | `GATEWAY_SERVICE` | systemd 单元名 | `xiaozhi`（容器引擎） / `kidpal-front`（TLS front） |
 | `GATEWAY_CERT_PATH` | 证书路径（frozen） | `/opt/kidpal/xiaozhi-esp32-server/cert/server.pem`（+ 同名 `server.key`，chmod 640） |
 | `DAEMON_ENV` 等渲染源 | overlay 渲染输入 | 由 `apply-xiaozhi-overlay.sh` 从 `secrets.env` 注入 provider 配置 |

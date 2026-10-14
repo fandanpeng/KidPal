@@ -1,0 +1,20 @@
+# test-scope-final —— 261010-device-reconnect-on-server-close（final verify --scope-file 消费）
+# 圈定方法：detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，
+#   base=main，inbound impact depth=3：17 个 impacted 符号全落 firmware/main，
+#   含 Application.Run/ActivationTask/HandleNetworkConnectedEvent、mcp_server Story*、
+#   各板 InitializeButtons——无跨模块越界）
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子
+#   ∪ 受改针面（needle）交集核对（application.cc / websocket_protocol / SetDeviceState 收尾区）。
+# 范围语义 = 影响面圈定清单；全量回归 = 人工触发位（host 套件单 elf 153 Tests 全量跑，
+#   由 planner final verify 触发）；真机轮 = RC-A4/B4/B5/B6 承载位（pending human 在场持板）。
+# 圈定降级注记：Pod 图索引可用，detect_changes 正常圈定，无降级。
+# 申报：planner 速览所指 session_logic.acceptance.c 在 firmware/main/test/ 根不存在；
+#   其「会话态收尾回归面」意图由 record_session_repair（Idle 分支收尾复位 [R2] 齿）等实际承载件替代，见下。
+
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/time_sync.acceptance.c

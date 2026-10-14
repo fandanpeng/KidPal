@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "cc423e4b-7a20-4371-a4b2-9334cfe1d72f",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\candidate.json",
+  "output": "C:\\AI\\KidPal-pod-m1-k1a-key-layer-dispatch\\.archify\\lifecycle-front-session-20261010-133848\\front-session-lifecycle.html",
+  "specification": {
+    "sha256": "7c49d8cf3218864a2331798ba9d8dc1f7770e5dab8368db1aeff6a3c004ceba6",
+    "bytes": 4430
+  },
+  "artifact": {
+    "sha256": "ac31f2897ed0c83014579c0d42e91afc1355cc6c218d90f0891ed6f5715df780",
+    "bytes": 759171
+  }
+}

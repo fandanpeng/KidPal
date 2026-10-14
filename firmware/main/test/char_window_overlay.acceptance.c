@@ -171,7 +171,11 @@
  *   [11] 查字窗展示面让位 + 空行不显示 + 组词多词 join（MCD-A1/A2/A3/A4; home =
  *       firmware/main/display/char_page.cc 单文件; 260920-m2-charwindow-display-fix
  *       additive 追加; 真机根因与需求权威 = human 真机轮 finding② + plan.md reviewed
- *       plan + requirements S-F3.2 AC1 五行口径 / F3）:
+ *       plan + requirements S-F3.2 AC1 五行口径 / F3）。
+ *       **2026-09-29 修订（TaskPackage 260929-char-window-v5-trim）**: A4 组词 join
+ *       整组回撤（依据 = human 2026-09-29 真机轮裁定——运行时 words 恒空、口径收敛
+ *       S-F3.2 四行, 非缺陷修复; 见 seam [14] / REVISION LOG 2026-09-29）; A1 几何
+ *       齿改对账重烘框右缘（width 钉值 160 → 让位区间）。
  *       a) **右栏去遮挡（A1）**: 恒显顶部状态带 top_bar_（LV_OPA_50 半透）+ status_bar_
  *          （KidPalReparentChatToLayer 的 chat_top[] reparent 到 lv_layer_top, **任何状态
  *          恒显**）压住 y≈0-24 全宽——cardlabel 起点 `(228, 8)` 使拼音行 y8-26 整行被压。
@@ -196,9 +200,85 @@
  *          test 11 行为半: 93B 中文满长 verbatim + 135B 超长截断安全恒 NUL）——**不改
  *          card_stroke.c**; UTF-8 边界安全（join 不劈半字）落在 char_page 装配面（设备侧,
  *          本 runner 非 host 编译 = 归真机腿/实现侧义务）。
+ *          **2026-09-29 整组回撤**（依据 = human 2026-09-29 真机轮裁定——运行时恒空、
+ *          口径收敛四行, 非缺陷修复; 见 seam [14] / REVISION LOG 2026-09-29）。
  *       **不动 chrome 语义**（让状态带随窗隐藏会扩大前台维度显隐面、横跨提醒 K4 最高层
  *       与语音轮四态既有闭环）——取单文件局部几何改动。
  *       **零新增字段**（落法 B display 块通用文本通道 = 另立契约门立项, 本轮不预造）。
+ *
+ *   [12] v1.59 KEY 起播改造呈现面（ACC-1/2/3/4; home = firmware/main/display/
+ *       char_page.cc 单文件; 260928-char-window-key-triggered-play additive 追加;
+ *       需求权威 = requirements v1.59 S-F3.1 AC1/AC3/AC5 + S-F3.3 AC1/AC2 + WF-F3-01
+ *       键帽随态变注 :480; plan.md reviewed 方案 A1–A4）:
+ *       a) 静态整字首帧（A1; ACC-1）: show() 内 charpage_render_frame(-1, 0) 改
+ *          charpage_render_frame(-1, g_page.n_strokes)——cur_stroke=-1 + written=n
+ *          -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字实心（char_stroke.c
+ *          相位复用, 冻结面零触碰——DC-1 同口径）; 旧空白首帧调用零残留。
+ *       b) 建窗零动画拍（A2/A3; ACC-2）: 删 charpage_refresh_hint(0) 首拍调用——
+ *          初始提示条 = hint_label 从 g_page.card.progress 落字（card 以 cur_stroke=-1
+ *          装配 -> 「写完啦·共 N 笔」定格文案单源, 零新文案零重抄——DC-3 human 裁）;
+ *          timer 创建保留原位原句、其后紧跟 lv_timer_pause(g_page.timer)。
+ *          **硬约束: MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create 必须
+ *          留在 show() 内 hint_label 创建之后**（test 12 tooth 5 锚位守卫同刀钉死;
+ *          DC-2 裁定 show 建表即 pause 即为此设计）。
+ *       c) replay 语义扩展（A5 部分; ACC-3）: replay() 区内 elapsed_ms = 0 +
+ *          started = 1 + lv_timer_resume(（首播/重播同路径; started 仅服务键帽态;
+ *          KEY 短按路由已在世——M2K3-A2 查字窗列, 零路由改动）。
+ *       d) REST 定格闸断（A4; ACC-4）: timer_cb 在 REST 相位渲染定格帧 + 刷定格
+ *          文案后 lv_timer_pause 且 return（不推进 elapsed_ms——取模回绕在装配层
+ *          闸断, char_stroke.c 零触碰——DC-1 裁定）。
+ *
+ *   [13] v1.59 键帽随态接线（ACC-6; home = lcd_display.cc + char_page.{h,cc};
+ *       同包 additive; plan.md reviewed 方案 A5/A6 + C）:
+ *       kidpal_keybar_sync_locked（**签名不动**——voice_round_ui.acceptance.c :930
+ *       钉该签名字面为区锚）体内: 查字窗前台（KIDPAL_LAYER_CHAR_WINDOW 门控）改走
+ *       kidpal_keybar_char_slots(kidpal_char_page_started(), ...)（键帽值域仍走
+ *       keybar 纯逻辑单源, 设备侧零重算; 提醒弹窗压查字窗时 front=REMINDER 不进
+ *       本分支, 提醒键帽不受扰）; char_page.h 声明 kidpal_char_page_started;
+ *       char_page.cc show() 末尾与 replay() 均调 kidpal_lcd_keybar_sync（建窗即
+ *       「播报」/ KEY 起播后即「重播」的驱动点; 内部递归取锁安全——kidpal_render_
+ *       node.cc:141 同款先例; 「锁外」位置纪律归实现侧/真机轮, 结构齿钉调用点在世）。
+ *       ACC-5 键帽值域行为齿住 keybar_three_slot.acceptance.c test 6（同批 additive）。
+ *
+ *   [14] v5 收敛四件改动面（CWVT-A1..A6; home = firmware/main/display/char_page.cc
+ *       + frm_236_236.bin 资产; TaskPackage 260929-char-window-v5-trim additive;
+ *       需求权威 = requirements v1.60 S-F3.2-AC1 四行口径 + plan.md reviewed plan
+ *       四件决策; 依据 = human 2026-09-29 真机轮裁定, 非缺陷修复）:
+ *       a) **无星（CWVT-A1; 决策①）**: char_page.cc 全文零 ic_star_22 /
+ *          charpage_art_star_dsc / s_cp_star_ 字面（s_cp_star_dsc/px/st 三静态 +
+ *          charpage_art_star_dsc() 整函数 + show() 内消费块 + 相关注释——干净删除,
+ *          负向齿不剥注释, 残留注释一并须清）。ic_star_22.bin 转孤儿资产, 本包不删
+ *          文件（账面注记归收口）。
+ *       b) **无组词行（CWVT-A2; 决策②）**: 速查卡拼装区（card_build -> cardlabel
+ *          字体锚）零 words 拼装（words 解析/join 块 + 拼装 words 行整删; 默认值与
+ *          info_o.words 改传 ""——card_build 非 NULL 要求由空串满足, 冻结面零触碰）。
+ *          **数据面 words 成员裁定保留**（char_stroke.{h,c} 零触碰 + 既有 verbatim
+ *          齿零触; 死成员清理登记 residual 后续包）。口径 = S-F3.2-AC1 四行（拼音
+ *          带声调/共 N 画/部首标签/释义）; MCD-A3 释义行/缺义兜底「释义：—」齿
+ *          原样保绿。
+ *       c) **引导线改纯黑点线（CWVT-A3/A4; 决策③a）**: charpage_draw_grid 区内
+ *          灰度 0x99/0xbb 字面撤除 + 纯黑在世（RLCD 阈值化后灰度不可见, 真机呈
+ *          空斜框）; 点距/虚实参数真机轮调, 不钉。
+ *          **2026-09-29 q7 修订（spine openQ q7 human 真机目检 finding——米字黑点线
+ *          仍不可见; spine q7 ruling, human-ratified）**: 纯黑承载机制 re-anchor 到
+ *          1bpp rast 光栅域——建窗 draw_grid 直绘 canvas 的格点被 charpage_blit 全幅
+ *          逐像素覆写吃掉（render_frame PENDING 分支直绘 canvas 的灰点链同雷面）,
+ *          真机不可见根因。修法 = 格点/点链挪 g_page.rast 1bpp 域、blit 兜底一次
+ *          成型（blit 本体零改）; PENDING 灰点链 1bpp 化后呈纯黑点链（1bpp 无灰度,
+ *          ruling 钉此形状）。齿 re-anchor（断言强度对等迁移, 非放宽）: draw_grid
+ *          区零 lv_canvas_set_px（旧 canvas 直绘机制撤除 = q7 缺陷机制本体）+
+ *          rast 引用在世（1bpp 光栅域写入）; 纯黑 = 1bpp ink 位, 颜色字面不再在世;
+ *          render_frame 区零 lv_canvas_set_px（帧路径零 canvas 直绘, blit 一次成型
+ *          语义钉死）。frame 消费链
+ *          charpage_art_frame_dsc()/charpage_art_overlay() **零触**（重烘案——
+ *          重烘 frm_236_236.bin 为圆角矩形 bin 资产; ACC-4 末端锚
+ *          charpage_art_frame_dsc 签名核对仍有效）; frm_236_236.bin 重烘像素形状
+ *          host 面测不出 = 真机轮未覆盖面申报, 不出齿。
+ *       d) **cardlabel 让位（CWVT-A5; 决策④）**: set_pos 第一参 >= 236（文本左缘
+ *          清出重烘框右缘 235, 旧 228 红）+ set_width(cardlabel, W) 字面在场且
+ *          x + W <= 388（右栏右缘不出画布; 预评两案 244/144、262/126 皆满足, W
+ *          终判归 builder + 真机轮, 不钉单一魔数）; set_pos 第二参 >= 30 与
+ *          LV_LABEL_LONG_WRAP 齿不动; canvas (4,8) 扫描器自检齿不动。
  *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
@@ -248,12 +328,25 @@
  *             LV_LABEL_LONG_WRAP 在场; 注释剥离后字面整数取值）
  *   coverage: MCD-A2 提示条让位（同包）-> test 10（源锚: hint_label set_pos 第二参 < 252,
  *             避开 bottom_bar_ 带 y252-300）
- *   coverage: MCD-A3 空行不显示（同包）-> test 11（拼装区字段首字节判空闸 radical[0] /
- *             words[0]——按字段有无选择拼行, 无空行/无占位符; 注释剥离后计数）
- *   coverage: MCD-A4 组词多词 join（同包）-> test 11（解析区「、」分隔字面 + 数组遍历
- *             循环 for+GetArraySize, 非只取 words[0]）+ 同 test 行为半（card_build 96B /
- *             中文多字节边界: 93B 中文满长 verbatim + 135B 超长截断安全恒 NUL,
- *             must-stay-green 数据面守卫）
+ *   coverage: MCD-A3 空行不显示（同包）-> test 11（拼装区字段首字节判空闸 radical[0]
+ *             ——按字段有无选择拼行, 无空行/无占位符; 注释剥离后计数; 2026-09-29 修订:
+ *             words[0] 闸随组词行整行删除回撤——口径收敛四行, 见 REVISION LOG）
+ *   coverage: MCD-A4 组词多词 join（同包; **2026-09-29 整组回撤**——依据 = human
+ *             2026-09-29 真机轮裁定, 运行时恒空、口径收敛, 非缺陷修复; 见 seam [14] /
+ *             REVISION LOG）-> 仅保留数据面 must-stay-green 守卫（card_build 96B /
+ *             中文多字节边界: 93B 中文满长 verbatim + 135B 超长截断安全恒 NUL + words[96]
+ *             容量截断安全; words 成员裁定保留）; join 结构齿（「、」字面 + 遍历循环）
+ *             删除
+ *   coverage: CWVT-A1/A2/A3/A4/A6（260929-char-window-v5-trim; seam [14]）-> test 14
+ *             （删改核证负向齿: 无星 / 无组词行 / 引导线灰度撤除 + 纯黑在世; + 框消费链
+ *             保留 guard——frm_236_236.bin 重烘像素形状 host 面测不出, 真机目检归
+ *             真机轮未覆盖面申报。**2026-09-29 q7 re-anchor**: A4 纯黑齿改钉 1bpp
+ *             rast 光栅域机制——draw_grid 区零 lv_canvas_set_px + rast 引用在世 +
+ *             render_frame 区零 lv_canvas_set_px; 纯黑 = 1bpp ink 位, 颜色字面不再
+ *             在世; 见 seam [14]c / REVISION LOG 2026-09-29 q7）
+ *   coverage: CWVT-A5（同包; seam [14]d）-> test 10（MCD-A1 几何齿修订——set_pos 第一参
+ *             >= 236 清出重烘框右缘 235 + x + W <= 388; y>=30 / LONG_WRAP / canvas
+ *             (4,8) 自检齿零触）
  *
  * Run protocol (HOST_TEST_CONVENTIONS.md [C4.4]):
  *   0) builder wiring 见 [7]。
@@ -299,6 +392,7 @@
 #define CWX_MCP_CC     "firmware/main/mcp_server.cc"
 #define CWX_BOARD_CC   "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"
 #define CWX_KEYBAR_C   "firmware/main/display/keybar.c"
+#define CWX_LCD_CC     "firmware/main/display/lcd_display.cc"
 #define CWX_CMAKELISTS "firmware/main/test/host_app/main/CMakeLists.txt"
 #define CWX_REQUIREMENTS "docs/requirements.md"
 #define CWX_CONTRACT   "docs/contracts/interface-contract.md"
@@ -1567,9 +1661,13 @@ TEST_CASE("查字窗右栏: 字体接线负向+font_puhui 正向+释义五行拼
  * hint_label (0,280) 落 bottom_bar_ 键帽条带（y252-300）内。
  * **每条源锚配负向变异自证**（锚值改回 => 齿转红; 见 REVISION LOG / 交付报告
  * mutationEvidence）——本包防假绿核心纪律（K3 A5a 正向包含齿假绿教训）。
+ * 2026-09-29 修订（260929-char-window-v5-trim, seam [14]d）: A1b width 钉值 160 →
+ * 让位区间（A1-x: x >= 236 清出重烘框右缘 235 + x + W <= 388; y>=30 / LONG_WRAP /
+ * canvas (4,8) 自检齿零触）。本包义务红 = A1-x（旧 x=228 < 236）; A1b 关系式对旧值
+ * (228,160) 恰过（228+160=388）, 让位转绿由 A1-x 承载。
  * **不得为让它绿而放宽/改写齿**。
  * ------------------------------------------------------------------------ */
-/* coverage: MCD-A1 -- 板端右栏去遮挡源锚齿: cardlabel set_pos 第二参 >= 30（清出恒显顶部状态带 y0-24）+ lv_obj_set_width(cardlabel, 160) 在场（388-228）+ LV_LABEL_LONG_WRAP 在场（释义改中文变长不冲出右缘被裁） */
+/* coverage: MCD-A1 -- 板端右栏让位源锚齿（260929-char-window-v5-trim 修订, seam [14]d）: cardlabel set_pos 第一参 >= 236（文本左缘清出重烘框右缘 235, 旧 228 红）+ set_pos 第二参 >= 30（清出恒显顶部状态带 y0-24, 齿不动）+ lv_obj_set_width(cardlabel, W) 字面在场且 x + W <= 388（右栏右缘不出画布; W 终判归 builder + 真机轮, 不钉单一魔数——预评两案 244/144、262/126 皆满足）+ LV_LABEL_LONG_WRAP 在场（释义改中文变长不冲出右缘被裁, 齿不动） */
 /* coverage: MCD-A2 -- 板端提示条让位源锚齿: hint_label set_pos 第二参 < 252（避开 bottom_bar_ 键帽条带 y252-300） */
 TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (MCD-A1/A2)",
           "[char_window_overlay][MCD-A1][MCD-A2][structural]")
@@ -1577,6 +1675,7 @@ TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (M
     char *code;
     char *region;
     long a[8];
+    long cx;
     int n;
 
     CWX_REQUIRE_ROOT();
@@ -1597,12 +1696,8 @@ TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (M
                "lv_layer_top, y0-24 任何状态恒显）压住（human 真机轮 finding②; 右栏须下移"
                "到 y>=30 清出状态带 + 余量）", a[1]));
 
-    /* ---- A1b: lv_obj_set_width(cardlabel, 160) 在场（释义中文变长不冲出右缘）--- */
-    n = cwx_ints_after(code, "lv_obj_set_width(cardlabel,", a, 8);
-    TEST_ASSERT_TRUE_MESSAGE(n >= 1 && a[0] == 160,
-        cwx_fm("MCD-A1 RED: 未取到 lv_obj_set_width(cardlabel, 160)（取到 %d 参, 首值 "
-               "%ld）——右栏 label 无宽度约束, 释义改中文变长必冲出右缘被裁（388-228=160;"
-               " plan.md 改动面 1）", n, n >= 1 ? a[0] : -1L));
+    /* ---- A1-x/A1b 几何基址捕获（cx = set_pos 第一参; 后续 a[] 被其它锚读取覆盖）-- */
+    cx = a[0];
 
     /* ---- A1c: LV_LABEL_LONG_WRAP 在场（定宽换行生效）------------------------ */
     region = cwx_region_between(CWX_CHAR_CC, "lv_obj_t *cardlabel = lv_label_create",
@@ -1615,14 +1710,16 @@ TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (M
         "plan.md 改动面 1 同刀钉死; 注释剥离后计数, 注释无法满足）");
     free(region);
 
-    /* ---- A2: hint_label 起点第二参 < 252（避开 bottom_bar_ 带 y252-300）------- */
+    /* ---- A2: hint_label 起点第二参 < 252（避开 bottom_bar_ 带；旧带 y252-300，
+     * 2026-09-26 起底条高 38 -> 带区 y262-300——本齿口径保持保守下界 252 不收紧,
+     * 实测取值 244 两口径皆过）------- */
     n = cwx_ints_after(code, "lv_obj_set_pos(g_page.hint_label,", a, 8);
     TEST_ASSERT_TRUE_MESSAGE(n >= 2,
         cwx_fm("MCD-A2 RED(infra): char_page.cc 未取到 lv_obj_set_pos(g_page.hint_label, "
                "X, Y) 两个整型实参（取到 %d 个）——提示条几何锚漂移或非字面形态", n));
     TEST_ASSERT_TRUE_MESSAGE(a[1] < 252,
         cwx_fm("MCD-A2 RED: hint_label 起点 y=%ld >= 252——底部提示条仍落 bottom_bar_ "
-               "键帽条带（LV_ALIGN_BOTTOM_MID 高 48 -> y252-300）内被压（human 裁: 提示条"
+               "键帽条带（LV_ALIGN_BOTTOM_MID 高 38 -> y262-300, 旧注高 48）内被压（human 裁: 提示条"
                "一并修, 上移到避开该带, plan.md 改动面 2）", a[1]));
 
     /* ---- 扫描器自检: 字面整数取值器对已知在世形态能命中（负向齿机器防假绿）----- */
@@ -1631,22 +1728,49 @@ TEST_CASE("查字窗展示面: 右栏让位(去遮挡)+提示条让位 源锚 (M
         "CWX RED(infra): cwx_ints_after 对已知 canvas 锚失灵（期望 4, 8）——取值器坏, "
         "A1/A2 齿失去咬合力");
 
+    /* ---- A1b (CWVT-A5): lv_obj_set_width(cardlabel, W) 字面在场且 x + W <= 388
+     * ——右栏定宽约束在世（释义中文变长不冲出右缘被裁）且右缘不出画布右缘 388。
+     * W 的具体值数值终判归 builder + 真机轮（预评两案 244/144、262/126 皆满足）,
+     * 不钉单一魔数。置于义务红齿之前 = 红基线相位本齿仍实跑复核。 */
+    n = cwx_ints_after(code, "lv_obj_set_width(cardlabel,", a, 8);
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        cwx_fm("MCD-A1 RED: 未取到 lv_obj_set_width(cardlabel, W) 字面宽度（取到 %d "
+               "参）——右栏 label 无宽度约束, 释义改中文变长必冲出右缘被裁（几何锚须以"
+               "字面整数书写; plan.md 改动面 1④）", n));
+    TEST_ASSERT_TRUE_MESSAGE(cx + a[0] <= 388,
+        cwx_fm("MCD-A1 RED: cardlabel 让位几何越界（x=%ld, width=%ld, 右缘 %ld）——"
+               "x + width 须 <= 388（右栏右缘不出画布右缘 388; 预评两案 244/144、"
+               "262/126 皆满足; W 终判归 builder + 真机轮）", cx, a[0], cx + a[0]));
+
+    /* ---- A1-x (CWVT-A5, 本包义务红齿, 置于本 TEST_CASE 末位): cardlabel 起点第一参
+     * >= 236——文本左缘清出重烘圆角框右缘 235（旧值 228 被框右缘压住, human
+     * 2026-09-29 真机轮 finding④; 让位原则 = 起点不在 228、文本左缘不与框右缘重叠,
+     * plan.md 改动面 1④）。Unity abort-on-fail——末位摆放使本齿之前的既有冻结齿
+     * （A1a/A1c/A2/自检/A1b）在红基线相位仍全部实跑到位。 */
+    TEST_ASSERT_TRUE_MESSAGE(cx >= 236,
+        cwx_fm("MCD-A1 RED: cardlabel 起点 x=%ld < 236——右栏文本左缘仍与重烘圆角框右缘 "
+               "(x=235) 重叠（human 2026-09-29 真机轮 finding④; 让位原则 = 起点不在 228、"
+               "文本左缘不与框右缘重叠, plan.md 改动面 1④）", cx));
+
     free(code);
 }
 
 /* -------------------------------------------------------------------------- *
- * TEST 11 — MCD-A3/A4 空行不显示 + 组词多词 join（structural + 行为半守卫;
+ * TEST 11 — MCD-A3 空行不显示 + 数据面守卫（structural + 行为半守卫;
  * seam [11]; char_page.cc 设备装配面非 host 编译——源级树扫承载;
  * 数据面 card_build 96B / 中文多字节边界走 host 真调——char_stroke.acceptance.c
  * card_build 既有 host 测试形态, 但**不改 char_stroke.c**）
- * RED today（设计态）: 拼装区零 radical[0]/words[0] 判空闸（现单条 snprintf 无条件拼
- * 五行）; 解析区只 cJSON_GetArrayItem(j, 0) 取 words[0]、零「、」分隔、零数组遍历。
- * 行为半（card_build 96B / 中文多字节）**must-stay-green**（数据面语义不动）。
+ * 2026-09-29 修订（260929-char-window-v5-trim）: MCD-A4 join 结构齿整组删除——
+ * 「、」join 字面齿 / for+GetArraySize 遍历齿 / words[0] 判空闸（缩为 radical[0]）。
+ * 依据 = human 2026-09-29 真机轮裁定（运行时 words 恒空、口径收敛 S-F3.2 四行,
+ * 非缺陷修复; 见 seam [14] / REVISION LOG 2026-09-29）。A3 释义行/缺义兜底齿
+ * （住 test 9）原样保绿; A4 数据面 guard（96B / 中文多字节 / words[96] 容量截断）
+ * must-stay-green——words 成员裁定保留, char_stroke.c 零触碰。
  * ------------------------------------------------------------------------ */
-/* coverage: MCD-A3 -- 空行不显示: 速查卡拼装区按字段有无选择拼行——字段首字节判空闸 radical[0] / words[0] 在场（组词/部首空则该行不拼装, 无空行/无占位符; 释义行保留 MCF 「释义：—」兜底） */
-/* coverage: MCD-A4 -- 组词多词 join: 解析区「、」分隔字面 + words 数组遍历循环（for + GetArraySize, 非只取 words[0]）+ 数据面 card_build 96B/中文多字节边界守卫（93B 中文满长 verbatim + 135B 超长截断安全恒 NUL, must-stay-green; 不动 char_stroke.c） */
-TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节边界 (MCD-A3/A4)",
-          "[char_window_overlay][MCD-A3][MCD-A4][structural][guard]")
+/* coverage: MCD-A3 -- 空行不显示: 速查卡拼装区按字段有无选择拼行——字段首字节判空闸 radical[0] 在场（部首空则该行不拼装, 无空行/无占位符; 释义行保留 MCF 「释义：—」兜底, 齿住 test 9 原样保绿）。2026-09-29 修订: words[0] 判空闸随组词行整行删除回撤（口径收敛四行, 见 REVISION LOG） */
+/* coverage: MCD-A4（2026-09-29 整组回撤——依据 = human 2026-09-29 真机轮裁定, 运行时恒空、口径收敛, 非缺陷修复; 见 seam [14] / REVISION LOG）: 仅保留数据面 must-stay-green 守卫——card_build 96B/中文多字节边界（93B 中文满长 verbatim + 135B 超长截断安全恒 NUL + words[96] 容量截断安全; words 成员裁定保留, 不动 char_stroke.c）; join 结构齿（「、」字面 + for+GetArraySize 遍历）删除, 无组词行核证改由 test 14 CWVT-A2 承载 */
+TEST_CASE("查字窗展示面: 空行不显示+释义数据面守卫 (MCD-A3)",
+          "[char_window_overlay][MCD-A3][structural][guard]")
 {
     char *region;
     kidpal_char_info info;
@@ -1666,24 +1790,8 @@ TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节�
     TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "radical[0]") >= 1,
         "MCD-A3 RED: 拼装区零 radical 首字节判空（radical[0]）——部首为空时仍拼该行"
         "（空行/占位符; plan.md 改动面 3: 按字段有无选择拼行; 注释剥离后计数）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "words[0]") >= 1,
-        "MCD-A3 RED: 拼装区零 words 首字节判空（words[0]）——组词为空时仍拼该行"
-        "（空行/占位符; plan.md 改动面 3; 注释剥离后计数）");
-    free(region);
-
-    /* ---- A4: words 数组多词 join（非只取 words[0]）------------------------- */
-    region = cwx_region_between(CWX_CHAR_CC, "const char *pinyin = \"?\"",
-                                "lv_obj_t *cardlabel");
-    TEST_ASSERT_NOT_NULL_MESSAGE(region,
-        "MCD-A4 RED(infra): char_page.cc 的 cJSON 解析/装配区切取失败（锚 const char "
-        "*pinyin = \"?\" / lv_obj_t *cardlabel 漂移——须复核本齿锚）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "、") >= 1,
-        "MCD-A4 RED: 解析区零「、」分隔字面——words 多词未以「、」join（现只取 words[0],"
-        " 多词丢失; kidpal_char_info.words 注释本就写明「、-joined」; 注释剥离后计数）");
-    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "for (") >= 1 &&
-                                 cwx_count_in_slice_code(region, "GetArraySize") >= 1,
-        "MCD-A4 RED: 解析区零 words 数组遍历循环（for + GetArraySize）——仍只取 words[0]"
-        "（多词组装落 char_page 层, 不动 char_stroke.c 纯逻辑合约; 注释剥离后计数）");
+    /* 2026-09-29 修订: 原 words[0] 判空闸齿随组词行整行删除回撤（MCD-A4 整组回撤,
+     * 口径收敛 S-F3.2 四行; 无组词行核证 = test 14 CWVT-A2 拼装区零 words 负向齿）。 */
     free(region);
 
     /* ---- A4 数据面守卫（must-stay-green）: card_build 96B / 中文多字节边界 ------
@@ -1744,6 +1852,381 @@ TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节�
         cwx_fm("MCD-A4 RED(guard): 「、」join 多词组词超容后截断不安全（长度 %zu, 须 "
                "<=95 且恒 NUL 结尾）——words[96] 容量越界（多词 join 的数据面半边）",
                strlen(card.words)));
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 12 — v1.59 KEY 起播改造: 静态整字初始态 + 建窗停表 + replay 语义 + REST 定格
+ * (structural; seam [12]; TaskPackage 260928-char-window-key-triggered-play additive;
+ * char_page.cc 设备装配面非 host 编译——源级树扫承载, 本件既有范式; 正向齿注释剥离后
+ * 计数——sealing pass 纪律)
+ * RED today（设计态, 交 builder 落地的靶; 见 REVISION LOG 2026-09-28 条目）:
+ *   - show() 首帧仍 charpage_render_frame(-1, 0)（米字格空白, 非「整字实心」）;
+ *   - charpage_refresh_hint(0) 在世（「第 1 笔」文案建窗即覆写定格文案——违 S-F3.1
+ *     AC1「未按 KEY 前零逐笔演示」）;
+ *   - timer 创建后零 lv_timer_pause（建窗即起播动画拍）;
+ *   - replay() 零 started 置位 / 零 lv_timer_resume（KEY 起播/重播语义未落）;
+ *   - timer_cb 零 REST 定格闸断（演完取模回绕自动重播——违 S-F3.1 AC3）。
+ * **不得为让它绿而放宽/改写齿**。
+ * ------------------------------------------------------------------------ */
+/* coverage: ACC-1 -- 建窗首帧静态整字（S-F3.1-AC1 前半）: show() 内 charpage_render_frame(-1, g_page.n_strokes) 在世（cur_stroke=-1 + written=n -> 每笔 WRITTEN 整字实心黑, char_stroke.c 相位复用零触碰）+ 旧空白首帧 charpage_render_frame(-1, 0) 零在世; 整字实心/右栏速查栏同屏真机目检归 planner 未覆盖面申报通道, 不钉 host 齿 */
+/* coverage: ACC-2 -- 建窗零动画拍（S-F3.1-AC1 后半）: timer 创建后 lv_timer_pause(g_page.timer) 在世（DC-2: show 建表即 pause, 保 MCF-A1 末端锚）+ hint_label 创建 -> timer 创建区间零 charpage_refresh_hint 调用（「第 1 笔」文案不得建窗出现; 初始提示条 = card_build 单源 card.progress 定格文案「写完啦·共 N 笔」, 消费面由在世齿承载零回归） */
+/* coverage: ACC-3 -- replay 语义扩展（S-F3.3-AC1; S-F3.1-AC5 起播半）: replay() 区内 elapsed_ms = 0 + started = 1 + lv_timer_resume( 三件在世——首播/重播同路径结构齿; KEY 短按路由已在世（M2K3-A2 查字窗列）, 真机起播手感归真机轮 */
+/* coverage: ACC-4 -- 演完定格闸断（S-F3.1-AC3; S-F3.3-AC2 定格等待半）: timer_cb 区内 lv_timer_pause( 在世且先于 elapsed_ms 推进、pause 与推进之间夹 return（REST 相位渲染定格帧 + 刷定格文案后 pause + return, 不推进 elapsed_ms = 不自动重播; 演完 2s+ 无自动重播真机目检归未覆盖面申报） */
+TEST_CASE("查字窗 v1.59 KEY 起播: 静态整字初始态+建窗停表+replay语义+REST定格 (ACC-1/2/3/4)",
+          "[char_window_overlay][ACC-1][ACC-2][ACC-3][ACC-4][structural]")
+{
+    char *region;
+    const char *pp;
+    const char *pe;
+
+    CWX_REQUIRE_ROOT();
+
+    /* ---- ACC-1: 建窗首帧 = 静态整字 ------------------------------------------ */
+    region = cwx_region_between(CWX_CHAR_CC,
+                                "void kidpal_char_page_show(const char *data_json)",
+                                "static const char charpage_dash_contract[1]");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "ACC-1 RED(infra): char_page.cc 的 show() 函数区切取失败（签名锚漂移——须复核"
+        "本齿锚, 不得改判为绿）");
+
+    /* tooth 1 (本包红齿): 首帧 = charpage_render_frame(-1, g_page.n_strokes)——
+     * cur_stroke=-1 + written=n -> kidpal_char_stroke_state 判每笔 WRITTEN = 整字
+     * 实心（char_stroke.c 纯逻辑相位复用, 冻结面零触碰——DC-1 同口径）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region,
+                                "charpage_render_frame(-1, g_page.n_strokes)") >= 1,
+        "ACC-1 RED: show() 首帧未接静态整字——charpage_render_frame(-1, "
+        "g_page.n_strokes) 不在世（cur_stroke=-1 + written=n = 每笔 WRITTEN 整字实心; "
+        "S-F3.1 AC1 前半: 米字格内直接静态显示完整示范字; 注释剥离后计数）");
+
+    /* tooth 2 (负向齿, 本包红齿): 旧空白首帧 charpage_render_frame(-1, 0) 零在世——
+     * 新旧并存时后执行者覆盖先者, 整字初始态被冲回空白格。注释剥离后计数（真实调用
+     * 无法藏进注释, 注释提及不误红）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "charpage_render_frame(-1, 0)") == 0,
+        "ACC-1 RED: show() 内 charpage_render_frame(-1, 0) 仍在世——空白首帧调用未替换"
+        "（若与新调用并存, 后执行者覆盖先者, 整字静态初始态被冲掉; S-F3.1 AC1 前半）");
+
+    /* ---- ACC-2: 建窗零动画拍 ------------------------------------------------- */
+    /* tooth 3 (本包红齿): timer 创建字面之后 lv_timer_pause(g_page.timer) 在世——
+     * 建窗即停表。region 自 timer 创建锚起切 = pause 只可能落锚后（「创建后紧跟
+     * pause」的结构承载; DC-2 裁定 show 建表即 pause, 不移 MCF-A1 末端锚）。 */
+    {
+        char *tr = cwx_region_between(CWX_CHAR_CC,
+                                      "g_page.timer = lv_timer_create",
+                                      "static const char charpage_dash_contract[1]");
+        TEST_ASSERT_NOT_NULL_MESSAGE(tr,
+            "ACC-2 RED(infra): char_page.cc 的 timer 创建锚切取失败（锚漂移——该字面"
+            "同时是 MCF-A1 区域齿末端锚, 不得移走; 须复核本齿锚, 不得改判为绿）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(tr, "lv_timer_pause(g_page.timer") >= 1,
+            "ACC-2 RED: timer 创建后零 lv_timer_pause(g_page.timer)——建窗即起播动画拍"
+            "（S-F3.1 AC1 后半: 未按 KEY 前零逐笔演示; DC-2 裁定 show 建表即 pause）");
+        free(tr);
+    }
+
+    /* tooth 4 (负向齿, 本包红齿): hint_label 创建区 -> timer 创建区之间零
+     * charpage_refresh_hint 调用——「第 1 笔」文案不得建窗出现（A2 删首拍调用;
+     * 初始提示条 = card_build 单源 card.progress 定格文案「写完啦·共 N 笔」, 该消费
+     * 在世且由 M2K3/S-F3.3-AC2 齿承载零回归）。注释剥离后计数（注释提及不误红）。 */
+    {
+        char *hr = cwx_region_between(CWX_CHAR_CC,
+                                      "g_page.hint_label = lv_label_create",
+                                      "g_page.timer = lv_timer_create");
+        TEST_ASSERT_NOT_NULL_MESSAGE(hr,
+            "ACC-2 RED(infra): hint_label 创建 -> timer 创建区切取失败（锚漂移——本区"
+            "即 MCF-A1 区域齿区段, 末端锚不得移走; 须复核本齿锚）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(hr, "charpage_refresh_hint(") == 0,
+            "ACC-2 RED: 建窗首拍出现 charpage_refresh_hint 调用——初始提示条被覆写成"
+            "「第 1 笔」（S-F3.1 AC1 后半: 未按 KEY 前零逐笔演示, 提示条应保持 "
+            "card_build 单源定格文案「写完啦·共 N 笔」; 注释剥离后计数）");
+        free(hr);
+    }
+
+    /* tooth 5 (guard, must-stay-green): MCF-A1 区域齿末端锚位守卫——
+     * g_page.hint_label = lv_label_create 须先于 g_page.timer = lv_timer_create
+     * （硬约束: 末端锚字面必须留在 show() 内 hint_label 创建之后; DC-2 方案 A3
+     * 即为此设计——任何把 timer 创建上提的改法在此红）。 */
+    {
+        const char *ph = strstr(region, "g_page.hint_label = lv_label_create");
+        const char *pt = strstr(region, "g_page.timer = lv_timer_create");
+        TEST_ASSERT_TRUE_MESSAGE(ph != NULL && pt != NULL && ph < pt,
+            "ACC-2 RED(guard): char_page.cc show() 内锚序漂移——g_page.timer = "
+            "lv_timer_create 不在 g_page.hint_label = lv_label_create 之后（MCF-A1 "
+            "区域齿末端锚被移走, 既有冻结齿区段被拆; DC-2 裁定: timer 创建保留原位"
+            "原句）");
+    }
+    free(region);
+
+    /* ---- ACC-3: replay 语义扩展（首播/重播同路径）---------------------------- */
+    {
+        char *rr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_replay(void)",
+                                      "void kidpal_char_page_show(const char *data_json)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(rr,
+            "ACC-3 RED(infra): char_page.cc 的 replay() 函数区切取失败（签名锚漂移——"
+            "须复核本齿锚, 不得改判为绿）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "elapsed_ms = 0") >= 1,
+            "ACC-3 RED: replay 区内零 elapsed_ms = 0——重播未从头起（S-F3.3 AC1: 从头"
+            "起播笔顺动画; 该半在世, 零回归守卫）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "started = 1") >= 1,
+            "ACC-3 RED: replay 区内零 started = 1——演示起播态未置位（WF-F3-01 键帽"
+            "随态变注: 起播后键帽「重播」的态源; S-F3.1 AC5 / S-F3.3 AC1）");
+        TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(rr, "lv_timer_resume(") >= 1,
+            "ACC-3 RED: replay 区内零 lv_timer_resume——KEY 短按不启动逐笔演示（A3 "
+            "建表即 pause 后, resume 是起播/重播唯一启动路径; S-F3.1 AC5 / S-F3.3 AC1）");
+        free(rr);
+    }
+
+    /* ---- ACC-4: REST 定格闸断（演完不自动重播）------------------------------- */
+    {
+        char *tb = cwx_region_between(CWX_CHAR_CC,
+                                      "static void charpage_timer_cb(lv_timer_t *timer)",
+                                      "static const lv_image_dsc_t *charpage_art_frame_dsc(void)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(tb,
+            "ACC-4 RED(infra): char_page.cc 的 timer_cb 函数区切取失败（签名锚漂移——"
+            "须复核本齿锚, 不得改判为绿）");
+        /* REST 相位闸断: lv_timer_pause 在世、先于 elapsed_ms 推进、且与推进之间夹
+         * return（pause 后即返回, 不落穿到推进行 = 演完定格不自动重播）。 */
+        pp = strstr(tb, "lv_timer_pause(");
+        pe = strstr(tb, "elapsed_ms +=");
+        TEST_ASSERT_TRUE_MESSAGE(pp != NULL && pe != NULL && pp < pe,
+            "ACC-4 RED: timer_cb 区内零 REST 定格闸断（lv_timer_pause 不在世, 或不先于 "
+            "elapsed_ms 推进）——演完取模回绕自动重播（S-F3.1 AC3: 定格在「✔ 写完啦 · "
+            "共 N 笔」等待按键, 不自动重播; 演完 2s+ 无自动重播真机目检归未覆盖面申报）");
+        if (pp != NULL && pe != NULL && pp < pe) {
+            size_t span = (size_t)(pe - pp);
+            char *between = (char *)malloc(span + 1);
+            assert(between != NULL); /* logic guard: host OOM must fail loudly */
+            memcpy(between, pp, span);
+            between[span] = '\0';
+            TEST_ASSERT_TRUE_MESSAGE(strstr(between, "return") != NULL,
+                "ACC-4 RED: REST 相位 pause 后未 return——闸断落穿到 elapsed_ms 推进"
+                "（定格帧渲染后计时仍推进 = 下一拍回绕自动重播; S-F3.1 AC3）");
+            free(between);
+        }
+        free(tb);
+    }
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 13 — v1.59 键帽随态接线: sync 查字窗分支 + started 外露 + show/replay 刷键帽
+ * (structural; seam [13]; TaskPackage 260928-char-window-key-triggered-play additive;
+ * lcd_display.cc / char_page.cc 设备装配面非 host 编译——源级树扫承载)
+ * RED today（设计态）: sync_locked 零 CHAR_WINDOW 分流 / 零 char_slots 消费 / 零
+ * started 消费; char_page.h 零 started 外露; char_page.cc 零 keybar_sync 调用点。
+ * ------------------------------------------------------------------------ */
+/* coverage: ACC-6 -- 接线（WF-F3-01 键帽随态变注）: lcd_display.cc kidpal_keybar_sync_locked 区内查字窗前台分支（KIDPAL_LAYER_CHAR_WINDOW 门控 + 消费 kidpal_keybar_char_slots(kidpal_char_page_started(), ...)——键帽随态值域仍走 keybar 纯逻辑单源零重算）+ char_page.h 声明 kidpal_char_page_started + char_page.cc show() 末尾与 replay() 均调 kidpal_lcd_keybar_sync（建窗即「播报」/ KEY 起播后即「重播」的驱动点; 内部递归取锁安全——kidpal_render_node.cc:141 同款先例; 「锁外」位置纪律归实现侧/真机轮, 结构齿钉调用点在世） */
+TEST_CASE("查字窗 v1.59 键帽接线: sync查字窗分支+started外露+show/replay刷键帽 (ACC-6)",
+          "[char_window_overlay][ACC-6][structural]")
+{
+    char *region;
+
+    CWX_REQUIRE_ROOT();
+
+    /* tooth 1 (本包红齿): kidpal_keybar_sync_locked 体内查字窗前台分支——CHAR_WINDOW
+     * 门控 + 双单源消费。region 自 sync_locked 体内首句锚起切（签名行另有 :479 前向
+     * 声明, 签名锚会切错区——避开）; 提醒弹窗压查字窗时 front=REMINDER 不进本分支,
+     * 提醒键帽不受扰（分流前提）。 */
+    region = cwx_region_between(CWX_LCD_CC,
+                                "kidpal_keybar_dots_t d;",
+                                "static void kidpal_voice_apply_look(int scene)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "ACC-6 RED(infra): lcd_display.cc 的 kidpal_keybar_sync_locked 函数区切取失败"
+        "（锚漂移——voice_round_ui.acceptance.c 钉 static void kidpal_keybar_sync_"
+        "locked(void) 签名字面, 签名不动红线; 须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "KIDPAL_LAYER_CHAR_WINDOW") >= 1,
+        "ACC-6 RED: kidpal_keybar_sync_locked 未按前台层 KIDPAL_LAYER_CHAR_WINDOW "
+        "分流——查字窗前台时键帽仍走通用覆盖层列（WF-F3-01 键帽随态变注 v1.59: 未起播"
+        "「播报」/起播后「重播」无落点; 提醒压查字窗时键帽不受扰的分流前提缺失）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_keybar_char_slots(") >= 1,
+        "ACC-6 RED: sync 查字窗分支未消费 kidpal_keybar_char_slots——键帽值域设备侧"
+        "重算（第二真相源; keybar 纯逻辑单源纪律 KB-A1/KB-E2）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_slice_code(region, "kidpal_char_page_started(") >= 1,
+        "ACC-6 RED: sync 查字窗分支未消费 kidpal_char_page_started——键帽不随演示起播"
+        "态变（未起播恒「播报」或恒「重播」; WF-F3-01 键帽随态变注）");
+    free(region);
+
+    /* tooth 2 (本包红齿): started 外露——char_page.h 声明 kidpal_char_page_started
+     * （lcd_display.cc 经 include 消费; extern "C" 块内——C 桥）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_CHAR_H, "kidpal_char_page_started") >= 1,
+        "ACC-6 RED: char_page.h 零 kidpal_char_page_started 声明——演示起播态未外露"
+        "（sync 查字窗分支无从取态; 注释剥离后计数）");
+
+    /* tooth 3 (本包红齿): char_page.cc 内 kidpal_lcd_keybar_sync 调用点 >= 2, 且
+     * replay() 区与 show() 区各含 >= 1——建窗末尾刷键帽（此时 CHAR_WINDOW 层已由
+     * begin_char_window 推入, sync 分支可正确裁决; 新查字重开窗 memset 归 0 -> 键帽
+     * 回「播报」）+ KEY 起播/重播后刷键帽。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file_code(CWX_CHAR_CC, "kidpal_lcd_keybar_sync(") >= 2,
+        "ACC-6 RED: char_page.cc 零/单点 kidpal_lcd_keybar_sync 调用（期望 >= 2: "
+        "show() 末尾 + replay()）——键帽随态刷新无驱动点（WF-F3-01 键帽随态变注）");
+    {
+        char *rr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_replay(void)",
+                                      "void kidpal_char_page_show(const char *data_json)");
+        TEST_ASSERT_NOT_NULL_MESSAGE(rr,
+            "ACC-6 RED(infra): char_page.cc 的 replay() 函数区切取失败（签名锚漂移）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(rr, "kidpal_lcd_keybar_sync(") >= 1,
+            "ACC-6 RED: replay() 区内零 kidpal_lcd_keybar_sync 调用——KEY 起播/重播后"
+            "键帽不刷新（「播报」不复位为「重播」; WF-F3-01 键帽随态变注）");
+        free(rr);
+    }
+    {
+        char *sr = cwx_region_between(CWX_CHAR_CC,
+                                      "void kidpal_char_page_show(const char *data_json)",
+                                      "static const char charpage_dash_contract[1]");
+        TEST_ASSERT_NOT_NULL_MESSAGE(sr,
+            "ACC-6 RED(infra): char_page.cc 的 show() 函数区切取失败（签名锚漂移）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            cwx_count_in_slice_code(sr, "kidpal_lcd_keybar_sync(") >= 1,
+            "ACC-6 RED: show() 区内零 kidpal_lcd_keybar_sync 调用——建窗末尾键帽不刷新"
+            "（未起播「播报」初始态无驱动点; WF-F3-01 键帽随态变注）");
+        free(sr);
+    }
+}
+
+/* -------------------------------------------------------------------------- *
+ * TEST 14 — CWVT v5 收敛删改核证（structural; seam [14]; TaskPackage
+ * 260929-char-window-v5-trim additive; char_page.cc 设备装配面非 host 编译——
+ * 源级树扫承载, 本件既有范式）
+ * 钉四件改动面的「删改」侧（负向齿 = 删除面核证——被删字面任何残留在世即红, 严于
+ * 正向齿; 负向齿不剥注释, 残留注释一并须清——sealing pass 纪律）:
+ *   ①无星（CWVT-A1）: char_page.cc 全文零 ic_star_22 / charpage_art_star_dsc /
+ *     s_cp_star_（三静态 + 整函数 + show() 消费块 + 相关注释干净删除）。
+ *   ②无组词行（CWVT-A2）: 速查卡拼装区（card_build -> cardlabel 字体锚）零 words
+ *     拼装（注释剥离后计数; 数据面 words 成员裁定保留——info_o/refresh_hint 透传
+ *     不在本区, char_stroke.c 零触碰）。
+ *   ③引导线改纯黑点线（CWVT-A3/A4; 2026-09-29 q7 re-anchor——纯黑 = 1bpp ink 位
+ *     （rast 域）, q7 修法后颜色字面不再在世）: charpage_draw_grid 区内灰度
+ *     0x99/0xbb 字面零在世（负向, raw——区内注释一并须清; A3 原样保留）+ 区内
+ *     lv_canvas_set_px 字面零在世（负向, raw——旧 canvas 直绘机制撤除, q7 缺陷机制
+ *     本体）+ rast 引用在世（正向, 注释剥离后——g_page.rast 直写或经参数传 rast
+ *     指针的 helper 均命中; 点距/虚实参数真机轮调, 不钉）+ charpage_render_frame
+ *     区内 lv_canvas_set_px 字面零在世（负向, raw——帧路径零 canvas 直绘, blit
+ *     一次成型语义; blit 本体在区外不受影响）。
+ *   ④cardlabel 让位（CWVT-A5）: 几何齿住 test 10（A1-x x >= 236 + A1b x + W <= 388）
+ *     ——本齿不重复。
+ *   guard（CWVT-A6, must-stay-green）: charpage_art_frame_dsc(void) 在世——重烘案
+ *     保留消费链（ACC-4 末端锚有效性随之核证）; frm_236_236.bin 重烘为 bin 资产,
+ *     像素形状 host 面测不出 = 真机轮未覆盖面申报, 不出齿。
+ * RED today（设计态, builder 落地后转绿）: ①②③ 现状在世（星消费 :651-658 /
+ *   words 拼装 :767-769 / draw_grid 0x99/0xbb :230-237——行号快照非长期事实源,
+ *   齿全走符号锚）。
+ * **2026-09-29 q7 修订后义务红（fixer 落地前现状源 = canvas 直绘在世, 先红后绿）**:
+ *   ③ 新齿——draw_grid 区 lv_canvas_set_px 负向齿红 + rast 正向齿红（rast 引用
+ *   缺失）+ render_frame 区 lv_canvas_set_px 负向齿红; A3（0x99/0xbb 负向）原样
+ *   保留、现状绿。真机行为验证归 human 目检（q7 continuation）, host 齿只钉机制
+ *   形状。
+ * **不得为让它绿而放宽/改写齿**。
+ * ------------------------------------------------------------------------ */
+/* coverage: CWVT-A1 -- 无星（requirements v1.60 S-F3.2-AC1 四行口径 + plan.md 决策①）: char_page.cc 全文零 ic_star_22 / charpage_art_star_dsc / s_cp_star_（负向源面字面齿, 不剥注释——删除面核证, 残留注释一并须清） */
+/* coverage: CWVT-A2 -- 无组词行（requirements v1.60 S-F3.2-AC1 四行口径 + plan.md 决策②）: 速查卡拼装区零 words 字面（注释剥离后计数; 数据面 words 成员裁定保留, 不动 char_stroke.c; MCD-A4 整组回撤的删改核证侧） */
+/* coverage: CWVT-A3 -- 引导线灰度撤除（plan.md 决策③a, human 2026-09-29 真机轮裁）: charpage_draw_grid 区内 0x99 / 0xbb 字面 = 0（负向, raw——RLCD 阈值化后灰度不可见, 真机呈空斜框; q7 修订原样保留） */
+/* coverage: CWVT-A4 -- 引导线纯黑在世（plan.md 决策③a; 2026-09-29 q7 re-anchor——纯黑 = 1bpp ink 位（rast 域）, q7 修法后颜色字面不再在世）: charpage_draw_grid 区内 lv_canvas_set_px 字面 = 0（负向, raw——旧 canvas 直绘机制撤除, 即 q7 缺陷机制本体; 区内注释一并须清）+ rast 引用 >= 1（正向, 注释剥离后计数——g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 不给实现细节过约束; 点距/虚实参数真机轮调不钉） */
+/* coverage: CWVT-A4（q7 帧半） -- 帧路径零 canvas 直绘: charpage_render_frame 区（static void charpage_render_frame(int cur_stroke, int written) -> static void charpage_refresh_hint(int cur_stroke) 切区）内 lv_canvas_set_px 字面 = 0（负向, raw——PENDING 灰点链 1bpp 化后归 rast 域呈纯黑点链（1bpp 无灰度, spine q7 ruling 钉此形状）, blit 兜底一次成型语义钉死; blit 本体在区外零触） */
+/* coverage: CWVT-A6 -- 框消费链保留 guard（plan.md 决策③ 重烘案）: charpage_art_frame_dsc(void) 在世（ACC-4 末端锚有效性核证; frm_236_236.bin 重烘像素形状 host 面测不出 = 真机轮未覆盖面申报） */
+TEST_CASE("查字窗 v5 收敛: 删星+删组词行+引导线纯黑点线 删改核证 (CWVT)",
+          "[char_window_overlay][CWVT][structural]")
+{
+    char *region;
+
+    CWX_REQUIRE_ROOT();
+
+    /* ---- guard: 框消费链保留（重烘案不删消费链; ACC-4 末端锚有效; 现状绿 =
+     *  MUST-STAY-GREEN——拆消费链在此红。置于义务红齿之前 = 红基线相位本齿仍实跑
+     *  复核——Unity abort-on-fail）。--------------------------------------------- */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_file_code_contains(CWX_CHAR_CC, "charpage_art_frame_dsc(void)") >= 1,
+        "CWVT RED(guard): char_page.cc 零 charpage_art_frame_dsc(void)——重烘案的消费链"
+        "（frame_dsc/overlay）被误拆（human 触点①裁定重烘 frm_236_236.bin 资产、保留"
+        "函数; ACC-4 末端锚 charpage_art_frame_dsc 签名有效性随之核证）");
+
+    /* ---- ① 无星: 全文零星资产/星消费字面（负向齿不剥注释）-------------------- */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cwx_count_in_file(CWX_CHAR_CC, "ic_star_22") == 0 &&
+            cwx_count_in_file(CWX_CHAR_CC, "charpage_art_star_dsc") == 0 &&
+            cwx_count_in_file(CWX_CHAR_CC, "s_cp_star_") == 0,
+        cwx_fm("CWVT RED: char_page.cc 仍有星面字面（ic_star_22=%d / "
+               "charpage_art_star_dsc=%d / s_cp_star_=%d）——装饰星未删净（human "
+               "2026-09-29 真机轮裁定去掉; 干净删除 = 三静态 + 整函数 + show() 消费块 "
+               "+ 相关注释一并清——负向齿不剥注释）",
+               cwx_count_in_file(CWX_CHAR_CC, "ic_star_22"),
+               cwx_count_in_file(CWX_CHAR_CC, "charpage_art_star_dsc"),
+               cwx_count_in_file(CWX_CHAR_CC, "s_cp_star_")));
+
+    /* ---- ② 无组词行: 拼装区零 words（注释剥离后计数）------------------------ */
+    region = cwx_region_between(CWX_CHAR_CC, "kidpal_char_card_build(&info_o",
+                                "lv_obj_set_style_text_font(cardlabel");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "CWVT RED(infra): 速查卡拼装区切取失败（锚漂移——须复核本齿锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "words") == 0,
+        "CWVT RED: 速查卡拼装区仍有 words 拼装——组词行未删（运行时 words 恒空、实际"
+        "呈现即释义行, human 2026-09-29 真机轮裁定把组词改成语义、卡面收敛四行; "
+        "S-F3.2-AC1 四行口径; 注释剥离后计数——注释提及不算删除）");
+    free(region);
+
+    /* ---- ③ 引导线改纯黑点线: draw_grid 区灰度字面撤除 + 纯黑承载机制在世 -----
+     * 2026-09-29 q7 re-anchor（REVISION LOG 2026-09-29 q7）: 纯黑 = 1bpp ink 位
+     * （rast 域）——修法把格点/点链挪 g_page.rast 1bpp 光栅域、charpage_blit 兜底
+     * 一次成型（blit 本体零改）后, draw_grid 区的颜色字面（lv_color_make 等）不再
+     * 在世, 旧 A4「纯黑颜色字面 >= 1」追踪的是被撤除的旧机制（canvas 直绘 + 颜色
+     * 字面）而非行为意图。re-anchor 非放宽——断言强度对等迁移: 负向齿钉旧机制
+     * 撤除（lv_canvas_set_px = 0, 即 q7 缺陷机制本体）, 正向齿钉新机制在世
+     * （rast 引用 >= 1）。意图不变: 纯黑点线在世; 点距/虚实参数真机轮调不钉。 */
+    region = cwx_region_between(CWX_CHAR_CC,
+                                "static void charpage_draw_grid(int size)",
+                                "static void charpage_render_frame(int cur_stroke, int written)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "CWVT RED(infra): charpage_draw_grid 函数区切取失败（签名锚漂移——须复核本齿锚, "
+        "不得改判为绿）");
+    /* A3（q7 修订原样保留）: 灰度字面撤除。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "0x99") == 0 &&
+                                 cwx_count_in_slice(region, "0xbb") == 0,
+        "CWVT RED: charpage_draw_grid 区内仍有灰度 0x99/0xbb 字面——米字引导线未改纯黑"
+        "（RLCD 阈值化后灰度不可见, 真机呈空斜框; human 2026-09-29 真机轮裁定改纯黑"
+        "点线; 区内注释一并须清——负向齿不剥注释）");
+    /* A4 负向齿（q7 re-anchor 核心）: draw_grid 区零 lv_canvas_set_px——旧 canvas
+     * 直绘机制撤除。缺陷机制本体: 建窗 draw_grid 直绘 canvas 的格点被 charpage_blit
+     * 全幅逐像素 ink?黑:白 覆写吃掉, 真机米字黑点线不可见（spine q7 human 真机目检
+     * finding）。负向齿不剥注释（区内注释一并须清——sealing pass 纪律）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "lv_canvas_set_px") == 0,
+        "CWVT RED: charpage_draw_grid 区内仍有 lv_canvas_set_px——格点仍走 canvas 直绘"
+        "（旧机制）, 必被 charpage_blit 全幅覆写吃掉、真机米字黑点线不可见（spine q7 "
+        "human 真机目检 finding; 修法 = 格点挪 g_page.rast 1bpp 光栅域、blit 兜底一次"
+        "成型, blit 本体零改; 区内注释一并须清——负向齿不剥注释）");
+    /* A4 正向齿（q7 re-anchor）: draw_grid 区 rast 引用在世——1bpp 光栅域写入在世
+     * （g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 不给实现细节过约束;
+     * 注释剥离后计数——注释无法满足, 防注释假绿）。 */
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice_code(region, "rast") >= 1,
+        "CWVT RED: charpage_draw_grid 区零 rast 引用——格点未落 1bpp 光栅域（spine q7 "
+        "修法: 格点写 g_page.rast, blit 兜底一次成型; 现状 canvas 直绘即 q7 缺陷机制; "
+        "注释剥离后计数——注释提及不算实现）");
+    free(region);
+
+    /* ---- ③ 帧（q7 帧半）: render_frame 区零 canvas 直绘 ----------------------
+     * render_frame PENDING 分支直绘 canvas 的灰点链与 draw_grid 同雷面（同被 blit
+     * 覆写吃掉; 1bpp 化后归 rast 域呈纯黑点链——1bpp 无灰度, spine q7 ruling 钉此
+     * 形状）。本齿钉「帧路径零 canvas 直绘 = blit 一次成型」语义; blit 本体在区外
+     * （charpage_blit 定义先于 draw_grid）, 不受本齿影响。负向齿不剥注释。 */
+    region = cwx_region_between(CWX_CHAR_CC,
+                                "static void charpage_render_frame(int cur_stroke, int written)",
+                                "static void charpage_refresh_hint(int cur_stroke)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "CWVT RED(infra): charpage_render_frame 函数区切取失败（签名锚漂移——须复核本齿"
+        "锚, 不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(cwx_count_in_slice(region, "lv_canvas_set_px") == 0,
+        "CWVT RED: charpage_render_frame 区内仍有 lv_canvas_set_px——帧路径仍直绘 canvas"
+        "（PENDING 灰点链被 charpage_blit 全幅覆写吃掉, 真机未写笔点链不可见; spine q7 "
+        "修法: 点链挪 g_page.rast 1bpp 域呈纯黑点链, blit 兜底一次成型; blit 本体在区外"
+        "零触; 区内注释一并须清——负向齿不剥注释）");
+    free(region);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1877,4 +2360,95 @@ TEST_CASE("查字窗展示面: 空行不显示+组词多词join+中文多字节�
  *               本包只动 char_window_overlay.acceptance.c（板端）; 云面新建
  *               server/acceptance/test_char_meaning_merge.acceptance.py（MCD-A5/A7）。
  *               每条源锚齿配负向变异自证（锚值改回 => 齿转红）, 证据见交付报告。
+ *   2026-09-28  v1.59 revision (acceptance-author, TaskPackage
+ *               260928-char-window-key-triggered-play; additive, 零既有齿改写):
+ *               ① 追 seam [12] + test 12（ACC-1/2/3/4——char_page.cc 呈现面结构齿:
+ *                  静态整字首帧 charpage_render_frame(-1, g_page.n_strokes) + 旧空白
+ *                  首帧负向齿 / timer 创建后 pause + 首拍 hint 覆写负向齿 + MCF-A1
+ *                  末端锚锚位守卫（tooth 5, 现状绿 = MUST-STAY-GREEN）/ replay 区
+ *                  elapsed=0 + started=1 + resume / timer_cb REST pause 先于 elapsed
+ *                  推进且与推进之间夹 return）。
+ *               ② 追 seam [13] + test 13（ACC-6——lcd_display.cc sync 查字窗分支
+ *                  CHAR_WINDOW 门控 + kidpal_keybar_char_slots / kidpal_char_page_
+ *                  started 消费 + char_page.h started 外露 + char_page.cc show/replay
+ *                  刷键帽驱动点）。
+ *               ACC-5（host 行为齿）钉 keybar_three_slot.acceptance.c test 6（同批
+ *               additive, 见该文件 REVISION LOG）。真机目检类断言（整字实心、演完
+ *               2s+ 无自动重播、KEY 起播手感）不钉 host 齿——归 planner 未覆盖面
+ *               申报通道。
+ *               本包义务红（设计态红, builder 落地后转绿, 不计入「新增红」违约）=
+ *               test 12 除 tooth 5 外全部 tooth + test 13 全部 tooth。
+ *               MUST-STAY-GREEN = test 12 tooth 5（MCF-A1 锚位守卫, 现状绿）。
+ *               硬约束留痕: MCF-A1 区域齿末端锚字面 g_page.timer = lv_timer_create
+ *               须留在 show() 内 hint_label 创建之后（DC-2 方案 A3; test 12 tooth 5
+ *               同刀钉死）——本包齿的形态（pause 走「timer 创建锚 -> dash_contract」
+ *               区间）不迫使 builder 移动该锚。
+ *   2026-09-29  v5-trim revision (acceptance-author, TaskPackage
+ *               260929-char-window-v5-trim; 计划性修订 + additive。修订依据 =
+ *               human 2026-09-29 真机轮裁定（运行时 words 恒空、口径收敛 S-F3.2
+ *               四行）, 非缺陷修复——如实留痕: MCD-A4 组词 join 于 2026-09-20 落地,
+ *               九天后整组回撤):
+ *               ① MCD-A4 整组回撤: test 11 删「、」join 字面齿 + for+GetArraySize
+ *                  遍历齿 + words[0] 判空闸（缩为 radical[0]）; MCD-A3 释义行/缺义
+ *                  兜底齿（住 test 9）原样保绿; A4 数据面 guard（93B 中文满长 verbatim
+ *                  + 135B 超长截断安全 + words[96] 容量截断安全）must-stay-green——
+ *                  words 成员裁定保留, char_stroke.c 零触碰（既有 verbatim 齿零触）。
+ *                  无组词行核证改由 test 14 CWVT-A2 负向齿承载。
+ *               ② MCD-A1 几何齿修订（seam [14]d）: A1b width 钉值 160 → 让位区间
+ *                  （新 A1-x 齿: set_pos 第一参 >= 236 清出重烘框右缘 235, 旧 228 红;
+ *                  A1b 改钉 x + W <= 388 + W 字面在场——预评两案 244/144、262/126
+ *                  皆满足, W 终判归 builder + 真机轮, 不钉单一魔数）; y>=30 /
+ *                  LONG_WRAP / canvas (4,8) 扫描器自检齿零触。
+ *               ③ 追 seam [14] + test 14（CWVT-A1/A2/A3/A4/A6）——删改核证负向齿:
+ *                  char_page.cc 全文零 ic_star_22/charpage_art_star_dsc/s_cp_star_
+ *                  （无星）、拼装区零 words（无组词行）、charpage_draw_grid 区零
+ *                  0x99/0xbb + 纯黑在世（引导线改纯黑点线）; + 框消费链保留 guard
+ *                  （charpage_art_frame_dsc(void) 在世——重烘案零触, ACC-4 末端锚
+ *                  核对仍有效）。frm_236_236.bin 重烘为 bin 资产——host 面测不出
+ *                  像素, 真机目检归真机轮未覆盖面申报, 不出齿。
+ *               本包义务红（设计态, builder 落地后转绿, 不计入「新增红」违约）=
+ *               test 10 A1-x 齿（旧 x=228 < 236）+ test 14 ①②③（星/组词/灰度现状
+ *               在世; A4 纯黑正向齿随灰度未改同红）。MUST-STAY-GREEN = test 14 框
+ *               消费链 guard + test 10 其余齿（y>=30 / LONG_WRAP / canvas 自检 /
+ *               MCD-A2）+ test 11 数据面守卫 + 其余既有冻结齿（MCF-A1/A3、M2K3 族、
+ *               ACC-1/2/3/4、ACC-6）零新增红。
+ *   2026-09-29  q7 re-anchor revision (acceptance-author, TaskPackage
+ *               260929-char-window-v5-trim fixer 内循环前置; spine openQ q7)。触发 =
+ *               human 2026-09-29 真机目检 finding——米字黑点线仍不可见（spine q7,
+ *               human-ratified ruling）。根因（主线程定位）: charpage_blit 全幅逐像素
+ *               ink?黑:白 覆写 canvas, 吃掉 (a) 建窗 charpage_draw_grid 直绘 canvas
+ *               的格点 (b) render_frame PENDING 分支直绘 canvas 的灰点链——既有 A4
+ *               齿（draw_grid 区纯黑颜色字面 >= 1）字面追踪的是旧机制（canvas 直绘 +
+ *               颜色字面）而非行为意图, 修法落地必转红。修法方向（spine q7 ruling）=
+ *               格点/点链挪 g_page.rast 1bpp 光栅域、charpage_blit 兜底一次成型
+ *               （blit 本体零改）; PENDING 灰点链 1bpp 化后呈纯黑点链（1bpp 无灰度,
+ *               ruling 钉此形状）。齿变化（re-anchor 非放宽——断言强度对等迁移, 仅动
+ *               test 14 ③ 区块, 既有其它齿零触碰）:
+ *               ① A3 原样保留: draw_grid 区 0x99/0xbb 字面 = 0（现状绿）。
+ *               ② A4 re-anchor: 负向齿（核心）= draw_grid 区 lv_canvas_set_px 字面
+ *                  = 0（旧 canvas 直绘机制撤除 = q7 缺陷机制本体; 负向齿不剥注释）;
+ *                  正向齿 = draw_grid 区 rast 引用 >= 1（1bpp 光栅域写入在世——
+ *                  g_page.rast 直写或经参数传 rast 指针的 helper 均命中, 注释剥离后
+ *                  计数; 不给实现细节过约束）; 原纯黑颜色字面正向齿撤除（纯黑 = 1bpp
+ *                  ink 位, q7 修法后颜色字面不再在世——coverage 行与区块头同步注明）。
+ *               ③ 新增 render_frame 区负向齿（覆盖 :291 同雷面）: render_frame 区
+ *                  （static void charpage_render_frame(int cur_stroke, int written)
+ *                  -> static void charpage_refresh_hint(int cur_stroke) 切区; 三签名
+ *                  锚均定义在前、无前向声明干扰, 冻结时点核验）内 lv_canvas_set_px
+ *                  字面 = 0——帧路径零 canvas 直绘, blit 一次成型语义钉死（blit 本体
+ *                  在区外, 不受影响）。
+ *               意图不变: 纯黑点线在世; 点距/虚实参数真机轮调不钉。
+ *               修订后新红基线（freeze 相位义务, 2026-09-29 当场实跑）:
+ *                 命令 = Run protocol（espidf_wsl.sh build + host_infra_test.elf;
+ *                 编译通道 error 为零——§4 C 类冻结验收实编过）。
+ *                 结果 = 107 Tests / 1 Failures / 0 Ignored; 唯一失败 = test 14
+ *                 （CWVT）A4 draw_grid 区 lv_canvas_set_px 负向齿——现状源（canvas
+ *                 直绘在世）即红 = 设计态先红, fixer 落地后转绿; test 14 内既有齿
+ *                 （框消费链 guard / ① 无星 / ② 无组词行 / A3 灰度负向）位于该齿之前
+ *                 已全部实跑 PASS = 既有齿零新增红。同 TEST_CASE 后位 q7 齿（rast
+ *                 正向 / render_frame 区 lv_canvas_set_px 负向）因 Unity abort-on-fail
+ *                 未单独报告, 其红由同一现状源事实确定性承载（draw_grid 区 :231-245
+ *                 零 rast 引用; render_frame 区 :291 lv_canvas_set_px 在世——行号
+ *                 快照非长期事实源）, fixer 逐齿转绿可见。
+ *               真机行为验证仍归 human 目检（q7 continuation）——host 齿只钉机制形状。
  * --------------------------------------------------------------------------- */

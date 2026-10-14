@@ -46,6 +46,8 @@ const WHITELIST = [
   /* V5 补缺批（2026-09-23）：小尺寸族 + 云朵烘斜 + 声波线 + 胶囊/语音条整块烘 */
   'ic_thermo_12', 'ic_drop_12', 'ic_batt_15', 'ic_cloud_40_t2', 'ic_mic_32',
   'ic_bell_24', 'ic_bell_22', 'ic_wave_40', 'ic_star_20', 'rec_wave',
+  /* 四角星（2026-09-26 human 裁定）：P1 涂鸦星换回 v2–v4 四角星（母版符号 ic-sparkle），与五角星族并存 */
+  'ic_sparkle_22',
   'p1_chip_jiexialai', 'p1_chip_mingzao', 'voice_chip_p3',
   'bub_listening', 'bub_recording', 'bub_rec_guide', 'bub_thinking', 'bub_speaking', 'arc_listen', 'ic_mic_22',
   'qmark_trio', 'bell_trio',

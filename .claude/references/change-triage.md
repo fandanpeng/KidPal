@@ -7,7 +7,7 @@
 
 - **铁律：只要改自有实现面（固件业务 + 云端 shim）行为，再小也过门。** 入口不分大 feature / 小 feature / bug。（档 1 期间 dev-loop 未迁，本门完整生效待档 2。）
 - **地板（免门，形状①直接修）**：仅**不改实现面行为**（docs/typo/只读探索）或人类明确跳过 → 不进此门。
-- **第一刀（事实源分区）**：碰单一事实源（`docs/contracts/**` / systems spec / `.claude/agents` 定义 / gate）→ 跟大小无关，一律直走 `/arch-change`，**根本不进本门**。本门只接纯实现面 / docs 行为变更。
+- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中升级判据（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` Track A/契约门），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/arch-change` 治理 profile。
 
 ## 1. 角色与写域（写域零扩张）
 

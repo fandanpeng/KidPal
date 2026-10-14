@@ -169,6 +169,11 @@ function runSelfCheck() {
   const allLive = parseCollectSummary('no tests collected (18 deselected) in 0.05s');
   ok('all-live-deselected-reported', allLive.structuralCollected === 0 && allLive.liveDeselected === 18);
 
+  // landing-verdict FAIL-F1 接缝断言：scope-file 双形态解析（等号 = caller 形态；空格 = 人敲形态）
+  ok('scope-arg-equals-form-parsed', parseScopeFileArg(['--scope-file=/tmp/a.txt']) !== null);
+  ok('scope-arg-space-form-parsed', parseScopeFileArg(['--scope-file', '/tmp/a.txt']) !== null);
+  ok('scope-arg-absent-null', parseScopeFileArg(['--phase=final']) === null);
+
   try {
     const real = collectReal(projectDir);
     const dReal = decide(real);
@@ -192,14 +197,64 @@ function isMain() {
   return Boolean(invoked && import.meta.url === pathToFileURL(resolve(invoked)).href);
 }
 
+// ── scope-file（260928-gov-review-dev-loop-preassess-manifest-scope T9，与 unit-run-check 同款）──
+// final 相位按影响面圈定跑。红：phase=final 缺 scope-file（举手不退全量）；scope-file 引用文件
+// 盘上全不存在（防 typo 假绿）。交集空 = 诚实绿跳过。scoped / 无 phase 直跑不消费，行为不变。
+function parseScopeFileArg(argv) {
+  // 兼容两种形态（landing-verdict FAIL-F1 接缝修复）：caller（verify.mjs / merge-driver）拼等号形态，
+  // 人手敲常用空格形态——只认其一会让透传静默落空（该圈不圈、该红不红）。
+  const eq = argv.find((a) => typeof a === 'string' && a.startsWith('--scope-file='));
+  if (eq) return resolve(projectDir, eq.slice('--scope-file='.length));
+  const i = argv.indexOf('--scope-file');
+  if (i === -1) return null;
+  const v = argv[i + 1];
+  if (!v || v.startsWith('--')) fail('--scope-file 需要路径参数（fail-loud）');
+  return resolve(projectDir, v);
+}
+
+function readScopeList(p) {
+  try {
+    return readFileSync(p, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  } catch {
+    fail(`scope-file 不可读（fail-closed）: ${p}`);
+    return [];
+  }
+}
+
+function scopeFilter(collected, surface, scopeList) {
+  const set = new Set(scopeList.map((l) => l.replace(/\\/g, '/')));
+  return collected.filter((f) => set.has(`${surface}/${f}`) || set.has(f));
+}
+
+function applyScope(real, scopeList) {
+  const onDisk = scopeList.filter((l) => existsSync(join(projectDir, l)));
+  if (scopeList.length > 0 && onDisk.length === 0) {
+    fail('scope-file 引用文件在盘上全部不存在（防 typo 假绿，fail-closed）', { scopeFileEntries: scopeList.length });
+  }
+  real.fwAccFiles = scopeFilter(real.fwAccFiles, 'firmware', scopeList);
+  real.pyAccFiles = scopeFilter(real.pyAccFiles, 'server', scopeList);
+  return real;
+}
+
 if (isMain() && process.argv.includes('--self-check')) runSelfCheck();
 
 if (isMain() && !process.argv.includes('--self-check')) {
+  const scopePath = parseScopeFileArg(process.argv);
+  const scopeList = scopePath ? readScopeList(scopePath) : null;
+  const phase = (process.argv.find((a) => a.startsWith('--phase=')) || '').split('=')[1] || null;
+  if (phase === 'final' && !scopeList) {
+    fail('final 相位缺 --scope-file（红闸举手，260928 批 T9 fail-closed）：范围 = 影响面圈定清单（detect_changes + impactedTests 种子合成，integrator Step 4）；全量回归 = 人工触发位。缺清单/圈定失败 → 升级 human，不默认全量');
+  }
   let real;
   try {
     real = collectReal(projectDir);
   } catch (e) {
     fail('oracle 枚举失败（fail-safe 向严：不吞成绿）', { error: e.message });
+  }
+  if (scopeList) applyScope(real, scopeList);
+  if (scopeList && real.fwAccFiles.length === 0 && real.pyAccFiles.length === 0) {
+    print({ ok: true, gate: 'acceptance', phase: 'executor-skipped', reason: 'scope 内 0 条可跑（交集空 = 诚实绿跳过，对偶 allLiveDeselected 绿）', scopeFile: scopePath });
+    process.exit(0);
   }
   const verdict = decide(real);
   if (!verdict.ok) {

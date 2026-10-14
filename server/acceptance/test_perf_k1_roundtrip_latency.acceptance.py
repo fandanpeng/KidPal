@@ -145,6 +145,20 @@ live 证据（PERF-A1/A2/A4 判定器的输入，builder/verifier live 相位产
 Run protocol（文件名两点须 importlib 模式）:
   python -m pytest -q --import-mode=importlib -m "not live" server/acceptance/
   live 面（@pytest.mark.live）不 auto-run（conftest 机械 skip，ARQ-260901-g3）。
+
+REVISION LOG
+  2026-10-01 · TaskPackage 261001-openclaw-model-name-overlay-drift（② 单包 Lite /
+  sourceType=drift-report）。改本冻结件由 planner 派 acceptance-author 授权重钉（非 §6
+  tighten-only 窗口：本节改动断言语义，非纯 additive）。
+  · 重钉 PERF-E1/E2 齿期望值：:916 声明面 model 与 :938 渲染面 model_name 由旧值
+    （openclaw 单 agent 时代的 default 后缀定位）改为 openclaw/kidpal（点名 agent，双
+    agent 下唯一定位）。
+  · 订正 :917/:939 失准文案（原文案误把 model_name 归到契约 §四——失准：契约对 model_name
+    零命中，§四只钉 base_url/loopback + 禁 max_tokens）与 :929 docstring 旧值。
+  · Reason：原钉旧值的成立前提 = OpenClaw 单 agent、default 可唯一定位；261001 真机实测
+    已为 main + kidpal 双 agent（ownership: explicit），前提不成立，正确基线 = openclaw/kidpal。
+    改已 merged 包冻结 oracle 的签字成本经 dev-loop 常规人门（supervisor 升级 + closeout）承载。
+  · guard-class: landing（重钉 = 落盘基线值类别，非接线守卫）。
 """
 
 from __future__ import annotations
@@ -724,26 +738,38 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         )
 
     def test_a1_probe_messages_include_production_prompt(self):
-        """coverage: PERF-A1 — 探针 messages 必带 system(v6 逐字) + user(题)（机制级 / D1）。
+        """coverage: PERF-A1 — 探针 messages 必带 system(被接线版逐字) + user(题)（机制级 / D1）。
 
         裸探针不带生产 prompt 时测的不是生产形态（评审推论甲 / §0.2-9 实证：无 display 块、
-        唤 David）——A1/A2 判定探针必须带仓内 v6 逐字。"""
+        唤 David）——A1/A2 判定探针必须带仓内被接线 prompt 逐字。260925-prompt-v7-round-routing
+        起改解析声明面得出版本（原硬编 v6 字面 = ARQ-260908-versioned-guard-version-literal-coupling
+        族类，bump 后静默测旧版假绿）。"""
         gate = self._gate()
         build = getattr(gate, "build_probe_messages", None)
         self.assertTrue(callable(build), "PERF-A1 RED: probe_gate 缺 build_probe_messages().")
-        prompt = _read_text(PROMPT_V6)
+        declared = _wired_prompt_artifact()
+        self.assertTrue(
+            declared,
+            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
+        )
+        prompt = _read_text(DEPLOY_DIR / declared)
         msgs = build(prompt, "明天有什么课程?")
         self.assertEqual(len(msgs), 2, "PERF-A1 RED: 探针 messages 不是 [system, user] 两元素。")
         self.assertEqual(msgs[0].get("role"), "system", "PERF-A1 RED: 首元素非 system 角色。")
         self.assertEqual(
             msgs[0].get("content"), prompt,
-            "PERF-A1 RED: system 内容 ≠ 仓内 v6 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
+            "PERF-A1 RED: system 内容 ≠ 仓内被接线 prompt 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
         )
         self.assertEqual(msgs[1].get("role"), "user", "PERF-A1 RED: 次元素非 user 角色。")
         self.assertEqual(msgs[1].get("content"), "明天有什么课程?", "PERF-A1 RED: user 题面不符。")
 
     def test_a1_probe_script_check_prompt_runs(self):
-        """coverage: PERF-A1 — 探针脚本 --check-prompt 离线可跑且解析出生产 prompt + 归一 hash（源锚代理）。"""
+        """coverage: PERF-A1 — 探针脚本 --check-prompt 离线可跑且解析出生产 prompt + 归一 hash（源锚代理）。
+
+        hash 断言版本无关（260925-prompt-v7-round-routing 起；原钉 v6 哈希字面 =
+        ARQ-260908-versioned-guard-version-literal-coupling 族类复发实例）——哈希取
+        「探针解析出 == 声明面接线」的那份文件（test_a1_probe_prompt_resolution_version_agnostic
+        已证解析一致性），bump 不再假红。"""
         self.assertTrue(
             PROBE_BATCH_MODULE.is_file(),
             f"PERF-A1 RED: 探针执行器不在位 —— 冻结契约要求 {PROBE_BATCH_MODULE}。",
@@ -758,7 +784,12 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             declared, out,
             f"PERF-A1 RED: --check-prompt 未打印解析出的生产 prompt {declared!r}（渲染面==被测面）。",
         )
-        expected_sha = _sha256_norm(PROMPT_V6)
+        wired = _wired_prompt_artifact()
+        self.assertTrue(
+            wired,
+            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
+        )
+        expected_sha = _sha256_norm(DEPLOY_DIR / wired)
         self.assertIn(
             expected_sha, out.lower(),
             "PERF-A1 RED: --check-prompt 未打印生产 prompt 的归一 sha256（hash 断言缺失）。",
@@ -896,8 +927,9 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             "PERF-E1 RED: LLM base_url 声明被改 —— 契约 §四要求 /v1（live 260906：缺 /v1 引擎 404）。",
         )
         self.assertIn(
-            'model: "openclaw/default"', src,
-            "PERF-E1 RED: LLM model 声明被改 —— 契约 §四钉 openclaw/default。",
+            'model: "openclaw/kidpal"', src,
+            "PERF-E1 RED: LLM model 声明被改 —— model_name 基线 = openclaw/kidpal"
+            "（双 agent 唯一定位；非契约面——契约 §四不钉 model_name）。",
         )
         self.assertRegex(src, r"stream:\s*true", "PERF-E1 RED: LLM stream 声明被改。")
         self.assertRegex(
@@ -909,7 +941,7 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         """coverage: PERF-E1
         coverage: PERF-E2 —— apply-xiaozhi-overlay.sh 引擎 LLM 段渲染面零回改（机制级）。
 
-        E2 铁律：不改引擎 .config.yaml LLM 段（base_url /v1、model_name openclaw/default、
+        E2 铁律：不改引擎 .config.yaml LLM 段（base_url /v1、model_name openclaw/kidpal、
         流式禁 max_tokens）；本齿钉其仓内渲染源面。"""
         src = _read_text(OVERLAY_SH)
         self.assertTrue(src, f"PERF-E1 RED: {OVERLAY_SH} 不在场。")
@@ -918,8 +950,9 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             "PERF-E1 RED: overlay 引擎 LLM base_url 被改（契约 §四 / V28 loopback）。",
         )
         self.assertIn(
-            "model_name: openclaw/default", src,
-            "PERF-E1 RED: overlay 引擎 LLM model_name 被改（契约 §四）。",
+            "model_name: openclaw/kidpal", src,
+            "PERF-E1 RED: overlay 引擎 LLM model_name 被改 —— model_name 基线 = openclaw/kidpal"
+            "（双 agent 唯一定位；非契约面——契约 §四不钉 model_name）。",
         )
         self.assertIn(
             "max_tokens", src,

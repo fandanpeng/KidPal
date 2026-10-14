@@ -1,7 +1,9 @@
 # KidPal 课表 producer 配置 (TaskPackage 260829-schedule-p2, 决策 26 / S-F1.1)
 
-# 本文件是课表 producer（OpenClaw 侧）的 repo 可测配置载体，随 server/deploy
-# overlay 上 ECS（与 openclaw-system-prompt.v2.md 同目录渲染面）。
+# 本文件是课表 producer（OpenClaw 侧）的 repo 可测配置载体，由 server/deploy/
+# manifest.yaml 登记、deploy.sh 直管消费位 /opt/kidpal/front/deploy/
+# openclaw-schedule.config.yaml（261013-gov-review-deploy-single-source-loop——原写
+# 「随 overlay 上 ECS」实为从未被 overlay 渲染，正是该消费位缺文件的根因，已废）。
 #
 # 契约 §二 B1 学校课程表**无时刻列**（表体零变更）：P1「接下来」分组把周中白天
 # 学校课合并成一项「XX:XX 上学」时，首节时刻 = producer 显式入参 school_start

@@ -194,6 +194,21 @@ Lite/Full 讲大小与风险；本维讲**包边界的形状**：每个 TaskPack
 - 默认不按 DB→API→UI 这种不能独立闭合能力/行为的技术层横切。这里约束的是**包边界**，不是要求每包必须同时改 schema/API/UI；只触一层但该层改动本身就是完整交付结果（例如修正一个 API 错误响应、一个事件投递 bug、一个可运行 CLI 行为）的 bugfix/internal-service/tooling change 仍是合法垂直切片。仅仅「这批 DB/API/UI 改动各自有测试」不足以证明它是垂直切片。
 - **wide refactor 例外**：rename/retype shared symbol、schema/contract evolution 等单次机械改动若 blast radius 使任何 tracer bullet 都无法独立保持 green，可按 `expand → migrate batches → contract` 拆包。expand/migrate 中间包不必 user-visible，但必须有独立可验证状态并声明 blocking edges。若连 migrate batch 都无法独立保持 green，本维不定义额外分支/集成机制；需另开治理变更设计集成策略。
 
+### 尺寸维与视觉对齐判例（260928-gov-review-portfolio-boundary-story-propagation T6）
+
+垂直切片维管**包边界的形状**，本维管**大小**——ui-v5-align 21 包建毁实证的缺口面（两轮粒度实质等于派遣方喂入的批次提案、human 三轮复裁充当缺失的粒度门）。四判据：
+
+- **改动行数量级**：单包改动行数量级应在一个 Pod 的验证预算内可消化；量级失衡（一包覆盖其余包总和）= 切法失衡信号，重切。
+- **文件面**：包间文件所有权不相交——同文件被多包认领 = merge order 冲突面 + 冻结面互踩，须显式 blocking edges 或重切。
+- **单包验证预算**：一包的验收面（齿数 + live/真机半）一 Pod 在 fixBudget 内可消化；超出 = 拆细，或降验收密度升 human。
+- **N 上下界**：单 workstream 包数无机械硬限，但 N 超过 Pod 并行度（WIP limit 量级）须显式论证——只按派遣方批次提案定粒度而无独立论证 = 粒度门缺失。
+
+**视觉对齐类切法判例**（260924 ui-v5-align human 终裁判据成文，引据源 = `delivery/workstreams/ui-v5-align/` 终裁记录；视觉批不套功能切片细粒度逻辑）：
+
+- **页单位粗包**：视觉对齐批按页切粗包，不按功能点/AC 逐条细切（粒度错配）。
+- **包间文件面不相交**：页 → 资产/渲染文件映射保持单包独占；同文件跨页复用时认领关系显式登记。
+- **跨页串面项走合并后串行追加轮**：横跨多页的系统性调整（字体/间距/主题级）不塞进任何单页包，等页包合并后单开追加轮，防每包都碰共享面。
+
 Use a Lite TaskPackage when all are true:
 
 - one source ref or a small tightly-coupled cluster;
@@ -227,7 +242,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 **Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。** 验收先行、红基线、verifier 证据、closeout、supervisor 合并门——一道都不跳。
 
 - **不可省**（守 dev-loop 铁律）：`changeId` / `rigor` / `sourceType` / `sourceRefs` / `riskTier` / `gateProfile` / `story` / `planRef` / `acceptance`（含红基线）/ `exitCriteria` / `crossEnd` 骨架（T5，260908-gov-review-input-surface-frontload：动机包本身即 Lite，Lite 豁免这条就等于放过动机案例）/ `scope` / 合并门。
-- **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、S2/design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。
+- **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。
 - **`crossEnd` 字段级定义（T5，260908-gov-review-input-surface-frontload）**：形状 = 对象 `{ "counterparts": [ { "path": "...", "symbol": "..." } ], "exempt": "<可选，不适用理由>" }`。**Draft 态：字段必须在场，空骨架 `{"counterparts": []}` 也算在场**（同 mutationEvidence 条）。**finalize 态（`acceptanceTestsFile` 非空）：`counterparts` 非空（每条含 path+symbol）∨ `exempt` 非空理由，二选一，双缺 = 闸红点名**；用作不适用分支时 **`exempt` 长度地板 ≥12 字符**（对齐闸内 `decisionCoverage.landsIn=dropped` 的 reason 地板，防「—」混关）——起草侧就要看到地板，否则短 exempt 撞闸红再反推，正是本清单要消灭的形态。**语义**：跨端性是设计判断、不是可推导属性（实测反例 `260907-g-relay-fix` 标 `subsystem=server`、全字段零 firmware 路径，却在改设备侧要解的帧），故走申报 + 留痕而非硬谓词；**判断不了按存疑向严填 counterparts，不填 exempt**。**本批覆盖档 = 自有实现面消费方**（`firmware/**`、`server/**`，`{path,symbol}` 可被 `brief-inputs.mjs` grep 解析；解析不到 = 脚本 fail-loud 非零退出、不静默产空锚）；只读参考树与无源码黑盒消费方（OpenClaw 引擎、物理声/显）两档 **留 ARQ 未覆盖**，越界填法脚本给 advisory。**advisory（非门）**：包 refs 引契约 wire 节（`interface-contract.md` 的 §1.5/§三/§四，常量单源在 `brief-inputs.mjs`）而 `counterparts` 空且无 exempt → stderr WARN 提示 planner 复核。消费方 = `brief-inputs.mjs` 第②路展开成对端面必读清单 + `taskpackage-required-check.mjs` 判定。
 - **`planRef` 指向 sibling `plan.md`**：taskpackage.json 是机器解析的，reviewed plan 是长 prose，prose 归 markdown（与验收是 sibling `.acceptance.spec.ts`、由 `acceptanceTestsFile` 引用同模式）。plan.md 是 `/triage-change` 分流门 architect 审过的，planner **只读消费、改需留痕**。**③拆包路径下 plan.md = 全量义务**（「装配型豁免」已全取消），骨架与门 1 checklist 见下文「拆包链」节。
 - **`crossPackageBehaviors` 字段级定义（260920-gov-review-bearing-strength-align T1，FROZEN v1.0）**：形状 = 数组，每项 `{ "topic": "...", "owner": "...", "note": "...", "carriedBy": "..." }`，四项语义——**`topic`** = 行为名（**包面存量键名为 `behavior`**）；**`owner`** = **语义 owner**（谁定这个行为的语义 / 裁决）；**`carriedBy`** = **实际承接包 `changeId`**（缺省回落 = `owner`）；**`note`** = 移交判据与验收归属。**「承接包」的判定统一为 `carriedBy ?? owner`**——「谁承接」这个位在两写面用的是不同的键（workstream 面 = `carriedBy`、包面 = `owner`），读侧**不得按 `owner` 单键判承接**（否则在 workstream 面把「谁定语义」当成「谁承接」，实测反例见下）。**写侧归一 canonical 四键；读侧兼容 `behavior` ∨ `topic` 作行为名**（包面存量 8 包全写 `behavior`，不回改）。
@@ -248,11 +263,12 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 ### plan.md 全量义务
 
 - 每个 TaskPackage 拆包时必备 `delivery/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
-- plan.md 骨架：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 改法取舍 + 阶段划分 + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。
+- plan.md 骨架（260928 批 T1 收窄）：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 可行性判据 + **跨包事实与共享冻结面约束（含跨切片边角）** + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。**判据一句钉死：跨包事实 / 共享冻结面约束（只有 RTE 看全局才知道的跨切片知识，如「唤醒词路径也过会话发起入口」「发送原语复用 K2 冻结缝」）留拆包侧；单包内实现决策（改法取舍、阶段划分、时序细节、渲染接线、包内边角）不进拆包侧 plan.md**——包内细节设计承载位 = 冻结 acceptance 断言化 + TaskPackage `notes`/`exitCriteria`/`decisionCoverage` 备注 + planner 派发 prompt（260928 批 OQ-1 裁定）；阶段划分 = `planner.md` Pod 标准 loop 重述、不重复成文。**例外（260928-gov-review-dev-loop-preassess-manifest-scope T3）**：plan.md 的「技术方案（planner+architect 预评）」节承载 architect 前置评估（planner Step 1g 档）产出——改法取舍 / 影响面 / 关键接线决策；该节由 planner 在收到 1g 档评估后补写，**须留痕（日期 + architect 档标识）**；包内其余细节承载位判定照旧。
 
 ### story 锚点引用与转写
 
 - story 在 plan.md / taskpackage 中**只以锚点引用出现**：`S-Fx.y · <标题>`（可选带 AC 号集）。**不内嵌原文、不改写、不复述语义**；story 语义权威 = `docs/requirements.md` 现文。
+- **acceptance 唯一写点（260928-gov-review-portfolio-boundary-story-propagation T3）**：story 命中包的 acceptance 由 Pod 内 acceptance-author 唯一产出（input-brief 带 `brief-inputs.mjs` 的 story 整节照录投影，见该脚本「story 语义权威」段）；拆包侧**不写 acceptance 骨架**（taskpackage `acceptance` 拆包期为空骨架 `[]`）；planner 在 **Step 8b** 核对忠实度（AC 回引号集与 sourceRefs AC 号集一致 + story 补充规则逐条有无落点 + 断言方向不弱于、不钉反），核对不通过退回 acceptance-author 重钉、planner 不代写；机械号集对账由 `taskpackage-required-check.mjs` AC 回引齿承载（T4，两道不互替）。
 - taskpackage `story` 字段承**锚点引用**，技术描述归 plan.md（治 260829 期 story 字段写成技术方案的真实翻车——write-story 纪律 1 反例在册）。
 - **AC 级回引复合句法（全仓首钉）**：`S-Fx.y-AC<n>`（如 `S-F1.4-AC3`）——验收齿 / `sourceRefs` 的 AC 粒度回引按此形态填。
 - **句法分工注记**：prose 锚点引用形态的权威 = skill `write-story`（其 description「拆包引用 story 的合法形态以本 skill 为准」管 prose 层）；AC 粒度机器引用的复合 token 句法 = **本节首钉**（write-story 边界节已把「TaskPackage 怎么承载/转写 story」委派拆包链治理）。两句并存、各管一层，不互为违规依据。
@@ -283,6 +299,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **读侧**（`portfolio-reconcile.mjs --check-launch`，260921-gov-review-launch-pipeline T6 落地）：脚本**读**该键——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（blocking 语义不变）**；裸 `string` 旧形态按 `{scope:"workstream", status:"unverified"}` 视之并走汇总行、不逐条报（防永久噪音，且不静默丢失）。**本改动不改任何门的判定语义、不新增工程门。**
 - **核验 = 机械读 + 人读**（260921-gov-review-launch-pipeline T6 取代原「convention + 人读，本门不含机械齿」口径）：**人读义务不变**——launch 执行者（human 点火前）逐条核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果回写 `status` / `evidence`**，使 `--check-launch` 下次不再重复报同一条。
 - **存量迁移不在同批**：两个在册 workstream（`m1-home-qa` / `m2-char-window`，各 6 条裸 `string`）的迁移由建包方在下次动该 workstream 时随批完成（`scope` 机械填、`status` 逐条引源行填）；过渡期由上述旧形态兼容行为承接。
+- **spine 源（② 单包路径，260928-gov-review-cross-face-intake-spine 起）**：带 spine 的变更（`delivery/changes/intake/<changeId>.md` 在场），spine `facePlan` 中**先于实现面**的各面 anchors 未回填 = 上游面未冻结 → 承载包不得 launch（与 ③ 路径「未冻结 → 承载该裁定的包不得 launch」同判、粒度同为包）；核验 = build-feature launch 面预检第五件（文面路由，非机械闸），机检齿留根。
 
 ### TaskPackage 显示编号（承重/游离，机械推导 · 2026-09-15 定，ARQ-260915-taskpackage-display-numbering）
 
@@ -300,25 +317,25 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 ## UIUX Depth Ladder and Optional TaskPackage Fields
 
-When a slice touches user-visible UI, planner detects a UIUX depth level and, from Level 2 up, records UIUX context on the TaskPackage. Depth drives whether a `uiux-author` step runs and what design-review evidence integrator owes at closeout.
+When a slice touches user-visible UI, planner detects a UIUX depth level and records UIUX context on the TaskPackage. Depth drives whether the **pre-launch UI-ready check** applies (T2 · planner Step 6b) and what design-review evidence integrator owes at closeout.
 
 | Level | Use when | Required action |
 |---|---|---|
 | L0 | Pure backend/contract/script/migration/internal service; no user-visible UI | `uiuxRequired=false` (or key absent); no UIUX author or design review |
-| L1 | Existing blueprint + component pattern; small status/field/button/message change | UI-state acceptance only |
-| L2 | New local user flow or complex states; visual direction follows existing system | `uiux-author` creates an interaction brief from the frozen system brief |
-| L3 | New page skeleton, key dashboard/workbench, important IA change, or human needs to see it first | OpenDesign visual reference + human design direction as needed |
-| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first; then `portfolio-planner` slices TaskPackages |
+| L1 | Existing blueprint + component pattern; small status/field/button/message change | UI-state acceptance only（小视觉微调——不产生新设计语义——亦在此档走 designReview） |
+| L2 | Package touches UI and upstream frozen per-page PNGs **exist** for every affected page/state | Consume: planner writes per-page PNG refs into the TaskPackage `uiux` block `designRefs[]` at packaging time（no translation role dispatched — upstream supply = requirement-change 档 2 流程 4b 生成模式） |
+| L3 | Package touches UI and upstream frozen per-page PNGs are **missing**（new page / new IA / new state without art） | **Design-gap signal**: fail-closed **before Pod launch** — stop the package, log pod-events `agent-escalation`（缺口页清单 + 路由去向），route to `requirement-change`（承接形态 = 原 story 的档 2 触 UI 修订批；human 裁意图入口照常、§9 版本行照常 append）；after the requirement batch freezes, planner re-runs the UI-ready check（对齐新版本行）then resumes the package |
+| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first — **drawn** via requirement-change 档 2 流程 4b 生成模式（same supply chain；human 设计方向裁定恒在人）；a blueprint change that constitutes a governance change is **reviewed** via `/arch-change` governance profile UIUX 轴集（只审不画）; then `portfolio-planner` slices TaskPackages（蓝图先行与拆包是先后两动作、不互斥——planner 停包、不越权拆包） |
 
-Existing systems without a full blueprint may continue L1 work. L2+ requires at least a **baseline** `UIUX-DESIGN-BRIEF.md`, which may be reverse-engineered from current implementation/spec — no full OpenDesign recreation required.
+Existing systems without a full blueprint may continue L1 work. The **UI-ready launch preconditions** for any UI-touching package（frozen per-page PNGs present + brief version-row alignment，分形判据：需求批出生的包对齐本批 requirements 版本号，非需求批出生的包对齐版本不晚于当前 frozen requirements 最新版本行）are **authoritatively defined in requirement-change.md「消费保护规则」节 launchPreconditions 句** — this section points, it does not restate.
 
-The UIUX fields are an **OPTIONAL extension**, not part of the required intake field set. `taskpackage-required-check.mjs` is unchanged and its hardcoded required list excludes them; a Level-0 package needs no `uiuxRequired` key at all. Add them only from Level 1+ (some) / Level 2+ (interaction brief):
+The UIUX fields are an **OPTIONAL extension**, not part of the required intake field set. `taskpackage-required-check.mjs` is unchanged and its hardcoded required list excludes them; a Level-0 package needs no `uiuxRequired` key at all. Add them only from Level 1+ (some: `uiAcceptanceRefs`) / Level 2+ (`designRefs` per-page PNGs):
 
 ```json
 {
   "uiuxRequired": true,
   "uiuxLevel": 2,
-  "designRefs": ["docs/systems/<S>/UIUX-DESIGN-BRIEF.md#pageId-x"],
+  "designRefs": ["docs/ui/V5/canvas-p1.png"],
   "sharedUiRefs": ["docs/ui/design.md#component-action-card"],
   "localDesignArtifactRefs": ["delivery/changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
   "artifactPackageRef": "<external zip path or future S5 artifactId>",
@@ -329,7 +346,7 @@ The UIUX fields are an **OPTIONAL extension**, not part of the required intake f
 }
 ```
 
-`designRefs[]` primarily point to stable `UIUX-DESIGN-BRIEF.md` sections/IDs; OpenDesign artifact refs are supporting visual context and cannot replace the frozen textual contract. If `UIUX-DESIGN-BRIEF.md` changes **semantically** while a UI TaskPackage is in flight, affected packages pause and update their design refs/acceptance; unaffected packages continue.
+`designRefs[]` point to frozen per-page PNGs（400×300，布局坐标定位权威——builder layout 常量按图定，brief 文本节仅作口径补充）. If `UIUX-DESIGN-BRIEF.md` changes **semantically** while a UI TaskPackage is in flight, affected packages pause and update their design refs/acceptance; unaffected packages continue.
 
 ## Distillation Integrity (decisionCoverage)
 
@@ -392,7 +409,7 @@ decisionCoverage / 必填字段的机检是**两闸分层**，口径不同、不
 
 ## 声明可兑现性（执行层能力声明须有兑现方）
 
-TaskPackage 声明执行层能力需求时（`s2ExploratoryRequired` 类布尔声明字段，以及 prose 中声明的能力要求），建包方须在起包期把每个声明映射到当前仓内现存的兑现方（角色 + 工具 / 闸路径，如 `s2ExploratoryRequired` → integrator 经 `run_inline_check` 执行 S2 official scan，见 dev-loop.md §3 / integrator.md Step 5），逐一列明；映射不上的声明不得裸交——要么不声明，要么在包内显式写明执行期降级预案（降级路径 + 「降级不亏证据」条款）。降级本身合法，「声明一个兑现不了的要求且无预案」不合法。（先例：loop-retro-2026-07-28 R8——260727-chat 声明 `s2ExploratoryRequired=true` 而当时 integrator 工具集无 S2 explorer，执行期才撞缺口、靠预案降级真 DB 证据。）本条为起包 convention、不入机械门（声明字段面小且开放新增；声明漂移复发时升机检，见 ARQ-260728-taskpackage-declaration-feasibility 留根）。
+TaskPackage 声明执行层能力需求时（布尔声明字段，以及 prose 中声明的能力要求），建包方须在起包期把每个声明映射到当前仓内现存的兑现方（角色 + 工具 / 闸路径），逐一列明；映射不上的声明不得裸交——要么不声明，要么在包内显式写明执行期降级预案（降级路径 + 「降级不亏证据」条款）。降级本身合法，「声明一个兑现不了的要求且无预案」不合法。（先例：loop-retro-2026-07-28 R8——曾有声明的执行层能力无对应工具，执行期才撞缺口、靠预案降级真 DB 证据；相关声明字段已随 260929 对齐批退役，先例留作纪律出处。）本条为起包 convention、不入机械门（声明字段面小且开放新增；声明漂移复发时升机检，见 ARQ-260728-taskpackage-declaration-feasibility 留根）。
 
 ## Arch Review Handoff
 

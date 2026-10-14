@@ -78,6 +78,27 @@ void Protocol::SendMcpMessage(const std::string& payload) {
     SendText(message);
 }
 
+void Protocol::SendKidpalStoryDelete(const char* id) {
+    /* 契约 §四 kidpal_story_delete（逐字仿 SendAbortSpeaking 形态）:
+     * {"session_id":"...","type":"kidpal_story_delete","id":"<story-id>"}。
+     * 单向通知、无应答消息（front 幂等承接, 隐式 ack = story_list 重推对账）。 */
+    std::string safe_id = (id != nullptr) ? id : "";
+    std::string message = "{\"session_id\":\"" + session_id_ +
+                          "\",\"type\":\"kidpal_story_delete\",\"id\":\"" + safe_id + "\"}";
+    SendText(message);
+}
+
+void Protocol::SendKidpalSessionCtx(const char* source_page) {
+    /* 契约 §四 kidpal_session_ctx（逐字仿 SendAbortSpeaking / SendKidpalStoryDelete
+     * 形态）: {"session_id":"...","type":"kidpal_session_ctx","source_page":"..."}。
+     * 单向通知、无应答消息（front 幂等承接, 拦截消费不下透引擎）;
+     * 发送失败降级普通会话不重试（notes ③ 负锚——调用恰一次, 无重试环）。 */
+    std::string safe_page = (source_page != nullptr) ? source_page : "";
+    std::string message = "{\"session_id\":\"" + session_id_ +
+                          "\",\"type\":\"kidpal_session_ctx\",\"source_page\":\"" + safe_page + "\"}";
+    SendText(message);
+}
+
 bool Protocol::IsTimeout() const {
     const int kTimeoutSeconds = 120;
     auto now = std::chrono::steady_clock::now();

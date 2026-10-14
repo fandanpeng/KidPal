@@ -1,0 +1,47 @@
+# test-scope-final —— 261010-p3-storylist-cold-start-restore（final verify --scope-file 消费）
+# 圈定方法（integrator 2026-10-12，Step 4 两步走之①）：
+#   detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base=main，
+#     merge_base 63c49cc，inbound depth=2）= 27 seed symbols / 77 impacted：
+#     firmware/main 18（story_page_v2 acceptance+test 两件 + archive happy_flow_capture +
+#     kidpal_render_node refresh_story 等函数族 + mcp_server ScheduleStoryRender /
+#     KidpalStoryVadEnterRecording / KidpalStorySessionEndApply / StoryDispatchAct +
+#     application.cc / main.cc / 板级 keya_dispatch_global_action / keya_overlay_consume）
+#     + server/gateway 14（front_app 函数族 + reminders.validate_alert_entry /
+#     read_pending / due_entries / AlertDispatcher.tick）+ server/acceptance 37 +
+#     server/tests 8——零跨模块越界、零预期外符号；Pod 专属图索引用常，无降级。
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子（SL-A1~A6 承载件，
+#     FIX-A1 冻结件修订授权链 = CCP id + §9 v1.63 行 + human 方向锚）。
+#   ∪ 共享 seam 相关（display_schema.py V27 floor 联动扩的 schema 消费面 =
+#     M3K1/M3K3 schema 齿 + story_units DisplayFloorUnits；reminders.validate_alert_entry
+#     hop1 命中的 reminder units）+ 安全余量（K7A4 hop2、schedule producer units）。
+#   host 套件为单 ELF（host_infra_test.elf 全量），圈定清单与实跑天然对齐
+#   「套件级全量」；server 面 final verify 按 scope 求交跑。
+# 语义铁律留痕：范围 = 影响面圈定清单（非全量、非本包档缩水）；圈定降级 = 无
+#   （detect_changes 正常圈定 + trace_path 可用）。真机轮 SL-A5 = human 持板硬前置，
+#   不在本清单（live-manual 面不计入 pytest 通过面）。
+
+# ── firmware 冻结验收件（acceptanceTestsFile + impactedTestsSeed）──
+firmware/main/test/story_page_v2.acceptance.c
+# firmware unit 面（restore 分流单测齿，blast radius hop1 Module）
+firmware/main/test/story_page_v2.test.c
+# blast radius hop1（archive 归档件，gate 求交不在役则诚实绿跳过）
+firmware/main/test/acceptance/archive/happy_flow_capture.test.c
+
+# ── server acceptance（本包两冻结件 + display_schema floor 联动的 schema 消费面）──
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_m3k1_schedule_producer.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
+
+# ── server units（blast radius：story units 直承 floor / reminders hop1 / producer 余量）──
+server/tests/test_story_units.py
+server/tests/test_schedule_producer_units.py
+server/tests/test_reminder_units.py
+
+# ── server archive（blast radius hop1/2 命中的退役面，闸枚举按 ARQ-260916「移位即退役」
+#    口径不入枚举——记 impact 账、不在役不跑）──
+# server/acceptance/archive/test_story_p3.acceptance.py
+# server/acceptance/archive/test_schedule_p2.acceptance.py
+# server/acceptance/archive/test_voice_roundtrip_b.acceptance.py
+# server/acceptance/archive/test_schedule_reminder.acceptance.py

@@ -1,0 +1,160 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "front 会话生命周期：故事累积链路（StoryAccumulator routing）",
+    "locale": "zh-CN",
+    "output": ".archify/lifecycle-front-session-20261010-133848/front-session-lifecycle.html",
+    "animation": "none",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "会话主态（routing 单源）"
+    },
+    {
+      "id": "terminal",
+      "label": "出口与消亡"
+    }
+  ],
+  "states": [
+    {
+      "id": "chat",
+      "type": "start",
+      "label": "chat 闲聊态",
+      "sublabel": "默认态（无会话态时同值）",
+      "lane": "main",
+      "col": 0,
+      "step": "01",
+      "width": 170
+    },
+    {
+      "id": "accumulate",
+      "type": "active",
+      "label": "accumulate 累积态",
+      "sublabel": "逐句 stt 喂入累积缓冲",
+      "lane": "main",
+      "col": 1,
+      "step": "02",
+      "width": 180
+    },
+    {
+      "id": "pending_stop",
+      "type": "waiting",
+      "label": "pending_stop 挂起态",
+      "sublabel": "listen stop 先到、转写后到（SAO-A1）",
+      "lane": "main",
+      "col": 2,
+      "step": "03",
+      "width": 215
+    },
+    {
+      "id": "archived",
+      "type": "success",
+      "label": "已归档",
+      "sublabel": "stories/<id>.md；正文+list 下发",
+      "lane": "terminal",
+      "col": 3,
+      "width": 195
+    },
+    {
+      "id": "destroyed",
+      "type": "failure",
+      "label": "会话态删除",
+      "sublabel": "cancel 丢弃 / LRU 淘汰",
+      "lane": "terminal",
+      "col": 4,
+      "width": 180
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-enter",
+      "from": "chat",
+      "to": "accumulate",
+      "label": "ctx(story) / start_recording → start()",
+      "labelAt": [
+        252,
+        40
+      ]
+    },
+    {
+      "id": "t-pend",
+      "from": "accumulate",
+      "to": "pending_stop",
+      "label": "listen stop 且累积空 → mark_pending()",
+      "labelAt": [
+        476,
+        40
+      ]
+    },
+    {
+      "id": "t-late-archive",
+      "from": "pending_stop",
+      "to": "archived",
+      "label": "stt 到达 → feed + stop 归档"
+    },
+    {
+      "id": "t-archive",
+      "from": "accumulate",
+      "to": "archived",
+      "label": "stop 归档：停录 / 收尾词 / 120s"
+    },
+    {
+      "id": "t-back",
+      "from": "archived",
+      "to": "chat",
+      "label": "会话回 chat"
+    },
+    {
+      "id": "t-release",
+      "from": "pending_stop",
+      "to": "chat",
+      "label": "10s 无转写释放（不写空故事）"
+    },
+    {
+      "id": "t-kill-acc",
+      "from": "accumulate",
+      "to": "destroyed",
+      "variant": "dashed",
+      "label": "断开 cancel：丢弃缓冲"
+    },
+    {
+      "id": "t-kill-pend",
+      "from": "pending_stop",
+      "to": "destroyed",
+      "variant": "dashed",
+      "label": "断开 cancel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "触发入口",
+      "items": [
+        "进入累积态的两路触发收敛建连会话同一幂等入口 acc.start：kidpal_session_ctx(source_page=story) 与 control/start_recording（front_app.py:99-101、207-216）",
+        "feed 在累积态与 pending_stop 态都进累积缓冲——真机序的转写恰在挂起之后才到（SAO-A1，story.py:591-594）",
+        "累积态内 120s 无语音由常驻轮询 sweep 自动 stop 归档（AUTO_STOP_SECONDS，story.py:553-575）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "挂起语义",
+      "items": [
+        "pending_stop ≠ chat 是冻结负锚（SAO-A2）：listen stop 空累积时不得立即打回闲聊态，否则后到转写被丢弃",
+        "10s 无转写 release_pending 释放回 chat、不写空故事（PENDING_STOP_SECONDS，story.py:685-695）",
+        "迟到 stt 命中 pending_stop → feed + stop 归档并追加 story_list 推送（三时点②，front_app.py:120-127）"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "消亡与有界",
+      "items": [
+        "断开即 cancel：丢弃即丢弃、不可 recover 挽回，与漏判 recover 是两条可分路径（story.py:697-704）",
+        "会话数 max_sessions=8，LRU 超限淘汰最久未活动会话并释放缓冲（story.py:526-527）",
+        "归档幂等重写：重复 stop 同段不产生第二篇（archive_story 委托）"
+      ]
+    }
+  ]
+}

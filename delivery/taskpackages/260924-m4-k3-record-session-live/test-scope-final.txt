@@ -1,0 +1,17 @@
+# test-scope 清单 · 260924-m4-k3-record-session-live（integrator Step 4 范围圈定，2026-09-30）
+# 合成来源 = detect_changes（project C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base main / merge_base ddd3875）impacted 21 节点
+#   + taskpackage impactedTestsSeed[] + 共享冻结面回归 + 安全余量；格式 = 仓根相对路径一行一件（# 注释）。
+# 范围性质：影响面圈定清单（非全量回归替代物）；本次实际终跑 = 双通道全量（覆盖本清单为下限 floor）。
+# ── 本包新冻验收件（acceptanceTestsFile）──
+firmware/main/test/record_session_live.acceptance.c
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+# ── blast radius 映射测试（detect_changes impacted：server/gateway 8 节点 → K1 件 + front 单元；server/acceptance 3 节点 → K1 件）──
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/tests/test_story_units.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+# ── 共享 seam 冻结面回归（impactedTestsSeed + detect_changes firmware/main 10 节点）──
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+# ── 安全余量（host 冒烟 + 接线注册序守卫 RSL-C1 承载面）──
+firmware/main/test/host_infra_smoke.acceptance.c

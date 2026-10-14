@@ -433,8 +433,9 @@ console.log(JSON.stringify({ns, st}));
         """coverage: MCD-A5/A7（prompt 锚齿，版本无关）— 当前接线的 prompt 正文内，
         **char 段**（含「最小意图块」的段落及其相邻段）携带：meaning 新约（data 含
         `meaning` = 中文释义，同回复播报同源）+「严禁自生成/复述 strokes/medians」
-        约束仍在 +「≤3 句」仍在。沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态，
-        避开版本字面耦合。"""
+        约束仍在 + 语音纪律锚（v7 起为「简洁不啰嗦」；原「≤3 句」锚随 human 2026-09-25
+        裁定删除硬性句数上限而废止，NFR-SAFE-1 同批修订——supersession，非丢锚）。
+        沿 a8 载体齿「解析渲染/声明两面得版本再断言」形态，避开版本字面耦合。"""
         rendered, _ = self._wired_prompt_files()
         self.assertTrue(rendered, "MCD-prompt RED(infra): 无接线 prompt 版本可解析。")
         body = _read_text(DEPLOY_DIR / sorted(set(rendered))[0])
@@ -460,9 +461,13 @@ console.log(JSON.stringify({ns, st}));
             any(w in window for w in ("禁止", "不得", "严禁", "不要自己", "禁自生成")),
             "MCD-prompt RED: char 段丢「严禁自生成/复述 strokes/medians」约束——坐标"
             "数据禁令（C1 立论前提）必须逐字保留。")
+        # 语音纪律锚（supersession, human 2026-09-25 裁 + 260925-prompt-v7-round-routing）：
+        # v6 及以下 = 「三句/3 句/句以内」硬上限；v7 起 = 「简洁不啰嗦」软纪律（NFR-SAFE-1
+        # 同批修订）。锚取两代口径并集，任一代在场即绿、两代语义全删才红。
         self.assertTrue(
-            any(w in window for w in ("三句", "3 句", "句以内")),
-            "MCD-prompt RED: char 段丢「≤3 句」纪律——语音句数硬上限必须保留。")
+            any(w in window for w in ("三句", "3 句", "句以内", "简洁", "不啰嗦")),
+            "MCD-prompt RED: char 段丢语音纪律锚——v6 口径（≤3 句）与 v7 口径（简洁"
+            "不啰嗦）至少一代必须在场，语音长度纪律整体消失不可接受。")
 
     def test_mcd_prompt_no_appendix_anchor(self):
         """coverage: MCD-A7（prompt 锚齿，版本无关）— 当前接线的 prompt 正文携带新约：

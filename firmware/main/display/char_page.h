@@ -27,6 +27,12 @@ void kidpal_char_page_show(const char *data_json);
  * 页面内部将动画进度归零重来。 */
 void kidpal_char_page_replay(void);
 
+/* 演示起播态外露 (v1.59 WF-F3-01 键帽随态变): 返回当前演示是否已起播——
+ * 0 = 未起播（键帽「播报」）/ 非 0 = 已起播（键帽「重播」）。建窗 memset 归 0,
+ * 每次 KEY 短按 replay() 置 1（首播/重播同路径）。由 lcd_display.cc 的键帽条
+ * 查字窗前台分支消费（kidpal_keybar_char_slots 的 started 入参）。 */
+int kidpal_char_page_started(void);
+
 #ifdef __cplusplus
 }
 #endif

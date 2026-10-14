@@ -129,6 +129,9 @@ set(INCLUDE_DIRS "." "display" "display/lvgl_display" "display/lvgl_display/jpg"
 file(GLOB BOARD_COMMON_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/common/*.cc)
 list(APPEND SOURCES ${BOARD_COMMON_SOURCES})
 list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
+# 生成头 lang_config.h 迁至 build 目录后，把组件 binary dir 追加进 include 搜索路径，
+# 使既有 include 字面量（全树统一形态 assets/lang_config.h，相对 main/ 解析）解析到生成的头，include 站点零改动。
+list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR})
 
 idf_build_get_property(build_components BUILD_COMPONENTS)
 # Function to find component dynamically by pattern
@@ -772,7 +775,9 @@ endif()
 
 # Define generation path
 set(LANG_JSON "${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/${LANG_DIR}/language.json")
-set(LANG_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/assets/lang_config.h")
+# 生成头落组件 build 目录（不再回写源树）——消灭「untracked 手补生成物」形态与跨 worktree 拷贝传播载体，
+# 每个 worktree 首建必然自生成。
+set(LANG_HEADER "${CMAKE_CURRENT_BINARY_DIR}/assets/lang_config.h")
 
 # Collect current language audio files
 file(GLOB LANG_SOUNDS ${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/${LANG_DIR}/*.ogg)
@@ -834,16 +839,18 @@ add_custom_command(
     COMMAND python ${PROJECT_DIR}/scripts/gen_lang.py
             --language "${LANG_DIR}"
             --output "${LANG_HEADER}"
+            --assets-dir "${CMAKE_CURRENT_SOURCE_DIR}/assets"
     DEPENDS
         ${LANG_JSON}
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets/locales/en-US/language.json
         ${PROJECT_DIR}/scripts/gen_lang.py
     COMMENT "Generating ${LANG_DIR} language config"
 )
 
-# Force build generation dependencies
-add_custom_target(lang_header ALL
-    DEPENDS ${LANG_HEADER}
-)
+# 把生成头挂进组件目标（GENERATED + HEADER_FILE_ONLY），使本组件的对象文件编译排序在生成完成之后，
+# 封死「ninja 编译与生成无序」编译红。单机制，不再挂冗余 ALL custom target。
+set_source_files_properties(${LANG_HEADER} PROPERTIES GENERATED TRUE HEADER_FILE_ONLY TRUE)
+target_sources(${COMPONENT_LIB} PRIVATE ${LANG_HEADER})
 
 # Find ESP-SR component dynamically
 find_component_by_pattern("espressif__esp-sr" ESP_SR_COMPONENT ESP_SR_COMPONENT_PATH)

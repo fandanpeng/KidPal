@@ -29,7 +29,7 @@ from enum import Enum
 # OFFICIAL xiaozhi-esp32-server lives at /opt/kidpal/xiaozhi-esp32-server; the OpenClaw
 # brain is an OpenAI-compatible endpoint bound to 127.0.0.1:18789.
 OPENCLAW_BASE_URL = os.environ.get("OPENCLAW_BASE_URL", "http://127.0.0.1:18789")
-OPENCLAW_MODEL = os.environ.get("OPENCLAW_MODEL", "openclaw/default")
+OPENCLAW_MODEL = os.environ.get("OPENCLAW_MODEL", "openclaw/kidpal")
 
 # 契约 §四 / V9 硬约束 —— 流式请求禁带 max_tokens.
 FEATURE_STREAMING_FORBIDS_MAX_TOKENS = True

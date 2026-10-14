@@ -177,6 +177,47 @@ set(HOST_ACCEPTANCE_SRCS
 
     "../../schedule_grid_restore.acceptance.c"
 
+    # 包 260924-m4-k2-p3-star-notebook-ui（P3 星星记录本展示面重构）被测实现接线：
+    # display/story_page.c = 新冻结齿 story_page_v2 的行为齿强符号源（v1.47 输入表
+    # 矩阵 + 列表分屏/消歧/删除子态/重发对账/seq 消费纯逻辑 + 渲染面重写；其
+    # kidpal_art_* 引用由在世 art_assets.c 强符号覆盖、font_puhui_14_1 由本清单
+    # 在世字体源覆盖，无需另接）。相对 host_app/main 为 ../../../display/。
+    "../../../display/story_page.c"
+
+    # 包 260924-m4-k2-p3-star-notebook-ui 冻结验收（LIST 态 v1.47 决策表 + 分屏/
+    # 消歧/删除子态/重发对账/阅读/计数双口径/盖章 seq 行为半 + CJK 真帧 + 渲染面/
+    # 删除链路结构半 + 层值接线 + 注册序守卫）。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫; 本文件 SPV2-C1
+    # tooth 1 校验此序）。
+    "../../story_page_v2.acceptance.c"
+
+    # 包 260924-m4-k2-p3-star-notebook-ui builder 单元测试（冻结齿未穷尽的边角：
+    # cursor_step 跨屏普通步进 / 局部末屏跳屏钳制 / stamp_text 恰好满 cap /
+    # text_seq 空白与负值 / 输入表未知页值兜底 / 消歧窗回绕边界）。置于 host
+    # smoke acceptance 之前。
+    "../../story_page_v2.test.c"
+
+    # 包 260924-m4-k3-record-session-live（记录会话跨端链路：session_ctx 发送缝 +
+    # 引导态/录音态 + 手势会话接线 + 回显消费 + story_list 推送 gating）冻结验收。
+    # 行为齿 [S1]-[S4] 强符号源 = display/story_page.c（已在册，尾部追加缝覆盖
+    # weak 哨兵）；[S5]-[S7] 为 needle 结构齿，扫真实工作树。**必须置于 host
+    # smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序
+    # 守卫; 本文件 RSL-C1 tooth 4 校验此序）。
+    "../../record_session_live.acceptance.c"
+
+    # 包 261001-m4-k3-record-session-live-repair（K3 落地后真机 P3 冒烟四缺陷止血：
+    # D1 列表延迟推送无消费方 / D2 会话层压录音页 / D4a 录音态 KEY 落全局 toggle 毁稿 /
+    # D4b 录音定时器致首页图像对象悬垂 panic）冻结验收。行为齿 [R1]-[R3] 强符号源 =
+    # display/story_page.c（已在册，尾部追加缝覆盖 weak 哨兵）；结构齿扫真实工作树。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary
+    # 齿注册序守卫; 本文件 RSR-C1 tooth 4 校验此序）。
+    "../../record_session_repair.acceptance.c"
+
+    # 包 261001-m4-k3-record-session-live-repair builder 单元测试（冻结齿未穷尽的分支/
+    # 边界：R1 规则优先级与 ctx 非零语义 / R2 越界与幂等 / R3 非零与非列表态）。置于
+    # host smoke acceptance 之前。
+    "../../record_session_repair.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

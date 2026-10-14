@@ -1,0 +1,33 @@
+# test-scope-final —— 261013-qq-schedule-write-closure（影响面圈定清单，integrator 落盘 2026-10-13）
+# 圈定方法（三分法：per-Pod 专属图索引可用 → 正常圈定，无降级）：
+#   detect_changes 实跑（Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，
+#   merge_base=af1bc3b，inbound depth=2，含工作树未 commit diff）：
+#   57 seed / 10 impacted，impacted 全落 server/gateway（front_app.py）与 server/acceptance
+#   （poll 入口/school_start 消费面）——改动面 = front_app.py 告警写 + manifest.yaml 条目
+#   + 两 SKILL.md + README/runbook，零越界到其它子系统。
+#   ∪ taskpackage acceptanceTestsFile + impactedTestsSeed 种子（冻结验收件 + test_mnf_a1
+#   跨包回归面 + 零改动近邻回归观察面）。
+#   圈定 floor：本包冻结验收件在清单内（单包无对端冻结件）。
+# 语义铁律留痕：范围 = 影响面圈定清单（非默认全量、非缩到只剩本包档）；圈定降级 = 无。
+#   QSW-A5 真机轮 = human 持板/ECS post-deploy 前置，不在本清单（live-manual 面不计入 runner 通过面）。
+# ambient 排除（非本包领地，三条历史红，见 review-packet ambient 清单）：
+#   - server/acceptance/test_m4k3_record_session_live.acceptance.py（test_a8_v7_prompt_immutable）
+#   - server/acceptance/test_prompt_v7_round_routing.acceptance.py（test_pn_a3_v8 / test_rf_a3_v9）
+#   两件均为提示词哈希不可变齿，红因 = 260925/261010 批 bump 未随更的历史期望，与本包零权限面。
+
+# ── 本包冻结验收件（acceptanceTestsFile，QSW-A1~A4 offline 面，11 齿）──
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
+
+# ── impactedTestsSeed 种子 ──
+# test_mnf_a1 转绿（261013 部署批 manifest provider note 字面残留，本包同文件顺手修）
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+# 逐条 AC 零改动回归观察面（近邻：reminder 单元）
+server/tests/test_reminder_units.py
+
+# ── blast radius 命中面（detect_changes 实跑：front_app.py run_schedule_poll_once / school_start 消费位）──
+server/acceptance/test_schedule_grid_restore.acceptance.py
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py
+
+# ── 安全余量（server/tests 全档基线面，exitCriteria「91 passed 保持」对齐）──
+server/tests/test_schedule_producer_units.py
+server/tests/test_story_units.py
