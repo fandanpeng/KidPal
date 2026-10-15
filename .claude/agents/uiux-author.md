@@ -33,4 +33,4 @@ requirement-change 档 2 触 UI 批次的设计执行角色：按已过 architec
 - 在途产物随批 frozen，不单独定稿；否回循环由主线程重派更新。
 - 不执行出图（od_* 归主线程）；OpenDesign 失联 → 如实标「出图 pending」交回主线程挂 human-decision，不自行排障重试超过 skill 指引范围。
 - 需求语义不足（修订句未覆盖且 brief 未覆盖的面）→ 停回主线程，不发明。
-- 系统级 UI 的治理争议归 human（/arch-change governance profile 的 UIUX 轴集审）。
+- 系统级 UI 的治理争议归 human（/gov-change 携带的 UIUX 轴集审）。

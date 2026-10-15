@@ -1,19 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_doc": [
-    "架构/治理 review loop（对抗 review）专用设置，只在跑 review loop 时显式加载：",
-    "  claude --settings .claude/review-loop.settings.json --agent review-moderator",
-    "deny 把契约面 docs/contracts/** 冻结为只读（触契约走 architect-reviewer + 人类契约门）；",
-    "契约冻结 deny 只用 Edit(path) 形态——Write(path) 被 CLI 判无效（ARQ-260924 实证，260924-gov-review-settings-deny-contract-merge T1 删除），勿再加回；",
+    "架构/治理面 review loop 专用设置，只在跑面 loop 时显式加载：",
+    "  claude --settings .claude/review-loop.settings.json（/arch-change、/gov-change 等）",
+    "契约面 deny 已随 261015-gov-review-face-loop-unify T16 移除（契约变更 = 架构变更的一种，走 /arch-change loop；防线 = scope-map per-agent deny + universal.bashDenyWrite + 合并机械凭据闸；dev-loop.settings.json 的契约 deny 保留——实现面恒禁写）。",
+    "历史教训保留：契约冻结 deny 只用 Edit(path) 形态——Write(path) 被 CLI 判无效（ARQ-260924 实证），勿再加 deny；",
     "PreToolUse 钩子按 .claude/scope-map.json 强制每个 review agent 的可写边界；",
-    "Bash push-main 保护防直推主干；Bash 分支 enforce-scope 拦 shell 重定向写契约/强制层。",
-    "与原仓区别：本仓档 1 无 dev-loop，无 supervisor-gate Stop 钩子（无合并门机器）。"
+    "Bash push-main 保护防直推主干；Bash 分支 enforce-scope 拦 shell 重定向写契约/强制层。"
   ],
-  "permissions": {
-    "deny": [
-      "Edit(./docs/contracts/**)"
-    ]
-  },
+  "permissions": {},
   "hooks": {
     "PreToolUse": [
       {

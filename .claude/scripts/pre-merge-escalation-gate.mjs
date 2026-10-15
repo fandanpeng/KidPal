@@ -9,7 +9,7 @@
 //
 // 例外清单（FROZEN §2 T1，按档适用）：
 //   两档通用：
-//     1. diff 触 docs/contracts/** 且同批无契约门证据 → BLOCK（契约面人签字制不动）
+//     1. diff 触 docs/contracts/** 且同批无契约合并凭据（FROZEN PROPOSAL + PASS landing-verdict + manifest 覆盖，三件联立）→ BLOCK（261015 批：机械凭据替代人签门；契约变更 = 架构变更的一种，走 /arch-change）
 //     2. 源 commit 落在 main/master 上（off-main 隔离被破坏）：无独立分支可合 → BLOCK
 //     3. change 存在未 resolve 的 agent-escalation 或 blocked 态 → BLOCK
 //   dev-loop 档：
@@ -29,7 +29,7 @@ import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { resolveHumanApproval, VERDICT_STATUS_RE } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源
+import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
@@ -110,6 +110,49 @@ function hasContractsDiff(execFn, source, target) {
   } catch {
     return false;
   }
+}
+
+/**
+ * T15（261015-gov-review-face-loop-unify）：契约合并机械凭据（三件联立）——ARQ-260923-contract-merge-deadpath 建议①兑现。
+ * 同批存在 arch-review 目录 PROPOSAL：① FROZEN（lib isFrozen 单源）+ ② 同目录 landing-verdict PASS（VERDICT_STATUS_RE 单源）
+ * + ③ manifest（lib extractManifestBlock 单源）覆盖全部契约 diff 路径 → 放行；否则 fail-closed 点名。
+ * 解析一律复用 lib 单源（R1-F5：不另写解析，防 260918/260920 verdict-anchor 病灶复发）。
+ */
+function hasArchLoopContractEvidence(execFn, source, target, projectDir, deps = {}) {
+  const readVerdict = deps.readVerdict || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
+  let diffOut;
+  try {
+    diffOut = execFn(`git diff --name-only ${source}..${target}`);
+  } catch {
+    return { ok: false, reason: 'contract-evidence: git diff 失败（fail-closed）', contractPaths: [] };
+  }
+  const lines = diffOut.split('\n').map((l) => l.trim()).filter(Boolean);
+  const contractPaths = lines.filter((l) => l.startsWith('docs/contracts/'));
+  if (contractPaths.length === 0) return { ok: true, reason: 'no-contract-diff', contractPaths };
+  const proposalPaths = lines.filter((l) => /delivery\/changes\/arch\/\d{6}-(?:gov|arch)-review-[^/]+\/PROPOSAL\.md$/.test(l));
+  const checked = [];
+  for (const proposalPath of proposalPaths) {
+    const dir = proposalPath.slice(0, proposalPath.lastIndexOf('/'));
+    let proposalText = null;
+    try {
+      proposalText = execFn(`git show ${target}:${proposalPath}`);
+    } catch { /* PROPOSAL 不在 target ref → frozen 判 false */ }
+    const frozen = proposalText ? isFrozen(proposalText) : false;
+    const manifest = proposalText ? extractManifestBlock(proposalText) : new Set();
+    const covered = contractPaths.every((p) => manifest.has(p));
+    const vText = readVerdict(join(projectDir, dir, 'landing-verdict.md'));
+    const vLine = vText ? vText.split('\n').find((l) => VERDICT_STATUS_RE.test(l)) : null;
+    const verdict = Boolean(vLine && /\b(PASS|GREEN)\b/i.test(vLine));
+    checked.push({ dir, frozen, verdict, covered });
+    if (frozen && verdict && covered) {
+      return { ok: true, reason: `contract-evidence via ${dir}`, contractPaths };
+    }
+  }
+  return {
+    ok: false,
+    reason: `contract-evidence: 无候选满足三件联立（FROZEN + PASS verdict + manifest 覆盖）；契约路径 = ${contractPaths.join(', ')}；已检查 = ${checked.length ? JSON.stringify(checked) : '无候选 PROPOSAL（同批无 arch-review 批）'}`,
+    contractPaths,
+  };
 }
 
 /**
@@ -259,9 +302,9 @@ export function evaluate(ctx) {
     }
   }
 
-  // 通用 1：contracts diff 无契约门证据
-  if (ctx.contractsDiff && !ctx.hasContractGateEvidence) {
-    push('docs/contracts/** diff 且同批无契约门证据（契约面人签字制不动）——契约包人合 runbook：.claude/references/pod-coordination.md §10e（预检/批准事件落账/ff 选定/簿记等价代记四步）');
+  // 通用 1：contracts diff 无契约合并凭据（T15，261015 批：三件联立凭据替代人签门）
+  if (ctx.contractsDiff && !ctx.hasContractGateEvidence.ok) {
+    push(`docs/contracts/** diff 且同批无契约合并凭据（${ctx.hasContractGateEvidence.reason}）——契约变更 = 架构变更的一种，走 /arch-change loop（.claude/rules/contracts.md；凭据 = FROZEN PROPOSAL + PASS landing-verdict + manifest 覆盖，三件联立）`);
   }
 
   // 通用 3：escalation 未 resolve / blocked（blocked 仅在人批豁免成立时视同 resolve，OQ2=(a)）
@@ -339,6 +382,8 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const supervisorVerdict = readSupervisorVerdict(projectDir, changeId);
   const govAnchors = kind === 'gov' ? readGovAnchors(projectDir, changeId) : null;
   const contractsDiff = hasContractsDiff(execFn, source, 'main');
+  // T15（261015 批）：契约合并机械凭据——替换原 hasContractGateEvidence: false 硬编码（ARQ-260923 建议①兑现）
+  const hasContractGateEvidence = hasArchLoopContractEvidence(execFn, source, 'main', projectDir);
   const podsRecordPath = findPodsRecordPath(projectDir, changeId);
   const blocked = (() => {
     if (!podsRecordPath) return false;
@@ -363,7 +408,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     supervisorVerdict,
     govAnchors,
     contractsDiff,
-    hasContractGateEvidence: false, // 契约门证据（contract-change-packet）后续接入；现 false → 契约面 diff 恒 BLOCK（向严）
+    hasContractGateEvidence, // T15（261015 批）：{ ok, reason, contractPaths }——ok=false 且 contractsDiff → 通用 1 BLOCK；原硬编码 false（恒 BLOCK 人合）已退役
     blocked,
     escalationUnresolved: false, // pod-events 聚合待接入；现 false（升级闸 v1 只覆盖 blocked 态 + 显式判定）
     humanApproval, // T1：--human-approval-ref 核验结果；未带 flag 为 null
@@ -390,7 +435,7 @@ function selfCheck() {
     },
     govAnchors: null,
     contractsDiff: false,
-    hasContractGateEvidence: false,
+    hasContractGateEvidence: { ok: true, reason: 'no-contract-diff', contractPaths: [] },
     blocked: false,
     escalationUnresolved: false,
     humanApproval: null, // T1：--human-approval-ref 核验结果
@@ -409,8 +454,44 @@ function selfCheck() {
   cases.push({ name: 'devloop-clean-pass', ok: !evaluate(mkCtx({})).blocked, got: '' });
   // 通用 2 off-main：source-on-main
   expect('off-main-block', { execFn: (c) => (c.includes('--is-ancestor') ? '' : 'x'), source: 'feature' }, true, 'off-main');
-  // 通用 1 contracts diff
-  expect('contracts-block', { contractsDiff: true }, true, 'docs/contracts');
+  // 通用 1 contracts diff（T15 改写：凭据对象形态）
+  expect('contracts-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: 无候选满足三件联立' } }, true, 'docs/contracts');
+  // T15 契约合并凭据 5 例（261015 批；R1-F4：三件联立肢各有否定覆盖；真空绿规约）
+  expect('contracts-diff-no-evidence-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: 无候选 PROPOSAL' } }, true, 'contract-evidence');
+  cases.push({
+    name: 'contracts-diff-evidence-pass',
+    ok: !evaluate(mkCtx({ contractsDiff: true, hasContractGateEvidence: { ok: true, reason: 'contract-evidence via 261016-arch-review-t' } })).blocked,
+    got: '',
+  });
+  expect('contracts-diff-proposal-not-frozen-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: FROZEN 缺' } }, true, 'contract-evidence');
+  expect('contracts-diff-manifest-not-covering-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: manifest 未覆盖' } }, true, 'contract-evidence');
+  expect('contracts-diff-verdict-not-pass-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: verdict 非 PASS' } }, true, 'contract-evidence');
+  {
+    // T15 直接函数 fixture 4 例（真空绿规约：PROPOSAL fixture 含 manifest 围栏块非空；deps.readVerdict 注入）
+    const FIX_PROPOSAL = [
+      '# PROPOSAL · t',
+      '> **状态：FROZEN v1.0 · 2026-10-15 · test**',
+      '```landing-manifest',
+      'docs/contracts/interface-contract.md',
+      'docs/architecture.md',
+      '```',
+      '',
+    ].join('\n');
+    const FIX_DIFF = ['docs/contracts/interface-contract.md', 'delivery/changes/arch/261016-arch-review-t/PROPOSAL.md'].join('\n');
+    const fxExec = (c) => (c.startsWith('git diff') ? FIX_DIFF : c.startsWith('git show') ? FIX_PROPOSAL : '');
+    const r1 = hasArchLoopContractEvidence(fxExec, 'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' });
+    cases.push({ name: 'contract-evidence-fn-pass', ok: r1.ok === true, got: r1.reason });
+    const r2 = hasArchLoopContractEvidence(fxExec, 'src', 'main', 'x', { readVerdict: () => 'verdict: BLOCK(F1)' });
+    cases.push({ name: 'contract-evidence-fn-verdict-not-pass-block', ok: r2.ok === false && /verdict|联立/.test(r2.reason), got: r2.reason });
+    const r3 = hasArchLoopContractEvidence((c) => (c.startsWith('git diff') ? FIX_DIFF : c.startsWith('git show') ? 'not frozen' : ''), 'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' });
+    cases.push({ name: 'contract-evidence-fn-not-frozen-block', ok: r3.ok === false && /FROZEN|联立/.test(r3.reason), got: r3.reason });
+    const r4 = hasArchLoopContractEvidence(
+      (c) => (c.startsWith('git diff') ? FIX_DIFF : c.startsWith('git show') ? FIX_PROPOSAL.replace('docs/contracts/interface-contract.md\n', '') : ''),
+      'src', 'main', 'x',
+      { readVerdict: () => 'verdict: PASS' },
+    );
+    cases.push({ name: 'contract-evidence-fn-manifest-not-covering-block', ok: r4.ok === false && /manifest|联立/.test(r4.reason), got: r4.reason });
+  }
   // 通用 3 blocked
   expect('blocked-block', { blocked: true }, true, 'blocked');
   // dev-loop 档 4 riskTier high

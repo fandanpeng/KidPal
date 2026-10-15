@@ -7,27 +7,31 @@
 - **系统 spec 面** = `docs/requirements.md`（需求：产品是什么）+ `docs/architecture.md`（架构：怎么造），两文件互相锚定（项目 = KidPal，docs 平铺、不再套 `systems/<sys>/` 层；2026-09-13 前为单文件 `docs/spec.md`，已归档 `docs/archive/spec.md`）。
 - **契约面** = `docs/contracts/**`（单一事实源 [interface-contract.md](docs/contracts/interface-contract.md)：笔顺 JSON / display 统一响应块 / 课表 MD 结构 / shim API）。契约改动走 architect-reviewer 四分类 + 人类契约门。
 
-## 治理路由（Track B 常驻默认 + Track A 判据升级）
+## 治理路由（四面 loop 元结构：起草/审稿对偶 + 纯编排主线程）
 
-治理 / spec 变更默认走 **Track B 常驻轻路径**——七步闭环：
+治理变更默认走 **Track B 常驻轻路径**——七步闭环（cast 已统一：主线程四面纯编排，不起草变更内容）：
 
-> **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起）**：human 只在两个真正判断点出场——① 前端一次性对齐「为什么改（需求）/ 往哪改（方案）/ 改动多大（量级）」= 立项 ack；② 命中例外清单升级拍板。其余（评审/实现/验证/落地核验/合并本地 main）全部 agent + 机械闸自动，例外升级，remote push 仍 human。
+> **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起，261015 批续贯）**：human 只在两个真正判断点出场——① 前端一次性对齐「为什么改（需求）/ 往哪改（方案）/ 改动多大（量级）」= 立项 ack；② 命中例外清单升级拍板。其余（评审/实现/验证/落地核验/合并本地 main）全部 agent + 机械闸自动，例外升级，remote push 仍 human。
 
-1. 主线程起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架 `docs/templates/PROPOSAL.template.md`）→ human 立项 ack；
-2. architect 评审循环至 GREEN（只读 canonical、只写评审记录；影响目标效果的打回项升级 human）；
+1. 主线程派 **architect** 起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架 `docs/templates/PROPOSAL.template.md`；输入 = human 原话 / spine sources / 讨论记录，落盘后派发）→ human 立项 ack；
+2. **architect-reviewer** 评审循环至 GREEN（只读 canonical、只写评审记录于 PROPOSAL §7；影响目标效果的打回项升级 human）；
 3. 主线程凭「立项 ack + GREEN」标 FROZEN；
 4. 主线程 packet-bound 落地（landing-manifest 绑定）+ 写 landing summary；
 5. 主线程派 landing-verifier 独立核验——结构门 `landing-fidelity-check.mjs` + 逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
 6. 补写 retro report 闭环（骨架 `docs/templates/retro.template.md`）——趁热写、先于合并；
-7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/changes/arch/INDEX.md`（INDEX 已按 lane 拆分：arch 段在 `delivery/changes/arch/INDEX.md`、dev 段在 `delivery/taskpackages/INDEX.md`，各 lane 只写自己的 INDEX）。
+7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/changes/arch/INDEX.md`（INDEX 已按 lane 拆分：arch 段在 `delivery/changes/arch/INDEX.md`、dev 段在 `delivery/taskpackages/INDEX.md`，各 lane 只写自己的 INDEX）。**轻路径**（文档面措辞级批）= 瘦制品五件过闸（瘦 PROPOSAL + §7 GREEN + landing-manifest + 瘦 landing-summary + landing-verdict；retro 豁免），判据见各面 SSOT。
 
-**升级判据（命中任一 → Track A full-adversarial，入口 `/arch-change`）**：① 触契约面 `docs/contracts/**`（直走契约门）；② 跨系统结构性变更（如固件协议与服务端语义同时动）。governance 类变更不强制升级；「声明红队」= 自愿逃生门（human 或 architect 任一方随时可启）。**熔断**：评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A）。**存疑向严**：判据适用存疑默认升 human。
+**升级判据（命中任一 → 所属面 loop 的 Track A 段，对抗收敛后流回 Track B 落地）**：① 跨系统结构性变更（如固件协议与服务端语义同时动）；② 方向未收敛（该不该变、收益与影响看不清——human 立项时判，或 reviewer 评审中升，只升不降）。「声明红队」= 自愿逃生门（human 或 architect 任一方随时可启）。**熔断**：评审 3 轮未 GREEN → human 三选一（转 Track A 段 / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A 段）。**存疑向严**：判据适用存疑默认升 human。
 
+**四面入口（每面一个 loop，互为对偶）**：
 **需求面变更**：走 `/requirement-change` loop（260928-gov-review-requirement-loop 立；流程 SSOT `.claude/references/requirement-change.md`，story-author 盘上 updating 起草 + requirement-reviewer 审稿 + 档 2 architect 必派〔免派例外见 SSOT〕；260928-gov-review-requirement-face 立三档判据与定稿载体）。
+**架构+契约面变更**：走 `/arch-change` loop（261015-gov-review-face-loop-unify 立；流程 SSOT `.claude/references/arch-change.md`——architect 起草 + architect-reviewer 四查〔恒定，改一个字也审〕+ 轻/主判档〔判据见 SSOT〕+ Track A 段〔只看收敛度，不看触及面〕；契约变更 = 架构变更的一种，契约包三节随批原子落、无人签门，合并过机械凭据闸）。
+**治理面变更**：走 `/gov-change` loop（同批立；流程 SSOT `.claude/references/gov-change.md`——同 cast；轻路径 = 文档面〔路径即判据〕，机器面〔commands / agents / hooks / scripts / scope-map / settings / G1〕恒 Track B；ARQ 条目直接作立项材料消费）。
+**实现面变更**：走 `/triage-change` 四档分流 → `/build-feature`（dev loop 不变）。
 **跨面 intake**：触面 ≥2 的跨面 idea 先过统一 intake 建 spine（`delivery/changes/intake/<changeId>.md`；程序 SSOT `.claude/references/change-intake.md`，260928-gov-review-cross-face-intake-spine 立）——统一 intake ≠ 统一门，各面门照旧各归各裁；spine 免冻，anchors 记录各面自己的冻结态。CLAUDE.md 经 `@AGENTS.md` 导入传导，不另改。
 
-**landing 通道（常态规则）**：恒 = 主线程 packet-bound 一条；architect 恒纯判官 / 起草、永不 landing。
-**不动**：契约门（architect-reviewer 四分类 + human 签字）、landing-verifier 独立核验、机械强制层（scope-map / hooks）。
+**landing 通道（常态规则）**：恒 = 主线程 packet-bound 一条；architect 恒起草、architect-reviewer 恒审稿、两者永不 landing。
+**不动**：契约面防线（Bash 重定向写恒拦 + 实现面 agent 与 dev-loop 会话契约禁写 + 合并机械凭据闸 `pre-merge-escalation-gate.mjs`）、landing-verifier 独立核验、机械强制层（scope-map / hooks）。
 
 ## Hard Rules
 

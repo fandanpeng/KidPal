@@ -23,7 +23,7 @@ paths:
 `description` 每会话都载入、且是 orchestrator 的**模型级路由信号**——写坏会又费 token 又诱导 agent 照 description 抄近路、跳过正文流程。因此：
 
 1. **只写「何时用（when-to-use）+ 职责边界 + 路由信号」，不概括 workflow 正文**。流程链（`A → B → C`、「先…再…然后」、`X + Y + Z` 输出清单）留正文，别进 description。
-2. **保留路由承重信号**：orchestrator 派谁（子 agent 名 / `tools: Agent(...)` 白名单）、入口命令（`/build-feature`、`/arch-change`、`/review-arch`、`/review-governance`）、profile 名、调用时机、防误路由消歧句（如 defender「不是契约审批者」、architect-reviewer「准备 ContractChangePacket 交人」）。去 description 时**不得**丢这些——去了会破自动路由。
+2. **保留路由承重信号**：orchestrator 派谁（子 agent 名 / `tools: Agent(...)` 白名单）、入口命令（`/build-feature`、`/arch-change`、`/gov-change`、`/requirement-change`）、profile 名、调用时机、防误路由消歧句（如 defender「不是契约审批者」、architect-reviewer「准备 ContractChangePacket 交人」）。去 description 时**不得**丢这些——去了会破自动路由。
 3. **字数预算**：description 尽量短（气味阈见 lint）；`name`/`tools`/`model` 与 `description` 同 frontmatter 块，改 description **只动 description、逐字段隔离**（误伤 `name` 破 `enforce-scope` 匹配、误伤 `tools: Agent()` 破 dispatch 白名单）。
 4. **thin 封装 skill**（`disable-model-invocation: true`，如 `grill-me`/`grill-with-docs`）：description 是**人读可读性**用途，**非模型自动路由信号**——给它们补「触发词提升自动路由」无效（模型本不自动调）。
 
