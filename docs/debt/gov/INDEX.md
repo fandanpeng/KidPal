@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 20（待拍板 0 / 待触发 18 / 已接受风险 2）；已结 84（归档索引见下）。
+**摘要**：未结 21（待拍板 0 / 待触发 19 / 已接受风险 2）；已结 84（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（18）
+## 待触发（19）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -35,6 +35,7 @@ _（无）_
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
 | [ARQ-261015-launch-prep-host-only-env-defer](ARQ-261015-launch-prep-host-only-env-defer.md) | SHOULD | launch-prep 对 host-only 可验 Lite 包缺「环境后置」快路径——前置整套固件环境等价化对不依赖 IDF 的包是纯开销，每树重复收取 | 下一个 host-only 可验 Lite 包 triage/拉起前；或下一治理批顺带 |
+| [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | SHOULD | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 下一治理批完整设计「lite 快路径」时（或 human 明确推进 lite 包执行优化） |
 
 ## 已接受风险（2）
 
