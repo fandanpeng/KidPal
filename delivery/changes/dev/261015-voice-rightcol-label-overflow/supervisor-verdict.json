@@ -1,0 +1,73 @@
+{
+  "verdict": "APPROVE",
+  "riskTier": "medium",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-10-15T04:55:55.357Z",
+  "changeId": "261015-voice-rightcol-label-overflow",
+  "originType": "regression",
+  "adjudication": {
+    "verdict": "APPROVE",
+    "riskTier": "medium",
+    "reasons": [
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:medium",
+      "adjudicate:low/med∧evidence-complete→APPROVE(restore-auto-merge)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "low",
+      "declaredTier": "medium",
+      "effectiveTier": "medium",
+      "ambiguous": false,
+      "diffReasons": [
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 4,
+    "evidenceComplete": true
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "low",
+        "declaredTier": "medium",
+        "effectiveTier": "medium",
+        "ambiguous": false,
+        "diffReasons": [
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": "delivery/taskpackages/261015-voice-rightcol-label-overflow/verifier-evidence/rounds/r4.json",
+        "bearingFactOk": true,
+        "completedRounds": 4,
+        "closeoutArtifactsChecked": [
+          "delivery/changes/dev/261015-voice-rightcol-label-overflow/docs-delta.md",
+          "delivery/changes/dev/261015-voice-rightcol-label-overflow/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "regression"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1791866549756-firmware-build.log",
+      ".claude/verify-logs/1791905549989-acceptance-coverage.log",
+      ".claude/verify-logs/1791906761009-mutation-check.log",
+      ".claude/verify-logs/1791908121061-docs-sync.log",
+      ".claude/verify-logs/1792038647115-mutation-check.log",
+      ".claude/verify-logs/1792038905575-mutation-check.log",
+      ".claude/verify-logs/1792039858007-unit.log",
+      ".claude/verify-logs/1792039858691-acceptance.log"
+    ],
+    "verifierEvidenceRefs": [
+      "delivery/taskpackages/261015-voice-rightcol-label-overflow/verifier-evidence/rounds/r4.json"
+    ],
+    "closeoutArtifactsChecked": [
+      "delivery/changes/dev/261015-voice-rightcol-label-overflow/docs-delta.md",
+      "delivery/changes/dev/261015-voice-rightcol-label-overflow/review-packet.md"
+    ]
+  }
+}
