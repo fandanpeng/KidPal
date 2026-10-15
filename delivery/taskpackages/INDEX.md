@@ -6,11 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (64)
+## dev (68)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [261015-voice-rightcol-label-overflow](261015-voice-rightcol-label-overflow/) | 2026-10-15 | delivery/taskpackages/261015-voice-rightcol-label-overflow/plan.md | closed | — |
+| [261015-voice-rightcol-label-overflow](261015-voice-rightcol-label-overflow/) | 2026-10-15 | delivery/taskpackages/261015-voice-rightcol-label-overflow/plan.md | open | — |
 | [261014-engine-stop-truncation-asr-filter](261014-engine-stop-truncation-asr-filter/) | 2026-10-14 | docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md | closed | — |
 | [261014-voice-round-entry-exit-fixes](261014-voice-round-entry-exit-fixes/) | 2026-10-14 | delivery/taskpackages/261014-voice-round-entry-exit-fixes/plan.md | closed | — |
 | [261013-lang-config-thinking-fix](261013-lang-config-thinking-fix/) | 2026-10-13 | docs/crq/tech/TECH-261013-lang-config-thinking-key-regen-landmine.md | closed | — |
@@ -32,6 +32,7 @@
 | [260924-m4-k1-story-cloud-link](260924-m4-k1-story-cloud-link/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
 | [260924-m4-k2-p3-star-notebook-ui](260924-m4-k2-p3-star-notebook-ui/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
 | [260924-m4-k3-record-session-live](260924-m4-k3-record-session-live/) | 2026-09-24 | delivery/milestones/milestones.jsonl#M4-star-notebook | closed | m4-star-notebook |
+| [260924-ops-openclaw-family-user-mapping](260924-ops-openclaw-family-user-mapping/) | 2026-09-24 | — | open | — |
 | [260924-perf-k1-roundtrip-latency](260924-perf-k1-roundtrip-latency/) | 2026-09-24 | docs/requirements.md#NFR-PERF-1 | closed | — |
 | [260923-m3-k6-boot-auto-connect](260923-m3-k6-boot-auto-connect/) | 2026-09-23 | 本会话 human 现场报告（开机/重启后设备与 Front 连接不自动建立，需按键才建连）+ human 立项 ack（A-only）；architect triage 裁决 ②单包 Lite + Shape A 形状修订（human 离席预授权技术判断，回席后补 ack） | closed | m3-schedule |
 | [260923-m3-k7-schedule-grid-restore](260923-m3-k7-schedule-grid-restore/) | 2026-09-23 | 260923-arch-review-schedule-grid-cold-boot（Track A full-adversarial r1 收口：adjudicator GREEN + F-C5 human 裁 accept-as-risk + R1-R11 回灌 v3 + 契约门批准 C1 挂账 + landing-verifier GREEN，commit 565cb2d）；需求面症状由 triage 门定性（P1 已修于 K6、P2 = 症状 B 独立设计入口，m3-schedule 遗留③） | closed | m3-schedule |
@@ -40,6 +41,7 @@
 | [260921-m3-k2-p2-week-grid-page](260921-m3-k2-p2-week-grid-page/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |
 | [260921-m3-k3-voice-schedule-entry-live](260921-m3-k3-voice-schedule-entry-live/) | 2026-09-21 | delivery/milestones/milestones.jsonl#M3-schedule | closed | m3-schedule |
 | [260921-m3-k4-p1-cjk-dynamic-text](260921-m3-k4-p1-cjk-dynamic-text/) | 2026-09-21 | delivery/workstreams/m3-schedule/progress.md | closed | m3-schedule |
+| [260920-gov-review-dispatch-telemetry-source](260920-gov-review-dispatch-telemetry-source/) | 2026-09-20 | — | open | — |
 | [260920-m2-charwindow-card-fix](260920-m2-charwindow-card-fix/) | 2026-09-20 | delivery/taskpackages/260920-m2-charwindow-card-fix/plan.md | closed | m2-char-window |
 | [260920-m2-charwindow-display-fix](260920-m2-charwindow-display-fix/) | 2026-09-20 | delivery/taskpackages/260920-m2-charwindow-display-fix/plan.md | closed | m2-char-window |
 | [260917-m1-k4-rma8-fixbatch](260917-m1-k4-rma8-fixbatch/) | 2026-09-17 | delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/device-round-1.md | closed | m1-home-qa |
@@ -64,6 +66,7 @@
 | [260831-cloud-link-bringup](260831-cloud-link-bringup/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
 | [260831-simulator-lvgl-align](260831-simulator-lvgl-align/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
 | [260831-ui-art-assets](260831-ui-art-assets/) | 2026-08-31 | .planning/kidpal-validation/PROPOSAL.md | closed | kidpal-validation |
+| [260829-audio-bargein-hw](260829-audio-bargein-hw/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 | [260829-char-stroke](260829-char-stroke/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-hardware-validation](260829-hardware-validation/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-home-p1](260829-home-p1/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
@@ -71,6 +74,7 @@
 | [260829-schedule-p2](260829-schedule-p2/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-schedule-reminder](260829-schedule-reminder/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-session-logic](260829-session-logic/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [260829-shim-skeleton](260829-shim-skeleton/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | open | kidpal-mvp |
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |

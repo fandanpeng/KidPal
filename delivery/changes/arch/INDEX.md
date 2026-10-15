@@ -6,7 +6,7 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (57)
+## arch (58)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
