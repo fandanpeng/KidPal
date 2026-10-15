@@ -91,7 +91,7 @@ graph LR
 
 ## ④ 非目标与批次归属
 
-- **happy-flow-host-capture 收尾**：在办包（`delivery/changes/dev/260913-happy-flow-host-capture/` open，独立 planner 闭环），不随本批重拆——M1 里程碑收口前由其自身闭环收尾，本 workstream 只挂账不承载。
+- **happy-flow-host-capture 收尾**：在办包（`delivery/taskpackages/260913-happy-flow-host-capture/` open，独立 planner 闭环），不随本批重拆——M1 里程碑收口前由其自身闭环收尾，本 workstream 只挂账不承载。
 - **60 秒 / 120 秒 timer 生产者接线**（requirements §2.1 60 秒超时对账 + §7 开放问题 7 双阈值）：与语音轮状态机同 seam 但非演出面，留给 M1 后续批次拆包（deferred，非 dropped）。
 - **页循环 4→3 / 撤 P4 常驻页 / 页点 4→3 对账**：归 M2 查字窗阶段（keybar 页点数量 deviation 在此对账收回）。
 - **P3 键位族 v1.47**（录音态 BOOT 丢弃、P3 列表删除确认子态、单双击消歧）：随 M4 星星记录本阶段落地。

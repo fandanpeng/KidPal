@@ -119,7 +119,7 @@
  *   coverage: KD-A4 钉点成批改 -> schedule_reminder_b.acceptance.c 文件尾 REVISION
  *             LOG 2026-09-15 条目（acceptance-author 留痕修订，非本文件断言面）
  *   coverage: KD-A5 真机确认轮 -> human 持板轮，不落 C 断言（kind=structural 对象
- *             条目）; 证据落 delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/
+ *             条目）; 证据落 delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/
  *             （以仓根为 cwd 的相对路径; host runner ELF 的运行 cwd 见 [C4.4]，结构齿
  *             以 kld_locate_root 自手持 cwd 定位仓根）
  *   coverage: KD-A6 host runner 终跑判读 + 本文件注册结构守卫 + KD-E2 spec 零修订
@@ -942,7 +942,7 @@ TEST_CASE("键位分层派发: 注册序守卫+需求契约canary+扫描器自�
  *     (3) WSA-A6 schedule_reminder... device_ws_switch.acceptance.c:830（ECS shim
  *         收尾证据, owner = 260903-device-ws-switch）
  *     (4) WSA-A4 device_ws_switch.acceptance.c:663（flash.log 烧录证据, owner 同上）
- *   在册红出处 = delivery/changes/dev/260911-key-route-a1/existing-red-inventory.md
+ *   在册红出处 = delivery/taskpackages/260911-key-route-a1/existing-red-inventory.md
  *   + 260911-render-pages/red-baseline-freeze.md（判读纪律 = 新增红才是本包责任）。
  *   本包义务红（设计态, builder 落地后转绿, 不计入「新增红」违约）:
  *     - 本文件 test 1-4（seam 未落地 = 真实缺失行为红）;
@@ -965,12 +965,12 @@ TEST_CASE("键位分层派发: 注册序守卫+需求契约canary+扫描器自�
  *     3 处 kidpal_layer_pop——各齿对现状必红, 红基线成立（接缝缺失即测试意图缺的
  *     真实行为）。
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/test/
- *   host_app 均可）; 凡引用 delivery/changes/dev/ 下证据路径一律按相对路径 + 仓根
+ *   host_app 均可）; 凡引用 delivery/taskpackages/ 下证据路径一律按相对路径 + 仓根
  *   cwd 前提（C 侧遗留指针纪律, root 定位吃 cwd）。
  * ---------------------------------------------------------------------------
  * 真机证据要求（KD-A5, 本文件不承载, human 持板轮）:
  *   覆盖层内 BOOT = 关层回原页不翻页、主页面 BOOT = 翻页、KEY 长按返回上一层 三行为
- *   真机手感确认; 证据落 delivery/changes/dev/260915-m1-k1a-key-layer-dispatch/
+ *   真机手感确认; 证据落 delivery/taskpackages/260915-m1-k1a-key-layer-dispatch/
  *   （human 持板轮日志/照片）。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):

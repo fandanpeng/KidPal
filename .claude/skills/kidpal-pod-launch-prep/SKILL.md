@@ -113,7 +113,7 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 ```
 跑 <changeId>（<workstream>，mergeOrder <N>）。
 基线锚：<workstream progress.md 带 SHA 行>——各面域判停结论（可引用 / 须重跑，按步骤 2 差异判停）。
-上一包留根：<changes/dev/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
+上一包留根：<delivery/taskpackages/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省）。
 命令行（两形态并列，标注适用条件）：
 ① 人在场交互式：claude --settings .claude/dev-loop.settings.json --agent planner

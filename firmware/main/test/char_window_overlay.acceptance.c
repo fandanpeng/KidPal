@@ -2308,7 +2308,7 @@ TEST_CASE("查字窗 v5 收敛: 删星+删组词行+引导线纯黑点线 删改
  *   无缺笔）。
  *   A8 NFR-PERF-2 live 复测 = 语音应答→查字窗打开实测计时对照 5 秒档（未达升 human 裁,
  *   不预绑优化方案）; 测量口径沿用 2026-09-15 真机实测 ~21.6s 的串口取证形态。
- *   证据落 delivery/changes/dev/260917-m2-k3-char-window-overlay/（沿用 RM-A8 取证形态）。
+ *   证据落 delivery/taskpackages/260917-m2-k3-char-window-overlay/（沿用 RM-A8 取证形态）。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
  *   2026-09-19  initial freeze (acceptance-author, TaskPackage

@@ -167,7 +167,7 @@ grep -nE 'LV_DRAW_THREAD_STACK_SIZE' tools/simulator/LvglWindowsSimulator/lv_con
 ### A4.4 验收图一律以阈值化版本为准
 `coverage: SLA-A4`（出口 = 收敛到 exitCriteria SLA-E3 的产物）
 
-本包落地产物 `delivery/changes/dev/260831-simulator-lvgl-align/` 下归档的 P1 回归截图必须是 A4.1 的阈值化 PNG
+本包落地产物 `delivery/taskpackages/260831-simulator-lvgl-align/` 下归档的 P1 回归截图必须是 A4.1 的阈值化 PNG
 版本，**不得提交非阈值化的真彩 ARGB 截图作为「验收图」**。
 
 ---

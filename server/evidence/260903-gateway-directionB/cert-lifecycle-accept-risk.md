@@ -1,7 +1,7 @@
 # ARQ-260902-cert-lifecycle-deadlock —— accept-as-risk 记账（GWA-E3 / GWA-A9）
 
 > **_INTEGRATOR LANDING NOTE_**: staged by builder in `server/`; builder write-scope excludes
-> `delivery/changes/dev/`. Integrator must land into `delivery/changes/dev/260903-gateway-directionB/`
+> `delivery/taskpackages/`. Integrator must land into `delivery/taskpackages/260903-gateway-directionB/`
 > (`cert*.md` / `risk*.md` / `deadlock*.md`) for
 > `test_e3_cert_deadlock_accept_risk_record` to go green. **ARQ 队列迁移由 integrator 收口**
 > （builder 无 docs/** 写权）。

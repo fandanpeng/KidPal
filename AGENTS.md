@@ -19,7 +19,7 @@
 4. 主线程 packet-bound 落地（landing-manifest 绑定）+ 写 landing summary；
 5. 主线程派 landing-verifier 独立核验——结构门 `landing-fidelity-check.mjs` + 逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
 6. 补写 retro report 闭环（骨架 `docs/templates/retro.template.md`）——趁热写、先于合并；
-7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/changes/arch/INDEX.md`（INDEX 已按 lane 拆分：arch 段在 `delivery/changes/arch/INDEX.md`、dev 段在 `delivery/changes/dev/INDEX.md`，各 lane 只写自己的 INDEX）。
+7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/changes/arch/INDEX.md`（INDEX 已按 lane 拆分：arch 段在 `delivery/changes/arch/INDEX.md`、dev 段在 `delivery/taskpackages/INDEX.md`，各 lane 只写自己的 INDEX）。
 
 **升级判据（命中任一 → Track A full-adversarial，入口 `/arch-change`）**：① 触契约面 `docs/contracts/**`（直走契约门）；② 跨系统结构性变更（如固件协议与服务端语义同时动）。governance 类变更不强制升级；「声明红队」= 自愿逃生门（human 或 architect 任一方随时可启）。**熔断**：评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A）。**存疑向严**：判据适用存疑默认升 human。
 

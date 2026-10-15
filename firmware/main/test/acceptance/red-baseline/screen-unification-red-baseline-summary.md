@@ -106,7 +106,7 @@ runner 自报 7 Tests 6 Failures，断言全落在缺失行为/结构上）。�
    动作（既有冻结件，非本文件新齿）；本文件只钉「char 页并入 s_kidpal_scr 层机体
    系、无独立屏」，不重写 char_stroke.acceptance.c。
 4. **真机面（SU-A8）**：语音轮/推送页/提醒并发 0 复位 0 崩溃 = human 持板，证据落
-   `delivery/changes/dev/260911-screen-unification/`，非 host 齿、本文件不冒充真机已验。
+   `delivery/taskpackages/260911-screen-unification/`，非 host 齿、本文件不冒充真机已验。
 
 ---
 

@@ -57,7 +57,7 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
   ├─ 派生 builder             单包边界内实现 + 单元测试
   ├─ 内层循环（主线程驱动，非嵌套）：
   │     跑 verify.mjs  →  红则派生 fixer  →  再跑 verify.mjs  →  …直到绿/超预算
-   ├─ 派生 integrator          docs-sync + 范围圈定终验（scope 圈定）+ delivery/changes/dev/ 制品 + 备可回滚路径
+   ├─ 派生 integrator          docs-sync + 范围圈定终验（scope 圈定）+ delivery/taskpackages/ 制品 + 备可回滚路径
    ├─ planner 收尾（pod-retro） 第一人称热记忆；integrator closeout 之后、supervisor gate 之前（post-cutoff closeout 完整性条件，Q5=warn）
    └─ 跑机械 supervisor-verdict 闸  合并门复核（supervisor-verdict-gate.mjs，planner invoke 不派 agent）；低/中风险+证据完整机器 APPROVE 授权 planner 本地合并（前置升级闸放行后），高/critical 升级人类
 ```
@@ -114,16 +114,16 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 4. **破坏性自检（mutation check）**：对实现做一处临时破坏，验收**必须**因此变红；
    若仍绿，说明验收是空的 → 红。
 5. **证据优先**：完成状态只认 verifier/integrator 证据，不认 agent 的解释。stdout 保持短摘要，长日志落文件。
-6. **文档与 closeout 归档**：integrator 在合并门前同步 canonical docs 并晋升标准 `delivery/changes/dev/<id>` 制品，防止 shipped behavior 与 spec/AGENTS/HANDOVER 以及交付证据漂移。
+6. **文档与 closeout 归档**：integrator 在合并门前同步 canonical docs 并晋升标准 `delivery/taskpackages/<id>` 制品，防止 shipped behavior 与 spec/AGENTS/HANDOVER 以及交付证据漂移。
 
 ### 变更制品（Change Artifact）
 
 每个正式变更有两个持久目录，按职责分工、不互拷（gov-review-taskpkg-lifecycle, FROZEN 2026-07-25）：
 
 - **`delivery/taskpackages/<change-id>/`**（执行 ledger）：机器执行态，Git-tracked。
-- **`delivery/changes/dev/<change-id>/`**（closeout/audit）：人可读收官/治理审计。
+- **`delivery/taskpackages/<change-id>/`**（closeout/audit）：人可读收官/治理审计。
 
-Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.json` **仅存于** `delivery/taskpackages/<id>/`，不晋升到 `delivery/changes/dev/`。Pre-cutoff 包保持兼容（grandfather clause）。标准内容：
+Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.json` **仅存于** `delivery/taskpackages/<id>/`，不晋升到 `delivery/taskpackages/`。Pre-cutoff 包保持兼容（grandfather clause）。标准内容：
 
 - `taskpackage.json`：sourceType、sourceRefs、deliveryImpact、planningImpact、riskTier、gateProfile、story、acceptance、exitCriteria、budget、contractRefs、docRefs、changeManifest（260928 批 T4；产出/消费/扩单细则见下方附加字段节）。
 - `plan.md`（②单包，可选）：`/triage-change` 分流门 architect 审过的 reviewed plan（sibling 文件，由 taskpackage.json `planRef` 引用，对偶 `acceptanceTestsFile` 引用 `.acceptance.spec.ts`）。planner **只读消费、改需留痕**——完全漂移保护依赖 `origin.upstreamFrozen` + `closeout-check` 的 `UPSTREAM_DRIFT` 检测（已随 artifact-lifecycle 交付，convention-only/warn，ARQ-260723-artifact-lifecycle-teeth）。**「技术方案（planner+architect 预评）」节为 F8 唯一例外（260928-gov-review-dev-loop-preassess-manifest-scope T3）**：planner 可在 architect 前置评估（Step 1g 档）后补写该节，须留痕（日期 + architect 档标识）；②单包已有 triage plan.md 则追加该节，③拆包由 planner 建包侧 plan.md 时写入；该节补写属留痕合法改，closeout-check 的 UPSTREAM_DRIFT warn（convention-only）命中时以留痕行解释、不构成漂移。大 feature 的 reviewed plan 落 `delivery/workstreams/<ws>/PROPOSAL.md`，不在 taskpackage 内。
@@ -132,7 +132,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审圈定范围闸（final 按 scope-file 圈定）仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
 - `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。
-- `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/changes/dev/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产双份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
+- `input-brief-acceptance-author.md` / `input-brief-builder.md`（T6，260908-gov-review-input-surface-frontload）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单，Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/taskpackages/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产双份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。
 - `loop-metrics.json` / `pod-journal.jsonl`：post-cutoff 退役、不提交；pre-cutoff 保留原生产、晋升与读取兼容。
@@ -140,7 +140,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 **退役制品（C4，gov-review-devloop-evidence-led FROZEN 2026-07-24）**：
 - `test-evidence.md` → **退役**（verifier 报告复述）；机器数据由 `verdict.json` + `verification.json` 承接。
 - `final-summary.md` → **退役**（复述类）；判断 prose 由 `review-packet.md` 承接，闭包状态由 `verification.json` 存在性判定。
-- `delivery/changes/dev/` 下 `taskpackage.json` 快照 → **退役已落地**（gov-review-taskpkg-lifecycle, FROZEN 2026-07-25）；post-cutoff 包不再复制，活文件 `delivery/taskpackages/<id>/taskpackage.json` 唯一承载。
+- `delivery/taskpackages/` 下 `taskpackage.json` 快照 → **退役已落地**（gov-review-taskpkg-lifecycle, FROZEN 2026-07-25）；post-cutoff 包不再复制，活文件 `delivery/taskpackages/<id>/taskpackage.json` 唯一承载。
 
 #### closeout 制品 SSOT（承重 / blocking 状态单一权威）
 
@@ -152,7 +152,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 | `supervisor-verdict.json` | **唯一 blocking 机器件**（supervisor Stop 门 G2 block 判据，`supervisor-gate-check.mjs:667-674` verdict-existence / `:768-770` BLOCK-value；行号实地核正——J4 一次校正 :280-286→:298-305/:371-373 against 编辑前文件，本批 G6 编辑〔2a import/2c validateProvenance/2d recompute〕同批再移→:319-326/:410-412；260814-gov-review-merge-gate-terminal-shape-batch T1-T4 同批再移→:667-674/:768-770） | blocking | blocking | 不可降级（不许降级面，F-11）——supervisor 合并门必产（post-cutoff 由机械闸 supervisor-verdict-gate.mjs fs-write） |
 | `verdict.json` / `verification.json` | **投影·advisory**（non-bearing，对引上文 `:125-127`） | advisory | advisory | 缺位时承重 = 手工跑机械闸 supervisor-verdict-gate.mjs 留痕（FIX-13，对偶上行 :146；260726 verdict 先例成文化）；closeout-check 维持 advisory-only、不升 blocking |
 | `test-evidence.md` | **退役**（机器产线运行时）；机器产线未运行 → **复活为手工替代件** | 退役 | 退役 | 复活件 = verifier 亲跑命令 + 输出摘要 + exit code（即 260726 形态）。**复活规则 = 程序条款（降级手工替代集）/ pending；`closeout-check.mjs requiredFiles` 逻辑不变**（F-10，避免注释↔代码主动分歧） |
-| `delivery/changes/dev/` 下 `taskpackage.json` 快照 | **维持退役** | 兼容保留 | 退役 | 活文件 `delivery/taskpackages/<id>/taskpackage.json` 唯一承载（260725/260726 快照不追溯清理） |
+| `delivery/taskpackages/` 下 `taskpackage.json` 快照 | **维持退役** | 兼容保留 | 退役 | 活文件 `delivery/taskpackages/<id>/taskpackage.json` 唯一承载（260725/260726 快照不追溯清理） |
 | `final-summary.md` | **退役不替代** | 退役 | 退役 | 判断 prose 归 `review-packet.md`；闭包状态由 `verification.json` 存在性判定 |
 | `review-packet.md` / `docs-delta.md` | **维持 blocking 必交** | blocking | blocking | 不可降级（手工产，不可跳过） |
 | `pod-retro.md` | **closeout 完整性条件**（planner 收尾相位，第一人称热记忆） | —（legacy 无） | **Q5=warn advisory + 零追溯白名单**（非 blocking；`closeout-check` post-cutoff 存在性牙） | planner 手工著（第一人称热记忆） |
@@ -170,12 +170,12 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 `taskpackage.json` 可按风险声明附加字段：
 
 - `securityReviewRequired` / `securityAxes` / `securityEvidence`：启用安全闸并记录证据。
-- `adrRequired`：提示 integrator 把架构/边界/契约取舍归档成 ADR 摘要或 `delivery/changes/dev/<change-id>/`。
+- `adrRequired`：提示 integrator 把架构/边界/契约取舍归档成 ADR 摘要或 `delivery/taskpackages/<change-id>/`。
 - `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T4）：本包预定改动文件/目录 glob 清单（仓根相对）。**产出** = architect 前置评估（planner Step 1g 档）、planner 回填；**消费** = builder/fixer 文件级改动边界（各自 .md 边界节）+ `change-manifest-check.mjs` 闸对账（timing=scoped）+ `taskpackage-required-check.mjs` 完备性齿；**扩单唯一通道** = architect 评估（builder/fixer → planner 带根因假设回评，扩单 append + 评估依据留痕），禁先改后补。
 
 变更包不是新事实源；`docs/contracts/**` 和 canonical spec（两文件）仍是事实源。它的作用是保留每次 loop 的上下文和证据，避免聊天记录成为唯一记忆。
 
-**硬要求**：TaskPackage 必须落盘。planner 在 Draft 阶段创建 `delivery/taskpackages/<change-id>/taskpackage.json`，并刷新 `delivery/taskpackages/current/taskpackage.json`；Finalize 后必须再次写回。verifier 第一闸会检查当前 TaskPackage 是否存在且字段完整；integrator 必须运行 `node .claude/scripts/closeout-check.mjs --update-index` 确认 `delivery/changes/dev/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`；TaskPackage 从 `delivery/taskpackages/<id>/taskpackage.json` 解析，post-cutoff 包不再要求 delivery/changes/dev/ 内副本）、`delivery/milestones` STATUS、`delivery/workstreams` workstream 收口，并显式执行 best-effort `delivery/changes/dev/INDEX.md` projection。**post-cutoff 包 closeout 完整性条件另含 `pod-retro.md`**（planner 收尾相位，第一人称热记忆；**Q5=warn**：closeout 相位 warn advisory + 零追溯白名单，**非 blocking**——见「closeout 制品 SSOT」表）。planner/supervisor 的复核调用使用默认只读 `node .claude/scripts/closeout-check.mjs`。没有文件记录的实现不能声明 loop 完成。
+**硬要求**：TaskPackage 必须落盘。planner 在 Draft 阶段创建 `delivery/taskpackages/<change-id>/taskpackage.json`，并刷新 `delivery/taskpackages/current/taskpackage.json`；Finalize 后必须再次写回。verifier 第一闸会检查当前 TaskPackage 是否存在且字段完整；integrator 必须运行 `node .claude/scripts/closeout-check.mjs --update-index` 确认 `delivery/taskpackages/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`；TaskPackage 从 `delivery/taskpackages/<id>/taskpackage.json` 解析，post-cutoff 包不再要求 delivery/taskpackages/ 内副本）、`delivery/milestones` STATUS、`delivery/workstreams` workstream 收口，并显式执行 best-effort `delivery/taskpackages/INDEX.md` projection。**post-cutoff 包 closeout 完整性条件另含 `pod-retro.md`**（planner 收尾相位，第一人称热记忆；**Q5=warn**：closeout 相位 warn advisory + 零追溯白名单，**非 blocking**——见「closeout 制品 SSOT」表）。planner/supervisor 的复核调用使用默认只读 `node .claude/scripts/closeout-check.mjs`。没有文件记录的实现不能声明 loop 完成。
 
 **治理件引用时序约定**（260824-gov-review-pod-worktree-launch-infra T3，ARQ-260813-cross-worktree-ref-firstclass 降级成文）：dev 包只引用已合进 main 的治理件。若需引用尚未合并的 gov FROZEN proposal，先完成该 proposal 的 main 合并、同步本 checkout，再于 docRefs/origin 引用；不得以 `_note` 散文、origin 类型改写等方式绕过 docs-sync 存在性检查。
 
@@ -228,7 +228,7 @@ acceptance-author→验收放行、verifier→全量禁写、未登记 agent/主
 | 功能闸（对故事负责） | `acceptance-coverage` → `test:unit` / `test:acceptance`（声明则加 `api`/`ui`） | 必须断言真实结果；空过等于没测。 |
 | 安全闸（按风险启用） | `security` | `securityReviewRequired=true` 时必须记录输入、权限、数据隔离、secret、AI tools 等安全证据。 |
 | 文档/治理闸 | `docs-sync`（TaskPackage 上下文中启用） | 实现行为变化时，相关 spec/AGENTS/HANDOVER 必须同步或记录无需更新理由。 |
-| 收口闸 | `closeout-check`（integrator 显式 `--update-index`；planner/supervisor 默认只读复核） | 合并门前必须有 `delivery/changes/dev/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`）、`delivery/milestones` STATUS 无漂移、`delivery/workstreams` workstream 记录完整；TaskPackage 从 `delivery/taskpackages/<id>/` 解析；**承重字段/decisionCoverage 校验由 closeout 相位程序化调用 `taskpackage-required-check` 单源承重**（F-04，本体不浅版重实现）；**post-cutoff 包 closeout 完整性条件含 `pod-retro.md`（Q5=warn advisory + 零追溯白名单，非 blocking）**；verdict/verification、loop metrics、pod journal 缺失为 advisory。 |
+| 收口闸 | `closeout-check`（integrator 显式 `--update-index`；planner/supervisor 默认只读复核） | 合并门前必须有 `delivery/taskpackages/<id>` 两个 blocking 标准制品（`docs-delta.md`、`review-packet.md`）、`delivery/milestones` STATUS 无漂移、`delivery/workstreams` workstream 记录完整；TaskPackage 从 `delivery/taskpackages/<id>/` 解析；**承重字段/decisionCoverage 校验由 closeout 相位程序化调用 `taskpackage-required-check` 单源承重**（F-04，本体不浅版重实现）；**post-cutoff 包 closeout 完整性条件含 `pod-retro.md`（Q5=warn advisory + 零追溯白名单，非 blocking）**；verdict/verification、loop metrics、pod journal 缺失为 advisory。 |
 
 判定**确定**（来自退出码），LLM 只把失败解读成 ErrorEnvelope + 根因假设。
 `verify.mjs` 产出的 immutable verifier-round fact 以本地 closed schema 承载 ErrorEnvelope 关系；ErrorEnvelope 形状与 `docs/contracts/**` 的共享类型约定方向对齐（K6），

@@ -61,7 +61,7 @@ function sourceReachableFromMain(execFn, source) {
 
 /** 读 supervisor-verdict.json（dev-loop 档），缺失返回 null。 */
 function readSupervisorVerdict(dir, changeId) {
-  const p = join(dir, 'delivery', 'changes', 'dev', changeId, 'supervisor-verdict.json');
+  const p = join(dir, 'delivery', 'taskpackages', changeId, 'supervisor-verdict.json');
   if (!existsSync(p)) return null;
   try {
     return JSON.parse(readFileSync(p, 'utf8'));
@@ -131,12 +131,12 @@ export const CONTRACT_SPEC_LITERALS = ['docs/contracts/**', 'docs/spec.md', 'doc
 export function contractFindingsAccounted(dir, changeId, deps = {}) {
   const readText = deps.readText || ((p) => (existsSync(p) ? readFileSync(p, 'utf8') : null));
   const readPacketText = () => {
-    let t = readText(join(dir, 'delivery', 'changes', 'dev', changeId, 'review-packet.md'));
+    let t = readText(join(dir, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
     if (t === null) t = readText(join(dir, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
     if (t === null && deps.podsRecordPath) {
       try {
         const wt = JSON.parse(readText(deps.podsRecordPath) || 'null')?.worktreePath;
-        if (wt) t = readText(join(wt, 'delivery', 'changes', 'dev', changeId, 'review-packet.md')) ?? readText(join(wt, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
+        if (wt) t = readText(join(wt, 'delivery', 'taskpackages', changeId, 'review-packet.md')) ?? readText(join(wt, 'delivery', 'taskpackages', changeId, 'review-packet.md'));
       } catch { /* worktree 回退失败按不在场处理 */ }
     }
     return t;
@@ -307,7 +307,7 @@ export function evaluate(ctx) {
     else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
     else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
   } else {
-    push(`unknown change kind（changeId 既无 delivery/changes/dev 也无 delivery/changes/arch）`);
+    push(`unknown change kind（changeId 既无 delivery/taskpackages 也无 delivery/changes/arch）`);
   }
 
   return { blocked: reasons.length > 0, reasons };
@@ -328,7 +328,7 @@ function findPodsRecordPath(projectDir, changeId) {
 /** 从磁盘组 ctx（live path）。 */
 function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
-  const devDir = join(projectDir, 'delivery', 'changes', 'dev', changeId);
+  const devDir = join(projectDir, 'delivery', 'taskpackages', changeId);
   const archDir = join(projectDir, 'delivery', 'changes', 'arch', changeId);
   const hasDev = existsSync(devDir);
   const hasArch = existsSync(archDir);

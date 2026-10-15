@@ -1,10 +1,10 @@
 # V21 多轮连续性首验探针结论（部署期第一件事）
 
 > **_INTEGRATOR LANDING NOTE_**: this file is staged by the builder inside `server/` because the
-> builder write-scope (enforce-scope) excludes `delivery/changes/dev/260903-gateway-directionB/`. The
+> builder write-scope (enforce-scope) excludes `delivery/taskpackages/260903-gateway-directionB/`. The
 > frozen structural acceptance `test_a8_v21_multiturn_probe_evidence` reads it from
-> `delivery/changes/dev/260903-gateway-directionB/v21*.md`. **Integrator must land this (and the sibling
-> evidence files) into `delivery/changes/dev/260903-gateway-directionB/` for GWA-A8/E2/E3 to go green.**
+> `delivery/taskpackages/260903-gateway-directionB/v21*.md`. **Integrator must land this (and the sibling
+> evidence files) into `delivery/taskpackages/260903-gateway-directionB/` for GWA-A8/E2/E3 to go green.**
 
 - **TaskPackage**: `260903-gateway-directionB`（GWA-A8）
 - **探针日期/环境**: 2026-09-04，ECS `8.137.91.16`，OpenClaw loopback `http://127.0.0.1:18789`（OpenAI 兼容端点，`type:openai` 接入假设为无状态，契约 §四）

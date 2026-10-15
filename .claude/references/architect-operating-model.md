@@ -27,7 +27,7 @@ Use this authority order when evidence conflicts:
 3. `docs/DEV-GOVERNANCE.md`, `AGENTS.md`, `CLAUDE.md`, `.claude/{agents,commands,references,rules,skills}/**`, `.claude/{hooks,scripts}/**`, and `.claude/*.json` - development governance rules and enforcement substrate.
 4. `CONTRACT-CHANGE-PACKET.md`, `architecture-gate-evidence.md`, ADRs - why, evidence, and gate state.
 5. `docs/CONTRACT-DECISION-QUEUE.md` and the debt ledger (`docs/debt/{gov,tech,requirement}/INDEX.md` - pending/deferred decision ledgers).
-6. `delivery/changes/dev/**` and `delivery/changes/arch/**` - per-change and per-review evidence.
+6. `delivery/taskpackages/**` and `delivery/changes/arch/**` - per-change and per-review evidence.
 7. Historical transcripts - provenance and lessons only; never canonical authority.
 
 Authority is not write permission. Development governance surfaces use four fields: **authority** (which file is the fact source), **owner** (who maintains the rule), **writer** (which agent may edit), and **approver** (who approves the change). `docs/DEV-GOVERNANCE.md` is the navigation entry for this model.
@@ -234,7 +234,7 @@ Make architecture outputs durable and transferable.
 - ADRs record why, not contract/spec what.
 - Contract gates require CCP, architecture-gate-evidence, and raw evidence. Chat approval is not enough.
 - Plain-file handoffs use `HANDOFF-NOTE.md`, `DELETE-LIST.txt`, and `files/`. Do not assume matching commit hashes across repos.
-- Review artifacts live under `delivery/changes/arch/**`; dev-loop artifacts under `delivery/changes/dev/**`.
+- Review artifacts live under `delivery/changes/arch/**`; dev-loop artifacts under `delivery/taskpackages/**`.
 - Generated transfer zips stay outside the repo unless explicitly intended.
 
 ## 12. Parallel And Multi-Session Operations

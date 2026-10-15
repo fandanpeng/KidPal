@@ -162,7 +162,7 @@
       "decision": "M4块1-story_list 推送触发重裁（defer 摘除建连即推后）",
       "summary": "260928-story-connect-push-defer 实证①建连即推与设备每会话 WS 重连冲突（重复推送盖页，旧固件无条件渲染 P3 页盖聆听态 + 零 CJK 字体半截页）→ 摘除①建连调用点，现役推送 = 归档后 + 删除后两时点。①恢复语义（是否恢复/以何形态恢复——候选缝 = K3 引导态会话建立同拍，或 front 收到 session_ctx 后条件推送）归 K3 重裁，重裁结论归 acceptance 冻齿断言（推送时点行为级）；defer 遗留「真机复验设备侧停弹页面」随 K3 设备轮一并目击。",
       "sourceRefs": [
-        "delivery/changes/dev/260928-story-connect-push-defer/review-packet.md",
+        "delivery/taskpackages/260928-story-connect-push-defer/review-packet.md",
         "docs/requirements.md#S-F2.1"
       ],
       "landsIn": "package:260924-m4-k3-record-session-live"

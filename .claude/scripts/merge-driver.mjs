@@ -185,10 +185,10 @@ function defaultGitDiffStat(wt, since) {
 }
 
 function defaultWriteDetectChangesCloseout(changeId, payload) {
-  // best-effort 写 delivery/changes/dev/<changeId>/detect-changes-advisory.json；失败抛（被 F1 catch-all 接住，不阻塞 merge）。
+  // best-effort 写 delivery/taskpackages/<changeId>/detect-changes-advisory.json；失败抛（被 F1 catch-all 接住，不阻塞 merge）。
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-  const dir = join(projectDir, 'delivery', 'changes', 'dev', changeId);
-  if (!existsSync(dir)) return; // closeout 目录不存在（未晋升 delivery/changes/dev）→ 静默跳过
+  const dir = join(projectDir, 'delivery', 'taskpackages', changeId);
+  if (!existsSync(dir)) return; // closeout 目录不存在（未晋升 delivery/taskpackages）→ 静默跳过
   writeFileSync(
     join(dir, 'detect-changes-advisory.json'),
     `${JSON.stringify({ changeId, generatedBy: 'merge-driver detect_changes advisory (ARQ-100)', ...payload }, null, 2)}\n`,
@@ -880,7 +880,7 @@ export function ensureGraphCacheSynced(cwd, changeId) {
 // ---- Step 0 治理面自动收口（T2，260907-gov-review-merge-friction）----
 // P2：pod-retro / supervisor-verdict / pod-events 追加等收尾制品产生于 integrator「最终」commit 之后，
 // 无人 commit 则 rebase 步死于 unstaged。若本 worktree unstaged/untracked 全部落在本 Pod 治理面白名单
-// （delivery/taskpackages/<pod-id>/** + delivery/changes/dev/<pod-id>/**）内 → 自动 add 精确路径 + chore commit；
+// （delivery/taskpackages/<pod-id>/** + delivery/taskpackages/<pod-id>/**）内 → 自动 add 精确路径 + chore commit；
 // 任一文件白名单外 → warn 留痕并保持 fail 行为（rebase 步 fail-closed，绝不吞非治理面变更）。
 function governanceFaceAutocommit(wt, changeId) {
   let out = '';
@@ -900,7 +900,7 @@ function governanceFaceAutocommit(wt, changeId) {
   }
   const prefixes = [
     `delivery/taskpackages/${changeId}/`,
-    `delivery/changes/dev/${changeId}/`,
+    `delivery/taskpackages/${changeId}/`,
   ];
   const inWhitelist = (p) => prefixes.some((pre) => p === pre.slice(0, -1) || p.startsWith(pre));
   const targets = [];
@@ -1169,13 +1169,13 @@ function runMergeFrictionSelfCheck() {
       git(t2, ['commit', '-m', 'init']);
       mkdirSync(join(t2, 'delivery', 'taskpackages', '260901-t2p'), { recursive: true });
       writeFileSync(join(t2, 'delivery', 'taskpackages', '260901-t2p', 'pod-events.jsonl'), '{}\n');
-      mkdirSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p'), { recursive: true });
-      writeFileSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro\n');
+      mkdirSync(join(t2, 'delivery', 'taskpackages', '260901-t2p'), { recursive: true });
+      writeFileSync(join(t2, 'delivery', 'taskpackages', '260901-t2p', 'pod-retro.md'), 'retro\n');
       const a = governanceFaceAutocommit(t2, '260901-t2p');
       const stA = git(t2, ['status', '--porcelain']);
       const msgA = git(t2, ['log', '-1', '--pretty=%s']);
       assert('T2a 白名单内 → 自动收口 commit 且 status 净', a === true && stA === '' && msgA.includes('merge 前治理面收口'), `ret=${a} status=${JSON.stringify(stA)} msg=${msgA}`);
-      writeFileSync(join(t2, 'delivery', 'changes', 'dev', '260901-t2p', 'pod-retro.md'), 'retro2\n');
+      writeFileSync(join(t2, 'delivery', 'taskpackages', '260901-t2p', 'pod-retro.md'), 'retro2\n');
       writeFileSync(join(t2, 'stranger.txt'), 'offender\n');
       const b = governanceFaceAutocommit(t2, '260901-t2p');
       const stB = git(t2, ['status', '--porcelain']);
@@ -1477,7 +1477,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
     if (qc.ok) { qcOk = true; break; }
     if (qc.failingGate === 'acceptance' && HUMAN_EXEMPTION !== null) {
       // 豁免判据（shape-only，对齐 supervisor-gate-check G6）：人类 token（flag）+ 预存红分类制品存在非空。
-      const inventory = join(projectDir, 'delivery', 'changes', 'dev', changeId, 'existing-red-inventory.md');
+      const inventory = join(projectDir, 'delivery', 'taskpackages', changeId, 'existing-red-inventory.md');
       let exemptByHuman = false;
       try {
         exemptByHuman = existsSync(inventory) && readFileSync(inventory, 'utf8').trim().length > 0;

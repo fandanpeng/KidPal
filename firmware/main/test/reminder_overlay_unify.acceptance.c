@@ -127,7 +127,7 @@
  *             零本地 timer——设备零本地事项源, 云侧补发口径归云 RM-E1 零触碰）
  *   coverage: RM-A8 真机确认轮（human 持板, kind=structural 对象条目）-> test 7
  *             （真机前置接缝断言: 骨架/门控/录音结束触发接线全部在世 = 真机轮前置）;
- *             真机证据落 delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/
+ *             真机证据落 delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/
  *             ——见文件尾「RM-A8 真机证据要求」段, 本文件不造 host 伪断言
  *   coverage: RM-A9 host runner 终跑 -> test 8（注册接线结构守卫）+ 本文件尾
  *             「RM-A9 终跑判读」段（suite 级判读: 相对有效基线零新增红 + 本包新齿全绿,
@@ -974,7 +974,7 @@ TEST_CASE("提醒驻留与过期: 驻留到按键+键位全表+过期不补发 (
 /* coverage: RM-A3 -- 录音排队例外结构半：mcp_server.cc RaiseReminderQueue 消费 kidpal_reminder_gate（录音态不 raise）+ application.cc 录音会话结束路径触发 RaiseReminderQueue（立刻弹; 触发点路由不锁） */
 /* coverage: RM-A6 -- drain timer 只弹不关（AlertDrainTimerCb 区域零 kidpal_reminder_key——零自动消失的机制面守卫） */
 /* coverage: RM-A7 -- 提醒模块零本地事项源：reminder_page.c 零 lv_timer（无本地补发/追催/自动消失 timer）+ 零三档阶梯时刻字面值（20:30/07:45 零进固件, RMD-A7 纪律承接） */
-/* coverage: RM-A8 -- 真机前置接缝断言（骨架/门控/录音结束触发接线全部在世 = 真机确认轮前置; 真机证据落 changes/dev, human 持板） */
+/* coverage: RM-A8 -- 真机前置接缝断言（骨架/门控/录音结束触发接线全部在世 = 真机确认轮前置; 真机证据落 delivery/taskpackages, human 持板） */
 TEST_CASE("提醒弹窗统一: 活侧接线——骨架复用+门控+录音结束触发+零自动消失 (RM-A1/RM-A3/RM-A6/RM-A7/RM-A8)",
           "[reminder_overlay_unify][RM-A1][RM-A3][RM-A6][RM-A7][RM-A8][structural]")
 {
@@ -1240,7 +1240,7 @@ TEST_CASE("F1 渲染回执链接线: RaiseReminderQueue 渲染路径调用 mark_
  *            mark_rendered 自调; 形状选型理由见 TEST 9 头注）。
  *   FX-A2 -> 真机齿 deferred（RM-A8 重跑, human 持板: journalctl acked=1 + 串口无
  *            60s 重推 + 单次 TTS 目击三方互证, 沿用 device-round-1 取证形态; 证据落
- *            changes/dev/260917-m1-k4-rma8-fixbatch/）。host 侧承载 = TEST 9（回执链
+ *            delivery/taskpackages/260917-m1-k4-rma8-fixbatch/）。host 侧承载 = TEST 9（回执链
  *            接线事实 = 真机 acked=1 的设备侧前置）; WS/网关链路 host 上不可机判,
  *            不造伪断言。
  *   FX-A3 -> 真机齿 deferred（RM-A8 重跑; F2 不变量靶 = 弹窗驻留期间 speaking 态
@@ -1259,7 +1259,7 @@ TEST_CASE("F1 渲染回执链接线: RaiseReminderQueue 渲染路径调用 mark_
  *            acceptance.c 语音态齿; 由红基线实跑记录承载）; 真机半（无提醒驻留时
  *            LISTEN/THINK/TALK 三态视觉与修复前一致, 真机会话目击）归 RM-A8 重跑。
  *   FX-A7 -> RM-A8 确认轮重跑（human 持板, kind=structural 对象条目）: 无 host 齿;
- *            四项清单证据落 changes/dev/260917-m1-k4-rma8-fixbatch/; 模拟器截图缺口
+ *            四项清单证据落 delivery/taskpackages/260917-m1-k4-rma8-fixbatch/; 模拟器截图缺口
  *            归属 = planner 裁定, closeout 声明去向, 不得静默丢。
  * ------------------------------------------------------------------------- */
 
@@ -1296,11 +1296,10 @@ TEST_CASE("F1 渲染回执链接线: RaiseReminderQueue 渲染路径调用 mark_
  *     真实行为）。test 3 为现状即绿的守卫齿（K1a 落地件消费面 + layer 优先级在世,
  *     零回归守卫本性, 不是假绿）。
  *   cwd 口径: 结构齿以真实工作树扫描, root 自手持 cwd 定位（仓根 / firmware/main/
- *   test/host_app 均可）; delivery/changes/dev/ 下证据路径一律按相对路径 + 仓根
+ *   test/host_app 均可）; delivery/taskpackages/ 下证据路径一律按相对路径 + 仓根
  *   cwd 前提（C 侧遗留指针纪律, root 定位吃 cwd）。
  * ---------------------------------------------------------------------------
- * RM-A8 真机证据要求（本文件不承载, human 持板轮; enforce-scope 拦 changes/dev 写入
- * ——本段由 planner 转写进 delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/）:
+ * RM-A8 真机证据要求（本文件不承载, human 持板轮; 证据面 = 包内收尾制品——本段由 planner 转写进 delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/）:
  *   ① 弹窗演出: 四态统一骨架（左小伴 pose-jump + 右大字事项/时间）真机观感 + 三件套
  *      同时发生（提示音 + 语音读出 + 弹窗驻留）;
  *   ② 最高层覆盖: 查字窗开启 / 语音播报中 / 思考页弹出时到点提醒压过一切前台;
@@ -1308,7 +1307,7 @@ TEST_CASE("F1 渲染回执链接线: RaiseReminderQueue 渲染路径调用 mark_
  *   ④ 驻留手感: 过夜/长时驻留不消失; KEY 关闭回当前页 / BOOT 关闭回原页不翻页;
  *      弹窗期间第二条到达排队、关闭后自动弹下一条。
  *   证据形态 = 模拟器截图（统一骨架弹窗、覆盖各前台态）+ 真机轮日志/照片, 落
- *   delivery/changes/dev/260915-m1-k4-reminder-overlay-unify/。
+ *   delivery/taskpackages/260915-m1-k4-reminder-overlay-unify/。
  * ---------------------------------------------------------------------------
  * 范围注记（无齿条目）:
  *   RM-E1——三段阶梯时刻/范围口径/权限 = 云侧数据面（MVP 已交付）, 本包零 server 面

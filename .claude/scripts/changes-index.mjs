@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // delivery/changes/{dev,arch}/INDEX.md 幂等全量重建 + 单行 upsert（G3，对偶 .claude/scripts/planning-index.mjs）。
-// 扫描 delivery/changes/dev/*/ + delivery/changes/arch/*/，收 origin.ref/origin.workstream/changeId/日期/状态，
+// 扫描 delivery/taskpackages/*/ + delivery/changes/arch/*/，收 origin.ref/origin.workstream/changeId/日期/状态，
 // 重建两份 lane INDEX（260915-gov-review-index-split，human 指示跳过 Track B 落地）：
-//   delivery/changes/dev/INDEX.md（dev 段）+ delivery/changes/arch/INDEX.md（arch 段）——按 lane 分文件，
+//   delivery/taskpackages/INDEX.md（dev 段）+ delivery/changes/arch/INDEX.md（arch 段）——按 lane 分文件，
 //   dev 合并流（pod merge）与 arch 合并流（gov merge）各写各的，消除单文件双 lane 逐次合并冲突。
 // 幂等——每次同输入产同输出；INDEX 头标「勿手改」。
 //
@@ -155,13 +155,14 @@ export function deriveDevClosed(dir, changeId) {
 }
 // collectDev 内：const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
 
-// 收 dev dirs（delivery/changes/dev/*/ 子目录，changeId 形状，可能含 closeout 制品）。
+// 收 dev dirs（delivery/taskpackages/*/ 子目录，changeId 形状，可能含 closeout 制品）。
 function collectDev() {
-  const root = resolve(projectDir, 'delivery', 'changes', 'dev');
+  const root = resolve(projectDir, 'delivery', 'taskpackages');
   const items = [];
   if (!existsSync(root)) return items;
   for (const name of readdirSync(root, { withFileTypes: true })) {
     if (!name.isDirectory()) continue;
+    if (name.name === 'current') continue; // 排除 current/ 活工作面（261014-gov-review-dev-lane-merge-taskpackages T2：扫描根迁 taskpackages 后的连带新语义）
     const dir = join(root, name.name);
     const tp = join(dir, 'taskpackage.json');
     const tpFallback = resolve(projectDir, 'delivery', 'taskpackages', name.name, 'taskpackage.json');
@@ -174,7 +175,7 @@ function collectDev() {
         originWorkstream = o.workstream || '';
       } catch { /* 非 JSON 或缺 origin */ }
     }
-    const date = parseChangeIdDate(name.name) || gitFirstCommitDate(`delivery/changes/dev/${name.name}`);
+    const date = parseChangeIdDate(name.name) || gitFirstCommitDate(`delivery/taskpackages/${name.name}`);
     const status = deriveDevClosed(dir, name.name) ? 'closed' : 'open';
     items.push({ changeId: name.name, date, lane: 'dev', originRef, status, workstream: originWorkstream });
   }
@@ -302,6 +303,9 @@ function staleReport() {
 
 // lane INDEX 写出（260915-gov-review-index-split：dev / arch 各一份，按 lane 分文件消除跨 lane 合并冲突）。
 function laneIndexPath(lane) {
+  // dev 段落址随包走（OQ1(a)：delivery/taskpackages/INDEX.md）；arch 段维持 changes/arch
+  // （261014-gov-review-dev-lane-merge-taskpackages T2：dev lane 撤销、扫描根迁 taskpackages）
+  if (lane === 'dev') return resolve(projectDir, 'delivery', 'taskpackages', 'INDEX.md');
   return resolve(projectDir, 'delivery', 'changes', lane, 'INDEX.md');
 }
 

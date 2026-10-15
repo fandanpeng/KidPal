@@ -27,4 +27,4 @@
 ## Links
 ```
 
-TaskPackage 可在 `docs-delta.md` 或 `final-summary.md` 中记录 ADR 摘要；integrator 负责把需要长期保留的决策同步到 canonical docs 或 `delivery/changes/dev/<change-id>/`。
+TaskPackage 可在 `docs-delta.md` 或 `final-summary.md` 中记录 ADR 摘要；integrator 负责把需要长期保留的决策同步到 canonical docs 或 `delivery/taskpackages/<change-id>/`。

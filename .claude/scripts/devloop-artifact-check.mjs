@@ -162,9 +162,9 @@ if (hasChangeId) {
     let isGrandfathered = false;
     let grandfatheredReason = '';
 
-    // 用 delivery/changes/dev/<changeId> 的 git 首提日期判定（taskpackage 可能尚未落 dev 但用同一 changeId）
-    // 先试 delivery/changes/dev，若不存在则试 delivery/taskpackages/<changeId>
-    const devPath = `delivery/changes/dev/${changeIdStr}`;
+    // 用 delivery/taskpackages/<changeId> 的 git 首提日期判定（taskpackage 可能尚未落 dev 但用同一 changeId）
+    // 先试 delivery/taskpackages，若不存在则试 delivery/taskpackages/<changeId>
+    const devPath = `delivery/taskpackages/${changeIdStr}`;
     const tpPath = `delivery/taskpackages/${changeIdStr}`;
     let firstCommit = gitFirstCommitDate(devPath);
     if (firstCommit === null) {
