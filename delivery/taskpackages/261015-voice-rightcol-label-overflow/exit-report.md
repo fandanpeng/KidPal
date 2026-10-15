@@ -39,3 +39,12 @@
 - **loop-retro 阈值触达**（closeout-check advisory：5 pending + 3 waiting = 8 ≥ 3）——发起责任 = 主线程，建议 human 收口后跑 /loop-retro。
 - 技术债建议：登记「firmware/sdkconfig idf.py 再生噪音」tech debt 条目（同族 TECH-261014）；「sonnet 档 API 400 经 cc-switch」环境问题建议单独排查。
 - 合并触发面：dev/pod-m2 分支头 = 6d199f8（+本次退出报告 commit），真机轮通过后合并链（INDEX 行 + merge-driver）由 human 触发。
+
+---
+
+## 真机轮收口（2026-10-15 human 现场，主线程补记）
+
+- **烧录**：app 分区单烧 `0x20000`（保 NVS），hash 校验通过；bin 经增量构建确认含修复（无重建动作）。
+- **启动取证**：复位后 20s 捕获 `/c/tmp/boot-banner-261015.log`——0 次 `[[RE-ENUM]]`、显示层初始化正常（`kidpal_rn: render home 400x300` / chrome_mid_sync / codec 全通）。
+- **判定**：human 真机复测结论 = **正常了**（VR-A6 PASS）——说话态右列长文行尾不再被裁（主 bug 面）、标头不回归。pod-event `human-decision` 已记（80a82efa，payload verdict=PASS）。
+- **遗留**：dev INDEX 行 + 合并动作照原节（合并链由 human 触发；本包工作直接落在 dev/pod-m2，分支头即制品，无独立 Pod 分支待并）。
