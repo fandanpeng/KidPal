@@ -17,6 +17,10 @@
     "    （fail-closed），不退全量。全量功能套件 = 人工触发位（如发版前），不在任何自动相位",
     "    （260928-gov-review-dev-loop-preassess-manifest-scope T10）。",
     "  默认 timing=scoped（未标则每轮跑，fail-safe）。",
+    "  defer 字段（261015-gov-review-lite-fast-path T3）：闸条目可声明 defer: { whenRigor: [...], phases: [...] }",
+    "    —— 指定 rigor 档的包在指定相位后置该闸。消费方 = verify.mjs（读 current/taskpackage.json 的 rigor，",
+    "    fail-open：读不到/字段缺席 = 不 defer = 维持现状）。scoped 相位后置的闸由 final 相位兜底恒跑",
+    "    （后置 ≠ 跳过）；跳过的闸自报 executor-skipped，经 liftNotExecuted 上收为机器可判 notExecuted，不假绿。",
     "",
     "降级与缺口（诚实记账，非假绿）：",
     "  - schema 闸（源仓 prisma-validate）：本仓无 Prisma，等价物 = firmware-build（ESP-IDF 编译即固件结构闸）",
@@ -29,7 +33,8 @@
     "    merge-driver QUICK_CHECK_IDS 单源消费）；acceptance 门按合并 diff 的 blast radius 圈定",
     "    （scope-file 由 merge-driver 现算注入；detect_changes/trace_path 均不可用 = fail-closed 举手，",
     "    OQ-1=(a)，260928-gov-review-dev-loop-preassess-manifest-scope T10）；firmware-build 有意不入冒烟",
-    "    （分钟级 + fail-open），由 verifier scoped 相位承担；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
+    "    （分钟级 + fail-open），由 verifier scoped 相位承担（rigor=lite 包后置 final 相位——",
+    "    261015-gov-review-lite-fast-path T3）；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
   ],
   "gates": [
     {
@@ -50,7 +55,8 @@
       "kind": "structural",
       "cmd": "node .claude/scripts/firmware-build-check.mjs",
       "timing": "scoped",
-      "_doc": "本仓等价源仓 schema+types 闸：ESP-IDF 固件编译（idf.py build）即固件结构/类型闸。脚本对 idf.py 缺失 fail-open（开发机无工具链不红），有工具链则真编译。"
+      "defer": { "whenRigor": ["lite"], "phases": ["scoped"] },
+      "_doc": "本仓等价源仓 schema+types 闸：ESP-IDF 固件编译（idf.py build）即固件结构/类型闸。脚本对 idf.py 缺失 fail-open（开发机无工具链不红），有工具链则真编译。rigor=lite 包 scoped 相位后置到 final（final 恒跑 = 后置非跳过；defer 缺省不 defer = 维持现状 fail-open）——scoped 跳过时本闸自报 executor-skipped，经 verify.mjs liftNotExecuted 上收为 notExecuted 机器可判字段，不假绿。261015-gov-review-lite-fast-path T3。"
     },
     {
       "id": "contract-lint",

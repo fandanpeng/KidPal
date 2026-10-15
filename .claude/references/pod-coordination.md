@@ -59,6 +59,17 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
 
 与既有机制的相容：ARQ-260905 每 worktree 专属图索引随树复用、自动增量刷新；快照流向不涉 Pod 树、不变；分支亲核语义见 [`integrator.md`](../agents/integrator.md)（常驻分支口径）。
 
+## 2d. 叫停协议（261015-gov-review-lite-fast-path T6）
+
+**顺序条款**：叫停一个 Pod = ① **先按启动卡登记的会话标识停会话进程**（或确认其已退出），② 再处置树与分支 + board 条目置 abandoned。顺序倒置 = 261015 E 事故同型：树没了、headless 会话还在跑、一路跑完整条 loop、产出无人认领。
+
+**树处置两形态**（与 §2c 换包协议对齐，不架空 human 决策权）：
+
+1. **池树复位续用**（默认）：在册池树按既有 abandoned 复位路径处理（§2c 第二条原文路径不变——先 main→base 同步，再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品），树与常驻分支**不换不删**。
+2. **删树**：仅废弃非池化单包树、或 human 明示收缩池容时，才删除 worktree + 分支——**删树决策归 human**（对偶 §2c 第四条「建新树决策归 human」，池的增减都对人称责）。
+
+**叫停完成 = 三件齐**：进程死 + 树处置落位（复位或删除）+ board 条目置 abandoned；缺一件在 progress.md / pod-events 留痕。自动杀进程脚本（按会话标识反查 + taskkill + 树处置一条龙）未实现——首例「叫停时找不到/杀不掉会话」的实测摩擦后再立项（261015 批 OQ-1 裁 procedural 先行）。
+
 ## 3. Pod 状态机
 
 ```text
@@ -85,7 +96,7 @@ Pod 报「我 ready」= 写自己的 `devloop/pods/<change-id>.json`；reconcile
 - **Pod 内交付闭环**：每个 Pod 在自己的 worktree 内跑完 acceptance→builder→verifier↔fixer→integrator→**supervisor**。supervisor APPROVE 后才标 `ready-to-merge`。
 - **合并门被 merge-driver 串行化**：N 个 Pod 并行开发、各自闭环；planner 在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后自动触发 `node .claude/scripts/merge-driver.mjs --pod <changeId>`，按 mergeOrder 逐个对 ready-to-merge Pod 执行 rebase→quick-check→merge。
 - 顺序由 portfolio-planner 定（依赖序、触共享文件/契约面者优先、冲突面最小化）；它只**排序 + 初始化 board**，不替 supervisor 判过/不过。
-- **正确性关键**：merge-driver 在 merge 前 **rebase 到解析出的最新合并基线**（本地 main 优先，origin/main 领先时切 origin/main——含已落地前序 Pod），并跑 quick-check（contract-lint + acceptance，260905 对齐后两门案；firmware-build 有意不入冒烟——分钟级 + fail-open，由 verifier scoped 相位承担）抓 rebase 后集成问题。supervisor 已在 Pod 内复核过 closeout 制品；quick-check 是 rebase 后的补充验证。
+- **正确性关键**：merge-driver 在 merge 前 **rebase 到解析出的最新合并基线**（本地 main 优先，origin/main 领先时切 origin/main——含已落地前序 Pod），并跑 quick-check（contract-lint + acceptance，260905 对齐后两门案；firmware-build 有意不入冒烟——分钟级 + fail-open，由 verifier scoped 相位承担，rigor=lite 包后置 final 相位——261015-gov-review-lite-fast-path T3）抓 rebase 后集成问题。supervisor 已在 Pod 内复核过 closeout 制品；quick-check 是 rebase 后的补充验证。
 - 跨 Pod 冲突在 **merge-driver 的 rebase+quick-check** 处暴露解决。rebase 冲突 → blocked（人工介入）；quick-check 失败 → 重试一次，仍失败 → blocked。
 - gate 权在 supervisor（APPROVE/BLOCK/ESCALATE），落地走 merge-driver 的本地 --no-ff 可回滚路径；portfolio-planner 不 merge、不越 gate。
 

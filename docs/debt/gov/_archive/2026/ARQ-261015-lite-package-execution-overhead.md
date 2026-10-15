@@ -2,7 +2,8 @@
 id: ARQ-261015-lite-package-execution-overhead
 title: Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案
 domain: gov
-status: deferred
+status: closed
+closed: 2026-10-15
 severity: SHOULD
 owner: architect
 trigger: 下一治理批完整设计「lite 快路径」时（或 human 明确推进 lite 包执行优化）
@@ -42,3 +43,7 @@ source:
 **建议改动**（候选，交 review、不自批；本批分叉未裁，见风险段）：立「host-closable lite 快路径」——A（launch 面环境后置，方案见 [[ARQ-261015-launch-prep-host-only-env-defer]] 建议改动）+ B（brief 合并为单份+角色增量；bug 类包 brief 带改动摘要而非 story 整节照录）+ C（firmware-build 门对 host-closable 包后置到真机轮，真机轮加设备编译预检）。D/E 是影响所有包的机制 bug，不塞进 lite 快路径，另行登记或随治理批一并修。真设计分叉：① 资格判据谁裁、何时判（triage architect 申报 vs 机械判）；② 后置点锚定（真机轮入口「环境就绪」预检——当前全仓不存在该锚点）；③ firmware-build 改法（窄改仅 host-closable 跳过 vs 宽改统一后置）。
 
 **风险**：riskTier: medium——改治理机制面（launch 面 + verify 面闸语义），影响所有后续 lite 包的环境就绪与设备编译验证语义；D 若纳入还触及 enforce-scope 承重面。**review profile：full-adversarial + human（Track A）**——Track B 三要件中 ①执行测出（yes，本条证据段）③爆炸半径已执行揭示（yes，实测时间线）齐，但 ②「修复明确无真设计分叉」不成立（资格判据/后置锚点/改法宽窄三处需 human 拍板），按「存疑向严」如实标 full，不走 Track B 快道。owner = architect（起草候选）→ human 裁定 → review-loop 落地。
+
+---
+
+**结项（2026-10-15）**：治理批 261015-gov-review-lite-fast-path 随批闭合——A 源经 T2（SKILL §3b lite 快路径：池优先 + 新树环境等价化后置真机轮 + 交接卫生补 host_app/sdkconfig 删除）；B 源经 T4（brief 基 id 去重 + 双份并单份 + bug 类降级）；C 源经 T3（verify-gates.json defer 字段 + verify.mjs 消费 + notExecuted 上收，final 恒跑）；D 源经 T5（enforce-scope 跨树重锚 + 反向洞封堵）；E 源经 T6（pod-coordination §2d 叫停协议 + 启动卡会话标识）。OQ-3 裁 (c)：图索引规则零修订（本条 A 段「图索引是大头」叙事与 SKILL 步骤 5「快照导入分钟级」的矛盾按「疑似快照流漂移、留根观察」处理——实测超 10 分钟登记 tech 域新条目）。凭据：PROPOSAL FROZEN v0.3（8d130a6）+ R1 GREEN（0 blocking）+ landing-verdict PASS。

@@ -239,7 +239,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 `dev-loop.md` §0 声明 progressive rigor，本节给出字段级定义。TaskPackage 用 `rigor` 字段标档：`"rigor": "lite" | "full"`（缺省按 full 既有逻辑走；存量无 `rigor` 的包不追溯，校验白名单放行）。
 
-**Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。** 验收先行、红基线、verifier 证据、closeout、supervisor 合并门——一道都不跳。
+**Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。** 验收先行、红基线、verifier 证据、closeout、supervisor 合并门——一道都不跳。`rigor=lite` 另承载**快路径**执行语义（launch 面环境后置 + verify 面 firmware-build scoped 相位后置，final 恒跑）——资格判注与例外声明见 [change-triage.md](change-triage.md) §7「lite 快路径」，launch 面机制见 `kidpal-pod-launch-prep` SKILL 的 lite 分支；本节字段级定义本体不受影响。
 
 - **不可省**（守 dev-loop 铁律）：`changeId` / `rigor` / `sourceType` / `sourceRefs` / `riskTier` / `gateProfile` / `story` / `planRef` / `acceptance`（含红基线）/ `exitCriteria` / `crossEnd` 骨架（T5，260908-gov-review-input-surface-frontload：动机包本身即 Lite，Lite 豁免这条就等于放过动机案例）/ `scope` / 合并门。
 - **可省/简化**：**仅 bug 类（非 proposal 来源）**的 `decisionCoverage`（**proposal 来源含 Lite 仍必填不豁免，见下**）、design-review/security 重闸（按 riskTier 关）、多包依赖图（`mergeOrder`/`dependsOn`/`acceptanceIdMap`）、`fixBudget` 调小。

@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 21（待拍板 0 / 待触发 19 / 已接受风险 2）；已结 84（归档索引见下）。
+**摘要**：未结 19（待拍板 0 / 待触发 17 / 已接受风险 2）；已结 86（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（19）
+## 待触发（17）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -34,8 +34,6 @@ _（无）_
 | [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
-| [ARQ-261015-launch-prep-host-only-env-defer](ARQ-261015-launch-prep-host-only-env-defer.md) | SHOULD | launch-prep 对 host-only 可验 Lite 包缺「环境后置」快路径——前置整套固件环境等价化对不依赖 IDF 的包是纯开销，每树重复收取 | 下一个 host-only 可验 Lite 包 triage/拉起前；或下一治理批顺带 |
-| [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | SHOULD | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 下一治理批完整设计「lite 快路径」时（或 human 明确推进 lite 包执行优化） |
 
 ## 已接受风险（2）
 
@@ -44,10 +42,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（84）
+## 已结（86）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 84 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 86 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 84 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 86 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -95,3 +95,5 @@
 | [ARQ-260929-competence-anchor-rework-evidence](ARQ-260929-competence-anchor-rework-evidence.md) | 能力透镜锚缺位——acceptance-author 断言可满足性/seam 闭环返工复发 + portfolio-planner 影响面枚举漏扫，def 无专业透镜行 | 2026-09-29 | 260929-gov-review-agent-def-alignment 批 landing（commit d5927e8）随 T8 落字核验在位：acceptance-author.md Process 6b「断言设计透镜」（两向可满足性推演 + fixture 自含性 + seam 驱动/消费闭环 + host/真机近似假设显式化）与 portfolio-planner.md Step 2a「影响面机械辅证」（trace_path / get_architecture 交叉验证、禁脑内清单）均已落，Leading Words 一行式、语义引用不复制，与建议改动一致。主线程按批闭卷翻 closed。 |
 | [ARQ-260929-docs-sync-spec-handoff](ARQ-260929-docs-sync-spec-handoff.md) | docs-sync 对 spec 面写权缺口——human 裁 integrator 对 requirements/architecture 零写权，spec 文本同步交 architect 承接 | 2026-09-29 | 260929-gov-review-agent-def-alignment 批 landing（commit d5927e8）随 T2 落字核验在位：scope-map integrator.allow 已去 docs/systems/** 且未增 spec 文件；integrator.md docs-sync 句已含「spec 面漂移 → 交 architect、零自改」；architect.allow / review-moderator.allow 换授两 spec 文件同批落地。按条目自设关闭条件（批 landing 后翻 closed）主线程翻闭；新流向首次实走待下一个触 spec 文档同步的 dev 包。 |
 | [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 2026-10-15 | 261015-gov-review-face-loop-unify T23（第三路径 repurposing 结项，human 立项 ack + R3 GREEN 2026-10-15） |
+| [ARQ-261015-launch-prep-host-only-env-defer](ARQ-261015-launch-prep-host-only-env-defer.md) | launch-prep 对 host-only 可验 Lite 包缺「环境后置」快路径——前置整套固件环境等价化对不依赖 IDF 的包是纯开销，每树重复收取 | 2026-10-15 | — |
+| [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 2026-10-15 | — |
