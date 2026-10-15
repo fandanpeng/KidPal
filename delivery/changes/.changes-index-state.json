@@ -265,5 +265,9 @@
   "261014-gov-review-dev-lane-merge-taskpackages": {
     "date": "2026-10-14",
     "mergedInMain": "yes"
+  },
+  "261015-gov-review-face-loop-unify": {
+    "date": "2026-10-15",
+    "mergedInMain": "yes"
   }
 }
