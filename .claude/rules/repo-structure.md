@@ -12,7 +12,7 @@ paths:
 
 | 区 | 拥有者 | 放什么 | 永不允许 |
 |---|---|---|---|
-| `docs/contracts/**` | 契约门 | 笔顺 JSON / display 响应块 / 课表 MD / shim API 的权威定义（单一事实源 interface-contract.md） | 任何会话直改（改动走 architect-reviewer 四分类 + human 契约门）；在根级新建 `contracts/**`（影子目录） |
+| `docs/contracts/**` | 契约面（写冻结防线） | 笔顺 JSON / display 响应块 / 课表 MD / shim API 的权威定义（单一事实源 interface-contract.md） | 任何 agent 直改（改动走 `/arch-change` loop；合并过机械凭据闸 `pre-merge-escalation-gate.mjs`——261015 批起无人签门）；在根级新建 `contracts/**`（影子目录） |
 | `docs/` 根 | 主线程（治理批 landing） | 仅白名单内的正式顶层文档（见下） | 在 `docs/` 根新建白名单外文件 |
 | `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
 | `docs/ui/` | 设计 | UI 设计稿与 brief：kidpal-ui-design HTML、UIUX-DESIGN-BRIEF、brand-spec | 把设计稿当实现代码改（设计稿是资产管线的母版） |
@@ -56,6 +56,6 @@ paths:
 
 ## 工作产物去哪
 
-- 治理 / spec 变更过程产物 → `delivery/changes/arch/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件）。
+- 治理 / 架构 / 契约面变更过程产物 → `delivery/changes/arch/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件；轻路径批 = 瘦制品五件）。入口 = `/arch-change`（架构+契约面）、`/gov-change`（治理面）。
 - dev-loop 过程产物 → `delivery/taskpackages/<change-id>/`（包全程唯一家：生前 plan / briefs / verify 证据与身后收尾制品同目录，一包一目录读齐；晋升环节已由 261014-gov-review-dev-lane-merge-taskpackages 撤销）。
 - 模拟器/管线的构建产物 → 不进仓（`.gitignore` 已覆盖 `tools/**/node_modules/`、模拟器 Output）。

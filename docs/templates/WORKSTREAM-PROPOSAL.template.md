@@ -61,7 +61,7 @@ upstreamRefs: [<触发来源：retro / ARQ / human 指示记录路径>]
 | 裁定 | 内容 | spec 关系 | 说明 |
 |---|---|---|---|
 | <OQ/裁定 id> | <裁定内容> | `within-spec` | spec 已定此语义，裁定只选实现路径——引 spec 条款号：<requirements/architecture §x.y> |
-| <裁定 id> | <裁定内容> | `需修订` | 裁定要改 spec 已钉死的语义 → 必须先走 spec 修订流程（Track B `/arch-change` → 对抗 review → human 冻结）；修订落点随语义面二分（story 语义 → `requirements.md`、支撑语义 → `architecture.md`）。**执行语义 = 受影响包的硬 launch 依赖**：登记到该包 `launchPreconditions`（粒度 = 包，经 decision-coverage 映射，非整 workstream 陪等）；spec 修订未冻结，承载该裁定的包不得 launch（convention + 人读核验，见 `pod-coordination.md` §2b）。spec 修订在本件冻结后尽早并行发起。 |
+| <裁定 id> | <裁定内容> | `需修订` | 裁定要改 spec 已钉死的语义 → 必须先走 spec 修订流程（走 `/arch-change` loop；方向未收敛升 Track A 段对抗收敛；human 冻结）；修订落点随语义面二分（story 语义 → `requirements.md`、支撑语义 → `architecture.md`）。**执行语义 = 受影响包的硬 launch 依赖**：登记到该包 `launchPreconditions`（粒度 = 包，经 decision-coverage 映射，非整 workstream 陪等）；spec 修订未冻结，承载该裁定的包不得 launch（convention + 人读核验，见 `pod-coordination.md` §2b）。spec 修订在本件冻结后尽早并行发起。 |
 | <裁定 id> | <裁定内容> | `spec-silent` | spec 未载此事——留根登记，由门 1 或收口定是否补进 spec。 |
 
 ### 3.2 human 取舍点（OQ）与裁定
@@ -74,7 +74,7 @@ upstreamRefs: [<触发来源：retro / ARQ / human 指示记录路径>]
 
 ### 3.4 逃生门申报
 
-实现期发现与 spec / 契约冲突时的出口（走 `/arch-change` 判级 + human 冻结；契约面走 architect-reviewer 四分类 + 人类契约门），不在 Pod 内自裁。
+实现期发现与 spec / 契约冲突时的出口（走 `/arch-change` 判级 + human 冻结；契约面走 architect-reviewer 四分类后随批原子落，无人签门），不在 Pod 内自裁。
 
 ## 4. 拆包预判（意图提示，非权威）
 

@@ -1,0 +1,28 @@
+执行时间: 2026-10-15 (builder 第一方实跑, 独立冒烟通道; planner 依派单纪律代落盘——mutation-evidence/ 目录非 builder 写权, 原始输出由 builder 交付报告逐字转存)
+命令行: cd firmware/main/test/acceptance/red-baseline && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- gcc -I. -o /tmp/vrl_mut_runner ../../voice_rightcol_label.acceptance.c runner.c ; 仓根下 MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- /tmp/vrl_mut_runner
+变异内容 (M1, VR-A1): g_kidpal_voice_echo_label 宽度 196 回退 264（lcd_display.cc, 其余两处 196 不动）
+期望红: VR-A1 正向齿红（W=264 超上界）+ VR-A4 反证齿同源红（264 销账行数=1）; 其余齿绿
+
+=== MUTATION STATE RUN ===
+BUILD_EXIT=0
+Running 语音轮右列 label 宽度源锚: echo 回显区 188..196 (VR-A1) ...     FAIL: VRL-A1 RED: g_kidpal_voice_echo_label 字面宽度 W=264 超上界 196——右列容器收窄 196（x=192, 宽 400-192-12, pad_all=0）后 label 仍按旧版式 264 换行, 每行右端约 68px 被容器视口裁剪（human 真机实证行尾字被裁; TaskPackage 261015-voice-rightcol-label-overflow VR-A1; 修复 = 字面宽度收进区间 [188, 196]）
+  -> FAIL
+Running 语音轮右列 label 宽度源锚: answer 问答框 188..196 (VR-A2) ... PASS
+Running 语音轮右列 label 宽度源锚: header 标头 188..196 (VR-A3) ... PASS
+Running 语音轮右列 264 旧值销账反证齿+扫描器自检 (VR-A4) ...     FAIL: VRL-A4 RED: lcd_display.cc 仍有 1 行 lv_obj_set_width 调用携带 264 字面——264 旧版式遗留值未销账（右列容器收窄 196 后 label 宽 264 = 每行右端约 68px 被裁, human 真机 bug 本体数值; TaskPackage 261015-voice-rightcol-label-overflow VR-A4; 三处调用点 264 -> [188, 196] 全部销账后转绿; 变异取证口径: VR-A1/A2/A3 各回退 264 时本齿与对应正向齿同源双红)
+  -> FAIL
+-----------------------
+4 Tests 2 Failures
+RUN_EXIT=2
+
+=== RESTORED, GREEN RE-RUN ===
+BUILD_EXIT=0
+Running 语音轮右列 label 宽度源锚: echo 回显区 188..196 (VR-A1) ... PASS
+Running 语音轮右列 label 宽度源锚: answer 问答框 188..196 (VR-A2) ... PASS
+Running 语音轮右列 label 宽度源锚: header 标头 188..196 (VR-A3) ... PASS
+Running 语音轮右列 264 旧值销账反证齿+扫描器自检 (VR-A4) ... PASS
+-----------------------
+4 Tests 0 Failures
+RUN_EXIT=0
+
+turnedRed: true（VR-A1 正向齿 + VR-A4 反证齿同源双红, 红名 verbatim 在上）

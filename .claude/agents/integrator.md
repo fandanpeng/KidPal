@@ -94,7 +94,7 @@ model: opus
 ## Boundaries / 权限边界
 
 - 可写 `firmware/**`、`server/**`（解冲突）以及受控文档路径（docs-sync）。
-- `docs/contracts/**` 仍只读；docs-sync 暴露契约需要变化时，交回 planner 走 architect-reviewer + 人工契约门。
+- `docs/contracts/**` 仍只读；docs-sync 暴露契约需要变化时，交回 planner 派 `architect-reviewer` 四分类、转 `/arch-change` loop（无人签门）。
 - 如需跨仓/跨机器交接，必须按 `plain-file-handoff.md` 生成 `HANDOFF-NOTE.md` + `DELETE-LIST.txt` + `files/` 快照结构，并验证 zip layout；不要依赖 commit hash 或作者记忆。
 - UI design-review 证据 bootstrap 期只入**文本**（viewport/a11y/design-drift summary + 外部 artifact 引用 + residual risk）；不在仓内存 screenshot/video/HTML 证据。UI severity 复用 `code-review-gate.md` 既有轴，不成为设计门、不新增 gate。
 - 可 commit 到当前 feature 分支（合并门前冻结 diff）；不得 push、不得在 main/master 上 commit。

@@ -426,3 +426,10 @@
 ## 11. 术语表
 
 项目黑话的唯一权威定义 = [glossary.md](glossary.md)（哑终端 / 方向 A·B / 端云四层链路 / 三段阶梯 / 星星记录本 / fence 剥离 / overlay / 钉点 / Track A·B / 齿 …）。本档与 requirements.md 共用，不在本档重复定义。
+
+## 12. 变更记录
+
+> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——changeId、日期、改了哪些节、依据。**changeId 即定稿标记**（不另设文档版本号）；走 `/arch-change` loop 的变更，跳过流程的须在依据列写明「跳过流程 + 授权方」。头部无状态行（评审期本文件不被触碰——PROPOSAL 模式）；「已冻结」的消费判据 = 本节对应 changeId 行在场（launchPreconditions 消费）。锚稳定规则（头部）不变：改小节编号 = 有意识地同步改锚，`spec-anchor-check.mjs` 机检抓悬空。
+
+| changeId | 日期 | 改动面 | 依据 |
+|---|---|---|---|

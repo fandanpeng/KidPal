@@ -67,7 +67,7 @@
 | 源路径 | 处置 |
 |---|---|
 | 对抗链 agents 8 个（architect / architect-reviewer / review-moderator / scenario-author / challenger / defender / adjudicator / landing-verifier） | 复制。逐文件按 P1/P2/P5 替换路径表述（见 §6 隐性假设清单） |
-| commands：`arch-change` / `review-arch` / `review-governance`（档 2 再加 `build-feature` / `triage-change` / `loop-retro`） | 复制 + 路径适配 |
+| commands：`arch-change` / `gov-change` / `requirement-change`（再加 `build-feature` / `triage-change` / `loop-retro`） | 复制 + 路径适配（261015 批后名册） |
 | rules：`authoring-agents-skills` / `prompt-authoring` + **按 P2 重写 `contracts.md`**（契约规则强绑契约面形态，必须新写不能复制） | 复制/新写 |
 | references 引用闭包 | **grep 驱动收集**（见 §6）：arch 链需要 `arch-review-protocol` / `arch-review-rubric` / `arch-scenarios` / `architect-operating-model` / `architecture-decisions` / `change-triage` / `contract-change-evidence` / `plain-file-handoff` / `track-b-judge-brief` / `track-b-verifier-brief` 等 |
 | skills（除本项目专属运维件外基本可全搬） | 复制后 grep 扫一遍命令示例里的项目名/符号名（见 §6） |

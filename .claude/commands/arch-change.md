@@ -1,45 +1,22 @@
 ---
-description: 架构/治理变更统一入口（Track A）（对偶 /build-feature）。把 plan mode 产出的想法交给对抗 review loop 自动跑：分类（spec/governance/mixed + 是否触契约）→ 派 architect 起草候选 → architect-reviewer 契约预审 → 路由进 spec profile 或 governance profile 跑完整 review → 落地低影响 spec / 出 decision packet 交 human。
-argument-hint: <plan 或想法，例如 "把 S1 线索意图改成 X" 或 "收窄 planner 的 write scope" 或 delivery/changes/arch/gov-review-<id>/PROPOSAL.md 路径>
+description: 架构+契约面变更 loop 入口（对偶 /requirement-change、/gov-change）。驱动一个架构或契约变更走面内 review loop：立项（human 裁意图 + 收敛度判断）→ 方向不清走 Track A 段（对抗收敛）→ architect 起草 → architect-reviewer 四查（恒定，改一个字也审）→ 轻/主判档 → 瘦制品过闸或 Track B 后端落地；触契约携带契约包随批原子落，无人签门。
+argument-hint: <human 意图原话，例如 "把首页「接下来」区改成三行清单显示">
 ---
 
 # /arch-change
 
-> **本命令 = Track A 全套对抗机器入口**。默认路由 = Track B 常驻轻路径（`AGENTS.md`「治理路由」节）；启动本命令前确认命中升级判据（[arch-review-protocol.md](../references/arch-review-protocol.md)「双轨路由」节）或 human / architect 已声明红队。
-
-你现在是 **review-moderator（主线程编排者）**。按 `.claude/agents/review-moderator.md` 的规则推进。
-这是架构/治理变更的**统一自动化入口**，对偶 dev-loop 的 `/build-feature`：人把 plan mode 产出的想法交给你，剩下的分类、起草、对抗 review、落地你自动串起来跑。
-
-- 它**不判实现**（实现走 `/build-feature`），**不改 `docs/contracts/**`**（走契约门）。
-- 你**编排但不判**：找洞归 `challenger`、裁定归 `adjudicator`、起草归被你派发的 `architect`（作者≠判官，对偶 dev-loop builder≠verifier/supervisor）。
-- profile 已知时可用直达命令 `/review-arch <spec>`、`/review-governance <治理变更>` 跳过分类。
-
-本次输入 plan：
+你现在**主线程编排者**（四面纯编排：派发 / 落地 / 状态翻转 / 记账，**不起草变更内容**）。按 `.claude/references/arch-change.md`（流程 SSOT）推进。
 
 > $ARGUMENTS
 
-逐步执行，并在每一步显式说明「派给谁、为什么、期望产物」：
+逐步执行，并在每一步显式说明：
 
-1. **Intake + 分类（phase-0）**：读 plan，判 **主 lane** 与 **contract-touching flag**：
-   - **spec**：触 `docs/requirements.md` + `docs/architecture.md`（KidPal canonical spec）的意图 / 行为 / 拓扑 / 边界 / 阶段（将来若立 L0 级蓝图文件，是 spec 特例，不自动落地）。
-   - **governance**：触 `.claude/{agents,commands,references,rules,skills}`、`scope-map.json`、`*.settings.json`、`hooks/**`、`scripts/**`、或指令根（AGENTS / CLAUDE / DEV-GOVERNANCE）。治理面定义 + 四元组 + G1–G4 见 [docs/DEV-GOVERNANCE.md](../../docs/DEV-GOVERNANCE.md)。
-     - **UIUX** 不是第 3 个对抗 profile、也不是 phase-0 的新分类分支：它是一个**携带 UIUX 轴集**的 governance-lane 变更，在既有 governance profile 下审。轴集 = 流程覆盖、page map、IA/导航、状态矩阵、共享组件复用、a11y/响应式、可切片性（结构/可执行性，**不判审美**）。视觉审美/品牌是**人类品味决策**，不由机器裁定。系统级 UIUX blueprint 的起草执行已接线 = requirement-change loop 档 2 的 `uiux-author` 生成模式（主线程派，见 requirement-change.md 档 2 流程 4b）——本命令只审 UIUX 轴集、不派起草执行。
-   - **contract-touching flag**：plan 是否实际触 `docs/contracts/**`（shim API / display 块 / 笔顺 JSON / 课表 MD）—— 这是**横切标记**，不是独立 lane；命中则在所属 profile 内触发 `architect-reviewer` 路由。
-   - **mixed**（命中 >1 lane）：用 AskUserQuestion 呈现分类，**默认建议拆成两次 `/arch-change` 跑**（spec 一次、governance 一次），除非强耦合到必须同一 PR 原子落地；由 human 定。
-   - **纯契约面**（`docs/contracts/**`，无 spec/governance 配套）**：不在本命令处理 —— 直接派 `architect-reviewer` + 人类契约门，告知用户走契约门，本命令收尾。
-   分类结果**必须显式展示给用户**；含糊时用 AskUserQuestion 确认，别猜。
-   - **review-depth（stage 2，lane 定后判；本段 = Track A 内部 G 层路由）**：`lightweight-architect-review` vs `full-adversarial`。**lightweight 仅限小/低风险 G2**（G1 指令根 + G3 强制层新 idea 恒 full-adversarial + human，永不 lightweight）。lightweight 快道：派 `architect-reviewer` 判 eligibility（4 裁断 LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED，机检硬排除 vs 主观残留）→ 若 `LIGHTWEIGHT_OK` 则你**独立复判 eligibility**（非 pass-through，作者≠判官保全）→ 通过后**由主线程 packet-bound landing（landing-manifest 绑定）** → 记 lightweight 证据（`lightweight-intake.md` / `architect-reviewer-verdict.md` / `architect-landing-summary.md` / 验证）。不达判据 → `full-adversarial`（下面步骤 3–7）。详见 [arch-review-protocol.md](../references/arch-review-protocol.md)「Review-depth 分类 + Lightweight path」（Track A 触发时适用；默认路由 = Track B，见「双轨路由」节）。
-2. **归一制品目录**：spec profile → `delivery/changes/arch/arch-review-<slug>/`；governance profile → `delivery/changes/arch/gov-review-<id>/`。
-3. **派 architect 起草候选**（作者阶段，对偶 dev-loop builder）：派 `architect`（起草 subagent）→ 产出**候选**：
-   - **spec lane** → spec 草案 / 候选修订写入 `docs/requirements.md` + `docs/architecture.md`（**写入不等于 spec 已冻结**）。
-   - **governance lane** → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`（**不落 G1/G2/G3 canonical**）。
-   - architect 只起草候选、准备 review 背景 / 候选关注点 / 历史 canary 线索；**不写冻结 charter、不自评 spec 可冻结、自改递归仍须 human**。
-4. **契约预审（仅当 contract-touching）**：派 `architect-reviewer` 四分类；`SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED` → 停在人类契约门，配套 spec / proposal 暂存 packet 不单独落地（原子性：与契约改动同一 PR）。
-5. **路由进 profile 跑完整 loop**：按分类进入 spec profile 或 governance profile，按 `.claude/agents/review-moderator.md` Process 推进：`scenario-author` 冻 charter → `challenger`↔`defender` 辩论内循环（你驱动，**禁止嵌套派生**）→ `adjudicator` 裁定 + 标 outcome → 级联续问穷尽。全程维护 `debate-log.md`。
-6. **落地 / 收口（profile 分叉）**：
-   - **spec profile**：低影响 CONFIRMED + 明确改法 → 你直接落设计层 spec（`docs/requirements.md` / `docs/architecture.md`）；高影响 / 跨系统 / deadlock / L0 → AskUserQuestion 交 human（**建议即地板**）。过 pass-oracle 5 关（+ handoff 出口）方可标 spec「可冻结」；需实现侧修复 → 产 `dev-loop-handoff.json` 交 `/build-feature`。
-   - **governance profile**：**不落任何 canonical**；confirmed 治理改法写进 `decision-packet.md`（目标文件 / 改法 / 影响面 / 是否触自改递归·契约·强制层 / 推荐）；治理默认高影响，AskUserQuestion 交 human；改 agent 定义 / 自改递归 / 强制执行层 / 指令根**必 human**。过 governance pass-oracle 6 关方可标「可批准」，human 批后**先定稿冻结 PROPOSAL（architect 回灌改法 → human 冻结 → 你核验 + `proposal-consolidation-check.mjs`）再由主线程 packet-bound canonical landing → 主线程派 `landing-verifier` 独立核验落地保真（`landing-fidelity-check.mjs` + 逐文件 diff，写 `landing-verdict.md`），verdict 绿才 human merge**（见 `arch-review-protocol.md`「Governance profile 定稿」）。
-7. **收尾**：确认 `adjudicator` 已将制品**写到 reviewDir 磁盘**——`findings.md` + `review-packet.md`（governance 另加 `decision-packet.md`）+ 按域写出的 debt 账本条目（`docs/debt/{gov,tech,requirement}/`，写完跑过 `node .claude/scripts/debt-render.mjs`），`debate-log.md` 齐备，返回只给结构化摘要；任一制品仅以文本返回 → 退回 adjudicator 重写盘，不收口。任一 pass-oracle 关 RED → 退回重跑，不放过。
+1. **立项**：human 裁意图 + **收敛度判断**（方向清晰 → 直接起草审稿；方向未收敛〔该不该变、收益与影响看不清〕→ Track A 段）。带 spine 调用时开场先读 faceMap/facePlan，不得要求 human 重述意图。缺意图 fail-closed，AskUserQuestion 问。
+2. **Track A 段（仅命中判据时）**：派 review-moderator 跑对抗机器（architect 起草候选 → scenario-author 冻 charter → challenger↔defender → adjudicator 裁定 → human 拍方向）；收敛后流回步骤 3，内容不再重复四查。
+3. **起草**：派 `architect` 起草 PROPOSAL 改法集（输入显式含 human 原话 / spine sources / 讨论记录；触契约则含契约包三节）。
+4. **审稿**：派 `architect-reviewer` 四查 + 判档（轻/主路径，判据见 SSOT；**只升不降**）。不过否回循环至过（architect 再改）。
+5. **落地**：轻路径 = 瘦制品五件过闸（瘦 PROPOSAL + §7 GREEN + landing-manifest + 瘦 landing-summary + landing-verdict；retro 豁免）；主路径 = Track B 后端全件（FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main）。
+6. **触契约分支**：契约包三节并入 PROPOSAL 随批原子落；合并过机械凭据闸（`pre-merge-escalation-gate.mjs`），**无人类签字门**。
+7. **记账收尾**：`node .claude/scripts/changes-index.mjs --upsert <changeId>`；跨面 → `change-intake.md` 建 spine 回填 `anchors.arch`。
 
-> mixed 强耦合必须同一 PR 时：同一会话**先跑完 spec profile 落地，再跑 governance profile**；否则拆两次会话。
-> 你不改 `docs/contracts/**`、不自动改 L0 蓝图、不落 G1/G2/G3 canonical、不直推 main、不自评通过、不替 human 拍板。
+你不起草变更内容、不改 reviewer 判决、不跳否回循环；实现面变更转 `/triage-change`；治理面变更转 `/gov-change`。

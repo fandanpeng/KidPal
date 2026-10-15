@@ -7,7 +7,7 @@
 
 - **铁律：只要改自有实现面（固件业务 + 云端 shim）行为，再小也过门。** 入口不分大 feature / 小 feature / bug。（档 1 期间 dev-loop 未迁，本门完整生效待档 2。）
 - **地板（免门，形状①直接修）**：仅**不改实现面行为**（docs/typo/只读探索）或人类明确跳过 → 不进此门。
-- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中升级判据（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` Track A/契约门），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/arch-change` 治理 profile。
+- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中触面事实（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` loop），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/gov-change`。
 
 ## 1. 角色与写域（写域零扩张）
 
@@ -24,7 +24,7 @@
 |---|---|---|
 | **③ 拆包** | 跨多切片 / 需多 Pod / 迁移 / 高风险大 feature | reviewed plan → `delivery/workstreams/<ws>/PROPOSAL.md`（人类冻结）→ portfolio-planner 拆 N 包 |
 | **② 单包 Full** | 单切片但 high/critical（触 security 轴 / 真 DB / 状态机 / AI 成本审计）| reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Full |
-| **② 单包 Lite** | 单一来源/紧耦合小簇 · 单 owning 包 · 无悬挂契约决策 · 无迁移删数 · 一轮收 | reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Lite |
+| **② 单包 Lite** | 单一来源/紧耦合小簇 · 单 owning 包 · 无悬挂契约决策 · 无迁移删数 · 一轮收 ⇒ 快路径默认适用（§7） | reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Lite |
 | **① 直接修** | 不改 apps 行为 / 人类明确跳过 | 不进 loop（地板） |
 
 **小 feature 与小 bug 合流为同一档（②单包）**：执行形状相同（单 Pod 单 TaskPackage 跑 dev loop），仅以 `sourceType`（feature→`proposal`/`human-ad-hoc`；bug→`regression`/`ci-failure`/`drift-report`；`human-confirmed-plan` 归 artifact-lifecycle origin.type，不预支）与 `plan.md` 内容框架（feature 写"建什么+方案"，bug 写"根因假设+修复+影响面"）区分。
@@ -95,11 +95,19 @@
 
 ## 6. 逃生门（reviewer-first，F10）
 
-分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + **停、升级 `delivery/changes/arch/` full-adversarial**。dev 分流门无权批准事实源变更，不越权。
+分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `ACCOMPANIES_SPEC_CHANGE`/`SPEC_CONTRACT_DRIFT`/`CONTRACT_CHANGE_REQUIRED` 转 `/arch-change` loop（契约变更 = 架构变更的一种；本门无权批准）。dev 分流门无权批准事实源变更，不越权。
 
 ## 7. Lite TaskPackage 字段级定义
 
 Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。字段级定义（不可省 / 可省、`rigor` 字段、`planRef`、decisionCoverage 与 rigor 关系）见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「rigor 字段与 Lite TaskPackage 字段级定义」。
+
+### lite 快路径（261015-gov-review-lite-fast-path T1）
+
+`rigor=lite` ⇒ **快路径默认适用**（launch 面环境后置 = `kidpal-pod-launch-prep` SKILL lite 分支；verify 面 firmware-build scoped 相位后置 = verify-gates.json defer 字段、final 相位恒跑）。机器只读 rigor，无独立资格字段。
+
+**triage 判注义务**：architect 判 lite 时，rationale 须含一句「host 齿可闭环」确认（验收内循环可在 host_app target / server pytest 闭环）；若判 lite 但设备编译面深（host_app target 盖不住的 seam，如触设备专有编译单元），须注明「快路径不适用、按 full 环境备」——launch/verify 快路径对注明的包不生效。
+
+**复议触发器（YAGNI）**：出现首个真实「full 但 host 可闭环」的包时，再评是否立独立资格字段（落新 ARQ 条目），本批不预设。
 
 ## 8. proposal 合法路径
 

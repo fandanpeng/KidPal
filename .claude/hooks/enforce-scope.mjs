@@ -9,8 +9,13 @@
 //   - 钩子在子 agent 内触发时，输入里带 agent_type；主线程/人类没有该字段。
 //   - PreToolUse 以 exit 2 拦截，stderr 内容回灌给模型作为拒绝原因。
 
-import { readFileSync } from 'node:fs';
-import { resolve, relative, sep } from 'node:path';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve, relative, sep } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const scriptPath = fileURLToPath(import.meta.url);
 
 function readStdin() {
   try {
@@ -118,6 +123,59 @@ function extractBashWriteTargets(cmd) {
   return [...targets];
 }
 
+// ── worktree 感知重锚（261015-gov-review-lite-fast-path T5）──
+// rel 锚定原假设单树（CLAUDE_PROJECT_DIR）；worktree 池化（260915 批）后「本仓」= 主 checkout + 多棵在册树。
+// 目标路径落在本仓（同 common dir）任一在册树 → rel 重锚到该树、读**该树**的 .claude/scope-map.json 判定
+// （Bash 重定向分支与 Edit/Write 分支同走重锚）；目标树 scope-map 缺失/不可读 = fail-closed 拦截（不向宽）；
+// 非本仓路径（c:\tmp、异仓）行为不变。定位纯 fs（.git 文件/目录 + worktrees gitdir 映射），不 spawn git——钩子是热路径。
+function locateGitTree(startPath) {
+  // 从起点自身开始向上探（起点可以是目录——homeProjectDir 的 .git 在其自身内；也可以是不存在的文件路径——
+  // join(file, '.git') 恒不存在，自然落到 dirname 继续）。
+  let cur = startPath;
+  for (;;) {
+    const dotGit = join(cur, '.git');
+    if (existsSync(dotGit)) {
+      if (statSync(dotGit).isDirectory()) {
+        return { treeRoot: cur, commonDir: dotGit }; // 主 checkout
+      }
+      const m = /^gitdir:\s*(.+)\s*$/.exec(readFileSync(dotGit, 'utf8'));
+      if (m) {
+        const gitdir = resolve(cur, m[1].trim()); // <commonDir>/worktrees/<name>/gitdir
+        // commonDir = gitdir 上三级（…/worktrees/<name>/gitdir → …/worktrees/<name> → …/worktrees → <commonDir>）
+        return { treeRoot: cur, commonDir: dirname(dirname(dirname(gitdir))) };
+      }
+    }
+    const parent = dirname(cur);
+    if (parent === cur) return null; // 到达盘根仍未找到
+    cur = parent;
+  }
+}
+
+function samePath(a, b) {
+  return resolve(a).replace(/[\\/]+$/, '').toLowerCase() === resolve(b).replace(/[\\/]+$/, '').toLowerCase();
+}
+
+// 返回 { mode: 'legacy' }（本树 / 非本仓路径——行为不变）| { mode: 'anchor', treeRoot, map }（在册兄弟树重锚）
+// | { mode: 'fail-closed', reason }（目标树 scope-map 缺失/不可读——拦截并点名）。
+function anchorForTarget(absPath, homeProjectDir) {
+  const home = locateGitTree(homeProjectDir);
+  if (!home) return { mode: 'legacy' };
+  const target = locateGitTree(absPath);
+  if (!target || !samePath(target.commonDir, home.commonDir)) return { mode: 'legacy' }; // 非本仓路径
+  if (samePath(target.treeRoot, home.treeRoot)) return { mode: 'legacy' }; // 本树 → 原逻辑
+  const mapPath = resolve(target.treeRoot, '.claude', 'scope-map.json');
+  let map;
+  try {
+    map = JSON.parse(readFileSync(mapPath, 'utf8'));
+  } catch {
+    return {
+      mode: 'fail-closed',
+      reason: `scope(anchor): 目标树 ${target.treeRoot} 的 .claude/scope-map.json 缺失或不可读——跨树重锚 fail-closed（261015-gov-review-lite-fast-path T5，不向宽）。`,
+    };
+  }
+  return { mode: 'anchor', treeRoot: target.treeRoot, map };
+}
+
 function main() {
   const raw = readStdin();
   let input;
@@ -140,41 +198,47 @@ function main() {
   //    build/install 会写 allow 外的产物目录，故 Bash 只拦「任何 agent 都不该用 shell
   //    重定向写」的少数结构面；程序内部 fs 写入不受此限（命令串里看不到路径）。
   if (input?.tool_name === 'Bash') {
-    const denyList = map.universal?.bashDenyWrite;
-    if (denyList && denyList.length) {
-      const cmd = input?.tool_input?.command || '';
-      for (const tgt of extractBashWriteTargets(cmd)) {
-        const absT = resolve(input.cwd || projectDir, tgt);
-        const relT = relative(projectDir, absT).split(sep).join('/');
-        if (matchesAny(relT, denyList)) {
-          block(
-            `scope(universal): 禁止用 Bash 重定向写 ${relT}（universal.bashDenyWrite——契约冻结 / 强制层结构红线）。` +
-              `改写这些面请用受门的 Write/Edit（各有 per-agent allow + settings.deny 把关），不要用 cat >/tee/重定向绕过。`,
-          );
-        }
+    const cmd = input?.tool_input?.command || '';
+    for (const tgt of extractBashWriteTargets(cmd)) {
+      const absT = resolve(input.cwd || projectDir, tgt);
+      const anchor = anchorForTarget(absT, projectDir);
+      if (anchor.mode === 'fail-closed') block(anchor.reason);
+      const baseDir = anchor.mode === 'anchor' ? anchor.treeRoot : projectDir;
+      const denyList = (anchor.mode === 'anchor' ? anchor.map.universal?.bashDenyWrite : map.universal?.bashDenyWrite) || [];
+      if (!denyList.length) continue;
+      const relT = relative(baseDir, absT).split(sep).join('/');
+      if (matchesAny(relT, denyList)) {
+        block(
+          `scope(universal): 禁止用 Bash 重定向写 ${relT}（universal.bashDenyWrite——契约冻结 / 强制层结构红线；跨树写按目标树 scope-map 判定）。` +
+            `改写这些面请用受门的 Write/Edit（各有 per-agent allow + settings.deny 把关），不要用 cat >/tee/重定向绕过。`,
+        );
       }
     }
     process.exit(0);
   }
 
-  // ── Edit/Write/MultiEdit 分支（既有 per-agent 逻辑）
+  // ── Edit/Write/MultiEdit 分支（既有 per-agent 逻辑 + T5 跨树重锚）
   const filePath = input?.tool_input?.file_path;
   if (!filePath) process.exit(0); // 该工具调用没有目标文件路径
 
   const abs = resolve(input.cwd || projectDir, filePath);
-  const rel = relative(projectDir, abs).split(sep).join('/');
+  const anchor = anchorForTarget(abs, projectDir);
+  if (anchor.mode === 'fail-closed') block(anchor.reason);
+  const baseDir = anchor.mode === 'anchor' ? anchor.treeRoot : projectDir;
+  const effMap = anchor.mode === 'anchor' ? anchor.map : map;
+  const rel = relative(baseDir, abs).split(sep).join('/');
 
   // 通用结构红线：不分 agent，对所有会话（含普通会话 / 主线程 / 人类）生效。
   // 防止 docs/ 顶层被工作产物淹没、防止影子 docs/contracts/。
-  if (map.universal) {
-    const reason = checkUniversal(rel, map.universal);
+  if (effMap.universal) {
+    const reason = checkUniversal(rel, effMap.universal);
     if (reason) block(reason);
   }
 
   const agent = input.agent_type;
   if (!agent) process.exit(0); // 主线程 / 人类：per-agent 边界不约束（仍受上面的 universal + settings.deny）
 
-  const agents = map.agents || {};
+  const agents = effMap.agents || {};
   // 大小写归一：scope-map 的 agent key 全小写；runtime 若传大小写变体（如 "Architect"）
   // 不能借此逃逸 per-agent 边界（gov-review-arch-change-autorun F3）。
   const agentKey = String(agent).toLowerCase();
@@ -196,4 +260,68 @@ function main() {
   process.exit(0);
 }
 
+// ── self-check（261015-gov-review-lite-fast-path T5 新建；argv 触发型，entry 集成臂——temp dir 假树 +
+// spawn 本钩子喂构造 stdin，对偶 brief-inputs.mjs mkdtemp 先例）──
+function buildFakeRepo() {
+  const root = mkdtempSync(join(tmpdir(), 'scope-t5-'));
+  const repo = join(root, 'repo'); // 主 checkout（.git 目录）
+  const podx = join(root, 'trees', 'pod-x'); // 在册兄弟树（.git 文件）
+  const outside = join(root, 'outside'); // 非在册路径
+  mkdirSync(join(repo, '.git', 'worktrees', 'pod-x'), { recursive: true });
+  mkdirSync(join(repo, '.claude'), { recursive: true });
+  mkdirSync(join(repo, 'firmware'), { recursive: true });
+  mkdirSync(join(podx, '.claude'), { recursive: true });
+  mkdirSync(join(podx, 'firmware'), { recursive: true });
+  mkdirSync(join(podx, 'docs', 'contracts'), { recursive: true });
+  mkdirSync(outside, { recursive: true });
+  const gitdirFile = join(repo, '.git', 'worktrees', 'pod-x', 'gitdir');
+  writeFileSync(gitdirFile, `${join(podx, '.git')}\n`, 'utf8');
+  writeFileSync(join(podx, '.git'), `gitdir: ${gitdirFile}\n`, 'utf8');
+  const mapShape = {
+    universal: { denyCreate: [], allowFiles: [], allowDirs: ['docs/contracts'], bashDenyWrite: ['docs/contracts/**', '.claude/**'] },
+    agents: { builder: { allow: ['firmware/**'], deny: [] } },
+  };
+  writeFileSync(join(repo, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
+  writeFileSync(join(podx, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
+  return { root, repo, podx, outside };
+}
+
+function selfCheck() {
+  const results = [];
+  const ok = (name, cond, detail = '') => results.push({ name, ok: Boolean(cond), detail });
+  const fx = buildFakeRepo();
+  try {
+    const run = (toolName, toolInput, extra = {}) => spawnSync(process.execPath, [scriptPath], {
+      input: JSON.stringify({ tool_name: toolName, tool_input: toolInput, agent_type: extra.agent, cwd: extra.cwd || fx.repo }),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: fx.repo },
+      encoding: 'utf8', timeout: 30000,
+    });
+    // 夹具非空先行（真空绿规约）
+    ok('fixture-nonempty', existsSync(join(fx.podx, '.claude', 'scope-map.json'))
+      && existsSync(join(fx.repo, '.git', 'worktrees', 'pod-x', 'gitdir'))
+      && readFileSync(join(fx.podx, '.git'), 'utf8').includes('gitdir:'));
+    // ① 在册兄弟树写工作面放行（builder → 兄弟树 firmware/，按该树 scope-map 的 allow 判）
+    const arm1 = run('Write', { file_path: join(fx.podx, 'firmware', 'x.c') }, { agent: 'builder' });
+    ok('sibling-worktree-workfile-allowed', arm1.status === 0, `exit=${arm1.status} ${String(arm1.stderr || '').slice(0, 120)}`);
+    // ② 在册兄弟树写红线面拦截（Bash 重定向 → 兄弟树 docs/contracts/，按该树 bashDenyWrite 判——主线程同样拦，反向洞封堵）
+    const arm2 = run('Bash', { command: `echo x > "${join(fx.podx, 'docs', 'contracts', 'y.md')}"` });
+    ok('sibling-worktree-redline-blocked', arm2.status === 2 && String(arm2.stderr || '').includes('bashDenyWrite'),
+      `exit=${arm2.status}`);
+    // ③ 非在册路径行为不变：per-agent 写仓外路径仍拦（allow 失配）；主线程写仓外路径仍放行（universal 不命中）
+    const arm3a = run('Write', { file_path: join(fx.outside, 'x.txt') }, { agent: 'builder' });
+    ok('outside-path-agent-blocked-legacy', arm3a.status === 2, `exit=${arm3a.status}`);
+    const arm3b = run('Write', { file_path: join(fx.outside, 'x.txt') });
+    ok('outside-path-mainthread-allowed-legacy', arm3b.status === 0, `exit=${arm3b.status}`);
+    // ④ 本树行为不变：builder 写本 checkout 工作面照旧放行
+    const arm4 = run('Write', { file_path: join(fx.repo, 'firmware', 'y.c') }, { agent: 'builder' });
+    ok('home-tree-behavior-unchanged', arm4.status === 0, `exit=${arm4.status}`);
+  } finally {
+    rmSync(fx.root, { recursive: true, force: true });
+  }
+  const allOk = results.every((r) => r.ok);
+  process.stdout.write(`${JSON.stringify({ selfCheck: 'enforce-scope', ok: allOk, results }, null, 2)}\n`);
+  process.exit(allOk ? 0 : 1);
+}
+
+if (process.argv.includes('--self-check')) selfCheck();
 main();

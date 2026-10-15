@@ -6,10 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。
 > 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。
 
-## arch (57)
+## arch (58)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261015-gov-review-lite-fast-path](261015-gov-review-lite-fast-path/) | 2026-10-15 | landed | yes |
+| [261015-gov-review-face-loop-unify](261015-gov-review-face-loop-unify/) | 2026-10-15 | landed | — |
 | [261014-gov-review-crq-debt-rename](261014-gov-review-crq-debt-rename/) | 2026-10-14 | landed | yes |
 | [261014-gov-review-dev-lane-merge-taskpackages](261014-gov-review-dev-lane-merge-taskpackages/) | 2026-10-14 | landed | yes |
 | [261013-gov-review-deploy-single-source-loop](261013-gov-review-deploy-single-source-loop/) | 2026-10-13 | landed | yes |

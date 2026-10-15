@@ -59,6 +59,17 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
 
 与既有机制的相容：ARQ-260905 每 worktree 专属图索引随树复用、自动增量刷新；快照流向不涉 Pod 树、不变；分支亲核语义见 [`integrator.md`](../agents/integrator.md)（常驻分支口径）。
 
+## 2d. 叫停协议（261015-gov-review-lite-fast-path T6）
+
+**顺序条款**：叫停一个 Pod = ① **先按启动卡登记的会话标识停会话进程**（或确认其已退出），② 再处置树与分支 + board 条目置 abandoned。顺序倒置 = 261015 E 事故同型：树没了、headless 会话还在跑、一路跑完整条 loop、产出无人认领。
+
+**树处置两形态**（与 §2c 换包协议对齐，不架空 human 决策权）：
+
+1. **池树复位续用**（默认）：在册池树按既有 abandoned 复位路径处理（§2c 第二条原文路径不变——先 main→base 同步，再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品），树与常驻分支**不换不删**。
+2. **删树**：仅废弃非池化单包树、或 human 明示收缩池容时，才删除 worktree + 分支——**删树决策归 human**（对偶 §2c 第四条「建新树决策归 human」，池的增减都对人称责）。
+
+**叫停完成 = 三件齐**：进程死 + 树处置落位（复位或删除）+ board 条目置 abandoned；缺一件在 progress.md / pod-events 留痕。自动杀进程脚本（按会话标识反查 + taskkill + 树处置一条龙）未实现——首例「叫停时找不到/杀不掉会话」的实测摩擦后再立项（261015 批 OQ-1 裁 procedural 先行）。
+
 ## 3. Pod 状态机
 
 ```text
@@ -85,7 +96,7 @@ Pod 报「我 ready」= 写自己的 `devloop/pods/<change-id>.json`；reconcile
 - **Pod 内交付闭环**：每个 Pod 在自己的 worktree 内跑完 acceptance→builder→verifier↔fixer→integrator→**supervisor**。supervisor APPROVE 后才标 `ready-to-merge`。
 - **合并门被 merge-driver 串行化**：N 个 Pod 并行开发、各自闭环；planner 在 supervisor APPROVE + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后自动触发 `node .claude/scripts/merge-driver.mjs --pod <changeId>`，按 mergeOrder 逐个对 ready-to-merge Pod 执行 rebase→quick-check→merge。
 - 顺序由 portfolio-planner 定（依赖序、触共享文件/契约面者优先、冲突面最小化）；它只**排序 + 初始化 board**，不替 supervisor 判过/不过。
-- **正确性关键**：merge-driver 在 merge 前 **rebase 到解析出的最新合并基线**（本地 main 优先，origin/main 领先时切 origin/main——含已落地前序 Pod），并跑 quick-check（contract-lint + acceptance，260905 对齐后两门案；firmware-build 有意不入冒烟——分钟级 + fail-open，由 verifier scoped 相位承担）抓 rebase 后集成问题。supervisor 已在 Pod 内复核过 closeout 制品；quick-check 是 rebase 后的补充验证。
+- **正确性关键**：merge-driver 在 merge 前 **rebase 到解析出的最新合并基线**（本地 main 优先，origin/main 领先时切 origin/main——含已落地前序 Pod），并跑 quick-check（contract-lint + acceptance，260905 对齐后两门案；firmware-build 有意不入冒烟——分钟级 + fail-open，由 verifier scoped 相位承担，rigor=lite 包后置 final 相位——261015-gov-review-lite-fast-path T3）抓 rebase 后集成问题。supervisor 已在 Pod 内复核过 closeout 制品；quick-check 是 rebase 后的补充验证。
 - 跨 Pod 冲突在 **merge-driver 的 rebase+quick-check** 处暴露解决。rebase 冲突 → blocked（人工介入）；quick-check 失败 → 重试一次，仍失败 → blocked。
 - gate 权在 supervisor（APPROVE/BLOCK/ESCALATE），落地走 merge-driver 的本地 --no-ff 可回滚路径；portfolio-planner 不 merge、不越 gate。
 
@@ -193,16 +204,9 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 
 **取舍机判判据**：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（git rebase 可自动并；`.vN` 载体不同段 / append 类按此判）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值 / 同锚互斥断言 / 版本字面互斥——后者复用 260908 批 guard-class wiring 判据）；**已登记 §10c 登记表形态的版本化制品 add/add 恒归 ②**（复用 merge-driver 特判并集），未登记形态归 ③（补集不变式 fail-closed）。判不了 = 存疑向严升 ③。
 
-## 10e. 契约包人合 runbook（260924-gov-review-settings-deny-contract-merge T3；K7 260923 即兴实走的成文化）
+## 10e. 契约包合并（261015-gov-review-face-loop-unify T19：人合 runbook 退役）
 
-适用面：diff 触 `docs/contracts/**` 的任何包（dev Pod 档与 Track B 治理档同）。升级闸通用 1 对此类包**恒 BLOCK 且无机械放行口**（`hasContractGateEvidence` 证据位未接入，向严设计、非故障）——契约面人签字制不动，人合 = 唯一合法通道，固定四步、任一步缺失即不合并：
-
-1. **pre-merge 预检**：merge-to-main skill 步骤 1–2 同形——`git diff --stat <target>...<source>` 列全改动面 + 相交面核对（零重叠，或重叠仅 §10c 登记表形态）；确认契约面改动带 human 契约门凭据（ContractChangePacket / CDQ 对应行 / 该批 PROPOSAL 的契约门批准记录，任一在案）。
-2. **human 批准事件落账**：dev Pod 档 = pod-events append `human-decision`（`payload.decision="approve-contract-merge-manual"`、actor=human，五要素与 `approve-escalated-merge` 同形；eventType 闭集不扩，decision 值沿 `anchor3-deviation-ruling` 自由串先例——该 decision 值为本节首立口径：K7 实走系复用 `approve-escalated-merge` human 批准事件作批准锚（eventId `c6464758`，merge-completed 代记 payload 引其 human-approval-ref），本节为契约包人合首立专用 decision 值，系成文收敛，R1-N1/R2-F1）；Track B 治理档（无 pod-events）= human 批准原文记入该批 PROPOSAL Status 凭据段 + architect-landing-summary（OQ 裁定凭据同口径）。
-3. **ff 与 no-ff 选定**：Track B 治理批恒 `git merge --ff-only`（arch-review-protocol「Track B 七步流程」步骤 7 同口径，非 ff 即停交 human）；dev Pod 通道 `--no-ff` 双亲合并以证合入事实（merge-driver Step 5 同形），由主线程代 merge-driver 执行；remote push 恒 human。（K7 实走的 dev Pod 包用了 `--ff-only`，系成文前的即兴偏差——本节按既有 canonical 口径收敛：`--no-ff` 双亲合并仅用于 dev Pod 通道、ff-only 仅限 Track B 治理批〔protocol 步骤 7 逐字口径〕，R1-N1 限定句。）
-4. **Step 5b 簿记等价代记**（merge-driver 机械簿记的手动等价，三件缺一不可）：pod-events append `merge-completed`（payload 注记「非 merge-driver：契约包人合（§10e），批准锚 <eventId>」）+ `node .claude/scripts/changes-index.mjs --upsert <changeId>` + merge commit message 注明人合与批准事件锚。
-
-**边界与留根**：本节不改任何闸判定——升级闸对契约面 diff 仍恒 BLOCK（向严不减）；机械放行口（升级闸接契约门证据，与 `--human-approval-ref` 同构）为留根项（ARQ-260923-contract-merge-deadpath 建议①），触发 = 契约包频率上升或本 runbook 实走摩擦 ≥1 次实测，届时另批立项。
+契约变更 = 架构变更的一种：走 `/arch-change` loop（契约包三节——proposedContractDiff / impact / validationPlan——并入该批 PROPOSAL），合并过 `pre-merge-escalation-gate.mjs` **机械凭据闸**（FROZEN PROPOSAL + PASS landing-verdict + manifest 覆盖该契约路径，三件联立、缺一即 BLOCK）——**无人合通道、无人类签字门**（历史人签门已随 261015 批撤销；K7 等人合先例见本节 git 历史；`ARQ-260923-contract-merge-deadpath` 建议①的机械放行口由本批 T15 兑现，该条目已于 2026-09-24 结项归档）。
 
 ## 11. 锚 3 · demo 对账与 roadmap 达成状态（260912-gov-review-portfolio-decomposition-chain T4，FROZEN v1.0）
 

@@ -1,88 +1,44 @@
-# Contract Change Evidence Reference
+# Contract Change Evidence Reference（261015-gov-review-face-loop-unify T17 收窄版）
 
-> Use for every Tier-1 contract change, every retroactive contract gate, and every arch-review finding that routes to the contract gate.
+> Use for every contract change. **契约变更 = 架构变更的一种**：走 `/arch-change` loop，证据由 loop 标准制品承载；独立双制品（`CONTRACT-CHANGE-PACKET.md` / `architecture-gate-evidence.md`）不再作为新批要求（历史包不动、仍有效作证据）。
 
-`CONTRACT-CHANGE-PACKET.md` describes the proposed contract decision. It is not enough by itself. A contract gate is not reviewable until the package also has an evidence ledger that proves what was reviewed, what was approved, what changed, and what validation ran.
+## 契约变更的证据义务（并入 loop 制品）
 
-## Required Artifacts
+契约变更批（`/arch-change`）的 PROPOSAL 改法集必须含**契约包三节**：
 
-Every contract-gated change must produce these artifacts in the owning change folder:
+1. **proposedContractDiff**：逐面列最小 diff（shimApi / displayBlock / strokeFormat / scheduleMD 四字段沿用 architect-reviewer 输出格式）。
+2. **impact**：影响固件渲染 / OpenClaw 输出 / shim 的哪些消费方；是否破坏已跑通实测链路。
+3. **validationPlan**：命令 + 退出码 + 预期（契约 diff 逐字人工核对 / JSON 样本回归如 makemeahanzi 笔顺 / 端云联调冒烟）。
 
-| Artifact | Required | Purpose |
-|---|---:|---|
-| `CONTRACT-CHANGE-PACKET.md` | Yes | Decision packet: scope, proposed diff, alternatives, impact, human question. |
-| `architecture-gate-evidence.md` | Yes | Gate ledger: reviewer classification, human ruling, applied diff inventory, validation, closeout state. |
-| `evidence/` | Yes when commands or audits ran | Raw logs and machine output. Summaries must point here instead of living only in chat. |
-| `ADR-*.md` | When the decision changes durable policy or semantics | Records why, not the schema itself. |
-| Queue update | Yes for nontrivial gates | `docs/CONTRACT-DECISION-QUEUE.md` records gate status and remaining conditions; the debt ledger (`docs/debt/tech/`) records the tech-side item with a `cdq:` pointer (gate authority stays with CDQ). |
+外加标准 loop 制品：FROZEN PROPOSAL、§7 评审记录（architect-reviewer）、landing-manifest（必须覆盖全部被 diff 的契约路径）、landing-verdict PASS——这四件同时是 `pre-merge-escalation-gate.mjs` 机械凭据闸的联立凭据。
 
-Do not call the gate closed from chat alone. The evidence ledger must be in the repo.
+## Evidence Integrity Rules（保留，不变）
 
-## Evidence Ledger Shape
+- Every factual claim about contract files must be grep-able or validated by a command: model counts, enum counts, line references, `DROP TABLE`, indexes, generated delegates, event/tool names.
+- Raw evidence belongs under `evidence/` (in the change folder); summaries link to it.
+- If a migration claim concerns an existing database, include data-safety evidence.
+- `APPROVED` without a machine-verifiable anchor is invalid——契约批的批准锚 = reviewer verdict + landing-verdict，不收聊天结论。
+- **Batch gatekeeper whitelist sync**：human-approved 时代条款——若后续仍存在扫描 `docs/contracts/**` 的批级验收 gatekeeper，白名单同步义务不变（先例：CDQ-017 / commit c70e6cd）。
 
-`architecture-gate-evidence.md` must include these sections:
-
-1. **Gate Scope**: exact surfaces (`docs/contracts/interface-contract.md` 的具体小节), owners, and what is explicitly out of scope.
-2. **Inputs Reviewed**: packet, specs, review findings, implementation evidence, prior queue rows, raw logs.
-3. **Architect-Reviewer Classification**: one row per change surface using `NO_CONTRACT_CHANGE`, `IMPLEMENTATION_ADAPTER`, `SPEC_CONTRACT_DRIFT`, or `CONTRACT_CHANGE_REQUIRED`, with rationale and authoritative refs.
-4. **Human / Architecture Decision**: who ruled, date, status, conditions, and exact question answered. `APPROVED` means human gate approved; otherwise use `CONDITIONAL-APPROVE`, `PENDING`, or `REJECTED`.
-5. **Applied Diff Inventory**: each touched file, symbol/model/tool/event/type, additive vs breaking, migration/data risk, docs sync needed — plus batch-level contract gatekeeper sync: whether the approved diff touches any path tracked by an active batch-level structural gatekeeper (an acceptance test that scans `docs/contracts/**` diffs against a workflow baseline and whitelists human-approved exceptions, e.g. `SANCTIONED_CONTRACT_CHANGES` in s1-nsa-integration-e2e S5-A2), and which whitelist entries were added (see Evidence Integrity Rules).
-6. **Closeout Conditions**: C1/C2 style conditions with owner, status, and required evidence. No condition means none.
-7. **Validation Evidence**: commands, exit status, expected result, actual result, raw log path. Include contract-diff re-read, JSON sample regression (e.g. makemeahanzi stroke JSON), or end-to-end smoke as applicable.
-8. **Docs / Queue Sync**: which specs, ADRs, CDQ/ARQ rows, and handoff docs were updated or explicitly unchanged.
-9. **Rollback / Follow-up**: what to revert if the gate fails, and which follow-up is deferred.
-10. **Verdict**: closed or not closed; whether dev may implement against it; whether the queue row may move to `已结`.
-
-## Status Vocabulary
-
-Use these words consistently:
+## Status Vocabulary（261015 批修订）
 
 | Status | Meaning |
 |---|---|
-| `DRAFT` | Packet exists, no architect-reviewer classification yet. |
-| `PRECHECKED` | Architect-reviewer classification exists, human has not ruled. |
-| `HUMAN_APPROVED` | Human approved the contract decision, implementation may land after validation. |
-| `CONDITIONAL-APPROVE` | Direction approved, but named closeout conditions must finish before `CLOSED`. |
-| `LANDED` | Contract diff applied, validation evidence present, but not necessarily closed. |
-| `CLOSED` / `已结` | Human gate, validation, docs/queue sync, and all closeout conditions are complete. |
+| `DRAFT` | 契约包三节起草中。 |
+| `PRECHECKED` | architect-reviewer 分类已出（CDQ 行登记）。 |
+| `LANDED` | 契约 diff 随批落地、验证证据在场。 |
+| `CLOSED` / `已结` | 凭据 + 验证 + docs/queue sync + closeout conditions 全部完成。 |
 
-Never keep `PENDING` beside a contract diff that already shipped. Either retroactively gate it with evidence or roll it back.
+`HUMAN_APPROVED` / `CONDITIONAL-APPROVE` 退役（人类契约签字门撤销；CDQ 历史行保留不改）。Never keep a pending status beside a contract diff that already shipped—retroactively evidence it or roll it back.
 
-## Evidence Integrity Rules
-
-- Every factual claim about contract files must be grep-able or validated by a command: model counts, enum counts, line references, `DROP TABLE`, indexes, generated delegates, event/tool names.
-- Raw evidence belongs under `evidence/`; summaries link to it.
-- If a migration claim concerns an existing database, include data-safety evidence (`migrate status`, duplicate checks, teardown decision, or `new provisioning only`).
-- If a Tier-2 change is allowed without a human gate, the ledger still records why it is Tier-2 and which clone/owner may write it.
-- `APPROVED` without human decision text/date is invalid. Use `PRECHECKED` or `CONDITIONAL-APPROVE` instead.
-- **Batch gatekeeper whitelist sync**: when a human-approved contract diff lands while a batch-level structural gatekeeper tracks `docs/contracts/**` (acceptance tests whitelisting sanctioned contract changes), add the whitelist entry in the same landing batch — human gate approval is the entry condition, and a missed sync blocks the next merge or full acceptance run with a pre-existing red (precedent: CDQ-017 gate closed 2026-08-18 without the sync; TP0 gate-4 red 2026-08-20 forced a one-off retroactive entry, commit c70e6cd). Record the gatekeeper census and the sync result in ledger §5/§8.
-
-## Minimal Template
+## Minimal Template（PROPOSAL 内契约包节骨架）
 
 ```md
-# Architecture Gate Evidence · <ID>
+### 契约包 · <面名>
 
-> Gate: <ARQ/CDQ/change id>
-> Date: <YYYY-MM-DD>
-> Status: <DRAFT|PRECHECKED|HUMAN_APPROVED|CONDITIONAL-APPROVE|LANDED|CLOSED>
-
-## 1. Gate Scope
-
-## 2. Inputs Reviewed
-
-## 3. Architect-Reviewer Classification
-
-## 4. Human / Architecture Decision
-
-## 5. Applied Diff Inventory
-
-## 6. Closeout Conditions
-
-## 7. Validation Evidence
-
-## 8. Docs / Queue Sync
-
-## 9. Rollback / Follow-up
-
-## 10. Verdict
+**proposedContractDiff**：...
+**impact**：...
+**validationPlan**：...
 ```
+
+CDQ 登记：每契约变更批一行（四分类五值 + loop 凭据列 = changeId + landing-verdict 结果）；权威 = `.claude/rules/contracts.md`。

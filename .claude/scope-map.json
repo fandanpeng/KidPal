@@ -21,8 +21,14 @@
       "对所有会话生效的结构红线（enforce-scope.mjs universal 段）。",
       "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。"
     ],
-    "denyCreate": ["contracts/**"],
-    "bashDenyWrite": ["docs/contracts/**", ".claude/**", "delivery/taskpackages/**"],
+    "denyCreate": [
+      "contracts/**"
+    ],
+    "bashDenyWrite": [
+      "docs/contracts/**",
+      ".claude/**",
+      "delivery/taskpackages/**"
+    ],
     "_bashDenyWrite_doc": "Bash 重定向写契约面与强制层 = 硬红线。原 .claude/** 红线对验收包的覆盖随 taskpackages 迁出（260914-gov-review-delivery-restructure T2）平移为 delivery/taskpackages/**。审查者提示句会提及 delivery/taskpackages/ 等目录——无害，留作档 2 升级时自然启用。",
     "docsTopLevel": {
       "allowFiles": [
@@ -49,94 +55,249 @@
     "_doc": [
       "档 1 登记 review-loop + architect 链；档 2/3 补 dev-loop 角色段（builder/fixer/acceptance-author/verifier/supervisor/integrator + planner/portfolio-planner）。",
       "实现面 = firmware/ + server/；契约面 docs/contracts/** 全 dev-loop 角色 deny；vendor 面 ESP32-S3-RLCD-4.2-Demo/** 全 deny。",
-      "builder/fixer allow 实现面、deny 验收测试文件（验收归 acceptance-author）；verifier/supervisor 只读（deny **）。"
+      "builder/fixer allow 实现面、deny 验收测试文件（验收归 acceptance-author）；verifier/supervisor 只读（deny **）。",
+      "architect-reviewer 窄写槽（261015-gov-review-face-loop-unify T2）：allow 仅 delivery/changes/arch/*-review-*/** 评审记录面——审稿人写评审记录仿 landing-verifier 先例，canonical 零写权。"
     ],
     "planner": {
-      "allow": ["delivery/taskpackages/**", "delivery/workstreams/**"],
-      "deny": ["docs/contracts/**", "firmware/**", "server/**", "ESP32-S3-RLCD-4.2-Demo/**", "docs/**"]
+      "allow": [
+        "delivery/taskpackages/**",
+        "delivery/workstreams/**"
+      ],
+      "deny": [
+        "docs/contracts/**",
+        "firmware/**",
+        "server/**",
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**"
+      ]
     },
     "portfolio-planner": {
-      "allow": ["delivery/taskpackages/**", "delivery/workstreams/**"],
-      "deny": ["docs/contracts/**", "firmware/**", "server/**", "ESP32-S3-RLCD-4.2-Demo/**", "docs/**"]
+      "allow": [
+        "delivery/taskpackages/**",
+        "delivery/workstreams/**"
+      ],
+      "deny": [
+        "docs/contracts/**",
+        "firmware/**",
+        "server/**",
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**"
+      ]
     },
     "builder": {
-      "allow": ["firmware/**", "server/**", "tools/**", "delivery/workstreams/**"],
-      "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+      "allow": [
+        "firmware/**",
+        "server/**",
+        "tools/**",
+        "delivery/workstreams/**"
+      ],
+      "deny": [
+        "**/*.acceptance.c",
+        "**/*.acceptance.cpp",
+        "**/acceptance/**",
+        "docs/contracts/**",
+        "ESP32-S3-RLCD-4.2-Demo/**"
+      ]
     },
     "fixer": {
-      "allow": ["firmware/**", "server/**", "tools/**", "delivery/workstreams/**"],
-      "deny": ["**/*.acceptance.c", "**/*.acceptance.cpp", "**/acceptance/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+      "allow": [
+        "firmware/**",
+        "server/**",
+        "tools/**",
+        "delivery/workstreams/**"
+      ],
+      "deny": [
+        "**/*.acceptance.c",
+        "**/*.acceptance.cpp",
+        "**/acceptance/**",
+        "docs/contracts/**",
+        "ESP32-S3-RLCD-4.2-Demo/**"
+      ]
     },
     "acceptance-author": {
-      "allow": ["firmware/**/*.acceptance.c", "firmware/**/*.acceptance.cpp", "firmware/**/acceptance/**", "server/**/acceptance/**", "tools/**"],
-      "deny": ["firmware/**/__tests__/**", "server/**/__tests__/**", "docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+      "allow": [
+        "firmware/**/*.acceptance.c",
+        "firmware/**/*.acceptance.cpp",
+        "firmware/**/acceptance/**",
+        "server/**/acceptance/**",
+        "tools/**"
+      ],
+      "deny": [
+        "firmware/**/__tests__/**",
+        "server/**/__tests__/**",
+        "docs/contracts/**",
+        "ESP32-S3-RLCD-4.2-Demo/**"
+      ]
     },
     "verifier": {
       "allow": [],
-      "deny": ["**"]
+      "deny": [
+        "**"
+      ]
     },
     "supervisor": {
       "allow": [],
-      "deny": ["**"]
+      "deny": [
+        "**"
+      ]
     },
     "integrator": {
-      "allow": ["firmware/**", "server/**", "docs/templates/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**", "docs/ADR.md", "delivery/taskpackages/**", "delivery/workstreams/**"],
-      "deny": ["docs/contracts/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+      "allow": [
+        "firmware/**",
+        "server/**",
+        "docs/templates/**",
+        "docs/ARCH-REVIEW-QUEUE.md",
+        "docs/debt/**",
+        "docs/ADR.md",
+        "delivery/taskpackages/**",
+        "delivery/workstreams/**"
+      ],
+      "deny": [
+        "docs/contracts/**",
+        "ESP32-S3-RLCD-4.2-Demo/**"
+      ]
     },
     "architect": {
       "allow": [
-        "docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**",
-        ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"
+        "docs/requirements.md",
+        "docs/architecture.md",
+        "docs/contracts/**",
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**",
+        ".claude/agents/**",
+        ".claude/commands/**",
+        ".claude/references/**",
+        ".claude/rules/**",
+        ".claude/skills/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",
-        ".claude/agents/architect.md", ".claude/agents/architect-reviewer.md", ".claude/agents/review-moderator.md",
-        ".claude/agents/scenario-author.md", ".claude/agents/challenger.md", ".claude/agents/defender.md", ".claude/agents/adjudicator.md",
+        ".claude/agents/architect.md",
+        ".claude/agents/architect-reviewer.md",
+        ".claude/agents/review-moderator.md",
+        ".claude/agents/scenario-author.md",
+        ".claude/agents/challenger.md",
+        ".claude/agents/defender.md",
+        ".claude/agents/adjudicator.md",
         ".claude/agents/landing-verifier.md",
-        ".claude/scope-map.json", ".claude/*.settings.json", ".claude/hooks/**", ".claude/scripts/**",
+        ".claude/scope-map.json",
+        ".claude/*.settings.json",
+        ".claude/hooks/**",
+        ".claude/scripts/**",
         ".claude/settings.json",
-        "AGENTS.md", "CLAUDE.md", "docs/DEV-GOVERNANCE.md"
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/DEV-GOVERNANCE.md"
       ]
     },
     "review-moderator": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**", "docs/requirements.md", "docs/architecture.md", "docs/contracts/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "AGENTS.md", "CLAUDE.md"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**",
+        "docs/requirements.md",
+        "docs/architecture.md",
+        "docs/contracts/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ]
     },
     "scenario-author": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**",
+        ".claude/**"
+      ]
     },
     "challenger": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**",
+        ".claude/**"
+      ]
     },
     "defender": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**",
+        ".claude/**"
+      ]
     },
     "adjudicator": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "docs/DEV-GOVERNANCE.md"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**",
+        "docs/ARCH-REVIEW-QUEUE.md",
+        "docs/debt/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/requirements.md",
+        "docs/architecture.md",
+        "docs/contracts/**",
+        "docs/DEV-GOVERNANCE.md"
+      ]
     },
     "architect-reviewer": {
-      "allow": [],
-      "deny": ["**"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**"
+      ],
+      "deny": [
+        "**"
+      ]
     },
     "uiux-author": {
-      "allow": ["docs/ui/**"],
-      "deny": ["docs/contracts/**", "docs/requirements.md", "docs/architecture.md", ".claude/**", "ESP32-S3-RLCD-4.2-Demo/**"]
+      "allow": [
+        "docs/ui/**"
+      ],
+      "deny": [
+        "docs/contracts/**",
+        "docs/requirements.md",
+        "docs/architecture.md",
+        ".claude/**",
+        "ESP32-S3-RLCD-4.2-Demo/**"
+      ]
     },
     "story-author": {
-      "allow": ["docs/requirements.md", "docs/architecture.md"],
-      "deny": ["docs/contracts/**"]
+      "allow": [
+        "docs/requirements.md",
+        "docs/architecture.md"
+      ],
+      "deny": [
+        "docs/contracts/**"
+      ]
     },
     "requirement-reviewer": {
       "allow": [],
-      "deny": ["**"]
+      "deny": [
+        "**"
+      ]
     },
     "landing-verifier": {
-      "allow": ["delivery/changes/arch/*arch-review-*/**", "delivery/changes/arch/*gov-review-*/**"],
-      "deny": ["ESP32-S3-RLCD-4.2-Demo/**", "docs/**", ".claude/**"]
+      "allow": [
+        "delivery/changes/arch/*arch-review-*/**",
+        "delivery/changes/arch/*gov-review-*/**"
+      ],
+      "deny": [
+        "ESP32-S3-RLCD-4.2-Demo/**",
+        "docs/**",
+        ".claude/**"
+      ]
     }
   }
 }
