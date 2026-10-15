@@ -218,6 +218,8 @@ set(HOST_ACCEPTANCE_SRCS
     # host smoke acceptance 之前。
     "../../record_session_repair.test.c"
 
+    "../../voice_rightcol_label.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

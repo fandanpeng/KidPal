@@ -1184,7 +1184,7 @@ void LcdDisplay::SetupUI() {
      * 「回显在『我在听！』标识下方」; LVGL 同父子件叠序 = 创建序)。全量字体同 r1 口径)。 */
     g_kidpal_voice_header_label = lv_label_create(g_kidpal_voice_page);
     lv_obj_set_pos(g_kidpal_voice_header_label, 124, 16);
-    lv_obj_set_width(g_kidpal_voice_header_label, 264);
+    lv_obj_set_width(g_kidpal_voice_header_label, 196);
     lv_obj_set_style_text_align(g_kidpal_voice_header_label, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_color(g_kidpal_voice_header_label, lvgl_theme->text_color(), 0);
     lv_obj_set_style_text_font(g_kidpal_voice_header_label, &font_puhui_14_1, 0);
@@ -1206,7 +1206,7 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_scrollbar_mode(g_kidpal_voice_echo_box, LV_SCROLLBAR_MODE_AUTO);
     g_kidpal_voice_echo_label = lv_label_create(g_kidpal_voice_echo_box);
     lv_label_set_long_mode(g_kidpal_voice_echo_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(g_kidpal_voice_echo_label, 264);
+    lv_obj_set_width(g_kidpal_voice_echo_label, 196);
     lv_obj_set_style_text_align(g_kidpal_voice_echo_label, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_color(g_kidpal_voice_echo_label, lvgl_theme->text_color(), 0);
     /* 全量字体: 孩子话语中文字形全覆盖 (LVGL 默认字体无中文字形 = 整段空白零上屏,
@@ -1226,7 +1226,7 @@ void LcdDisplay::SetupUI() {
     lv_obj_set_scrollbar_mode(g_kidpal_voice_answer_box, LV_SCROLLBAR_MODE_AUTO);
     g_kidpal_voice_answer_label = lv_label_create(g_kidpal_voice_answer_box);
     lv_label_set_long_mode(g_kidpal_voice_answer_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(g_kidpal_voice_answer_label, 264);
+    lv_obj_set_width(g_kidpal_voice_answer_label, 196);
     lv_obj_set_style_text_align(g_kidpal_voice_answer_label, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_color(g_kidpal_voice_answer_label, lvgl_theme->text_color(), 0);
     /* 全量字体: 同回显区 (答案全文中文覆盖; NFR-READ-1 14px 下限档, 禁 basic 稀疏

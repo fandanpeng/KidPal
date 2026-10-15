@@ -23,7 +23,11 @@
     "VR-A2: 右列 answer label（问答框，TALK/说话态——human 真机报的 bug 面）宽度 264→196——lcd_display.cc g_kidpal_voice_answer_label 的 lv_obj_set_width 字面宽度改 196；显示语义同 VR-A1",
     "VR-A3: 标头 label 宽度 264→196 一并收进（human 触点①一句话改判授权，统一版式卫生）——lcd_display.cc g_kidpal_voice_header_label 的 lv_obj_set_width 字面宽度改 196；标头 x=124 位置零触碰（WF-B 标头位是独立版式决策，非本包范围）",
     "VR-A4: 反证齿——264 旧值在三个 lv_obj_set_width 调用点销账：源锚齿（仿 MCD-A1 形态，int 提取字面宽度）断三处 W 在场且 W ≤ 196，任一处回 264 即红；结构性承载 VR-A1/A2/A3 的防复发判别力",
-    "VR-A5: 既有冻结件零改动回归——voice_round_ui.acceptance.c 零改动应全绿（architect 已核查全文无对该两 label 的 set_width/set_size/set_pos needle，归档件同查无）；相对有效基线零新增红（推论面：既有齿全绿 + 新齿绿 = 相对基线零新增红）",
+    {
+      "id": "VR-A5",
+      "kind": "structural",
+      "note": "既有冻结件零改动回归——voice_round_ui.acceptance.c 零改动应全绿（architect 已核查全文无对该两 label 的 set_width/set_size/set_pos needle，归档件同查无）；相对有效基线零新增红（推论面：既有齿全绿 + 新齿绿 = 相对基线零新增红）。〔kind:structural 标注系 verifier r1 mutation-check 后的形态校正：本条为回归观察面、无独立实现变异点，mutation 语义 = 不适用（M-4 同款），与 VR-A6 structural 豁免同形态；条目原文逐字保留、语义零变更——planner 2026-10-15〕"
+    },
     {
       "id": "VR-A6",
       "kind": "structural",
@@ -46,7 +50,7 @@
     "VR-A6 真机轮留痕：human 持板目测 + 截图对比（本包收尾停门项，不自行烧录）"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "待 acceptance-author 冻结新齿后、builder 动 lcd_display.cc 前实跑（红基线相位；261013 包同位先例）——预期：既有齿全绿 + 新增源锚齿对净 HEAD（264 在世）设计态红（W≤196 断言不满足 / 264 销账断言不满足）",
+  "redBaselineResult": "已实跑（2026-10-15，本树）：全量构建 EXIT=0（新验收件入套件编译通过）+ host runner 172 Tests / 4 Failures——4 红全部为新齿设计态红且红名与冻结申报逐字一致（VRL-A1/A2/A3 RED: W=264 超上界 196；VRL-A4 RED: 仍有 3 行 lv_obj_set_width 携带 264），零 RED(infra)；既有 168 齿全绿 = 相对上游基线（261014 合并后 168/0）零新增红（VR-A5 基线面成立）。另有 acceptance-author 独立冒烟通道取证（red-baseline 执行架 gcc 实编 exit=0 + 实跑 4 Tests 4 Failures 同形状，见其回执）。证据：/c/tmp/vrl-hostbuild-r1.log、/c/tmp/vrl-redbaseline-r1.log",
   "requiredLayers_note": "host 结构齿离线可跑（源锚齿读仓内源文件、walk-up 定根）；真机轮 live-manual 停门等 human",
   "deliveryImpact": "none",
   "planningImpact": "none",
@@ -100,25 +104,33 @@
         "acceptance": "VR-A1: 右列 echo label（回显区，LISTEN/THINK 态）宽度 264→196——lcd_display.cc g_kidpal_voice_echo_label 的 lv_obj_set_width 字面宽度改 196（与右列容器内容宽一致，容器 x=192 宽 196、pad_all=0）；换行点从 264 前移到 196、行数变多/滚动更早出现属冻结设计预期行为（VQ-A2 超屏高滚出 / VQ-A3 长文滚动看完），非副作用；行尾不再被容器视口裁剪",
         "mutation": "lcd_display.cc g_kidpal_voice_echo_label 宽度回退 264（撤销改动点）",
         "affectedTest": "firmware/main/test/voice_rightcol_label.acceptance.c 源锚齿（echo label W≤196 断言——acceptance-author 冻结件申报齿）",
-        "turnedRed": false,
+        "turnedRed": true,
         "sensitive": true,
-        "notes": "骨架条目：builder 取证后回填 turnedRed/红名 verbatim/还原复绿证据；VR-A2/A3 同形（answer/标头各回退 264 同源红）；VR-A4 反证齿由同族变异一并承载"
+        "notes": "已取证（2026-10-15 builder 第一方实跑，独立冒烟通道）：VR-A1 正向齿 + VR-A4 反证齿同源双红（红名 verbatim：VRL-A1 RED: g_kidpal_voice_echo_label 字面宽度 W=264 超上界 196；VRL-A4 RED: lcd_display.cc 仍有 1 行 lv_obj_set_width 调用携带 264 字面），其余齿绿；还原 196 复绿 4/4 PASS。证据文件：mutation-evidence/m1-echo-label-revert-264.txt（builder 交付报告逐字转存，planner 代落盘）"
       },
       {
         "acceptance": "VR-A2: 右列 answer label（问答框，TALK/说话态——human 真机报的 bug 面）宽度 264→196——lcd_display.cc g_kidpal_voice_answer_label 的 lv_obj_set_width 字面宽度改 196；显示语义同 VR-A1",
         "mutation": "lcd_display.cc g_kidpal_voice_answer_label 宽度回退 264（撤销改动点）",
         "affectedTest": "firmware/main/test/voice_rightcol_label.acceptance.c 源锚齿（answer label W≤196 断言）",
-        "turnedRed": false,
+        "turnedRed": true,
         "sensitive": true,
-        "notes": "骨架条目：builder 取证后回填"
+        "notes": "已取证（2026-10-15 builder 第一方实跑）：VR-A2 正向齿 + VR-A4 反证齿同源双红（红名 verbatim：VRL-A2 RED: g_kidpal_voice_answer_label 字面宽度 W=264 超上界 196；VRL-A4 RED: 仍有 1 行 lv_obj_set_width 携带 264），其余齿绿；还原复绿 4/4 PASS。证据文件：mutation-evidence/m2-answer-label-revert-264.txt"
       },
       {
         "acceptance": "VR-A3: 标头 label 宽度 264→196 一并收进（human 触点①一句话改判授权，统一版式卫生）——lcd_display.cc g_kidpal_voice_header_label 的 lv_obj_set_width 字面宽度改 196；标头 x=124 位置零触碰（WF-B 标头位是独立版式决策，非本包范围）",
         "mutation": "lcd_display.cc g_kidpal_voice_header_label 宽度回退 264（撤销改动点）",
         "affectedTest": "firmware/main/test/voice_rightcol_label.acceptance.c 源锚齿（标头 W≤196 断言）",
-        "turnedRed": false,
+        "turnedRed": true,
         "sensitive": true,
-        "notes": "骨架条目：builder 取证后回填"
+        "notes": "已取证（2026-10-15 builder 第一方实跑）：VR-A3 正向齿 + VR-A4 反证齿同源双红（红名 verbatim：VRL-A3 RED: g_kidpal_voice_header_label 字面宽度 W=264 超上界 196；VRL-A4 RED: 仍有 1 行 lv_obj_set_width 携带 264），其余齿绿；还原复绿 4/4 PASS。证据文件：mutation-evidence/m3-header-label-revert-264.txt。VR-A4 反证齿由三族变异各自同源双红承载，销账 grep 收尾净（仅注释 2 处提及 264）"
+      },
+      {
+        "acceptance": "VR-A4: 反证齿——264 旧值在三个 lv_obj_set_width 调用点销账：源锚齿（仿 MCD-A1 形态，int 提取字面宽度）断三处 W 在场且 W ≤ 196，任一处回 264 即红；结构性承载 VR-A1/A2/A3 的防复发判别力",
+        "mutation": "由 VR-A1/A2/A3 三族回退变异各自承载（m1/m2/m3 每次回退 264 均同时触发本反证齿红——行级双针命中回退行，红名行数 = 1）",
+        "affectedTest": "firmware/main/test/voice_rightcol_label.acceptance.c test 4（VR-A4 销账断言 + 扫描器自检两枚）",
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "已取证（2026-10-15 builder 第一方实跑，三族变异逐一）：VR-A4 反证齿在 m1/m2/m3 三次变异态全部同源红（红名 verbatim：VRL-A4 RED: lcd_display.cc 仍有 1 行 lv_obj_set_width 调用携带 264 字面），三态其余齿绿、还原复绿 4/4 PASS。证据文件：mutation-evidence/m1-echo-label-revert-264.txt / m2-answer-label-revert-264.txt / m3-header-label-revert-264.txt"
       }
     ],
     "reason": "Lite 包骨架前置（起包格式期望前置第①条）；变异形状 = 三处宽度任一回退 264，新源锚齿（MCD-A1 形态）须红；VR-A5 既有齿与 VR-A6 真机轮为取证豁免面（既有齿零改动判别力由既有包 mutation 留档承载；VR-A6 structural 豁免）；perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤）"

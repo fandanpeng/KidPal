@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-scope",
+  "authority": "bearing",
+  "changeId": "261015-voice-rightcol-label-overflow",
+  "producedBy": "integrator",
+  "producedAt": "2026-10-15",
+  "purpose": "final bearing verification 范围圈定清单（integrator Step 4 ① 范围圈定产出；final verify 轮以 --scope-file 消费本文件）。无既有包同名先例，按 detect_changes 输出组织：changedFiles + impactedTests。",
+  "scopeMethod": {
+    "detectChanges": "可用（per-Pod 专属图索引 C-AI-KidPal-pod-m2 在场；base=main，merge_base=3fedba46dbcd8db85779c59dbaf405442e691f5e，changed_files=22 含工作树未提交态）——正常圈定路径，非降级",
+    "tracePathSpotCheck": "LcdDisplay::SetupUI 入向 callers=3（MipiLcdDisplay / RgbLcdDisplay / SpiLcdDisplay 构造路径），无跨子系统、无 wire 面调用边——与 crossEnd.exempt 一致",
+    "impactedTestsSeed": "taskpackage.json impactedTestsSeed 三件（regression-watch-zero-touch / new-frozen-acceptance-file / wiring-add）全数纳入",
+    "note": "detect_changes seed_symbols=0：改动为字面常量值（264→196），无符号签名变化，blast radius 以文件面 + 源锚齿读文件关系判定"
+  },
+  "changedFiles": [
+    {
+      "path": "firmware/main/display/lcd_display.cc",
+      "hunks": 3,
+      "summary": "LcdDisplay::SetupUI 内三处 lv_obj_set_width 字面宽度 264→196（g_kidpal_voice_header_label :1187 / g_kidpal_voice_echo_label :1209 / g_kidpal_voice_answer_label :1229），纯常量值改动"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "hunks": 1,
+      "summary": "HOST_ACCEPTANCE_SRCS 接线 +2 行：voice_rightcol_label.acceptance.c 置于 host_infra_smoke 之前（C4.2/C4.3 纪律）"
+    },
+    {
+      "path": "firmware/main/test/voice_rightcol_label.acceptance.c",
+      "hunks": "new-file",
+      "summary": "本包新建冻结验收件（VR-A1~A4 四齿，MCD-A1 源锚形态）"
+    },
+    {
+      "path": "firmware/sdkconfig",
+      "hunks": 1,
+      "summary": "环境态归一副作用（Image Effects Configuration 空节头再生），非功能改动，TECH-261014 处置口径已申报"
+    }
+  ],
+  "impactedTests": [
+    {
+      "path": "firmware/main/test/voice_rightcol_label.acceptance.c",
+      "source": "acceptanceTestsFile + impactedTestsSeed(new-frozen-acceptance-file)",
+      "kind": "primary"
+    },
+    {
+      "path": "firmware/main/test/voice_round_ui.acceptance.c",
+      "source": "impactedTestsSeed(regression-watch-zero-touch)",
+      "kind": "regression-watch-zero-touch"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "source": "impactedTestsSeed(wiring-add)",
+      "kind": "wiring-add"
+    },
+    {
+      "path": "firmware/main/test/char_window_overlay.acceptance.c",
+      "source": "共享 seam 相关测试（同文件 MCD-A1 源锚形态先例回归面，taskpackage notes ③ 相关子集申报）",
+      "kind": "shared-seam"
+    },
+    {
+      "path": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "source": "安全余量（host 套件包 0 守卫，接线位置其前）",
+      "kind": "safety-margin"
+    }
+  ],
+  "scopeExcluded": [
+    {
+      "item": "detect_changes changed_files 中 delivery/** 制品面（taskpackages / changes INDEX / current 投影 / docs/debt）",
+      "reason": "交付工件面，图索引排除规则与本仓 .cbmignore 同口径，非测试影响面"
+    }
+  ],
+  "floorNote": "本包无双包冲突消解，无「双方冻结件」floor 项；floor = 本包冻结验收件 voice_rightcol_label.acceptance.c + 既有冻结件 voice_round_ui.acceptance.c 零改动回归（VR-A5）",
+  "degradation": "none"
+}
