@@ -52,6 +52,9 @@ T20 明细（19 件改指）：`.claude/agents/{review-moderator,scenario-author
 2. **差异注记 A2 · ARQ-260928 文件路径迁移**：manifest 声明 `docs/debt/gov/ARQ-260928-arch-change-retirement.md`，实际落位 `_archive/2026/` 同名件——`debt-render.mjs` 按「位置 = 状态的纯函数」自动归位（repo-structure 明文「人不搬文件」），非人工迁移。
 3. **ADVISORY · V9 为文审走查**：三场景走查系对 SSOT 文本的逐段可追性核查，非实跑 loop——首三个真实变更批（各面一单）落地时按走查路径实际执行，偏差回写 retro。
 4. **未落项（FROZEN §6 留根 6 条）**：需求面形态差统一评估 / reviewer 大一统评估 / 变更记录节机械消费齿 / 凭据闸补强评估 / CDQ 存废评估 / commandEntry 形态对齐复核——全部按留根清单去向登记，不在本批。
+5. **landing-verifier R1 FAIL(F1,F2) 修订记录**：F1 = self-check 补第六具名例 `no-contracts-diff-unaffected`（早退肢此前仅由基线例隐式覆盖，无具名夹具——V5 预期「六个新用例名」口径差如实纠正）；F2 = 去人签门残留活规范句四处在册件内补改（`AGENTS.md` 契约面定义行 + Hard Rules 契约冻结行、`.claude/agents/architect.md:25` 路由句、`architect-operating-model.md` §6 契约门句），同文件补落、manifest 无扩张。
+6. **升级 human 项（FROZEN sweep 缺口，manifest 外 5 处残留活句，verifier 判「manifest 外 landing 不可修」呈裁）**：`.claude/commands/requirement-change.md:24`、`.claude/references/requirement-change.md:79`、`.claude/references/architecture-decisions.md:3`、`.claude/scripts/brief-inputs.mjs:24`（注释）、`docs/templates/AGENTS.template.md:48`——均仍含「人类契约门 / human contract gate」表述。处置 = human 裁（本批扩 FROZEN 修订 vs 留根紧随轻路径批收拾）；本 landing 对五处零触碰。
+7. **ADVISORY 采纳**：summary manifest 围栏块补漏 `.claude/references/dev-loop-operating-system.md`（本行）；gate verdict 接受 PASS|GREEN 双 token 的 deliberation 句未按 R1-F5 单独成文（行为已由 VERDICT_STATUS_RE 单源覆盖，留根）；gate 候选正则双 lane 同收（良性）；review-loop.settings `_doc` 与 contracts.md 历史注记微缩（超枚举微改，如实登记）；AGENTS.md 升级判据增「方向未收敛」条 + 实现面入口行（T8/T12 packet 内部传导，良性）。
 
 ```landing-manifest
 .claude/agents/architect-reviewer.md
@@ -83,6 +86,7 @@ T20 明细（19 件改指）：`.claude/agents/{review-moderator,scenario-author
 .claude/references/change-triage.md
 .claude/references/task-intake-and-slicing.md
 .claude/references/dev-loop.md
+.claude/references/dev-loop-operating-system.md
 .claude/rules/contracts.md
 .claude/rules/repo-structure.md
 .claude/rules/authoring-agents-skills.md

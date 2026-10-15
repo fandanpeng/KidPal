@@ -153,7 +153,7 @@ Tier-2 surfaces can stay with the owning system when all conditions hold:
 3. No event, tool, shared-type, notify, or invariant shape change.
 4. If later promoted to Tier-1, the contract gate restarts with CCP evidence.
 
-Architect may draft contract direction, CCP text, or a candidate patch, but cannot declare approval. Any landing in `docs/contracts/**` requires `architect-reviewer` pre-screen and explicit human contract gate.
+Architect may draft contract direction, contract-package text, or a candidate patch, but cannot declare approval. Landings in `docs/contracts/**` go through the `/arch-change` loop（契约包三节并入 PROPOSAL）and pass the mechanical evidence gate（`pre-merge-escalation-gate.mjs` 三件联立）；the human signature gate was removed by 261015-gov-review-face-loop-unify.
 
 Decision rules:
 

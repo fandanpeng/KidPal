@@ -466,6 +466,11 @@ function selfCheck() {
   expect('contracts-diff-proposal-not-frozen-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: FROZEN 缺' } }, true, 'contract-evidence');
   expect('contracts-diff-manifest-not-covering-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: manifest 未覆盖' } }, true, 'contract-evidence');
   expect('contracts-diff-verdict-not-pass-block', { contractsDiff: true, hasContractGateEvidence: { ok: false, reason: 'contract-evidence: verdict 非 PASS' } }, true, 'contract-evidence');
+  cases.push({
+    name: 'no-contracts-diff-unaffected',
+    ok: !evaluate(mkCtx({ contractsDiff: false, hasContractGateEvidence: { ok: true, reason: 'no-contract-diff', contractPaths: [] } })).blocked,
+    got: '',
+  });
   {
     // T15 直接函数 fixture 4 例（真空绿规约：PROPOSAL fixture 含 manifest 围栏块非空；deps.readVerdict 注入）
     const FIX_PROPOSAL = [

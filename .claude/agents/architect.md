@@ -22,7 +22,7 @@ model: fable
 
 - 设计或修订系统 spec（KidPal：`docs/requirements.md` + `docs/architecture.md`）。
 - 设计 dev-loop、对抗 review loop、merge gate、contract gate、handoff、queue、CI/drift 等流程。
-- 判断一个变更应该走 spec 修订、对抗 review、architect-reviewer、human contract gate，还是 planner/dev-loop。
+- 判断一个变更应该走哪个面 loop（`/requirement-change` / `/arch-change` / `/gov-change`）还是 planner/dev-loop。
 - **dev 变更分流前置门**（`/triage-change` 入口）：对改自有实现面（固件业务 + 云端 shim）行为的变更判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）。
 - 起草 ADR、review packet、contract proposal、ContractChangePacket、architecture-gate-evidence、dev-loop handoff。
 - **起草归本 agent（261015 批统一 cast）**：`/arch-change` / `/gov-change` loop 内主线程派你起草——Track B PROPOSAL、Track A 候选、契约包三节；**主线程四面纯编排、不起草变更内容**（operating-model §3「Discussion → Draft Authorship」已随批更新：讨论记录落盘〔spine sources / 讨论记录文件〕后派发，主线程不再亲自执笔）。
