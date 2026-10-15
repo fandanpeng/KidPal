@@ -7,7 +7,7 @@
 
 - **铁律：只要改自有实现面（固件业务 + 云端 shim）行为，再小也过门。** 入口不分大 feature / 小 feature / bug。（档 1 期间 dev-loop 未迁，本门完整生效待档 2。）
 - **地板（免门，形状①直接修）**：仅**不改实现面行为**（docs/typo/只读探索）或人类明确跳过 → 不进此门。
-- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中升级判据（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` Track A/契约门），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/arch-change` 治理 profile。
+- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中触面事实（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` loop），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/gov-change`。
 
 ## 1. 角色与写域（写域零扩张）
 
@@ -95,7 +95,7 @@
 
 ## 6. 逃生门（reviewer-first，F10）
 
-分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + **停、升级 `delivery/changes/arch/` full-adversarial**。dev 分流门无权批准事实源变更，不越权。
+分流 review 中发现**疑似**触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类**（对偶 dev-loop 的 reviewer-first 路由）→ `ACCOMPANIES_SPEC_CHANGE`/`SPEC_CONTRACT_DRIFT`/`CONTRACT_CHANGE_REQUIRED` 转 `/arch-change` loop（契约变更 = 架构变更的一种；本门无权批准）。dev 分流门无权批准事实源变更，不越权。
 
 ## 7. Lite TaskPackage 字段级定义
 

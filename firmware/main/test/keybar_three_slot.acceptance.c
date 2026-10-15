@@ -143,7 +143,7 @@
  *             归一化值的裁决表）
  *   coverage: KB-A5 真机确认轮 -> 不在本文件（kind:structural 对象条目, human 持板;
  *             三槽条 + 页点显隐 + 随态文案真机可见; 证据落
- *             delivery/changes/dev/260915-m1-k2-keybar-three-slot/）——见文件尾
+ *             delivery/taskpackages/260915-m1-k2-keybar-three-slot/）——见文件尾
  *             「KB-A5 真机证据要求」段
  *   coverage: KB-A6 host runner 终跑 -> test 5（注册接线结构守卫）+ 本文件尾
  *             「KB-A6 终跑判读」段（suite 级判读: 相对有效基线零新增红 + 本包新齿全绿）
@@ -998,11 +998,11 @@ TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起
  *     - test 5 tooth 2/3（需求契约 canary: requirements §2.2 comp-keybar/三槽锚在世
  *       + 契约面在世; 扫描器自检）。
  *   KB-A5 真机确认轮: human 持板（三槽条 + 页点显隐 + 随态文案真机可见）, 证据落
- *   delivery/changes/dev/260915-m1-k2-keybar-three-slot/。
+ *   delivery/taskpackages/260915-m1-k2-keybar-three-slot/。
  *
  * RED baseline 判读口径（freeze 相位, acceptance-author）:
  *   通道① 既有 host runner 全量实跑（新齿未接线前）= 有效基线 13/0（见上, 2026-09-16
- *   实跑, 命令见 Run protocol; 记录 = delivery/changes/dev/260915-m1-k2-keybar-
+ *   实跑, 命令见 Run protocol; 记录 = delivery/taskpackages/260915-m1-k2-keybar-
  *   three-slot/red-baseline-freeze.md 五要素）。
  *   通道② 本文件新齿 C 类冻结验收实编（DEV-GOVERNANCE 验收测试纪律 §4）:
  *     gcc -std=c11 -Wall -Wextra -fsyntax-only -I firmware/main/test/acceptance/
@@ -1035,7 +1035,7 @@ TEST_CASE("键帽条三槽: 查字窗键帽随态——未起播「播报」/起
  *   ① 三槽条真机形态: 左 KEY 提示 / 中页点 / 右 BOOT 提示, 通栏贴底, 覆盖层
  *      （提醒弹窗/查字窗/语音轮演出）盖不掉条体; ② 页点: 仅主页面显示、当前页实心
  *      放大、覆盖层内消失; ③ 左右槽随态文案: 语音轮左槽逐字（说完啦/不等了/打断/
- *      知道了）+ 右槽（结束/关闭）。证据（照片/记录）落 delivery/changes/dev/
+ *      知道了）+ 右槽（结束/关闭）。证据（照片/记录）落 delivery/taskpackages/
  *   260915-m1-k2-keybar-three-slot/。
  * ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):

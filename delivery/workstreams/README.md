@@ -1,6 +1,6 @@
 # `delivery/workstreams/` — 长周期工作记忆
 
-本目录承载**跨切片、长周期**的工作记忆（为什么 / 发现 / 进展）。它是 workstream（里程碑 / 命名倡议）级的，区别于单切片验收包（`delivery/taskpackages/`）与实现变更归档（`delivery/changes/dev/`）。
+本目录承载**跨切片、长周期**的工作记忆（为什么 / 发现 / 进展）。它是 workstream（里程碑 / 命名倡议）级的，区别于单切片验收包（`delivery/taskpackages/`）与实现变更归档（`delivery/taskpackages/`）。
 
 > 本仓是治理迁移的采用方（自 AInativecompany 迁入），非 dogfood 参考实例；本文件只保留与栈无关的通用结构与纪律。
 
@@ -35,7 +35,7 @@ delivery/workstreams/
 
 自上而下套这个梯：
 
-1. 带 `<change-id>` 的单切片 dev-loop 变更 → **不建**，归 `delivery/taskpackages/<change-id>/`（晋升后进 `delivery/changes/dev/`）。
+1. 带 `<change-id>` 的单切片 dev-loop 变更 → **不建**，归 `delivery/taskpackages/<change-id>/`（晋升后进 `delivery/taskpackages/`）。
 2. 已存在 workstream 的子任务 / 续作 → **不建**，追加进那个 workstream 的 `progress.md` / `findings.md`。
 3. 跨多切片 / 多会话，且带未来 agent 必须读的 why / findings / deviation → **建** `delivery/workstreams/<slug>/`。
 4. 其余（琐碎一次性、纯探讨、无耐久产出）→ **不建**，靠 commit message 或不留。
@@ -96,7 +96,7 @@ changes:                  # 挂在本 workstream 下的 change-id（体现 1:N�
 |---|---|---|
 | `delivery/workstreams/<workstream>/` | 跨切片、长周期工作记忆（为什么 / 发现 / 进展） | 人 · 主线程 · dev-loop agent |
 | `delivery/taskpackages/<change-id>/` | 单个正式实现切片的机器可读验收包（exit criteria / 预算 / 证据） | dev-loop |
-| `delivery/changes/dev/<change-id>/` | 晋升后的长期实现变更归档 | integrator |
+| `delivery/taskpackages/<change-id>/` | 晋升后的长期实现变更归档 | integrator |
 
 ## 约定
 

@@ -1,11 +1,11 @@
 ---
 name: brainstorming
-description: "Use when: 在 plan 模式、动工前把一个模糊想法 / 需求 / story 理成成形设计（意图、约束、成功标准、备选方案都想清楚）。触发词: brainstorm, 头脑风暴, 帮我理清思路, 帮我想清楚, 需求澄清, 设计探索, 动工前先想清楚。边界: 只产设计不写实现、不改 contracts；成形后交 /arch-change（架构·治理·spec；档 2 迁入 dev-loop 后实现走 /build-feature），纯契约改动走 architect-reviewer + 人类契约门。"
+description: "Use when: 在 plan 模式、动工前把一个模糊想法 / 需求 / story 理成成形设计（意图、约束、成功标准、备选方案都想清楚）。触发词: brainstorm, 头脑风暴, 帮我理清思路, 帮我想清楚, 需求澄清, 设计探索, 动工前先想清楚。边界: 只产设计不写实现、不改 contracts；成形后交面 loop（/arch-change 架构+契约 / /gov-change 治理；实现走 /build-feature），纯契约改动走 /arch-change（无人签门）。"
 ---
 
 # Brainstorming：把想法理成设计
 
-在动工前，用协作对话把一个模糊想法 / 需求 / story 理成成形设计。这是 plan 模式的默认「想清楚」环节，位于架构 review（`/arch-change`）的**上游**（dev-loop `/build-feature` 档 2 迁入后，也位于其上游），属 AGENTS.md 明列的「规划讨论」例外，不是实现工作。
+在动工前，用协作对话把一个模糊想法 / 需求 / story 理成成形设计。这是 plan 模式的默认「想清楚」环节，位于面 loop（`/arch-change`、`/gov-change`）的**上游**（dev-loop `/build-feature` 档 2 迁入后，也位于其上游），属 AGENTS.md 明列的「规划讨论」例外，不是实现工作。
 
 <HARD-GATE>
 拿出设计并得到用户批准前：不写代码、不改实现面（固件/shim）、不改 `docs/contracts/**`、不搭脚手架、不调用任何实现 / 落地入口。无论需求看起来多简单都适用。本 skill 的产物是**达成一致的设计**，不是实现。
@@ -56,11 +56,11 @@ flowchart LR
 brainstorming 到「达成一致的设计」为止。**不自己实现、不写 canonical spec**（那些各有 owner）。按设计落到哪条 lane，把它作为输入交给对应 governed 入口：
 
 - **要实现**（feature / bug fix / behavior / test）→ 档 1 期间由 human 决定是否临时跳过流程一次性执行（如实记录）；档 2 dev-loop 迁入后交 **`/build-feature`**。
-- **架构 / 治理 / spec 意图或拓扑**（`docs/requirements.md` + `docs/architecture.md`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作讨论稿**，交 **`/arch-change`**（review-moderator 分类；**成形设计已落 delivery/changes/ 作讨论稿的，按『已有 proposal』跳过 architect 起草**；输入仅瘦 plan、无落盘上下文时才反派 architect 起草候选，走对抗 review）。
-- **纯契约改动**（`docs/contracts/**`：shim API / display 块 / 笔顺 JSON / 课表 MD）→ 交 **architect-reviewer** + 人类契约门。
+- **架构 / 治理 / spec 意图或拓扑**（`docs/requirements.md` + `docs/architecture.md`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作讨论记录**，交 **`/arch-change`**（架构+契约面）或 **`/gov-change`**（治理面）——主线程持讨论上下文，落盘后派 architect 起草（authoring SSOT = architect-operating-model §3）。
+- **纯契约改动**（`docs/contracts/**`：shim API / display 块 / 笔顺 JSON / 课表 MD）→ 交 **`/arch-change`**（触契约分支：契约包三节随批原子落，无人签门）。
 
-成形设计即讨论稿，落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作 `/arch-change` 的『已有 proposal』输入（非 canonical）；canonical 正式 spec 由下游 owner（architect）产出。
+成形设计落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作面 loop 的输入讨论记录（非 canonical）；canonical 正式 spec 由 architect 产出。
 
 ---
 
-_方法借鉴 obra/superpowers 的 brainstorming skill；terminal state 与文档边界已适配本仓治理（dev-loop / arch-change / 契约门）。_
+_方法借鉴 obra/superpowers 的 brainstorming skill；terminal state 与文档边界已适配本仓治理（dev-loop / 面 loop / 契约面防线）。_

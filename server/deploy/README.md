@@ -1,6 +1,6 @@
 # KidPal direction-B gateway — 部署指引
 
-KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.0）的服务器端部署承载。本文件是 `server/deploy/` 下部署件的 README 性指引（GWA-A2 / GWA-E2 的对齐文档），指向任务包 `260903-gateway-directionB` 与 `delivery/changes/dev/260903-gateway-directionB/deploy.md`（部署期实证证据）。
+KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.0）的服务器端部署承载。本文件是 `server/deploy/` 下部署件的 README 性指引（GWA-A2 / GWA-E2 的对齐文档），指向任务包 `260903-gateway-directionB` 与 `delivery/taskpackages/260903-gateway-directionB/deploy.md`（部署期实证证据）。
 
 ## 部署拓扑
 
@@ -16,7 +16,7 @@ KidPal 方向 B「唯一公网入口 = 流式网关」（spec 决策 18 / §3.0.
 ```
 
 - **引擎腿**：官方 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest`（China mirror；拉不到退 `ghcr.io/...`）。容器镜像本体无改；display fence 剥离补丁以**部署副本 bind-mount** 形态覆盖镜像内 `core/`（见下节「引擎部署副本补丁」）。`data/.config.yaml` overlay + models 卷挂载，keys 不入镜像层、数据跨重建持久。
-- **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `delivery/changes/dev/260903-device-ws-switch/`。）
+- **传输腿**：引擎 plain ws:8000 仅暴露于宿主 **LOOPBACK 127.0.0.1:8010**；设备侧公网 wss:8000 由 TLS FRONT 承担——front 终结 TLS + 强制 token 鉴权后转发到 loopback 腿。引擎不外露。（260903-device-ws-switch live 重切：`docker-compose.yml` 改 `network_mode: host`，引擎**自绑** `127.0.0.1:8010`、无 ports 网桥——对外形状不变，见 `delivery/taskpackages/260903-device-ws-switch/`。）
 - **脑腿**：OpenClaw 网关 `openclaw.json gateway.bind=loopback`（18789 只绑 `127.0.0.1`，V28 硬前置）；`network_mode: host` 下容器经**真 loopback `127.0.0.1:18789`** 直达宿主 OpenClaw（原 `host.docker.internal:18789` 网桥随 host 模式移除，260903-device-ws-switch live）。
 
 ## 部署入口（manifest + deploy.sh · 261013-gov-review-deploy-single-source-loop 起）

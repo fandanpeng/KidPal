@@ -1,8 +1,8 @@
 # 部署证据 v0.1 —— 方向 B 流式网关 ECS 部署（GWA-A2 / GWA-E2）
 
 > **_INTEGRATOR LANDING NOTE_**: staged by builder in `server/`; builder write-scope excludes
-> `delivery/changes/dev/`. Integrator must land `deploy.md` into
-> `delivery/changes/dev/260903-gateway-directionB/` (name contains `deploy`) for
+> `delivery/taskpackages/`. Integrator must land `deploy.md` into
+> `delivery/taskpackages/260903-gateway-directionB/` (name contains `deploy`) for
 > `test_e2_deploy_evidence_in_changes_dev` to go green. Read verbatim for honest status —
 > DO NOT edit to claim a running service that is not yet up.
 

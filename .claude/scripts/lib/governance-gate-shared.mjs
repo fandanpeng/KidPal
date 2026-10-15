@@ -531,10 +531,10 @@ export function runSection2AnchorSelfCheck() {
   const dotRes = parseSection2AnchorLists(dotfile);
   ok(dotRes.problems.length === 0, 'dotfile-anchor-no-problems');
   ok(JSON.stringify(dotRes.union) === JSON.stringify(['.gitattributes']), 'dotfile-anchor-union');
-  const changesPath = ['## 2. 改法', '### T1 · changes 制品锚示例', '改法正文。', '目标文件：`delivery/changes/dev/260831-cloud-link-bringup/review-packet.md`（改：追加复核注）。', '## 3.'].join('\n');
+  const changesPath = ['## 2. 改法', '### T1 · changes 制品锚示例', '改法正文。', '目标文件：`delivery/taskpackages/260831-cloud-link-bringup/review-packet.md`（改：追加复核注）。', '## 3.'].join('\n');
   const chRes = parseSection2AnchorLists(changesPath);
   ok(chRes.problems.length === 0, 'changes-anchor-no-problems');
-  ok(JSON.stringify(chRes.union) === JSON.stringify(['delivery/changes/dev/260831-cloud-link-bringup/review-packet.md']), 'changes-anchor-union');
+  ok(JSON.stringify(chRes.union) === JSON.stringify(['delivery/taskpackages/260831-cloud-link-bringup/review-packet.md']), 'changes-anchor-union');
 
   // fenced code block 跳过（T3 子项 b，260920-gov-review-citation-anchor-residue，FROZEN 2026-09-20）。
   // 夹具两具，形态取自 R1-F5 在真实旧行为下的实测：围栏内路径**带 backtick** / **裸写**。

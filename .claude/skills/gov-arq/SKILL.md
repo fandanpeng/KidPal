@@ -1,18 +1,18 @@
 ---
 name: gov-arq
-description: "Use when: 把一个已执行测出的治理改进项（bug 或优化建议）写成快路径就绪的 debt 条目，让 architect-reviewer 能凭条目机判 review depth（Track B 三要件 或 G2 lightweight 机检事实齐全）。触发词: 登记ARQ, gov ARQ, 这个gov bug记一下, register ARQ, fast-path ARQ。边界: 只做执行测出的改进项登记（按域落条目，含技术面与改需求请求）；新 idea 交 /arch-change，cadence 共性批量交 /loop-retro。"
+description: "Use when: 把一个已执行测出的治理改进项（bug 或优化建议）写成快路径就绪的 debt 条目，让 architect-reviewer 能凭条目机判轻/主判档与 Track A 段升级（判据可机判、事实齐全）。触发词: 登记ARQ, gov ARQ, 这个gov bug记一下, register ARQ, fast-path ARQ。边界: 只做执行测出的改进项登记（按域落条目，含技术面与改需求请求）；新 idea 交 /arch-change，cadence 共性批量交 /loop-retro。"
 ---
 
 # Gov ARQ：把执行测出的改进项写成快路径就绪的 debt 条目
 
-把一个**已执行测出的改进项**（bug 或优化建议）写成一份信息齐全的**条目文件**，按域登记进 debt 账本 `docs/debt/<域>/<ID>.md`。「快路径就绪」= 条目预先携带可机判事实（`paths[]` 供机推 G 层与硬排除、三要件写在正文），让 `architect-reviewer` 不必重新推上下文就能裁 review depth——够格就走快路径（**Track B** 执行测出快道，或纯 G2 的 **Track A lightweight**），不够格就**如实**标 `full-adversarial + human`，绝不美化。
+把一个**已执行测出的改进项**（bug 或优化建议）写成一份信息齐全的**条目文件**，按域登记进 debt 账本 `docs/debt/<域>/<ID>.md`。「快路径就绪」= 条目预先携带可机判事实（`paths[]` 供机推 G 层与硬排除、三要件写在正文），让 `architect-reviewer` 不必重新推上下文就能裁 review depth——够格就走轻/主判档（判据见 references/gov-change.md），不够格就**如实**标 `full-adversarial + human`，绝不美化。
 
 本 skill 是**单条、按需**的条目起草器，与 `/loop-retro`（跨 Pod 周期性批量 retro）互补、字段 convention 完全一致；它不是批量 retro，也不是新 idea 入口。登记进账本是**主线程职责**（human-approved 2026-07-28），本 skill 由主线程执行即落该职责。
 
-> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程起草 PROPOSAL → human 立项 ack → architect 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（触 `docs/contracts/**` / 跨系统结构性变更 / 声明红队）的交 `/arch-change`（Track A）。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
+> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（跨系统结构性 / 方向未收敛 / 声明红队）的升所属面 loop Track A 段。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
 
 <HARD-GATE>
-没有**至少一条可识别的执行记录**（provenance）前，不起草条目——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的改进项」，停：是新 idea 就交 `/arch-change`，或先去补执行证据再回来。产物只有账本里的**一个条目文件**（或对既有条目的证据注记）；其余边界见「约束」节。
+没有**至少一条可识别的执行记录**（provenance）前，不起草条目——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的改进项」，停：是新 idea 就交面 loop（`/arch-change` / `/gov-change`），或先去补执行证据再回来。产物只有账本里的**一个条目文件**（或对既有条目的证据注记）；其余边界见「约束」节。
 </HARD-GATE>
 
 ## Checklist（按顺序，一步一 task）
@@ -34,7 +34,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    - ① 执行测出（有上一步 provenance 承载）？
    - ② 问题清晰、修复明确（**无真设计分叉**）？
    - ③ 爆炸半径已被执行揭示（不是推测）？
-   **终点**：三条全 yes → `review profile = Track B（不论 G 几）`。任一 no → **不是快路径**，标 `full-adversarial + human（Track A）`；skill 仍可起草，但 profile 必须写实，不得回标 Track B。
+   **终点**：三条全 yes → `review profile = Track B（不论 G 几）`。任一 no → **不是轻/主可机判形态**，标 `Track A 段 + human`；skill 仍可起草，但 profile 必须写实，不得回标 Track B。
 
 4. **填 `paths[]` 与机检硬排除事实**（即便走 Track B 也写清，供 architect-reviewer 判）：
    - **列出要改的确切仓根相对路径** → 写进 frontmatter 的 `paths[]`。**G 层与硬排除结论由 `node .claude/scripts/debt-doctor.mjs` 从路径机推**——不再手写六个布尔（这是旧形态 6 495 字符格子的主要体积来源）。
@@ -85,7 +85,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 本 skill 的 terminal state = 「条目写进 `docs/debt/<域>/` + 渲染已跑」（边界即「约束」节 NEVER，不重复）。按 review profile 交下游：
 
 - **已登记条目（默认）** → 走 **Track B 默认路由**（主线程起草 PROPOSAL 走起，见文首路由注）。
-- **命中升级判据（触 `docs/contracts/**` / 跨系统结构性变更）或声明红队** → 交 **`/arch-change`**（Track A）。
-- **provenance 不足 / 其实是新设计 idea** → 不登记，交 **`/arch-change`**（新 idea 走 Track A）。
+- **命中升级判据（跨系统结构性变更 / 方向未收敛）或声明红队** → 升所属面 loop 的 **Track A 段**。
+- **provenance 不足 / 其实是新设计 idea** → 不登记，交面 loop（**`/arch-change` / `/gov-change`**）。
 - **是跨 Pod 周期性共性、应批量 retro** → 交 **`/loop-retro`**（其 triage 第 4 步同样产出 ARQ candidate，字段一致）。
 - **tech 域条目**：登记后工作本身交出去（`handoff` 字段写去向 + 移交触发）——账本存的是「已交 X 面、去向 Y、触发 Z」，不是「活在我这儿」。

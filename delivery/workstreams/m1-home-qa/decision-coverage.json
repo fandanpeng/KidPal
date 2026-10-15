@@ -8,7 +8,7 @@
   "_doc": [
     "workstream 级 decisionCoverage：拆包输入 = 里程碑注册表 M1-home-qa nextAction 四块（v1.42 四阶段重切后首次拆包；sourceType=delivery-story，非 proposal，无 upstreamFrozen pin）。",
     "本次拆 5 包：key-layer-dispatch（块①键基建）/ keybar-three-slot（块①键帽条）/ p1-home-battery（块②首页+电量）/ voice-round-ui（块③问答演出）/ reminder-overlay-unify（块④提醒四态统一）。",
-    "块③的 happy-flow-host-capture 收尾 = 在办独立包（delivery/changes/dev/260913-happy-flow-host-capture/ open），不随本批重拆，只挂账。",
+    "块③的 happy-flow-host-capture 收尾 = 在办独立包（delivery/taskpackages/260913-happy-flow-host-capture/ open），不随本批重拆，只挂账。",
     "story 引用全部走锚点引用纪律（S-Fx.y · 标题 + AC 号集），story 语义权威 = docs/requirements.md 现文；本批引用的 S-F1.1 / S-F1.3 / S-F1.4 / S-F4.1 均不在 §8 已砍清单、可行性均 ✅（intake 两道机查通过）。",
     "跨包共享冻结面交叉扫描：① 键帽文案 kidpal_voice_states 冻结闭集跨 keybar/voice-round/reminder 三包共享——值唯一、非互斥、无冲突（登记纪律 = 值零偏移）；② 行为碰撞型 = key-layer-dispatch 必触 schedule_reminder_b.acceptance.c 冻结钉点（已申报走 acceptance-author 留痕修订）；reminder-overlay-unify 亦触同套件但在其合并后的新基线上，不双改。未发现常量互斥型冲突。"
   ],
@@ -50,7 +50,7 @@
     {
       "decision": "M1块③-happy-flow-host-capture收尾（在办包挂账）",
       "summary": "happy-flow-host-capture 为在办独立包（open），由其自身 planner 闭环收尾——本 workstream 只挂账不承载、不重拆。",
-      "sourceRefs": ["delivery/changes/dev/INDEX.md#260913-happy-flow-host-capture"],
+      "sourceRefs": ["delivery/taskpackages/INDEX.md#260913-happy-flow-host-capture"],
       "landsIn": "deferred",
       "reason": "在办包已有 live 工作面与 planner 闭环，重拆会破坏其在途验收；M1 里程碑收口前由其自身收尾，本批零触碰。"
     },

@@ -11,9 +11,9 @@
 
 | # | 形态 | 示例 | 残留清扫子检模式（关键：模式须**同时**覆盖正形与残形，否则子检自咬） |
 |---|---|---|---|
-| 1 | **斜杠形**（正形） | `delivery/changes/dev/INDEX.md` | `delivery/changes/dev/` |
+| 1 | **斜杠形**（正形） | `delivery/taskpackages/INDEX.md` | `delivery/taskpackages/` |
 | 2 | **分段单引号** | `'changes', 'INDEX.md'` | `['"]changes['"]\s*,\s*['"]` |
-| 3 | **分段双引号**（**任意段值**，含 `'changes', 'INDEX.md'` 类非三段值） | `"delivery", "changes", "dev"` | `['"](?:delivery|changes|dev)['"]\s*,\s*['"](?:changes|dev|INDEX)` |
+| 3 | **分段双引号**（**任意段值**，含 `'changes', 'INDEX.md'` 类非三段值） | `"delivery", "taskpackages"` | `['"](?:delivery|changes|dev)['"]\s*,\s*['"](?:changes|dev|INDEX)` |
 | 4 | **Python join** | `"changes" / "dev"` | `['"][a-z_]+['"]\s*/\s*['"]` |
 | 5 | **C 双引号实参** | `fopen("delivery/changes/...")` | `"[^"]*(?:delivery|changes)/[^"]*"` |
 | 6 | **相对链接形** | `../../changes/` | `\.\./(?:\.\./)*(?:delivery|changes)/` |
@@ -24,7 +24,7 @@
 
 ### ① 幂等双应用（压缩形两轮叠加）
 
-压缩形（如把 `delivery/changes/dev/` 换成更短形态）**跑两轮会叠加**——第二轮把第一轮的产物再压一次，造成超压缩损伤。**对策**：替换后**复跑同一子检**，命中数应为 0；非 0 即发生了叠加，回退后单轮重做。
+压缩形（如把 `delivery/taskpackages/` 换成更短形态）**跑两轮会叠加**——第二轮把第一轮的产物再压一次，造成超压缩损伤。**对策**：替换后**复跑同一子检**，命中数应为 0；非 0 即发生了叠加，回退后单轮重做。
 
 ### ② 点前缀规则误吃成员访问（第 8 类的成因）
 

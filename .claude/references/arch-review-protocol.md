@@ -3,22 +3,22 @@
 > spec 层对抗 review 的「怎么跑」规则:辩论节奏、收敛/deadlock、finding 结案、pass-oracle、spec↔contract 保障。
 > 这是 dev-loop `verify-gates.json` + 升级手册的 spec 层对偶:dev-loop 的 oracle 是测试退出码,本 loop 的 oracle 是**对抗挑战被提出并被解决/记账的记录**(架构无测试退出码)。
 
-> 2026-08-02：路由永久化为「**Track B 常驻轻路径（默认） / 触发式 Track A 重路径**」，SSOT = 下「双轨路由」节（立法来源 `delivery/changes/arch/260802-gov-review-track-b-permanentize/PROPOSAL.md`；2026-08-01 临时路由安排同日退役）。标注「Track A 触发时适用」的各节仅在判据命中时生效。
+> 2026-08-02 立法永久化；261015-gov-review-face-loop-unify 元结构更新——本机器 = 两面 loop（`/arch-change` / `/gov-change`）的 Track A 段，触发判据 = 收敛度（只看收敛度不看触及面，见各面流程 SSOT），SSOT = 下「双轨路由」节。标注「Track A 段适用」的各节仅在判据命中时生效。
 
 ## 两个 profile（共同机制 + 各自 oracle）
 
-同一 loop(intake+draft → charter → challenger↔defender → adjudicator → pass-oracle)跑两个 profile:
+同一套对抗机器（intake+draft → charter → challenger↔defender → adjudicator → pass-oracle）作为**两面 loop 的 Track A 段**运行（261015 批）——由派发面决定语料与判据：
 
-- **spec profile**(`/review-arch`):审 spec(`docs/requirements.md` + `docs/architecture.md`、L0)是否可冻结。低影响 confirmed spec 文本由 moderator 落地。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
-- **governance profile**(`/review-governance`):审 G1/G2/G3 开发治理变更是否自洽、可批准。**不落 canonical**,只产证据 + decision packet,human 批后由主线程 packet-bound landing（landing 通道见「双轨路由」节）。证据落 `delivery/changes/arch/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
+- **架构+契约面 Track A 段**（入口 `/arch-change`）：收敛架构方向（拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉）。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
+- **治理面 Track A 段**（入口 `/gov-change`）：收敛治理方向。**不落 canonical**,只产证据 + decision packet,human 拍方向后流回该面 Track B 落地后端（landing 通道见「双轨路由」节）。证据落 `delivery/changes/arch/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
 
-**统一入口 `/arch-change`**(对偶 dev-loop `/build-feature`):把一个 plan/想法丢给 moderator,先 phase-0 分类再路由进上面某个 profile;`/review-arch`、`/review-governance` 是 profile 已知时的直达入口。**⚠「统一」的所指（本句即「`/arch-change` = 统一入口」这一定位的定义句）**：统一的**不是** Track A 与 Track B 两条轨，而是 **Track A 内部的 spec / governance 两个 profile**——`/arch-change` **是 Track A 的入口**；**Track B 常驻轻路径没有命令入口**，其入口 = 主线程直接起草 PROPOSAL（见「双轨路由」节）。故「命中升级判据 / 声明红队 → `/arch-change`」与「默认 Track B → 主线程起草」两句各指其一、并不冲突。**（边界 · 承 R2-F9）**「统一入口」在本仓是一个**通用短语**而非本命令的专名：`docs/DEV-GOVERNANCE.md` §7 的「**统一入口**」段标题指的是**治理 / spec 变更的入口总览**（同一段同时讲两条轨），`.claude/agents/portfolio-planner.md:25` 的「repair-intent 统一入口」指的是**修复意图的收口处**——二者各由本处上下文定义，**不在本句的覆盖范围内**；本句只定义「用作 `/arch-change` 标签时」的所指。
+**触发（只看收敛度，不看触及面）**：human 立项时判方向未收敛（该不该变、收益与影响看不清）、或 architect-reviewer 评审中升级（只升不降）、或声明红队——主线程派 review-moderator 编排本机器；收敛后 **human 拍方向**，流回 Track B 落地后端（收敛内容不再重复四查——对抗机器已审得更深）。跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 
 本文下面各节(intake+分类、辩论内循环、五条要点、finding 结案、渐进式严格、反空过)是**共同机制**,两 profile 通用;差异只在 charter 判据、可写落点与 pass-oracle。
 
 ## 路由权归属（author 不得自路由）
 
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
+> **Track A 段适用**（默认 = 面内 Track B，见「双轨路由」节）。
 
 **路由权 = 决定一个 change 走哪条 review flow（spec/governance lane）、什么 depth（lightweight/full）、是否转契约门——此判定独立于变更作者。** 三方承载，皆非作者：
 
@@ -28,32 +28,27 @@
 
 **作者不得自路由**：起草或提议变更者（architect 起草 subagent、或任何 plan 提出者）**不决定自己变更的 review 路径**；自认「小/轻/无碍」不作数——**存疑向严**（主观残留默认 `ESCALATE_FULL_REVIEW`）、**mixed 交 human**（AskUserQuestion，默认拆两次）。这是 ③ 作者≠判官（[DEV-GOVERNANCE §1.2](../../docs/DEV-GOVERNANCE.md)）在路由面的具体化：判官独立于作者，**路由（决定谁来判、按什么力度判）同样独立于作者**。
 
-## Intake + 分类（`/arch-change` 统一入口）
+## Intake + 分类（职责归面 loop 立项）
 
-`/arch-change` 下,moderator 先把 plan 分类再起草;`/review-arch`、`/review-governance` 直达时 profile 已定,跳过本节。
+phase-0 分类（lane 挑选 + contract-touching flag）**由派发面 loop 的立项步骤承担**（SSOT = `arch-change.md` / `gov-change.md`「立项与收敛度判断」节；跨面探测 = change-intake.md 四面探测）——本机器收到的 dispatch 已带定好的面与收敛目标，不再自分类。lane 语义保留备查：
 
-**主 lane(二选一)+ 一个横切 flag**—— 分类器只挑车道,不混两个 oracle:
+- **架构+契约面**：触 `docs/requirements.md` + `docs/architecture.md` / `docs/contracts/**` 的意图 / 行为 / 拓扑 / 边界 / 阶段。
+- **治理面**：触 `.claude/{agents,commands,references,rules,skills}`、`scope-map.json`、`*.settings.json`、`verify-gates.json`、`hooks/**`、`scripts/**`、指令根。
+- **mixed**：面 loop 立项时由主线程拆面（AskUserQuestion 默认建议拆两次跑；强耦合同一 PR 时同会话先跑完一面再跑另一面）。
+- **纯 `docs/contracts/**`（无架构配套）**：以 `/arch-change` 触契约分支为入口（无人签门）。
 
-- **spec lane**:触 `docs/requirements.md` + `docs/architecture.md` 的意图 / 行为 / 拓扑 / 边界 / 阶段(L0 蓝图是 spec 特例,不自动落地)。
-- **governance lane**:触 `.claude/{agents,commands,references,rules,skills}`、`scope-map.json`、`*.settings.json`、`verify-gates.json`、`hooks/**`、`scripts/**`、或指令根(README/AGENTS/CLAUDE/DEV-GOVERNANCE)。
-- **contract-touching flag(横切,非独立 lane)**:plan 是否实际触 `docs/contracts/**`;命中则在所属 profile 内触发 `architect-reviewer` 四分类 + 人类契约门(原子性:配套 spec/proposal 与契约同一 PR)。
-- **mixed(命中 >1 lane)**:AskUserQuestion 展示分类,**默认建议拆两次跑**(spec 一次、governance 一次);强耦合到必须同一 PR 时,同会话先跑完 spec profile 落地再跑 governance profile。
-- **纯 `docs/contracts/**`(无 spec/governance 配套)**:不在本 loop 处理 → 直走 `architect-reviewer` + 人类契约门。
+## 判档（261015 批取代 review-depth 分类 + Lightweight path）
 
-分类结果**必须显式展示**;含糊用 AskUserQuestion 确认,不猜。
+lane 定了之后，**轻重判档归 architect-reviewer**（面 loop 评审循环内，四查后）：按各面流程 SSOT 的可机判清单判轻/主路径与 Track A 段升级，**只升不降**——架构+契约面判据见 `arch-change.md`（措辞 vs 语义 + 收敛度三条），治理面见 `gov-change.md`（路径即判据：文档面轻 / 机器面恒 Track B）。旧 review-depth 双轨（lightweight-architect-review vs full-adversarial 四裁断 + moderator 复判）已退役；轻路径落地 = 瘦制品五件过闸（见 `arch-change.md`「轻路径落地通道」节）。执行测出 bug 的 Track B 快路径语义不变（见「双轨路由」节）。
 
-## Review-depth 分类 + Lightweight path（`/arch-change`，gov-review-architect-landing-mode 2026-07-08 human-approved）
+### 双轨路由（默认面内 Track B / 触发式 Track A 段）
 
-lane 分类之后，`/arch-change` 再判 **review-depth**（**Track A 触发时适用**——默认路由 = Track B 常驻轻路径，见下「双轨路由」节；此处「Track B · 快路径」的「执行测出 bug」语义已并入该节的常驻 Track B）。review-depth 是**双轨**（按「是否执行测出」分流，**不按 G 层**）：**Track A · G 层路由**（新 idea，`lightweight-architect-review` vs `full-adversarial`，下节）+ **Track B · 快路径 / human 知情覆核**（执行测出的 bug，不论 G 几，见「双轨路由」节）。两轨皆是既有「对抗 review 人类拍板」工程门的**具名 depth 子道**（DEV-GOVERNANCE §5 保持 6 工程门，与 6 业务门无关），不是新增第 7 个工程门。
-
-### 双轨路由（默认 Track B 常驻轻路径 / 触发式 Track A 重路径）
-
-**本节为治理 / spec 变更现行路由唯一 SSOT**（2026-08-02 由 2026-08-01 临时路由安排永久化，立法来源 `delivery/changes/arch/260802-gov-review-track-b-permanentize/PROPOSAL.md`）。**默认路由 = Track B 常驻轻路径**；Track A（full-adversarial 机器）不再是默认档，由下方判据**触发式**启用。
+**本节为治理变更现行路由唯一 SSOT**（2026-08-02 立法永久化；261015 批元结构更新——四面 loop、cast 统一）。**默认路由 = 面内 Track B 常驻轻路径**；Track A 段（对抗收敛机器）由收敛度判据**触发式**启用（判据见各面流程 SSOT，只看收敛度不看触及面）。
 
 **Track B 七步流程（默认）**：
 
-1. 主线程起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架见 `docs/templates/PROPOSAL.template.md`）→ human **立项 ack**；
-2. **architect 评审循环**（只读 canonical、只写评审记录于 PROPOSAL §7；结论二分：GREEN / 打回；影响目标效果的打回项升级 human）至 GREEN；
+1. 主线程派 **architect** 起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架见 `docs/templates/PROPOSAL.template.md`；输入 = human 原话 / spine sources / 讨论记录，落盘后派发——主线程不起草内容）→ human **立项 ack**；
+2. **architect-reviewer 评审循环**（只读 canonical、只写评审记录于 PROPOSAL §7；结论二分：GREEN / 打回；影响目标效果的打回项升级 human）至 GREEN；
 3. 主线程凭「立项 ack + GREEN」**标 FROZEN**（FROZEN = 内容冻结；授权记 Status 行）；
 4. 主线程 **packet-bound 落地**（G1/G2/G3 全落，landing-manifest 绑定，落地后不可回改 PROPOSAL）+ 写 `architect-landing-summary.md`（**骨架见 `docs/templates/architect-landing-summary.template.md`，复制勿手写**——缺 landing-manifest 围栏块即结构门 / landing-verifier 合法打回；unit-gate F4 + 批 A 两实例已在册，同根 ARQ-260924-landing-summary-template-pointer-gap）；
 5. 主线程派 **landing-verifier** 独立核验（逐文件 diff + `landing-fidelity-check.mjs`）→ 绿；
@@ -74,68 +69,33 @@ lane 分类之后，`/arch-change` 再判 **review-depth**（**Track A 触发时
 
 **直接 Track A（绕过 Track B）判据**——命中任一即走 full-adversarial：
 
-1. 触 `docs/contracts/**`（直走契约门，既有规则不变——契约门是独立机器，非 Track A 族）；
-2. 跨系统结构性变更（多系统 spec 语义 / 拓扑同时动）。
+1. 跨系统结构性变更（多系统 spec 语义 / 拓扑同时动）；
+2. 方向未收敛（该不该变、收益与影响看不清——判据只看收敛度，见各面流程 SSOT）。
 
-**governance 类变更（含 self-def / review-loop agent defs）不再强制升级**——治理形态由 human 定义，Track B 评审循环的对抗力度即为足额；「声明红队」保留为**自愿逃生门**：human 或 architect 任一方随时可声明启动 Track A，但**非路由义务**。Track A 触发时：路由权归属、Eligibility 判据、四裁断、Lightweight 流程、Governance pass-oracle 与定稿序列各节（均标注「Track A 触发时适用」）生效。
+**governance 类变更（含 self-def / review-loop agent defs）不再强制升级**——治理形态由 human 定义，Track B 评审循环的对抗力度即为足额；「声明红队」保留为**自愿逃生门**：human 或 architect 任一方随时可声明启动 Track A 段，但**非路由义务**。Track A 段触发时：路由权归属、Governance pass-oracle 与定稿序列各节（均标注「Track A 段适用」）生效；Eligibility / 四裁断 / Lightweight 各节已随 261015 批退役（判档改由 architect-reviewer 按各面流程 SSOT 的可机判清单执行，只升不降）。
 
-**Track B 内熔断升级**：architect 评审循环 **3 轮未 GREEN** → 升级 human 三选一：① 转 Track A（全套对抗）；② 撤回 / 缩圈提案；③ 换新判官实例再战 1 轮——仍不绿则**自动转 Track A**，不再二次升级。**human 不定轮数上限**：方向由 human 裁，数字由机械规则兜底（R1–R3 = 同判官 resume，上下文连续；Track A 内部轮次不设上限，收敛即停）。
+**Track B 内熔断升级**：architect-reviewer 评审循环 **3 轮未 GREEN** → 升级 human 三选一：① 转 Track A 段（全套对抗）；② 撤回 / 缩圈提案；③ 换新判官实例再战 1 轮——仍不绿则**自动转 Track A 段**，不再二次升级。**human 不定轮数上限**：方向由 human 裁，数字由机械规则兜底（R1–R3 = 同判官 resume，上下文连续；Track A 段内部轮次不设上限，收敛即停）。
 
 **存疑向严**：判据适用存疑时默认升 human（不猜、不向宽）；主线程起草时须在 PROPOSAL 标注轨道自评 + 理由（沿用「路由权归属」作者不得自路由精神）。
 
-**不动清单（本路由不改）**：契约门（contracts Tier-1 → architect-reviewer 四分类 + human 签字）、`landing-fidelity-check.mjs`、landing-verifier 独立核验、机械强制层（scope-map / hooks / verify-gates）。
+**不动清单（本路由不改）**：契约面防线（写冻结 + 合并机械凭据闸 `pre-merge-escalation-gate.mjs`——契约变更 = 架构变更的一种，走 `/arch-change` 触契约分支）、`landing-fidelity-check.mjs`、landing-verifier 独立核验、机械强制层（scope-map / hooks / verify-gates）。
 
-### Eligibility 判据（机检硬排除 vs 主观残留 —— 关键拆分）
+### 轻路径判档（261015 批取代 Eligibility / 四裁断 / Lightweight 流程）
 
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
+> **Track B 内适用**（判档发生在面 loop 评审循环内，非 Track A 段）。
 
-准入分两档，由 architect-reviewer 判、review-moderator 独立复判：
+旧机制（architect-reviewer 四裁断 LIGHTWEIGHT_OK / moderator 复判 / lightweight 快道制品）已随 261015-gov-review-face-loop-unify 退役。现行判档：
 
-**机检硬排除（命中任一即不合格；可路径 / frontmatter / diff 机判，不靠判断）：**
-- 触 `docs/contracts/**` 或造 spec-contract drift → `CONTRACT_GATE_REQUIRED`。
-- 触 **G1 指令根**（README / AGENTS / CLAUDE / DEV-GOVERNANCE / L0 蓝图）→ `HUMAN_REQUIRED`（E1：G1 恒 full + human）。**执行测出的 bug 走 Track B 快路径（不论 G 几），见「双轨路由」节；本条管新 idea 轨。**
-- 触 **G3 强制层**（scope-map / *.settings / verify-gates / hooks / scripts）→ `HUMAN_REQUIRED`（E1：G3 恒 full + human）。**执行测出的 bug 走 Track B 快路径（不论 G 几），见「双轨路由」节；本条管新 idea 轨。**
-- 改 agent `tools` / `name` / `model` / write scope / authority 语义 → `HUMAN_REQUIRED`（自改递归）。
-- 改 self-def / review-loop agent 定义 → `HUMAN_REQUIRED`（自改递归 + 第五阀）。
-- 新增 / 删 / 改任何 human / engineering / merge / contract / review gate → 不合格。
-- mixed lane / L0 蓝图 → 不合格。
+- **判档人 = architect-reviewer**（评审循环内，四查后），**判据可机判、只升不降**：
+  - 架构+契约面：轻路径判据四条 + Track A 段判据三条，见 `arch-change.md`；
+  - 治理面：路径即判据（文档面轻 / 机器面恒 Track B）+ Track A 段判据，见 `gov-change.md`。
+- **轻路径落地 = 瘦制品五件过闸**（瘦 PROPOSAL + §7 GREEN + landing-manifest + 瘦 architect-landing-summary + landing-verdict；闸零改动；retro 豁免）——SSOT 见 `arch-change.md`「轻路径落地通道」节。
+- **不达判据 → 主路径 Track B 全件**；方向未收敛 → 升 Track A 段（对抗收敛后流回）。
 
-**主观残留（无法机判，architect-reviewer 不得自证为 OK，默认升 full）：**「small non-semantic clarification」「no cross-system meaning / ownership change」「cheap validation plan exists」「no open ambiguity / deadlock」。落到主观判断即 `ESCALATE_FULL_REVIEW`。lightweight 只吃机检能证「确实小」的部分（典型：G2 reference/command 措辞、link、evidence-shape、路由澄清）。
-
-→ **合格面 = 仅 G2 + 机检硬排除全过 + 主观残留为空**。
-
-### 四裁断（architect-reviewer 返回）
-
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
-
-| 裁断 | 含义 | 下一步 |
-|---|---|---|
-| `LIGHTWEIGHT_OK` | 确属小、非契约、仅 G2、硬排除全过、主观残留空 | moderator **独立复判** → 通过后由主线程 packet-bound landing |
-| `ESCALATE_FULL_REVIEW` | 有架构语义 / 跨系统 / 歧义 / 信心不足 / 落主观残留 | 走 full 对抗 loop |
-| `HUMAN_REQUIRED` | 触 G1 / G3 / 自改递归 / 高敏 | human / full governance |
-| `CONTRACT_GATE_REQUIRED` | 触 contracts 或 spec-contract drift | 契约门四分类 + 人类契约门 |
-
-### Lightweight 流程 + 制品
-
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
-
-```text
-review-moderator: lane 分类 → review-depth 分类
-  → 派 architect-reviewer 只读判 eligibility（4 裁断）
-  → LIGHTWEIGHT_OK → review-moderator 独立复判 eligibility（非 pass-through；作者≠判官保全；路由权归属见上节）
-  → 复判通过 → 主线程 packet-bound landing（landing-manifest 绑定）
-  → 记 lightweight 证据
-```
-
-制品（落 `delivery/changes/arch/{arch-review,gov-review}-<id>/`）：`lightweight-intake.md`、`architect-reviewer-verdict.md`、`architect-landing-summary.md`（引被批 packet-id，A9 packet-binding，供人类 merge 门 spot-check）、验证输出 / notes。**不得伪造** full-review 制品（`review-charter.md` / `findings.md` / `review-packet.md`）—— full loop 没跑就没有这些。
-
-### 不达判据 → full-adversarial
-
-任一硬排除命中、主观残留非空、或 moderator 复判存疑 → 走下面的 full 对抗 loop。full review 对以下**强制**：高影响架构、跨系统 spec 语义、L0 蓝图、改 authority/owner/writer/approver 语义 / gates / agent tools·write scope / scope-map allow·deny / hooks·settings·scripts / route enforcement 的治理变更、任何 deadlock 或未决分歧。（**以上为 Track A 新 idea 轨；执行测出的 bug 走 Track B 快路径，见「双轨路由」节——其中真设计分叉 / 爆炸半径未揭示 / 无执行记录 → 回 Track A full。**）
-
+full 对抗（Track A 段）对以下**强制**：高影响架构、跨系统 spec 语义、L0 蓝图、改 authority/owner/writer/approver 语义 / gates / agent tools·write scope / scope-map allow·deny / hooks·settings·scripts / route enforcement 的治理变更、任何 deadlock 或未决分歧、以及一切方向未收敛的变更（以上为收敛度与风险强制项；执行测出的 bug 走 Track B 快路径——其中真设计分叉 / 爆炸半径未揭示 / 无执行记录 → 回 Track A 段）。
 ## 起草阶段（architect = 作者 subagent，对偶 builder）
 
-输入是 plan/想法时,moderator 派 `architect` 当**起草 subagent** 产候选(spec lane → `docs/requirements.md` + `docs/architecture.md`,**写入不等于冻结**;governance lane → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`,**不落 canonical**)。输入已是现成 spec/proposal 则跳过起草。
+输入是 plan/想法时,Track A 段内 moderator 派 `architect` 当**起草 subagent** 产候选(架构面 → `docs/requirements.md` + `docs/architecture.md`,**写入不等于冻结**;治理面 → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`,**不落 canonical**;Track B 内主线程直接派 architect 起草)。输入已是现成 spec/proposal 则跳过起草。
 
 **作者 ≠ 判官(中立性铁律,对偶 dev-loop builder≠verifier/supervisor)**:architect 只产**候选制品**;判据(charter)由 `scenario-author` 独立冻结,攻与裁由 `challenger`/`adjudicator`。architect 不写冻结 charter、不自评可冻结/可批准、不落 governance canonical、自改递归仍须 human;moderator 编排但不代 architect 起草。**路由权同——作者不得自路由（见上节「路由权归属」）。**
 
@@ -185,11 +145,11 @@ scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 fin
 
 ## Spec↔Contract 一致性保障（铁律）
 
-本 loop 改 spec(docs/,设计层),但 `docs/contracts/**` 是单一事实源、全程冻结(同 dev-loop 的 `permissions.deny` + enforce-scope 钩子),**永不**拥有契约权威 → 挂到 dev-loop 同一个契约门。
+本机器只改 spec/docs 设计层草稿,`docs/contracts/**` 是单一事实源——**契约变更 = 架构变更的一种**，走 `/arch-change` 触契约分支（无人签门；合并过机械凭据闸 `pre-merge-escalation-gate.mjs`）。
 
-1. **冻结**:所有 review agent 不能写 `docs/contracts/**`。
-2. **单一门**:对每条 CONFIRMED 的 spec 改动按 `architect-reviewer` 四分类定性 —— `NO_CONTRACT_CHANGE`(纯措辞/阶段/边界,或 spec 漂了改 spec 消除漂移)/ `IMPLEMENTATION_ADAPTER` / `SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED`。后两类 → moderator 主线程派 architect-reviewer → ContractChangePacket → 人类契约门;spec 改动**暂存在 packet 里,不单独落地**。
-3. **原子性**:触契约的 spec 改动与契约改动**同一个 PR** 落地(monorepo 原则),不先合 spec;契约未批前 spec 不可冻结。
+1. **写防线**:所有 review agent 不能写 `docs/contracts/**`（scope-map deny；落地恒主线程）。
+2. **触契约处置**:对每条 CONFIRMED 的 spec 改动按 `architect-reviewer` 四分类（canonical 五值，权威 = rules/contracts.md）定性 —— `NO_CONTRACT_CHANGE` / `IMPLEMENTATION_ADAPTER` 原地消化；`ACCOMPANIES_SPEC_CHANGE` / `SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED` → **契约包三节**（proposedContractDiff / impact / validationPlan）并入该批 PROPOSAL，与 spec 改动**同批原子落地**。
+3. **原子性**:触契约的 spec 改动与契约改动**同批**落地(monorepo 原则),不先合 spec。
 4. **机械门**:`node .claude/scripts/arch-spec-contract-check.mjs <spec>` —— 不复制 schema(铁律,硬失败);`core.*` 引用必须在 `docs/contracts/**` 解析(硬失败);`<system>.*` 引用未解析记为 advisory(可能是 Tier-2 私有/未契约化事件,challenger 按轴 4 核),`--strict` 下升为硬失败。这是 pass-oracle 第 4 关。
 
 ## Pass-oracle（5 关 + handoff 出口全过才可冻结）
@@ -203,14 +163,14 @@ scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 fin
 
 ## Governance profile pass-oracle（全过才可标「可批准」）
 
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
+> **Track A 段适用**（默认 = 面内 Track B，见「双轨路由」节）。
 
-governance profile(`/review-governance`)不用上面的 spec 冻结 oracle,换成这六关:
+治理面 Track A 段（`/gov-change`）不用上面的 spec 冻结 oracle,换成这六关:
 
 1. **治理判据覆盖** — charter 冻结的每条治理判据(authority/owner/writer/approver 一致性、G1/G2/G3 归属、自改递归、agent·command·scope-map·hooks·settings 跨面对齐、业务门/工程门边界、是否触契约)都被 challenger 走过。
 2. **finding 全结** — 每条 finding 落到某个 outcome;无未结 BLOCKING/SHOULD。
 3. **高敏项已标 human** — 触 agent 定义 / 自改递归 / 强制执行层 / 指令根的 confirmed 项一律标 HUMAN-RULED,写进 decision-packet,不在 loop 内落 canonical。
-4. **触契约已转门** — 若治理变更实际触 `docs/contracts/**`,已派 architect-reviewer 转契约门。
+4. **触契约已转** — 若变更实际触 `docs/contracts/**`,已转 `/arch-change` 触契约分支（契约包三节随批原子落）。
 5. **canaries 全中** — 治理 regression-canaries(历史治理踩坑)被 challenger 独立重新派生。
 6. **decision-packet 完整** — 每条 confirmed 治理改法有:目标文件、改法、影响面、是否触自改递归/契约/强制层、推荐,供 human 批。
 
@@ -218,7 +178,7 @@ governance profile **不复制** spec↔contract 机械门(那是 spec profile �
 
 ## Governance profile 定稿 → 冻结 → 核验 → landing（human 批准后 / canonical landing 前）
 
-> **Track A 触发时适用**（默认路由 = Track B 常驻轻路径，见「双轨路由」节）。
+> **Track A 段适用**（默认 = 面内 Track B，见「双轨路由」节）。
 
 governance profile 在 human 批准 decision-packet **之后**、主线程 packet-bound canonical landing **之前**，必须走定稿阶段。补的就是一个真实缺口：confirmed 改法若只留在 `decision-packet.md` / `findings.md`，不回灌 PROPOSAL，则 PROPOSAL 起草后即「孤儿」——停在初稿、可能与批定设计矛盾，而 canonical landing 又绑定 decision-packet，于是**没有任何一步核验「落地的 == 批定的」**（gov-review-proposal-consolidation-gate 修复）。
 

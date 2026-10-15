@@ -322,7 +322,7 @@ if (hasFailFastTruncation) {
 }
 
 // 读 terminalOutcome / riskTier
-const changeDir = resolve(projectDir, 'delivery', 'changes', 'dev', changeId);
+const changeDir = resolve(projectDir, 'delivery', 'taskpackages', changeId);
 const verdictPath = resolve(changeDir, 'supervisor-verdict.json');
 const taskPackagePath = resolve(changeDir, 'taskpackage.json');
 
@@ -367,7 +367,7 @@ const metrics = {
   notes,
 };
 
-// 产出路径：优先 delivery/changes/dev/<changeId>/，若不存在则 delivery/taskpackages/<changeId>/
+// 产出路径：优先 delivery/taskpackages/<changeId>/，若不存在则 delivery/taskpackages/<changeId>/
 let outputDir;
 if (existsSync(changeDir)) {
   outputDir = changeDir;

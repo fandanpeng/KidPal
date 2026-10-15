@@ -35,9 +35,9 @@ model: opus
 
 ## Governance profile / 治理 charter
 
-governance profile(`/review-governance`)下,charter 不是钉 spec 覆盖,而是钉**治理变更审查覆盖**:
+治理面 Track A 段（`/gov-change`）下,charter 不是钉 spec 覆盖,而是钉**治理变更审查覆盖**:
 
-- 适用判据:authority / owner / writer / approver 一致性、G1/G2/G3 归属、自改递归、agent·command·scope-map·hooks·settings 跨面对齐、业务门/工程门边界、是否触契约需转契约门。
+- 适用判据:authority / owner / writer / approver 一致性、G1/G2/G3 归属、自改递归、agent·command·scope-map·hooks·settings 跨面对齐、业务门/工程门边界、是否触契约需转 `/arch-change`。
 - 必载原则:`docs/DEV-GOVERNANCE.md` 的四元组 + G1–G4 分层 + 自改递归规则。
 - regression-canaries:从历史治理踩坑提炼(如 AGENTS/CLAUDE 不对称、强制层无 owner、agent 自改自身 scope 无 human),challenger 必须独立重新派生。
 - 输出到 `delivery/changes/arch/gov-review-<id>/review-charter.md`,冻结。

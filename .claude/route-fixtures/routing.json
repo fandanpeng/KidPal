@@ -1,27 +1,14 @@
 {
-  "_doc": "Route-regression config for route-regression-check.mjs — KidPal 档1 净版。Static proxy gate — asserts command→entry routing + required routing-signal substrings preserved in agent descriptions + tools:Agent() dispatch whitelists. NOT a real LLM-routing proof. owner=architect (G3). Landing-time/manual verification tool. 档2 迁入 dev-loop 时补 build-feature/planner 行。",
-  "commandEntry": [
-    {
-      "command": ".claude/commands/arch-change.md",
-      "entryAgent": "review-moderator"
-    },
-    {
-      "command": ".claude/commands/review-arch.md",
-      "entryAgent": "review-moderator"
-    },
-    {
-      "command": ".claude/commands/review-governance.md",
-      "entryAgent": "review-moderator"
-    }
-  ],
+  "_doc": "Route-regression config for route-regression-check.mjs — KidPal 档1 净版。Static proxy gate — asserts required routing-signal substrings preserved in agent descriptions + tools:Agent() dispatch whitelists. NOT a real LLM-routing proof. owner=architect (G3). Landing-time/manual verification tool. 261015-gov-review-face-loop-unify T22：commandEntry 三行全删（判官 R2-F6 亲核 route-regression-check.mjs:41-45——entryAgent 语义 = 入口路由断言；新 /arch-change、/gov-change 入口 = 主线程，对齐 /requirement-change 未登记先例）；architect-reviewer 信号重钉（扩编后职责）；review-moderator 信号随 Track A 段定位重钉。",
+  "commandEntry": [],
   "agentRequiredSignals": {
     "review-moderator": [
-      "/review-arch",
-      "/review-governance",
       "/arch-change",
-      "profile",
-      "起草候选",
-      "主线程"
+      "/gov-change",
+      "Track A 段",
+      "scenario-author",
+      "challenger",
+      "adjudicator"
     ],
     "scenario-author": [
       "charter",
@@ -42,9 +29,11 @@
       "queue"
     ],
     "architect-reviewer": [
-      "ContractChangePacket",
+      "/arch-change",
+      "/gov-change",
+      "四查",
       "契约",
-      "预审"
+      "判档"
     ],
     "story-author": [
       "requirement-change.md",

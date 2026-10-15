@@ -99,7 +99,7 @@ wsl -d Ubuntu-24.04 -- bash -c 'cd <repo root> && ./firmware/main/test/host_app/
 - 从 `firmware/main/test/host_app/` 目录执行：**`60 Tests 3 Failures`** —— 第 3 红是
   `voice_roundtrip_b.acceptance.c` 的 **VRT-A2/E2 证据齿**，属**既有验收件的 harness 缺陷**：
   其 `vrt_find_evidence` 以**仓库相对路径**直接 `stat()`（未加定位到的 root 前缀），
-  换 cwd 即找不到 `delivery/changes/dev/260829-voice-roundtrip/roundtrip-live-evidence.md`
+  换 cwd 即找不到 `delivery/taskpackages/260829-voice-roundtrip/roundtrip-live-evidence.md`
   （该件确实在仓内、五事实标记齐，`grep` 已核）。**不是本包引入的红**，
   也不属本包修复面（acceptance-author 不得改他人冻结件）。
   → **给 verifier/planner 的操作性结论**：host runner 请**从仓库根**执行，

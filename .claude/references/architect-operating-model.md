@@ -12,9 +12,9 @@ The architect does not implement application code, approve contracts, bypass dev
 
 Boundary summary:
 
-- Architect drafts and advises.
-- `architect-reviewer` classifies contract impact and prepares gate evidence.
-- Human architect approves or rejects contract gates.
+- Architect drafts and advises（四面统一 cast：需求面起草 = story-author，架构+契约/治理面起草 = architect）.
+- `architect-reviewer` classifies contract impact (filter), and reviews face-loop drafts（架构/治理面四查 + 轻/主判档；Track B 第 2 步评审人）.
+- Contract changes are architecture changes：走 `/arch-change`，合并过机械凭据闸（human 签字门已由 261015 批撤销）.
 - `planner` executes implementation work through TaskPackage and dev-loop.
 - `supervisor` gates merge readiness.
 
@@ -27,7 +27,7 @@ Use this authority order when evidence conflicts:
 3. `docs/DEV-GOVERNANCE.md`, `AGENTS.md`, `CLAUDE.md`, `.claude/{agents,commands,references,rules,skills}/**`, `.claude/{hooks,scripts}/**`, and `.claude/*.json` - development governance rules and enforcement substrate.
 4. `CONTRACT-CHANGE-PACKET.md`, `architecture-gate-evidence.md`, ADRs - why, evidence, and gate state.
 5. `docs/CONTRACT-DECISION-QUEUE.md` and the debt ledger (`docs/debt/{gov,tech,requirement}/INDEX.md` - pending/deferred decision ledgers).
-6. `delivery/changes/dev/**` and `delivery/changes/arch/**` - per-change and per-review evidence.
+6. `delivery/taskpackages/**` and `delivery/changes/arch/**` - per-change and per-review evidence.
 7. Historical transcripts - provenance and lessons only; never canonical authority.
 
 Authority is not write permission. Development governance surfaces use four fields: **authority** (which file is the fact source), **owner** (who maintains the rule), **writer** (which agent may edit), and **approver** (who approves the change). `docs/DEV-GOVERNANCE.md` is the navigation entry for this model.
@@ -37,7 +37,7 @@ Development governance surfaces are layered:
 - **Navigation / instruction roots (G1)**: `AGENTS.md`, `CLAUDE.md`, `docs/DEV-GOVERNANCE.md`.（本仓暂无独立 README 顶层与 L0 蓝图；设立时登记进 G1。）
 - **Role / process definitions (G2)**: `.claude/agents/**`, `.claude/commands/**`, `.claude/references/**`, `.claude/rules/**`, `.claude/skills/**`.
 - **Enforcement substrate (G3)**: `.claude/scope-map.json`, `.claude/*.settings.json`, `.claude/verify-gates.json`, `.claude/hooks/**`, `.claude/scripts/**`.
-- **Evidence / queues (G4)**: `delivery/changes/arch/**`, `docs/CONTRACT-DECISION-QUEUE.md`. Registration of debt ledger entries (`docs/debt/<domain>/<ID>.md`) is a **main-thread action** (human-approved 2026-07-28; dedupe-first — append evidence to an existing same-root item, never duplicate); architect owns ARQ *handling* via `/arch-change`, not the registration act (scope-map allow deliberately excludes the ledger write for architect; ARQ-260728-architect-queue-write-scope closed).
+- **Evidence / queues (G4)**: `delivery/changes/arch/**`, `docs/CONTRACT-DECISION-QUEUE.md`. Registration of debt ledger entries (`docs/debt/<domain>/<ID>.md`) is a **main-thread action** (human-approved 2026-07-28; dedupe-first — append evidence to an existing same-root item, never duplicate); architect owns ARQ *handling* via the face loops (`/arch-change`, `/gov-change`), not the registration act (scope-map allow deliberately excludes the ledger write for architect; ARQ-260728-architect-queue-write-scope closed).
 
 Architect owns and may write G1-G3 only as a human-approved governance change. G1-G3 changes never self-approve. Agent definitions are architect-owned; other agents do not edit `.claude/agents/**`. If architect changes its own definition, tools, write scope, or a G3 file that affects its authority, explicit human approval is mandatory.
 
@@ -54,7 +54,7 @@ Contract provenance ladder:
 | Role | Owns | Does not own |
 |---|---|---|
 | Architect | Strategy, topology, process/gate design, spec drafting, ADR/rationale, review artifact drafting, contract proposal framing, in-dev-loop advisory analysis（opinions only; execution stays with fixer/builder） | App implementation, contract approval, merge approval, all canonical landing（landing 恒 = 主线程 packet-bound，G1/G2/G3） |
-| `architect-reviewer` | Read-only tactical contract pre-review and compliance classification, plus lightweight architecture-review eligibility for small **G2** changes (LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED) | Editing contracts/specs/implementation; approving gates; self-certifying eligibility (review-moderator re-judges) |
+| `architect-reviewer` | 独立审稿：架构/治理面 loop 的四查内容审稿 + 轻/主判档与 Track A 段升级判定（只升不降），兼契约分类过滤（canonical 五值，权威 = rules/contracts.md） | Editing contracts/specs/implementation; approving content; self-certifying（作者≠审者，与 architect 不得互兼） |
 | `review-moderator` | Full adversarial spec review orchestration | Contract approval; implementation |
 | `planner` | Dev-loop implementation orchestration and TaskPackage slicing | Spec soundness review; contract approval |
 | `supervisor` | Merge gate review | Authoring or repairing implementation |
@@ -62,21 +62,19 @@ Contract provenance ladder:
 
 Important platform rule: `architect-reviewer` is not planner-only. It is main-thread-only. In dev-loop the main thread is `planner`; in arch-review the main thread is `review-moderator`. Claude Code subagents cannot spawn subagents, so every loop must have a single main-thread orchestrator.
 
-**两个变更前置门（分流空间 dual，gov-review-architect-change-triage）**：变更进来先分一问——**碰不碰单一事实源？**
-- **碰**（`docs/contracts/**` / systems spec / `.claude/agents` 定义 / gate）→ 跟大小无关，一律直走 `/arch-change`（`delivery/changes/arch/` 对抗 review），**不进** `/triage-change`。
-- **不碰**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门：architect 做比例化 review、返回四档裁决（③拆包 / ②单包Full / ②单包Lite / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门。
-- **逃生门（reviewer-first）**：`/triage-change` review 中发现疑似触事实源 → 先派 `architect-reviewer` 四分类 → `CONTRACT_CHANGE_REQUIRED`/`SPEC_CONTRACT_DRIFT` 转契约门 + 升级 `/arch-change`。
+**变更入口（261015 批元结构：每面一个 loop 入口）**：变更进来先分一问——**碰哪个面？**
+- **需求面** → `/requirement-change`；**架构+契约面**（`docs/contracts/**` / `docs/architecture.md`）→ `/arch-change`；**治理面**（`.claude/**` / 指令根 / gate）→ `/gov-change`——各面 loop 内 architect 起草、architect-reviewer 审稿，**不进** `/triage-change`。
+- **不碰事实源**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门：architect 做比例化 review、返回四档裁决（③拆包 / ②单包Full / ②单包Lite / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门；跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
+- **逃生门（reviewer-first）**：`/triage-change` review 中发现疑似触事实源 → 先派 `architect-reviewer` 四分类 → `CONTRACT_CHANGE_REQUIRED` / `SPEC_CONTRACT_DRIFT` / `ACCOMPANIES_SPEC_CHANGE` 转 `/arch-change`（契约变更 = 架构变更的一种；无人签门，合并过机械凭据闸）。
 
-**Discussion → Draft Authorship（讨论稿由主线程作者，gov-review-discussion-draft-authorship FROZEN 2026-07-27）**：人 + 主 Agent 在主线程讨论出的方案要结晶成 draft proposal 时，**由主 Agent 亲自起草**，不起 architect 子 Agent——主线程持完整讨论上下文，子 Agent 不继承父会话，派子 Agent 写讨论稿必然有损。
+**Discussion → Draft Authorship（261015 批统一 cast：起草归 architect，主线程四面纯编排）**：人 + 主 Agent 在主线程讨论出的方案要结晶成变更内容（PROPOSAL / spec 候选）时，**由主线程派 architect 起草**——主线程四面纯编排（派发 / 落地 / 状态翻转 / 记账），不起草变更内容；architect 是架构面与治理面变更的起草者。
 
-- **落点 = `delivery/changes/` 下的 draft / 候选（G4 证据，非 canonical）**；主 Agent **不写** canonical spec 设计面（`docs/requirements.md` / `docs/architecture.md`，那是 architect 的设计面写域）。
-- **主 Agent 起草前先读 `architect-operating-model.md`**（把 architect 开工读纪律扩到主线程起草时；与 architect「先读」同为 convention 级、无机器牙）。
-- **architect-as-drafting-subagent 收窄**到 `/arch-change` 内「输入是一句瘦 plan、上下文已落盘、review-moderator 需从中立位置产候选」的场景。
-- **canonical 起草仍归 architect、落地恒归主线程**：讨论稿过 `/arch-change` 后，spec lane 由 architect 把候选写入 `docs/requirements.md` + `docs/architecture.md`，governance lane 由 architect 维护 `PROPOSAL.md` 定稿，packet-bound landing 归主线程。（§3 路由表 Architect 行「spec drafting」= **canonical** spec 起草，归 architect；讨论结晶 draft = `delivery/changes/` 候选，由主线程作者。）
-- **crisp 判据**：结晶 draft 所需设计上下文**主要存在于主线程对话（未落盘）→ 主线程作者**；输入仅一句瘦 plan、所需上下文**已在仓内耐久文件**（spec/queue/reference 可读）→ architect 可作 subagent 从中立位置起草。**存疑时主线程作者**（持上下文者作者）。
-- **author≠judge 不破**：讨论稿作者无论为主 Agent+人，判官（scenario-author / challenger / adjudicator）仍由 `/arch-change` 下游独立产生，作者身份不进 charter、不自评（把 §5「architect authors the candidate」的显式声明者延伸到主线程作者）。
-- **与 DEV-GOVERNANCE §4 步骤 1 的区分（锚其第二句逃生门）**：DEV-GOVERNANCE §4 步骤 1「architect 起草 PROPOSAL」适用 `/arch-change` raw-plan 入口反派路径；讨论稿是主线程作者的「已备 proposal」，经 `/review-governance` 直达 / 作「已有 proposal」被 §5 步骤 2 跳起草槽消费，**不触发该步起草**。architect-作者声明六站点条件化于 raw-plan（DEV-GOVERNANCE §4 第二句逃生门 + §5 起草阶段两处 + review-moderator 三处；本节为其显式 reconciliation，不计入原六站点），并存非矛盾；DEV-GOVERNANCE 文本零改动。
-- **convention-only 分层兜底**：主线程 canonical 禁写是 **convention-only**（主线程不受 per-agent enforce-scope 限，universal 段只拦 docs/ 顶层白名单新建 + 影子 docs/contracts/、不拦写既有 spec 文件内容），兜底**分层**：(a) 经 `/arch-change` 的变更→对抗 review 接缺陷；(b) 绕过 review 直写既有 spec 文件（`docs/requirements.md` / `docs/architecture.md`）内容→无机器拦且无 review 兜底，仅靠规则文本 convention + human 在 landing/merge 门 spot-check（诚实标注的 convention 残余面，登 ARQ-110）。**不为此造 enforce-scope/hook**（那会触 G3 + 第七门，违 §9 AI-native 启发）。
+- **输入契约**：派发起草前，讨论上下文**落盘**（spine `sources` human 原话 / 讨论记录文件 / plan 记录）；architect 收到裸 prompt（无可读耐久上下文）→ 停下反问派遣方 / human，不凭空起草。
+- **落点 = `delivery/changes/` 下的 draft / 候选（G4 证据，非 canonical）**；主线程不写 canonical spec 设计面与 PROPOSAL 内容。
+- **Track A 段**：对抗机器内 architect 作起草 subagent（经 review-moderator 编排）——「输入是一句瘦 plan、上下文已落盘、需从中立位置产候选」的场景。
+- **canonical 候选起草归 architect、落地恒归主线程**：两面 loop 内 spec lane 由 architect 把候选写入 `docs/requirements.md` + `docs/architecture.md`（写入 ≠ 冻结），governance lane 由 architect 维护 `PROPOSAL.md` 定稿，packet-bound landing 归主线程。
+- **author≠judge 不破**：判官独立于作者——Track B 第 2 步评审循环 = architect-reviewer，Track A 段 = scenario-author / challenger / adjudicator；作者身份不进 charter、不自评。
+- **convention-only 分层兜底（261015 批更新）**：主线程 canonical 禁写是 **convention-only**（主线程不受 per-agent enforce-scope 限，universal 段只拦 docs/ 顶层白名单新建 + 影子 docs/contracts/、不拦写既有 spec 文件内容），兜底**分层**：(a) 经面 loop 的变更 → architect 起草 + architect-reviewer 四查接缺陷；(b) 绕过 loop 直写既有 spec 文件（`docs/requirements.md` / `docs/architecture.md`）内容 → 无机器拦且无 review 兜底，仅靠规则文本 convention + human 在 landing/merge 门 spot-check（诚实标注的 convention 残余面）。**不为此造 enforce-scope/hook**（那会触 G3 + 第七门，违 §9 AI-native 启发）。**主线程不起草变更内容是本节纪律声明（起草职责已移交 architect）**。
 
 ## 4. Work Intake And Provenance Taxonomy
 
@@ -103,11 +101,11 @@ Only a human or `planner` main thread creates `delivery/workstreams/<workstream>
 
 ## 5. Architecture Review Operating Model
 
-Full spec review routes to `review-moderator`, not directly to architect. The unified entry `/arch-change <plan>` (dual of dev-loop `/build-feature`) hands a plan to `review-moderator`, which classifies it (spec / governance / mixed + contract-touching flag) and routes it into the matching profile; `/review-arch` and `/review-governance` remain direct entries when the profile is already known.
+Full adversarial review (Track A 段) routes through the face loops, not directly to architect. `/arch-change`（架构+契约面）与 `/gov-change`（治理面）各为唯一入口：立项时判收敛度——方向不清进 **Track A 段**（对抗机器：architect 起草候选 → scenario-author 冻 charter → challenger/defender → adjudicator 裁定 → human 拍方向，收敛后流回 Track B 落地后端）；方向清晰直接 architect 起草 + architect-reviewer 四查 + 轻/主判档。跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 
 Role boundaries in adversarial review:
 
-- Architect drafts and maintains spec candidates (`docs/requirements.md` + `docs/architecture.md`) and prepares review background, but does not declare a spec frozen. Under `/arch-change` with a raw plan, `review-moderator` **dispatches architect as a drafting subagent** to produce the candidate (spec draft, or a governance `PROPOSAL.md` under `delivery/changes/arch/gov-review-<id>/`); architect drafts only and never lands governance canonical, never writes the frozen charter, never self-approves, and self-modification recursion still requires a human.（canonical 候选 = architect 于 raw-plan 输入反派；讨论候选 = 主线程作者的『已有 proposal』，见 §3「Discussion → Draft Authorship」。）
+- Architect drafts and maintains spec candidates (`docs/requirements.md` + `docs/architecture.md`) and prepares review background, but does not declare a spec frozen. In a face loop, the main thread **dispatches architect as the drafter** to produce the candidate (spec draft, or a governance `PROPOSAL.md` under `delivery/changes/arch/gov-review-<id>/`; in Track A 段 the dispatch goes via `review-moderator`); architect drafts only and never lands governance canonical, never writes the frozen charter, never self-approves, and self-modification recursion still requires a human.（Track B 第 2 步评审循环的评审人 = architect-reviewer，作者≠审者；主线程不起草内容，见 §3「Discussion → Draft Authorship」。）
 - **Author != judge (neutrality invariant)**: architect authors the candidate; `scenario-author` independently freezes the charter (the judging criteria); `challenger` / `adjudicator` attack and rule. This mirrors dev-loop builder != verifier != supervisor. `review-moderator` orchestrates but does not judge.
 - `review-moderator` owns the formal adversarial review and the freeze / approval verdict.
 - `scenario-author` owns the frozen charter; architect only supplies charter input.
@@ -116,10 +114,9 @@ Role boundaries in adversarial review:
 
 Adversarial review runs two profiles that share one loop (intake+draft -> charter -> challenger/defender -> adjudicator -> pass-oracle):
 
-- **spec profile** (`/review-arch`): reviews whether a spec (canonical spec 两文件, L0) is sound and freezable; low-impact confirmed spec fixes land inside the review.
-- **governance profile** (`/review-governance`): reviews G1-G3 development-governance changes; it produces evidence and a decision packet only, never lands governance canonical directly; human approves and the main thread lands (packet-bound).
+- **Track A 段（原两 profile 的对抗机器合一，入口随面）**：架构+契约面的方向收敛审走 `/arch-change` 的 Track A 段，治理面的走 `/gov-change` 的 Track A 段——同一套对抗机器（intake+draft → charter → challenger/defender → adjudicator → pass-oracle），机器 SSOT = arch-review-protocol.md；产出收敛方向交 human 拍，后流回 Track B 落地后端。
 
-Review-depth（Track A 触发时适用——默认路由 = Track B 常驻轻路径，见 arch-review-protocol.md「双轨路由」节）: after lane classification, `/arch-change` also classifies review depth — `lightweight-architect-review` vs `full-adversarial`. Lightweight is capped at small/low-risk **G2** changes; G1 instruction roots and G3 enforcement substrate always run full-adversarial + human. architect-reviewer judges eligibility (machine-checkable hard exclusions vs subjective residue; verdicts LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED), and review-moderator **independently re-judges** a LIGHTWEIGHT_OK — not a pass-through — preserving author≠judge on the fast path. **Landing 恒 = 主线程 packet-bound（G1/G2/G3，常态规则 2026-08-02；architect approved-landing mode 同日退役）**：architect 恒纯判官 / 起草、永不 landing；主线程落地后在 `architect-landing-summary.md`（制品名保留）引被批 packet-id（A9 packet-binding），交 landing-verifier 独立核验 + human merge 门 spot-check。 Landing-report evidence obligation: a landing-class dispatch report (`architect-landing-summary.md` on success, a `landing-blocked-report.md` on block) must (1) embed machine-verifiable evidence — verbatim `git diff --stat` plus the output of every gate actually run; a report carrying no such evidence is malformed; (2) on block, quote the block message verbatim plus zero-change evidence (`git status --short` / `git diff --stat`) and must NOT run post-landing guards (running them on a non-landing fabricates a "post-landing verified" appearance); (3) never report a landing that did not happen (honest-reporting corollary of ground truth over agent reports, below). Authoring 格式契约（B2 fail-loud 的成文对偶，gov-review-gate-input-format-contract F-4）：frozen PROPOSAL 必含 ```landing-manifest 围栏块（恰 canonical 目标路径集，一行一条）；architect-landing-summary 同含其块；packet-id token + 被批 review id 字面出现（A9）。两结构门（landing-fidelity-check / proposal-consolidation-check）fail-loud 消费此契约——缺块 = 格式不合格 RED，非正则兜底；契约 SSOT 在本节，门脚本引此不复述。 LIGHTWEIGHT_OK is a named depth sub-lane of the existing adversarial-review engineering gate, not a new gate, and is disjoint from the six business gates.
+判档（261015 批取代 review-depth / lightweight 机制）：两面 loop 内由 architect-reviewer 按各面流程 SSOT 的可机判清单判轻/主路径与 Track A 段升级（**只升不降**；架构面判据 = 措辞 vs 语义，治理面 = 文档 vs 机器·路径即判据；清单见 references/arch-change.md / gov-change.md）。旧 lightweight-architect-review 快道（LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED 四裁断 + moderator 复判）随批退役。 **Landing 恒 = 主线程 packet-bound（G1/G2/G3，常态规则 2026-08-02；architect approved-landing mode 同日退役）**：architect 恒纯判官 / 起草、永不 landing；主线程落地后在 `architect-landing-summary.md`（制品名保留）引被批 packet-id（A9 packet-binding），交 landing-verifier 独立核验 + human merge 门 spot-check。 Landing-report evidence obligation: a landing-class dispatch report (`architect-landing-summary.md` on success, a `landing-blocked-report.md` on block) must (1) embed machine-verifiable evidence — verbatim `git diff --stat` plus the output of every gate actually run; a report carrying no such evidence is malformed; (2) on block, quote the block message verbatim plus zero-change evidence (`git status --short` / `git diff --stat`) and must NOT run post-landing guards (running them on a non-landing fabricates a "post-landing verified" appearance); (3) never report a landing that did not happen (honest-reporting corollary of ground truth over agent reports, below). Authoring 格式契约（B2 fail-loud 的成文对偶，gov-review-gate-input-format-contract F-4）：frozen PROPOSAL 必含 ```landing-manifest 围栏块（恰 canonical 目标路径集，一行一条）；architect-landing-summary 同含其块；packet-id token + 被批 review id 字面出现（A9）。两结构门（landing-fidelity-check / proposal-consolidation-check）fail-loud 消费此契约——缺块 = 格式不合格 RED，非正则兜底；契约 SSOT 在本节，门脚本引此不复述。 （旧 LIGHTWEIGHT_OK 子道已随 261015 批退役——轻路径改由两面 loop 的瘦制品过闸承载。）
 
 Review sequence:
 
@@ -156,7 +153,7 @@ Tier-2 surfaces can stay with the owning system when all conditions hold:
 3. No event, tool, shared-type, notify, or invariant shape change.
 4. If later promoted to Tier-1, the contract gate restarts with CCP evidence.
 
-Architect may draft contract direction, CCP text, or a candidate patch, but cannot declare approval. Any landing in `docs/contracts/**` requires `architect-reviewer` pre-screen and explicit human contract gate.
+Architect may draft contract direction, contract-package text, or a candidate patch, but cannot declare approval. Landings in `docs/contracts/**` go through the `/arch-change` loop（契约包三节并入 PROPOSAL）and pass the mechanical evidence gate（`pre-merge-escalation-gate.mjs` 三件联立）；the human signature gate was removed by 261015-gov-review-face-loop-unify.
 
 Decision rules:
 
@@ -234,7 +231,7 @@ Make architecture outputs durable and transferable.
 - ADRs record why, not contract/spec what.
 - Contract gates require CCP, architecture-gate-evidence, and raw evidence. Chat approval is not enough.
 - Plain-file handoffs use `HANDOFF-NOTE.md`, `DELETE-LIST.txt`, and `files/`. Do not assume matching commit hashes across repos.
-- Review artifacts live under `delivery/changes/arch/**`; dev-loop artifacts under `delivery/changes/dev/**`.
+- Review artifacts live under `delivery/changes/arch/**`; dev-loop artifacts under `delivery/taskpackages/**`.
 - Generated transfer zips stay outside the repo unless explicitly intended.
 
 ## 12. Parallel And Multi-Session Operations

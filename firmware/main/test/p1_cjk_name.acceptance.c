@@ -2065,7 +2065,7 @@ TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A
 
 /* ---------------------------------------------------------------------------
  * P1CJK-A6 闸证据条目（冻结文本——本条不是 host 齿, 不造假齿; 执行承载 = verifier
- * final 轮收口 + human 持板目击, 证据落 delivery/changes/dev/
+ * final 轮收口 + human 持板目击, 证据落 delivery/taskpackages/
  * 260921-m3-k4-p1-cjk-dynamic-text/）:
  *
  *   (1) device build 闸: idf.py 构建 xiaozhi.bin 过 + 体积余量记录（无新增大静态

@@ -123,7 +123,7 @@ Use one of:
 - CI/drift: `CI-types-2026-07-05`, `DRIFT-D6-CREATE-TABLE-IN-TEST`
 - Proposal: `delivery/changes/(arch|dev)/<id>/PROPOSAL.md#§x.y`，或大 feature `delivery/workstreams/<ws>/PROPOSAL.md#§x.y`
 
-For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/changes/dev/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
+For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/taskpackages/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
 
 > **DP-1 过渡 carve-out**：上述规则仅适用于既有 sourceType=proposal 老包（无 origin 或其 type 非 proposal）。新包（`origin.upstreamType=proposal`）的 proposal→docRefs back-check 由 **`origin.upstreamRef` 接管**——`origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`，`sourceRefs` 不再承载 proposal 路径（退本职为代码范围锚点）。详见 [task-intake-and-slicing.md](#origin) `### origin` 节。
 
@@ -283,7 +283,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **checklist 五项**：① 切片逻辑（按行为切还是按页面/问题切，图上见；偏离垂直切片须有显式理由）；② 依赖序与 WIP 合理性；③ decision-coverage 完备（含跨包行为 owner 显式登记）；④ 每包意图陈述与 PROPOSAL 冻结裁定一致；⑤ demo 证据形态可行（真机轮配额默认仅核心包）。
 - **workType 分流**：整改型核根因↔改法 + 红基线在位；新建型核切片与覆盖；重构型核结构性质可验收。
 - **裁决耐久记录**：verdict + checklist 逐项结论 + 派发/裁决时点 append 到 `delivery/workstreams/<ws>/review.md`「门 1」节——GREEN 不得只留在聊天。
-- **存疑向严**：触契约面 / 跨系统 / 判官不绿 → 升 Track A（`/arch-change`）。
+- **存疑向严**：触契约面 / 跨系统 / 判官不绿 → 升所属面 loop 的 Track A 段（架构/契约面 = `/arch-change`；治理面 = `/gov-change`）。
 
 ### launchPreconditions（canonical 定义）
 
@@ -325,7 +325,7 @@ When a slice touches user-visible UI, planner detects a UIUX depth level and rec
 | L1 | Existing blueprint + component pattern; small status/field/button/message change | UI-state acceptance only（小视觉微调——不产生新设计语义——亦在此档走 designReview） |
 | L2 | Package touches UI and upstream frozen per-page PNGs **exist** for every affected page/state | Consume: planner writes per-page PNG refs into the TaskPackage `uiux` block `designRefs[]` at packaging time（no translation role dispatched — upstream supply = requirement-change 档 2 流程 4b 生成模式） |
 | L3 | Package touches UI and upstream frozen per-page PNGs are **missing**（new page / new IA / new state without art） | **Design-gap signal**: fail-closed **before Pod launch** — stop the package, log pod-events `agent-escalation`（缺口页清单 + 路由去向），route to `requirement-change`（承接形态 = 原 story 的档 2 触 UI 修订批；human 裁意图入口照常、§9 版本行照常 append）；after the requirement batch freezes, planner re-runs the UI-ready check（对齐新版本行）then resumes the package |
-| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first — **drawn** via requirement-change 档 2 流程 4b 生成模式（same supply chain；human 设计方向裁定恒在人）；a blueprint change that constitutes a governance change is **reviewed** via `/arch-change` governance profile UIUX 轴集（只审不画）; then `portfolio-planner` slices TaskPackages（蓝图先行与拆包是先后两动作、不互斥——planner 停包、不越权拆包） |
+| L4 | System navigation model, shell, shared UI, cross-system components, multiple pages | System blueprint first — **drawn** via requirement-change 档 2 流程 4b 生成模式（same supply chain；human 设计方向裁定恒在人）；a blueprint change that constitutes a governance change is **reviewed** via `/gov-change`（UIUX 轴集随治理变更携带，只审不画）; then `portfolio-planner` slices TaskPackages（蓝图先行与拆包是先后两动作、不互斥——planner 停包、不越权拆包） |
 
 Existing systems without a full blueprint may continue L1 work. The **UI-ready launch preconditions** for any UI-touching package（frozen per-page PNGs present + brief version-row alignment，分形判据：需求批出生的包对齐本批 requirements 版本号，非需求批出生的包对齐版本不晚于当前 frozen requirements 最新版本行）are **authoritatively defined in requirement-change.md「消费保护规则」节 launchPreconditions 句** — this section points, it does not restate.
 
@@ -359,25 +359,25 @@ Shape:
   {
     "decision": "D1",
     "summary": "Polish only runs when substantive content changes (three-way check).",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§4.2"],
     "landsIn": "acceptance:POL-B2"
   },
   {
     "decision": "D2",
     "summary": "Unit tests cover debounce merge and failure fallback.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§5"],
     "landsIn": "exitCriteria:E2"
   },
   {
     "decision": "D3",
     "summary": "Cross-slice delay to another package.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§4.1"],
     "landsIn": "package:s1-ai-summary-polish"
   },
   {
     "decision": "D4",
     "summary": "A dropped decision.",
-    "sourceRefs": ["delivery/changes/dev/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
+    "sourceRefs": ["delivery/taskpackages/s1-ai-summary-projection-polish/PROPOSAL.md#§6"],
     "landsIn": "dropped",
     "reason": "risk-accepted: human accepted on 2026-07-19 that X is out of scope for this slice."
   }

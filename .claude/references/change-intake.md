@@ -25,8 +25,8 @@
 ## 3. 四面探测程序
 
 - **派发形态**：主线程派 architect（只读 + 同会话 return），语料 = requirements.md（含 §9 账 + story AC）+ architecture.md + `docs/contracts/**` + debt 未结账三域（gov / tech / requirement）+ governance 面（`.claude/agents/**` 定义 / gate 登记）。
-- governance 命中记入 faceMap 并路由 /arch-change 治理 profile，不建实现面档（R1-F4）。
-- **建档前查重**：intake 开场先查 `delivery/changes/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；并存期 /arch-change 侧同此纪律（其文本改动归退役安置批，本文件单侧承载）。
+- governance 命中记入 faceMap 并路由 `/gov-change` 治理面 loop，不建实现面档（R1-F4）。
+- **建档前查重**：intake 开场先查 `delivery/changes/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；并存期各面 loop 侧同此纪律。
 - **触面事实是查出来的，不是申报出来的**（walkthrough 实证自我申报不可靠）。产出 = faceMap + facePlan 交主线程落盘。
 
 ## 4. 立项 ack
@@ -56,7 +56,7 @@
 
 ## 8. 与各面门接缝
 
-- **faceMap 契约行 = architect-reviewer 四分类的输入**：契约门开场带 intake 取证，human 第二次出场只答「签不签」，不重听诊断。
-- **升级判据 ≠ 契约门**：升级判据是路由门（答「走哪套流程」，触面疑似即可命中、判错可挽回）；契约门是审批门（答「这份 diff 签不签」，针对具体 packet、判错污染 SSOT）。两门独立可达——升级后四分类可判「无需改」、未升级也可能被逃生门踢进契约门。
-- **开场即消费**：带 changeId 调用的各面流程入口（triage 实现面 / requirement-change 各档 / /arch-change / build-feature）先读 spine 的 faceMap/facePlan，不得要求 human 重述意图。
+- **faceMap 契约行 = architect-reviewer 四分类的输入**：契约变更走 `/arch-change`（无人签门），intake 取证随 dispatch 传入。
+- **升级判据 ≠ 触契约处置**：升级判据是路由门（答「走哪套流程」，触面疑似即可命中、判错可挽回）；触契约是内容处置（答「这份 diff 怎么落」，四分类定性后契约包随批原子落）。两门独立可达——升级后四分类可判「无需改」、未升级也可能被逃生门转 `/arch-change`。
+- **开场即消费**：带 changeId 调用的各面流程入口（triage 实现面 / requirement-change 各档 / /arch-change / /gov-change / build-feature）先读 spine 的 faceMap/facePlan，不得要求 human 重述意图。
 - **launch 前置**：带 spine 的变更，facePlan 中先于实现面的各面 anchors 未回填 = 上游未冻结 → 承载包不得 launch（canonical 定义见 task-intake-and-slicing.md launchPreconditions 节 spine 源条款；build-feature launch 面预检第五件）。

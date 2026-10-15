@@ -25,7 +25,7 @@
 // metrics-ledger advisory section (loop-metrics.json + pod-journal.jsonl) remains untouched below
 // - changeIdArchiveCandidates 改 YYMMDD- 前缀感知（原按日期后缀 -YYYY-MM-DD 剥）
 // - 新增 UPSTREAM_DRIFT detection（convention-only / warn，DP-4 / F3）
-// - 新增 delivery/changes/dev/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
+// - 新增 delivery/taskpackages/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）
 // - sourceType-without-origin 过渡告警（advisory，不红）
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -143,15 +143,15 @@ function warnDrift(payload, taskPackage) {
   }
 }
 
-// ── delivery/changes/dev/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
+// ── delivery/taskpackages/INDEX.md 单行增量 upsert（best-effort；全量重建见 changes-index.mjs）──
 function upsertIndexRow(changeId, taskPackage, archDir) {
-  const indexPath = resolve(projectDir, 'delivery', 'changes', 'dev', 'INDEX.md');
+  const indexPath = resolve(projectDir, 'delivery', 'taskpackages', 'INDEX.md');
   if (!existsSync(indexPath)) return 'index-missing-skipped'; // 首次 closeout 需先跑 changes-index.mjs 产骨架
   const origin = (taskPackage.origin && typeof taskPackage.origin === 'object') ? taskPackage.origin : null;
   const prefixMatch = String(changeId).match(CHANGE_ID_PREFIX_RE);
   const date = prefixMatch && prefixMatch[1]
     ? `20${prefixMatch[1].slice(0,2)}-${prefixMatch[1].slice(2,4)}-${prefixMatch[1].slice(4,6)}`
-    : (gitFirstCommitDate(`delivery/changes/dev/${changeId}`) || '');
+    : (gitFirstCommitDate(`delivery/taskpackages/${changeId}`) || '');
   const originRef = resolveOriginRef(origin) || '';
   const workstream = (origin && origin.workstream) || '';
 
@@ -180,7 +180,7 @@ function changeIdArchiveCandidates(changeId) {
   const withoutDate = str.replace(/-\d{4}-\d{2}-\d{2}$/, ''); // 去后缀: slug-YYYY-MM-DD
   const noPrefix = stripPrefix(str);                           // 去前缀: YYMMDD-slug → slug
 
-  const changesRoot = resolve(projectDir, 'delivery', 'changes', 'dev');
+  const changesRoot = resolve(projectDir, 'delivery', 'taskpackages');
   const candidates = [resolve(changesRoot, str)];
   if (withoutDate !== str) candidates.push(resolve(changesRoot, withoutDate));
   if (noPrefix !== str) candidates.push(resolve(changesRoot, noPrefix));
@@ -188,6 +188,7 @@ function changeIdArchiveCandidates(changeId) {
   if (existsSync(changesRoot)) {
     for (const entry of readdirSync(changesRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
+      if (entry.name === 'current') continue; // 排除 current/ 活工作面（261014-gov-review-dev-lane-merge-taskpackages T2：候选根迁 taskpackages 后的连带新语义）
       const name = entry.name;
       if (str.startsWith(name) || name.startsWith(noPrefix) || name.startsWith(withoutDate)) {
         candidates.push(resolve(changesRoot, name));
@@ -240,16 +241,16 @@ if (hasPrefix) {
     advisories.push(`changeId date prefix (${prefixedDate}) is not valid YYMMDD (month 01-12, day 01-31)`);
   }
 } else {
-  const firstCommit = gitFirstCommitDate(`delivery/changes/dev/${changeId}`) || gitFirstCommitDate(`delivery/taskpackages/${changeId}`);
+  const firstCommit = gitFirstCommitDate(`delivery/taskpackages/${changeId}`);
   if (firstCommit && firstCommit >= CHANGE_ID_CUTOFF) {
     advisories.push(`changeId lacks YYMMDD- prefix but first commit ${firstCommit} >= cutoff ${CHANGE_ID_CUTOFF}; missing-date-prefix blocks at taskpackage-required gate for new packages`);
   }
 }
 
 const changeDir = findChangeDir(changeId);
-if (!changeDir) fail('delivery/changes/dev/<changeId> folder is missing', { changeId, expected: `delivery/changes/dev/${changeId}` });
+if (!changeDir) fail('delivery/taskpackages/<changeId> folder is missing', { changeId, expected: `delivery/taskpackages/${changeId}` });
 
-// Post-cutoff packages no longer require taskpackage.json in delivery/changes/dev/ (gov-review-taskpkg-lifecycle).
+// Post-cutoff packages no longer require taskpackage.json in delivery/taskpackages/ (gov-review-taskpkg-lifecycle).
 // TaskPackage is resolved from delivery/taskpackages/<id>/ for post-cutoff packages.
 const isPostCutoff = isPostCutoffChangeId(changeId);
 // Post-EVENTS_SCHEMA_CUTOFF: session-digest/loop-health/loop-metrics retired (Package B)
@@ -257,7 +258,7 @@ const isPostEventsCutoff = hasPrefix && String(changeId).slice(0, 6) >= EVENTS_S
 const requiredFiles = closeoutRequiredFiles(changeId);
 const machineEvidenceFiles = ['verdict.json', 'verification.json'];
 const missing = requiredFiles.filter((file) => !existsSync(resolve(changeDir, file)));
-if (missing.length > 0) fail('delivery/changes/dev/<changeId> is missing standard closeout artifacts', { changeId, missing });
+if (missing.length > 0) fail('delivery/taskpackages/<changeId> is missing standard closeout artifacts', { changeId, missing });
 
 // Machine evidence (verdict.json / verification.json) — advisory, not blocking
 const missingMachineEvidence = machineEvidenceFiles.filter((file) => !existsSync(resolve(changeDir, file)));
@@ -280,7 +281,7 @@ if (isPostEventsCutoff) {
 if (isPostCutoff) {
   const podRetroPath = resolve(changeDir, 'pod-retro.md');
   if (!existsSync(podRetroPath)) {
-    advisories.push('pod-retro.md missing in delivery/changes/dev/<id>/ — planner first-person hot memory not recorded (Q5=warn advisory; zero-retroactivity: post-cutoff only). planner 收尾相位 should write it after integrator closeout, before supervisor gate.');
+    advisories.push('pod-retro.md missing in delivery/taskpackages/<id>/ — planner first-person hot memory not recorded (Q5=warn advisory; zero-retroactivity: post-cutoff only). planner 收尾相位 should write it after integrator closeout, before supervisor gate.');
   }
 }
 
@@ -381,5 +382,5 @@ if (updateIndexRequested) {
   }
 }
 
-print({ ok: true, gate: 'closeout', changeId, changeDir: `delivery/changes/dev/${basename(changeDir)}`, requiredFiles, advisories, indexProjection });
+print({ ok: true, gate: 'closeout', changeId, changeDir: `delivery/taskpackages/${basename(changeDir)}`, requiredFiles, advisories, indexProjection });
 if (missing.length > 0) process.exit(1);
