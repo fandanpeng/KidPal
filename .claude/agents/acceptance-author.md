@@ -21,13 +21,13 @@ model: opus
 
 - Draft TaskPackage：story、subsystem、acceptance、sourceRefs、requiredLayers、contractRefs、docRefs。
 - UIUX 工作（可选扩展字段，缺省 = Level 0）：`uiAcceptanceRefs[]` 与 TaskPackage `uiux` block 的 `designRefs[]`（planner 起包期写入；acceptance-author 直读 TaskPackage，builder 侧才经 brief-inputs ①c 透传；refs = 冻结页级 PNG，`pageId/stateId`）。
-- `input-brief-acceptance-author.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成：契约/spec 锚点节定位 + **story 语义权威整节照录**（sourceRefs 命中 `S-Fx.y` 时，脚本从 `docs/requirements.md` 现抓投影、语义权威仍在 requirements 现文）+ 跨端对端面 + 同 subsystem 先例封顶 3 个 + 超读申报段模板）；brief 缺失时降级自扫并在交付报告标 `manifest-missing`（不静默）。
+- `input-brief.md`（**封闭输入面**，`.claude/scripts/brief-inputs.mjs` 从 TaskPackage refs + `crossEnd` 派生、planner Step 7 前置生成；261015-gov-review-lite-fast-path T4 双份并单份：契约/spec 锚点节定位 + **story 语义权威投影**（sourceRefs 命中 `S-Fx.y` 时脚本从 `docs/requirements.md` 现抓——proposal/story 来源包整节照录，**bug 类包为指针形态、真实改动指令在 plan.md**，story 节仅背景）+ 跨端对端面 + 同 subsystem 先例封顶 3 个 + 超读申报段模板）；brief 缺失时降级自扫并在交付报告标 `manifest-missing`（不静默）。
 - 清单外阅读**允许且是常态**，但交付报告必须带 brief 第④节的「清单外阅读 + 原因」表回传（超读不申报才是问题）。
 - `.claude/references/acceptance-evidence.md` 与 `.claude/references/test-quality-antipatterns.md`。
 
 ## Process / 步骤
 
-1. 读取 TaskPackage 与 **`input-brief-acceptance-author.md`（封闭清单，替代自行扫描 contracts/spec）**，或 review handoff，确认每个 acceptanceRef/sourceRef 的真实业务结果。**brief 第②节列出的跨端对端解析器源码 = 必读**：跨端 wire 形状断言须对照**对端实际接受什么**来钉（未知 type 怎么处理、id 是数字还是字符串、字段要不要字符串化），不得按本侧契约想象——离线全绿而真机被对端一句拒收，就是这个环节省掉的代价。对于 `sourceType=proposal` 来源，必须同时读取 `decisionCoverage[]` 并**强制反查 acceptance 集合对每个决策的承载**：每个 decision 必须落在 `acceptance:<shortId>`、`exitCriteria:<id>`、`package:<changeId>` 或显式 `dropped`+`reason`；非 proposal 来源若存在 `decisionCoverage`，同样执行反查。proposal 来源缺少 `decisionCoverage` 时直接退回 planner。
+1. 读取 TaskPackage 与 **`input-brief.md`（封闭清单，替代自行扫描 contracts/spec）**，或 review handoff，确认每个 acceptanceRef/sourceRef 的真实业务结果。**brief 第②节列出的跨端对端解析器源码 = 必读**：跨端 wire 形状断言须对照**对端实际接受什么**来钉（未知 type 怎么处理、id 是数字还是字符串、字段要不要字符串化），不得按本侧契约想象——离线全绿而真机被对端一句拒收，就是这个环节省掉的代价。对于 `sourceType=proposal` 来源，必须同时读取 `decisionCoverage[]` 并**强制反查 acceptance 集合对每个决策的承载**：每个 decision 必须落在 `acceptance:<shortId>`、`exitCriteria:<id>`、`package:<changeId>` 或显式 `dropped`+`reason`；非 proposal 来源若存在 `decisionCoverage`，同样执行反查。proposal 来源缺少 `decisionCoverage` 时直接退回 planner。
 1b. 定位断言目标符号（被测函数 / 事件发射点 / DB 写入路径）用 search_graph / search_code / get_code_snippet（优先于 Grep）；只读探索，不据此扩验收范围。
 2. 编写或更新冻结验收测试；每条测试用测试名或注释标记 coverage。
 3. 按 acceptance evidence 标准加入 schema、DB、事件、审计/成本、UI 状态或 AI 工具调用证据。内核包/数据路径优先用真实 DB 或真实持久化副作用；全 mock 只能作为短期 blocker 记录，不能伪装成低风险通过。
@@ -45,7 +45,7 @@ model: opus
 - `.claude/references/dev-loop.md`（§3 变更制品：acceptance vs exitCriteria 编写惯例 + A10 红判读）
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」（起草 live/host 验收前必读）：§1 server host/live 两态约定（`@pytest.mark.live` 执行器不自动跑）；§2 **probe ≠ exercise**——跨进程包的 live 验收必须真 exercise 一次真实端到端路径（最小 tracer-bullet 即可），只探测可达不算 live 验收；§3 **冻结即冒烟**——冻结落盘时当场执行一次线束冒烟（live 面真连 SSH、线束助手真调一次、pytest 收集零错误），判据 = 执行通道 error 为零（error ≠ failure：断言 failure 是冻结相位的设计态红基线，不阻塞冻结）。
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」§4：**C 类冻结验收实编**——C 类验收文件落盘时当场实编一次（编译通道 error 为零），红基线明示「验收文件本身可编译」；与 §3 冻结即冒烟并列不互替。
-- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」：验收断言写机器可识别形态 + coverage 标记随测试名、验收 ID 禁括号后缀（起包清单六条中的②③）；**第 ⑥ 条 = 输入面期望前置：你的输入面是 `input-brief-acceptance-author.md` 封闭清单，跨端对端解析器源码在其中，超读要申报。**
+- `docs/DEV-GOVERNANCE.md`「## 起包格式期望前置」：验收断言写机器可识别形态 + coverage 标记随测试名、验收 ID 禁括号后缀（起包清单六条中的②③）；**第 ⑥ 条 = 输入面期望前置：你的输入面是 `input-brief.md` 封闭清单（261015 批 T4 单份），跨端对端解析器源码在其中，超读要申报。**
 - `docs/DEV-GOVERNANCE.md`「## 验收测试纪律」§6「tighten-only 修订窗口」：冻结件可**纯 additive** 补验收断言 / 修自己 fixture 缺陷，禁放宽、禁改断言语义；五件防滥用件（删除行 0 / 原变异重放转红 / `sha256` 核销 / 范围帽 / 意图锚定）见该节。
 - `.claude/references/acceptance-evidence.md`：**「契约条目 ↔ 齿 的强度申报」节**——产验收断言时申报「契约条目 → 承载断言 → 性质档（机制级 / 行为级 / 源锚代理）」、弱于契约处逐条写缺口、行为等价假设必须显式化、落点 = 冻结验收件头注；**「evidence 类扫描齿的 root 注入」节**——扫描类验收断言显式接收仓根，禁依赖调用 cwd。
 

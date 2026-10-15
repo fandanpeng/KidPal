@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 17 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 18 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -28,3 +28,4 @@
 | [TECH-261012-p3-star-count-invisible-on-device](TECH-261012-p3-star-count-invisible-on-device.md) | P3 星星记录本列表右上角 ★/×N 计数真机不显示——根因已钉死（chrome 顶带 top_bar_ 50% 白蒙层 × 1bpp 0x7fff 阈值漂白 INK 灰；四轮 TEMP-DIAG bar 透明一行试验真机证实） | 2026-10-13 | 261012-p3-topbar-ink-bleach-fix（dev-loop integrator closeout，修复随包落地） |
 | [TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout](TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout.md) | 冻结齿按 LF 原始字节哈希钉 prompt 版本文件，但 .gitattributes 未钉这些文件的 eol=lf——Windows autocrlf=true 检出即 CRLF，三条不可变齿恒红并拦死 merge-driver 合并通道 | 2026-10-13 | 261013-gov-review-lf-eol-teeth-pin（Track B 全环：frozen v0.2 + R1→R2 GREEN + landing-verifier GREEN；eol=lf 族钉 + V6 齿常量毒化重算 + skill 注记） |
 | [TECH-261013-lang-config-thinking-key-regen-landmine](TECH-261013-lang-config-thinking-key-regen-landmine.md) | 固件 lang_config.h 生成物与 locale 源不一致——Lang::Strings::THINKING 键只存在于手工补丁的未跟踪生成头，任何触发重新生成的干净构建（新 worktree 首建 / json mtime 更新后构建）必编译红 | 2026-10-14 | 261013-lang-config-thinking-fix（dev-loop integrator closeout，修复随包落地） |
+| [TECH-261014-host-app-sdkconfig-env-drift](TECH-261014-host-app-sdkconfig-env-drift.md) | host_app sdkconfig 为 gitignored 环境态且只在构建发生的 worktree 演进——其它树（含 main）陈旧配置致冻结齿成批假红（实测 main 冷构建 10 红：CJK 字体未链接 → P1 渲染齿「渲染缝断裂」假象），非代码回归 | 2026-10-15 | — |

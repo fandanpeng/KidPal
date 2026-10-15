@@ -11,7 +11,8 @@
 // `carriedBy ?? owner`**（两写面在这一位上用不同的键：workstream 面读 `carriedBy`、包面读 `owner`——
 // 按 `owner` 单键判会把「谁定语义」当成「谁承接」）；行为名**读侧兼容** `topic` ∨ `behavior`（包面存量写
 // `behavior`）。零命中**明写 `none`**（防「没写」与「没有」混同）。方向 = 补可见性，不改任何门判定。
-// 生成时点 = planner Step 7 派发前一次产双份（acceptance-author + builder）；Step 8 核在场；Step 9 只引用。
+// 生成时点 = planner Step 7 派发前一次产单份（acceptance-author + builder 共用 `input-brief.md`——
+// 261015-gov-review-lite-fast-path T4 双份并单份）；Step 8 核在场；Step 9 只引用。
 // advisory（非门）：引 wire 节 ∧ counterparts 空 ∧ 无 exempt → stderr WARN 提示 planner 复核申报。
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -30,7 +31,6 @@ export const CONTRACT_WIRE_FILE = 'docs/contracts/interface-contract.md';
 export const WIRE_SECTIONS = ['§1.5', '§三', '§四'];
 // ──────────────────────────────────────────────────────────────────────────────
 
-const ROLES = ['acceptance-author', 'builder'];
 const PRECEDENT_CAP = 3;
 const ANCHOR_RE = /^(.*?)#(.+)$/;
 
@@ -39,10 +39,10 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--change-id') out.changeId = argv[++i];
-    else if (a === '--role') out.role = argv[++i];
     else if (a === '--dry-run') out.dryRun = true;
     else if (a === '--self-check') out.selfCheck = true;
     else if (a === '--regenerated-because') out.regeneratedBecause = argv[++i];
+    // --role 已退役（261015-gov-review-lite-fast-path T4 双份并单份）：传入即 unknown argument fail-loud
     else fail('unknown argument', { arg: a });
   }
   return out;
@@ -96,36 +96,54 @@ function storySectionText(storyId) {
   return { title: hit.title, line: hit.line, text: lines.slice(hit.line - 1, next ? next.line - 1 : undefined).join('\n').trimEnd() };
 }
 
-function renderStoryRoad(storyRefs, advisories) {
-  const seen = new Set();
-  const ids = [];
+function renderStoryRoad(storyRefs, advisories, opts = {}) {
+  // 基 id 去重（261015-gov-review-lite-fast-path T4）：`S-Fx.y-AC1` 与 `S-Fx.y-AC3` 同基 id——同节只贴一次、
+  // AC 粒度回引标签并列；story 级引用与 AC 级引用同基 id 时同样合并。
+  const byBase = new Map(); // base id -> { storyLevel: bool, acTags: [] }
   for (const r of storyRefs) {
     const id = String(r.path).trim();
-    if (!seen.has(id)) { seen.add(id); ids.push(id); }
-  }
-  if (ids.length === 0) return null;
-  const L = [];
-  L.push('## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）');
-  L.push('');
-  for (const id of ids) {
     const base = id.replace(/-AC\d+$/, '');
-    const acTag = id !== base ? ` · 本包声明 AC 粒度回引：\`${id}\`` : '';
+    const entry = byBase.get(base) || { storyLevel: false, acTags: [] };
+    if (id === base) entry.storyLevel = true;
+    else entry.acTags.push(id);
+    byBase.set(base, entry);
+  }
+  if (byBase.size === 0) return null;
+  // bug 类降级（261015-gov-review-lite-fast-path T4，立项 ack 第 5 条）：sourceType ∈ bug 类且 planRef 在场 →
+  // ①b 渲染指针形态（语义权威 = requirements 现文，不照录；story 节对本包仅作背景）。
+  const bugDowngrade = !!opts.bugDowngrade;
+  const L = [];
+  if (bugDowngrade) {
+    L.push('## ①b · story 语义权威（bug 类包 · 指针形态——改动指令源在 plan.md）');
+  } else {
+    L.push('## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）');
+  }
+  L.push('');
+  for (const [base, entry] of byBase) {
+    const tags = [...(entry.storyLevel ? [base] : []), ...entry.acTags];
+    const tagLine = (entry.storyLevel && entry.acTags.length === 0)
+      ? ''
+      : ` · 本包声明 AC 粒度回引：${tags.map((t) => `\`${t}\``).join('、')}`;
     const sec = storySectionText(base);
     if (!sec) {
-      L.push(`### ${id}`);
+      L.push(`### ${base}`);
       L.push('');
       L.push('> ⚠ 未在 `docs/requirements.md` 定位到该 story 节（story id 可能写错或该节已迁移）——如实呈现、不猜；起包期核对 sourceRefs。');
       L.push('');
-      advisories.push(`story ref 未定位到节：${id}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`);
+      advisories.push(`story ref 未定位到节：${base}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`);
       continue;
     }
-    L.push(`### ${id} · 源 = \`docs/requirements.md\` 节首行 :${sec.line}${acTag}`);
+    L.push(`### ${base} · 源 = \`docs/requirements.md\` 节首行 :${sec.line}${tagLine}`);
     L.push('');
-    L.push('> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。');
-    L.push('');
-    L.push('```markdown');
-    L.push(sec.text);
-    L.push('```');
+    if (bugDowngrade) {
+      L.push(`> 本包 sourceType 为 bug 类且 planRef 在场：**不照录整节**——语义权威 = \`docs/requirements.md\` 现文（\`${sec.title}\`），按需自读；story 节对本包仅作背景，真实改动指令 = plan.md（见头部改动指令源行）。`);
+    } else {
+      L.push('> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。');
+      L.push('');
+      L.push('```markdown');
+      L.push(sec.text);
+      L.push('```');
+    }
     L.push('');
   }
   return L;
@@ -414,28 +432,35 @@ function collectCrossPackageCarry(tp, repoRoot = projectDir) {
   return { rows, notes };
 }
 
-function renderBrief(tp, role, opts = {}) {
+// bug 类来源闭集（261015-gov-review-lite-fast-path T4）：命中且 planRef 在场 → ①b 指针形态 + 头部改动指令源行
+const BUG_SOURCE_TYPES = ['regression', 'ci-failure', 'drift-report'];
+
+function renderBrief(tp, opts = {}) {
   const errors = [];
   const advisories = [];
   const repoRoot = opts.repoRoot || projectDir;
   const now = new Date().toISOString();
+  const bugDowngrade = BUG_SOURCE_TYPES.includes(tp.sourceType) && nonEmptyString(tp.planRef);
   const anchorRows = renderAnchorSections(collectRefs(tp).filter((r) => !isStoryRef(r.path)), advisories);
-  const storyRoad = renderStoryRoad(collectRefs(tp).filter((r) => isStoryRef(r.path)), advisories);
+  const storyRoad = renderStoryRoad(collectRefs(tp).filter((r) => isStoryRef(r.path)), advisories, { bugDowngrade });
   const ce = renderCounterparts(tp, errors);
   const precedents = findPrecedents(tp);
   const carry = collectCrossPackageCarry(tp, repoRoot);
   const warn = wireAdvisory(tp, ce);
 
   const L = [];
-  L.push(`# input-brief · ${role} · ${tp.changeId}`);
+  L.push(`# input-brief · ${tp.changeId}`);
   L.push('');
   L.push(`> **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。`);
   L.push(`> **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 \`brief-inputs.mjs\` 取新行号，不得照旧行号通读整文件。`);
-  L.push(`> generated-at: ${now} · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: ${role}`);
+  L.push(`> generated-at: ${now} · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）`);
   if (nonEmptyString(opts.regeneratedBecause)) {
     L.push(`> regenerated-because: ${String(opts.regeneratedBecause).trim()}（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）`);
   }
   L.push(`> 来源 TaskPackage: \`delivery/taskpackages/${tp.changeId}/taskpackage.json\` · subsystem: ${tp.subsystem || '(空)'} · rigor: ${tp.rigor || 'full'}`);
+  if (bugDowngrade) {
+    L.push(`> **改动指令源 = plan.md**：\`${tp.planRef}\`（bug 类包——本 brief ①b 为指针形态，真实改动指令在此）。`);
+  }
   L.push('');
   L.push(`## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）`);
   L.push('');
@@ -450,25 +475,24 @@ function renderBrief(tp, role, opts = {}) {
     for (const l of storyRoad) L.push(l);
     L.push('');
   }
-  // ①c（260929-gov-review-req-loop-ui-author T5.3）：uiux 设计 refs 专列 builder——refs 入清单即入视野
-  if (role === 'builder') {
-    const uiuxRefs = collectUiuxRefs(tp, repoRoot);
-    for (const d of uiuxRefs.filter((r) => !r.present)) {
-      advisories.push(`uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`);
-    }
-    L.push(`## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威）`);
-    L.push('');
-    if (uiuxRefs.some((r) => r.present)) {
-      L.push('| 类别 | 路径 |');
-      L.push('|---|---|');
-      for (const r of uiuxRefs.filter((r) => r.present)) L.push(`| ${r.kind} | \`${r.path}\` |`);
-      L.push('');
-      L.push('页级 PNG（400×300）= **布局坐标定位权威**：layout 常量按图定，文字线框仅口径补充。');
-    } else {
-      L.push('`none` —— uiux block 不在场或无在盘设计 refs（`designRefs[]` / `sharedUiRefs[]`）。本包若实有 UI 面，回报 planner 补挂——不脑补。');
-    }
-    L.push('');
+  // ①c（260929-gov-review-req-loop-ui-author T5.3 立；261015-gov-review-lite-fast-path T4 单份化：builder 为
+  // 主要消费方，acceptance-author 直读 TaskPackage uiux block 的既有口径不变）——refs 入清单即入视野
+  const uiuxRefs = collectUiuxRefs(tp, repoRoot);
+  for (const d of uiuxRefs.filter((r) => !r.present)) {
+    advisories.push(`uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`);
   }
+  L.push(`## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）`);
+  L.push('');
+  if (uiuxRefs.some((r) => r.present)) {
+    L.push('| 类别 | 路径 |');
+    L.push('|---|---|');
+    for (const r of uiuxRefs.filter((r) => r.present)) L.push(`| ${r.kind} | \`${r.path}\` |`);
+    L.push('');
+    L.push('页级 PNG（400×300）= **布局坐标定位权威**：layout 常量按图定，文字线框仅口径补充。');
+  } else {
+    L.push('`none` —— uiux block 不在场或无在盘设计 refs（`designRefs[]` / `sharedUiRefs[]`）。本包若实有 UI 面，回报 planner 补挂——不脑补。');
+  }
+  L.push('');
   L.push(`## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）`);
   L.push('');
   if (!ce.present) {
@@ -557,14 +581,14 @@ function selfCheck() {
   ok('fixture-nonempty', Array.isArray(fixtureTp.docRefs) && fixtureTp.docRefs.length >= 2
       && !!fixtureTp.crossEnd, JSON.stringify(fixtureTp.docRefs));
 
-  const a = renderBrief(fixtureTp, 'acceptance-author');
+  const a = renderBrief(fixtureTp);
   ok('① 锚点节形状', /\|\s*路径\s*\|\s*锚点\s*\|\s*节标题\s*\|\s*节首行\s*\|\s*状态\s*\|/.test(a.markdown)
       && a.markdown.includes(CONTRACT_WIRE_FILE), 'table header + contract path');
   ok('① 不抽正文', !/```(py|c|cpp|json)/.test(a.markdown), 'no fenced source bodies');
   ok('① 裸路径标「无锚点（整文件）」', a.markdown.includes('无锚点（整文件）')
       && a.advisories.some((s) => s.includes('无锚点')), 'DEV-GOVERNANCE.md bare ref → bare marker + advisory (R1/F12)');
   // T5（260924-gov-review-gate-parse-teeth）判别：缺失文件 → missing 行 + advisory（反转实现必须变红）。
-  const miss = renderBrief({ ...fixtureTp, docRefs: [...fixtureTp.docRefs, 'docs/nonexistent-brief-inputs-probe.md#§9'] }, 'acceptance-author');
+  const miss = renderBrief({ ...fixtureTp, docRefs: [...fixtureTp.docRefs, 'docs/nonexistent-brief-inputs-probe.md#§9'] });
   ok('① 缺失文件 → missing 行 + advisory（T5）', miss.markdown.includes('（文件不存在）')
       && miss.advisories.some((s) => s.includes('不在磁盘上')), 'missing ref → missing row + advisory');
   ok('② 对端面节在场（空骨架分支）', a.markdown.includes('## ② 跨端对端面')
@@ -585,28 +609,29 @@ function selfCheck() {
 
   // ①c uiux 设计 refs 透传（260929-gov-review-req-loop-ui-author T5.3）：两臂 + builder 专列 + 悬空 advisory
   const uiuxTp = { ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/UIUX-DESIGN-BRIEF.md'], sharedUiRefs: [] } };
-  const ub = renderBrief(uiuxTp, 'builder');
-  ok('uiux-refs 在位列（builder brief 含设计 ref 与定位权威句）', ub.markdown.includes('## ①c · UI 设计 refs')
+  const ub = renderBrief(uiuxTp);
+  ok('uiux-refs 在位列（brief 含设计 ref 与定位权威句）', ub.markdown.includes('## ①c · UI 设计 refs')
       && ub.markdown.includes('docs/ui/UIUX-DESIGN-BRIEF.md')
       && ub.markdown.includes('布局坐标定位权威'), 'designRef listed with authority note');
-  ok('uiux-refs 专列 builder（acceptance-author brief 不含 ①c）', !renderBrief(uiuxTp, 'acceptance-author').markdown.includes('## ①c · UI 设计 refs'), 'builder-only section');
-  ok('uiux-refs 缺席 → none 结论（不脑补）', renderBrief(fixtureTp, 'builder').markdown.includes('`none` —— uiux block 不在场'), 'absent arm renders none');
-  const uDangle = renderBrief({ ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/no-such-page-probe.png'], sharedUiRefs: [] } }, 'builder');
+  ok('uiux-refs ①c 主要消费方标注（单份共用、builder 主读）', renderBrief(uiuxTp).markdown.includes('本节主要消费方 = builder'),
+      'single-file ①c notes builder as main consumer');
+  ok('uiux-refs 缺席 → none 结论（不脑补）', renderBrief(fixtureTp).markdown.includes('`none` —— uiux block 不在场'), 'absent arm renders none');
+  const uDangle = renderBrief({ ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/no-such-page-probe.png'], sharedUiRefs: [] } });
   ok('uiux-refs 悬空 ref → advisory（在位才列）', uDangle.advisories.some((s) => s.includes('uiux 设计 ref 指向的文件不在盘上'))
       && !uDangle.markdown.includes('docs/ui/no-such-page-probe.png'), 'dangling ref excluded + advisory');
   ok('uiux-refs 夹具非空（设计 ref 指向的母版在盘）', existsSync(resolve(projectDir, 'docs/ui/UIUX-DESIGN-BRIEF.md')), 'fixture ref targets real file');
 
   // fail-loud 路径（§8-B1）
   const badTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'firmware/main/nonexistent_xxx.cc', symbol: 'NoSuchSymbol' }] } };
-  const bad = renderBrief(badTp, 'builder');
+  const bad = renderBrief(badTp);
   ok('② 解析失败 fail-loud', bad.errors.some((e) => e.kind === 'counterpart-unresolved' && e.entry.includes('NoSuchSymbol')),
       'errors carry named entry, not silent empty anchor');
   const okTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'firmware/main/mcp_server.cc', symbol: 'McpServer' }] } };
-  const good = renderBrief(okTp, 'builder');
+  const good = renderBrief(okTp);
   ok('② 自有面正例可解析', good.errors.length === 0 && good.markdown.includes('firmware/main/mcp_server.cc'),
       'resolved range rendered');
   const offTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'ESP32-S3-RLCD-4.2-Demo/x.cc', symbol: 'Y' }] } };
-  const off = renderBrief(offTp, 'builder');
+  const off = renderBrief(offTp);
   ok('②③档越界提示（ADV 真发出、不静默不硬红）', off.advisories.some((s) => s.includes('未覆盖档'))
       && !off.errors.some((e) => e.kind === 'counterpart-unresolved'),
       'landing-verifier 复核指出原臂含恒真合取（>=0）系 vacuous，改正为必验 ADV 实发');
@@ -688,7 +713,7 @@ function selfCheck() {
       && existsSync(join(cpbDir, 'delivery', 'workstreams', 'probe-ws', 'decision-coverage.json'))
       && existsSync(join(cpbDir, 'delivery', 'workstreams', '_archive', '2026', 'old', 'decision-coverage.json')));
   const cpbTp = { changeId: cpbSelf, subsystem: 'firmware', docRefs: [], sourceRefs: [], contractRefs: [], crossEnd: { counterparts: [], exempt: '' } };
-  const cpb = renderBrief(cpbTp, 'builder', { repoRoot: cpbDir });
+  const cpb = renderBrief(cpbTp, { repoRoot: cpbDir });
   ok('⑤ 命中·包面（`behavior` 存量键 + `owner` 判承接）',
       cpb.markdown.includes('## ⑤ 跨包承接面') && cpb.markdown.includes('包面行为甲（owner 直指本包）')
       && cpb.markdown.includes(`package:${cpbOther}`));
@@ -698,7 +723,7 @@ function selfCheck() {
   ok('⑤ 排除（承接包是别包 / `owner` 指本包但 `carriedBy` 是别包 / 自包登记 / 归档面）',
       !cpb.markdown.includes('包面 decoy') && !cpb.markdown.includes('workstream decoy')
       && !cpb.markdown.includes('自包登记 decoy') && !cpb.markdown.includes('归档 decoy'));
-  const cpbNone = renderBrief({ ...cpbTp, changeId: '260930-nothing-carry' }, 'builder', { repoRoot: cpbDir });
+  const cpbNone = renderBrief({ ...cpbTp, changeId: '260930-nothing-carry' }, { repoRoot: cpbDir });
   ok('⑤ 零命中明写 `none`（不是省略）', cpbNone.markdown.includes('`none` —— 两写面'));
   rmSync(cpbDir, { recursive: true, force: true });
 
@@ -709,17 +734,32 @@ function selfCheck() {
     return existsSync(p) && readFileSync(p, 'utf8').includes('##### S-F1.4 · ');
   })());
   const storyTp = { ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4', 'S-F1.4-AC3'] };
-  const story = renderBrief(storyTp, 'builder');
+  const story = renderBrief(storyTp);
   ok('①b story ref 整节照录（节标题 + AC1 在投影内）', story.markdown.includes('## ①b · story 语义权威')
       && story.markdown.includes('日程提醒') && /AC1[：:]/.test(story.markdown), 'verbatim section excerpted');
   ok('①b story ref 不再落 ① 路 missing 表', !story.markdown.includes('（文件不存在）')
       && !/\| `S-F1\.4` \|/.test(story.markdown), 'routed out of anchor table (ARQ-260927 证据 5 缺口闭合)');
   ok('①b AC 复合句法加亮 + 照录语义声明', story.markdown.includes('`S-F1.4-AC3`')
       && story.markdown.includes('语义权威仍在 requirements 现文'), 'AC tag + authority note');
-  const storyMiss = renderBrief({ ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F9.9'] }, 'builder');
+  const storyMiss = renderBrief({ ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F9.9'] });
   ok('①b not-found → advisory、不阻断（brief 仍产出）', storyMiss.markdown.includes('## ①b · story 语义权威')
       && storyMiss.advisories.some((s) => s.includes('story ref 未定位到节'))
       && storyMiss.errors.length === 0, 'advisory channel, no exit-1 class error');
+  // T4（261015-gov-review-lite-fast-path）：基 id 去重 + bug 类降级 + proposal 照录不变 + 单份头部
+  ok('①b 基 id 去重（同基两引用只贴一次、AC 标签并列）', (() => {
+    const hits = (story.markdown.match(/### S-F1\.4 · 源 =/g) || []).length;
+    return hits === 1 && story.markdown.includes('`S-F1.4`、`S-F1.4-AC3`');
+  })(), 'one section per base id, merged AC tags');
+  const bugTp = { ...fixtureTp, sourceType: 'regression', planRef: 'delivery/taskpackages/x/plan.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4', 'S-F1.4-AC3'] };
+  const bug = renderBrief(bugTp);
+  ok('①b bug 类降级（指针形态 + 头部指令源行、不照录整节）', bug.markdown.includes('## ①b · story 语义权威（bug 类包 · 指针形态')
+      && bug.markdown.includes('**改动指令源 = plan.md**')
+      && bug.markdown.includes('不照录整节')
+      && !bug.markdown.includes('> **语义权威仍在 requirements 现文**'), 'pointer form, no verbatim section');
+  const propTp = { ...fixtureTp, sourceType: 'proposal', planRef: 'delivery/changes/dev/x/PROPOSAL.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4'] };
+  ok('①b proposal 来源照录不变（负向臂）', renderBrief(propTp).markdown.includes('> **语义权威仍在 requirements 现文**'), 'verbatim kept for proposal origin');
+  ok('单份头部形态（消费方并列、无 role 残留）', a.markdown.includes('消费方: acceptance-author + builder')
+      && !a.markdown.includes('input-brief · acceptance-author'), 'single-file header');
   const failed = checks.filter((c) => !c.pass);
   for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
 
@@ -736,7 +776,6 @@ function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.selfCheck) selfCheck();
   if (!args.changeId) fail('--change-id required');
-  if (!ROLES.includes(args.role)) fail('--role must be acceptance-author|builder', { got: args.role });
 
   const dir = resolve(projectDir, 'delivery/taskpackages', args.changeId);
   const tpPath = join(dir, 'taskpackage.json');
@@ -745,7 +784,7 @@ function main() {
   try { tp = JSON.parse(readFileSync(tpPath, 'utf8').replace(/^﻿/, '')); }
   catch (e) { fail('TaskPackage is not valid JSON', { tpPath, error: String(e.message || e) }); }
 
-  const { markdown, errors, advisories, warnings } = renderBrief(tp, args.role, { regeneratedBecause: args.regeneratedBecause });
+  const { markdown, errors, advisories, warnings } = renderBrief(tp, { regeneratedBecause: args.regeneratedBecause });
 
   for (const w of warnings) console.error(`brief-inputs: WARN(advisory) — ${w}`);
   for (const adv of advisories) console.error(`brief-inputs: ADV — ${adv}`);
@@ -758,13 +797,13 @@ function main() {
     process.exit(1);
   }
 
-  const outPath = join(dir, `input-brief-${args.role}.md`);
+  const outPath = join(dir, 'input-brief.md');
   if (args.dryRun) {
     process.stdout.write(markdown);
     return;
   }
   writeFileSync(outPath, markdown, 'utf8');
-  console.log(JSON.stringify({ ok: true, script: 'brief-inputs', role: args.role, changeId: args.changeId, brief: outPath, warnings: warnings.length, advisories: advisories.length }, null, 2));
+  console.log(JSON.stringify({ ok: true, script: 'brief-inputs', changeId: args.changeId, brief: outPath, warnings: warnings.length, advisories: advisories.length }, null, 2));
 }
 
 if (await isMainScript()) main();

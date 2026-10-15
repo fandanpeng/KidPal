@@ -1,0 +1,9 @@
+# verifier scope list · 261015-voice-rightcol-label-overflow（final bearing 轮消费）
+# 来源 = verifier-scope.json（integrator Step 4 影响面圈定，detect_changes + impactedTestsSeed）
+# 形态注记：unit-run-check / acceptance-run-check 消费纯文本清单（一行一个仓根相对路径），
+# verifier-scope.json 为富信息 provenance（schemaVersion 1.0），两者同源同改。
+firmware/main/test/voice_rightcol_label.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+firmware/main/test/host_app/main/CMakeLists.txt

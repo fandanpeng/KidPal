@@ -269,5 +269,9 @@
   "261015-gov-review-face-loop-unify": {
     "date": "2026-10-15",
     "mergedInMain": "yes"
+  },
+  "261015-gov-review-lite-fast-path": {
+    "date": "2026-10-15",
+    "mergedInMain": "yes"
   }
 }

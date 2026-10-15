@@ -14,7 +14,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 1. 调度判定记录（哪几包、为什么）→ 落 `delivery/workstreams/kidpal-mvp/progress.md` 追加段
 2. 每个包：`--check-launch` 机械门绿
 3. 每个包：运行时 worktree（**复用空闲树 ∨ 按需新建**，一树一常驻分支——见步骤 3 换包协议）
-4. 每个包：固件环境等价化（sdkconfig / dependencies.lock 镜像 + managed_components 共享软链 + bootstrap 跑过）
+4. 每个包：固件环境等价化（sdkconfig / dependencies.lock / host_app sdkconfig 镜像 + managed_components 共享软链 + bootstrap 跑过；**lite 包新树：后置真机轮前**，见步骤 3b——261015-gov-review-lite-fast-path）
 5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（moderate + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
 6. board（`devloop/pods/<changeId>.json`）预填 worktreePath
 7. 启动卡落 `delivery/taskpackages/<changeId>/launch-card.md`
@@ -65,7 +65,7 @@ python -m pytest -q --import-mode=importlib -m "not live" "<repo 绝对路径>/s
 
 - **空闲判读**：树上有会话在跑即占用（一个目录一个会话，并行同树在操作层不可达）；board 的 worktreePath 是**记录不是锁**（merge-driver 定位用），不设独占校验门（human 2026-09-15 裁定）。
 - **一树一常驻分支**：每棵树一个常驻分支（命名自由，如 `dev/pool-1`；git 禁同分支两树，多树天然分流）。包与包之间不换不删——上一包 **merged** → 直接续跑（merge-driver 的 rebase 步已把常驻分支 rebase 到 main，树内治理面即为最新）；上一包 **abandoned** → 先 main→base 同步（显式前置一步），再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品——复位目标**非 main**（main..base 含未 launch 包的拆包制品，字面复位 main 会抹掉它们、下一包 intake 即 fail-closed）。
-- **交接卫生**：换包前 tracked 改动须净、untracked 清理，**白名单保留 `build/` 与 `managed_components` 软链**（保住热编译与组件缓存——host build 热缓存随树，换包增量编译）。
+- **交接卫生**：换包前 tracked 改动须净、untracked 清理，**白名单保留 `build/` 与 `managed_components` 软链**（保住热编译与组件缓存——host build 热缓存随树，换包增量编译）；`firmware/main/test/host_app/sdkconfig` 属 gitignored 再生面、不随树保留——换包交接时**删除之**，强制下次构建从 tracked `sdkconfig.defaults` 重生成（消 TECH-261014 陈旧假红类；新树无此险，冷构建从 defaults 重生成即正确）。
 - **按需扩容**：建新树决策归 human（评估并行收益 vs 一棵树的 host 冷编译成本）。新建时：
 
 ```
@@ -74,13 +74,23 @@ git worktree add C:/AI/KidPal-pod-<树名> -b <常驻分支名> <专用 base 分
 
 （树名是纯标识符，运行时绑定唯一 = board worktreePath；既有按包名命名的树一律不改名——改名会孤儿化路径派生的图索引项目。）
 
-### 4. 固件环境等价化（仅新建树；复用树跳过——环境已就位，换包时只做交接卫生核对）
+### 3b. lite 快路径（`rigor=lite` 包；261015-gov-review-lite-fast-path）
+
+触发 = 包 `rigor=lite` 且 triage 未声明「快路径不适用」（资格判注义务与例外声明 = [change-triage.md](../../../.claude/references/change-triage.md) §7）。分叉两条：
+
+- **池优先**：先按步骤 3 换包协议复用空闲池树——复用树自带热环境（build/ 缓存 + managed_components 软链 + 既有图索引），环境后置对它无意义，launch 只剩 board 预填 + 基线差异判停 + 写启动卡；无空闲树才经 human 决策建新树（步骤 3 第四条不变）。
+- **新树免做的只有一件 = 固件环境等价化**（步骤 4 全件）——后置为真机轮前置条件，启动卡钉预检行「烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录」。其余 launch 面步骤照旧：**专属图索引维持「必办 + intake 前在册」原样**（ARQ-260905 零修订），仅加执行顺序注记——新树建成后**立即发起**步骤 5 图索引（快照导入 + 增量，分钟级），与 board 预填 / 启动卡撰写自然交叠。
+
+### 4. 固件环境等价化（仅新建树；复用树跳过——环境已就位，换包时只做交接卫生核对。**lite 包新树：整步骤后置真机轮前**，见 3b——届时一次性执行本步骤全件，或真机轮直接退主 checkout 构建烧录）
 
 ```
 cp firmware/sdkconfig firmware/dependencies.lock <worktree>/firmware/
+cp firmware/main/test/host_app/sdkconfig <worktree>/firmware/main/test/host_app/sdkconfig
 ln -s /c/AI/KidPal/firmware/managed_components <worktree>/firmware/managed_components
 cd <worktree> && node .claude/scripts/worktree-bootstrap.mjs --source C:/AI/KidPal
 ```
+
+- host_app sdkconfig 镜像行 = TECH-261014 修法方向①落地（261015-gov-review-lite-fast-path T2 随批结项）：host_app 的生成态 sdkconfig 随树镜像，防 host 冷构建从 defaults 重生成后与树内验收基线漂移出假红。
 
 - **managed_components 用 git bash `ln -s` 软链到主 checkout**（多 worktree 共享组件缓存，勿删勿重建）。`cmd //c mklink /J` 在 git bash 引号转义下会报 `Invalid switch`——别用。
 - 软链建完用原生 python 验：`python -c "import os; print(os.path.isdir(r'<worktree>\firmware\managed_components'))"` 须 `True`（idf.py 走原生 python，MSYS 假链会坑它）。
@@ -108,13 +118,15 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 ### 7. 启动卡（260915-gov-review-worktree-pool-reuse T1⑤：prompt 收缩）
 
-写 `delivery/taskpackages/<changeId>/launch-card.md`（**Git-tracked**，随 commit-before-launch 进基准 ref——Pod 建树即天然拿到。落点迁移见 260921-gov-review-launch-pipeline T2）——**数行启动卡，五要素**：
+写 `delivery/taskpackages/<changeId>/launch-card.md`（**Git-tracked**，随 commit-before-launch 进基准 ref——Pod 建树即天然拿到。落点迁移见 260921-gov-review-launch-pipeline T2）——**数行启动卡，六要素**：
 
 ```
 跑 <changeId>（<workstream>，mergeOrder <N>）。
 基线锚：<workstream progress.md 带 SHA 行>——各面域判停结论（可引用 / 须重跑，按步骤 2 差异判停）。
 上一包留根：<delivery/taskpackages/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
-固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省）。
+固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省；261015 批 T3 起 defer > required——lite 包 scoped 相位 defer 短路优先于本行，final 相位恒跑）。
+会话标识：<pid / 终端标识 / 启动时刻>（点火后由 launch 执行者回填——叫停时核「进程确实已死」用，见 pod-coordination「叫停协议」节）。
+（lite 包新树加一行）真机轮预检：烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录。
 命令行（两形态并列，标注适用条件）：
 ① 人在场交互式：claude --settings .claude/dev-loop.settings.json --agent planner
 ② 无人值守 headless：claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner（另加 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0）
@@ -131,6 +143,8 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 ## 坑（实测代价换来的）
 
+- **会话从哪棵树启动就在哪棵树干活**（261015 D 事故）：从 pod-m2 启动的会话去兄弟树派发/写文件，被 enforce-scope 按越界全拦（烧探针后退化成跨树双写互踩）；T5 修复后跨树写按目标树 scope-map 重锚判定（红线面仍拦），但治理语义不变——**树隔离是池模型的承重墙**，跨树干活的合法形态 = 在该树起自己的会话。
+- **叫停 = 先停会话进程、再处置树与分支**（261015 E 事故：树删了、headless 会话裸跑 2h）：顺序条款与树处置两形态见 `pod-coordination.md`「叫停协议」节，此处不双写正文。
 - **过期的环境注记会传染**（260915 起 prompt 已收缩为启动卡，此坑移位到 skills / progress.md 锚行）：引用任何环境事实或基线前逐项核地面真值（list_projects / worktree list / 文件存在性 / anchor SHA 可达）——图索引漏建事故根因即抄旧文（2026-09-05 追因）。
 - **复用树的交接卫生**（260915 树池模型新增）：换包前不核对 tracked 净 + untracked 清理，上一包的证据残留/半成品会漏给下一包（intake 误判、基线误读）；白名单只保 `build/` 与 `managed_components` 软链。
 - **图索引是必办不是优化**：worktree 被跟踪文件互相不可见，主索引 root_path 指主 checkout，查 worktree 新增文件非专属索引不可。
