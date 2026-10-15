@@ -287,3 +287,4 @@ ARQ-261015-lite-package-execution-overhead C 源（5 轮 323s）。语义红线�
 - **F4（should）**：T4-2 planner 枚举补 :74 单份引用 + :47 bug 类限定半句。
 - **F5（advisory）**：sdkconfig.defaults 行数 38 → 37（实测）。
 - 无 blocking。**ROUND1 VERDICT: GREEN**（三项 should 修订须在 FROZEN 前随下一版 PROPOSAL 落实，主线程标 FROZEN 时核对；F5 顺手改）。
+verdict: GREEN（R1 · 2026-10-15 · 0 blocking · 3 should 已随 v0.3 折进）
