@@ -10,7 +10,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261015-gov-review-lite-fast-path](261015-gov-review-lite-fast-path/) | 2026-10-15 | landed | — |
+| [261015-gov-review-lite-fast-path](261015-gov-review-lite-fast-path/) | 2026-10-15 | landed | yes |
 | [261015-gov-review-face-loop-unify](261015-gov-review-face-loop-unify/) | 2026-10-15 | landed | — |
 | [261014-gov-review-crq-debt-rename](261014-gov-review-crq-debt-rename/) | 2026-10-14 | landed | yes |
 | [261014-gov-review-dev-lane-merge-taskpackages](261014-gov-review-dev-lane-merge-taskpackages/) | 2026-10-14 | landed | yes |
