@@ -350,3 +350,28 @@ verdict: BLOCK(R2-F1)
 **亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① node 字节级提取 :107/:156 两行「不豁免…」引文比对——输出 `verbatim-equal (ignoring md bold): true` 且 T3 引文含 `**` 标记、T6 无（判定见 R2-F1 条）；② grep `与 1g/10b 同款|10b 同款` = :288/:321 两行（均 §7 记录）；③ `sed -n '13,27p'` manifest 围栏块 = 15 条目逐行打印核对（11 必选 + 4 条件，与 R2 亲核留痕⑧同一集合）；④ `node .claude/scripts/landing-fidelity-check.mjs --preflight <本PROPOSAL>` 实跑 = ok:true / anchorCount:11 / findings:[] / advisories:[] / section2BodyFound:true；⑤ `git diff bcbd307 7f9d13e` 全量通读 = 三 hunk 与 R2 否回项一一对应；⑥ 结构字段 grep 定位——packet-id :6、manifest 围栏 :12-28、§5 第 1 条定稿义务 :254、§5 第 9 条 :262。
 
 verdict: GREEN
+
+### R4 - 2026-10-16 - architect
+
+**轮次焦点**：定稿保真专项（R3 GREEN 后 human 裁毕全部 OQ、v1.0 定稿改写）——七项逐核：§4 裁断保真、OQ4(b)/OQ5(b) 落地保真、条件锚三转一删、T1 阈值与实测表、定稿 diff 全量通读（`git diff 9476bdb..fdfd2e3`）、结构字段与凭据链。R1–R3 已亲核且未被 v1.0 触动的引据不重跑。
+
+**七项核验**：
+
+1. **§4 裁断保真：七条全对**。OQ1=(a)（:217「同批改 architect.md；T6 条件锚已转必选锚」）、OQ2=(a)（:223「全扩既有闸、零新立脚本、半径 advisory——维持原设计不变」）、OQ3=实测钉死 inbound ≤ 5、明示不采纳推荐 (b)（:229「实测钉死 inbound ≤ 5（不采纳推荐 (b)）」）、OQ4=(b) 裁在非推荐位（:235，推荐原为 (a)）、OQ5=(b) 裁在非推荐位（:241，推荐原为 (a)）、OQ6=(a)（:246）、OQ7=(a)（:252）——七条标注与 human 裁断逐字一致；OQ4/OQ5 确认 T 段按 (b) 改写而非残留 (a) 设计（到位面见第 2/3 项，残留面见 findings）。
+2. **OQ4(b) 落地保真：主体到位，词汇/机制残留见 R4-F1/R4-F2**。到位面：T3 :107 落痕载体 = integrator 在 review-packet.md 增「白盒复核」节 +「不落独立件、closeout-check 不加牙」+「10c 判分位语义不变——PASS 仍为 Step 11 前置」三要素齐；T5 改法与目标文件行（:144）已无 closeout-check 条目（定稿 diff 实删条件牙 bullet 与目标文件第四项）；§5 原 OQ4(a) 专属验证条（旧第 8 条 closeout-check warn 牙夹具）已删、条目重编号连续（现第 8 条 = git diff --cached --stat 对照 manifest，无断号）；全 PROPOSAL grep `whitebox-review` 字面：生效面零命中（命中仅 §4 OQ4 选项/裁断 ：231/:235 与 §7 历史记录）。
+3. **OQ5(b) 落地保真：到位**。T3 :108「不成文——不设 exitCriteria 视觉门条目、不设 supervisor 闸前 AskUserQuestion 确认……supervisor 不恒 ESCALATE 维持现状」；T2 :84 exitCriteria 括注同步为「视觉门不成文，OQ5=(b) 见 T3」；T3 证据 ：100 live-manual 先例引证保留（先例引证属举证材料非视觉门条款，不成文裁定不受影响）；AskUserQuestion 无生效面设计残留（:3 为 Status 留痕注记、:237 为 §4 选项文本）。
+4. **条件锚三转一删：核过**。manifest 围栏块 ：12-27、条目 ：13-26 恰 14 行亲点；architect.md / AGENTS.md / docs/DEV-GOVERNANCE.md 三锚在场且 §2 目标文件行条件注记已去（T6/T7 标题与目标文件、§3 sweep 行、Status 头 ：8 四处同步）；closeout-check.mjs 不在 manifest、不在 §2 锚清单。判官亲跑 preflight = `ok:true ∧ section2BodyFound:true ∧ anchorCount:14 ∧ findings:[] ∧ advisories:[]`，anchorUnion 14 成员与 manifest 围栏块逐 token 一致。
+5. **T1 阈值与实测表：在场 + 侧面抽查成立**。判据钉死句 :59「阈值钉死 = 每将触符号 inbound 调用方 ≤ 5 且同属一个 owning 文件/紧耦合簇」；实测表 ：51 四包数值齐全且含「topbar 被拒……是判据生效的设计意图，不是误伤」设计意图说明；「未亲核」标注如实（主线程 trace_path 现跑、起草会话无 MCP）。判官侧面抽查（Grep 实测，不精确复算）：`p1_blit_art` 在 `firmware/main/display/home_p1.c` 直接调用点 = 4（:1143/:1217/:1273/:1341，定义 :573 与注释不计）——与申报 = 4 恰合；`rn_render_kidpal_page_locked` 直接调用 4 处（kidpal_render_node.cc :656/:999/:1037/:1150）+ 其四公共入口（kidpal_render_node_cycle_next / refresh_story / dismiss_front_overlay / voice_end）设备侧外部调用点 ≥9（application.cc:1088、waveshare 板 ：138/:160/:185、mcp_server.cc :240/:300/:390/:1079/:1116），depth-3 传递闭包 ≈17 量级可信、明显 >5——断层分布成立，「阈值钉 5 恰落断层空档」经抽查无反证。
+6. **定稿 diff 全量通读：无夹带**。`git diff 9476bdb..fdfd2e3 -- <本PROPOSAL>` 13 个 hunk 逐个核对——全部映射到七条 OQ 裁断及其联动同步（Status/review profile、manifest 删 closeout-check 行、T1 判据钉死+实测表、T2 exitCriteria 括注、T3 三 bullet、T4 条件注记去条件化、T5 删牙+标题、T6/T7 标题与目标文件、§3 四行、§4 七条裁断行、§5 第 1/3/7/8 条、§6 第 1/4/5 条、起草注记），无无关改动混入；§6 留根与 OQ3/OQ5 同步（第 1 条现文「判档阈值本身已实测钉死……本条只管收口实测侧的硬齿化」——无「阈值待校准」残留表述；第 4/5 条同 sync）；§5 各条（pre-commit）/(post-commit) 时点标注 8/8 在场。
+7. **结构字段与凭据链：齐**。manifest 围栏块 ：12-27 与 packet-id 行 ：6 在场；Status 行 ：3 载 OQ 裁毕留痕与「定稿待主线程标 FROZEN」，立项 ack 由 ：4「human 2026-10-16 两轮口述直接发起」承载——R4 GREEN 后凭据链（立项 ack + OQ 裁毕 + R3 GREEN + R4 GREEN）完整，可标 FROZEN。
+
+**Findings**：
+
+- **R4-F1（BLOCKING）· T1 判据句残留 OQ4=(a) 落痕载体词汇「白盒复核件」，与 T3/OQ4=(b) 矛盾**：T1 判档双层形状句（:62）现文「收口实测 = `detect_changes` 对 actual diff 算实际爆炸半径，结果记进白盒复核件（advisory，见 T3）」——「白盒复核件」在本 PROPOSAL 语汇中是 OQ4 的定义术语（OQ4 标题「白盒复核件载体与牙」即 whitebox-review.md 载体问题），OQ4=(b) 已裁「不落独立件」，T3 :107 生效文为「记入回执」+「落痕载体 = integrator 在 review-packet.md 增『白盒复核』节」。T1 字面落地会把收口实测落点写进一个 (b) 设计下不存在的独立件——而 T1 判据节恰是落进 change-triage.md 的 canonical 内容，该悬空指称会随 landing 进入档位 SSOT，未来读者按 T1 找「白盒复核件」即回植被拒的 (a) 设计。与 R2-F1 同判：FROZEN 文本内部矛盾 + 字面落地回植被拒设计 → BLOCKING。修法方向：:62 改为「……结果记入白盒复核回执（advisory，见 T3；落痕载体 = integrator review-packet『白盒复核』节，OQ4=(b)）」。升级 human：否——修法唯一且机械，无方向分叉。
+- **R4-F2（SHOULD）· 「planner 代落」落痕链三处 (a) 时代残留**：OQ4=(a) 的落盘机制是 planner 代落 whitebox-review.md；(b) 下落痕 = integrator 写 review-packet 节，planner 代落不再是机制一环。残留三处：T3 证据 :99「复核结论落盘须由 planner 代落」（(b) 下落盘者 = integrator，「须由 planner 代落」为过期断言）；T6 改法尾句 ：154「（复核只读 + planner 代落，写域零扩张）」（结论「写域零扩张」在 (b) 下依然成立——architect 恒只读、integrator 写自家制品——但括注机制名过期）；§3 sweep :190「architect 复核回执 planner 代落（先例 planner.md:33②）」。三处均不承载闸语义、结论不受影响，故 SHOULD；修法方向：三处统一改为「architect 恒只读零写；落痕 = integrator review-packet『白盒复核』节（OQ4=(b)）」。
+
+**判档与升级（只升不降）**：判档维持 Track B 主路径全件（v1.0 触面集与 R1 判档结论一致，OQ4=(b) 删 closeout-check.mjs 触面属收窄非扩张）；Track A 段判定维持不升级——R4-F1/R4-F2 均为实现层文本残留修订，无方向级分叉。无升级 human 项。
+
+**亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① preflight 亲跑输出 = ok:true / section2BodyFound:true / anchorCount:14 / findings:[] / advisories:[]，anchorUnion 14 token 与 manifest 逐一对上；② 全文 grep `whitebox-review|closeout-check`——命中 ：8/:106/:107/:219/:231/:235/:258/:282/:299/:305/:342（:106 为 Step 11 既有 closeout-check 保留项、:107 为「不加牙」否定句，其余为 Status 头裁断注记、§4 选项/裁断文本与 §7 append-only 历史；生效面零残留）；③ 全文 grep `白盒复核件|视觉门|AskUserQuestion|代落|第 9 条`——定位 R4-F1 :62 与 R4-F2 :99/:154/:190；其余命中（:3 Status 留痕、:100/:108 T3、:230/:236/:237 §4、:325/:342/:344 §7 历史）均豁免；④ 定稿 diff 13 hunk 全量通读（逐 hunk ↔ 七条 OQ 映射核对）；⑤ `p1_blit_art` home_p1.c 调用点 grep = 4；⑥ `rn_render_kidpal_page_locked` 全固件 grep（kidpal_render_node.cc 四调用点 + 四公共入口外部设备侧调用点 grep 实测 ≥9）；⑦ manifest :13-26 亲点 14 行、packet-id :6、Status :3/:4、§5 八条时点标注在场；⑧ T5 目标文件行 ：144 = 三文件无 closeout-check、§5 现第 8 条 = manifest 对照条（原 warn 牙验证条已删、无断号残留）。
+
+verdict: BLOCK(R4-F1)
