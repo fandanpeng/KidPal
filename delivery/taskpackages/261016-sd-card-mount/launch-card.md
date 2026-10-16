@@ -7,7 +7,7 @@
 - **上一包留根**：无——本树分支零自有提交（bd4beac = main），交接卫生已核（tracked 净，untracked 仅本包 delivery 制品）。
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开；本包 rigor=full，无 defer 短路）。
 - **真机门前停等（本包特有，写进派发即生效）**：A1（插卡 roundtrip）/ A2（无卡降级 + KEY 冒烟）需 human 持板。planner 依次跑完 intake → acceptance-author → builder → verifier 代码面齿 → A3 设备编译闸后，**在真机门前停**：status 写 `awaiting-human:real-device`、退出报告交回，把「插卡/拔卡/观察项」整理成一份持板操作单（含原理图三脚目视核对销 GPIO21 疑问）；human 完成操作后 resume 续跑。
-- **会话标识**：＿（点火后由 launch 执行者回填 pid / 启动时刻，叫停核「进程确实已死」用）。
+- **会话标识**：headless 后台任务 `br7az9wic`（主会话 52a734cd 派起，2026-10-16 ~14:03 点火，human 授权主线程代跑 launch——change-intake 姿势二；叫停核「进程确实已死」用）。
 
 ## 命令行（worktree = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch，分支 dev/261016-sd-card-mount）
 

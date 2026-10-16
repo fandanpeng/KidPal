@@ -1,176 +1,89 @@
 {
-  "changeId": "261015-p1-auxbar-style-fix",
-  "rigor": "lite",
+  "changeId": "261016-sd-card-mount",
+  "rigor": "full",
   "sourceType": "human-ad-hoc",
   "origin": {
     "type": "human-ad-hoc",
     "upstreamType": "human-ad-hoc",
-    "upstreamRef": "delivery/taskpackages/261015-p1-auxbar-style-fix/plan.md",
-    "upstreamFrozen": "reviewed plan（architect /triage-change 分流 review 产出 2026-10-15，frontmatter reviewed-by 为证；human 触点①决议已记 plan「human 触点①决议」节：②单包 Lite + Tier-2④a 日期全大写纳入实施 + Tier-2④b 冒号眨眼不做出包）；plan 即冻结输入，只读消费",
+    "upstreamRef": "delivery/taskpackages/261016-sd-card-mount/plan.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 分流 review 产出 2026-10-16，frontmatter reviewed-by 为证；human 触点①三项确认同日：①能力就绪 scope 收窄 ②LFN 不开 ③architecture.md:232 随批 doc-sync 不升级架构面；human 授权主线程代跑 launch——change-intake 姿势二，启动卡会话标识 br7az9wic 为证）；plan 即冻结输入，只读消费",
     "workstream": ""
   },
-  "subsystem": "firmware/main/display（home_p1.c 辅助条四观感件）+ 资产管线（tools/asset-pipeline）",
-  "planRef": "delivery/taskpackages/261015-p1-auxbar-style-fix/plan.md",
-  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1——日期英文简写示例锚「Tue 22 Sep」）——story 语义权威 = docs/requirements.md 现文；行为权威 = reviewed plan.md（architect /triage-change 2026-10-15 + human 触点①决议）。非新语义包：P1 辅助条像素级观感修复（human 原话「首页 最上面那一条，整体看起来很不精致」）；④a 全大写 = human 显式覆盖拍板（触点①决议留痕），requirements AC1 示例措辞同步 = 殿后项不入本包",
+  "subsystem": "firmware/main/boards/waveshare-s3-rlcd-4.2（板级 SDMMC 挂载）",
+  "planRef": "delivery/taskpackages/261016-sd-card-mount/plan.md",
+  "story": "TEMP-2026-10-16-sd-card-mount · TF 卡接入——SDMMC 1-bit 挂载 + /sdcard 存储访问能力就绪（降级不崩）——行为权威 = reviewed plan.md（architect /triage-change 2026-10-16 + human 触点①三项确认）；scope 收窄 = 只做挂载能力就绪，story 存储/日志落盘不在本包（human 原话钉死，将来另包且须先过决策 24 介质禁令 spec 裁决）",
   "sourceRefs": [
-    "S-F1.1",
-    "S-F1.1-AC1",
-    "delivery/taskpackages/261015-p1-auxbar-style-fix/plan.md"
+    "TEMP-2026-10-16-sd-card-mount",
+    "delivery/taskpackages/261016-sd-card-mount/plan.md"
   ],
-  "acceptance": [
-    "AB-A1: 电池图标换原生直出件——home_p1.c p1_draw_aux_batt 消费 ic_batt_15.bin（15x12 原生字面）直出不缩放，图标半区以冻结钉区表 HPB_RECT_AUX_BATT_ICON {342,6,362,29} 为准内居中（落位授权域 x0∈[342,347]、y0∈[11,15]，蕴含墨盒收进钉区、中线 19±2）；弃用 22x40 非等比盒，ic_batt_48 引号字面销账=0；art 未挂载兜底描边保持钉区内（HPB 兜底义务由 p1_home_battery.acceptance.c:101-104 既有齿承载）。冻结红名见 p1_auxbar_style.acceptance.c 头注（首发：未取到 ic_batt_15.bin 消费点；二阶：ic_batt_48.bin 字面消费未销账 / 落位越出图标半区）",
-    "AB-A2: 温度图标换原生直出件——p1_draw_aux_temp 消费 ic_thermo_12.bin（12x12 原生字面）直出不缩放，图标半区 {210,6,230,29} 内居中（x0∈[211,217]、y0∈[11,15]）；thermo_man 41x67→20x20 缩放消费销账=0；兜底同 AB-A1 纪律",
-    "AB-A3: 湿度图标换原生直出件——p1_draw_aux_hum 消费 ic_drop_12.bin（12x12 原生字面）直出不缩放，图标半区 {282,6,302,29} 内居中（x0∈[283,289]、y0∈[11,15]）；drop_baby 32x51→20x20 缩放消费销账=0；兜底同 AB-A1 纪律",
-    {
-      "id": "AB-A4",
-      "kind": "structural",
-      "note": "AB-A4: wifi 资产按 14px 重设重出（守卫验收测试 case，设计态绿——转红即 infra 异常）——gen_assets.mjs ic-wifi job 同行锚（'ic_wifi_14' × svgUse('ic-wifi')）+ 输出 (w,h)=(14,14) + 母版 id=\"ic-wifi\" symbol 在世（不钉 symbol 内容——终形归看屏轮 human 拍板，钉内容即抢跑仲裁面）+ home_p1.c 消费几何 (12,12,14,14) 零重锚守卫；母版内容级重设由 uiux-author 承载、builder 2-3 候选经 host screenshot 自查比对，白名单 68 枚不动、验收零重锚 〔kind:structural 标注系 verifier r1 mutation-check 后的形态校正：本条为守卫观察面（job 同行锚/母版 symbol id 在世/消费几何三锚在世，设计态绿、转红即 infra 异常），同名同尺寸重出无 pre-change 状态差与独立实现变异点，mutation 语义 = 不适用（M-4 / VR-A5 同款）；条目原文逐字保留、语义零变更——planner 2026-10-16〕"
-    },
-    "AB-A5: 日期简写全大写（Tier-2④a，human 触点①拍板纳入；requirements AC1 示例「Tue 22 Sep」措辞同步 = 殿后项，S-F1.1-AC1 语义由 human 显式覆盖承载）——k_p1_month_abbr / k_p1_wday_abbr 表串逐 token 全大写 + 非空表串数 12/7 在世（防清空表体假绿）；零新资产（imgfont_letter_A..Z 全套在库实证）。冻结红名：月表含小写首犯 \"Jan\" 形态（星期表同构）",
-    {
-      "id": "AB-A6",
-      "kind": "structural",
-      "note": "AB-A6: ④b 负面锚（守卫验收测试 case，设计态绿——④b human 拍板不做）——colon_visible 门控字面（kidpal_home_p1_blink_visible(s_state.tick_ms, HP1_BLINK_PERIOD_COLON_MS)）在世且函数窗内出现 ≥2（赋值+blit 消费）+ home_p1.h 常量定义行与 4400 同行在世 + kidpal_home_p1_blink_visible 函数定义本体在世；p1_home_battery / p1_cjk_name（blink_visible 符号钉）/ time_sync（p1_draw_aux_time 结构齿）/ voice_rightcol_label 四冻结件回归观察面不落 case（落即越权复钉，VR-A5 同款口径）、零改动全绿 〔kind:structural 标注系 verifier r1 mutation-check 后的形态校正：本条为④b 负面锚守卫面（零触碰观察，被触碰时报 RED(infra)）+ 既有四冻结件回归观察面，无逐 AC 实现变异点，mutation 语义 = 不适用（M-4 / VR-A5 同款）；条目原文逐字保留、语义零变更——planner 2026-10-16〕"
-    },
-    {
-      "id": "AB-A7",
-      "kind": "structural",
-      "note": "真机轮 live-manual structural 豁免（VR-A6 261015-voice / TR-A5 261013 先例口径，不计入 runner 通过面）：human 持板验收——① wifi 不再读作「两朵重叠」；② 电池/温/湿图标与文字同视觉级（墨高约 11-15px、中线 y≈19、无硬切感）；③ 日期全大写观感确认；④ 烧录 = app+art 双分区（spiffs 资产变更，261011 先例）。host 面转绿后停该门等 human，不自行烧录"
-    }
-  ],
-  "acceptanceTestsFile": [
-    "firmware/main/test/p1_auxbar_style.acceptance.c"
-  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
   "requiredLayers": [
-    "unit",
     "acceptance-offline",
     "live-manual"
   ],
   "exitCriteria": [
-    "新建冻结验收件 p1_auxbar_style.acceptance.c 全绿（源锚齿形态：资产消费名断言 + 大写表串断言），红基线设计态红全数转绿",
-    "既有冻结件（p1_home_battery / p1_cjk_name / time_sync / voice_rightcol_label）零改动全绿；host 套件相对上游基线（voice 收尾态 172 Tests / 0 Failures）零新增红",
-    "资产面：verify_art_assets.mjs 绿；gen_assets→gen_art_spiffs 重出链仅产生 ic_wifi_14.bin 一枚 bin 字节 diff（其余 67 枚白名单件字节不变——管线确定性自检），diff 越界即停报不静默",
-    "mutation 取证闭环：资产消费名或表串回退 → 新源锚齿红（红名 verbatim 留档），还原复绿；旧消费点（ic_batt_48/thermo_man/drop_baby 于辅助条绘制路径）销账 grep 净",
-    "docs-sync 显式裁定：docsSyncRequired=false（理由见 docsSyncReason）；docs/ui 母版同步由 uiux-author 派发承载；requirements AC1 示例措辞全大写同步 = 殿后项（human 触点①已拍板，档 0 勘误或 human 直改如实记录）",
-    "AB-A7 真机轮留痕：human 持板目测 + 修复前后截图对比（本包收尾停门项，不自行烧录）"
-  ],
-  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "已实跑（2026-10-15，acceptance-author 双通道，本树）：① 独立冒烟通道（WSL gcc -Wall -Wextra，新件未接线不入全量 runner）——编译 COMPILE_EXIT=0 零 warning + 实跑 6 Tests 4 Failures，AB-A1/A2/A3/A5 四枚设计态红且红名与冻结申报逐字一致（首发红名：未取到 ic_batt_15/ic_thermo_12/ic_drop_12.bin 消费点 + 月表含小写首犯 \"Jan\"），AB-A4/A6 守卫 case 绿（与头注申报一致）；日志 /c/tmp/p1_auxbar_style_red_baseline_smoke.log。② 全量套件（派发命令原样）——BUILD_EXIT=0 + 172 Tests / 0 Failures / RUN_EXIT=0，与上游基线（voice 收尾态 172T/0F）持平、既有验收测试 case 零新增红；日志 /c/tmp/p1_auxbar_style_full_suite_build.log、/c/tmp/p1_auxbar_style_full_suite_run.log。红判据口径：AB-A4（同名同尺寸重出无 pre-change 状态差）与 AB-A6（负面锚零触碰性质）为设计态绿守卫 case，转红即 infra 异常——口径已冻结进文件头注 RED baseline 节",
-  "requiredLayers_note": "host 结构齿离线可跑（源锚齿读仓内源文件 + 缩写表串，walk-up 定根）；screenshot 墨带 bbox 自查 = 独立 gcc harness（home_p1_screenshot.c，不进 runner 构建）归 builder 取证通道；真机轮 live-manual 停门等 human",
-  "deliveryImpact": "none",
-  "planningImpact": "none",
-  "planningRefs": [],
-  "riskTier": "low",
-  "gateProfile": [
-    "types",
-    "test-quality",
-    "evidence-integrity"
-  ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md"
-  ],
-  "docRefs": [
-    "docs/requirements.md#S-F1.1",
-    "delivery/taskpackages/261015-p1-auxbar-style-fix/plan.md"
-  ],
-  "changeManifest": [
-    "firmware/main/display/home_p1.c",
-    "tools/asset-pipeline/gen_assets.mjs",
-    "tools/simulator/LvglWindowsSimulator/assets/assets.c",
-    "firmware/main/assets/spiffs_root/ic_wifi_14.bin",
-    "firmware/main/test/host_app/screenshot/home_p1_screenshot.c",
-    "firmware/main/test/p1_auxbar_style.acceptance.c",
-    "firmware/main/test/host_app/main/CMakeLists.txt",
-    "docs/ui/kidpal-ui-design-v5.html"
-  ],
-  "changeManifest_note": "docs/ui/kidpal-ui-design-v5.html 由 uiux-author 窄写（docs/ui/** 唯一写权角色，261011-p1-home-v5-rework 先例），builder/fixer 不触；assets.c 与 png 预览为 gen_assets 重生产物随链再生",
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "纯板端显示资产消费与绘制观感修复——零 wire 面：不触碰任何跨端 wire 形状（帧类型/字段类型与承载/回执语义/序列化形态），server 零 diff、契约全文资产面零命中（plan 实证 NO_CONTRACT_CHANGE），无对端面"
-  },
-  "impactedTestsSeed": [
-    {
-      "path": "firmware/main/test/p1_home_battery.acceptance.c",
-      "kind": "regression-watch-zero-touch",
-      "note": "HPB-A4 1s 电池闪活齿（:1047-1056，blink_visible 依赖须在世）+ PH-A2 墨下界齿（:1090-1134）零改动应全绿；辅助条钉区表 :60-73 为图标半区权威（y2=29）"
-    },
-    {
-      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
-      "kind": "regression-watch-zero-touch",
-      "note": "blink_visible 符号钉 :1342——④b 不做，blink_visible 函数本体必须在世，零改动应全绿"
-    },
-    {
-      "path": "firmware/main/test/time_sync.acceptance.c",
-      "kind": "regression-watch-zero-touch",
-      "note": "p1_draw_aux_time 结构齿 :1149-1155——冒号门控零触碰下零改动应全绿"
-    },
-    {
-      "path": "firmware/main/test/voice_rightcol_label.acceptance.c",
-      "kind": "regression-watch-zero-touch",
-      "note": "上游 voice 包新冻结件，与本包正交，零改动应全绿"
-    },
-    {
-      "path": "firmware/main/test/p1_auxbar_style.acceptance.c",
-      "kind": "new-frozen-acceptance-file",
-      "note": "本包新建（承载位 = acceptance-author 定；加接线进 host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS——CMakeLists 行归 builder，scope-map 分权：acceptance-author 只写 *.acceptance.c）"
-    },
-    {
-      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
-      "kind": "wiring-add",
-      "note": "新冻结件接线一行（HOST_ACCEPTANCE_SRCS 列表 + 置于 smoke 之前，C4.2/C4.3 纪律）——builder 落笔"
-    },
-    {
-      "path": "firmware/main/test/host_app/screenshot/home_p1_screenshot.c",
-      "kind": "probe-update",
-      "note": ":261 ic_batt_48 探针随消费切换更新（→ic_batt_15）；该 harness 独立 gcc 通道（WSL 手编），归 builder 墨带 bbox 修复前后对比取证"
-    }
+    "新建冻结验收件（源锚结构齿：引脚宏 / 挂载调用参数 / 失败降级路径 / 查询入口）全绿，红基线设计态红全数转绿",
+    "A3 设备编译闸绿：firmware-build 闸过（VERIFY_FW_BUILD_REQUIRED=1，rigor=full 无 defer 短路），sdkconfig 零改动（LFN 维持 CONFIG_FATFS_LFN_NONE，human 触点①拍板）",
+    "既有冻结件零改动全绿：host 套件相对上游基线零新增红（板级 .cc 不入 host 编译面，既有齿与本包正交）",
+    "mutation 取证闭环：引脚宏或挂载参数回退 → 新源锚齿红（红名 verbatim 留档），还原复绿",
+    "docs-sync 落地：docs/architecture.md:232 盘点行改记已接入 + docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62 同步（顺带修正 KEY 键 stale 行；落点通道见 notes【doc 行落点】）",
+    "真机轮留痕（本包收尾停门项）：A1 插卡 roundtrip（写-读-删 8.3 探针文件验后即删）+ A2 无卡降级（正常启动 + WARN + KEY 会话冒烟），human 持板，含原理图三脚目视核对销 GPIO21 疑问"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptance": "AB-A1: 电池图标换原生直出件——home_p1.c p1_draw_aux_batt 消费 ic_batt_15.bin（15x12 原生字面）直出不缩放，图标半区以冻结钉区表 HPB_RECT_AUX_BATT_ICON {342,6,362,29} 为准内居中（落位授权域 x0∈[342,347]、y0∈[11,15]，蕴含墨盒收进钉区、中线 19±2）；弃用 22x40 非等比盒，ic_batt_48 引号字面销账=0；art 未挂载兜底描边保持钉区内（HPB 兜底义务由 p1_home_battery.acceptance.c:101-104 既有齿承载）。冻结红名见 p1_auxbar_style.acceptance.c 头注（首发：未取到 ic_batt_15.bin 消费点；二阶：ic_batt_48.bin 字面消费未销账 / 落位越出图标半区）",
-        "mutation": "m1 · ic_batt_15.bin→ic_batt_48.bin 消费名回退",
-        "affectedTest": "p1_auxbar_style.acceptance.c AB-A1：presence 红与销账红同源双红（首发红名 + 仍有 1 处 ic_batt_48.bin 字面消费未销账）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "已取证（2026-10-15 builder 第一方实跑）：RUNNER_EXIT=1 该族单红、其余五 case 绿；还原复绿（四族跑毕 6 Tests 0 Failures / FINAL_RUNNER_EXIT=0）。红名 verbatim：AB-A1 RED: home_p1.c p1_draw_aux_batt 未取到 ic_batt_15.bin 消费点（15x12 原生直出件未接入）——电池图标仍走 ic_batt_48 48x48 塞 22x40 非等比盒旧路径（横压 2.18x + y0=0 clip 硬切, 全条最重最黑）; 修复 = 消费切换 ic_batt_48.bin -> ic_batt_15.bin 原生 15x12 直出不缩放。证据：mutation-evidence/builder-run-2026-10-15.md（m1 节；日志 /c/tmp/p1_auxbar_style_mutation_ab_a1.log）"
-      },
-      {
-        "acceptance": "AB-A2: 温度图标换原生直出件——p1_draw_aux_temp 消费 ic_thermo_12.bin（12x12 原生字面）直出不缩放，图标半区 {210,6,230,29} 内居中（x0∈[211,217]、y0∈[11,15]）；thermo_man 41x67→20x20 缩放消费销账=0；兜底同 AB-A1 纪律",
-        "mutation": "m2 · ic_thermo_12.bin→thermo_man.bin 消费名回退",
-        "affectedTest": "p1_auxbar_style.acceptance.c AB-A2：presence 红与销账红同源双红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "已取证（2026-10-15 builder 第一方实跑）：RUNNER_EXIT=1 该族单红、其余五 case 绿；还原复绿（四族跑毕 6 Tests 0 Failures / FINAL_RUNNER_EXIT=0）。红名 verbatim：AB-A2 RED: home_p1.c p1_draw_aux_temp 未取到 ic_thermo_12.bin 消费点（12x12 原生直出件未接入）——温度图标仍走 thermo_man 41x67 最近邻硬压 20x20 旧路径（五官细节全毁）; 修复 = 消费切换 thermo_man.bin -> ic_thermo_12.bin 原生 12x12 直出不缩放。证据：mutation-evidence/builder-run-2026-10-15.md（m2 节；日志 /c/tmp/p1_auxbar_style_mutation_ab_a2.log）"
-      },
-      {
-        "acceptance": "AB-A3: 湿度图标换原生直出件——p1_draw_aux_hum 消费 ic_drop_12.bin（12x12 原生字面）直出不缩放，图标半区 {282,6,302,29} 内居中（x0∈[283,289]、y0∈[11,15]）；drop_baby 32x51→20x20 缩放消费销账=0；兜底同 AB-A1 纪律",
-        "mutation": "m3 · ic_drop_12.bin→drop_baby.bin 消费名回退",
-        "affectedTest": "p1_auxbar_style.acceptance.c AB-A3：presence 红与销账红同源双红",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "已取证（2026-10-15 builder 第一方实跑）：RUNNER_EXIT=1 该族单红、其余五 case 绿；还原复绿（四族跑毕 6 Tests 0 Failures / FINAL_RUNNER_EXIT=0）。红名 verbatim：AB-A3 RED: home_p1.c p1_draw_aux_hum 未取到 ic_drop_12.bin 消费点（12x12 原生直出件未接入）——湿度图标仍走 drop_baby 32x51 最近邻硬压 20x20 旧路径（五官细节全毁）; 修复 = 消费切换 drop_baby.bin -> ic_drop_12.bin 原生 12x12 直出不缩放。证据：mutation-evidence/builder-run-2026-10-15.md（m3 节；日志 /c/tmp/p1_auxbar_style_mutation_ab_a3.log）"
-      },
-      {
-        "acceptance": "AB-A5: 日期简写全大写（Tier-2④a，human 触点①拍板纳入；requirements AC1 示例「Tue 22 Sep」措辞同步 = 殿后项，S-F1.1-AC1 语义由 human 显式覆盖承载）——k_p1_month_abbr / k_p1_wday_abbr 表串逐 token 全大写 + 非空表串数 12/7 在世（防清空表体假绿）；零新资产（imgfont_letter_A..Z 全套在库实证）。冻结红名：月表含小写首犯 \"Jan\" 形态（星期表同构）",
-        "mutation": "m4 · 缩写表串回退 \"JAN\"→\"Jan\"",
-        "affectedTest": "p1_auxbar_style.acceptance.c AB-A5：k_p1_month_abbr 月简写表串含小写字母（首犯 \"Jan\"；wday 齿同构）",
-        "turnedRed": true,
-        "sensitive": true,
-        "notes": "已取证（2026-10-15 builder 第一方实跑）：RUNNER_EXIT=1 该族单红、其余五 case 绿；还原复绿（四族跑毕 6 Tests 0 Failures / FINAL_RUNNER_EXIT=0）。红名 verbatim：AB-A5 RED: k_p1_month_abbr 月简写表串含小写字母（首犯 \"Jan\"）——日期月/星期简写仍为 title-case, 12x16 降采样下小写笔画侵蚀与大小写混排参差在世（Tier-2④a human 触点①拍板「直接做」; 修复 = 表串全大写 JAN..DEC, 零新资产 imgfont_letter_A..Z 全套在库）。证据：mutation-evidence/builder-run-2026-10-15.md（m4 节；日志 /c/tmp/p1_auxbar_style_mutation_ab_a5.log）"
-      }
-    ],
-    "reason": "Lite 包骨架前置（起包格式期望前置第①条）；变异形状 = 资产消费名回退（ic_batt_15→ic_batt_48 / ic_thermo_12→thermo_man / ic_drop_12→drop_baby 任一回退）或缩写表串回退（全大写→title-case），新源锚齿（MCD-A1 形态）须红；AB-A4 资产重出面（同名同尺寸重出，无独立源码变异点——守卫咬合 = job 同行锚/母版 symbol/消费几何三锚在世）、AB-A6 负面锚面（门控被触碰时报 RED(infra)）与 AB-A7 真机轮为取证豁免面；perAcceptance.acceptance = acceptance[] 对应条目全文逐字复制（261010 包先例⑤），builder 已取证（2026-10-15），planner 回填 turnedRed/红名 verbatim/证据路径——全文逐字代存于 mutation-evidence/builder-run-2026-10-15.md"
+    "perAcceptance": [],
+    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状预判 = ①引脚宏回退（如 SD_MMC_D0_GPIO 39→其他）②挂载参数回退（format_if_mount_failed→true / max_files 缺失 / slot.width≠1）③降级路径破坏（WITHOUT_ABORT→ESP_ERROR_CHECK panic 形态 / 查询入口删除）——新源锚齿须红；A1/A2 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance 由 acceptance-author 冻结轮补骨架、builder 实跑取证、planner 回填"
   },
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "delivery/taskpackages/261016-sd-card-mount/plan.md",
+    "docs/architecture.md",
+    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
+  ],
+  "changeManifest": [
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/config.h",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/sd_card_mount.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "docs/architecture.md",
+    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
+  ],
+  "changeManifest_note": "sd_card_mount.acceptance.c 承载位与命名归 acceptance-author 定（本清单为预定形态）；CMakeLists.txt 一行接线归 builder（scope-map 分权同 261015 先例）；docs/architecture.md 与 docs/notes/** 不在任何实现角色 allow 面——落点通道见 notes【doc 行落点】，builder/fixer 不触",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "SDMMC 板级挂载能力就绪，零 wire 面：不触任何跨端 wire 形状（帧类型/字段类型与承载/回执语义/序列化形态），server 零 diff（plan 四面探测实证：需求/契约/debt/intake/治理面零触），本包自身零消费方，无对端面"
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/sd_card_mount.acceptance.c",
+      "kind": "new-frozen-acceptance-file",
+      "note": "本包新建（承载位 = acceptance-author 定；源锚结构齿读仓内源文件形态，walk-up 定根，261015-p1-auxbar-style-fix 先例；加接线进 host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS）"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring-add",
+      "note": "新冻结件接线一行（HOST_ACCEPTANCE_SRCS 列表，C4.2/C4.3 纪律）——builder 落笔"
+    }
+  ],
   "adrRequired": false,
-  "docsSyncRequired": false,
-  "docsSyncReason": "零触 requirements / architecture / contracts（契约全文资产面零命中，plan 实证；AC1 措辞同步已由 human 触点①拍板为殿后项——实现先做全大写、需求示例措辞殿后档 0 勘误或 human 直改，决策留痕不入本包实现面）；docs/ui/kidpal-ui-design-v5.html 母版 symbol 内容级同步属资产面实现、由 uiux-author 派发承载（261011 facePlan 顺序4 先例），非 docs-sync 层；closeout docs-delta 声明「无 docs 面（requirements/architecture/contracts 零 diff）+ 殿后项声明」即可",
+  "docsSyncRequired": true,
+  "docsSyncReason": "plan 随批 doc-sync 义务（human 触点①③确认）：docs/architecture.md:232 §5.3.1 盘点行「SD 槽固件未接入」→ 改记已接入（SDMMC 1-bit /sdcard 能力就绪；业务数据不落板、决策 24 不变）+ docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62 同步（该行 KEY「未接入」亦随 260911-key-route-a1 变 stale，顺带一并修正）。事实态盘点同步，无设计决策变更，不升级架构面",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-15，frontmatter reviewed-by 为证）：技术方案意见（Tier-1①②③ + Tier-2④a）+ 影响面（changeManifest 等价）+ 关键取证文件（impactedTests 种子等价）三件齐备，不再重复派发 architect；human 触点①三决已裁（②单包 Lite / ④a 直接做 / ④b 不做出包）。【1f 快照保鲜核验】plan 引用锚逐条对磁盘核验通过（本会话 grep/sed 实证）：home_p1.c :917-931 冒号门控 / :945 :952 缩写表 / :1040 thermo_man / :1070 drop_baby / :1104 ic_batt_48 / :1127 ic_wifi_14；p1_home_battery.acceptance.c 钉区表 :60-73 / 兜底义务 :101-104 / HPB-A4 :1047-1056 / PH-A2 :1090-1134；screenshot 探针 :261；gen_assets.mjs:286 ic_wifi_14 job；gen_art_spiffs 68 枚白名单含 ic_thermo_12/ic_drop_12/ic_batt_15；spiffs_root 四枚目标 bin（ic_batt_15/ic_thermo_12/ic_drop_12/ic_wifi_14）+ imgfont_letter_A..Z 全套在册（spiffs_root 136 文件）；requirements.md:226（S-F1.1 AC1「Tue 22 Sep」）/ :564（眨眼冒号）。一处措辞级漂移如实修正：plan 称图标半区底缘 33，冻结钉区表实值 y2=29（HPB_RECT_AUX_BATT_ICON {342,6,362,29}，钉区底缘 29 = 上虚线 y30-32 重钉后不含虚线行）——以冻结验收表为准（居中/中线 y≈19 实质不变），plan 不回退。【1c scope-map 核对】builder/fixer allow firmware/** + tools/** 覆盖 home_p1.c / gen_assets.mjs / assets.c 重出 / spiffs bin / screenshot 探针 / 新冻结件接线 CMakeLists；*.acceptance.c 命中 builder deny——验收归 acceptance-author（allow firmware/**/*.acceptance.c ✓）分权即设计无冲突声明；docs/ui/kidpal-ui-design-v5.html 不在任何实现角色 allow 面——按 261011-p1-home-v5-rework 先例改派 uiux-author（docs/ui/** 唯一写权角色，母版内容级同步与实现解耦）；wifi 候选探索通道 = builder 对母版拷贝跑 gen_assets.mjs（脚本签名 node gen_assets.mjs <design.html> <outDir>，html 为参数——拷贝到 scratch 改候选 symbol 不触 docs/ui 写权），终形看屏轮 human 拍板后 uiux-author 落正式母版、builder 对真母版重出。【1d crossEnd】exempt 已定（纯板端显示资产与观感，零 wire 面）——brief-inputs 展开对端面为空。【UIUX】Level 0（既有页观感修复，无新页/新态设计面，不跑 UI-ready 检查；母版 symbol 内容级同步属资产面非页面设计面）。【intake 形状】自建形状（human-ad-hoc）：无 portfolio taskpackage、无 devloop/pods 条目命中本 changeId、无 PROPOSAL；launch-card.md 缺失如实记录、不设门（launch prompt 即启动卡，Step 1① 口径）；current/ 投影起包时自 261015-voice-rightcol-label-overflow 刷新至本包（stale 投影件同批清理）。【worktree/环境】专属 Pod worktree（分支 dev/261015-p1-auxbar-style-fix，基线 dcfc4af = main 27ad430 + plan commit）；launch-prep 步骤 4 全件已备（firmware/sdkconfig + dependencies.lock + host_app/sdkconfig 镜像 + managed_components 软链 python 验真 + bootstrap 已跑），261015-voice 先例同口径，lite 后置条款不启用；VERIFY_FW_BUILD_REQUIRED=1（scoped 相位 defer 短路优先，final 相位恒跑）；专属图索引 C-AI-KidPal-pod-261015-p1-auxbar-style-fix 已建（headless 会话仅只读查询面，如实申报非默许常规化）。【基线锚】上游 host 基线 = 261015-voice-rightcol-label-overflow 收尾态 172 Tests / 0 Failures（168 既有 + 4 新齿全绿；voice taskpackage redBaselineResult + exit-report 记录）；voice 修复 46bf631 已并入本树 main 27ad430；git diff anchor..HEAD -- firmware = 零（本树仅多 plan commit），差异判停协议零重判。【已知地雷前置申报】① firmware-build 闸 sdkconfig 再生噪音（voice exit-report 案）：Windows idf.py 构建会再生 firmware/sdkconfig Image Effects 空节头 +5 行零行为噪音 diff——final 相位若见同款 diff 先剥后判（FIX-3/FIX-5 处置 + pod-events 留痕），勿误判代码回归；② 资产重出链确定性自检：gen_assets 重出 assets.c（+png 预览）→ gen_art_spiffs 重写 68 枚 bin——确定性管线下应仅 ic_wifi_14.bin 一枚字节 diff，其余 67 枚字节不变；越界 diff = 管线非确定性 → 停报 friction(degraded)，不得静默全量重烘；③ host 齿相关子集 = p1_home_battery + p1_cjk_name + time_sync + voice_rightcol_label + 新冻结件；④ host 齿 tree-scan walk-up 定根，host_app build 目录与仓根两处 cwd 均可跑；⑤ 本包齿为源锚结构齿 + 墨带 bbox 观察（screenshot 自查独立 gcc 通道），all-mock 风险低，如实申报：若机械闸判 all-mock 触 riskTier 重算 high 需 human 放行（先例申报口径）。【8b 验收方向核】① AC 回引号集对账：sourceRefs AC 集 = {S-F1.1-AC1}，acceptance 回引 = AB-A5 显式携 S-F1.1-AC1（殿后项语义由 human 显式覆盖承载）——集合一致；② story 补充规则落点：AC1「辅助条各项图标前置」→ AB-A1/A2/A3 图标半区落位承载、「日期英文简写」→ AB-A5 承载（全大写 = human 显式覆盖拍板留痕，AC1 示例措辞殿后）、:564 趣味性「眨眼冒号」→ AB-A6 负面锚显式保留（④b 不做）；③ 断言方向：不弱于 story 语义、无钉反——四枚设计态红对 HEAD 旧路径（等比失真/小写表串）方向正确，守卫 case 防抢跑仲裁面（AB-A4 不钉 symbol 内容、AB-A6 钉零触碰）。核对者 = planner，核对对象 = acceptance-author 冻结件，通过。【真机门】host 面转绿后停 human 持板门（AB-A7），烧录 = app+art 双分区（spiffs 资产变更，261011 先例 / flash-asset-partition-rule），live-manual 停门等 human，不自行烧录。【殿后项随包声明】requirements.md AC1 示例措辞全大写同步（档 0 勘误或 human 直改如实记录）；home_p1.c 过时注释顺手修（:1037 等尺寸描述随资产切换失实）；联网小标条件显隐遗留不碰（:1122 注记）。"
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-16，frontmatter reviewed-by 为证；261015-p1-auxbar-style-fix 同款先例口径）：技术方案意见（config.h 引脚宏 / InitializeSdCard 挂载与降级 / sdkconfig 零改动含 LFN 裁决 / 决策 24 遵守）+ 影响面（预定改动面 = changeManifest 等价）+ 验收方向（A1/A2 真机 + A3 设备编译闸）三件齐备，不再重复派发 architect。【1f 快照保鲜核验】plan 引用锚逐条对磁盘核验通过（本会话 grep/sed 实证）：现役 config.h 无 SD 宏、GPIO_NUM_18 为 KEY（:36），21/38/39 在 waveshare-s3-rlcd-4.2 板面零占用（他板占用与本板无关）；.cc 构造初始化序列 :830-845（InitializeArt 同排插入点实证）；docs/architecture.md:232「SD 槽固件未接入」在位；docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62「未接入…KEY 键（GPIO 18）、Micro SD 卡槽」在位；参考件核验 = 主 checkout C:/AI/KidPal/ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/06_SD_Card/components/port_bsp/sdcard_bsp.{h,cpp}（vendor 树 untracked 不入 worktree——环境事实非 plan 漂移；已预拷 C:/tmp/sdcard-ref-261016/ 供 builder 只读），sdcard_bsp.h:15 clk=38/cmd=21/d0=39/width=1 与 plan 逐字一致，.cpp:9-10 format_if_mount_failed=false / max_files=5 与 plan 一致。【1c scope-map 核对】builder/fixer allow firmware/** 覆盖 config.h / 板 .cc / CMakeLists 接线；*.acceptance.c 命中 builder deny——验收归 acceptance-author（allow firmware/**/*.acceptance.c ✓）分权即设计无冲突声明。【1d crossEnd】exempt 已定（板级挂载零 wire 面）——brief-inputs 展开对端面为空。【UIUX】Level 0（无用户可见行为变更，不跑 UI-ready 检查）。【intake 形状】launch-argument 形状（/build-feature <changeId>）：launch 面五件预检通过（① board 条目在册 queued ② 启动卡在场 ③ worktree 实态核验（dev/261016-sd-card-mount，HEAD 82ef6dc）④ 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册 ⑤ spine 不在场——human-ad-hoc 非拆包，「在场才核」不适用）；portfolio handoff 探测：无既有 taskpackage → 归一本 plan；board 命中 + taskpackage 缺失不判交接断裂——本包 taskpackage 即本次 intake 制品（启动卡 + plan.md human 裁定在案，非拆包产物缺失）。current/ 投影自 261015-p1-auxbar-style-fix 刷新至本包。【worktree/环境】专属 Pod worktree（分支 dev/261016-sd-card-mount，基线 82ef6dc = main bd4beac + triage plan/启动卡首提交）；VERIFY_FW_BUILD_REQUIRED=1（rigor=full 无 defer 短路，launch card 钉死）；专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 已建。【基线锚】本包预定改动面 = 板级 config.h/.cc + 两处文档行，不触 server/**（server 面无锚可判，启动卡判停事实）；host_app 盖不住 SDMMC 设备专有编译单元（triage 实核，快路径不适用）——本包验收齿 = host 源锚结构齿（离线可跑）+ A3 设备编译闸 + 真机轮；acceptance-author 新冻结齿恒现跑红基线。【真机门前停等（本包特有，启动卡条款）】A1/A2 需 human 持板：planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → A3 设备编译闸后，在真机门前停——status 写 awaiting-human:real-device（portfolio-reconcile --set-pod）、退出报告交回主线程含持板操作单（插卡/拔卡/观察项 + 原理图三脚目视核对销 GPIO21 疑问）；不自行烧录。【doc 行落点】integrator allow 不含 docs/architecture.md 与 docs/notes/**（scope-map 实证）；261010-device-reconnect-on-server-close 先例 = integrator 起草 docs-delta 逐字文本 → architect 代写 architecture.md（architect allow ✓）→ integrator 抽查；docs/notes/** 无 agent 有写权 → 主线程通道代落（enforce-scope 主线程不受 per-agent 约束）并如实留痕。决策 24 介质禁令（architecture.md:416）：本包不写业务/身份/事项状态数据，验收 roundtrip 文件为临时测试探针（8.3 名）验后即删，story/日志落板不在本包不开口子。【LFN 裁决】本包不开长文件名（维持 CONFIG_FATFS_LFN_NONE，human 触点①②确认）；验收限 8.3 命名；builder 实测若发现挂载缺配置项走 planner 扩单通道回补不私扩。【已知地雷前置申报】① firmware-build 闸 sdkconfig 再生噪音（261015-voice exit-report 案）：Windows idf.py 构建会再生 firmware/sdkconfig Image Effects 空节头 +5 行零行为噪音 diff——final 相位若见同款 diff 先剥后判（FIX-3/FIX-5 处置 + pod-events 留痕），勿误判代码回归；② 分区表禁碰（assets/art canary 不动）：本包无 spiffs_root 资产变更 → 只烧 app 分区，资产双分区烧录规则不适用；③ 真机轮烧录姿势按启动卡 headless 停等条款执行。【8b 验收方向核】sourceRefs 未命中 requirements story（TEMP-* 临时 ref）——AC 回引号集对账不适用，核「行为权威 = plan.md 忠实度」：A1/A2/A3 三验收方向与 plan §验收方式一一对应、LFN 8.3 限制与 sdkconfig 裁决一致、决策 24 遵守承载于探针验后即删 + exitCriteria；核对者 = planner，核对对象 = acceptance-author 冻结件，待冻结轮执行。"
 }

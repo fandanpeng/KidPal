@@ -1,0 +1,89 @@
+{
+  "changeId": "261016-sd-card-mount",
+  "rigor": "full",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/taskpackages/261016-sd-card-mount/plan.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 分流 review 产出 2026-10-16，frontmatter reviewed-by 为证；human 触点①三项确认同日：①能力就绪 scope 收窄 ②LFN 不开 ③architecture.md:232 随批 doc-sync 不升级架构面；human 授权主线程代跑 launch——change-intake 姿势二，启动卡会话标识 br7az9wic 为证）；plan 即冻结输入，只读消费",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/boards/waveshare-s3-rlcd-4.2（板级 SDMMC 挂载）",
+  "planRef": "delivery/taskpackages/261016-sd-card-mount/plan.md",
+  "story": "TEMP-2026-10-16-sd-card-mount · TF 卡接入——SDMMC 1-bit 挂载 + /sdcard 存储访问能力就绪（降级不崩）——行为权威 = reviewed plan.md（architect /triage-change 2026-10-16 + human 触点①三项确认）；scope 收窄 = 只做挂载能力就绪，story 存储/日志落盘不在本包（human 原话钉死，将来另包且须先过决策 24 介质禁令 spec 裁决）",
+  "sourceRefs": [
+    "TEMP-2026-10-16-sd-card-mount",
+    "delivery/taskpackages/261016-sd-card-mount/plan.md"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "requiredLayers": [
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "exitCriteria": [
+    "新建冻结验收件（源锚结构齿：引脚宏 / 挂载调用参数 / 失败降级路径 / 查询入口）全绿，红基线设计态红全数转绿",
+    "A3 设备编译闸绿：firmware-build 闸过（VERIFY_FW_BUILD_REQUIRED=1，rigor=full 无 defer 短路），sdkconfig 零改动（LFN 维持 CONFIG_FATFS_LFN_NONE，human 触点①拍板）",
+    "既有冻结件零改动全绿：host 套件相对上游基线零新增红（板级 .cc 不入 host 编译面，既有齿与本包正交）",
+    "mutation 取证闭环：引脚宏或挂载参数回退 → 新源锚齿红（红名 verbatim 留档），还原复绿",
+    "docs-sync 落地：docs/architecture.md:232 盘点行改记已接入 + docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62 同步（顺带修正 KEY 键 stale 行；落点通道见 notes【doc 行落点】）",
+    "真机轮留痕（本包收尾停门项）：A1 插卡 roundtrip（写-读-删 8.3 探针文件验后即删）+ A2 无卡降级（正常启动 + WARN + KEY 会话冒烟），human 持板，含原理图三脚目视核对销 GPIO21 疑问"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": [],
+    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状预判 = ①引脚宏回退（如 SD_MMC_D0_GPIO 39→其他）②挂载参数回退（format_if_mount_failed→true / max_files 缺失 / slot.width≠1）③降级路径破坏（WITHOUT_ABORT→ESP_ERROR_CHECK panic 形态 / 查询入口删除）——新源锚齿须红；A1/A2 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance 由 acceptance-author 冻结轮补骨架、builder 实跑取证、planner 回填"
+  },
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "medium",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "contractRefs": [],
+  "docRefs": [
+    "delivery/taskpackages/261016-sd-card-mount/plan.md",
+    "docs/architecture.md",
+    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
+  ],
+  "changeManifest": [
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/config.h",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/sd_card_mount.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "docs/architecture.md",
+    "docs/notes/board-hardware-esp32-s3-rlcd-4.2.md"
+  ],
+  "changeManifest_note": "sd_card_mount.acceptance.c 承载位与命名归 acceptance-author 定（本清单为预定形态）；CMakeLists.txt 一行接线归 builder（scope-map 分权同 261015 先例）；docs/architecture.md 与 docs/notes/** 不在任何实现角色 allow 面——落点通道见 notes【doc 行落点】，builder/fixer 不触",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "SDMMC 板级挂载能力就绪，零 wire 面：不触任何跨端 wire 形状（帧类型/字段类型与承载/回执语义/序列化形态），server 零 diff（plan 四面探测实证：需求/契约/debt/intake/治理面零触），本包自身零消费方，无对端面"
+  },
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/sd_card_mount.acceptance.c",
+      "kind": "new-frozen-acceptance-file",
+      "note": "本包新建（承载位 = acceptance-author 定；源锚结构齿读仓内源文件形态，walk-up 定根，261015-p1-auxbar-style-fix 先例；加接线进 host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS）"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "wiring-add",
+      "note": "新冻结件接线一行（HOST_ACCEPTANCE_SRCS 列表，C4.2/C4.3 纪律）——builder 落笔"
+    }
+  ],
+  "adrRequired": false,
+  "docsSyncRequired": true,
+  "docsSyncReason": "plan 随批 doc-sync 义务（human 触点①③确认）：docs/architecture.md:232 §5.3.1 盘点行「SD 槽固件未接入」→ 改记已接入（SDMMC 1-bit /sdcard 能力就绪；业务数据不落板、决策 24 不变）+ docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62 同步（该行 KEY「未接入」亦随 260911-key-route-a1 变 stale，顺带一并修正）。事实态盘点同步，无设计决策变更，不升级架构面",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "planningWorkstreamRequired": false,
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-16，frontmatter reviewed-by 为证；261015-p1-auxbar-style-fix 同款先例口径）：技术方案意见（config.h 引脚宏 / InitializeSdCard 挂载与降级 / sdkconfig 零改动含 LFN 裁决 / 决策 24 遵守）+ 影响面（预定改动面 = changeManifest 等价）+ 验收方向（A1/A2 真机 + A3 设备编译闸）三件齐备，不再重复派发 architect。【1f 快照保鲜核验】plan 引用锚逐条对磁盘核验通过（本会话 grep/sed 实证）：现役 config.h 无 SD 宏、GPIO_NUM_18 为 KEY（:36），21/38/39 在 waveshare-s3-rlcd-4.2 板面零占用（他板占用与本板无关）；.cc 构造初始化序列 :830-845（InitializeArt 同排插入点实证）；docs/architecture.md:232「SD 槽固件未接入」在位；docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62「未接入…KEY 键（GPIO 18）、Micro SD 卡槽」在位；参考件核验 = 主 checkout C:/AI/KidPal/ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/06_SD_Card/components/port_bsp/sdcard_bsp.{h,cpp}（vendor 树 untracked 不入 worktree——环境事实非 plan 漂移；已预拷 C:/tmp/sdcard-ref-261016/ 供 builder 只读），sdcard_bsp.h:15 clk=38/cmd=21/d0=39/width=1 与 plan 逐字一致，.cpp:9-10 format_if_mount_failed=false / max_files=5 与 plan 一致。【1c scope-map 核对】builder/fixer allow firmware/** 覆盖 config.h / 板 .cc / CMakeLists 接线；*.acceptance.c 命中 builder deny——验收归 acceptance-author（allow firmware/**/*.acceptance.c ✓）分权即设计无冲突声明。【1d crossEnd】exempt 已定（板级挂载零 wire 面）——brief-inputs 展开对端面为空。【UIUX】Level 0（无用户可见行为变更，不跑 UI-ready 检查）。【intake 形状】launch-argument 形状（/build-feature <changeId>）：launch 面五件预检通过（① board 条目在册 queued ② 启动卡在场 ③ worktree 实态核验（dev/261016-sd-card-mount，HEAD 82ef6dc）④ 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册 ⑤ spine 不在场——human-ad-hoc 非拆包，「在场才核」不适用）；portfolio handoff 探测：无既有 taskpackage → 归一本 plan；board 命中 + taskpackage 缺失不判交接断裂——本包 taskpackage 即本次 intake 制品（启动卡 + plan.md human 裁定在案，非拆包产物缺失）。current/ 投影自 261015-p1-auxbar-style-fix 刷新至本包。【worktree/环境】专属 Pod worktree（分支 dev/261016-sd-card-mount，基线 82ef6dc = main bd4beac + triage plan/启动卡首提交）；VERIFY_FW_BUILD_REQUIRED=1（rigor=full 无 defer 短路，launch card 钉死）；专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 已建。【基线锚】本包预定改动面 = 板级 config.h/.cc + 两处文档行，不触 server/**（server 面无锚可判，启动卡判停事实）；host_app 盖不住 SDMMC 设备专有编译单元（triage 实核，快路径不适用）——本包验收齿 = host 源锚结构齿（离线可跑）+ A3 设备编译闸 + 真机轮；acceptance-author 新冻结齿恒现跑红基线。【真机门前停等（本包特有，启动卡条款）】A1/A2 需 human 持板：planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → A3 设备编译闸后，在真机门前停——status 写 awaiting-human:real-device（portfolio-reconcile --set-pod）、退出报告交回主线程含持板操作单（插卡/拔卡/观察项 + 原理图三脚目视核对销 GPIO21 疑问）；不自行烧录。【doc 行落点】integrator allow 不含 docs/architecture.md 与 docs/notes/**（scope-map 实证）；261010-device-reconnect-on-server-close 先例 = integrator 起草 docs-delta 逐字文本 → architect 代写 architecture.md（architect allow ✓）→ integrator 抽查；docs/notes/** 无 agent 有写权 → 主线程通道代落（enforce-scope 主线程不受 per-agent 约束）并如实留痕。决策 24 介质禁令（architecture.md:416）：本包不写业务/身份/事项状态数据，验收 roundtrip 文件为临时测试探针（8.3 名）验后即删，story/日志落板不在本包不开口子。【LFN 裁决】本包不开长文件名（维持 CONFIG_FATFS_LFN_NONE，human 触点①②确认）；验收限 8.3 命名；builder 实测若发现挂载缺配置项走 planner 扩单通道回补不私扩。【已知地雷前置申报】① firmware-build 闸 sdkconfig 再生噪音（261015-voice exit-report 案）：Windows idf.py 构建会再生 firmware/sdkconfig Image Effects 空节头 +5 行零行为噪音 diff——final 相位若见同款 diff 先剥后判（FIX-3/FIX-5 处置 + pod-events 留痕），勿误判代码回归；② 分区表禁碰（assets/art canary 不动）：本包无 spiffs_root 资产变更 → 只烧 app 分区，资产双分区烧录规则不适用；③ 真机轮烧录姿势按启动卡 headless 停等条款执行。【8b 验收方向核】sourceRefs 未命中 requirements story（TEMP-* 临时 ref）——AC 回引号集对账不适用，核「行为权威 = plan.md 忠实度」：A1/A2/A3 三验收方向与 plan §验收方式一一对应、LFN 8.3 限制与 sdkconfig 裁决一致、决策 24 遵守承载于探针验后即删 + exitCriteria；核对者 = planner，核对对象 = acceptance-author 冻结件，待冻结轮执行。"
+}
