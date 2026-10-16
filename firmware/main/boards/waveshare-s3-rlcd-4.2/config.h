@@ -35,8 +35,17 @@
  * active_high=false；KR-A5 human 持板真机确认后回填/冻结）。 */
 #define KEY_BUTTON_GPIO         GPIO_NUM_18
 
+/* 包 261016-sd-card-mount (TF 卡接入——SDMMC 1-bit 挂载 + /sdcard 能力就绪):
+ * SD 卡脚位 + VFS 挂载根。来源 = 官方例程 ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/
+ * 06_SD_Card/components/port_bsp/sdcard_bsp.h:15 默认脚位 (只读参考重写, 不直接改
+ * 参考树); 1-bit 模式 (本板只引出 D0, 四线需 D1-D3)。triage 实核 21/38/39 在本板
+ * firmware/main 零占用, 无冲突。 */
+#define SD_MMC_CLK_GPIO         GPIO_NUM_38
+#define SD_MMC_CMD_GPIO         GPIO_NUM_21
+#define SD_MMC_D0_GPIO          GPIO_NUM_39
+#define SD_MMC_MOUNT_ROOT       "/sdcard"
 
-#define RLCD_DC_PIN    GPIO_NUM_5  
+#define RLCD_DC_PIN    GPIO_NUM_5
 #define RLCD_CS_PIN    GPIO_NUM_40
 #define RLCD_SCK_PIN   GPIO_NUM_11
 #define RLCD_MOSI_PIN  GPIO_NUM_12

@@ -17,19 +17,19 @@
     "delivery/taskpackages/261016-sd-card-mount/plan.md"
   ],
   "acceptance": [
-    "SD-A1 config.h 四宏在世且值正确：#define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行、#define SD_MMC_CMD_GPIO 与 GPIO_NUM_21 同行、#define SD_MMC_D0_GPIO 与 GPIO_NUM_39 同行、#define SD_MMC_MOUNT_ROOT 与 \"/sdcard\" 同行（注释剥离后可执行源字面断言，宏间接形态红须复核锚）+ raw 源注释面含包号 261016-sd-card-mount 与来源锚 sdcard_bsp（来源 = 官方例程 sdcard_bsp.h:15 默认脚位）。含行级双针计数器扫描器自检（已知在世形态 AUDIO_I2S_GPIO_MCLK×GPIO_NUM_16）。冻结红名见 sd_card_mount.acceptance.c 头注（首发：config.h 未取到 #define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行宏定义）",
-    "SD-A2 板 .cc 挂载初始化：void InitializeSdCard 定义在世 + CustomBoard() : 构造窗内存在调用点 InitializeSdCard();（InitializeArt 同排初始化序列）+ 函数窗内五件：esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT（根宏首参，plan 逐字形态）、slot 宽度 = 字面 1（slot.width/.width 两拼写、WIDTH_1 枚举等价；1-bit 义务）、SD_MMC_CLK_GPIO/SD_MMC_CMD_GPIO/SD_MMC_D0_GPIO 三宏函数窗消费绑定、format_if_mount_failed 与 false 同行在世且 true 形态负向禁令（计数=0）、max_files 首个整数 = 字面 5",
-    "SD-A3 失败降级路径：函数窗内 ESP_ERROR_CHECK_WITHOUT_ABORT 在世 + 裸 ESP_ERROR_CHECK( panic 形态计数=0（负向齿；WITHOUT_ABORT 前缀不误伤）+ ESP_OK 返回码判定 + NULL 句柄判空双检 + s_sd_mounted 与 false 同行（降级置假）+ ESP_LOGW（WARN 继续不静默）+ 成功路径 s_sd_mounted 与 true 同行 + sdmmc_card_print_info（真机 A1「启动日志见 SD 卡信息打印」的结构承载）",
-    "SD-A4 板级查询入口：SdCardMounted 定义体读 s_sd_mounted 返回（定义窗内 s_sd_mounted + return 在世，禁常量真值 stub）——本包零消费方的防死代码误删观察锚；命名 SdCardMounted 经冻结件头注 seam contract 钉死（便于 mutation 定向取证）",
+    "SD-A1: config.h 四宏在世且值正确：#define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行、#define SD_MMC_CMD_GPIO 与 GPIO_NUM_21 同行、#define SD_MMC_D0_GPIO 与 GPIO_NUM_39 同行、#define SD_MMC_MOUNT_ROOT 与 \"/sdcard\" 同行（注释剥离后可执行源字面断言，宏间接形态红须复核锚）+ raw 源注释面含包号 261016-sd-card-mount 与来源锚 sdcard_bsp（来源 = 官方例程 sdcard_bsp.h:15 默认脚位）。含行级双针计数器扫描器自检（已知在世形态 AUDIO_I2S_GPIO_MCLK×GPIO_NUM_16）。冻结红名见 sd_card_mount.acceptance.c 头注（首发：config.h 未取到 #define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行宏定义）",
+    "SD-A2: 板 .cc 挂载初始化：void InitializeSdCard 定义在世 + CustomBoard() : 构造窗内存在调用点 InitializeSdCard();（InitializeArt 同排初始化序列）+ 函数窗内五件：esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT（根宏首参，plan 逐字形态）、slot 宽度 = 字面 1（slot.width/.width 两拼写、WIDTH_1 枚举等价；1-bit 义务）、SD_MMC_CLK_GPIO/SD_MMC_CMD_GPIO/SD_MMC_D0_GPIO 三宏函数窗消费绑定、format_if_mount_failed 与 false 同行在世且 true 形态负向禁令（计数=0）、max_files 首个整数 = 字面 5",
+    "SD-A3: 失败降级路径：函数窗内 ESP_ERROR_CHECK_WITHOUT_ABORT 在世 + 裸 ESP_ERROR_CHECK( panic 形态计数=0（负向齿；WITHOUT_ABORT 前缀不误伤）+ ESP_OK 返回码判定 + NULL 句柄判空双检 + s_sd_mounted 与 false 同行（降级置假）+ ESP_LOGW（WARN 继续不静默）+ 成功路径 s_sd_mounted 与 true 同行 + sdmmc_card_print_info（真机 A1「启动日志见 SD 卡信息打印」的结构承载）",
+    "SD-A4: 板级查询入口：SdCardMounted 定义体读 s_sd_mounted 返回（定义窗内 s_sd_mounted + return 在世，禁常量真值 stub）——本包零消费方的防死代码误删观察锚；命名 SdCardMounted 经冻结件头注 seam contract 钉死（便于 mutation 定向取证）",
     {
       "id": "SD-A5",
-      "kind": "live-manual",
-      "note": "SD-A5: 真机插卡（live-manual 停门条目，不计 runner 通过面，不落 C 齿，AB-A7 261015 先例口径）——启动日志见 SD 卡信息打印 + 挂载成功；写-读-删 roundtrip 8.3 探针文件 /sdcard/SDTEST.TXT 读回与写入一致、验后即删不驻留（决策 24 介质禁令）；顺带复核 SD 三脚（CLK38/CMD21/D039）与原理图一致销 GPIO21 疑问。host 面转绿后停门等 human，不自行烧录"
+      "kind": "structural",
+      "note": "SD-A5: 真机插卡（live-manual 停门条目——taskpackage-required-check kind 闭集只支持 structural，live-manual 口径由 note 语义承载、豁免判定同 AB-A7 261015 先例，不计 runner 通过面，不落 C 齿，AB-A7 261015 先例口径）——启动日志见 SD 卡信息打印 + 挂载成功；写-读-删 roundtrip 8.3 探针文件 /sdcard/SDTEST.TXT 读回与写入一致、验后即删不驻留（决策 24 介质禁令）；顺带复核 SD 三脚（CLK38/CMD21/D039）与原理图一致销 GPIO21 疑问。host 面转绿后停门等 human，不自行烧录"
     },
     {
       "id": "SD-A6",
-      "kind": "live-manual",
-      "note": "SD-A6: 真机无卡（live-manual 停门条目，同上口径）——正常启动进主界面（降级不崩不 panic）+ 启动日志见降级 WARN（s_sd_mounted=false 路径 ESP_LOGW 输出）+ KEY 发起会话冒烟至少一次（语音主链路不受影响）"
+      "kind": "structural",
+      "note": "SD-A6: 真机无卡（live-manual 停门条目——taskpackage-required-check kind 闭集只支持 structural，live-manual 口径由 note 语义承载、豁免判定同 AB-A7 261015 先例，同上口径）——正常启动进主界面（降级不崩不 panic）+ 启动日志见降级 WARN（s_sd_mounted=false 路径 ESP_LOGW 输出）+ KEY 发起会话冒烟至少一次（语音主链路不受影响）"
     },
     {
       "id": "SD-A3-GATE",
@@ -61,7 +61,7 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "SD-A1 config.h 四宏在世且值正确（详见 acceptance[] 同名条目全文）",
+        "acceptance": "SD-A1: config.h 四宏在世且值正确：#define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行、#define SD_MMC_CMD_GPIO 与 GPIO_NUM_21 同行、#define SD_MMC_D0_GPIO 与 GPIO_NUM_39 同行、#define SD_MMC_MOUNT_ROOT 与 \"/sdcard\" 同行（注释剥离后可执行源字面断言，宏间接形态红须复核锚）+ raw 源注释面含包号 261016-sd-card-mount 与来源锚 sdcard_bsp（来源 = 官方例程 sdcard_bsp.h:15 默认脚位）。含行级双针计数器扫描器自检（已知在世形态 AUDIO_I2S_GPIO_MCLK×GPIO_NUM_16）。冻结红名见 sd_card_mount.acceptance.c 头注（首发：config.h 未取到 #define SD_MMC_CLK_GPIO 与 GPIO_NUM_38 同行宏定义）",
         "mutation": "m1 · ①整组删除四宏 ②单宏值回退（如 SD_MMC_D0_GPIO GPIO_NUM_39→40）③注释包号/来源抹除",
         "affectedTest": "sd_card_mount.acceptance.c test 1：对应 tooth 红名 verbatim（如「SD-A1 RED: config.h 未取到 #define SD_MMC_D0_GPIO 与 GPIO_NUM_39 同行宏定义——引脚宏面不完整…」/「SD-A1 RED: config.h SD 宏注释缺包号 261016-sd-card-mount…」）",
         "turnedRed": true,
@@ -69,7 +69,7 @@
         "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
-        "acceptance": "SD-A2 板 .cc 挂载初始化（详见 acceptance[] 同名条目全文）",
+        "acceptance": "SD-A2: 板 .cc 挂载初始化：void InitializeSdCard 定义在世 + CustomBoard() : 构造窗内存在调用点 InitializeSdCard();（InitializeArt 同排初始化序列）+ 函数窗内五件：esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT（根宏首参，plan 逐字形态）、slot 宽度 = 字面 1（slot.width/.width 两拼写、WIDTH_1 枚举等价；1-bit 义务）、SD_MMC_CLK_GPIO/SD_MMC_CMD_GPIO/SD_MMC_D0_GPIO 三宏函数窗消费绑定、format_if_mount_failed 与 false 同行在世且 true 形态负向禁令（计数=0）、max_files 首个整数 = 字面 5",
         "mutation": "m2 · ①format_if_mount_failed→true ②slot 宽度 1→4 ③max_files 5→12 ④构造窗调用点删除 ⑤三引脚宏消费任一移出函数窗",
         "affectedTest": "sd_card_mount.acceptance.c test 2：对应 tooth 红名 verbatim（如「SD-A2 RED: InitializeSdCard 函数窗存在 format_if_mount_failed = true 形态…」）",
         "turnedRed": true,
@@ -77,7 +77,7 @@
         "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
-        "acceptance": "SD-A3 失败降级路径（详见 acceptance[] 同名条目全文）",
+        "acceptance": "SD-A3: 失败降级路径：函数窗内 ESP_ERROR_CHECK_WITHOUT_ABORT 在世 + 裸 ESP_ERROR_CHECK( panic 形态计数=0（负向齿；WITHOUT_ABORT 前缀不误伤）+ ESP_OK 返回码判定 + NULL 句柄判空双检 + s_sd_mounted 与 false 同行（降级置假）+ ESP_LOGW（WARN 继续不静默）+ 成功路径 s_sd_mounted 与 true 同行 + sdmmc_card_print_info（真机 A1「启动日志见 SD 卡信息打印」的结构承载）",
         "mutation": "m3 · ①WITHOUT_ABORT→裸 ESP_ERROR_CHECK ②失败置标志删除 ③sdmmc_card_print_info 删除",
         "affectedTest": "sd_card_mount.acceptance.c test 3：对应 tooth 红名 verbatim（如「SD-A3 RED: InitializeSdCard 函数窗存在 N 处裸 ESP_ERROR_CHECK( panic 形态…」）",
         "turnedRed": true,
@@ -85,7 +85,7 @@
         "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
-        "acceptance": "SD-A4 板级查询入口（详见 acceptance[] 同名条目全文）",
+        "acceptance": "SD-A4: 板级查询入口：SdCardMounted 定义体读 s_sd_mounted 返回（定义窗内 s_sd_mounted + return 在世，禁常量真值 stub）——本包零消费方的防死代码误删观察锚；命名 SdCardMounted 经冻结件头注 seam contract 钉死（便于 mutation 定向取证）",
         "mutation": "m4 · accessor 删除或改常量 stub return true（不读标志）",
         "affectedTest": "sd_card_mount.acceptance.c test 4：SD-A4 红名 verbatim（「SD-A4 RED: 板级查询入口 SdCardMounted() 未落地…」）",
         "turnedRed": true,
@@ -93,7 +93,7 @@
         "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       }
     ],
-    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状（acceptance-author 冻结轮钉死）：①引脚宏回退/删除/注释抹除 ②挂载参数回退（format_if_mount_failed→true / 宽度 1→4 / max_files 5→12 / 构造窗调用点删除 / 引脚宏消费移出函数窗）③降级路径破坏（WITHOUT_ABORT→裸 ESP_ERROR_CHECK panic 形态 / 置标志与 print_info 删除）④accessor 删除或常量 stub——新源锚齿须红；SD-A5/A6 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance.acceptance = acceptance[] 对应条目指针（全文见 acceptance[]），builder 已实跑取证（2026-10-16，m1–m4 全数 turnedRed=true，靶位全对、还原复绿、终复绿 4T/0F），planner 已回填并代存 mutation-evidence/builder-run-2026-10-16.md"
+    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状（acceptance-author 冻结轮钉死）：①引脚宏回退/删除/注释抹除 ②挂载参数回退（format_if_mount_failed→true / 宽度 1→4 / max_files 5→12 / 构造窗调用点删除 / 引脚宏消费移出函数窗）③降级路径破坏（WITHOUT_ABORT→裸 ESP_ERROR_CHECK panic 形态 / 置标志与 print_info 删除）④accessor 删除或常量 stub——新源锚齿须红；SD-A5/A6 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance.acceptance = acceptance[] 对应条目全文（mutation-check raw-id 全文子串匹配要求，2026-10-16 planner 第 3 轮后修正：指针形态对该闸必然失配），builder 已实跑取证（2026-10-16，m1–m4 全数 turnedRed=true，靶位全对、还原复绿、终复绿 4T/0F），planner 已回填并代存 mutation-evidence/builder-run-2026-10-16.md"
   },
   "deliveryImpact": "none",
   "planningImpact": "none",
@@ -105,7 +105,9 @@
     "evidence-integrity",
     "device-round"
   ],
-  "contractRefs": [],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "docRefs": [
     "delivery/taskpackages/261016-sd-card-mount/plan.md",
     "docs/architecture.md",
@@ -142,5 +144,5 @@
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-16，frontmatter reviewed-by 为证；261015-p1-auxbar-style-fix 同款先例口径）：技术方案意见（config.h 引脚宏 / InitializeSdCard 挂载与降级 / sdkconfig 零改动含 LFN 裁决 / 决策 24 遵守）+ 影响面（预定改动面 = changeManifest 等价）+ 验收方向（A1/A2 真机 + A3 设备编译闸）三件齐备，不再重复派发 architect。【1f 快照保鲜核验】plan 引用锚逐条对磁盘核验通过（本会话 grep/sed 实证）：现役 config.h 无 SD 宏、GPIO_NUM_18 为 KEY（:36），21/38/39 在 waveshare-s3-rlcd-4.2 板面零占用（他板占用与本板无关）；.cc 构造初始化序列 :830-845（InitializeArt 同排插入点实证）；docs/architecture.md:232「SD 槽固件未接入」在位；docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62「未接入…KEY 键（GPIO 18）、Micro SD 卡槽」在位；参考件核验 = 主 checkout C:/AI/KidPal/ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/06_SD_Card/components/port_bsp/sdcard_bsp.{h,cpp}（vendor 树 untracked 不入 worktree——环境事实非 plan 漂移；已预拷 C:/tmp/sdcard-ref-261016/ 供 builder 只读），sdcard_bsp.h:15 clk=38/cmd=21/d0=39/width=1 与 plan 逐字一致，.cpp:9-10 format_if_mount_failed=false / max_files=5 与 plan 一致。【1c scope-map 核对】builder/fixer allow firmware/** 覆盖 config.h / 板 .cc / CMakeLists 接线；*.acceptance.c 命中 builder deny——验收归 acceptance-author（allow firmware/**/*.acceptance.c ✓）分权即设计无冲突声明。【1d crossEnd】exempt 已定（板级挂载零 wire 面）——brief-inputs 展开对端面为空。【UIUX】Level 0（无用户可见行为变更，不跑 UI-ready 检查）。【intake 形状】launch-argument 形状（/build-feature <changeId>）：launch 面五件预检通过（① board 条目在册 queued ② 启动卡在场 ③ worktree 实态核验（dev/261016-sd-card-mount，HEAD 82ef6dc）④ 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册 ⑤ spine 不在场——human-ad-hoc 非拆包，「在场才核」不适用）；portfolio handoff 探测：无既有 taskpackage → 归一本 plan；board 命中 + taskpackage 缺失不判交接断裂——本包 taskpackage 即本次 intake 制品（启动卡 + plan.md human 裁定在案，非拆包产物缺失）。current/ 投影自 261015-p1-auxbar-style-fix 刷新至本包。【worktree/环境】专属 Pod worktree（分支 dev/261016-sd-card-mount，基线 82ef6dc = main bd4beac + triage plan/启动卡首提交）；VERIFY_FW_BUILD_REQUIRED=1（rigor=full 无 defer 短路，launch card 钉死）；专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 已建。【基线锚】本包预定改动面 = 板级 config.h/.cc + 两处文档行，不触 server/**（server 面无锚可判，启动卡判停事实）；host_app 盖不住 SDMMC 设备专有编译单元（triage 实核，快路径不适用）——本包验收齿 = host 源锚结构齿（离线可跑）+ A3 设备编译闸 + 真机轮；acceptance-author 新冻结齿恒现跑红基线。【真机门前停等（本包特有，启动卡条款）】A1/A2 需 human 持板：planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → A3 设备编译闸后，在真机门前停——status 写 awaiting-human:real-device（portfolio-reconcile --set-pod）、退出报告交回主线程含持板操作单（插卡/拔卡/观察项 + 原理图三脚目视核对销 GPIO21 疑问）；不自行烧录。【doc 行落点】integrator allow 不含 docs/architecture.md 与 docs/notes/**（scope-map 实证）；261010-device-reconnect-on-server-close 先例 = integrator 起草 docs-delta 逐字文本 → architect 代写 architecture.md（architect allow ✓）→ integrator 抽查；docs/notes/** 无 agent 有写权 → 主线程通道代落（enforce-scope 主线程不受 per-agent 约束）并如实留痕。决策 24 介质禁令（architecture.md:416）：本包不写业务/身份/事项状态数据，验收 roundtrip 文件为临时测试探针（8.3 名）验后即删，story/日志落板不在本包不开口子。【LFN 裁决】本包不开长文件名（维持 CONFIG_FATFS_LFN_NONE，human 触点①②确认）；验收限 8.3 命名；builder 实测若发现挂载缺配置项走 planner 扩单通道回补不私扩。【已知地雷前置申报】① firmware-build 闸 sdkconfig 再生噪音（261015-voice exit-report 案）：Windows idf.py 构建会再生 firmware/sdkconfig Image Effects 空节头 +5 行零行为噪音 diff——final 相位若见同款 diff 先剥后判（FIX-3/FIX-5 处置 + pod-events 留痕），勿误判代码回归；② 分区表禁碰（assets/art canary 不动）：本包无 spiffs_root 资产变更 → 只烧 app 分区，资产双分区烧录规则不适用；③ 真机轮烧录姿势按启动卡 headless 停等条款执行。【8b 验收方向核】sourceRefs 未命中 requirements story（TEMP-* 临时 ref）——AC 回引号集对账不适用，核「行为权威 = plan.md 忠实度」：SD-A1↔plan §方案1（四宏+包号来源）、SD-A2↔plan §方案2（挂载序列+参数五件）、SD-A3↔plan §方案2 失败路径（降级不崩）、SD-A4↔plan §方案2 查询入口、SD-A5/A6↔plan §验收 A1/A2（live-manual）、SD-A3-GATE↔plan §验收 A3（设备编译闸）——一一对应无多引少引；LFN 8.3 限制承载于 SD-A5 探针命名 + exitCriteria sdkconfig 零改动；决策 24 承载于 SD-A5 验后即删 + notes 介质禁令节；断言方向不弱于 plan 语义（负向齿 panic 禁令严于 plan「不 panic」一句）；既有套件 3 红归因（上游 p1_auxbar_style 漂移）已入 redBaselineResult 防误判。核对者 = planner，核对对象 = acceptance-author 冻结件（2026-10-16 回执），通过。"
+  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 分流 review 2026-10-16，frontmatter reviewed-by 为证；261015-p1-auxbar-style-fix 同款先例口径）：技术方案意见（config.h 引脚宏 / InitializeSdCard 挂载与降级 / sdkconfig 零改动含 LFN 裁决 / 决策 24 遵守）+ 影响面（预定改动面 = changeManifest 等价）+ 验收方向（A1/A2 真机 + A3 设备编译闸）三件齐备，不再重复派发 architect。【1f 快照保鲜核验】plan 引用锚逐条对磁盘核验通过（本会话 grep/sed 实证）：现役 config.h 无 SD 宏、GPIO_NUM_18 为 KEY（:36），21/38/39 在 waveshare-s3-rlcd-4.2 板面零占用（他板占用与本板无关）；.cc 构造初始化序列 :830-845（InitializeArt 同排插入点实证）；docs/architecture.md:232「SD 槽固件未接入」在位；docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:61-62「未接入…KEY 键（GPIO 18）、Micro SD 卡槽」在位；参考件核验 = 主 checkout C:/AI/KidPal/ESP32-S3-RLCD-4.2-Demo/02_ESP-IDF/06_SD_Card/components/port_bsp/sdcard_bsp.{h,cpp}（vendor 树 untracked 不入 worktree——环境事实非 plan 漂移；已预拷 C:/tmp/sdcard-ref-261016/ 供 builder 只读），sdcard_bsp.h:15 clk=38/cmd=21/d0=39/width=1 与 plan 逐字一致，.cpp:9-10 format_if_mount_failed=false / max_files=5 与 plan 一致。【1c scope-map 核对】builder/fixer allow firmware/** 覆盖 config.h / 板 .cc / CMakeLists 接线；*.acceptance.c 命中 builder deny——验收归 acceptance-author（allow firmware/**/*.acceptance.c ✓）分权即设计无冲突声明。【1d crossEnd】exempt 已定（板级挂载零 wire 面）【contractRefs 注】plan 四面探测实证契约零触（NO_CONTRACT_CHANGE 档）——contractRefs 恒列 interface-contract.md 为 261015 先例的形态惯例（checker 要求非空），非契约依赖声明——brief-inputs 展开对端面为空。【UIUX】Level 0（无用户可见行为变更，不跑 UI-ready 检查）。【intake 形状】launch-argument 形状（/build-feature <changeId>）：launch 面五件预检通过（① board 条目在册 queued ② 启动卡在场 ③ worktree 实态核验（dev/261016-sd-card-mount，HEAD 82ef6dc）④ 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 在册 ⑤ spine 不在场——human-ad-hoc 非拆包，「在场才核」不适用）；portfolio handoff 探测：无既有 taskpackage → 归一本 plan；board 命中 + taskpackage 缺失不判交接断裂——本包 taskpackage 即本次 intake 制品（启动卡 + plan.md human 裁定在案，非拆包产物缺失）。current/ 投影自 261015-p1-auxbar-style-fix 刷新至本包。【worktree/环境】专属 Pod worktree（分支 dev/261016-sd-card-mount，基线 82ef6dc = main bd4beac + triage plan/启动卡首提交）；VERIFY_FW_BUILD_REQUIRED=1（rigor=full 无 defer 短路，launch card 钉死）；专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 已建。【基线锚】本包预定改动面 = 板级 config.h/.cc + 两处文档行，不触 server/**（server 面无锚可判，启动卡判停事实）；host_app 盖不住 SDMMC 设备专有编译单元（triage 实核，快路径不适用）——本包验收齿 = host 源锚结构齿（离线可跑）+ A3 设备编译闸 + 真机轮；acceptance-author 新冻结齿恒现跑红基线。【真机门前停等（本包特有，启动卡条款）】A1/A2 需 human 持板：planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → A3 设备编译闸后，在真机门前停——status 写 awaiting-human:real-device（portfolio-reconcile --set-pod）、退出报告交回主线程含持板操作单（插卡/拔卡/观察项 + 原理图三脚目视核对销 GPIO21 疑问）；不自行烧录。【doc 行落点】integrator allow 不含 docs/architecture.md 与 docs/notes/**（scope-map 实证）；261010-device-reconnect-on-server-close 先例 = integrator 起草 docs-delta 逐字文本 → architect 代写 architecture.md（architect allow ✓）→ integrator 抽查；docs/notes/** 无 agent 有写权 → 主线程通道代落（enforce-scope 主线程不受 per-agent 约束）并如实留痕。决策 24 介质禁令（architecture.md:416）：本包不写业务/身份/事项状态数据，验收 roundtrip 文件为临时测试探针（8.3 名）验后即删，story/日志落板不在本包不开口子。【LFN 裁决】本包不开长文件名（维持 CONFIG_FATFS_LFN_NONE，human 触点①②确认）；验收限 8.3 命名；builder 实测若发现挂载缺配置项走 planner 扩单通道回补不私扩。【已知地雷前置申报】① firmware-build 闸 sdkconfig 再生噪音（261015-voice exit-report 案）：Windows idf.py 构建会再生 firmware/sdkconfig Image Effects 空节头 +5 行零行为噪音 diff——final 相位若见同款 diff 先剥后判（FIX-3/FIX-5 处置 + pod-events 留痕），勿误判代码回归；② 分区表禁碰（assets/art canary 不动）：本包无 spiffs_root 资产变更 → 只烧 app 分区，资产双分区烧录规则不适用；③ 真机轮烧录姿势按启动卡 headless 停等条款执行。【8b 验收方向核】sourceRefs 未命中 requirements story（TEMP-* 临时 ref）——AC 回引号集对账不适用，核「行为权威 = plan.md 忠实度」：SD-A1↔plan §方案1（四宏+包号来源）、SD-A2↔plan §方案2（挂载序列+参数五件）、SD-A3↔plan §方案2 失败路径（降级不崩）、SD-A4↔plan §方案2 查询入口、SD-A5/A6↔plan §验收 A1/A2（live-manual）、SD-A3-GATE↔plan §验收 A3（设备编译闸）——一一对应无多引少引；LFN 8.3 限制承载于 SD-A5 探针命名 + exitCriteria sdkconfig 零改动；决策 24 承载于 SD-A5 验后即删 + notes 介质禁令节；断言方向不弱于 plan 语义（负向齿 panic 禁令严于 plan「不 panic」一句）；既有套件 3 红归因（上游 p1_auxbar_style 漂移）已入 redBaselineResult 防误判。核对者 = planner，核对对象 = acceptance-author 冻结件（2026-10-16 回执），通过。"
 }

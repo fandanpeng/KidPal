@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-round-fact",
+  "authority": "bearing",
+  "producedBy": "verify.mjs",
+  "changeId": "261016-sd-card-mount",
+  "phase": "scoped",
+  "round": 1,
+  "invocationId": "5e5bda18-af5d-4ee6-b4aa-15ee6470cbf8",
+  "startedAt": "2026-10-16T07:01:13.152Z",
+  "completedAt": "2026-10-16T07:01:13.558Z",
+  "observedGateExit": 1,
+  "ok": false,
+  "results": [
+    {
+      "id": "taskpackage-required",
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": false,
+      "exit": 1,
+      "exitCode": 1,
+      "ms": 305,
+      "timing": "scoped",
+      "stdout": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\",\n    \"acceptance[SD-A5].kind unknown value \\\"live-manual\\\" (only 'structural' supported; unknown values fail-safe to no-exemption)\",\n    \"acceptance[SD-A6].kind unknown value \\\"live-manual\\\" (only 'structural' supported; unknown values fail-safe to no-exemption)\"\n  ],\n  \"coverageErrors\": [],\n  \"warnings\": []\n}\n",
+      "stderr": "[taskpackage-required] TaskPackage 上下文解析：changeId=261016-sd-card-mount（来源：delivery/taskpackages/current/taskpackage.json）\n",
+      "notExecuted": false,
+      "notExecutedReason": "",
+      "summary": "taskpackage-required failed"
+    }
+  ],
+  "error": {
+    "name": "GateFailure",
+    "category": "guardrail",
+    "fingerprint": "4776d865c354",
+    "failingStep": "taskpackage-required",
+    "message": "gate taskpackage-required failed (exit 1)",
+    "cmd": "node .claude/scripts/taskpackage-required-check.mjs",
+    "logFile": ".claude/verify-logs/1792134073547-taskpackage-required.log",
+    "logTail": "{\n  \"ok\": false,\n  \"gate\": \"taskpackage-required\",\n  \"message\": \"TaskPackage is missing required finalized fields or has invalid decisionCoverage\",\n  \"taskPackage\": \"C:\\\\AI\\\\KidPal-pod-m1-k1a-key-layer-dispatch\\\\delivery\\\\taskpackages\\\\current\\\\taskpackage.json\",\n  \"missing\": [\n    \"contractRefs\",\n    \"acceptance[SD-A5].kind unknown value \\\"live-manual\\\" (only 'structural' supported; unknown values fail-safe to no-exemption)\",\n    \"acceptance[SD-A6].kind unknown value \\\"live-manual\\\" (only 'structural' supported; unknown values fail-safe to no-exemption)\"\n  ],\n  \"coverageErrors\": [],\n  \"warnings\": []\n}\n[taskpackage-required] TaskPackage 上下文解析：changeId=261016-sd-card-mount（来源：delivery/taskpackages/current/taskpackage.json）\n"
+  }
+}
