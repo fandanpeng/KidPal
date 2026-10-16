@@ -273,5 +273,9 @@
   "261015-gov-review-lite-fast-path": {
     "date": "2026-10-15",
     "mergedInMain": "yes"
+  },
+  "261015-gov-review-changes-taxonomy": {
+    "date": "2026-10-15",
+    "mergedInMain": "yes"
   }
 }
