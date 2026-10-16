@@ -19,10 +19,12 @@
   "universal": {
     "_doc": [
       "对所有会话生效的结构红线（enforce-scope.mjs universal 段）。",
-      "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。"
+      "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。另禁 delivery/changes/dev/**——废止位：dev lane 已由 261014-gov-review-dev-lane-merge-taskpackages 批撤销（包全程唯一家 = delivery/taskpackages/<id>/），任何写入即违规（261015-gov-review-changes-taxonomy T1 齿一）。",
+      "denyCreate 条目 delivery/changes/**（伞级扩展）随本批 261015-gov-review-changes-taxonomy 波段二（T6 齿一）落地——伞解散后真家见 delivery/archive/README.md 旧→新映射。"
     ],
     "denyCreate": [
-      "contracts/**"
+      "contracts/**",
+      "delivery/changes/dev/**"
     ],
     "bashDenyWrite": [
       "docs/contracts/**",

@@ -756,7 +756,7 @@ function selfCheck() {
       && bug.markdown.includes('**改动指令源 = plan.md**')
       && bug.markdown.includes('不照录整节')
       && !bug.markdown.includes('> **语义权威仍在 requirements 现文**'), 'pointer form, no verbatim section');
-  const propTp = { ...fixtureTp, sourceType: 'proposal', planRef: 'delivery/changes/dev/x/PROPOSAL.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4'] };
+  const propTp = { ...fixtureTp, sourceType: 'proposal', planRef: 'delivery/changes/arch/x/PROPOSAL.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4'] }; // 261015-gov-review-changes-taxonomy T1 顺修：原 'delivery/changes/dev/x/...' 指向废止树（dev lane 已撤）；波段二 T6 随批定稿为 delivery/review/x/PROPOSAL.md
   ok('①b proposal 来源照录不变（负向臂）', renderBrief(propTp).markdown.includes('> **语义权威仍在 requirements 现文**'), 'verbatim kept for proposal origin');
   ok('单份头部形态（消费方并列、无 role 残留）', a.markdown.includes('消费方: acceptance-author + builder')
       && !a.markdown.includes('input-brief · acceptance-author'), 'single-file header');
