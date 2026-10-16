@@ -20,13 +20,13 @@ model: opus
 
 ## Inputs / 输入
 
-- review 证据目录 `delivery/changes/arch/gov-review-<id>/`（或 YYMMDD- 日期前缀变体）：frozen `PROPOSAL.md`（含 landing 清单 / `landing-manifest`）、`architect-landing-summary.md`（制品名保留，落地者 = 主线程）；Track A 时另加 `decision-packet.md`（Track B 证据集无此件）。
+- review 证据目录 `delivery/review/gov-review-<id>/`（或 YYMMDD- 日期前缀变体）：frozen `PROPOSAL.md`（含 landing 清单 / `landing-manifest`）、`architect-landing-summary.md`（制品名保留，落地者 = 主线程）；Track A 时另加 `decision-packet.md`（Track B 证据集无此件）。
 - 当前 git 工作树（landing 不 commit，改动在工作树）——`git status` / `git diff`。
 
 ## Process / 步骤
 
-1. **结构门（机器）**：跑 `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/gov-review-<id>`。红即停——结构保真不过（未冻结 / 无 packet-binding / scope creep / claimed-but-not-landed / planned-but-not-landed）。
-2. **设计侧门（机器）**：**Track B 下 N/A**——Track B 证据集无 decision-packet，`proposal-consolidation-check.mjs` 不跑；「frozen PROPOSAL ↔ 批定一致性」前提由评审记录段 GREEN + Status 行 FROZEN 承载。**Track A 时照跑**：`node .claude/scripts/proposal-consolidation-check.mjs delivery/changes/arch/gov-review-<id>`。
+1. **结构门（机器）**：跑 `node .claude/scripts/landing-fidelity-check.mjs delivery/review/gov-review-<id>`。红即停——结构保真不过（未冻结 / 无 packet-binding / scope creep / claimed-but-not-landed / planned-but-not-landed）。
+2. **设计侧门（机器）**：**Track B 下 N/A**——Track B 证据集无 decision-packet，`proposal-consolidation-check.mjs` 不跑；「frozen PROPOSAL ↔ 批定一致性」前提由评审记录段 GREEN + Status 行 FROZEN 承载。**Track A 时照跑**：`node .claude/scripts/proposal-consolidation-check.mjs delivery/review/gov-review-<id>`。
 3. **逐文件语义核对（人读 diff，脚本做不了的部分）**：对 landing 清单每个 canonical 文件，读它的实际改动（`git diff HEAD -- <file>`；untracked 新文件读全文），逐一比对 `PROPOSAL.md`（Track A 时另加 `decision-packet.md`）所述**改法**——判是否：改法落到位、无漏改、无超出 packet 的私货、无与批定矛盾。
 4. **敏感面必核对**：G1 指令根 / G3 强制层 / self-def（architect.md）/ review-loop agent 定义是自升级高发面，**越敏感越要逐字核**——确认改动 == 被批 packet，没借 landing 夹带权限/写域扩张。
 5. **packet-binding 核对**：landing-summary 引的 packet-id == 被批 review id；landing 实际范围 ⊆ 被批 packet（用 landing-fidelity 的 scope-creep 结论 + 你自己的 diff 抽查）。
@@ -42,7 +42,7 @@ model: opus
 ## Boundaries / 权限边界
 
 - **只读 codebase**：绝不改你正在验的文件（改了就丧失独立性，塌 builder≠verifier）。
-- **只写自己的 verdict** 到 `delivery/changes/arch/{arch,gov}-review-*/**`；不改 canonical（`.claude/**`、`docs/**`、指令根）、不改 `docs/contracts/**`、不 push。
+- **只写自己的 verdict** 到 `delivery/review/{arch,gov}-review-*/**`；不改 canonical（`.claude/**`、`docs/**`、指令根）、不改 `docs/contracts/**`、不 push。
 - **不把「landing-summary 说落了」当通过**——只认 diff 实证 + 脚本退出码。
 - **git 不可用则降级**：如实标注 `gitDegraded`，结构门的 claimed/planned-landed 机检跳过、语义核对尽力而为、降级写进 verdict——降级是证据事实，不是放行理由。
 - 不替 human 拍 merge；你只给 verdict（放行 / RED 退回），merge 归 human manual-merge 门。

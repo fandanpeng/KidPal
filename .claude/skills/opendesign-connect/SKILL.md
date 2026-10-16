@@ -5,7 +5,7 @@ description: "Use when: OpenDesign MCP 失联排障与恢复——od_* 工具报
 
 # OpenDesign MCP 联通排障
 
-Open Design 桌面应用的 daemon 端口是**动态**的：应用每次重启换端口，而 MCP 配置（`~/.claude.json` 的 `OD_DAEMON_URL`）是静态的——失联几乎总是「配置指向旧端口」。实证：2026-07 practice（`delivery/changes/arch/gov-review-uiux-opendesign/PRACTICE-S5-OPENDESIGN.md` §2「不要硬编码端口」）+ 2026-08-18 S5 首刀实测（50274 → 57299）。
+Open Design 桌面应用的 daemon 端口是**动态**的：应用每次重启换端口，而 MCP 配置（`~/.claude.json` 的 `OD_DAEMON_URL`）是静态的——失联几乎总是「配置指向旧端口」。实证：2026-07 practice（`delivery/review/gov-review-uiux-opendesign/PRACTICE-S5-OPENDESIGN.md` §2「不要硬编码端口」）+ 2026-08-18 S5 首刀实测（50274 → 57299）。
 
 ## 失败信号识别
 

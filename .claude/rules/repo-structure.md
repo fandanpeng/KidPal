@@ -16,7 +16,7 @@ paths:
 | `docs/` 根 | 主线程（治理批 landing） | 仅白名单内的正式顶层文档（见下） | 在 `docs/` 根新建白名单外文件 |
 | `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
 | `docs/ui/` | 设计 | UI 设计稿与 brief：kidpal-ui-design HTML、UIUX-DESIGN-BRIEF、brand-spec | 把设计稿当实现代码改（设计稿是资产管线的母版） |
-| `docs/showme/` | 主线程（human 直接指示） | 一次性视觉解释稿的 HTML 归档：show-me 类示意图 / 信息图 / 短幻灯（治理演化、拆包链、索引拓扑等）；**不是** UI 设计稿 | 当 spec 或设计母版用（设计稿母版在 `docs/ui/`）；往里塞过程产物（过程产物→ `delivery/changes/**`） |
+| `docs/showme/` | 主线程（human 直接指示） | 一次性视觉解释稿的 HTML 归档：show-me 类示意图 / 信息图 / 短幻灯（治理演化、拆包链、索引拓扑等）；**不是** UI 设计稿 | 当 spec 或设计母版用（设计稿母版在 `docs/ui/`）；往里塞过程产物（过程产物→ `delivery/review/**`） |
 | `docs/templates/` | 治理 | PROPOSAL / retro 等治理制品骨架 | — |
 | `docs/archive/` | 治理 | 已结项归档（长期不动的历史制品） | 把未结项塞进去 |
 | `docs/debt/` | 主线程（登记）· adjudicator（review 收口）· integrator（scope-map 已授写槽） | **未结决策项账本**（debt 账，原名 crq、261014 批改名）：三域文件夹 `gov/` `tech/` `requirement/`，**一条目一文件**（YAML frontmatter 机读状态 + 正文 append-only 散文）+ 每域一份**生成件** `INDEX.md`；**已结条目由渲染脚本自动归位 `_archive/<结项年>/`**（镜像 `delivery/workstreams/_archive/<年>/` 先例；位置 = 状态的纯函数，**人不搬文件**，每年一份归档薄行 INDEX） | 手改各 `INDEX.md`（是生成件——改状态去改条目文件再重跑 `.claude/scripts/debt-render.mjs`）；人工移动条目文件（归位/搬回都是渲染器的事）；把 `docs/debt/` 当正式文档面（它是**会持续增长的记录库**，见下方语义说明） |
@@ -29,24 +29,49 @@ paths:
 | `delivery/milestones/` | 主线程 | 里程碑注册表：`milestones.jsonl`（单一事实源，state 由人/integrator 维护）+ 脚本再生 `STATUS.md` + `delivery-workspace.json` 绑定元数据 | 手改派生件 STATUS.md（改状态去改 milestones.jsonl 再重跑脚本） |
 | `delivery/workstreams/` | 人 · 主线程 planner · dev-loop | workstream 级长周期工作记忆（为什么/发现/进展），准入判据与生命周期治理见 [delivery/workstreams/README.md](../../delivery/workstreams/README.md)；活跃在顶层、完结归 `_archive/<年>/` | 违反准入判据建目录（半年后接手的 agent 靠 diff + taskpackage + commit 能继续的不配建） |
 | `delivery/taskpackages/` | dev-loop | dev-loop 包的全程唯一家：生前 plan / briefs / verify 证据 + 身后 review-packet / supervisor-verdict / pod-retro / docs-delta 等收尾制品（含 `current/` 活工作面），一包一目录读齐 | Bash 重定向写（scope-map bashDenyWrite 红线） |
-| `delivery/changes/arch/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
-| `delivery/changes/intake/**` | 主线程（跨面 intake 落盘） | spine 制品：`delivery/changes/intake/<changeId>.md`（触面 ≥2 的变更入口记录；程序 SSOT = `.claude/references/change-intake.md`） | 当各面门制品的家（各面制品落各自既有家，spine 只记 anchors）；手改各面 anchors 以外的历史字段 |
-| `delivery/changes/retro/**` | 主线程（loop-retro cadence） | cadence retro 制品归档（loop-retro 产出） | 当 live 工作区用；当各面门制品用 |
+| `delivery/review/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
+| `delivery/intake/**` | 主线程（跨面 intake 落盘） | spine 制品：`delivery/intake/<changeId>.md`（触面 ≥2 的变更入口记录；程序 SSOT = `.claude/references/change-intake.md`）+ `<changeId>.design.md` companion 设计稿（T4 需要判据见 change-intake.md） | 当各面门制品的家（各面制品落各自既有家，spine 只记 anchors）；手改各面 anchors 以外的历史字段 |
+| `delivery/retro/**` | 主线程（loop-retro cadence） | cadence retro 制品归档（loop-retro 产出） | 当 live 工作区用；当各面门制品用 |
+| `delivery/archive/**` | 治理（主线程） | 已解散布局的历史整树归档（旧 `changes/` 伞，261015-gov-review-changes-taxonomy T6 归档；路标 = `delivery/archive/README.md` 旧→新映射） | 归档内任何改写（append-only 纪律；历史批重启 = 新立 changeId 引旧批） |
+
+## 变更制品生命周期三层语义（261015-gov-review-changes-taxonomy T2 立）
+
+> 本节回答三个根本问题：「一个东西算诉求、证据还是复盘？」「主动提的与发现的问题按什么分家？」「一个 idea 从冒头到结项，讨论过程记录在哪？」——顶层地图行各自只答「放什么」，本节把目录串成一条生命周期线。
+
+**三层语义模型**：
+
+- **诉求层**（发现的问题与在途变更路由）= `docs/debt/`（发现的问题·暂缓账，一条目一文件 + 状态机）+ `delivery/intake/`（在途变更路由账，spine 一变更一文件）。
+- **证据层**（变更走完后的批证据）= `delivery/review/`（需求 / 架构+契约 / 治理三面 loop 的批证据：PROPOSAL / 评审记录 / landing-summary / verdict / retro）+ `delivery/taskpackages/`（dev-loop 包全程唯一家）+ `docs/requirements.md` §9（需求面定稿与评审留痕，设计如此，锚 `requirement-change.md` :47）。
+- **复盘层**（周期性收敛与长周期记忆）= `delivery/retro/`（cadence retro 制品）+ `delivery/workstreams/`（跨包长周期工作记忆）。
+
+**触发源判据条文（成文，防回摆）**：「触发源（主动发起 / 发现的问题）= 元数据，不作目录轴」——spine `sources`（human 原话 + refs）、TaskPackage `sourceType` + `sourceRefs`、debt 条目 frontmatter（域 + severity + trigger）各自承载触发源。**理由**：进 loop 后制品同构（主动与发现的批走同一套 Track B 七步、产同一套制品），且主动/被动边界天然模糊（一个发现的 bug 常牵出主动改进），按目录分轴必制造双头记账与搬家成本（dev lane 撤销 + 261015 批 T1 残件即代价实证）。
+
+**idea 记录链纵向地图**（一个 idea 从冒头到结项的记录在哪）：
+
+| 阶段 | 记录落点 |
+|---|---|
+| 冒头暂缓 | `docs/debt/<域>/<ID>.md` 条目正文（append-only） |
+| 在途讨论 | spine `sources`（human 原话逐字）+ `openQ`（问答通道，裁定 + 依据留痕） |
+| 成形设计 | `delivery/intake/<changeId>.design.md` companion 设计稿（需要判据见 change-intake.md T4 节） |
+| 推进状态 | spine `facePlan` / `anchors` / `status`（投影 = `delivery/intake/INDEX.md`） |
+
+**比例化原则**：留裁定 + 依据，不留推演全程 transcript（human 2026-10-15 裁定③）。
 
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
 文件：`requirements.md`（需求面 SSOT）· `architecture.md`（架构面 SSOT）· `DEV-GOVERNANCE.md` · `ARCH-REVIEW-QUEUE.md`（**已降为指路 stub**，见下）· `CONTRACT-DECISION-QUEUE.md` · `ADR.md`（架构决策记录单文件日志，260907 批 T7，human 裁 docs 根平铺）· `glossary.md`（术语表，已建）
 子目录：`contracts/` · `notes/` · `ui/` · `showme/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）· `debt/`（未结决策项账本，见上表行）
 
-### 三种同名物消歧（260923-gov-review-arq-ssot-restructure T6 钉死；仓内同名 `INDEX.md` 现共 8 份且随归档年增长，`find . -name INDEX.md` 可枚举）
+### 四种同名物消歧（260923-gov-review-arq-ssot-restructure T6 钉死，261015 批 T5 增 intake 列；仓内同名 `INDEX.md` 现共 10 份且随归档年增长，`find . -name INDEX.md` 可枚举）
 
 | 路径 | 索引什么 | 划分轴 | 谁写 |
 |---|---|---|---|
-| `delivery/changes/arch/INDEX.md` + `delivery/taskpackages/INDEX.md` | **变更批次的落地状态**（changeId / 日期 / draft→frozen→landed / 已合main） | **lane**（Pod 合并流 vs gov 合并流） | `changes-index.mjs` 生成 |
+| `delivery/review/INDEX.md` + `delivery/taskpackages/INDEX.md` | **变更批次的落地状态**（changeId / 日期 / draft→frozen→landed / 已合main） | **lane**（Pod 合并流 vs gov 合并流） | `changes-index.mjs` 生成 |
+| `delivery/intake/INDEX.md` | **在途变更路由状态**（spine 的 changeId / 触面 / status / anchors 回填 / 漂移标） | **lane**（intake 投影，检测不拦截） | `changes-index.mjs` 生成 |
 | `docs/debt/{gov,tech,requirement}/INDEX.md`（+ 各域 `_archive/<年>/INDEX.md`） | **未结决策项**（未结清单 + 已结指针/薄行） | **域**（写者/裁定线不同） | `debt-render.mjs` 生成 |
 | `delivery/workstreams/INDEX.md` | workstream 清单 | — | hook 自动生成（编辑 workstreams/ 即重建），勿手改 |
 
-> **引用纪律**：任何引用 `INDEX.md` **必须带目录**（写 `docs/debt/gov/INDEX.md` 或 `delivery/changes/arch/INDEX.md`），**禁裸写 `INDEX.md`**——裸写在本仓是歧义的。
+> **引用纪律**：任何引用 `INDEX.md` **必须带目录**（写 `docs/debt/gov/INDEX.md` 或 `delivery/review/INDEX.md`），**禁裸写 `INDEX.md`**——裸写在本仓是歧义的。
 
 ### 语义说明：`docs/` 的边界在本批扩了一次（有意识动作）
 
@@ -56,6 +81,6 @@ paths:
 
 ## 工作产物去哪
 
-- 治理 / 架构 / 契约面变更过程产物 → `delivery/changes/arch/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件；轻路径批 = 瘦制品五件）。入口 = `/arch-change`（架构+契约面）、`/gov-change`（治理面）。
+- 治理 / 架构 / 契约面变更过程产物 → `delivery/review/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件；轻路径批 = 瘦制品五件）。入口 = `/arch-change`（架构+契约面）、`/gov-change`（治理面）。
 - dev-loop 过程产物 → `delivery/taskpackages/<change-id>/`（包全程唯一家：生前 plan / briefs / verify 证据与身后收尾制品同目录，一包一目录读齐；晋升环节已由 261014-gov-review-dev-lane-merge-taskpackages 撤销）。
 - 模拟器/管线的构建产物 → 不进仓（`.gitignore` 已覆盖 `tools/**/node_modules/`、模拟器 Output）。

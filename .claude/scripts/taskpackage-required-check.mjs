@@ -489,7 +489,7 @@ if (isProposalByType || isProposalByPath) {
     if (!originRef) {
       coverageErrors.push('origin.ref is required for origin.type=proposal');
     } else if (!isProposalMdPath(originRef)) {
-      coverageErrors.push(`origin.ref ${originRef} is not a valid proposal .md path (expect delivery/changes/(arch|dev)/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
+      coverageErrors.push(`origin.ref ${originRef} is not a valid proposal .md path (expect delivery/review/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
     } else if (!normalizedDocRefs.has(originRef)) {
       coverageErrors.push(`proposal origin.ref ${originRef} must also appear in docRefs[]`);
     }

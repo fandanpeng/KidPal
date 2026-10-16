@@ -275,7 +275,7 @@
 - `firmware/`：小智 V2.1.0 整树基座 + 板级 overlay（ESP-IDF + C++；esp-sr ~2.2、esp-opus-encoder ~2.4.1、LVGL 锁 9.3.x）。注：官方 Demo 的 Arduino + U8g2 路线**未被采用**（旧文档 §1.1 的 U8g2 版本约束属该路线遗留）；
 - `server/`：gateway（front 冻结模块）/ deploy（部署面）/ acceptance（~183 验收函数，offline+live 两面）/ shim.py（已退役）；
 - `tools/`：LVGL 模拟器 + 资产管线（不入图索引，查询降级 Grep）；
-- `docs/`（spec 面 + contracts + notes）、`delivery/changes/`（治理/开发证据）、`.claude/`（治理机制）。
+- `docs/`（spec 面 + contracts + notes）、`delivery/review/` + `delivery/intake/` + `delivery/retro/` + `delivery/archive/`（治理/开发证据，261015 批六目录新树；旧 changes/ 伞归档）、`.claude/`（治理机制）。
 
 #### 5.5.2 资产管线（预栅格化 1bpp）
 
@@ -433,3 +433,4 @@
 
 | changeId | 日期 | 改动面 | 依据 |
 |---|---|---|---|
+| 261015-gov-review-changes-taxonomy | 2026-10-16 | §5.5.1 :278 仓结构行——`delivery/changes/` 指针更新为六目录新树（review/intake/retro/archive + 既有三家；changes/ 伞解散归档）。档 0 勘误通道，零语义变更 | delivery/review/261015-gov-review-changes-taxonomy/PROPOSAL.md（FROZEN v0.4，T6 第 3 条改写类） |

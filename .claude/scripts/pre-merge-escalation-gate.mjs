@@ -2,7 +2,7 @@
 // pre-merge-escalation-gate.mjs — 前置升级闸（auto-merge 前的机械判，非门、非 merge 执行者）
 //
 // 治理声明：owner=architect · approver=human · G3（DEV-GOVERNANCE §6 强制执行层行覆盖）。
-// 批准物：源仓 delivery/changes/arch/260831-gov-review-auto-merge-local-main/PROPOSAL.md（FROZEN v1.0，T1）
+// 批准物：源仓 delivery/review/260831-gov-review-auto-merge-local-main/PROPOSAL.md（FROZEN v1.0，T1）
 //   —— 同步自源仓 commit 6154a6c（治理迁移指南 §4.3 同步通道）；契约面路径按 KidPal 适配为 docs/contracts/**。
 // 分工：本脚本只重算「例外清单是否命中」，命中即 exit 1 且报命中项；放行 exit 0。**合并前必经，
 //   ——它放行 merge-driver 才跑**（merge-driver 在 processPod Step 1 前 invoke，见 PROPOSAL T2）。
@@ -18,8 +18,9 @@
 //   Track B 档（治理态无 supervisor-verdict，替换为）：
 //     6. architect GREEN 机锚缺失（PROPOSAL Status 标 FROZEN + §7 GREEN + landing-verdict 在产）→ BLOCK
 //   两档通用（T1，261015-gov-review-changes-taxonomy 齿二）：
-//     7. 合并结果树含废止路径残件（现 delivery/changes/dev——dev lane 已由 261014 批撤销；scope-map 齿一拦
-//        agent 会话写入，本齿拦 git merge 通道带入旧布局分支）→ BLOCK，指引归位 taskpackages 同 id 目录后重跑
+//     7. 合并结果树含废止路径残件（波段一 delivery/changes/dev；波段二随 T6 第 6 条扩为整伞
+//        delivery/changes——dev lane 已由 261014 批撤销、伞已解散；scope-map 齿一拦 agent 会话写入，
+//        本齿拦 git merge 通道带入旧布局分支）→ BLOCK，指引归位真家（映射见 delivery/archive/README.md）
 //
 // 用法：
 //   node .claude/scripts/pre-merge-escalation-gate.mjs <changeId> [--source-ref <ref>] [--project-dir <dir>]
@@ -89,8 +90,9 @@ function isGreenVerdict(text) {
 }
 
 function readGovAnchors(dir, changeId) {
-  const proposalPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'PROPOSAL.md');
-  const landingVerdictPath = join(dir, 'delivery', 'changes', 'arch', changeId, 'landing-verdict.md');
+  // 261015-gov-review-changes-taxonomy T6 第 6 条：PROPOSAL/verdict 路径拼接随新树改 delivery/review/
+  const proposalPath = join(dir, 'delivery', 'review', changeId, 'PROPOSAL.md');
+  const landingVerdictPath = join(dir, 'delivery', 'review', changeId, 'landing-verdict.md');
   if (!existsSync(proposalPath)) return null;
   const text = readFileSync(proposalPath, 'utf8');
   const frozen = /^[>\s]*\*\*状态：FROZEN v\d+\.\d+/m.test(text); // 260905 T4：容忍 `> ` 引用前缀，与行首形态双命中（既有错位归位，260905-gov-review-verify-gates-align）
@@ -132,7 +134,7 @@ function hasArchLoopContractEvidence(execFn, source, target, projectDir, deps = 
   const lines = diffOut.split('\n').map((l) => l.trim()).filter(Boolean);
   const contractPaths = lines.filter((l) => l.startsWith('docs/contracts/'));
   if (contractPaths.length === 0) return { ok: true, reason: 'no-contract-diff', contractPaths };
-  const proposalPaths = lines.filter((l) => /delivery\/changes\/arch\/\d{6}-(?:gov|arch)-review-[^/]+\/PROPOSAL\.md$/.test(l));
+  const proposalPaths = lines.filter((l) => /delivery\/review\/\d{6}-(?:gov|arch)-review-[^/]+\/PROPOSAL\.md$/.test(l)); // 261015 批 T6 第 6 条：契约凭据候选随新树改 review 形态
   const checked = [];
   for (const proposalPath of proposalPaths) {
     const dir = proposalPath.slice(0, proposalPath.lastIndexOf('/'));
@@ -239,10 +241,10 @@ export const VERSIONED_ARTIFACT_RE_LOCAL = /\.v[0-9]+\.md$/; // 与 merge-driver
  * T1（261015-gov-review-changes-taxonomy 齿二）：废止路径结构检查——对合并结果树跑 ls-tree，
  * 废止路径非空即残件被旧布局分支 merge 带入（齿一 scope-map denyCreate 只拦 agent 会话写入，
  * 管不到 git merge 通道）。execFn 可注入（self-check）；探测异常 fail-closed（交上层 BLOCK，
- * 绝不因探测失败误放行）。波段二（同批 T6 第 6 条）扩为 ['delivery/changes']——伞解散后
+ * 绝不因探测失败误放行）。波段二（同批 T6 第 6 条）已扩为 ['delivery/changes']——伞解散后
  * delivery/archive/changes/ 是不同精确路径、ls-tree 不误伤。
  */
-export const RETIRED_MERGE_PATHS = ['delivery/changes/dev'];
+export const RETIRED_MERGE_PATHS = ['delivery/changes'];
 
 export function retiredPathProbe(execFn, source, target) {
   try {
@@ -393,7 +395,7 @@ export function evaluate(ctx) {
     else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
     else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
   } else {
-    push(`unknown change kind（changeId 既无 delivery/taskpackages 也无 delivery/changes/arch）`);
+    push(`unknown change kind（changeId 既无 delivery/taskpackages 也无 delivery/review）`);
   }
 
   return { blocked: reasons.length > 0, reasons };
@@ -415,7 +417,7 @@ function findPodsRecordPath(projectDir, changeId) {
 function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
   const devDir = join(projectDir, 'delivery', 'taskpackages', changeId);
-  const archDir = join(projectDir, 'delivery', 'changes', 'arch', changeId);
+  const archDir = join(projectDir, 'delivery', 'review', changeId); // 261015 批 T6：gov 批新家 delivery/review/（kind 探测随新树）
   const hasDev = existsSync(devDir);
   const hasArch = existsSync(archDir);
   const kind = hasArch ? 'gov' : hasDev ? 'devloop' : 'unknown';
@@ -529,7 +531,7 @@ function selfCheck() {
       '```',
       '',
     ].join('\n');
-    const FIX_DIFF = ['docs/contracts/interface-contract.md', 'delivery/changes/arch/261016-arch-review-t/PROPOSAL.md'].join('\n');
+    const FIX_DIFF = ['docs/contracts/interface-contract.md', 'delivery/review/261016-arch-review-t/PROPOSAL.md'].join('\n');
     const fxExec = (c) => (c.startsWith('git diff') ? FIX_DIFF : c.startsWith('git show') ? FIX_PROPOSAL : '');
     const r1 = hasArchLoopContractEvidence(fxExec, 'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' });
     cases.push({ name: 'contract-evidence-fn-pass', ok: r1.ok === true, got: r1.reason });
@@ -623,6 +625,8 @@ function selfCheck() {
   expect('retired-path-probe-fail-closed-block', { retiredProbe: { probed: false, error: 'merge-tree 无结果树 oid', paths: [] } }, true, 'retired-path-probe-fail-closed');
   // 3) 干净分支 PASS：结果树 ls-tree 空（显式复证，默认 mkCtx 即此形态）
   cases.push({ name: 'retired-path-clean-pass', ok: !evaluate(mkCtx({ retiredProbe: { probed: true, tree: 'x', paths: [] } })).blocked, got: '' });
+  // 5) 波段二（T6 第 6 条）旧伞分支 BLOCK 臂：伞级路径命中
+  expect('retired-path-umbrella-block', { retiredProbe: { probed: true, tree: 'x', paths: ['040000 tree b2\tdelivery/changes'] } }, true, 'retired-path-merge-block');
   // 4) 函数级 execFn 注入两态：merge-tree 返回树 oid，ls-tree 空 = 干净 / 非空 = 残件
   {
     const TREE = 'a'.repeat(40);

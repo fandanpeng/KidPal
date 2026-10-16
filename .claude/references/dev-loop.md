@@ -41,7 +41,7 @@ planner 在 Draft TaskPackage 前必须按 `.claude/references/task-intake-and-s
 
 **TaskPackage 撰写约定**：字段级撰写约定见 [taskpackage-authoring.md](taskpackage-authoring.md)——撰写侧单一入口，覆盖每包易复踩的 6 个字段坑（只补约定、不改闸）。
 
-架构 review loop 不能只靠 prose 把 confirmed findings 交给开发。凡 `CONFIRMED` 且需要实现侧修复的 finding，`adjudicator` / `review-moderator` 必须在 `delivery/changes/arch/arch-review-<spec>/dev-loop-handoff.json` 中产出结构化 handoff，包含 `sourceRefs`、`riskTier`、`gateProfile`、`blockingDecisions`、`suggestedTaskPackages`、`planningRecommendation`、`deliveryImpact`、`acceptanceRefs` 与 `verificationHints`。planner 只消费这个 handoff 做切片；没有 handoff，review 只能算已审完，不能算可执行地交给 dev-loop。
+架构 review loop 不能只靠 prose 把 confirmed findings 交给开发。凡 `CONFIRMED` 且需要实现侧修复的 finding，`adjudicator` / `review-moderator` 必须在 `delivery/review/arch-review-<spec>/dev-loop-handoff.json` 中产出结构化 handoff，包含 `sourceRefs`、`riskTier`、`gateProfile`、`blockingDecisions`、`suggestedTaskPackages`、`planningRecommendation`、`deliveryImpact`、`acceptanceRefs` 与 `verificationHints`。planner 只消费这个 handoff 做切片；没有 handoff，review 只能算已审完，不能算可执行地交给 dev-loop。
 
 ---
 

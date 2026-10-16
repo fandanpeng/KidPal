@@ -41,7 +41,7 @@ argument-hint: <可选：周期范围或聚焦点，例如 "近 10 个 change" �
    - **两源偏差类**：① old-format（pod-retro vs loop-health 矛盾）② new-format（pod-retro vs pod-events 覆盖偏差，机器不可按主题对撞、人工覆盖比对）→ 均写成 architect-owned ARQ candidate，标『偏差不采信任一源』。
    - **实现类**（确定的 `firmware/**` 缺陷 / 测试补强）→ 走正常 dev-loop：单切片直接 `planner`，多切片/多 Pod 交 `portfolio-planner` 拆包。
    - **信息类 / 接受风险** → 记入复盘输出，标 owner + 触发条件，不强行加门（别无脑加管控）。
-5. **输出复盘小结**：top findings、升级主题、每条分流、advisory、waiting 清单、token coverage（只在有 exact 数据时报告总和，并附 `{dispatchesTotal, dispatchesWithTokenData, dispatchesUnavailable}`）与下一周期关注点。
+5. **输出复盘小结**：top findings、升级主题、每条分流、advisory、waiting 清单、`delivery/intake/INDEX.md` 漂移标核查（T5 复议触发承载点——仍见漂移则升级机械闸另立批）、token coverage（只在有 exact 数据时报告总和，并附 `{dispatchesTotal, dispatchesWithTokenData, dispatchesUnavailable}`）与下一周期关注点。
    - 对账结果（GC1）：N 条发现与现行 canonical 冲突（记复现、不新立 ARQ），含所核现行锚点。
    - 覆盖比对结果（GC3）：new-format 包 M 个，机器聚合 vs 散文主题覆盖偏差 K 处（含 ledger=0 / retro=N 型），转 ARQ candidate 数。
 6. **收口游标（推进 ledger）**：分析完跑 `node .claude/scripts/loop-health-report.mjs --record-retro loop-retro-YYYY-MM-DD [--note "..."]`，把本轮 `pendingAnalysis` 追加进 `.claude/loop-retro/ledger.jsonl`；下轮 `--pending` 自动排除。若只分析了部分 Pod，用 `--covered a,b,c` 显式列实际分析的 change-id（其余留下轮）。ledger 随 main 版本控制、跨设备一致。

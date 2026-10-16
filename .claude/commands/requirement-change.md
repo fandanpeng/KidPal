@@ -19,6 +19,6 @@ argument-hint: <human 需求意图原话，例如 "查字窗演示改 KEY 起播
 5. **审稿（档 1/2）**：派 `requirement-reviewer` 四查（触 UI 批次扩五查：加查 UI↔需求一致性）——dispatch prompt 输入构成显式含「human 意图原话 + author 改前/改后对照」（触 UI 批次另含 docs/ui 在途产物路径），审稿对象 = 盘上 updating 态文件；任一查不过 → 逐条否回项打回 story-author 改盘上文件（否回修订触及 UI 面 → 重派 uiux-author 更新在途产物后再复审），循环至 PASS 或升级 human。
 6. **落稿**：档 1 = PASS 后、档 2 = human 终拍后（architect 结论 + reviewer 结论 + UI 产物一并呈，human 看图拍「要不要」），主线程翻状态行 frozen + §9 追加版本行（版本号即 changeId）+ 依 SSOT 分工表核 reviewer/author 结论留痕进依据列。
 7. **机检与消费保护**：每次翻转/落稿跑 `node .claude/scripts/spec-anchor-check.mjs` 须绿；updating 态期间本文件不得进入下游消费（triage / taskpackage / launchPreconditions 只认 frozen——机械判据 = §9 版本行在位）。
-8. **记账收尾**：跨面变更（触面 ≥2）先按 `change-intake.md` 建/更新 spine 并回填 anchors.req；单面变更直接收束。human 明确说跳过流程的一次性操作允许直改，§9 记账须写明「跳过 story-author/reviewer」。
+8. **记账收尾**：跨面变更（触面 ≥2）先按 `change-intake.md` 建/更新 spine 并回填 anchors.req + status（写者恒 = 主线程，261015 批 T5 齿）；单面变更直接收束。human 明确说跳过流程的一次性操作允许直改，§9 记账须写明「跳过 story-author/reviewer」。
 
 你不改 reviewer 判决、不跳否回循环、不代笔修订；触 `docs/contracts/**` 的发现一律路由 architect-reviewer 四分类 + 人类契约门，本流程无权处置。

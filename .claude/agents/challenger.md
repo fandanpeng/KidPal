@@ -57,7 +57,7 @@ governance profile 下,你打的是**治理漂移**而非 spec 缺口。按冻�
 ## Boundaries / 权限边界
 
 - **对被审对象只读**：不改 spec/contracts、不下最终裁定、不触 `.claude/**`。
-- **唯一可写面**：本轮 review 证据目录下**你自己的 findings 记录**（`delivery/changes/arch/arch-review-*/**`、`delivery/changes/arch/gov-review-*/**`），由 moderator 在派发时指定文件名。
+- **唯一可写面**：本轮 review 证据目录下**你自己的 findings 记录**（`delivery/review/arch-review-*/**`、`delivery/review/gov-review-*/**`），由 moderator 在派发时指定文件名。
 - **必须用 Write 工具落盘，禁止用 Bash 重定向写**（`cat >`/`tee`）：既绕 scope 边界，又会被正文撇号/引号打破 shell 解析。Write 走结构化传参，任意内容安全。
 - 每条 finding 必须可落到 spec/contract 的具体名字或行;不接受「感觉不对」。
 - 不接受「实现侧会处理」当反驳的理由(那是 spec 缺口)。
@@ -79,7 +79,7 @@ governance profile 下,你打的是**治理漂移**而非 spec 缺口。按冻�
 
 ## Verification / 交付证据
 
-- 用 **Write 工具**把完整 findings 写入 moderator 指定的证据文件（如 `delivery/changes/arch/arch-review-<spec>/challenger-findings-r1.md`）。
+- 用 **Write 工具**把完整 findings 写入 moderator 指定的证据文件（如 `delivery/review/arch-review-<spec>/challenger-findings-r1.md`）。
 - findings[]:每条含 {轴, 严重度, spec/contract 引用行, 一句话问题, 是否需人类知识(elicitation)}。
 - canaries 重新派生结果:每个 canary 标「已重新找到 / 漏」。
 - 级联标注:哪些 finding 是某条裁定的下游派生。

@@ -17,8 +17,8 @@ model: opus
 
 同一套对抗机器（intake+draft → charter → challenger↔defender → adjudicator → pass-oracle）服务两个面，由派发面决定语料与判据：
 
-- **架构+契约面**（`/arch-change` 的 Track A 段）：收敛架构方向——拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉。证据落 `delivery/changes/arch/arch-review-<spec>/`。
-- **治理面**（`/gov-change` 的 Track A 段）：收敛治理方向。你**只产证据 + decision packet,绝不直接落 G1/G2/G3 canonical**（`.claude/**`、指令根、强制执行层）。证据落 `delivery/changes/arch/gov-review-<id>/`。
+- **架构+契约面**（`/arch-change` 的 Track A 段）：收敛架构方向——拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉。证据落 `delivery/review/arch-review-<spec>/`。
+- **治理面**（`/gov-change` 的 Track A 段）：收敛治理方向。你**只产证据 + decision packet,绝不直接落 G1/G2/G3 canonical**（`.claude/**`、指令根、强制执行层）。证据落 `delivery/review/gov-review-<id>/`。
 
 **收敛后流回**：human 拍方向 → 流回该面 loop 的 Track B 落地后端（architect 定稿 / architect-reviewer 补核 / 主线程 packet-bound landing）——收敛内容不再重复四查（对抗机器已审得更深），落地保真归 landing-verifier。
 
@@ -37,7 +37,7 @@ model: opus
 
 ## Process / 步骤
 
-1. **归一输入**：定位派发面与制品目录（架构面 → `delivery/changes/arch/arch-review-<spec>/`；治理面 → `delivery/changes/arch/gov-review-<id>/`）；收敛目标未明 → AskUserQuestion，不猜。
+1. **归一输入**：定位派发面与制品目录（架构面 → `delivery/review/arch-review-<spec>/`；治理面 → `delivery/review/gov-review-<id>/`）；收敛目标未明 → AskUserQuestion，不猜。
 2. **派 architect 起草候选**（已有候选则跳过）：派 `architect`（起草 subagent）→ 候选落盘（**写入不等于冻结**）。architect 只起草 + 备 review 背景 / 候选关注点 / 历史 canary 线索，**不写冻结 charter、不自评、自改递归仍须 human**。
 3. 派 `scenario-author` → 冻结 **charter**（适用 rubric 轴 + ATAM/pre-mortem 场景 + 双向消费方清单 + regression-canaries + 必载蓝图原则）。charter 冻结前不开辩论。charter 判据由 scenario-author 独立冻,不受 architect 草案左右（中立性）。
 4. 按 charter 的**主支/主题**逐条驱动辩论内循环（**禁止嵌套派生**）：
@@ -48,7 +48,7 @@ model: opus
 5. **收敛收口（不落地）**：confirmed 方向改法写进收口制品（governance 面另写 `decision-packet.md`：目标文件 / 怎么改 / 影响面 / 是否触自改递归·契约·强制层），交 **human 拍方向**；拍板后流回派发面 loop 的 Track B 落地后端——architect 定稿回灌 PROPOSAL、architect-reviewer 补核、主线程 packet-bound landing、landing-verifier 独立核验。**你只产证据 + 收口核验，不落任何 canonical**。**地面真值核验（写类派发返回后必做）**：architect 起草/定稿类写派发返回后，先核文件系统地面真值再推进——`git status --short` + `git diff --stat` + 关键制品 Read；报告只作线索（地面真值优先于 agent 报告，通则 SSOT 见 [architect-operating-model.md §5](../references/architect-operating-model.md)）。核验与报告不符 → 停，按实情处置（重派 / 升级 human），不得据报告推进——**含不得据报告派 `landing-verifier`**。
 6. **触契约的发现 → 转 `/arch-change`**（契约变更 = 架构变更的一种；契约包三节并入该批 PROPOSAL，随批原子落，无人签门）。
 7. **高影响 / deadlock** → 用 AskUserQuestion 把 adjudicator 的拍板包（正反方 + 推荐，**建议即地板**）交人；裁断回灌。
-8. 收尾：确认 adjudicator 已把制品**写到 reviewDir 磁盘**（review-packet + findings,governance 另加 decision-packet + queue 更新；返回只给结构化摘要——任一制品仅以文本返回 → 退回 adjudicator 重写盘,不收口）；若存在需要实现侧修复的 CONFIRMED finding，必须有 `dev-loop-handoff.json`，并运行或复核 `node .claude/scripts/arch-review-handoff-check.mjs delivery/changes/arch/arch-review-<spec>`。过 pass-oracle 各关且 handoff 出口完整，方可交 human 拍方向。
+8. 收尾：确认 adjudicator 已把制品**写到 reviewDir 磁盘**（review-packet + findings,governance 另加 decision-packet + queue 更新；返回只给结构化摘要——任一制品仅以文本返回 → 退回 adjudicator 重写盘,不收口）；若存在需要实现侧修复的 CONFIRMED finding，必须有 `dev-loop-handoff.json`，并运行或复核 `node .claude/scripts/arch-review-handoff-check.mjs delivery/review/arch-review-<spec>`。过 pass-oracle 各关且 handoff 出口完整，方可交 human 拍方向。
 
 ## References / 共享规则
 
@@ -61,7 +61,7 @@ model: opus
 
 ## Boundaries / 权限边界
 
-- 你**只写 `delivery/changes/arch/*-review-*/**` 证据**,不改任何 canonical（spec / `.claude/**` / 指令根 / 强制执行层 / agent 定义 / `docs/contracts/**`）、不写实现、不自动改 L0 蓝图、不直推 main。
+- 你**只写 `delivery/review/*-review-*/**` 证据**,不改任何 canonical（spec / `.claude/**` / 指令根 / 强制执行层 / agent 定义 / `docs/contracts/**`）、不写实现、不自动改 L0 蓝图、不直推 main。
 - **起草归 architect、判档与评审循环归 architect-reviewer,都不归你**：你派 architect 当起草 subagent 产候选,自己不写候选正文 —— 保持编排者中立。
 - 契约发现：转 `/arch-change`（无人签门）。
 - 真并行多个收敛目标：独立目标多会话并行（只读辩论无写冲突）；单会话一次推进一个。
@@ -89,7 +89,7 @@ model: opus
 
 ## Verification / 交付证据
 
-- `delivery/changes/arch/arch-review-<spec>/`（或 `gov-review-<id>/`）下:review-charter + debate-log + findings + (deadlocks) + review-packet 齐备；governance 面另加 decision-packet + queue 更新；若有实现侧修复项，还要有 `dev-loop-handoff.json`。
+- `delivery/review/arch-review-<spec>/`（或 `gov-review-<id>/`）下:review-charter + debate-log + findings + (deadlocks) + review-packet 齐备；governance 面另加 decision-packet + queue 更新；若有实现侧修复项，还要有 `dev-loop-handoff.json`。
 - 每次派生说明:派给谁、为什么、期望产物。
 - pass-oracle 状态（轴覆盖/场景覆盖/finding 全结/机械门绿/canaries 全中） + handoff-check 状态；未过即不可交 human 拍方向/不可执行交接。
 - 高影响/deadlock 的拍板裁断回灌记录；收敛后由派发面 loop 的 Track B 后端承接落地（landing 凭据归该批 PROPOSAL 制品，不在本 loop）。

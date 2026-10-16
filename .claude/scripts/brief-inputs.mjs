@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // brief-inputs.mjs · dev-loop 派发输入面封闭化：从 TaskPackage refs + crossEnd 派生 input-brief
-// 立法来源：delivery/changes/arch/260908-gov-review-input-surface-frontload/PROPOSAL.md（FROZEN v1.0 · T2）
+// 立法来源：delivery/archive/changes/arch/260908-gov-review-input-surface-frontload/PROPOSAL.md（FROZEN v1.0 · T2）
 // 承载 DEV-GOVERNANCE「起包格式期望前置」第六条第 ①②③ 件（同批 T1）。
 //
 // 定位：**派生清单，不新造事实源**——只读 taskpackage.json 与被引文件，只写 taskpackages 目录内 brief。
@@ -756,7 +756,7 @@ function selfCheck() {
       && bug.markdown.includes('**改动指令源 = plan.md**')
       && bug.markdown.includes('不照录整节')
       && !bug.markdown.includes('> **语义权威仍在 requirements 现文**'), 'pointer form, no verbatim section');
-  const propTp = { ...fixtureTp, sourceType: 'proposal', planRef: 'delivery/changes/arch/x/PROPOSAL.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4'] }; // 261015-gov-review-changes-taxonomy T1 顺修：原 'delivery/changes/dev/x/...' 指向废止树（dev lane 已撤）；波段二 T6 随批定稿为 delivery/review/x/PROPOSAL.md
+  const propTp = { ...fixtureTp, sourceType: 'proposal', planRef: 'delivery/review/x/PROPOSAL.md', sourceRefs: [...fixtureTp.sourceRefs, 'S-F1.4'] }; // 261015 批 T1 顺修：原 planRef 指向已废止的 dev lane 旧址（原文见 FROZEN PROPOSAL T1 改法 4）；波段二随 T6 定稿为本行新树形态
   ok('①b proposal 来源照录不变（负向臂）', renderBrief(propTp).markdown.includes('> **语义权威仍在 requirements 现文**'), 'verbatim kept for proposal origin');
   ok('单份头部形态（消费方并列、无 role 残留）', a.markdown.includes('消费方: acceptance-author + builder')
       && !a.markdown.includes('input-brief · acceptance-author'), 'single-file header');

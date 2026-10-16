@@ -56,10 +56,10 @@ flowchart LR
 brainstorming 到「达成一致的设计」为止。**不自己实现、不写 canonical spec**（那些各有 owner）。按设计落到哪条 lane，把它作为输入交给对应 governed 入口：
 
 - **要实现**（feature / bug fix / behavior / test）→ 档 1 期间由 human 决定是否临时跳过流程一次性执行（如实记录）；档 2 dev-loop 迁入后交 **`/build-feature`**。
-- **架构 / 治理 / spec 意图或拓扑**（`docs/requirements.md` + `docs/architecture.md`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作讨论记录**，交 **`/arch-change`**（架构+契约面）或 **`/gov-change`**（治理面）——主线程持讨论上下文，落盘后派 architect 起草（authoring SSOT = architect-operating-model §3）。
+- **架构 / 治理 / spec 意图或拓扑**（`docs/requirements.md` + `docs/architecture.md`、`docs/contracts/**`、`.claude/**`、指令根）→ 把成形设计**落 `delivery/intake/<changeId>.design.md`（companion 设计稿，change-intake.md T4 规范；或 `delivery/workstreams/` scratch）作讨论记录**，交 **`/arch-change`**（架构+契约面）或 **`/gov-change`**（治理面）——主线程持讨论上下文，落盘后派 architect 起草（authoring SSOT = architect-operating-model §3）。
 - **纯契约改动**（`docs/contracts/**`：shim API / display 块 / 笔顺 JSON / 课表 MD）→ 交 **`/arch-change`**（触契约分支：契约包三节随批原子落，无人签门）。
 
-成形设计落 `delivery/changes/`（或 `delivery/workstreams/` scratch）作面 loop 的输入讨论记录（非 canonical）；canonical 正式 spec 由 architect 产出。
+成形设计落 `delivery/intake/<changeId>.design.md`（companion 设计稿，T4 规范；或 `delivery/workstreams/` scratch）作面 loop 的输入讨论记录（非 canonical）；canonical 正式 spec 由 architect 产出。
 
 ---
 

@@ -34,10 +34,12 @@ export const TARGET_PATTERNS = [
 export const CANONICAL_TEST = /^(?:\.claude\/|docs\/|delivery\/workstreams\/|README\.md|AGENTS\.md|CLAUDE\.md)/;
 
 // ANCHORABLE_TEST（260907-gov-review-arq-governance-batch-2 T1，FROZEN 2026-09-07）：
-// §2 锚提取专用形态 = CANONICAL_TEST ∪ 仓根点文件（`.` 开头无内斜杠的单段文件名）∪ `delivery/changes/` 前缀。
+// §2 锚提取专用形态 = CANONICAL_TEST ∪ 仓根点文件（`.` 开头无内斜杠的单段文件名）∪ delivery 证据根前缀。
+// 261015-gov-review-changes-taxonomy T6 第 5 条：delivery 根枚举扩 intake|retro|review|archive 四根
+// （changes 根保留——归档内历史 PROPOSAL 仍可被 preflight 解析）；本项是波段二落地序列时序前置。
 // 消费方 = 本文件 :386 锚过滤一处；changedNotInProposal 检测面（landing-fidelity-check.mjs:367）维持
 // CANONICAL_TEST 不动——检测向严、锚提取向宽，两职责分离（R1-F8 消费点核对：全仓 CANONICAL_TEST 仅此两处）。
-export const ANCHORABLE_TEST = /^(?:\.claude\/|docs\/|delivery\/(?:workstreams|milestones|taskpackages|changes)\/|firmware\/|server\/|tools\/|README\.md|AGENTS\.md|CLAUDE\.md|\.[A-Za-z0-9_-]+$)/;
+export const ANCHORABLE_TEST = /^(?:\.claude\/|docs\/|delivery\/(?:workstreams|milestones|taskpackages|intake|retro|review|archive|changes)\/|firmware\/|server\/|tools\/|README\.md|AGENTS\.md|CLAUDE\.md|\.[A-Za-z0-9_-]+$)/;
 
 // closeout 收口制品谓词单源（260906-gov-review-index-status-truth-source T1，FROZEN 2026-09-06）：
 //   消费方 = closeout-check.mjs（承重闸，本批具名导入替换本地拷贝）+ changes-index.mjs collectDev（INDEX dev 状态推导）。
@@ -107,7 +109,8 @@ export function isProposalMdPath(path) {
   if (typeof path !== 'string') return false;
   const normalized = normalizeSourceRef(path);
   return (
-    /^delivery\/changes\/(arch|dev)\/.+\/PROPOSAL\.md$/.test(normalized) ||
+    /^delivery\/changes\/(arch|dev)\/.+\/PROPOSAL\.md$/.test(normalized) || // 旧树分支保留——归档内历史引用可解析（261015 批 T6 第 5 条）
+    /^delivery\/review\/.+\/PROPOSAL\.md$/.test(normalized) || // 261015-gov-review-changes-taxonomy T6：新树分支
     /^delivery\/workstreams\/.+\/PROPOSAL\.md$/.test(normalized)
   );
 }
@@ -217,7 +220,7 @@ export function runExtractTargetsSelfCheck() {
   const fromBlock = extractTargets(withBlock, { source: 'self-check' }).sort();
   ok(JSON.stringify(fromBlock) === JSON.stringify(['.claude/agents/a.md', '.claude/commands/b.md']), 'B2-block-exact-set');
   // B3：packet 侧——工具路径排除 · 常规 canonical 保留 · markdown 链接目标排除
-  const packet = 'run node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/x then edit .claude/agents/x.md and see [spec](docs/kernel/K5-ai-provider.md)';
+  const packet = 'run node .claude/scripts/landing-fidelity-check.mjs delivery/review/x then edit .claude/agents/x.md and see [spec](docs/kernel/K5-ai-provider.md)';
   const fromPacket = extractTargetsFromPacket(packet);
   ok(!fromPacket.includes('.claude/scripts/landing-fidelity-check.mjs'), 'B3-tool-path-excluded');
   ok(fromPacket.includes('.claude/agents/x.md'), 'B3-canonical-kept');
@@ -311,8 +314,8 @@ export function runResolveOriginSelfCheck() {
   // resolveOriginRef
   ok(resolveOriginRef(null) === null, 'ref-null');
   ok(resolveOriginRef({}) === null, 'ref-empty-object');
-  ok(resolveOriginRef({ ref: 'delivery/changes/arch/x/PROPOSAL.md' }) === 'delivery/changes/arch/x/PROPOSAL.md', 'ref-single-ref');
-  ok(resolveOriginRef({ upstreamRef: 'delivery/changes/arch/x/PROPOSAL.md' }) === 'delivery/changes/arch/x/PROPOSAL.md', 'ref-single-upstream');
+  ok(resolveOriginRef({ ref: 'delivery/review/x/PROPOSAL.md' }) === 'delivery/review/x/PROPOSAL.md', 'ref-single-ref');
+  ok(resolveOriginRef({ upstreamRef: 'delivery/review/x/PROPOSAL.md' }) === 'delivery/review/x/PROPOSAL.md', 'ref-single-upstream');
   ok(resolveOriginRef({ upstreamRef: 'a', ref: 'b' }) === 'a', 'ref-both-upstream-wins');
   ok(resolveOriginRef({ upstreamRef: ' ', ref: 'b' }) === null, 'ref-whitespace-upstream-blocks-ref');
   ok(resolveOriginRef({ upstreamRef: '', ref: 'b' }) === 'b', 'ref-empty-upstream-falls-to-ref');
@@ -411,7 +414,7 @@ export function parseSection2AnchorLists(text) {
         continue;
       }
       // B7 第二变体 T1(a) · 路径形状过滤：只认锚可辨路径形态（T1，260907 批：改用 ANCHORABLE_TEST——
-      // 认仓根点文件与 delivery/changes/ 制品形态，承 260906 批 T7/T9 整裁腿缺口根治）；内联代码 token（裸标识符 / --flag CLI /
+      // 认仓根点文件与 delivery 证据根制品形态，承 260906 批 T7/T9 整裁腿缺口根治）；内联代码 token（裸标识符 / --flag CLI /
       // 函数名）不入锚集、不参与歧义锚与或锚判定，仅作注记文本（腿6 批 PROPOSAL.md:104 实证）。
       const canonical = matches.filter((m) => ANCHORABLE_TEST.test(m[1].trim()));
       // T1(b) · 歧义锚兜底口径：过滤后仍零 canonical 路径 → 作者写错锚（全行只写内联代码、无一条真路径）→ fail-loud，
@@ -526,7 +529,7 @@ export function runSection2AnchorSelfCheck() {
   const allInlineRes = parseSection2AnchorLists(allInline);
   ok(allInlineRes.problems.some((p) => p.includes('歧义锚')), 'all-inline-code-ambiguous-anchor');
 
-  // T1（260907 批）自检：ANCHORABLE_TEST 两新形态——仓根点文件锚 + delivery/changes/ 制品锚，各一正例（均须入并集、零 problems）
+  // T1（260907 批）自检：ANCHORABLE_TEST 两新形态——仓根点文件锚 + delivery 证据根制品锚，各一正例（均须入并集、零 problems）
   const dotfile = ['## 2. 改法', '### T1 · 仓根点文件锚示例', '改法正文。', '目标文件：`.gitattributes`（新增）。', '## 3.'].join('\n');
   const dotRes = parseSection2AnchorLists(dotfile);
   ok(dotRes.problems.length === 0, 'dotfile-anchor-no-problems');

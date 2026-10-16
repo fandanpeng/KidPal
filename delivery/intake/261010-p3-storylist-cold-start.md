@@ -5,7 +5,7 @@ faceMap: 需求面动（S-F2.1 补充规则 + P3 空态两态话术定稿，requ
 facePlan: ① 需求面先行（/requirement-change loop：story-author 起草 S-F2.1 补充规则 + 空态两态话术，requirement-reviewer 审稿 + 档 2 architect 必派，可与 REQ-261010-p1-schedule-empty-state 并批裁定——两 CRQ trigger 字段均点名同族可并批；human 拍措辞）；② 架构面随需求面批同批落（arch §5.2 场景④行重载，Track B 小批或需求批档 2 architect 派遣时同批）；③ 契约面（若取 restore 标记）：architect-reviewer 四分类（预期 CONTRACT_CHANGE_REQUIRED，additive，引 §1.3② L85 / ADR-005 先例）→ human 契约门 → 与实现同批原子落；④ 实现面：reviewed plan 已出（261010-p3-storylist-cold-start-restore，Full），launch 前置 = ①②③ anchors 回填（spine 源条款：先于实现面的 anchors 未回填 = 承载包不得 launch）
 anchors: {req: "requirements.md §9 v1.63（2026-10-12 档 1 定稿、frozen；S-F2.1 AC1 限定 + AC5/AC6 空态两态 + 补充规则冷启动恢复 + WF-F2-01 注记）", arch: "arch §5.1.2 :186 front 网关行三时点 + §5.2 场景④ :214 story_list 权威行重载（restore 标记、随契约门挂法）——随 v1.63 批同拍落（story-author 镜像同批义务）", contract: "契约门 HUMAN_APPROVED 2026-10-12（story_list data.restore additive，D1–D4 四处 diff；packet + gate evidence = delivery/taskpackages/261010-p3-storylist-cold-start-restore/contract-gate/；diff 与实现同批原子落——落地通道 CCP 先例：逐字 patch 过目 → git apply；closeout C1 = ECS 开关默认关、烧板验证后人工开闸）"}
 openQ: OQ-1 restore 标记（触契约面 additive、P2 先例对称、语义显式——推荐）vs 固件本地页 gating（wire 零变化但改 K2 消费面「非 VOICE 前台一律推前台」既有语义）——呈 human 随立项 ack/契约门一并裁。
-status: landed
+status: closed
 ---
 
 # spine · P3 story_list 冷启动（261010-p3-storylist-cold-start）
@@ -24,3 +24,4 @@ status: landed
 ## openQ 账
 
 - OQ-1（2026-10-10 触点①呈 human）：restore 标记（推荐，触契约 additive）vs 固件本地页 gating（wire 零变化、改 K2 既有消费语义）——human 选 restore 标记方案（触点①第三问答「确认」）。
+- OQ-2（2026-10-16 整改留痕，261015-gov-review-changes-taxonomy T5 第 3 条）：frontmatter `status: landed` 值域外（枚举 = change-intake.md §2.7 七值）——整改翻 `closed`。依据：anchors 三面已回填（req/arch/contract 三行在册）、契约门 HUMAN_APPROVED 2026-10-12（spine anchors.contract 行）、实现面 261010-p3-storylist-cold-start-restore 已收口（dev INDEX closed）——状态机完整闭环，closed 为实判。

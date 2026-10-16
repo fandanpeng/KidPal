@@ -34,7 +34,7 @@ requirements.md 头部版本区设状态行（形态 `> 状态：frozen | updati
 1. **human 裁意图**——原话即起草依据（含改什么、为什么）。
 2. **story-author 盘上起草**——直接编辑 requirements.md（头部状态行置 updating）+ 完稿自检 + spec-anchor-check + 相邻 story 撞车报告；return 交主线程的内容 = 自检结果 + 撞车报告 + 已改锚行清单 + **改前/改后句级对照**（逐修订段「原句 → 新句」两行式；稿在盘上，不另携修订稿全文，对照不可省——reviewer 意图保真夹带检测的输入）。
 3. **requirement-reviewer 四查**——审稿对象 = 盘上 updating 态文件（不审转交文本）；主线程 dispatch prompt 输入构成显式含「human 意图原话 + author 改前/改后对照」；不过否回循环至过（author 再改盘上文件，状态保持 updating）。
-4. **过即落稿**——主线程翻状态行 frozen + §9 追加版本行。**无 human 终确认**（human 已裁：意图事前对齐 + reviewer 意图保真核查已覆盖；§9 append-only 可事后否回）。
+4. **过即落稿**——主线程翻状态行 frozen + §9 追加版本行；跨面变更（触面 ≥2）回写 spine anchors.req + status（写者恒 = 主线程，261015 批 T5 齿）。**无 human 终确认**（human 已裁：意图事前对齐 + reviewer 意图保真核查已覆盖；§9 append-only 可事后否回）。
 
 ### 档 2 · 结构性
 
@@ -44,7 +44,7 @@ requirements.md 头部版本区设状态行（形态 `> 状态：frozen | updati
 4. **story-author 按可行性修订**——🔴/取舍点升回 human，不带病下行。
 4b. **UI 生成（仅档 2 且触 UI）**——story-author 牵连面清单标「触 UI」的批次：主线程派 `uiux-author`（**生成模式**）产出本批 UI 修订——UIUX-DESIGN-BRIEF 升版 + 设计 HTML + **出图规格单**（逐页 pageId/stateId、画布 400×300、黑白 1bpp 风格约束、内容要点、对应 brief 锚）；**出图执行 = 主线程代执行**：按规格单跑 OpenDesign MCP（od_*）回填 PNG 落 `docs/ui/`，文件名对齐 pageId/stateId。**出图定例：每个受影响页面/状态一张 400×300 精确画布 PNG——PNG 是 builder 布局坐标的定位权威，HTML 仅作母版迭代载体不进 builder 视野。**产物头部标注「随批 <changeId> 在途」；🟡 可行性或取舍点未被 human 消解前不出图；**否回循环交互**：reviewer 打回的需求修订触及 UI 面 → 主线程重派 uiux-author（生成模式）更新在途产物（含重出图）后再送复审，状态保持 updating。非触 UI 批次不派。
 5. **requirement-reviewer 四查**（重点查牵连面；审盘上 updating 文件 + 改前/改后对照）——**触 UI 批次扩五查**：加查「UI↔需求一致性」，对照 updating 态需求与新落 docs/ui 在途产物逐项核（页面覆盖 / 交互口径 / 键位提示与 requirements §2.3 键位逐语境口径相符）；dispatch 输入构成显式含 UI 产物路径，UI 产物对 reviewer 恒只读。
-6. **human 终拍**——architect 结论 + reviewer 结论 + **UI 产物（设计稿/图，触 UI 批次）**一并呈——human 看图拍「要不要」；拍板 → 主线程翻 frozen + §9 版本行；review 留痕 = §9 该行依据列浓缩承载 architect 结论 + reviewer 结论。
+6. **human 终拍**——architect 结论 + reviewer 结论 + **UI 产物（设计稿/图，触 UI 批次）**一并呈——human 看图拍「要不要」；拍板 → 主线程翻 frozen + §9 版本行；跨面变更（触面 ≥2）回写 spine anchors.req + status（写者恒 = 主线程，261015 批 T5 齿）；review 留痕 = §9 该行依据列浓缩承载 architect 结论 + reviewer 结论。
 
 分工一句话：architect 管「能不能」、reviewer 管「准不准」、human 拍「要不要」。
 

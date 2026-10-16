@@ -40,11 +40,11 @@
 | 人类确认 | **要**（触点②盖 FROZEN——诞生了跨会话耐久权威） | plan mode 里人类已批过 plan 即够（+ 触点①确认路由） |
 | 逃生门 | 见 §6 reviewer-first | 同左 |
 
-**dev 侧为何单轮而非对抗**：dev plan 不碰单一事实源（contracts/spec），错了 verifier 验收门会接住，不值得 challenger/defender 对抗红队。单轮 architect review + 人类确认，与体量对齐。这与 `delivery/changes/arch/` 的 spec/governance 对抗 review **不是同一回事**，不互相替代。
+**dev 侧为何单轮而非对抗**：dev plan 不碰单一事实源（contracts/spec），错了 verifier 验收门会接住，不值得 challenger/defender 对抗红队。单轮 architect review + 人类确认，与体量对齐。这与 `delivery/review/` 的 spec/governance 对抗 review **不是同一回事**，不互相替代。
 
 **深度纪律（防漂移，accepted-risk）**：小 review 不得漂成重审（过度治理），也不得橡皮图章（审不出问题）——靠四档裁决 + progressive-rigor 约定框住；loop-retro 监控吞吐与深度校准。
 
-## 4. reviewed plan 就近落地（主线程落盘，delivery/changes/arch 不碰）
+## 4. reviewed plan 就近落地（主线程落盘，delivery/review 不碰）
 
 跨会话递不到 planner（planner 是另一会话）。落盘由主线程做，跨会话靠**家里的耐久文件**（plan.md / PROPOSAL.md），不靠返回一段 prose（沿用 dev-loop-handoff 纪律）。
 
@@ -111,7 +111,7 @@ Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。
 
 ## 8. proposal 合法路径
 
-`sourceType=proposal` 的合法 proposal 路径为 `delivery/changes/(arch|dev)/**/PROPOSAL.md` **或 `delivery/workstreams/<ws>/PROPOSAL.md`**（大 feature 设计权威）。G3 `taskpackage-required-check.mjs` 的 `isProposalMdPath` 已同步扩认 `delivery/workstreams`（本提案落地的机械前提；artifact-lifecycle 的 origin.ref 校验复用之，sequencing 上本提案先于/同批）。
+`sourceType=proposal` 的合法 proposal 路径为 `delivery/review/**/PROPOSAL.md` **或 `delivery/workstreams/<ws>/PROPOSAL.md`**（大 feature 设计权威）。G3 `taskpackage-required-check.mjs` 的 `isProposalMdPath` 已同步扩认 `delivery/workstreams`（本提案落地的机械前提；artifact-lifecycle 的 origin.ref 校验复用之，sequencing 上本提案先于/同批）。
 
 ## 9. 强制力说明（honest，F9）
 

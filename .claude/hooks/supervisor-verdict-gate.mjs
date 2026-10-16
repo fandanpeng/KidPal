@@ -204,7 +204,7 @@ const TEST_FILE_RE = /(\.spec\.|\.test\.|__tests__|\/acceptance\/)/;
 // 260916 扩消费面（ARQ-260916-supervisor-auth-fp-author）：auth paths 轴亦消费本闭集（securityAxisTriggered 路径环先跳过）——
 // 制品面路径名同样不承载生产安全信号，消 *auth* 吃 input-brief-acceptance-author.md 类假阳（该文件名 261015 批
 // T4 已更名单份 input-brief.md；旧名保留为夹具合成回归锚——agent 名存续，保护判据不变、投影精度收敛）。
-// 维护注：TEST_FILE_RE 复用单源；制品三根对应 repo-structure「工作产物去哪」（delivery/changes/** closeout / taskpackages 过程件 / delivery/workstreams workstream 记忆）。
+// 维护注：TEST_FILE_RE 复用单源；制品三根对应 repo-structure「工作产物去哪」（delivery/review/** 批证据 / taskpackages 包全程件 / delivery/workstreams workstream 记忆；旧址 changes/** 已随 261015 批解散归档）。
 const ARTIFACT_TEST_EXCLUDE_PATH_RES = [
   TEST_FILE_RE,                 // 测试面：.spec. / .test. / __tests__ / /acceptance/
   /^delivery\/changes\//,       // closeout 证据 + arch review 制品

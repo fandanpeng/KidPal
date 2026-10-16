@@ -134,7 +134,7 @@ if (originType === 'proposal') {
   if (!ref) {
     errors.push('origin.ref is required for origin.type=proposal');
   } else if (!isProposalMdPath(ref)) {
-    errors.push(`origin.ref ${ref} is not a valid proposal .md path (expect delivery/changes/(arch|dev)/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
+    errors.push(`origin.ref ${ref} is not a valid proposal .md path (expect delivery/review/<id>/PROPOSAL.md or delivery/workstreams/<ws>/PROPOSAL.md)`);
   }
 } else if (isProposalByPath) {
   // hybrid（ref 是 PROPOSAL 路径但 type 非 proposal）：shape 闸仅 advisory（H2 / CF-02a）

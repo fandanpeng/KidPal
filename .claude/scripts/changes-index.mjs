@@ -1,24 +1,32 @@
 #!/usr/bin/env node
-// delivery/changes/{dev,arch}/INDEX.md 幂等全量重建 + 单行 upsert（G3，对偶 .claude/scripts/planning-index.mjs）。
-// 扫描 delivery/taskpackages/*/ + delivery/changes/arch/*/，收 origin.ref/origin.workstream/changeId/日期/状态，
-// 重建两份 lane INDEX（260915-gov-review-index-split，human 指示跳过 Track B 落地）：
-//   delivery/taskpackages/INDEX.md（dev 段）+ delivery/changes/arch/INDEX.md（arch 段）——按 lane 分文件，
-//   dev 合并流（pod merge）与 arch 合并流（gov merge）各写各的，消除单文件双 lane 逐次合并冲突。
+// delivery/{review,intake,taskpackages}/INDEX.md 幂等全量重建 + 单行 upsert（G3，对偶 .claude/scripts/planning-index.mjs）。
+// 扫描 delivery/taskpackages/*/ + delivery/review/*/ + delivery/intake/<changeId>.md，收 origin.ref/origin.workstream/
+// changeId/日期/状态，重建三份 lane INDEX（260915-gov-review-index-split lane 分文件；261015-gov-review-changes-taxonomy
+// T5/T6：arch lane 迁 review、新增 intake lane、扫描根随新树）：
+//   delivery/taskpackages/INDEX.md（dev 段）+ delivery/review/INDEX.md（review 段，旧 changes/arch）+
+//   delivery/intake/INDEX.md（intake 段，spine 状态投影 + 漂移检测标记——T5，检测不拦截）。
 // 幂等——每次同输入产同输出；INDEX 头标「勿手改」。
 //
 // 用法：
 //   node .claude/scripts/changes-index.mjs                    # 幂等全量重建（定期纠偏/手改后修复）
-//   node .claude/scripts/changes-index.mjs --upsert <id>      # arch 单行 upsert（状态转移时 agent 主动跑，只动一行）
+//   node .claude/scripts/changes-index.mjs --upsert <id>      # review 单行 upsert（状态转移时 agent 主动跑，只动一行）
 //   node .claude/scripts/changes-index.mjs --backfill         # 一次性回填（日期/已合main/landed，零 git fork 读缓存）
+//   node .claude/scripts/changes-index.mjs --stale-report     # 陈旧批次观察面
 //   node .claude/scripts/changes-index.mjs --self-check       # 结构化自检（ARQ-114 先例）
 // 由 closeout-check 增量刷 dev INDEX 行（互补——全量重建是手改/漂移的纠偏手段）。
 // 本脚本不写 index.jsonl。
 //
-// arch 状态机（260823-gov-review-arq-queue-restructure，Track B R2 GREEN）：
+// review 状态机（260823-gov-review-arq-queue-restructure，Track B R2 GREEN；261015 批 T6 随新树）：
 //   draft → frozen → landed（终态）。frozen 复用 lib isFrozen（状态行非全文）；
 //   landed = landing-verdict.md 在场且最终 verdict ∈ {PASS, GREEN}；已合 main = 目录**末提交**被本地 main 包含
 //   （260909-gov-review-gate-truthfulness T6：旧判据用首提交，draft 入册即被误报 mergedInMain=yes）。
 //   状态全 immutable/单调收敛 → 一次算完钉死；已算结果缓存进 .changes-index-state.json 供零 fork 复用。
+//
+// intake 状态机（260928-gov-review-cross-face-intake-spine 立，change-intake.md §2.7 值域；T5 投影齿）：
+//   intake → in-flight → awaiting-human:<gate> / awaiting-upstream / awaiting-human:<openQ> → closed。
+//   漂移检测两规则（human 裁定②：清单齿 + INDEX 漂移标，检测不拦截；复议触发 = 下轮 loop-retro 仍见漂移标）：
+//   ① anchors 命中面全回填但 status ≠ closed → ⚠未闭环；② awaiting-* 滞留超 7 天 → ⚠滞留Nd
+//   （滞留天数代理 = 今天 − spine 文件末提交日；阈值酌定理由与重估条款见 PROPOSAL T5 第 2 条 / §6）。
 
 import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve, join, basename } from 'node:path';
@@ -29,10 +37,11 @@ import { resolveOriginRef, isFrozen, closeoutRequiredFiles, VERDICT_STATUS_RE, V
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
 // 状态缓存（一次性钉死结果），供零 fork 复用。tracked，幂等。
-const STATE_CACHE_PATH = resolve(projectDir, 'delivery', 'changes', '.changes-index-state.json');
+// 261015-gov-review-changes-taxonomy T6 第 4 条：随 review 新树迁址（旧址随伞整体归档）。
+const STATE_CACHE_PATH = resolve(projectDir, 'delivery', 'review', '.changes-index-state.json');
 
 // 人工 adjudication（landing 期一次性判定，immutable）：机械强信号判不出的发散旧批 + 进行中批。
-// 每个值 = true（人工核 verdict 文件确认已落地）。判据记录于 delivery/changes/arch/260823-gov-review-arq-queue-restructure/（landing 期 verdict 人工判定清单）。
+// 每个值 = true（人工核 verdict 文件确认已落地）。判据记录于对应批目录（landing 期 verdict 人工判定清单；261015 批 T6 前旧址 delivery/review/，随伞归档 delivery/archive/changes/arch/260823-gov-review-arq-queue-restructure/）。
 const LANDED_ADJUDICATION = {
   // 发散散文旧批（强信号判不出，人工核 verdict 结论为通过态）：
   '260729-gov-review-portfolio-handoff-failclosed': true,      // 转绿记录 + R-1~R-4 全绿 → 翻 GREEN（终态）
@@ -240,9 +249,9 @@ function staleCandidate({ landed, firstCommit, thresholdDays, now }) {
   return d > (thresholdDays ?? 30);
 }
 
-// 单目录 arch 状态计算（供 collectArch 全量与 --upsert 单行复用）。cache 提供已钉死的 date/mergedInMain（零 fork）；frozen/landed 从文件现推（廉价、无 fork）。
-function computeArchEntry(name, cache) {
-  const dir = join(resolve(projectDir, 'delivery', 'changes', 'arch'), name);
+// 单目录 review 状态计算（供 collectReview 全量与 --upsert 单行复用）。cache 提供已钉死的 date/mergedInMain（零 fork）；frozen/landed 从文件现推（廉价、无 fork）。
+function computeReviewEntry(name, cache) {
+  const dir = join(resolve(projectDir, 'delivery', 'review'), name);
   const propPath = join(dir, 'PROPOSAL.md');
   const cached = cache[name] || {};
   let status = 'draft';
@@ -250,25 +259,25 @@ function computeArchEntry(name, cache) {
     try { if (isFrozen(readText(propPath))) status = 'frozen'; } catch { /* ignore */ }
   }
   if (deriveLanded(dir, cached)) status = 'landed'; // landed 是终态，覆盖 frozen（① 人工 adjudication 缓存优先）
-  const date = cached.date || parseChangeIdDate(name) || gitFirstCommitDate(`delivery/changes/arch/${name}`);
+  const date = cached.date || parseChangeIdDate(name) || gitFirstCommitDate(`delivery/review/${name}`);
   const mergedInMain = cached.mergedInMain !== undefined ? cached.mergedInMain : '';
-  return { changeId: name, date, lane: 'arch', originRef: '', status, workstream: '', mergedInMain };
+  return { changeId: name, date, lane: 'review', originRef: '', status, workstream: '', mergedInMain };
 }
 
-// 收 arch dirs（delivery/changes/arch/*/ 子目录，review 文件夹，读 PROPOSAL.md 状态行 + landing-verdict.md 取状态）。
-function collectArch(cache = {}) {
-  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
+// 收 review dirs（delivery/review/*/ 子目录，读 PROPOSAL.md 状态行 + landing-verdict.md 取状态）。
+function collectReview(cache = {}) {
+  const root = resolve(projectDir, 'delivery', 'review');
   const items = [];
   if (!existsSync(root)) return items;
   for (const name of readdirSync(root, { withFileTypes: true })) {
     if (!name.isDirectory()) continue;
-    items.push(computeArchEntry(name.name, cache));
+    items.push(computeReviewEntry(name.name, cache));
   }
   return items;
 }
 
 // ── stale-report：机械 census（只读、永不删除、永不改写）──
-// 遍历 delivery/changes/arch/*/，deriveLanded（复用单源 + cache）+ gitFirstCommitDate → staleCandidate 过滤，
+// 遍历 delivery/review/*/，deriveLanded（复用单源 + cache）+ gitFirstCommitDate → staleCandidate 过滤，
 // stdout 打 JSON；无陈旧时 stale:[]。fileCount = 目录直接子文件计数（非递归），纯观察列、不参与判定。
 function todayLocalIso() {
   const d = new Date();
@@ -281,7 +290,7 @@ function todayLocalIso() {
 function staleReport() {
   const thresholdDays = parseInt(process.env.ARCH_GC_STALE_DAYS || '30', 10) || 30;
   const now = todayLocalIso();
-  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
+  const root = resolve(projectDir, 'delivery', 'review');
   const stale = [];
   if (!existsSync(root)) return { ok: true, mode: 'stale-report', thresholdDays, stale };
   const cache = loadStateCache();
@@ -293,7 +302,7 @@ function staleReport() {
       fileCount = readdirSync(dir, { withFileTypes: true }).filter(e => e.isFile()).length;
     } catch { fileCount = 0; }
     const landed = deriveLanded(dir, cache[name.name]);
-    const firstCommit = gitFirstCommitDate(`delivery/changes/arch/${name.name}`);
+    const firstCommit = gitFirstCommitDate(`delivery/review/${name.name}`);
     if (staleCandidate({ landed, firstCommit, thresholdDays, now })) {
       stale.push({ dir: name.name, firstCommit, landed, fileCount });
     }
@@ -301,12 +310,137 @@ function staleReport() {
   return { ok: true, mode: 'stale-report', thresholdDays, stale };
 }
 
-// lane INDEX 写出（260915-gov-review-index-split：dev / arch 各一份，按 lane 分文件消除跨 lane 合并冲突）。
+// ── intake lane（261015 批 T5）：spine frontmatter 解析 + 漂移检测（检测不拦截）──
+// spine 文件形态 = delivery/intake/<changeId>.md（companion 设计稿 <changeId>.design.md 非 spine，T4 命名规约）。
+// faceMap 命中面探测双形态：结构化子键（`  requirements: 动…`）与 inline 散文（「需求面动…；governance 不动」）。
+// 滞留天数代理 = 今天 − spine 末提交日（git last commit）；阈值 7 天（human 裁定②，重估条款见 PROPOSAL §6）。
+const INTAKE_FACES = [
+  { abbr: 'req', keys: ['requirements', '需求面'] },
+  { abbr: 'arch', keys: ['architecture', '架构面'] },
+  { abbr: 'contract', keys: ['contract', '契约面'] },
+  { abbr: 'imp', keys: ['implementation', '实现面'] },
+  { abbr: 'gov', keys: ['governance'] },
+];
+const INTAKE_STATUS_ENUM = /^intake$|^in-flight$|^awaiting-/;
+
+function parseSpine(text) {
+  const lines = text.split('\n').map((l) => l.replace(/\r$/, '')); // spine 工作树 CRLF 容忍（autocrlf 检出形态；261015 批 T5 实测六件因 ---\r 漏解析）
+  if (lines[0] !== '---') return null;
+  let end = -1;
+  for (let i = 1; i < lines.length; i++) if (lines[i] === '---') { end = i; break; }
+  if (end < 0) return null;
+  const fields = {};
+  let cur = null;
+  for (let i = 1; i < end; i++) {
+    const l = lines[i];
+    const m = /^([A-Za-z][A-Za-z0-9]*):(.*)$/.exec(l);
+    if (m) { cur = m[1]; fields[cur] = (fields[cur] ? `${fields[cur]}\n` : '') + m[2].trim(); }
+    else if (cur && l.trim()) { fields[cur] += `\n${l.trim()}`; }
+  }
+  return fields;
+}
+
+// faceMap 命中面（返回缩写数组）。值以「不动」开头 = 缺席；结构化「动/疑似触」与 inline 段不含「不动」均 = 命中。
+function faceMapHits(faceMap) {
+  if (!faceMap) return [];
+  const hits = [];
+  for (const def of INTAKE_FACES) {
+    const alt = def.keys.join('|');
+    const structRe = new RegExp(`(?:^|\\n)\\s*(?:${alt}):([^\\n]*)`, 'i');
+    const sm = structRe.exec(`\n${faceMap}`);
+    if (sm) {
+      if (!/^不动/.test(sm[1].trim())) hits.push(def.abbr);
+      continue;
+    }
+    // inline 散文：关键词出现处到下一面关键词的段不含「不动」= 命中
+    const positions = [];
+    for (const k of def.keys) {
+      let idx = faceMap.indexOf(k);
+      while (idx >= 0) { positions.push(idx); idx = faceMap.indexOf(k, idx + 1); }
+    }
+    if (!positions.length) continue;
+    // 全文先收所有面关键词位置（本面段 = 本面首现到最近的其它面关键词）
+    const all = [];
+    for (const d2 of INTAKE_FACES) for (const k2 of d2.keys) {
+      let idx = faceMap.indexOf(k2);
+      while (idx >= 0) { all.push(idx); idx = faceMap.indexOf(k2, idx + 1); }
+    }
+    all.sort((a, b) => a - b);
+    const start = Math.min(...positions);
+    const next = all.find((p) => p > start);
+    const segment = faceMap.slice(start, next === undefined ? undefined : next);
+    if (!segment.includes('不动')) hits.push(def.abbr);
+  }
+  return hits;
+}
+
+// anchors 回填进度：锚键非空且不含「待回填」= 已回填。值域 = 键后到下一锚键 / `}` / 行尾的最小者。
+function anchorsProgress(anchorsField) {
+  if (!anchorsField) return { filled: 0, total: 0 };
+  const text = `\n${anchorsField}`;
+  const keyRe = /(?:\{|,|^|\n)\s*(req|arch|contract|imp|gov)\s*:/g;
+  const found = [];
+  let m;
+  while ((m = keyRe.exec(text))) found.push({ key: m[1], at: m.index + m[0].length });
+  let filled = 0;
+  for (let i = 0; i < found.length; i++) {
+    const ends = [found[i + 1] ? found[i + 1].at : text.length];
+    const nl = text.indexOf('\n', found[i].at); if (nl >= 0) ends.push(nl);
+    const br = text.indexOf('}', found[i].at); if (br >= 0) ends.push(br);
+    const v = text.slice(found[i].at, Math.min(...ends));
+    if (v.trim() && !v.includes('待回填')) filled++;
+  }
+  return { filled, total: found.length };
+}
+
+// 漂移检测两规则（T5 第 2 条，检测不拦截）+ 值域外显示标（第 3 条：不静默归一）。
+function intakeDrift({ statusBase, hitCount, filled, lastCommitDate, today }) {
+  const marks = [];
+  if (!INTAKE_STATUS_ENUM.test(statusBase) && statusBase !== 'closed' && statusBase) marks.push('⚠值域外');
+  if (hitCount > 0 && filled >= hitCount && statusBase !== 'closed') marks.push('⚠未闭环');
+  if (/^awaiting-/.test(statusBase) && lastCommitDate) {
+    const d = Math.floor(daysBetweenIso(lastCommitDate, today));
+    if (!Number.isNaN(d) && d > 7) marks.push(`⚠滞留${d}d`);
+  }
+  return marks;
+}
+
+function collectIntake() {
+  const root = resolve(projectDir, 'delivery', 'intake');
+  const items = [];
+  if (!existsSync(root)) return items;
+  const today = todayLocalIso();
+  for (const name of readdirSync(root, { withFileTypes: true })) {
+    if (!name.isFile()) continue;
+    if (!/^\d{6}-.+\.md$/.test(name.name) || name.name.endsWith('.design.md')) continue;
+    const rel = `delivery/intake/${name.name}`;
+    let fields = null;
+    try { fields = parseSpine(readText(join(root, name.name))); } catch { fields = null; }
+    const changeId = (fields && fields.changeId) || name.name.replace(/\.md$/, '');
+    const statusRaw = ((fields && fields.status) || '').split('\n')[0];
+    const statusBase = ( /^(intake|in-flight|awaiting-[^\s（(]+|closed)/.exec(statusRaw) || [] )[1] || statusRaw.split(/[\s（(]/)[0] || '—';
+    const hits = fields ? faceMapHits(fields.faceMap) : [];
+    const prog = fields ? anchorsProgress(fields.anchors) : { filled: 0 };
+    const last = gitCommitDate(gitLastCommitSha(rel));
+    const drift = intakeDrift({ statusBase, hitCount: hits.length, filled: prog.filled, lastCommitDate: last.slice(0, 10), today });
+    items.push({
+      lane: 'intake', changeId,
+      faces: hits.join('+') || '—',
+      status: statusBase || '—',
+      anchorsProgress: hits.length ? `${prog.filled}/${hits.length}` : '—',
+      date: parseChangeIdDate(changeId) || last.slice(0, 10) || '—',
+      drift: drift.join(' '),
+    });
+  }
+  return items;
+}
+
+// lane INDEX 写出（260915-gov-review-index-split：dev / review / intake 各一份，按 lane 分文件消除跨 lane 合并冲突）。
+// 261015 批 T6 第 4 条：review 段落址随新树 delivery/review/INDEX.md（头部指针行指向归档内旧 INDEX 由全量重建注入）；T5：intake 段新立。
 function laneIndexPath(lane) {
-  // dev 段落址随包走（OQ1(a)：delivery/taskpackages/INDEX.md）；arch 段维持 changes/arch
-  // （261014-gov-review-dev-lane-merge-taskpackages T2：dev lane 撤销、扫描根迁 taskpackages）
   if (lane === 'dev') return resolve(projectDir, 'delivery', 'taskpackages', 'INDEX.md');
-  return resolve(projectDir, 'delivery', 'changes', lane, 'INDEX.md');
+  if (lane === 'intake') return resolve(projectDir, 'delivery', 'intake', 'INDEX.md');
+  return resolve(projectDir, 'delivery', 'review', 'INDEX.md');
 }
 
 function indexHeader(lane) {
@@ -339,18 +473,40 @@ function buildDevIndexMd(dev) {
   return out.join('\n');
 }
 
-function buildArchIndexMd(arch) {
-  const out = indexHeader('arch');
+function buildReviewIndexMd(review) {
+  const out = indexHeader('review');
   out.push('> 自动生成（changes-index.mjs 幂等重建 / 状态转移时 `--upsert <id>` 单行钉进）。**勿手改**。');
-  out.push('> 列：changeId | 日期 | 状态 | 已合main。arch 状态机：draft→frozen→landed(终态)。');
+  out.push('> 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。');
+  out.push('> 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。');
   out.push('');
-  out.push(`## arch (${arch.length})`);
+  out.push(`## review (${review.length})`);
   out.push('');
-  if (arch.length) {
+  if (review.length) {
     out.push('| changeId | 日期 | 状态 | 已合main |');
     out.push('|---|---|---|---|');
-    for (const i of arch) {
+    for (const i of review) {
       out.push(`| [${esc(i.changeId)}](${i.changeId}/) | ${i.date || '—'} | ${esc(i.status)} | ${esc(i.mergedInMain) || '—'} |`);
+    }
+  } else {
+    out.push('_（无）_');
+  }
+  out.push('');
+  return out.join('\n');
+}
+
+function buildIntakeIndexMd(intake) {
+  const out = indexHeader('intake');
+  out.push('> 自动生成（changes-index.mjs 幂等重建）。**勿手改**。');
+  out.push('> 列：changeId | 触面 | status | anchors回填 | 日期 | 漂移标。intake 状态机（change-intake.md §2.7）：intake→in-flight→awaiting-*→closed。');
+  out.push('> 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）。复议触发 = 下轮 loop-retro 仍见漂移标。');
+  out.push('');
+  out.push(`## intake (${intake.length})`);
+  out.push('');
+  if (intake.length) {
+    out.push('| changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |');
+    out.push('|---|---|---|---|---|---|');
+    for (const i of intake) {
+      out.push(`| ${esc(i.changeId)} | ${esc(i.faces)} | ${esc(i.status)} | ${esc(i.anchorsProgress)} | ${i.date || '—'} | ${esc(i.drift) || '—'} |`);
     }
   } else {
     out.push('_（无）_');
@@ -361,30 +517,32 @@ function buildArchIndexMd(arch) {
 
 function buildIndexMd(items) {
   const dev = items.filter(i => i.lane === 'dev').sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  const arch = items.filter(i => i.lane === 'arch').sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  return { dev: buildDevIndexMd(dev), arch: buildArchIndexMd(arch) };
+  const review = items.filter(i => i.lane === 'review').sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  const intake = items.filter(i => i.lane === 'intake').sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return { dev: buildDevIndexMd(dev), review: buildReviewIndexMd(review), intake: buildIntakeIndexMd(intake) };
 }
 
-// ── 命名断言（260825-gov-review-track-b-naming-convention T3）：日期前缀 arch 目录名须命中写槽 token ──
+// ── 命名断言（260825-gov-review-track-b-naming-convention T3）：日期前缀 review 目录名须命中写槽 token ──
 // 只拦日期前缀新目录（parseChangeIdDate 判定；非法日期前缀自然落空不断言）；旧目录 / 非日期前缀宽容。
 // fail-loud 点名只挂 upsert（起草期收口）；全量重建与 backfill 不经本断言（存量安全）。
 function checkArchDirNaming(id) {
   if (!parseChangeIdDate(id)) return null; // 非日期前缀或非法日期前缀 → 不断言
   if (/gov-review|arch-review/.test(id)) return null;
-  return `naming: delivery/changes/arch/${id} 缺写槽 token（gov-review / arch-review）——日期前缀提案目录名必须命中 .claude/scope-map.json review-agent 写槽，否则评审/核验期制品写入被 enforce-scope 拦截（见 protocol「双轨路由」节命名条款）`;
+  return `naming: delivery/review/${id} 缺写槽 token（gov-review / arch-review）——日期前缀提案目录名必须命中 .claude/scope-map.json review-agent 写槽，否则评审/核验期制品写入被 enforce-scope 拦截（见 protocol「双轨路由」节命名条款）`;
 }
 
-// ── 单行 upsert：在 arch INDEX 中定位 <id> 的行 → 替换或插入（只动一行，对偶 closeout-check dev INDEX 刷行）──
+// ── 单行 upsert：在 review INDEX 中定位 <id> 的行 → 替换或插入（只动一行，对偶 closeout-check dev INDEX 刷行）──
+// 261015 批 T6：lane 键 arch→review、扫描根随新树（函数名保留 upsertArchRow 免散引改动，语义已随 lane 迁移）。
 function upsertArchRow(indexPath, id, cache) {
   const namingError = checkArchDirNaming(id);
   if (namingError) return { ok: false, error: namingError };
-  if (!existsSync(join(resolve(projectDir, 'delivery', 'changes', 'arch'), id))) {
-    return { ok: false, error: `arch dir delivery/changes/arch/${id} absent on disk` };
+  if (!existsSync(join(resolve(projectDir, 'delivery', 'review'), id))) {
+    return { ok: false, error: `review dir delivery/review/${id} absent on disk` };
   }
-  if (!existsSync(indexPath)) return { ok: false, error: 'delivery/changes/arch/INDEX.md absent — run full rebuild first' };
-  const entry = computeArchEntry(id, cache);
+  if (!existsSync(indexPath)) return { ok: false, error: 'delivery/review/INDEX.md absent — run full rebuild first' };
+  const entry = computeReviewEntry(id, cache);
   // 已合 main：按目录末提交现推并钉进缓存（260909 T6；前提 = 合 main 完成后跑本 upsert，R1-F3）
-  const merged = dirMergedInMain(`delivery/changes/arch/${id}`);
+  const merged = dirMergedInMain(`delivery/review/${id}`);
   // T3（260920-gov-review-verdict-anchor-align，FROZEN 2026-09-20）：守卫收真值型——
   // gitContainedInMain 返回 'yes'/'no'/''（:118），'no' 在 JS 中为真值 ⇒ 旧守卫会把 'no' 也钉进缓存，
   // 而全量重建缓存优先（:240）⇒ 合并后该列不翻 yes。收窄为只钉 'yes'（已合并的 immutable 事实）。
@@ -393,8 +551,8 @@ function upsertArchRow(indexPath, id, cache) {
 
   const content = readText(indexPath);
   const lines = content.split('\n');
-  const archStart = lines.findIndex(l => /^## arch /.test(l));
-  if (archStart < 0) return { ok: false, error: 'arch INDEX header non-standard (no "## arch" section)' };
+  const archStart = lines.findIndex(l => /^## review /.test(l));
+  if (archStart < 0) return { ok: false, error: 'review INDEX header non-standard (no "## review" section)' };
   const linkRe = new RegExp(`^\\| \\[${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]\\(${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`);
   const idx = lines.findIndex((l, i) => i > archStart && linkRe.test(l));
   let action;
@@ -420,16 +578,16 @@ function upsertArchRow(indexPath, id, cache) {
   return { ok: true, action, entry };
 }
 
-// ── 一次性回填：对全部 arch 目录算 date/mergedInMain（fork git 一次）+ landed 状态，写缓存 + 全量重建 ──
+// ── 一次性回填：对全部 review 目录算 date/mergedInMain（fork git 一次）+ landed 状态，写缓存 + 全量重建 ──
 function backfill() {
   const cache = loadStateCache();
-  const root = resolve(projectDir, 'delivery', 'changes', 'arch');
+  const root = resolve(projectDir, 'delivery', 'review');
   const names = existsSync(root) ? readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name) : [];
   let computed = 0, landedCount = 0;
   for (const name of names) {
-    const sha = gitFirstCommitSha(`delivery/changes/arch/${name}`);
+    const sha = gitFirstCommitSha(`delivery/review/${name}`);
     const date = parseChangeIdDate(name) || (sha ? gitCommitDate(sha) : '');
-    const merged = dirMergedInMain(`delivery/changes/arch/${name}`);
+    const merged = dirMergedInMain(`delivery/review/${name}`);
     const landed = deriveLanded(join(root, name), cache[name]);
     if (landed) landedCount++;
     // T3（260920-gov-review-verdict-anchor-align，R1-F7 采纳）：merged === ''（git 不可用）时保旧值，
@@ -438,11 +596,12 @@ function backfill() {
     computed++;
   }
   saveStateCache(cache);
-  const items = [...collectDev(), ...collectArch(cache)];
+  const items = [...collectDev(), ...collectReview(cache), ...collectIntake()];
   const indexMd = buildIndexMd(items);
   writeFileSync(laneIndexPath('dev'), indexMd.dev, 'utf8');
-  writeFileSync(laneIndexPath('arch'), indexMd.arch, 'utf8');
-  return { ok: true, backfilled: computed, archCount: items.filter(i => i.lane === 'arch').length, landed: landedCount };
+  writeFileSync(laneIndexPath('review'), indexMd.review, 'utf8');
+  writeFileSync(laneIndexPath('intake'), indexMd.intake, 'utf8');
+  return { ok: true, backfilled: computed, reviewCount: items.filter(i => i.lane === 'review').length, intakeCount: items.filter(i => i.lane === 'intake').length, landed: landedCount };
 }
 
 // ── 结构化自检（ARQ-114 先例）──
@@ -455,7 +614,7 @@ function selfCheck() {
   t('frozen: Status 行 FROZEN → frozen', isFrozen('> Status: **FROZEN v1.0**'), true);
   t('frozen: DRAFT 主导（先位）→ 非 frozen', isFrozen('> Status: **DRAFT v0.5**（R2 GREEN 后标 FROZEN）'), false);
   t('frozen: 正文含 FROZEN 但无状态行 → 非 frozen（F2 回归）', isFrozen('# 提案\n正文说「评审通过后标 FROZEN」'), false);
-  // landed verdict 闭集（F1 回归）：用 os.tmpdir() 夹具测 deriveLanded 真函数（不写 delivery/changes/arch、不污染收件箱）
+  // landed verdict 闭集（F1 回归）：用 os.tmpdir() 夹具测 deriveLanded 真函数（不写 delivery/review、不污染收件箱）
   const osTmp = process.env.TMPDIR || process.env.TMP || process.env.TEMP || '/tmp';
   const mkFix = (id, verdictLines) => {
     const d = resolve(osTmp, 'changes-index-selfcheck-' + id);
@@ -518,6 +677,23 @@ function selfCheck() {
   const runExit = (flagArgs) => spawnSync(process.execPath, [process.argv[1], ...flagArgs], { encoding: 'utf8', timeout: 60000 }).status;
   t('cli: --help → exit 0 且不重建', runExit(['--help']), 0);
   t('cli: 未知旗标 → exit 2（不静默全量重建）', runExit(['--bogus-selfcheck-probe']), 2);
+  // intake lane 新臂（261015 批 T5；真空绿规约：fixture 构造非空输入，逐 case 有预期）
+  const spineInline = ['---', 'changeId: 261010-x', 'sources: s', 'faceMap: 需求面动（…）；架构面动（…）；契约面疑似动（…）；实现面动（…）；governance 不动', 'anchors: {req: "v1", arch: "v2", contract: "v3", imp: "v4"}', 'openQ: o', 'status: in-flight', '---', '正文'].join('\n');
+  const sf = parseSpine(spineInline);
+  t('intake: inline spine 解析七字段', sf && sf.changeId === '261010-x' && sf.status === 'in-flight' && !!sf.anchors, true);
+  t('intake: faceMap inline 形态命中面（governance 不动缺席）', JSON.stringify(faceMapHits(sf.faceMap)), JSON.stringify(['req', 'arch', 'contract', 'imp']));
+  const spineStruct = ['---', 'changeId: 261012-y', 'faceMap:', '  requirements: 动（轻量记账）', '  architecture: 动（指针刷）', '  contract: 疑似触（…）', '  implementation: 动（…）', '  governance: 不动', 'anchors:', '  req: "已回填"', '  contract: "已回填"', '  arch: "已回填"', '  imp: "已回填"', 'status: in-flight', '---'].join('\n');
+  const ss = parseSpine(spineStruct);
+  t('intake: faceMap 结构化形态命中面（不动缺席）', JSON.stringify(faceMapHits(ss.faceMap)), JSON.stringify(['req', 'arch', 'contract', 'imp']));
+  const prog = anchorsProgress(ss.anchors);
+  t('intake: anchors 全回填 4/4', JSON.stringify(prog), JSON.stringify({ filled: 4, total: 4 }));
+  const progWait = anchorsProgress('anchors: {req: "待回填", arch: "待回填", contract: "待回填"}');
+  t('intake: anchors 待回填 → 0/3', JSON.stringify(progWait), JSON.stringify({ filled: 0, total: 3 }));
+  t('intake: 漂移① 全回填但 status≠closed → ⚠未闭环', JSON.stringify(intakeDrift({ statusBase: 'in-flight', hitCount: 4, filled: 4, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify(['⚠未闭环']));
+  t('intake: 漂移② awaiting-* 滞留 >7d → ⚠滞留Nd', JSON.stringify(intakeDrift({ statusBase: 'awaiting-human:gate', hitCount: 2, filled: 0, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify(['⚠滞留15d']));
+  t('intake: awaiting-* 未超 7d → 无标', JSON.stringify(intakeDrift({ statusBase: 'awaiting-human:gate', hitCount: 2, filled: 0, lastCommitDate: '2026-10-12', today: '2026-10-16' })), JSON.stringify([]));
+  t('intake: 值域外 status（landed）→ ⚠值域外', JSON.stringify(intakeDrift({ statusBase: 'landed', hitCount: 3, filled: 3, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify(['⚠值域外', '⚠未闭环']));
+  t('intake: closed 全回填 → 无标', JSON.stringify(intakeDrift({ statusBase: 'closed', hitCount: 3, filled: 3, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify([]));
   const pass = cases.filter(c => c.pass).length;
   const ok = pass === cases.length;
   return { selfCheck: 'changes-index', ok, pass, fail: cases.length - pass, total: cases.length, cases: ok ? undefined : cases.filter(c => !c.pass) };
@@ -525,20 +701,21 @@ function selfCheck() {
 
 function main() {
   const cache = loadStateCache();
-  const items = [...collectDev(), ...collectArch(cache)];
+  const items = [...collectDev(), ...collectReview(cache), ...collectIntake()];
   const indexMd = buildIndexMd(items);
   writeFileSync(laneIndexPath('dev'), indexMd.dev, 'utf8');
-  writeFileSync(laneIndexPath('arch'), indexMd.arch, 'utf8');
-  return { ok: true, devCount: items.filter(i => i.lane === 'dev').length, archCount: items.filter(i => i.lane === 'arch').length };
+  writeFileSync(laneIndexPath('review'), indexMd.review, 'utf8');
+  writeFileSync(laneIndexPath('intake'), indexMd.intake, 'utf8');
+  return { ok: true, devCount: items.filter(i => i.lane === 'dev').length, reviewCount: items.filter(i => i.lane === 'review').length, intakeCount: items.filter(i => i.lane === 'intake').length };
 }
 
 const CHANGES_INDEX_USAGE = `用法：node .claude/scripts/changes-index.mjs [--upsert <changeId> | --backfill | --stale-report | --self-check | --help]
-  --upsert <change-id>   arch 单行 upsert（状态转移时 agent 主动跑，只动一行）
+  --upsert <change-id>   review 单行 upsert（状态转移时 agent 主动跑，只动一行）
   --backfill             一次性回填（日期/已合main/landed，零 git fork 读缓存）
   --stale-report         只读列出未落地且首提交超阈的陈旧批次目录（GC 观察面）
   --self-check           结构化自检（ARQ-114 先例）
   --help / -h            本用法（exit 0）
-裸跑（无参数）= 幂等全量重建两 lane INDEX；未知 -- 旗标 = 用法错误 exit 2（260924-gov-review-gate-parse-teeth T3：不静默触发全量重建，rma8 病灶闭合）。`;
+裸跑（无参数）= 幂等全量重建三 lane INDEX；未知 -- 旗标 = 用法错误 exit 2（260924-gov-review-gate-parse-teeth T3：不静默触发全量重建，rma8 病灶闭合）。`;
 
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
@@ -557,7 +734,7 @@ if (invokedDirectly) {
     const id = args[1];
     if (!id) { console.error(JSON.stringify({ ok: false, error: '--upsert requires <changeId>' })); process.exit(2); }
     const cache = loadStateCache();
-    result = upsertArchRow(laneIndexPath('arch'), id, cache);
+    result = upsertArchRow(laneIndexPath('review'), id, cache);
     saveStateCache(cache);
   } else if (args[0] !== undefined && args[0].startsWith('--')) {
     // T3（260924-gov-review-gate-parse-teeth）：未知旗标 = 用法错误 exit 2，不静默落 main() 全量重建。
@@ -571,4 +748,4 @@ if (invokedDirectly) {
   if (result && result.selfCheck && !result.ok) process.exit(1);
 }
 
-export { main, upsertArchRow, backfill, staleReport, selfCheck, computeArchEntry, deriveLanded, staleCandidate };
+export { main, upsertArchRow, backfill, staleReport, selfCheck, computeReviewEntry, deriveLanded, staleCandidate, parseSpine, faceMapHits, anchorsProgress, intakeDrift, collectIntake };

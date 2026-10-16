@@ -12,7 +12,7 @@
 
 ## 2. spine 制品形态
 
-- **落点** = `delivery/changes/intake/<changeId>.md`，一变更一文件，lane 中立（arch / dev / retro / intake 四 sibling；结构登记见 repo-structure.md）。写者 = 主线程；**anchors 回填写者也恒 = 主线程**——下游会话以退出报告交回结果，主线程回填（写域零扩张）。
+- **落点** = `delivery/intake/<changeId>.md`，一变更一文件，lane 中立（arch / dev / retro / intake 四 sibling；结构登记见 repo-structure.md）。写者 = 主线程；**anchors 回填写者也恒 = 主线程**——下游会话以退出报告交回结果，主线程回填（写域零扩张）。
 - **frontmatter 七字段**：
   1. `changeId` = 全局 changeId（YYMMDD-slug）；各面锚回填时映射为各面既有格式——req = §9 版本号、contract = packet、arch = changeId、imp = taskpackage id；单包 ② 直接复用不另铸。
   2. `sources` = human 意图原话（逐字）+ 关联引用 id 列表（ARQ / REQ- / §9 版本行 / retro / 里程碑；词汇复用 TaskPackage `sourceRefs`）。
@@ -26,8 +26,17 @@
 
 - **派发形态**：主线程派 architect（只读 + 同会话 return），语料 = requirements.md（含 §9 账 + story AC）+ architecture.md + `docs/contracts/**` + debt 未结账三域（gov / tech / requirement）+ governance 面（`.claude/agents/**` 定义 / gate 登记）。
 - governance 命中记入 faceMap 并路由 `/gov-change` 治理面 loop，不建实现面档（R1-F4）。
-- **建档前查重**：intake 开场先查 `delivery/changes/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；并存期各面 loop 侧同此纪律。
+- **建档前查重**：intake 开场先查 `delivery/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；**查重范围扩 docs/debt 三域未结条目**（261015 批 T3 第 3 条——防「debt 一件、spine 一件」双头记账）：命中 debt 未结条目 → 消费既有条目走晋升路径（§3a），不重复建档；并存期各面 loop 侧同此纪律。
 - **触面事实是查出来的，不是申报出来的**（walkthrough 实证自我申报不可靠）。产出 = faceMap + facePlan 交主线程落盘。
+
+## 3a · debt → intake 晋升（261015-gov-review-changes-taxonomy T3）
+
+「发现的问题先记 debt，后来立项要做」这条路径的成文桥——debt 账与 spine / 各面入口的互引约定：
+
+- **登记**：发现的问题先记 `docs/debt/` 条目（登记 = 主线程，域判据见 debt 模板）。
+- **立项要做时**：触面 ≥2 → 按上文程序建 spine，`sources.refs` 引 debt 条目 id；触面 =1 → 直接进各面既有入口（需求 `/requirement-change` / 架构+契约 `/arch-change` / 治理 `/gov-change` / 实现 `/triage-change`），各面制品的 refs/sourceRefs 引 debt 条目 id。
+- **主动 idea 跳过 debt**：直接按触面判（§1 既有程序不变）——触发源不作目录轴（repo-structure.md 生命周期节）。
+- **debt 条目随立项结项**：`status` 翻 `closed` + 正文结项行带 `consumed-by: <changeId>` 约定（正文约定：机检三脚本零改动兼容性已实测——debt-ledger-shared.mjs 无未知字段拦截、渲染器不消费 consumed-by；与 append-only 散文同型）。
 
 ## 4. 立项 ack
 
@@ -53,6 +62,13 @@
 
 - spine 是路由账本不是设计文档，**不设 FROZEN**；各面的冻结语义由各面制品承载（§9 版本行 / 契约 packet / FROZEN PROPOSAL / origin.frozen），spine anchors 记录这些冻结事实。
 - **facePlan 修订权限**：加面 / 改「谁裁」→ L2 呈人；调执行顺序 / 细节 → L0/L1 主线程可裁。
+
+## 7a · companion 设计稿（261015-gov-review-changes-taxonomy T4）
+
+- **需要判据** = 跨面 / 需求档 2 / 含 human 设计取舍点——即立项 ack 需要实质对齐物时；不需要时不设，spine facePlan 足矣。
+- **命名** = `<changeId>.design.md`，与 spine 同目录（`delivery/intake/`）；spine 的「往哪改」行引用之。
+- **免冻、不设独立评审批**：设计对抗审归下游面 loop 既有环节（先例 261014：由 requirement-change 档 2 的 architect 必派承担）；companion 本身不进任何门。
+- **比例化原则**：留裁定 + 依据，不留推演全程 transcript（同 repo-structure 生命周期节）。
 
 ## 8. 与各面门接缝
 

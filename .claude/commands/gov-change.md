@@ -16,6 +16,6 @@ argument-hint: <human 意图原话或 ARQ-id 清单，例如 "ARQ-260928-arch-ch
 3. **起草**：派 `architect` 起草 PROPOSAL（主路径五段式）或瘦 PROPOSAL（轻路径：Status 行 + 改法清单表 + 判档依据节）。
 4. **审稿**：派 `architect-reviewer` 四查 + 判档（**路径即判据**：diff 全落 references/skills/notes/templates 且纯措辞 → 轻；触 commands/agents/hooks/scripts/scope-map/settings/G1 → 恒 Track B；只升不降）。不过否回循环至过。
 5. **落地**：轻路径 = 瘦制品五件过闸（retro 豁免）；主路径 = Track B 后端全件（FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main）。
-6. **记账收尾**：`node .claude/scripts/changes-index.mjs --upsert <changeId>`；跨面 → spine 回填 anchors。
+6. **记账收尾**：`node .claude/scripts/changes-index.mjs --upsert <changeId>`；跨面 → spine 回填 anchors + status（写者恒 = 主线程，261015 批 T5 齿）。
 
 你不起草变更内容、不改 reviewer 判决、不跳否回循环；架构+契约面变更转 `/arch-change`；实现面变更转 `/triage-change`。

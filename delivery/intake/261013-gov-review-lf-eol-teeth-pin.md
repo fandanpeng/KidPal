@@ -34,3 +34,4 @@ openQ:
     ruling: L0 主线程裁——triage 地板判据「不改实现面行为 → ① 直接修免门」适用（冻结常量对齐 canonical 零行为变更）；并入 Track B 单批，architect 评审对 T2 改法实质把关（依据：change-intake §1 比例化）
     status: resolved
 status: closed
+---

@@ -20,7 +20,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 1. **收 provenance（地面真值）** — 找出至少一条可识别执行记录，引具体路径/行：
    - loop-retro 条目（`.claude/loop-retro/loop-retro-*.md` 某行）/ friction 记录；
    - verifier-evidence round（`delivery/taskpackages/*/verifier-evidence/rounds/*.json`）；
-   - architect-review / adjudicator finding（`delivery/changes/arch/*/`）；
+   - architect-review / adjudicator finding（`delivery/review/*/`）；
    - 带执行证据的已登记条目（`docs/debt/*/*.md` 引执行来源）。
    **终点**：一条可点开的执行记录引用。没有 → 走 HARD-GATE 的停法。
 
