@@ -11,4 +11,4 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261015-gov-review-changes-taxonomy](261015-gov-review-changes-taxonomy/) | 2026-10-15 | frozen | — |
+| [261015-gov-review-changes-taxonomy](261015-gov-review-changes-taxonomy/) | 2026-10-15 | landed | yes |
