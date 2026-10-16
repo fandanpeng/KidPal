@@ -11,5 +11,6 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261016-gov-review-triage-entry-identity](261016-gov-review-triage-entry-identity/) | 2026-10-16 | landed | yes |
 | [261016-gov-review-nano-tier](261016-gov-review-nano-tier/) | 2026-10-16 | landed | yes |
 | [261015-gov-review-changes-taxonomy](261015-gov-review-changes-taxonomy/) | 2026-10-15 | landed | yes |
