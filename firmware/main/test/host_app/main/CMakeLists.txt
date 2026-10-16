@@ -226,6 +226,12 @@ set(HOST_ACCEPTANCE_SRCS
     # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../p1_auxbar_style.acceptance.c"
 
+    # 包 261016-sd-card-mount（TF 卡接入——SDMMC 1-bit 挂载 + /sdcard 能力就绪，降级
+    # 不崩）冻结验收：纯树扫源锚结构齿（板级 config.h / .cc 不进 host 构建——源锚齿
+    # tree-scan 承载，261015-p1-auxbar-style-fix 同款）。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../sd_card_mount.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

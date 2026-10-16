@@ -1,0 +1,249 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4038326e
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x548
+load:0x403c8700,len:0xc3c
+load:0x403cb700,len:0x2e70
+entry 0x403c8908
+I (35) octal_psram: vendor id    : 0x0d (AP)
+I (35) octal_psram: dev id       : 0x02 (generation 3)
+I (35) octal_psram: density      : 0x03 (64 Mbit)
+I (37) octal_psram: good-die     : 0x01 (Pass)
+I (41) octal_psram: Latency      : 0x01 (Fixed)
+I (45) octal_psram: VCC          : 0x01 (3V)
+I (49) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (54) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (59) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (63) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (68) octal_psram: DriveStrength: 0x00 (1/1)
+I (73) MSPI Timing: PSRAM timing tuning index: 5
+I (77) esp_psram: Found 8MB PSRAM device
+I (80) esp_psram: Speed: 80MHz
+I (83) cpu_start: Multicore app
+I (105) cpu_start: Pro cpu start user code
+I (105) cpu_start: cpu freq: 240000000 Hz
+I (105) app_init: Application information:
+I (106) app_init: Project name:     xiaozhi
+I (109) app_init: App version:      2.1.0
+I (113) app_init: Compile time:     Sep 23 2026 12:52:24
+I (118) app_init: ELF file SHA256:  60c7be524...
+I (122) app_init: ESP-IDF:          v5.5.1-dirty
+I (127) efuse_init: Min chip rev:     v0.0
+I (130) efuse_init: Max chip rev:     v0.99 
+I (134) efuse_init: Chip rev:         v0.2
+I (138) heap_init: Initializing. RAM available for dynamic allocation:
+I (145) heap_init: At 3FCB34A0 len 00036270 (216 KiB): RAM
+I (150) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (155) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (160) heap_init: At 600FE000 len 00001FD8 (7 KiB): RTCRAM
+I (166) esp_psram: Adding pool of 7709K of PSRAM memory to heap allocator
+I (172) spi_flash: detected chip: generic
+I (176) spi_flash: flash io: qio
+I (179) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (185) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (192) main_task: Started on CPU0
+I (202) esp_psram: Reserving pool of 64K of internal memory for DMA/internal allocations
+I (202) main_task: Calling app_main()
+I (212) Board: UUID=df23a9ab-0c77-481d-94ca-0c0258804df6 SKU=waveshare-s3-rlcd-4.2
+I (212) button: IoT Button Version: 4.1.7
+I (222) BoxAudioCodec: Duplex channels created
+I (222) ES8311: Work in Slave mode
+I (232) ES7210: Work in Slave mode
+I (242) ES7210: Enable ES7210_INPUT_MIC1
+I (242) ES7210: Enable ES7210_INPUT_MIC2
+I (242) ES7210: Enable ES7210_INPUT_MIC3
+I (252) ES7210: Enable ES7210_INPUT_MIC4
+I (252) ES7210: Enable TDM mode
+I (252) BoxAudioCodec: BoxAudioDevice initialized
+I (252) waveshare_rlcd_4_2: rtc_pcf85063 corr_id=kdp-252 ok rtc=21:00:08 date=10-16 wday=4 os=0
+I (272) waveshare_rlcd_4_2: shtc3 corr_id=kdp-252 ok temp_c=27.66 rh_pct=48.0
+I (272) adc_battery_estimation: Use external ADC handle
+I (272) MCP: Add tool: self.disp.network
+I (272) Display: Power management not supported
+I (282) CustomDisplay: Initialize SPI
+I (592) CustomDisplay: Initialize LVGL library
+I (592) LVGL: Starting LVGL task
+I (592) CustomDisplay: RLCD init
+I (1172) CustomDisplay: ui start
+I (1182) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (1182) K3DIAG: bottom_bar h=0 text=''
+I (1222) waveshare_rlcd_4_2: art SPIFFS mounted at /art (partition "art")
+I (1222) waveshare_rlcd_4_2: art layer mounted at /art
+Name: asdfg
+Type: SDHC
+Speed: 20.00 MHz (limit: 20.00 MHz)
+Size: luMB
+CSD: ver=2, sector_size=512, capacity=30535680 read_bl_len=9
+SSR: bus_width=1
+I (1262) waveshare_rlcd_4_2: SD card mounted at /sdcard (SDMMC 1-bit)
+I (1272) waveshare_rlcd_4_2: SD ROUNDTRIP PASS path=/sdcard/SDTEST.TXT corr_id=kdp-1262 bytes=63 (write-read-compare-delete ok, 验后即删不驻留)
+I (1282) kidpal_rn: KidPal render node initialized (unified screen + layer stack)
+I (1282) waveshare_rlcd_4_2: battery_inject corr_id=kdp-1282 level=95 charging=0 vbat_ok=1
+I (1692) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=1126
+I (1692) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (1692) LcdDisplay: chrome_mid_sync mid_mode=0 front=0 reminder=0 force_hide=0 voice_live=0
+I (1702) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (1702) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+I (1712) LcdDisplay: chrome_front_in front=0 mid_mode=0 force_hide=0
+I (1722) LcdDisplay: chrome_mid_sync mid_mode=0 front=0 reminder=0 force_hide=0 voice_live=0
+I (1722) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (1732) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (2032) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (2032) StateMachine: State: unknown -> starting
+I (2032) I2S_IF: channel mode 2 bits:16/16 channel:4 mask:3
+I (2042) I2S_IF: TDM Mode 0 bits:16/16 channel:4 sample_rate:24000 mask:3
+I (2042) I2S_IF: channel mode 0 bits:16/16 channel:4 mask:3
+I (2072) I2S_IF: STD Mode 1 bits:32/32 channel:4 sample_rate:24000 mask:0
+I (2072) ES7210: Bits 16
+I (2082) ES7210: Enable ES7210_INPUT_MIC1
+I (2082) ES7210: Enable ES7210_INPUT_MIC2
+I (2092) ES7210: Enable ES7210_INPUT_MIC3
+I (2092) ES7210: Enable ES7210_INPUT_MIC4
+I (2092) ES7210: Enable TDM mode
+I (2102) ES7210: Unmuted
+I (2102) Adev_Codec: Open codec device OK
+I (2102) AudioCodec: Set input enable to true
+I (2102) I2S_IF: Mode 0 need extend bits 64 to 32
+I (2102) I2S_IF: channel mode 0 bits:16/32 channel:2 mask:1
+I (2112) I2S_IF: STD Mode 1 bits:16/32 channel:2 sample_rate:24000 mask:1
+I (2132) Adev_Codec: Open codec device OK
+I (2132) AudioCodec: Set output enable to true
+I (2132) AudioCodec: Audio codec started
+I (2132) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (2142) OpusResampler: Resampler configured with input sample rate 24000 and output sample rate 16000
+I (2152) MCP: Add tool: self.get_device_status
+I (2152) MCP: Add tool: self.audio_speaker.set_volume
+I (2162) MCP: Add tool: kidpal/display
+I (2162) MCP: Add tool: kidpal/alert
+I (2162) MCP: Add tool: self.screen.set_theme
+I (2172) MCP: Add tool: self.get_system_info [user]
+I (2172) MCP: Add tool: self.reboot [user]
+I (2182) MCP: Add tool: self.upgrade_firmware [user]
+I (2182) MCP: Add tool: self.screen.get_info [user]
+I (2192) MCP: Add tool: self.screen.snapshot [user]
+I (2192) MCP: Add tool: self.screen.preview_image [user]
+I (2202) Assets: The storage free size is 21440 KB
+I (2202) Assets: The partition size is 8192 KB
+I (2422) Assets: The checksum calculation time is 217 ms
+I (2422) MCP: Add tool: self.assets.set_download_url [user]
+I (2422) WifiManager: Initializing...
+I (2432) pp: pp rom version: e7ae62f
+I (2432) net80211: net80211 rom version: e7ae62f
+I (2442) wifi:wifi driver task: 3fce64c4, prio:23, stack:6144, core=0
+I (2442) wifi:wifi firmware version: 14da9b7
+I (2442) wifi:wifi certification version: v7.0
+I (2452) wifi:config NVS flash: disabled
+I (2452) wifi:config nano formatting: enabled
+I (2462) wifi:Init data frame dynamic rx buffer num: 6
+I (2462) wifi:Init dynamic rx mgmt buffer num: 5
+I (2462) wifi:Init management short buffer num: 32
+I (2472) wifi:Init dynamic tx buffer num: 32
+I (2472) wifi:Init static tx FG buffer num: 2
+I (2482) wifi:Init static rx buffer size: 1600
+I (2482) wifi:Init static rx buffer num: 3
+I (2482) wifi:Init dynamic rx buffer num: 6
+I (2492) wifi_init: rx ba win: 3
+I (2492) wifi_init: accept mbox: 6
+I (2492) wifi_init: tcpip mbox: 16
+I (2502) wifi_init: udp mbox: 6
+I (2502) wifi_init: tcp mbox: 6
+I (2502) wifi_init: tcp tx win: 5760
+I (2512) wifi_init: tcp rx win: 5760
+I (2512) wifi_init: tcp mss: 1440
+I (2512) WifiManager: Initialized
+I (2522) WifiBoard: Starting WiFi connection attempt
+I (2522) WifiManager: Starting station
+I (2532) phy_init: phy_version 701,f4f1da3a,Mar  3 2025,15:50:10
+I (2572) wifi:mode : sta (58:e6:c5:72:0c:bc)
+I (2572) wifi:enable tsf
+I (2582) WifiBoard: WiFi scanning
+I (3152) AudioService: esp_timer task stack HWM: 7248 words (stack 8192 bytes)
+I (4992) WifiStation: Found AP: 701, BSSID: a2:7b:52:84:30:ba, RSSI: -45, Channel: 11, Authmode: 3
+I (4992) WifiBoard: WiFi connecting to 701
+W (4992) wifi:Password length matches WPA2 standards, authmode threshold changes from OPEN to WPA2
+I (6282) wifi:new:<11,0>, old:<1,0>, ap:<255,255>, sta:<11,0>, prof:1, snd_ch_cfg:0x0
+I (6282) wifi:state: init -> auth (0xb0)
+I (6292) wifi:state: auth -> assoc (0x0)
+I (6302) wifi:state: assoc -> run (0x10)
+I (6322) wifi:connected with 701, aid = 1, channel 11, BW20, bssid = a2:7b:52:84:30:ba
+I (6322) wifi:security: WPA2-PSK, phy: bgn, rssi: -46
+I (6322) wifi:pm start, type: 1
+
+I (6322) wifi:dp: 1, bi: 102400, li: 10, scale listen interval from 1024000 us to 1024000 us
+I (6332) wifi:set rx beacon pti, rx_bcn_pti: 0, bcn_timeout: 25000, mt_pti: 0, mt_time: 10000
+I (6362) wifi:<ba-add>idx:0 (ifx:0, a2:7b:52:84:30:ba), tid:0, ssn:0, winSize:64
+I (6382) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (7422) esp_netif_handlers: sta ip: 192.168.3.36, mask: 255.255.255.0, gw: 192.168.3.1
+I (7422) WifiStation: Got IP: 192.168.3.36
+I (7422) WifiBoard: Connected to WiFi: 701
+I (7952) Application: Network connected
+I (7952) Application: sntp_time_sync corr_id=kdp-7952 started servers=ntp.aliyun.com,ntp1.aliyun.com,pool.ntp.org tz=CST-8
+I (7952) StateMachine: State: starting -> activating
+create static modelsI (7962) MODEL_LOADER: Successfully load srmodels
+I (7962) Assets: Refreshing display theme...
+I (7972) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (7982) Application: Activation done
+I (7982) SystemInfo: free sram: 99239 minimal sram: 90383
+I (7992) StateMachine: State: activating -> idle
+I (7992) AudioService: OpusHead: version=1, channels=1, sample_rate=16000
+I (8002) AudioService: decode queue <- packet #1: sr=16000 fd=60 payload=59 bytes
+I (8012) AudioService: Resampling audio from 16000 to 24000
+I (8012) OpusResampler: Resampler configured with input sample rate 16000 and output sample rate 24000
+I (8022) AudioService: decode frame #1: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (8032) AudioService: decode queue <- packet #2: sr=16000 fd=60 payload=146 bytes
+I (8042) AudioService: playback frame #1: 1440 samples -> codec (enabled=1)
+I (8042) AudioService: audio_output task stack HWM: 2656 words
+I (8052) AudioService: decode frame #2: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (8062) AudioService: decode queue <- packet #3: sr=16000 fd=60 payload=131 bytes
+I (8072) WifiStation: Setting WiFi power save level: LOW_POWER (MAX_MODEM)
+I (8072) AudioService: decode frame #3: sr=16000 fd=60 decoded=960 -> out 1440 samples @24000Hz
+I (8072) wifi:Set ps type: 2, coexist: 0
+
+I (8092) WS: Connecting to websocket server: wss://8.137.91.16:8000 with version: 1
+I (8092) WsTlsCa: wss cacert enabled: custom cert bundle path = main/certs/kidpal_ca.pem (esp_crt_bundle_attach trust face) — handshake verified against self-signed CA
+I (8102) AudioService: playback frame #2: 1440 samples -> codec (enabled=1)
+I (8122) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8122) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8132) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8142) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8142) AfeWakeWord: Model 0: wn9_nihaoxiaozhi_tts
+I (8152) AFE_CONFIG: Set WakeNet Model: wn9_nihaoxiaozhi_tts
+I (8162) AudioService: playback frame #3: 1440 samples -> codec (enabled=1)
+MC Quantized wakenet9: wakenet9l_tts1h8_你好小智_3_0.631_0.635, tigger:v4, mode:0, p:0, (Nov 11 2025 10:37:06)
+I (8232) AFE: AFE Version: (1MIC_V250121)
+I (8242) AFE: Input PCM Config: total 2 channels(1 microphone, 1 playback), sample rate:16000
+I (8242) AFE: AFE Pipeline: [input] -> |AEC(SR_HIGH_PERF)| ->  -> |VAD(WebRTC)| -> |WakeNet(wn9_nihaoxiaozhi_tts,)| -> [output]
+I (8262) AfeWakeWord: Audio detection task started, feed size: 512 fetch size: 512
+I (8272) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8272) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8282) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (8292) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (8572) esp-x509-crt-bundle: Certificate validated
+I (9002) Application: sntp_time_sync corr_id=kdp-9002 ok year=2026
+I (9142) MCP: story_list_dispatch corr_id=kdp-9142 items=1 counter=1 degrade=false
+I (9142) MCP: story_list_gate defer_front page=0 voice_front=0 restore=1
+I (9162) WS: Session ID: def522d2-ab6f-45bb-b986-c774e7b502da
+I (9262) Application: AutoConnect task exit, stack high water mark=4924
+I (9262) MCP: display_dispatch view=schedule corr_id=kdp-9262 courses=39 degrade=false
+I (9272) MCP: display_dispatch view=home corr_id=kdp-9252 upcoming_apply ok
+I (9772) kidpal_rn: render home 400x300 render_rc=0 state_rc=0 tick=9113
+I (9772) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (9772) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (9782) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (9792) kidpal_rn: chrome_front layer_top=2 force_hide=0 front=0
+I (9792) LcdDisplay: chrome_front_in front=0 mid_mode=2 force_hide=0
+I (9802) LcdDisplay: chrome_mid_sync mid_mode=2 front=0 reminder=0 force_hide=0 voice_live=0
+I (9802) LcdDisplay: chrome_mid_sync voice_page hidden readback=1 force_hide=0
+I (9822) LcdDisplay: KEYBAR ovl=0 page=0 substate=-1 left=说话 right=翻页
+I (9822) kidpal_rn: show_home: LOCAL_PAGE front (layer top=2)
+I (10612) WifiStation: Setting WiFi power save level: PERFORMANCE (NONE)
+I (10612) wifi:Set ps type: 0, coexist: 0
+
+W (10612) Application: Server sample rate 16000 does not match device output sample rate 24000, resampling may cause distortion
+I (10622) MCP: schedule_grid_restore corr_id=kdp-9262 courses=39 cached=39
+I (17192) SystemInfo: free sram: 73835 minimal sram: 50359
+I (24152) I2S_IF: Pending out channel for in channel running
+I (24152) AudioCodec: Set output enable to false
