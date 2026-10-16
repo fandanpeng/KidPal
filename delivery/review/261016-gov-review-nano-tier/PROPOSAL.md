@@ -300,3 +300,31 @@ verdict: BLOCK(F1,F2)
 ---
 
 **起草注记（非判官区）**：§5 第 1 条 preflight 实跑结果——R1 修订后复跑（2026-10-16，`node .claude/scripts/landing-fidelity-check.mjs --preflight delivery/review/261016-gov-review-nano-tier/PROPOSAL.md`）：`ok:true`、`section2BodyFound:true`、`findings:[]`、`advisories:[]`、`anchorCount:11`，anchorUnion 成员名单 = `.claude/agents/fixer.md`、`.claude/agents/planner.md`、`.claude/commands/triage-change.md`、`.claude/references/architect-operating-model.md`、`.claude/references/change-triage.md`、`.claude/references/dev-loop.md`、`.claude/references/task-intake-and-slicing.md`、`.claude/scripts/firmware-build-check.mjs`、`.claude/scripts/taskpackage-required-check.mjs`、`.claude/skills/kidpal-pod-launch-prep/SKILL.md`、`.claude/verify-gates.json`；4 个条件锚（`.claude/agents/architect.md`、`.claude/scripts/closeout-check.mjs`、`AGENTS.md`、`docs/DEV-GOVERNANCE.md`）按 parser 条件锚裁剪语义不入并集（设计行为，非漏锚），定稿义务见 §5 第 1 条末句。（R1 修订：判官 BLOCK(F1,F2) + 6 条全修——F1 补 :330 acceptanceTestsFile 豁免与 T2 四字段/总括句、F2 改写 10c 效力声明、F3 补 triage-change.md:26、F4 裁扩 launch-prep skill 并加锚、F5 承接 planner.md:53 例外、F6 Status 头改主路径、F7 _doc 同步注记、F8 行号校正为 :24-28/:30-34/:35-39。）
+
+### R2 - 2026-10-16 - architect
+
+**轮次焦点**：R1 八条 findings 修订到位性逐条核验 + 修订引入的新矛盾扫描；R1 已亲核且未被修订触动的引据不重跑。
+
+**R1 findings 逐条核验**：
+
+- **F1 修订到位**。T5 现文显式列「**免 :330 行 `acceptanceTestsFile` 数组非空必填**」并补「nano 包不依赖 acceptanceTestsFile 判 finalize（直接按 nano profile 全量校验）」；T2 不可省清单补齐 `deliveryImpact` / `planningImpact` / `contractRefs` / `docRefs` 四字段 + 总括句「未在下方豁免清单显式列名的闸必填字段（taskpackage-required-check.mjs:326 与 :330 两必填行）一律照 full 判据」。判官亲核两必填行实际内容：:326 for 循环清单 = `changeId/subsystem/story/redBaselineCommand/redBaselineResult/deliveryImpact/planningImpact/riskTier`；:330 = `acceptance/acceptanceTestsFile/exitCriteria/contractRefs/docRefs/sourceRefs/gateProfile`——T5 豁免点名（redBaseline×2 + acceptanceTestsFile）与两行未豁免字段集合对得上，T2 不可省清单与未豁免字段一一对应，总括句兜底完备：按 T5 字面落地时合法 nano 包（acceptance 恰一条 suiteGate、acceptanceTestsFile 缺席、无验收文件）不再在 :330 红，亦不再经 :526 isFinalizedState 代理触发 input-brief 在场检查与 AC 回引齿。contractRefs/docRefs 的「无契约命中时按既有口径填契约面引用或显式说明」措辞与闸行为（仅查非空数组）相容。
+- **F2 T3 主体改写到位，但第二载体残留（见 R2-F1）**。T3 10c 效力声明原文已重写为「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；本复核即 nano 行为验收判分位，PASS 为 Step 11 前置」，与 10b advisory 效力的辨析（「有意不同」+「名为 ARCH-ADVISORY 仅指派发通道复用」）清楚。全 PROPOSAL grep 复证：T 段生效措辞无「不构成通过判据」残留（:107 为引述辨析、:288 为 R1 append-only 记录，均非生效措辞）。**T6 镜像句未同步，见 R2-F1。**
+- **F3 修订到位**。T4 证据补 ：26（「呈现 architect 的四档裁决——判官 F3 补漏，R1 修订复跑 grep 复证 4 处命中」），改法范围扩为「description 与 ：13、:22、:26」，§3 sweep 行同步「:2/:13/:22/:26 四处」。判官亲核 `triage-change.md` 四档提法实为 ：2/:13/:22/:26 四处，与修订覆盖集一致。
+- **F4 修订到位**。处置 = 扩 skill 对称，四处落位齐全：landing-manifest 加 `.claude/skills/kidpal-pod-launch-prep/SKILL.md`（manifest :24）、§2 T4 改法（3b 触发条件扩 `rigor ∈ {lite, nano}` + 步骤 4 头注 lite/nano 同步）、§3 sweep 加 G2 skills 行、§5 第 2 条加 `grep -c "nano" SKILL.md` 断言。T1 判档判注义务已立（「host 齿可闭环」确认，明示 launch 半边见 T4、verify 半边见 T5）。判官亲核比照对象与倒挂论证：`SKILL.md:77-84` 3b 触发 = `rigor=lite` 且步骤 4 头注「lite 包新树：整步骤后置真机轮前」、`change-triage.md:108` lite 判注义务原文在场（T1 比照同构成立）、`verify-gates.json:58` `defer.whenRigor:["lite"]`——lite 两半皆享后置，nano 更轻却两半皆无 = 倒挂成立，扩 skill 对称处置逻辑自洽。
+- **F5 修订到位**。T3「另立显式例外承接」段载明 planner.md:53 原句与例外括注措辞（「`rigor=nano` 档为显式例外：整组 = 恰一条 suiteGate 条目…」）；planner.md:53 原句「`acceptance[]` 必须承载行为决策，不允许整组只有结构条目」亲核在场。
+- **F6 修订到位**。Status 头 :5 现文「**review 轨**：Track B 主路径（机器面恒 Track B，**非**瘦制品轻路径——制品四件 + retro 照常，不误套轻路径 retro 豁免…）」。
+- **F7 修订到位**。T5 verify-gates.json 落地注记载明 `_doc` 两处（「:36 头注数组内、:59 firmware-build 条目 `_doc` 字段」）；判官亲核两处实际内容（:36「rigor=lite 包后置 final 相位——」、:59「rigor=lite 包 scoped 相位后置到 final…」）与注记吻合，只改措辞不动判定语义的边界声明在场。
+- **F8 修订到位**。T1 证据校正为 :24-28/:30-34/:35-39；判官亲核 auxbar taskpackage.json：AB-A4 结构对象 :24-28、AB-A6 :30-34、AB-A7 :35-39，三段行号实。
+
+**新矛盾扫描 findings**：
+
+- **R2-F1（BLOCKING）· T6 镜像句「效力声明与 1g/10b 同款」与 T3 改写后 10c 声明自相矛盾（R1 F2 修订未覆盖其第二载体）**：PROPOSAL T6 改法现文「…只读 + 回执文本、不落盘、不改任何文件；**效力声明与 1g/10b 同款**）」，而 T3 已钉死 10c 声明与 10b advisory 效力**有意不同**。1g/10b 效力声明尾句原文亲核 = planner.md:49「不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据」、planner.md:84「…不构成通过判据；fixer 可拿证据反驳…」——若 OQ1 裁 (a) 按 T6 字面落地，architect.md 镜像段会把 10b 的「不构成通过判据」写成 10c 的效力声明 = R1 F2 点名的「验收权威自我否定、可被援引为跳过判分的口实」在第二载体原样回植；且 PROPOSAL 自身 T3「有意不同」与 T6「同款」并存，FROZEN 文本内部矛盾（本批 T6 根因自述「两处缺一…必有一个过期」恰被本句自证）。修法方向：T6 镜像句改为「效力声明 = T3 Step 10c 改写后原文（与 1g/10b 有意不同）」或直引同一声明原文，两落点单源。升级 human：否——修法唯一且机械，无方向分叉。
+- **R2-F2（NIT）· §5 第 9 条 manifest 行数计数未随 F4 修订同步**：现文「`git diff --cached --stat` 对照 landing-manifest 14 行」，但 F4 修订 manifest 加 SKILL.md 后围栏块现为 15 条目（判官亲核 manifest :13-27 = 15 行 = 11 必选 + 4 条件锚，与 §5 第 1 条 `anchorCount:11` 及起草注记一致；R1 亲核留痕的「14 行 = 10 必选 + 4 条件」系修订前时点快照，append-only 不回改）。修法方向：「14 行」→「15 行」，或改写为「对照 landing-manifest 条目集（11 必选 + 4 条件锚按 OQ 裁断裁剪）」防行数再漂。
+
+**锚一致性亲核**：判官亲跑 `node .claude/scripts/landing-fidelity-check.mjs --preflight delivery/review/261016-gov-review-nano-tier/PROPOSAL.md` = `ok:true` ∧ `findings:[]` ∧ `advisories:[]` ∧ `section2BodyFound:true` ∧ `anchorCount:11`，anchorUnion 成员名单与起草注记逐 token 一致；manifest 围栏块 15 行 = 11 必选 + 4 条件锚，一致。
+
+**判档与升级（只升不降）**：判档不变——Track B 主路径全件（R1 判档结论的触面集未被修订扩出边界，SKILL.md 属 G2 skills 原本就在机器面集合内）；Track A 段判定维持不升级（R2-F1/R2-F2 均为实现层文本修订，无方向级分叉）。
+
+**亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① `taskpackage-required-check.mjs:326/:330` 两必填行字段清单 Read 亲核（见 F1 条）；② `triage-change.md` 全文 Read——四档提法 :2（description「判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）」）、:13（「照旧判四档」）、:22（「判四档 + 出 reviewed plan」）、:26（「呈现 architect 的四档裁决」）四处实；③ `SKILL.md:77-84` Read——3b 标题「lite 快路径（`rigor=lite` 包…）」、触发句、步骤 4 头注「lite 包新树：整步骤后置真机轮前」实；④ `change-triage.md:108` Grep——lite 判注义务「host 齿可闭环」原文实；⑤ `verify-gates.json:36/:58/:59` Read——头注数组内「rigor=lite 包后置 final 相位」、firmware-build `defer.whenRigor:["lite"]`、`_doc`「rigor=lite 包 scoped 相位后置到 final」实；⑥ `planner.md:49/:53/:84` Read——1g 效力声明尾句「不构成通过判据」、Step 5 「不允许整组只有结构条目」、10b 效力声明原文实；⑦ auxbar `taskpackage.json:24-39` Read——三条 kind:structural 对象行号 :24-28/:30-34/:35-39 实；⑧ preflight 实跑输出见上「锚一致性亲核」；⑨ PROPOSAL v0.1→v0.2 全量 diff（git diff abb769c d4b39e1）通读——修订范围与起草注记自述一致，无夹带改动；T6 :156 与 §5 第 9 条 :262 的两处残留即 diff 后仍存于 v0.2 的原文。
+
+verdict: BLOCK(R2-F1)
