@@ -24,12 +24,12 @@
     {
       "id": "SD-A5",
       "kind": "structural",
-      "note": "SD-A5: 真机插卡（live-manual 停门条目——taskpackage-required-check kind 闭集只支持 structural，live-manual 口径由 note 语义承载、豁免判定同 AB-A7 261015 先例，不计 runner 通过面，不落 C 齿，AB-A7 261015 先例口径）——启动日志见 SD 卡信息打印 + 挂载成功；写-读-删 roundtrip 8.3 探针文件 /sdcard/SDTEST.TXT 读回与写入一致、验后即删不驻留（决策 24 介质禁令）；顺带复核 SD 三脚（CLK38/CMD21/D039）与原理图一致销 GPIO21 疑问。host 面转绿后停门等 human，不自行烧录"
+      "note": "SD-A5: 真机有卡轮——已执行 PASS（2026-10-16 真机门停等点第 2 次接续；human-decision 0263a7a3；取证日志 C:/tmp/sd-boot-a5b.log，落仓副本 device-round-sd-a5-boot.log）。观察项：① 上电（插卡）启动日志见 SD 卡信息打印（sdmmc_card_print_info 输出「Name: asdfg / Type: SDHC」+「CSD: ver=2, sector_size=512, capacity=30535680」）+ 挂载成功（「SD card mounted at /sdcard (SDMMC 1-bit)」）；② 经板级入口完成写-读-删 roundtrip：8.3 探针文件 /sdcard/SDTEST.TXT 读回与写入一致、验后即删不驻留（决策 24 介质禁令）——真机兑现行「SD ROUNDTRIP PASS path=/sdcard/SDTEST.TXT corr_id=kdp-1262 bytes=63」；③ 修订 2026-10-16（真机门停等点第 2 次接续）：原理图三根脚（CLK38/CMD21/D039）目视核对未单独执行——改由「config.h 宏取值 + 真机挂载成功」实证反证（真机 mount 成功即三脚接线正确，销 GPIO21 历史疑问）。不计 runner 通过面、不落 C 齿；kind=structural 闭集口径由 note 语义承载（live-manual 口径同 AB-A7 261015 先例）"
     },
     {
       "id": "SD-A6",
       "kind": "structural",
-      "note": "SD-A6: 真机无卡（live-manual 停门条目——taskpackage-required-check kind 闭集只支持 structural，live-manual 口径由 note 语义承载、豁免判定同 AB-A7 261015 先例，同上口径）——正常启动进主界面（降级不崩不 panic）+ 启动日志见降级 WARN（s_sd_mounted=false 路径 ESP_LOGW 输出）+ KEY 发起会话冒烟至少一次（语音主链路不受影响）"
+      "note": "SD-A6: 真机无卡轮——本机不可执行豁免 + 结构性证据替代（human 裁定 2026-10-16；human-decision 416e5c42；kind=structural 闭集口径同上，豁免判定先例同 AB-A7 261015）。豁免事由：卡永久在位、无卡态在本机不可达（human 原话『不好取，不取了，以后也不会拿出来』）。替代证据口径（代码面静态结构断言，非运行时真机观察——明确不冒充真机观察）：① 降级分支 WITHOUT_ABORT 不 panic 的代码面断言，由 SD-A3 承载（ESP_ERROR_CHECK_WITHOUT_ABORT 在世 + 裸 ESP_ERROR_CHECK( panic 形态计数=0 负向齿 + s_sd_mounted 与 false 同行降级置假 + ESP_LOGW WARN 继续不静默）；② 现有 host/结构齿覆盖面 = SD-A3（失败降级路径结构齿）+ SD-A4（板级查询入口读标志观察锚）。覆盖映射与差集：原三观察项中「正常启动进主界面（降级不崩不阻断启动）」由 ① panic 负向齿静态担保、「启动日志见降级 WARN」由 SD-A3 ESP_LOGW 结构齿担保、「KEY 发起会话冒烟（语音主链路不受影响）」本机不可得、无结构齿承载——如实列为覆盖面差集（去向 = Review Packet 未覆盖面申报）。真机无卡实测本机不可得，本项不表述为真机已验证，不落 C 齿"
     },
     {
       "id": "SD-A3-GATE",

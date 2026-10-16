@@ -229,7 +229,7 @@
 | 音频 | ES8311 codec（出）+ ES7210 ADC 双麦阵列（入） | AEC 用播放信号做参考；MX1.25 扬声器接口 |
 | RTC | PCF85063（I2C）+ 独立备用电池座 | 备用电池座**仅支持 PH1.0 可充电电池**（不可装纽扣锂原电池） |
 | 传感器 | SHTC3 温湿度（I2C） | 仅本地直读上首页（云端记录不做） |
-| 存储 | 16MB Flash 分区（assets/art 分区）+ Micro SD 槽 | **SD 槽固件未接入**（资产走内部 Flash SPIFFS art 分区）；I2C 四器件（ES8311/ES7210/RTC/SHTC3）共享总线 |
+| 存储 | 16MB Flash 分区（assets/art 分区）+ Micro SD 槽 | **SD 槽固件已接入**（SDMMC 1-bit 挂载 `/sdcard`，能力就绪 2026-10-16，261016-sd-card-mount；业务数据不落板、决策 24 介质禁令不变）；资产走内部 Flash SPIFFS art 分区；I2C 四器件（ES8311/ES7210/RTC/SHTC3）共享总线 |
 | 电池 | 18650 + 充放电管理（CHG/WRN 指示灯） | ADC 测电量；⚠️【修复项】固件三处未接线（板类 ADC 死成员、无 GetBatteryLevel override、渲染无注入缝），真机恒显满电 |
 
 #### 5.3.2 云端拓扑（阿里云成都 ECS 8.137.91.16）

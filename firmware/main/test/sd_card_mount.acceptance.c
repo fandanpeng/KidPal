@@ -62,9 +62,15 @@
  *       定义在世且读 s_sd_mounted 标志（定义窗内 s_sd_mounted + return 在世——
  *       禁常量真值 stub）。
  *
- *   [5] live-manual 停门条目（不计入 runner 通过面, 真机轮 human 持板; 形态照
- *       AB-A7 261015-p1-auxbar-style-fix 先例——真机轮 live-manual structural
- *       豁免, 不落 C 齿; 见 coverage map SD-A5/SD-A6）。
+ *   [5] live-manual 条目（不计入 runner 通过面; 见 coverage map SD-A5/SD-A6）:
+ *       - SD-A5 真机有卡轮 = **已执行 PASS**（2026-10-16 真机门停等点第 2 次接续;
+ *         human-decision 0263a7a3; 取证日志 C:/tmp/sd-boot-a5b.log）。原 AB-A7 先例
+ *         口径「真机轮 human 持板、不落 C 齿」对 SD-A5 已兑现完成。
+ *       - SD-A6 真机无卡轮 = **本机不可执行豁免 + 结构性证据替代**（human 裁定
+ *         2026-10-16; human-decision 416e5c42）: 卡永久在位、无卡态在本机不可达
+ *         （human 原话「不好取，不取了，以后也不会拿出来」）→ 替代证据性质 =
+ *         **代码面静态结构断言, 非运行时真机观察**（明确不冒充真机观察）, 由 SD-A3 +
+ *         SD-A4 承载, 不落 C 齿（替代证据口径逐条见 coverage map SD-A6 行）。
  *
  *   [6] Builder FIRST ACTION（本文件进 host runner 的唯一前置; 接线行**不在
  *       acceptance-author 写权内**, scope-map 分权——TaskPackage changeManifest
@@ -89,19 +95,31 @@
  *   coverage: SD-A3 -- 失败降级路径六件（WITHOUT_ABORT + panic 禁令 + 返回码/
  *             句柄双检 + 降级置假 + WARN 继续 + 成功置真与卡信息打印）（test 3）
  *   coverage: SD-A4 -- 板级查询入口 SdCardMounted 读标志观察锚（test 4）
- *   coverage: SD-A5 -- 真机轮 live-manual structural 豁免（AB-A7 先例口径, 不计
- *             入 runner 通过面）, 不落 C 齿: human 持板——① 上电（**插卡**）启动
- *             日志见 SD 卡信息打印（sdmmc_card_print_info 输出）+ 挂载成功; ② 经
- *             板级入口完成写-读-删 roundtrip: 8.3 探针文件 /sdcard/SDTEST.TXT,
- *             写入内容与读回一致, 验后即删、不驻留（决策 24 介质禁令——临时测试
- *             探针非业务数据落板）; ③ 顺带复核 SD 三根脚（CLK38/CMD21/D039）与
- *             原理图一致（销 GPIO21 历史疑问）。host 面转绿后停该门等 human,
- *             不自行烧录。
- *   coverage: SD-A6 -- 真机轮 live-manual structural 豁免（同上口径, 不落 C 齿）:
- *             human 持板——① 上电（**无卡**）正常启动进主界面（降级不崩、不 panic、
- *             不阻断启动）; ② 启动日志见降级 WARN（s_sd_mounted=false 路径的
- *             ESP_LOGW 输出）; ③ 语音主链路不受影响: 至少完成一次 KEY 发起会话
- *             冒烟或等效确认。
+ *   coverage: SD-A5 -- 真机有卡轮 **已执行 PASS**（2026-10-16 真机门停等点第 2 次
+ *             接续; human-decision 0263a7a3; 取证日志 C:/tmp/sd-boot-a5b.log）, 不计
+ *             入 runner 通过面: human 持板——① 上电（**插卡**）启动日志见 SD 卡信息
+ *             打印（sdmmc_card_print_info 输出: "Name: asdfg / Type: SDHC" + "CSD:
+ *             ver=2, sector_size=512, capacity=30535680"）+ 挂载成功（"SD card
+ *             mounted at /sdcard (SDMMC 1-bit)"）; ② 经板级入口完成写-读-删
+ *             roundtrip: 8.3 探针文件 /sdcard/SDTEST.TXT, 写入内容与读回一致, 验后
+ *             即删、不驻留（决策 24 介质禁令——临时测试探针非业务数据落板）; 真机
+ *             兑现行 = "SD ROUNDTRIP PASS path=/sdcard/SDTEST.TXT corr_id=kdp-1262
+ *             bytes=63"; ③ 修订 2026-10-16（真机门停等点第 2 次接续）: 原理图三根脚
+ *             （CLK38/CMD21/D039）目视核对**未单独执行**——改由「config.h 宏取值 +
+ *             真机挂载成功」实证反证（真机 mount 成功即 CLK38/CMD21/D039 接线正确,
+ *             销 GPIO21 历史疑问）。
+ *   coverage: SD-A6 -- **本机不可执行豁免 + 结构性证据替代**（human 裁定 2026-10-16;
+ *             human-decision 416e5c42）, 不落 C 齿: 真机无卡态在本机不可达（卡永久
+ *             在位, human 原话「不好取，不取了，以后也不会拿出来」）——替代证据性质
+ *             = **代码面静态结构断言, 非运行时真机观察**（明确不冒充真机观察）: 降级
+ *             分支 ESP_ERROR_CHECK_WITHOUT_ABORT 不 panic 的代码面断言由本文件 test 3 /
+ *             SD-A3 承载（WITHOUT_ABORT 在世 + 裸 ESP_ERROR_CHECK( panic 形态计数 = 0
+ *             负向齿 + s_sd_mounted 与 false 同行降级置假 + ESP_LOGW WARN 继续不静默）;
+ *             现有 host/结构齿覆盖面 = SD-A3（失败降级路径结构齿）+ SD-A4（板级查询
+ *             入口读标志观察锚）。真机观察面（**无卡**上电降级 WARN / 语音主链路不受
+ *             影响）本机不可得, 豁免事由见上; 原 live-manual 停门口径（human 持板）
+ *             对本条不再适用。修订 2026-10-16（真机门停等点第 2 次接续）: human 真机
+ *             轮裁定 → SD-A6 由 live-manual 停门改为本机不可执行豁免 + 结构性证据替代。
  *   coverage: A3（plan §验收方式）-- 设备编译闸: 非验收齿, 归 verify
  *             firmware-build 闸（VERIFY_FW_BUILD_REQUIRED=1, rigor=full 无 defer）,
  *             不落 C 齿、不占 acceptance 条目（intake 约束 3）。
@@ -797,4 +815,14 @@ TEST_CASE("SD 卡挂载查询入口观察锚: SdCardMounted 读标志 (SD-A4)",
  *               verify firmware-build 闸）。冻结落盘冒烟 = red-baseline 独立
  *               执行架实编 + 实跑（净 HEAD 设计态红形状逐齿核对, 红名 verbatim
  *               见交付报告）+ host 套件全量基线（既有齿零新增红判读）。
+ *   2026-10-16 修订（真机门停等点第 2 次接续; human 真机轮裁定 0263a7a3 SD-A5 PASS +
+ *               416e5c42 SD-A6 豁免）: **仅注释面措辞修订, C 齿逻辑零改动**（SD-A1~A4
+ *               断言字节不变）——[5] 节 + coverage map SD-A5/SD-A6 行改写: SD-A5 由
+ *               「真机轮 live-manual 停门」改记「已执行 PASS」（有卡轮兑现: 卡信息
+ *               打印 + /sdcard SDMMC 1-bit 挂载 + ROUNDTRIP PASS）, 子项③ 原理图
+ *               三根脚目视核对改实证反证形态（未单独执行）; SD-A6 由「真机轮
+ *               live-manual 停门」改「本机不可执行豁免 + 结构性证据替代」（卡永久
+ *               在位、无卡态本机不可达; 替代证据 = SD-A3/SD-A4 代码面静态结构断言,
+ *               明确不冒充真机观察）。SD-A5 判定 PASS 不变; 修订留痕逐条见 [5] 节与
+ *               coverage 行。
  * --------------------------------------------------------------------------- */

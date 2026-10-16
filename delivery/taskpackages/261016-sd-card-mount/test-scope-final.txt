@@ -1,0 +1,25 @@
+# test-scope-final —— 261016-sd-card-mount（final verify --scope-file 消费，round 7）
+# 圈定方法（integrator 2026-10-16，Step 4 两步走之①；§Review Packet 同源）：
+#   detect_changes（per-Pod 专属图索引 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch，base=main，
+#     merge_base=bd4beac，inbound depth=2）= 33 seed symbols / 1 impacted：
+#     firmware/main/test/sd_card_mount.acceptance.c（新冻结验收模块，hop 1）——零跨模块越界、
+#     零 server 面、零预期外符号；per-Pod 图索引可用（search_graph/trace_path 均实测在世），
+#     正常圈定路径、非降级。
+#   ∪ taskpackage.json impactedTestsSeed 两件：sd_card_mount.acceptance.c（new-frozen-acceptance-file）
+#     + host_app/main/CMakeLists.txt（wiring-add）。
+#   ∪ blast radius 映射测试：同上游件（新验收模块）。
+#   共享 seam 判据：本包改动面 = 板级 config.h 引脚宏 + 板级 .cc（InitializeSdCard /
+#     RunBootRoundtripProbe / SdCardMounted / s_sd_mounted）——板级 .cc 与 config.h **不入
+#     host 编译面**（redBaselineResult 实证：host 套件零新增红、板器专有编译单元），host 面
+#     唯一改动 = 新验收件接线一行 → host 编译面无既有测试受影响，无共享 seam 测试纳入。
+#   trace_path 抽查：InitializeSdCard inbound callers_total=1（CustomBoard 构造函数，同文件
+#     同模块）——无跨子系统、无 wire 面调用边，与 crossEnd.exempt 一致。
+# 语义铁律留痕：范围 = 影响面圈定清单（非全量、非本包档缩水）；floor = 本包 acceptanceTestsFile
+#   ∪ blast radius（本包无对端包，floor = 本清单）。圈定降级 = 无。设备编译面（firmware-build
+#   闸）不在本清单（结构闸、timing=scoped，恒跑，非 scope-file 圈定对象）；真机轮（SD-A5
+#   已 PASS / SD-A6 豁免）= human 前置，不在本清单。
+#
+# ── firmware 冻结验收件（acceptanceTestsFile + blast radius hop1，最终求交面）──
+firmware/main/test/sd_card_mount.acceptance.c
+# ── 接线观察面（wiring-add 种子；acceptance 闸 fwAccFiles 过滤不含非验收件，列此留痕）──
+firmware/main/test/host_app/main/CMakeLists.txt
