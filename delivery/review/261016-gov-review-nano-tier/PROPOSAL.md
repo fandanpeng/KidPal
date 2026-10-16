@@ -1,6 +1,6 @@
 # PROPOSAL · 261016-gov-review-nano-tier
 
-> **状态：DRAFT v0.2 · 2026-10-16 · R1 否回 8 条 findings 全修，待 architect-reviewer 复审**
+> **状态：DRAFT v0.3 · 2026-10-16 · R2 否回 2 条 findings 全修，待 architect-reviewer 复审**
 > **承载 ARQ**：无在册 ARQ 直承（human 2026-10-16 两轮口述直接发起，原话逐字在主线程派发记录）。同根先例 = 2026-10-14 loop-retro T1「包元数据/冻结件形状税第四波」（`delivery/retro/2026-10-14-loop-retro.md:16-20`；其关联条目 ARQ-260907-taskpackage-format-expectations-frontload 治的是起包格式期望前置，与本批「整档减重」不同根，不回写该行）。
 > **review 轨**：Track B 主路径（机器面恒 Track B，**非**瘦制品轻路径——制品四件 + retro 照常，不误套轻路径 retro 豁免；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节、`AGENTS.md`「治理路由」节、`.claude/references/gov-change.md`「轻路径判据」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -153,7 +153,7 @@ docs/DEV-GOVERNANCE.md
 
 **根因**：职责的机读路由信号（description / When to Use）住在 agent def；派发契约住 planner.md。两处缺一，orchestrator 路由与角色自我认知必有一个过期。
 
-**改法**（**条件锚 = §4 OQ1 裁 (a) 才动**）：architect.md 的 When to Use 加一档「dev-loop nano 档事后白盒复核（planner 按 Step 10c 派：fixer 落补丁后拿 plan.md 意图定义对 actual diff 复核三问 + detect_changes 收口半径记录；只读 + 回执文本、不落盘、不改任何文件；效力声明与 1g/10b 同款）」，职责段同步镜像，:26 triage 段「判四档」→「判五档」同步。Boundaries / Write Scope 不动（复核只读 + planner 代落，写域零扩张）。
+**改法**（**条件锚 = §4 OQ1 裁 (a) 才动**）：architect.md 的 When to Use 加一档「dev-loop nano 档事后白盒复核（planner 按 Step 10c 派：fixer 落补丁后拿 plan.md 意图定义对 actual diff 复核三问 + detect_changes 收口半径记录；只读 + 回执文本、不落盘、不改任何文件；**效力声明引 T3 Step 10c 声明原文、逐字一致**——「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；本复核即 nano 行为验收判分位，PASS 为 Step 11 前置」，两落点单源）」，职责段同步镜像，:26 triage 段「判四档」→「判五档」同步。**禁止回植 1g/10b 的「不构成通过判据」尾句**——10c 是 nano 档验收权威本体（human 已裁②），自我否定的声明会把 R1 F2 的病从镜像段原样带回（R2-F1）。Boundaries / Write Scope 不动（复核只读 + planner 代落，写域零扩张）。
 
 目标文件：`.claude/agents/architect.md`（改 · 条件锚：OQ1 裁 (a) 才动；自改递归面，须 human 明示批准）
 
@@ -259,7 +259,7 @@ docs/DEV-GOVERNANCE.md
 6. **（post-commit）** `node .claude/hooks/verify.mjs --self-check` → exit 0 ∧ 既有 16 项不减（defer 机制回归，whenRigor 匹配逻辑零改动断言）。
 7. **（post-commit）** `node .claude/scripts/route-regression-check.mjs` → exit 0（triage-change command description 与 planner/fixer/〔条件〕architect def 改动后，必留路由信号不退化；基线 52 ok）。
 8. **（post-commit，OQ4 裁 (a) 才生效）** nano 形态夹具包（rigor:"nano" + 缺 whitebox-review.md）跑 `node .claude/scripts/closeout-check.mjs` → exit 0 ∧ advisories 含 whitebox-review 行（warn 级非 blocking 的机器证据）；夹具临时构造、例后清理，不污染 delivery/taskpackages。
-9. **（post-commit）** `git diff --cached --stat` 对照 landing-manifest 14 行（条件锚按 OQ 裁断裁剪后）：落地文件集 ≡ manifest 裁剪后集合（landing-fidelity 结构门同判据，本条为 landing 后人读复核位）。
+9. **（post-commit）** `git diff --cached --stat` 对照 landing-manifest 15 行（11 必选锚 + 4 条件锚，条件锚按 OQ 裁断裁剪后）：落地文件集 ≡ manifest 裁剪后集合（landing-fidelity 结构门同判据，本条为 landing 后人读复核位）。
 
 ## 6. 留根清单
 
