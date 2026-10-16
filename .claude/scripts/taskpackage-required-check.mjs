@@ -269,6 +269,13 @@ function selfCheck() {
   ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: ['firmware/main/../x'] }, () => null).length === 1, 'sc-manifest-traversal-red');
   ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: ['firmware/main/**', 'server/app/*.py'] }, () => null).length === 0, 'sc-manifest-globs-ok');
   ok(collectManifestErrors({ changeId: '260930-mf-probe', changeManifest: [] }, () => '2026-09-01').length === 0, 'sc-manifest-legacy-carveout');
+  // ── rigor=nano profile（261016-gov-review-nano-tier）：合法 nano 包过 / 缺 planRef 红 / acceptance 非单条 suiteGate 红 / proposal 来源红 / 非 nano 不触发 ──
+  const nanoBase = { rigor: 'nano', planRef: 'delivery/taskpackages/261016-nano-probe/plan.md', sourceType: 'human-ad-hoc', acceptance: [{ id: 'NP-A1', suiteGate: true }] };
+  ok(collectNanoErrors(nanoBase).length === 0, 'sc-nano-valid-ok');
+  ok(collectNanoErrors({ ...nanoBase, planRef: '' }).length === 1, 'sc-nano-missing-planref-red');
+  ok(collectNanoErrors({ ...nanoBase, acceptance: ['NP-A1 既有套件零新增红'] }).length === 1, 'sc-nano-non-suitegate-red');
+  ok(collectNanoErrors({ ...nanoBase, sourceType: 'proposal' }).length === 1, 'sc-nano-proposal-red');
+  ok(collectNanoErrors({ ...nanoBase, rigor: 'lite' }).length === 0, 'sc-nano-other-rigor-untouched');
   console.log(JSON.stringify({ selfCheck: 'taskpackage-required-check', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   process.exit(failCount === 0 ? 0 : 1);
 }
@@ -313,6 +320,31 @@ if (!explicitInvocation) {
   }
 }
 
+// ── rigor=nano profile（261016-gov-review-nano-tier FROZEN v1.1）──
+// nano = 无验收语义净增的实现面微改档：验收权威置换 = architect 白盒复核 + 既有套件零新增红（suiteGate）。
+// 故免 redBaselineCommand/Result、acceptanceTestsFile、input-brief 必填（mutationEvidence 本闸无对应齿，convention 面同免），
+// 换 planRef 必填 + acceptance 恰一条 {id, suiteGate:true} 纯形态 + sourceType ≠ proposal 三枚专属校验。
+function collectNanoErrors(taskPackage) {
+  const errs = [];
+  if (taskPackage.rigor !== 'nano') return errs;
+  if (!nonEmptyString(taskPackage.planRef)) {
+    errs.push('planRef(nano 必填：意图定义五件载体 = sibling plan.md，见 task-intake-and-slicing.md nano 小节)');
+  }
+  if (taskPackage.sourceType === 'proposal') {
+    errs.push("sourceType(nano 判据排除 proposal 来源——proposal 载荷 = 决策集、decisionCoverage 不豁免，升 Lite/Full)");
+  }
+  const acc = Array.isArray(taskPackage.acceptance) ? taskPackage.acceptance : [];
+  const e = acc.length === 1 ? acc[0] : null;
+  const ID_KEYS = ['id', 'acceptanceId', 'name'];
+  const keys = e && typeof e === 'object' ? Object.keys(e) : [];
+  if (!e || typeof e !== 'object' || e.suiteGate !== true
+    || !ID_KEYS.some((k) => nonEmptyString(e[k]))
+    || keys.some((k) => ![...ID_KEYS, 'suiteGate'].includes(k))) {
+    errs.push('acceptance(nano 形态 = 恰一条 {id, suiteGate:true} 纯形态——语义 = 既有套件零新增红；数量≠1 或夹带其它键即非 nano，升 Lite)');
+  }
+  return errs;
+}
+
 const missing = [];
 
 // ── origin 一等强键（上游溯源结构；DP / F-series）──
@@ -323,13 +355,22 @@ const hasSourceType = nonEmptyString(taskPackage.sourceType);
 // origin.type ∨ sourceType 至少一个存在（必填清单改：sourceType 不再无条件必填）
 if (!originType && !hasSourceType) missing.push('origin.type∨sourceType(at least one)');
 
-for (const field of ['changeId', 'subsystem', 'story', 'redBaselineCommand', 'redBaselineResult', 'deliveryImpact', 'planningImpact', 'riskTier']) {
+// rigor=nano（261016-gov-review-nano-tier）：红基线与验收件必填豁免（验收权威置换，见 collectNanoErrors 头注）。
+const isNanoProfile = taskPackage.rigor === 'nano';
+const requiredStringFields = ['changeId', 'subsystem', 'story', 'deliveryImpact', 'planningImpact', 'riskTier'];
+if (!isNanoProfile) requiredStringFields.push('redBaselineCommand', 'redBaselineResult');
+for (const field of requiredStringFields) {
   if (!nonEmptyString(taskPackage[field])) missing.push(field);
 }
 
-for (const field of ['acceptance', 'acceptanceTestsFile', 'exitCriteria', 'contractRefs', 'docRefs', 'sourceRefs', 'gateProfile']) {
+const requiredArrayFields = ['acceptance', 'exitCriteria', 'contractRefs', 'docRefs', 'sourceRefs', 'gateProfile'];
+if (!isNanoProfile) requiredArrayFields.push('acceptanceTestsFile');
+for (const field of requiredArrayFields) {
   if (!nonEmptyArray(taskPackage[field])) missing.push(field);
 }
+
+// nano 专属校验（planRef / sourceType / acceptance 纯形态；changeManifest 非空由下方 manifest 完备性齿对全档统一承载）
+missing.push(...collectNanoErrors(taskPackage));
 
 // ── acceptance[] 对象条目形状校验（260731 批 M-1/M-6：kind/suiteGate 一等豁免标记，非可选）──
 // 互斥 fail-loud：同条目同时标 kind:'structural' + suiteGate:true = 类别矛盾 → 红。
@@ -515,6 +556,8 @@ if (isProposalByType || isProposalByPath) {
 // ③ finalize 态单份 input-brief.md 在场（261015-gov-review-lite-fast-path T4：双份并单份）。
 // finalize 代理 = `acceptanceTestsFile` 非空，系既有约定（本闸上方对七数组无条件必填 + planner Step 8 同义）：
 // Draft 态本闸恒红、绿态仅 finalize 可达，故 ②③ 的分支条件恒有定义（PROPOSAL R1/E 节确认自洽）。
+// rigor=nano（261016-gov-review-nano-tier）：acceptanceTestsFile 已豁免、不作 finalize 代理——nano 包恒按 finalize 判
+//（crossEnd 二选一照填；input-brief 对 nano 豁免，见下方分支条件）。
 const CROSS_END_EXEMPT_MIN_CHARS = 12; // 对齐本闸 landsIn=dropped 的 reason 地板（防空破折号混关）
 const crossEnd = (taskPackage.crossEnd && typeof taskPackage.crossEnd === 'object') ? taskPackage.crossEnd : null;
 if (!crossEnd) {
@@ -523,7 +566,7 @@ if (!crossEnd) {
   missing.push('crossEnd.counterparts(must be an array; empty skeleton allowed at Draft)');
 }
 
-const isFinalizedState = nonEmptyArray(taskPackage.acceptanceTestsFile);
+const isFinalizedState = isNanoProfile ? true : nonEmptyArray(taskPackage.acceptanceTestsFile);
 if (isFinalizedState && crossEnd) {
   const counterparts = Array.isArray(crossEnd.counterparts) ? crossEnd.counterparts : [];
   for (const [i, entry] of counterparts.entries()) {
@@ -542,7 +585,7 @@ if (isFinalizedState && crossEnd) {
   }
 }
 
-if (isFinalizedState) {
+if (isFinalizedState && !isNanoProfile) {
   const tpDir = dirname(pathToTaskPackage);
   const briefPath = join(tpDir, 'input-brief.md');
   if (!existsSync(briefPath)) {

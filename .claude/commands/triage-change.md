@@ -1,5 +1,5 @@
 ---
-description: dev 侧变更分流前置门（对偶 /arch-change、/build-feature）。改 firmware/** 行为的变更开工前先过 architect 一次比例化 review：判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）→ 人类确认/改判路由 → reviewed plan 按成熟度就近落地（大 feature 落 delivery/workstreams/<ws>/PROPOSAL.md，小 feature/bug 落 delivery/taskpackages/<id>/plan.md）→ 报告下一步命令。
+description: dev 侧变更分流前置门（对偶 /arch-change、/build-feature）。改 firmware/** 行为的变更开工前先过 architect 一次比例化 review：判五档（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）→ 人类确认/改判路由 → reviewed plan 按成熟度就近落地（大 feature 落 delivery/workstreams/<ws>/PROPOSAL.md，小 feature/bug 落 delivery/taskpackages/<id>/plan.md）→ 报告下一步命令。
 argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "修复线索 SSE 重复行"，或一份 plan 文件路径>
 ---
 
@@ -10,7 +10,7 @@ argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "�
 
 - **门性质**：Part-2 **工程门 / bootstrap 临时信任门**（权威在 K9 §11），**不是业务门、不进 DEV-GOVERNANCE §5 六门清单**；与业务运行时 6 门无涉。
 - **你编排但落盘归你（主线程）**：判断归被你派发的 `architect`（只读+审+返回裁决，零写入）；**落盘归你这个主线程**（主线程不受 per-agent enforce-scope 限，dev-loop.md §4）。作者≠判官：architect 审+起草，FROZEN 归人类。
-- **四面探测（intake，程序 SSOT 见 `change-intake.md`）**：变更进来先做跨面探测——对照 requirements / architecture / contracts + debt 未结账 + governance 面逐面查触面事实（枚举以 SSOT 为准），主线程落盘 spine（触面 ≥2 时）；命中触面事实（触 `docs/contracts/**` 或跨系统结构性）→ 按 facePlan 把该变更的架构/契约面路由 `/arch-change` loop，实现面留本门分档，不再整单踢走；纯实现面变更 → 照旧判四档。
+- **四面探测（intake，程序 SSOT 见 `change-intake.md`）**：变更进来先做跨面探测——对照 requirements / architecture / contracts + debt 未结账 + governance 面逐面查触面事实（枚举以 SSOT 为准），主线程落盘 spine（触面 ≥2 时）；命中触面事实（触 `docs/contracts/**` 或跨系统结构性）→ 按 facePlan 把该变更的架构/契约面路由 `/arch-change` loop，实现面留本门分档，不再整单踢走；纯实现面变更 → 照旧判五档。
 
 本次输入 plan：
 
@@ -19,11 +19,11 @@ argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "�
 逐步执行，并在每一步显式说明「派给谁、为什么、期望产物」：
 
 1. **四面探测（intake）**：读 plan/idea，按 `change-intake.md` 程序做跨面探测——触面 ≥2 时主线程落盘 spine；命中触面事实（触 SSOT / 跨系统结构性）→ 按 facePlan 路由（架构/契约面走 `/arch-change` loop，本门继续承接实现面），不再整单踢走；纯实现面 → 继续。
-2. **派 architect 比例化 review**：派 `architect`（只读+审），按 `change-triage.md` 判四档 + 出 reviewed plan。architect **只审 + 返回**（同会话 return，非跨会话 prose），**不写任何文件**。
+2. **派 architect 比例化 review**：派 `architect`（只读+审），按 `change-triage.md` 判五档 + 出 reviewed plan。architect **只审 + 返回**（同会话 return，非跨会话 prose），**不写任何文件**。
    - 大 feature（③拆包）：实质单轮 review（findings 逐条 + 处置），生成 `delivery/workstreams/<ws>/review.md` 内容（findings + architect sign-off）。
    - 小 feature/bug（②单包）：快审（确认判据 + 路由裁决），裁决写进 `plan.md` frontmatter，不单独成件。
    - **逃生门（reviewer-first）**：review 中发现疑似触契约/spec/agent 定义/gate → **先派 `architect-reviewer` 四分类** → `ACCOMPANIES_SPEC_CHANGE`/`SPEC_CONTRACT_DRIFT`/`CONTRACT_CHANGE_REQUIRED` 转 `/arch-change` loop（契约变更 = 架构变更的一种；本门无权批准这些）。
-3. **人类触点①（确认/改判路由）**：用 AskUserQuestion 呈现 architect 的四档裁决，人类一句话确认或改判（如 Lite→Full）。**落盘前必须过这一关**——Lite/Full 是安全相关判断，architect 误判需人类 backstop。
+3. **人类触点①（确认/改判路由）**：用 AskUserQuestion 呈现 architect 的五档裁决，人类一句话确认或改判（如 Lite→Full）。**落盘前必须过这一关**——Lite/Full 是安全相关判断，architect 误判需人类 backstop。
 4. **主线程落盘（只搬运 architect 的 reviewed plan + 裁决，不改内容）**：按确认后的档位把 reviewed plan 落进它的家：
    - **③大 feature** → `delivery/workstreams/<ws>/PROPOSAL.md`（+ `review.md`），frontmatter `freezeState: pending-human`。**按 `docs/templates/WORKSTREAM-PROPOSAL.template.md`（三问 + 分型模板）起草**——业务目的清单 / `workType` 数组 / spec 关系标注三项硬项缺失，会在 portfolio-planner intake 被 fail-closed 打回（260912 拆包链 T1）。`delivery/workstreams/<ws>/` 由你（人类/主线程）创建——这是「设计权威落家」（对 ARQ-065/066 RTE 集权的有意放宽，见 change-triage.md §F4）；portfolio-planner 后续拆包时才建调度态。
    - **②单包** → `delivery/taskpackages/<id>/plan.md`，frontmatter 含 `rigor`/`riskTier`/`sourceType`/`reviewed-by`/`date`。**建包时按 `task-intake-and-slicing.md` §§ origin/changeId 创建 taskpackage.json + 填入 origin（`upstreamType`/`upstreamRef`/`upstreamFrozen`/`workstream`）+ 注入 `YYMMDD-` 日期前缀 changeId + 写 `planRef` 指回 sibling `plan.md`**（建包方职责经 reference 下达、经既有委派链承接；gov-review-devloop-artifact-lifecycle DP-5）。

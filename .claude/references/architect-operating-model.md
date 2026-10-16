@@ -64,7 +64,7 @@ Important platform rule: `architect-reviewer` is not planner-only. It is main-th
 
 **变更入口（261015 批元结构：每面一个 loop 入口）**：变更进来先分一问——**碰哪个面？**
 - **需求面** → `/requirement-change`；**架构+契约面**（`docs/contracts/**` / `docs/architecture.md`）→ `/arch-change`；**治理面**（`.claude/**` / 指令根 / gate）→ `/gov-change`——各面 loop 内 architect 起草、architect-reviewer 审稿，**不进** `/triage-change`。
-- **不碰事实源**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门：architect 做比例化 review、返回四档裁决（③拆包 / ②单包Full / ②单包Lite / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门；跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
+- **不碰事实源**（纯实现面 / docs 行为变更）→ 进 `/triage-change` dev 分流门：architect 做比例化 review、返回五档裁决（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门；跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 - **逃生门（reviewer-first）**：`/triage-change` review 中发现疑似触事实源 → 先派 `architect-reviewer` 四分类 → `CONTRACT_CHANGE_REQUIRED` / `SPEC_CONTRACT_DRIFT` / `ACCOMPANIES_SPEC_CHANGE` 转 `/arch-change`（契约变更 = 架构变更的一种；无人签门，合并过机械凭据闸）。
 
 **Discussion → Draft Authorship（261015 批统一 cast：起草归 architect，主线程四面纯编排）**：人 + 主 Agent 在主线程讨论出的方案要结晶成变更内容（PROPOSAL / spec 候选）时，**由主线程派 architect 起草**——主线程四面纯编排（派发 / 落地 / 状态翻转 / 记账），不起草变更内容；architect 是架构面与治理面变更的起草者。

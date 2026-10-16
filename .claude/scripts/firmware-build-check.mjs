@@ -56,13 +56,15 @@ function firmwarePresent() {
   return existsSync(FW_DIR) && (existsSync(join(FW_DIR, 'CMakeLists.txt')) || existsSync(join(FW_DIR, 'sdkconfig')));
 }
 
-// 纯决策（self-check 直调）：input = { deferred?, fwPresent, idfOk, required, probes? }
+// 纯决策（self-check 直调）：input = { deferred?, fwPresent, idfOk, required, probes?, deferReason? }
 function decide(input) {
   // deferred 臂（261015-gov-review-lite-fast-path T3）：VERIFY_GATE_DEFER=1 优先于一切（含 VERIFY_FW_BUILD_REQUIRED=1
   // 严格模式）——defer 是显式声明的不执行 + executor-skipped 机器标记（liftNotExecuted 上收），strict mode 治的是
   // 「工具链缺失时静默降级」，两者语义不同、顺序钉死为 defer > required。final 相位由 verify.mjs 硬判永不注入。
+  // reason 优先消费 VERIFY_GATE_DEFER_REASON（verify.mjs 注入、含真实 rigor 文案；261016-gov-review-nano-tier：
+  // whenRigor 扩 nano 后硬编码 lite 文案会假称 rigor），env 缺席回退现行硬编码。
   if (input.deferred) {
-    return { ok: true, phase: 'executor-skipped', reason: 'rigor=lite 包 scoped 相位后置（final 相位恒跑；261015-gov-review-lite-fast-path）' };
+    return { ok: true, phase: 'executor-skipped', reason: input.deferReason || 'rigor=lite 包 scoped 相位后置（final 相位恒跑；261015-gov-review-lite-fast-path）' };
   }
   if (!input.fwPresent) {
     return { ok: true, skip: true, reason: 'no-firmware-surface:firmware/ 未建（档 2 起步期合法）' };
@@ -101,7 +103,11 @@ function runSelfCheck() {
   ok('deferred-arm-executor-skipped', (() => {
     const d = decide({ deferred: true, fwPresent: true, idfOk: false, required: false });
     return d.ok === true && d.phase === 'executor-skipped' && d.reason.includes('rigor=lite');
-  })(), 'deferred → executor-skipped + reason 点名 rigor=lite');
+  })(), 'deferred → executor-skipped + deferReason 缺席回退硬编码（点名 rigor=lite）');
+  ok('deferred-arm-env-reason', (() => {
+    const d = decide({ deferred: true, fwPresent: true, idfOk: false, required: false, deferReason: 'rigor=nano 包 scoped 相位后置（final 相位恒跑；261015-gov-review-lite-fast-path）' });
+    return d.ok === true && d.phase === 'executor-skipped' && d.reason.includes('rigor=nano');
+  })(), 'deferReason 在场时 reason 取注入文案（含真实 rigor——261016-gov-review-nano-tier，防假称 lite）');
   ok('deferred-over-required-priority', decide({ deferred: true, fwPresent: true, idfOk: false, required: true }).phase === 'executor-skipped',
     'defer > required（严格模式被 defer 短路——显式声明的不执行优先）');
   const allOk = results.every((r) => r.ok);
@@ -120,7 +126,7 @@ if (isMain() && !process.argv.includes('--self-check')) {
   // defer 短路（261015-gov-review-lite-fast-path T3）：VERIFY_GATE_DEFER=1 优先于一切（含严格模式），
   // 短路先于工具链探测（hermetic——无 IDF 环境的机器亦可跑 defer 路径，不触发 probeToolchain）。
   if (process.env.VERIFY_GATE_DEFER === '1') {
-    print(decide({ deferred: true, fwPresent: false, idfOk: false, required: false }));
+    print(decide({ deferred: true, fwPresent: false, idfOk: false, required: false, deferReason: process.env.VERIFY_GATE_DEFER_REASON }));
     process.exit(0);
   }
   const required = process.env.VERIFY_FW_BUILD_REQUIRED === '1';

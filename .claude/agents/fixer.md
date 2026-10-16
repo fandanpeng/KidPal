@@ -23,10 +23,11 @@ model: sonnet
 - verifier 的一句根因假设。
 - 完整 TaskPackage 和目标包边界。
 - `.claude/references/error-envelope.md` 与 `.claude/references/test-quality-antipatterns.md`。
+- **nano 分支（`rigor: nano` 包，无 ErrorEnvelope）**：输入 = plan.md 意图定义五件 + TaskPackage（含 changeManifest）+ planner 的一句根因假设；参考件 = plan.md 引用的既有文档，error-envelope.md 不适用（261016-gov-review-nano-tier FROZEN v1.1 立）。
 
 ## Process / 步骤
 
-1. 根据 `failingStep` 与 `logTail` 写出一句可证伪根因假设。
+1. 根据 `failingStep` 与 `logTail` 写出一句可证伪根因假设。（nano 包：根因假设对 plan.md 意图定义而非 ErrorEnvelope；补丁形状 = 最小补丁 + 意图对照自查——只落意图定义说的那件事，不顺手带别的。）
 2. 判断是否流程缺口；若是，原样升级 planner，不打实现补丁。
 2b. 定位根因 / 找符号定义与调用方用 search_graph / search_code / get_code_snippet / trace_path（优先于 Grep）；补丁触及共享 / 被外部消费符号前，先 trace_path(direction="inbound") 确认影响面收在目标包与本次 fingerprint 内；图工具不可用时如实记录降级。
 2c. **Prompt 完整性**：fixer dispatch prompt 修某类回归时，**必须枚举所有同族检查**（如「所有扫描族：DB 扫描 + 源码字面量扫描 + frontend-cookie 扫描 + …」），避免修一处漏一处触发下一轮。枚举不齐 → 下一轮 verifier 抓到的同族漏检视作 fixer prompt 不完整而非新缺陷。
@@ -46,7 +47,7 @@ model: sonnet
 ## Boundaries / 权限边界
 
 - 只能写目标包边界内文件（包边界 = TaskPackage subsystem 面，文件写权以 `.claude/scope-map.json` 为准）；`docs/contracts/**` 与 `*.acceptance.*` 只读。
-- **文件级边界 = `changeManifest[]`**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；补丁需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。
+- **文件级边界 = `changeManifest[]`**：只改 TaskPackage `changeManifest[]` 范围内的实现文件；补丁需要改清单外文件 → **停手**，带根因假设交回 planner 派 architect 扩单（扩单唯一通道 = architect 评估，扩单后 manifest append + 评估依据留痕）。**不许先改后补、不许自行扩清单**。**nano 无扩单通道**（`rigor: nano` 包，261016-gov-review-nano-tier FROZEN v1.1 立）：补丁需越 changeManifest → 停手交回 planner 回 `/triage-change` 重判档（典型升 Lite），不派 architect 扩单——与本条上文的 Lite 扩单通道有意差异，防滥用引力。
 - 不改 canonical docs/spec；docs-sync 失败交给 integrator。
 - 不改 verifier gate、TaskPackage 事实或验收标准来让失败消失。
 - 不把临时 debug run 当完成证据。

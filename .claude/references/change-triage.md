@@ -1,6 +1,6 @@
 # Change Triage（dev 侧变更分流前置门程序）
 
-> `/triage-change` 入口下 architect 遵循的分流程序：判定标准、比例化深度、四档裁决、reviewed plan 就近落地。是 [architect-operating-model.md](architect-operating-model.md) §3/§4 路由的延伸，对偶事实源侧的 `/arch-change`。
+> `/triage-change` 入口下 architect 遵循的分流程序：判定标准、比例化深度、五档裁决、reviewed plan 就近落地。是 [architect-operating-model.md](architect-operating-model.md) §3/§4 路由的延伸，对偶事实源侧的 `/arch-change`。
 > 来源：gov-review-architect-change-triage（FROZEN 2026-07-22）。门性质 = **Part-2 工程门 / bootstrap 临时信任门**（K9 §11 权威），非业务门、不进 DEV-GOVERNANCE §5 六门清单。
 
 ## 0. 铁律与地板
@@ -11,7 +11,7 @@
 
 ## 1. 角色与写域（写域零扩张）
 
-- **architect（子 agent，只读+审）**：判四档 + 出 reviewed plan + 写 rationale。**不写任何文件**（只读 + 审 + 同会话 return）。architect 是 full architect（有判断力、主持 review），**不是 `architect-reviewer`**（后者只读、只做契约影响分类 + lightweight eligibility，不主持收敛、不出 reviewed plan）。
+- **architect（子 agent，只读+审）**：判五档 + 出 reviewed plan + 写 rationale。**不写任何文件**（只读 + 审 + 同会话 return）。architect 是 full architect（有判断力、主持 review），**不是 `architect-reviewer`**（后者只读、只做契约影响分类 + lightweight eligibility，不主持收敛、不出 reviewed plan）。
 - **主线程（`/triage-change` 编排者 = 人类主线程）**：落盘 reviewed plan。主线程不受 per-agent enforce-scope 限（dev-loop.md §4），可写 `delivery/workstreams`/`taskpackages`。让主线程落、architect 只审，正好绕开扩 architect 写域——**写域零扩张，不触 scope-map**。
 - **planner / portfolio-planner**：写各自既有的家（本就是其写域），从家里读 reviewed plan 做 intake/拆包。
 - **人类**：三个承重触点（见 §5）；FROZEN 归人类（作者≠判官）。
@@ -25,11 +25,26 @@
 | **③ 拆包** | 跨多切片 / 需多 Pod / 迁移 / 高风险大 feature | reviewed plan → `delivery/workstreams/<ws>/PROPOSAL.md`（人类冻结）→ portfolio-planner 拆 N 包 |
 | **② 单包 Full** | 单切片但 high/critical（触 security 轴 / 真 DB / 状态机 / AI 成本审计）| reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Full |
 | **② 单包 Lite** | 单一来源/紧耦合小簇 · 单 owning 包 · 无悬挂契约决策 · 无迁移删数 · 一轮收 ⇒ 快路径默认适用（§7） | reviewed plan → `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，Lite |
+| **⓪ 档 0 nano** | 改动独立 + 爆炸半径小（每将触符号 inbound ≤5）+ 无验收语义净增 · 排除清单零命中（判据见下方「档 0 nano 判据」节） | reviewed plan（= 意图定义五件，frontmatter `rigor: nano`）→ `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，nano |
 | **① 直接修** | 不改 apps 行为 / 人类明确跳过 | 不进 loop（地板） |
 
 **小 feature 与小 bug 合流为同一档（②单包）**：执行形状相同（单 Pod 单 TaskPackage 跑 dev loop），仅以 `sourceType`（feature→`proposal`/`human-ad-hoc`；bug→`regression`/`ci-failure`/`drift-report`；`human-confirmed-plan` 归 artifact-lifecycle origin.type，不预支）与 `plan.md` 内容框架（feature 写"建什么+方案"，bug 写"根因假设+修复+影响面"）区分。
 
 **单向守卫（riskTier 优先于 rigor）—— convention-only（F1 / Q1-A）**：设计意图是单向校验——信号说"这是 Full 级"（security 轴 / 迁移 / 跨包 / core.* / 触契约）而 `rigor:"lite"` → 应强制升 Full。**但本门当前无此机器牙齿**（`taskpackage-required-check.mjs` 只扩了 `isProposalMdPath`，不含 riskTier-overrides-rigor 守卫，记 ARQ 后续 G3）；安全兜底靠**两层人工**：① 人类触点①确认/改判路由；② supervisor 对 riskTier=high 仍升级人类。残余洞需 architect 同时误设 riskTier(low)+rigor(lite) 且人类 rubber-stamp（复合失败）才漏。**诚实标注：这是 convention-only，不是机器保障。** 判断仍归 architect（写进裁决 rationale）。
+
+### 档 0 nano 判据（261016-gov-review-nano-tier FROZEN v1.1 立）
+
+位序在 ①直接修 之上、②单包Lite 之下：仍过门（不像①免门）但不开完整 TaskPackage 验收链仪式（不像②）。面向「意图完全明确、无验收语义净增」的实现面微改——典型形态 = 单个 UI 页面元素调整、单个 threshold 常量修改、资产消费点名切换。**判据（全部满足 + 排除清单零命中；存疑向严升档）**：
+
+- **改动独立**：单一目标符号 / 单一 UI 页面元素 / 单一常量簇，改动意图一句话说清；
+- **爆炸半径小（机器量，不靠人指定、不按代码行数）**：triage 时 architect 用 CodebaseMemory 图工具 `trace_path(direction="inbound")` 量每个将触符号的调用方集，**阈值 = 每将触符号 inbound 调用方 ≤ 5 且同属一个 owning 文件/紧耦合簇**（human 2026-10-16 实测钉死：三包 nano 意图包全 ≤4 vs 中枢调度符号 17，阈值落一个数量级断层空档）；预估 diff ≤2 个实现面文件作辅助参照；
+- **无验收语义净增**：不改 story 语义、不引入新行为决策、不触新契约语义；`sourceType=proposal` 的包不得判 nano（proposal 载荷 = 决策集，decisionCoverage 不豁免，与 task-intake-and-slicing.md「decisionCoverage 与 rigor 的关系」现行规则一致）；
+- **排除清单（命中任一即升，不判 nano）**：触 wire/契约面、状态机、跨端、安全轴、迁移/删数；目标区域无既有齿覆盖且 human 不愿目检兜底；意图需要新行为验收语义承载（→ 升 Lite）。
+- **判档双层形状**：判档预估 = `trace_path` inbound（triage 时）；收口实测 = `detect_changes` 对 actual diff 算实际爆炸半径，结果记入白盒复核回执（advisory；落痕载体 = integrator review-packet「白盒复核」节）。
+- **判档判注义务（比照 §7 lite 判注）**：architect 判 nano 时 rationale 须含一句「host 齿可闭环」确认（nano 的 suiteGate 回归网 = 既有 host 套件，可在 host_app target 闭环；与 lite 快路径判注义务同构，承接 launch/verify 两侧后置）。
+- **落盘形状**：nano 裁决 → reviewed plan（= 意图定义五件）落 `delivery/taskpackages/<id>/plan.md`（与 ②单包同家，frontmatter `rigor: nano`）；意图定义五件 = ① 改动意图一句（改什么、为什么）② 目标符号/文件锚（即 changeManifest 种子，triage architect 给）③ 预期行为差（before/after 一句）④ 目标区域既有齿覆盖态申报（既有验收/单元齿清单，或「无齿 → human 目检兜底」声明）⑤ 爆炸半径预估（trace_path 结果摘要）。
+- **越界升档（nano 无扩单通道）**：nano 包 change-manifest 闸红（diff 越出清单）或白盒复核发现出界 → planner 停，回本门重判档（典型升 Lite），不得原地扩 manifest 续跑——与 Lite 的 architect 扩单通道（fixer.md 边界节）有意不同，承载 human「diff 越界自动升档」裁定。
+- **触点① nano 形态**：human 确认档 0 时一并确认意图定义五件与覆盖态兜底声明；单向守卫（riskTier overrides rigor）对 nano 同样生效（触契约/security/迁移信号 → 升档）。
 
 ## 3. 比例化 review 深度
 
@@ -42,7 +57,7 @@
 
 **dev 侧为何单轮而非对抗**：dev plan 不碰单一事实源（contracts/spec），错了 verifier 验收门会接住，不值得 challenger/defender 对抗红队。单轮 architect review + 人类确认，与体量对齐。这与 `delivery/review/` 的 spec/governance 对抗 review **不是同一回事**，不互相替代。
 
-**深度纪律（防漂移，accepted-risk）**：小 review 不得漂成重审（过度治理），也不得橡皮图章（审不出问题）——靠四档裁决 + progressive-rigor 约定框住；loop-retro 监控吞吐与深度校准。
+**深度纪律（防漂移，accepted-risk）**：小 review 不得漂成重审（过度治理），也不得橡皮图章（审不出问题）——靠五档裁决 + progressive-rigor 约定框住；loop-retro 监控吞吐与深度校准。
 
 ## 4. reviewed plan 就近落地（主线程落盘，delivery/review 不碰）
 
@@ -51,7 +66,7 @@
 ```
 /triage-change（主线程=编排者）
   └─ 派 architect（只读+审）→ 返回 reviewed plan + 裁决（同会话 return，非跨会话 prose）
-  └─ 主线程 AskUserQuestion 呈现裁决，人类【确认 / 改判四档】（一句话）   ← 人类触点①
+  └─ 主线程 AskUserQuestion 呈现裁决，人类【确认 / 改判五档】（一句话）   ← 人类触点①
   └─ 确认后主线程把 reviewed plan 落进它的家（只搬运、不改内容）：
         ③大 → delivery/workstreams/<ws>/PROPOSAL.md（+review.md，freezeState=pending-human；按 docs/templates/WORKSTREAM-PROPOSAL.template.md 三问 + 分型模板起草——业务目的清单 / workType 数组 / spec 关系标注三项硬项缺失即 portfolio-planner intake fail-closed 打回，260912 拆包链 T1）
         ②   → delivery/taskpackages/<id>/plan.md（frontmatter：rigor/riskTier/sourceType/reviewed-by/date）
@@ -79,7 +94,7 @@
 
 | 触点 | 何时 | 人类做什么 | 为何承重 |
 |---|---|---|---|
-| ① 确认/改判路由 | architect 返回裁决后、落盘前 | 一句话确认四档，或改判（AskUserQuestion） | Lite/Full 是安全相关判断，architect 误判需人类 backstop |
+| ① 确认/改判路由 | architect 返回裁决后、落盘前 | 一句话确认五档，或改判（AskUserQuestion） | Lite/Full 是安全相关判断，architect 误判需人类 backstop |
 | ② 冻结 PROPOSAL | 仅大 feature，落盘后 | 盖 FROZEN（版本/sha） | 作者≠判官：architect 起草/主持 review，判官是人类 |
 | ③ 起下一段会话 | 落盘（+冻结）后 | 跑主线程打出的命令（planner `/build-feature <id>` 或 portfolio-planner `<ws>`） | planner/portfolio 必须是自己的主线程会话——子 agent 不能再派子 agent |
 
