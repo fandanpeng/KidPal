@@ -73,3 +73,30 @@ source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与�
 5. **点明 `/triage-change` 的容器属性**：AGENTS.md 入口节与 change-triage.md §0 都应写出「triage = 承载整条跨面链的编排会话，各面在它内部按 facePlan 被派发（轻面本会话内联、重面 headless）」；「实现面留本门分档」应补「**分档是它的收尾动作，不是它等于实现面**」这一限定。**不加这条限定，仅补"入口身份"仍不足以阻止第二种误读**（本例已证）。
 
 **证据强度**：本条目现有**两次独立误读**（同一读者、同一文本、两种不同错法），且第二次发生在完整阅读之后——`severity: SHOULD` 是否应升 `MAJOR`，留待 `/gov-change` 评审时裁；本处按纪律只追加、不改既有字段。
+
+---
+
+**追加（2026-10-16，成因分析定稿 + 本条目自身缺陷登记）**
+
+**① 成因分析定稿：为什么「读全了仍滑回旧定义」（三条机理，按权重排序）**
+
+1. **最高权威面每次会话重新灌入旧定义**（本条目的独立新论据，原标题只点了「摘要行未同步」，未点这一层）。AGENTS.md 是**常驻指令**——会话启动即加载、经 CLAUDE.md `@AGENTS.md` 传导——其「四面入口」节逐字仍为「**实现面变更**：走 `/triage-change` 五档分流 → `/build-feature`（dev loop 不变）」。即：新定义被读到**一次**，旧定义**每次会话重新灌入一次**。读一次压不住灌多次。
+2. **新定义全文无正面陈述，仅以从句寄生在旧段落里**。全部载体 = `change-triage.md` §0「……实现面**留本门**分档，**不再整单踢走**」+ `commands/triage-change.md` step 6「轻面注明内联执行（**本会话继续派发**）」。两句都是「关于 dev 门的段落」里的补充从句，读起来像脚注——**全文找不到一句形如「`/triage-change` 就是跨面变更的全流程入口」的正面陈述**，所以读完了什么也没改变。
+3. **先入 schema 的追加式吸收**。首次接收的 AGENTS.md + `change-intake.md` §8（「triage **实现面**」）形成 schema；后读到的「四面探测（intake）」被编码为「triage **另外还兼做** intake」，而非「triage **就是**跨面全流程本身」——新定义未覆盖旧 schema，只叠加上去，于是每次回读旧定义都浮在最上层。
+
+**② 本条目自身缺陷登记：`title` 与正文矛盾（须在 `/gov-change` 一并更正）**
+
+`title` 写「跨面 intake 入口身份**未在任何 canonical 声明**」——**不成立**，与本条目证据 2 自述「即：入口身份**只存在于** triage 侧两个文件 + change-intake.md 的一句抬头」**直接矛盾**。准确表述应为：**它在 canonical 里，只是不在最高权威那一路（AGENTS.md）**。按纪律（正文只追加、不改既有段）此处只登记、不动 `title` 字段；**`/gov-change` 处置时须一并更正 `title`**——注意 `title` 是 `docs/debt/gov/INDEX.md` 的 title 列来源，改后须重跑 `node .claude/scripts/debt-render.mjs`。
+
+**③ `paths` 可能不全（须复核，改后会动 G 层机推）**
+
+现列 `[AGENTS.md, .claude/references/change-intake.md]`。按机理 1/2，真正要动的还包括：
+
+- `.claude/references/change-triage.md` —— 其**文件标题**仍为「Change Triage（**dev 侧**变更分流前置门程序）」，与改造后的跨面身份直接不符；
+- `.claude/commands/triage-change.md` —— 正确内容在此（step 1 四面探测 / step 6 本会话继续派发），但被「dev 侧变更分流前置门」的框架包裹，无正面身份陈述。
+
+两者不是「缺内容」而是「**内容被旧框架包着**」，处置形态 = 改标题/摘要 + 补正面陈述，非新增内容。是否增列 `paths` 由 `/gov-change` 定；**增列后须复核机推 G 层仍为 G1+G2**（现机推结果：`gateLayersOf(['AGENTS.md','.claude/references/change-intake.md'])` = `['G1','G2']`，硬排除六项零命中）。
+
+**④ 本条目当前最大弱点（缺口如实登记）**
+
+条目通篇**没有"正确形态"的原始表述**——全部内容都是误读者（主线程）的**推导版本**。human 2026-10-16 被请求给出「现在这版 `/triage-change` 的定义原文是哪句、在哪」，**截至本条 append 尚未提供**。**`/gov-change` 起草 PROPOSAL 前须先取到该原文**，否则修复方向仍是推导而非 canonical——这正是本条目前最需要补的一块。
