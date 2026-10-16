@@ -1,6 +1,6 @@
 # Dev Loop OS — 开发期操作系统（canonical reference）
 
-> 状态：canonical dev-loop 治理参考。落定自 `delivery/changes/arch/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1，2026-07-07 对抗 review 通过；ARQ-064~068）。
+> 状态：canonical dev-loop 治理参考。落定自 `delivery/review/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1，2026-07-07 对抗 review 通过；ARQ-064~068）。
 > 归属：平台 / architect 维护（`.claude/references/**`）。本文件定义**开发过程**的操作系统；**公司运行时**编排见 [`docs/kernel/K9-orchestrator.md`](../../docs/kernel/K9-orchestrator.md)。
 > 协调机制（blackboard / merge token / reconcile）细节见 [`.claude/references/pod-coordination.md`](pod-coordination.md)。
 

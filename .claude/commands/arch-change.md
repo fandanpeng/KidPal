@@ -17,6 +17,6 @@ argument-hint: <human 意图原话，例如 "把首页「接下来」区改成�
 4. **审稿**：派 `architect-reviewer` 四查 + 判档（轻/主路径，判据见 SSOT；**只升不降**）。不过否回循环至过（architect 再改）。
 5. **落地**：轻路径 = 瘦制品五件过闸（瘦 PROPOSAL + §7 GREEN + landing-manifest + 瘦 landing-summary + landing-verdict；retro 豁免）；主路径 = Track B 后端全件（FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main）。
 6. **触契约分支**：契约包三节并入 PROPOSAL 随批原子落；合并过机械凭据闸（`pre-merge-escalation-gate.mjs`），**无人类签字门**。
-7. **记账收尾**：`node .claude/scripts/changes-index.mjs --upsert <changeId>`；跨面 → `change-intake.md` 建 spine 回填 `anchors.arch`。
+7. **记账收尾**：`node .claude/scripts/changes-index.mjs --upsert <changeId>`；跨面 → `change-intake.md` 建 spine 回填 `anchors.arch` + `status`（回写 spine anchors + status；写者恒 = 主线程，261015 批 T5 齿）。
 
 你不起草变更内容、不改 reviewer 判决、不跳否回循环；实现面变更转 `/triage-change`；治理面变更转 `/gov-change`。

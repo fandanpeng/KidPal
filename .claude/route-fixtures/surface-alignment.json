@@ -4,18 +4,18 @@
   "exemptions": { "agents": [] },
   "writeScope": {
     "architect": {
-      "allow": ["docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"],
+      "allow": ["docs/requirements.md", "docs/architecture.md", "docs/contracts/**", "delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**", ".claude/agents/**", ".claude/commands/**", ".claude/references/**", ".claude/rules/**", ".claude/skills/**"],
       "exemptions": [],
       "lastReviewed": "2026-08-27",
       "rationale": "Draft/judge only; canonical landing is main-thread packet-bound. G1/G3 self-deny lives in scope-map deny carve-out."
     },
-    "review-moderator": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", "docs/requirements.md", "docs/architecture.md", "docs/contracts/**"], "exemptions": [], "lastReviewed": "2026-09-29", "rationale": "Matches scope-map." },
-    "scenario-author": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "challenger": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "defender": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
-    "adjudicator": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**"], "exemptions": [], "lastReviewed": "2026-10-14", "rationale": "Matches scope-map (docs/debt/** added by 260923-gov-review-arq-ssot-restructure, renamed crq→debt by 261014-gov-review-crq-debt-rename; ARCH-REVIEW-QUEUE.md kept as stub path)." },
+    "review-moderator": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**", "docs/requirements.md", "docs/architecture.md", "docs/contracts/**"], "exemptions": [], "lastReviewed": "2026-09-29", "rationale": "Matches scope-map." },
+    "scenario-author": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "challenger": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "defender": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." },
+    "adjudicator": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**", "docs/ARCH-REVIEW-QUEUE.md", "docs/debt/**"], "exemptions": [], "lastReviewed": "2026-10-14", "rationale": "Matches scope-map (docs/debt/** added by 260923-gov-review-arq-ssot-restructure, renamed crq→debt by 261014-gov-review-crq-debt-rename; ARCH-REVIEW-QUEUE.md kept as stub path)." },
     "architect-reviewer": { "_readOnly": true, "lastReviewed": "2026-08-27" },
-    "landing-verifier": { "allow": ["delivery/changes/arch/arch-review-*/**", "delivery/changes/arch/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." }
+    "landing-verifier": { "allow": ["delivery/review/arch-review-*/**", "delivery/review/gov-review-*/**"], "exemptions": [], "lastReviewed": "2026-08-27", "rationale": "Matches scope-map." }
   },
   "criticalDenySet": {
     "settingsFile": ".claude/review-loop.settings.json",

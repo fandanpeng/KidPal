@@ -19,10 +19,12 @@
   "universal": {
     "_doc": [
       "对所有会话生效的结构红线（enforce-scope.mjs universal 段）。",
-      "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。"
+      "denyCreate：禁影子 contracts 目录——真契约面在 docs/contracts/**，根级 contracts/** 一律视为影子。文档骨架白名单见 docsTopLevel。",
+      "denyCreate 条目 delivery/changes/** = 废止位（261015-gov-review-changes-taxonomy：dev lane 已由 261014 批撤销〔T1 齿一，波段一先落 dev 子路径〕、伞已随 T6 解散归档 delivery/archive/changes/）——任何写入即违规，真家见 delivery/archive/README.md 旧→新映射（review = delivery/review/、intake = delivery/intake/、retro = delivery/retro/、dev = delivery/taskpackages/）。"
     ],
     "denyCreate": [
-      "contracts/**"
+      "contracts/**",
+      "delivery/changes/**"
     ],
     "bashDenyWrite": [
       "docs/contracts/**",
@@ -56,7 +58,7 @@
       "档 1 登记 review-loop + architect 链；档 2/3 补 dev-loop 角色段（builder/fixer/acceptance-author/verifier/supervisor/integrator + planner/portfolio-planner）。",
       "实现面 = firmware/ + server/；契约面 docs/contracts/** 全 dev-loop 角色 deny；vendor 面 ESP32-S3-RLCD-4.2-Demo/** 全 deny。",
       "builder/fixer allow 实现面、deny 验收测试文件（验收归 acceptance-author）；verifier/supervisor 只读（deny **）。",
-      "architect-reviewer 窄写槽（261015-gov-review-face-loop-unify T2）：allow 仅 delivery/changes/arch/*-review-*/** 评审记录面——审稿人写评审记录仿 landing-verifier 先例，canonical 零写权。"
+      "architect-reviewer 窄写槽（261015-gov-review-face-loop-unify T2）：allow 仅 delivery/review/*-review-*/** 评审记录面——审稿人写评审记录仿 landing-verifier 先例，canonical 零写权。"
     ],
     "planner": {
       "allow": [
@@ -162,8 +164,8 @@
         "docs/requirements.md",
         "docs/architecture.md",
         "docs/contracts/**",
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**",
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**",
         ".claude/agents/**",
         ".claude/commands/**",
         ".claude/references/**",
@@ -192,8 +194,8 @@
     },
     "review-moderator": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**",
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**",
         "docs/requirements.md",
         "docs/architecture.md",
         "docs/contracts/**"
@@ -206,8 +208,8 @@
     },
     "scenario-author": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**"
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",
@@ -217,8 +219,8 @@
     },
     "challenger": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**"
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",
@@ -228,8 +230,8 @@
     },
     "defender": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**"
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",
@@ -239,8 +241,8 @@
     },
     "adjudicator": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**",
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**",
         "docs/ARCH-REVIEW-QUEUE.md",
         "docs/debt/**"
       ],
@@ -254,8 +256,8 @@
     },
     "architect-reviewer": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**"
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**"
       ],
       "deny": [
         "**"
@@ -290,8 +292,8 @@
     },
     "landing-verifier": {
       "allow": [
-        "delivery/changes/arch/*arch-review-*/**",
-        "delivery/changes/arch/*gov-review-*/**"
+        "delivery/review/*arch-review-*/**",
+        "delivery/review/*gov-review-*/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",

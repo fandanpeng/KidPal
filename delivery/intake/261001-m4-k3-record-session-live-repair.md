@@ -24,10 +24,10 @@ facePlan:
   - 顺序4 Package C（独立小包，human 触点①裁「另立」+ 确认档位）：引擎 overlay model_name 冲刷修复 → `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md`（② 单包 Lite / riskTier=low / sourceType=drift-report；经 architect 快审：单面实现、不触契约/spec、逃生门不触发、不建独立 spine）
   - launchPrecondition（Package A）：无上游锚依赖，可即时 launch；Package B 受顺序3 anchors 门控；Package C 独立
 anchors:
-  req: "待回填（D3-甲 随 spec 修订顺带改 :431 注记；路由 = 需求面 /requirement-change，见 openQ q6）"
-  contract: "待回填（architect-reviewer 四分类 261001 已预审；Track A 定形后重备 packet + 契约门）"
-  arch: "待回填（§5.2④ 改法 + ADR-008；/arch-change Track A）"
-  imp: "Package A：taskpackage 261001-m4-k3-record-session-live-repair（②单包 Full，riskTier=high/rigor=full/sourceType=regression；plan.md 落盘 261001，taskpackage.json/origin 归 planner intake 建）。Package B：未落包（待 spec/contract anchors 回填后另立）。Package C（独立变更，另 id）：taskpackage 261001-openclaw-model-name-overlay-drift（②单包 Lite，plan.md 已落盘 261001）"
+  req: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：D3-甲随 spec 修订顺带改 :431 注记——机制定形未启动，路由 = 需求面 /requirement-change（openQ q6），暂无定稿物可引"
+  contract: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：architect-reviewer 四分类 261001 已预审；:266「引擎不感知本信号」扩面随 human 触点①裁；Track A 定形后重备契约包三节（现行口径无人签门，change-intake §8）——暂无 packet"
+  arch: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：§5.2④ 改法 + ADR-008 修订——/arch-change Track A 未启动，暂无镜像句落点"
+  imp: "Package A：taskpackage 261001-m4-k3-record-session-live-repair **已收口**（dev INDEX closed，2026-10-16 T5 整改实证——②单包 Full 全程走毕）。Package C（独立变更另 id）：taskpackage 261001-openclaw-model-name-overlay-drift **已收口**（dev INDEX closed）。Package B：未落包（Track A 定形后另立，facePlan 顺序 3 门控）"
 openQ:
   - id: q1-四档路由
     question: architect 判 ③ 拆包（Package A 纯固件 ②单包 Full / Package B 取甲跨面转契约门+Track A），human 是否确认或改判？
@@ -65,7 +65,7 @@ openQ:
     question: q8 复核出的「归档早于转写」缺陷如何立项？
     ruling: human 261001 触点②同意先开；architect 分流判 ② 单包 Full（riskTier=high / rigor=full / sourceType=regression；存疑向严理由 = 数据丢失 + 触累积态状态机 + 改写已 merged 包的冻结验收时序假设），human 复确认档位。plan 落 `delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md`（修法 = 停录挂起 pending-stop + 转写到达后归档 + 正文剔收尾词 + 10s 超时兜底；120s sweep 同源缺陷划 B2/B3）。**不建独立 spine**（单面实现）
     status: resolved
-status: in-flight
+status: awaiting-upstream
 ---
 
 # spine · 261001-m4-k3-record-session-live-repair
@@ -73,3 +73,7 @@ status: in-flight
 2026-10-01 真机 P3 冒烟暴露 `260924-m4-k3-record-session-live` 落地后的四缺陷：D1 星星记录本列表不出现（延迟推送无消费方）/ D2 按 KEY 进声波层而非法录音页（会话层压住录音页）/ D3 语音收尾「我说完了」不生效（manual 聆听 + NON_STREAM ASR 产不出 stt 帧）/ D4a 录音态 KEY 落全局会话 toggle 致毁稿 + D4b 录音演出定时器致首页图像悬垂 LVGL panic 重启。human 已拍板 D3 取甲（改可产逐句 stt 的聆听形态 + front 累积态压制逐句回复）。
 
 裁决来源：architect 分流 review（同会话 return，2026-10-01），faceMap/facePlan 取其报告 §1/§2 落盘；逃生门判定（D3-甲 触契约/架构面）见其 §5。
+
+## openQ 账 · T5 整改留痕（2026-10-16，261015-gov-review-changes-taxonomy T5 第 3 条）
+
+- **全面实审回填**：anchors 四键如实回填实况（imp = Package A / Package C 均已收口，dev INDEX closed 双实证；req/contract/arch = Track A 待跑实况）；`status: in-flight → awaiting-upstream` 实判——Package B 实现面冻结至 Track A 定形（facePlan 顺序 3 门控），spine 整体处于等上游面状态（值域 = change-intake.md §2.7）。预期漂移标：⚠未闭环（req/contract/arch 实况回填后 anchors 4/4 但未 closed）+ ⚠滞留Nd（awaiting-* 滞留超 7 天）——如实呈现待 loop-retro 复议。

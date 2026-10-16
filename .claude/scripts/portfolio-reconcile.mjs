@@ -316,10 +316,10 @@ export function selfCheck() {
   };
   const TP = 'delivery/taskpackages/cid-a/taskpackage.json';
 
-  // ① proposal 型双路 delivery/changes/(arch|dev)/** 三件齐 → ok:true
+  // ① proposal 型双路 delivery/review/**（旧树归档形态经 isProposalMdPath 兼容）三件齐 → ok:true
   let w = mkStubs({
-    [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/changes/arch/x/PROPOSAL.md', workstream: 'ws-a' } }),
-    'delivery/changes/arch/x/PROPOSAL.md': '# PROPOSAL',
+    [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/review/x/PROPOSAL.md', workstream: 'ws-a' } }),
+    'delivery/review/x/PROPOSAL.md': '# PROPOSAL',
     'delivery/workstreams/ws-a/decision-coverage.json': '{}',
   });
   let r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
@@ -340,9 +340,9 @@ export function selfCheck() {
   t('non-proposal-upstream-proposal-na', { ok: r.ok, blocking: r.blocking }, { ok: true, blocking: [] });
 
   // ④ proposal 型但 PROPOSAL 缺 → ok:false + 点名
-  w = mkStubs({ [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/changes/arch/y/PROPOSAL.md' } }) });
+  w = mkStubs({ [TP]: JSON.stringify({ origin: { upstreamType: 'proposal', upstreamRef: 'delivery/review/y/PROPOSAL.md' } }) });
   r = checkLaunchReachability('.', { changeId: 'cid-a', baseRef: 'REF', exists: w.exists, show: w.show });
-  t('proposal-missing-blocking-named', { ok: r.ok, hasBlocking: r.blocking.length > 0, named: r.blocking.some((b) => b.includes('delivery/changes/arch/y/PROPOSAL.md')) }, { ok: false, hasBlocking: true, named: true });
+  t('proposal-missing-blocking-named', { ok: r.ok, hasBlocking: r.blocking.length > 0, named: r.blocking.some((b) => b.includes('delivery/review/y/PROPOSAL.md')) }, { ok: false, hasBlocking: true, named: true });
 
   // ⑤ launchPreconditions 新形态（对象）：按包过滤 + 只报未核（260921-gov-review-launch-pipeline T6）
   //    可分辨性：不按 scope 过滤 → A4 会混入 pending；不按 status 过滤 → A3 会混入 pending。

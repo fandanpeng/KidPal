@@ -61,7 +61,7 @@ function extractImplementationFindingIds(markdown) {
 }
 
 if (!reviewDir) {
-  fail('review directory argument is required', { usage: 'node .claude/scripts/arch-review-handoff-check.mjs delivery/changes/arch/arch-review-<spec>' });
+  fail('review directory argument is required', { usage: 'node .claude/scripts/arch-review-handoff-check.mjs delivery/review/arch-review-<spec>' });
 }
 
 if (!existsSync(reviewDir)) fail('review directory does not exist', { reviewDir });
@@ -128,14 +128,14 @@ const missing = requiredFindingIds.filter((id) => !handoffFindings.has(id));
 if (missing.length > 0) errors.push(`handoff missing findings: ${missing.join(', ')}`);
 
 if (errors.length > 0) {
-  fail('dev-loop handoff is incomplete', { reviewDir, handoff: `delivery/changes/arch/${basename(reviewDir)}/dev-loop-handoff.json`, errors });
+  fail('dev-loop handoff is incomplete', { reviewDir, handoff: `delivery/review/${basename(reviewDir)}/dev-loop-handoff.json`, errors });
 }
 
 print({
   ok: true,
   gate: 'arch-review-handoff',
   reviewDir,
-  handoff: `delivery/changes/arch/${basename(reviewDir)}/dev-loop-handoff.json`,
+  handoff: `delivery/review/${basename(reviewDir)}/dev-loop-handoff.json`,
   requiredFindingIds,
   handoffFindingIds: [...handoffFindings.keys()],
 });

@@ -2,7 +2,7 @@
 // settings-lint.mjs — settings 族 permissions 规则合法性静态检查（launch-prep 步骤 2 机检）
 //
 // 治理声明：owner=architect · approver=human · G3（launch 面机检；**不入 verify-gates 闸族**、不进任何既有闸链）。
-// 批准物：delivery/changes/arch/260924-gov-review-settings-deny-contract-merge/PROPOSAL.md（FROZEN v0.4，T2-i；OQ-2=(a) human 裁定 2026-09-24）
+// 批准物：delivery/archive/changes/arch/260924-gov-review-settings-deny-contract-merge/PROPOSAL.md（FROZEN v0.4，T2-i；OQ-2=(a) human 裁定 2026-09-24）
 //
 // 病灶背景：`Write(path)` 文件权限规则被现行 CLI 判无效（文件权限检查只认 `Edit(path)` 规则，Edit 规则
 //   覆盖所有文件编辑工具）——零执行力且硬阻塞 headless launch（exit 4，ARQ-260924-settings-write-deny-rule-cli-drift

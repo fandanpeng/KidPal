@@ -49,7 +49,7 @@ TaskPackage 层 `origin` 形状（G3 读取此层，与 workstream 层（task_pl
 ```
 
 - **`upstreamType`**（必填）：取值 = `sourceType` 9 枚举（`delivery-story`、`planning-workstream`、`arch-review`、`human-ad-hoc`、`ci-failure`、`drift-report`、`regression`、`maintenance`、`proposal`）**+ 一个受控扩展 `human-confirmed-plan`**。`human-confirmed-plan` 是过渡性——专为「人确认过、非正式 proposal 的设计权威」（如 s1-nsa design-plan.md）设，其 `origin.type` 不映射到任何 `sourceType`（两者并存→红）。
-- **`upstreamRef`**（proposal 型必填，其余 type 可省略）：指向上游设计目录——proposal 型指向 FROZEN PROPOSAL 路径（如 `delivery/workstreams/<ws>/PROPOSAL.md` 或 `delivery/changes/(arch|dev)/<id>/PROPOSAL.md`）。非 proposal 型（regression/ci-failure/…）指向触发来源（issue / drift 报告 / 人类指令记录）。**proposal→docRefs back-check（完整性闸）**——触发判据为**析取** `isProposalByType ∨ isProposalByPath`（260731 Phase 2 T1 路径枢轴：`isProposalByPath` = `origin.upstreamRef ∨ origin.ref` fragment-stripped 走 G3 `isProposalMdPath`；`isProposalByType` = `sourceType/originType === 'proposal'` 字符串判，析取保老包）时 `origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`（新包 / 路径枢轴包——origin.ref 接管 back-check；老包（sourceType=proposal、originType 非 proposal、ref 非 proposal 路径）维持 sourceRefs-based back-check 不误红，过渡 carve-out）。**decisionCoverage 承重触发维持字符串判**（`isProposalByType`），不随路径枢轴（OQ4-B：hybrid 不被要求 in-taskpackage DC，其 DC 在 workstream 级）。
+- **`upstreamRef`**（proposal 型必填，其余 type 可省略）：指向上游设计目录——proposal 型指向 FROZEN PROPOSAL 路径（如 `delivery/workstreams/<ws>/PROPOSAL.md` 或 `delivery/review/<id>/PROPOSAL.md`）。非 proposal 型（regression/ci-failure/…）指向触发来源（issue / drift 报告 / 人类指令记录）。**proposal→docRefs back-check（完整性闸）**——触发判据为**析取** `isProposalByType ∨ isProposalByPath`（260731 Phase 2 T1 路径枢轴：`isProposalByPath` = `origin.upstreamRef ∨ origin.ref` fragment-stripped 走 G3 `isProposalMdPath`；`isProposalByType` = `sourceType/originType === 'proposal'` 字符串判，析取保老包）时 `origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`（新包 / 路径枢轴包——origin.ref 接管 back-check；老包（sourceType=proposal、originType 非 proposal、ref 非 proposal 路径）维持 sourceRefs-based back-check 不误红，过渡 carve-out）。**decisionCoverage 承重触发维持字符串判**（`isProposalByType`），不随路径枢轴（OQ4-B：hybrid 不被要求 in-taskpackage DC，其 DC 在 workstream 级）。
 - **`upstreamFrozen`**（**仅 origin.upstreamType=proposal 必填**、占位符无效；其余 type 可空、不触发 UPSTREAM_DRIFT）：钉上游 PROPOSAL 被批时间点，用于 `closeout-check` 检测**上游悄改漂移**（UPSTREAM_DRIFT = **warn/告警，非红拦**——convention-only，机器齿记 ARQ-260723-artifact-lifecycle-teeth）。**标准 pin 格式（260731-gov-review-artifact-lifecycle-origin-teeth Phase 1 FROZEN；Phase 2 同批改写 + carry 再确认，H4 批准）**：`sha1:<16hex>`，算法 = `'sha1:' + createHash('sha1').update(fileContent.replace(/\r\n/g, '\n')).digest('hex').slice(0,16)`（**raw file bytes 行尾归一化（`\r\n` → `\n`）后 hash**，G3 `computeFrozenPin` 共享单源，与 `closeout-check.mjs` 消费端一致）。**不是** `git hash-object`（后者含 git blob header `"blob <size>\0" + content`，对同一文件产出不同 hash，结构性不可比）。**过渡期**：prose pin（如 `"frozen v0.2 2026-07-29 (...)"`）及 `git hash-object` 产物均为非标准格式 → convention-only-skip（不判 drift），不追溯为红；新包冻结时应使用标准 raw-content-sha1 格式。
 - **`workstream`**（可选）：归属的 `delivery/workstreams` workstream slug，供 `portfolio-planner` 拆包 + 反向反查消费方。
 
@@ -109,7 +109,7 @@ Use one of:
 | `ci-failure` | A PR/CI/verifier gate failure triggers the task. |
 | `drift-report` | A scheduled or manual drift report triggers the task. |
 | `regression` | A behavioral regression from manual QA, acceptance, or user feedback triggers the task. |
-| `proposal` | 来源为 `delivery/changes/(arch|dev)/**/PROPOSAL.md` 或 `delivery/workstreams/<ws>/PROPOSAL.md`（大 feature 设计权威，gov-review-architect-change-triage §3.6）类设计方案；载荷 = 决策集；蒸馏完整性规则强制适用（**含 Lite，见 decisionCoverage 规则**）。`human-confirmed-plan` **不是** sourceType 枚举值（其正名归 artifact-lifecycle 的 origin.type，本表不预支）。 |
+| `proposal` | 来源为 `delivery/review/**/PROPOSAL.md` 或 `delivery/workstreams/<ws>/PROPOSAL.md`（大 feature 设计权威，gov-review-architect-change-triage §3.6）类设计方案；载荷 = 决策集；蒸馏完整性规则强制适用（**含 Lite，见 decisionCoverage 规则**）。`human-confirmed-plan` **不是** sourceType 枚举值（其正名归 artifact-lifecycle 的 origin.type，本表不预支）。 |
 
 `sourceType` records origin, not impact. If an arch-review task changes milestone health, keep `sourceType: "arch-review"` and set `deliveryImpact: "milestone-affecting"`.
 
@@ -121,9 +121,9 @@ Use one of:
 - Architecture review: `ARQ-063`, `D-A1`, `F3`, `ARQ-063-C1`
 - Human ad-hoc: `TEMP-YYYY-MM-DD-short-slug`
 - CI/drift: `CI-types-2026-07-05`, `DRIFT-D6-CREATE-TABLE-IN-TEST`
-- Proposal: `delivery/changes/(arch|dev)/<id>/PROPOSAL.md#§x.y`，或大 feature `delivery/workstreams/<ws>/PROPOSAL.md#§x.y`
+- Proposal: `delivery/review/<id>/PROPOSAL.md#§x.y`，或大 feature `delivery/workstreams/<ws>/PROPOSAL.md#§x.y`
 
-For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/changes/arch/`, `delivery/taskpackages/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
+For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s), and each such path must also be present in `docRefs[]`. A "proposal .md path" is a path ending in `PROPOSAL.md` under `delivery/review/`, `delivery/taskpackages/`, **or `delivery/workstreams/<ws>/`**（大 feature 设计权威；gov-review-architect-change-triage §3.6 把合法落点扩到 `delivery/workstreams`，G3 `isProposalMdPath` 已同步扩认）. Chapter-level refs may use URL fragments (e.g. `path#§x.y`) for human readability; G3 validation strips the fragment before checking `docRefs[]` membership.
 
 > **DP-1 过渡 carve-out**：上述规则仅适用于既有 sourceType=proposal 老包（无 origin 或其 type 非 proposal）。新包（`origin.upstreamType=proposal`）的 proposal→docRefs back-check 由 **`origin.upstreamRef` 接管**——`origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`，`sourceRefs` 不再承载 proposal 路径（退本职为代码范围锚点）。详见 [task-intake-and-slicing.md](#origin) `### origin` 节。
 
@@ -299,7 +299,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 - **读侧**（`portfolio-reconcile.mjs --check-launch`，260921-gov-review-launch-pipeline T6 落地）：脚本**读**该键——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（blocking 语义不变）**；裸 `string` 旧形态按 `{scope:"workstream", status:"unverified"}` 视之并走汇总行、不逐条报（防永久噪音，且不静默丢失）。**本改动不改任何门的判定语义、不新增工程门。**
 - **核验 = 机械读 + 人读**（260921-gov-review-launch-pipeline T6 取代原「convention + 人读，本门不含机械齿」口径）：**人读义务不变**——launch 执行者（human 点火前）逐条核 `launchPreconditions` + 按落点核对应 spec 文件**已冻结**（review + human 冻结落地）；未冻结 → 承载该裁定的包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果回写 `status` / `evidence`**，使 `--check-launch` 下次不再重复报同一条。
 - **存量迁移不在同批**：两个在册 workstream（`m1-home-qa` / `m2-char-window`，各 6 条裸 `string`）的迁移由建包方在下次动该 workstream 时随批完成（`scope` 机械填、`status` 逐条引源行填）；过渡期由上述旧形态兼容行为承接。
-- **spine 源（② 单包路径，260928-gov-review-cross-face-intake-spine 起）**：带 spine 的变更（`delivery/changes/intake/<changeId>.md` 在场），spine `facePlan` 中**先于实现面**的各面 anchors 未回填 = 上游面未冻结 → 承载包不得 launch（与 ③ 路径「未冻结 → 承载该裁定的包不得 launch」同判、粒度同为包）；核验 = build-feature launch 面预检第五件（文面路由，非机械闸），机检齿留根。
+- **spine 源（② 单包路径，260928-gov-review-cross-face-intake-spine 起）**：带 spine 的变更（`delivery/intake/<changeId>.md` 在场），spine `facePlan` 中**先于实现面**的各面 anchors 未回填 = 上游面未冻结 → 承载包不得 launch（与 ③ 路径「未冻结 → 承载该裁定的包不得 launch」同判、粒度同为包）；核验 = build-feature launch 面预检第五件（文面路由，非机械闸），机检齿留根。
 
 ### TaskPackage 显示编号（承重/游离，机械推导 · 2026-09-15 定，ARQ-260915-taskpackage-display-numbering）
 
@@ -337,7 +337,7 @@ The UIUX fields are an **OPTIONAL extension**, not part of the required intake f
   "uiuxLevel": 2,
   "designRefs": ["docs/ui/V5/canvas-p1.png"],
   "sharedUiRefs": ["docs/ui/design.md#component-action-card"],
-  "localDesignArtifactRefs": ["delivery/changes/arch/uiux-<system>-blueprint/_artifacts/<snapshot>"],
+  "localDesignArtifactRefs": ["delivery/review/uiux-<system>-blueprint/_artifacts/<snapshot>"],
   "artifactPackageRef": "<external zip path or future S5 artifactId>",
   "uiAcceptanceRefs": ["pageId-x.stateId-y"],
   "designReviewRequired": true,

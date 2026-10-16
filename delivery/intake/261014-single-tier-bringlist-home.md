@@ -21,17 +21,17 @@ faceMap:
     what: docs/architecture.md §5.1 组件行 :196（「三档算术 20:30/07:45/前 15min」）与 §5.2 场景⑤ :216（「重算三档」）需镜像修订；§5.2 场景① 日程刷新三触发口径复查（折叠后「接下来」语义变化）。
   contract:
     hit: true
-    what: interface-contract.md §1.3⑥ home view data.upcoming 逐项 {time,name} → additive 字段承载上学行带物清单文字；§三 :246 「按课表算三档时刻」→ 单档口径。走 architect-reviewer 四分类 + 人类契约门（随批 packet）。
+    what: interface-contract.md §1.3⑥ home view data.upcoming 逐项 {time,name} → additive 字段承载上学行带物清单文字；§三 :246 「按课表算三档时刻」→ 单档口径。走 `/arch-change` 触契约分支（architect-reviewer 四分类 + 契约包三节随批原子落、无人签门、合并过机械凭据闸——261015-gov-review-face-loop-unify 批现行口径，2026-10-16 本批 T4 第 3 条刷新，原文见 delivery/archive/changes/ 归档前版本 git 历史）。
   implementation:
     hit: true
     what: 服务端（openclaw-reminder.config.yaml / reminder_schedule_lib.py 单档化 + 静默窗口；schedule.config.yaml school_end；front_app.py + schedule.py bringlist 读取与折叠拼装）；OpenClaw 创作面（AGENTS.md 家庭面纪律 + schedule-write skill 扩带物清单录入）；固件（home_p1.h/.c + home_upcoming.c 清单行渲染，板端对旧载荷过渡容忍——261011 preview 先例）；部署面（manifest.yaml 新消费位 + kidpal-front.service env）。
 governanceProbe: 未命中治理面（.claude/** 零改动）；升级判据①触契约面命中 → 路由归 OQ-1 human 裁（Track B + 契约门随批 vs Track A）。
 facePlan:
   - 需求面：requirement-change 档 2（story-author 起草 → requirement-reviewer 四查 → architect 可行性三件 → 触 UI 批次 uiux-author 出图 → human 终拍看图）
-  - 契约面：architect-reviewer 四分类 → ContractChangePacket → human 契约门（additive 字段 + §三措辞，随批原子落）
+  - 契约面：`/arch-change` 触契约分支——architect-reviewer 四分类 → 契约包三节（proposedContractDiff / impact / validationPlan）随批原子落、无人签门（现行口径，2026-10-16 T4 第 3 条刷新；additive 字段 + §三措辞）
   - 实现面：triage-change 比例化 → dev-loop Pod（服务端包 + 固件包可拆两包并行；launch 前置 = 需求/契约 anchors 回填）
   - 架构面：镜像修订随需求面同批（arch §5.1/§5.2 两处 + 场景①复查），不单独立批
-  - 顺序：立项 ack → 需求面起草与评审（含契约四分类预审）→ 契约门 human 签 → dev-loop launch
+  - 顺序：立项 ack → 需求面起草与评审（含契约四分类预审）→ 契约包随批原子落（无人签门）→ dev-loop launch
 anchors:
   req: ""
   contract: ""
@@ -39,7 +39,7 @@ anchors:
   imp: ""
 openQ:
   - q: 路由——触契约面命中升级判据①，Track B 独立评审批 vs spine 分面推进？
-    a: human 2026-10-14 裁「降为立项稿、不建独立评审批」——设计稿落在 intake companion（261014-single-tier-bringlist-home.PROPOSAL.md，无 FROZEN-landing），设计对抗审由 requirement-change 档 2 architect 必派承担；原 delivery/changes/arch/261014-gov-review-single-tier-bringlist-home/ 目录撤除、INDEX 行随全量重建消行。
+    a: human 2026-10-14 裁「降为立项稿、不建独立评审批」——设计稿落在 intake companion（261014-single-tier-bringlist-home.design.md，无 FROZEN-landing），设计对抗审由 requirement-change 档 2 architect 必派承担；原 delivery/changes/arch/261014-gov-review-single-tier-bringlist-home/ 目录撤除、INDEX 行随全量重建消行。
   - q: 带物清单是否要一条早晨语音兜底（07:45 单条合并播报）？
     a: human 2026-10-14 讨论倾向纯首页展示；立项稿 OQ-2 正式呈裁。
   - q: 校内窗口边界值？
@@ -63,5 +63,5 @@ status: awaiting-human:立项-ack
 ## 立项对齐（为什么改 / 往哪改 / 改动多大）
 
 - **为什么改**：三档中前晚与早上两档真机使用无效（human 2026-10-14 反馈原话「并没有起到什么作用」）；校内事项的分钟级时刻是家庭不可知不可控的假精度；携带物信息靠到点语音送达不可靠。
-- **往哪改**：单档临期提醒 + 首页常驻带物清单（设计载体 = intake companion `261014-single-tier-bringlist-home.PROPOSAL.md`，T1 单档化 / T2 静默窗口 / T3 带物清单 / T4 首页挂清单+契约 additive）。
+- **往哪改**：单档临期提醒 + 首页常驻带物清单（设计载体 = intake companion `261014-single-tier-bringlist-home.design.md`，T1 单档化 / T2 静默窗口 / T3 带物清单 / T4 首页挂清单+契约 additive）。
 - **改动多大**：需求面 2 个 story 结构性修订（档 2）；契约面 1 次 additive 契约变更；实现面服务端 + 固件两包可并行；架构面 2 处镜像。整体量级 = 中。

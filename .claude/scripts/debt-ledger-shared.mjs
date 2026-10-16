@@ -55,7 +55,7 @@ export const GATE_LAYER_RULES = [
   ['G1', /^(AGENTS\.md|CLAUDE\.md|README\.md|docs\/DEV-GOVERNANCE\.md)$/],
   ['G2', /^\.claude\/(agents|commands|references|rules|skills)\//],
   ['G3', /^(\.claude\/(scope-map\.json|hooks\/|scripts\/|[^/]*\.settings\.json)|\.claude\/verify-gates\.json)/],
-  ['G4', /^delivery\/(changes\/|taskpackages\/|workstreams\/)/],
+  ['G4', /^delivery\/(changes\/|taskpackages\/|workstreams\/|review\/|intake\/|retro\/|archive\/)/], // 261015 批 T6：delivery 证据根扩 review|intake|retro|archive 四根（changes 根保留解析历史 debt 路径；landing 期 FAIL(F1) 补列，对偶 governance-gate-shared ANCHORABLE_TEST 扩根）
 ];
 
 export function gateLayersOf(paths) {

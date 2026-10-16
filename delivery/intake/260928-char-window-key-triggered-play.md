@@ -61,3 +61,4 @@ openQ:
   - id: Q6
     q: story-author / requirement-reviewer 两 agent 加载失败（本会话与 headless claude -p 均报 not found），如何处置？
     a: 执行测出 bug（260928 批 ebea91a 落地件），按「执行测出 bug 走快路径」惯例打最小补丁：两文件 frontmatter description 未加引号且值含 `: `（YAML 解析失败、agent 被静默丢弃——全仓 14 份 agent def 枚举对照，可加载的 12 份全部带引号、失败的恰是未加引号的 2 份），补双引号后 headless 探针通过（回「收到」）。跳过流程一次性修复、如实记录本条；残留建议（lint-descriptions 扩「description 含引号缺失」齿）留待 loop-retro 捡起。
+---

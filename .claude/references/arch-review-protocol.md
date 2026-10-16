@@ -9,8 +9,8 @@
 
 同一套对抗机器（intake+draft → charter → challenger↔defender → adjudicator → pass-oracle）作为**两面 loop 的 Track A 段**运行（261015 批）——由派发面决定语料与判据：
 
-- **架构+契约面 Track A 段**（入口 `/arch-change`）：收敛架构方向（拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉）。证据落 `delivery/changes/arch/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
-- **治理面 Track A 段**（入口 `/gov-change`）：收敛治理方向。**不落 canonical**,只产证据 + decision packet,human 拍方向后流回该面 Track B 落地后端（landing 通道见「双轨路由」节）。证据落 `delivery/changes/arch/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
+- **架构+契约面 Track A 段**（入口 `/arch-change`）：收敛架构方向（拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉）。证据落 `delivery/review/arch-review-<spec>/`。oracle 见下「Pass-oracle」。
+- **治理面 Track A 段**（入口 `/gov-change`）：收敛治理方向。**不落 canonical**,只产证据 + decision packet,human 拍方向后流回该面 Track B 落地后端（landing 通道见「双轨路由」节）。证据落 `delivery/review/gov-review-<id>/`。oracle 见下「Governance profile pass-oracle」。
 
 **触发（只看收敛度，不看触及面）**：human 立项时判方向未收敛（该不该变、收益与影响看不清）、或 architect-reviewer 评审中升级（只升不降）、或声明红队——主线程派 review-moderator 编排本机器；收敛后 **human 拍方向**，流回 Track B 落地后端（收敛内容不再重复四查——对抗机器已审得更深）。跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 
@@ -52,7 +52,7 @@ lane 定了之后，**轻重判档归 architect-reviewer**（面 loop 评审循�
 3. 主线程凭「立项 ack + GREEN」**标 FROZEN**（FROZEN = 内容冻结；授权记 Status 行）；
 4. 主线程 **packet-bound 落地**（G1/G2/G3 全落，landing-manifest 绑定，落地后不可回改 PROPOSAL）+ 写 `architect-landing-summary.md`（**骨架见 `docs/templates/architect-landing-summary.template.md`，复制勿手写**——缺 landing-manifest 围栏块即结构门 / landing-verifier 合法打回；unit-gate F4 + 批 A 两实例已在册，同根 ARQ-260924-landing-summary-template-pointer-gap）；
 5. 主线程派 **landing-verifier** 独立核验（逐文件 diff + `landing-fidelity-check.mjs`）→ 绿；
-6. 主线程补写 **retro report**（骨架见 `docs/templates/retro.template.md`）于提案目录——landing-verifier 绿后**趁热**写、先于合并完成，retro 不含合并锚（合并落点由 `delivery/changes/arch/INDEX.md` `mergedInMain` 列经 `changes-index.mjs` 机械现推承担）；
+6. 主线程补写 **retro report**（骨架见 `docs/templates/retro.template.md`）于提案目录——landing-verifier 绿后**趁热**写、先于合并完成，retro 不含合并锚（合并落点由 `delivery/review/INDEX.md` `mergedInMain` 列经 `changes-index.mjs` 机械现推承担）；
 7. 主线程跑前置升级闸（`pre-merge-escalation-gate.mjs`，含 off-main 校验），放行 → 自动合并本地 main：治理批恒 `git merge --ff-only`（与 `git reflog main` 2026-09-08 起近期实务、`.claude/skills/merge-to-main` 步骤 4 一致；更早 3 例 gov 双亲合并 `8bd4a84`/`8c1cba3`/`33d8009` 系按本条旧文本执行，正是 260909-gov-review-gate-truthfulness T7 的收口对象；main 无独有 commit 时 ff-only 才成立，有分歧即停交 human），回滚口径 = `git revert` 逐 commit 或 human 裁；`--no-ff` 双亲合并仅用于 merge-driver 的 dev Pod 通道（该通道产物是 Pod 分支，需保留双亲以证合入事实）。remote push 仍 human；升级闸拦 → 升级人。
 
 > **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起）**：Track B 的 human 触点 = 立项 ack（前端对齐：需求/方向/量级）；merge 恒由主线程在前置升级闸放行后自动落本地 main，remote 同步仍 human。升级闸只重算 merge 期仍可机判的例外（契约面 diff / off-main / escalation 未 resolve / riskTier high-critical / supervisor APPROVE provenance / architect GREEN 机锚）；跨系统结构性变更、声明红队、自改递归属**路由期**裁决，在 merge 前已引走人，不做 merge 期重算。
@@ -95,7 +95,7 @@ lane 定了之后，**轻重判档归 architect-reviewer**（面 loop 评审循�
 full 对抗（Track A 段）对以下**强制**：高影响架构、跨系统 spec 语义、L0 蓝图、改 authority/owner/writer/approver 语义 / gates / agent tools·write scope / scope-map allow·deny / hooks·settings·scripts / route enforcement 的治理变更、任何 deadlock 或未决分歧、以及一切方向未收敛的变更（以上为收敛度与风险强制项；执行测出的 bug 走 Track B 快路径——其中真设计分叉 / 爆炸半径未揭示 / 无执行记录 → 回 Track A 段）。
 ## 起草阶段（architect = 作者 subagent，对偶 builder）
 
-输入是 plan/想法时,Track A 段内 moderator 派 `architect` 当**起草 subagent** 产候选(架构面 → `docs/requirements.md` + `docs/architecture.md`,**写入不等于冻结**;治理面 → `delivery/changes/arch/gov-review-<id>/PROPOSAL.md`,**不落 canonical**;Track B 内主线程直接派 architect 起草)。输入已是现成 spec/proposal 则跳过起草。
+输入是 plan/想法时,Track A 段内 moderator 派 `architect` 当**起草 subagent** 产候选(架构面 → `docs/requirements.md` + `docs/architecture.md`,**写入不等于冻结**;治理面 → `delivery/review/gov-review-<id>/PROPOSAL.md`,**不落 canonical**;Track B 内主线程直接派 architect 起草)。输入已是现成 spec/proposal 则跳过起草。
 
 **作者 ≠ 判官(中立性铁律,对偶 dev-loop builder≠verifier/supervisor)**:architect 只产**候选制品**;判据(charter)由 `scenario-author` 独立冻结,攻与裁由 `challenger`/`adjudicator`。architect 不写冻结 charter、不自评可冻结/可批准、不落 governance canonical、自改递归仍须 human;moderator 编排但不代 architect 起草。**路由权同——作者不得自路由（见上节「路由权归属」）。**
 
@@ -136,7 +136,7 @@ architect(起草 subagent,仅当输入是 plan/想法,产候选不判)· review-
 ## 渐进式严格（谁落地 vs 谁升级）
 
 - **低影响** CONFIRMED + 明显 spec 文本改法 → moderator 主线程直接落地 + 记 debate-log。
-- **实现侧修复** CONFIRMED → adjudicator/review-moderator 必须生成 `delivery/changes/arch/arch-review-<spec>/dev-loop-handoff.json`，包含 sourceRefs、riskTier、gateProfile、blockingDecisions、suggestedTaskPackages、planningRecommendation、deliveryImpact、acceptanceRefs 与 verificationHints；planner 只消费 handoff 做 TaskPackage 切片。
+- **实现侧修复** CONFIRMED → adjudicator/review-moderator 必须生成 `delivery/review/arch-review-<spec>/dev-loop-handoff.json`，包含 sourceRefs、riskTier、gateProfile、blockingDecisions、suggestedTaskPackages、planningRecommendation、deliveryImpact、acceptanceRefs 与 verificationHints；planner 只消费 handoff 做 TaskPackage 切片。
 - **高影响 / 跨系统 / 触契约 / deadlock** → 人类拍板(镜像 supervisor 自动放行 vs ESCALATE + 契约门)。
 
 ## 反空过守卫（mutation-check 对偶,非破坏性）
@@ -159,7 +159,7 @@ scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 fin
 3. **finding 全结** — 每条 finding 落到上面某个 outcome;无未结 BLOCKING/SHOULD。
 4. **spec↔contract 机械门绿** — 无 schema 复制 + `core.*` 引用解析(`<system>.*` 未解析为 advisory,Tier-2 交 challenger 按轴 4 核;见 A7 脚本)。
 5. **canaries 全中** — 所有 regression-canary 被 challenger 独立重新派生。
-6. **dev-loop handoff 完整** — 有实现侧修复 finding 时，`node .claude/scripts/arch-review-handoff-check.mjs delivery/changes/arch/arch-review-<spec>` 必须绿；没有此类 finding 时，review-packet 说明 handoff not required。
+6. **dev-loop handoff 完整** — 有实现侧修复 finding 时，`node .claude/scripts/arch-review-handoff-check.mjs delivery/review/arch-review-<spec>` 必须绿；没有此类 finding 时，review-packet 说明 handoff not required。
 
 ## Governance profile pass-oracle（全过才可标「可批准」）
 
@@ -184,8 +184,8 @@ governance profile 在 human 批准 decision-packet **之后**、主线程 packe
 
 1. **定稿（consolidate，architect）**：把所有 CONFIRMED 改法（来自 `decision-packet.md` / `findings.md`）+ human 裁决**回灌进 `PROPOSAL.md`**，标 `FROZEN / APPROVED`，并加一段「Review 定稿记录」（review 摘要 + finding/改法映射 + 裁决）。PROPOSAL 成为**单一权威设计**；`decision-packet.md` 退化为「本次 delta 记录」。定稿必产 ```landing-manifest 围栏块（恰 canonical 目标路径集，一行一条）作为回灌的机械组成部分（非可选）——两结构门 fail-loud 消费此块，缺块即格式不合格 RED（authoring 格式契约 SSOT 见 architect-operating-model §5）。architect 只机械回灌**已批**改动，**不夹带新设计、不自冻**（作者≠判官）。
 2. **冻结（freeze，human）**：human 盖 FROZEN（版本/sha）。architect 不能自冻——作者≠判官，起草/定稿归 architect，判官是 human。
-3. **核验（verify，review-moderator 收口 + 机械门）**：moderator（**非作者**，保 author≠judge）核对 frozen PROPOSAL ↔ decision-packet ↔ findings ↔ human 裁决一致——**无漏改法、无新引入矛盾、canonical 目标逐一匹配**；并跑 `node .claude/scripts/proposal-consolidation-check.mjs delivery/changes/arch/gov-review-<id>`（机器兜底：PROPOSAL 已冻结 + 有定稿段 + decision-packet 每条 canonical 目标都在 frozen PROPOSAL 出现）。脚本是**结构一致性**门，不证语义正确——语义正确是 moderator 人读核验的事，两层互补。核验 RED → 退回 architect 定稿，**不放行 landing**。
+3. **核验（verify，review-moderator 收口 + 机械门）**：moderator（**非作者**，保 author≠judge）核对 frozen PROPOSAL ↔ decision-packet ↔ findings ↔ human 裁决一致——**无漏改法、无新引入矛盾、canonical 目标逐一匹配**；并跑 `node .claude/scripts/proposal-consolidation-check.mjs delivery/review/gov-review-<id>`（机器兜底：PROPOSAL 已冻结 + 有定稿段 + decision-packet 每条 canonical 目标都在 frozen PROPOSAL 出现）。脚本是**结构一致性**门，不证语义正确——语义正确是 moderator 人读核验的事，两层互补。核验 RED → 退回 architect 定稿，**不放行 landing**。
 4. **landing（主线程）**：核验过后由主线程（无 agent_type 会话）packet-bound canonical landing，`architect-landing-summary.md` 引被批 packet-id + frozen PROPOSAL 版本（A9 packet-binding）。
-5. **landing 保真核验（landing-verifier，独立于落地者）**：landing 后由主线程派 `landing-verifier`（治理 loop 的 verifier 对偶，补 builder≠verifier 缺槽）**独立核验「实际落的 == frozen PROPOSAL」**：跑 `node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/gov-review-<id>`（结构门：未冻结 / 无 packet-binding / scope creep / claimed·planned-but-not-landed 硬失败）+ 逐文件人读 diff 核对改法 == PROPOSAL/decision-packet（语义保真，脚本不判），写 `landing-verdict.md`。**verdict 绿才交 human merge，RED 退回主线程修 landing**。landing-verifier 只读 codebase、只写自己 verdict——改了被验文件就塌独立性。补的缺口：此前 landing 只靠 architect 自写 landing-summary「供人类 merge 门 spot-check」，无独立核验（gov-review-landing-fidelity-gate 修复）。
+5. **landing 保真核验（landing-verifier，独立于落地者）**：landing 后由主线程派 `landing-verifier`（治理 loop 的 verifier 对偶，补 builder≠verifier 缺槽）**独立核验「实际落的 == frozen PROPOSAL」**：跑 `node .claude/scripts/landing-fidelity-check.mjs delivery/review/gov-review-<id>`（结构门：未冻结 / 无 packet-binding / scope creep / claimed·planned-but-not-landed 硬失败）+ 逐文件人读 diff 核对改法 == PROPOSAL/decision-packet（语义保真，脚本不判），写 `landing-verdict.md`。**verdict 绿才交 human merge，RED 退回主线程修 landing**。landing-verifier 只读 codebase、只写自己 verdict——改了被验文件就塌独立性。补的缺口：此前 landing 只靠 architect 自写 landing-summary「供人类 merge 门 spot-check」，无独立核验（gov-review-landing-fidelity-gate 修复）。
 
 > 这一段是 governance profile 专属（spec profile 的候选直接是 `docs/` 里的 spec，confirmed 改法直接落进 spec，无「孤儿 PROPOSAL」问题）。定稿核验过后 landing 恒 = 主线程 packet-bound（见「双轨路由」节；architect 的 approved-landing mode 已于 2026-08-02 退役）。

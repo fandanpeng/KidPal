@@ -29,7 +29,7 @@ owner: <谁承接，如 architect / dev-loop / human>
 trigger: <什么时机处理它——「下一治理批」「下个动 X 的包」这类可判触发>
 opened: <YYYY-MM-DD，通常 = ID 里的日期>
 closed: <已结才填 YYYY-MM-DD>
-closedBy: <已结才填：结项依据的链接，如 delivery/changes/arch/<id>/landing-verdict.md>
+closedBy: <已结才填：结项依据的链接，如 delivery/review/<id>/landing-verdict.md>
 paths: [<待改的确切仓根相对路径，逗号分隔；空则 G 层不可机判，doctor 出 advisory>]
 source: [<provenance：可点开的执行记录，如就地的 review-packet / pod-events / retro 行>]
 ---
@@ -50,7 +50,7 @@ source: [<provenance：可点开的执行记录，如就地的 review-packet / p
 ## 三条纪律
 
 1. **正文只追加、不改既有段**——历史证据不可被重写（`AGENTS.md` Hard Rules）。要更正，就在尾部追加一段并写明更正理由。
-2. **结项 = 原地翻字段**（`status: closed` + `closed` + `closedBy`，正文尾追加一行「**结项**：…」），**不重打 ID、不换结构**；已结条目由 `debt-render.mjs` **自动归位** `_archive/<结项年>/`（**人不搬文件**——位置是状态的纯函数，重开自动搬回，`debt-doctor.mjs` 核「位置 == f(状态)」）。
+2. **结项 = 原地翻字段**（`status: closed` + `closed` + `closedBy`，正文尾追加一行「**结项**：…」；被变更消费而结项时，结项行写 `consumed-by: <changeId>`——正文约定，change-intake.md §3a，机检兼容性实测零脚本改动），**不重打 ID、不换结构**；已结条目由 `debt-render.mjs` **自动归位** `_archive/<结项年>/`（**人不搬文件**——位置是状态的纯函数，重开自动搬回，`debt-doctor.mjs` 核「位置 == f(状态)」）。
 3. **登记前先查重**：`grep -l "<关键词>" docs/debt/*/*.md`——命中即已有条目，**在既例行追加证据注记、不新立**。
 
 ## 正文段落名（渲染与检查不依赖，但保持同形便于人读与产物一致）

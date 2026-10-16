@@ -12,10 +12,10 @@
 | # | 形态 | 示例 | 残留清扫子检模式（关键：模式须**同时**覆盖正形与残形，否则子检自咬） |
 |---|---|---|---|
 | 1 | **斜杠形**（正形） | `delivery/taskpackages/INDEX.md` | `delivery/taskpackages/` |
-| 2 | **分段单引号** | `'changes', 'INDEX.md'` | `['"]changes['"]\s*,\s*['"]` |
-| 3 | **分段双引号**（**任意段值**，含 `'changes', 'INDEX.md'` 类非三段值） | `"delivery", "taskpackages"` | `['"](?:delivery|changes|dev)['"]\s*,\s*['"](?:changes|dev|INDEX)` |
-| 4 | **Python join** | `"changes" / "dev"` | `['"][a-z_]+['"]\s*/\s*['"]` |
-| 5 | **C 双引号实参** | `fopen("delivery/changes/...")` | `"[^"]*(?:delivery|changes)/[^"]*"` |
+| 2 | **分段单引号** | `'review', 'INDEX.md'` | `['"]changes['"]\s*,\s*['"]` |
+| 3 | **分段双引号**（**任意段值**，含 `'review', 'INDEX.md'` 类非三段值） | `"delivery", "taskpackages"` | `['"](?:delivery|changes|dev)['"]\s*,\s*['"](?:changes|dev|INDEX)` |
+| 4 | **Python join** | `"review" / "INDEX.md"` | `['"][a-z_]+['"]\s*/\s*['"]` |
+| 5 | **C 双引号实参** | `fopen("delivery/review/...")` | `"[^"]*(?:delivery|changes)/[^"]*"` |
 | 6 | **相对链接形** | `../../changes/` | `\.\./(?:\.\./)*(?:delivery|changes)/` |
 | 7 | **正则转义两子形** | `\.planning` / `changes\/` | `\\\.\w+` 与 `\w+\\/`（两子形**分别**扫，不可合一） |
 | 8 | **点号成员访问粘连形** | `taskPackage.deliveryMilestoneStateChanged` | `\.(?:delivery\|milestone\|change)[A-Za-z]*`（见下方风险注记②） |
@@ -63,4 +63,4 @@
 
 - 起草自检两句 → `docs/templates/PROPOSAL.template.md` §2「【硬项 · 目标文件锚清单】」段末
 - 结构门 / 冻结前干跑 → `.claude/scripts/landing-fidelity-check.mjs`（`--preflight`）
-- 实证批 → `delivery/changes/arch/260914-gov-review-delivery-restructure/`（retro §3-F2/F2b、§4-2；landing-verdict 首轮 FAIL 红项）
+- 实证批 → `delivery/review/260914-gov-review-delivery-restructure/`（retro §3-F2/F2b、§4-2；landing-verdict 首轮 FAIL 红项）

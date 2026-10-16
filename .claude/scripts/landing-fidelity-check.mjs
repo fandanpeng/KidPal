@@ -21,7 +21,7 @@
 //
 // 语义保真（改法对不对、有无私货）归 landing-verifier 人读 diff，本脚本不判。
 //
-// 用法：node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/gov-review-<id> [baseRef]
+// 用法：node .claude/scripts/landing-fidelity-check.mjs delivery/review/gov-review-<id> [baseRef]
 // 「已落地」判定 = 工作树改动 ∪ 已提交改动；默认相对 HEAD~1，给 baseRef 则相对该 ref（含未提交）。
 // landing 清单来源：读 PROPOSAL.md / architect-landing-summary.md 里的 ```landing-manifest 围栏块
 // （一行一个 canonical 路径，authoring 格式契约见 architect-operating-model §5）。
@@ -562,14 +562,14 @@ function gitChangedFiles(sinceRef) {
 
 if (!reviewDir) {
   fail('review directory argument is required', {
-    usage: 'node .claude/scripts/landing-fidelity-check.mjs delivery/changes/arch/gov-review-<id>',
+    usage: 'node .claude/scripts/landing-fidelity-check.mjs delivery/review/gov-review-<id>',
   });
 }
 if (!existsSync(reviewDir)) fail('review directory does not exist', { reviewDir });
 
 const proposalPath = resolve(reviewDir, 'PROPOSAL.md');
 const summaryPath = resolve(reviewDir, 'architect-landing-summary.md');
-const relDir = `delivery/changes/arch/${basename(reviewDir)}`;
+const relDir = `delivery/review/${basename(reviewDir)}`;
 
 if (!existsSync(proposalPath)) fail('PROPOSAL.md is required（frozen 权威设计 + landing 清单）', { reviewDir: relDir });
 if (!existsSync(summaryPath)) fail('architect-landing-summary.md is required（landing 声称 + packet-binding）', { reviewDir: relDir });

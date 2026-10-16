@@ -687,7 +687,7 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 
 ## 9. 变更记录（版本管理）
 
-> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——版本号、日期、改了什么、依据。story 增删改、NFR 变动、砍项、结构重排必须有行；纯勘误也记（标「勘误」）。行只追加、不覆盖既有行。逐次详情可溯 delivery/changes/arch/** 对应制品。语义修改（档 1）与结构性变更（档 2）的变更行以版本号为 changeId（不另铸 ID），该行即 story 修订的定稿载体，实现包引用以其为准；走 requirement-change.md 三档流程的变更，跳过流程的须在依据列写明「跳过 story-author/reviewer」。流程判据见 `.claude/references/requirement-change.md`。头部状态行是盘上在途态标记：story-author 动笔置 updating、主线程在落稿时翻 frozen，翻 frozen 以 §9 版本行在位为准；updating 态本文件不得被实现包 / triage / launchPreconditions 引用。
+> 纪律：本文件每次改动都在下表追加一行（新行在上，倒序）——版本号、日期、改了什么、依据。story 增删改、NFR 变动、砍项、结构重排必须有行；纯勘误也记（标「勘误」）。行只追加、不覆盖既有行。逐次详情可溯 delivery/review/**（2026-10-16 前历史批见 delivery/archive/changes/arch/**）对应制品。语义修改（档 1）与结构性变更（档 2）的变更行以版本号为 changeId（不另铸 ID），该行即 story 修订的定稿载体，实现包引用以其为准；走 requirement-change.md 三档流程的变更，跳过流程的须在依据列写明「跳过 story-author/reviewer」。流程判据见 `.claude/references/requirement-change.md`。头部状态行是盘上在途态标记：story-author 动笔置 updating、主线程在落稿时翻 frozen，翻 frozen 以 §9 版本行在位为准；updating 态本文件不得被实现包 / triage / launchPreconditions 引用。
 
 | 版本 | 日期 | 变更 | 依据 |
 |---|---|---|---|
@@ -754,3 +754,5 @@ Story 编号 `S-Fx.y` 发布后稳定，不回收、不复用；每条 story = �
 | v1.3 | 2026-09-13 | §1「主要功能」重写为对话为主两层结构：通用问答 + 三项专项能力（问课表 / 帮我记录（暂名，原「故事记录」）/ 查生字），专项能力均对话发起、专属页面承接；Epic E1 目的句同步改口径。「故事记录」改名与 F2 内涵（日记 vs 随手记）待梳理到 F2 时再拍。 | human 直改指示（跳过 Track B，如实记录；phase 1 从头梳理中，未到定版） |
 | v1.2 | 2026-09-13 | phase 1 需求梳理起步·结构重排：UI 锚规则与 story 锚行撰写纪律移出本文件（SSOT 归 skill `write-story`）；已砍清单自文件头部移至文末 §8；新增本变更记录节。story 正文、NFR、开放问题零语义改动。 | human 直改指示（一次性跳过 Track B，如实记录；phase 1 重新定基线语境） |
 | v1.1 | 2026-09-13 | 自 docs/spec.md（v0.2 FROZEN）拆分落地为独立需求文件：13 条 story 按五件模板重写、NFR 四件结构、共享底座整编、Epic E1（F1–F4）定界、已砍清单随迁（5 件）。 | `260913-arch-review-spec-split`（Track B FROZEN v1.1；四件制品见 changes/arch/260913-arch-review-spec-split/） |
+
+> **勘误行（档 0 勘误通道，261015-gov-review-changes-taxonomy T6 第 3 条）**：§9 本头注「逐次详情可溯」指针行由 `delivery/changes/arch/**` 更新为 `delivery/review/**`（changes/ 伞解散随 261015 批归档迁移；旧树整树在 delivery/archive/changes/arch/**，零改写）。§9 既有版本行零改动（append-only 豁免）。

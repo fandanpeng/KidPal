@@ -2,7 +2,7 @@
 // suggest-codebase-memory.mjs — 告警级 advisory 钩子（非门）
 //
 // 治理声明：owner=architect · approver=human · G3（DEV-GOVERNANCE §6 强制执行层行覆盖）· 告警级非门（对偶先例 lint-descriptions.mjs）。
-// 批准物：delivery/changes/arch/gov-review-codebase-memory-enforcement/decision-packet.md（§2 修正版受众闸 + §4 对账断言清单）。
+// 批准物：delivery/archive/changes/arch/gov-review-codebase-memory-enforcement/decision-packet.md（§2 修正版受众闸 + §4 对账断言清单）。
 // 本钩子是仓内首个逐工具调用的运行时模型上下文注入钩子（触发类无先例，定价见 packet §7-2 / 簇⑥-6d）。
 //
 // 行为规格（decision-packet §2 修正版 + §4 固化）：
@@ -19,7 +19,7 @@
 //     全名留在 ELIGIBLE_FULL 是防未来子代理化。acceptance-author 是真被 planner 派发的 subagent → 经分支②。
 //   - 事件 A（PostToolUse 且 tool_name ∈ {Grep, Glob}）：代码面启发——路径白名单为主
 //     （firmware/**、server/**、docs/contracts/**），文件型析取仅与索引根相交时生效；
-//     .claude/**、docs/**、delivery/changes/**、delivery/workstreams/**、*.md 显式静默。节流 grepReminders cap=2/session。
+//     .claude/**、docs/**、delivery/review/**、delivery/intake/**、delivery/retro/**、delivery/archive/**、delivery/workstreams/**、*.md 显式静默。节流 grepReminders cap=2/session。
 //   - 事件 B（PreToolUse 且 tool_name=Bash 且 /\bgit\s+commit\b/i 命中 command）：节流 commitReminders cap=1/session。
 //   - 提醒通道：exit 0 + stdout JSON { hookSpecificOutput: { hookEventName, additionalContext } }——文本注入模型上下文、不改判定。
 //   - 会话状态：os.tmpdir()/claude-cbm-suggest-<session_id>.json { grepReminders, commitReminders }；
@@ -62,7 +62,7 @@ function eligible(input) {
 function isCodeSurface(toolInput, projectDir) {
   const ti = toolInput || {};
   const signals = [ti.path, ti.glob, ti.type, ti.pattern].filter((s) => typeof s === 'string' && s.length > 0);
-  // 显式静默面（优先判定）：.claude/**、docs/**、delivery/changes/**、delivery/workstreams/**、*.md、纯文本文件型
+  // 显式静默面（优先判定）：.claude/**、docs/**、delivery/review/**、delivery/intake/**、delivery/retro/**、delivery/archive/**、delivery/workstreams/**、*.md、纯文本文件型
   for (const s of signals) {
     const p = s.replace(/\\/g, '/');
     if (/(^|\/)\.claude(\/|$)/.test(p)) return false;

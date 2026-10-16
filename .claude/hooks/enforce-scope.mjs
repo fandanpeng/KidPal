@@ -63,7 +63,7 @@ function checkUniversal(rel, universal) {
     const parts = rel.split('/');
     if (parts.length === 2) {
       if (!(dt.allowFiles || []).includes(rel)) {
-        return `scope(universal): 禁止在 docs/ 根新建 ${rel}。过程产物→ delivery/taskpackages/<id>/ 或 delivery/changes/arch/arch-review-<spec>/；若确为新的正式顶层文档，先登记进 .claude/scope-map.json 的 universal.docsTopLevel.allowFiles 与 .claude/rules/repo-structure.md。`;
+        return `scope(universal): 禁止在 docs/ 根新建 ${rel}。过程产物→ delivery/taskpackages/<id>/ 或 delivery/review/arch-review-<spec>/；若确为新的正式顶层文档，先登记进 .claude/scope-map.json 的 universal.docsTopLevel.allowFiles 与 .claude/rules/repo-structure.md。`;
       }
     } else if (parts.length >= 3) {
       const topDir = parts[0] + '/' + parts[1];

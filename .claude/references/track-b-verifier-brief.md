@@ -14,7 +14,7 @@
 
 ## 唯一可写面
 
-`delivery/changes/arch/<change-id>/landing-verdict.md`（新建）。不得写其它任何文件。
+`delivery/review/<change-id>/landing-verdict.md`（新建）。不得写其它任何文件。
 
 ## 六项核验清单（逐项过，逐项记 verdict）
 

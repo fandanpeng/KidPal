@@ -1,6 +1,6 @@
 # Pod Coordination — blackboard / merge token / reconcile（canonical mechanics）
 
-> 状态：canonical dev-loop 协调机制参考。落定自 `delivery/changes/arch/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1）§7–§9。
+> 状态：canonical dev-loop 协调机制参考。落定自 `delivery/review/dev-loop-os-rte/PROPOSAL.md`（FROZEN v2.1）§7–§9。
 > 上层定义见 [`dev-loop-operating-system.md`](dev-loop-operating-system.md)；本文件只讲多 Pod 并行的协调**机制**。角色见 [`.claude/agents/portfolio-planner.md`](../agents/portfolio-planner.md)。
 
 ## 1. 原则
@@ -37,7 +37,7 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
   - `taskpackage.json`（`delivery/taskpackages/<changeId>/taskpackage.json`）= **blocking**
   - PROPOSAL（`origin.upstreamRef` 解析）= **blocking**
   - `decision-coverage.json`（`delivery/workstreams/<ws>/decision-coverage.json`）= **warn**
-- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `delivery/workstreams/<ws>` ∨ `delivery/changes/(arch|dev)/**`（复用 `isProposalMdPath`，change-triage.md:106）。
+- `origin.upstreamRef` 校验前按 task-intake DP-1 **剥片段**（`:S-Fx.y` / `:S-Fx.y-ACn` 等锚点，复用不新造；句法见 task-intake「story 锚点引用与转写」节）；PROPOSAL 路径**双路解析** `delivery/workstreams/<ws>` ∨ `delivery/review/**`（复用 `isProposalMdPath`，change-triage.md:106）。
 - **`launchPreconditions` 核验 = 机械读 + 人读（260921-gov-review-launch-pipeline T6 承载 `ARQ-260914`）**：`--check-launch` **读** workstream `decision-coverage.json` 顶层 `launchPreconditions`——**按包过滤**（只取 `scope === "workstream"` ∨ `scope === "package:<本包>"`，其余折叠为一行计数、不逐条列）、**只报** `status !== "verified"` 的条目，落 **warn 通道（不阻断）**。**人读核验义务不变**：该面仍由 **launch 执行者（human 点火前）逐条核**——逐条核前置是否满足，其中 `需修订` 类 spec 裁定按落点二分核对应文件已冻结（story 语义 → `docs/requirements.md`、支撑语义 → `docs/architecture.md`）；未满足 → 承载包不得 launch（粒度 = 包，非整 workstream 陪等）。**核验结果由 launch 执行者回写**条目的 `status` / `evidence`（凭据 = progress.md 锚行 / human 裁决 ref），使下次不再重复报。canonical 定义（对象形态 + 写入义务分派）见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「launchPreconditions」节。**旧形态兼容**：裸 `string` 条目按 `{scope:"workstream", status:"unverified"}` 视之；读侧对旧形态走汇总行、不逐条报（防永久噪音），且**不静默丢失**。**本门判定语义不变**——该键仍属 warn 通道、非 blocking 源，**不新增工程门**。（本项前身「机械齿另登 ARQ 留根，人读反复漏检再机械化」**已由本次读侧落地而作废**——该 ARQ 即 `ARQ-260914`。）
 - **board 不入 check 集**：board/token 恒在 git common dir（§2）、不入版本控制，其可见性由 common dir 给、不靠 commit；board 失同步由 planner intake-reconcile 修。
 - 缺失（blocking 项）→ **拒绝 launch**，报「拆包产物未 commit 到基准 ref」，回 portfolio-planner 补 commit（对偶 planner.md F-09 needs-triage 默认出口）。
