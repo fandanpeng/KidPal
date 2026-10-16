@@ -18,6 +18,8 @@ packet-id：FROZEN PROPOSAL v0.4 §2 改法集（T1，改法 1–4）+ §5 验�
 - **V2 · deny 双态实测（波段一态）**：落地会话 Write 探针 `delivery/changes/dev/probe.md` → PreToolUse 钩子拦截，拦截原文逐字：`scope(universal): 禁止写 delivery/changes/dev/probe.md（.claude/scope-map.json universal.denyCreate——影子目录或受保护区）。` 探针未落盘（`delivery/changes/dev` 全树不在场）。
 - **V3 · 合并闸 BLOCK/PASS**：① `node .claude/scripts/pre-merge-escalation-gate.mjs --self-check` → `{"selfCheck":"pre-merge-escalation-gate","pass":48,"fail":0,"total":48,"ok":true}`（基线 43 + 齿二新增 5 臂：retired-path-merge-block / retired-path-probe-fail-closed / retired-path-clean-pass / retired-probe-fn-clean / retired-probe-fn-dirty，输出含全部新增自检名）；② 真实旧布局分支实跑：`node .claude/scripts/pre-merge-escalation-gate.mjs 261015-voice-rightcol-label-overflow --source-ref dev/pod-m2` → `exit=1`，BLOCK 理由逐字：`retired-path-merge-block：合并结果树含废止路径残件 1 条（040000 tree eb121c95ab583c7b868534897678a9e29b5e708c	delivery/changes/dev）——旧布局分支带入；归位 delivery/taskpackages/ 同 id 目录后重跑（dev lane 已由 261014 批撤销，真家映射见 delivery/archive/README.md）`；off-main 未触发（单因证据，dev/pod-m2 与 main diverged，与 T1 证据「在途分支」一致）。
 - **V1 · 搬移对账（working tree 预跑）**：`for f in review-packet.md supervisor-verdict.json pod-retro.md docs-delta.md; do test -f ... || echo MISSING; done` → 无 MISSING（四件全在位）；`test ! -d delivery/changes/dev` → 在场性否定成立。**post-commit 复证将 append 本节**（V1 判据时点 = post-commit）。
+
+> **V1 post-commit 复证（append · commit a8ee823）**：同断言 post-commit 复跑——四件全在位（无 MISSING）+ `delivery/changes/dev` 不在场，V1 闭合（判据时点达成）。
 - **附带机械检查**：`brief-inputs.mjs --self-check` → 43/43 passed，SELF-CHECK GREEN；`settings-lint.mjs` → 3 files, 0 RED, 0 WARN（scope-map 改动后复跑）。
 
 ## 3. 诚实注记
