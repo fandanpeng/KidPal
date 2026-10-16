@@ -33,6 +33,8 @@
 #include <esp_vfs_fat.h>              /* 包 261016-sd-card-mount: esp_vfs_fat_sdmmc_mount / mount_config */
 #include <sdmmc_cmd.h>               /* 包 261016-sd-card-mount: sdmmc_card_t / sdmmc_card_print_info */
 #include <driver/sdmmc_host.h>       /* 包 261016-sd-card-mount: SDMMC_HOST_DEFAULT / sdmmc_slot_config_t */
+#include <stdio.h>                   /* 包 261016-sd-card-mount: 探针 VFS 文件 I/O (fopen/fwrite/fread/fclose/remove) */
+#include <errno.h>                   /* 包 261016-sd-card-mount: 探针失败步 errno 诊断 */
 
 /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
  * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
@@ -863,6 +865,101 @@ private:
         s_sd_mounted = true;
         sdmmc_card_print_info(stdout, card);
         ESP_LOGI(TAG, "SD card mounted at %s (SDMMC 1-bit)", SD_MMC_MOUNT_ROOT);
+        /* 包 261016-sd-card-mount: 挂载成功路径一次性开机 roundtrip 探针调用点
+         * (SD-A5 真机 live-manual 观察触发面, 见 RunBootRoundtripProbe 头注)。
+         * 仅成功路径执行——无卡/挂载失败的降级 return 分支 (:856-862) 不跑;
+         * 探针内部失败只记日志、继续正常启动, 不改 s_sd_mounted (挂载成功即成功)。 */
+        RunBootRoundtripProbe();
+    }
+
+    /* 包 261016-sd-card-mount: 一次性开机 SD roundtrip 探针 —— **本包测试义务**
+     * (冻结验收 SD-A5 真机 live-manual 条目的观察触发面), **非业务消费**。SD-A5
+     * 要求 human 持板在真机观察「/sdcard/SDTEST.TXT 写-读-删 roundtrip 读回与写入
+     * 一致、验后即删不驻留」; 但本包自身零消费方(无 MCP 工具/串口命令/开机探针
+     * 触发文件读写), 该齿在真机上无触发面, human 无法观察 —— 故在挂载成功路径加
+     * 本探针给 human 一个可观察点。human 裁定留痕 = pod-events eventId db8b1406
+     * (「齿是冻结权威, 不回调验收; 补最小实现满足冻结齿」)。
+     *
+     * 临时测试探针, 遵守决策 24 介质禁令口径: 不写业务/身份/事项状态数据, 固定
+     * 已知字节序列、**验后即删不驻留**(任一失败步亦尽力 remove 清场)。8.3 大写名
+     * (SDTEST.TXT) 受 LFN 关闭约束 (CONFIG_FATFS_LFN_NONE, human 触点①拍板)。
+     *
+     * 形态: 走 VFS 标准 C 文件 I/O (fopen/fwrite/fread/fclose/remove), 每步判返回
+     * 值。**严禁裸 ESP_ERROR_CHECK(** (SD-A3 负向齿: 函数窗内 panic 形态计数=0);
+     * 探针内部任何失败只 ESP_LOGW 记失败步 + errno, 继续正常启动、绝不 panic、不
+     * 阻断。结果进串口日志: 通过 = ESP_LOGI "SD ROUNDTRIP PASS"; 任一步失败 =
+     * ESP_LOGW "SD ROUNDTRIP FAIL ..." 带失败步 (write/read/compare/delete)。 */
+    void RunBootRoundtripProbe() {
+        static const char kProbePath[] = SD_MMC_MOUNT_ROOT "/SDTEST.TXT"; /* 8.3 大写名 */
+        static const char kPayload[] =
+            "KIDPAL-SD-ROUNDTRIP-PROBE-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const size_t payload_len = sizeof(kPayload) - 1; /* 不含结尾 NUL */
+        char corr_id[24];
+        snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+
+        /* step write: 建/截断 8.3 探针文件并写入固定已知字节序列。 */
+        FILE *f = fopen(kProbePath, "wb");
+        if (f == NULL) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=write path=%s corr_id=%s errno=%d",
+                     kProbePath, corr_id, errno);
+            return;
+        }
+        size_t written = fwrite(kPayload, 1, payload_len, f);
+        int close_rc = fclose(f);
+        if (written != payload_len || close_rc != 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=write path=%s corr_id=%s "
+                          "written=%u/%u fclose=%d errno=%d",
+                     kProbePath, corr_id, (unsigned)written, (unsigned)payload_len,
+                     close_rc, errno);
+            remove(kProbePath); /* 尽力清场, 不留残件 (验后即删义务) */
+            return;
+        }
+
+        /* step read: 读回逐字节比对。 */
+        f = fopen(kProbePath, "rb");
+        if (f == NULL) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=read path=%s corr_id=%s errno=%d",
+                     kProbePath, corr_id, errno);
+            remove(kProbePath);
+            return;
+        }
+        char rb[128] = {};
+        size_t nread = fread(rb, 1, sizeof(rb), f);
+        fclose(f);
+        if (nread != payload_len) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=read path=%s corr_id=%s "
+                          "read=%u/%u errno=%d",
+                     kProbePath, corr_id, (unsigned)nread, (unsigned)payload_len, errno);
+            remove(kProbePath);
+            return;
+        }
+        int mismatch = -1;
+        for (size_t i = 0; i < payload_len; i++) {
+            if (rb[i] != kPayload[i]) {
+                mismatch = static_cast<int>(i);
+                break;
+            }
+        }
+        if (mismatch >= 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=compare path=%s corr_id=%s "
+                          "byte_off=%d got=0x%02x want=0x%02x",
+                     kProbePath, corr_id, mismatch,
+                     (unsigned char)rb[mismatch], (unsigned char)kPayload[mismatch]);
+            remove(kProbePath);
+            return;
+        }
+
+        /* step delete: 验后即删, 探针文件不驻留。 */
+        int del_rc = remove(kProbePath);
+        if (del_rc != 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=delete path=%s corr_id=%s rc=%d errno=%d",
+                     kProbePath, corr_id, del_rc, errno);
+            return;
+        }
+        ESP_LOGI(TAG, "SD ROUNDTRIP PASS path=%s corr_id=%s bytes=%u "
+                      "(write-read-compare-delete ok, 验后即删不驻留)",
+                 kProbePath, corr_id, (unsigned)payload_len);
     }
 
     /* 包 261016-sd-card-mount: 板级查询入口 (本包零消费方, 供将来消费方判 /sdcard
