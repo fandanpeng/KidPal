@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verifier-scope",
+  "authority": "bearing",
+  "changeId": "261015-p1-auxbar-style-fix",
+  "producedBy": "planner（materialize integrator 圈定结论——integrator Step 4 影响面圈定已完成并落痕 review-packet.md §2（detect_changes base=main / merge_base=27ad430），本文件按 verify.mjs --scope-file 消费格式转写，非二次圈定",
+  "producedAt": "2026-10-16",
+  "purpose": "final bearing verification 范围圈定清单（final verify 轮以 --scope-file 消费本文件）。",
+  "scopeMethod": {
+    "detectChanges": "可用（per-Pod 专属图索引 C-AI-KidPal-pod-261015-p1-auxbar-style-fix 在场；integrator 实测 changed_files 与 changeManifest 对账一致，账外仅簿记面 current/ 投影轮换与 .codebase-memory 常驻脏）——正常圈定路径，非降级",
+    "tracePathSpotCheck": "inbound blast radius 仅 3 符号（kidpal_home_p1_render_frame 渲染帧入口 + 新验收模块 + hop-2 归档测试模块），无跨子系统、无 wire 面调用边——与 crossEnd.exempt 一致",
+    "impactedTestsSeed": "taskpackage.json impactedTestsSeed 七件全数纳入（四 regression-watch-zero-touch + new-frozen-acceptance-file + wiring-add + probe-update）",
+    "note": "改动为字面消费名/表串/注释 + 资产重出，无符号签名变化，blast radius 以文件面 + 源锚齿读文件关系判定（integrator 记账同口径）"
+  },
+  "changedFiles": [
+    {
+      "path": "firmware/main/display/home_p1.c",
+      "hunks": 7,
+      "summary": "p1_draw_aux_batt/temp/hum 三处消费切原生直出件（ic_batt_15 15x12 / ic_thermo_12 / ic_drop_12 12x12，dw/dh 恒等映射、钉区 y2=29 内居中、中线 y≈19）+ k_p1_month_abbr / k_p1_wday_abbr 表串全大写 + 过时尺寸注释同步；冒号眨眼门控零触碰（④b 不做）"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "hunks": 1,
+      "summary": "HOST_ACCEPTANCE_SRCS 接线一行：p1_auxbar_style.acceptance.c 置于 voice_rightcol_label 之后、host_infra_smoke 之前（C4.2/C4.3 纪律，smoke 保持末位）"
+    },
+    {
+      "path": "firmware/main/test/host_app/screenshot/home_p1_screenshot.c",
+      "hunks": 3,
+      "summary": ":261 探针装载名 ic_batt_48→ic_batt_15；诊断窗口重锚冻结钉区 + 新增 wifi 窗 + bbox 扫描带收窄 y[0..29] 排除上虚线（独立 gcc harness，不进 runner 构建）"
+    },
+    {
+      "path": "firmware/main/test/p1_auxbar_style.acceptance.c",
+      "hunks": "new-file",
+      "summary": "本包新建冻结验收件（6 case：AB-A1/A2/A3/A5 源锚齿 + AB-A4/A6 守卫齿，MCD-A1 源锚形态）"
+    },
+    {
+      "path": "tools/simulator/LvglWindowsSimulator/assets/assets.c",
+      "hunks": 1,
+      "summary": "gen_assets 重生产物：仅 ic_wifi_14_map 段变化（wifi 14px 重设 C2 winner，管线确定性自检过）"
+    },
+    {
+      "path": "firmware/main/assets/spiffs_root/ic_wifi_14.bin",
+      "hunks": 1,
+      "summary": "gen_art_spiffs 重生产物：ic_wifi_14 14x14 重出（同名同尺寸，白名单不动、验收零重锚）；其余 67 枚白名单 bin 字节不变"
+    },
+    {
+      "path": "tools/simulator/LvglWindowsSimulator/assets/png/ic_wifi_14.png",
+      "hunks": 1,
+      "summary": "gen_assets 阈值预览 PNG 随链再生（changeManifest_note 声明面）"
+    }
+  ],
+  "impactedTests": [
+    {
+      "path": "firmware/main/test/p1_auxbar_style.acceptance.c",
+      "source": "acceptanceTestsFile + impactedTestsSeed(new-frozen-acceptance-file)",
+      "expectation": "6 case 全绿（四源锚齿设计态红转绿 + 双守卫齿保持绿）"
+    },
+    {
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "source": "impactedTestsSeed(regression-watch-zero-touch)",
+      "expectation": "零改动全绿（HPB-A4 1s 电池闪活齿 + PH-A2 墨下界齿——blink_visible 在世依赖与图标半区钉区）"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "source": "impactedTestsSeed(regression-watch-zero-touch)",
+      "expectation": "零改动全绿（blink_visible 符号钉 :1342——④b 不做面）"
+    },
+    {
+      "path": "firmware/main/test/time_sync.acceptance.c",
+      "source": "impactedTestsSeed(regression-watch-zero-touch)",
+      "expectation": "零改动全绿（p1_draw_aux_time 结构齿 :1149-1155——冒号门控零触碰）"
+    },
+    {
+      "path": "firmware/main/test/voice_rightcol_label.acceptance.c",
+      "source": "impactedTestsSeed(regression-watch-zero-touch)",
+      "expectation": "零改动全绿（上游 voice 包冻结件，与本包正交）"
+    },
+    {
+      "path": "firmware/main/test/host_infra_smoke.acceptance.c",
+      "source": "wiring 邻接（smoke 保持列表末位，C4.2/C4.3 纪律核验面）",
+      "expectation": "零改动全绿（守卫 case 排位不因接线插入漂移）"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "source": "impactedTestsSeed(wiring-add)",
+      "expectation": "接线行在位（HOST_ACCEPTANCE_SRCS、smoke 之前）"
+    }
+  ],
+  "excludedFromScope": [
+    "delivery/taskpackages/**（本包簿记制品与 current/ 投影轮换——治理面非测试面）",
+    ".codebase-memory/**（机器再生面常驻脏，不入库不入圈）",
+    "firmware/sdkconfig（若 final firmware-build 闸再生 Image Effects 空节头噪音 diff——TECH-261014 / voice 包先例处置口径：先剥后判，非代码回归）"
+  ]
+}

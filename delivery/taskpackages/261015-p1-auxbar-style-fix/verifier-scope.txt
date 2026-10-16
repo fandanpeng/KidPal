@@ -1,0 +1,11 @@
+# verifier scope list · 261015-p1-auxbar-style-fix（final bearing 轮消费）
+# 来源 = verifier-scope.json（planner materialize integrator Step 4 影响面圈定——review-packet.md §2 同源）
+# 形态注记：unit-run-check / acceptance-run-check 消费纯文本清单（一行一个仓根相对路径），
+# verifier-scope.json 为富信息 provenance（schemaVersion 1.0），两者同源同改。
+firmware/main/test/p1_auxbar_style.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/time_sync.acceptance.c
+firmware/main/test/voice_rightcol_label.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+firmware/main/test/host_app/main/CMakeLists.txt
