@@ -1040,20 +1040,21 @@ static void p1_draw_aux_temp(void)
 
     /* 图标走 ic_thermo_12 12x12 原生直出（2026-10-15 资产切换：退役 thermo_man 41x67
      * 最近邻硬压 20x20 旧路径——五官细节全毁）+ clip 进温度图标半区 {210,6,230,29}；
-     * 图标半区 {210,6,230,29} 内居中（x0=214）、墨带以中线 y≈19 为心（y0=13, dh=12 ->
-     * ink y[13..24]）。 */
-    if (!p1_blit_art_scaled("ic_thermo_12.bin", 214, 13, 12, 12,
+     * 图标右贴半区右界（x0=218, 2026-10-16 看屏轮打回：图标↔数值间隙收拢 <=4px）、
+     * 墨带以中线 y≈19 为心（y0=13, dh=12 -> ink y[13..24]）。 */
+    if (!p1_blit_art_scaled("ic_thermo_12.bin", 218, 13, 12, 12,
                             210, 6, 230, 29)) {
         p1_stroke_rect(212, 10, 228, 29, 1);
     }
     if (s_art_ok) {
-        (void)p1_blit_int_scaled(s_state.temp_c, 236, 12, P1_AUX_PITCH,
+        /* 数值起笔 234 贴数值半区左界（2026-10-16 看屏轮打回：与图标间隙 <=4px）。 */
+        (void)p1_blit_int_scaled(s_state.temp_c, 234, 12, P1_AUX_PITCH,
                                  P1_AUX_DIG_W, P1_AUX_DIG_H, 234, 6, 278, 33);
         /* °C 后缀：° cell 跟尾数 cell、C 紧随（+pitch）。'°' 非 ASCII，以 (char)0xB0
          * 传入（art_assets.c kidpal_art_glyph 按 unsigned char 0xB0 分流 imgfont_degree）。 */
-        p1_blit_glyph_scaled((char)0xB0, 236 + P1_AUX_PITCH * n, 12,
+        p1_blit_glyph_scaled((char)0xB0, 234 + P1_AUX_PITCH * n, 12,
                              P1_AUX_DIG_W, P1_AUX_DIG_H, 234, 6, 278, 33);
-        p1_blit_glyph_scaled('C', 236 + P1_AUX_PITCH * n + P1_AUX_PITCH, 12,
+        p1_blit_glyph_scaled('C', 234 + P1_AUX_PITCH * n + P1_AUX_PITCH, 12,
                              P1_AUX_DIG_W, P1_AUX_DIG_H, 234, 6, 278, 33);
     } else {
         p1_stroke_rect(238, 10, 274, 29, 1);
@@ -1071,22 +1072,22 @@ static void p1_draw_aux_hum(void)
 
     /* 图标走 ic_drop_12 12x12 原生直出（2026-10-15 资产切换：退役 drop_baby 32x51
      * 最近邻硬压 20x20 旧路径——五官细节全毁）+ clip 进湿度图标半区 {282,6,302,29}；
-     * 图标半区 {282,6,302,29} 内居中（x0=286）、墨带以中线 y≈19 为心（y0=13, dh=12 ->
-     * ink y[13..24]）。 */
-    if (!p1_blit_art_scaled("ic_drop_12.bin", 286, 13, 12, 12,
+     * 图标右贴半区右界（x0=288, 2026-10-16 看屏轮打回：图标↔数值间隙收拢 <=4px）、
+     * 墨带以中线 y≈19 为心（y0=13, dh=12 -> ink y[13..24]）。 */
+    if (!p1_blit_art_scaled("ic_drop_12.bin", 288, 13, 12, 12,
                             282, 6, 302, 29)) {
         p1_stroke_rect(284, 10, 300, 29, 1);
     }
     if (s_art_ok) {
-        /* 数值起笔 304 贴图标半区右界（302）外侧 2px；'%' 走真字形管线
-         * （p1_blit_glyph_scaled('%', …, 12x16 同 cell 同基线）：同数字 cell 自动基线
-         * 对齐，同 y0。% 起笔 = 304 + pitch*n（n = 位数）落整元素 {302,6,338,33} 内
-         * （n<=2 时 % cell 末 324+11=335 收进右界），clip 防越界。湿度 100（n=3）时
-         * 元素右界不足容纳 '%'（预既有缺陷，home 实况近不着边），仍无条件绘制、clip
-         * 截断到右界 338。 */
-        (void)p1_blit_int_scaled(val, 304, 12, P1_AUX_PITCH,
+        /* 数值起笔 302 贴数值半区左界（2026-10-16 看屏轮打回：与图标间隙 <=4px）；
+         * '%' 走真字形管线（p1_blit_glyph_scaled('%', …, 12x16 同 cell 同基线）：同
+         * 数字 cell 自动基线对齐，同 y0。% 起笔 = 302 + pitch*n（n = 位数）落整元素
+         * {302,6,338,33} 内（n<=2 时 % cell 末 322+11=333 收进右界），clip 防越界。
+         * 湿度 100（n=3）时元素右界不足容纳 '%'（预既有缺陷，home 实况近不着边），
+         * 仍无条件绘制、clip 截断到右界 338。 */
+        (void)p1_blit_int_scaled(val, 302, 12, P1_AUX_PITCH,
                                  P1_AUX_DIG_W, P1_AUX_DIG_H, 302, 6, 338, 33);
-        p1_blit_glyph_scaled('%', 304 + P1_AUX_PITCH * n, 12,
+        p1_blit_glyph_scaled('%', 302 + P1_AUX_PITCH * n, 12,
                              P1_AUX_DIG_W, P1_AUX_DIG_H, 302, 6, 338, 33);
     } else {
         p1_stroke_rect(306, 10, 336, 29, 1);
@@ -1103,12 +1104,13 @@ static void p1_draw_aux_batt(void)
     int val = s_state.battery_pct;
     int n = p1_ndigits(val);
 
-    /* 图标走 ic_batt_15 15x12 原生直出（2026-10-15 资产切换：退役 ic_batt_48 48x48
-     * 塞 22x40 非等比盒旧路径——横压 2.18x + y0=0 clip 硬切，全条最重最黑）+ clip 进
-     * 电量图标半区 {342,6,362,29}；图标半区 {342,6,362,29} 内居中（x0=345）、墨带以
-     * 中线 y≈19 为心（y0=13, dh=12 -> ink y[13..24]）。数值起笔 364（图标墨右界贴半区
-     * ~360，>=4px 空隙）。 */
-    if (!p1_blit_art_scaled("ic_batt_15.bin", 345, 13, 15, 12,
+    /* 图标走 ic_batt_20 20x20 原生直出（2026-10-16 看屏轮打回：ic_batt_15 15x12 过小
+     * 「读不出是个啥」——20px 档重出，且母版三格电在 20px 下条宽 2.9px/间隙 0.8px 并死
+     * 实证，资产侧并格为两格电间隙 2.1px；2026-10-15 曾切 ic_batt_15 退役 ic_batt_48
+     * 22x40 非等比盒旧路径）+ clip 进电量图标半区 {342,6,362,29}；落位 x0=342、y0=9
+     * （内容墨带 y[15..22] 以中线 y≈19 为心）。数值起笔 364（图标墨右界 ~359，
+     * >=4px 空隙）。 */
+    if (!p1_blit_art_scaled("ic_batt_20.bin", 342, 9, 20, 20,
                             342, 6, 362, 29)) {
         p1_stroke_rect(344, 10, 360, 29, 1);
     }
@@ -1125,14 +1127,12 @@ static void p1_draw_aux_batt(void)
     }
 }
 
-/* ① 辅助条·WiFi 联网小标（ui-v5-align §2 P1 行 1; spec AC1「📶 联网小标打头」）:
- * ic_wifi_14.bin 14x14 @ (12,12), 辅助条中线 y≈19。常显家具（设计稿状态栏首部小标;
- * 联网状态条件显隐需 hp1_state_t 增网络字段 = 契约面, 本批不碰——归登记遗留）。
- * 加载失败不画（纯装饰件, 无有墨义务）。 */
-static void p1_draw_wifi_icon(void)
-{
-    (void)p1_blit_art_scaled("ic_wifi_14.bin", 12, 12, 14, 14, 12, 12, 25, 25);
-}
+/* ① 辅助条·WiFi 联网小标（ui-v5-align §2 P1 行 1）——**2026-10-16 看屏轮退役**：
+ * 原自绘 ic_wifi_14 位图 @ (12,12) 与基座 chrome 顶带 network_label_（FA wifi 字形，
+ * font_awesome_14_1，SetTheme 已调至辅助条中线 y≈19.5，boards/waveshare-s3-rlcd-4.2/
+ * custom_lcd_display.cc:26-57）双层叠画 = 真机「两朵 wifi 重叠糊」根因（主线程实证）。
+ * human 拍板：删位图消费，chrome FA 字形为唯一联网小标（带真实联网状态驱动，与 P3 页
+ * 一致）。ic_wifi_14.bin 资产本体留库不再消费。 */
 
 /* ② 小伴常驻演出：pose_daily 全尺寸 96x96 blit（2026-09-26 对齐轮落位 (28,116)——
  * canvas-p1 实测猫墨迹 x36-109/y127-209，资产墨盒 (8,11)-(81,93) 反解盒原点 =
@@ -1375,9 +1375,9 @@ int kidpal_home_p1_render_frame(void)
      * 接下来额外要求日程缓存非空（空日程让位 -> 主体区严格零墨）。 */
     lr = kidpal_home_p1_layout_resolve(28, 120, 28, P1_FB_H);
 
-    /* ① 辅助条 y[0..39]（v1.4 重排序：WiFi 小标打头 + 时间·日期·温度·湿度·电量，
-     * 图标前置; ui-v5-align §2 P1 行 1）。 */
-    p1_draw_wifi_icon();
+    /* ① 辅助条 y[0..39]（v1.4 重排序：时间·日期·温度·湿度·电量，图标前置;
+     * ui-v5-align §2 P1 行 1。2026-10-16 看屏轮：WiFi 位图小标退役——chrome 顶带
+     * FA 字形为唯一联网小标（见 p1_draw_aux_temp 前退役注记），无双层叠画）。 */
     p1_draw_aux_time();
     p1_draw_aux_date();
     if (s_state.env_valid == 1 && ((lr & HP1_ELEM_BIT_TH) != 0)) {
