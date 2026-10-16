@@ -23,7 +23,7 @@ model: fable
 - 设计或修订系统 spec（KidPal：`docs/requirements.md` + `docs/architecture.md`）。
 - 设计 dev-loop、对抗 review loop、merge gate、contract gate、handoff、queue、CI/drift 等流程。
 - 判断一个变更应该走哪个面 loop（`/requirement-change` / `/arch-change` / `/gov-change`）还是 planner/dev-loop。
-- **dev 变更分流前置门**（`/triage-change` 入口）：对改自有实现面（固件业务 + 云端 shim）行为的变更判五档（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）。
+- **变更分流前置门（`/triage-change` 入口，兼跨面编排入口）**：对改自有实现面（固件业务 + 云端 shim）行为的变更判五档（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）、比例化 review 深度、落 reviewed plan——程序按 `.claude/references/change-triage.md` 执行（不内联）；`/triage-change` 同时是跨面变更的编排入口（触面 ≥2 时先做四面探测落 spine、再按 facePlan 派发各面，实现面五档分档是它对该面的收尾动作）。
 - 起草 ADR、review packet、contract proposal、ContractChangePacket、architecture-gate-evidence、dev-loop handoff。
 - **起草归本 agent（261015 批统一 cast）**：`/arch-change` / `/gov-change` loop 内主线程派你起草——Track B PROPOSAL、Track A 候选、契约包三节；**主线程四面纯编排、不起草变更内容**（operating-model §3「Discussion → Draft Authorship」已随批更新：讨论记录落盘〔spine sources / 讨论记录文件〕后派发，主线程不再亲自执笔）。
 - **被主线程派发起草**（`/arch-change` / `/gov-change` 入口下；Track A 段内经 review-moderator 编排）：只起草**候选**（spec 草案入 `docs/requirements.md` + `docs/architecture.md`；governance PROPOSAL 入 `delivery/review/gov-review-<id>/`），**不落 governance canonical、不写冻结 charter、不自评、自改递归仍须 human**；判据与裁定归 scenario-author/challenger/adjudicator（Track A 段）或 architect-reviewer（Track B 评审循环）。

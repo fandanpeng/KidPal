@@ -6,6 +6,7 @@
 
 ## 1. 触发与比例化
 
+- **入口**：本程序的入口 = `/triage-change` 的四面探测步（step 1）——跨面 idea 从 `/triage-change` 进来，先做四面探测、落 spine，再按 facePlan 派发各面（含实现面五档分档）。
 - **触发**：一个 idea 或请求同时触 ≥2 面（需求 / 架构 / 契约 / 实现）——human 说一次意图，本程序探测触面、落 spine、分面推进。
 - **比例化**：触面 ≥2 的变更强制建 spine；单面 ① 直接修免门（地板不变：不改实现面行为 / human 明确跳过）；单面 ②③ 现状不动——plan.md / PROPOSAL 本身已载 intent，无重复陈述问题。
 - **免建例外**：human 明确说跳过流程的一次性操作允许直改（对齐 AGENTS.md Hard Rules 既有条款）；记账须写明「跳过 intake」。
@@ -74,5 +75,5 @@
 
 - **faceMap 契约行 = architect-reviewer 四分类的输入**：契约变更走 `/arch-change`（无人签门），intake 取证随 dispatch 传入。
 - **升级判据 ≠ 触契约处置**：升级判据是路由门（答「走哪套流程」，触面疑似即可命中、判错可挽回）；触契约是内容处置（答「这份 diff 怎么落」，四分类定性后契约包随批原子落）。两门独立可达——升级后四分类可判「无需改」、未升级也可能被逃生门转 `/arch-change`。
-- **开场即消费**：带 changeId 调用的各面流程入口（triage 实现面 / requirement-change 各档 / /arch-change / /gov-change / build-feature）先读 spine 的 faceMap/facePlan，不得要求 human 重述意图。
+- **开场即消费**：带 changeId 调用的各面流程入口（triage 为编排入口、其余为其按 facePlan 派发面：requirement-change 各档 / /arch-change / /gov-change / build-feature）先读 spine 的 faceMap/facePlan，不得要求 human 重述意图。
 - **launch 前置**：带 spine 的变更，facePlan 中先于实现面的各面 anchors 未回填 = 上游未冻结 → 承载包不得 launch（canonical 定义见 task-intake-and-slicing.md launchPreconditions 节 spine 源条款；build-feature launch 面预检第五件）。

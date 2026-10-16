@@ -1,13 +1,14 @@
-# Change Triage（dev 侧变更分流前置门程序）
+# Change Triage（变更分流前置门程序——/triage-change 兼跨面编排入口与实现面五档分档）
 
 > `/triage-change` 入口下 architect 遵循的分流程序：判定标准、比例化深度、五档裁决、reviewed plan 就近落地。是 [architect-operating-model.md](architect-operating-model.md) §3/§4 路由的延伸，对偶事实源侧的 `/arch-change`。
 > 来源：gov-review-architect-change-triage（FROZEN 2026-07-22）。门性质 = **Part-2 工程门 / bootstrap 临时信任门**（K9 §11 权威），非业务门、不进 DEV-GOVERNANCE §5 六门清单。
 
 ## 0. 铁律与地板
 
+- **入口身份**：`/triage-change` 是跨面变更的编排入口（容器）——它承载整条跨面链：先做四面探测落 spine，再按 facePlan 派发各面（轻面本会话内联、重面 headless 拉起）；实现面五档分档是它对该面的收尾动作，不是它等于实现面。
 - **铁律：只要改自有实现面（固件业务 + 云端 shim）行为，再小也过门。** 入口不分大 feature / 小 feature / bug。（档 1 期间 dev-loop 未迁，本门完整生效待档 2。）
 - **地板（免门，形状①直接修）**：仅**不改实现面行为**（docs/typo/只读探索）或人类明确跳过 → 不进此门。
-- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中触面事实（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` loop），实现面留本门分档，不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/gov-change`。
+- **四面探测（intake）**：变更进来先按 `change-intake.md` 做跨面探测——触面事实记 spine faceMap（触面 ≥2 建档）；命中触面事实（触 `docs/contracts/**` / systems spec / 跨系统结构性 / 存疑向严）→ 按 facePlan 路由（架构/契约面走 `/arch-change` loop），实现面留本门分档（分档是它的收尾动作，不是它等于实现面），不再整单踢走。governance 面（`.claude/agents` 定义 / gate）命中 → 路由 `/gov-change`。
 
 ## 1. 角色与写域（写域零扩张）
 

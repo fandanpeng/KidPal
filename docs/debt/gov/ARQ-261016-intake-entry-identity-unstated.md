@@ -1,6 +1,6 @@
 ---
 id: ARQ-261016-intake-entry-identity-unstated
-title: /triage-change 的跨面 intake 入口身份未在任何 canonical 声明——AGENTS.md 入口摘要行未随 260928 批同步、change-intake.md 未自声明入口，读者会得出「triage 只是四面并列入口之一」的错误心智模型
+title: /triage-change 的跨面编排入口身份未进最高权威面 AGENTS.md——入口身份只存在于 triage 侧两个文件与 change-intake.md 一句抬头，AGENTS.md「四面入口」节把它收编成并列的「实现面变更」，读者会得出「triage 只是四面并列入口之一」的错误心智模型
 domain: gov
 status: deferred
 severity: SHOULD
@@ -9,7 +9,7 @@ trigger: 下一治理批（动 AGENTS.md 入口节 / change-intake.md / change-t
 opened: 2026-10-16
 closed: ""
 closedBy: ""
-paths: [AGENTS.md, .claude/references/change-intake.md]
+paths: [AGENTS.md, .claude/references/change-intake.md, .claude/references/change-triage.md, .claude/commands/triage-change.md, .claude/agents/architect.md, .claude/references/architect-operating-model.md]
 source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与编排」节（2026-10-16 主线程更正留痕）, 主线程会话 2026-10-16 human 原话「不对，你再去查一下triage跟 intake 之间的关系，你这样设计的话就有个问题：…谁是这个总的编排者呢？」, docs/debt/gov/_archive/2026/ARQ-260928-triage-cross-face-intake-gap.md（前身批；其 paths 未含 AGENTS.md 即为本缺陷的直接实证）]
 ---
 
@@ -100,3 +100,7 @@ source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与�
 **④ 本条目当前最大弱点（缺口如实登记）**
 
 条目通篇**没有"正确形态"的原始表述**——全部内容都是误读者（主线程）的**推导版本**。human 2026-10-16 被请求给出「现在这版 `/triage-change` 的定义原文是哪句、在哪」，**截至本条 append 尚未提供**。**`/gov-change` 起草 PROPOSAL 前须先取到该原文**，否则修复方向仍是推导而非 canonical——这正是本条目前最需要补的一块。
+
+---
+
+**2026-10-16 注记（本条目承载批）**：建议 1/2/3/5（AGENTS.md 入口节显式化编排入口身份 / change-intake.md 自声明入口 + §8 消歧 / change-triage.md 标题与 §0 补正面陈述 / commands description 与正文补正面陈述）已由 261016-gov-review-triage-entry-identity 批承载，并随 OQ-4=(a) 增列 architect.md（self-def、human 显式批准破界）与 architect-operating-model.md（镜像转述）两处同源框架。本条目自身两处缺陷随本批更正：title 措辞由「未在任何 canonical 声明」改为「未进最高权威面 AGENTS.md」（对齐证据 2 自述）；paths 增列 change-triage.md + triage-change.md + architect.md + architect-operating-model.md。建议 4（check 齿）按 human 裁 OQ-3=(b) convention-only 留根。
