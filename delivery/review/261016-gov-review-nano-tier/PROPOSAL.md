@@ -1,6 +1,6 @@
 # PROPOSAL · 261016-gov-review-nano-tier
 
-> **状态：DRAFT v1.0 · 2026-10-16 · human 已裁全部 OQ（OQ1–OQ7，2026-10-16 AskUserQuestion 留痕），定稿待主线程标 FROZEN**
+> **状态：DRAFT v1.1 · 2026-10-16 · R4 否回 2 条 findings 全修，待 architect-reviewer 复审**
 > **承载 ARQ**：无在册 ARQ 直承（human 2026-10-16 两轮口述直接发起，原话逐字在主线程派发记录）。同根先例 = 2026-10-14 loop-retro T1「包元数据/冻结件形状税第四波」（`delivery/retro/2026-10-14-loop-retro.md:16-20`；其关联条目 ARQ-260907-taskpackage-format-expectations-frontload 治的是起包格式期望前置，与本批「整档减重」不同根，不回写该行）。
 > **review 轨**：Track B 主路径（机器面恒 Track B，**非**瘦制品轻路径——制品四件 + retro 照常，不误套轻路径 retro 豁免；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节、`AGENTS.md`「治理路由」节、`.claude/references/gov-change.md`「轻路径判据」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -59,7 +59,7 @@ docs/DEV-GOVERNANCE.md
 - **爆炸半径小（机器量，不靠人指定、不按代码行数）**：triage 时 architect 用 CodebaseMemory 图工具 `trace_path(direction="inbound")` 量每个将触符号的调用方集，**阈值钉死 = 每将触符号 inbound 调用方 ≤ 5 且同属一个 owning 文件/紧耦合簇**（human 2026-10-16 实测钉死 OQ3，四包实测表与断层分布见证据段）；预估 diff ≤2 个实现面文件作辅助参照；
 - **无验收语义净增**：不改 story 语义、不引入新行为决策、不触新契约语义；`sourceType=proposal` 的包不得判 nano（proposal 载荷 = 决策集，decisionCoverage 不豁免，与 task-intake-and-slicing.md:253 现行规则一致）；
 - **排除清单（命中任一即升，不判 nano）**：触 wire/契约面、状态机、跨端、安全轴、迁移/删数；目标区域无既有齿覆盖且 human 不愿目检兜底；意图需要新行为验收语义承载（→ 升 Lite）。
-- **判档双层形状**：判档预估 = `trace_path` inbound（triage 时）；收口实测 = `detect_changes` 对 actual diff 算实际爆炸半径，结果记进白盒复核件（advisory，见 T3）。
+- **判档双层形状**：判档预估 = `trace_path` inbound（triage 时）；收口实测 = `detect_changes` 对 actual diff 算实际爆炸半径，结果记入白盒复核回执（advisory，见 T3；落痕载体 = integrator review-packet「白盒复核」节，OQ4=(b)）。
 - **判档判注义务（比照 §7 lite 判注）**：architect 判 nano 时 rationale 须含一句「host 齿可闭环」确认（nano 的 suiteGate 回归网 = 既有 host 套件，可在 host_app target 闭环；与 lite 快路径判注义务同构，承接 launch/verify 两侧后置——launch 半边见 T4 skill 扩、verify 半边见 T5 defer 扩）。
 - **落盘形状**：nano 裁决 → reviewed plan（= 意图定义五件）落 `delivery/taskpackages/<id>/plan.md`（与 ②单包同家，frontmatter `rigor: nano`；记录落点见 §4 OQ7）；意图定义五件 = ① 改动意图一句（改什么、为什么）② 目标符号/文件锚（即 changeManifest 种子，triage architect 给）③ 预期行为差（before/after 一句）④ 目标区域既有齿覆盖态申报（既有验收/单元齿清单，或「无齿 → human 目检兜底」声明）⑤ 爆炸半径预估（trace_path 结果摘要）。
 - **越界升档（nano 无扩单通道）**：nano 包 change-manifest 闸红（diff 越出清单）或白盒复核发现出界 → planner 停，回 `/triage-change` 重判档（典型升 Lite），不得原地扩 manifest 续跑——与 Lite 的 architect 扩单通道（fixer.md:49）有意不同，承载 human「diff 越界自动升档」裁定。
@@ -96,7 +96,7 @@ docs/DEV-GOVERNANCE.md
 **证据**：
 - planner.md Step 1g（:49，「TaskPackage 落盘后 / brief 生成前」派 architect 预评三件）、Step 7 brief 生成（:62）、Step 8 finalize 硬前置（:63）、Step 8b 验收方向核（:64）、Step 9 派 builder（:65）、Step 10b ARCH-ADVISORY 疑难分析档（:80-84，效力声明原文在 :84）。
 - fixer.md:20-25（Inputs = ErrorEnvelope + 根因假设 + TaskPackage）、fixer.md:49（changeManifest 文件级边界 + 扩单唯一通道）。
-- architect 无 `delivery/taskpackages/**` 写权（`.claude/scope-map.json:163-174` architect allow 集；`:177` deny architect.md 自身）——复核结论落盘须由 planner 代落，先例 = planner.md:33 派发书三条硬约定②「无权即在派单时预指派代落人」。
+- architect 无 `delivery/taskpackages/**` 写权（`.claude/scope-map.json:163-174` architect allow 集；`:177` deny architect.md 自身）——OQ4=(b) 设计下无需任何代落安排：architect 恒只读零写，落痕 = integrator 在自家制品 `review-packet.md` 增「白盒复核」节（integrator 写 `delivery/taskpackages/<id>/` 是其既有写域），写域零扩张成立。
 - human 视觉门先例（live-manual 停门等 human）：`delivery/taskpackages/261015-p1-auxbar-style-fix/taskpackage.json:36-39`（AB-A7「host 面转绿后停该门等 human，不自行烧录」）。
 
 **根因**：验收权威置换后，编排面需要三个新形状——豁免清单成文（防逐包自由裁量）、复核派发点（验收权威的生产位）、fixer 的非 ErrorEnvelope 输入分支（nano 的活是「外部发现、人工输入」，不是 verifier 红轮驱动）。
@@ -151,7 +151,7 @@ docs/DEV-GOVERNANCE.md
 
 **根因**：职责的机读路由信号（description / When to Use）住在 agent def；派发契约住 planner.md。两处缺一，orchestrator 路由与角色自我认知必有一个过期。
 
-**改法**（OQ1=(a) human 已裁 2026-10-16，自改递归面获明示批准）：architect.md 的 When to Use 加一档「dev-loop nano 档事后白盒复核（planner 按 Step 10c 派：fixer 落补丁后拿 plan.md 意图定义对 actual diff 复核三问 + detect_changes 收口半径记录；只读 + 回执文本、不落盘、不改任何文件；**效力声明引 T3 Step 10c 声明原文、逐字一致**——「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；本复核即 nano 行为验收判分位，PASS 为 Step 11 前置」，两落点单源）」，职责段同步镜像，:26 triage 段「判四档」→「判五档」同步。**禁止回植 1g/10b 的「不构成通过判据」尾句**——10c 是 nano 档验收权威本体（human 已裁②），自我否定的声明会把 R1 F2 的病从镜像段原样带回（R2-F1）。Boundaries / Write Scope 不动（复核只读 + planner 代落，写域零扩张）。
+**改法**（OQ1=(a) human 已裁 2026-10-16，自改递归面获明示批准）：architect.md 的 When to Use 加一档「dev-loop nano 档事后白盒复核（planner 按 Step 10c 派：fixer 落补丁后拿 plan.md 意图定义对 actual diff 复核三问 + detect_changes 收口半径记录；只读 + 回执文本、不落盘、不改任何文件；**效力声明引 T3 Step 10c 声明原文、逐字一致**——「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；本复核即 nano 行为验收判分位，PASS 为 Step 11 前置」，两落点单源）」，职责段同步镜像，:26 triage 段「判四档」→「判五档」同步。**禁止回植 1g/10b 的「不构成通过判据」尾句**——10c 是 nano 档验收权威本体（human 已裁②），自我否定的声明会把 R1 F2 的病从镜像段原样带回（R2-F1）。Boundaries / Write Scope 不动（architect 恒只读零写；落痕 = integrator review-packet「白盒复核」节，OQ4=(b)——写域零扩张）。
 
 目标文件：`.claude/agents/architect.md`（改）
 
@@ -187,7 +187,7 @@ docs/DEV-GOVERNANCE.md
 | G3 config | `.claude/verify-gates.json` | 改（T5） | firmware-build defer.whenRigor 加 nano；消费方 = verify.mjs |
 | G1 | `AGENTS.md` | 改（T7） | :30 档数同步；G1 显式升级，OQ6=(a) human 已裁 |
 | G1 | `docs/DEV-GOVERNANCE.md` | 改（T7） | :128、:235 档数同步；G1 显式升级，OQ6=(a) human 已裁 |
-| 承重未触 | `.claude/scope-map.json`、`.claude/hooks/enforce-scope.mjs`、`.claude/dev-loop.settings.json` | 未触 | 写域零扩张：architect 复核回执 planner 代落（先例 planner.md:33②），fixer 既有 allow 覆盖实现面 |
+| 承重未触 | `.claude/scope-map.json`、`.claude/hooks/enforce-scope.mjs`、`.claude/dev-loop.settings.json` | 未触 | 写域零扩张：architect 恒只读零写、落痕 = integrator review-packet「白盒复核」节（OQ4=(b)）；fixer 既有 allow 覆盖实现面 |
 | 承重未触 | `.claude/hooks/supervisor-verdict-gate.mjs`、`supervisor-gate-check.mjs`、`.claude/scripts/pre-merge-escalation-gate.mjs`、`merge-driver.mjs` | 未触 | 合并链零改动；nano 包合并走同一链 |
 | 承重未触 | 契约冻结防线（contracts.md / Bash 重定向恒拦 / per-agent deny） | 未触 | nano 判据排除清单含触契约即升档 |
 | 承重未触 | `.claude/scripts/acceptance-coverage-check.mjs`、`.claude/scripts/mutation-check.mjs` | 未触 | suiteGate 既有豁免行为承接 nano 验收形态（:143-144 / :141-142,:156 实证），零改动 |
