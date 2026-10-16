@@ -237,7 +237,7 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 
 ## rigor 字段与 Lite TaskPackage 字段级定义（gov-review-architect-change-triage §3.5）
 
-`dev-loop.md` §0 声明 progressive rigor，本节给出字段级定义。TaskPackage 用 `rigor` 字段标档：`"rigor": "lite" | "full"`（缺省按 full 既有逻辑走；存量无 `rigor` 的包不追溯，校验白名单放行）。
+`dev-loop.md` §0 声明 progressive rigor，本节给出字段级定义。TaskPackage 用 `rigor` 字段标档：`"rigor": "nano" | "lite" | "full"`（缺省按 full 既有逻辑走；存量无 `rigor` 的包不追溯，校验白名单放行）。
 
 **Lite 省的是"方案/决策映射的文牍"，不是 loop 的任何一道闸。** 验收先行、红基线、verifier 证据、closeout、supervisor 合并门——一道都不跳。`rigor=lite` 另承载**快路径**执行语义（launch 面环境后置 + verify 面 firmware-build scoped 相位后置，final 恒跑）——资格判注与例外声明见 [change-triage.md](change-triage.md) §7「lite 快路径」，launch 面机制见 `kidpal-pod-launch-prep` SKILL 的 lite 分支；本节字段级定义本体不受影响。
 
@@ -251,6 +251,16 @@ Stop with `planningImpact: "needs-triage"` when the planner cannot determine the
 **riskTier 优先于 rigor（单向守卫）—— convention-only（F1 / Q1-A）**：设计意图是单向校验——若信号说"这是 Full 级"（security 轴 / 迁移 / 跨包 / core.* / 触契约）而 `rigor:"lite"` → 应强制升 Full。**但该机器守卫当前不落地**（`taskpackage-required-check.mjs` 本批只扩 `isProposalMdPath`，不含 riskTier-overrides-rigor 校验，记 ARQ 后续 G3）；landing 时靠**两层人工**兜底：① `/triage-change` 人类触点①确认/改判路由；② supervisor 对 riskTier=high 仍升级人类。判断归 architect（写进裁决 rationale）。
 
 **decisionCoverage 与 rigor 的关系（F2）**：`sourceType=proposal` 的包——**包括 Lite**——`decisionCoverage` 必填不豁免。「Lite 省 decisionCoverage」仅适用于非 proposal 的 bug 类小改动（regression/ci-failure/drift-report，无 proposal 决策集）。G3 `taskpackage-required-check.mjs` 对 `sourceType==='proposal'` 强制 decisionCoverage 必填，与本节一致。
+
+### nano 档字段级定义（261016-gov-review-nano-tier FROZEN v1.1 立）
+
+nano 面向「无验收语义净增、意图完全明确」的实现面微改（判据与排除清单见 [change-triage.md](change-triage.md)「档 0 nano 判据」节）。**Lite 省的是方案/决策映射的文牍；nano 再省「冻结验收链」——但验收权威不删除，置换成等价承载**：architect 事后白盒复核（行为判分位）+ 既有套件零新增红（防回归）+ human 视觉终裁（触 UI 包，不成文靠真机轮惯例）。
+
+- **不可省**（守 dev-loop 铁律与簿记统一）：`changeId` / `rigor:"nano"` / `sourceType`（**不得为 proposal**）/ `sourceRefs` / `deliveryImpact` / `planningImpact` / `riskTier` / `gateProfile` / `story` / `planRef`（= 意图定义载体，nano 必填）/ `subsystem`·scope / `contractRefs` / `docRefs`（两字段在 taskpackage-required-check.mjs 数组非空必填行，nano 不豁免——无契约命中时按既有口径填契约面引用或显式说明）/ `changeManifest`（triage architect 给，fixer 文件级硬边界）/ `crossEnd`（二选一照填，exempt ≥12 字符地板不动）/ `acceptance` = **恰一条 `{ "id": "<包前缀>-A1", "suiteGate": true }`**（语义 = 既有测试套件零新增红；复用 260731 一等豁免机制，acceptance-coverage / mutation 两闸零改动即天然闭环）/ `exitCriteria`（含白盒复核条目）/ closeout 两 blocking 制品（docs-delta.md、review-packet.md）/ pod-retro.md（human 已裁不豁免）/ pod-events 全程簿记 / supervisor 合并门 + 前置升级闸全链；**总括：未在下方豁免清单显式列名的闸必填字段一律照 full 判据，不随 nano 豁免**。
+- **豁免**（逐条理由）：`redBaselineCommand`/`redBaselineResult`（验收权威置换为白盒复核 + suiteGate，无新冻结件可跑红基线）；`acceptanceTestsFile`（同上，无新验收文件）；`mutationRequired`/`mutationEvidence`（suiteGate 条目 M-4 语义不适用，闸既有豁免行为承接）；`input-brief`（无 acceptance-author/builder 消费方，fixer 输入 = plan.md 意图定义）；`decisionCoverage`（nano 判据排除 proposal 来源，非 proposal 本就可选）；planner Step 1g / 7 / 8 验收件部分 / 8b / 9（编排面豁免理由见 planner.md nano 分支段）。
+- **与 lite 快路径关系**：nano 与 lite 同享快路径两侧——verify 半边 = firmware-build scoped 相位后置（verify-gates.json defer 机制 whenRigor 已扩 nano）；launch 半边 = `kidpal-pod-launch-prep` SKILL 3b 触发条件已扩 nano（处置 = 扩 skill 对称处理，理由：nano 比 lite 更轻，轻档不享环境后置而重一档的反享 = 无理由倒挂）。lite 快路径其余语义不动。
+- **与 lite 的边界判据（防两档死态互推）**：lite = 有行为决策要钉（新验收语义、story 命中或 bug 根因要冻结齿）但单包一轮可收；nano = 无验收语义净增、意图完全明确的形态替换。判不了 → 向严 lite。判档机判（半径量 + 排除清单）+ 越界升档 + loop-retro 校准三道防滥用。
+- **豁免审计承接**：nano 包 acceptance 恒含 suiteGate → acceptance-coverage 输出 suiteGates 非空 → 既有 D-1 审计通道（review-packet 枚举 + human glance 一句确认，dev-loop.md 验收惯例节）承接，不新增机械通道。
 
 ## 拆包链：workstream 双轨制品、门 1、story 转写（260912-gov-review-portfolio-decomposition-chain FROZEN v1.0）
 

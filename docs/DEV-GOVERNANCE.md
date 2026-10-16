@@ -125,7 +125,7 @@ flowchart LR
 ```
 
 - **对象 / 触发**：自有实现面（固件业务 + 云端 shim，动工前由 human 登记进 scope-map）实现（feature / bugfix / 重构 / 测试修复 / 实现侧 docs-sync）。
-- **怎么做**：⓪ 开工前 `/triage-change` 比例化分档（拆包 / Full / Lite / 直接修）→ ① RTE 拆包调度 → ② launch 面准备（主线程，操作手册 = `kidpal-pod-launch-prep` skill）→ ③ planner 带单 Pod：acceptance-author（红基线）→ builder → verifier↔fixer → integrator（docs-sync + 全量 e2e + closeout）→ planner 收尾（pod-retro）→ supervisor 合并门 → planner 前置升级闸放行后本地合并 → ④ `/loop-retro` 周期性跨 Pod 复盘提共性 → 治理类进 ARQ、回流 ① intake，构成**自改进回路**。疑似触契约 → architect-reviewer 兜底。
+- **怎么做**：⓪ 开工前 `/triage-change` 比例化分档（拆包 / Full / Lite / nano / 直接修）→ ① RTE 拆包调度 → ② launch 面准备（主线程，操作手册 = `kidpal-pod-launch-prep` skill）→ ③ planner 带单 Pod：acceptance-author（红基线）→ builder → verifier↔fixer → integrator（docs-sync + 全量 e2e + closeout）→ planner 收尾（pod-retro）→ supervisor 合并门 → planner 前置升级闸放行后本地合并 → ④ `/loop-retro` 周期性跨 Pod 复盘提共性 → 治理类进 ARQ、回流 ① intake，构成**自改进回路**。疑似触契约 → architect-reviewer 兜底。
 - **证据**：`delivery/taskpackages/<id>/`（execution ledger）+ `delivery/taskpackages/<id>/`（closeout audit）。详见 [dev-loop-operating-system.md](../.claude/references/dev-loop-operating-system.md) · [dev-loop.md](../.claude/references/dev-loop.md) · [change-triage.md](../.claude/references/change-triage.md)。
 
 ### 治理变更 ≈ 流程改进 retrospective
@@ -232,7 +232,7 @@ flowchart TD
 | 系统 spec（KidPal：`docs/requirements.md` + `docs/architecture.md`） | `/arch-change` loop（方向未收敛 → Track A 段对抗收敛） | architect-reviewer 审稿 + human 立项 ack / Track A 拍方向 |
 | L0 蓝图 | `/arch-change` Track A 段（= 跨系统结构性变更）；备改法交人类，不自动落地 | human |
 | 系统级 UI 蓝图 / UIUX·OpenDesign 治理 | `/gov-change` 携带 UIUX 轴集（非新工程门；系统级 brief 起草候选） | human（跨系统 / 主流程 / IA / 品牌）；局部低风险可 loop 落 |
-| 自有实现面（固件 / shim） | `/triage-change` 比例化四档 → reviewed plan → Dev Loop OS | supervisor 合并门 |
+| 自有实现面（固件 / shim） | `/triage-change` 比例化五档 → reviewed plan → Dev Loop OS | supervisor 合并门 |
 | agent 定义 | `/gov-change`（机器面恒 Track B）；被改 agent 不得自改或找人代改 | **human** |
 | command / reference / rule / skill | `/gov-change`（文档面可走轻路径瘦制品过闸，机器面恒 Track B） | human |
 | scope-map / settings / verify-gates / hook / script | `/gov-change`（机器面恒 Track B，高敏） | human |

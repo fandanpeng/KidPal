@@ -23,13 +23,13 @@ claude --settings .claude/dev-loop.settings.json --agent planner
 
 允许例外只有：只读探索、计划讨论、架构/契约设计、人类明确要求跳过 loop 的一次性操作。例外不能顺手扩大成正式实现。
 
-dev loop 采用 progressive rigor：低风险小修可以用 Lite TaskPackage，高风险/跨系统/契约相关变更必须使用 Full Change Artifact；两者都不能跳过验收、验证、closeout 和合并门。**三档边界（③拆包 / ②单包Full / ②单包Lite）与 `rigor` 字段级定义见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「rigor 字段与 Lite TaskPackage 字段级定义」；改 `firmware/**` 行为的变更开工前先过 `/triage-change` 分流门（architect 比例化 review + 裁决四档，见 [change-triage.md](change-triage.md)）。**
+dev loop 采用 progressive rigor：低风险小修可以用 Lite TaskPackage，高风险/跨系统/契约相关变更必须使用 Full Change Artifact；两者都不能跳过验收、验证、closeout 和合并门。**五档边界（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）与 `rigor` 字段级定义见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「rigor 字段与 Lite TaskPackage 字段级定义」（含 nano 档字段级定义小节）；改 `firmware/**` 行为的变更开工前先过 `/triage-change` 分流门（architect 比例化 review + 裁决五档，见 [change-triage.md](change-triage.md)）。**
 
 ### 0.1 入口来源与任务切片
 
 `delivery/milestones/` 只记录承诺路线图与里程碑分母；`delivery/workstreams/` 只记录跨切片、跨会话的长周期工作记忆；TaskPackage 才是所有正式实现工作的最小执行合同。架构 review finding、CI 红线、drift report、人类临时任务即使不进入 `delivery/milestones` 或 `delivery/workstreams`，也必须先进入 TaskPackage。
 
-**分流门衔接（gov-review-architect-change-triage）**：改 `firmware/**` 行为的变更开工前先过 `/triage-change` 前置门（architect 比例化 review + 四档裁决，程序见 [change-triage.md](change-triage.md)）。reviewed plan 按成熟度就近落地：大 feature 落 `delivery/workstreams/<ws>/PROPOSAL.md`（人类冻结后由 portfolio-planner 拆包），小 feature/bug 落 `delivery/taskpackages/<id>/plan.md`（单 Pod 跑 dev loop）。planner 跑 `/build-feature <id>` 时从 sibling `plan.md` 读 reviewed plan + frontmatter 裁决（`rigor`/`sourceType`）做 intake；plan.md 是 architect 审过的，planner 只读消费、改需留痕。
+**分流门衔接（gov-review-architect-change-triage）**：改 `firmware/**` 行为的变更开工前先过 `/triage-change` 前置门（architect 比例化 review + 五档裁决，程序见 [change-triage.md](change-triage.md)）。reviewed plan 按成熟度就近落地：大 feature 落 `delivery/workstreams/<ws>/PROPOSAL.md`（人类冻结后由 portfolio-planner 拆包），小 feature/bug 落 `delivery/taskpackages/<id>/plan.md`（单 Pod 跑 dev loop）。planner 跑 `/build-feature <id>` 时从 sibling `plan.md` 读 reviewed plan + frontmatter 裁决（`rigor`/`sourceType`）做 intake；plan.md 是 architect 审过的，planner 只读消费、改需留痕。
 
 planner 在 Draft TaskPackage 前必须按 `.claude/references/task-intake-and-slicing.md` 做 source intake，写入：
 
@@ -131,7 +131,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `verdict.json`：**兼容投影**，由 `verify.mjs` best-effort 写入 `current/verdict.json`，可含 `evidenceRef` / identity，但可覆盖、non-bearing；不能满足 FS-EVIDENCE-2、resume、closeout、supervisor 或 merge-readiness。
 - `verification.json`：supervisor-compatible closeout 机器件；在 closeout cardinality 中为 advisory-only，缺失不阻塞 `closeout-check`。终审圈定范围闸（final 按 scope-file 圈定）仍由 immutable verifier-round fact 承重，integrator 只消费 validated final fact，不用 projection 替代判定。
 - `docs-delta.md`：需要归档回 canonical docs 的变更，或无需更新理由。
-- `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。
+- `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。**nano 包制品注记（261016-gov-review-nano-tier FROZEN v1.1 立）**：`rigor: nano` 包的 review-packet.md 增「白盒复核」节（= nano 验收权威落痕位——planner Step 10c 派 architect 对意图定义逐条核 actual diff + PASS/偏差结论 + detect_changes 收口半径记录）；nano 的豁免/保留清单指针 = task-intake-and-slicing.md「nano 档字段级定义」节与 planner.md Step 3n，此处不复制字段表。
 - `input-brief.md`（T6，260908-gov-review-input-surface-frontload；261015-gov-review-lite-fast-path T4 双份并单份）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单（acceptance-author + builder 单份共用，§①c 主要消费方 = builder），Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/taskpackages/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产单份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。

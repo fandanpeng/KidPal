@@ -27,7 +27,7 @@
 **需求面变更**：走 `/requirement-change` loop（260928-gov-review-requirement-loop 立；流程 SSOT `.claude/references/requirement-change.md`，story-author 盘上 updating 起草 + requirement-reviewer 审稿 + 档 2 architect 必派〔免派例外见 SSOT〕；260928-gov-review-requirement-face 立三档判据与定稿载体）。
 **架构+契约面变更**：走 `/arch-change` loop（261015-gov-review-face-loop-unify 立；流程 SSOT `.claude/references/arch-change.md`——architect 起草 + architect-reviewer 四查〔恒定，改一个字也审〕+ 轻/主判档〔判据见 SSOT〕+ Track A 段〔只看收敛度，不看触及面〕；契约变更 = 架构变更的一种，契约包三节随批原子落、无人签门，合并过机械凭据闸）。
 **治理面变更**：走 `/gov-change` loop（同批立；流程 SSOT `.claude/references/gov-change.md`——同 cast；轻路径 = 文档面〔路径即判据〕，机器面〔commands / agents / hooks / scripts / scope-map / settings / G1〕恒 Track B；ARQ 条目直接作立项材料消费）。
-**实现面变更**：走 `/triage-change` 四档分流 → `/build-feature`（dev loop 不变）。
+**实现面变更**：走 `/triage-change` 五档分流 → `/build-feature`（dev loop 不变）。
 **跨面 intake**：触面 ≥2 的跨面 idea 先过统一 intake 建 spine（`delivery/intake/<changeId>.md`；程序 SSOT `.claude/references/change-intake.md`，260928-gov-review-cross-face-intake-spine 立）——统一 intake ≠ 统一门，各面门照旧各归各裁；spine 免冻，anchors 记录各面自己的冻结态。CLAUDE.md 经 `@AGENTS.md` 导入传导，不另改。
 
 **landing 通道（常态规则）**：恒 = 主线程 packet-bound 一条；architect 恒起草、architect-reviewer 恒审稿、两者永不 landing。

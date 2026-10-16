@@ -14,7 +14,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 1. 调度判定记录（哪几包、为什么）→ 落 `delivery/workstreams/kidpal-mvp/progress.md` 追加段
 2. 每个包：`--check-launch` 机械门绿
 3. 每个包：运行时 worktree（**复用空闲树 ∨ 按需新建**，一树一常驻分支——见步骤 3 换包协议）
-4. 每个包：固件环境等价化（sdkconfig / dependencies.lock / host_app sdkconfig 镜像 + managed_components 共享软链 + bootstrap 跑过；**lite 包新树：后置真机轮前**，见步骤 3b——261015-gov-review-lite-fast-path）
+4. 每个包：固件环境等价化（sdkconfig / dependencies.lock / host_app sdkconfig 镜像 + managed_components 共享软链 + bootstrap 跑过；**lite/nano 包新树：后置真机轮前**，见步骤 3b——261015-gov-review-lite-fast-path）
 5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（moderate + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
 6. board（`devloop/pods/<changeId>.json`）预填 worktreePath
 7. 启动卡落 `delivery/taskpackages/<changeId>/launch-card.md`
@@ -74,14 +74,14 @@ git worktree add C:/AI/KidPal-pod-<树名> -b <常驻分支名> <专用 base 分
 
 （树名是纯标识符，运行时绑定唯一 = board worktreePath；既有按包名命名的树一律不改名——改名会孤儿化路径派生的图索引项目。）
 
-### 3b. lite 快路径（`rigor=lite` 包；261015-gov-review-lite-fast-path）
+### 3b. lite/nano 快路径（`rigor ∈ {lite, nano}` 包；261015-gov-review-lite-fast-path，nano 扩 = 261016-gov-review-nano-tier FROZEN v1.1）
 
-触发 = 包 `rigor=lite` 且 triage 未声明「快路径不适用」（资格判注义务与例外声明 = [change-triage.md](../../../.claude/references/change-triage.md) §7）。分叉两条：
+触发 = 包 `rigor ∈ {lite, nano}` 且 triage 未声明「快路径不适用」（资格判注义务与例外声明 = [change-triage.md](../../../.claude/references/change-triage.md) §7 lite 判注与「档 0 nano 判据」节 nano 判注）。分叉两条：
 
 - **池优先**：先按步骤 3 换包协议复用空闲池树——复用树自带热环境（build/ 缓存 + managed_components 软链 + 既有图索引），环境后置对它无意义，launch 只剩 board 预填 + 基线差异判停 + 写启动卡；无空闲树才经 human 决策建新树（步骤 3 第四条不变）。
 - **新树免做的只有一件 = 固件环境等价化**（步骤 4 全件）——后置为真机轮前置条件，启动卡钉预检行「烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录」。其余 launch 面步骤照旧：**专属图索引维持「必办 + intake 前在册」原样**（ARQ-260905 零修订），仅加执行顺序注记——新树建成后**立即发起**步骤 5 图索引（快照导入 + 增量，分钟级），与 board 预填 / 启动卡撰写自然交叠。
 
-### 4. 固件环境等价化（仅新建树；复用树跳过——环境已就位，换包时只做交接卫生核对。**lite 包新树：整步骤后置真机轮前**，见 3b——届时一次性执行本步骤全件，或真机轮直接退主 checkout 构建烧录）
+### 4. 固件环境等价化（仅新建树；复用树跳过——环境已就位，换包时只做交接卫生核对。**lite/nano 包新树：整步骤后置真机轮前**，见 3b——届时一次性执行本步骤全件，或真机轮直接退主 checkout 构建烧录）
 
 ```
 cp firmware/sdkconfig firmware/dependencies.lock <worktree>/firmware/
@@ -124,9 +124,9 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 跑 <changeId>（<workstream>，mergeOrder <N>）。
 基线锚：<workstream progress.md 带 SHA 行>——各面域判停结论（可引用 / 须重跑，按步骤 2 差异判停）。
 上一包留根：<delivery/taskpackages/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
-固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省；261015 批 T3 起 defer > required——lite 包 scoped 相位 defer 短路优先于本行，final 相位恒跑）。
+固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省；261015 批 T3 起 defer > required——lite/nano 包 scoped 相位 defer 短路优先于本行，final 相位恒跑）。
 会话标识：<pid / 终端标识 / 启动时刻>（点火后由 launch 执行者回填——叫停时核「进程确实已死」用，见 pod-coordination「叫停协议」节）。
-（lite 包新树加一行）真机轮预检：烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录。
+（lite/nano 包新树加一行）真机轮预检：烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录。
 命令行（两形态并列，标注适用条件）：
 ① 人在场交互式：claude --settings .claude/dev-loop.settings.json --agent planner
 ② 无人值守 headless：claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner（另加 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0）
