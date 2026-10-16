@@ -328,3 +328,22 @@ verdict: BLOCK(F1,F2)
 **亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① `taskpackage-required-check.mjs:326/:330` 两必填行字段清单 Read 亲核（见 F1 条）；② `triage-change.md` 全文 Read——四档提法 :2（description「判四档（③拆包 / ②单包Full / ②单包Lite / ①直接修）」）、:13（「照旧判四档」）、:22（「判四档 + 出 reviewed plan」）、:26（「呈现 architect 的四档裁决」）四处实；③ `SKILL.md:77-84` Read——3b 标题「lite 快路径（`rigor=lite` 包…）」、触发句、步骤 4 头注「lite 包新树：整步骤后置真机轮前」实；④ `change-triage.md:108` Grep——lite 判注义务「host 齿可闭环」原文实；⑤ `verify-gates.json:36/:58/:59` Read——头注数组内「rigor=lite 包后置 final 相位」、firmware-build `defer.whenRigor:["lite"]`、`_doc`「rigor=lite 包 scoped 相位后置到 final」实；⑥ `planner.md:49/:53/:84` Read——1g 效力声明尾句「不构成通过判据」、Step 5 「不允许整组只有结构条目」、10b 效力声明原文实；⑦ auxbar `taskpackage.json:24-39` Read——三条 kind:structural 对象行号 :24-28/:30-34/:35-39 实；⑧ preflight 实跑输出见上「锚一致性亲核」；⑨ PROPOSAL v0.1→v0.2 全量 diff（git diff abb769c d4b39e1）通读——修订范围与起草注记自述一致，无夹带改动；T6 :156 与 §5 第 9 条 :262 的两处残留即 diff 后仍存于 v0.2 的原文。
 
 verdict: BLOCK(R2-F1)
+
+### R3 - 2026-10-16 - architect
+
+**轮次焦点**：R2 两条 findings 修订到位性核验 + v0.3 新矛盾扫描 + GREEN 前结构字段核对；R1/R2 已亲核且未被 v0.3 触动的引据不重跑。
+
+**R2 findings 逐条核验**：
+
+- **R2-F1 修订到位**。T6（:156）现文「**效力声明引 T3 Step 10c 声明原文、逐字一致**——「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；本复核即 nano 行为验收判分位，PASS 为 Step 11 前置」，两落点单源」+ 显式禁令「**禁止回植 1g/10b 的「不构成通过判据」尾句**——10c 是 nano 档验收权威本体（human 已裁②），自我否定的声明会把 R1 F2 的病从镜像段原样带回（R2-F1）」——「与 1g/10b 同款」表述已删（grep `与 1g/10b 同款|10b 同款` 仅命中 :288/:321 两处 §7 append-only 评审记录，非生效措辞）。逐字比对（node 字节级提取两行引文）：T3 :107 引文 = 「不豁免 verify.mjs 任何闸、不改 TaskPackage 事实；**本复核即 nano 行为验收判分位，PASS 为 Step 11 前置**」，T6 :156 引文去除 markdown 加粗标记后与之**逐字符相等**——T3 引文内的 `**` 系该行排版强调（包住后半句 punchline），非声明内容差异；判定「逐字一致」在字符内容层成立，landing 时两落点取同一去标记纯文本即可，不构成 finding。「不构成通过判据」生效面命中仅两处元语句：T3 :107（「与 10b 档的 advisory 效力（「不构成通过判据」）**有意不同**」辨析引述）与 T6 :156（禁令句本身引用尾句字面以禁止回植）——均为引述/禁令，非 10c 声明本体；其余命中（:288/:311/:321/:328）全在 §7 评审记录，无生效面残留。
+- **R2-F2 修订到位**。§5 第 9 条（:262）现文「`git diff --cached --stat` 对照 landing-manifest 15 行（11 必选锚 + 4 条件锚，条件锚按 OQ 裁断裁剪后）」——行数修正与条目集表述双采纳（R2 修法方向给出的两个选项都落了）。判官亲核 manifest 围栏块 :13-27 = **15 条目**（sed 实测逐行打印核对），= 11 必选锚（preflight anchorUnion 同集）+ 4 条件锚（architect.md / closeout-check.mjs / AGENTS.md / docs/DEV-GOVERNANCE.md），与 §5 第 1 条 `anchorCount:11` 及起草注记联立一致。
+
+**v0.3 新矛盾扫描**：`git diff bcbd307 7f9d13e -- <本PROPOSAL>` 全量通读——改动恰三处（Status 状态行 v0.2→v0.3、T6 改法镜像句、§5 第 9 条），与 R2 否回的修法方向一一对应、无夹带改动；T6 新文与 T3 :107「有意不同」辨析、§5 第 1 条 anchorCount 断言、起草注记均无冲突。preflight 亲跑（2026-10-16 本 worktree）= `ok:true` ∧ `section2BodyFound:true` ∧ `anchorCount:11` ∧ `findings:[]` ∧ `advisories:[]`，anchorUnion 11 成员与起草注记逐 token 一致。
+
+**GREEN 前结构字段核对**：landing-manifest 围栏块在场（:12-28，15 条目）；packet-id 行在场（:6「packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集」）；§5 第 1 条末句定稿义务在场（:254「**定稿义务**：FROZEN 前按 OQ1/OQ4/OQ6 裁断改写条件锚（裁 (a) 则去条件注记转必选锚、裁 (b) 则删锚并裁剪 manifest），复跑本预跑核「§2 并集 ≡ manifest 围栏块」」）。
+
+**判档与升级（只升不降）**：判档维持 Track B 主路径全件（v0.3 触面集与 R1 判档结论一致，未扩边界）；Track A 段判定维持不升级——R2-F1/R2-F2 修订均为实现层文本收敛，v0.3 未引入方向级分叉。无升级 human 项。
+
+**亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① node 字节级提取 :107/:156 两行「不豁免…」引文比对——输出 `verbatim-equal (ignoring md bold): true` 且 T3 引文含 `**` 标记、T6 无（判定见 R2-F1 条）；② grep `与 1g/10b 同款|10b 同款` = :288/:321 两行（均 §7 记录）；③ `sed -n '13,27p'` manifest 围栏块 = 15 条目逐行打印核对（11 必选 + 4 条件，与 R2 亲核留痕⑧同一集合）；④ `node .claude/scripts/landing-fidelity-check.mjs --preflight <本PROPOSAL>` 实跑 = ok:true / anchorCount:11 / findings:[] / advisories:[] / section2BodyFound:true；⑤ `git diff bcbd307 7f9d13e` 全量通读 = 三 hunk 与 R2 否回项一一对应；⑥ 结构字段 grep 定位——packet-id :6、manifest 围栏 :12-28、§5 第 1 条定稿义务 :254、§5 第 9 条 :262。
+
+verdict: GREEN
