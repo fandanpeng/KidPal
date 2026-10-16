@@ -55,3 +55,21 @@ source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与�
 **路由**：归 `/gov-change` loop。按 AGENTS.md「治理路由」节，「机器面〔commands / agents / hooks / scripts / scope-map / settings / **G1**〕**恒 Track B**」——本条目触 G1，故 gov-change 侧的**轻路径不适用**（轻路径判据 = 纯文档面且不在机器面清单内）。（注：此「Track B」= gov-change loop 的路径轴，与上文 gov-arq 的 review profile 轴同名异义，两轴独立、一并如实记录。）
 
 **关联**：前身批 `docs/debt/gov/_archive/2026/ARQ-260928-triage-cross-face-intake-gap.md`（机制建立，本条目承接其镜像同步遗漏）；`260928-gov-review-cross-face-intake-spine`（落地批，change-intake.md 出处）；`ARQ-260928-arch-change-retirement`（同批拆出的相邻条目）；本条目由跨面变更 `261016-p3-story-body-sd-cache`（spine `delivery/intake/261016-p3-story-body-sd-cache.md`）的起草期误读派生。
+
+---
+
+**追加（2026-10-16，同日第二次复现，同一条目，证据升级）**：
+
+**第二次误读**：主线程在**读完** `.claude/commands/triage-change.md` + `change-triage.md` **之后**（即本条目证据 1 那次更正之后），仍把 `/triage-change` 编排为「③ 实现面」——即把**容器当成了链上的一环**。human 2026-10-16 当场第二次指出：「triage 现在就是要把需求、架构跟开发都合在一起，它并不是只看开发的，所以你把它放到第三位是不对的」。
+
+**这一条为什么重要**：证据 1 是「没读定义就下结论」（执行失误）；本条是「**读完了定义仍然读错**」——同一份文本、同一个读者、读全之后仍推导出错误结构。这排除了"读者偷懒"的解释，把成因锁在**文本本身**：
+
+- `change-triage.md` §0 的「**实现面留本门分档**」与 AGENTS.md 的「实现面变更 → `/triage-change` 五档分流 → `/build-feature`」，两处都把 triage 描述成「实现面那一环」；
+- 而真正点明它是**容器**的那半句在别处、且极易被跳过——`commands/triage-change.md` step 6：「轻面注明**内联执行（本会话继续派发）**」。**「本会话继续派发」＝ triage 会话在自己里面把各面派出去**，这才是"把需求、架构、开发合在一起编"的机制载体。
+- **反向旁证被忽视**：前身条目 `ARQ-260928-triage-cross-face-intake-gap` 的触发原话逐字即「现在 triage **只关注到实现侧的拆包大小，这个不够**」——那句正是在宣告 triage 改造后**不再只是实现面**。误读者读过该条目全篇（本次查重时），仍未吸收。
+
+**对建议改动的加固**：原建议 1/2/3 三处显式化之外，须**再加一处**——
+
+5. **点明 `/triage-change` 的容器属性**：AGENTS.md 入口节与 change-triage.md §0 都应写出「triage = 承载整条跨面链的编排会话，各面在它内部按 facePlan 被派发（轻面本会话内联、重面 headless）」；「实现面留本门分档」应补「**分档是它的收尾动作，不是它等于实现面**」这一限定。**不加这条限定，仅补"入口身份"仍不足以阻止第二种误读**（本例已证）。
+
+**证据强度**：本条目现有**两次独立误读**（同一读者、同一文本、两种不同错法），且第二次发生在完整阅读之后——`severity: SHOULD` 是否应升 `MAJOR`，留待 `/gov-change` 评审时裁；本处按纪律只追加、不改既有字段。
