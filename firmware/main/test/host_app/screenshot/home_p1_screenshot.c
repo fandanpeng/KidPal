@@ -170,7 +170,8 @@ static void set_state(int hour, int minute, int month, int mday, int env, int te
 static void bbox_win(const char *nm, int x0, int x1)
 {
     int ymin = -1, ymax = -1, xmin = -1, xmax = -1, any = 0;
-    for (int y = 0; y < 40; y++) { /* 辅助条 y[0..39] 带内；避免扫到下方日程主体墨 */
+    for (int y = 0; y < 30; y++) { /* 辅助条内容 y[0..29]（钉区底缘 29）; y30-32 为上虚线
+                                    * 分隔带（p1_draw_group_dash_sep(30,8,391)），排除免污染 bbox */
         for (int x = x0; x <= x1 && x < P1_FB_W; x++) {
             if (s_p1_fb[y * P1_FB_W + x] != (uint32_t)0xFFFFFFu) {
                 any = 1;
@@ -194,39 +195,40 @@ static void bbox_win(const char *nm, int x0, int x1)
 static void diagn_aux_bbox(void)
 {
     printf("aux strip ink bbox (normal 10:24 / 22C / 45%% / 96%%):\n");
-    bbox_win("time",      36, 108);
-    bbox_win("date",     112, 208);
-    bbox_win("temp_icon", 212, 232);
-    bbox_win("temp_val",  236, 264);
-    bbox_win("hum_icon",  268, 283);
-    bbox_win("hum_val",   285, 305);
-    bbox_win("hum_pct",   307, 318);
-    bbox_win("batt_icon", 322, 344);
-    bbox_win("batt_val",  349, 369);
-    bbox_win("batt_pct",  370, 396);
-    bbox_win("batt_pct_2", 349, 396); /* 数值+% 全窗（测整体中线） */
+    /* 窗口 = p1_home_battery.acceptance.c 冻结钉区 x 域（2026-10-15 对齐——旧窗
+     * 为 2026-09-26 右移重排前的坐标，已失实）。 */
+    bbox_win("wifi",       12,  25);
+    bbox_win("time",       36, 108);
+    bbox_win("date",      112, 208);
+    bbox_win("temp_icon", 210, 230);
+    bbox_win("temp_val",  234, 278);
+    bbox_win("hum_icon",  282, 302);
+    bbox_win("hum_val",   302, 338);
+    bbox_win("batt_icon", 342, 362);
+    bbox_win("batt_val",  364, 396);
 }
 
-/* 对当前 s_p1_fb 统计辅助条各钉区墨像素数（C 侧，免 python 盲猜）。 */
+/* 对当前 s_p1_fb 统计辅助条各钉区墨像素数（C 侧，免 python 盲猜）。
+ * 区域 = p1_home_battery.acceptance.c 冻结钉区（2026-10-15 对齐重锚）。 */
 static void diagn_aux_strip(void)
 {
-    static const int r_time[4]   = {  36, 6, 108, 33 };
-    static const int r_date[4]   = { 112, 6, 208, 33 };
-    static const int r_ticon[4]  = { 212, 6, 232, 33 };
-    static const int r_tval[4]   = { 236, 6, 264, 33 };
-    static const int r_hicon[4]  = { 268, 6, 288, 33 };
-    static const int r_hval[4]   = { 292, 6, 318, 33 };
-    static const int r_bicon[4]  = { 322, 6, 344, 33 };
-    static const int r_bval[4]   = { 348, 6, 396, 33 };
-    int ink;
+    static const int r_wifi[4]  = {  12, 6,  25, 29 };
+    static const int r_time[4]  = {  36, 6, 108, 29 };
+    static const int r_date[4]  = { 112, 6, 208, 29 };
+    static const int r_ticon[4] = { 210, 6, 230, 29 };
+    static const int r_tval[4]  = { 234, 6, 278, 29 };
+    static const int r_hicon[4] = { 282, 6, 302, 29 };
+    static const int r_hval[4]  = { 302, 6, 338, 29 };
+    static const int r_bicon[4] = { 342, 6, 362, 29 };
+    static const int r_bval[4]  = { 364, 6, 396, 29 };
+    static const char *const nm[9] = {"wifi", "time", "date", "temp_icon", "temp_val",
+                                      "hum_icon", "hum_val", "batt_icon", "batt_val"};
+    const int *regions[9] = {r_wifi, r_time, r_date, r_ticon, r_tval,
+                             r_hicon, r_hval, r_bicon, r_bval};
     printf("s_art_ok=%d (via glyph_advance)\n", kidpal_art_glyph_advance() > 0);
-    for (int r = 0; r < 8; r++) {
-        static const char *nm[8] = {"time", "date", "temp_icon", "temp_val",
-                                    "hum_icon", "hum_val", "batt_icon", "batt_val"};
-        const int *R = (&r_time[0] == &r_time[0]) ?
-            (r==0?r_time: r==1?r_date: r==2?r_ticon: r==3?r_tval:
-             r==4?r_hicon: r==5?r_hval: r==6?r_bicon: r_bval) : 0;
-        ink = 0;
+    for (int r = 0; r < 9; r++) {
+        const int *R = regions[r];
+        int ink = 0;
         for (int y = R[1]; y <= R[3]; y++) {
             for (int x = R[0]; x <= R[2]; x++) {
                 if (s_p1_fb[y * P1_FB_W + x] != (uint32_t)0xFFFFFFu) {
@@ -258,7 +260,7 @@ int main(int argc, char **argv)
     printf("glyph_advance() = %d\n", kidpal_art_glyph_advance());
     {
         kidpal_art_img_t probe;
-        printf("load ic_batt_48.bin = %d\n", kidpal_art_load("ic_batt_48.bin", &probe));
+        printf("load ic_batt_15.bin = %d\n", kidpal_art_load("ic_batt_15.bin", &probe));
     }
 
     /* 1) 常态 96%（有日程，env 有效，tick 亮相）。日期 9 月 16 日真实态 -> "16 Sep"。 */

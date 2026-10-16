@@ -220,6 +220,12 @@ set(HOST_ACCEPTANCE_SRCS
 
     "../../voice_rightcol_label.acceptance.c"
 
+    # 包 261015-p1-auxbar-style-fix（P1 辅助条像素级观感修复：电池/温/湿图标切原生
+    # 直出件 + 日期简写全大写 + wifi 资产重出守卫）冻结验收。纯树扫（home_p1.c 不进
+    # host 构建——源锚齿 tree-scan 承载）。**必须置于 host smoke acceptance 之前**
+    # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../p1_auxbar_style.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
