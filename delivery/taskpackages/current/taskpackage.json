@@ -64,36 +64,36 @@
         "acceptance": "SD-A1 config.h 四宏在世且值正确（详见 acceptance[] 同名条目全文）",
         "mutation": "m1 · ①整组删除四宏 ②单宏值回退（如 SD_MMC_D0_GPIO GPIO_NUM_39→40）③注释包号/来源抹除",
         "affectedTest": "sd_card_mount.acceptance.c test 1：对应 tooth 红名 verbatim（如「SD-A1 RED: config.h 未取到 #define SD_MMC_D0_GPIO 与 GPIO_NUM_39 同行宏定义——引脚宏面不完整…」/「SD-A1 RED: config.h SD 宏注释缺包号 261016-sd-card-mount…」）",
-        "turnedRed": null,
-        "sensitive": false,
-        "notes": "骨架（acceptance-author 冻结轮 2026-10-16 产出，planner 代落）；builder 实跑取证后回填 turnedRed/红名 verbatim/证据路径"
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
         "acceptance": "SD-A2 板 .cc 挂载初始化（详见 acceptance[] 同名条目全文）",
         "mutation": "m2 · ①format_if_mount_failed→true ②slot 宽度 1→4 ③max_files 5→12 ④构造窗调用点删除 ⑤三引脚宏消费任一移出函数窗",
         "affectedTest": "sd_card_mount.acceptance.c test 2：对应 tooth 红名 verbatim（如「SD-A2 RED: InitializeSdCard 函数窗存在 format_if_mount_failed = true 形态…」）",
-        "turnedRed": null,
-        "sensitive": false,
-        "notes": "骨架（同上，planner 代落待 builder 取证回填）"
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
         "acceptance": "SD-A3 失败降级路径（详见 acceptance[] 同名条目全文）",
         "mutation": "m3 · ①WITHOUT_ABORT→裸 ESP_ERROR_CHECK ②失败置标志删除 ③sdmmc_card_print_info 删除",
         "affectedTest": "sd_card_mount.acceptance.c test 3：对应 tooth 红名 verbatim（如「SD-A3 RED: InitializeSdCard 函数窗存在 N 处裸 ESP_ERROR_CHECK( panic 形态…」）",
-        "turnedRed": null,
-        "sensitive": false,
-        "notes": "骨架（同上，planner 代落待 builder 取证回填）"
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       },
       {
         "acceptance": "SD-A4 板级查询入口（详见 acceptance[] 同名条目全文）",
         "mutation": "m4 · accessor 删除或改常量 stub return true（不读标志）",
         "affectedTest": "sd_card_mount.acceptance.c test 4：SD-A4 红名 verbatim（「SD-A4 RED: 板级查询入口 SdCardMounted() 未落地…」）",
-        "turnedRed": null,
-        "sensitive": false,
-        "notes": "骨架（同上，planner 代落待 builder 取证回填）"
+        "turnedRed": true,
+        "sensitive": true,
+        "notes": "已取证（2026-10-16 builder 第一方实跑）：红名 verbatim + 还原复绿 + 日志路径全文见 mutation-evidence/builder-run-2026-10-16.md（planner 代存）"
       }
     ],
-    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状（acceptance-author 冻结轮钉死）：①引脚宏回退/删除/注释抹除 ②挂载参数回退（format_if_mount_failed→true / 宽度 1→4 / max_files 5→12 / 构造窗调用点删除 / 引脚宏消费移出函数窗）③降级路径破坏（WITHOUT_ABORT→裸 ESP_ERROR_CHECK panic 形态 / 置标志与 print_info 删除）④accessor 删除或常量 stub——新源锚齿须红；SD-A5/A6 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance.acceptance = acceptance[] 对应条目指针（全文见 acceptance[]），builder 实跑取证、planner 回填 turnedRed/红名 verbatim/证据路径"
+    "reason": "Full 包骨架前置（起包格式期望前置第①条）；变异形状（acceptance-author 冻结轮钉死）：①引脚宏回退/删除/注释抹除 ②挂载参数回退（format_if_mount_failed→true / 宽度 1→4 / max_files 5→12 / 构造窗调用点删除 / 引脚宏消费移出函数窗）③降级路径破坏（WITHOUT_ABORT→裸 ESP_ERROR_CHECK panic 形态 / 置标志与 print_info 删除）④accessor 删除或常量 stub——新源锚齿须红；SD-A5/A6 真机轮与 A3 设备编译闸为取证豁免面（live-manual / 编译闸无独立实现变异点）；perAcceptance.acceptance = acceptance[] 对应条目指针（全文见 acceptance[]），builder 已实跑取证（2026-10-16，m1–m4 全数 turnedRed=true，靶位全对、还原复绿、终复绿 4T/0F），planner 已回填并代存 mutation-evidence/builder-run-2026-10-16.md"
   },
   "deliveryImpact": "none",
   "planningImpact": "none",
