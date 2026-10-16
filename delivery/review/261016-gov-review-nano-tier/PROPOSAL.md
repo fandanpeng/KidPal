@@ -1,6 +1,6 @@
 # PROPOSAL · 261016-gov-review-nano-tier
 
-> **状态：DRAFT v1.1 · 2026-10-16 · R4 否回 2 条 findings 全修，待 architect-reviewer 复审**
+> **状态：FROZEN v1.1 · 2026-10-16 · 主线程凭据自冻——human 立项 ack（2026-10-16 本会话前端对齐：nano 档意图 + 四点裁定 + 指示「commit 后进 review」）+ architect R5 GREEN（2026-10-16，§7）+ human 裁 OQ1–OQ7 结果（2026-10-16 AskUserQuestion 两轮留痕，§4）**
 > **承载 ARQ**：无在册 ARQ 直承（human 2026-10-16 两轮口述直接发起，原话逐字在主线程派发记录）。同根先例 = 2026-10-14 loop-retro T1「包元数据/冻结件形状税第四波」（`delivery/retro/2026-10-14-loop-retro.md:16-20`；其关联条目 ARQ-260907-taskpackage-format-expectations-frontload 治的是起包格式期望前置，与本批「整档减重」不同根，不回写该行）。
 > **review 轨**：Track B 主路径（机器面恒 Track B，**非**瘦制品轻路径——制品四件 + retro 照常，不误套轻路径 retro 豁免；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节、`AGENTS.md`「治理路由」节、`.claude/references/gov-change.md`「轻路径判据」节）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
@@ -375,3 +375,22 @@ verdict: GREEN
 **亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① preflight 亲跑输出 = ok:true / section2BodyFound:true / anchorCount:14 / findings:[] / advisories:[]，anchorUnion 14 token 与 manifest 逐一对上；② 全文 grep `whitebox-review|closeout-check`——命中 ：8/:106/:107/:219/:231/:235/:258/:282/:299/:305/:342（:106 为 Step 11 既有 closeout-check 保留项、:107 为「不加牙」否定句，其余为 Status 头裁断注记、§4 选项/裁断文本与 §7 append-only 历史；生效面零残留）；③ 全文 grep `白盒复核件|视觉门|AskUserQuestion|代落|第 9 条`——定位 R4-F1 :62 与 R4-F2 :99/:154/:190；其余命中（:3 Status 留痕、:100/:108 T3、:230/:236/:237 §4、:325/:342/:344 §7 历史）均豁免；④ 定稿 diff 13 hunk 全量通读（逐 hunk ↔ 七条 OQ 映射核对）；⑤ `p1_blit_art` home_p1.c 调用点 grep = 4；⑥ `rn_render_kidpal_page_locked` 全固件 grep（kidpal_render_node.cc 四调用点 + 四公共入口外部设备侧调用点 grep 实测 ≥9）；⑦ manifest :13-26 亲点 14 行、packet-id :6、Status :3/:4、§5 八条时点标注在场；⑧ T5 目标文件行 ：144 = 三文件无 closeout-check、§5 现第 8 条 = manifest 对照条（原 warn 牙验证条已删、无断号残留）。
 
 verdict: BLOCK(R4-F1)
+
+### R5 - 2026-10-16 - architect
+
+**轮次焦点**：R4 两条 findings 修订到位性核验 + v1.1 新矛盾扫描 + GREEN 前结构字段与凭据链核对；R1–R4 已亲核且未被 v1.1 触动的引据不重跑。
+
+**R4 findings 逐条核验**：
+
+- **R4-F1 修订到位**。T1 判档双层形状句（:62）现文「收口实测 = `detect_changes` 对 actual diff 算实际爆炸半径，结果记入白盒复核回执（advisory，见 T3；落痕载体 = integrator review-packet「白盒复核」节，OQ4=(b)）」——悬空指称「白盒复核件」已改回「白盒复核回执」+ 落痕载体三要素（integrator / review-packet「白盒复核」节 / OQ4=(b)）齐备，与 T3 :107 落痕载体表述一致。全 PROPOSAL grep `白盒复核件`：命中仅 :230（§4 OQ4 标题「白盒复核件载体与牙」，选项/裁断历史文本）与 :370/:375（§7 R4 append-only 记录）——生效面零残留。
+- **R4-F2 修订到位**。三处「planner 代落」统一改写为 OQ4=(b) 落痕表述：T3 证据 :99 现文「——OQ4=(b) 设计下无需任何代落安排：architect 恒只读零写，落痕 = integrator 在自家制品 `review-packet.md` 增「白盒复核」节（integrator 写 `delivery/taskpackages/<id>/` 是其既有写域），写域零扩张成立」；T6 改法尾句 :154 现文「Boundaries / Write Scope 不动（architect 恒只读零写；落痕 = integrator review-packet「白盒复核」节，OQ4=(b)——写域零扩张）」；§3 sweep :190 现文「写域零扩张：architect 恒只读零写、落痕 = integrator review-packet「白盒复核」节（OQ4=(b)）；fixer 既有 allow 覆盖实现面」。grep `代落`：生效面命中仅 :99 一处且为「无需任何代落安排」否定句（豁免类）；其余命中 :231（§4 OQ4 选项 (a) 历史文本）与 :282/:371/:375（§7 append-only 记录）。三处新表述与 T3 :107 落痕载体三要素逐点一致，四处（T1/T3/T6/§3）同一口径。v1.1 新增事实断言「integrator 写 `delivery/taskpackages/<id>/` 是其既有写域」判官亲核成立：`.claude/scope-map.json:146-155` integrator allow 集含 `delivery/taskpackages/**`（:154）。
+
+**v1.1 新矛盾扫描**：`git diff fdfd2e3..446f23e -- <本PROPOSAL>` 全量通读——含 R4 verdict 落账（87415aa，append-only §7 记录）与 v1.1 修订（446f23e）两部分；隔离 `git show 446f23e --stat` = 恰 1 文件 5 insertions/5 deletions，5 hunk 逐一映射：Status 行（v1.0→v1.1）、T1 :62（R4-F1）、T3 :99 / T6 :154 / §3 :190（R4-F2 三处），与 R4 否回两条一一对应、无夹带改动。preflight 亲跑（2026-10-16 本 worktree）= `ok:true` ∧ `section2BodyFound:true` ∧ `anchorCount:14` ∧ `findings:[]` ∧ `advisories:[]`，anchorUnion 14 成员与 manifest 围栏块逐 token 一致。
+
+**GREEN 前结构字段与凭据链核对**：landing-manifest 围栏块在场（:12-27，14 条目）；packet-id 行在场（:6「packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T7）+ §5 验证集」）。凭据链：立项 ack = :4「human 2026-10-16 两轮口述直接发起」；OQ 裁毕 = :8「全部 OQ 已于 2026-10-16 裁毕」+ §4 七条裁断行（R4 第 1 项已逐字核过）；GREEN = R3 :352 + 本轮 R5。链齐，可标 FROZEN。
+
+**判档与升级（只升不降）**：判档维持 Track B 主路径全件（v1.1 触面集与 R1 判档结论一致，纯文本修订零扩面）；Track A 段判定维持不升级——R4-F1/R4-F2 修订均为实现层文本收敛，v1.1 未引入方向级分叉。无升级 human 项。
+
+**亲核留痕（判官实测，2026-10-16，本 worktree gov/kidpal）**：① grep `白盒复核件` = :230/:370/:375（均豁免面）；② grep `代落` = :99/:231/:282/:371/:375（:99 为否定句，其余 §4 历史文本与 §7 记录）；③ `git show 446f23e --stat` = 1 file / +5-5，五 hunk 逐一对映射；④ `git diff fdfd2e3..446f23e` 全量通读；⑤ preflight 实跑输出 = ok:true / anchorCount:14 / advisories:[] / findings:[] / section2BodyFound:true，anchorUnion 14 token 与 manifest :13-26 逐一比对一致；⑥ `.claude/scope-map.json:146-155` Read——integrator allow 含 `delivery/taskpackages/**`（:154）；⑦ manifest 围栏块 :12-27 与 packet-id :6 定位在场；⑧ T1/T3/T6/§3 四处落痕表述口径一致性逐句比对。
+
+verdict: GREEN
