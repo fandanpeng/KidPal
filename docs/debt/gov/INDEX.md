@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 21（待拍板 0 / 待触发 19 / 已接受风险 2）；已结 87（归档索引见下）。
+**摘要**：未结 22（待拍板 0 / 待触发 20 / 已接受风险 2）；已结 87（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（19）
+## 待触发（20）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -35,6 +35,7 @@ _（无）_
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
 | [ARQ-261017-anchor-check-master-unvalidated](ARQ-261017-anchor-check-master-unvalidated.md) | SHOULD | spec-anchor-check 假定「最高版号设计稿即完整母版」却不校验完整性——任何人产出一份增量 vN 设计稿即静默打断全仓 UI 锚机检（2026-10-17 实测 12 条悬空、涉 10 条 story） | 下一治理批（动 `.claude/scripts/spec-anchor-check.mjs` / 设计母版发布流程 / `uiux-author` 或 write-story 的「母版产出」纪律任一时并批）；或再出现一次「写增量稿静默打断 UI 锚机检」时立即升格 |
+| [ARQ-261017-merge-gate-contract-evidence-ref](ARQ-261017-merge-gate-contract-evidence-ref.md) | SHOULD | pre-merge-escalation-gate 的契约凭据取件用 `git show target(main):PROPOSAL` 而非 source——结构性不可满足，arch-lane 契约批恒 BLOCK（2026-10-17 实测，261015 T15 新增路径首次真实执行） | 下一治理批（动 `pre-merge-escalation-gate.mjs` / 契约凭据判据 / `/arch-change` landing 流程任一时并批）；或在 agent-lane 契约批再次被同一 BLOCK 挡住时立即升格 |
 | [ARQ-261017-merge-gate-scope-unstated](ARQ-261017-merge-gate-scope-unstated.md) | SHOULD | 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK | 下次治理批；或下个动 pre-merge-escalation-gate.mjs / merge-to-main skill 文面 / AGENTS.md 治理路由节任一时并批（与 ARQ-261014 同脚本，可同批） |
 
 ## 已接受风险（2）
