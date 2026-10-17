@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 26（待拍板 0 / 待触发 20 / 已接受风险 6）；已结 18（归档索引见下）。
+**摘要**：未结 25（待拍板 0 / 待触发 19 / 已接受风险 6）；已结 19（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（20）
+## 待触发（19）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -28,7 +28,6 @@ _（无）_
 | [TECH-261012-edgetts-403-hotpatch](TECH-261012-edgetts-403-hotpatch.md) | MAJOR | Edge TTS 微软端全线 403（speech.platform.bing.com 2026-10 拒旧宿主）致设备语音全哑——容器热补丁切 api.msedgeservices.com 端点已恢复，耐久化（补丁进部署源）未落 | 下次动 server/deploy 引擎部署面的批顺带落耐久化；或容器重建/镜像更新时热补丁丢失即复现（可判触发） |
 | [TECH-261012-first-keypress-no-listening](TECH-261012-first-keypress-no-listening.md) | SHOULD | 重启后首次按键不跳聆听页（human 口述「每次重启都有」）+ 实测复现：按键撞 781s 空闲通道超时 → WS 重建后会话失同步、音频通道秒关弹回 idle，连按两次恢复 | 下一次动固件连接生命周期/常驻在线逻辑的批（triage 分流时按图索骥） |
 | [TECH-261012-qq-schedule-write-format-gap](TECH-261012-qq-schedule-write-format-gap.md) | MAJOR | QQ 课表录入链路缺口——家庭侧 main agent 无写课表 skill 钉 B1 格式，一个脏日期格致整份 schedule.md 解析失败、「接下来」三触发全静默停摆；连带实测刷新 marker 链（触发③）从未 live 部署 | dev 侧在途课表链路批 landing 前对账合并处理；或下次 QQ 录入复现时 |
-| [TECH-261013-p3-reader-entry-no-text-silent-noop](TECH-261013-p3-reader-entry-no-text-silent-noop.md) | SHOULD | P3 KEY 双击进阅读态对「无正文缓存」故事静默无反应——设计降级缺用户可见反馈，且冷启动恢复的老故事无正文获取通路（S-F2.1 AC2 承诺不可兑现） | 下个动 P3 显示面 / story_text 通路 / front story 推送面的包；修复分两层（固件可见降级提示 = 纯固件；正文按需获取通路 = 疑触 front/契约，走 intake 裁），修完随包真机复验「双击进阅读 + 阅读态标题」 |
 | [TECH-261014-autoconnect-gives-up-silently](TECH-261014-autoconnect-gives-up-silently.md) | SHOULD | 自动重连任务固定 3 次尝试后静默退出——服务端重启/断网窗口超过约 15 秒即设备离线且不自愈，须用户动作（KEY/唤醒）才重建连；后果：离线期间提醒推送（MCP 下发）全丢 | 下一次动 application.cc 连接/重连面的批顺带评估；或排期后的可靠性小包（判据 = 是否要求「持续重试到连上」的产品口径先定） |
 | [TECH-261014-engine-asr-hallucination-after-stop](TECH-261014-engine-asr-hallucination-after-stop.md) | SHOULD | 引擎在收到 listen stop 后仍处理尾音、ASR 于静音/杂音上幻听（典型 "Thank you."），LLM 顺口回复并被推成 TTS——表现为查字/播报结束后设备多播一段「不客气呀」之类无关寒暄 | 下一次动引擎部署面（server/deploy / engine-patch）的批顺带；或提醒/播报链路的可靠性小包 |
 | [TECH-261014-kidpal-speak-await-nonetype](TECH-261014-kidpal-speak-await-nonetype.md) | SHOULD | engine-patch 对同步 speak_txt 误 await——每轮提醒语音注入必报 ERROR「播报注入失败」但主链仍通（语音在报错后照常合成下发），2026-09-11 live 轮已测出、记「归后续修复」后未修未登记，本条补登 | 下一次动 server/deploy 引擎部署面的批顺带（与 TECH-261012-edgetts-403-hotpatch 耐久化同批的先例模式）；修复一行级，不值得单开包 |
@@ -49,10 +48,10 @@ _（无）_
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（18）
+## 已结（19）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 18 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 19 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

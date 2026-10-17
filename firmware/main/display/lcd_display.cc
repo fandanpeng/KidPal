@@ -1357,6 +1357,16 @@ static void kidpal_keybar_sync_locked(void)
     int rn_page = kidpal_render_node_get_page();
     int overlay_top = kidpal_render_node_front_is_overlay();
     int front_layer = kidpal_render_node_front_layer();
+    /* P3 子态（LOCAL_PAGE 且本地页 = STORY 时缓存视图页态）——提前在此读一次,
+     * 键帽槽子态裁决与页点有效 overlay 判据同源。 */
+    int story_sub = kidpal_render_node_story_substate();
+    /* 有效 overlay 判据（页点显隐入参）: 层栈归一值 + WF-F2-06「正文取不回」提示态。
+     * 该提示是本地基层上的故事页子态（非独立 layer, front_is_overlay 不报覆盖层），
+     * 但语义是整屏覆盖层——brief:101「覆盖层……不显示页点」/ requirements:382
+     * 「页点消失 = 覆盖层口径」。仅本消费点并入, 层栈裁决 owner 零改动
+     * （KB-E3: 本函数只读, 不 push/pop, 不另立层模型）。 */
+    int dots_overlay = (overlay_top != 0 ||
+                        story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) ? 1 : 0;
 
     /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
@@ -1366,18 +1376,19 @@ static void kidpal_keybar_sync_locked(void)
     if (g_kidpal_keybar_left_label != NULL && g_kidpal_keybar_right_label != NULL) {
         int slots_ok;
         /* P3 子态键帽随态（260924-m4-k2-p3-star-notebook-ui; 260928 查字窗并行缝
-         * 先例形态）: 删除确认覆盖层前台 / 阅读态本地基层 / **录音态** 时, 左右槽经
-         * kidpal_keybar_story_slots 纯逻辑单源取随态值（[删掉]/[算了] / [长按退出]/[翻屏] /
-         * [收尾]/[结束], WF-F2-02/04/05）; LIST/STAMP 等不落子态表的场景回落既有路径
-         * （基层页槽表 / 语音场景槽表）。设备侧零重算。
+         * 先例形态）: 删除确认覆盖层前台 / 阅读态本地基层 / **录音态** / **正文取不回
+         * 提示态**时, 左右槽经 kidpal_keybar_story_slots 纯逻辑单源取随态值（[删掉]/
+         * [算了] / [长按退出]/[翻屏] / [收尾]/[结束] / [知道了]/[关闭], WF-F2-02/04/05
+         * + 261016 WF-F2-06）; LIST/STAMP 等不落子态表的场景回落既有路径（基层页槽表 /
+         * 语音场景槽表）。设备侧零重算。
          * K3R 补落（261001-m4-k3-record-session-live-repair, 2026-10-01 真机轮）: 原 K2
          * 期此处刻意留 RECORDING 给 K3 落设备接线（旧注「随 K3 录音会话动作接线同批落」,
          * 本包补落）; 旧注担心的「录音态前台 = VOICE 会话 chrome 双写冲突」**已消除**——
          * D2 甲形态进录音态弹出 VOICE 层后, 录音期 front_layer = LOCAL_PAGE, 键帽无
          * apply_look 场景双写, 故 RECORDING 子态可直接出 [收尾]/[结束]。 */
-        int story_sub = kidpal_render_node_story_substate();
         if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
-            story_sub == KSTORY_PAGE_RECORDING) {
+            story_sub == KSTORY_PAGE_RECORDING ||
+            story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) {
             slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
         } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
@@ -1407,7 +1418,7 @@ static void kidpal_keybar_sync_locked(void)
                  left != NULL ? left : "(null)", right != NULL ? right : "(null)");
     }
 
-    if (kidpal_keybar_dots(page, overlay_top, &d) == 0 &&
+    if (kidpal_keybar_dots(page, dots_overlay, &d) == 0 &&
         g_kidpal_keybar_dots_box != NULL) {
         if (d.visible) {
             lv_obj_remove_flag(g_kidpal_keybar_dots_box, LV_OBJ_FLAG_HIDDEN);

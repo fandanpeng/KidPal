@@ -232,6 +232,17 @@ set(HOST_ACCEPTANCE_SRCS
     # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
     "../../sd_card_mount.acceptance.c"
 
+    # 包 261016-p3-story-body-sd-cache（P3 story 正文本地缓存：SD 只读镜像 + 列表
+    # 预取 + 双击兜底 + id 校验修复）被测实现：display/story_cache.c = seam
+    # [C1]-[C9] 纯逻辑七缝强符号源（覆盖冻结件 weak 哨兵）。SD 真 I/O
+    # (boards/*/story_sd_io.cc) 是 chip 侧、host 不可达（GAP-2 真机轮承载）。
+    "../../../display/story_cache.c"
+
+    # 包 261016-p3-story-body-sd-cache 冻结验收（预取决策 / 三分支 / id 校验 /
+    # 写卡门控 / 覆盖层骨架 + 跨端接线结构齿）。**必须置于 host smoke acceptance
+    # 之前**（smoke 末位 = 最先执行）。
+    "../../story_cache.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

@@ -416,6 +416,36 @@ def story_text(record) -> dict:
 # --------------------------------------------------------------------------- #
 
 
+def _safe_story_path(stories_dir, story_id, *, action: str, corr_id=None) -> "Path | None":
+    """story 账本 id 安全面（delete_story / fetch_story 共享单源）。
+
+    判据（契约 §四：非法 id 拒绝 + 审计留痕）：非空 str、不含「..」、不含路径分隔符
+    `/` `\\`；解析后必须落在 <stories_dir> 之内（拒绝任何逃逸）。违规一律返回 None +
+    warning 审计（`action` 前缀 = story_delete / story_fetch 的拒绝类 token）。
+    纯机械、绝不抛异常。"""
+    if not isinstance(story_id, str):
+        log.warning("%s rejected corr_id=%s id=%r reason=invalid_type",
+                    action, corr_id, story_id)
+        return None
+    sid = story_id.strip()
+    if not sid or ".." in sid or _ID_UNSAFE_RE.search(sid):
+        log.warning("%s rejected corr_id=%s id=%s reason=unsafe_id", action, corr_id, sid)
+        return None
+    d = Path(stories_dir)
+    path = d / f"{sid}.md"
+    # 双保险：解析后必须落在 stories_dir 内（拒绝任何逃逸）。
+    try:
+        if path.resolve().parent != d.resolve():
+            log.warning("%s rejected corr_id=%s id=%s reason=outside_dir",
+                        action, corr_id, sid)
+            return None
+    except OSError:
+        log.warning("%s rejected corr_id=%s id=%s reason=resolve_error",
+                    action, corr_id, sid)
+        return None
+    return path
+
+
 def delete_story(stories_dir, story_id, *, corr_id=None) -> bool:
     """契约 §四 kidpal_story_delete 的机械执行面（硬删、无恢复；Q6 裁定）。
 
@@ -426,26 +456,10 @@ def delete_story(stories_dir, story_id, *, corr_id=None) -> bool:
     - 合法 -> 真删该 MD 文件（硬删）-> True + 审计日志；
     - 流水号账本不变（seq 不回退；删除的产品边界 = 仅 story MD，Q6）；
     - 纯机械、绝不抛异常（畸形 id 归 False，幂等 no-op 不报错）。"""
-    if not isinstance(story_id, str):
-        log.warning("story_delete rejected corr_id=%s id=%r reason=invalid_type",
-                    corr_id, story_id)
+    path = _safe_story_path(stories_dir, story_id, action="story_delete", corr_id=corr_id)
+    if path is None:
         return False
-    sid = story_id.strip()
-    if not sid or ".." in sid or _ID_UNSAFE_RE.search(sid):
-        log.warning("story_delete rejected corr_id=%s id=%s reason=unsafe_id", corr_id, sid)
-        return False
-    d = Path(stories_dir)
-    path = d / f"{sid}.md"
-    # 双保险：解析后必须落在 stories_dir 内（拒绝任何逃逸）。
-    try:
-        if path.resolve().parent != d.resolve():
-            log.warning("story_delete rejected corr_id=%s id=%s reason=outside_dir",
-                        corr_id, sid)
-            return False
-    except OSError:
-        log.warning("story_delete rejected corr_id=%s id=%s reason=resolve_error",
-                    corr_id, sid)
-        return False
+    sid = path.stem
     if read_story_file(str(path)) is None:
         # 不存在 / 无哨兵头杂物 -> 拒绝（幂等 no-op），审计留痕（绝不删非故事 MD）。
         log.warning("story_delete rejected corr_id=%s id=%s reason=no_sentinel_or_missing",
@@ -459,6 +473,37 @@ def delete_story(stories_dir, story_id, *, corr_id=None) -> bool:
         return False
     log.info("story_delete ok corr_id=%s id=%s path=%s", corr_id, sid, path)
     return True
+
+
+def fetch_story(stories_dir, story_id, *, corr_id=None) -> "dict | None":
+    """契约 §四 kidpal_story_fetch 的机械执行面（TaskPackage
+    261016-p3-story-body-sd-cache；SC-A7）——**只读**：逐 id 校验存在于 story 账本
+    （哨兵头 + `<stories_dir>/<id>.md` 存在）→ 读回记录。
+
+    - id 安全面与 delete_story 共享单源（_safe_story_path：类型 / 穿越 / 分隔符 /
+      resolve 逃逸），非法 id -> None + 审计留痕；
+    - 不存在 / 无哨兵头杂物文件 -> None + 审计（不读成故事、不回帧）；
+    - 合法 -> record（{id,title,date,text,path} + 账本有该 id 时追加 int seq）；
+    - **零写入**：不重归档、不动 seq 账本、不推进任何云端状态（云端归档是唯一真相源，
+      fetch 只是只读镜像的取回面；契约 §1.3④）。纯机械、绝不抛异常。"""
+    path = _safe_story_path(stories_dir, story_id, action="story_fetch", corr_id=corr_id)
+    if path is None:
+        return None
+    rec = read_story_file(str(path))
+    if rec is None:
+        log.warning("story_fetch rejected corr_id=%s id=%s reason=no_sentinel_or_missing",
+                    corr_id, path.stem)
+        return None
+    # seq 只在账本已分配时携带（契约 §1.3④ 帧形状；**不**凭空造 seq、不重建账本、
+    # 不落盘——_load_ledger 纯读）。
+    ledger, _state = _load_ledger(stories_dir)
+    if ledger is not None:
+        seq = ledger["by_id"].get(rec.get("id"))
+        if isinstance(seq, int) and not isinstance(seq, bool):
+            rec["seq"] = seq
+    log.info("story_fetch ok corr_id=%s id=%s bytes=%d", corr_id, rec.get("id"),
+             len(rec.get("text") or ""))
+    return rec
 
 
 # --------------------------------------------------------------------------- #

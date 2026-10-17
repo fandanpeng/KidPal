@@ -235,6 +235,13 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     - kidpal_story_delete：整条消费；机械执行 delete_story（哨兵头校验 + MD 硬删 + 拒绝
       审计）→ 重推 story_list 对账（隐式 ack：不存在 id 亦重推、total 不变；合法删除
       total −1 可见）。畸形/非法 id 由 delete_story 内部拒绝、不崩、审计留痕。
+    - kidpal_story_fetch（TaskPackage 261016-p3-story-body-sd-cache; 契约 §四）：
+      整条消费并拦截；逐 id 校验存在于 story 账本（哨兵头 + 文件存在）→ 读 MD → 以
+      **既有 story_text 帧形状**逐篇应答（每篇一次、零新字段；顺序 == ids 序）。
+      非法 / 不存在 id 由 fetch_story 内部拒绝 + 审计、不回帧（混合请求逐条跳过——
+      契约「逐 id 校验 + 逐篇应答」直读）；空 ids / 畸形载荷 = no-op（零帧、零下透）。
+      纯只读：不重归档、不动 seq 账本、不推 story_list（契约 §1.3④ fetch 应答不触发
+      盖章 / 无归档侧效应）。
     返回 True = 已消费（调用方不得转发引擎）。"""
     if not isinstance(obj, dict):
         return False
@@ -256,6 +263,24 @@ async def _consume_kidpal_control(session_id, obj, websocket) -> bool:
     if mtype == "kidpal_story_delete":
         gw_story.delete_story(STORIES_DIR, obj.get("id"), corr_id=session_id)
         await _push_story_list(websocket)  # 删除执行后重推对账（三时点③）
+        return True
+    if mtype == "kidpal_story_fetch":
+        ids = obj.get("ids")
+        if not isinstance(ids, list):
+            # 畸形载荷（缺 ids / ids 非数组 / null）：no-op + 审计；整条拦截不下透。
+            log.warning("story_fetch rejected corr_id=%s id=<none> reason=invalid_ids",
+                        session_id)
+            return True
+        for raw in ids:
+            if not isinstance(raw, str):
+                # 元素非字符串：逐条跳过（契约「逐 id 校验」；不崩、不回帧）。
+                log.warning("story_fetch rejected corr_id=%s id=%r reason=invalid_type",
+                            session_id, raw)
+                continue
+            rec = gw_story.fetch_story(STORIES_DIR, raw, corr_id=session_id)
+            if rec is None:
+                continue  # 拒绝审计已在 fetch_story 内留痕；不回帧
+            await _push_display_payload(websocket, gw_story.story_text(rec))
         return True
     return False
 

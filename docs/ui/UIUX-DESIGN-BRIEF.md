@@ -3,8 +3,6 @@
 > 给 Open Design 用的界面设计需求文档。
 > 目标：为 ESP32-S3-RLCD-4.2 儿童学习伙伴设计一套界面。
 > **版本：v5**（v4 → v5 随批 `261016-p3-story-body-sd-cache` 对齐 requirements.md v1.64；本批只加 P3 一个子状态 **编号 `WF-F2-06`「正文取不回提示」`p3-body-unavailable`**，其余页/态一律不动。各页细目不复述、改导航表指锚，防双源漂移。需求权威 = [requirements.md](../requirements.md)，冲突以它为准；本轮全部裁定的设计侧索引见 [PHASE1-DESIGN-INPUT.md](PHASE1-DESIGN-INPUT.md)。）
->
-> **⚠️ 随批 `261016-p3-story-body-sd-cache` 在途**——本 brief 与设计母版 [kidpal-ui-design-v6.html](kidpal-ui-design-v6.html) 为需求 `updating · v1.64` 期的在途产物，**未经 human 终拍、下游（triage / taskpackage / dev-loop）禁引**（消费保护规则见 [requirement-change.md](../../.claude/references/requirement-change.md)）。随批冻结后本行撤。
 
 ---
 

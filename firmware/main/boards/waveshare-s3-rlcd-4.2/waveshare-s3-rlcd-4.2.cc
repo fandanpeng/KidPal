@@ -964,9 +964,12 @@ private:
 
     /* 包 261016-sd-card-mount: 板级查询入口 (本包零消费方, 供将来消费方判 /sdcard
      * 能力就绪; 防死代码误删观察锚)。读启动期挂载标志返回。 */
-    bool SdCardMounted() { return s_sd_mounted; }
-
 public:
+    /* 包 261016-p3-story-body-sd-cache: 提为 public + override（Board 基类
+     * virtual SdCardMounted 默认 false）——story 正文 SD 只读镜像消费方经基类口
+     * 拿挂载标志，不碰本类私有态。 */
+    bool SdCardMounted() override { return s_sd_mounted; }
+
     CustomBoard() : boot_button_(BOOT_BUTTON_GPIO),
                     key_button_(KEY_BUTTON_GPIO, false, 0, CONFIG_BUTTON_SHORT_PRESS_TIME_MS, false) {
         /* key_button_ 构造参数（接缝契约钉死）：
