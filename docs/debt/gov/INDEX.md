@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 19（待拍板 0 / 待触发 17 / 已接受风险 2）；已结 87（归档索引见下）。
+**摘要**：未结 20（待拍板 0 / 待触发 18 / 已接受风险 2）；已结 87（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（17）
+## 待触发（18）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -34,6 +34,7 @@ _（无）_
 | [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
+| [ARQ-261017-merge-gate-scope-unstated](ARQ-261017-merge-gate-scope-unstated.md) | SHOULD | 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK | 下次治理批；或下个动 pre-merge-escalation-gate.mjs / merge-to-main skill 文面 / AGENTS.md 治理路由节任一时并批（与 ARQ-261014 同脚本，可同批） |
 
 ## 已接受风险（2）
 
