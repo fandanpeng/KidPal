@@ -26,7 +26,10 @@
       "note": "真机轮（human 在场持板，live-manual 观测项不计入自动断言面）：离线双击已留存篇目照常打开（NFR-OFF-1 窄例外边界）；双击三类记录（本机录 / 重启前录 / 云端恢复）均能进阅读；列表停留期预取不挤占语音主链路（对话不卡顿）"
     }
   ],
-  "acceptanceTestsFile": [],
+  "acceptanceTestsFile": [
+    "firmware/main/test/story_cache.acceptance.c",
+    "server/acceptance/test_story_fetch.py"
+  ],
   "requiredLayers": [
     "unit",
     "acceptance-offline",
@@ -43,7 +46,7 @@
     "review-packet 未覆盖面申报：隐私加密防护未做（TECH-261016 deferred）、缓存淘汰 / 光标预取 / 热插拔检测属非目标，逐条一行"
   ],
   "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance ; MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "（待 acceptance-author 冻结轮实跑回填）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-17 @fa88f168（本树）：① server 面 —— 新件 7 failed（全为设计态红：front _consume_kidpal_control 无 kidpal_story_fetch 分支，帧被原样下透引擎、零 story_text 应答）；既有全目录 `7 failed, 174 passed, 4 deselected, 33 subtests passed`——174 passed 与上游锚逐字一致，既有齿零新增红。② firmware 面 —— 新件尚未接线进 host 构建（登记归 builder），走独立冒烟通道 `firmware/main/test/acceptance/red-baseline/sc_red_wrapper.sh`：gcc -std=c11 -Wall -Wextra 零 error 零 warning，`10 Tests 10 Failures`（全部设计态红：story_cache 七缝 weak 哨兵未实现 / story_page.h 无 KSTORY_BODY_UNAVAILABLE_HINT 单源宏 / SendKidpalStoryFetch 全树零命中）；既有 host 全量套件 `182 Tests 3 Failures`（AB-A1/A2/A4）与上游已知红基线逐条同名单，新增红 0。③ 双向可满足性 —— /tmp 一次性参考实现跑同份冻结件 → 8/10 行为齿 PASS，仅 2 条结构齿待 builder 改真实工作树，证明转绿路径存在、无自相矛盾钉法。",
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
@@ -59,7 +62,8 @@
     "docs/requirements.md#S-F2.1",
     "S-F2.1-AC2",
     "S-F2.1-AC7",
-    "S-F2.3",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
     "delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md",
     "delivery/intake/261016-p3-story-body-sd-cache.md",
     "docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
@@ -117,6 +121,8 @@
     "server/gateway/story.py",
     "firmware/main/test/host_app/main/CMakeLists.txt",
     "firmware/main/test/story_cache.acceptance.c",
+    "firmware/main/test/acceptance/red-baseline/sc_red_wrapper.sh",
+    "firmware/main/test/acceptance/red-baseline/unity.h",
     "server/acceptance/test_story_fetch.py"
   ],
   "impactedTestsSeed": [
@@ -227,8 +233,120 @@
   "supervisorBlockBudget": 2,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [],
-    "reason": "骨架由 acceptance-author 冻结轮产出、builder 落地后实跑变异取证；SC-A9 为真机轮观测（structural 豁免自动断言面）"
+    "perAcceptance": [
+      {
+        "acceptanceId": "SC-A1",
+        "acceptance": "SC-A1: 预取决策纯逻辑（显式注入 page_state / voice_front / ws_busy / elapsed_ms）——仅 page_state==KSTORY_PAGE_LIST 且 voice_front==0 时发 kidpal_story_fetch；录音态/会话态/阅读态立即挂起并清在途队列；逐篇串行 + 篇间间隔（≥ 阈值 ms）+ 发前查 WebSocket 空闲；离开 P3（页态迁移）即停 host 单测",
+        "mutation": "把 kidpal_story_prefetch_due 的 `voice_front == 0` 条件删掉（并在 suspend 恒返回 0）——预取在语音前台/离开列表后仍发帧",
+        "affectedTest": [
+          "story cache: prefetch decision never squeezes voice front (SC-A1)",
+          "story cache: missing-on-screen selection drives prefetch batch (SC-A1)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A2",
+        "acceptance": "SC-A2: story_text 到达且 SD 在位 → 写 /sdcard/story/<id>.txt + 更新 RAM 索引；卡不在位 / 坏卡 → 整层失效（不落盘、不崩溃），正文照常 RAM 显示 host 纯逻辑 + 真机 SD 读回 roundtrip",
+        "mutation": "把 kidpal_story_cache_commit 改成「无论 write_ok 直接 add」（并去掉 card_ready 门）——写卡失败/卡不在位仍登记索引",
+        "affectedTest": [
+          "story cache: index registration gated on successful card write (SC-A2/SC-A8)",
+          "story cache: RAM index init/add dedupe/full/remove/clear (SC-A2)",
+          "story cache: story id character set blocks path injection (SC-A2)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A3",
+        "acceptance": "SC-A3: 双击命中判据 = 该篇正文已在本地留存 **且该 id 仍在云端当前列表**（本地副本与云端列表对不上的一律不采信）→ 读卡进阅读态、零网络帧 host 单测",
+        "mutation": "kidpal_story_open_decide 中把 `card_ready && has_local -> HIT_CARD` 改为恒走 FETCH（或去掉 has_local 分支）",
+        "affectedTest": [
+          "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A4",
+        "acceptance": "SC-A4: 双击未命中 → 插队发该篇 kidpal_story_fetch（优先级高于后台预取）→ 应答到达后进阅读态；预取失效不影响双击正确性 host 决策单测 + front pytest",
+        "mutation": "kidpal_story_open_decide 未命中分支返回 DEGRADE；且 kidpal_story_fetch_answer_enter 恒返回 0（应答不进阅读）",
+        "affectedTest": [
+          "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)",
+          "story cache: fetch answer enters reader only when awaited, never stamps (SC-A4/A8)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A5",
+        "acceptance": "SC-A5: 双击后取不回（离线 / 超时 / 卡不在位且拉取失败）→ 可见降级提示（WF-F2-06 整屏覆盖层，文案单源 = story_page.h），不静默、不黑屏；10 秒无操作自动消失；KEY／BOOT 任一手势立即关闭回列表 host 可测 + 真机轮",
+        "mutation": "kidpal_story_body_unavailable_idle_step 的阈值改成 100000UL（10s 永不自动消失），并把 kidpal_story_page_input 的 page==5 分支删掉（手势不关闭）",
+        "affectedTest": [
+          "story body-unavailable overlay: single-source copy, 10s idle, any gesture closes (SC-A5)",
+          "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A6",
+        "acceptance": "SC-A6: id 校验修复——被打开正文的 id == 光标所选行 id 才进阅读；不等则拒绝并走降级，**绝不显示别篇内容** host 单测 + 真机回归位",
+        "mutation": "kidpal_story_reader_id_match 改为按 title 比对（或恒返回 1），open_decide 的 id_match==0 → DEGRADE 分支删除",
+        "affectedTest": [
+          "story cache: reader id match pins opened text to cursor row (SC-A6)",
+          "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A7",
+        "acceptance": "SC-A7: front kidpal_story_fetch 消费——合法 ids 逐篇以既有 story_text 帧应答（形状逐字复用、零新字段）；非法 / 不存在 id 拒绝 + 审计 + 不回帧；空 ids = no-op；多 id 逐篇顺序 server pytest",
+        "mutation": "front_app._consume_kidpal_control 对 kidpal_story_fetch 返回 False（帧下透引擎）；并让应答帧用自造 data 键（如额外 `from_fetch:true`）",
+        "affectedTest": [
+          "StoryFetchWireAcceptance.test_sc_a7_legal_ids_answer_one_story_text_frame_each",
+          "StoryFetchWireAcceptance.test_sc_a7_rejects_invalid_and_missing_ids_with_audit",
+          "StoryFetchWireAcceptance.test_sc_a7_empty_ids_noop",
+          "StoryFetchWireAcceptance.test_sc_a7_multi_id_frame_order_matches_request",
+          "StoryFetchWireAcceptance.test_sc_a7_malformed_payloads_never_crash_or_forward",
+          "story cache: fetch primitive + front branch + module wiring anchors (SC-A1/A2/A7)"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A8",
+        "acceptance": "SC-A8: 契约消费语义——fetch 应答不触发星星盖章；卡不在位时当场显示、不留存 host + server pytest",
+        "mutation": "删掉 kidpal_story_stamp_should_fire 的 `from_fetch -> 0` 守卫（fetch 应答走盖章）；server 侧让 fetch 路径调 archive_story / 改账本",
+        "affectedTest": [
+          "story cache: fetch answer enters reader only when awaited, never stamps (SC-A4/A8)",
+          "story cache: index registration gated on successful card write (SC-A2/SC-A8)",
+          "StoryFetchConsumptionAcceptance.test_sc_a8_fetch_answer_has_no_stamp_or_archive_side_effect",
+          "StoryFetchConsumptionAcceptance.test_sc_a8_seqless_record_keeps_three_key_shape"
+        ],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "pending-builder"
+      },
+      {
+        "acceptanceId": "SC-A9",
+        "acceptance": "SC-A9: 真机轮（human 在场持板，live-manual 观测项不计入自动断言面）——离线双击已留存照常开 / 双击三类记录进阅读 / 预取不挤占语音主链路 / SD 读回 roundtrip / 离线降级覆盖层 / id 错配回归位 / heap 水位",
+        "mutation": "不适用（kind=structural / live-manual，自动断言面豁免）",
+        "affectedTest": [],
+        "turnedRed": null,
+        "sensitive": null,
+        "result": "not-applicable-structural"
+      }
+    ],
+    "reason": "骨架由 acceptance-author 冻结轮产出、builder 落地后实跑变异取证（turnedRed / sensitive / 实测记录由 builder 回填）；SC-A9 为真机轮观测（structural 豁免自动断言面）"
   },
   "securityReviewRequired": true,
   "securityAxes": [
@@ -240,5 +358,5 @@
   "docsSyncRequired": true,
   "docsSyncReason": "TECH-261013-p3-reader-entry-no-text-silent-noop 结项（consumed-by: 261016-p3-story-body-sd-cache）+ spine anchors.imp 回填（主线程写，非 integrator）+ review-packet 隐私降级申报；架构/契约面已冻结、本包零改动",
   "docsOwner": "integrator",
-  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。【1g architect 前置技术预评采纳 2026-10-17（advisory，不豁免门）】① id 校验不改 `kidpal_story_open_reader` 冻结签名（story_page_v2.acceptance.c:551 等已钉死），改新增纯逻辑 seam `kidpal_story_reader_id_match`（story_cache.c/.h）+ mcp_server OPEN_READER 消费侧调 open_reader 前校验；② 预取队列 / 双击插队 / pending 等待态 / SD 索引为一个共享单元，一次设计一次实现（单包最大工程风险点）；③ `SdCardMounted()` virtual 化（boards/common/board.h 默认 false + waveshare 板 public override）为前置阻断项；④ SD I/O 适配 sd_mounted 显式入参注入、先写卡成功才登记索引；⑤ front 复用 gw_story.story_text 零新字段、建议抽 story.py fetch_story 与 delete 共享 id 安全；⑥ LFN 键 = LFN_NONE → LFN_HEAP、codepage 437 保持、缓冲走 PSRAM；⑦ WF-F2-06 走 story_page.c 新增页态（不动 render_node）；⑧ fetch 路径不置 archive_pend / 不调 kidpal_story_on_saved（盖章侧效应恒假）。changeManifest 已按预评补至 17 条（含 host_app CMakeLists 与验收件）。crossEnd counterparts 指既有同族 seam（front `_consume_kidpal_control` / 固件 `SendKidpalStoryDelete`），本包在其旁新增 `kidpal_story_fetch` 消费分支与 `SendKidpalStoryFetch`（新符号；brief-inputs 的符号解析只认既有符号，故以 seam 为锚）。"
+  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。【1g architect 前置技术预评采纳 2026-10-17（advisory，不豁免门）】① id 校验不改 `kidpal_story_open_reader` 冻结签名（story_page_v2.acceptance.c:551 等已钉死），改新增纯逻辑 seam `kidpal_story_reader_id_match`（story_cache.c/.h）+ mcp_server OPEN_READER 消费侧调 open_reader 前校验；② 预取队列 / 双击插队 / pending 等待态 / SD 索引为一个共享单元，一次设计一次实现（单包最大工程风险点）；③ `SdCardMounted()` virtual 化（boards/common/board.h 默认 false + waveshare 板 public override）为前置阻断项；④ SD I/O 适配 sd_mounted 显式入参注入、先写卡成功才登记索引；⑤ front 复用 gw_story.story_text 零新字段、建议抽 story.py fetch_story 与 delete 共享 id 安全；⑥ LFN 键 = LFN_NONE → LFN_HEAP、codepage 437 保持、缓冲走 PSRAM；⑦ WF-F2-06 走 story_page.c 新增页态（不动 render_node）；⑧ fetch 路径不置 archive_pend / 不调 kidpal_story_on_saved（盖章侧效应恒假）。changeManifest 已按预评补至 17 条（含 host_app CMakeLists 与验收件）。crossEnd counterparts 指既有同族 seam（front `_consume_kidpal_control` / 固件 `SendKidpalStoryDelete`），本包在其旁新增 `kidpal_story_fetch` 消费分支与 `SendKidpalStoryFetch`（新符号；brief-inputs 的符号解析只认既有符号，故以 seam 为锚）。【8b 验收方向核 2026-10-17（planner 自核，不代写）】① AC 回引：sourceRefs AC 集 = {S-F2.1-AC2, S-F2.1-AC7}，冻结 C 件 11 处回引 AC2/AC7；server 件覆盖契约级 SC-A7/A8（不回引 story AC，属方向正确分账）→ 一致；② 补充规则逐条落点：只留正文/写卡 = SC-A2，只认云端列表存在篇目 = SC-A3，fetch 应答不盖章/卡不在位不留存 = SC-A8，门槛话术与 10s 关闭 = SC-A5；③ 断言方向不弱于、不钉反 story 语义。验收作者提请的两处判读**采纳**：GAP-4 混批非法 id = 逐条跳过（契约 §四「逐 id 校验 + 逐篇应答、非法不回帧」直读）；fetch 应答携带 data.seq（契约 §1.3④ 帧形状列 seq + impactedTestsSeed 明载），builder 不得放宽。**builder 硬前置**：`firmware/main/test/host_app/main/CMakeLists.txt` 追加 `../../story_cache.acceptance.c` 与 `../../../display/story_cache.c`（置于 `host_infra_smoke.acceptance.c` 之前），否则冻结件 TEST 10 tooth 4 会把「未登记」钉红（EQ-1 防未接线也绿）。brief-inputs 锚点解析把 `§1.3④` 判 not-found（实际在 contract :115 在位）——advisory，记 pod-events friction，不影响冻结。"
 }

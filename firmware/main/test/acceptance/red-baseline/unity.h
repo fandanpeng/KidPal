@@ -62,4 +62,14 @@ extern int unity_stub_failed;
 #define TEST_ASSERT_NOT_NULL(c) TEST_ASSERT_NOT_NULL_MESSAGE((c), #c)
 #define TEST_ASSERT_NULL(c)     TEST_ASSERT_NULL_MESSAGE((c), #c)
 
+/* 2026-10-17 additive（TaskPackage 261016-p3-story-body-sd-cache acceptance-author）:
+ * sc_red_wrapper 的冻结件 story_cache.acceptance.c 使用整数/字符串相等断言族；
+ * 本 stub 原只含布尔族。仅补宏，不改既有宏语义（既有红跑的冻结件零影响）。 */
+#define TEST_ASSERT_EQUAL_INT_MESSAGE(e, a, m)                                 \
+    do { if ((long)(e) != (long)(a)) UNITY_STUB_FAIL(m); } while (0)
+#define TEST_ASSERT_EQUAL_INT(e, a) TEST_ASSERT_EQUAL_INT_MESSAGE((e), (a), #a)
+#define TEST_ASSERT_EQUAL_STRING_MESSAGE(e, a, m)                              \
+    do { if ((a) == NULL || strcmp((const char *)(e), (const char *)(a)) != 0) \
+             UNITY_STUB_FAIL(m); } while (0)
+
 #endif /* UNITY_STUB_H */
