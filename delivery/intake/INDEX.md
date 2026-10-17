@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 0/4 | 2026-10-16 | — |
+| 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 1/4 | 2026-10-16 | — |
 | 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 |
 | 261013-gov-review-lf-eol-teeth-pin | imp+gov | closed | 2/2 | 2026-10-13 | — |
 | 261012-kidpal-realtime-facts | req+arch+contract+imp | in-flight | 4/4 | 2026-10-12 | ⚠未闭环 |

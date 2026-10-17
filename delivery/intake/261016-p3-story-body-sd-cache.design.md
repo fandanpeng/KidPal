@@ -50,9 +50,15 @@
 
 **问题**：设备侧无任何取正文的通路（现状差距 3）。
 
-**关键发现（推翻旧 ADR 的否决理由）**：ADR-005 备选①与 ADR-010 备选②两次否决「设备按需拉取」，逐字理由是「需在 §四端云协议剖面新增**首例**『设备发起请求-应答』消息对（现无 device RPC 先例）」。**该理由已过期**——[protocol.cc:81-87](../../firmware/main/protocols/protocol.cc#L81-L87) 的 `kidpal_story_delete` 是契约 §四既有私有上行帧，设备→网关，261010 批落地、已上线运行，front 侧接收在 [front_app.py:256](../../server/gateway/front/front_app.py#L256)。首例已存在，且**同族**（story 私有帧）。故本项的增量是「照同型再加一条帧」，不是在协议剖面开新面。
+**推翻旧否决理由的关键发现（附 2026-10-17 起草期纠偏）**：ADR-005 备选①与 ADR-010 备选②两次否决「设备按需拉取」，逐字理由是「需在 §四端云协议剖面新增**首例**『设备发起请求-应答』消息对（现无 device RPC 先例）」。本稿初版据此写成「该理由已过期」——**该表述不精确，经 architect 可行性判断（2026-10-17）纠偏如下**：
 
-**改法**：新增上行帧 `kidpal_story_fetch`，逐字仿 `kidpal_story_delete` 形态；载荷带 **ids 数组**（触发场景天然是「当前屏这一批」，一帧一往返优于逐篇发帧）。下行**不新增**：应答直接复用既有 `story_text` 帧，网关按 id 逐篇回——`story_text` 帧形状零改动，只是第一次被「设备主动要」触发。
+- **`kidpal_story_delete` 是「设备→网关方向」的先例，但不是「请求-应答消息对」的先例**。契约 §四对它的逐字定义是「**单向通知、无应答消息**……不新增请求-应答消息对，ADR-005 边界保持」（[interface-contract.md:271](../../docs/contracts/interface-contract.md)）。同理 `kidpal_session_ctx` 亦为单向。
+- 故正确的表述是：**方向先例存在（delete / session_ctx 两条私有一族），但「设备发起 request → 网关 response」的闭环在本批之前不存在**。`kidpal_story_fetch` + 复用 `story_text` 帧应答，将是契约面**首个设备发起的请求-应答环**。
+- **对难度的影响**：不改变可行性（应答**复用既有 `story_text` 帧、下行零新形状**，净新增 = 一条上行帧 + 一条消费语义注记），但**它确实跨过了 ADR-005 立下的那条边界**——这是本批契约面比初稿描述更重的地方，`architect-reviewer` 四分类时应据实裁定，**不得沿用本稿初版的不精确引据**。
+
+**同族性仍然成立**：上行帧形态照 `kidpal_story_delete` 同型（`{"session_id":…,"type":…,"id":…}`，[protocol.cc:81-87](../../firmware/main/protocols/protocol.cc#L81-L87)），front 侧接收缝亦同族（[front_app.py:256](../../server/gateway/front/front_app.py#L256)）。故本项的**形态**增量小（照同型再加一条帧）；**但它引入的"请求-应答环"是新的**。
+
+**改法**：新增上行帧 `kidpal_story_fetch`，逐字仿 `kidpal_story_delete` 形态；载荷带 **ids 数组**（触发场景天然是「当前屏这一批」，一帧一往返优于逐篇发帧；human 2026-10-16 裁定）。下行**不新增**：应答直接复用既有 `story_text` 帧，网关按 id 逐篇回——`story_text` 帧形状零改动，只是第一次被「设备主动要」触发。
 
 **目标文件**：`docs/contracts/interface-contract.md`（§四私有消息族 + §1.3④ story_text 消费语义注记）· `server/gateway/front/front_app.py`（收帧 → 校验 id → 逐篇回 story_text）
 
