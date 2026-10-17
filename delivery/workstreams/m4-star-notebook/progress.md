@@ -285,3 +285,18 @@
 - **启动卡**：`delivery/taskpackages/261010-p3-storylist-cold-start-restore/launch-card.md`（五要素 + intake 特别注意 ⑧ 条：CCP 先批后落通道 / FIX-A1 翻正授权链 / schedule :926-991 分流形态复刻 / ECS 开关默认关 / all-mock 前置申报 / 真机轮 human 在场 / ctx(story) 归并处置归本包）。
 - **图索引**：`C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` mode=full 刷新随本批执行。
 - **遗留 human 项**：① SL-A5 真机轮 human 在场持板（重启冷启动翻 P3 见列表 + 空态两态 + 无前台抢占）；② supervisor 若判 all-mock 触 riskTier 重算 high → 需 human 放行；③ ECS 恢复推送开关烧板验证后 human 人工开闸（gate evidence C1）；④ 契约 diff 逐字 patch 过目 → git apply（CCP 先例通道，人工 diff 核对留痕）。
+
+## 2026-10-17 · 261016-p3-story-body-sd-cache launch prep（单包批；spine 三面 anchors 齐 + triage 改判 ②单包 Full）
+
+- **调度判定**：本批 = 单包 `261016-p3-story-body-sd-cache`（②单包 Full，riskTier **high**——triage 2026-10-17 architect 分流原判 ③拆包〔A/B/C 三包、A∥B 波次 1、C depends A〕，human 触点①改判 ②单包 Full；单向守卫：改的是档位、风险级不降）。来源链 = 跨面 spine `delivery/intake/261016-p3-story-body-sd-cache.md`（`/triage-change` 作容器走完需求 / 架构+契约两面）→ 上游 anchors 三面回填齐：需求 v1.64 frozen（S-F2.1 AC2 兑现 + 新增 AC7 + 正文缓存边界 + WF-F2-06 + 设计母版 v6）、架构 261017 批 landing b3f50ebd（决策 24 窄例外 + ADR-011 + 六处禁令重述点）、契约 CDQ-261017 LANDED（§四 `kidpal_story_fetch` 上行帧 + §1.3④ `story_text` 消费语义，形状零改动）。消费 debt = TECH-261013-p3-reader-entry-no-text-silent-noop（含 id 错配缺陷追加段）；留根 TECH-261016（隐私防护 deferred）。
+- **launch 形态**：human 2026-10-17 指示「launch prep 完成后就在本 worktree build-feature」——本树既有会话即 Pod 本体就地起 loop（m2-char-window / 261010-p3-storylist 先例），不另建树、不派 headless。
+- **树同步**：worktree = `C:/AI/KidPal-pod-m2`，常驻分支 `dev/pod-m2` = main tip b6cc8945、零独有提交；交接卫生核对 tracked 净、untracked 仅本批 prep 制品；固件环境在位（sdkconfig / dependencies.lock / host_app sdkconfig / managed_components 软链 / host build 热缓存）。
+- **双面基线锚 @ b6cc8945（本树实测，producer 五要素）**：
+  - server 面：`python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m2/server/acceptance` → **174 passed / 0 failed / 4 deselected / 33 subtests passed，exit 0**（2026-10-17；面域 = server）。零红。旧锚 152P @fde1eb9 作废（差异判停命中：fde1eb9..b6cc8945 server 面 36 文件改动，须重跑）。
+  - firmware host 面：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf` → **182 Tests / 3 Failures / 0 Ignored**（2026-10-17；面域 = firmware；runner exit 0，判红以 summary 行为准）。**上游已知红 3 条** = `p1_auxbar_style` 的 AB-A1 / AB-A2 / AB-A4：261015-p1-auxbar-style-fix 的 04f8409a「看屏轮打回直修」改了实现（ic_batt_15→ic_batt_20、thermo 落位 x0=218 越出齿域 [211,217]、wifi 位图退役）而冻结齿未同步——**基线本身的消解另立批，不塞给本包**。旧锚 155T0F @fde1eb9 作废（firmware 面 41 文件改动）。
+- **机械门**：`settings-lint.mjs` 3 files / 0 RED / 0 WARN；`portfolio-reconcile --check-launch 261016-p3-story-body-sd-cache --base-ref main` → blocking = `delivery/taskpackages/261016-p3-story-body-sd-cache/taskpackage.json`（未进基准 ref，属时序预期——intake 建包首提交后即消）。
+- **建包件**：taskpackage.json 留 intake 建并首提交（plan.md 附录「结构化种子」为直接输入：origin proposal 型 upstreamRef = `delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md`；gateProfile 五项；crossEnd 声明 `front_app.py` / `protocol.cc` 两个 counterpart；decisionCoverage 八映射含一条 `dropped`〔隐私只落盘不加防护，reason 引 TECH-261016〕）。
+- **board 预填**：queued + worktreePath = `C:/AI/KidPal-pod-m2`；mergeOrder null（非拆包产物）。
+- **图索引**：`C-AI-KidPal-pod-m2` 已在册（moderate，ready，19025 nodes / 52704 edges）；复用树随树增量刷新。
+- **启动卡**：`delivery/taskpackages/261016-p3-story-body-sd-cache/launch-card.md`（六要素 + 上游已知红 3 条锚 + riskTier high 的真机轮/合并门预期）。
+- **遗留 human 项**：① 真机 live-manual 轮 human 持板（SD 读回 roundtrip / 双击三类记录进阅读 / 离线降级提示 / id 错配回归位 / 预取期语音不卡顿）；② riskTier high ⇒ supervisor 合并门升级 human（预期路径，非缺陷）；③ **launch prep 附带发现，建议另立批**：p1_auxbar_style 冻结齿与 04f8409a 直修漂移（3 红），归资产面独立批或 ARQ，不塞给本包。
