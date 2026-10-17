@@ -300,3 +300,12 @@
 - **图索引**：`C-AI-KidPal-pod-m2` 已在册（moderate，ready，19025 nodes / 52704 edges）；复用树随树增量刷新。
 - **启动卡**：`delivery/taskpackages/261016-p3-story-body-sd-cache/launch-card.md`（六要素 + 上游已知红 3 条锚 + riskTier high 的真机轮/合并门预期）。
 - **遗留 human 项**：① 真机 live-manual 轮 human 持板（SD 读回 roundtrip / 双击三类记录进阅读 / 离线降级提示 / id 错配回归位 / 预取期语音不卡顿）；② riskTier high ⇒ supervisor 合并门升级 human（预期路径，非缺陷）；③ **launch prep 附带发现，建议另立批**：p1_auxbar_style 冻结齿与 04f8409a 直修漂移（3 红），归资产面独立批或 ARQ，不塞给本包。
+
+## 2026-10-17 · 261016-p3-story-body-sd-cache 集成收口（integrator；**含 1 条 BLOCKING，停在合并门前**）
+
+- **闸面实态**：final r3（round 3 / invocationId `fb3d31f8-…`）`ok:true` / 10 闸全跑 / `verifier-evidence-check` `factOk:true`；按 test-scope 圈定真跑 = unit 86 passed + acceptance 51 passed；全量交叉核对 = host `192 Tests / 3 Failures`（3 红 = 上游已知 AB-A1/A2/A4，新增红 0）、server `181 passed / 4 deselected / 33 subtests`、`server/tests` 91 passed；设备真编 build-pass；变异 8/8 功能条 turnedRed + 还原复绿。
+- **范围圈定**：`detect_changes`（`C-AI-KidPal-pod-m2`，base=main）155 seed / 17 impacted，零预期外模块；清单 = `delivery/taskpackages/261016-p3-story-body-sd-cache/test-scope-final.txt`（正常路径、无降级）。
+- **closeout**：`docs-delta.md` + `review-packet.md` 已落包目录；TECH-261013-p3-reader-entry-no-text-silent-noop 结项（`closedBy`/`consumed-by` = 本包）并由 `debt-render.mjs` 归位 `docs/debt/tech/_archive/2026/`；`docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:62` 盘点行仍待主线程落笔（无 agent 写权，ready-to-apply 文本在 docs-delta §2）。
+- **BLOCKING（交回 planner 派 fixer）**：WF-F2-06 覆盖层出现时底栏仍是 P3 列表基层形态——左右槽 `说话·双击看`/`下移`（实际两键均「关闭回列表」＝状态误导）+ 3 页点未隐藏（brief:101「不显示页点」/requirements:382「页点消失 = 覆盖层口径」/设计稿均要求隐藏）；`story_page.c` 覆盖层内自画的 `[知道了]`/`[关闭]` 键帽被不透明 top-layer 底条遮住 = 死绘制（双画法源）。修面 = `keybar.c` + `lcd_display.cc`（+ 删 `story_page.c` 自画键帽），**均不在本包 changeManifest** → planner 须先扩清单；并须核 `keybar_three_slot.acceptance.c` 对该值域的冻结负向齿。次条 SHOULD = 标题字号/居中与设计稿「大字」不符（建议随修复轮一并处理）。
+- **留账**：隐私面按 human OQ-3 只落盘不加防护（TECH-261016 deferred）；真机 live-manual（SC-A9）仍为收口前置；本包**未进入合并门**。
+

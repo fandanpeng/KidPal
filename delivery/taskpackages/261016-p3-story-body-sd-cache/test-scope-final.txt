@@ -1,0 +1,71 @@
+# test-scope-final —— 261016-p3-story-body-sd-cache（final verify --scope-file 消费，round 3）
+# 圈定方法（integrator 2026-10-17，Step 4 两步走之①；review-packet §影响面记账同源）：
+#   detect_changes（per-Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，
+#     merge_base=b6cc8945，inbound depth=2）= 155 seed symbols / 17 impacted：
+#       firmware/main：CMakeLists 模块 + Application::Initialize + CustomBoard /
+#         InitializeButtons + app_main + story_cache.acceptance / story_page_v2.test 两个测试模块；
+#       server：front_app（pump_client_to_upstream / ws_gateway）+ tests/test_story_units
+#         （DeleteStoryUnits / SeqLedgerUnits）+ 两个 acceptance 文件的 _device_to_engine 包装。
+#     零预期外模块（impacted_modules = firmware/main + server/{acceptance,gateway,tests}），
+#     per-Pod 图索引可用（detect_changes 实跑 + trace_path 抽查 SdCardMounted /
+#     kidpal_story_page_input 均实测在世、且已收进本批新符号）→ 正常圈定路径、非降级。
+#   ∪ taskpackage.json impactedTestsSeed 三件：story_cache.acceptance.c（additive-host）+
+#     server/acceptance/test_story_fetch.py（additive）+ 真机 live-manual（human 前置，不入本清单）。
+#   ∪ 共享 seam 映射（改动实现面文件的树扫/行为消费测试，grep 双确认）：
+#     - display/story_page.c/.h（新增 KSTORY_PAGE_BODY_UNAVAILABLE=5 + idle-step 缝 +
+#       新渲染分支 + 手势关闭分支）→ story_page_v2.acceptance/test、record_session_live、
+#       record_session_repair(.acceptance/.test)、story_cache；
+#     - mcp_server.cc（VRT_ROUTE_STORY_TEXT 写卡 + KSPV2_ACT_OPEN_READER 三分支，435 行）
+#       树扫测试 → story_page_v2、record_session_live/repair、char_window_overlay、
+#       reminder_overlay_unify、retract_p4_three_page、schedule_grid、schedule_grid_restore；
+#     - protocols/protocol.cc/.h（新增 SendKidpalStoryFetch）树扫 → story_page_v2、
+#       record_session_live、boot_auto_connect、voice_round_ui；
+#     - boards/common/board.h + waveshare .cc（SdCardMounted virtual 化 + override）→
+#       sd_card_mount.acceptance（SdCardMounted 定义体观察锚，直读板 .cc）、
+#       p1_home_battery.acceptance（同文件结构齿）；
+#     - server/gateway/story.py（_safe_story_path 抽共享单源，delete 路径重构）→
+#       server/tests/test_story_units.py（DeleteStoryUnits / SeqLedgerUnits 全集）；
+#     - server/gateway/front/front_app.py（_consume_kidpal_control 新增 fetch 分支）→
+#       test_m4k1_story_cloud_link / test_m4k3_record_session_live（_device_to_engine 走
+#       kidpal_control 上行）；
+#     - server/acceptance/test_story_fetch.py（本包新冻结验收）。
+#   安全余量：host 套件是单 ELF（scope 清单对固件面为记账与"该跑哪些"的显式圈定；
+#     实际 runner 仍是一体化全量编入——范围内外同样执行，圈定不制造漏跑假象）；
+#     未纳入树扫无关文件者（char_stroke 扫 custom_lcd_display.cc、key_layer_dispatch /
+#     time_sync 扫板 .cc 的 KEY/RTC 区、schedule_grid_restore 以外的非 mcp_server 面等）
+#     的判据 = 其断言对象不在本包改动符号内。
+# 语义铁律留痕：范围 = 影响面圈定清单（非全量、非本包档缩水）；floor = 本包
+#   acceptanceTestsFile ∪ blast radius 映射测试 ∪ 共享 seam 测试（本包无对端包，
+#   对端包冻结件不存在，floor = 本清单）。圈定降级 = 无。
+#   设备编译面（firmware-build 闸）不在本清单（结构闸、timing=scoped，恒跑）；
+#   真机轮（SC-A9）＝ human 持板硬前置，不在 runner 通过面。
+#   --enable-evidence 记账：final verify 的 acceptance/unit 闸按本清单求交
+#   （firmware *.acceptance.c 在 acceptance 闸只作结构 oracle；server 三件 pytest 真跑）。
+#
+# ── firmware 冻结验收件（acceptanceTestsFile + impactedTestsSeed）──
+firmware/main/test/story_cache.acceptance.c
+# ── 共享 seam：story_page.c/.h 新增页态/缝的行为与结构齿消费方 ──
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/story_page_v2.test.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+# ── 共享 seam：boards/common/board.h + waveshare .cc（SdCardMounted virtual 化）──
+firmware/main/test/sd_card_mount.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+# ── 共享 seam：mcp_server.cc / protocol.cc 树扫结构齿消费方 ──
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+# ── 接线观察面（host_app 编译注册；acceptance 闸 fwAccFiles 过滤不含非验收件，列此留痕）──
+firmware/main/test/host_app/main/CMakeLists.txt
+# ── server 冻结验收件（acceptanceTestsFile）──
+server/acceptance/test_story_fetch.py
+# ── 共享 seam：front_app.py + gateway/story.py 消费方（server pytest，final 相位真跑）──
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/tests/test_story_units.py

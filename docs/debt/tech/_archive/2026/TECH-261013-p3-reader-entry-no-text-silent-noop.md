@@ -2,13 +2,13 @@
 id: TECH-261013-p3-reader-entry-no-text-silent-noop
 title: P3 KEY 双击进阅读态对「无正文缓存」故事静默无反应——设计降级缺用户可见反馈，且冷启动恢复的老故事无正文获取通路（S-F2.1 AC2 承诺不可兑现）
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: dev-loop（P3 显示面 + story_text 通路，疑跨面）
 trigger: 下个动 P3 显示面 / story_text 通路 / front story 推送面的包；修复分两层（固件可见降级提示 = 纯固件；正文按需获取通路 = 疑触 front/契约，走 intake 裁），修完随包真机复验「双击进阅读 + 阅读态标题」
 opened: 2026-10-13
-closed: ""
-closedBy: ""
+closed: 2026-10-17
+closedBy: 261016-p3-story-body-sd-cache
 paths: ["firmware/main/mcp_server.cc", "firmware/main/display/story_page.c", "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc"]
 source: 261012-p3-topbar-ink-bleach-fix TB-A4 真机轮（2026-10-13）human 观测「双击查看没有反应，其他都正常了」+ 同轮串口捕获 c:/tmp/diag-doubleclick.log 逐字证据
 ---
@@ -50,3 +50,13 @@ source: 261012-p3-topbar-ink-bleach-fix TB-A4 真机轮（2026-10-13）human 观
 > **修法**：并入 `261016-p3-story-body-sd-cache`（其 T4 已含本项），`kidpal_story_open_reader` 或其消费侧必须校验「被打开正文的 id == 光标所选行 id」，不符即拒绝并走可见降级。
 
 **③ 本条目 `severity` 复核建议**：层 1 静默 + 层 2 通路缺失 + 上述 id 错配三条同属本面，且 ② 的 symptom 比原载的 ① 更重（显示错内容 vs 无反应）。`SHOULD` 是否该升——留待 `architect-reviewer` 在该变更 `/arch-change` 四分类时一并判，本处不自行改字段（纪律：正文只追加）。
+
+**结项（2026-10-17）**：本条目三层缺陷已由 `261016-p3-story-body-sd-cache` 实现包承载并落地（builder commit `c60ee50d`，verifier scoped r2 全绿 + integrator final r3 全绿）。
+
+- **层 1（静默无反应）**：`OPEN_READER` 消费侧不再静默——取不回时进 WF-F2-06 整屏覆盖层（`KSTORY_PAGE_BODY_UNAVAILABLE = 5`，话术单源 = `story_page.h` 的 `KSTORY_BODY_UNAVAILABLE_HINT` / `_SUB`，10s 无操作静默消失、KEY／BOOT 任一手势关闭回列表）；齿 = SC-A5（host）。
+- **层 2（按需获取通路）**：契约 §四新增设备发起请求-应答环 `kidpal_story_fetch`（逐 id 校验 + 逐篇以既有 `story_text` 帧应答、零新字段；ADR-011 承接）；固件侧进列表／翻屏当屏批量预取 + 双击未命中插队 fetch + `story_text` 到达写 SD 只读镜像（决策 24 窄例外，`/sdcard/story/<id>.txt`）；齿 = SC-A1..A4 / SC-A7 / SC-A8（host + server pytest）。
+- **② id 错配**：新增纯逻辑 seam `kidpal_story_reader_id_match`（不改 `kidpal_story_open_reader` 冻结签名），`KSPV2_ACT_OPEN_READER` 消费侧在 `open_reader` 前校验「正文 id == 光标所选行 id」，不符拒绝并走降级——绝不显示别篇内容；齿 = SC-A6（host）。
+- **实测基线**：host `192 Tests 3 Failures`（3 红 = 上游已知红 AB-A1/A2/A4，新增红 0）；server `181 passed / 4 deselected / 33 subtests`（final 相位按 test-scope 圈定复跑 unit 86 passed + acceptance 51 passed）；设备真编 firmware-build PASS；变异取证 perAcceptance 全条 turnedRed=true 且还原复绿。
+- **收口口径**：自动化断言面全绿即本条「代码面兑现」；SC-A9 真机 live-manual 轮（human 持板：双击三类记录进阅读 / 离线双击已留存照常开 / 降级覆盖层 10s 与双键关闭 / id 错配回归位 / 预取期语音不卡顿）仍为本包收口前置，随该轮留痕于 review-packet。残留面 = 隐私防护（TECH-261016 deferred，本批只落盘）与缓存淘汰 / 光标预取 / 热插拔检测（非目标）。
+
+consumed-by: 261016-p3-story-body-sd-cache
