@@ -66,7 +66,7 @@
     "S-F2.3-AC2",
     "delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md",
     "delivery/intake/261016-p3-story-body-sd-cache.md",
-    "docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
+    "docs/debt/tech/_archive/2026/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
     "delivery/taskpackages/261016-p3-story-body-sd-cache/plan.md"
   ],
   "contractRefs": [
@@ -80,7 +80,7 @@
     "docs/contracts/interface-contract.md#§四",
     "delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md",
     "delivery/intake/261016-p3-story-body-sd-cache.md",
-    "docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
+    "docs/debt/tech/_archive/2026/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
     "docs/debt/tech/TECH-261016-sd-story-confidentiality.md",
     "docs/ui/UIUX-DESIGN-BRIEF.md"
   ],
@@ -216,7 +216,7 @@
       "decision": "id 错配修复：被打开正文 id == 光标所选行 id",
       "summary": "kidpal_story_open_reader 加 id 校验；不符拒绝并走降级——「显示错内容比无反应更危险」的直接回归齿。",
       "sourceRefs": [
-        "docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md"
+        "docs/debt/tech/_archive/2026/TECH-261013-p3-reader-entry-no-text-silent-noop.md"
       ],
       "landsIn": "acceptance:SC-A6"
     },
