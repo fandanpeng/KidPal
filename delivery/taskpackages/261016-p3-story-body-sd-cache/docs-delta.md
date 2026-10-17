@@ -8,9 +8,11 @@
 - **正文 append 结项行**（只追加、不改既有段）：三层缺陷逐条落点（层 1 可见降级 = SC-A5 / 层 2 按需取回通路 = SC-A1..A4 + SC-A7 + SC-A8 / ② id 错配 = SC-A6）+ 实测基线（host `192 Tests 3 Failures`〔上游已知红 AB-A1/A2/A4，新增红 0〕、server `181 passed / 4 deselected / 33 subtests`、final 相位圈定复跑 unit 86 passed + acceptance 51 passed、设备真编 PASS、变异 perAcceptance 全条 turnedRed 且还原复绿）+ 收口口径（自动化面全绿 = 代码面兑现；SC-A9 真机 live-manual 轮仍为本包收口前置）。末行 `consumed-by: 261016-p3-story-body-sd-cache`。**格式对齐先例** = `docs/debt/gov/_archive/2026/ARQ-261016-intake-entry-identity-unstated.md`（同类结项行 + consumed-by 末行）。
 - **`node .claude/scripts/debt-render.mjs` 实跑**（exit 0）：条目按状态纯函数归位 `docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md` → `docs/debt/tech/_archive/2026/TECH-261013-p3-reader-entry-no-text-silent-noop.md`；`docs/debt/tech/INDEX.md` 与 `docs/debt/tech/_archive/2026/INDEX.md` 由渲染器再生（**未手改任何 INDEX.md**）。gov / requirement 两域「未变」。
 
-## 2. `docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:62` —— **待主线程落笔（docs/notes，无 agent 写权）**
+## 2. `docs/notes/board-hardware-esp32-s3-rlcd-4.2.md:62` —— 主线程已代落（integrator 只收口提交）
 
 **本项不由 integrator 落笔**：scope-map 实证 integrator allow 不含 `docs/notes/**`（`allow` = firmware/server/docs/templates/docs/ARCH-REVIEW-QUEUE.md/docs/debt/docs/ADR.md/delivery/taskpackages/delivery/workstreams），仓内亦无其它 agent 的 allow 覆盖该路径（上包同款通道脱节，pod-events friction 在案）。故以「待主线程（human 主会话，无 agent_type）落笔」移交，exact text 存本节。
+
+**状态（round-6 复收口核对）= 已由主线程落笔**：本工作树 `docs/notes/board-hardware-esp32-s3-rlcd-4.2.md` 于 2026-10-17 18:52 出现本节 ready-to-apply 文本的无差异改动（仅第 62 行一行、其余行/EOL 未动，`git diff` 实核）；integrator 只把它随 closeout commit 收口，未改一字。
 
 **为什么必须改**：该行现文写「业务数据不落板、决策 24 介质禁令不变」——本包起 story 正文按决策 24 **窄例外**落 `/sdcard/story/<id>.txt`（只读镜像），「不变」二字已成 stale 表述；不改则「文档写了真机不存在」的反向形态（真机存在、文档说没有）。
 
@@ -39,6 +41,16 @@
 - **spec 面**（`docs/requirements.md` / `docs/architecture.md`）：上游 261017 批与需求 v1.64 已把事实态写在同批（arch §2.1 / §2.4 原则 1·5 / §3.1 / §4 / §5.3.1 / §5.4 / §6.2 / §10 决策 24 史实更正 + 窄例外 / §12 changeId 行；requirements §S-F2.1 AC2/AC7 + 补充规则 + §2.3 矩阵新行 + WF-F2-06 + NFR-OFF-1 邻位注记）。逐条核对**无「随实现落地翻既成」的悬空句**（无「尚未落地 / 未实现 / 待接入」类与本研究对象相关的注记）——本包**无 spec 面待改清单**，integrator 未写、不需派 architect（`ARQ-260929-docs-sync-spec-handoff` 触发条件未命中）。
 - **ADR**：`adrRequired=false`；ADR-011 已在 `docs/ADR.md:94` 在册（决策 24 窄例外 + 契约首个设备发起请求-应答环），本包无新耐久决策、无需归档新 ADR。
 - **唯一 stale 落点** = §2 的 `docs/notes` 盘点行（事实态盘点，非 spec 面），交主线程落笔。
+
+## 5. round-6 复收口（fix commit `8f80394a` 修 BLOCKING）—— docs-sync 增量结论：**仍为零改**
+
+- 修复面 = `firmware/main/display/keybar.c`（新 `KSTORY_PAGE_BODY_UNAVAILABLE` 槽 case）+ `lcd_display.cc`（`dots_overlay` 有效 overlay 判据）+ `story_page.c/.h`（删自画键帽死绘制 / 标题居中 / 新增两枚键帽文案宏）。均为**实现内部 chrome 接线与代码级宏单源**，不产生任何 spec 面 / 契约面 / docRefs 文字变更需求：
+  - `docs/ui/UIUX-DESIGN-BRIEF.md:101`（「覆盖层……不显示页点」）原文即目标态，修复后实现**兑现**该文义，brief 无需改（本包 diff 内 brief 仅撤在途警示两行，见 §3）。
+  - `docs/requirements.md:382`（「页点消失 = 覆盖层口径」）与 S-F2.1 AC7 表述均为行为级，实现侧落地不改其文字。
+  - `story_page.h` 新增 `KSTORY_BODY_UNAVAILABLE_KEYCAP_KEY/_BOOT` 是实现侧文案单源宏，非契约面类型（契约 `docs/contracts/**` 零 diff 复核仍为空）。
+- 复核命令实跑：`git diff main...HEAD -- docs/contracts docs/requirements.md docs/architecture.md docs/ADR.md` = **空**（exit 0）；`docs/` 全量 diff 仍只有 §1 的 debt 归档三件 + §3 的 brief 两行撤除。
+- `docRefs` / `sourceRefs` 的 TECH-261013 条目已由 planner 随 commit `da8055df` 改指 `docs/debt/tech/_archive/2026/...`（debt-render 归位结果），r4 暴露的 docs-sync 红点已消；final r6 `docs-sync` 闸 PASS。
+- 结论：**本轮无新增 docs-sync 动作**；`docsSyncRequired=true` 的已履行内容仍为 §1（TECH-261013 结项归档）+ §2（主线程代落盘点行）+ §3（brief 在途行撤除核对）。
 
 ## 附注
 
