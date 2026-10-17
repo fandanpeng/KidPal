@@ -242,9 +242,9 @@
           "story cache: prefetch decision never squeezes voice front (SC-A1)",
           "story cache: missing-on-screen selection drives prefetch batch (SC-A1)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A2",
@@ -255,9 +255,9 @@
           "story cache: RAM index init/add dedupe/full/remove/clear (SC-A2)",
           "story cache: story id character set blocks path injection (SC-A2)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A3",
@@ -266,9 +266,9 @@
         "affectedTest": [
           "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A4",
@@ -278,9 +278,9 @@
           "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)",
           "story cache: fetch answer enters reader only when awaited, never stamps (SC-A4/A8)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A5",
@@ -290,9 +290,9 @@
           "story body-unavailable overlay: single-source copy, 10s idle, any gesture closes (SC-A5)",
           "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A6",
@@ -302,9 +302,9 @@
           "story cache: reader id match pins opened text to cursor row (SC-A6)",
           "story cache: open-reader three-branch decision (SC-A3/A4/A5/A6)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A7",
@@ -318,9 +318,9 @@
           "StoryFetchWireAcceptance.test_sc_a7_malformed_payloads_never_crash_or_forward",
           "story cache: fetch primitive + front branch + module wiring anchors (SC-A1/A2/A7)"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A8",
@@ -332,9 +332,9 @@
           "StoryFetchConsumptionAcceptance.test_sc_a8_fetch_answer_has_no_stamp_or_archive_side_effect",
           "StoryFetchConsumptionAcceptance.test_sc_a8_seqless_record_keeps_three_key_shape"
         ],
-        "turnedRed": null,
-        "sensitive": null,
-        "result": "pending-builder"
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned-red-confirmed"
       },
       {
         "acceptanceId": "SC-A9",
@@ -346,7 +346,7 @@
         "result": "not-applicable-structural"
       }
     ],
-    "reason": "骨架由 acceptance-author 冻结轮产出、builder 落地后实跑变异取证（turnedRed / sensitive / 实测记录由 builder 回填）；SC-A9 为真机轮观测（structural 豁免自动断言面）"
+    "reason": "骨架由 acceptance-author 冻结轮产出、builder 落地后实跑变异取证并 planner 代落（2026-10-17）。实测逐条（改实现→目标齿转红→还原→复绿）：SC-A1 prefetch_due 删 voice_front==0 门 + suspend 恒 0 → `prefetch decision never squeezes voice front` FAIL（:919 Expected 0 Was 1）；SC-A2 commit 删 card_ready/write_ok 门 → `index registration gated on successful card write` FAIL（:966 Expected -1 Was 1）；SC-A3 open_decide 删 HIT_CARD 支 → `open-reader three-branch decision` FAIL（:846 Expected 0 Was 1）；SC-A4 未命中支返 DEGRADE + fetch_answer_enter 恒 0 → 两齿 FAIL（:849/:1068）；SC-A5 idle 阈值 100000UL + 删 page==5 手势关闭 → `body-unavailable overlay` FAIL（:1146）；SC-A6 reader_id_match 恒 1 → `reader id match` FAIL（:808 Expected 0 Was 1）；SC-A7 front 分支 return False + 自造 from_fetch 键 → server 5 failed（legal/rejects/empty/malformed/seqless，multi_id_order 仍绿因其只钉顺序）；SC-A8 删 stamp_should_fire from_fetch 守卫 + server fetch 推进 seq 账本 → host :1075 FAIL + server 侧效应 FAIL（stories 目录字节快照不等）。全部还原后 grep MUTATION 四文件零命中、两套件复跑回绿。SC-A9 为真机轮观测（structural 豁免自动断言面）。"
   },
   "securityReviewRequired": true,
   "securityAxes": [
@@ -358,5 +358,5 @@
   "docsSyncRequired": true,
   "docsSyncReason": "TECH-261013-p3-reader-entry-no-text-silent-noop 结项（consumed-by: 261016-p3-story-body-sd-cache）+ spine anchors.imp 回填（主线程写，非 integrator）+ review-packet 隐私降级申报；架构/契约面已冻结、本包零改动",
   "docsOwner": "integrator",
-  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。【1g architect 前置技术预评采纳 2026-10-17（advisory，不豁免门）】① id 校验不改 `kidpal_story_open_reader` 冻结签名（story_page_v2.acceptance.c:551 等已钉死），改新增纯逻辑 seam `kidpal_story_reader_id_match`（story_cache.c/.h）+ mcp_server OPEN_READER 消费侧调 open_reader 前校验；② 预取队列 / 双击插队 / pending 等待态 / SD 索引为一个共享单元，一次设计一次实现（单包最大工程风险点）；③ `SdCardMounted()` virtual 化（boards/common/board.h 默认 false + waveshare 板 public override）为前置阻断项；④ SD I/O 适配 sd_mounted 显式入参注入、先写卡成功才登记索引；⑤ front 复用 gw_story.story_text 零新字段、建议抽 story.py fetch_story 与 delete 共享 id 安全；⑥ LFN 键 = LFN_NONE → LFN_HEAP、codepage 437 保持、缓冲走 PSRAM；⑦ WF-F2-06 走 story_page.c 新增页态（不动 render_node）；⑧ fetch 路径不置 archive_pend / 不调 kidpal_story_on_saved（盖章侧效应恒假）。changeManifest 已按预评补至 17 条（含 host_app CMakeLists 与验收件）。crossEnd counterparts 指既有同族 seam（front `_consume_kidpal_control` / 固件 `SendKidpalStoryDelete`），本包在其旁新增 `kidpal_story_fetch` 消费分支与 `SendKidpalStoryFetch`（新符号；brief-inputs 的符号解析只认既有符号，故以 seam 为锚）。【8b 验收方向核 2026-10-17（planner 自核，不代写）】① AC 回引：sourceRefs AC 集 = {S-F2.1-AC2, S-F2.1-AC7}，冻结 C 件 11 处回引 AC2/AC7；server 件覆盖契约级 SC-A7/A8（不回引 story AC，属方向正确分账）→ 一致；② 补充规则逐条落点：只留正文/写卡 = SC-A2，只认云端列表存在篇目 = SC-A3，fetch 应答不盖章/卡不在位不留存 = SC-A8，门槛话术与 10s 关闭 = SC-A5；③ 断言方向不弱于、不钉反 story 语义。验收作者提请的两处判读**采纳**：GAP-4 混批非法 id = 逐条跳过（契约 §四「逐 id 校验 + 逐篇应答、非法不回帧」直读）；fetch 应答携带 data.seq（契约 §1.3④ 帧形状列 seq + impactedTestsSeed 明载），builder 不得放宽。**builder 硬前置**：`firmware/main/test/host_app/main/CMakeLists.txt` 追加 `../../story_cache.acceptance.c` 与 `../../../display/story_cache.c`（置于 `host_infra_smoke.acceptance.c` 之前），否则冻结件 TEST 10 tooth 4 会把「未登记」钉红（EQ-1 防未接线也绿）。brief-inputs 锚点解析把 `§1.3④` 判 not-found（实际在 contract :115 在位）——advisory，记 pod-events friction，不影响冻结。"
+  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。【1g architect 前置技术预评采纳 2026-10-17（advisory，不豁免门）】① id 校验不改 `kidpal_story_open_reader` 冻结签名（story_page_v2.acceptance.c:551 等已钉死），改新增纯逻辑 seam `kidpal_story_reader_id_match`（story_cache.c/.h）+ mcp_server OPEN_READER 消费侧调 open_reader 前校验；② 预取队列 / 双击插队 / pending 等待态 / SD 索引为一个共享单元，一次设计一次实现（单包最大工程风险点）；③ `SdCardMounted()` virtual 化（boards/common/board.h 默认 false + waveshare 板 public override）为前置阻断项；④ SD I/O 适配 sd_mounted 显式入参注入、先写卡成功才登记索引；⑤ front 复用 gw_story.story_text 零新字段、建议抽 story.py fetch_story 与 delete 共享 id 安全；⑥ LFN 键 = LFN_NONE → LFN_HEAP、codepage 437 保持、缓冲走 PSRAM；⑦ WF-F2-06 走 story_page.c 新增页态（不动 render_node）；⑧ fetch 路径不置 archive_pend / 不调 kidpal_story_on_saved（盖章侧效应恒假）。changeManifest 已按预评补至 17 条（含 host_app CMakeLists 与验收件）。crossEnd counterparts 指既有同族 seam（front `_consume_kidpal_control` / 固件 `SendKidpalStoryDelete`），本包在其旁新增 `kidpal_story_fetch` 消费分支与 `SendKidpalStoryFetch`（新符号；brief-inputs 的符号解析只认既有符号，故以 seam 为锚）。【8b 验收方向核 2026-10-17（planner 自核，不代写）】① AC 回引：sourceRefs AC 集 = {S-F2.1-AC2, S-F2.1-AC7}，冻结 C 件 11 处回引 AC2/AC7；server 件覆盖契约级 SC-A7/A8（不回引 story AC，属方向正确分账）→ 一致；② 补充规则逐条落点：只留正文/写卡 = SC-A2，只认云端列表存在篇目 = SC-A3，fetch 应答不盖章/卡不在位不留存 = SC-A8，门槛话术与 10s 关闭 = SC-A5；③ 断言方向不弱于、不钉反 story 语义。验收作者提请的两处判读**采纳**：GAP-4 混批非法 id = 逐条跳过（契约 §四「逐 id 校验 + 逐篇应答、非法不回帧」直读）；fetch 应答携带 data.seq（契约 §1.3④ 帧形状列 seq + impactedTestsSeed 明载），builder 不得放宽。**builder 硬前置**：`firmware/main/test/host_app/main/CMakeLists.txt` 追加 `../../story_cache.acceptance.c` 与 `../../../display/story_cache.c`（置于 `host_infra_smoke.acceptance.c` 之前），否则冻结件 TEST 10 tooth 4 会把「未登记」钉红（EQ-1 防未接线也绿）。brief-inputs 锚点解析把 `§1.3④` 判 not-found（实际在 contract :115 在位）——advisory，记 pod-events friction，不影响冻结。【builder 落地 2026-10-17（Step 9）】两套件实跑：host `192 Tests 3 Failures`（新增 10 齿全 PASS；3 红 = 上游已知红 AB-A1/A2/A4，新增红 0）；server `181 passed, 4 deselected, 33 subtests`（上游 174 + 本包 7）。冻结件与契约零改动（git diff 核）。偏离申报四处已裁：① `SendKidpalStoryFetch` 落 protocol.cc 自由函数 + 静态活动实例（friend 取用，mcp_server 经 `Application::GetInstance().Schedule` 在主任务闭包内调用，线程纪律保持）——application.{h,cc} 不在 manifest，不扩单，采纳；② 未新增独立 `story_cache.test.c`（不在 manifest），冻结件 TEST 1..10 已覆盖 NULL/越界/满容量/路径注入/超时边界，本轮不扩单（verifier 若要求独立边界单测再走扩单通道）；③ ws_busy 以 `Application::GetDeviceState() != kDeviceStateIdle` 代理（无公开连接查询面），发帧失败自然降级；④ 取不回判定以 10s 超时为主（离线/丢帧同路径），降级覆盖层最迟 10s 出现——符合冻结 [C5]。设备编译归 verify.mjs firmware-build 闸（builder 本机无 esp32s3 工具链，已用 g++ -fsyntax-only 核 protocol.cc / story_sd_io.cc）。"
 }

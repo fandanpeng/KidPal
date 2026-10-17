@@ -71,7 +71,12 @@ typedef enum {
     KSTORY_PAGE_STAMP     = 3,   /* 盖章帧 (S-F2.4) */
     /* additive 追加位（seam [K1]; 冻结数值 = 4）: 删除确认子态（整屏覆盖层,
      * WF-F2-05; 层值 KIDPAL_LAYER_STORY_DELETE, seam [K10]）。 */
-    KSTORY_PAGE_DELETE    = 4
+    KSTORY_PAGE_DELETE    = 4,
+    /* additive 尾部追加（TaskPackage 261016-p3-story-body-sd-cache; 冻结数值 = 5）:
+     * P3「正文取不回」整屏覆盖层（WF-F2-06, requirements v1.64 S-F2.1 AC7）——
+     * 纯告知态：不静默、不黑屏、绝不显示别篇内容；10s 无操作自动消失（静默、不显
+     * 倒计时），KEY／BOOT **任一手势**立即关闭回列表。既有值零改（0..4）。 */
+    KSTORY_PAGE_BODY_UNAVAILABLE = 5
 } kidpal_story_page_t;
 
 typedef struct {
@@ -351,6 +356,30 @@ int kidpal_story_render_page_state(int node_cached_page, int session_page,
  * （TECH-261012 根因链: 漂白根因是 top_bar_ 蒙层、非色值本身——色值归一是实现层
  * 常数归一, requirements v1.63 空态注记钉「画法照常」不钉色值）。 */
 #define KSY_COLOR_INK 0x333333u
+
+/* ---- ⑲ P3「正文取不回」覆盖层单源（TaskPackage 261016-p3-story-body-sd-cache;
+ * additive 尾部追加, 冻结纪律只增不改/移; 语义 = requirements v1.64 S-F2.1 AC7 +
+ * 线框 WF-F2-06 + docs/ui/V6/p3-body-unavailable.png 定稿文案）。 ---- */
+
+/* 话术单源（既有「话术单源 = story_page.h」纪律, KSTORY_EMPTY_HINT 同款）:
+ * 大字「这篇暂时打不开」+ 副句「等会儿再试试吧」。本场景失败模式是「这篇还没取
+ * 回来」、**不是**网络故障 —— 不得复用 §2.2 通用网络故障固定句（话术不混用）。 */
+#define KSTORY_BODY_UNAVAILABLE_HINT "这篇暂时打不开"
+#define KSTORY_BODY_UNAVAILABLE_SUB  "等会儿再试试吧"
+
+/* 10s 无操作自动消失（**静默**——不显示倒计时；到点调用方静默关闭回列表并复位）。 */
+#define KSTORY_BODY_UNAVAILABLE_IDLE_MS 10000UL
+
+/* 10s idle-step（形参 / 语义逐字仿 kidpal_story_delete_idle_step）: 累计 idle 并判
+ * 到点，>= KSTORY_BODY_UNAVAILABLE_IDLE_MS 返回 1（调用方静默关闭回列表并复位），
+ * 未到点 0，NULL -> -1。 */
+int kidpal_story_body_unavailable_idle_step(unsigned long *idle_ms,
+                                            unsigned long dt_ms);
+
+/* 手势关闭（home = story_page.c kidpal_story_page_input）: page ==
+ * KSTORY_PAGE_BODY_UNAVAILABLE 时 KEY／BOOT **任一手势**（短按 / 双击 / 长按）一律
+ * 关闭回列表（v->page == KSTORY_PAGE_LIST），两键语义一致、无破坏性动作、无 GLOBAL
+ * 外泄（纯告知态吞掉手势，绝不漏网误开会话）。 */
 
 #ifdef __cplusplus
 }

@@ -826,6 +826,21 @@ int kidpal_story_delete_idle_step(unsigned long *idle_ms, unsigned long dt_ms)
 }
 
 /* -------------------------------------------------------------------------- *
+ * P3「正文取不回」覆盖层 10s idle-step (TaskPackage 261016-p3-story-body-sd-cache;
+ * 形参 / 语义逐字仿 kidpal_story_delete_idle_step; **静默**消失——屏上不显剩余
+ * 秒数, AC7 口径)。
+ * ------------------------------------------------------------------------ */
+
+int kidpal_story_body_unavailable_idle_step(unsigned long *idle_ms, unsigned long dt_ms)
+{
+    if (idle_ms == NULL) {
+        return -1;
+    }
+    *idle_ms += dt_ms;
+    return (*idle_ms >= KSTORY_BODY_UNAVAILABLE_IDLE_MS) ? 1 : 0;
+}
+
+/* -------------------------------------------------------------------------- *
  * 隐式 ack 重发决策 (seam [K4]; 契约 §四 Q5): tries < 上限 且 age >= 间隔 -> 1
  * （调用方重发同一 id 并 tries++）; 否则 0（未到期 / 已达上限放弃——放弃后静默
  * 停发, 不新增请求-应答消息对）。
@@ -1209,6 +1224,67 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             }
             break;
         }
+        case KSTORY_PAGE_BODY_UNAVAILABLE: {
+            /* WF-F2-06 正文取不回提示（TaskPackage 261016-p3-story-body-sd-cache;
+             * requirements v1.64 S-F2.1 AC7）——整屏纯告知覆盖层：大字 + 副句
+             * （话术单源 = story_page.h 的两宏）+ 所选条目行（星星 + 标题 + 日期）+
+             * 底部键帽 [知道了][关闭]（KEY／BOOT 任一手势关闭）。版式按
+             * docs/ui/V6/p3-body-unavailable.png 定坐标。**静默**（不显剩余秒数;
+             * 10s 自动消失, GAP-1 观感细节归真机设计 review）。 */
+            lv_obj_t *q;
+            int hint_y = 64;
+            int sub_y = 96;
+            int box_y = 130;
+            int cap_y = LV_VER_RES - 34;
+
+            q = lv_label_create(scr);
+            lv_label_set_text(q, KSTORY_BODY_UNAVAILABLE_HINT);
+            lv_obj_set_pos(q, 118, hint_y);
+            lv_obj_set_style_text_color(q, lv_color_hex(KSY_COLOR_INK), 0);
+            lv_obj_set_style_text_font(q, &font_puhui_14_1, 0);
+
+            ksy_label(scr, KSTORY_BODY_UNAVAILABLE_SUB, 150, sub_y, KSY_COLOR_INK);
+
+            /* 所选条目行（正文与所选篇目一致的可视锚——孩子看得懂「是这一篇」）。 */
+            if (list != NULL && v->cursor >= 0 && v->cursor < list->count) {
+                lv_obj_t *sel = lv_obj_create(scr);
+                lv_obj_remove_style_all(sel);
+                lv_obj_set_size(sel, LV_HOR_RES - 80, 40);
+                lv_obj_set_pos(sel, 40, box_y);
+                lv_obj_set_style_radius(sel, 10, 0);
+                lv_obj_set_style_bg_opa(sel, LV_OPA_TRANSP, 0);
+                lv_obj_set_style_border_width(sel, 3, 0);
+                lv_obj_set_style_border_color(sel, lv_color_hex(KSY_COLOR_BORDER), 0);
+                lv_obj_set_style_border_opa(sel, LV_OPA_COVER, 0);
+                lv_obj_clear_flag(sel, LV_OBJ_FLAG_SCROLLABLE);
+                ksy_label(scr, "★", 60, box_y + 12, KSY_COLOR_INK);
+                ksy_label(scr, list->items[v->cursor].title, 90, box_y + 12,
+                          KSY_COLOR_TEXT);
+                ksy_label(scr, list->items[v->cursor].date, 300, box_y + 12,
+                          KSY_COLOR_INK);
+            }
+
+            /* 底部键帽（[知道了] = KEY / [关闭] = BOOT——任一手势均关闭）。 */
+            {
+                static const char *const caps[2] = { "[知道了]", "[关闭]" };
+                int xs[2] = { 12, LV_HOR_RES - 78 };
+                int i;
+                for (i = 0; i < 2; i++) {
+                    lv_obj_t *cap = lv_obj_create(scr);
+                    lv_obj_remove_style_all(cap);
+                    lv_obj_set_size(cap, 66, 24);
+                    lv_obj_set_pos(cap, xs[i], cap_y);
+                    lv_obj_set_style_radius(cap, 8, 0);
+                    lv_obj_set_style_bg_opa(cap, LV_OPA_TRANSP, 0);
+                    lv_obj_set_style_border_width(cap, 2, 0);
+                    lv_obj_set_style_border_color(cap, lv_color_hex(KSY_COLOR_INK), 0);
+                    lv_obj_set_style_border_opa(cap, LV_OPA_COVER, 0);
+                    lv_obj_clear_flag(cap, LV_OBJ_FLAG_SCROLLABLE);
+                    ksy_label(scr, caps[i], xs[i] + 8, cap_y + 3, KSY_COLOR_INK);
+                }
+            }
+            break;
+        }
         case KSTORY_PAGE_READER: {
             char label[64];
             int s, total_screens = v->screens < 1 ? 1 : v->screens;
@@ -1443,6 +1519,8 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
  *   RECORDING: KEY 短=STOP_RECORD / KEY 长=STOP_RECORD（同短按保存, v1.47）/ BOOT
  *            短·双·长=DISCARD_RECORD
  *   STAMP:   全手势=GLOBAL（演出帧页内零语义, 零回归守卫）
+ *   BODY_UNAVAILABLE（WF-F2-06 取不回提示, 261016 批 append）: KEY／BOOT 任一手势
+ *            （短/双/长）= NONE 并关闭回列表（纯告知、无破坏性动作、绝不 GLOBAL）
  *   空列表:  KEY 短=REC_SESSION / BOOT 短·双=NONE / BOOT 长=NONE
  * ------------------------------------------------------------------------ */
 
@@ -1509,6 +1587,16 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
             }
             return KSPV2_ACT_GLOBAL;
         }
+
+        case KSTORY_PAGE_BODY_UNAVAILABLE:
+            /* P3「正文取不回」覆盖层（WF-F2-06, AC7）: 纯告知态 —— KEY／BOOT
+             * **任一手势**（短按 / 双击 / 长按）一律关闭回列表, 两键语义一致、
+             * 无破坏性动作。返回 NONE（页拥有但无副作用）: 回列表的重渲由消费侧
+             * （mcp HandleStoryKey 关闭路径）承载, 绝不 GLOBAL 外泄（漏网手势会被
+             * 通用覆盖层列误映射成 SESSION_TOGGLE）。 */
+            ksy_story_restore_list_screen(v);
+            v->page = KSTORY_PAGE_LIST;
+            return KSPV2_ACT_NONE;
 
         case KSTORY_PAGE_DELETE:
             /* 删除确认子态裁决（S-F2.1 AC4）: **必须吞掉全部手势**（任何漏网手势会
