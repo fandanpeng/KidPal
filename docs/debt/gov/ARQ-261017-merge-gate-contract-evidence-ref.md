@@ -71,3 +71,18 @@ source: [2026-10-17 主线程在 261017-arch-review-p3-story-body-sd-cache 合�
 **风险**：riskTier: low——单文件判据改动 + 一处自检 + 文档成文，零行为面、零契约面。但**触 G3**（`.claude/scripts/**` 属治理机器面），故按 gov-arq 判据 **review profile = full-adversarial + human**，不美化快路径。硬排除六项：不触 `docs/contracts/**`、无 agent frontmatter、非 architect.md self-def、非 review-loop agent 定义、**非新增门**（改既有闸判据，不新增 gate）、无 spec-contract drift。
 
 **路由**：归 `/gov-change` loop；paths 含 `.claude/scripts/**` = **机器面**，恒 Track B（轻路径不适用）。**关联**：`ARQ-261017-merge-gate-scope-unstated`（**同脚本、不同根**——该条治 lane 白名单覆盖面，本条治取件 ref；两条 paths 同含该闸，**建议同批评审**，且第 3 条建议（处置路径成文）两条可合并为一处落）。本条目由 `261017-arch-review-p3-story-body-sd-cache` 的合并期实测派生；该批经 human 2026-10-17 显式授权「假阴性 + 手工本地合并」处置，处置实况见该批 landing-summary §3 与合并提交 message。
+
+---
+
+**追加（2026-10-17，本条目登记后当场自查发现的第二个成因——先前的归因不完整，此处更正）**：
+
+本条目正文把闸报的 `{frozen:false, verdict:false, covered:false}` **整体归因于取件 ref 缺陷**。登记后进一步核验发现：**`verdict:false` 还有第二个、独立的成因——verdict 文件的写法不满足 `VERDICT_STATUS_RE`。**
+
+- **判据单源**：`.claude/scripts/lib/governance-gate-shared.mjs:632` 的 `VERDICT_STATUS_RE` 接受形如 `verdict: PASS` / `总判：PASS` / `结论：PASS`（可带 `>` / `**` / 反引号包裹）；关键词表含 `总判`、`总判定`，**不含裸 `判定`**。
+- **实测**：`261017-arch-review-p3-story-body-sd-cache` 的 `landing-verdict.md` 对该正则 **命中 0 行**——它写的是 `## 判定` + `**ok: true — PASS（放行建议…）**`（首词为 `ok` 而非 `PASS`，pending-heading 回退亦接不住）。**同目录既有三批全部 1 命中**（`261015…` = `verdict: PASS + 2 ADVISORY`；`261016…nano-tier` / `…triage-entry-identity` = `verdict: PASS`）——**本批是唯一例外，问题在产出侧，不在判据侧**。
+- **两个下游后果**：① `changes-index.mjs` 的 `deriveLanded()` 读不到 → 本批在 `delivery/review/INDEX.md` 状态停在 `frozen` 而非终态 `landed`；② `pre-merge-escalation-gate.mjs:148-150` 的 `verdict` 位恒 false。
+- **对本条目建议的修正**：**建议 1（取件 ref 修正）单独实施并不足以放行**——`verdict` 位仍会因格式而为 false。故本条的完整修法 = **建议 1（ref）+ 建议 2（归因自检）**，**再加一条建议 4**：
+  **4. 契约凭据的产出侧格式校验（或产出模板化）**：`landing-verifier` 的 verdict 产出应有机器可读的规范行；当前靠「写对了才生效」、写歪了只表现为下游静默 false（本批即如此，且 BLOCK 报的仍是「缺凭据」，归因再次误导——与本条正文 F 的病灶同型：**判据失败时不说"哪一件的形态不对"**）。载体候选：verifier 简报（`track-b-verifier-brief.md`）加一行格式要求 / `landing-verdict` 加产出模板 / 或在 `deriveLanded` 与闸里对「命中 0 行」单独报错点名。
+- **本批的即时处置**：已请 landing-verifier 在其 verdict 文件补一行规范 `verdict: PASS`（不改判定、不改核验结论、不改 ADVISORY），使该凭据对机可读；此为**产出侧修正**，不涉及任何判据放宽。
+
+**证据锚补充**：`delivery/review/261017-arch-review-p3-story-body-sd-cache/landing-verdict.md`（命中 0 行的文件）；三批对照的一次性复跑脚本见本条目追加的实测记录。

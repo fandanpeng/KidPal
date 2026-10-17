@@ -6,10 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (69)
+## dev (70)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261016-sd-card-mount](261016-sd-card-mount/) | 2026-10-16 | delivery/taskpackages/261016-sd-card-mount/plan.md | closed | — |
 | [261015-p1-auxbar-style-fix](261015-p1-auxbar-style-fix/) | 2026-10-15 | delivery/taskpackages/261015-p1-auxbar-style-fix/plan.md | closed | — |
 | [261015-voice-rightcol-label-overflow](261015-voice-rightcol-label-overflow/) | 2026-10-15 | delivery/taskpackages/261015-voice-rightcol-label-overflow/plan.md | closed | — |
 | [261014-engine-stop-truncation-asr-filter](261014-engine-stop-truncation-asr-filter/) | 2026-10-14 | docs/crq/tech/TECH-261014-engine-asr-hallucination-after-stop.md | closed | — |
@@ -79,4 +80,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261016-sd-card-mount](261016-sd-card-mount/) | 2026-10-16 | delivery/taskpackages/261016-sd-card-mount/plan.md | closed | — |

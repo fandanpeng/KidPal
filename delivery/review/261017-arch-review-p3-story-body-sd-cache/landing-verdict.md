@@ -6,6 +6,8 @@
 
 ## 判定
 
+verdict: PASS + 6 ADVISORY
+
 **ok: true — PASS（放行建议；merge 仍归 human / 合并机械闸）**
 
 ```json
