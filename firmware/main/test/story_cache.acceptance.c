@@ -171,6 +171,44 @@
  *               server/acceptance/test_story_fetch.py 在对端**真消费**（SC-A7）。
  *
  * ===========================================================================
+ * TIGHTEN-ONLY ADDENDUM（2026-10-17 补齿轮；Review Packet Finding ① BLOCKING 的
+ * 可机判面。既有 TEST 1..10 零触碰，三个新 TEST_CASE = TEST 11/12/13，唯一新增
+ * 非测试件 = 键帽槽纯函数 weak 哨兵 [C11]）:
+ *
+ *   [C11] 可见 chrome 面（WF-F2-06 覆盖层出现时）——**状态误导 / 页点常显 / 双画法源**
+ *         三条可机判齿的语义契约（设计权威 = docs/ui/UIUX-DESIGN-BRIEF.md:101
+ *         「整屏覆盖层……覆盖列表、**不显示页点**」+ docs/requirements.md:382
+ *         「页点消失 = 覆盖层口径」+ 设计稿 docs/ui/V6/p3-body-unavailable.png
+ *         底栏 **左「知道了」/ 右「关闭」、无页点**）:
+ *
+ *     T-OUT-1 键帽槽（home = display/keybar.c::kidpal_keybar_story_slots）:
+ *            kidpal_keybar_story_slots(KSTORY_PAGE_BODY_UNAVAILABLE, &l, &r) == 0
+ *            且 l == "知道了"、r == "关闭"（本覆盖层两键真实行为都是「关闭回列表」，
+ *            不得回落 P3 列表基层槽表「说话·双击看」/「下移」）。值域仍走 keybar
+ *            纯逻辑单源，设备侧（lcd_display.cc）零重算。
+ *     T-OUT-2 页点隐藏（home = display/lcd_display.cc::kidpal_keybar_sync_locked）:
+ *            KSTORY_PAGE_BODY_UNAVAILABLE 必须被纳入传给 kidpal_keybar_dots 的
+ *            **有效 overlay 判据**（overlay_top 入参而非裸 layer 栈值），使页点
+ *            visible = 0（brief「覆盖层不显示页点」）。同源纪律：覆盖层身份与键
+ *            路由同源，不在设备侧另立第二真相源。
+ *     T-OUT-3 唯一画法源（home = display/story_page.c BODY_UNAVAILABLE 渲染分支）:
+ *            覆盖层渲染路径**不得再自画键帽文案**（键帽单源 = keybar.c；旧自画
+ *            [知道了]/[关闭] 位于不透明底条之下 = 死绘制）。同时 keybar.c 必须
+ *            承载该态槽文案（防「只删不加」导致覆盖层无键帽）。
+ *
+ *   强度申报（逐条，acceptance-evidence「契约条目 ↔ 齿」节）:
+ *     TEST 11 = **行为级**（host 强符号下真调纯逻辑函数；独立冒烟通道不链接
+ *               keybar.c，weak 哨兵 KSC_UNIMPLEMENTED 恒红 = 设计态红，EQ-4）。
+ *     TEST 12 = **源锚代理**（真实工作树扫描 lcd_display.cc 的
+ *               kidpal_keybar_sync_locked 函数体 + kidpal_keybar_dots 第 2 实参
+ *               归属判定）。**符号链 ≠ 运行时观察**：本齿证明「状态被纳入有效
+ *               overlay 判据」的源码形状，不证明 LVGL 真帧上页点像素不可见——
+ *               真机目检归 SC-A9 live-manual。
+ *     TEST 13 = **源锚代理**（扫 story_page.c 的 BODY_UNAVAILABLE 渲染分支无
+ *               自画键帽字面）。**符号链 ≠ 运行时观察**：删字面 ≠ 真帧已目检，
+ *               真机底栏形态归 SC-A9 live-manual。
+ *
+ * ===========================================================================
  * 契约条目 / 决策 ↔ 齿 的强度申报（acceptance-evidence「契约条目 ↔ 齿」节）:
  *
  * | 契约 / 决策条目 | 承载齿 | 性质档 |
@@ -183,6 +221,7 @@
  * | 预取不挤占语音主链路 | [C6]；TEST 5 | 行为级 |
  * | id 错配修复（TECH-261013） | [C4]/[C5]；TEST 3/4 | 行为级 |
  * | 路径注入（securityAxes） | [C9]；TEST 7 + TEST 6 负向 | 行为级 |
+ * | WF-F2-06 可见 chrome 面（键帽槽 / 页点隐藏 / 唯一画法源；tighten-only） | [C11]；TEST 11/12/13 | 行为级（TEST 11）+ 源锚代理（TEST 12/13） |
  *
  * 弱于契约处（显式缺口，不得当已兑现）:
  *   GAP-1（渲染 / 观感）：WF-F2-06 的整屏覆盖层像素、所选条目行（星星＋标题＋日期）、
@@ -198,6 +237,9 @@
  *         live-manual（SC-A9）。
  *   GAP-5（LFN 代价）：「CONFIG_FATFS_LFN_HEAP 生效 + heap 水位」属 exitCriteria，不属
  *         SC-A1..A8 自动断言面（真机读数）。
+ *   GAP-6（chrome 面真帧观察）：TEST 12/13 是源码结构齿（符号链），**不等于** LVGL
+ *         真帧上「页点像素消失 / 底条只画一份键帽」的运行时观察——真帧目检归
+ *         SC-A9 live-manual + design review（见头注 TIGHTEN-ONLY ADDENDUM 强度申报）。
  *
  * 行为等价假设（显式；不写即默认不成立）:
  *   EQ-1「weak 哨兵被强符号覆盖 = 接线落地」：本文件在 standalone 红跑里 weak 先于强符号
@@ -207,6 +249,10 @@
  *        kidpal_story_page_input；story_page.h 漂移时 TEST 9 先红，等值由头注 [C0] 钉死。
  *   EQ-3「SendKidpalStoryFetch 符号链 = 设备真的会发该帧」：结构齿只是源锚代理，真
  *        wire 形状由对端（front）pytest 的 request→response 行为齿承载（SC-A7）。
+ *   EQ-4「kidpal_keybar_story_slots 强符号覆盖 = 键帽槽单源接线」：TEST 11 在 host
+ *        runner 中由 display/keybar.c 强符号承载；独立冒烟通道（sc_red_wrapper.sh）
+ *        不链接 keybar.c -> weak 哨兵 KSC_UNIMPLEMENTED 恒红 = 设计态红（与 EQ-1 同款，
+ *        不是「测试写错」）。
  *
  * 覆盖标记（coverage marker）随 TEST_CASE 名称与首行注释逐条给出。
  *
@@ -217,6 +263,12 @@
  *
  * REVISION LOG
  *   2026-10-17 初版冻结（acceptance-author；SC-A1..A8 的 host 纯逻辑半 + 跨端结构半）。
+ *   2026-10-17 tighten-only 补齿（acceptance-author；Review Packet Finding ① BLOCKING）：
+ *     新增 TEST 11/12/13（SC-A5 可见 chrome 面：键帽槽 / 页点隐藏 / 唯一画法源）+
+ *     键帽槽纯函数 weak 哨兵。既有 TEST 1..10 零改动；五件防滥用件自查：删除行 0
+ *     （git diff 实测 440 增 / 0 删）、原变异靶未动（TEST 1..10 逐字不变）、范围帽
+ *     （仅 SC-A5 chrome 面）、意图锚定（Finding ① + brief:101 / requirements:382）、
+ *     sha256 核销待 planner/fixer 轮收口时按冻结件口径登记。
  */
 
 #include <unity.h>
@@ -373,6 +425,12 @@ __attribute__((weak)) int kidpal_story_body_unavailable_idle_step(unsigned long 
 __attribute__((weak)) int kidpal_story_page_input(ksc_story_view_t *v, key_id_t key,
                                                   key_gesture_t g)
 { (void)v; (void)key; (void)g; return KSC_UNIMPLEMENTED; }
+/* [C11] T-OUT-1：home = display/keybar.c（kidpal_keybar_story_slots 纯逻辑单源）。
+ * host runner 已在册（display/keybar.c 强符号覆盖，EQ-4）；独立冒烟通道不链接
+ * -> 恒哨兵红 = 设计态红。签名逐字复制 keybar.h（本文件不 include 实现头）。 */
+__attribute__((weak)) int kidpal_keybar_story_slots(int substate, const char **out_left,
+                                                    const char **out_right)
+{ (void)substate; (void)out_left; (void)out_right; return KSC_UNIMPLEMENTED; }
 
 /* -------------------------------------------------------------------------- *
  * 工具（哨兵必查 / 消息格式化 / 仓根定位 / 文件扫描）
@@ -610,6 +668,236 @@ static int ksc_scan_count(const char *rel_dir, const char *needle,
     }
     closedir(d);
     return files;
+}
+
+/* -------------------------------------------------------------------------- *
+ * tighten-only 源码结构辅助（2026-10-17 SC-A5 可见 chrome 面补齿; TEST 12/13 消费）。
+ * 均为「真实工作树扫描」形态（root 经 ksc_rel 注入，不依赖调用 cwd）。
+ * ------------------------------------------------------------------------ */
+
+/* 在 [hay, hay+len) 内找 needle（needle 非空）。 */
+static int ksc_strnstr(const char *hay, size_t len, const char *needle)
+{
+    size_t nlen = strlen(needle);
+    size_t i;
+
+    assert(needle != NULL);
+    if (nlen == 0 || nlen > len) {
+        return 0;
+    }
+    for (i = 0; i + nlen <= len; i++) {
+        if (memcmp(hay + i, needle, nlen) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* [s, e) 去首尾空白后复制（malloc'd、NUL 结尾）。 */
+static char *ksc_slice_trim(const char *s, const char *e)
+{
+    char *out;
+    size_t n;
+
+    assert(s != NULL && e != NULL && e >= s);
+    while (s < e && (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r')) {
+        s++;
+    }
+    while (e > s && (e[-1] == ' ' || e[-1] == '\t' || e[-1] == '\n' || e[-1] == '\r')) {
+        e--;
+    }
+    n = (size_t)(e - s);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL);
+    memcpy(out, s, n);
+    out[n] = '\0';
+    return out;
+}
+
+/* 从 buf 的 start_marker 起、到其后首个 end_marker 前截一段（malloc'd、NUL 结尾）。
+ * 任一端缺失 -> NULL。调用方必须把 NULL 当红——**不得**把空块读成「缺失即通过」
+ * （否则删除整段代码会把「无自画键帽」齿伪装成绿）。 */
+static char *ksc_extract_block(const char *buf, const char *start_marker,
+                               const char *end_marker)
+{
+    const char *s;
+    const char *e;
+    return (buf == NULL || start_marker == NULL || end_marker == NULL)
+               ? NULL
+               : ((s = strstr(buf, start_marker)) == NULL
+                      ? NULL
+                      : ((e = strstr(s + strlen(start_marker), end_marker)) == NULL
+                             ? NULL
+                             : ksc_slice_trim(s, e)));
+}
+
+/* 读整文件并截取其函数体（sig = 函数签名起始串; 函数体尾 = 行首 "}"，列 0）。
+ * 必须跳过前向声明（`static void f(void);`）——只认签名后（跳过空白）紧跟 '{' 的
+ * 定义处。结束标记刻意用 "\n}" 而非 "\n}\n" —— 仓内源码为 CRLF 时 "}\r\n" 不匹配
+ * 后者；"\n}" 只匹配列 0 的收尾花括号（函数体内收尾都是缩进的，不会提前截断）。
+ * malloc'd; 读不到 / 找不到函数定义 -> NULL。 */
+static char *ksc_read_function(const char *rel, const char *sig)
+{
+    size_t len = 0;
+    size_t slen;
+    char *buf = ksc_read(rel, &len);
+    char *block = NULL;
+    const char *p;
+
+    (void)len;
+    if (buf == NULL) {
+        return NULL;
+    }
+    slen = strlen(sig);
+    p = buf;
+    for (;;) {
+        const char *body;
+        p = strstr(p, sig);
+        if (p == NULL) {
+            break;
+        }
+        body = p + slen;
+        while (*body == ' ' || *body == '\t' || *body == '\r' || *body == '\n') {
+            body++;
+        }
+        if (*body == '{') {
+            block = ksc_extract_block(p, sig, "\n}");
+            break;
+        }
+        p = body;
+    }
+    free(buf);
+    return block;
+}
+
+/* 取 call 的第 arg_index 个（0-based）实参文本（去首尾空白，malloc'd）。
+ * call 可带或不带结尾 '('（如 "kidpal_keybar_dots(" 或 "kidpal_keybar_dots"）；
+ * 若首次命中不是真正的调用（如注释里的裸符号），继续找下一处。
+ * 只做圆/方/花括号平衡 + 字符串字面量跳过（够读本仓源码形态）。 */
+static char *ksc_call_arg(const char *buf, const char *call, int arg_index)
+{
+    const char *p = buf;
+    size_t clen;
+
+    if (buf == NULL || call == NULL || arg_index < 0) {
+        return NULL;
+    }
+    clen = strlen(call);
+    if (clen == 0) {
+        return NULL;
+    }
+    for (;;) {
+        const char *open;
+        const char *arg_start;
+        int depth = 0;
+        int arg = 0;
+        int in_str = 0;
+
+        p = strstr(p, call);
+        if (p == NULL) {
+            return NULL;
+        }
+        if (call[clen - 1] == '(') {
+            open = p + clen - 1; /* 已含开括号 */
+        } else {
+            open = p + clen;
+            while (*open == ' ' || *open == '\t' || *open == '\n' || *open == '\r') {
+                open++;
+            }
+            if (*open != '(') {
+                p = open; /* 非调用形态 -> 继续找下一处 */
+                continue;
+            }
+        }
+        arg_start = open + 1;
+        for (p = open + 1; *p != '\0'; p++) {
+            if (in_str) {
+                if (*p == '\\' && p[1] != '\0') {
+                    p++;
+                } else if (*p == '"') {
+                    in_str = 0;
+                }
+                continue;
+            }
+            if (*p == '"') {
+                in_str = 1;
+                continue;
+            }
+            if (*p == '(' || *p == '[' || *p == '{') {
+                depth++;
+                continue;
+            }
+            if (*p == ')' || *p == ']' || *p == '}') {
+                if (depth == 0 && *p == ')') {
+                    return (arg == arg_index) ? ksc_slice_trim(arg_start, p) : NULL;
+                }
+                depth--;
+                continue;
+            }
+            if (*p == ',' && depth == 0) {
+                if (arg == arg_index) {
+                    return ksc_slice_trim(arg_start, p);
+                }
+                arg++;
+                arg_start = p + 1;
+            }
+        }
+        return NULL;
+    }
+}
+
+/* 纯标识符（[A-Za-z0-9_] 非空）判定。 */
+static int ksc_is_ident(const char *s)
+{
+    const char *p;
+
+    if (s == NULL || s[0] == '\0') {
+        return 0;
+    }
+    for (p = s; *p != '\0'; p++) {
+        int ok = (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
+                 (*p >= '0' && *p <= '9') || *p == '_';
+        if (!ok) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* body 中是否存在 `ident = <rhs>;` 且 rhs 含 token（覆盖 `int ident = ...` 形态）。 */
+static int ksc_ident_assigned_token(const char *body, const char *ident, const char *token)
+{
+    size_t ilen;
+    const char *p;
+
+    if (body == NULL || ident == NULL || token == NULL) {
+        return 0;
+    }
+    ilen = strlen(ident);
+    p = body;
+    while ((p = strstr(p, ident)) != NULL) {
+        const char *q = p + ilen;
+        int left_ok = (p == body) ||
+                      !((p[-1] >= 'a' && p[-1] <= 'z') ||
+                        (p[-1] >= 'A' && p[-1] <= 'Z') ||
+                        (p[-1] >= '0' && p[-1] <= '9') || p[-1] == '_');
+        int right_ok = !((*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z') ||
+                         (*q >= '0' && *q <= '9') || *q == '_');
+        if (left_ok && right_ok) {
+            const char *s = q;
+            while (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r') {
+                s++;
+            }
+            if (*s == '=' && s[1] != '=') {
+                const char *e = strchr(s, ';');
+                if (e != NULL && ksc_strnstr(s, (size_t)(e - s), token)) {
+                    return 1;
+                }
+            }
+        }
+        p += ilen;
+    }
+    return 0;
 }
 
 static void ksc_put_item(ksc_story_item_t *it, const char *id, const char *title)
@@ -1251,4 +1539,157 @@ TEST_CASE("story cache: fetch primitive + front branch + module wiring anchors (
         ksc_file_contains("firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
                           "SdCardMounted"),
         "SC-A2 RED: waveshare 板级无 SdCardMounted 实现（前置阻断项未落）。");
+}
+
+/* ========================================================================== *
+ * TEST 11 — WF-F2-06 覆盖层键帽槽：知道了 / 关闭 走 keybar 纯逻辑单源（SC-A5）
+ * coverage: SC-A5 -- 可见降级提示的 chrome 面：覆盖层出现时底栏键帽槽不得再是 P3
+ *           列表基层文案（说话·双击看 / 下移）——此刻两键真实行为都是「关闭回列表」
+ * ========================================================================== */
+TEST_CASE("story body-unavailable overlay: keycap slots say 知道了/关闭 single-source (SC-A5)",
+          "[story_cache][SC-A5][UI][linux]")
+{
+    const char *left = NULL;
+    const char *right = NULL;
+    int r;
+
+    r = kidpal_keybar_story_slots(KSC_PAGE_BODY_UNAVAILABLE, &left, &right);
+    ksc_require_impl(r, "[C11] kidpal_keybar_story_slots(KSTORY_PAGE_BODY_UNAVAILABLE)");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(
+        0, r,
+        "SC-A5 RED: 覆盖层态键帽槽未裁决成功（应 0；当前回落 P3 基层槽表 = "
+        "说话·双击看/下移，与两键真实行为「关闭回列表」不符）。");
+    TEST_ASSERT_NOT_NULL_MESSAGE(left, "SC-A5 RED: 覆盖层态左槽为空。");
+    TEST_ASSERT_NOT_NULL_MESSAGE(right, "SC-A5 RED: 覆盖层态右槽为空。");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(
+        "知道了", left,
+        "SC-A5 RED: 覆盖层态左槽非「知道了」（设计稿 v6 p3-body-unavailable 底栏左键；"
+        "KEY 此刻 = 关闭回列表）。");
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(
+        "关闭", right,
+        "SC-A5 RED: 覆盖层态右槽非「关闭」（设计稿 v6 p3-body-unavailable 底栏右键；"
+        "BOOT 此刻 = 关闭回列表）。");
+
+    /* 负向：不得是 P3 列表基层槽文案（提示与实际动作不符 = 状态误导）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        strcmp(left, "说话·双击看") != 0,
+        "SC-A5 RED: 覆盖层左槽仍是列表基层「说话·双击看」（状态误导面）。");
+    TEST_ASSERT_TRUE_MESSAGE(
+        strcmp(right, "下移") != 0,
+        "SC-A5 RED: 覆盖层右槽仍是列表基层「下移」（BOOT 此刻真实行为是关闭回列表）。");
+
+    /* 防御面（既有 keybar 契约不破）：out 指针 NULL -> -1。 */
+    left = NULL;
+    right = NULL;
+    TEST_ASSERT_EQUAL_INT_MESSAGE(
+        -1, kidpal_keybar_story_slots(KSC_PAGE_BODY_UNAVAILABLE, NULL, &right),
+        "SC-A5 RED: 覆盖层态 out_left=NULL 未返回 -1。");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(
+        -1, kidpal_keybar_story_slots(KSC_PAGE_BODY_UNAVAILABLE, &left, NULL),
+        "SC-A5 RED: 覆盖层态 out_right=NULL 未返回 -1。");
+}
+
+/* ========================================================================== *
+ * TEST 12 — WF-F2-06 覆盖层页点隐藏：状态纳入有效 overlay 判据（SC-A5）
+ * coverage: SC-A5 -- 可见降级提示的 chrome 面：覆盖层出现时 3 个页点不得常显
+ *           （brief:101「覆盖层……不显示页点」/ requirements:382「页点消失 = 覆盖层口径」）
+ * 强度 = 源锚代理（符号链 ≠ 运行时观察；真帧目检归 SC-A9 live-manual）
+ * ========================================================================== */
+TEST_CASE("story body-unavailable overlay: state drives page-dot hiding predicate (SC-A5)",
+          "[story_cache][SC-A5][UI][structural][linux]")
+{
+    char *fn;
+    char *arg;
+    int ok;
+
+    fn = ksc_read_function("firmware/main/display/lcd_display.cc",
+                           "static void kidpal_keybar_sync_locked(void)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        fn,
+        "SC-A5 RED: lcd_display.cc 无 kidpal_keybar_sync_locked（键帽条/页点刷新单点）"
+        "——页点可见性无裁决入口。");
+    arg = ksc_call_arg(fn, "kidpal_keybar_dots(", 1);
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        arg,
+        "SC-A5 RED: kidpal_keybar_sync_locked 内无 kidpal_keybar_dots(...) 调用"
+        "（页点显隐裁决缺席）。");
+
+    /* 有效 overlay 判据 = 传给 dots 的第 2 实参。三种合法落法都接受：
+     *  (a) 实参表达式直接含覆盖层态（如 overlay_top || story_sub == ...）;
+     *  (b) 实参是变量，其在本函数内的赋值右侧含覆盖层态;
+     *  (c) 实参 = overlay_top，且 _front_is_overlay() 本身纳入该态（单源放层判据）。 */
+    ok = (strstr(arg, "KSTORY_PAGE_BODY_UNAVAILABLE") != NULL);
+    if (!ok && ksc_is_ident(arg)) {
+        ok = ksc_ident_assigned_token(fn, arg, "KSTORY_PAGE_BODY_UNAVAILABLE");
+    }
+    if (!ok && strcmp(arg, "overlay_top") == 0) {
+        char *ov = ksc_read_function("firmware/main/display/kidpal_render_node.cc",
+                                     "int kidpal_render_node_front_is_overlay(void)");
+        ok = (ov != NULL && strstr(ov, "KSTORY_PAGE_BODY_UNAVAILABLE") != NULL);
+        free(ov);
+    }
+    TEST_ASSERT_TRUE_MESSAGE(
+        ok,
+        ksc_fm("SC-A5 RED: 页点可见性判据未纳入 KSTORY_PAGE_BODY_UNAVAILABLE —— "
+               "kidpal_keybar_dots 第 2 实参 = 「%s」，覆盖层出现时 3 页点会常显"
+               "（brief:101 / requirements:382 要求覆盖层不显示页点）。",
+               arg));
+
+    free(arg);
+    free(fn);
+}
+
+/* ========================================================================== *
+ * TEST 13 — WF-F2-06 覆盖层唯一画法源：story_page.c 不再自画键帽（SC-A5）
+ * coverage: SC-A5 -- 可见降级提示的 chrome 面：覆盖层自画 [知道了]/[关闭] 位于不透明
+ *           底条（y 262-300）之下 = 死绘制；键帽单源 = keybar.c
+ * 强度 = 源锚代理（符号链 ≠ 运行时观察；真帧目检归 SC-A9 live-manual）
+ * ========================================================================== */
+TEST_CASE("story body-unavailable overlay: no self-drawn keycaps in story_page (SC-A5)",
+          "[story_cache][SC-A5][UI][structural][linux]")
+{
+    size_t len = 0;
+    char *src;
+    char *block;
+
+    src = ksc_read("firmware/main/display/story_page.c", &len);
+    (void)len;
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        src, "SC-A5 RED: 读不到 story_page.c（源码结构齿 root 注入失败）。");
+
+    block = ksc_extract_block(src, "case KSTORY_PAGE_BODY_UNAVAILABLE:",
+                              "case KSTORY_PAGE_");
+    TEST_ASSERT_NOT_NULL_MESSAGE(
+        block,
+        "SC-A5 RED: story_page.c 无 KSTORY_PAGE_BODY_UNAVAILABLE 渲染分支（或其后无"
+        "下一个 case，无法圈定覆盖层渲染路径）。");
+
+    /* 自检：确认截到的是覆盖层渲染分支本体（含话术单源宏）。防「截空块 ->
+     * 缺失即通过」——删除整段代码不得把「无自画键帽」齿伪装成绿。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(block, "KSTORY_BODY_UNAVAILABLE_HINT") != NULL,
+        "SC-A5 RED: 截取的覆盖层分支未含 KSTORY_BODY_UNAVAILABLE_HINT"
+        "（圈定失败，断言语义自检）。");
+
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(block, "\"[知道了]\"") == NULL,
+        "SC-A5 RED: 覆盖层渲染分支仍自画 [知道了] 键帽字面（位于不透明底条之下 = "
+        "死绘制；键帽必须单源 keybar.c）。");
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(block, "\"[关闭]\"") == NULL,
+        "SC-A5 RED: 覆盖层渲染分支仍自画 [关闭] 键帽字面（同一语义两个画法源）。");
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(block, "const char *const caps") == NULL,
+        "SC-A5 RED: 覆盖层渲染分支仍保留自画键帽容器数组（caps[]）。");
+
+    /* 唯一画法源的另一半：keybar.c 必须承载该态槽文案（防「只删不加」变成
+     * 无键帽覆盖层——单源二选一必须选 keybar）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        ksc_file_contains("firmware/main/display/keybar.c",
+                          "KSTORY_PAGE_BODY_UNAVAILABLE"),
+        "SC-A5 RED: keybar.c 未承载 KSTORY_PAGE_BODY_UNAVAILABLE 槽文案"
+        "（删掉 story_page 自画键帽后会变成无键帽覆盖层）。");
+
+    free(block);
+    free(src);
 }

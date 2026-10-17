@@ -96,8 +96,11 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
      * 录音态「收尾」（KEY 短按 = 停录保存, v1.47）/ 阅读态「长按退出」（KEY 长按 =
      * 退出阅读回列表）/ 删除确认「删掉」（KEY 短按 = 确认删除）; 右槽 BOOT 提示
      * 随态（「结束」= 录音中兜底收尾与全局会话结束手势一致 /「翻屏」= BOOT 短按
-     * 翻屏 /「算了」= BOOT 任一手势取消回列表）。LIST/STAMP 不落本表（基层页槽表 /
-     * 演出帧无键帽）-> -1, 消费方回落既有路径。 */
+     * 翻屏 /「算了」= BOOT 任一手势取消回列表）。正文取不回提示（WF-F2-06,
+     * 261016-p3-story-body-sd-cache）: 两键任一手势均关闭回列表, 底栏文案单源 =
+     * story_page.h 的 KSTORY_BODY_UNAVAILABLE_KEYCAP_* 宏（本文件零字面重抄, 守
+     * KB-E2 闭集字面红线）。LIST/STAMP 不落本表（基层页槽表 / 演出帧无键帽）-> -1,
+     * 消费方回落既有路径。 */
     switch (substate) {
         case KSTORY_PAGE_RECORDING:
             *out_left  = "收尾";
@@ -110,6 +113,12 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
         case KSTORY_PAGE_DELETE:
             *out_left  = "删掉";
             *out_right = "算了";
+            return 0;
+        case KSTORY_PAGE_BODY_UNAVAILABLE:
+            /* WF-F2-06 正文取不回覆盖层底栏（设计稿 v6 p3-body-unavailable 逐字）:
+             * 文案经 story_page.h 单源宏符号引用（见上注, KB-E2 零字面重抄）。 */
+            *out_left  = KSTORY_BODY_UNAVAILABLE_KEYCAP_KEY;
+            *out_right = KSTORY_BODY_UNAVAILABLE_KEYCAP_BOOT;
             return 0;
         default:
             return -1;

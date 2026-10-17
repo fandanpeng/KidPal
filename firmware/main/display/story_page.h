@@ -367,6 +367,14 @@ int kidpal_story_render_page_state(int node_cached_page, int session_page,
 #define KSTORY_BODY_UNAVAILABLE_HINT "这篇暂时打不开"
 #define KSTORY_BODY_UNAVAILABLE_SUB  "等会儿再试试吧"
 
+/* 底栏键帽文案单源（设计稿 v6 p3-body-unavailable 底栏逐字；两键真实行为都是
+ * 「关闭回列表」）：键帽绘制单源 = keybar.c（kidpal_keybar_story_slots 经本二宏
+ * 符号引用消费）。文案住本头而非 keybar.c——KB-E2 冻结齿要求 keybar.c 零重抄
+ * 语音闭集键帽字面（「知道了」是闭集成员, 字面只许住 kidpal_voice_states.c 与
+ * 话术单源头）。 */
+#define KSTORY_BODY_UNAVAILABLE_KEYCAP_KEY  "知道了"
+#define KSTORY_BODY_UNAVAILABLE_KEYCAP_BOOT "关闭"
+
 /* 10s 无操作自动消失（**静默**——不显示倒计时；到点调用方静默关闭回列表并复位）。 */
 #define KSTORY_BODY_UNAVAILABLE_IDLE_MS 10000UL
 

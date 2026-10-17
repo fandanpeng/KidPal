@@ -1227,19 +1227,24 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         case KSTORY_PAGE_BODY_UNAVAILABLE: {
             /* WF-F2-06 正文取不回提示（TaskPackage 261016-p3-story-body-sd-cache;
              * requirements v1.64 S-F2.1 AC7）——整屏纯告知覆盖层：大字 + 副句
-             * （话术单源 = story_page.h 的两宏）+ 所选条目行（星星 + 标题 + 日期）+
-             * 底部键帽 [知道了][关闭]（KEY／BOOT 任一手势关闭）。版式按
-             * docs/ui/V6/p3-body-unavailable.png 定坐标。**静默**（不显剩余秒数;
-             * 10s 自动消失, GAP-1 观感细节归真机设计 review）。 */
+             * （话术单源 = story_page.h 的两宏）+ 所选条目行（星星 + 标题 + 日期）。
+             * **键帽不在本分支绘制**：底栏 [知道了][关闭] 的单源 = keybar.c
+             * （kidpal_keybar_story_slots, 由 lcd_display.cc 三槽 chrome 落屏;
+             * 本页自画会落在不透明底条之下 = 死绘制、同一语义两个画法源——SC-A5
+             * TEST 13 钉唯一画法源）。KEY／BOOT 任一手势关闭回列表（静默关闭）。
+             * 版式按 docs/ui/V6/p3-body-unavailable.png 定坐标；标题水平居中（设计稿
+             * 视觉 26px 大字：设备侧可用大字字体 font_puhui_20_4 需 LV_FONT_FMT_TXT_LARGE，
+             * 该开关仅设备 sdkconfig 开启、host runner sdkconfig 不在本包 changeManifest，
+             * 故本包取舍 = 沿用 14px 全量普惠体 + 居中，字号差归真机设计 review/后续轮）。
+             * **静默**（不显剩余秒数; 10s 自动消失, GAP-1 观感细节归真机设计 review）。 */
             lv_obj_t *q;
             int hint_y = 64;
             int sub_y = 96;
             int box_y = 130;
-            int cap_y = LV_VER_RES - 34;
 
             q = lv_label_create(scr);
             lv_label_set_text(q, KSTORY_BODY_UNAVAILABLE_HINT);
-            lv_obj_set_pos(q, 118, hint_y);
+            lv_obj_align(q, LV_ALIGN_TOP_MID, 0, hint_y);
             lv_obj_set_style_text_color(q, lv_color_hex(KSY_COLOR_INK), 0);
             lv_obj_set_style_text_font(q, &font_puhui_14_1, 0);
 
@@ -1262,26 +1267,6 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                           KSY_COLOR_TEXT);
                 ksy_label(scr, list->items[v->cursor].date, 300, box_y + 12,
                           KSY_COLOR_INK);
-            }
-
-            /* 底部键帽（[知道了] = KEY / [关闭] = BOOT——任一手势均关闭）。 */
-            {
-                static const char *const caps[2] = { "[知道了]", "[关闭]" };
-                int xs[2] = { 12, LV_HOR_RES - 78 };
-                int i;
-                for (i = 0; i < 2; i++) {
-                    lv_obj_t *cap = lv_obj_create(scr);
-                    lv_obj_remove_style_all(cap);
-                    lv_obj_set_size(cap, 66, 24);
-                    lv_obj_set_pos(cap, xs[i], cap_y);
-                    lv_obj_set_style_radius(cap, 8, 0);
-                    lv_obj_set_style_bg_opa(cap, LV_OPA_TRANSP, 0);
-                    lv_obj_set_style_border_width(cap, 2, 0);
-                    lv_obj_set_style_border_color(cap, lv_color_hex(KSY_COLOR_INK), 0);
-                    lv_obj_set_style_border_opa(cap, LV_OPA_COVER, 0);
-                    lv_obj_clear_flag(cap, LV_OBJ_FLAG_SCROLLABLE);
-                    ksy_label(scr, caps[i], xs[i] + 8, cap_y + 3, KSY_COLOR_INK);
-                }
             }
             break;
         }
