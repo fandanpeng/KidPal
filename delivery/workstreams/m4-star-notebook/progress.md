@@ -309,3 +309,13 @@
 - **BLOCKING（交回 planner 派 fixer）**：WF-F2-06 覆盖层出现时底栏仍是 P3 列表基层形态——左右槽 `说话·双击看`/`下移`（实际两键均「关闭回列表」＝状态误导）+ 3 页点未隐藏（brief:101「不显示页点」/requirements:382「页点消失 = 覆盖层口径」/设计稿均要求隐藏）；`story_page.c` 覆盖层内自画的 `[知道了]`/`[关闭]` 键帽被不透明 top-layer 底条遮住 = 死绘制（双画法源）。修面 = `keybar.c` + `lcd_display.cc`（+ 删 `story_page.c` 自画键帽），**均不在本包 changeManifest** → planner 须先扩清单；并须核 `keybar_three_slot.acceptance.c` 对该值域的冻结负向齿。次条 SHOULD = 标题字号/居中与设计稿「大字」不符（建议随修复轮一并处理）。
 - **留账**：隐私面按 human OQ-3 只落盘不加防护（TECH-261016 deferred）；真机 live-manual（SC-A9）仍为收口前置；本包**未进入合并门**。
 
+## 2026-10-17 · 261016-p3-story-body-sd-cache BLOCKING 修复 + 复收口 + 合并门 ESCALATE（planner）
+
+- **修复路径**：acceptance-author **tighten-only 补 3 齿**（SC-A5 可见 chrome 面：键帽槽「知道了/关闭」/ 页点隐藏 / 死绘制清除；只增不改，红基线实跑）→ fixer 最小修（`keybar.c` 新 case + `story_page.h` 宏单源——避 `keybar_three_slot.acceptance.c` KB-E2 对「知道了」字面零容忍；`lcd_display.cc` `dots_overlay` 纳入 5 号态；`story_page.c` 删自画键帽死绘制 + 标题居中）→ scoped r5 全绿 → integrator 复收口（final r6 全绿，10 闸 ok / observedGateExit=0 / factOk=true）。
+- **实跑**：host `195 Tests / 3 Failures`（新增红 0；3 红仅上游 AB-A1/A2/A4）；server `181 passed / 4 deselected / 33 subtests`；`server/tests` 91 passed；设备真编 build-pass（`xiaozhi.bin 0x3217f0`，余 9%）。SC-A5 三条新齿变异逐条可杀（删 case / 摘判据 / 恢复死绘制 → 各自转红，还原复绿）。
+- **findings 处置**：BLOCKING = **RESOLVED**（fix `8f80394a` + r5/r6 + 新齿）；SHOULD「标题大字」= **deferred**（host sdkconfig 开 `LV_FONT_FMT_TXT_LARGE` 需扩单、不在 manifest；设备内置 30px 字体缺字；居中已修）→ 视觉批候选，不得记达标；NIT `StorySendFetchBatch` 未过 id_safe = accepted-with-rationale（无注入面，front 兜底）；NIT docs/notes stale = 主线程已代落。
+- **收口件**：commit `0f4257d3`（复收口）+ `5e98dd19`（pod-retro + spine `anchors.imp` 回填）；`closeout-check --update-index` 绿；TECH-261013 结项归档（consumed-by 本包）。
+- **合并门**：`supervisor-verdict-gate.mjs` = **ESCALATE**（`riskTier=critical`——diff 命中 `firmware/sdkconfig` 关键路径；declared high → effective critical），`supervisor-gate-check.mjs` exit 0；board status = `blocked`。
+- **停 human（预期路径）**：① 真机 SC-A9 live-manual 轮（human 持板，操作单 = `delivery/taskpackages/261016-p3-story-body-sd-cache/device-round-checklist.md`）；② 通过后落 `human-decision`（`approve-escalated-merge`）→ `merge-driver --pod ... --human-approval-ref <eventId>` 本地合并。
+- **留账**：视觉批候选（标题大字 / 覆盖层真帧目检结论）；loop-retro 阈值 advisory（16 ≥ 3，发起责任 = 主线程）。
+
