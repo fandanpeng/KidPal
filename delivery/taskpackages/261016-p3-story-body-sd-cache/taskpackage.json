@@ -56,7 +56,7 @@
     "docs-sync"
   ],
   "sourceRefs": [
-    "docs/requirements.md:S-F2.1",
+    "docs/requirements.md#S-F2.1",
     "S-F2.1-AC2",
     "S-F2.1-AC7",
     "S-F2.3",
@@ -66,14 +66,14 @@
     "delivery/taskpackages/261016-p3-story-body-sd-cache/plan.md"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md §四 kidpal_story_fetch",
-    "docs/contracts/interface-contract.md §1.3④ story_text"
+    "docs/contracts/interface-contract.md#§四",
+    "docs/contracts/interface-contract.md#§1.3④"
   ],
   "docRefs": [
-    "docs/requirements.md",
-    "docs/architecture.md",
+    "docs/requirements.md#S-F2.1",
+    "docs/architecture.md#§10",
     "docs/ADR.md",
-    "docs/contracts/interface-contract.md",
+    "docs/contracts/interface-contract.md#§四",
     "delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md",
     "delivery/intake/261016-p3-story-body-sd-cache.md",
     "docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md",
@@ -104,29 +104,36 @@
     "firmware/main/display/story_cache.c",
     "firmware/main/display/story_cache.h",
     "firmware/main/boards/waveshare-s3-rlcd-4.2/story_sd_io.cc",
+    "firmware/main/boards/common/board.h",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
     "firmware/main/CMakeLists.txt",
     "firmware/main/protocols/protocol.cc",
+    "firmware/main/protocols/protocol.h",
     "firmware/main/mcp_server.cc",
     "firmware/main/display/story_page.c",
     "firmware/main/display/story_page.h",
     "firmware/sdkconfig",
-    "server/gateway/front/front_app.py"
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "firmware/main/test/story_cache.acceptance.c",
+    "server/acceptance/test_story_fetch.py"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/host_app (新增/追加 host 齿)",
+      "path": "firmware/main/test/story_cache.acceptance.c（新增；host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 追加登记）",
       "kind": "additive-host",
-      "note": "story_cache 索引 / 当屏缺失判定 / 读回 id 校验 / 预取队列决策单测；open_reader id 校验（相等进阅读 / 不等拒绝）；OPEN_READER 三分支决策单测。建议落独立 story_cache.acceptance.c + 既有 story_page_v2 追加，既有齿零触碰"
+      "note": "索引 add 幂等去重 / 满 16 拒绝 / has 命中与未命中 / clear；当屏缺失判定（list 3 条 + 空 cache → 3；含 1 条 → 2；越界/空 list → 0）；读回 id 校验（相等 1 / 不等 0 / 空 id 0 / cursor 越界 0 / NULL 0）；预取决策（LIST+voice0+ws0+since>=interval → 1；RECORDING/READER/STAMP/DELETE、voice_front=1、ws_busy=1、since<interval → 0）；OPEN_READER 三分支决策（命中读卡零网络 / 未命中插队 fetch / 取不回降级）"
     },
     {
-      "path": "server/acceptance (kidpal_story_fetch 收帧回帧)",
+      "path": "server/acceptance/test_story_fetch.py（新增）",
       "kind": "additive",
-      "note": "front 消费分支：合法 id 逐篇回 story_text / 非法与不存在 id 拒绝不回帧 + 审计 / 空 ids no-op / 多 id 逐篇顺序"
+      "note": "合法 id → 恰一帧 story_text 且形状 == gw_story.story_text(read_story_file(...))（零新字段、ledger 有 seq 时带 seq）；非法 id（../x、a/b、无哨兵头、不存在）→ 拒绝 + audit log + 零帧；空 ids → no-op 零帧；多 id → 逐篇顺序、帧序 == ids 序"
     },
     {
       "path": "真机 live-manual（收口轮）",
       "kind": "live-manual",
-      "note": "SD 读回 roundtrip；双击三类记录进阅读；离线双击降级提示；双击非本机录制篇显示选中篇（id 错配回归位）；预取期语音无卡顿"
+      "note": "SD 读回 roundtrip（fresh_save 后文件在 / 重启后仍可读）；双击三类记录进阅读；离线双击已留存照常开、未留存走 WF-F2-06（10s 自动消失 + KEY/BOOT 任一关闭）；双击非本机录制篇显示选中篇（id 错配回归位）；预取期语音无卡顿；heap 水位读数（LFN 代价）"
     }
   ],
   "crossEnd": {
@@ -134,12 +141,12 @@
       {
         "face": "server",
         "path": "server/gateway/front/front_app.py",
-        "symbol": "kidpal_story_fetch 消费分支"
+        "symbol": "_consume_kidpal_control"
       },
       {
         "face": "firmware",
         "path": "firmware/main/protocols/protocol.cc",
-        "symbol": "SendKidpalStoryFetch"
+        "symbol": "SendKidpalStoryDelete"
       }
     ],
     "exempt": ""
@@ -233,5 +240,5 @@
   "docsSyncRequired": true,
   "docsSyncReason": "TECH-261013-p3-reader-entry-no-text-silent-noop 结项（consumed-by: 261016-p3-story-body-sd-cache）+ spine anchors.imp 回填（主线程写，非 integrator）+ review-packet 隐私降级申报；架构/契约面已冻结、本包零改动",
   "docsOwner": "integrator",
-  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。"
+  "notes": "riskTier=high 口径（triage reviewed plan frontmatter 权威 + human 改判 ②单包 Full 时维持不降）：跨固件/云端两端、新增 SD 只读镜像介质路径与设备发起请求-应答环，但契约与决策已在上游冻结。已知地雷前置申报：SC-A7/A8 为 wire 帧断言、SC-A1 为 host 纯逻辑断言 → supervisor 机械闸可能判 all-mock 触 riskTier 重算 high → 需 human 放行（261012/261010 同款先例申报），本包 riskTier 已是 high，合并门升级 human 为预期路径。mcp_server.cc 区域分工纪律：块 1 只动 VRT_ROUTE_STORY_TEXT 分支，块 3 只动 KSPV2_ACT_OPEN_READER 分支，不得交叉污染。契约零改动（docs/contracts/** 本包禁写；wire 逐字对照上游契约）。scope-map 核对：builder allow firmware/** + server/** ✓；acceptance-author allow firmware/**/*.acceptance.c 与 server/**/acceptance/** ✓；docs/notes 落点无 agent 写权（上包 retro 教训）→ 如需板级 SD 目录说明文档，交主线程代落。launch prep 附带处置：docs/ui/UIUX-DESIGN-BRIEF.md 遗留的「updating 在途、下游禁引」警示行（本应随需求冻结撤除）由主线程代撤，留痕于 pod-events friction。上游已知红基线引 progress.md 2026-10-17 锚行，不手写数字。【1g architect 前置技术预评采纳 2026-10-17（advisory，不豁免门）】① id 校验不改 `kidpal_story_open_reader` 冻结签名（story_page_v2.acceptance.c:551 等已钉死），改新增纯逻辑 seam `kidpal_story_reader_id_match`（story_cache.c/.h）+ mcp_server OPEN_READER 消费侧调 open_reader 前校验；② 预取队列 / 双击插队 / pending 等待态 / SD 索引为一个共享单元，一次设计一次实现（单包最大工程风险点）；③ `SdCardMounted()` virtual 化（boards/common/board.h 默认 false + waveshare 板 public override）为前置阻断项；④ SD I/O 适配 sd_mounted 显式入参注入、先写卡成功才登记索引；⑤ front 复用 gw_story.story_text 零新字段、建议抽 story.py fetch_story 与 delete 共享 id 安全；⑥ LFN 键 = LFN_NONE → LFN_HEAP、codepage 437 保持、缓冲走 PSRAM；⑦ WF-F2-06 走 story_page.c 新增页态（不动 render_node）；⑧ fetch 路径不置 archive_pend / 不调 kidpal_story_on_saved（盖章侧效应恒假）。changeManifest 已按预评补至 17 条（含 host_app CMakeLists 与验收件）。crossEnd counterparts 指既有同族 seam（front `_consume_kidpal_control` / 固件 `SendKidpalStoryDelete`），本包在其旁新增 `kidpal_story_fetch` 消费分支与 `SendKidpalStoryFetch`（新符号；brief-inputs 的符号解析只认既有符号，故以 seam 为锚）。"
 }
