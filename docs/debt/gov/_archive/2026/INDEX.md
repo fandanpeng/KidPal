@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 86 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 87 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -97,3 +97,4 @@
 | [ARQ-260928-arch-change-retirement](ARQ-260928-arch-change-retirement.md) | /arch-change 与统一 intake（/triage-change 四面探测）并存期入口未定界——双入口都能进跨面变更，/arch-change 开场无「先查既有 spine」条款，治理流量归并或长期并存的定界未做 | 2026-10-15 | 261015-gov-review-face-loop-unify T23（第三路径 repurposing 结项，human 立项 ack + R3 GREEN 2026-10-15） |
 | [ARQ-261015-launch-prep-host-only-env-defer](ARQ-261015-launch-prep-host-only-env-defer.md) | launch-prep 对 host-only 可验 Lite 包缺「环境后置」快路径——前置整套固件环境等价化对不依赖 IDF 的包是纯开销，每树重复收取 | 2026-10-15 | — |
 | [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 2026-10-15 | — |
+| [ARQ-261016-intake-entry-identity-unstated](ARQ-261016-intake-entry-identity-unstated.md) | /triage-change 的跨面编排入口身份未进最高权威面 AGENTS.md——入口身份只存在于 triage 侧两个文件与 change-intake.md 一句抬头，AGENTS.md「四面入口」节把它收编成并列的「实现面变更」，读者会得出「triage 只是四面并列入口之一」的错误心智模型 | 2026-10-17 | 261016-gov-review-triage-entry-identity |

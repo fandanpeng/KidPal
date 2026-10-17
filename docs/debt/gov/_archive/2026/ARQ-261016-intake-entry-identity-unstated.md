@@ -2,13 +2,13 @@
 id: ARQ-261016-intake-entry-identity-unstated
 title: /triage-change 的跨面编排入口身份未进最高权威面 AGENTS.md——入口身份只存在于 triage 侧两个文件与 change-intake.md 一句抬头，AGENTS.md「四面入口」节把它收编成并列的「实现面变更」，读者会得出「triage 只是四面并列入口之一」的错误心智模型
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 AGENTS.md 入口节 / change-intake.md / change-triage.md 任一时并批）；或再出现一次跨面变更被误路由进错入口时立即升格
 opened: 2026-10-16
-closed: ""
-closedBy: ""
+closed: 2026-10-17
+closedBy: 261016-gov-review-triage-entry-identity
 paths: [AGENTS.md, .claude/references/change-intake.md, .claude/references/change-triage.md, .claude/commands/triage-change.md, .claude/agents/architect.md, .claude/references/architect-operating-model.md]
 source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与编排」节（2026-10-16 主线程更正留痕）, 主线程会话 2026-10-16 human 原话「不对，你再去查一下triage跟 intake 之间的关系，你这样设计的话就有个问题：…谁是这个总的编排者呢？」, docs/debt/gov/_archive/2026/ARQ-260928-triage-cross-face-intake-gap.md（前身批；其 paths 未含 AGENTS.md 即为本缺陷的直接实证）]
 ---
@@ -104,3 +104,7 @@ source: [delivery/intake/261016-p3-story-body-sd-cache.md 的「档位裁定与�
 ---
 
 **2026-10-16 注记（本条目承载批）**：建议 1/2/3/5（AGENTS.md 入口节显式化编排入口身份 / change-intake.md 自声明入口 + §8 消歧 / change-triage.md 标题与 §0 补正面陈述 / commands description 与正文补正面陈述）已由 261016-gov-review-triage-entry-identity 批承载，并随 OQ-4=(a) 增列 architect.md（self-def、human 显式批准破界）与 architect-operating-model.md（镜像转述）两处同源框架。本条目自身两处缺陷随本批更正：title 措辞由「未在任何 canonical 声明」改为「未进最高权威面 AGENTS.md」（对齐证据 2 自述）；paths 增列 change-triage.md + triage-change.md + architect.md + architect-operating-model.md。建议 4（check 齿）按 human 裁 OQ-3=(b) convention-only 留根。
+
+**结项（2026-10-17）**：本条目已由 `261016-gov-review-triage-entry-identity` 批承载并落地——建议 1/2/3/5 全落地（AGENTS.md 入口节显式化编排入口身份 / change-intake.md 自声明入口 + §8 消歧 / change-triage.md 标题与 §0 补正面陈述 / commands description 与正文补正面陈述），OQ-4=(a) 增列 `architect.md` 与 `architect-operating-model.md` 两处同源框架；建议 4（check 齿）按 human 裁 OQ-3=(b) convention-only 留根（去向见该批 PROPOSAL §6）。批制品 = `delivery/review/261016-gov-review-triage-entry-identity/`（FROZEN v0.3 PROPOSAL + landing-summary + landing-verdict PASS + retro）；落地 8 文件经独立 landing-verifier 核验、前置升级闸 PASS、已合并本地 main。落地期对条目自身的两处更正：证据 5「前身批未同步 AGENTS.md」经 `git show 2e43fc59/68ab0579` 实测**不成立**（AGENTS.md 在 260928 批确被同步，真漂移点是 261015-gov-review-face-loop-unify 新立的「四面入口」框架把前批身份陈述收编成并列项）——该更正已随本批 PROPOSAL §2 硬项段与 retro §3 F1 留痕。
+
+consumed-by: 261016-gov-review-triage-entry-identity
