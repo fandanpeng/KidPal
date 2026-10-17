@@ -1,12 +1,12 @@
 ---
-description: dev 侧变更分流前置门（对偶 /arch-change、/build-feature）。改 firmware/** 行为的变更开工前先过 architect 一次比例化 review：判五档（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）→ 人类确认/改判路由 → reviewed plan 按成熟度就近落地（大 feature 落 delivery/workstreams/<ws>/PROPOSAL.md，小 feature/bug 落 delivery/taskpackages/<id>/plan.md）→ 报告下一步命令。
+description: 变更分流 + 跨面编排入口（对偶 /arch-change、/build-feature）。改 firmware/** 行为的单面实现变更开工前先过 architect 一次比例化 review：判五档（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修）→ 人类确认/改判路由 → reviewed plan 按成熟度就近落地（大 feature 落 delivery/workstreams/<ws>/PROPOSAL.md，小 feature/bug 落 delivery/taskpackages/<id>/plan.md）→ 报告下一步命令。
 argument-hint: <plan 或想法，例如 plan mode 产出的实现思路，或 "修复线索 SSE 重复行"，或一份 plan 文件路径>
 ---
 
 # /triage-change
 
 你现在是 **主线程编排者**（人类主线程）。按 `.claude/references/change-triage.md` 的程序推进。
-这是 **dev 侧变更分流前置门**，对偶事实源侧的 `/arch-change` 与实现侧的 `/build-feature`：改 `firmware/**` 行为的变更（大 feature / 小 feature / bug 不分入口）开工前先过 architect 一次**比例化 review**，判它走哪档、把 reviewed plan 落到它的家。
+这是 **变更分流与跨面编排入口**（对偶事实源侧的 `/arch-change` 与实现侧的 `/build-feature`）：跨面变更（触面 ≥2）先做四面探测落 spine、再按 facePlan 派发各面；改 `firmware/**` 行为的单面实现变更（大 feature / 小 feature / bug 不分入口）开工前先过 architect 一次**比例化 review**，判它走哪档、把 reviewed plan 落到它的家。
 
 - **门性质**：Part-2 **工程门 / bootstrap 临时信任门**（权威在 K9 §11），**不是业务门、不进 DEV-GOVERNANCE §5 六门清单**；与业务运行时 6 门无涉。
 - **你编排但落盘归你（主线程）**：判断归被你派发的 `architect`（只读+审+返回裁决，零写入）；**落盘归你这个主线程**（主线程不受 per-agent enforce-scope 限，dev-loop.md §4）。作者≠判官：architect 审+起草，FROZEN 归人类。

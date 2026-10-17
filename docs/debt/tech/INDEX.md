@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 25（待拍板 0 / 待触发 19 / 已接受风险 6）；已结 18（归档索引见下）。
+**摘要**：未结 26（待拍板 0 / 待触发 20 / 已接受风险 6）；已结 18（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（19）
+## 待触发（20）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -36,6 +36,7 @@ _（无）_
 | [TECH-261014-sdkconfig-decorative-empty-section](TECH-261014-sdkconfig-decorative-empty-section.md) | NIT | firmware/sdkconfig 每次固件构建被追加装饰性空节（「Image Effects Configuration」块）——Kconfig 构建期回写使跟踪文件常驻脏、git status 噪音与误提交风险 | 下个固件 sdkconfig / 构建治理批顺带；或 sdkconfig 脏噪再次干扰收口对账（人工排除复现）时 |
 | [TECH-261014-session-end-channels-unwired](TECH-261014-session-end-channels-unwired.md) | MAJOR | 会话结束三通道有两通道未接线——60 秒超时设备侧零 timer producer、结束意图（云端判）WS 链路无下发，致一轮聊完后设备常驻聆听（实测：说「拜拜」后仍开着麦直到 WS 通道超时约 137 秒） | human 排期后的会话生命周期修复包；或下次动 session_state_machine / 会话收尾链的包顺带评估（本条体量含双阈值与云端判据取舍，不建议纯顺带） |
 | [TECH-261014-wakeword-connecting-voice-layer](TECH-261014-wakeword-connecting-voice-layer.md) | MAJOR | 唤醒词路径 connecting 态事件被合并跳过致 VOICE 层不推入、语音页整轮不显示 | human 排期后的固件修复包（/triage-change 路由）；或下一个动 application.cc 状态分发 / display 前台桥的包顺带承接 |
+| [TECH-261016-sd-story-confidentiality](TECH-261016-sd-story-confidentiality.md) | COULD | story 正文落 SD 卡后缺可读性防护——需口令 + 存储混淆（本批只落盘、human 2026-10-16 裁留待后续处理） | 下个动 P3 存储层 / SD 数据面的包；或产品出现「设备离手」场景（送修 / 转赠 / 二手 / 家长要求可携带）前必须有 |
 
 ## 已接受风险（6）
 

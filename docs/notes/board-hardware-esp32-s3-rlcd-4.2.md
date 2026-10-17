@@ -58,8 +58,8 @@
 | 4.2" RLCD 400×300 | LVGL XRGB8888 渲染（`kidpal_render_node`）|
 | BOOT 键 | 语音会话/翻页（见上表） |
 
-未接入（官方在板、固件未用）：**KEY 键（GPIO 18）**、Micro SD 卡槽（注意：art 资产
-用的是内部 Flash 的 SPIFFS art 分区，非 SD 卡）。
+接入变更（原「未接入」两件均已接）：**KEY 键（GPIO 18）** 已随 260911-key-route-a1 接线（三手势）；
+**Micro SD 卡槽** 已随 261016-sd-card-mount 接入（SDMMC 1-bit 挂载 `/sdcard` 能力就绪，2026-10-16；业务数据不落板、决策 24 介质禁令不变）。art 资产用的是内部 Flash 的 SPIFFS art 分区，非 SD 卡。
 
 ## 四、装配/使用注意（官方原文要点）
 

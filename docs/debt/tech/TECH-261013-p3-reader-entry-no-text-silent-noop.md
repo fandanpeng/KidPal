@@ -34,3 +34,19 @@ source: 261012-p3-topbar-ink-bleach-fix TB-A4 真机轮（2026-10-13）human 观
 - ③ 真机复验项（随修包）：双击进阅读 + 阅读态标题（TECH-261012 修复 A 的自愈预测一并闭环）。
 
 **风险**：riskTier: medium——层 1 修复明确（低风险快修）；层 2 通路未裁（触面待 intake 定，候选 a 触契约）。修通前 S-F2.3 阅读态对存量故事不可用。owner = dev-loop；登记后工作交出（handoff = trigger 所列）。
+
+---
+
+**追加（2026-10-16，主线程登记）**：
+
+**① 本条目已被立项消费**：跨面变更 `261016-p3-story-body-sd-cache` 建 spine（[delivery/intake/261016-p3-story-body-sd-cache.md](../../../delivery/intake/261016-p3-story-body-sd-cache.md)）+ companion 设计稿（[.design.md](../../../delivery/intake/261016-p3-story-body-sd-cache.design.md)），`sources.refs` 引本条目 id，本条目 `trigger` 所列「story_text 通路」包已成立——结项待该变更落地（结项行带 `consumed-by: 261016-p3-story-body-sd-cache`）。
+
+**② 同一消费面上新发现一条缺陷（本条目原载范围之外，经 human 2026-10-16 同意并入本条目）**：
+
+> **`kidpal_story_open_reader` 不校验 id/光标——缓存非空时「打开错的」**。地面真值：[story_page.c:1707-1732](../../../firmware/main/display/story_page.c#L1707-L1732) 的 `kidpal_story_open_reader` 只拿传入 `st->text` 分页并置 `v->page = KSTORY_PAGE_READER`，**全程不读 `v->cursor`、不比对 `st->id` 与所选列表项 id**；渲染面 [story_page.c:1216-1237](../../../firmware/main/display/story_page.c#L1216-L1237) 的标题与正文亦均取自该缓存。消费侧 [mcp_server.cc:305-317](../../../firmware/main/mcp_server.cc#L305-L317) 的 `KSPV2_ACT_OPEN_READER` 分支只判 `g_story_text.id[0] != '\0'` 非空、不判相等。
+>
+> **可复现场景**：本开机录过至少一篇（`g_story_text` 被归档回传填充为该篇）后，在列表里用 BOOT 把光标移到**另一篇**再双击——进阅读态显示的是**刚录的那一篇**，不是光标选中的那一篇。与层 1 的「静默无反应」是**两种不同症状**：一个是装作没反应，一个是**自信地显示错内容**，后者对孩子更危险（他会以为这就是他自己选的那篇）。
+>
+> **修法**：并入 `261016-p3-story-body-sd-cache`（其 T4 已含本项），`kidpal_story_open_reader` 或其消费侧必须校验「被打开正文的 id == 光标所选行 id」，不符即拒绝并走可见降级。
+
+**③ 本条目 `severity` 复核建议**：层 1 静默 + 层 2 通路缺失 + 上述 id 错配三条同属本面，且 ② 的 symptom 比原载的 ① 更重（显示错内容 vs 无反应）。`SHOULD` 是否该升——留待 `architect-reviewer` 在该变更 `/arch-change` 四分类时一并判，本处不自行改字段（纪律：正文只追加）。

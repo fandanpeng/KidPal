@@ -30,6 +30,11 @@
 #include <time.h>                     /* K5: time/localtime_r/mktime（RTC <-> 系统时间桥） */
 #include <freertos/task.h>            /* K5: 周期时间维护 task */
 #include "time_sync.h"                /* K5 seam [S1]: bcd_encode / write_decision 纯逻辑单源 */
+#include <esp_vfs_fat.h>              /* 包 261016-sd-card-mount: esp_vfs_fat_sdmmc_mount / mount_config */
+#include <sdmmc_cmd.h>               /* 包 261016-sd-card-mount: sdmmc_card_t / sdmmc_card_print_info */
+#include <driver/sdmmc_host.h>       /* 包 261016-sd-card-mount: SDMMC_HOST_DEFAULT / sdmmc_slot_config_t */
+#include <stdio.h>                   /* 包 261016-sd-card-mount: 探针 VFS 文件 I/O (fopen/fwrite/fread/fclose/remove) */
+#include <errno.h>                   /* 包 261016-sd-card-mount: 探针失败步 errno 诊断 */
 
 /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
  * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
@@ -262,6 +267,11 @@ private:
     int s_env_ok   = 0;
     int s_env_temp = 0;
     int s_env_rh   = 0;
+
+    /* 包 261016-sd-card-mount (TF 卡接入): 启动期 SDMMC 挂载标志。InitializeSdCard
+     * 成功置真、失败/无卡置假; 经 SdCardMounted() 供将来消费方判 /sdcard 能力就绪
+     * （本包自身零消费方）。默认假 = 未挂载保守态。 */
+    bool s_sd_mounted = false;
 
     void InitializeI2c() {
         i2c_master_bus_config_t i2c_bus_cfg = {};
@@ -819,6 +829,143 @@ private:
         }
     }
 
+    /* 包 261016-sd-card-mount (TF 卡接入——SDMMC 1-bit 挂载 /sdcard 能力就绪, 降级
+     * 不崩): 启动期挂载 TF 卡到 SD_MMC_MOUNT_ROOT。卡在位 -> 挂载成功 + 卡信息打印
+     * (sdmmc_card_print_info, 真机 A1 观察点) + s_sd_mounted 置真; 无卡/坏卡/挂载
+     * 失败 -> ESP_ERROR_CHECK_WITHOUT_ABORT 承接 (只打印错误码, 绝不 panic 重启) +
+     * 置 s_sd_mounted=false + WARN 继续, 不阻断启动、不碰语音主链路 (真机 A2 无卡
+     * 观察点)。1-bit 模式 (本板只引出 D0); format_if_mount_failed=false = 坏卡/异
+     * 格式不销毁数据、只报错降级 (对偶 InitializeArt 既有范式)。热插拔检测第一版
+     * 不做。参考 = 官方例程 sdcard_bsp.cpp (只读参考重写, 不直接改参考树)。 */
+    void InitializeSdCard() {
+        sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+        sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+        slot_config.clk   = SD_MMC_CLK_GPIO;   /* GPIO_NUM_38 */
+        slot_config.cmd   = SD_MMC_CMD_GPIO;   /* GPIO_NUM_21 */
+        slot_config.d0    = SD_MMC_D0_GPIO;    /* GPIO_NUM_39 */
+        slot_config.width = 1;                 /* 1-bit: 本板只引出 D0 (SDMMC 四线需 D1-D3) */
+
+        esp_vfs_fat_sdmmc_mount_config_t mount_config = {};
+        mount_config.format_if_mount_failed = false; /* 坏卡/异格式不销毁数据, 只报错降级 */
+        mount_config.max_files              = 5;
+
+        sdmmc_card_t *card = NULL;
+        esp_err_t ret = esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT, &host, &slot_config,
+                                                &mount_config, &card);
+        /* 降级形态: 失败不 abort (WITHOUT_ABORT 只打印错误码, 不 panic 重启); 随后按
+         * 返回码/卡句柄判空置板级降级标志, 继续启动不阻断。 */
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ret);
+        if (ret != ESP_OK || card == NULL) {
+            s_sd_mounted = false;
+            ESP_LOGW(TAG, "SD card mount failed at %s (ret=%s, card=%p) -> /sdcard "
+                     "unavailable, continue", SD_MMC_MOUNT_ROOT, esp_err_to_name(ret),
+                     (void *)card);
+            return;
+        }
+        s_sd_mounted = true;
+        sdmmc_card_print_info(stdout, card);
+        ESP_LOGI(TAG, "SD card mounted at %s (SDMMC 1-bit)", SD_MMC_MOUNT_ROOT);
+        /* 包 261016-sd-card-mount: 挂载成功路径一次性开机 roundtrip 探针调用点
+         * (SD-A5 真机 live-manual 观察触发面, 见 RunBootRoundtripProbe 头注)。
+         * 仅成功路径执行——无卡/挂载失败的降级 return 分支 (:856-862) 不跑;
+         * 探针内部失败只记日志、继续正常启动, 不改 s_sd_mounted (挂载成功即成功)。 */
+        RunBootRoundtripProbe();
+    }
+
+    /* 包 261016-sd-card-mount: 一次性开机 SD roundtrip 探针 —— **本包测试义务**
+     * (冻结验收 SD-A5 真机 live-manual 条目的观察触发面), **非业务消费**。SD-A5
+     * 要求 human 持板在真机观察「/sdcard/SDTEST.TXT 写-读-删 roundtrip 读回与写入
+     * 一致、验后即删不驻留」; 但本包自身零消费方(无 MCP 工具/串口命令/开机探针
+     * 触发文件读写), 该齿在真机上无触发面, human 无法观察 —— 故在挂载成功路径加
+     * 本探针给 human 一个可观察点。human 裁定留痕 = pod-events eventId db8b1406
+     * (「齿是冻结权威, 不回调验收; 补最小实现满足冻结齿」)。
+     *
+     * 临时测试探针, 遵守决策 24 介质禁令口径: 不写业务/身份/事项状态数据, 固定
+     * 已知字节序列、**验后即删不驻留**(任一失败步亦尽力 remove 清场)。8.3 大写名
+     * (SDTEST.TXT) 受 LFN 关闭约束 (CONFIG_FATFS_LFN_NONE, human 触点①拍板)。
+     *
+     * 形态: 走 VFS 标准 C 文件 I/O (fopen/fwrite/fread/fclose/remove), 每步判返回
+     * 值。**严禁裸 ESP_ERROR_CHECK(** (SD-A3 负向齿: 函数窗内 panic 形态计数=0);
+     * 探针内部任何失败只 ESP_LOGW 记失败步 + errno, 继续正常启动、绝不 panic、不
+     * 阻断。结果进串口日志: 通过 = ESP_LOGI "SD ROUNDTRIP PASS"; 任一步失败 =
+     * ESP_LOGW "SD ROUNDTRIP FAIL ..." 带失败步 (write/read/compare/delete)。 */
+    void RunBootRoundtripProbe() {
+        static const char kProbePath[] = SD_MMC_MOUNT_ROOT "/SDTEST.TXT"; /* 8.3 大写名 */
+        static const char kPayload[] =
+            "KIDPAL-SD-ROUNDTRIP-PROBE-0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const size_t payload_len = sizeof(kPayload) - 1; /* 不含结尾 NUL */
+        char corr_id[24];
+        snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+
+        /* step write: 建/截断 8.3 探针文件并写入固定已知字节序列。 */
+        FILE *f = fopen(kProbePath, "wb");
+        if (f == NULL) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=write path=%s corr_id=%s errno=%d",
+                     kProbePath, corr_id, errno);
+            return;
+        }
+        size_t written = fwrite(kPayload, 1, payload_len, f);
+        int close_rc = fclose(f);
+        if (written != payload_len || close_rc != 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=write path=%s corr_id=%s "
+                          "written=%u/%u fclose=%d errno=%d",
+                     kProbePath, corr_id, (unsigned)written, (unsigned)payload_len,
+                     close_rc, errno);
+            remove(kProbePath); /* 尽力清场, 不留残件 (验后即删义务) */
+            return;
+        }
+
+        /* step read: 读回逐字节比对。 */
+        f = fopen(kProbePath, "rb");
+        if (f == NULL) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=read path=%s corr_id=%s errno=%d",
+                     kProbePath, corr_id, errno);
+            remove(kProbePath);
+            return;
+        }
+        char rb[128] = {};
+        size_t nread = fread(rb, 1, sizeof(rb), f);
+        fclose(f);
+        if (nread != payload_len) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=read path=%s corr_id=%s "
+                          "read=%u/%u errno=%d",
+                     kProbePath, corr_id, (unsigned)nread, (unsigned)payload_len, errno);
+            remove(kProbePath);
+            return;
+        }
+        int mismatch = -1;
+        for (size_t i = 0; i < payload_len; i++) {
+            if (rb[i] != kPayload[i]) {
+                mismatch = static_cast<int>(i);
+                break;
+            }
+        }
+        if (mismatch >= 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=compare path=%s corr_id=%s "
+                          "byte_off=%d got=0x%02x want=0x%02x",
+                     kProbePath, corr_id, mismatch,
+                     (unsigned char)rb[mismatch], (unsigned char)kPayload[mismatch]);
+            remove(kProbePath);
+            return;
+        }
+
+        /* step delete: 验后即删, 探针文件不驻留。 */
+        int del_rc = remove(kProbePath);
+        if (del_rc != 0) {
+            ESP_LOGW(TAG, "SD ROUNDTRIP FAIL step=delete path=%s corr_id=%s rc=%d errno=%d",
+                     kProbePath, corr_id, del_rc, errno);
+            return;
+        }
+        ESP_LOGI(TAG, "SD ROUNDTRIP PASS path=%s corr_id=%s bytes=%u "
+                      "(write-read-compare-delete ok, 验后即删不驻留)",
+                 kProbePath, corr_id, (unsigned)payload_len);
+    }
+
+    /* 包 261016-sd-card-mount: 板级查询入口 (本包零消费方, 供将来消费方判 /sdcard
+     * 能力就绪; 防死代码误删观察锚)。读启动期挂载标志返回。 */
+    bool SdCardMounted() { return s_sd_mounted; }
+
 public:
     CustomBoard() : boot_button_(BOOT_BUTTON_GPIO),
                     key_button_(KEY_BUTTON_GPIO, false, 0, CONFIG_BUTTON_SHORT_PRESS_TIME_MS, false) {
@@ -839,6 +986,7 @@ public:
         InitializeTools();
         InitializeLcdDisplay();
         InitializeArt();
+        InitializeSdCard();
         /* 归一屏（包 260911-screen-unification SU-RULING-02 单物理屏）：
          * CustomLcdDisplay 构造期 SetupUI() 已把聊天 chrome（状态栏/表情/气泡）建在
          * LVGL 默认首屏上。此处把它们 reparent 到常驻顶层 layer（lv_layer_top，非屏、

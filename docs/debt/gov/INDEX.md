@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 19（待拍板 0 / 待触发 17 / 已接受风险 2）；已结 86（归档索引见下）。
+**摘要**：未结 22（待拍板 0 / 待触发 20 / 已接受风险 2）；已结 87（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（17）
+## 待触发（20）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -34,6 +34,9 @@ _（无）_
 | [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
+| [ARQ-261017-anchor-check-master-unvalidated](ARQ-261017-anchor-check-master-unvalidated.md) | SHOULD | spec-anchor-check 假定「最高版号设计稿即完整母版」却不校验完整性——任何人产出一份增量 vN 设计稿即静默打断全仓 UI 锚机检（2026-10-17 实测 12 条悬空、涉 10 条 story） | 下一治理批（动 `.claude/scripts/spec-anchor-check.mjs` / 设计母版发布流程 / `uiux-author` 或 write-story 的「母版产出」纪律任一时并批）；或再出现一次「写增量稿静默打断 UI 锚机检」时立即升格 |
+| [ARQ-261017-merge-gate-contract-evidence-ref](ARQ-261017-merge-gate-contract-evidence-ref.md) | SHOULD | pre-merge-escalation-gate 的契约凭据取件用 `git show target(main):PROPOSAL` 而非 source——结构性不可满足，arch-lane 契约批恒 BLOCK（2026-10-17 实测，261015 T15 新增路径首次真实执行） | 下一治理批（动 `pre-merge-escalation-gate.mjs` / 契约凭据判据 / `/arch-change` landing 流程任一时并批）；或在 agent-lane 契约批再次被同一 BLOCK 挡住时立即升格 |
+| [ARQ-261017-merge-gate-scope-unstated](ARQ-261017-merge-gate-scope-unstated.md) | SHOULD | 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK | 下次治理批；或下个动 pre-merge-escalation-gate.mjs / merge-to-main skill 文面 / AGENTS.md 治理路由节任一时并批（与 ARQ-261014 同脚本，可同批） |
 
 ## 已接受风险（2）
 
@@ -42,10 +45,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（86）
+## 已结（87）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 86 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 87 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
