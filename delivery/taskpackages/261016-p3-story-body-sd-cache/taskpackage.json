@@ -353,6 +353,7 @@
     "data-at-rest：story 正文上卡明文（TECH-261016 deferred，本批只落盘不加防护——human OQ-3 已裁）",
     "路径注入：story id 进 /sdcard/story/<id>.txt 前须字符集校验（_slugify/_hash_slug 产 ASCII），禁用户输入直通路径拼接"
   ],
+  "securityReviewNotes": "2026-10-17 planner 安全面复核（securityReviewRequired=true，两轴逐条给结论与证据）。① 轴「data-at-rest：story 正文上卡明文（TECH-261016 deferred，本批只落盘不加防护——human OQ-3 已裁）」——复核结论：按 human 2026-10-16 OQ-3 裁定，本批只落盘、不加防护（无加密、无混淆、无口令）；落盘内容仅 story 正文（与云端归档同源文本），不含 token / 凭据 / 个人信息；设备 token 仍走既有 NVS 面、本批零触碰。剩余风险 = 物理取卡可读故事正文，属已裁定的接受风险，由 TECH-261016-sd-story-confidentiality（status: deferred）跟踪后续「口令 + 存储混淆」；review-packet 的未覆盖面申报必须列此行（不得以「已评审」冒充「已防护」）。② 轴「路径注入：story id 进 /sdcard/story/<id>.txt 前须字符集校验（_slugify/_hash_slug 产 ASCII），禁用户输入直通路径拼接」——复核结论：固件侧 `kidpal_story_id_safe`（firmware/main/display/story_cache.c:286）拒绝空 / 超长 / 含 `..` / 含 [A-Za-z0-9._-] 之外字符（含 `/` `\\` 空格非 ASCII），在写卡（story_sd_io.cc:61）、读卡（:98）、启动扫描（:157）与索引 commit（story_cache.c:151）四处强制前置；云端侧 `story.py::_safe_story_path`（:419）对 fetch 与 delete 共享单源校验：非 str 拒绝、`..` 与 `_ID_UNSAFE_RE`（`/` `\\`）拒绝、Path.resolve 后必须落在 stories_dir 内（拒逃逸），再叠哨兵头校验（read_story_file 为 None → 拒绝），违规一律 warning 审计。③ 其他面：front `kidpal_story_fetch` 只对账本存在且带哨兵头的 id 回帧（非法 / 不存在一律拒绝且不回帧）；审计日志只记 id / corr_id，不记正文；零新增出网面、零新增依赖、零权限提升。",
   "adrRequired": false,
   "adrReason": "决策承接的 ADR-011 已随上游 261017 arch 批落地（delivery/review/261017-arch-review-p3-story-body-sd-cache/），本包无新耐久决策",
   "docsSyncRequired": true,
