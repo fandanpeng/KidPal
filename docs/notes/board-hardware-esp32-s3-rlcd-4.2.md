@@ -59,7 +59,7 @@
 | BOOT 键 | 语音会话/翻页（见上表） |
 
 接入变更（原「未接入」两件均已接）：**KEY 键（GPIO 18）** 已随 260911-key-route-a1 接线（三手势）；
-**Micro SD 卡槽** 已随 261016-sd-card-mount 接入（SDMMC 1-bit 挂载 `/sdcard` 能力就绪，2026-10-16；业务数据不落板、决策 24 介质禁令不变）。art 资产用的是内部 Flash 的 SPIFFS art 分区，非 SD 卡。
+**Micro SD 卡槽** 已随 261016-sd-card-mount 接入（SDMMC 1-bit 挂载 `/sdcard` 能力就绪，2026-10-16）。art 资产用的是内部 Flash 的 SPIFFS art 分区，非 SD 卡。**SD 卡上只放 story 正文的只读镜像**（`/sdcard/story/<id>.txt`，随 261016-p3-story-body-sd-cache 接入，2026-10-17；决策 24 窄例外——云端 story 归档为唯一真相源、板端不承载任何写入，卡可换）；提醒 / 课表 / 日志等其余业务数据**仍不落板**。
 
 ## 四、装配/使用注意（官方原文要点）
 

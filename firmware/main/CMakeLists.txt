@@ -47,6 +47,12 @@ set(SOURCES "audio/audio_codec.cc"
             # story_page.c / story_page.h (家 display/; 纯逻辑+纯 LVGL -> host 单测同源,
             # 见 firmware/main/test/story_p3.acceptance.c)。
             "display/story_page.c"
+            # P3 正文本地缓存纯逻辑面 (TaskPackage 261016-p3-story-body-sd-cache):
+            # RAM 索引 / 当屏缺失 / 双击三分支决策 / 预取决策 / id 校验 / 盖章侧效应
+            # 守卫——零 FATFS / 零 LVGL / 零芯片依赖 -> host_app linux target 同源
+            # (接线见 test/host_app/main/CMakeLists.txt)。SD 真 I/O 薄适配在
+            # boards/waveshare-s3-rlcd-4.2/story_sd_io.cc (chip 侧, 由板级 glob 收入)。
+            "display/story_cache.c"
             # 查生字 P4 (包 260829-char-stroke): 光栅契约纯逻辑模块 + LVGL 查字页。
             # char_stroke.c 纯逻辑无芯片依赖 -> host_app linux target 同源 (甲烷线接线在 host_app)。
             "display/char_stroke.c"

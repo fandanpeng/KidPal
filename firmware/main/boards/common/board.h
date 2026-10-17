@@ -82,6 +82,11 @@ public:
     virtual void SetPowerSaveLevel(PowerSaveLevel level) = 0;
     virtual std::string GetBoardJson() = 0;
     virtual std::string GetDeviceStatusJson() = 0;
+    /* /sdcard 能力就绪查询（TaskPackage 261016-p3-story-body-sd-cache 前置阻断项）:
+     * story 正文 SD 只读镜像的消费方（mcp_server）经此判卡在位/坏卡整层失效,
+     * 不碰板级私有挂载标志。默认 false = 无 SD 能力的板恒走「拉进 RAM 显示、
+     * 不落盘」降级路径。 */
+    virtual bool SdCardMounted() { return false; }
 };
 
 #define DECLARE_BOARD(BOARD_CLASS_NAME) \

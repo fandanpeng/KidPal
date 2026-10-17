@@ -11,6 +11,8 @@
 #include <cstring>
 #include <ctime>
 #include <memory>
+#include <string>
+#include <vector>
 #include <esp_pthread.h>
 
 #include "application.h"
@@ -23,6 +25,9 @@
 #include "display/view_router.h"
 #include "display/schedule_page.h"
 #include "display/story_page.h"  /* 故事 P3 (包 260829-story-p3): 列表/阅读/录音/盖章消费面 */
+#include "display/story_cache.h" /* P3 正文本地缓存纯逻辑面 (261016-p3-story-body-sd-cache):
+                                  * RAM 索引 / 当屏缺失 / 双击三分支 / 预取决策 / id 校验 /
+                                  * SD I/O 适配声明 */
 #include "display/char_stroke.h"   /* 查生字 P4 (包 260829-char-stroke): 缺字段防御降级门 */
 #include "display/char_page.h"     /* 查生字 P4 LVGL 页 (设备侧) */
 #include "display/reminder_page.h" /* 提醒弹窗消费面 (包 260829-schedule-reminder):
@@ -145,8 +150,31 @@ int      g_story_pending_tries = 0;          /* 已重发次数 */
 uint32_t g_story_pending_sent_ms = 0;        /* 最近一次发送时刻 */
 lv_timer_t* g_story_tick_timer = nullptr;    /* ~100ms tick：消歧冲销/idle/重发三驱动 */
 
+/* ---- 正文 SD 只读镜像 + 预取 / 双击兜底共享状态单元（TaskPackage
+ * 261016-p3-story-body-sd-cache; architect 预评 ②：预取队列 / 双击插队 /
+ * pending 等待态 / SD 索引 = **同一套状态**——块 1（story_text 写卡+预取触发）与
+ * 块 3（OPEN_READER 三分支）只消费本单元的入口，不得各建一套互踩的队列）。
+ * 单实例消费现实 = mcp 主线程串行（与 g_story_* 既有约定一致）。 ---- */
+kidpal_story_cache_t g_story_cache = {};      /* RAM 索引（卡上有哪些 id, [C1]） */
+bool     g_story_cache_scanned = false;       /* 启动后惰性索引重建一次性门 */
+char     g_story_prefetch_ids[KSTORY_CACHE_MAX][KSTORY_CACHE_ID_MAX] = {}; /* 当屏待取队列 */
+int      g_story_prefetch_n = 0;              /* 队列长度（逐篇串行, 头出） */
+int      g_story_prefetch_in_flight = 0;      /* 在途未收（破串行守卫） */
+char     g_story_prefetch_inflight_id[KSTORY_CACHE_ID_MAX] = {0}; /* 在途篇 id */
+uint32_t g_story_prefetch_sent_ms = 0;        /* 最近一次发帧时刻（篇间间隔输入） */
+uint32_t g_story_prefetch_inflight_ms = 0;    /* 在途起点（丢帧有界收口） */
+bool     g_story_fetch_pending = false;       /* 双击在等该篇应答（SC-A4 等待态） */
+char     g_story_fetch_pending_id[KSTORY_CACHE_ID_MAX] = {0};
+uint32_t g_story_fetch_pending_ms = 0;        /* 双击等待起点（[C5] 10s 超时输入） */
+/* 已发 kidpal_story_fetch 的 id 小环（[C8] from_fetch 判据：fetch 应答恒不盖章） */
+char     g_story_fetch_issued[KSTORY_CACHE_MAX][KSTORY_CACHE_ID_MAX] = {};
+int      g_story_fetch_issued_n = 0;
+unsigned long g_story_body_unavailable_idle_ms = 0; /* WF-F2-06 覆盖层 10s idle 累计 */
+
 /* 前置声明（StoryTickTimerCb 与 StoryDispatchAct 互序） */
 bool StoryDispatchAct(int act);
+/* 预取 / 双击等待 tick 驱动（定义在 EnsureStoryTickTimer 之后） */
+bool StoryPrefetchTick(void);
 
 /* ~100ms tick 三驱动（seam [K2] 消歧冲销执行 / [K3] 10s idle 静默取消 / [K4] 5s
  * 重发）——禁 1s tick 驱动消歧（300ms 死线粒度不够, plan 机制形态注记）。全部
@@ -198,6 +226,28 @@ void StoryTickTimerCb(lv_timer_t* timer) {
         busy = true;
     }
 
+    /* ④ 正文取不回覆盖层 10s idle（WF-F2-06 / AC7; 静默消失——不显示倒计时;
+     * 到点静默关闭回列表并复位。任一手势重计 = HandleStoryKey 消费侧义务）。 */
+    if (g_story_view.page == KSTORY_PAGE_BODY_UNAVAILABLE) {
+        if (kidpal_story_body_unavailable_idle_step(&g_story_body_unavailable_idle_ms,
+                                                    100UL) == 1) {
+            g_story_body_unavailable_idle_ms = 0;
+            g_story_view.page = KSTORY_PAGE_LIST;
+            ESP_LOGI(TAG, "story_body_unavailable idle_close");
+            ScheduleStoryRender();
+        } else {
+            busy = true;
+        }
+    } else {
+        g_story_body_unavailable_idle_ms = 0; /* 非该子态: 不计时（防历史累计误关） */
+    }
+
+    /* ⑤ 预取 / 双击等待（SC-A1/A4/A5）: 纯逻辑决策住 story_cache.c, 此处只注入
+     * 显式输入并执行发帧 / 降级出参。 */
+    if (StoryPrefetchTick()) {
+        busy = true;
+    }
+
     if (!busy) {
         lv_timer_delete(timer); /* 三驱动全空 -> 自删, 绝不常驻 */
         g_story_tick_timer = nullptr;
@@ -208,6 +258,235 @@ void EnsureStoryTickTimer() {
     if (g_story_tick_timer == nullptr) {
         g_story_tick_timer = lv_timer_create(StoryTickTimerCb, 100, nullptr);
     }
+}
+
+/* -------------------------------------------------------------------------- *
+ * P3 正文 SD 只读镜像 / 预取 / 双击兜底 —— 消费侧辅助（261016-p3-story-body-sd-cache）
+ *
+ * 正确性不对称（plan「关键接线决策」）：**预取是优化、双击插队 fetch 是正确性保证**
+ * ——预取挂掉功能照常，插队兜底保证双击必达（或给出可见降级）。
+ * ------------------------------------------------------------------------ */
+
+/* RAM 索引惰性重建（启动后一次; 热插拔检测属非目标）。无卡 -> 空索引（整层失效,
+ * 双击走 fetch / 降级路径）。 */
+void StoryCacheEnsureLoaded() {
+    if (g_story_cache_scanned) {
+        return;
+    }
+    g_story_cache_scanned = true;
+    (void)kidpal_story_cache_init(&g_story_cache);
+    (void)kidpal_story_sd_rebuild_index(
+        &g_story_cache, Board::GetInstance().SdCardMounted() ? 1 : 0);
+}
+
+/* 已发 fetch 的 id 登记（小环, 满则挤最旧）：answers 判据 from_fetch（[C8] 不盖章）。 */
+void StoryMarkFetchIssued(const char* id) {
+    int i;
+
+    if (id == nullptr || id[0] == '\0') {
+        return;
+    }
+    for (i = 0; i < g_story_fetch_issued_n; i++) {
+        if (std::strcmp(g_story_fetch_issued[i], id) == 0) {
+            return; /* 已在环（重复请求不重复记账） */
+        }
+    }
+    if (g_story_fetch_issued_n >= KSTORY_CACHE_MAX) {
+        for (i = 0; i + 1 < g_story_fetch_issued_n; i++) {
+            std::memcpy(g_story_fetch_issued[i], g_story_fetch_issued[i + 1],
+                        KSTORY_CACHE_ID_MAX);
+        }
+        g_story_fetch_issued_n--;
+    }
+    std::snprintf(g_story_fetch_issued[g_story_fetch_issued_n], KSTORY_CACHE_ID_MAX,
+                  "%s", id);
+    g_story_fetch_issued_n++;
+}
+
+/* 应答到达时消费 issued 记账: 1 = 本帧是 kidpal_story_fetch 的应答（from_fetch）;
+ * 0 = 停录归档 / 历史推送等非 fetch 路径。 */
+int StoryConsumeFetchIssued(const char* id) {
+    int i;
+    int j;
+
+    if (id == nullptr || id[0] == '\0') {
+        return 0;
+    }
+    for (i = 0; i < g_story_fetch_issued_n; i++) {
+        if (std::strcmp(g_story_fetch_issued[i], id) == 0) {
+            for (j = i; j + 1 < g_story_fetch_issued_n; j++) {
+                std::memcpy(g_story_fetch_issued[j], g_story_fetch_issued[j + 1],
+                            KSTORY_CACHE_ID_MAX);
+            }
+            g_story_fetch_issued_n--;
+            std::memset(g_story_fetch_issued[g_story_fetch_issued_n], 0,
+                        KSTORY_CACHE_ID_MAX);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* id 是否在预取队列（双击插队时去重：同一篇只发一次帧）。 */
+void StoryPrefetchDrop(const char* id) {
+    int i;
+    int j;
+
+    if (id == nullptr) {
+        return;
+    }
+    for (i = 0; i < g_story_prefetch_n; i++) {
+        if (std::strcmp(g_story_prefetch_ids[i], id) == 0) {
+            for (j = i; j + 1 < g_story_prefetch_n; j++) {
+                std::memcpy(g_story_prefetch_ids[j], g_story_prefetch_ids[j + 1],
+                            KSTORY_CACHE_ID_MAX);
+            }
+            g_story_prefetch_n--;
+            std::memset(g_story_prefetch_ids[g_story_prefetch_n], 0, KSTORY_CACHE_ID_MAX);
+            return;
+        }
+    }
+}
+
+/* 发帧原语（主任务闭包内调 SendKidpalStoryFetch——协议发送归主任务, 与
+ * SendMcpMessage / SendKidpalStoryDelete 同款线程纪律；本函数只做拷贝与记账）。 */
+void StorySendFetchBatch(const char* const* ids, int count) {
+    int i;
+
+    if (ids == nullptr || count <= 0) {
+        return; /* 空 ids = no-op（契约 §四） */
+    }
+    for (i = 0; i < count; i++) {
+        StoryMarkFetchIssued(ids[i]);
+    }
+    std::vector<std::string> copy;
+    copy.reserve(static_cast<size_t>(count));
+    for (i = 0; i < count; i++) {
+        copy.emplace_back(ids[i] != nullptr ? ids[i] : "");
+    }
+    Application::GetInstance().Schedule([copy]() {
+        std::vector<const char*> ptrs;
+        ptrs.reserve(copy.size());
+        for (const auto& s : copy) {
+            ptrs.push_back(s.c_str());
+        }
+        SendKidpalStoryFetch(ptrs.empty() ? nullptr : ptrs.data(),
+                             static_cast<int>(ptrs.size()));
+    });
+}
+
+/* 当屏缺失批次重算（AC2「进列表 / 翻屏先行为当屏各篇取回本地缺失的正文」）。
+ * 出参缓冲走文件级静态（1KB）——本函数在 story_list 路由回调链上被调用（ssl_receive
+ * 4096B 栈纪律：禁止新增大栈缓冲, 见本文件头注）。 */
+void StoryPrefetchRefresh() {
+    static char ids[KSTORY_CACHE_MAX][KSTORY_CACHE_ID_MAX];
+    int i;
+    int n;
+
+    StoryCacheEnsureLoaded();
+    g_story_prefetch_n = 0;
+    /* 在途标记保留（逐篇串行语义跨「翻屏重算」成立——上一帧未收前不发新帧）。 */
+    if (!Board::GetInstance().SdCardMounted()) {
+        return; /* 卡不在位：预取无落点（不产生网络帧） */
+    }
+    if (g_story_view.page != KSTORY_PAGE_LIST) {
+        return; /* 仅列表态预取（离开 P3 即停） */
+    }
+    n = kidpal_story_cache_missing_on_screen(
+        &g_story_cache, g_story_list.items, g_story_list.count, g_story_view.screen,
+        KSTORY_LIST_ROWS_PER_SCREEN, ids);
+    if (n <= 0) {
+        return;
+    }
+    for (i = 0; i < n && i < KSTORY_CACHE_MAX; i++) {
+        std::memcpy(g_story_prefetch_ids[i], ids[i], KSTORY_CACHE_ID_MAX);
+    }
+    g_story_prefetch_n = n;
+    /* 首篇即时可发（篇间间隔从「上一帧」起算；队列新装 = 无上一帧）。 */
+    g_story_prefetch_sent_ms = lv_tick_get() - static_cast<uint32_t>(KSTORY_FETCH_INTERVAL_MS);
+    EnsureStoryTickTimer();
+    ESP_LOGI(TAG, "story_prefetch_armed screen=%d missing=%d", g_story_view.screen, n);
+}
+
+/* WF-F2-06 可见降级（AC7）: 整屏覆盖层页态 + 10s idle 起算 + 落屏。 */
+void EnterStoryBodyUnavailable() {
+    g_story_fetch_pending = false;
+    g_story_fetch_pending_id[0] = '\0';
+    g_story_body_unavailable_idle_ms = 0;
+    g_story_view.page = KSTORY_PAGE_BODY_UNAVAILABLE;
+    EnsureStoryTickTimer();
+    ScheduleStoryRender();
+    ESP_LOGW(TAG, "story_open_degrade page=%d (WF-F2-06 visible hint)",
+             g_story_view.page);
+}
+
+/* 预取 / 双击等待 tick 驱动（~100ms）。返回 true = 仍需 tick（勿自删）。 */
+bool StoryPrefetchTick() {
+    uint32_t now = lv_tick_get();
+    bool busy = false;
+    int voice_front;
+    int ws_busy;
+    unsigned long since;
+    const char* one;
+
+    /* ① 双击等待超时（[C5] (c)）: 10s 取不回 / 卡不在位且拉取失败 -> 可见降级。 */
+    if (g_story_fetch_pending) {
+        unsigned long wait_ms = static_cast<unsigned long>(now - g_story_fetch_pending_ms);
+        if (kidpal_story_open_decide(1, 0, 0, 0, 1, wait_ms) == KSTORY_OPEN_DEGRADE) {
+            ESP_LOGW(TAG, "story_fetch_timeout id=%s wait_ms=%lu",
+                     g_story_fetch_pending_id, wait_ms);
+            EnterStoryBodyUnavailable();
+        } else {
+            busy = true; /* 等待中（应答到达即由 STORY_TEXT 路由收口） */
+        }
+    }
+
+    voice_front = (kidpal_render_node_front_layer() == KIDPAL_LAYER_VOICE) ? 1 : 0;
+
+    /* ② 预取挂起（离开 P3 / 语音前台 -> 立即挂起并清在途队列, [C6]）。 */
+    if (kidpal_story_prefetch_suspend(g_story_view.page, voice_front) == 1) {
+        if (g_story_prefetch_n > 0 || g_story_prefetch_in_flight != 0) {
+            ESP_LOGI(TAG, "story_prefetch_suspend page=%d voice_front=%d",
+                     g_story_view.page, voice_front);
+        }
+        g_story_prefetch_n = 0;
+        g_story_prefetch_in_flight = 0;
+        g_story_prefetch_inflight_id[0] = '\0';
+        return busy;
+    }
+
+    /* ③ 在途丢帧有界收口（防一次应答丢失令预取永停；双击兜底不受影响）。 */
+    if (g_story_prefetch_in_flight != 0 &&
+        static_cast<uint32_t>(now - g_story_prefetch_inflight_ms) >= 15000u) {
+        g_story_prefetch_in_flight = 0;
+        g_story_prefetch_inflight_id[0] = '\0';
+    }
+    if (g_story_prefetch_n <= 0) {
+        return busy;
+    }
+
+    /* ④ 发帧决策（显式注入 page_state / voice_front / ws_busy / in_flight /
+     * pending_count / since_last_ms——纯逻辑住 story_cache.c, [C6]）。 */
+    ws_busy = (Application::GetInstance().GetDeviceState() != kDeviceStateIdle) ? 1 : 0;
+    since = static_cast<unsigned long>(now - g_story_prefetch_sent_ms);
+    if (kidpal_story_prefetch_due(g_story_view.page, voice_front, ws_busy,
+                                  g_story_prefetch_in_flight, g_story_prefetch_n,
+                                  since) == 1) {
+        /* 先拷贝队头 id 再出队（StoryPrefetchDrop 会重排数组，指针随后失效）。 */
+        char sent_id[KSTORY_CACHE_ID_MAX];
+        std::snprintf(sent_id, sizeof(sent_id), "%s", g_story_prefetch_ids[0]);
+        one = sent_id;
+        StorySendFetchBatch(&one, 1);
+        StoryPrefetchDrop(sent_id); /* 头出队列（发帧已拷贝 id） */
+        g_story_prefetch_in_flight = 1;
+        std::snprintf(g_story_prefetch_inflight_id, sizeof(g_story_prefetch_inflight_id),
+                      "%s", sent_id);
+        g_story_prefetch_inflight_ms = now;
+        g_story_prefetch_sent_ms = now;
+        ESP_LOGI(TAG, "story_prefetch_send id=%s remaining=%d", sent_id,
+                 g_story_prefetch_n);
+    }
+    return true;
 }
 
 /* 删除确认覆盖层渲染（DELETE_ENTER 消费侧）：STORY_DELETE 层夹钳 + DELETE 态
@@ -302,21 +581,77 @@ bool StoryDispatchAct(int act) {
             ScheduleStoryRender();
             return true;
         }
-        case KSPV2_ACT_OPEN_READER:
-            /* 进阅读态: 消费侧配对 kidpal_story_open_reader（正文 = 缓存 g_story_text
-             * ——回看正文由云端 story_text 路由预先装载; 输入函数只产请求语义位、
-             * 不就地切页）。无正文缓存（本开机未查过该故事正文）-> 消费不动留在
-             * 列表态（V27 友好降级, 不盲渲染空阅读面）。 */
-            if (g_story_text.id[0] != '\0') {
-                (void)kidpal_story_open_reader(&g_story_view, &g_story_text,
-                                               KSTORY_READER_LINES_PER_SCREEN);
-                ScheduleStoryRender();
-            } else {
-                ESP_LOGW(TAG, "story_key open_reader_no_text -> stay list");
+        case KSPV2_ACT_OPEN_READER: {
+            /* 双击三分支（TaskPackage 261016-p3-story-body-sd-cache; SC-A3/A4/A5/A6）:
+             *   (1) 命中本地镜像（卡在位 + RAM 索引有该篇）-> 读卡进阅读态, **零网络帧**;
+             *   (2) 未命中 -> 插队单篇 kidpal_story_fetch（绕过预取串行 / 篇间间隔闸,
+             *       优先级高于后台预取）-> 应答到达后进阅读态（STORY_TEXT 路由收口）;
+             *   (3) 取不回（离线 / 超时 / 卡不在位且拉取失败）-> WF-F2-06 可见降级。
+             * id 错配修复（TECH-261013「显示错内容比无反应更危险」）: 正文一律按
+             * 「光标所选行 id」取（卡分支按 id 读文件 / fetch 分支按 id 等应答）,
+             * **绝不**沿用上一轮遗留的 g_story_text——旧实现盲开缓存正文 =
+             * 显示别篇内容的净根因; 应答侧另以 kidpal_story_reader_id_match 复核。 */
+            const char* sel_id = nullptr;
+            int card_ready;
+            int has_local;
+            int dec;
+
+            StoryCacheEnsureLoaded();
+            if (g_story_view.cursor >= 0 && g_story_view.cursor < g_story_list.count) {
+                sel_id = g_story_list.items[g_story_view.cursor].id;
+            }
+            card_ready = Board::GetInstance().SdCardMounted() ? 1 : 0;
+            has_local = (sel_id != nullptr) ? kidpal_story_cache_has(&g_story_cache, sel_id) : 0;
+            dec = kidpal_story_open_decide(sel_id != nullptr ? 1 : 0, has_local,
+                                           card_ready, 0, 0, 0);
+            if (dec == KSTORY_OPEN_HIT_CARD && sel_id != nullptr) {
+                if (kidpal_story_sd_read(sel_id, g_story_text.text,
+                                         sizeof(g_story_text.text), card_ready) == 1) {
+                    /* 本地镜像只留正文（决策 24）: 标题 / 日期沿用云端列表行。 */
+                    std::snprintf(g_story_text.id, sizeof(g_story_text.id), "%s", sel_id);
+                    std::snprintf(g_story_text.title, sizeof(g_story_text.title), "%s",
+                                  g_story_list.items[g_story_view.cursor].title);
+                    g_story_text.seq = KSTORY_SEQ_ABSENT;
+                    (void)kidpal_story_open_reader(&g_story_view, &g_story_text,
+                                                   KSTORY_READER_LINES_PER_SCREEN);
+                    ScheduleStoryRender();
+                    ESP_LOGI(TAG, "story_open_hit_card id=%s (zero network frame)",
+                             sel_id);
+                } else {
+                    /* 索引与卡内容漂移（文件被删 / 卡中段失效）: 该篇移出索引后
+                     * 走在线取回路径（不整层清空）。 */
+                    (void)kidpal_story_cache_remove(&g_story_cache, sel_id);
+                    dec = KSTORY_OPEN_FETCH;
+                }
+            }
+            if (dec == KSTORY_OPEN_FETCH && sel_id != nullptr) {
+                const char* one = sel_id;
+                StoryPrefetchDrop(sel_id); /* 插队去重：该篇不再从后台队列重复发帧 */
+                if (!(g_story_prefetch_in_flight != 0 &&
+                      std::strcmp(g_story_prefetch_inflight_id, sel_id) == 0)) {
+                    StorySendFetchBatch(&one, 1);
+                } /* 该篇已在预取在途 -> 直接复用那一帧的应答（不重复发帧） */
+                g_story_fetch_pending = true;
+                std::snprintf(g_story_fetch_pending_id,
+                              sizeof(g_story_fetch_pending_id), "%s", sel_id);
+                g_story_fetch_pending_ms = lv_tick_get();
+                EnsureStoryTickTimer();
+                ESP_LOGI(TAG, "story_open_fetch id=%s (queued ahead of prefetch)",
+                         sel_id);
+            } else if (dec == KSTORY_OPEN_DEGRADE) {
+                EnterStoryBodyUnavailable();
             }
             return true;
+        }
         case KSPV2_ACT_CURSOR_NEXT:
         case KSPV2_ACT_SCREEN_JUMP:
+            /* 本地导航/子态动作: 页态变更已由输入函数就地完成——双通道本地路径
+             * 落屏（cache_story + refresh_story, 前台保持 LOCAL_PAGE、页点可见）。
+             * 光标下移 / 翻屏 -> 当屏缺失批次重算（AC2「翻屏时先行为当屏各篇
+             * 取回本地缺失的正文」; 卡不在位 / 非列表态时 refresh 内部 no-op）。 */
+            StoryPrefetchRefresh();
+            ScheduleStoryRender();
+            return true;
         case KSPV2_ACT_PAGE_TURN:
         case KSPV2_ACT_READER_EXIT:
             /* 本地导航/子态动作: 页态变更已由输入函数就地完成——双通道本地路径
@@ -743,6 +1078,17 @@ bool McpServer::HandleStoryKey(key_id_t key, key_gesture_t g) {
         g_story_delete_idle_ms = 0;
     }
 
+    /* 正文取不回提示态（WF-F2-06, AC7）: KEY／BOOT **任一手势**立即关闭回列表
+     * （纯告知、无破坏性动作）——输入函数已把页态切回 LIST 并吞掉手势；此处负责
+     * 回列表重渲 + idle 复位（关闭路径绝不落全局 SESSION_TOGGLE / 翻页）。 */
+    if (g_story_view.page == KSTORY_PAGE_BODY_UNAVAILABLE) {
+        g_story_body_unavailable_idle_ms = 0;
+        (void)kidpal_story_page_input(&g_story_view, key, g);
+        ESP_LOGI(TAG, "story_body_unavailable close key=%d gesture=%d", (int)key, (int)g);
+        ScheduleStoryRender();
+        return true;
+    }
+
     /* 300ms 单双击消歧（seam [K2]; 仅 LIST 态挂起, notes 边角②）: 单击先挂起不直发,
      * 双击到达窗内冲销挂起单击; 其余态 gate=0 单击零延迟直发。双击迟到（>死线,
      * 罕见: 板端双击窗 350 > 死线 300 的边缘带）同样冲销挂起并直发双击——挂起位
@@ -1080,6 +1426,9 @@ void McpServer::AddCommonTools() {
                             });
                         }
                     }
+                    /* AC2「进入本列表时已先行为当屏各篇取回本地缺失的正文」: 列表装载
+                     * 后重算当屏缺失批次（卡不在位 / 非列表态内部 no-op）。 */
+                    StoryPrefetchRefresh();
                     cJSON_AddNumberToObject(ack, "items", items_n);
                     cJSON_AddNumberToObject(ack, "counter", kidpal_story_counter(parsed.get()));
                     ESP_LOGI(TAG, "story_list_dispatch corr_id=%s items=%d counter=%d degrade=false",
@@ -1153,16 +1502,37 @@ void McpServer::AddCommonTools() {
                     }
                     g_story_text = *parsed;
                     {
+                        /* P3 正文本地留存（决策 24 窄例外; SC-A2/A8）: 写
+                         * /sdcard/story/<id>.txt，**写卡成功才登记 RAM 索引**（commit
+                         * 承载）；卡不在位 / 坏卡 -> 整层失效（不落盘、不崩溃），正文
+                         * 照常 RAM 显示；写失败只清该篇、不整层清空（commit 内承载）。
+                         * id 字符集校验在 commit + story_sd_io 双门（[C9] 路径注入面）。 */
+                        StoryCacheEnsureLoaded();
+                        int sd_mounted = Board::GetInstance().SdCardMounted() ? 1 : 0;
+                        int write_rc = kidpal_story_sd_write(parsed->id, parsed->text,
+                                                             sd_mounted);
+                        (void)kidpal_story_cache_commit(&g_story_cache, parsed->id,
+                                                        sd_mounted, write_rc == 1 ? 1 : 0);
+                    }
+                    {
                         /* 「上传成功那一瞬 -> 盖章帧」生产触发 (S-F2.2/S-F2.4, HWV-A9)：
                          * 孩子停录时页内输入 (kidpal_story_page_input STOP_RECORD) 把
                          * archive_pend 置位；网关侧停录归档成功后把整段正文以
                          * story_text(record) 组块回传 (本包 front_app .stop -> story_text
                          * 云侧接线)，设备在此收到这条「刚入册」正文即盖章。仅在停录待确认
                          * (archive_pend>0) 且 id 与最近一次盖章不同 (幂等，防 mcp 回执重试
-                         * 重复发徽章) 时触发；否则 (回看既有故事) 照常进阅读态。 */
-                        int fresh_save =
-                            (g_story_view.archive_pend > 0) && parsed->id[0] != '\0' &&
-                            std::strcmp(parsed->id, g_story_view.last_saved_id) != 0;
+                         * 重复发徽章) 时触发；否则 (回看既有故事) 照常进阅读态。
+                         * 侧效应守卫 = 纯逻辑 [C8] kidpal_story_stamp_should_fire:
+                         * **fetch 应答恒不盖章**（契约 §1.3④; from_fetch 判据 = 本帧 id
+                         * 命中已发 kidpal_story_fetch 记账环）；fetch 路径也不置
+                         * archive_pend、不调 kidpal_story_on_saved。 */
+                        int from_fetch = StoryConsumeFetchIssued(parsed->id);
+                        int awaiting = (from_fetch != 0 && g_story_fetch_pending &&
+                                        std::strcmp(g_story_fetch_pending_id,
+                                                    parsed->id) == 0) ? 1 : 0;
+                        int fresh_save = kidpal_story_stamp_should_fire(
+                            g_story_view.archive_pend, parsed->id,
+                            g_story_view.last_saved_id, from_fetch);
                         if (fresh_save) {
                             /* 盖章 N = 入册流水号 seq（seam [K6]/[K7]; 契约 §1.3④ 唯一
                              * 权威源, 账本 owner = K1; 旧「counter+1 本地推」D3 与
@@ -1190,6 +1560,41 @@ void McpServer::AddCommonTools() {
                                 });
                             }
                             break;
+                        }
+                        /* kidpal_story_fetch 应答消费（SC-A4/A5/A6/A8; 契约 §1.3④）:
+                         *   在等该篇（双击兜底）-> id 校验通过后进阅读态; id 错配 ->
+                         *     绝不显示别篇, 走 WF-F2-06 可见降级;
+                         *   后台预取应答 -> 只装缓存（写卡 + 索引已在上面完成），
+                         *     **不动前台**（[C7] fetch_answer_enter 恒 0）。
+                         * 应答收口同时清预取在途标记 / 队列中的同 id（逐篇串行放行）。 */
+                        if (from_fetch != 0) {
+                            g_story_prefetch_in_flight = 0;
+                            g_story_prefetch_inflight_id[0] = '\0';
+                            StoryPrefetchDrop(parsed->id);
+                            if (kidpal_story_fetch_answer_enter(awaiting) != 1) {
+                                /* 后台预取应答：只装缓存（写卡 + 索引已完成），
+                                 * **不动前台**——绝不抢当前演出。 */
+                                ESP_LOGI(TAG, "story_fetch_prefetch_cached corr_id=%s id=%s",
+                                         corr_id, parsed->id);
+                                break;
+                            }
+                            g_story_fetch_pending = false;
+                            g_story_fetch_pending_id[0] = '\0';
+                            if (kidpal_story_reader_id_match(parsed.get(), &g_story_list,
+                                                             g_story_view.cursor) != 1) {
+                                /* SC-A6 / AC7: 被打开正文 id != 光标所选行 id ——
+                                 * 拒绝并走降级（显示错内容比无反应更危险）。 */
+                                ESP_LOGW(TAG, "story_fetch_answer_mismatch corr_id=%s id=%s "
+                                              "cursor=%d -> degrade",
+                                         corr_id, parsed->id, g_story_view.cursor);
+                                EnterStoryBodyUnavailable();
+                                break;
+                            }
+                            /* id 校验通过 -> 落到下方**既有阅读态渲染单点**（复用同一
+                             * begin/end_page 调用点；不新增前台接管调用——K7-A5 文件级
+                             * begin_page 计数恒 5 的冻结守卫）。 */
+                            ESP_LOGI(TAG, "story_fetch_answer_enter corr_id=%s id=%s",
+                                     corr_id, parsed->id);
                         }
                         /* 阅读态分页行高单源 (KSTORY_READER_LINES_PER_SCREEN, 包
                          * 260911-render-pages RP-A2; 替代原硬编码 4 的最小估算)。

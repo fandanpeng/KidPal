@@ -4,6 +4,20 @@
 
 #define TAG "Protocol"
 
+/* kidpal_story_fetch 无接收者发送原语的活动实例指针（protocol.h 声明）。构造置位、
+ * 析构清位——Application::ResetProtocol 销毁协议对象后绝不留悬垂指针。 */
+Protocol* Protocol::s_kidpal_active_ = nullptr;
+
+Protocol::Protocol() {
+    s_kidpal_active_ = this;
+}
+
+Protocol::~Protocol() {
+    if (s_kidpal_active_ == this) {
+        s_kidpal_active_ = nullptr;
+    }
+}
+
 void Protocol::OnIncomingJson(std::function<void(const cJSON* root)> callback) {
     on_incoming_json_ = callback;
 }
@@ -108,4 +122,35 @@ bool Protocol::IsTimeout() const {
         ESP_LOGE(TAG, "Channel timeout %ld seconds", (long)duration.count());
     }
     return timeout;
+}
+
+/* 契约 §四 kidpal_story_fetch（TaskPackage 261016-p3-story-body-sd-cache; 逐字仿
+ * SendKidpalStoryDelete 形态）:
+ *   {"session_id":"<sid>","type":"kidpal_story_fetch","ids":["<id>",...]}
+ * 设备发起 request、网关以既有 story_text 帧逐篇 response（下行零新形状）。
+ * 空 ids（count <= 0 / ids == NULL）= no-op（不发帧, 契约 §四「空 ids 数组 =
+ * no-op」）。id 闭集 / 字符集校验归调用方（mcp_server 以只发 story_list items
+ * 下发过的 id + kidpal_story_id_safe 门控）。
+ * 无接收者形态：活动实例 = 最近构造且未析构的 Protocol（s_kidpal_active_）。
+ * 调用纪律：mcp_server 经 Application::Schedule 在主任务闭包内调用（协议发送归
+ * 主任务, 与 SendMcpMessage / SendKidpalStoryDelete 同款线程纪律）。 */
+void SendKidpalStoryFetch(const char *const *ids, int count)
+{
+    Protocol *p = Protocol::s_kidpal_active_;
+
+    if (p == nullptr || ids == nullptr || count <= 0) {
+        return; /* 空 ids / 协议未就绪（离线降级）：静默 no-op，不产生半帧 */
+    }
+    std::string message = "{\"session_id\":\"" + p->session_id_ +
+                          "\",\"type\":\"kidpal_story_fetch\",\"ids\":[";
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            message += ",";
+        }
+        message += "\"";
+        message += (ids[i] != nullptr) ? ids[i] : "";
+        message += "\"";
+    }
+    message += "]}";
+    p->SendText(message);
 }

@@ -43,7 +43,8 @@ enum ListeningMode {
 
 class Protocol {
 public:
-    virtual ~Protocol() = default;
+    Protocol();
+    virtual ~Protocol();
 
     inline int server_sample_rate() const {
         return server_sample_rate_;
@@ -85,6 +86,11 @@ public:
      * （server hello 之后）发送; 通道复用会话同样发送; 重复发送安全（front 幂等
      * 承接）; 省略 = 普通会话向后兼容。source_page 闭集 story/schedule/home。 */
     virtual void SendKidpalSessionCtx(const char* source_page);
+    /* §四 kidpal_story_fetch（TaskPackage 261016-p3-story-body-sd-cache）: 设备发起
+     * 的批量正文取回请求 —— 契约面首个 request → response 请求-应答环（应答 = 既有
+     * story_text 帧，零新形状）。发送原语形态见本头末尾自由函数
+     * SendKidpalStoryFetch（无接收者：活动实例 = 最近构造且未析构的 Protocol）。 */
+    friend void SendKidpalStoryFetch(const char *const *ids, int count);
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;
@@ -100,11 +106,25 @@ protected:
     bool error_occurred_ = false;
     std::string session_id_;
     std::chrono::time_point<std::chrono::steady_clock> last_incoming_time_;
+    /* kidpal_story_fetch 无接收者发送原语的活动实例指针（构造置位 / 析构清位）:
+     * 单实例现实 = Application::protocol_ 唯一所有权（ResetProtocol 销毁后指针复位,
+     * 绝不悬垂）。 */
+    static Protocol* s_kidpal_active_;
 
     virtual bool SendText(const std::string& text) = 0;
     virtual void SetError(const std::string& message);
     virtual bool IsTimeout() const;
 };
+
+/* §四 kidpal_story_fetch 发送原语（TaskPackage 261016-p3-story-body-sd-cache;
+ * seam contract [C10] home = protocols/protocol.{h,cc}）。
+ * 线形状（逐字）:
+ *   {"session_id":"<sid>","type":"kidpal_story_fetch","ids":["<id>",...]}
+ * count <= 0 / ids == NULL = 空 ids no-op（不发帧）。调用纪律：由 mcp_server 在
+ * Application::Schedule 主任务闭包内调用（协议发送归主任务, 与 SendMcpMessage /
+ * SendKidpalStoryDelete 同款线程纪律）；id 闭集 + 字符集校验由调用方与 [C9]
+ * kidpal_story_id_safe 承接。 */
+void SendKidpalStoryFetch(const char *const *ids, int count);
 
 #endif // PROTOCOL_H
 

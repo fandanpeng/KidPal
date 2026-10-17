@@ -52,6 +52,21 @@ date: 2026-10-17
 - **id 错配修复验法**：① host_app 单测（`kidpal_story_open_reader` 加 id 参数：id 相等 → 进阅读；id 不等 → 拒绝 + 消费侧走降级）；② 真机回归位：双击「非本机录制的那一篇」→ 显示选中的那篇、不是缓存残留篇（TECH-261013 追加段「显示错内容比无反应更危险」的直接回归齿）。
 - **riskTier=high 的下游含义**：supervisor 合并门对 high 包升级 human（非机械自动放行），真机 live 轮 + human 目检是预期收口路径。
 
+## 技术方案（planner+architect 预评）
+
+> **2026-10-17 · architect 前置技术预评（planner Step 1g ARCH-ADVISORY 档；只读 advisory，不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据）**。以下为**采纳要点**，全文见本包 pod-events 同日 dispatch 记录。
+
+- **id 校验落点修正（不改 `kidpal_story_open_reader` 签名）**：该函数是冻结 seam，被 `story_page_v2.acceptance.c:551` 与环境调用点（mcp_server.cc:311/:1198）钉死；加参数会破冻结齿。改为**新增 additive 纯逻辑 seam** `kidpal_story_reader_id_match(st, list, cursor)`（落 `story_cache.c/.h`），在 `mcp_server.cc` OPEN_READER 消费侧调用 `open_reader` **之前**校验（正文 id == 光标所选行 id），不符拒绝并走降级。**行为不变、冻结件零触碰**。
+- **共享状态单元（单包最大工程风险点）**：预取队列 / 双击插队 / pending-fetch 等待态 / SD 索引是块 1 与块 3 **共用的同一套状态**——按一个单元一次设计、一次实现，两分支只消费其入口；不得把块 1、块 3 做成两次互不相干的改动（否则互踩同一队列）。
+- **`SdCardMounted()` 前置阻断项**：现为 waveshare 板私有成员（:967），基类 `Board` 无此 virtual → mcp_server 拿不到挂载标志。须在 `boards/common/board.h` 加 `virtual bool SdCardMounted() { return false; }`（默认 false），waveshare 板侧改 public + override。
+- **SD I/O 适配边界**：`sd_mounted` 以显式 bool 入参注入（不直接碰板级私有态）；无卡/坏卡短路、绝不 fopen；**先写卡成功才登记 RAM 索引**，写失败只清该篇、正文照常 RAM 显示（不整层清空）。
+- **front 复用零新字段**：新增 `kidpal_story_fetch` 消费分支只调 `gw_story.story_text()` + `_push_display_payload`（不拼新 key）；建议在 `server/gateway/story.py` 抽 `fetch_story()` helper 与 `delete_story` 共享 id 安全（`_ID_UNSAFE_RE` / `..` / resolve 逃逸 / 哨兵头），避免复制路径穿越防御；非法 id 记 warning 审计、空 ids no-op。
+- **盖章侧效应保证**：fetch 路径不置 `archive_pend`、不调 `kidpal_story_on_saved`——`fresh_save` 判据（archive_pend>0 && id≠last_saved_id）在 fetch 应答时恒假，天然不进盖章（契约 §1.3④）。
+- **LFN 具体键**：`firmware/sdkconfig` 的 `CONFIG_FATFS_LFN_NONE=y` → `CONFIG_FATFS_LFN_HEAP=y`；codepage 维持 437（story id 纯 ASCII）；LFN 工作缓冲走 PSRAM（`CONFIG_FATFS_ALLOC_PREFER_EXTRAM=y`），heap 观察位 = 挂载后 / 写卡后 internal + SPIRAM 读数。
+- **WF-F2-06 覆盖层归属**：走 `story_page.c` 新增页态（与 WF-F2-05 删除确认同族：页态值 additive + render + 手势 + 10s idle 步进 seam），不动 `kidpal_render_node.cc`。
+- **预取竞态收口**：决策与发帧合并同一 tick，发帧前 `protocol.IsConnected()` 实时复查；页态迁移 / `voice_front` 置位时立即清空在途队列。
+- **id 路径安全**：固件写卡前二次校验 id 只含 `[a-zA-Z0-9._-]` 且不含 `..` / `/` / `\`（不信任云端、卡可换）；front 侧复用 delete 的 id 安全面。
+
 ## 非目标
 
 光标预取 / 缓存淘汰（LRU）/ 热插拔检测 / 离线产出（写入仍须联网）/ 摘除 data.restore 补丁（另立变更评估）/ 隐私加密防护（TECH-261016 已登记 deferred，本批只落盘不加防护）。
