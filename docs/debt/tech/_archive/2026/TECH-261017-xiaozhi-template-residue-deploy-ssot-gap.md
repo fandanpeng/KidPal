@@ -2,13 +2,13 @@
 id: TECH-261017-xiaozhi-template-residue-deploy-ssot-gap
 title: 引擎通用小智模板残留 + 三个部署面键无仓内源——agent-base-prompt.txt 与 v10 对冲（工具语义/禁 Markdown）、system_error_response 兜底语播「小智」、kidpal skill 白名单未收（18 bundled 噪音），三者均未接入 manifest.yaml 单一事实源
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: dev 批（server/deploy 部署面）
 trigger: 下一次动 server/deploy 部署面的批（与 TECH-261017-schedule-answer-skip-read-hallucination 同批）
 opened: 2026-10-17
-closed: ""
-closedBy: ""
+closed: 2026-10-18
+closedBy: 261017-prompt-v11-schedule-recall
 paths: ["server/deploy/apply-xiaozhi-overlay.sh", "server/deploy/provider.config.yaml", "server/deploy/manifest.yaml", "server/deploy/kidpal-agent-prompt.txt"]
 source: 2026-10-17 ECS 排查（docker inspect 挂载：agent-base-prompt.txt 镜像内置非 bind-mount；.config.yaml 无 prompt_template/system_error_response 键；openclaw.json agents.entries.kidpal 无 skills；manifest.yaml 无这三条目；openclaw skills list --agent kidpal 报 19 ready 其中 18 bundled/extra）
 handoff: 与 TECH-261017-schedule-answer-skip-read-hallucination 合批走部署面 loop；openclaw.json skills 走 perf-k1 定点 patch 先例
@@ -25,3 +25,5 @@ handoff: 与 TECH-261017-schedule-answer-skip-read-hallucination 合批走部署
 4. 三者接入 manifest.yaml 单一事实源：模板新增条目（owner overlay、verify md5）+ .config.yaml marker 锚集加 `prompt_template`/`system_error_response` 两锚 + openclaw skills 声明文件条目（owner deploy.sh）。
 
 **风险**：riskTier: medium——同时动生产 openclaw.json（含 secret 的 gateway 主配置）+ 引擎 config + manifest 单一事实源 + 新增渲染面，且 .config.yaml 为 overlay 生成件（改错即引擎起不来）；但四件各自可独立验证、可回滚，爆炸半径可控在部署面。
+
+consumed-by: 261017-prompt-v11-schedule-recall（2026-10-18 收口：① KidPal 极简模板 `server/deploy/kidpal-agent-prompt.txt` 落盘〔`<identity>` + `<context>` + 中文输出约束，删通用小智模板残留段〕，overlay 拷入 data/ bind-mount；② overlay heredoc + provider.config.yaml 声明两键 `prompt_template` / `system_error_response`〔兜底语去「小智」〕，.config.yaml marker 锚集同步覆盖；③ kidpal skills 收敛声明工件 `server/deploy/261017-openclaw-kidpal-skills/`〔声明 JSON + 幂等 apply + rollback，openclaw.json 零入仓/零触碰 gateway.token〕；④ 五件全部接入 manifest.yaml 单一事实源。host 面验收 PV-A4/A5/A6/A7 绿；`.config.yaml` 真再生与 skills apply 的 live 落地留 human 部署后 verify-deploy.sh 轮 + PV-A8 真机门）

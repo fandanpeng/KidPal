@@ -82,3 +82,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261017-prompt-v11-schedule-recall](261017-prompt-v11-schedule-recall/) | 2026-10-17 | docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md | closed | — |

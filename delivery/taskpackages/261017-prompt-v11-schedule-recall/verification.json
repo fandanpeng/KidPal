@@ -1,0 +1,50 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "261017-prompt-v11-schedule-recall",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "d55fac5f-35ee-481f-9fe0-48e91dfcd804",
+  "outcome": "ok",
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r3.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r1.json",
+  "provenance": {
+    "sourceType": "regression",
+    "triage": "/triage-change 2026-10-18（architect 分流 review；human 触点①确认，②单包 Lite；同日重裁 arch 面迁出 dev 包、gateProfile 收敛为 evidence-integrity）",
+    "rigor": "lite",
+    "riskTier": "medium",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md（intake 时点事实；条目已 closed 并归位 docs/debt/tech/_archive/2026/）"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "final",
+    "round": 3,
+    "invocationId": "d55fac5f-35ee-481f-9fe0-48e91dfcd804",
+    "observedGateExit": 0
+  },
+  "gateSummary": [
+    { "gate": "taskpackage-required", "kind": "governance", "ok": true, "timing": "scoped" },
+    { "gate": "change-manifest", "kind": "governance", "ok": true, "timing": "scoped", "note": "pre-cutoff 存量放行（gitFirstCommitDate 2026-09-11 < MANIFEST_CUTOFF 2026-09-28）" },
+    { "gate": "firmware-build", "kind": "structural", "ok": true, "timing": "scoped", "note": "final 相位恒跑；工具链可用、真编译 build-pass（xiaozhi.bin 0x3217f0 bytes，最小 app 分区余量 9%）；本包零固件 diff" },
+    { "gate": "contract-lint", "kind": "structural", "ok": true, "timing": "scoped", "note": "唯一 warning = 上游断链 delivery/changes/arch/260923-arch-review-schedule-grid-cold-boot/CONTRACT-CHANGE-PACKET.md，非本包引入" },
+    { "gate": "acceptance-coverage", "kind": "functional", "ok": true, "timing": "scoped", "note": "PV-A1..A7 functional；PV-A8 structural/live-manual；files = 三件冻结验收" },
+    { "gate": "mutation-check", "kind": "functional", "ok": true, "timing": "scoped", "note": "skipped=true（部署面 prompt/配置/声明工件 + additive 齿批，无 DB/事件 mutation 对象；apply/rollback 幂等性由冻结件临时 fixture 真跑承载；live 观测归 PV-A8）" },
+    { "gate": "docs-sync", "kind": "governance", "ok": true, "timing": "scoped", "note": "两条 TECH 结项 + INDEX 重渲染 + README v11 指针核证；docs/architecture.md 两处指针显式不在本包（docs-delta §2）" },
+    { "gate": "security", "kind": "security", "ok": true, "timing": "scoped", "note": "securityReviewRequired=false；openclaw.json 零入仓、仓内零 secret 字样" },
+    { "gate": "unit", "kind": "functional", "ok": true, "timing": "full", "note": "scope-file test-scope.txt：executor-run，structuralCollected 121 / liveDeselected 4 → 121 passed / 4 deselected / 4 subtests（scope 内 9 件 pytest）" },
+    { "gate": "acceptance", "kind": "functional", "ok": true, "timing": "full", "note": "oracle-pass（firmwareAcceptanceFiles 0 / serverAcceptanceFiles 9）+ executor-run 121 passed / 4 deselected / 4 subtests" }
+  ],
+  "gateSummaryPrecision": "r3 final 的 unit/acceptance 两 full 闸按 test-scope.txt 圈定（9 件 pytest）同面实跑，计数一致；integrator 另做闸外全量交叉核对：server/acceptance/ 210 passed / 4 deselected / 33 subtests（零残留红）+ server/tests/ 91 passed。",
+  "impactAudit": {
+    "detectChanges": "base=main，merge_base dd8083d2，inbound depth=2：changed_files 29 / seed_symbols 87 / impacted_total 0。成因 = 改动面为 prompt 文本 + YAML 清单 + shell 渲染 + JSON 声明工件，无代码符号调用者；图索引可用（非不可用降级），blast radius 由共享 seam 人工映射补全并在 test-scope.txt 逐条注明",
+    "closedSet": "git status --porcelain + git diff main...HEAD 实证改动面 == changeManifest（实现/验收 13 件 + docs 4 件 + delivery 簿记）；零触碰面 docs/contracts、docs/architecture.md、docs/requirements.md、openclaw.json、firmware/**、server/gateway/** 实测零 diff",
+    "testScopeFile": "delivery/taskpackages/261017-prompt-v11-schedule-recall/test-scope.txt",
+    "scopingMethod": "三分法：per-Pod 专属图索引可用且 detect_changes 正常返回 → 正常圈定（无 trace_path 降级；impacted_total 0 是符号面无边的真实结果，不是「图不可用」）"
+  },
+  "residual": "PV-A8 四项 live-manual（问后天课表见 read 动作 + 周一课表一致 / loopback 复验 / skills list = 3 / 兜底语无小智）未跑，本 Pod 零部署零烧录；ECS 部署轮（.config.yaml 真再生、skills 首次 apply、verify-deploy.sh 三时机）未跑；模板渲染为静态等价代理（本机无 jinja2，引擎 build_enhanced_prompt 未执行）；system_error_response 文案为 builder 拟定（human 可调）；README ARQ-260908 小节 v3 时代叙述仍在（既有记账）；docs/architecture.md §5.5.5 / §5.1 指针归 merge 后独立 architect 会话（禁指针先于实物）"
+}
