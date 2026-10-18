@@ -102,6 +102,61 @@ RED 基线预期（冻结时点树，v10 未建、接线未改）：RF-A1 两齿
 RF-A3 = must-stay-green（v9 未被回改即绿，回改才红——负锚形态同 PN-A3）；既有齿
 零触碰、既有绿不降。四个版本无关守卫（m3k3 A1 / MCD / M4K3-A8 / PN-A4）四面同批
 翻即绿、漏翻必红（must-stay-green，不在本批改动面）。
+
+────────────────────────────────────────────────────────────────────────────
+261017-prompt-v11-schedule-recall 增批（additive 补齿，tighten-only 窗口——既有齿
+零触碰、既有断言语义不动；TaskPackage = delivery/taskpackages/
+261017-prompt-v11-schedule-recall，源头 = docs/debt/tech/TECH-261017-schedule-
+answer-skip-read-hallucination（MAJOR，真机问「后天都有什么课程？」零工具调用凭
+印象编造）+ TECH-261017-xiaozhi-template-residue-deploy-ssot-gap（SHOULD））：
+
+冻结范围（PV-A1/A2/A3/A4/A7 落本文件；PV-A5 落
+test_261010_engine_decision21_overlay_persist；PV-A6 落
+test_261017_openclaw_kidpal_skills（新建）；PV-A8 = structural live-manual 观测项，
+非自动断言、不落测试）：
+  ⑯ v11 落盘非空 + 首行 `## 角色` 无前言 + 课表问答回合行识别特征扩列锚（PV-A1）：
+     时间面（今天/明天/后天/大后天/周X/星期X/周几/这周/下周/号）与主题面
+     （课表/课程/上课/上什么课/几点上课/要带什么）并集容换写，且纪律仍落在
+     「先读 schedule.md 再作答 / 读不到诚实说查不到」同一表行内；
+  ⑰ v11 相对 v10 的差异只落在课表问答回合表行（PV-A1，diff-confinement；同
+     M3K3-A1 v5/v6 逐字比对齿——「其余段落相对 v10 零偏移」的机判形态）；
+  ⑱ v10 历史版本零回改（PV-A2，RF-A3 形态复刻，must-stay-green 负锚）；
+  ⑲ 四面接线一致（渲染面 PROMPT_SRC/DST / 声明面 provider.config.yaml 三键 /
+     载体面 OPENCLAW_SYSTEM_PROMPT_CARRIER 声明行 / manifest.yaml prompt 条目）+
+     接线版承载 ⑯ 扩列锚 + carrier 沿革 append 且历史行不删（PV-A3，版本无关形态：
+     从结构化指向解析当前版，禁 v11 字面当作唯一判据）；
+  ⑳ KidPal 极简模板 `kidpal-agent-prompt.txt` 三段位与残留禁令（PV-A4）+
+     manifest 条目齐 / entries 静态可解析 / README prompt 指针节跟当前接线版
+     （PV-A7）。
+
+强度申报（acceptance-evidence「契约条目 ↔ 齿 的强度申报」体例）：
+  - PV-A1 → 落盘/结构齿（机制级：文件存在性 + 首行字面）+ 源锚代理（v11 的产出物
+    就是措辞本身；扩列锚采用并集半同义组，措辞换写不误红、识别面被删才红）；
+    diff-confinement 为机制级（逐行比对，断言「只许扩课表识别特征列」）；
+    「prompt 写明 ≠ LLM 遵循」行为等价假设显式化——LLM 实际遵循度 offline 不可
+    机判，归 PV-A8 真机轮目击；
+  - PV-A2 → 机制级（LF 归一 sha256；v10 仓内 blob 为 LF——本树 Windows 检出侧
+    autocrlf 会把工作树转 CRLF，故按 LF 归一口径钉，与 canonical blob 同值、
+    检出环境无关）；
+  - PV-A3 → 机制级（四面结构化指向解析 + 一致性 + 接线版语义锚在场 + carrier
+    沿革对既存历史版本文件全覆盖）；解析器为本文件自含实现（跨冻结件 import 会
+    把冻结件焊死，PN 批同纪律）；
+  - PV-A4 → 源锚代理（模板产出物即文本；三段位 + 残留词表为机制级文本锚）；
+  - PV-A7 → 机制级（manifest YAML 静态解析 + verify-deploy.sh 语义等价校验 +
+    README 指针对结构化解析出的当前接线版）；
+  - fixture 自含性声明：全部齿直读 repo 内 deploy 制品，无外部资产 / 时间真值
+    依赖；唯一环境前提 = PyYAML（与 verify-deploy.sh 同一解析器，缺库时判 infra
+    红、不静默跳过）；行为 seam（prompt 纪律 → LLM 行为）的驱动方 = PV-A8
+    真机轮（human 在场），offline 侧无驱动方 = 已申报盲区；
+  - 契约零涉及（crossEnd exempt：零 wire 形状改动），本批齿全部为 deploy 制品面
+    锚，无 DB/事件断言（TaskPackage notes 地雷前置申报在案）。
+
+RED 基线预期（冻结时点树，v11 未建、接线未改）：PV-A1 三齿 + PV-A3 接线版扩列
+锚 = 设计态红（v11 文件缺失 / 现接线 v10 无后天与大后天识别特征 = 真实缺失行为）；
+PV-A2 = must-stay-green（v10 未被回改即绿）；PV-A3 四面一致与 carrier 沿革齿、
+PV-A7 静态可解析与 README 指针齿 = 现树绿、bump 漏翻才红（must-stay-green 半：
+bump 后 README 仍指 v10 / manifest 漏改即红）；PV-A4 + PV-A7 manifest 条目齐 =
+设计态红（模板与 skills 条目未建）。既有 V7/PN/RF 齿零触碰、既有绿不降。
 """
 
 from __future__ import annotations
@@ -109,6 +164,7 @@ from __future__ import annotations
 import hashlib
 import re
 import unittest
+from itertools import zip_longest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -786,6 +842,578 @@ class TestPromptV10RealtimeFacts(unittest.TestCase):
                 f"RF-A4 RED: 接线版 {name} 丢失世系锚「{needle}」——{why}；"
                 "版本化 bump 只许扩行不许丢段（plan.md：v10 = v9 全量 + 实时事实扩行）。",
             )
+
+
+# --------------------------------------------------------------------------- #
+# PV 批辅助（261017-prompt-v11-schedule-recall，additive）
+# --------------------------------------------------------------------------- #
+
+PV11_NAME = "openclaw-system-prompt.v11.md"
+PV11_TEMPLATE_NAME = "kidpal-agent-prompt.txt"
+PV11_SKILLS_DIRNAME = "261017-openclaw-kidpal-skills"
+PV11_MANIFEST = DEPLOY_DIR / "manifest.yaml"
+PV11_README = DEPLOY_DIR / "README.md"
+
+# 冻结时点 v10 内容 hash（LF 归一口径 = canonical blob 口径）。v11 bump 与一切后续
+# 包不得改 v10 本体（V7 ⑤ / PN-A3 / RF-A3 形态复刻）。
+# 口径说明（2026-10-18 PV 批冻结实测）：仓内 blob 为 LF（`git show HEAD:…` 实测
+# sha256 = 本值）；本树 Windows 检出侧 autocrlf 把工作树文件转成 CRLF，raw bytes
+# sha256 因而与 blob 不同——故统一按 LF 归一后计算（read_text + \r\n→\n），
+# canonical blob 与任何检出环境同值。
+PV11_V10_SHA256_LF = "963b2b79bf2331dd76528f282aca620c39f764aef8b8888c2b96af7ae90b9b23"
+
+# 课表问答回合识别特征扩列锚（plan.md §A 原文并集半同义组：措辞换写不误红、
+# 识别面被删才红）。时间面含「后天 / 大后天」——TECH-261017 真机触发词（原 v10 只
+# 枚举今天/明天/这周，「后天」落对话回合兜底 = 结构性逼出编造）。
+PV11_SCHEDULE_SUBJECT_ANCHORS = (
+    "课表", "课程", "上课", "上什么课", "几点上课", "要带什么")
+PV11_SCHEDULE_TIME_ANCHORS = ("今天", "明天", "周几", "这周", "下周", "号")
+PV11_WEEKDAY_RE = re.compile(r"周[一二三四五六日天1-7Xx×]")
+PV11_XINGQI_RE = re.compile(r"星期[一二三四五六日天1-7Xx×]")
+# 「只要提到就一律判课表回合」的全称量词半（human 2026-10-17 裁「只要提到课表就去
+# 读」；不收「一律」单词——v10 课表行已有「一律违规」，单词会假绿）。
+PV11_UNIVERSAL_ANCHORS = (
+    "凡提到", "只要提到", "任何提到", "凡是提到", "凡涉及", "只要涉及", "凡是涉及")
+
+PV11_PROMPT_FILE_RE = re.compile(r"openclaw-system-prompt\.v(\d+)\.md")
+
+
+def _sha256_lf(path: Path) -> str:
+    """LF 归一 sha256（canonical blob 口径；检出 eol 无关）。"""
+    try:
+        txt = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    return hashlib.sha256(txt.replace("\r\n", "\n").encode("utf-8")).hexdigest()
+
+
+def _pv_manifest_entries(testcase) -> list[dict]:
+    """解析 manifest.yaml entries（与 verify-deploy.sh 同一解析器 yaml.safe_load）。
+
+    PyYAML 是唯一环境前提（verify-deploy.sh 自身也依赖它）——缺库 / 解析失败 = infra
+    红，不静默跳过（冻结即冒烟纪律：收集通道 error 为零，断言面不缩）。"""
+    try:
+        import yaml  # noqa: PLC0415  (lazy: 不让既有 V7/PN/RF 齿被可选依赖连坐)
+    except ImportError as e:  # pragma: no cover - 环境前提缺失
+        testcase.fail(
+            f"PV manifest RED(infra): PyYAML 不在位——manifest 静态解析前置缺失"
+            f"（verify-deploy.sh 同一依赖）: {e!r}")
+    if not PV11_MANIFEST.is_file():
+        testcase.fail(f"PV manifest RED: {PV11_MANIFEST} 不在场。")
+    try:
+        doc = yaml.safe_load(PV11_MANIFEST.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — 解析错误是 RED，不是 crash
+        testcase.fail(
+            f"PV manifest RED: manifest.yaml 解析失败（verify-deploy.sh 会 exit 2）: {e!r}")
+    entries = doc.get("entries") if isinstance(doc, dict) else None
+    testcase.assertTrue(
+        isinstance(entries, list) and entries,
+        "PV manifest RED: manifest.yaml 缺 entries 列表（单一事实源被破坏）。")
+    return entries
+
+
+def _pv_parse_version(name: str) -> int:
+    m = PV11_PROMPT_FILE_RE.search(name or "")
+    return int(m.group(1)) if m else -1
+
+
+def _pv_wired_faces_four(testcase):
+    """四面结构化解析当前被接线的版本化 prompt 文件名（版本无关，ARQ-260908 纪律）。
+
+    渲染面 = apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST；声明面 =
+    provider.config.yaml system_prompt 三键；载体面 = OPENCLAW_SYSTEM_PROMPT_CARRIER
+    声明行；铺放面 = manifest.yaml prompt 条目（deploy 输入副本 + data 渲染副本）。
+    返回 (rendered, declared, carried, manifested)，各为该面解析出的文件名列表。"""
+    render_src = _read_text(DEPLOY_DIR / "apply-xiaozhi-overlay.sh")
+    rendered = re.findall(
+        r"PROMPT_(?:SRC|DST)\s*=.*?(openclaw-system-prompt\.v\d+\.md)", render_src)
+    decl_src = _read_text(DEPLOY_DIR / "provider.config.yaml")
+    declared = re.findall(
+        r"(?:artifact|source|deploy_target)\s*:\s*\"[^\"]*"
+        r"(openclaw-system-prompt\.v\d+\.md)", decl_src)
+    carried = []
+    carrier = _read_text(DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER")
+    for line in carrier.splitlines():
+        if "artifact（生成唯一来源）" in line or (
+                line.strip().startswith("- 渲染面") and "openclaw-system-prompt" in line):
+            m = PV11_PROMPT_FILE_RE.search(line)
+            if m:
+                carried.append(m.group(0))
+    manifested = []
+    for entry in _pv_manifest_entries(testcase):
+        if not isinstance(entry, dict):
+            continue
+        for field in ("src", "dst"):
+            m = PV11_PROMPT_FILE_RE.search(str(entry.get(field) or ""))
+            if m:
+                manifested.append(m.group(0))
+    return rendered, declared, carried, manifested
+
+
+def _pv_carrier_history_region(carrier: str) -> str:
+    """carrier 沿革段提取（内容驱动：含「历史版本」的行 → 下一条 `- 声明面` 行为止）。"""
+    lines = carrier.splitlines()
+    start = next((i for i, l in enumerate(lines) if "历史版本" in l), None)
+    if start is None:
+        return ""
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith("- 声明面"):
+            end = j
+            break
+    return "\n".join(lines[start:end])
+
+
+def _pv_readme_prompt_section(readme: str) -> str:
+    """README prompt 指针节提取（内容驱动：标题含 `system prompt` 的 `## ` 节全文）。"""
+    lines = readme.splitlines()
+    start = next((i for i, l in enumerate(lines)
+                  if l.startswith("## ") and "system prompt" in l), None)
+    if start is None:
+        return ""
+    end = len(lines)
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith("## "):
+            end = j
+            break
+    return "\n".join(lines[start:end])
+
+
+class TestPromptV11ScheduleRecall(unittest.TestCase):
+    """261017-prompt-v11-schedule-recall（offline，静态锚齿，additive 补齿）。
+
+    PV-A8（live-manual 观测项——**非自动断言**，structural 豁免，本类不落测试）：
+      ECS 部署由 human 在场执行后，human 持板验收——① 问「后天都有什么课程？」→
+      OpenClaw 审计出现 read 工具动作、答复与 kidpal/schedule.md 周一一行一致
+      （语文/数学/足球/科学/班会/语文/足球），无英语/美术；② loopback 探针同口径
+      复验；③ `openclaw skills list --agent kidpal` ready = 3
+      （kidpal-schedule-answer / weather / tavily）；④ 人为触发一次引擎出错兜底，
+      确认播报不含「小智」。非确定性来源：模型「该读未读」是概率性的、工具调用与
+      TTS 播报 offline 不可机判（「prompt 写明 ≠ LLM 遵循」M3K3 / PN-A5 / RF-A5
+      同款行为等价假设）。观测 = OpenClaw 审计 + 引擎日志双侧留痕，human 真机轮
+      目击判定；本 Pod 不自行部署。"""
+
+    maxDiff = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.v11_path = DEPLOY_DIR / PV11_NAME
+        cls.v11 = _read_text(cls.v11_path)
+        cls.v10_path = DEPLOY_DIR / V10_NAME
+        cls.v10 = _read_text(cls.v10_path)
+
+    # -- PV-A1 落盘 + 无前言 + 课表行扩列 + 差分收口 ---------------------------
+
+    def test_pv_a1_v11_prompt_file_lands(self):
+        """coverage: PV-A1 — v11 落盘非空（版本化演进，历史版本共存可 diff）。"""
+        self.assertTrue(
+            self.v11_path.is_file(),
+            f"PV-A1 RED: {PV11_NAME} 未落盘——v11 版本化 bump 未发生，课表问答回合"
+            "识别特征扩列（TECH-261017 后天课表零工具调用根因）无载体（E4 族）。",
+        )
+        self.assertGreater(
+            len(self.v11.strip()), 0,
+            "PV-A1 RED: v11 文件为空。",
+        )
+
+    def test_pv_a1_v11_no_version_preamble(self):
+        """coverage: PV-A1 — 制品本体无版本沿革前言：首行即 `## 角色`（RF-A1 同形态）。
+        沿革只允许住 OPENCLAW_SYSTEM_PROMPT_CARRIER（260925 起的版本化纪律，bump
+        不得回潮）。"""
+        self.assertTrue(
+            self.v11_path.is_file(), "PV-A1 RED: v11 未落盘（前置）。")
+        first = self.v11.splitlines()[0].strip() if self.v11.splitlines() else ""
+        self.assertEqual(
+            first, "## 角色",
+            "PV-A1 RED: v11 首行不是 `## 角色`——版本沿革前言回潮或角色节被移位"
+            "（沿革只允许住 OPENCLAW_SYSTEM_PROMPT_CARRIER）。",
+        )
+        self.assertFalse(
+            self.v11.startswith("#") and not self.v11.startswith("## "),
+            "PV-A1 RED: v11 顶层出现 H1 前言标题（前言回潮）。",
+        )
+
+    def _assert_schedule_row_expansion(self, body: str, label: str):
+        """PV-A1 扩列锚组（内容驱动选行、并集半同义，不钉具体措辞）：
+        ① 既有读文件纪律保持（先读 / schedule.md / 读不到诚实说查不到）；
+        ② 「只要提到 → 一律判课表问答回合」全称量词；
+        ③ 时间面扩列（后天 + 大后天 + 周X/星期X + 覆盖 ≥3/6）；
+        ④ 主题面扩列（课程 + 覆盖 ≥5/6）。"""
+        rows = _schedule_qa_rows(body)
+        self.assertTrue(
+            rows,
+            f"PV-A1 RED({label}): 回合路由面无「课表问答回合」表行——回合类型路由表"
+            "结构被破坏（V7-A1 既有锚面回退）。",
+        )
+        row = "\n".join(rows)
+        # ① 既有纪律保持（扩列不得替换成「直接凭记忆答」）。
+        self.assertIn(
+            "先读", row,
+            f"PV-A1 RED({label}): 课表问答回合行无「先读」锚——先读真课表再作答的"
+            "既有纪律被删。")
+        self.assertIn(
+            "schedule.md", row,
+            f"PV-A1 RED({label}): 课表问答回合行无 schedule.md 路径锚——真实课表来源"
+            "声明缺失。")
+        self.assertTrue(
+            "读不到" in row or "查不到" in row,
+            f"PV-A1 RED({label}): 课表问答回合行无「读不到/查不到」降级路径锚——"
+            "读不到诚实说查不到的纪律半缺失。")
+        self.assertTrue(
+            any(w in row for w in ("诚实", "如实", "不知道")),
+            f"PV-A1 RED({label}): 课表问答回合行降级路径无诚实语义锚（诚实/如实/"
+            "不知道任一）。")
+        # ② 全称量词半（human 2026-10-17 裁「只要提到课表就去读」）。
+        self.assertTrue(
+            any(w in row for w in PV11_UNIVERSAL_ANCHORS),
+            f"PV-A1 RED({label}): 课表问答回合行无「凡提到 / 只要提到」类全称量词——"
+            "识别特征仍是枚举式（TECH-261017 根因：枚举漏词即落对话回合兜底）。")
+        # ③ 时间面扩列（后天 / 大后天 = 真机触发词；周X / 星期X = 任意具体星期）。
+        self.assertIn(
+            "后天", row,
+            f"PV-A1 RED({label}): 课表问答回合行识别特征缺「后天」——TECH-261017 "
+            "真机触发词未命中即落对话回合兜底（零工具调用 + 凭印象编造）。")
+        self.assertIn(
+            "大后天", row,
+            f"PV-A1 RED({label}): 课表问答回合行识别特征缺「大后天」——相对日表达"
+            "只扩到后天不完整（plan.md §A 扩列清单）。")
+        self.assertTrue(
+            PV11_WEEKDAY_RE.search(row) or PV11_XINGQI_RE.search(row),
+            f"PV-A1 RED({label}): 课表问答回合行识别特征缺「周X / 星期X」模式——"
+            "任意具体星期表达未覆盖（plan.md §A 扩列清单）。")
+        time_hits = [w for w in PV11_SCHEDULE_TIME_ANCHORS if w in row]
+        self.assertGreaterEqual(
+            len(time_hits), 3,
+            f"PV-A1 RED({label}): 课表问答回合行时间面覆盖不足——命中 {time_hits}"
+            "（须 ≥3/6：今天/明天/周几/这周/下周/号）。")
+        # ④ 主题面扩列。
+        subject_hits = [w for w in PV11_SCHEDULE_SUBJECT_ANCHORS if w in row]
+        self.assertIn(
+            "课程", subject_hits,
+            f"PV-A1 RED({label}): 课表问答回合行识别特征缺「课程」——主题面扩列未落"
+            "（plan.md §A：凡提到课表、课程、上课…）。")
+        self.assertGreaterEqual(
+            len(subject_hits), 5,
+            f"PV-A1 RED({label}): 课表问答回合行主题面覆盖不足——命中 {subject_hits}"
+            "（须 ≥5/6：课表/课程/上课/上什么课/几点上课/要带什么）。")
+
+    def test_pv_a1_v11_schedule_row_expanded_recognition(self):
+        """coverage: PV-A1 — v11 课表问答回合行识别特征扩列锚齐（并集容换写），
+        且纪律句仍在同表行内。"""
+        self.assertTrue(
+            self.v11_path.is_file(), "PV-A1 RED: v11 未落盘（前置）。")
+        self._assert_schedule_row_expansion(self.v11, f"{PV11_NAME} 文件")
+
+    def test_pv_a1_v11_diff_confined_to_schedule_row(self):
+        """coverage: PV-A1 — v11 = v10 全文仅「课表问答回合」识别特征列扩列：
+        两版逐行比对，差异只允许落在课表问答回合表行（其余段落零偏移）。"""
+        self.assertTrue(
+            self.v11_path.is_file(), "PV-A1 RED: v11 未落盘（前置）。")
+        self.assertTrue(
+            self.v10.strip(), "PV-A1 RED(infra): v10 不在场/为空——差分基线缺失。")
+        offenders = []
+        for lineno, (old, new) in enumerate(
+                zip_longest(self.v10.splitlines(), self.v11.splitlines(),
+                            fillvalue=None), start=1):
+            if old == new:
+                continue
+            if "课表问答回合" in (old or "") and "课表问答回合" in (new or ""):
+                continue
+            offenders.append((lineno, old, new))
+        self.assertEqual(
+            offenders, [],
+            "PV-A1 RED: v11 相对 v10 的差异越出「课表问答回合」表行——版本化 bump "
+            "只许扩课表识别特征列、其余段落零偏移（plan.md §A）。首三处："
+            f"{offenders[:3]!r}",
+        )
+
+    # -- PV-A2 v10 历史版本零回改（RF-A3 形态复刻，must-stay-green 负锚） ------
+
+    def test_pv_a2_v10_prompt_file_immutable(self):
+        """coverage: PV-A2 — v10 本体零回改（历史不可变铁律；v1..v9 由既有各包齿钉）。
+        v10 冻结时点 sha256 = 963b2b79…（2026-10-18 PV 批冻结，LF 归一口径 =
+        canonical blob 口径）。"""
+        self.assertTrue(
+            self.v10_path.is_file(),
+            "PV-A2 RED: v10 文件被删除——历史版本共存可 diff 铁律被破坏。",
+        )
+        self.assertEqual(
+            _sha256_lf(self.v10_path), PV11_V10_SHA256_LF,
+            "PV-A2 RED: v10 本体被回改——bump 必须新落 .v11 文件、历史版本一律不改"
+            "（版本化落盘惯例；如确需改动属治理裁决，须 human ruling 后更新本钉）。",
+        )
+
+    # -- PV-A3 四面接线一致 + 接线版承载扩列锚 + carrier 沿革（版本无关形态） ----
+
+    def test_pv_a3_four_faces_wired_consistent(self):
+        """coverage: PV-A3 — 四面接线一致且 manifest prompt 条目齐（deploy 输入
+        副本 + data 渲染副本）。
+
+        版本无关形态（ARQ-260908 纪律，接线类断言零版本字面）：从渲染面 /
+        声明面 / 载体面 / manifest 四面各自解析当前版，断言四面集合相等且该版
+        落盘非空——「验收所测 = 生产所用」；bump 同批翻即绿、漏翻必红。"""
+        rendered, declared, carried, manifested = _pv_wired_faces_four(self)
+        self.assertTrue(
+            rendered and declared and carried and manifested,
+            f"PV-A3 RED: 接线面解析失败（rendered={rendered} declared={declared} "
+            f"carried={carried} manifested={manifested}）——prompt 落盘即孤儿"
+            "（PROMPT_SRC/PROMPT_DST、provider.config.yaml system_prompt 三键、"
+            "OPENCLAW_SYSTEM_PROMPT_CARRIER 声明行、manifest.yaml prompt 条目须"
+            "指向 openclaw-system-prompt.vN.md）。",
+        )
+        self.assertEqual(
+            set(rendered), set(declared),
+            f"PV-A3 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
+            "不同版本——「验收所测 = 生产所用」断裂（ADR-001 接线不变式，bump "
+            "须同批）。",
+        )
+        self.assertEqual(
+            set(rendered), set(carried),
+            f"PV-A3 RED: 载体面（OPENCLAW_SYSTEM_PROMPT_CARRIER）声明 "
+            f"{sorted(carried)} 与渲染/声明两面 {sorted(rendered)} 不一致——"
+            "carrier 声明未随 bump 同批。",
+        )
+        self.assertEqual(
+            set(rendered), set(manifested),
+            f"PV-A3 RED: manifest.yaml prompt 条目 {sorted(manifested)} 与渲染/声明"
+            f"/载体三面 {sorted(rendered)} 不一致——清单仍指旧版，verify-deploy.sh "
+            "会对账失败（261013 单一事实源纪律）。",
+        )
+        name = sorted(set(rendered))[0]
+        path = DEPLOY_DIR / name
+        self.assertTrue(
+            path.is_file(), f"PV-A3 RED: 被接线的 {name} 未落盘（孤儿声明）。")
+        self.assertTrue(
+            _read_text(path).strip(), f"PV-A3 RED: 被接线的 {name} 是空文件。")
+        # manifest 两条 prompt 条目：deploy 输入副本 + data 渲染副本。
+        entries = _pv_manifest_entries(self)
+        prompt_entries = [
+            e for e in entries
+            if isinstance(e, dict) and any(
+                PV11_PROMPT_FILE_RE.search(str(e.get(f) or "")) for f in ("src", "dst"))]
+        self.assertGreaterEqual(
+            len(prompt_entries), 2,
+            "PV-A3 RED: manifest prompt 条目不足两条——须含 deploy 输入副本与 data "
+            f"渲染副本（实得 {len(prompt_entries)} 条）。")
+        dsts = [str(e.get("dst") or "") for e in prompt_entries]
+        self.assertTrue(
+            any("/xiaozhi-esp32-server/deploy/" in d for d in dsts),
+            f"PV-A3 RED: manifest 无 deploy 输入副本条目（dst 列表 {dsts}）——"
+            "overlay 渲染源的铺放面缺失。")
+        self.assertTrue(
+            any("xiaozhi-docker-data" in d for d in dsts),
+            f"PV-A3 RED: manifest 无 data 渲染副本条目（dst 列表 {dsts}）——"
+            "overlay 渲染产物无核验面（渲染即失对账）。")
+
+    def test_pv_a3_carrier_history_appends_all_prior_versions(self):
+        """coverage: PV-A3 — carrier 沿革 append 一行且历史行不删：既存历史版本
+        `.vK.md` 文件（K < 当前接线版）须全部在「历史版本」沿革段被点名。"""
+        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
+        self.assertTrue(rendered, "PV-A3 RED: 无接线 prompt 版本可解析。")
+        current = _pv_parse_version(sorted(set(rendered))[0])
+        self.assertGreater(current, 0, "PV-A3 RED: 接线 prompt 版本号解析失败。")
+        carrier = _read_text(DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER")
+        self.assertTrue(
+            carrier.strip(),
+            "PV-A3 RED: OPENCLAW_SYSTEM_PROMPT_CARRIER 不在场——沿革唯一全量副本缺失。")
+        history = _pv_carrier_history_region(carrier)
+        self.assertTrue(
+            history,
+            "PV-A3 RED: carrier 无「历史版本」沿革段——沿革唯一全量副本结构被破坏。")
+        missing = [
+            f"openclaw-system-prompt.v{k}.md" for k in range(1, current)
+            if (DEPLOY_DIR / f"openclaw-system-prompt.v{k}.md").is_file()
+            and f"openclaw-system-prompt.v{k}.md" not in history
+        ]
+        self.assertEqual(
+            missing, [],
+            "PV-A3 RED: carrier 沿革漏记既存历史版本 "
+            f"{missing}——bump 须 append 一行（历史行不删），沿革是版本演进史唯一"
+            "全量副本（260925 起的版本化纪律）。",
+        )
+
+    def test_pv_a3_wired_version_carries_expanded_recognition(self):
+        """coverage: PV-A3 — 接线版正文携带 PV-A1 扩列锚（红→绿半：现接线 v10 无
+        后天/大后天 = 设计态红；bump v11 + 四面同批后转绿；未来 bump 丢锚同样红，
+        防丢内容）。"""
+        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
+        self.assertTrue(rendered, "PV-A3 RED: 无接线 prompt 版本可解析。")
+        name = sorted(set(rendered))[0]
+        body = _read_text(DEPLOY_DIR / name)
+        self.assertTrue(body.strip(), f"PV-A3 RED: 被接线的 {name} 不在场/为空。")
+        self._assert_schedule_row_expansion(body, f"接线版 {name}")
+
+    # -- PV-A4 KidPal 极简模板（三段位 + 残留禁令） -----------------------------
+
+    def _template_body(self) -> str:
+        path = DEPLOY_DIR / PV11_TEMPLATE_NAME
+        self.assertTrue(
+            path.is_file(),
+            f"PV-A4 RED: {PV11_TEMPLATE_NAME} 未落盘——通用小智模板与 v11 对冲"
+            "（工具不匹配就直答 / 禁 ``` 段）无替换件（TECH-261017 第二根因）。")
+        body = _read_text(path)
+        self.assertGreater(len(body.strip()), 0, "PV-A4 RED: 模板文件为空。")
+        return body
+
+    def test_pv_a4_kidpal_template_identity_and_context(self):
+        """coverage: PV-A4 — 模板含 `<identity>` 位（承接 build_enhanced_prompt 以
+        config["prompt"] 注入的 base_prompt）与 `<context>` 位（日期/星期/农历/
+        设备位置/天气事实注入位——课表「后天星期几」的事实来源必须保留）+
+        中文输出约束一句。"""
+        body = self._template_body()
+        self.assertIn(
+            "<identity>", body,
+            "PV-A4 RED: 模板缺 <identity> 位——v10 入口（config[\"prompt\"] 作 "
+            "base_prompt）无处承接，prompt 与 v11 脱钩。")
+        self.assertIn(
+            "</identity>", body, "PV-A4 RED: 模板 <identity> 位未闭合。")
+        self.assertIn(
+            "{{base_prompt}}", body,
+            "PV-A4 RED: 模板 <identity> 未以 {{base_prompt}} 承接引擎注入的 "
+            "base_prompt（plan.md §B：<identity>{{base_prompt}}</identity>）。")
+        self.assertIn("<context>", body, "PV-A4 RED: 模板缺 <context> 位。")
+        self.assertIn("</context>", body, "PV-A4 RED: 模板 <context> 位未闭合。")
+        # 事实注入位（并集容换写：英文占位名或中文表述任一）。
+        fact_groups = {
+            "今天日期": ("today_date", "今天日期", "日期"),
+            "星期": ("today_weekday", "星期", "weekday"),
+            "农历": ("农历", "lunar"),
+            "设备位置": ("位置", "location", "城市"),
+            "天气": ("天气", "weather"),
+        }
+        missing = [name for name, anchors in fact_groups.items()
+                   if not any(a in body for a in anchors)]
+        self.assertEqual(
+            missing, [],
+            "PV-A4 RED: 模板 <context> 缺事实注入位 "
+            f"{missing}——课表「后天星期几」与实时事实回合的事实来源必须在位"
+            "（plan.md §B：<context> 今天日期、星期、农历、设备位置、天气必须留）。")
+        self.assertIn(
+            "中文", body,
+            "PV-A4 RED: 模板缺中文输出约束（plan.md §B 三段位之三）。")
+        self.assertTrue(
+            any(w in body for w in ("回答", "输出", "回复", "作答", "说话")),
+            "PV-A4 RED: 模板「中文输出约束」缺输出动词半（回答/输出/回复/作答/"
+            "说话任一）——约束句不成立。")
+
+    def test_pv_a4_kidpal_template_free_of_xiaozhi_residue(self):
+        """coverage: PV-A4 — 模板不含通用小智模板残留（play_music / hass /
+        handle_exit_intent / speaker_recognition / anti_ai_smell / 空 <memory> /
+        禁 ``` 段），且不写 `{{current_time}}`（引擎传字面量，写了会留字面串）。"""
+        body = self._template_body()
+        lower = body.lower()
+        for token in ("play_music", "handle_exit_intent", "speaker_recognition",
+                      "anti_ai_smell", "tts_format_constraints"):
+            self.assertNotIn(
+                token, lower,
+                f"PV-A4 RED: 模板残留通用小智模板段「{token}」——与 v11 对冲"
+                "（plan.md §B 删除清单）。")
+        self.assertIsNone(
+            re.search(r"\bhass\b", lower),
+            "PV-A4 RED: 模板残留通用小智模板 hass 智能家居语义（plan.md §B 删除清单）。")
+        self.assertNotIn(
+            "<memory", lower,
+            "PV-A4 RED: 模板残留 <memory> 段（含空 <memory>）——plan.md §B 删除清单。")
+        self.assertNotIn(
+            "{{current_time}}", body,
+            "PV-A4 RED: 模板写了 {{current_time}}——build_enhanced_prompt 传字面量，"
+            "会留字面串在 prompt 里（plan.md §B 已知引擎缺陷规避）。")
+        fence_offenders = [
+            line for line in body.splitlines()
+            if "```" in line and (
+                "代码块" in line or "code block" in line.lower()
+                or any(w in line for w in ("禁止", "严禁", "不得", "不要", "不能", "不可")))
+        ]
+        self.assertEqual(
+            fence_offenders, [],
+            "PV-A4 RED: 模板残留「禁 ``` 段」（tts_format_constraints 条款）——"
+            "v11 的末尾 ```display 块纪律会被这条对冲。实得行："
+            f"{fence_offenders[:2]!r}")
+
+    # -- PV-A7 manifest 条目齐 + 静态可解析 + README 指针 -----------------------
+
+    def test_pv_a7_manifest_entries_cover_template_and_skills(self):
+        """coverage: PV-A7 — manifest 条目齐：kidpal-agent-prompt.txt 一条 +
+        261017-openclaw-kidpal-skills 声明工件条目一条（prompt v11 两条见 PV-A3）。"""
+        entries = _pv_manifest_entries(self)
+
+        def _mentions(needle: str) -> list[dict]:
+            return [
+                e for e in entries
+                if isinstance(e, dict) and needle in (
+                    str(e.get("src") or "") + "\n" + str(e.get("dst") or ""))]
+
+        self.assertTrue(
+            _mentions(PV11_TEMPLATE_NAME),
+            f"PV-A7 RED: manifest 缺 {PV11_TEMPLATE_NAME} 条目——KidPal 极简模板"
+            "未入单一事实源（live 铺放/核验无面）。")
+        self.assertTrue(
+            _mentions(PV11_SKILLS_DIRNAME),
+            f"PV-A7 RED: manifest 缺 {PV11_SKILLS_DIRNAME} 声明工件条目——skills "
+            "收敛声明未入单一事实源。")
+
+    def test_pv_a7_manifest_entries_statically_parseable(self):
+        """coverage: PV-A7 — entries 可被 verify-deploy.sh 静态解析（等价校验：
+        每条 dst 在场；md5 条 src 在仓内存在；marker 条 anchors 非空）。"""
+        entries = _pv_manifest_entries(self)
+        problems = []
+        for i, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                problems.append(f"entries[{i}] 不是 object")
+                continue
+            dst = entry.get("dst")
+            if not dst:
+                problems.append(f"entries[{i}] 缺 dst")
+            expect = entry.get("verify")
+            if expect == "marker":
+                if not entry.get("anchors"):
+                    problems.append(f"entries[{i}] verify=marker 但 anchors 空（dst={dst}）")
+            else:
+                src = entry.get("src")
+                if not src:
+                    problems.append(f"entries[{i}] verify={expect!r} 但缺 src（dst={dst}）")
+                elif not (REPO_ROOT / str(src)).is_file():
+                    problems.append(f"entries[{i}] 仓内源缺失: {src}")
+        self.assertEqual(
+            problems, [],
+            "PV-A7 RED: manifest entries 静态解析问题（verify-deploy.sh 会判漂移/"
+            "配置错误）：\n  - " + "\n  - ".join(problems))
+
+    def test_pv_a7_readme_pointer_follows_wired_version(self):
+        """coverage: PV-A7 — server/deploy/README.md prompt 指针节刷当前接线版，
+        且不复述沿革（沿革唯一全量副本 = carrier）。"""
+        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
+        self.assertTrue(rendered, "PV-A7 RED: 无接线 prompt 版本可解析（指针目标缺失）。")
+        current = sorted(set(rendered))[0]
+        readme = _read_text(PV11_README)
+        self.assertTrue(readme.strip(), "PV-A7 RED: server/deploy/README.md 不在场。")
+        section = _pv_readme_prompt_section(readme)
+        self.assertTrue(
+            section,
+            "PV-A7 RED: README 无 prompt 指针节（标题含「system prompt」的 `## ` 节"
+            "缺失）——指针节是运维面唯一分散入口。")
+        self.assertIn(
+            current, section,
+            f"PV-A7 RED: README prompt 指针节未指向当前接线版 {current}——"
+            "bump 后仍指旧版 = 散文漂移（arch §5.5.5 :360 先例债）。")
+        stale = [
+            name for name in re.findall(
+                r"(?:当前|现状)[^\n]{0,20}?(openclaw-system-prompt\.v\d+\.md)", section)
+            if name != current
+        ]
+        self.assertEqual(
+            stale, [],
+            f"PV-A7 RED: README 指针节仍以「当前/现状」口径写旧版 {stale}——"
+            f"当前接线版为 {current}。")
+        lineage = [
+            line for line in section.splitlines()
+            if len(set(re.findall(r"openclaw-system-prompt\.v\d+\.md", line))) >= 2
+        ]
+        self.assertEqual(
+            lineage, [],
+            "PV-A7 RED: README 指针节复述沿革（单行并列多个版本文件）——沿革只允许"
+            "住 OPENCLAW_SYSTEM_PROMPT_CARRIER。实得行："
+            f"{lineage[:2]!r}")
 
 
 if __name__ == "__main__":

@@ -82,6 +82,12 @@ TTS:
     voice: zh-CN-XiaoxiaoNeural
 ASR:
   Qwen3ASRFlash: {api_key: "$DASHSCOPE_API_KEY", model_name: qwen3-asr-flash, type: qwen3_asr_flash}
+# KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）：引擎
+# PromptManager._load_base_template 读本顶层键（缺省回落镜像内置 agent-base-prompt.txt
+# = 通用小智模板，与 v11 对冲）。值 = data/ bind-mount 内路径，模板源由本脚本下方拷入。
+prompt_template: /opt/xiaozhi-esp32-server/data/kidpal-agent-prompt.txt
+# 引擎出错兜底语（KidPal 口径，去「小智」字样）：get_system_error_response 读本顶层键。
+system_error_response: "哎呀，我这边卡了一下，稍等一下再问我一次吧。"
 # 决策 21（arch §6.4）: 引擎不主动断连 — 两道超时 24h 纯兜底 + 告别语关闭。
 # 缺此块 = 引擎回落源码默认（120s 无语音告别语 + 180s 硬断，receiveAudioHandle.py:114/123）
 # → 提醒推送黑洞（设备常驻在线假设被击穿）。持久化面 = 本 heredoc，TECH-261010 仓内根治。
@@ -96,12 +102,13 @@ ls -la "$OVERLAY"
 # 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
 # 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
 # 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
-#   v10 = openclaw-system-prompt.v10.md (当前渲染源; 261012-kidpal-realtime-facts:
-#        回合类型路由表新增「实时事实回合」行（先播提示→联网真查→只依据查询结果作答、
-#        查不到诚实引导、禁编造/禁虚称已查）+ 对话行通用反编造 + 底线节第三不变量
-#        （TECH-261012 真机天气幻觉根治）; 其余段落零偏移继承 v9)。
-PROMPT_SRC="$HERE/openclaw-system-prompt.v10.md"
-PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v10.md"
+#   v11 = openclaw-system-prompt.v11.md (当前渲染源; 261017-prompt-v11-schedule-recall:
+#        课表问答回合识别特征扩列——凡提到课表 / 课程 / 上课 / 上什么课 / 几点上课 /
+#        要带什么，及今天 / 明天 / 后天 / 大后天 / 周X / 星期X / 周几 / 这周 / 下周 /
+#        （某月某）号 + 课 的组合一律判课表问答回合，先读 schedule.md 再作答、读不到
+#        诚实说查不到（TECH-261017 真机「该读未读」根治）; 其余段落零偏移继承 v10)。
+PROMPT_SRC="$HERE/openclaw-system-prompt.v11.md"
+PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v11.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
   echo "rendered openclaw-system-prompt -> $PROMPT_DST"
@@ -120,6 +127,18 @@ if [ -f "$PROMPT_SRC" ]; then
   fi
 else
   echo "WARN: wired system prompt not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
+fi
+
+# KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）: data/ 是容器
+# 的 bind-mount，拷入即被引擎 prompt_template 读取（与 .config.yaml 同目录、同一次渲染）。
+# 模板源替换镜像内置通用小智模板；缺源时告警而不静默（孤儿 prompt_template 指向空气）。
+PROMPT_TEMPLATE_SRC="$HERE/kidpal-agent-prompt.txt"
+PROMPT_TEMPLATE_DST="$DATA_DIR/kidpal-agent-prompt.txt"
+if [ -f "$PROMPT_TEMPLATE_SRC" ]; then
+  cp "$PROMPT_TEMPLATE_SRC" "$PROMPT_TEMPLATE_DST"
+  echo "rendered kidpal-agent-prompt -> $PROMPT_TEMPLATE_DST"
+else
+  echo "WARN: KidPal agent prompt template not found at $PROMPT_TEMPLATE_SRC — prompt_template 将指向缺失文件" >&2
 fi
 
 # 提醒三档配置 / 排程脚本的铺放已移交 manifest 直管（261013-gov-review-deploy-

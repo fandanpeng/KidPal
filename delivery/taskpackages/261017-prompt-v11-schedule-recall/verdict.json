@@ -1,0 +1,84 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r3.json)",
+  "changeId": "261017-prompt-v11-schedule-recall",
+  "phase": "final",
+  "round": 3,
+  "invocationId": "d55fac5f-35ee-481f-9fe0-48e91dfcd804",
+  "outcome": "ok",
+  "ok": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesNotExecuted": [],
+  "evidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r3.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r1.json",
+  "lifecycle": {
+    "rounds": [
+      { "round": 1, "timing": "scoped", "outcome": "全绿（八闸 PASS，builder 实现 commit 0574e9bb 后的 scoped 证据态）", "evidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r1.json" },
+      { "round": 2, "timing": "final", "outcome": "红（仅 docs-sync：docRefs 两条 TECH 条目仍指旧顶层路径——收口后 debt-render.mjs 已按 closed 状态自动归位 _archive/2026/；引用路径修正后复跑，非代码红、非被测行为红）", "evidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r2.json" },
+      { "round": 3, "timing": "final", "outcome": "全绿（十闸 PASS，firmware-build 真编译；收口证据态）", "evidenceRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/verifier-evidence/rounds/r3.json" }
+    ],
+    "reworkRounds": 0,
+    "budgetNote": "iterationBudget=2 / fixBudget=3 / supervisorBlockBudget=2——scoped r1 一次过；final r2 红为 integrator docs 引用路径缺陷（非代码返工），修正后 r3 一次过",
+    "redBaseline": "acceptance-author 冻结实跑 2026-10-18（C:/tmp/pv-red-three-files.log、C:/tmp/pv-red-full.log）：三文件 24 failed / 26 passed；全量 24 failed / 186 passed / 4 deselected / 33 subtests；24 条失败全部为 PV 设计态红（非 PV 前缀失败 = 0），上游 181 passed 零新增红",
+    "greenState": "integrator 独立全量复跑 2026-10-18：server/acceptance/ -m \"not live\" = 210 passed / 4 deselected / 33 subtests（零残留红）；server/tests/ = 91 passed；firmware-build 真编译 build-pass（xiaozhi.bin 0x3217f0 bytes，app 分区余量 9%）"
+  },
+  "scopeAudit": {
+    "implementationFiles": [
+      "server/deploy/openclaw-system-prompt.v11.md",
+      "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+      "server/deploy/provider.config.yaml",
+      "server/deploy/apply-xiaozhi-overlay.sh",
+      "server/deploy/manifest.yaml",
+      "server/deploy/kidpal-agent-prompt.txt",
+      "server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json",
+      "server/deploy/261017-openclaw-kidpal-skills/apply_agent_skills.py",
+      "server/deploy/261017-openclaw-kidpal-skills/rollback_agent_skills.py",
+      "server/deploy/README.md"
+    ],
+    "acceptanceFiles": [
+      "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+      "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py"
+    ],
+    "docsFiles": [
+      "docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md（closed → 渲染器归位 _archive/2026/）",
+      "docs/debt/tech/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md（closed → 渲染器归位 _archive/2026/）",
+      "docs/debt/tech/INDEX.md（生成件重渲染）",
+      "docs/debt/tech/_archive/2026/INDEX.md（生成件重渲染）"
+    ],
+    "deliveryFiles": [
+      "delivery/taskpackages/261017-prompt-v11-schedule-recall/**",
+      "delivery/taskpackages/current/{taskpackage.json,verdict.json}"
+    ],
+    "zeroTouchSurfaces": [
+      "docs/requirements.md",
+      "docs/architecture.md",
+      "docs/contracts/**",
+      "openclaw.json（零入仓）",
+      "firmware/**",
+      "server/gateway/**"
+    ],
+    "auditCommand": "git status --porcelain + git diff main...HEAD --stat（分支 dev/pod-m2；零触碰面 git diff 为空实核）"
+  },
+  "testScope": {
+    "scopeFile": "delivery/taskpackages/261017-prompt-v11-schedule-recall/test-scope.txt",
+    "entries": [
+      "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+      "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+      "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
+      "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+      "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
+      "server/acceptance/test_char_meaning_merge.acceptance.py",
+      "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+      "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+      "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py"
+    ],
+    "floor": "本包 acceptanceTestsFile ∪ blast radius 映射 ∪ 共享 seam（单包，无对端冻结件）",
+    "scopingMethod": "detect_changes（per-Pod 图索引 C-AI-KidPal-pod-m2 可用，base=main，merge_base dd8083d2，changed_files 29 / seed_symbols 87 / impacted_total 0——改动面为 prompt/YAML/shell/JSON 声明，无代码符号调用者）+ 「谁读这些部署面文件」人工映射补全；非降级、无 trace_path 降级"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/taskpackages/261017-prompt-v11-schedule-recall/review-packet.md",
+    "docsDelta": "delivery/taskpackages/261017-prompt-v11-schedule-recall/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（本 integrator 不判定通过、不 merge、不 push）；PV-A8 真机四项 + ECS 部署轮（.config.yaml 真再生 / skills 首次 apply / verify-deploy.sh 三时机）+ docs/architecture.md 指针 arch 会话为 human/主线程承接项"
+}

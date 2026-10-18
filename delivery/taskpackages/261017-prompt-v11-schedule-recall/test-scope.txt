@@ -1,0 +1,30 @@
+# test-scope · 261017-prompt-v11-schedule-recall（final 相位影响面圈定清单）
+# 生成者：integrator（Step 4）· 2026-10-18
+# 圈定方法：detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，depth=2，
+#   merge_base=dd8083d231b27ccb9304692540c8305efad685d8，changed_files=29 / seed_symbols=87 /
+#   impacted_total=0——本包改动面为 prompt 文本 + YAML 清单 + shell 渲染面 + JSON 声明工件，
+#   无代码符号调用者，故 blast radius 由「谁读这些部署面文件」人工映射补全）
+#   ∪ taskpackage.impactedTestsSeed ∪ 共享 seam（prompt/overlay/manifest/声明工件读取方）∪ 安全余量。
+# 范围构成：
+#   ① acceptanceTestsFile（本包三件冻结验收，PV-A1..A7 承载）
+#   ② impactedTestsSeed 映射测试（m3k3 四面版本无关守卫 / 261001 overlay 冲刷守卫）
+#   ③ 共享 seam：所有读取 server/deploy prompt / manifest.yaml / apply-xiaozhi-overlay.sh /
+#      provider.config.yaml 的冻结验收件（v11 bump 或 overlay heredoc/清单改动即处其断言面）
+#   ④ 安全余量：同 seam 的声明契约先例件（perf-k1 —— 261017 skills 声明仿其形态）
+# 未纳入及理由：
+#   - server/tests/*.py 单元面：无文件引用 server/deploy 改动面（unit 闸交集空 = 诚实绿跳过）
+#   - test_engine_stop_truncation_asr_filter / test_kidpal_speak_sync：只读 engine-patch/connection.py
+#     （本包零 diff），不处断言面
+#   - 其余 acceptance 文件（m3k1 / schedule_grid_restore / m4k1 / story_fetch / tech260928）：
+#     不读本包改动面
+# impactedTestsSeed 中 server/deploy/verify-deploy.sh 非测试件（静态解析对象），其可解析性由
+#   PV-A7 齿 test_pv_a7_manifest_entries_statically_parseable 覆盖，不单列。
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
