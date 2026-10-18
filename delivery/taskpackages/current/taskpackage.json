@@ -1,147 +1,258 @@
 {
-  "changeId": "261017-prompt-v11-schedule-recall",
-  "rigor": "lite",
-  "sourceType": "regression",
+  "changeId": "261018-sd-log-persist",
+  "rigor": "full",
+  "sourceType": "proposal",
   "origin": {
-    "type": "regression",
-    "upstreamType": "regression",
-    "upstreamRef": "docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md",
-    "upstreamFrozen": "reviewed plan = delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md（/triage-change 2026-10-18：architect 分流 review 判 ②单包 Lite，human 触点①确认；同日重裁「arch 面迁出 dev 包、独立 architect 会话后置」、gateProfile 收敛为 evidence-integrity）。spine = delivery/intake/261017-prompt-v11-schedule-recall.md（status: in-flight，facePlan 实现面先行、架构面后置）。plan 即冻结输入，只读消费。",
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+    "upstreamFrozen": "PROPOSAL FROZEN v1.0（architect-reviewer R1 BLOCK(F1-F3) → v0.2 → R2 GREEN；判档 = 主路径；契约四分类 = NO_CONTRACT_CHANGE）；landing commit 5a37b001（docs/architecture.md 决策 24 白名单增列 + 六处镜像 + docs/ADR.md ADR-012；landing-verdict GREEN）；spine delivery/intake/261018-sd-log-persist.md anchors.arch 已回填。reviewed plan = delivery/taskpackages/261018-sd-log-persist/plan.md（architect /triage-change 2026-10-18 比例化 review；human 触点①确认 ②单包 Full / riskTier=high），plan 即冻结技术输入、只读消费。",
     "workstream": ""
   },
-  "subsystem": "server/deploy（prompt v11 四面接线 + KidPal 极简模板与 overlay 两键 + manifest 单一事实源 + openclaw.json kidpal skills 定点 patch）+ server/acceptance（additive v11 齿 / 新键锚扩展 / skills 声明离线契约）",
-  "planRef": "delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md",
-  "story": "TECH-261017-schedule-answer-skip-read-hallucination（MAJOR）· 课表问答「该读未读」幻觉根治——行为语义权威 = requirements S-F1.3 AC1「课表问题永不编造」与 human 2026-10-17 裁「只要提到课表就去读」；本包属实现细化，需求文本零改动。真机问「后天都有什么课程？」时 kidpal agent 零工具调用、凭印象编造不存在的英语/美术课（同 prompt 同路径 loopback 复现 9/9 读文件即答对），根因 = v10 回合路由表课表行识别特征只枚举今天/明天/这周，「后天」落入「孩子对话回合（禁工具）」兜底。同批消费 TECH-261017-xiaozhi-template-residue-deploy-ssot-gap（SHOULD）：引擎通用小智模板与 v10 对冲（工具不匹配就直答 / 禁 ``` 段）、system_error_response 兜底语播「小智」、kidpal agent 19 个 modelVisible skill 中 18 个为 bundled/extra 噪音、三键无仓内源。修法 = v11 识别特征扩列 + KidPal 极简模板替换 + 兜底语去小智 + kidpal skills allowlist 收敛为 3 项，五件全部接入 manifest.yaml 单一事实源。",
+  "subsystem": "firmware/main/diagnostics（sd_log 纯逻辑 host 同源 seam + sd_log_fs 芯片面）+ firmware/main（app_main 最早期装 esp_log 钩子）+ firmware/main/boards/waveshare-s3-rlcd-4.2（挂载成功分支 attach + max_files 5→8）+ firmware/main/CMakeLists.txt 与 firmware/main/test/host_app/main/CMakeLists.txt 两处显式登记 + firmware/main/test（host 验收件）",
+  "planRef": "delivery/taskpackages/261018-sd-log-persist/plan.md",
+  "story": "261018-sd-log-persist · 板端诊断日志落 TF 卡（有界轮转，含 STT/LLM 对话原文）——行为权威 = reviewed plan（architect /triage-change 2026-10-18）+ FROZEN PROPOSAL 决策 24 白名单增列。设备脱离串口独立运行时也能事后查真相（真机长尾：课表幻觉 TECH-261018、ASR 误听等）：采集 esp_log 输出（默认 INFO 及以上），经 PSRAM 环形缓冲 + 低优先级写盘任务落到 /sdcard/logs/KPLOGnnn.TXT，单文件 512KB × 32 个 ≈ 目录总量 16MB 封顶、循环覆盖最旧。human 已拍板：含对话原文（STT/LLM）、常开 + 有界轮转、分区表与 sdkconfig 零改动。",
   "sourceRefs": [
-    "docs/debt/tech/_archive/2026/TECH-261017-schedule-answer-skip-read-hallucination.md",
-    "docs/debt/tech/_archive/2026/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md",
-    "delivery/intake/261017-prompt-v11-schedule-recall.md",
-    "delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md"
+    "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+    "delivery/intake/261018-sd-log-persist.md",
+    "delivery/taskpackages/261018-sd-log-persist/plan.md",
+    "docs/debt/tech/TECH-261016-sd-story-confidentiality.md"
   ],
   "acceptance": [
-    "PV-A1: v11 制品落盘且本体无前言（首行 `## 角色`），回合路由表「课表问答回合」识别特征扩列锚齐（并集容换写：提到课表/课程/上课/上什么课/几点上课/要带什么 + 今天/明天/后天/大后天/周X/星期X/周几/这周/下周/某月某号 + 课 的组合表述），并落在先读 `kidpal/schedule.md` 再作答 / 读不到诚实说查不到的纪律句内；其余段落相对 v10 零偏移（v11 = v10 全文仅课表识别特征列扩列）。设计态红：v11 未落盘或课表行仍只枚举今天/明天/这周",
-    "PV-A2: v10 历史文件 sha256 零回改（负锚守卫，LF 归一 / canonical blob 口径——Windows 工作树 CRLF 是 autocrlf 检出伪影，不得据此判红或判绿；冻结值 = 963b2b79bf2331dd76528f282aca620c39f764aef8b8888c2b96af7ae90b9b23）——bump 后任何回改 v10 本体的动作必须报红",
-    "PV-A3: 四面接线同批翻 v11 且相互一致：OPENCLAW_SYSTEM_PROMPT_CARRIER（artifact 指向 v11 + 沿革 append 一行、历史行不删）、provider.config.yaml 的 system_prompt 三键（artifact/source/deploy_target）、apply-xiaozhi-overlay.sh 的 PROMPT_SRC/PROMPT_DST、manifest.yaml 两条 v10 条目改 v11 且 .config.yaml marker 锚集同步；ADR-001 版本无关守卫绿（从结构化指向解析当前版、禁版本字面断言）。设计态红：任一接线面仍指 v10 或四面指向不一致",
-    "PV-A4: KidPal 极简模板落盘 `server/deploy/kidpal-agent-prompt.txt`：含 `<identity>` 位（承接引擎 build_enhanced_prompt 以 config[\"prompt\"] 注入的 base_prompt）与 `<context>` 位（today_date / today_weekday / 农历 / 设备位置 / 天气等事实注入位，课表「后天星期几」的事实来源必须保留）+ 中文输出约束一句；不含 play_music / hass / handle_exit_intent / speaker_recognition / 禁 ``` 段 / anti_ai_smell / 空 <memory>；不写 `{{current_time}}` 行（引擎 build_enhanced_prompt 传字面量，写了会留字面串在 prompt 里）。设计态红：模板缺失或仍含通用小智模板任一残留段",
-    "PV-A5: overlay 渲染两键：apply-xiaozhi-overlay.sh 的 .config.yaml heredoc 含 `prompt_template: /opt/xiaozhi-esp32-server/data/kidpal-agent-prompt.txt` 与 `system_error_response`（KidPal 口径兜底语，禁「小智」字样）；模板源经 overlay 拷入 data/（bind-mount）随之生效；provider.config.yaml 声明面同步两键；.config.yaml marker 锚集覆盖 prompt_template / system_error_response 两锚。设计态红：heredoc 缺任一键或兜底语含「小智」",
-    "PV-A6: openclaw.json kidpal skills 收敛声明工件（仿 perf-k1 定点 patch 先例）：server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json 声明 agents.entries.kidpal.skills = [\"kidpal-schedule-answer\",\"weather\",\"tavily\"] + drift_guard（现状锚 = 未设）+ backup + rollback；apply_agent_skills.py 幂等（重复 apply 二次零语义变更/零 diff）、drift_guard 现状不中 exit 3 拒绝、写前时间戳备份；rollback_agent_skills.py 可回滚；openclaw.json 整文件不入仓（含 gateway.token secret，只入声明）。设计态红：声明缺失 / allowlist 非三项 / apply 脚本非幂等或 drift_guard 失效",
-    "PV-A7: manifest.yaml 单一事实源完备：新增/修改条目齐（v11 两条 deploy+data 渲染面、kidpal-agent-prompt.txt 一条、skills 声明工件一条），entries 可被 verify-deploy.sh 静态解析；server/deploy/README.md prompt 指针节刷 v11（禁复述沿革）。设计态红：manifest 缺条目或 README 仍指 v10",
+    "SLP-A1: 环形缓冲纯逻辑（host 同源，显式注入容量/写者时序）——容量上界 128KB 语义；写满后新写入被接纳、丢最旧；多写者（任务/ISR 语义模拟）并发写入不撕裂（每条记录完整、无半行）；drain 后读指针推进且不重复消费。设计态红：sd_log 纯逻辑 seam 未实现",
+    "SLP-A2: 轮转与 8.3 命名纯逻辑——文件名 KPLOG000.TXT → KPLOG031.TXT 顺序推进、31 之后 wrap 回 000；单文件达 512KB 分片边界即切下一文件；目录 32 个文件封顶后覆盖最旧；目录总量 ≤16MB（512KB × 32）。设计态红：轮转/命名 seam 未实现",
+    "SLP-A3: 早启动留存语义——缓冲 init 早于 SD 挂载；未 attach 期间写入累积不清空；attach 后写盘任务从最旧未落盘条目开始 drain，NVS/WiFi 早期日志不丢。设计态红：缓冲未实现或 attach 时清空",
+    "SLP-A4: 接线结构齿（源锚，仿 sd_card_mount.acceptance.c）——① main.cc app_main 最早期调用 esp_log_set_vprintf（早于 nvs_flash_init），钩子保存旧函数指针并链式转调；② waveshare 板 InitializeSdCard 成功分支（s_sd_mounted=true 之后、RunBootRoundtripProbe 之前）调用 KidpalSdLogAttach(SD_MMC_MOUNT_ROOT)；③ mount_config.max_files = 8；④ PSRAM 环形缓冲以 heap_caps_malloc(..., MALLOC_CAP_SPIRAM) 分配、容量 128KB；⑤ 写盘任务内零 ESP_LOG* 调用（防 vprintf 递归）。设计态红：钩子/attach/max_files/PSRAM/递归守卫任一缺失",
+    "SLP-A5: 降级与重试语义——无卡（未 attach）时零 fopen 零写盘、整层静默失效；写失败进入 30s 重试窗口、不 panic 不 abort、不阻断语音主链路；恢复后从缓冲继续 drain。设计态红：失败路径 panic/abort 或零重试",
     {
-      "id": "PV-A8",
+      "id": "SLP-A6",
       "kind": "structural",
-      "note": "live-manual 观测项（非自动断言，诚实申报；261012 RF-A5 / 261015 AB-A7 同款口径，不计入 pytest 通过面）：ECS 部署由 human 在场执行后，human 持板验收——① 问「后天都有什么课程？」→ OpenClaw 审计出现 read 工具动作，答复与 kidpal/schedule.md 周一一行一致（语文/数学/足球/科学/班会/语文/足球），无英语/美术；② loopback 探针同口径复验；③ `openclaw skills list --agent kidpal` ready = 3（kidpal-schedule-answer / weather / tavily）；④ 人为触发一次引擎出错兜底，确认播报不含「小智」。本包 host 面转绿后停该门等 human，不自行部署/烧录"
+      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；261012 RF-A5 / 261017 PV-A8 同款口径，不计入 runner 通过面）：human 持板执行——① /sdcard/logs/ 出现 KPLOG*.TXT，内容含当轮 STT 转写与 LLM 回复原文片段；② 串口 COM5 日志输出不因装钩子中断；③ 写满 32×512KB 后最旧被覆盖、目录 ≤16MB；④ 拔卡/坏卡场景不崩、30s 重试后恢复写盘。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
     }
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
-    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
-    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py"
+    "firmware/main/test/sd_log.acceptance.c"
   ],
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "pending: acceptance-author 冻结实跑后回填（Draft 首提交时验收件尚未落盘；设计态红 = SLP-A1/A2/A3/A5 的 pure-logic seam 未实现、SLP-A4 接线锚缺失、SLP-A6 live-manual 不计入 runner）",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
     "live-manual"
   ],
-  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "acceptance-author 冻结实跑（2026-10-18，本树；日志 C:/tmp/pv-red-three-files.log、C:/tmp/pv-red-full.log）：① 三文件命令 24 failed / 26 passed / exit 1（50 collected，零 collection error）；② 全量 `cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance` = 24 failed / 186 passed / 4 deselected / 33 subtests passed / exit 1；上游基线 181 passed → 186 = 181 + 5 条新 must-stay-green，24 条失败全部为 PV 设计态红（非 PV 前缀失败 = 0），既有齿零新增红。设计态红分布：PV-A1×4（v11 未落盘 / 课表行无扩列载体）、PV-A3×1（接线版课表行仍枚举式）、PV-A4×2（模板未落盘）、PV-A5×6（两键/模板拷贝/marker 锚缺失）、PV-A6×10（声明/apply/rollback 未落盘）、PV-A7×1（manifest 缺模板与 skills 条目）。PV-A2（v10 负锚）与 PV-A3 四面一致 / 沿革 / PV-A7 静态可解析 / README 指针为 must-stay-green，已绿。",
   "exitCriteria": [
-    "PV-A1/A3/A4/A5/A6/A7 设计态红全部转绿；PV-A2（v10 sha256 零回改）与既有版本无关守卫（m3k3 A1 / 261001 overlay 冲刷 / D21 三齿 / V7 / PN / RF 既有齿）零新增红，server 全量基线 181 passed / 0 failed 不降",
-    "四面接线同批翻零漏翻：v11 制品 / OPENCLAW_SYSTEM_PROMPT_CARRIER / provider.config.yaml / apply-xiaozhi-overlay.sh / manifest.yaml 五面指向一致，ADR-001 版本无关守卫绿；v10 文件零回改",
-    "overlay 两键（prompt_template / system_error_response）在渲染面 heredoc 与声明面 provider.config.yaml 同值在场，兜底语禁「小智」；.config.yaml 为生成件——host 静态齿 + human 部署后 verify-deploy.sh + 改动前 .bak 备份三保险",
-    "skills 声明工件 apply 幂等 / drift_guard 现状不中拒绝 / backup / rollback 四项离线契约绿；openclaw.json 零入仓、gateway.token 零触碰",
-    "manifest.yaml 新增/修改条目齐且可被 verify-deploy.sh 静态解析；server/deploy/README.md prompt 指针节刷 v11、沿革不复述",
-    "docs-sync 显式裁定：server/deploy/README.md 指针节 + 两条 debt 条目结项（status: closed + consumed-by: 261017-prompt-v11-schedule-recall + 重跑 node .claude/scripts/debt-render.mjs）由 integrator 落盘；docs/architecture.md §5.5.5 / §5.1 指针不在本包（dev 落地后独立 architect 会话，禁指针先于实物），docs-delta 显式声明该项与顺序",
-    "PV-A8 live-manual 留痕：human 持板轮（问后天课表见 read 动作 + 周一课表一致 / skills list = 3 / 兜底语无小智），本 Pod 不自行部署，host 面转绿后停门等 human"
+    "SLP-X1: 全部 SLP-Ax host 齿转绿（sd_log.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红",
+    "SLP-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1；firmware-build-check.mjs 真编译通过，firmware/main/CMakeLists.txt 显式 SOURCES 登记生效）",
+    "SLP-X3: 分区表与 sdkconfig 零改动（git diff -- firmware/partitions* firmware/sdkconfig* 为空）",
+    "SLP-X4: 真机轮由 human 持板执行并留痕（SLP-A6 四项观察），本 Pod 到门停等、不自行烧录",
+    "SLP-X5: docs-sync 完成或显式裁定不需要——架构面 T1–T8 已随 261018 架构面 landing（commit 5a37b001）落地；隐私记账已在 docs/debt/tech/TECH-261016-sd-story-confidentiality.md append（commit 27b4ecd5）；本包 docs-delta 只需声明口径与「无新增文档改动」"
   ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "medium",
+  "riskTier": "high",
   "gateProfile": [
-    "evidence-integrity"
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round",
+    "security"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "docs/requirements.md#S-F1.3",
-    "docs/architecture.md#5.5.5",
-    "docs/debt/tech/_archive/2026/TECH-261017-schedule-answer-skip-read-hallucination.md",
-    "docs/debt/tech/_archive/2026/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md",
-    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
-    "delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md"
+    "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+    "delivery/intake/261018-sd-log-persist.md",
+    "delivery/taskpackages/261018-sd-log-persist/plan.md",
+    "docs/architecture.md#§6.6",
+    "docs/architecture.md#§10",
+    "docs/ADR.md#ADR-012",
+    "docs/debt/tech/TECH-261016-sd-story-confidentiality.md"
   ],
-  "changeManifest": [
-    "server/deploy/openclaw-system-prompt.v11.md",
-    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
-    "server/deploy/provider.config.yaml",
-    "server/deploy/apply-xiaozhi-overlay.sh",
-    "server/deploy/manifest.yaml",
-    "server/deploy/kidpal-agent-prompt.txt",
-    "server/deploy/261017-openclaw-kidpal-skills/**",
-    "server/deploy/README.md",
-    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
-    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
-    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
-    "docs/debt/tech/_archive/2026/TECH-261017-schedule-answer-skip-read-hallucination.md",
-    "docs/debt/tech/_archive/2026/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md",
-    "docs/debt/tech/INDEX.md",
-    "docs/debt/tech/_archive/2026/INDEX.md"
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "data-at-rest：STT/LLM 对话原文（儿童语音转写 + AI 回复）明文落可拔 SD 卡、读卡器直读——与 TECH-261016-sd-story-confidentiality 同族且暴露面加宽；human 2026-10-18 有意识接受（「含对话原文」拍板），本批不加防护、记账在案",
+    "路径安全：日志文件名由固定 8.3 模板生成（KPLOG + 3 位十进制 + .TXT），零用户输入进路径拼接，无路径注入面",
+    "降级不崩：无卡/坏卡/写失败整层失效不阻断语音主链路，不 panic、不 abort、不触碰业务数据"
   ],
-  "changeManifest_note": "相对 plan 的两处载体细化（非扩单、零实现面扩张）：① `server/deploy/README.md`——prompt 指针节现写「现状 = v10」（:54/:59），不同批刷新即散文漂移（arch §5.5.5 :360 已把「README prompt 现状写 v3」记为先例债），归本包 docs-sync（integrator allow server/**）；② `server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py`——plan §C 验收要点「apply 幂等 / drift_guard 生效 / backup / rollback 可跑」需要独立离线契约载体（perf-k1 先例 test_perf_k1_roundtrip_latency.acceptance.py 承载同型声明工件），不改任何实现文件；载体归 acceptance-author（scope-map server/**/acceptance/** allow）。`docs/architecture.md` 明确不在本包（planner deny docs/**、integrator allow 不含它）：dev 落地后另起 architect 会话翻 §5.5.5 / §5.1 指针，禁「指针先于实物」。",
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯部署面 prompt/配置/声明工件 + 验收齿变更：零 wire 形状改动（帧类型 / 字段类型与承载 / 回执语义 / 序列化形态全不动），设备侧与 server 网关协议零 diff；prompt 是 OpenClaw 运行时注入文本、非跨端帧；kidpal skills 是 OpenClaw 运行时 config 白名单、非仓内 agent 定义。契约面 NO_CONTRACT_CHANGE（display E1 / schedule view / B1 课表 MD 全不变）。"
+    "exempt": "纯板端本地诊断日志采集与落卡：零 wire 形状改动（帧类型 / 字段类型与承载 / 回执语义 / 序列化形态全不动），不新增端云消息、不做远程开关；esp_log 钩子只消费设备本地日志流，server/** 零 diff（PROPOSAL 契约四分类 = NO_CONTRACT_CHANGE）。"
   },
-  "impactedTestsSeed": [
+  "decisionCoverage": [
     {
-      "path": "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
-      "kind": "additive-host",
-      "note": "PV-A1/A2/A3 新齿 additive 落此（v11 落盘/无前言/识别特征扩列锚 + v10 sha256 零回改 + 四面接线一致），既有 V7/PN/RF 齿零触碰"
+      "decision": "D0 · 架构面 T1–T8（决策 24 白名单增列「设备诊断日志」+ 六处镜像 + ADR-012）",
+      "summary": "已随架构面 landing（commit 5a37b001）先行落地；本包只消费其形态边界（常开 + 有界轮转 + 16MB 封顶 + 可删除 + 含对话原文），不重复改动 docs/。",
+      "sourceRefs": [
+        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md"
+      ],
+      "landsIn": "exitCriteria:SLP-X5"
     },
     {
-      "path": "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
-      "kind": "extension",
-      "note": "扩展 D21 面新键锚：prompt_template / system_error_response 两键在渲染面与声明面同值在场（PV-A5）"
+      "decision": "D1 · 有界轮转形态：512KB × 32 个、目录总量 16MB 封顶、循环覆盖最旧",
+      "summary": "轮转与容量边界由纯逻辑 seam 承载并可 host 测；目录封顶 = 32 个文件。",
+      "sourceRefs": [
+        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A2"
     },
     {
-      "path": "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
-      "kind": "new-frozen-acceptance-file",
-      "note": "新建（acceptance-author 落位）：skills 声明结构 + apply 幂等 + drift_guard 拒绝 + backup/rollback 的离线契约（PV-A6），仿 perf-k1 声明契约形态"
+      "decision": "D2 · 落点与命名：/sdcard/logs/KPLOGnnn.TXT（8.3 兼容名，sdkconfig 零改动）",
+      "summary": "文件名 KPLOG + 3 位十进制 + .TXT，KPLOG000→KPLOG031 wrap；与 LFN 配置解耦。",
+      "sourceRefs": [
+        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A2"
     },
     {
-      "path": "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
-      "kind": "must-stay-green",
-      "note": "test_a1_prompt_wired_three_faces_version_agnostic——四面接线同批翻即绿、漏翻必红"
+      "decision": "D3 · 采集方式：esp_log_set_vprintf 钩子必须链式转调原 vprintf，串口输出不中断",
+      "summary": "钩子保存旧函数指针、先转调再写环形缓冲；app_main 最早期安装。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A4"
     },
     {
-      "path": "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
-      "kind": "must-stay-green",
-      "note": "overlay 冲刷守卫（model_name 与决策 21 键）——本包改 overlay heredoc，零触碰应全绿"
+      "decision": "D4 · 环形缓冲：128KB 落 PSRAM，ISR-safe、多写者不撕裂，满溢丢最旧",
+      "summary": "纯逻辑 seam + PSRAM 分配在芯片面；溢出策略 = 丢最旧、不阻塞业务。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A1"
     },
     {
-      "path": "server/deploy/verify-deploy.sh",
-      "kind": "static-parse",
-      "note": "manifest 条目静态解析 / 未对账漂移核验（human 部署后三时机真跑；host 面做静态可解析性检查）"
+      "decision": "D5 · 早启动到挂载间的留存语义：从 app_main 起累积不清空，attach 后从最旧 drain",
+      "summary": "NVS/WiFi 早期日志不因挂载晚而丢失。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A3"
+    },
+    {
+      "decision": "D6 · 写盘任务：低优先级 + 1s 或 4KB 批量刷盘 + 任务内禁调 ESP_LOG（防递归回灌）",
+      "summary": "单写者纪律；写盘任务零 ESP_LOG 调用为结构齿。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A4"
+    },
+    {
+      "decision": "D7 · 板级接线：挂载成功分支 attach + max_files 5→8",
+      "summary": "KidpalSdLogAttach(SD_MMC_MOUNT_ROOT) 在 s_sd_mounted=true 之后、RunBootRoundtripProbe 之前；FD 预算给日志文件 + story_sd_io + 探针留头。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A4"
+    },
+    {
+      "decision": "D8 · 降级：无卡/坏卡/写失败整层失效不崩、不阻断语音主链路；写失败 30s 重试",
+      "summary": "对齐 story_sd_io「无卡短路绝不 fopen」范式；不 panic、不 abort。",
+      "sourceRefs": [
+        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A5"
+    },
+    {
+      "decision": "D9 · 内容：默认 INFO 及以上，含 STT/LLM 对话原文（human 2026-10-18 拍板）",
+      "summary": "application.cc 既有 ESP_LOGI(\"<< %s\"/\">> %s\") 已输出 transcript，钩子即可捕获，无需改 application.cc；真机轮观察项 SLP-A6 承载。",
+      "sourceRefs": [
+        "delivery/intake/261018-sd-log-persist.md",
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "acceptance:SLP-A6"
+    },
+    {
+      "decision": "D10 · 纯逻辑 / 芯片面分离（复用 story_cache 先例；OQ-3 = L0 builder 可裁）",
+      "summary": "环形缓冲/轮转/文件名为 host 同源纯逻辑；esp_log 钩子 + FATFS 写 + attach 为芯片面。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md",
+        "delivery/intake/261018-sd-log-persist.md"
+      ],
+      "landsIn": "acceptance:SLP-A1"
+    },
+    {
+      "decision": "D11 · panic / OOPS 输出不落卡",
+      "summary": "v1 明确边界，不在本层承载。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "dropped",
+      "reason": "v1 明确边界：panic handler 绕开 vprintf 直写 UART，本层不承载，非缺陷"
+    },
+    {
+      "decision": "D12 · 组件内裸 printf 不经钩子、bootloader 日志抓不到",
+      "summary": "v1 明确边界，不在本层承载。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "dropped",
+      "reason": "v1 明确边界：仅挂 esp_log vprintf；裸 printf 与 bootloader 日志不经钩子，不做截获"
+    },
+    {
+      "decision": "D13 · 运行中热插拔不做（写失败 30s 重试）",
+      "summary": "v1 不做热插拔事件检测；拔卡后按写失败重试处理。",
+      "sourceRefs": [
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "dropped",
+      "reason": "v1 明确边界：不检测热插拔事件；拔卡后按写失败 30s 重试，恢复后继续写盘"
+    },
+    {
+      "decision": "D14 · 分区表与 sdkconfig 零改动",
+      "summary": "8.3 命名与 PSRAM 分配均不需改分区或 sdkconfig。",
+      "sourceRefs": [
+        "delivery/intake/261018-sd-log-persist.md",
+        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+      ],
+      "landsIn": "exitCriteria:SLP-X3"
     }
   ],
-  "iterationBudget": 2,
-  "fixBudget": 3,
-  "supervisorBlockBudget": 2,
-  "mutationRequired": false,
-  "mutationSkipReason": "部署面 prompt 文本 + 配置声明 + skills 声明工件 + additive 验收齿批：行为断言面 = 文本锚与接线一致性守卫（must-stay-green），无 DB/事件/落库 mutation 可取证；apply/rollback 幂等性由 acceptance-author 在临时 fixture 上直接构造 pre/post 状态断言（本身即状态变异），live 行为观测归 PV-A8 真机轮 human 在场（structural 豁免，非自动断言）。口径同 261012-kidpal-realtime-facts。",
-  "mutationEvidence": {
-    "perAcceptance": [],
-    "reason": "口径同上：prompt 文本 / 配置声明 / 声明工件批，无独立源码变异点意义上的 mutation 取证对象；live 观测归 PV-A8。"
-  },
-  "adrRequired": false,
-  "docsSyncRequired": true,
-  "docsSyncReason": "docs-sync 面 = ① server/deploy/README.md prompt 指针节 v10→v11（integrator allow server/**）；② 两条 debt 条目结项（docs/debt/tech/**，integrator allow）：status: closed + 正文结项行 consumed-by: 261017-prompt-v11-schedule-recall + 重跑 node .claude/scripts/debt-render.mjs 刷新 INDEX；③ docs-delta 须显式声明 docs/architecture.md §5.5.5 / §5.1 指针**不在本包**（dev 落地后独立 architect 会话翻，禁指针先于实物）。docRefs 为行为/指针权威引用，其正文不逐条回引 PV-Ax 验收 id——验收断言承载在 server/acceptance 冻结件与 review-packet，文档面不改需求/架构/契约正文。",
-  "docsSyncOwnerNote": "本包 docs-sync 仅 server/deploy/README.md prompt 指针节（integrator 可写）+ 两条 debt 结项（docs/debt/**，integrator 可写）；docs/architecture.md §5.5.5 / §5.1 指针**不在本包**——dev 落地后另起 architect 会话，禁指针先于实物（spine facePlan + 启动卡）。",
-  "docsOwner": "integrator",
-  "securityReviewRequired": false,
-  "securityReviewNote": "openclaw.json 含 gateway.token 但整文件不入仓，只入无 secret 的 skills 声明工件；apply 脚本只读改写 agents.entries.kidpal.skills（非 secret 字段）+ drift_guard + 备份 + 回滚。无新出网路径、无凭据新增。",
-  "planningWorkstreamRequired": false,
-  "notes": "【1g 前置技术预评】= plan.md 本体（architect /triage-change 2026-10-18 review，frontmatter reviewed-by 为证）：技术方案意见（A/B/C/D 四段）+ changeManifest + impactedTests 种子三件齐备，不再重复派发 architect；human 触点①已裁 ②单包 Lite。 【1f 快照保鲜核验】plan 引用逐条对磁盘核验通过（本会话实测）：server/deploy 无 v11 占用；v10 在世且首行 `## 角色`；provider.config.yaml :32 deploy_target=v10；apply-xiaozhi-overlay.sh :103-104 PROMPT_SRC/DST=v10；manifest.yaml :84-91 两条 v10 条目 + :90-98 .config.yaml marker（锚 = 实时事实回合 / close_connection_no_voice_time）；perf-k1 声明+apply+rollback 四件在位；两条 debt 条目与 docs/debt/tech/INDEX.md 在位；server 基线 181 passed（launch-card）；POD 板条目 status=queued 已置 running。 【1c scope-map 核对】builder/fixer allow server/** 覆盖 server/deploy 全部实现面与脚本；*.acceptance.py 落在 server/acceptance/** = builder deny（`**/acceptance/**`），验收归 acceptance-author（allow server/**/acceptance/**）分权即设计、无冲突；docs/debt/** 与 server/deploy/README.md 均由 integrator allow 承载（builder 无权），派单时预指派 integrator 落盘；docs/architecture.md 无 dev-loop 角色可写 → 明确迁出本包。 【1d crossEnd】exempt 已定（零 wire 面）——brief-inputs 展开对端面为空。 【intake 形状】launch-argument 形状：命中 devloop/pods/<changeId>.json（multi-pod 模式，已 --set-pod running），无 portfolio taskpackage、非 workstream 拆包产物；handoff 制品 = reviewed plan + spine + launch-card 三件齐备，非交接断裂。 【运行面】worktree C:/AI/KidPal-pod-m2，分支 dev/pod-m2；ECS 部署与真机轮 = human 门（启动卡人工位），本 Pod 不执行部署。 【已知地雷前置申报】① 机械 supervisor 闸可能判 all-mock（全文件内容锚 + live 观测项、无 DB/事件断言）→ riskTier 重算 high → ESCALATE 需 human 放行（261012 / 261010 v9 同款先例，如实申报）；② .config.yaml 是 overlay 生成件，改错引擎起不来——host 静态齿 + human 部署后 verify-deploy.sh + 改动前 .bak 备份三保险；③ openclaw.json 定点 patch 前自动 backup + drift_guard 现状锚，apply 只改 skills 键不动 gateway.token；④ v11 槽位冲突——bump 前 builder 再核一次 server/deploy 无 v11。 【Step 7/8 冻结记录（2026-10-18）】input-brief 已生成并双份投影（canonical + current/ 字节一致）；acceptance-author 三载体落盘（test_prompt_v7_round_routing additive 628 行 / D21 扩展 255 行 / 新 skills 契约件），PV-A1..A7 共 29 条 case 带 coverage 标记，acceptance-coverage 与 mutation-check 两闸绿。冻结口径四条（acceptance-author 决定，builder 须照此实现）：① PV-A2 用 LF 归一 canonical blob sha256（Windows CRLF 检出伪影不计）；② PV-A6 声明形状 = 顶层 case/change/drift_guard/backup/rollback，change.path 逐字 agents.entries.kidpal.skills，skills 恰三项；drift_guard 含 {path: 同上, expect: \"unset\"}；backup.pattern 为 config 同目录相对 glob 且名含 UTC yyyymmddTHHMMSS；apply 语义序 = 幂等 SKIP exit0 → drift-guard 不中 exit3 → 时间戳备份 → 只改 skills 键，缺 config/声明/非法 JSON exit2；③ PV-A4「禁 ``` 段」判法 = 含 ``` 且同行出现禁止类词才红（容忍日后合法引用 display 块）；④ PV-A7 只要求 ≥1 条模板条目、≥1 条 skills 条目，v11 两副本由 PV-A3 断言。 【8b 验收方向核】sourceRefs 不含 requirements story id（本包 regression 来源、需求文本零改动），AC 回引号集对账不适用；plan「验收要点」host 七项 + live 四项逐条有 PV-Ax 承载（无遗漏、无钉反）：v11 落盘/扩列锚 → PV-A1，v10 不可变 → PV-A2，四面接线 + ADR-001 → PV-A3，模板 → PV-A4，两键/兜底语/marker → PV-A5，skills → PV-A6，manifest/README/verify-deploy 静态 → PV-A7，真机轮 → PV-A8 structural。核对通过，未退 acceptance-author。 【check-launch 实测】首提交后 `--base-ref dev/pod-m2` = ok:true；`--base-ref main` 仍列 taskpackage.json（机械事实：Pod 分支产物在 merge-driver 合入本地 main 前不可达 main）。启动卡「首提交后即消」按「已提交到承载分支、合并后可达 main」理解，不伪报 main 绿。 【docRefs/sourceRefs/changeManifest 归档路径修正（整合收口，2026-10-18）】两条 TECH 条目收口后经 debt-render.mjs 自动归位 docs/debt/tech/_archive/2026/（位置 = 状态的纯函数，人不搬文件），引用路径同步改指归档现址，changeManifest 补 _archive/2026/INDEX.md 制件行；origin.upstreamRef 保持 intake 时点事实不动——引用精度修正，非语义变更（261013-lang-config-thinking-fix 先例）",
-  "crossEndNote": "intake 期对照 261012 同域先例：同端 sync 面（声明面/渲染面/carrier）本非「对端面」语义，故 exempt 而非 counterparts。"
+  "changeManifest": [
+    "firmware/main/diagnostics/sd_log.h",
+    "firmware/main/diagnostics/sd_log.c",
+    "firmware/main/diagnostics/sd_log_fs.cc",
+    "firmware/main/main.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "firmware/main/test/sd_log.acceptance.c"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/sd_log.acceptance.c",
+      "kind": "new-frozen-acceptance-file",
+      "note": "新增（acceptance-author 落位）：SLP-A1/A2/A3/A5 纯逻辑 host 齿 + SLP-A4 源锚结构齿；仿 sd_card_mount.acceptance.c 的源锚形态（builder 接线 = 向 firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 追加登记，登记行不在 acceptance-author 写权内）"
+    },
+    {
+      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
+      "kind": "extension",
+      "note": "HOST_ACCEPTANCE_SRCS 追加 \"../../sd_log.acceptance.c\"，并登记 sd_log.c 纯逻辑 source（host 同源）"
+    },
+    {
+      "path": "firmware/main/CMakeLists.txt",
+      "kind": "extension",
+      "note": "main 目录非 GLOB：显式 SOURCES 补 diagnostics/sd_log.c 与 diagnostics/sd_log_fs.cc"
+    },
+    {
+      "path": "firmware/main/test/host_app（既有全量套件）",
+      "kind": "must-stay-green",
+      "note": "既有 host 全量套件零新增红（sd-card-mount / p3-story-body-sd-cache 等既有齿不受钩子接线影响）"
+    }
+  ],
+  "notes": "① scope-map 已核（Step 1c）：builder allow firmware/**，acceptance-author allow firmware/**/*.acceptance.c；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（技术方案 = plan「设计要点」；changeManifest = plan「changeManifest 种子清单」+ architect 补入两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，故本轮不重复派 architect 重评。③ current/ 投影纪律：canonical 与 current/ 字节级复制、任何回填后原子刷新。④ 真机门前停等：host 齿 + 设备编译闸绿后，status=awaiting-human:real-device，输出持板操作单交 human，resume 续跑。⑤ 隐私：含 STT/LLM 对话原文 = human 有意识接受，记账已在 TECH-261016 append（commit 27b4ecd5）；本包不再改 debt。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（除 acceptance-author）；日志带 correlationId（K6）不适用于本包（诊断日志是 esp_log 原样留存）。"
 }
