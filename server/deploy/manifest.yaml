@@ -81,21 +81,26 @@ entries:
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/docker-compose.yml,
      owner: deploy.sh, verify: md5, restart: none,
      note: 变更需 docker compose up -d 才生效——deploy.sh 只提示不自动执行（容器重建 = 设备全断 + 重建时长不可控）}
-  - {src: server/deploy/openclaw-system-prompt.v10.md,
-     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/openclaw-system-prompt.v10.md,
+  - {src: server/deploy/openclaw-system-prompt.v11.md,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/openclaw-system-prompt.v11.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: overlay 渲染 prompt 的输入副本（overlay 把它拷进 data/ 并注入 .config.yaml 的 prompt 键）}
 
   # ── 引擎渲染产物（overlay 渲染 / 注入；deploy.sh 只核验不铺）──
-  - {src: server/deploy/openclaw-system-prompt.v10.md,
-     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/openclaw-system-prompt.v10.md,
+  - {src: server/deploy/openclaw-system-prompt.v11.md,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/openclaw-system-prompt.v11.md,
      owner: overlay, verify: md5, restart: engine,
      note: 与上行同源——上行铺输入、本行核验 overlay 渲染出的 data/ 副本}
+  - {src: server/deploy/kidpal-agent-prompt.txt,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/kidpal-agent-prompt.txt,
+     owner: overlay, verify: md5, restart: engine,
+     note: KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）——引擎顶层 prompt_template 指向 data/ 本文件；overlay 每次拷入 bind-mount}
   - {dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/.config.yaml,
      owner: overlay, verify: marker,
-     anchors: ["实时事实回合", "close_connection_no_voice_time"],
+     anchors: ["实时事实回合", "close_connection_no_voice_time",
+               "prompt_template", "system_error_response"],
      restart: engine,
-     note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = prompt v10 版本锚 + decision-21 引擎超时键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
+     note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = prompt v11 版本锚（实时事实回合延续段）+ decision-21 引擎超时键 + KidPal 模板/兜底语两键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
 
   # ── OpenClaw 创作面（运行态不入清单，见文件头纪律）──
   - {src: server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md,
@@ -134,6 +139,21 @@ entries:
      dst: /root/.openclaw/workspace-kidpal/skills/kidpal-schedule-answer/SKILL.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: 板侧课表问答流程 skill（2026-09-25 落地，loopback 探针实测生效）}
+
+  # ── kidpal agent skills 收敛声明工件（261017-prompt-v11-schedule-recall / PV-A6）──
+  # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 定点 apply/回滚脚本。
+  - {src: server/deploy/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json,
+     dst: /opt/kidpal/openclaw-patch/261017-openclaw-kidpal-skills/kidpal-agent-skills-declaration.json,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: kidpal agent modelVisible skills 收敛声明（三项白名单 kidpal-schedule-answer / weather / tavily + drift_guard + backup + rollback）}
+  - {src: server/deploy/261017-openclaw-kidpal-skills/apply_agent_skills.py,
+     dst: /opt/kidpal/openclaw-patch/261017-openclaw-kidpal-skills/apply_agent_skills.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 只改 agents.entries.kidpal.skills）}
+  - {src: server/deploy/261017-openclaw-kidpal-skills/rollback_agent_skills.py,
+     dst: /opt/kidpal/openclaw-patch/261017-openclaw-kidpal-skills/rollback_agent_skills.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 一步回滚（--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）}
 
   # ── reminder 面（cron 消费位直管，OQ-1(a)——本批修复的路径分裂落点）──
   - {src: server/deploy/openclaw-patch/reminder_schedule_lib.py,
