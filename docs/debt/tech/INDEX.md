@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 25（待拍板 0 / 待触发 19 / 已接受风险 6）；已结 19（归档索引见下）。
+**摘要**：未结 27（待拍板 0 / 待触发 21 / 已接受风险 6）；已结 19（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（19）
+## 待触发（21）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -36,6 +36,8 @@ _（无）_
 | [TECH-261014-session-end-channels-unwired](TECH-261014-session-end-channels-unwired.md) | MAJOR | 会话结束三通道有两通道未接线——60 秒超时设备侧零 timer producer、结束意图（云端判）WS 链路无下发，致一轮聊完后设备常驻聆听（实测：说「拜拜」后仍开着麦直到 WS 通道超时约 137 秒） | human 排期后的会话生命周期修复包；或下次动 session_state_machine / 会话收尾链的包顺带评估（本条体量含双阈值与云端判据取舍，不建议纯顺带） |
 | [TECH-261014-wakeword-connecting-voice-layer](TECH-261014-wakeword-connecting-voice-layer.md) | MAJOR | 唤醒词路径 connecting 态事件被合并跳过致 VOICE 层不推入、语音页整轮不显示 | human 排期后的固件修复包（/triage-change 路由）；或下一个动 application.cc 状态分发 / display 前台桥的包顺带承接 |
 | [TECH-261016-sd-story-confidentiality](TECH-261016-sd-story-confidentiality.md) | COULD | story 正文落 SD 卡后缺可读性防护——需口令 + 存储混淆（本批只落盘、human 2026-10-16 裁留待后续处理） | 下个动 P3 存储层 / SD 数据面的包；或产品出现「设备离手」场景（送修 / 转赠 / 二手 / 家长要求可携带）前必须有 |
+| [TECH-261017-schedule-answer-skip-read-hallucination](TECH-261017-schedule-answer-skip-read-hallucination.md) | MAJOR | 课表问答幻觉——「后天」未命中课表回合识别特征（v10 只枚举今天/明天/这周），kidpal agent 未读 schedule.md 直接编造（真机报「第三节英语/下午美术」等不存在课程） | 下一次动 server/deploy prompt 面的批（bump v11 补识别特征），与 TECH-261017-xiaozhi-template-residue-deploy-ssot-gap 同批 |
+| [TECH-261017-xiaozhi-template-residue-deploy-ssot-gap](TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md) | SHOULD | 引擎通用小智模板残留 + 三个部署面键无仓内源——agent-base-prompt.txt 与 v10 对冲（工具语义/禁 Markdown）、system_error_response 兜底语播「小智」、kidpal skill 白名单未收（18 bundled 噪音），三者均未接入 manifest.yaml 单一事实源 | 下一次动 server/deploy 部署面的批（与 TECH-261017-schedule-answer-skip-read-hallucination 同批） |
 
 ## 已接受风险（6）
 
