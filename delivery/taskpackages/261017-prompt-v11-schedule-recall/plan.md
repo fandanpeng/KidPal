@@ -4,8 +4,9 @@ title: prompt v11 课表召回 + 去小智模板残留——「提到课表就�
 rigor: lite
 riskTier: medium
 sourceType: regression
-reviewed-by: architect (/triage-change 分流 review，human 触点①确认 ②单包 Lite)
+reviewed-by: architect (/triage-change 分流 review，human 触点①确认 ②单包 Lite；同日重裁：arch 面迁出 dev 包独立成 architect 会话，gateProfile 收敛为 evidence-integrity)
 date: 2026-10-18
+gateProfile: ["evidence-integrity"]
 ---
 
 # 根因
@@ -52,14 +53,15 @@ date: 2026-10-18
 
 `openclaw.json` 含 `gateway.token`，**整文件不入仓**，只入这份声明。
 
-## D. docs-sync + 债务结项
+## D. 债务结项
 
-- `docs/architecture.md` §5.5.5「现状 = v10」指针翻 v11（沿革追加一行）+ §5.1 :197 同批；
-- 两条 debt 条目翻 `status: closed` + 正文结项行 `consumed-by: 261017-prompt-v11-schedule-recall`，重跑 `debt-render.mjs`。
+- 两条 debt 条目翻 `status: closed` + 正文结项行 `consumed-by: 261017-prompt-v11-schedule-recall`，重跑 `node .claude/scripts/debt-render.mjs`。
+
+> **架构面不在本包**（architect 2026-10-18 重裁）：`docs/architecture.md` §5.5.5「现状 = v10」+ §5.1 指针翻 v11 归**独立 arch 面**，由 `--agent architect` 会话在 dev 包落地**之后**执行——依据是 scope-map：`integrator.allow` 不含 `docs/architecture.md`、`planner.deny` 含 `docs/**`，dev-loop 无任何角色可写。顺序 = dev 先落 v11 实物与三面接线、arch 后翻指针（禁「指针先于实物」）；ADR-001 守卫从三面结构解析当前版、不读 arch.md，落地窗口内 arch 短暂落后不假红。
 
 # 影响面
 
-- 只动 `server/deploy` 部署面 + `docs/architecture.md` 两处指针；零固件面、零 front 面。
+- 只动 `server/deploy` 部署面 + 两条 debt 条目；零固件面、零 front 面。架构 docs-sync（`docs/architecture.md` 两处指针）由独立 arch 面在本包之后落，不占本包 diff。
 - 需求面零改动（课表识别扩列是实现细化，S-F1.3 能力句与 AC1 已覆盖「后天」语义）。
 - 契约面零改动（display E1 / `schedule` view / B1 全不变）。
 - 治理面零改动（skills 是 OpenClaw 运行时 config，非仓内 agent 定义）。
@@ -97,7 +99,6 @@ date: 2026-10-18
 - `server/deploy/261017-openclaw-kidpal-skills/**`（新增：声明 JSON + apply + rollback）
 - `server/acceptance/test_prompt_v7_round_routing.acceptance.py`（append v11 齿）
 - `server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py`（扩展新键锚）
-- `docs/architecture.md`
 - `docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md`
 - `docs/debt/tech/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md`
 - `docs/debt/tech/INDEX.md`（生成件重渲染）
