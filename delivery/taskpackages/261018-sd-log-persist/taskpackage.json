@@ -34,7 +34,7 @@
     "firmware/main/test/sd_log.acceptance.c"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "pending: acceptance-author 冻结实跑后回填（Draft 首提交时验收件尚未落盘；设计态红 = SLP-A1/A2/A3/A5 的 pure-logic seam 未实现、SLP-A4 接线锚缺失、SLP-A6 live-manual 不计入 runner）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-18（本树）：① 独立冒烟通道（gcc -std=c11 -Wall -Wextra -pthread，与 sc_red_wrapper 同款）编入冻结件 + runner → COMPILE_EXIT=0 零 warning，8 Tests 8 Failures（全部设计态红：SLP-A1×2 / SLP-A2×1 / SLP-A3×1 / SLP-A5×1 = 纯逻辑 seam 未实现；SLP-A4×3 = main.cc 未装钩子 / max_files 仍为 5 / sd_log.h 未落地）；② 既有 host runner（本件尚未登记）195 Tests 3 Failures exit 3——3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4），与本包子系统正交，本包零新增红；③ 宿主构建旗标实编 COMPILE_EXIT=0（-std=gnu17 -Wall -Wextra -Werror=all 零 warning）。双向可满足性：一次性参考实现 + 合成树 → 8 Tests 0 Failures；定向变异六项（max_files 8→5 / 钩子后移 / 写盘任务加 ESP_LOG / attach 清空 / 满溢丢最新 / 移除 rot_account 消费）各只打红对应断言。",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
