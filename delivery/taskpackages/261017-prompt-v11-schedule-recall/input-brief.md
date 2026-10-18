@@ -2,7 +2,8 @@
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-18T01:40:45.434Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> generated-at: 2026-10-18T02:05:53.243Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> regenerated-because: integrator 收口：两条 debt 结项后由 debt-render 归位 _archive/2026，sourceRefs/docRefs/changeManifest 同步改指归档现址（引用精度修正，非语义变更）（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
 > 来源 TaskPackage: `delivery/taskpackages/261017-prompt-v11-schedule-recall/taskpackage.json` · subsystem: server/deploy（prompt v11 四面接线 + KidPal 极简模板与 overlay 两键 + manifest 单一事实源 + openclaw.json kidpal skills 定点 patch）+ server/acceptance（additive v11 齿 / 新键锚扩展 / skills 声明离线契约） · rigor: lite
 > **改动指令源 = plan.md**：`delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md`（bug 类包——本 brief ①b 为指针形态，真实改动指令在此）。
 
@@ -13,8 +14,8 @@
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `docs/requirements.md` | `S-F1.3` | S-F1.3 · 语音问课表 | 277 | ok |
 | `docs/architecture.md` | `5.5.5` | 5.5.5 OpenClaw system prompt 版本化 | 297 | ok |
-| `docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md` | — | 无锚点（整文件） | — | bare |
+| `docs/debt/tech/_archive/2026/TECH-261017-schedule-answer-skip-read-hallucination.md` | — | 无锚点（整文件） | — | bare |
+| `docs/debt/tech/_archive/2026/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md` | — | 无锚点（整文件） | — | bare |
 | `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` | — | 无锚点（整文件） | — | bare |
 | `delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/intake/261017-prompt-v11-schedule-recall.md` | — | 无锚点（整文件） | — | bare |
