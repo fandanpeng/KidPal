@@ -1,0 +1,167 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "261018-sd-log-persist",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "0f3e6b1a-7c52-4a9d-9f61-2b8e4d7c5a10",
+  "outcome": "ok",
+  "ok": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r2.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r1.json",
+  "provenance": {
+    "sourceType": "proposal",
+    "triage": "/triage-change 2026-10-18（architect 比例化 review；human 触点①确认 ②单包 Full / riskTier=high）；架构面 T1–T8 已随 commit 5a37b001 先行 landing",
+    "rigor": "full",
+    "riskTier": "high",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "final",
+    "round": 2,
+    "invocationId": "0f3e6b1a-7c52-4a9d-9f61-2b8e4d7c5a10",
+    "observedGateExit": 0
+  },
+  "gateSummary": [
+    {
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "TaskPackage 上下文解析通过（current 指针 → 261018-sd-log-persist）"
+    },
+    {
+      "gate": "change-manifest",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "本包首提交日期 2026-09-11 < MANIFEST_CUTOFF 2026-09-28 → pre-cutoff 存量放行；integrator 另做人工 closed-set 对账"
+    },
+    {
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "timing": "scoped",
+      "note": "final 相位恒跑；工具链可用、真编译 build-pass（xiaozhi.bin 0x322180 bytes，最小 app 分区余量 9%）"
+    },
+    {
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；唯一 warning = 上游断链 delivery/changes/arch/260923-arch-review-schedule-grid-cold-boot/CONTRACT-CHANGE-PACKET.md，非本包引入"
+    },
+    {
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "timing": "scoped",
+      "note": "SLP-A1..A5 functional / SLP-A6 structural(live-manual)；files = firmware/main/test/sd_log.acceptance.c"
+    },
+    {
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；perAcceptance 六条（SLP-A1..A5 + 跨包重锚 XPKG）全部 turnedRed/sensitive，见 TaskPackage mutationEvidence"
+    },
+    {
+      "gate": "docs-sync",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；docRefs 七条在盘；本包零新增 canonical 文档改动（docs-delta.md §1）"
+    },
+    {
+      "gate": "security",
+      "kind": "security",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；securityReviewRequired=true，三轴证据在 securityAxes/securityEvidence（明文对话原文 = human 接受 + TECH-261016 记账；路径安全；降级不崩）"
+    },
+    {
+      "gate": "unit",
+      "kind": "functional",
+      "ok": true,
+      "timing": "full",
+      "note": "executor-run：scope 内 2 件 server acceptance，26 passed / 0 deselected（test-scope.txt 圈定）"
+    },
+    {
+      "gate": "acceptance",
+      "kind": "functional",
+      "ok": true,
+      "timing": "full",
+      "note": "oracle-pass（firmwareAcceptanceFiles 22 / serverAcceptanceFiles 2）+ executor-run 26 passed / 0 deselected（test-scope.txt 圈定）"
+    }
+  ],
+  "gatesNotExecuted": [],
+  "lifecycle": {
+    "rounds": [
+      {
+        "round": 1,
+        "timing": "scoped",
+        "outcome": "全绿（八闸 PASS，builder 实现 + 重锚 + mutation 取证后的 scoped 证据态）",
+        "evidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r1.json"
+      },
+      {
+        "round": 2,
+        "timing": "final",
+        "outcome": "全绿（十闸 PASS；firmware-build 真编译；unit/acceptance 按 test-scope.txt 圈定真跑）",
+        "evidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r2.json"
+      }
+    ],
+    "reworkRounds": 0,
+    "budgetNote": "iterationBudget=3 / fixBudget=3 / supervisorBlockBudget=2——scoped r1 一次过；final r2 一次过，零返工",
+    "redBaseline": "acceptance-author 冻结实跑 2026-10-18（本树）：① 独立冒烟通道（gcc -std=c11 -Wall -Wextra -pthread，与 sc_red_wrapper 同款）编入冻结件 + runner → COMPILE_EXIT=0 零 warning，8 Tests 8 Failures（全部设计态红：SLP-A1×2 / SLP-A2×1 / SLP-A3×1 / SLP-A5×1 = 纯逻辑 seam 未实现；SLP-A4×3 = main.cc 未装钩子 / max_files 仍为 5 / sd_log.h 未落地）；② 既有 host runner（本件尚未登记）195 Tests 3 Failures exit 3——3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4），与本包子系统正交，本包零新增红；③ 宿主构建旗标实编 COMPILE_EXIT=0（-std=gnu17 -Wall -Wextra -Werror=all 零 warning）。双向可满足性：一次性参考实现 + 合成树 → 8 Tests 0 Failures；定向变异六项（max_files 8→5 / 钩子后移 / 写盘任务加 ESP_LOG / attach 清空 / 满溢丢最新 / 移除 rot_account 消费）各只打红对应断言。",
+    "greenState": "integrator 独立全量复跑 2026-10-18（闸外）：WSL host_app build + host_infra_test.elf = 203 Tests 3 Failures（仅 p1_auxbar AB-A1/A2/A4 先存红）；sd_log 8 齿 + sd_card_mount 4 齿全 PASS；scope 内 server pytest 26 passed；firmware-build build-pass"
+  },
+  "scopeAudit": {
+    "implementationFiles": [
+      "firmware/main/diagnostics/sd_log.h",
+      "firmware/main/diagnostics/sd_log.c",
+      "firmware/main/diagnostics/sd_log_fs.cc",
+      "firmware/main/main.cc",
+      "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+      "firmware/main/CMakeLists.txt",
+      "firmware/main/test/host_app/main/CMakeLists.txt"
+    ],
+    "acceptanceFiles": [
+      "firmware/main/test/sd_log.acceptance.c",
+      "firmware/main/test/sd_card_mount.acceptance.c（261016 冻结件跨包重锚；human-decision 88a08bbd-c542-41e5-bdc4-fb2739dc24ef 窄口径授权）"
+    ],
+    "docsFiles": [],
+    "deliveryFiles": [
+      "delivery/taskpackages/261018-sd-log-persist/**",
+      "delivery/taskpackages/current/{taskpackage.json,verdict.json}"
+    ],
+    "zeroTouchSurfaces": [
+      "docs/contracts/**",
+      "docs/requirements.md",
+      "docs/architecture.md（本包实现提交）",
+      "docs/ADR.md（本包实现提交）",
+      "docs/debt/tech/**（本轮）",
+      "server/**",
+      "firmware/partitions*",
+      "firmware/sdkconfig*"
+    ],
+    "auditCommand": "git status --porcelain + git diff main --stat（分支 dev/pod-m2；零触碰面 git diff 为空实核；partition/sdkconfig diff 为空）"
+  },
+  "testScope": {
+    "scopeFile": "delivery/taskpackages/261018-sd-log-persist/test-scope.txt",
+    "entries": 27,
+    "composition": "acceptanceTestsFile ∪ 跨包重锚冻结件 ∪ 共享 seam（扫描 main.cc / board .cc 的既有源锚齿）∪ host_app 全量安全余量 ∪ detect_changes 影响集中的 2 件 server acceptance",
+    "floor": "本包 acceptanceTestsFile ∪ 跨包重锚冻结件 ∪ blast radius 映射 ∪ 共享 seam ∪ host 全量安全余量（单包，无 workstream 对端冻结件）",
+    "scopingMethod": "detect_changes（per-Pod 图索引 C-AI-KidPal-pod-m2 可用，base=main，merge_base 21360279，changed_files 31 / seed_symbols 214 / impacted_total 24）→ 正常圈定；无 trace_path 降级、无「图不可用」举手"
+  },
+  "blockingArtifacts": {
+    "reviewPacket": "delivery/taskpackages/261018-sd-log-persist/review-packet.md",
+    "docsDelta": "delivery/taskpackages/261018-sd-log-persist/docs-delta.md"
+  },
+  "nextGate": "planner 主线程 supervisor-verdict-gate.mjs 机械闸（integrator 不判定通过、不 merge、不 push）；SLP-A6 真机轮为 human 持板承接项（本 Pod 到门停等）"
+}

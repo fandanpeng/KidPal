@@ -83,3 +83,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261018-sd-log-persist](261018-sd-log-persist/) | 2026-10-18 | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md | closed | — |

@@ -125,6 +125,14 @@ set(SOURCES "audio/audio_codec.cc"
             # 会话状态机 + KEY/BOOT 按键手势解析（纯逻辑，包 3；host 单测同源）
             "session_state_machine.cc"
             "key_gesture_parser.cc"
+            # 包 261018-sd-log-persist（板端诊断日志落 TF 卡：有界轮转）：
+            # diagnostics/sd_log.c = 环形缓冲 / 8.3 轮转命名 / 刷盘与重试决策表纯逻辑
+            # （零 FATFS / 零 FreeRTOS / 零 LVGL -> host_app linux target 同源）;
+            # diagnostics/sd_log_fs.cc = esp_log vprintf 钩子 + PSRAM 128KB 分配 +
+            # 低优先级写盘任务 + 挂载成功 attach（芯片面）。main 目录非 GLOB,
+            # 两个源都必须在此显式登记（否则设备构建拿不到）。
+            "diagnostics/sd_log.c"
+            "diagnostics/sd_log_fs.cc"
             "assets.cc"
             "main.cc"
             )

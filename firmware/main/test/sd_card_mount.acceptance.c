@@ -46,7 +46,7 @@
  *           SD_MMC_D0_GPIO 三宏在世（消费绑定——宏挪出函数窗 = 锚漂移红(infra)）;
  *         - mount config: format_if_mount_failed = false（坏卡/异格式不销毁数据、
  *           只报错降级——对偶 InitializeArt 既有范式）且**禁止 true 形态**（负向齿）;
- *         - max_files = 5（赋值行首个整数 = 字面 5）。
+ *         - max_files = 8（赋值行首个整数 = 字面 8）。
  *
  *   [3] 失败降级路径（plan §2; 不 panic、不阻断启动）: 函数窗内——
  *         - `ESP_ERROR_CHECK_WITHOUT_ABORT`（降级形态）在世, 且裸 panic 形态
@@ -91,7 +91,7 @@
  *   coverage: SD-A1 -- config.h 四宏在世且值正确 + 注释包号/来源标注（test 1）
  *   coverage: SD-A2 -- InitializeSdCard 定义 + 构造序列接线 + 挂载调用参数五件
  *             （root 宏首参 / width=1 / clk·cmd·d0 宏 / format_if_mount_failed=
- *             false+true 禁令 / max_files=5）（test 2）
+ *             false+true 禁令 / max_files=8）（test 2）
  *   coverage: SD-A3 -- 失败降级路径六件（WITHOUT_ABORT + panic 禁令 + 返回码/
  *             句柄双检 + 降级置假 + WARN 继续 + 成功置真与卡信息打印）（test 3）
  *   coverage: SD-A4 -- 板级查询入口 SdCardMounted 读标志观察锚（test 4）
@@ -553,10 +553,10 @@ TEST_CASE("SD 卡挂载引脚宏源锚: config.h 四宏 + 挂载根 + 注释包�
 /* -------------------------------------------------------------------------- *
  * TEST 2 — SD-A2 板级挂载初始化源锚齿: `void InitializeSdCard` 定义在世 + 挂进
  * CustomBoard 构造函数初始化序列 + 函数窗内挂载调用五件（root 宏首参 / width=1 /
- * clk·cmd·d0 宏消费 / format_if_mount_failed=false 且禁 true / max_files=5）。
+ * clk·cmd·d0 宏消费 / format_if_mount_failed=false 且禁 true / max_files=8）。
  * RED today（设计态）: 板 .cc 无 InitializeSdCard -> 首发红 = presence。
  * ------------------------------------------------------------------------ */
-/* coverage: SD-A2 -- 板 .cc 挂载初始化: void InitializeSdCard 定义在世 + CustomBoard 构造初始化序列调用点（InitializeArt 同排）+ esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT 首参 + slot.width=1 字面（1-bit 义务; WIDTH_1 枚举形态等价接受）+ clk/cmd/d0 取 config.h 宏（SD_MMC_CLK_GPIO/SD_MMC_CMD_GPIO/SD_MMC_D0_GPIO 函数窗消费绑定）+ format_if_mount_failed=false（坏卡/异格式不销毁数据——对偶 InitializeArt 既有范式; true 形态负向禁令）+ max_files=5 字面 */
+/* coverage: SD-A2 -- 板 .cc 挂载初始化: void InitializeSdCard 定义在世 + CustomBoard 构造初始化序列调用点（InitializeArt 同排）+ esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT 首参 + slot.width=1 字面（1-bit 义务; WIDTH_1 枚举形态等价接受）+ clk/cmd/d0 取 config.h 宏（SD_MMC_CLK_GPIO/SD_MMC_CMD_GPIO/SD_MMC_D0_GPIO 函数窗消费绑定）+ format_if_mount_failed=false（坏卡/异格式不销毁数据——对偶 InitializeArt 既有范式; true 形态负向禁令）+ max_files=8 字面 */
 TEST_CASE("SD 卡挂载初始化源锚: InitializeSdCard + 构造接线 + 挂载调用参数 (SD-A2)",
           "[sd_card_mount][SD-A2][structural]")
 {
@@ -652,10 +652,10 @@ TEST_CASE("SD 卡挂载初始化源锚: InitializeSdCard + 构造接线 + 挂载
         "SD-A2 RED: InitializeSdCard 函数窗存在 format_if_mount_failed = true 形态——"
         "坏卡/异格式会被格式化销毁数据（介质禁令对偶义务: 只报错降级）, 禁 true");
 
-    /* ---- tooth 6 (max_files = 5 字面): 赋值行首个整数 = 5。 ------------------ */
+    /* ---- tooth 6 (max_files = 8 字面): 赋值行首个整数 = 8。 ------------------ */
     TEST_ASSERT_TRUE_MESSAGE(
-        sdm_first_int_after_on_line(winbuf, "max_files", &v) && v == 5,
-        sdm_fm("SD-A2 RED: InitializeSdCard 函数窗 max_files 取值非字面 5（取到 %ld; "
+        sdm_first_int_after_on_line(winbuf, "max_files", &v) && v == 8,
+        sdm_fm("SD-A2 RED: InitializeSdCard 函数窗 max_files 取值非字面 8（取到 %ld; "
                "宏间接/符号常量形态取值失败同红, 须复核锚不得改判为绿）", v));
 
     /* ---- tooth 7 (构造序列接线): CustomBoard 构造窗内存在调用点。 ------------ */
@@ -825,4 +825,41 @@ TEST_CASE("SD 卡挂载查询入口观察锚: SdCardMounted 读标志 (SD-A4)",
  *               在位、无卡态本机不可达; 替代证据 = SD-A3/SD-A4 代码面静态结构断言,
  *               明确不冒充真机观察）。SD-A5 判定 PASS 不变; 修订留痕逐条见 [5] 节与
  *               coverage 行。
+ *   2026-10-18 重锚（261016 SD-A2 tooth 6 期望值 5 → 8 + 四处文字镜像）——**非
+ *               tighten-only**: 执行者 acceptance-author, 执行包 261018-sd-log-persist
+ *               （本文件已先入该包 changeManifest, 先扩单后动文件）, 所属包
+ *               261016-sd-card-mount（本文件为该包冻结件）。
+ *               Reason: 跨包字面冲突——261016 冻结件钉 max_files=5, 执行包
+ *               261018-sd-log-persist 的 plan 要求 8, host 全量新增 1 红; 重锚前
+ *               host 实跑 203 Tests 4 Failures（3 条 p1_auxbar 先存红 AB-A1/A2/A4
+ *               + 1 条本冲突）。
+ *               授权: human 2026-10-18 窄口径批准 A 原话要点「授权 acceptance-author
+ *               把 261016 SD-A2 tooth 6 的期望值 5→8, 连同四处文字镜像一起重锚, 并在
+ *               该文件尾 append REVISION LOG（不覆盖 2026-10-16 既有两条）, 其余断言
+ *               与 261016 其他收尾制品零改动」, decision 88a08bbd-c542-41e5-bdc4-
+ *               fb2739dc24ef; 配套 architect 1g 正式扩单回评（2026-10-18, 本包
+ *               261018-sd-log-persist）。
+ *               范围: 仅 tooth 6 期望值（:657 `v == 5` → `v == 8`）+ 四处文字镜像
+ *               （:49 / :94 / :556 / :559 的 max_files 描述值）+ tooth 6 注释头与红名
+ *               文本（:655 / :658）+ 本条日志; **C 齿判别机制与其余断言零改动**（比较
+ *               运算符、扫描窗大小、helper 语义、其余 coverage 行、TEST_CASE 数与
+ *               acceptance id 全部未动; 代码面 git diff --numstat = 7 / 7（日志
+ *               append 前实测）, 全文件删除行恒为 7、增行全部落在本条日志区, 删除行
+ *               恰为 :49 / :94 / :556 / :559 / :655 / :657 / :658 七行）。
+ *               **本条为非 tighten-only 修订**: 改的是既有断言语义, 不属
+ *               DEV-GOVERNANCE「验收测试纪律」§6 的纯 additive 窗口, 依据 = human
+ *               2026-10-18 一次性窄口径授权（见上）。
+ *               sha256: 6ff4fca19d05cd0ecf82fd073dd1750ab90d24ddec3e46f7535ef38af3d3ed4a
+ *               → ec74a68ab41dd2a49552db21649da92d59daf92cfd7a21513d7eddf7b1dc8b74
+ *               （后值口径 = 7 行重锚落盘后的工作树全文件实测, 本条日志 append 之前;
+ *               自指不可闭合——含本条日志的最终字节哈希见 261018-sd-log-persist
+ *               提交记录）。
+ *               证据: 重锚后 host 全量实跑 = 203 Tests 3 Failures（仅 p1_auxbar
+ *               AB-A1/A2/A4 先存红; 本文件四 TEST_CASE 全绿）——WSL host_app 全量
+ *               build + host_infra_test.elf 实跑, 2026-10-18 重锚落盘当场执行。
+ *               历史边界: 261016 的 taskpackage / review-packet / mutation 记录保留
+ *               原文不动; 261016 mutation 记录中 m2「5 → 12」对本文件不再适用, 重放
+ *               请改用 8 → 12 或 8 → 5。
+ *               防先例（逐字）:
+ *               本条为 human 2026-10-18 一次性窄口径授权（decision 88a08bbd-c542-41e5-bdc4-fb2739dc24ef）：仅覆盖 261016 SD-A2 tooth 6 期望值 5→8 及四处文字镜像，不构成『plan 提到某值即可改任何钉该值的冻结齿』的先例；后续任何冻结齿重锚仍须逐案 human 窄口径裁决 + architect 1g 扩单评估（或走正常改验收通道），且一律先扩 manifest 后动文件，不得援引本条为隐性先例，也不得据此放宽任何其他断言。
  * --------------------------------------------------------------------------- */
