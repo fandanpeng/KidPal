@@ -1,91 +1,36 @@
-# input-brief · 261016-p3-story-body-sd-cache
+# input-brief · 261017-prompt-v11-schedule-recall
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-17T09:14:30.582Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
-> 来源 TaskPackage: `delivery/taskpackages/261016-p3-story-body-sd-cache/taskpackage.json` · subsystem: firmware/main (display/story_cache 纯逻辑 + boards story_sd_io + protocols SendKidpalStoryFetch + mcp_server STORY_TEXT/OPEN_READER 两分支 + display/story_page id 校验与文案单源) + server/gateway/front (kidpal_story_fetch 收帧回帧) · rigor: full
+> generated-at: 2026-10-18T02:05:53.243Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> regenerated-because: integrator 收口：两条 debt 结项后由 debt-render 归位 _archive/2026，sourceRefs/docRefs/changeManifest 同步改指归档现址（引用精度修正，非语义变更）（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
+> 来源 TaskPackage: `delivery/taskpackages/261017-prompt-v11-schedule-recall/taskpackage.json` · subsystem: server/deploy（prompt v11 四面接线 + KidPal 极简模板与 overlay 两键 + manifest 单一事实源 + openclaw.json kidpal skills 定点 patch）+ server/acceptance（additive v11 齿 / 新键锚扩展 / skills 声明离线契约） · rigor: lite
+> **改动指令源 = plan.md**：`delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md`（bug 类包——本 brief ①b 为指针形态，真实改动指令在此）。
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
-| `docs/contracts/interface-contract.md` | `§四` | 四、端云协议剖面（小智协议消息子集，2026-09-03 新增，方向 B） | 263 | ok |
-| `docs/contracts/interface-contract.md` | `§1.3④` | （未定位到标题节） | — | not-found |
-| `docs/requirements.md` | `S-F2.1` | S-F2.1 · 看「星星记录本」列表 | 428 | ok |
-| `docs/architecture.md` | `§10` | 10. 决策记录 | 390 | ok |
-| `docs/ADR.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/review/261017-arch-review-p3-story-body-sd-cache/PROPOSAL.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/intake/261016-p3-story-body-sd-cache.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/TECH-261013-p3-reader-entry-no-text-silent-noop.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/TECH-261016-sd-story-confidentiality.md` | — | 无锚点（整文件） | — | bare |
-| `docs/ui/UIUX-DESIGN-BRIEF.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261016-p3-story-body-sd-cache/plan.md` | — | 无锚点（整文件） | — | bare |
-
-## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）
-
-### S-F2.1 · 源 = `docs/requirements.md` 节首行 :428 · 本包声明 AC 粒度回引：`S-F2.1-AC2`、`S-F2.1-AC7`
-
-> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
-
-```markdown
-##### S-F2.1 · 看「星星记录本」列表
-
-> 作为孩子，我希望看到我记下来的所有内容排成列表、每篇都是一颗星星，以便有收集的成就感。
-
-**验收标准**
-- AC1：Given 进星星记录本且列表数据已送达（正常接收与冷启动恢复推送均算——冷启动恢复口径见补充规则），When 看列表，Then 星星计数（×N，右上角），每条 = 星星图标 + 标题 + 日期；**光标默认选中第一条**，选中行**带边框**（不反白——反白真机效果差，2026-09-14 human 裁）；**列表超一屏时底部显示「第 x 屏 · 共 y 屏」**（与阅读态分屏同心智，v1.28）。
-- AC2：Given 列表中，When BOOT 短按，Then 选中项下移——光标到当前屏底再按翻下一屏并落该屏首项，列表到底 wrap 回首项（永不离页）；When BOOT 双击，Then 直接翻下一屏、光标落该屏首项（长列表快速跳屏；最后一屏再双击 wrap 回首屏）；When KEY 双击，Then 进入阅读态看选中那一篇的正文（见 S-F2.3）——本机录的、重启前录的、云端恢复回来的老故事**一视同仁**：正文取自设备本地留存的那一篇，本地尚无该篇时设备即时从云端取回后再进阅读态（进入本列表、或本页翻屏时已先行为当屏各篇取回本地缺失的正文，通常双击即开）。
-- AC3：Given 星星记录本任意时刻，When 孩子看屏，Then 常驻语音入口提示「说『我要讲故事』开录新的」。
-- AC4：Given 列表选中某篇，When BOOT 长按，Then 弹出删除确认弹窗（**整屏覆盖层，WF-F2-05**，大字「删掉这篇？」+ 待删条目，页点消失同覆盖层口径；v1.48 human 裁全屏形态）：KEY 短按 = 确认删除（条目移除、星星计数 −1、云端同步）；BOOT 任一手势 = 取消回列表；10 秒无操作静默取消回列表；其余手势不响应。
-- AC5（无内容空态，v1.63）：Given 列表数据已送达且现存篇数为零（新设备或全部删除后），When 孩子看列表，Then 星星计数显示 **×0**（诚实计数、页身份保持），列表体区显示「本子空空的，讲个故事点亮第一颗星吧」；AC3 常驻语音入口提示**照常保留**——空态话术与入口提示两句话术并存、不互相顶替。
-- AC6（数据未达空态，v1.63）：Given 未收到列表数据、现存篇数未知（典型 = 设备重启后恢复推送未到或失败），When 孩子看列表，Then **不显示星星计数**（篇数未知，×0 会误导——明明有故事却显 0 颗），屏显「本子还没翻开，等等再来看看吧」；联网恢复、恢复推送到达后本页刷新为正常列表（按 AC1）。两态判据落在「有无列表数据」而非「断网与否」，与无内容空态（AC5）显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）。
-- AC7（离线 / 降级，v1.64 本批新增）：Given 列表某篇的正文既未在设备本地留存、当刻又取不回来（典型 = 断网），When 孩子双击该篇，Then 设备给出孩子看得懂的**可见提示**（**整屏覆盖层，WF-F2-06**；示例话术「这篇暂时打不开，等会儿再试试吧」——最终措辞归文案单源 / 设计稿、守 §2.2 错误兜底的儿童化口径，本 AC 只钉「**必须有可见反馈**」），不静默、不黑屏、也不显示出别篇的内容——**正文须与所选篇目一致**；已本地留存的篇目断网时照常打开（本批新增的离线可看边界，见补充规则）。
-
-**线框**：WF-F2-01（实存）+ WF-F2-05（删除确认弹窗，v1.48）+ WF-F2-06（正文取不回提示，v1.64）。
-**补充规则**：出路口径（v1.29 human 裁）= 列表态**无按键翻页出口**（BOOT 本页不翻页——多屏列表里「到底翻页」与「翻下一屏」直觉冲突），离开 = KEY 双击进阅读 / KEY 长按回首页（列表 = P3 顶层，长按一层即到家）/ 语音切页（「打开课表页」等）——页循环在本页断开，对话为主产品可接受。冷启动恢复（v1.63，复刻 S-F1.2 周网格先例口径）= 板端列表数据属内存缓存、重启即失，WS 建连时云端附带重推星星列表（恢复性推送，只填缓存不抢前台，P3 在屏时刷新本页；触发时机权威承载见 arch §5.2 场景④）；数据未达（恢复推送未到/失败）时翻到本页 = 数据未达空态（AC6），恢复推送到达后自动补齐。空态口径（v1.63）= 两态显式分叉（形态对齐 S-F1.1 AC5/AC6/AC7 先例）：**无内容空态**（数据已送达、确无篇目——新设备或全删后）计数显 ×0 + 话术「本子空空的，讲个故事点亮第一颗星吧」（AC5），AC3 常驻提示照常并存；**数据未达空态**（未收到列表数据、篇数未知）不显计数 + 话术「本子还没翻开，等等再来看看吧」（AC6）——判据落在「有无列表数据」而非「断网与否」。正文缓存边界（v1.64）= 设备为 story 正文在本地留一份副本、**只留正文**（提醒 / 课表 / 日志等其余业务数据照旧不落本地——回引 NFR-OFF-1「断网无提醒」，语义不变）；**云端的故事归档是唯一真相源，本地副本只是它的只读镜像**——设备不从本地副本改任何东西，录音归档 / 删除等一切写入照旧走云端；双击进阅读时**只认云端列表里存在的篇目**（本地副本与云端列表对不上的一律不采信），命中判据 = 该篇正文已在本地留存。本地留存不可用时设备仍可在线取回并当场显示（只不留存）；此时若同时离线、该篇又未留存，按 AC7 走可见提示。埋点 = 无。
-**锚**：UI = `canvas-p3` ｜ 支撑 = arch §5.5.4（UI 演出·星星记录本渲染，板）、§5.1（服务端组件·故事数据链路，云）
-**可行性**：✅
-```
-
-### S-F2.3 · 源 = `docs/requirements.md` 节首行 :461
-
-> **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
-
-```markdown
-##### S-F2.3 · 回看记录（原「回看记录与朗读」，v1.52 砍朗读）
-
-> 作为孩子，我希望选一篇记录能看到它的文字，以便重温我记下来的东西。
-
-**验收标准**
-- AC1：Given 列表选中某篇，When KEY 双击，Then 进阅读态：标题 + 正文分页，底部「第 1 屏 · 共 3 屏」。
-- AC2：Given 阅读中，When BOOT 短按（双击同短按），Then 翻下一屏——末屏再翻 wrap 回首屏、**永不离页**（离开 = KEY 长按退出阅读回列表（v1.36 返回上一层，再长按回首页）/ 语音切页）；When 按 KEY 短按，Then 不响应（朗读已砍，v1.52）。
-
-**线框**：WF-F2-04（阅读态，纯阅读）。
-**补充规则**：数据口径 = 正文排版 13.5px 起、行高 1.72（可读性口径，回引 NFR-READ-1）。阅读态口径 = **一义到底（纯阅读），无会话/问答入口**（2026-09-14 human 裁；v1.52 砍朗读，KEY 短按不响应）——问生字、问故事内容请先退出（KEY 长按逐层返回）再问，故事语境会话（按 KEY 带故事背景开会话）同案不取，本期不考虑故事内问答。已砍联动 = 「生字反白高亮」「生字跳查字页（原 AC3）」「朗读出音（v1.52）」（见已砍清单）。埋点 = 无。
-**锚**：UI = `p3-reader` ｜ 支撑 = arch §5.5.4（UI 演出·阅读态渲染，板）、§5.1（服务端组件·故事数据链路，云）
-**可行性**：✅（朗读砍除后纯板端渲染，host 已验）
-```
-
+| `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
+| `docs/requirements.md` | `S-F1.3` | S-F1.3 · 语音问课表 | 277 | ok |
+| `docs/architecture.md` | `5.5.5` | 5.5.5 OpenClaw system prompt 版本化 | 297 | ok |
+| `docs/debt/tech/_archive/2026/TECH-261017-schedule-answer-skip-read-hallucination.md` | — | 无锚点（整文件） | — | bare |
+| `docs/debt/tech/_archive/2026/TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md` | — | 无锚点（整文件） | — | bare |
+| `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261017-prompt-v11-schedule-recall/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/intake/261017-prompt-v11-schedule-recall.md` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）
 
-| 类别 | 路径 |
-|---|---|
-| designRefs | `docs/ui/V6/p3-body-unavailable.png` |
-| designRefs | `docs/ui/V5/canvas-p3.png` |
-| designRefs | `docs/ui/V5/p3-reader.png` |
-| sharedUiRefs | `docs/ui/UIUX-DESIGN-BRIEF.md` |
-
-页级 PNG（400×300）= **布局坐标定位权威**：layout 常量按图定，文字线框仅口径补充。
+`none` —— uiux block 不在场或无在盘设计 refs（`designRefs[]` / `sharedUiRefs[]`）。本包若实有 UI 面，回报 planner 补挂——不脑补。
 
 ## ② 跨端对端面（crossEnd · 本批限自有实现面 firmware/** · server/**）
 
-| 对端文件 | symbol | 行号区间（生成时点） | 其余命中行 |
-|---|---|---|---|
-| `server/gateway/front/front_app.py` | `_consume_kidpal_control` | :224-335 | 597 |
-| `firmware/main/protocols/protocol.cc` | `SendKidpalStoryDelete` | :92-93 | — |
+本包声明 **exempt**（不适用跨端对端阅读）：
 
-上述对端解析器源码 = **本包必读输入**：跨端 wire 形状断言须对照对端实际接受什么来钉（数字 id vs 字符串 id、未知 type 处理、字段是否字符串化），不得按本侧契约想象。
+> 纯部署面 prompt/配置/声明工件 + 验收齿变更：零 wire 形状改动（帧类型 / 字段类型与承载 / 回执语义 / 序列化形态全不动），设备侧与 server 网关协议零 diff；prompt 是 OpenClaw 运行时注入文本、非跨端帧；kidpal skills 是 OpenClaw 运行时 config 白名单、非仓内 agent 定义。契约面 NO_CONTRACT_CHANGE（display E1 / schedule view / B1 课表 MD 全不变）。
+
+豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
 ## ③ 先例（同 subsystem 已 merged 包，封顶 3 个，按 changeId 日期前缀倒序）
 

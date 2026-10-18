@@ -7,11 +7,12 @@
 > 列：changeId | 触面 | status | anchors回填 | 日期 | 漂移标。intake 状态机（change-intake.md §2.7）：intake→in-flight→awaiting-*→closed。
 > 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）。复议触发 = 下轮 loop-retro 仍见漂移标。
 
-## intake (9)
+## intake (10)
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 3/4 | 2026-10-16 | — |
+| 261017-prompt-v11-schedule-recall | arch+imp | in-flight | 2/2 | 2026-10-17 | ⚠未闭环 |
+| 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 4/4 | 2026-10-16 | ⚠未闭环 |
 | 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 |
 | 261013-gov-review-lf-eol-teeth-pin | imp+gov | closed | 2/2 | 2026-10-13 | — |
 | 261012-kidpal-realtime-facts | req+arch+contract+imp | in-flight | 4/4 | 2026-10-12 | ⚠未闭环 |
