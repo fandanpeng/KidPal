@@ -10,7 +10,7 @@
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开；本包 lite 但设备 seam 深，按 full 环境备）。
 - **真机门前停等（本包特有）**：真机轮需 human 持板 + Claude Code 调 `tools/diag/kidpal_logs.py`。**第一步先做单命令 smoke** 验证 `/dev/secondary` 可读（`kplog list`）；失败按 plan 的降级 A（HAL 直读）→ 降级 B（console primary，须回 triage 升档）。planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → 设备编译闸后，**在真机门前停**：status 写 `awaiting-human:real-device`、交回操作单；完成后续跑。
 - **合并门预期**：riskTier=medium，机械门可能直接放行或升级 human；按实际结果处理。
-- **会话标识**：headless 启动任务 ID `（点火后回填）`。
+- **会话标识**：headless 启动任务 ID `bgrpw9j1f`（2026-10-18 23:59 点火；叫停须先停会话进程再处置树/分支）。
 
 ## 命令行（worktree = C:/AI/KidPal-pod-m2，分支 dev/pod-m2）
 
