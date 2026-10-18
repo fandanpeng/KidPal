@@ -9,7 +9,7 @@
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开；本包 rigor=full，无 defer 短路）。
 - **真机门前停等（本包特有，写进派发即生效）**：真机轮需 human 持板——观察项 = ① 日志文件真实落 `/sdcard/logs/` 且含 STT/LLM 原文片段；② 串口输出不因装钩子中断；③ 循环覆盖（32 × 512KB，目录 ≤16MB）；④ 拔卡/坏卡不崩、30s 重试。planner 跑完 intake → acceptance-author → builder → verifier 代码面齿 → 设备编译闸后，**在真机门前停**：status 写 `awaiting-human:real-device`、退出报告交回，把观察项整理成一份持板操作单；human 完成后 resume 续跑。
 - **合并门预期**：riskTier=high，supervisor 合并门会升级 human；这是预期行为。
-- **会话标识**：headless 启动任务 ID `（点火后回填）`。
+- **会话标识**：headless 启动任务 ID `bnbnjhpqf`（2026-10-18 22:10 点火；叫停须先停会话进程再处置树/分支——`TaskStop` 杀不死 `claude -p` 时按 CommandLine 定点 taskkill）。
 
 ## 命令行（worktree = C:/AI/KidPal-pod-m2，分支 dev/pod-m2）
 
