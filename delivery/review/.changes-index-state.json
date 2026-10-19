@@ -15,5 +15,9 @@
   "261017-arch-review-p3-story-body-sd-cache": {
     "date": "2026-10-17",
     "mergedInMain": "yes"
+  },
+  "261019-gov-review-local-memory-extraction": {
+    "date": "2026-10-19",
+    "mergedInMain": "yes"
   }
 }

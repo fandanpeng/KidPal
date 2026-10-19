@@ -2,13 +2,13 @@
 id: ARQ-261019-local-memory-extraction-gaps
 title: Claude Code 本机 memory 承载的治理知识未全量提取入仓——261019 复分析 8 条，1 条已被吸收、1 条部分吸收、3 条残留缺口（verdict 状态行义务 / 生成即验证 / OpenClaw sqlite 坑）、1 条取舍未决
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（触 `.claude/agents/landing-verifier.md` 或 `docs/templates/PROPOSAL.template.md` 或 `kidpal-ecs-gateway` skill 的批次优先消费）
 opened: 2026-10-19
-closed: ""
-closedBy: ""
+closed: 2026-10-19
+closedBy: delivery/review/261019-gov-review-local-memory-extraction/landing-verdict.md
 paths: [.claude/agents/landing-verifier.md, docs/templates/PROPOSAL.template.md, .claude/skills/kidpal-ecs-gateway/SKILL.md]
 source: [delivery/archive/changes/arch/260928-gov-review-cross-face-intake-spine/retro.md（F3 长文 Write 序列化损坏）, delivery/archive/changes/arch/260928-gov-review-cross-face-intake-spine/architect-landing-summary.md（T1 执行事故记录）, 本会话 2026-10-19 对本机 memory 与 repo 承载面的逐条对照实测]
 ---
@@ -33,3 +33,5 @@ source: [delivery/archive/changes/arch/260928-gov-review-cross-face-intake-spine
 - 便宜验证计划：落地后 grep 复核三处（`.claude/agents/landing-verifier.md` 含 `verdict:` 状态行义务句；`docs/templates/PROPOSAL.template.md` 自检块含「生成即验证」句；`kidpal-ecs-gateway` SKILL.md 含 sqlite/OpenClaw 运维节）+ 复跑 `debt-doctor.mjs` 零 RED。
 
 **风险**：riskTier: low——三处均为文档面局部增补（agent def 一句 / 模板自检一句 / skill 一节），不动门脚本、不动机械判据、不触契约面；唯一连带注意点 = 缺口① 两处同文义务须防未来漂移（建议以「引一处、不复制」方式落）。review profile: Track B（三要件：① 执行测出——provenance 见 source 与本条证据节实测；② 问题清晰修复明确——三处候选改法均无设计分叉；③ 爆炸半径已揭示——三个文件局部，无连带面）。
+
+**结项**（2026-10-19）：consumed-by: 261019-gov-review-local-memory-extraction——缺口①②③ + 条目 5 取舍四项全落（landing-verdict PASS + 2 ADVISORY，mergedInMain=yes，ff 自 21360279）；条目 1（ui-granularity 已吸收）随批外收尾删本机冗余 memory，条目 6 三条留本机维持。
