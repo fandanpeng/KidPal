@@ -1,356 +1,217 @@
 {
-  "changeId": "261018-sd-log-persist",
-  "rigor": "full",
-  "sourceType": "proposal",
+  "changeId": "261018-sd-log-usb-read",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
   "origin": {
-    "type": "proposal",
-    "upstreamType": "proposal",
-    "upstreamRef": "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-    "upstreamFrozen": "PROPOSAL FROZEN v1.0（architect-reviewer R1 BLOCK(F1-F3) → v0.2 → R2 GREEN；判档 = 主路径；契约四分类 = NO_CONTRACT_CHANGE）；landing commit 5a37b001（docs/architecture.md 决策 24 白名单增列 + 六处镜像 + docs/ADR.md ADR-012；landing-verdict GREEN）；spine delivery/intake/261018-sd-log-persist.md anchors.arch 已回填。reviewed plan = delivery/taskpackages/261018-sd-log-persist/plan.md（architect /triage-change 2026-10-18 比例化 review；human 触点①确认 ②单包 Full / riskTier=high），plan 即冻结技术输入、只读消费。",
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-18 比例化 review + human 触点①确认：②单包 Lite、lite 快路径不适用按 full 环境备）；plan 即冻结技术输入、只读消费。launch-card.md 为本包启动卡（会话标识 bgrpw9j1f）。非拆包产物、无 workstream/mergeOrder。",
     "workstream": ""
   },
-  "subsystem": "firmware/main/diagnostics（sd_log 纯逻辑 host 同源 seam + sd_log_fs 芯片面）+ firmware/main（app_main 最早期装 esp_log 钩子）+ firmware/main/boards/waveshare-s3-rlcd-4.2（挂载成功分支 attach + max_files 5→8）+ firmware/main/CMakeLists.txt 与 firmware/main/test/host_app/main/CMakeLists.txt 两处显式登记 + firmware/main/test（host 验收件）",
-  "planRef": "delivery/taskpackages/261018-sd-log-persist/plan.md",
-  "story": "261018-sd-log-persist · 板端诊断日志落 TF 卡（有界轮转，含 STT/LLM 对话原文）——行为权威 = reviewed plan（architect /triage-change 2026-10-18）+ FROZEN PROPOSAL 决策 24 白名单增列。设备脱离串口独立运行时也能事后查真相（真机长尾：课表幻觉 TECH-261018、ASR 误听等）：采集 esp_log 输出（默认 INFO 及以上），经 PSRAM 环形缓冲 + 低优先级写盘任务落到 /sdcard/logs/KPLOGnnn.TXT，单文件 512KB × 32 个 ≈ 目录总量 16MB 封顶、循环覆盖最旧。human 已拍板：含对话原文（STT/LLM）、常开 + 有界轮转、分区表与 sdkconfig 零改动。",
+  "subsystem": "firmware/main/diagnostics（log_cmd 纯逻辑 host 同源 seam + log_cmd_port 芯片面 /dev/secondary 读任务）+ firmware/main/main.cc 接线（钩子之后启动命令任务）+ firmware/main/diagnostics/sd_log.h 与 sd_log_fs.cc 只读访问器增量 + firmware/main/CMakeLists.txt 与 firmware/main/test/host_app/main/CMakeLists.txt 两处显式登记 + firmware/main/test（host 验收件）+ tools/diag（host 取回脚本）；不触 server/**",
+  "planRef": "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
+  "story": "261018-sd-log-usb-read · 诊断日志按需 USB 串口取回（只读命令，不自动 dump、不上云）——行为权威 = reviewed plan（architect /triage-change 2026-10-18 比例化 review + human 触点①确认 2026-10-18）。human 原话动机：不必自动输出，需要时经 Claude Code 调脚本按需取回；防自动输出干扰串口监控与烧录。设备插 USB（COM5 原生 USB-Serial/JTAG）后，host 脚本按需取回 /sdcard/logs/KPLOGnnn.TXT：列目录、看最新文件尾部、读指定文件全文；不自动输出、不上云、不改正常日志流；拔卡读仍可用。",
   "sourceRefs": [
-    "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-    "delivery/intake/261018-sd-log-persist.md",
-    "delivery/taskpackages/261018-sd-log-persist/plan.md",
-    "docs/debt/tech/TECH-261016-sd-story-confidentiality.md"
+    "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
+    "delivery/taskpackages/261018-sd-log-usb-read/launch-card.md",
+    "delivery/taskpackages/261018-sd-log-persist/pod-retro.md"
   ],
   "acceptance": [
-    "SLP-A1: 环形缓冲纯逻辑（host 同源，显式注入容量/写者时序）——容量上界 128KB 语义；写满后新写入被接纳、丢最旧；多写者（任务/ISR 语义模拟）并发写入不撕裂（每条记录完整、无半行）；drain 后读指针推进且不重复消费。设计态红：sd_log 纯逻辑 seam 未实现",
-    "SLP-A2: 轮转与 8.3 命名纯逻辑——文件名 KPLOG000.TXT → KPLOG031.TXT 顺序推进、31 之后 wrap 回 000；单文件达 512KB 分片边界即切下一文件；目录 32 个文件封顶后覆盖最旧；目录总量 ≤16MB（512KB × 32）。设计态红：轮转/命名 seam 未实现",
-    "SLP-A3: 早启动留存语义——缓冲 init 早于 SD 挂载；未 attach 期间写入累积不清空；attach 后写盘任务从最旧未落盘条目开始 drain，NVS/WiFi 早期日志不丢。设计态红：缓冲未实现或 attach 时清空",
-    "SLP-A4: 接线结构齿（源锚，仿 sd_card_mount.acceptance.c）——① main.cc app_main 最早期调用 esp_log_set_vprintf（早于 nvs_flash_init），钩子保存旧函数指针并链式转调；② waveshare 板 InitializeSdCard 成功分支（s_sd_mounted=true 之后、RunBootRoundtripProbe 之前）调用 KidpalSdLogAttach(SD_MMC_MOUNT_ROOT)；③ mount_config.max_files = 8；④ PSRAM 环形缓冲以 heap_caps_malloc(..., MALLOC_CAP_SPIRAM) 分配、容量 128KB；⑤ 写盘任务内零 ESP_LOG* 调用（防 vprintf 递归）。设计态红：钩子/attach/max_files/PSRAM/递归守卫任一缺失",
-    "SLP-A5: 降级与重试语义——无卡（未 attach）时零 fopen 零写盘、整层静默失效；写失败进入 30s 重试窗口、不 panic 不 abort、不阻断语音主链路；恢复后从缓冲继续 drain。设计态红：失败路径 panic/abort 或零重试",
+    "LUR-A1: 命令解析纯逻辑（host 同源）——kplog list / kplog tail / kplog tail N / kplog cat N 合法形态解析成功；tail 默认 N=200、上限 1000；cat idx 闭集 0..31。设计态红：log_cmd 纯逻辑 seam 未实现",
+    "LUR-A2: 非法输入拒绝——idx ≥32 / 负数 / 非数字 / 路径字符（../、/、.）/ 多余 token / 未知子命令 / 超长行 → 返回 bad-index 或 bad-cmd 错误码，且不产生任何文件访问调用（拒绝即短路，文件访问层零触达）。设计态红：解析 seam 未实现",
+    "LUR-A3: 行装配纯逻辑——跨读块边界拼行；CRLF/LF 两种行尾；超长行丢弃；非 kplog 前缀输入静默不输出（不自动 dump 的行为齿：无命令零输出）。设计态红：行装配 seam 未实现",
+    "LUR-A4: 帧格式化纯逻辑——BEGIN/END 帧字面精确（=== KPLOG BEGIN <cmd> === / === KPLOG END ===）；list 行格式（文件名 + 字节数 + 当前写入文件尾标 * + KPLOG TOTAL 汇总行）；错误帧格式（KPLOG ERROR no-card|no-file|bad-cmd|bad-index）。设计态红：帧格式化 seam 未实现",
+    "LUR-A5: 尾部窗口选取纯逻辑——样本字节流取末 N 行边界正确：N=1 / N 大于总行数 / CRLF / 无结尾换行。设计态红：尾部选取 seam 未实现",
+    "LUR-A6: 接线结构齿（源锚，仿 sd_log.acceptance.c 形态）——① 文件名只经 kidpal_sd_log_file_name 或受校验整数构造（禁用户串直进路径拼接）；② 端口只 open /dev/secondary（不出现其它设备路径字面）；③ 启动函数 KidpalLogCmdStart 零打印；④ 读任务函数体内零 ESP_LOG* 调用（防 vprintf 钩子自污染与递归），响应只经 stdout（fwrite/printf）。设计态红：接线任一缺失或结构违例",
     {
-      "id": "SLP-A6",
+      "id": "LUR-A7",
       "kind": "structural",
-      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；261012 RF-A5 / 261017 PV-A8 同款口径，不计入 runner 通过面）：human 持板执行——① /sdcard/logs/ 出现 KPLOG*.TXT，内容含当轮 STT 转写与 LLM 回复原文片段；② 串口 COM5 日志输出不因装钩子中断；③ 写满 32×512KB 后最旧被覆盖、目录 ≤16MB；④ 拔卡/坏卡场景不崩、30s 重试后恢复写盘。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；SLP-A6 同款口径，不计入 runner 通过面）：human 持板执行，本 Pod 到真机门前停等（status=awaiting-human:real-device）、不自行烧录。① 单命令 smoke 先行：kplog list 验证 /dev/secondary 可读（失败按 plan 降级 A=HAL 直读 / 降级 B=console primary 须回 triage 升档）；② 烧录后 COM5 除正常日志外静默无自动输出，不插线正常启动；③ list → 文件名+大小+总量、当前文件有 *；④ tail 50 → 末 50 行含当轮 STT/LLM 原文片段、帧完整；⑤ cat 0 → 全文逐字节正确、中文 UTF-8 不乱码；⑥ 产生新日志后 list/tail 大小增长且 tail 含新行（读不干扰写）；⑦ 非法命令（cat 99 / tail abc / 乱敲前缀）→ 错误帧、不崩、无多余输出；⑧ 拔卡 → no-card 错误帧、设备不崩、语音主链路不受影响、插回重启恢复；⑨ 关脚本后 esptool 正常烧录、串口监控正常（与既有链路零回归）"
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/sd_log.acceptance.c"
+    "firmware/main/test/log_cmd.acceptance.c"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-18（本树）：① 独立冒烟通道（gcc -std=c11 -Wall -Wextra -pthread，与 sc_red_wrapper 同款）编入冻结件 + runner → COMPILE_EXIT=0 零 warning，8 Tests 8 Failures（全部设计态红：SLP-A1×2 / SLP-A2×1 / SLP-A3×1 / SLP-A5×1 = 纯逻辑 seam 未实现；SLP-A4×3 = main.cc 未装钩子 / max_files 仍为 5 / sd_log.h 未落地）；② 既有 host runner（本件尚未登记）195 Tests 3 Failures exit 3——3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4），与本包子系统正交，本包零新增红；③ 宿主构建旗标实编 COMPILE_EXIT=0（-std=gnu17 -Wall -Wextra -Werror=all 零 warning）。双向可满足性：一次性参考实现 + 合成树 → 8 Tests 0 Failures；定向变异六项（max_files 8→5 / 钩子后移 / 写盘任务加 ESP_LOG / attach 清空 / 满溢丢最新 / 移除 rot_account 消费）各只打红对应断言。【补充轮 2026-10-19（真机缺陷修复 + fsync 回归齿）】fixer 补 DrainPending fsync(fileno)（真机实证 fflush 不落 FAT 目录项、硬复位丢数据；human-decision b0da8396）；acceptance-author 按 tighten-only additive 窗口补 fsync 源锚回归齿（43/0，sha256 核销见该件 REVISION LOG），变异红证 = 摘 fsync 转红（红名 verbatim 见 mutationEvidence SLP-A4 注记）；host 复跑 210 Tests 3 Failures（+7 = 姊妹包 261018-sd-log-usb-read log_cmd 齿；3 红仍为 p1_auxbar 先存红，零新增红）。",
+  "redBaselineResult": "",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
     "live-manual"
   ],
   "exitCriteria": [
-    "SLP-X1: 全部 SLP-Ax host 齿转绿（sd_log.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红",
-    "SLP-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1；firmware-build-check.mjs 真编译通过，firmware/main/CMakeLists.txt 显式 SOURCES 登记生效）",
-    "SLP-X3: 分区表与 sdkconfig 零改动（git diff -- firmware/partitions* firmware/sdkconfig* 为空）",
-    "SLP-X4: 真机轮由 human 持板执行并留痕（SLP-A6 四项观察），本 Pod 到门停等、不自行烧录",
-    "SLP-X5: docs-sync 完成或显式裁定不需要——架构面 T1–T8 已随 261018 架构面 landing（commit 5a37b001）落地；隐私记账已在 docs/debt/tech/TECH-261016-sd-story-confidentiality.md append（commit 27b4ecd5）；本包 docs-delta 只需声明口径与「无新增文档改动」"
+    "LUR-X1: 全部 LUR-Ax host 齿转绿（log_cmd.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红（含 persist 包 sd_log.acceptance.c 全齿：TEST 6 main.cc 结构锚在 KidpalLogCmdStart 加位后保持绿）",
+    "LUR-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，lite 快路径不适用；firmware/main/CMakeLists.txt 显式 SOURCES 登记生效）",
+    "LUR-X3: 边界零改动——git diff 对 firmware/partitions*、firmware/sdkconfig*、决策 24 白名单（docs/architecture.md §10）、§6.6 canonical 文本全空；persist 写路径行为零改动（sd_log.h/sd_log_fs.cc 只增只读访问器，不改既有行为与冻结验收）",
+    "LUR-X4: 真机轮由 human 持板执行并留痕（LUR-A7 九项逐条判据，单命令 smoke 先行），本 Pod 到门停等、不自行烧录",
+    "LUR-X5: docs-sync 完成或显式裁定不需要——本包零新增文档改动（决策 24 白名单与 §6.6 已随 persist 架构面落地；取回命令为诊断工具、不入 canonical），docs-delta 声明口径即可",
+    "LUR-X6: host 取回脚本 tools/diag/kidpal_logs.py 落地且自描述（--port/--cmd/--n/--index/--out/--timeout；DTR/RTS 立即拉低防复位伪影），真机轮第 1 步单命令 smoke 可直接调用"
   ],
-  "iterationBudget": 3,
+  "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "high",
+  "riskTier": "medium",
   "gateProfile": [
     "docs-sync",
     "test-quality",
-    "evidence-integrity",
-    "device-round",
-    "security"
+    "device-round"
   ],
   "contractRefs": [
     "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-    "delivery/intake/261018-sd-log-persist.md",
-    "delivery/taskpackages/261018-sd-log-persist/plan.md",
+    "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
+    "delivery/taskpackages/261018-sd-log-usb-read/launch-card.md",
+    "delivery/taskpackages/261018-sd-log-persist/taskpackage.json",
+    "delivery/taskpackages/261018-sd-log-persist/pod-retro.md",
     "docs/architecture.md#§6.6",
-    "docs/architecture.md#§10",
-    "docs/ADR.md#ADR-012",
     "docs/debt/tech/TECH-261016-sd-story-confidentiality.md"
   ],
   "docsSyncRequired": true,
-  "docsNoChangeReason": "本包零新增文档改动：架构面 T1–T8 已随 261018 架构面 landing（commit 5a37b001）先行落地；隐私记账已在 docs/debt/tech/TECH-261016-sd-story-confidentiality.md append（commit 27b4ecd5）；契约面 NO_CONTRACT_CHANGE；docs-delta 只作声明与口径留痕，不重复改写 canonical 文档。",
+  "docsNoChangeReason": "本包零新增文档改动：决策 24 白名单（诊断日志）与 §6.6 已随 261018 persist 包架构面 landing（commit 5a37b001）落地；本包只加只读取回命令，属诊断工具面、不改变架构决策与 canonical 文本；契约面零改动（plan 边界明列不改 §6.6 canonical）；docs-delta 只作声明与口径留痕。",
   "docsOwner": "integrator",
-  "securityReviewRequired": true,
-  "securityEvidence": "安全评审（2026-10-18，planner + architect 前置评估 + FROZEN PROPOSAL 决策 24 注记），逐轴结论：① data-at-rest：STT/LLM 对话原文（儿童语音转写 + AI 回复）明文落可拔 SD 卡、读卡器直读——与 TECH-261016-sd-story-confidentiality 同族且暴露面加宽；human 2026-10-18 有意识接受（「含对话原文」拍板），本批不加防护、记账在案——处置 = 接受并记账，不写加密/脱敏验收断言。② 路径安全：日志文件名由固定 8.3 模板生成（KPLOG + 3 位十进制 + .TXT），零用户输入进路径拼接，无路径注入面——处置 = 无新增攻击面。③ 降级不崩：无卡/坏卡/写失败整层失效不阻断语音主链路，不 panic、不 abort、不触碰业务数据——处置 = 写盘任务单写者、低优先级、任务内零 ESP_LOG；失败 30s 重试。另有：介质禁令边界（诊断日志 = 可观测性数据、非业务真相源、不提供离线功能；提醒/课表/业务日志仍不落板，决策 24 注记 + ADR-012）；分区表与 sdkconfig 零改动。",
-  "securityAxes": [
-    "data-at-rest：STT/LLM 对话原文（儿童语音转写 + AI 回复）明文落可拔 SD 卡、读卡器直读——与 TECH-261016-sd-story-confidentiality 同族且暴露面加宽；human 2026-10-18 有意识接受（「含对话原文」拍板），本批不加防护、记账在案",
-    "路径安全：日志文件名由固定 8.3 模板生成（KPLOG + 3 位十进制 + .TXT），零用户输入进路径拼接，无路径注入面",
-    "降级不崩：无卡/坏卡/写失败整层失效不阻断语音主链路，不 panic、不 abort、不触碰业务数据"
-  ],
+  "securityReviewRequired": false,
+  "securityAxes": [],
   "adrRequired": false,
   "planningWorkstreamRequired": false,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "SLP-A1",
-        "acceptance": "SLP-A1: 环形缓冲纯逻辑（host 同源，显式注入容量/写者时序）——容量上界 128KB 语义；写满后新写入被接纳、丢最旧；多写者（任务/ISR 语义模拟）并发写入不撕裂（每条记录完整、无半行）；drain 后读指针推进且不重复消费。设计态红：sd_log 纯逻辑 seam 未实现",
-        "mutation": "环形缓冲满溢策略由「丢最旧」改为「拒绝新记录」：kidpal_sd_log_ring_write 空间不足即 return -1",
-        "affectedTest": "firmware/main/test/sd_log.acceptance.c TEST 1/2（SLP-A1）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SLP-A1 RED: 第 60 条 64B 记录未被接纳（满时应丢最旧腾位后接纳新写）。",
-          "SLP-A1 RED: 写者 A 存在拒绝写入（write 返回值 <= 0）——满时应丢最旧后接纳新写。"
-        ],
-        "restored": "git checkout -- sd_log.c 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）",
-        "note": "该变异同时触发 SLP-A5「无卡态不得拒绝采集」断言，属策略面耦合（A1/A5 共同钉住 drop-oldest），非断言串味"
-      },
-      {
-        "acceptanceId": "SLP-A2",
-        "acceptance": "SLP-A2: 轮转与 8.3 命名纯逻辑——文件名 KPLOG000.TXT → KPLOG031.TXT 顺序推进、31 之后 wrap 回 000；单文件达 512KB 分片边界即切下一文件；目录 32 个文件封顶后覆盖最旧；目录总量 ≤16MB（512KB × 32）。设计态红：轮转/命名 seam 未实现",
-        "mutation": "8.3 命名漂移：kidpal_sd_log_file_name 的 \"KPLOG%03u.TXT\" → \"KPLO%04u.TXT\"（前缀与位宽同时漂移，仍 12 字节）",
-        "affectedTest": "firmware/main/test/sd_log.acceptance.c TEST 3（SLP-A2）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SLP-A2 RED: file_name(0) 取值错（期望 KPLOG000.TXT）。"
-        ],
-        "restored": "git checkout -- sd_log.c 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）"
-      },
-      {
-        "acceptanceId": "SLP-A3",
-        "acceptance": "SLP-A3: 早启动留存语义——缓冲 init 早于 SD 挂载；未 attach 期间写入累积不清空；attach 后写盘任务从最旧未落盘条目开始 drain，NVS/WiFi 早期日志不丢。设计态红：缓冲未实现或 attach 时清空",
-        "mutation": "attach 清空环形缓冲：kidpal_sd_log_ring_attach 内置 attached=1 前把 head/tail/used/count 归零",
-        "affectedTest": "firmware/main/test/sd_log.acceptance.c TEST 4（SLP-A3）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SLP-A3 RED: attach 清空了缓冲（pending != 5）——早启动留存语义被破坏。"
-        ],
-        "restored": "git checkout -- sd_log.c 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）"
-      },
-      {
-        "acceptanceId": "SLP-A4",
-        "acceptance": "SLP-A4: 接线结构齿（源锚，仿 sd_card_mount.acceptance.c）——① main.cc app_main 最早期调用 esp_log_set_vprintf（早于 nvs_flash_init），钩子保存旧函数指针并链式转调；② waveshare 板 InitializeSdCard 成功分支（s_sd_mounted=true 之后、RunBootRoundtripProbe 之前）调用 KidpalSdLogAttach(SD_MMC_MOUNT_ROOT)；③ mount_config.max_files = 8；④ PSRAM 环形缓冲以 heap_caps_malloc(..., MALLOC_CAP_SPIRAM) 分配、容量 128KB；⑤ 写盘任务内零 ESP_LOG* 调用（防 vprintf 递归）。设计态红：钩子/attach/max_files/PSRAM/递归守卫任一缺失",
-        "mutation": "板 .cc 的 mount_config.max_files 8 → 5（FD 预算撤销）",
-        "affectedTest": "firmware/main/test/sd_log.acceptance.c TEST 7（SLP-A4，max_files 结构齿）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SLP-A4 RED: InitializeSdCard 内 mount_config.max_files 取值非字面 8（取到 5）——FD 预算未给日志文件 + story_sd_io + 启动探针留头（宏间接 / 符号常量形态取值失败同红，须复核锚不得改判为绿）"
-        ],
-        "restored": "git checkout -- waveshare-s3-rlcd-4.2.cc 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）",
-        "note": "同一变异同时打红 261016 重锚后的 SD-A2 tooth 6（见 XPKG 记录），证明跨包重锚齿同样敏感。【回归齿 2026-10-19，tighten-only additive 修订】真机实证 fsync 缺席缺陷（human-decision b0da8396-266e-4055-aa97-2a3b898104fe）修复后，TEST 8 additive 补「DrainPending 体内 fsync(fileno( 在世」源锚齿（43 增/0 删；sha256 395b9300…→68def413…，REVISION LOG append）；变异红证：/tmp 合成树摘除 fsync（注释保留）→ 红名 verbatim「SLP-A4 RED: DrainPending 体内 fsync(fileno( 缺席——fflush 只推 RAM 文件对象、FAT 目录项不落卡（真机实证 2026-10-19：硬复位丢全部已写数据）」"
-      },
-      {
-        "acceptanceId": "SLP-A5",
-        "acceptance": "SLP-A5: 降级与重试语义——无卡（未 attach）时零 fopen 零写盘、整层静默失效；写失败进入 30s 重试窗口、不 panic 不 abort、不阻断语音主链路；恢复后从缓冲继续 drain。设计态红：失败路径 panic/abort 或零重试",
-        "mutation": "重试窗口漂移：sd_log.h 的 KIDPAL_SD_LOG_RETRY_MS 30000 → 1000",
-        "affectedTest": "firmware/main/test/sd_log.acceptance.c TEST 5/8（SLP-A5 行为齿 + 常量单源齿）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SLP-A5 RED: 失败后 29999ms 就重试——30s 重试窗口过短（会持续打坏卡）。",
-          "SLP-A5 RED: sd_log.h 的 KIDPAL_SD_LOG_RETRY_MS 非 30000——30s 写失败重试窗口冻结值不成立"
-        ],
-        "restored": "git checkout -- sd_log.h 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）"
-      },
-      {
-        "acceptanceId": "XPKG-261016-SD-A2-reanchor",
-        "sourceAcceptance": "261016-sd-card-mount · SD-A2 tooth 6（max_files 字面值）",
-        "kind": "cross-package-frozen-reanchor",
-        "mutation": "重锚后在板 .cc 临时把 mount_config.max_files 8→5",
-        "affectedTest": "firmware/main/test/sd_card_mount.acceptance.c TEST 2 (SD-A2)",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "SD-A2 RED: InitializeSdCard 函数窗 max_files 取值非字面 8（取到 5; 宏间接/符号常量形态取值失败同红, 须复核锚不得改判为绿）"
-        ],
-        "governance": {
-          "authorizedBy": "human-decision 88a08bbd-c542-41e5-bdc4-fb2739dc24ef（2026-10-18）",
-          "assessment": "architect 1g 正式扩单回评（2026-10-18）",
-          "scopeLimit": "仅 SD-A2 tooth 6 期望字面 5→8 + 四处文字镜像 + REVISION LOG append"
-        },
-        "sha256": "6ff4fca19d05cd0ecf82fd073dd1750ab90d24ddec3e46f7535ef38af3d3ed4a -> ef0404d99dc9b306c844706699e27c23e474838bc43c309c6984f899cd29de98",
-        "notes": "耐久证据、非门判据：acceptanceId 刻意不撞 SLP-*，mutation-check 不会把它当 SLP 证据消费；仅存档跨包重锚的可核验事实。后值为含 REVISION LOG 的最终字节哈希，代码面重锚后值为 ec74a68ab41dd2a49552db21649da92d59daf92cfd7a21513d7eddf7b1dc8b74（见文件内 REVISION LOG 自指口径说明）。"
-      }
-    ]
+    "perAcceptance": []
   },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯板端本地诊断日志采集与落卡：零 wire 形状改动（帧类型 / 字段类型与承载 / 回执语义 / 序列化形态全不动），不新增端云消息、不做远程开关；esp_log 钩子只消费设备本地日志流，server/** 零 diff（PROPOSAL 契约四分类 = NO_CONTRACT_CHANGE）。"
+    "exempt": "串口取回帧协议（KPLOG BEGIN/END）的生产端（firmware log_cmd.c）与消费端（tools/diag/kidpal_logs.py）同在本包 changeManifest 内实现与验收，不存在包外对端面；不触 server/**、零端云 wire、docs/contracts 零改动（plan 边界明列）。帧格式行为由 LUR-A4 host 齿 + 真机轮逐字节核对承载。"
   },
   "decisionCoverage": [
     {
-      "decision": "D0 · 架构面 T1–T8（决策 24 白名单增列「设备诊断日志」+ 六处镜像 + ADR-012）",
-      "summary": "已随架构面 landing（commit 5a37b001）先行落地；本包只消费其形态边界（常开 + 有界轮转 + 16MB 封顶 + 可删除 + 含对话原文），不重复改动 docs/。",
+      "decision": "D1 · 命令面只读白名单：行协议仅识别 kplog 前缀，其余输入静默丢弃（防串口噪声触发输出）",
+      "summary": "list/tail/cat 三命令；不自动输出、无命令零输出。",
       "sourceRefs": [
-        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "exitCriteria:SLP-X5"
+      "landsIn": "acceptance:LUR-A1"
     },
     {
-      "decision": "D1 · 有界轮转形态：512KB × 32 个、目录总量 16MB 封顶、循环覆盖最旧",
-      "summary": "轮转与容量边界由纯逻辑 seam 承载并可 host 测；目录封顶 = 32 个文件。",
+      "decision": "D2 · 读通道：/dev/secondary VFS 直开（O_RDONLY|O_NONBLOCK）非阻塞 read，不装 usb_serial_jtag_driver、不改 sdkconfig",
+      "summary": "IDF 5.5.1 CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y 已注册含 read ops 的 VFS（sdkconfig:1577 实核）。",
       "sourceRefs": [
-        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A2"
+      "landsIn": "acceptance:LUR-A6"
     },
     {
-      "decision": "D2 · 落点与命名：/sdcard/logs/KPLOGnnn.TXT（8.3 兼容名，sdkconfig 零改动）",
-      "summary": "文件名 KPLOG + 3 位十进制 + .TXT，KPLOG000→KPLOG031 wrap；与 LFN 配置解耦。",
+      "decision": "D3 · 输出纪律：响应走 stdout（fwrite/printf），读任务函数体内零 ESP_LOG（防 vprintf 钩子自污染与递归）",
+      "summary": "沿用 persist 写盘任务纪律。",
       "sourceRefs": [
-        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A2"
+      "landsIn": "acceptance:LUR-A6"
     },
     {
-      "decision": "D3 · 采集方式：esp_log_set_vprintf 钩子必须链式转调原 vprintf，串口输出不中断",
-      "summary": "钩子保存旧函数指针、先转调再写环形缓冲；app_main 最早期安装。",
+      "decision": "D4 · 读盘并发：FATFS FS_LOCK=0 下只读打开（rb）、一次一个 FD、读完即关，与单写者纪律不冲突",
+      "summary": "不 rename/remove，避免 FATFS 非法操作；写方 fflush 后为完整记录（sdkconfig:1733 实核）。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A4"
+      "landsIn": "acceptance:LUR-A6"
     },
     {
-      "decision": "D4 · 环形缓冲：128KB 落 PSRAM，ISR-safe、多写者不撕裂，满溢丢最旧",
-      "summary": "纯逻辑 seam + PSRAM 分配在芯片面；溢出策略 = 丢最旧、不阻塞业务。",
+      "decision": "D5 · 当前轮转索引只读访问器：sd_log_fs.cc 增 KidpalSdLogCurrentIndex（未 init/未 attach 返 -1），供 tail 与 list 的 * 标记",
+      "summary": "只加只读访问器、不改 persist 行为与冻结验收；不靠 mtime（FAT 时间粒度 2s、RTC 未同步会退化）。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A1"
+      "landsIn": "acceptance:LUR-A4"
     },
     {
-      "decision": "D5 · 早启动到挂载间的留存语义：从 app_main 起累积不清空，attach 后从最旧 drain",
-      "summary": "NVS/WiFi 早期日志不因挂载晚而丢失。",
+      "decision": "D6 · 纯逻辑/芯片面分离：解析/行装配/帧格式化/尾部窗口 = log_cmd.c（零 FATFS/零 FreeRTOS，host 同源）；VFS 读/任务/文件 I/O/stdout = log_cmd_port.cc（不进 host 构建）",
+      "summary": "复用 story_cache 与 sd_log 先例。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A3"
+      "landsIn": "acceptance:LUR-A1"
     },
     {
-      "decision": "D6 · 写盘任务：低优先级 + 1s 或 4KB 批量刷盘 + 任务内禁调 ESP_LOG（防递归回灌）",
-      "summary": "单写者纪律；写盘任务零 ESP_LOG 调用为结构齿。",
+      "decision": "D7 · 任务形态：main.cc 在 vprintf 钩子之后 KidpalLogCmdStart()；低优先级（prio 2，写盘任务为 1）、栈 4KB、50–100ms 轮询读 64B 块",
+      "summary": "无卡/未挂载只回错误帧，不崩、不阻断语音主链路。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A4"
+      "landsIn": "acceptance:LUR-A6"
     },
     {
-      "decision": "D7 · 板级接线：挂载成功分支 attach + max_files 5→8",
-      "summary": "KidpalSdLogAttach(SD_MMC_MOUNT_ROOT) 在 s_sd_mounted=true 之后、RunBootRoundtripProbe 之前；FD 预算给日志文件 + story_sd_io + 探针留头。",
+      "decision": "D8 · host 取回脚本：tools/diag/kidpal_logs.py（pyserial），打开端口立即 dtr=False/rts=False 防复位伪影；单进程独占 COM5",
+      "summary": "丢弃 BEGIN 前普通日志、收集到 END 为止、按字节落本地文件（UTF-8 errors=replace）。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "acceptance:SLP-A4"
+      "landsIn": "exitCriteria:LUR-X6"
     },
     {
-      "decision": "D8 · 降级：无卡/坏卡/写失败整层失效不崩、不阻断语音主链路；写失败 30s 重试",
-      "summary": "对齐 story_sd_io「无卡短路绝不 fopen」范式；不 panic、不 abort。",
+      "decision": "D9 · v1 边界（不做）：自动 dump/开机打印/周期上报；写删格式化/任意路径读取/云端取回；USB MSC；UART0 输入通道",
+      "summary": "USB MSC 与 USB-Serial/JTAG 争 USB 控制器；COM5 实测为原生 USB-Serial/JTAG、UART0 未引到 Type-C。",
       "sourceRefs": [
-        "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md",
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
-      ],
-      "landsIn": "acceptance:SLP-A5"
-    },
-    {
-      "decision": "D9 · 内容：默认 INFO 及以上，含 STT/LLM 对话原文（human 2026-10-18 拍板）",
-      "summary": "application.cc 既有 ESP_LOGI(\"<< %s\"/\">> %s\") 已输出 transcript，钩子即可捕获，无需改 application.cc；真机轮观察项 SLP-A6 承载。",
-      "sourceRefs": [
-        "delivery/intake/261018-sd-log-persist.md",
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
-      ],
-      "landsIn": "acceptance:SLP-A6"
-    },
-    {
-      "decision": "D10 · 纯逻辑 / 芯片面分离（复用 story_cache 先例；OQ-3 = L0 builder 可裁）",
-      "summary": "环形缓冲/轮转/文件名为 host 同源纯逻辑；esp_log 钩子 + FATFS 写 + attach 为芯片面。",
-      "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md",
-        "delivery/intake/261018-sd-log-persist.md"
-      ],
-      "landsIn": "acceptance:SLP-A1"
-    },
-    {
-      "decision": "D11 · panic / OOPS 输出不落卡",
-      "summary": "v1 明确边界，不在本层承载。",
-      "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
       "landsIn": "dropped",
-      "reason": "v1 明确边界：panic handler 绕开 vprintf 直写 UART，本层不承载，非缺陷"
+      "reason": "v1 明确边界（human 原话动机：不必自动输出、防干扰串口监控与烧录；plan 目标与边界节逐项列明），非缺陷不做承载"
     },
     {
-      "decision": "D12 · 组件内裸 printf 不经钩子、bootloader 日志抓不到",
-      "summary": "v1 明确边界，不在本层承载。",
+      "decision": "D10 · 降级链：/dev/secondary 直读未达时降级 A = HAL 直读 usb_serial_jtag_ll_read_rxfifo；降级 B = console primary 切 USB-SERIAL-JTAG（须回 /triage-change 升档重判）",
+      "summary": "真机轮第 1 步前先做单命令 smoke 验证；smoke 失败才进降级链。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
+        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
       ],
-      "landsIn": "dropped",
-      "reason": "v1 明确边界：仅挂 esp_log vprintf；裸 printf 与 bootloader 日志不经钩子，不做截获"
-    },
-    {
-      "decision": "D13 · 运行中热插拔不做（写失败 30s 重试）",
-      "summary": "v1 不做热插拔事件检测；拔卡后按写失败重试处理。",
-      "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
-      ],
-      "landsIn": "dropped",
-      "reason": "v1 明确边界：不检测热插拔事件；拔卡后按写失败 30s 重试，恢复后继续写盘"
-    },
-    {
-      "decision": "D14 · 分区表与 sdkconfig 零改动",
-      "summary": "8.3 命名与 PSRAM 分配均不需改分区或 sdkconfig。",
-      "sourceRefs": [
-        "delivery/intake/261018-sd-log-persist.md",
-        "delivery/taskpackages/261018-sd-log-persist/plan.md"
-      ],
-      "landsIn": "exitCriteria:SLP-X3"
+      "landsIn": "acceptance:LUR-A7"
     }
   ],
   "changeManifest": [
+    "firmware/main/diagnostics/log_cmd.h",
+    "firmware/main/diagnostics/log_cmd.c",
+    "firmware/main/diagnostics/log_cmd_port.cc",
     "firmware/main/diagnostics/sd_log.h",
-    "firmware/main/diagnostics/sd_log.c",
     "firmware/main/diagnostics/sd_log_fs.cc",
     "firmware/main/main.cc",
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
     "firmware/main/CMakeLists.txt",
     "firmware/main/test/host_app/main/CMakeLists.txt",
-    "firmware/main/test/sd_log.acceptance.c",
-    "firmware/main/test/sd_card_mount.acceptance.c"
+    "firmware/main/test/log_cmd.acceptance.c",
+    "tools/diag/kidpal_logs.py"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/sd_log.acceptance.c",
+      "path": "firmware/main/test/log_cmd.acceptance.c",
       "kind": "new-frozen-acceptance-file",
-      "note": "新增（acceptance-author 落位）：SLP-A1/A2/A3/A5 纯逻辑 host 齿 + SLP-A4 源锚结构齿；仿 sd_card_mount.acceptance.c 的源锚形态（builder 接线 = 向 firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 追加登记，登记行不在 acceptance-author 写权内）"
+      "note": "新增（acceptance-author 落位）：LUR-A1..A5 纯逻辑 host 齿 + LUR-A6 源锚结构齿；仿 sd_log.acceptance.c 形态；builder 接线 = 向 firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 追加登记（登记行不在 acceptance-author 写权内）"
     },
     {
       "path": "firmware/main/test/host_app/main/CMakeLists.txt",
       "kind": "extension",
-      "note": "HOST_ACCEPTANCE_SRCS 追加 \"../../sd_log.acceptance.c\"，并登记 sd_log.c 纯逻辑 source（host 同源）"
+      "note": "HOST_ACCEPTANCE_SRCS 追加 ../../log_cmd.acceptance.c，并登记 log_cmd.c 纯逻辑 source（host 同源）；log_cmd_port.cc 不进 host 构建"
     },
     {
       "path": "firmware/main/CMakeLists.txt",
       "kind": "extension",
-      "note": "main 目录非 GLOB：显式 SOURCES 补 diagnostics/sd_log.c 与 diagnostics/sd_log_fs.cc"
+      "note": "main 目录非 GLOB：显式 SOURCES 补 diagnostics/log_cmd.c 与 diagnostics/log_cmd_port.cc（persist 包教训：登记是缺口高发位）"
     },
     {
       "path": "firmware/main/test/host_app（既有全量套件）",
       "kind": "must-stay-green",
-      "note": "既有 host 全量套件零新增红（sd-card-mount / p3-story-body-sd-cache 等既有齿不受钩子接线影响）"
+      "note": "既有 host 全量套件零新增红；特别：persist 包 sd_log.acceptance.c TEST 6（main.cc 结构锚：KidpalSdLogInit → esp_log_set_vprintf → ChainPreviousVprintf 早于首个 nvs_flash_init）在 KidpalLogCmdStart 钩子后加位调用下必须保持绿（intake 期已核加位兼容）；TEST 8（sd_log.h 宏字面单源扫描 + CMake 登记哨兵）对只读访问器声明增量安全"
     },
     {
-      "path": "firmware/main/test/sd_card_mount.acceptance.c",
-      "kind": "frozen-file-reanchor",
-      "note": "跨包重锚（261016 已合并冻结件；非新增、非纯 additive、不新建文件）：SD-A2 tooth 6 期望字面 5→8 + 四处文字镜像（:49/:94/:556/:559）+ 文件尾 REVISION LOG append；判别机制与其余断言零改动。human-decision 88a08bbd-c542-41e5-bdc4-fb2739dc24ef 窄口径授权，architect 1g 扩单评估 = 2026-10-18 正式回评。final 相位 test-scope 必须覆盖该文件（已编入 host runner，全量跑即覆盖）；kind 只圈影响面，不构成放宽许可。"
+      "path": "firmware/main/test/sd_log.acceptance.c",
+      "kind": "must-stay-green-adjacent-frozen",
+      "note": "相邻冻结件不改不动（persist 包全齿 keep-green）；本包对 sd_log.h/sd_log_fs.cc 只增只读访问器，无重锚需求（intake 期相邻冻结齿字面锚扫查已做：无冲突，persist retro 教训 #1 已消化）"
+    },
+    {
+      "path": "tools/diag/kidpal_logs.py",
+      "kind": "new-host-tool",
+      "note": "新增 host 取回脚本；无自动齿（真机轮 LUR-A7① 单命令 smoke 承载首验）；pyserial 依赖用 IDF python env"
     }
   ],
-  "notes": "① scope-map 已核（Step 1c）：builder allow firmware/**，acceptance-author allow firmware/**/*.acceptance.c；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（技术方案 = plan「设计要点」；changeManifest = plan「changeManifest 种子清单」+ architect 补入两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，故本轮不重复派 architect 重评。③ current/ 投影纪律：canonical 与 current/ 字节级复制、任何回填后原子刷新。④ 真机门前停等：host 齿 + 设备编译闸绿后，status=awaiting-human:real-device，输出持板操作单交 human，resume 续跑。⑤ 隐私：含 STT/LLM 对话原文 = human 有意识接受，记账已在 TECH-261016 append（commit 27b4ecd5）；本包不再改 debt。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（除 acceptance-author）；日志带 correlationId（K6）不适用于本包（诊断日志是 esp_log 原样留存）。⑦【扩单 2026-10-18，human-decision 88a08bbd-c542-41e5-bdc4-fb2739dc24ef + architect 1g 正式扩单回评】changeManifest 增列 firmware/main/test/sd_card_mount.acceptance.c（261016 已合并冻结件重锚：SD-A2 tooth 6 期望字面 5→8 + 四处文字镜像 + REVISION LOG append），起因 = 本包 plan 要求 max_files=8 与旧齿字面 5 互斥。本条为 human 2026-10-18 一次性窄口径授权：仅覆盖 261016 SD-A2 tooth 6 期望值 5→8 及四处文字镜像，不构成「plan 提到某值即可改任何钉该值的冻结齿」的先例；后续任何冻结齿重锚仍须逐案 human 窄口径裁决 + architect 1g 扩单评估（或走正常改验收通道），且一律先扩 manifest 后动文件，不得援引本条为隐性先例，也不得据此放宽任何其他断言。⑧ 历史双源：261016 taskpackage 的 acceptance 文本与 m2 配方仍写 5，属 human 明令保留的历史快照；现行期望以 live 冻结件 + 其 REVISION LOG 为准，见者不得据历史文本回改实现或回退齿。"
+  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + tools/**，acceptance-author allow firmware/**/*.acceptance.c + tools/**；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（2026-10-18；技术方案 = plan「设计要点」九条；changeManifest = plan「changeManifest 种子清单」含 architect 补入的两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，本轮不重复派 architect 重评。③ Step 1f 保鲜核验已做：plan 引用的 sd_log.h/sd_log_fs.cc/两处 CMakeLists/sdkconfig 行（:1577/:1733）实核在场且值相符；改动面覆盖完整。④ 相邻冻结齿字面锚扫查（persist retro 教训 #1）：sd_log.acceptance.c 全齿与只读访问器增量无字面锚冲突；TEST 6 main.cc 结构锚需 KidpalLogCmdStart 在钩子后加位（已入 must-stay-green）。⑤ 上游依赖：persist 代码已在本分支 dev/pod-m2（未合 main），base ref = dev/pod-m2，不得假设 persist 已在 main；合并顺序 = 主线程裁定（OQ-1）：persist 真机四项验完 → persist 合 main → 本包 rebase 后立合，persist 未验完前两包都不合。⑥ 真机门前停等：host 齿 + 设备编译闸绿后 status=awaiting-human:real-device，输出持板操作单（含单命令 smoke 步骤）交 human，resume 续跑；本 Pod 不自行烧录。⑦ security 轴裁定：只读白名单 + 物理访问威胁模型与拔卡同族未加宽（architect 比例化 review 结论），securityReviewRequired=false、零新记账；注入拒绝面由 LUR-A2 行为齿承载。⑧ mutation 纪律：mutationEvidence 证据串须携带完整 acceptance 串（persist retro 教训 #2，raw-id 语义会闸红）。⑨ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与既有 *.acceptance.*（除 acceptance-author 新建本包验收件）；sdkconfig 与分区表零改动（LUR-X3）。"
 }
