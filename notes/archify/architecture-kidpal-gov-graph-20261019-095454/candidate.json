@@ -1,0 +1,769 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "KidPal 治理拓扑 · Graph Engineering 视角",
+    "locale": "zh-CN",
+    "output": "notes/archify/architecture-kidpal-gov-graph-20261019-095454/kidpal-gov-graph.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "human / 外部输入"
+        },
+        "frontend": {
+          "label": "主线程 · 纯编排"
+        },
+        "backend": {
+          "label": "agent 角色（起草⇄审稿对偶）"
+        },
+        "security": {
+          "label": "机械闸 / 汇合门"
+        },
+        "database": {
+          "label": "状态面工件（git 仓）"
+        },
+        "messagebus": {
+          "label": "事件流"
+        }
+      }
+    }
+  },
+  "components": [
+    {
+      "id": "idea",
+      "type": "external",
+      "label": "idea · 变更想法",
+      "sublabel": "human 原话 / 讨论",
+      "icon": "start",
+      "pos": [
+        40,
+        170
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "intake",
+      "type": "frontend",
+      "label": "intake",
+      "sublabel": "/triage-change · 探测",
+      "pos": [
+        260,
+        170
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "triage",
+      "type": "frontend",
+      "label": "triage 分流",
+      "sublabel": "facePlan 派发 · 五档判档",
+      "pos": [
+        480,
+        152
+      ],
+      "size": [
+        140,
+        100
+      ]
+    },
+    {
+      "id": "human-ack",
+      "type": "external",
+      "label": "Human ① 立项 ack",
+      "sublabel": "为什么改 / 往哪改 / 改多大",
+      "icon": "person",
+      "pos": [
+        470,
+        36
+      ],
+      "size": [
+        160,
+        48
+      ]
+    },
+    {
+      "id": "human-esc",
+      "type": "external",
+      "label": "Human ② 例外升级",
+      "sublabel": "Track A 拍方向 · 熔断三选一",
+      "icon": "person",
+      "pos": [
+        1100,
+        36
+      ],
+      "size": [
+        200,
+        48
+      ]
+    },
+    {
+      "id": "human-push",
+      "type": "external",
+      "label": "Human ③",
+      "sublabel": "remote push 仍 human",
+      "icon": "person",
+      "pos": [
+        1614,
+        480
+      ],
+      "size": [
+        130,
+        60
+      ]
+    },
+    {
+      "id": "story-author",
+      "type": "backend",
+      "label": "story-author",
+      "sublabel": "需求修订起草（updating）",
+      "pos": [
+        700,
+        140
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "uiux",
+      "type": "backend",
+      "label": "uiux-author",
+      "sublabel": "档2 触 UI · 生成/修订",
+      "pos": [
+        930,
+        140
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "req-reviewer",
+      "type": "backend",
+      "label": "requirement-reviewer",
+      "sublabel": "四查 · 否回循环",
+      "pos": [
+        1140,
+        140
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "arch-author",
+      "type": "backend",
+      "label": "architect",
+      "sublabel": "起草 PROPOSAL",
+      "pos": [
+        700,
+        270
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "arch-reviewer",
+      "type": "backend",
+      "label": "architect-reviewer",
+      "sublabel": "四查 · 轻/主判档",
+      "pos": [
+        930,
+        270
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "tracka",
+      "type": "backend",
+      "label": "Track A 段 · 对抗收敛",
+      "sublabel": "challenger⇄defender→adjudicator",
+      "pos": [
+        895,
+        360
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "portfolio",
+      "type": "backend",
+      "label": "portfolio-planner",
+      "sublabel": "拆包 · WIP 调度",
+      "pos": [
+        700,
+        644
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "pod-a",
+      "type": "backend",
+      "label": "Pod A",
+      "sublabel": "builder⇄verifier/fixer",
+      "pos": [
+        930,
+        616
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "pod-b",
+      "type": "backend",
+      "label": "Pod B（并行）",
+      "sublabel": "独立 worktree",
+      "pos": [
+        930,
+        692
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "merge-token",
+      "type": "security",
+      "label": "merge token · 串行汇合",
+      "sublabel": "merge-driver 解冲突",
+      "pos": [
+        1140,
+        644
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "gov-author",
+      "type": "backend",
+      "label": "architect",
+      "sublabel": "起草 PROPOSAL",
+      "pos": [
+        700,
+        486
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "gov-reviewer",
+      "type": "backend",
+      "label": "architect-reviewer",
+      "sublabel": "四查 · 判档",
+      "pos": [
+        930,
+        486
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "landing",
+      "type": "frontend",
+      "label": "主线程落地",
+      "sublabel": "packet-bound · 凭据绑定",
+      "pos": [
+        1420,
+        140
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "verify",
+      "type": "backend",
+      "label": "landing-verifier",
+      "sublabel": "结构门 + 人读 diff",
+      "pos": [
+        1420,
+        250
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "merge-gate",
+      "type": "security",
+      "label": "合并机械凭据闸",
+      "sublabel": "三件联立 · 缺一 BLOCK",
+      "pos": [
+        1420,
+        360
+      ],
+      "size": [
+        150,
+        72
+      ]
+    },
+    {
+      "id": "main-branch",
+      "type": "database",
+      "label": "本地 main",
+      "sublabel": "自动合并 · 可回滚",
+      "pos": [
+        1420,
+        480
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "retro",
+      "type": "backend",
+      "label": "retro / loop-retro",
+      "sublabel": "每批 + 周期复盘",
+      "pos": [
+        1420,
+        600
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "spine",
+      "type": "database",
+      "label": "spine",
+      "sublabel": "跨面 intake 锚 · 免冻",
+      "pos": [
+        440,
+        870
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "index",
+      "type": "database",
+      "label": "delivery/ 三 lane INDEX",
+      "sublabel": "状态转移 --upsert 钉进 · 各 lane 只写自己",
+      "pos": [
+        660,
+        870
+      ],
+      "size": [
+        260,
+        60
+      ]
+    },
+    {
+      "id": "pod-events",
+      "type": "messagebus",
+      "label": "pod-events",
+      "sublabel": "merge 完成事件等会话事件流",
+      "pos": [
+        970,
+        870
+      ],
+      "size": [
+        180,
+        60
+      ]
+    },
+    {
+      "id": "debt",
+      "type": "database",
+      "label": "debt 账本",
+      "sublabel": "docs/debt/{gov,tech} · ARQ",
+      "pos": [
+        1200,
+        870
+      ],
+      "size": [
+        220,
+        60
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "需求面 · /requirement-change",
+      "wraps": [
+        "story-author",
+        "uiux",
+        "req-reviewer"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "架构+契约面 · /arch-change",
+      "wraps": [
+        "arch-author",
+        "arch-reviewer",
+        "tracka"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "实现面 · /build-feature（dev loop · 多 Pod 并行）",
+      "wraps": [
+        "portfolio",
+        "pod-a",
+        "pod-b",
+        "merge-token"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "治理面 · /gov-change",
+      "wraps": [
+        "gov-author",
+        "gov-reviewer"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "状态面 · git 仓工件 = 图的持久状态（可审计 · 可回滚）",
+      "wraps": [
+        "spine",
+        "index",
+        "pod-events",
+        "debt"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "security-group",
+      "label": "机械强制层（恒在）· hooks / scope-map / 契约写防线",
+      "wraps": [
+        "intake",
+        "triage",
+        "story-author",
+        "uiux",
+        "req-reviewer",
+        "arch-author",
+        "arch-reviewer",
+        "tracka",
+        "portfolio",
+        "pod-a",
+        "pod-b",
+        "merge-token",
+        "gov-author",
+        "gov-reviewer",
+        "landing",
+        "verify",
+        "merge-gate",
+        "main-branch",
+        "retro"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "idea-to-intake",
+      "from": "idea",
+      "to": "intake",
+      "label": "原话",
+      "variant": "emphasis"
+    },
+    {
+      "id": "intake-to-triage",
+      "from": "intake",
+      "to": "triage",
+      "label": "跨面探测"
+    },
+    {
+      "id": "ack-to-triage",
+      "from": "human-ack",
+      "to": "triage",
+      "label": "① 立项 ack",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "triage-to-req",
+      "from": "triage",
+      "to": "story-author",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "triage-to-arch",
+      "from": "triage",
+      "to": "arch-author",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "triage-to-dev",
+      "from": "triage",
+      "to": "portfolio",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "triage-to-gov",
+      "from": "triage",
+      "to": "gov-author",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "story-to-uiux",
+      "from": "story-author",
+      "to": "uiux",
+      "label": "触 UI",
+      "variant": "dashed"
+    },
+    {
+      "id": "uiux-to-reqrev",
+      "from": "uiux",
+      "to": "req-reviewer"
+    },
+    {
+      "id": "reqrev-to-story",
+      "from": "req-reviewer",
+      "to": "story-author",
+      "label": "否回 · 熔断 3 轮",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "reqrev-to-landing",
+      "from": "req-reviewer",
+      "to": "landing",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "arch-to-archrev",
+      "from": "arch-author",
+      "to": "arch-reviewer",
+      "label": "PROPOSAL"
+    },
+    {
+      "id": "archrev-to-arch",
+      "from": "arch-reviewer",
+      "to": "arch-author",
+      "label": "打回 · 3 轮熔断",
+      "fromSide": "top",
+      "toSide": "top"
+    },
+    {
+      "id": "archrev-to-tracka",
+      "from": "arch-reviewer",
+      "to": "tracka",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "archrev-to-landing",
+      "from": "arch-reviewer",
+      "to": "landing",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "portfolio-to-poda",
+      "from": "portfolio",
+      "to": "pod-a",
+      "label": "派 Pod"
+    },
+    {
+      "id": "portfolio-to-podb",
+      "from": "portfolio",
+      "to": "pod-b"
+    },
+    {
+      "id": "poda-to-token",
+      "from": "pod-a",
+      "to": "merge-token",
+      "label": "转绿"
+    },
+    {
+      "id": "podb-to-token",
+      "from": "pod-b",
+      "to": "merge-token"
+    },
+    {
+      "id": "token-to-gate",
+      "from": "merge-token",
+      "to": "merge-gate",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "gov-to-govrev",
+      "from": "gov-author",
+      "to": "gov-reviewer",
+      "label": "PROPOSAL"
+    },
+    {
+      "id": "govrev-to-gov",
+      "from": "gov-reviewer",
+      "to": "gov-author",
+      "label": "打回",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "govrev-to-landing",
+      "from": "gov-reviewer",
+      "to": "landing",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "landing-to-verify",
+      "from": "landing",
+      "to": "verify",
+      "label": "manifest",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "verify-to-gate",
+      "from": "verify",
+      "to": "merge-gate",
+      "label": "PASS",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "gate-to-main",
+      "from": "merge-gate",
+      "to": "main-branch",
+      "label": "放行 · ff 合并",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "main-to-push",
+      "from": "main-branch",
+      "to": "human-push",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "main-to-retro",
+      "from": "main-branch",
+      "to": "retro",
+      "label": "落地复盘 · 趁热写",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "retro-to-debt",
+      "from": "retro",
+      "to": "debt",
+      "label": "转 ARQ",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "debt-to-intake",
+      "from": "debt",
+      "to": "intake",
+      "label": "ARQ 作立项材料回流",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "intake-to-spine",
+      "from": "intake",
+      "to": "spine",
+      "label": "落 spine",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "gate-to-human",
+      "from": "merge-gate",
+      "to": "human-esc",
+      "label": "闸拦升级",
+      "fromSide": "right",
+      "toSide": "right",
+      "labelAt": [
+        1450,
+        48
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "边上凭据链（每条边的契约）",
+      "items": [
+        "起草 → PROPOSAL → §7 GREEN → FROZEN 机锚",
+        "落地 → landing-manifest 绑定 + landing-summary",
+        "核验 → verdict PASS；合并闸三件联立、缺一 BLOCK",
+        "闭环 → retro（轻路径豁免；制品四件过闸）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Human 只在三点出场",
+      "items": [
+        "① 立项 ack：为什么改 / 往哪改 / 改多大",
+        "② 例外升级：Track A 拍方向 · 熔断（3 轮不绿）三选一 · 升级闸拦",
+        "③ remote push 仍归 human；本地 main 自动合并可回滚"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "并行与汇合（dev loop）",
+      "items": [
+        "portfolio-planner 拆包 + WIP limit 调度多 Pod",
+        "各 Pod 独立 worktree 转绿 → merge token 串行汇合",
+        "merge-driver 解冲突；supervisor 合并门复核"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "状态面读写纪律",
+      "items": [
+        "spine 免冻：anchors 记录各面自己的冻结态",
+        "状态转移跑 changes-index --upsert 钉 INDEX；合并后须重跑",
+        "debt 账本：retro / loop-retro 把共性踩坑转 ARQ，回流立项",
+        "pod-events：merge 完成等会话事件入流，供复盘与追溯"
+      ]
+    }
+  ]
+}
