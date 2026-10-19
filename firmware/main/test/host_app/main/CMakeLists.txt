@@ -251,6 +251,16 @@ set(HOST_ACCEPTANCE_SRCS
     "../../../diagnostics/sd_log.c"
     "../../sd_log.acceptance.c"
 
+    # 包 261018-sd-log-usb-read（诊断日志按需 USB 串口取回：只读命令 kplog list/tail/cat）
+    # 被测实现 + 冻结验收。diagnostics/log_cmd.c = [S2]-[S5] 纯逻辑强符号源（命令解析 /
+    # 行装配 / 帧格式化 / 尾部窗口，覆盖冻结件 weak 哨兵；零 FATFS / 零 FreeRTOS）；
+    # diagnostics/log_cmd_port.cc 是芯片面（/dev/secondary VFS 读任务 + FATFS 只读 +
+    # stdout 输出），host 不可达、**不进本构建**（冻结件 TEST 7 负向守校验）。相对
+    # host_app/main 分别为 ../../../diagnostics/ 与 ../../。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../../diagnostics/log_cmd.c"
+    "../../log_cmd.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

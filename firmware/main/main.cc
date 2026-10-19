@@ -10,6 +10,7 @@
 #include "application.h"
 #include "system_info.h"
 #include "diagnostics/sd_log.h"  /* 包 261018-sd-log-persist: 诊断日志落 TF 卡 */
+#include "diagnostics/log_cmd.h" /* 包 261018-sd-log-usb-read: USB 串口按需取回命令任务 */
 
 #define TAG "main"
 
@@ -24,6 +25,11 @@ extern "C" void app_main(void)
      *    挂载成功后从最旧条目 drain 落卡。 */
     KidpalSdLogInit();
     KidpalSdLogChainPreviousVprintf(esp_log_set_vprintf(KidpalSdLogVprintf));
+
+    /* 包 261018-sd-log-usb-read: 在 vprintf 钩子链保存之后启动 USB 串口按需取回命令任务
+     * （kplog list/tail/cat，只读；无命令零输出）。顺序约束（冻结契约 [S8]）：必须在
+     * KidpalSdLogChainPreviousVprintf 之后——提前启动会与钩子安装竞态。 */
+    KidpalLogCmdStart();
 
     // Initialize NVS flash for WiFi configuration
     esp_err_t ret = nvs_flash_init();
