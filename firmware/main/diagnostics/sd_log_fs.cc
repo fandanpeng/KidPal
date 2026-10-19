@@ -267,3 +267,17 @@ extern "C" void KidpalSdLogAttach(const char *mount_root)
     ESP_LOGI(TAG, "diagnostic log attached at %s (KPLOG000..031, 512KB x 32)",
              s_dir_path);
 }
+
+/* [D5] 当前轮转索引只读访问器（包 261018-sd-log-usb-read 增量，只增不改）：
+ * 未 init（s_rot/s_ring 空）/ 未 attach（无卡或挂载失败）-> -1；否则返回当前写入
+ * 文件号 0..31。供 USB 取回的 list 的 * 标记与 tail 的当前文件选取使用（不靠 mtime）。 */
+extern "C" int KidpalSdLogCurrentIndex(void)
+{
+    if (s_rot == nullptr || s_ring == nullptr) {
+        return -1;  /* 未 init */
+    }
+    if (kidpal_sd_log_ring_attached(s_ring) != 1) {
+        return -1;  /* 未 attach（无卡 / 挂载失败）：零 fopen 降级面 */
+    }
+    return kidpal_sd_log_rot_index(s_rot);
+}

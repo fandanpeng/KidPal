@@ -127,6 +127,11 @@ int KidpalSdLogVprintf(const char *fmt, va_list ap);
  * 无卡路径不调用本函数。 */
 void KidpalSdLogAttach(const char *mount_root);
 
+/* 当前轮转索引只读访问器（包 261018-sd-log-usb-read 增量；D5）：供 USB 取回的
+ * list 当前文件 * 标记 / tail 当前文件选取使用（不靠 mtime——FAT 时间粒度 2s、
+ * RTC 未同步时会退化）。未 init / 未 attach 返回 -1。 */
+int KidpalSdLogCurrentIndex(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -133,6 +133,15 @@ set(SOURCES "audio/audio_codec.cc"
             # 两个源都必须在此显式登记（否则设备构建拿不到）。
             "diagnostics/sd_log.c"
             "diagnostics/sd_log_fs.cc"
+            # 包 261018-sd-log-usb-read（诊断日志按需 USB 串口取回：只读命令
+            # kplog list/tail/cat）：diagnostics/log_cmd.c = 命令解析 / 行装配 /
+            # 帧格式化 / 尾部窗口纯逻辑（零 FATFS / 零 FreeRTOS / 零 LVGL ->
+            # host_app linux target 同源）; diagnostics/log_cmd_port.cc =
+            # /dev/secondary VFS 读任务 + FATFS 只读 + stdout 输出（芯片面）。
+            # main 目录非 GLOB, 两个源都必须在此显式登记（persist 包教训：登记是
+            # 缺口高发位）。log_cmd_port.cc 不进 host 构建。
+            "diagnostics/log_cmd.c"
+            "diagnostics/log_cmd_port.cc"
             "assets.cc"
             "main.cc"
             )
