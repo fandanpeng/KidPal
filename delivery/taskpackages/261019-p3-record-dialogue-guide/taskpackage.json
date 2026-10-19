@@ -26,16 +26,41 @@
     "docs/requirements.md#NFR-PERF-3",
     "docs/requirements.md#S-F1.4"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "RDG-A1: 明示卡壳词检测纯函数 is_stuck_phrase（E3 检出器形态）——与 is_finish_phrase 同构：strip 后子串包含 STUCK_PHRASES 任一精确短语命中（末尾标点不阻断）、空串/None/非 str 恒 False；词表 STUCK_PHRASES 为非空 tuple 全 str 常量且判定单源联动（临时换词判定随动 = 实现期可调证明）；AC2 示例起点词「卡住了」「想不起来」须命中、叙述正文不误判；is_finish_phrase 既有在世零偏移。回引 S-F2.2-AC2。设计态红 = story.py 无 is_stuck_phrase / STUCK_PHRASES",
+    "RDG-A2: StoryAccumulator 卡壳计时与引导轮次纯决策（时钟注入快进）+ NFR-PERF-3 五条边界——①孩子接着说即重置卡壳计时；②停顿超注入阈值判 stuck-due（>= 边界、未到不误判、非累积态排除）；③明示卡壳词立即触发（命中即计轮、计时锚=轮发出时刻）；④连续 2 轮无回应（GUIDE_ROUND_LIMIT=2 冻结）且第 2 轮计时到判自动收尾，收尾后 stop 真归档不丢弃（两轮间孩子回应=streak 重置）；⑤收声抑制/返回空轮 suppressed=True 照常计轮至自动收尾（q6）。阈值 STUCK_GUIDE_SECONDS 名字冻结数值不冻结（只断言正数，NFR-PERF-3 待定不落验收值）。回引 S-F2.2-AC2/AC5 + NFR-PERF-3。设计态红 = 决策族缺席",
+    "RDG-A3: 忠实整理输入装配纯函数 build_organizing_input 只取孩子的话（accum 拼接、只读）——装配层不代行滤除：静音段幻听串（Thank you. 类）与孩子中途提问句显式在输入内（滤除职责全压整理 LLM 指令，q7-E4/种子2·3）；空累积/无会话 None。两枚版本化 prompt 制品在 server/gateway/front/prompts/（目录名冻结）：整理制品含忠实义务锚（只用/原话/口水/分段/标题/不补情节/不换表达）、引导制品含 AC2 护栏锚（不提供情节选项/不代编）、两枚均含该回合不触发工具调用约束（种子7）；front_app 引用 openclaw_stream_request 与 prompts 面。回引 S-F2.2-AC2/AC4 + 种子2/3/7。设计态红 = 装配函数+prompts 目录缺席",
+    "RDG-A4: Package B 等价信号注入引擎腿 + engine-patch 第三守卫（种子1 host 半）——front 在 session_ctx(story)/control/start_recording 两收敛入口注入 type=kidpal_record_context active=true（幂等）；收尾归档同拍注入 active=false；patch 认领缝 _kidpal_on_record_context 方法体真执行 + chat() depth==0 块内记录语境守卫 return 先于 dialogue.put 与 TTS FIRST 且不置 client_abort + _route_message 认领先于 handleTextMessage；stop-truncation 豁免重绑（风险2）：记录语境 auto 形态 stop 不截断不排空、非记录语境 auto 照常截断（261014 齿保绿）；_kidpal_try_speak 不改 _kidpal_record_context、不置 _kidpal_listen_closed。回引 种子1+ADR-013+风险2。设计态红 = 零注入帧+认领/守卫/重绑缺席",
+    "RDG-A5: display_schema 自推通路分叉（风险1）——GATEWAY_DECISION_CONTROL_ACTIONS 含 start_organizing 且 FORWARDABLE 不含；validate_display 引擎侧拒转、build_display_tool_calls 降级；validate_display(payload, *, self_push=False) keyword-only 形参（既有调用点零偏移）：self_push=True 放行 start_organizing（end_session 即便自推仍拒）；front 自推缝真跑恰一帧；end_session/start_recording 零偏移。回引 契约§1.4+风险1。设计态红 = 未登记+形参缺席",
+    "RDG-A6: 卡壳计时 sweep 与三式收尾统一 start_organizing——收尾词路径归档同拍下发恰一帧+出语境信号；sweep 重写（签名不变、注入 now 驱动全部纯决策与轮次记账不落墙钟）：stuck-due 走引导回合（LLM 失败/空=仍计轮）、引导轮不归档不下发；2 轮无回应第 2 轮计时到自动收尾下发 start_organizing 恰一帧+出语境信号；重复幂等；pending-stop 10s 窗口保留。回引 AC4/AC5+NFR-PERF-3+q2。设计态红 = 零 start_organizing 帧+决策族缺席",
+    "RDG-A7: S-F1.4-AC6 录音期提醒排队延后不回归（host 半）——引导/整理注入复用 ADR-003 kidpal_speak 通道（build_speech_injection 同型 {type,text} 逐字、空 speech 降级 None 零偏移）；引导注入不以提醒帧形态下发；设备半 RM-A3 页面态权威由 RDG-F5 承载+reminder_overlay_unify tooth2 must-stay-green；端到端归真机轮 S5 申报。回引 S-F1.4-AC6",
+    "RDG-F1: VRT_CTRL_START_ORGANIZING=3 additive（0/1/2 零偏移、NULL/未知降级）+ view_router.h 枚举锚 + on_control case 3（ORGANIZING=6、重复幂等、case 0/1/2/NULL/未知零偏移）。回引 契约§1.4+q2。设计态红 = 哨兵-99/头锚缺席",
+    "RDG-F2: 引导播报中子态键位分叉（毁稿防线）——RECORDING+rec_substate=1：KEY 短/长=KSPV2_ACT_INTERRUPT_GUIDE 12（打断、页态保持、子态复位0、零 cancel/归档副作用）；BOOT 任一手势=NONE 无操作（不拦截则 BOOT 落 DISCARD_RECORD 毁稿）；rec_substate=0 常规语义回归守卫（10/11）。回引 AC2。设计态红 = 哨兵-99",
+    "RDG-F3: 整理态键位不响应（page=6 任意手势 NONE、页态保持、零副作用）+ story_page.h/.c additive 锚（ORGANIZING=6/INTERRUPT_GUIDE=12/rec_substate；.c 内 ORGANIZING>=2、「打断」键帽、rec_substate>=2）+ 回显常驻防回退锚（echo_reset 恰1次、echo_line 渲染在世）。回引 AC4/AC2。设计态红 = 哨兵/锚缺席",
+    "RDG-F4: kvr 场景守卫（application.cc stt-final 回调内 kidpal_story_session_ctx_active 引用先于 kidpal_voice_round_scene——记录语境不误映 THINK 跳页）+ INTERRUPT_GUIDE 消费闭环 + mcp start_organizing 消费与 story_consumed 日志同型 + recording_enter 决策表回归守卫。运行时半归真机轮。回引 AC1。设计态红 = 消费锚缺席+哨兵",
+    "RDG-F5: S-F1.4-AC6 设备半 + 登记守——mcp_server.cc RM-A3 门控页面态权威（g_story_view.page == KSTORY_PAGE_RECORDING 判据在世）+ HOST_ACCEPTANCE_SRCS 登记守（anti-vacuity，builder FIRST ACTION）。回引 S-F1.4-AC6",
+    "RDG-F6: live-manual 真机轮观测项（structural，不落自动断言不计入通过面——261018 SLP-A6 口径）：①VAD 真沿与 AFE/AEC；②引导播完继续录音不离记录会话（种子1 真机半）；③引导播报不跳页观感半；④state-organizing 帧真机可见（翻✅条件③）；⑤S-F1.4-AC6 端到端。真机轮归 S5（status=awaiting-human:real-device）"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "server/acceptance/test_m4k1_story_cloud_link.acceptance.py",
+    "firmware/main/test/record_dialogue_guide.acceptance.c",
+    "firmware/main/test/acceptance/red-baseline/rdg_red_wrapper.sh",
+    "firmware/main/test/acceptance/red-baseline/rdg_inner.sh"
+  ],
+  "redBaselineCommand": "server：python -m pytest -q --import-mode=importlib -m \"not live\" server/tests server/acceptance；server 新件单跑：python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_record_dialogue_guide.acceptance.py；firmware 新件（尚未接线，独立冒烟通道）：bash firmware/main/test/acceptance/red-baseline/rdg_red_wrapper.sh（WSL gcc -std=c11 -Wall -Wextra -I. 编 record_dialogue_guide.acceptance.c + runner.c 后执行）；firmware 既有全量：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-19 @ dev/pod-m2（净工作树现跑）。① server 新件单跑：17 tests，15 failed / 2 passed——15 红全为设计态红逐齿映射（A1 词表缺席；A2 决策族 AttributeError；A3 装配+prompts 目录缺席；A4 零注入帧+patch 认领/守卫/豁免重绑缺席；A5 决定类未登记+self_push 缺席；A6 零 start_organizing 帧+决策族缺席）；2 passed = RDG-A7 must-stay-green 锚 + A4 speak 注入零副作用负锚（现状平凡绿）。收集零错误（冻结即冒烟 §3）。② server 全目录：17 failed / 301 passed / 4 deselected / 33 subtests passed——17 = 新件 15 + M4K1 A5 重钉 2 齿（设计态红，REVISION LOG 2026-10-19 条），既有齿零新增红；server/tests 单独 91 passed（与 261016 锚逐字一致）。③ firmware 新件独立通道：COMPILE_EXIT=0（零 error 零 warning，§4 实编）+ 7 Tests 7 Failures（RUN_EXIT=7）——TEST1 G1 additive 缺席；TEST2 G2 case3 缺席；TEST3 G3 子态分叉缺席；TEST4 G4 整理态不响应缺席；TEST5 G5 头/.c 锚缺席；TEST6 G6 消费闭环缺席+recording_enter 哨兵（登记后转绿）；TEST7 登记守（builder FIRST ACTION）。④ firmware 既有 host 全量（新件未登记独立重跑）：210 Tests 3 Failures / 0 Ignored——3 红全为既有 p1_auxbar AB-A1/A2/A4 先存红、零新增红（261018 锚 195T3F→现 210T3F，总数增长归在册登记件、红数不变）。⑤ 转绿判据：builder 落地 FROZEN OFFLINE CONTRACT 后①②③全绿；固件新件须先登记 HOST_ACCEPTANCE_SRCS；仍红而源锚已落地 = 锚漂移，复核锚不得改判为绿。双向可满足性：A2/A6 全以注入 timeout_s 承载（阈值不落验收值）、固件镜像=story_page.h 现役形状+尾部追加字段（EQ-2）、fixture 自含（tempdir/注入时钟/假 ws 双桩——EQ-4 唯一环境假设 = LLM provider 离线快失败）。",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
     "live-manual"
   ],
-  "exitCriteria": [],
+  "exitCriteria": [
+    "全部 RDG-A1..A7 / RDG-F1..F5 冻结验收转绿（RDG-F6 = live-manual structural 不计入 runner 通过面）；既有套件零新增红（冻结相位基线锚 = redBaselineResult 实跑：server 全目录 17 failed/301 passed——17 = 新件 15 + M4K1 A5 重钉 2 设计态红、server/tests 单独 91 passed 与 261016 锚一致；firmware host 210T3F = p1_auxbar AB-A1/A2/A4 先存；固件新件独立通道 7T7F 设计态红）。builder 落地后转绿；固件新件须先登记 HOST_ACCEPTANCE_SRCS（登记守齿先行）",
+    "builder 配套义务两件：① server/tests/test_story_units.py 的 120s 单测（test_boundary_and_exclusions：AUTO_STOP_SECONDS==120 + timed_out_sessions 边界）随 120s 语义退役同步重写为新决策族（changeManifest server/tests/** 在册、计数变化不记新增红）；② HOST_ACCEPTANCE_SRCS 追加 record_dialogue_guide.acceptance.c 登记行",
+    "live-manual 层如实申报：引导/整理 LLM 回合真实行为链 + S5 真机轮五 AC 全链 + RDG-F6 五项 = live/真机承载，offline 不造假齿；S2 live 齿需真 OpenClaw loopback 18789、S5 需 human 持板——到门即停 status=awaiting-human:real-device",
+    "mutationEvidence perAcceptance 全条 turnedRed=true 且还原复绿（mutationRequired=true）"
+  ],
   "iterationBudget": 3,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
@@ -115,7 +140,7 @@
         "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 1（注入不尾随 auto-listen）+ 结构性义务 2"
+      "landsIn": "acceptance:RDG-A4"
     },
     {
       "decision": "E3 检出器形态（关键词表 + 引导 LLM 可返回空）",
@@ -123,7 +148,7 @@
       "sourceRefs": [
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 3/4（E4 fixture + NFR 五边界）"
+      "landsIn": "acceptance:RDG-A1"
     },
     {
       "decision": "q2 = ⓒ（新增 start_organizing 下行信号）",
@@ -131,7 +156,7 @@
       "sourceRefs": [
         "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
       ],
-      "landsIn": "acceptance-种子 6（q2 裁定落地 + 思考态接线真机可见）"
+      "landsIn": "acceptance:RDG-A6"
     },
     {
       "decision": "R1-F4 provider 出口 (a)：OpenClaw OpenAI 兼容端点 + 出网沿 §1.2 路径②零新增",
@@ -140,7 +165,7 @@
         "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 7（provider 出口断言）"
+      "landsIn": "acceptance:RDG-A3"
     },
     {
       "decision": "q6 收声不停摆计轮",
@@ -149,7 +174,7 @@
         "delivery/intake/261019-p3-record-dialogue-guide.md",
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 4 边界⑤ + S-F2.2-AC5"
+      "landsIn": "acceptance:RDG-A2"
     },
     {
       "decision": "R1-N4 丢稿口径（当轮不归档 + 固定安抚句）",
@@ -157,7 +182,7 @@
       "sourceRefs": [
         "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
       ],
-      "landsIn": "acceptance-种子 8（包外留根之外的本包失败路径）"
+      "landsIn": "acceptance:RDG-A6"
     },
     {
       "decision": "120s 设备侧超时语义退役（timed_out_sessions / AUTO_STOP_SECONDS）",
@@ -166,7 +191,7 @@
         "docs/requirements.md §9 v1.65",
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 4 + 既有 server 冻结件更新"
+      "landsIn": "acceptance:RDG-A2"
     },
     {
       "decision": "卡壳阈值数值（起步约 8 秒）",
@@ -193,7 +218,7 @@
       "sourceRefs": [
         "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
       ],
-      "landsIn": "acceptance-种子 8（按 AC2 原文词表实现）"
+      "landsIn": "acceptance:RDG-A1"
     },
     {
       "decision": "整理失败的素材保全取舍",
@@ -201,7 +226,7 @@
       "sourceRefs": [
         "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance-种子 8（同 R1-N4，二者同源合并承载）"
+      "landsIn": "acceptance:RDG-A6"
     }
   ],
   "changeManifest": [
@@ -209,16 +234,16 @@
     "server/gateway/front/front_app.py",
     "server/gateway/display_schema.py",
     "server/deploy/engine-patch/connection.py",
-    "server/gateway/front/prompts/**（两枚版本化 prompt 制品，新建——路径包内定，落位后回填清单）",
-    "server/acceptance/**（新增冻结验收件 + 既有 120s 语义冻结件更新——acceptance-author 写权）",
-    "server/tests/**（S1 纯决策单元测试）",
+    "server/gateway/front/prompts/**",
+    "server/acceptance/**",
+    "server/tests/**",
     "firmware/main/application.cc",
     "firmware/main/display/view_router.h",
     "firmware/main/display/view_router.c",
     "firmware/main/display/story_page.c",
-    "firmware/main/display/story_page.h（如子态枚举需 additive）",
+    "firmware/main/display/story_page.h",
     "firmware/main/mcp_server.cc",
-    "firmware/main/test/**（新增冻结验收件 + host_app CMakeLists 登记）"
+    "firmware/main/test/**"
   ],
   "impactedTestsSeed": [
     {
@@ -247,5 +272,5 @@
       "note": "host 全量零新增红（先存红 = p1_auxbar AB-A1/A2/A4 三条，基线锚见启动卡）"
     }
   ],
-  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + server/** 覆盖 S1–S5 全部 target；acceptance-author allow server/**/acceptance/** + firmware acceptance 路径覆盖冻结件写权；无中途补 scope 需求。② Step 1g 前置技术预评由 triage 的 architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费），changeManifest 与 impactedTestsSeed 由 planner 依 plan S1–S5 与结构性风险节回填，不重复派 architect。③ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。④ live/真机门前停等：S2 live 齿需真 OpenClaw loopback（18789）在位；S5 端到端 + 真机轮需 human 持板——到门即停 status=awaiting-human:real-device。⑤ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（acceptance-author 冻结写权除外）；结构性义务两件（display_schema 自推分叉 / stop-truncation 豁免重绑）为实施期红线，擦边即停走逃生门 reviewer-first。⑦ 起包格式前置自查（docs/DEV-GOVERNANCE.md 六条）：mutationEvidence 骨架 perAcceptance=[] 已留；断言格式与验收 ID 禁括号义务随 acceptance-author 冻结落地；降级声明前置 = live-manual 层如实申报不造 offline 假齿；新约定包闸判据自查 = 本包零新增闸；input-brief 前置 = Step 7 单份生成、brief 单份投影纪律照跑。⑧ 未核项 6 条（plan §未核项申报）为包内定量/挂点验证义务：S2 动工前验引擎 ASR stt 下行发出点；S4 动工前读 kidpal_render_node.c 场景映射与 story_page.c RECORDING 渲染区现状；S2 复用 reminders.py 注入先例前先读全——均由 builder/fixer 实施期履行，不动摇分档。"
+  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + server/** 覆盖 S1–S5 全部 target；acceptance-author allow server/**/acceptance/** + firmware acceptance 路径覆盖冻结件写权；无中途补 scope 需求。② Step 1g 前置技术预评由 triage 的 architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费），changeManifest 与 impactedTestsSeed 由 planner 依 plan S1–S5 与结构性风险节回填，不重复派 architect。③ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。④ live/真机门前停等：S2 live 齿需真 OpenClaw loopback（18789）在位；S5 端到端 + 真机轮需 human 持板——到门即停 status=awaiting-human:real-device。⑤ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（acceptance-author 冻结写权除外）；结构性义务两件（display_schema 自推分叉 / stop-truncation 豁免重绑）为实施期红线，擦边即停走逃生门 reviewer-first。⑦ 起包格式前置自查（docs/DEV-GOVERNANCE.md 六条）：mutationEvidence 骨架 perAcceptance=[] 已留；断言格式与验收 ID 禁括号义务随 acceptance-author 冻结落地；降级声明前置 = live-manual 层如实申报不造 offline 假齿；新约定包闸判据自查 = 本包零新增闸；input-brief 前置 = Step 7 单份生成、brief 单份投影纪律照跑。⑧ 未核项 6 条（plan §未核项申报）为包内定量/挂点验证义务：S2 动工前验引擎 ASR stt 下行发出点；S4 动工前读 kidpal_render_node.c 场景映射与 story_page.c RECORDING 渲染区现状；S2 复用 reminders.py 注入先例前先读全——均由 builder/fixer 实施期履行，不动摇分档。⑨ acceptance-author 冻结交付（2026-10-19）：acceptance[] = RDG-A1..A7（server）+ RDG-F1..F6（firmware，F6 = live-manual structural）；acceptanceTestsFile[] 4 件；红基线四通道实跑数字见 redBaselineResult。两件须 planner 知悉：（a）既有冻结件 test_m4k1_story_cloud_link.acceptance.py 按任务授权做 120s 语义换代重钉（2 齿改名 + 文件头两处重述 + REVISION LOG 2026-10-19 条，正常改验收通道非 tighten-only）——Step 8b 核对时请对本修订做忠实度确认；（b）120s 退役连带 server/tests/test_story_units.py test_boundary_and_exclusions 需 builder 随语义换代重写——exitCriteria 已列为 builder 配套义务。⑩ freeze 冒烟 = pytest 收集零错误 + 固件独立通道 COMPILE_EXIT=0 零 warning（DEV-GOVERNANCE §3/§4）。⑪ 格式归一（planner 续跑 2026-10-19，机械核 taskpackage-required-check 驱动）：acceptanceTestsFile / changeManifest 改纯路径/glob，原散文注记（新件=FROZEN OFFLINE CONTRACT seam 权威+强度申报+GAP-1..6+EQ-1..4+Coverage map；M4K1=语义换代 REVISION LOG 2026-10-19 条非 tighten-only；prompts 路径包内定落位后回填；story_page.h additive；firmware test 含 CMakeLists 登记；red-baseline 两脚本=非冻结冒烟通道经 WSL gcc）由本条承载；decisionCoverage.landsIn 归一为 acceptance:<id> 单 id 形态——种子1→RDG-A4、种子3/4→RDG-A1（辅 RDG-A2）、种子6→RDG-A6、种子7→RDG-A3、种子4⑤→RDG-A2、种子8/R1-N4→RDG-A6（失败路径承载齿 = 冻结件 :126-128）、120s 退役→RDG-A2、q3 词表→RDG-A1。AC3（盖章照旧）承载判定：照旧语义 = 零行为变更，无新设计态红可造，由既有套件零新增红 + RDG-F2 rec_substate=0 常规语义回归守卫承载。"
 }

@@ -11,7 +11,9 @@ Scope of record（taskpackage acceptance M4K1-A1..A6 + exitCriteria E1–E3 + ga
   M4K1-A3 story_list 推送齿（producer 窗口/计数语义 + 三时点下发；≤16 窗口 + total 恒全量）。
   M4K1-A4 删除执行齿（kidpal_story_delete 消费：哨兵头校验 + MD 硬删 + 幂等 no-op + 重推对账
           + 非法 id 拒绝审计）。
-  M4K1-A5 收尾与超时齿（收尾词机械检测 + 120s 无语音自动收尾的纯决策面 + BOOT 丢弃零偏移）。
+  M4K1-A5 收尾与超时齿（收尾词机械检测 + 120s 无语音自动收尾的纯决策面 + BOOT 丢弃
+          零偏移）〔2026-10-19 重述：超时半随 v1.65 语义换代重钉为「120s 退役守卫 +
+          2 轮无回应自动收尾归档不丢弃」，REVISION LOG 同日条〕。
   M4K1-A6 流水号账本齿（归档分配 seq、删除不回退、重启存活、账本缺失重建不倒退）。
   M4K1-A7 live 全链复证 = structural deferred 挂 M4-K3 设备轮 —— 本文件**无 live 面**（不冻 live 齿）。
 
@@ -24,8 +26,13 @@ front_app.py 面离线装载（本文件在 fastapi 缺席时用本地 stub，g-
 
     STORY_LIST_WINDOW = 16
         story_list items 窗口上限（契约 §1.3③ Q2 丙案；= 板端 KSTORY_LIST_MAX）。
-    AUTO_STOP_SECONDS = 120
-        累积态无语音自动收尾阈值（秒；requirements §2.1 录音态超时口径）。
+    〔2026-10-19 重述 · REVISION LOG 同日条〕AUTO_STOP_SECONDS = 120 与
+        StoryAccumulator.timed_out_sessions() **退役（删除）**——120s 纯静默自动收尾
+        语义被 requirements v1.65 S-F2.2-AC5 / NFR-PERF-3「卡壳引导 2 轮无回应自动
+        收尾」取代（语义换代、非放水；断言方向仍钉「自动收尾归档不丢弃」）。接位
+        seam（STUCK_GUIDE_SECONDS / GUIDE_ROUND_LIMIT / stuck_due_sessions /
+        auto_finish_due_sessions / mark_guide_round / build_organizing_input）由
+        server/acceptance/test_record_dialogue_guide.acceptance.py 冻结承载。
 
     is_finish_phrase(text) -> bool
         累积态收尾词机械检测：text（str）剔除首尾空白后**包含**精确短语「我说完了」
@@ -68,12 +75,12 @@ front_app.py 面离线装载（本文件在 fastapi 缺席时用本地 stub，g-
         纯机械、绝不抛异常（畸形 id 归 False）。
 
     class StoryAccumulator（既有 start/feed/stop/cancel/redo/recover/routing 零偏移；增量）：
-        timed_out_sessions(now, *, timeout_s=None) -> list[str]
-            now: datetime；timeout_s: float|None（缺省 AUTO_STOP_SECONDS）。
-            返回**累积态（routing=="accumulate"）**中「最近活动时刻」（= start()/feed()
-            显式传入的 now）距 now **>= timeout_s** 的会话 id 列表。
-            - 恰为 timeout_s -> 计入（>=）；未记录活动的会话、非累积态会话、
-              已 stop/cancel 的会话 -> 不返回。查询不改状态。
+        〔2026-10-19 重述 · REVISION LOG 同日条〕timed_out_sessions(now, *,
+        timeout_s=None) 120s 纯决策面**退役（删除）**——纯静默超时被「卡壳引导 2 轮
+        无回应自动收尾」纯决策族取代（stuck_due_sessions / auto_finish_due_sessions /
+        mark_guide_round；权威 seam = test_record_dialogue_guide.acceptance.py 文件头
+        A 节）。本文件 A5 齿重钉为退役守卫 + 新决策收尾归档不丢弃（见 test_a5_
+        timeout_decision_replaced_by_guide_round_auto_finish）。
 
   B) server/gateway/display_schema.py（Q8 story 轻量形状 floor；schedule floor 先例对称）：
         validate_display 对 story_list / story_text 新增**形状 floor**：
@@ -131,6 +138,9 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
                                         FIX-A1 翻正齿（建连恰一帧 data.restore==true story_list）
                                         + SL-A6 齿（恢复推送失败不阻断建连）
   requirements §2.1 120s 录音态超时     → A5 齿（纯决策面真跑）+ 前端接线缺口（见下）
+                                        〔2026-10-19 重述：120s 语义退役——A5 超时半
+                                        重钉为退役守卫 + v1.65 卡壳引导 2 轮无回应自动
+                                        收尾归档不丢弃；REVISION LOG 同日条〕
   spec S-F2.4 AC2 流水号只增不减        → A6 齿（删除不回退/重启存活真跑）→ 行为级
 
   SAO 承接（261001-m4-k3-story-archive-order；归档时序缺陷冻结 oracle）：
@@ -202,8 +212,9 @@ Coverage map (acceptanceRef -> test):
            -> test_a4_delete_rejects_traversal_and_no_sentinel
   M4K1-A5 -> test_a5_finish_phrase_detection
            -> test_a5_finish_phrase_triggers_stop_in_accumulate_only
-           -> test_a5_timeout_120s_decision
-           -> test_a5_front_wiring_references_timeout_decision
+           -> test_a5_timeout_decision_replaced_by_guide_round_auto_finish（2026-10-19
+             重钉：原 test_a5_timeout_120s_decision 语义换代，REVISION LOG 同日条）
+           -> test_a5_front_wiring_references_stuck_decision（2026-10-19 重钉）
   M4K1-A6 -> test_a6_archive_assigns_persistent_monotonic_seq
            -> test_a6_rearchive_same_id_keeps_seq
            -> test_a6_restart_survival
@@ -1316,41 +1327,59 @@ class M4K1FinishTimeoutAcceptance(unittest.TestCase):
                     len(list(Path(tmp).glob("*.md"))), 1,
                     "M4K1-A5 RED: 问答会话被收尾词误归档 —— 收尾词仅累积态消费。")
 
-    def test_a5_timeout_120s_decision(self):
-        """coverage: M4K1-A5 / requirements §2.1 — AUTO_STOP_SECONDS==120；timed_out_sessions
-        边界（>=120s 计入 / <120s 不计 / 非累积态与无活动会话排除）。"""
-        const, err = _story_attr("AUTO_STOP_SECONDS")
-        self.assertEqual(const, 120,
-                         f"M4K1-A5 RED: AUTO_STOP_SECONDS = {const!r} != 120（录音态超时口径，"
-                         "requirements §2.1）。")
+    def test_a5_timeout_decision_replaced_by_guide_round_auto_finish(self):
+        """coverage: M4K1-A5（2026-10-19 语义换代重钉，REVISION LOG 同日条）/
+        requirements v1.65 S-F2.2-AC5 + NFR-PERF-3 — 120s 纯静默超时退役守卫 +
+        新自动收尾决策「归档不丢弃」方向重钉：AUTO_STOP_SECONDS 与
+        timed_out_sessions 不再在世（复活/改名 = 语义回退）；卡壳引导 2 轮无回应
+        （注入时钟）判定收尾后 stop 真归档、内容不丢。"""
         st = _story_module()
-        acc = st.StoryAccumulator(str(Path(tempfile.gettempdir()) / "m4k1_a5_acc"))
-        self.assertTrue(hasattr(acc, "timed_out_sessions"),
-                        "M4K1-A5 RED: StoryAccumulator 无 timed_out_sessions(now) —— 120s "
-                        "自动收尾的纯决策面未实现。")
-        t0 = datetime(2026, 9, 24, 12, 0, 0, tzinfo=dt_timezone.utc)
-        acc.start("s-old", now=t0)
-        acc.feed("s-old", "内容", now=t0)
-        acc.start("s-fresh", now=t0 + timedelta(seconds=125))
-        acc.feed("s-fresh", "内容", now=t0 + timedelta(seconds=125))
-        acc.feed("s-chat", "闲聊", now=t0)  # 无 start -> chat 态
-        at_119 = acc.timed_out_sessions(t0 + timedelta(seconds=119))
-        at_120 = acc.timed_out_sessions(t0 + timedelta(seconds=120))
-        at_130 = acc.timed_out_sessions(t0 + timedelta(seconds=130))
-        self.assertNotIn("s-old", at_119, "M4K1-A5 RED: 119s 误判超时（阈值必须 >=120s）。")
-        self.assertIn("s-old", at_120, "M4K1-A5 RED: 恰 120s 未计入（边界 >= 语义）。")
-        self.assertIn("s-old", at_130, "M4K1-A5 RED: 130s 未计超时。")
-        self.assertNotIn("s-fresh", at_130, "M4K1-A5 RED: 活动仅 5s 前的会话误判超时。")
-        self.assertNotIn("s-chat", at_130, "M4K1-A5 RED: 非累积态会话误判超时。")
+        self.assertFalse(
+            hasattr(st, "AUTO_STOP_SECONDS"),
+            "M4K1-A5 RED: AUTO_STOP_SECONDS 仍在世 —— 120s 纯静默超时语义未退役"
+            "（requirements v1.65 S-F2.2-AC5 取代 §2.1 录音态超时口径；复活 = 语义"
+            "回退，见 REVISION LOG 2026-10-19 条）。")
+        self.assertFalse(
+            hasattr(st.StoryAccumulator, "timed_out_sessions"),
+            "M4K1-A5 RED: StoryAccumulator.timed_out_sessions 仍在世 —— 120s 纯决策面"
+            "未退役（语义换代：卡壳引导 2 轮无回应自动收尾接位）。")
+        # 新决策族在世性（权威 seam 在 test_record_dialogue_guide.acceptance.py）。
+        for name in ("stuck_due_sessions", "auto_finish_due_sessions",
+                     "mark_guide_round", "guide_rounds"):
+            self.assertTrue(
+                hasattr(st.StoryAccumulator, name),
+                f"M4K1-A5 RED: StoryAccumulator 无 {name} —— 120s 退役后接位决策族"
+                "缺失（自动收尾语义换代的承重面）。")
+        with tempfile.TemporaryDirectory(prefix="m4k1_a5_acc_") as tmp:
+            acc = st.StoryAccumulator(str(tmp))
+            t0 = datetime(2026, 9, 24, 12, 0, 0, tzinfo=dt_timezone.utc)
+            acc.start("s-old", now=t0)
+            acc.feed("s-old", "内容", now=t0)
+            acc.mark_guide_round("s-old", now=t0 + timedelta(seconds=10))
+            acc.mark_guide_round("s-old", now=t0 + timedelta(seconds=20))
+            due = acc.auto_finish_due_sessions(t0 + timedelta(seconds=25),
+                                               timeout_s=5)
+            self.assertIn("s-old", due,
+                          "M4K1-A5 RED: 2 轮无回应且计时到未判自动收尾 —— 退役后收尾"
+                          "语义未接位（归档不丢弃方向的判定前提）。")
+            rec = acc.stop("s-old", now=t0 + timedelta(seconds=25))
+            self.assertIsNotNone(
+                rec,
+                "M4K1-A5 RED: 自动收尾后 stop 未归档 —— 自动收尾丢弃已讲内容 = 语义"
+                "回退（断言方向仍钉「自动收尾归档不丢弃」）。")
+            self.assertEqual(
+                len(list(Path(tmp).glob("*.md"))), 1,
+                "M4K1-A5 RED: 自动收尾归档未真落盘。")
 
-    def test_a5_front_wiring_references_timeout_decision(self):
-        """coverage: M4K1-A5（源锚代理）— front 轮询接线引用 120s 纯决策
-        （timed_out_sessions）；行为等价假设「每 tick 调该决策并对命中会话 stop+下发」
-        本齿未验（offline 不可验，归 M4-K3 live）。"""
+    def test_a5_front_wiring_references_stuck_decision(self):
+        """coverage: M4K1-A5（2026-10-19 重钉，REVISION LOG 同日条）（源锚代理）—
+        front 卡壳计时 sweep 接线引用新纯决策（stuck_due_sessions）；行为等价假设
+        「sweep 每 tick 调该决策并对 stuck-due 会话走引导/对 auto-finish 收尾」
+        offline 只钉接线在世，行为半由 test_record_dialogue_guide RDG-A6 真跑承载。"""
         self.assertIn(
-            "timed_out_sessions", _front_source(),
-            "M4K1-A5 源锚代理 RED: front_app.py 未引用 timed_out_sessions —— 120s 自动收尾的"
-            "前端计时接线未落地（纯决策在而接线不在 = 超时永不触发）。")
+            "stuck_due_sessions", _front_source(),
+            "M4K1-A5 源锚代理 RED: front_app.py 未引用 stuck_due_sessions —— 卡壳计时"
+            " sweep 接线未落地（纯决策在而接线不在 = 卡壳引导永不触发）。")
 
 
 # =========================================================================== #
@@ -1873,6 +1902,43 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
 #   闸（acceptance-coverage-check.mjs hasCoverageMarker 正则 `coverage\s*:?\s*SL-A1\b`）
 #   要求 coverage 与验收 ID 紧邻, `FIX-A1 + ` 隔中不命中致 SL-A1 误报未覆盖; 纯
 #   cosmetic coverage-marker 修正（闸红 ad 实证驱动）, 断言零触碰。
+# --------------------------------------------------------------------------- #
+# [2026-10-19 · 正常改验收通道（非 §6 tighten-only）· 包 261019-p3-record-dialogue-guide
+#  · sourceType=proposal · riskTier=high · 范围：本冻结件内 M4K1-A5 超时齿语义换代重钉
+#  （2 齿改名 + 断言本体改写）+ 文件头 frozen contract 两处重述]
+#   修订授权链：docs/requirements.md §9 v1.65（frozen 2026-10-19）——S-F2.2-AC5
+#   「连续 2 轮引导无回应自动收尾（取代原『120 秒无语音自动收尾』）」+ NFR-PERF-3
+#   （阈值待定、轮数 2 已拍）；FROZEN PROPOSAL 261019-arch-review-p3-record-dialogue-
+#   guide（T2 计时器族换代 + T4 七处 120s 语义对账 + ADR-013）；reviewed plan
+#   delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md（S1「AUTO_STOP_
+#   SECONDS/timed_out_sessions 退役或重述，既有冻结验收文件同步更新」）；契约 §1.4
+#   start_organizing 表行 LANDED（CDQ-261019-p3-record-dialogue-guide）。
+#   修订性质：**语义换代（取代），非放水**——断言方向仍钉「自动收尾归档不丢弃」；
+#   判别机制不保留（120s 纯静默超时在 v1.65 语义下是错误行为：卡壳计时属引导回合
+#   状态机，纯静默超时会绕过引导直接收尾、截断孩子的思考等待）。
+#   修订动作：
+#     ① test_a5_timeout_120s_decision 更名
+#       test_a5_timeout_decision_replaced_by_guide_round_auto_finish：原「AUTO_STOP_
+#       SECONDS==120 + timed_out_sessions >=120s 边界」断言改为「退役守卫（两符号
+#       不得复活）+ 接位决策族在世（stuck_due_sessions / auto_finish_due_sessions /
+#       mark_guide_round / guide_rounds）+ 2 轮无回应判定收尾后 stop 真归档不丢弃」。
+#     ② test_a5_front_wiring_references_timeout_decision 更名
+#       test_a5_front_wiring_references_stuck_decision：源锚 needle 由
+#       timed_out_sessions 改为 stuck_due_sessions（卡壳计时 sweep 接线）。
+#     ③ 文件头 frozen contract：A 节 AUTO_STOP_SECONDS 与 StoryAccumulator.
+#       timed_out_sessions 两块重述为退役声明（接位 seam 权威 =
+#       server/acceptance/test_record_dialogue_guide.acceptance.py 文件头 A 节）；
+#       Scope of record M4K1-A5 行 + 强度申报 §2.1 行加同日重述注记；Coverage map
+#       A5 两行更新。其余齿（A1-A4 / A6 / E1 / FIX / SL / SAO 家族）逐条核对**零
+#       触碰**——归档链真机序齿、pending-stop 10s 窗口齿（SAO-A3）、删除/账本/推送
+#       齿与新语义正交（pending-stop 挂起窗口保留、finish 词路径归档链不变，仅
+#       additive start_organizing/出语境信号帧，不进入本件任何断言的计数面）。
+#   配套影响：server/tests/test_story_units.py 的 120s 单测
+#   （test_boundary_and_exclusions：AUTO_STOP_SECONDS==120 + timed_out_sessions 边界）
+#   由 builder 随语义退役同步重写（changeManifest server/tests/** 在册；suite 计数
+#   变化不记新增红）。冻结相位红基线：①②两齿在未实现树上转红（120s 符号尚在世 =
+#   退役守卫红；接位决策族缺席 = 接位红）——设计态红，见 taskpackage
+#   redBaselineResult。
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()
