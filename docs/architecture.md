@@ -365,7 +365,7 @@
 | 11 | shim 退役遗留：ECS 停服 + 8080 安全组未清 | 攻击面残留（探针已证不可达） | teardown 证据待补 | dev-loop |
 | 12 | 验收齿可合法弱于契约（同族 ≥6 包）+ 跨包行为无显式 owner | 齿绿而契约未兑现 | ARQ-260911-tooth-strength-below-contract / cross-package-behavior-owner-gap | architect |
 
-> 治理类 ARQ 全景（~30 条）见 [ARCH-REVIEW-QUEUE.md](ARCH-REVIEW-QUEUE.md)，本章只记架构相关面。
+> 治理类未结项全景见 [docs/debt/gov/INDEX.md](debt/gov/INDEX.md)（debt 账本 gov 域；原 ARCH-REVIEW-QUEUE.md 已撤销，261019 批），本章只记架构相关面。
 
 ### 8.2 开放问题
 

@@ -87,7 +87,7 @@ flowchart TD
 - **对象 / 触发**：`docs/contracts/**`（笔顺 JSON / display 响应块 / 课表 MD / shim API）。
 - **怎么做**：契约变更 = 架构变更的一种，走 `/arch-change` loop——architect 起草（契约包三节：proposedContractDiff / impact / validationPlan）→ architect-reviewer 四查 → 随批原子落地；纯契约变更同样以该 loop 为入口。**无人类签字门**（261015 批撤销——human 只在立项 ack 与例外升级出场）。
 - **防线**：写冻结保留（Bash 重定向写恒拦 + 实现面 agent 与 dev-loop 会话禁写）；合并过机械凭据闸 `pre-merge-escalation-gate.mjs`（三件联立、缺一即 BLOCK）。
-- **证据**：owning change folder + [CONTRACT-DECISION-QUEUE.md](CONTRACT-DECISION-QUEUE.md)（列义 = loop 凭据）。详见 [contracts.md](../.claude/rules/contracts.md)（五值枚举权威） · [contract-change-evidence.md](../.claude/references/contract-change-evidence.md)。
+- **证据**：owning change folder + 契约决策账 [`docs/debt/contract/`](debt/contract/INDEX.md)（一条目一文件，列义 = loop 凭据不变；原 `docs/CONTRACT-DECISION-QUEUE.md` 261019 批并入并删除）。详见 [contracts.md](../.claude/rules/contracts.md)（五值枚举权威） · [contract-change-evidence.md](../.claude/references/contract-change-evidence.md)。
 
 ### 对抗 review ≈ 方向收敛 · 红队（Track A 段）
 
@@ -106,7 +106,7 @@ flowchart TD
 
 - **对象 / 触发**：**方向未收敛**的变更（判据只看收敛度，不看触及面）——human 立项时判、reviewer 评审中升（只升不降）、或声明红队。
 - **怎么做**：所属面 loop 的 Track A 段——architect 起草候选 → 评审会（scenario-author 冻判据 → challenger ↔ defender 对抗 → adjudicator 裁决）→ 过 pass-oracle → **human 拍方向** → 流回该面 Track B 落地后端（收敛内容不再重复四查——对抗机器已审得更深）。
-- **证据**：`delivery/review/arch-review-<spec>/` + [ARCH-REVIEW-QUEUE.md](ARCH-REVIEW-QUEUE.md)。机器 SSOT = [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)；入口 = [arch-change.md](../.claude/commands/arch-change.md) · [gov-change.md](../.claude/commands/gov-change.md)。
+- **证据**：`delivery/review/arch-review-<spec>/` + debt 账本 [`docs/debt/`](debt/README.md)（指路 = `docs/debt/README.md`；原 `docs/ARCH-REVIEW-QUEUE.md` 261019 批删除）。机器 SSOT = [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)；入口 = [arch-change.md](../.claude/commands/arch-change.md) · [gov-change.md](../.claude/commands/gov-change.md)。
 
 ### Dev Loop OS ≈ sprint 循环
 
@@ -203,7 +203,7 @@ flowchart TD
 | **入口与指令根（G1）** | `AGENTS.md`、`CLAUDE.md`、`docs/DEV-GOVERNANCE.md` | architect | **human** |
 | **角色与流程定义（G2）** | `.claude/{agents,commands,references,rules,skills}/**` | architect | **human** |
 | **强制执行层（G3）** | `.claude/scope-map.json`、`.claude/*.settings.json`、`.claude/verify-gates.json`、`.claude/{hooks,scripts}/**` | architect | **human** |
-| **证据与队列（G4）** | `delivery/review/**`、`delivery/taskpackages/**`、`docs/ARCH-REVIEW-QUEUE.md`、`docs/CONTRACT-DECISION-QUEUE.md` | 按流程分工 | 按流程分工 |
+| **证据与队列（G4）** | `delivery/review/**`、`delivery/taskpackages/**`、`docs/debt/**`（四域账本，含 contract 契约决策账） | 按流程分工 | 按流程分工 |
 
 **硬条款**：
 
@@ -237,7 +237,7 @@ flowchart TD
 | command / reference / rule / skill | `/gov-change`（文档面可走轻路径瘦制品过闸，机器面恒 Track B） | human |
 | scope-map / settings / verify-gates / hook / script | `/gov-change`（机器面恒 Track B，高敏） | human |
 | README / AGENTS / CLAUDE / 治理文档 / 蓝图 | `/gov-change`（L0 蓝图见上行 Track A 段语境） | human |
-| `docs/ADR.md`（架构决策记录） | integrator 收口落新增条目 / 主线程治理批落条目；条目格式与 append-only 约定见该文件头（T7，260907 批，human 裁 docs 根平铺） | 对应流程 |
+| `docs/decisions/ADR.md`（架构决策记录） | integrator 收口落新增条目 / 主线程治理批落条目；条目格式与 append-only 约定见该文件头（T7，260907 批立；2026-10-19 human 裁迁 `docs/decisions/`，261019 批） | 对应流程 |
 | `delivery/review/**`、`delivery/taskpackages/**`、ARQ、CDQ | 按来源流程记账 | 对应流程 |
 
 > **入口总览**：每面一个 loop 入口——需求 `/requirement-change` · 架构+契约 `/arch-change` · 治理 `/gov-change` · 实现 `/triage-change` → `/build-feature`；跨面（触面 ≥2）→ 统一 intake 建 spine（change-intake.md）。治理变更默认 Track B 七步（主线程派 architect 起草，主线程不起草内容）；命中升级判据（跨系统结构性 / 方向未收敛）或声明红队 → 所属面 loop 的 Track A 段（对抗收敛后流回 Track B 落地）。
@@ -249,7 +249,7 @@ flowchart TD
 
 - **repair-intent 自动化桥（Phase 9）**：入口已定为 portfolio-planner intake；把 K6 `DefectDetected` 自动变成 repair-intent 制品并触发 launch 的 automation bridge 仍是未来占位。
 - **新系统创建的 `.claude` 扩充**：新增 K/S 系统时 agent 克隆体、scope-map、hook 的扩充流程。
-- **`.claude/**` 一致性机械门**：agent 定义 ↔ scope-map ↔ command 引用的一致性检查。**已分批部分落地**（批次 1 / 批次 2 / 腿 6 launch 可达性 `--check-launch`）；剩余子项与消费方链见 [ARCH-REVIEW-QUEUE.md](ARCH-REVIEW-QUEUE.md) ARQ-077。
+- **`.claude/**` 一致性机械门**：agent 定义 ↔ scope-map ↔ command 引用的一致性检查。**已分批部分落地**（批次 1 / 批次 2 / 腿 6 launch 可达性 `--check-launch`）；剩余子项与消费方链原见 ARQ-077（原单文件队列 ID，未迁入现行 debt 账本，队列文件 261019 批删除——以本节记述为准）。
 - **uiux-designer 系统级 brief 的 moderator dispatch 接线**：起草者已定（`uiux-designer`），dispatch 尚未接线。
 
 ## 验收测试纪律

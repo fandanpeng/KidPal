@@ -35,12 +35,9 @@
     "docsTopLevel": {
       "allowFiles": [
         "docs/DEV-GOVERNANCE.md",
-        "docs/ARCH-REVIEW-QUEUE.md",
-        "docs/CONTRACT-DECISION-QUEUE.md",
         "docs/glossary.md",
         "docs/requirements.md",
-        "docs/architecture.md",
-        "docs/ADR.md"
+        "docs/architecture.md"
       ],
       "allowDirs": [
         "docs/contracts",
@@ -48,7 +45,8 @@
         "docs/archive",
         "docs/notes",
         "docs/ui",
-        "docs/debt"
+        "docs/debt",
+        "docs/decisions"
       ]
     }
   },
@@ -147,9 +145,8 @@
         "firmware/**",
         "server/**",
         "docs/templates/**",
-        "docs/ARCH-REVIEW-QUEUE.md",
         "docs/debt/**",
-        "docs/ADR.md",
+        "docs/decisions/ADR.md",
         "delivery/taskpackages/**",
         "delivery/workstreams/**"
       ],
@@ -242,7 +239,6 @@
       "allow": [
         "delivery/review/*arch-review-*/**",
         "delivery/review/*gov-review-*/**",
-        "docs/ARCH-REVIEW-QUEUE.md",
         "docs/debt/**"
       ],
       "deny": [

@@ -30,7 +30,7 @@
 // 退出码：0 放行 / 1 命中（BLOCK）/ 2 用法错。
 
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源
@@ -166,10 +166,11 @@ function hasArchLoopContractEvidence(execFn, source, target, projectDir, deps = 
  * 行含字面 `| hard-violation |` 且行含 CONTRACT_SPEC_LITERALS 任一字面（B-4 写作侧对齐：
  * integrator.md findings 约定要求 Basis 以该前缀集起引；未匹配形态放行，不把自由 prose 写作变假红）→
  * 视为「契约类 hard-violation 在案」。在案者 MUST 二选一核销：
- *   a) docs/CONTRACT-DECISION-QUEUE.md 含本 changeId 字面（对应 CDQ 行）；
+ *   a) `docs/debt/contract/`（含 `_archive/<年>/`）任一条目文件含本 changeId 字面（对应 CDQ 条目；
+ *      261019 批起 CDQ 单文件队列并入 debt 账本 contract 域）；
  *   b) pod-events 有 human-decision 事件 payload.decision ∈ {defer-contract-change, accept-risk}
  *      且 changeId 匹配（B-6 锚格式，复用五要素事件形状）。
- * 返回 { present, accounted, hits:[findingLine 摘录] }。readText/cdqText 可注入，self-check 可测。
+ * 返回 { present, accounted, hits:[findingLine 摘录] }。readText/listFiles 可注入，self-check 可测。
  */
 // 字面集（260913-arch-review-spec-split 扩展：spec.md 拆分为 requirements.md + architecture.md 并归档）——
 // 与 integrator.md Basis 前缀写作约定同批联动改（只改一边 = 闸与约定脱钩）；
@@ -195,8 +196,25 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
     .split('\n')
     .filter((l) => l.includes('hard-violation') && CONTRACT_SPEC_LITERALS.some((lit) => l.includes(lit)));
   if (hits.length === 0) return { present: false, accounted: true, hits: [] };
-  const cdqText = readText(join(dir, 'docs', 'CONTRACT-DECISION-QUEUE.md'));
-  const cdqHasRow = cdqText !== null && cdqText.includes(changeId);
+  // CDQ 核销读点（261019-gov-review-docs-root-ledger-rehome T3）：单文件读 → 目录扫描。
+  // 递归列举 docs/debt/contract/（含 _archive/<年>/——已结条目被渲染器归位后仍须可查，否则已结批的
+  // 后续复核包会被误拦），排除 INDEX.md（生成件；凭据本体 = 条目文件，INDEX 内容派生自条目、不独立作证）。
+  // 目录不在场 → 空集（cdqHasRow=false → BLOCK，向严）。判定 = 任一条目文件文本含 changeId 字面。
+  const listFiles = deps.listFiles || ((root) => {
+    const out = [];
+    const walk = (d) => {
+      for (const ent of readdirSync(d, { withFileTypes: true })) {
+        if (ent.isDirectory()) { walk(join(d, ent.name)); continue; }
+        if (ent.name.endsWith('.md') && ent.name !== 'INDEX.md') out.push(join(d, ent.name));
+      }
+    };
+    walk(root);
+    return out;
+  });
+  const cdqDir = join(dir, 'docs', 'debt', 'contract');
+  let cdqFiles = [];
+  try { cdqFiles = listFiles(cdqDir); } catch { cdqFiles = []; } // 目录不在场 → 空集（向严）
+  const cdqHasRow = cdqFiles.some((f) => (readText(f) || '').includes(changeId));
   const deferAnchored = (() => {
     const raw =
       readText(join(dir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl')) ??
@@ -360,7 +378,7 @@ export function evaluate(ctx) {
   // 只拦可识别形态（A-8 放行方向）：Findings 行含 hard-violation + CONTRACT_SPEC_LITERALS 任一字面起引，
   // 且 CDQ 无对应行、pod-events 无 human defer/accept-risk 锚 → BLOCK；未匹配 / packet 不在场 → 放行。
   if (ctx.contractFindings?.present && !ctx.contractFindings.accounted) {
-    push(`contract-findings-unaccounted：review-packet 有 ${ctx.contractFindings.hits.length} 条 hard-violation 且 Basis 引 docs/contracts/**|docs/spec.md|docs/requirements.md|docs/architecture.md，但 CONTRACT-DECISION-QUEUE 无对应行且无 human defer/accept-risk 锚（260908 批 T5；字面集 260913 批扩展）`);
+    push(`contract-findings-unaccounted：review-packet 有 ${ctx.contractFindings.hits.length} 条 hard-violation 且 Basis 引 docs/contracts/**|docs/spec.md|docs/requirements.md|docs/architecture.md，但 docs/debt/contract/ 无对应条目且无 human defer/accept-risk 锚（260908 批 T5；字面集 260913 批扩展；CDQ 家 261019 批迁 docs/debt/contract/）——核销 = 在 docs/debt/contract/ 立条目（骨架 docs/templates/debt-item.template.md）`);
   }
 
   // 人批 flag fail-closed：给了 flag 但核验不过 → BLOCK 且点名失败项
@@ -597,25 +615,36 @@ function selfCheck() {
   // 3) 在案 + human defer 锚（accounted:true）→ 放行
   cases.push({ name: 'contract-findings-defer-anchored-pass', ok: !evaluate(mkCtx({ contractFindings: { present: true, accounted: true, hits: ['docs/spec.md'] } })).blocked, got: '' });
 
-  // T5 字面集扩展 4 例（260913-arch-review-spec-split：spec.md 拆分 + 归档；真实扫 contractFindingsAccounted，注入 readText fixture）
-  const mkReadText = (packetLine, cdqText) => (p) => {
-    if (p.includes('review-packet.md')) return `| SHOULD | hard-violation | contract | x | ${packetLine} | 交回 CDQ |\n`;
-    if (p.includes('CONTRACT-DECISION-QUEUE')) return cdqText;
-    return null; // pod-events 不在场 → 无 defer 锚
-  };
+  // T5 字面集扩展 4 例（260913-arch-review-spec-split：spec.md 拆分 + 归档；真实扫 contractFindingsAccounted，注入 listFiles + readText 目录 fixture——261019 批起 CDQ 读点 = docs/debt/contract/ 目录扫描）
+  const mkDirDeps = (packetLine, entries) => ({
+    // entries: { 相对路径: 文本 }——键含 '_archive' 者模拟已结条目归位后场景
+    listFiles: () => Object.keys(entries),
+    readText: (p) => {
+      if (p.includes('review-packet.md')) return `| SHOULD | hard-violation | contract | x | ${packetLine} | 交回 CDQ |\n`;
+      const rel = Object.keys(entries).find((k) => p.endsWith(k) || p === k);
+      if (rel) return entries[rel];
+      return null; // pod-events 不在场 → 无 defer 锚
+    },
+  });
   {
-    // 1) 新路径 docs/requirements.md → 在案，CDQ 无行 → unaccounted
-    const r = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/requirements.md §3', '# CDQ\n') });
+    // 1) 新路径 docs/requirements.md → 在案，contract/ 无条目含 changeId → unaccounted
+    const r = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/requirements.md §3', { 'CDQ-260901-a.md': '# 条目\n' }));
     cases.push({ name: 'literal-requirements-detected', ok: r.present === true && r.accounted === false, got: JSON.stringify(r) });
-    // 2) 新路径 docs/architecture.md + CDQ 有本 changeId 行 → accounted
-    const r2 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/architecture.md §5', '# CDQ\nchg-1 挂账行\n') });
+    // 2) 新路径 docs/architecture.md + contract/ 有条目含本 changeId → accounted
+    const r2 = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/architecture.md §5', { 'CDQ-260901-a.md': '# 条目\nchg-1 挂账行\n' }));
     cases.push({ name: 'literal-architecture-cdq-accounted', ok: r2.present === true && r2.accounted === true, got: JSON.stringify(r2) });
     // 3) 归档件 docs/spec.md 字面保留（历史 findings 兼容）→ 在案
-    const r3 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/spec.md §4', '# CDQ\n') });
+    const r3 = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/spec.md §4', { 'CDQ-260901-a.md': '# 条目\n' }));
     cases.push({ name: 'literal-archived-spec-still-detected', ok: r3.present === true && r3.accounted === false, got: JSON.stringify(r3) });
     // 4) 非字面集路径（docs/notes/...）→ 不在案，放行（A-8 放行方向不回退）
-    const r4 = contractFindingsAccounted('x', 'chg-1', { readText: mkReadText('docs/notes/foo.md', '# CDQ\n') });
+    const r4 = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/notes/foo.md', { 'CDQ-260901-a.md': '# 条目\n' }));
     cases.push({ name: 'literal-noncontract-path-not-present', ok: r4.present === false && r4.accounted === true, got: JSON.stringify(r4) });
+    // 5) changeId 只在 _archive/2026/ 的已结条目里 → accounted（归位后可查 parity）
+    const r5 = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/architecture.md §5', { '_archive/2026/CDQ-260901-a.md': '# 已结条目\nchg-1 挂账行\n' }));
+    cases.push({ name: 'cdq-archive-still-accounted', ok: r5.present === true && r5.accounted === true, got: JSON.stringify(r5) });
+    // 6) 目录在场但无任何条目含 changeId → unaccounted（BLOCK 点名）
+    const r6 = contractFindingsAccounted('x', 'chg-1', mkDirDeps('docs/architecture.md §5', { 'CDQ-260901-a.md': '# 条目\nchg-2 的账\n', 'CDQ-260902-b.md': '# 另一条\n' }));
+    cases.push({ name: 'cdq-no-matching-entry-block', ok: r6.present === true && r6.accounted === false, got: JSON.stringify(r6) });
   }
 
   // 齿二（261015-gov-review-changes-taxonomy）两臂 + execFn 注入两态（真空绿规约：夹具 ls-tree 输出先断非空/空）

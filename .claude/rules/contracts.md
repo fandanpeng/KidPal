@@ -23,4 +23,4 @@
 
 - 契约已归位为 `docs/contracts/interface-contract.md`（2026-08-27 主线程按 human 指示归位）。
 - pass-oracle 第 4 关（spec↔contract 机械门）本仓暂无脚本兜底，降级为人工核对并如实记录——见 debt 账本条目 `docs/debt/gov/ARQ-260827-contract-mech-gate-gap.md`。
-- 历史人签门制品（`CONTRACT-CHANGE-PACKET.md` / `architecture-gate-evidence.md`）不再作为新批要求（261015 批撤销人类契约签字门）；证据义务由 loop 标准制品承载（见 [references/contract-change-evidence.md](../references/contract-change-evidence.md) 收窄版）；CDQ（`docs/CONTRACT-DECISION-QUEUE.md`）保留为跨时间账本，列义「loop 凭据」。
+- 历史人签门制品（`CONTRACT-CHANGE-PACKET.md` / `architecture-gate-evidence.md`）不再作为新批要求（261015 批撤销人类契约签字门）；证据义务由 loop 标准制品承载（见 [references/contract-change-evidence.md](../references/contract-change-evidence.md) 收窄版）；CDQ 保留为跨时间账本——家 = `docs/debt/contract/` 域（一条目一文件；原 `docs/CONTRACT-DECISION-QUEUE.md` 单文件队列 261019 批并入并删除），列义「loop 凭据」（条目机读字段 `fourClass` / `loopEvidence`）。

@@ -49,7 +49,7 @@ model: fable
 - **入口与指令根（G1）**：`AGENTS.md`、`CLAUDE.md`、`docs/DEV-GOVERNANCE.md`。（L0 级蓝图本仓暂无独立文件；将来立时在此登记并按「蓝图改动不自动落地」处理。）
 - **角色与流程定义（G2）**：`.claude/agents/**`、`.claude/commands/**`、`.claude/references/**`、`.claude/rules/**`、`.claude/skills/**`。
 - **强制执行层（G3）**：`.claude/scope-map.json`、`.claude/*.settings.json`、`.claude/verify-gates.json`、`.claude/hooks/**`、`.claude/scripts/**`。
-- **证据与队列（G4）**：`docs/CONTRACT-DECISION-QUEUE.md`、`delivery/review/**`、`delivery/workstreams/README.md`。`docs/ARCH-REVIEW-QUEUE.md` 的登记动作归**主线程**（human-approved，见 OS §6「登记动作 = 主线程」+ 查重纪律）：architect 拥有 ARQ 处理权（经面 loop `/arch-change`、`/gov-change` 分流/landing），不做登记；scope-map allow 相应不含该文件。
+- **证据与队列（G4）**：`delivery/review/**`、`delivery/workstreams/README.md`。debt 账本条目（`docs/debt/<域>/<ID>.md`，四域含 contract〔原 `docs/CONTRACT-DECISION-QUEUE.md`，261019 批并入〕）与 ARQ 的登记动作归**主线程**（human-approved，见 OS §6「登记动作 = 主线程」+ 查重纪律）：architect 拥有 ARQ/CDQ 处理权（经面 loop `/arch-change`、`/gov-change` 分流/landing），不做登记；scope-map allow 相应不含 `docs/debt/**`。
 
 **设计面（spec 草案 / 候选修订，非治理面）**：`docs/requirements.md` + `docs/architecture.md`（canonical spec 本体，平铺无 systems 层）。这是 spec 初稿、候选修订与低风险设计维护面，**写入不等于 spec 已冻结**。正式 spec soundness / 冻结判定归 `review-moderator` 的对抗 review（spec profile）；冻结 charter 归 `scenario-author`，architect 只提供 review 背景 / 候选关注点 / 历史 canary 线索，不写冻结 charter。L0 级蓝图改动不自动落地，人类批。
 

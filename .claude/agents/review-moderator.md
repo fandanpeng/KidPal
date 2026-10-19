@@ -33,7 +33,7 @@ model: opus
 
 - **派发面 + 收敛目标**：来自 `/arch-change` 或 `/gov-change` 主线程的 dispatch（含 changeId / spine 引用 / human 原话）。
 - 蓝图 §1 北极星 / §3 七条DNA / §5 关卡纪律（charter 必载的公司原则）。
-- 可选：既往 review 的 charter/findings、CDQ、debt 账本现存条目（`docs/debt/{gov,tech,requirement}/INDEX.md`）。
+- 可选：既往 review 的 charter/findings、CDQ、debt 账本现存条目（`docs/debt/{gov,tech,requirement,contract}/INDEX.md`）。
 
 ## Process / 步骤
 

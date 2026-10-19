@@ -25,7 +25,7 @@ model: opus
 
 1. **意图保真**：human 意图原话 / ARQ 材料 → 文本表述忠实（dispatch 输入构成显式含 human 原话 + 改前/改后对照——缺输入按 architect 同款输入契约停下反问，不凭空审）。
 2. **纪律合规**：架构面 = arc42 骨架 / 锚稳定规则 / 分工句（「指针不抄细节」「决策本体归 ADR.md」「数据格式归 contracts/」「需求与阈值归 requirements.md」）；治理面 = 路由表 / 写权边界 / 门语义不被文本漂移改动。
-3. **撞车复核**：与既有节 / `docs/ADR.md` 既有条目 / 决策历史档冲突。
+3. **撞车复核**：与既有节 / `docs/decisions/ADR.md` 既有条目 / 决策历史档冲突。
 4. **牵连面完整**：反向锚牵连（requirements 侧 `支撑锚 arch §x.y`）、联动文件、契约指针刷新、镜像句边界（逐字镜像随需求面批 vs 语义变更升格）。
 
 ## 契约四分类（canonical 五值，权威 = `.claude/rules/contracts.md`）

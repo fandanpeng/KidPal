@@ -110,8 +110,18 @@ function selfCheck() {
   if (!runChecks([closedTop]).red.some((r) => r.code === 'mislocated')) fails.push('mislocated');
   const closedArchived = { ...closedTop, rel: '_archive/2026/ARQ-260902-y.md' };
   if (runChecks([closedArchived]).red.some((r) => r.code === 'mislocated')) fails.push('mislocated-false-positive');
+  // 夹具 12 · CDQ 前缀落 contract 域 → 不红（正控，261019 批第四域）
+  if (runChecks([mk('CDQ-260913-a', 'contract', 'deferred', { fourClass: 'CONTRACT_CHANGE_REQUIRED' })]).red.length) fails.push('cdq-in-contract-false-positive');
+  // 夹具 13 · CDQ 前缀落 gov 域 → 红 prefix-domain-mismatch（CDQ 非祖辈前缀）
+  if (!runChecks([mk('CDQ-260913-a', 'gov', 'deferred')]).red.some((r) => r.code === 'prefix-domain-mismatch')) fails.push('cdq-prefix-domain');
+  // 夹具 14 · contract 条目缺 fourClass → advisory contract-no-fourclass（非红）
+  const r14 = runChecks([mk('CDQ-260913-a', 'contract', 'deferred')]);
+  if (!r14.advisory.some((a) => a.code === 'contract-no-fourclass')) fails.push('contract-fourclass-advisory');
+  if (r14.red.some((r) => r.code === 'contract-no-fourclass')) fails.push('contract-fourclass-should-not-be-red');
+  // 夹具 15 · contract 条目带 fourClass → 零报（正控）
+  if (runChecks([mk('CDQ-260913-a', 'contract', 'deferred', { fourClass: 'NO_CONTRACT_CHANGE' })]).advisory.some((a) => a.code === 'contract-no-fourclass')) fails.push('contract-fourclass-false-positive');
 
-  console.log(fails.length === 0 ? 'debt-doctor --self-check: ok (13/13)' : `debt-doctor --self-check: FAIL\n  ${fails.join('\n  ')}`);
+  console.log(fails.length === 0 ? 'debt-doctor --self-check: ok (17/17)' : `debt-doctor --self-check: FAIL\n  ${fails.join('\n  ')}`);
   return fails.length === 0;
 }
 

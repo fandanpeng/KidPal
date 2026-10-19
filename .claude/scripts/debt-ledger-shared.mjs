@@ -5,7 +5,7 @@
 // （检查）/ crq-migrate.mjs（一次性迁移，retained 历史件）。禁各自另造副本。
 //
 // 形态：每条目一文件 docs/debt/<域>/<ID>.md = YAML frontmatter（机读状态）+ 正文（append-only 散文）。
-// 纪律：改状态去改条目文件再重跑 debt-render.mjs；三份 INDEX.md 是生成件，勿手改。
+// 纪律：改状态去改条目文件再重跑 debt-render.mjs；各域 INDEX.md 是生成件，勿手改。
 import { readdirSync, readFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
 import { resolve, join, dirname, basename } from 'node:path';
 
@@ -14,6 +14,7 @@ export const DOMAINS = {
   gov:        { dir: 'gov',         prefix: 'ARQ',  extra: [] },
   tech:       { dir: 'tech',        prefix: 'TECH', extra: ['handoff', 'cdq'] },
   requirement:{ dir: 'requirement', prefix: 'REQ',  extra: ['affects', 'decision', 'landedIn'] },
+  contract:   { dir: 'contract',    prefix: 'CDQ',  extra: ['fourClass', 'loopEvidence'] },
 };
 export const DOMAIN_KEYS = Object.keys(DOMAINS);
 export const LEDGER_ROOT = ['docs', 'debt'];
@@ -32,11 +33,12 @@ export const STATUSES = ['blocker', 'deferred', 'accepted-risk', 'closed'];
 //   把这条「队列实际用词 ≠ 自己引用的 rubric」的漂移显式留在册（另见 §6 留根）。
 export const SEVERITIES = ['BLOCKING', 'MAJOR', 'SHOULD', 'COULD', 'NIT', 'OPTIONAL', 'FYI'];
 export const RUBRIC_SEVERITIES = ['BLOCKING', 'SHOULD', 'NIT', 'OPTIONAL', 'FYI'];
-export const ID_RE = /^(ARQ|TECH|REQ)-\d{6}-[a-z0-9-]+$/;
+export const ID_RE = /^(ARQ|TECH|REQ|CDQ)-\d{6}-[a-z0-9-]+$/;
 // ID 前缀 → 域。注意 `ARQ`：它是**祖辈前缀**（95 条在册，改名要动全仓引用且无收益）——
 //   规则 = 「新条目用本域前缀」+「`ARQ-` 在任何域都放行（历史词汇，告警计数）」。
 //   把 `ARQ-` 硬绑 gov 会与本批「迁移不改名」直接冲突（本批起草期由 doctor 抓出该自相矛盾）。
-export const PREFIX_TO_DOMAIN = { ARQ: 'gov', TECH: 'tech', REQ: 'requirement' };
+//   `CDQ` = contract 域本域前缀（261019 批起，原 docs/CONTRACT-DECISION-QUEUE.md 单文件队列并入）。
+export const PREFIX_TO_DOMAIN = { ARQ: 'gov', TECH: 'tech', REQ: 'requirement', CDQ: 'contract' };
 export const GRANDFATHER_PREFIX = 'ARQ';
 
 // §1.1/§1.2/§1.3/§2 四节 ↘ status 的对应（T2 改法 2：分节由 status 派生）
@@ -112,7 +114,7 @@ function fmtScalar(v) {
 }
 
 // 字段输出顺序钉死（确定性渲染的前提之一）
-const FM_ORDER = ['id', 'title', 'domain', 'status', 'severity', 'owner', 'trigger', 'opened', 'closed', 'closedBy', 'paths', 'source', 'handoff', 'cdq', 'affects', 'decision', 'landedIn'];
+const FM_ORDER = ['id', 'title', 'domain', 'status', 'severity', 'owner', 'trigger', 'opened', 'closed', 'closedBy', 'paths', 'source', 'handoff', 'cdq', 'affects', 'decision', 'landedIn', 'fourClass', 'loopEvidence'];
 
 export function serializeItem(fm, body) {
   const keys = [...FM_ORDER.filter((k) => k in fm), ...Object.keys(fm).filter((k) => !FM_ORDER.includes(k)).sort()];
@@ -241,6 +243,7 @@ export function checkItems(items) {
     }
     // 内容性待补 —— 告警级，不阻断（迁移项普遍命中）
     if (it.domain === 'tech' && !fm.handoff) advisory.push({ at: where, code: 'tech-no-handoff', msg: 'tech 条目未填 handoff 去向' });
+    if (it.domain === 'contract' && !fm.fourClass) advisory.push({ at: where, code: 'contract-no-fourclass', msg: 'contract 条目未填 fourClass（五值闭集，权威 .claude/rules/contracts.md）' });
     if ((!fm.paths || fm.paths.length === 0)) advisory.push({ at: where, code: 'no-paths', msg: '未申报 paths[]，G 层不可机判' });
     if (String(fm.status) === 'closed' && !/^\d{4}-/.test(String(fm.closed || ''))) advisory.push({ at: where, code: 'closed-no-date', msg: '已结但无 closed 日期——无法按年归档' });
     // 位置 == f(状态)：归档归位由渲染器执行，人搬错/漏跑渲染都会在此现形

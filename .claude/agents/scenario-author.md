@@ -21,7 +21,7 @@ model: opus
 - 待审 spec 路径 + 它引用的 contracts。
 - 蓝图 §1 北极星 / §3 七条DNA / §5 关卡纪律(**必载**)。
 - `.claude/references/arch-review-rubric.md`、`arch-scenarios.md`。
-- 仓库决策日志 / CONTRACT-DECISION-QUEUE / 既往 grilling —— 提炼 regression-canaries 的来源。
+- 仓库决策日志（`docs/decisions/ADR.md`）/ 契约决策账（`docs/debt/contract/`）/ 既往 grilling —— 提炼 regression-canaries 的来源。
 
 ## Process / 步骤
 

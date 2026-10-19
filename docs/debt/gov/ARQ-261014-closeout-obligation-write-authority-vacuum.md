@@ -18,3 +18,5 @@ source: loop-retro-2026-10-14 18 包复盘（`delivery/changes/retro/2026-10-14-
 **定性**：非闸缺陷——enforce-scope 全对；缺的是「收口义务 → 承载写点」的映射表与 finalize 前置核对步骤。每包收口期 planner 现场即兴找写点、找不齐就升级 human 裁「主线程直落」，同型即兴每包重演。
 
 **修法候选**（交 review，不自批）：① DEV-GOVERNANCE 收口义务清单逐项钉承载写点（CDQ 行=主线程 / 设计稿母版=主线程直落 / spine 回填=主线程 / spec 挂法=architect——后者已是 ARQ-260929-docs-sync-spec-handoff 的既有裁定，映射表把它收编成文）；② planner finalize 步骤加「写点核对」前置项（纯文面，不改闸）；③ 高频代落场景（CDQ 行）评估给机械通道或专用写槽。倾向 ①+②。**riskTier: low**（不动闸语义；scope-map 写权矩阵若动走既有批内换授先例）。
+
+**追注（2026-10-19，261019-gov-review-docs-root-ledger-rehome 批）**：CDQ 单文件队列（上文 :16 所引 `docs/CONTRACT-DECISION-QUEUE.md`）已并入 `docs/debt/contract/` 域并删除原文件——新写点落在 integrator / adjudicator 既有 `docs/debt/**` 写槽内，本条目「CDQ 行写权真空」一项就此闭合。条目**不结**：其余义务面（设计稿母版 / spine 回填 / 挂法句写点映射）未治，status 留 deferred。

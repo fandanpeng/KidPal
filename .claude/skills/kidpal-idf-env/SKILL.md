@@ -53,7 +53,7 @@ Repo shell scripts checked out on Windows may carry **CRLF** line endings; WSL b
 ```
 sed 's/\r$//' espidf_wsl.sh > /tmp/espidf_wsl.lf.sh && bash /tmp/espidf_wsl.lf.sh <args>
 ```
-Root fix (pin `*.sh` to LF via `.gitattributes`) is tracked as governance debt — see `docs/ARCH-REVIEW-QUEUE.md` ARQ-260906-shell-scripts-lf-gitattributes.
+Root fix (pin `*.sh` to LF via `.gitattributes`) is tracked as governance debt — see `docs/debt/gov/_archive/2026/ARQ-260906-shell-scripts-lf-gitattributes.md`（已结归档位；原 `docs/ARCH-REVIEW-QUEUE.md` 261019 批删除）。
 
 ## Two more WSL gotchas (260915 launch-prep 实测; verbatim evidence = delivery/review/260915-gov-review-worktree-pool-reuse/evidence-wsl-pitfalls.md)
 1. **`espidf_wsl.sh` 头注释的 `-T main` 示例已失效** — IDF v5.5.1 `idf.py` has no `-T` option (`Error: No such option: -T`). Correct usage = `espidf_wsl.sh build`（无 -T）.
