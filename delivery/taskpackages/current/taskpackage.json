@@ -34,7 +34,7 @@
     "firmware/main/test/log_cmd.acceptance.c"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-19（本树）：① 本冻结件设计态红（独立冒烟通道 gcc -std=c11 -Wall -Wextra 直编冻结件 + red-baseline runner.c——登记行在 host_app CMakeLists（builder 写权面），TaskPackage redBaselineCommand 全量 runner 编不进本件，通道关系已写进冻结件头 Run protocol）：COMPILE_EXIT=0 零 warning、7 Tests 7 Failures 全设计态红（TEST 1 LUR-A1 parse seam 未实现 weak 哨兵 -99 / TEST 2 LUR-A2 同 / TEST 3 LUR-A3 asm_init NULL / TEST 4 LUR-A4 frame_begin 字面错 / TEST 5 LUR-A5 tail_window 哨兵 / TEST 6 LUR-A6 log_cmd_port.cc 未落地 / TEST 7 LUR-A6 app_main 未调用 KidpalLogCmdStart）。② 官方 redBaselineCommand 实跑（既有套件正交性）：espidf_wsl.sh build 绿 + host_infra_test.elf → 203 Tests 3 Failures（exit 3），3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4，persist 红基线同一批），persist 包 sd_log.acceptance.c 全齿保持绿（含 TEST 6 main.cc 安装序锚、TEST 8 登记哨），本包零新增红。③ 双向可满足性：/tmp 一次性参考实现 + 合成树 KIDPAL_REPO_ROOT 注入（不写工作树）→ 7 Tests 0 Failures 零 warning；定向变异 9 处（M1..M9）单变异恰好只命中目标断言、逐字红行取证（见 mutationEvidence），还原后复跑 7/0 绿。",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
@@ -80,7 +80,92 @@
   "planningWorkstreamRequired": false,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "LUR-A1",
+        "acceptance": "LUR-A1: 命令解析纯逻辑（host 同源）——kplog list / kplog tail / kplog tail N / kplog cat N 合法形态解析成功；tail 默认 N=200、上限 1000；cat idx 闭集 0..31。设计态红：log_cmd 纯逻辑 seam 未实现",
+        "mutation": "M1 tail 钳制移除：log_cmd.c kidpal_logcmd_parse 删除 if (v > KIDPAL_LOGCMD_TAIL_MAX) v = KIDPAL_LOGCMD_TAIL_MAX 钳制行",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 1（LUR-A1）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR RED: parse(\"kplog tail 1001\") 出参错（期望 1000 实际 1001）。"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures（参考实现冒烟通道）",
+        "note": "参考实现 /tmp 一次性合成树取证，非工作树实现（工作树实现由 builder 落地后由 final 轮全量验证）；取证轮 acceptance-author 2026-10-19"
+      },
+      {
+        "acceptanceId": "LUR-A2",
+        "acceptance": "LUR-A2: 非法输入拒绝——idx ≥32 / 负数 / 非数字 / 路径字符（../、/、.）/ 多余 token / 未知子命令 / 超长行 → 返回 bad-index 或 bad-cmd 错误码，且不产生任何文件访问调用（拒绝即短路，文件访问层零触达）。设计态红：解析 seam 未实现",
+        "mutation": "M9 cat 索引闭集上界放宽：kidpal_logcmd_parse 的 v >= KIDPAL_LOGCMD_CAT_COUNT 放宽为 v > KIDPAL_LOGCMD_CAT_COUNT（上界 32→33，kplog cat 32 由拒绝转接受）",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 2（LUR-A2）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR RED: parse(\"kplog cat 32\") 结果码错（期望 -2 实际 3）——命令面语义漂移。"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures",
+        "note": "补缺口变异（首轮 M1..M8 未覆盖 TEST 2，回传 acceptance-author 补做）"
+      },
+      {
+        "acceptanceId": "LUR-A3",
+        "acceptance": "LUR-A3: 行装配纯逻辑——跨读块边界拼行；CRLF/LF 两种行尾；超长行丢弃；非 kplog 前缀输入静默不输出（不自动 dump 的行为齿：无命令零输出）。设计态红：行装配 seam 未实现",
+        "mutation": "M4 超长行丢弃标记移除：lur_asm_finalize 超长行处置 a->dropped = 1 改为 = 0（整行仍丢弃但 LUR_ASM_DROPPED 标记不置位）",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 3（LUR-A3）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR-A3 RED: 超长行未按契约丢弃（pop 未返 LUR_ASM_DROPPED）——超长输入行必须整行丢弃，不得截断成假命令触发输出。"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures"
+      },
+      {
+        "acceptanceId": "LUR-A4",
+        "acceptance": "LUR-A4: 帧格式化纯逻辑——BEGIN/END 帧字面精确（=== KPLOG BEGIN <cmd> === / === KPLOG END ===）；list 行格式（文件名 + 字节数 + 当前写入文件尾标 * + KPLOG TOTAL 汇总行）；错误帧格式（KPLOG ERROR no-card|no-file|bad-cmd|bad-index）。设计态红：帧格式化 seam 未实现",
+        "mutation": "M2 BEGIN list 字面漂移：kidpal_logcmd_frame_begin 的 LIST 返回字面 === KPLOG BEGIN list === 漂移为 lisr",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 4（LUR-A4）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR-A4 RED: frame_begin(LIST) 字面错（契约 [S4]：=== KPLOG BEGIN list ===）——host 脚本按 BEGIN/END 定界收集，字面漂移 = 消费端断流。"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures"
+      },
+      {
+        "acceptanceId": "LUR-A5",
+        "acceptance": "LUR-A5: 尾部窗口选取纯逻辑——样本字节流取末 N 行边界正确：N=1 / N 大于总行数 / CRLF / 无结尾换行。设计态红：尾部选取 seam 未实现",
+        "mutation": "M3 窗口偏移 off-by-one：kidpal_logcmd_tail_window 选中行起始偏移返回值 +1",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 5（LUR-A5）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR-A5 RED: tail_window(n=1) 末 N 行窗口偏移错（期望 4 实际 5，样本 \"a\nb\nc\n\"）。"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures"
+      },
+      {
+        "acceptanceId": "LUR-A6",
+        "acceptance": "LUR-A6: 接线结构齿（源锚，仿 sd_log.acceptance.c 形态）——① 文件名只经 kidpal_sd_log_file_name 或受校验整数构造（禁用户串直进路径拼接）；② 端口只 open /dev/secondary（不出现其它设备路径字面）；③ 启动函数 KidpalLogCmdStart 零打印；④ 读任务函数体内零 ESP_LOG* 调用（防 vprintf 钩子自污染与递归），响应只经 stdout（fwrite/printf）。设计态红：接线任一缺失或结构违例",
+        "mutation": "M5 读任务体内加 ESP_LOGI（LogCmdReadTask 注入 ESP_LOGI(\"kplogcmd\", \"block read\")）——同 acceptance 另有三条独立变异 M6（main.cc KidpalLogCmdStart 移到 ChainPreviousVprintf 前，打接线序锚）/ M7（log_cmd.h KIDPAL_LOGCMD_CMD_MAX 64→128，打 EQ-2 头文件字面锚）/ M8（host_app CMakeLists 注销本验收件登记行，打 anti-vacuity 登记守），红行互异、分别落在三个不同断言",
+        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 6（LUR-A6）+ TEST 7（LUR-A6）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "FAIL: LUR-A6 RED: 读任务 LogCmdReadTask 函数体内存在 1 处 ESP_LOG* 调用——会经 vprintf 钩子递归回灌环形缓冲（自污染 / 掉日志 / 栈溢出风险，D3/plan §3：响应只经 stdout）",
+          "FAIL: LUR-A6 RED: KidpalLogCmdStart() 出现在 KidpalSdLogChainPreviousVprintf 之前——契约 [S8] 要求命令任务在 vprintf 钩子链保存之后启动（D7；提前启动会与钩子安装竞态）",
+          "FAIL: LUR-A6 RED: log_cmd.h 的 KIDPAL_LOGCMD_CMD_MAX 非 64——命令行解析上限冻结值漂移（EQ-2）",
+          "FAIL: LUR-A6 RED: host_app/main/CMakeLists.txt 未登记 log_cmd.acceptance.c——本冻结验收件不进 host runner（全部断言不会被执行 = 空过绿；builder FIRST ACTION，见头注 Run protocol 0）"
+        ],
+        "restored": "还原后复跑 7 Tests 0 Failures",
+        "note": "9/9 变异各单变异恰好只命中目标断言、无误伤其它 TEST"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [],
@@ -213,5 +298,5 @@
       "note": "新增 host 取回脚本；无自动齿（真机轮 LUR-A7① 单命令 smoke 承载首验）；pyserial 依赖用 IDF python env"
     }
   ],
-  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + tools/**，acceptance-author allow firmware/**/*.acceptance.c + tools/**；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（2026-10-18；技术方案 = plan「设计要点」九条；changeManifest = plan「changeManifest 种子清单」含 architect 补入的两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，本轮不重复派 architect 重评。③ Step 1f 保鲜核验已做：plan 引用的 sd_log.h/sd_log_fs.cc/两处 CMakeLists/sdkconfig 行（:1577/:1733）实核在场且值相符；改动面覆盖完整。④ 相邻冻结齿字面锚扫查（persist retro 教训 #1）：sd_log.acceptance.c 全齿与只读访问器增量无字面锚冲突；TEST 6 main.cc 结构锚需 KidpalLogCmdStart 在钩子后加位（已入 must-stay-green）。⑤ 上游依赖：persist 代码已在本分支 dev/pod-m2（未合 main），base ref = dev/pod-m2，不得假设 persist 已在 main；合并顺序 = 主线程裁定（OQ-1）：persist 真机四项验完 → persist 合 main → 本包 rebase 后立合，persist 未验完前两包都不合。⑥ 真机门前停等：host 齿 + 设备编译闸绿后 status=awaiting-human:real-device，输出持板操作单（含单命令 smoke 步骤）交 human，resume 续跑；本 Pod 不自行烧录。⑦ security 轴裁定：只读白名单 + 物理访问威胁模型与拔卡同族未加宽（architect 比例化 review 结论），securityReviewRequired=false、零新记账；注入拒绝面由 LUR-A2 行为齿承载。⑧ mutation 纪律：mutationEvidence 证据串须携带完整 acceptance 串（persist retro 教训 #2，raw-id 语义会闸红）。⑨ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与既有 *.acceptance.*（除 acceptance-author 新建本包验收件）；sdkconfig 与分区表零改动（LUR-X3）。"
+  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + tools/**，acceptance-author allow firmware/**/*.acceptance.c + tools/**；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（2026-10-18；技术方案 = plan「设计要点」九条；changeManifest = plan「changeManifest 种子清单」含 architect 补入的两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，本轮不重复派 architect 重评。③ Step 1f 保鲜核验已做：plan 引用的 sd_log.h/sd_log_fs.cc/两处 CMakeLists/sdkconfig 行（:1577/:1733）实核在场且值相符；改动面覆盖完整。④ 相邻冻结齿字面锚扫查（persist retro 教训 #1）：sd_log.acceptance.c 全齿与只读访问器增量无字面锚冲突；TEST 6 main.cc 结构锚需 KidpalLogCmdStart 在钩子后加位（已入 must-stay-green）。⑤ 上游依赖：persist 代码已在本分支 dev/pod-m2（未合 main），base ref = dev/pod-m2，不得假设 persist 已在 main；合并顺序 = 主线程裁定（OQ-1）：persist 真机四项验完 → persist 合 main → 本包 rebase 后立合，persist 未验完前两包都不合。⑥ 真机门前停等：host 齿 + 设备编译闸绿后 status=awaiting-human:real-device，输出持板操作单（含单命令 smoke 步骤）交 human，resume 续跑；本 Pod 不自行烧录。⑦ security 轴裁定：只读白名单 + 物理访问威胁模型与拔卡同族未加宽（architect 比例化 review 结论），securityReviewRequired=false、零新记账；注入拒绝面由 LUR-A2 行为齿承载。⑧ mutation 纪律：mutationEvidence 证据串须携带完整 acceptance 串（persist retro 教训 #2，raw-id 语义会闸红）。⑨ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与既有 *.acceptance.*（除 acceptance-author 新建本包验收件）；sdkconfig 与分区表零改动（LUR-X3）。；⑩ Step 8 finalize 2026-10-19：redBaselineResult 与 mutationEvidence.perAcceptance 已按 acceptance-author 两轮实跑回填（M9 补 TEST 2 缺口）；Step 8b 方向核对：本包 sourceRefs 不命中 requirements story（human-ad-hoc），验收方向核对以 plan 验收计划为权威逐条对账（LUR-A1..A6 语义与 plan §验收计划一致，LUR-A7 真机九项含单命令 smoke 先行），无钉反、无弱化。"
 }
