@@ -4,7 +4,7 @@
   "meta": {
     "title": "KidPal 治理拓扑 · Graph Engineering 视角",
     "locale": "zh-CN",
-    "output": "notes/archify/architecture-kidpal-gov-graph-20261019-095454/kidpal-gov-graph.html",
+    "output": "docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/kidpal-gov-graph.html",
     "quality_profile": "showcase",
     "legend": {
       "mode": "auto",
@@ -108,7 +108,7 @@
       "id": "human-push",
       "type": "external",
       "label": "Human ③",
-      "sublabel": "remote push 仍 human",
+      "sublabel": "批 PR 仍 human",
       "icon": "person",
       "pos": [
         1614,
