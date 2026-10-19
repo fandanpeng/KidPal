@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "60dcb65a-d7c5-43fc-988a-71d754ec13c4",
+  "receiptId": "8b90e3fc-7d03-4d99-a100-134390ceadb1",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-casual-20261019-160714\\candidate.json",
-  "output": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-casual-20261019-160714\\kidpal-casual.html",
+  "input": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-business-casual-20261019-160714\\candidate.json",
+  "output": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-business-casual-20261019-160714\\kidpal-casual.html",
   "specification": {
-    "sha256": "678a2f3f19217632ee295007225820cbb929abf46501fb86c5d1ac94af82eb24",
-    "bytes": 2850
+    "sha256": "f10a8c1e46856c2ebd49344900279105f2cba81c48553d2bb2c820a1f8249303",
+    "bytes": 2816
   },
   "artifact": {
-    "sha256": "aa1bf9ede1e7e85dea1c14a5dd82888e71ee14ede2fa8f0a6c648d6990e1360a",
-    "bytes": 770542
+    "sha256": "35e3877d6edb2cb8ce08b326ea170347b97a6b5c4d41e5bcd617955b56e81597",
+    "bytes": 770538
   }
 }
