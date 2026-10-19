@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261019-p3-record-dialogue-guide | req+arch+contract+imp | in-flight | 4/4 | 2026-10-19 | ⚠未闭环 |
+| 261019-p3-record-dialogue-guide | req+arch+contract+imp | awaiting-human:pre-merge-escalation-gate | 4/4 | 2026-10-19 | ⚠未闭环 |
 | 261018-sd-log-persist | arch+imp | closed | 4/2 | 2026-10-18 | — |
 | 261017-prompt-v11-schedule-recall | arch+imp | closed | 4/2 | 2026-10-17 | — |
 | 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 4/4 | 2026-10-16 | ⚠未闭环 |

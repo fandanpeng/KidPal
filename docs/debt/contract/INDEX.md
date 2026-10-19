@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/contract/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 7（待拍板 0 / 待触发 7 / 已接受风险 0）；已结 5（归档索引见下）。
+**摘要**：未结 8（待拍板 0 / 待触发 8 / 已接受风险 0）；已结 5（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（7）
+## 待触发（8）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -24,6 +24,7 @@ _（无）_
 | [CDQ-260924-m4-k1-storylist-semantics](CDQ-260924-m4-k1-storylist-semantics.md) | SHOULD | story_list total 语义收窄为现存篇数 + items ≤16 窗口 | 实现面：front 推送 producer（三时点 + 窗口截断）归 K1；板端窗口消费/计数恒信 total 归 K2（C1/C2） |
 | [CDQ-260924-m4-k1-storytext-seq](CDQ-260924-m4-k1-storytext-seq.md) | SHOULD | story_text 增可选 data.seq（入册流水号） | seq 账本实现归 K1（M4K1-A6）；板端盖章 N 消费 + 易失 stamp_index 退役归 K2（M4K2-A5） |
 | [CDQ-261017-p3-story-body-sd-cache](CDQ-261017-p3-story-body-sd-cache.md) | SHOULD | 新增 kidpal_story_fetch（契约面首个端发起请求-应答环） | ADR-011 已随批落（architecture+契约面同批）；实现面承载包（五档分档） |
+| [CDQ-261019-p3-record-dialogue-guide](CDQ-261019-p3-record-dialogue-guide.md) | SHOULD | 新增 start_organizing 控制动作 + 记录语境对话态措辞对账（interface-contract.md 三触点） | 实现面承载包（五档分档，待 261016-p3-story-body-sd-cache 合并）；ADR-013 已随批落（architecture+契约面同批） |
 
 ## 已接受风险（0）
 
