@@ -3,9 +3,9 @@ id: ARQ-261018-enforce-scope-worktree-anchor-offbyone
 title: enforce-scope 钩子跨树锚定 off-by-one——worktree 的 .git 指向 gitdir 目录（三级深），代码按 gitdir 文件假定用 dirname^3，多剥一层致 commonDir 落到仓根、samePath 恒不等、静默降级 legacy → worktree 内子 agent 写同仓合法路径被误拦
 domain: gov
 status: deferred
-severity: SHOULD
+severity: MAJOR
 owner: architect（G3 强制执行层）
-trigger: 下一次动 `.claude/hooks/**` 的治理批；或再有子 agent 在 worktree 里被误拦时
+trigger: 已二次命中（2026-10-19 landing-verifier 误拦，见尾部追注）——下一治理批必带处理；或下一次动 `.claude/hooks/**` 的治理批
 opened: 2026-10-18
 closed: ""
 closedBy: ""
@@ -25,3 +25,5 @@ source: 2026-10-18 architect 子会话实测（写 docs/architecture.md 被拦�
 **建议改动（一行级 + 夹具修正）**：worktree 分支把 `dirname^3` 改 `dirname^2`（gitdir 目录 → `<commonDir>/worktrees` → `<commonDir>`）；或两分支统一到同一层级再 samePath。同时修 self-check 夹具，使其 `.git` 指向 gitdir **目录**以复现真实拓扑（否则修完仍无齿）。属 G3 文件，须 human-approved 治理批。
 
 **风险**：riskTier: low——一行边界修正 + 夹具补齿；改错只会让跨树锚定继续降级 legacy，不引入新的越权写面。
+
+**追注（2026-10-19，trigger 第二条件命中，主线程升格）**：二次发生——261019-gov-review-local-memory-extraction 批 landing-verifier 在 gov worktree（`C:/AI/KidPal-gov`）写 `delivery/review/261019-gov-review-local-memory-extraction/landing-verdict.md` 被 enforce-scope 连续两次误拦（路径被解析为 `../KidPal-gov/...` 判越界，而该路径在 hook 自述白名单 `delivery/review/*gov-review-*/**` 内）；误拦形态与条目所述 off-by-one 完全一致（verdict 文件「核验过程事件」段逐字记录在案）。本次核验者**未绕行**（不用 Bash 重定向代写），改由主线程机械转写落盘——闸制品（landing-verdict）落盘被卡住的事实本身即「护栏影响治理链」的实证，故 severity SHOULD → MAJOR、trigger 翻「已二次命中，下一治理批必带」。对照条目既有影响面段所述首次处置（Python 直写绕行 = 绕过钩子），本次处置链（如实报告 + 机械转写 + 升格）是合规形态，可作后续同类事件的处置范式。

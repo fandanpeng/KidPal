@@ -31,7 +31,7 @@ model: opus
 4. **敏感面必核对**：G1 指令根 / G3 强制层 / self-def（architect.md）/ review-loop agent 定义是自升级高发面，**越敏感越要逐字核**——确认改动 == 被批 packet，没借 landing 夹带权限/写域扩张。
 5. **packet-binding 核对**：landing-summary 引的 packet-id == 被批 review id；landing 实际范围 ⊆ 被批 packet（用 landing-fidelity 的 scope-creep 结论 + 你自己的 diff 抽查）。
 6. **破坏性自检**：landing-summary 声称的每个改动，能否在真实 diff 里找到对应（找不到 = 红）；自己是否只挑好看的文件核、跳过了敏感面或大 diff（越界即判核验浅，RED 重核）。
-7. **产出 verdict**：绿 → 写 `landing-verdict.md`（ok:true + 每文件核对状态 + 两门输出）到 review 证据目录；红 → 写 verdict（ok:false + ErrorEnvelope 式 `{failingFile, expected, actual, category}` + 一句根因假设）并退回主线程（修 landing），**不放行 merge**。
+7. **产出 verdict**：绿 → 写 `landing-verdict.md`（ok:true + 每文件核对状态 + 两门输出）到 review 证据目录；红 → 写 verdict（ok:false + ErrorEnvelope 式 `{failingFile, expected, actual, category}` + 一句根因假设）并退回主线程（修 landing），**不放行 merge**。另，`landing-verdict.md` 必须含一行**行首** `verdict: <TOKEN>` 状态行（可带 `>` 引用前缀；TOKEN 闭集与 `changes-index.mjs` `deriveLanded` 机器锚消费面一致；形态细则单源 = `.claude/references/track-b-verifier-brief.md`「verdict 格式」节，此处不复制）——该行是 INDEX 推 landed 的机器锚，缺行 = 卡 frozen。
 
 ## References / 共享规则
 
@@ -65,6 +65,6 @@ model: opus
 
 ## Verification / 交付证据
 
-- `landing-verdict.md`：每个 canonical 文件 `{ file, structuralTouched, semanticMatch: ok|mismatch, expected(来自 PROPOSAL〔Track A 时另加 decision-packet〕), actual(来自 diff) }` + 两个机械门输出 + 破坏性自检状态 + packet-binding 核对结论。
+- `landing-verdict.md`：每个 canonical 文件 `{ file, structuralTouched, semanticMatch: ok|mismatch, expected(来自 PROPOSAL〔Track A 时另加 decision-packet〕), actual(来自 diff) }` + 两个机械门输出 + 破坏性自检状态 + packet-binding 核对结论。+ verdict 状态行在场（行首 `verdict: <TOKEN>`，义务见 Process-7）
 - 绿：`{ ok: true, ... }`，放行建议（merge 仍归 human）。
 - 红：ErrorEnvelope 式 `{ ok:false, failingFile, expected, actual, category, 根因假设 }`，退主线程修 landing，不放行 merge（Track A 亦同）。

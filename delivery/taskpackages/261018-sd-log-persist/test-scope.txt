@@ -1,0 +1,74 @@
+# test-scope · 261018-sd-log-persist（final 相位影响面圈定清单）
+# 生成者：integrator（Step 4）· 2026-10-18 · round 2 / invocationId 0f3e6b1a-7c52-4a9d-9f61-2b8e4d7c5a10
+#
+# §1 圈定方法（正常路径，非降级）
+#   detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，merge_base=21360279，
+#   inbound depth=2）：changed_files 31（含 delivery 簿记；实现面 9 件）/ seed_symbols 214 /
+#   impacted_total 24。图索引可用 -> 正常圈定。
+#   实现面改动面：firmware/main/diagnostics/{sd_log.h,sd_log.c,sd_log_fs.cc}（新）、
+#   firmware/main/main.cc（app_main 最早期钩子）、
+#   firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc（attach + max_files 5→8）、
+#   firmware/main/CMakeLists.txt 与 firmware/main/test/host_app/main/CMakeLists.txt（显式登记）、
+#   firmware/main/test/sd_log.acceptance.c（新冻结验收）、
+#   firmware/main/test/sd_card_mount.acceptance.c（跨包冻结件重锚，human-decision
+#   88a08bbd-c542-41e5-bdc4-fb2739dc24ef 窄口径授权）。
+#   blast radius 映射（inbound）：main.cc -> application/audio/mcp_server/protocols 等运行时
+#   调用链（均为设备运行时面，host 不可达）；board .cc -> sd_card_mount 源锚齿 + 其余 13 件
+#   扫描 main.cc / board .cc 的冻结源锚齿（见 §3 共享 seam）。host 运行面由「host_app 全量
+#   套件 = 单一 ELF 全量注册执行」承载，任一源锚齿的期望字面都处本轮影响面。
+#
+# §2 范围构成
+#   ① acceptanceTestsFile（本包冻结验收）：firmware/main/test/sd_log.acceptance.c
+#   ② 跨包重锚冻结件（强制覆盖）：firmware/main/test/sd_card_mount.acceptance.c
+#   ③ 共享 seam（扫描本包改动源 main.cc / board .cc 的既有冻结源锚齿）：
+#      boot_auto_connect / char_stroke / char_window_overlay / key_layer_dispatch /
+#      p1_home_battery / record_session_repair / reminder_overlay_unify / schedule_grid /
+#      story_cache / story_page_v2 / time_sync / voice_round_ui（+ ① ② 两件，共 14 件命中）
+#   ④ 安全余量（host_app 既有全量套件 = 同 ELF 同源编译，任一冻结件的注册序/链接面
+#      （WHOLE_ARCHIVE、smoke 末位）都可能受新登记影响 -> 全量保留，不缩到只剩本包档）：
+#      HOST_ACCEPTANCE_SRCS 登记的其余现役冻结验收 + 3 件 builder 单测
+#   ⑤ detect_changes 影响集中的 server 面测试：test_m4k3_record_session_live /
+#      test_schedule_grid_restore（非 archive；静态对照不读本包改动源，但图判为受影响，
+#      按向严纳入真跑）。archive/ 下 3 件 = 已退役面（闸枚举 SKIP_DIRS 排除），不纳入。
+#   ⑥ 设备编译面：firmware-build 闸（timing=scoped，final 相位必跑、不消费 scope-file）
+#      真编译覆盖，不在本清单列内——本清单只承载 timing=full 的 unit/acceptance 求交范围。
+#
+# §3 未纳入及理由
+#   - server/acceptance/archive/test_g_relay_fix.acceptance.py
+#     server/acceptance/archive/test_schedule_reminder.acceptance.py
+#     server/acceptance/archive/test_voice_roundtrip_b.acceptance.py
+#     —— archive = 已退役面（acceptance/unit 闸 SKIP_DIRS 硬排除），非现役测试面。
+#   - 其余 server/tests/*.py 与 server/acceptance/*.py：不读本包改动源（本包 server/** 零 diff；
+#     图影响集内非 archive 两件已纳入）。
+#   - 设备运行时调用链（application/audio/mcp_server/protocols）：host 不可达，由 firmware-build
+#     真编译 + SLP-A6 真机轮（human 持板）承载，不冒充 host 测试。
+#
+# 以下为清单正文（一行一个仓根相对路径，# 注释）。
+
+firmware/main/test/sd_log.acceptance.c
+firmware/main/test/sd_card_mount.acceptance.c
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/char_stroke.acceptance.c
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/char_window.test.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/p1_auxbar_style.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c
+firmware/main/test/story_cache.acceptance.c
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/story_page_v2.test.c
+firmware/main/test/time_sync.acceptance.c
+firmware/main/test/voice_rightcol_label.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
