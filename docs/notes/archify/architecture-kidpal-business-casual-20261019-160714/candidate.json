@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "小伴（KidPal）· 它是怎么帮我管小孩的",
+    "title": "小伴（KidPal）· 它是怎么帮到我们家的",
     "output": "notes/archify/architecture-kidpal-business-casual-20261019-160714/kidpal-casual.html",
     "locale": "zh-CN",
     "quality_profile": "showcase"

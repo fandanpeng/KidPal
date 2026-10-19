@@ -108,7 +108,7 @@
       "id": "human-push",
       "type": "external",
       "label": "Human ③",
-      "sublabel": "提 PR 仍 human",
+      "sublabel": "批 PR 仍 human",
       "icon": "person",
       "pos": [
         1614,

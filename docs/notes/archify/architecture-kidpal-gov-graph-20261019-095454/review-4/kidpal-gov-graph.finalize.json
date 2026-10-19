@@ -1,0 +1,1042 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-19T13:48:48.858Z",
+  "specification": {
+    "path": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+    "sha256": "dd37bdbf437655c635f1bc840bd0311dc6a91f8463aedd8f309c825a0eb5cb46",
+    "bytes": 15458
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+    "sha256": "3cb6ad5ab3f68bfb47dcf82e114c6d7e28ec6b63adc72dda139b87f6528e12c2",
+    "bytes": 828130
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\AI\\KidPal-gov\\.claude\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\AI\\KidPal-gov",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "dd37bdbf437655c635f1bc840bd0311dc6a91f8463aedd8f309c825a0eb5cb46",
+          "bytes": 15458
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1832,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\AI\\KidPal-gov\\.claude\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\AI\\KidPal-gov",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "044782ef-4936-4862-a485-0a09ad9b8e60",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+        "output": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "specification": {
+          "sha256": "dd37bdbf437655c635f1bc840bd0311dc6a91f8463aedd8f309c825a0eb5cb46",
+          "bytes": 15458
+        },
+        "artifact": {
+          "sha256": "3cb6ad5ab3f68bfb47dcf82e114c6d7e28ec6b63adc72dda139b87f6528e12c2",
+          "bytes": 828130
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 482,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\AI\\KidPal-gov\\.claude\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "artifact": {
+          "sha256": "3cb6ad5ab3f68bfb47dcf82e114c6d7e28ec6b63adc72dda139b87f6528e12c2",
+          "bytes": 828130
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 6,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.0257414661443764,
+            "maxBends": 3,
+            "routesOverSuggestedBends": 1,
+            "maxStretch": 1.584,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 23,
+            "minInteriorSegmentPx": 23,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "id": "debt-to-intake",
+                  "from": "debt",
+                  "to": "intake",
+                  "label": "ARQ 作立项材料回流",
+                  "collectionIndex": 29,
+                  "artifactIndex": 30
+                },
+                "bends": 3,
+                "stretch": 1.063
+              },
+              {
+                "relationship": {
+                  "id": "gate-to-human",
+                  "from": "merge-gate",
+                  "to": "human-esc",
+                  "label": "闸拦升级",
+                  "collectionIndex": 31,
+                  "artifactIndex": 32
+                },
+                "bends": 2,
+                "stretch": 1.584
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 36,
+            "emptyTopRatio": 0.035,
+            "occupiedTop": 36,
+            "viewBoxTop": 0,
+            "canvasHeight": 1022,
+            "typicalNodeHeight": 64,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "recognized-declared-wide",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 1346,
+            "actualBudgetPx": 1346,
+            "actualReaderWidth": 1376,
+            "desiredReaderWidth": 1705.3125,
+            "viewportCap": 1376,
+            "limit": "viewport-cap",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": "idea-to-intake",
+              "from": "idea",
+              "to": "intake"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 6.0257414661443764,
+            "semanticTextCount": 79
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "044782ef-4936-4862-a485-0a09ad9b8e60"
+      }
+    },
+    "browser-check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1720,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\AI\\KidPal-gov\\.claude\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+        "--json",
+        "--require-provenance",
+        "--out-dir",
+        "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\review-4"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "pass",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "044782ef-4936-4862-a485-0a09ad9b8e60",
+        "artifact": {
+          "path": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+          "sha256": "3cb6ad5ab3f68bfb47dcf82e114c6d7e28ec6b63adc72dda139b87f6528e12c2",
+          "bytes": 828130
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [],
+        "containment": {
+          "status": "pass",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 913,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 770,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.0257414661443764,
+              "minimumProjectedNonEdgeTextPx": 6.778959149412423,
+              "minimumProjectedEdgeTextPx": 6.0257414661443764,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1070,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 861,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.742025741466144,
+              "minimumProjectedNonEdgeTextPx": 7.584778959149412,
+              "minimumProjectedEdgeTextPx": 6.742025741466144,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1167,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1706,
+              "diagramWidth": 1676,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 959,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 7.503077783995523,
+              "minimumProjectedNonEdgeTextPx": 8.440962506994964,
+              "minimumProjectedEdgeTextPx": 7.503077783995523,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1069,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "themeStates": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "light",
+              "resolvedTheme": "light",
+              "ok": true
+            },
+            {
+              "width": 1440,
+              "height": 900,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "requestedTheme": "dark",
+              "resolvedTheme": "dark",
+              "ok": true
+            }
+          ]
+        },
+        "readability": {
+          "status": "pass",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 913,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 770,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.0257414661443764,
+              "minimumProjectedNonEdgeTextPx": 6.778959149412423,
+              "minimumProjectedEdgeTextPx": 6.0257414661443764,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1070,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 861,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.742025741466144,
+              "minimumProjectedNonEdgeTextPx": 7.584778959149412,
+              "minimumProjectedEdgeTextPx": 6.742025741466144,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1167,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1706,
+              "diagramWidth": 1676,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 959,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 7.503077783995523,
+              "minimumProjectedNonEdgeTextPx": 8.440962506994964,
+              "minimumProjectedEdgeTextPx": 7.503077783995523,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1069,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "viewerChrome": {
+          "status": "pass",
+          "viewports": [
+            {
+              "width": 1440,
+              "height": 900,
+              "theme": "light",
+              "innerWidth": 1440,
+              "innerHeight": 900,
+              "scrollWidth": 1440,
+              "scrollHeight": 913,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1376,
+              "diagramWidth": 1346,
+              "pageComposition": {
+                "bodyPaddingPx": 12,
+                "headerPx": 52,
+                "diagramChromePx": 78,
+                "svgPx": 770,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.0257414661443764,
+              "minimumProjectedNonEdgeTextPx": 6.778959149412423,
+              "minimumProjectedEdgeTextPx": 6.0257414661443764,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1600,
+              "height": 1000,
+              "theme": "light",
+              "innerWidth": 1600,
+              "innerHeight": 1000,
+              "scrollWidth": 1600,
+              "scrollHeight": 1070,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1536,
+              "diagramWidth": 1506,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 861,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 6.742025741466144,
+              "minimumProjectedNonEdgeTextPx": 7.584778959149412,
+              "minimumProjectedEdgeTextPx": 6.742025741466144,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 1920,
+              "height": 1080,
+              "theme": "light",
+              "innerWidth": 1920,
+              "innerHeight": 1080,
+              "scrollWidth": 1920,
+              "scrollHeight": 1167,
+              "overflowX": false,
+              "overflowY": true,
+              "verticalScrollAccepted": true,
+              "overflowDisposition": "readable-vertical-scroll",
+              "readerLayout": "adaptive",
+              "readerOverflow": "authored",
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1706,
+              "diagramWidth": 1676,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 60,
+                "diagramChromePx": 84,
+                "svgPx": 959,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 7.503077783995523,
+              "minimumProjectedNonEdgeTextPx": 8.440962506994964,
+              "minimumProjectedEdgeTextPx": 7.503077783995523,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 54,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            },
+            {
+              "width": 2048,
+              "height": 1320,
+              "theme": "light",
+              "innerWidth": 2048,
+              "innerHeight": 1320,
+              "scrollWidth": 2048,
+              "scrollHeight": 1320,
+              "overflowX": false,
+              "overflowY": false,
+              "verticalScrollAccepted": false,
+              "overflowDisposition": "contained",
+              "readerLayout": "adaptive",
+              "readerOverflow": null,
+              "readerFit": "intrinsic-height",
+              "ok": true,
+              "readerWidth": 1920,
+              "diagramWidth": 1870,
+              "pageComposition": {
+                "bodyPaddingPx": 64,
+                "headerPx": 68,
+                "diagramChromePx": 94,
+                "svgPx": 1069,
+                "cardsPx": 0,
+                "viewBoxHeight": 1022
+              },
+              "viewBoxWidth": 1787,
+              "minimumProjectedNodeTextPx": 8,
+              "minimumProjectedNonEdgeTextPx": 9,
+              "minimumProjectedEdgeTextPx": 8,
+              "minimumProjectedNodeText": "原话",
+              "minimumProjectedNodeTextDetail": "edge",
+              "minimumProjectedNodeTextOwner": {
+                "kind": "edge",
+                "id": "idea-to-intake",
+                "from": "idea",
+                "to": "intake"
+              },
+              "minimumRequiredNodeTextPx": 6,
+              "readabilityOk": true,
+              "hasLegend": true,
+              "hasNavigationDock": true,
+              "legendDockIntersectionArea": 0,
+              "dockStageIntersectionArea": 0,
+              "dockStageGap": 10,
+              "requiredDockStageGap": 10,
+              "viewerChromeStageOk": true,
+              "viewerChromeReserve": 44,
+              "viewerChromeActive": true,
+              "viewerChromeOk": true,
+              "resolvedTheme": "light"
+            }
+          ]
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "directory": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\review-4",
+          "receipt": "kidpal-gov-graph.browser-check.json",
+          "files": []
+        }
+      }
+    }
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\review-4\\kidpal-gov-graph.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\review-4\\kidpal-gov-graph.finalize-summary.json",
+    "browserCheckReceipt": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\review-4\\kidpal-gov-graph.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-10-19T13:48:53.899Z",
+  "durationMs": 5041,
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-19T01:56:58.114Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.0.1 → 3.2.0. A previous check at 2026-10-19T01:56:58.114Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  }
+}

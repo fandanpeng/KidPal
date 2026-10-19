@@ -1,7 +1,7 @@
 # KidPal 小伴 · 一个管理者用 AI Agent 团队造出来的产品
 
 > 一个做了 15 年软件交付管理的人，把带工程师团队的方法论原样搬去带一支 AI Agent 团队。
-> 这个仓库装着两层东西：**方法**——一套 AI 原生的多智能体研发治理框架（Graph Engineering）；**证据**——用它从 0 到 1 做出来的真实产品（KidPal，一个帮我管小孩的 AI 终端）。
+> 这个仓库装着两层东西：**方法**——一套 AI 原生的多智能体研发治理框架（Graph Engineering）；**证据**——用它从 0 到 1 做出来的真实产品（KidPal，一个小学生的 AI 小伴终端）。
 
 **English abstract**: This repository contains two things. (1) *Graph Engineering* — an AI-native governance framework that makes software governance an explicit graph: a full agile team mapped onto specialized LLM agents as nodes, four closed change loops (requirements / architecture+contracts / governance / implementation) as edges, each running draft → independent review → freeze → landing → independent verification → retrospective, with acceptance tests frozen before work begins, a single-source-of-truth interface contract, adversarial red-team/blue-team review for structural changes, machine-enforced permission boundaries, and risk-graded escalation to a human. (2) *KidPal* — a real product built entirely by that agent team under this governance: an ESP32-S3 companion terminal for an elementary-school kid, backed by a cloud "brain" that parents talk to through QQ. Every change in this repo keeps its full audit trail (proposal, landing summary, independent verdict, retrospective) — see the evidence section below. Documentation is primarily in Chinese.
 
@@ -11,11 +11,11 @@
 
 **产品这层**：小孩对终端说话，云端大脑负责思考和记忆，爸爸妈妈在 QQ 上吩咐大脑——不用装任何 App。
 
-![KidPal 业务全景](docs/notes/archify/architecture-kidpal-business-casual-20261019-160714/review-3/visual-check/kidpal-casual.visual-check.2048x1320.light.png)
+![KidPal 业务全景](docs/notes/archify/architecture-kidpal-business-casual-20261019-160714/review-4/visual-check/kidpal-casual.visual-check.2048x1320.light.png)
 
 **方法这层**：每个变更从 idea 到合并进 main，要走完一条有门禁、有分工、有复盘的流水线——人在里面只做三个动作：立项、例外拍板、批 PR。
 
-![Graph Engineering 治理拓扑](docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/review-3/visual-check/kidpal-gov-graph.visual-check.2048x1320.light.png)
+![Graph Engineering 治理拓扑](docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/review-4/visual-check/kidpal-gov-graph.visual-check.2048x1320.light.png)
 
 ---
 
