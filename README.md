@@ -15,7 +15,7 @@
 
 **方法这层**：每个变更从 idea 到合并进 main，要走完一条有门禁、有分工、有复盘的流水线——人在里面只做三个动作：立项、例外拍板、批 PR。
 
-![Graph Engineering 治理拓扑](docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/visual-check/kidpal-gov-graph.visual-check.2048x1320.light.png)
+![Graph Engineering 治理拓扑](docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/review-3/visual-check/kidpal-gov-graph.visual-check.2048x1320.light.png)
 
 ---
 

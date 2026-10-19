@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "ed471f58-3983-41bf-bfcc-5c4c8e6930d0",
+  "receiptId": "504a6f71-6613-4d38-ba52-27187daba03e",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
-  "output": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+  "input": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+  "output": "C:\\AI\\KidPal-gov\\docs\\notes\\archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
   "specification": {
-    "sha256": "0293791db9ae716cb9f6011864f1395865ed7a658bf8a930797463eb240563be",
-    "bytes": 16221
+    "sha256": "a9733df8549efaf942f56204eed83b2274cefe94220d038aaf748f18219436b1",
+    "bytes": 15458
   },
   "artifact": {
-    "sha256": "2bd039ffd2b4fc21ff6e45b8fbfecbfd49ff3fb7ad5a5bee371c3d3bd5b30e52",
-    "bytes": 828150
+    "sha256": "2e9e8f6dfdb58d28238de160fc00a7086a3360f2a08298664e1fcb1461789d60",
+    "bytes": 828130
   }
 }
