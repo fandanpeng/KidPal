@@ -1,6 +1,6 @@
 # PROPOSAL · 261019-gov-review-local-memory-extraction
 
-> **状态：FROZEN · 2026-10-19 · 凭「human 立项 ack（含第五阀显式批准）+ architect-reviewer R1 GREEN（§7:215）」冻结，packet-bound 落地以 §2 改法集（T1–T4）+ §5 验证集为准**
+> **状态：FROZEN v1.0 · 2026-10-19 · 凭「human 立项 ack（含第五阀显式批准）+ architect-reviewer R1 GREEN（§7:215）」冻结，packet-bound 落地以 §2 改法集（T1–T4）+ §5 验证集为准（v 号为前置升级闸 :98 行首正则 `\*\*状态：FROZEN v\d+\.\d+` 的机器锚形态，闸拦后补正——packet 内容零改动）**
 > **承载 ARQ**：`ARQ-261019-local-memory-extraction-gaps`（唯一根条目，本批整体消费：缺口①②③ = T1/T2/T3；条目 5「取舍未决」= T4，human 前端已裁①搭车入批；条目 1/6 处置见 §6 留根清单，无留根指针）。
 > **review 轨**：Track B 主路径（机器面〔agents / skills / templates / G1〕恒 Track B，**非**瘦制品轻路径——制品四件 + retro 照常；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节、`AGENTS.md`「治理路由」节、`.claude/references/gov-change.md`）。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（T1–T4）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
