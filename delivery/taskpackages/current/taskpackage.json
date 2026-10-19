@@ -1,302 +1,242 @@
 {
-  "changeId": "261018-sd-log-usb-read",
-  "rigor": "lite",
-  "sourceType": "human-ad-hoc",
+  "changeId": "261019-p3-record-dialogue-guide",
+  "rigor": "full",
+  "sourceType": "proposal",
   "origin": {
-    "type": "human-ad-hoc",
-    "upstreamType": "human-ad-hoc",
-    "upstreamRef": "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
-    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-18 比例化 review + human 触点①确认：②单包 Lite、lite 快路径不适用按 full 环境备）；plan 即冻结技术输入、只读消费。launch-card.md 为本包启动卡（会话标识 bgrpw9j1f）。非拆包产物、无 workstream/mergeOrder。",
-    "workstream": ""
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "upstreamFrozen": "spine anchors 三面已回填且批已合本地 main（delivery/intake/261019-p3-record-dialogue-guide.md，main = e65a8731）：req = requirements §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen——S-F2.2 全篇重写 + NFR-PERF-3 + WF-F2-02 增补注记四件）；arch = 261019-arch-review-p3-record-dialogue-guide 批 landing（FROZEN v1.2 + R2 GREEN + landing-verdict PASS 27 项对账——决策 25 机制面改写 + §5.1.2 计时器族 + §5.2④ 链路 + ADR-013 supersedes 决策 25 机制面 + 261001 Package B 引擎抑制吸收定形）；contract = CDQ-261019-p3-record-dialogue-guide LANDED（docs/debt/contract/ 条目：§1.4 新增 start_organizing 控制动作 + start_recording/session_ctx 措辞对账，wire 其余零新增）。reviewed plan = delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md（triage 2026-10-19 architect 分流 ②单包 Full / riskTier=high / rigor=full，human 触点①确认），只读消费。硬前置 261016-p3-story-body-sd-cache 已合并（b2e2ceb3）。"
   },
-  "subsystem": "firmware/main/diagnostics（log_cmd 纯逻辑 host 同源 seam + log_cmd_port 芯片面 /dev/secondary 读任务）+ firmware/main/main.cc 接线（钩子之后启动命令任务）+ firmware/main/diagnostics/sd_log.h 与 sd_log_fs.cc 只读访问器增量 + firmware/main/CMakeLists.txt 与 firmware/main/test/host_app/main/CMakeLists.txt 两处显式登记 + firmware/main/test（host 验收件）+ tools/diag（host 取回脚本）；不触 server/**",
-  "planRef": "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
-  "story": "261018-sd-log-usb-read · 诊断日志按需 USB 串口取回（只读命令，不自动 dump、不上云）——行为权威 = reviewed plan（architect /triage-change 2026-10-18 比例化 review + human 触点①确认 2026-10-18）。human 原话动机：不必自动输出，需要时经 Claude Code 调脚本按需取回；防自动输出干扰串口监控与烧录。设备插 USB（COM5 原生 USB-Serial/JTAG）后，host 脚本按需取回 /sdcard/logs/KPLOGnnn.TXT：列目录、看最新文件尾部、读指定文件全文；不自动输出、不上云、不改正常日志流；拔卡读仍可用。",
+  "subsystem": "server/gateway (story.py 卡壳词表/轮次纯决策/整理输入装配 + front_app.py sweep 重写/引导与整理 LLM 回合/start_organizing 下发/自推通路分叉/Package B 等价信号注入 + display_schema.py 分表 additive + 新增两枚 front 侧版本化 prompt 制品 + server/deploy/engine-patch/connection.py 记录语境标志认领/chat 入口第三守卫/stop-truncation 豁免重绑) + firmware/main (application.cc 聆听形态切换与 kvr 场景守卫 + display/view_router.h/.c VRT_CTRL_START_ORGANIZING=3 additive + mcp_server.cc 控制 case 3 消费 + display/story_page.c 帧 A 修订/引导播报中子态/整理过渡态渲染与键位分叉/思考态接线)",
+  "story": "S-F2.2 · 对话式引导记录（双入口）· 定稿版本号 v1.65（docs/requirements.md §9 v1.65 行 2026-10-19）：AC1 双入口同一记录语境对话态 + AI 默认闭嘴 + 逐句回显；AC2 卡壳轻引导（停顿超阈值约 8 秒待定或明示卡住；只基于已讲内容、不提供情节选项、不代编）+ 引导播报不跳页 + 引导播报中 KEY 打断/BOOT 无操作 + 引导语/提问/回答不进素材；AC3 盖章照旧；AC4 三式收尾 + 忠实整理（只用孩子原话：去口水/断句/分段/标题，不换表达不补情节）+ 整理中 KEY/BOOT 均不响应 + 新篇入列表 + BOOT/「讲错啦」取消丢弃不设恢复；AC5 自动收尾（连续 2 轮引导无回应，含收声抑制等被抑制轮——收声不停摆）。NFR-PERF-3 卡壳阈值待定 + 断言五条边界。S-F1.4 AC6 录音期提醒排队延后不回归。补充规则翻案留痕（废除 2026-09-14 一刀切）。",
   "sourceRefs": [
-    "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
-    "delivery/taskpackages/261018-sd-log-usb-read/launch-card.md",
-    "delivery/taskpackages/261018-sd-log-persist/pod-retro.md"
+    "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.design.md",
+    "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+    "S-F2.2",
+    "S-F2.2-AC1",
+    "S-F2.2-AC2",
+    "S-F2.2-AC3",
+    "S-F2.2-AC4",
+    "S-F2.2-AC5",
+    "NFR-PERF-3",
+    "S-F1.4-AC6"
   ],
-  "acceptance": [
-    "LUR-A1: 命令解析纯逻辑（host 同源）——kplog list / kplog tail / kplog tail N / kplog cat N 合法形态解析成功；tail 默认 N=200、上限 1000；cat idx 闭集 0..31。设计态红：log_cmd 纯逻辑 seam 未实现",
-    "LUR-A2: 非法输入拒绝——idx ≥32 / 负数 / 非数字 / 路径字符（../、/、.）/ 多余 token / 未知子命令 / 超长行 → 返回 bad-index 或 bad-cmd 错误码，且不产生任何文件访问调用（拒绝即短路，文件访问层零触达）。设计态红：解析 seam 未实现",
-    "LUR-A3: 行装配纯逻辑——跨读块边界拼行；CRLF/LF 两种行尾；超长行丢弃；非 kplog 前缀输入静默不输出（不自动 dump 的行为齿：无命令零输出）。设计态红：行装配 seam 未实现",
-    "LUR-A4: 帧格式化纯逻辑——BEGIN/END 帧字面精确（=== KPLOG BEGIN <cmd> === / === KPLOG END ===）；list 行格式（文件名 + 字节数 + 当前写入文件尾标 * + KPLOG TOTAL 汇总行）；错误帧格式（KPLOG ERROR no-card|no-file|bad-cmd|bad-index）。设计态红：帧格式化 seam 未实现",
-    "LUR-A5: 尾部窗口选取纯逻辑——样本字节流取末 N 行边界正确：N=1 / N 大于总行数 / CRLF / 无结尾换行。设计态红：尾部选取 seam 未实现",
-    "LUR-A6: 接线结构齿（源锚，仿 sd_log.acceptance.c 形态）——① 文件名只经 kidpal_sd_log_file_name 或受校验整数构造（禁用户串直进路径拼接）；② 端口只 open /dev/secondary（不出现其它设备路径字面）；③ 启动函数 KidpalLogCmdStart 零打印；④ 读任务函数体内零 ESP_LOG* 调用（防 vprintf 钩子自污染与递归），响应只经 stdout（fwrite/printf）。设计态红：接线任一缺失或结构违例",
-    {
-      "id": "LUR-A7",
-      "kind": "structural",
-      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；SLP-A6 同款口径，不计入 runner 通过面）：human 持板执行，本 Pod 到真机门前停等（status=awaiting-human:real-device）、不自行烧录。① 单命令 smoke 先行：kplog list 验证 /dev/secondary 可读（失败按 plan 降级 A=HAL 直读 / 降级 B=console primary 须回 triage 升档）；② 烧录后 COM5 除正常日志外静默无自动输出，不插线正常启动；③ list → 文件名+大小+总量、当前文件有 *；④ tail 50 → 末 50 行含当轮 STT/LLM 原文片段、帧完整；⑤ cat 0 → 全文逐字节正确、中文 UTF-8 不乱码；⑥ 产生新日志后 list/tail 大小增长且 tail 含新行（读不干扰写）；⑦ 非法命令（cat 99 / tail abc / 乱敲前缀）→ 错误帧、不崩、无多余输出；⑧ 拔卡 → no-card 错误帧、设备不崩、语音主链路不受影响、插回重启恢复；⑨ 关脚本后 esptool 正常烧录、串口监控正常（与既有链路零回归）"
-    }
-  ],
-  "acceptanceTestsFile": [
-    "firmware/main/test/log_cmd.acceptance.c"
-  ],
-  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-19（本树）：① 本冻结件设计态红（独立冒烟通道 gcc -std=c11 -Wall -Wextra 直编冻结件 + red-baseline runner.c——登记行在 host_app CMakeLists（builder 写权面），TaskPackage redBaselineCommand 全量 runner 编不进本件，通道关系已写进冻结件头 Run protocol）：COMPILE_EXIT=0 零 warning、7 Tests 7 Failures 全设计态红（TEST 1 LUR-A1 parse seam 未实现 weak 哨兵 -99 / TEST 2 LUR-A2 同 / TEST 3 LUR-A3 asm_init NULL / TEST 4 LUR-A4 frame_begin 字面错 / TEST 5 LUR-A5 tail_window 哨兵 / TEST 6 LUR-A6 log_cmd_port.cc 未落地 / TEST 7 LUR-A6 app_main 未调用 KidpalLogCmdStart）。② 官方 redBaselineCommand 实跑（既有套件正交性）：espidf_wsl.sh build 绿 + host_infra_test.elf → 203 Tests 3 Failures（exit 3），3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4，persist 红基线同一批），persist 包 sd_log.acceptance.c 全齿保持绿（含 TEST 6 main.cc 安装序锚、TEST 8 登记哨），本包零新增红。③ 双向可满足性：/tmp 一次性参考实现 + 合成树 KIDPAL_REPO_ROOT 注入（不写工作树）→ 7 Tests 0 Failures 零 warning；定向变异 9 处（M1..M9）单变异恰好只命中目标断言、逐字红行取证（见 mutationEvidence），还原后复跑 7/0 绿。",
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
     "live-manual"
   ],
-  "exitCriteria": [
-    "LUR-X1: 全部 LUR-Ax host 齿转绿（log_cmd.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红（含 persist 包 sd_log.acceptance.c 全齿：TEST 6 main.cc 结构锚在 KidpalLogCmdStart 加位后保持绿）",
-    "LUR-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，lite 快路径不适用；firmware/main/CMakeLists.txt 显式 SOURCES 登记生效）",
-    "LUR-X3: 边界零改动——git diff 对 firmware/partitions*、firmware/sdkconfig*、决策 24 白名单（docs/architecture.md §10）、§6.6 canonical 文本全空；persist 写路径行为零改动（sd_log.h/sd_log_fs.cc 只增只读访问器，不改既有行为与冻结验收）",
-    "LUR-X4: 真机轮由 human 持板执行并留痕（LUR-A7 九项逐条判据，单命令 smoke 先行），本 Pod 到门停等、不自行烧录",
-    "LUR-X5: docs-sync 完成或显式裁定不需要——本包零新增文档改动（决策 24 白名单与 §6.6 已随 persist 架构面落地；取回命令为诊断工具、不入 canonical），docs-delta 声明口径即可",
-    "LUR-X6: host 取回脚本 tools/diag/kidpal_logs.py 落地且自描述（--port/--cmd/--n/--index/--out/--timeout；DTR/RTS 立即拉低防复位伪影），真机轮第 1 步单命令 smoke 可直接调用"
-  ],
-  "iterationBudget": 2,
+  "exitCriteria": [],
+  "iterationBudget": 3,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "medium",
+  "riskTier": "high",
   "gateProfile": [
-    "docs-sync",
+    "contract-drift",
     "test-quality",
-    "device-round"
+    "evidence-integrity",
+    "device-round",
+    "security",
+    "docs-sync"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md §1.4 start_organizing（消费）",
+    "docs/contracts/interface-contract.md §四 kidpal_session_ctx source_page=story（消费）"
   ],
   "docRefs": [
-    "delivery/taskpackages/261018-sd-log-usb-read/plan.md",
-    "delivery/taskpackages/261018-sd-log-usb-read/launch-card.md",
-    "delivery/taskpackages/261018-sd-log-persist/taskpackage.json",
-    "delivery/taskpackages/261018-sd-log-persist/pod-retro.md",
-    "docs/architecture.md#§6.6",
-    "docs/debt/tech/TECH-261016-sd-story-confidentiality.md"
-  ],
+    "docs/requirements.md §9 v1.65",
+    "docs/architecture.md（决策 25 取代注记 + §5.1.2 + §5.2④ + §12 changeId 行）",
+    "docs/decisions/ADR.md ADR-013",
+    "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.design.md",
+    "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+    "docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md",
+    "docs/ui/V7/（三帧 p3-recording 修订 / p3-recording-guide / state-organizing）"
+    ],
   "docsSyncRequired": true,
-  "docsNoChangeReason": "本包零新增文档改动：决策 24 白名单（诊断日志）与 §6.6 已随 261018 persist 包架构面 landing（commit 5a37b001）落地；本包只加只读取回命令，属诊断工具面、不改变架构决策与 canonical 文本；契约面零改动（plan 边界明列不改 §6.6 canonical）；docs-delta 只作声明与口径留痕。",
   "docsOwner": "integrator",
-  "securityReviewRequired": false,
-  "securityAxes": [],
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "儿童对话内容（STT 转写）经整理 LLM 回合处理——承载通道 = 既有 OpenClaw loopback 与归档链路，无新增数据出境面；整理输入装配纯函数只取孩子的话（素材边界），不扩大处理范围",
+    "两枚 front 侧版本化 prompt 制品：引导/整理回合制品级 system prompt 须约束该回合不触发工具调用（PROPOSAL T3 第 5 条 provider 出口断言，验收种子 7）",
+    "engine-patch chat() 入口第三守卫（记录语境跳过 LLM 派发）：抑制失效时不得静默毁稿——失败路径 = 当轮素材不归档 + 固定安抚句（PROPOSAL R1-N4），不发明新语义"
+  ],
   "adrRequired": false,
   "planningWorkstreamRequired": false,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "LUR-A1",
-        "acceptance": "LUR-A1: 命令解析纯逻辑（host 同源）——kplog list / kplog tail / kplog tail N / kplog cat N 合法形态解析成功；tail 默认 N=200、上限 1000；cat idx 闭集 0..31。设计态红：log_cmd 纯逻辑 seam 未实现",
-        "mutation": "M1 tail 钳制移除：log_cmd.c kidpal_logcmd_parse 删除 if (v > KIDPAL_LOGCMD_TAIL_MAX) v = KIDPAL_LOGCMD_TAIL_MAX 钳制行",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 1（LUR-A1）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR RED: parse(\"kplog tail 1001\") 出参错（期望 1000 实际 1001）。"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures（参考实现冒烟通道）",
-        "note": "参考实现 /tmp 一次性合成树取证，非工作树实现（工作树实现由 builder 落地后由 final 轮全量验证）；取证轮 acceptance-author 2026-10-19"
-      },
-      {
-        "acceptanceId": "LUR-A2",
-        "acceptance": "LUR-A2: 非法输入拒绝——idx ≥32 / 负数 / 非数字 / 路径字符（../、/、.）/ 多余 token / 未知子命令 / 超长行 → 返回 bad-index 或 bad-cmd 错误码，且不产生任何文件访问调用（拒绝即短路，文件访问层零触达）。设计态红：解析 seam 未实现",
-        "mutation": "M9 cat 索引闭集上界放宽：kidpal_logcmd_parse 的 v >= KIDPAL_LOGCMD_CAT_COUNT 放宽为 v > KIDPAL_LOGCMD_CAT_COUNT（上界 32→33，kplog cat 32 由拒绝转接受）",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 2（LUR-A2）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR RED: parse(\"kplog cat 32\") 结果码错（期望 -2 实际 3）——命令面语义漂移。"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures",
-        "note": "补缺口变异（首轮 M1..M8 未覆盖 TEST 2，回传 acceptance-author 补做）"
-      },
-      {
-        "acceptanceId": "LUR-A3",
-        "acceptance": "LUR-A3: 行装配纯逻辑——跨读块边界拼行；CRLF/LF 两种行尾；超长行丢弃；非 kplog 前缀输入静默不输出（不自动 dump 的行为齿：无命令零输出）。设计态红：行装配 seam 未实现",
-        "mutation": "M4 超长行丢弃标记移除：lur_asm_finalize 超长行处置 a->dropped = 1 改为 = 0（整行仍丢弃但 LUR_ASM_DROPPED 标记不置位）",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 3（LUR-A3）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR-A3 RED: 超长行未按契约丢弃（pop 未返 LUR_ASM_DROPPED）——超长输入行必须整行丢弃，不得截断成假命令触发输出。"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures"
-      },
-      {
-        "acceptanceId": "LUR-A4",
-        "acceptance": "LUR-A4: 帧格式化纯逻辑——BEGIN/END 帧字面精确（=== KPLOG BEGIN <cmd> === / === KPLOG END ===）；list 行格式（文件名 + 字节数 + 当前写入文件尾标 * + KPLOG TOTAL 汇总行）；错误帧格式（KPLOG ERROR no-card|no-file|bad-cmd|bad-index）。设计态红：帧格式化 seam 未实现",
-        "mutation": "M2 BEGIN list 字面漂移：kidpal_logcmd_frame_begin 的 LIST 返回字面 === KPLOG BEGIN list === 漂移为 lisr",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 4（LUR-A4）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR-A4 RED: frame_begin(LIST) 字面错（契约 [S4]：=== KPLOG BEGIN list ===）——host 脚本按 BEGIN/END 定界收集，字面漂移 = 消费端断流。"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures"
-      },
-      {
-        "acceptanceId": "LUR-A5",
-        "acceptance": "LUR-A5: 尾部窗口选取纯逻辑——样本字节流取末 N 行边界正确：N=1 / N 大于总行数 / CRLF / 无结尾换行。设计态红：尾部选取 seam 未实现",
-        "mutation": "M3 窗口偏移 off-by-one：kidpal_logcmd_tail_window 选中行起始偏移返回值 +1",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 5（LUR-A5）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR-A5 RED: tail_window(n=1) 末 N 行窗口偏移错（期望 4 实际 5，样本 \"a\nb\nc\n\"）。"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures"
-      },
-      {
-        "acceptanceId": "LUR-A6",
-        "acceptance": "LUR-A6: 接线结构齿（源锚，仿 sd_log.acceptance.c 形态）——① 文件名只经 kidpal_sd_log_file_name 或受校验整数构造（禁用户串直进路径拼接）；② 端口只 open /dev/secondary（不出现其它设备路径字面）；③ 启动函数 KidpalLogCmdStart 零打印；④ 读任务函数体内零 ESP_LOG* 调用（防 vprintf 钩子自污染与递归），响应只经 stdout（fwrite/printf）。设计态红：接线任一缺失或结构违例",
-        "mutation": "M5 读任务体内加 ESP_LOGI（LogCmdReadTask 注入 ESP_LOGI(\"kplogcmd\", \"block read\")）——同 acceptance 另有三条独立变异 M6（main.cc KidpalLogCmdStart 移到 ChainPreviousVprintf 前，打接线序锚）/ M7（log_cmd.h KIDPAL_LOGCMD_CMD_MAX 64→128，打 EQ-2 头文件字面锚）/ M8（host_app CMakeLists 注销本验收件登记行，打 anti-vacuity 登记守），红行互异、分别落在三个不同断言",
-        "affectedTest": "firmware/main/test/log_cmd.acceptance.c TEST 6（LUR-A6）+ TEST 7（LUR-A6）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "FAIL: LUR-A6 RED: 读任务 LogCmdReadTask 函数体内存在 1 处 ESP_LOG* 调用——会经 vprintf 钩子递归回灌环形缓冲（自污染 / 掉日志 / 栈溢出风险，D3/plan §3：响应只经 stdout）",
-          "FAIL: LUR-A6 RED: KidpalLogCmdStart() 出现在 KidpalSdLogChainPreviousVprintf 之前——契约 [S8] 要求命令任务在 vprintf 钩子链保存之后启动（D7；提前启动会与钩子安装竞态）",
-          "FAIL: LUR-A6 RED: log_cmd.h 的 KIDPAL_LOGCMD_CMD_MAX 非 64——命令行解析上限冻结值漂移（EQ-2）",
-          "FAIL: LUR-A6 RED: host_app/main/CMakeLists.txt 未登记 log_cmd.acceptance.c——本冻结验收件不进 host runner（全部断言不会被执行 = 空过绿；builder FIRST ACTION，见头注 Run protocol 0）"
-        ],
-        "restored": "还原后复跑 7 Tests 0 Failures",
-        "note": "9/9 变异各单变异恰好只命中目标断言、无误伤其它 TEST"
-      }
-    ]
+    "perAcceptance": []
   },
   "crossEnd": {
-    "counterparts": [],
-    "exempt": "串口取回帧协议（KPLOG BEGIN/END）的生产端（firmware log_cmd.c）与消费端（tools/diag/kidpal_logs.py）同在本包 changeManifest 内实现与验收，不存在包外对端面；不触 server/**、零端云 wire、docs/contracts 零改动（plan 边界明列）。帧格式行为由 LUR-A4 host 齿 + 真机轮逐字节核对承载。"
+    "counterparts": [
+      {
+        "face": "server",
+        "path": "server/gateway/display_schema.py",
+        "symbol": "GATEWAY_DECISION_CONTROL_ACTIONS / validate_display（自推通路分叉，结构性义务 1）"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/display/view_router.h",
+        "symbol": "VRT_CTRL_START_ORGANIZING=3（additive 枚举，冻结数值码 0/1/2 不偏移）"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "显示控制 case 3 消费（:1230-1263 区，story_consumed 日志同型）"
+      }
+    ],
+    "exempt": ""
   },
   "decisionCoverage": [
     {
-      "decision": "D1 · 命令面只读白名单：行协议仅识别 kplog 前缀，其余输入静默丢弃（防串口噪声触发输出）",
-      "summary": "list/tail/cat 三命令；不自动输出、无命令零输出。",
+      "decision": "Package B 读法乙（引擎侧抑制 LLM）",
+      "summary": "engine-patch connection.py 认领等价信号置记录语境标志 + chat() depth==0 入口第三守卫（跳过 LLM 派发）+ stop-truncation 豁免重绑（判据 manual 模式 → 记录语境标志）。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A1"
+      "landsIn": "acceptance-种子 1（注入不尾随 auto-listen）+ 结构性义务 2"
     },
     {
-      "decision": "D2 · 读通道：/dev/secondary VFS 直开（O_RDONLY|O_NONBLOCK）非阻塞 read，不装 usb_serial_jtag_driver、不改 sdkconfig",
-      "summary": "降级 A（human 2026-10-19 显式指令）：端口读取 HAL 直读 usb_serial_jtag_ll_read_rxfifo（同外设非阻塞轮询、不装 driver、不改 sdkconfig）；原 /dev/secondary VFS 直读真机 smoke 未达（exit 4 超时零字节）",
+      "decision": "E3 检出器形态（关键词表 + 引导 LLM 可返回空）",
+      "summary": "S1 词表纯函数（is_finish_phrase 同构子串扫描，词表 = 实现期可调常量）+ S2 引导回合空返回仍计轮。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A6"
+      "landsIn": "acceptance-种子 3/4（E4 fixture + NFR 五边界）"
     },
     {
-      "decision": "D3 · 输出纪律：响应走 stdout（fwrite/printf），读任务函数体内零 ESP_LOG（防 vprintf 钩子自污染与递归）",
-      "summary": "沿用 persist 写盘任务纪律。",
+      "decision": "q2 = ⓒ（新增 start_organizing 下行信号）",
+      "summary": "三式收尾统一下发 start_organizing（重复幂等）+ 固件 VRT_CTRL_START_ORGANIZING=3 additive 消费；wire 已随 arch 批 LANDED，本包零契约改动。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
       ],
-      "landsIn": "acceptance:LUR-A6"
+      "landsIn": "acceptance-种子 6（q2 裁定落地 + 思考态接线真机可见）"
     },
     {
-      "decision": "D4 · 读盘并发：FATFS FS_LOCK=0 下只读打开（rb）、一次一个 FD、读完即关，与单写者纪律不冲突",
-      "summary": "不 rename/remove，避免 FATFS 非法操作；写方 fflush 后为完整记录（sdkconfig:1733 实核）。",
+      "decision": "R1-F4 provider 出口 (a)：OpenClaw OpenAI 兼容端点 + 出网沿 §1.2 路径②零新增",
+      "summary": "S2 引导/整理 LLM 回合走 openclaw_stream_request → loopback 18789；两枚 front 侧版本化 prompt 制品不走 OpenClaw 主 agent 共享 system prompt。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A6"
+      "landsIn": "acceptance-种子 7（provider 出口断言）"
     },
     {
-      "decision": "D5 · 当前轮转索引只读访问器：sd_log_fs.cc 增 KidpalSdLogCurrentIndex（未 init/未 attach 返 -1），供 tail 与 list 的 * 标记",
-      "summary": "只加只读访问器、不改 persist 行为与冻结验收；不靠 mtime（FAT 时间粒度 2s、RTC 未同步会退化）。",
+      "decision": "q6 收声不停摆计轮",
+      "summary": "被抑制的引导轮照常计入轮次，「AI 收声」≠「计时停摆」，第 2 轮计时到仍无回应即自动收尾。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/intake/261019-p3-record-dialogue-guide.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A4"
+      "landsIn": "acceptance-种子 4 边界⑤ + S-F2.2-AC5"
     },
     {
-      "decision": "D6 · 纯逻辑/芯片面分离：解析/行装配/帧格式化/尾部窗口 = log_cmd.c（零 FATFS/零 FreeRTOS，host 同源）；VFS 读/任务/文件 I/O/stdout = log_cmd_port.cc（不进 host 构建）",
-      "summary": "复用 story_cache 与 sd_log 先例。",
+      "decision": "R1-N4 丢稿口径（当轮不归档 + 固定安抚句）",
+      "summary": "整理失败 = 当轮素材不归档 + §6.3 固定安抚句 + text 视图结束当轮；不发明新语义。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
       ],
-      "landsIn": "acceptance:LUR-A1"
+      "landsIn": "acceptance-种子 8（包外留根之外的本包失败路径）"
     },
     {
-      "decision": "D7 · 任务形态：main.cc 在 vprintf 钩子之后 KidpalLogCmdStart()；低优先级（prio 2，写盘任务为 1）、栈 4KB、50–100ms 轮询读 64B 块",
-      "summary": "无卡/未挂载只回错误帧，不崩、不阻断语音主链路。",
+      "decision": "120s 设备侧超时语义退役（timed_out_sessions / AUTO_STOP_SECONDS）",
+      "summary": "取代关系 = 卡壳引导 2 轮无回应自动收尾；既有冻结验收文件同步更新（120s 语义钉法退役）。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "docs/requirements.md §9 v1.65",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A6"
+      "landsIn": "acceptance-种子 4 + 既有 server 冻结件更新"
     },
     {
-      "decision": "D8 · host 取回脚本：tools/diag/kidpal_logs.py（pyserial），打开端口立即 dtr=False/rts=False 防复位伪影；单进程独占 COM5",
-      "summary": "丢弃 BEGIN 前普通日志、收集到 END 为止、按字节落本地文件（UTF-8 errors=replace）。",
+      "decision": "卡壳阈值数值（起步约 8 秒）",
+      "summary": "NFR-PERF-3 阈值待定、不得写死为验收值；真机调优后立项拍数——本包不拍数。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
-      ],
-      "landsIn": "exitCriteria:LUR-X6"
-    },
-    {
-      "decision": "D9 · v1 边界（不做）：自动 dump/开机打印/周期上报；写删格式化/任意路径读取/云端取回；USB MSC；UART0 输入通道",
-      "summary": "USB MSC 与 USB-Serial/JTAG 争 USB 控制器；COM5 实测为原生 USB-Serial/JTAG、UART0 未引到 Type-C。",
-      "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "docs/requirements.md §9 v1.65",
+        "docs/requirements.md NFR-PERF-3"
       ],
       "landsIn": "dropped",
-      "reason": "v1 明确边界（human 原话动机：不必自动输出、防干扰串口监控与烧录；plan 目标与边界节逐项列明），非缺陷不做承载"
+      "reason": "NFR-PERF-3 明文「不得写死为验收值」；本包验收断言边界不锁数值，阈值常量为实现期可调"
     },
     {
-      "decision": "D10 · 降级链：/dev/secondary 直读未达时降级 A = HAL 直读 usb_serial_jtag_ll_read_rxfifo；降级 B = console primary 切 USB-SERIAL-JTAG（须回 /triage-change 升档重判）",
-      "summary": "真机轮第 1 步前先做单命令 smoke 验证；smoke 失败才进降级链。",
+      "decision": "真机停顿手感（观感直修长环）",
+      "summary": "非本包范围：真机停顿手感走观感直修长环、闸链后补账。",
       "sourceRefs": [
-        "delivery/taskpackages/261018-sd-log-usb-read/plan.md"
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
       ],
-      "landsIn": "acceptance:LUR-A7"
+      "landsIn": "dropped",
+      "reason": "plan 验收种子 8 明示包外留根；本包真机轮只验机制可达与观感可接受，不做手感调优"
+    },
+    {
+      "decision": "261001 q3「说完了是否并入收尾词表」",
+      "summary": "未确认前按 S-F2.2-AC2 原文「我说完了/讲完啦」实现（PROPOSAL §6 口径）。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
+      ],
+      "landsIn": "acceptance-种子 8（按 AC2 原文词表实现）"
+    },
+    {
+      "decision": "整理失败的素材保全取舍",
+      "summary": "当轮不归档 + 固定安抚句——不发明新语义。",
+      "sourceRefs": [
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 8（同 R1-N4，二者同源合并承载）"
     }
   ],
   "changeManifest": [
-    "firmware/main/diagnostics/log_cmd.h",
-    "firmware/main/diagnostics/log_cmd.c",
-    "firmware/main/diagnostics/log_cmd_port.cc",
-    "firmware/main/diagnostics/sd_log.h",
-    "firmware/main/diagnostics/sd_log_fs.cc",
-    "firmware/main/main.cc",
-    "firmware/main/CMakeLists.txt",
-    "firmware/main/test/host_app/main/CMakeLists.txt",
-    "firmware/main/test/log_cmd.acceptance.c",
-    "tools/diag/kidpal_logs.py"
+    "server/gateway/story.py",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/deploy/engine-patch/connection.py",
+    "server/gateway/front/prompts/**（两枚版本化 prompt 制品，新建——路径包内定，落位后回填清单）",
+    "server/acceptance/**（新增冻结验收件 + 既有 120s 语义冻结件更新——acceptance-author 写权）",
+    "server/tests/**（S1 纯决策单元测试）",
+    "firmware/main/application.cc",
+    "firmware/main/display/view_router.h",
+    "firmware/main/display/view_router.c",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h（如子态枚举需 additive）",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/**（新增冻结验收件 + host_app CMakeLists 登记）"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/log_cmd.acceptance.c",
+      "path": "server/acceptance/（既有 120s 语义冻结件）",
+      "kind": "frozen-file-update",
+      "note": "timed_out_sessions/AUTO_STOP_SECONDS 退役或重述——acceptance-author 按 tighten-only 窗口更新既有冻结件（plan 未核项 4：钉法与改动量动工前先读全）"
+    },
+    {
+      "path": "server/acceptance/（新增冻结件）",
       "kind": "new-frozen-acceptance-file",
-      "note": "新增（acceptance-author 落位）：LUR-A1..A5 纯逻辑 host 齿 + LUR-A6 源锚结构齿；仿 sd_log.acceptance.c 形态；builder 接线 = 向 firmware/main/test/host_app/main/CMakeLists.txt 的 HOST_ACCEPTANCE_SRCS 追加登记（登记行不在 acceptance-author 写权内）"
+      "note": "S1 卡壳词表/轮次纯决策 + NFR-PERF-3 五条边界（时钟注入快进）+ 整理输入装配；S2 接线 host 齿（front 纯函数 + 引擎补丁单收口离线可测先例 connection.py:91）"
     },
     {
-      "path": "firmware/main/test/host_app/main/CMakeLists.txt",
-      "kind": "extension",
-      "note": "HOST_ACCEPTANCE_SRCS 追加 ../../log_cmd.acceptance.c，并登记 log_cmd.c 纯逻辑 source（host 同源）；log_cmd_port.cc 不进 host 构建"
+      "path": "server/tests/（既有 unit）",
+      "kind": "must-stay-green",
+      "note": "既有 server/tests 91 passed 量级（261016 记录）零新增红"
     },
     {
-      "path": "firmware/main/CMakeLists.txt",
-      "kind": "extension",
-      "note": "main 目录非 GLOB：显式 SOURCES 补 diagnostics/log_cmd.c 与 diagnostics/log_cmd_port.cc（persist 包教训：登记是缺口高发位）"
+      "path": "firmware/main/test/（新增冻结件）",
+      "kind": "new-frozen-acceptance-file",
+      "note": "S3 键位映射子态分支/回显/recording_enter/kvr 场景映射 + S4 on_control case 3/键位不响应/渲染分支纯逻辑齿"
     },
     {
       "path": "firmware/main/test/host_app（既有全量套件）",
       "kind": "must-stay-green",
-      "note": "既有 host 全量套件零新增红；特别：persist 包 sd_log.acceptance.c TEST 6（main.cc 结构锚：KidpalSdLogInit → esp_log_set_vprintf → ChainPreviousVprintf 早于首个 nvs_flash_init）在 KidpalLogCmdStart 钩子后加位调用下必须保持绿（intake 期已核加位兼容）；TEST 8（sd_log.h 宏字面单源扫描 + CMake 登记哨兵）对只读访问器声明增量安全"
-    },
-    {
-      "path": "firmware/main/test/sd_log.acceptance.c",
-      "kind": "must-stay-green-adjacent-frozen",
-      "note": "相邻冻结件不改不动（persist 包全齿 keep-green）；本包对 sd_log.h/sd_log_fs.cc 只增只读访问器，无重锚需求（intake 期相邻冻结齿字面锚扫查已做：无冲突，persist retro 教训 #1 已消化）"
-    },
-    {
-      "path": "tools/diag/kidpal_logs.py",
-      "kind": "new-host-tool",
-      "note": "新增 host 取回脚本；无自动齿（真机轮 LUR-A7① 单命令 smoke 承载首验）；pyserial 依赖用 IDF python env"
+      "note": "host 全量零新增红（先存红 = p1_auxbar AB-A1/A2/A4 三条，基线锚见启动卡）"
     }
   ],
-  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + tools/**，acceptance-author allow firmware/**/*.acceptance.c + tools/**；本包 target 路径全部在允许面内，无中途补 scope。② Step 1g 前置技术预评由 /triage-change 的 architect 比例化 review 一次产出（2026-10-18；技术方案 = plan「设计要点」九条；changeManifest = plan「changeManifest 种子清单」含 architect 补入的两处 CMakeLists；impactedTests 种子 = plan「验收计划」），plan 即冻结输入、只读消费，本轮不重复派 architect 重评。③ Step 1f 保鲜核验已做：plan 引用的 sd_log.h/sd_log_fs.cc/两处 CMakeLists/sdkconfig 行（:1577/:1733）实核在场且值相符；改动面覆盖完整。④ 相邻冻结齿字面锚扫查（persist retro 教训 #1）：sd_log.acceptance.c 全齿与只读访问器增量无字面锚冲突；TEST 6 main.cc 结构锚需 KidpalLogCmdStart 在钩子后加位（已入 must-stay-green）。⑤ 上游依赖：persist 代码已在本分支 dev/pod-m2（未合 main），base ref = dev/pod-m2，不得假设 persist 已在 main；合并顺序 = 主线程裁定（OQ-1）：persist 真机四项验完 → persist 合 main → 本包 rebase 后立合，persist 未验完前两包都不合。⑥ 真机门前停等：host 齿 + 设备编译闸绿后 status=awaiting-human:real-device，输出持板操作单（含单命令 smoke 步骤）交 human，resume 续跑；本 Pod 不自行烧录。⑦ security 轴裁定：只读白名单 + 物理访问威胁模型与拔卡同族未加宽（architect 比例化 review 结论），securityReviewRequired=false、零新记账；注入拒绝面由 LUR-A2 行为齿承载。⑧ mutation 纪律：mutationEvidence 证据串须携带完整 acceptance 串（persist retro 教训 #2，raw-id 语义会闸红）。⑨ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与既有 *.acceptance.*（除 acceptance-author 新建本包验收件）；sdkconfig 与分区表零改动（LUR-X3）。；⑩ Step 8 finalize 2026-10-19：redBaselineResult 与 mutationEvidence.perAcceptance 已按 acceptance-author 两轮实跑回填（M9 补 TEST 2 缺口）；Step 8b 方向核对：本包 sourceRefs 不命中 requirements story（human-ad-hoc），验收方向核对以 plan 验收计划为权威逐条对账（LUR-A1..A6 语义与 plan §验收计划一致，LUR-A7 真机九项含单命令 smoke 先行），无钉反、无弱化。；⑪ 【降级 A 重锚 2026-10-19】真机 smoke /dev/secondary VFS 直读未达（exit 4 超时零字节，被动捕获正常、sdkconfig 实核在位），human 显式指令走 plan 风险节降级 A（HAL 直读 usb_serial_jtag_ll_read_rxfifo）。acceptance-author 窄口径重锚 TEST 6 端口锚簇（HAL 消费在场 + 三禁令锚：零 /dev/ 字面 / 零 open(\" 形 / 零 driver_install）+ [S6] 头注同步 + REVISION LOG append；重锚红恰 TEST 6、其余 6 TEST 绿）。本条授权范围：仅本包 TEST 6 端口锚与 D2 口径，不构成其它锚重锚先例。"
+  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + server/** 覆盖 S1–S5 全部 target；acceptance-author allow server/**/acceptance/** + firmware acceptance 路径覆盖冻结件写权；无中途补 scope 需求。② Step 1g 前置技术预评由 triage 的 architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费），changeManifest 与 impactedTestsSeed 由 planner 依 plan S1–S5 与结构性风险节回填，不重复派 architect。③ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。④ live/真机门前停等：S2 live 齿需真 OpenClaw loopback（18789）在位；S5 端到端 + 真机轮需 human 持板——到门即停 status=awaiting-human:real-device。⑤ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（acceptance-author 冻结写权除外）；结构性义务两件（display_schema 自推分叉 / stop-truncation 豁免重绑）为实施期红线，擦边即停走逃生门 reviewer-first。⑦ 起包格式前置自查（docs/DEV-GOVERNANCE.md 六条）：mutationEvidence 骨架 perAcceptance=[] 已留；断言格式与验收 ID 禁括号义务随 acceptance-author 冻结落地；降级声明前置 = live-manual 层如实申报不造 offline 假齿；新约定包闸判据自查 = 本包零新增闸；input-brief 前置 = Step 7 单份生成、brief 单份投影纪律照跑。⑧ 未核项 6 条（plan §未核项申报）为包内定量/挂点验证义务：S2 动工前验引擎 ASR stt 下行发出点；S4 动工前读 kidpal_render_node.c 场景映射与 story_page.c RECORDING 渲染区现状；S2 复用 reminders.py 注入先例前先读全——均由 builder/fixer 实施期履行，不动摇分档。"
 }

@@ -6,17 +6,237 @@
     "type": "proposal",
     "upstreamType": "proposal",
     "upstreamRef": "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
-    "upstreamFrozen": "spine anchors 三面已回填且批已合本地 main（delivery/intake/261019-p3-record-dialogue-guide.md，main = e65a8731）：req = requirements §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen——S-F2.2 对话式引导记录全篇重写 + NFR-PERF-3 + WF-F2-02 注记四件）；arch = 261019-arch-review-p3-record-dialogue-guide 批 landing（FROZEN v1.2 + R2 GREEN + landing-verdict PASS 27 项对账——决策 25 机制面改写 + §5.1.2 计时器族 + §5.2④ 链路 + ADR-013 supersedes 决策 25 机制面 + 261001 Package B 引擎抑制吸收定形）；contract = CDQ-261019-p3-record-dialogue-guide LANDED（docs/debt/contract/ 条目：§1.4 新增 start_organizing 控制动作 + start_recording/session_ctx 措辞对账，wire 其余零新增）。reviewed plan = delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md（triage 2026-10-19 architect 分流 ②单包 Full / riskTier=high / rigor=full，human 触点①确认），只读消费。硬前置 261016-p3-story-body-sd-cache 已合并（b2e2ceb3）。"
+    "upstreamFrozen": "spine anchors 三面已回填且批已合本地 main（delivery/intake/261019-p3-record-dialogue-guide.md，main = e65a8731）：req = requirements §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen——S-F2.2 全篇重写 + NFR-PERF-3 + WF-F2-02 增补注记四件）；arch = 261019-arch-review-p3-record-dialogue-guide 批 landing（FROZEN v1.2 + R2 GREEN + landing-verdict PASS 27 项对账——决策 25 机制面改写 + §5.1.2 计时器族 + §5.2④ 链路 + ADR-013 supersedes 决策 25 机制面 + 261001 Package B 引擎抑制吸收定形）；contract = CDQ-261019-p3-record-dialogue-guide LANDED（docs/debt/contract/ 条目：§1.4 新增 start_organizing 控制动作 + start_recording/session_ctx 措辞对账，wire 其余零新增）。reviewed plan = delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md（triage 2026-10-19 architect 分流 ②单包 Full / riskTier=high / rigor=full，human 触点①确认），只读消费。硬前置 261016-p3-story-body-sd-cache 已合并（b2e2ceb3）。"
   },
   "subsystem": "server/gateway (story.py 卡壳词表/轮次纯决策/整理输入装配 + front_app.py sweep 重写/引导与整理 LLM 回合/start_organizing 下发/自推通路分叉/Package B 等价信号注入 + display_schema.py 分表 additive + 新增两枚 front 侧版本化 prompt 制品 + server/deploy/engine-patch/connection.py 记录语境标志认领/chat 入口第三守卫/stop-truncation 豁免重绑) + firmware/main (application.cc 聆听形态切换与 kvr 场景守卫 + display/view_router.h/.c VRT_CTRL_START_ORGANIZING=3 additive + mcp_server.cc 控制 case 3 消费 + display/story_page.c 帧 A 修订/引导播报中子态/整理过渡态渲染与键位分叉/思考态接线)",
   "story": "S-F2.2 · 对话式引导记录（双入口）· 定稿版本号 v1.65（docs/requirements.md §9 v1.65 行 2026-10-19）：AC1 双入口同一记录语境对话态 + AI 默认闭嘴 + 逐句回显；AC2 卡壳轻引导（停顿超阈值约 8 秒待定或明示卡住；只基于已讲内容、不提供情节选项、不代编）+ 引导播报不跳页 + 引导播报中 KEY 打断/BOOT 无操作 + 引导语/提问/回答不进素材；AC3 盖章照旧；AC4 三式收尾 + 忠实整理（只用孩子原话：去口水/断句/分段/标题，不换表达不补情节）+ 整理中 KEY/BOOT 均不响应 + 新篇入列表 + BOOT/「讲错啦」取消丢弃不设恢复；AC5 自动收尾（连续 2 轮引导无回应，含收声抑制等被抑制轮——收声不停摆）。NFR-PERF-3 卡壳阈值待定 + 断言五条边界。S-F1.4 AC6 录音期提醒排队延后不回归。补充规则翻案留痕（废除 2026-09-14 一刀切）。",
-  "planRef": "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+  "sourceRefs": [
+    "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.design.md",
+    "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+    "S-F2.2",
+    "S-F2.2-AC1",
+    "S-F2.2-AC2",
+    "S-F2.2-AC3",
+    "S-F2.2-AC4",
+    "S-F2.2-AC5",
+    "NFR-PERF-3",
+    "S-F1.4-AC6"
+  ],
   "acceptance": [],
   "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
     "live-manual"
   ],
-  "notes": "acceptance/acceptanceTestsFile/exitCriteria 由 acceptance-author 冻结验收后回填（验收种子 8 组见 plan.md §验收种子——q4/q7 转注 + E4 + NFR-PERF-3 五条边界 + S-F2.2 五 AC + 翻✅三条件 + provider 出口 + 包外留根）。riskTier=high ⇒ supervisor 合并门升级 human（单向守卫预期行为）。结构性义务两件（plan §结构性风险）：display_schema 自推校验分叉（自推不被自拒、relay 拒转语义一字不动）、engine-patch stop-truncation 豁免重绑（记录语境标志判据，防 KEY 收尾末句被截断毁稿）。"
+  "exitCriteria": [],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "high",
+  "gateProfile": [
+    "contract-drift",
+    "test-quality",
+    "evidence-integrity",
+    "device-round",
+    "security",
+    "docs-sync"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md §1.4 start_organizing（消费）",
+    "docs/contracts/interface-contract.md §四 kidpal_session_ctx source_page=story（消费）"
+  ],
+  "docRefs": [
+    "docs/requirements.md §9 v1.65",
+    "docs/architecture.md（决策 25 取代注记 + §5.1.2 + §5.2④ + §12 changeId 行）",
+    "docs/decisions/ADR.md ADR-013",
+    "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.md",
+    "delivery/intake/261019-p3-record-dialogue-guide.design.md",
+    "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+    "docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md",
+    "docs/ui/V7/（三帧 p3-recording 修订 / p3-recording-guide / state-organizing）"
+    ],
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "儿童对话内容（STT 转写）经整理 LLM 回合处理——承载通道 = 既有 OpenClaw loopback 与归档链路，无新增数据出境面；整理输入装配纯函数只取孩子的话（素材边界），不扩大处理范围",
+    "两枚 front 侧版本化 prompt 制品：引导/整理回合制品级 system prompt 须约束该回合不触发工具调用（PROPOSAL T3 第 5 条 provider 出口断言，验收种子 7）",
+    "engine-patch chat() 入口第三守卫（记录语境跳过 LLM 派发）：抑制失效时不得静默毁稿——失败路径 = 当轮素材不归档 + 固定安抚句（PROPOSAL R1-N4），不发明新语义"
+  ],
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "server",
+        "path": "server/gateway/display_schema.py",
+        "symbol": "GATEWAY_DECISION_CONTROL_ACTIONS / validate_display（自推通路分叉，结构性义务 1）"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/display/view_router.h",
+        "symbol": "VRT_CTRL_START_ORGANIZING=3（additive 枚举，冻结数值码 0/1/2 不偏移）"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "显示控制 case 3 消费（:1230-1263 区，story_consumed 日志同型）"
+      }
+    ],
+    "exempt": ""
+  },
+  "decisionCoverage": [
+    {
+      "decision": "Package B 读法乙（引擎侧抑制 LLM）",
+      "summary": "engine-patch connection.py 认领等价信号置记录语境标志 + chat() depth==0 入口第三守卫（跳过 LLM 派发）+ stop-truncation 豁免重绑（判据 manual 模式 → 记录语境标志）。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 1（注入不尾随 auto-listen）+ 结构性义务 2"
+    },
+    {
+      "decision": "E3 检出器形态（关键词表 + 引导 LLM 可返回空）",
+      "summary": "S1 词表纯函数（is_finish_phrase 同构子串扫描，词表 = 实现期可调常量）+ S2 引导回合空返回仍计轮。",
+      "sourceRefs": [
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 3/4（E4 fixture + NFR 五边界）"
+    },
+    {
+      "decision": "q2 = ⓒ（新增 start_organizing 下行信号）",
+      "summary": "三式收尾统一下发 start_organizing（重复幂等）+ 固件 VRT_CTRL_START_ORGANIZING=3 additive 消费；wire 已随 arch 批 LANDED，本包零契约改动。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
+      ],
+      "landsIn": "acceptance-种子 6（q2 裁定落地 + 思考态接线真机可见）"
+    },
+    {
+      "decision": "R1-F4 provider 出口 (a)：OpenClaw OpenAI 兼容端点 + 出网沿 §1.2 路径②零新增",
+      "summary": "S2 引导/整理 LLM 回合走 openclaw_stream_request → loopback 18789；两枚 front 侧版本化 prompt 制品不走 OpenClaw 主 agent 共享 system prompt。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 7（provider 出口断言）"
+    },
+    {
+      "decision": "q6 收声不停摆计轮",
+      "summary": "被抑制的引导轮照常计入轮次，「AI 收声」≠「计时停摆」，第 2 轮计时到仍无回应即自动收尾。",
+      "sourceRefs": [
+        "delivery/intake/261019-p3-record-dialogue-guide.md",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 4 边界⑤ + S-F2.2-AC5"
+    },
+    {
+      "decision": "R1-N4 丢稿口径（当轮不归档 + 固定安抚句）",
+      "summary": "整理失败 = 当轮素材不归档 + §6.3 固定安抚句 + text 视图结束当轮；不发明新语义。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
+      ],
+      "landsIn": "acceptance-种子 8（包外留根之外的本包失败路径）"
+    },
+    {
+      "decision": "120s 设备侧超时语义退役（timed_out_sessions / AUTO_STOP_SECONDS）",
+      "summary": "取代关系 = 卡壳引导 2 轮无回应自动收尾；既有冻结验收文件同步更新（120s 语义钉法退役）。",
+      "sourceRefs": [
+        "docs/requirements.md §9 v1.65",
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 4 + 既有 server 冻结件更新"
+    },
+    {
+      "decision": "卡壳阈值数值（起步约 8 秒）",
+      "summary": "NFR-PERF-3 阈值待定、不得写死为验收值；真机调优后立项拍数——本包不拍数。",
+      "sourceRefs": [
+        "docs/requirements.md §9 v1.65",
+        "docs/requirements.md NFR-PERF-3"
+      ],
+      "landsIn": "dropped",
+      "reason": "NFR-PERF-3 明文「不得写死为验收值」；本包验收断言边界不锁数值，阈值常量为实现期可调"
+    },
+    {
+      "decision": "真机停顿手感（观感直修长环）",
+      "summary": "非本包范围：真机停顿手感走观感直修长环、闸链后补账。",
+      "sourceRefs": [
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "dropped",
+      "reason": "plan 验收种子 8 明示包外留根；本包真机轮只验机制可达与观感可接受，不做手感调优"
+    },
+    {
+      "decision": "261001 q3「说完了是否并入收尾词表」",
+      "summary": "未确认前按 S-F2.2-AC2 原文「我说完了/讲完啦」实现（PROPOSAL §6 口径）。",
+      "sourceRefs": [
+        "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md"
+      ],
+      "landsIn": "acceptance-种子 8（按 AC2 原文词表实现）"
+    },
+    {
+      "decision": "整理失败的素材保全取舍",
+      "summary": "当轮不归档 + 固定安抚句——不发明新语义。",
+      "sourceRefs": [
+        "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md"
+      ],
+      "landsIn": "acceptance-种子 8（同 R1-N4，二者同源合并承载）"
+    }
+  ],
+  "changeManifest": [
+    "server/gateway/story.py",
+    "server/gateway/front/front_app.py",
+    "server/gateway/display_schema.py",
+    "server/deploy/engine-patch/connection.py",
+    "server/gateway/front/prompts/**（两枚版本化 prompt 制品，新建——路径包内定，落位后回填清单）",
+    "server/acceptance/**（新增冻结验收件 + 既有 120s 语义冻结件更新——acceptance-author 写权）",
+    "server/tests/**（S1 纯决策单元测试）",
+    "firmware/main/application.cc",
+    "firmware/main/display/view_router.h",
+    "firmware/main/display/view_router.c",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h（如子态枚举需 additive）",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/**（新增冻结验收件 + host_app CMakeLists 登记）"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "server/acceptance/（既有 120s 语义冻结件）",
+      "kind": "frozen-file-update",
+      "note": "timed_out_sessions/AUTO_STOP_SECONDS 退役或重述——acceptance-author 按 tighten-only 窗口更新既有冻结件（plan 未核项 4：钉法与改动量动工前先读全）"
+    },
+    {
+      "path": "server/acceptance/（新增冻结件）",
+      "kind": "new-frozen-acceptance-file",
+      "note": "S1 卡壳词表/轮次纯决策 + NFR-PERF-3 五条边界（时钟注入快进）+ 整理输入装配；S2 接线 host 齿（front 纯函数 + 引擎补丁单收口离线可测先例 connection.py:91）"
+    },
+    {
+      "path": "server/tests/（既有 unit）",
+      "kind": "must-stay-green",
+      "note": "既有 server/tests 91 passed 量级（261016 记录）零新增红"
+    },
+    {
+      "path": "firmware/main/test/（新增冻结件）",
+      "kind": "new-frozen-acceptance-file",
+      "note": "S3 键位映射子态分支/回显/recording_enter/kvr 场景映射 + S4 on_control case 3/键位不响应/渲染分支纯逻辑齿"
+    },
+    {
+      "path": "firmware/main/test/host_app（既有全量套件）",
+      "kind": "must-stay-green",
+      "note": "host 全量零新增红（先存红 = p1_auxbar AB-A1/A2/A4 三条，基线锚见启动卡）"
+    }
+  ],
+  "notes": "① scope-map 已核（Step 1c）：builder/fixer allow firmware/** + server/** 覆盖 S1–S5 全部 target；acceptance-author allow server/**/acceptance/** + firmware acceptance 路径覆盖冻结件写权；无中途补 scope 需求。② Step 1g 前置技术预评由 triage 的 architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费），changeManifest 与 impactedTestsSeed 由 planner 依 plan S1–S5 与结构性风险节回填，不重复派 architect。③ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。④ live/真机门前停等：S2 live 齿需真 OpenClaw loopback（18789）在位；S5 端到端 + 真机轮需 human 持板——到门即停 status=awaiting-human:real-device。⑤ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑥ 禁止改 docs/contracts/**、docs/requirements.md、docs/architecture.md 与 *.acceptance.*（acceptance-author 冻结写权除外）；结构性义务两件（display_schema 自推分叉 / stop-truncation 豁免重绑）为实施期红线，擦边即停走逃生门 reviewer-first。⑦ 起包格式前置自查（docs/DEV-GOVERNANCE.md 六条）：mutationEvidence 骨架 perAcceptance=[] 已留；断言格式与验收 ID 禁括号义务随 acceptance-author 冻结落地；降级声明前置 = live-manual 层如实申报不造 offline 假齿；新约定包闸判据自查 = 本包零新增闸；input-brief 前置 = Step 7 单份生成、brief 单份投影纪律照跑。⑧ 未核项 6 条（plan §未核项申报）为包内定量/挂点验证义务：S2 动工前验引擎 ASR stt 下行发出点；S4 动工前读 kidpal_render_node.c 场景映射与 story_page.c RECORDING 渲染区现状；S2 复用 reminders.py 注入先例前先读全——均由 builder/fixer 实施期履行，不动摇分档。"
 }
