@@ -1,25 +1,26 @@
 {
-  "verdict": "ESCALATE",
-  "riskTier": "high",
+  "verdict": "APPROVE",
+  "riskTier": "medium",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-10-19T02:02:34.471Z",
+  "ts": "2026-10-19T03:30:22.067Z",
   "changeId": "261018-sd-log-usb-read",
   "originType": "human-ad-hoc",
   "adjudication": {
-    "verdict": "ESCALATE",
-    "riskTier": "high",
+    "verdict": "APPROVE",
+    "riskTier": "medium",
     "reasons": [
-      "security-axis-diff:auth",
-      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+      "green-channel:no-critical/high-closed-set-hit(dev-loop:244)",
+      "declared-raises:medium",
+      "adjudicate:low/med∧evidence-complete→APPROVE(restore-auto-merge)"
     ],
     "riskTierDerivation": {
-      "diffTier": "high",
+      "diffTier": "low",
       "declaredTier": "medium",
-      "effectiveTier": "high",
+      "effectiveTier": "medium",
       "ambiguous": false,
       "diffReasons": [
-        "security-axis-diff:auth"
+        "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
       ]
     },
     "circuitBreakerCompletedRounds": 4,
@@ -31,12 +32,12 @@
       "ran": true,
       "producedBy": "supervisor-verdict-gate.mjs",
       "riskTierDerivation": {
-        "diffTier": "high",
+        "diffTier": "low",
         "declaredTier": "medium",
-        "effectiveTier": "high",
+        "effectiveTier": "medium",
         "ambiguous": false,
         "diffReasons": [
-          "security-axis-diff:auth"
+          "green-channel:no-critical/high-closed-set-hit(dev-loop:244)"
         ]
       },
       "evidenceCompleteness": {
