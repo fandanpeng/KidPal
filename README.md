@@ -13,7 +13,7 @@
 
 ![KidPal 业务全景](docs/notes/archify/architecture-kidpal-business-casual-20261019-160714/review-3/visual-check/kidpal-casual.visual-check.2048x1320.light.png)
 
-**方法这层**：每个变更从 idea 到合并进 main，要走完一条有门禁、有分工、有复盘的流水线——人在里面只做三个动作：立项、例外拍板、提 PR。
+**方法这层**：每个变更从 idea 到合并进 main，要走完一条有门禁、有分工、有复盘的流水线——人在里面只做三个动作：立项、例外拍板、批 PR。
 
 ![Graph Engineering 治理拓扑](docs/notes/archify/architecture-kidpal-gov-graph-20261019-095454/visual-check/kidpal-gov-graph.visual-check.2048x1320.light.png)
 
@@ -35,7 +35,7 @@
 
 ## 方法层：Graph Engineering 是什么
 
-为什么叫 Graph：把研发治理显式建成一张图——角色是节点（一支敏捷团队整编制映射成 17 个专职 Agent，写代码的和验代码的绝不是同一个；human 在图上只有三个出场点：立项、例外拍板、提 PR），流程是边，git 仓库里的档案是图的持久状态（所以天然可审计、可回滚）。
+为什么叫 Graph：把研发治理显式建成一张图——角色是节点（一支敏捷团队整编制映射成 17 个专职 Agent，写代码的和验代码的绝不是同一个；human 在图上只有三个出场点：立项、例外拍板、批 PR——PR 也是 AI 起草的，但批准权只在人），流程是边，git 仓库里的档案是图的持久状态（所以天然可审计、可回滚）。
 
 图上有**四条闭环（loop）**，对应软件研发的四个面，每条都走同一个七步：起草 → 独立审稿 → 冻结 → 落地 → 独立核验 → 复盘 → 合并：
 
@@ -48,7 +48,7 @@
 
 这张图还会自己长：**每批变更收尾都趁热写复盘（retro），先于合并**；定期再跑 `/loop-retro` 周期复盘，把跨批的共性踩坑提炼成治理改进项，记进 `docs/debt/` 账本，再经 `/gov-change` 落回框架自身。你今天看到的这套流程不是一天设计成的，就是这样一圈一圈复盘长出来的。
 
-支撑这一切落地的是**机器强制层**：scope-map 权限边界、hooks、校验脚本，把「AI 不能越权」变成机器可检查的规则（比如 agent 想直接推 main 会被钩子当场拦下，落地必须走人提的 PR）；CodebaseMemory 知识图谱让 Agent 基于结构化的代码认知工作，而不是靠猜。
+支撑这一切落地的是**机器强制层**：scope-map 权限边界、hooks、校验脚本，把「AI 不能越权」变成机器可检查的规则（比如 agent 想直接推 main 会被钩子当场拦下，落地必须走人批准的 PR）；CodebaseMemory 知识图谱让 Agent 基于结构化的代码认知工作，而不是靠猜。
 
 ## 证据：这个仓库的历史就是展品
 
