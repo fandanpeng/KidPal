@@ -35,4 +35,16 @@
 
 ## escalation themes（post-cutoff，cross-reference pod-events）
 
-本包 pod-events 零 agent-escalation 事件；唯一非常规事件是 intake 期的 launch-precheck 记录（human-decision 形态，承 launch-card 既有裁决，非升级）。
+本包 pod-events 零 agent-escalation 事件；唯一非常规事件是 intake 期的 launch-precheck 记录（human-decision 形态，承 launch-card 既有裁决，非升级）。后续新增三个事件锚：`df4e0382`（smoke 失败升级）→ `38862edb`（降级 A 闭合）→ `056d1338`（human 批合并）。
+
+## resume 补记（2026-10-19 真机轮 + 降级 A 收口后，第一人称热记忆）
+
+- **降级 A 一发命中**：fixer 的最小补丁（VFS open/read → `usb_serial_jtag_ll_read_rxfifo` 轮询）让 TEST 6 重锚后转绿、真机 smoke 重测通过。plan 风险节预写降级链的价值在真机门兑现了——smoke 失败当晚就有合法路径，没有升级裁决停摆。**Kconfig 帮助文本「secondary 仅输出」的警告是真的**：`/dev/secondary` VFS read ops 注册了但直读未达，HAL 直读是实际可用路径——对后续要碰 USB-Serial/JTAG 的包是高价值事实，review-packet 补记已收。
+- **真机九项 8 PASS + 1 NOT-EXECUTABLE**：第 7 项（拔卡）卡物理难拔，human 如实标注、host 验收测试覆盖降级路径——「诚实申报不可执行」比凑一个假 PASS 好得多，这个判定形态值得沿用。
+- **跨包共享分支上的收口会话交叠**：persist 收口会话直接在共享的 dev/pod-m2 上落了 15 个提交（含 current/ 指针翻走、fixer fsync 补丁、合并后簿记），我 resume 时 current/ 指针已指 persist——**共享分支多 Pod 交叠时 current/ 指针在每次闸前必须实核**（机械闸按 current/ 解析 TaskPackage，指错包 = 静默错评）。INDEX 行用显式位置参数兜住了。
+- **rebase 权限 ask 挡在最后一步**：settings 把 `git rebase` 放 ask 列（防绕 merge token 串行化的设计意图），headless 会话 ask 弹窗未达 human 即自动拒绝。merge-driver 内部 rebase 与 merge 原子绑定、无 rebase-only 入口——「planner 手搓 rebase → 闸 → merge-driver」这条 human 序列在当前权限面下需要 human 批一次 rebase 或亲自跑一条命令。流程与权限面的真实摩擦点，值得 ARQ 记一笔（`git rebase` ask 判据的 headless 形态）。
+- **多包共享一个机械闸的状态机摩擦**：verdict write-once + stale 移除 + 「新验收测试轮才重跑」语义，遇到共享分支上另一包的收口会话也在动 diff 时，stale 判定需要人肉对齐——本包两次 stale 移除都是我核对 diff 基准后手动做的。不算坏设计，但共享分支形态下值得在 ARQ 里提「verdict 基准 = main...HEAD 显式化」。
+
+## 最终收口事实（供 resume 链消费，机器数据以 artifacts 为权威）
+
+真机九项 8 PASS + 1 NOT-EXECUTABLE（LUR-X4 成立）；降级 A 补丁 `ef09aa97` 后 verifier r3/r4 十闸全绿；human 批合并凭据 = pod-events `056d1338`；current/ 指针已修回本包（`e6224c20`）；待办 = rebase（待 human 批权）→ verdict 复判 → 升级闸 → merge-driver。
