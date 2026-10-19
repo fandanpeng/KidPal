@@ -1,4 +1,4 @@
-# notes/showme/ —— 一次性视觉解释稿归档
+# docs/notes/showme/ —— 一次性视觉解释稿归档
 
 放「show-me」类 HTML：讲一个概念、方案、演化或拓扑时画的示意图 / 信息图 / 短幻灯。它们是**解释用的视觉稿**，不是需求、不是设计母版、不是评审证据。
 
@@ -16,7 +16,7 @@
 | [show-me-triage-intake-spine.html](show-me-triage-intake-spine.html) | `/triage-change` 升格跨面 intake + spine 讨论稿 v2（将来形态；落地版见上 show-me-gov-triage.html） | 2026-09-28 |
 | [show-me-index-topology.html](show-me-index-topology.html) | CodebaseMemory 索引拓扑：主索引 `C-AI-KidPal` 与各 Pod worktree 专属索引的分工 | 2026-09-23 |
 
-用浏览器直接打开即可（Git Bash 下 `start notes/showme/<文件>`）。
+用浏览器直接打开即可（Git Bash 下 `start docs/notes/showme/<文件>`）。
 
 ## 同类的稿子还在别处
 
@@ -24,10 +24,10 @@
 
 | 文件 | 讲什么 |
 |---|---|
-| [delivery/archive/changes/arch/260912-gov-review-portfolio-decomposition-chain/decomposition-chain.html](../../delivery/archive/changes/arch/260912-gov-review-portfolio-decomposition-chain/decomposition-chain.html) | 拆包→执行链（评审落地版） |
-| [delivery/archive/changes/arch/260913-arch-review-spec-split/show-me-spec-split.html](../../delivery/archive/changes/arch/260913-arch-review-spec-split/show-me-spec-split.html) | spec 拆分为 requirements + architecture 两文件 |
-| [delivery/archive/changes/arch/260918-gov-review-merge-chain-friction/split-overview-friction-map.html](../../delivery/archive/changes/arch/260918-gov-review-merge-chain-friction/split-overview-friction-map.html) | 合并链摩擦点地图 |
-| [delivery/retro/2026-09-13-loop-retro-efficiency.html](../../delivery/retro/2026-09-13-loop-retro-efficiency.html) | loop retro 效率复盘 |
+| [delivery/archive/changes/arch/260912-gov-review-portfolio-decomposition-chain/decomposition-chain.html](../../../delivery/archive/changes/arch/260912-gov-review-portfolio-decomposition-chain/decomposition-chain.html) | 拆包→执行链（评审落地版） |
+| [delivery/archive/changes/arch/260913-arch-review-spec-split/show-me-spec-split.html](../../../delivery/archive/changes/arch/260913-arch-review-spec-split/show-me-spec-split.html) | spec 拆分为 requirements + architecture 两文件 |
+| [delivery/archive/changes/arch/260918-gov-review-merge-chain-friction/split-overview-friction-map.html](../../../delivery/archive/changes/arch/260918-gov-review-merge-chain-friction/split-overview-friction-map.html) | 合并链摩擦点地图 |
+| [delivery/retro/2026-09-13-loop-retro-efficiency.html](../../../delivery/retro/2026-09-13-loop-retro-efficiency.html) | loop retro 效率复盘 |
 
 **UI 设计稿不在本目录**——设计稿母版在 `docs/ui/`（`kidpal-ui-design*.html`），它属资产管线的母版，不是一次性解释稿。
 
@@ -35,4 +35,4 @@
 
 - 收：用 show-me 手法画的解释性 HTML（概念图、方案图、演化史、拓扑图、短幻灯）。
 - 不收：UI 设计稿（→ `docs/ui/`）、评审/复盘的正式证据（→ 各自批证据包，review 批 = `delivery/review/`）、过程产物（→ `delivery/taskpackages/`）、第三方文档存档。
-- 本目录原在 `docs/showme/`（2026-10-19 human 直接指示迁至根级 `notes/showme/`）；收录口径见 [.claude/rules/repo-structure.md](../../.claude/rules/repo-structure.md)（结构单一事实源）。
+- 本目录原在 `docs/showme/`，2026-10-19 晨迁根级 `notes/showme/`（f680934a）、同日 human 直接指示随根级 `notes/` 整体并入现址；收录口径见 [.claude/rules/repo-structure.md](../../../.claude/rules/repo-structure.md)（结构单一事实源）。

@@ -14,7 +14,7 @@ paths:
 |---|---|---|---|
 | `docs/contracts/**` | 契约面（写冻结防线） | 笔顺 JSON / display 响应块 / 课表 MD / shim API 的权威定义（单一事实源 interface-contract.md） | 任何 agent 直改（改动走 `/arch-change` loop；合并过机械凭据闸 `pre-merge-escalation-gate.mjs`——261015 批起无人签门）；在根级新建 `contracts/**`（影子目录） |
 | `docs/` 根 | 主线程（治理批 landing） | 仅白名单内的正式顶层文档（见下） | 在 `docs/` 根新建白名单外文件 |
-| `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析 | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
+| `docs/notes/` | 主线程 / dev-loop | 经验与策略类文档：踩坑记录、实现策略、协议分析（含 `showme/` 一次性视觉解释稿、`archify/` 架构图制品两子目录） | 当 spec 用（spec 面 = `docs/requirements.md` + `docs/architecture.md` 两文件，260913-arch-review-spec-split 起） |
 | `docs/ui/` | 设计 | UI 设计稿与 brief：kidpal-ui-design HTML、UIUX-DESIGN-BRIEF、brand-spec | 把设计稿当实现代码改（设计稿是资产管线的母版） |
 | `docs/templates/` | 治理 | PROPOSAL / retro 等治理制品骨架 | — |
 | `docs/archive/` | 治理 | 已结项归档（长期不动的历史制品） | 把未结项塞进去 |
@@ -59,7 +59,7 @@ paths:
 ## docs/ 根白名单（唯一可直接放在 docs/ 顶层的东西）
 
 文件：`requirements.md`（需求面 SSOT）· `architecture.md`（架构面 SSOT）· `DEV-GOVERNANCE.md` · `glossary.md`（术语表，已建）——**仅此四份**（2026-10-19 human 裁 docs 根瘦身，261019-gov-review-docs-root-ledger-rehome 方案甲：`ARCH-REVIEW-QUEUE.md` 指路 stub 与 `CONTRACT-DECISION-QUEUE.md` 已删除、内容并入 `docs/debt/`；`ADR.md` 已迁 `docs/decisions/ADR.md`）
-子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）· `debt/`（未结决策项账本，见上表行）· `decisions/`（ADR 架构决策记录，261019 批自 docs 根迁入）。show-me 类一次性视觉解释稿不在 docs 内——2026-10-19 human 直接指示迁至根级 `notes/showme/`（历史曾为 `docs/showme/`，a89f3a6 立）。
+子目录：`contracts/` · `notes/` · `ui/` · `templates/` · `archive/`（旧 spec 归档于 `archive/spec.md`）· `debt/`（未结决策项账本，见上表行）· `decisions/`（ADR 架构决策记录，261019 批自 docs 根迁入）。show-me 类一次性视觉解释稿归 `docs/notes/showme/`（历史：`docs/showme/` a89f3a6 立 → 2026-10-19 晨迁根级 `notes/showme/` f680934a → 同日 human 直接指示随根级 `notes/` 整体并入 docs/notes/）。
 
 ### 四种同名物消歧（260923-gov-review-arq-ssot-restructure T6 钉死，261015 批 T5 增 intake 列；仓内同名 `INDEX.md` 现共 10 份且随归档年增长，`find . -name INDEX.md` 可枚举）
 
@@ -74,7 +74,7 @@ paths:
 
 ### 语义说明：`docs/` 的边界在本批扩了一次（有意识动作）
 
-`docs/` 原定义 = 「仅白名单内的**正式顶层文档**」+ 五类子目录（契约 / 经验 / 设计 / 模板 / 归档）；现共六类——260923 批增账本子目录（时名 `crq`，261014-gov-review-crq-debt-rename 批改名 `debt/`）；曾有的第七类 `showme/`（并行批 a89f3a6，human 直接指示增）已于 2026-10-19 human 直接指示迁出至根级 `notes/showme/`，docs 白名单随之收回。账本子目录的加入使 docs **同时承接一个会持续增长的记录库**（首日 94 条目 + 生成 index〔主 4 + 归档年，随归档年增长〕，只增不减）。这是**有意识的边界扩张**，不是顺手放东西：账本原本就住 `docs/`（`ARCH-REVIEW-QUEUE.md` / `CONTRACT-DECISION-QUEUE.md` 都是 docs 根文件——两队列文件 261019 批删除，内容与决策账全量并入 `docs/debt/`；ADR 同批迁 `docs/decisions/`），铺开进 docs 是**原地铺开**而非换树。**复议触发 = docs 子目录数再增两个，或出现第二个记录库**——届时重新考虑 docs 的边界定义。
+`docs/` 原定义 = 「仅白名单内的**正式顶层文档**」+ 五类子目录（契约 / 经验 / 设计 / 模板 / 归档）；现共六类——260923 批增账本子目录（时名 `crq`，261014-gov-review-crq-debt-rename 批改名 `debt/`）；曾有的第七类 `showme/`（并行批 a89f3a6，human 直接指示增）已于 2026-10-19 晨迁出至根级 `notes/showme/`（f680934a）、同日 human 直接指示随根级 `notes/` 整体并入 `docs/notes/showme/`，docs 白名单维持收回。账本子目录的加入使 docs **同时承接一个会持续增长的记录库**（首日 94 条目 + 生成 index〔主 4 + 归档年，随归档年增长〕，只增不减）。这是**有意识的边界扩张**，不是顺手放东西：账本原本就住 `docs/`（`ARCH-REVIEW-QUEUE.md` / `CONTRACT-DECISION-QUEUE.md` 都是 docs 根文件——两队列文件 261019 批删除，内容与决策账全量并入 `docs/debt/`；ADR 同批迁 `docs/decisions/`），铺开进 docs 是**原地铺开**而非换树。**复议触发 = docs 子目录数再增两个，或出现第二个记录库**——届时重新考虑 docs 的边界定义。
 
 > 其它一律不进 docs/ 根。要加新的正式顶层文档 / 类别 → 先登记进 [.claude/scope-map.json](../scope-map.json) 的 `universal.docsTopLevel` 和本表（有意识动作），钩子才放行。
 
