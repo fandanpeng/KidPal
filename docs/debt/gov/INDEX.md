@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 24（待拍板 0 / 待触发 22 / 已接受风险 2）；已结 87（归档索引见下）。
+**摘要**：未结 25（待拍板 0 / 待触发 23 / 已接受风险 2）；已结 88（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（22）
+## 待触发（23）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -38,7 +38,8 @@ _（无）_
 | [ARQ-261017-merge-gate-contract-evidence-ref](ARQ-261017-merge-gate-contract-evidence-ref.md) | SHOULD | pre-merge-escalation-gate 的契约凭据取件用 `git show target(main):PROPOSAL` 而非 source——结构性不可满足，arch-lane 契约批恒 BLOCK（2026-10-17 实测，261015 T15 新增路径首次真实执行） | 下一治理批（动 `pre-merge-escalation-gate.mjs` / 契约凭据判据 / `/arch-change` landing 流程任一时并批）；或在 agent-lane 契约批再次被同一 BLOCK 挡住时立即升格 |
 | [ARQ-261017-merge-gate-scope-unstated](ARQ-261017-merge-gate-scope-unstated.md) | SHOULD | 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK | 下次治理批；或下个动 pre-merge-escalation-gate.mjs / merge-to-main skill 文面 / AGENTS.md 治理路由节任一时并批（与 ARQ-261014 同脚本，可同批） |
 | [ARQ-261018-enforce-scope-worktree-anchor-offbyone](ARQ-261018-enforce-scope-worktree-anchor-offbyone.md) | MAJOR | enforce-scope 钩子跨树锚定 off-by-one——worktree 的 .git 指向 gitdir 目录（三级深），代码按 gitdir 文件假定用 dirname^3，多剥一层致 commonDir 落到仓根、samePath 恒不等、静默降级 legacy → worktree 内子 agent 写同仓合法路径被误拦 | 已二次命中（2026-10-19 landing-verifier 误拦，见尾部追注）——下一治理批必带处理；或下一次动 `.claude/hooks/**` 的治理批 |
-| [ARQ-261019-local-memory-extraction-gaps](ARQ-261019-local-memory-extraction-gaps.md) | SHOULD | Claude Code 本机 memory 承载的治理知识未全量提取入仓——261019 复分析 8 条，1 条已被吸收、1 条部分吸收、3 条残留缺口（verdict 状态行义务 / 生成即验证 / OpenClaw sqlite 坑）、1 条取舍未决 | 下一治理批（触 `.claude/agents/landing-verifier.md` 或 `docs/templates/PROPOSAL.template.md` 或 `kidpal-ecs-gateway` skill 的批次优先消费） |
+| [ARQ-261019-anchor-probe-fence-blind](ARQ-261019-anchor-probe-fence-blind.md) | SHOULD | parseSection2AnchorLists 的 §2 边界探测不跳围栏——§2 内围栏块含 `^## ` 行会提前截断 §2，其后锚行与 T 条目全消失且报错误导（T3 误报缺锚、T4 条目静默消失不点名） | 下一次动 `.claude/scripts/lib/governance-gate-shared.mjs` 锚解析面的治理批 |
+| [ARQ-261019-verbatim-quote-line-level-false-negative](ARQ-261019-verbatim-quote-line-level-false-negative.md) | NIT | landing-fidelity 结构门 verbatim-quote 检查按行级匹配——目标句嵌在长行中部时报 not-found 假阴性（byte 比对证实逐字在场），advisory 语义局限误导核对 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` 的治理批 |
 
 ## 已接受风险（2）
 
@@ -47,10 +48,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（87）
+## 已结（88）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 87 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 88 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

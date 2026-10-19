@@ -11,7 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261019-gov-review-local-memory-extraction](261019-gov-review-local-memory-extraction/) | 2026-10-19 | landed | — |
+| [261019-gov-review-local-memory-extraction](261019-gov-review-local-memory-extraction/) | 2026-10-19 | landed | yes |
 | [261017-arch-review-p3-story-body-sd-cache](261017-arch-review-p3-story-body-sd-cache/) | 2026-10-17 | landed | yes |
 | [261016-gov-review-nano-tier](261016-gov-review-nano-tier/) | 2026-10-16 | landed | yes |
 | [261016-gov-review-triage-entry-identity](261016-gov-review-triage-entry-identity/) | 2026-10-16 | landed | yes |
