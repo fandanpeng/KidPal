@@ -22,7 +22,9 @@
     "S-F2.2-AC4",
     "S-F2.2-AC5",
     "NFR-PERF-3",
-    "S-F1.4-AC6"
+    "S-F1.4-AC6",
+    "docs/requirements.md#NFR-PERF-3",
+    "docs/requirements.md#S-F1.4"
   ],
   "acceptance": [],
   "acceptanceTestsFile": [],
@@ -50,20 +52,22 @@
     "docs-sync"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md §1.4 start_organizing（消费）",
-    "docs/contracts/interface-contract.md §四 kidpal_session_ctx source_page=story（消费）"
+    "docs/contracts/interface-contract.md#§1.4",
+    "docs/contracts/interface-contract.md#§四"
   ],
   "docRefs": [
-    "docs/requirements.md §9 v1.65",
-    "docs/architecture.md（决策 25 取代注记 + §5.1.2 + §5.2④ + §12 changeId 行）",
-    "docs/decisions/ADR.md ADR-013",
+    "docs/requirements.md#NFR-PERF-3",
+    "docs/architecture.md",
+    "docs/decisions/ADR.md",
     "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
     "delivery/intake/261019-p3-record-dialogue-guide.md",
     "delivery/intake/261019-p3-record-dialogue-guide.design.md",
     "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
     "docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md",
-    "docs/ui/V7/（三帧 p3-recording 修订 / p3-recording-guide / state-organizing）"
-    ],
+    "docs/ui/V7/p3-recording.png",
+    "docs/ui/V7/p3-recording-guide.png",
+    "docs/ui/V7/state-organizing.png"
+  ],
   "docsSyncRequired": true,
   "docsOwner": "integrator",
   "securityReviewRequired": true,
@@ -83,17 +87,22 @@
       {
         "face": "server",
         "path": "server/gateway/display_schema.py",
-        "symbol": "GATEWAY_DECISION_CONTROL_ACTIONS / validate_display（自推通路分叉，结构性义务 1）"
+        "symbol": "GATEWAY_DECISION_CONTROL_ACTIONS"
+      },
+      {
+        "face": "server",
+        "path": "server/gateway/display_schema.py",
+        "symbol": "validate_display"
       },
       {
         "face": "firmware",
-        "path": "firmware/main/display/view_router.h",
-        "symbol": "VRT_CTRL_START_ORGANIZING=3（additive 枚举，冻结数值码 0/1/2 不偏移）"
+        "path": "firmware/main/display/view_router.c",
+        "symbol": "kidpal_display_control_action"
       },
       {
         "face": "firmware",
-        "path": "firmware/main/mcp_server.cc",
-        "symbol": "显示控制 case 3 消费（:1230-1263 区，story_consumed 日志同型）"
+        "path": "firmware/main/display/story_page.c",
+        "symbol": "kidpal_story_on_control"
       }
     ],
     "exempt": ""
