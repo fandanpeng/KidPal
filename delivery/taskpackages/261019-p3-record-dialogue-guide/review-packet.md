@@ -143,4 +143,4 @@ decisionCoverage 中 `landsIn: dropped` 条目两条（「卡壳阈值数值」/
 
 ## Step 9b 影响面记账（advisory）
 
-detect_changes 以 git diff 为准、无法覆盖未 commit 工作树——本包 Step 9b advisory 记账降级为「change-manifest 闸对账」（r5 PASS：17 tracked + prompts 目录全在 manifest 内、manifest 外零触）+ commit 后由 planner final bearing verify 轮在已 commit 树上补跑（test-scope 圈定与 final 轮归 planner，本相位不代跑 verify.mjs）。per-Pod 图索引在册（launch 面）；无 re-index 需求申报。
+detect_changes 以 git diff 为准、无法覆盖未 commit 工作树——本包 Step 9b advisory 记账降级为「change-manifest 闸对账」（r5 PASS：17 tracked + prompts 目录全在 manifest 内、manifest 外零触）+ commit 后由 planner final bearing verify 轮在已 commit 树上补跑（test-scope 圈定与 final 轮归 planner，本相位不代跑 verify.mjs）。per-Pod 图索引在册（launch 面）；无 re-index 需求申报。补跑闭环（2026-10-20，已由 planner 触发）：实现与冻结件均已 commit（cedd4d1f / ef3e5066 @ dev/pod-m2），detect_changes 在已 commit 树上正常可用（Pod 索引 C-AI-KidPal-pod-m2：changed_files 41 / seed_symbols 204 / impacted_total 129，零降级），影响面圈定清单已落盘 delivery/taskpackages/261019-p3-record-dialogue-guide/scope-final.md（server 20 件 / firmware 27 件）；原降级申报撤销。
