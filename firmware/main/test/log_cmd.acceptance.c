@@ -148,11 +148,14 @@
  *               无命令零输出，不干扰烧录与监控）。
  *          static void LogCmdReadTask(void *arg);
  *            -- 读任务（自由函数形态，**函数名 LogCmdReadTask 字面冻结**，供结构断言
- *               定位函数体）：open("/dev/secondary", O_RDONLY | O_NONBLOCK)（D2，不装
- *               usb_serial_jtag_driver、不改 sdkconfig）+ 轮询读（vTaskDelay 50..100ms
- *               窗口，64B 块）+ 消费 kidpal_logcmd_* 纯逻辑入口 + 只读 FATFS（一次一个
- *               FD、读完即关、不 rename/remove）+ **函数体内零 ESP_LOG***（防 vprintf
- *               钩子自污染与递归，D3）+ 响应只经 stdout（fwrite / fputs）。
+ *               定位函数体）：HAL 直读 usb_serial_jtag_ll_read_rxfifo（降级 A，
+ *               2026-10-19 human 显式指令：真机 smoke /dev/secondary VFS 直读未达
+ *               exit 4 超时零字节——同外设、非阻塞轮询、**不 open 任何 /dev/ 设备
+ *               路径**、不装 usb_serial_jtag_driver、不改 sdkconfig）+ 轮询读
+ *               （vTaskDelay 50..100ms 窗口，64B 块）+ 消费 kidpal_logcmd_* 纯逻辑
+ *               入口 + 只读 FATFS（一次一个 FD、读完即关、不 rename/remove）+
+ *               **函数体内零 ESP_LOG***（防 vprintf 钩子自污染与递归，D3）+ 响应只经
+ *               stdout（fwrite / fputs）。
  *
  *   [S7] 只读访问器增量（home = sd_log.h 声明 + sd_log_fs.cc 定义；persist 包文件的
  *        **只增不改**——未 init/未 attach 返回 -1，供 list 的 * 标记与 tail 当前文件）:
@@ -176,9 +179,9 @@
  * | LUR-A3 行装配（跨块 / CRLF/LF / 超长丢弃 / 非 kplog 静默） | TEST 3 | 行为级 |
  * | LUR-A4 帧格式（BEGIN/END 精确字面 / list 行 / 错误帧 / TOTAL 汇总） | TEST 4 | 行为级 |
  * | LUR-A5 尾部窗口（N=1 / N>行数 / CRLF / 无结尾换行） | TEST 5 | 行为级 |
- * | LUR-A6 接线结构（文件名单源 / /dev/secondary / 启动零打印 / 读任务零 ESP_LOG + stdout / D2/D5/D7） | TEST 6 + TEST 7 | 源锚代理（机制级锚点；**不等于运行时观察**） |
+ * | LUR-A6 接线结构（文件名单源 / 端口 HAL 直读 / 启动零打印 / 读任务零 ESP_LOG + stdout / D2/D5/D7） | TEST 6 + TEST 7 | 源锚代理（机制级锚点；**不等于运行时观察**） |
  * | D1 命令面只读白名单（仅 kplog 前缀、其余静默） | TEST 1 + TEST 3 SILENT 面 | 行为级 |
- * | D2 /dev/secondary VFS 直开（O_RDONLY|O_NONBLOCK） | TEST 6 源锚 | 源锚代理 |
+ * | D2 端口读通道（原 /dev/secondary VFS 直开；真机 smoke 未达，降级 A = HAL 直读 usb_serial_jtag_ll_read_rxfifo，不装 usb_serial_jtag_driver、不改 sdkconfig） | TEST 6 源锚（HAL 消费在场 + 零 "/dev/ 设备路径字面 + 零 usb_serial_jtag_driver_install） | 源锚代理 |
  * | D3 输出纪律（stdout、读任务零 ESP_LOG） | TEST 6 源锚 | 源锚代理 |
  * | D4 读盘并发（rb 只读、一次一 FD、不 rename/remove） | TEST 6 源锚（禁令半）+ 真机轮 LUR-A7⑤⑥ | 源锚代理（禁令） |
  * | D5 KidpalSdLogCurrentIndex 只读访问器 | TEST 7（声明/定义/port 消费） | 源锚代理 |
@@ -186,10 +189,10 @@
  * | LUR-A7 真机轮观测 | **live-manual，无自动断言**（见 coverage map 末行） | 真机观察（human 持板） |
  *
  * 弱于契约处（显式缺口，不得当已兑现）:
- *   GAP-1（真机 /dev/secondary 直读可达性）：Kconfig 帮助文本提示 secondary 主要用于
- *         输出；host 齿只证明「只 open /dev/secondary + O_RDONLY|O_NONBLOCK」的源形状，
- *         **不证明**设备上 read() 真能取到字节——真机轮 LUR-A7① 单命令 smoke 承载
- *         （失败按 plan 降级 A/B 链）。
+ *   GAP-1（真机端口读可达性）：原 /dev/secondary VFS 直读在真机 smoke 已证未达（exit 4
+ *         超时零字节，2026-10-19，降级 A 生效改 HAL 直读）；host 齿只证明「HAL
+ *         usb_serial_jtag_ll_read_rxfifo 消费 + 零 /dev/ 设备路径」的源形状，**不证明**
+ *         设备上 HAL 读真能取到字节——真机轮 LUR-A7① 单命令 smoke 重跑承载。
  *   GAP-2（真实 FATFS 并发读）：FS_LOCK=0 下 rb 打开、一次一个 FD、读不干扰写，host
  *         不可达 -> 真机轮 LUR-A7⑤⑥。
  *   GAP-3（stdout 实际可见性）：fwrite 到 stdout 在设备上经 console 双写（UART0 +
@@ -297,8 +300,9 @@
  *             空缓冲 / 连续空行边界（TEST 5）
  *   coverage: LUR-A6 -- 接线结构齿（源锚，注释剥离后可执行源）：① 文件名只经
  *             kidpal_sd_log_file_name 消费（port 无 KPLOG% 字面 = 禁本地模板 / 用户串
- *             直进路径拼接）（TEST 6）；② 端口只 open /dev/secondary（O_RDONLY|
- *             O_NONBLOCK，全文件唯一 "/dev/ 设备路径字面）（TEST 6）；③ 启动函数
+ *             直进路径拼接）（TEST 6）；② 端口 HAL 直读 usb_serial_jtag_ll_read_
+ *             rxfifo（降级 A：零 "/dev/ 设备路径字面、零 open(" 引号路径形、零
+ *             usb_serial_jtag_driver_install）（TEST 6）；③ 启动函数
  *             KidpalLogCmdStart 函数体内零打印（TEST 6）；④ 读任务 LogCmdReadTask
  *             函数体内零 ESP_LOG*、响应只经 stdout（fwrite/fputs）+ 纯逻辑入口消费
  *             闭环（TEST 6）；⑤ main.cc 钩子后接线 KidpalLogCmdStart()（D7）+
@@ -1246,14 +1250,16 @@ TEST_CASE("log cmd: tail window picks last N lines with CRLF and no-trailing-NL 
 /* ========================================================================== *
  * TEST 6 — LUR-A6 ①②③④ port 芯片面源锚（log_cmd_port.cc 源文本扫，不进 host 构建）。
  * coverage: LUR-A6 -- ① 文件名只经 kidpal_sd_log_file_name 消费、port 无 KPLOG% 模板
- *           字面（禁用户串/本地模板直进路径拼接）；② 端口只 open /dev/secondary
- *           （O_RDONLY|O_NONBLOCK，全文件唯一 "/dev/ 设备路径字面，D2）；③ 启动函数
+ *           字面（禁用户串/本地模板直进路径拼接）；② 端口 HAL 直读
+ *           usb_serial_jtag_ll_read_rxfifo（降级 A：零 "/dev/ 设备路径字面、零 open("
+ *           引号路径形、零 usb_serial_jtag_driver_install，D2）；③ 启动函数
  *           KidpalLogCmdStart 函数体内零打印；④ 读任务 LogCmdReadTask 函数体内零
  *           ESP_LOG*（D3）+ 响应只经 stdout（fwrite/fputs）+ parse 接线 + FATFS 只读
  *           禁令（不 rename/remove，D4）+ 纯逻辑入口消费闭环 + 轮询窗口 50..100ms
- * RED today（设计态）: log_cmd_port.cc 未落地（/dev/secondary 读任务无承载）。
+ * RED today（重锚态）: log_cmd_port.cc 仍为 /dev/secondary VFS 直开实现（无 HAL 直读
+ *           消费）——降级 A 重锚后端口锚红，fixer 按 [S6] 重写后转绿。
  * ========================================================================== */
-TEST_CASE("log cmd: port opens only /dev/secondary, start silent, read task no ESP_LOG (LUR-A6)",
+TEST_CASE("log cmd: port reads via HAL rxfifo only, start silent, read task no ESP_LOG (LUR-A6)",
           "[log_cmd][LUR-A6][structural]")
 {
     char *code;
@@ -1266,20 +1272,25 @@ TEST_CASE("log cmd: port opens only /dev/secondary, start silent, read task no E
 
     code = lur_strip_file(LUR_PORT_CC);
     TEST_ASSERT_NOT_NULL_MESSAGE(code,
-        "LUR-A6 RED: firmware/main/diagnostics/log_cmd_port.cc 未落地——/dev/secondary 读任务"
-        "无承载（builder 落地后转绿；本齿对 port 做源文本扫，port 不进 host 构建）");
+        "LUR-A6 RED: firmware/main/diagnostics/log_cmd_port.cc 未落地——USB 串口读任务"
+        "（HAL 直读）无承载（builder 落地后转绿；本齿对 port 做源文本扫，port 不进 "
+        "host 构建）");
 
-    /* ---- ② 端口只 open /dev/secondary + D2 直开形态 -------------------------- */
-    TEST_ASSERT_TRUE_MESSAGE(strstr(code, "\"/dev/secondary\"") != NULL,
-        "LUR-A6 RED: log_cmd_port.cc 可执行源无 \"/dev/secondary\" 字面——VFS 直开读通道"
-        "缺席（D2：O_RDONLY|O_NONBLOCK，不装 usb_serial_jtag_driver、不改 sdkconfig）");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(1, lur_count_sub(code, "\"/dev/"),
-        "LUR-A6 RED: log_cmd_port.cc 出现多个 \"/dev/ 设备路径字面——端口只 open "
-        "/dev/secondary（plan §1，禁其它设备路径）");
-    TEST_ASSERT_TRUE_MESSAGE(strstr(code, "O_NONBLOCK") != NULL,
-        "LUR-A6 RED: port 未用 O_NONBLOCK——非阻塞轮询读形态缺席（D2）");
-    TEST_ASSERT_TRUE_MESSAGE(strstr(code, "O_RDONLY") != NULL,
-        "LUR-A6 RED: port 未用 O_RDONLY——只读打开纪律缺席（D2/D4：一次一个 FD、读完即关）");
+    /* ---- ② 端口 HAL 直读 usb_serial_jtag_ll_read_rxfifo + D2/降级 A 禁令形态 - */
+    TEST_ASSERT_TRUE_MESSAGE(strstr(code, "usb_serial_jtag_ll_read_rxfifo(") != NULL,
+        "LUR-A6 RED: log_cmd_port.cc 可执行源无 usb_serial_jtag_ll_read_rxfifo( 消费——"
+        "HAL 直读通道缺席（降级 A：真机 smoke /dev/secondary VFS 直读未达 exit 4 超时"
+        "零字节，human 2026-10-19 显式指令 + pod-events b5dee0ec；同外设、非阻塞轮询、"
+        "不装 usb_serial_jtag_driver、不改 sdkconfig）");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, lur_count_sub(code, "\"/dev/"),
+        "LUR-A6 RED: log_cmd_port.cc 出现 \"/dev/ 设备路径字面——降级 A 后端口只经 HAL "
+        "usb_serial_jtag_ll_read_rxfifo 直读，禁 open 任何设备路径（plan §1 + 降级 A）");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, lur_count_sub(code, "open(\""),
+        "LUR-A6 RED: log_cmd_port.cc 存在 open(\" 引号路径形——端口禁 VFS open（降级 A；"
+        "FATFS 日志文件的 fopen 走 FILE* + 路径变量形态、不受此禁）");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, lur_count_sub(code, "usb_serial_jtag_driver_install"),
+        "LUR-A6 RED: log_cmd_port.cc 出现 usb_serial_jtag_driver_install——降级 A 明令"
+        "不装 driver（直接 HAL 读 rxfifo；装 driver 会与 console 抢占 / 改变 RX 行为）");
 
     /* ---- ① 文件名只经 kidpal_sd_log_file_name（禁本地模板 / 用户串直进路径） -- */
     TEST_ASSERT_TRUE_MESSAGE(strstr(code, "kidpal_sd_log_file_name(") != NULL,
@@ -1365,9 +1376,9 @@ TEST_CASE("log cmd: port opens only /dev/secondary, start silent, read task no E
     TEST_ASSERT_TRUE_MESSAGE(lur_count_sub(body, "fwrite(") + lur_count_sub(body, "fputs(") >= 1,
         "LUR-A6 RED: 读任务函数体内无 fwrite( / fputs( ——响应只经 stdout（D3：ESP_LOG "
         "会被 sd_log 的 vprintf 钩子再收进环形缓冲，禁止走 esp_log 通道）");
-    TEST_ASSERT_TRUE_MESSAGE(strstr(body, "read(") != NULL,
-        "LUR-A6 RED: 读任务函数体内无 read( 调用——/dev/secondary 非阻塞取字节面缺席"
-        "（D2）");
+    TEST_ASSERT_TRUE_MESSAGE(strstr(body, "usb_serial_jtag_ll_read_rxfifo(") != NULL,
+        "LUR-A6 RED: 读任务函数体内无 usb_serial_jtag_ll_read_rxfifo( 调用——HAL 直读"
+        "取字节面缺席（D2/降级 A：同外设非阻塞轮询，不经 VFS）");
     TEST_ASSERT_TRUE_MESSAGE(strstr(body, "kidpal_logcmd_parse(") != NULL,
         "LUR-A6 RED: 读任务未消费 kidpal_logcmd_parse(——解析纯逻辑入口未接线（行为齿"
         "绿 != 接线，决策表不得成死代码）");
@@ -1613,4 +1624,21 @@ TEST_CASE("log cmd: app_main wires KidpalLogCmdStart after hook, accessor, regis
  *               逐条核对，红名见交付报告）+ 既有 host 全量套件零新增红判读；双向
  *               可满足性以 /tmp 一次性参考实现 + 合成树（KIDPAL_REPO_ROOT 注入）取证，
  *               不写入工作树。
+ *   2026-10-19 重锚（窄口径 tighten-only；acceptance-author）：TEST 6 端口锚由
+ *               「/dev/secondary VFS 直开」改锚「HAL 直读 usb_serial_jtag_ll_read_
+ *               rxfifo」。事由：真机单命令 smoke 失败——/dev/secondary VFS 直读未达
+ *               （exit 4 超时零字节；烧录/被动捕获正常、sdkconfig secondary 配置实核
+ *               在位）。处置 = plan 风险节降级 A：端口读取换 HAL 直读 usb_serial_jtag_
+ *               ll_read_rxfifo（同外设、非阻塞轮询、不装 usb_serial_jtag_driver、不改
+ *               sdkconfig）。授权：human 2026-10-19 显式指令 + plan 风险节降级链预授权
+ *               + pod-events human-decision b5dee0ec-1358-4b6e-9c24-867c459fa3ab。
+ *               改动范围（恰好）：TEST 6 ② 锚块重锚（HAL 消费在场 + 全文件零 "/dev/
+ *               设备路径字面 + 零 open(" 引号路径形 + 零 usb_serial_jtag_driver_install
+ *               禁令；O_RDONLY/O_NONBLOCK VFS 形态断言随旧锚移除）+ 读任务函数体
+ *               read( needle 改 HAL needle + TEST_CASE 名与 ② 注释行同步；头注 [S6]
+ *               条目、强度申报表 LUR-A6/D2 行、GAP-1、coverage map ②、TEST 6 未落地
+ *               红消息同步为 HAL 口径；REVISION LOG 本条。TEST 1-5 / TEST 7 与其余
+ *               全部断言零改动（sdkconfig 锚本文件原无、按指令不加）。重锚红基线：
+ *               当前工作树实现仍为 VFS 直开版 → 恰 TEST 6 端口锚红、其余 6 TEST 绿
+ *               （设计态重锚红，fixer 按 [S6] 重写后转绿）。
  * --------------------------------------------------------------------------- */

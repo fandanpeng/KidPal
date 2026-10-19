@@ -4,8 +4,10 @@
  *
  * 契约权威 = firmware/main/test/log_cmd.acceptance.c 文件头 [S6]（冻结，逐字）。
  * 本文件承载 host 不可达的四件事（不进 host 构建，只由结构断言扫源锚）：
- *   1) secondary 串口 VFS 直开（O_RDONLY | O_NONBLOCK，不装 usb_serial_jtag_driver、
- *      不改 sdkconfig）+ 50..100ms 轮询读 64B 块（D2）；
+ *   1) secondary 串口 HAL 直读（usb_serial_jtag_ll_read_rxfifo，同 USB-Serial/JTAG
+ *      外设、非阻塞轮询、不装 usb_serial_jtag_driver、不改 sdkconfig、不开任何设备
+ *      路径）+ 50..100ms 轮询读 64B 块（D2；降级 A，2026-10-19 human 显式指令：
+ *      真机 smoke /dev/secondary VFS 直读未达 exit 4 超时零字节）；
  *   2) 消费 kidpal_logcmd_* 纯逻辑入口（解析 / 行装配 / 帧格式化 / 尾部窗口）——
  *      决策表不得成死代码；
  *   3) FATFS 只读（rb、一次一 FD、读完即关、不 rename/remove，D4）；
@@ -20,12 +22,12 @@
 #include <cstring>
 #include <cstdlib>
 
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
+#include "hal/usb_serial_jtag_ll.h"
 
 #include "log_cmd.h"
 #include "sd_log.h"
@@ -204,15 +206,15 @@ static int EmitTail(unsigned n)
     return 0;
 }
 
-/* 读任务（自由函数形态，名字 LogCmdReadTask 字面冻结）：secondary 串口 VFS 非阻塞轮询读
- * -> 行装配 -> 解析 -> 帧响应（stdout）。函数体内零 ESP_LOG（D3：防 vprintf 钩子递归回灌）。 */
+/* 读任务（自由函数形态，名字 LogCmdReadTask 字面冻结）：secondary 串口 HAL 直读
+ * （usb_serial_jtag_ll_read_rxfifo 非阻塞轮询，不经 VFS）-> 行装配 -> 解析 -> 帧响应
+ * （stdout）。函数体内零 ESP_LOG（D3：防 vprintf 钩子递归回灌）。 */
 static void LogCmdReadTask(void *arg)
 {
     static char asm_storage[KIDPAL_LOGCMD_LINE_MAX + 128];
     kidpal_logcmd_asm_t *asmr;
     char line[KIDPAL_LOGCMD_LINE_MAX + 1];
     unsigned char block[KIDPAL_LOGCMD_READ_BLOCK];
-    int fd = -1;
 
     (void)arg;
     asmr = kidpal_logcmd_asm_init(asm_storage, (unsigned)sizeof(asm_storage));
@@ -221,17 +223,16 @@ static void LogCmdReadTask(void *arg)
         return;
     }
     for (;;) {
-        ssize_t got;
+        uint32_t got;
 
-        if (fd < 0) {
-            fd = open("/dev/secondary", O_RDONLY | O_NONBLOCK);
-            if (fd < 0) {
-                vTaskDelay(pdMS_TO_TICKS(KIDPAL_LOGCMD_POLL_MS));
-                continue;
-            }
+        /* HAL 直读：rxfifo 有数据才取，read 本身非阻塞（读到空即返回已取字节数）。
+         * 不装 usb_serial_jtag_driver、不开设备路径、不改 sdkconfig（降级 A）。 */
+        if (usb_serial_jtag_ll_rxfifo_data_available() != 0) {
+            got = usb_serial_jtag_ll_read_rxfifo(block, (uint32_t)sizeof(block));
+        } else {
+            got = 0u;
         }
-        got = read(fd, block, sizeof(block));
-        if (got > 0) {
+        if (got > 0u) {
             int ln;
 
             (void)kidpal_logcmd_asm_feed(asmr, block, (unsigned)got);
