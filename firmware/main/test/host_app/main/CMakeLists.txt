@@ -243,6 +243,14 @@ set(HOST_ACCEPTANCE_SRCS
     # 之前**（smoke 末位 = 最先执行）。
     "../../story_cache.acceptance.c"
 
+    # 包 261018-sd-log-persist（板端诊断日志落 TF 卡：有界轮转，含 STT/LLM 原文）
+    # 被测实现 + 冻结验收。diagnostics/sd_log.c = [C1]-[C3] 纯逻辑强符号源（环形缓冲 /
+    # 8.3 轮转命名 / 刷盘与重试决策表，覆盖冻结件 weak 哨兵）；sd_log_fs.cc 是芯片面
+    # （vprintf 钩子 / PSRAM / 写盘任务），host 不可达、不进本构建。相对 host_app/main
+    # 分别为 ../../../diagnostics/ 与 ../../。**必须置于 host smoke acceptance 之前**。
+    "../../../diagnostics/sd_log.c"
+    "../../sd_log.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

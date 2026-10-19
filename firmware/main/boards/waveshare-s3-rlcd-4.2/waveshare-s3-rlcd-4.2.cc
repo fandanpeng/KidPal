@@ -35,6 +35,7 @@
 #include <driver/sdmmc_host.h>       /* 包 261016-sd-card-mount: SDMMC_HOST_DEFAULT / sdmmc_slot_config_t */
 #include <stdio.h>                   /* 包 261016-sd-card-mount: 探针 VFS 文件 I/O (fopen/fwrite/fread/fclose/remove) */
 #include <errno.h>                   /* 包 261016-sd-card-mount: 探针失败步 errno 诊断 */
+#include "diagnostics/sd_log.h"      /* 包 261018-sd-log-persist: 挂载成功分支 KidpalSdLogAttach */
 
 /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
  * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
@@ -847,7 +848,9 @@ private:
 
         esp_vfs_fat_sdmmc_mount_config_t mount_config = {};
         mount_config.format_if_mount_failed = false; /* 坏卡/异格式不销毁数据, 只报错降级 */
-        mount_config.max_files              = 5;
+        /* 包 261018-sd-log-persist: 5 -> 8 —— FD 预算给诊断日志文件 + story_sd_io +
+         * 开机 SD 探针留头（单写者纪律：日志文件只由诊断写盘任务持有）。 */
+        mount_config.max_files              = 8;
 
         sdmmc_card_t *card = NULL;
         esp_err_t ret = esp_vfs_fat_sdmmc_mount(SD_MMC_MOUNT_ROOT, &host, &slot_config,
@@ -865,6 +868,11 @@ private:
         s_sd_mounted = true;
         sdmmc_card_print_info(stdout, card);
         ESP_LOGI(TAG, "SD card mounted at %s (SDMMC 1-bit)", SD_MMC_MOUNT_ROOT);
+        /* 包 261018-sd-log-persist: 仅挂载成功分支 attach 诊断日志落盘链——无卡 /
+         * 挂载失败在上方降级 return 已退出, 不会走到这里（零 fopen）。attach 只置
+         * 可 drain 标志、不清早启动累积的 PSRAM 环形缓冲, 并打开 / 轮转
+         * /sdcard/logs/KPLOGnnn.TXT。 */
+        KidpalSdLogAttach(SD_MMC_MOUNT_ROOT);
         /* 包 261016-sd-card-mount: 挂载成功路径一次性开机 roundtrip 探针调用点
          * (SD-A5 真机 live-manual 观察触发面, 见 RunBootRoundtripProbe 头注)。
          * 仅成功路径执行——无卡/挂载失败的降级 return 分支 (:856-862) 不跑;

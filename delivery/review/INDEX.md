@@ -7,11 +7,12 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (4)
+## review (6)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
 | [261019-gov-review-local-memory-extraction](261019-gov-review-local-memory-extraction/) | 2026-10-19 | landed | yes |
+| [261018-arch-review-sd-log-persist](261018-arch-review-sd-log-persist/) | 2026-10-18 | landed | — |
 | [261017-arch-review-p3-story-body-sd-cache](261017-arch-review-p3-story-body-sd-cache/) | 2026-10-17 | landed | yes |
 | [261016-gov-review-nano-tier](261016-gov-review-nano-tier/) | 2026-10-16 | landed | yes |
 | [261016-gov-review-triage-entry-identity](261016-gov-review-triage-entry-identity/) | 2026-10-16 | landed | yes |

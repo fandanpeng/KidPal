@@ -1,0 +1,111 @@
+{
+  "producedBy": "integrator closeout projection (advisory, non-bearing; bearing fact = verifier-evidence/rounds/r2.json)",
+  "changeId": "261018-sd-log-persist",
+  "phase": "final",
+  "round": 2,
+  "invocationId": "0f3e6b1a-7c52-4a9d-9f61-2b8e4d7c5a10",
+  "outcome": "ok",
+  "ok": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "evidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r2.json",
+  "scopedEvidenceRef": "delivery/taskpackages/261018-sd-log-persist/verifier-evidence/rounds/r1.json",
+  "provenance": {
+    "sourceType": "proposal",
+    "triage": "/triage-change 2026-10-18（architect 比例化 review；human 触点①确认 ②单包 Full / riskTier=high）；架构面 T1–T8 已随 commit 5a37b001 先行 landing",
+    "rigor": "full",
+    "riskTier": "high",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md"
+  },
+  "evidenceFact": {
+    "artifactType": "verifier-round-fact",
+    "authority": "bearing",
+    "producedBy": "verify.mjs",
+    "ok": true,
+    "phase": "final",
+    "round": 2,
+    "invocationId": "0f3e6b1a-7c52-4a9d-9f61-2b8e4d7c5a10",
+    "observedGateExit": 0
+  },
+  "gateSummary": [
+    {
+      "gate": "taskpackage-required",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "TaskPackage 上下文解析通过（current 指针 → 261018-sd-log-persist）"
+    },
+    {
+      "gate": "change-manifest",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "本包首提交日期 2026-09-11 < MANIFEST_CUTOFF 2026-09-28 → pre-cutoff 存量放行；integrator 另做人工 closed-set 对账"
+    },
+    {
+      "gate": "firmware-build",
+      "kind": "structural",
+      "ok": true,
+      "timing": "scoped",
+      "note": "final 相位恒跑；工具链可用、真编译 build-pass（xiaozhi.bin 0x322180 bytes，最小 app 分区余量 9%）"
+    },
+    {
+      "gate": "contract-lint",
+      "kind": "structural",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；唯一 warning = 上游断链 delivery/changes/arch/260923-arch-review-schedule-grid-cold-boot/CONTRACT-CHANGE-PACKET.md，非本包引入"
+    },
+    {
+      "gate": "acceptance-coverage",
+      "kind": "functional",
+      "ok": true,
+      "timing": "scoped",
+      "note": "SLP-A1..A5 functional / SLP-A6 structural(live-manual)；files = firmware/main/test/sd_log.acceptance.c"
+    },
+    {
+      "gate": "mutation-check",
+      "kind": "functional",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；perAcceptance 六条（SLP-A1..A5 + 跨包重锚 XPKG）全部 turnedRed/sensitive，见 TaskPackage mutationEvidence"
+    },
+    {
+      "gate": "docs-sync",
+      "kind": "governance",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；docRefs 七条在盘；本包零新增 canonical 文档改动（docs-delta.md §1）"
+    },
+    {
+      "gate": "security",
+      "kind": "security",
+      "ok": true,
+      "timing": "scoped",
+      "note": "PASS；securityReviewRequired=true，三轴证据在 securityAxes/securityEvidence（明文对话原文 = human 接受 + TECH-261016 记账；路径安全；降级不崩）"
+    },
+    {
+      "gate": "unit",
+      "kind": "functional",
+      "ok": true,
+      "timing": "full",
+      "note": "executor-run：scope 内 2 件 server acceptance，26 passed / 0 deselected（test-scope.txt 圈定）"
+    },
+    {
+      "gate": "acceptance",
+      "kind": "functional",
+      "ok": true,
+      "timing": "full",
+      "note": "oracle-pass（firmwareAcceptanceFiles 22 / serverAcceptanceFiles 2）+ executor-run 26 passed / 0 deselected（test-scope.txt 圈定）"
+    }
+  ],
+  "gateSummaryPrecision": "r2 final 的 unit/acceptance 两 full 闸按 test-scope.txt 圈定真跑（scope 内 2 件 server acceptance，26 passed / 0 deselected，计数一致）；firmware 侧 host 全量套件由 integrator 闸外独立实跑交叉核对（203 Tests / 3 先存红 / 本包 12 齿全绿）",
+  "impactAudit": {
+    "detectChanges": "base=main，merge_base 21360279，inbound depth=2：changed_files 31 / seed_symbols 214 / impacted_total 24（firmware/main 18 + server/acceptance 6）；图索引可用 → 正常圈定",
+    "closedSet": "git status --porcelain + git diff main --stat 实证改动面 == changeManifest ∪ 跨包重锚 ∪ delivery 簿记；零触碰面 docs/contracts、docs/requirements.md、docs/architecture.md、docs/ADR.md、docs/debt、server/**、firmware/partitions*、firmware/sdkconfig* 实测零 diff",
+    "testScopeFile": "delivery/taskpackages/261018-sd-log-persist/test-scope.txt",
+    "scopingMethod": "三分法：per-Pod 专属图索引可用且 detect_changes 正常返回 → 正常圈定（无 trace_path 降级）"
+  },
+  "residual": "SLP-A6 四项 live-manual 未跑（本 Pod 零烧录零真机）；真实 ISR / FATFS / PSRAM / UART 运行时未在 host 复现；p1_auxbar AB-A1/A2/A4 先存红与本包正交；四项 NIT（自旋锁 ISR 边界 / pending_bytes 溢出差 / 逐条 flush / 钩子栈占用）已记账"
+}
