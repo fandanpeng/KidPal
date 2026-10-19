@@ -33,3 +33,9 @@ human 的两次介入都很省：一次是窄口径批准重锚（原话直接�
 1. intake / 1g 增加一条「既有冻结件相邻字面锚」扫查（本包根因，交 ARQ）。
 2. 派 builder 做 mutation 时，派单直接要求 mutationEvidence 记录携带完整 acceptance 串（避免 raw-id 语义往返）。
 3. 真机 checklist 继续坚持「逐条判据 + 留痕形态」，不要退化成截图观感。
+
+## 修复轮补记（2026-10-19，真机缺陷 fsync）
+
+真机轮抓到一个 host 齿结构上盖不住的缺陷：fflush 只推 RAM 文件对象、FAT 目录项不落卡，硬复位丢全部已写日志。这件事给我两个体感：一，`SLP-A6 live-manual` 的价值这次是真的——它是唯一能抓到「数据是否真的活过掉电」的验收位，host 侧 210 齿全绿也替不了；二，我在 intake 时对「持久性」这个词的理解停在「fwrite 成功 = 落盘」，没有追问 FAT 语义下 fflush 与 fsync 的差别——plan 写「每 1 秒 fflush」，我照单全收，没有用架构视角复核这句技术表述。下次 intake 读 plan 里带 I/O 语义的句子时，要把「这句话在真实介质上成立吗」当一道必答题。
+
+修复与回归齿的流程本身很顺：human 授权（b0da8396）→ fixer 最小补丁 → tighten-only additive 齿（五件套）→ r3/r4 复验全绿。冻结件治理的两条通道（窄口径重锚、additive 窗口）这次各用了一次，都比我预期的省力。
