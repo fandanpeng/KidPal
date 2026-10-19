@@ -1,6 +1,6 @@
 # 开发域治理（DEV-GOVERNANCE）：设计思想与实现
 
-> **迁移注记（2026-08-27 档 1；2026-08-29 档 2/3）**：本文件自 `c:\AI\AInativecompany` 迁移，按 KidPal 实况适配——契约面 = `docs/contracts/**`（单文件 markdown 协议）。档 1（spec 治理：arch-review 对抗链 + 契约门 + Track B）2026-08-27 迁入；档 2（dev-loop 全链 + 测试闸）与档 3（portfolio 编排）2026-08-29 迁入（迁移批 `delivery/review/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面重写）。结构参考 = `.claude/rules/repo-structure.net-template.md`（原仓模板，含本仓未建面）。流程正文在各 operational 文档；契约 SSOT 永远是 [docs/contracts/**](contracts/)；术语表暂缺，建立时补。
+> **迁移注记（2026-08-27 档 1；2026-08-29 档 2/3）**：本文件自 `c:\AI\AInativecompany` 迁移，按 KidPal 实况适配——契约面 = `docs/contracts/**`（单文件 markdown 协议）。档 1（spec 治理：arch-review 对抗链 + 契约门 + Track B）2026-08-27 迁入；档 2（dev-loop 全链 + 测试闸）与档 3（portfolio 编排）2026-08-29 迁入（迁移批 `delivery/review/260829-gov-review-migration-tier23`，栈绑定闸按本仓双实现面重写）。结构参考 = [repo-structure.md](../.claude/rules/repo-structure.md)（本仓结构 SSOT）。流程正文在各 operational 文档；契约 SSOT 永远是 [docs/contracts/**](contracts/)；术语表 = [glossary.md](glossary.md)（已建）。
 > 本文件讲清开发域治理**按什么思想设计、如何在本仓实现**。
 > **怎么读本文**：想了解 → 上篇 §1–§4；想改东西 → §7 速查；想改治理本身 → §6 → §4 治理变更 → §5。
 > **贯穿铁律**：审批在前、改动在后（前置门）；证据入库，聊天结论不结门；冲突按 authority ladder **停下路由**、不静默选择——`docs/contracts/**` > canonical spec > 治理规则 > gate evidence > queues > `delivery/review/` > transcripts。
@@ -51,9 +51,8 @@
 | 架构评审 | `architect-reviewer` | 契约四分类 + review-depth 裁断 |
 | landing 独立核验 | `landing-verifier` | 治理 canonical landing 保真 == frozen PROPOSAL |
 | retro 引导（跨团队） | `/loop-retro` | 周期性跨 Pod 提共性，治理类进 ARQ |
-| 设计师 | `uiux-designer` | 系统级 UI brief 候选 |
-| UI 翻译（TaskPackage 级） | `uiux-author` | 把冻结的系统 UI brief 翻译成 TaskPackage `uiux` block |
-| 最终负责人 | human | 契约门、高影响拍板、治理批准 |
+| 系统级 UI 设计执行 | `uiux-author` | requirement-change 档 2 触 UI 批次按需求修订生成/修订系统级 UI（档 2 流程 4b 生成模式：brief 升版 + 设计 HTML 迭代 + 出图规格单；出图 od_* 归主线程；dev-loop 包内不派——消费走 planner 挂图 + brief-inputs 透传） |
+| 最终负责人 | human | 立项 ack、例外升级拍板、高影响拍板、治理批准 |
 
 一个 Pod = 一个 git worktree 里的一支敏捷小队：多 Pod 并行开发、**串行合并**（merge token + 进门前 rebase 到当前 main），谁都不并行直落 main（机制见 [pod-coordination.md](../.claude/references/pod-coordination.md)）。
 
@@ -250,7 +249,6 @@ flowchart TD
 - **repair-intent 自动化桥（Phase 9）**：入口已定为 portfolio-planner intake；把 K6 `DefectDetected` 自动变成 repair-intent 制品并触发 launch 的 automation bridge 仍是未来占位。
 - **新系统创建的 `.claude` 扩充**：新增 K/S 系统时 agent 克隆体、scope-map、hook 的扩充流程。
 - **`.claude/**` 一致性机械门**：agent 定义 ↔ scope-map ↔ command 引用的一致性检查。**已分批部分落地**（批次 1 / 批次 2 / 腿 6 launch 可达性 `--check-launch`）；剩余子项与消费方链原见 ARQ-077（原单文件队列 ID，未迁入现行 debt 账本，队列文件 261019 批删除——以本节记述为准）。
-- **uiux-designer 系统级 brief 的 moderator dispatch 接线**：起草者已定（`uiux-designer`），dispatch 尚未接线。
 
 ## 验收测试纪律
 
