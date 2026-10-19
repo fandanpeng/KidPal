@@ -76,7 +76,13 @@ typedef enum {
      * P3「正文取不回」整屏覆盖层（WF-F2-06, requirements v1.64 S-F2.1 AC7）——
      * 纯告知态：不静默、不黑屏、绝不显示别篇内容；10s 无操作自动消失（静默、不显
      * 倒计时），KEY／BOOT **任一手势**立即关闭回列表。既有值零改（0..4）。 */
-    KSTORY_PAGE_BODY_UNAVAILABLE = 5
+    KSTORY_PAGE_BODY_UNAVAILABLE = 5,
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结数值 = 6）:
+     * 整理过渡态（q2 = ⓒ：start_organizing 下行消费；requirements v1.65 S-F2.2-AC4
+     * 「整理期间以思考态盖住延迟」的页态载体，docs/ui/V7/state-organizing）——
+     * 非交互过渡态：KEY／BOOT 均不响应；离态 = story_text 到达（既有渲染路径）。
+     * seam 权威 = record_dialogue_guide.acceptance.c 文件头 [G2]/[G4]。 */
+    KSTORY_PAGE_ORGANIZING = 6
 } kidpal_story_page_t;
 
 typedef struct {
@@ -98,6 +104,12 @@ typedef struct {
     /* additive 尾部追加（seam [K1]/[K5]）: 待删条目 id 记账（确认删除后、story_list
      * 重推对账冲销前在账; 隐式 ack 重发与对账的锚）。空串 = 无待账。 */
     char pending_delete_id[64];
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结纪律只增不
+     * 改/移; 冻结名 [G3], seam 权威 = record_dialogue_guide.acceptance.c 文件头）:
+     * RECORDING 引导播报中子态（帧 B, AC2）：0 = 常规录音聆听; 1 = 引导播报中——
+     * KEY 短/长按 = 打断引导继续聆听（KSPV2_ACT_INTERRUPT_GUIDE）、BOOT 任一手势 =
+     * 无操作（绝不落 DISCARD_RECORD 毁稿路径）。 */
+    int rec_substate;
 } kidpal_story_view_t;
 
 /* ---- ④ 盖章帧几何 (spec S-F2.4) ---- */
@@ -127,7 +139,12 @@ typedef enum {
     KSPV2_ACT_PAGE_TURN      = 8,  /* READER BOOT 短按（双击同短按）-> 翻屏 wrap */
     KSPV2_ACT_READER_EXIT    = 9,  /* READER KEY 长按 -> 退出阅读回列表 */
     KSPV2_ACT_STOP_RECORD    = 10, /* RECORDING KEY 短按 & 长按同义（保存, v1.47） */
-    KSPV2_ACT_DISCARD_RECORD = 11  /* RECORDING BOOT 任一手势（丢弃退回列表） */
+    KSPV2_ACT_DISCARD_RECORD = 11, /* RECORDING BOOT 任一手势（丢弃退回列表） */
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结数值 = 12;
+     * seam [G3]）: RECORDING+rec_substate=1 引导播报中 KEY 短/长按——打断引导播报、
+     * 回常规录音聆听（消费方 = mcp_server StoryDispatchAct -> AbortSpeaking + 继续聆听;
+     * 页态保持 RECORDING、子态复位 0、零 cancel/归档副作用）。 */
+    KSPV2_ACT_INTERRUPT_GUIDE = 12
 } kidpal_story_act_t;
 
 /* ---- ⑥ 空态文案单源（notes 边角③: 列表态空态渲染入口两处——story_page.c 与
@@ -289,8 +306,9 @@ int kidpal_story_list_gate(int voice_front, int page_state);
 
 /* 记录语境标志（builder 侧消费门; 冻结齿不钉标志本体——验收盲区申报③: 置位/
  * 清位时机 = 实现细节, 可观测后果由 guide_bubble 消费链 + recording_enter 决策表
- * + stt 旁路喂入承载）。置位单点 = mcp_server REC_SESSION 消费位; 清位 = 会话收尾
- * （Application Idle 分支）。 */
+ * + stt 旁路喂入承载）。置位 = mcp_server 两收敛入口消费位（REC_SESSION / 控制
+ * case 2 start_recording——261019-p3-record-dialogue-guide AC1「双入口同一记录语境
+ * 对话态」）; 清位 = 会话收尾（Application Idle 分支）。 */
 int kidpal_story_session_ctx_active(void);
 void kidpal_story_session_ctx_set(int active);
 

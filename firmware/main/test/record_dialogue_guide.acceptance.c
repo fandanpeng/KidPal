@@ -656,6 +656,9 @@ TEST_CASE("record guide: guide-playing substate keys - KEY interrupts, BOOT no-o
     v.rec_substate = RDL_REC_SUB_GUIDE;
     RDL_REQUIRE_IMPL_INT(kidpal_story_page_input(&v, KEY_ID_KEY, KEY_GESTURE_CLICK),
                          "kidpal_story_page_input");
+    /* 探针恢复：上一行哨兵守卫恒求值调用一次 [G3] 动作（rec_substate 被消费为 0），
+     * 此处恢复子态后再钉行为断言——语义零改动，非 tighten-only（2026-10-19）。 */
+    v.rec_substate = RDL_REC_SUB_GUIDE;
     TEST_ASSERT_EQUAL_INT_MESSAGE(RDL_ACT_INTERRUPT_GUIDE,
         kidpal_story_page_input(&v, KEY_ID_KEY, KEY_GESTURE_CLICK),
         "RDG-F2 RED: 引导播报中 KEY 短按未映 KSPV2_ACT_INTERRUPT_GUIDE(12) —— 打断"
@@ -977,4 +980,12 @@ TEST_CASE("record guide: acceptance file registered into host runner (RDG-F5 gua
  *               live-manual 真机轮观测项，不落自动断言（G8 五项），本 Pod 到真机
  *               门前停等 human。冻结落盘冒烟 = 独立冒烟通道实编 + 实跑（设计态红
  *               逐条核对，红名见交付报告）+ 既有 host 全量套件零新增红判读。
+ *   2026-10-19 TEST3（RDG-F2）探针缺陷最小复钉（语义零改动，非 tighten-only；builder
+ *               停点申报：实现落地后 TEST3「Expected 12 Was 10」）——:657 哨兵守卫
+ *               宏 RDL_REQUIRE_IMPL_INT 恒求值条件，探针真实执行一次 [G3] KEY 短按
+ *               调用并把 rec_substate 消费为 0；:659 行为断言第二次同视图调用落入
+ *               常规录音路径返 10。冻结期红因 = 哨兵 -99 时探针 abort、双调用流未
+ *               被观察到（盲点）。修法 = 探针后、断言前重设 v.rec_substate =
+ *               RDL_REC_SUB_GUIDE（恢复被探针消费的子态）；[G3] 语义、:659 断言期
+ *               望值、全部断言集合零变化。
  * --------------------------------------------------------------------------- */

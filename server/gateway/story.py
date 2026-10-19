@@ -51,8 +51,23 @@ _NONWORD_STRIP_RE = re.compile(r"[^\w]+")
 # 维持为防御面）；total 恒全量现存篇数，绝不以 len(items) 顶替（load-bearing）。
 STORY_LIST_WINDOW = 16
 
-# requirements §2.1 录音态超时口径：累积态无语音 >= AUTO_STOP_SECONDS 秒自动收尾归档。
-AUTO_STOP_SECONDS = 120
+# 卡壳引导阈值缺省单源（requirements v1.65 NFR-PERF-3）：**名字冻结、数值不冻结**——
+# 阈值待定（起步约 8 秒，真机调优后立项拍数），不得写死为验收值；验收只断言正数。
+STUCK_GUIDE_SECONDS = 8
+
+# 引导连续无回应自动收尾轮数（requirements v1.65 S-F2.2-AC5 / NFR-PERF-3「轮数已拍」）。
+GUIDE_ROUND_LIMIT = 2
+
+# 卡壳引导阈值缺省单源（STUCK_GUIDE_SECONDS）与轮数（GUIDE_ROUND_LIMIT）的取代声明
+# （261019-p3-record-dialogue-guide REVISION-NOTE）：120s 纯静默自动收尾
+# （AUTO_STOP_SECONDS / StoryAccumulator.timed_out_sessions）**退役（删除）**——语义
+# 换代为「卡壳引导 2 轮无回应自动收尾」（requirements v1.65 S-F2.2-AC5 / NFR-PERF-3，
+# §2.1 120s 录音态超时口径作废）。改名/复活 = 语义回退。
+
+# 累积态明示卡壳词（S-F2.2-AC2「如『卡住了』『想不起来』」为示例起点，词表 = 实现期
+# 可调常量；is_stuck_phrase 以它为单源）——精确短语 + 末尾标点不阻断（与 is_finish_phrase
+# 同构子串语义）。
+STUCK_PHRASES = ("卡住了", "想不起来", "接不下去", "编不下去", "不会讲了")
 
 # pending-stop 挂起窗口（plan §2 / 261001-m4-k3-story-archive-order）：listen/state=stop
 # 到达时累积为空 -> 挂起等转写，真机转写延迟 ~1.7s，留足抖动余量故 10s。越过该窗口仍无
@@ -133,6 +148,20 @@ def is_finish_phrase(text) -> bool:
     if not stripped:
         return False
     return any(phrase in stripped for phrase in _FINISH_PHRASES)
+
+
+def is_stuck_phrase(text) -> bool:
+    """累积态明示卡壳词机械检测（S-F2.2-AC2；E3 检出器形态，与 is_finish_phrase 同构）。
+
+    text（str）剔除首尾空白后**包含** STUCK_PHRASES 任一精确短语 -> True；其余
+    （空串/None/非 str/无关叙述）-> False。子串匹配、末尾标点不阻断。词表单源：
+    is_stuck_phrase 只消费 STUCK_PHRASES 模块常量（临时换词判定随动 = 实现期可调）。"""
+    if not isinstance(text, str):
+        return False
+    stripped = text.strip()
+    if not stripped:
+        return False
+    return any(phrase in stripped for phrase in STUCK_PHRASES)
 
 
 def strip_trailing_finish_words(text: str) -> str:
@@ -514,7 +543,7 @@ def fetch_story(stories_dir, story_id, *, corr_id=None) -> "dict | None":
 class _SessionState:
     __slots__ = ("routing", "accum", "accum_chars", "ring", "ring_chars",
                  "last_record", "last_stop_now", "last_transcript", "last_activity",
-                 "pending", "pending_since")
+                 "pending", "pending_since", "guide_rounds", "guide_since")
 
     def __init__(self) -> None:
         self.routing = "chat"
@@ -525,12 +554,17 @@ class _SessionState:
         self.last_record: dict | None = None
         self.last_stop_now = None
         self.last_transcript: str | None = None
-        # 最近活动时刻（start()/feed() 传入 now 或墙钟）——timed_out_sessions 的纯决策输入。
+        # 最近活动时刻（start()/feed() 传入 now 或墙钟）——卡壳计时纯决策的缺省等待锚。
         self.last_activity = None
         # pending-stop 挂起态（listen/state=stop 空累积 -> 等转写到达才归档；SAO-A1/A2）：
         # pending=True 时 routing 恒为 "pending_stop"（!= "chat"），pending_since 为挂起时刻。
         self.pending = False
         self.pending_since = None
+        # 卡壳引导轮次记账（261019-p3-record-dialogue-guide；S-F2.2-AC5「收声不停摆」）：
+        # guide_rounds = 已计引导轮次（含被抑制轮）；guide_since = 该轮无回应计时锚
+        # （轮发出时刻；None = 尚无引导轮，卡壳计时回退锚 last_activity）。
+        self.guide_rounds = 0
+        self.guide_since = None
 
 
 class StoryAccumulator:
@@ -595,40 +629,109 @@ class StoryAccumulator:
         st = self._get(session_id)
         return st.routing if st is not None else "chat"
 
-    def timed_out_sessions(self, now, *, timeout_s=None) -> list:
-        """累积态无语音自动收尾的**纯决策面**（requirements §2.1 录音态超时口径；M4K1-A5）。
+    def stuck_due_sessions(self, now, *, timeout_s=None) -> list:
+        """卡壳计时纯决策（NFR-PERF-3 边界①②；261019-p3-record-dialogue-guide RDG-A2）。
 
-        返回 routing=="accumulate" 且「最近活动时刻」（= start()/feed() 传入的 now 或墙钟）
-        距 now >= timeout_s 的会话 id 列表。
+        返回 routing=="accumulate" 且「等待锚」距 now **>** timeout_s 的会话 id 列表：
+        等待锚 t = guide_since（该轮引导已发出则等回应）否则 last_activity（孩子最近
+        一句话时刻）；timeout_s 缺省 = STUCK_GUIDE_SECONDS（名字冻结、数值实现期可调）。
+        边界语义 = 严格大于（恰 timeout_s 未计入——冻结测试 RDG-A2 边界②以 NotIn 钉
+        「恰阈值不触发、过阈值触发」；「停顿超阈值」语义）。
 
-        - timeout_s 缺省 = AUTO_STOP_SECONDS（120）；边界语义 >=（恰 timeout_s 计入）；
-        - 未记录活动的会话 / 非累积态会话 / 已 stop·cancel 的会话 -> 不返回；
+        - 未记录活动 / 非累积态会话 / 已 stop·cancel 的会话 -> 不返回；
         - 查询不改状态（不触碰 LRU、不动缓冲）。"""
         if now is None:
             now = datetime.now(timezone.utc)
-        threshold = AUTO_STOP_SECONDS if timeout_s is None else float(timeout_s)
+        threshold = STUCK_GUIDE_SECONDS if timeout_s is None else float(timeout_s)
         out = []
         for sid, st in self._sessions.items():
-            if st.routing != "accumulate" or st.last_activity is None:
+            if st.routing != "accumulate":
+                continue
+            anchor = st.guide_since if st.guide_since is not None else st.last_activity
+            if anchor is None:
                 continue
             try:
-                elapsed = (now - st.last_activity).total_seconds()
+                elapsed = (now - anchor).total_seconds()
             except TypeError:
                 continue  # 不可比时刻（时区/类型）-> 不误判超时
+            if elapsed > threshold:
+                out.append(sid)
+        return out
+
+    def auto_finish_due_sessions(self, now, *, timeout_s=None, rounds=None) -> list:
+        """自动收尾纯决策（NFR-PERF-3 边界④⑤；S-F2.2-AC5「第 2 轮计时到仍无回应即
+        判收尾」）。
+
+        返回 routing=="accumulate" 且 guide_rounds >= rounds（缺省 GUIDE_ROUND_LIMIT=2，
+        含被抑制轮——q6 收声不停摆）**且** now - guide_since >= timeout_s（缺省
+        STUCK_GUIDE_SECONDS）的会话 id 列表。未发出过引导轮（guide_since None）不返回；
+        查询不改状态（与 stuck_due_sessions 同缝）。"""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        threshold = STUCK_GUIDE_SECONDS if timeout_s is None else float(timeout_s)
+        need = GUIDE_ROUND_LIMIT if rounds is None else int(rounds)
+        out = []
+        for sid, st in self._sessions.items():
+            if st.routing != "accumulate" or st.guide_since is None:
+                continue
+            if st.guide_rounds < need:
+                continue
+            try:
+                elapsed = (now - st.guide_since).total_seconds()
+            except TypeError:
+                continue
             if elapsed >= threshold:
                 out.append(sid)
         return out
 
+    def mark_guide_round(self, session_id, now=None, *, suppressed=False) -> None:
+        """计一轮引导（S-F2.2-AC2/AC5；RDG-A2/A6 接线缝）。
+
+        guide_rounds += 1（**suppressed=True 亦计**——q6 收声不停摆：收声抑制/LLM 返回
+        空 = 本轮不播报仍计轮）；guide_since = now（None -> 墙钟），作为该轮无回应计时
+        锚。**不改** last_activity（孩子活动权威不被引导污染）。"""
+        st = self._ensure(session_id)
+        st.guide_rounds += 1
+        st.guide_since = now if now is not None else datetime.now(timezone.utc)
+        if suppressed:
+            log.debug("story_guide_round corr_id=%s suppressed=true rounds=%d",
+                      session_id, st.guide_rounds)
+
+    def guide_rounds(self, session_id) -> int:
+        """该会话已计引导轮次；无会话 -> 0。查询不改状态。"""
+        st = self._get(session_id)
+        return st.guide_rounds if st is not None else 0
+
+    def build_organizing_input(self, session_id) -> "str | None":
+        """忠实整理输入装配纯函数（S-F2.2-AC4「只取孩子的话」；RDG-A3）。
+
+        累积非空 -> "\\n".join(accum)（**只读**——不消费、不改状态，消费归 stop()）；
+        空/无会话 -> None。不滤任何内容（静音段幻听串、孩子中途提问句原样在输入内——
+        滤除职责全压整理 LLM 指令，q7-E4/验收种子 2·3 口径；装配层不代行滤除）。"""
+        st = self._get(session_id)
+        if st is None or not st.accum:
+            return None
+        return "\n".join(st.accum)
+
     def start(self, session_id, now=None) -> None:
         st = self._ensure(session_id)
-        # 最近活动时刻（供 120s 无语音超时决策；now 缺省用墙钟）。
+        # 最近活动时刻（供卡壳计时决策的缺省等待锚；now 缺省用墙钟）。
         st.last_activity = now if now is not None else datetime.now(timezone.utc)
+        # 新会话沿（chat/pending -> accumulate）：卡壳引导轮次记账清零（上一轮会话的
+        # 引导 streak 不得污染新会话）；重复 start（幂等重入，已在累积态）不清。
+        if st.routing != "accumulate":
+            st.guide_rounds = 0
+            st.guide_since = None
         # 幂等：重复 start 不重复开会话、不清空已在累积的内容
         st.routing = "accumulate"
 
     def feed(self, session_id, text, now=None) -> int:
         st = self._ensure(session_id)
         st.last_activity = now if now is not None else datetime.now(timezone.utc)
+        # 孩子开口 = 回应（NFR-PERF-3 边界①）：连续无回应 streak 重置（计时锚随
+        # last_activity 前移由 guide_since=None 回退承载）。
+        st.guide_rounds = 0
+        st.guide_since = None
         if text is None or not str(text).strip():
             return len(st.ring)  # 空句不入库、不计一句（不抛）
         sentence = str(text)

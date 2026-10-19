@@ -682,6 +682,17 @@ bool StoryDispatchAct(int act) {
             Application::GetInstance().CloseAudioChannel();
             ScheduleStoryRender();
             return true;
+        case KSPV2_ACT_INTERRUPT_GUIDE:
+            /* 引导播报中打断（261019-p3-record-dialogue-guide [G3]/[G6] 消费闭环）:
+             * KEY 短/长按打断引导播报、继续聆听——页态保持 RECORDING、子态复位 0 已由
+             * 输入函数就地完成; 此处消费 = AbortSpeaking 既有打断路径（application.cc
+             * :927 同族——轮来源 = Listening, tts stop 出口判据③播完回 Listening）。
+             * 零 cancel/归档副作用（打断不是收尾也不是丢弃）; 不发 listen stop、不离
+             * 记录会话（继续聆听）。 */
+            ESP_LOGI(TAG, "story_key interrupt_guide page=%d", g_story_view.page);
+            Application::GetInstance().AbortSpeaking(kAbortReasonNone);
+            ScheduleStoryRender();
+            return true;
         case KSPV2_ACT_NONE:
             /* 页拥有该手势但无副作用（不响应 = 消费不动）——返回 true 吃掉手势,
              * 绝不交回全局路由（删除子态 NONE 漏网 = 误开会话, K1 层派发教训）。 */
@@ -1246,12 +1257,33 @@ void McpServer::AddCommonTools() {
                                                                    VRT_CTRL_START_RECORDING);
                             ESP_LOGI(TAG, "control start_recording story_consumed=%d page=%d",
                                      consumed, g_story_view.page);
+                            /* [G6] 双入口同一记录语境（261019, AC1）: 触发词入口经
+                             * control/start_recording 收敛——置记录语境标志（与 REC_SESSION
+                             * 入口同态: 回显旁路喂入 / kvr 场景守卫 / 聆听形态切换的消费门;
+                             * 清位 = 会话收尾, 既有）。幂等重入（consumed 幂等返回）不重复置。 */
+                            kidpal_story_session_ctx_set(1);
                             app.StartListening();
                             if (consumed == 1) {
                                 /* 进录音态 -> 首帧渲染 + 起演出 tick 驱动（显示循环侧真实
                                  * 消费 kidpal_story_rec_tick, 录音「正在录」可观察; HWV-A9）。 */
                                 ScheduleStoryRender();
                                 StartStoryRecTimer();
+                            }
+                            break;
+                        }
+                        case 3: { /* start_organizing（261019-p3-record-dialogue-guide
+                                   * [G2]/[G6], q2 = ⓒ）: 三式收尾统一下发 -> 设备切
+                                   * P3 整理过渡演出（KSTORY_PAGE_ORGANIZING, 非交互
+                                   * 过渡态 KEY/BOOT 均不响应; 离态 = story_text 到达
+                                   * 既有渲染路径）。重复幂等由 on_control case 3 承载。 */
+                            int consumed = kidpal_story_on_control(&g_story_view,
+                                                                   VRT_CTRL_START_ORGANIZING);
+                            ESP_LOGI(TAG, "control start_organizing story_consumed=%d page=%d",
+                                     consumed, g_story_view.page);
+                            if (consumed == 1) {
+                                /* 进整理过渡态 -> 首帧渲染（state-organizing 帧可见,
+                                 * 翻✅条件③的设备半; 渲染分支 = story_page.c [G5]）。 */
+                                ScheduleStoryRender();
                             }
                             break;
                         }

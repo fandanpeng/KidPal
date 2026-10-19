@@ -773,11 +773,19 @@ void Application::InitializeProtocol() {
                     if (kidpal_story_session_ctx_active()) {
                         (void)kidpal_story_echo_push(message.c_str());
                     }
-                    kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
-                                        ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
-                    int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
-                    if (scene == KVST_SCENE_THINK) {
-                        display->SetStatus(Lang::Strings::THINKING);
+                    /* [G6] kvr 场景守卫（261019-p3-record-dialogue-guide）: 记录语境
+                     * **先分流**（引用先于 kidpal_voice_round_scene——ctx 选取必须在
+                     * 映射前联挂记录语境标志）: 记录语境切逐句 stt 形态后 ctx 选取不得
+                     * 按 listening_mode_ 误映 KVST_SCENE_THINK -> SetStatus(THINKING)
+                     * 跳页（AC1「切句只回显不进思考」; 回显已在上支承载）。非记录语境
+                     * 既有场景映射零偏移。 */
+                    if (!kidpal_story_session_ctx_active()) {
+                        kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
+                                            ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
+                        int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
+                        if (scene == KVST_SCENE_THINK) {
+                            display->SetStatus(Lang::Strings::THINKING);
+                        }
                     }
                 });
             }
@@ -971,10 +979,27 @@ void Application::HandleStartListeningEvent() {
             }
         }
 
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3 聆听形态切换]（261019-p3-record-dialogue-guide）: 记录语境从 ManualStop
+         * 切到产逐句 stt 形态——切句只回显 + 云侧累积 + 卡壳计时引导（manual 整段转写
+         * 形态无逐句 stt, 引导/回显/累积全断）。形态取舍（包内裁）: AEC 开 ->
+         * Realtime（QA KEY 路径 :926 同族先例）; AEC 关 -> AutoStop（realtime 需 AEC
+         * 挡引导播报回灌; AFE/AEC 依赖归真机轮 GAP-4 承载）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     } else if (state == kDeviceStateSpeaking) {
         AbortSpeaking(kAbortReasonNone);
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3] 打断衔接（引导播报中 KEY/长按打断 -> StartListening 沿）: 记录语境
+         * 保持逐句 stt 形态继续聆听（不回落 manual——回落即离逐句 stt, 回显/累积断）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     }
 }
 

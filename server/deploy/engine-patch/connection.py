@@ -64,6 +64,14 @@ KIDPAL_DISPLAY_BLOCKS = "kidpal_display_blocks"
 # 二进制音频帧（设备腿 send_bytes 恒空），出音全部走这条既有链。
 KIDPAL_SPEAK_TYPE = "kidpal_speak"
 
+# KidPal 记录语境等价信号类型 (TaskPackage 261019-p3-record-dialogue-guide / ADR-013
+# Package B 读法乙): front 在 session_ctx(story) / control/start_recording 两收敛入口
+# 注入 {"type":"kidpal_record_context","active":<bool>}（引擎腿内部消息，形状不入契约；
+# 协调单源 = 冻结验收 test_record_dialogue_guide.acceptance.py 文件头）。本文件认领置/
+# 清记录语境标志 -> chat() depth==0 第三守卫抑制 LLM 派发（孩子讲着时 AI 默认闭嘴，
+# 切句只回显）+ stop-truncation 豁免判据重绑（记录语境 stop 不截断，KEY 收尾末句承重）。
+KIDPAL_RECORD_CONTEXT_TYPE = "kidpal_record_context"
+
 # KidPal ASR 静音幻听串表 (TaskPackage 261014-engine-stop-truncation-asr-filter /
 # 改动点 3)。Qwen/Whisper 系 ASR 在低能量/静音段的已知幻听模式——引擎收到 listen
 # stop 后对缓冲尾音（本质是停止后的静音）整段识别，恒产 "Thank you." 一类串，被当
@@ -172,6 +180,12 @@ class ConnectionHandler:
         # 丢弃 stop 收尾后在途的 ASR 轮（自有标志，不动 client_abort——避免波及 stop 后
         # front 注入的合法 speak/story 下发）。
         self._kidpal_listen_closed = False
+        # KidPal 记录语境标志 (261019-p3-record-dialogue-guide / ADR-013 Package B):
+        # front 等价信号 kidpal_record_context 认领缝（_kidpal_on_record_context）置/清。
+        # chat() depth==0 第三守卫据此抑制 LLM 派发；stop-truncation 豁免判据据此重绑
+        # （记录语境即使切非 manual 聆听形态，stop 触发的末句转写仍不截断——KEY 收尾
+        # 承重通道）。
+        self._kidpal_record_context = False
 
         # 线程任务相关
         self.loop = None  # 在 handle_connection 中获取运行中的事件循环
@@ -430,6 +444,32 @@ class ConnectionHandler:
                 f"kidpal_speak 播报注入失败: {speak_error} (提醒降级：弹窗+提示音仍必达)")
         return True
 
+    async def _kidpal_on_record_context(self, message) -> bool:
+        """认领 Package B 记录语境等价信号帧 (261019-p3-record-dialogue-guide / ADR-013)。
+
+        命中 {"type":"kidpal_record_context","active":<bool>} -> 置/清记录语境标志并
+        返回 True（本条已消费：它是**引擎内部协调信号**，绝不能当孩子说的话送 LLM）。
+        active 真 = 进入记录语境（引擎侧抑制 LLM 派发）；假 = 退出（收尾/取消，恢复
+        正常对话）。非本类型 / 解析失败 -> False（静默不动，绝不扰动上游路由——
+        _kidpal_try_speak 同款纪律）。
+
+        实现注记：类型字面用裸串（不用模块常量）——冻结验收按 AST 抽取本方法体在
+        受限命名空间 exec（ET 先例），仅注入 json/re/queue/asyncio/TAG 五名。
+        """
+        try:
+            obj = json.loads(message)
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(obj, dict) or obj.get("type") != "kidpal_record_context":
+            return False
+        if obj.get("active"):
+            self._kidpal_record_context = True
+            self.logger.bind(tag=TAG).info("kidpal record-context: 进入记录语境（抑制 LLM）")
+        else:
+            self._kidpal_record_context = False
+            self.logger.bind(tag=TAG).info("kidpal record-context: 退出记录语境（恢复 LLM）")
+        return True
+
     async def _kidpal_on_listen_message(self, message):
         """listen 帧旁路截断 (261014-engine-stop-truncation-asr-filter 改动点 1)。
 
@@ -441,6 +481,11 @@ class ConnectionHandler:
 
         manual 模式（故事录音会话）豁免：其 stop 触发 ASR 是 front pending-stop 归档的
         承重通道（SAO-A2），截断即毁稿。消息照常转 handleTextMessage，上游语义零改。
+        261019-p3-record-dialogue-guide 豁免判据重绑（结构性风险 2）：判据从「manual
+        模式」重绑为「manual 模式 **或** 记录语境标志」——记录语境即使切非 manual 聆听
+        形态（AutoStop/Realtime 逐句 stt），stop 触发的末句转写仍不截断（KEY 收尾承重
+        通道）；**非记录语境 auto 模式照常截断**（261014 既有齿保绿，additive 不改既有
+        判别机制）。
         解析失败/非 listen/未知 state 一律静默返回，绝不扰动上游路由。
         """
         try:
@@ -454,7 +499,8 @@ class ConnectionHandler:
             # 新聆听窗：复位截断态（正常对话轮不被上一轮截断误杀）。
             self._kidpal_listen_closed = False
             return
-        if state == "stop" and self.client_listen_mode != "manual":
+        if (state == "stop" and self.client_listen_mode != "manual"
+                and not getattr(self, "_kidpal_record_context", False)):
             # 承重顺序 = 先清后转：置标志 + 清缓冲尾音 + 非阻塞排空在途 PCM 帧
             # （get_nowait 循环，循 clear_queues 先例）。
             self._kidpal_listen_closed = True
@@ -490,6 +536,10 @@ class ConnectionHandler:
         if isinstance(message, str):
             # 提醒语音内部指令先被认领（裁定二），其余文本仍走原生 handleTextMessage
             if await self._kidpal_try_speak(message):
+                return
+            # 记录语境等价信号认领（261019 / ADR-013）：先认领后转（_kidpal_on_listen_
+            # message 同缝）——信号绝不能被当普通文本送 LLM。
+            if await self._kidpal_on_record_context(message):
                 return
             # listen 帧旁路截断（261014 改动点 1）：先清后转——认领的内部指令不被截断
             # 扰动；handleTextMessage 的 stop 分支随后读到已清空的 asr_audio 经 len()>0
@@ -1214,6 +1264,16 @@ class ConnectionHandler:
             if _kidpal_is_asr_hallucination(query):
                 self.logger.bind(tag=TAG).info(
                     f"kidpal asr-hallucination filter: 丢弃幻听串: {query}")
+                return
+            # KidPal 第三守卫 (261019-p3-record-dialogue-guide / ADR-013 Package B 读法乙):
+            # 记录语境中抑制 LLM 派发 —— 孩子讲着时 AI 默认闭嘴，切句只用于话语回显
+            # （stt 下行在 ASR 路径先于 chat，回显与 front 累积不受影响）。return 在
+            # dialogue.put 与 TTS FIRST 入队之前（跳过即零 LLM 零 TTS）；守卫内不置
+            # client_abort（避免波及 front 注入的合法 speak/story 下发）。depth>0 递归
+            # 子轮不拦。
+            if self._kidpal_record_context:
+                self.logger.bind(tag=TAG).info(
+                    f"kidpal record-context: 抑制 LLM 派发（记录语境闭嘴回显）: {query}")
                 return
             current_sentence_id = str(uuid.uuid4().hex)
             self.sentence_id = current_sentence_id  # 更新共享属性

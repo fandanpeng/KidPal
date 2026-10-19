@@ -1352,6 +1352,49 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 int h = 10 + (((wave + i) % 4) * 10);
                 ksy_box(scr, 60 + i * 20, 90 - h / 2, 12, h, KSY_COLOR_INK);
             }
+            /* 话语回显区（261019 [G5] 回显常驻, AC2「回显区常驻」防回退锚）: 逐句
+             * 经 kidpal_story_echo_line 消费（idx 0 = 最旧），渲染在声波之下——引导
+             * 播报中子态 / 整理过渡态**不得清空**回显区（echo_reset 只许定义处调用,
+             * TEST 5 计数锚）。 */
+            {
+                int n = kidpal_story_echo_count();
+                int e;
+                int base_y = 120;
+                for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
+                    const char *line = NULL;
+                    if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
+                        ksy_label(scr, line, 16, base_y + e * 22, KSY_COLOR_TEXT);
+                    }
+                }
+            }
+            if (v->rec_substate == 1) {
+                /* 引导播报中子态渲染（帧 B, 261019 [G5]）: 气泡换引导文案（单源 =
+                 * kidpal_story_guide_bubble, lcd apply_look 覆写缝同源不双写）+ 键帽
+                 * 左「打断」右留空（键位分叉的可见证据——KEY 打断/BOOT 无操作,
+                 * AC2; 视觉细节归设计稿 p3-recording-guide, GAP-2）。页态保持
+                 * RECORDING（引导播报不跳页）。 */
+                ksy_label(scr, kidpal_story_guide_bubble(), 16, 8, KSY_COLOR_TEXT);
+                ksy_label(scr, "打断", 16, LV_VER_RES - 24, KSY_COLOR_INK);
+            }
+            break;
+        }
+        case KSTORY_PAGE_ORGANIZING: {
+            /* 整理过渡态渲染（261019 [G5] 分支在世锚; q2 = ⓒ start_organizing 消费
+             * 落地的可见半）。视觉细节（pose-think 复用 / 三问号组 / 波浪线 / 云朵 /
+             * 「你刚说」标签）归设计稿 state-organizing（GAP-2 纯美学不转脆性断言）;
+             * 本分支承载: 过渡提示 + 右区刚讲内容（回显环复用——**不清空**, 整理中
+             * 孩子讲过的话不消失, AC2 回显常驻同源）。键帽槽留空 = 非交互过渡态
+             * （KEY/BOOT 均不响应, 输入函数 case 已吞全部手势）。 */
+            int n = kidpal_story_echo_count();
+            int e;
+            ksy_label(scr, "整理中…", 16, 40, KSY_COLOR_TEXT);
+            ksy_label(scr, "你刚说", 16, 78, KSY_COLOR_INK);
+            for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
+                const char *line = NULL;
+                if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
+                    ksy_label(scr, line, 16, 104 + e * 22, KSY_COLOR_TEXT);
+                }
+            }
             break;
         }
         case KSTORY_PAGE_STAMP: {
@@ -1477,6 +1520,7 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
     v->tts_requests = 0;
     v->last_saved_id[0] = '\0';
     v->pending_delete_id[0] = '\0';
+    v->rec_substate = 0; /* [G3] 引导播报中子态复位常规（新视图零残留） */
 
     s_ksy_item_ids_n = 0;
     if (list != NULL) {
@@ -1503,6 +1547,13 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
  *            BOOT 双=PAGE_TURN / BOOT 长=NONE（页循环 P3 断开, 不离页）
  *   RECORDING: KEY 短=STOP_RECORD / KEY 长=STOP_RECORD（同短按保存, v1.47）/ BOOT
  *            短·双·长=DISCARD_RECORD
+ *            RECORDING+rec_substate=1（引导播报中子态, 261019 [G3] 帧 B 键位分叉——
+ *            本包固件侧最关键的键位分叉: 子态不拦截则引导播报一句期间按 BOOT 即毁稿）:
+ *            KEY 短=INTERRUPT_GUIDE(12) / KEY 长=12（同短按, §2.1 打断停播语义;
+ *            页态保持 RECORDING、子态复位 0、零 cancel/归档副作用）/ BOOT
+ *            短·双·长=NONE（无操作, 绝不落 DISCARD_RECORD 毁稿路径）
+ *   ORGANIZING（整理过渡态, 261019 [G4]）: KEY/BOOT 任意手势=NONE（非交互过渡态,
+ *            整理中 KEY/BOOT 均不响应, AC4/§2.3; 页态保持、零副作用）
  *   STAMP:   全手势=GLOBAL（演出帧页内零语义, 零回归守卫）
  *   BODY_UNAVAILABLE（WF-F2-06 取不回提示, 261016 批 append）: KEY／BOOT 任一手势
  *            （短/双/长）= NONE 并关闭回列表（纯告知、无破坏性动作、绝不 GLOBAL）
@@ -1655,6 +1706,25 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
             return KSPV2_ACT_NONE;
 
         case KSTORY_PAGE_RECORDING:
+            if (v->rec_substate == 1) {
+                /* 引导播报中子态（帧 B, 261019 [G3] 键位分叉——毁稿防线）:
+                 * KEY 短/长按 = 打断引导、继续聆听（子态复位 0, 页态保持 RECORDING,
+                 * 零 cancel/归档副作用——打断不是收尾也不是丢弃）; 消费方 = mcp
+                 * StoryDispatchAct case 12 -> AbortSpeaking + 继续聆听。 */
+                if (key == KEY_ID_KEY &&
+                    (g == KEY_GESTURE_CLICK || g == KEY_GESTURE_LONG_PRESS)) {
+                    v->rec_substate = 0;
+                    return KSPV2_ACT_INTERRUPT_GUIDE;
+                }
+                if (key == KEY_ID_BOOT) {
+                    /* BOOT 任一手势（短/双/长）= 无操作: 页态保持、cancel_count /
+                     * archive_pend 不动——绝不落 DISCARD_RECORD 毁稿路径（引导播报
+                     * 一句期间按 BOOT 即毁稿 = 本包固件侧最关键分叉, AC2「BOOT 无
+                     * 操作」）。子态保持 1（引导播报尚未被打断）。 */
+                    return KSPV2_ACT_NONE;
+                }
+                return KSPV2_ACT_GLOBAL;
+            }
             if (key == KEY_ID_KEY &&
                 (g == KEY_GESTURE_CLICK || g == KEY_GESTURE_LONG_PRESS)) {
                 /* KEY 短按 & 长按同短按 = 停录保存（防长按误触毁稿 v1.47——旧
@@ -1673,6 +1743,13 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
                 return KSPV2_ACT_DISCARD_RECORD;
             }
             return KSPV2_ACT_GLOBAL;
+
+        case KSTORY_PAGE_ORGANIZING:
+            /* 整理过渡态（261019 [G4]）: KEY／BOOT 任意手势 = NONE 不响应——非交互
+             * 过渡态（requirements v1.65 AC4「整理中 KEY/BOOT 均不响应」, §2.3 录音态
+             * 子态按键口径; 误触会打断整理演出或误触毁稿面）。页态保持、零副作用
+             * （绝不 restore/cancel/归档）, 消费即吞手势（绝不 GLOBAL 外泄）。 */
+            return KSPV2_ACT_NONE;
 
         case KSTORY_PAGE_STAMP:
             return KSPV2_ACT_GLOBAL; /* 盖章帧页内零语义（零回归守卫） */
@@ -1698,8 +1775,17 @@ int kidpal_story_on_control(kidpal_story_view_t *v, int ctrl_action)
         }
         v->page = KSTORY_PAGE_RECORDING;
         v->rec_seconds = 0;
+        v->rec_substate = 0; /* [G3] 重入录音态 = 常规聆听子态（引导子态不跨沿残留） */
         v->screen = 0;
         /* 冻结决策 D2: 录完前不预推计数（counter 不变; 取消的故事不该占故事果位）。 */
+        return 1;
+    }
+    if (ctrl_action == 3) { /* VRT_CTRL_START_ORGANIZING（261019 [G2], q2 = ⓒ） */
+        if (v->page == KSTORY_PAGE_ORGANIZING) {
+            /* 重复幂等：网关重试下发不得翻倍副作用、页态保持。 */
+            return 1;
+        }
+        v->page = KSTORY_PAGE_ORGANIZING; /* 整理过渡演出（state-organizing 帧） */
         return 1;
     }
     if (ctrl_action == 0 || ctrl_action == 1) { /* END_SESSION / STOP_SPEAKING */

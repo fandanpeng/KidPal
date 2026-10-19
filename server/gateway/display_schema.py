@@ -40,8 +40,11 @@ MAX_DATA_BYTES = 65536
 
 # 契约 §1.4 控制 action 表. end_session 是网关切意图后的决定, 不是可被 LLM 流
 # 盲转发的 display 意图 —— 伪造/注入的 control-end_session 必须在机械层拒绝.
-GATEWAY_DECISION_CONTROL_ACTIONS = frozenset({"end_session"})
-# 可由 display 流透传的 control action.
+# start_organizing（契约 §1.4, 2026-10-19 CDQ 条目 LANDED）同型: 三式收尾统一由
+# front 机械下发单源承载（q2 = ⓒ 裁定）, 引擎 display 流来源一律拒转.
+GATEWAY_DECISION_CONTROL_ACTIONS = frozenset({"end_session", "start_organizing"})
+# 可由 display 流透传的 control action（决定类与可透传类不相交——start_organizing
+# 只走 front 自推通路 self_push=True 放行, relay 路径恒拒）.
 FORWARDABLE_CONTROL_ACTIONS = frozenset({"stop_speaking", "start_recording"})
 
 
@@ -52,11 +55,19 @@ def _data_bytes(data) -> int:
         return -1  # not JSON-serialisable -> caller rejects
 
 
-def validate_display(payload) -> tuple[bool, str]:
+def validate_display(payload, *, self_push=False) -> tuple[bool, str]:
     """Validate a ```display JSON payload for forwardability to the board.
 
     Returns (ok: bool, reason: str). (True, "ok") means the payload passed the
     mechanical schema check and is safe to relay; anything else must be downgraded.
+
+    self_push（keyword-only, 缺省 False; 既有全部调用点零偏移——结构性风险 1 自推通路
+    分叉, 261019-p3-record-dialogue-guide）:
+      False（relay/引擎侧路径, 既有语义一字不动）: 网关决定类（GATEWAY_DECISION_
+        CONTROL_ACTIONS）一律拒绝——伪造/注入的网关决定不得经 display 流透传。
+      True（front 机械自推专用通路 _push_display_payload）: 网关决定类中仅
+        start_organizing 放行（front 机械下发单源, q2 = ⓒ）; end_session 即便自推仍
+        拒绝（会话结束决定不因通路放行）。其余 floor 照跑。
     """
     if not isinstance(payload, dict):
         return (False, "display payload must be a JSON object, not a raw/dirty value")
@@ -73,9 +84,14 @@ def validate_display(payload) -> tuple[bool, str]:
             return (False, "control view requires data.action map")
         action = data.get("action")
         if action in GATEWAY_DECISION_CONTROL_ACTIONS:
-            # 契约 §1.4: end_session 是网关切意图后的决定, 伪造/注入的必须拒绝.
-            return (False, "control/end_session is a gateway intent decision, not forwardable")
-        if action not in FORWARDABLE_CONTROL_ACTIONS:
+            # 契约 §1.4: 网关决定类不是可被 display 流盲转发的意图. start_organizing
+            # 唯一豁免口 = front 自推通路（self_push=True）——机械下发单源放行;
+            # end_session 即便自推仍拒（会话结束决定不因通路放行）.
+            if self_push and action == "start_organizing":
+                pass  # front 自推放行（落位到下方 forwardable 分支外的放行通道）
+            else:
+                return (False, f"control/{action} is a gateway intent decision, not forwardable")
+        elif action not in FORWARDABLE_CONTROL_ACTIONS:
             return (False, f"control action {action!r} unknown / not forwardable")
 
     # data must be an object for data-carrying views; home carries none.
