@@ -48,8 +48,7 @@
         "docs/archive",
         "docs/notes",
         "docs/ui",
-        "docs/debt",
-        "docs/showme"
+        "docs/debt"
       ]
     }
   },
