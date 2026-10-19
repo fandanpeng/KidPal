@@ -162,7 +162,7 @@ OpenClaw 回复文本（示例）
 
 - （契约变更记录：2026-10-11 经契约门批准 `data.upcoming.preview` 由单 `{time,name}` 对象改多项数组 + 三态语义（非空数组 = 明日全量升序列表 / `[]` = 确认明日无项承载 AC6 空态话术 / `null`·缺省 = 未推送承载 AC7 未达态）——requirements v1.61 S-F1.1 AC2/AC6/AC7；示例值 `"time": "明早"` 旧漂移顺修，K1 裁决载荷钉 HH:MM、自然语言标签不入 wire；板端 seam 同形改（`home_p1.h`），板端对旧单对象形状保留一个过渡版的解析容忍（部署缓冲防御，不入契约形状定义）；随 261011-p1-home-v5-rework 同 PR 落地，见 [CONTRACT-CHANGE-PACKET.md](../../delivery/taskpackages/261011-p1-home-v5-rework/CONTRACT-CHANGE-PACKET.md)。）
 
-### 1.4 控制类指令（OpenClaw 判意图后下发）
+### 1.4 控制类指令（OpenClaw 判意图或 front 检出后下发）
 
 控制指令也走 display 块，`view: "control"`：
 ```json
@@ -172,7 +172,10 @@ OpenClaw 回复文本（示例）
 |---|---|---|
 | `end_session` | 孩子说"拜拜/不用了" | 结束会话，回首页常显 |
 | `stop_speaking` | 孩子说"别讲了"（云端确认） | （MVP 主要靠本地喊停，此为云端补充确认） |
-| `start_recording` | 孩子说"我要讲故事"（云端判意图） | 网关切该会话为累积态（不按句送对话）、设备切 REC 录音演出（manual 聆听模式）；误判回退路径见 spec S-F2.2（2026-09-03 新增，方向 B 故事录入流式） |
+| `start_recording` | 孩子说"我要讲故事"（云端判意图） | 网关切该会话为记录语境对话态（stt 只喂累积缓冲与回显、不逐句进对话；卡壳轻引导与收尾忠实整理机制权威 = arch §5.2 场景④）、设备切 REC 录音演出；误判回退路径见 spec S-F2.2（2026-09-03 新增，方向 B 故事录入流式；2026-10-19 措辞对账——「累积态 / manual 聆听模式」随 v1.65 对话式引导记录改写，`261019-p3-record-dialogue-guide`） |
+| `start_organizing` | 记录会话收尾检出（语音收尾词 / 再按 KEY / 连续 2 轮引导无回应自动收尾——front 检出） | 设备离开录音聆听演出、切整理过渡演出（v7 `state-organizing` 帧、思考态复用）；整理中 KEY/BOOT 均不响应（非交互过渡态，requirements v1.65 §2.3 录音态子态按键口径）；收到 `story_text`（正常）或降级安抚帧（失败）即离态；三式收尾 front 统一下发、重复幂等。**网关决定类动作**（与 `end_session` 同型）：front 机械下发、不经引擎 display 流，引擎侧同名 action 拒转（2026-10-19 新增，`261019-p3-record-dialogue-guide`） |
+
+（契约变更记录：2026-10-19 经 `/arch-change` 批准新增 `start_organizing` 控制动作（记录会话收尾 → 整理过渡态；网关决定类、引擎 display 流拒转）+ §1.4 节标题括注对账（「OpenClaw 判意图后下发」→「OpenClaw 判意图或 front 检出后下发」）+ `start_recording` 行措辞对账（「累积态 / manual 聆听模式」→ 记录语境对话态）+ §四 `kidpal_session_ctx` 条措辞对账（「切累积态 / manual 聆听 / 引擎不感知本信号」→ 记录语境对话态 + 引擎侧抑制由 front 内部注入等价信号承载）——requirements v1.65 S-F2.2 对话式引导记录 + ADR-013；随 `261019-p3-record-dialogue-guide` 同批原子落地，见 delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md。）
 
 ### 1.5 网关的职责（薄，零自研业务逻辑红线不变）
 
@@ -268,7 +271,7 @@ OpenClaw cron 按课表算三档时刻并写 `alerts/pending.json`（同机共�
 - **Opus 二进制帧**：上行 16kHz/60ms 单声道（BinaryProtocol v2/v3）；下行 24kHz 协商。
 - **`stt`/`tts` 状态消息**（云→端）：`stt` 识别文字上屏；`tts` start/sentence_start（带同步文字）/stop 播报状态机。
 - **`abort` 消息**（端→云）：喊停/打断 → 云端取消生成（本地 AEC+VAD 即时停播仍是主地位）。
-- **`kidpal_session_ctx` 消息**（端→网关，KidPal 私有扩展消息、非小智原生子集；2026-09-14 新增）：设备在**每次发起会话时、首帧音频前**发送 `{"type":"kidpal_session_ctx","source_page":"story"}`——首连时序上在 server hello 之后，wss 常驻连接的通道复用后续会话同样发送，重复发送安全（收敛入口幂等）。`source_page` 取值闭集 = `story` / `home` / `schedule`（story = P3 星星记录本按 KEY 发起的记录语境会话）。**网关消费并拦截、不下透引擎**：`source_page=="story"` 时 front 即切该会话累积态（与 §1.4 `control/start_recording` 收敛同一幂等入口，重复触发不重复开会话）；其余取值现版本无行为（闭集预留，供未来切页语境扩展）。无论取值，整条消息一律由网关拦截。省略整条消息 = 普通会话，向后兼容。设备 manual 聆听仍经既有 listen 消息承载，引擎不感知本信号。
+- **`kidpal_session_ctx` 消息**（端→网关，KidPal 私有扩展消息、非小智原生子集；2026-09-14 新增）：设备在**每次发起会话时、首帧音频前**发送 `{"type":"kidpal_session_ctx","source_page":"story"}`——首连时序上在 server hello 之后，wss 常驻连接的通道复用后续会话同样发送，重复发送安全（收敛入口幂等）。`source_page` 取值闭集 = `story` / `home` / `schedule`（story = P3 星星记录本按 KEY 发起的记录语境会话）。**网关消费并拦截、不下透引擎**：`source_page=="story"` 时 front 即切该会话记录语境对话态（与 §1.4 `control/start_recording` 收敛同一幂等入口，重复触发不重复开会话）；其余取值现版本无行为（闭集预留，供未来切页语境扩展）。无论取值，整条消息一律由网关拦截。省略整条消息 = 普通会话，向后兼容。设备聆听仍经既有 listen 消息承载（聆听形态取值归实现面，v1.65 起 manual 模式作废）；引擎不感知本消息本身——记录语境期间的引擎侧 LLM 抑制由 front 经既有内部注入通道注入等价信号承载（front↔引擎为服务端内部链路、不入本契约；机制权威 = arch §5.2 场景④ / ADR-013）。
 - **`kidpal_story_delete` 消息**（端→网关，KidPal 私有扩展消息；2026-09-24 新增）：设备在删除确认子态 KEY 确认（S-F2.1 AC4）后发送 `{"type":"kidpal_story_delete","id":"<story-id>"}`——`id` 取值 = story_list items 下发过的 id（闭集来源，设备不造 id）。**网关消费并拦截、不下透引擎**：front 机械执行（哨兵头校验 + `<stories_dir>/<id>.md` 硬删 + 审计日志；边界 = 仅 story MD，不触 OpenClaw 侧对话记忆/日志——家长知情权兜底面保留；家长侧删除通道本期不建、挂账登记，2026-09-24 契约门 Q6）→ 删除后重推 `story_list` 对账（`total` −1 可见；流水号账本不回退）。**单向通知、无应答消息**——可靠性 = 隐式 ack：设备发出 delete 后未收到「不含该 id 的 story_list 重推」即超时重发，front 幂等承接（不存在 id = 幂等 no-op、仍重推列表；不新增请求-应答消息对，ADR-005 边界保持，Q5）。非法 id（路径穿越/无哨兵头）拒绝 + 审计留痕。省略整条消息 = 无删除，向后兼容。
 - **`kidpal_story_fetch` 消息**（端→网关，KidPal 私有扩展消息；2026-10-17 新增，`261016-p3-story-body-sd-cache`）：设备请求取回 story 正文时发送 `{"session_id":"...","type":"kidpal_story_fetch","ids":["<story-id>", ...]}`——`ids` = story_list items 下发过的 id 数组（闭集来源，设备不造 id）；触发 = 进 P3 列表 / 翻屏时的当屏批量预取 + 双击兜底插队单篇（human 2026-10-16 裁载荷 = ids 批量，触发场景天然「当前屏这一批」，一帧一往返优于逐篇发帧）。**网关消费并拦截、不下透引擎**：front 机械执行（逐 id 校验存在于 story 账本〔哨兵头 + `<stories_dir>/<id>.md` 存在〕→ 读 MD → 以既有 **`story_text` 帧（§1.3④）逐篇应答**，每篇一次）；非法 / 不存在 id 拒绝 + 审计留痕、不回帧；空 ids 数组 = no-op。**这是契约面首个「设备发起 request → 网关 response」的请求-应答环**——此前 §四私有消息（`kidpal_story_delete` / `kidpal_session_ctx`）均单向通知、无应答（ADR-005 边界保持）；本帧 + `story_text` 应答**首次跨过 ADR-005 立下的「现无 device RPC 先例」边界**（据实裁定、不沿用「delete 是首例请求-应答」类不精确引据，见 spine OQ-9 / ADR-011）。下行**零新形状**——应答复用既有 `story_text` 帧。省略整条消息 = 不取回，向后兼容。
 - **`mcp` 工具调用**（云→端）：两种载荷——`kidpal/display`（载 E1 display JSON，view 白名单见 §1.3；网关下发前机械 schema 校验）与 `kidpal/alert`（载 §三 提醒条目）；设备 JSON-RPC 回执 = 送达确认（提醒出队 ack）。小智原生 alert/custom 通道**弃用**。

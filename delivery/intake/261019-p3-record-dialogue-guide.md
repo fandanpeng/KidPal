@@ -22,8 +22,8 @@ facePlan:
   - 顺序3 实现面（本门收尾动作）：anchors req/arch/contract 回填 + 261016-p3-story-body-sd-cache 合并完成后，/triage-change 五档收尾（预判 ② 单包 Full）→ planner /build-feature；launch 前置硬约束 = change-intake §8 spine 源条款 + 261016 合并序
 anchors:
   req: "requirements.md §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen）——S-F2.2 全篇重写（对话式引导记录：默认闭嘴 + 卡壳轻引导 + 素材边界废除一刀切 + 收尾忠实整理 + AC5 自动收尾含被抑制轮 + 按键语义钉）+ NFR-PERF-3 新增（阈值待定）+ §7 开放问题 7 取代注记 + WF-F2-02 框后注记四件 + 连带 §1/§2.1/§2.3/§2.4/F2 intro；设计母版 v6→v7（三帧 p3-recording 修订 / p3-recording-guide / state-organizing，气泡左上演层顶部位式）+ BRIEF v6 + glossary 两条勘误；PNG = docs/ui/V7/ 三帧；human 终拍两轮通过（第一轮打回气泡位式）；reviewer 三轮 PASS；流程留痕见 §9 v1.65 依据列"
-  arch: ""
-  contract: ""
+  arch: "architecture.md §12 changeId 行 `261019-p3-record-dialogue-guide`（2026-10-19 landed）——§10 决策 25 取代注记（悬空指针同修）+ ADR-013 新增（记录语境对话态 + Package B 引擎侧抑制定形 + `start_organizing` + provider 出口钉沿 §1.2 路径②）+ §5.1.2 front/story.py 行与 §5.2 场景④ 链路重写 + §2.3 / §5.1.1 / §9 to-be② / §5.5.4 / §4 NFR 映射表（补 NFR-PERF-3 行）/ §2.4 原则 3 联动对账；制品 = delivery/review/261019-arch-review-p3-record-dialogue-guide/（FROZEN v1.2 + R1 BLOCK(F1-F4)→v1.1/v1.2 修毕 + R2 GREEN + landing-verdict PASS）"
+  contract: "interface-contract.md 三触点 LANDED（CDQ-261019-p3-record-dialogue-guide）：① §1.4 新增 `start_organizing`（网关决定类、引擎 display 流拒转）+ 表后变更记录条；② §1.4 `start_recording` 行 + §四 `kidpal_session_ctx` 条措辞对账（记录语境对话态 + 引擎侧抑制由 front 内部注入等价信号承载；wire 形状零改）；③ §1.4 节标题括注对账。四分类 = ACCOMPANIES_SPEC_CHANGE（reviewer 独立裁定）；同批 ADR-013 随落"
   imp: ""
 openQ:
   - id: q1-261001-PackageB-吸收

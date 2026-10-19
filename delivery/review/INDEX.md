@@ -13,6 +13,7 @@
 |---|---|---|---|
 | [261019-gov-review-docs-root-drift-cleanup](261019-gov-review-docs-root-drift-cleanup/) | 2026-10-19 | landed | yes |
 | [261019-gov-review-docs-root-ledger-rehome](261019-gov-review-docs-root-ledger-rehome/) | 2026-10-19 | landed | yes |
+| [261019-arch-review-p3-record-dialogue-guide](261019-arch-review-p3-record-dialogue-guide/) | 2026-10-19 | landed | — |
 | [261019-gov-review-local-memory-extraction](261019-gov-review-local-memory-extraction/) | 2026-10-19 | landed | yes |
 | [261018-arch-review-sd-log-persist](261018-arch-review-sd-log-persist/) | 2026-10-18 | landed | yes |
 | [261017-arch-review-p3-story-body-sd-cache](261017-arch-review-p3-story-body-sd-cache/) | 2026-10-17 | landed | yes |
