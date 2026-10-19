@@ -66,7 +66,7 @@ openQ:
     question: human 终拍第一轮反馈——帧 A/B 气泡位置错：应与其它态一致放猫咪头顶上方（左演出层顶部），非右栏中部
     ruling: 终拍第一轮单点打回已闭合——uiux-author 改帧 A/B 气泡至左演出层顶部猫头顶上方（left 24/top 28，三帧位式统一）+ 规格表加「气泡位式」行 + BRIEF 同步；期间 uiux-author 全文件 Write 二次覆盖完整母版（R1 回归），主线程重放合并修复（机检复绿 15 画布）+ 重出三帧 PNG + 与 uiux-author 约定母版单写者（其后续只交增量页/补丁说明）。**human 终拍第二轮（2026-10-19）通过**（含帧 C 空键帽 = 非交互语义确认），requirements 翻 frozen v1.65
     status: resolved
-status: awaiting-human:pre-merge-escalation-gate（2026-10-19 第三跑：arch 面全环走完——FROZEN v1.2 + R2 GREEN + landing + landing-verdict PASS + retro 齐，commit 9f60f99c 在 dev/pod-m2；合并本地 main 被升级闸拦 = ARQ-261017-merge-gate-contract-evidence-ref 已登记的结构性假阴性（闸从 target(main) 读 PROPOSAL，恒不可满足），三件凭据实齐、261017 前例处置 = human 显式授权假阴性 + 手工本地合并——该授权不自动延及本批，待 human 拍：照前例授权手工合并 / 或先修闸（gov-change 并批 ARQ-261017-merge-gate-contract-evidence-ref + -scope-unstated）
+status: in-flight（2026-10-19 合并处置已拍：human 照 261016 前例授权假阴性闸旁路 + 手工本地合并——main 侧漂移 12 commit 含 gov ledger-rehome 结构迁移，rebase 后 ff 合并 = main ad28fd7c；CDQ 行按迁移格式重放 docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md、ADR-013 随 rename 落 docs/decisions/ADR.md，生成件重建、机检复绿。req/arch/contract 三 anchors 已回填，剩实现面 facePlan 顺序 3 = 五档分档（硬前置：261016-p3-story-body-sd-cache 合并）→ /build-feature）
 ---
 
 # spine · P3 记录会话改对话式引导态（261019-p3-record-dialogue-guide）

@@ -24,10 +24,10 @@ facePlan:
   - 顺序4 Package C（独立小包，human 触点①裁「另立」+ 确认档位）：引擎 overlay model_name 冲刷修复 → `delivery/taskpackages/261001-openclaw-model-name-overlay-drift/plan.md`（② 单包 Lite / riskTier=low / sourceType=drift-report；经 architect 快审：单面实现、不触契约/spec、逃生门不触发、不建独立 spine）
   - launchPrecondition（Package A）：无上游锚依赖，可即时 launch；Package B 受顺序3 anchors 门控；Package C 独立
 anchors:
-  req: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：D3-甲随 spec 修订顺带改 :431 注记——机制定形未启动，路由 = 需求面 /requirement-change（openQ q6），暂无定稿物可引"
-  contract: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：architect-reviewer 四分类 261001 已预审；:266「引擎不感知本信号」扩面随 human 触点①裁；Track A 定形后重备契约包三节（现行口径无人签门，change-intake §8）——暂无 packet"
-  arch: "Track A 待跑实况（2026-10-16 T5 整改如实回填）：§5.2④ 改法 + ADR-008 修订——/arch-change Track A 未启动，暂无镜像句落点"
-  imp: "Package A：taskpackage 261001-m4-k3-record-session-live-repair **已收口**（dev INDEX closed，2026-10-16 T5 整改实证——②单包 Full 全程走毕）。Package C（独立变更另 id）：taskpackage 261001-openclaw-model-name-overlay-drift **已收口**（dev INDEX closed）。Package B：未落包（Track A 定形后另立，facePlan 顺序 3 门控）"
+  req: "**已闭环（2026-10-19 回填）**——D3-甲需求侧语义与 :431 注记随 261019-p3-record-dialogue-guide 需求面 v1.65 frozen 承载（S-F2.2 补充规则翻案留痕段含引擎侧抑制连带）：requirements.md §9 v1.65"
+  contract: "**已闭环（2026-10-19 回填）**——Package B 契约面（:266「引擎不感知本信号」措辞对账 + 引擎侧抑制机制）由 261019-arch-review-p3-record-dialogue-guide 吸收定形：interface-contract.md 三触点 LANDED（含 §四 session_ctx「引擎侧抑制由 front 内部注入等价信号承载」），条目 = docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md；261019 主线程 rebase 合并期按 ledger-rehome 迁移格式迁入 contract 域"
+  arch: "**已闭环（2026-10-19 回填）**——Package B 架构面（§5.2④ 链路 + 引擎侧抑制定形）由 261019 批 ADR-013 承载（supersedes 决策 25 机制面），architecture.md 五改法点 LANDED（landing-verdict PASS 27 项对账）"
+  imp: "Package A：taskpackage 261001-m4-k3-record-session-live-repair **已收口**（dev INDEX closed，2026-10-16 T5 整改实证——②单包 Full 全程走毕）。Package C（独立变更另 id）：taskpackage 261001-openclaw-model-name-overlay-drift **已收口**（dev INDEX closed）。Package B：定形 + 实现义务经 261019 spine q1（human 裁吸收）转移至 261019-p3-record-dialogue-guide——实现归其实现面承载包（待 261016 合并后五档分档），本 spine 无剩余在途义务"
 openQ:
   - id: q1-四档路由
     question: architect 判 ③ 拆包（Package A 纯固件 ②单包 Full / Package B 取甲跨面转契约门+Track A），human 是否确认或改判？
@@ -65,7 +65,7 @@ openQ:
     question: q8 复核出的「归档早于转写」缺陷如何立项？
     ruling: human 261001 触点②同意先开；architect 分流判 ② 单包 Full（riskTier=high / rigor=full / sourceType=regression；存疑向严理由 = 数据丢失 + 触累积态状态机 + 改写已 merged 包的冻结验收时序假设），human 复确认档位。plan 落 `delivery/taskpackages/261001-m4-k3-story-archive-order/plan.md`（修法 = 停录挂起 pending-stop + 转写到达后归档 + 正文剔收尾词 + 10s 超时兜底；120s sweep 同源缺陷划 B2/B3）。**不建独立 spine**（单面实现）
     status: resolved
-status: awaiting-upstream
+status: closed（2026-10-19 结项：Package A/C 已收口；Package B 定形 + 实现义务经 261019-p3-record-dialogue-guide spine q1 human 裁定吸收——其 arch/contract 面 FROZEN v1.2 + landing-verdict PASS 并已合本地 main（ad28fd7c），实现归同批实现面承载包，见 anchors 三行回填）
 ---
 
 # spine · 261001-m4-k3-record-session-live-repair
