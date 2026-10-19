@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261018-sd-log-persist | arch+imp | in-flight | 3/2 | 2026-10-18 | ⚠未闭环 |
+| 261018-sd-log-persist | arch+imp | closed | 4/2 | 2026-10-18 | — |
 | 261017-prompt-v11-schedule-recall | arch+imp | closed | 4/2 | 2026-10-17 | — |
 | 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 4/4 | 2026-10-16 | ⚠未闭环 |
 | 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 |
