@@ -126,3 +126,15 @@
 - **复验**：scoped r3 八闸全绿（invocationId `439dfe54-dcd0-469d-9e59-a6fb73703542`）+ final r4 十闸全绿（invocationId `9b9542ae-19c8-412f-99d0-1faff3075a6a`，scope-file 同 `test-scope.txt`）；两轮 immutable fact 经 `verifier-evidence-check` 核验 factOk:true。host runner 210 Tests 3 Failures（+7 = 姊妹包 261018-sd-log-usb-read log_cmd 齿入 runner；3 红仍为 p1_auxbar 先存红，零新增红）。设备编译闸真编译 build-pass，新 `xiaozhi.bin` = 3,288,320 bytes（0x322d00），sha256 `595ef670f37b50d8bed1e310b5012535fe1035df522501399d18cc6d9e7a6e37`。
 - **持久性终判归真机**：修复的可证伪判据 = 重录 → 硬复位 → 取回文件非 0 字节且含近期日志；由 human 复测（SLP-A6 观察项 ③④ 同轮执行）。
 - **合并状态**：`supervisor-verdict.json` 维持 ESCALATE（riskTier=high），board blocked，停 human。
+
+## SLP-A6 真机轮判定（2026-10-19 · human 持板，PASS）
+
+| # | 观察项 | 判定 | 证据 |
+|---|---|---|---|
+| 1 | 落卡与内容 | **PASS**——`/sdcard/logs/KPLOG000.TXT` 含完整 boot 日志 + 对话原文（`>> 明天有什么课？` + `<<` 六行课表答复等），34,583 字节 | `c:/tmp/lur-cat0b.txt` |
+| 2 | 串口不中断 | **PASS**——三轮烧录+启动捕获连续输出、无断流、无 panic | `c:/tmp/dev-round-261018-a6.log` / `c:/tmp/lur-boot.log` |
+| 3 | 循环覆盖与目录封顶 | 未跑满轮（如实标注：当前 1 文件 34,467 字节；轮转/16MB 封顶逻辑由 host 覆盖，真机满轮留观察） | — |
+| 4 | 拔卡降级 | 本机不可执行（卡物理难拔，如实标注；降级代码路径由 host 覆盖与代码审查承载） | — |
+| 加测 | **fsync 持久性（d65866ba 修复实证）** | **PASS**——硬复位后 `kplog list` 返回 34,467 字节（复位前 22K），对话数据完整存活；`fflush→fsync` 修复的真机实证成立 | 同上串口/取回日志 |
+
+**SLP-A6 判定 = PASS**（①② 加测 PASS；③④ 如实标注未执行/不可执行，由 host 齿与代码审查承载、真机满轮留观察）。human 据此批准 ESCALATED 合并（pod-events `human-decision 04d4c5a4-5415-42b6-b41d-6bc521fe8c70`，`payload.decision="approve-escalated-merge"`）。
