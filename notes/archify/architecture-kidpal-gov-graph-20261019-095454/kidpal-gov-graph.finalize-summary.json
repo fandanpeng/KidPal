@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+    "sha256": "a06d86aeb3c43ffbb865a3f41b78afc0955da5a7c8ff3cddd8d60aee610910ad",
+    "bytes": 16221
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+    "sha256": "a5436de04fd4fe178256194ca570845e892c359dd48e410d0df9e1c8b5d86c41",
+    "bytes": 828375
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.finalize-summary.json",
+    "browserCheckReceipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-19T01:56:58.114Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.0.1 → 3.2.0. A previous check at 2026-10-19T01:56:58.114Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4885,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 5,
+      "routesOverSuggestedBends": 1,
+      "routesOverSuggestedStretch": 2
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "triage-to-arch",
+            "from": "triage",
+            "to": "arch-author",
+            "label": "",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "id": "triage-to-gov",
+            "from": "triage",
+            "to": "gov-author",
+            "label": "",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            660,
+            223
+          ],
+          "sharedNode": "triage"
+        },
+        {
+          "left": {
+            "id": "triage-to-dev",
+            "from": "triage",
+            "to": "portfolio",
+            "label": "",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "right": {
+            "id": "triage-to-gov",
+            "from": "triage",
+            "to": "gov-author",
+            "label": "",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            644,
+            223
+          ],
+          "sharedNode": "triage"
+        },
+        {
+          "left": {
+            "id": "reqrev-to-story",
+            "from": "req-reviewer",
+            "to": "story-author",
+            "label": "否回 · 熔断 3 轮",
+            "collectionIndex": 9,
+            "artifactIndex": 10
+          },
+          "right": {
+            "id": "archrev-to-arch",
+            "from": "arch-reviewer",
+            "to": "arch-author",
+            "label": "打回 · 3 轮熔断",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "point": [
+            778.4,
+            227
+          ]
+        },
+        {
+          "left": {
+            "id": "token-to-gate",
+            "from": "merge-token",
+            "to": "merge-gate",
+            "label": "",
+            "collectionIndex": 19,
+            "artifactIndex": 20
+          },
+          "right": {
+            "id": "govrev-to-landing",
+            "from": "gov-reviewer",
+            "to": "landing",
+            "label": "",
+            "collectionIndex": 22,
+            "artifactIndex": 23
+          },
+          "point": [
+            1378.1000000000001,
+            397.14444444444433
+          ]
+        },
+        {
+          "left": {
+            "id": "debt-to-intake",
+            "from": "debt",
+            "to": "intake",
+            "label": "ARQ 作立项材料回流",
+            "collectionIndex": 29,
+            "artifactIndex": 30
+          },
+          "right": {
+            "id": "intake-to-spine",
+            "from": "intake",
+            "to": "spine",
+            "label": "落 spine",
+            "collectionIndex": 30,
+            "artifactIndex": 31
+          },
+          "point": [
+            337,
+            552
+          ],
+          "sharedNode": "intake"
+        }
+      ],
+      "detours": [
+        {
+          "relationship": {
+            "id": "ack-to-triage",
+            "from": "human-ack",
+            "to": "triage",
+            "label": "① 立项 ack",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "bends": 4,
+          "stretch": 1.41
+        },
+        {
+          "relationship": {
+            "id": "gate-to-human",
+            "from": "merge-gate",
+            "to": "human-esc",
+            "label": "闸拦升级",
+            "collectionIndex": 31,
+            "artifactIndex": 32
+          },
+          "bends": 2,
+          "stretch": 1.551
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "triage → arch-author and triage → gov-author cross next to triage: move node arch-author or gov-author so the two reach triage from different sides (for example one level with it, one directly above or below it).",
+      "triage → portfolio and triage → gov-author cross next to triage: move node portfolio or gov-author so the two reach triage from different sides (for example one level with it, one directly above or below it).",
+      "req-reviewer → story-author crosses arch-reviewer → arch-author: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "merge-token → merge-gate crosses gov-reviewer → landing: move the node of whichever is a branch, return, or second entrance to the other side of the main path, so that relationship runs through an empty corridor.",
+      "debt → intake and intake → spine cross next to intake: move node debt or spine so the two reach intake from different sides (for example one level with it, one directly above or below it).",
+      "human-ack → triage needs 4 bends: move node human-ack or triage so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "merge-gate → human-esc needs 2 bends: move node merge-gate or human-esc so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

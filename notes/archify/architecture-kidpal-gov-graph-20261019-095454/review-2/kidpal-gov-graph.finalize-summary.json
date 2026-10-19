@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\candidate.json",
+    "sha256": "0293791db9ae716cb9f6011864f1395865ed7a658bf8a930797463eb240563be",
+    "bytes": 16221
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\kidpal-gov-graph.html",
+    "sha256": "2bd039ffd2b4fc21ff6e45b8fbfecbfd49ff3fb7ad5a5bee371c3d3bd5b30e52",
+    "bytes": 828150
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\review-2\\kidpal-gov-graph.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\review-2\\kidpal-gov-graph.finalize-summary.json",
+    "browserCheckReceipt": "C:\\AI\\KidPal-gov\\.archify\\architecture-kidpal-gov-graph-20261019-095454\\review-2\\kidpal-gov-graph.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-19T01:56:58.114Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.0.1 → 3.2.0. A previous check at 2026-10-19T01:56:58.114Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4321,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "debt-to-intake",
+            "from": "debt",
+            "to": "intake",
+            "label": "ARQ 作立项材料回流",
+            "collectionIndex": 29,
+            "artifactIndex": 30
+          },
+          "bends": 3,
+          "stretch": 1.063
+        },
+        {
+          "relationship": {
+            "id": "gate-to-human",
+            "from": "merge-gate",
+            "to": "human-esc",
+            "label": "闸拦升级",
+            "collectionIndex": 31,
+            "artifactIndex": 32
+          },
+          "bends": 2,
+          "stretch": 1.584
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "debt → intake needs 3 bends: move node debt or intake so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "merge-gate → human-esc needs 2 bends: move node merge-gate or human-esc so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}
