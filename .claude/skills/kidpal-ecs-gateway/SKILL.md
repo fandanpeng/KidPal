@@ -43,4 +43,13 @@ python c:/tmp/ssh_helper.py "docker logs --since 6m xiaozhi-esp32-server 2>&1 | 
 ```
 Good round = `识别文本:` (ASR) → `大模型收到用户消息` → `发送第一段语音` + `语音生成成功` (TTS), no `invalid tool configuration`.
 
+## OpenClaw ops (2026.8.1 reinstall field notes)
+Field-tested during the 2026-08-31 ECS OpenClaw 2026.8.1 reinstall. **Do not expect `doctor --fix` to fix credential problems.**
+
+- **Credential migration deadlock**: pre-2026.8.1 credentials live in `~/.openclaw/agents/main/agent/auth-profiles.json`; 2026.8.1 requires them migrated into sqlite, but `doctor --fix` (interactive / non-interactive / `--force`) performs no migration, while every auth CLI is gated behind "run doctor --fix first" — a deadlock.
+- **Manual fix — write BOTH sqlite stores**: (1) agent-level `~/.openclaw/agents/main/agent/openclaw-agent.sqlite`, table `auth_profile_store` (`store_key='primary'`); (2) shared-level `~/.openclaw/state/openclaw.sqlite`, table `config_machine_state` (`state_key='authProfiles.store'`). Insert the `{version:1, profiles:{...}}` JSON into both. Use `node -e` with `node:sqlite` — the ECS python3 sqlite is too old to read STRICT tables.
+- **Billing lock**: after a DeepSeek balance-exhaustion 402, 2026.8.1 writes the profile into `openclaw-agent.sqlite` table `auth_profile_state` (`usageStats.<id>.disabledUntil` + `disabledReason:"billing"`, ~5h lock; topping up does NOT auto-recover; error `Prepared direct auth fallback cannot bypass unavailable profiles`). Fix = stop gateway → via node:sqlite delete the `usageStats` field from `state_json` in that table → start gateway. The failure state lives in `auth_profile_state`, NOT `auth_profile_store`; there is no CLI reset command.
+- **Gateway as a service**: `openclaw gateway install` fails with SERVICE_DEFINITION_UNKNOWN (installer bug) → hand-write a system unit `/etc/systemd/system/openclaw-gateway.service` (`User=root`, `ExecStart=node .../openclaw.mjs gateway run`, env `NODE_COMPILE_CACHE` + `OPENCLAW_NO_RESPAWN=1`), then `systemctl enable --now`.
+- Red line unchanged: **no secrets in this skill** (extends the Never-persist-secrets discipline above); this section stays in English like the rest of the file.
+
 Related: [[kidpal-serial-monitor]] [[kidpal-nvs-ops]] [[kidpal-live-smoke-debug]]
