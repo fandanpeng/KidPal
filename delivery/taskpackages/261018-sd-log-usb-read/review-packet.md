@@ -108,3 +108,31 @@
 - **Known limitation**：① LUR-A7 真机九项 + 降级链 A/B 未跑（本 Pod 零烧录，awaiting-human:real-device）；② 真实 /dev/secondary、FATFS 并发读、USB-Serial/JTAG 行为未在 host 复现（chip 面不可达）；③ tail 整文件读入的堆峰值与目录字面双源两项 NIT 已入债务表；④ `p1_auxbar` AB-A1/A2/A4 先存红仍在（与本包正交）；⑤ final 相位 verifier round 未跑（scoped r1 为当前唯一 verifier fact），LUR-X2 设备编译闸面证据待 final 轮补。
 - **Follow-up recommended**：① human 持板轮按 LUR-A7 ①–⑨ 逐项观测并留痕，单命令 smoke 先行，失败进降级链；② planner/verifier 跑 final 相位 round（`--scope-file delivery/taskpackages/261018-sd-log-usb-read/scope-final.md`）补 firmware-build 真编译与 unit/acceptance 闸面证据；③ pod-retro 由 planner 收尾相位落 `pod-retro.md`。
 - **Human decision needed**：LUR-A7 真机轮放行与九项验收结论（本 Pod 停门等 human 持板）；合并顺序按 OQ-1 主线程裁定执行（persist 验完合 main 后本包 rebase 立合）。
+
+## 真机轮判定补记（2026-10-19 resume）
+
+### LUR-A7 九项逐项判定
+
+| # | 项目 | 判定 | 证据 / 说明 |
+|---|---|---|---|
+| 1 | 单命令 smoke（`kplog list` 经 kidpal_logs.py） | PASS | 启动日志 `c:/tmp/lur-boot.log`；命令响应帧完整、零 ESP_LOG 污染 |
+| 2 | 无命令零输出（不干扰监控/烧录） | PASS | boot 日志静默面确认 |
+| 3 | `kplog list` 列出分片文件与字节数 | PASS | 基线 21,939 字节序列起点 |
+| 4 | `kplog cat 0` 回取 STT/LLM 原文 | PASS | `c:/tmp/lur-cat0.txt` 内容与落卡一致 |
+| 5 | 写入增长后 cat 字节数同步增长 | PASS | 序列 21,939 → 22,246 → 34,467 |
+| 6 | `kplog tail n` 尾部窗口与定位边界 | PASS | 窗口数行与边界行为符合验收 |
+| 7 | 拔卡后错误帧（no-card 不崩） | NOT-EXECUTABLE | SD 卡物理难拔，本机不可执行；降级路径由 host 齿覆盖（无卡 `KidpalSdLogCurrentIndex` 返 -1 错误帧面已在 host 验收 TEST 覆盖） |
+| 8 | 非法命令拒绝（越界/超长/坏 token） | PASS | 拒绝即短路，零文件触达 |
+| 9 | 帧完整性（DTR/RTS 时序下无半帧） | PASS | 全轮未复现半帧/截断 |
+
+证据文件：`c:/tmp/lur-boot.log`（boot + 命令响应全程日志）、`c:/tmp/lur-cat0.txt`（cat 0 回取原文快照）。
+
+### 降级 A 过程事实
+
+首版 /dev/secondary VFS 直读 smoke 失败（10s 零响应）——Kconfig 帮助文本「secondary 仅输出」的警告成立，VFS 读路径不可用。降级 A（HAL 直读 `usb_serial_jtag_ll_read_rxfifo`，commit ef09aa97）重测通过，确认为可用路径。此事实对后续涉及 USB-Serial/JTAG 读取的包有直接参考价值：该外设的 secondary 通道按 IDF Kconfig 语义仅输出，读侧必须走 HAL 直读。
+
+### 结论
+
+- LUR-X4 成立：真机轮由 human 持板执行并留痕（boot/cat 证据文件在案）。
+- LUR-A7 判定 8/9 PASS + 1 NOT-EXECUTABLE（第 7 项拔卡，host 齿覆盖降级路径）。
+- 人批引用：pod-events human-decision `056d1338-2dde-49b9-af52-5532fdc93f99`（payload.decision=approve-escalated-merge）。
