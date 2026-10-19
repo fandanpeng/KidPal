@@ -117,3 +117,12 @@
 - **Known limitation**：① SLP-A6 真机四项未跑（本 Pod 零烧录）；② 真实 ISR / FATFS / PSRAM / UART 运行时未在 host 复现（chip 面不可达）；③ `p1_auxbar` AB-A1/A2/A4 先存红仍在（与本包正交）；④ 自旋锁 ISR 边界、pending_bytes 溢出差、逐条 flush、钩子栈占用四项 NIT 已记账。
 - **Follow-up recommended**：human 持板轮按 SLP-A6 ①②③④ 逐项观测并留痕；如真机轮观察到刷盘过频或栈压力，按 Findings 表升级触发处理；pod-retro 由 planner 收尾相位落 `pod-retro.md`（含 intake `scan-miss` friction 收口）。
 - **Human decision needed**：SLP-A6 真机轮放行与验收结论；隐私面（对话原文明文落卡）已拍板接受，如有变更需求另立批。
+
+## Fix Round（2026-10-19 · 真机实证缺陷修复 + fsync 回归齿）
+
+- **缺陷（human 真机轮报告，live-manual 发现、host 齿未覆盖）**：硬复位后 `KPLOG000.TXT 0 bytes`——`DrainPending()` 原实现只调 `fflush`（推 RAM 文件对象），FAT 目录项与 FAT 链只有 `f_sync` 才落卡；esptool 硬复位等价掉电，已写数据全失（串口侧 360 行连续输出证实数据确曾写入）。
+- **修复**：fixer 单文件补丁 `sd_log_fs.cc`（+13/-3）：写条件补 `fsync(fileno(s_file))`（fflush 保留、语义互补）；fsync 失败 = 写失败（MarkWriteFailed + 不 commit + 30s 重试）；1s/4KB 节流、512KB 分片、轮转逻辑零改动。授权 = pod-events `human-decision b0da8396-266e-4055-aa97-2a3b898104fe`。
+- **回归齿（tighten-only additive，DEV-GOVERNANCE §6 五件合规）**：`sd_log.acceptance.c` TEST 8 补「DrainPending 体内 `fsync(fileno(` 在世」源锚齿（43 增/0 删；sha256 `395b9300… → 68def413…`，REVISION LOG append）；变异红证 = /tmp 合成树摘 fsync（注释保留）转红，红名 verbatim 落 mutationEvidence SLP-A4 注记；意图锚定 SLP-A4/A5 原意图、零新增 acceptance id。
+- **复验**：scoped r3 八闸全绿（invocationId `439dfe54-dcd0-469d-9e59-a6fb73703542`）+ final r4 十闸全绿（invocationId `9b9542ae-19c8-412f-99d0-1faff3075a6a`，scope-file 同 `test-scope.txt`）；两轮 immutable fact 经 `verifier-evidence-check` 核验 factOk:true。host runner 210 Tests 3 Failures（+7 = 姊妹包 261018-sd-log-usb-read log_cmd 齿入 runner；3 红仍为 p1_auxbar 先存红，零新增红）。设备编译闸真编译 build-pass，新 `xiaozhi.bin` = 3,288,320 bytes（0x322d00），sha256 `595ef670f37b50d8bed1e310b5012535fe1035df522501399d18cc6d9e7a6e37`。
+- **持久性终判归真机**：修复的可证伪判据 = 重录 → 硬复位 → 取回文件非 0 字节且含近期日志；由 human 复测（SLP-A6 观察项 ③④ 同轮执行）。
+- **合并状态**：`supervisor-verdict.json` 维持 ESCALATE（riskTier=high），board blocked，停 human。

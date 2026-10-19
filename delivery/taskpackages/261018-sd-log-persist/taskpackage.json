@@ -34,7 +34,7 @@
     "firmware/main/test/sd_log.acceptance.c"
   ],
   "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-18（本树）：① 独立冒烟通道（gcc -std=c11 -Wall -Wextra -pthread，与 sc_red_wrapper 同款）编入冻结件 + runner → COMPILE_EXIT=0 零 warning，8 Tests 8 Failures（全部设计态红：SLP-A1×2 / SLP-A2×1 / SLP-A3×1 / SLP-A5×1 = 纯逻辑 seam 未实现；SLP-A4×3 = main.cc 未装钩子 / max_files 仍为 5 / sd_log.h 未落地）；② 既有 host runner（本件尚未登记）195 Tests 3 Failures exit 3——3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4），与本包子系统正交，本包零新增红；③ 宿主构建旗标实编 COMPILE_EXIT=0（-std=gnu17 -Wall -Wextra -Werror=all 零 warning）。双向可满足性：一次性参考实现 + 合成树 → 8 Tests 0 Failures；定向变异六项（max_files 8→5 / 钩子后移 / 写盘任务加 ESP_LOG / attach 清空 / 满溢丢最新 / 移除 rot_account 消费）各只打红对应断言。",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-18（本树）：① 独立冒烟通道（gcc -std=c11 -Wall -Wextra -pthread，与 sc_red_wrapper 同款）编入冻结件 + runner → COMPILE_EXIT=0 零 warning，8 Tests 8 Failures（全部设计态红：SLP-A1×2 / SLP-A2×1 / SLP-A3×1 / SLP-A5×1 = 纯逻辑 seam 未实现；SLP-A4×3 = main.cc 未装钩子 / max_files 仍为 5 / sd_log.h 未落地）；② 既有 host runner（本件尚未登记）195 Tests 3 Failures exit 3——3 条全为 p1_auxbar_style 先存红（AB-A1/A2/A4），与本包子系统正交，本包零新增红；③ 宿主构建旗标实编 COMPILE_EXIT=0（-std=gnu17 -Wall -Wextra -Werror=all 零 warning）。双向可满足性：一次性参考实现 + 合成树 → 8 Tests 0 Failures；定向变异六项（max_files 8→5 / 钩子后移 / 写盘任务加 ESP_LOG / attach 清空 / 满溢丢最新 / 移除 rot_account 消费）各只打红对应断言。【补充轮 2026-10-19（真机缺陷修复 + fsync 回归齿）】fixer 补 DrainPending fsync(fileno)（真机实证 fflush 不落 FAT 目录项、硬复位丢数据；human-decision b0da8396）；acceptance-author 按 tighten-only additive 窗口补 fsync 源锚回归齿（43/0，sha256 核销见该件 REVISION LOG），变异红证 = 摘 fsync 转红（红名 verbatim 见 mutationEvidence SLP-A4 注记）；host 复跑 210 Tests 3 Failures（+7 = 姊妹包 261018-sd-log-usb-read log_cmd 齿；3 红仍为 p1_auxbar 先存红，零新增红）。",
   "requiredLayers": [
     "unit",
     "acceptance-offline",
@@ -141,7 +141,7 @@
           "SLP-A4 RED: InitializeSdCard 内 mount_config.max_files 取值非字面 8（取到 5）——FD 预算未给日志文件 + story_sd_io + 启动探针留头（宏间接 / 符号常量形态取值失败同红，须复核锚不得改判为绿）"
         ],
         "restored": "git checkout -- waveshare-s3-rlcd-4.2.cc 后 git diff 为空；全量复跑 203 Tests 3 Failures（仅先存红）",
-        "note": "同一变异同时打红 261016 重锚后的 SD-A2 tooth 6（见 XPKG 记录），证明跨包重锚齿同样敏感"
+        "note": "同一变异同时打红 261016 重锚后的 SD-A2 tooth 6（见 XPKG 记录），证明跨包重锚齿同样敏感。【回归齿 2026-10-19，tighten-only additive 修订】真机实证 fsync 缺席缺陷（human-decision b0da8396-266e-4055-aa97-2a3b898104fe）修复后，TEST 8 additive 补「DrainPending 体内 fsync(fileno( 在世」源锚齿（43 增/0 删；sha256 395b9300…→68def413…，REVISION LOG append）；变异红证：/tmp 合成树摘除 fsync（注释保留）→ 红名 verbatim「SLP-A4 RED: DrainPending 体内 fsync(fileno( 缺席——fflush 只推 RAM 文件对象、FAT 目录项不落卡（真机实证 2026-10-19：硬复位丢全部已写数据）」"
       },
       {
         "acceptanceId": "SLP-A5",

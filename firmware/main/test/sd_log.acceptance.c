@@ -288,6 +288,12 @@
  *             32 × 512KB 后最旧被覆盖、目录 <= 16MB；④ 拔卡 / 坏卡场景不崩、30s 重试后
  *             恢复写盘。本 Pod 到真机门前停等（status=awaiting-human:real-device），
  *             不自行烧录。**隐私事实**：含对话原文 = human 有意识接受（见文件头注）。
+ *   coverage: SLP-A4/A5（tighten-only additive 修订，2026-10-19）-- DrainPending 体内
+ *             fsync(fileno( 持久性源锚（TEST 8，注释剥离后可执行源字面形态）：钉既有
+ *             SLP-A4（接线结构源锚家族——写盘链正确性）与 SLP-A5（写失败语义——fsync
+ *             失败 = 写失败即停、不 commit）的**原意图**，不新增 acceptance id；缘由 =
+ *             真机实证 fflush-only 落卡丢失（human-decision b0da8396-266e-4055-aa97-
+ *             2a3b898104fe，硬复位丢全部已写数据），防同类回退。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>
@@ -1861,6 +1867,28 @@ TEST_CASE("sd log: PSRAM 128KB ring, low-prio writer task without ESP_LOG, no pa
         "SLP-A3 RED: KidpalSdLogAttach 内未调用 kidpal_sd_log_ring_attach(——环未进入可 drain "
         "状态（早启动累积的日志永远不落盘）");
 
+    /* 持久性源锚（tighten-only additive 修订 2026-10-19；真机实证缘由 human-decision
+     * b0da8396-266e-4055-aa97-2a3b898104fe）：DrainPending 体内 fsync(fileno( 必须在世
+     * （注释剥离后可执行源的字面形态——只在注释里提及不得假绿，260917-m2-k3 教训）。
+     * fflush 只把 stdio 流缓冲推进 VFS/FATFS 的 RAM 文件对象，FAT 目录项（文件大小）与
+     * FAT 链只有 f_sync 才落卡——esptool 硬复位（等价掉电）后 KPLOG000.TXT 0 bytes、
+     * 已写数据全失。意图锚定 = 既有 SLP-A4（接线结构源锚家族——写盘链正确性）与
+     * SLP-A5（写失败语义——fsync 失败 = 写失败即停、不 commit）原意图，不新增
+     * acceptance id。 */
+    p = strstr(code, "void DrainPending(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(p,
+        "SLP-A4 RED(infra): sd_log_fs.cc 无 DrainPending 定义——落盘主循环缺席"
+        "（须复核锚不得改判为绿）");
+    {
+        const char *drain_end = sdl_body_end(p, SDL_BODY_WINDOW);
+
+        body = sdl_window_copy(p, drain_end);
+    }
+    TEST_ASSERT_TRUE_MESSAGE(sdl_find_in(body, body + strlen(body), "fsync(fileno(") != NULL,
+        "SLP-A4 RED: DrainPending 体内 fsync(fileno( 缺席——fflush 只推 RAM 文件对象、"
+        "FAT 目录项不落卡（真机实证 2026-10-19：硬复位丢全部已写数据）");
+    free(body);
+
     /* 纯逻辑决策入口必须在芯片面被消费（否则决策表是死代码，A1/A2/A5 行为绿不等于接线）。 */
     TEST_ASSERT_TRUE_MESSAGE(strstr(code, "kidpal_sd_log_should_flush(") != NULL,
         "SLP-A5 RED: sd_log_fs.cc 未消费 kidpal_sd_log_should_flush(——无卡零写盘 / 1s·4KB "
@@ -1927,4 +1955,19 @@ TEST_CASE("sd log: PSRAM 128KB ring, low-prio writer task without ESP_LOG, no pa
  *               冻结落盘冒烟 = 独立冒烟通道实编 + 实跑（设计态红逐条核对，红名见交付
  *               报告）+ 既有 host 全量套件零新增红判读；双向可满足性以 /tmp 一次性参考
  *               实现 + 合成树（KIDPAL_REPO_ROOT 注入）取证，不写入工作树。
+ *   2026-10-19 tighten-only additive 修订（acceptance-author；§6 纯 additive、删除行 0、
+ *               不改既有断言语义、不新建文件）：TEST 8 追加 DrainPending 体内
+ *               fsync(fileno( 持久性源锚断言。缘由 = 真机实证缺陷（2026-10-19，
+ *               human-decision b0da8396-266e-4055-aa97-2a3b898104fe）：DrainPending 仅
+ *               fflush 时 FAT 目录项不落卡，esptool 硬复位后 KPLOG000.TXT 0 bytes、
+ *               已写数据全失；fixer 已补 fsync（工作树 sd_log_fs.cc），本次补钉防回退。
+ *               意图锚定 = 既有 SLP-A4（接线结构源锚家族——写盘链正确性）与 SLP-A5
+ *               （写失败语义——fsync 失败 = 写失败即停、不 commit）原意图，不新增
+ *               acceptance id。变异红证：/tmp 合成树摘除 fsync 后本断言转红（红名
+ *               verbatim 见交付报告），注释里提及 fsync 不假绿（注释剥离通道覆盖）。
+ *               sha256 395b930092e6c6c5b158ef4e130704a68718f4ac6d711f58938c9a522358b79b
+ *               -> dde09f4f3c6747f439b07ff2ae2341242e3af9c3a641ad20fe2562351c28c61e
+ *               （后值口径 = 含本条日志、sha256 值槽为 SHA-SLOT-PLACEHOLDER 时的工
+ *               作树全文件实测；自指不可闭合——含本条日志终态字节的哈希见本包提交
+ *               记录。前 -> 后同条核销。）
  * --------------------------------------------------------------------------- */

@@ -15,8 +15,9 @@
  * 写盘任务函数体内**零 ESP_LOG***：钩子会捕获一切 esp_log 输出，任务内再记日志会经
  * vprintf 递归回灌环形缓冲。任务失败诊断只在 attach 等任务外路径记。
  *
- * 写盘口径：peek -> 写文件 -> 轮转记账 -> commit 才推进读指针；每批 fflush（1s 或
- * 4KB 门控见 kidpal_sd_log_should_flush）。
+ * 写盘口径：peek -> 写文件 -> 轮转记账 -> commit 才推进读指针；每批 fflush + fsync
+ * （1s 或 4KB 门控见 kidpal_sd_log_should_flush）——fflush 推流缓冲、fsync 才把
+ * FAT 目录项与 FAT 链落卡（掉电/硬复位持久性保证）。
  */
 
 #include <cstdarg>
@@ -24,6 +25,7 @@
 #include <cstring>
 #include <cerrno>
 #include <sys/stat.h>
+#include <unistd.h>  /* fsync（VFS -> f_sync，FAT 目录项落卡） */
 
 #include <esp_heap_caps.h>
 #include <esp_log.h>
@@ -109,8 +111,15 @@ void DrainPending(void)
             MarkWriteFailed();
             return;
         }
+        /* 真机实证修复（TaskPackage 261018-sd-log-persist，2026-10-19 human-decision
+         * b0da8396）：fflush 只把 stdio 流缓冲推进 VFS/FATFS 的 RAM 文件对象，
+         * FAT 目录项（文件大小）与 FAT 链只有 f_sync 才落卡 —— esptool 硬复位
+         * （等价掉电）后目录项仍 0 字节、已写数据全失。fsync(fileno) 经 VFS 触发
+         * f_sync 落目录项；fflush 与 fsync 语义互补（先把流缓冲推进 VFS，再把 VFS
+         * 推到卡），故两者都保留。fsync 失败与 fwrite 失败同语义：写失败即停、
+         * 不 commit（最旧条目保留供 30s 后重试）。 */
         if (fwrite(rec, 1, (size_t)len, s_file) != (size_t)len ||
-            fflush(s_file) != 0) {
+            fflush(s_file) != 0 || fsync(fileno(s_file)) != 0) {
             MarkWriteFailed();
             return;
         }
