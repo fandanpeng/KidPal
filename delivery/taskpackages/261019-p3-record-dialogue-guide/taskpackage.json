@@ -1,0 +1,22 @@
+{
+  "changeId": "261019-p3-record-dialogue-guide",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md",
+    "upstreamFrozen": "spine anchors 三面已回填且批已合本地 main（delivery/intake/261019-p3-record-dialogue-guide.md，main = e65a8731）：req = requirements §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen——S-F2.2 对话式引导记录全篇重写 + NFR-PERF-3 + WF-F2-02 注记四件）；arch = 261019-arch-review-p3-record-dialogue-guide 批 landing（FROZEN v1.2 + R2 GREEN + landing-verdict PASS 27 项对账——决策 25 机制面改写 + §5.1.2 计时器族 + §5.2④ 链路 + ADR-013 supersedes 决策 25 机制面 + 261001 Package B 引擎抑制吸收定形）；contract = CDQ-261019-p3-record-dialogue-guide LANDED（docs/debt/contract/ 条目：§1.4 新增 start_organizing 控制动作 + start_recording/session_ctx 措辞对账，wire 其余零新增）。reviewed plan = delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md（triage 2026-10-19 architect 分流 ②单包 Full / riskTier=high / rigor=full，human 触点①确认），只读消费。硬前置 261016-p3-story-body-sd-cache 已合并（b2e2ceb3）。"
+  },
+  "subsystem": "server/gateway (story.py 卡壳词表/轮次纯决策/整理输入装配 + front_app.py sweep 重写/引导与整理 LLM 回合/start_organizing 下发/自推通路分叉/Package B 等价信号注入 + display_schema.py 分表 additive + 新增两枚 front 侧版本化 prompt 制品 + server/deploy/engine-patch/connection.py 记录语境标志认领/chat 入口第三守卫/stop-truncation 豁免重绑) + firmware/main (application.cc 聆听形态切换与 kvr 场景守卫 + display/view_router.h/.c VRT_CTRL_START_ORGANIZING=3 additive + mcp_server.cc 控制 case 3 消费 + display/story_page.c 帧 A 修订/引导播报中子态/整理过渡态渲染与键位分叉/思考态接线)",
+  "story": "S-F2.2 · 对话式引导记录（双入口）· 定稿版本号 v1.65（docs/requirements.md §9 v1.65 行 2026-10-19）：AC1 双入口同一记录语境对话态 + AI 默认闭嘴 + 逐句回显；AC2 卡壳轻引导（停顿超阈值约 8 秒待定或明示卡住；只基于已讲内容、不提供情节选项、不代编）+ 引导播报不跳页 + 引导播报中 KEY 打断/BOOT 无操作 + 引导语/提问/回答不进素材；AC3 盖章照旧；AC4 三式收尾 + 忠实整理（只用孩子原话：去口水/断句/分段/标题，不换表达不补情节）+ 整理中 KEY/BOOT 均不响应 + 新篇入列表 + BOOT/「讲错啦」取消丢弃不设恢复；AC5 自动收尾（连续 2 轮引导无回应，含收声抑制等被抑制轮——收声不停摆）。NFR-PERF-3 卡壳阈值待定 + 断言五条边界。S-F1.4 AC6 录音期提醒排队延后不回归。补充规则翻案留痕（废除 2026-09-14 一刀切）。",
+  "planRef": "delivery/taskpackages/261019-p3-record-dialogue-guide/plan.md",
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "notes": "acceptance/acceptanceTestsFile/exitCriteria 由 acceptance-author 冻结验收后回填（验收种子 8 组见 plan.md §验收种子——q4/q7 转注 + E4 + NFR-PERF-3 五条边界 + S-F2.2 五 AC + 翻✅三条件 + provider 出口 + 包外留根）。riskTier=high ⇒ supervisor 合并门升级 human（单向守卫预期行为）。结构性义务两件（plan §结构性风险）：display_schema 自推校验分叉（自推不被自拒、relay 拒转语义一字不动）、engine-patch stop-truncation 豁免重绑（记录语境标志判据，防 KEY 收尾末句被截断毁稿）。"
+}
