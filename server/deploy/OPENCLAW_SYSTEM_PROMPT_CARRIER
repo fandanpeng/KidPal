@@ -47,8 +47,8 @@
 - 消费面：本声明指向的版本化文件**应当**是 live 探针的唯一 prompt 源，以保「验收所测 =
   生产所用」；实测现状（260829-story-p3 切 v3 后）= VRT-A4/A7 探针常量仍钉
   `openclaw-system-prompt.v1.md`、CHR-A8/A9 仍钉 `.v2.md`，即 live 面所测版本落后于
-  本声明版本。该版本字面耦合已登记 `docs/ARCH-REVIEW-QUEUE.md`
-  ARQ-260908-versioned-guard-version-literal-coupling（owner=architect+acceptance-author），
+  本声明版本。该版本字面耦合已登记 `docs/debt/gov/_archive/2026/ARQ-260908-versioned-guard-version-literal-coupling.md`
+  （owner=architect+acceptance-author；原 `docs/ARCH-REVIEW-QUEUE.md` 261019 批删除），
   **重指前请勿把本行改回无条件表述**。offline 机械守卫侧：VRT-E4 用不带版本号的裸名 needle，
   CHR-E3 与 story P3 载体齿已改为解析渲染/声明两面得出版本再断言，均不受字面漂移影响。
 

@@ -514,4 +514,4 @@ assert(feasibilityReportPresent && budgetReportPresent, 'E4 可行性报告+预�
 5. **红基线诚实映射**：红基线（§1）红在「美术元素全量出图尚未发生」（story 缺失的真实行为），每条 UAA 的 RED
    状态逐条标注对应缺失行为（其余 6 姿态 / 框族 / 网点 / 印章 / 12 枚图标 / 授权 / imgfont 11 枚 / 预算报告）。
 6. **预算联动钉死**：A9 超预算 → 结论「必须上 I1」→ 升 `ARQ-260831-i1-indexed-asset-on-device` P0（feature-inventory
-   §1.5 与 ARCH-REVIEW-QUEUE 该条目 trigger 已记此联动）。RGB565 2 字节/像素 + 分区 8M 对照值在本文档写死为机判基准。
+   §1.5 与 debt 账本该条目（`docs/debt/tech/ARQ-260831-i1-indexed-asset-on-device.md`）trigger 已记此联动）。RGB565 2 字节/像素 + 分区 8M 对照值在本文档写死为机判基准。
