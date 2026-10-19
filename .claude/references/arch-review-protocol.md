@@ -127,7 +127,7 @@ architect(起草 subagent,仅当输入是 plan/想法,产候选不判)· review-
 | DISMISS-WITH-GROUNDING | defender 引 spec/contract 原文完整反驳 → 记理由,关闭 |
 | ACCEPT-AS-RISK | 真缺口但有意接受 → 记入 ADR/decision-log,标 owner+相位 |
 | HUMAN-RULED | deadlock/高影响 → 人类拍板,裁断回灌 |
-| SPAWN-NEW-CONCERN | finding 揭示缺一个内核/公司级关注点 → 登记**延迟占位**(forcing-function 追踪),不在本 spec 过度设计;入 debt 账本按域落条目(`docs/debt/{gov,tech,requirement}/`,一条目一文件 + 跑 `debt-render.mjs`)(S1 Inbound Router 即此类) |
+| SPAWN-NEW-CONCERN | finding 揭示缺一个内核/公司级关注点 → 登记**延迟占位**(forcing-function 追踪),不在本 spec 过度设计;入 debt 账本按域落条目(`docs/debt/{gov,tech,requirement,contract}/`,一条目一文件 + 跑 `debt-render.mjs`)(S1 Inbound Router 即此类) |
 
 ## 严重度 → 可冻结性
 
@@ -141,7 +141,7 @@ architect(起草 subagent,仅当输入是 plan/想法,产候选不判)· review-
 
 ## 反空过守卫（mutation-check 对偶,非破坏性）
 
-scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 finding(从仓库决策日志/CONTRACT-DECISION-QUEUE/既往 grilling 提炼)。challenger 若没能独立重新派生出来 → 辩论太浅 → RED,换更锋利的 challenger 重跑。**绝不改真 spec 来造洞。**
+scenario-author 在 charter 里播种 **regression-canaries** = 已知历史 finding(从仓库决策日志（`docs/decisions/ADR.md`）/契约决策账（`docs/debt/contract/`）/既往 grilling 提炼)。challenger 若没能独立重新派生出来 → 辩论太浅 → RED,换更锋利的 challenger 重跑。**绝不改真 spec 来造洞。**
 
 ## Spec↔Contract 一致性保障（铁律）
 

@@ -2,16 +2,17 @@
 
 > 用法：复制本件为 `docs/debt/<域>/<ID>.md`，替换 `<尖括号>` 占位，删掉本注与示例正文。
 > **字段 schema 的单一事实源是 `.claude/scripts/debt-ledger-shared.mjs`**（闭集与必填项以它为准，本件只教怎么填、不重复定义）。
-> 三份 `INDEX.md` 由 `node .claude/scripts/debt-render.mjs` 从条目文件生成，**勿手改**；写完跑一次渲染，再跑 `node .claude/scripts/debt-doctor.mjs` 自检。
+> 各域 `INDEX.md` 由 `node .claude/scripts/debt-render.mjs` 从条目文件生成，**勿手改**；写完跑一次渲染，再跑 `node .claude/scripts/debt-doctor.mjs` 自检。
 > 引用条目文件的路径**必须带目录**（`docs/debt/gov/ARQ-xxxxxx-yyy.md`），仓内共有多个同名 `INDEX.md`。
 
-## 域怎么选（三值，判据 = 谁裁 / 落哪个门）
+## 域怎么选（四值，判据 = 谁裁 / 落哪个门）
 
 | 域 | 目录 | ID 前缀 | 什么时候选它 |
 |---|---|---|---|
 | `gov` | `gov/` | `ARQ-` | 治理机制面：agent 定义 / skill / 门 / 脚本 / 纪律文面。裁定人 = architect，落本账的 Track B/A 批次 |
-| `tech` | `tech/` | `TECH-` | 技术相关，**含 contract**：固件 / 工具 / 部署运维 / 契约 / spec 文档。裁定人 = 各面 owner，去向填 `handoff` |
+| `tech` | `tech/` | `TECH-` | 技术相关：固件 / 工具 / 部署运维 / spec 文档（契约**决策账**已独立成 `contract` 域；tech 域契约类条目以 `cdq:` 指针挂接）。裁定人 = 各面 owner，去向填 `handoff` |
 | `requirement` | `requirement/` | `REQ-` | 改需求的**请求**与裁定状态。裁定人 = human，落地 = [`requirements.md`](../requirements.md) §9 记账 |
+| `contract` | `contract/` | `CDQ-` | 契约面变更的决策状态与剩余条件（原 `docs/CONTRACT-DECISION-QUEUE.md` 单文件队列，261019 批并入）。登记 = integrator 收口落条目 / 主线程治理批落条目；四分类五值权威 = [`.claude/rules/contracts.md`](../../.claude/rules/contracts.md) |
 
 > **ID**：`<前缀>-<YYMMDD 创建日>-<短英文 kebab>`；**文件名必须与 `id` 相同**。
 > **祖辈前缀 `ARQ-`**：历史词汇，落在任何域都放行（只出 advisory 计数）；**新条目请用本域前缀**。
@@ -43,9 +44,11 @@ source: [<provenance：可点开的执行记录，如就地的 review-packet / p
 **风险**：<riskTier: low | medium | high> + 一句话证成
 ```
 
-`tech` 域另有两个可选字段：`handoff`（去向 + 移交触发，如 `delivery/workstreams/<ws>`；**空则 doctor 出 advisory**）、`cdq`（契约类条目的 CDQ 指针，如 `CDQ-260914-kidpal-session-ctx`；**契约的门与批准状态仍以 CDQ 为唯一权威**）。
+`tech` 域另有两个可选字段：`handoff`（去向 + 移交触发，如 `delivery/workstreams/<ws>`；**空则 doctor 出 advisory**）、`cdq`（契约类条目的 CDQ 指针，如 `CDQ-260914-kidpal-session-ctx`；**契约的门与批准状态以 `contract` 域条目（`docs/debt/contract/`）为唯一权威**）。
 
 `requirement` 域另有三个可选字段：`affects`（受影响的 story·AC 锚，如 `S-F1.1-AC1`）、`decision`（human 裁定原文）、`landedIn`（已落时填 `requirements.md` §9 的版本号）。
+
+`contract` 域另有两个可选字段：`fourClass`（四分类五值闭集——`NO_CONTRACT_CHANGE` / `IMPLEMENTATION_ADAPTER` / `ACCOMPANIES_SPEC_CHANGE` / `SPEC_CONTRACT_DRIFT` / `CONTRACT_CHANGE_REQUIRED`，权威 [`.claude/rules/contracts.md`](../../.claude/rules/contracts.md)；**缺了 doctor 出 advisory**）、`loopEvidence`（loop 凭据 = changeId + landing-verdict 结果摘要）。
 
 ## 三条纪律
 

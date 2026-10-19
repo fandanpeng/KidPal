@@ -17,7 +17,7 @@ K7-A4  alert 起轮不回归——_register_alert_legs 注册时序零偏移（p
 K7-A7  每日 / marker 触发附带——piggyback 路径 grid 同型附带（同一 due 判定点、
        不新增第二套进程内日账）；录入 marker 附带 = SHOULD 级（R8 分层口径）。
 
-上游锚：docs/ADR.md ADR-005（restore 语义 + 部署时序 + 触发必要性分层 R8）+
+上游锚：docs/decisions/ADR.md ADR-005（restore 语义 + 部署时序 + 触发必要性分层 R8）+
 docs/contracts/interface-contract.md §1.3②（data.restore additive L85 / 生产纪律
 L86 / 板子行为句 L87，2026-09-23 契约门批准）+ arch §5.2 场景①（三触发附带推）。
 

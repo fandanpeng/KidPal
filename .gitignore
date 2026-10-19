@@ -44,3 +44,6 @@ tools/simulator/Output/
 __pycache__/
 .claude/verify-logs/
 overlap-probe.json
+
+# 个人文件，永不入仓（开源脱敏）
+樊丹朋的简历.md

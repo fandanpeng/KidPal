@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "KidPal 业务全景 · 孩子、家长与云端大脑",
+    "output": "notes/archify/architecture-kidpal-business-20261019-155912/kidpal-business.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/fandanpeng/KidPal.git",
+      "provider": "github",
+      "revision": "b2dac451ba8f4a02ebab97c74edb0867ba8c7635"
+    }
+  },
+  "components": [
+    { "id": "child", "type": "external", "label": "孩子", "sublabel": "小学生", "icon": "person", "pos": [40, 310], "size": [100, 60],
+      "sources": [ { "path": "docs/architecture.md", "line": 23, "end_line": 25, "label": "按键/语音 · 看屏听播报" } ] },
+    { "id": "device", "type": "frontend", "label": "ESP32 终端", "sublabel": "常显 · 会说话的显示器", "pos": [230, 300], "size": [150, 80],
+      "sources": [ { "path": "docs/architecture.md", "line": 62, "label": "哑终端定位" } ] },
+    { "id": "front", "type": "security", "label": "front 接入网关", "sublabel": "唯一公网入口 · TLS+鉴权", "pos": [470, 300], "size": [150, 80],
+      "sources": [ { "path": "docs/architecture.md", "line": 70, "label": "公网入口与鉴权权威" } ] },
+    { "id": "engine", "type": "backend", "label": "引擎服务", "sublabel": "小智官方容器 · ASR/TTS 编排", "pos": [710, 300], "size": [150, 80],
+      "sources": [ { "path": "docs/architecture.md", "line": 74, "label": "官方容器运行时" } ] },
+    { "id": "openclaw", "type": "backend", "label": "OpenClaw 编排大脑", "sublabel": "意图 · 记忆 · 工具 · cron", "pos": [970, 300], "size": [160, 80],
+      "sources": [ { "path": "docs/architecture.md", "line": 78, "end_line": 80, "label": "编排大脑职责" } ] },
+    { "id": "dad", "type": "external", "label": "爸爸", "sublabel": "家长", "icon": "person", "pos": [900, 130], "size": [110, 60],
+      "sources": [ { "path": "docs/requirements.md", "line": 318, "label": "家长主通道 = QQ" } ] },
+    { "id": "mom", "type": "external", "label": "妈妈", "sublabel": "家长", "icon": "person", "pos": [1040, 130], "size": [110, 60],
+      "sources": [ { "path": "docs/requirements.md", "line": 318, "label": "家长主通道 = QQ" } ] },
+    { "id": "alerts", "type": "database", "label": "提醒待推", "sublabel": "pending.json · 到点待推", "pos": [700, 480], "size": [170, 70],
+      "sources": [ { "path": "docs/architecture.md", "line": 82, "label": "轮询与推送链" } ] },
+    { "id": "bizmd", "type": "database", "label": "业务档案（MD）", "sublabel": "课表 · 故事 · 笔顺缓存", "pos": [950, 480], "size": [190, 70],
+      "sources": [ { "path": "docs/architecture.md", "line": 62, "label": "课表/故事存 MD" } ] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "阿里云 ECS（成都）· 全部云端面", "wraps": ["front", "engine", "openclaw", "alerts", "bizmd"] }
+  ],
+  "connections": [
+    { "id": "child-to-device", "from": "child", "to": "device", "label": "按键/语音", "variant": "emphasis" },
+    { "id": "device-uplink", "from": "device", "to": "front", "label": "wss 上行", "variant": "emphasis" },
+    { "id": "front-downlink", "from": "front", "to": "device", "label": "显示下发", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom", "labelDy": 46 },
+    { "id": "front-to-engine", "from": "front", "to": "engine", "label": "明文 ws" },
+    { "id": "engine-to-openclaw", "from": "engine", "to": "openclaw", "label": "OpenAI 兼容" },
+    { "id": "dad-qq", "from": "dad", "to": "openclaw", "label": "QQ 渠道①", "fromSide": "bottom", "toSide": "top" },
+    { "id": "mom-qq", "from": "mom", "to": "openclaw", "label": "QQ 渠道②", "fromSide": "bottom", "toSide": "top" },
+    { "id": "openclaw-md", "from": "openclaw", "to": "bizmd", "label": "读写", "fromSide": "bottom", "toSide": "top" },
+    { "id": "openclaw-cron", "from": "openclaw", "to": "alerts", "label": "cron 重算", "fromSide": "bottom", "toSide": "top" },
+    { "id": "alerts-poll", "from": "alerts", "to": "front", "label": "每分钟轮询", "variant": "dashed", "fromSide": "left", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "家长怎么参与", "items": [
+      "QQ 语音/文字对 OpenClaw 说即录入课表，即时生效（主通道）",
+      "副通道 = 直改课表 MD 文件，下次刷新兜底",
+      "家长知情权 = OpenClaw 侧完整日志，不做小程序家长端"
+    ] },
+    { "dot": "cyan", "title": "孩子侧为什么简单", "items": [
+      "设备是哑终端：只收音/放音/显示/按键，不理解业务",
+      "所有数据、逻辑、记忆都在云端大脑",
+      "断网 = 友好空态，恢复后自动同步"
+    ] },
+    { "dot": "slate", "title": "大脑背后的外部服务", "items": [
+      "阿里云 ASR（Qwen3-ASR-Flash）· edge-tts 语音合成",
+      "DeepSeek（OpenClaw 内）· Tavily 联网搜索",
+      "makemeahanzi 字库支撑 9574 字笔顺"
+    ] }
+  ]
+}

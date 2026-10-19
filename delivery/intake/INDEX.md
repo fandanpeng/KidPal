@@ -7,11 +7,12 @@
 > 列：changeId | 触面 | status | anchors回填 | 日期 | 漂移标。intake 状态机（change-intake.md §2.7）：intake→in-flight→awaiting-*→closed。
 > 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）。复议触发 = 下轮 loop-retro 仍见漂移标。
 
-## intake (11)
+## intake (12)
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261018-sd-log-persist | arch+imp | in-flight | 3/2 | 2026-10-18 | ⚠未闭环 |
+| 261019-p3-record-dialogue-guide | req+arch+contract+imp | in-flight | 4/4 | 2026-10-19 | ⚠未闭环 |
+| 261018-sd-log-persist | arch+imp | closed | 4/2 | 2026-10-18 | — |
 | 261017-prompt-v11-schedule-recall | arch+imp | closed | 4/2 | 2026-10-17 | — |
 | 261016-p3-story-body-sd-cache | req+arch+contract+imp | in-flight | 4/4 | 2026-10-16 | ⚠未闭环 |
 | 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 |
@@ -19,6 +20,6 @@
 | 261012-kidpal-realtime-facts | req+arch+contract+imp | in-flight | 4/4 | 2026-10-12 | ⚠未闭环 |
 | 261011-p1-home-v5-rework | contract+imp | closed | 4/2 | 2026-10-11 | — |
 | 261010-p3-storylist-cold-start | req+arch+contract+imp | closed | 3/4 | 2026-10-10 | — |
-| 261001-m4-k3-record-session-live-repair | req+arch+contract+imp | awaiting-upstream | 4/4 | 2026-10-01 | ⚠未闭环 |
+| 261001-m4-k3-record-session-live-repair | req+arch+contract+imp | closed | 4/4 | 2026-10-01 | — |
 | 260929-char-window-v5-trim | req+imp | closed | 4/2 | 2026-09-29 | — |
 | 260928-char-window-key-triggered-play | req+arch+contract+imp+gov | closed | 4/5 | 2026-09-28 | — |

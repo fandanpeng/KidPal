@@ -10,8 +10,8 @@
 - **星星**：原「故事果」资产；计数 = 现存篇数，盖章文案的 N = 入册流水号（只增不减）。
 - **盖章**：录音保存成功瞬间的全屏定格演出（-8° 微倾、0.8 秒）。
 - **三段阶梯**：提醒三档时刻 = 前一天 20:30（带物）/ 当天 07:45（日程）/ 事前 15 分钟——全局常量，配在 OpenClaw 侧不进契约。
-- **记录语境**：在 P3 按 KEY 发起的会话——预置引导语、一刀切纯记录、无触发词。
-- **一刀切纯记录**：该会话内说的全部累积归档，不做逐句意图切换（提问也记录）。
+- **记录语境**：在 P3 按 KEY 发起的会话——预置引导语、无触发词；v1.65 起为**记录语境对话态**（对话式引导记录：AI 默认闭嘴、卡壳轻引导、收尾忠实整理）。
+- **一刀切纯记录**：已废除口径（2026-09-14 裁定，2026-10-19 v1.65 随批 `261019-p3-record-dialogue-guide` 有意识废除）——原指该会话内说的全部累积归档、不做逐句意图切换（提问也记录）；现行语义 = 记录语境对话态，AI 引导语、孩子中途提问与 AI 回答均不进故事素材（S-F2.2）。
 - **覆盖层**：盖在主页面之上的整屏内容（提醒弹窗/查字窗/语音轮演出/删除确认），层栈内置前。
 - **BOOT 隔离**：覆盖层内 BOOT = 关掉顶层回原页、不翻页（v1.39 起；主屏 BOOT = 3 页循环翻页）。
 
@@ -32,10 +32,10 @@
 
 - **Track A / Track B**：变更评审两轨——A = 方向收敛红队（所属面 loop 的 Track A 段，入口 `/arch-change` / `/gov-change`；只看收敛度）；B = 常驻 Track B 七步闭环（轻路径 = 文档面瘦制品过闸）。
 - **PROPOSAL / landing / landing-verifier / retro**：Track B 七步闭环的四件制品。
-- **debt 账本**：未结决策项账本（`docs/debt/`，260923-gov-review-arq-ssot-restructure 起，原名 `crq`、261014-gov-review-crq-debt-rename 批改名）——三域 `gov/` `tech/` `requirement/`，一条目一文件（frontmatter 机读状态 + append-only 正文），每域 `INDEX.md` 为生成件；已结条目自动归位 `_archive/<结项年>/`。
-- **ARQ**：治理机制域条目 ID 前缀（`ARQ-<YYMMDD>-<slug>`，落 `docs/debt/gov/`；原义 ARCH-REVIEW-QUEUE 单文件队列，已重构为 debt 账本，`docs/ARCH-REVIEW-QUEUE.md` 存指路 stub）。**TECH-** / **REQ-** = 技术域（含 contract）/ 需求变更请求域的条目前缀。
-- **CDQ**：契约决策队列（CONTRACT-DECISION-QUEUE.md，契约变更事项；契约类条目在 debt 账本 tech 域以 `cdq:` 指针挂接，门与批准状态仍以 CDQ 为唯一权威）。
-- **ADR**：架构决策记录（ADR.md，append-only 五件格式：日期/决策/理由/备选与放弃原因/关联）。
+- **debt 账本**：未结决策项账本（`docs/debt/`，260923-gov-review-arq-ssot-restructure 起，原名 `crq`、261014-gov-review-crq-debt-rename 批改名）——四域 `gov/` `tech/` `requirement/` `contract/`，一条目一文件（frontmatter 机读状态 + append-only 正文），每域 `INDEX.md` 为生成件；已结条目自动归位 `_archive/<结项年>/`。
+- **ARQ**：治理机制域条目 ID 前缀（`ARQ-<YYMMDD>-<slug>`，落 `docs/debt/gov/`；原义 ARCH-REVIEW-QUEUE 单文件队列，已重构为 debt 账本，`docs/ARCH-REVIEW-QUEUE.md` 指路 stub 已于 261019 批删除）。**TECH-** / **REQ-** = 技术域 / 需求变更请求域的条目前缀（契约决策账已独立成 contract 域，见 CDQ 行）。
+- **CDQ**：契约决策账（家 = `docs/debt/contract/` 域，一条目一文件，ID 前缀 `CDQ-`；原 `docs/CONTRACT-DECISION-QUEUE.md` 单文件队列 261019 批并入并删除。契约类条目在 tech 域以 `cdq:` 指针挂接不变，**门与批准状态以 contract 域条目为唯一权威**）。
+- **ADR**：架构决策记录（`docs/decisions/ADR.md`，261019 批自 docs 根迁入；append-only 五件格式：日期/决策/理由/备选与放弃原因/关联）。
 - **钉点 / needle**：冻结验收测试中逐字断言的锚点；文案改动必须随 needle 一并更新，否则验收假红。
 - **齿**：验收断言（acceptance teeth）；host 面 = 本机可跑，live 面 = SSH 到 ECS 真环境（`RUN_LIVE=1` 显式放行）。
 - **红基线**：动工前先确认目标断言当前为红，修绿才算证据。

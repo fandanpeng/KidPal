@@ -27,7 +27,7 @@ description: Inspect and surgically patch the KidPal ESP32-S3 NVS partition — 
 - **Official xiaozhi server 0.9.6 sends RAW opus over ws** (no v2 binary header on the ws path; headers only for MQTT gateway). Native devices therefore use **version 1** (OTA response carries no version field).
 - version **2/3** = device expects a binary frame header → it parses raw opus as a header → garbage `payload_size` → (before hardening) `bad_alloc` crash; (after hardening in OnData) `WS v2 frame payload_size invalid` and **all TTS audio dropped**.
 - **Correct value = 1.** If you see `with version: 2` + `payload_size invalid` floods, the NVS version is wrong — flash it to i32 `1`.
-- Governance note: whether `version` should stay a settable NVS key at all (vs a code-pinned constant, since the direction-B gateway always speaks v1) is tracked in `docs/ARCH-REVIEW-QUEUE.md` ARQ-260906-protocol-version-pinned-constant.
+- Governance note: whether `version` should stay a settable NVS key at all (vs a code-pinned constant, since the direction-B gateway always speaks v1) is tracked in `docs/debt/tech/ARQ-260906-protocol-version-pinned-constant.md`（原 `docs/ARCH-REVIEW-QUEUE.md` 261019 批删除）。
 
 ## Patch recipe (surgical, preserves WiFi creds)
 Read live → patch only the version entry's i32 → recompute entry CRC → write back. CRC self-calibrates against a known-good entry: `zlib.crc32(e[8:32], zlib.crc32(e[0:4], 0xFFFFFFFF))`. Working script: `c:/tmp/patch_nvs_version.py` (fix its page-magic to `0xfe` before trusting it). Then **re-read and re-dump to confirm value==1** before declaring done.

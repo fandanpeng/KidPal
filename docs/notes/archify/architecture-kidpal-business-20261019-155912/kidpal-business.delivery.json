@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "647dd77b-7706-46b0-aadc-23c1812517dd",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\candidate.json",
+  "output": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\kidpal-business.html",
+  "specification": {
+    "sha256": "53f545fca933df749616da80290127c651c8c1042ea7b91a8d1f5a2ae85ada76",
+    "bytes": 5089
+  },
+  "artifact": {
+    "sha256": "9516b0a87bf85764c36288e63ff42237f4baf925173b942887cb4a1cf28b6995",
+    "bytes": 779680
+  }
+}

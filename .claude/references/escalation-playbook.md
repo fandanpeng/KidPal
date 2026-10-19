@@ -17,4 +17,4 @@
 ## 3. verifier 反复红
 - 同 fingerprint 连续 2 轮 或 触 fixBudget=3 → 熔断升级，不硬磕
 - 红基线没确认 → 退 acceptance-author，先确认红
-- 要改契约 → 进 CONTRACT-DECISION-QUEUE 异步批，切别的 worktree 不空等
+- 要改契约 → 进契约决策账（`docs/debt/contract/`）异步批，切别的 worktree 不空等

@@ -48,7 +48,7 @@ Scope of record（taskpackage acceptance MNF-A1 / MNF-A2；MNF-A3 见下）：
    · **残留扫描范围 = server 现役代码/配置面**（见 _iter_live_surface_files）：不含
      `server/acceptance/**`（验收件按设计在断言里引用值字面；其唯一承载 PERF-K1 件由
      MNF-A2 齿显式覆盖）、不含退役面（`server/shim.py` 头注 ARCHIVED / `server/kidpal-shim.service`
-     / `server/acceptance/archive/**`）、不含历史记录类（`docs/crq/**`、`docs/ADR.md` ADR-006
+     / `server/acceptance/archive/**`）、不含历史记录类（`docs/crq/**`、`docs/decisions/ADR.md` ADR-006
      正文、`delivery/**` 过程证据、`.claude/skills/kidpal-ecs-gateway/SKILL.md` 历史解释）。
      故本齿是「现役 live 面零残留」而非字面「全仓零残留」——全仓扫描会扫进大量历史/过程
      文本而长期假红。

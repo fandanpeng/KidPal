@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "小伴（KidPal）· 它是怎么帮我管小孩的",
+    "output": "notes/archify/architecture-kidpal-business-casual-20261019-160714/kidpal-casual.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "visual_preset": "editorial"
+  },
+  "components": [
+    { "id": "child", "type": "external", "label": "小孩", "sublabel": "小学生一枚", "icon": "person", "pos": [40, 290], "size": [110, 64] },
+    { "id": "device", "type": "frontend", "label": "小伴终端", "sublabel": "会说话的显示器", "pos": [240, 280], "size": [160, 84] },
+    { "id": "brain", "type": "cloud", "label": "云端大脑", "sublabel": "记事 · 想问题 · 管提醒", "pos": [640, 280], "size": [190, 84] },
+    { "id": "dad", "type": "external", "label": "爸爸", "sublabel": "在 QQ 上吩咐", "icon": "person", "pos": [580, 120], "size": [140, 64] },
+    { "id": "mom", "type": "external", "label": "妈妈", "sublabel": "也在 QQ 上吩咐", "icon": "person", "pos": [760, 120], "size": [140, 64] },
+    { "id": "notebook", "type": "database", "label": "小本本", "sublabel": "课表 · 故事 · 笔顺", "pos": [660, 480], "size": [190, 70] },
+    { "id": "reminder", "type": "database", "label": "小闹钟", "sublabel": "到点待办", "icon": "clock", "pos": [400, 480], "size": [170, 70] }
+  ],
+  "connections": [
+    { "id": "child-talk", "from": "child", "to": "device", "label": "「勇字怎么写？」", "variant": "emphasis" },
+    { "id": "device-up", "from": "device", "to": "brain", "label": "把话传给大脑", "variant": "emphasis" },
+    { "id": "brain-down", "from": "brain", "to": "device", "label": "回答 · 显示", "fromSide": "bottom", "toSide": "bottom", "labelDy": 52 },
+    { "id": "dad-qq", "from": "dad", "to": "brain", "label": "QQ：明天有钢琴课", "fromSide": "bottom", "toSide": "top" },
+    { "id": "mom-qq", "from": "mom", "to": "brain", "label": "QQ：今天听写哪几个字", "fromSide": "bottom", "toSide": "top" },
+    { "id": "brain-note", "from": "brain", "to": "notebook", "label": "记下来", "fromSide": "bottom", "toSide": "top" },
+    { "id": "brain-cron", "from": "brain", "to": "reminder", "label": "到点算一算", "fromSide": "bottom", "toSide": "top" },
+    { "id": "remind-push", "from": "reminder", "to": "device", "label": "催一催", "variant": "dashed", "fromSide": "left", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "amber", "title": "日常长这样", "items": [
+      "小孩问「勇敢的勇怎么写」→ 屏幕上一笔一画演示给他看",
+      "妈妈 QQ 留言「明天带水彩笔」→ 到点自动提醒",
+      "小孩口述了个故事 → 大脑帮他整理成文字存起来",
+      "我和他妈都不用装 App，QQ 上说话就行"
+    ] }
+  ]
+}

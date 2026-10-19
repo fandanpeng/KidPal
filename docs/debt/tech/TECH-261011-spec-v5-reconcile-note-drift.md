@@ -21,3 +21,5 @@ cdq: CDQ-261011-p1-home-v5-rework
 **cdq 指针**：本条目随契约批 261011-p1-home-v5-rework 登记（gate authority = CDQ-261011-p1-home-v5-rework，docs/CONTRACT-DECISION-QUEUE.md）；本条目本身不涉契约语义，仅作该批 tech 侧记账的 follow-up 承载（gate evidence §8「记 tech 侧条目 + cdq: 指针」义务）。
 
 **riskTier: low**（纯文档勘误、零行为面）。
+
+**追注（2026-10-19，261019-gov-review-docs-root-ledger-rehome 批）**：上文所引 gate authority 所指 CDQ-261011-p1-home-v5-rework 已迁 `docs/debt/contract/_archive/2026/`（closed）；`cdq:` 指针（ID 形）不受影响。

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\candidate.json",
+    "sha256": "53f545fca933df749616da80290127c651c8c1042ea7b91a8d1f5a2ae85ada76",
+    "bytes": 5089
+  },
+  "artifact": {
+    "path": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\kidpal-business.html",
+    "sha256": "9516b0a87bf85764c36288e63ff42237f4baf925173b942887cb4a1cf28b6995",
+    "bytes": 779680
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\kidpal-business.finalize.json",
+    "summaryReceipt": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\kidpal-business.finalize-summary.json",
+    "browserCheckReceipt": "C:\\AI\\KidPal-gov\\notes\\archify\\architecture-kidpal-business-20261019-155912\\kidpal-business.browser-check.json"
+  },
+  "update": {
+    "status": "update_available",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.2.0",
+    "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
+    "severity": "normal",
+    "checkedAt": "2026-10-19T01:56:58.114Z",
+    "source": "cache",
+    "noticeRequired": true,
+    "noticeText": "Archify update: 3.0.1 → 3.2.0. A previous check at 2026-10-19T01:56:58.114Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3779
+}

@@ -20,16 +20,16 @@
 - `APPROVED` without a machine-verifiable anchor is invalid——契约批的批准锚 = reviewer verdict + landing-verdict，不收聊天结论。
 - **Batch gatekeeper whitelist sync**：human-approved 时代条款——若后续仍存在扫描 `docs/contracts/**` 的批级验收 gatekeeper，白名单同步义务不变（先例：CDQ-017 / commit c70e6cd）。
 
-## Status Vocabulary（261015 批修订）
+## Status Vocabulary（261015 批修订；261019 批起转历史对照——新条目直接用 debt 闭集 blocker / deferred / accepted-risk / closed，家 = `docs/debt/contract/`）
 
 | Status | Meaning |
 |---|---|
 | `DRAFT` | 契约包三节起草中。 |
-| `PRECHECKED` | architect-reviewer 分类已出（CDQ 行登记）。 |
+| `PRECHECKED` | architect-reviewer 分类已出（CDQ 条目登记，`docs/debt/contract/`）。 |
 | `LANDED` | 契约 diff 随批落地、验证证据在场。 |
 | `CLOSED` / `已结` | 凭据 + 验证 + docs/queue sync + closeout conditions 全部完成。 |
 
-`HUMAN_APPROVED` / `CONDITIONAL-APPROVE` 退役（人类契约签字门撤销；CDQ 历史行保留不改）。Never keep a pending status beside a contract diff that already shipped—retroactively evidence it or roll it back.
+`HUMAN_APPROVED` / `CONDITIONAL-APPROVE` 退役（人类契约签字门撤销；CDQ 历史行保留不改——已随 261019 批迁入 `docs/debt/contract/` 条目，退役词按映射表归一 debt 闭集）。Never keep a pending status beside a contract diff that already shipped—retroactively evidence it or roll it back.
 
 ## Minimal Template（PROPOSAL 内契约包节骨架）
 
@@ -41,4 +41,4 @@
 **validationPlan**：...
 ```
 
-CDQ 登记：每契约变更批一行（四分类五值 + loop 凭据列 = changeId + landing-verdict 结果）；权威 = `.claude/rules/contracts.md`。
+CDQ 登记：每契约变更批一条目（`docs/debt/contract/<CDQ-id>.md`；机读字段 `fourClass` 五值 + `loopEvidence` = changeId + landing-verdict 结果摘要；原单文件队列 261019 批并入并删除）；权威 = `.claude/rules/contracts.md`。

@@ -175,7 +175,15 @@ function selfCheck() {
   if (JSON.stringify(got) !== JSON.stringify(wantMoves)) fails.push(`relocation:got=${got.join(' ; ')}`);
   // 夹具 7：expectedRel 与 computeRelocations 同源一致（防两处判据漂移）
   if (expectedRel({ status: 'closed', closed: '2026-01-02', id: 'X' }) !== '_archive/2026/X.md') fails.push('expectedRel');
-  console.log(fails.length === 0 ? 'debt-render --self-check: ok (8/8)' : `debt-render --self-check: FAIL\n  ${fails.join('\n  ')}`);
+  // 夹具 8：contract 域渲染产出含 CDQ 条目（261019 批第四域；真空绿规约——夹具输入非空断言先行）
+  const cdqItems = [mk('CDQ-260913-a', 'contract', 'deferred', '2026-09-13')];
+  if (cdqItems.length === 0) fails.push('fixture-empty');
+  const cdqText = renderIndex('contract', cdqItems);
+  if (!cdqText.includes('[CDQ-260913-a](CDQ-260913-a.md)')) fails.push('contract-render-missing');
+  if (!cdqText.includes('# CDQ · contract 域账')) fails.push('contract-header-missing');
+  // 夹具 9：域过滤（CDQ 条目不进 gov index，对偶夹具 5）
+  if (renderIndex('gov', cdqItems).includes('CDQ-260913-a')) fails.push('contract-domain-filter-broken');
+  console.log(fails.length === 0 ? 'debt-render --self-check: ok (10/10)' : `debt-render --self-check: FAIL\n  ${fails.join('\n  ')}`);
   return fails.length === 0;
 }
 

@@ -26,7 +26,7 @@ Use this authority order when evidence conflicts:
 2. Canonical spec (`docs/requirements.md` + `docs/architecture.md`) - intent, ownership, phase boundaries, and system behavior.
 3. `docs/DEV-GOVERNANCE.md`, `AGENTS.md`, `CLAUDE.md`, `.claude/{agents,commands,references,rules,skills}/**`, `.claude/{hooks,scripts}/**`, and `.claude/*.json` - development governance rules and enforcement substrate.
 4. `CONTRACT-CHANGE-PACKET.md`, `architecture-gate-evidence.md`, ADRs - why, evidence, and gate state.
-5. `docs/CONTRACT-DECISION-QUEUE.md` and the debt ledger (`docs/debt/{gov,tech,requirement}/INDEX.md` - pending/deferred decision ledgers).
+5. The debt ledger (`docs/debt/{gov,tech,requirement,contract}/INDEX.md` - pending/deferred decision ledgers；contract 域 = 契约决策账，261019 批自 `docs/CONTRACT-DECISION-QUEUE.md` 并入).
 6. `delivery/taskpackages/**` and `delivery/review/**` - per-change and per-review evidence.
 7. Historical transcripts - provenance and lessons only; never canonical authority.
 
@@ -37,7 +37,7 @@ Development governance surfaces are layered:
 - **Navigation / instruction roots (G1)**: `AGENTS.md`, `CLAUDE.md`, `docs/DEV-GOVERNANCE.md`.（本仓暂无独立 README 顶层与 L0 蓝图；设立时登记进 G1。）
 - **Role / process definitions (G2)**: `.claude/agents/**`, `.claude/commands/**`, `.claude/references/**`, `.claude/rules/**`, `.claude/skills/**`.
 - **Enforcement substrate (G3)**: `.claude/scope-map.json`, `.claude/*.settings.json`, `.claude/verify-gates.json`, `.claude/hooks/**`, `.claude/scripts/**`.
-- **Evidence / queues (G4)**: `delivery/review/**`, `docs/CONTRACT-DECISION-QUEUE.md`. Registration of debt ledger entries (`docs/debt/<domain>/<ID>.md`) is a **main-thread action** (human-approved 2026-07-28; dedupe-first — append evidence to an existing same-root item, never duplicate); architect owns ARQ *handling* via the face loops (`/arch-change`, `/gov-change`), not the registration act (scope-map allow deliberately excludes the ledger write for architect; ARQ-260728-architect-queue-write-scope closed).
+- **Evidence / queues (G4)**: `delivery/review/**`, `docs/debt/contract/`（契约决策账，261019 批起）. Registration of debt ledger entries (`docs/debt/<domain>/<ID>.md`) is a **main-thread action** (human-approved 2026-07-28; dedupe-first — append evidence to an existing same-root item, never duplicate); architect owns ARQ *handling* via the face loops (`/arch-change`, `/gov-change`), not the registration act (scope-map allow deliberately excludes the ledger write for architect; ARQ-260728-architect-queue-write-scope closed).
 
 Architect owns and may write G1-G3 only as a human-approved governance change. G1-G3 changes never self-approve. Agent definitions are architect-owned; other agents do not edit `.claude/agents/**`. If architect changes its own definition, tools, write scope, or a G3 file that affects its authority, explicit human approval is mandatory.
 
@@ -166,7 +166,7 @@ Decision rules:
 ARQ and CDQ are related but not interchangeable.
 
 - ARQ is the architecture review and spec soundness backlog: findings, deadlocks, accepted risks, and future forcing-functions.
-- CDQ is the contract decision backlog: Tier-1 shape, owner, consumer, and runtime interface decisions.
+- CDQ is the contract decision backlog: Tier-1 shape, owner, consumer, and runtime interface decisions（家 = `docs/debt/contract/`，261019 批自单文件队列并入）.
 - A unified current-work dashboard can exist, but ARQ and CDQ remain separate evidence ledgers.
 - ARQ may generate CDQ when a finding requires contract shape work. CDQ does not generate ARQ.
 

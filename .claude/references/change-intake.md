@@ -25,9 +25,9 @@
 
 ## 3. 四面探测程序
 
-- **派发形态**：主线程派 architect（只读 + 同会话 return），语料 = requirements.md（含 §9 账 + story AC）+ architecture.md + `docs/contracts/**` + debt 未结账三域（gov / tech / requirement）+ governance 面（`.claude/agents/**` 定义 / gate 登记）。
+- **派发形态**：主线程派 architect（只读 + 同会话 return），语料 = requirements.md（含 §9 账 + story AC）+ architecture.md + `docs/contracts/**` + debt 未结账四域（gov / tech / requirement / contract）+ governance 面（`.claude/agents/**` 定义 / gate 登记）。
 - governance 命中记入 faceMap 并路由 `/gov-change` 治理面 loop，不建实现面档（R1-F4）。
-- **建档前查重**：intake 开场先查 `delivery/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；**查重范围扩 docs/debt 三域未结条目**（261015 批 T3 第 3 条——防「debt 一件、spine 一件」双头记账）：命中 debt 未结条目 → 消费既有条目走晋升路径（§3a），不重复建档；并存期各面 loop 侧同此纪律。
+- **建档前查重**：intake 开场先查 `delivery/intake/` 既有 spine（按意图与触面相近判），命中 → 消费既有件不重复建档；**查重范围扩 docs/debt 四域未结条目**（261015 批 T3 第 3 条——防「debt 一件、spine 一件」双头记账）：命中 debt 未结条目 → 消费既有条目走晋升路径（§3a），不重复建档；并存期各面 loop 侧同此纪律。
 - **触面事实是查出来的，不是申报出来的**（walkthrough 实证自我申报不可靠）。产出 = faceMap + facePlan 交主线程落盘。
 
 ## 3a · debt → intake 晋升（261015-gov-review-changes-taxonomy T3）

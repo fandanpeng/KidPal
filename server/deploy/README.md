@@ -48,7 +48,7 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 ### 漂移告警语义
 
 - **标记行缺失 = 补丁丢失或未装载**：镜像更新/重建后若 compose 卷映射被改动或部署副本文件不在位，容器会静默回退到镜像原生 `connection.py`（fence 重新混入播报文本、display relay 断链）——唯一的机械报警锚就是标记行不再出现，等价于 live 缺陷回归，应立即对照本节排查。
-- **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/ARCH-REVIEW-QUEUE.md` `ARQ-260907-engine-deploy-patch-drift`（owner=dev-loop 运维面）。
+- **镜像升级 = 补丁语义漂移风险**：官方镜像升级后镜像内 `core/connection.py` 上游演进，宿主部署副本（0.9.6 基线）可能与新版引擎内部 API 不匹配。升级镜像前先核对上游 diff；标记行仍在但引擎行为异常时优先怀疑此漂移。治理项已登记 `docs/debt/tech/ARQ-260907-engine-deploy-patch-drift.md`（owner=dev-loop 运维面；原 `docs/ARCH-REVIEW-QUEUE.md` 261019 批删除）。
 - 已知环境怪癖（非本补丁引入）：容器 healthcheck 显示 `unhealthy`——镜像内无 `ss`/`netstat`，健康检查命令恒失败；引擎实际健康以标记行 + 设备可建连为准。
 
 ## OpenClaw system prompt 版本化接线（现状 = v11）
@@ -78,7 +78,7 @@ front 侧对应职责（`server/gateway/front_app.py`）：截获侧通道帧 �
 
 ### 已知版本字面漂移（本包未修，归 ARQ-260908）
 
-`docs/ARCH-REVIEW-QUEUE.md` 的 `ARQ-260908-versioned-guard-version-literal-coupling`（Track A，
+`docs/debt/gov/_archive/2026/ARQ-260908-versioned-guard-version-literal-coupling.md`（Track A，
 owner=architect + acceptance-author）登记了「语义耦合在版本字面文件名上」这一通用病灶。carrier
 切到 v3 后的实测现状，改本节或 bump v4 前须知道：
 

@@ -1,7 +1,7 @@
 # TaskPackage 撰写约定 · 字段约定单一入口（撰写侧）
 
 > 定位：planner 起草 TaskPackage 时的字段级撰写约定单一入口。五个包独立实证、反复踩坑的 6 个字段坑照本清单一次填对，免去每包 1–3 轮返工。本文只补撰写侧约定：不新增任何机械闸、不改任何既有闸判据。
-> 来源：ARQ-260813-taskpackage-friction-fields-template（`docs/ARCH-REVIEW-QUEUE.md`，5 包独立实证）；承载批 = [260824-gov-review-taskpackage-authoring-convention](../../delivery/review/260824-gov-review-taskpackage-authoring-convention/PROPOSAL.md)。
+> 来源：ARQ-260813-taskpackage-friction-fields-template（原 `docs/ARCH-REVIEW-QUEUE.md` 单文件队列——该 ID 未迁入现行 debt 账本，队列文件 261019 批删除；5 包独立实证）；承载批 = [260824-gov-review-taskpackage-authoring-convention](../../delivery/review/260824-gov-review-taskpackage-authoring-convention/PROPOSAL.md)。
 
 ## 1. docRefs 只列承重引用
 
