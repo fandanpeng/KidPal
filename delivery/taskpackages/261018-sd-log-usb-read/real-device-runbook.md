@@ -1,5 +1,7 @@
 # 真机持板操作单 · 261018-sd-log-usb-read
 
+> **v2（2026-10-19 降级 A 补丁后重试版）**：首轮 smoke 失败（/dev/secondary VFS 直读未达）已按 plan 降级 A 补丁——端口读改 HAL 直读 `usb_serial_jtag_ll_read_rxfifo`（commit `ef09aa97`）。**请先烧录新固件**：`firmware/build/xiaozhi.bin`（0x20000，sha256 `aab0223c…f7c262` 全值见 commit `41bd4b68` 后回执），烧录后硬复位再跑下方各步。第 0 步 smoke 命令不变；若再失败，按降级 B（console primary 切 USB-SERIAL-JTAG，须回 `/triage-change` 升档重判）处置，不要自行改 sdkconfig。
+
 > 写给 human（持板人）。Pod 已在真机门前停等（status=`awaiting-human:real-device`）；代码面（host 齿 7/7 + 既有套件零新增红 + 设备编译闸）已全绿，本单执行完把结果回给 planner（Pod 会话 `bgrpw9j1f` resume 或新会话 `/build-feature 261018-sd-log-usb-read` 续跑）即可继续收口。
 
 ## 前置状态
