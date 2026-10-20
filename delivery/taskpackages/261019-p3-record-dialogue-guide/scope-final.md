@@ -63,6 +63,13 @@
 #
 # 以下为清单正文（一行一个仓根相对路径，# 注释）。
 
+# ── fixer 轮增量（planner 2026-10-20，D2/D3 fix 后 final r8 前补）──
+#   fix 触及实现面 = story_page.c / keybar.c/h / lcd_display.cc / kidpal_render_node.cc/h /
+#   mcp_server.cc / host_app seam（与 §1 已圈定面同域，行为由既有清单件承载：story_page_v2、
+#   record_session_live/repair、keybar_three_slot、key_layer_dispatch、record_dialogue_guide、
+#   voice_round_ui）。新增承载件一行（*.test.c → unit 面，已入 host runner 单 ELF 注册）：
+firmware/main/test/record_dialogue_v7_fix.test.c
+
 firmware/main/test/boot_auto_connect.acceptance.c
 firmware/main/test/char_stroke.acceptance.c
 firmware/main/test/char_window.test.c
