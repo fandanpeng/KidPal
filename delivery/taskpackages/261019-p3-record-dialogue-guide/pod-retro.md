@@ -1,38 +1,26 @@
-# pod-retro · 261019-p3-record-dialogue-guide（第一人称热记忆，planner 收尾相位 2026-10-20 接线轮）
+# pod-retro · 261019-p3-record-dialogue-guide（第一人称热记忆，planner 收尾相位 2026-10-20 fixer R4 真机轮）
 
-> 标签：第一人称主观过程体感。tokens / gates / rounds / verdict / test results 等以 machine artifacts（verifier-evidence / pod-events / taskpackage）为权威，本文件不复述、不冠权威。（多轮 closeout 重写、最后一轮为准；2026-10-19 版被本版取代，其 Planner 元数据自修教训已内化为本版「下次改进」的预算前置。）
+> 标签：第一人称主观过程体感。tokens / gates / rounds / verdict / test results 等以 machine artifacts（verifier-evidence / pod-events / taskpackage）为权威，本文件不复述、不冠权威。（多轮 closeout 重写、最后一轮为准；2026-10-20 接线轮版被本版取代。）
 
-## 本轮体感（2026-10-20 接线轮：SAO-A1 族重钉 + 三式收尾 organize 单源）
+## 本轮体感（fixer R4 真机轮：真机 R3/R4 合并缺陷五项按序修）
 
-- 卡点体感：本轮真正的堵点不在代码而在**两张冻结纸打架**——S-F2.2-AC4 v1.65（三式收尾忠实整理）与 SAO-A1 261001 批钉的「正文==原始转写」。fixer 前几轮只能绕着走、单源化不敢接 organize，升级挂 pending 的处理是对的：这不是 fixer 该裁决的事。human 一次裁定（da35cae4）解开后，整条链（重钉 → 补桩 → 接线 → 转绿）一轮走通、零 fixer 绕轮，与前几轮的烧轮体感反差明显。
-- 顺手体感好的点：acceptance-author 的红基线先行（改钉先红、5 条设计态红逐齿 verbatim）让 builder 的转绿判据天然清晰；RDG-A6/A4 两处漏桩都是**别人先我一步发现**（acceptance-author 回执申报、builder 实证加桩即可满足），跨角色互检在起作用，不是流程摆设。
-- 别扭的点：重钉波及面（RDG-A6/A4 补桩）严格说在 human 授权字面之外（「除 SAO-A1 族外其余冻结验收不改」），我按「断言零改、只补 organize 成功桩」最小修订类推处理并全程留痕——这类「机械兼容修订算不算改验收」的边界值得在治理面成文，下次不必靠 planner 现场裁。
-- 人工纠偏体感：无负向。human 指令把授权凭据、语义口径、fixture 要求、stop 点一次给全，planner 全程不需要补问。
+- 卡点体感：本轮最值钱的不是修了什么，而是 **D4-1 的根因与 brief 假设完全不同**——brief 按现象猜「start_organizing 下发时点错」，fixer 先做部署指纹诊断排除「部署旧版」解释，再用三方日志逐拍闭环钉死真根因（同步 urllib LLM 回合把 front 事件循环整冻、演出先行序被整冻吃掉）。「现象→假设→排除→实证」这条诊断纪律值得固化为真机缺陷轮的标准开局，比直接照 brief 修法动手少绕一次。
+- 第二个卡点是**冻结验收与修法方向的潜在冲突被我在派单时提前拦下**：brief 选项③（装配层幻听过滤）与 RDG-A3 冻结齿「装配层不代行滤除」正面冲突，若不在派单红线里点名，fixer 很可能照 brief 做③然后撞闸。planner 在派发前读冻结断言面做冲突预检，这半步的成本远低于撞闸后返工。
+- 第三个体感：**scope-final.md 的「fixer 轮增量」先例段**（fixer R1 轮立的）这轮直接复用——新 guard 两行补入清单正文即可让 final 闸吃下增量，无需重派 integrator 重圈。先例段的格式自解释，跨轮复用顺畅。
 
 ## verifier↔fixer 绕轮原因的主观判断
 
-- 本轮 fixer 零派发——scoped r11 与 final r12 一次全绿。前提是重钉红基线把「转绿判据」钉得足够死：红在哪、为什么红、绿长什么样全部 verbatim 在案，builder 没有猜语义的空间。
-- 对照 2026-10-19 版的体感（当时五轮 scoped 全是 planner 元数据自修）：闸对 TaskPackage 字段形态的敏感度问题本轮未再出现，起包期格式回填教训算是真的吃进去了。
+- 本轮 fixer 单轮收口五项、零绕轮。前提有三：brief 把每项的现场证据（时间戳/日志行）钉得够死；派单把冲突预检（D4-2 选项③ vs RDG-A3）和先行诊断（D4-1 部署指纹）写成红线；扩单授权在派单时预指派（log_cmd_port.cc 清单外预放行 + sd_log_fs.cc 判定授权），fixer 不必中途停下问。
+- 残余风险不是代码面而是**部署面时序**：接线轮 13:59 部署 / 14:00 重启、R3 15:51 观测——部署在观测前，但「部署后核对进程实际加载版」这一步当时缺位，导致 brief 归因时无法第一时间排除旧版假设。下次部署后立即核对加载版（`__pycache__` / md5），取证省一轮。
 
 ## 帮倒忙/帮上忙的钩子与规则
 
-- 帮上忙：enforce-scope 拦下我用 Bash 重定向写 pod-retro——姿势错了但拦截方向对，受门 Write 通道照走，零怨言。
-- 帮上忙：verify.mjs final 相位 scope-file fail-closed 逼我核了对 scope-final.md 的覆盖面再跑——本轮属侥幸合法（接线面恰在原圈定 server 面内），若 builder 触新文件就必须重圈，这条闸防的是真风险。
-- 体感别扭：dispatch-stamp 的 `--token-status exact` 必须**同时**手喂 `--token-total`，与我记忆中「transcript 自动派生、不用手喂」的口径不一致——结果是我第一次调用 exit 2 返工一次。要么脚本口径升级了我没跟上，要么文档口径落后了，值得核对一次（下次改进①）。
+- 帮上忙：verify.mjs final 相位 scope-file fail-closed 连续第二轮发挥作用——本轮真实需要补增量（两件新 guard），闸逼我核覆盖面后补清单再跑，防的是「拿旧圈定跑新改动」的真风险。
+- 帮上忙：pod-events-append 的事件闭集拒绝了我编的 `dispatch` 类型——派发生命周期归 dispatch-stamp 承载是既有设计，我临时造类型被机械拦下，闭集纪律在起作用。
+- 小摩擦（非帮倒忙）：dispatch-stamp 报的实际生效模型与派发指定不符（cc-switch 代理改写）——如实记录即可，不改派发纪律。
 
-## 人工纠偏体感
+## 下次改进
 
-- 本会话 human 触点一次（任务下发即授权），全程无中途纠偏。分层出场口径运转正常：RDG-A6/A4 补桩这类波及面裁决我按类推处理 + 留痕 + 回执明示，没有为机械细节打断 human。
-
-## 下次改进（可执行）
-
-1. 核对 dispatch-stamp token 旗标口径（exact 是否要求手喂 total），把结论回写心智卡。
-2. 起包期验收蒸馏时把「offline LLM 不可达」对正路径冻结断言的影响一次扫清（本包两处漏桩同根：离线环境「必归档」前提在 organize 语义换代后普遍失真，实际分了三次派发才扫完）。
-3. 「机械兼容修订」边界成文提案（波及面补桩 = 断言零改只补桩，算不算改验收），带本包实例进下一次治理面批。
-4. final 相位 scope-file 复用前先对本轮 git diff 做覆盖面对账，不复用侥幸。
-
-## escalation themes（post-cutoff，pod-events 交叉引用）
-
-- contract-or-spec（75f58b5d → e2640c49 消解）：冻结验收与 FROZEN 需求冲突须 acceptance-author 重钉通道，fixer 停手正确——本轮主叙事，human-decision da35cae4 凭据闭环。
-- environment（952d7661，仍 pending）：真机轮 R3 三项生产写入前置（front 服务重载 / engine-patch 容器重启 / 固件烧板）归主线程，到门即停口径维持。
-- F3 收尾词裁定（1c803a25）→ v1.66（e724ff48）→ 本轮「说完了」guard case 闭环：human 裁定 → 需求面定稿 → 验收冻结 → 实现接线，四点一线无回溯。
+- 真机缺陷轮派单模板加两条红线：①先行诊断条（部署指纹/日志逐拍排除部署旧版解释，再动手）；②冻结断言冲突预检条（修法方向逐条对冻结齿面过一遍，冲突即标「默认不做/逃生门」）。
+- 扩单授权姿势固化为派单模板条目：预判可能越 changeManifest 的落点在派单时明示放行 + 判定授权边界（本次「可独立摘除」句式很好用）。
+- 部署后立即核对进程实际加载版并留痕，消除「部署旧版 vs 真缺口」的归因歧义。
