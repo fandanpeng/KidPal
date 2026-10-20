@@ -50,6 +50,11 @@
   "adrRequired": false,
   "planningWorkstreamRequired": false,
   "mutationRequired": false,
+  "mutationSkipReason": "nano 档无验收语义净增（261016-gov-review-nano-tier）：验收权威置换 = NRF-A1 suiteGate（既有套件零新增红）+ NRF-X3 architect 白盒复核；目标区域实测零坐标断言齿（plan 五件④），无新冻结断言可变异，变异仪式无对象。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "设备端本地像素布局微调，零端云 wire、零包外对端面（architect 逃生门自查 NO_CONTRACT_CHANGE：display 统一响应块是 server→device wire schema，本改不触）；server/** 零改动。"
+  },
   "changeManifest": [
     "firmware/main/display/story_page.c"
   ],

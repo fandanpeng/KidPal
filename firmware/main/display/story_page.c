@@ -1442,33 +1442,46 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             ESP_LOGI(KSR_TAG,
                      "RECORDING render wave=%d rec_seconds=%d", wave, v->rec_seconds);
             /* D3 v7 帧 A 骨架重排（261019 fixer; 权威 = v7 html p3-recording 帧 +
-             * 规格表, 旧左列 x=16~60 旧布局退役）:
+             * 规格表, 旧左列 x=16~60 旧布局退役; 261020 观感修两处位式在末两行）:
              *   左 pose-record 96x96 @(45,87)（资产不可用静默降级）;
              *   气泡 @(24,28)（文案单源 KSTORY_RECORDING_BUBBLE, 位式通则 24/28——
              *   旧无气泡 / 帧 B (16,8) 位式退役）;
-             *   REC 12px 闪点 + REC 文案 @(180,18)（旧 24x24 黑块 @(20,52) 退役）;
-             *   大时长 @(180,38);
-             *   声波 rec_wave 资产 206x34 @(180,94)（设计稿同款折线; 资产不可用退
-             *   程序化跳动条右列版）;
+             *   「在记」信号一行 @ y=17：12px 闪点 @(200,18) + REC 文案 @(218,17) +
+             *   大时长 @(254,17)（261020 观感修: 旧闪点 @(180,18) / REC @(198,17) /
+             *   大时长分两行 @(180,38) 与气泡右缘 ~192 重叠; 今三者同行整体右移,
+             *   起点 200 = 帧 B 引导气泡右缘 192 + 8px 安全距, 400px 版面上行宽
+             *   200..~300 仍有裕量; 元素集零变化）;
+             *   声波 rec_wave 资产 206x34（设计稿同款折线; 资产不可用退程序化跳动条）:
+             *   261020 观感修从右侧中部 @(180,94) 挪到猫咪正下方左演出区——206px
+             *   资产宽 vs 左区 <180px 有张力, 等比缩绘 212/256（≈0.83, pivot 置左上,
+             *   对象位即落位）: x=8..179（猫中线 x=93 居中）/ y=191..219, 不侵入右
+             *   回显列 x>=180; 兜底跳动条同位式（居中 x=32..154, 中心 y=205）;
              *   回显右列 @(180,184)（[G5] 回显常驻 AC2 锚: echo_reset 只许定义处
              *   调用, 引导播报中/整理过渡态不清空）。 */
             ksy_art_image(scr, "pose_record_96.bin", KSTORY_POSE_MAX, KSTORY_POSE_MAX, 45, 87);
             ksy_bubble(scr, KSTORY_RECORDING_BUBBLE, 24, 28);
-            ksy_box(scr, 180, 18, 12, 12, KSY_COLOR_INK);
-            ksy_label(scr, "REC", 198, 17, KSY_COLOR_INK);
+            ksy_box(scr, 200, 18, 12, 12, KSY_COLOR_INK);
+            ksy_label(scr, "REC", 218, 17, KSY_COLOR_INK);
             if (kidpal_story_rec_time(v, buf, sizeof(buf)) == 0) {
-                ksy_label(scr, buf, 180, 38, KSY_COLOR_TEXT);
+                ksy_label(scr, buf, 254, 17, KSY_COLOR_TEXT);
             }
             {
                 const lv_image_dsc_t *wd = kstory_art_dsc("rec_wave.bin", 240, 40);
                 if (wd != NULL) {
                     lv_obj_t *wi = lv_image_create(scr);
                     lv_image_set_src(wi, wd);
-                    lv_obj_set_pos(wi, 180, 94);
+                    /* 261020 观感修: 缩绘锚点改左上（默认 pivot 居中会绕对象中心
+                     * 收拢, 落位需反推负偏移）; 212/256 ≈0.83 落在左演出区内。 */
+                    lv_image_set_pivot(wi, 0, 0);
+                    lv_image_set_scale(wi, 212);
+                    lv_obj_set_pos(wi, 8, 191);
                 } else {
+                    /* 程序化兜底跳动条（同位式语义: 资产缺失时占同一位置——
+                     * 猫正下方居中, 6 条 12px 宽 / 22px 步进, 中心 y=205 =
+                     * 缩绘后声波中线）。 */
                     for (i = 0; i < 6; i++) {
                         int h = 10 + (((wave + i) % 4) * 10);
-                        ksy_box(scr, 180 + i * 22, 111 - h / 2, 12, h, KSY_COLOR_INK);
+                        ksy_box(scr, 32 + i * 22, 205 - h / 2, 12, h, KSY_COLOR_INK);
                     }
                 }
             }
