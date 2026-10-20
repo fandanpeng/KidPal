@@ -253,14 +253,35 @@ extern "C" void KidpalSdLogAttach(const char *mount_root)
                  s_dir_path, errno);
         return;  /* 建目录失败：整层静默失效, 不 attach（零 fopen） */
     }
-    /* 重启续写：把已在盘的当前文件字节数喂给轮转器，避免单文件越过 512KB 上限。
-     * 记账到界时 rot_account 自行推进到下一个文件号。**先播种再置 attached**，避免
-     * 写盘任务与本函数并发记账造成重复计数。 */
-    if (kidpal_sd_log_file_name((unsigned)kidpal_sd_log_rot_index(s_rot), name,
-                                (unsigned)sizeof(name)) == 0) {
-        snprintf(path, sizeof(path), "%s/%s", s_dir_path, name);
-        if (stat(path, &st) == 0 && st.st_size > 0) {
-            (void)kidpal_sd_log_rot_account(s_rot, (unsigned)st.st_size);
+    /* 重启续写 v2（261020 D4-4）：从**盘面状态**播种轮转器。旧实现只 stat「当前
+     * index」——而轮转记账态在 RAM、每次启动 rot 归 000，跨启动已轮转的盘面
+     * （000 已封口、001 带前次启动的残留）会把当前文件的既有字节整段漏记账：
+     * 续写后记账 512KB 才封口，盘面单文件实际 512KB + 残留（真机 KPLOG001 740KB
+     * 未轮实证 = 001 残留 ~220KB + 本轮记账 512KB）。新法：000 起找第一个不存在
+     * /空/未满的文件号 = 当前文件（此前各号按满额推进轮转器——只用冻结纯逻辑
+     * 既有 API，不新增决策面），当前文件按实际字节数播种记账；32 文件全满则整
+     * wrap 回 000 覆盖最旧。只增不减纪律：已封口文件不清理不改名。 */
+    {
+        unsigned idx;
+
+        for (idx = 0u; idx < KIDPAL_SD_LOG_FILE_COUNT; idx++) {
+            long fsize;
+
+            if (kidpal_sd_log_file_name(idx, name, (unsigned)sizeof(name)) != 0) {
+                break;
+            }
+            snprintf(path, sizeof(path), "%s/%s", s_dir_path, name);
+            if (stat(path, &st) != 0 || st.st_size <= 0) {
+                break;  /* 不存在/空 = 当前文件（记账态已是该号、字节 0） */
+            }
+            fsize = (long)st.st_size;
+            if (fsize < (long)KIDPAL_SD_LOG_FILE_BYTES) {
+                /* 未满文件 = 当前文件：按实际字节播种（记账态在该号、字节=fsize） */
+                (void)kidpal_sd_log_rot_account(s_rot, (unsigned)fsize);
+                break;
+            }
+            /* 已封口（≥512KB）：按满额推进一格，看下一号 */
+            (void)kidpal_sd_log_rot_account(s_rot, KIDPAL_SD_LOG_FILE_BYTES);
         }
     }
     (void)kidpal_sd_log_ring_attach(s_ring);

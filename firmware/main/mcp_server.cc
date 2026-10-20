@@ -784,6 +784,35 @@ void KidpalStorySessionEndApply(int list_page) {
              static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), list_page);
 }
 
+/* -------------------------------------------------------------------------- *
+ * [G3] 帧 B「引导播报中」子态沿桥（261019-p3-record-dialogue-guide D4-5, fixer）。
+ * 旧账 escalation 067bd067: 全仓无路径置 rec_substate=1 —— 消费面（story_page_input
+ * RDG-F2 键位分叉 + keybar 帧分叉）在世而置位链缺失, 引导播报期间键帽仍显收尾/丢弃
+ * （BOOT 毁稿分叉敞口）。修法 = 设备侧从**既有 tts 帧派生**（零 wire 新增）: 记录语境
+ * 内引擎抑制 LLM/TTS, kidpal_speak 引导注入是该页态下唯一 TTS 源 —— application.cc
+ * tts start/stop 分支沿调用本桥。桥内门: 仅 RECORDING 页态有子态语义（幂等, 重复沿
+ * 不重渲）; 写 g_story_view.rec_substate 标量后经 ScheduleStoryRender 同步渲染节点
+ * 缓存（键帽分叉消费 = kidpal_render_node_story_rec_substate）+ 落屏。RDG-F2 键位
+ * 分叉 / RDG-F3 整理态吞键零触碰（桥只写标量, 分叉判定仍归 story_page_input 冻结
+ * 决策表）。打断路径（KEY -> INTERRUPT_GUIDE）的子态复位由输入函数就地完成（本桥
+ * 的 tts stop 复位沿与其幂等汇合）。定义面纪律与 KidpalStoryVadEnterRecording 同款
+ * （不进 mcp_server.h 公共头, 消费方 extern 声明）。主线程 Schedule 串行消费现实与
+ * g_story_* 既有约定一致。
+ * ------------------------------------------------------------------------ */
+void KidpalStoryGuideSpeechEdge(int speaking) {
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        return;  /* 子态载体只在录音态有语义（引导态/列表/整理态不置不复位） */
+    }
+    int next = (speaking != 0) ? 1 : 0;
+    if (g_story_view.rec_substate == next) {
+        return;  /* 幂等: 重复沿（tts start 重发 / 连续 sentence 帧）不重渲 */
+    }
+    g_story_view.rec_substate = next;
+    ESP_LOGI(TAG, "story_guide_speech_edge substate=%d",
+             g_story_view.rec_substate);
+    ScheduleStoryRender();
+}
+
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
  * 取不到/非字符串 -> 空串 (调用方按降级或空内容处理, 不崩)。 */
 static std::string mcp_json_get_string(const std::string& json, const char* key) {

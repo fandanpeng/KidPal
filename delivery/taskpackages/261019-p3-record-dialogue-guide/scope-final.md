@@ -117,3 +117,13 @@ server/acceptance/test_tech260928_school_start_wiring.acceptance.py
 server/tests/test_reminder_units.py
 server/tests/test_schedule_producer_units.py
 server/tests/test_story_units.py
+
+# ── fixer r4 轮增量（planner 2026-10-20，真机缺陷五项修后 final r14 前补）──
+#   fix 触及实现面 = connection.py / front_app.py / application.cc / mcp_server.cc /
+#   log_cmd_port.cc / sd_log_fs.cc（后两件 = 清单外扩单，pod-events scope-drift 5fe6d62e 在案；
+#   sd_log_fs 行为由 sd_log.acceptance.c 承载、log_cmd_port 行为由 log_cmd.acceptance.c 承载，
+#   两件均已在正文）。行为由既有清单件承载：record_dialogue_guide / engine_stop_truncation /
+#   m4k1_story_cloud_link / story_units / story_page_v2 / voice_round_ui。新增承载件两行
+#   （fixer r4 guard，server/tests unit 面）：
+server/tests/test_engine_round_close_units.py
+server/tests/test_archive_guard_units.py

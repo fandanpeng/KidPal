@@ -353,3 +353,77 @@ TEST_CASE("record guide v7 fix: D2 linkage seams and guards source anchors (RDV7
         free(hdr);
     }
 }
+
+/* -------------------------------------------------------------------------- *
+ * TEST 3 — D4-5 置位链结构半（261020 fixer R4; 源锚; 设备 TU 不进 host 构建）:
+ * 「引导播报中」子态置位链（escalation 067bd067 销账）——tts 帧沿派生桥在世：
+ * application.cc tts start 分支置位沿(1) / tts stop 分支复位沿(0)（复位沿必须先于
+ * Speaking 出口守卫——打断离场后 tts stop 到达时出口判据不吞复位沿）+ mcp_server.cc
+ * 桥定义（RECORDING 页态门 + 幂等 + 渲染节点缓存同步）。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("record guide v7 fix: D4-5 guide speech substate edge chain source anchors (RDV7-A3)",
+          "[record_dialogue_v7_fix][RDV7-A3][structural]")
+{
+    char *app;
+    char *mcp;
+    char *win;
+
+    rdf_require_root();
+
+    /* ---- tooth 1: application.cc tts start 分支置位沿(1) --------------------- */
+    app = rdf_strip_comments(rdf_read_file("firmware/main/application.cc"));
+    TEST_ASSERT_NOT_NULL_MESSAGE(app, "RDV7-A3 RED(infra): application.cc unreadable");
+    win = rdf_slice(app, "strcmp(type->valuestring, \"tts\") == 0",
+                    "strcmp(state->valuestring, \"sentence_start\") == 0");
+    TEST_ASSERT_NOT_NULL_MESSAGE(win, "RDV7-A3 RED(infra): tts 分支头段切片失败（锚漂移须复核）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rdf_count(win, "KidpalStoryGuideSpeechEdge(1)") >= 1,
+        "RDV7-A3 RED: tts start 分支无置位沿(1) —— 引导播报中子态置位链缺失回归"
+        "（escalation 067bd067 本体: 全仓无路径置 rec_substate=1, 键帽不切帧 B, "
+        "BOOT 毁稿分叉敞口）");
+    /* 负锚（VQ-A1 增补齿同域）: 置位链不得引入语音轮场景切换载体。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        rdf_count(win, "SetDeviceState(kDeviceStateSpeaking)") == 0 &&
+        rdf_count(win, "kidpal_voice_round_scene(") == 0,
+        "RDV7-A3 RED: tts start 分支混入语音轮场景切换载体——KVR-A1 冻结齿同域回归");
+    free(win);
+
+    /* ---- tooth 2: tts stop 分支复位沿(0) 先于 Speaking 出口守卫 --------------- */
+    win = rdf_slice(app, "strcmp(state->valuestring, \"stop\") == 0",
+                    "strcmp(state->valuestring, \"sentence_start\") == 0");
+    TEST_ASSERT_NOT_NULL_MESSAGE(win, "RDV7-A3 RED(infra): tts stop 分支切片失败");
+    {
+        const char *edge_at = strstr(win, "KidpalStoryGuideSpeechEdge(0)");
+        const char *guard_at = strstr(win, "GetDeviceState() == kDeviceStateSpeaking");
+        TEST_ASSERT_NOT_NULL_MESSAGE(
+            edge_at,
+            "RDV7-A3 RED: tts stop 分支无复位沿(0) —— 引导播报结束后子态悬挂帧 B");
+        TEST_ASSERT_NOT_NULL_MESSAGE(guard_at, "RDV7-A3 RED(infra): tts stop 出口守卫锚漂移");
+        TEST_ASSERT_TRUE_MESSAGE(
+            edge_at < guard_at,
+            "RDV7-A3 RED: 复位沿晚于 Speaking 出口守卫 —— 打断离场后 tts stop 到达时"
+            "设备已非 Speaking, 复位沿被出口判据吞掉 = 子态悬挂");
+    }
+    free(win);
+    free(app);
+
+    /* ---- tooth 3: mcp_server.cc 桥定义（页态门 + 幂等 + 缓存同步）------------- */
+    mcp = rdf_strip_comments(rdf_read_file("firmware/main/mcp_server.cc"));
+    TEST_ASSERT_NOT_NULL_MESSAGE(mcp, "RDV7-A3 RED(infra): mcp_server.cc unreadable");
+    win = rdf_slice(mcp, "void KidpalStoryGuideSpeechEdge(int speaking)",
+                    "mcp_json_get_string");
+    TEST_ASSERT_NOT_NULL_MESSAGE(win, "RDV7-A3 RED(infra): 桥定义区切片失败");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rdf_count(win, "KSTORY_PAGE_RECORDING") >= 1,
+        "RDV7-A3 RED: 桥缺 RECORDING 页态门 —— 非录音态 TTS（欢迎语/整理安抚句）"
+        "误置引导子态");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rdf_count(win, "g_story_view.rec_substate == next") >= 1,
+        "RDV7-A3 RED: 桥缺幂等门 —— 重复沿（tts start 重发）整页重渲抖动");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rdf_count(win, "ScheduleStoryRender()") >= 1,
+        "RDV7-A3 RED: 桥零渲染节点缓存同步 —— 键帽分叉消费面"
+        "（kidpal_render_node_story_rec_substate）读不到新子态, 帧 B 键帽不切");
+    free(win);
+    free(mcp);
+}

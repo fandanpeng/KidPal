@@ -91,6 +91,10 @@ _KIDPAL_ASR_HALLUCINATIONS = frozenset({
 # **保留空格**——删空格会让「让我们一起说thank you吧」这类合法话被误判为子串命中。
 _KIDPAL_ASR_HALLUCINATION_STRIP_RE = re.compile(r"[^\w\s]")
 
+# 丢弃轮收尾播报文案 (261020 D4-3)：固定短句、产品腔与 front 固定句族一致
+# （ORGANIZING_FAIL_SOOTHING「……我们再讲一次好吗？」同款句式），不发明新机制。
+_KIDPAL_ROUND_CLOSE_LINE = "我没听清，再说一遍好吗？"
+
 
 def _kidpal_is_asr_hallucination(text):
     """整串相等匹配已知 ASR 幻听串（绝不子串）。
@@ -512,6 +516,35 @@ class ConnectionHandler:
                     break
             self.logger.bind(tag=TAG).info(
                 "kidpal stop-truncation: listen stop 收尾，丢弃在途音频")
+
+    def _kidpal_close_dropped_round(self, drop_reason: str):
+        """丢弃入口轮后向设备发回合收尾 (261020 D4-3)。
+
+        病灶：chat depth==0 丢弃分支 return 前不产生任何设备可见输出——但 ASR 路径的
+        stt 回显帧（receiveAudioHandle.startToChat -> send_stt_message）先于 chat 已
+        下发，设备已进思考态（THINK 覆盖层，键帽「不等了」）等回复；静默丢弃 = 设备
+        悬思考态直到连接超时（真机 R3 目击挂 20+ 分钟）。
+
+        选型（读引擎/设备两侧链路后定）：设备侧 THINK 只被完整 TTS 轮退出
+        （sentence_start -> Speaking -> tts stop；单发 tts stop 在非 Speaking 态是
+        no-op，ws 协议无 goodbye/close 帧可用）——引擎既有回合收尾机制 = 走 TTS 链
+        完整一轮，与 _kidpal_try_speak 的 speak_txt 注入同款原语、同款降级纪律
+        （出音失败只记日志，不重抛拖垮 chat/丢弃语义）。
+
+        纪律：绝不置 client_abort（两守卫同款，防波及 stop 后 front 注入的合法
+        speak/story 下发）；调用方在记录语境静默（抑制链是冻结语义——回显区无 THINK
+        悬挂，不出音）；listen_closed 分支不出音（用户刚主动收尾，出音违背收尾意图）。
+        """
+        try:
+            from core.handle.intentHandler import speak_txt
+
+            speak_txt(self, _KIDPAL_ROUND_CLOSE_LINE)
+            self.logger.bind(tag=TAG).info(
+                f"kidpal round-close: 丢弃轮收尾播报已入队 (reason={drop_reason})")
+        except Exception as close_error:  # noqa: BLE001 — 通知失败不影响丢弃语义
+            self.logger.bind(tag=TAG).error(
+                f"kidpal round-close 播报失败: {close_error} "
+                "(设备将停留思考态至用户按键)")
 
     async def _route_message(self, message):
         """消息路由"""
@@ -1267,6 +1300,11 @@ class ConnectionHandler:
             if _kidpal_is_asr_hallucination(query):
                 self.logger.bind(tag=TAG).info(
                     f"kidpal asr-hallucination filter: 丢弃幻听串: {query}")
+                # 261020 D4-3: 丢弃后关轮——stt 回显已先于 chat 下发，设备已进思考态
+                # 等回复，静默丢弃 = 设备悬思考态直到连接超时（真机 R3 实害）。记录
+                # 语境不出音（抑制链冻结语义：切句只回显，回显区无 THINK 悬挂）。
+                if not self._kidpal_record_context:
+                    self._kidpal_close_dropped_round("asr-hallucination")
                 return
             # KidPal 第三守卫 (261019-p3-record-dialogue-guide / ADR-013 Package B 读法乙):
             # 记录语境中抑制 LLM 派发 —— 孩子讲着时 AI 默认闭嘴，切句只用于话语回显

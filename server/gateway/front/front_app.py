@@ -33,6 +33,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -93,6 +94,56 @@ START_ORGANIZING_PAYLOAD = {"view": "control", "data": {"action": "start_organiz
 # 固定安抚句（R1-N4 丢稿口径：整理失败 = 当轮素材不归档 + 固定安抚句，不发明新语义；
 # PROPOSAL §6.3）。
 ORGANIZING_FAIL_SOOTHING = "刚才的话我没能记下来，我们再讲一次好吗？"
+
+# 整理回合进程内单飞锁（261020 D4-1 线程化配套）：_organize_and_archive 移出事件
+# 循环（asyncio.to_thread）后，两个并发收尾（多腿/多连接）可能在两线程同时跑
+# archive_story——seq 持久账本（.seq.json read-modify-write）的「front 单写者」纪律
+# 靠事件循环天然串行的旧形态承载，线程化后须显式串行化还原同语义。
+_ORGANIZE_ARCHIVE_LOCK = threading.Lock()
+
+# 归档前内容守卫（261020 D4-2 ①，fixer 裁定；brief 三选组合取 ①，不做 ③）：
+# 现场实害 = 空内容 + 幻听「Thank you.」被整理归档成 `2026-10-20-no-reply` 垃圾篇
+# （seq=9 占用、SD 落卡 bytes=8）。守卫落点 = _story_finish_session 归档边界
+# （strip_trailing_finish_words 之后、organize LLM 回合之前）——**不在**装配层
+# （RDG-A3 冻结：build_organizing_input 不代行滤除；本守卫整串判定，混排内容
+# 「真话+幻听串」照常放行进整理，只有**纯**幻听/近无内容拒归档）。
+# 表与 engine-patch connection.py 幻听过滤同族模式（归一化后整串相等、绝不子串——
+# 「谢谢你，这个字怎么写」类真实用户话不得误杀）；不 import engine-patch（部署面
+# 隔离：connection.py 属引擎容器部署件，front 侧自有同族实现）。种子集 = 引擎侧
+# 幻听表全量（CRQ TECH-261014 真机逐字命中 + ECS 24h 日志证据）+ 中文语气词重复族
+# （同 ASR 家族低能量段已知模式）。最小有意义内容阈值 = 归一化去空白标点后 <2 字
+# （单语气词/纯标点不归档——孩子单字残余无整理价值，旧形态会归档成垃圾篇）。
+_FRONT_ARCHIVE_HALLUCINATIONS = frozenset({
+    "thank you",
+    "thanks for watching",
+    "thank you for watching",
+    "谢谢观看",
+    "请不吝点赞",
+    "嗯嗯",
+    "哦哦",
+    "呵呵",
+    "哈哈",
+    "哈哈哈",
+    "嘿嘿",
+    "嘻嘻",
+})
+_FRONT_GUARD_STRIP_RE = re.compile(r"[^\w\s]")
+
+
+def _archive_material_reject_reason(material: str) -> "str | None":
+    """归档边界内容守卫：返回拒绝原因串（留痕用）或 None（放行归档）。
+
+    判序：幻听整串命中优先（归一化保空格、整串相等——engine-patch 同族语义，种子
+    内含词间空格）→ 命中即 pure_hallucination_material；归一化去空白后 <2 字 =
+    insignificant_material（纯标点/单语气词）。绝不子串：只对**整段** material 判定，
+    混排内容（真话+幻听串）照常放行。"""
+    spaced = _FRONT_GUARD_STRIP_RE.sub("", material or "").strip().lower()
+    if spaced in _FRONT_ARCHIVE_HALLUCINATIONS:
+        return "pure_hallucination_material"
+    compact = re.sub(r"\s+", "", spaced)
+    if len(compact) < 2:
+        return "insignificant_material"
+    return None
 # 两枚 front 侧版本化 prompt 制品（home = server/gateway/front/prompts/，目录名冻结；
 # 不走 OpenClaw 主 agent 共享 system prompt——request 级 system 消息承载，种子 7）。
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
@@ -239,6 +290,20 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
         return None  # 空正文不归档（不写空故事）
     log.info("story_organize_round corr_id=%s ok=true id=%s", corr_id, record["id"])
     return record
+
+
+def _organize_and_archive_offloop(raw, corr_id=None) -> "dict | None":
+    """整理回合同步体的线程化执行壳（261020 D4-1）。
+
+    病灶（真机 R3/R4 四轮收尾逐拍实证）：_openclaw_chat_once 是同步 urllib LLM 回合
+    （~2-4s），在事件循环上内联执行把整个 front 冻结到回合完成——收尾沿先行下发的
+    start_organizing 帧、期间到达的 stt 转发全部压到解冻后才冲刷，与 story_text 同拍
+    到设备，整理过渡页（S-F2.2 AC4「演出盖住延迟」）实际从未可见（设备日志：每轮
+    收尾 start_organizing 与 story_saved_stamp 同拍 10-20ms 到达）。移出事件循环后
+    收尾沿下发即冲刷、循环在 LLM 回合期间保持响应。单飞锁还原 seq 账本「front
+    单写者」串行语义（同步时代由事件循环天然承载）。"""
+    with _ORGANIZE_ARCHIVE_LOCK:
+        return _organize_and_archive(raw, corr_id)
 
 
 def _get_story_acc():
@@ -527,7 +592,10 @@ async def _story_guide_round(sid, now_dt) -> None:
     acc = _get_story_acc()
     spoken = acc.build_organizing_input(sid) or ""
     prompt = _load_prompt_artifact(_GUIDE_PROMPT_FILE)
-    reply = _openclaw_chat_once(
+    # 261020 D4-1 同族：引导回合的同步 LLM 调用同样移出事件循环（sweep 路径上一轮
+    # 冻结会吃掉下一轮收尾沿的及时性，与整理回合同根因）。
+    reply = await asyncio.to_thread(
+        _openclaw_chat_once,
         prompt,
         f"孩子到目前为止讲的内容：\n{spoken}\n\n孩子停顿了，请按指令给一句轻声引导。")
     if reply:
@@ -860,9 +928,21 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     if not material:
         log.info("story_finish corr_id=%s archived=false reason=empty_material", session_id)
         return None
+    # 261020 D4-2 ①归档边界内容守卫：纯幻听/近无内容（单语气词、纯标点）不归档
+    # （不占 seq、不落 SD）、不演出（不下发 start_organizing）、不安抚——与空素材
+    # 同款仅释放。R1-N4 口径裁决：安抚句语义是「有稿丢了」，纯幻听 = 孩子本无内容，
+    # 安抚反而误导（留注记，归 acceptance-author 后续通道复裁）。
+    reject = _archive_material_reject_reason(material)
+    if reject:
+        log.info("story_finish corr_id=%s archived=false reason=%s material=%r",
+                 session_id, reject, material)
+        return None
     for device_ws, engine_ws in list(legs):
         await _issue_finish_downlink(session_id, engine_ws, device_ws)
-    record = _organize_and_archive(material, session_id)
+    # 261020 D4-1: 整理回合移出事件循环（同步 urllib LLM 回合 ~2-4s 曾整冻 front，
+    # 把收尾沿先行的 start_organizing 压到与 story_text 同拍——过渡页不可见本体）。
+    record = await asyncio.to_thread(_organize_and_archive_offloop,
+                                     material, session_id)
     if record is None:
         # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
         await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)

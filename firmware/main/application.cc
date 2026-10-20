@@ -32,6 +32,12 @@ void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.c
  * 判据 + 复位录音页态并停录音演出定时器。 */
 int  KidpalStoryViewPageState();
 void KidpalStorySessionEndApply(int list_page);
+/* [G3] 帧 B 子态沿桥（261020 D4-5, fixer; 定义住 mcp_server.cc, 同款免扩公共头纪律）:
+ * 引导播报中子态从设备侧既有 tts 帧派生（记录语境内引擎抑制 LLM/TTS, kidpal_speak
+ * 引导注入 = 唯一 TTS 源, 零 wire 新增）——tts start 沿置 rec_substate=1、tts stop 沿
+ * 复位 0（幂等, 仅 RECORDING 页态有语义）。RDG-F2 键位分叉 / RDG-F3 整理态吞键零触碰
+ * （桥只写子态标量, 分叉判定仍归 story_page_input 冻结决策表）。 */
+void KidpalStoryGuideSpeechEdge(int speaking);
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
@@ -696,9 +702,18 @@ void Application::InitializeProtocol() {
                  * sentence_start 分支 (实际起播时刻), 此处只复位打断标志。 */
                 Schedule([this]() {
                     aborted_ = false;
+                    /* [G3] 帧 B 子态置位沿 (261020 D4-5): 记录语境内 tts start =
+                     * 引导播报开始（引擎抑制下 kidpal_speak 是唯一 TTS 源; 桥内
+                     * RECORDING 页态门 + 幂等）——键帽路由据此分叉帧 B（打断）。 */
+                    KidpalStoryGuideSpeechEdge(1);
                 });
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
+                    /* [G3] 帧 B 子态复位沿 (261020 D4-5): 引导播报结束/被打断 ——
+                     * 无条件先于 Speaking 出口守卫（tts stop 到达时设备可能已因
+                     * 打断离场 Speaking, 复位沿不得被出口判据吞掉; 桥内幂等 +
+                     * RECORDING 页态门）。 */
+                    KidpalStoryGuideSpeechEdge(0);
                     if (GetDeviceState() == kDeviceStateSpeaking) {
                         /* 261014 VR-A2 tts stop 出口三守卫（序即优先级）:
                          * ① 手动模式既有语义（出口回 Idle, 优先级最高）;
