@@ -39,8 +39,8 @@ openQ:
     status: resolved（待 Track A 定形后复裁）
   - id: q3-收尾词表口径
     question: 「说完了」（三字）是否并入 _FINISH_PHRASES（story.py:59 现仅「我说完了/讲完啦」）？
-    ruling: 随 D3-甲 进需求面一并裁，未确认前按 S-F2.2-AC2 原文实现（不阻塞拆包）
-    status: deferred
+    ruling: **human 2026-10-20 裁：并入**（真机轮 R2 实证「好说完了。」不收尾）——需求面 v1.66 frozen（批 261020-finish-phrase-shuowanle，档 1：S-F2.2 AC4 等四处枚举增补 + 补充规则留痕），实现随 261019 fixer 轮落 story.py _FINISH_PHRASES
+    status: resolved
   - id: q4-D2层栈闭集取向
     question: 进录音态让位的实现形态——弹出 VOICE 层（则 D4a 判据天然成立）vs 录音页提到 VOICE 之上（则 D4a 判据须显式补 RECORDING 分支）？
     ruling: 归 Package A 设计决策点，plan.md 须写明二选一 + host 可机判齿
