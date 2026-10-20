@@ -119,6 +119,17 @@ void StoryRecTimerCb(lv_timer_t* timer) {
         g_story_rec_timer = nullptr;
         return;
     }
+    /* D2 真机轮 R1 真相核（261019 fixer）: 渲染前核「基层内容页仍是 P3」。任何其它
+     * 路径已把基层重建为首页/课表时（残缝: 守卫外的重建路径 / 翻页），本拍跳过——
+     * 演出断一拍无害, 录音页盖回基层 = 错（且曾与悬垂 s_kidpal_img 链成 UAF）。
+     * 不满足时**不**代为重建录音页（重建走 ScheduleStoryRender 单点权威）。判据
+     * 单源 = kidpal_render_node_story_page_is_local()（host 侧缝同符号）。
+     * K6 correlationId: 跳拍带 corr_id 便于真机日志对账。 */
+    if (kidpal_render_node_story_page_is_local() != 1) {
+        ESP_LOGW(TAG, "rec tick skip corr_id=kdp-%u local_page!=story",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        return;
+    }
     uint32_t elapsed = lv_tick_get() - g_story_rec_start_ms;
     int flash = 0;
     int wave = 0;

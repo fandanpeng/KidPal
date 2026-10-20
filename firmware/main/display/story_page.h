@@ -407,6 +407,25 @@ int kidpal_story_body_unavailable_idle_step(unsigned long *idle_ms,
  * 关闭回列表（v->page == KSTORY_PAGE_LIST），两键语义一致、无破坏性动作、无 GLOBAL
  * 外泄（纯告知态吞掉手势，绝不漏网误开会话）。 */
 
+/* ---- ⑲ P3 记录会话 v7 重排（261019-p3-record-dialogue-guide fixer, 2026-10-20;
+ * additive 尾部追加。措辞单源 = docs/ui/kidpal-ui-design-v7.html P3 节规格表
+ * 「气泡文案（终稿）」行——P3 三帧气泡文案住本处单源, 渲染面零字面重抄） ---- */
+
+/* 帧 A 录音中（p3-recording）气泡：v7 终稿逐字。开口**前**的记录语境引导气泡
+ * （「需要我帮你记点什么？」）另有单源 = kidpal_story_guide_bubble()（[S2] 冻结缝,
+ * 语音轮 apply_look 覆写缝消费）——两文案两语境, 不互替。 */
+#define KSTORY_RECORDING_BUBBLE "你讲吧，我听着呢"
+/* 帧 C 整理中（state-organizing）气泡：v7 逐字。 */
+#define KSTORY_ORGANIZING_BUBBLE "我来整理一下…"
+
+/* 帧 B 引导播报中键帽（v7 p3-recording-guide R2 裁定: 左「打断」右留空）。**宏间接
+ * 红线注记**: 「打断」同时是语音轮五态 keycap 冻结闭集成员（keybar_three_slot
+ * KKB-E2: keybar.c 零闭集字面重抄, 字面只住 kidpal_voice_states.c）——记录语境帧 B
+ * 键帽与闭集成员同字、不同语境（此处 = 打断引导播报、继续记录; 闭集成员 = 语音轮
+ * 停播）。为守 KKB-E2 树扫负锚, 字面住本处单源、keybar.c 经宏符号引用（与
+ * KSTORY_BODY_UNAVAILABLE_KEYCAP_KEY「知道了」同为闭集同字宏间接先例）。 */
+#define KSTORY_RECORDING_GUIDE_KEYCAP "打断"
+
 #ifdef __cplusplus
 }
 #endif

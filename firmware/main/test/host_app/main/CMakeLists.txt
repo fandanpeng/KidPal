@@ -273,6 +273,12 @@ set(HOST_ACCEPTANCE_SRCS
     "../../../display/view_router.c"
     "../../record_dialogue_guide.acceptance.c"
 
+    # 261019-p3-record-dialogue-guide fixer 轮二（2026-10-20）guard 单测: keybar v7
+    # 键帽集行为齿（keybar.c 强符号真跑）+ D2 根修缝/守卫与 D3 资产落点源锚结构齿
+    # （story_page.c / mcp_server.cc / kidpal_render_node.cc 设备 TU 不进 host 构建,
+    # 源锚代理; 渲染节点缝 host 半 = host_infra_seam.c 同符号实现）。置于 smoke 之前。
+    "../../record_dialogue_v7_fix.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

@@ -128,7 +128,8 @@ def _openclaw_chat_once(system_text: str, user_text: str, timeout_s: float = 10.
     req = urllib.request.Request(
         gw_provider.OPENCLAW_BASE_URL.rstrip("/") + "/v1/chat/completions",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json",
+                 "Authorization": "Bearer " + os.environ.get("OPENCLAW_TOKEN", "")},
         method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:

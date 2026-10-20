@@ -1360,13 +1360,21 @@ static void kidpal_keybar_sync_locked(void)
     /* P3 子态（LOCAL_PAGE 且本地页 = STORY 时缓存视图页态）——提前在此读一次,
      * 键帽槽子态裁决与页点有效 overlay 判据同源。 */
     int story_sub = kidpal_render_node_story_substate();
+    /* D3 v7（261019 fixer）: RECORDING 子态的帧 A/帧 B 键帽分叉判据（引导播报中
+     * 子态, [G3] rec_substate; 渲染节点缓存单源）。 */
+    int story_rec_sub = (story_sub == KSTORY_PAGE_RECORDING)
+                            ? kidpal_render_node_story_rec_substate() : 0;
     /* 有效 overlay 判据（页点显隐入参）: 层栈归一值 + WF-F2-06「正文取不回」提示态。
      * 该提示是本地基层上的故事页子态（非独立 layer, front_is_overlay 不报覆盖层），
      * 但语义是整屏覆盖层——brief:101「覆盖层……不显示页点」/ requirements:382
      * 「页点消失 = 覆盖层口径」。仅本消费点并入, 层栈裁决 owner 零改动
-     * （KB-E3: 本函数只读, 不 push/pop, 不另立层模型）。 */
+     * （KB-E3: 本函数只读, 不 push/pop, 不另立层模型）。
+     * D3 v7 并入: 记录会话录音/整理两态（v7 规格表「页点」行——记录会话为覆盖演出,
+     * 不显示页点）。 */
     int dots_overlay = (overlay_top != 0 ||
-                        story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) ? 1 : 0;
+                        story_sub == KSTORY_PAGE_BODY_UNAVAILABLE ||
+                        story_sub == KSTORY_PAGE_RECORDING ||
+                        story_sub == KSTORY_PAGE_ORGANIZING) ? 1 : 0;
 
     /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
@@ -1388,8 +1396,17 @@ static void kidpal_keybar_sync_locked(void)
          * apply_look 场景双写, 故 RECORDING 子态可直接出 [收尾]/[结束]。 */
         if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
             story_sub == KSTORY_PAGE_RECORDING ||
+            story_sub == KSTORY_PAGE_ORGANIZING ||
             story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) {
-            slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
+            /* D3 v7（261019 fixer）: RECORDING 帧分叉走 kidpal_keybar_story_rec_slots
+             * （帧 A 收尾/丢弃, 帧 B 打断/留空）; ORGANIZING 走 story_slots 整理行
+             * （双槽留空, 非交互）。其余子态既有 story_slots 表零偏移。 */
+            if (story_sub == KSTORY_PAGE_RECORDING) {
+                slots_ok = (kidpal_keybar_story_rec_slots(story_rec_sub,
+                                                          &left, &right) == 0);
+            } else {
+                slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
+            }
         } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
              * 未起播「播报」/ 起播后「重播」, 右槽 BOOT「结束」。值域仍走 keybar 纯逻辑
@@ -1408,6 +1425,28 @@ static void kidpal_keybar_sync_locked(void)
             }
             if (right != NULL) {
                 lv_label_set_text(g_kidpal_keybar_right_label, right);
+            }
+            /* D3 v7（261019 fixer）: 留空槽 = 键帽盒一并隐藏（v7 p3-recording-guide
+             * 右槽「不画键帽盒, 免诱导误按」/ state-organizing 双槽留空; 非留空恢复
+             * 显形）。键帽盒 = 标签的父容器（SetupUI 装配 keycap_left/right, 标签
+             * 已重挂其内）。 */
+            {
+                lv_obj_t *lbox = (g_kidpal_keybar_left_label != NULL)
+                                     ? lv_obj_get_parent(g_kidpal_keybar_left_label)
+                                     : NULL;
+                lv_obj_t *rbox = (g_kidpal_keybar_right_label != NULL)
+                                     ? lv_obj_get_parent(g_kidpal_keybar_right_label)
+                                     : NULL;
+                bool lshow = (left != NULL && left[0] != '\0');
+                bool rshow = (right != NULL && right[0] != '\0');
+                if (lbox != NULL) {
+                    if (lshow) lv_obj_remove_flag(lbox, LV_OBJ_FLAG_HIDDEN);
+                    else lv_obj_add_flag(lbox, LV_OBJ_FLAG_HIDDEN);
+                }
+                if (rbox != NULL) {
+                    if (rshow) lv_obj_remove_flag(rbox, LV_OBJ_FLAG_HIDDEN);
+                    else lv_obj_add_flag(rbox, LV_OBJ_FLAG_HIDDEN);
+                }
             }
         }
         /* K3R D2 真机轮诊断（纯日志）: 键帽三槽裁决输入（overlay 归一位 / 页 / P3 子态）

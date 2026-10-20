@@ -92,6 +92,13 @@ int kidpal_keybar_char_slots(int started, const char **out_left,
 int kidpal_keybar_story_slots(int substate, const char **out_left,
                               const char **out_right);
 
+/* D3 v7 帧分叉键帽（261019-p3-record-dialogue-guide fixer, 2026-10-20; additive）:
+ * RECORDING 子态帧 A/帧 B 键帽集单源。guide_sub == 0 -> 左「收尾」右「丢弃」;
+ * guide_sub != 0 -> 左「打断」右留空（空串 = 消费方置空槽）。NULL out -> -1。
+ * 消费点 = lcd_display 键帽三槽随态（记录语境录音态）。 */
+int kidpal_keybar_story_rec_slots(int guide_sub, const char **out_left,
+                                  const char **out_right);
+
 #ifdef __cplusplus
 }
 #endif
