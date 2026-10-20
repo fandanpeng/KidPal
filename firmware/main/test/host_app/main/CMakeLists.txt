@@ -261,6 +261,24 @@ set(HOST_ACCEPTANCE_SRCS
     "../../../diagnostics/log_cmd.c"
     "../../log_cmd.acceptance.c"
 
+    # 包 261019-p3-record-dialogue-guide（P3 对话式引导记录：VRT_CTRL_START_ORGANIZING
+    # additive / 整理过渡态 / 引导播报中子态键位分叉 / kvr 场景守卫 / 控制消费闭环）
+    # 被测实现 + 冻结验收。display/view_router.c = [G1] kidpal_display_control_action
+    # 五值决策表强符号源（覆盖冻结件 weak 哨兵；head 注「view_router.c 已在册」与本
+    # 清单现况不符——本包首次登记, builder 交付注记）; display/story_page.c 已在册
+    # （尾部追加 rec_substate / ORGANIZING case 覆盖 [G2]-[G5] weak 哨兵）; 结构齿扫
+    # 真实工作树（application.cc / mcp_server.cc 不进 host 构建）。相对 host_app/main
+    # 分别为 ../../../display/ 与 ../../。**必须置于 host smoke acceptance 之前**
+    # （smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫）。
+    "../../../display/view_router.c"
+    "../../record_dialogue_guide.acceptance.c"
+
+    # 261019-p3-record-dialogue-guide fixer 轮二（2026-10-20）guard 单测: keybar v7
+    # 键帽集行为齿（keybar.c 强符号真跑）+ D2 根修缝/守卫与 D3 资产落点源锚结构齿
+    # （story_page.c / mcp_server.cc / kidpal_render_node.cc 设备 TU 不进 host 构建,
+    # 源锚代理; 渲染节点缝 host 半 = host_infra_seam.c 同符号实现）。置于 smoke 之前。
+    "../../record_dialogue_v7_fix.test.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

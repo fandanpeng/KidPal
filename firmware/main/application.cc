@@ -32,6 +32,12 @@ void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.c
  * 判据 + 复位录音页态并停录音演出定时器。 */
 int  KidpalStoryViewPageState();
 void KidpalStorySessionEndApply(int list_page);
+/* [G3] 帧 B 子态沿桥（261020 D4-5, fixer; 定义住 mcp_server.cc, 同款免扩公共头纪律）:
+ * 引导播报中子态从设备侧既有 tts 帧派生（记录语境内引擎抑制 LLM/TTS, kidpal_speak
+ * 引导注入 = 唯一 TTS 源, 零 wire 新增）——tts start 沿置 rec_substate=1、tts stop 沿
+ * 复位 0（幂等, 仅 RECORDING 页态有语义）。RDG-F2 键位分叉 / RDG-F3 整理态吞键零触碰
+ * （桥只写子态标量, 分叉判定仍归 story_page_input 冻结决策表）。 */
+void KidpalStoryGuideSpeechEdge(int speaking);
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
@@ -696,9 +702,18 @@ void Application::InitializeProtocol() {
                  * sentence_start 分支 (实际起播时刻), 此处只复位打断标志。 */
                 Schedule([this]() {
                     aborted_ = false;
+                    /* [G3] 帧 B 子态置位沿 (261020 D4-5): 记录语境内 tts start =
+                     * 引导播报开始（引擎抑制下 kidpal_speak 是唯一 TTS 源; 桥内
+                     * RECORDING 页态门 + 幂等）——键帽路由据此分叉帧 B（打断）。 */
+                    KidpalStoryGuideSpeechEdge(1);
                 });
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
+                    /* [G3] 帧 B 子态复位沿 (261020 D4-5): 引导播报结束/被打断 ——
+                     * 无条件先于 Speaking 出口守卫（tts stop 到达时设备可能已因
+                     * 打断离场 Speaking, 复位沿不得被出口判据吞掉; 桥内幂等 +
+                     * RECORDING 页态门）。 */
+                    KidpalStoryGuideSpeechEdge(0);
                     if (GetDeviceState() == kDeviceStateSpeaking) {
                         /* 261014 VR-A2 tts stop 出口三守卫（序即优先级）:
                          * ① 手动模式既有语义（出口回 Idle, 优先级最高）;
@@ -773,11 +788,19 @@ void Application::InitializeProtocol() {
                     if (kidpal_story_session_ctx_active()) {
                         (void)kidpal_story_echo_push(message.c_str());
                     }
-                    kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
-                                        ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
-                    int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
-                    if (scene == KVST_SCENE_THINK) {
-                        display->SetStatus(Lang::Strings::THINKING);
+                    /* [G6] kvr 场景守卫（261019-p3-record-dialogue-guide）: 记录语境
+                     * **先分流**（引用先于 kidpal_voice_round_scene——ctx 选取必须在
+                     * 映射前联挂记录语境标志）: 记录语境切逐句 stt 形态后 ctx 选取不得
+                     * 按 listening_mode_ 误映 KVST_SCENE_THINK -> SetStatus(THINKING)
+                     * 跳页（AC1「切句只回显不进思考」; 回显已在上支承载）。非记录语境
+                     * 既有场景映射零偏移。 */
+                    if (!kidpal_story_session_ctx_active()) {
+                        kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
+                                            ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
+                        int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
+                        if (scene == KVST_SCENE_THINK) {
+                            display->SetStatus(Lang::Strings::THINKING);
+                        }
                     }
                 });
             }
@@ -971,10 +994,27 @@ void Application::HandleStartListeningEvent() {
             }
         }
 
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3 聆听形态切换]（261019-p3-record-dialogue-guide）: 记录语境从 ManualStop
+         * 切到产逐句 stt 形态——切句只回显 + 云侧累积 + 卡壳计时引导（manual 整段转写
+         * 形态无逐句 stt, 引导/回显/累积全断）。形态取舍（包内裁）: AEC 开 ->
+         * Realtime（QA KEY 路径 :926 同族先例）; AEC 关 -> AutoStop（realtime 需 AEC
+         * 挡引导播报回灌; AFE/AEC 依赖归真机轮 GAP-4 承载）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     } else if (state == kDeviceStateSpeaking) {
         AbortSpeaking(kAbortReasonNone);
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3] 打断衔接（引导播报中 KEY/长按打断 -> StartListening 沿）: 记录语境
+         * 保持逐句 stt 形态继续聆听（不回落 manual——回落即离逐句 stt, 回显/累积断）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     }
 }
 

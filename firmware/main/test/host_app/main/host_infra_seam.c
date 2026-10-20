@@ -375,3 +375,37 @@ int kidpal_p1_font_glyph_for_font(const lv_font_t *font, uint32_t codepoint,
     }
     return p1_glyph_core(font, codepoint, out);
 }
+/* ---------------------------------------------------------------------------
+ * D2 真机轮 R1 根修缝 host 侧实现（2026-10-20, 261019-p3-record-dialogue-guide
+ * fixer; additive 尾部追加）。设备强定义住 display/kidpal_render_node.cc（设备专属
+ * TU, 不进 host 构建）; story_page.c（宿主/设备两侧同源可编）经 kidpal_render_node.h
+ * 声明消费这三枚缝, host 侧在此提供同符号实现:
+ *   - notify_screen_cleaned: 设备侧置 NULL 渲染节点静态首页图像控件指针; host 无
+ *     渲染节点单屏模型, 空实现（缝的 host 语义 = 可链接 + 可单测判据载体）。
+ *   - story_page_front: 设备侧置 s_local_page = KP_PAGE_STORY; host 空实现。
+ *   - story_page_is_local: host 侧恒答 1（host 无渲染节点本地页态, StoryRecTimerCb
+ *     不进 host 构建, 本符号仅可链接性兜底）。
+ * 行为判据由 fixer 单测（record_dialogue_v7_fix.test.c）以源锚结构齿承载。
+ * ------------------------------------------------------------------------ */
+#include "kidpal_render_node.h"
+
+void kidpal_render_node_notify_screen_cleaned(void)
+{
+    /* host: 无渲染节点屏对象模型, no-op（见上注）。 */
+}
+
+void kidpal_render_node_story_page_front(void)
+{
+    /* host: no-op（见上注）。 */
+}
+
+int kidpal_render_node_story_page_is_local(void)
+{
+    return 1;
+}
+
+int kidpal_render_node_story_rec_substate(void)
+{
+    /* host: 无缓存视图运行态; 键帽分叉行为由 keybar 纯逻辑单测直接覆盖。 */
+    return 0;
+}

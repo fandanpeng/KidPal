@@ -38,8 +38,13 @@
 #define KIDPAL_LOGCMD_READ_BLOCK     64
 /* cat 流式输出块（plan §5：1KB 块 fwrite + fflush）。 */
 #define KIDPAL_LOGCMD_CAT_CHUNK      1024
-/* tail 读入上限（单文件分片上限 512KB；读任务按此上限取当前文件全文）。 */
-#define KIDPAL_LOGCMD_TAIL_MAX_BYTES (512u * 1024u)
+/* tail 扫描窗上限（261020 D4-4 重定义）：不再假设「文件封顶 512KB 整文件读入」
+ * ——真机 KPLOG001 达 740KB 时旧实现对超限文件直接零输出帧（诊断主通道失效）。
+ * 新语义 = 只取文件**尾部** min(size, 窗) 字节进缓冲做尾部窗口判定；窗值 = tail
+ * 行数上限的覆盖上界（LUR 行钳制 1000 行 × 单记录上限 512B ≈ 512KB）。窗内切行
+ * 判定仍归 kidpal_logcmd_tail_window 单源（LUR-A6 消费锚不变）；分配失败按半
+ * 递减降级（内部堆 / PSRAM 紧张时保出帧，窗变小只影响能回看的行数）。 */
+#define KIDPAL_LOGCMD_TAIL_SCAN_BYTES (512u * 1024u)
 
 /* 日志目录：板级挂载根 SD_MMC_MOUNT_ROOT("/sdcard") + "/logs"（与 sd_log_fs.cc 的
  * KidpalSdLogAttach 同形态）。板级 config.h 的挂载根不在本组件 include 面，此处以设备
@@ -154,15 +159,19 @@ static int EmitCat(unsigned idx)
 
 /* tail <n>：当前写入文件末 n 行（尾部窗口单源 = kidpal_logcmd_tail_window）。
  * 返回 0 / NO_CARD / NO_FILE。
- * minimal: 整文件读入一块堆缓冲（≤512KB 分片上限）再取尾部窗口 —— 实现最简；升级路径
- * = 分块流式 + 回溯定位（免大块分配），当前按 plan「诊断命令低频、文件封顶 512KB」判为
- * 不必要。malloc 失败 / 超上限退化为 NO_FILE / 零输出（帧仍完整）。 */
+ * 261020 D4-4: 尾部扫描窗形态 —— 只读文件末 min(size, TAIL_SCAN_BYTES) 字节进
+ * 堆缓冲（真机 KPLOG001 740KB 实证「文件封顶 512KB」假设破洞：旧实现超限直接
+ * 零输出帧）。分配失败按半递减降级（≥1KB 步进，全败退 NO_FILE，帧仍完整）；
+ * 窗口小于文件时首字节可能落在行中间（自造截断缝）——窗口偏移先推到下一个
+ * '\n' 之后再输出，窗口内的末 n 行判定仍归 kidpal_logcmd_tail_window 单源。 */
 static int EmitTail(unsigned n)
 {
     char path[96];
     FILE *f;
     char *buf;
     long size;
+    unsigned long want;
+    unsigned len;
     int off;
     int cur = KidpalSdLogCurrentIndex();
 
@@ -173,33 +182,52 @@ static int EmitTail(unsigned n)
         return KIDPAL_LOGCMD_ERR_NO_FILE;
     }
     size = FileSizeOf(path);
-    if (size <= 0 || (unsigned long)size > (unsigned long)KIDPAL_LOGCMD_TAIL_MAX_BYTES) {
-        if (size < 0) {
-            return KIDPAL_LOGCMD_ERR_NO_FILE;
-        }
-        return 0;  /* 空文件 / 超上限：零输出（帧仍完整） */
+    if (size < 0) {
+        return KIDPAL_LOGCMD_ERR_NO_FILE;
+    }
+    if (size == 0) {
+        return 0;  /* 空文件：零输出（帧仍完整） */
     }
     f = fopen(path, "rb");
     if (f == nullptr) {
         return KIDPAL_LOGCMD_ERR_NO_FILE;
     }
-    buf = (char *)malloc((size_t)size);
+    want = ((unsigned long)size > (unsigned long)KIDPAL_LOGCMD_TAIL_SCAN_BYTES)
+               ? (unsigned long)KIDPAL_LOGCMD_TAIL_SCAN_BYTES
+               : (unsigned long)size;
+    for (;;) {
+        buf = (char *)malloc((size_t)want);
+        if (buf != nullptr || want <= 1024ul) {
+            break;
+        }
+        want /= 2ul;  /* 分配失败半递减降级（诊断命令低频，不挤占语音/LVGL 堆） */
+    }
     if (buf == nullptr) {
         fclose(f);
         return KIDPAL_LOGCMD_ERR_NO_FILE;
     }
-    if (fread(buf, 1, (size_t)size, f) != (size_t)size) {
+    if (fseek(f, -(long)want, SEEK_END) != 0 ||
+        fread(buf, 1, (size_t)want, f) != (size_t)want) {
         free(buf);
         fclose(f);
         return KIDPAL_LOGCMD_ERR_NO_FILE;
     }
     fclose(f);
-    off = kidpal_logcmd_tail_window(buf, (unsigned)size, n);
+    len = (unsigned)want;
+    off = kidpal_logcmd_tail_window(buf, len, n);
     if (off < 0) {
         off = 0;
     }
-    if ((unsigned)off < (unsigned)size) {
-        fwrite(buf + off, 1, (size_t)((unsigned)size - (unsigned)off), stdout);
+    if ((unsigned long)want < (unsigned long)size && off < (int)len) {
+        /* 自造截断缝：窗口首行可能是被切断的半行 —— 推到下一个 '\n' 之后。 */
+        const char *nl = (const char *)memchr(buf + off, '\n',
+                                              (size_t)(len - (unsigned)off));
+        if (nl != nullptr) {
+            off = (int)(nl - buf) + 1;
+        }
+    }
+    if (off < (int)len) {
+        fwrite(buf + off, 1, (size_t)((unsigned)len - (unsigned)off), stdout);
     }
     free(buf);
     fflush(stdout);

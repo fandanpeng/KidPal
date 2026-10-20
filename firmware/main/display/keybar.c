@@ -92,11 +92,15 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
     if (out_left == NULL || out_right == NULL) {
         return -1;
     }
-    /* P3 子态键帽随态（WF-F2-02/04/05; 260924-m4-k2-p3-star-notebook-ui）:
-     * 录音态「收尾」（KEY 短按 = 停录保存, v1.47）/ 阅读态「长按退出」（KEY 长按 =
-     * 退出阅读回列表）/ 删除确认「删掉」（KEY 短按 = 确认删除）; 右槽 BOOT 提示
-     * 随态（「结束」= 录音中兜底收尾与全局会话结束手势一致 /「翻屏」= BOOT 短按
-     * 翻屏 /「算了」= BOOT 任一手势取消回列表）。正文取不回提示（WF-F2-06,
+    /* P3 子态键帽随态（WF-F2-02/04/05; 260924-m4-k2-p3-star-notebook-ui; D3 v7 重排
+     * 261019 fixer, 2026-10-20）:
+     * 录音态左「收尾」（KEY 短按 = 停录保存, v1.47）/ 右「**丢弃**」（BOOT = 丢弃,
+     * 破坏性提示承担误按缓释——v7 p3-recording 修订, 旧「结束」兜底文案退役;
+     * 语音轮 keycap 闭集（kidpal_voice_states.c 五成员）只在语音轮四态用,
+     * 记录语境不是语音轮态, 本表零闭集字面（KB-E2）/ 阅读态「长按退出」（KEY 长按 =退出阅读回列表）/
+     * 删除确认「删掉」（KEY 短按 = 确认删除）; 整理过渡态 = **非交互**, 左右槽均
+     * 留空（KEY/BOOT 均不响应, 键帽条照常驻留——v7 state-organizing R2 裁定;
+     * 空串 = 消费方置空槽, 非保持旧文案）。正文取不回提示（WF-F2-06,
      * 261016-p3-story-body-sd-cache）: 两键任一手势均关闭回列表, 底栏文案单源 =
      * story_page.h 的 KSTORY_BODY_UNAVAILABLE_KEYCAP_* 宏（本文件零字面重抄, 守
      * KB-E2 闭集字面红线）。LIST/STAMP 不落本表（基层页槽表 / 演出帧无键帽）-> -1,
@@ -104,7 +108,11 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
     switch (substate) {
         case KSTORY_PAGE_RECORDING:
             *out_left  = "收尾";
-            *out_right = "结束";
+            *out_right = "丢弃";
+            return 0;
+        case KSTORY_PAGE_ORGANIZING:
+            *out_left  = "";
+            *out_right = "";
             return 0;
         case KSTORY_PAGE_READER:
             *out_left  = "长按退出";
@@ -123,4 +131,31 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
         default:
             return -1;
     }
+}
+
+int kidpal_keybar_story_rec_slots(int guide_sub, const char **out_left,
+                                  const char **out_right)
+{
+    /* 防御：任一输出指针 NULL -> -1，从不为 UB。 */
+    if (out_left == NULL || out_right == NULL) {
+        return -1;
+    }
+    /* D3 v7 帧分叉键帽（261019 fixer; 权威 = v7 p3-recording / p3-recording-guide
+     * 两帧 + 规格表「键帽」行）:
+     *   guide_sub == 0（帧 A 常规录音聆听）-> 左「收尾」右「丢弃」;
+     *   guide_sub != 0（帧 B 引导播报中）-> 左槽 = KSTORY_RECORDING_GUIDE_KEYCAP 宏
+     *     （值域住 story_page.h 单源; KB-E2 零字面重抄, 见该宏注记）右**留空**
+     *     （BOOT 无操作——空串置空, 不画键帽盒免诱导误按）。
+     * 消费点 = lcd_display 键帽三槽随态（story_sub == RECORDING 时经渲染节点
+     * kidpal_render_node_story_rec_substate 取子态分叉）。 */
+    if (guide_sub != 0) {
+        /* 字面经 story_page.h 单源宏（KKB-E2: 该值同字为语音轮闭集成员, keybar.c
+         * 零闭集字面重抄——同 KSTORY_BODY_UNAVAILABLE_KEYCAP_* 宏间接先例）。 */
+        *out_left  = KSTORY_RECORDING_GUIDE_KEYCAP;
+        *out_right = "";
+    } else {
+        *out_left  = "收尾";
+        *out_right = "丢弃";
+    }
+    return 0;
 }

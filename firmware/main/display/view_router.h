@@ -37,6 +37,10 @@ enum {
     VRT_CTRL_END_SESSION = 0,       /* end_session     结束会话回首页 */
     VRT_CTRL_STOP_SPEAKING = 1,     /* stop_speaking   云端确认停播补充 */
     VRT_CTRL_START_RECORDING = 2,   /* start_recording 包 8 录音接合 */
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结数值 = 3;
+     * q2 = ⓒ 裁定——三式收尾统一下发 start_organizing，设备切整理过渡演出；
+     * seam 权威 = firmware/main/test/record_dialogue_guide.acceptance.c 文件头 [G1]）。 */
+    VRT_CTRL_START_ORGANIZING = 3,  /* start_organizing 整理过渡演出（P3 页 case 3） */
     VRT_CTRL_UNKNOWN = (-1)         /* 未知/NULL 动作 — 降级 */
 };
 
