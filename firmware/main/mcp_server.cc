@@ -106,8 +106,13 @@ void ScheduleStoryRender() {
          * 推送路径（story_list/story_text 路由）维持夹钳后 SERVER_PAGE 前台现状。 */
         kidpal_render_node_begin_page();
         kidpal_story_page_render(&snap->v, &snap->l, &snap->t);
-        /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。 */
-        kidpal_render_node_cache_story(&snap->v, &snap->l, &snap->t);
+        /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。
+         * 261019 fixer R2-F4 根修: 同步 g_story_* 执行期当前值而非入队时快照——快照
+         * 可能早于其后落账的云端 story_list（时序倒挂：盖章帧先入队、新列表后到），
+         * 执行期回写旧快照会把基层缓存打回旧列表（真机 R2 归档后 items=3 渲染过、
+         * 页重进回退 vcount=2 的直接来源）。基层缓存语义 = 「下次重渲的数据源」，
+         * 恒取云端权威最新值。g_story_* 与本 lambda 同线程消费（StoryRecTimerCb 先例）。 */
+        kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
         kidpal_render_node_end_page();
         kidpal_render_node_story_local_front();
     });
@@ -1493,17 +1498,22 @@ void McpServer::AddCommonTools() {
                         int story_voice_front =
                             (kidpal_render_node_front_layer() == KIDPAL_LAYER_VOICE) ? 1 : 0;
                         bool story_restore = mcp_json_get_bool(data, "restore");
+                        /* 261019 fixer R2-F4: 基层缓存同步上提为路由区唯一写点
+                         * （K7-A5 纪律 / SLP-SLA4 计数钉恒 1）——gated 只装缓存与前推
+                         * 渲染分支共用同一条同步，两路都取云端权威最新列表。缺此步前推
+                         * 分支只落 SERVER_PAGE 覆盖层, 基层缓存停留陈旧列表——覆盖层
+                         * 消退/页重进即按陈旧缓存重渲（R2 新故事 3→2 回退的直接来源）。 */
+                        kidpal_render_node_cache_story(&g_story_view, &g_story_list,
+                                                       &g_story_text);
                         if (story_restore ||
                             kidpal_story_list_gate(story_voice_front,
                                                    g_story_view.page) != 0) {
-                            /* restore 或记录语境前台 gated: 只装缓存（唯一缓存同步缝,
+                            /* restore 或记录语境前台 gated: 只装缓存（上方唯一缓存同步缝,
                              * 不给恢复性载荷另起第二条缓存路径——K7-A5「唯一缓存写点」
                              * 纪律）、零前台夹钳（不接管前台、不推 SERVER_PAGE——260928
                              * 摘除理由的板端消解路径）。restore 且 P3 在屏（LIST 冷浏览）
                              * -> 经重绘本页单入口仅重绘（自持锁、先缓存后调——.h :277
                              * 在世契约）。 */
-                            kidpal_render_node_cache_story(&g_story_view, &g_story_list,
-                                                           &g_story_text);
                             if (story_restore && kidpal_render_node_story_on_screen()) {
                                 kidpal_render_node_refresh_story();
                             }
@@ -1517,6 +1527,9 @@ void McpServer::AddCommonTools() {
                                 kidpal_render_node_begin_page();
                                 kidpal_story_page_render(&view_snapshot, list_snapshot.get(),
                                                          &g_story_text);
+                                /* 261019 fixer R2-F4: 基层缓存已在 gating 之前由路由区
+                                 * 唯一写点同步（上方）, 本前推分支只负责覆盖层渲染——
+                                 * 不再另起第二处缓存调用（K7-A5 / SLP-SLA4 计数钉恒 1）。 */
                                 kidpal_render_node_end_page();
                             });
                         }

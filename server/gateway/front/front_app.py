@@ -795,15 +795,20 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
             # 推送（三时点②）+ 统一收尾下发（start_organizing + 出语境信号, 261019）。
             feed_rec = _story_feed_from_stt(session_id, obj)
             if feed_rec is not None:
+                # 261019 fixer R2-F1: 演出先行序统一（downlink -> story_text -> story_list，
+                # 与 auto-finish 同构）。设备 ORGANIZING 过渡态离态沿 = story_text 到达
+                # （story_page.c [G4]），start_organizing 晚于 story_text 下发 = 设备无离态沿。
+                # 冻结断言序不敏感（SAO-A1/A2、RDG-A4/A6 只断言帧在世）。
+                await _issue_finish_downlink(session_id, upstream, websocket)
                 await _push_display_payload(websocket, gw_story.story_text(feed_rec))
                 await _push_story_list(websocket)
-                await _issue_finish_downlink(session_id, upstream, websocket)
             # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦」-> stop 整段归档
             # + 下发归档正文（不丢弃）；问答会话零影响（_story_finish_on_phrase 仅累积态消费）。
             finish_rec = _story_finish_on_phrase(session_id, obj)
             if finish_rec is not None:
-                await _push_display_payload(websocket, gw_story.story_text(finish_rec))
+                # 261019 fixer R2-F1: 同上演出先行序统一。
                 await _issue_finish_downlink(session_id, upstream, websocket)
+                await _push_display_payload(websocket, gw_story.story_text(finish_rec))
             if obj.get("type") == SIDE_CHANNEL_TYPE:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
@@ -908,6 +913,11 @@ async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
                 # 豁免）；归档成功后追加 story_list 推送（三时点②）。单帧单发、不拆帧。
                 rec = _story_stop_on_listen_stop(session_id, up_obj)
                 if rec is not None:
+                    # 261019 fixer R2-F1: KEY 收尾（listen-stop 立即归档分支）补三式收尾
+                    # 统一下发（GAP-4 additive 真机缺口；语音收尾同款单源）。演出先行序
+                    # （downlink -> story_text -> story_list）与 auto-finish 同构：设备
+                    # ORGANIZING 离态沿 = story_text 到达，顺序颠倒卡死整理过渡页。
+                    await _issue_finish_downlink(session_id, upstream, websocket)
                     await _push_display_payload(websocket, gw_story.story_text(rec))
                     await _push_story_list(websocket)
                 acked, rid = on_device_receipt(text)

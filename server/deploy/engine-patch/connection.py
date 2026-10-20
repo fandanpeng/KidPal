@@ -1247,7 +1247,10 @@ class ConnectionHandler:
         # 保存当前任务的sentence_id到局部变量，避免被新任务覆盖
         current_sentence_id = None
 
-        if query is not None:
+        # 261019 fixer R2-F2: 记录语境守卫将抑制的本条不再预打「收到用户消息」——
+        # 真机 R2 该行与守卫行并存被误读为 LLM 真派发（13 叙述每句紧跟「抑制 LLM 派发」
+        # 即 return，零真派发）。抑制分支自带 query 全文日志，可观测性不减。
+        if query is not None and not self._kidpal_record_context:
             self.logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
 
         # 为最顶层时新建会话ID和发送FIRST请求
