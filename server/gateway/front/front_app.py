@@ -189,23 +189,56 @@ async def _speak_to_engine_legs(text: str) -> int:
     """ADR-003 kidpal_speak 通道播报注入（reminders.build_speech_injection 先例复用；
     S-F1.4-AC6：注入不以提醒帧形态下发、不产生 alert 载荷——引导/整理播报与提醒
     弹窗链路分离）。空文本零注入。"""
+    return await _speak_to_legs(text, _alert_legs)
+
+
+async def _speak_to_legs(text: str, legs) -> int:
+    """kidpal_speak 注入到指定腿集（_speak_to_engine_legs / 收尾安抚句共用单源）。
+
+    引导回合走 _alert_legs（全局登记腿）；收尾安抚句走调用方腿快照（泵路径 = 本连接
+    双腿、sweep 路径 = _alert_legs），两条通道同型、不产生提醒帧。空文本零注入。"""
     if not isinstance(text, str) or not text.strip():
         return 0
     injection = gw_reminders.build_speech_injection({"speech": text.strip()})
     if injection is None:
         return 0
     sent = 0
-    for _device_ws, engine_ws in list(_alert_legs):
+    for _device_ws, engine_ws in list(legs):
         sent += await _send_engine_leg_frames(engine_ws, [injection])
     return sent
 
 
-def _push_start_organizing_frames() -> "list[tuple]":
-    """三式收尾统一 start_organizing 下发 + 出语境信号的当前在线腿快照。
+def _organize_and_archive(raw, corr_id=None) -> "dict | None":
+    """忠实整理回合 + 归档单源（三式收尾共用；S-F2.2-AC4 v1.65 / R1-N4）。
 
-    返回 [(device_ws, engine_ws)] 供调用方逐腿投递（重复幂等由会话状态沿保证——
-    同一收尾沿只走一次，重复 sweep 因会话已回 chat 不再命中）。"""
-    return list(_alert_legs)
+    孩子原话素材 -> 去掉**尾随**收尾词（story.py 既有 strip_trailing_finish_words，
+    防收尾词进整理输入）-> 整理制品 + 一次性 LLM 回合 -> 标题 = 输出首行 strip 后
+    ≤12 字、正文 = 其余行 -> archive_story（既有零改）。
+
+    任一失败（空素材 / LLM 不可达或空返回 / 空正文）返回 None = **当轮素材不归档**
+    （R1-N4；调用方补固定安抚句），不退回原始转写、不写空故事。
+    `_openclaw_chat_once` 经模块全局查找调用（冻结桩 monkeypatch front._openclaw_chat_once）。"""
+    material = gw_story.strip_trailing_finish_words(raw or "").strip()
+    if not material:
+        return None
+    prompt = _load_prompt_artifact(_ORGANIZE_PROMPT_FILE)
+    reply = _openclaw_chat_once(
+        prompt, f"孩子讲的内容：\n{material}\n\n请按指令把这段话忠实整理成一篇。")
+    if not reply:
+        log.info("story_organize_round corr_id=%s ok=false reason=llm_unavailable",
+                 corr_id)
+        return None
+    lines = [ln for ln in reply.splitlines() if ln.strip()]
+    if not lines:
+        return None
+    title = lines[0].strip()[:12]
+    body = "\n".join(lines[1:]).strip() or reply.strip()
+    try:
+        record = gw_story.archive_story(STORIES_DIR, body, title=title)
+    except ValueError:
+        return None  # 空正文不归档（不写空故事）
+    log.info("story_organize_round corr_id=%s ok=true id=%s", corr_id, record["id"])
+    return record
 
 
 def _get_story_acc():
@@ -236,64 +269,57 @@ def _story_route_display_payload(session_id, payload) -> bool:
     return False
 
 
-def _story_feed_from_stt(session_id, obj) -> "dict | None":
+def _story_feed_from_stt(session_id, obj) -> bool:
     """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7 / 261001-m4-k3-story-archive-order)：
     引擎回带的 ASR 上行 stt 帧 (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，
     供停录时整段归档。仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。
 
     真机序挂起态接通（261001）：routing == "pending_stop"（listen/state=stop 先到、accum 空）
-    时，本条 stt（~1.7s 后到）即转写到达 -> feed + 归档（正文剔尾随收尾词）-> 返回 record，
-    供上层下发 story_text + story_list（三时点②）；routing == "accumulate" -> 只 feed、
-    返回 None；聊态 -> 无行为返回 None。"""
+    时，本条 stt（~1.7s 后到）即转写到达 -> feed 并返回 True，上层走忠实整理收尾单源
+    `_story_finish_session`（S-F2.2-AC4 v1.65：归档正文 == 整理输出，不再原始转写直归档）；
+    routing == "accumulate" -> 只 feed、返回 False；聊态 -> 无行为返回 False。"""
     if not session_id or not isinstance(obj, dict):
-        return None
+        return False
     if obj.get("type") != "stt":
-        return None
+        return False
     text = obj.get("text")
     if not isinstance(text, str) or not text.strip():
-        return None
+        return False
     acc = _get_story_acc()
     routing = acc.routing(session_id)
     if routing == "pending_stop":
         acc.feed(session_id, text)
-        rec = acc.stop(session_id, strip_finish=True)
-        if rec is not None:
-            log.info("story_pending_archive corr_id=%s id=%s", session_id, rec.get("id"))
-        return rec
+        return True
     if routing == "accumulate":
         acc.feed(session_id, text)
-    return None
+    return False
 
 
-def _story_stop_on_listen_stop(session_id, obj) -> "dict | None":
+def _story_stop_on_listen_stop(session_id, obj) -> bool:
     """云侧停录归档接线 (包 9b HWV-A10/A12 / 261001-m4-k3-story-archive-order)：
     设备「聆听停止」上行帧 (listen/state=stop) 命中累积态时按下法处置：
 
-    - 累积**非空** -> 立即 StoryAccumulator.stop 整段归档 (兼容 B2/B3 auto 模式：录音期间
-      stt 已喂入 accum)，返回记录供上层以 story_text(record) 组块下发正文；
+    - 累积**非空** -> 返回 True，上层走忠实整理收尾单源 `_story_finish_session`
+      (兼容 B2/B3 auto 模式：录音期间 stt 已喂入 accum；2026-10-20 三式收尾统一后
+      **不再**原始转写直归档——S-F2.2-AC4 v1.65)；
     - 累积**空** -> 真机序（manual 模式 ASR 由 listen stop 触发，转写 ~1.7s 后才经下行到达）
-      -> 挂起 pending-stop（acc.mark_pending，routing="pending_stop" != "chat"），返回 None；
-      下一条 stt 到达时由 _story_feed_from_stt 归档（SAO-A1/A2）。
-    非累积态 / 已挂起 / 累积为空且已 pending -> None（不编造归档、不写空故事）。"""
+      -> 挂起 pending-stop（acc.mark_pending，routing="pending_stop" != "chat"），返回 False；
+      下一条 stt 到达时由 _story_feed_from_stt 接通收尾（SAO-A1/A2）。
+    非累积态 / 已挂起 / 累积为空且已 pending -> False（不编造归档、不写空故事）。"""
     if not session_id or not isinstance(obj, dict):
-        return None
+        return False
     if not (obj.get("type") == "listen" and obj.get("state") == "stop"):
-        return None
+        return False
     acc = _get_story_acc()
     if acc.routing(session_id) != "accumulate":
-        return None
+        return False
     if not acc.has_accum(session_id):
         # 累积空 -> 真机序：转写尚未到达，挂起 pending-stop 等它（旧实现此处立即 stop()
         # 返 None 并把会话打回 chat -> 转写被丢弃 = 本缺陷，SAO-A2 冻结 oracle）。
         acc.mark_pending(session_id)
         log.info("story_stop corr_id=%s archived=false reason=pending_stop", session_id)
-        return None
-    rec = acc.stop(session_id, strip_finish=True)
-    if rec is None:
-        log.warning("story_stop corr_id=%s archived=false reason=empty_after_strip", session_id)
-        return None
-    log.info("story_stop corr_id=%s archived=true id=%s", session_id, rec.get("id"))
-    return rec
+        return False
+    return True
 
 
 async def _push_display_payload(websocket, payload: dict) -> None:
@@ -432,28 +458,24 @@ async def _consume_kidpal_control(session_id, obj, websocket, upstream=None) -> 
     return False
 
 
-def _story_finish_on_phrase(session_id, obj) -> "dict | None":
-    """累积态 stt 命中收尾词 -> StoryAccumulator.stop 归档（S-F2.2 收尾；M4K1-A5）。
+def _story_finish_on_phrase(session_id, obj) -> bool:
+    """累积态 stt 命中收尾词 -> 收尾沿（S-F2.2 收尾；M4K1-A5）。
 
-    仅累积态消费（问答会话零影响）；命中 -> stop 整段归档并返回记录（供上层下发
-    story_text 正文、不丢弃）；未命中 / 非累积态 / 空累积 -> None。"""
+    仅累积态消费（问答会话零影响）；命中 -> 返回 True，上层走忠实整理收尾单源
+    `_story_finish_session`（S-F2.2-AC4 v1.65：三式收尾均走整理回合成篇）；
+    未命中 / 非累积态 -> False。触发句本身不入素材由整理输入装配前剔尾随收尾词承载
+    （逐句 feed 语义不动）。"""
     if not session_id or not isinstance(obj, dict):
-        return None
+        return False
     if obj.get("type") != "stt":
-        return None
+        return False
     text = obj.get("text")
     if not isinstance(text, str) or not text.strip():
-        return None
+        return False
     if not gw_story.is_finish_phrase(text):
-        return None
+        return False
     acc = _get_story_acc()
-    if acc.routing(session_id) != "accumulate":
-        return None
-    rec = acc.stop(session_id, strip_finish=True)
-    if rec is None:
-        return None
-    log.info("story_finish corr_id=%s archived=true id=%s", session_id, rec.get("id"))
-    return rec
+    return acc.routing(session_id) == "accumulate"
 
 
 async def _story_timeout_sweep(now=None) -> int:
@@ -519,60 +541,14 @@ async def _story_guide_round(sid, now_dt) -> None:
 
 
 async def _story_auto_finish(sid, now_dt) -> None:
-    """自动收尾（S-F2.2-AC5）：三式收尾统一下发 + 整理回合 + 归档（既有零改）。
+    """自动收尾（S-F2.2-AC5）：委托三式收尾单源 `_story_finish_session`。
 
-    - start_organizing 恰一帧 + 出语境信号：经 _alert_legs 当前在线腿（重复幂等由
-      会话状态沿承载——收尾后 routing 回 chat/会话释放，重复 sweep 不再命中）；
-    - 整理回合：整理制品忠实指令 + build_organizing_input（只取孩子的话）→
-      archive_story（标题 ≤12 字同回合产出）→ story_text(seq) + story_list 三时点②；
-    - 失败（LLM 不可达/空返回）= 当轮素材不归档 + 固定安抚句 kidpal_speak（R1-N4）；
-    - 任一分支终态 = 会话释放（cancel），自动收尾不挂死。"""
-    acc = _get_story_acc()
-    # ① 统一收尾下发（先于整理回合：收尾演出先行，整理延迟被过渡态盖住）。
-    for device_ws, engine_ws in _push_start_organizing_frames():
-        try:
-            await _push_display_payload(device_ws, dict(START_ORGANIZING_PAYLOAD))
-        except Exception as e:  # noqa: BLE001 — 单腿失败不连坐
-            log.warning("story_start_organizing_push_err corr_id=%s err=%s",
-                        sid, type(e).__name__)
-        try:
-            await _send_engine_leg_frames(
-                engine_ws, [{"type": RECORD_CTX_SIGNAL_TYPE, "active": False}])
-        except Exception as e:  # noqa: BLE001 — 单腿失败不连坐
-            log.warning("story_record_ctx_exit_err corr_id=%s err=%s",
-                        sid, type(e).__name__)
-    # ② 整理回合（素材先取后放：build_organizing_input 只读，会话终态统一释放）。
-    raw = acc.build_organizing_input(sid) or ""
-    prompt = _load_prompt_artifact(_ORGANIZE_PROMPT_FILE)
-    reply = _openclaw_chat_once(
-        prompt, f"孩子讲的内容：\n{raw}\n\n请按指令把这段话忠实整理成一篇。")
-    record = None
-    if reply:
-        lines = [ln for ln in reply.splitlines() if ln.strip()]
-        if lines:
-            title = lines[0].strip()[:12]
-            body = "\n".join(lines[1:]).strip() or reply.strip()
-            try:
-                record = gw_story.archive_story(STORIES_DIR, body, title=title)
-            except ValueError:
-                record = None  # 空正文不归档（不写空故事）
-    if record is not None:
-        log.info("story_auto_finish corr_id=%s archived=true id=%s", sid, record["id"])
-    else:
-        # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
-        await _speak_to_engine_legs(ORGANIZING_FAIL_SOOTHING)
-        log.info("story_auto_finish corr_id=%s archived=false reason=organize_failed",
-                 sid)
-    # ③ 会话释放（终态统一）：归档成功素材已入册、失败按 R1-N4 丢弃，均不挂死。
-    acc.cancel(sid, reason="auto_finish")
-    # ④ 归档成功：三时点②下发（story_text 正文 + story_list 对账）。
-    if record is not None:
-        for device_ws, _engine_ws in list(_alert_legs):
-            try:
-                await _push_display_payload(device_ws, gw_story.story_text(record))
-                await _push_story_list(device_ws)
-            except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
-                log.warning("story_auto_finish_push_err err=%s", type(e).__name__)
+    腿集 = `_alert_legs` 当前在线腿快照（sweep 无泵上下文）：start_organizing 恰一帧
+    + 出语境信号 -> 素材装配 -> 会话释放 -> 整理回合归档 -> story_text + story_list
+    三时点②；失败 = 当轮素材不归档 + 固定安抚句 kidpal_speak（R1-N4）。重复幂等由
+    会话状态沿承载（收尾后会话已释放，重复 sweep 不再命中）。now_dt 保留签名兼容
+    （sweep 时钟注入纪律；本函数不另取墙钟）。"""
+    await _story_finish_session(sid, _get_story_acc(), list(_alert_legs))
 
 
 def _bearer(header: Optional[str]) -> str:
@@ -791,24 +767,15 @@ async def pump_upstream_to_client(upstream, websocket, session_id=None) -> None:
                 continue
             # 云侧累积接线 (包 9b HWV-A10 / 261001)：ASR 上行 stt 帧命中累积态则喂缓冲
             # （旁路消费，转发不变，决策23）；pending-stop 态（listen/state=stop 先到、转写后到
-            # 的真机序 SAO-A1）的转写到达 -> feed + 归档 -> 返回记录，除正文外**追加** story_list
-            # 推送（三时点②）+ 统一收尾下发（start_organizing + 出语境信号, 261019）。
-            feed_rec = _story_feed_from_stt(session_id, obj)
-            if feed_rec is not None:
-                # 261019 fixer R2-F1: 演出先行序统一（downlink -> story_text -> story_list，
-                # 与 auto-finish 同构）。设备 ORGANIZING 过渡态离态沿 = story_text 到达
-                # （story_page.c [G4]），start_organizing 晚于 story_text 下发 = 设备无离态沿。
-                # 冻结断言序不敏感（SAO-A1/A2、RDG-A4/A6 只断言帧在世）。
-                await _issue_finish_downlink(session_id, upstream, websocket)
-                await _push_display_payload(websocket, gw_story.story_text(feed_rec))
-                await _push_story_list(websocket)
-            # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦」-> stop 整段归档
-            # + 下发归档正文（不丢弃）；问答会话零影响（_story_finish_on_phrase 仅累积态消费）。
-            finish_rec = _story_finish_on_phrase(session_id, obj)
-            if finish_rec is not None:
-                # 261019 fixer R2-F1: 同上演出先行序统一。
-                await _issue_finish_downlink(session_id, upstream, websocket)
-                await _push_display_payload(websocket, gw_story.story_text(finish_rec))
+            # 的真机序 SAO-A1）的转写到达 = 收尾沿 -> 忠实整理收尾单源（S-F2.2-AC4 v1.65）。
+            if _story_feed_from_stt(session_id, obj):
+                await _story_finish_session(session_id, _get_story_acc(),
+                                            [(websocket, upstream)])
+            # 累积态收尾词收尾（S-F2.2 收尾）：stt 命中「我说完了/讲完啦/说完了」-> 同一
+            # 整理收尾单源成篇（三式收尾统一）；问答会话零影响（检测仅累积态消费）。
+            if _story_finish_on_phrase(session_id, obj):
+                await _story_finish_session(session_id, _get_story_acc(),
+                                            [(websocket, upstream)])
             if obj.get("type") == SIDE_CHANNEL_TYPE:
                 # engine-internal display-blocks side channel: INTERCEPT (never forwarded
                 # verbatim — the device must not see the engine transport frame), drive the
@@ -867,6 +834,51 @@ async def _issue_finish_downlink(session_id, upstream, websocket) -> None:
                     session_id, type(e).__name__)
 
 
+async def _story_finish_session(session_id, acc, legs) -> "dict | None":
+    """三式收尾单源（261019-p3-record-dialogue-guide fixer R3；S-F2.2-AC4 v1.65）：
+
+    语音收尾词路径（_story_finish_on_phrase）、KEY listen-stop 立即归档半
+    （_story_stop_on_listen_stop）、pending-stop 恢复归档半（_story_feed_from_stt）、
+    自动收尾（_story_auto_finish）全部委托本函数——整理回合范式单源。
+
+    序：
+      ① 素材装配（build_organizing_input 只读）+ 会话释放（cancel 终态统一，任一分支
+         不挂死；先于演出 await 释放，防并发 sweep 重复命中同一收尾沿）；
+      ② 演出先行：逐腿 control/start_organizing 恰一帧 + 出语境 kidpal_record_context
+         active=false（_issue_finish_downlink 同源）；
+      ③ 忠实整理回合 + 归档（_organize_and_archive）；
+      ④ 成功 -> story_text 正文 + story_list 三时点②（逐设备腿）；
+         失败 -> 当轮素材不归档 + 固定安抚句 ORGANIZING_FAIL_SOOTHING 经 kidpal_speak
+         下发（R1-N4；逐引擎腿，与引导回合同型通道、不产生提醒帧）；
+      空素材（只有收尾词/无累积）-> 不归档、不演出、不安抚（无可丢内容），仅释放。
+
+    legs = [(device_ws, engine_ws)] 当前在线腿快照（泵路径 = 本连接双腿；sweep 路径 =
+    _alert_legs）。单腿失败降级留痕、不连坐其它腿。返回归档记录或 None（K6 归因）。"""
+    raw = acc.build_organizing_input(session_id) or ""
+    material = gw_story.strip_trailing_finish_words(raw).strip()
+    acc.cancel(session_id, reason="finish")
+    if not material:
+        log.info("story_finish corr_id=%s archived=false reason=empty_material", session_id)
+        return None
+    for device_ws, engine_ws in list(legs):
+        await _issue_finish_downlink(session_id, engine_ws, device_ws)
+    record = _organize_and_archive(material, session_id)
+    if record is None:
+        # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
+        await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)
+        log.info("story_finish corr_id=%s archived=false reason=organize_failed", session_id)
+        return None
+    for device_ws, _engine_ws in list(legs):
+        try:
+            await _push_display_payload(device_ws, gw_story.story_text(record))
+            await _push_story_list(device_ws)
+        except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
+            log.warning("story_finish_push_err corr_id=%s err=%s",
+                        session_id, type(e).__name__)
+    log.info("story_finish corr_id=%s archived=true id=%s", session_id, record["id"])
+    return record
+
+
 async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
     """Device->engine leg: reads starlette-style dict messages via await websocket.receive()
     ({"type": "websocket.receive", "text"/"bytes": ...}), forwards every frame to
@@ -907,19 +919,13 @@ async def pump_client_to_upstream(websocket, upstream, session_id=None) -> list:
                     continue
                 await upstream.send(text)
                 # 云侧停录归档接线 (包 9b HWV-A10/A12)：旁路消费设备 listen/stop 上行帧
-                # （转发不变，决策23）——命中累积态则 StoryAccumulator.stop 整段归档，并把
-                # 归档正文以 story_text(record) 下发给设备（F4 分工：正文由网关 story_text
-                # 下发，设备盖章/回看在 story_p3 冻结消费）。front 自推不经 relay（Q7 天然
-                # 豁免）；归档成功后追加 story_list 推送（三时点②）。单帧单发、不拆帧。
-                rec = _story_stop_on_listen_stop(session_id, up_obj)
-                if rec is not None:
-                    # 261019 fixer R2-F1: KEY 收尾（listen-stop 立即归档分支）补三式收尾
-                    # 统一下发（GAP-4 additive 真机缺口；语音收尾同款单源）。演出先行序
-                    # （downlink -> story_text -> story_list）与 auto-finish 同构：设备
-                    # ORGANIZING 离态沿 = story_text 到达，顺序颠倒卡死整理过渡页。
-                    await _issue_finish_downlink(session_id, upstream, websocket)
-                    await _push_display_payload(websocket, gw_story.story_text(rec))
-                    await _push_story_list(websocket)
+                # （转发不变，决策23）——命中累积态则走忠实整理收尾单源（KEY 收尾式；
+                # S-F2.2-AC4 v1.65：整理输出成篇，不再原始转写直归档）。front 自推
+                # 不经 relay（Q7 天然豁免）；演出先行序与另两式同构
+                # （downlink -> story_text -> story_list）。单帧单发、不拆帧。
+                if _story_stop_on_listen_stop(session_id, up_obj):
+                    await _story_finish_session(session_id, _get_story_acc(),
+                                                [(websocket, upstream)])
                 acked, rid = on_device_receipt(text)
                 if acked:
                     acked_ids.append(rid)

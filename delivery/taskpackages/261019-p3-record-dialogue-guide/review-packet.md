@@ -144,3 +144,45 @@ decisionCoverage 中 `landsIn: dropped` 条目两条（「卡壳阈值数值」/
 ## Step 9b 影响面记账（advisory）
 
 detect_changes 以 git diff 为准、无法覆盖未 commit 工作树——本包 Step 9b advisory 记账降级为「change-manifest 闸对账」（r5 PASS：17 tracked + prompts 目录全在 manifest 内、manifest 外零触）+ commit 后由 planner final bearing verify 轮在已 commit 树上补跑（test-scope 圈定与 final 轮归 planner，本相位不代跑 verify.mjs）。per-Pod 图索引在册（launch 面）；无 re-index 需求申报。补跑闭环（2026-10-20，已由 planner 触发）：实现与冻结件均已 commit（cedd4d1f / ef3e5066 @ dev/pod-m2），detect_changes 在已 commit 树上正常可用（Pod 索引 C-AI-KidPal-pod-m2：changed_files 41 / seed_symbols 204 / impacted_total 129，零降级），影响面圈定清单已落盘 delivery/taskpackages/261019-p3-record-dialogue-guide/scope-final.md（server 20 件 / firmware 27 件）；原降级申报撤销。
+
+---
+
+## 2026-10-20 接线轮（SAO-A1 族重钉 + 三式收尾 organize 单源）· 增量收口
+
+- 作者：integrator（增量收口相位）· 性质：本包此前多轮 closeout 制品已在位，本轮为增量刷新、不推倒重来。
+
+### 授权链与派发事实
+
+- 授权链：pod-events human-decision `da35cae4-461b-4049-9ecd-46539cbd5bd0`（SAO-A1 族重钉 + 接线授权，消解 fixer r3 升级 `75f58b5d`）→ agent-escalation-resolved `e2640c49-cfdc-4ca6-971d-498a60d2af8d`。本包实地核对：两事件均在 pod-events.jsonl 本轮新增条目中在位。
+- acceptance-author 三次派发：① SAO-A1 族重钉（SAO-A1 双分支成功/失败 + SAO-A4 改忠实整理输出断言 + E4 忠实性 fixture「中途提问句/幻听串不进正文」+ 人工抽检申报 S5 + v1.66「说完了」guard case + M4K1 a2/a3/a5 正路径补桩）——红基线 5 设计态红；② RDG-A6 收尾词 case 补桩（断言零改）；③ RDG-A4 收尾沿 case 补桩（断言零改）。
+- builder 一次派发：`server/gateway/front/front_app.py` 三式收尾单源（新增 `_organize_and_archive` :211 / `_story_finish_session` :837 / `_speak_to_legs` :195；三检测器改收尾沿纯判定；auto-finish 委托单源；成功链 = 整理输出归档 + story_text + story_list + downlink；失败链 R1-N4 = 零归档 + ORGANIZING_FAIL_SOOTHING 安抚句 + 会话释放回 chat）。本包实地核对：三符号行号与派单一致（:195/:211/:837 实测在位）。
+- verifier：scoped r11（8 闸全绿，invocationId 3b7e2f1a-9c4d-4e8b-a1d5-6f2e8b9c0d4e）+ final r12（10 闸全绿、零 notExecuted，invocationId c5d9a3f7-2b6e-4a1c-8d3f-9e4b7a2c5d8f）；scope-file 复用 scope-final.md——本轮改动面（front_app.py + 两冻结件）全部在原圈定 server 面内，scope 复用合法、未缩圈未扩圈。test-scope 清单落盘路径 = `delivery/taskpackages/261019-p3-record-dialogue-guide/scope-final.md`。
+
+### 测试实态与 demo 对账
+
+- 全协议 pytest：325 passed / 0 failed / 33 subtests（r12 unit 闸 stdout 逐字；acceptance 闸 229 passed / 4 deselected，live 类由 marker 机械 deselect）。
+- demo 对账行：本轮 demo 证据 = 全协议 pytest 325 passed 0 failed + SAO 双分支行为级实证（SAO-A1 成功分支归档正文 == 忠实整理输出、失败分支零归档 + 固定安抚句 + 会话不挂死）；真机 demo 归 R3 轮。
+- 结构闸：r12 全 10 闸 PASS（taskpackage-required / change-manifest〔pre-cutoff 存量放行口径不变〕/ firmware-build / contract-lint / acceptance-coverage / mutation-check / docs-sync / security / unit / acceptance），零 notExecuted。final fact `ok:true` 成立，closeout 承重判断以 r12 为准；`current/verdict.json` 投影已同步 final r12（non-bearing compatibility projection）。
+
+### docs-sync 增量
+
+本轮 canonical 文档零改动（同目录 [docs-delta.md](docs-delta.md) 2026-10-20 接线轮增量节）：重钉与接线均在实现/验收面，requirements v1.65/v1.66 与契约 §1.4 已随上游批 landing；docs-sync 闸 r11/r12 双绿复验。
+
+### 本轮未覆盖面申报（逐条一行）
+
+- 真 LLM 整理忠实度（忠实性 E4 fixture 只能机判形状与排除面）：offline 不可证——人工抽检申报 S5 真机轮。
+- 语音收尾词路径新增 story_list 推送：行为增量、真机核（S5 真机轮观测项）。
+- RDG-F6 五项 live-manual structural：无自动断言（既有口径不变，real-device-runbook.md 承载）。
+- S2 live 齿：需真 OpenClaw loopback 18789 驱动（到门即停，前置清单不变）。
+- 部署/烧录：front 服务重载 + engine-patch 容器重启 + 固件烧板，归主线程（不在本包范围）。
+- 其余逐项排查（对照 acceptance[] + 契约 §1.4 + roadmap 效果段）：**none**——SAO-A1..A4 / M4K1 a2/a3/a5 / RDG-A4/A6 重钉与补桩后断言面全覆盖本轮改动行为，零缺口。
+
+### 回滚与簿记
+
+- 本轮改动随增量 commit 落 dev/pod-m2（不 push、不碰 main）；回滚 = `git revert` 该 commit（实现面 + 冻结件原子同回，SAO 重钉齿连带——与主包回滚口径一致）。
+- 簿记刷新：taskpackage.json notes ⑫ + redBaselineResult 增补、verify-runs.jsonl 两行（r11/r12）、pod-events.jsonl 九条（授权链 + 三派发 + builder + verifier + 收口）、input-brief.md 重生成快照（2026-10-20T05:38:48Z）、current/ 三件投影同步、INDEX.md 本包状态 open→closed（含末尾重复行去重）。
+
+### 里程碑与 Step 9b 增量记账（advisory）
+
+- milestones.jsonl 无状态跳变，未改未跑 delivery-status.mjs（M4-star-notebook 仍 in_delivery，判定同主节）。
+- 本轮改动面 = front_app.py + 两冻结件 + 簿记，全部落在 scope-final.md 已圈定面（server 20 件含三冻结件与 server/tests 相邻面）内；未跑增量 detect_changes——主节 Step 9b 补跑（changed_files 41 / impacted_total 129）已覆盖本包树，本轮增量在此圈定面子集内，复用合法。

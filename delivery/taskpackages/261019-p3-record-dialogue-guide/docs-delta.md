@@ -32,3 +32,11 @@ verifier scoped round 5（`verifier-evidence/rounds/r5.json`）docs-sync 闸 PAS
 ## 升级评估
 
 docs-sync 复核未发现任何暴露契约需要变化、spec 漂移或 canonical 缺口的点；若后续需在 architecture 某节补实现侧新符号注记，属架构面文档变更、走 `/arch-change` loop，不在本包范围内补写。**本包零 canonical 写点成立。**
+
+---
+
+## 2026-10-20 接线轮增量（SAO-A1 族重钉 + 三式收尾 organize 单源）
+
+- 作者：integrator（增量收口相位）· 结论：**本轮 canonical 文档零改动**——重钉与接线均在实现/验收面，requirements v1.65/v1.66 与契约 §1.4 已随上游批 landing（同上表依据不变），上节申报明细逐条继续成立。
+- 实现侧注记（一行，价值有限、如实申报）：三式收尾单源符号 `_organize_and_archive` / `_story_finish_session` / `_speak_to_legs` 落在 `server/gateway/front/front_app.py`，其 S-F2.2-AC4 v1.65 忠实整理语义注记已随函数 docstring 与冻结件 `test_m4k1_story_cloud_link.acceptance.py` / `test_record_dialogue_guide.acceptance.py` 头注承载，无需晋级 canonical。
+- docs-sync 闸：verifier scoped r11 与 final r12（`verifier-evidence/rounds/r11.json` / `r12.json`）docs-sync 闸均 PASS；本轮零新增 canonical 写点结论经 final 轮复验。

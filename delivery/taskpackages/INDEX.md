@@ -10,7 +10,7 @@
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | open | — |
+| [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | closed | — |
 | [261018-sd-log-persist](261018-sd-log-persist/) | 2026-10-18 | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md | closed | — |
 | [261018-sd-log-usb-read](261018-sd-log-usb-read/) | 2026-10-18 | delivery/taskpackages/261018-sd-log-usb-read/plan.md | closed | — |
 | [261017-prompt-v11-schedule-recall](261017-prompt-v11-schedule-recall/) | 2026-10-17 | docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md | closed | — |
@@ -85,4 +85,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | closed | — |

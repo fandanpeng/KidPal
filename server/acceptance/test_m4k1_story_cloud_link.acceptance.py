@@ -36,8 +36,10 @@ front_app.py 面离线装载（本文件在 fastapi 缺席时用本地 stub，g-
 
     is_finish_phrase(text) -> bool
         累积态收尾词机械检测：text（str）剔除首尾空白后**包含**精确短语「我说完了」
-        或「讲完啦」-> True；其余（含空串/None/非 str）-> False。可读文本子串匹配，
-        末尾标点不阻断（「我说完了。」含「我说完了」）。
+        /「讲完啦」/「说完了」-> True（词表三短语；v1.66 批 261020-finish-phrase-
+        shuowanle 并入「说完了」，commit e724ff48）；其余（含空串/None/非 str）-> False。
+        可读文本子串匹配，末尾标点不阻断（「我说完了。」含「我说完了」；前缀变体
+        「好，说完了」含「说完了」天然覆盖）。
 
     list_stories(stories_dir, *, limit=None, offset=0) -> dict
         契约 §1.3③ producer 下发块：
@@ -143,14 +145,25 @@ Shape authority = docs/contracts/interface-contract.md §1.3③/§1.3④/§1.5(3
                                         收尾归档不丢弃；REVISION LOG 同日条〕
   spec S-F2.4 AC2 流水号只增不减        → A6 齿（删除不回退/重启存活真跑）→ 行为级
 
-  SAO 承接（261001-m4-k3-story-archive-order；归档时序缺陷冻结 oracle）：
+  SAO 承接（261001-m4-k3-story-archive-order；归档时序缺陷冻结 oracle；2026-10-20 重钉
+  随 S-F2.2-AC4 v1.65 忠实整理语义——见 REVISION LOG 同日条）：
     requirements S-F2.2-AC2（录音中收尾 -> 保存、新篇入列表、AI 不逐句回复）
                                         → SAO-A1/A2/A3/A4 齿（真机序 pump + 真落盘 + 真帧）→ 行为级
+    requirements S-F2.2-AC4 v1.65（三式收尾均走忠实整理成篇：只用孩子原话——去口水/
+      断句/分段/标题，不换表达不补情节；organize 成功 = 归档正文==整理输出；
+      organize 失败 = 当轮素材不归档 + 固定安抚句 kidpal_speak 下发（R1-N4）+
+      会话不挂死）          → SAO-A1 双分支齿（organize 成功桩真跑 / 离线失败分支真跑）→ 行为级
     requirements S-F2.2-AC4（KEY 兜底收尾 = 停录并保存）
                                         → SAO-A2/A3 齿（pending-stop 挂起真跑）→ 行为级
     arch §5.2④ 归档时点（触发仍是 listen-stop、归档动作等转写到达）
                                         → SAO-A1/A2 齿（真机序 pump wire）→ 行为级
-    plan §2 正文剔尾随收尾词             → SAO-A4 齿（归档正文真读）→ 行为级
+    v1.66 收尾词表（批 261020-finish-phrase-shuowanle；commit e724ff48——「说完了」并入）
+                                        → A5 检测齿（三短语正命中）+ 新增触发词行为级
+                                        guard case（is_finish_phrase 消费面真归档）
+    E4 忠实性 fixture（转写显式含孩子中途提问句 + 静音段幻听串；罐头整理输出不含）
+                                        → SAO-A1 成功分支 / SAO-A4 齿（归档正文事实点机判）→ 行为级；
+                                        真 LLM 整理忠实度 offline 不可证，归 S5 真机轮人工抽检
+                                        （261019 包 S5 live-manual 面，GAP-1 同口径）
 
   弱于契约处（显式缺口，逐条）：
     ⓢ SAO-A3 pending 超时牙 = 行为级钉子（**线束假设显式化**）：offline 无真计时，本齿以
@@ -222,19 +235,29 @@ Coverage map (acceptanceRef -> test):
            -> test_a6_ledger_missing_rebuilds_without_rollback
   M4K1-E1 -> test_e1_existing_story_semantics_zero_offset
 
-SAO 承接（2026-10-01 · 包 261001-m4-k3-story-archive-order · 归档时序缺陷冻结 oracle）：
+SAO 承接（2026-10-01 · 包 261001-m4-k3-story-archive-order · 归档时序缺陷冻结 oracle；
+2026-10-20 重钉随 S-F2.2-AC4 v1.65 忠实整理语义，REVISION LOG 同日条）：
   sourceRefs = S-F2.2-AC2 / S-F2.2-AC4（记录会话归档时序；本缺陷 = 归档早于转写）。
-  SAO-A1 -> test_sao_a1_stop_before_stt_archives_transcript
-          -> test_a2_session_ctx_intercepted_not_forwarded（归档链改真机序）
-          -> test_a2_idempotent_convergence_with_start_recording（归档链改真机序）
-          -> test_a3_push_seam_and_wire_timepoints（时点②改真机序）
-          -> test_a5_finish_phrase_triggers_stop_in_accumulate_only（改真机序）
-  SAO-A2 -> test_sao_a2_empty_stop_holds_pending_not_bail_to_chat（本缺陷冻结 oracle/负锚）
-  SAO-A3 -> test_sao_a3_repeated_stop_no_double_archive
-          -> test_sao_a3_stop_cancel_interleave_no_leak
-          -> test_sao_a3_pending_window_boundary
-  SAO-A4 -> test_sao_a4_body_excludes_trailing_finish_words
-          -> test_a5_finish_phrase_triggers_stop_in_accumulate_only（正文剔词半）
+  SAO-A1 -> test_sao_a1_stop_before_stt_organize_success_archives_faithful_body
+            （2026-10-20 重钉：organize 成功分支——正文==忠实整理输出；原
+            test_sao_a1_stop_before_stt_archives_transcript「正文==原始转写」改钉）
+          -> test_sao_a1_stop_before_stt_organize_fail_no_archive_and_soothing
+            （2026-10-20 新增：organize 失败分支——零归档 + 固定安抚句 + 会话不挂死）
+          -> test_a2_session_ctx_intercepted_not_forwarded（归档链改真机序 + organize 成功桩）
+          -> test_a2_idempotent_convergence_with_start_recording（归档链改真机序 + organize 成功桩）
+          -> test_a3_push_seam_and_wire_timepoints（时点②改真机序 + organize 成功桩）
+          -> test_a5_finish_phrase_triggers_stop_in_accumulate_only（改真机序 + organize 成功桩）
+  SAO-A2 -> test_sao_a2_empty_stop_holds_pending_not_bail_to_chat（本缺陷冻结 oracle/负锚；
+            挂起态负锚语义不动——恢复归档半补 organize 成功桩保原语义）
+  SAO-A3 -> test_sao_a3_repeated_stop_no_double_archive（去重语义不动 + organize 成功桩）
+          -> test_sao_a3_stop_cancel_interleave_no_leak（cancel/泄漏语义不动 + 正半 organize 桩）
+          -> test_sao_a3_pending_window_boundary（窗口语义不动 + 窗口内半 organize 桩）
+  SAO-A4 -> test_sao_a4_organized_body_carries_facts_excludes_finish_words（2026-10-20 重钉：
+            断言对象从「原始转写剔词后正文」换为「忠实整理输出」；v1.66 三收尾词 subTest 保留）
+          -> test_a5_finish_phrase_triggers_stop_in_accumulate_only（正文剔词半 + organize 桩）
+  M4K1-A5 -> test_a5_finish_phrase_shuowanle_triggers_finish（2026-10-20 新增：「说完了」
+            作为收尾触发词的行为级 guard case——is_finish_phrase 消费面真归档，非只剔词；
+            v1.66 批 261020-finish-phrase-shuowanle，commit e724ff48）
 
 Red baseline (现状树 @5e862d0+契约落地批, acceptance-author 2026-09-24 实跑；命令见 taskpackage
 redBaselineCommand): 设计态红 = 未实现行为（无 is_finish_phrase/delete_story/timed_out_sessions、
@@ -540,6 +563,77 @@ def _story_text_frames(sent_text):
     return [p for p in _display_payloads(sent_text) if p.get("view") == "story_text"]
 
 
+def _engine_leg_objects(sent):
+    """引擎腿 upstream.send 的 JSON 对象流（kidpal_speak / kidpal_record_context 等注入帧）。"""
+    out = []
+    for item in sent:
+        if isinstance(item, (bytes, bytearray)):
+            continue
+        try:
+            obj = json.loads(item)
+        except (TypeError, ValueError):
+            continue
+        if isinstance(obj, dict):
+            out.append(obj)
+    return out
+
+
+def _speak_frames(sent):
+    """引擎腿上 type==kidpal_speak 的内部注入帧（dict 形态；reminders.build_speech_injection
+    先例通道，RDG-A7 同款重建器）。"""
+    return [o for o in _engine_leg_objects(sent) if o.get("type") == "kidpal_speak"]
+
+
+@contextlib.contextmanager
+def _alert_legs(front, device_ws, engine_ws):
+    """临时登记推送腿（front._register_alert_legs 既有缝），退出时清理（RDG 冻结件同款）。"""
+    old = list(getattr(front, "_alert_legs", []))
+    front._register_alert_legs(device_ws, engine_ws)
+    try:
+        yield
+    finally:
+        front._alert_legs[:] = old
+
+
+@contextlib.contextmanager
+def _organize_stub(front, reply):
+    """organize 成功桩：monkeypatch front 侧整理回合入口 _openclaw_chat_once（front_app
+    冻结 seam）返回罐头忠实整理输出（标题行 + 正文行）。失败路径**不打桩**（离线连接
+    拒绝快失败 = EQ-4 既有环境假设，RDG 冻结件文件头）。记录被捕获的调用入参
+    （calls: [(system_text, user_text)]，供「整理回合真被驱动且输入含孩子原话」断言）。"""
+    calls = []
+
+    def _fake(system_text, user_text, timeout_s=10.0):  # noqa: ANN001, ANN202
+        calls.append((system_text, user_text))
+        return reply
+
+    old = getattr(front, "_openclaw_chat_once", None)
+    front._openclaw_chat_once = _fake
+    try:
+        yield calls
+    finally:
+        if old is None:
+            front.__dict__.pop("_openclaw_chat_once", None)
+        else:
+            front._openclaw_chat_once = old
+
+
+# 忠实整理 fixture（E4，261019-p3-record-dialogue-guide 重钉；S-F2.2-AC4 v1.65）：
+# 转写显式含「孩子中途提问句」（妈妈，恐龙吃什么呀？——AC2 口径：提问不进素材）与
+# 「静音段幻听串」（Thank you.——真机实录噪声）；罐头忠实整理输出只含孩子叙述事实点、
+# 不含这两类串（装配层不滤除——滤除职责压整理回合，story.py build_organizing_input /
+# RDG-A3 口径）。机判 = 归档正文事实点比对（含孩子叙述事实、不含幻听/提问串）。
+# **人工抽检申报**：真 LLM 整理忠实度 offline 不可证，归 S5 真机轮人工抽检
+# （261019 包 S5 live-manual 面；RDG GAP-1 同口径——不造 offline 假齿冒充忠实度已证）。
+SAO_TRANSCRIPT_E4 = ("从前有一只小猫，它去公园玩了一会儿。"
+                     "妈妈，恐龙吃什么呀？"
+                     "后来它遇到了一只小狗。"
+                     "Thank you.")
+SAO_ORGANIZE_TITLE = "小猫去公园"
+SAO_ORGANIZE_BODY = "从前有一只小猫，它去公园玩了一会儿，后来它遇到了一只小狗。"
+SAO_ORGANIZE_REPLY = f"{SAO_ORGANIZE_TITLE}\n{SAO_ORGANIZE_BODY}"
+
+
 @contextlib.contextmanager
 def _captured_logs():
     """Capture every log record (audit-log assertions)."""
@@ -765,10 +859,13 @@ class M4K1SessionCtxAcceptance(unittest.TestCase):
                 # 真机序归档链可证（SAO-A1，261001 r2 实录序）：先 listen-stop（累积空 ->
                 # 挂起 pending-stop）后转写 stt 到 -> 恰一篇归档。旧序（stt -> listen-stop）
                 # 固化了错误时序假设、不得再过闸（261001-m4-k3-story-archive-order）。
-                _device_to_engine(
-                    front, sid, [json.dumps({"type": "listen", "state": "stop"})])
-                _up2, dev2 = _engine_to_device(
-                    front, sid, [{"type": "stt", "text": "从前有一只小猫"}])
+                # organize 成功桩（2026-10-20 重钉）：收尾归档走忠实整理回合，正文 ==
+                # 整理输出（S-F2.2-AC4 v1.65）；桩 = 本验收自建 fixture，非实现放水。
+                with _organize_stub(front, "小结\n从前有一只小猫"):
+                    _device_to_engine(
+                        front, sid, [json.dumps({"type": "listen", "state": "stop"})])
+                    _up2, dev2 = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "从前有一只小猫"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(len(files), 1,
                                  f"M4K1-A2 RED: session_ctx->listen-stop->stt（真机序）未产出恰"
@@ -836,9 +933,11 @@ class M4K1SessionCtxAcceptance(unittest.TestCase):
                 self.assertEqual(front._get_story_acc().routing(sid), "accumulate",
                                  "M4K1-A2 RED: 重复触发退出累积态 —— 幂等入口被破。")
                 # 4) 真机序归档（SAO-A1）：listen-stop 先（累积空 -> 挂起）-> stt 后 -> 恰一篇。
-                _device_to_engine(
-                    front, sid, [json.dumps({"type": "listen", "state": "stop"})])
-                _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "第一句"}])
+                # organize 成功桩（2026-10-20 重钉，S-F2.2-AC4 v1.65）：收尾归档走忠实整理回合。
+                with _organize_stub(front, "我的第一句\n第一句"):
+                    _device_to_engine(
+                        front, sid, [json.dumps({"type": "listen", "state": "stop"})])
+                    _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "第一句"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(len(files), 1,
                                  f"M4K1-A2 RED: 重复触发产出 {len(files)} 篇归档 —— 幂等入口"
@@ -926,14 +1025,16 @@ class M4K1StoryListPushAcceptance(unittest.TestCase):
                 self.assertLessEqual(len(frames[0]["data"]["items"]), 16,
                                      "M4K1-A3 RED: 缝直调下发 items 超窗口。")
                 # 时点② 归档成功后：session_ctx -> listen-stop -> stt（真机序，SAO-A1）后除
-                # story_text 外必须**追加** story_list 推送。
+                # story_text 外必须**追加** story_list 推送。organize 成功桩（2026-10-20 重钉，
+                # S-F2.2-AC4 v1.65：收尾归档走忠实整理回合）。
                 sid = "sess-a3-tp2"
-                _device_to_engine(front, sid, [json.dumps(
-                    {"type": "kidpal_session_ctx", "source_page": "story"})])
-                _device_to_engine(
-                    front, sid, [json.dumps({"type": "listen", "state": "stop"})])
-                _up, dev2 = _engine_to_device(
-                    front, sid, [{"type": "stt", "text": "从前有一只小猫"}])
+                with _organize_stub(front, "小猫日记\n从前有一只小猫"):
+                    _device_to_engine(front, sid, [json.dumps(
+                        {"type": "kidpal_session_ctx", "source_page": "story"})])
+                    _device_to_engine(
+                        front, sid, [json.dumps({"type": "listen", "state": "stop"})])
+                    _up, dev2 = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "从前有一只小猫"}])
                 self.assertTrue(
                     _story_text_frames(dev2.sent_text),
                     "M4K1-A3 RED: 归档成功后未下发 story_text（既有链路偏移）。")
@@ -1280,20 +1381,22 @@ class M4K1FinishTimeoutAcceptance(unittest.TestCase):
     maxDiff = None
 
     def test_a5_finish_phrase_detection(self):
-        """coverage: M4K1-A5 / S-F2.2 收尾 — is_finish_phrase 精确短语「我说完了」/
-        「讲完啦」子串命中；其余不误判（空/None/无关文本）。"""
+        """coverage: M4K1-A5 / S-F2.2 收尾（词表 v1.66 批 261020-finish-phrase-shuowanle）
+        — is_finish_phrase 精确短语「我说完了」/「讲完啦」/「说完了」（三短语，commit
+        e724ff48）子串命中（含前缀变体「好，说完了」）；其余不误判（空/None/无关文本）。"""
         fn, err = _story_attr("is_finish_phrase")
         if not callable(fn):
             self.fail("M4K1-A5 RED: " + (err or "is_finish_phrase 非可调用。"))
-        for text in ("我说完了", "好啦，讲完啦", "我说的故事讲完啦。"):
+        for text in ("我说完了", "好啦，讲完啦", "我说的故事讲完啦。", "说完了", "好，说完了"):
             self.assertTrue(fn(text), f"M4K1-A5 RED: 收尾词未命中: {text!r}。")
         for text in ("我今天去公园玩了", "", "   ", None, "讲完了"):
             self.assertFalse(fn(text), f"M4K1-A5 RED: 非收尾词误判为收尾: {text!r}。")
 
     def test_a5_finish_phrase_triggers_stop_in_accumulate_only(self):
         """coverage: M4K1-A5 + SAO-A1 + SAO-A4 / S-F2.2 收尾 — 累积态真机序（listen-stop
-        先、转写后到）收到含收尾词的转写 -> 自动归档 + 下发正文（不丢弃）+ 正文剔尾随收尾词；
-        非累积态（问答会话）零影响。"""
+        先、转写后到）收到含收尾词的转写 -> 自动归档 + 下发正文（不丢弃）+ 归档正文 ==
+        忠实整理输出（organize 成功桩，2026-10-20 重钉：S-F2.2-AC4 v1.65 收尾路径走整理
+        回合）且不含尾随收尾词；非累积态（问答会话）零影响。"""
         with tempfile.TemporaryDirectory(prefix="m4k1_a5_") as tmp:
             with _front_with_stories(tmp) as front:
                 sid = "sess-a5-finish"
@@ -1301,10 +1404,12 @@ class M4K1FinishTimeoutAcceptance(unittest.TestCase):
                     {"type": "kidpal_session_ctx", "source_page": "story"})])
                 # 真机序（SAO-A1）：listen-stop 先（累积空 -> 挂起 pending-stop）-> 转写后到
                 # （manual 模式 ASR 由 listen stop 触发，整段含尾随「我说完了」）。
-                _device_to_engine(
-                    front, sid, [json.dumps({"type": "listen", "state": "stop"})])
-                _up, dev = _engine_to_device(front, sid, [
-                    {"type": "stt", "text": "从前有一只小猫。我说完了"}])
+                # organize 成功桩：正文断言对象 = 忠实整理输出（含叙述事实、不含收尾词）。
+                with _organize_stub(front, "小猫的故事\n从前有一只小猫"):
+                    _device_to_engine(
+                        front, sid, [json.dumps({"type": "listen", "state": "stop"})])
+                    _up, dev = _engine_to_device(front, sid, [
+                        {"type": "stt", "text": "从前有一只小猫。我说完了"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(
                     len(files), 1,
@@ -1316,16 +1421,52 @@ class M4K1FinishTimeoutAcceptance(unittest.TestCase):
                 rec = st.read_story_file(str(files[0]))
                 body = (rec or {}).get("text", "")
                 self.assertIn("从前有一只小猫", body,
-                              "M4K1-A5 RED: 收尾归档未包含已累积正文（内容被丢弃）。")
+                              "M4K1-A5 RED: 收尾归档未包含已叙述事实（忠实整理输出丢失叙述"
+                              "内容，S-F2.2-AC4 v1.65 不换表达不补情节）。")
                 self.assertNotIn(
                     "我说完了", body,
-                    "M4K1-A5 RED: 归档正文含尾随收尾词「我说完了」—— 正文剔词未落（SAO-A4）。")
+                    "M4K1-A5 RED: 归档正文含尾随收尾词「我说完了」—— 整理输出含收尾词或"
+                    "归档退回原始转写（SAO-A4 / 2026-10-20 重钉）。")
                 # 问答会话零影响：无 session_ctx 时同一句收尾词不得归档。
                 sid2 = "sess-a5-chat"
                 _engine_to_device(front, sid2, [{"type": "stt", "text": "我说完了"}])
                 self.assertEqual(
                     len(list(Path(tmp).glob("*.md"))), 1,
                     "M4K1-A5 RED: 问答会话被收尾词误归档 —— 收尾词仅累积态消费。")
+
+    def test_a5_finish_phrase_shuowanle_triggers_finish(self):
+        """coverage: M4K1-A5 / S-F2.2 收尾（v1.66 批 261020-finish-phrase-shuowanle，
+        commit e724ff48）— 「说完了」作为**收尾触发词**的行为级 guard case（is_finish_phrase
+        消费面）：累积态转写含「说完了」（前缀变体「好，说完了」）即触发收尾归档 + 正文
+        下发，非只做剔词。organize 成功桩（2026-10-20 重钉）：归档正文 == 忠实整理输出。"""
+        with tempfile.TemporaryDirectory(prefix="m4k1_a5sw_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-a5-shuowanle"
+                _device_to_engine(front, sid, [json.dumps(
+                    {"type": "kidpal_session_ctx", "source_page": "story"})])
+                # 累积态：首句叙述入累积（不含收尾词、不触发），第二句「好，说完了」
+                # 命中收尾词表 -> 触发收尾（触发词行为级断言：收尾真的发生了）。
+                with _organize_stub(front, "小猫讲故事\n从前有一只小猫"):
+                    _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "从前有一只小猫"}])
+                    _up, dev = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "好，说完了"}])
+                files = list(Path(tmp).glob("*.md"))
+                self.assertEqual(
+                    len(files), 1,
+                    f"M4K1-A5 RED: 「说完了」未触发收尾归档（得 {len(files)} 篇）—— v1.66 "
+                    "词表并入后「说完了」须作为收尾触发词消费（is_finish_phrase 消费面），"
+                    "非只归档剔词。")
+                self.assertTrue(
+                    _story_text_frames(dev.sent_text),
+                    "M4K1-A5 RED: 「说完了」触发收尾后未下发 story_text（收尾链不完整）。")
+                st = _story_module()
+                body = (st.read_story_file(str(files[0])) or {}).get("text", "")
+                self.assertIn("从前有一只小猫", body,
+                              "M4K1-A5 RED: 「说完了」触发收尾的归档正文丢失叙述内容。")
+                self.assertNotIn(
+                    "说完了", body,
+                    "M4K1-A5 RED: 归档正文含收尾词「说完了」—— 收尾词须剔出正文/整理输出。")
 
     def test_a5_timeout_decision_replaced_by_guide_round_auto_finish(self):
         """coverage: M4K1-A5（2026-10-19 语义换代重钉，REVISION LOG 同日条）/
@@ -1602,10 +1743,17 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
     修法口径（plan §2）：stop 时 accum **非空** -> 立即归档（B2/B3 auto 模式兼容分支，
     本类不将其判错——既有 E1/a6 齿沿该分支覆盖）；accum **空** -> 挂起 pending-stop，
     下一条 stt 到达时 feed -> 归档 -> 下发 story_text + story_list；pending 超时 10s ->
-    释放挂起态、不写空故事、迟到 stt 不污染；正文剔尾随收尾词（SAO-A4）。
+    释放挂起态、不写空故事、迟到 stt 不污染。
+
+    〔2026-10-20 重钉 · REVISION LOG 同日条 · 授权 pod-events da35cae4〕收尾归档随
+    S-F2.2-AC4 v1.65 忠实整理语义换代：organize 成功 -> 归档正文 == 忠实整理输出
+    （不再是「正文==原始转写」）；organize 失败 -> 当轮素材不归档 + 固定安抚句
+    kidpal_speak 下发（R1-N4）+ 会话不挂死。SAO-A2 负锚（不打回 chat）、SAO-A3
+    去重/窗口/cancel 挂起态语义不动——正路径齿配 organize 成功桩（_openclaw_chat_once
+    打桩返回罐头整理输出）保原语义。
 
     sourceRefs = S-F2.2-AC2（录音中收尾 -> 保存、新篇入列表、AI 不逐句回复）、
-    S-F2.2-AC4（KEY 兜底收尾 = 停录并保存）。"""
+    S-F2.2-AC4（KEY 兜底收尾 = 停录并忠实整理保存；v1.65）。"""
 
     maxDiff = None
 
@@ -1613,35 +1761,110 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                       ensure_ascii=False)
     _STOP = json.dumps({"type": "listen", "state": "stop"}, ensure_ascii=False)
 
-    def test_sao_a1_stop_before_stt_archives_transcript(self):
-        """coverage: SAO-A1 / S-F2.2-AC2 / S-F2.2-AC4 — 真机序（listen/state=stop 先、
-        转写 stt 后）-> 归档恰一篇、正文 = 转写内容、下发 story_text + story_list。"""
+    def test_sao_a1_stop_before_stt_organize_success_archives_faithful_body(self):
+        """coverage: SAO-A1 / S-F2.2-AC2 / S-F2.2-AC4 v1.65 — 真机序（listen/state=stop 先、
+        转写 stt 后）+ organize 成功（_openclaw_chat_once 打桩返回罐头忠实整理输出）->
+        归档恰一篇、正文 == 忠实整理输出（含孩子叙述事实点、**不含**孩子中途提问句与
+        静音段幻听串，E4 fixture）、story_text + story_list 在世。
+
+        E4 fixture（SAO_TRANSCRIPT_E4）：转写显式含「妈妈，恐龙吃什么呀？」（孩子中途
+        提问句，AC2 口径不进素材）与「Thank you.」（静音段幻听串）——罐头整理输出不含
+        这两类串；机判 = 归档正文事实点比对。
+        **人工抽检申报**：真 LLM 整理忠实度 offline 不可证，归 S5 真机轮人工抽检。"""
         with tempfile.TemporaryDirectory(prefix="sao_a1_") as tmp:
             with _front_with_stories(tmp) as front:
                 sid = "sess-sao-a1"
                 _device_to_engine(front, sid, [self._CTX])
                 # 1) 停录上行帧先到（累积必空）。
                 _device_to_engine(front, sid, [self._STOP])
-                # 2) 转写 stt 后到（真机序）。
-                transcript = "从前有一只小猫，它去公园玩了"
-                _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": transcript}])
+                # 2) 转写 stt 后到（真机序），organize 成功桩在位 -> 走忠实整理归档。
+                with _organize_stub(front, SAO_ORGANIZE_REPLY) as calls:
+                    _up, dev = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": SAO_TRANSCRIPT_E4}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(
                     len(files), 1,
                     f"SAO-A1 RED: 真机序（listen-stop 先、stt 后）未产出恰一篇归档"
-                    f"（得 {len(files)}）—— 归档早于转写（旧缺陷：stop 帧上立即 acc.stop()）。")
+                    f"（得 {len(files)}）—— 归档早于转写（旧缺陷：stop 帧上立即 acc.stop()）"
+                    "或 organize 成功路径未接通收尾归档。")
+                self.assertTrue(
+                    calls,
+                    "SAO-A1 RED: organize 回合入口 _openclaw_chat_once 未被调用 —— 收尾"
+                    "未走忠实整理回合（S-F2.2-AC4 v1.65：三式收尾均走忠实整理成篇）。")
+                self.assertIn(
+                    "小猫", " ".join(" ".join(c) for c in calls),
+                    "SAO-A1 RED: organize 回合输入未携带孩子原话（叙述事实点缺失）—— "
+                    "整理输入装配未接（S-F2.2-AC4 只用孩子原话）。")
                 st = _story_module()
-                rec = st.read_story_file(str(files[0]))
+                rec = st.read_story_file(str(files[0])) or {}
                 self.assertEqual(
-                    (rec or {}).get("text"), transcript,
-                    f"SAO-A1 RED: 归档正文 {((rec or {}).get('text'))!r} != 转写内容 "
-                    f"{transcript!r} —— 正文须为转写结果。")
+                    rec.get("text"), SAO_ORGANIZE_BODY,
+                    f"SAO-A1 RED: 归档正文 {rec.get('text')!r} != 忠实整理输出 "
+                    f"{SAO_ORGANIZE_BODY!r} —— organize 成功时正文须为整理输出，"
+                    "不得退回原始转写（2026-10-20 重钉；旧「正文==原始转写」语义退役）。")
+                self.assertEqual(
+                    rec.get("title"), SAO_ORGANIZE_TITLE,
+                    f"SAO-A1 RED: 归档标题 {rec.get('title')!r} != 整理输出标题行 "
+                    f"{SAO_ORGANIZE_TITLE!r} —— 整理输出的标题行须入册为标题。")
+                self.assertNotIn("恐龙吃什么", rec.get("text", ""),
+                                 "SAO-A1 RED: 归档正文混入孩子中途提问句（提问不进素材，"
+                                 "S-F2.2-AC2 补充规则）。")
+                self.assertNotIn("Thank you", rec.get("text", ""),
+                                 "SAO-A1 RED: 归档正文混入静音段幻听串（E4 fixture）。")
                 self.assertTrue(
                     _story_text_frames(dev.sent_text),
                     "SAO-A1 RED: 归档后未下发 story_text（设备侧无法盖章/回看）。")
                 self.assertTrue(
                     _story_list_frames(dev.sent_text),
                     "SAO-A1 RED: 归档后未追加 story_list 推送（三时点②；新篇应出现在列表）。")
+
+    def test_sao_a1_stop_before_stt_organize_fail_no_archive_and_soothing(self):
+        """coverage: SAO-A1 / S-F2.2-AC4 v1.65 + R1-N4 — 真机序（stop 先、stt 后）+
+        organize 失败（不打桩：离线连接拒绝快失败 = EQ-4 既有环境假设）-> **零归档**
+        （0 文件，不写空故事）+ 固定安抚句经 kidpal_speak 注入下发（R1-N4 全链负锚：
+        零 story_text、零 story_list）+ 会话不挂死（回闲聊态）。"""
+        with tempfile.TemporaryDirectory(prefix="sao_a1f_") as tmp:
+            with _front_with_stories(tmp) as front:
+                sid = "sess-sao-a1-fail"
+                _device_to_engine(front, sid, [self._CTX])
+                _device_to_engine(front, sid, [self._STOP])
+                # 转写 stt 后到（真机序）；organize 不打桩 -> 离线快失败（EQ-4）。
+                stt = json.dumps({"type": "stt", "text": SAO_TRANSCRIPT_E4},
+                                 ensure_ascii=False)
+                # 同一 upstream 兼作下行泵引擎腿与 _alert_legs 登记腿：无论安抚句走
+                # _speak_to_engine_legs（_alert_legs）还是泵腿注入，同一双桩可观察。
+                up = _FakeUpstream(frames=[stt])
+                dev = _FakeDeviceSocket()
+                with _alert_legs(front, dev, up):
+                    asyncio.run(front.pump_upstream_to_client(up, dev, sid))
+                files = list(Path(tmp).glob("*.md"))
+                self.assertEqual(
+                    len(files), 0,
+                    f"SAO-A1 RED: organize 失败仍归档 {len(files)} 篇 —— R1-N4「整理失败 "
+                    "= 当轮素材不归档」未落（不得退回原始转写直归档、不得写空故事）。")
+                soothing = getattr(front, "ORGANIZING_FAIL_SOOTHING", None)
+                self.assertTrue(
+                    isinstance(soothing, str) and soothing.strip(),
+                    "SAO-A1 RED(infra): front_app.ORGANIZING_FAIL_SOOTHING 固定安抚句常量"
+                    "缺席（R1-N4 单源不在世）。")
+                speaks = _speak_frames(up.sent)
+                self.assertTrue(
+                    any(o.get("text") == soothing for o in speaks),
+                    f"SAO-A1 RED: organize 失败后固定安抚句未经 kidpal_speak 注入下发"
+                    f"（引擎腿 kidpal_speak 帧 = {speaks!r}）—— R1-N4 安抚句链缺失。")
+                self.assertEqual(
+                    _story_text_frames(dev.sent_text), [],
+                    "SAO-A1 RED: organize 失败仍下发 story_text —— 未归档不得有正文下发"
+                    "（R1-N4 全链负锚；假归档演出）。")
+                self.assertEqual(
+                    _story_list_frames(dev.sent_text), [],
+                    "SAO-A1 RED: organize 失败仍追加 story_list 推送 —— 零归档时列表不得"
+                    "虚增（R1-N4 全链负锚）。")
+                acc = front._get_story_acc()
+                self.assertEqual(
+                    acc.routing(sid), "chat",
+                    "SAO-A1 RED: organize 失败后会话未释放（挂死在累积/挂起态）—— R1-N4 "
+                    "失败终态须不挂死。")
 
     def test_sao_a2_empty_stop_holds_pending_not_bail_to_chat(self):
         """coverage: SAO-A2 / S-F2.2-AC2 — 本缺陷冻结 oracle（防复发）：listen/state=stop
@@ -1663,8 +1886,10 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                     "SAO-A2 RED: listen-stop 空累积时会话被打回 chat —— 旧缺陷复现"
                     "（stop() 立即返 None 并把会话回闲聊态）；须挂起 pending-stop 等转写到达"
                     "（本缺陷冻结 oracle）。")
-                # 后续 stt 到达 -> 挂起态解除 + 归档恰一篇。
-                _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "转写内容"}])
+                # 后续 stt 到达 -> 挂起态解除 + 归档恰一篇（organize 成功桩，2026-10-20
+                # 重钉：恢复归档走忠实整理回合，挂起态语义本身不动）。
+                with _organize_stub(front, "我的故事\n转写内容"):
+                    _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "转写内容"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(
                     len(files), 1,
@@ -1682,7 +1907,9 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                 sid = "sess-sao-a3-dup"
                 _device_to_engine(front, sid, [self._CTX])
                 _device_to_engine(front, sid, [self._STOP, self._STOP])
-                _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "一段故事"}])
+                # organize 成功桩（2026-10-20 重钉）：收尾归档走忠实整理回合，去重语义不动。
+                with _organize_stub(front, "一段故事\n一段故事"):
+                    _up, dev = _engine_to_device(front, sid, [{"type": "stt", "text": "一段故事"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(
                     len(files), 1,
@@ -1714,7 +1941,9 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                 sid_b = "sess-sao-a3-cancel-pos"
                 _device_to_engine(front, sid_b, [self._CTX])
                 _device_to_engine(front, sid_b, [self._STOP])
-                _up_b, dev_b = _engine_to_device(front, sid_b, [{"type": "stt", "text": "新故事"}])
+                # organize 成功桩（2026-10-20 重钉）：收尾归档走忠实整理回合，泄漏语义不动。
+                with _organize_stub(front, "新故事\n新故事"):
+                    _up_b, dev_b = _engine_to_device(front, sid_b, [{"type": "stt", "text": "新故事"}])
                 self.assertEqual(
                     len(list(Path(tmp).glob("*.md"))), 1,
                     "SAO-A3 RED: 释放后新会话真机序未归档 —— 归档链被前一会话串味/状态未清。")
@@ -1730,8 +1959,11 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                 sid_in = "sess-sao-a3-win"
                 _device_to_engine(front, sid_in, [self._CTX])
                 _device_to_engine(front, sid_in, [self._STOP])
-                _up, dev = _engine_to_device(
-                    front, sid_in, [{"type": "stt", "text": "窗口内转写"}])
+                # organize 成功桩（2026-10-20 重钉）：窗口内恢复归档走忠实整理回合，
+                # 窗口/超时语义不动。
+                with _organize_stub(front, "窗口内转写\n窗口内转写"):
+                    _up, dev = _engine_to_device(
+                        front, sid_in, [{"type": "stt", "text": "窗口内转写"}])
                 self.assertEqual(
                     len(list(Path(tmp).glob("*.md"))), 1,
                     "SAO-A3 RED: 窗口内转写未归档 —— pending 被过早释放（或归档链未接通）。")
@@ -1755,10 +1987,14 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                     len(_story_text_frames(dev2.sent_text)), 0,
                     "SAO-A3 RED: 超时后迟到 stt 触发 story_text 下行（假归档演出）。")
 
-    def test_sao_a4_body_excludes_trailing_finish_words(self):
-        """coverage: SAO-A4 / S-F2.2-AC2 — 归档正文剔除尾随收尾词：「我说完了」/「讲完啦」
-        + 子串「说完了」（真机转写尾带「说完了」）。"""
+    def test_sao_a4_organized_body_carries_facts_excludes_finish_words(self):
+        """coverage: SAO-A4 / S-F2.2-AC2 + S-F2.2-AC4 v1.65 — 归档正文 == 忠实整理输出
+        （2026-10-20 重钉：断言对象从「原始转写剔词后正文」换为「忠实整理输出」）——
+        整理输出含孩子叙述事实点、**不含**尾随收尾词「我说完了」/「讲完啦」/「说完了」
+        （三短语 subTest 保留；「说完了」= v1.66 批 261020-finish-phrase-shuowanle，
+        commit e724ff48）。organize 成功桩在位时若归档退回原始转写（含收尾词）即红。"""
         narration = "从前有一只小猫去公园玩"
+        canned = f"小猫日记\n{narration}"
         for tail in ("我说完了", "讲完啦", "说完了"):
             with self.subTest(tail=tail):
                 with tempfile.TemporaryDirectory(prefix="sao_a4_") as tmp:
@@ -1766,21 +2002,31 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                         sid = f"sess-sao-a4-{tail}"
                         _device_to_engine(front, sid, [self._CTX])
                         _device_to_engine(front, sid, [self._STOP])
-                        _up, dev = _engine_to_device(
-                            front, sid, [{"type": "stt", "text": f"{narration}。{tail}"}])
+                        with _organize_stub(front, canned) as calls:
+                            _up, dev = _engine_to_device(
+                                front, sid, [{"type": "stt", "text": f"{narration}。{tail}"}])
                         files = list(Path(tmp).glob("*.md"))
                         self.assertEqual(
                             len(files), 1,
                             f"SAO-A4 RED({tail}): 真机序未产出归档（得 {len(files)} 篇）。")
+                        self.assertTrue(
+                            calls,
+                            f"SAO-A4 RED({tail}): organize 回合未驱动 —— 收尾归档未走忠实"
+                            "整理回合（S-F2.2-AC4 v1.65）。")
                         st = _story_module()
                         body = (st.read_story_file(str(files[0])) or {}).get("text", "")
+                        self.assertEqual(
+                            body, narration,
+                            f"SAO-A4 RED({tail}): 归档正文 {body!r} != 忠实整理输出 "
+                            f"{narration!r} —— organize 成功时正文须为整理输出，不得退回"
+                            "原始转写（2026-10-20 重钉）。")
                         self.assertIn(
                             narration, body,
-                            f"SAO-A4 RED({tail}): 归档正文丢失叙述内容 {narration!r}。")
+                            f"SAO-A4 RED({tail}): 整理输出丢失叙述事实点 {narration!r}。")
                         self.assertNotIn(
                             tail, body,
-                            f"SAO-A4 RED({tail}): 归档正文含尾随收尾词 —— 正文剔词未落"
-                            "（plan §2 正文剔尾随收尾词）。")
+                            f"SAO-A4 RED({tail}): 归档正文含尾随收尾词 —— 整理输出混入"
+                            "收尾词或归档退回原始转写（v1.66 词表「我说完了/讲完啦/说完了」）。")
 
 
 # --------------------------------------------------------------------------- #
@@ -1939,6 +2185,81 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
 #   变化不记新增红）。冻结相位红基线：①②两齿在未实现树上转红（120s 符号尚在世 =
 #   退役守卫红；接位决策族缺席 = 接位红）——设计态红，见 taskpackage
 #   redBaselineResult。
+# --------------------------------------------------------------------------- #
+# [2026-10-20 · 正常改验收通道（非 §6 tighten-only）· 包 261019-p3-record-dialogue-guide
+#  fixer r3（human-decision pod-events da35cae4，消解 fixer r3 升级 75f58b5d）
+#  · sourceType=regression（真机 r2 F1 实录）· riskTier=high · 范围：本冻结件内
+#  SAO-A1 拆双分支重钉 + SAO-A4 断言对象改钉 + SAO-A2/A3/a2/a3/a5 正路径齿补 organize
+#  成功桩 + A5 收尾词检测齿/词表枚举 v1.66 刷新 + 新增「说完了」触发词 guard case]
+#   需求权威：docs/requirements.md S-F2.2-AC4 v1.65（frozen——三式收尾均走忠实整理
+#   成篇：只用孩子原话，去口水/断句/分段/标题，不换表达不补情节）+ R1-N4（整理失败 =
+#   当轮素材不归档 + 固定安抚句 front_app ORGANIZING_FAIL_SOOTHING 经 kidpal_speak
+#   注入下发，不写空故事、会话不挂死）；词表 v1.66 = 批 261020-finish-phrase-shuowanle
+#   （commit e724ff48，「说完了」并入收尾词表）。
+#   修订动机（fixer 真机 r2 F1 实录）：listen-stop（KEY 收尾）路径 = 旧 M4-K3 归档流，
+#   原始转写直归档（标题 = 首行「嗯」、口水词/提问/幻听串全在）、零整理——收尾归档
+#   语义与 S-F2.2-AC4 v1.65 脱钩；本件 SAO-A1 旧钉「正文==原始转写」正是该旧流的
+#   冻结凭据，须随语义换代重钉（「正文==转写」与「离线必归档」两类旧语义退役）。
+#   修订动作：
+#     ① SAO-A1 拆双分支：test_sao_a1_stop_before_stt_archives_transcript 改钉为
+#       test_sao_a1_stop_before_stt_organize_success_archives_faithful_body（organize
+#       成功分支：_openclaw_chat_once 打桩返回罐头忠实整理输出 -> 归档恰一篇、正文 ==
+#       整理输出（含叙述事实、不含孩子中途提问句与静音段幻听串——E4 fixture
+#       SAO_TRANSCRIPT_E4）、标题行入册、organize 回合真被驱动且输入含孩子原话、
+#       story_text + story_list 在世）+ 新增
+#       test_sao_a1_stop_before_stt_organize_fail_no_archive_and_soothing（失败分支：
+#       不打桩、离线连接拒绝快失败（EQ-4）-> 零归档 + 固定安抚句 kidpal_speak 帧在世
+#       + 零 story_text/story_list + 会话回闲聊态不挂死）。
+#     ② SAO-A4 改钉：test_sao_a4_body_excludes_trailing_finish_words 更名
+#       test_sao_a4_organized_body_carries_facts_excludes_finish_words，断言对象从
+#       「原始转写剔词后正文」换为「忠实整理输出」（正文==整理输出 + 事实点在世 +
+#       三收尾词不在世；三短语 subTest 保留，「说完了」= v1.66）。
+#     ③ SAO-A2/A3 + a2/a3/a5 正路径齿逐齿核对：凡「stt 到达 -> 归档」正路径半补
+#       organize 成功桩（_organize_stub context manager，monkeypatch
+#       front._openclaw_chat_once 冻结 seam；失败路径恒不打桩）保原语义——挂起解除 +
+#       归档 + story_text / 去重 / 窗口 / cancel / 泄漏负锚全部**语义不动**（改桩不改
+#       断言：test_a2_session_ctx_intercepted_not_forwarded、
+#       test_a2_idempotent_convergence_with_start_recording、
+#       test_a3_push_seam_and_wire_timepoints、
+#       test_sao_a2_empty_stop_holds_pending_not_bail_to_chat（负锚半零触碰）、
+#       test_sao_a3_repeated_stop_no_double_archive、
+#       test_sao_a3_stop_cancel_interleave_no_leak（cancel 半零触碰、正半补桩）、
+#       test_sao_a3_pending_window_boundary（窗口/超时半零触碰、窗口内半补桩）、
+#       test_a5_finish_phrase_triggers_stop_in_accumulate_only）。
+#     ④ A5 词表 v1.66 刷新：test_a5_finish_phrase_detection 正命中集补「说完了」/
+#       「好，说完了」（前缀变体天然覆盖）+ 文件头 is_finish_phrase 冻结 contract 块
+#       词表枚举同步三短语；新增 test_a5_finish_phrase_shuowanle_triggers_finish
+#       （「说完了」作为收尾触发词的行为级 guard case——累积态转写含「好，说完了」
+#       真触发收尾归档 + story_text，非只剔词）。
+#     ⑤ 文件头 SAO 强度申报块 + Coverage map SAO 块随①-④同步重述。
+#   断言设计透镜（冻结前两向推演）：红向 = 现实现收尾路径原始转写直归档、无 organize
+#   回合 -> ①成功分支（calls 空 + 正文==原始转写含提问/幻听串）与②失败分支（仍归档 +
+#   无安抚句 + 仍下发 story_text/story_list）均转红，②A4（正文含收尾词）转红——均为
+#   当前 story 缺失的真实行为（设计态红）；绿向 = fixer R3 按 F1 单源收尾流落 organize
+#   回合后逐条可满足。fixture 自含性：E4 转写/罐头输出均为本件内联常量，无外部资产/
+#   时间真值/环境前提依赖（离线连接拒绝快失败 = EQ-4 既有申报假设，RDG 冻结件同款）。
+#   行为 seam 驱动/消费闭环：驱动方 = 验收泵（真机序 ctx->stop->stt 真实 pump I/O），
+#   消费方 = front 收尾归档链；「安抚句下发通道」双观察面（_alert_legs 登记腿与下行泵
+#   引擎腿共用同一 _FakeUpstream 双桩）——builder 无论走 _speak_to_engine_legs 还是
+#   泵腿注入均可观察，缺驱动方盲区 = 无。host/真机近似假设显式化：真 LLM 整理忠实度
+#   offline 不可证（罐头桩只证「整理输出成为归档正文」的管道语义），归 S5 真机轮人工
+#   抽检（261019 包 S5 live-manual 面；RDG GAP-1 同口径，不造 offline 假齿冒充已证）。
+#   配套影响（**须 planner 知悉的跨文件张力**）：server/acceptance/
+#   test_record_dialogue_guide.acceptance.py test_rdg_a6_finish_word_path_issues_
+#   start_organizing_and_exit_signal 在离线（organize 必失败）环境断言收尾词路径
+#   「恰一篇归档」——按本条重钉语义（失败 = 不归档），builder 落地 organize 回合后
+#   该齿将转红；该件不在本次授权范围（本件外零文件改动），须 planner 派 acceptance-
+#   author 对 RDG-A6 收尾词齿补 organize 成功桩（同款 _openclaw_chat_once 打桩）。
+#   红基线恒现跑（2026-10-20 实跑，命令 = python -m pytest -q --import-mode=importlib
+#   -m "not live" server/acceptance/test_m4k1_story_cloud_link.acceptance.py）：
+#   36 齿（+2 新增）；5 failed, 34 passed —— 设计态红 5 = SAO-A1 成功分支
+#   （首红「organize 回合入口 _openclaw_chat_once 未被调用」）+ SAO-A1 失败分支
+#   （首红「organize 失败仍归档 1 篇」1 != 0）+ SAO-A4 三 subTest（首红「organize
+#   回合未驱动」，subTest 我说完了/讲完啦/说完了 各一）——均为当前 story 缺失的
+#   真实行为（收尾路径原始转写直归档、无 organize 回合）；其余 34 齿零新增红，
+#   与改钉前 34 passed 基线逐齿同绿。收集零错误（冻结即冒烟，DEV-GOVERNANCE §3；
+#   standalone python 直跑同口径 Ran 36 tests / failures=5，执行通道 error 为零 =
+#   冒烟判据达成）。
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()

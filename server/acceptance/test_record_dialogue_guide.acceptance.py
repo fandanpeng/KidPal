@@ -237,6 +237,24 @@ REVISION LOG
   2026-10-19 初版冻结（acceptance-author；RDG-A1..A7；S1 纯决策面 + S2 host 齿 +
              NFR-PERF-3 五边界 + 120s 语义退役配套；live/真机面如实申报不造
              offline 假齿——261018 SLP-A6 同款口径）。
+  2026-10-20 RDG-A6 收尾词 case 补 organize 成功桩（test_rdg_a6_finish_word_path_
+             issues_start_organizing_and_exit_signal；断言零改，非语义重钉）。
+             理由 = SAO-A1 族重钉（261019 同包 fixer R2 真机轮 + human 裁定「SAO-A1
+             族重钉 + builder 接线三式收尾 organize」）使 organize 失败 = 不归档，
+             离线环境下收尾词路径的「恰一篇归档」前提失真。修订 = 驱动收尾词路径前
+             补 _organize_stub（SAO 件同型桩法，monkeypatch front._openclaw_chat_once
+             返回罐头忠实整理输出）；三条断言（归档恰一篇 + start_organizing 恰一帧 +
+             出语境信号在世）一字未动。授权 = pod-events da35cae4 波及面裁定
+             （planner 转达 human）——波及面内最小兼容修订。
+  2026-10-20 RDG-A4 收尾沿 case 补 organize 成功桩（test_rdg_a4_front_injects_
+             record_context_enter_exit_on_engine_leg；断言零改，非语义重钉）。
+             理由 = 同 RDG-A6 条：SAO-A1 族重钉 + builder 接线三式收尾 organize
+             后，收尾词路径归档改经整理回合、organize 失败 = 零归档，离线环境下
+             本 case 收尾沿的「恰一篇归档」前提同形失真（实测 files=0）。修订 =
+             驱动收尾沿的 _engine_to_device 调用包进 _organize_stub（与 RDG-A6
+             同款罐头忠实整理输出）；三条断言（归档恰一篇 + 出语境 active=false
+             在世 + 注入不尾随）一字未动。授权同上（pod-events da35cae4 波及面
+             裁定）——波及面内最小兼容修订。
 """
 
 from __future__ import annotations
@@ -569,6 +587,33 @@ def _alert_legs(front, device_ws, engine_ws):
         yield
     finally:
         front._alert_legs[:] = old
+
+
+@contextlib.contextmanager
+def _organize_stub(front, reply):
+    """organize 成功桩（SAO 件 test_m4k1_story_cloud_link.acceptance.py _organize_stub
+    同型桩法，2026-10-20 波及面修订）：monkeypatch front 侧整理回合入口
+    _openclaw_chat_once（front_app 冻结 seam）返回罐头忠实整理输出（标题行 + 正文行）。
+    失败路径**不打桩**（离线连接拒绝快失败 = EQ-4 既有环境假设）。
+    授权凭据：pod-events da35cae4 波及面裁定（planner）——SAO-A1 族重钉 + builder
+    接线三式收尾 organize 后，收尾词路径归档改经整理回合，organize 失败 = 不归档；
+    本桩保证 RDG-A6 收尾词 case 在重钉后的接线形态下仍钉机械下发/出语境信号语义
+    （断言零改、非语义重钉）。"""
+    calls = []
+
+    def _fake(system_text, user_text, timeout_s=10.0):  # noqa: ANN001, ANN202
+        calls.append((system_text, user_text))
+        return reply
+
+    old = getattr(front, "_openclaw_chat_once", None)
+    front._openclaw_chat_once = _fake
+    try:
+        yield calls
+    finally:
+        if old is None:
+            front.__dict__.pop("_openclaw_chat_once", None)
+        else:
+            front._openclaw_chat_once = old
 
 
 # =========================================================================== #
@@ -905,8 +950,13 @@ class RdgRecordContextWiringAcceptance(unittest.TestCase):
                     "（两入口必须收敛同一等价信号注入）。")
                 # 出语境：收尾词归档同拍注入 active=false。
                 _device_to_engine(front, sid, [_STOP])
-                up4, dev4 = _engine_to_device(
-                    front, sid, [{"type": "stt", "text": "小猫回家了。我说完了"}])
+                # organize 成功桩（2026-10-20 波及面修订，与 RDG-A6 同款；pod-events
+                # da35cae4 波及面裁定 + SAO-A1 族重钉后收尾词路径归档经整理回合，
+                # organize 失败 = 不归档——离线环境下不补桩则「恰一篇归档」前提
+                # 失真；断言零改，非语义重钉）。
+                with _organize_stub(front, "小猫回家了\n小猫回家了，它玩得很开心。"):
+                    up4, dev4 = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "小猫回家了。我说完了"}])
                 self.assertEqual(len(list(Path(tmp).glob("*.md"))), 1,
                                  "RDG-A4 RED(前置): 收尾词路径未归档（既有链路回退）。")
                 exits = [f for f in _record_ctx_frames(up4.sent)
@@ -1252,8 +1302,12 @@ class RdgSweepOrganizingAcceptance(unittest.TestCase):
                 up, dev = _FakeUpstream(), _FakeDeviceSocket()
                 _device_to_engine(front, sid, [_CTX])
                 _device_to_engine(front, sid, [_STOP])
-                up2, dev2 = _engine_to_device(
-                    front, sid, [{"type": "stt", "text": "小猫回家了。我说完了"}])
+                # organize 成功桩（2026-10-20 波及面修订，pod-events da35cae4；SAO-A1
+                # 族重钉后收尾词路径归档经整理回合，organize 失败 = 不归档——离线
+                # 环境下不补桩则「恰一篇归档」前提失真；断言零改，非语义重钉）。
+                with _organize_stub(front, "小猫回家了\n小猫回家了，它玩得很开心。"):
+                    up2, dev2 = _engine_to_device(
+                        front, sid, [{"type": "stt", "text": "小猫回家了。我说完了"}])
                 files = list(Path(tmp).glob("*.md"))
                 self.assertEqual(len(files), 1,
                                  "RDG-A6 RED(前置): 收尾词路径未归档（既有链路回退）。")
