@@ -3,7 +3,7 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-10-19T16:01:56.217Z",
+  "ts": "2026-10-20T05:57:02.399Z",
   "changeId": "261019-p3-record-dialogue-guide",
   "originType": "proposal",
   "adjudication": {
@@ -22,7 +22,7 @@
         "security-axis-declared:securityReviewRequired=true"
       ]
     },
-    "circuitBreakerCompletedRounds": 6,
+    "circuitBreakerCompletedRounds": 12,
     "evidenceComplete": true
   },
   "provenance": {
@@ -40,9 +40,9 @@
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261019-p3-record-dialogue-guide/verifier-evidence/rounds/r6.json",
+        "bearingFactRef": "delivery/taskpackages/261019-p3-record-dialogue-guide/verifier-evidence/rounds/r12.json",
         "bearingFactOk": true,
-        "completedRounds": 6,
+        "completedRounds": 12,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261019-p3-record-dialogue-guide/docs-delta.md",
           "delivery/taskpackages/261019-p3-record-dialogue-guide/review-packet.md"
@@ -69,7 +69,7 @@
       ".claude/verify-logs/1792424781431-security.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261019-p3-record-dialogue-guide/verifier-evidence/rounds/r6.json"
+      "delivery/taskpackages/261019-p3-record-dialogue-guide/verifier-evidence/rounds/r12.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261019-p3-record-dialogue-guide/docs-delta.md",

@@ -1,39 +1,38 @@
-# pod-retro · 261019-p3-record-dialogue-guide（第一人称热记忆，planner 收尾相位 2026-10-19）
+# pod-retro · 261019-p3-record-dialogue-guide（第一人称热记忆，planner 收尾相位 2026-10-20 接线轮）
 
-> 标签：第一人称主观过程体感。tokens / gates / rounds / verdict / test results 等以 machine artifacts（verifier-evidence / pod-events / taskpackage）为权威，本文件不复述、不冠权威。
+> 标签：第一人称主观过程体感。tokens / gates / rounds / verdict / test results 等以 machine artifacts（verifier-evidence / pod-events / taskpackage）为权威，本文件不复述、不冠权威。（多轮 closeout 重写、最后一轮为准；2026-10-19 版被本版取代，其 Planner 元数据自修教训已内化为本版「下次改进」的预算前置。）
 
-## 卡点与绕轮体感
+## 本轮体感（2026-10-20 接线轮：SAO-A1 族重钉 + 三式收尾 organize 单源）
 
-- **最别扭的一段是我自己造的**：上会话 429 死前对 taskpackage 的格式回填带了散文注记（landsIn / changeManifest / acceptanceTestsFile），本会话机械核当场曝红。教训具体化：**回填结构字段时散文一律进 notes，字段本体永远纯形态**——这条我这次是用三轮 verify 红换来的，下次起包模板自查就该拦住。
-- 同族第二刀：我把 red-baseline 冒烟脚手架 sh 也「顺手」纯路径化进了 acceptanceTestsFile，被 acceptance-coverage 打回。两处都是「格式归一时没想清楚字段的语义边界」——纯路径化 ≠ 全部路径都该进这个字段。
-- mutation-check 的全 id 子串匹配（raw 全文提及）我第一版用短 id 撞了墙。短 id 对人可读、对闸不可见——**证据字段的匹配口径先看脚本再落笔**，这一刀其实可以预判。
-- docs-sync / security 两红同根：字段存在性+内容判据（docsNoChangeReason 逃生口、securityEvidence 逐轴子串）都在脚本里写着，我起包时没逐闸过一遍 TaskPackage 字段面。**下次 finalize 前把 8 个闸脚本各自的 TaskPackage 期望字段清单过一遍**，可以把 r1–r4 全部消掉。
+- 卡点体感：本轮真正的堵点不在代码而在**两张冻结纸打架**——S-F2.2-AC4 v1.65（三式收尾忠实整理）与 SAO-A1 261001 批钉的「正文==原始转写」。fixer 前几轮只能绕着走、单源化不敢接 organize，升级挂 pending 的处理是对的：这不是 fixer 该裁决的事。human 一次裁定（da35cae4）解开后，整条链（重钉 → 补桩 → 接线 → 转绿）一轮走通、零 fixer 绕轮，与前几轮的烧轮体感反差明显。
+- 顺手体感好的点：acceptance-author 的红基线先行（改钉先红、5 条设计态红逐齿 verbatim）让 builder 的转绿判据天然清晰；RDG-A6/A4 两处漏桩都是**别人先我一步发现**（acceptance-author 回执申报、builder 实证加桩即可满足），跨角色互检在起作用，不是流程摆设。
+- 别扭的点：重钉波及面（RDG-A6/A4 补桩）严格说在 human 授权字面之外（「除 SAO-A1 族外其余冻结验收不改」），我按「断言零改、只补 organize 成功桩」最小修订类推处理并全程留痕——这类「机械兼容修订算不算改验收」的边界值得在治理面成文，下次不必靠 planner 现场裁。
+- 人工纠偏体感：无负向。human 指令把授权凭据、语义口径、fixture 要求、stop 点一次给全，planner 全程不需要补问。
 
 ## verifier↔fixer 绕轮原因的主观判断
 
-- fixer 一次都没派——五轮 scoped 全是 planner 元数据自修。这不说明实现零风险（builder 停点申报的 TEST3 探针缺陷是真问题），说明**闸对元数据形态的敏感度高于我对它的预期**。
-- TEST3 停点申报质量很高：builder 拒绝 sticky 方案的理由（真机会吞孩子打断后的收尾保存）是对的，「实现与冻结件冲突 → 停」的处置也干净。acceptance-author 复钉也快。这条链路（builder 停点 → acceptance-author 复钉 → builder 补变异取证）是本次跑得最顺的一段。
+- 本轮 fixer 零派发——scoped r11 与 final r12 一次全绿。前提是重钉红基线把「转绿判据」钉得足够死：红在哪、为什么红、绿长什么样全部 verbatim 在案，builder 没有猜语义的空间。
+- 对照 2026-10-19 版的体感（当时五轮 scoped 全是 planner 元数据自修）：闸对 TaskPackage 字段形态的敏感度问题本轮未再出现，起包期格式回填教训算是真的吃进去了。
 
 ## 帮倒忙/帮上忙的钩子与规则
 
-- 帮上忙：taskpackage-required-check 的 landsIn/glob 纯形态校验在派 builder 前就拦住了三处——否则进 verifier 才爆，返工更贵。
-- 帮上忙：scope-map deny 让「builder 修冻结件」这条路物理不可行，逼着走了 acceptance-author 复钉的正确通道。
-- 体感别扭：mutation 全 id 子串匹配 + securityEvidence 逐轴原文包含，都是「证据字段必须内嵌权威全文」的形态——防漂移的意图我认，但引导（错误信息只说 missing 列表、不说「把 acceptance 原文嵌进去即可」），每次都要读脚本源码才明白。
+- 帮上忙：enforce-scope 拦下我用 Bash 重定向写 pod-retro——姿势错了但拦截方向对，受门 Write 通道照走，零怨言。
+- 帮上忙：verify.mjs final 相位 scope-file fail-closed 逼我核了对 scope-final.md 的覆盖面再跑——本轮属侥幸合法（接线面恰在原圈定 server 面内），若 builder 触新文件就必须重圈，这条闸防的是真风险。
+- 体感别扭：dispatch-stamp 的 `--token-status exact` 必须**同时**手喂 `--token-total`，与我记忆中「transcript 自动派生、不用手喂」的口径不一致——结果是我第一次调用 exit 2 返工一次。要么脚本口径升级了我没跟上，要么文档口径落后了，值得核对一次（下次改进①）。
 
 ## 人工纠偏体感
 
-- 本会话零人工纠偏（续跑全程自主推进）。上会话 429 中断恢复成本比预想低：恢复点描述 + 盘上实况逐项对上，投影漂移一处即修。**恢复点描述写清楚「哪些在盘上、哪些没 commit」是续跑能自主推进的关键**——这条值得进 launch-card 惯例。
+- 本会话 human 触点一次（任务下发即授权），全程无中途纠偏。分层出场口径运转正常：RDG-A6/A4 补桩这类波及面裁决我按类推处理 + 留痕 + 回执明示，没有为机械细节打断 human。
 
 ## 下次改进（可执行）
 
-1. finalize 前逐闸过 TaskPackage 字段面（8 闸期望字段清单化，附进起包 checklist 心智卡）。
-2. 结构字段回填零散文注记（注记一律 notes）。
-3. evidence 类字段（mutation/security）落笔前先读对应 check 脚本的匹配口径。
-4. 工作树 untracked 制品（prompts/ 新目录）在 builder 派单时点名申报——本次 builder 主动报了，但派单模板里可以固化。
+1. 核对 dispatch-stamp token 旗标口径（exact 是否要求手喂 total），把结论回写心智卡。
+2. 起包期验收蒸馏时把「offline LLM 不可达」对正路径冻结断言的影响一次扫清（本包两处漏桩同根：离线环境「必归档」前提在 organize 语义换代后普遍失真，实际分了三次派发才扫完）。
+3. 「机械兼容修订」边界成文提案（波及面补桩 = 断言零改只补桩，算不算改验收），带本包实例进下一次治理面批。
+4. final 相位 scope-file 复用前先对本轮 git diff 做覆盖面对账，不复用侥幸。
 
-## escalation themes（pod-events cross-ref）
+## escalation themes（post-cutoff，pod-events 交叉引用）
 
-- friction/stall（867c0ff7）：上会话 429 中断续跑——恢复点核验 + 投影漂移修复。
-- friction/degraded（48dd2f63）：RDG-F2 TEST3 冻结件探针缺陷 → acceptance-author 复钉闭环（agent-escalation 未触发，停点申报在 builder 回执内闭环）。
-- friction/degraded（24c1b0bf… / a9ada8a4）：round1 脚手架误列 / round2-4 元数据三红——planner 自修闭环。
-- 无 human-decision / human-correction 事件（本会话 human 触点为零，符合分层出场口径：常规派发不逐次请示）。
+- contract-or-spec（75f58b5d → e2640c49 消解）：冻结验收与 FROZEN 需求冲突须 acceptance-author 重钉通道，fixer 停手正确——本轮主叙事，human-decision da35cae4 凭据闭环。
+- environment（952d7661，仍 pending）：真机轮 R3 三项生产写入前置（front 服务重载 / engine-patch 容器重启 / 固件烧板）归主线程，到门即停口径维持。
+- F3 收尾词裁定（1c803a25）→ v1.66（e724ff48）→ 本轮「说完了」guard case 闭环：human 裁定 → 需求面定稿 → 验收冻结 → 实现接线，四点一线无回溯。
