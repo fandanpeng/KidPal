@@ -179,6 +179,13 @@
  *     TEST 6 -> G6 kvr 守卫 / 消费闭环 / start_organizing 消费锚缺席 +
  *               G7 recording_enter 哨兵（host runner 登记后该半转绿——先例缝在世）
  *     TEST 7 -> G8/HOST_ACCEPTANCE_SRCS 未登记（anti-vacuity；builder FIRST ACTION）
+ *
+ * RED baseline 增补（2026-10-21, TaskPackage 261021-p3-record-cancel-lifecycle
+ * RCL-F1 落地前的设计态红面）:
+ *   TEST 8 -> mcp_server.cc start_organizing 消费块零 StopListening（settle 未落,
+ *             设计态红）; application.cc HandleStopListeningEvent 幂等门现状绿
+ *             （must-stay-green: 既有状态门单发 listen stop——本齿防回退, 非 builder
+ *             落地面）。
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: RDG-F1 -- VRT_CTRL additive 数值码（0/1/2 零偏移 + 3 新增）+ 头文件
@@ -195,6 +202,9 @@
  *             runner 登记守（TEST 7，anti-vacuity 非 acceptance 条目）
  *   coverage: RDG-F6 -- **live-manual 真机轮观测项，不落自动断言、不计入 runner
  *             通过面**（G8 五项；human 持板，本 Pod 到真机门前停等）。
+ *   coverage: RCL-F1 -- start_organizing 消费 settle 链 + KEY 路径幂等（261021-
+ *             p3-record-cancel-lifecycle additive; TEST 8; S-F1.4-AC6 清位链运行时
+ *             归真机轮）。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>
@@ -966,8 +976,111 @@ TEST_CASE("record guide: acceptance file registered into host runner (RDG-F5 gua
     free(cmake);
 }
 
+/* ========================================================================== *
+ * TEST 8 — RCL-F1（261021-p3-record-cancel-lifecycle）: start_organizing 消费
+ *          settle 链 + KEY 路径幂等（源锚结构齿; 261019 起的 case 3 消费位补
+ *          app.StopListening() 事件位投递——KSPV2_ACT_STOP_RECORD :687 同款形态,
+ *          plan F4 修位; Idle 清位链复用 application.cc 既有零改）。
+ * RED today: mcp_server.cc case 3 零 StopListening（settle 未落——design-state red）;
+ *          application.cc 幂等门现状绿（must-stay-green: HandleStopListeningEvent
+ *          既有状态门 = 已 Idle 重复 settle no-op、不重发 listen stop 的机制载体）。
+ * ========================================================================== */
+/* coverage: RCL-F1 -- start_organizing 消费沿补 StopListening settle（case 3 块内接线锚）+ KEY 路径幂等（HandleStopListeningEvent 状态门单发 listen stop 锚, 已 Idle 重复 settle no-op 不重发） */
+/* coverage: S-F1.4-AC6 -- settle 后 Idle 分支既有清位链接管（[R2] 页态复位 + ctx_set(0) + RaiseReminderQueue「会话结束立刻弹」）——运行时归真机轮, 本齿只钉事件位投递与幂等门在世 */
+TEST_CASE("record guide: start_organizing settle + KEY idempotent stop path (RCL-F1)",
+          "[record_dialogue_guide][RCL-F1][structural]")
+{
+    char *mcp;
+    char *app;
+    const char *p_case3;
+    const char *p_case4;
+    const char *p_vrt;
+    char *case3;
+    size_t span;
+    const char *p_send;
+    const char *p_gate;
+
+    RDL_REQUIRE_ROOT();
+
+    /* ---- mcp_server.cc: case 3（start_organizing 消费块）内 StopListening settle */
+    mcp = rdl_strip_file(RDL_MCP_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(mcp, "RCL-F1 RED(infra): mcp_server.cc unreadable");
+    p_case3 = strstr(mcp, "case 3:");
+    TEST_ASSERT_NOT_NULL_MESSAGE(p_case3,
+        "RCL-F1 RED(infra): mcp_server.cc 无 case 3 消费位（既有 start_organizing "
+        "消费块被移? 须复核本齿锚, 不属 builder 修订面）");
+    p_case4 = strstr(p_case3 + 7, "case 4:");
+    if (p_case4 == NULL) {
+        p_case4 = mcp + strlen(mcp);
+    }
+    span = (size_t)(p_case4 - p_case3);
+    case3 = (char *)malloc(span + 1);
+    assert(case3 != NULL); /* logic guard: host OOM must fail loudly, not read as "red" */
+    memcpy(case3, p_case3, span);
+    case3[span] = '\0';
+    p_vrt = strstr(case3, "VRT_CTRL_START_ORGANIZING");
+    TEST_ASSERT_NOT_NULL_MESSAGE(p_vrt,
+        "RCL-F1 RED(infra): case 3 切片内无 VRT_CTRL_START_ORGANIZING —— 切片锚失真"
+        "（case 3/4 锚漂移, 须复核本齿锚不得改判为绿）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        strstr(case3, "StopListening(") != NULL,
+        "RCL-F1 RED: mcp_server.cc start_organizing 消费块零 StopListening —— "
+        "server 驱动收尾 settle 缺席（语音/自动收尾路径 front 检出时设备仍在 "
+        "Listening, ctx 停死 1 -> show_home 守卫拦截 = 列表页长按六连拦, 根因④; "
+        "plan F4: 消费沿补 app.StopListening() 事件位投递, 与 KSPV2_ACT_STOP_RECORD "
+        "同款形态; Idle 清位链接管 = [R2] 复位 + ctx_set(0) + RaiseReminderQueue）");
+    free(case3);
+    free(mcp);
+
+    /* ---- application.cc: KEY 路径幂等（状态门单发 listen stop; must-stay-green） */
+    app = rdl_strip_file(RDL_APP_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(app, "RCL-F1 RED(infra): application.cc unreadable");
+    {
+        const char *fn = strstr(app, "void Application::HandleStopListeningEvent");
+        const char *fn_end;
+        char *region;
+        TEST_ASSERT_NOT_NULL_MESSAGE(fn,
+            "RCL-F1 RED(infra): application.cc 无 HandleStopListeningEvent —— "
+            "settle 幂等门载体缺席（既有形态被改写? 须复核锚不得改判为绿）");
+        fn_end = strstr(fn, "void Application::HandleWakeWordDetectedEvent");
+        if (fn_end == NULL) {
+            fn_end = app + strlen(app);
+        }
+        span = (size_t)(fn_end - fn);
+        region = (char *)malloc(span + 1);
+        assert(region != NULL); /* logic guard: host OOM must fail loudly */
+        memcpy(region, fn, span);
+        region[span] = '\0';
+        /* 幂等机制 = 状态门: listen stop 只在 kDeviceStateListening 分支单发
+         * （KEY 路径设备已先自行 Idle, settle 重复见 state != Listening 即 no-op、
+         * 不重发 listen stop——RCL-F1「KEY 路径幂等」的机制载体; 行为半归真机轮）。 */
+        TEST_ASSERT_EQUAL_INT_MESSAGE(
+            1, rdl_count_sub(region, "SendStopListening("),
+            "RCL-F1 RED: HandleStopListeningEvent 区内 SendStopListening 出现次数 "
+            "!= 1 —— listen stop 多点散射/状态门被破（幂等失效 = 重复 settle 重发"
+            "归档触发面, listen stop = front stop 归档语义, 双发即双归档沿）。");
+        p_gate = strstr(region, "kDeviceStateListening");
+        p_send = strstr(region, "SendStopListening(");
+        TEST_ASSERT_TRUE_MESSAGE(
+            p_gate != NULL && p_send != NULL && p_gate < p_send,
+            "RCL-F1 RED: listen stop 发送点不在 kDeviceStateListening 状态门之后 "
+            "—— KEY 路径幂等机制失效（已 Idle 的重复 settle 不得重发 listen stop, "
+            "plan F4 幂等条款）。");
+        free(region);
+    }
+    free(app);
+}
+
 /* ---------------------------------------------------------------------------
  * REVISION LOG (acceptance-author only; tighten-only discipline):
+ *   2026-10-21 additive（TaskPackage 261021-p3-record-cancel-lifecycle RCL-F1）:
+ *               新增 TEST 8——start_organizing 消费沿 settle 链（mcp_server.cc case 3
+ *               块内 StopListening 接线锚; plan F4 修位, 与 KSPV2_ACT_STOP_RECORD
+ *               同款形态）+ KEY 路径幂等锚（application.cc HandleStopListeningEvent
+ *               状态门单发 listen stop——已 Idle 重复 settle no-op 的机制载体,
+ *               must-stay-green 防回退; 行为半归真机轮）。既有 TEST 1-7 断言集合
+ *               零变化; 授权 = reviewed plan.md F4 修位表 + taskpackage acceptance
+ *               RCL-F1（冻结边界）。设计态红面追加 TEST 8 settle 半。
  *   2026-10-19 初版冻结（TaskPackage 261019-p3-record-dialogue-guide; acceptance[]
  *               RDG-F1..F6 为冻结边界; requirements v1.65 S-F2.2/NFR-PERF-3 +
  *               FROZEN PROPOSAL ADR-013 + reviewed plan S3/S4 为语义权威）。
