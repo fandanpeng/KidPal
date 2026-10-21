@@ -89,13 +89,13 @@
     "counterparts": [
       {
         "face": "firmware",
-        "path": "firmware/main/protocols/protocol.cc",
-        "symbol": "SendKidpalStoryDiscard"
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "KSPV2_ACT_DISCARD_RECORD"
       },
       {
         "face": "firmware",
-        "path": "firmware/main/mcp_server.cc",
-        "symbol": "story_key discard_rec"
+        "path": "firmware/main/protocols/protocol.cc",
+        "symbol": "SendKidpalStoryDelete"
       },
       {
         "face": "server",
