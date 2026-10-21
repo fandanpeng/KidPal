@@ -1,69 +1,171 @@
 {
-  "changeId": "261020-p3-rec-frame-visual",
-  "rigor": "nano",
-  "sourceType": "human-ad-hoc",
+  "changeId": "261021-p3-record-cancel-lifecycle",
+  "rigor": "full",
+  "sourceType": "regression",
   "origin": {
-    "type": "human-ad-hoc",
-    "upstreamType": "human-ad-hoc",
-    "upstreamRef": "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md",
-    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-20 比例化 review 判档 0 nano + human 触点① 2026-10-20 确认，含爆炸半径边界量数申报与无齿目检兜底声明）；plan 即冻结技术输入、只读消费。非拆包产物、无 workstream/mergeOrder。",
-    "workstream": ""
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261021-story-session-cancel-lifecycle.md",
+    "upstreamFrozen": ""
   },
-  "subsystem": "firmware/main/display/story_page.c（kidpal_story_page_render 内 case KSTORY_PAGE_RECORDING 分支 :1434–1501 的位式常量与绘制坐标 + 分支头注释 :1444–1454）；不触 server/**、不触其它页态分支、不触任何签名与函数本体",
-  "planRef": "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md",
-  "story": "261020-p3-rec-frame-visual · P3 录音帧两处观感修——① 声波波浪线从右侧中部 @(180,94) 挪到猫咪图标 @(45,87,96x96) 正下方（左演出区内，避开右侧回显列）；② REC 闪点+「REC」+录音时长合并一行并整体右移，消除与左侧对话气泡（右缘 ~192）的视觉重叠。元素集与「在记」语义零变化（WF-F2-02 / v7「在记信号三帧常驻」不动）。行为权威 = reviewed plan（意图定义五件）；human 截图直提，观感直修+烧板+看屏偏好先例（真机目检兜底，2026-10-16 human 反馈）。",
+  "subsystem": "server/gateway (front_app.py teardown gather 悬挂修复 / kidpal_story_discard 消费分支 / 在途引导双点存续守卫 / 腿集会话归口连接级映射 + story.py 预判零改~极小) + firmware/main (mcp_server.cc start_organizing 消费补 StopListening settle + DISCARD_RECORD case 补 discard 帧发送 + protocols/protocol.h/.cc SendKidpalStoryDiscard 逐字仿 SendKidpalStoryDelete 形态) + firmware/main/test 两 host 齿更新（record_session_live / record_dialogue_guide）",
+  "story": "S-F2.2 · 对话式引导记录（双入口）· v1.66（docs/requirements.md §9 v1.66 行）AC4：BOOT/「讲错啦」取消丢弃不设恢复（本包 = 取消/丢弃生命周期两侧闭环的实现语义落地：显式丢弃通知 + 断连取消兜底 + zombie 隔离）；S-F1.4-AC6：录音期提醒排队延后、会话结束立刻弹（F4 settle 复用 Idle 清位链顺带对齐）。取消链架构权威 = arch §5.2 场景④ + 契约 §四 kidpal_story_discard（2026-10-21 LANDED）。",
   "sourceRefs": [
-    "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md"
+    "docs/debt/tech/TECH-261021-story-session-cancel-lifecycle.md",
+    "delivery/intake/261021-p3-record-cancel-lifecycle.md",
+    "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md",
+    "delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md",
+    "S-F2.2",
+    "S-F2.2-AC4",
+    "S-F1.4-AC6",
+    "docs/contracts/interface-contract.md#§四"
   ],
   "acceptance": [
-    { "id": "NRF-A1", "suiteGate": true }
+    "RCL-A1: 累积态会话 + kidpal_story_discard 到达 → acc.cancel 落、无归档、story_list total 不变、会话 pop、sweep stuck/auto-finish 不再命中；幂等 no-op（重复 discard / 非累积态 discard）；连接权威：载荷 session_id 不被信任——front 按本连接 session_id 取消（伪造跨会话 session_id 不影响其他会话）。设计态红 = _consume_kidpal_control 无 discard 分支",
+    "RCL-A2: 在途引导回合存续守卫（mock LLM 延迟注入）+ discard/断连中途到达 → 引导回合入口守卫返回不发 LLM（build_organizing_input None 即返）、LLM 返回后播报前复查 routing(sid)=="accumulate" 否则丢弃产出不播报不计轮；mark_guide_round 不复活会话壳（先判 accumulate 再 mark）。设计态红 = 双点守卫缺席",
+    "RCL-A3: 设备断连 + 引擎静默 → teardown 收尾限时内完成（gather FIRST_COMPLETED 不悬挂回归齿）、cancel(reason=ws_disconnect) 落、_alert_legs 与会话→连接腿映射摘除。设计态红 = gather 双泵悬挂语义在世",
+    "RCL-A4: 跨连接隔离（zombie 回归齿）——旧连接 zombie 会话 + 新连接在线 → sweep 引导注入与自动收尾帧只打旧会话归属连接的腿，新连接腿零帧；提醒/课表两消费点全局腿语义不回归。设计态红 = 腿集会话归口映射缺席",
+    "RCL-F1: 固件 host 齿——start_organizing 消费 → StopListening 事件投递（Idle 清位链接管）；KEY 路径幂等（已 Idle 重复 settle no-op、不重发 listen stop）；DISCARD_RECORD → SendKidpalStoryDiscard 帧先于 CloseAudioChannel（同一 TCP 有序帧序）；既有负锚换锚（record_session_live :739-751 齿语义更新为 discard 帧序断言）。设计态红 = SendKidpalStoryDiscard 缺席 + settle 消费链缺席"
   ],
   "exitCriteria": [
-    "NRF-X1: host 全量套件零新增红（既有先存红基线 = p1_auxbar AB-A1/A2/A4 三条，2026-10-20 本树实测 220 Tests 3 Failures exit 3；不新增、不扩大；story/record 区既有齿全绿）",
-    "NRF-X2: diff 不越 changeManifest（story_page.c 单文件；越界 = planner 停、回 /triage-change 重判档，nano 无扩单通道）",
-    "NRF-X3: 白盒复核——detect_changes 对 actual diff 算实际爆炸半径，与 plan 五件⑤预估摘要比对，结果记入 integrator review-packet「白盒复核」节（advisory；nano 行为验收判分位）",
-    "NRF-X4: 真机目检 human 终判（观感直修先例，烧板+看屏）：波浪线在猫咪正下方左演出区内、REC 闪点+「REC」+时长一行且与气泡零重叠、回显列与「在记」元素集观感不变；本 Pod 到门停等（status=awaiting-human:real-device）、不自行烧录"
+    "全部 RCL-A1..A4（server pytest）+ RCL-F1（firmware host）冻结验收转绿；既有套件零新增红（基线锚见 launch-card：server 面引用 261020 锚 229 passed 零红 @ b8aaa82b 零差异、firmware host 现跑 220 Tests 3 Failures 全 p1_auxbar AB-A1/A2/A4 先存红 @ be93ca5e）；负锚换锚属本包验收面语义更新、非绕齿",
+    "live-manual 层如实申报：discard 帧序端到端 + 真机取消链（BOOT 丢弃 → 列表页长按不再被拦、断连后 zombie 不复活）归真机轮——烧板轮不可省（mcp_server.cc / protocol.cc 设备编译单元），到门即停 status=awaiting-human:real-device",
+    "mutationEvidence perAcceptance 全条 turnedRed=true 且还原复绿（mutationRequired=true）",
+    "契约零改：builder/fixer 不触 docs/contracts/**（kidpal_story_discard 已随上游 /arch-change 批 LANDED，本包只消费冻结契约）"
   ],
-  "iterationBudget": 1,
-  "fixBudget": 2,
+  "iterationBudget": 3,
+  "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "deliveryImpact": "none",
   "planningImpact": "none",
   "planningRefs": [],
-  "riskTier": "low",
+  "riskTier": "high",
   "gateProfile": [
-    "docs-sync",
+    "contract-drift",
     "test-quality",
-    "device-round"
+    "evidence-integrity",
+    "device-round",
+    "security",
+    "docs-sync"
   ],
   "contractRefs": [
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md#§四",
+    "docs/contracts/interface-contract.md#§1.4"
   ],
   "docRefs": [
-    "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md"
+    "docs/debt/tech/TECH-261021-story-session-cancel-lifecycle.md",
+    "delivery/intake/261021-p3-record-cancel-lifecycle.md",
+    "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md",
+    "delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md",
+    "docs/contracts/interface-contract.md",
+    "docs/architecture.md"
   ],
   "docsSyncRequired": true,
-  "docsNoChangeReason": "本包零 canonical 文档改动：位式微调不改需求/架构/契约语义（architect 逃生门自查 NO_CONTRACT_CHANGE，display 统一响应块是 wire schema、设备端本地像素布局不在其列）；v7 设计稿与 WF-F2-02 线框回同步已按观感直修先例钉为后补账（真机观感终判后走直修快环补账，见 plan「后补账提示」），不阻塞本包；docs-delta 只作声明口径留痕。",
   "docsOwner": "integrator",
-  "securityReviewRequired": false,
-  "securityAxes": [],
+  "securityReviewRequired": true,
+  "securityAxes": [
+    "kidpal_story_discard 私有扩展消息伪造面：front 会话绑定以连接权威——按本连接 session_id 取消、不信载荷 session_id 值（防跨会话伪造取消），幂等 + 审计 log 一行",
+    "teardown 与腿集归口改动触碰连接生命周期资源释放（pump 泵收尾 / _alert_legs / 会话→连接腿映射）：不得引入新泄漏（未停录断开缓冲累积）也不得误摘活跃连接腿（提醒/课表两消费点全局腿语义不动）"
+  ],
   "adrRequired": false,
   "planningWorkstreamRequired": false,
-  "mutationRequired": false,
-  "mutationSkipReason": "nano 档无验收语义净增（261016-gov-review-nano-tier）：验收权威置换 = NRF-A1 suiteGate（既有套件零新增红）+ NRF-X3 architect 白盒复核；目标区域实测零坐标断言齿（plan 五件④），无新冻结断言可变异，变异仪式无对象。",
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "设备端本地像素布局微调，零端云 wire、零包外对端面（architect 逃生门自查 NO_CONTRACT_CHANGE：display 统一响应块是 server→device wire schema，本改不触）；server/** 零改动。"
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
   },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "face": "firmware",
+        "path": "firmware/main/protocols/protocol.cc",
+        "symbol": "SendKidpalStoryDiscard"
+      },
+      {
+        "face": "firmware",
+        "path": "firmware/main/mcp_server.cc",
+        "symbol": "story_key discard_rec"
+      },
+      {
+        "face": "server",
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_consume_kidpal_control"
+      }
+    ],
+    "exempt": ""
+  },
+  "decisionCoverage": [
+    {
+      "decision": "OQ1 = Design B 新增 kidpal_story_discard（human 2026-10-21 触点①裁）",
+      "summary": "三条复用通道 architect 实证排除（abort 正面冲突 / listen stop 语义相反 / 断连隐式失效）——破坏性用户意图走显式可审计通道，契约已 LANDED，本包零契约改动。",
+      "sourceRefs": ["delivery/intake/261021-p3-record-cancel-lifecycle.md"],
+      "landsIn": "acceptance:RCL-A1"
+    },
+    {
+      "decision": "OQ2 = cancel-on-disconnect 维持（human 2026-10-21 触点①裁）",
+      "summary": "纯掉线会话维持 HWV-A11 既有 cancel-on-disconnect 语义（内存卫生；掉线丢素材可重录），跨连接续存机制不做。",
+      "sourceRefs": ["delivery/intake/261021-p3-record-cancel-lifecycle.md"],
+      "landsIn": "acceptance:RCL-A3"
+    },
+    {
+      "decision": "F2 会话绑定以连接权威（front 不信载荷 session_id）",
+      "summary": "discard 消息载荷仅作审计参考，front 按本连接 session_id 取消——连接权威裁定落验收断言。",
+      "sourceRefs": ["delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"],
+      "landsIn": "acceptance:RCL-A1"
+    },
+    {
+      "decision": "F3 不引入会话代次（sid = 每连接 uuid4）",
+      "summary": "cancel 后同名会话不会重建，双点存续守卫已完备——比例化裁定，不加重建代计数。",
+      "sourceRefs": ["delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"],
+      "landsIn": "acceptance:RCL-A2"
+    },
+    {
+      "decision": "OQ3 = 复验③重定义 (a)（human 2026-10-21 触点①裁）",
+      "summary": "「引导播报刚停、子态回聆听瞬间丢弃 → 在途/在播引导残余立即断」——不动需求面，本包内闭环（语音「讲错啦」取消通道不动，复验走按键路径）。",
+      "sourceRefs": ["delivery/intake/261021-p3-record-cancel-lifecycle.md"],
+      "landsIn": "acceptance:RCL-A2"
+    },
+    {
+      "decision": "F4 复用 HandleStopListeningEvent 既有 Idle 清位链（application.cc 预判零改）",
+      "summary": "start_organizing 消费补 app.StopListening()（事件位投递与 KSPV2_ACT_STOP_RECORD 同款形态）；KEY 路径幂等（state!=Listening no-op）——不复刻清位逻辑。",
+      "sourceRefs": ["delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"],
+      "landsIn": "acceptance:RCL-F1"
+    }
+  ],
   "changeManifest": [
-    "firmware/main/display/story_page.c"
+    "server/gateway/front/front_app.py",
+    "server/gateway/story.py",
+    "server/acceptance/**",
+    "server/tests/**",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/protocols/protocol.h",
+    "firmware/main/protocols/protocol.cc",
+    "firmware/main/test/**"
   ],
   "impactedTestsSeed": [
     {
-      "path": "firmware/main/test/host_app（既有全量套件）",
+      "path": "server/acceptance/（新增冻结件或既有件更新）",
+      "kind": "new-frozen-acceptance-file",
+      "note": "验收种子 1-4：discard 消费幂等/连接权威、在途守卫、teardown 不悬挂、跨连接隔离（假 ws 双桩 + mock LLM 延迟注入先例同 261019 EQ-4 形态）"
+    },
+    {
+      "path": "firmware/main/test/record_session_live.acceptance.c",
+      "kind": "frozen-file-update",
+      "note": "负锚换锚：:739-751 既有齿「DISCARD_RECORD case → CloseAudioChannel 接线」+「零 StopListening」负锚改写为「SendKidpalStoryDiscard 先于 CloseAudioChannel 帧序」——齿语义更新属本包验收面"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "frozen-file-update",
+      "note": "settle 消费链 / KEY 路径幂等齿"
+    },
+    {
+      "path": "server/tests/ + firmware host 既有全量套件",
       "kind": "must-stay-green",
-      "note": "既有 host 全量套件零新增红（NRF-A1 suiteGate 语义）；特别：story_page_v2 / record_dialogue_guide / record_dialogue_v7_fix 既有齿只断言行为语义（页态/键位/子态/资产名在库/文案单源）、零坐标断言，位式微调对其天然安全；p1_auxbar AB-A1/A2/A4 三条先存红为基线、与本包正交"
+      "note": "零新增红（基线锚见 launch-card：server 229 passed 引用锚零差异；firmware host 220T3F 全 p1_auxbar 先存）"
     }
   ],
-  "notes": "① 爆炸半径边界量数（human 触点①已确认）：将触符号 kidpal_story_page_render 按调用作用域 4 ≤ 5 达标（ScheduleStoryRender / StoryRecTimerCb / ScheduleStoryDeleteOverlay + AddCommonTools 内 3 个 story 工具 handler lambda 同属 mcp_server.cc 紧耦合簇）、按调用点计 6 略超阈值——architect 如实申报、human 确认放行。② 无齿目检兜底：RECORDING 帧位式坐标零既有断言齿，视觉终判归 human 真机目检（plan 五件④）；本 Pod 不自行烧录（观感直修先例：闸链后补账）。③ nano 无扩单通道：diff 越出 changeManifest 或白盒复核发现出界 → 停回 /triage-change 重判档，不得原地扩 manifest。④ Step 5 acceptance-author 豁免：nano 无验收语义净增（taskpackage-required-check nano profile 红基线/验收件必填豁免），acceptance = suiteGate 纯形态（既有套件零新增红），无可冻结的新齿、不派 acceptance-author。⑤ 基线锚（本树现跑 2026-10-20 @ HEAD b8aaa82b）：server 面 229 passed / 0 failed / 4 deselected 零红；firmware host 面 220 Tests 3 Failures exit 3，3 条全 = p1_auxbar AB-A1/A2/A4 先存红（与 261018/261019 基线同批），story/record 区零红。⑥ 坐标定案归 builder/fixer 在左演出区自由度内定（206px 资产宽 vs 左区 ~170px 张力，plan 五件③），真机目检为准；程序化兜底跳动条（story_page.c:1469–1472）随资产分支同挪。"
+  "notes": "① scope-map 已核：builder/fixer allow firmware/** + server/** 覆盖 changeManifest 全部 target；acceptance-author allow 覆盖两 face 冻结件写权；无中途补 scope。② Step 1g 前置技术预评由 triage architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费；根因四条逐点 file:line 实证 + 四件修复修位表），不重复派 architect。③ 契约判定：kidpal_story_discard 已随上游 /arch-change 批 LANDED（CDQ-261021-p3-record-cancel-lifecycle，CONTRACT_CHANGE_REQUIRED R1 正式裁定），本包零契约改动，builder/fixer 契约禁写不变。④ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。⑤ live/真机门前停等：烧板轮不可省（mcp_server.cc / protocol.cc 属设备编译单元，按 full 环境备），到门即停 status=awaiting-human:real-device。⑥ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑦ plan.md 负锚换锚条款在册：record_session_live.acceptance.c:739-751 齿语义更新属本包验收面，非绕齿。⑧ 上一包留根 intake 评估（pod-retro 261020 三条：诊断先行 / 冲突预检 / 扩单预授权——逐条继承，无 blockingDecision）。⑨ 预判零改文件（不进 changeManifest，builder 越界即停）：server/deploy/engine-patch/connection.py（注入/抑制语义不动）、firmware/main/application.cc（Idle 清位链复用零改）。",
+  "securityEvidence": "",
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "acceptanceTestsFile": []
 }
