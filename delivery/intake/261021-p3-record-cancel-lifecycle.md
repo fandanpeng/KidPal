@@ -20,7 +20,7 @@ anchors:
   req: "N/A——需求面零命中，无 §9 版本行（S-F2.2 AC4 既有语义实现对齐）"
   arch: "architecture.md §12 changeId 行 `261021-p3-record-cancel-lifecycle`（2026-10-21 landed）——§5.2 场景④ 取消链显式化一句（设备丢弃 → 契约 §四 `kidpal_story_discard` → 网关按连接权威 cancel；断连 cancel 兜底）+ §5.1.2 front 行闭集枚举补一词（R1-F1 裁定随批补）；制品 = delivery/review/261021-arch-review-p3-record-cancel-lifecycle/（FROZEN v1.1 + R1 BLOCK(F1,F2)→v1.1 修毕 + R2 GREEN + landing-summary 偏差申报三处）"
   contract: "interface-contract.md 两触点 LANDED（CDQ-261021-p3-record-cancel-lifecycle）：① §四新增 `kidpal_story_discard`（端→网关私有扩展消息、网关按本连接 session_id 权威取消不信载荷值、幂等 + 审计、单向无应答、省略 = cancel-on-disconnect 兜底维持）+ 变更记录条；② §1.4 `start_organizing` 行包络核对零改（NO_CONTRACT_CHANGE，R1 正式裁定）。四分类 = CONTRACT_CHANGE_REQUIRED（主触点，R1 正式裁定）；落地核验待 landing-verdict"
-  imp: ""
+  imp: "实现面 ② 单包 Full landed @ dev/pod-m2 e4b6847c（2026-10-21）：RCL-A1..A4 + RCL-F1 冻结齿全绿、verify final r4 10/10 闸 PASS（round 证据 verifier-evidence/rounds/r4.json）、mutation 5/5 turnedRed 还原复绿、firmware host 复跑收敛 222T3F（仅剩 p1_auxbar 先存红）、closeout-check ok + INDEX +1 行；语义决策三条（U2 无参自由函数原语 / U3 [SC-D] 空表回退 / U4 在途整理守卫包外）登记 review-packet；待 supervisor 合并门（riskTier=high → awaiting-human:merge-gate）+ 真机轮（awaiting-human:real-device，烧板不可省）。commit 链：80c0c482 launch 面 + c725114e 冻结 + bab51858 brief + e4b6847c 实现/收口"
 openQ:
   - id: q1-wire分叉
     question: 设备→server 丢弃通知复用既有通道（abort / listen stop / 断连隐式）还是新增显式 cancel 信号？
