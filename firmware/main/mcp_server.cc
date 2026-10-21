@@ -688,13 +688,20 @@ bool StoryDispatchAct(int act) {
             ScheduleStoryRender();
             return true;
         case KSPV2_ACT_DISCARD_RECORD:
-            /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）——关通道
-             * 即达 front 断开钩子 acc.cancel(session_id, reason="ws_disconnect")
-             * （弹缓冲不落盘）。负锚: 严禁走收尾保存面（listen stop 上行会触发
-             * front stop 归档 = 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=
-             * 丢弃」已退役）。 */
+            /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）。
+             * 261021-p3-record-cancel-lifecycle F2（契约 §四 kidpal_story_discard,
+             * 2026-10-21 LANDED）: 先发显式丢弃帧、再关通道——同一 TCP 有序, front
+             * 泵先消费 discard（按本连接会话键权威取消、不归档）再处理断连;
+             * 关通道保留 = cancel-on-disconnect 兜底（OQ2 维持: 帧丢失/旧网关退化
+             * 路径仍由断开钩子收尾）。
+             * 发帧在本回调上下文直接调协议自由函数（与 KSPV2_ACT_INTERRUPT_GUIDE
+             * 的 AbortSpeaking 直接发送同款线程形态）——若经 Application::Schedule
+             * 排到主任务, 帧序会落到关通道之后 = 发不出去, 显式丢弃通道退化。
+             * 负锚: 严禁走收尾保存面（listen stop 上行会触发 front stop 归档 =
+             * 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=丢弃」已退役）。 */
             ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
                      g_story_view.cancel_count);
+            SendKidpalStoryDiscard();
             Application::GetInstance().CloseAudioChannel();
             ScheduleStoryRender();
             return true;
@@ -1325,6 +1332,17 @@ void McpServer::AddCommonTools() {
                                                                    VRT_CTRL_START_ORGANIZING);
                             ESP_LOGI(TAG, "control start_organizing story_consumed=%d page=%d",
                                      consumed, g_story_view.page);
+                            /* 261021-p3-record-cancel-lifecycle F4（S-F1.4-AC6 清位链
+                             * 复用）: server 驱动收尾（语音收尾/自动收尾）时设备仍在
+                             * Listening——补 settle 事件位投递（与 KSPV2_ACT_STOP_RECORD
+                             * 同款形态, mcp 回调上下文安全）：HandleStopListeningEvent
+                             * 发 listen stop + SetDeviceState(Idle) -> Idle 分支既有清位
+                             * 链接管（[R2] 页态复位 + story ctx 清位 + 提醒队列 raise）,
+                             * show_home 守卫随之放行。幂等: KEY 收尾路径设备已先自行
+                             * Idle, 重复 settle 见 state != Listening 即 no-op 不重发
+                             * listen stop; front 侧收尾已先 cancel 会话（routing 回 chat）
+                             * -> 本 listen stop 零副作用。 */
+                            app.StopListening();
                             if (consumed == 1) {
                                 /* 进整理过渡态 -> 首帧渲染（state-organizing 帧可见,
                                  * 翻✅条件③的设备半; 渲染分支 = story_page.c [G5]）。 */

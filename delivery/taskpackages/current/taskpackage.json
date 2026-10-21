@@ -83,7 +83,54 @@
   "planningWorkstreamRequired": false,
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptance": "RCL-A1",
+        "turnedRed": true,
+        "mutation": "front_app.py _consume_kidpal_control discard 分支摘除审计日志行 log.info(\"story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s\", ...)（取消语义保留，仅摘「审计日志一行」契约职责）",
+        "redVerbatim": "AssertionError: no logs of level INFO or higher triggered on kidpal-front @ server/acceptance/test_record_cancel_lifecycle.acceptance.py:645 —— FAILED test_rcl_a1_discard_cancels_without_archive_and_sweep_stops；1 failed, 8 passed in 0.27s",
+        "restoreReGreen": "还原后单跑 server/acceptance/test_record_cancel_lifecycle.acceptance.py → 9 passed in 0.24s",
+        "sensitive": true,
+        "acceptanceId": "RCL-A1: 累积态会话收到 {\"session_id\":\"...\",\"type\":\"kidpal_story_discard\"}（契约 §四 LANDED wire 形态）→ 网关整条消费并拦截不下透引擎（引擎腿零 discard 帧）；front 按本连接 session_id 权威取消——acc.cancel(本连接 session_id, reason=\"discard\") 落（reason 冻结值 = \"discard\"）、会话 pop（routing 回 chat、active_sessions 不再含该键、累积缓冲销毁 build_organizing_input 返 None）、无归档（stories 目录零 .md）、不触发 story_list 重推（设备腿零 story_list 帧）、审计日志一行（logger \"kidpal-front\" 消息含冻结 token \"story_discard\" + 本连接 session_id）；discard 后 sweep 纯决策不再命中、sweep 真跑零播报零收尾零归档。幂等 no-op：会话已释放后的重复 discard（×2）与非累积态（chat）/未知会话的 discard 均为消费拦截 + 零帧零归档零会话壳复活零异常。连接权威：连接 B 上的 discard 携带伪造载荷 session_id = 连接 A 的会话键时，连接 A 会话保持累积态、素材完好、A 引擎腿零新帧，仅 B 本连接会话被取消（载荷 session_id 不被信任）。设计态红 = _consume_kidpal_control 无 discard 分支（消费拦截/取消/审计/幂等全链红）。回引 = 契约 §四 kidpal_story_discard + decisionCoverage OQ1/F2"
+      },
+      {
+        "acceptance": "RCL-A2",
+        "turnedRed": true,
+        "mutation": "front_app.py _story_guide_round 入口守卫整块摘除（spoken = acc.build_organizing_input(sid) + if spoken is None: return → 回退 261019 旧形态 or \"\"）",
+        "redVerbatim": "assertEqual(stub.calls, []) 抛出 list diff（含空素材照发 user_text 逐字）—— RCL-A2 RED: 引导回合入口守卫缺席 —— 会话已释放仍发 LLM @ test_record_cancel_lifecycle.acceptance.py:809；1 failed, 8 passed in 0.32s",
+        "restoreReGreen": "还原后单跑 → 9 passed in 0.23s",
+        "sensitive": true,
+        "acceptanceId": "RCL-A2: 在途引导回合双点存续守卫（mock LLM 延迟注入 = _openclaw_chat_once 替身可门控阻塞）——①入口守卫：会话已释放（build_organizing_input 返 None，discard 先于引导回合到达）→ 引导回合直接返回，零 LLM 调用、零播报、零计轮、零会话壳；②播报前复查：LLM 在途期间断连取消（reason=ws_disconnect）或 discard（经真实设备泵中途到达）落地后 LLM 才返回 → 复查 routing(sid)==\"accumulate\" 不成立则丢弃产出：不注入 kidpal_speak、不播报、不计轮；③mark 不复活会话壳：mark_guide_round 仅在累积态调用，全程断言 active_sessions() 不含已取消会话（story.py _ensure 重建壳回潮即红）。不误杀正常收尾（finish 先 cancel 后演出属正确丢弃）作为设计约束记于缝契约。设计态红 = 双点守卫缺席。回引 = plan F3①②③④ + OQ3 复验③重定义(a)（服务端时序半）"
+      },
+      {
+        "acceptance": "RCL-A3",
+        "turnedRed": true,
+        "mutation": "front_app.py ws_gateway teardown 回退 await asyncio.gather(pump_up, pump_dn)（摘除 asyncio.wait FIRST_COMPLETED + 对侧泵 cancel 回收 + 泵异常留痕）",
+        "redVerbatim": "AssertionError: RCL-A3 RED: 设备腿已断连且引擎腿静默, ws_gateway 收尾未在限时内完成 —— gather 双泵悬挂语义在世 @ test_record_cancel_lifecycle.acceptance.py:994；1 failed, 8 passed in 6.42s（6s 预算耗尽型红，非挂死）",
+        "restoreReGreen": "还原后单跑 → 9 passed in 0.26s（耗时回 0.2s 量级，反证悬挂消失）",
+        "sensitive": true,
+        "acceptanceId": "RCL-A3: 设备腿断连 + 引擎腿静默（fake websockets 连接 + 永静默引擎腿替身）→ ws_gateway 收尾限时内完成（6s 预算 asyncio.wait_for 驱动；gather 双泵悬挂 = 超时即红，当前树红于 front_app.py:1496 await asyncio.gather(pump_up, pump_dn)）；收尾完成后断言：acc.cancel(session_id, reason=\"ws_disconnect\") 落（spy 包装真实 StoryAccumulator.cancel 记录 reason，真实取消语义真跑）、会话 pop、零归档（未停录断开累积缓冲不泄漏，HWV-A11 意图）、_alert_legs 摘除本连接腿、会话→连接腿映射摘除（[SC-D] 缝在场时断言空表）。设计态红 = gather 双泵悬挂语义在世。回引 = plan F1 + OQ2 cancel-on-disconnect 维持"
+      },
+      {
+        "acceptance": "RCL-A4",
+        "turnedRed": true,
+        "mutation": "front_app.py _story_auto_finish 腿集回退 list(_alert_legs)（摘除 _session_legs(sid) 会话归口；引导注入侧仍归口，只变异自动收尾半）",
+        "redVerbatim": "assertEqual(_start_organizing_frames(dev_new.sent_text), []) 抛出 —— RCL-A4 RED: 旧会话的自动收尾 start_organizing 打进了新连接设备腿 —— 全局腿收尾在世（症状⑤复现）@ test_record_cancel_lifecycle.acceptance.py:1147；1 failed, 8 passed in 0.22s",
+        "restoreReGreen": "还原后单跑 → 9 passed in 0.27s",
+        "sensitive": true,
+        "acceptanceId": "RCL-A4: 跨连接隔离（zombie 回归齿）+ 腿集会话归口映射缝（[SC-D] 名字冻结：_register_session_legs(session_id, device_ws, engine_ws) / _unregister_session_legs(device_ws) / _session_legs(session_id)——ws_gateway 与 _alert_legs 同生命周期登记/摘除；按 device_ws 对象身份摘除、未知会话查询返空表、查询不改状态）：旧连接 zombie 会话（stuck-due 1 轮引导 + auto-finish 2 轮两态齐备、其腿仍泄漏在全局 _alert_legs）+ 新连接在线（全局腿 + 映射双登记）→ sweep 后引导注入只打旧会话①归属腿（kidpal_speak）、自动收尾帧族（start_organizing 恰一帧 + story_text + story_list）只打旧会话②归属腿；新连接腿零帧（引擎腿零 speak、设备腿零 start_organizing/story_text/story_list——症状②⑤三次实证形态的回归齿）；另一 zombie 腿亦零溢出（会话级定向非连接级粗粒度）。must-stay-green：提醒投递（_deliver_alert_now → gw_reminders.deliver_alert 真跑）仍达新连接设备腿 + 引擎腿——F3⑤「提醒/课表两消费点维持全局腿不动」行为锚；sweep 后全局 _alert_legs 登记不被 purge。设计态红 = 腿集会话归口映射缝缺席（三缝函数全零命中）。回引 = plan F3⑤ + securityAxes 轴②"
+      },
+      {
+        "acceptance": "RCL-F1",
+        "turnedRed": true,
+        "mutation": "mcp_server.cc case KSPV2_ACT_DISCARD_RECORD 内摘除 SendKidpalStoryDiscard(); 调用（保留 CloseAudioChannel；变异注释刻意不含该符号防 needle 自指假绿）。附加变异（settle 半，同批第二跑）：case 3: 消费块内摘除 app.StopListening();",
+        "redVerbatim": "RSL-A5 :770 FAIL —— RCL-F1 RED(换锚): KSPV2_ACT_DISCARD_RECORD case 零 SendKidpalStoryDiscard；RSL-A8 :942 FAIL —— 仅 2/3 文件命中；222 Tests 5 Failures。附加变异红：RDL TEST 8 :1025 FAIL —— start_organizing 消费块零 StopListening（222 Tests 4 Failures，恰好 1 条新增红无误伤）",
+        "restoreReGreen": "还原后 host 复跑 → 222 Tests 3 Failures 0 Ignored（仅剩 p1_auxbar AB-A1/A2/A4 先存红）；附加变异还原后同态",
+        "sensitive": true,
+        "acceptanceId": "RCL-F1: 固件 host 齿（两件已登记 HOST_ACCEPTANCE_SRCS，零新增登记——登记守维持）——① DISCARD_RECORD case 帧序（record_session_live RSL-A5 tooth 3 换锚）：case 区内 SendKidpalStoryDiscard( 先于 CloseAudioChannel（契约 §四发送时机 = 关音频通道之前同连接先行、同一 TCP 有序，front 泵先消费 discard 再处理断连；先断连 = discard 帧发不出去、显式丢弃通道退化为掉线路径即红）+ CloseAudioChannel 在场保留（cancel-on-disconnect 兜底 must-stay-green）+ tooth 4 负锚保留（case 内严禁 StopListening——丢弃不得走收尾保存面；plan 换锚条款核对裁定 = tooth 3 换锚 + tooth 4 防回潮保留）；② 发送原语（record_session_live 新增 RSL-A8）：protocol.h 声明 + protocol.cc 定义（wire 形状片段 session_id / kidpal_story_discard / SendText 下发，逐字仿 SendKidpalStoryDelete 拼串形态）+ mcp_server.cc DISCARD case 发送点 = ≥3 文件消费链 + websocket_protocol.cc 零 override 负锚；③ settle 消费链（record_dialogue_guide 新增 TEST 8）：mcp_server.cc start_organizing 消费块（case 3 区）内 StopListening( 在场（事件位投递，KSPV2_ACT_STOP_RECORD 同款形态，Idle 清位链接管 = [R2] 复位 + ctx_set(0) + RaiseReminderQueue）；④ KEY 路径幂等（TEST 8 第二半，must-stay-green）：application.cc HandleStopListeningEvent 区内 SendStopListening( 恰一次且在 kDeviceStateListening 状态门之后（已 Idle 重复 settle no-op 机制载体；行为半归真机轮）。设计态红 = SendKidpalStoryDiscard 缺席（RSL-A5 换锚半 + RSL-A8 全红）+ settle 消费链缺席（RDL TEST 8 settle 半）；幂等门现状绿。回引 = plan F2/F4 修位表 + 负锚换锚条款（notes ⑦）",
+        "note": "F1 附加变异（settle 半）恰红 RDL TEST 8 一条；tooth 强度观察（非本包修订面，转 acceptance-author 参考）：RSL-A8 tooth1 文件计数可被注释满足——注释自指试跑 222T4F 仅 RSL-A5 红"
+      }
+    ]
   },
   "crossEnd": {
     "counterparts": [
@@ -188,6 +235,6 @@
     }
   ],
   "notes": "① scope-map 已核：builder/fixer allow firmware/** + server/** 覆盖 changeManifest 全部 target；acceptance-author allow 覆盖两 face 冻结件写权；无中途补 scope。② Step 1g 前置技术预评由 triage architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费；根因四条逐点 file:line 实证 + 四件修复修位表），不重复派 architect。③ 契约判定：kidpal_story_discard 已随上游 /arch-change 批 LANDED（CDQ-261021-p3-record-cancel-lifecycle，CONTRACT_CHANGE_REQUIRED R1 正式裁定），本包零契约改动，builder/fixer 契约禁写不变。④ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。⑤ live/真机门前停等：烧板轮不可省（mcp_server.cc / protocol.cc 属设备编译单元，按 full 环境备），到门即停 status=awaiting-human:real-device。⑥ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑦ plan.md 负锚换锚条款在册：record_session_live.acceptance.c:739-751 齿语义更新属本包验收面，非绕齿；acceptance-author 裁定 tooth 3 换锚 + tooth 4 负锚保留（防回潮），planner 核对判忠实（2026-10-21）。⑧ 上一包留根 intake 评估（pod-retro 261020 三条：诊断先行 / 冲突预检 / 扩单预授权——逐条继承，无 blockingDecision）。⑨ 预判零改文件（不进 changeManifest，builder 越界即停）：server/deploy/engine-patch/connection.py（注入/抑制语义不动）、firmware/main/application.cc（Idle 清位链复用零改）。⑩ acceptance-author 未决问题五条裁定（2026-10-21，已回填 redBaselineResult）：[SC-D] 缝名采纳提案冻结（_register_session_legs/_unregister_session_legs/_session_legs，builder 不得自行改名）；RSL-A5 tooth 4 保留判忠实；审计 token=story_discard + reason=\"discard\" 采纳；**builder 在世义务两件**——EQ-7 会话键 uuid 注入缝不得改动会话键生成形态（F3③ 预判零改，改则 infra 红回 acceptance-author 重钉）、RDL TEST 8 case 切片锚依赖 mcp_server.cc 控制 switch 现状 case 编号顺序（无预期理由不重排 switch，重排即 infra 红回 acceptance-author 重钉）。⑪ 冻结交付（2026-10-21 acceptance-author，HEAD 80c0c482）：acceptance[] = RCL-A1..A4（server）+ RCL-F1（firmware）；acceptanceTestsFile 3 件；红基线四通道实跑数字见 redBaselineResult；freeze 冒烟 = pytest 收集零 error + C 类实编 COMPILE_EXIT=0（DEV-GOVERNANCE §3/§4）。⑫ 清单外阅读申报（acceptance-author）：story.py / auth.py / reminders.py / front_app.py 全域 / mcp_server.cc·application.cc·protocol 原语 / red-baseline wrapper（rsl wrapper 指向 pod-m1 旧树已改 m2 树内联等价——wrapper 路径漂移知会）。",
-  "securityEvidence": "",
+  "securityEvidence": "kidpal_story_discard 私有扩展消息伪造面：front 会话绑定以连接权威——按本连接 session_id 取消、不信载荷 session_id 值（防跨会话伪造取消），幂等 + 审计 log 一行（token=story_discard） —— 实现侧复核（builder 回执 + RCL-A1 冻结齿）：_consume_kidpal_control discard 分支 = _get_story_acc().cancel(session_id, reason=\"discard\")（本连接会话键），载荷 session_id 仅进审计 log.info(\"story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s\")；整条拦截 return True 不下透引擎；cancel 异常吞掉留痕不外抛（幂等 no-op）；连接权威断言由 RCL-A1 跨连接伪造 case（连接 B 携带连接 A 会话键的载荷 → A 会话保持累积态素材完好仅 B 被取消）+ builder 自带单测 test_story_cancel_lifecycle_units.py 各一条钉住。\nteardown 与腿集归口改动触碰连接生命周期资源释放（pump 泵收尾 / _alert_legs / 会话→连接腿映射）：不得引入新泄漏（未停录断开缓冲累积）也不得误摘活跃连接腿（提醒/课表两消费点全局腿语义不动） —— 实现侧复核（builder 回执 + RCL-A3/A4 冻结齿）：F1 teardown 改 asyncio.wait FIRST_COMPLETED + 对侧泵 cancel 回收，finally 必然执行 → _unregister_alert_legs + _unregister_session_legs + acc.cancel(reason=ws_disconnect) 消除「teardown 悬挂 → 映射泄漏」；_session_legs_map 生命周期与 _alert_legs 同源（连接登记 + finally 双摘除，按 device_ws 对象身份摘除）无无界增长——已知边界：未设显式 cap（_alert_legs 有 ALERT_LEG_CAP=8），因一连接一会话键、摘除与注册同生命周期实际界 = 并发连接数（reviewer 若要求显式上界属实现侧小改可留 fixer）；误摘防护由 RCL-A4 must-stay-green 锚承载（提醒投递 _deliver_alert_now → gw_reminders.deliver_alert 真跑仍达新连接两腿、sweep 后全局 _alert_legs 登记不被 purge）。",
   "docsNoChangeReason": "契约（§四 kidpal_story_discard + §1.4 措辞对账）、arch（§12 changeId 行 + §5.2 场景④取消链 + §5.1.2 闭集枚举）、requirements（v1.66 零触）均已随上游 /arch-change 批 landing（spine anchors 全 resolved）——本包 docs-delta 由 integrator 据实申报（零改动或仅实现侧注记，不重复上游 canonical）。"
 }

@@ -164,6 +164,17 @@ REVISION LOG
              验收种子 1-4 消费；[SC-A]-[SC-D] seam 契约 = plan F2/F3 修位 +
              契约 §四冻结措辞的机器可判形态；live/真机面如实申报不造 offline
              假齿——261019 同款口径）。
+  2026-10-21 探针重钉（builder 实现轮复验 8/9 绿后 planner 裁定成立；授权 =
+             planner 转达）：_display_payloads 重建器把 kidpal/display 的 name
+             过滤误下探到 params.arguments 层（wire 上 name 住 params 层）——
+             探针层级拷改缺陷，致 _display_payloads 及其派生
+             _story_list_frames/_story_text_frames/_control_frames/
+             _start_organizing_frames 恒空：A1 的「零 story_list 重推」负向
+             断言空过、A4 的定向正向断言任何实现都不可满足。修法 = 过滤位上提
+             到 params 层（三行，姊妹冻结件 test_record_dialogue_guide.
+             acceptance.py / test_m4k1_story_cloud_link.acceptance.py 同层
+             形态对齐）；全部断言语义零弱化（修后断言变真、变强——负向断言
+             不再空过、正向断言恢复可满足），红基线数字随动重录。
 """
 
 from __future__ import annotations
@@ -468,9 +479,13 @@ def _mcp_envelopes(sent_text):
 def _display_payloads(sent_text):
     out = []
     for env in _mcp_envelopes(sent_text):
-        args = (env.get("params") or {}).get("arguments") or {}
-        if args.get("name") != "kidpal/display":
+        # name 住在 JSON-RPC params 层（与 test_record_dialogue_guide.acceptance.py
+        # _mcp_envelopes 过滤位同层）——2026-10-21 重钉：冻结期拷改误把过滤下探到
+        # arguments 层致本重建器恒空（探针缺陷，非断言语义变更）。
+        params = env.get("params") or {}
+        if params.get("name") != "kidpal/display":
             continue
+        args = params.get("arguments") or {}
         data = args.get("data")
         try:
             decoded = json.loads(data) if isinstance(data, str) else None
