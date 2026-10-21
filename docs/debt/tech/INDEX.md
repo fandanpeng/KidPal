@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 27（待拍板 0 / 待触发 21 / 已接受风险 6）；已结 22（归档索引见下）。
+**摘要**：未结 28（待拍板 0 / 待触发 22 / 已接受风险 6）；已结 22（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（21）
+## 待触发（22）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -38,6 +38,7 @@ _（无）_
 | [TECH-261016-sd-story-confidentiality](TECH-261016-sd-story-confidentiality.md) | COULD | story 正文落 SD 卡后缺可读性防护——需口令 + 存储混淆（本批只落盘、human 2026-10-16 裁留待后续处理） | 下个动 P3 存储层 / SD 数据面的包；或产品出现「设备离手」场景（送修 / 转赠 / 二手 / 家长要求可携带）前必须有 |
 | [TECH-261018-openclaw-deepseek-flash-one-shot-stream](TECH-261018-openclaw-deepseek-flash-one-shot-stream.md) | COULD | OpenClaw 2026.8.1 下模型 id「deepseek-flash」整段一次性返回（1 个 content delta、首字=总时长），而同一上游的「deepseek-v4-flash」正常渐进流式；本地模型声明 / compat / blockStreamingChunk 均无法修复 | 下次切换设备模型 id、或升级 OpenClaw 版本时 |
 | [TECH-261018-schedule-read-compliance-residual](TECH-261018-schedule-read-compliance-residual.md) | MAJOR | prompt v11 后仍观察到真机漏读——受控 loopback 15/15 都读文件，但设备连续两笔里有一笔零工具调用、直接编造周一课表（含不存在的英语/美术与带物）；属模型服从度长尾，机械注入课表内容为候选根治 | 下个动 prompt 或引擎部署面的批；或真机再次复现漏读时提前 |
+| [TECH-261021-story-session-cancel-lifecycle](TECH-261021-story-session-cancel-lifecycle.md) | MAJOR | P3 记录会话取消/收尾生命周期两侧不对称——丢弃不通知 server（在途引导回合照播 ③ / 丢弃内容仍被自动总结收录 ⑤）+ server 收尾不清设备 ctx（列表页长按困死 ④），三症状同根 | human 单开对话处理（2026-10-21 裁定：本包收口、三症状记 debt、修位同一处；修复走 /triage-change 分流，建议单包） |
 
 ## 已接受风险（6）
 

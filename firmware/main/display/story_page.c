@@ -1456,7 +1456,9 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
              *   资产宽 vs 左区 <180px 有张力, 等比缩绘 212/256（≈0.83, pivot 置左上,
              *   对象位即落位）: x=8..179（猫中线 x=93 居中）/ y=191..219, 不侵入右
              *   回显列 x>=180; 兜底跳动条同位式（居中 x=32..154, 中心 y=205）;
-             *   回显右列 @(180,184)（[G5] 回显常驻 AC2 锚: echo_reset 只许定义处
+             *   回显右列 @(180,72)（261020 观感修: 旧 @(180,184) 上移吃满上半
+             *   右栏、满行底缘 156 不再被键位条 262 裁切; 明细见下方回显块注释）
+             *   （[G5] 回显常驻 AC2 锚: echo_reset 只许定义处
              *   调用, 引导播报中/整理过渡态不清空）。 */
             ksy_art_image(scr, "pose_record_96.bin", KSTORY_POSE_MAX, KSTORY_POSE_MAX, 45, 87);
             ksy_bubble(scr, KSTORY_RECORDING_BUBBLE, 24, 28);
@@ -1487,11 +1489,19 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             }
             /* 话语回显区（261019 [G5] 回显常驻, AC2「回显区常驻」防回退锚）: 逐句
              * 经 kidpal_story_echo_line 消费（idx 0 = 最旧），渲染在右区回显列——
-             * 引导播报中子态 / 整理过渡态**不得清空**回显区。 */
+             * 引导播报中子态 / 整理过渡态**不得清空**回显区。
+             * 261020 观感修: 起点从 @(180,184) 上移到 @(180,72)——旧位式把上半
+             * 右栏（REC 行 y17..35 与挪走的声波之间）空置, 且第 4 行 y=250 底缘
+             * 268 被键位条上沿 262 裁切（真机照片实证）。新起点 72 = 帧 B 引导
+             * 气泡 box 底缘 66（@(24,28) 高 38）下方 6px 安全距——气泡右缘 192
+             * 侵入右栏 x>=180 的 12px 横向带, 不能让首行顶到 REC 行下沿 35+9;
+             * 满行（KSTORY_ECHO_MAX_LINES=4）底缘 = 72 + 3*22 + 18 = 156,
+             * 距键位条上沿 262 尚有 106px 安全距。行高 22 / 行数上限 / 追加
+             * 与裁剪语义零变化, 仅整体平移起点。 */
             {
                 int n = kidpal_story_echo_count();
                 int e;
-                int base_y = 184;
+                int base_y = 72;
                 for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
                     const char *line = NULL;
                     if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
