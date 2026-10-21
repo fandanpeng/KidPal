@@ -2,13 +2,13 @@
 id: TECH-261021-story-session-cancel-lifecycle
 title: P3 记录会话取消/收尾生命周期两侧不对称——丢弃不通知 server（在途引导回合照播 ③ / 丢弃内容仍被自动总结收录 ⑤）+ server 收尾不清设备 ctx（列表页长按困死 ④），三症状同根
 domain: tech
-status: deferred
+status: closed
 severity: MAJOR
 owner: dev-loop
 trigger: human 单开对话处理（2026-10-21 裁定：本包收口、三症状记 debt、修位同一处；修复走 /triage-change 分流，建议单包）
 opened: 2026-10-21
-closed: ""
-closedBy: ""
+closed: 2026-10-21
+closedBy: delivery/taskpackages/261021-p3-record-cancel-lifecycle/
 paths: ["server/front_app.py", "server/story.py", "firmware/main/display/kidpal_render_node.cc", "firmware/main/display/view_router.c", "firmware/main/mcp_server.cc", "server/deploy/engine-patch/connection.py"]
 source: 2026-10-21 真机三轮实测（TF 卡 KPLOG003/004 时间线逐点取证，含 261020-p3-rec-frame-visual 真机目检轮附带发现），human 三次报告 + 日志实锤
 handoff: dev-loop（/triage-change 过比例化 review 后立修复包；human 已示意单开对话处理，本条目 = 该对话的技术输入）
@@ -40,3 +40,5 @@ handoff: dev-loop（/triage-change 过比例化 review 后立修复包；human �
 ---
 
 **登记留痕（2026-10-21）**：三症状由 261020-p3-rec-frame-visual 包真机目检轮附带发现（该包坐标改动与本三症状正交，白盒复核已证）；human 裁定「本包收口、三症状记 debt、修位同一处、单开对话处理」。本条目 = 该对话技术输入。另两项 human 早前裁定「再观察」的观察项（首次按键吞没无日志 / 首页语音入口进录音页 LLM 链路延迟 10-16s）未入本条目，见该包 pod-retro 观察项节。
+
+**结项行（2026-10-21，consumed-by: 261021-p3-record-cancel-lifecycle）**：human 单开对话启动，经 `/triage-change` 过门收编——architect 四面探测 + 根因链读码实证（新发现：teardown gather 悬挂是症状③⑤直接机制 front_app.py:1496-1506）→ 五档裁决 ② 单包 Full / riskTier high（debt 预判 medium 升级）/ sourceType regression，human 触点① 确认 + 三开放问题同轮拍板（OQ1 = Design B 新增 `kidpal_story_discard` 私有消息〔复用通道 abort / listen stop / 断连隐式三条实证排除〕；OQ2 = cancel-on-disconnect 维持；OQ3 = 复验③重定义「引导播报刚停、子态回聆听瞬间丢弃」，不动需求面）。reviewed plan 落 `delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md`；spine 落 `delivery/intake/261021-p3-record-cancel-lifecycle.md`（q1–q4 全 resolved）。本条目按 change-intake §3a 随立项结项（status closed + consumed-by 钉包 id）；剩余义务由该 changeId 承载——契约面 /arch-change 契约包三节（facePlan 顺序1）→ 实现包 /build-feature（facePlan 顺序2，launch 前置 = 契约 anchor 回填）→ 真机四轮复验（debt 复验节四条，③已重定义）。
