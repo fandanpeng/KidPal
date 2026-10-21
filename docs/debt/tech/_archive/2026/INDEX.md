@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 22 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 23 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -33,3 +33,4 @@
 | [TECH-261017-schedule-answer-skip-read-hallucination](TECH-261017-schedule-answer-skip-read-hallucination.md) | 课表问答幻觉——「后天」未命中课表回合识别特征（v10 只枚举今天/明天/这周），kidpal agent 未读 schedule.md 直接编造（真机报「第三节英语/下午美术」等不存在课程） | 2026-10-18 | 261017-prompt-v11-schedule-recall |
 | [TECH-261017-xiaozhi-template-residue-deploy-ssot-gap](TECH-261017-xiaozhi-template-residue-deploy-ssot-gap.md) | 引擎通用小智模板残留 + 三个部署面键无仓内源——agent-base-prompt.txt 与 v10 对冲（工具语义/禁 Markdown）、system_error_response 兜底语播「小智」、kidpal skill 白名单未收（18 bundled 噪音），三者均未接入 manifest.yaml 单一事实源 | 2026-10-18 | 261017-prompt-v11-schedule-recall |
 | [TECH-261019-impl-prose-ledger-path-drift](TECH-261019-impl-prose-ledger-path-drift.md) | 实现面与历史快照 10 处散文仍引 docs/ADR.md、ARCH-REVIEW-QUEUE.md 等已迁/已删路径 | 2026-10-19 | 主线程一次性散文改指 chore commit（human 明示跳过 dev-loop，2026-10-19；豁免面 5 件永不动，见正文） |
+| [TECH-261021-story-session-cancel-lifecycle](TECH-261021-story-session-cancel-lifecycle.md) | P3 记录会话取消/收尾生命周期两侧不对称——丢弃不通知 server（在途引导回合照播 ③ / 丢弃内容仍被自动总结收录 ⑤）+ server 收尾不清设备 ctx（列表页长按困死 ④），三症状同根 | 2026-10-21 | delivery/taskpackages/261021-p3-record-cancel-lifecycle/ |

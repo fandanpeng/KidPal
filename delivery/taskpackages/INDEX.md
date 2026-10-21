@@ -6,10 +6,12 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (75)
+## dev (77)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | — | open | — |
+| [261020-p3-rec-frame-visual](261020-p3-rec-frame-visual/) | 2026-10-20 | delivery/taskpackages/261020-p3-rec-frame-visual/plan.md | closed | — |
 | [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | closed | — |
 | [261018-sd-log-persist](261018-sd-log-persist/) | 2026-10-18 | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md | closed | — |
 | [261018-sd-log-usb-read](261018-sd-log-usb-read/) | 2026-10-18 | delivery/taskpackages/261018-sd-log-usb-read/plan.md | closed | — |
@@ -85,4 +87,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261020-p3-rec-frame-visual](261020-p3-rec-frame-visual/) | 2026-10-20 | delivery/taskpackages/261020-p3-rec-frame-visual/plan.md | closed | — |
