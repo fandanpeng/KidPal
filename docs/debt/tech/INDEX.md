@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 28（待拍板 0 / 待触发 22 / 已接受风险 6）；已结 23（归档索引见下）。
+**摘要**：未结 29（待拍板 0 / 待触发 23 / 已接受风险 6）；已结 23（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（22）
+## 待触发（23）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -38,6 +38,7 @@ _（无）_
 | [TECH-261016-sd-story-confidentiality](TECH-261016-sd-story-confidentiality.md) | COULD | story 正文落 SD 卡后缺可读性防护——需口令 + 存储混淆（本批只落盘、human 2026-10-16 裁留待后续处理） | 下个动 P3 存储层 / SD 数据面的包；或产品出现「设备离手」场景（送修 / 转赠 / 二手 / 家长要求可携带）前必须有 |
 | [TECH-261018-openclaw-deepseek-flash-one-shot-stream](TECH-261018-openclaw-deepseek-flash-one-shot-stream.md) | COULD | OpenClaw 2026.8.1 下模型 id「deepseek-flash」整段一次性返回（1 个 content delta、首字=总时长），而同一上游的「deepseek-v4-flash」正常渐进流式；本地模型声明 / compat / blockStreamingChunk 均无法修复 | 下次切换设备模型 id、或升级 OpenClaw 版本时 |
 | [TECH-261018-schedule-read-compliance-residual](TECH-261018-schedule-read-compliance-residual.md) | MAJOR | prompt v11 后仍观察到真机漏读——受控 loopback 15/15 都读文件，但设备连续两笔里有一笔零工具调用、直接编造周一课表（含不存在的英语/美术与带物）；属模型服从度长尾，机械注入课表内容为候选根治 | 下个动 prompt 或引擎部署面的批；或真机再次复现漏读时提前 |
+| [TECH-261022-device-memory-prompt-overhaul](TECH-261022-device-memory-prompt-overhaul.md) | MAJOR | 设备语音链路「越用越聪明」整体重构待 triage——持久 session（openai-http user 字段）+ Honcho 用户画像记忆 + 静态 prompt 迁 AGENTS.md + 工具白名单收窄 + 课表机械注入（现状单轮 prompt 22.1k tokens、跨会话事实答不出、课表幻觉可复现） | 下一次 /triage-change 分流；或下次动 OpenClaw 部署 / 引擎调用面的批 |
 | [TECH-261022-openclaw-prep-tax-memory-pressure](TECH-261022-openclaw-prep-tax-memory-pressure.md) | MAJOR | OpenClaw embedded run prep 固定税 ~7s（bootstrap-context ~6.5s）+ 内存压力增长趋势——整理回合靠 front 60s 超时兜住，网关侧改善为长线候选 | 整理/引导回合再出现 ClientDisconnectError 超时形态；或 OpenClaw rss 再触内存压力告警；或下个动 OpenClaw 部署/升级的批 |
 
 ## 已接受风险（6）

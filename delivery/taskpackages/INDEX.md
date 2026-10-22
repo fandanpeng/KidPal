@@ -10,7 +10,7 @@
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
-| [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | — | open | — |
+| [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md | closed | — |
 | [261020-p3-rec-frame-visual](261020-p3-rec-frame-visual/) | 2026-10-20 | delivery/taskpackages/261020-p3-rec-frame-visual/plan.md | closed | — |
 | [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | closed | — |
 | [261018-sd-log-persist](261018-sd-log-persist/) | 2026-10-18 | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md | closed | — |
@@ -87,4 +87,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md | closed | — |

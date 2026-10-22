@@ -1,0 +1,40 @@
+---
+changeId: 261022-device-memory-prompt-overhaul
+sources: 2026-10-22 human 原话逐字——①「我的目的是要做到这种长期记忆的检索，包括事实卡的记录。我的理解，OpenClaw 应该有这样的机制啊，你再联网查一下它到底有没有这样的机制？」；②「我有个想法，是不是可以把我们的 system prompt 就直接改成 agent.md？将来我们的 system prompt 就不用再传那些东西了」；③「同意你说的那些，所以我们第一点的方案就变成：把 system prompt 里面一些可以通用的部分放到 AGENTS.md 去，其他的还是按你的方案来。先把方案改一下」；④「那这两个先不加吧，先把我们现在整理的这个方案记一个 debt吧，然后我们再triage去处理它」；⑤「走 triage」；⑥触点①裁决——路由「确认 ③拆包」、backfill 隐私「照记（推荐）」、整理回合「不入（推荐）」、出网反问「Dashscope是厂家的embedding 模型，在哪里部署的，是不是可以考虑aliyun 的embedding模型，我们的ASR也用的aliyun」（主线程 L1 答疑见 openQ OQ-2）。关联引用 = `TECH-261022-device-memory-prompt-overhaul`（主触发 debt，本批消费）、`TECH-261018-schedule-read-compliance-residual`（第 3 层落地即消费）、`TECH-261022-openclaw-prep-tax-memory-pressure`（同批复测）、`ARQ-260907-openclaw-tools-rejection-rootcause`（不改只引）。查重结论：delivery/intake/ 在册 15 份无同意图 spine（最近邻 261017-prompt-v11-schedule-recall 已 closed，本批为其后继方向）；debt 查重见主触发条目——首次消费，走 §3a 晋升路径新立 spine。
+faceMap: 需求面**动（真实变更，/requirement-change 档 2）**——requirements.md 全文「记忆」零命中（grep 计数 0），无 story/AC 承载跨会话记忆；需 ① 新记忆 story（同会话回忆 / 跨会话回忆 / 隐私负向 AC / 保留删除口径）、② NFR-SEC-2 增第 ⑤ 条出网认账（Honcho deriver→DeepSeek、embedding→DashScope，requirements.md:627-631 现四条不覆盖）、③ NFR-PRIV-1 记忆边界/保留/删除（契约 §四 kidpal_story_delete 现行边界 :272 明确不触对话记忆，不能由实现包自创删除语义）、④ §9 版本行 v1.67。架构面**动（实质变更，/arch-change Track B 主路径，不触 Track A）**——① 新增 Honcho 记忆子系统（外部依赖 §1.2 :32-41 增删=轻路径判据④否）、② session 模型反转（:377 已定案「stateless 不续、每轮透传历史」→ user 标识 + 服务端持久会话）、③ prompt 承载反转（:299-304 §5.5.5 注入 system prompt 主承载 + workspace-kidpal/AGENTS.md:15 自声明「次要承载」→ AGENTS.md 主承载）、④ 课表机械注入上下文装配机制、⑤ 决策 21 连带 :368/:419「上下文跨 UI 会话累积」定性转 feature、⑥ 新 ADR（记忆架构 / 会话模型）+ glossary。契约面**零结构性变更、处 B 随批原子落一处定案改写**（四分类已闭合：§1.6 :189-194 = NO_CONTRACT_CHANGE；§四 :283「会话连续性承载」= ACCOMPANIES_SPEC_CHANGE——契约内待定案记录条款被本批闭合，定案改写随架构面 PROPOSAL 原子落，ARQ-260902 闭合；display E1 :9-194 / B1 :196-247 / §三提醒 / §四全部私有消息帧均不变；课表机械注入不触契约语义但须守住 §1.5 :184-186 schedule.py 唯一解析器单源红线）。治理面**零命中**（部署资产全在 server/deploy/** 归实现面，:84-157 manifest 单一事实源；不触 .claude/** agent 定义/gate 登记）。实现面**动（③拆包）**——引擎部署面（prompt 承载/动态 context/新 provider 补丁/课表注入）、OpenClaw 部署面（Honcho 插件+hooks+agent tools 覆写+workspace 文件）、运维面（Honcho 栈常驻+ECS 资源+历史 backfill）、front 一次性回合隔离。触面 = 3（需求 + 架构 + 实现）→ 建本 spine。
+facePlan: 执行顺序（architect 2026-10-22 裁、human 触点①确认 ③拆包）：**1. 需求面** = /requirement-change 档 2（story-author 盘上起草 → requirement-reviewer 四查 → architect 可行性必派 → human 终拍，frozen + §9 v1.67）；前置 = human 先裁开放问题（出网认账已 L1 裁、backfill 已裁照记、整理回合已裁不入；story 落位与 NFR-PRIV-1 形态在需求面内裁）。**2. 架构面** = /arch-change 主路径 Track B（architect 起草 PROPOSAL → architect-reviewer 四查+判档 → human 立项裁收敛度）；前置 = 需求面 frozen（隐私边界 + NFR-SEC-2 ⑤ 是架构提案语义输入）；起草可并行酝酿、冻结在其后。**3. 契约面** = 逃生门先行：主线程派 architect-reviewer 对 §1.6:189-194 / §四:283 做四分类（triage 会话内联执行）；若判 ACCOMPANIES_SPEC_CHANGE，契约包三节并入架构面 PROPOSAL 随批原子落；**分类未闭合前实现包不得 launch**。**4. 实现面** = 本门收尾判 ③拆包 → workstream PROPOSAL → human 触点② FROZEN → portfolio-planner 拆 P1–P5；launch 前置 = req frozen + arch 变更记录 changeId 行在场 + 契约四分类闭合。切片与 merge order：P1 prompt 迁移与上下文装配（medium/full/proposal）→ P2 持久 session（high/full/proposal）→ P3 Honcho 生产化+守则 v12（high/full/proposal，gateProfile 含 security/real-db）→ P4 backfill（high/full，migration gate）；P5 课表机械注入（medium/lite/regression）插 P1 之后可换序；**单 Pod 串行**（共享文件面大：manifest/carrier/provider.config/overlay/connection.py/AGENTS.md）。死亡顺序禁令：需求/架构 anchors 未回填前实现包不得 launch。**5. 治理面**：无。
+anchors: {req: "待回填——/requirement-change 档 2 未启动（story + NFR-SEC-2 ⑤ + NFR-PRIV-1 + §9 v1.67）", arch: "待回填——/arch-change Track B 未启动（Honcho 子系统 + session 反转 + prompt 承载反转 + ADR×2 + glossary）；契约包三节草案要点（OQ-5 处 B）须带入架构面 PROPOSAL 起草输入随批原子落", contract: "已回填——architect-reviewer 四分类闭合（2026-10-22，独立裁定）：处 A §1.6:189-194 = NO_CONTRACT_CHANGE（附非必需随批措辞对账建议，沿 2026-10-19 §1.4 先例）；处 B §四:283 = ACCOMPANIES_SPEC_CHANGE（本批闭合契约内待定案记录条款——user 标识持久会话系两选项外第三形态，定案改写 + ARQ-260902-multiturn-continuity 闭合；契约包三节草案要点见回执，随架构面 PROPOSAL 原子落；粒度只钉形态事实、device_id→peer 映射细节归 arch/ADR）。实现包 launch 闸维持：架构批契约包落地为准", imp: "已回填——workstream PROPOSAL device-memory-overhaul 已落并 **human 触点②盖 FROZEN v1.0（2026-10-22）**；portfolio-planner 拆包待启动（launch 前置：req frozen + arch 变更记录在场 + 契约包随架构批落地）"}
+openQ: OQ-1（触点①已裁）路由确认 ③拆包，三面编排照 facePlan。OQ-2（**L1 主线程已裁，答疑记录**）human 反问「Dashscope 是厂家的 embedding 模型，在哪里部署的，是不是可以考虑 aliyun 的 embedding 模型，我们的 ASR 也用的 aliyun」——澄清：DashScope 即阿里云模型服务平台（百炼），探针已配的 text-embedding-v4 就是阿里云 embedding 模型，与 ASR（Qwen3-ASR-Flash）同平台同供应商；出网暴露面裁定：embedding→阿里云=与 ASR 同信任域（ASR 已送原始语音）接受；deriver→DeepSeek=非新增暴露（主对话全部内容本就发 DeepSeek）维持。若需求面/架构面要求全供应商收敛，备选 = deriver/dialectic 改走 DashScope qwen 系（openai 兼容），留架构面裁。OQ-3（触点①已裁）backfill 第三方姓名照记（孩子社交事实是记忆目标；9-30 语料系孩子主动讲述且家长知情），P4 不带 PII 过滤器，但 backfill 幂等/回滚/计数报告照 architect 建议保留。OQ-4（触点①已裁）front 一次性回合（整理/引导）不入记忆画像——P3 须实测隔离（front_app.py:170-186 无 user 字段）并落 AC。OQ-5（**已闭合，2026-10-22 architect-reviewer 独立裁定**）契约四分类——处 A §1.6:189-194 = NO_CONTRACT_CHANGE（附非必需随批措辞对账建议）；处 B §四:283 = **ACCOMPANIES_SPEC_CHANGE**（与分流预判不一致处：该句是契约内「以部署期首验定案」的待定案记录条款，本批批准动作直接闭合之，且 arch:377 于 2026-09-11 定案「每轮透传历史」后契约从未记录——既有文本级欠账，同批原子落是唯一不产生新漂移的窗口；五问反证全过：线格式零改动、user 为引擎→OpenClaw additive 字段、设备端零感知、:284 禁 max_tokens 不受影响）。契约包三节草案要点（proposedContractDiff：:283 整句改写为定案记载 + 契约变更记录行 + 处 A 对账注记顺手落；impact：牵连带 arch:377 翻转/:301 ADR-001 重定义/新 ADR×2/glossary 同批必须齐；validationPlan：ARQ-260902 探针复验 + 省略 user 降级路径 + 七类回合 parity + spec↔contract 人工逐字对账）已存档 review.md 回执，**须带入架构面 /arch-change PROPOSAL 起草输入**。OQ-6（开放，架构面裁）多设备/多孩子 peer 映射——先 device 级 peer，多设备身份体系本批不做。OQ-7（开放，需求面裁）记忆保留/备份/加密/删除语义——契约 §四:272 段明确 story 删除不触对话记忆，删除语义须 NFR-PRIV-1 另钉。OQ-8（开放，架构面裁）prompt 版本化新形态——v12 续用 openclaw-system-prompt.vN.md + AGENTS.md 双件 vs 迁 server/deploy/prompts/ 单一事实源，影响 carrier 与 ADR-001 不变式重定义。OQ-9（architect 建议、human 默认接受）Track A 不声明（方向已裁、探针已验）；human 或 reviewer 可随时启动。
+status: in-flight
+---
+
+# spine · 设备链路「越用越聪明」整体重构（261022-device-memory-prompt-overhaul）
+
+> 触面 ≥2 跨面变更的路由账本（[change-intake.md](../../.claude/references/change-intake.md) 程序；spine 免冻——各面冻结语义由各面制品承载，anchors 记录冻结事实）。
+
+## 建档前查重（change-intake.md §3）
+
+- **既有 spine 排查**：`delivery/intake/` 在册 15 份逐份按意图与触面比对——无同意图件。最近邻 [261017-prompt-v11-schedule-recall.md](261017-prompt-v11-schedule-recall.md)（已 closed）是 v11 prompt 课表召回批，与本批同面但不同意图（本批动 session 模型 + 新记忆子系统 + 需求语义），不消费旧 spine。
+- **debt 四域排查**：命中 4 条走 §3a 晋升——主触发 `docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md`（MAJOR，2026-10-22 登记，七组实测证据 + 四层候选改动）；本批消费 `TECH-261018-schedule-read-compliance-residual`（第 3 层机械注入落地即结项，consumed-by 本 changeId）；同批复测 `TECH-261022-openclaw-prep-tax-memory-pressure`（ECS 已升 2C/4G，P3 后复测；该条目记录的是升级前 2GB 读数）；不改只引 `ARQ-260907-openclaw-tools-rejection-rootcause`。
+
+## 立项 ack（change-intake.md §4 · 唯一必停人类触点）
+
+四面对齐「为什么改 / 往哪改 / 改动多大」→ **human 2026-10-22 触点①已确认 ③拆包**（architect 裁决未被改判），并同场裁定三个开放问题（backfill 照记 / 整理回合不入画像 / 出网认账经 OQ-2 L1 答疑收敛）。
+
+- **为什么改**：设备语音链路三个实测缺陷——① 每请求随机 session 无会话连续性，孩子 9-30 讲过的「王一诺」今天答不出（OpenClaw 原生记忆写端在收、读端三重封死）；② 单轮 DeepSeek prompt 实测 22,116 tokens（34 工具 schema 57KB），纪律被稀释且 cache miss 占大头；③ 课表回合幻觉可复现（v11 后仍漏读，TECH-261018 在案）。
+- **往哪改**：四层方案（详见 workstream PROPOSAL）——持久 session（user 字段）+ Honcho 用户画像记忆（已探针验证端到端）+ 静态 prompt 迁 AGENTS.md（缓存前缀收益）+ 工具白名单收窄至 4 + 课表机械注入。
+- **改动多大**：③拆包——跨多 owning 面（引擎部署 / OpenClaw 部署 / 运维 / front）、含迁移 backfill、四个可独立回滚的行为结果。
+- **落盘**：[delivery/workstreams/device-memory-overhaul/PROPOSAL.md](../workstreams/device-memory-overhaul/PROPOSAL.md)（reviewed plan，human 触点②待 FROZEN）+ [review.md](../workstreams/device-memory-overhaul/review.md)（architect 四面探测 + 比例化 review 回执全量存档）。
+
+## 触面事实（查出来的，非申报）
+
+见 frontmatter faceMap（architect 2026-10-22 回执，file:line 依据逐面在列）。
+
+## 档位裁定（architect 2026-10-22 比例化 review；human 触点①确认）
+
+- **③拆包**。非 ①：改实现面行为。非 ⓪：命中排除清单（跨端 / 安全隐私轴 / 迁移 backfill / 验收语义净增）。非 ②Lite：多 owning 面 + 共享文件面。非 ②Full：至少四个可独立演示、独立回滚的行为结果（体积/连续性/记忆+隐私负向/课表零编造），塞一包造无法独立回滚巨包。
+- 工作流：`device-memory-overhaul`，P1–P5 切片（详见 PROPOSAL §4），单 Pod 串行。
+
+## 收口
+
+（待各面 anchors 回填后追加。）
