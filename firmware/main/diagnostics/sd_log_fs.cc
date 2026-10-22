@@ -233,6 +233,10 @@ extern "C" int KidpalSdLogVprintf(const char *fmt, va_list ap)
         if (prefix_len >= sizeof(buf)) {
             prefix_len = 0; /* 不可能态守卫：前缀容量 32 << RECORD_MAX 512，防御不越界 */
         }
+        /* 真机实证修复（261022-diag-log-content 真机轮 DLG-A6①）：预格式化前缀串先拷进
+         * buf[0..prefix_len)——此前只把正文写在 buf+prefix_len、记录总长含前缀，头 prefix_len
+         * 字节是未初始化栈垃圾（真机 KPLOG005 每条记录前 ~22 字节 NUL/指针形态实证）。 */
+        memcpy(buf, time_prefix, prefix_len);
         n = vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, copy);
 
         if (n > 0) {
