@@ -38,19 +38,27 @@
       "note": "live-manual 真机目检（非自动断言，诚实申报；CG-A5 先例同款口径，不计入 runner 通过面）：human 持板——① 引导不再独播垄断（篇幅受限、末段引导后有应答窗）；② 说「说完了」正常收尾归档（不再孤儿帧）；③ 新篇在列表最上且标题可识别。前置 = front 重部署 ECS。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行部署"
     }
   ],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "（acceptance-author 冻结后回填）server 全量：python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance ‖ 本件独立通道：acceptance-author 冻结时定（pytest 新齿件直跑）",
-  "redBaselineResult": "（acceptance-author 冻结实跑后回填）",
+  "acceptanceTestsFile": [
+    "server/acceptance/test_record_front_polish.acceptance.py"
+  ],
+  "redBaselineCommand": "通道 A（server 全量）：python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance ‖ 通道 B（本件直跑）：python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance/test_record_front_polish.acceptance.py",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22 @ dev/pod-m2（净工作树现跑，commit c4b499ee）。① 通道 A（新齿件落位前全量）：238 passed, 4 deselected, 33 subtests passed in 12.29s——与基线锚 64d54eba 逐字一致，零新增红零扰动。② 通道 B（本件直跑）：8 collected 收集零 error，7 failed / 1 passed——7 红全为设计态红逐齿映射（FP-A1×2 + FP-A2 + FP-A3 = 三单源常量 GUIDE_RESPONSE_WINDOW_SECONDS / GUIDE_SPEECH_MAX_CHARS / GUIDE_STT_GUARD_SECONDS 缺席；FP-A4 = 同日仍按 id 字符串倒序 '2026-10-22-zzz' 排 '2026-10-22-aaa' 之上；FP-A5×2 = is_generic_story_title 缺席 + 敷衍标题「我的故事」原样入册），1 passed = FP-A4 缺 seq 回退齿（平凡绿 must-stay-green 锚，现状即 id 倒序，转绿后钉「不崩 + 账本纯读不重建」）。行为层红验证：内存注入三常量桩复跑，行为断言链红在预期点（FP-A1 = 末段引导 + STUCK_GUIDE_SECONDS 即 start_organizing / 旧触发点即收局归档；FP-A2 = 28 字超限未截断；FP-A3 = _story_feed_from_stt 无 now 形参 TypeError）。③ 转绿判据：builder 落地文件头 FROZEN OFFLINE CONTRACT A–E 节（三常量 + now 注入缝 + list_stories seq tiebreak + 标题启发式）后全绿，全量套件 = 238 基线 + 本件 8 齿全绿（FP-X1）。server 侧 pytest 无登记机制（落位即收集），文件在册后、builder 转绿前全量重跑见 7 设计态红——FP-X1「零新增红」以既有齿零新增红口径读（261019 先例同款）。④ 双向可满足性：三参数数值不落验收值（monkeypatch 注入承载，GAP-2）、应答窗实现形态不钉、fixture 自含（tempdir/注入时钟/假 ws 双桩——唯一环境假设 = LLM 离线快失败）。FP-A6 = 套件级 suiteGate、FP-A7 = live-manual（structural 口径，前置 = front 重部署 ECS）。verbatim 详见 test_record_front_polish.acceptance.py 文件头。",
   "deliveryImpact": "none",
   "planningImpact": "none",
-  "gateProfile": ["docs-sync", "test-quality", "evidence-integrity"],
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity"
+  ],
   "exitCriteria": [
     "FP-X1: 全部 FP-Ax 齿转绿（冻结验收件编入 server 套件），既有 server 全量零新增红 vs 基线 238 passed（锚 64d54eba）",
     "FP-X2: 引导节奏三参数（应答窗 / 篇幅上限 / 过滤窗）走单源可测，数值不进 spec 文本；AC5 轮数语义与 is_finish_phrase 词表零触碰（负锚）",
     "FP-X3: 真机目检由 human 持板执行并留痕（引导不独播 / 说「说完了」正常收尾 / 新篇列表最上标题可识别）；planner 到真机门前停等（awaiting-human:real-device）；front 部署 ECS 归真机轮前动作",
     "FP-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
   ],
-  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "crossEnd": {
     "counterparts": [],
     "exempt": "front 应用面内部修：零 wire 形状改动（story_list/story_text/kidpal_speak/start_organizing 全部既有帧形状零 diff，tiebreak 只变同日到达序、items 字段不变；设备端按到达序消费零扰动已预核）；不改契约 §1.3③ 任何文本；不改 is_finish_phrase 词表（v1.66 需求面已冻）；不改引擎树。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
@@ -58,7 +66,10 @@
   "securityReviewRequired": false,
   "securityAxes": [],
   "adrRequired": false,
-  "requiredLayers": ["unit", "acceptance-offline"],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline"
+  ],
   "iterationBudget": 3,
   "fixBudget": 3,
   "docRefs": [
