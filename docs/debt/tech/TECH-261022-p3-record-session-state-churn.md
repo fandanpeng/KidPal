@@ -44,3 +44,5 @@ handoff: 紧随登记起 /triage-change 分流；建议拆包——① 固件包
 ---
 
 **consumed-by 追记（2026-10-22，append-only）**：缺陷①②由 `261022-p3-record-chrome-ghost-fix`（②单包 Lite，triage 落盘 823f7b05）承接——冻结齿件 `firmware/main/test/chrome_ghost.acceptance.c`（CG-A1 场景复位 / CG-A2 过渡窗门控 / CG-A3 成功归档层栈收口 / CG-A4 回归网 / CG-A5 live-manual 真机目检）；缺陷③④⑤由并联包 `261022-p3-record-front-polish-fix` 承接（待起）。seam 契约 [CG-C1]/[CG-C2]/[CG-C3] 落 keybar.{h,c} additive + lcd_display.cc 场景单源 + application.cc 收尾沿复位 + mcp_server.cc 两闭包收口（既有符号闭集，帧类型负锚守住）。
+
+**consumed-by 追记二（2026-10-22，append-only）**：缺陷③④⑤由 `261022-p3-record-front-polish-fix`（②单包 Lite，triage 落盘 823f7b05）承接——冻结齿 FP-A1 应答窗收尾通路 / FP-A2 引导篇幅上限 / FP-A3 引导窗口素材过滤（窗口外反向 case 必载）/ FP-A4 同日 seq tiebreak（缺 seq 回退）/ FP-A5 标题敷衍兜底 / FP-A6 回归网 / FP-A7 live-manual 真机目检（前置 = front 重部署 ECS）；front 部署生效后 KPLOG 链可复验。同树顺序执行（包 A chrome-ghost-fix 之后）消 INDEX.md 并行相交面。

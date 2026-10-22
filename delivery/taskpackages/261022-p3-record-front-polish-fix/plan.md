@@ -68,3 +68,7 @@ KPLOG005 真机轮：全天四笔记录会话，「说完了」笔笔迟到 5~14
 1. 应答窗时长 = 手感参数（ASR 5~14s 实测定初值），human 真机轮终判；
 2. ④过滤窗过宽误吞孩子接话——与③应答窗同源自洽消解，验收反向 case 兜底；
 3. 单向守卫声明：riskTier=medium + rigor=lite，无 security/迁移/触契约信号，不触发 riskTier-overrides-rigor。
+
+## 冻结齿映射（intake 终版回填，acceptance-author 冻结件承载）
+
+- **FP-A1** = 验收方向 1①（应答窗 + 窗内「说完了」正常收尾）；**FP-A2** = 验收方向 1②（引导篇幅上限）；**FP-A3** = 验收方向 1④（引导窗口素材过滤 + 窗口外反向 case）；**FP-A4** = 验收方向 1⑤a（同日 seq 倒序 + 缺 seq 回退）；**FP-A5** = 验收方向 1⑤b（标题敷衍兜底）；**FP-A6** = 验收方向 4（回归网三族 + server 全量零新增红 vs 238 passed）；**FP-A7** = 验收方向 5（live-manual 真机目检，structural 口径不入 runner 通过面，前置 = front 重部署 ECS）。

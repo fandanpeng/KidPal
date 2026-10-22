@@ -5,10 +5,10 @@
   "sourceType": "regression",
   "origin": {
     "type": "regression",
-    "human-verbatim": "KPLOG005 真机轮实证：全天四笔记录会话「说完了」笔笔迟到 5~14 秒成孤儿帧；13:02 笔 39 秒会话引导独播约 28 秒、末段引导与 start_organizing 同毫秒；「Okay」幻听（human 实证非本人声音）直进素材缓冲；新故事标题「我的故事」+ 同日随机 id 排序致 human 找不到刚录篇目（「13点那笔故事记录下来了吗，标题叫啥，我咋找不到呢」「所以那个okay不是我说的」）。三源取证落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷③引导节奏与说完了竞态 + ④幻听入素材 + ⑤排序标题。",
+    "human-verbatim": "KPLOG005 真机轮实证：全天四笔记录会话「说完了」笔笔迟到 5~14 秒成孤儿帧；13:02 笔 39 秒会话引导独播约 28 秒、末段引导与 start_organizing 同毫秒；「Okay」幻听（human 实证非本人声音：「所以那个okay不是我说的」）直进素材缓冲；新故事标题「我的故事」+ 同日随机 id 排序致 human 找不到刚录篇目（「13点那笔故事记录下来了吗，标题叫啥，我咋找不到呢」）。三源取证落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷③引导节奏与说完了竞态 + ④幻听入素材 + ⑤排序标题。",
     "upstreamType": "regression",
     "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "upstreamFrozen": "debt 条目已 commit（75daaf32，2026-10-22）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
     "workstream": ""
   },
   "subsystem": "server/gateway/front/front_app.py（引导节奏 + 素材过滤 + 标题兜底）+ server/gateway/story.py（list_stories seq tiebreak + 账本读取回退）+ server/gateway/front/prompts（引导制品措辞）+ server/acceptance（pytest 验收件）",
@@ -22,6 +22,52 @@
   "story": "261022-p3-record-front-polish-fix · front 记录会话族修复——③引导节奏：单段引导篇幅上限 + 末段引导与 start_organizing 之间留应答窗（延后计时起点/抑制计时，不改 AC5「2 轮无回应」轮数语义），应答窗内「说完了」经 is_finish_phrase 正常收尾（治全天四笔笔笔迟到的孤儿帧）；④记录语境素材面设防：引导播报窗口 STT 在 front 素材入口丢弃/降权（窗口外正常进，反向 case 必载；引擎侧候选排除——第三方部署树）；⑤列表同日 tiebreak 改 seq 倒序（缺 seq 回退 id 不崩；契约只钉日期倒序，tiebreak 是实现自由度，设备端按到达序消费零扰动已预核）+ 标题敷衍兜底启发式（front 侧，不动 faithful-organize 制品）。debt TECH-261022-p3-record-session-state-churn 缺陷③④⑤；并联包 = 261022-p3-record-chrome-ghost-fix（固件面，零依赖零文件交集）。",
   "sourceRefs": [
     "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-front-polish-fix/plan.md",
+    "delivery/taskpackages/261022-p3-record-front-polish-fix/launch-card.md"
+  ],
+  "acceptance": [
+    "FP-A1: 应答窗收尾通路——末段引导播报结束与 start_organizing 之间存在应答窗（计时可注入快进）；应答窗内到达的「说完了」stt 经 is_finish_phrase 判定走正常收尾整理归档（不成孤儿帧）；无应答窗形态（现状同毫秒收会话）不再出现。设计态红：现状 start_organizing 与引导 end 同毫秒、无应答窗",
+    "FP-A2: 引导篇幅上限——单段引导播报篇幅超上限被截断/抑制（上限数值走配置/单源，不裸改字面）；上限内的正常引导不受影响。设计态红：篇幅上限未实现",
+    "FP-A3: 素材面引导窗口过滤——引导播报窗口内到达的 STT 不进素材缓冲、不进录音回显旁路；窗口外 STT 正常进素材（反向 case 必载——防过滤窗过宽误吞孩子接话）。设计态红：_story_feed_from_stt 对引导窗口不设防",
+    "FP-A4: 列表同日 seq tiebreak——同日多篇按 seq 倒序（新篇在上）；缺 seq 记录回退 id 倒序不崩；跨日仍按日期倒序。设计态红：同日按 id 字符串倒序（随机散列无时间序）",
+    "FP-A5: 标题敷衍兜底——整理输出标题命中敷衍启发式（如「我的故事」类万能名）时兜底替换/后缀化（启发式走单源可测）；正常标题原样保留。设计态红：标题取 LLM 首行无兜底",
+    "FP-A6: 回归网——test_record_dialogue_guide / test_record_cancel_lifecycle / test_m4k1_story_cloud_link 三族全绿 + server 全量套件零新增红 vs 基线 238 passed 0 failed（锚 64d54eba）",
+    {
+      "id": "FP-A7",
+      "kind": "structural",
+      "note": "live-manual 真机目检（非自动断言，诚实申报；CG-A5 先例同款口径，不计入 runner 通过面）：human 持板——① 引导不再独播垄断（篇幅受限、末段引导后有应答窗）；② 说「说完了」正常收尾归档（不再孤儿帧）；③ 新篇在列表最上且标题可识别。前置 = front 重部署 ECS。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行部署"
+    }
+  ],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "（acceptance-author 冻结后回填）server 全量：python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance ‖ 本件独立通道：acceptance-author 冻结时定（pytest 新齿件直跑）",
+  "redBaselineResult": "（acceptance-author 冻结实跑后回填）",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": ["docs-sync", "test-quality", "evidence-integrity"],
+  "exitCriteria": [
+    "FP-X1: 全部 FP-Ax 齿转绿（冻结验收件编入 server 套件），既有 server 全量零新增红 vs 基线 238 passed（锚 64d54eba）",
+    "FP-X2: 引导节奏三参数（应答窗 / 篇幅上限 / 过滤窗）走单源可测，数值不进 spec 文本；AC5 轮数语义与 is_finish_phrase 词表零触碰（负锚）",
+    "FP-X3: 真机目检由 human 持板执行并留痕（引导不独播 / 说「说完了」正常收尾 / 新篇列表最上标题可识别）；planner 到真机门前停等（awaiting-human:real-device）；front 部署 ECS 归真机轮前动作",
+    "FP-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
+  ],
+  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "front 应用面内部修：零 wire 形状改动（story_list/story_text/kidpal_speak/start_organizing 全部既有帧形状零 diff，tiebreak 只变同日到达序、items 字段不变；设备端按到达序消费零扰动已预核）；不改契约 §1.3③ 任何文本；不改 is_finish_phrase 词表（v1.66 需求面已冻）；不改引擎树。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "requiredLayers": ["unit", "acceptance-offline"],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "docRefs": [
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
     "delivery/taskpackages/261022-p3-record-front-polish-fix/plan.md"
-  ]
+  ],
+  "planningRefs": [],
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "knownRedFloor": "server 套件零已知红：238 passed, 4 deselected, 33 subtests passed, 0 failed @ 基线锚 64d54eba（带锚引用三件齐：SHA + pytest 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-front-polish-fix/launch-card.md 基线锚行；2026-10-22 本会话实测，-m \"not live\"）"
 }
