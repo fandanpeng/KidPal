@@ -29,6 +29,9 @@
 - **渲染面 == 声明面 == 被测面**：版本化制品接线不变式（ADR-001）——三处必须同指一版，守卫禁版本字面断言。
 - **makemeahanzi**：开源汉字笔顺数据库（9574 字，SVG path + medians），笔顺数据源，契约 D3。
 - **observation**：记忆库（Honcho）deriver 从对话中抽取的单条事实记录——记忆画像的原料；抽什么/不抽什么的边界权威 = requirements NFR-PRIV-1（261022-device-memory-prompt-overhaul）。
+- **记忆子系统**：云端自托管的 Honcho 服务栈（ECS 本机五容器、端口全 loopback），承担消息 / 会话存储、observation 抽取（deriver）与画像表示（representation），在 prompt 构建前注入画像；写入资格与边界见 arch §6.7，语义权威 = requirements NFR-PRIV-1，出网记账 = NFR-SEC-2 ⑤（261022-device-memory-prompt-overhaul）。
+- **持久会话**：引擎以 `user=<device_id>` 标识、只发本回合，OpenClaw 服务端按该标识维护的跨 UI 会话对话历史——对话历史的唯一权威（ADR-015）；引擎 RAM 内的副本非权威、不重放。
+- **动态 context 块**：引擎每轮发往 OpenClaw 的系统侧小块（时间 / 日期、课表摘要等），位于缓存边界之下、不含静态纪律；静态语义在 workspace `AGENTS.md`（缓存边界之上，arch §5.5.5）。
 
 ## 治理与验收（一句话版）
 

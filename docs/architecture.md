@@ -25,8 +25,8 @@
  └──────────┘  看屏/听播报          │ （常显终端） │◀─────┘
                                     └────────────┘
  外部服务（设备/云端经其完成能力）：
-   阿里云 ASR（Qwen3-ASR-Flash）· edge-tts（微软非官方接口）· DeepSeek（OpenClaw 内）
-   makemeahanzi 字库（静态数据）· 小智官方服务端镜像（xinnan-tech，容器运行时）· Tavily（OpenClaw 平台联网搜索，实时事实查询）
+   阿里云 ASR（Qwen3-ASR-Flash）· 阿里云 DashScope embedding（text-embedding-v4，记忆画像）· edge-tts（微软非官方接口）· DeepSeek（OpenClaw 内；含 Honcho deriver 抽取）
+   makemeahanzi 字库（静态数据）· 小智官方服务端镜像（xinnan-tech，容器运行时）· Tavily（OpenClaw 平台联网搜索，实时事实查询）· Honcho 自托管记忆子系统（ECS 本机五容器）
 ```
 
 ### 1.2 外部依赖清单
@@ -35,7 +35,9 @@
 |---|---|---|---|
 | 小智官方服务端镜像 `ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest` | Docker 容器（引擎服务运行时） | 镜像由官方演进；**镜像升级 = engine-patch 漂移风险** | 部署副本漂移治理（ARQ-260907-engine-deploy-patch-drift，§8） |
 | 阿里云 ASR（Qwen3-ASR-Flash，DashScope 流式） | 容器内 provider，凭据 env `DASHSCOPE_API_KEY` | 按量计费 + 免费额度；额度尽/流式不达标 → 切本地 SenseVoice（决策 19，配置级切换） | 出网路径①（NFR-SEC-2 记账） |
-| DeepSeek（deepseek-v4-flash） | OpenClaw 内部 provider | OpenClaw 侧配置，公网可达 | 出网路径② |
+| DeepSeek（deepseek-v4-flash） | OpenClaw 内部 provider | OpenClaw 侧配置，公网可达 | 出网路径②（Honcho deriver 抽取复用同域，NFR-SEC-2 ⑤） |
+| 阿里云 DashScope embedding（text-embedding-v4） | 记忆子系统容器内 provider，凭据沿用 `DASHSCOPE_API_KEY` | 按量计费；额度尽 / 不达标 → 画像管线降级（不阻塞对话） | 出网路径⑤（NFR-SEC-2 ⑤ 记账；与 ASR 同供应商同信任域） |
+| Honcho 自托管记忆服务栈 | Docker 容器（五容器；api `127.0.0.1:18100` loopback；postgres + pgvector 持久卷） | 与 ECS 同机共生；故障 → 画像注入缺失、对话照常（§6.7 降级） | 部署面运维（§5.3.2）；数据本机不出网（NFR-PRIV-1） |
 | edge-tts（zh-CN-XiaoxiaoNeural） | 引擎容器内 provider | **微软非官方接口，有被封运维风险**，不作唯一依赖；被封 → 提醒降级「仅弹窗+提示音」仍必达（§6 降级） | 出网路径③ |
 | Tavily（联网搜索） | OpenClaw 平台联网搜索 provider（平台承载，非自建搜索链路） | kidpal agent 实时事实查询回合（天气/新闻/今日热点类）消费 | 出网路径④（NFR-SEC-2 ④ 记账，v1.62 增） |
 | makemeahanzi 字库 | 静态数据（9574 字 / 32MB），已在服务器 `chardata/` + 预热 `char_cache.json` | 静态、无在线依赖 | 无 |
@@ -50,6 +52,7 @@
 - OTA——Phase 1 非目标（证书生命周期相位对账见 §8/决策 22）；
 - 机械内容过滤层（policy-as-code）——留作日后合规选项（决策 28）；
 - 多设备/多用户——MVP 单设备（全设备共享单 token，多设备时转每设备唯一并记账，决策 22）。
+- 多设备 / 多孩子**记忆身份体系**——本批**设备级 peer** 先行（换设备 = 新 peer、旧画像不迁移）；身份体系另立（§6.7 / OQ-6 留根）。
 
 ---
 
@@ -74,9 +77,10 @@
 【引擎服务】xiaozhi-esp32-server 官方容器（Docker host 网络 + engine-patch 部署副本补丁）
    │  ASR（阿里云）· VAD 切句 · TTS（edge-tts）· Opus 下行
    │  display fence 剥离（补丁状态机）→ 侧通道帧回 front
-   │  LLM type:openai ▼ loopback 127.0.0.1:18789
-【编排大脑】OpenClaw（记忆 + 工具 + cron）
-   │  意图/多轮对话（每轮透传历史）/ 业务 MD 读写 / QQ 录入
+   │  LLM type:openai ▼ loopback 127.0.0.1:18789（每轮：user=<device_id> + 本回合 + 动态 context 块）
+【编排大脑】OpenClaw（持久会话 + 记忆画像 + 工具 + cron）
+   │  意图/多轮对话（服务端持久会话，按 user 标识；引擎只发新回合）/ 业务 MD 读写 / QQ 录入
+   │  记忆画像：Honcho 自托管侧车（loopback 127.0.0.1:18100）deriver / representation
    │  提醒：cron 重算（openclaw-patch 确定性脚本）写 alerts/pending.json
    ▼
  front 每分钟轮询 pending.json → mcp kidpal/alert 推送设备
@@ -111,7 +115,7 @@
 - **不冷场**：孩子说完到设备开口，等待超 4 秒先播安抚句（NFR-PERF-1）；
 - **查字延迟**：问「X 怎么写」到**查字窗弹出（完整示范字可见）**目标 5 秒档（NFR-PERF-2；【修复项】实测冷启动约 109 秒，见 §8）；
 - **传输安全**：公网入口强制鉴权，不留 validation-mode 后门；wss + 自签长期证书（NFR-SEC-1）；
-- **儿童数据出网**：四条路径（音频→阿里云 / 转写→DeepSeek / 回复→edge-tts / 实时事实查询→Tavily 联网搜索）human 已记账接受（NFR-SEC-2；第④条 v1.62 增）；
+- **儿童数据出网**：五条路径（音频→阿里云 / 转写→DeepSeek / 回复→edge-tts / 实时事实查询→Tavily 联网搜索 / 记忆画像管线→deriver 复用 DeepSeek + embedding→DashScope）human 已记账接受（NFR-SEC-2；第④条 v1.62 增、第⑤条 v1.67 增）；
 - **离线边界**：断网仅本地时间/温湿度/电量，不缓存任何事项（story 正文只读镜像为窄例外，NFR-OFF-1 注记）；
 - **内容安全**：答案口语化、简洁不啰嗦、适合 8–12 岁（生成端 system prompt 约束 + 失效截断兜底，NFR-SAFE-1；不设硬性句数上限——human 2026-09-25 裁）；
 - **1bpp CJK 可读性**：16px 以下真机可读性下限未实测（NFR-READ-1，ARQ-260831-small-cjk-1bpp-readability）。
@@ -147,7 +151,8 @@
 | NFR-PERF-2 查字 5 秒档 | OpenClaw 侧 `warm_char_cache.py` 预热 9574 字全量 `char_cache.json` + char_stroke hold-and-replace 缓存；【修复项】live 冷启动实测 ~109s，流式/异步优化待做 | §5.1 OpenClaw 补丁组件 |
 | NFR-PERF-3 记录会话卡壳引导时机 | front 卡壳计时器族（每句讲完起计时、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合、连续 2 轮无回应自动收尾；阈值权威 = requirements NFR-PERF-3〔待定、真机调优后立项拍数〕）+ `StoryAccumulator` 卡壳计时与引导轮次纯决策 | §5.1.2 front/story.py 组件行 / §5.2 场景④ |
 | NFR-SEC-1 强制鉴权 + 传输安全 | front TLS 终结（自签 RSA-3072 20 年）+ `websocket.accept()` 之前强制 `gw_auth.authorize`（constant-time、token ≥22 字符、未设拒服务）+ OpenClaw 18789 锁 loopback + 引擎层 `auth: false`（鉴权唯一权威在 front，260911 裁） | §6.1 / §5.3.2 |
-| NFR-SEC-2 出网记账 | 四条出网路径（§1.2 表；第④条 = 实时事实查询回合经 Tavily 联网搜索，v1.62 增）+ 决策 19 记账 | §1.2 |
+| NFR-SEC-2 出网记账 | 五条出网路径（§1.2 表；第④条 = 实时事实查询回合经 Tavily 联网搜索，v1.62 增；第⑤条 = 记忆画像管线 deriver→DeepSeek / embedding→DashScope，v1.67 增）+ 决策 19 记账 | §1.2 |
+| NFR-PRIV-1 记忆边界与保留 | 记忆写入资格门（白名单入册）+ 抽取三层纵深（来源门 / 抽取策略 / 注入过滤）+ 自托管不出网 + 删除 = 运维手工 | §6.7 / §5.1.2 记忆子系统 / §5.4 记忆行 |
 | NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 +RAM 渲染缓冲不禁（掉电即失，§6.2 澄清；story 正文只读镜像窄例外，§6.2） | §6.2 / §5.4 |
 | NFR-SAFE-1 内容安全 | system prompt 简洁不啰嗦纪律（回合路由表承载，不设硬性句数上限；现行版本以 §5.5.5 现状指针为准）+ front 兜底文案与 V32 截断（超限按有处理的失败模式） | §5.1 front 组件 / §5.5.5 prompt 版本化 |
 | NFR-READ-1 1bpp CJK 下限 | 字体子集管线（`lv_font_conv` → SPIFFS `.bin`）+ 待实测（单独烧版对照） | §5.5.3 字体管线 |
@@ -184,7 +189,7 @@
 
 | 组件 | 文件 | 职责与现状 |
 |---|---|---|
-| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环 |
+| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环；**引导 / 整理一次性 LLM 回合不携 `user`**（§6.7 资格门：非资格回合不写记忆、不注入画像）；**课表摘要注入**（会话建立时把 `schedule.py` 派生的课表文本经内部通道注入引擎，供动态 context 块消费——§5.2 场景②） |
 | 鉴权 | `gateway/auth.py` | `authorize` 纯函数 + `secrets.compare_digest` 常时比较 + `TOKEN_MIN_CHARS=22`；token 来自 env，未设 = 拒绝服务，无 validation-mode 后门 |
 | display 校验 | `gateway/display_schema.py` | 7 view 白名单 + `MAX_DATA_BYTES=65536` + control 动作分表（拒转 `end_session`；放行 `stop_speaking`/`start_recording`）——display 契约的机械执行点（V27） |
 | mcp relay | `gateway/mcp_relay.py` | display/提醒统一 JSON-RPC `tools/call`（kidpal/display、kidpal/alert）；数字 id（时间戳+单调序号）；渲染回执消费 |
@@ -193,14 +198,15 @@
 | 课表解析 | `gateway/schedule.py` | B1 三区块 MD 纯解析（`parse_schedule_md`/`items_for_date`/`group_upcoming` 分组）——**唯一解析器**，openclaw-patch 复用不自建第二套 |
 | 故事归档 | `gateway/story.py` | `archive_story` 落盘 `<stories_dir>/<id>.md`（哨兵头 + kidpal-id/date/title）+ 持久流水号账本 `.seq.json`（`seq=max+1`、只增不减）；`list_stories` = 最新 ≤16 条窗口 + `total` 全量现存篇数；`story_text` = 三键 + 可选 `seq`（additive）；`delete_story` 硬删（哨兵头校验 + 越权/穿越拒绝 + 审计）；`is_finish_phrase` 收尾词检测 + 明示卡壳词表检测（同构子串扫描，词表 = 实现期可调常量）+ `StoryAccumulator` 卡壳计时与引导轮次纯决策（每句活动时刻重置计时、计时到 = 引导触发、连续 2 轮无回应 = 自动收尾、被抑制/返回空轮照常计轮——取代 `timed_out_sessions` 120s 纯静默决策；pending-stop 挂起窗口保留）+ 忠实整理输入装配（只取孩子的话；引导语与问答滤除） |
 | 提醒投递 | `gateway/reminders.py` | AlertDispatcher：每分钟轮询 pending.json → 到点推送 → 60s 超时重推 ×3 → 过期作废；`MAX_PENDING=64/MAX_TRACKED=256` |
-| **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚** |
+| **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚**；**动态 context 装配**（本回合时间 / 日期 + front 注入的课表摘要拼入每轮动态块，缓存边界之下、不含静态纪律） |
 | **OpenClaw 侧补丁** | `server/deploy/openclaw-patch/` | 提醒生产侧混合分层（ADR-002）：`reminder_schedule_lib.py` 确定性脚本（三档算术 20:30/07:45/前 15min + 幂等 id 确定性散列 ≤40 字符 + `pending.json` 原子写 + 坏输入降级）；语义判断 = agent 回合产 `semantic.json`（缺/坏降级机械兜底文案）；`char_stroke_lib.py` + `warm_char_cache.py`（9574 字缓存）；`make_openclaw_patch.py`（OpenClaw dist hold-and-replace 补丁，drift-guard） |
-| OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/记忆/工具/QQ 录入）；system prompt 版本化 v11（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
+| **记忆子系统（Honcho 自托管侧车）** | `server/deploy/honcho/**`（compose + 配置 + apply/rollback + 健康检查） | peer / session / message 存储、deriver 抽 observation、representation 生成、`before_prompt_build` 画像注入；五容器全部绑定 127.0.0.1（api 18100）；写入受 §6.7 资格门约束；与引擎 / OpenClaw 同机共生、数据本机不出网 |
+| OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/工具/QQ 录入）；**对话历史 = 服务端持久会话**（按 `user` 标识，ADR-015）；**记忆画像经 Honcho 插件**（§6.7）；**静态语义承载 = workspace `AGENTS.md`**（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
 | shim（已退役） | `server/shim.py` | HTTP 四端点台阶，头部 ARCHIVED（2026-09-05 退役）；`kidpal-shim.service` 为历史单，ECS 侧停服 + 8080 安全组关闭待清【遗留待办】 |
 
 #### 5.1.3 组件依赖方向
 
-设备协议层 ⇄ front（唯一对外面）；front → 引擎（明文 ws）→ OpenClaw（OpenAI 兼容）；front ↔ 提醒交接目录（pending.json/semantic.json）；openclaw-patch 脚本 ← 复用 gateway/schedule.py 解析器（单源）；设备渲染层 ← MCP 工具面注入（view 路由单向）。
+设备协议层 ⇄ front（唯一对外面）；front → 引擎（明文 ws；服务端内部注入：`kidpal_speak` / 记录语境等价信号 / 课表摘要）→ OpenClaw（OpenAI 兼容；每轮 `user` 标识 + 本回合 + 动态 context 块）；front ↔ 提醒交接目录（pending.json/semantic.json）；openclaw-patch 脚本 ← 复用 gateway/schedule.py 解析器（单源）；设备渲染层 ← MCP 工具面注入（view 路由单向）。
 
 ### 5.2 运行视图（关键场景端到端）
 
@@ -208,7 +214,9 @@
 
 **① 开机与常显**：上电 → WiFi（NVS 凭据 / 配网）→ WS 建连（front TLS + 鉴权）→ hello 协商 → 常显 P1 首页。「接下来」刷新三触发 = WS 连接建立 + 每日 0:00 跨天 + 新建日程后即时推（决策 26；producer = QQ 录入路径 OpenClaw 自改写即时重算+推送，直改 MD 靠连接/跨天兜底）。P2 周网格缓存恢复 = 三触发（与「接下来」同源同机）的附带推送：WS 建连、每日 0:00 跨天与录入 marker 时，front 在推「接下来」后附带重推周网格**恢复性载荷**（契约 §1.3② `data.restore: true` 语义：设备只填 RAM 网格缓存、不接管前台，P2 在屏时仅重绘本页）。决策 26 三触发表述只覆盖 upcoming，网格恢复面由 ADR-005 补齐；语音「帮我显示课表」意图薄载荷展开仍为主动展示、无条件接管前台（M3-K3 冻结行为）。断网或推送未达期间翻到 P2 = 友好空态（决策 24 离线边界不变，网格缓存属 RAM 渲染缓冲、§5.4 板端状态行）。
 
-**② 语音问答**：KEY 单击或喊「你好，小智」→ hello → Opus 16k 帧流式上行 → 引擎 VAD 切句 → 云 ASR → `stt` 消息回发（聆听态逐句回显）→ OpenClaw（每轮透传历史）流式回复 → 引擎 TTS delta 流上 **fence 剥离状态机**：闭块瞬间同步发侧通道帧；正文送 TTS → Opus 24k 下行播报；front 截获侧通道帧 → `display_schema` 校验 → 逐块 mcp `kidpal/display` 下发 → 设备渲染。播报中 KEY 单击 = 停播 + `abort` 云端取消生成（Phase 1 唯一打断手段）。
+**② 语音问答**：KEY 单击或喊「你好，小智」→ hello → Opus 16k 帧流式上行 → 引擎 VAD 切句 → 云 ASR → `stt` 消息回发（聆听态逐句回显）→ OpenClaw（服务端持久会话：请求携 user=<device_id>、只发本回合，见 ADR-015）流式回复 → 引擎 TTS delta 流上 **fence 剥离状态机**：闭块瞬间同步发侧通道帧；正文送 TTS → Opus 24k 下行播报；front 截获侧通道帧 → `display_schema` 校验 → 逐块 mcp `kidpal/display` 下发 → 设备渲染。播报中 KEY 单击 = 停播 + `abort` 云端取消生成（Phase 1 唯一打断手段）。
+
+**动态 context 装配（`261022-device-memory-prompt-overhaul`）**：引擎每轮发往 OpenClaw 的系统侧内容分两层——静态语义在 workspace `AGENTS.md`（缓存边界之上，§5.5.5）、动态 context 块在缓存边界之下；动态块含本回合时间 / 日期与 front 经内部注入通道提供的**课表摘要**（front `schedule.py` 唯一解析器派生，会话建立时注入；引擎不解析 MD、不建第二解析器——契约 §1.5 单源红线）。课表回合因此无需工具调用即可作答；摘要窗口外日期仍走读文件或诚实说查不到。
 
 **③ 查字**：同 ② 前半；OpenClaw 判查字意图 → `char_stroke_lib` 从 9574 字 `char_cache.json` hold-and-replace 组 D3 笔顺 JSON（逐笔念笔名 = OpenClaw 回复文本自由承载，requirements v1.55 恢复——2026-09-15 真机实证「勇」9 笔笔名几何对照零错误，试点期持续核错误率；若走权威笔名数据源需 D3 契约扩展，届时契约门）→ `view=char` 覆盖窗（驻留到按键或 5 分钟无操作；**弹窗即静态显示整字、笔顺演示由 KEY 短按起播（再按 = 重播）**、长按关窗；BOOT 关窗回原页不翻页；播完会话即结束不回聆听态——requirements v1.36/v1.37/v1.43/v1.59 口径）。2026-09-15 真机复验：全链恢复可跑（语音应答→窗开 ~21.6s，5 秒档优化归 Phase 1）；板端两缺陷定位 = LVGL 任务栈溢出（已验证修复方向）+ SVG 解析器缺 C 命令（见 §8 风险债 5）。
 
@@ -240,6 +248,7 @@
 | 设备接入（公网入口） | `kidpal-front.service`（uvicorn `front.front_app:app`） | **0.0.0.0:8000 TLS**（唯一公网入口；证书 `/opt/kidpal/xiaozhi-esp32-server/cert/server.{pem,key}`，自签 RSA-3072 notAfter 2046-08-30） |
 | 引擎服务 | `xiaozhi-container.service` → docker compose（`xiaozhi-esp32-server`，官方镜像 6.9GB，`network_mode: host`） | 自绑 `127.0.0.1:8010` 明文 ws（不外露）；`data/.config.yaml` overlay + models 卷；engine-patch 两文件 bind-mount 覆盖 `core/` |
 | 编排大脑 | OpenClaw（宿主进程） | `18789` 锁 loopback（gateway.bind=loopback，部署期断言）；容器经真 loopback 访问 |
+| 记忆子系统 | Honcho 自托管栈（`server/deploy/honcho/**` 声明 → ECS `/opt/honcho` compose；五容器） | api `127.0.0.1:18100` 全 loopback（端口探针纳入 §5.3.3 部署后核验）；postgres + pgvector 落本机持久卷；资源基线 = ECS 2C/4G（2026-10-22 升级后基线；prep 税 / 内存压力 P3 后复测，TECH-261022-openclaw-prep-tax-memory-pressure） |
 | 交接目录 | `/opt/kidpal/alerts/`（pending.json + semantic.json）、`/opt/kidpal/stories/` | 同机文件交接，front 与 OpenClaw 共享 |
 | 配置与密钥 | `provider.config.yaml`（渲染源）→ `data/.config.yaml`（overlay 渲染产物）；`secrets.env` chmod 600（仓库只有 `.example`） | 引擎 `server.auth: false`（鉴权唯一权威在 front，260911 裁）；token ≥22 字符否则拒绝渲染 |
 | 历史单 | `xiaozhi-gateway.service`（legacy）、`kidpal-shim.service`（已退役） | shim 8080 已停；公网探针实证 8080 不可达、8000 唯一入口（260903 实证） |
@@ -247,7 +256,7 @@
 #### 5.3.3 运维面
 
 - **overlay 渲染**：`apply-xiaozhi-overlay.sh` 以 `provider.config.yaml` 为源渲染 `data/.config.yaml`（LLM type:openai→OpenClaw、TTS edge、ASR qwen3_asr_flash、禁 max_tokens、`server.ip=127.0.0.1/port=8010`）+ prompt 版本接线（PROMPT_SRC/DST）；
-- **部署后核验三件**：① `docker logs | grep "kidpal display-strip patch active"`（每次建连打一行；**缺失 = 补丁未生效**，fence 重新混入播报 + relay 断链）；② `docker inspect` 核 bind-mount 两映射在位；③ 端口探针（8000 可达 / 8010·18789·8080 不可达）；
+- **部署后核验三件**：① `docker logs | grep "kidpal display-strip patch active"`（每次建连打一行；**缺失 = 补丁未生效**，fence 重新混入播报 + relay 断链）；② `docker inspect` 核 bind-mount 两映射在位；③ 端口探针（8000 可达 / 8010·18789·8080 不可达）；另核记忆子系统 api 18100 仅本机可达、五容器其余端口公网不可达；
 - **漂移告警语义**：镜像升级 → 部署副本（0.9.6 基线）可能与新引擎内部 API 不匹配（ARQ-260907-engine-deploy-patch-drift）；升级前先对上游 diff；
 - **证书**：`cert-renew.sh`（VALID_DAYS=7300，auto/renew/force 三模式）+ `cert-warn-expiry.sh`（WARN_DAYS=30，exit 0/1/2 可机判）；
 - **提醒 cron**：`openclaw cron`（kidpal-reminder-plan，venv 解释器载荷——系统 python 3.6.8 不兼容之坑已记录）；回滚 = live `.config.yaml` 时间戳备份 + `openclaw cron remove`；
@@ -269,7 +278,10 @@
 | story 正文本地副本（**只读镜像**） | 设备 SD 卡 `/sdcard/story/` | 固件（云端 story 归档为唯一真相源，板端不承载任何写入） | 持久（随卡；卡可换） | 掉电保持 | **决策 24 carve-out**（261016-p3-story-body-sd-cache，只读镜像例外，见 §6.2）／契约 §1.3④ story_text |
 | 设备诊断日志 `logs/KPLOGnnn.TXT` | 设备 SD 卡 `/sdcard/logs/` | 固件诊断日志写盘任务（`esp_log_set_vprintf` 钩子 → PSRAM 环形缓冲 → 低优先级批量刷盘；单写者） | 常开；有界轮转（512KB × 32 个，目录总量 16MB 封顶、覆盖最旧） | 掉电保持（随卡；卡可拔可换、可删除） | 决策 24 白名单增列（261018-sd-log-persist，见 §6.6）／板端自定义明文行格式（非端云数据格式，无契约权威；含 STT / LLM 对话原文，见决策 24 注记） |
 | 1bpp 美术/字体/提示音 | 设备 art+assets 分区 | 资产管线（构建期） | 静态 | 随固件面 | §5.5.2 |
-| 对话历史（剥离前原文） | 引擎容器内存 | 引擎 | 连接期（跨 UI 会话累积——决策 21 连带，feature/bug 待 human 拍） | 掉电即失 | — |
+| 对话历史（服务端持久会话） | OpenClaw 会话存储（按 `agent:kidpal:openai-user:<device_id>` 键） | OpenClaw（每轮追加本回合；压缩 = auto-compaction，默认开） | 持久；跨 UI 会话保留（ADR-015；增长 / 压缩成本 = §8.1 风险 14 观察项） | 云端持久 | 非契约（wire 无此形状） |
+| 对话历史（剥离前原文，引擎本地副本） | 引擎容器内存 | 引擎 | 连接期；**本地非权威副本、不向 OpenClaw 重放**（ADR-015） | 掉电即失 | — |
+| 记忆·会话消息（peer / session / message） | Honcho postgres（ECS 本机；pgvector 向量列） | OpenClaw Honcho 插件（每轮 persist，受 §6.7 资格门约束） | 持久；删除 = 运维手工（NFR-PRIV-1） | 云端持久 | Honcho 内部 schema（非契约） |
+| 记忆·画像（observation / representation） | 同上 | Honcho deriver（LLM 抽取）→ representation | 持久、随抽取滚动更新；删除同上 | 云端持久 | 语义权威 = requirements NFR-PRIV-1；形状非契约 |
 
 ### 5.5 开发视图（怎么造、怎么验）
 
@@ -296,9 +308,15 @@
 - **底部键帽条**：条体已常驻（基座 screen 所有），内部仅单个居中 label——三槽布局/页点/键帽图形【修复项】；
 - **首页辅助条**：联网图标链路已实现（断网 WiFi-slash + 强/中/弱三档）；电量【修复项】见 §5.3.1。
 
-#### 5.5.5 OpenClaw system prompt 版本化
+#### 5.5.5 OpenClaw prompt 承载与版本化（静态 / 动态两件）
 
-声明件 `OPENCLAW_SYSTEM_PROMPT_CARRIER`（无扩展名）显式声明当前接线版 + **承载版本演进史唯一全量副本**（260925-prompt-v7-round-routing 起：声明面/渲染面散文只留「当前 = vN」指针，沿革不再四处复述）；**现状 = v11**（v1 基座 → v2 +课表 producer+char C1 → v3 +故事 producer+提醒并集 → v4 +F4 故事分工修正 → v5 +char meaning/禁附录 → v6 +M3-K3 课表问答口径 → v7 回合类型路由表 + 故事段对齐 2026-09-24 契约门禁产 story JSON + 语音「简洁不啰嗦」纪律 + **制品本体不带前言**〔沿革外置 carrier，渲染不剥离保「验收所测 = 生产所用」〕 → v8 +故事段「帮我记下来」第二指令 + 意图边界负例〔M4-K3 双指令批〕 → v9 +课表问答回合行对称反叙述纪律〔v7 修对话行时漏课表行对称条款，TECH-261010 真机内部推理当语音播出根治〕 → v10 +回合类型路由表新增「实时事实回合」行〔先播提示→联网真查→只依据查询结果作答+降级诚实，TECH-261012 真机天气幻觉根治〕+ 对话行通用反编造 + 底线节第三不变量 → v11 课表问答回合识别特征扩列〔凡提到课表/课程/上课/上什么课/几点上课/要带什么，及任何「今天/明天/后天/大后天/周X/星期X/周几/这周/下周/（某月某）号 + 课」组合一律判课表问答回合、先读 `kidpal/schedule.md` 再作答，TECH-261017 真机「该读未读」凭印象编造根治，其余段落零偏移〕）。历史文件不改、共存可 diff。**接线不变式：渲染面（overlay PROMPT_SRC）== 声明面（provider.config 三键）== 被测面**（ADR-001：守卫从结构化指向解析当前版，禁版本字面断言）。
+**静态语义（主承载）**：单一事实源 = `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md`（仓内镜像 → live `/root/.openclaw/workspace-kidpal/AGENTS.md`；经 `server/deploy/manifest.yaml` 登记、`deploy.sh` 铺放、`verify-deploy.sh` 每日 md5 核验）。OpenClaw 把 workspace `AGENTS.md` 作为 stable project context 组装进 system prompt 的**缓存边界之上**（参考实现：context file 序 `agents.md` 居首、仅 `heartbeat.md` 归 dynamic，stable 段落置于 `SYSTEM_PROMPT_CACHE_BOUNDARY` 之前）——跨回合字节稳定、命中缓存前缀。v1–v11 历史 prompt 版本文件原地冻结、可 diff；演进史全量副本 = `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER`。
+
+**动态 context（每轮，缓存边界之下）**：模板 = `server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt`（新增），经 `apply-xiaozhi-overlay.sh` 渲染进引擎 `.config.yaml` 的 `prompt:` 键；内容 = 有界的回合内动态信息（本回合时间 / 日期、front 注入的课表摘要等），**不含静态纪律**。它在 OpenClaw 侧落在缓存边界之下的 Conversation Context（参考实现 `extraSystemPrompt` 段），不污染稳定前缀。引擎既有 `prompt_template` 键与动态块的分工归 P1 实现，本节只钉「静态不进动态块、动态块有界且不含纪律」。
+
+**承载不变式（ADR-001 重定义，`261022-device-memory-prompt-overhaul`）**：① **静态面**：渲染面（live workspace `AGENTS.md`）== 声明面（`OPENCLAW_SYSTEM_PROMPT_CARRIER` + `provider.config.yaml` 静态承载三键，键形归 P1 实现）== 被测面（探针直接读同一 `AGENTS.md`）；② **动态面**：渲染面（`.config.yaml` `prompt:` 值）== 声明面（`provider.config.yaml` 动态模板三键）== 被测面（探针请求同源）。守卫从结构化指向解析当前承载（版本无关），集合相等照 ADR-001 本体两原则执行；ADR-001 的「版本化部署制品」实例枚举由本批重定义收窄为上述两面（ADR-014 记载 amend，不覆盖其决策本体）。
+
+**OQ-8 裁定（2026-10-22，本批）**：**否决「v12 双件」**——v12 与 `AGENTS.md` 同载静态语义 = 两处事实源，ADR-001 的三面相等会退化为「三面同指一版 + 一个影子副本」。**「单一事实源」原则采纳，落点 = 现有 prompt 资产家**：静态语义唯一件 = `openclaw-agents/workspace-kidpal/AGENTS.md`（原地）；动态模板与 carrier 留在 `server/deploy/` 现址（`kidpal-dynamic-context.v1.txt` / `OPENCLAW_SYSTEM_PROMPT_CARRIER`）。**不新建 `server/deploy/prompts/` 平行目录**——现成 `openclaw-agents/` 家仍在（`AGENTS.md`、README、历史版本文件），新造平行目录会产生「两个 prompt 家」的新歧义；搬家本身不产生单源语义收益，只增加 manifest / deploy / verify / README 四处路径改写与冻结验收测试 corpus 迁移的漂移面。目录归纳如确需，另立纯搬迁批，不阻塞本列车。
 
 #### 5.5.6 构建与测试基建
 
@@ -335,6 +353,31 @@
 
 关联法与已知坑（wire capture 因 permessage-deflate 不可用）见 kidpal-live-smoke-debug / kidpal-serial-monitor skills。派发观测缺口（dispatch-stamp 无模型/token 分项）= ARQ-260909。
 
+### 6.7 记忆写入资格与画像
+
+**在哪侧：记忆子系统（§5.1.2）+ 资格门（跨 front / 引擎 / OpenClaw 的部署面断言）。**
+
+**资格门（唯一判据，出生即定）**：仅当回合来自 kidpal agent 的语音链路、且请求携带 `user=<device_id>` 时，该回合内容才可进入记忆管线（写 observation / 落消息）；**读侧同门**——非资格回合不注入画像。资格门**全局生效**（不只 kidpal）：main agent 的 QQ / cron 回合、任何不携 `user` 的调用一律不入库。设备流程触发的回合因此结构性不入画像，完整枚举（S-F5.1 AC5 的「完整枚举由架构文档定义」即本表）：
+
+| # | 回合 | 触发 / 承载 | 不入画像的原因 |
+|---|---|---|---|
+| 1 | 卡壳引导回合 | front 一次性 LLM（`_openclaw_chat_once`，request 级 system 指令） | 不携带 `user`（front 内部回合，无设备身份） |
+| 2 | 忠实整理回合 | 同上 | 同上 |
+| 3 | 提醒到点语义回合 | OpenClaw cron → **main** agent 产 `semantic.json` | 非 kidpal 语音链路；cron 会话无设备 `user` |
+| 4 | 提醒三档机械脚本 | `reminder_schedule_lib.py` | 无 LLM 回合 |
+| 5 | 家长 QQ 录入 / 查日志回合 | QQ 通道 → main agent | 非设备语音链路；peer = 家长通道身份，非设备 peer |
+| 6 | 故障 / 兜底固定文案 | front 固定安抚句 / 引擎 `system_error_response` | 无 LLM 回合 |
+
+（记录语境期间引擎侧本就无 LLM 回合〔ADR-013 读法乙〕，不在枚举内。新回合形态入库前须先判资格门，不满足者默认不入画像——**白名单入册，不做黑名单剔除**。）
+
+**画像边界（AC3 / AC4 抽取边界，三层纵深）**：① **来源门** = 上表资格门；② **抽取策略** = deriver 只抽「孩子世界的事实」（喜好 / 宠物 / 同学 / 经历），家长隐私信息（姓名 / 联系方式 / 家庭安排）不产 observation——策略承载首选 Honcho deriver 侧的提示配置；若自托管版本不支持自定义 deriver 提示，退回「持久化前消息侧过滤」；③ **注入边界** = representation 注入前的类别过滤（低置信 / 敏感类不回注）。验收判据 = seeded 负向探针集 100% 零命中（NFR-PRIV-1）；三层任一失守即不达标。P3 实测成形后回填本小节。
+
+**历史 backfill**：2026-09-30 前 `session-corpus` 全量照记（human 2026-10-22 裁：不分回合性质、含第三方姓名）；幂等可重跑、前后计数报告、清库回滚（实现归 P4）。
+
+**删除语义**：NFR-PRIV-1 —— 运维面手工删除记忆画像与 observation / 消息存储；不删 OpenClaw 完整日志、历史补录源语料、设备诊断日志（各按既有接受口径保留）。
+
+**降级**：记忆服务不可用 → 本轮无画像注入、对话与回复照常（不阻塞、不静默重试风暴）；记忆失败不进 §6.3 的用户可见兜底（用户无感知）。
+
 ---
 
 ## 7. 接口与契约（指针，不抄细节）
@@ -365,8 +408,10 @@
 | 7 | `server/deploy/README.md` prompt 现状曾写 v3、arch 曾写 v4（两处散文漂移） | 部署指引误导 | 已随 260925-prompt-v7-round-routing 收敛：README prompt 节改指针式（沿革归 carrier 唯一副本），arch §5.1/§5.5.5 刷新 v7【已闭合】 | dev-loop |
 | 8 | 逐笔念笔名试点期笔名错误率未成批核验（requirements v1.55 恢复；「勇」单字零错误 = 唯一实测点，笔名由 LLM 自由生成、无权威数据源兜底） | LLM 猜错笔名 = 教学事故（孩子照错的学） | 试点期扩常用字样本人工核错误率；不达标 → 回退纯引导语或接权威笔名数据源 + D3 契约扩展 `stroke_names`（走契约门） | human（试跑采样）+ dev-loop（数据源方案） |
 | 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
-| 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（方案二：接入网关对设备常驻连接、引擎按会话起停）留 Phase 1 | human |
+| 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（方案二：接入网关对设备常驻连接、引擎按会话起停）留 Phase 1。**已闭账（2026-10-22，`261022-device-memory-prompt-overhaul`）**：定性 = feature（跨会话连续性 + 记忆画像的底座），决策本体 = ADR-015；上下文污染的重放双源风险由「引擎只发新回合 + 持久会话单一权威」结构性消除；残余 = 历史增长 / 压缩成本（见风险 14）。决策 21 所列结构级备选（方案二：网关设备腿常驻、引擎腿按会话起停）随 ADR-015 承载定案失效。 | human |
 | 10 | 16px 以下 CJK 1bpp 可读性未实测 | 字号下限悬置 | 单独烧版对照（ARQ-260831-small-cjk-1bpp-readability） | 真机字体任务 |
+| 13 | 记忆子系统单点（Honcho 五容器与 ECS 同机；画像 / 消息库在本机 postgres） | 故障 = 无记忆（对话不阻塞）；数据损坏 = 画像需自消息库 / backfill 重建；删除 = 运维手工 | 降级语义 §6.7；备份 / 恢复形态 = 不备份、靠消息库 / backfill 语料重建（human 2026-10-22 裁 OQ-10；重建源 = session-corpus 源语料 + OpenClaw 会话存储；重评触发 = 重建不可接受 / 家长提出恢复诉求）；数据不出网（NFR-PRIV-1） | 运维面 |
+| 14 | 持久会话历史增长与 auto-compaction 成本 / 质量（ADR-015 连带） | 长会话 token 成本；压缩后早期细节可能丢失（长期事实另存于记忆画像，兜底） | P2 上线后观测；压缩默认 safeguard（参考实现 `docs/concepts/compaction.md`）；必要时调 `keepRecentTokens` | dev-loop 运维面（观察项） |
 | 11 | shim 退役遗留：ECS 停服 + 8080 安全组未清 | 攻击面残留（探针已证不可达） | teardown 证据待补 | dev-loop |
 | 12 | 验收齿可合法弱于契约（同族 ≥6 包）+ 跨包行为无显式 owner | 齿绿而契约未兑现 | ARQ-260911-tooth-strength-below-contract / cross-package-behavior-owner-gap | architect |
 
@@ -374,7 +419,7 @@
 
 ### 8.2 开放问题
 
-1. ~~多轮会话连续性~~ **已定案（2026-09-11 V21 探针实证）**：stateless 不续、**每轮透传历史**续——承载方案关闭；剩余相位矛盾见 ARQ-260902-multiturn-continuity（session_id 语义与协议剖面承载定义随契约门 §四）。
+1. ~~多轮会话连续性~~ **已定案（2026-09-11 V21 探针实证）→ 2026-10-22 再次定案（取代）**：2026-09-11 定「stateless 不续、**每轮透传历史**续」；2026-10-22 `261022-device-memory-prompt-overhaul` 起取代为「引擎请求携 `user=<device_id>`、只发本回合，OpenClaw 按标识维护**服务端持久会话**」（决策本体 = ADR-015）——旧路线承载方案关闭；契约 §四「会话连续性承载」同批改写为定案记载（ARQ-260902-multiturn-continuity 已于 2026-10-12 关闭，本批只清契约字面残留）。
 2. **AEC 实测调优**【二期】：喊停误触发/漏触发阈值（机制侧 §5.1.1 音频组件；需求侧 requirements §2.1）——2026-09-13 定不纳入 Phase 1 后不再挡路。
 3. **证书生命周期相位对账**：OTA vs 首期续证（ARQ-260902-cert-lifecycle-deadlock）——证书形态已定（≥10 年 + 轮换脚本 + 告警），human 已裁 accept-as-risk。
 
@@ -414,9 +459,9 @@
 16. **屏幕**：ST7305 / 400×300 / 1bpp / 45-70FPS / 无前光。按键 ×3（KEY/BOOT/PWR）。
 17. **图形库**：**沿用小智自带 LVGL**（单色模式），笔顺用 `lv_canvas` 绘制。——美术元素（吉祥物/手绘框/涂鸦）不走运行时绘制，走预栅格化 1bpp 资产（本文件 §3.1）。
 18. **服务端实现形态（2026-09-02 新增 + grilling 定）**：**官方 Python 版**小智服务端（xinnan-tech/xiaozhi-esp32-server；Go 社区版弃选——社区小、provider 覆盖未验证）+ 适配插件——LLM 经 OpenAI 兼容端点配置级接入 OpenClaw（`type:openai`，base_url/api_key/model 可配；**流式请求禁带 `max_tokens`**）；TTS=edge-tts（可替换 provider）；ASR=阿里云云端（云优先，见决策 19）；自写部分仅结构化下发 push helper 与提醒定时推送（各约几十行）。
-19. **ASR 云优先（2026-09-02 新增）**：前期用阿里云云 ASR（Qwen3-ASR-Flash / Aliyun 流式，与 ECS 同区、按量计费+免费额度），避免前期订阅服务器扩容；兜底触发 = 额度用尽 / 隐私需求变化 / **云 ASR 流式不达标（与 VAD 切句语义不兼容）**（V23 补）→ 升级 ECS 切本地 SenseVoice（官方服务端 `fun_local`，配置级切换、无返工）。「ASR = 可替换 provider」写为架构前提。**儿童数据出网记账（human 2026-09-03 确认，V29 定）**：① 语音音频 → 阿里云 ASR（境内）；② 转写文本 → OpenClaw → DeepSeek 云（deepseek-v4-flash）；③ 回复文本 → edge-tts（微软非官方接口）——三条路径均出内网，human 已知晓并接受；原「仅 ASR 链路」措辞废止。**出网路径④ 联网搜索（human 2026-10-12 裁，v1.62 增补注记，原文①–③不动）**：kidpal agent 实时事实查询回合（天气/新闻/今日热点类）经 OpenClaw 平台联网搜索（Tavily）出网查询，human 已知晓并接受；行为口径与接受证据权威 = requirements NFR-SEC-2 ④（v1.62），本条为投影记账。
+19. **ASR 云优先（2026-09-02 新增）**：前期用阿里云云 ASR（Qwen3-ASR-Flash / Aliyun 流式，与 ECS 同区、按量计费+免费额度），避免前期订阅服务器扩容；兜底触发 = 额度用尽 / 隐私需求变化 / **云 ASR 流式不达标（与 VAD 切句语义不兼容）**（V23 补）→ 升级 ECS 切本地 SenseVoice（官方服务端 `fun_local`，配置级切换、无返工）。「ASR = 可替换 provider」写为架构前提。**儿童数据出网记账（human 2026-09-03 确认，V29 定）**：① 语音音频 → 阿里云 ASR（境内）；② 转写文本 → OpenClaw → DeepSeek 云（deepseek-v4-flash）；③ 回复文本 → edge-tts（微软非官方接口）——三条路径均出内网，human 已知晓并接受；原「仅 ASR 链路」措辞废止。**出网路径④ 联网搜索（human 2026-10-12 裁，v1.62 增补注记，原文①–③不动）**：kidpal agent 实时事实查询回合（天气/新闻/今日热点类）经 OpenClaw 平台联网搜索（Tavily）出网查询，human 已知晓并接受；行为口径与接受证据权威 = requirements NFR-SEC-2 ④（v1.62），本条为投影记账。**出网路径⑤ 记忆画像管线（human 2026-10-22 裁，v1.67 增补注记，原文①–④不动）**：Honcho deriver 抽 observation → DeepSeek 云（与 ② 同域，非新增暴露面）+ embedding 向量化 → DashScope（阿里云 text-embedding-v4，与 ① ASR 同供应商同信任域），human 已知晓并接受；权威 = requirements NFR-SEC-2 ⑤，本条为投影记账。
 20. **提醒模型（2026-09-02 新增 + 三轮 grilling 定）**：**按区块判范围**——「学校课程表」区块不提醒（在校例行）；「每周固定课表」区块（培训班，不论周中周末，**每周重复生成**）+ 一次性安排走三段阶梯（前一天晚上 20:30 带物 / 当天早上 07:45 日程 / 事前 15 分钟——**时刻为 2026-09-02 human 修订值**，全局常量**配在 OpenClaw 侧**、不进契约）；携带内容复用课表备注列、解析规则由 system prompt 约定（契约 B1 表格主体零变更；frontmatter `remind_before_min` 字段废止、待契约门裁）；定时器 = **OpenClaw 原生 cron**（2026-09-02 ECS 实测：调度器在跑、已有 class-reminder 类任务运行记录、`cron --message` 可定时触发 agent 回合）；**脑算网关推**（OpenClaw 算三档写 pending.json、网关只到点推送）；载体走 mcp（见决策 23）；**重试到确认**（60 秒超时重推、单档上限 3 次、不做重连即重推、过期静默作废），**渲染即确认出队**（KEY/BOOT 关弹窗即出队；BOOT 同时照常翻页。⚠️ 2026-09-14 requirements v1.39 翻转：覆盖层内 BOOT = 关弹窗回原页、不翻页——本条为历史口径，现状见 requirements.md §2.3。弹窗无超时驻留、多提醒排队逐个弹（录音态例外 = 排队延后，见 §2.9）；设备易失 id 集合幂等去重）。机制细节见 §2.9。
-21. **连接策略（2026-09-02 grilling 定）**：常驻连接（设备开机即连、断线重连），保提醒推送/打断可达；省电不预设优化，功耗实测后再看（决策 10 便携电池优先）。**2026-09-14 查证 + 配置级修正（PM review 驱动，human 裁方案一）**：引擎默认 120 秒无语音关闭与常驻连接直接冲突——上游 `receiveAudioHandle.no_voice_close_connect` 在 120 秒无语音时给 LLM 塞 `end_prompt` 煽情告别语、播完断连，engine-patch 另有二道 `120+60=180` 秒静默硬关兜底；而网关提醒推送（§2.9）推的是「当前在线设备腿」，设备腿与引擎腿同生共死（逐连接代理），引擎反复断连 = 推送黑洞 + 重连 churn + LLM 越权告别语（真机日志 `su-a8-keypress-02` 印证：告别播完即 WS disconnected）。修正 = ECS 引擎 `.config.yaml` 追加 `close_connection_no_voice_time: 86400` + `end_prompt.enable: false`（抄档 `.config.yaml.bak-20260914-session-timeout`，docker restart 生效）——两道超时退为 24h 纯兜底、告别语关闭，常驻连接自此真实成立。已知连带：引擎侧对话上下文将跨 UI 会话累积（当 feature 或当 bug 待 human 拍）；结构级备选（方案二）= 网关设备腿常驻、引擎腿按会话起停，留 Phase 1 评估。
+21. **连接策略（2026-09-02 grilling 定）**：常驻连接（设备开机即连、断线重连），保提醒推送/打断可达；省电不预设优化，功耗实测后再看（决策 10 便携电池优先）。**2026-09-14 查证 + 配置级修正（PM review 驱动，human 裁方案一）**：引擎默认 120 秒无语音关闭与常驻连接直接冲突——上游 `receiveAudioHandle.no_voice_close_connect` 在 120 秒无语音时给 LLM 塞 `end_prompt` 煽情告别语、播完断连，engine-patch 另有二道 `120+60=180` 秒静默硬关兜底；而网关提醒推送（§2.9）推的是「当前在线设备腿」，设备腿与引擎腿同生共死（逐连接代理），引擎反复断连 = 推送黑洞 + 重连 churn + LLM 越权告别语（真机日志 `su-a8-keypress-02` 印证：告别播完即 WS disconnected）。修正 = ECS 引擎 `.config.yaml` 追加 `close_connection_no_voice_time: 86400` + `end_prompt.enable: false`（抄档 `.config.yaml.bak-20260914-session-timeout`，docker restart 生效）——两道超时退为 24h 纯兜底、告别语关闭，常驻连接自此真实成立。已知连带：引擎侧对话上下文将跨 UI 会话累积（当 feature 或当 bug 待 human 拍）；结构级备选（方案二）= 网关设备腿常驻、引擎腿按会话起停，留 Phase 1 评估。⚠️ **2026-10-22 取代注记（部分）**：「引擎侧对话上下文将跨 UI 会话累积（当 feature 或当 bug 待 human 拍）」已定案为 **feature**（跨会话连续性 + 记忆画像的底座），并由 `261022-device-memory-prompt-overhaul` 结构性落实——引擎请求携 `user=<device_id>`、只发本回合，上下文累积的家移到 OpenClaw 服务端持久会话（决策本体 = ADR-015）；引擎 RAM 副本降为非权威、不重放。决策 21 其余（常驻连接 / 24h 兜底 / 告别语关闭）不变。
 22. **传输安全与鉴权（2026-09-02 grilling 定 + 2026-09-03 拍板回灌）**：wss + 自签长期证书——**有效期 ≥10 年**（把到期死局推出产品生命周期，V25 定）+ 轮换机械脚本 + 到期前告警（owner = 方向 B 落地包；部署期相位对账：证书有效期 vs OTA 建立，若 OTA 必晚于首期续证则 OTA 提前或显式记账死局，ARQ-260902-cert-lifecycle-deadlock）；CA 嵌入固件的证书加载实现面见 dev-loop handoff V10。**设备 token = 全设备共享单 token**（human 2026-09-03 裁，V26 定；MVP 单设备场景；已知取舍 = 无每设备身份、单点泄露危及全部、多设备时转每设备唯一并记账）；强度 ≥128-bit 随机、服务端 constant-time 比对、配网时生成写入。**强制设备鉴权**——token 未设 = 拒绝服务，公网入口不留 validation-mode 后门。**18789 收敛 = 方向 B 落地前硬前置**（V28 定）：OpenClaw 18789 锁 127.0.0.1（安全组/防火墙，部署期断言），与 ARQ-260901 复议触发合并。
 23. **协议载体（2026-09-02 grilling 定）**：display 指令与提醒推送统一走 `mcp` 工具调用（kidpal/display、kidpal/alert），设备 JSON-RPC 回执 = 送达确认（提醒出队的 ack 通道）；小智原生 alert/custom 通道弃用。
 24. **离线边界（2026-09-02 grilling 定）**：设备不缓存事项/课表——断网无提醒、P1「接下来」与 P2 课表不可用，仅时间/温湿度/电量；「哑终端不存数据」纯洁性保持，离线兜底验收撤回。**介质禁令（V4 定）**：板端非易失介质（16MB Flash / SD / NVS）仅允许设备凭证与服务器地址（url/token/version）、预栅格化 1bpp 美术资产与字体、固件本体；一切业务/身份/事项状态（提醒易失 id 集合、P1 日程渲染缓冲、会话状态机）只能驻留 RAM、掉电即失、禁落任何非易失介质。**史实更正 + 窄例外（`261016-p3-story-body-sd-cache`，2026-10-17）**：「『哑终端不存数据』纯洁性保持」句的历史更正——介质禁令的原始动因是**当时的存储成本约束**（未用 TF 卡、RAM 存不下业务数据），并非产品原则；human 2026-10-16 原话逐字「业务数据不落盘 是因为之前没用TF卡，ram根本存不下 无奈之举」。TF 卡能力 2026-10-16 就绪（`261016-sd-card-mount`）后该约束解除：介质禁令**白名单增列「story 正文只读镜像」**（云端 story 归档仍为唯一真相源，板端不承载任何写入；断网时已留存正文照常回看）。**边界不变**：提醒 / 课表 / 日志等其余业务 / 身份 / 事项状态仍只驻 RAM、禁落非易失介质；「离线边界（断网无提醒）」部分语义不变。 **白名单增列 · 设备诊断日志（`261018-sd-log-persist`，2026-10-18）**：介质禁令白名单再增列**设备诊断日志**——设备自身运行日志（固件 `esp_log` 输出流），常开 + 有界轮转、目录总量 16MB 封顶（512KB × 32 个文件）、可删除；写者 = 固件低优先级写盘任务。它是**可观测性数据**：不承载任何业务状态、不供掉电恢复、不是业务真相源。**口径消歧**：本条目与原则 5 所列「提醒 / 课表 / 日志等其余业务数据」中的「日志」指**业务日志**（家长知情权 = OpenClaw 侧完整日志，§1.3 / requirements §7 开放问题 3）——业务日志仍不落板、语义不变；设备诊断日志属**架构 / 运维面**概念，不在该业务数据枚举内。**边界仍不变**：提醒 / 课表等其余业务 / 身份 / 事项状态仍只驻 RAM、禁落非易失介质；「离线边界（断网无提醒）」语义不变——诊断日志不提供任何离线功能。**隐私接受**：落卡内容含**对话原文（STT / LLM 转录与回复）**，human 2026-10-18 有意识接受；与 `TECH-261016-sd-story-confidentiality` 同族（儿童数据明文落可拔卡）、暴露面加宽（全部对话转录 vs 孩子主动录的故事），隐私记账见该 tech 条目。
@@ -439,6 +484,7 @@
 
 | changeId | 日期 | 改动面 | 依据 |
 |---|---|---|---|
+| 261022-device-memory-prompt-overhaul | 2026-10-22 | §1.1 / §1.2（+Honcho 自托管栈、+DashScope embedding、DeepSeek deriver 同域注记）/ §1.3（记忆身份体系范围声明）/ §2.2 总图（持久会话 + 记忆侧车）/ §3.1·§4（出网四条→五条、+NFR-PRIV-1 对策行）/ §5.1.2（+记忆子系统行；OpenClaw 本体行 / front 行 / 引擎补丁行）/ §5.1.3 / §5.2 场景②（动态 context 装配 + 课表摘要）/ §5.3.2（+Honcho 行）/ §5.3.3（Honcho 端口核验）/ §5.4（+记忆两行、对话历史两行）/ §5.5.5 整节重写（静态 / 动态承载 + ADR-001 重定义）/ §6.7 新增（记忆写入资格与画像）/ §8.1（风险 9 闭账、+13/14）/ §8.2（会话定案取代注记）/ §10 决策 19 ⑤、决策 21 取代注记 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md（契约面同批原子落：§四「会话连续性承载」定案改写 + §1.6 承载对账注记；ADR-014/015 + glossary 词条同批落） |
 | 261021-p3-record-cancel-lifecycle | 2026-10-21 | §5.2 场景④ 补取消链显式化一句（设备丢弃 → 契约 §四 `kidpal_story_discard` → 网关按连接权威 cancel；断连 cancel 为兜底） | delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md（契约面同批原子落：§四新增 `kidpal_story_discard` + 变更记录条；§1.4 `start_organizing` 行包络核对零改） |
 | 261019-p3-record-dialogue-guide | 2026-10-19 | §10 决策 25 取代注记（悬空指针同修）+ ADR-013 新增（记录语境对话态 + 引擎侧抑制定形）+ §5.1.2 front/story.py 行与 §5.2 场景④ 链路重写（卡壳计时器族 / 引导注入 / 忠实整理 / `start_organizing`）+ §2.3 / §5.1.1 / §9 to-be② / §5.5.4 / §4 NFR 映射表 / §2.4 原则 3 联动对账 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md（契约面同批原子落：§1.4 新增 `start_organizing` + §1.4/§四措辞对账） |
 | 261018-sd-log-persist | 2026-10-18 | §2.4 原则 5 / §5.3.1 存储行 / §5.4 新增「设备诊断日志」数据行 / §6.2 / §6.6 / §10 决策 24——介质禁令白名单增列「设备诊断日志（常开 + 有界轮转、目录总量 16MB 封顶、可删除）」+ 「日志 = 业务日志」口径消歧（设备诊断日志属架构 / 运维面） | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md（ADR-012 同批落） |

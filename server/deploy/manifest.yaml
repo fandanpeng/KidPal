@@ -106,7 +106,7 @@ entries:
   - {src: server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md,
      dst: /root/.openclaw/workspace-kidpal/AGENTS.md,
      owner: deploy.sh, verify: md5, restart: none,
-     note: 板侧 kidpal agent 工作区护栏（次要承载，冲突以注入 prompt 为准）}
+     note: 板侧 kidpal agent 静态语义单一事实源（261022 起主承载；每次会话注入的动态 context 块不含纪律，冲突以本文件为准）}
   - {src: server/deploy/openclaw-skills/workspace-main/AGENTS.md,
      dst: /root/.openclaw/workspace/AGENTS.md,
      owner: deploy.sh, verify: md5, restart: none,
