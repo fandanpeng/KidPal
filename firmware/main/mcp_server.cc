@@ -763,6 +763,70 @@ void KidpalStoryVadEnterRecording() {
 }
 
 /* -------------------------------------------------------------------------- *
+ * 引导播报子态看门狗（真机轮追补 261022, KPLOG006 22:27:43-22:29:09 实证）。
+ * 缺陷链: 引导 TTS 多句流式播放中孩子继续说话触发 barge-in abort（引擎 abortHandle:
+ * clear_queues + 发 tts stop）——句 1 的 tts stop 正常到达（设备 edge 0 @22:28:03.4）,
+ * 但句 2 的 tts start 帧竞态泄漏（edge 1 同刻到达, 其音频与收尾 stop 已被 abort 清掉）
+ * -> 设备 rec_substate 卡 1 -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导
+ * 的 stop 才解开）。根因在第三方引擎树（不可改）, 设备侧补韧性缺口 = 本看门狗。
+ *
+ * 语义: 每个 tts start 沿布防一次性定时器, 到期仍未收 stop 且窗口内无音频即判泄沿,
+ * 复位子态并同步渲染（幂等沿语义与 KidpalStoryGuideSpeechEdge 一致: 仅在仍处引导播报
+ * 子态时复位, stop 沿已复位则早退不重渲）。看门狗不推断「谁该发 stop」, 只兜底
+ * 「无 stop 的悬挂态」。
+ *
+ * 时长依据（r2 音频感知收紧, 真机反馈 2026-10-22）: 初版 12s 盲等在真机可触发但**打断
+ * 窗口体验差**——孤儿帧没有音频, 孩子白等 12s 才见键帽恢复。r2 改为「音频感知」判据:
+ * 真实句子引擎 TTS 首包实测 ~1-2s 内到达（引擎日志「发送第一段语音 -> 语音生成成功」
+ * ≈1s）, 3s = 1.5x 余量即足以区分「真音频在放」与「孤儿 start 无音频」; 到期回调据此
+ * 二选一——见过音频（g_story_guide_audio_seen == true）不复位、不重渲, 直接撤表返回
+ * （真音频在放, 等它的 stop 沿; stop 丢失属罕见形态, 可接受）, 没见过音频才复位
+ * （日志 audio=none 标记）。多句流每句 start 重布防（先撤旧再建新, 帧间 30ms 级,
+ * 幂等）, 故正常播放期间不会误判。到期复位后的键帽恢复 = 真机观测项（CG-A5 口径）。
+ * ------------------------------------------------------------------------ */
+#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 3000
+static lv_timer_t* g_story_guide_wd_timer = nullptr;
+
+/* 音频感知标志（定义住 application.cc OnIncomingAudio 收包路径; 同款免扩公共头纪律:
+ * 消费方此处 extern 声明, mcp_server.h 零改动）。布防时由本侧清 false 开新窗口。 */
+extern "C" bool g_story_guide_audio_seen;
+
+static void StopStoryGuideWatchdog() {
+    if (g_story_guide_wd_timer != nullptr) {
+        lv_timer_delete(g_story_guide_wd_timer);
+        g_story_guide_wd_timer = nullptr;
+    }
+}
+
+static void StoryGuideWatchdogCb(lv_timer_t* timer) {
+    g_story_guide_wd_timer = nullptr;
+    lv_timer_delete(timer); /* 一次性: 回调自删, 绝不常驻（StoryRecTimerCb 先例） */
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        return; /* 已离开录音态: 子态载体无语义（收尾路径负责）, 不越权复位 */
+    }
+    if (g_story_view.rec_substate != 1) {
+        return; /* 幂等: stop 沿已复位 -> 到期不重渲（与沿桥幂等语义汇合） */
+    }
+    if (g_story_guide_audio_seen) {
+        /* 音频感知（r2）: 窗口内真有 opus 包进过解码队列 = 真句子在放, 不复位不重渲,
+         * 撤表返回等它的 stop 沿（stop 丢失属罕见形态, 不为此误伤正常播放）。 */
+        ESP_LOGI(TAG, "story_guide_speech_watchdog deferred audio=yes");
+        return;
+    }
+    g_story_view.rec_substate = 0;
+    ESP_LOGW(TAG, "story_guide_speech_watchdog substate=0 audio=none");
+    ScheduleStoryRender();
+}
+
+static void ArmStoryGuideWatchdog() {
+    StopStoryGuideWatchdog(); /* 多句流: 先撤旧再布防, 幂等（每句 get 一个新窗口） */
+    g_story_guide_audio_seen = false; /* 新窗口: 清音频感知（r2） */
+    g_story_guide_wd_timer = lv_timer_create(StoryGuideWatchdogCb,
+                                             KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS,
+                                             nullptr);
+}
+
+/* -------------------------------------------------------------------------- *
  * K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1）。
  * application.cc Idle 分支消费 story_page.c 纯逻辑缝 kidpal_story_session_end 出参
  * 后经此二桥执行设备半——读 g_story_view.page 供判据（KidpalStoryViewPageState）+
@@ -782,6 +846,9 @@ void KidpalStorySessionEndApply(int list_page) {
         lv_timer_delete(g_story_rec_timer);
         g_story_rec_timer = nullptr;
     }
+    /* 会话收尾一并撤引导播报看门狗（跨会话泄漏防线, 同 D4b 根因形态: 收尾不定时,
+     * 定时器可能在首页重建后仍持有旧会话子态的判决权）。 */
+    StopStoryGuideWatchdog();
     /* 同步渲染节点缓存 + 权威会话页态镜像（令前台回落路径 voice_end 的 [R3]/[R5] 判据
      * 见 LIST 真值; 录音态强屏蔽随之复位——voice_end 重算 chrome 时 page_state != RECORDING
      * -> 强屏蔽位落 0, 声波 chrome 按常规语义恢复）。 */
@@ -809,6 +876,14 @@ void KidpalStorySessionEndApply(int list_page) {
 void KidpalStoryGuideSpeechEdge(int speaking) {
     if (g_story_view.page != KSTORY_PAGE_RECORDING) {
         return;  /* 子态载体只在录音态有语义（引导态/列表/整理态不置不复位） */
+    }
+    /* 看门狗沿（真机轮追补 261022, KPLOG006 22:28:03 泄漏 start 帧实证）: 布防/撤防
+     * 先于子态幂等早退——多句流每句 start 都要重布防（30ms 级帧间, 帧间不给新窗口
+     * 则首句窗口到期误判正常句）; stop 沿撤防令正常播完/被打断不留残余定时器。 */
+    if (speaking != 0) {
+        ArmStoryGuideWatchdog();
+    } else {
+        StopStoryGuideWatchdog();
     }
     int next = (speaking != 0) ? 1 : 0;
     if (g_story_view.rec_substate == next) {
@@ -1578,6 +1653,12 @@ void McpServer::AddCommonTools() {
                                  * 唯一写点同步（上方）, 本前推分支只负责覆盖层渲染——
                                  * 不再另起第二处缓存调用（K7-A5 / SLP-SLA4 计数钉恒 1）。 */
                                 kidpal_render_node_end_page();
+                                /* CG-A3 成功归档层栈收口（261022-p3-record-chrome-
+                                 * ghost-fix）: 夹钳后回落基层——否则覆盖层仍占逻辑
+                                 * 前台, 归档后首按 BOOT 被吃成 overlay_close
+                                 * （KPLOG005 13:03:20）。通道 = 既有 story_local_front
+                                 * （在役先例同款）, 帧类型负锚零新帧。 */
+                                kidpal_render_node_story_local_front();
                             });
                         }
                     }
@@ -1660,6 +1741,12 @@ void McpServer::AddCommonTools() {
                                     kidpal_story_page_render(&stamp_view, stamp_list.get(),
                                                              stamp_text.get());
                                     kidpal_render_node_end_page();
+                                    /* CG-A3（261022-p3-record-chrome-ghost-fix）: 盖章帧
+                                     * 闭包同款层栈收口（对齐失败路径 4068dc6c 的显式
+                                     * dismiss 纪律）——成功归档 / 盖章演出后覆盖层不得
+                                     * 继续占逻辑前台。通道 = 既有 story_local_front,
+                                     * 帧类型负锚: 零新下行帧。 */
+                                    kidpal_render_node_story_local_front();
                                 });
                             }
                             break;

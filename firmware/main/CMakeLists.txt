@@ -142,6 +142,13 @@ set(SOURCES "audio/audio_codec.cc"
             # 缺口高发位）。log_cmd_port.cc 不进 host 构建。
             "diagnostics/log_cmd.c"
             "diagnostics/log_cmd_port.cc"
+            # 包 261022-diag-log-content（板端诊断日志内容增强）：diagnostics/log_semantics.c =
+            # 墙上时间前缀格式化决策 + 预格式化缓存 + action/key/gesture/page/trigger 语义名
+            # 映射 + SystemInfo 降频决策纯逻辑（零芯片依赖 / 零 FreeRTOS / 零 LVGL ->
+            # host_app linux target 同源）; diagnostics/log_semantics.h = 冻结数值单源
+            # （KIDPAL_LOG_TIME_PREFIX_CAP=32 / KIDPAL_LOG_SYSINFO_INTERVAL_MS=60000LL）。
+            # main 目录非 GLOB, 必须在此显式登记（persist 包教训：登记是缺口高发位）。
+            "diagnostics/log_semantics.c"
             "assets.cc"
             "main.cc"
             )

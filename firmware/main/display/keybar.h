@@ -92,6 +92,51 @@ int kidpal_keybar_char_slots(int started, const char **out_left,
 int kidpal_keybar_story_slots(int substate, const char **out_left,
                               const char **out_right);
 
+/* -------------------------------------------------------------------------- *
+ * 语音场景生命周期单源（TaskPackage 261022-p3-record-chrome-ghost-fix, CG-A1;
+ * additive 追加——既有声明零触碰）。
+ *
+ * 场景态原先住 lcd_display.cc 文件级 static（设备侧独占、host 不可达）。本包把它上收
+ * 本模块：设备侧经 include 消费 set/get/reset，host 侧行为齿可直接驱动（与 dots/
+ * slots/char_slots/story_slots 单源同款架构）。跨任务读写 = 对齐 g_story_* 既有宽松度
+ * （32 位对齐标量写，单写者语义；调用点分别持 LVGL 锁 / 主循环，无撕裂风险）。
+ * ------------------------------------------------------------------------ */
+
+/* 复位值 = 「非语音场景默认」：落在语音场景闭集 [KVST_SCENE_LISTEN..KVST_SCENE_LOWBATT]
+ * **之外**——通用分支 kidpal_keybar_slots(page, scene, overlay_top) 遇越界 scene 落 -1
+ * 防御，残留语音键帽（「说完啦/结束」「不等了/结束」）绝不再被画出（EQ-3）。 */
+#define KIDPAL_KEYBAR_SCENE_NONE (-1)
+
+/* 场景写沿（消费点 = lcd_display.cc kidpal_voice_apply_look：每轮语音演出 / 提醒
+ * 弹窗的场景落点）。存真值，get 原样返回。 */
+void kidpal_keybar_scene_set(int scene);
+/* 场景读沿（消费点 = kidpal_keybar_sync_locked 通用分支入参 +
+ * kidpal_chrome_mid_sync_locked 中部显隐判据）。 */
+int kidpal_keybar_scene_get(void);
+/* 语音会话收尾沿复位（幂等）——写完 get() 恒落 KIDPAL_KEYBAR_SCENE_NONE（出闭集）；
+ * 复位后下一轮 set 照常驱动覆盖层键帽（修复不误伤真实语音轮）。 */
+void kidpal_keybar_scene_reset(void);
+
+/* story 子态缓存「过渡窗」（story_sub == -1，覆盖层/云端夹钳前台时缓存页态不可见）
+ * 的键帽裁决（TaskPackage 261022-p3-record-chrome-ghost-fix, CG-A2; additive）:
+ *   story_sub      = kidpal_render_node_story_substate() 现值（-1 = 过渡窗）;
+ *   last_known_sub = 调用方注入的「最后已知故事子态」（纯函数无隐藏状态——
+ *                    追踪器归属与更新时机归设备侧消费点, 见 GAP-1 申报）;
+ *   rec_sub        = 录音子态帧分叉（kidpal_render_node_story_rec_substate）。
+ * 返回三态:
+ *   -1 : 非法入参（out_left / out_right 任一 NULL）;
+ *   0  : 回落既有路径（out_* 不触碰）——非过渡窗（story_sub != -1），或过渡窗但
+ *        last_known_sub 不在在途集 {READER, RECORDING, ORGANIZING}（LIST/STAMP/DELETE/
+ *        BODY_UNAVAILABLE 等相位不接管，其残留由 scene 复位兜底）;
+ *   1  : 过渡窗裁决命中——按最后已知子态出键帽，值域零偏移复用既有冻结单源
+ *        （READER/ORGANIZING -> kidpal_keybar_story_slots；RECORDING ->
+ *        kidpal_keybar_story_rec_slots 帧分叉）。**内部只经上述两函数取字面**
+ *        （KB-E2 单源红线: 本函数不重抄键帽文本, 也绝不出语音轮闭集残留键帽）。
+ * 并行函数（不动既有签名与值域——additive, 既有齿不破）。 */
+int kidpal_keybar_story_transition_slots(int story_sub, int last_known_sub,
+                                         int rec_sub, const char **out_left,
+                                         const char **out_right);
+
 /* D3 v7 帧分叉键帽（261019-p3-record-dialogue-guide fixer, 2026-10-20; additive）:
  * RECORDING 子态帧 A/帧 B 键帽集单源。guide_sub == 0 -> 左「收尾」右「丢弃」;
  * guide_sub != 0 -> 左「打断」右留空（空串 = 消费方置空槽）。NULL out -> -1。

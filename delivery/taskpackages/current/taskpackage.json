@@ -1,240 +1,192 @@
 {
-  "changeId": "261021-p3-record-cancel-lifecycle",
-  "rigor": "full",
+  "changeId": "261022-p3-record-chrome-ghost-fix",
+  "rigor": "lite",
+  "riskTier": "medium",
   "sourceType": "regression",
   "origin": {
     "type": "regression",
+    "human-verbatim": "KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，跟我在屏幕上看到的状态乱跳是一样的」。逐秒还原 + 三源取证（设备 KPLOG005/kplog_user_test_full、front journalctl、引擎 docker logs）落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷①键帽鬼影闪烁 + ②成功路径鬼覆盖层吃按键。",
     "upstreamType": "regression",
-    "upstreamRef": "docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md",
-    "upstreamFrozen": ""
+    "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
+    "workstream": ""
   },
-  "subsystem": "server/gateway (front_app.py teardown gather 悬挂修复 / kidpal_story_discard 消费分支 / 在途引导双点存续守卫 / 腿集会话归口连接级映射 + story.py 预判零改~极小) + firmware/main (mcp_server.cc start_organizing 消费补 StopListening settle + DISCARD_RECORD case 补 discard 帧发送 + protocols/protocol.h/.cc SendKidpalStoryDiscard 逐字仿 SendKidpalStoryDelete 形态) + firmware/main/test 两 host 齿更新（record_session_live / record_dialogue_guide）",
-  "story": "S-F2.2 · 对话式引导记录（双入口）· v1.66（docs/requirements.md §9 v1.66 行）AC4：BOOT/「讲错啦」取消丢弃不设恢复（本包 = 取消/丢弃生命周期两侧闭环的实现语义落地：显式丢弃通知 + 断连取消兜底 + zombie 隔离）；S-F1.4-AC6：录音期提醒排队延后、会话结束立刻弹（F4 settle 复用 Idle 清位链顺带对齐）。取消链架构权威 = arch §5.2 场景④ + 契约 §四 kidpal_story_discard（2026-10-21 LANDED）。",
+  "subsystem": "firmware/main/display（lcd_display 键帽裁决 + keybar 纯逻辑单源 + kidpal_voice_states 场景生命周期 + kidpal_render_node 层栈收口）+ firmware/main/mcp_server.cc（收尾桥挂点，如需）+ firmware/main/application.cc（scene 复位挂点，如 1g 预评确认）+ firmware/main/test（host 验收件）",
+  "planRef": "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+  "changeManifest": [
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/kidpal_voice_states.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/test/**"
+  ],
+  "changeManifestNotes": "triage 种子原样（architect reviewed plan）；builder 若需为新验收件做 host runner 登记，实路径 = firmware/main/CMakeLists.txt（同形先例 261022-diag-log-content 扩单），届时按扩单申报纪律登记。",
+  "story": "261022-p3-record-chrome-ghost-fix · P3 记录会话 chrome 鬼影修复——①键帽鬼影闪烁（语音场景键帽残留 + story_sub 过渡窗读 -1 掉通用分支 + 单事件双同步，三因叠加出「说完啦/结束」「不等了/结束」鬼影双连闪，含无语音会话场景）：语音会话收尾复位 keybar scene + 故事会话期 -1 过渡窗取最后已知子态或硬门通用分支；②成功路径鬼覆盖层白吃按键：成功归档路径补显式覆盖层 dismiss（对齐 4068dc6c 失败路径形态；帧类型负锚 = 不得新发明下行帧类型，落点归 1g 预评）。debt TECH-261022-p3-record-session-state-churn 缺陷①②；并联包 = 261022-p3-record-front-polish-fix（front 面，零依赖零文件交集）。",
   "sourceRefs": [
-    "docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md",
-    "delivery/intake/261021-p3-record-cancel-lifecycle.md",
-    "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md",
-    "delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md",
-    "S-F2.2",
-    "S-F2.2-AC4",
-    "S-F1.4-AC6",
-    "docs/contracts/interface-contract.md#§四"
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
   ],
   "acceptance": [
-    "RCL-A1: 累积态会话收到 {\"session_id\":\"...\",\"type\":\"kidpal_story_discard\"}（契约 §四 LANDED wire 形态）→ 网关整条消费并拦截不下透引擎（引擎腿零 discard 帧）；front 按本连接 session_id 权威取消——acc.cancel(本连接 session_id, reason=\"discard\") 落（reason 冻结值 = \"discard\"）、会话 pop（routing 回 chat、active_sessions 不再含该键、累积缓冲销毁 build_organizing_input 返 None）、无归档（stories 目录零 .md）、不触发 story_list 重推（设备腿零 story_list 帧）、审计日志一行（logger \"kidpal-front\" 消息含冻结 token \"story_discard\" + 本连接 session_id）；discard 后 sweep 纯决策不再命中、sweep 真跑零播报零收尾零归档。幂等 no-op：会话已释放后的重复 discard（×2）与非累积态（chat）/未知会话的 discard 均为消费拦截 + 零帧零归档零会话壳复活零异常。连接权威：连接 B 上的 discard 携带伪造载荷 session_id = 连接 A 的会话键时，连接 A 会话保持累积态、素材完好、A 引擎腿零新帧，仅 B 本连接会话被取消（载荷 session_id 不被信任）。设计态红 = _consume_kidpal_control 无 discard 分支（消费拦截/取消/审计/幂等全链红）。回引 = 契约 §四 kidpal_story_discard + decisionCoverage OQ1/F2",
-    "RCL-A2: 在途引导回合双点存续守卫（mock LLM 延迟注入 = _openclaw_chat_once 替身可门控阻塞）——①入口守卫：会话已释放（build_organizing_input 返 None，discard 先于引导回合到达）→ 引导回合直接返回，零 LLM 调用、零播报、零计轮、零会话壳；②播报前复查：LLM 在途期间断连取消（reason=ws_disconnect）或 discard（经真实设备泵中途到达）落地后 LLM 才返回 → 复查 routing(sid)==\"accumulate\" 不成立则丢弃产出：不注入 kidpal_speak、不播报、不计轮；③mark 不复活会话壳：mark_guide_round 仅在累积态调用，全程断言 active_sessions() 不含已取消会话（story.py _ensure 重建壳回潮即红）。不误杀正常收尾（finish 先 cancel 后演出属正确丢弃）作为设计约束记于缝契约。设计态红 = 双点守卫缺席。回引 = plan F3①②③④ + OQ3 复验③重定义(a)（服务端时序半）",
-    "RCL-A3: 设备腿断连 + 引擎腿静默（fake websockets 连接 + 永静默引擎腿替身）→ ws_gateway 收尾限时内完成（6s 预算 asyncio.wait_for 驱动；gather 双泵悬挂 = 超时即红，当前树红于 front_app.py:1496 await asyncio.gather(pump_up, pump_dn)）；收尾完成后断言：acc.cancel(session_id, reason=\"ws_disconnect\") 落（spy 包装真实 StoryAccumulator.cancel 记录 reason，真实取消语义真跑）、会话 pop、零归档（未停录断开累积缓冲不泄漏，HWV-A11 意图）、_alert_legs 摘除本连接腿、会话→连接腿映射摘除（[SC-D] 缝在场时断言空表）。设计态红 = gather 双泵悬挂语义在世。回引 = plan F1 + OQ2 cancel-on-disconnect 维持",
-    "RCL-A4: 跨连接隔离（zombie 回归齿）+ 腿集会话归口映射缝（[SC-D] 名字冻结：_register_session_legs(session_id, device_ws, engine_ws) / _unregister_session_legs(device_ws) / _session_legs(session_id)——ws_gateway 与 _alert_legs 同生命周期登记/摘除；按 device_ws 对象身份摘除、未知会话查询返空表、查询不改状态）：旧连接 zombie 会话（stuck-due 1 轮引导 + auto-finish 2 轮两态齐备、其腿仍泄漏在全局 _alert_legs）+ 新连接在线（全局腿 + 映射双登记）→ sweep 后引导注入只打旧会话①归属腿（kidpal_speak）、自动收尾帧族（start_organizing 恰一帧 + story_text + story_list）只打旧会话②归属腿；新连接腿零帧（引擎腿零 speak、设备腿零 start_organizing/story_text/story_list——症状②⑤三次实证形态的回归齿）；另一 zombie 腿亦零溢出（会话级定向非连接级粗粒度）。must-stay-green：提醒投递（_deliver_alert_now → gw_reminders.deliver_alert 真跑）仍达新连接设备腿 + 引擎腿——F3⑤「提醒/课表两消费点维持全局腿不动」行为锚；sweep 后全局 _alert_legs 登记不被 purge。设计态红 = 腿集会话归口映射缝缺席（三缝函数全零命中）。回引 = plan F3⑤ + securityAxes 轴②",
-    "RCL-F1: 固件 host 齿（两件已登记 HOST_ACCEPTANCE_SRCS，零新增登记——登记守维持）——① DISCARD_RECORD case 帧序（record_session_live RSL-A5 tooth 3 换锚）：case 区内 SendKidpalStoryDiscard( 先于 CloseAudioChannel（契约 §四发送时机 = 关音频通道之前同连接先行、同一 TCP 有序，front 泵先消费 discard 再处理断连；先断连 = discard 帧发不出去、显式丢弃通道退化为掉线路径即红）+ CloseAudioChannel 在场保留（cancel-on-disconnect 兜底 must-stay-green）+ tooth 4 负锚保留（case 内严禁 StopListening——丢弃不得走收尾保存面；plan 换锚条款核对裁定 = tooth 3 换锚 + tooth 4 防回潮保留）；② 发送原语（record_session_live 新增 RSL-A8）：protocol.h 声明 + protocol.cc 定义（wire 形状片段 session_id / kidpal_story_discard / SendText 下发，逐字仿 SendKidpalStoryDelete 拼串形态）+ mcp_server.cc DISCARD case 发送点 = ≥3 文件消费链 + websocket_protocol.cc 零 override 负锚；③ settle 消费链（record_dialogue_guide 新增 TEST 8）：mcp_server.cc start_organizing 消费块（case 3 区）内 StopListening( 在场（事件位投递，KSPV2_ACT_STOP_RECORD 同款形态，Idle 清位链接管 = [R2] 复位 + ctx_set(0) + RaiseReminderQueue）；④ KEY 路径幂等（TEST 8 第二半，must-stay-green）：application.cc HandleStopListeningEvent 区内 SendStopListening( 恰一次且在 kDeviceStateListening 状态门之后（已 Idle 重复 settle no-op 机制载体；行为半归真机轮）。设计态红 = SendKidpalStoryDiscard 缺席（RSL-A5 换锚半 + RSL-A8 全红）+ settle 消费链缺席（RDL TEST 8 settle 半）；幂等门现状绿。回引 = plan F2/F4 修位表 + 负锚换锚条款（notes ⑦）"
+    "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+    "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+    "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+    "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    {
+      "id": "CG-A5",
+      "kind": "structural",
+      "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+    }
   ],
   "acceptanceTestsFile": [
-    "server/acceptance/test_record_cancel_lifecycle.acceptance.py",
-    "firmware/main/test/record_session_live.acceptance.c",
-    "firmware/main/test/record_dialogue_guide.acceptance.c"
+    "firmware/main/test/chrome_ghost.acceptance.c"
   ],
-  "redBaselineCommand": "server 新件单跑：python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance/test_record_cancel_lifecycle.acceptance.py；server 全目录：python -m pytest -q --import-mode=importlib -m \"not live\" server/acceptance；server/tests 单独：python -m pytest -q --import-mode=importlib server/tests；firmware host 全量：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build，随后 cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-21 @ dev/pod-m2 HEAD 80c0c482（净工作树现跑）。① 新件单跑：9 failed in 16.17s——9/9 设计态红逐红归因（A1 三件 = discard 不消费/不取消/被透传；A2 三件 = LLM 照发/产出照播+壳复活/discard 透传；A3 = gather 悬挂超时；A4 两件 = _register_session_legs 三缝零命中）。② server/acceptance 全目录：9 failed, 229 passed, 4 deselected, 33 subtests passed——229 passed 与 261020 锚（b8aaa82b 零红）逐字一致，既有齿零新增红、9 failed 全为本包新件设计态红。③ server/tests：104 passed, 19 subtests passed（零红）。④ firmware host：espidf_wsl.sh build 绿 exit 0；host_infra_test.elf → 222 Tests 6 Failures 0 Ignored = 基线锚 220T/3F（全 p1_auxbar AB-A1/A2/A4 先存红）+ 2 新增 TEST_CASE + 3 设计态红（RSL-A5 :770 换锚红 / RSL-A8 :942 原语链红 / RDL TEST 8 :1025 settle 红），失败名逐一核对无第四类。独立红跑通道（red-baseline + runner.c）两件 COMPILE_EXIT=0。冻结即冒烟：pytest 收集零 error、C 类实编双通道 COMPILE_EXIT=0（唯一 warning 为 rsl_read snprintf 截断告警——既有非本批引入）。〔acceptance-author 未决问题 planner 裁定（2026-10-21）：[SC-D] 缝名采纳提案冻结；RSL-A5 tooth 4 保留裁定判忠实（F2 语义本禁丢弃走收尾保存面）；审计 token story_discard + reason discard 采纳；EQ-7 uuid 注入缝与 RDL TEST 8 case 切片锚转 builder 在世义务（见 notes ⑩）〕",
+  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/cg_red_runner ../../chrome_ghost.acceptance.c ../../../display/keybar.c ../../../display/kidpal_voice_states.c runner.c（COMPILE_EXIT 须 0 零 warning）&& cd <repo root> && /tmp/cg_red_runner（结构锚支持 KIDPAL_REPO_ROOT 注入）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：227 Tests 3 Failures exit 3——与基线锚 0df2c0c3 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 227→232 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——TEST 1 CG-A1（weak 哨兵 kidpal_keybar_scene_get 返回 -99 或 set 未存真值）、TEST 2 CG-A2（frozen seam 未实现 kidpal_keybar_story_transition_slots）、TEST 3 CG-A2（kidpal_keybar_sync_locked 未消费 transition_slots 接线）、TEST 4 CG-A3（story_list 前推渲染闭包 end_page 后无层栈收口）、TEST 5 CG-A4（host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c）。双向可满足性：/mnt/c/tmp/cg_work 合成树（KIDPAL_REPO_ROOT 注入 + 一次性参考实现，不写入工作树）绿树 5 Tests 0 Failures 零 warning；七处定向变异各只打红对应 TEST_CASE（复位值入语音闭集→T1 / 过渡窗产语音残留→T2 / 摘过渡窗接线→T3 / 场景 static 第二真相源回归→T3 / 盖章闭包摘收口→T4 / 摘登记→T5 / 摘会话收尾沿复位→T3）。转绿判据：builder 落地 [CG-C1]/[CG-C2] 新缝 + [CG-C3] 接线 + [CG-C5] 登记（builder FIRST ACTION：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 追加 ../../chrome_ghost.acceptance.c 置于 smoke 之前）后全绿；既有 host 全量套件零新增红。verbatim 详见 firmware/main/test/chrome_ghost.acceptance.c 头注「冻结落盘实跑」段（commit a92706c0）。CG-A5 = live-manual 真机目检，不计入 runner 通过面。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "exitCriteria": [
+    "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
+    "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
   "requiredLayers": [
     "unit",
     "acceptance-offline",
-    "live-manual"
-  ],
-  "exitCriteria": [
-    "全部 RCL-A1..A4（server pytest）+ RCL-F1（firmware host）冻结验收转绿；既有套件零新增红（冻结相位基线锚 = redBaselineResult 实跑：server 全目录 9 failed 全为新件设计态红 + 229 passed 与 261020 锚逐字一致、server/tests 104 passed 零红、firmware host 222T6F = 3 先存 p1_auxbar 红 + 3 新件设计态红）。builder 落地后转绿；转绿后固件 host 复跑回到 222 Tests 3 Failures（仅剩 p1_auxbar 先存红）",
-    "live-manual 层如实申报：discard 帧序端到端 + 真机取消链（BOOT 丢弃 → 列表页长按不再被拦、断连后 zombie 不复活、server 驱动收尾设备侧回 Idle）归真机轮——烧板轮不可省（mcp_server.cc / protocol.cc 设备编译单元），到门即停 status=awaiting-human:real-device",
-    "mutationEvidence perAcceptance 全条 turnedRed=true 且还原复绿（mutationRequired=true）",
-    "契约零改：builder/fixer 不触 docs/contracts/**（kidpal_story_discard 已随上游 /arch-change 批 LANDED，本包只消费冻结契约）"
+    "firmware-build"
   ],
   "iterationBudget": 3,
   "fixBudget": 3,
-  "supervisorBlockBudget": 2,
-  "deliveryImpact": "none",
-  "planningImpact": "none",
-  "planningRefs": [],
-  "riskTier": "high",
-  "gateProfile": [
-    "contract-drift",
-    "test-quality",
-    "evidence-integrity",
-    "device-round",
-    "security",
-    "docs-sync"
-  ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md#§四",
-    "docs/contracts/interface-contract.md#§1.4"
-  ],
   "docRefs": [
-    "docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md",
-    "delivery/intake/261021-p3-record-cancel-lifecycle.md",
-    "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md",
-    "delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md",
-    "docs/contracts/interface-contract.md",
-    "docs/architecture.md"
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
   ],
+  "planningRefs": [],
+  "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "securityReviewRequired": true,
-  "securityAxes": [
-    "kidpal_story_discard 私有扩展消息伪造面：front 会话绑定以连接权威——按本连接 session_id 取消、不信载荷 session_id 值（防跨会话伪造取消），幂等 + 审计 log 一行（token=story_discard）",
-    "teardown 与腿集归口改动触碰连接生命周期资源释放（pump 泵收尾 / _alert_legs / 会话→连接腿映射）：不得引入新泄漏（未停录断开缓冲累积）也不得误摘活跃连接腿（提醒/课表两消费点全局腿语义不动）"
-  ],
-  "adrRequired": false,
-  "planningWorkstreamRequired": false,
-  "mutationRequired": true,
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 0df2c0c3（带锚引用三件齐：SHA + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md 基线锚行；2026-10-22 本会话 producer=consumer 同树实测，222→227 = diag-log 五齿新增计入）",
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptance": "RCL-A1",
+        "acceptanceId": "CG-A1",
+        "acceptance": "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+        "mutation": "变异 1：keybar.c kidpal_keybar_scene_reset 复位值 KIDPAL_KEYBAR_SCENE_NONE(-1) → KVST_SCENE_LISTEN(0)（复位值落回语音场景闭集内）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 1（CG-A1）· 复位值出闭集断言（:729）",
         "turnedRed": true,
-        "mutation": "front_app.py _consume_kidpal_control discard 分支摘除审计日志行 log.info(\"story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s\", ...)（取消语义保留，仅摘「审计日志一行」契约职责）",
-        "redVerbatim": "AssertionError: no logs of level INFO or higher triggered on kidpal-front @ server/acceptance/test_record_cancel_lifecycle.acceptance.py:645 —— FAILED test_rcl_a1_discard_cancels_without_archive_and_sweep_stops；1 failed, 8 passed in 0.27s",
-        "restoreReGreen": "还原后单跑 server/acceptance/test_record_cancel_lifecycle.acceptance.py → 9 passed in 0.24s",
         "sensitive": true,
-        "acceptanceId": "RCL-A1: 累积态会话收到 {\"session_id\":\"...\",\"type\":\"kidpal_story_discard\"}（契约 §四 LANDED wire 形态）→ 网关整条消费并拦截不下透引擎（引擎腿零 discard 帧）；front 按本连接 session_id 权威取消——acc.cancel(本连接 session_id, reason=\"discard\") 落（reason 冻结值 = \"discard\"）、会话 pop（routing 回 chat、active_sessions 不再含该键、累积缓冲销毁 build_organizing_input 返 None）、无归档（stories 目录零 .md）、不触发 story_list 重推（设备腿零 story_list 帧）、审计日志一行（logger \"kidpal-front\" 消息含冻结 token \"story_discard\" + 本连接 session_id）；discard 后 sweep 纯决策不再命中、sweep 真跑零播报零收尾零归档。幂等 no-op：会话已释放后的重复 discard（×2）与非累积态（chat）/未知会话的 discard 均为消费拦截 + 零帧零归档零会话壳复活零异常。连接权威：连接 B 上的 discard 携带伪造载荷 session_id = 连接 A 的会话键时，连接 A 会话保持累积态、素材完好、A 引擎腿零新帧，仅 B 本连接会话被取消（载荷 session_id 不被信任）。设计态红 = _consume_kidpal_control 无 discard 分支（消费拦截/取消/审计/幂等全链红）。回引 = 契约 §四 kidpal_story_discard + decisionCoverage OQ1/F2"
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: 会话收尾沿复位后 scene=0 仍落在语音场景闭集 [0..4] 内——复位值必须出闭集（EQ-3：出闭集 -> 通用分支 overlay 列仲裁落 kidpal_keybar_slots scene 越界 -1 防御 -> 残留键帽绝不再被画出；复位到 0=KVST_SCENE_LISTEN 等于没修）"
+        ],
+        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b64e88b47b738f09cecaa1a02076770858f1df32c8697224192c1e133 与变异前一致；复跑通道 B：COMPILE_EXIT=0 / 5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 1 FAIL，其余 TEST 2/3/4/5 PASS——与冻结矩阵预测（TEST 1 红）逐条一致。"
       },
       {
-        "acceptance": "RCL-A2",
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 2：keybar.c kidpal_keybar_story_transition_slots 非在途 default 分支由回落 return 0 改为产出语音残留键帽字面（*out_left=\"说完啦\"; *out_right=\"结束\"; return 1）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 2（CG-A2）· 过渡窗+非在途回落断言（:891，首值 KSTORY_PAGE_LIST）+ 全域语音残留负扫描（:908）",
         "turnedRed": true,
-        "mutation": "front_app.py _story_guide_round 入口守卫整块摘除（spoken = acc.build_organizing_input(sid) + if spoken is None: return → 回退 261019 旧形态 or \"\"）",
-        "redVerbatim": "assertEqual(stub.calls, []) 抛出 list diff（含空素材照发 user_text 逐字）—— RCL-A2 RED: 引导回合入口守卫缺席 —— 会话已释放仍发 LLM @ test_record_cancel_lifecycle.acceptance.py:809；1 failed, 8 passed in 0.32s",
-        "restoreReGreen": "还原后单跑 → 9 passed in 0.23s",
         "sensitive": true,
-        "acceptanceId": "RCL-A2: 在途引导回合双点存续守卫（mock LLM 延迟注入 = _openclaw_chat_once 替身可门控阻塞）——①入口守卫：会话已释放（build_organizing_input 返 None，discard 先于引导回合到达）→ 引导回合直接返回，零 LLM 调用、零播报、零计轮、零会话壳；②播报前复查：LLM 在途期间断连取消（reason=ws_disconnect）或 discard（经真实设备泵中途到达）落地后 LLM 才返回 → 复查 routing(sid)==\"accumulate\" 不成立则丢弃产出：不注入 kidpal_speak、不播报、不计轮；③mark 不复活会话壳：mark_guide_round 仅在累积态调用，全程断言 active_sessions() 不含已取消会话（story.py _ensure 重建壳回潮即红）。不误杀正常收尾（finish 先 cancel 后演出属正确丢弃）作为设计约束记于缝契约。设计态红 = 双点守卫缺席。回引 = plan F3①②③④ + OQ3 复验③重定义(a)（服务端时序半）"
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A2 RED: 过渡窗 + 非在途子态(0) = (rc=1, 左=说完啦)——非在途相位必须回落既有路径（plan 修法②逐字范围: 只接管录音/整理/阅读三在途子态; 该相位残留由 [CG-C1] scene 复位兜底）"
+        ],
+        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b…c1e133 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 2 FAIL，其余 PASS——与冻结矩阵预测（TEST 2 红）一致。首红落在非在途回落循环（KSTORY_PAGE_LIST=0）；语音残留负扫描（:908）为同因二次承载，unity 首败中止未单独触达。"
       },
       {
-        "acceptance": "RCL-A3",
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 3：lcd_display.cc kidpal_keybar_sync_locked 区摘掉过渡窗接线——else if (kidpal_keybar_story_transition_slots(story_sub, trans_last_known, story_rec_sub, &left, &right) == 1) → else if (0)（消费锚从可执行源消失，仅留注释）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A2 结构齿）· sync 区 kidpal_keybar_story_transition_slots( 消费源锚（:1000）",
         "turnedRed": true,
-        "mutation": "front_app.py ws_gateway teardown 回退 await asyncio.gather(pump_up, pump_dn)（摘除 asyncio.wait FIRST_COMPLETED + 对侧泵 cancel 回收 + 泵异常留痕）",
-        "redVerbatim": "AssertionError: RCL-A3 RED: 设备腿已断连且引擎腿静默, ws_gateway 收尾未在限时内完成 —— gather 双泵悬挂语义在世 @ test_record_cancel_lifecycle.acceptance.py:994；1 failed, 8 passed in 6.42s（6s 预算耗尽型红，非挂死）",
-        "restoreReGreen": "还原后单跑 → 9 passed in 0.26s（耗时回 0.2s 量级，反证悬挂消失）",
         "sensitive": true,
-        "acceptanceId": "RCL-A3: 设备腿断连 + 引擎腿静默（fake websockets 连接 + 永静默引擎腿替身）→ ws_gateway 收尾限时内完成（6s 预算 asyncio.wait_for 驱动；gather 双泵悬挂 = 超时即红，当前树红于 front_app.py:1496 await asyncio.gather(pump_up, pump_dn)）；收尾完成后断言：acc.cancel(session_id, reason=\"ws_disconnect\") 落（spy 包装真实 StoryAccumulator.cancel 记录 reason，真实取消语义真跑）、会话 pop、零归档（未停录断开累积缓冲不泄漏，HWV-A11 意图）、_alert_legs 摘除本连接腿、会话→连接腿映射摘除（[SC-D] 缝在场时断言空表）。设计态红 = gather 双泵悬挂语义在世。回引 = plan F1 + OQ2 cancel-on-disconnect 维持"
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A2 RED: kidpal_keybar_sync_locked 未消费 kidpal_keybar_story_transition_slots(——story 会话期 -1 过渡窗仍直接掉通用分支（KPLOG005 缺陷①因二未接; 纯逻辑缝 [CG-C2] 已冻结, 接线缺位 = 断言不能承载的盲区 GAP-1 半）"
+        ],
+        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6e92c805bbde46a6034fd964bbe5a2a4cb513b442e327618e903a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 结构齿红）一致。变异以注释剥离后无可执行消费锚取证，反向验证扫描器注释剥离有效。"
       },
       {
-        "acceptance": "RCL-A4",
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 7：application.cc HandleStateChangedEvent Idle 分支摘掉会话收尾沿复位——kidpal_keybar_scene_reset(); → (void)0;（kidpal_render_node.cc voice_end 亦无 reset，两处均缺席）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1/CG-A2 结构齿）· 收尾沿 kidpal_keybar_scene_reset( 复位锚（:1036 application.cc 路径 → :1049 voice_end 回退路径）",
         "turnedRed": true,
-        "mutation": "front_app.py _story_auto_finish 腿集回退 list(_alert_legs)（摘除 _session_legs(sid) 会话归口；引导注入侧仍归口，只变异自动收尾半）",
-        "redVerbatim": "assertEqual(_start_organizing_frames(dev_new.sent_text), []) 抛出 —— RCL-A4 RED: 旧会话的自动收尾 start_organizing 打进了新连接设备腿 —— 全局腿收尾在世（症状⑤复现）@ test_record_cancel_lifecycle.acceptance.py:1147；1 failed, 8 passed in 0.22s",
-        "restoreReGreen": "还原后单跑 → 9 passed in 0.27s",
         "sensitive": true,
-        "acceptanceId": "RCL-A4: 跨连接隔离（zombie 回归齿）+ 腿集会话归口映射缝（[SC-D] 名字冻结：_register_session_legs(session_id, device_ws, engine_ws) / _unregister_session_legs(device_ws) / _session_legs(session_id)——ws_gateway 与 _alert_legs 同生命周期登记/摘除；按 device_ws 对象身份摘除、未知会话查询返空表、查询不改状态）：旧连接 zombie 会话（stuck-due 1 轮引导 + auto-finish 2 轮两态齐备、其腿仍泄漏在全局 _alert_legs）+ 新连接在线（全局腿 + 映射双登记）→ sweep 后引导注入只打旧会话①归属腿（kidpal_speak）、自动收尾帧族（start_organizing 恰一帧 + story_text + story_list）只打旧会话②归属腿；新连接腿零帧（引擎腿零 speak、设备腿零 start_organizing/story_text/story_list——症状②⑤三次实证形态的回归齿）；另一 zombie 腿亦零溢出（会话级定向非连接级粗粒度）。must-stay-green：提醒投递（_deliver_alert_now → gw_reminders.deliver_alert 真跑）仍达新连接设备腿 + 引擎腿——F3⑤「提醒/课表两消费点维持全局腿不动」行为锚；sweep 后全局 _alert_legs 登记不被 purge。设计态红 = 腿集会话归口映射缝缺席（三缝函数全零命中）。回引 = plan F3⑤ + securityAxes 轴②"
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: 会话收尾沿无 kidpal_keybar_scene_reset(——application.cc HandleStateChangedEvent Idle 分支与 kidpal_render_node.cc voice_end 两处均缺席（[CG-C3]③; g_kidpal_keybar_scene 语音会话结束后永不复位缺陷原样保留, KPLOG005 缺陷①因一未治）"
+        ],
+        "restored": "git checkout -- firmware/main/application.cc；git diff --stat 空；sha256 2794b7a5ea3559c3460c10d150487ab1ded14bc443a1881f58211fd768affc54 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 红）一致。虽按派发归入 CG-A2 组，实际打红断言文本前缀为 CG-A1（收尾沿复位属 [CG-C3]③，TEST 3 同时承载 CG-A1/CG-A2 结构齿）；此处如实记录。"
       },
       {
-        "acceptance": "RCL-F1",
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 4（附注）：lcd_display.cc 恢复文件级 static 第二真相源——新增可执行源 static int g_kidpal_keybar_scene = -1;（绕过 keybar 单源）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1 负锚 / CG-A2 结构齿同件）· g_kidpal_keybar_scene 可执行源零残留负锚（:1022-1023）",
         "turnedRed": true,
-        "mutation": "mcp_server.cc case KSPV2_ACT_DISCARD_RECORD 内摘除 SendKidpalStoryDiscard(); 调用（保留 CloseAudioChannel；变异注释刻意不含该符号防 needle 自指假绿）。附加变异（settle 半，同批第二跑）：case 3: 消费块内摘除 app.StopListening();",
-        "redVerbatim": "RSL-A5 :770 FAIL —— RCL-F1 RED(换锚): KSPV2_ACT_DISCARD_RECORD case 零 SendKidpalStoryDiscard；RSL-A8 :942 FAIL —— 仅 2/3 文件命中；222 Tests 5 Failures。附加变异红：RDL TEST 8 :1025 FAIL —— start_organizing 消费块零 StopListening（222 Tests 4 Failures，恰好 1 条新增红无误伤）",
-        "restoreReGreen": "还原后 host 复跑 → 222 Tests 3 Failures 0 Ignored（仅剩 p1_auxbar AB-A1/A2/A4 先存红）；附加变异还原后同态",
         "sensitive": true,
-        "acceptanceId": "RCL-F1: 固件 host 齿（两件已登记 HOST_ACCEPTANCE_SRCS，零新增登记——登记守维持）——① DISCARD_RECORD case 帧序（record_session_live RSL-A5 tooth 3 换锚）：case 区内 SendKidpalStoryDiscard( 先于 CloseAudioChannel（契约 §四发送时机 = 关音频通道之前同连接先行、同一 TCP 有序，front 泵先消费 discard 再处理断连；先断连 = discard 帧发不出去、显式丢弃通道退化为掉线路径即红）+ CloseAudioChannel 在场保留（cancel-on-disconnect 兜底 must-stay-green）+ tooth 4 负锚保留（case 内严禁 StopListening——丢弃不得走收尾保存面；plan 换锚条款核对裁定 = tooth 3 换锚 + tooth 4 防回潮保留）；② 发送原语（record_session_live 新增 RSL-A8）：protocol.h 声明 + protocol.cc 定义（wire 形状片段 session_id / kidpal_story_discard / SendText 下发，逐字仿 SendKidpalStoryDelete 拼串形态）+ mcp_server.cc DISCARD case 发送点 = ≥3 文件消费链 + websocket_protocol.cc 零 override 负锚；③ settle 消费链（record_dialogue_guide 新增 TEST 8）：mcp_server.cc start_organizing 消费块（case 3 区）内 StopListening( 在场（事件位投递，KSPV2_ACT_STOP_RECORD 同款形态，Idle 清位链接管 = [R2] 复位 + ctx_set(0) + RaiseReminderQueue）；④ KEY 路径幂等（TEST 8 第二半，must-stay-green）：application.cc HandleStopListeningEvent 区内 SendStopListening( 恰一次且在 kDeviceStateListening 状态门之后（已 Idle 重复 settle no-op 机制载体；行为半归真机轮）。设计态红 = SendKidpalStoryDiscard 缺席（RSL-A5 换锚半 + RSL-A8 全红）+ settle 消费链缺席（RDL TEST 8 settle 半）；幂等门现状绿。回引 = plan F2/F4 修位表 + 负锚换锚条款（notes ⑦）",
-        "note": "F1 附加变异（settle 半）恰红 RDL TEST 8 一条；tooth 强度观察（非本包修订面，转 acceptance-author 参考）：RSL-A8 tooth1 文件计数可被注释满足——注释自指试跑 222T4F 仅 RSL-A5 红"
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: lcd_display.cc 仍存在 1 处 g_kidpal_keybar_scene（可执行源）——设备侧场景 static 未上收 keybar 单源（[CG-C1]; 同窗双写 = 谁生效说不清, 第二真相源红线）"
+        ],
+        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6…3a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "附注变异（派发写作「+4 附注」）。通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS。打红文本前缀为 CG-A1（第二真相源负锚属场景单源改造），与变异 7 同属 TEST 3 的 CG-A1/CG-A2 共用结构齿，如实记录。"
+      },
+      {
+        "acceptanceId": "CG-A3",
+        "acceptance": "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+        "mutation": "变异 5：mcp_server.cc 盖章帧渲染闭包 app.Schedule([stamp_view, stamp_list, stamp_text]() 区内摘掉层栈收口调用——kidpal_render_node_story_local_front(); → (void)0;（story_list 前推闭包与 ScheduleStoryRender 在役先例未动）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 4（CG-A3）· 盖章帧渲染闭包 end_page 后层栈收口锚（:1149-1153）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A3 RED: 盖章帧渲染闭包 end_page 后无层栈收口——成功归档路径与失败路径（4068dc6c dismiss_front_overlay 先例）不对齐, 覆盖层逻辑前台残留吃按键"
+        ],
+        "restored": "git checkout -- firmware/main/mcp_server.cc；git diff --stat 空；sha256 80421035d64489ebacab8503e9483b77352c7aa0b649732014456ad16da81290 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 4 FAIL，其余 PASS——与冻结矩阵预测（TEST 4 红）一致。story_list 前推闭包收口与 ScheduleStoryRender 在役先例未变异（本轮每变异只改一处），故 TEST 4 首红落在盖章闭包断言。"
+      },
+      {
+        "acceptanceId": "CG-A4",
+        "acceptance": "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+        "mutation": "变异 6：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 摘除 \"../../chrome_ghost.acceptance.c\" 登记行（回归网静默缩网）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 5（CG-A4）· 本件登记守（:1184-1188）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A4 RED: host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c——本冻结验收件不进 host runner（全部断言不会被执行 = 空过绿）；builder FIRST ACTION（diag_log 261022 先例口径, 登记行不在 acceptance-author 写权内）"
+        ],
+        "restored": "git checkout -- firmware/main/test/host_app/main/CMakeLists.txt；git diff --stat 空；sha256 3cbfbf65a70cb49d01b0420bdabd1391246bf848ed078a9d37bc8c559d683398 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 5 FAIL，其余 PASS——与冻结矩阵预测（TEST 5 红）一致。TEST 5 走裸读（非注释剥离），登记行摘除后该字面唯一命中消失。"
       }
     ]
-  },
-  "crossEnd": {
-    "counterparts": [
-      {
-        "face": "firmware",
-        "path": "firmware/main/mcp_server.cc",
-        "symbol": "KSPV2_ACT_DISCARD_RECORD"
-      },
-      {
-        "face": "firmware",
-        "path": "firmware/main/protocols/protocol.cc",
-        "symbol": "SendKidpalStoryDelete"
-      },
-      {
-        "face": "server",
-        "path": "server/gateway/front/front_app.py",
-        "symbol": "_consume_kidpal_control"
-      }
-    ],
-    "exempt": ""
-  },
-  "decisionCoverage": [
-    {
-      "decision": "OQ1 = Design B 新增 kidpal_story_discard（human 2026-10-21 触点①裁）",
-      "summary": "三条复用通道 architect 实证排除（abort 正面冲突 / listen stop 语义相反 / 断连隐式失效）——破坏性用户意图走显式可审计通道，契约已 LANDED，本包零契约改动。",
-      "sourceRefs": [
-        "delivery/intake/261021-p3-record-cancel-lifecycle.md"
-      ],
-      "landsIn": "acceptance:RCL-A1"
-    },
-    {
-      "decision": "OQ2 = cancel-on-disconnect 维持（human 2026-10-21 触点①裁）",
-      "summary": "纯掉线会话维持 HWV-A11 既有 cancel-on-disconnect 语义（内存卫生；掉线丢素材可重录），跨连接续存机制不做。",
-      "sourceRefs": [
-        "delivery/intake/261021-p3-record-cancel-lifecycle.md"
-      ],
-      "landsIn": "acceptance:RCL-A3"
-    },
-    {
-      "decision": "F2 会话绑定以连接权威（front 不信载荷 session_id）",
-      "summary": "discard 消息载荷仅作审计参考，front 按本连接 session_id 取消——连接权威裁定落验收断言。",
-      "sourceRefs": [
-        "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"
-      ],
-      "landsIn": "acceptance:RCL-A1"
-    },
-    {
-      "decision": "F3 不引入会话代次（sid = 每连接 uuid4）",
-      "summary": "cancel 后同名会话不会重建，双点存续守卫已完备——比例化裁定，不加重建代计数。",
-      "sourceRefs": [
-        "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"
-      ],
-      "landsIn": "acceptance:RCL-A2"
-    },
-    {
-      "decision": "OQ3 = 复验③重定义 (a)（human 2026-10-21 触点①裁）",
-      "summary": "「引导播报刚停、子态回聆听瞬间丢弃 → 在途/在播引导残余立即断」——不动需求面，本包内闭环（语音「讲错啦」取消通道不动，复验走按键路径）。",
-      "sourceRefs": [
-        "delivery/intake/261021-p3-record-cancel-lifecycle.md"
-      ],
-      "landsIn": "acceptance:RCL-A2"
-    },
-    {
-      "decision": "F4 复用 HandleStopListeningEvent 既有 Idle 清位链（application.cc 预判零改）",
-      "summary": "start_organizing 消费补 app.StopListening()（事件位投递与 KSPV2_ACT_STOP_RECORD 同款形态）；KEY 路径幂等（state!=Listening no-op）——不复刻清位逻辑。",
-      "sourceRefs": [
-        "delivery/taskpackages/261021-p3-record-cancel-lifecycle/plan.md"
-      ],
-      "landsIn": "acceptance:RCL-F1"
-    }
-  ],
-  "changeManifest": [
-    "server/gateway/front/front_app.py",
-    "server/gateway/story.py",
-    "server/acceptance/**",
-    "server/tests/**",
-    "firmware/main/mcp_server.cc",
-    "firmware/main/protocols/protocol.h",
-    "firmware/main/protocols/protocol.cc",
-    "firmware/main/test/**"
-  ],
-  "impactedTestsSeed": [
-    {
-      "path": "server/acceptance/test_record_cancel_lifecycle.acceptance.py",
-      "kind": "new-frozen-acceptance-file",
-      "note": "已由 acceptance-author 冻结（2026-10-21）：9 TEST = RCL-A1×3 + A2×3 + A3×1 + A4×2；文件头 [SC-A]–[SC-D] 缝契约 + 强度申报 + GAP-1..5 + EQ 清单 + Coverage map"
-    },
-    {
-      "path": "firmware/main/test/record_session_live.acceptance.c",
-      "kind": "frozen-file-update",
-      "note": "已冻结：RSL-A5 tooth 3 换锚（SendKidpalStoryDiscard 先于 CloseAudioChannel 帧序）+ tooth 4 负锚保留措辞随动 + 新增 TEST 8 / RSL-A8 + REVISION LOG 2026-10-21 条"
-    },
-    {
-      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
-      "kind": "frozen-file-update",
-      "note": "已冻结：新增 TEST 8 / RCL-F1 settle + KEY 幂等锚 + REVISION LOG 2026-10-21 条"
-    },
-    {
-      "path": "server/tests/ + firmware host 既有全量套件",
-      "kind": "must-stay-green",
-      "note": "零新增红（冻结基线：server/tests 104 passed；firmware host 先存红仅 p1_auxbar AB-A1/A2/A4 三条）"
-    }
-  ],
-  "notes": "① scope-map 已核：builder/fixer allow firmware/** + server/** 覆盖 changeManifest 全部 target；acceptance-author allow 覆盖两 face 冻结件写权；无中途补 scope。② Step 1g 前置技术预评由 triage architect 分流 review 一次产出（plan.md = reviewed-by architect 的冻结技术输入，只读消费；根因四条逐点 file:line 实证 + 四件修复修位表），不重复派 architect。③ 契约判定：kidpal_story_discard 已随上游 /arch-change 批 LANDED（CDQ-261021-p3-record-cancel-lifecycle，CONTRACT_CHANGE_REQUIRED R1 正式裁定），本包零契约改动，builder/fixer 契约禁写不变。④ current/ 投影纪律：canonical 与 current/ 字节级复制（cp，禁 Write 重打），任何回填后原子刷新。⑤ live/真机门前停等：烧板轮不可省（mcp_server.cc / protocol.cc 属设备编译单元，按 full 环境备），到门即停 status=awaiting-human:real-device。⑥ 合并门预期：riskTier=high → supervisor 合并门升级 human（status=awaiting-human:merge-gate，单向守卫预期行为）。⑦ plan.md 负锚换锚条款在册：record_session_live.acceptance.c:739-751 齿语义更新属本包验收面，非绕齿；acceptance-author 裁定 tooth 3 换锚 + tooth 4 负锚保留（防回潮），planner 核对判忠实（2026-10-21）。⑧ 上一包留根 intake 评估（pod-retro 261020 三条：诊断先行 / 冲突预检 / 扩单预授权——逐条继承，无 blockingDecision）。⑨ 预判零改文件（不进 changeManifest，builder 越界即停）：server/deploy/engine-patch/connection.py（注入/抑制语义不动）、firmware/main/application.cc（Idle 清位链复用零改）。⑩ acceptance-author 未决问题五条裁定（2026-10-21，已回填 redBaselineResult）：[SC-D] 缝名采纳提案冻结（_register_session_legs/_unregister_session_legs/_session_legs，builder 不得自行改名）；RSL-A5 tooth 4 保留判忠实；审计 token=story_discard + reason=\"discard\" 采纳；**builder 在世义务两件**——EQ-7 会话键 uuid 注入缝不得改动会话键生成形态（F3③ 预判零改，改则 infra 红回 acceptance-author 重钉）、RDL TEST 8 case 切片锚依赖 mcp_server.cc 控制 switch 现状 case 编号顺序（无预期理由不重排 switch，重排即 infra 红回 acceptance-author 重钉）。⑪ 冻结交付（2026-10-21 acceptance-author，HEAD 80c0c482）：acceptance[] = RCL-A1..A4（server）+ RCL-F1（firmware）；acceptanceTestsFile 3 件；红基线四通道实跑数字见 redBaselineResult；freeze 冒烟 = pytest 收集零 error + C 类实编 COMPILE_EXIT=0（DEV-GOVERNANCE §3/§4）。⑫ 清单外阅读申报（acceptance-author）：story.py / auth.py / reminders.py / front_app.py 全域 / mcp_server.cc·application.cc·protocol 原语 / red-baseline wrapper（rsl wrapper 指向 pod-m1 旧树已改 m2 树内联等价——wrapper 路径漂移知会）。",
-  "securityEvidence": "kidpal_story_discard 私有扩展消息伪造面：front 会话绑定以连接权威——按本连接 session_id 取消、不信载荷 session_id 值（防跨会话伪造取消），幂等 + 审计 log 一行（token=story_discard） —— 实现侧复核（builder 回执 + RCL-A1 冻结齿）：_consume_kidpal_control discard 分支 = _get_story_acc().cancel(session_id, reason=\"discard\")（本连接会话键），载荷 session_id 仅进审计 log.info(\"story_discard corr_id=%s consumed=true cancelled=%s payload_session_id=%s\")；整条拦截 return True 不下透引擎；cancel 异常吞掉留痕不外抛（幂等 no-op）；连接权威断言由 RCL-A1 跨连接伪造 case（连接 B 携带连接 A 会话键的载荷 → A 会话保持累积态素材完好仅 B 被取消）+ builder 自带单测 test_story_cancel_lifecycle_units.py 各一条钉住。\nteardown 与腿集归口改动触碰连接生命周期资源释放（pump 泵收尾 / _alert_legs / 会话→连接腿映射）：不得引入新泄漏（未停录断开缓冲累积）也不得误摘活跃连接腿（提醒/课表两消费点全局腿语义不动） —— 实现侧复核（builder 回执 + RCL-A3/A4 冻结齿）：F1 teardown 改 asyncio.wait FIRST_COMPLETED + 对侧泵 cancel 回收，finally 必然执行 → _unregister_alert_legs + _unregister_session_legs + acc.cancel(reason=ws_disconnect) 消除「teardown 悬挂 → 映射泄漏」；_session_legs_map 生命周期与 _alert_legs 同源（连接登记 + finally 双摘除，按 device_ws 对象身份摘除）无无界增长——已知边界：未设显式 cap（_alert_legs 有 ALERT_LEG_CAP=8），因一连接一会话键、摘除与注册同生命周期实际界 = 并发连接数（reviewer 若要求显式上界属实现侧小改可留 fixer）；误摘防护由 RCL-A4 must-stay-green 锚承载（提醒投递 _deliver_alert_now → gw_reminders.deliver_alert 真跑仍达新连接两腿、sweep 后全局 _alert_legs 登记不被 purge）。",
-  "docsNoChangeReason": "契约（§四 kidpal_story_discard + §1.4 措辞对账）、arch（§12 changeId 行 + §5.2 场景④取消链 + §5.1.2 闭集枚举）、requirements（v1.66 零触）均已随上游 /arch-change 批 landing（spine anchors 全 resolved）——本包 docs-delta 由 integrator 据实申报（零改动或仅实现侧注记，不重复上游 canonical）。"
+  }
 }

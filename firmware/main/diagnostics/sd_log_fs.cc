@@ -33,6 +33,7 @@
 #include <freertos/task.h>
 
 #include "sd_log.h"
+#include "log_semantics.h" /* 261022-diag-log-content [DLG-C4]①: 预格式化时间前缀只读取串 */
 
 #define TAG "SdLog"
 
@@ -219,10 +220,28 @@ extern "C" int KidpalSdLogVprintf(const char *fmt, va_list ap)
     }
     if (s_ring != nullptr) {
         char buf[KIDPAL_SD_LOG_RECORD_MAX];
-        int n = vsnprintf(buf, sizeof(buf), fmt, copy);
+        /* 261022-diag-log-content [DLG-C4]①：落环**之前**拼预格式化墙上时间前缀。
+         * 产出方 = application.cc 1s clock tick（kidpal_log_time_cache_update），钩子
+         * 只取现成串拼接、**不做**时间格式化——R1 ISR 缓解的消费半（钩子可在任意任务 /
+         * 中断上下文被调，localtime_r / snprintf 的重入与时延风险即 R1 本体）。缓存恒非
+         * NULL；未 update 过 = ""（降级无前缀，日志照常可读）。[C4] 其余三锚不动：
+         * 链式转调在先、ring_write 消费语义不变、写盘任务零 ESP_LOG。 */
+        const char *time_prefix = kidpal_log_time_cache();
+        size_t prefix_len = strlen(time_prefix);
+        int n;
+
+        if (prefix_len >= sizeof(buf)) {
+            prefix_len = 0; /* 不可能态守卫：前缀容量 32 << RECORD_MAX 512，防御不越界 */
+        }
+        /* 真机实证修复（261022-diag-log-content 真机轮 DLG-A6①）：预格式化前缀串先拷进
+         * buf[0..prefix_len)——此前只把正文写在 buf+prefix_len、记录总长含前缀，头 prefix_len
+         * 字节是未初始化栈垃圾（真机 KPLOG005 每条记录前 ~22 字节 NUL/指针形态实证）。 */
+        memcpy(buf, time_prefix, prefix_len);
+        n = vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, copy);
 
         if (n > 0) {
-            unsigned len = (unsigned)n;
+            /* n = body 的「应写长度」（可能已截断）；记录体 = 前缀 + body，总长含前缀。 */
+            unsigned len = (unsigned)n + (unsigned)prefix_len;
             if (len >= KIDPAL_SD_LOG_RECORD_MAX) {
                 len = KIDPAL_SD_LOG_RECORD_MAX - 1u;  /* 保 NUL 位, 记录体不超上限 */
             }

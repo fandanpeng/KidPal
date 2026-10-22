@@ -398,7 +398,15 @@ static lv_obj_t*   g_kidpal_keybar_left_label  = NULL; /* 三槽·左 KEY 提示
 static lv_obj_t*   g_kidpal_keybar_dots_box     = NULL; /* 三槽·中页点槽容器 (页点子件建其上, bottom_bar_ 子件) */
 static lv_obj_t*   g_kidpal_keybar_right_label  = NULL; /* 三槽·右 BOOT 提示槽 (通栏贴底常驻, bottom_bar_ 子件) */
 static lv_obj_t*   g_kidpal_keybar_dot[PAGE_COUNT] = {0}; /* 中槽页点子件 (数量 = 现行页循环, 当前页实心放大) */
-static int         g_kidpal_keybar_scene        = 0;  /* 覆盖层当前语音场景 (随态右槽 结束/关闭 与左槽单源用) */
+/* 261022-p3-record-chrome-ghost-fix（CG-A1）: 覆盖层当前语音场景态已上收 keybar 纯逻辑
+ * 单源（keybar.c kidpal_keybar_scene_set/get/reset）——设备侧不留第二真相源, 读写一律经
+ * 该三缝。原文件级 static g_kidpal_keybar_scene 退役（语音会话结束后永不复位的缺陷根因
+ * 面: 复位沿 = application.cc 会话收尾 Idle 分支）。 */
+/* CG-A2 过渡窗「最后已知故事子态」追踪器（同包; GAP-1 申报的实现自由归属）: 故事子态
+ * 缓存可见时（story_sub >= 0 且本地页 = P3）记最近有效子态, 供 kidpal_keybar_story_
+ * transition_slots 在覆盖层/云端夹钳遮住缓存的过渡窗按最后已知子态出键帽。
+ * -1 = 无线索（回落既有路径）。32 位对齐标量, 单写者 LVGL 任务, 与 g_story_* 同级。 */
+static int         g_kidpal_keybar_last_known_story_sub = -1;
 static lv_obj_t*   g_kidpal_chat_label   = NULL; /* 同步文字框 / 气泡挂点 (SetupUI 纪元) */
 static lv_obj_t*   g_kidpal_pose_parent  = NULL; /* 姿态图父容器 = SetupUI 活分支表情区 (SetupUI 纪元) */
 static lv_obj_t*   g_kidpal_pose_img     = NULL; /* 姿态图对象 (场景切换重建, 旧件必删) */
@@ -1360,9 +1368,23 @@ static void kidpal_keybar_sync_locked(void)
     /* P3 子态（LOCAL_PAGE 且本地页 = STORY 时缓存视图页态）——提前在此读一次,
      * 键帽槽子态裁决与页点有效 overlay 判据同源。 */
     int story_sub = kidpal_render_node_story_substate();
+    /* CG-A2 过渡窗（261022-p3-record-chrome-ghost-fix）: 「本地页仍是故事页」判据 =
+     * 渲染节点页 KP_PAGE_STORY（== PAGE_P3 恒等, M2K2-A2 两枚举逐项同序）——覆盖层 /
+     * 夹钳前台时它仍报基层页。故事子态缓存可见时记「最后已知子态」（缓存值本身在过渡
+     * 窗里仍有效）；本地页已不是故事页时一律停用该线索——陈旧值不得跨页接管键帽。 */
+    const int on_story_local_page = (rn_page == KP_PAGE_STORY) ? 1 : 0;
+    if (story_sub >= 0 && on_story_local_page) {
+        g_kidpal_keybar_last_known_story_sub = story_sub;
+    }
+    /* 过渡窗只认云端渲染夹钳窗（begin_page 推 SERVER_PAGE、end_page 只释放锁不弹层 ——
+     * 缓存页态被夹钳遮住的唯一窗口）。VOICE / REMINDER / CHAR_WINDOW / STORY_DELETE
+     * 前台是**合法覆盖层语境**（各自的键帽本来就该出），不得被过渡窗接管。 */
+    int trans_last_known = (front_layer == KIDPAL_LAYER_SERVER_PAGE && on_story_local_page)
+                               ? g_kidpal_keybar_last_known_story_sub : -1;
     /* D3 v7（261019 fixer）: RECORDING 子态的帧 A/帧 B 键帽分叉判据（引导播报中
-     * 子态, [G3] rec_substate; 渲染节点缓存单源）。 */
-    int story_rec_sub = (story_sub == KSTORY_PAGE_RECORDING)
+     * 子态, [G3] rec_substate; 渲染节点缓存单源）。过渡窗（story_sub < 0）也读一次——
+     * 最后已知子态若为 RECORDING, 帧分叉仍须由 rec_slots 单源裁。 */
+    int story_rec_sub = (story_sub == KSTORY_PAGE_RECORDING || story_sub < 0)
                             ? kidpal_render_node_story_rec_substate() : 0;
     /* 有效 overlay 判据（页点显隐入参）: 层栈归一值 + WF-F2-06「正文取不回」提示态。
      * 该提示是本地基层上的故事页子态（非独立 layer, front_is_overlay 不报覆盖层），
@@ -1407,6 +1429,15 @@ static void kidpal_keybar_sync_locked(void)
             } else {
                 slots_ok = (kidpal_keybar_story_slots(story_sub, &left, &right) == 0);
             }
+        } else if (kidpal_keybar_story_transition_slots(story_sub, trans_last_known,
+                                                        story_rec_sub, &left,
+                                                        &right) == 1) {
+            /* CG-A2 过渡窗裁决（261022-p3-record-chrome-ghost-fix）: 故事会话在途
+             * （录音/整理/阅读）但子态缓存被云端夹钳遮住（story_sub == -1）时, 按最后
+             * 已知子态出故事键帽——绝不掉通用分支画语音残留键帽（KPLOG005 缺陷①因二）。
+             * 纯逻辑缝 [CG-C2] 已把三态决策表全承载, 本处只做接线与环境门控
+             * （夹钳窗 + 本地页 = P3）, 值域零重算（KB-E2）。 */
+            slots_ok = 1;
         } else if (front_layer == KIDPAL_LAYER_CHAR_WINDOW) {
             /* 查字窗前台 (v1.59 WF-F3-01 键帽随态变, ACC-6): 键帽随演示起播态变——
              * 未起播「播报」/ 起播后「重播」, 右槽 BOOT「结束」。值域仍走 keybar 纯逻辑
@@ -1416,7 +1447,9 @@ static void kidpal_keybar_sync_locked(void)
             slots_ok = (kidpal_keybar_char_slots(kidpal_char_page_started(),
                                                  &left, &right) == 0);
         } else {
-            slots_ok = (kidpal_keybar_slots(page, g_kidpal_keybar_scene, overlay_top,
+            /* 场景读沿（CG-A1）: 语音场景态单源 = keybar.c（复位后落 -1 出闭集 ->
+             * kidpal_keybar_slots scene 越界 -1 防御, 残留语音键帽绝不再被画出）。 */
+            slots_ok = (kidpal_keybar_slots(page, kidpal_keybar_scene_get(), overlay_top,
                                             &left, &right) == 0);
         }
         if (slots_ok) {
@@ -1452,8 +1485,8 @@ static void kidpal_keybar_sync_locked(void)
         /* K3R D2 真机轮诊断（纯日志）: 键帽三槽裁决输入（overlay 归一位 / 页 / P3 子态）
          * + 解出的左右槽文案指针内容（真机照片底栏 = 基层 P3 槽 vs 设计 RECORDING 槽的
          * 机读对账点）。 */
-        ESP_LOGI(TAG, "KEYBAR ovl=%d page=%d substate=%d left=%s right=%s",
-                 overlay_top, page, story_sub,
+        ESP_LOGI(TAG, "KEYBAR ovl=%d page=%d substate=%d last_known=%d left=%s right=%s",
+                 overlay_top, page, story_sub, trans_last_known,
                  left != NULL ? left : "(null)", right != NULL ? right : "(null)");
     }
 
@@ -1579,8 +1612,10 @@ static void kidpal_voice_apply_look(int scene)
         lv_label_set_text(g_kidpal_keybar_left_label, look.keycap);
     }
     /* 记录当前语音场景供随态右槽 (结束/关闭) 裁决; 顺带刷新中/右槽 + 页点显隐
-     * (覆盖层随态, 锁已在持)。 */
-    g_kidpal_keybar_scene = scene;
+     * (覆盖层随态, 锁已在持)。CG-A1（261022-p3-record-chrome-ghost-fix）: 场景态
+     * 单源 = keybar.c（kidpal_keybar_scene_set）——设备侧零第二真相, 复位沿见
+     * application.cc 会话收尾 Idle 分支。 */
+    kidpal_keybar_scene_set(scene);
     kidpal_keybar_sync_locked();
 
     /* 三态标识件按场景显隐 (r3-C: 聆听态 mic / 思考态问号 / 播报态声波条 + lv_anim;
@@ -2115,12 +2150,15 @@ static void kidpal_voice_v5_apply_locked(int scene)
  * ------------------------------------------------------------------------ */
 static void kidpal_chrome_mid_sync_locked(void)
 {
+    /* 语音场景态读沿（CG-A1）: 单源 = keybar.c; 本区五处判据（提醒材料壳 / 回显区 /
+     * 问答框）同取一次，零第二真相。 */
+    const int keybar_scene = kidpal_keybar_scene_get();
     /* 提醒材料壳（K4 overlay-unify）：提醒 = 最高层覆盖, 其外壳 = 本骨架整页 —— REMIND
      * 态下即使 VOICE 非前台（REMINDER 层置顶）也要点亮整页外壳 + 小伴 pose; 关窗后
      * front_is_reminder() 变 0 -> 自动回落不残留跨页。判据取 render_node 层 top（与语音
      * 前台桥同源, 零第二条真理）。顶置计算供下方 pose 与 voice_page 两块共用。 */
     const int reminder_shell =
-        (g_kidpal_mid_mode == 1 && g_kidpal_keybar_scene == KVST_SCENE_REMIND &&
+        (g_kidpal_mid_mode == 1 && keybar_scene == KVST_SCENE_REMIND &&
          kidpal_render_node_front_is_reminder()) ? 1 : 0;
 
     if (g_kidpal_mid_mode == 1) {
@@ -2156,7 +2194,8 @@ static void kidpal_chrome_mid_sync_locked(void)
      * 页面容器 = 演出活跃且 VOICE 前台时整页盖住首页内容 (WF-B 冻结线框; 首页猫
      * 遮蔽销账 = 整页盖住形态, 显隐只切 HIDDEN 零重建)。回显区/问答框按场景互斥:
      * LISTEN/THINK -> 回显区 (WF-B-01/02), TALK -> 问答框 (WF-B-03); 提醒态 -> 问答框
-     * 承载大字事项+时间 (WF-B-04)。场景值取 g_kidpal_keybar_scene (apply_look 刷新)。 */
+     * 承载大字事项+时间 (WF-B-04)。场景值取 keybar 单源 kidpal_keybar_scene_get
+     * (apply_look 刷新 / 会话收尾复位)。 */
     {
         /* K3R D2（261001-m4-k3-record-session-live-repair, 2026-10-01 真机轮架构修）:
          * 录音态强屏蔽（force_hide）**落在本 sync 执行点**——即便 g_kidpal_voice_front /
@@ -2167,11 +2206,11 @@ static void kidpal_chrome_mid_sync_locked(void)
                           (g_kidpal_voice_front || reminder_shell) &&
                           !g_kidpal_recording_force_hide) ? 1 : 0;
         int show_echo = (voice_live &&
-                         (g_kidpal_keybar_scene == KVST_SCENE_LISTEN ||
-                          g_kidpal_keybar_scene == KVST_SCENE_THINK)) ? 1 : 0;
+                         (keybar_scene == KVST_SCENE_LISTEN ||
+                          keybar_scene == KVST_SCENE_THINK)) ? 1 : 0;
         int show_answer = (voice_live &&
-                           (g_kidpal_keybar_scene == KVST_SCENE_TALK ||
-                            g_kidpal_keybar_scene == KVST_SCENE_REMIND)) ? 1 : 0;
+                           (keybar_scene == KVST_SCENE_TALK ||
+                            keybar_scene == KVST_SCENE_REMIND)) ? 1 : 0;
         /* K3R D2 诊断（有意保留的诊断债务, 真机一刀切定位三支: ①桥断 ②sync 未生效
          * ③第二画源）。 */
         ESP_LOGI(TAG, "chrome_mid_sync mid_mode=%d front=%d reminder=%d force_hide=%d voice_live=%d",
