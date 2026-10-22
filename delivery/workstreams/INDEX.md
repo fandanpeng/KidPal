@@ -1,13 +1,14 @@
 # delivery/workstreams Index
 
-> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-10-17。
+> 自动生成（hook：编辑 delivery/workstreams/ 即重建；标记 done 即归档）。**勿手改**。最后更新 2026-10-22。
 
-## Active (2)
+## Active (3)
 
 | slug | status | area | owner | opened | summary |
 |---|---|---|---|---|---|
 | [m3-schedule](m3-schedule/task_plan.md) | active | delivery | portfolio-planner | 2026-09-21 | M3-schedule 里程碑拆包——P2 一周总览网格（S-F1.2）+ 语音问课表问答框口径（S-F1.3）+ 家长录入即时链路（S-F1.5/B4）+ 课表数据接首页「接下来」合流（决策 26 三触发 producer 链路） |
 | [m4-star-notebook](m4-star-notebook/task_plan.md) | active | delivery | main-thread | 2026-09-24 | M4-star-notebook 里程碑拆包——P3 列表（S-F2.1，含删除确认覆盖层）+ 记录会话双入口链路（S-F2.2）+ 星星徽章盖章（S-F2.4）+ 阅读态（S-F2.3）+ F2 改名对账四项；契约三触点（story_list 语义拆分 / story_text seq 承载 / 删除载体新增）合一走契约门、随 K1 同 PR |
+| [device-memory-overhaul](device-memory-overhaul/task_plan.md) | active | systems | main-thread | 2026-10-22 | 设备语音链路「越用越聪明」整体重构——持久会话 + Honcho 记忆画像 + prompt 迁 AGENTS.md + 工具收窄 + 课表机械注入（P1–P5 单 Pod 串行） |
 
 ## Archived (3)
 

@@ -1,0 +1,197 @@
+{
+  "changeId": "261022-m5-k3-honcho-memory-production",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
+    "workstream": "device-memory-overhaul"
+  },
+  "subsystem": "server/deploy/honcho（Honcho 自托管五容器 + 生产 profile 插件/hooks 授权）+ server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（v12 守则）+ server/gateway/front（一次性回合隔离，若需）",
+  "story": "S-F5.1 · 记住孩子说过的事（AC2 跨会话回忆、AC3 隐私负向、AC4 记忆边界、AC5 设备流程回合不入画像）+ NFR-PRIV-1 · 记忆边界与保留 + NFR-SEC-2 ⑤ 出网认账——story 语义权威 = docs/requirements.md v1.67 现文；AC5 的「完整枚举由架构文档定义」承载 = arch §6.7 六行表。",
+  "planRef": "delivery/taskpackages/261022-m5-k3-honcho-memory-production/plan.md",
+  "sourceRefs": [
+    "S-F5.1-AC2",
+    "S-F5.1-AC3",
+    "S-F5.1-AC4",
+    "S-F5.1-AC5",
+    "NFR-PRIV-1",
+    "NFR-SEC-2",
+    "TECH-261022-device-memory-prompt-overhaul",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+    "docs/debt/tech/TECH-261022-openclaw-prep-tax-memory-pressure.md",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T1",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/gateway/front/front_app.py"
+  ],
+  "acceptanceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
+    "docs/requirements.md#§NFR-PRIV-1"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "impactedTests": [
+    "server/acceptance/test_261022_honcho_memory.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py",
+    "server/acceptance/test_record_dialogue_guide.acceptance.py",
+    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+    "server/deploy/verify-deploy.sh"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual",
+    "real-db"
+  ],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；新增记忆/隔离验收断言按设计态红，既有套件须零新增红）。",
+  "exitCriteria": [
+    "K3-E1: Honcho 自托管栈生产化落盘 server/deploy/honcho/**（compose + 配置 + apply/rollback + 健康检查）：五容器、api 127.0.0.1:18100 全 loopback、postgres+pgvector 本机持久卷；manifest.yaml 登记与 verify-deploy.sh 端口/健康核验；出网仅 NFR-SEC-2 ⑤ 两条（deriver→DeepSeek、embedding→DashScope），数据本机不出网",
+    "K3-E2: 写入资格门全局生效：仅 kidpal 语音链路且请求携 user=<device_id> 的回合可读写记忆；front 引导/整理一次性回合不携 user → marker 探针（DB / 日志双证）零命中；主链路正证同 marker 命中；读侧同门（非资格回合不注入画像）",
+    "K3-E3: v12 守则落 AGENTS.md 静态语义：孩子世界事实必须记 / 家长隐私信息不记；seeded 负向探针集（家长姓名 / 电话 / 家庭安排注入后问询）画像与答复 100% 零命中（S-F5.1 AC3 / NFR-PRIV-1）",
+    "K3-E4: 记忆口径与生命周期：只记孩子世界的事实（AC4）；删除 = 运维面手工、范围 = 画像与 observation/消息存储（不删 OpenClaw 完整日志 / 回填源语料 / 诊断日志）；备份 = 不备份靠重建（OQ-10，重建源 = session-corpus 源语料 + OpenClaw 会话存储），无自助删除界面",
+    "K3-E5: 降级语义：记忆服务不可用 → 本轮无画像注入、对话与回复照常，不阻塞、不静默重试风暴；记忆失败不进用户可见兜底；记忆数据不进任何日志导出与展示面",
+    "K3-E6: openclaw.json 声明式 patch 组合纪律：Honcho 插件 + hooks.allowConversationAccess 的声明工件与 P1 的 tools allowlist 声明工件互不覆盖、apply 幂等、drift_guard 以 P1 已应用态为现状锚；openclaw.json 整文件不入仓",
+    {
+      "id": "K3-E7",
+      "kind": "structural",
+      "note": "live 观测项（非自动断言）：新 WS 新会话问「我最喜欢的颜色 / 我的小狗叫什么」答对（全新 user id 对照答不出）；2C/4G 基线下 prep 税 / 内存读数前后对照，event_loop_delay 无 38s 级退化，复测读数回填 TECH-261022-openclaw-prep-tax-memory-pressure；arch §6.7 抽取策略实测成形后回填（守卫走 /arch-change 收口）"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§四"
+  ],
+  "docRefs": [
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md",
+    "delivery/taskpackages/261022-m5-k3-honcho-memory-production/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+    "docs/debt/tech/TECH-261022-openclaw-prep-tax-memory-pressure.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "架构面 §1.1/§1.2/§3.1/§4/§5.1.2/§5.3.2/§5.3.3/§5.4/§6.7/§8.1 与 NFR-PRIV-1 / NFR-SEC-2 ⑤ 已由 261022 两面 landing（requirements v1.67 + arch FROZEN v1.1）落稿；本包只落实现面。§6.7 抽取策略「实测成形后回填」若需改 spec，走 /arch-change 逃生门，不在 Pod 内自裁。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": true,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "本包主体 = 自托管栈声明 / 插件配置 / 守则文本 / 隔离判据；验收以 marker 探针 DB+日志双证、seeded 负向探针集与降级路径为主，属证据面而非分支逻辑面，变异取证 ROI 不成立。",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包纯云端记忆子系统与 agent 守则面改动：设备端零感知、固件零 diff；不新增或改变任何端→网关消息、帧类型、字段与序列化形态（display E1 / B1 / §三提醒 / §四私有消息帧零触碰）。front 一次性回合隔离只改云端发起侧 payload（不携 user），设备无感。"
+  },
+  "changeManifest": [
+    "server/deploy/honcho/**",
+    "server/deploy/261022-openclaw-honcho-plugin/**",
+    "server/deploy/manifest.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/deploy/verify-deploy.sh",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/gateway/front/front_app.py",
+    "server/acceptance/test_261022_honcho_memory.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/device-memory-overhaul/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "security",
+    "real-db",
+    "evidence-integrity",
+    "ai-cost-audit"
+  ],
+  "mergeOrder": 53,
+  "dependsOn": [
+    "261022-m5-k2b-persistent-session",
+    "261022-m5-k1-prompt-carrier-migration"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "R3 · 引入 Honcho 自托管记忆子系统（外部依赖）",
+      "summary": "五容器 loopback 18100、postgres+pgvector 本机持久卷，与 ECS 同机共生；manifest / verify / 健康检查同批。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T1"
+      ],
+      "landsIn": "exitCriteria:K3-E1"
+    },
+    {
+      "decision": "R4 / OQ-2 · NFR-SEC-2 ⑤ 出网认账（deriver→DeepSeek、embedding→DashScope）",
+      "summary": "出网仅两条已记账管线；DashScope = 阿里云百炼，与 ASR 同信任域；其余数据本机不出网。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/requirements.md"
+      ],
+      "landsIn": "exitCriteria:K3-E1"
+    },
+    {
+      "decision": "R5 · 新记忆 story（S-F5.1 五条 AC）",
+      "summary": "跨会话回忆 / 隐私负向 / 记忆边界 / 一次性回合隔离四轴由本包承载；AC5 历史照记半归 P4。",
+      "sourceRefs": [
+        "docs/requirements.md",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "landsIn": "exitCriteria:K3-E3"
+    },
+    {
+      "decision": "R7 / OQ-4 · front 一次性回合不入记忆画像（按 user 缺席过滤，读写同门）",
+      "summary": "资格门唯一判据 = 请求是否携带 user；main agent / cron / 一次性回合结构性不入库；marker 探针 DB+日志双证。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "docs/architecture.md"
+      ],
+      "landsIn": "exitCriteria:K3-E2"
+    },
+    {
+      "decision": "OQ-6 / NFR-PRIV-1 · 保留与删除语义（运维手工、范围限定、无自助界面、不进日志导出）",
+      "summary": "删除 = 运维面手工；范围 = 画像与 observation/消息存储；备份 = 不备份靠重建（OQ-10）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/requirements.md"
+      ],
+      "landsIn": "exitCriteria:K3-E4"
+    },
+    {
+      "decision": "记忆不可用时的降级语义（不阻塞对话、不静默重试风暴）",
+      "summary": "故障 = 无画像注入，对话与回复照常；用户无感知、不进用户可见兜底。",
+      "sourceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "landsIn": "exitCriteria:K3-E5"
+    },
+    {
+      "decision": "R6 / OQ-3 · backfill 第三方姓名照记（不在本包）",
+      "summary": "历史 corpus 全量照记、不带 PII 过滤器，归 P4；本包只提供 peer 与画像边界。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ],
+      "landsIn": "package:261022-m5-k4-history-corpus-backfill"
+    },
+    {
+      "decision": "业务目的 6 · prep 税/内存压力可解释（2C/4G 基线复测）",
+      "summary": "复测读数在部署后 live 观测回填 debt 条目，不在 host 自动断言面。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§1"
+      ],
+      "landsIn": "exitCriteria:K3-E7"
+    }
+  ]
+}

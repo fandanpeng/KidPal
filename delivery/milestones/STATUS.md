@@ -6,8 +6,8 @@
 
 ## 完工比例
 
-- **已验收**：0%（0 / 4 里程碑 accepted 及以后）
-- **在途预计**：30%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **已验收**：0%（0 / 5 里程碑 accepted 及以后）
+- **在途预计**：32%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -33,5 +33,11 @@
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 阶段四·星星记录本（P3 四态 + F2 改名对账） | `planning` | green | 拆包已落（2026-09-24，三包 mergeOrder 38–40，workstream m4-star-notebook）：K1 story-cloud-link（契约三触点门【story_list 语义拆分/story_text seq/删除载体 kidpal_story_delete】+ front session_ctx 拦截/story_list 推送/删除执行/seq 账本/收尾词+120s）→ K2 p3-star-notebook-ui（P3 键路由补全+300ms 消歧 + 列表/删除覆盖层/阅读/盖章 + CJK 字体接线 + F2 改名对账四项）→ K3 record-session-live（板端 session_ctx 发送 + 引导/录音态演出 + prompt v7 双指令 + live 真机轮一次性收口）；契约门 HUMAN_APPROVED + 门 1 过目 = K1 launch 前置（LP1/LP2） | [ref](../docs/requirements.md) |
+| 阶段四·星星记录本（P3 四态 + F2 改名对账） | `in_delivery` | green | 重拆已落（2026-09-29，human 指示按新拆包规覆盖重拆剩余包；首拆 2026-09-24 三包 mergeOrder 38–40，workstream m4-star-notebook）：K1 story-cloud-link 已 merged 本地 main（契约三触点 story_list 语义拆分/story_text seq/kidpal_story_delete 随落地批进现文；建连即推时点经止血包 260928-story-connect-push-defer 摘除）→ K2 p3-star-notebook-ui 重拆版（acceptance 空骨架/plan 五件骨架/uiux L2 挂图 docs/ui/V5 P3 五面 PNG/changeManifest；UI-ready 前置 LP7 verified）→ K3 record-session-live 重拆版（板端 session_ctx 发送 + 引导/录音态演出 + prompt v7 双指令 + story_list 推送①重裁 + C4 arch 收口随 docs-sync + live 真机轮一次性收口含 K1/K2 deferred 半）；待办：重拆批门 1 重审 + human 过目切法 → commit → K2/K3 依序 launch；milestones state 翻账（planning→in_delivery）与 remote push 归 human | [ref](../docs/requirements.md) |
+
+### M5
+
+| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
+|---|---|---|---|---|
+| 阶段五·小伴的记忆（持久会话 + Honcho 画像 + prompt 迁 AGENTS.md + 课表机械注入） | `planning` | green | workstream device-memory-overhaul 拆包 P1–P5（P1 prompt 迁移与上下文装配 / P2 持久会话 / P3 Honcho 生产化+守则 v12 / P4 历史 backfill / P5 课表机械注入；单 Pod 串行 merge order P1→P2→P3→P4、P5 插 P1 后）。上游已齐：requirements v1.67 frozen（F5 + NFR-SEC-2 ⑤ + NFR-PRIV-1）+ 架构面 FROZEN v1.1 landing（PROPOSAL delivery/review/261022-arch-review-device-memory-prompt-overhaul/）+ 契约 §四:283 定案改写随批原子落 + 契约四分类闭合。下一步 = 拆包四件套（portfolio-planner 停等中）→ 门 1 → human 过目切法 → 逐包 launch。待 human 裁：OQ-10 记忆库备份已裁「不备份靠重建」（2026-10-22，重建源 = session-corpus 源语料 + OpenClaw 会话存储） | [ref](../docs/requirements.md) |
 

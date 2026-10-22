@@ -191,6 +191,8 @@ OpenClaw 回复文本（示例）
 在调 `/v1/chat/completions` 时，通过 system prompt 让 DeepSeek **始终**按此格式回复：
 > "你是儿童学习伙伴。每次回复分两部分：先用口语化、适合8-12岁孩子的话回答（这部分会被念出来）；然后在末尾附一个 ` ```display ` 代码块，内含屏幕显示指令 JSON，view 取 char/schedule/story_list/story_text/text/home/control 之一。涉及课表时：孩子问课表只用文字回答（备注类提醒在话术里说，如『舞蹈课记得带护膝』），不要生成课表 JSON；需要切到课表页时只发 `{"view":"schedule","data":{}}` 意图薄载荷，完整周网格由网关展开（2026-09-21 契约门改写，见 §1.3②）。涉及星星记录本时：只用文字答复，不要生成 story_list/story_text JSON——列表与正文由网关机械推送（2026-09-24 契约门改写，见 §1.3③④）。"
 
+> 承载对账（2026-10-22）：本行格式约束语义的物理承载 = workspace `AGENTS.md`（OpenClaw 组装时并入 system prompt，arch §5.5.5）；「通过 system prompt 约束」语义不变——本节未钉承载归属，display 线格式零改动。
+
 ---
 
 ## 二、B1 课表 MD 结构
@@ -278,9 +280,11 @@ OpenClaw cron 按课表算三档时刻并写 `alerts/pending.json`（同机共�
 
 （契约变更记录：2026-10-21 经 `/arch-change` 批准新增 §四 `kidpal_story_discard`（端→网关私有扩展消息：用户主动丢弃记录会话、素材销毁不入册；网关按本连接 session_id 权威取消、不信载荷值，幂等 + 审计，单向无应答；与 `kidpal_story_delete` 先例同构）——requirements S-F2.2 AC4 丢弃语义的端→云载体补齐 + arch §5.2 场景④ 取消链显式化；§1.4 `start_organizing` 行包络核对结论 = 既有行文已在包络内、零改（见同批 PROPOSAL T2）；随 `261021-p3-record-cancel-lifecycle` 同批原子落地，见 delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md。）
 
+（契约变更记录：2026-10-22 经 `/arch-change` 批准改写 §四「会话连续性承载」为定案记载（`user=<device_id>` 标识 + OpenClaw 服务端持久会话 + 引擎只发新回合；省略 `user` 回落旧行为；原「部署期首验」与两条降级路径随定案撤销）+ §1.6 承载对账注记（静态语义物理承载 = workspace `AGENTS.md`，格式约束语义不变、display 线格式零改动）——requirements v1.67 F5 / NFR-PRIV-1 / NFR-SEC-2 ⑤ + ADR-014 / ADR-015；随 `261022-device-memory-prompt-overhaul` 同批原子落地，见 delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md。）
+
 - **`mcp` 工具调用**（云→端）：两种载荷——`kidpal/display`（载 E1 display JSON，view 白名单见 §1.3；网关下发前机械 schema 校验）与 `kidpal/alert`（载 §三 提醒条目）；设备 JSON-RPC 回执 = 送达确认（提醒出队 ack）。小智原生 alert/custom 通道**弃用**。
 - **`llm`/`system` 消息**：小智原生——`llm`（emotion）本项目 UI 重做不消费（弃用）；`system`（reboot）留二期 OTA。
-- **会话连续性承载**：`type:openai` 接入默认无状态；多轮连续性承载方案（网关侧状态 vs 每轮透传历史）以**部署期首验**定案（两轮追问连续性探针；失败 → 网关适配传会话标识/历史，或 A4 连续追问降级单轮问答并记账，ARQ-260902-multiturn-continuity）。
+- **会话连续性承载**：`type:openai` 接入默认无状态；多轮连续性**已定案（2026-10-22，`261022-device-memory-prompt-overhaul`，决策本体 = ADR-015）**：引擎请求携带 `user=<device_id>`、只发本回合新内容，OpenClaw 按该标识维护**服务端持久会话**（跨 UI 会话保留对话历史）；省略 `user` 时回落旧行为（每请求随机 session、连续性由调用方自携带历史负责），向后兼容。`device_id` 与记忆子系统 peer 的映射细节归架构与 ADR，本契约不钉（原「以部署期首验定案」及两条降级路径随定案撤销；ARQ-260902-multiturn-continuity 已于 2026-10-12 关闭，本行只清字面残留）。
 - **provider 配置硬约束**：对 OpenClaw 的流式请求**禁带 `max_tokens`**（实测触发 agent incomplete-turn 报错）。
 
 ---
