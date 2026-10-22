@@ -1967,6 +1967,14 @@ int kidpal_story_on_control(kidpal_story_view_t *v, int ctrl_action)
             return 1;
         }
         v->page = KSTORY_PAGE_ORGANIZING; /* 整理过渡演出（state-organizing 帧） */
+        /* 261023 观感直修（真机轮 human 实证「没出徽章页」）: 网关只在**即将归档**
+         * 时下发 start_organizing——自动收尾路径（S-F2.2 AC5, 静默超时）也经此帧。
+         * archive_pend 此前只由 KEY 停录路径置位（story_page_input STOP_RECORD），
+         * 自动收尾的 story_text 到达时 archive_pend=0 -> 盖章门
+         * kidpal_story_stamp_should_fire 落 0 -> 走正文阅读分支，徽章从未在自动
+         * 收尾出现过。此处即视为一次归档请求武装（与 KEY 收尾语义对齐）；幂等门
+         * 已在其上，重试不翻倍。 */
+        v->archive_pend++;
         return 1;
     }
     if (ctrl_action == 0 || ctrl_action == 1) { /* END_SESSION / STOP_SPEAKING */
