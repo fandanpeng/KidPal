@@ -149,6 +149,13 @@ def _archive_material_reject_reason(material: str) -> "str | None":
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 _GUIDE_PROMPT_FILE = "guide-round.v1.md"
 _ORGANIZE_PROMPT_FILE = "faithful-organize.v1.md"
+# 整理回合 LLM 超时（261021 真机轮 R7 修复）：OpenClaw embedded run 的 prep 阶段实测
+# 7.05s（journalctl 09:06:06 trace:embedded-run totalMs=7052，其中 bootstrap-context
+# ~6.5s），整理回合长输入 + 长输出还需数秒——原缺省 10s 在模型刚吐 ~1.5s 时即被掐断
+# （ClientDisconnectError @ elapsed 1497ms，真机每次必现：10s 对整理回合结构性不够）。
+# 60s = prep ~7s + 整理生成长尾留足余量。**引导回合调用点维持缺省 10s 不动**（短 prompt
+# 实测可通过，本次不扩大改动面）。
+_ORGANIZE_LLM_TIMEOUT_S = 60.0
 
 
 def _load_prompt_artifact(filename: str) -> str:
@@ -277,7 +284,8 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
         return None
     prompt = _load_prompt_artifact(_ORGANIZE_PROMPT_FILE)
     reply = _openclaw_chat_once(
-        prompt, f"孩子讲的内容：\n{material}\n\n请按指令把这段话忠实整理成一篇。")
+        prompt, f"孩子讲的内容：\n{material}\n\n请按指令把这段话忠实整理成一篇。",
+        timeout_s=_ORGANIZE_LLM_TIMEOUT_S)
     if not reply:
         log.info("story_organize_round corr_id=%s ok=false reason=llm_unavailable",
                  corr_id)
