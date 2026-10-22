@@ -40,3 +40,7 @@ handoff: 紧随登记起 /triage-change 分流；建议拆包——① 固件包
 **影响面**：①②③ 每笔记录会话必现，是 human 真机观感「状态乱跳/找不到故事」的直接来源；④ 内容污染风险（本次侥幸）；⑤ 可发现性损害。全部不动契约、不动 wire——固件 chrome 面与 front 应用面各自内部修。
 
 **风险**：riskTier: medium——①② 在固件 chrome/键帽裁决面，有既有 acceptance 族（keybar/story 冻结件）兜底防回归；③④ 在 front 引导/素材面，需重跑记录会话冒烟；⑤ 排序键变更需对设备端既有列表渲染零扰动核验。
+
+---
+
+**consumed-by 追记（2026-10-22，append-only）**：缺陷①②由 `261022-p3-record-chrome-ghost-fix`（②单包 Lite，triage 落盘 823f7b05）承接——冻结齿件 `firmware/main/test/chrome_ghost.acceptance.c`（CG-A1 场景复位 / CG-A2 过渡窗门控 / CG-A3 成功归档层栈收口 / CG-A4 回归网 / CG-A5 live-manual 真机目检）；缺陷③④⑤由并联包 `261022-p3-record-front-polish-fix` 承接（待起）。seam 契约 [CG-C1]/[CG-C2]/[CG-C3] 落 keybar.{h,c} additive + lcd_display.cc 场景单源 + application.cc 收尾沿复位 + mcp_server.cc 两闭包收口（既有符号闭集，帧类型负锚守住）。

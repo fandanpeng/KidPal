@@ -61,3 +61,7 @@ KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，�
 1. 缺陷②修复落点未完全钉死（front 补帧 vs 固件层栈收口）——留 1g 技术预评，附帧类型负锚；
 2. 1g 预评若发现须触 story_page_input 冻结决策表 → 升档信号（回 triage 重判）；
 3. 单向守卫声明：riskTier=medium + rigor=lite，无 security/迁移/触契约信号，不触发 riskTier-overrides-rigor。
+
+## 冻结齿映射（intake 终版回填，acceptance-author 冻结件 chrome_ghost.acceptance.c 承载）
+
+- **CG-A1** = 验收方向 1①（语音会话收尾 scene 复位）；**CG-A2** = 验收方向 1②（story 会话期 -1 过渡窗门控）；**CG-A3** = 验收方向 1③（成功归档层栈收口，BOOT 列表页路由成列表动作）；**CG-A4** = 验收方向 2（回归网三族 + host 全量零新增红 vs 227T3F）；**CG-A5** = 验收方向 3（live-manual 真机目检，structural 口径不入 runner 通过面）。
