@@ -88,3 +88,4 @@
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md | closed | — |
+| [261022-diag-log-content](261022-diag-log-content/) | 2026-10-22 | delivery/taskpackages/261022-diag-log-content/plan.md | closed | — |
