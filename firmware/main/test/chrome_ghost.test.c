@@ -12,6 +12,10 @@
  *      子态表外的有效子态（LIST/STAMP/DELETE/BODY_UNAVAILABLE）同样零触碰;
  *   4. 帧分叉入参边界：READER / ORGANIZING 不吃 rec_sub（任意 rec_sub 同产物）;
  *      RECORDING 的 rec_sub 只做「0 / 非 0」二值分叉（负值同帧 B）。
+ *   5. 引导播报子态看门狗复位沿幂等（真机轮追补 261022, KPLOG006 22:28:03 实证）：
+ *      引擎 abort 竞态泄漏 tts start 帧 -> rec_substate 卡 1 -> 键帽悬挂。设备侧韧性
+ *      补在 mcp_server.cc（设备 TU 不进 host 构建），故本条走源锚代理；行为半归
+ *      真机观测项（CG-A5 口径扩展）。
  *
  * 纯逻辑、零芯片依赖（keybar.c 在 host runner 与设备树两侧同源）。
  * 用例内部均先写后读，不依赖整轮执行序（无顺序耦合）。
@@ -19,8 +23,13 @@
 
 #include <unity.h>
 
+#include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "../display/keybar.h"
 
@@ -185,4 +194,268 @@ TEST_CASE("chrome ghost builder: transition seam rec_sub boundary (ignored off R
             CG_BUILDER_RED "过渡窗 RECORDING 的 rec_sub 分叉未与 story_rec_slots 同源"
             "（rec_sub 语义必须是 0 / 非 0 二值, 负值同帧 B）");
     }
+}
+
+/* -------------------------------------------------------------------------- *
+ * 结构扫描助手（本件自用前缀 cgw_；cg_ 先例族同款：仓根注入 / 注释剥离 / 区切取 /
+ * 裸源计数）。mcp_server.cc 是设备 TU, 不进 host 构建——源锚代理是唯一可断言面,
+ * 注释剥离是防假绿的前提（正向锚只认可执行源字面, 260917-m2-k3 sealing pass 教训）。
+ * ------------------------------------------------------------------------ */
+#define CGW_MAX_PATH 1024
+#define CGW_MAX_READ (8u * 1024u * 1024u)
+
+static char cgw_root[CGW_MAX_PATH];
+static int cgw_root_ready;
+
+static int cgw_is_regular(const char *path)
+{
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISREG(st.st_mode);
+}
+
+static int cgw_locate_root(void)
+{
+    static const char *const cands[] = {
+        ".", "..", "../..", "../../..", "../../../..", "../../../../..",
+        "../../../../../.."
+    };
+    char probe[CGW_MAX_PATH];
+    const char *env_root;
+    size_t i;
+
+    if (cgw_root_ready) {
+        return 1;
+    }
+    env_root = getenv("KIDPAL_REPO_ROOT");
+    if (env_root != NULL && env_root[0] != '\0') {
+        snprintf(probe, sizeof(probe), "%s/firmware/main/CMakeLists.txt", env_root);
+        if (cgw_is_regular(probe)) {
+            snprintf(cgw_root, sizeof(cgw_root), "%s", env_root);
+            cgw_root_ready = 1;
+            return 1;
+        }
+    }
+    for (i = 0; i < sizeof(cands) / sizeof(cands[0]); i++) {
+        snprintf(probe, sizeof(probe), "%s/firmware/main/CMakeLists.txt", cands[i]);
+        if (cgw_is_regular(probe)) {
+            snprintf(cgw_root, sizeof(cgw_root), "%s", cands[i]);
+            cgw_root_ready = 1;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static char *cgw_read(const char *rel)
+{
+    char p[CGW_MAX_PATH * 2];
+    FILE *f;
+    long sz;
+    char *buf;
+
+    if (!cgw_locate_root()) {
+        return NULL;
+    }
+    snprintf(p, sizeof(p), "%s/%s", cgw_root, rel);
+    f = fopen(p, "rb");
+    if (f == NULL) {
+        return NULL;
+    }
+    if (fseek(f, 0, SEEK_END) != 0 || (sz = ftell(f)) < 0 ||
+        (unsigned long)sz > CGW_MAX_READ || fseek(f, 0, SEEK_SET) != 0) {
+        fclose(f);
+        return NULL;
+    }
+    buf = (char *)malloc((size_t)sz + 1);
+    assert(buf != NULL); /* logic guard: host OOM must fail loudly, not read as "red" */
+    if (sz > 0 && fread(buf, 1, (size_t)sz, f) != (size_t)sz) {
+        fclose(f);
+        free(buf);
+        return NULL;
+    }
+    buf[sz] = '\0';
+    fclose(f);
+    return buf;
+}
+
+/* 注释剥离（保持缓冲长度；字符串/字符字面量体保留）。调用方 free。 */
+static char *cgw_strip(const char *src)
+{
+    size_t n, i = 0;
+    char *out;
+
+    assert(src != NULL); /* logic guard: NULL source is a test bug, not a red */
+    n = strlen(src);
+    out = (char *)malloc(n + 1);
+    assert(out != NULL);
+    memcpy(out, src, n + 1);
+
+    while (i < n) {
+        char c = out[i];
+        if (c == '"' || c == '\'') {
+            char q = c;
+            i++;
+            while (i < n) {
+                if (out[i] == '\\' && i + 1 < n) { i += 2; continue; }
+                if (out[i] == q) { i++; break; }
+                i++;
+            }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '/') {
+            while (i < n && out[i] != '\n') { out[i] = ' '; i++; }
+            continue;
+        }
+        if (c == '/' && i + 1 < n && out[i + 1] == '*') {
+            out[i] = ' '; out[i + 1] = ' '; i += 2;
+            while (i < n) {
+                if (out[i] == '*' && i + 1 < n && out[i + 1] == '/') {
+                    out[i] = ' '; out[i + 1] = ' '; i += 2; break;
+                }
+                if (out[i] != '\n') { out[i] = ' '; }
+                i++;
+            }
+            continue;
+        }
+        i++;
+    }
+    return out;
+}
+
+/* 区切取：start_needle 首现起至（exclusive）其后首个 end_needle（无命中 -> EOF）。
+ * NULL = 切取失败（锚漂移）。调用方 free。 */
+static char *cgw_slice(char *src, const char *start_needle,
+                       const char *end_needle)
+{
+    char *s, *e;
+    char *slice;
+    size_t span;
+
+    if (src == NULL || start_needle == NULL) {
+        return NULL;
+    }
+    s = strstr(src, start_needle);
+    if (s == NULL) {
+        return NULL;
+    }
+    if (end_needle == NULL ||
+        (e = strstr(s + strlen(start_needle), end_needle)) == NULL) {
+        e = src + strlen(src);
+    }
+    span = (size_t)(e - s);
+    slice = (char *)malloc(span + 1);
+    assert(slice != NULL);
+    memcpy(slice, s, span);
+    slice[span] = '\0';
+    return slice;
+}
+
+/* 裸源子串出现计数（传入已剥注释窗时天然只计可执行源）。 */
+static int cgw_count(const char *hay, const char *needle)
+{
+    int n = 0;
+    const char *p = hay;
+    size_t nl;
+
+    if (hay == NULL || needle == NULL) {
+        return 0;
+    }
+    nl = strlen(needle);
+    if (nl == 0) {
+        return 0;
+    }
+    while ((p = strstr(p, needle)) != NULL) {
+        n++;
+        p++;
+    }
+    return n;
+}
+
+#define CGW_MCP_CC "firmware/main/mcp_server.cc"
+
+/* -------------------------------------------------------------------------- *
+ * TEST 4 — 引导播报子态看门狗复位沿幂等（真机轮追补 261022；源锚代理）。
+ *
+ * 真机轮实证（KPLOG006 22:27:43-22:29:09）：引导 TTS 多句流式播放中孩子继续说话
+ * 触发 barge-in abort（引擎 abortHandle: clear_queues + 发 tts stop）——句 1 的
+ * tts stop 正常到达（edge 0 @22:28:03.4），但句 2 的 tts start 帧竞态泄漏
+ * （edge 1 同刻到达, 其音频与收尾 stop 已被 abort 清掉）-> 设备 rec_substate 卡 1
+ * -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导的 stop 才解开）。
+ * 根因在第三方引擎树（不可改），设备侧修韧性缺口 = 引导子态看门狗。
+ *
+ * 设备 TU 不进 host 构建 -> 判据 = 源锚代理（diag_log TEST 4 先例形态；注释剥离后
+ * 只认可执行源）。三锚：
+ *   ① 到期回调**幂等复位**：仅在 rec_substate 仍为 1 时写 0（stop 沿已复位则不
+ *      重渲——与 KidpalStoryGuideSpeechEdge 的幂等沿语义汇合），且一次性自删；
+ *   ② start 沿布防 / stop 沿撤防（每句重布防, 先撤旧再建新, 幂等）；
+ *   ③ 会话收尾路径撤防（跨会话泄漏防线, D4b 根因形态）。
+ * 到期后的行为半（键帽真的复位、真机上 12s 内自愈）= 真机观测项（CG-A5 口径）。
+ * ------------------------------------------------------------------------ */
+TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge and disarm paths",
+          "[chrome_ghost][builder][structural]")
+{
+    char *raw;
+    char *code;
+    char *cb_win;
+    char *edge_win;
+    char *end_win;
+
+    TEST_ASSERT_TRUE_MESSAGE(cgw_locate_root(),
+        CG_BUILDER_RED "repo root not located — run from the repo root, "
+        "firmware/main/test/host_app or firmware/main/test/acceptance/red-baseline, "
+        "or pass KIDPAL_REPO_ROOT");
+
+    raw = cgw_read(CGW_MCP_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(raw,
+        CG_BUILDER_RED "mcp_server.cc unreadable（源锚扫描面失效）");
+    code = cgw_strip(raw);
+    free(raw);
+    TEST_ASSERT_NOT_NULL(code);
+
+    /* ---- ① 到期回调：幂等复位 + 一次性自删 -------------------------------- */
+    cb_win = cgw_slice(code, "void StoryGuideWatchdogCb(lv_timer_t* timer)",
+                       "void ArmStoryGuideWatchdog()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(cb_win,
+        CG_BUILDER_RED "看门狗到期回调区切取失败——引导子态看门狗未落（KPLOG006 "
+        "22:28:03 泄漏 start 帧 -> rec_substate 卡 1 -> 键帽悬挂 66s；设备侧韧性"
+        "缺口 = 无到期兜底复位）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "g_story_view.rec_substate != 1") >= 1,
+        CG_BUILDER_RED "看门狗回调缺幂等门（rec_substate != 1 早退）——stop 沿已复位"
+        "的场合到期仍写 0 + 重渲 = 多余整页重绘抖动（复位沿必须与既有幂等沿语义汇合）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "g_story_view.rec_substate = 0") >= 1,
+        CG_BUILDER_RED "看门狗回调无子态复位写——到期复位本体缺失（悬挂键帽治不了）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "ScheduleStoryRender()") >= 1,
+        CG_BUILDER_RED "看门狗回调复位后零渲染同步——渲染节点缓存与键帽分叉读不到新"
+        "子态, 屏幕仍显「打断/留空」");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "lv_timer_delete(timer)") >= 1,
+        CG_BUILDER_RED "看门狗非一次性（回调未自删）——到期后按周期反复触发, 常驻"
+        "定时器开销与重复复位风险（StoryRecTimerCb 自删先例同款纪律）");
+    free(cb_win);
+
+    /* ---- ② 沿桥：start 布防 / stop 撤防 ----------------------------------- */
+    edge_win = cgw_slice(code, "void KidpalStoryGuideSpeechEdge(int speaking)",
+                         "mcp_json_get_string");
+    TEST_ASSERT_NOT_NULL_MESSAGE(edge_win,
+        CG_BUILDER_RED "KidpalStoryGuideSpeechEdge 区切取失败——既有沿桥锚漂移");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(edge_win, "ArmStoryGuideWatchdog()") >= 1,
+        CG_BUILDER_RED "引导播报置位沿未布防看门狗——泄漏的 tts start 帧（其 stop 被 "
+        "abort 清掉）无到期兜底, 子态悬挂复发（KPLOG006 22:28:03）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(edge_win, "StopStoryGuideWatchdog()") >= 1,
+        CG_BUILDER_RED "引导播报复位沿未撤防看门狗——正常播完/被打断后残留定时器会在"
+        "12s 后对无关会话误判");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(edge_win, "g_story_view.rec_substate == next") >= 1,
+        CG_BUILDER_RED "既有幂等沿被删——重复 tts start 将整页重渲抖动");
+    free(edge_win);
+
+    /* ---- ③ 会话收尾路径撤防（跨会话泄漏防线） ----------------------------- */
+    end_win = cgw_slice(code, "void KidpalStorySessionEndApply(int list_page)",
+                        "void KidpalStoryGuideSpeechEdge(int speaking)");
+    TEST_ASSERT_NOT_NULL_MESSAGE(end_win,
+        CG_BUILDER_RED "KidpalStorySessionEndApply 区切取失败——会话收尾桥锚漂移");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(end_win, "StopStoryGuideWatchdog()") >= 1,
+        CG_BUILDER_RED "会话收尾路径未撤看门狗——定时器跨会话存活（D4b 根因形态: "
+        "收尾后首页重建, 旧定时器仍对下一个会话的子态判决权在手）");
+    free(end_win);
+
+    free(code);
 }

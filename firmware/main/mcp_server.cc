@@ -763,6 +763,53 @@ void KidpalStoryVadEnterRecording() {
 }
 
 /* -------------------------------------------------------------------------- *
+ * 引导播报子态看门狗（真机轮追补 261022, KPLOG006 22:27:43-22:29:09 实证）。
+ * 缺陷链: 引导 TTS 多句流式播放中孩子继续说话触发 barge-in abort（引擎 abortHandle:
+ * clear_queues + 发 tts stop）——句 1 的 tts stop 正常到达（设备 edge 0 @22:28:03.4）,
+ * 但句 2 的 tts start 帧竞态泄漏（edge 1 同刻到达, 其音频与收尾 stop 已被 abort 清掉）
+ * -> 设备 rec_substate 卡 1 -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导
+ * 的 stop 才解开）。根因在第三方引擎树（不可改）, 设备侧补韧性缺口 = 本看门狗。
+ *
+ * 语义: 每个 tts start 沿布防一次性定时器, 到期仍未收 stop 即判泄沿, 复位子态并同步
+ * 渲染（幂等沿语义与 KidpalStoryGuideSpeechEdge 一致: 仅在仍处引导播报子态时复位,
+ * stop 沿已复位则早退不重渲）。看门狗不推断「谁该发 stop」, 只兜底「无 stop 的悬挂态」。
+ *
+ * 时长依据: front 侧引导篇幅已钳 30 字（≈ ≤8s 语音, 含句间停顿余量）, 12s = 50% 余量,
+ * 足以覆盖最长单句播放而不误伤; 多句流每句 start 重布防（先撤旧再建新, 帧间 30ms 级,
+ * 幂等）, 故正常播放期间不会触发。到期复位后的键帽恢复 = 真机观测项（CG-A5 口径）。
+ * ------------------------------------------------------------------------ */
+#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 12000
+static lv_timer_t* g_story_guide_wd_timer = nullptr;
+
+static void StopStoryGuideWatchdog() {
+    if (g_story_guide_wd_timer != nullptr) {
+        lv_timer_delete(g_story_guide_wd_timer);
+        g_story_guide_wd_timer = nullptr;
+    }
+}
+
+static void StoryGuideWatchdogCb(lv_timer_t* timer) {
+    g_story_guide_wd_timer = nullptr;
+    lv_timer_delete(timer); /* 一次性: 回调自删, 绝不常驻（StoryRecTimerCb 先例） */
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        return; /* 已离开录音态: 子态载体无语义（收尾路径负责）, 不越权复位 */
+    }
+    if (g_story_view.rec_substate != 1) {
+        return; /* 幂等: stop 沿已复位 -> 到期不重渲（与沿桥幂等语义汇合） */
+    }
+    g_story_view.rec_substate = 0;
+    ESP_LOGW(TAG, "story_guide_speech_watchdog substate=0");
+    ScheduleStoryRender();
+}
+
+static void ArmStoryGuideWatchdog() {
+    StopStoryGuideWatchdog(); /* 多句流: 先撤旧再布防, 幂等（每句 get 一个新窗口） */
+    g_story_guide_wd_timer = lv_timer_create(StoryGuideWatchdogCb,
+                                             KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS,
+                                             nullptr);
+}
+
+/* -------------------------------------------------------------------------- *
  * K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1）。
  * application.cc Idle 分支消费 story_page.c 纯逻辑缝 kidpal_story_session_end 出参
  * 后经此二桥执行设备半——读 g_story_view.page 供判据（KidpalStoryViewPageState）+
@@ -782,6 +829,9 @@ void KidpalStorySessionEndApply(int list_page) {
         lv_timer_delete(g_story_rec_timer);
         g_story_rec_timer = nullptr;
     }
+    /* 会话收尾一并撤引导播报看门狗（跨会话泄漏防线, 同 D4b 根因形态: 收尾不定时,
+     * 定时器可能在首页重建后仍持有旧会话子态的判决权）。 */
+    StopStoryGuideWatchdog();
     /* 同步渲染节点缓存 + 权威会话页态镜像（令前台回落路径 voice_end 的 [R3]/[R5] 判据
      * 见 LIST 真值; 录音态强屏蔽随之复位——voice_end 重算 chrome 时 page_state != RECORDING
      * -> 强屏蔽位落 0, 声波 chrome 按常规语义恢复）。 */
@@ -809,6 +859,14 @@ void KidpalStorySessionEndApply(int list_page) {
 void KidpalStoryGuideSpeechEdge(int speaking) {
     if (g_story_view.page != KSTORY_PAGE_RECORDING) {
         return;  /* 子态载体只在录音态有语义（引导态/列表/整理态不置不复位） */
+    }
+    /* 看门狗沿（真机轮追补 261022, KPLOG006 22:28:03 泄漏 start 帧实证）: 布防/撤防
+     * 先于子态幂等早退——多句流每句 start 都要重布防（30ms 级帧间, 帧间不给新窗口
+     * 则首句窗口到期误判正常句）; stop 沿撤防令正常播完/被打断不留残余定时器。 */
+    if (speaking != 0) {
+        ArmStoryGuideWatchdog();
+    } else {
+        StopStoryGuideWatchdog();
     }
     int next = (speaking != 0) ? 1 : 0;
     if (g_story_view.rec_substate == next) {
