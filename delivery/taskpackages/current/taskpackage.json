@@ -1,163 +1,77 @@
 {
-  "changeId": "261022-diag-log-content",
+  "changeId": "261022-p3-record-chrome-ghost-fix",
   "rigor": "lite",
-  "sourceType": "human-ad-hoc",
+  "riskTier": "medium",
+  "sourceType": "regression",
   "origin": {
-    "type": "human-ad-hoc",
-    "human-verbatim": "2026-10-22 human 两段原话（逐字见 plan.md「human 意图」节）：①设备导出日志无价值——至少把每个页面和每个状态的跳转都记下来；②连时间都没记——至少把当时的时间记下来。另附真机日志样本，主线程反推五类记录面（时间/页面跳转/状态机/按键语义/噪声治理）。",
-    "upstreamType": "human-ad-hoc",
-    "upstreamRef": "delivery/taskpackages/261022-diag-log-content/plan.md",
-    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-22 比例化 review + human 触点①确认 ②单包 Lite + 钩子层每行带时间）；plan 即冻结技术输入、只读消费",
+    "type": "regression",
+    "human-verbatim": "KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，跟我在屏幕上看到的状态乱跳是一样的」。逐秒还原 + 三源取证（设备 KPLOG005/kplog_user_test_full、front journalctl、引擎 docker logs）落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷①键帽鬼影闪烁 + ②成功路径鬼覆盖层吃按键。",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
     "workstream": ""
   },
-  "subsystem": "firmware/main/diagnostics（log_semantics 新纯逻辑单源 + sd_log_fs.cc 钩子时间前缀）+ firmware/main/device_state_machine.cc（被拒转移补打）+ firmware/main/display/kidpal_render_node.cc（PAGE_SWITCH 行）+ firmware/main/boards/waveshare-s3-rlcd-4.2（按键语义名）+ firmware/main/application.cc（SystemInfo 降频）+ firmware/main/test（host 验收件 + host_app runner 登记）",
-  "planRef": "delivery/taskpackages/261022-diag-log-content/plan.md",
+  "subsystem": "firmware/main/display（lcd_display 键帽裁决 + keybar 纯逻辑单源 + kidpal_voice_states 场景生命周期 + kidpal_render_node 层栈收口）+ firmware/main/mcp_server.cc（收尾桥挂点，如需）+ firmware/main/application.cc（scene 复位挂点，如 1g 预评确认）+ firmware/main/test（host 验收件）",
+  "planRef": "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
   "changeManifest": [
-    "firmware/main/diagnostics/*",
-    "firmware/main/device_state_machine.cc",
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/kidpal_voice_states.c",
     "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/boards/waveshare-s3-rlcd-4.2/*",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/mcp_server.cc",
     "firmware/main/application.cc",
-    "firmware/main/test/**",
-    "firmware/main/CMakeLists.txt"
+    "firmware/main/test/**"
   ],
-  "changeManifestNotes": "architect 扩单裁决 2026-10-22（D1，builder 申报）：append firmware/main/CMakeLists.txt——依据 = 冻结验收 [DLG-C5] 明示要求（diag_log.acceptance.c:121-125 设备构建登记）+ 设备链接必需（sd_log_fs.cc:229 消费 kidpal_log_time_cache，不登记即链接失败）+ 单行显式 SOURCES 登记零新增行为面（同形先例 261018 :134-135）；triage manifest 种子补漏（改动点 7 漏设备侧登记），非范围扩张、非升档触发。",
-  "story": "261022-diag-log-content · 板端诊断日志内容增强——让 TF 卡导出的诊断日志能回答「设备哪一刻在哪一页、什么状态、被什么触发」：每行带墙上时间（SNTP/RTC 已同步 → YYYY-MM-DD HH:MM:SS；未同步 → BOOT+ms 降级标注；低频任务预格式化 + 钩子只拼接以规避 ISR 风险）、页面跳转一行语义（PAGE_SWITCH from→to + trigger 枚举）、设备状态机跳转语义行（含被拒转移补打 state_reject）、按键事件语义名（action=3 → action=3(语义名)）、周期噪声降频（SystemInfo 10s→60s，间隔走纯逻辑单源）。落卡管线（261018 批）复用不动；sd_log.acceptance.c [C1]-[C5] 冻结锚保持绿。",
+  "changeManifestNotes": "triage 种子原样（architect reviewed plan）；builder 若需为新验收件做 host runner 登记，实路径 = firmware/main/CMakeLists.txt（同形先例 261022-diag-log-content 扩单），届时按扩单申报纪律登记。",
+  "story": "261022-p3-record-chrome-ghost-fix · P3 记录会话 chrome 鬼影修复——①键帽鬼影闪烁（语音场景键帽残留 + story_sub 过渡窗读 -1 掉通用分支 + 单事件双同步，三因叠加出「说完啦/结束」「不等了/结束」鬼影双连闪，含无语音会话场景）：语音会话收尾复位 keybar scene + 故事会话期 -1 过渡窗取最后已知子态或硬门通用分支；②成功路径鬼覆盖层白吃按键：成功归档路径补显式覆盖层 dismiss（对齐 4068dc6c 失败路径形态；帧类型负锚 = 不得新发明下行帧类型，落点归 1g 预评）。debt TECH-261022-p3-record-session-state-churn 缺陷①②；并联包 = 261022-p3-record-front-polish-fix（front 面，零依赖零文件交集）。",
   "sourceRefs": [
-    "delivery/taskpackages/261022-diag-log-content/plan.md",
-    "delivery/taskpackages/261022-diag-log-content/launch-card.md"
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
   ],
   "acceptance": [
-    "DLG-A1: 墙上时间前缀纯逻辑——格式化决策单源：时间已同步 → `YYYY-MM-DD HH:MM:SS` 前缀；未同步 → `BOOT+<ms>ms` 降级标注；预格式化缓存决策（低频任务产出、钩子只拼接）。设计态红：log_semantics 纯逻辑未实现",
-    "DLG-A2: 语义名映射纯逻辑——global_action_t / key / gesture / page 枚举 → 语义名映射函数，未知值有 fallback 不崩；host 行为级。设计态红：映射未实现",
-    "DLG-A3: 噪声降频决策纯逻辑——SystemInfo 打印间隔决策单源（10s→60s），间隔数值不裸改字面。设计态红：未实现",
-    "DLG-A4: 接线结构齿（源锚）——① KidpalSdLogVprintf 写环形缓冲前拼接预格式化时间前缀，[C4] 三锚保持（链式转调在先 / ring_write 消费 / 写盘任务零 ESP_LOG）；② device_state_machine.cc 拒绝转移补打 state_reject 行、既有 State: 行保留；③ waveshare key_route_dispatch / key_gesture_parser 行挂语义名、corr_id 纪律保留；④ kidpal_render_node.cc 新增 PAGE_SWITCH from→to+trigger 行；⑤ application.cc SystemInfo 降频接线。设计态红：任一接线缺失",
-    "DLG-A5: 回归网——既有冻结件全绿（sd_log.acceptance.c [C1]-[C5]、key_layer_dispatch.acceptance.c、time_sync.acceptance.c）+ host 套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
+    "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+    "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+    "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+    "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
     {
-      "id": "DLG-A6",
+      "id": "CG-A5",
       "kind": "structural",
-      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；SLP-A6 先例同款口径，不计入 runner 通过面）：human 持板执行——① 导卡逐行核五类记录面（每行时间前缀〔含未同步降级〕/ PAGE_SWITCH / 状态机跳转含被拒 / 按键语义名 / SystemInfo 60s 降频）；② 串口 COM5 不中断；③ 无钩子递归迹象；④ 轮转与 dropped 计数正常。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+      "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
     }
   ],
-  "acceptanceTestsFile": [
-    "firmware/main/test/diag_log.acceptance.c"
-  ],
-  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：WSL 内 cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/dlg_red_runner ../../diag_log.acceptance.c runner.c，仓根跑 /tmp/dlg_red_runner（exit = 失败数）",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：222 Tests 3 Failures exit 3——与基线锚 5412af06 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 222→227 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——DLG-A1（weak 哨兵 kidpal_log_time_format 返回 -99 / 已同步前缀长度非 22）、DLG-A2（action 0 名错或哨兵 NULL）、DLG-A3（kidpal_log_sysinfo_due 哨兵 -99）、DLG-A4（KidpalSdLogVprintf 体内未消费 kidpal_log_time_cache(——前缀未拼接）、DLG-A5（host_app/main/CMakeLists.txt 未登记 diag_log.acceptance.c）。冻结件 sha256=2fd2efe823ac676bd45a9e879aaaf4330ced07e09196c1f9c565d90423bac838。可满足性自证：/tmp 合成树一次性参考实现 5 Tests 0 Failures（转绿得证）+ 9 处定向变异各自只打红对应断言（断言非空过得证）；自证脚本 c:\\tmp\\dlg_synth_setup.sh / dlg_mutate.sh（仓外，未入仓）。偏差申报：DLG-A2 增第五族 trigger 名映射（plan 改动点 5 trigger 枚举的消费方）；时间缓存产出方钉 application.cc clock tick（R1 低频任务的具体落点，builder 改落点须走 tighten-only 修订）；KIDPAL_LOG_SYSINFO_INTERVAL_MS=60000LL 头文件宏冻结。",
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "（acceptance-author 冻结后回填）通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf；通道 B（本件独立通道红基线）：acceptance-author 冻结时定",
+  "redBaselineResult": "（acceptance-author 冻结实跑后回填）",
   "deliveryImpact": "none",
   "planningImpact": "none",
-  "riskTier": "medium",
-  "gateProfile": [
-    "docs-sync",
-    "test-quality",
-    "evidence-integrity",
-    "device-round"
-  ],
+  "gateProfile": ["docs-sync", "test-quality", "evidence-integrity", "device-round"],
   "exitCriteria": [
-    "DLG-X1: 全部 DLG-Ax host 齿转绿（diag-log 验收件编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
-    "DLG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；sd_log.acceptance.c [C4] 冻结锚三件保持绿——链式转调顺序 / ring_write 消费 / 写盘任务零 ESP_LOG）",
-    "DLG-X3: 落卡管线口径零变更（分区表 / sdkconfig / 16MB 封顶 / 轮转数量零 diff；sd_log.acceptance.c 全件回归绿）",
-    "DLG-X4: 真机轮由 human 持板执行并留痕（DLG-A6 四项观察），本 Pod 到门停等、不自行烧录",
-    "DLG-X5: docs-sync 完成或显式裁定不需要——架构面零触碰（决策 24 + §6.6 已覆盖日志内容增强，triage architect 已裁）；如有架构文档措辞补记归 integrator docs-sync"
+    "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
+    "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
   ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md"
-  ],
+  "contractRefs": ["docs/contracts/interface-contract.md"],
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯板端本地诊断日志内容增强：零 wire 形状改动（帧类型 / 字段 / 回执语义 / 序列化全不动，server/** 零 diff——triage 四面探测裁 NO_CONTRACT_CHANGE）；esp_log 钩子只消费设备本地日志流；页面名 / 按键名 / 状态名语义行不引入新数据类（不触 261018 隐私暴露面）。"
+    "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
   },
   "securityReviewRequired": false,
   "securityAxes": [],
   "adrRequired": false,
-  "requiredLayers": [
-    "unit",
-    "acceptance-offline",
-    "firmware-build"
-  ],
+  "requiredLayers": ["unit", "acceptance-offline", "firmware-build"],
   "iterationBudget": 3,
   "fixBudget": 3,
   "docRefs": [
-    "docs/architecture.md",
-    "firmware/main/test/sd_log.acceptance.c"
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
   ],
-  "planningRefs": [],
+  "planningRefs": ["delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"],
   "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 5412af06（带锚引用：SHA + host runner ELF 命令 + 落盘锚 delivery/taskpackages/261021-p3-record-cancel-lifecycle/review-packet.md:32 三件齐；261022 复判 firmware 面 diff 零，引用成立）",
-  "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "DLG-A1",
-        "acceptance": "DLG-A1: 墙上时间前缀纯逻辑——格式化决策单源：时间已同步 → `YYYY-MM-DD HH:MM:SS` 前缀；未同步 → `BOOT+<ms>ms` 降级标注；预格式化缓存决策（低频任务产出、钩子只拼接）。设计态红：log_semantics 纯逻辑未实现",
-        "mutation": "log_semantics.c kidpal_log_time_format 已同步分支 snprintf 格式串 \"[%04d-%02d-%02d %02d:%02d:%02d] \" → \"[%d-%d-%d %d:%d:%d] \"（六字段零填充全部摘除）",
-        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 1（DLG-A1）· 单位数月/日零填充断言（:716）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "DLG-A1 RED: 单位数月份/日期格式化长度非 22。"
-        ],
-        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c → 工作树；该文件 untracked，git checkout 不适用），sha256 130bf3f84688a01c863f6fed5ca7586ef8f5a24436e35d81fcd525804f7377c1 与变异前逐字节一致；全量复跑 227 Tests 3 Failures（仅先存红 p1_auxbar AB-A1/A2/A4）",
-        "note": "变异同时摘掉年份零填充，但 2026 本为四位，故仅有单位数字段的 :716 断言转红（首段 12:34:56 断言仍绿）——零填充义务由该单条断言钉住；Unity 前缀为 Expected 22 Was 17。"
-      },
-      {
-        "acceptanceId": "DLG-A2",
-        "acceptance": "DLG-A2: 语义名映射纯逻辑——global_action_t / key / gesture / page 枚举 → 语义名映射函数，未知值有 fallback 不崩；host 行为级。设计态红：映射未实现",
-        "mutation": "log_semantics.c kidpal_log_page_name 闭集外回退 return ls_fallback(\"page\", page) → return \"\"（页族 fallback 退化为空串）",
-        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 2（DLG-A2）· page 3 闭集外 fallback 断言（:894）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "DLG-A2 RED: page 3 fallback 错——撤 P4 后 page 3 是非法页，绝不能映射出伪语义名。"
-        ],
-        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c），sha256 130bf3f8…f7377c1 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
-        "note": "四族（action/key/gesture/trigger）回退未变异，本轮按「每 acceptanceId 一条」只取页族；Unity 前缀 Expected 'page_3' Was ''。"
-      },
-      {
-        "acceptanceId": "DLG-A3",
-        "acceptance": "DLG-A3: 噪声降频决策纯逻辑——SystemInfo 打印间隔决策单源（10s→60s），间隔数值不裸改字面。设计态红：未实现",
-        "mutation": "log_semantics.c kidpal_log_sysinfo_due 删除 `if (interval <= 0) return -1;` 防线（零/负间隔落入正常窗口判定）",
-        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 3（DLG-A3）· interval=0 防御断言（:949）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "DLG-A3 RED: interval=0 未返回 -1——零间隔等于每 tick 一条，等于没降频。"
-        ],
-        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c），sha256 130bf3f8…f7377c1 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
-        "note": "负间隔断言（:951）因 :949 先行中止未执行；Unity 前缀 Expected -1 Was 1。"
-      },
-      {
-        "acceptanceId": "DLG-A4",
-        "acceptance": "DLG-A4: 接线结构齿（源锚）——① KidpalSdLogVprintf 写环形缓冲前拼接预格式化时间前缀，[C4] 三锚保持（链式转调在先 / ring_write 消费 / 写盘任务零 ESP_LOG）；② device_state_machine.cc 拒绝转移补打 state_reject 行、既有 State: 行保留；③ waveshare key_route_dispatch / key_gesture_parser 行挂语义名、corr_id 纪律保留；④ kidpal_render_node.cc 新增 PAGE_SWITCH from→to+trigger 行；⑤ application.cc SystemInfo 降频接线。设计态红：任一接线缺失",
-        "mutation": "sd_log_fs.cc KidpalSdLogVprintf 体内 `const char *time_prefix = kidpal_log_time_cache();` → `const char *time_prefix = \"\";`（钩子整体摘除预格式化前缀消费，环写记录不带墙上时间；m9 变体）",
-        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 4（DLG-A4）· ① 时间前缀消费锚（:1055）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "DLG-A4 RED: KidpalSdLogVprintf 体内未消费 kidpal_log_time_cache(——墙上时间前缀未拼接进落卡日志（human 立项痛点②「连时间都没记」未治）；钩子内自行 localtime_r/snprintf 格式化同样红——R1 纪律：低频任务预格式化 + 钩子只拼接"
-        ],
-        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/sd_log_fs.cc；该文件带未提交 builder 改动，git checkout 会误清实现面），sha256 1eeee8963bf44d1020e9cde7c061ca4685a23bdec1d9e259e439a0373fd4a06b 一致；git status 回到变异前同集合；全量复跑 227 Tests 3 Failures（仅先存红）",
-        "note": "本轮取 m9（存在性锚）。顺序锚 p_prev < p_cache < p_write 未单独真树变异——acceptance-author /tmp 合成树 m1/m2 已取红证；若 verifier 要求顺序齿独立真树证据，可另起 m1（前缀拼接移到 ring_write 之后）。"
-      },
-      {
-        "acceptanceId": "DLG-A5",
-        "acceptance": "DLG-A5: 回归网——既有冻结件全绿（sd_log.acceptance.c [C1]-[C5]、key_layer_dispatch.acceptance.c、time_sync.acceptance.c）+ host 套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
-        "mutation": "host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 摘除 \"../../sd_log.acceptance.c\" 登记行（回归网成员静默缩网）",
-        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 5（DLG-A5）· 回归网成员登记守（:1244）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "DLG-A5 RED: 回归网成员 sd_log.acceptance.c 从 host 登记消失——落卡管线冻结件（[C1]-[C5]）必须继续全量在跑，[C4] 三锚的回归面不得静默缩网"
-        ],
-        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/host_app_main_CMakeLists.txt），sha256 c9553da2884b65d0bdf28ca8a9662dd0293cf379f9728f7f32700e1597c20b1a 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
-        "note": "本条为对「每个功能验收 id 一条」的补齐（dispatch 原文只点名 A1/A2/A3/A4 四条）；变异同时摘掉 sd_log 8 条运行面（227→219 Tests），属预期，非串味。"
-      }
-    ]
-  }
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 0df2c0c3（带锚引用三件齐：SHA + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md 基线锚行；2026-10-22 本会话 producer=consumer 同树实测，222→227 = diag-log 五齿新增计入）"
 }

@@ -8,7 +8,7 @@
     "human-verbatim": "KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，跟我在屏幕上看到的状态乱跳是一样的」。逐秒还原 + 三源取证（设备 KPLOG005/kplog_user_test_full、front journalctl、引擎 docker logs）落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷①键帽鬼影闪烁 + ②成功路径鬼覆盖层吃按键。",
     "upstreamType": "regression",
     "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "upstreamFrozen": "debt 条目已 commit（75daaf32，2026-10-22）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
     "workstream": ""
   },
   "subsystem": "firmware/main/display（lcd_display 键帽裁决 + keybar 纯逻辑单源 + kidpal_voice_states 场景生命周期 + kidpal_render_node 层栈收口）+ firmware/main/mcp_server.cc（收尾桥挂点，如需）+ firmware/main/application.cc（scene 复位挂点，如 1g 预评确认）+ firmware/main/test（host 验收件）",
@@ -24,9 +24,54 @@
     "firmware/main/application.cc",
     "firmware/main/test/**"
   ],
+  "changeManifestNotes": "triage 种子原样（architect reviewed plan）；builder 若需为新验收件做 host runner 登记，实路径 = firmware/main/CMakeLists.txt（同形先例 261022-diag-log-content 扩单），届时按扩单申报纪律登记。",
   "story": "261022-p3-record-chrome-ghost-fix · P3 记录会话 chrome 鬼影修复——①键帽鬼影闪烁（语音场景键帽残留 + story_sub 过渡窗读 -1 掉通用分支 + 单事件双同步，三因叠加出「说完啦/结束」「不等了/结束」鬼影双连闪，含无语音会话场景）：语音会话收尾复位 keybar scene + 故事会话期 -1 过渡窗取最后已知子态或硬门通用分支；②成功路径鬼覆盖层白吃按键：成功归档路径补显式覆盖层 dismiss（对齐 4068dc6c 失败路径形态；帧类型负锚 = 不得新发明下行帧类型，落点归 1g 预评）。debt TECH-261022-p3-record-session-state-churn 缺陷①②；并联包 = 261022-p3-record-front-polish-fix（front 面，零依赖零文件交集）。",
   "sourceRefs": [
     "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
+  ],
+  "acceptance": [
+    "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+    "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+    "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+    "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    {
+      "id": "CG-A5",
+      "kind": "structural",
+      "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+    }
+  ],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "（acceptance-author 冻结后回填）通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf；通道 B（本件独立通道红基线）：acceptance-author 冻结时定",
+  "redBaselineResult": "（acceptance-author 冻结实跑后回填）",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": ["docs-sync", "test-quality", "evidence-integrity", "device-round"],
+  "exitCriteria": [
+    "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
+    "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
+  ],
+  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "requiredLayers": ["unit", "acceptance-offline", "firmware-build"],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "docRefs": [
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
     "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
-  ]
+  ],
+  "planningRefs": ["delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"],
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 0df2c0c3（带锚引用三件齐：SHA + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md 基线锚行；2026-10-22 本会话 producer=consumer 同树实测，222→227 = diag-log 五齿新增计入）"
 }
