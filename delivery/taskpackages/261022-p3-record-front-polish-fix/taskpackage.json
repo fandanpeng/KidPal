@@ -1,0 +1,27 @@
+{
+  "changeId": "261022-p3-record-front-polish-fix",
+  "rigor": "lite",
+  "riskTier": "medium",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "human-verbatim": "KPLOG005 真机轮实证：全天四笔记录会话「说完了」笔笔迟到 5~14 秒成孤儿帧；13:02 笔 39 秒会话引导独播约 28 秒、末段引导与 start_organizing 同毫秒；「Okay」幻听（human 实证非本人声音）直进素材缓冲；新故事标题「我的故事」+ 同日随机 id 排序致 human 找不到刚录篇目（「13点那笔故事记录下来了吗，标题叫啥，我咋找不到呢」「所以那个okay不是我说的」）。三源取证落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷③引导节奏与说完了竞态 + ④幻听入素材 + ⑤排序标题。",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32，2026-10-22）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
+    "workstream": ""
+  },
+  "subsystem": "server/gateway/front/front_app.py（引导节奏 + 素材过滤 + 标题兜底）+ server/gateway/story.py（list_stories seq tiebreak + 账本读取回退）+ server/gateway/front/prompts（引导制品措辞）+ server/acceptance（pytest 验收件）",
+  "planRef": "delivery/taskpackages/261022-p3-record-front-polish-fix/plan.md",
+  "changeManifest": [
+    "server/gateway/front/front_app.py",
+    "server/gateway/front/prompts/*",
+    "server/gateway/story.py",
+    "server/acceptance/**"
+  ],
+  "story": "261022-p3-record-front-polish-fix · front 记录会话族修复——③引导节奏：单段引导篇幅上限 + 末段引导与 start_organizing 之间留应答窗（延后计时起点/抑制计时，不改 AC5「2 轮无回应」轮数语义），应答窗内「说完了」经 is_finish_phrase 正常收尾（治全天四笔笔笔迟到的孤儿帧）；④记录语境素材面设防：引导播报窗口 STT 在 front 素材入口丢弃/降权（窗口外正常进，反向 case 必载；引擎侧候选排除——第三方部署树）；⑤列表同日 tiebreak 改 seq 倒序（缺 seq 回退 id 不崩；契约只钉日期倒序，tiebreak 是实现自由度，设备端按到达序消费零扰动已预核）+ 标题敷衍兜底启发式（front 侧，不动 faithful-organize 制品）。debt TECH-261022-p3-record-session-state-churn 缺陷③④⑤；并联包 = 261022-p3-record-chrome-ghost-fix（固件面，零依赖零文件交集）。",
+  "sourceRefs": [
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-front-polish-fix/plan.md"
+  ]
+}
