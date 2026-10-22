@@ -18,8 +18,10 @@
     "firmware/main/display/kidpal_render_node.cc",
     "firmware/main/boards/waveshare-s3-rlcd-4.2/*",
     "firmware/main/application.cc",
-    "firmware/main/test/**"
+    "firmware/main/test/**",
+    "firmware/main/CMakeLists.txt"
   ],
+  "changeManifestNotes": "architect 扩单裁决 2026-10-22（D1，builder 申报）：append firmware/main/CMakeLists.txt——依据 = 冻结验收 [DLG-C5] 明示要求（diag_log.acceptance.c:121-125 设备构建登记）+ 设备链接必需（sd_log_fs.cc:229 消费 kidpal_log_time_cache，不登记即链接失败）+ 单行显式 SOURCES 登记零新增行为面（同形先例 261018 :134-135）；triage manifest 种子补漏（改动点 7 漏设备侧登记），非范围扩张、非升档触发。",
   "story": "261022-diag-log-content · 板端诊断日志内容增强——让 TF 卡导出的诊断日志能回答「设备哪一刻在哪一页、什么状态、被什么触发」：每行带墙上时间（SNTP/RTC 已同步 → YYYY-MM-DD HH:MM:SS；未同步 → BOOT+ms 降级标注；低频任务预格式化 + 钩子只拼接以规避 ISR 风险）、页面跳转一行语义（PAGE_SWITCH from→to + trigger 枚举）、设备状态机跳转语义行（含被拒转移补打 state_reject）、按键事件语义名（action=3 → action=3(语义名)）、周期噪声降频（SystemInfo 10s→60s，间隔走纯逻辑单源）。落卡管线（261018 批）复用不动；sd_log.acceptance.c [C1]-[C5] 冻结锚保持绿。",
   "sourceRefs": [
     "delivery/taskpackages/261022-diag-log-content/plan.md",
@@ -83,5 +85,79 @@
   "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 5412af06（带锚引用：SHA + host runner ELF 命令 + 落盘锚 delivery/taskpackages/261021-p3-record-cancel-lifecycle/review-packet.md:32 三件齐；261022 复判 firmware 面 diff 零，引用成立）"
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 5412af06（带锚引用：SHA + host runner ELF 命令 + 落盘锚 delivery/taskpackages/261021-p3-record-cancel-lifecycle/review-packet.md:32 三件齐；261022 复判 firmware 面 diff 零，引用成立）",
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "DLG-A1",
+        "acceptance": "DLG-A1: 墙上时间前缀纯逻辑——格式化决策单源：时间已同步 → `YYYY-MM-DD HH:MM:SS` 前缀；未同步 → `BOOT+<ms>ms` 降级标注；预格式化缓存决策（低频任务产出、钩子只拼接）。设计态红：log_semantics 纯逻辑未实现",
+        "mutation": "log_semantics.c kidpal_log_time_format 已同步分支 snprintf 格式串 \"[%04d-%02d-%02d %02d:%02d:%02d] \" → \"[%d-%d-%d %d:%d:%d] \"（六字段零填充全部摘除）",
+        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 1（DLG-A1）· 单位数月/日零填充断言（:716）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "DLG-A1 RED: 单位数月份/日期格式化长度非 22。"
+        ],
+        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c → 工作树；该文件 untracked，git checkout 不适用），sha256 130bf3f84688a01c863f6fed5ca7586ef8f5a24436e35d81fcd525804f7377c1 与变异前逐字节一致；全量复跑 227 Tests 3 Failures（仅先存红 p1_auxbar AB-A1/A2/A4）",
+        "note": "变异同时摘掉年份零填充，但 2026 本为四位，故仅有单位数字段的 :716 断言转红（首段 12:34:56 断言仍绿）——零填充义务由该单条断言钉住；Unity 前缀为 Expected 22 Was 17。"
+      },
+      {
+        "acceptanceId": "DLG-A2",
+        "acceptance": "DLG-A2: 语义名映射纯逻辑——global_action_t / key / gesture / page 枚举 → 语义名映射函数，未知值有 fallback 不崩；host 行为级。设计态红：映射未实现",
+        "mutation": "log_semantics.c kidpal_log_page_name 闭集外回退 return ls_fallback(\"page\", page) → return \"\"（页族 fallback 退化为空串）",
+        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 2（DLG-A2）· page 3 闭集外 fallback 断言（:894）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "DLG-A2 RED: page 3 fallback 错——撤 P4 后 page 3 是非法页，绝不能映射出伪语义名。"
+        ],
+        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c），sha256 130bf3f8…f7377c1 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
+        "note": "四族（action/key/gesture/trigger）回退未变异，本轮按「每 acceptanceId 一条」只取页族；Unity 前缀 Expected 'page_3' Was ''。"
+      },
+      {
+        "acceptanceId": "DLG-A3",
+        "acceptance": "DLG-A3: 噪声降频决策纯逻辑——SystemInfo 打印间隔决策单源（10s→60s），间隔数值不裸改字面。设计态红：未实现",
+        "mutation": "log_semantics.c kidpal_log_sysinfo_due 删除 `if (interval <= 0) return -1;` 防线（零/负间隔落入正常窗口判定）",
+        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 3（DLG-A3）· interval=0 防御断言（:949）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "DLG-A3 RED: interval=0 未返回 -1——零间隔等于每 tick 一条，等于没降频。"
+        ],
+        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/log_semantics.c），sha256 130bf3f8…f7377c1 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
+        "note": "负间隔断言（:951）因 :949 先行中止未执行；Unity 前缀 Expected -1 Was 1。"
+      },
+      {
+        "acceptanceId": "DLG-A4",
+        "acceptance": "DLG-A4: 接线结构齿（源锚）——① KidpalSdLogVprintf 写环形缓冲前拼接预格式化时间前缀，[C4] 三锚保持（链式转调在先 / ring_write 消费 / 写盘任务零 ESP_LOG）；② device_state_machine.cc 拒绝转移补打 state_reject 行、既有 State: 行保留；③ waveshare key_route_dispatch / key_gesture_parser 行挂语义名、corr_id 纪律保留；④ kidpal_render_node.cc 新增 PAGE_SWITCH from→to+trigger 行；⑤ application.cc SystemInfo 降频接线。设计态红：任一接线缺失",
+        "mutation": "sd_log_fs.cc KidpalSdLogVprintf 体内 `const char *time_prefix = kidpal_log_time_cache();` → `const char *time_prefix = \"\";`（钩子整体摘除预格式化前缀消费，环写记录不带墙上时间；m9 变体）",
+        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 4（DLG-A4）· ① 时间前缀消费锚（:1055）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "DLG-A4 RED: KidpalSdLogVprintf 体内未消费 kidpal_log_time_cache(——墙上时间前缀未拼接进落卡日志（human 立项痛点②「连时间都没记」未治）；钩子内自行 localtime_r/snprintf 格式化同样红——R1 纪律：低频任务预格式化 + 钩子只拼接"
+        ],
+        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/sd_log_fs.cc；该文件带未提交 builder 改动，git checkout 会误清实现面），sha256 1eeee8963bf44d1020e9cde7c061ca4685a23bdec1d9e259e439a0373fd4a06b 一致；git status 回到变异前同集合；全量复跑 227 Tests 3 Failures（仅先存红）",
+        "note": "本轮取 m9（存在性锚）。顺序锚 p_prev < p_cache < p_write 未单独真树变异——acceptance-author /tmp 合成树 m1/m2 已取红证；若 verifier 要求顺序齿独立真树证据，可另起 m1（前缀拼接移到 ring_write 之后）。"
+      },
+      {
+        "acceptanceId": "DLG-A5",
+        "acceptance": "DLG-A5: 回归网——既有冻结件全绿（sd_log.acceptance.c [C1]-[C5]、key_layer_dispatch.acceptance.c、time_sync.acceptance.c）+ host 套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
+        "mutation": "host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 摘除 \"../../sd_log.acceptance.c\" 登记行（回归网成员静默缩网）",
+        "affectedTest": "firmware/main/test/diag_log.acceptance.c TEST 5（DLG-A5）· 回归网成员登记守（:1244）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "DLG-A5 RED: 回归网成员 sd_log.acceptance.c 从 host 登记消失——落卡管线冻结件（[C1]-[C5]）必须继续全量在跑，[C4] 三锚的回归面不得静默缩网"
+        ],
+        "restored": "仓外备份复原（cp c:/tmp/dlg261022_fixer_bak/host_app_main_CMakeLists.txt），sha256 c9553da2884b65d0bdf28ca8a9662dd0293cf379f9728f7f32700e1597c20b1a 一致；全量复跑 227 Tests 3 Failures（仅先存红）",
+        "note": "本条为对「每个功能验收 id 一条」的补齐（dispatch 原文只点名 A1/A2/A3/A4 四条）；变异同时摘掉 sd_log 8 条运行面（227→219 Tests），属预期，非串味。"
+      }
+    ]
+  }
 }

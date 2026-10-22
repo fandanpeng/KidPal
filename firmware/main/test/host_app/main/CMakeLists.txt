@@ -279,6 +279,17 @@ set(HOST_ACCEPTANCE_SRCS
     # 源锚代理; 渲染节点缝 host 半 = host_infra_seam.c 同符号实现）。置于 smoke 之前。
     "../../record_dialogue_v7_fix.test.c"
 
+    # 包 261022-diag-log-content（板端诊断日志内容增强：每行墙上时间前缀 + PAGE_SWITCH /
+    # 状态机 / 按键语义行 + SystemInfo 10s->60s 降频）被测实现 + 冻结验收。
+    # diagnostics/log_semantics.c = [DLG-C1]-[DLG-C3] 纯逻辑强符号源（时间前缀格式化决策 +
+    # 预格式化缓存 + 五族语义名映射 + 降频决策；零芯片依赖、host_app linux target 与设备树
+    # 同源，覆盖冻结件 weak 哨兵）；../../diag_log.acceptance.c = DLG-A1..A5 冻结验收。
+    # 相对 host_app/main 分别为 ../../../diagnostics/ 与 ../../。**必须置于 host smoke
+    # acceptance 之前**（smoke 末位 = 最先执行, 包 0 boundary 齿注册序守卫; 本文件 TEST 5
+    # 校验此序——登记行缺失即红）。
+    "../../../diagnostics/log_semantics.c"
+    "../../diag_log.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

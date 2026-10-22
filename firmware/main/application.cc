@@ -58,7 +58,9 @@ static DeviceState speaking_round_entered_from_ = kDeviceStateIdle;
 #include <freertos/task.h>
 #include <esp_sntp.h>
 #include <sys/time.h>
+#include <time.h>          /* 261022-diag-log-content: localtime_r / struct tm（时间前缀产出） */
 #include "time_sync.h"
+#include "diagnostics/log_semantics.h" /* 261022-diag-log-content: 时间前缀缓存产出 + SystemInfo 降频决策 */
 
 #define TAG "Application"
 
@@ -88,6 +90,14 @@ static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
  * planner 重冻结）。本 needle 首现即本定义。
  * ------------------------------------------------------------------------ */
 static const int kResidentRebuildDelayS = 5;
+
+/* -------------------------------------------------------------------------- *
+ * 261022-diag-log-content（板端诊断日志内容增强）SystemInfo 打印门控状态：
+ * 上一次放行的单调毫秒（单写者 = main event loop，与 clock_ticks_ 同上下文）。降频
+ * 决策本体归 diagnostics/log_semantics.c kidpal_log_sysinfo_due（间隔 = 头文件
+ * KIDPAL_LOG_SYSINFO_INTERVAL_MS 单源 60s，调用点不得裸写字面）。
+ * ------------------------------------------------------------------------ */
+static long long s_sysinfo_last_print_ms = 0;
 
 /* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
 static void KidPalSntpMonitorTask(void *arg)
@@ -392,10 +402,38 @@ void Application::Run() {
             clock_ticks_++;
             auto display = Board::GetInstance().GetDisplay();
             display->UpdateStatusBar();
-        
-            // Print debug info every 10 seconds
-            if (clock_ticks_ % 10 == 0) {
-                SystemInfo::PrintHeapStats();
+
+            /* 261022-diag-log-content [DLG-C4]⑤（R1 缓解的**产出半**）：1s clock tick 把
+             * 当前墙上时间预格式化进日志前缀缓存——esp_log 钩子（diagnostics/sd_log_fs.cc
+             * KidpalSdLogVprintf）只取现成串 memcpy 拼接，**不在钩子内**做 localtime_r /
+             * snprintf（钩子可在任意任务 / 中断上下文被调，重入与时延风险即 plan R1）。
+             * synced 判定 = 既有 K5 时间可信门 kidpal_ts_year_ok（系统时间未过 2025 门 =
+             * SNTP/RTC 未对齐）-> 缓存降级为 "[BOOT+<ms>ms] "，至少保住开机后的先后序；
+             * 真实判定来源的残差归真机轮 DLG-A6①（GAP-2）。 */
+            {
+                struct timeval tv_now;
+                struct tm tm_now = {};
+
+                gettimeofday(&tv_now, nullptr);
+                localtime_r(&tv_now.tv_sec, &tm_now);
+                kidpal_log_time_cache_update(
+                    kidpal_ts_year_ok(tm_now.tm_year),
+                    tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday,
+                    tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
+                    static_cast<unsigned long long>(esp_timer_get_time() / 1000));
+            }
+
+            /* SystemInfo 降频（plan 改动点 6）：原「每 10 秒一条 SRAM 统计」占导出日志
+             * 篇幅约 70%，改走 kidpal_log_sysinfo_due 决策单源（60s 间隔，头文件宏）。
+             * 首条在开机 60s 后放行（上次放行记 0 = 开机起点）。 */
+            {
+                long long now_ms = static_cast<long long>(esp_timer_get_time() / 1000);
+
+                if (kidpal_log_sysinfo_due(now_ms, s_sysinfo_last_print_ms,
+                                           KIDPAL_LOG_SYSINFO_INTERVAL_MS) == 1) {
+                    s_sysinfo_last_print_ms = now_ms;
+                    SystemInfo::PrintHeapStats();
+                }
             }
         }
     }

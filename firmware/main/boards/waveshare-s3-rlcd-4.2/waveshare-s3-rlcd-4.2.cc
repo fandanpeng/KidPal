@@ -36,6 +36,7 @@
 #include <stdio.h>                   /* 包 261016-sd-card-mount: 探针 VFS 文件 I/O (fopen/fwrite/fread/fclose/remove) */
 #include <errno.h>                   /* 包 261016-sd-card-mount: 探针失败步 errno 诊断 */
 #include "diagnostics/sd_log.h"      /* 包 261018-sd-log-persist: 挂载成功分支 KidpalSdLogAttach */
+#include "diagnostics/log_semantics.h" /* 261022-diag-log-content: action/key/gesture 语义名 */
 
 /* 包 260915-m1-n1b-p1-home-battery 任务 B：联网小标切小号 FA 字体（与温/湿/电辅助条小标
  * 同档）。基座 SetupUI 初帧把 network_label_ 落主题 icon_font=font_awesome_30_4（30px），
@@ -124,7 +125,8 @@ static void keya_dispatch_global_action(global_action_t act)
         char corr_id[24];
         snprintf(corr_id, sizeof(corr_id), "kdp-%u",
                  static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-        ESP_LOGI(TAG, "key_route_dispatch corr_id=%s action=%d", corr_id, static_cast<int>(act));
+        ESP_LOGI(TAG, "key_route_dispatch corr_id=%s action=%d(%s)", corr_id,
+                 static_cast<int>(act), kidpal_log_action_name(static_cast<int>(act)));
     }
     switch (act) {
     case GLOBAL_ACT_SESSION_TOGGLE:
@@ -228,8 +230,9 @@ static void keya_log_gesture(key_id_t key, key_gesture_t g)
     char corr_id[24];
     snprintf(corr_id, sizeof(corr_id), "kdp-%u",
              static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-    ESP_LOGI(TAG, "key_gesture_parser corr_id=%s key=%d gesture=%d", corr_id,
-             static_cast<int>(key), static_cast<int>(g));
+    ESP_LOGI(TAG, "key_gesture_parser corr_id=%s key=%d(%s) gesture=%d(%s)", corr_id,
+             static_cast<int>(key), kidpal_log_key_name(static_cast<int>(key)),
+             static_cast<int>(g), kidpal_log_gesture_name(static_cast<int>(g)));
 }
 
 class CustomBoard : public WifiBoard {

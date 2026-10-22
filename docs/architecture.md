@@ -331,7 +331,7 @@
 ### 6.6 可观测性
 三日志源：设备串口（COM5，被动 watch / 复位捕获纪律）、front systemd 日志（K6 结构化 + correlationId）、引擎 docker logs（补丁标记行 = 部署面报警锚）。
 
-设备侧诊断日志**常开落板端 SD 卡**（`/sdcard/logs/KPLOGnnn.TXT`，8.3 名、512KB × 32 个、目录总量 16MB 封顶、循环覆盖最旧；采集 = `esp_log_set_vprintf` 钩子链式转调原 vprintf，串口输出不中断；含 STT / LLM 对话原文，human 2026-10-18 有意识接受，见决策 24 注记）——这是「设备串口」同一 `esp_log` 流的留存副本，**不新增第四个源**；用途 = 设备脱离串口独立运行时事后回看。它与**业务日志**（家长知情权 = OpenClaw 侧完整日志）是两个概念——业务日志不落板、语义不变。
+设备侧诊断日志**常开落板端 SD 卡**（`/sdcard/logs/KPLOGnnn.TXT`，8.3 名、512KB × 32 个、目录总量 16MB 封顶、循环覆盖最旧；采集 = `esp_log_set_vprintf` 钩子链式转调原 vprintf，串口输出不中断；含 STT / LLM 对话原文，human 2026-10-18 有意识接受，见决策 24 注记）——这是「设备串口」同一 `esp_log` 流的留存副本，**不新增第四个源**；用途 = 设备脱离串口独立运行时事后回看。它与**业务日志**（家长知情权 = OpenClaw 侧完整日志）是两个概念——业务日志不落板、语义不变。日志内容增强（`261022-diag-log-content`，2026-10-22）：每行落卡日志带墙上时间前缀（SNTP/RTC 已同步 → `YYYY-MM-DD HH:MM:SS`，未同步降级 `BOOT+<ms>ms` 标注；低频任务预格式化缓存 + 钩子只拼接），并覆盖五类语义记录面——页面跳转（PAGE_SWITCH from→to + trigger）、设备状态机跳转（含被拒转移 state_reject 补打）、按键事件语义名、SystemInfo 周期噪声降频（10s→60s）——落卡管线口径（8.3 名 / 512KB × 32 / 16MB 封顶轮转）不变，验收锚 `[DLG-A1]-[DLG-A6]`。
 
 关联法与已知坑（wire capture 因 permessage-deflate 不可用）见 kidpal-live-smoke-debug / kidpal-serial-monitor skills。派发观测缺口（dispatch-stamp 无模型/token 分项）= ARQ-260909。
 

@@ -115,7 +115,11 @@ bool DeviceStateMachine::TransitionTo(DeviceState new_state) {
 
     // Validate transition
     if (!IsValidTransition(old_state, new_state)) {
-        ESP_LOGW(TAG, "Invalid state transition: %s -> %s",
+        /* 261022-diag-log-content [DLG-C4]②（plan 改动点 3）：被拒转移不再静默——
+         * 字面 "state_reject %s -> %s" 冻结（原 "Invalid state transition" 行即本行，
+         * 语义等价升格为可 grep 的语义行）。成功路径既有 State: 行保留不动（下方
+         * :125 原样），故一行失败一行成功，状态机跳转在日志里成对可读。 */
+        ESP_LOGW(TAG, "state_reject %s -> %s",
                  GetStateName(old_state), GetStateName(new_state));
         return false;
     }
