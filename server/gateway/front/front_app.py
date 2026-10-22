@@ -959,7 +959,9 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
       ③ 忠实整理回合 + 归档（_organize_and_archive）；
       ④ 成功 -> story_text 正文 + story_list 三时点②（逐设备腿）；
          失败 -> 当轮素材不归档 + 固定安抚句 ORGANIZING_FAIL_SOOTHING 经 kidpal_speak
-         下发（R1-N4；逐引擎腿，与引导回合同型通道、不产生提醒帧）；
+         下发（R1-N4；逐引擎腿，与引导回合同型通道、不产生提醒帧）+ **补 story_list
+         页面退出帧**（逐设备腿；设备已进 ORGANIZING 过渡态，无下行帧即困死整合页，
+         261021 真机轮 R6 修复——列表 total 不虚增，仅缺 story_text 正文帧）；
       空素材（只有收尾词/无累积）-> 不归档、不演出、不安抚（无可丢内容），仅释放。
 
     legs = [(device_ws, engine_ws)] 当前在线腿快照（泵路径 = 本连接双腿；sweep 路径 =
@@ -988,7 +990,25 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     if record is None:
         # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
         await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)
-        log.info("story_finish corr_id=%s archived=false reason=organize_failed", session_id)
+        # 261021 真机轮 R6 缺陷修复（KPLOG005 实证）：失败分支**必须补页面退出帧**——
+        # 设备已在 ② 按 start_organizing 进 ORGANIZING 非交互过渡态（substate=6，
+        # KEY/BOOT 全吞 = 261019 有意的过渡态）。成功路径靠 story_text + story_list
+        # 出页；失败路径原先零下行帧 -> 安抚句 TTS 播完进 Idle 后，[R2]
+        # kidpal_story_session_end 只复位 RECORDING 页（ORGANIZING 命中 no-op）-> 设备
+        # 困死整合页、重启是唯一出口。补 story_list 推送 = 「收尾后回 P3 列表、当轮不
+        # 归档」：列表里没有这篇 = 准确反映未归档（total 不虚增），与成功路径的唯一差别
+        # 是没有 story_text 正文帧。复用既有 _push_story_list 通道与错误处理形态
+        # （单腿失败不连坐、不发明新帧）。
+        pushed = 0
+        for device_ws, _engine_ws in list(legs):
+            try:
+                await _push_story_list(device_ws)
+                pushed += 1
+            except Exception as e:  # noqa: BLE001 — 单腿失败不连坐其它腿
+                log.warning("story_finish_push_err corr_id=%s err=%s",
+                            session_id, type(e).__name__)
+        log.info("story_finish corr_id=%s archived=false reason=organize_failed "
+                 "story_list_pushed=%d", session_id, pushed)
         return None
     for device_ws, _engine_ws in list(legs):
         try:
