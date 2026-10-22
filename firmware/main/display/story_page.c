@@ -43,7 +43,10 @@ LV_FONT_DECLARE(font_puhui_14_1);
 
 /* 盖章几何冻结值。 */
 #define KSTORY_STAMP_ANGLE_DECI (-80)
-#define KSTORY_STAMP_HOLD_MS    800
+/* 261022 观感修（真机轮 human 实证「一闪而过根本来不及看」）: 800 -> 3000。
+ * 3s = 孩子看清徽章 + N 序号的庆祝驻留；演出半（pose-jump 动画相位）不变，
+ * 只拉长定格。 */
+#define KSTORY_STAMP_HOLD_MS    3000
 
 /* 录音态显示位上界 = 99:59 (5999 秒)；冻结 contract 钳制显示位。 */
 #define KSTORY_REC_MAX_SECONDS 5999
