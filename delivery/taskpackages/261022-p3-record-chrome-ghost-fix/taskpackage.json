@@ -82,9 +82,7 @@
     "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
     "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
   ],
-  "planningRefs": [
-    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
-  ],
+  "planningRefs": [],
   "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
