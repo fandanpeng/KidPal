@@ -1,0 +1,87 @@
+{
+  "changeId": "261022-diag-log-content",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "human-verbatim": "2026-10-22 human 两段原话（逐字见 plan.md「human 意图」节）：①设备导出日志无价值——至少把每个页面和每个状态的跳转都记下来；②连时间都没记——至少把当时的时间记下来。另附真机日志样本，主线程反推五类记录面（时间/页面跳转/状态机/按键语义/噪声治理）。",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/taskpackages/261022-diag-log-content/plan.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-22 比例化 review + human 触点①确认 ②单包 Lite + 钩子层每行带时间）；plan 即冻结技术输入、只读消费",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/diagnostics（log_semantics 新纯逻辑单源 + sd_log_fs.cc 钩子时间前缀）+ firmware/main/device_state_machine.cc（被拒转移补打）+ firmware/main/display/kidpal_render_node.cc（PAGE_SWITCH 行）+ firmware/main/boards/waveshare-s3-rlcd-4.2（按键语义名）+ firmware/main/application.cc（SystemInfo 降频）+ firmware/main/test（host 验收件 + host_app runner 登记）",
+  "planRef": "delivery/taskpackages/261022-diag-log-content/plan.md",
+  "changeManifest": [
+    "firmware/main/diagnostics/*",
+    "firmware/main/device_state_machine.cc",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/*",
+    "firmware/main/application.cc",
+    "firmware/main/test/**"
+  ],
+  "story": "261022-diag-log-content · 板端诊断日志内容增强——让 TF 卡导出的诊断日志能回答「设备哪一刻在哪一页、什么状态、被什么触发」：每行带墙上时间（SNTP/RTC 已同步 → YYYY-MM-DD HH:MM:SS；未同步 → BOOT+ms 降级标注；低频任务预格式化 + 钩子只拼接以规避 ISR 风险）、页面跳转一行语义（PAGE_SWITCH from→to + trigger 枚举）、设备状态机跳转语义行（含被拒转移补打 state_reject）、按键事件语义名（action=3 → action=3(语义名)）、周期噪声降频（SystemInfo 10s→60s，间隔走纯逻辑单源）。落卡管线（261018 批）复用不动；sd_log.acceptance.c [C1]-[C5] 冻结锚保持绿。",
+  "sourceRefs": [
+    "delivery/taskpackages/261022-diag-log-content/plan.md",
+    "delivery/taskpackages/261022-diag-log-content/launch-card.md"
+  ],
+  "acceptance": [
+    "DLG-A1: 墙上时间前缀纯逻辑——格式化决策单源：时间已同步 → `YYYY-MM-DD HH:MM:SS` 前缀；未同步 → `BOOT+<ms>ms` 降级标注；预格式化缓存决策（低频任务产出、钩子只拼接）。设计态红：log_semantics 纯逻辑未实现",
+    "DLG-A2: 语义名映射纯逻辑——global_action_t / key / gesture / page 枚举 → 语义名映射函数，未知值有 fallback 不崩；host 行为级。设计态红：映射未实现",
+    "DLG-A3: 噪声降频决策纯逻辑——SystemInfo 打印间隔决策单源（10s→60s），间隔数值不裸改字面。设计态红：未实现",
+    "DLG-A4: 接线结构齿（源锚）——① KidpalSdLogVprintf 写环形缓冲前拼接预格式化时间前缀，[C4] 三锚保持（链式转调在先 / ring_write 消费 / 写盘任务零 ESP_LOG）；② device_state_machine.cc 拒绝转移补打 state_reject 行、既有 State: 行保留；③ waveshare key_route_dispatch / key_gesture_parser 行挂语义名、corr_id 纪律保留；④ kidpal_render_node.cc 新增 PAGE_SWITCH from→to+trigger 行；⑤ application.cc SystemInfo 降频接线。设计态红：任一接线缺失",
+    "DLG-A5: 回归网——既有冻结件全绿（sd_log.acceptance.c [C1]-[C5]、key_layer_dispatch.acceptance.c、time_sync.acceptance.c）+ host 套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
+    {
+      "id": "DLG-A6",
+      "kind": "structural",
+      "note": "live-manual 真机轮观测项（非自动断言，诚实申报；SLP-A6 先例同款口径，不计入 runner 通过面）：human 持板执行——① 导卡逐行核五类记录面（每行时间前缀〔含未同步降级〕/ PAGE_SWITCH / 状态机跳转含被拒 / 按键语义名 / SystemInfo 60s 降频）；② 串口 COM5 不中断；③ 无钩子递归迹象；④ 轮转与 dropped 计数正常。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/diag_log.acceptance.c"
+  ],
+  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && cd firmware/main/test/host_app && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- ./build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：WSL 内 cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/dlg_red_runner ../../diag_log.acceptance.c runner.c，仓根跑 /tmp/dlg_red_runner（exit = 失败数）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：222 Tests 3 Failures exit 3——与基线锚 5412af06 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 222→227 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——DLG-A1（weak 哨兵 kidpal_log_time_format 返回 -99 / 已同步前缀长度非 22）、DLG-A2（action 0 名错或哨兵 NULL）、DLG-A3（kidpal_log_sysinfo_due 哨兵 -99）、DLG-A4（KidpalSdLogVprintf 体内未消费 kidpal_log_time_cache(——前缀未拼接）、DLG-A5（host_app/main/CMakeLists.txt 未登记 diag_log.acceptance.c）。冻结件 sha256=2fd2efe823ac676bd45a9e879aaaf4330ced07e09196c1f9c565d90423bac838。可满足性自证：/tmp 合成树一次性参考实现 5 Tests 0 Failures（转绿得证）+ 9 处定向变异各自只打红对应断言（断言非空过得证）；自证脚本 c:\\tmp\\dlg_synth_setup.sh / dlg_mutate.sh（仓外，未入仓）。偏差申报：DLG-A2 增第五族 trigger 名映射（plan 改动点 5 trigger 枚举的消费方）；时间缓存产出方钉 application.cc clock tick（R1 低频任务的具体落点，builder 改落点须走 tighten-only 修订）；KIDPAL_LOG_SYSINFO_INTERVAL_MS=60000LL 头文件宏冻结。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTier": "medium",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "exitCriteria": [
+    "DLG-X1: 全部 DLG-Ax host 齿转绿（diag-log 验收件编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 222T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 5412af06）",
+    "DLG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；sd_log.acceptance.c [C4] 冻结锚三件保持绿——链式转调顺序 / ring_write 消费 / 写盘任务零 ESP_LOG）",
+    "DLG-X3: 落卡管线口径零变更（分区表 / sdkconfig / 16MB 封顶 / 轮转数量零 diff；sd_log.acceptance.c 全件回归绿）",
+    "DLG-X4: 真机轮由 human 持板执行并留痕（DLG-A6 四项观察），本 Pod 到门停等、不自行烧录",
+    "DLG-X5: docs-sync 完成或显式裁定不需要——架构面零触碰（决策 24 + §6.6 已覆盖日志内容增强，triage architect 已裁）；如有架构文档措辞补记归 integrator docs-sync"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端本地诊断日志内容增强：零 wire 形状改动（帧类型 / 字段 / 回执语义 / 序列化全不动，server/** 零 diff——triage 四面探测裁 NO_CONTRACT_CHANGE）；esp_log 钩子只消费设备本地日志流；页面名 / 按键名 / 状态名语义行不引入新数据类（不触 261018 隐私暴露面）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "docRefs": [
+    "docs/architecture.md",
+    "firmware/main/test/sd_log.acceptance.c"
+  ],
+  "planningRefs": [],
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 5412af06（带锚引用：SHA + host runner ELF 命令 + 落盘锚 delivery/taskpackages/261021-p3-record-cancel-lifecycle/review-packet.md:32 三件齐；261022 复判 firmware 面 diff 零，引用成立）"
+}
