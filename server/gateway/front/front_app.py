@@ -180,6 +180,12 @@ GUIDE_SPEECH_MAX_CHARS = 30
 # 初值 8.0s：≈ GUIDE_SPEECH_MAX_CHARS(30 字) 的语音时长上界；窗口过期后孩子接话照常
 # 进素材（反向 case 由 FP-A3 兜底，防过滤窗过宽误吞孩子接话）。
 GUIDE_STT_GUARD_SECONDS = 8.0
+# 故事卡壳 sweep 独立节拍（秒；261022-p3-record-front-polish-fix 真机轮追补）。原 sweep
+# 搭 reminder_poll_loop 整分钟节拍：卡壳阈值 STUCK_GUIDE_SECONDS(8s) 却最坏 60s+ 才生效
+# （KPLOG006 实测末次 STT 22:28:02 -> 引导 22:29:06，迟到 66s），且整分钟齐射会在孩子
+# 正在说话时插话（引导播报 barge-in -> 引擎 abort 竞态 -> 设备键帽卡打断）。固定短间隔
+# 独立轮询：4s = 阈值 8s 的一半，引导/收尾判定最坏迟到 4s。**提醒/课表节拍零改动**。
+_STORY_SWEEP_INTERVAL_SECONDS = 4.0
 
 # 敷衍标题启发式单源词表（缺陷⑤b；FROZEN OFFLINE CONTRACT E 节）。整理 LLM 偶尔给
 # 「万能名」标题——KPLOG005 实证「我的故事」——列表里零可识别性（human：「标题叫啥，
@@ -674,7 +680,32 @@ def _story_finish_on_phrase(session_id, obj) -> bool:
     return acc.routing(session_id) == "accumulate"
 
 
+# 重入守卫（进程级 in-flight 标志；261022-p3-record-front-polish-fix）：独立节拍缩短到
+# 4s 后，引导/整理回合的 LLM 在途（asyncio.to_thread 6~7s）期间下一拍会重入 -> 同会话
+# 双引导轮。不用 asyncio.Lock：冻结齿逐次 asyncio.run 直调本函数（同一 Lock 跨事件循环
+# 复用会绑死首个 loop 并抛 RuntimeError），布尔标志等价且跨循环安全。sweep 任务无 stop
+# 语义（与 _alert_loop_task 对齐、从不 cancel），不存在「取消后 to_thread 仍在跑」窗口。
+_story_sweep_inflight = False
+
+
 async def _story_timeout_sweep(now=None) -> int:
+    """卡壳计时 sweep 单源入口（签名 (now=None) 不变；语义说明见
+    `_story_timeout_sweep_body`）。
+
+    重入守卫：上一拍仍在途 -> 本拍跳过（skip，返回 0），锁在 finally 释放。守卫只拦
+    并发重入，不触单轮内路径——「空/异常 = 本轮不播报仍计轮」（q6/E3）语义零偏移。"""
+    global _story_sweep_inflight
+    if _story_sweep_inflight:
+        log.debug("story_timeout_sweep skipped=inflight")
+        return 0
+    _story_sweep_inflight = True
+    try:
+        return await _story_timeout_sweep_body(now)
+    finally:
+        _story_sweep_inflight = False
+
+
+async def _story_timeout_sweep_body(now=None) -> int:
     """卡壳计时 sweep（261019-p3-record-dialogue-guide 重写；签名 (now=None) 不变）+
     pending-stop 10s 挂起窗口保留（SAO 家族齿 must-stay-green）。
 
@@ -1240,6 +1271,9 @@ _alert_dispatcher = None
 _alert_receipts = collections.deque(maxlen=gw_reminders.MAX_TRACKED)
 _alert_legs: list = []
 _alert_loop_task = None
+# 故事卡壳 sweep 独立任务句柄（261022-p3-record-front-polish-fix）：与 _alert_loop_task
+# 同位起停、同生命周期语义（进程内一份；连接全断后不停转——不做额外 stop 语义）。
+_story_sweep_task = None
 _alert_delivery_tasks: set = set()
 
 
@@ -1611,7 +1645,9 @@ async def run_alert_poll_once(now_epoch=None) -> dict:
 async def reminder_poll_loop() -> None:
     """每分钟轮询到点推送 + 课表 piggyback（触发②每日零点/③录入即时 marker）。
 
-    节拍对齐整分钟；单轮异常绝不杀死循环。提醒投递与课表推送同节拍，两路各自容错。"""
+    节拍对齐整分钟；单轮异常绝不杀死循环。提醒投递与课表推送同节拍，两路各自容错。
+    故事卡壳 sweep 已摘出到独立短节拍（_story_sweep_loop；261022-p3-record-front-polish-fix
+    ——原同节拍使 8s 阈值最坏 60s+ 迟到，且 sweep 的 LLM 在途会阻塞提醒投递）。"""
     try:
         await run_alert_poll_once()          # 起轮先跑一次：避免刚连上就错过整分钟点
     except Exception as e:  # noqa: BLE001
@@ -1620,31 +1656,47 @@ async def reminder_poll_loop() -> None:
         await run_schedule_poll_once()       # 课表 piggyback：同一循环，容错不连坐
     except Exception as e:  # noqa: BLE001
         log.warning("schedule_poll_error err=%s", type(e).__name__)
-    try:
-        await _story_timeout_sweep()         # 卡壳计时 sweep（引导/自动收尾）：同节拍，容错不连坐
-    except Exception as e:  # noqa: BLE001
-        log.warning("story_timeout_sweep_err err=%s", type(e).__name__)
     while True:
         try:
             await asyncio.sleep(gw_reminders.next_poll_delay(time.time()))
             await run_alert_poll_once()
             await run_schedule_poll_once()
-            await _story_timeout_sweep()
         except asyncio.CancelledError:
             raise
         except Exception as e:  # noqa: BLE001 — 提醒投递不得因单轮异常停摆
             log.warning("alert_poll_error err=%s", type(e).__name__)
 
 
+async def _story_sweep_loop() -> None:
+    """故事卡壳 sweep 独立短节拍轮询（261022-p3-record-front-polish-fix 真机轮追补）。
+
+    原 sweep 挂 reminder_poll_loop 整分钟齐射：卡壳阈值 8s 却最坏 60s+ 才生效
+    （KPLOG006 实测 66s 迟到），且齐射会在孩子说话中插话（引导播报 barge-in -> 引擎
+    abort 竞态）。固定 _STORY_SWEEP_INTERVAL_SECONDS 间隔独立轮询；单轮异常不连坐循环。
+    最小实现：固定间隔、无抖动/无自适应（minimal: 回退或调频只动该常量；若日后确需
+    抖动防多进程齐射，在此循环内加 jitter，升级路径不改调用面）。"""
+    while True:
+        try:
+            await _story_timeout_sweep()
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:  # noqa: BLE001 — 卡壳 sweep 不得因单轮异常停摆
+            log.warning("story_timeout_sweep_err err=%s", type(e).__name__)
+        await asyncio.sleep(_STORY_SWEEP_INTERVAL_SECONDS)
+
+
 def _ensure_alert_loop() -> None:
-    """首个已鉴权设备连接建立时起轮询任务（进程内只跑一份；无设备时不空转）。"""
-    global _alert_loop_task
-    if _alert_loop_task is not None and not _alert_loop_task.done():
-        return
+    """首个已鉴权设备连接建立时起轮询任务（进程内只跑一份；无设备时不空转）。
+    故事卡壳 sweep 同位起独立节拍任务（261022-p3-record-front-polish-fix：生命周期与
+    提醒轮询对齐，各自一份、互不连坐）。"""
+    global _alert_loop_task, _story_sweep_task
     try:
-        _alert_loop_task = asyncio.create_task(reminder_poll_loop())
+        if _alert_loop_task is None or _alert_loop_task.done():
+            _alert_loop_task = asyncio.create_task(reminder_poll_loop())
+        if _story_sweep_task is None or _story_sweep_task.done():
+            _story_sweep_task = asyncio.create_task(_story_sweep_loop())
     except RuntimeError:  # 无运行中事件循环（离线装载）
-        _alert_loop_task = None
+        pass
 
 
 @app.websocket("/{path:path}")
