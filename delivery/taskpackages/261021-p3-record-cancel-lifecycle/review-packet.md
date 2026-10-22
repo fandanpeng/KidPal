@@ -142,3 +142,16 @@ detect_changes（Pod 专属图索引 C-AI-KidPal-pod-m2，base=main，merge_base
 
 - final bearing verify r4 全绿 + closeout 制品齐 → 交 planner 跑 `supervisor-verdict-gate.mjs` 机械闸；riskTier=high → supervisor 合并门升级 human（awaiting-human:merge-gate）。
 - 真机轮：awaiting-human:real-device（烧板轮不可省，真机取消链四项 + discard 帧序端到端观测）。
+
+## 真机轮追补（2026-10-22，planner 记；人批合并前补账）
+
+真机轮 + 线上实测揪出两处后端缺陷，同包 fixer 双轮收口（verify r5/r6 scoped 绿）：
+
+| 轮 | 缺陷（真机群证） | 修法 | commit / 证据 |
+|---|---|---|---|
+| R6 | 整理失败路径困死 ORGANIZING 非交互页：R1-N4 失败分支零页面退出帧 + [R2] 复位缝只认 RECORDING（KPLOG005 1698525-1716875：安抚句播完 Idle 后页面滞留 substate=6，重启为唯一出口） | `_story_finish_session` 失败分支同拍逐设备腿补 `_push_story_list` 退出帧（total=0/items=[] 零虚增）；伴生 M4K1 SAO-A1 负锚换代（「严格零帧」→「恰一帧空列表退出帧」= 更强钉法，REVISION LOG 2026-10-22 条） | 4068dc6c；r5.json；真机复验 `story_list_pushed=1` 生效 |
+| R7 | 整理回合 LLM 超时结构性不够：OpenClaw embedded run prep 实测 7.05s（bootstrap-context ~6.5s 固定税，2 核 2GB ECS + 600MB rss Node 进程）+ 整理长输入长输出 → 原缺省 10s 在模型吐 ~1.5s 时掐断（ClientDisconnectError，每次必现） | `_ORGANIZE_LLM_TIMEOUT_S = 60.0` 只挂 organize 调用点；引导回合维持 10s 不动 | 2160fef7；r6.json |
+
+- 部署史：front_app.py 三次人批部署（md5 9663f635 → 3f27a228 → e3584c59，各次旧件备份在 ECS `.bak*`）；设备固件全量烧录一次（启动判定 0 RE-ENUM）。
+- **人批合并前真机终态：整理成功出稿归档、设备自动出整合页回列表、无困死（human 2026-10-22 确认「这次没出问题」）。**
+- 遗留登记：OpenClaw prep 7s 固定税 + 内存压力增长趋势（rss 600MB 超阈 125% 一次）→ 归 arch/治理面 debt，不塞本包。
