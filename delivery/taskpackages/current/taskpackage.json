@@ -84,5 +84,80 @@
   "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
-  "knownRedFloor": "server 套件零已知红：238 passed, 4 deselected, 33 subtests passed, 0 failed @ 基线锚 64d54eba（带锚引用三件齐：SHA + pytest 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-front-polish-fix/launch-card.md 基线锚行；2026-10-22 本会话实测，-m \"not live\"）"
+  "knownRedFloor": "server 套件零已知红：238 passed, 4 deselected, 33 subtests passed, 0 failed @ 基线锚 64d54eba（带锚引用三件齐：SHA + pytest 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-front-polish-fix/launch-card.md 基线锚行；2026-10-22 本会话实测，-m \"not live\"）",
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "FP-A1",
+        "acceptance": "FP-A1: 应答窗收尾通路——末段引导播报结束与 start_organizing 之间存在应答窗（计时可注入快进）；应答窗内到达的「说完了」stt 经 is_finish_phrase 判定走正常收尾整理归档（不成孤儿帧）；无应答窗形态（现状同毫秒收会话）不再出现。设计态红：现状 start_organizing 与引导 end 同毫秒、无应答窗",
+        "mutation": "变异 1：front_app.py _story_timeout_sweep 自动收尾阈值 finish_timeout_s = gw_story.STUCK_GUIDE_SECONDS + GUIDE_RESPONSE_WINDOW_SECONDS → gw_story.STUCK_GUIDE_SECONDS（摘应答窗）",
+        "affectedTest": "test_record_front_polish.acceptance.py::FpResponseWindowAcceptance::test_fp_a1_response_window_delays_auto_finish_after_final_guide_round（:562）+ ::test_fp_a1_finish_phrase_within_response_window_archives_normally（:611）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "AssertionError: Lists differ: [{'view': 'control', 'data': {'action': 'start_organizing'}}] != [] ... : FP-A1 RED: 末段引导后 STUCK_GUIDE_SECONDS 即自动收尾 —— 应答窗缺失（缺陷③：收尾词 ASR 链路 5~14s 结构性迟到，窗内会话已清 = 「说完了」恒成孤儿帧；KPLOG005 全天四笔笔笔实证）。  [test_record_front_polish.acceptance.py:562]",
+          "AssertionError: Lists differ: [WindowsPath(...md)] != [] : FP-A1 RED: 应答窗内旧触发点（末段引导 + STUCK_GUIDE_SECONDS）即自动收局归档 ——「说完了」还在 ASR 链路上（实测 5~14s）会话已被收，迟到转写到达即孤儿帧。  [test_record_front_polish.acceptance.py:611]"
+        ],
+        "restored": "git checkout -- server/gateway/front/front_app.py；git status 该文件 diff 空；sha256 f162a376bdbf93d986a69e3fb34f501503e793b478791474cb6ec0f2a6000b1c 与仓外备份一致；复跑通道 B：8 passed in 0.21s",
+        "note": "通道 B 单变异跑：2 failed / 6 passed，仅两条 FP-A1 齿红，其余（FP-A2..A5）PASS——与预测「FP-A1 两测试红」逐条一致。"
+      },
+      {
+        "acceptanceId": "FP-A2",
+        "acceptance": "FP-A2: 引导篇幅上限——单段引导播报篇幅超上限被截断/抑制（上限数值走配置/单源，不裸改字面）；上限内的正常引导不受影响。设计态红：篇幅上限未实现",
+        "mutation": "变异 2：front_app.py _story_guide_round 播报文本 spoken_text = reply[:GUIDE_SPEECH_MAX_CHARS] → spoken_text = reply（摘篇幅截断）",
+        "affectedTest": "test_record_front_polish.acceptance.py::FpGuideSpeechCapAcceptance::test_fp_a2_guide_speech_cap_truncates_overlong_and_preserves_within_limit（:700）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "AssertionError: 28 not less than or equal to 12 : FP-A2 RED: 引导播报 28 字超上限 12 未截断/抑制 —— 篇幅上限未实现（KPLOG005 缺陷③：39s 会话引导独播 ~28s，孩子只说了 4 句）。  [test_record_front_polish.acceptance.py:700]"
+        ],
+        "restored": "git checkout -- server/gateway/front/front_app.py；git status 该文件 diff 空；sha256 f162a376bdbf93d986a69e3fb34f501503e793b478791474cb6ec0f2a6000b1c 与仓外备份一致；复跑通道 B：8 passed in 0.23s",
+        "note": "通道 B 单变异跑：1 failed / 7 passed，仅 FP-A2 齿红，其余 PASS——与预测「FP-A2 红」一致。"
+      },
+      {
+        "acceptanceId": "FP-A3",
+        "acceptance": "FP-A3: 素材面引导窗口过滤——引导播报窗口内到达的 STT 不进素材缓冲、不进录音回显旁路；窗口外 STT 正常进素材（反向 case 必载——防过滤窗过宽误吞孩子接话）。设计态红：_story_feed_from_stt 对引导窗口不设防",
+        "mutation": "变异 3：front_app.py _story_guide_window_active 函数首行插入 return False（恒不活跃，摘素材过滤窗）",
+        "affectedTest": "test_record_front_polish.acceptance.py::FpGuideSttGuardAcceptance::test_fp_a3_guide_broadcast_window_drops_stt_and_expires_to_normal_feed（:776·窗内幻听「Okay」进素材缓冲断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "AssertionError: 'Okay' unexpectedly found in '从前有一只小猫\\nOkay' : FP-A3 RED: 引导播报窗口内 STT 进了素材缓冲 —— 素材面不设防（KPLOG005 缺陷④：本次成文干净是整理 LLM 丢噪声的运气非设计）。  [test_record_front_polish.acceptance.py:776]"
+        ],
+        "restored": "git checkout -- server/gateway/front/front_app.py；git status 该文件 diff 空；sha256 f162a376bdbf93d986a69e3fb34f501503e793b478791474cb6ec0f2a6000b1c 与仓外备份一致；复跑通道 B：8 passed in 0.26s",
+        "note": "通道 B 单变异跑：1 failed / 7 passed，仅 FP-A3 齿红，其余 PASS——与预测「FP-A3 红」一致。红落窗内丢弃断言，反向 case（窗口过期/未开播会话）未被触及（首败中止）。"
+      },
+      {
+        "acceptanceId": "FP-A4",
+        "acceptance": "FP-A4: 列表同日 seq tiebreak——同日多篇按 seq 倒序（新篇在上）；缺 seq 记录回退 id 倒序不崩；跨日仍按日期倒序。设计态红：同日按 id 字符串倒序（随机散列无时间序）",
+        "mutation": "变异 4：story.py list_stories._order_key 排序键 (date, seq, id) → (date, id)（摘 seq tiebreak，回退 id 倒序）",
+        "affectedTest": "test_record_front_polish.acceptance.py::FpStoryListOrderAcceptance::test_fp_a4_same_day_seq_tiebreak_desc_and_cross_day_unchanged（:842·同日新篇排最上断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "AssertionError: '2026-10-22-zzz' != '2026-10-22-aaa' : FP-A4 RED: 同日新篇（seq 大者）未排在最上 —— 同日 tiebreak 仍按 id 字符串倒序（随机散列无时间序；KPLOG005 缺陷⑤a「找不到刚录的篇目」本体）。  [test_record_front_polish.acceptance.py:842]"
+        ],
+        "restored": "git checkout -- server/gateway/story.py；git status 该文件 diff 空；sha256 fca05494e0c6c36f641e700bbaa5e536cdf013020824e73ce96a0483a3d47eb9 与仓外备份一致；复跑通道 B：8 passed in 0.21s",
+        "note": "通道 B 单变异跑：1 failed / 7 passed，仅同日 seq tiebreak 齿红，其余 PASS。缺 seq 回退齿（must-stay-green 锚）按预期保持绿（回退路径 (date,id) 与缺 seq 时行为等价）。"
+      },
+      {
+        "acceptanceId": "FP-A5",
+        "acceptance": "FP-A5: 标题敷衍兜底——整理输出标题命中敷衍启发式（如「我的故事」类万能名）时兜底替换/后缀化（启发式走单源可测）；正常标题原样保留。设计态红：标题取 LLM 首行无兜底",
+        "mutation": "变异 5：front_app.py _organize_and_archive 命中分支条件 if is_generic_story_title(title): → if False and is_generic_story_title(title):（摘命中置 None 兜底分支；纯函数本体保留）",
+        "affectedTest": "test_record_front_polish.acceptance.py::FpGenericTitleAcceptance::test_fp_a5_organize_generic_title_fallback_and_normal_preserved（:943·敷衍标题原样入册断言）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "AssertionError: '我的故事' == '我的故事' : FP-A5 RED: 敷衍标题「我的故事」原样入册 —— 兜底替换缺失（KPLOG005 缺陷⑤b：列表里无可识别性，human 找不到刚录篇目）。  [test_record_front_polish.acceptance.py:943]"
+        ],
+        "restored": "git checkout -- server/gateway/front/front_app.py；git status 该文件 diff 空；sha256 f162a376bdbf93d986a69e3fb34f501503e793b478791474cb6ec0f2a6000b1c 与仓外备份一致；复跑通道 B：8 passed in 0.21s",
+        "note": "通道 B 单变异跑：1 failed / 7 passed，仅 organize 兜底齿红，其余 PASS——与预测「FP-A5 红」一致。启发式纯函数齿（test_fp_a5_generic_title_heuristic_single_source）按预期保持绿（变异只摘分支，未动函数本体）。"
+      }
+    ]
+  }
 }
