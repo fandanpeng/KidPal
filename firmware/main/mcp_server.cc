@@ -1578,6 +1578,12 @@ void McpServer::AddCommonTools() {
                                  * 唯一写点同步（上方）, 本前推分支只负责覆盖层渲染——
                                  * 不再另起第二处缓存调用（K7-A5 / SLP-SLA4 计数钉恒 1）。 */
                                 kidpal_render_node_end_page();
+                                /* CG-A3 成功归档层栈收口（261022-p3-record-chrome-
+                                 * ghost-fix）: 夹钳后回落基层——否则覆盖层仍占逻辑
+                                 * 前台, 归档后首按 BOOT 被吃成 overlay_close
+                                 * （KPLOG005 13:03:20）。通道 = 既有 story_local_front
+                                 * （在役先例同款）, 帧类型负锚零新帧。 */
+                                kidpal_render_node_story_local_front();
                             });
                         }
                     }
@@ -1660,6 +1666,12 @@ void McpServer::AddCommonTools() {
                                     kidpal_story_page_render(&stamp_view, stamp_list.get(),
                                                              stamp_text.get());
                                     kidpal_render_node_end_page();
+                                    /* CG-A3（261022-p3-record-chrome-ghost-fix）: 盖章帧
+                                     * 闭包同款层栈收口（对齐失败路径 4068dc6c 的显式
+                                     * dismiss 纪律）——成功归档 / 盖章演出后覆盖层不得
+                                     * 继续占逻辑前台。通道 = 既有 story_local_front,
+                                     * 帧类型负锚: 零新下行帧。 */
+                                    kidpal_render_node_story_local_front();
                                 });
                             }
                             break;

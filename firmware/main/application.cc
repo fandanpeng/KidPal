@@ -21,6 +21,8 @@
 #include "display/voice_round.h"
 #include "display/kidpal_voice_states.h"
 #include "display/story_page.h"  /* K3: source_page 映射/引导态/回显/记录语境标志冻结缝 */
+#include "display/keybar.h"      /* 261022-p3-record-chrome-ghost-fix CG-A1: 键帽场景单源
+                                  * 收尾沿复位 kidpal_keybar_scene_reset */
 
 /* K3 (260924-m4-k3-record-session-live): 记录会话消费状态（文件级静态; 单写者——
  * on_vad_change 回调写 speaking / 主循环读, 32 位标量, 与既有跨任务宽松度同级）。
@@ -1160,6 +1162,23 @@ void Application::HandleStateChangedEvent() {
                                              &story_end_page) == 1) {
                     KidpalStorySessionEndApply(story_end_page);
                 }
+            }
+            /* 261022-p3-record-chrome-ghost-fix（CG-A1）: 语音会话收尾沿**先**复位键帽
+             * 场景态（keybar 场景单源 kidpal_keybar_scene_reset）——回「非语音场景默认」
+             * （出闭集）。修复前该态永不复位, 下一轮故事子态缓存未同步的过渡窗会被通用
+             * 分支画出上一次语音轮残留键帽（KPLOG005 缺陷①因一: 聆听残留「说完啦/结束」、
+             * 思考残留「不等了/结束」约 300~500ms）。
+             * 落位在 voice_end 之前: voice_end 内部会重渲基层页并驱动键帽条同步, 复位先落
+             * 才能让那次同步读到的已是默认态（否则会话收尾那一次刷新仍按残留场景裁决,
+             * 键帽要等下一次 chrome 同步才盖回——正是「鬼影 300~500ms」的形态）。
+             * 提醒弹窗驻留（REMINDER 在顶）时不复位——提醒材料壳的显隐判据取同一场景态
+             * （KVST_SCENE_REMIND）, 复位会把驻留中的提醒外壳/小伴整页熄掉; 提醒关闭走
+             * 自己的场景沿（REMIND 之后的下一次 apply_look）。复位幂等: 非语音轮路径
+             * （无 VOICE 层）同样安全。 */
+            if (kidpal_render_node_front_is_reminder() != 1) {
+                kidpal_keybar_scene_reset();
+                ESP_LOGI(TAG, "keybar_scene_reset corr_id=kdp-%u src=session_end",
+                         static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
             }
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */
