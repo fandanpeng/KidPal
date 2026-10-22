@@ -1,0 +1,150 @@
+{
+  "changeId": "261022-m5-k4-history-corpus-backfill",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
+    "workstream": "device-memory-overhaul"
+  },
+  "subsystem": "server/deploy/honcho/backfill（历史 session-corpus → Honcho 记忆库迁移：照记全量、幂等重跑、计数报告、清库回滚）",
+  "story": "S-F5.1 · 记住孩子说过的事（AC5 历史照记）——孩子以前聊过的历史内容（含同学姓名）补录进记忆后照常记入，旧内容与新聊天一视同仁；story 语义权威 = docs/requirements.md v1.67 现文，human 2026-10-22 终拍「照记全量（不分回合性质、含第三方姓名）」。",
+  "planRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/plan.md",
+  "sourceRefs": [
+    "S-F5.1-AC5",
+    "TECH-261022-device-memory-prompt-overhaul",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+  ],
+  "acceptanceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
+    "docs/requirements.md#§S-F5.1"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "impactedTests": [
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py",
+    "server/deploy/verify-deploy.sh"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual",
+    "real-db"
+  ],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；回填脚本离线契约验收断言按设计态红）。",
+  "exitCriteria": [
+    "K4-E1: 历史 corpus 全量照记：源 = session-corpus 既有语料，不区分回合性质、不过滤第三方姓名（human 2026-10-22 终拍 R6/OQ-3）；补录后旧内容与新聊天在画像侧一视同仁（S-F5.1 AC5）",
+    "K4-E2: 记忆身份 = 设备级 peer（沿用 P3 的 `user=<device_id>` → peer 映射）；不引入多设备 / 多孩子身份体系；换设备 = 新 peer、旧画像不迁移（记录为已知后果）",
+    "K4-E3: 幂等可重跑：重复执行零重复 observation / 零语义变更（幂等键或去重判据在 plan.md 定形）；执行前后计数报告（peers / sessions / messages / observations）落盘",
+    "K4-E4: 清库回滚：提供可回滚路径与执行证据；回滚不删 OpenClaw 完整日志、历史补录源语料、设备诊断日志（各按既有接受口径保留）；源语料只读、零改写",
+    "K4-E5: 与 P3 资格门的边界：backfill 属「历史照记」显式豁免（不分回合性质），但新增回合仍走资格门；两条口径在实现与文档中不互串",
+    {
+      "id": "K4-E6",
+      "kind": "structural",
+      "note": "live 运维项（非自动断言）：human 在 ECS 执行 backfill 全量跑 + 计数报告过目 + 抽查画像命中；幂等二次跑零增量；清库回滚演练一次（测试库或快照窗口）。本包 host 面转绿后停门等 human，不自行部署"
+    }
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§四"
+  ],
+  "docRefs": [
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md",
+    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "历史照记口径已在 requirements v1.67 S-F5.1 AC5 补充规则与 arch §6.7「历史 backfill」段落稿；本包只落迁移实现与运维脚本，docs/** 零 diff。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": true,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "本包 = 数据迁移脚本与运维回滚件；验收以幂等 / 计数 / 回滚三态与 live 演练承载，属数据证据面而非分支逻辑面，变异取证 ROI 不成立。",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包纯云端离线数据迁移与运维脚本：设备端零感知、固件零 diff；不新增或改变任何端→网关消息、帧类型、字段与序列化形态，记忆库形状非契约。"
+  },
+  "changeManifest": [
+    "server/deploy/honcho/backfill/**",
+    "server/deploy/manifest.yaml",
+    "server/deploy/verify-deploy.sh",
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/device-memory-overhaul/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "migration",
+    "security",
+    "real-db"
+  ],
+  "mergeOrder": 54,
+  "dependsOn": [
+    "261022-m5-k3-honcho-memory-production"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "R6 / OQ-3 · backfill 第三方姓名照记（不带 PII 过滤器）",
+      "summary": "human 2026-10-22 裁：孩子社交事实是记忆目标；9-30 语料系孩子主动讲述且家长知情；保留幂等 / 回滚 / 计数报告。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "exitCriteria:K4-E1"
+    },
+    {
+      "decision": "R5 / S-F5.1 AC5 · 历史内容照常记入（旧内容与新聊天一视同仁）",
+      "summary": "历史补录不区分回合性质、全量照记；设备流程回合不入画像的边界自 P3 上线起对新增回合生效，不回溯历史。",
+      "sourceRefs": [
+        "docs/requirements.md",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "landsIn": "exitCriteria:K4-E1"
+    },
+    {
+      "decision": "OQ-7 · 设备级 peer 先行（backfill 消费面）",
+      "summary": "回填按设备级 peer 落库；多设备 / 多孩子身份体系不做；换设备 = 新 peer。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/architecture.md"
+      ],
+      "landsIn": "exitCriteria:K4-E2"
+    },
+    {
+      "decision": "OQ-10 · 记忆库备份 = 不备份靠重建（重建源 = session-corpus 源语料 + OpenClaw 会话存储）",
+      "summary": "backfill 同时是记忆库重建路径；源语料只读、重建可重跑，无需 pg_dump 备份。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "delivery/workstreams/device-memory-overhaul/task_plan.md"
+      ],
+      "landsIn": "exitCriteria:K4-E4"
+    },
+    {
+      "decision": "记忆口径分层：历史照记豁免 vs 新增回合资格门",
+      "summary": "backfill 显式豁免不分回合性质；P3 的 user 资格门只对新增回合生效，两条口径不互串。",
+      "sourceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "landsIn": "exitCriteria:K4-E5"
+    }
+  ]
+}

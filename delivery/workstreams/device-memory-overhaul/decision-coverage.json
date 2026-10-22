@@ -1,0 +1,306 @@
+{
+  "workstream": "device-memory-overhaul",
+  "source": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+  "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
+  "archUpstream": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md（FROZEN v1.1，sha1:68254183b7f6e6ab）",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-10-22",
+  "updatedAt": "2026-10-22",
+  "_doc": [
+    "workstream 级 decisionCoverage：拆包输入 = workstream PROPOSAL FROZEN v1.0（sha1:b03fdcbb2150cbfa）+ arch PROPOSAL FROZEN v1.1 + review.md（契约四分类回执）+ task_plan.md（P1–P5 五波）。sourceType=proposal，故 payload = PROPOSAL §3.1 R1–R9 裁定 + §3.2 OQ 裁定 + §4 切片集 + §3.3 非目标。",
+    "本次拆 5 包：P1 prompt 承载迁移（K1）/ P5 课表机械注入（N2a）/ P2 持久会话（K2b）/ P3 Honcho 生产化 + 守则 v12（K3）/ P4 历史 corpus backfill（K4）。merge order：P1 50 → P5 51 → P2 52 → P3 53 → P4 54；单 Pod 串行（共享文件面大，拆包价值在独立验收/回滚边界，不在并行）。",
+    "story 引用机查：S-F5.1（新建于 requirements v1.67）不在 docs/requirements.md §8 已砍清单；其可行性 = ✅ AC1/AC2 探针实证、🟡 AC3/AC4/AC5 待实现批验收——无 🔴，无需立项处置记录。S-F1.3 为既有 story（课表问答），沿用。",
+    "跨包共享常量 / 共享冻结面交叉扫描（launch 前预警）：① 常量互斥型——未发现。「user=<device_id>」字面与 `agent:kidpal:openai-user:<device_id>` 键跨 P2/P3/P4 共享但值唯一、非互斥；`prompt_template` / `system_error_response` 两键由 P1 保留、P3 不得删除（值唯一）。② 行为碰撞型——四处已登记处置：(a) manifest `.config.yaml` marker 锚「实时事实回合」是 v11 静态内容锚，P1 必须同批换为动态块锚，否则 verify-deploy 必红；(b) 冻结验收 harness（test_prompt_v7_round_routing / test_261010 / test_261017）断言现行三面接线与 v11 语义，P1 须经 acceptance-author 留痕 supersede，禁静默改写；(c) openclaw.json 运行态被 P1（tools allowlist）与 P3（Honcho 插件 + hooks）两次声明式 patch，须顺序 apply / 幂等 / drift_guard 以 P1 已应用态为锚；(d) workspace AGENTS.md 被 P1（迁移 v11 语义）与 P3（追加 v12 守则）串行编辑，P1 先落、P3 只追加不回转。③ 跨切片边角——P5 可与 P2 换序（merge order 51 < 52）：P2 rebase 须保留 P5 在 connection.py 的动态块装配段；P3 的插件配置经 overlay 时须在 P1 更新后的锚集上追加、不得回退。",
+    "P1 v12 新建项撤销（arch §6.1 / OQ-8）：原 workstream §4 的 `openclaw-system-prompt.v12.md` 新建项撤销，改为新增 `server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt`；既有 `server/deploy/kidpal-agent-prompt.txt` 的去留/改写归 P1 定形，二选一、不得并存。",
+    "acceptance 唯一写点 = Pod 内 acceptance-author：各 taskpackage 拆包期 `acceptance: []` 为空骨架；本文件只记录 decision 的承载包 / exitCriteria / 跨包指针，不代写验收断言。",
+    "拿不到上游时的 fail-closed 记录：本 workstream 上轮（同 changeId）因里程碑未登记 + task_plan 缺失打回主线程；两件已补齐并经本次 intake 复核（milestones.jsonl M5-device-memory 在场、task_plan.md phases P1–P5 在场、PROPOSAL FROZEN v1.0）。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "R1 · 引擎请求加 user=<device_id> + 只发新回合 → OpenClaw 服务端持久会话",
+      "summary": "payload 恰一条本回合 user message、无 history 重放；持久会话按 user 键维护，跨 UI 会话保留。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T2"
+      ],
+      "landsIn": "package:261022-m5-k2b-persistent-session"
+    },
+    {
+      "decision": "R2 · v11 静态语义迁 workspace-kidpal/AGENTS.md 主承载，引擎只发动态 context 小块",
+      "summary": "静态语义进缓存边界之上；动态块有界、不含纪律；三面接线同批翻。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"
+      ],
+      "landsIn": "package:261022-m5-k1-prompt-carrier-migration"
+    },
+    {
+      "decision": "R3 · 引入 Honcho 自托管记忆子系统（外部依赖）",
+      "summary": "五容器 loopback 18100、postgres+pgvector 本机持久卷；与 ECS 同机共生，故障 = 无记忆不阻塞对话。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T1"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "R4 · NFR-SEC-2 增第 ⑤ 条出网认账（deriver→DeepSeek、embedding→DashScope）",
+      "summary": "两条管线均已在 requirements v1.67 记账（human 裁接受）；实现侧只允许这两条出网，其余本机不出网。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "docs/requirements.md"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "R5 · 新记忆 story（S-F5.1 五条 AC：同会话 / 跨会话 / 隐私负向 / 记忆边界 / 设备流程回合不入画像）",
+      "summary": "AC1–AC4 与 AC5 的新增回合隔离半由 P3 承载；AC5 的历史照记半由 P4 承载。",
+      "sourceRefs": [
+        "docs/requirements.md",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "R5-AC5-history · S-F5.1 AC5 历史语料照记半",
+      "summary": "历史内容（含同学姓名）补录进记忆后照常记入，旧内容与新聊天一视同仁。",
+      "sourceRefs": [
+        "docs/requirements.md",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ],
+      "landsIn": "package:261022-m5-k4-history-corpus-backfill"
+    },
+    {
+      "decision": "R6 · backfill 第三方姓名照记（不带 PII 过滤器）",
+      "summary": "human 2026-10-22 终拍：照记全量、不分回合性质；保留幂等 / 回滚 / 计数报告。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "package:261022-m5-k4-history-corpus-backfill"
+    },
+    {
+      "decision": "R7 · front 一次性回合（整理/引导）不入记忆画像",
+      "summary": "资格门以「请求是否携带 user」为唯一判据，读写同门；marker 探针 DB/日志双证。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "docs/architecture.md"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "R8 · 课表机械注入走 schedule.py 单源，注入位置 = P1 动态 context 块",
+      "summary": "front 派生 → 内部通道 → 每轮动态块；引擎不解析 MD、不建第二解析器。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"
+      ],
+      "landsIn": "package:261022-m5-n2a-schedule-mechanical-injection"
+    },
+    {
+      "decision": "R9 · Intent 维持 nointent、thinking 维持关闭、分回合 thinking 不纳入本批",
+      "summary": "human 2026-10-22 裁 + ARQ-260907 根因在案——本批零实现面承载，保持现状即兑现。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ],
+      "landsIn": "dropped",
+      "reason": "human 裁定本批不改 Intent/thinking（ARQ-260907 根因在案）；保持现状即兑现，无实现承载面。"
+    },
+    {
+      "decision": "OQ-1 · 路由 = ③拆包（human 2026-10-22 确认）",
+      "summary": "拆包动作本身兑现；无单独实现面。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "dropped",
+      "reason": "路由裁定由本 workstream 的拆包动作本身兑现，不产生独立实现承载面。"
+    },
+    {
+      "decision": "OQ-2 · 出网认账（DashScope = 阿里云百炼，与 ASR 同信任域；deriver→DeepSeek 非新增暴露）",
+      "summary": "实现侧以 NFR-SEC-2 ⑤ 为唯一出网记账面，不新增路径。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/requirements.md"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "OQ-3 · backfill 隐私 = 照记（human 裁）",
+      "summary": "与 R6 同源；实现归 P4。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "package:261022-m5-k4-history-corpus-backfill"
+    },
+    {
+      "decision": "OQ-4 · 一次性回合不入画像（human 裁）",
+      "summary": "与 R7 同源；实现归 P3。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "OQ-5 · 记忆 story 落位 / NFR-PRIV-1 形态（需求面已终拍，requirements v1.67）",
+      "summary": "F5 + S-F5.1 + NFR-PRIV-1 已落需求面；实现侧验收挂 P3/P4。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/requirements.md"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "OQ-6 · 记忆保留/备份/删除语义（需求面 NFR-PRIV-1 已钉）",
+      "summary": "删除 = 运维手工、范围限定；保留 = 自托管不出网；实现与运维口径归 P3。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/requirements.md"
+      ],
+      "landsIn": "package:261022-m5-k3-honcho-memory-production"
+    },
+    {
+      "decision": "OQ-7 · 多设备/多孩子 peer 映射 = 设备级 peer 先行，身份体系本批不做",
+      "summary": "留根：换设备 = 新 peer、旧画像不迁移；不在本批任何包实现身份体系。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "docs/architecture.md"
+      ],
+      "landsIn": "dropped",
+      "reason": "留根项（OQ-7）：设备级 peer 先行，多设备/多孩子身份体系本批不做，另立需求批。"
+    },
+    {
+      "decision": "OQ-8 · prompt 版本化新形态：否决 v12 双件、静态唯一件 = AGENTS.md、不新建 prompts/ 目录",
+      "summary": "动态模板单件新增；既有 kidpal-agent-prompt.txt 去留/改写二选一。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"
+      ],
+      "landsIn": "package:261022-m5-k1-prompt-carrier-migration"
+    },
+    {
+      "decision": "OQ-9 · Track A 不声明（human 默认接受，可随时启动）",
+      "summary": "治理流程裁定，无实现承载面。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ],
+      "landsIn": "dropped",
+      "reason": "治理流程裁定（Track A 不声明），方向已裁、探针已验，无实现承载面。"
+    },
+    {
+      "decision": "OQ-10 · 记忆库备份 = 不备份靠重建（human 终裁）",
+      "summary": "重建源 = session-corpus 源语料 + OpenClaw 会话存储；backfill 即重建路径。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "delivery/workstreams/device-memory-overhaul/task_plan.md"
+      ],
+      "landsIn": "package:261022-m5-k4-history-corpus-backfill"
+    },
+    {
+      "decision": "§3.3 非目标 · 不做 OpenClaw 替换 / 自研记忆层；不触 display E1 / B1 / §三提醒 / §四私有消息帧线格式",
+      "summary": "全线零实现承载，作为各包铁律约束。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.3"
+      ],
+      "landsIn": "dropped",
+      "reason": "防 scope creep 的非目标：本批任何包不得触碰，无实现承载面（违反即回 planner 重走 arch-change）。"
+    },
+    {
+      "decision": "§3.3 非目标 · 不修改历史 prompt 版本文件（v1–v11 不改、可 diff）",
+      "summary": "由 P1 的 changeManifest 与铁律约束承载（v11 零回改负锚）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.3"
+      ],
+      "landsIn": "package:261022-m5-k1-prompt-carrier-migration"
+    },
+    {
+      "decision": "§5 收口标准 · 跨包并集验收（体积 / 记忆 / 正确性 / 隔离 / 出网 / 资源 / 部署）与收口轮 owner = P5 + P4 计数报告对账",
+      "summary": "P5 为最后一个行为切片的收口轮 owner；P4 计数报告同轮对账。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§5"
+      ],
+      "landsIn": "package:261022-m5-n2a-schedule-mechanical-injection"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "user=<device_id> 请求字段（合法值 / 来源 / 省略回落）",
+      "owner": "261022-m5-k2b-persistent-session",
+      "carriedBy": "261022-m5-k2b-persistent-session",
+      "note": "P2 定义字段形态与来源（设备 id）；P3 资格门以「是否携带 user」为唯一判据（读写同门）；P4 device 级 peer 由它派生。三包同一字面、禁 sentinel user 变体。"
+    },
+    {
+      "topic": "记忆 peer 映射（device 级 peer，键 agent:kidpal:openai-user:<device_id>）",
+      "owner": "261022-m5-k3-honcho-memory-production",
+      "carriedBy": "261022-m5-k3-honcho-memory-production",
+      "note": "peer 语义 owner = P3；键形态源自 P2 会话键，P4 backfill 消费同一映射；多设备身份体系不做（OQ-7 留根）。"
+    },
+    {
+      "topic": "openclaw.json 声明式 patch 组合（tools allowlist + Honcho 插件/hooks）",
+      "owner": "261022-m5-k1-prompt-carrier-migration",
+      "carriedBy": "261022-m5-k3-honcho-memory-production",
+      "note": "P1 先落 tools 声明；P3 在 P1 已应用态上追加插件/hooks 声明；两包均幂等 apply + drift_guard + rollback，openclaw.json 整文件不入仓。"
+    },
+    {
+      "topic": "workspace AGENTS.md 静态语义内容（v11 迁移段 + v12 守则段）",
+      "owner": "261022-m5-k1-prompt-carrier-migration",
+      "carriedBy": "261022-m5-k3-honcho-memory-production",
+      "note": "P1 迁入 v11 静态语义并保持单一事实源自声明；P3 只追加 v12 记忆守则，不回改 P1 段；两包串行（P1 先）。"
+    },
+    {
+      "topic": "动态 context 块装配契约（有界 / 不含纪律 / 每轮在场）",
+      "owner": "261022-m5-k1-prompt-carrier-migration",
+      "carriedBy": "261022-m5-n2a-schedule-mechanical-injection",
+      "note": "P1 建机制与模板；P5 在模板占位内注入课表摘要，不得另建第二动态块；P5 可先于 P2 合并，P2 rebase 须保留 P5 装配段。"
+    },
+    {
+      "topic": "manifest .config.yaml marker 锚集（撤 v11 静态锚、增动态块锚）",
+      "owner": "261022-m5-k1-prompt-carrier-migration",
+      "carriedBy": "261022-m5-k1-prompt-carrier-migration",
+      "note": "P1 同批换锚（否则 verify-deploy 必红）；P3 若经 overlay 增 Honcho 配置，只能在 P1 新锚集上追加，不得回退。"
+    },
+    {
+      "topic": "冻结验收语义锚升级（三面接线 / v11 语义 / 声明式 patch 守卫）",
+      "owner": "261022-m5-k1-prompt-carrier-migration",
+      "carriedBy": "261022-m5-k1-prompt-carrier-migration",
+      "note": "test_prompt_v7_round_routing / test_261010 / test_261017 由 P1 经 acceptance-author 留痕 supersede；P2/P3/P5 的 impactedTests 只做追加，不静默改写既有冻结断言。"
+    },
+    {
+      "topic": "M5 收口轮（跨包并集验收 + live 真机轮 + P4 计数报告对账）",
+      "owner": "261022-m5-n2a-schedule-mechanical-injection",
+      "carriedBy": "261022-m5-n2a-schedule-mechanical-injection",
+      "note": "P5 为最后一个行为切片的收口轮 owner；P4 前後计数报告同轮对账；真机配额默认仅收口轮（P1–P4 不单独占轮）。"
+    }
+  ],
+  "launchPreconditions": [
+    {
+      "text": "LP1 需求面 frozen：requirements v1.67（F5 + S-F5.1 五 AC + NFR-SEC-2 ⑤ + NFR-PRIV-1）在案，§9 v1.67 行 = 定稿载体。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/requirements.md 头部版本行 :8（frozen · v1.67 · 2026-10-22）+ §9 v1.67 行 :759"
+    },
+    {
+      "text": "LP2 架构面变更记录 changeId 行在场：docs/architecture.md §12 首行 261022-device-memory-prompt-overhaul + PROPOSAL FROZEN v1.1 landing。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/architecture.md:487（§12 行）+ commit 0411e957（架构+契约面 Track B landing，landing-verdict PASS）"
+    },
+    {
+      "text": "LP3 契约四分类闭合且契约包随架构批原子落：§四「会话连续性承载」定案改写 + 变更记录条 + §1.6 承载对账注记已在案（处 A = NO_CONTRACT_CHANGE，处 B = ACCOMPANIES_SPEC_CHANGE 已闭合）。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/contracts/interface-contract.md:194 / :283 / :287 + commit 0411e957；四分类回执 = delivery/workstreams/device-memory-overhaul/review.md 附件"
+    },
+    {
+      "text": "LP4 门 1 GREEN + human 过目切法：architect 轻量 checklist review 五项全过（切片逻辑 / 依赖序与 WIP / decision-coverage 完备 / 每包意图与 PROPOSAL 一致 / demo 证据形态可行）+ human 认可切法；裁决 append workstream review.md「门 1」节。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP5 commit-before-launch：拆包四件套（roadmap.md + taskpackage.json ×5 + plan.md ×5 + decision-coverage.json）commit 到专用 base ref（非 main）后，worktree 自该 ref 建出；board 不入 commit。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    }
+  ]
+}
