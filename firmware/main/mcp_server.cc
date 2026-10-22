@@ -151,6 +151,36 @@ void StartStoryRecTimer() {
     g_story_rec_timer = lv_timer_create(StoryRecTimerCb, 100, nullptr);
 }
 
+/* ---- 盖章定格驻留定时器（261022 观感直修）---- */
+/* hold_ms（story_page.c KSTORY_STAMP_HOLD_MS=3000, 契约 kidpal_story_stamp_spec）
+ * 此前只声明未消费（「真机观感殿后 9b」）——盖章页无驻留保证, 被下一次渲染
+ * （迟到的状态变化 / story_list 重推）顶掉 = 徽章「一闪而过」（真机轮 human 实证,
+ * KPLOG 23:59:34-36 仅 1.7s）。接线 = 3s 一次性定时器 -> STAMP 页态回落 LIST +
+ * ScheduleStoryRender 单点权威。回调页态门 = 驻留期间页态已被其它沿改变
+ * （用户手势 / 新会话）则让位, 绝不代翻。时长值与 story_page.c 冻结常量双写——
+ * 值域钉 3s, 改动须两处同批（对账注记, 免扩公共头）。 */
+lv_timer_t* g_story_stamp_hold_timer = nullptr;
+
+void StoryStampHoldCb(lv_timer_t* timer) {
+    lv_timer_delete(timer);
+    g_story_stamp_hold_timer = nullptr;
+    if (g_story_view.page != KSTORY_PAGE_STAMP) {
+        return; /* 驻留期间页态已被其它沿改变 -> 让位, 绝不代翻 */
+    }
+    g_story_view.page = KSTORY_PAGE_LIST;
+    ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u page=list",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ScheduleStoryRender();
+}
+
+void StartStoryStampHoldTimer() {
+    if (g_story_stamp_hold_timer != nullptr) {
+        lv_timer_delete(g_story_stamp_hold_timer);
+    }
+    g_story_stamp_hold_timer =
+        lv_timer_create(StoryStampHoldCb, 3000, nullptr); /* = KSTORY_STAMP_HOLD_MS */
+}
+
 /* ---- 删除确认子态 + 消歧 + 隐式 ack 重发的设备驱动状态（260924-m4-k2 seam
  * [K2]/[K3]/[K4]/[K5] 消费侧; 纯逻辑决策表住 story_page.c, 这里只持有调用方侧
  * 状态并做 tick 驱动）。单实例消费现实 = 主线程串行（HandleStoryKey 由板级按键
@@ -1747,6 +1777,9 @@ void McpServer::AddCommonTools() {
                                      * 继续占逻辑前台。通道 = 既有 story_local_front,
                                      * 帧类型负锚: 零新下行帧。 */
                                     kidpal_render_node_story_local_front();
+                                    /* 261022 观感直修: 盖章定格驻留 3s（hold_ms 接线,
+                                     * 见 StartStoryStampHoldTimer 注记）-> 回落列表。 */
+                                    StartStoryStampHoldTimer();
                                 });
                             }
                             break;

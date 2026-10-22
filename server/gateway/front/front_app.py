@@ -1082,23 +1082,36 @@ async def _inject_record_context_enter(upstream) -> None:
 async def _issue_finish_downlink(session_id, upstream, websocket) -> None:
     """三式收尾统一下发（q2 = ⓒ 裁定；261019-p3-record-dialogue-guide RDG-A6）：
 
-    归档成功同拍 (a) 向本连接设备腿下发 control/start_organizing 恰一帧（front 机械
-    自推单源, self_push=True 放行）；(b) 向本连接引擎腿注入 kidpal_record_context
-    active=false 出语境信号（引擎抑制解除）。腿 = 泵自身双腿（本连接权威对，不经
+    归档成功同拍向本连接设备腿下发 control/start_organizing 恰一帧（front 机械
+    自推单源, self_push=True 放行）。腿 = 泵自身双腿（本连接权威对，不经
     _alert_legs——避免与登记腿重复下发双帧）。幂等由会话状态沿承载：归档后 routing
     回 chat, 同一收尾沿的重复消费（feed_rec / finish_rec 双路径互斥）与重复 sweep
-    不再命中。单腿失败降级留痕, 不连坐另一腿、不阻断泵。"""
+    不再命中。单腿失败降级留痕, 不连坐另一腿、不阻断泵。
+
+    261022 真机轮修订：kidpal_record_context active=false 出语境信号**不再在此处
+    发**——原形态在整理回合开始前就解除引擎抑制，收尾后迟到的幻听 STT（KPLOG006
+    23:59:30 「Thank you」）被引擎当普通对话派发 LLM 并播报「我没听清/再说一遍」，
+    盖过整理演出。出语境改由 _story_finish_session 在整理回合**完成后**发
+    （_release_record_context 单源）——整理期间孩子的后续话语走闭嘴回显，不进对话。"""
     try:
         await _push_display_payload(websocket, dict(START_ORGANIZING_PAYLOAD))
     except Exception as e:  # noqa: BLE001 — 单腿失败不连坐
         log.warning("story_start_organizing_push_err corr_id=%s err=%s",
                     session_id, type(e).__name__)
-    try:
-        await _send_engine_leg_frames(
-            upstream, [{"type": RECORD_CTX_SIGNAL_TYPE, "active": False}])
-    except Exception as e:  # noqa: BLE001 — 单腿失败不连坐
-        log.warning("story_record_ctx_exit_err corr_id=%s err=%s",
-                    session_id, type(e).__name__)
+
+
+async def _release_record_context(session_id, legs) -> None:
+    """出语境单源（261022 真机轮修订）：kidpal_record_context active=false 逐引擎腿
+    注入（引擎抑制解除）。收尾路径统一在**整理回合完成后**调用——迟到 STT 在整理
+    期间走闭嘴回显不进对话（孤儿幻听不再触发 LLM 播报）。空素材/纯幻听拒绝路径
+    同样必须调用（会话已释放但引擎语境标志尚活——不解除 = 后续正常对话被抑制）。"""
+    for _device_ws, engine_ws in list(legs):
+        try:
+            await _send_engine_leg_frames(
+                engine_ws, [{"type": RECORD_CTX_SIGNAL_TYPE, "active": False}])
+        except Exception as e:  # noqa: BLE001 — 单腿失败降级留痕不连坐
+            log.warning("story_record_ctx_exit_err corr_id=%s err=%s",
+                        session_id, type(e).__name__)
 
 
 async def _story_finish_session(session_id, acc, legs) -> "dict | None":
@@ -1128,6 +1141,9 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     acc.cancel(session_id, reason="finish")
     if not material:
         log.info("story_finish corr_id=%s archived=false reason=empty_material", session_id)
+        # 261022 真机轮修订：空素材路径此前零下行帧 = 引擎语境标志永不解除（后续
+        # 正常对话被抑制的潜伏缺陷）——同样必须出语境。
+        await _release_record_context(session_id, legs)
         return None
     # 261020 D4-2 ①归档边界内容守卫：纯幻听/近无内容（单语气词、纯标点）不归档
     # （不占 seq、不落 SD）、不演出（不下发 start_organizing）、不安抚——与空素材
@@ -1137,6 +1153,8 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     if reject:
         log.info("story_finish corr_id=%s archived=false reason=%s material=%r",
                  session_id, reject, material)
+        # 261022 真机轮修订：拒绝路径与空素材同款，必须出语境（见 empty 分支注记）。
+        await _release_record_context(session_id, legs)
         return None
     for device_ws, engine_ws in list(legs):
         await _issue_finish_downlink(session_id, engine_ws, device_ws)
@@ -1144,6 +1162,10 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
     # 把收尾沿先行的 start_organizing 压到与 story_text 同拍——过渡页不可见本体）。
     record = await asyncio.to_thread(_organize_and_archive_offloop,
                                      material, session_id)
+    # 261022 真机轮修订：出语境移到整理回合**完成后**（原在 ② 演出先行时提前解除，
+    # 整理期间迟到的幻听 STT 被引擎当普通对话派发 LLM 播报「我没听清」——KPLOG006
+    # 23:59:30-36 实证）。整理期间孩子话语走闭嘴回显（会话已 cancel，不进素材）。
+    await _release_record_context(session_id, legs)
     if record is None:
         # R1-N4 丢稿口径：当轮素材不归档 + 固定安抚句（不发明新语义）。
         await _speak_to_legs(ORGANIZING_FAIL_SOOTHING, legs)
