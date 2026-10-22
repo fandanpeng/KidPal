@@ -1024,7 +1024,7 @@ static void ksy_box(lv_obj_t *scr, int x, int y, int w, int h, uint32_t color)
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
 }
 
-static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
+static lv_obj_t *ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
 {
     lv_obj_t *l = lv_label_create(scr);
     lv_label_set_text(l, text);
@@ -1033,6 +1033,7 @@ static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t co
     /* CJK 字体显式接线（seam [K9]: 不赌继承——默认 montserrat_14 纯拉丁, P3 中文
      * 面真机空白; lcd_display.cc 五处先例同款）。 */
     lv_obj_set_style_text_font(l, &font_puhui_14_1, 0);
+    return l;
 }
 
 /* D3 v7 三帧气泡（261019 fixer; 位式权威 = docs/ui/kidpal-ui-design-v7.html P3 规格
@@ -1505,7 +1506,16 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
                     const char *line = NULL;
                     if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
-                        ksy_label(scr, line, 180, base_y + e * 22, KSY_COLOR_TEXT);
+                        lv_obj_t *el = ksy_label(scr, line, 180, base_y + e * 22,
+                                                 KSY_COLOR_TEXT);
+                        /* 261022 观感修（真机轮 human 实证: 长句溢出右缘裁字）:
+                         * 回显列单行宽钳制 216px（x=180 起至 400 右缘留 4px 安全距,
+                         * puhui_14_1 满宽 ≈15 个中文字）, LV_LABEL_LONG_DOT 像素精确
+                         * 截断加 "..."。截断只在显示对象——累积缓冲 s_story_echo
+                         * 全量不动（整理素材链零影响）。整理态回显列（x=192）同修
+                         * 宽 204。 */
+                        lv_obj_set_width(el, 216);
+                        lv_label_set_long_mode(el, LV_LABEL_LONG_DOT);
                     }
                 }
             }
@@ -1547,7 +1557,11 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
                 const char *line = NULL;
                 if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
-                    ksy_label(scr, line, 192, 104 + e * 22, KSY_COLOR_TEXT);
+                    lv_obj_t *el = ksy_label(scr, line, 192, 104 + e * 22, KSY_COLOR_TEXT);
+                    /* 261022 观感修: 整理态回显列同款宽钳制（x=192 起宽 204）,
+                     * 见录音态回显块注记。 */
+                    lv_obj_set_width(el, 204);
+                    lv_label_set_long_mode(el, LV_LABEL_LONG_DOT);
                 }
             }
             break;
