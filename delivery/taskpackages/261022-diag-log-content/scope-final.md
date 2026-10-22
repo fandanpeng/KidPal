@@ -40,4 +40,14 @@
 - 命令形（scope-file 缺失 = 红闸，本文件即清单）：
   `node .claude/hooks/verify.mjs --evidence-mode=round --phase=final --scope-file delivery/taskpackages/261022-diag-log-content/scope-final.md --change-id 261022-diag-log-content --round <final round> --invocation-id <uuid>`
 - **本轮未执行**：前置 docs-sync 红未消（spec 面落盘交回持写权者，见 docs-delta.md），final 相位跑必红；final round / invocationId 由 planner 在 docs-sync 转绿后签发时一并跑，随后 `verifier-evidence-check.mjs --phase final` 判 fact `ok:true` 方进 closeout。
-- test-scope 清单落盘路径（一行，final verifier fact / review-packet results 元数据必含）：`delivery/taskpackages/261022-diag-log-content/scope-final.md`。
+- **test-scope 清单落盘路径**（一行，final verifier fact / review-packet results 元数据必含）：`delivery/taskpackages/261022-diag-log-content/scope-final.md`。
+
+## 5. 机读清单（acceptance-run-check / unit-run-check 的 readScopeList 逐行消费；一行一条 repo-relative 路径，散文节仅供人读）
+
+firmware/main/test/diag_log.acceptance.c
+firmware/main/test/sd_log.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/time_sync.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+
