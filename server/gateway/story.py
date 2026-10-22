@@ -391,7 +391,16 @@ def _display_date(date_iso: str) -> str:
 
 def list_stories(stories_dir, *, limit=None, offset=0) -> dict:
     """契约 §1.3 ③ story_list producer 下发块：total = 全集计数（与分页无关），
-    items 按完整日期倒序（同日按 id 倒序）、date 显示 'MM-DD'、杂物文件不计入。
+    items 按完整日期倒序、**同日按入册 seq 倒序**（261022-p3-record-front-polish-fix
+    缺陷⑤a：契约只钉日期倒序，tiebreak 是实现自由度）、date 显示 'MM-DD'、杂物文件
+    不计入。
+
+    同日 tiebreak 单源 = `.seq.json` 账本 by_id（archive_story 真实分配的入册流水号）：
+    现状 `(date, id)` 倒序把同日新篇压在随机散列旧 id 之下（KPLOG005：13:03 新篇
+    s789d9474 排 09:31 旧篇 s9074aa51 之下，human 找不到刚录的篇目）。对账本**纯读**
+    （`_load_ledger`；不重建、不落盘——「front 单写者」纪律，fetch_story 先例）；
+    缺 seq 记录（历史脏态 / 账本缺失）回退 -1 即同日按 id 倒序、绝不崩（GAP-4 混排
+    相对序不钉）。items 元素字段形状零偏移（{id,title,date}，零 wire 变更）。
 
     limit/offset 只切 items 页、绝不动 total（契约 §1.3③：total = 现存篇数 = 星星
     计数 ×N；盖章 N 取 story_text.data.seq——2026-09-24 契约门拆分）；offset 超界
@@ -399,7 +408,16 @@ def list_stories(stories_dir, *, limit=None, offset=0) -> dict:
     validate_display（验收机械断言）。"""
     records = _collect_records(stories_dir)
     total = len(records)  # 全量现存篇数，绝不以 len(items) 顶替
-    ordered = sorted(records, key=lambda r: (r["date"], r["id"]), reverse=True)
+    ledger, _state = _load_ledger(stories_dir)
+    seq_by_id = (ledger or {}).get("by_id") or {}
+
+    def _order_key(rec):
+        seq = seq_by_id.get(rec.get("id")) if isinstance(rec, dict) else None
+        if not isinstance(seq, int) or isinstance(seq, bool):
+            seq = -1  # 缺 seq -> 同日回退 id 倒序（GAP-4：混排相对序不钉）
+        return (rec.get("date") or "", seq, rec.get("id") or "")
+
+    ordered = sorted(records, key=_order_key, reverse=True)
 
     start = offset if (offset and offset > 0) else 0
     # 窗口上限：显式 limit 覆盖（既有分页语义保留），否则恒取最新 ≤STORY_LIST_WINDOW 条
@@ -545,7 +563,8 @@ def fetch_story(stories_dir, story_id, *, corr_id=None) -> "dict | None":
 class _SessionState:
     __slots__ = ("routing", "accum", "accum_chars", "ring", "ring_chars",
                  "last_record", "last_stop_now", "last_transcript", "last_activity",
-                 "pending", "pending_since", "guide_rounds", "guide_since")
+                 "pending", "pending_since", "guide_rounds", "guide_since",
+                 "guide_broadcast_since")
 
     def __init__(self) -> None:
         self.routing = "chat"
@@ -567,6 +586,11 @@ class _SessionState:
         # （轮发出时刻；None = 尚无引导轮，卡壳计时回退锚 last_activity）。
         self.guide_rounds = 0
         self.guide_since = None
+        # 最近一次引导**播报注入**时刻（261022-p3-record-front-polish-fix 缺陷④；窗口锚）。
+        # 与 guide_since 的差别 = 被抑制轮无播报：guide_since 计轮照涨（q6 收声不停摆），
+        # 本字段只在真播报时前移——front 的引导播报窗口 STT 过滤只按真播报开窗，不误伤
+        # 无播报轮后的孩子接话。None = 本会话从未播报过引导。
+        self.guide_broadcast_since = None
 
 
 class StoryAccumulator:
@@ -691,10 +715,14 @@ class StoryAccumulator:
 
         guide_rounds += 1（**suppressed=True 亦计**——q6 收声不停摆：收声抑制/LLM 返回
         空 = 本轮不播报仍计轮）；guide_since = now（None -> 墙钟），作为该轮无回应计时
-        锚。**不改** last_activity（孩子活动权威不被引导污染）。"""
+        锚。**不改** last_activity（孩子活动权威不被引导污染）。真播报轮（suppressed
+        为假）同拍前移 guide_broadcast_since = 本轮时刻（261022 缺陷④：front 素材面
+        引导播报窗口的锚；被抑制轮无播报、不开窗）。"""
         st = self._ensure(session_id)
         st.guide_rounds += 1
         st.guide_since = now if now is not None else datetime.now(timezone.utc)
+        if not suppressed:
+            st.guide_broadcast_since = st.guide_since
         if suppressed:
             log.debug("story_guide_round corr_id=%s suppressed=true rounds=%d",
                       session_id, st.guide_rounds)
@@ -703,6 +731,14 @@ class StoryAccumulator:
         """该会话已计引导轮次；无会话 -> 0。查询不改状态。"""
         st = self._get(session_id)
         return st.guide_rounds if st is not None else 0
+
+    def guide_broadcast_anchor(self, session_id):
+        """该会话最近一次引导**播报注入**时刻（datetime | None）；无会话/从未播报 -> None。
+
+        纯查询：不改状态、不触 LRU。front 素材面引导播报窗口（GUIDE_STT_GUARD_SECONDS）
+        以本锚 + 调用方注入 now 判窗口（261022-p3-record-front-polish-fix 缺陷④）。"""
+        st = self._get(session_id)
+        return st.guide_broadcast_since if st is not None else None
 
     def build_organizing_input(self, session_id) -> "str | None":
         """忠实整理输入装配纯函数（S-F2.2-AC4「只取孩子的话」；RDG-A3）。
@@ -724,6 +760,9 @@ class StoryAccumulator:
         if st.routing != "accumulate":
             st.guide_rounds = 0
             st.guide_since = None
+            # 新会话沿同样清播报窗锚（上一轮会话的引导播报窗口不得污染新会话的素材面；
+            # 261022 缺陷④）。
+            st.guide_broadcast_since = None
         # 幂等：重复 start 不重复开会话、不清空已在累积的内容
         st.routing = "accumulate"
 

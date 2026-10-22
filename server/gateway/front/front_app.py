@@ -157,6 +157,63 @@ _ORGANIZE_PROMPT_FILE = "faithful-organize.v1.md"
 # 实测可通过，本次不扩大改动面）。
 _ORGANIZE_LLM_TIMEOUT_S = 60.0
 
+# --- 记录会话引导节奏三参数（261022-p3-record-front-polish-fix；debt 缺陷③④）-----------
+# 名字冻结（FROZEN OFFLINE CONTRACT A 节）、**数值不冻结**：三者都是手感参数，初值取
+# 现网实测的合理中位，终判归 human 真机轮（FP-A7），数值不进 spec 文本（FP-X2）。
+# 三个都是**模块级单源**：所有消费点每次现读模块全局（不在任何调用点内联字面量），
+# 故验收可 monkeypatch 该常量做确定性快进 / 夹紧（内联硬编码 = 单源被破 = 验收红）。
+#
+# 应答窗（缺陷③：KPLOG005 全天四笔「说完了」笔笔迟到 5~14s 成孤儿帧——末段引导结束与
+# control start_organizing 同毫秒下发，会话在 ASR 收尾词链路到达前就被收走）。语义 =
+# 末段引导轮发出后，自动收尾不得早于「旧触发点（+STUCK_GUIDE_SECONDS）+ 本窗」，窗内
+# 留给收尾词到达并经 is_finish_phrase 走正常收尾（轮数语义 AC5 零触碰，只延后计时起点）。
+# 初值 8.0s：与 story.STUCK_GUIDE_SECONDS(8s) 叠加共 16s，覆盖实测 14s 上界。
+GUIDE_RESPONSE_WINDOW_SECONDS = 8.0
+# 单段引导播报篇幅上限（字符数；缺陷③：39s 会话里引导独播 ~28s，孩子只说了 4 句）。
+# 引导制品自身已要求「不超过 20 个字」（prompt 面第一道防线）；本上限是硬护栏——超限
+# 按上限截断（截断产物恒为原文前缀，不另编内容）。初值 30 字（≈ 语音 6~8s），留出
+# prompt 指令的容差余量而不让回合跑成独白。
+GUIDE_SPEECH_MAX_CHARS = 30
+# 引导播报窗口 STT 素材过滤时长（秒；缺陷④：KPLOG005 13:02:34「Okay」幻听——human
+# 实证非本人声音——直进故事素材缓冲）。锚 = 该会话最近一次引导**播报注入**时刻（被
+# 抑制轮无播报、不开窗）；窗口内 stt 只丢素材面，收尾词判定面不在窗内（FP-A1 本体）。
+# 初值 8.0s：≈ GUIDE_SPEECH_MAX_CHARS(30 字) 的语音时长上界；窗口过期后孩子接话照常
+# 进素材（反向 case 由 FP-A3 兜底，防过滤窗过宽误吞孩子接话）。
+GUIDE_STT_GUARD_SECONDS = 8.0
+
+# 敷衍标题启发式单源词表（缺陷⑤b；FROZEN OFFLINE CONTRACT E 节）。整理 LLM 偶尔给
+# 「万能名」标题——KPLOG005 实证「我的故事」——列表里零可识别性（human：「标题叫啥，
+# 我咋找不到呢」）。命中 -> _organize_and_archive 兜底为正文派生标题（story.py
+# _fallback_title 单源）；未命中 -> 原样保留。is_generic_story_title 只消费本常量
+# （临时换表判定随动 = 实现期可调，RDG-A1 STUCK_PHRASES 先例同款）。
+GENERIC_STORY_TITLES = frozenset({
+    "我的故事",
+    "我的故事呀",
+    "我的小故事",
+    "我讲的故事",
+    "一个故事",
+    "小故事",
+    "故事",
+    "好听的故事",
+    "今天的故事",
+})
+# 标题归一化的首尾剥离字符（标点/空白）：判「我的故事。」与「我的故事」同族。
+_GENERIC_TITLE_STRIP_CHARS = "。．.！!？?，,、；;：:～~…· \t\r\n　"
+
+
+def is_generic_story_title(title) -> bool:
+    """敷衍标题判定纯函数（缺陷⑤b；单源 = GENERIC_STORY_TITLES）。
+
+    非 str / 空白 -> False（安全拒判）；剔除首尾空白与尾随标点后**整串**命中词表 ->
+    True（绝不子串——「风里的故事」这类具体题名不误杀）。判定只读模块常量，
+    临时换表即随动。"""
+    if not isinstance(title, str):
+        return False
+    candidate = title.strip().strip(_GENERIC_TITLE_STRIP_CHARS).strip()
+    if not candidate:
+        return False
+    return candidate in GENERIC_STORY_TITLES
+
 
 def _load_prompt_artifact(filename: str) -> str:
     """读 prompt 制品全文；缺失/不可读返回 ""（回合退化为无 system 指令，不炸 sweep）。"""
@@ -274,7 +331,8 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
 
     孩子原话素材 -> 去掉**尾随**收尾词（story.py 既有 strip_trailing_finish_words，
     防收尾词进整理输入）-> 整理制品 + 一次性 LLM 回合 -> 标题 = 输出首行 strip 后
-    ≤12 字、正文 = 其余行 -> archive_story（既有零改）。
+    ≤12 字、正文 = 其余行 -> archive_story（既有零改）。标题命中敷衍启发式
+    （is_generic_story_title）-> 兜底为正文派生标题（缺陷⑤b）。
 
     任一失败（空素材 / LLM 不可达或空返回 / 空正文）返回 None = **当轮素材不归档**
     （R1-N4；调用方补固定安抚句），不退回原始转写、不写空故事。
@@ -295,6 +353,15 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
         return None
     title = lines[0].strip()[:12]
     body = "\n".join(lines[1:]).strip() or reply.strip()
+    if is_generic_story_title(title):
+        # 缺陷⑤b 兜底（CONTRACT E 节）：整理 LLM 起的「万能名」不成题名（KPLOG005 实证
+        # 「我的故事」，列表里零可识别性 = human 找不到刚录篇目）。交给 archive_story 的
+        # 内容派生标题单源（story._fallback_title：正文首个标点前片段 ≤12 字）——替换形态
+        # 不另编内容；未命中即原样保留（≤12 字既有截断零偏移，faithful-organize 制品
+        # 语义零触碰）。
+        log.info("story_organize_round corr_id=%s generic_title=%r fallback=content", corr_id,
+                 title)
+        title = None
     try:
         record = gw_story.archive_story(STORIES_DIR, body, title=title)
     except ValueError:
@@ -345,7 +412,28 @@ def _story_route_display_payload(session_id, payload) -> bool:
     return False
 
 
-def _story_feed_from_stt(session_id, obj) -> bool:
+def _story_guide_window_active(acc, session_id, now=None) -> bool:
+    """引导播报窗口判定（缺陷④；FROZEN OFFLINE CONTRACT A/B 节）。
+
+    窗口锚 = 该会话最近一次引导**播报注入**时刻（StoryAccumulator.guide_broadcast_anchor，
+    被抑制轮无播报 = 不开窗）；`now`（= 调用方注入时刻）落在 [锚, 锚 +
+    GUIDE_STT_GUARD_SECONDS) 内 -> True。时钟注入纪律：锚与 now 都不落墙钟（缺省 None
+    = 墙钟，仅生产泵路径如此），否则离线快进不可测。从未播报引导的会话 -> False
+    （不得全局误伤——FP-A3 反向 case②）。"""
+    anchor = acc.guide_broadcast_anchor(session_id)
+    if anchor is None:
+        return False
+    now_dt = now if now is not None else datetime.now(timezone.utc)
+    try:
+        elapsed = (now_dt - anchor).total_seconds()
+    except TypeError:
+        return False  # 不可比时刻（注入时钟类型失真）-> 不误判过滤
+    if elapsed < 0:  # 时钟回拨/注入时刻早于锚：不当作窗口内（宁可放行素材）
+        return False
+    return elapsed < float(GUIDE_STT_GUARD_SECONDS)
+
+
+def _story_feed_from_stt(session_id, obj, *, now=None) -> bool:
     """云侧累积接线 (包 9b HWV-A10 / story-p3 §9 F7 / 261001-m4-k3-story-archive-order)：
     引擎回带的 ASR 上行 stt 帧 (= 孩子逐句被识别的叙述) 在累积态喂进 StoryAccumulator.feed，
     供停录时整段归档。仅旁路消费（wire 转发不变，决策23）；非累积态 (普通闲聊) 不入库。
@@ -353,7 +441,15 @@ def _story_feed_from_stt(session_id, obj) -> bool:
     真机序挂起态接通（261001）：routing == "pending_stop"（listen/state=stop 先到、accum 空）
     时，本条 stt（~1.7s 后到）即转写到达 -> feed 并返回 True，上层走忠实整理收尾单源
     `_story_finish_session`（S-F2.2-AC4 v1.65：归档正文 == 整理输出，不再原始转写直归档）；
-    routing == "accumulate" -> 只 feed、返回 False；聊态 -> 无行为返回 False。"""
+    routing == "accumulate" -> 只 feed、返回 False；聊态 -> 无行为返回 False。
+
+    引导播报窗口过滤（261022-p3-record-front-polish-fix 缺陷④；FROZEN CONTRACT B 节）：
+    窗口内（`_story_guide_window_active`）到达的 stt 不喂素材缓冲、返回 False、不改累积
+    缓冲——KPLOG005「Okay」幻听（human 实证非本人声音）直进素材即此缺口。**只滤素材面**：
+    收尾词判定面（`_story_finish_on_phrase` -> story.is_finish_phrase）不经本函数，窗内
+    孩子真说「说完了」收尾沿照常可达（FP-A1 本体）。now（additive keyword-only；缺省 None
+    = 墙钟）供注入时钟快进（RDG-A5 self_push keyword-only 先例同缝），窗口过期判定与
+    feed 的 last_activity 都消费注入 now，不落墙钟。"""
     if not session_id or not isinstance(obj, dict):
         return False
     if obj.get("type") != "stt":
@@ -362,12 +458,16 @@ def _story_feed_from_stt(session_id, obj) -> bool:
     if not isinstance(text, str) or not text.strip():
         return False
     acc = _get_story_acc()
+    if _story_guide_window_active(acc, session_id, now):
+        log.info("story_feed_guard corr_id=%s dropped=guide_broadcast_window", session_id)
+        return False
+    now_dt = now if now is not None else datetime.now(timezone.utc)
     routing = acc.routing(session_id)
     if routing == "pending_stop":
-        acc.feed(session_id, text)
+        acc.feed(session_id, text, now=now_dt)
         return True
     if routing == "accumulate":
-        acc.feed(session_id, text)
+        acc.feed(session_id, text, now=now_dt)
     return False
 
 
@@ -584,13 +684,16 @@ async def _story_timeout_sweep(now=None) -> int:
 
       ② stuck-due（stuck_due_sessions 命中）会话执行引导回合：引导制品 prompt →
          _openclaw_chat_once（R1-F4 provider 出口，loopback 18789）→ 有文本 =
-         kidpal_speak 注入播报（ADR-003 通道，不以提醒帧形态下发）；**返回空/异常 =
-         本轮不播报仍计轮**（mark_guide_round，q6/E3 收声不停摆）。引导轮不归档、
-         不下发 start_organizing（引导不是收尾）。
+         kidpal_speak 注入播报（ADR-003 通道，不以提醒帧形态下发；播报文本受
+         GUIDE_SPEECH_MAX_CHARS 篇幅上限夹紧）；**返回空/异常 = 本轮不播报仍计轮**
+         （mark_guide_round，q6/E3 收声不停摆）。引导轮不归档、不下发 start_organizing
+         （引导不是收尾）。末段引导轮（GUIDE_ROUND_LIMIT）已发的会话不再发第 3 轮。
       ③ auto-finish（auto_finish_due_sessions 命中，先于引导判定——第 2 轮计时到仍
          无回应即收尾，不再发第 3 轮引导）→ 三式收尾统一下发：control/start_organizing
          恰一帧（重复幂等——收尾后 routing 回 chat，重复 sweep 不再命中）+ 出语境信号
-         active=false + 走整理回合。
+         active=false + 走整理回合。计时阈值 = STUCK_GUIDE_SECONDS +
+         GUIDE_RESPONSE_WINDOW_SECONDS（末段引导后的应答窗：窗内留给 ASR 收尾词链路，
+         窗耗尽才自动收尾——缺陷③「说完了」孤儿帧竞态）。
       ④ 整理回合：一次性、忠实指令（整理制品）、标题 ≤12 字同回合产出 → archive_story
          （既有零改）→ story_text(seq) + story_list 三时点②；失败 = 当轮素材不归档 +
          固定安抚句 kidpal_speak（R1-N4，不发明新语义）。
@@ -606,11 +709,21 @@ async def _story_timeout_sweep(now=None) -> int:
             log.info("story_pending_timeout corr_id=%s released=true", sid)
     finished = 0
     # ③ 自动收尾先于引导判定：第 2 轮计时到仍无回应即收尾（不再发第 3 轮引导）。
-    for sid in acc.auto_finish_due_sessions(now_dt):
+    # 应答窗（261022-p3-record-front-polish-fix 缺陷③；FROZEN CONTRACT A/C 节）：自动
+    # 收尾阈值 = 旧触发点（STUCK_GUIDE_SECONDS）**叠加**应答窗——末段引导后先留
+    # GUIDE_RESPONSE_WINDOW_SECONDS 给 ASR 收尾词链路（实测 5~14s 恒迟到），窗内「说完了」
+    # 经 is_finish_phrase 走正常收尾（不成孤儿帧），窗耗尽后自动收尾照常（恰一帧 + 幂等
+    # 既有语义零偏移）。常量现读模块全局（monkeypatch 可调，FP-X2 单源）。
+    finish_timeout_s = gw_story.STUCK_GUIDE_SECONDS + GUIDE_RESPONSE_WINDOW_SECONDS
+    for sid in acc.auto_finish_due_sessions(now_dt, timeout_s=finish_timeout_s):
         await _story_auto_finish(sid, now_dt)
         finished += 1
     # ② 卡壳引导回合（stuck-due 命中；LLM 失败/空 = 抑制计轮仍走，收声不停摆）。
+    # 末段引导轮（GUIDE_ROUND_LIMIT）已发的会话不再发第 3 轮——那段时长正是应答窗，
+    # 播放第三段引导会把孩子正说的收尾话盖过去（缺陷③本体）；等 ③ 的自动收尾接位。
     for sid in acc.stuck_due_sessions(now_dt):
+        if acc.guide_rounds(sid) >= gw_story.GUIDE_ROUND_LIMIT:
+            continue
         await _story_guide_round(sid, now_dt)
     return finished
 
@@ -646,9 +759,14 @@ async def _story_guide_round(sid, now_dt) -> None:
     if reply:
         # 腿集会话归口（[SC-D]）：只打该会话归属连接的引擎腿；映射缺席（无登记连接,
         # 离线/既有直调形态）= 退回全局腿，与 261019 现状等价。
-        await _speak_to_engine_legs(reply, _session_legs(sid) or list(_alert_legs))
-        log.info("story_guide_round corr_id=%s spoken=yes rounds=%d",
-                 sid, acc.guide_rounds(sid) + 1)
+        # 单段引导播报篇幅上限（261022-p3-record-front-polish-fix 缺陷③；CONTRACT A 节）：
+        # 超限按 GUIDE_SPEECH_MAX_CHARS 截断——截断产物恒为原文前缀（不另编内容），
+        # 上限内原样保真；常量现读模块全局（monkeypatch 可调）。
+        spoken_text = reply[:GUIDE_SPEECH_MAX_CHARS]
+        await _speak_to_engine_legs(spoken_text, _session_legs(sid) or list(_alert_legs))
+        log.info("story_guide_round corr_id=%s spoken=yes rounds=%d chars=%d%s",
+                 sid, acc.guide_rounds(sid) + 1, len(spoken_text),
+                 "" if spoken_text == reply else " truncated=true")
     else:
         log.info("story_guide_round corr_id=%s spoken=no (suppressed, still counts)",
                  sid)
