@@ -96,5 +96,6 @@ graph LR
 - **不触碰 display E1 / B1 课表 MD / §三提醒 / §四私有消息帧的线格式**；课表机械注入只改「谁把 B1 内容喂给模型」，不改 B1 结构。
 - **不修改历史 prompt 版本文件**（v1–v11 原地冻结、可 diff）；不新建 v12 双件、不新建 `server/deploy/prompts/` 平行目录（OQ-8）。
 - **记忆保留 / 备份 / 删除**：删除 = 运维手工、无自助界面；备份 = 不备份靠重建（OQ-10 human 终裁）。
-- **跨批前置**：需求面 requirements v1.67 / 架构面 FROZEN v1.1 landing / 契约包随批原子落——三项已全部满足（见 decision-coverage.json `launchPreconditions` LP1–LP3）；门 1 + human 过目切法 + commit-before-launch 为 launch 前剩余门（LP4–LP5）。
+- **跨批前置**：需求面 requirements v1.67 / 架构面 FROZEN v1.1 landing / 契约包随批原子落——三项已全部满足（见 decision-coverage.json `launchPreconditions` LP1–LP3）；门 1 GREEN + human 过目切法已于 2026-10-22 确认（LP4）；commit-before-launch（LP5）为 launch 前剩余门。
+- **OQ 编号两套不同源**：workstream PROPOSAL §3.2 的 OQ-1–OQ-10 与架构批 PROPOSAL 的 OQ 编号**不是同一套**（同号可指不同问题，如架构侧 OQ-6 = 多设备 peer 映射，本 workstream OQ-6 = 记忆保留/删除语义）。实现侧一律按包内 `sourceRefs` 精确指针读取，**勿裸引 OQ 号**。
 - **收口轮归属**：P5 为最后一个行为切片的收口轮 owner；P4 的前后计数报告同轮对账；真机配额默认仅收口轮。

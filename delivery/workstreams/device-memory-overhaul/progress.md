@@ -24,3 +24,15 @@
 - **机检**：5 包 JSON 均通过 `taskpackage-required-check.mjs` 除 Draft 态两字段（`acceptance` / `acceptanceTestsFile`）外零错误、零 warning；`render-roadmap.mjs` 渲染成功且编号与 changeId token 一致（M5-K1 / M5-N2a / M5-K2b / M5-K3 / M5-K4）。
 - **board**：5 pod 预填 `queued` + merge order 50–54（`portfolio-reconcile.mjs --set-pod` 单一写者；worktree-path 留 null，由 launch 侧预填）。
 - **待办（交给 human / 门 1）**：① human 发起门 1（architect 轻量 checklist 五项 + workType 分流），裁决 append `review.md` 门 1 节；② 门 1 GREEN + human 过目切法；③ commit-before-launch（四件套 commit 到专用 base ref，非 main；board 不入 commit）；④ 逐包 launch（P1 先，P5/P2 次，P3、P4 串行）。
+
+## 2026-10-22 · 门 1 GREEN + 判官 A1–A5 补正落盘（portfolio-planner）
+
+- **门 1**：human 确认 verdict GREEN、过目切法；判官 A1–A5 五项补正经 human 终裁，均不构成否回、不改切片结构。裁决已耐久记录 `review.md`「门 1」节（GREEN 不留聊天）。
+- **A1（K1 · SOUL/USER 清理）**：落 K1 `plan.md`「跨包事实」节 + taskpackage `K1-E8`（structural / live 处置项）——live 核实 `workspace-kidpal/SOUL.md` 与 `USER.md`：存在则清空/瘦身并登记为 P1 launch card 人工步骤（随 deploy.sh 铺放批次一并处理），不存在则显式记 moot；不扩 changeManifest。
+- **A2（K3 种子外扩项确认）**：落 `decision-coverage.json` `_doc`——`server/deploy/261022-openclaw-honcho-plugin/**` 属种子外扩，依据 = P3 范围「生产 profile 插件+hooks 授权」+ K3-E6 + 261017 声明式 patch 先例，无他包认领（human 2026-10-22 确认）。
+- **A3（K4 出处指针改正）**：K4 `plan.md`「arch PROPOSAL §4」→「workstream PROPOSAL.md:99 · §4 P4 行」。
+- **A4（glob 重叠注记）**：落 K3 `plan.md`「跨包事实」节——`server/deploy/honcho/backfill/**` 子树归 P4，K3 只建栈本体、不预建/不改动 backfill 目录。
+- **A5（launch brief 提醒）**：落 `roadmap.md` ④ 节 + `decision-coverage.json` `_doc`——OQ 编号两套不同源（workstream vs arch PROPOSAL），实现侧按包内 `sourceRefs` 读、勿裸引 OQ 号。
+- **LP4 状态翻转**：`decision-coverage.json` `launchPreconditions` LP4 → `verified`（evidence = review.md 门 1 节 + 本节点补正）。
+- **机检**：5 包 `taskpackage-required-check.mjs` 重跑（见同日验证输出）；JSON 语法与 Draft 态豁免字段核对。
+- **status：`ready-for-commit-before-launch`** —— 四件套就绪；LP5 commit-before-launch（专用 base ref，非 main）与逐包 launch 交主线程（human）。本轮不拉子会话、不 launch Pod。

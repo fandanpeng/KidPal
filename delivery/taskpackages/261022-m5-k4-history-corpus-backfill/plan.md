@@ -24,7 +24,7 @@ mergeOrder: 54
 - 幂等判据可在 plan 阶段定形（消息指纹 / session+turn 键 / 去重写入），host 面可离线验证「二次跑零增量」。
 - 清库回滚可在测试库或快照窗口演练，不触碰源语料。
 - 前置：P3 已合并（peer 映射与画像边界）；P3 的资格门不影响 backfill（历史照记显式豁免）。
-- **风险提示（arch PROPOSAL §4 预判）**：若过滤 / 回滚设计未收敛，riskTier 升 critical 并回 planner/architect 重评——本包拆包期按 high 起步，builder 期若发现必须引入 PII 过滤或不可逆数据移动，停、升级。
+- **风险提示（workstream PROPOSAL.md:99 · §4 P4 行预判）**：若过滤 / 回滚设计未收敛，riskTier 升 critical 并回 planner/architect 重评——本包拆包期按 high 起步，builder 期若发现必须引入 PII 过滤或不可逆数据移动，停、升级。
 
 # 跨包事实与共享冻结面约束（只有 RTE 看全局的部分）
 

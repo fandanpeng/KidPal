@@ -34,6 +34,7 @@ mergeOrder: 53
 - **P4 消费本包的 peer 与画像边界**：backfill 按本包设备的 peer 落库；历史照记豁免不分回合性质，但新增回合仍走本包资格门——两条口径不互串。
 - **front 一次性回合**：`server/gateway/front/front_app.py` 的 `_openclaw_chat_once` 现状不携 `user`；若实测发现仍有携 `user` 的旁路，最小改动隔离，不改 provider 单源构造与契约 §四禁 `max_tokens` 约束。
 - **manifest marker 锚**：若 Honcho 配置经 overlay 渲染，P1 更新后的 `.config.yaml` 锚集由本包追加 Honcho 相关锚；不得回退 P1 的动态块锚。
+- **与 P4 的 changeManifest 子树分层（门 1 终裁 A4）**：本包 `server/deploy/honcho/**` 的 glob 与 P4 的 `server/deploy/honcho/backfill/**` 重叠——**`server/deploy/honcho/backfill/**` 子树归 P4**。本包只建栈本体（compose / 配置 / apply-rollback / 健康检查），不预建、不改动 backfill 目录；P4 只在其子树内新增、不动本包栈文件。两包的 `manifest.yaml` / `verify-deploy.sh` 条目按 merge 顺序各自串行追加。
 
 # 铁律约束
 

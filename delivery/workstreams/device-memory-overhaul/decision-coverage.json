@@ -13,7 +13,9 @@
     "跨包共享常量 / 共享冻结面交叉扫描（launch 前预警）：① 常量互斥型——未发现。「user=<device_id>」字面与 `agent:kidpal:openai-user:<device_id>` 键跨 P2/P3/P4 共享但值唯一、非互斥；`prompt_template` / `system_error_response` 两键由 P1 保留、P3 不得删除（值唯一）。② 行为碰撞型——四处已登记处置：(a) manifest `.config.yaml` marker 锚「实时事实回合」是 v11 静态内容锚，P1 必须同批换为动态块锚，否则 verify-deploy 必红；(b) 冻结验收 harness（test_prompt_v7_round_routing / test_261010 / test_261017）断言现行三面接线与 v11 语义，P1 须经 acceptance-author 留痕 supersede，禁静默改写；(c) openclaw.json 运行态被 P1（tools allowlist）与 P3（Honcho 插件 + hooks）两次声明式 patch，须顺序 apply / 幂等 / drift_guard 以 P1 已应用态为锚；(d) workspace AGENTS.md 被 P1（迁移 v11 语义）与 P3（追加 v12 守则）串行编辑，P1 先落、P3 只追加不回转。③ 跨切片边角——P5 可与 P2 换序（merge order 51 < 52）：P2 rebase 须保留 P5 在 connection.py 的动态块装配段；P3 的插件配置经 overlay 时须在 P1 更新后的锚集上追加、不得回退。",
     "P1 v12 新建项撤销（arch §6.1 / OQ-8）：原 workstream §4 的 `openclaw-system-prompt.v12.md` 新建项撤销，改为新增 `server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt`；既有 `server/deploy/kidpal-agent-prompt.txt` 的去留/改写归 P1 定形，二选一、不得并存。",
     "acceptance 唯一写点 = Pod 内 acceptance-author：各 taskpackage 拆包期 `acceptance: []` 为空骨架；本文件只记录 decision 的承载包 / exitCriteria / 跨包指针，不代写验收断言。",
-    "拿不到上游时的 fail-closed 记录：本 workstream 上轮（同 changeId）因里程碑未登记 + task_plan 缺失打回主线程；两件已补齐并经本次 intake 复核（milestones.jsonl M5-device-memory 在场、task_plan.md phases P1–P5 在场、PROPOSAL FROZEN v1.0）。"
+    "拿不到上游时的 fail-closed 记录：本 workstream 上轮（同 changeId）因里程碑未登记 + task_plan 缺失打回主线程；两件已补齐并经本次 intake 复核（milestones.jsonl M5-device-memory 在场、task_plan.md phases P1–P5 在场、PROPOSAL FROZEN v1.0）。",
+    "K3 种子外扩项（门 1 判官 A2，human 2026-10-22 确认）：`server/deploy/261022-openclaw-honcho-plugin/**` 不在 workstream PROPOSAL §4 P3 行的字面清单内，属种子外扩项——依据 = P3 范围「生产 profile 插件+hooks 授权」+ K3-E6 声明式 patch 组合纪律 + 261017-openclaw-kidpal-skills 声明式 patch 先例；无其他包认领（P1 的 `261022-openclaw-kidpal-tools/**` 只承载 tools allowlist）。",
+    "OQ 编号两套不同源（门 1 判官 A5）：本文件与各 taskpackage 中的 OQ 号默认指 workstream PROPOSAL §3.2 的 OQ-1–OQ-10；架构批 PROPOSAL 另有一套同名编号（同号可指不同问题，如 arch 侧 OQ-6 = 多设备 peer 映射 vs 本 workstream OQ-6 = 记忆保留/删除语义）。实现侧一律按包内 `sourceRefs` 精确指针读取，勿裸引 OQ 号。"
   ],
   "decisionCoverage": [
     {
@@ -293,8 +295,8 @@
     {
       "text": "LP4 门 1 GREEN + human 过目切法：architect 轻量 checklist review 五项全过（切片逻辑 / 依赖序与 WIP / decision-coverage 完备 / 每包意图与 PROPOSAL 一致 / demo 证据形态可行）+ human 认可切法；裁决 append workstream review.md「门 1」节。",
       "scope": "workstream",
-      "status": "unverified",
-      "evidence": ""
+      "status": "verified",
+      "evidence": "delivery/workstreams/device-memory-overhaul/review.md「门 1」节（2026-10-22：verdict GREEN + 判官 A1–A5 补正 + human 终裁）；补正落点见 progress.md 同日节"
     },
     {
       "text": "LP5 commit-before-launch：拆包四件套（roadmap.md + taskpackage.json ×5 + plan.md ×5 + decision-coverage.json）commit 到专用 base ref（非 main）后，worktree 自该 ref 建出；board 不入 commit。",

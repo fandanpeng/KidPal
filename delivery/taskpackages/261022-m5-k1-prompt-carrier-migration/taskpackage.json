@@ -56,6 +56,11 @@
       "id": "K1-E7",
       "kind": "structural",
       "note": "live 观测项（非自动断言，诚实申报）：human 部署后复测单轮 DeepSeek prompt_tokens ≤11,000（基线 22,116）与 cache hit 覆盖稳定前缀（目标翻倍量级）；工具面 audit 可见工具 = 4 项、57KB schema 消失。本包 host 面转绿后停门等 human，不自行部署"
+    },
+    {
+      "id": "K1-E8",
+      "kind": "structural",
+      "note": "SOUL/USER 清理（human 2026-10-22 门 1 终裁 A1；live 处置项，非自动断言）：live 核实 workspace-kidpal/SOUL.md 与 USER.md（ECS 生产 workspace live 在场，仓内无镜像、不在本包 changeManifest）——存在则清空/瘦身，处置登记为 P1 launch card 人工步骤、随 deploy.sh 铺放批次一并处理；不存在则显式记为 moot。不得据此扩包 changeManifest"
     }
   ],
   "iterationBudget": 2,

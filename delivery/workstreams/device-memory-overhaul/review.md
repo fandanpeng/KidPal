@@ -133,3 +133,18 @@ impactedTests 种子：`test_prompt_v7_round_routing.acceptance.py`（语义锚�
 ## 结论
 
 A = `NO_CONTRACT_CHANGE`（附非必需措辞对账建议）；B = `ACCOMPANIES_SPEC_CHANGE`（契约包三节随架构面 PROPOSAL 原子落）。主线程动作：① spine anchors.contract 与 OQ-5 回填（已完成）；② PROPOSAL §7 回填（已完成）；③ 契约包三节草案要点带入架构面 /arch-change PROPOSAL 起草输入。facePlan「分类未闭合前实现包不得 launch」——B 判 ACCOMPANIES_SPEC_CHANGE 后，闭合条件 = 架构批契约包落地，实现包 launch 闸维持。
+
+---
+
+# 门 1 · 拆包 review 裁决（architect 轻量 checklist，2026-10-22）
+
+**verdict = GREEN**｜human 2026-10-22 确认并过目切法（不否回、不改切片结构）。
+
+- **checklist 五项**：① 切片逻辑；② 依赖序与 WIP limit；③ decision-coverage 完备；④ 每包意图与 PROPOSAL 一致；⑤ demo 证据形态可行——verdict GREEN。
+- **判官补正 A1–A5 与 human 终裁（均不构成否回）**：
+  - **A1（K1 · SOUL/USER 清理进 K1）**：live 核实 `workspace-kidpal/SOUL.md` 与 `USER.md`（ECS live 在场、仓内无镜像）→ 存在则清空/瘦身并记入 P1 launch card 人工步骤（随 deploy.sh 铺放批次一并处理）；不存在则显式记 moot。**落点**：K1 plan.md「跨包事实」节 + taskpackage `K1-E8`。
+  - **A2（确认扩项）**：K3 的 `server/deploy/261022-openclaw-honcho-plugin/**` 为种子外扩项，依据 = P3 范围「生产 profile 插件+hooks 授权」+ K3-E6 + 261017 声明式 patch 先例，无他包认领（human 2026-10-22 确认）。**落点**：`decision-coverage.json` `_doc`。
+  - **A3（出处指针改正）**：K4 plan「arch PROPOSAL §4」→「workstream PROPOSAL.md:99（§4 P4 行）」。**落点**：K4 plan.md 可行性判据节。
+  - **A4（glob 重叠注记）**：K3 包内注明 `server/deploy/honcho/backfill/**` 子树归 P4。**落点**：K3 plan.md「跨包事实」节。
+  - **A5（launch brief 提醒）**：OQ 编号两套不同源（workstream vs arch PROPOSAL），实现侧按包内 `sourceRefs` 读、勿裸引 OQ 号。**落点**：roadmap.md ④ 节 + `decision-coverage.json` `_doc`。
+- **执行记录**：判官派发与 human 裁决均为 2026-10-22（拆包第二轮同日）；补正执行与机检回执见 `progress.md` 同日节。LP4 状态在 `decision-coverage.json` `launchPreconditions` 翻为 `verified`。

@@ -34,6 +34,7 @@ mergeOrder: 50
 - **冻结验收语义锚升级**：`test_prompt_v7_round_routing.acceptance.py` / `test_261010_engine_decision21_overlay_persist.acceptance.py` / `test_261017_openclaw_kidpal_skills.acceptance.py` 承载现行三面接线与 v11 语义断言。承载拓扑反转后这些断言需语义升级（acceptance-author 留痕 supersede），**不静默改写冻结断言**；`test_261001_openclaw_model_name_overlay_drift.acceptance.py` 作为声明式 patch 同型守卫参照。
 - **契约面只读**：`docs/contracts/**` 本包零改；契约 §1.6 承载对账注记已随 arch 批落稿，本包不改契约字面；display E1 线格式零改动。
 - **非本包**：v12 守则内容（P3）、Honcho 记忆（P3/P4）、课表注入内容与单源反证（P5）、持久会话 payload（P2）。
+- **SOUL/USER 清理（human 2026-10-22 门 1 终裁 A1，live 处置项）**：live 核实 `workspace-kidpal/SOUL.md` 与 `USER.md`（ECS 生产 workspace live 在场，仓内无镜像、不在本包 changeManifest）——存在则清空/瘦身，处置登记为 P1 launch card 人工步骤，随 deploy.sh 铺放批次一并处理；不存在则显式记为 moot。不得据此扩包 changeManifest；host 面不作自动断言，按 live 观测项诚实申报。
 
 # 铁律约束
 
