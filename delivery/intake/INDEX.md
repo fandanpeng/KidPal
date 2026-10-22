@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261022-device-memory-prompt-overhaul | req+arch+contract+imp | in-flight | 2/4 | 2026-10-22 | — |
+| 261022-device-memory-prompt-overhaul | req+arch+contract+imp | in-flight | 3/4 | 2026-10-22 | — |
 | 261021-p3-record-cancel-lifecycle | — | — | — | 2026-10-21 | ⚠值域外 |
 | 261019-p3-record-dialogue-guide | req+arch+contract+imp | closed | 4/4 | 2026-10-19 | — |
 | 261018-sd-log-persist | arch+imp | closed | 4/2 | 2026-10-18 | — |
