@@ -42,19 +42,28 @@
       "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
     }
   ],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "（acceptance-author 冻结后回填）通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf；通道 B（本件独立通道红基线）：acceptance-author 冻结时定",
-  "redBaselineResult": "（acceptance-author 冻结实跑后回填）",
+  "acceptanceTestsFile": [
+    "firmware/main/test/chrome_ghost.acceptance.c"
+  ],
+  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/cg_red_runner ../../chrome_ghost.acceptance.c ../../../display/keybar.c ../../../display/kidpal_voice_states.c runner.c（COMPILE_EXIT 须 0 零 warning）&& cd <repo root> && /tmp/cg_red_runner（结构锚支持 KIDPAL_REPO_ROOT 注入）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：227 Tests 3 Failures exit 3——与基线锚 0df2c0c3 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 227→232 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——TEST 1 CG-A1（weak 哨兵 kidpal_keybar_scene_get 返回 -99 或 set 未存真值）、TEST 2 CG-A2（frozen seam 未实现 kidpal_keybar_story_transition_slots）、TEST 3 CG-A2（kidpal_keybar_sync_locked 未消费 transition_slots 接线）、TEST 4 CG-A3（story_list 前推渲染闭包 end_page 后无层栈收口）、TEST 5 CG-A4（host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c）。双向可满足性：/mnt/c/tmp/cg_work 合成树（KIDPAL_REPO_ROOT 注入 + 一次性参考实现，不写入工作树）绿树 5 Tests 0 Failures 零 warning；七处定向变异各只打红对应 TEST_CASE（复位值入语音闭集→T1 / 过渡窗产语音残留→T2 / 摘过渡窗接线→T3 / 场景 static 第二真相源回归→T3 / 盖章闭包摘收口→T4 / 摘登记→T5 / 摘会话收尾沿复位→T3）。转绿判据：builder 落地 [CG-C1]/[CG-C2] 新缝 + [CG-C3] 接线 + [CG-C5] 登记（builder FIRST ACTION：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 追加 ../../chrome_ghost.acceptance.c 置于 smoke 之前）后全绿；既有 host 全量套件零新增红。verbatim 详见 firmware/main/test/chrome_ghost.acceptance.c 头注「冻结落盘实跑」段（commit a92706c0）。CG-A5 = live-manual 真机目检，不计入 runner 通过面。",
   "deliveryImpact": "none",
   "planningImpact": "none",
-  "gateProfile": ["docs-sync", "test-quality", "evidence-integrity", "device-round"],
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
   "exitCriteria": [
     "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
     "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
     "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
     "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
   ],
-  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "crossEnd": {
     "counterparts": [],
     "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
@@ -62,14 +71,20 @@
   "securityReviewRequired": false,
   "securityAxes": [],
   "adrRequired": false,
-  "requiredLayers": ["unit", "acceptance-offline", "firmware-build"],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
   "iterationBudget": 3,
   "fixBudget": 3,
   "docRefs": [
     "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
     "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
   ],
-  "planningRefs": ["delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"],
+  "planningRefs": [
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
+  ],
   "mutationRequired": true,
   "docsSyncRequired": true,
   "docsOwner": "integrator",
