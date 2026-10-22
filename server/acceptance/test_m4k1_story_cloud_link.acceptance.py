@@ -1822,7 +1822,9 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
         """coverage: SAO-A1 / S-F2.2-AC4 v1.65 + R1-N4 — 真机序（stop 先、stt 后）+
         organize 失败（不打桩：离线连接拒绝快失败 = EQ-4 既有环境假设）-> **零归档**
         （0 文件，不写空故事）+ 固定安抚句经 kidpal_speak 注入下发（R1-N4 全链负锚：
-        零 story_text、零 story_list）+ 会话不挂死（回闲聊态）。"""
+        零 story_text、story_list 恰一帧**空列表页面退出帧** total=0/items=[]——
+        设备 ORGANIZING 非交互页的退出载体，零归档时列表不得虚增）+
+        会话不挂死（回闲聊态）。"""
         with tempfile.TemporaryDirectory(prefix="sao_a1f_") as tmp:
             with _front_with_stories(tmp) as front:
                 sid = "sess-sao-a1-fail"
@@ -1856,10 +1858,22 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
                     _story_text_frames(dev.sent_text), [],
                     "SAO-A1 RED: organize 失败仍下发 story_text —— 未归档不得有正文下发"
                     "（R1-N4 全链负锚；假归档演出）。")
+                exits = _story_list_frames(dev.sent_text)
                 self.assertEqual(
-                    _story_list_frames(dev.sent_text), [],
-                    "SAO-A1 RED: organize 失败仍追加 story_list 推送 —— 零归档时列表不得"
-                    "虚增（R1-N4 全链负锚）。")
+                    len(exits), 1,
+                    f"SAO-A1 RED: organize 失败后 story_list 下发 {len(exits)} 帧（应恰"
+                    "一帧页面退出帧）—— ORGANIZING 非交互页（KEY/BOOT 全吞、[R2] 复位"
+                    "只认 RECORDING）的设备页面退出载体缺失 = 真机困死形态（KPLOG005 "
+                    "1698525-1716875 群证：安抚句播完 Idle 后页面滞留 substate=6）；"
+                    "零帧旧钉法允许「既不发帧也不退页」的困死实现假绿。")
+                self.assertEqual(
+                    (exits[0].get("data") or {}).get("total"), 0,
+                    "SAO-A1 RED: 页面退出帧 data.total != 0 —— 零归档时列表不得虚增"
+                    "（R1-N4 文案意图钉死：失败路径不产新篇、星星计数不涨）。")
+                self.assertEqual(
+                    (exits[0].get("data") or {}).get("items"), [],
+                    "SAO-A1 RED: 页面退出帧 data.items 非空列表 —— 退出帧必须是空列表"
+                    "对账（零归档、无条目可列; 复用成功路径通道的空态形状）。")
                 acc = front._get_story_acc()
                 self.assertEqual(
                     acc.routing(sid), "chat",
@@ -2260,6 +2274,30 @@ class SAOArchiveOrderAcceptance(unittest.TestCase):
 #   与改钉前 34 passed 基线逐齿同绿。收集零错误（冻结即冒烟，DEV-GOVERNANCE §3；
 #   standalone python 直跑同口径 Ran 36 tests / failures=5，执行通道 error 为零 =
 #   冒烟判据达成）。
+# --------------------------------------------------------------------------- #
+# [2026-10-22 · 正常改验收通道（非 §6 tighten-only）· 包 261021-p3-record-cancel-lifecycle
+#  真机轮（RCL 包）· planner 裁定成立 · 范围：本冻结件内 SAO-A1 失败分支 story_list
+#  负锚单处重钉（:1859 区）]
+#   修订理由（RCL 包真机轮实录 + planner 裁定）：organize 失败路径设备困死 ORGANIZING
+#   非交互页（KEY/BOOT 全吞、[R2] 复位只认 RECORDING）——fixer 已在
+#   _story_finish_session 失败分支补发逐设备腿 story_list 页面退出帧（total=0/
+#   items=[]，复用成功路径通道，零虚增；真机 KPLOG005 1698525-1716875 群证：安抚句
+#   播完 Idle 后页面滞留 substate=6）。SAO-A1 既有「_story_list_frames == []」严格
+#   零帧负锚与新行为互斥（断言-实现互斥 = 不可满足齿），但其文案意图「零归档时列表
+#   不得虚增」实际成立且须保留。
+#   修订动作：失败分支 story_list 断言由「严格零帧」改写为「恰一帧页面退出帧且
+#   data.total == 0、data.items == []」——比原钉法更精确（原形式允许实现既不发帧也
+#   不退页的困死形态假绿；新形式把退出帧钉死且锁定不虚增 = 更强的行为钉法，非弱化）。
+#   同 case 的 story_text 零帧断言与零归档断言保持不动；docstring 同步换代。授权 =
+#   planner（RCL 包真机轮伴生断言换代，acceptance-author 执行）。
+#   红基线恒现跑（2026-10-22 实跑）：test_m4k1 单件全绿 + server/acceptance 全目录
+#   238 passed 零新增红（逐字 summary 见 taskpackage / RCL 包交付报告）；RCL/RDG
+#   两件点名复跑同绿。
+#   sha256 核销链: v5 交付形态（2026-10-20 条）→ 本次修订后正文态 sha256 =
+#   bce20062e5043a2ff825fc1a92e663375163996226a497a98074313eee9ce884（复算程序 = 逐行
+#   剥离：自「# REVISION LOG」头行起、至 `if __name__` 行之前的全部注释行剥除，保留其
+#   前与其后原文；子串定位会误命中 2026-09-24 条正文中的反引号字面，须按行首判据）。
+#   本条自身计入被剥离块、自指不可解，据实分记——同前三条口径。
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
     loader = unittest.TestLoader()

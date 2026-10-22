@@ -125,6 +125,20 @@
  *            KEY 按（K2 前置分流 -> REC_SESSION 消费位 -> StartListening）与唤醒词
  *            （WakeWordInvoke）双入口都汇入 Listening 分支 = 单点覆盖双入口。
  *
+ *   [S8] kidpal_story_discard 发送原语 + 发送时点（2026-10-21 additive,
+ *        TaskPackage 261021-p3-record-cancel-lifecycle RCL-F1; home = protocols/
+ *        protocol.{h,cc} 原语 + mcp_server.cc DISCARD case 发送点; 逐字仿
+ *        SendKidpalStoryDelete 形态; 契约 §四 kidpal_story_discard 2026-10-21
+ *        LANDED——零契约改动）:
+ *          protocol.h: virtual void SendKidpalStoryDiscard();
+ *          protocol.cc: 拼 {"session_id":"...","type":"kidpal_story_discard"}
+ *            （两字段、单向通知、无应答）走 SendText。
+ *          发送点 = mcp_server.cc KSPV2_ACT_DISCARD_RECORD case 内、
+ *            CloseAudioChannel **之前**（同一 TCP 有序, front 泵先消费 discard
+ *            再处理断连——契约 §四发送时机; 帧序断言 = RSL-A5 tooth 3 换锚,
+ *            原语链/wire 形状 = RSL-A8; 旧锚「仅 CloseAudioChannel 接线」由两者
+ *            联合取代, REVISION LOG 2026-10-21 条）。
+ *
  * ---------------------------------------------------------------------------
  * Coverage map (acceptanceRef -> test):
  *   coverage: M4K3-A1 session_ctx 发送缝（契约 §四 + S-F2.2-AC1 技术信号板端半 +
@@ -138,6 +152,9 @@
  *             -> RSL-A7
  *   coverage: M4K3-A9 零偏移与注册守卫（K2 语义位/K1-K3 契约面/spec canary/注册序）
  *             -> RSL-C1
+ *   coverage: RCL-F1 discard 发送原语与帧序（261021-p3-record-cancel-lifecycle 负锚
+ *             换锚 + 原语链; 契约 §四 kidpal_story_discard 2026-10-21 LANDED）
+ *             -> RSL-A5 tooth 3（换锚帧序断言）+ RSL-A8
  *   （M4K3-A4 front 双路径守卫 / M4K3-A7 ctx 条件推送 front 半 / M4K3-A8 prompt v8
  *    = server/acceptance/test_m4k3_record_session_live.acceptance.py 承载;
  *    M4K3-A10 = dropped 显式取舍, 见 taskpackage decisionCoverage。）
@@ -733,14 +750,38 @@ TEST_CASE("record_session_live: 录音手势会话接线+交叉负锚 (RSL-A5)",
         "ToggleChatState——收尾保存严禁走会话 toggle/断连（不发 listen stop -> front "
         "走 disconnect cancel 丢弃路径 = 毁稿; 两条 front 路径不混的板端根, notes (e)）");
 
-    /* tooth 3: DISCARD_RECORD case -> 丢弃面（CloseAudioChannel 即达 front 断开钩子
-     * acc.cancel 弹缓冲不落盘; S-F2.2-AC4 BOOT 任一手势 = 丢弃退回列表）。 */
-    TEST_ASSERT_TRUE_MESSAGE(
-        rsl_region_contains(RSL_MCP_CC, "case KSPV2_ACT_DISCARD_RECORD:",
-                            "case KSPV2_ACT_NONE:", "CloseAudioChannel"),
-        "RSL-A5 RED: KSPV2_ACT_DISCARD_RECORD case 零 CloseAudioChannel 接线——"
-        "BOOT 丢弃无会话动作（S-F2.2-AC4: 取消录音、已录内容丢弃退回列表, 不设重录"
-        "恢复 v1.49; front 断开钩子 cancel 收不到断开 = 内容滞留累积态）");
+    /* tooth 3 (2026-10-21 换锚, RCL-F1): DISCARD_RECORD case -> 丢弃面双动作帧序
+     * （契约 §四 kidpal_story_discard: SendKidpalStoryDiscard **先于** CloseAudioChannel
+     * —— 同一 TCP 有序, front 泵先消费 discard 再处理断连; CloseAudioChannel 仍必须在
+     * 场 = cancel-on-disconnect 兜底依赖关通道（OQ2 维持）; S-F2.2-AC4 BOOT 任一手势
+     * = 丢弃退回列表）。旧锚「仅 CloseAudioChannel 接线」按 plan.md 负锚换锚条款由
+     * 本帧序断言 + CloseAudioChannel 在场断言联合取代（齿语义更新属本包验收面,
+     * 非绕齿; REVISION LOG 2026-10-21 条）。 */
+    {
+        char *region = rsl_region_between(RSL_MCP_CC,
+                                          "case KSPV2_ACT_DISCARD_RECORD:",
+                                          "case KSPV2_ACT_NONE:");
+        const char *p_disc, *p_close;
+        TEST_ASSERT_TRUE_MESSAGE(region != NULL,
+            "RSL-A5 RED(infra): mcp_server.cc DISCARD_RECORD case 区切取失败（case 锚"
+            "漂移——须复核本齿锚, 不属 builder 修订面）");
+        p_disc = strstr(region, "SendKidpalStoryDiscard(");
+        p_close = strstr(region, "CloseAudioChannel");
+        TEST_ASSERT_TRUE_MESSAGE(p_disc != NULL,
+            "RCL-F1 RED(换锚): KSPV2_ACT_DISCARD_RECORD case 零 SendKidpalStoryDiscard"
+            " —— 契约 §四 kidpal_story_discard 板端发送半未接线（丢弃 = 静默断连, front "
+            "无法区分主动丢弃 vs 意外掉线; 显式丢弃通道失效, front 侧 discard 消费/幂等/"
+            "审计断言失去驱动方; plan F2 + 2026-10-21 换锚条款）");
+        TEST_ASSERT_TRUE_MESSAGE(p_close != NULL,
+            "RSL-A5 RED: KSPV2_ACT_DISCARD_RECORD case 零 CloseAudioChannel —— 关通道"
+            "兜底面被摘（cancel-on-disconnect 依赖断连, OQ2 维持; must-stay-green 半）");
+        TEST_ASSERT_TRUE_MESSAGE(p_disc < p_close,
+            "RCL-F1 RED: SendKidpalStoryDiscard 晚于 CloseAudioChannel —— 契约 §四发送"
+            "时机被破（「发送时机 = 设备关闭音频通道之前同连接先行发送（同一 TCP 有序, "
+            "网关泵先消费 discard 再处理断连）」; 先断连 = discard 帧发不出去, front 只能"
+            "走 ws_disconnect 兜底, 显式丢弃通道退化为掉线路径）");
+        free(region);
+    }
 
     /* tooth 4 (负锚): DISCARD case 严禁 StopListening——丢弃不是归档（listen stop
      * 会触发 front stop 归档 = 丢弃反而落盘, 语义反转）; 旧冻结表「KEY 长按=丢弃」
@@ -750,7 +791,8 @@ TEST_CASE("record_session_live: 录音手势会话接线+交叉负锚 (RSL-A5)",
                          "case KSPV2_ACT_NONE:", "StopListening(") == 0,
         "RSL-A5 RED(负锚): KSPV2_ACT_DISCARD_RECORD case 出现 StopListening——"
         "丢弃不得走收尾保存面（listen stop = front 归档, 丢弃反被保存 = 语义反转"
-        "回潮; 丢弃 = 断连 cancel 直裁不落盘）");
+        "回潮; 丢弃 = 显式 kidpal_story_discard 帧 + 断连兜底 cancel, 不落盘"
+        "——2026-10-21 换锚后措辞随动, 断言语义零变化）");
 }
 
 /* ========================================================================== *
@@ -877,7 +919,60 @@ TEST_CASE("record_session_live: story_list 推送 gating (RSL-A7)",
 }
 
 /* ========================================================================== *
- * TEST 8 — RSL-C1: canary + 注册序守卫（structural guards）。
+ * TEST 8 — RSL-A8: kidpal_story_discard 发送原语四件套 + wire 形状（RCL-F1;
+ * 261021-p3-record-cancel-lifecycle; K2 SPV2-B3 / RSL-A1 同款先例形态; 契约 §四
+ * kidpal_story_discard 2026-10-21 LANDED——只消费冻结契约, 零契约改动）。
+ * RED today: 全部 needle 零命中（protocol 层无 discard 发送原语——design-state red）。
+ * ========================================================================== */
+/* coverage: RCL-F1 -- discard 发送原语（protocol.h 声明 + protocol.cc wire 形状拼串 + mcp_server.cc DISCARD case 发送点 = >=3 文件消费链; 逐字仿 SendKidpalStoryDelete 形态, plan F2） + websocket_protocol 零 override 负锚 */
+/* coverage: 契约 §四 kidpal_story_discard -- wire 形状片段（session_id/kidpal_story_discard/SendText）函数区同区承载（两字段、单向通知、无应答; 机制级代理, 逐字节复证挂设备轮） */
+TEST_CASE("record_session_live: kidpal_story_discard 发送原语+wire 形状 (RSL-A8)",
+          "[record_session_live][RSL-A8][structural]")
+{
+    char *region;
+    int n;
+
+    RSL_REQUIRE_ROOT();
+
+    /* tooth 1: 原语 >= 3 文件消费链（protocol.h 声明 + protocol.cc 定义 +
+     * mcp_server.cc DISCARD case 发送点调用; K2 SendKidpalStoryDelete tooth-1 同款）。 */
+    n = rsl_file_contains(RSL_PROTO_H, "SendKidpalStoryDiscard") +
+        rsl_file_contains(RSL_PROTO_CC, "SendKidpalStoryDiscard") +
+        rsl_file_contains(RSL_MCP_CC, "SendKidpalStoryDiscard");
+    TEST_ASSERT_TRUE_MESSAGE(n >= 3,
+        rsl_fm("RCL-F1 RED: SendKidpalStoryDiscard 仅 %d/3 文件命中（期望 >= 3: "
+               "protocol.h/.cc + mcp_server.cc）—— 契约 §四 kidpal_story_discard 发送"
+               "原语无端到端消费链（逐字仿 SendKidpalStoryDelete 形态, plan F2 修位; "
+               "帧序断言见 RSL-A5 tooth 3）", n));
+
+    /* tooth 2: wire 形状片段同函数区（契约 §四:
+     * {"session_id":"...","type":"kidpal_story_discard"} —— session_id 拼串 + type
+     * 两片段 + SendText 下发; 无第三字段（单向通知、无应答消息, 与 delete 先例同型
+     * 同构）; 机制级代理——逐字节 wire 复证挂设备轮, 强度申报见头注）。 */
+    region = rsl_region_between(RSL_PROTO_CC, "SendKidpalStoryDiscard", "IsTimeout");
+    TEST_ASSERT_TRUE_MESSAGE(region != NULL,
+        "RSL-A8 RED(infra): protocol.cc SendKidpalStoryDiscard 函数区切取失败"
+        "（原语未落/锚漂移——须复核本齿锚, 不属 builder 修订面）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_contains(region, "session_id") &&
+        rsl_contains(region, "kidpal_story_discard") &&
+        rsl_contains(region, "SendText("),
+        "RSL-A8 RED: protocol.cc SendKidpalStoryDiscard 函数区缺 wire 形状片段"
+        "（session_id / kidpal_story_discard / SendText 下发）—— 契约 §四 discard 帧"
+        "形状未按 SendKidpalStoryDelete 同族拼串形态承载");
+    free(region);
+
+    /* tooth 3 (guard): websocket_protocol.{h,cc} 零改动负锚（RSL-A1 tooth 3 同款——
+     * SendText 虚实现自动生效; 若有人在此层加 override = 缝分裂）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        rsl_file_count("firmware/main/protocols/websocket_protocol.cc",
+                       "SendKidpalStoryDiscard") == 0,
+        "RSL-A8 RED(guard): websocket_protocol.cc 出现 SendKidpalStoryDiscard——"
+        "发送缝须单点住 protocol 基类（K2 同族先例; override = 缝分裂反模式）");
+}
+
+/* ========================================================================== *
+ * TEST 9 — RSL-C1: canary + 注册序守卫（structural guards）。
  * RED today: 注册序 needle 零命中（本文件未进 HOST_ACCEPTANCE_SRCS——builder
  * duty）; canary/语义位守卫现状绿（must-stay-green）。
  * ========================================================================== */
@@ -949,7 +1044,28 @@ TEST_CASE("record_session_live: canary+注册序守卫 (RSL-C1)",
  *         runner.c  （自 red-baseline/ 目录; 行为齿走哨兵红、结构齿扫真实工作树）
  *   GREEN 后门面 = host_app linux ELF（CMakeLists 接线后全量, 既有 128 齿零偏移 +
  *   本文件 8 TEST_CASE 转绿）。
+ *
+ * RED baseline 判读口径 2026-10-21 增补（TaskPackage 261021-p3-record-cancel-
+ * lifecycle RCL-F1 换锚后、builder 落地前的设计态红面）:
+ *   RSL-A5 tooth 3 换锚红（SendKidpalStoryDiscard 零命中——discard 发送半未接线;
+ *   CloseAudioChannel 在场半与 tooth 4 负锚现状绿 = must-stay-green）。
+ *   RSL-A8 全红（发送原语三文件消费链零命中 + wire 形状区切取失败）。
+ *   其余 TEST_CASE 判读口径不变（host runner 内既有齿零新增红由引用锚行判停承载）。
  * --------------------------------------------------------------------------- *
  * REVISION LOG（tighten-only 修订窗口; 纯 additive / 零断言语义变化才可追加）:
  *   （冻结时点无修订。）
+ *   2026-10-21 负锚换锚 + additive（TaskPackage 261021-p3-record-cancel-lifecycle
+ *               RCL-F1; 授权 = taskpackage notes ⑦ / plan.md「负锚换锚」条款——齿
+ *               语义更新属本包验收面, 非绕齿）:
+ *               ① RSL-A5 tooth 3 换锚：DISCARD_RECORD case 断言由「零 CloseAudio
+ *               Channel 接线」改写为「SendKidpalStoryDiscard 先于 CloseAudioChannel
+ *               帧序」（契约 §四 kidpal_story_discard 发送时机 = 关通道之前同连接
+ *               先行, 同一 TCP 有序; CloseAudioChannel 在场断言保留 = cancel-on-
+ *               disconnect 兜底 must-stay-green 半）。② tooth 4 负锚（零 StopListening）
+ *               断言语义零变化、仅失败消息措辞随 discard 通道更新。③ additive 新增
+ *               TEST 8 / RSL-A8（发送原语 >=3 文件消费链 + protocol.cc 函数区 wire
+ *               形状片段 + websocket_protocol 零 override 负锚——RSL-A1 同款先例
+ *               形态; 强度 = 机制级源锚代理, 逐字节 wire 复证挂设备轮）。既有 TEST
+ *               1-7 断言集合零变化; 设计态红面追加 RSL-A8 全红 + RSL-A5 tooth 3
+ *               换锚红（SendKidpalStoryDiscard 零命中）。
  * --------------------------------------------------------------------------- */
