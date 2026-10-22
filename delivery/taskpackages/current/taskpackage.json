@@ -31,11 +31,15 @@
     "FP-A3: 素材面引导窗口过滤——引导播报窗口内到达的 STT 不进素材缓冲、不进录音回显旁路；窗口外 STT 正常进素材（反向 case 必载——防过滤窗过宽误吞孩子接话）。设计态红：_story_feed_from_stt 对引导窗口不设防",
     "FP-A4: 列表同日 seq tiebreak——同日多篇按 seq 倒序（新篇在上）；缺 seq 记录回退 id 倒序不崩；跨日仍按日期倒序。设计态红：同日按 id 字符串倒序（随机散列无时间序）",
     "FP-A5: 标题敷衍兜底——整理输出标题命中敷衍启发式（如「我的故事」类万能名）时兜底替换/后缀化（启发式走单源可测）；正常标题原样保留。设计态红：标题取 LLM 首行无兜底",
-    "FP-A6: 回归网——test_record_dialogue_guide / test_record_cancel_lifecycle / test_m4k1_story_cloud_link 三族全绿 + server 全量套件零新增红 vs 基线 238 passed 0 failed（锚 64d54eba）",
     {
       "id": "FP-A7",
       "kind": "structural",
       "note": "live-manual 真机目检（非自动断言，诚实申报；CG-A5 先例同款口径，不计入 runner 通过面）：human 持板——① 引导不再独播垄断（篇幅受限、末段引导后有应答窗）；② 说「说完了」正常收尾归档（不再孤儿帧）；③ 新篇在列表最上且标题可识别。前置 = front 重部署 ECS。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行部署"
+    },
+    {
+      "id": "FP-A6",
+      "suiteGate": true,
+      "note": "回归网——test_record_dialogue_guide / test_record_cancel_lifecycle / test_m4k1_story_cloud_link 三族全绿 + server 全量套件既有齿零新增红 vs 基线 238 passed 0 failed（锚 64d54eba；转绿全量 246 = 238 + 新件 8 齿）。FP-A7 同件 live-manual structural，不入 runner 通过面"
     }
   ],
   "acceptanceTestsFile": [
