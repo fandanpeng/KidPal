@@ -372,9 +372,10 @@ static int cgw_count(const char *hay, const char *needle)
 }
 
 #define CGW_MCP_CC "firmware/main/mcp_server.cc"
+#define CGW_APP_CC "firmware/main/application.cc"
 
 /* -------------------------------------------------------------------------- *
- * TEST 4 — 引导播报子态看门狗复位沿幂等（真机轮追补 261022；源锚代理）。
+ * TEST 4 — 引导播报子态看门狗复位沿幂等 + 音频感知窗（真机轮追补 261022；源锚代理）。
  *
  * 真机轮实证（KPLOG006 22:27:43-22:29:09）：引导 TTS 多句流式播放中孩子继续说话
  * 触发 barge-in abort（引擎 abortHandle: clear_queues + 发 tts stop）——句 1 的
@@ -383,13 +384,21 @@ static int cgw_count(const char *hay, const char *needle)
  * -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导的 stop 才解开）。
  * 根因在第三方引擎树（不可改），设备侧修韧性缺口 = 引导子态看门狗。
  *
+ * r2（真机反馈 2026-10-22「12 秒打断窗口体验太差」）：12s 盲等改为**音频感知 3s**——
+ * 到期回调先看 g_story_guide_audio_seen（application.cc 收包路径置位）: 见过音频
+ * 不复位直接撤表（真句子在放, 等它的 stop 沿）; 没见过才复位（audio=none 日志）。
+ * 3s 依据: 引擎 TTS 首包实测 ~1-2s, 1.5x 余量; 孤儿 start 恒无音频必命中。
+ *
  * 设备 TU 不进 host 构建 -> 判据 = 源锚代理（diag_log TEST 4 先例形态；注释剥离后
- * 只认可执行源）。三锚：
- *   ① 到期回调**幂等复位**：仅在 rec_substate 仍为 1 时写 0（stop 沿已复位则不
- *      重渲——与 KidpalStoryGuideSpeechEdge 的幂等沿语义汇合），且一次性自删；
- *   ② start 沿布防 / stop 沿撤防（每句重布防, 先撤旧再建新, 幂等）；
- *   ③ 会话收尾路径撤防（跨会话泄漏防线, D4b 根因形态）。
- * 到期后的行为半（键帽真的复位、真机上 12s 内自愈）= 真机观测项（CG-A5 口径）。
+ * 只认可执行源）。四锚：
+ *   ① 到期回调**幂等复位 + 音频感知分叉**：仅在 rec_substate 仍为 1 时写 0（stop 沿
+ *      已复位则不重渲——与 KidpalStoryGuideSpeechEdge 的幂等沿语义汇合），见过音频
+ *      早退不复位，且一次性自删；
+ *   ② start 沿布防（清音频标志 = 开新窗） / stop 沿撤防（每句重布防, 先撤旧再建新）；
+ *   ③ 会话收尾路径撤防（跨会话泄漏防线, D4b 根因形态）；
+ *   ④ application.cc 收包路径置位（状态门内、解码入队处）——缺此锚则标志恒 false,
+ *      3s 窗会把正常播放的句子也当孤儿帧误伤。
+ * 到期后的行为半（键帽真的复位、真机上 3s 内自愈）= 真机观测项（CG-A5 口径）。
  * ------------------------------------------------------------------------ */
 TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge and disarm paths",
           "[chrome_ghost][builder][structural]")
@@ -397,8 +406,12 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
     char *raw;
     char *code;
     char *cb_win;
+    char *arm_win;
     char *edge_win;
     char *end_win;
+    char *app_raw;
+    char *app_code;
+    char *app_win;
 
     TEST_ASSERT_TRUE_MESSAGE(cgw_locate_root(),
         CG_BUILDER_RED "repo root not located — run from the repo root, "
@@ -412,7 +425,7 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
     free(raw);
     TEST_ASSERT_NOT_NULL(code);
 
-    /* ---- ① 到期回调：幂等复位 + 一次性自删 -------------------------------- */
+    /* ---- ① 到期回调：音频感知分叉 + 幂等复位 + 一次性自删 ------------------ */
     cb_win = cgw_slice(code, "void StoryGuideWatchdogCb(lv_timer_t* timer)",
                        "void ArmStoryGuideWatchdog()");
     TEST_ASSERT_NOT_NULL_MESSAGE(cb_win,
@@ -422,6 +435,13 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
     TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "g_story_view.rec_substate != 1") >= 1,
         CG_BUILDER_RED "看门狗回调缺幂等门（rec_substate != 1 早退）——stop 沿已复位"
         "的场合到期仍写 0 + 重渲 = 多余整页重绘抖动（复位沿必须与既有幂等沿语义汇合）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "g_story_guide_audio_seen") >= 1,
+        CG_BUILDER_RED "看门狗回调缺音频感知判据（g_story_guide_audio_seen）——r2 收紧"
+        "到 3s 后, 无此判据会把正常播放的句子（音频在放、stop 未到）当孤儿帧误伤, "
+        "键帽在句中被打回收尾/丢弃（比 12s 盲等更坏的回归）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "audio=none") >= 1,
+        CG_BUILDER_RED "看门狗复位日志缺 audio=none 标记——真机轮判读分不清「孤儿 start "
+        "无音频复位」与「真音频场景误判」（KPLOG 判读面回归）");
     TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "g_story_view.rec_substate = 0") >= 1,
         CG_BUILDER_RED "看门狗回调无子态复位写——到期复位本体缺失（悬挂键帽治不了）");
     TEST_ASSERT_TRUE_MESSAGE(cgw_count(cb_win, "ScheduleStoryRender()") >= 1,
@@ -432,7 +452,22 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
         "定时器开销与重复复位风险（StoryRecTimerCb 自删先例同款纪律）");
     free(cb_win);
 
-    /* ---- ② 沿桥：start 布防 / stop 撤防 ----------------------------------- */
+    /* ---- ①b 时限常量：音频感知 3s（r2） ----------------------------------- */
+    TEST_ASSERT_TRUE_MESSAGE(
+        cgw_count(code, "#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 3000") == 1,
+        CG_BUILDER_RED "看门狗时限不是音频感知 3s（r2, 真机反馈 12s 打断窗口体验差）"
+        "——盲等越短+音频判据兜正确性, 孤儿帧才能秒级自愈");
+
+    /* ---- ② 沿桥：start 布防（清音频标志） / stop 撤防 ---------------------- */
+    arm_win = cgw_slice(code, "static void ArmStoryGuideWatchdog()",
+                        "int KidpalStoryViewPageState()");
+    TEST_ASSERT_NOT_NULL_MESSAGE(arm_win,
+        CG_BUILDER_RED "ArmStoryGuideWatchdog 区切取失败——布防函数锚漂移");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(arm_win, "g_story_guide_audio_seen = false") >= 1,
+        CG_BUILDER_RED "布防未清音频感知标志——旧窗口的 true 会跨句残留（多句流每句"
+        "重布防）, 孤儿句继承前句 true 即漏判, 3s 兜底失效");
+    free(arm_win);
+
     edge_win = cgw_slice(code, "void KidpalStoryGuideSpeechEdge(int speaking)",
                          "mcp_json_get_string");
     TEST_ASSERT_NOT_NULL_MESSAGE(edge_win,
@@ -442,7 +477,7 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
         "abort 清掉）无到期兜底, 子态悬挂复发（KPLOG006 22:28:03）");
     TEST_ASSERT_TRUE_MESSAGE(cgw_count(edge_win, "StopStoryGuideWatchdog()") >= 1,
         CG_BUILDER_RED "引导播报复位沿未撤防看门狗——正常播完/被打断后残留定时器会在"
-        "12s 后对无关会话误判");
+        "3s 后对无关会话误判");
     TEST_ASSERT_TRUE_MESSAGE(cgw_count(edge_win, "g_story_view.rec_substate == next") >= 1,
         CG_BUILDER_RED "既有幂等沿被删——重复 tts start 将整页重渲抖动");
     free(edge_win);
@@ -458,4 +493,30 @@ TEST_CASE("chrome ghost builder: guide speech watchdog — idempotent reset edge
     free(end_win);
 
     free(code);
+
+    /* ---- ④ application.cc 收包路径置位（音频感知判据的写端） --------------- */
+    app_raw = cgw_read(CGW_APP_CC);
+    TEST_ASSERT_NOT_NULL_MESSAGE(app_raw,
+        CG_BUILDER_RED "application.cc unreadable（音频感知标志定义/置位面失效）");
+    app_code = cgw_strip(app_raw);
+    free(app_raw);
+    TEST_ASSERT_NOT_NULL(app_code);
+    TEST_ASSERT_TRUE_MESSAGE(
+        cgw_count(app_code, "extern \"C\" bool g_story_guide_audio_seen;") >= 1 &&
+        cgw_count(app_code, "bool g_story_guide_audio_seen = false") >= 1,
+        CG_BUILDER_RED "application.cc 缺 g_story_guide_audio_seen 定义（extern \"C\" "
+        "声明 + 定义两行, 见应用侧注释）——mcp_server.cc 的 extern 声明将链接失败"
+        "或读到错链接符号");
+    app_win = cgw_slice(app_code, "protocol_->OnIncomingAudio(", "protocol_->OnAudioChannelOpened(");
+    TEST_ASSERT_NOT_NULL_MESSAGE(app_win,
+        CG_BUILDER_RED "OnIncomingAudio 收包区切取失败——音频路径锚漂移（置位面无法"
+        "判读）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(app_win, "g_story_guide_audio_seen = true") >= 1,
+        CG_BUILDER_RED "收包路径未置音频感知标志——标志恒 false, 3s 窗会把每一句正常"
+        "播放当成孤儿帧, 句中断帽子态被打回复位（r2 回归主形态）");
+    TEST_ASSERT_TRUE_MESSAGE(cgw_count(app_win, "PushPacketToDecodeQueue") >= 1,
+        CG_BUILDER_RED "收包区解码入队调用消失——置位锚与真实音频路径脱钩（音频路径"
+        "零行为变更前提被破坏）");
+    free(app_win);
+    free(app_code);
 }

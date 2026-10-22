@@ -770,16 +770,26 @@ void KidpalStoryVadEnterRecording() {
  * -> 设备 rec_substate 卡 1 -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导
  * 的 stop 才解开）。根因在第三方引擎树（不可改）, 设备侧补韧性缺口 = 本看门狗。
  *
- * 语义: 每个 tts start 沿布防一次性定时器, 到期仍未收 stop 即判泄沿, 复位子态并同步
- * 渲染（幂等沿语义与 KidpalStoryGuideSpeechEdge 一致: 仅在仍处引导播报子态时复位,
- * stop 沿已复位则早退不重渲）。看门狗不推断「谁该发 stop」, 只兜底「无 stop 的悬挂态」。
+ * 语义: 每个 tts start 沿布防一次性定时器, 到期仍未收 stop 且窗口内无音频即判泄沿,
+ * 复位子态并同步渲染（幂等沿语义与 KidpalStoryGuideSpeechEdge 一致: 仅在仍处引导播报
+ * 子态时复位, stop 沿已复位则早退不重渲）。看门狗不推断「谁该发 stop」, 只兜底
+ * 「无 stop 的悬挂态」。
  *
- * 时长依据: front 侧引导篇幅已钳 30 字（≈ ≤8s 语音, 含句间停顿余量）, 12s = 50% 余量,
- * 足以覆盖最长单句播放而不误伤; 多句流每句 start 重布防（先撤旧再建新, 帧间 30ms 级,
- * 幂等）, 故正常播放期间不会触发。到期复位后的键帽恢复 = 真机观测项（CG-A5 口径）。
+ * 时长依据（r2 音频感知收紧, 真机反馈 2026-10-22）: 初版 12s 盲等在真机可触发但**打断
+ * 窗口体验差**——孤儿帧没有音频, 孩子白等 12s 才见键帽恢复。r2 改为「音频感知」判据:
+ * 真实句子引擎 TTS 首包实测 ~1-2s 内到达（引擎日志「发送第一段语音 -> 语音生成成功」
+ * ≈1s）, 3s = 1.5x 余量即足以区分「真音频在放」与「孤儿 start 无音频」; 到期回调据此
+ * 二选一——见过音频（g_story_guide_audio_seen == true）不复位、不重渲, 直接撤表返回
+ * （真音频在放, 等它的 stop 沿; stop 丢失属罕见形态, 可接受）, 没见过音频才复位
+ * （日志 audio=none 标记）。多句流每句 start 重布防（先撤旧再建新, 帧间 30ms 级,
+ * 幂等）, 故正常播放期间不会误判。到期复位后的键帽恢复 = 真机观测项（CG-A5 口径）。
  * ------------------------------------------------------------------------ */
-#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 12000
+#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 3000
 static lv_timer_t* g_story_guide_wd_timer = nullptr;
+
+/* 音频感知标志（定义住 application.cc OnIncomingAudio 收包路径; 同款免扩公共头纪律:
+ * 消费方此处 extern 声明, mcp_server.h 零改动）。布防时由本侧清 false 开新窗口。 */
+extern "C" bool g_story_guide_audio_seen;
 
 static void StopStoryGuideWatchdog() {
     if (g_story_guide_wd_timer != nullptr) {
@@ -797,13 +807,20 @@ static void StoryGuideWatchdogCb(lv_timer_t* timer) {
     if (g_story_view.rec_substate != 1) {
         return; /* 幂等: stop 沿已复位 -> 到期不重渲（与沿桥幂等语义汇合） */
     }
+    if (g_story_guide_audio_seen) {
+        /* 音频感知（r2）: 窗口内真有 opus 包进过解码队列 = 真句子在放, 不复位不重渲,
+         * 撤表返回等它的 stop 沿（stop 丢失属罕见形态, 不为此误伤正常播放）。 */
+        ESP_LOGI(TAG, "story_guide_speech_watchdog deferred audio=yes");
+        return;
+    }
     g_story_view.rec_substate = 0;
-    ESP_LOGW(TAG, "story_guide_speech_watchdog substate=0");
+    ESP_LOGW(TAG, "story_guide_speech_watchdog substate=0 audio=none");
     ScheduleStoryRender();
 }
 
 static void ArmStoryGuideWatchdog() {
     StopStoryGuideWatchdog(); /* 多句流: 先撤旧再布防, 幂等（每句 get 一个新窗口） */
+    g_story_guide_audio_seen = false; /* 新窗口: 清音频感知（r2） */
     g_story_guide_wd_timer = lv_timer_create(StoryGuideWatchdogCb,
                                              KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS,
                                              nullptr);

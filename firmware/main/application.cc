@@ -40,6 +40,19 @@ void KidpalStorySessionEndApply(int list_page);
  * 复位 0（幂等, 仅 RECORDING 页态有语义）。RDG-F2 键位分叉 / RDG-F3 整理态吞键零触碰
  * （桥只写子态标量, 分叉判定仍归 story_page_input 冻结决策表）。 */
 void KidpalStoryGuideSpeechEdge(int speaking);
+/* 引导播报看门狗「音频感知」标志（真机轮追补 261022 r2; 定义面 = 本文件音频收包路径,
+ * 消费方 = mcp_server.cc StoryGuideWatchdogCb）。语义: 本次引导播报窗口内是否有真实
+ * opus 音频包进入解码队列——孤儿 tts start（其音频已被引擎 abort 清掉）恒 false,
+ * 真句子引擎 TTS 首包实测 ~1-2s 内到达恒 true。extern "C" + 消费者 extern 声明, 与
+ * 既有 KidpalStoryGuideSpeechEdge 桥同款「不扩公共头」纪律（mcp_server.h 冻结面零改）。
+ * 非原子布尔: 写方 = 协议接收任务 OnIncomingAudio 回调, 读方 = LVGL 定时器任务
+ * （看门狗到期）。单字节 store/load 在 Xtensa 上不可撕裂; 语义上只需「窗口内见过」的
+ * 一次性单调置位（布防时由消费方清 false）, 无跨字段次序依赖——与 g_story_* 既有
+ * 跨任务宽松度同级。形式说明: 先 `extern "C"` 声明定链接、后一行定义（单行
+ * `extern "C" bool X = false;` 会触发 -Wextern-initializer, 故拆两行; C 链接由前置
+ * 声明继承）。 */
+extern "C" bool g_story_guide_audio_seen;
+bool g_story_guide_audio_seen = false;
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
@@ -699,6 +712,11 @@ void Application::InitializeProtocol() {
     
     protocol_->OnIncomingAudio([this](std::unique_ptr<AudioStreamPacket> packet) {
         if (GetDeviceState() == kDeviceStateSpeaking) {
+            /* 音频感知标志置位（真机轮追补 261022 r2）: 真实包到达**且**会进解码队列
+             * （= 真会被听到）才算「本窗口有音频」——置位点在状态门内、解码入队前,
+             * 音频路径本身零行为变更（只多一次布尔写）。孤儿 tts start 后引擎 abort
+             * 已清队列, 该窗口永不走本支 -> 看门狗保 false -> 3s 到期复位。 */
+            g_story_guide_audio_seen = true;
             audio_service_.PushPacketToDecodeQueue(std::move(packet));
         }
     });
