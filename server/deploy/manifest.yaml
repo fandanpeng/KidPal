@@ -85,6 +85,18 @@ entries:
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/openclaw-system-prompt.v11.md,
      owner: deploy.sh, verify: md5, restart: none,
      note: overlay 渲染 prompt 的输入副本（overlay 把它拷进 data/ 并注入 .config.yaml 的 prompt 键）}
+  - {src: server/deploy/apply-xiaozhi-overlay.sh,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/apply-xiaozhi-overlay.sh,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: overlay 渲染脚本自身（261023 部署实证缺口——脚本原不在清单，ECS 停留旧版致渲染链走旧布局；deploy.sh 铺放后同轮 step 3 消费）}
+  - {src: server/deploy/kidpal-agent-prompt.txt,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/kidpal-agent-prompt.txt,
+     owner: deploy.sh, verify: md5, restart: engine,
+     note: 动态 context 块内容源的 overlay 输入副本（$HERE 消费位；仿 v11 输入/输出双行先例，261023 部署实证缺口补登）}
+  - {src: server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt,
+     owner: deploy.sh, verify: md5, restart: engine,
+     note: 引擎装配壳的 overlay 输入副本（$HERE/openclaw-agents/ 消费位；261023 部署实证缺口补登）}
 
   # ── 引擎渲染产物（overlay 渲染 / 注入；deploy.sh 只核验不铺）──
   - {src: server/deploy/openclaw-system-prompt.v11.md,
