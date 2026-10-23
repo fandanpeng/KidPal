@@ -197,4 +197,14 @@ else
 fi
 [ "$HONCHO_FAIL" -ne 0 ] && VERIFY_RC=1
 
+# ── Honcho backfill 迁移工具核验段（261022-m5-k4 / K4-E6；261013 纪律）──
+# 两工具逐件 md5 比对已由上方 manifest 驱动段覆盖（entries dst =
+# /opt/honcho/backfill/*）；本段核消费位目录在世——栈已部署而迁移工具
+# 消费位缺位 = drift（执行面 = human ECS 轮 K4-E6）。
+BACKFILL_DIR_LIVE="${KIDPAL_HONCHO_DIR:-/opt/honcho}/backfill"
+if [ -d "${KIDPAL_HONCHO_DIR:-/opt/honcho}" ] && [ ! -d "$BACKFILL_DIR_LIVE" ]; then
+  echo "DRIFT [honcho-backfill] $BACKFILL_DIR_LIVE 不在世——backfill 迁移工具消费位缺失（K4-E6；manifest 已登记两工具）"
+  VERIFY_RC=1
+fi
+
 exit "$VERIFY_RC"

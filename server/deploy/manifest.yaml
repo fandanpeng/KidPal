@@ -248,7 +248,7 @@ entries:
   # 五容器（api 127.0.0.1:18100 loopback / postgres+pgvector 本机持久卷 / deriver /
   # app / adminer）；出网仅 deriver→DeepSeek + embedding→DashScope 两条记账管线；
   # 凭据经 /opt/honcho/.env 注入（不入仓）；备份 = 不备份靠重建（OQ-10）；
-  # backfill 子树归 P4（261022-m5-k4），本清单不预登。
+  # backfill 子树由 261022-m5-k4（P4/K4）登记——见下方 backfill 迁移工具段。
   - {src: server/deploy/honcho/docker-compose.yml,
      dst: /opt/honcho/docker-compose.yml,
      owner: deploy.sh, verify: md5, restart: none,
@@ -269,6 +269,26 @@ entries:
      dst: /opt/honcho/healthcheck-honcho.sh,
      owner: deploy.sh, verify: md5, restart: none,
      note: 五容器健康检查（127.0.0.1:18100 loopback 探针 + compose ps 健康门）——与 verify-deploy.sh honcho 段同口径}
+
+  # ── Honcho 历史 corpus backfill 迁移工具（261022-m5-k4 / K4-E1..E4）──
+  # 历史 session-corpus（≤2026-09-30）+ OpenClaw transcript_events 双源照记全量
+  # 迁移（不分回合性质、含第三方姓名，human 2026-10-22 终拍 R6/OQ-3）；幂等
+  # 指纹 kidpalBackfillFingerprint、batch 标记 kidpalBackfillBatch（标记即键，
+  # 回滚面判定锚）；plan 干跑缺省、--apply 显式写；执行面 = human ECS 轮
+  # （K4-E6，awaiting-human:live-deploy）；回滚 = rollback 件恰删标记 session，
+  # 源语料只读零触碰（NFR-PRIV-1 三保留）。
+  - src: server/deploy/honcho/backfill/backfill_honcho.py
+    dst: /opt/honcho/backfill/backfill_honcho.py
+    owner: deploy.sh
+    verify: md5
+    restart: none
+    note: 照记全量迁移 runner（--corpus-dir / --openclaw-db 两源至少其一 + --device-id 必填；--peer 缺省 owner；计数报告 --report-out 落盘 = M5 收口对账件；幂等指纹重跑零增量）
+  - src: server/deploy/honcho/backfill/rollback_honcho_backfill.py
+    dst: /opt/honcho/backfill/rollback_honcho_backfill.py
+    owner: deploy.sh
+    verify: md5
+    restart: none
+    note: 清库回滚 runner（恰删携带 kidpalBackfillBatch 标记的 session，live 在用数据零触碰；plan 预演缺省、--apply 显式删；零源侧旗标——NFR-PRIV-1 三保留）
 
   # ── Honcho 记忆插件声明式 patch 工作台（261022-m5-k3 / K3-E6 立，261023 批 B 甲案换代）──
   # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 安全 apply/回滚脚本。

@@ -24,8 +24,11 @@
     "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
     "docs/requirements.md#§S-F5.1"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
+  "acceptance": ["K4-E1", "K4-E2", "K4-E3", "K4-E4", "K4-E5", "K4-E6"],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py",
+    "server/acceptance/test_261022_honcho_memory.acceptance.py"
+  ],
   "impactedTests": [
     "server/acceptance/test_261022_honcho_backfill.acceptance.py",
     "server/deploy/verify-deploy.sh"
@@ -37,10 +40,10 @@
     "real-db"
   ],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；回填脚本离线契约验收断言按设计态红）。",
+  "redBaselineResult": "2026-10-23 planner+acceptance-author 实跑回填：cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 319 passed / 14 failed / 7 deselected / 33 subtests passed（27.3s）——14 failed 全部为本包新件 server/acceptance/test_261022_honcho_backfill.acceptance.py 对未实现 backfill 工具面的设计态红；319 passed = 拆包锚 318 全绿零回退 + K4-E6 头注申报自检 1 件（自指测试即时绿，K3-E7 同例）。注意：K3 姊妹件 test_261022_honcho_memory.acceptance.py 做了显式锚换代（test_k3_e1_no_backfill_subtree_a4_redline → test_k3_e1_no_backfill_in_k3_stack_assets，A4 禁区解除使旧断言与本包 changeManifest 直接冲突；「子树禁在」半退役、保留「K3 栈本体工件零 backfill 引用」边界半，头注换代注记留痕）——acceptance-author 显式治理动作，非静默放宽。",
   "exitCriteria": [
     "K4-E1: 历史 corpus 全量照记：源 = session-corpus 既有语料，不区分回合性质、不过滤第三方姓名（human 2026-10-22 终拍 R6/OQ-3）；补录后旧内容与新聊天在画像侧一视同仁（S-F5.1 AC5）",
-    "K4-E2: 记忆身份 = 设备级 peer（沿用 P3 的 `user=<device_id>` → peer 映射）；不引入多设备 / 多孩子身份体系；换设备 = 新 peer、旧画像不迁移（记录为已知后果）",
+    "K4-E2: 记忆身份按 ADR-016（2026-10-23 面 C，supersedes ADR-014 ②③）现行口径：session 键族设备级（`agent:kidpal:openai-user:<device_id>`）、画像 = 家庭单 owner peer；backfill 灌入的历史 session 归宿 = 既有设备 session 键族、peer 归家庭单 owner；不引入多设备 / 多孩子身份体系；换设备 = 新 session 家族、画像不变（记录为已知后果）",
     "K4-E3: 幂等可重跑：重复执行零重复 observation / 零语义变更（幂等键或去重判据在 plan.md 定形）；执行前后计数报告（peers / sessions / messages / observations）落盘",
     "K4-E4: 清库回滚：提供可回滚路径与执行证据；回滚不删 OpenClaw 完整日志、历史补录源语料、设备诊断日志（各按既有接受口径保留）；源语料只读、零改写",
     "K4-E5: 与 P3 资格门的边界：backfill 属「历史照记」显式豁免（不分回合性质），但新增回合仍走资格门；两条口径在实现与文档中不互串",
@@ -73,6 +76,7 @@
   "adrRequired": false,
   "mutationRequired": false,
   "mutationSkipReason": "本包 = 数据迁移脚本与运维回滚件；验收以幂等 / 计数 / 回滚三态与 live 演练承载，属数据证据面而非分支逻辑面，变异取证 ROI 不成立。",
+  "securityEvidence": "安全证据面（gateProfile security / migration / real-db 承载）：① 网络面——backfill/rollback 两工具出网仅经 --api 参数指向的 Honcho loopback（127.0.0.1:18100，K3 既有栈体内），零新增出网端点；冻结件 K4-A6 负锚断言（K3 同族记账外端点词表零命中 + DEFAULT_API=127.0.0.1:18100）机检承载；源语料与 transcript db 全程字节不变（K4-A4 源只读断言）。② 凭据面——backfill 树零内联 secret（sk- 长键负锚断言），REST 客户端 stdlib urllib 直连本机 loopback、不携第三方凭据；DASHSCOPE/DEEPSEEK 凭据仍由 K3 栈体 .env 承载、本包不触碰。③ 数据面——照记全量（不滤第三方姓名）= human 2026-10-22 终拍（OQ-3-workstream/R6，孩子主动讲述且家长知情，孩子社交事实是记忆目标），非本包自裁；家长隐私抽取边界仍由 K3 deriver 策略与 NFR-PRIV-1 三层纵深承载，backfill 不新增家长侧数据源。④ 删除面——rollback 恰删携带 kidpalBackfillBatch 标记的 session（「标记即键」，list_backfill_batches() 取回集合即删除集合）、live 无标记数据零触碰（K4-A4 断言）；不删 OpenClaw 完整日志 / 源语料 / 诊断日志（零源旗标断言）；删除语义 = NFR-PRIV-1 运维面手工口径不变。⑤ 身份面——ADR-016 口径：session 键族设备级 + 家庭单 owner peer、零新 peer（K4-A2 断言）；backfill 隔离命名空间 = kidpalBackfillBatch metadata 标记，live 数据永不进指纹集合（K4-A3 断言）。",
   "mutationEvidence": {
     "perAcceptance": []
   },
@@ -101,6 +105,7 @@
   "dependsOn": [
     "261022-m5-k3-honcho-memory-production"
   ],
+  "notes": "① launch-card.md 缺失（pod-events 闭集无对应事件类型，此处留痕不设门）；② sourceRefs 含裸 ID 'TECH-261022-device-memory-prompt-overhaul'（brief-inputs ADV：裸 ID 不在磁盘，全路径版本同列在册，非腐坏）；③ K4-E2 措辞 2026-10-23 planner 按 1f 保鲜权修正对齐 ADR-016（面 C 261023-arch-review-memory-wiring-verified-behavior 改写）：设备级 peer → 设备级 session 键族 + 家庭单 owner peer；decisionCoverage 的 OQ-7 条目保留拆包期历史原文不改，现行口径以 K4-E2 与 ADR-016 为准；④ 与 live 共生：生产库插件在写，backfill 幂等判据须区分「已灌」与「live 新增」（隔离/对账方式冻结契约定形）；⑤ 重建源两件 = session-corpus 源语料（ECS workspace-kidpal/memory/.dreams/session-corpus/）+ OpenClaw 会话存储（kidpal agent sqlite transcript_events，P2 持久会话起），两源关系与边界冻结相位定形；⑥ backfill 执行面归 human（ECS 全量跑/计数报告/回滚演练），Pod 只建工具与离线契约，host 绿后停 awaiting-human:live-deploy；⑦ 验收测试 file（server/acceptance/**）归 acceptance-author 写，builder deny 面恰不含它（scope-map 已核）",
   "decisionCoverage": [
     {
       "decision": "R6 / OQ-3 · backfill 第三方姓名照记（不带 PII 过滤器）",
