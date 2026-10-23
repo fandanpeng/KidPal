@@ -1,0 +1,29 @@
+# test-scope-final · 261023-honcho-memory-wiring-restoration（final 相位影响面圈定清单）
+
+# 生成方法：本包 impactedTests 种子（taskpackage.impactedTests = server/acceptance/test_261022_memory_isolation.acceptance.py）
+#   ∪ detect_changes（project C-AI-KidPal-pod-m2，direction=both，merge_base 939f9ed6，impacted_total=27）映射测试
+#   ∪ 共享 seam 安全余量（openclaw_stream_request / front payload seam 消费方 + K2 冻结件正证）。
+# 图可用性：per-Pod 图索引可用（detect_changes 正常返回，seed_symbols=51、impacted_total=27，无截断）——
+#   **正常圈定，无降级**；非测试锚与噪声单列尾注。
+# 口径：每行一个测试文件；# 开头为注。final verify 消费本清单：
+#   node .claude/hooks/verify.mjs --evidence-mode=round --phase=final --scope-file delivery/taskpackages/261023-honcho-memory-wiring-restoration/test-scope-final.txt --change-id 261023-honcho-memory-wiring-restoration
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py
+server/acceptance/test_261022_persistent_session.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+# ── 逐件纳入理由 ──
+# 1) test_261022_memory_isolation.acceptance.py —— 本件（impactedTests 种子 + changeManifest 验收件；A1-A4 全承载）。
+# 2) test_261022_honcho_memory.acceptance.py —— 姊妹件（K3-E1 栈面 + K3_P1_AGENTS_ANCHORS；冻结锚保护清单要求零交叉触碰，
+#    入 scope 作零新增红观察位，非本包断言承载）。
+# 3) test_261023_agents_md_static_semantics_alignment.acceptance.py —— manifest/工作台文本消费邻接面（指令指定纳入；同样零触碰观察位）。
+# 4) test_261022_persistent_session.acceptance.py —— K2 冻结件（本件头注 A 节点名：main 链路 user=device_id 正证承载件；
+#    front payload seam 共享，must-stay-green 安全余量）。
+# 5) test_record_dialogue_guide.acceptance.py —— 共享 seam 安全余量：仓内 grep 证实与 K2 冻结件同为
+#    server/gateway/provider.openclaw_stream_request 消费方（该符号为本包 blast radius hop-2 impact）。
+# ── 尾注（非测试锚 / 噪声，不进 scope 行）──
+# 非测试锚：server/gateway/front/front_app.py（_openclaw_chat_once，hop-1 impact——本件 _load_front_app 直驱，零改动核对位）；
+#           server/gateway/provider.py（openclaw_stream_request，hop-2 impact——payload 单源构造 seam）。
+# 噪声（hop-2 误映，不入 scope）：server/tests/test_engine_round_close_units.py（_Log.info 泛化映射）、
+#           firmware/main/test/acceptance/red-baseline/pcn_a11_oracle_check.py（decode 泛化映射）、builtins 泛化映射 7 项。
+# 范围下限（floor）：本清单已含指令指定三件全部；detect_changes 未映射出额外测试文件（姊妹件/邻接面由种子与余量覆盖）。

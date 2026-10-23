@@ -6,14 +6,15 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (85)
+## dev (86)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261023-agents-md-static-semantics-alignment](261023-agents-md-static-semantics-alignment/) | 2026-10-23 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md | closed | — |
 | [261022-diag-log-content](261022-diag-log-content/) | 2026-10-22 | delivery/taskpackages/261022-diag-log-content/plan.md | closed | — |
 | [261022-m5-k1-prompt-carrier-migration](261022-m5-k1-prompt-carrier-migration/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
-| [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
-| [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
+| [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
 | [261022-m5-k4-history-corpus-backfill](261022-m5-k4-history-corpus-backfill/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
 | [261022-m5-n2a-schedule-mechanical-injection](261022-m5-n2a-schedule-mechanical-injection/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4 | closed | device-memory-overhaul |
 | [261022-p3-record-chrome-ghost-fix](261022-p3-record-chrome-ghost-fix/) | 2026-10-22 | docs/debt/tech/TECH-261022-p3-record-session-state-churn.md | closed | — |
@@ -95,5 +96,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
-| [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |

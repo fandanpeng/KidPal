@@ -1,0 +1,70 @@
+{
+  "batch": "261023-arch-review-memory-wiring-verified-behavior",
+  "verdict": "PASS",
+  "date": "2026-10-23",
+  "verifier": "landing-verifier（独立核验，只读 codebase；本件为 landing-verdict.md 的结构化投影，机器锚消费面以 landing-verdict.md 的行首 verdict 行为准）",
+  "baseRef": "HEAD",
+  "gitDegraded": false,
+  "gates": {
+    "preflight": { "ok": true, "anchorCount": 3, "anchorUnion": ["docs/architecture.md", "docs/decisions/ADR.md", "docs/glossary.md"], "findings": [] },
+    "landingFidelity": { "ok": true, "exitCode": 0, "frozen": true, "packetBinding": true, "unauthorized": [], "claimedNotLanded": [], "plannedNotLanded": [], "changedCanonicalNotInProposal": [] },
+    "specAnchorCheck": { "ok": true, "storyCount": 14, "anchorLines": 36, "errors": [] }
+  },
+  "perFile": [
+    {
+      "file": "docs/architecture.md",
+      "structuralTouched": true,
+      "numstat": { "added": 20, "deleted": 17 },
+      "semanticMatch": "ok",
+      "items": [
+        { "id": "T1", "check": "§6.7 全节 vs PROPOSAL 围栏块", "result": "字节级精确匹配（2470 字符）；历史backfill/删除语义/降级三段未入 diff（逐字带过保全）" },
+        { "id": "T2", "check": "§1.3 :55 整行替换", "result": "整行逐字匹配（211 字符）" },
+        { "id": "T3", "check": "§4 NFR-PRIV-1 映射行替换", "result": "整行逐字匹配（206 字符）" },
+        { "id": "T4a", "check": ":192 行内片段替换", "result": "子串级逐字在场；旧片段残留 0" },
+        { "id": "T4b", "check": ":203 行内片段替换", "result": "逐字在场；旧片段残留 0" },
+        { "id": "T5", "check": ":283 行内片段替换", "result": "逐字在场；旧片段残留 0" },
+        { "id": "T6", "check": "§12 表首行插入 changeId 行", "result": "逐字在场，紧邻 261022 行之上" }
+      ],
+      "oldFragmentResidue": 0
+    },
+    {
+      "file": "docs/decisions/ADR.md",
+      "structuralTouched": true,
+      "numstat": { "added": 8, "deleted": 0 },
+      "semanticMatch": "ok",
+      "items": [
+        { "id": "T7", "check": "文末追加 ADR-016（append-only）", "result": "围栏块 1085 字符逐字在文末；既有条目零改动；ADR-014 残留语面（:119/:122/:123）= PROPOSAL §3 明示的历史条目 supersede 处置，非夹带" }
+      ]
+    },
+    {
+      "file": "docs/glossary.md",
+      "structuralTouched": true,
+      "numstat": { "added": 1, "deleted": 1 },
+      "semanticMatch": "ok",
+      "items": [
+        { "id": "T8", "check": ":32 词条内描述语片段替换", "result": "新片段逐字在场；旧片段「写入资格与边界」残留 0；溯源注记保留" }
+      ]
+    }
+  ],
+  "verificationSetRerun": {
+    "note": "landing-verifier 独立复跑（基线亦对 HEAD 独立复测，与 PROPOSAL 声明一致）",
+    "V2": { "expect": "ok:true/errors:[]", "actual": "ok:true/storyCount:14/anchorLines:36/errors:[]", "pass": true },
+    "V3": { "expect": 0, "baseline": 8, "actual": 0, "pass": true },
+    "V4": { "expect": "peer 0 / session >=2", "baseline": "1 / 0", "actual": "0 / 2", "pass": true },
+    "V5": { "expect": 0, "baseline": 2, "actual": 0, "pass": true },
+    "V6": { "expect": "标题1 / 新标题1 / 全仓残留1", "actual": "1（:490 历史行）/ 1 / 1", "pass": true },
+    "V7": { "expect": "旧0 / 新1", "actual": "0 / 1", "pass": true },
+    "V8": { "expect": "ADR-016 计数1 / 删除行0", "actual": "1 / 0", "pass": true },
+    "V9": { "expect": ">=1", "actual": 1, "pass": true },
+    "V10": { "expect": "三段零增删 / glossary 1增1删", "actual": "零增删 / 1增1删", "pass": true },
+    "V11": { "expect": "T1-T8 与 PROPOSAL 围栏块逐字", "actual": "全部一致（字节级；T4a 为行内片段以子串级比对）", "pass": true }
+  },
+  "packetBinding": { "packetId": "261023-arch-review-memory-wiring-verified-behavior", "matchesReviewId": true, "landingScope": ["docs/architecture.md", "docs/decisions/ADR.md", "docs/glossary.md"], "withinPacket": true },
+  "scopeIsolation": { "docsTreeModified": ["docs/architecture.md", "docs/decisions/ADR.md", "docs/glossary.md"], "contractsTouch": false, "requirementsTouch": false, "debtTouch": false },
+  "advisories": [
+    "verbatimQuoteAdvisory 4 项 not-found 为整行匹配器对行内片段（T4a/T4b/T5/T8）的假阳；门 exit 0，verifier 子串级比对已证四片段逐字在场",
+    "PROPOSAL 引 :487 历史行因 T6 插行现位于 :490，同一行逐字未动",
+    "canonical 与需求面阈值已知张力（NFR-PRIV-1 AC5 等）为 PROPOSAL §3 申报的跨面时序结果（OQ-1=(a)），非 landing 缺陷"
+  ],
+  "recommendation": "landing 保真度通过；放行进入批后流程（retro / 前置升级闸），合并决定归 human manual-merge 门"
+}

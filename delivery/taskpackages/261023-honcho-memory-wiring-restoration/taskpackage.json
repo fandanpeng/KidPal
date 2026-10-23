@@ -1,0 +1,91 @@
+{
+  "changeId": "261023-honcho-memory-wiring-restoration",
+  "rigor": "lite",
+  "sourceType": "arch-review",
+  "origin": {
+    "type": "arch-review",
+    "human-verbatim": "human 三项裁决（2026-10-23）：① 方案甲=原样复用官方插件零新代码；② workspaceId=kidpal 新库不迁探针数据；③ 与批 A 解耦、compose 已先行回流 commit f4d5e647。human 原则（第一判据）：「我们之前测试过、已经验证过能用的功能，就直接用起来，不要再去发明什么新的东西了。」",
+    "upstreamType": "arch-review",
+    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md",
+    "upstreamFrozen": "advisory 落盘（architect 2026-10-23，只读检视 ECS+仓内）+ human 三项裁决 + plan.md 冻结语义六条 + advisory §9 网关安全铁律；plan.md 即冻结技术输入、只读消费",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy/261022-openclaw-honcho-plugin（插件工作台：声明/apply/rollback）+ server/deploy/manifest.yaml（工作台条目）+ server/acceptance（锚换代件）",
+  "story": "261023-honcho-memory-wiring-restoration · 批 B 记忆接线 bring-up（甲案）：K3 自研 carrier 三层失效（配置形状 schema 拒收 / 不是插件 / 端点不存在）致生产崩循环——弃用 carrier、原样复用探针验证过的上游插件 @honcho-ai/openclaw-honcho@1.7.0 + plugins.entries.openclaw-honcho 4 键 + noisePatterns（挡 front 一次性回合 user 消息）；apply 安全化（patch 生成器 + OpenClaw 写入口编排、零脚本直写 openclaw.json）；冻结验收锚换代（peer→session 口径 + live 证据三证 schema）。残余偏差（front 读侧注入 / QQ 落消息）如实申报，spec 口径修正归面 C /arch-change。",
+  "planRef": "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md",
+  "sourceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md",
+    "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+    "docs/architecture.md#§6.7",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
+  "acceptance": [
+    "A1",
+    "A2",
+    "A3",
+    "A4"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
+  "impactedTests": [
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline"
+  ],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "acceptance-author 冻结相位实跑（2026-10-23，本树）：① 换代前基线 316 passed / 6 deselected / 33 subtests 确认（批 A+B 后）；② 换代后全量含本件 = 310 passed / 8 failed / 7 deselected / 33 subtests——8 红全部在本件被换代断言（设计态红：旧声明 2 键≠5 键 / 旧 apply 不识别 --gen-patch 与 --openclaw-bin / rollback 头注缺三级回滚序 / manifest 4≠3 / hooks 全路径缺失 / wiring 锚缺失），既有其它件零新增红；③ 全量排除本件 = 306 passed / 4 deselected / 33 subtests 零 failure。转绿后全量预言 = 318 passed / 7 deselected / 33 subtests（本件换代净增 2 host + 1 live；LOOP-X 对账按 318/7/33 核）",
+  "exitCriteria": [
+    "A1: honcho-plugin-declaration.json 换代为 plugins.entries.openclaw-honcho 5 键（enabled=true / hooks.allowConversationAccess=true / config.baseUrl=http://127.0.0.1:18100 / config.workspaceId=kidpal / config.noisePatterns=[\"^孩子(到目前为止)?讲的内容：\"]）逐字锚；顶层 hooks.* 与 agents.entries.*.plugins 零出现（负锚）；workspaceId 非 kidpal-probe；drift_guard P1 现状锚（tools.allow 四项）原样保留；声明零 secret",
+    "A2: apply_honcho_plugin.py 安全化——零脚本直写 openclaw.json（点分写入器撤销）；patch 生成器（declaration → openclaw config patch JSON5）离线可测；安全应用编排按 advisory §9 序（备份→patch --dry-run schema:true→plugins install --pin 1.7.0→inspect/doctor→正式 patch→validate→restart/health）且 openclaw 二进制注入可离线桩真跑调用序断言（dry-run 先于任何写、失败序零写）；幂等 SKIP / drift-guard exit 3 / 写前时间戳备份语义保留；rollback_honcho_plugin.py 对应改 + 三级回滚序申报",
+    "A3: 自研 carrier 撤净——honcho-plugin.js 删除、manifest.yaml 工作台条目 4→3（decl+apply+rollback）、全工作台零 'kidpal honcho memory patch active' marker / 零 /v1/openclaw 端点 / 零 carrier 残留（负锚）；manifest 登记仓内源存在、dst 在 openclaw-patch 消费位",
+    "A4: 验收锚换代（advisory §7 清单逐条）——marker 锚→插件 loaded 日志行 'Honcho memory plugin loaded' + Policy 行；peer 前缀→session key 家族 agent:kidpal:openai-user:<device_id>（session 表述）；hooks 后缀→全路径 plugins.entries.openclaw-honcho.hooks.allowConversationAccess；/health 探针锚删；gate_carrier_anchors 重写为 4 键逐字+版本 pin 1.7.0+零 carrier 残留；degradation_guards 改测上游插件（dist/hooks capture.js try/catch 源锚）或降 live；live 证据 schema marker 字段→三证（session metadata openclawSessionKey + 消息条数 + 网关日志）且 one_shot 判定口径写死 = 甲案 user 原文零出现（assistant 回复入库=申报残余不判红）；头注 B.4/C 重写为「已验证接线四键+残余偏差申报」；EVIDENCE_DIR 改指本包 memory-probes/",
+    "LOOP-X: 既有其它冻结件零新增红——全量 acceptance = 换代断言转绿后 318 passed / 7 deselected / 33 subtests 零 failure（姊妹件 test_261022_honcho_memory / test_261023_agents_md_static_semantics_alignment 零触碰）；closeout 制品齐（docs-delta 含两处残余偏差申报 + 头注重写对账）+ closeout-check 绿 + supervisor 机械闸完成；live 面停等 awaiting-human:live-deploy（部署轮执行 install+apply+重启按 §9 序 + 三证采集 + OQ-3 实测）"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md",
+    "docs/architecture.md",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包零 canonical spec/contracts 改动：spec（arch §6.7 资格门 / §1.3 设备级 peer）口径修正归面 C /arch-change（advisory §8 三件两批已裁）；两处残余偏差申报由 integrator docs-delta 制品 + acceptance 头注重写承载，非 spec sync。",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "apply 安全化的承载断言 = fixture 真跑行为组（幂等/drift-guard/备份/调用序桩真跑）+ 声明逐字静态锚；点分写入器撤销后剩余逻辑为薄编排，分支逻辑由行为断言直接覆盖，变异取证 ROI 不成立（261023-agents-md 批同款降级声明前置）。",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯 server 侧部署声明与验收锚换代：零 wire 形状改动（帧类型/字段类型与承载/回执语义/序列化形态零触——OpenClaw 配置键与 Honcho session 元数据是云端运行态配置，非跨端协议）；设备端零感知、固件零 diff、本包不改 compose（批 A 已回流 f4d5e647）。"
+  },
+  "changeManifest": [
+    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json",
+    "server/deploy/261022-openclaw-honcho-plugin/apply_honcho_plugin.py",
+    "server/deploy/261022-openclaw-honcho-plugin/rollback_honcho_plugin.py",
+    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin.js",
+    "server/deploy/manifest.yaml",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTier": "medium",
+  "gateProfile": [
+    "test-quality",
+    "evidence-integrity",
+    "security"
+  ],
+  "dependsOn": "批 A（compose 拓扑回流）已先行合入 commit f4d5e647——本包不改 compose",
+  "mergeOrder": null,
+  "notes": "起包前置自查（DEV-GOVERNANCE 起包格式期望六条）：① mutation 降级声明已前置（mutationSkipReason）；② 断言格式 = A1-A4 + LOOP-X、验收 ID 无括号；③ 验收 ID 无括号形态；④ 降级声明 = live 面全降 human 部署轮（install/apply/restart/三证采集/OQ-3），Pod 停等 awaiting-human:live-deploy；⑤ 新约定包闸判据自查：本包无新约定，apply 序 = advisory §9 既有权威；⑥ 输入面期望 = input-brief 单份 + 超读申报 + crossEnd 已填（exempt 理由 ≥12 字）。scope-map 核对（1c）：builder/fixer allow 含 server/**、deny 含 **/acceptance/**（验收件归 acceptance-author）；本包全部 target 路径（deploy 工作台 + manifest + 验收件）在各自角色 allow 面内，零冲突。纪律红线：advisory §9 铁律（openclaw.json 只经 OpenClaw 写入口、写前 --dry-run、禁脚本直写）；契约面只读；spec 口径修正归面 C 不归本包。live 证据落本包 memory-probes/。"
+}
