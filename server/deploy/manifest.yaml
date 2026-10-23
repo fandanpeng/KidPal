@@ -244,6 +244,53 @@ entries:
      owner: deploy.sh, verify: md5, restart: none,
      note: 一步回滚（--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）}
 
+  # ── Honcho 自托管记忆子系统栈（261022-m5-k3-honcho-memory-production / K3-E1）──
+  # 五容器（api 127.0.0.1:18100 loopback / postgres+pgvector 本机持久卷 / deriver /
+  # app / adminer）；出网仅 deriver→DeepSeek + embedding→DashScope 两条记账管线；
+  # 凭据经 /opt/honcho/.env 注入（不入仓）；备份 = 不备份靠重建（OQ-10）；
+  # backfill 子树归 P4（261022-m5-k4），本清单不预登。
+  - {src: server/deploy/honcho/docker-compose.yml,
+     dst: /opt/honcho/docker-compose.yml,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 栈本体声明——变更需 docker compose up -d（apply-honcho-stack.sh 幂等收敛），published 端口全显式 127.0.0.1}
+  - {src: server/deploy/honcho/honcho.env.example,
+     dst: /opt/honcho/honcho.env.example,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 环境模板（EMBEDDING_VECTOR_DIMENSIONS=1536 / DERIVER_FLUSH_ENABLED=true / DeepSeek+DashScope 管线锚）；真实值在 ECS /opt/honcho/.env，不入仓}
+  - {src: server/deploy/honcho/apply-honcho-stack.sh,
+     dst: /opt/honcho/apply-honcho-stack.sh,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 栈幂等铺放（缺 .env 拒跑；cmp 一致即 SKIP；compose up -d 收敛声明态）}
+  - {src: server/deploy/honcho/rollback-honcho-stack.sh,
+     dst: /opt/honcho/rollback-honcho-stack.sh,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 栈回滚（还原最近 compose 备份或停栈；数据卷 honcho-pgdata 保留——删除归运维面手工）}
+  - {src: server/deploy/honcho/healthcheck-honcho.sh,
+     dst: /opt/honcho/healthcheck-honcho.sh,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 五容器健康检查（127.0.0.1:18100 loopback 探针 + compose ps 健康门）——与 verify-deploy.sh honcho 段同口径}
+
+  # ── Honcho 记忆插件声明式 patch 工作台（261022-m5-k3 / K3-E6，A2 归属本包）──
+  # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 定点 apply/回滚脚本。
+  # 与 261017 skills / 261022 P1 tools 声明工件作用于同一运行态文件，组合共存、
+  # 互不整文件改写；drift_guard 现状锚 = P1 已应用态（tools.allow 四项）。
+  - {src: server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: Honcho 插件 + hooks.allowConversationAccess=true 声明（drift_guard 现状锚 = P1 tools.allow 四项已应用态；零 secret）}
+  - {src: server/deploy/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 逐条定点写 changes 声明的点分键）}
+  - {src: server/deploy/261022-openclaw-honcho-plugin/rollback_honcho_plugin.py,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/rollback_honcho_plugin.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 一步回滚（--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）}
+  - {src: server/deploy/261022-openclaw-honcho-plugin/honcho-plugin.js,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin.js,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 资格门 gate carrier（user 缺席即非资格、读写同门；peer 键 = P2 键族 agent:kidpal:openai-user:<device_id> 不另造；/health 探针门控 marker「kidpal honcho memory patch active」；persist/inject bounded 失败降级）}
+
   # ── reminder 面（cron 消费位直管，OQ-1(a)——本批修复的路径分裂落点）──
   - {src: server/deploy/openclaw-patch/reminder_schedule_lib.py,
      dst: /opt/kidpal/openclaw-patch/reminder_schedule_lib.py,

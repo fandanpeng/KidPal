@@ -1,10 +1,9 @@
-# input-brief · 261022-m5-k2b-persistent-session
+# input-brief · 261022-m5-k3-honcho-memory-production
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-23T06:17:26.377Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
-> regenerated-because: refs changed after freeze-phase taskpackage.json backfill（覆盖上一份快照，旧 generated-at 见 git diff 上一版本）
-> 来源 TaskPackage: `delivery/taskpackages/261022-m5-k2b-persistent-session/taskpackage.json` · subsystem: server/deploy（engine-patch 持久会话补丁：请求携 user=<device_id> + 只发本回合；docker-compose bind-mount；启动标记行漂移护栏） · rigor: full
+> generated-at: 2026-10-23T09:02:27.325Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> 来源 TaskPackage: `delivery/taskpackages/261022-m5-k3-honcho-memory-production/taskpackage.json` · subsystem: server/deploy/honcho（Honcho 自托管五容器 + 生产 profile 插件/hooks 授权）+ server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（v12 守则）+ server/gateway/front（一次性回合隔离，若需） · rigor: full
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
@@ -14,21 +13,24 @@
 | `delivery/workstreams/device-memory-overhaul/PROPOSAL.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/workstreams/device-memory-overhaul/task_plan.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261022-m5-k2b-persistent-session/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261022-m5-k3-honcho-memory-production/plan.md` | — | 无锚点（整文件） | — | bare |
 | `docs/requirements.md` | — | 无锚点（整文件） | — | bare |
 | `docs/architecture.md` | — | 无锚点（整文件） | — | bare |
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
 | `docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/ARQ-260907-engine-deploy-patch-drift.md` | — | 无锚点（整文件） | — | bare |
+| `docs/debt/tech/TECH-261022-openclaw-prep-tax-memory-pressure.md` | — | 无锚点（整文件） | — | bare |
+| `NFR-PRIV-1` | — | （文件不存在） | — | missing |
+| `NFR-SEC-2` | — | （文件不存在） | — | missing |
 | `TECH-261022-device-memory-prompt-overhaul` | — | （文件不存在） | — | missing |
 | `delivery/workstreams/device-memory-overhaul/PROPOSAL.md` | `§3.1` | 3.1 方案空间与裁定 | 53 | ok |
-| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md` | `T2` | T2 · 会话模型反转：`user` 标识 + 服务端持久会话 + 双历史单一权威 | 159 | ok |
-| `server/deploy/engine-patch/connection.py` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/docker-compose.yml` | — | 无锚点（整文件） | — | bare |
+| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md` | `T1` | T1 · 外部依赖、部署与数据视图：Honcho 记忆子系统落位 | 67 | ok |
+| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md` | `T4` | T4 · 记忆写入资格门与 AC5 完整枚举（含一次性回合隔离机制裁定） | 282 | ok |
+| `server/deploy/apply-xiaozhi-overlay.sh` | — | 无锚点（整文件） | — | bare |
+| `server/gateway/front/front_app.py` | — | 无锚点（整文件） | — | bare |
 
 ## ①b · story 语义权威（S-Fx.y 整节照录 · machine-derived 投影）
 
-### S-F5.1 · 源 = `docs/requirements.md` 节首行 :589 · 本包声明 AC 粒度回引：`S-F5.1-AC1`、`S-F5.1-AC2`
+### S-F5.1 · 源 = `docs/requirements.md` 节首行 :589 · 本包声明 AC 粒度回引：`S-F5.1-AC2`、`S-F5.1-AC3`、`S-F5.1-AC4`、`S-F5.1-AC5`
 
 > **语义权威仍在 requirements 现文**；本段为脚本只读投影（整节照录、不改写不蒸馏），requirements 变更后重跑本脚本刷新。
 
@@ -61,7 +63,7 @@
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 本包只改引擎→OpenClaw 的 additive 请求字段（user）与历史发送策略；设备端零感知、固件零 diff，display E1 / B1 / §三提醒 / §四私有消息帧线格式零改动（契约 §四定案已明示向后兼容）。
+> 本包纯云端记忆子系统与 agent 守则面改动：设备端零感知、固件零 diff；不新增或改变任何端→网关消息、帧类型、字段与序列化形态（display E1 / B1 / §三提醒 / §四私有消息帧零触碰）。front 一次性回合隔离只改云端发起侧 payload（不携 user），设备无感。
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
@@ -81,7 +83,9 @@
 
 | 来源 | 行为 | 语义 owner | 承接包（`carriedBy ?? owner`） | note |
 |---|---|---|---|---|
-| `workstream:device-memory-overhaul` | user=<device_id> 请求字段（合法值 / 来源 / 省略回落） | `261022-m5-k2b-persistent-session` | `261022-m5-k2b-persistent-session` | P2 定义字段形态与来源（设备 id）；P3 资格门以「是否携带 user」为唯一判据（读写同门）；P4 device 级 peer 由它派生。三包同一字面、禁 sentinel user 变体。 |
+| `workstream:device-memory-overhaul` | 记忆 peer 映射（device 级 peer，键 agent:kidpal:openai-user:<device_id>） | `261022-m5-k3-honcho-memory-production` | `261022-m5-k3-honcho-memory-production` | peer 语义 owner = P3；键形态源自 P2 会话键，P4 backfill 消费同一映射；多设备身份体系不做（OQ-7 留根）。 |
+| `workstream:device-memory-overhaul` | openclaw.json 声明式 patch 组合（tools allowlist + Honcho 插件/hooks） | `261022-m5-k1-prompt-carrier-migration` | `261022-m5-k3-honcho-memory-production` | P1 先落 tools 声明；P3 在 P1 已应用态上追加插件/hooks 声明；两包均幂等 apply + drift_guard + rollback，openclaw.json 整文件不入仓。 |
+| `workstream:device-memory-overhaul` | workspace AGENTS.md 静态语义内容（v11 迁移段 + v12 守则段） | `261022-m5-k1-prompt-carrier-migration` | `261022-m5-k3-honcho-memory-production` | P1 迁入 v11 静态语义并保持单一事实源自声明；P3 只追加 v12 记忆守则，不回改 P1 段；两包串行（P1 先）。 |
 
 上述条目 = **本包承接的跨包行为**（上游起包期 / 拆包期登记）。验收面须覆盖它们，或在本包 review-packet 的「未覆盖面申报」段写明去向（`dev-loop.md`「### 合并门 Review Packet」）。
 

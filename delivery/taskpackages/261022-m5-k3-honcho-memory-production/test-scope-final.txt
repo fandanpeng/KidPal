@@ -1,0 +1,37 @@
+# test-scope-final.txt — 261022-m5-k3-honcho-memory-production final 相位影响面圈定清单
+# 生成：integrator 2026-10-23；方法 = 本包 impactedTests 种子 ∪ detect_changes（project C-AI-KidPal-pod-m2，inbound depth 3，impacted_total=56）映射测试 ∪ 共享 seam 相关测试 ∪ 安全余量
+# 圈定路径：per-Pod 专属图索引可用（C-AI-KidPal-pod-m2）→ 正常圈定，无降级
+# 口径：每行一个测试文件；非测试锚（脚本/manifest）单列尾注
+
+# — 本包 acceptanceTestsFile（TaskPackage K3-E1..E7 断言载体）—
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_261022_memory_isolation.acceptance.py
+
+# — TaskPackage impactedTests 种子 —
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+# （impactedTests 第 6 条 server/deploy/verify-deploy.sh 为脚本非测试文件，见尾注 1）
+
+# — detect_changes 爆炸半径映射测试（inbound hops 1-3 内的测试符号所在文件）—
+server/tests/test_reminder_units.py
+server/acceptance/archive/test_schedule_reminder.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+server/acceptance/test_schedule_grid_restore.acceptance.py
+
+# — 共享 seam 相关测试 —
+# seam 1：front_app.py 一次性回合 payload（K3-E2 门载体锚；K2b 持久会话同 seam）
+server/acceptance/test_261022_persistent_session.acceptance.py
+# seam 2：openclaw.json 声明式 patch 工作台 vs P1 tools allowlist（K3-E6 apply 保全对象）
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
+# seam 3：AGENTS.md 守则静态面（v12 追加段落被既有 skills/tools 套件读取）
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+
+# — 安全余量（dependsOn 前序包回归）—
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/tests/test_engine_round_close_units.py
+
+# — 尾注（非测试文件锚，final 判据按结构面核）—
+# 1. server/deploy/verify-deploy.sh：E1 判据要求的新增 Honcho 核验段，无自动测试；由 verify-deploy.sh 语法与内容断言（本包 acceptance E1 内）承载。
+# 2. server/deploy/manifest.yaml：E1/E6 manifest 登记断言（本包 acceptance 内）承载。
+# 3. server/gateway/front/front_app.py：本包零 diff（K3-E2 front 守卫 = P2 后现状即合规，must-stay-green）；其 inbound 爆炸半径已由 seam 1 测试覆盖。
