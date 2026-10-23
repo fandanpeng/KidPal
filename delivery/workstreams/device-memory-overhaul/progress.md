@@ -59,3 +59,9 @@
 - **v11 声明面保留（刻意，非漏改）**：`test_char_meaning_merge` 守卫仍解析 provider 三键/overlay PROMPT_SRC 指 v11——保留为「冻结终点版/data 存档」声明面（不再注入 prompt 键），后续包勿当废弃清理。
 - **verifier 双轮**：scoped r1（invocation `aa4e8924`）`ok:true`，FS-EVIDENCE-2 过；final r2 由 integrator Step 4 携 scope-file 跑（invocation `28f4ca43`，round 2——首个 final 尝试因缺 `--scope-file` 被 verify.mjs fail-closed 举手、未产证据、轮号回收复用）。FS-EVIDENCE-1 过（19 tracked 改动全部在 changeManifest 面）；current/ 投影已字节级刷新；dispatch-stamp ×2 + over-scan friction ×2 落账。
 - **board**：K1 `running`；integrator 转绿后置 `verifier-green`。
+
+## 2026-10-23 · K1 closeout + supervisor 闸 ESCALATE 停人类门（planner）
+
+- **integrator 收口（commit `f08d7d28`，40 files，未 push）**：final bearing r2（invocation `28f4ca43`）`ok:true` 10 闸全绿；test-scope-final.txt 10 行无降级（detect_changes 可用，impacted 2 全在种子内）；closeout 两 blocking 制品落盘、closeout-check PASS；demo 对账行 + 未覆盖面申报六行如实（K1-E7/E8 标「待 human 部署轮」）；两条非 BLOCKING findings（SHOULD：§5.5.5 措辞漂移随 P5；NIT：carrier 历史段时态混排顺手改）。FS-EVIDENCE-3 过。
+- **supervisor 机械闸 = ESCALATE（停人类合并门）**：diff 重算 tier=`high`（判据 `all-mock: test-files-no-real-db/event-assertion`——本包 diff 全为验收/声明/部署脚本面、无真实 DB/事件断言，启发式上浮），声明的 medium 向上取效为 high → high 判 ESCALATE。provenance v2 全过（`supervisor-gate-check` exit 0）、evidenceComplete、熔断轮 2。非缺陷路径：medium 包被 diff 启发式上浮属闸的诚实行为。board 置 `blocked`；pod-retro.md 已落（closeout advisory 消）。
+- **待 human 裁**：合并放行（人批 → pod-events `human-decision` → `merge-driver --pod` 本地合并）或维持停等。**部署轮提醒**：合并后 live 项仍待 human——K1-E7（prompt_tokens ≤11,000 / cache hit / 工具 4 项）+ K1-E8（SOUL/USER live 清理，launch card 人工步骤）；**AGENTS.md 不得单独铺放**（v11 语义已在仓内镜像就位，走 deploy.sh 整批铺放即安全）。另：loop-retro 触发阈值已到（30 pending，advisory），归主线程排期。
