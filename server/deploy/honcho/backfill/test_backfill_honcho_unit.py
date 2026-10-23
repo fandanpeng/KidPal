@@ -12,10 +12,14 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
+import os
 import sqlite3
 import tempfile
 import unittest
+import unittest.mock as mock
+import urllib.error
 from pathlib import Path
 
 DIR = Path(__file__).resolve().parent
@@ -314,6 +318,208 @@ class RollbackCase(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertNotIn("delete_sessions",
                          [c[0] for c in self.stub.calls])
+
+
+class _FakeResp:
+    """urllib urlopen 桩响应（Page JSON 体；上下文管理器形态）。"""
+
+    def __init__(self, payload):
+        self._raw = json.dumps(payload).encode("utf-8")
+
+    def read(self, size=-1):
+        return self._raw
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class RestWireCase(unittest.TestCase):
+    """HonchoRestClient wire 形状单测（stub urllib 传输层；离线零网络）。
+
+    断言形状全部对 upstream main@7478be29 源码实测：/v3 + workspace 作用域
+    路径、SessionCreate/MessageCreate alias 字段、100 条分块、Page.items
+    分页走全量、Bearer 凭据（HONCHO_JWT 环境变量名引用）、DELETE 202/404
+    语义、canonical↔wire 名可逆编码（资源名 pattern ^[a-zA-Z0-9_-]+$）。
+    """
+
+    def setUp(self):
+        self.mod = load_module(BACKFILL_PY, "unit_backfill_wire")
+        self.canon = ("agent:kidpal:openai-user:aa:bb:cc:dd:ee:ff"
+                      ":backfill:20261023T000000Z:session-corpus")
+        self.wire = self.mod.wire_session_name(self.canon)
+        self.client = self.mod.HonchoRestClient("http://127.0.0.1:18100/")
+        self.calls = []
+
+    # -- 传输层桩 -------------------------------------------------------------- #
+    def _install(self, responder):
+        def fake_urlopen(req, timeout=None):
+            body = json.loads(req.data.decode("utf-8")) if req.data else None
+            self.calls.append({
+                "method": req.get_method(), "url": req.full_url,
+                "body": body,
+                "headers": {k.lower(): v for k, v in req.header_items()},
+            })
+            payload, status = responder()
+            if status >= 400:
+                raise urllib.error.HTTPError(
+                    req.full_url, status, "err", None, io.BytesIO(b'{"d":1}'))
+            return _FakeResp(payload)
+        patcher = mock.patch.object(self.mod.urllib.request, "urlopen", fake_urlopen)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    @staticmethod
+    def _page(items, total=None):
+        page = {"items": items, "page": 1, "size": 100}
+        page["total"] = total if total is not None else len(items)
+        return page
+
+    # -- 断言 ------------------------------------------------------------------ #
+
+    def test_wire_name_roundtrip_and_pattern(self):
+        w = self.mod.wire_session_name(self.canon)
+        self.assertRegex(w, r"^[A-Za-z0-9_-]+$")  # 资源名 pattern 合规（api.py:46）
+        self.assertTrue(w.startswith("kidpal-bf-"))
+        self.assertEqual(self.mod.canonical_session_name(w), self.canon)
+        self.assertEqual(self.mod.wire_session_name(self.canon), w)  # 确定不变
+        self.assertIsNone(self.mod.canonical_session_name("plugin-session-abc"))
+
+    def test_create_session_v3_workspace_alias_body(self):
+        self._install(lambda: (self._page([]), 200))
+        self.client.create_session(
+            "owner", self.canon, {BATCH_KEY: "agent:kidpal:openai-user:x"})
+        call = self.calls[0]
+        self.assertEqual(call["method"], "POST")
+        self.assertEqual(
+            call["url"], "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions")
+        self.assertEqual(call["body"]["peers"], {"owner": {}})  # peer_names alias
+        self.assertEqual(
+            call["body"]["metadata"],
+            {BATCH_KEY: "agent:kidpal:openai-user:x"})
+        wire_id = call["body"]["id"]  # SessionCreate.name 的 alias id
+        self.assertEqual(wire_id, self.wire)
+        self.assertRegex(wire_id, r"^[A-Za-z0-9_-]+$")
+
+    def test_add_message_single_batch_alias_and_peer_routing(self):
+        self._install(lambda: ([], 201))
+        self.client.add_message(self.canon, "user", "你好",
+                                {FP_KEY: "v1:session-corpus:" + "0" * 64})
+        call = self.calls[0]
+        self.assertEqual(call["method"], "POST")
+        self.assertEqual(
+            call["url"],
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions/"
+            + self.wire + "/messages")
+        self.assertEqual(call["body"], {"messages": [{
+            "content": "你好", "peer_id": "owner",
+            "metadata": {FP_KEY: "v1:session-corpus:" + "0" * 64}}]})
+
+    def test_add_message_assistant_routes_agent_peer(self):
+        self._install(lambda: ([], 201))
+        self.client.add_message(self.canon, "assistant", "回", {})
+        self.assertEqual(self.calls[0]["body"]["messages"][0]["peer_id"],
+                         "agent-kidpal")
+
+    def test_add_messages_chunks_over_100(self):
+        self._install(lambda: ([], 201))
+        rows = [{"content": str(i), "peer_id": "owner", "metadata": {}}
+                for i in range(250)]
+        self.client._add_messages(self.canon, rows)
+        posts = [c for c in self.calls if c["method"] == "POST"]
+        self.assertEqual(len(posts), 3)
+        self.assertEqual(
+            [len(c["body"]["messages"]) for c in posts], [100, 100, 50])
+        for c in posts:
+            self.assertEqual(
+                c["url"], "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions/"
+                + self.wire + "/messages")
+            self.assertLessEqual(len(c["body"]["messages"]),
+                                 self.mod.HonchoRestClient.MESSAGE_BATCH_LIMIT)
+        flattened = [m for c in posts for m in c["body"]["messages"]]
+        self.assertEqual(flattened, rows)  # 分块零丢序
+
+    def test_snapshot_counts_page_walk_and_endpoints(self):
+        mod = self.mod
+
+        class _Small(mod.HonchoRestClient):
+            LIST_PAGE_SIZE = 2
+
+        client = _Small("http://127.0.0.1:18100/")
+        plan = iter([
+            self._page([{"id": "owner"}, {"id": "agent-kidpal"}], total=3),
+            self._page([{"id": "p3"}], total=3),        # peers 第 2 页 → 走满
+            self._page([{"id": self.wire, "metadata": {}}], total=1),
+            self._page([{}, {}, {}], total=3),          # session 消息页
+            self._page([{}, {}], total=2),              # conclusions 页
+        ])
+        self._install(lambda: (next(plan), 200))
+        counts = client.snapshot_counts()
+        self.assertEqual(counts, {"peers": 3, "sessions": 1,
+                                  "messages": 3, "observations": 2})
+        urls = [c["url"] for c in self.calls]
+        self.assertEqual(urls, [
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/peers/list?page=1&size=2",
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/peers/list?page=2&size=2",
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions/list?page=1&size=2",
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions/"
+            + self.wire + "/messages/list?page=1&size=2",
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/conclusions/list?page=1&size=2",
+        ])
+
+    def test_list_backfill_batches_and_fingerprints_read_metadata(self):
+        mod = self.mod
+
+        class _Small(mod.HonchoRestClient):
+            LIST_PAGE_SIZE = 2
+
+        client = _Small("http://127.0.0.1:18100/")
+        plan = iter([
+            self._page([{"id": self.wire,
+                         "metadata": {BATCH_KEY: self.canon}}], total=1),
+            self._page([{"id": self.wire,
+                         "metadata": {BATCH_KEY: self.canon}}], total=1),
+            self._page([{"metadata": {FP_KEY: "fp1"}}], total=1),
+        ])
+        self._install(lambda: (next(plan), 200))
+        self.assertEqual(client.list_backfill_batches(), {self.canon})
+        self.assertEqual(client.list_fingerprints(), {"fp1"})
+
+    def test_delete_sessions_202_counts(self):
+        self._install(lambda: ({"message": "ok"}, 202))
+        deleted = self.client.delete_sessions([self.canon])
+        self.assertEqual(deleted, 1)
+        self.assertEqual(self.calls[0]["method"], "DELETE")
+        self.assertEqual(
+            self.calls[0]["url"],
+            "http://127.0.0.1:18100/v3/workspaces/kidpal/sessions/" + self.wire)
+
+    def test_bearer_token_from_env_name_reference(self):
+        self._install(lambda: ([], 201))
+        with mock.patch.dict(os.environ, {self.mod.HonchoRestClient.JWT_ENV_VAR:
+                                          "tok-123"}):
+            self.client._request("GET", "/probe")
+        self.assertEqual(
+            self.calls[0]["headers"].get("authorization"), "Bearer tok-123")
+        self.calls.clear()
+        self.client._request("GET", "/probe")
+        self.assertNotIn("authorization", self.calls[0]["headers"])  # 零凭据形态
+
+    def test_delete_404_idempotent_skip(self):
+        self.calls.clear()
+        state = {"n": 0}
+
+        def responder():
+            state["n"] += 1
+            return ({"message": "ok"}, 202) if state["n"] == 1 else (
+                {"detail": "nf"}, 404)
+
+        self._install(responder)
+        deleted = self.client.delete_sessions([self.canon, self.canon])
+        self.assertEqual(deleted, 1)  # 202 计数、404 幂等跳过
+        self.assertEqual(self.calls[0]["method"], "DELETE")
 
 
 if __name__ == "__main__":

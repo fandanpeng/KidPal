@@ -18,6 +18,10 @@ ADR-016 + OQ-10 + NFR-SEC-2 ⑤ + NFR-PRIV-1。
 身份口径（K4-E2 · ADR-016 现行口径）:
   · 灌入 session 键全部落既有设备 session 键族：前缀恰
     agent:kidpal:openai-user:<device_id>（后缀 = :backfill:<batch>:<source-kind>）。
+    canonical 键形态在鸭型协议层、metadata batch 标记值与计数报告中保真
+    不变；仅出网 wire 层经 HonchoRestClient 确定性可逆编码
+    （kidpal-bf- + base64url——Honcho 资源名 pattern ^[a-zA-Z0-9_-]+$
+    不容 ':'，schemas/api.py:46 实测），同键跨进程编码确定一致。
   · 目标 peer 恒 = 家庭单 owner（--peer 缺省 "owner"）；零新 peer 创建
     （零设备名 peer、零多设备多孩子身份）；换设备 = 新 session 家族、
     画像不变（arch §1.3 已知后果，K4-E6 live 轮知悉项）。
@@ -48,6 +52,9 @@ ADR-016 + OQ-10 + NFR-SEC-2 ⑤ + NFR-PRIV-1。
 出网（NFR-SEC-2 ⑤）: 数据面只经 --api（缺省 http://127.0.0.1:18100，
 Honcho loopback）；deriver→DeepSeek / embedding→DashScope 两条出网记账
 在 Honcho 服务端既有体内，本工具零新增出网路径、零内联凭据。
+凭据: 可选 HONCHO_JWT 环境变量名字引用（Authorization: Bearer <token>；
+token 由 ECS 侧注入，不入仓；服务端 settings.AUTH.USE_AUTH=false 时
+零凭据放行 admin 语义——security.py auth() 实测）。
 零过滤类旗标: redact / mask / anonymize / pii / filter- 族一律不在场
 （human 终拍照记全量）。
 
@@ -65,11 +72,23 @@ observations 的 deriver 异步增量在 live 轮对账——K4-E6）。
 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查；挂
 awaiting-human:live-deploy，Pod 不自行部署）。
 
-minimal: 真 REST 适配（HonchoRestClient）的端点与 wire 形状按 Honcho
-REST 最佳知识落笔——metadata 逐消息可达性 = live 全量跑首验点（冻结件
-缺口申报）；端点路径集中类常量，live 轮一次校准。若 message metadata
+minimal: 真 REST 适配（HonchoRestClient）的端点与 wire 形状已按 Honcho
+upstream 源码对读实测落笔（对读源 = plastic-labs/honcho main@7478be29
+本地克隆 C:/tmp/honcho-upstream-ref/honcho + 协调者 ECS /opt/honcho 现读
+特征逐条吻合：全 router prefix /v3、routers 全 workspace 作用域）；端点
+路径集中类常量。逐端点源码行锚：sessions routers/sessions.py:40-43
+（prefix）+ :305（POST "" = get-or-create）+ :418（DELETE 202 异步级联）、
+peers routers/peers.py:87（POST /list）+ :124（POST "" get-or-create）、
+messages routers/messages.py:38（prefix）+ :102（批量上限 100，201）、
+conclusions routers/conclusions.py:22（prefix）+ :61（POST /list 分页）、
+schemas/api.py:46（RESOURCE_NAME_PATTERN）+ :342（MessageCreate alias
+peer_id）+ :394（MessageBatchCreate ≤100）+ :420（SessionCreate alias
+id/peers）、utils/pagination.py（POST /list 分页 Page.items，size ≤ 100）、
+security.py:260-274（Bearer；USE_AUTH=false 放行）。——metadata 逐消息
+可达性 = live 全量跑首验点（冻结件缺口申报保留）。若 message metadata
 不可达，按冻结件缺口申报换 session 侧指纹清单方案并走 tighten-only
-反审。升级路径：本类恰一 _request 出入口。
+反审。升级路径：本类恰一 _request 出入口；_add_messages 已按 100 条
+分块建模，runner 逐条调用可在不破冻结鸭型协议下升级为批量。
 
 stdlib-only；模块顶层零副作用、零网络 I/O；可被 importlib 按路径导入。
 """
@@ -77,8 +96,10 @@ stdlib-only；模块顶层零副作用、零网络 I/O；可被 importlib 按路
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
+import os
 import sqlite3
 import sys
 import urllib.error
@@ -96,6 +117,9 @@ DEFAULT_PEER = "owner"
 # assistant 角色消息在 Honcho 侧的 peer 归宿（ADR-016：DB peers = owner /
 # agent-kidpal 两员）；其余角色一律归目标 owner peer。
 AGENT_PEER = "agent-kidpal"
+# wire 层 session 名编码前缀（wire_session_name / canonical_session_name）——
+# canonical 键含 ':' 不合 Honcho 资源名 pattern，出网名 = 前缀 + base64url。
+WIRE_NAME_PREFIX = "kidpal-bf-"
 
 
 class BackfillError(Exception):
@@ -236,24 +260,74 @@ def plan_sources(args: argparse.Namespace) -> dict[str, list[dict]]:
 # --------------------------------------------------------------------------- #
 
 
-class HonchoRestClient:
-    """Honcho REST 适配（真实现；stdlib urllib）。
+def wire_session_name(canonical_key: str) -> str:
+    """canonical session 键 → wire 合法资源名。
 
-    minimal: 端点与 wire 形状按 Honcho REST 最佳知识落笔——metadata 逐
-    消息可达性 = live 全量跑首验点（冻结件缺口申报）；端点集中类常量，
-    live 轮一次校准。升级路径：若 message metadata 不可达，按缺口申报
-    换 session 侧指纹清单方案（tighten-only 反审回改冻结件）。
-    快照/指纹枚举按全量拉取建模（现网量级小）；量级增大后换聚合端点。
+    Honcho 资源名 pattern = ^[a-zA-Z0-9_-]+$（schemas/api.py:46）——canonical
+    键含 ':' 不合 wire；编码 = kidpal-bf- 前缀 + base64url（去 padding），
+    可逆且同键确定不变（幂等/回滚跨进程一致）。canonical 键在 metadata
+    batch 标记值、消息指纹与计数报告中保真，wire 名仅出网层局部形态。
+    """
+    encoded = base64.urlsafe_b64encode(canonical_key.encode("utf-8")).decode("ascii")
+    return WIRE_NAME_PREFIX + encoded.rstrip("=")
+
+
+def canonical_session_name(wire_name: str) -> str | None:
+    """wire 名反解 canonical 键；非本前缀（live 插件等他源 session）→ None。"""
+    if not wire_name.startswith(WIRE_NAME_PREFIX):
+        return None
+    raw = wire_name[len(WIRE_NAME_PREFIX):]
+    return base64.urlsafe_b64decode(
+        raw + "=" * (-len(raw) % 4)).decode("utf-8")
+
+
+class HonchoRestClient:
+    """Honcho REST 适配（真实现；stdlib urllib；wire 形状按 upstream 源码实测）。
+
+    对读源：plastic-labs/honcho main@7478be29 本地克隆
+    （C:/tmp/honcho-upstream-ref/honcho——src/main.py:216-223 全 router
+    prefix /v3；sessions/peers/messages/conclusions 四 routers 全 workspace
+    作用域），与协调者 ECS /opt/honcho 现读特征逐条吻合。逐端点源码行锚
+    见模块头注 minimal 段。目标 workspace = kidpal（与插件 config.workspaceId
+    同源）。
+
+    wire 形态要点（全部源码实测，非「最佳知识」）：
+      · 资源名 pattern ^[a-zA-Z0-9_-]+$（schemas/api.py:46）——canonical
+        session 键含 ':'，出网名 = wire_session_name() 确定性可逆编码；
+      · 建会话 = get-or-create 语义（POST ""，200/201 即得，无 409 分支）；
+      · 消息批 {"messages": [...]} 上限 100 条/批（MessageBatchCreate），
+        超量自动分块；单条 MessageCreate 的 peer 字段 wire 名 = peer_id
+        （MessageCreate.peer_name 的 alias，schemas/api.py:342-347）；
+      · 列举 = POST /list 分页（Page.items；size 上限 100 逐页走）；
+      · DELETE session 返回 202（标记 inactive 即时、真删异步；list 只回
+        active——crud/session.py:183 is_active 过滤实测）；
+      · 凭据 = HONCHO_JWT 环境变量名字引用（token 由 ECS 侧注入，不入仓）；
+        服务端 USE_AUTH=false 时零凭据放行（security.py:272 实测）。
+
+    minimal: 快照/指纹枚举按全量拉取建模（现网量级小；size=100 逐页）；
+    metadata 逐消息可达性 = live 全量跑首验点（冻结件缺口申报保留）；若
+    message metadata 不可达，按冻结件缺口申报换 session 侧指纹清单方案并
+    走 tighten-only 反审。快照计数对服务端异步派生（observations）含等待
+    窗差——live 轮对账见 K4-E6。升级路径：本类恰一 _request 出入口；
+    _add_messages 已按 100 条/批分块建模，runner 逐条调用可在不破冻结
+    鸭型协议（六方法）下升级为批量调用。
     """
 
-    EP_PEERS = "/v2/peers"
-    EP_SESSIONS = "/v2/sessions"
-    EP_SESSION_MESSAGES = "/v2/sessions/{sid}/messages"
-    EP_PEER_REPRESENTATIONS = "/v2/peers/{pid}/representations"
+    WS = "kidpal"
+    EP_SESSIONS = "/v3/workspaces/{ws}/sessions"                # POST = get-or-create
+    EP_SESSIONS_LIST = EP_SESSIONS + "/list"                    # POST 分页列举
+    EP_SESSION = "/v3/workspaces/{ws}/sessions/{sid}"           # DELETE（202 异步删）
+    EP_SESSION_MESSAGES = "/v3/workspaces/{ws}/sessions/{sid}/messages"  # POST 批量写
+    EP_SESSION_MESSAGES_LIST = EP_SESSION_MESSAGES + "/list"    # POST 分页列举
+    EP_PEERS_LIST = "/v3/workspaces/{ws}/peers/list"            # POST 分页列举
+    EP_CONCLUSIONS_LIST = "/v3/workspaces/{ws}/conclusions/list"  # POST 分页列举
+
+    MESSAGE_BATCH_LIMIT = 100  # MessageBatchCreate max_length=100（api.py:394）
+    LIST_PAGE_SIZE = 100       # pagination size le=100（utils/pagination.py）
+    JWT_ENV_VAR = "HONCHO_JWT"  # token 名字引用；ECS 侧注入，不入仓
 
     def __init__(self, api: str):
         self._base = api.rstrip("/")
-        self._sid_by_key: dict[str, str] = {}
         self._peer_by_key: dict[str, str] = {}
 
     # -- HTTP 出入口（恰一处；出网目的地 = 构造参数 api，即 --api loopback）-- #
@@ -263,6 +337,9 @@ class HonchoRestClient:
             url += "?" + urllib.parse.urlencode(query)
         data = None
         headers = {"Accept": "application/json"}
+        token = os.environ.get(self.JWT_ENV_VAR)
+        if token:
+            headers["Authorization"] = "Bearer " + token
         if body is not None:
             data = json.dumps(body, ensure_ascii=False).encode("utf-8")
             headers["Content-Type"] = "application/json"
@@ -285,34 +362,38 @@ class HonchoRestClient:
 
     @staticmethod
     def _items(payload) -> list:
-        if payload is None:
-            return []
-        if isinstance(payload, list):
-            return payload
-        if isinstance(payload, dict):
-            for key in ("items", "data", "results"):
-                if isinstance(payload.get(key), list):
-                    return payload[key]
+        """Page 分页响应取 items（Page[...] 响应形状——utils/pagination.py）。"""
+        if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+            return payload["items"]
         return []
 
+    def _list_all(self, path: str) -> list:
+        """POST /list 分页走全量（page/size 偏移翻页，至不足一页或齐 total）。"""
+        items: list = []
+        page = 1
+        while True:
+            payload = self._request(
+                "POST", path, query={"page": page, "size": self.LIST_PAGE_SIZE})
+            batch = self._items(payload)
+            items.extend(batch)
+            if len(batch) < self.LIST_PAGE_SIZE:
+                return items
+            total = payload.get("total") if isinstance(payload, dict) else None
+            if isinstance(total, int) and len(items) >= total:
+                return items
+            page += 1
+
     def snapshot_counts(self) -> dict:
-        peers = self._items(self._request("GET", self.EP_PEERS))
-        sessions = self._items(self._request("GET", self.EP_SESSIONS))
+        ws = self.WS
+        peers = self._list_all(self.EP_PEERS_LIST.format(ws=ws))
+        sessions = self._list_all(self.EP_SESSIONS_LIST.format(ws=ws))
         messages = 0
         for session in sessions:
-            sid = urllib.parse.quote(str(
-                session.get("id") or session.get("sessionId") or ""))
-            msgs = self._items(self._request(
-                "GET", self.EP_SESSION_MESSAGES.format(sid=sid)))
-            messages += len(msgs)
-        observations = 0
-        for peer in peers:
-            pid = urllib.parse.quote(str(
-                peer.get("id") or peer.get("peerId") or ""))
-            reps = self._items(self._request(
-                "GET", self.EP_PEER_REPRESENTATIONS.format(pid=pid),
-                query={"type": "worked"}))
-            observations += len(reps)
+            sid = urllib.parse.quote(str(session.get("id") or ""))
+            messages += len(self._list_all(
+                self.EP_SESSION_MESSAGES_LIST.format(ws=ws, sid=sid)))
+        observations = len(self._list_all(
+            self.EP_CONCLUSIONS_LIST.format(ws=ws)))
         return {
             "peers": len(peers),
             "sessions": len(sessions),
@@ -323,7 +404,7 @@ class HonchoRestClient:
     def list_backfill_batches(self) -> set:
         """既有 backfill batch 标记集合——标记即键形态下 = 被标记 session 键集。"""
         batches = set()
-        for session in self._items(self._request("GET", self.EP_SESSIONS)):
+        for session in self._list_all(self.EP_SESSIONS_LIST.format(ws=self.WS)):
             metadata = session.get("metadata") or {}
             if SESSION_BATCH_KEY in metadata:
                 batches.add(str(metadata[SESSION_BATCH_KEY]))
@@ -332,60 +413,62 @@ class HonchoRestClient:
     def list_fingerprints(self) -> set:
         """既有消息指纹集合（live 数据无标记 → 天然不在集合内）。"""
         fingerprints = set()
-        for session in self._items(self._request("GET", self.EP_SESSIONS)):
-            sid = urllib.parse.quote(str(
-                session.get("id") or session.get("sessionId") or ""))
-            for message in self._items(self._request(
-                    "GET", self.EP_SESSION_MESSAGES.format(sid=sid))):
+        for session in self._list_all(self.EP_SESSIONS_LIST.format(ws=self.WS)):
+            sid = urllib.parse.quote(str(session.get("id") or ""))
+            for message in self._list_all(
+                    self.EP_SESSION_MESSAGES_LIST.format(ws=self.WS, sid=sid)):
                 metadata = message.get("metadata") or {}
                 if MESSAGE_FP_KEY in metadata:
                     fingerprints.add(str(metadata[MESSAGE_FP_KEY]))
         return fingerprints
 
-    def _resolve_session(self, session_key: str) -> str:
-        sid = self._sid_by_key.get(session_key)
-        if sid:
-            return sid
-        for session in self._items(self._request("GET", self.EP_SESSIONS)):
-            name = str(session.get("name") or session.get("id") or "")
-            if name == session_key:
-                sid = str(session.get("id") or "")
-                self._sid_by_key[session_key] = sid
-                return sid
-        raise BackfillError(f"Honcho session 不可解析: {session_key}")
-
     def create_session(self, peer, session_key, metadata) -> None:
-        self._peer_by_key[session_key] = str(peer)
-        body = {"peerId": str(peer), "name": str(session_key),
-                "metadata": dict(metadata)}
-        try:
-            payload = self._request("POST", self.EP_SESSIONS, body=body)
-        except BackfillError as exc:
-            if exc.status == 409:
-                return  # session 已在世（重复 create）——幂等容忍
-            raise
-        if isinstance(payload, dict):
-            sid = payload.get("id") or payload.get("sessionId")
-            if sid:
-                self._sid_by_key[session_key] = str(sid)
+        canonical = str(session_key)
+        self._peer_by_key[canonical] = str(peer)
+        body = {
+            "id": wire_session_name(canonical),  # SessionCreate.name 的 alias id
+            "metadata": dict(metadata),
+            "peers": {str(peer): {}},            # SessionCreate.peer_names 的 alias peers
+        }
+        # POST sessions = get-or-create 语义（routers/sessions.py:305）——重复
+        # create 返回既有 session（200/201），无 409 分支。
+        self._request("POST", self.EP_SESSIONS.format(ws=self.WS), body=body)
 
     def add_message(self, session_key, role, content, metadata) -> None:
-        sid = urllib.parse.quote(self._resolve_session(str(session_key)))
+        session_key = str(session_key)
         peer = (AGENT_PEER if str(role) == "assistant"
-                else self._peer_by_key.get(str(session_key), DEFAULT_PEER))
-        self._request(
-            "POST", self.EP_SESSION_MESSAGES.format(sid=sid),
-            body=[{"content": str(content), "peerId": peer,
-                   "metadata": dict(metadata)}])
+                else self._peer_by_key.get(session_key, DEFAULT_PEER))
+        self._add_messages(session_key, [{
+            "content": str(content),
+            "peer_id": peer,  # MessageCreate.peer_name 的 alias peer_id（api.py:342）
+            "metadata": dict(metadata),
+        }])
+
+    def _add_messages(self, session_key: str, rows: list[dict]) -> None:
+        """批量写消息（MessageBatchCreate：{"messages":[...]} 上限 100 条/批）。
+
+        超过 MESSAGE_BATCH_LIMIT 自动按 100 分块（api.py:394 实测）；当前
+        runner 逐条调用 = 每批恰一条。wire 会话名 = 确定性编码
+        （wire_session_name），消息作者 peer 由服务端 get-or-create
+        （crud/message.py:434 实测）。
+        """
+        sid = urllib.parse.quote(wire_session_name(session_key))
+        for start in range(0, len(rows), self.MESSAGE_BATCH_LIMIT):
+            self._request(
+                "POST", self.EP_SESSION_MESSAGES.format(ws=self.WS, sid=sid),
+                body={"messages": rows[start:start + self.MESSAGE_BATCH_LIMIT]})
 
     def delete_sessions(self, session_keys) -> int:
         deleted = 0
         for key in session_keys:
+            sid = urllib.parse.quote(wire_session_name(str(key)))
             try:
-                sid = urllib.parse.quote(self._resolve_session(str(key)))
-            except BackfillError:
-                continue  # 不在世即视作已删
-            self._request("DELETE", self.EP_SESSIONS + "/" + sid)
+                # DELETE 返回 202（标记 inactive 即时、真删异步级联）。
+                self._request("DELETE", self.EP_SESSION.format(ws=self.WS, sid=sid))
+            except BackfillError as exc:
+                if exc.status == 404:
+                    continue  # 不在世即视作已删（幂等回滚）
+                raise
             deleted += 1
         return deleted
 

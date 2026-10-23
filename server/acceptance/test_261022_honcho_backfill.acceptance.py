@@ -177,25 +177,37 @@ host/live 分工边界（riskTier=high + Honcho DB / 源语料在 ECS、host 面
   · manifest 登记 + verify-deploy 核验        → test_k4_a6_manifest_... /
                                                  test_k4_a6_verify_...   → 机制级
 
-缺口（承载断言强度低于契约要求处，逐条）：
+缺口（承载断言强度低于契约要求处，逐条；2026-10-23 申报收敛——原「REST
+wire 形状 = 最佳知识、未定形」申报撤销，见文尾申报收敛注记）：
 
-  · 「真语料全量照记」的最终对账半：host fixture 是冻结最小行格式（ECS
-    真语料格式 host 无样本），真语料逐件解析与行数对账 = live 轮计数报告
-    过目（K4-E6 ①）。行为等价假设：最小格式下的零丢弃 / 兜底收编行为 ≈
-    真语料解析零丢弃（显式化，不写即默认不成立；真语料解析缺陷会在 live
-    计数对账时暴露）。
-  · 指纹标记经 Honcho message metadata 承载：host 面以鸭型客户端协议断言，
-    REST wire 形状（metadata 是否逐消息可达）= live 全量跑首验点；若
-    metadata 不可达，builder 须在实现期以等价源锚机制（如 session 侧指纹
-    清单）替代并回改本冻结件（tighten-only 纪律反审）。
-  · 回滚对派生 observation 的连带清除：host 桩按「删 session 连带计数」
-    建模；真栈 cascade 行为 = live 回滚演练（K4-E6 ③）验证。
-  · 「二次跑零重复 observation」的语义半：host 面证零重复写入（消息级）；
-    deriver 对重复消息不产重复 observation = Honcho 服务端行为，live 轮
-    幂等二次跑（K4-E6 ②）对账。
+  · REST wire 形状已落定（2026-10-23，不再按「最佳知识 / 未定形」口吻在案）：
+    builder 首轮 /v2 形态错误经主线程对照审查（ECS /opt/honcho 现读）实锤，
+    已按 upstream main@7478be29 本地克隆源码对读修复，与现读特征逐条吻合
+    ——全 router prefix=/v3、sessions/peers/messages/conclusions 全
+    workspace 作用域（/v3/workspaces/{wid}/...）、MessageBatchCreate
+    ≤100 分块、RESOURCE_NAME_PATTERN 禁 `:` 故 backfill session 走确定性
+    可逆 wire 名编码（kidpal-bf-<base64url>，canonical 键保真在鸭型协议
+    层）。冻结全量 333 passed 零变化（断言与鸭型协议零改动）。
+
+  仍挂 live 全量跑首验点的诚实申报（收窄为四项；真栈行为仍待 live 对账）：
+    ① message metadata 逐消息可达性——指纹幂等的真栈前提；若 metadata
+       不可达，builder 须在实现期以等价源锚机制（如 session 侧指纹清单）
+       替代并回改本冻结件（tighten-only 纪律反审）。
+    ② 真语料格式适配——host fixture 是冻结最小行格式（ECS 真语料格式
+       host 无样本），真语料逐件解析与行数对账 = live 轮计数报告过目
+       （K4-E6 ①）。行为等价假设：最小格式下的零丢弃 / 兜底收编行为 ≈
+       真语料解析零丢弃（显式化，不写即默认不成立；真语料解析缺陷会在
+       live 计数对账时暴露）。
+    ③ DELETE 202 异步删除窗差——真栈 DELETE session 返回 202（inactive
+       即时标记、真删异步级联），host 桩按同步「删 session 连带计数」
+       建模存在窗差；回滚演练（K4-E6 ③）对账。
+    ④ conclusions 异步派生等待窗——deriver 异步产出 conclusions /
+       observations 存在等待窗，「二次跑零重复 observation」的语义半与
+       前后计数取窗 = observations 计数对账（K4-E6 ② 幂等二次跑）。
+
   · device_id 取值口径（MAC vs 其他设备标识）沿 P2/P3 既有 user 语义，
     工具以 --device-id 透传不裁定；live 跑时 human 按 ECS 现网 device id
-    传参。
+    传参（既有注记保留，不属上述四项 live 对账点）。
 
 fixture 自含性声明：全部断言用 tempfile 自建 fixture（corpus 两个文本件 /
 sqlite 一个临时库）+ 注入桩客户端；零网络 I/O（stub 客户端纯内存）、零
@@ -213,6 +225,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2] 推导仓根，不依赖调用�
   _patch_client（同族 8 处全有、唯此处漏），离线机连接拒绝致 rc==0 断言空红；
   补 `self._patch_client(rb, stub)` 一行，断言零改动（K3 姊妹件「锚换代注记」
   留痕先例格式）。
+
+申报收敛注记（2026-10-23，tighten-only 非语义变更）：头注「缺口申报」节
+  收敛——builder 首轮 REST /v2 形态错误经主线程对照审查（ECS /opt/honcho
+  现读）实锤、按 upstream main@7478be29 本地克隆源码对读修复后，原「REST
+  wire 形状（metadata 是否逐消息可达）= live 全量跑首验点」的未定形申报
+  撤销，端点与请求/响应形状按源码对读落定；诚实申报收窄为四项 live 对账点
+  （metadata 逐消息可达 / 真语料格式适配 / DELETE 202 异步删除窗差 /
+  conclusions 异步派生等待窗）。断言、鸭型协议、coverage 标记零改动
+  （上方「缺陷修复注记」同日留痕先例格式）。
 
 Run protocol（文件名两点须 importlib 模式）:
   cd server && python -m pytest -q --import-mode=importlib -m "not live" acceptance

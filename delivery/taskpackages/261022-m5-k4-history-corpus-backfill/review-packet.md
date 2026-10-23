@@ -1,6 +1,6 @@
 # Review Packet · 261022-m5-k4-history-corpus-backfill
 
-> integrator 合并前审查包，2026-10-23，final round 4（invocationId `4b7f0a2e-9c1d-4e5f-8a3b-2d6c1e0f9a7b`）。等待 supervisor 裁断；不 push、不 merge。
+> integrator 合并前审查包，2026-10-23，初版 final round 4（invocationId `4b7f0a2e-9c1d-4e5f-8a3b-2d6c1e0f9a7b`）；**wire 修复轮复收口 final round 6**（invocationId `7c3e9a1f-2b4d-4f6a-9e8c-5d1b0a7f3e2c`，见 §13）。等待 supervisor 裁断；不 push、不 merge。
 
 ## 1. Change Size
 
@@ -40,7 +40,7 @@ roadmap 效果段（roadmap.md:89）声明 demo 证据形态 =「host runner 输
 
 对照 acceptance[]（K4-E1..E6）+ 契约条目（interface-contract §四）+ roadmap §3 效果段，逐条一行：
 
-- **REST wire 形状（message metadata 可达性）**：无自动断言——HonchoRestClient 端点与 wire 按 Honcho REST 最佳知识落笔（minimal: 自申报），metadata 逐消息可达性 = live 全量跑首验点；不可达则按冻结件缺口申报换 session 侧指纹清单方案并走 tighten-only 反审。现状：host 桩验收绿；去向：K4-E6 human 部署轮。
+- **REST wire 形状（message metadata 可达性）**：**host 面已落定（r5/r6 wire 修复轮）**——端点与请求/响应形状经 upstream main@7478be29 源码对读 + ECS /opt/honcho 现读特征吻合实测（/v3 + workspace 作用域 + ≤100 分块 + kidpal-bf-<base64url> 资源名编码 + Bearer HONCHO_JWT 名字引用），单测 RestWireCase 十项承载；未定形申报已撤销。剩余未自动断言面 = **message metadata 逐消息可达性**（REST GET 侧是否回传 metadata 属真栈行为）——不可达则按冻结件缺口申报换 session 侧指纹清单方案并走 tighten-only 反审；去向：K4-E6 human 部署轮 live 对账（四项之一，见 §13）。
 - **真语料格式适配**：无自动断言——host 面钉最小可测格式（`[<role>] <content>` 行 + transcript_events id/role/content 列），真 session-corpus 语料格式 = live 计数报告对账（unparsed 披露兜底、零丢弃）；去向：K4-E6 human 部署轮。
 - **observations 异步增量与回滚逐 session 消息量预测**：无自动断言——deriver 异步增量在 plan 态只能记 after=before 预测、回滚逐 session 消息量不可经客户端协议预知（rollback 头注声明预测半）；去向：K4-E6 live 演练对账。
 - **K4-E6 live structural 项**（ECS 全量跑 + 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查）：无自动断言（structural）——停门 `awaiting-human:live-deploy`；去向：human 部署轮。
@@ -52,7 +52,7 @@ roadmap 效果段（roadmap.md:89）声明 demo 证据形态 =「host runner 输
 | Severity | Kind | Area | Finding | Basis | Required action |
 |---|---|---|---|---|---|
 | NIT | judgement-call | rollback 报告语义 | plan 预演态 `backfill.deleted = len(marked_keys)` 是「预删 session 数」而非已删计数，报告读者若只看 deleted 键可能误读（mode 键与头注已两处披露） | changed-code hunk `rollback_honcho_backfill.py:107-108` + 运维可读性 heuristic；非硬违规 | live 演练对账时先读 mode 再读 deleted；可留待 tighten-only 顺手在 plan 态改键名 |
-| NIT | judgement-call | REST wire 假设 | add_message body 为 JSON 数组（batch add 形状）、snapshot_counts 全量拉取建模——wire 形状按 Honcho REST 最佳知识落笔，未经真端点实证 | changed-code hunk `backfill_honcho.py:372-379` + 源码 `minimal:` 标记自申报（backfill_honcho.py:68/:242） | 已入第 4 节未覆盖面申报，K4-E6 live 首验点；不需本包动作 |
+| NIT | judgement-call | REST wire 假设 | ~~add_message body 为 JSON 数组（batch add 形状）、snapshot_counts 全量拉取建模——wire 形状按 Honcho REST 最佳知识落笔，未经真端点实证~~ **wire 修复轮已收敛（r5/r6）**：形状错误（/v2 + 缺 workspace 上下文）经源码对读修复，原「最佳知识」申报撤销；残留 = metadata 逐消息可达性仍属 live 首验点 | changed-code hunk `backfill_honcho.py:75-91`（minimal: 段含逐端点源码行锚）+ §13 wire 修复轮节 | metadata 可达性入 §13 四项 live 对账点；不需本包动作 |
 
 无 BLOCKING、无 SHOULD；无 hard-violation。结构闸（verify.mjs 10 闸）PASS/FAIL 不复述为 finding，gate 全绿仍完整执行五轴语义 review（见第 6 节）。
 
@@ -66,10 +66,10 @@ roadmap 效果段（roadmap.md:89）声明 demo 证据形态 =「host runner 输
 
 ## 7. Simplification debt（`minimal:` 台账）
 
-grep `minimal:` 两处命中，均集中在 HonchoRestClient wire 假设：
+grep `minimal:` 两处命中，均集中在 HonchoRestClient wire 假设（r5/r6 后状态）：
 
-- D1: REST 端点/wire 按最佳知识落笔、live 一次校准（backfill_honcho.py:68）——`no-trigger`（live 首验点已在 K4-E6 挂账，无升级触发）。
-- D2: snapshot/list 按全量拉取建模，量级增大后换聚合端点（backfill_honcho.py:242）——`no-trigger`（现网量级小，live 对账确认后无动作）。
+- D1: ~~REST 端点/wire 按最佳知识落笔、live 一次校准~~ **已收敛**（backfill_honcho.py:75——形状经 upstream main@7478be29 源码对读实测落笔，`minimal:` 段改承载逐端点源码行锚；残留校准点仅 metadata 可达性，入 §13 live 对账）——`no-trigger`（wire 形态错误已在实现期消灭，无升级触发）。
+- D2: snapshot/list 按全量拉取（size=100 逐页）建模，量级增大后换聚合端点（backfill_honcho.py:307）——`no-trigger`（现网量级小，live 对账确认后无动作）。
 
 ## 8. Residual Risk
 
@@ -90,6 +90,25 @@ N/A——本包纯云端数据迁移与运维脚本，无 UIUX 面（input-brief
 
 ## 12. 制品与 commit 状态
 
-- closeout 制品：`docs-delta.md`（零 diff 声明）+ 本 packet + `test-scope-final-r4.txt` + `verdict.json`（final round 4 fact 晋升投影，supervisor-compatible shape）+ `verification.json`（advisory 投影）落 `delivery/taskpackages/261022-m5-k4-history-corpus-backfill/`。
-- commit：dev/pod-m2 分支（含全部实现面 + 验收件 + 投影 + 制品），**不 push**；`.codebase-memory/` 两件不入 commit。
+- closeout 制品：`docs-delta.md`（零 diff 声明）+ 本 packet + `test-scope-final-r4.txt`（初轮）+ `test-scope-final-r6.txt`（wire 修复轮复收口）+ `verdict.json`（**final round 6 fact 晋升投影**，supervisor-compatible shape）+ `verification.json`（advisory 投影，finalScopedRun r6 + priorRounds r1..r5）落 `delivery/taskpackages/261022-m5-k4-history-corpus-backfill/`。
+- commit：dev/pod-m2 分支（含全部实现面 + 验收件 + 投影 + 制品，wire 修复轮复收口二次 commit），**不 push**；`.codebase-memory/` 两件不入 commit。
 - 后续门：supervisor-verdict-gate（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod（planner 主线程）；K4-E6 human 部署轮独立于合并门（stop 位 awaiting-human:live-deploy）。
+
+## 13. wire 修复轮（r5/r6）——复收口简记
+
+**实锤缘由**：初轮收口（commit fe89b6fa，r4 全绿）后，主线程对照审查在 ECS `/opt/honcho` 现读实锤 builder 首轮 REST 适配的 wire 形态错误——REST client 按「最佳知识」落笔用了 `/v2` 端点且缺 workspace 上下文（friction 记录 pod-events `157cc490`，frictionType=scan-miss）；host 桩验收因鸭型协议自洽而全绿，未拦截形态错误。
+
+**修法（源码对读）**：builder 按 upstream `plastic-labs/honcho` main@7478be29 本地克隆（C:/tmp/honcho-upstream-ref/honcho）逐端点对读修复，并与协调者 ECS `/opt/honcho` 现读特征吻合校验（全 router prefix `/v3`、routers 全 workspace 作用域）；`minimal:` 段承载逐端点源码行锚（sessions/peers/messages/conclusions 四 routers + schemas/api.py RESOURCE_NAME_PATTERN + utils/pagination.py + security.py Bearer）。
+
+**实现期新适配（IMPLEMENTATION_ADAPTER 级，非契约变更）**：canonical 键含 `:` 不合 Honcho `RESOURCE_NAME_PATTERN`（`^[a-zA-Z0-9_-]+$`）→ 出网资源名编码 = `kidpal-bf-` 前缀 + base64url（去 padding），解码可逆（单测 roundtrip 断言承载）；其余修复项：`/v3` + workspace 作用域端点族、消息批量 ≤100 分块（MessageBatchCreate max_length=100）、列举 POST /list 分页（size ≤ 100）、凭据改 Bearer `HONCHO_JWT` 环境变量名字引用（token ECS 侧注入不入仓）。四分类判定：现契约无 memory wire 表达，纯实现侧适配，`IMPLEMENTATION_ADAPTER`（原地指导级），不触发 `/arch-change`。
+
+**acceptance-author 申报收敛（tighten-only）**：冻结件头注「缺口申报」节收敛——原「REST wire 形状 = 最佳知识、未定形」申报撤销，诚实申报收窄为四项 live 对账点；断言、鸭型协议、coverage 标记零改动（冻结全量 333 passed 零变化）。
+
+**收敛后 live 对账四项（K4-E6 human 部署轮，stop 位 awaiting-human:live-deploy）**：① message metadata 逐消息可达性（REST GET 侧真栈行为；不可达则换 session 侧指纹清单方案 + tighten-only 反审）；② 真 session-corpus 语料格式适配（unparsed 披露兜底、零丢弃，计数报告对账）；③ observations 异步增量（plan 态 after=before 预测）；④ 回滚逐 session 消息量预测（rollback 头注预测半）+ conclusions 异步派生等待窗观测。
+
+**复跑数字**：
+- scoped round 5（builder 修复 + 申报收敛后，invocation `baf02b5c`）：8 闸绿（fact `r5.json` ok:true，2026-10-23T15:45:25Z–15:45:37Z）。
+- **final round 6（本复收口 bearing，invocation `7c3e9a1f`）**：`node .claude/hooks/verify.mjs --evidence-mode=round --phase=final --scope-file delivery/taskpackages/261022-m5-k4-history-corpus-backfill/test-scope-final-r6.txt --change-id 261022-m5-k4-history-corpus-backfill --round 6 --invocation-id 7c3e9a1f-2b4d-4f6a-9e8c-5d1b0a7f3e2c` → `observedGateExit=0`、10 闸全绿、`ok:true`（2026-10-23T15:46:50Z–15:47:32Z）；**test-scope 清单落盘路径** = `delivery/taskpackages/261022-m5-k4-history-corpus-backfill/test-scope-final-r6.txt`（圈定方式 = 正常圈定：per-Pod 索引 `C-AI-KidPal-pod-m2` detect_changes，changed_files 26、seed_symbols 74、impacted_total=0，清单件数与 r4 相同、floor 不缩）。fact 校验：`verifier-evidence-check.mjs` 同参 → `factOk:true`、exit 0。
+- 圈定交集实测：acceptance **52 passed / 0 failed / 3 deselected**（serverAcceptanceFiles=4）；unit **78 passed / 0 failed / 3 deselected / 3 subtests**（structuralCollected 68→78，builder 扩容 RestWireCase 十项 wire 形状断言）。
+- 留根注记：r6 fact results 元数据仍未含 scope 路径行（verify.mjs 未透传落 fact），路径以本节与 scope 文件自注承载。
+

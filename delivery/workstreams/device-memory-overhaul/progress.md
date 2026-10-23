@@ -230,3 +230,10 @@
 - **K3-E7 live 核对锚（可机判）**：新 WS 新会话问「我最喜欢的颜色 / 我的小狗叫什么」答对（全新 user id 对照答不出）= 跨会话回忆生效；front 引导/整理回合后 Honcho DB 与日志 marker 零命中 = 资格门隔离生效；seeded 负向套问（家长姓名/电话/家庭安排）画像与答复零命中 = v12 隐私边界生效；prep 税/内存读数前后对照回填 TECH-261022-openclaw-prep-tax-memory-pressure。
 - **M5 五包列车进度**：P1 ✓ → P5 ✓ → P2 ✓ → **P3 ✓（merged，待部署）** → P4/K4（mo54，dependsOn K3 已满足，可起）。
 - **advisory 转交**：loop-retro 阈值已到（30 ≥ 3），发起归主线程。
+
+## 2026-10-23 · K4 wire 修复轮复收口——final r6 全绿 + commit 冻结（integrator）
+
+- **实锤与修法**：初轮收口（commit `fe89b6fa`，final r4 全绿；supervisor 闸 ESCALATE 停人类门 `44ed1db1`）后，主线程对照审查在 ECS `/opt/honcho` 现读实锤 builder 首轮 REST 适配 wire 形态错误（/v2 + 缺 workspace 上下文，pod-events friction `157cc490`）。builder 按 upstream main@7478be29 源码对读修复：`/v3` + workspace 作用域端点族、消息批量 ≤100 分块、POST /list 分页（size ≤100）、RESOURCE_NAME_PATTERN 适配的 `kidpal-bf-<base64url>` wire 名编码、Bearer 凭据 `HONCHO_JWT` 环境变量名字引用；acceptance-author 冻结件缺口申报收敛（tighten-only，断言零改动）。
+- **验证**：scoped r5（invocation `baf02b5c`）8 闸绿；**final r6**（invocation `7c3e9a1f`）10 闸全绿、fact `ok:true`（scope 圈定口径：acceptance 52 passed / 3 deselected；unit 78 passed / 3 subtests，单测扩容 68→78 RestWireCase 十项 wire 形状断言）；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `test-scope-final-r6.txt`（per-Pod 索引 detect_changes 正常圈定，impacted_total=0，清单件数与 r4 相同）。
+- **制品**：verdict.json（r6 fact 晋升）+ verification.json（finalScopedRun r6、priorRounds r1..r5）+ review-packet.md §13 wire 修复轮节（未覆盖面申报同步刷新：REST wire 形状从「未定形首验点」改为「host 面已落定，剩 metadata 可达性等四项 live 对账」）。commit 待落（本节随 commit 入册）。
+- **停等位不变**：`awaiting-human:live-deploy`——K4-E6 live structural 项 + 收敛后四项 live 对账（metadata 可达性 / 真语料格式 / observations 异步增量 / 回滚逐 session 量预测）挂 human 部署轮。
