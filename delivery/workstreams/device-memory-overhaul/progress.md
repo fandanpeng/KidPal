@@ -211,7 +211,7 @@
 - **范围圈定**：detect_changes impacted_total=56（正常圈定无降级）；scope 清单落 `test-scope-final.txt`（11 测试文件：acceptanceTestsFile 两件 ∪ impactedTests 四件 ∪ 爆炸半径映射 ∪ 共享 seam 三件 ∪ 安全余量两件）。
 - **final bearing round 3**（invocation e59ae7a3）：fact `ok:true`、**10 闸全 PASS**；scope 圈定口径 acceptance 140 passed / 6 deselected；全量口径 313 passed 与转绿目标逐字一致；verifier-evidence-check 过。
 - **制品**：review-packet.md（BLOCKING 无 / SHOULD 无 / NIT×1——verify-deploy.sh honcho 段假设 docker compose v2，ECS 若仅 v1 该段恒判 DRIFT，部署轮顺手核）+ docs-delta.md（声明性注记四条）+ verdict/verification 投影（integrator 首轮漏晋升，advisory 补票轮补齐——补票后 commit amend）。closeout-check exit 0。
-- **commit**：feat(m5-k3) 单 commit 收口 **766c35b4**（amend 后 hash；30 files +3853/−153），本地 dev/pod-m2、不 push、不合并。
+- **commit**：feat(m5-k3) 单 commit 收口（amend 后；30 files +3853/−153；rebase 后 hash = **5c43bdc8**，簿记 = 04d5592f），本地 dev/pod-m2、不 push、不合并。
 - **簿记**：integrator dispatch-stamp ×2 + pod-retro.md 落盘（closeout advisory Q5 消）。
 
 ## 2026-10-23 · K3 supervisor 闸 ESCALATE → 停人类合并门（planner）
@@ -221,3 +221,12 @@
 - **停等位：`awaiting-human:merge-approval` + `awaiting-human:live-deploy`**——K3-E7 live 观测项（新 WS 新会话跨会话回忆对照 / seeded 负向探针 live 轮零命中 / marker 探针 DB+日志双证 / 2C/4G prep 税与内存读数复测回填 TECH-261022-openclaw-prep-tax-memory-pressure / arch §6.7 抽取策略实测成形〔回填走 /arch-change〕）。**部署轮注意（比 K2b 多两步）**：① `/opt/honcho/.env` 先填真实凭据（模板 honcho.env.example）；② ECS /opt/honcho 已有在跑探针栈——铺放前先 diff 线上 compose 与本仓声明（manifest md5 核验会把差异显式化为 drift，属预期报警路径）；③ verify-deploy.sh honcho 段假设 docker compose v2 在位（NIT）；④ plugin patch apply 须在 P1 已应用态之后顺序跑。
 - **M5 五包列车进度**：P1 ✓ → P5 ✓ → P2 ✓ → **P3/K3 全绿待人批合并（mo53）** → P4/K4（mo54）。
 - **advisory 转交**：loop-retro 触发阈值已到（22 pending + 8 waiting = 30 ≥ 3），发起归主线程（run /loop-retro）。
+
+## 2026-10-23 · K3 人批 → 合并 DONE（planner 收口）
+
+- **人批 → 合并**：human 主会话 AskUserQuestion 批准；human-decision 凭据 `cf2b968c`（actor=human 五要素一次到位）；merge-driver **DONE**（approval-ref 五要素核验 OK → escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK，merge token 串行化走完）。merge commit `e55f94ea`（human-approval-ref 在案）；Step 5b 簿记落 main（`933482b5`）。
+- **收口状态**：board K3 = **merged**（mo53）；`delivery/taskpackages/INDEX.md` dev 段 = closed（行 99；旧行 open 保留，K2b 同款 append 纪律）。本地 main 领先 origin/main（K3 合并 + 簿记 + P2 热修批），push 归 human。
+- **停等位：`awaiting-human:live-deploy`**——K3-E7 live 项移交 human 部署轮：① `/opt/honcho/.env` 先填真实凭据（模板 `server/deploy/honcho/honcho.env.example`：DASHSCOPE_API_KEY / DEEPSEEK_API_KEY / POSTGRES_PASSWORD，零内联入仓）；② ECS `/opt/honcho` 已有在跑探针栈——铺放前先 diff 线上 compose 与本仓声明（manifest md5 核验把差异显式化为 drift，属预期报警路径，K2b dry-run 伪漂移教训同理：先把 clone 拨回部署戳再跑真部署）；③ verify-deploy.sh honcho 段假设 docker compose v2 在位（NIT，首次跑核一下，仅 v1 随部署轮顺手改）；④ `261022-openclaw-honcho-plugin` patch apply 须在 P1 tools allowlist 已应用态之后顺序跑（drift_guard 现状锚 = P1 已应用态，先 K3 后 P1 会 exit 3 零写）。
+- **K3-E7 live 核对锚（可机判）**：新 WS 新会话问「我最喜欢的颜色 / 我的小狗叫什么」答对（全新 user id 对照答不出）= 跨会话回忆生效；front 引导/整理回合后 Honcho DB 与日志 marker 零命中 = 资格门隔离生效；seeded 负向套问（家长姓名/电话/家庭安排）画像与答复零命中 = v12 隐私边界生效；prep 税/内存读数前后对照回填 TECH-261022-openclaw-prep-tax-memory-pressure。
+- **M5 五包列车进度**：P1 ✓ → P5 ✓ → P2 ✓ → **P3 ✓（merged，待部署）** → P4/K4（mo54，dependsOn K3 已满足，可起）。
+- **advisory 转交**：loop-retro 阈值已到（30 ≥ 3），发起归主线程。
