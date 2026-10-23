@@ -168,3 +168,26 @@
 - **supervisor 机械闸 = ESCALATE（预期路径，launch-card 钉死）**：riskTier=high（`all-mock:test-files-no-real-db/event-assertion` 启发式 + adjudicate critical/high）；provenance v2 全过（`supervisor-gate-check` exit 0）；evidenceComplete、轮 2。verdict 落 `supervisor-verdict.json`；board 置 `blocked`。
 - **收尾簿记**：integrator dispatch-stamp ×2（0 值条 + 实测修正条）+ over-scan 落账；pod-retro.md 落（closeout advisory Q5 消）。
 - **待 human 裁**：合并放行（人批 → pod-events `human-decision` → `merge-driver --pod` 本地合并）或维持停等。**部署轮提前提醒（比 K1/P5 多一步）**：合并后 ① 新增 bind-mount 首次生效须人工 `docker compose up -d` 重建容器（deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话回忆复证；③ 持久会话增长 / auto-compaction 成本只记观察（arch §8.1 风险 14）。
+
+## 2026-10-23 · P2 人批 → 合并 DONE（planner 收口）
+
+- **人批 → 合并**：human 会话内 AskUserQuestion 批准；human-decision 凭据 `596028f3`（actor=human 一次到位）；`pre-merge-escalation-gate` PASS；merge-driver 本地合并 **DONE**（escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK，merge token 串行化走完）。首跑被未提交簿记 fail-closed 拦一轮（K1 同款），收尾簿记 commit `f0856754` 后放行。
+- **收口状态**：board K2b = **merged**（mo52）；`delivery/taskpackages/INDEX.md` dev 段 = closed（行 98）。merge commit `a62321cf`；Step 5b 簿记落 main（`190b1a28`）。本地 main 领先 origin/main（P2 合并 + 簿记），push 归 human。
+- **停等位：`awaiting-human:live-deploy`**——live 项移交 human 部署轮：① **先 `docker compose up -d` 重建容器**（新增 bind-mount 首次生效 = 唯一路径，deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话问此前讲过的事实能答出（真机半）；③ 引擎日志见 `kidpal persistent-session patch active` 标记行（探针门控——若见 `INACTIVE` error 行 = bind-mount 未生效，即回查）；④ 持久会话增长 / auto-compaction 成本只记观察，不在本包定阈值。
+- **M5 五包列车进度**：P1 ✓ → P5 ✓ → **P2 ✓（merged，待部署）** → P3/K3（mo53，dependsOn K2 已满足）→ P4/K4（mo54）。
+- **部署核对锚（可机判）**：`docker compose config` 应见 `./engine-patch/openai.py:/opt/xiaozhi-esp32-server/core/providers/llm/openai/openai.py` 挂载；manifest md5 核验过 verify-deploy；两轮追问「我刚才说的第二件事是什么」跨新 WS 会话仍记得 = 持久会话生效。
+
+## 2026-10-23 · P2 部署轮——机械锚全绿 + Edge TTS 403 事故热修（planner 主线程，human 授权）
+
+- **部署收口**：`deploy.sh` 常规闸过（首跑 REFUSE 属 dry-run 把 clone HEAD 留在新批态的伪漂移——clone 拨回部署戳 2d338dd1 后 drift 0 放行，教训：dry-run 后跑真部署前把 clone 拨回上一部署戳）；DEPLOY OK @ 3cd909e6（快照 20261023-144516）；`docker compose up -d` 重建容器 → openai.py bind-mount 在场；**四 marker 全打**（含探针门控的 `kidpal persistent-session patch active`——能打出 = provider 探针实测过）；设备 14:46 重连，课表摘要入会话态 len=158。
+- **Edge TTS 403 事故（真机首回合「卡思考页」）**：LLM 腿全通（回复内容正确且引用课表注入——P2/P5 均在工作）；卡死点 = TTS 每段 403（`speech.platform.bing.com` 拒 7.2.6 的 Sec-MS-GEC 参数，13:40–14:48 之间微软侧收紧）。判别链：时钟同步排除 → 容器 3/3 稳定 403 排除瞬时 → 本机同库 7.3.1 成功 → **升级 7.3.1 即愈**。
+- **热修两步**：① 容器内 pip 升级 + 引擎重启（即时解除，14:55 四 marker 复现全绿）；② 耐久化载体 = `server/deploy/engine-patch/edge-tts-731/`（wheel 原样解包、与容器内逐字节同源）+ compose 两条 bind-mount 阴影 site-packages（`edge_tts` + dist-info）+ manifest 16 条 `restart: none` 登记——`docker compose up -d` 重建不回退。回流仓随本批 commit（K1 热修回流先例）。
+- **debt 登记**：`docs/debt/tech/TECH-261023-edge-tts-drm-single-point.md`（deferred——TTS 单点外部依赖余量：无可用性探针 / 备选 TTS 未接通〔box 上现有凭据无可直插路径，选型归 human〕/ carrier 不防下次版本淘汰）。
+- **待办**：① K2-E6 两轮真机复证（TTS 解除后做——第 1 轮同会话记忆 + 第 2 轮跨 WS 断连重连后记忆）；② 热修 commit push 归 human → ECS deploy.sh 对账铺载体（挂载已手工在位，对账轮零设备断连）；③ 本地 main 与 origin 差 = 热修批。
+
+## 2026-10-23 · P2 K2-E6 live 实测达标——P2 全 exitCriteria 闭合（planner）
+
+- **真机轮（human 持板 + transcript 机验）**：事实轮（15:11:05「周六下午你和方可馨一块下楼去玩，这个约定我记住啦」）→ 孩子两轮**跨新 WS 会话**考记忆且两轮念错名字（15:11:32「方可欣是谁？」/ 15:12:24「方可清是谁？」）→ 设备两轮都纠正回「方可馨」并复述事实（同栋楼 + 周六同玩）——**跨 session 07fe22ae → 8ec360aa → face646d 三个 WS 会话记忆全保持**（含设备重连产生的新会话），TTS 全程 `语音生成成功 重试0次`。
+- **OpenClaw 侧机证（node:sqlite 读 agent db）**：`session_windows` 表**恰一条**持久会话窗口，`session_key = agent:kidpal:openai-user:58:e6:c5:72:0c:bc`（device_id = 设备 MAC）——与冻结判定的键形逐字一致、单一窗口承载全部会话；旧行为（每请求 `openai:<randomUUID>`）下不可能出现跨会话保持。
+- **三件机验结论**：① 请求携 `user=<device_id>` ✓（键形在场）；② 零历史重放 ✓（单窗口 + 冻结验收 E1/E2 结构断言承载）；③ 两轮 session 键一致 ✓（跨会话行为 + 单窗口双证）。**K2-E6 = 达标，P2 E1..E6 全闭合、完全收口**。
+- **遗留账**：热修批 `e52e55d1`（edge-tts 载体）+ `aca6c957`（记账）在 `dev/pod-m2` 未进 main——push 归 human，push 后 ECS `deploy.sh` 对账铺载体（消每日 drift timer 的 compose 漂移报，零设备断连）。M5 列车：P1 ✓ P5 ✓ P2 ✓ → 下包 **P3/K3**（mo53）。

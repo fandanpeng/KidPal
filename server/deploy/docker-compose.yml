@@ -53,6 +53,13 @@ services:
       # recreate = all devices disconnected, manual window): deploy.sh only does
       # `docker restart`, it never recreates.
       - ./engine-patch/openai.py:/opt/xiaozhi-esp32-server/core/providers/llm/openai/openai.py
+      # edge-tts 7.3.1 DRM-fix carrier (live hotfix 20261023: MS began rejecting
+      # 7.2.6 Sec-MS-GEC params mid-day => all TTS 403, device stuck on thinking
+      # page; 7.3.1 emits accepted params). Mount shadows site-packages with the
+      # upgraded pure-python package so `docker compose up -d` reimages don't
+      # regress; see manifest entries (restart: none).
+      - ./engine-patch/edge-tts-731/edge_tts:/usr/local/lib/python3.10/site-packages/edge_tts
+      - ./engine-patch/edge-tts-731/edge_tts-7.3.1.dist-info:/usr/local/lib/python3.10/site-packages/edge_tts-7.3.1.dist-info
     # logging drives the container health check used by the systemd unit
     healthcheck:
       test: ["CMD-SHELL", "ss -tln 2>/dev/null | grep -q 127.0.0.1:8010 || netstat -tln 2>/dev/null | grep -q 127.0.0.1:8010"]

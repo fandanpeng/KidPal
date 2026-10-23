@@ -74,6 +74,59 @@ entries:
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/openai.py,
      owner: deploy.sh, verify: md5, restart: engine,
      note: stock openai provider 部署副本补丁（261022-m5-k2b 持久会话——两发送腿接受命名参数 user 并 additive 入请求体，OpenClaw 按 agent:kidpal:openai-user:<device_id> 键维护服务端持久会话）——bind-mount 覆盖容器 core/providers/llm/openai/openai.py；新增 bind-mount 首次生效须 docker compose up -d 重建容器（= 设备全断 + 人工窗口），deploy.sh 只做 docker restart 不自动重建}
+  # ── edge-tts 7.3.1 DRM-fix carrier（20261023 live 热修回流）：微软侧收紧 Sec-MS-GEC
+  #    参数校验致 7.2.6 全量 403（设备卡思考页）；7.3.1 参数过验。纯 python 包以
+  #    bind-mount 阴影容器 site-packages，避免 compose 重建回退镜像内置 7.2.6。
+  #    restart: none（挂载面稳定，内容随 deploy.sh 对账；生效 = 下次引擎重启自然加载）。
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/__init__.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/__init__.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/__main__.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/__main__.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/communicate.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/communicate.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/constants.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/constants.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/data_classes.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/data_classes.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/drm.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/drm.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/exceptions.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/exceptions.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/progress.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/progress.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/py.typed,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/py.typed,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/srt_composer.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/srt_composer.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/submaker.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/submaker.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/typing.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/typing.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/util.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/util.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/version.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/version.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts/voices.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts/voices.py,
+     owner: deploy.sh, verify: md5, restart: none}
+  - {src: server/deploy/engine-patch/edge-tts-731/edge_tts-7.3.1.dist-info/METADATA,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/edge-tts-731/edge_tts-7.3.1.dist-info/METADATA,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 版本 metadata 锚（RECORD 自引用哈希不登记、WHEEL/licenses 不逐一登记——挂载整目录随 compose 生效）}
   - {src: server/deploy/engine-patch/kidpal_display_strip.py,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/kidpal_display_strip.py,
      owner: deploy.sh, verify: md5, restart: engine}
