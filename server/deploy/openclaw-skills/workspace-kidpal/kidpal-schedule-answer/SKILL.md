@@ -1,18 +1,18 @@
 ---
 name: "kidpal-schedule-answer"
-description: "孩子/板子问今天明天这周有什么课、几点上课时 (KidPal)：读 kidpal/schedule.md 匹配星期，text view 走问答框答复（含备注读回）。"
+description: "孩子/板子问今天明天这周有什么课、几点上课时 (KidPal)：先看动态 context 的课表摘要，摘要没覆盖再读 kidpal/schedule.md，text view 走问答框答复（含备注读回）。"
 ---
 
 # KidPal 课表问答（今天/明天有什么课）
 
-板子/孩子问「今天/明天/这周有什么课」「几点上什么课」时：读 `kidpal/schedule.md`（本 workspace 内、只读），按目标日的星期匹配，用 `text` view 走问答框答复（课表问答不切课表页）。
+板子/孩子问「今天/明天/这周有什么课」「几点上什么课」时：先看动态 context 的「课表摘要：」行——它由 front 从 `kidpal/schedule.md` 单源派生（窗口 = 今天 / 明天 / 后天），覆盖的日期直接用摘要作答、不必再读文件；摘要没覆盖的日期（大后天 / 下周 / 某月某号），或摘要行显示「（本次会话未提供）」、被截断时，读 `kidpal/schedule.md`（本 workspace 内、只读），按目标日的星期匹配，用 `text` view 走问答框答复（课表问答不切课表页）。
 
-**先读文件再作答，绝不凭印象/上下文残影列举课程**——没读文件就没有事实依据，答了就是编造（2026-09-25 实证：凭印象答出课表里不存在的钢琴课、把周一有下午课答成没课）。system prompt v7 的回合路由表已显式许可课表问答回合读文件（反编造覆盖句同批落地）。
+**没有事实依据绝不凭印象/上下文残影列举课程**——没读到事实就作答，就是编造。这里的「上下文残影」= 模型自己的记忆或往轮印象，**不是**动态 context 的课表摘要：摘要行是 front 单源派生的真实课表，等同本回合读到的事实（2026-09-25 实证：凭印象答出课表里不存在的钢琴课、把周一有下午课答成没课）。system prompt v7 的回合路由表已显式许可课表问答回合读文件；2026-10-23 起改为摘要优先、摘要没覆盖再读文件（反编造覆盖句不变）。
 
 ## 步骤
 
-1. **读 `kidpal/schedule.md`（workspace 侧必须读，别答「查不到」）。**
-   取星期别心算：今天 `date '+%A'`，明天 `date -d tomorrow '+%F %A'`（时区 Asia/Shanghai）。
+1. **先判摘要覆盖：目标日在摘要窗口（今天 / 明天 / 后天）内就用摘要；窗口外再读 `kidpal/schedule.md`（本 workspace 内、只读；读了就别答「查不到」）。**
+   （窗口外路径）取星期别心算：今天 `date '+%A'`，明天 `date -d tomorrow '+%F %A'`（时区 Asia/Shanghai）。
    完成判据：拿到目标星期的三个区块 —— 学校课程表、每周固定课表、一次性安排。
 
 2. **筛学校课程表里目标星期那一行（该表无时刻列）。**
@@ -37,4 +37,4 @@ description: "孩子/板子问今天明天这周有什么课、几点上课时 (
 ## 边界（板侧 agent 专属）
 
 - `kidpal/` 是只读数据（workspace-kidpal AGENTS.md 规则 3）：本 skill **只读**，改课表/录入归家庭侧 agent（main workspace 的同名 skill）与网关承载；家长 QQ 录入消息走 main agent、不会到达本 agent；front 分档常量、软链同步等网关侧内容不在本 skill 范围。
-- **与注入 system prompt 的关系**：v7 起回合路由表已为课表问答回合显式许可读文件（P0-1 矛盾根治，260925-prompt-v7-round-routing）；若未来版本回退出「课表答复凭空编课程/漏课且声称查不到」行为，按 prompt↔skill 优先级链排查注入 prompt 是否又收回了许可。
+- **与注入 system prompt 的关系**：v7 起回合路由表已为课表问答回合显式许可读文件（P0-1 矛盾根治，260925-prompt-v7-round-routing）；若未来版本回退出「课表答复凭空编课程/漏课且声称查不到」行为，按 prompt↔skill 优先级链排查注入 prompt 是否又收回了许可。2026-10-23 起路由表改为摘要优先、窗口外读文件（`261023-agents-md-static-semantics-alignment`），本条读文件许可仅窗口外适用。
