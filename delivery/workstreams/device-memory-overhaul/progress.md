@@ -168,3 +168,11 @@
 - **supervisor 机械闸 = ESCALATE（预期路径，launch-card 钉死）**：riskTier=high（`all-mock:test-files-no-real-db/event-assertion` 启发式 + adjudicate critical/high）；provenance v2 全过（`supervisor-gate-check` exit 0）；evidenceComplete、轮 2。verdict 落 `supervisor-verdict.json`；board 置 `blocked`。
 - **收尾簿记**：integrator dispatch-stamp ×2（0 值条 + 实测修正条）+ over-scan 落账；pod-retro.md 落（closeout advisory Q5 消）。
 - **待 human 裁**：合并放行（人批 → pod-events `human-decision` → `merge-driver --pod` 本地合并）或维持停等。**部署轮提前提醒（比 K1/P5 多一步）**：合并后 ① 新增 bind-mount 首次生效须人工 `docker compose up -d` 重建容器（deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话回忆复证；③ 持久会话增长 / auto-compaction 成本只记观察（arch §8.1 风险 14）。
+
+## 2026-10-23 · P2 人批 → 合并 DONE（planner 收口）
+
+- **人批 → 合并**：human 会话内 AskUserQuestion 批准；human-decision 凭据 `596028f3`（actor=human 一次到位）；`pre-merge-escalation-gate` PASS；merge-driver 本地合并 **DONE**（escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK，merge token 串行化走完）。首跑被未提交簿记 fail-closed 拦一轮（K1 同款），收尾簿记 commit `f0856754` 后放行。
+- **收口状态**：board K2b = **merged**（mo52）；`delivery/taskpackages/INDEX.md` dev 段 = closed（行 98）。merge commit `a62321cf`；Step 5b 簿记落 main（`190b1a28`）。本地 main 领先 origin/main（P2 合并 + 簿记），push 归 human。
+- **停等位：`awaiting-human:live-deploy`**——live 项移交 human 部署轮：① **先 `docker compose up -d` 重建容器**（新增 bind-mount 首次生效 = 唯一路径，deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话问此前讲过的事实能答出（真机半）；③ 引擎日志见 `kidpal persistent-session patch active` 标记行（探针门控——若见 `INACTIVE` error 行 = bind-mount 未生效，即回查）；④ 持久会话增长 / auto-compaction 成本只记观察，不在本包定阈值。
+- **M5 五包列车进度**：P1 ✓ → P5 ✓ → **P2 ✓（merged，待部署）** → P3/K3（mo53，dependsOn K2 已满足）→ P4/K4（mo54）。
+- **部署核对锚（可机判）**：`docker compose config` 应见 `./engine-patch/openai.py:/opt/xiaozhi-esp32-server/core/providers/llm/openai/openai.py` 挂载；manifest md5 核验过 verify-deploy；两轮追问「我刚才说的第二件事是什么」跨新 WS 会话仍记得 = 持久会话生效。
