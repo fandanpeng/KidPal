@@ -1617,6 +1617,18 @@ void McpServer::AddCommonTools() {
                     /* kidpal_story_list_t = 2824B → 堆分配（ssl_receive 4096B 栈纪律，
                      * 见本文件头注）。make_unique<T>() 值初始化 = 旧写法的 `= {}` 清零。 */
                     auto parsed = std::make_unique<kidpal_story_list_t>();
+                    /* architect B-1/B-2（261023 真机轮追补评审）: 盖章驻留谓词只看页态
+                     * 不看定时器（跨任务时序：story_list 可能先于盖章闭包执行, timer
+                     * 判据在该时序失效）——case 级声明覆盖 view_init 块与 gate 块两个
+                     * 作用域。view_init 之后恢复驻留字段（view_init 清 page/
+                     * last_saved_id/stamp_serial——不清回则重复 story_text 回执二次盖章）。 */
+                    bool stamp_hold = (g_story_view.page == KSTORY_PAGE_STAMP);
+                    char hold_saved_id[sizeof(g_story_view.last_saved_id)] = {0};
+                    int hold_stamp_serial = g_story_view.stamp_serial;
+                    if (stamp_hold) {
+                        memcpy(hold_saved_id, g_story_view.last_saved_id,
+                               sizeof(hold_saved_id));
+                    }
                     int items_n = kidpal_story_list_parse(data.c_str(), parsed.get());
                     if (items_n < 0) {
                         /* 降级：story_list data 畸形/缺字段/越界 -> 友好提示, 不盲渲染 */
@@ -1645,18 +1657,6 @@ void McpServer::AddCommonTools() {
                     }
                     {
                         bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
-                        /* architect B-1/B-2（261023 真机轮追补评审）: 盖章驻留谓词只看
-                         * 页态不看定时器（跨任务时序：story_list 可能先于盖章闭包执行,
-                         * timer 判据在该时序失效）+ view_init 之后恢复驻留字段
-                         * （view_init 清 page/last_saved_id/stamp_serial——不清回则
-                         * 重复 story_text 回执会二次盖章）。 */
-                        bool stamp_hold = (g_story_view.page == KSTORY_PAGE_STAMP);
-                        char hold_saved_id[sizeof(g_story_view.last_saved_id)] = {0};
-                        int hold_stamp_serial = g_story_view.stamp_serial;
-                        if (stamp_hold) {
-                            memcpy(hold_saved_id, g_story_view.last_saved_id,
-                                   sizeof(hold_saved_id));
-                        }
                         kidpal_story_view_init(&g_story_view, parsed.get());
                         g_story_list = *parsed;
                         if (stamp_hold) {
