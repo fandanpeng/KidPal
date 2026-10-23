@@ -3,14 +3,14 @@
   "riskTier": "high",
   "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
   "producedBy": "supervisor-verdict-gate.mjs",
-  "ts": "2026-10-23T15:22:06.743Z",
+  "ts": "2026-10-23T15:51:54.009Z",
   "changeId": "261022-m5-k4-history-corpus-backfill",
   "originType": "proposal",
   "adjudication": {
     "verdict": "ESCALATE",
     "riskTier": "high",
     "reasons": [
-      "security-axis-declared:securityReviewRequired=true",
+      "security-axis-diff:auth",
       "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
     ],
     "riskTierDerivation": {
@@ -19,10 +19,10 @@
       "effectiveTier": "high",
       "ambiguous": false,
       "diffReasons": [
-        "security-axis-declared:securityReviewRequired=true"
+        "security-axis-diff:auth"
       ]
     },
-    "circuitBreakerCompletedRounds": 4,
+    "circuitBreakerCompletedRounds": 6,
     "evidenceComplete": true
   },
   "provenance": {
@@ -36,13 +36,13 @@
         "effectiveTier": "high",
         "ambiguous": false,
         "diffReasons": [
-          "security-axis-declared:securityReviewRequired=true"
+          "security-axis-diff:auth"
         ]
       },
       "evidenceCompleteness": {
-        "bearingFactRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r4.json",
+        "bearingFactRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r6.json",
         "bearingFactOk": true,
-        "completedRounds": 4,
+        "completedRounds": 6,
         "closeoutArtifactsChecked": [
           "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/docs-delta.md",
           "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/review-packet.md"
@@ -91,7 +91,7 @@
       ".claude/verify-logs/1792768258494-security.log"
     ],
     "verifierEvidenceRefs": [
-      "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r4.json"
+      "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r6.json"
     ],
     "closeoutArtifactsChecked": [
       "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/docs-delta.md",
