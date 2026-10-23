@@ -123,3 +123,14 @@
 - **supervisor 机械闸 = ESCALATE（与 K1 同形）**：diff 启发式（all-mock: test-files-no-real-db/event-assertion）把装配/声明面上浮 high，声明的 medium 向上取效 → 人批放行。provenance v2 全过（gate-check exit 0）；board 置 blocked → merge-driver approvalRefUnlock 消解。
 - **人批 → 合并**：human-decision 凭据 `5f792801`（actor=human 一次到位，K1 教训已吸收）；merge-driver 本地合并 **DONE**（quick-check 2 闸 OK；Step 0 治理面收口自动 commit 了在途 pod-events）。board = **merged**（mo51）；INDEX dev 段 P5 = closed（全量重建收敛）。
 - **M5 五包列车进度**：P1 ✓（merged + 部署实测达标）→ **P5 ✓（merged，待部署）** → P2/K2b（mo52）→ P3/K3（mo53）→ P4/K4（mo54）。本地 main 领先 origin/main（P5 合并 + K1 记账数 commit），push 归 human。
+
+## 2026-10-23 · P5 部署 + live 实测全绿——P5 完全收口（planner）
+
+- **部署**：PR #21（release/261023-5）push 后 `deploy.sh` **常规闸直接过**（预检 drift 0——K1 manifest 补登后对账稳态恢复，无需 --first-run）；铺 front_app.py（front 重启）+ connection.py（引擎重启）；DEPLOY OK @ 2d338dd1，快照 `20261023-134048`。
+- **live 实测（human 持板 4 轮 + transcript 机验）**：
+  - 三 patch 标记行全在场（display-strip / stop-truncation / **schedule-summary** 新标记）；
+  - **窗口内零工具调用**：「明天有什么课」5 秒直答（周六两节课：新东方英语 8 点 / 街舞 17 点，含地点与提前 15 分钟——注入块事实，transcript 无 toolResult）；「大后天」= 10月26日星期一在窗口外，模型**正确转 read 文件**（窗口外行为 = 读文件不编造，K5-E3 live 证）；
+  - 「哪天有美术课」跨窗口泛问 → read 工具查全表（周三第五节/周五第三节）诚实回答；天气混合轮 web 工具正常且**顺带交叉引用了课表**（「早上八点上英语课记得穿外套」）——注入无污染反成加分；
+  - **cache 实测**：cacheRead 6,144→9,600 递增（含课表摘要的稳定前缀全命中），每轮 input 仅 341-2,188；
+  - transcript 全量 `{{` 零命中——P1 遗留占位（today_date 等）**无行为级泄漏**（回答日期全部正确），降级为外观级清理候选、不另起批。
+- **P5 = 全 exitCriteria 闭合**（E4 host 21 轮冻结断言 + live 抽样 4 轮全绿）。M5 列车：P1 ✓ P5 ✓ → 下包 **P2/K2b 持久会话**（mo52）。
