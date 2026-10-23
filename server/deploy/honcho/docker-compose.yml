@@ -1,114 +1,155 @@
-# Honcho 自托管记忆子系统 — 栈本体 compose（K3-E1 / 261022-m5-k3-honcho-memory-production）
+# Honcho 自托管记忆栈 — K3-E1（261022-m5-k3-honcho-memory-production）
 #
-# 落位：ECS /opt/honcho（arch §5.3.2「记忆子系统」行）；api 消费位 127.0.0.1:18100
-# （arch §1.2 / §5.3.3：仅本机可达）。真实环境变量（凭据）经同目录 .env 注入——
-# 模板见 honcho.env.example，凭据只存 ECS、不入仓（NFR-SEC-2 / 凭据纪律）。
+# 261023 修正（部署轮实测发现，nano 批回流）：本文件曾按「Docker Hub 拉镜像五容器
+# （api/deriver/app/adminer + 假设镜像 plasticlabs/honcho-app）」声明——实测三处失效：
+# plasticlabs/* 镜像上游从不发布（自家 compose 全为 build 源码，app 为托管前端无自
+# 托管载体）、api/deriver 缺 DB_CONNECTION_URI 连不上库。本版改回 2026-10-22 探针轮
+# 在 ECS 实测验证过的上游拓扑（build 源码 + 五服务 api/deriver/mcp/database/redis +
+# DB_CONNECTION_URI 接线 + pgdata 卷数据延续），仅保留 K3 两条硬红线：
+#   ① 全部 published 端口显式绑定 127.0.0.1（出网红线，NFR-SEC-2 / arch §5.3.3）；
+#   ② 记账锚键（EMBEDDING_VECTOR_DIMENSIONS=1536 / DERIVER_FLUSH_ENABLED /
+#      DASHSCOPE_API_KEY 名字引用 / deepseek+dashscope 管线锚）由同目录
+#      honcho.env.example 承载（K3-E1 验收树扫描面；真实值在 /opt/honcho/.env，
+#      经 env_file 注入容器，不入仓）。
+# 运维/查看面：psql 经 127.0.0.1:5432 直连（adminer/app 随错误声明撤除）。
 #
-# 出网红线（NFR-SEC-2 ⑤ / arch §10 决策 19 ⑤）：本栈出网仅两条已记账管线——
-#   deriver 抽取 → DeepSeek（DERIVER_LLM_BASE_URL，与设备对话同域）
-#   embedding 向量化 → DashScope（DASHSCOPE_BASE_URL，与 ASR 同供应商同信任域）
-# 其余全部数据本机不出网；五容器 published 端口全部显式绑定 127.0.0.1
-# （容器间互通走 expose / 内部网络，不经宿主端口面）。
+# 首铺：bash apply-honcho-stack.sh（缺 /opt/honcho/.env 拒跑）；镜像变更后收敛：
+#   docker compose build && docker compose up -d
 #
-# 生命周期（NFR-PRIV-1 / OQ-10）：备份 = 不备份靠重建，重建源 = session-corpus
-# 源语料 + OpenClaw 会话存储；删除 = 运维面手工、范围 = 记忆画像与
-# observation/消息存储；本栈不提供自助删除界面。
+# By default, ports are bound to 127.0.0.1 (localhost only).
 
 services:
-  postgres:
-    # postgres + pgvector（向量列固定 1536 维，见 EMBEDDING_VECTOR_DIMENSIONS）
-    image: pgvector/pgvector:pg16
-    container_name: honcho-postgres
-    expose:
-      - "5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data   # NFR-PRIV-1 ②：记忆数据自托管存于 ECS 本机持久卷
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-honcho}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set-in-/opt/honcho/.env}
-      POSTGRES_DB: ${POSTGRES_DB:-honcho}
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_LANCEDB: ${INSTALL_LANCEDB:-false}
+    entrypoint: ["sh", "docker/entrypoint.sh"]
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18100:8000"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-honcho} -d ${POSTGRES_DB:-honcho}"]
-      interval: 10s
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()",
+        ]
+      interval: 5s
       timeout: 5s
-      retries: 6
+      retries: 5
+      start_period: 10s
+    volumes:
+      # Shared LanceDB data (used when VECTOR_STORE_TYPE=lancedb)
+      - lancedb-data:/app/lancedb_data
+    environment:
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:postgres@database:5432/postgres
+      - CACHE_URL=redis://redis:6379/0?suppress=true
+      - CACHE_ENABLED=true
+    env_file:
+      - path: .env
+        required: false
     restart: unless-stopped
 
   deriver:
-    # 观察抽取器：消费消息队列，LLM 抽 observation（出网管线① → DeepSeek）
-    image: plasticlabs/honcho-deriver:latest
-    container_name: honcho-deriver
+    # 观察抽取器：消费消息队列，LLM 抽 observation（出网管线① → DeepSeek，
+    # 凭据经 .env 的 DERIVER_MODEL_CONFIG__* 注入）
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_LANCEDB: ${INSTALL_LANCEDB:-false}
+    entrypoint: ["/app/.venv/bin/python", "-m", "src.deriver"]
     depends_on:
-      postgres:
+      api:
         condition: service_healthy
-    expose:
-      - "8000"
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - lancedb-data:/app/lancedb_data
     environment:
-      DERIVER_LLM_BASE_URL: ${DERIVER_LLM_BASE_URL:-https://api.deepseek.com/v1}
-      DERIVER_LLM_MODEL: ${DERIVER_LLM_MODEL:-deepseek-v4-flash}
-      DERIVER_LLM_API_KEY: ${DEEPSEEK_API_KEY:?set-in-/opt/honcho/.env}
-      DERIVER_EMBEDDING_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
-      DERIVER_EMBEDDING_MODEL: ${DASHSCOPE_EMBEDDING_MODEL:-text-embedding-v4}
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:?set-in-/opt/honcho/.env}
-      EMBEDDING_VECTOR_DIMENSIONS: ${EMBEDDING_VECTOR_DIMENSIONS:-1536}
-      DERIVER_FLUSH_ENABLED: ${DERIVER_FLUSH_ENABLED:-true}
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 6
+      - DB_CONNECTION_URI=postgresql+psycopg://postgres:postgres@database:5432/postgres
+      - CACHE_URL=redis://redis:6379/0?suppress=true
+      - CACHE_ENABLED=true
+    env_file:
+      - path: .env
+        required: false
     restart: unless-stopped
 
-  api:
-    # Honcho API（OpenClaw Honcho 插件的消费位；127.0.0.1:18100 仅本机可达）
-    image: plasticlabs/honcho:latest
-    container_name: honcho-api
-    depends_on:
-      postgres:
-        condition: service_healthy
-      deriver:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:18100:8000"            # arch §5.3.3 ③：api 仅本机可达
-    environment:
-      HONCHO_BASE_URL: ${HONCHO_API_BASE_URL:-http://127.0.0.1:18100}
-      DATABASE_URL: postgres://honcho:${POSTGRES_PASSWORD}@postgres:5432/honcho
-      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:?set-in-/opt/honcho/.env}
-      EMBEDDING_VECTOR_DIMENSIONS: ${EMBEDDING_VECTOR_DIMENSIONS:-1536}
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 6
-    restart: unless-stopped
-
-  app:
-    # 演示/管理前端（仅本机）
-    image: plasticlabs/honcho-app:latest
-    container_name: honcho-app
+  mcp:
+    build:
+      context: ./mcp
+      dockerfile: Dockerfile
     depends_on:
       api:
         condition: service_healthy
     ports:
-      - "127.0.0.1:18101:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      HONCHO_API_URL: http://api:8000
+      - HONCHO_API_URL=http://api:8000
+    env_file:
+      - path: .env
+        required: false
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
-  adminer:
-    # 数据库运维台（仅本机；删除画像等运维手工动作的查看面）
-    image: adminer:latest
-    container_name: honcho-adminer
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:18102:8080"
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
+  database:
+    image: pgvector/pgvector:pg15
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    command: ["postgres", "-c", "max_connections=200"]
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      # Allow passwordless connections from the host (port is bound to 127.0.0.1).
+      # Lets the local test suite and ad-hoc tools connect without supplying a
+      # password. Do NOT use this in production.
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
-    name: honcho-pgdata
+  redis-data:
+  lancedb-data:

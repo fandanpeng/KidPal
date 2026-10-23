@@ -2,18 +2,24 @@
   "case": "kidpal-honcho-memory-plugin",
   "changes": [
     {
-      "path": "hooks.allowConversationAccess",
+      "path": "plugins.entries.openclaw-honcho.enabled",
       "value": true
     },
     {
-      "path": "agents.entries.kidpal.plugins.honcho",
-      "value": {
-        "carrier": "/opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin.js",
-        "baseUrl": "http://127.0.0.1:18100",
-        "peerPrefix": "agent:kidpal:openai-user:",
-        "gate": "user-present-only",
-        "note": "记忆写入资格门（读写同门）：仅请求携 user=<device_id> 的 kidpal 语音回合可读写记忆；front 一次性回合 / main agent / cron 不携 user，结构性不入画像（arch §6.7 资格门，白名单入册不做黑名单剔除）。baseUrl 指本机 loopback；peer 键消费 P2 键族 agent:kidpal:openai-user:<device_id>，不另造。"
-      }
+      "path": "plugins.entries.openclaw-honcho.hooks.allowConversationAccess",
+      "value": true
+    },
+    {
+      "path": "plugins.entries.openclaw-honcho.config.baseUrl",
+      "value": "http://127.0.0.1:18100"
+    },
+    {
+      "path": "plugins.entries.openclaw-honcho.config.workspaceId",
+      "value": "kidpal"
+    },
+    {
+      "path": "plugins.entries.openclaw-honcho.config.noisePatterns",
+      "value": ["^孩子(到目前为止)?讲的内容："]
     }
   ],
   "drift_guard": [
@@ -22,6 +28,21 @@
       "expect": ["read", "write", "exec", "web_search"]
     }
   ],
+  "plugins": {
+    "entries": {
+      "openclaw-honcho": {
+        "enabled": true,
+        "hooks": {
+          "allowConversationAccess": true
+        },
+        "config": {
+          "baseUrl": "http://127.0.0.1:18100",
+          "workspaceId": "kidpal",
+          "noisePatterns": ["^孩子(到目前为止)?讲的内容："]
+        }
+      }
+    }
+  },
   "backup": {
     "dir": "/root/.openclaw",
     "pattern": "openclaw.json.bak-kidpal-honcho-*"
@@ -29,5 +50,5 @@
   "rollback": {
     "script": "rollback_honcho_plugin.py"
   },
-  "_note": "261022-m5-k3-honcho-memory-production K3-E6 声明工件。双声明式 patch 组合：P1 的 tools.allow 四项白名单已应用在先（drift_guard 现状锚 = P1 已应用态，P1 漂移时本包 STOP 拒绝叠加，不整文件改写）；本包顺序 apply 追加 hooks.allowConversationAccess=true（debt TECH-261022 证据 7 钩子授权字面）+ Honcho 插件注册。openclaw.json 含 gateway 凭据、整文件不入仓；本声明零 secret。apply_honcho_plugin.py 幂等应用（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份）；rollback_honcho_plugin.py 一步还原。与 261017 skills / P1 tools 两份声明工件作用于同一运行态文件，组合共存。"
+  "_note": "261023-honcho-memory-wiring-restoration 批 B（甲案）声明工件：原样复用探针验证过的上游 npm 插件 @honcho-ai/openclaw-honcho@1.7.0（部署轮 openclaw plugins install --pin 安装，plugins inspect --runtime 核对 Version: 1.7.0），配置 = plugins.entries.openclaw-honcho 的 5 键——探针实测 4 键（enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId）+ 本批增补 config.noisePatterns。changes（扁平点分 path/value）是 apply 的唯一消费源；同文件顶层 plugins 块是同一目标态的嵌套镜像（人读 + 验收读取 decl.plugins.entries.openclaw-honcho.config.workspaceId），两处值须一致。全部 5 键都是**插件条目内**全路径：顶层 hooks.* 与 agents.entries.*.plugins 是 2026.8.1 zod strictObject 拒收键（K3 生产崩循环根因 ①），本声明零出现。allowConversationAccess 的唯一合法位置 = plugins.entries.openclaw-honcho.hooks.allowConversationAccess（插件条目内 hooks，不是顶层 hooks）。config.workspaceId 取生产值 kidpal（探针的 kidpal-probe 是测试库，数据不迁，human 裁决 ②）。config.noisePatterns = [\"^孩子(到目前为止)?讲的内容：\"] 是甲案资格门的 user 消息挡板（上游已文档化、configSchema 白名单内；恰配 front 引导/整理两条一次性 prompt 的 user 消息开头），cron/心跳由上游 captureSystemRuns=false 默认挡。验证行为口径 = 设备级 session + 家庭单 owner 画像：Honcho session metadata openclawSessionKey = agent:kidpal:openai-user:<device_id>（这是 session key，不是 peer 键——DB peers 只有 owner / agent-kidpal）。插件运行时证据（部署轮核对，静态锚 = 工作台并集）：「Honcho memory plugin loaded」（上游插件 dist/index.js 原文，journalctl -u openclaw-gateway 核对）+ plugins inspect openclaw-honcho --runtime 的「Policy: allowConversationAccess: true」。drift_guard 现状锚 = P1 已应用态（agents.entries.kidpal.tools.allow 四项在位），P1 漂移时本包 STOP 拒绝叠加、不整文件改写。openclaw.json 含 gateway 凭据、整文件不入仓；本声明零 secret。apply_honcho_plugin.py 只经 OpenClaw 自己的写入口（config patch，写前 --dry-run schema 校验）落配置，零脚本直写；rollback_honcho_plugin.py 一步还原时间戳备份。与 261017 skills / 261022 P1 tools 两份声明工件作用于同一运行态文件，组合共存。"
 }

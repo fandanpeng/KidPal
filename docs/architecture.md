@@ -52,7 +52,7 @@
 - OTA——Phase 1 非目标（证书生命周期相位对账见 §8/决策 22）；
 - 机械内容过滤层（policy-as-code）——留作日后合规选项（决策 28）；
 - 多设备/多用户——MVP 单设备（全设备共享单 token，多设备时转每设备唯一并记账，决策 22）。
-- 多设备 / 多孩子**记忆身份体系**——本批**设备级 peer** 先行（换设备 = 新 peer、旧画像不迁移）；身份体系另立（§6.7 / OQ-6 留根）。
+- 多设备 / 多孩子**记忆身份体系**——本批不做；已验证形态 = **设备级 session**（session key 家族 `agent:kidpal:openai-user:<device_id>`）+ **家庭单 owner 画像**（Honcho peer = `owner`，不按设备隔离）；换设备 = 新 session 家族（会话连续性重置），画像不变；身份体系另立（§6.7 / OQ-6 留根）。
 
 ---
 
@@ -152,7 +152,7 @@
 | NFR-PERF-3 记录会话卡壳引导时机 | front 卡壳计时器族（每句讲完起计时、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合、连续 2 轮无回应自动收尾；阈值权威 = requirements NFR-PERF-3〔待定、真机调优后立项拍数〕）+ `StoryAccumulator` 卡壳计时与引导轮次纯决策 | §5.1.2 front/story.py 组件行 / §5.2 场景④ |
 | NFR-SEC-1 强制鉴权 + 传输安全 | front TLS 终结（自签 RSA-3072 20 年）+ `websocket.accept()` 之前强制 `gw_auth.authorize`（constant-time、token ≥22 字符、未设拒服务）+ OpenClaw 18789 锁 loopback + 引擎层 `auth: false`（鉴权唯一权威在 front，260911 裁） | §6.1 / §5.3.2 |
 | NFR-SEC-2 出网记账 | 五条出网路径（§1.2 表；第④条 = 实时事实查询回合经 Tavily 联网搜索，v1.62 增；第⑤条 = 记忆画像管线 deriver→DeepSeek / embedding→DashScope，v1.67 增）+ 决策 19 记账 | §1.2 |
-| NFR-PRIV-1 记忆边界与保留 | 记忆写入资格门（白名单入册）+ 抽取三层纵深（来源门 / 抽取策略 / 注入过滤）+ 自托管不出网 + 删除 = 运维手工 | §6.7 / §5.1.2 记忆子系统 / §5.4 记忆行 |
+| NFR-PRIV-1 记忆边界与保留 | 记忆写入范围（已验证接线：`noisePatterns` 挡 front 一次性回合 user 消息 + `captureSystemRuns=false` 挡系统回合；模型回复与读侧注入残余逐行申报）+ 抽取三层纵深（来源门 / 抽取策略 / 注入过滤）+ 自托管不出网 + 删除 = 运维手工 | §6.7 / §5.1.2 记忆子系统 / §5.4 记忆行 |
 | NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 +RAM 渲染缓冲不禁（掉电即失，§6.2 澄清；story 正文只读镜像窄例外，§6.2） | §6.2 / §5.4 |
 | NFR-SAFE-1 内容安全 | system prompt 简洁不啰嗦纪律（回合路由表承载，不设硬性句数上限；现行版本以 §5.5.5 现状指针为准）+ front 兜底文案与 V32 截断（超限按有处理的失败模式） | §5.1 front 组件 / §5.5.5 prompt 版本化 |
 | NFR-READ-1 1bpp CJK 下限 | 字体子集管线（`lv_font_conv` → SPIFFS `.bin`）+ 待实测（单独烧版对照） | §5.5.3 字体管线 |
@@ -189,7 +189,7 @@
 
 | 组件 | 文件 | 职责与现状 |
 |---|---|---|
-| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环；**引导 / 整理一次性 LLM 回合不携 `user`**（§6.7 资格门：非资格回合不写记忆、不注入画像）；**课表摘要注入**（会话建立时把 `schedule.py` 派生的课表文本经内部通道注入引擎，供动态 context 块消费——§5.2 场景②） |
+| **front 网关** | `server/gateway/front/front_app.py`（+ `server/gateway/` 冻结模块） | 唯一公网入口：TLS 终结（uvicorn ssl，自签 20 年证书）、HTTP upgrade 层强制鉴权（accept 之前，失败 403）、路由（GET /healthz、POST /command、POST /adaptation/dryrun、WS）、**ws 双泵**（上行透传；下行截获 `kidpal_display_blocks` 侧通道帧 → 机械校验 → 逐块 mcp 帧下发设备）、**故事面**（上行泵拦截 `kidpal_session_ctx`/`kidpal_story_delete`/`kidpal_story_discard` 整条消费不下透引擎；`source_page=story` 切记录语境对话态（v1.65 取代「累积态」）；stt 帧喂累积缓冲（只回显、不逐句进对话）+ 卡壳计时器族（每句讲完起计时〔阈值权威 = requirements NFR-PERF-3〕、接着说重置、计时到或明示卡壳词命中触发引导 LLM 回合 + `kidpal_speak` 注入播报〔ADR-003 同型〕，返回空/收声抑制 = 本轮不播报仍计轮，连续 2 轮无回应自动收尾）+ 记录语境等价信号注入引擎侧抑制 LLM（ADR-013）；收尾检出 → 下发 `start_organizing` → 一次性忠实整理 → 归档 + 下发 `story_text(seq)`；`story_list` 三时点自推〔① WS 建连恢复推送（`data.restore` 标记、只填缓存不抢前台——requirements v1.63 赎回，additive 字段已随契约门落（2026-10-12 human 批准，随 261010-p3-storylist-cold-start-restore 同批原子落），沿革与语义权威 = §5.2 场景④）② 归档后 ③ 删除后〕（沿革：建连即推曾于 260928-story-connect-push-defer 摘除）；relay 收紧引擎侧 `story_*` 块；卡壳计时 sweep（取代 120s 超时 sweep；pending-stop 挂起等转写窗口保留〔261001-m4-k3-story-archive-order〕）+ 引导/整理一次性 LLM 回合发起（机械触发归网关、语义生成在脑——ADR-002 混合分层同型，ADR-013））、提醒轮询循环；**引导 / 整理一次性 LLM 回合不携 `user`**（§6.7 记忆写入范围：user 消息不入库，模型回复与读侧画像注入为已申报残余）；**课表摘要注入**（会话建立时把 `schedule.py` 派生的课表文本经内部通道注入引擎，供动态 context 块消费——§5.2 场景②） |
 | 鉴权 | `gateway/auth.py` | `authorize` 纯函数 + `secrets.compare_digest` 常时比较 + `TOKEN_MIN_CHARS=22`；token 来自 env，未设 = 拒绝服务，无 validation-mode 后门 |
 | display 校验 | `gateway/display_schema.py` | 7 view 白名单 + `MAX_DATA_BYTES=65536` + control 动作分表（拒转 `end_session`；放行 `stop_speaking`/`start_recording`）——display 契约的机械执行点（V27） |
 | mcp relay | `gateway/mcp_relay.py` | display/提醒统一 JSON-RPC `tools/call`（kidpal/display、kidpal/alert）；数字 id（时间戳+单调序号）；渲染回执消费 |
@@ -200,7 +200,7 @@
 | 提醒投递 | `gateway/reminders.py` | AlertDispatcher：每分钟轮询 pending.json → 到点推送 → 60s 超时重推 ×3 → 过期作废；`MAX_PENDING=64/MAX_TRACKED=256` |
 | **引擎部署副本补丁** | `server/deploy/engine-patch/`（connection.py 0.9.6 改 + kidpal_display_strip.py） | 官方镜像不动、bind-mount 原位覆盖容器内 `core/` 两文件：fence 状态机三态（normal/tag/fence，未闭合 fence 裸载荷进 blocks 绝不进 TTS「宁默不念 JSON」）；单一剥离点（TTS 流与全文共享状态机）；对话历史存剥离前原文；`kidpal_speak` 指令认领 → 复用引擎既有音频链出音（ADR-003）；**启动标记行 `kidpal display-strip patch active` = 补丁在位的唯一机械报警锚**；**动态 context 装配**（本回合时间 / 日期 + front 注入的课表摘要拼入每轮动态块，缓存边界之下、不含静态纪律） |
 | **OpenClaw 侧补丁** | `server/deploy/openclaw-patch/` | 提醒生产侧混合分层（ADR-002）：`reminder_schedule_lib.py` 确定性脚本（三档算术 20:30/07:45/前 15min + 幂等 id 确定性散列 ≤40 字符 + `pending.json` 原子写 + 坏输入降级）；语义判断 = agent 回合产 `semantic.json`（缺/坏降级机械兜底文案）；`char_stroke_lib.py` + `warm_char_cache.py`（9574 字缓存）；`make_openclaw_patch.py`（OpenClaw dist hold-and-replace 补丁，drift-guard） |
-| **记忆子系统（Honcho 自托管侧车）** | `server/deploy/honcho/**`（compose + 配置 + apply/rollback + 健康检查） | peer / session / message 存储、deriver 抽 observation、representation 生成、`before_prompt_build` 画像注入；五容器全部绑定 127.0.0.1（api 18100）；写入受 §6.7 资格门约束；与引擎 / OpenClaw 同机共生、数据本机不出网 |
+| **记忆子系统（Honcho 自托管侧车）** | `server/deploy/honcho/**`（compose + 配置 + apply/rollback + 健康检查） | peer / session / message 存储、deriver 抽 observation、representation 生成、`before_prompt_build` 画像注入；五容器全部绑定 127.0.0.1（api 18100）；写入范围与残余见 §6.7；与引擎 / OpenClaw 同机共生、数据本机不出网 |
 | OpenClaw 本体 | ECS 部署（2026.8.1） | 完整 agent（意图/多轮/工具/QQ 录入）；**对话历史 = 服务端持久会话**（按 `user` 标识，ADR-015）；**记忆画像经 Honcho 插件**（§6.7）；**静态语义承载 = workspace `AGENTS.md`**（§5.5.5）；原生 cron（提醒 15min 重算 + 录入即时触发） |
 | shim（已退役） | `server/shim.py` | HTTP 四端点台阶，头部 ARCHIVED（2026-09-05 退役）；`kidpal-shim.service` 为历史单，ECS 侧停服 + 8080 安全组关闭待清【遗留待办】 |
 
@@ -280,7 +280,7 @@
 | 1bpp 美术/字体/提示音 | 设备 art+assets 分区 | 资产管线（构建期） | 静态 | 随固件面 | §5.5.2 |
 | 对话历史（服务端持久会话） | OpenClaw 会话存储（按 `agent:kidpal:openai-user:<device_id>` 键） | OpenClaw（每轮追加本回合；压缩 = auto-compaction，默认开） | 持久；跨 UI 会话保留（ADR-015；增长 / 压缩成本 = §8.1 风险 14 观察项） | 云端持久 | 非契约（wire 无此形状） |
 | 对话历史（剥离前原文，引擎本地副本） | 引擎容器内存 | 引擎 | 连接期；**本地非权威副本、不向 OpenClaw 重放**（ADR-015） | 掉电即失 | — |
-| 记忆·会话消息（peer / session / message） | Honcho postgres（ECS 本机；pgvector 向量列） | OpenClaw Honcho 插件（每轮 persist，受 §6.7 资格门约束） | 持久；删除 = 运维手工（NFR-PRIV-1） | 云端持久 | Honcho 内部 schema（非契约） |
+| 记忆·会话消息（peer / session / message） | Honcho postgres（ECS 本机；pgvector 向量列） | OpenClaw Honcho 插件（每轮 persist；写入范围与残余见 §6.7） | 持久；删除 = 运维手工（NFR-PRIV-1） | 云端持久 | Honcho 内部 schema（非契约） |
 | 记忆·画像（observation / representation） | 同上 | Honcho deriver（LLM 抽取）→ representation | 持久、随抽取滚动更新；删除同上 | 云端持久 | 语义权威 = requirements NFR-PRIV-1；形状非契约 |
 
 ### 5.5 开发视图（怎么造、怎么验）
@@ -353,24 +353,26 @@
 
 关联法与已知坑（wire capture 因 permessage-deflate 不可用）见 kidpal-live-smoke-debug / kidpal-serial-monitor skills。派发观测缺口（dispatch-stamp 无模型/token 分项）= ARQ-260909。
 
-### 6.7 记忆写入资格与画像
+### 6.7 记忆写入范围与画像
 
-**在哪侧：记忆子系统（§5.1.2）+ 资格门（跨 front / 引擎 / OpenClaw 的部署面断言）。**
+**在哪侧：记忆子系统（§5.1.2）+ OpenClaw 侧插件接线（跨 front / 引擎 / OpenClaw 的部署面行为）。**
 
-**资格门（唯一判据，出生即定）**：仅当回合来自 kidpal agent 的语音链路、且请求携带 `user=<device_id>` 时，该回合内容才可进入记忆管线（写 observation / 落消息）；**读侧同门**——非资格回合不注入画像。资格门**全局生效**（不只 kidpal）：main agent 的 QQ / cron 回合、任何不携 `user` 的调用一律不入库。设备流程触发的回合因此结构性不入画像，完整枚举（S-F5.1 AC5 的「完整枚举由架构文档定义」即本表）：
+**记忆写入范围（以已验证行为为准）**：生产记忆接线 = OpenClaw 上游插件 `@honcho-ai/openclaw-honcho`（经 OpenClaw 自有插件管理器安装、pin 版本），采集（落消息 / 抽 observation）与注入（`before_prompt_build` 画像）按回合钩子**全局生效**——插件没有「仅携 `user` 的回合才入库」这类逐回合判据。2026-10-22 初版以「请求是否携 `user` 即是否入库」为唯一判据的写法，源于对探针配置缩略式的误读，未经任何一轮验证、也不被上游插件承载，本版按 2026-10-23 实况改写。实际边界由三件构成：① 写侧以插件 `config.noisePatterns` 挡 front 两条一次性 prompt 的 **user 消息**（配置键在上游插件 schema 内；接线生效随部署轮验收）；② 系统回合（cron / 心跳）由 `captureSystemRuns=false`（默认值）排除；③ 读侧画像注入**不区分回合**。因此「设备流程触发的回合不入画像」在本形态下**只对 user 侧输入成立**——模型侧回复落库与读侧注入是有申报的残余；完整枚举（S-F5.1 AC5 的「完整枚举由架构文档定义」即本表）：
 
-| # | 回合 | 触发 / 承载 | 不入画像的原因 |
+| # | 回合 | 触发 / 承载 | 实际记忆行为与残余 |
 |---|---|---|---|
-| 1 | 卡壳引导回合 | front 一次性 LLM（`_openclaw_chat_once`，request 级 system 指令） | 不携带 `user`（front 内部回合，无设备身份） |
-| 2 | 忠实整理回合 | 同上 | 同上 |
-| 3 | 提醒到点语义回合 | OpenClaw cron → **main** agent 产 `semantic.json` | 非 kidpal 语音链路；cron 会话无设备 `user` |
-| 4 | 提醒三档机械脚本 | `reminder_schedule_lib.py` | 无 LLM 回合 |
-| 5 | 家长 QQ 录入 / 查日志回合 | QQ 通道 → main agent | 非设备语音链路；peer = 家长通道身份，非设备 peer |
-| 6 | 故障 / 兜底固定文案 | front 固定安抚句 / 引擎 `system_error_response` | 无 LLM 回合 |
+| 1 | 卡壳引导回合 | front 一次性 LLM（`_openclaw_chat_once`，request 级 system 指令） | user 消息被 `noisePatterns` 挡、不入库；**模型回复仍落库**（残余；引导句不含孩子隐私）；**读侧仍注入孩子画像**（残余） |
+| 2 | 忠实整理回合 | 同上 | user 消息（孩子原话）被 `noisePatterns` 挡；**整理产物仍落库**（残余；内容本身是孩子自己的故事，是否被 deriver 抽成 observation 随 P3 实测）；**读侧仍注入孩子画像**——整理回合可能被画像「带跑」（忠实性质量风险，真机抽检 3–5 例） |
+| 3 | 提醒到点语义回合 | OpenClaw cron → **main** agent 产 `semantic.json` | 排除：cron 会话分类 + `captureSystemRuns=false`（默认） |
+| 4 | 提醒三档机械脚本 | `reminder_schedule_lib.py` | 不适用（无 LLM 回合） |
+| 5 | 家长 QQ 录入 / 查日志回合 | QQ 通道 → main agent | **消息照常落库**（残余）；家长回合按 `senderId` 归独立通道 peer（插件默认 `per-sender` 策略，不污染家庭 owner 画像）；家长内容可被 `honcho_*` 工具（如跨会话检索工具 `honcho_search_messages`）检索到的风险待部署轮实测，未闭合前按未闭合风险记账 |
+| 6 | 故障 / 兜底固定文案 | front 固定安抚句 / 引擎 `system_error_response` | 不适用（无 LLM 回合） |
 
-（记录语境期间引擎侧本就无 LLM 回合〔ADR-013 读法乙〕，不在枚举内。新回合形态入库前须先判资格门，不满足者默认不入画像——**白名单入册，不做黑名单剔除**。）
+（记录语境期间引擎侧本就无 LLM 回合〔ADR-013 读法乙〕，不在枚举内。新回合形态入册前须实测其写 / 读行为，按实测入表——**以实测为准，不按设计意图推定**；front / QQ 两行的部署轮实测随验收包落盘，与本表不符时以实测为准回填。）
 
-**画像边界（AC3 / AC4 抽取边界，三层纵深）**：① **来源门** = 上表资格门；② **抽取策略** = deriver 只抽「孩子世界的事实」（喜好 / 宠物 / 同学 / 经历），家长隐私信息（姓名 / 联系方式 / 家庭安排）不产 observation——策略承载首选 Honcho deriver 侧的提示配置；若自托管版本不支持自定义 deriver 提示，退回「持久化前消息侧过滤」；③ **注入边界** = representation 注入前的类别过滤（低置信 / 敏感类不回注）。验收判据 = seeded 负向探针集 100% 零命中（NFR-PRIV-1）；三层任一失守即不达标。P3 实测成形后回填本小节。
+**记忆身份**：记忆库内 peer = 家庭单 `owner`（另有 agent 侧 `agent-kidpal`）；设备身份体现在 **session key 家族** `agent:kidpal:openai-user:<device_id>`——每设备一族会话，换设备 = 新 session 家族（会话连续性重置），**画像仍为家庭单 owner、不按设备隔离**（§1.3）。
+
+**画像边界（AC3 / AC4 抽取边界，三层纵深）**：① **来源门** = 上表记忆写入范围（user 侧输入为主边界，模型侧回复与读侧注入的残余见各行申报）；② **抽取策略** = deriver 只抽「孩子世界的事实」（喜好 / 宠物 / 同学 / 经历），家长隐私信息（姓名 / 联系方式 / 家庭安排）不产 observation——策略承载首选 Honcho deriver 侧的提示配置；若自托管版本不支持自定义 deriver 提示，退回「持久化前消息侧过滤」；③ **注入边界** = representation 注入前的类别过滤（低置信 / 敏感类不回注）。验收判据 = seeded 负向探针集 100% 零命中（NFR-PRIV-1）；三层任一失守即不达标。P3 实测成形后回填本小节。
 
 **历史 backfill**：2026-09-30 前 `session-corpus` 全量照记（human 2026-10-22 裁：不分回合性质、含第三方姓名）；幂等可重跑、前后计数报告、清库回滚（实现归 P4）。
 
@@ -484,6 +486,7 @@
 
 | changeId | 日期 | 改动面 | 依据 |
 |---|---|---|---|
+| 261023-arch-review-memory-wiring-verified-behavior | 2026-10-23 | §1.3（记忆身份体系实测口径：设备级 session + 家庭单 owner 画像）/ §4（NFR-PRIV-1 映射行口径）/ §5.1.2（front 行括注、记忆子系统行）/ §5.4（记忆·会话消息行）/ §6.7 改写（逐回合判据 → 记忆写入范围 + 六行实况表 + 残余申报 + 记忆身份） | delivery/review/261023-arch-review-memory-wiring-verified-behavior/PROPOSAL.md（依据：human 2026-10-23 方案甲裁决 + 261022 批 advisory memory-wiring-advisory-20261023 §1/§5/§6；K3 冻结验收与生产接线换代归批 B） |
 | 261022-device-memory-prompt-overhaul | 2026-10-22 | §1.1 / §1.2（+Honcho 自托管栈、+DashScope embedding、DeepSeek deriver 同域注记）/ §1.3（记忆身份体系范围声明）/ §2.2 总图（持久会话 + 记忆侧车）/ §3.1·§4（出网四条→五条、+NFR-PRIV-1 对策行）/ §5.1.2（+记忆子系统行；OpenClaw 本体行 / front 行 / 引擎补丁行）/ §5.1.3 / §5.2 场景②（动态 context 装配 + 课表摘要）/ §5.3.2（+Honcho 行）/ §5.3.3（Honcho 端口核验）/ §5.4（+记忆两行、对话历史两行）/ §5.5.5 整节重写（静态 / 动态承载 + ADR-001 重定义）/ §6.7 新增（记忆写入资格与画像）/ §8.1（风险 9 闭账、+13/14）/ §8.2（会话定案取代注记）/ §10 决策 19 ⑤、决策 21 取代注记 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md（契约面同批原子落：§四「会话连续性承载」定案改写 + §1.6 承载对账注记；ADR-014/015 + glossary 词条同批落） |
 | 261021-p3-record-cancel-lifecycle | 2026-10-21 | §5.2 场景④ 补取消链显式化一句（设备丢弃 → 契约 §四 `kidpal_story_discard` → 网关按连接权威 cancel；断连 cancel 为兜底） | delivery/review/261021-arch-review-p3-record-cancel-lifecycle/PROPOSAL.md（契约面同批原子落：§四新增 `kidpal_story_discard` + 变更记录条；§1.4 `start_organizing` 行包络核对零改） |
 | 261019-p3-record-dialogue-guide | 2026-10-19 | §10 决策 25 取代注记（悬空指针同修）+ ADR-013 新增（记录语境对话态 + 引擎侧抑制定形）+ §5.1.2 front/story.py 行与 §5.2 场景④ 链路重写（卡壳计时器族 / 引导注入 / 忠实整理 / `start_organizing`）+ §2.3 / §5.1.1 / §9 to-be② / §5.5.4 / §4 NFR 映射表 / §2.4 原则 3 联动对账 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md（契约面同批原子落：§1.4 新增 `start_organizing` + §1.4/§四措辞对账） |

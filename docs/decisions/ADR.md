@@ -131,3 +131,11 @@
 - **理由**：每请求随机 session 三重封死跨会话记忆（debt TECH-261022 证据 1）；双历史并存必造重放漂移；探针同 user 两轮可回忆（证据 7）；「服务端持久会话」比「网关侧状态」更贴合决策 20「脑算网推」（网关不变厚）。
 - **备选与放弃原因**：网关侧状态（front 存历史）——放弃：网关变厚违背脑算网推（决策 20/23）；继续每轮透传历史——放弃：22k token 起步、无跨会话连续性（debt 证据 2）；每轮透传 + `user` 并用——放弃：历史被再写进持久会话 = 重复累积漂移；device→peer 多设备映射——放弃：留根（OQ-6）。
 - **关联**：arch §2.2·§5.2②·§5.4·§8.1 风险 9/14·§8.2（取代注记）·§10 决策 21（部分取代注记）；契约 §四「会话连续性承载」定案改写；requirements v1.67 F5 AC1·AC2；ADR-014；workstream P1·P2；spine = delivery/intake/261022-device-memory-prompt-overhaul.md。
+
+## ADR-016 · 记忆身份与写入口径以已验证接线为准：设备级 session + 家庭单 owner 画像（supersedes ADR-014 ②③）
+
+- **日期**：2026-10-23（`261023-arch-review-memory-wiring-verified-behavior` 架构面 Track B）
+- **决策**：① 记忆身份 = **设备级 session**（session key 家族 `agent:kidpal:openai-user:<device_id>`）+ **家庭单 `owner` 画像**；设备之间不隔离画像（换设备 = 新 session 家族，画像不变）。② 写入范围 = **已验证接线的实际行为**：front 一次性回合的 user 消息以插件 `noisePatterns` 挡、模型回复落库（残余）；cron / 心跳由 `captureSystemRuns=false` 排除；QQ 家长消息落库、按 `senderId` 归独立通道 peer，`honcho_*` 工具可检索风险待实测；读侧画像注入不区分回合（残余）。残余逐行申报于 arch §6.7。③ 弃用「逐回合资格门」表述与 K3 自研 carrier 路线。
+- **理由**：human 2026-10-23 裁「验证过的优先，不发明新东西」。探针轮端到端验证的是「设备级 session + 家庭单 owner 画像」；资格门从未被任何一轮验证、上游插件亦不提供（advisory §3/§5）。把已验证行为如实记账，优于维持一个永不满足的冻结口径。
+- **备选与放弃原因**：甲+（vendor 上游插件打约 10 行最小补丁保资格门字面）——放弃：本批遵循 human 原则不改已验证物，残余实测不可接受时另立补丁批；修 K3 自研 carrier——放弃：三层失效（配置形状错 / 不是插件 / 调用的 Honcho 端点不存在）。
+- **关联**：arch §1.3·§4·§5.1.2·§5.4·§6.7；ADR-014（本 ADR supersede 其 ②③，①④⑤⑥⑦ 不变）·ADR-015；requirements NFR-PRIV-1 / S-F5.1 AC5（需求面措辞同步另批）；证据 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md。
