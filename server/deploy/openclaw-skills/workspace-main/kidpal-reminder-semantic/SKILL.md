@@ -16,9 +16,16 @@ description: "提醒 cron 语义回合（KidPal）：读 kidpal/schedule.md 备�
    当前也指向同一文件——若未来该 env 改指他处，以 env 实际指向为准核对本 skill 的读路径）。
    完成判据：拿到 B1 三区块（学校课程表 / 每周固定课表 / 一次性安排）。
 
+   **解析必须传文本**：`gateway.schedule.parse_schedule_md` 收的是 MD **文本**，传路径会
+   静默解析出空 weekly/onetime（陷阱实证 2026-10-21）；正确姿势永远是
+   `parse_schedule_md(open(PATH, encoding='utf-8').read())`。解析后先断言 weekly 行数 > 0，
+   为 0 时停手排查，不要落一份空 semantic.json 把上份产物覆盖掉。
+
 2. **筛可提醒行**：「每周固定课表」「一次性安排」两区块中**有开始时刻**的行。
    「学校课程表」区块**一律不产条目**（在校例行，不提醒）。过期的一次性安排（日期 < 今天）
-   不产条目——判过期用 `date '+%F'` 取今天日期，别心算。
+   不产条目——判过期用 `date '+%F'` 取今天日期，别心算；或直接依赖解析器实算拿到的 rows（
+   第 3 步跑的 `gateway.schedule`+`entry_key`）自带的窗口语义：消费端 `_rows_in_scope` 对
+   过期一次性安排永不生成、对 school 区块永不生成（契约 §2.3），按此口径不必另行算日期。
 
 3. **逐行产条目**，顶层对象、键 = `entry_key`，必须与脚本算法**逐字对齐**（对不上 = 你的判断
    挂不到任何事项上，静默落空）：
@@ -28,6 +35,12 @@ description: "提醒 cron 语义回合（KidPal）：读 kidpal/schedule.md 备�
    - **星期数字 = 该行「星期」列的映射（周一=1…周日=7），不是今天的星期**——取自课表行
      本身，与今天星期几无关，严禁用 `date` 的输出填这里。
    - **不发明别的键、不写 id、不写 fire_at**（时刻/id/排程归脚本）。
+   - **entry_key 用解析器实算，不靠手工拼**：key 必须与脚本算法逐字相同，故直接跑
+     `KIDPAL_SERVER_DIR=/opt/kidpal/front /usr/bin/python3.11`，按 `gateway.schedule`
+     （sys.path 加 `/opt/kidpal/front`）解析 schedule.md 拿 rows，再对每行调
+     `reminder_schedule_lib.entry_key(section, row)` 打印 key。**不要用 `python3`**：
+     /opt/kidpal 下默认 `python3` = 3.6，`gateway/schedule.py` 的 `X | None` 注解会
+     SyntaxError 崩掉；3.11 才行。
 
 4. **判「备注里哪部分算要带的」（bring）——本回合的核心价值**：从备注原文挑出**孩子要带
    出门的物件名词**，逐个进 `bring` 数组，用备注**原词**、不做同义改写、不补修饰；穿着类
@@ -46,7 +59,19 @@ description: "提醒 cron 语义回合（KidPal）：读 kidpal/schedule.md 备�
    脚本第 372-374 行）；备注**确有携带物**时 speech/title 一般省略（脚本按三档各自生成
    更自然）。字段 ≤60 / ≤90 字。
 
-6. **原子写** `/opt/kidpal/alerts/semantic.json`：python3 临时文件 + `os.replace`，写完
+6. 判完所有行后**按脚本逐字复算一遍落盘前的 mid-flight 校验样本**（低成本、必做）：
+   跑 `/usr/bin/python3.11`，`sys.path` 加 `/opt/kidpal/front` 与 `/opt/kidpal/openclaw-patch`，
+   对每条会产生提醒的 key 调
+   `reminder_schedule_lib.plan_reminders(model, now_iso, config=lib.load_ladder_config('/opt/kidpal/openclaw-reminder.config.yaml'), semantic=<你准备写的 dict>)`，
+   用 `now_iso='2026-10-17T01:02:00+08:00'` 一类含真实日期的时刻（**now_iso 必须带 +08:00
+   偏移**，裸 datetime 会被 `_parse_now` 判非法；同日早于 07:45 的 now 会掩掉 morning 档，
+   故取一个晚于早上档的当天时刻更稳），抽查：night 档 title 以「明天 」开头、speech 以
+   「明天」开头且含你给的 bring 原词；morning 档以「今天」开头；soon 档 title 以
+   `<start> <name>` 开头、speech 以 `<start> 有` 开头；speech ≤90、title ≤60；每条 id
+   经 `lib.reminder_id(key, ladder, event_date)` 可复现。任一抽查不符 = 该 key 的字段没
+   被脚本认到（多半 key 拼错或字段被 `load_semantic` 静默丢弃），改到全符再落盘。
+
+7. **原子写** `/opt/kidpal/alerts/semantic.json`：python3 临时文件 + `os.replace`，写完
    `chmod 600`（对齐 pending.json 权限）。**全量重写**（每次从当前 schedule.md 重算整个
    文件，不增量合并）。写完自检：`python3 -c "import json;json.load(open('/opt/kidpal/alerts/semantic.json'))"`
    通过才算完成。

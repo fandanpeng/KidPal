@@ -11,7 +11,7 @@
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
 | [261022-diag-log-content](261022-diag-log-content/) | 2026-10-22 | delivery/taskpackages/261022-diag-log-content/plan.md | closed | — |
-| [261022-m5-k1-prompt-carrier-migration](261022-m5-k1-prompt-carrier-migration/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-k1-prompt-carrier-migration](261022-m5-k1-prompt-carrier-migration/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
 | [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
 | [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
 | [261022-m5-k4-history-corpus-backfill](261022-m5-k4-history-corpus-backfill/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
@@ -95,4 +95,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261022-m5-k1-prompt-carrier-migration](261022-m5-k1-prompt-carrier-migration/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
