@@ -72,3 +72,12 @@
 - **收口状态**：board K1 = **merged**（merge order 50）；`delivery/taskpackages/INDEX.md` dev 段 K1 = closed（全量重建收敛；`--upsert` 子命令对本包撞 naming 检查误报，全量重建绕开）；P1→P5/P2→P3→P4 链下一包 = **P5 `261022-m5-n2a-schedule-mechanical-injection`**（mo51，dependsOn K1 已满足）。
 - **停等位：`awaiting-human:live-deploy`**——live 观测项移交 human 部署轮：① K1-E7 复测单轮 prompt_tokens ≤11,000（基线 22,116）+ cache 命中覆盖稳定前缀 + `openclaw` 工具审计 = 4 项、57KB schema 消失；② K1-E8 live 核实 `workspace-kidpal/SOUL.md`/`USER.md` 存在则清空/瘦身、不存在记 moot；③ **AGENTS.md 走 deploy.sh 整批铺放、不得单独铺放**（仓内镜像已反转，单独铺 = 护栏真空）；④ 部署后 verify-deploy.sh 对 AGENTS.md 的 md5 漂移报属预期已知窗口不判红。
 - **移交下一包的实现面事实**：动态内容源 = `kidpal-agent-prompt.txt`（`{{schedule_summary}}` 占位），装配壳 = `openclaw-agents/kidpal-dynamic-context.v1.txt`；v11 在 provider/overlay 的「冻结终点版/data 存档」声明面刻意保留（test_char_meaning_merge 守卫仍在解析）——两注记均已落 P5 plan.md 跨包事实节。
+
+## 2026-10-23 · K1 ECS 部署轮（human 授权主线程执行，两轮收口）
+
+- **部署序**：PR #18/#19/#20 三次 push（K1 实现 + SKILL.md 热修回流 + manifest 补登）；`deploy.sh --first-run` 两轮（预检按 10-14 旧基线拦对账铺放，`--first-run` 跳预检、铺后自检须绿；全量快照 `/opt/kidpal/deploy-backups/20261023-124026`）。**终态 drift_count=0，DEPLOY OK @ 462d0cfe**。
+- **部署实证缺口两个（已修）**：① `kidpal-reminder-semantic/SKILL.md` live 热修未回流（10-21 三条陷阱实证）→ 原样回流仓（88e8bdb3）；② **apply-xiaozhi-overlay.sh 自身不在 manifest**（ECS 停旧版致渲染链走旧布局：装配壳缺失、prompt 块为旧 v11 内容、内容源被旧脚本回写）+ 新脚本 `$HERE` 消费位无输入铺放条目 → manifest 补三条（脚本自身 + 内容源/装配壳输入副本，fabc6e4c；输入行 restart:engine 保证同轮触发渲染与引擎重启）。教训进 pod-retro 语境：K1 离线验收 `$HERE`=repo 布局成立、ECS `$HERE` 布局不成立，渲染脚本的输入面必须在 manifest 成对登记。
+- **openclaw 运行态补丁**：`apply_agent_tools.py` APPLIED（allow=[read,write,exec,web_search]，备份 `openclaw.json.bak-kidpal-tools-20261023T044104`；复跑 SKIP 幂等 ✓）——注意 ECS 默认 python3=3.6 需 `/usr/bin/python3.11`（SKILL.md 热修同款坑）。
+- **K1-E8 执行**：`workspace-kidpal/SOUL.md`(1518B)/`USER.md`(871B) 在场 → 备份 `/opt/kidpal/deploy-backups/20261023-k1-soul-user/` 后瘦身为指针壳（228B/224B）。
+- **live 核验全绿**：engine boot 干净（ASR/组件初始化成功）；设备 12:40:44 重连，`kidpal display-strip patch active` 标记行在场；**`快速初始化组件: prompt成功 <context>`** = 引擎装配壳 + 动态块生效（v11 注入退役）；`.config.yaml` 锚集 本回合时间/课表摘要 命中；`prompt_template` → 装配壳路径；front/openclaw-gateway active；tools allow 四项读回一致。
+- **K1-E7 余项（待语音回合）**：真机语音对话单轮 prompt_tokens ≤11,000 + cache 命中——设备在连但未开嗓，等 human 安排一轮回读数。
