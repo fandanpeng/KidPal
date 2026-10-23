@@ -69,7 +69,11 @@ entries:
   - {src: server/deploy/engine-patch/connection.py,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/connection.py,
      owner: deploy.sh, verify: md5, restart: engine,
-     note: bind-mount 覆盖容器 core/，生效标记行 = docker logs 里 'kidpal display-strip patch active' / 'kidpal stop-truncation/asr-filter patch active' / 'kidpal schedule-summary patch active'（261022-m5-n2a 课表摘要占位填充补丁）}
+     note: bind-mount 覆盖容器 core/，生效标记行 = docker logs 里 'kidpal display-strip patch active' / 'kidpal stop-truncation/asr-filter patch active' / 'kidpal schedule-summary patch active'（261022-m5-n2a 课表摘要占位填充补丁）/ 'kidpal persistent-session patch active'（261022-m5-k2b 持久会话补丁——由 provider 探针门控，openai.py bind-mount 丢失时打 ERROR 报警而非 marker）}
+  - {src: server/deploy/engine-patch/openai.py,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/openai.py,
+     owner: deploy.sh, verify: md5, restart: engine,
+     note: stock openai provider 部署副本补丁（261022-m5-k2b 持久会话——两发送腿接受命名参数 user 并 additive 入请求体，OpenClaw 按 agent:kidpal:openai-user:<device_id> 键维护服务端持久会话）——bind-mount 覆盖容器 core/providers/llm/openai/openai.py；新增 bind-mount 首次生效须 docker compose up -d 重建容器（= 设备全断 + 人工窗口），deploy.sh 只做 docker restart 不自动重建}
   - {src: server/deploy/engine-patch/kidpal_display_strip.py,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/kidpal_display_strip.py,
      owner: deploy.sh, verify: md5, restart: engine}

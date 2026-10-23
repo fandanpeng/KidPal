@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261022-m5-k2b-persistent-session",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "2b7d9e4a-5c31-4f8a-9e62-d01c4471ab55",
+  "evidenceRef": "delivery/taskpackages/261022-m5-k2b-persistent-session/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261022-m5-k2b-persistent-session/test-scope-final.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成：acceptanceTestsFile 1 件 ∪ impactedTests 种子 3 件 pytest〔第 4 件 verify-deploy.sh 本树零 diff 非 pytest 件，清单头注记〕 ∪ 共享 seam 2 件〔connection.py 为 P5 共享冻结面——P5 动态装配段回退守卫；K1 prompt 载体承载不变式〕 ∪ 安全余量 2 件〔R9 意图/工具零触碰 + 模型名漂移守卫，K2-E5 语义〕）。detect_changes（project C-AI-KidPal-pod-m2，base=main，merge_base 5cb5bae9，seed_symbols=58）impacted_total=7 全为 builtins / firmware gifdec usage 边噪声——部署副本补丁 + compose/manifest 登记行不产生产产符号入边，blast radius 未映射出 server 测试文件，测试面以种子 + seam + 余量承载。detect_changes 与 trace_path 均可用（per-Pod 专属图索引），正常圈定、无降级。acceptance 闸圈定交集 = serverAcceptanceFiles 7，恰合清单 7 件 acceptance。",
+  "finalScopedRun": {
+    "acceptance": "89 passed / 4 subtests（serverAcceptanceFiles=7，scope-file 交集恰合清单 7 件 acceptance）",
+    "unit": "89 passed / 4 subtests（unit 闸按同清单求交 = 清单内可收集测试件交集语义，docs-delta 注记 2）",
+    "fullSuiteReference": "builder 全量 acceptance 292 passed / 0 failed / 4 deselected / 33 subtests（收拢前实测，= 278 既有 + 冻结件 14 全绿）；builder 申报 unit 115 passed 为既有 server/tests 全档。final 圈定跑 89 与全量 292 之差 = 未入影响面 4 件 acceptance，非缩水。判法目标数 281 = 冻结时点值（278 既有 + 3 条 must-stay-green 当时即绿），11 设计态红转绿后实数 292（docs-delta 注记 1）"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261022-m5-k2b-persistent-session --phase final --round 2 --invocation-id 2b7d9e4a-5c31-4f8a-9e62-d01c4471ab55",
+    "exit": 0,
+    "factOk": true
+  },
+  "scopedRound1": {
+    "invocationId": "7322233d-491c-498d-bbcf-aecd5aa11da4",
+    "evidenceRef": "delivery/taskpackages/261022-m5-k2b-persistent-session/verifier-evidence/rounds/r1.json",
+    "ok": true
+  },
+  "packageOwnSurface": "green (K2-E1..E5 host 面 exitCriteria 断言绿——payload 恰一条本回合 user message / 无 history 重放 / user=device_id / 省略 user 负锚 / 双写形态负例 / 漂移护栏三面 / R9 零触碰 / P5 接线零回退；K2-E6 零自动断言 structural 项挂 human 部署轮)",
+  "structuralPendingHumanDeployRound": ["K2-E6 live 观测项（真机跨 WS 回忆 + 持久会话增长/auto-compaction 成本观察，arch §8.1 风险 14）"],
+  "docsContractSpecDelta": "none (docs/contracts/**、docs/** 零 diff；docsSyncRequired=false——架构 §8.2/§5.4/决策 21 与契约 §四:283 定案已由 261022 arch 批 FROZEN v1.1 landing 0411e957 同批原子落；docs-delta.md 登记四条声明性注记：281/292 口径 + unit 层口径 + verify-deploy.sh 零改动 + 部署轮人工生效步)",
+  "detectChangesAdvisory": {
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "5cb5bae9ef3bb1c89fb09bc3c604bacdbeef21a7",
+    "changedFiles": 15,
+    "seedSymbols": 58,
+    "impactedTotal": 7,
+    "impactedModules": ["firmware/main", "<python-builtins>"],
+    "note": "Step 9b advisory 记账：影响集全为 usage 边噪声（固件零 diff），无未预期生产符号波及；变更面 = 部署副本补丁 + 部署登记行，不产生产产符号入边"
+  }
+}
