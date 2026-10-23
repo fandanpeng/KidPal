@@ -162,3 +162,9 @@
 - **范围圈定**：test-scope 清单落 `delivery/taskpackages/261022-m5-k2b-persistent-session/test-scope-final.txt`（acceptanceTestsFile 1 + 种子 3 pytest + 共享 seam 2〔P5 接线守卫 / K1 承载不变式〕+ 安全余量 2〔R9 工具 / 模型名漂移〕；detect_changes impacted_total=7 全为 builtins/usage 边噪声，正常圈定无降级）。
 - **制品**：review-packet.md（findings 2 NIT judgement-call，无 BLOCKING/SHOULD；K2-E6 live 项挂 human 部署轮）+ docs-delta.md（四条声明性注记）+ verdict.json/verification.json 晋升 + closeout-check 绿（--update-index inserted，INDEX 收敛）。
 - **commit**：feat(m5-k2b) 冻结 diff 收口（实现 4 件 + 冻结验收件 + 簿记面），本地 `dev/pod-m2`、不 push、不合并；待 supervisor 闸（riskTier=high → ESCALATE 人批为预期路径）。
+
+## 2026-10-23 · P2 supervisor 闸 ESCALATE → 停人类合并门（planner）
+
+- **supervisor 机械闸 = ESCALATE（预期路径，launch-card 钉死）**：riskTier=high（`all-mock:test-files-no-real-db/event-assertion` 启发式 + adjudicate critical/high）；provenance v2 全过（`supervisor-gate-check` exit 0）；evidenceComplete、轮 2。verdict 落 `supervisor-verdict.json`；board 置 `blocked`。
+- **收尾簿记**：integrator dispatch-stamp ×2（0 值条 + 实测修正条）+ over-scan 落账；pod-retro.md 落（closeout advisory Q5 消）。
+- **待 human 裁**：合并放行（人批 → pod-events `human-decision` → `merge-driver --pod` 本地合并）或维持停等。**部署轮提前提醒（比 K1/P5 多一步）**：合并后 ① 新增 bind-mount 首次生效须人工 `docker compose up -d` 重建容器（deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话回忆复证；③ 持久会话增长 / auto-compaction 成本只记观察（arch §8.1 风险 14）。
