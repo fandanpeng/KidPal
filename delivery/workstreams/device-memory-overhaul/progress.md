@@ -134,3 +134,31 @@
   - **cache 实测**：cacheRead 6,144→9,600 递增（含课表摘要的稳定前缀全命中），每轮 input 仅 341-2,188；
   - transcript 全量 `{{` 零命中——P1 遗留占位（today_date 等）**无行为级泄漏**（回答日期全部正确），降级为外观级清理候选、不另起批。
 - **P5 = 全 exitCriteria 闭合**（E4 host 21 轮冻结断言 + live 抽样 4 轮全绿）。M5 列车：P1 ✓ P5 ✓ → 下包 **P2/K2b 持久会话**（mo52）。
+
+## 2026-10-23 · P2（K2b 持久会话）launch + 冻结相位起跑（planner，K1/P5 同会话续跑）
+
+- **launch 面**：human 指示起包；board `running`（mo52）；current/ 投影切 K2b（stale P5 verdict 移除）；`brief-inputs.mjs` 产单（0 warnings / 12 advisories——「TECH-261022 引用腐坏」经核实为裸 token 形态探针误报，`docs/debt/tech/` 下两件 debt 文件均在场）；启动卡落盘（纪律红线四条 / bind-mount 人工生效步 / riskTier=high → ESCALATE 人批为预期路径）。
+- **架构权威**：arch T2 + ADR-015 双历史单一权威 + 契约 §四 :287 定案；基线锚 = acceptance 278 passed（P5 后本树实测）。
+- **loop 进度**：acceptance-author 冻结相位已派（K2-E1..E5 冻结 + K2-E6 live 项零自动断言申报 + 红基线实跑回填 + taskpackage.json 回填）。
+
+## 2026-10-23 · P2 冻结收口 + builder 起跑（planner）
+
+- **冻结完成**：红基线 = 冻结前 278 passed / 4 deselected / 33 subtests（P5 后锚逐字命中、无偏离）；冻结后 **281 passed / 11 failed**（全设计态红，三源同因：openai.py 补丁未建 4 / connection.py 接线未落 5 / compose+manifest 登记 2）+ must-stay-green 3 条冻结时点即绿；零 error。新验收件 = `server/acceptance/test_261022_persistent_session.acceptance.py`（14 断言，K2-E1..E6；connection.py/openai.py 不可离线 import，走 AST 抽取 + 受限 exec 行为驱动）。变异自检 9 项全抓（双写禁区 / 切片丢史 / 丢 user 注入 / max_tokens 禁带 / marker 门控），自检纠出 harness 两缺陷（exec 命名空间回传 / E4 fixture RAM 历史）。
+- **判法定形（acceptance-author，planner 追认）**：connection.py 模块级纯函数 `_kidpal_turn_messages(assembled, actual_start, keep_tail_count)` + provider 探针 `_kidpal_provider_supports_user(llm)`（反射失败 False 不抛）；marker 字面 `kidpal persistent-session patch active` 须探针门控（openai.py bind-mount 丢失时 stock provider 静默吞 user kwargs，无门控 marker = 假绿报警锚）；openai.py 两腿命名参数 `user`（缺省 None）、零 max_tokens（契约 §四 :288 禁带）。
+- **簿记**：dispatch-stamp 落账（189k tokens / 66 tool-uses / 23.7min）；over-scan friction 1 笔（同族验收先例两件 + 参考树 05 openai.py/dialogue.py 源码——低风险同向消费）；taskpackage.json 回填（acceptance 6 条目 + acceptanceTestsFile + redBaselineResult 终态 + verify-deploy.sh 零 diff 预期注记）；brief 重生成（refs 改动）；required check 零错误零 warning；current/ 投影刷新。
+- **builder 已派**：11 设计态红转绿目标 = acceptance 281 passed / 0 failed。
+
+## 2026-10-23 · P2 builder 全绿 + verifier scoped r1 全闸绿 + 进 integrator（planner）
+
+- **builder 实现（未 commit，4 件改动全在 changeManifest 内）**：`engine-patch/openai.py` 新增（参考树 05 stock 基线整文件复制 + keyword-only `user=None` 两腿 / `if user:` 注入 / 零 max_tokens 语义保持 / thinking 钩子原样）；`connection.py` 切片接线（`_kidpal_turn_messages` 纯函数 + `_kidpal_provider_supports_user` 探针 + depth==0 记 turn_start + 两发送腿内联切片携 `user=self.device_id` + 探针门控第四条 marker，探针失败打 error 不打 marker——假绿锚防护；`dialogue.put` 记账照旧；P5 schedule-summary 段与既有三 marker 零回退）；compose 新增 openai.py bind-mount 行（注释含 compose up -d 人工生效步）；manifest 新资产条目（md5/restart=engine/note 含人工生效步）+ connection.py 条目 marker 清单补第四条。
+- **验证实测**：acceptance **292 passed / 0 failed / 4 deselected / 33 subtests**（= 278 既有 + 冻结件 14 全绿）；unit 115 passed 零新增红；契约零 diff；verify-deploy.sh 零改动（预期内，如实申报）。builder 另以真实 Dialogue + 抽取切片函数做四场景离线仿真旁证（未落文件、不计判据）。
+- **形态申报**：① 判法目标数 281 是冻结时点值，11 红转绿后实数 292（判据全达成）；② unit 专用补件因 manifest 边界未做（清单外停手，行为级证据由冻结件 ET 断言承载）；③ `_kidpal_prefix_count` few-shot 补位假设 minimal: 注记（nointent 部署面该段为空）。
+- **verifier scoped r1**（invocation `7322233d`，round 1）：`ok:true`、factOk true、8 闸全 PASS（taskpackage-required / change-manifest / firmware-build / contract-lint / acceptance-coverage / mutation-check / docs-sync / security）。verifier-evidence-check 过。over-scan friction 1 笔落账（builder 超读申报 5 行）。board 置 `verifier-green`。
+- **integrator 已派**（final r2 由其携 scope-file 跑，full bearing 模式）。
+
+## 2026-10-23 · P2 integrator 收口（final r2 全绿 + 制品落盘 + commit 冻结 diff）
+
+- **final bearing round 2**（invocation `2b7d9e4a-5c31-4f8a-9e62-d01c4471ab55`，evidence `verifier-evidence/rounds/r2.json`，fact `ok:true`，observedGateExit 0，**10 闸全绿**）；verifier-evidence-check 过（exit 0 / factOk true）。acceptance 闸按 scope-file 圈定 = 89 passed / 4 subtests（7 件恰合清单）；unit 同清单求交 89 passed。
+- **范围圈定**：test-scope 清单落 `delivery/taskpackages/261022-m5-k2b-persistent-session/test-scope-final.txt`（acceptanceTestsFile 1 + 种子 3 pytest + 共享 seam 2〔P5 接线守卫 / K1 承载不变式〕+ 安全余量 2〔R9 工具 / 模型名漂移〕；detect_changes impacted_total=7 全为 builtins/usage 边噪声，正常圈定无降级）。
+- **制品**：review-packet.md（findings 2 NIT judgement-call，无 BLOCKING/SHOULD；K2-E6 live 项挂 human 部署轮）+ docs-delta.md（四条声明性注记）+ verdict.json/verification.json 晋升 + closeout-check 绿（--update-index inserted，INDEX 收敛）。
+- **commit**：feat(m5-k2b) 冻结 diff 收口（实现 4 件 + 冻结验收件 + 簿记面），本地 `dev/pod-m2`、不 push、不合并；待 supervisor 闸（riskTier=high → ESCALATE 人批为预期路径）。
