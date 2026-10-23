@@ -47,6 +47,12 @@ services:
       # the patched connection.py bind-mounted in place of the stock originals.
       - ./engine-patch/kidpal_display_strip.py:/opt/xiaozhi-esp32-server/core/kidpal_display_strip.py
       - ./engine-patch/connection.py:/opt/xiaozhi-esp32-server/core/connection.py
+      # 261022-m5-k2b persistent-session: patched openai provider (additive `user`
+      # request field; OpenClaw keys its server-side persistent session on it).
+      # NEW bind-mount => first activation needs `docker compose up -d` (container
+      # recreate = all devices disconnected, manual window): deploy.sh only does
+      # `docker restart`, it never recreates.
+      - ./engine-patch/openai.py:/opt/xiaozhi-esp32-server/core/providers/llm/openai/openai.py
     # logging drives the container health check used by the systemd unit
     healthcheck:
       test: ["CMD-SHELL", "ss -tln 2>/dev/null | grep -q 127.0.0.1:8010 || netstat -tln 2>/dev/null | grep -q 127.0.0.1:8010"]

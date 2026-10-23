@@ -1,0 +1,25 @@
+# test-scope-final · 261022-m5-k2b-persistent-session（integrator Step 4①，2026-10-23）
+# 圈定来源：detect_changes（project C-AI-KidPal-pod-m2，base=main，merge_base 5cb5bae9）
+#   changed_files=15、seed_symbols=58、impacted_total=7——影响集全为
+#   python-builtins / firmware gifdec usage 边噪声（本包变更面 = 部署副本补丁 + compose/manifest
+#   登记行，config/部署面不产生产产符号入边），blast radius 未映射出 server 测试文件；
+#   测试面以 TaskPackage impactedTests 4 件种子 + 共享 seam + 安全余量合成（K2-E5 既有冻结件零
+#   新增红语义直接覆盖）。
+# 图可用性：per-Pod 专属图索引可用 → 正常圈定（非降级路径）。
+# 变更代码面：server/deploy/engine-patch/openai.py（新增）、server/deploy/engine-patch/connection.py、
+#   server/deploy/docker-compose.yml、server/deploy/manifest.yaml。
+#
+# ── 本包 acceptanceTestsFile（K2-E1..E5 断言承载）──
+server/acceptance/test_261022_persistent_session.acceptance.py
+# ── impactedTests 种子（taskpackage.json；K2-E5 既有冻结件零新增红 + 单源反证）──
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+# （impactedTests 第 4 件 server/deploy/verify-deploy.sh 本树零 diff、非 pytest 件——恒 manifest
+#   驱动对新条目零特例，部署轮以脚本命令位另行执行）
+# ── 共享 seam（connection.py 为 P5 共享冻结面——P5 动态装配段不得回退，plan.md 铁律）──
+server/acceptance/test_261022_schedule_injection.acceptance.py
+# ── 共享 seam（P1 prompt 载体承载不变式——payload 形状须与 P1 后动态块装配一致）──
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+# ── 安全余量（openai.py 引擎 provider 面：R9 意图/思考档零触碰 + 模型名漂移守卫，K2-E5）──
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py

@@ -1,6 +1,7 @@
 import os
 import sys
 import copy
+import inspect
 import json
 import re
 import uuid
@@ -125,6 +126,56 @@ def _kidpal_is_asr_hallucination(text):
     return normalized in _KIDPAL_ASR_HALLUCINATIONS
 
 
+def _kidpal_turn_messages(assembled, actual_start, keep_tail_count):
+    """本回合切片（261022-m5-k2b 持久会话 / ADR-015 唯一装配点，名字与签名冻结）。
+
+    输入 assembled = Dialogue.get_llm_dialogue_with_memory 的全量装配产物
+    （[system, few-shot…, 实际历史…]）；返回 = 会话级前缀 assembled[:actual_start]
+    （system + few-shot——prompt 装配层不动，memory / voiceprint / speaker 注入保持）
+    + 本回合尾部 assembled[len-assembled - keep_tail_count:]。**先前的实际历史消息
+    一律不进返回值**：对话历史唯一权威 = OpenClaw 服务端持久会话（按 user 键），
+    引擎 RAM Dialogue 是非权威副本，双写 = 「同一段话被重放两次」的双历史漂移。
+
+    keep_tail_count 覆盖在途 tool 链：递归子轮（depth>0）本回合尾部 = 本回合 user
+    message + 本回合已落地的 assistant(tool_calls) / tool 消息——工具链从未持久化到
+    OpenClaw，截断即让模型失上下文。keep_tail_count == 0 → 仅返回前缀（无本回合
+    消息的边界）；非法下标（负数 / 区间越界 / 尾段与前缀重叠）→ ValueError。
+    """
+    messages = list(assembled or [])
+    total = len(messages)
+    if actual_start < 0 or keep_tail_count < 0:
+        raise ValueError(
+            "_kidpal_turn_messages: 非法下标 actual_start=%r keep_tail_count=%r"
+            "（两者均不得为负）" % (actual_start, keep_tail_count))
+    if actual_start > total:
+        raise ValueError(
+            "_kidpal_turn_messages: actual_start=%r 越界（装配产物 %d 条）"
+            % (actual_start, total))
+    tail_start = total - keep_tail_count
+    if tail_start < actual_start:
+        raise ValueError(
+            "_kidpal_turn_messages: 保留尾段与前缀重叠（actual_start=%r "
+            "keep_tail_count=%r，装配产物 %d 条）"
+            % (actual_start, keep_tail_count, total))
+    return messages[:actual_start] + messages[tail_start:]
+
+
+def _kidpal_provider_supports_user(llm):
+    """补丁在位探针（名字冻结）：llm.response 是否以**命名参数**接受 "user"。
+
+    判据 = inspect.signature 的 parameters 含 "user"（**kwargs 吞参不算——stock
+    provider 会静默丢弃 user，请求落回每请求随机 session）。llm 无 response /
+    反射失败 → False（绝不抛）：探针只用于启动报警锚，不得反过来拖垮建连。
+    """
+    try:
+        response = getattr(llm, "response", None)
+        if response is None or not callable(response):
+            return False
+        return "user" in inspect.signature(response).parameters
+    except Exception:  # noqa: BLE001 — 探针失败必须回落 False（见 docstring）
+        return False
+
+
 TAG = __name__
 
 auto_import_modules("plugins_func.functions")
@@ -213,6 +264,11 @@ class ConnectionHandler:
         # （回填前快照）：帧迟到 / 二次到达时以原形重填，绝不丢占位。
         self._kidpal_schedule_summary = ""
         self._kidpal_schedule_prompt_base = None
+        # KidPal 本回合起点 (261022-m5-k2b 持久会话 / ADR-015): depth==0 在
+        # dialogue.put 之前记「本回合之前已落地的实际历史消息数」，chat 发送腿以它
+        # 为切片下界——本回合 user + 在途 tool 链整段进请求，先前实际历史一律不向
+        # OpenClaw 重放（persistent-session 的唯一装配点 = _kidpal_turn_messages）。
+        self._kidpal_turn_start = 0
 
         # 线程任务相关
         self.loop = None  # 在 handle_connection 中获取运行中的事件循环
@@ -916,6 +972,18 @@ class ConnectionHandler:
             self.logger.bind(tag=TAG).info("kidpal stop-truncation/asr-filter patch active")
             # KidPal schedule-summary placeholder fill patch ACTIVE — startup marker / drift anchor
             self.logger.bind(tag=TAG).info("kidpal schedule-summary patch active")
+            # KidPal persistent-session patch ACTIVE — startup marker / drift anchor
+            # (261022-m5-k2b, ARQ-260907 同族). 必须由 provider 探针门控：openai.py
+            # bind-mount 丢失时 stock provider 静默吞掉 user kwarg = 持久会话全功能
+            # 回退（每请求随机 session），无门控的 marker 只是假绿报警锚。
+            if _kidpal_provider_supports_user(self.llm):
+                self.logger.bind(tag=TAG).info(
+                    "kidpal persistent-session patch active")
+            else:
+                self.logger.bind(tag=TAG).error(
+                    "kidpal persistent-session patch INACTIVE: provider 不接受命名参数 "
+                    "user —— engine-patch/openai.py bind-mount 缺失/漂移？持久会话已回退 "
+                    "为每请求随机 session，跨会话回忆失效（补丁生效后本行为 INFO marker）")
 
             """初始化组件"""
             if self.config.get("prompt") is not None:
@@ -1355,6 +1423,40 @@ class ConnectionHandler:
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 
+    def _kidpal_actual_history_len(self):
+        """已落地的实际历史消息数（system / few-shot 之外，261022-m5-k2b）。
+
+        判据与 Dialogue.get_llm_dialogue_with_memory「第三段：实际对话历史」同形
+        （role != system 且 is_temporary 为假）。只作本回合切片的下界锚点，不参与
+        prompt 装配本身。
+        """
+        messages = getattr(self.dialogue, "dialogue", None) or []
+        return sum(
+            1 for m in messages
+            if getattr(m, "role", None) != "system"
+            and not getattr(m, "is_temporary", False)
+        )
+
+    def _kidpal_prefix_count(self):
+        """装配产物里会话级前缀（system + few-shot）的消息数 = 切片 actual_start。
+
+        与 get_llm_dialogue_with_memory 的段序同构：可选 system 一条 + 全部
+        temporary few-shot 消息。minimal: few-shot 段按其「悬空 tool_calls 补位」规则
+        可能追加 dummy tool 消息，此处按「示例链恒闭合」计数——_inject_tool_call_fewshot
+        注入的两条示例链（direct_answer / handle_exit_intent）均为 assistant
+        tool_calls → tool → assistant 的闭合三段，KidPal 部署面 intent_type = nointent
+        时该段本就为空；若未来引入悬空示例链，升级路径 = 改用与引擎同源的补位计数。
+        """
+        messages = getattr(self.dialogue, "dialogue", None) or []
+        prefix = 1 if any(
+            getattr(m, "role", None) == "system" for m in messages) else 0
+        prefix += sum(
+            1 for m in messages
+            if getattr(m, "role", None) != "system"
+            and getattr(m, "is_temporary", False)
+        )
+        return prefix
+
     def chat(self, query, depth=0):
         # 保存当前任务的sentence_id到局部变量，避免被新任务覆盖
         current_sentence_id = None
@@ -1397,6 +1499,10 @@ class ConnectionHandler:
                 return
             current_sentence_id = str(uuid.uuid4().hex)
             self.sentence_id = current_sentence_id  # 更新共享属性
+            # KidPal 本回合起点 (261022-m5-k2b / ADR-015): 必须在 dialogue.put **之前**
+            # 记录——此后追加的消息（本回合 user + 在途 tool 链）才是进请求的「本回合
+            # 尾部」，此前落地的实际历史一律不进（persistent-session 切片下界）。
+            self._kidpal_turn_start = self._kidpal_actual_history_len()
             self.dialogue.put(Message(role="user", content=query))
             self.tts.tts_text_queue.put(
                 TTSMessageDTO(
@@ -1473,21 +1579,34 @@ class ConnectionHandler:
                 self.system_introduced_speakers.add(cs)
                 speaker_for_system = cs
 
+            # ADR-015 双历史单一权威 (261022-m5-k2b): 全量装配产物只作切片输入源——
+            # 会话级前缀（system + few-shot；memory / voiceprint / speaker 注入的
+            # prompt 装配层零触碰）+ 本回合尾部（本回合 user + 在途 tool 链）才进
+            # 请求；先前实际历史一律不向 OpenClaw 重放。RAM Dialogue 仍照常 put
+            # （本地非权威副本，标题生成/调试日志继续记账）。
+            assembled = self.dialogue.get_llm_dialogue_with_memory(
+                memory_str, self.config.get("voiceprint", {}), speaker_for_system
+            )
+            prefix_count = self._kidpal_prefix_count()
+            turn_messages = _kidpal_turn_messages(
+                assembled,
+                prefix_count,
+                len(assembled) - prefix_count - self._kidpal_turn_start,
+            )
+
             if self.intent_type == "function_call" and functions is not None:
                 # 使用支持functions的streaming接口
                 llm_responses = self.llm.response_with_functions(
                     self.session_id,
-                    self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {}), speaker_for_system
-                    ),
+                    turn_messages,
                     functions=functions,
+                    user=self.device_id,
                 )
             else:
                 llm_responses = self.llm.response(
                     self.session_id,
-                    self.dialogue.get_llm_dialogue_with_memory(
-                        memory_str, self.config.get("voiceprint", {}), speaker_for_system
-                    ),
+                    turn_messages,
+                    user=self.device_id,
                 )
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"LLM 处理出错 {query}: {e}")
