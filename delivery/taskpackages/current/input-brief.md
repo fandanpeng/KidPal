@@ -1,25 +1,20 @@
-# input-brief · 261023-agents-md-static-semantics-alignment
+# input-brief · 261023-honcho-memory-wiring-restoration
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-23T09:48:27.810Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
-> 来源 TaskPackage: `delivery/taskpackages/261023-agents-md-static-semantics-alignment/taskpackage.json` · subsystem: server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（kidpal agent 静态语义单一事实源）+ server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md（B1 同口径）+ server/acceptance（新验收件） · rigor: lite
+> generated-at: 2026-10-23T12:41:44.707Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> 来源 TaskPackage: `delivery/taskpackages/261023-honcho-memory-wiring-restoration/taskpackage.json` · subsystem: server/deploy/261022-openclaw-honcho-plugin（插件工作台：声明/apply/rollback）+ server/deploy/manifest.yaml（工作台条目）+ server/acceptance（锚换代件） · rigor: lite
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
-| `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md` | — | 无锚点（整文件） | — | bare |
 | `docs/architecture.md` | — | 无锚点（整文件） | — | bare |
-| `docs/requirements.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261023-agents-md-static-semantics-alignment/plan.md` | — | 无锚点（整文件） | — | bare |
-| `docs/architecture.md` | `§5.2` | 5.2 运行视图（关键场景端到端） | 211 | ok |
-| `docs/requirements.md` | `S-F2.2` | S-F2.2 · 对话式引导记录（双入口，v1.65 改名，原「开录（双入口）」） | 454 | ok |
-| `docs/requirements.md` | `S-F1.3` | S-F1.3 · 语音问课表 | 278 | ok |
-| `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md` | — | 无锚点（整文件） | — | bare |
+| `docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md` | — | 无锚点（整文件） | — | bare |
+| `docs/architecture.md` | `§6.7` | 6.7 记忆写入资格与画像 | 356 | ok |
+| `server/acceptance/test_261022_memory_isolation.acceptance.py` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）
 
@@ -29,7 +24,7 @@
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 纯云端 prompt 文本面：零 wire 形状改动、零帧类型/字段/序列化触碰（display E1 / B1 课表 MD / §三提醒 / §四私有消息帧零触）；设备端零感知、固件零 diff。triage architect 逃生门预查 = 全包 spec-clean 唯 S3 疑似（甲案：architect-reviewer 四分类前置，human 2026-10-23 裁）。
+> 纯 server 侧部署声明与验收锚换代：零 wire 形状改动（帧类型/字段类型与承载/回执语义/序列化形态零触——OpenClaw 配置键与 Honcho session 元数据是云端运行态配置，非跨端协议）；设备端零感知、固件零 diff、本包不改 compose（批 A 已回流 f4d5e647）。
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
