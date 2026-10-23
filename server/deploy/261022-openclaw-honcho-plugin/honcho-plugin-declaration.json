@@ -1,0 +1,33 @@
+{
+  "case": "kidpal-honcho-memory-plugin",
+  "changes": [
+    {
+      "path": "hooks.allowConversationAccess",
+      "value": true
+    },
+    {
+      "path": "agents.entries.kidpal.plugins.honcho",
+      "value": {
+        "carrier": "/opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin.js",
+        "baseUrl": "http://127.0.0.1:18100",
+        "peerPrefix": "agent:kidpal:openai-user:",
+        "gate": "user-present-only",
+        "note": "记忆写入资格门（读写同门）：仅请求携 user=<device_id> 的 kidpal 语音回合可读写记忆；front 一次性回合 / main agent / cron 不携 user，结构性不入画像（arch §6.7 资格门，白名单入册不做黑名单剔除）。baseUrl 指本机 loopback；peer 键消费 P2 键族 agent:kidpal:openai-user:<device_id>，不另造。"
+      }
+    }
+  ],
+  "drift_guard": [
+    {
+      "path": "agents.entries.kidpal.tools.allow",
+      "expect": ["read", "write", "exec", "web_search"]
+    }
+  ],
+  "backup": {
+    "dir": "/root/.openclaw",
+    "pattern": "openclaw.json.bak-kidpal-honcho-*"
+  },
+  "rollback": {
+    "script": "rollback_honcho_plugin.py"
+  },
+  "_note": "261022-m5-k3-honcho-memory-production K3-E6 声明工件。双声明式 patch 组合：P1 的 tools.allow 四项白名单已应用在先（drift_guard 现状锚 = P1 已应用态，P1 漂移时本包 STOP 拒绝叠加，不整文件改写）；本包顺序 apply 追加 hooks.allowConversationAccess=true（debt TECH-261022 证据 7 钩子授权字面）+ Honcho 插件注册。openclaw.json 含 gateway 凭据、整文件不入仓；本声明零 secret。apply_honcho_plugin.py 幂等应用（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份）；rollback_honcho_plugin.py 一步还原。与 261017 skills / P1 tools 两份声明工件作用于同一运行态文件，组合共存。"
+}

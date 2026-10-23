@@ -1,0 +1,114 @@
+# Honcho 自托管记忆子系统 — 栈本体 compose（K3-E1 / 261022-m5-k3-honcho-memory-production）
+#
+# 落位：ECS /opt/honcho（arch §5.3.2「记忆子系统」行）；api 消费位 127.0.0.1:18100
+# （arch §1.2 / §5.3.3：仅本机可达）。真实环境变量（凭据）经同目录 .env 注入——
+# 模板见 honcho.env.example，凭据只存 ECS、不入仓（NFR-SEC-2 / 凭据纪律）。
+#
+# 出网红线（NFR-SEC-2 ⑤ / arch §10 决策 19 ⑤）：本栈出网仅两条已记账管线——
+#   deriver 抽取 → DeepSeek（DERIVER_LLM_BASE_URL，与设备对话同域）
+#   embedding 向量化 → DashScope（DASHSCOPE_BASE_URL，与 ASR 同供应商同信任域）
+# 其余全部数据本机不出网；五容器 published 端口全部显式绑定 127.0.0.1
+# （容器间互通走 expose / 内部网络，不经宿主端口面）。
+#
+# 生命周期（NFR-PRIV-1 / OQ-10）：备份 = 不备份靠重建，重建源 = session-corpus
+# 源语料 + OpenClaw 会话存储；删除 = 运维面手工、范围 = 记忆画像与
+# observation/消息存储；本栈不提供自助删除界面。
+
+services:
+  postgres:
+    # postgres + pgvector（向量列固定 1536 维，见 EMBEDDING_VECTOR_DIMENSIONS）
+    image: pgvector/pgvector:pg16
+    container_name: honcho-postgres
+    expose:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # NFR-PRIV-1 ②：记忆数据自托管存于 ECS 本机持久卷
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-honcho}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set-in-/opt/honcho/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-honcho}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-honcho} -d ${POSTGRES_DB:-honcho}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  deriver:
+    # 观察抽取器：消费消息队列，LLM 抽 observation（出网管线① → DeepSeek）
+    image: plasticlabs/honcho-deriver:latest
+    container_name: honcho-deriver
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+    environment:
+      DERIVER_LLM_BASE_URL: ${DERIVER_LLM_BASE_URL:-https://api.deepseek.com/v1}
+      DERIVER_LLM_MODEL: ${DERIVER_LLM_MODEL:-deepseek-v4-flash}
+      DERIVER_LLM_API_KEY: ${DEEPSEEK_API_KEY:?set-in-/opt/honcho/.env}
+      DERIVER_EMBEDDING_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      DERIVER_EMBEDDING_MODEL: ${DASHSCOPE_EMBEDDING_MODEL:-text-embedding-v4}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:?set-in-/opt/honcho/.env}
+      EMBEDDING_VECTOR_DIMENSIONS: ${EMBEDDING_VECTOR_DIMENSIONS:-1536}
+      DERIVER_FLUSH_ENABLED: ${DERIVER_FLUSH_ENABLED:-true}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  api:
+    # Honcho API（OpenClaw Honcho 插件的消费位；127.0.0.1:18100 仅本机可达）
+    image: plasticlabs/honcho:latest
+    container_name: honcho-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      deriver:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18100:8000"            # arch §5.3.3 ③：api 仅本机可达
+    environment:
+      HONCHO_BASE_URL: ${HONCHO_API_BASE_URL:-http://127.0.0.1:18100}
+      DATABASE_URL: postgres://honcho:${POSTGRES_PASSWORD}@postgres:5432/honcho
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:?set-in-/opt/honcho/.env}
+      EMBEDDING_VECTOR_DIMENSIONS: ${EMBEDDING_VECTOR_DIMENSIONS:-1536}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  app:
+    # 演示/管理前端（仅本机）
+    image: plasticlabs/honcho-app:latest
+    container_name: honcho-app
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18101:3000"
+    environment:
+      HONCHO_API_URL: http://api:8000
+    restart: unless-stopped
+
+  adminer:
+    # 数据库运维台（仅本机；删除画像等运维手工动作的查看面）
+    image: adminer:latest
+    container_name: honcho-adminer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18102:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    name: honcho-pgdata
