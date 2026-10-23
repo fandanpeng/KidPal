@@ -72,6 +72,22 @@ KIDPAL_SPEAK_TYPE = "kidpal_speak"
 # 切句只回显）+ stop-truncation 豁免判据重绑（记录语境 stop 不截断，KEY 收尾末句承重）。
 KIDPAL_RECORD_CONTEXT_TYPE = "kidpal_record_context"
 
+# KidPal 课表摘要注入指令类型 (TaskPackage 261022-m5-n2a-schedule-mechanical-injection
+# / arch PROPOSAL T5 候选甲): front 在会话建立时向引擎腿注入
+# {"type":"kidpal_schedule_summary","text":<课表摘要>}——摘要由 front
+# gateway/schedule.py 唯一解析器派生（契约 §1.5 单源红线）。本文件只做「存会话态 +
+# 填充动态 context 占位」，**零课表 MD 解析**：不 import gateway、不含 B1 区块名、
+# 不自建解析实现（T5 候选丙直接否——造第二解析器）。
+KIDPAL_SCHEDULE_SUMMARY_TYPE = "kidpal_schedule_summary"
+
+# 动态 context 内容源占位（261022-m5-k1 定形：server/deploy/kidpal-agent-prompt.txt 的
+# 「课表摘要：{{schedule_summary}}」行；装配壳无内容占位不在本补丁面）。填充缝在引擎
+# 部署副本补丁内（引擎上游 prompt_manager 不在本包改动面），字面单次替换。
+KIDPAL_SCHEDULE_SUMMARY_PLACEHOLDER = "{{schedule_summary}}"
+# 摘要缺席时的占位文本（front 未提供 / 课表文件缺失）：不编造任何事实，交模型走读文件
+# 或诚实说查不到（T5 注入语义②窗口外诚实 / TECH-261018 零编造）。
+KIDPAL_SCHEDULE_SUMMARY_EMPTY = "（本次会话未提供）"
+
 # KidPal ASR 静音幻听串表 (TaskPackage 261014-engine-stop-truncation-asr-filter /
 # 改动点 3)。Qwen/Whisper 系 ASR 在低能量/静音段的已知幻听模式——引擎收到 listen
 # stop 后对缓冲尾音（本质是停止后的静音）整段识别，恒产 "Thank you." 一类串，被当
@@ -190,6 +206,13 @@ class ConnectionHandler:
         # （记录语境即使切非 manual 聆听形态，stop 触发的末句转写仍不截断——KEY 收尾
         # 承重通道）。
         self._kidpal_record_context = False
+        # KidPal 课表摘要会话态 (261022-m5-n2a-schedule-mechanical-injection / T5 甲):
+        # front 会话建立时注入 kidpal_schedule_summary 帧 -> 存入本字段；动态 context
+        # 内容源的 {{schedule_summary}} 占位在系统提示词构建/刷新时填充（本补丁零解析，
+        # 摘要内容全部来自 front 的单源派生）。_kidpal_schedule_prompt_base = 占位原形
+        # （回填前快照）：帧迟到 / 二次到达时以原形重填，绝不丢占位。
+        self._kidpal_schedule_summary = ""
+        self._kidpal_schedule_prompt_base = None
 
         # 线程任务相关
         self.loop = None  # 在 handle_connection 中获取运行中的事件循环
@@ -474,6 +497,51 @@ class ConnectionHandler:
             self.logger.bind(tag=TAG).info("kidpal record-context: 退出记录语境（恢复 LLM）")
         return True
 
+    def _kidpal_apply_schedule_summary(self, prompt):
+        """{{schedule_summary}} 占位填充（261022-m5-n2a K5-E1 填充接缝）。
+
+        只做字面单次替换：内容 = front 经 schedule.py 唯一解析器派生后经内部帧送来的
+        课表摘要；本补丁**零课表 MD 解析、零 gateway import、无 B1 区块名**（契约 §1.5
+        单源红线，T5 候选乙/丙否决）。会话内未注入摘要 -> 填缺席占位文本（不编造事实，
+        模型走读文件或诚实说查不到）。非 str 原样返回（上游 prompt 缺席时不动）。
+        替换前把占位原形快照到 _kidpal_schedule_prompt_base——帧迟到 / 二次到达时以
+        原形重填（已填文本不可再插，原形可）。
+        """
+        if not isinstance(prompt, str):
+            return prompt
+        if KIDPAL_SCHEDULE_SUMMARY_PLACEHOLDER not in prompt:
+            return prompt
+        self._kidpal_schedule_prompt_base = prompt
+        text = self._kidpal_schedule_summary or KIDPAL_SCHEDULE_SUMMARY_EMPTY
+        return prompt.replace(KIDPAL_SCHEDULE_SUMMARY_PLACEHOLDER, text)
+
+    async def _kidpal_on_schedule_summary(self, message) -> bool:
+        """认领 front 注入的课表摘要帧（261022-m5-n2a / T5 候选甲通道）。
+
+        命中 {"type":"kidpal_schedule_summary","text":<str>} -> 存入会话态；若系统
+        提示词已构建则立即回填占位（帧先于/后于 prompt 装配两种时序都覆盖——会话建立
+        时注入，之后每轮动态块都携带摘要）。返回 True（**引擎内部指令**，绝不能当孩子
+        说的话送 LLM）。非本类型 / 解析失败 -> False（静默不动，_kidpal_try_speak 同款
+        纪律）。text 非 str / 缺席 -> 空摘要（引擎填缺席占位文本）。
+        """
+        try:
+            obj = json.loads(message)
+        except (TypeError, ValueError):
+            return False
+        if not isinstance(obj, dict) or obj.get("type") != KIDPAL_SCHEDULE_SUMMARY_TYPE:
+            return False
+        text = obj.get("text")
+        self._kidpal_schedule_summary = text.strip() if isinstance(text, str) else ""
+        # 回填源 = 占位原形优先（帧晚于 prompt 装配时，已填文本里无占位可替；原形里恒有）；
+        # 落定经 change_system_prompt 单收口（填充缝单点）。
+        prompt = self._kidpal_schedule_prompt_base or self.prompt
+        if prompt:
+            self.change_system_prompt(prompt)
+        self.logger.bind(tag=TAG).info(
+            "kidpal schedule-summary: 课表摘要已入会话态 len=%d"
+            % len(self._kidpal_schedule_summary))
+        return True
+
     async def _kidpal_on_listen_message(self, message):
         """listen 帧旁路截断 (261014-engine-stop-truncation-asr-filter 改动点 1)。
 
@@ -548,6 +616,10 @@ class ConnectionHandler:
 
     async def _route_message(self, message):
         """消息路由"""
+        # KidPal 课表摘要（261022-m5-n2a / T5 甲）：纯会话态存储 + 占位回填，不依赖
+        # 绑定完成——先于绑定门认领，建连即注入的帧不因绑定等待窗（1s）丢失。
+        if isinstance(message, str) and await self._kidpal_on_schedule_summary(message):
+            return
         # 检查是否已经获取到真实的绑定状态
         if not self.bind_completed_event.is_set():
             # 还没有获取到真实状态，等待直到获取到真实状态或超时
@@ -842,11 +914,14 @@ class ConnectionHandler:
             self.logger.bind(tag=TAG).info("kidpal display-strip patch active")
             # KidPal stop-truncation / asr-filter patch ACTIVE — startup marker / drift anchor
             self.logger.bind(tag=TAG).info("kidpal stop-truncation/asr-filter patch active")
+            # KidPal schedule-summary placeholder fill patch ACTIVE — startup marker / drift anchor
+            self.logger.bind(tag=TAG).info("kidpal schedule-summary patch active")
 
             """初始化组件"""
             if self.config.get("prompt") is not None:
                 user_prompt = self.config["prompt"]
-                # 使用快速提示词进行初始化
+                # 使用快速提示词进行初始化（课表摘要占位由 change_system_prompt 单收口
+                # 填充——帧先于组件初始化到达时此处已能带上摘要）
                 prompt = self.prompt_manager.get_quick_prompt(user_prompt)
                 self.change_system_prompt(prompt)
                 self.logger.bind(tag=TAG).info(
@@ -1272,7 +1347,11 @@ class ConnectionHandler:
             asyncio.run_coroutine_threadsafe(self.func_handler._initialize(), self.loop)
 
     def change_system_prompt(self, prompt):
-        self.prompt = prompt
+        # 课表摘要占位填充单收口（261022-m5-n2a K5-E1 填充接缝）：系统提示词每次落定都
+        # 经此缝，front 会话建立时注入的摘要替换 {{schedule_summary}}——本补丁只做字面
+        # 替换，零课表 MD 解析（契约 §1.5 单源红线；T5 候选乙/丙否决）。组件初始化在
+        # 线程池、注入帧在事件循环，两线程都经此单点落定，读摘要取当刻最新会话态。
+        self.prompt = self._kidpal_apply_schedule_summary(prompt)
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 

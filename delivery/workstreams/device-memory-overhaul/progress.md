@@ -88,3 +88,32 @@
 - **token 实测**（openclaw transcript usage）：首轮 input 7,761 / cacheRead 0（新会话冷启动，≤11,000 目标 ✓，基线 22,116 → -65%）；二轮 input 3,949 + cacheRead 7,808 = 11,757（含 web_search 结果 ~3k 回合事实）——**cache hit 66% 覆盖稳定前缀（基线 32%，翻倍达成）**，每轮真成本（未缓存）14,948 → 3,949（**-74%**）。
 - **P1 收口**：K1-E1..E8 全部闭合（E7 实测达标、E8 已执行）。board merged / INDEX closed 不变；部署缺口两修复（SKILL 回流 + manifest 三补登）随 PR #19/#20 在 origin/main。
 - **下一包** = P5 `261022-m5-n2a-schedule-mechanical-injection`（mo51；消费本包动态块 `{{schedule_summary}}` 占位）。
+
+## 2026-10-23 · P5（N2a 课表机械注入）launch + 冻结相位起跑（planner，K1 同会话续跑）
+
+- **launch 面**：human 指示起包；board `running`（mo51）；current/ 投影切 P5；`brief-inputs.mjs` 产单（0 warnings / 11 advisories）；启动卡落盘（基线锚 = K1 后 268 passed；T5 + 契约 §1.5 为架构权威；通道形态若需改 front 侧文件而 changeManifest 未含 → 停报扩单）。
+- **S-F1.3 权威通读**（1e 硬前置）：AC1 共享问答框口径 / AC4 备注参与答复——本包锚 AC1（注入使课表回合零工具调用也答对）；补充规则「备注列参与语音答复」落 K5-E3 受控集的备注断言。
+- **loop 进度**：acceptance-author 冻结相位已派（K5-E1..E6 冻结 + 红基线回填 + 通道形态现状排查——front_app.py 不在 changeManifest，是否需要扩单由排查结论定）。
+
+## 2026-10-23 · P5 冻结收口 + 扩单一项 + builder 起跑（planner）
+
+- **冻结完成**：红基线 = 冻结前 268 全绿无先存红；冻结后 270 passed / 8 failed（全设计态红，成因单一：派生接缝 `build_schedule_summary` 不在世 + 接线面未落）+ 2 must-stay-green；零 error。变异自检在案（窗口越界 / 内容抽空分别新爆 6/7 红）。新验收件 = `test_261022_schedule_injection.acceptance.py`（10 断言，K5-E1..E6）。
+- **冻结契约定形**：派生接缝 = `front_app.py` 模块级纯函数 `build_schedule_summary(model, today_iso)`；内部通道帧 token = `kidpal_schedule_summary`（kidpal_speak 同型先例）；填充接缝 = connection.py 内 `{{schedule_summary}}` 替换、引擎零解析；定稿窗口 = 3 日历日 / ≤2048 字节；**注入内容含学校节次名 + 备注列逐字**（TECH-261018 编造证据恰是学校课与带物）。
+- **扩单一项（planner 决定）**：`server/gateway/front/front_app.py` 入 changeManifest——T5 候选甲通道原点必在 front 侧派生，manifest 内自足落法只剩 connection.py 自解析 MD = T5 已否决 + 违反契约 §1.5。launch-card 预设停等判据命中，扩单后放行 builder。
+- **簿记**：dispatch-stamp ×2（补实测值）+ over-scan ×1；taskpackage.json 回填（acceptance 6 条目 + acceptanceTestsFile + redBaselineResult + 扩单）；brief 重生成（refs 改动）；current/ 投影刷新；required check 零错误。
+- **builder 已派**（例行形态默认档）：8 红转绿目标 = acceptance 278 passed。
+
+## 2026-10-23 · P5 builder 全绿 + verifier scoped 绿 + 进 integrator（planner）
+
+- **builder 实现（未 commit，改动 3 件全在 changeManifest 内）**：`front_app.py` 新增 `build_schedule_summary(model, today_iso)` 纯函数（只调 `items_for_date` 单源符号、学校节次+备注从单源模型行回查、窗口 3 日历日/≤2048 字节整日粒度截断）+ 会话建立时经 `_send_engine_leg_frames` 发 `kidpal_schedule_summary` 帧；`connection.py` 占位填充单收口落 `change_system_prompt`（三时序安全：帧先到/后到/二次到达均正确，缺席填「（本次会话未提供）」不编造）+ 启动标记 `kidpal schedule-summary patch active`；manifest 仅补 note 标记载行。**schedule.py 零改动**；`kidpal-agent-prompt.txt`/装配壳零改动；m3k1/m3k3 冻结件零触碰。
+- **验证**：acceptance **278 passed / 4 deselected / 33 subtests**（逐字达标）、unit 115 passed、契约零 diff。分支/边界由一次性探针覆盖（未持久化——unit 层按 K1 先例以既有套件零新增红承载，integrator docs-delta 诚实申报）。
+- **P1 遗留观察项（builder 遗留②，跨包）**：装配壳 jinja2 单遍渲染下 `{{today_date}}` 等日期/天气占位可能字面进 live prompt（`{{schedule_summary}}` 本包已填不受影响）——K5-E4 live 轮顺带实证，若确认归 P1 收尾小批（候选落点 connection.py `change_system_prompt` 同缝），本包不扩。
+- **verifier**：scoped r1（invocation `86204f35`）`ok:true`、FS-EVIDENCE-2 过；final r2 由 integrator 携 scope-file 跑（invocation `becb85f0`）。FS-EVIDENCE-1 过（3 件改动全在 manifest 面）；dispatch-stamp ×2 + over-scan ×1 落账。
+
+## 2026-10-23 · P5 integrator 收口（未 commit→commit，未合并）
+
+- **final bearing r2 绿**（invocation `becb85f0-afdb-4d4d-a281-a40b99fb0325`，evidence r2.json，fact ok:true，10 闸全绿）：acceptance 圈定跑 160 passed / 5 subtests（scope 清单 10 件恰合）+ unit 220 passed / 5 subtests + firmware 真编译绿；verifier-evidence-check exit 0。scoped r1（`86204f35`）此前已绿。
+- **范围圈定**：detect_changes（C-AI-KidPal-pod-m2，base=main，merge_base fdd643b3，impacted_total=66）+ impactedTests 4 件种子 + 共享 seam 4 件合成 test-scope 清单落盘 `test-scope-final.txt`（正常圈定、无降级）；路径一行已记 review-packet。
+- **制品**：docs-delta.md（两声明注记：P1 遗留占位观察 + unit 层口径）+ review-packet.md（findings 仅 2 NIT judgement-call，无 BLOCKING/SHOULD）+ verdict.json / verification.json 晋升 + closeout-check --update-index 绿。
+- **TECH-261018 结项（K5-E5）**：status closed + closedBy = 本包 + 结项记 append；debt-render 跑过、归位 `docs/debt/tech/_archive/2026/`。
+- **停等位**：`awaiting-human:live-deploy`——K5-E4 live 段（真机 ≥20 轮零工具调用零编造）挂 human 部署轮；connection.py engine-face 重启 = 设备断连重连（K1 同款）；manifest note 三条生效标记行核验锚。
