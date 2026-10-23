@@ -176,3 +176,11 @@
 - **停等位：`awaiting-human:live-deploy`**——live 项移交 human 部署轮：① **先 `docker compose up -d` 重建容器**（新增 bind-mount 首次生效 = 唯一路径，deploy.sh 只 restart 不重建；容器重建 = 设备全断，需安排窗口）；② K2-E6 真机跨 WS 新会话问此前讲过的事实能答出（真机半）；③ 引擎日志见 `kidpal persistent-session patch active` 标记行（探针门控——若见 `INACTIVE` error 行 = bind-mount 未生效，即回查）；④ 持久会话增长 / auto-compaction 成本只记观察，不在本包定阈值。
 - **M5 五包列车进度**：P1 ✓ → P5 ✓ → **P2 ✓（merged，待部署）** → P3/K3（mo53，dependsOn K2 已满足）→ P4/K4（mo54）。
 - **部署核对锚（可机判）**：`docker compose config` 应见 `./engine-patch/openai.py:/opt/xiaozhi-esp32-server/core/providers/llm/openai/openai.py` 挂载；manifest md5 核验过 verify-deploy；两轮追问「我刚才说的第二件事是什么」跨新 WS 会话仍记得 = 持久会话生效。
+
+## 2026-10-23 · P2 部署轮——机械锚全绿 + Edge TTS 403 事故热修（planner 主线程，human 授权）
+
+- **部署收口**：`deploy.sh` 常规闸过（首跑 REFUSE 属 dry-run 把 clone HEAD 留在新批态的伪漂移——clone 拨回部署戳 2d338dd1 后 drift 0 放行，教训：dry-run 后跑真部署前把 clone 拨回上一部署戳）；DEPLOY OK @ 3cd909e6（快照 20261023-144516）；`docker compose up -d` 重建容器 → openai.py bind-mount 在场；**四 marker 全打**（含探针门控的 `kidpal persistent-session patch active`——能打出 = provider 探针实测过）；设备 14:46 重连，课表摘要入会话态 len=158。
+- **Edge TTS 403 事故（真机首回合「卡思考页」）**：LLM 腿全通（回复内容正确且引用课表注入——P2/P5 均在工作）；卡死点 = TTS 每段 403（`speech.platform.bing.com` 拒 7.2.6 的 Sec-MS-GEC 参数，13:40–14:48 之间微软侧收紧）。判别链：时钟同步排除 → 容器 3/3 稳定 403 排除瞬时 → 本机同库 7.3.1 成功 → **升级 7.3.1 即愈**。
+- **热修两步**：① 容器内 pip 升级 + 引擎重启（即时解除，14:55 四 marker 复现全绿）；② 耐久化载体 = `server/deploy/engine-patch/edge-tts-731/`（wheel 原样解包、与容器内逐字节同源）+ compose 两条 bind-mount 阴影 site-packages（`edge_tts` + dist-info）+ manifest 16 条 `restart: none` 登记——`docker compose up -d` 重建不回退。回流仓随本批 commit（K1 热修回流先例）。
+- **debt 登记**：`docs/debt/tech/TECH-261023-edge-tts-drm-single-point.md`（deferred——TTS 单点外部依赖余量：无可用性探针 / 备选 TTS 未接通〔box 上现有凭据无可直插路径，选型归 human〕/ carrier 不防下次版本淘汰）。
+- **待办**：① K2-E6 两轮真机复证（TTS 解除后做——第 1 轮同会话记忆 + 第 2 轮跨 WS 断连重连后记忆）；② 热修 commit push 归 human → ECS deploy.sh 对账铺载体（挂载已手工在位，对账轮零设备断连）；③ 本地 main 与 origin 差 = 热修批。
