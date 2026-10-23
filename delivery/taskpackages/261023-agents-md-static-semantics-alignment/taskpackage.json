@@ -1,0 +1,94 @@
+{
+  "changeId": "261023-agents-md-static-semantics-alignment",
+  "rigor": "lite",
+  "sourceType": "arch-review",
+  "origin": {
+    "type": "arch-review",
+    "human-verbatim": "「直接起批 A+B，其他的先记录到 debt里」（2026-10-22 AGENTS.md advisory review 出清后，human 2026-10-23 对批 A+B 起批指示；S2/S7 排除出本包归 debt）。",
+    "upstreamType": "arch-review",
+    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md",
+    "upstreamFrozen": "advisory 落盘（architect 2026-10-23，只读检视）+ architect reviewed plan（plan.md 逐字终稿，六件冻结件内存替换实跑验证）+ human 触点①（②单包 Lite + S3 甲案：architect-reviewer 四分类后随包落）；plan.md 即冻结技术输入、只读消费",
+    "workstream": ""
+  },
+  "subsystem": "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（kidpal agent 静态语义单一事实源）+ server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md（B1 同口径）+ server/acceptance（新验收件）",
+  "story": "261023-agents-md-static-semantics-alignment · 批 A+B：AGENTS.md 静态语义与现行链路口径对齐——B1 课表问答行对齐 P5 机械注入（摘要优先/窗口外或截断读文件+降级句）、B2 故事节撤 261019 前旧管道（front 整理回合产出、删重录/挽回）、S1 提醒 cron 行收编为兜底+单源指针、B3 补「不编造记忆」负向、S3 隐私句锚串后追加孩子日程澄清（甲案：四分类后落）、S4/S5/S6/N1–N6 措辞与矛盾消解。权威对账 = arch §5.2/§5.2④ + requirements S-F2.2 AC4 / S-F1.3 AC1/AC4 已冻结口径——本包把静态 prompt 拉回已冻结 spec，非新语义。",
+  "planRef": "delivery/taskpackages/261023-agents-md-static-semantics-alignment/plan.md",
+  "sourceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md",
+    "delivery/taskpackages/261023-agents-md-static-semantics-alignment/plan.md",
+    "docs/architecture.md#§5.2",
+    "docs/requirements.md#S-F2.2",
+    "docs/requirements.md#S-F1.3",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md"
+  ],
+  "acceptance": [
+    "A1",
+    "A2",
+    "A3"
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py"
+  ],
+  "impactedTests": [
+    "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py",
+    "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+    "server/acceptance/test_261022_honcho_memory.acceptance.py",
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline"
+  ],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "acceptance-author 冻结相位实跑（2026-10-23，本树 lite 快路径）：① 新件 3 failed（A1/A2/A3 设计态红，与 plan §10 预言一致）；② 六件读数冻结件 101 passed / 4 deselected 逐件一致；③ 全量含新件 = 3 failed + 313 passed + 6 deselected + 33 subtests（3 failed 恰为新件自身）；④ 全量排除新件 = 313 passed / 6 deselected / 33 subtests 零 failure。plan §10 三条判法同时成立，唯一允许的红 = 新件 3 条。断言实现形态注记：A2/A3 未用 subTest（pytest 9.1.1 subTest 父级 PASSED 形态会偏离 3/3 红判法），改普通 assert 逐锚失败消息；锚集与语义零变化。",
+  "exitCriteria": [
+    "AG-X1: 新验收件 3 条断言（A1 摘要优先口径两文件同口径 / A2 故事旧管道撤净 / A3 提醒单源+记忆负向+S3 澄清）设计态红转绿；既有冻结件零新增红——六件读数件 101 passed / 4 deselected 逐件一致 + 全量 acceptance 313 passed / 6 deselected / 33 subtests 零 failure（plan.md §10 三条同时成立）",
+    "AG-X2: plan.md §3 冻结锚保护清单逐条对账（review-packet 表，附验证方式）——K1/K3/M3K3/M4K3/v7/perf 锚全保；K3_P1_AGENTS_ANCHORS 六串含隐私锚串逐字在场（S3 只在锚串后追加）",
+    "AG-X3: B2 对账项（「讲错啦」零文本检出 + 丢弃链三处载体）builder 静态对账落 review-packet，debt 候选申报归主线程登记（plan.md §5）",
+    "AG-X4: closeout 制品齐 + closeout-check 绿 + supervisor 机械闸判定完成；部署（deploy.sh 同批铺放 AGENTS.md + SKILL.md）归 human 部署轮，本包到 live 门前停等 awaiting-human:live-deploy——与 K3 部署轮合流，seeded 负向探针测最终措辞（plan.md §6 live 判读注记）"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md",
+    "docs/architecture.md",
+    "docs/requirements.md",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包是把静态 prompt 拉回已冻结 spec（arch §5.2/§5.2④ + requirements S-F1.3 AC1/AC4 / S-F2.2 AC4 现文已载新口径），零 spec 改动、零契约触面；plan.md §1 权威对账节承载依据。",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "本包主体 = live prompt 文本措辞修订；验收以冻结锚保留（六件既有验收件零新增红）+ 三条新文本断言承载，属证据面而非分支逻辑面，变异取证 ROI 不成立。",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯云端 prompt 文本面：零 wire 形状改动、零帧类型/字段/序列化触碰（display E1 / B1 课表 MD / §三提醒 / §四私有消息帧零触）；设备端零感知、固件零 diff。triage architect 逃生门预查 = 全包 spec-clean 唯 S3 疑似（甲案：architect-reviewer 四分类前置，human 2026-10-23 裁）。"
+  },
+  "changeManifest": [
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/openclaw-skills/workspace-kidpal/kidpal-schedule-answer/SKILL.md",
+    "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py"
+  ],
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTier": "low",
+  "gateProfile": [
+    "test-quality",
+    "evidence-integrity"
+  ],
+  "dependsOn": null,
+  "mergeOrder": null
+}

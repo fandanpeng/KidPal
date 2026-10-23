@@ -96,3 +96,4 @@
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |
+| [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | closed | device-memory-overhaul |

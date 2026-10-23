@@ -33,8 +33,166 @@
     "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
     "docs/requirements.md#§NFR-PRIV-1"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
+  "acceptance": [
+    {
+      "id": "K3-E1",
+      "title": "Honcho 栈生产化落盘 server/deploy/honcho/**：五容器 compose（全部 published 端口显式 127.0.0.1、api 18100、恰一 pgvector service 持久卷）+ 配置（EMBEDDING_VECTOR_DIMENSIONS=1536 / DERIVER_FLUSH_ENABLED / baseUrl loopback / 出网仅 DeepSeek+DashScope 记账管线、负锚词表零命中）+ apply/rollback/healthcheck 工件 + manifest 登记 ≥4 + verify-deploy 核验 + A4 红线（backfill 子树零创建）",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+          "tests": [
+            "test_k3_e1_compose_five_services_api_loopback_only",
+            "test_k3_e1_config_loopback_outbound_accounted_no_secret",
+            "test_k3_e1_apply_rollback_healthcheck_present",
+            "test_k3_e1_manifest_registers_honcho_assets",
+            "test_k3_e1_verify_deploy_checks_honcho_health_and_loopback",
+            "test_k3_e1_no_backfill_subtree_a4_redline"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T1",
+        "docs/requirements.md#§NFR-PRIV-1",
+        "docs/requirements.md#§NFR-SEC-2"
+      ],
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+        "server/deploy/apply-xiaozhi-overlay.sh"
+      ]
+    },
+    {
+      "id": "K3-E2",
+      "title": "写入资格门载体锚（读写同门）：门判据 = 请求携 user=<device_id> 的锚在场于链路件；front 一次性回合 payload 零 user（host 结构面）；marker 探针 DB+日志双证为 live 面（live 标记 deselected，K3-E7 live 轮执行）",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_memory_isolation.acceptance.py",
+          "tests": [
+            "test_k3_e2_gate_carrier_anchors",
+            "test_k3_e2_front_oneshot_payload_no_user"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
+        "docs/requirements.md#S-F5.1-AC5"
+      ],
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "server/gateway/front/front_app.py",
+        "docs/architecture.md"
+      ]
+    },
+    {
+      "id": "K3-E3",
+      "title": "v12 守则落 AGENTS.md 静态语义：v12 记忆守则段在场（孩子世界事实必须记 / 家长隐私信息不记）、P1 迁移段单向追加零回改、引擎动态块零记忆纪律；seeded 负向探针集 100% 零命中为 live 面（live 标记 deselected，K3-E7 live 轮执行）",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+          "tests": [
+            "test_k3_e3_agents_md_v12_memory_section",
+            "test_k3_e3_p1_sections_untouched_single_direction_append",
+            "test_k3_e3_dynamic_context_free_of_memory_discipline"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "docs/requirements.md#S-F5.1-AC3",
+        "docs/requirements.md#§NFR-PRIV-1"
+      ],
+      "sourceRefs": [
+        "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ]
+    },
+    {
+      "id": "K3-E4",
+      "title": "记忆口径与生命周期：删除 = 运维面手工、范围 = 画像与 observation/消息存储（不删 OpenClaw 完整日志 / 回填源语料 / 诊断日志）、备份 = 不备份靠重建（OQ-10 语义）、无自助删除界面——lifecycle 断言落地",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+          "tests": [
+            "test_k3_e4_lifecycle_no_backup_no_self_delete"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "docs/requirements.md#§NFR-PRIV-1",
+        "docs/requirements.md#S-F5.1-AC4"
+      ],
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
+      ]
+    },
+    {
+      "id": "K3-E5",
+      "title": "降级语义守卫：记忆服务不可用 → 本轮无画像注入、对话与回复照常、不阻塞、不静默重试风暴、记忆失败不进用户可见兜底、记忆数据不进日志导出与展示面（守卫断言 + E4/E5/E7 头注申报自检冻结时点即绿）",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_memory_isolation.acceptance.py",
+          "tests": [
+            "test_k3_e5_degradation_guards"
+          ]
+        },
+        {
+          "file": "server/acceptance/test_261022_honcho_memory.acceptance.py",
+          "tests": [
+            "test_k3_e4_e5_e7_declarations_in_header"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "sourceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ]
+    },
+    {
+      "id": "K3-E6",
+      "title": "openclaw.json 声明式 patch 工作台（server/deploy/261022-openclaw-honcho-plugin/**）：声明工件 schema + P1 已应用态现状锚、apply 幂等且保全 P1 tools allowlist、drift_guard 检出漂移 exit 3、apply 时间戳备份、rollback dry-run + restore、openclaw.json 整文件不入仓 + 零内联 secret、manifest 登记工作台",
+      "asserts": [
+        {
+          "file": "server/acceptance/test_261022_memory_isolation.acceptance.py",
+          "tests": [
+            "test_k3_e6_declaration_schema_and_p1_drift_anchor",
+            "test_k3_e6_apply_idempotent_and_preserves_p1_state",
+            "test_k3_e6_apply_drift_guard_exit3",
+            "test_k3_e6_apply_timestamped_backup",
+            "test_k3_e6_rollback_dry_run_and_restore",
+            "test_k3_e6_no_openclaw_json_in_repo_and_no_secret",
+            "test_k3_e6_manifest_registers_the_workbench"
+          ]
+        }
+      ],
+      "acceptanceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+      ],
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "server/deploy/manifest.yaml"
+      ]
+    },
+    {
+      "id": "K3-E7",
+      "title": "live 观测项（零自动断言，live 标记 deselected + 头注申报）：新 WS 新会话跨会话回忆对照 / seeded 负向探针集 live 轮 100% 零命中（test_live_k3_e3_*） / marker 探针 DB+日志双证（test_live_k3_e2_*） / 2C/4G prep 税与内存读数复测回填 TECH-261022-openclaw-prep-tax-memory-pressure / arch §6.7 抽取策略实测成形（回填走 /arch-change）——live 门前停等 awaiting-human:live-deploy",
+      "asserts": [],
+      "acceptanceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
+        "docs/debt/tech/TECH-261022-openclaw-prep-tax-memory-pressure.md",
+        "docs/requirements.md#S-F5.1-AC2"
+      ],
+      "sourceRefs": [
+        "docs/debt/tech/TECH-261022-openclaw-prep-tax-memory-pressure.md",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§1"
+      ],
+      "kind": "structural"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261022_honcho_memory.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
   "impactedTests": [
     "server/acceptance/test_261022_honcho_memory.acceptance.py",
     "server/acceptance/test_261022_memory_isolation.acceptance.py",
@@ -50,7 +208,7 @@
     "real-db"
   ],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；新增记忆/隔离验收断言按设计态红，既有套件须零新增红）。",
+  "redBaselineResult": "acceptance-author 冻结相位 2026-10-23 实跑（命令 = redBaselineCommand；冻结件由 acceptance-author 落盘、429 中断后 planner 代收口回填）：① 冻结前（既有套件，剔除两新件）= 292 passed / 0 failed / 4 deselected / 33 subtests passed（P2 后锚逐字命中、无偏离）；② 冻结后全量 = 296 passed / 17 failed / 6 deselected / 33 subtests，零 error。17 红全为设计态红、全落两新件、按面归因六源：E1 栈生产化未建 8 红（compose / 配置 / apply-rollback-healthcheck / manifest / verify-deploy / A4 红线探针）、E6 patch 工作台未建 7 红（schema / apply 幂等 / drift_guard exit3 / 时间戳备份 / rollback / 不入仓 / manifest 登记）、E2 门载体锚未接线 1 红、E3 v12 段未追加 1 红、E4 lifecycle 断言 1 红、E5 降级守卫 1 红；既有套件零新增红（剔除两新件实跑零 failed）。must-stay-green 4 条冻结时点即绿：E3 动态块零纪律 / E3 P1 段单向追加 / E4-E5-E7 头注申报自检 / E2 front 一次性回合 payload 零 user（P2 后现状即合规）。deselected 4→6 = 新件两条 live 标记（test_live_k3_e2_marker_probes_db_log_double_evidence / test_live_k3_e3_seeded_negative_probe_set_zero_hit），K3-E7 live 轮执行。转绿目标 = acceptance 296+17=313 passed / 0 failed / 6 deselected / 33 subtests（296 为冻结时点 passed 计数，17 红转绿后即 313；verifier 判据 = 0 failed + 既有 292 零新增红）。",
   "exitCriteria": [
     "K3-E1: Honcho 自托管栈生产化落盘 server/deploy/honcho/**（compose + 配置 + apply/rollback + 健康检查）：五容器、api 127.0.0.1:18100 全 loopback、postgres+pgvector 本机持久卷；manifest.yaml 登记与 verify-deploy.sh 端口/健康核验；出网仅 NFR-SEC-2 ⑤ 两条（deriver→DeepSeek、embedding→DashScope），数据本机不出网",
     "K3-E2: 写入资格门全局生效：仅 kidpal 语音链路且请求携 user=<device_id> 的回合可读写记忆；front 引导/整理一次性回合不携 user → marker 探针（DB / 日志双证）零命中；主链路正证同 marker 命中；读侧同门（非资格回合不注入画像）",
@@ -85,6 +243,7 @@
   "docsSyncReason": "架构面 §1.1/§1.2/§3.1/§4/§5.1.2/§5.3.2/§5.3.3/§5.4/§6.7/§8.1 与 NFR-PRIV-1 / NFR-SEC-2 ⑤ 已由 261022 两面 landing（requirements v1.67 + arch FROZEN v1.1）落稿；本包只落实现面。§6.7 抽取策略「实测成形后回填」若需改 spec，走 /arch-change 逃生门，不在 Pod 内自裁。",
   "docsOwner": "integrator",
   "securityReviewRequired": true,
+  "securityEvidence": "安全证据面（gateProfile security / real-db / evidence-integrity 承载）：① 网络面——五容器全部 published 端口显式绑定 127.0.0.1（E1 compose 断言 + verify-deploy.sh loopback 双核验：ss 监听面无非 loopback 绑定即 DRIFT）；出网仅 NFR-SEC-2 ⑤ 两条记账管线（deriver→DeepSeek、embedding→DashScope），K3_FORBIDDEN_HOSTS 负锚词表断言记账外端点零命中。② 凭据面——DASHSCOPE_API_KEY / DEEPSEEK_API_KEY / POSTGRES_PASSWORD 均名字引用（honcho.env.example 空值模板，真实值仅 ECS /opt/honcho/.env）；openclaw.json 整文件不入仓 + 零内联 secret（sk- 长键负锚）+ apply 脚本定点写声明键、gateway/P1 tools 原样保留。③ 资格门——仅请求携 user=<device_id> 的回合可读写记忆（读写同门），front 一次性回合 payload 零 user 守卫；marker 探针 DB+日志双证归 K3-E7 live 轮。④ 删除与备份——删除 = 运维面手工、范围 = 画像与 observation/消息存储；备份 = 不备份靠重建，零 pg_dump、零出网备份（E4 lifecycle 断言）。⑤ 降级——记忆失败不进用户可见兜底、不静默重试风暴（E5 守卫断言）。",
   "adrRequired": false,
   "mutationRequired": false,
   "mutationSkipReason": "本包主体 = 自托管栈声明 / 插件配置 / 守则文本 / 隔离判据；验收以 marker 探针 DB+日志双证、seeded 负向探针集与降级路径为主，属证据面而非分支逻辑面，变异取证 ROI 不成立。",

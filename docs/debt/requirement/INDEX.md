@@ -7,15 +7,17 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/requirement/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 0（待拍板 0 / 待触发 0 / 已接受风险 0）；已结 2（归档索引见下）。
+**摘要**：未结 1（待拍板 0 / 待触发 1 / 已接受风险 0）；已结 2（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（0）
+## 待触发（1）
 
-_（无）_
+| ID | 严重度 | title | 等什么触发 |
+|---|---|---|---|
+| [REQ-261023-family-arrangement-scope-clarification](REQ-261023-family-arrangement-scope-clarification.md) | SHOULD | NFR-PRIV-1 ①「家庭安排」范围未澄清——与 S-F1.3 AC4「备注列参与语音答复」在接送/出行类备注上字面冲突（spec 内部张力，非措辞问题）；一句话澄清即可消解 | 下一次需求面变更批；或 human 指示即刻起草（批 A+B 已落 prompt 侧表态，spec 侧澄清不阻塞） |
 
 ## 已接受风险（0）
 

@@ -150,3 +150,51 @@ if not no_alerts:
 
 sys.exit(1 if findings else 0)
 PYEOF
+VERIFY_RC=$?
+
+# ── Honcho 记忆子系统核验段（261022-m5-k3 / K3-E1；arch §5.3.3 ③「记忆子系统
+#    api 18100 仅本机可达、五容器其余端口公网不可达」的机检承载）──
+# compose 声明面（published 端口全显式 127.0.0.1）+ 运行态双核验：
+#   ① loopback 探针：127.0.0.1:18100 本机可达且监听面无非 loopback 绑定；
+#   ② 五容器健康门：docker compose ps 全部 running/healthy（compose ps 路径，
+#      端口探针不能替代容器健康）。
+# 漂移同样并入口径：任何一段失败 → 本脚本 exit 1（每日 drift timer 消费同脚本）。
+HONCHO_DIR_LIVE="${KIDPAL_HONCHO_DIR:-/opt/honcho}"
+HONCHO_FAIL=0
+if [ ! -d "$HONCHO_DIR_LIVE" ]; then
+  echo "DRIFT [honcho] $HONCHO_DIR_LIVE 不在世——记忆子系统栈未部署（K3-E1 消费位缺失）"
+  HONCHO_FAIL=1
+else
+  if command -v ss >/dev/null 2>&1 && ss -tln 2>/dev/null | grep -q ':18100 '; then
+    if ! ss -tln 2>/dev/null | grep ':18100 ' | grep -q '127.0.0.1:18100'; then
+      echo "DRIFT [honcho] 18100 存在非 127.0.0.1 监听——api 暴露公网（出网红线失守）"
+      HONCHO_FAIL=1
+    fi
+  fi
+  if command -v curl >/dev/null 2>&1; then
+    if ! curl -sS -m 5 -o /dev/null http://127.0.0.1:18100/ 2>/dev/null; then
+      echo "DRIFT [honcho] 127.0.0.1:18100 loopback 探针失败——api 未就绪"
+      HONCHO_FAIL=1
+    fi
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    HONCHO_PS="$(docker compose --project-directory "$HONCHO_DIR_LIVE" ps --format '{{.Service}} {{.State}}' 2>/dev/null || true)"
+    HONCHO_TOTAL="$(printf '%s\n' "$HONCHO_PS" | grep -c . || true)"
+    HONCHO_BAD="$(printf '%s\n' "$HONCHO_PS" | grep -cv 'running\|healthy' || true)"
+    if [ "${HONCHO_TOTAL:-0}" -ne 5 ]; then
+      echo "DRIFT [honcho] 五容器健康门不满足：compose ps 计数 ${HONCHO_TOTAL:-0}/5"
+      HONCHO_FAIL=1
+    fi
+    if [ "${HONCHO_BAD:-0}" -ne 0 ]; then
+      echo "DRIFT [honcho] 有容器非 running/healthy："
+      printf '%s\n' "$HONCHO_PS" | grep -v 'running\|healthy' || true
+      HONCHO_FAIL=1
+    fi
+  else
+    echo "DRIFT [honcho] docker 不在位——五容器健康门不可核"
+    HONCHO_FAIL=1
+  fi
+fi
+[ "$HONCHO_FAIL" -ne 0 ] && VERIFY_RC=1
+
+exit "$VERIFY_RC"

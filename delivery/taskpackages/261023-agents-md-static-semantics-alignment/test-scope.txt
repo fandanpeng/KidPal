@@ -1,0 +1,17 @@
+# test-scope · 261023-agents-md-static-semantics-alignment · final 相位影响面圈定清单
+# 合成方式：detect_changes（C-AI-KidPal，inbound，depth=2）+ TaskPackage impactedTests 种子 + blast radius 映射（acceptance 全目录 grep 两份 prompt 资产引用）+ 安全余量。
+# detect_changes 结果：图可用、无降级；changed_files 仅 .codebase-memory 快照 2 件 + 两份 prompt 文本/新验收件（未提交、非符号承载面）→ 代码符号 impacted_total = 0（prompt 文本面无调用图符号）。
+# 圈定语义 = 影响面圈定，非全量：种子 7 件 ∪ blast radius 映射 3 件（下述 261017/261022 两白名单件 + memory_isolation 件，仅引用 skill 名集合、非内容锚，入安全余量）。
+# 安全余量另注：builder/verifier 已另跑全量 acceptance（316 passed / 6 deselected / 33 subtests）作圈定外旁证，不在本清单消费面内。
+# seeds（acceptanceTestsFile + impactedTests，taskpackage.json）
+server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+# blast radius 映射补充（acceptance 目录内引用 workspace-kidpal/AGENTS.md 或 kidpal-schedule-answer 的其余 3 件）
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
