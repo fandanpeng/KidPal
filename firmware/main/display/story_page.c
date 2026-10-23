@@ -1592,7 +1592,7 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 ring = lv_obj_create(scr);
                 lv_obj_remove_style_all(ring);
                 lv_obj_set_size(ring, sz, sz);
-                lv_obj_set_pos(ring, LV_HOR_RES / 2 - sz / 2, 40 + (is_inner ? 16 : 0));
+                lv_obj_set_pos(ring, LV_HOR_RES / 2 - sz / 2, 10 + (is_inner ? 16 : 0));
                 lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
                 lv_obj_set_style_border_width(ring, (is_inner && spec.inner_dashed) ? 2 : 6, 0);
                 lv_obj_set_style_border_color(ring, lv_color_hex(KSY_COLOR_INK), 0);
@@ -1613,21 +1613,27 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 if (kidpal_story_stamp_text(v->stamp_serial, txt, sizeof(txt)) == 0) {
                     lv_obj_t *sl = lv_label_create(scr);
                     lv_label_set_text(sl, txt);
-                    lv_obj_set_pos(sl, LV_HOR_RES / 2 - 90, 190);
+                    /* 261023 观感直修（对齐 V5 p3-stamp-frame 设计稿）: 文案水平居中
+                     * （旧 x=110 定值左偏）+ y 158（印章上移后腾出的中部带）。 */
+                    lv_obj_set_pos(sl, (LV_HOR_RES - ksy_utf8_chars(txt) * 14) / 2, 158);
                     lv_obj_set_style_text_color(sl, lv_color_hex(KSY_COLOR_TEXT), 0);
                     lv_obj_set_style_text_font(sl, &font_puhui_14_1, 0);
                 }
             }
-            /* pose-jump 定格位图 (p3-stamp 三件套之一, spec S-F2.4)：经资产层 loader
-             * 合成、右下角确定空白区 (rings 收在 x<270、文案 y=190 之左 -> 不遮不变量)。
-             * 不可用时静默降级, 双圈 + 文案仍在。 */
+            /* pose-jump 定格位图 (p3-stamp 三件套之一, spec S-F2.4)：261023 观感直修
+             * （真机轮 human 实证「猫咪跑到底部横线下面被键帽条裁掉」+ 设计稿自身
+             * 「猫咪挡字」两处一并修）: 旧右下角定位 (296,196..292) 侵入键帽条区
+             * (y>=262)。新形态对齐 V5 设计稿 = 猫咪**居中**坐在文案下方、整体缩放
+             * 200/256≈0.78（96 -> 75px）落在 y 178..253，键帽条上沿 262 之上、
+             * 不与文案（158..176）重叠。不可用时静默降级, 双圈 + 文案仍在。 */
             {
                 const lv_image_dsc_t *pd = kstory_pose_dsc("pose_jump_96.bin");
                 if (pd != NULL) {
                     lv_obj_t *pi = lv_image_create(scr);
                     lv_image_set_src(pi, pd);
-                    lv_obj_set_pos(pi, LV_HOR_RES - (int)pd->header.w - 8,
-                                   LV_VER_RES - (int)pd->header.h - 8);
+                    lv_image_set_pivot(pi, 0, 0);
+                    lv_image_set_scale(pi, 200);
+                    lv_obj_set_pos(pi, (LV_HOR_RES - (int)pd->header.w * 200 / 256) / 2, 178);
                 }
             }
             break;

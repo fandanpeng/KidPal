@@ -114,6 +114,15 @@ int kidpal_keybar_story_slots(int substate, const char **out_left,
             *out_left  = "";
             *out_right = "";
             return 0;
+        case KSTORY_PAGE_STAMP:
+            /* 261023 观感直修（真机轮 human 实证 + V5 p3-stamp-frame 设计稿）:
+             * 盖章演出帧 = 非交互庆祝驻留, 双槽留空（同 ORGANIZING 形态——此前
+             * STAMP 不落本表回落通用分支, 画出残留语音场景键帽, 与设计稿「演出
+             * 帧无键帽」冲突）。STAMP 期间 KEY/BOOT 手势由页输入函数裁决
+             * （STAMP 全手势 GLOBAL 交回全局路由, 键帽留空不诱导误按）。 */
+            *out_left  = "";
+            *out_right = "";
+            return 0;
         case KSTORY_PAGE_READER:
             *out_left  = "长按退出";
             *out_right = "翻屏";

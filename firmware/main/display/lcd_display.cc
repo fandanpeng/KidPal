@@ -1396,7 +1396,8 @@ static void kidpal_keybar_sync_locked(void)
     int dots_overlay = (overlay_top != 0 ||
                         story_sub == KSTORY_PAGE_BODY_UNAVAILABLE ||
                         story_sub == KSTORY_PAGE_RECORDING ||
-                        story_sub == KSTORY_PAGE_ORGANIZING) ? 1 : 0;
+                        story_sub == KSTORY_PAGE_ORGANIZING ||
+                        story_sub == KSTORY_PAGE_STAMP) ? 1 : 0;
 
     /* 渲染节点页 (KP_PAGE_*) 与键路由页序 (PAGE_P1..PAGE_P3) 撤 P4 后逐项同序同值，
      * 页索引映射塌成恒等——直取即为「当前画的是哪一页」，无需换算表（实心页点与页槽
@@ -1419,7 +1420,10 @@ static void kidpal_keybar_sync_locked(void)
         if (story_sub == KSTORY_PAGE_DELETE || story_sub == KSTORY_PAGE_READER ||
             story_sub == KSTORY_PAGE_RECORDING ||
             story_sub == KSTORY_PAGE_ORGANIZING ||
+            story_sub == KSTORY_PAGE_STAMP ||
             story_sub == KSTORY_PAGE_BODY_UNAVAILABLE) {
+            /* 261023 观感直修: STAMP 并入（盖章演出帧双槽留空, V5 p3-stamp-frame
+             * 设计稿「演出帧无键帽」; keybar.c kidpal_keybar_story_slots 同批加行）。 */
             /* D3 v7（261019 fixer）: RECORDING 帧分叉走 kidpal_keybar_story_rec_slots
              * （帧 A 收尾/丢弃, 帧 B 打断/留空）; ORGANIZING 走 story_slots 整理行
              * （双槽留空, 非交互）。其余子态既有 story_slots 表零偏移。 */
