@@ -81,3 +81,10 @@
 - **K1-E8 执行**：`workspace-kidpal/SOUL.md`(1518B)/`USER.md`(871B) 在场 → 备份 `/opt/kidpal/deploy-backups/20261023-k1-soul-user/` 后瘦身为指针壳（228B/224B）。
 - **live 核验全绿**：engine boot 干净（ASR/组件初始化成功）；设备 12:40:44 重连，`kidpal display-strip patch active` 标记行在场；**`快速初始化组件: prompt成功 <context>`** = 引擎装配壳 + 动态块生效（v11 注入退役）；`.config.yaml` 锚集 本回合时间/课表摘要 命中；`prompt_template` → 装配壳路径；front/openclaw-gateway active；tools allow 四项读回一致。
 - **K1-E7 余项（待语音回合）**：真机语音对话单轮 prompt_tokens ≤11,000 + cache 命中——设备在连但未开嗓，等 human 安排一轮回读数。
+
+## 2026-10-23 · K1-E7 live 实测达标——P1 全 exitCriteria 闭合（planner）
+
+- **观测回合**：human 让设备问「今天西安天气怎么样」（12:44:57，session 5cbd765f）。链路全通：ASR → kidpal agent 调 `web_search`（四项收窄工具真实工作）→ 真实数据播报（晴间多云 9-17℃，有查询支撑、非编造——底线不变量行为级验证）。
+- **token 实测**（openclaw transcript usage）：首轮 input 7,761 / cacheRead 0（新会话冷启动，≤11,000 目标 ✓，基线 22,116 → -65%）；二轮 input 3,949 + cacheRead 7,808 = 11,757（含 web_search 结果 ~3k 回合事实）——**cache hit 66% 覆盖稳定前缀（基线 32%，翻倍达成）**，每轮真成本（未缓存）14,948 → 3,949（**-74%**）。
+- **P1 收口**：K1-E1..E8 全部闭合（E7 实测达标、E8 已执行）。board merged / INDEX closed 不变；部署缺口两修复（SKILL 回流 + manifest 三补登）随 PR #19/#20 在 origin/main。
+- **下一包** = P5 `261022-m5-n2a-schedule-mechanical-injection`（mo51；消费本包动态块 `{{schedule_summary}}` 占位）。
