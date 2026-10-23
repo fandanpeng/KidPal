@@ -4,7 +4,8 @@ display_schema Q8 story floor 实现自带测（分支、边界与错误路径�
 与冻结验收（server/acceptance/test_m4k1_story_cloud_link.acceptance.py）的分工：冻结件
 是**规格**（26 齿，全绿）；本文件是实现自带测，覆盖规格未逐字段钉的边界/错误路径——
 账本损坏（非缺失）重建分支、显式 limit 分页、offset 超界、delete_story 非 str/空串 id、
-timed_out_sessions 的 timeout_s 覆盖与「查询不改状态」、Q8 floor 的边界样本。
+卡壳计时/引导轮次纯决策族的边界与「查询不改状态」（120s 语义退役后接位，261019
+p3-record-dialogue-guide builder 配套义务①）、Q8 floor 的边界样本。
 
 纯 stdlib + 按路径加载，零网络、零 ECS 依赖，任何 python3 可跑：
   cd server && python -m pytest -q tests/test_story_units.py
@@ -171,37 +172,128 @@ class FinishPhraseUnits(unittest.TestCase):
             self.assertFalse(story.is_finish_phrase(t), repr(t))
 
 
-class TimeoutDecisionUnits(unittest.TestCase):
-    """timed_out_sessions 纯决策：边界 / 排除 / 查询不改状态。"""
+class StuckGuideDecisionUnits(unittest.TestCase):
+    """卡壳计时/引导轮次纯决策（120s 语义退役后的接位决策族；261019-p3-record-dialogue-guide
+    builder 配套义务①——原 test_boundary_and_exclusions 的 AUTO_STOP_SECONDS==120 +
+    timed_out_sessions 边界断言随语义退役重写）：
 
-    def test_boundary_and_exclusions(self):
-        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "m4k1_ut_acc"))
-        t0 = datetime(2026, 9, 24, 12, 0, 0, tzinfo=dt_timezone.utc)
+    - 退役守卫：AUTO_STOP_SECONDS / StoryAccumulator.timed_out_sessions 不在世（复活 =
+      语义回退，M4K1-A5 重钉同口径）；
+    - stuck_due_sessions：>= 边界 / 等待锚（guide_since 优先、缺省 last_activity）/
+      feed 重置 / 非累积态排除 / 查询不改状态；
+    - auto_finish_due_sessions：轮数 2 已拍 + 第 2 轮计时到 + 收尾归档不丢弃；
+    - mark_guide_round：suppressed 亦计轮（q6 收声不停摆）、last_activity 不被污染。"""
+
+    def test_retired_120s_semantics_absent(self):
+        self.assertFalse(hasattr(story, "AUTO_STOP_SECONDS"),
+                         "AUTO_STOP_SECONDS 复活 = 120s 语义回退（requirements v1.65）")
+        self.assertFalse(hasattr(story.StoryAccumulator, "timed_out_sessions"),
+                         "timed_out_sessions 复活 = 120s 纯决策面回退")
+
+    def test_stuck_due_boundary_and_exclusions(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
         acc.start("s-old", now=t0)
         acc.feed("s-old", "内容", now=t0)
-        acc.start("s-fresh", now=t0 + timedelta(seconds=125))
-        acc.feed("s-fresh", "内容", now=t0 + timedelta(seconds=125))
+        acc.start("s-fresh", now=t0 + timedelta(seconds=30))
+        acc.feed("s-fresh", "内容", now=t0 + timedelta(seconds=30))
         acc.feed("s-chat", "闲聊", now=t0)              # 无 start -> chat
         acc.start("s-stopped", now=t0)
         acc.feed("s-stopped", "内容", now=t0)
         acc.stop("s-stopped", now=t0)                  # 已 stop -> 不再累积态
-        self.assertEqual(story.AUTO_STOP_SECONDS, 120)
-        self.assertNotIn("s-old", acc.timed_out_sessions(t0 + timedelta(seconds=119)))
-        self.assertIn("s-old", acc.timed_out_sessions(t0 + timedelta(seconds=120)))
-        at130 = acc.timed_out_sessions(t0 + timedelta(seconds=130))
-        self.assertIn("s-old", at130)
-        self.assertNotIn("s-fresh", at130)
-        self.assertNotIn("s-chat", at130)
-        self.assertNotIn("s-stopped", at130)
+        self.assertGreater(story.STUCK_GUIDE_SECONDS, 0)  # 名字冻结、数值不冻结
+        # 边界语义 = 严格大于（恰阈值不计入、过阈值触发；RDG-A2 边界②同口径）。
+        self.assertNotIn("s-old", acc.stuck_due_sessions(t0 + timedelta(seconds=8),
+                                                         timeout_s=8))
+        self.assertIn("s-old", acc.stuck_due_sessions(t0 + timedelta(seconds=8.5),
+                                                      timeout_s=8))
+        at30 = acc.stuck_due_sessions(t0 + timedelta(seconds=30), timeout_s=8)
+        self.assertIn("s-old", at30)
+        self.assertNotIn("s-fresh", at30)
+        self.assertNotIn("s-chat", at30)
+        self.assertNotIn("s-stopped", at30)
+        self.assertEqual(acc.routing("s-old"), "accumulate")  # 查询不改状态
 
-    def test_timeout_s_override_and_query_no_mutation(self):
-        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "m4k1_ut_acc2"))
-        t0 = datetime(2026, 9, 24, 12, 0, 0, tzinfo=dt_timezone.utc)
+    def test_feed_resets_streak_and_guide_since_anchor(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc2"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.feed("s", "开头", now=t0)
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=5))
+        self.assertEqual(acc.guide_rounds("s"), 1)
+        self.assertIn("s", acc.stuck_due_sessions(t0 + timedelta(seconds=11),
+                                                  timeout_s=5))
+        # 孩子接着说 = 回应：streak 清零 + 计时锚随 feed 前移。
+        acc.feed("s", "然后它回家了", now=t0 + timedelta(seconds=6))
+        self.assertEqual(acc.guide_rounds("s"), 0)
+        self.assertNotIn("s", acc.stuck_due_sessions(t0 + timedelta(seconds=11),
+                                                     timeout_s=5))
+        self.assertIn("s", acc.stuck_due_sessions(t0 + timedelta(seconds=11.5),
+                                                  timeout_s=5))
+
+    def test_mark_guide_round_suppressed_still_counts_and_keeps_activity(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc3"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.feed("s", "内容", now=t0 + timedelta(seconds=1))
+        anchor_before = t0 + timedelta(seconds=1)
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=5), suppressed=True)
+        self.assertEqual(acc.guide_rounds("s"), 1)
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=10), suppressed=True)
+        self.assertEqual(acc.guide_rounds("s"), 2)
+        # 计时锚 = 轮发出时刻（guide_since），last_activity 不被引导污染。
+        self.assertIn("s", acc.auto_finish_due_sessions(t0 + timedelta(seconds=16),
+                                                        timeout_s=5))
+        self.assertIn("s", acc.stuck_due_sessions(t0 + timedelta(seconds=16),
+                                                  timeout_s=5))
+        self.assertEqual(acc.guide_rounds("s"), 2)  # 查询不改状态
+
+    def test_auto_finish_needs_two_rounds_then_stop_archives(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc4"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
+        acc.start("s", now=t0)
+        acc.feed("s", "从前有一只小猫", now=t0)
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=5))
+        self.assertEqual(story.GUIDE_ROUND_LIMIT, 2)
+        self.assertNotIn("s", acc.auto_finish_due_sessions(t0 + timedelta(seconds=12),
+                                                           timeout_s=5))
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=10))
+        self.assertNotIn("s", acc.auto_finish_due_sessions(t0 + timedelta(seconds=14),
+                                                           timeout_s=5))
+        self.assertIn("s", acc.auto_finish_due_sessions(t0 + timedelta(seconds=15),
+                                                        timeout_s=5))
+        # 自动收尾 = 归档不丢弃（断言方向钉死）。
+        rec = acc.stop("s", now=t0 + timedelta(seconds=15))
+        self.assertIsNotNone(rec)
+        self.assertIn("从前有一只小猫", rec["text"])
+
+    def test_rounds_override_and_new_session_streak_clean(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc5"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
         acc.start("s", now=t0)
         acc.feed("s", "内容", now=t0)
-        self.assertIn("s", acc.timed_out_sessions(t0 + timedelta(seconds=5), timeout_s=5))
-        self.assertEqual(acc.routing("s"), "accumulate")  # 查询不改状态
-        self.assertEqual(acc.recent_depth("s"), 1)
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=5))
+        acc.mark_guide_round("s", now=t0 + timedelta(seconds=10))
+        # rounds 覆盖（1 轮即判）。
+        self.assertIn("s", acc.auto_finish_due_sessions(t0 + timedelta(seconds=16),
+                                                        timeout_s=5, rounds=1))
+        # 新会话沿：上一会话的引导 streak 不污染（stop -> start 重置）。
+        acc.stop("s", now=t0 + timedelta(seconds=16))
+        acc.start("s2", now=t0 + timedelta(seconds=20))
+        self.assertEqual(acc.guide_rounds("s2"), 0)
+        self.assertNotIn("s2", acc.auto_finish_due_sessions(t0 + timedelta(seconds=30),
+                                                            timeout_s=5))
+
+    def test_build_organizing_input_readonly_and_none(self):
+        acc = story.StoryAccumulator(str(Path(tempfile.gettempdir()) / "rdg_ut_acc6"))
+        t0 = datetime(2026, 10, 19, 12, 0, 0, tzinfo=dt_timezone.utc)
+        self.assertIsNone(acc.build_organizing_input("nope"))
+        acc.start("s", now=t0)
+        self.assertIsNone(acc.build_organizing_input("s"))  # 空累积
+        acc.feed("s", "第一句", now=t0)
+        acc.feed("s", "Thank you.", now=t0 + timedelta(seconds=1))  # 幻听串不滤
+        self.assertEqual(acc.build_organizing_input("s"), "第一句\nThank you.")
+        self.assertEqual(acc.guide_rounds("s"), 0)  # 只读不改状态
 
 
 class DisplayFloorUnits(unittest.TestCase):

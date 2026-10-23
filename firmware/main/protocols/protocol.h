@@ -91,6 +91,12 @@ public:
      * story_text 帧，零新形状）。发送原语形态见本头末尾自由函数
      * SendKidpalStoryFetch（无接收者：活动实例 = 最近构造且未析构的 Protocol）。 */
     friend void SendKidpalStoryFetch(const char *const *ids, int count);
+    /* §四 kidpal_story_discard（TaskPackage 261021-p3-record-cancel-lifecycle F2 /
+     * 契约 §四 2026-10-21 LANDED）: 丢弃会话的显式通知，端→网关单向、无应答——
+     * front 按本连接会话键权威取消（不归档）、幂等承接。发送时机 = 设备
+     * CloseAudioChannel **之前**同连接先行（同一 TCP 有序, front 泵先消费 discard
+     * 再处理断连）。无接收者形态同 fetch：活动实例 = s_kidpal_active_。 */
+    friend void SendKidpalStoryDiscard();
 
 protected:
     std::function<void(const cJSON* root)> on_incoming_json_;
@@ -125,6 +131,17 @@ protected:
  * SendKidpalStoryDelete 同款线程纪律）；id 闭集 + 字符集校验由调用方与 [C9]
  * kidpal_story_id_safe 承接。 */
 void SendKidpalStoryFetch(const char *const *ids, int count);
+
+/* §四 kidpal_story_discard 发送原语（TaskPackage 261021-p3-record-cancel-lifecycle
+ * RCL-F1; 逐字仿 SendKidpalStoryDelete 拼串形态）。
+ * 线形状（逐字）:
+ *   {"session_id":"<sid>","type":"kidpal_story_discard"}
+ * 两字段、单向通知、无应答消息（front 拦截消费 + 幂等承接）。发送时机 = 设备
+ * CloseAudioChannel 之前同连接先行（同一 TCP 有序, 网关泵先消费 discard 再处理
+ * 断连——先断连 = 帧发不出去, 显式丢弃通道退化为掉线路径）。
+ * 无接收者形态同 SendKidpalStoryFetch：活动实例 = 最近构造且未析构的 Protocol
+ * （s_kidpal_active_）；未就绪 = 静默 no-op（离线降级, 不产生半帧）。 */
+void SendKidpalStoryDiscard();
 
 #endif // PROTOCOL_H
 

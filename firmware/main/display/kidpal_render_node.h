@@ -309,6 +309,43 @@ void kidpal_render_node_story_local_front(void);
  */
 int kidpal_render_node_story_substate(void);
 
+/*
+ * D2 真机轮 R1 根修缝（2026-10-20, 261019-p3-record-dialogue-guide fixer; additive
+ * 尾部追加）。任何路径 lv_obj_clean(lv_screen_active()) 销毁屏上对象后必须调用本缝：
+ * 渲染节点把静态首页图像控件指针 s_kidpal_img 置 NULL（clean 已销毁, 不置空 = 悬垂;
+ * 旧 lv_obj_is_valid 出帧守卫对「地址复用假阳性」不可靠——悬垂地址被新对象复用时
+ * is_valid 判真, lv_image_set_src 打在非图像对象上）。消费点 = story_page.c 渲染入口
+ * （唯一在 clean s_kidpal_scr 时不经 rn_render_home_locked /
+ * rn_render_kidpal_page_locked 的路径）; 设备实现住 kidpal_render_node.cc, host runner
+ * 由 host_infra_seam.c 提供同符号空实现。调用方已持 lvgl 锁（渲染路径持锁纪律）。
+ */
+void kidpal_render_node_notify_screen_cleaned(void);
+
+/*
+ * D2 真机轮 R1 根修缝（同上批注）: 渲染成功出口把「基层内容页 = P3」真相同步给渲染
+ * 节点（s_local_page = KP_PAGE_STORY 单点写）。修复 ScheduleStoryRender 本地导航通道
+ * 裸调 kidpal_story_page_render 导致的 s_local_page 陈旧 HOME——voice_end [R3]
+ * on_story_front 误判走 else 首页重建 + 首页动画 tick 悬垂 UAF 的共同前提。调用方已
+ * 持 lvgl 锁; host runner 空实现（同上）。
+ */
+void kidpal_render_node_story_page_front(void);
+
+/*
+ * D2 真机轮 R1 根修缝（同上批注）: P3 录音演出定时器渲染前的「前台真相核」单一权威:
+ * 基层内容页 = P3（s_local_page == KP_PAGE_STORY）才允许 StoryRecTimerCb 落渲染——
+ * 任何其它路径已把基层重建为首页/课表时, 定时器跳过本拍（演出断一拍无害, 录音页
+ * 盖掉基层 = 错 + 悬垂链）。返回 1 = P3 在基层（可渲）; 0 = 否。无锁整数读。
+ */
+int kidpal_render_node_story_page_is_local(void);
+
+/*
+ * P3 引导播报中子态查询（D3 v7 键帽路由用, 同批 additive）: 缓存视图的 rec_substate
+ * （0 = 常规录音聆听, 1 = 引导播报中; story_page.h [G3] 冻结名）。消费点 = lcd_display
+ * 键帽三槽随态（RECORDING 子态时按本值分叉帧 A/帧 B 键帽集——v7 p3-recording-guide）。
+ * 无锁整数读，可跨任务调用。
+ */
+int kidpal_render_node_story_rec_substate(void);
+
 #ifdef __cplusplus
 }
 #endif

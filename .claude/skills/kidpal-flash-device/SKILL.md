@@ -1,6 +1,6 @@
 ---
 name: kidpal-flash-device
-description: Flash the KidPal ESP32-S3 app firmware over COM5 — the app offset comes from the partition table (ota_0 @ 0x20000, NOT 0x10000), the wrong-offset boot-loop symptom table (7s reset loop, black screen, USB chime), NVS-preserving flash, and the boot-success observation loop when serial won't cooperate. Use whenever flashing xiaozhi.bin, a device boot-loops after flash, or you're about to guess a flash offset.
+description: Flash the KidPal ESP32-S3 app firmware over COM5 — the app offset comes from the partition table (ota_0 @ 0x20000, NOT 0x10000), the wrong-offset boot-loop symptom table (7s reset loop, black screen, USB chime), NVS-preserving flash, and boot-success verification via the device SD log (kidpal_logs.py tail) with serial capture as fallback. Use whenever flashing xiaozhi.bin, a device boot-loops after flash, or you're about to guess a flash offset.
 ---
 
 # KidPal Device Flash (COM5)
@@ -37,12 +37,24 @@ description: Flash the KidPal ESP32-S3 app firmware over COM5 — the app offset
 
 ⚠️ 该脚本内层 `while True` 不回检截止时间——端口稳定后**永不自行退出且锁死 COM5**，用完必须 kill（`tasklist //FI "IMAGENAME eq python.exe"` 核对）。
 
+## Boot-success via SD log（首选；261022 human 指示更新——diag-log 包后每行日志自带墙上时间）
+
+**烧完板子不用拉串口，看设备 SD 卡日志即可**（诊断日志落 TF 卡，261018 批管线 + 261022 内容增强）：
+
+```
+"C:/Users/15802/.espressif/python_env/idf5.5_py3.10_env/Scripts/python.exe" tools/diag/kidpal_logs.py --cmd tail --n 80 --out c:/tmp/boot-check.log
+```
+
+判据（读尾部）：**出现本轮新 boot 序列**（`rtc_writeback ... ok` 在 t≈2s 处 + `StateMachine: State: unknown -> starting → activating → idle` 推进到 idle，且时间戳单调推进）= 启动成功；**复位循环 = 尾部反复出现同构 boot 序列**（`unknown -> starting` + t≈2s 的 rtc 行多次、间隔 ~7s）——一次看不清就隔几秒再 tail 一次对比尾部 mtime 与序列是否推进。详见 [[kidpal-device-logs]]。
+
+串口捕获降级为 fallback：SD 卡读不出来（挂载失败本身）或需要抓复位循环的第一现场时才用上面 serial_catch_tight（锁端口的坑照旧）。
+
 ## Procedure (put together)
 
 1. 构建：`cd firmware && "$IDFPY" c:/tmp/idf_run.py build`（venv python 全路径，[[kidpal-idf-env]] 的 MSYSTEM 陷阱）。
 2. 查端口独占：`tasklist //FI "IMAGENAME eq python.exe"`——一个进程持 COM5（kill 残留捕获进程）。
-3. 烧录：按上面的偏移规则（默认走 `idf_run.py flash` 全量）。
-4. 观测：追端口捕获 30s 按判据确认启动；之后再开被动捕获（`c:/tmp/serial_passive.py`）看业务轮。
+3. 烧录：按上面的偏移规则（默认走 `idf_run.py flash` 全量；仅 app 更新走 `write_flash 0x20000` 保 NVS）。
+4. 观测：**首选 SD 卡日志 tail 确认启动**（上文判据）；串口捕获是 fallback。之后再开被动捕获（`c:/tmp/serial_passive.py`）看业务轮。
 5. USB-Serial/JTAG 硬复位后会重枚举——COM5 消失再出现是常态，重开句柄即可（`serial.tools.list_ports` 核对还在）。
 
-Related: [[kidpal-idf-env]] [[kidpal-serial-monitor]] [[kidpal-nvs-ops]]
+Related: [[kidpal-device-logs]] [[kidpal-idf-env]] [[kidpal-serial-monitor]] [[kidpal-nvs-ops]]

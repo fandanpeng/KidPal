@@ -1,0 +1,69 @@
+{
+  "changeId": "261020-p3-rec-frame-visual",
+  "rigor": "nano",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md",
+    "upstreamFrozen": "reviewed plan（architect /triage-change 2026-10-20 比例化 review 判档 0 nano + human 触点① 2026-10-20 确认，含爆炸半径边界量数申报与无齿目检兜底声明）；plan 即冻结技术输入、只读消费。非拆包产物、无 workstream/mergeOrder。",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/display/story_page.c（kidpal_story_page_render 内 case KSTORY_PAGE_RECORDING 分支 :1434–1501 的位式常量与绘制坐标 + 分支头注释 :1444–1454）；不触 server/**、不触其它页态分支、不触任何签名与函数本体",
+  "planRef": "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md",
+  "story": "261020-p3-rec-frame-visual · P3 录音帧两处观感修——① 声波波浪线从右侧中部 @(180,94) 挪到猫咪图标 @(45,87,96x96) 正下方（左演出区内，避开右侧回显列）；② REC 闪点+「REC」+录音时长合并一行并整体右移，消除与左侧对话气泡（右缘 ~192）的视觉重叠。元素集与「在记」语义零变化（WF-F2-02 / v7「在记信号三帧常驻」不动）。行为权威 = reviewed plan（意图定义五件）；human 截图直提，观感直修+烧板+看屏偏好先例（真机目检兜底，2026-10-16 human 反馈）。",
+  "sourceRefs": [
+    "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md"
+  ],
+  "acceptance": [
+    { "id": "NRF-A1", "suiteGate": true }
+  ],
+  "exitCriteria": [
+    "NRF-X1: host 全量套件零新增红（既有先存红基线 = p1_auxbar AB-A1/A2/A4 三条，2026-10-20 本树实测 220 Tests 3 Failures exit 3；不新增、不扩大；story/record 区既有齿全绿）",
+    "NRF-X2: diff 不越 changeManifest（story_page.c 单文件；越界 = planner 停、回 /triage-change 重判档，nano 无扩单通道）",
+    "NRF-X3: 白盒复核——detect_changes 对 actual diff 算实际爆炸半径，与 plan 五件⑤预估摘要比对，结果记入 integrator review-packet「白盒复核」节（advisory；nano 行为验收判分位）",
+    "NRF-X4: 真机目检 human 终判（观感直修先例，烧板+看屏）：波浪线在猫咪正下方左演出区内、REC 闪点+「REC」+时长一行且与气泡零重叠、回显列与「在记」元素集观感不变；本 Pod 到门停等（status=awaiting-human:real-device）、不自行烧录"
+  ],
+  "iterationBudget": 1,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "planningRefs": [],
+  "riskTier": "low",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "device-round"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "delivery/taskpackages/261020-p3-rec-frame-visual/plan.md"
+  ],
+  "docsSyncRequired": true,
+  "docsNoChangeReason": "本包零 canonical 文档改动：位式微调不改需求/架构/契约语义（architect 逃生门自查 NO_CONTRACT_CHANGE，display 统一响应块是 wire schema、设备端本地像素布局不在其列）；v7 设计稿与 WF-F2-02 线框回同步已按观感直修先例钉为后补账（真机观感终判后走直修快环补账，见 plan「后补账提示」），不阻塞本包；docs-delta 只作声明口径留痕。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "planningWorkstreamRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "nano 档无验收语义净增（261016-gov-review-nano-tier）：验收权威置换 = NRF-A1 suiteGate（既有套件零新增红）+ NRF-X3 architect 白盒复核；目标区域实测零坐标断言齿（plan 五件④），无新冻结断言可变异，变异仪式无对象。",
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "设备端本地像素布局微调，零端云 wire、零包外对端面（architect 逃生门自查 NO_CONTRACT_CHANGE：display 统一响应块是 server→device wire schema，本改不触）；server/** 零改动。"
+  },
+  "changeManifest": [
+    "firmware/main/display/story_page.c"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/host_app（既有全量套件）",
+      "kind": "must-stay-green",
+      "note": "既有 host 全量套件零新增红（NRF-A1 suiteGate 语义）；特别：story_page_v2 / record_dialogue_guide / record_dialogue_v7_fix 既有齿只断言行为语义（页态/键位/子态/资产名在库/文案单源）、零坐标断言，位式微调对其天然安全；p1_auxbar AB-A1/A2/A4 三条先存红为基线、与本包正交"
+    }
+  ],
+  "notes": "① 爆炸半径边界量数（human 触点①已确认）：将触符号 kidpal_story_page_render 按调用作用域 4 ≤ 5 达标（ScheduleStoryRender / StoryRecTimerCb / ScheduleStoryDeleteOverlay + AddCommonTools 内 3 个 story 工具 handler lambda 同属 mcp_server.cc 紧耦合簇）、按调用点计 6 略超阈值——architect 如实申报、human 确认放行。② 无齿目检兜底：RECORDING 帧位式坐标零既有断言齿，视觉终判归 human 真机目检（plan 五件④）；本 Pod 不自行烧录（观感直修先例：闸链后补账）。③ nano 无扩单通道：diff 越出 changeManifest 或白盒复核发现出界 → 停回 /triage-change 重判档，不得原地扩 manifest。④ Step 5 acceptance-author 豁免：nano 无验收语义净增（taskpackage-required-check nano profile 红基线/验收件必填豁免），acceptance = suiteGate 纯形态（既有套件零新增红），无可冻结的新齿、不派 acceptance-author。⑤ 基线锚（本树现跑 2026-10-20 @ HEAD b8aaa82b）：server 面 229 passed / 0 failed / 4 deselected 零红；firmware host 面 220 Tests 3 Failures exit 3，3 条全 = p1_auxbar AB-A1/A2/A4 先存红（与 261018/261019 基线同批），story/record 区零红。⑥ 坐标定案归 builder/fixer 在左演出区自由度内定（206px 资产宽 vs 左区 ~170px 张力，plan 五件③），真机目检为准；程序化兜底跳动条（story_page.c:1469–1472）随资产分支同挪。"
+}

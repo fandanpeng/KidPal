@@ -46,6 +46,7 @@
 #include "char_page.h"
 #include "char_window.h"   /* M2K3-A3 驱动半 seam [9]: kidpal_char_window_idle_step / 5min 上限 */
 #include "kidpal_layer.h"
+#include "diagnostics/log_semantics.h" /* 261022-diag-log-content: PAGE_SWITCH 页名/触发名 */
 
 #include <esp_log.h>
 #include <esp_timer.h>
@@ -58,6 +59,25 @@
 #include <string>
 
 static const char *RN_TAG = "kidpal_rn";
+
+/* PAGE_SWITCH 触发源闭集（261022-diag-log-content [DLG-C2]；语义名映射归
+ * diagnostics/log_semantics.c kidpal_log_trigger_name——本文件只注值、不另写名表）。 */
+#define RN_PAGE_TRIGGER_KEY   0 /* 按键路径：键路由翻页 / 关层回原页 / 页内导航 */
+#define RN_PAGE_TRIGGER_TIMER 1 /* 定时器路径 */
+#define RN_PAGE_TRIGGER_NET   2 /* 网络 / 云端推送路径（含语音轮收尾的页面回落） */
+
+/* 下一次页面跳转的触发源（默认按键路径）：调用方在调 rn_render_kidpal_page_locked
+ * 之前经 rn_note_page_switch_trigger 标注，渲染权威体内读一次即复位。
+ * 为什么不给渲染函数加参数：retract_p4_three_page.acceptance.c 的 M2K2-A1 冻结了该
+ * 函数的签名文本锚 `static void rn_render_kidpal_page_locked(kidpal_page_id_t page)`
+ * ——改签名会打红既有冻结回归网（本包零新增红的硬约束）。单写者 = 持 lvgl 锁的调用方，
+ * 读点在渲染体内（同任务、同锁区间），无跨任务竞争。 */
+static int s_page_switch_trigger = RN_PAGE_TRIGGER_KEY;
+
+static void rn_note_page_switch_trigger(int trigger)
+{
+    s_page_switch_trigger = trigger;
+}
 
 /* -------------------------------------------------------------------------
  * 渲染节点内部状态（全部小量，不新增大静态缓冲）
@@ -396,6 +416,10 @@ static void rn_reconcile_foreground_locked(void)
  * [R3] P3 前台回落重渲在此提前消费, 须先前向声明）。 */
 static void rn_render_kidpal_page_locked(kidpal_page_id_t page);
 
+/* 前置声明（定义在后方 D2 R1 根修区; show_home / voice_begin / voice_end 三守卫
+ * 消费点在其定义之前）。 */
+static int rn_record_session_live_locked(void);
+
 /* 重建并渲染首页 P1 帧，再把它切到前台。s_kidpal_scr 必须已存在。 */
 static void rn_render_home_locked(void)
 {
@@ -559,6 +583,19 @@ void kidpal_render_node_show_home(void)
         return;
     }
 
+    /* D2 真机轮 R1 守卫（261019-p3-record-dialogue-guide fixer）: 记录会话覆盖演出
+     * 在世（录音/整理中）-> 首页重建降级 no-op（屏上真相 = P3 会话页, 服务端 home
+     * 推送/键长按等入口不得把基层翻回 P1——重建即演出冻结 + s_local_page 陈旧链）。
+     * 会话收尾（Idle 分支清 ctx / [R2] 复位 LIST）之后本守卫自然放行。 */
+    if (rn_record_session_live_locked()) {
+        lvgl_port_unlock();
+        ESP_LOGW(RN_TAG,
+                 "show_home suppressed: record session live (page=%d corr_id=kdp-%u)",
+                 s_story_session_page,
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        return;
+    }
+
     /* 回首页 = 前台回到本地浏览基层：出掉一切 transient 上层，基层 LOCAL_PAGE 独留。 */
     kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_SERVER_PAGE);
     kidpal_layer_pop(&s_layer_stack, KIDPAL_LAYER_REMINDER);
@@ -610,8 +647,10 @@ void kidpal_render_node_voice_begin(void)
     /* 单物理屏内容回落：上一轮服务端回答页（课表/故事/查字）曾画在 s_kidpal_scr 上，
      * 清层后须把物理内容页从「服务端页」落回本地首页（否则聊天 chrome 迁 top layer 后，
      * 旧服务端页会留在唯一前台屏上、与「新语音轮清除驻留」矛盾）。聊天 chrome 在
-     * lv_layer_top 不受影响，聆听级表情/状态仍恒可见。 */
-    if (had_server && s_kidpal_scr != NULL) {
+     * lv_layer_top 不受影响，聆听级表情/状态仍恒可见。
+     * D2 R1 守卫: 记录会话在世时**不**回首页重建（屏上真相 = P3 会话页——录音/整理
+     * 演出不因新语音轮被首页帧覆盖; 只收盾物理屏）。 */
+    if (had_server && s_kidpal_scr != NULL && !rn_record_session_live_locked()) {
         rn_render_home_locked();
     } else {
         rn_reconcile_foreground_locked();
@@ -643,7 +682,12 @@ void kidpal_render_node_voice_end(void)
          * s_story_view.page）, 并以解析结果喂 [R3] 的 page_state 入参（defer 缓存消费
          * 判据）与渲染页态（页态同步先于渲染）。VOICE 层已弹出, 故 [R3] voice_front 传 0。 */
         if (s_kidpal_scr != NULL) {
-            int on_story_front = (s_local_page == KP_PAGE_STORY) ? 1 : 0;
+            /* D2 R1 判据放宽（261019 fixer）: on_story_front = 「本地页 = P3」或
+             * 「记录会话在世」。后者兜 s_local_page 被中途翻走的残缝（真值 = 权威
+             * 会话页态镜像 s_story_session_page, [R5] 解析消费点语义不变）——记录
+             * 语境下 voice_end 恒不出 else 首页重建分支（现场 1 崩链的前提之一）。 */
+            int on_story_front = (s_local_page == KP_PAGE_STORY ||
+                                  rn_record_session_live_locked()) ? 1 : 0;
             if (on_story_front) {
                 int page_state = kidpal_story_render_page_state(s_story_view.page,
                                                                 s_story_session_page,
@@ -653,6 +697,7 @@ void kidpal_render_node_voice_end(void)
                                                                   page_state);
                 ESP_LOGI(RN_TAG, "voice_end: story front list_flush=%d page_state=%d",
                          list_flush, page_state);
+                rn_note_page_switch_trigger(RN_PAGE_TRIGGER_NET);
                 rn_render_kidpal_page_locked(KP_PAGE_STORY);
             } else {
                 rn_render_home_locked();
@@ -828,6 +873,21 @@ void kidpal_render_node_end_provision(void)
  * 经 layer 栈裁决，函数体零层栈副作用（不含任何 kidpal_layer_pop）。 */
 static void rn_render_kidpal_page_locked(kidpal_page_id_t page)
 {
+    /* 261022-diag-log-content [DLG-C4]④（plan 改动点 5）：页跳转**一行语义记录**——
+     * from→to + 触发源（key/timer/net），回答「设备哪一刻在哪一页、从哪来、被什么
+     * 触发」。既有 PAGE_RENDER in/out 两行（K3R D2 真机诊断，下方原样保留）记的是
+     * 渲染入出口快照，语义面不同，不互相替代。from 取落笔前的基层页（s_local_page 在
+     * 本函数 switch 内才更新）；触发源由调用方经 rn_note_page_switch_trigger 标注，
+     * 此处读一次即复位默认（键路径）——防陈旧值串到下一次跳转。 */
+    int trigger = s_page_switch_trigger;
+
+    s_page_switch_trigger = RN_PAGE_TRIGGER_KEY;
+    ESP_LOGI(RN_TAG, "PAGE_SWITCH from=%s to=%s trigger=%s local_from=%d local_to=%d",
+             kidpal_log_page_name(static_cast<int>(s_local_page)),
+             kidpal_log_page_name(static_cast<int>(page)),
+             kidpal_log_trigger_name(trigger),
+             static_cast<int>(s_local_page), static_cast<int>(page));
+
     /* K3R D2 真机轮诊断（纯日志, 零渲染改动）: 页渲染入口——入参 page + 本地页 +
      * 故事节点缓存/权威会话页态 + 活动屏是否已切到 s_kidpal_scr。 */
     ESP_LOGI(RN_TAG, "PAGE_RENDER in=%d local=%d sview=%d ssess=%d active_ok=%d",
@@ -996,6 +1056,7 @@ void kidpal_render_node_dismiss_front_overlay(void)
     if (kidpal_render_node_front_is_overlay() != 0) {
         (void)kidpal_layer_pop_transients(&s_layer_stack);
         kidpal_layer_push(&s_layer_stack, KIDPAL_LAYER_LOCAL_PAGE);
+        rn_note_page_switch_trigger(RN_PAGE_TRIGGER_KEY);
         rn_render_kidpal_page_locked(static_cast<kidpal_page_id_t>(s_local_page));
     }
     rn_voice_chrome_front_locked();
@@ -1034,6 +1095,7 @@ void kidpal_render_node_cycle_next(void)
     kidpal_page_id_t next = static_cast<kidpal_page_id_t>(
         (static_cast<int>(s_local_page) + 1) % KP_PAGE_COUNT);
 
+    rn_note_page_switch_trigger(RN_PAGE_TRIGGER_KEY); /* 键路由翻页 = 按键触发 */
     rn_render_kidpal_page_locked(next);
 
     /* 浏览页前台：五态姿态/气泡退隐（chrome 显隐前台维度）。 */
@@ -1147,6 +1209,7 @@ void kidpal_render_node_refresh_story(void)
      * 输入动作——光标/跳屏/阅读翻屏/退出阅读——均经本函数落屏, 不推 SERVER_PAGE）。
      * 层栈零改动：前台保持现状（本地导航不接管前台、不关任何覆盖层——删除确认
      * 覆盖层的关层走 dismiss_front_overlay 唯一入口）。 */
+    rn_note_page_switch_trigger(RN_PAGE_TRIGGER_NET); /* 云端推送 / restore 路径 */
     rn_render_kidpal_page_locked(KP_PAGE_STORY);
 
     lvgl_port_unlock();
@@ -1184,4 +1247,48 @@ int kidpal_render_node_story_substate(void)
         return -1;
     }
     return s_story_view.page;
+}
+
+int kidpal_render_node_story_rec_substate(void)
+{
+    /* D3 v7 键帽路由（帧 A/帧 B 分叉判据载体）: 缓存视图的引导播报中子态
+     * （[G3] rec_substate; cache_story 单点同步, 与 s_story_view.page 同源同纪）。
+     * 无锁 32 位整数读, 可跨任务调用（键帽同步在 LVGL 任务, 写方在 mcp 主线程——
+     * 与 g_story_* 既有跨任务宽松度一致）。 */
+    return s_story_view.rec_substate;
+}
+
+/* -------------------------------------------------------------------------
+ * D2 真机轮 R1 根修（2026-10-20, 261019-p3-record-dialogue-guide fixer）
+ * ---------------------------------------------------------------------- */
+
+void kidpal_render_node_notify_screen_cleaned(void)
+{
+    /* clean 联动单点: s_kidpal_img 只指 s_kidpal_scr 的子件, 调用方刚 clean 过
+     * 活动屏 -> 无条件置 NULL（不做 lv_obj_is_valid 复验——悬垂地址复用时该判定
+     * 会假阳性, D4b-3 守卫的已证缺口）。调用方已持 lvgl 锁（渲染路径持锁纪律）。 */
+    s_kidpal_img = NULL;
+}
+
+void kidpal_render_node_story_page_front(void)
+{
+    /* 渲染成功出口的页归属真相单点: 基层内容页 = P3。写点恒在渲染路径（调用方已
+     * 持 lvgl 锁）; 32 位对齐指针宽赋值, 与 g_story_* 跨任务宽松度同级。 */
+    s_local_page = KP_PAGE_STORY;
+}
+
+int kidpal_render_node_story_page_is_local(void)
+{
+    return (s_local_page == KP_PAGE_STORY) ? 1 : 0;
+}
+
+/* 记录语境会话在世判据（D2 R1 守卫半; 调用方已持锁或处于单线程渲染语境）:
+ * 记录语境标志置位 && 权威会话页态 ∈ {RECORDING, ORGANIZING}。消费点 = show_home /
+ * voice_begin(had_server) / voice_end else——记录会话覆盖演出期间, 一切首页重建
+ * 路径不得把基层翻回 P1（屏上真相 = P3 会话页; 重建即演出冻结 + 悬垂链前提）。 */
+static int rn_record_session_live_locked(void)
+{
+    int page = s_story_session_page;
+    return (kidpal_story_session_ctx_active() == 1 &&
+            (page == KSTORY_PAGE_RECORDING || page == KSTORY_PAGE_ORGANIZING)) ? 1 : 0;
 }

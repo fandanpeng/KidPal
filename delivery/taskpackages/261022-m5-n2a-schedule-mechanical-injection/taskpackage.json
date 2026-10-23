@@ -1,0 +1,148 @@
+{
+  "changeId": "261022-m5-n2a-schedule-mechanical-injection",
+  "rigor": "lite",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4",
+    "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
+    "workstream": "device-memory-overhaul"
+  },
+  "subsystem": "server/deploy/engine-patch（动态 context 装配：课表摘要拼入每轮动态块）+ server/gateway/schedule.py（只读复用，单源）",
+  "story": "S-F1.3 · 语音问课表（AC1 播报答复与问答框口径）——本包修「该读未读、凭印象编造」的回归：课表回合零工具调用也能答对，答案与 kidpal/schedule.md 逐日一致；story 语义权威 = docs/requirements.md v1.67 现文。缺陷证据锚 = TECH-261018 探针复现。",
+  "planRef": "delivery/taskpackages/261022-m5-n2a-schedule-mechanical-injection/plan.md",
+  "sourceRefs": [
+    "S-F1.3-AC1",
+    "TECH-261018-schedule-read-compliance-residual",
+    "docs/debt/tech/TECH-261018-schedule-read-compliance-residual.md",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5",
+    "server/gateway/schedule.py",
+    "server/deploy/engine-patch/connection.py"
+  ],
+  "acceptanceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5",
+    "docs/contracts/interface-contract.md#§1.5"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "impactedTests": [
+    "server/acceptance/test_261022_schedule_injection.acceptance.py",
+    "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+    "server/deploy/verify-deploy.sh"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "live-manual"
+  ],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；注入单源反证验收断言按设计态红）。",
+  "exitCriteria": [
+    "K5-E1: 注入源 = server/gateway/schedule.py 单源（parse_schedule_md / items_for_date 派生）；引擎不解析课表 MD、不建第二解析器（契约 §1.5 单源红线）；schedule.py 若需改动严格最小、只读复用为主",
+    "K5-E2: 注入语义：逐轮在场（不按意图门控——判断是否课表回合本身是模型裁量）、有界（窗口 = 今日 + 近日，建议 ≤3 日 / ≤2KB，本包定稿）、会话建立时注入（课表变更 / 跨天最迟下一会话生效，会话内不追；记录为边界）",
+    "K5-E3: 单源反证：注入内容与 parse_schedule_md / items_for_date 同日派生逐项一致（受控日期集断言）；窗口外日期仍走读文件或诚实说查不到，禁凭印象",
+    "K5-E4: 受控 ≥20 轮课表提问零工具调用也不编造，答案与 kidpal/schedule.md 逐日一致（S-F1.3 AC1 + 业务目的 4）；host 面可闭环部分先绿，live 复证挂 human 部署轮",
+    "K5-E5: 消费 TECH-261018：本包落地即满足其第 3 层机械注入修复；debt 结项（status: closed + consumed-by）由 integrator 收口路径落，不在 Pod 内手改账本",
+    "K5-E6: 既有冻结验收断言零新增红（schedule producer / voice schedule entry / 动态 context 装配相关），server 全量基线不降"
+  ],
+  "iterationBudget": 1,
+  "fixBudget": 2,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.5"
+  ],
+  "docRefs": [
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md",
+    "delivery/taskpackages/261022-m5-n2a-schedule-mechanical-injection/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/debt/tech/TECH-261018-schedule-read-compliance-residual.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "架构 §5.2 场景②动态 context 装配段 / §5.1.2 front 行课表摘要句 / §5.1.3 依赖方向已由 261022 arch 批 FROZEN v1.1 landing（0411e957）落稿；本包只落实现面。TECH-261018 结项由 integrator 收口路径落。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "Lite 包：核心 = 注入窗口 / 单源一致性 / 零编造行为，验收以单源反证 + 受控轮次为主；改动面小且为装配接线，变异取证 ROI 不成立。",
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包纯云端动态 context 装配与单源复用：设备端零感知、固件零 diff；不新增或改变任何端→网关消息、帧类型、字段与序列化形态，B1 课表 MD 结构与 display E1 零改动。"
+  },
+  "changeManifest": [
+    "server/deploy/engine-patch/connection.py",
+    "server/gateway/schedule.py",
+    "server/deploy/manifest.yaml",
+    "server/deploy/verify-deploy.sh",
+    "server/acceptance/test_261022_schedule_injection.acceptance.py"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/device-memory-overhaul/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality"
+  ],
+  "mergeOrder": 51,
+  "dependsOn": [
+    "261022-m5-k1-prompt-carrier-migration"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "R8 · 课表机械注入走 schedule.py 单源，注入位置 = P1 动态 context 块",
+      "summary": "front 派生 → 会话建立时内部通道注入 → 引擎拼入每轮动态块；引擎零解析、不建第二解析器（契约 §1.5）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"
+      ],
+      "landsIn": "exitCriteria:K5-E1"
+    },
+    {
+      "decision": "注入语义：逐轮在场、有界、会话建立时刷新、窗口外诚实告知",
+      "summary": "不按意图门控（判断课表回合本身是模型裁量）；窗口 ≤3 日 / ≤2KB 本包定稿；会话内变更不追。",
+      "sourceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"
+      ],
+      "landsIn": "exitCriteria:K5-E2"
+    },
+    {
+      "decision": "业务目的 4 · 课表回答不再有编造长尾（受控 ≥20 轮零工具调用零编造）",
+      "summary": "机械注入把「是否读文件」从模型裁量变成装配决定；单源反证保证注入内容 == 解析器输出。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§1",
+        "docs/debt/tech/TECH-261018-schedule-read-compliance-residual.md"
+      ],
+      "landsIn": "exitCriteria:K5-E4"
+    },
+    {
+      "decision": "消费 TECH-261018（第 3 层机械注入落地即结项）",
+      "summary": "本包落地即满足该 debt 的修复面；账本结项由 integrator 收口，不在 Pod 内自裁。",
+      "sourceRefs": [
+        "docs/debt/tech/TECH-261018-schedule-read-compliance-residual.md"
+      ],
+      "landsIn": "exitCriteria:K5-E5"
+    },
+    {
+      "decision": "动态 context 装配机制由 P1 建立（本包消费）",
+      "summary": "本包不自建装配面；若 P1 尚未合并则不得启动（dependsOn 硬边）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4"
+      ],
+      "landsIn": "package:261022-m5-k1-prompt-carrier-migration"
+    }
+  ]
+}

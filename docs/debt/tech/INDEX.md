@@ -7,13 +7,15 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 27（待拍板 0 / 待触发 21 / 已接受风险 6）；已结 22（归档索引见下）。
+**摘要**：未结 31（待拍板 1 / 待触发 24 / 已接受风险 6）；已结 23（归档索引见下）。
 
-## 待拍板（0）
+## 待拍板（1）
 
-_（无）_
+| ID | 严重度 | title | 处理时机 |
+|---|---|---|---|
+| [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
 
-## 待触发（21）
+## 待触发（24）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -38,6 +40,9 @@ _（无）_
 | [TECH-261016-sd-story-confidentiality](TECH-261016-sd-story-confidentiality.md) | COULD | story 正文落 SD 卡后缺可读性防护——需口令 + 存储混淆（本批只落盘、human 2026-10-16 裁留待后续处理） | 下个动 P3 存储层 / SD 数据面的包；或产品出现「设备离手」场景（送修 / 转赠 / 二手 / 家长要求可携带）前必须有 |
 | [TECH-261018-openclaw-deepseek-flash-one-shot-stream](TECH-261018-openclaw-deepseek-flash-one-shot-stream.md) | COULD | OpenClaw 2026.8.1 下模型 id「deepseek-flash」整段一次性返回（1 个 content delta、首字=总时长），而同一上游的「deepseek-v4-flash」正常渐进流式；本地模型声明 / compat / blockStreamingChunk 均无法修复 | 下次切换设备模型 id、或升级 OpenClaw 版本时 |
 | [TECH-261018-schedule-read-compliance-residual](TECH-261018-schedule-read-compliance-residual.md) | MAJOR | prompt v11 后仍观察到真机漏读——受控 loopback 15/15 都读文件，但设备连续两笔里有一笔零工具调用、直接编造周一课表（含不存在的英语/美术与带物）；属模型服从度长尾，机械注入课表内容为候选根治 | 下个动 prompt 或引擎部署面的批；或真机再次复现漏读时提前 |
+| [TECH-261022-device-memory-prompt-overhaul](TECH-261022-device-memory-prompt-overhaul.md) | MAJOR | 设备语音链路「越用越聪明」整体重构待 triage——持久 session（openai-http user 字段）+ Honcho 用户画像记忆 + 静态 prompt 迁 AGENTS.md + 工具白名单收窄 + 课表机械注入（现状单轮 prompt 22.1k tokens、跨会话事实答不出、课表幻觉可复现） | 下一次 /triage-change 分流；或下次动 OpenClaw 部署 / 引擎调用面的批 |
+| [TECH-261022-openclaw-prep-tax-memory-pressure](TECH-261022-openclaw-prep-tax-memory-pressure.md) | MAJOR | OpenClaw embedded run prep 固定税 ~7s（bootstrap-context ~6.5s）+ 内存压力增长趋势——整理回合靠 front 60s 超时兜住，网关侧改善为长线候选 | 整理/引导回合再出现 ClientDisconnectError 超时形态；或 OpenClaw rss 再触内存压力告警；或下个动 OpenClaw 部署/升级的批 |
+| [TECH-261023-recording-echo-ghosting](TECH-261023-recording-echo-ghosting.md) | SHOULD | P3 录音回显滚动瞬间的面板响应叠印——传输层/LVGL 层已三重排除，定性为反射屏液晶响应窗物理特性，缓解与产品选项待拍板 | human 对回显显示形态拍板（单行化 / 接受现状 / 驱动实验三选一）；或下个动 P3 录音演出面 / 显示驱动面的包 |
 
 ## 已接受风险（6）
 
@@ -50,10 +55,10 @@ _（无）_
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（22）
+## 已结（23）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 22 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 23 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

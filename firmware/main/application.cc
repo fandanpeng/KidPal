@@ -21,6 +21,8 @@
 #include "display/voice_round.h"
 #include "display/kidpal_voice_states.h"
 #include "display/story_page.h"  /* K3: source_page 映射/引导态/回显/记录语境标志冻结缝 */
+#include "display/keybar.h"      /* 261022-p3-record-chrome-ghost-fix CG-A1: 键帽场景单源
+                                  * 收尾沿复位 kidpal_keybar_scene_reset */
 
 /* K3 (260924-m4-k3-record-session-live): 记录会话消费状态（文件级静态; 单写者——
  * on_vad_change 回调写 speaking / 主循环读, 32 位标量, 与既有跨任务宽松度同级）。
@@ -32,6 +34,25 @@ void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.c
  * 判据 + 复位录音页态并停录音演出定时器。 */
 int  KidpalStoryViewPageState();
 void KidpalStorySessionEndApply(int list_page);
+/* [G3] 帧 B 子态沿桥（261020 D4-5, fixer; 定义住 mcp_server.cc, 同款免扩公共头纪律）:
+ * 引导播报中子态从设备侧既有 tts 帧派生（记录语境内引擎抑制 LLM/TTS, kidpal_speak
+ * 引导注入 = 唯一 TTS 源, 零 wire 新增）——tts start 沿置 rec_substate=1、tts stop 沿
+ * 复位 0（幂等, 仅 RECORDING 页态有语义）。RDG-F2 键位分叉 / RDG-F3 整理态吞键零触碰
+ * （桥只写子态标量, 分叉判定仍归 story_page_input 冻结决策表）。 */
+void KidpalStoryGuideSpeechEdge(int speaking);
+/* 引导播报看门狗「音频感知」标志（真机轮追补 261022 r2; 定义面 = 本文件音频收包路径,
+ * 消费方 = mcp_server.cc StoryGuideWatchdogCb）。语义: 本次引导播报窗口内是否有真实
+ * opus 音频包进入解码队列——孤儿 tts start（其音频已被引擎 abort 清掉）恒 false,
+ * 真句子引擎 TTS 首包实测 ~1-2s 内到达恒 true。extern "C" + 消费者 extern 声明, 与
+ * 既有 KidpalStoryGuideSpeechEdge 桥同款「不扩公共头」纪律（mcp_server.h 冻结面零改）。
+ * 非原子布尔: 写方 = 协议接收任务 OnIncomingAudio 回调, 读方 = LVGL 定时器任务
+ * （看门狗到期）。单字节 store/load 在 Xtensa 上不可撕裂; 语义上只需「窗口内见过」的
+ * 一次性单调置位（布防时由消费方清 false）, 无跨字段次序依赖——与 g_story_* 既有
+ * 跨任务宽松度同级。形式说明: 先 `extern "C"` 声明定链接、后一行定义（单行
+ * `extern "C" bool X = false;` 会触发 -Wextern-initializer, 故拆两行; C 链接由前置
+ * 声明继承）。 */
+extern "C" bool g_story_guide_audio_seen;
+bool g_story_guide_audio_seen = false;
 static bool s_vad_speaking = false;
 static bool s_story_rec_entered = false;
 
@@ -52,7 +73,9 @@ static DeviceState speaking_round_entered_from_ = kDeviceStateIdle;
 #include <freertos/task.h>
 #include <esp_sntp.h>
 #include <sys/time.h>
+#include <time.h>          /* 261022-diag-log-content: localtime_r / struct tm（时间前缀产出） */
 #include "time_sync.h"
+#include "diagnostics/log_semantics.h" /* 261022-diag-log-content: 时间前缀缓存产出 + SystemInfo 降频决策 */
 
 #define TAG "Application"
 
@@ -82,6 +105,14 @@ static const int kAutoConnectBackoffS[3] = { 5, 10, 20 };
  * planner 重冻结）。本 needle 首现即本定义。
  * ------------------------------------------------------------------------ */
 static const int kResidentRebuildDelayS = 5;
+
+/* -------------------------------------------------------------------------- *
+ * 261022-diag-log-content（板端诊断日志内容增强）SystemInfo 打印门控状态：
+ * 上一次放行的单调毫秒（单写者 = main event loop，与 clock_ticks_ 同上下文）。降频
+ * 决策本体归 diagnostics/log_semantics.c kidpal_log_sysinfo_due（间隔 = 头文件
+ * KIDPAL_LOG_SYSINFO_INTERVAL_MS 单源 60s，调用点不得裸写字面）。
+ * ------------------------------------------------------------------------ */
+static long long s_sysinfo_last_print_ms = 0;
 
 /* SNTP 同步监测 task：成功即退出；失败按 [S1] 退避决策表递增观测间隔（封顶 32s）。 */
 static void KidPalSntpMonitorTask(void *arg)
@@ -386,10 +417,38 @@ void Application::Run() {
             clock_ticks_++;
             auto display = Board::GetInstance().GetDisplay();
             display->UpdateStatusBar();
-        
-            // Print debug info every 10 seconds
-            if (clock_ticks_ % 10 == 0) {
-                SystemInfo::PrintHeapStats();
+
+            /* 261022-diag-log-content [DLG-C4]⑤（R1 缓解的**产出半**）：1s clock tick 把
+             * 当前墙上时间预格式化进日志前缀缓存——esp_log 钩子（diagnostics/sd_log_fs.cc
+             * KidpalSdLogVprintf）只取现成串 memcpy 拼接，**不在钩子内**做 localtime_r /
+             * snprintf（钩子可在任意任务 / 中断上下文被调，重入与时延风险即 plan R1）。
+             * synced 判定 = 既有 K5 时间可信门 kidpal_ts_year_ok（系统时间未过 2025 门 =
+             * SNTP/RTC 未对齐）-> 缓存降级为 "[BOOT+<ms>ms] "，至少保住开机后的先后序；
+             * 真实判定来源的残差归真机轮 DLG-A6①（GAP-2）。 */
+            {
+                struct timeval tv_now;
+                struct tm tm_now = {};
+
+                gettimeofday(&tv_now, nullptr);
+                localtime_r(&tv_now.tv_sec, &tm_now);
+                kidpal_log_time_cache_update(
+                    kidpal_ts_year_ok(tm_now.tm_year),
+                    tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday,
+                    tm_now.tm_hour, tm_now.tm_min, tm_now.tm_sec,
+                    static_cast<unsigned long long>(esp_timer_get_time() / 1000));
+            }
+
+            /* SystemInfo 降频（plan 改动点 6）：原「每 10 秒一条 SRAM 统计」占导出日志
+             * 篇幅约 70%，改走 kidpal_log_sysinfo_due 决策单源（60s 间隔，头文件宏）。
+             * 首条在开机 60s 后放行（上次放行记 0 = 开机起点）。 */
+            {
+                long long now_ms = static_cast<long long>(esp_timer_get_time() / 1000);
+
+                if (kidpal_log_sysinfo_due(now_ms, s_sysinfo_last_print_ms,
+                                           KIDPAL_LOG_SYSINFO_INTERVAL_MS) == 1) {
+                    s_sysinfo_last_print_ms = now_ms;
+                    SystemInfo::PrintHeapStats();
+                }
             }
         }
     }
@@ -653,6 +712,11 @@ void Application::InitializeProtocol() {
     
     protocol_->OnIncomingAudio([this](std::unique_ptr<AudioStreamPacket> packet) {
         if (GetDeviceState() == kDeviceStateSpeaking) {
+            /* 音频感知标志置位（真机轮追补 261022 r2）: 真实包到达**且**会进解码队列
+             * （= 真会被听到）才算「本窗口有音频」——置位点在状态门内、解码入队前,
+             * 音频路径本身零行为变更（只多一次布尔写）。孤儿 tts start 后引擎 abort
+             * 已清队列, 该窗口永不走本支 -> 看门狗保 false -> 3s 到期复位。 */
+            g_story_guide_audio_seen = true;
             audio_service_.PushPacketToDecodeQueue(std::move(packet));
         }
     });
@@ -696,9 +760,18 @@ void Application::InitializeProtocol() {
                  * sentence_start 分支 (实际起播时刻), 此处只复位打断标志。 */
                 Schedule([this]() {
                     aborted_ = false;
+                    /* [G3] 帧 B 子态置位沿 (261020 D4-5): 记录语境内 tts start =
+                     * 引导播报开始（引擎抑制下 kidpal_speak 是唯一 TTS 源; 桥内
+                     * RECORDING 页态门 + 幂等）——键帽路由据此分叉帧 B（打断）。 */
+                    KidpalStoryGuideSpeechEdge(1);
                 });
             } else if (strcmp(state->valuestring, "stop") == 0) {
                 Schedule([this]() {
+                    /* [G3] 帧 B 子态复位沿 (261020 D4-5): 引导播报结束/被打断 ——
+                     * 无条件先于 Speaking 出口守卫（tts stop 到达时设备可能已因
+                     * 打断离场 Speaking, 复位沿不得被出口判据吞掉; 桥内幂等 +
+                     * RECORDING 页态门）。 */
+                    KidpalStoryGuideSpeechEdge(0);
                     if (GetDeviceState() == kDeviceStateSpeaking) {
                         /* 261014 VR-A2 tts stop 出口三守卫（序即优先级）:
                          * ① 手动模式既有语义（出口回 Idle, 优先级最高）;
@@ -773,11 +846,19 @@ void Application::InitializeProtocol() {
                     if (kidpal_story_session_ctx_active()) {
                         (void)kidpal_story_echo_push(message.c_str());
                     }
-                    kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
-                                        ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
-                    int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
-                    if (scene == KVST_SCENE_THINK) {
-                        display->SetStatus(Lang::Strings::THINKING);
+                    /* [G6] kvr 场景守卫（261019-p3-record-dialogue-guide）: 记录语境
+                     * **先分流**（引用先于 kidpal_voice_round_scene——ctx 选取必须在
+                     * 映射前联挂记录语境标志）: 记录语境切逐句 stt 形态后 ctx 选取不得
+                     * 按 listening_mode_ 误映 KVST_SCENE_THINK -> SetStatus(THINKING)
+                     * 跳页（AC1「切句只回显不进思考」; 回显已在上支承载）。非记录语境
+                     * 既有场景映射零偏移。 */
+                    if (!kidpal_story_session_ctx_active()) {
+                        kvr_ctx_t ctx = (listening_mode_ == kListeningModeManualStop)
+                                            ? KVR_CTX_LISTEN_MANUAL : KVR_CTX_LISTEN_AUTO;
+                        int scene = kidpal_voice_round_scene(ctx, KVR_EVT_STT_FINAL);
+                        if (scene == KVST_SCENE_THINK) {
+                            display->SetStatus(Lang::Strings::THINKING);
+                        }
                     }
                 });
             }
@@ -971,10 +1052,27 @@ void Application::HandleStartListeningEvent() {
             }
         }
 
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3 聆听形态切换]（261019-p3-record-dialogue-guide）: 记录语境从 ManualStop
+         * 切到产逐句 stt 形态——切句只回显 + 云侧累积 + 卡壳计时引导（manual 整段转写
+         * 形态无逐句 stt, 引导/回显/累积全断）。形态取舍（包内裁）: AEC 开 ->
+         * Realtime（QA KEY 路径 :926 同族先例）; AEC 关 -> AutoStop（realtime 需 AEC
+         * 挡引导播报回灌; AFE/AEC 依赖归真机轮 GAP-4 承载）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     } else if (state == kDeviceStateSpeaking) {
         AbortSpeaking(kAbortReasonNone);
-        SetListeningMode(kListeningModeManualStop);
+        /* [G3] 打断衔接（引导播报中 KEY/长按打断 -> StartListening 沿）: 记录语境
+         * 保持逐句 stt 形态继续聆听（不回落 manual——回落即离逐句 stt, 回显/累积断）。 */
+        if (kidpal_story_session_ctx_active()) {
+            SetListeningMode(aec_mode_ == kAecOff ? kListeningModeAutoStop
+                                                  : kListeningModeRealtime);
+        } else {
+            SetListeningMode(kListeningModeManualStop);
+        }
     }
 }
 
@@ -1082,6 +1180,23 @@ void Application::HandleStateChangedEvent() {
                                              &story_end_page) == 1) {
                     KidpalStorySessionEndApply(story_end_page);
                 }
+            }
+            /* 261022-p3-record-chrome-ghost-fix（CG-A1）: 语音会话收尾沿**先**复位键帽
+             * 场景态（keybar 场景单源 kidpal_keybar_scene_reset）——回「非语音场景默认」
+             * （出闭集）。修复前该态永不复位, 下一轮故事子态缓存未同步的过渡窗会被通用
+             * 分支画出上一次语音轮残留键帽（KPLOG005 缺陷①因一: 聆听残留「说完啦/结束」、
+             * 思考残留「不等了/结束」约 300~500ms）。
+             * 落位在 voice_end 之前: voice_end 内部会重渲基层页并驱动键帽条同步, 复位先落
+             * 才能让那次同步读到的已是默认态（否则会话收尾那一次刷新仍按残留场景裁决,
+             * 键帽要等下一次 chrome 同步才盖回——正是「鬼影 300~500ms」的形态）。
+             * 提醒弹窗驻留（REMINDER 在顶）时不复位——提醒材料壳的显隐判据取同一场景态
+             * （KVST_SCENE_REMIND）, 复位会把驻留中的提醒外壳/小伴整页熄掉; 提醒关闭走
+             * 自己的场景沿（REMIND 之后的下一次 apply_look）。复位幂等: 非语音轮路径
+             * （无 VOICE 层）同样安全。 */
+            if (kidpal_render_node_front_is_reminder() != 1) {
+                kidpal_keybar_scene_reset();
+                ESP_LOGI(TAG, "keybar_scene_reset corr_id=kdp-%u src=session_end",
+                         static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
             }
             /* 语音轮结束 -> 前台回落（无服务端页驻留则回首页，有回答页驻留则保持其前台，
              * OQ3=c 回答驻留）；事件驱动取代原 1s tick 轮询对账。 */

@@ -6,10 +6,21 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (74)
+## dev (85)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261022-diag-log-content](261022-diag-log-content/) | 2026-10-22 | delivery/taskpackages/261022-diag-log-content/plan.md | closed | — |
+| [261022-m5-k1-prompt-carrier-migration](261022-m5-k1-prompt-carrier-migration/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-k4-history-corpus-backfill](261022-m5-k4-history-corpus-backfill/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
+| [261022-m5-n2a-schedule-mechanical-injection](261022-m5-n2a-schedule-mechanical-injection/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4 | open | device-memory-overhaul |
+| [261022-p3-record-chrome-ghost-fix](261022-p3-record-chrome-ghost-fix/) | 2026-10-22 | docs/debt/tech/TECH-261022-p3-record-session-state-churn.md | closed | — |
+| [261022-p3-record-front-polish-fix](261022-p3-record-front-polish-fix/) | 2026-10-22 | docs/debt/tech/TECH-261022-p3-record-session-state-churn.md | closed | — |
+| [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md | closed | — |
+| [261020-p3-rec-frame-visual](261020-p3-rec-frame-visual/) | 2026-10-20 | delivery/taskpackages/261020-p3-rec-frame-visual/plan.md | closed | — |
+| [261019-p3-record-dialogue-guide](261019-p3-record-dialogue-guide/) | 2026-10-19 | delivery/review/261019-arch-review-p3-record-dialogue-guide/PROPOSAL.md | closed | — |
 | [261018-sd-log-persist](261018-sd-log-persist/) | 2026-10-18 | delivery/review/261018-arch-review-sd-log-persist/PROPOSAL.md | closed | — |
 | [261018-sd-log-usb-read](261018-sd-log-usb-read/) | 2026-10-18 | delivery/taskpackages/261018-sd-log-usb-read/plan.md | closed | — |
 | [261017-prompt-v11-schedule-recall](261017-prompt-v11-schedule-recall/) | 2026-10-17 | docs/debt/tech/TECH-261017-schedule-answer-skip-read-hallucination.md | closed | — |

@@ -106,8 +106,13 @@ void ScheduleStoryRender() {
          * 推送路径（story_list/story_text 路由）维持夹钳后 SERVER_PAGE 前台现状。 */
         kidpal_render_node_begin_page();
         kidpal_story_page_render(&snap->v, &snap->l, &snap->t);
-        /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。 */
-        kidpal_render_node_cache_story(&snap->v, &snap->l, &snap->t);
+        /* 包 9b HWV-A6: 同步至渲染节点缓存，供 BOOT 双按翻页 cycle_next 读取。
+         * 261019 fixer R2-F4 根修: 同步 g_story_* 执行期当前值而非入队时快照——快照
+         * 可能早于其后落账的云端 story_list（时序倒挂：盖章帧先入队、新列表后到），
+         * 执行期回写旧快照会把基层缓存打回旧列表（真机 R2 归档后 items=3 渲染过、
+         * 页重进回退 vcount=2 的直接来源）。基层缓存语义 = 「下次重渲的数据源」，
+         * 恒取云端权威最新值。g_story_* 与本 lambda 同线程消费（StoryRecTimerCb 先例）。 */
+        kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
         kidpal_render_node_end_page();
         kidpal_render_node_story_local_front();
     });
@@ -119,10 +124,40 @@ void StoryRecTimerCb(lv_timer_t* timer) {
         g_story_rec_timer = nullptr;
         return;
     }
+    /* D2 真机轮 R1 真相核（261019 fixer）: 渲染前核「基层内容页仍是 P3」。任何其它
+     * 路径已把基层重建为首页/课表时（残缝: 守卫外的重建路径 / 翻页），本拍跳过——
+     * 演出断一拍无害, 录音页盖回基层 = 错（且曾与悬垂 s_kidpal_img 链成 UAF）。
+     * 不满足时**不**代为重建录音页（重建走 ScheduleStoryRender 单点权威）。判据
+     * 单源 = kidpal_render_node_story_page_is_local()（host 侧缝同符号）。
+     * K6 correlationId: 跳拍带 corr_id 便于真机日志对账。 */
+    if (kidpal_render_node_story_page_is_local() != 1) {
+        ESP_LOGW(TAG, "rec tick skip corr_id=kdp-%u local_page!=story",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        return;
+    }
     uint32_t elapsed = lv_tick_get() - g_story_rec_start_ms;
     int flash = 0;
     int wave = 0;
     if (kidpal_story_rec_tick(&g_story_view, elapsed, &flash, &wave) == 0) {
+        /* 261023 观感直修（architect 评审裁定落地）: 渲染节流——面板为反射 LCD，
+         * 10fps 无条件全页重建在回显滚动时产生肉眼可见的新旧文本叠印（真机照片
+         * 实证、FULL 渲染模式排除传输层后定性 = 面板响应窗）。跳拍规则：秒数/
+         * 回显行数/闪点任一变化、或每 3 拍（声波动画降频 3.3fps）才渲染一帧。 */
+        static int s_rec_render_phase = 0;
+        static int s_last_sec = -1;
+        static int s_last_echo = -1;
+        static int s_last_flash = -1;
+        int echo_n = kidpal_story_echo_count();
+        bool content_changed = (g_story_view.rec_seconds != s_last_sec) ||
+                               (echo_n != s_last_echo) ||
+                               (flash != s_last_flash);
+        s_rec_render_phase = (s_rec_render_phase + 1) % 3;
+        if (!content_changed && s_rec_render_phase != 0) {
+            return; /* 跳拍：面板少一次整页重驱 */
+        }
+        s_last_sec = g_story_view.rec_seconds;
+        s_last_echo = echo_n;
+        s_last_flash = flash;
         kidpal_story_page_render(&g_story_view, &g_story_list, &g_story_text);
     }
 }
@@ -133,6 +168,46 @@ void StartStoryRecTimer() {
     }
     g_story_rec_start_ms = lv_tick_get();
     g_story_rec_timer = lv_timer_create(StoryRecTimerCb, 100, nullptr);
+}
+
+/* ---- 盖章定格驻留定时器（261022 观感直修）---- */
+/* hold_ms（story_page.c KSTORY_STAMP_HOLD_MS=3000, 契约 kidpal_story_stamp_spec）
+ * 此前只声明未消费（「真机观感殿后 9b」）——盖章页无驻留保证, 被下一次渲染
+ * （迟到的状态变化 / story_list 重推）顶掉 = 徽章「一闪而过」（真机轮 human 实证,
+ * KPLOG 23:59:34-36 仅 1.7s）。接线 = 3s 一次性定时器 -> STAMP 页态回落 LIST +
+ * ScheduleStoryRender 单点权威。回调页态门 = 驻留期间页态已被其它沿改变
+ * （用户手势 / 新会话）则让位, 绝不代翻。时长值与 story_page.c 冻结常量双写——
+ * 值域钉 3s, 改动须两处同批（对账注记, 免扩公共头）。 */
+lv_timer_t* g_story_stamp_hold_timer = nullptr;
+
+void StoryStampHoldCb(lv_timer_t* timer) {
+    lv_timer_delete(timer);
+    g_story_stamp_hold_timer = nullptr;
+    if (g_story_view.page != KSTORY_PAGE_STAMP) {
+        return; /* 驻留期间页态已被其它沿改变 -> 让位, 绝不代翻 */
+    }
+    g_story_view.page = KSTORY_PAGE_LIST;
+    if (kidpal_render_node_story_on_screen() == 1) {
+        /* 在屏：渲染列表（取最新缓存列表）。 */
+        ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u page=list on_screen=1",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        ScheduleStoryRender();
+    } else {
+        /* architect B-4 离页守卫：用户已 BOOT 翻走 / 语音层前台——只同步渲染节点
+         * 缓存, 不渲染不抢前台。缓存同步不能省：否则 cycle_next 回 P3 时按缓存
+         * page=STAMP 重绘盖章页且定时器已自删 = 卡死盖章页。 */
+        kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
+        ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u on_screen=0 cache_only=1",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    }
+}
+
+void StartStoryStampHoldTimer() {
+    if (g_story_stamp_hold_timer != nullptr) {
+        lv_timer_delete(g_story_stamp_hold_timer);
+    }
+    g_story_stamp_hold_timer =
+        lv_timer_create(StoryStampHoldCb, 3000, nullptr); /* = KSTORY_STAMP_HOLD_MS */
 }
 
 /* ---- 删除确认子态 + 消歧 + 隐式 ack 重发的设备驱动状态（260924-m4-k2 seam
@@ -672,14 +747,32 @@ bool StoryDispatchAct(int act) {
             ScheduleStoryRender();
             return true;
         case KSPV2_ACT_DISCARD_RECORD:
-            /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）——关通道
-             * 即达 front 断开钩子 acc.cancel(session_id, reason="ws_disconnect")
-             * （弹缓冲不落盘）。负锚: 严禁走收尾保存面（listen stop 上行会触发
-             * front stop 归档 = 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=
-             * 丢弃」已退役）。 */
+            /* K3 [S5]: BOOT 任一手势 = 丢弃退回列表（不设重录恢复 v1.49）。
+             * 261021-p3-record-cancel-lifecycle F2（契约 §四 kidpal_story_discard,
+             * 2026-10-21 LANDED）: 先发显式丢弃帧、再关通道——同一 TCP 有序, front
+             * 泵先消费 discard（按本连接会话键权威取消、不归档）再处理断连;
+             * 关通道保留 = cancel-on-disconnect 兜底（OQ2 维持: 帧丢失/旧网关退化
+             * 路径仍由断开钩子收尾）。
+             * 发帧在本回调上下文直接调协议自由函数（与 KSPV2_ACT_INTERRUPT_GUIDE
+             * 的 AbortSpeaking 直接发送同款线程形态）——若经 Application::Schedule
+             * 排到主任务, 帧序会落到关通道之后 = 发不出去, 显式丢弃通道退化。
+             * 负锚: 严禁走收尾保存面（listen stop 上行会触发 front stop 归档 =
+             * 丢弃反被落盘, 语义反转回潮; 旧冻结表「KEY 长按=丢弃」已退役）。 */
             ESP_LOGI(TAG, "story_key discard_rec cancel_count=%d",
                      g_story_view.cancel_count);
+            SendKidpalStoryDiscard();
             Application::GetInstance().CloseAudioChannel();
+            ScheduleStoryRender();
+            return true;
+        case KSPV2_ACT_INTERRUPT_GUIDE:
+            /* 引导播报中打断（261019-p3-record-dialogue-guide [G3]/[G6] 消费闭环）:
+             * KEY 短/长按打断引导播报、继续聆听——页态保持 RECORDING、子态复位 0 已由
+             * 输入函数就地完成; 此处消费 = AbortSpeaking 既有打断路径（application.cc
+             * :927 同族——轮来源 = Listening, tts stop 出口判据③播完回 Listening）。
+             * 零 cancel/归档副作用（打断不是收尾也不是丢弃）; 不发 listen stop、不离
+             * 记录会话（继续聆听）。 */
+            ESP_LOGI(TAG, "story_key interrupt_guide page=%d", g_story_view.page);
+            Application::GetInstance().AbortSpeaking(kAbortReasonNone);
             ScheduleStoryRender();
             return true;
         case KSPV2_ACT_NONE:
@@ -729,6 +822,70 @@ void KidpalStoryVadEnterRecording() {
 }
 
 /* -------------------------------------------------------------------------- *
+ * 引导播报子态看门狗（真机轮追补 261022, KPLOG006 22:27:43-22:29:09 实证）。
+ * 缺陷链: 引导 TTS 多句流式播放中孩子继续说话触发 barge-in abort（引擎 abortHandle:
+ * clear_queues + 发 tts stop）——句 1 的 tts stop 正常到达（设备 edge 0 @22:28:03.4）,
+ * 但句 2 的 tts start 帧竞态泄漏（edge 1 同刻到达, 其音频与收尾 stop 已被 abort 清掉）
+ * -> 设备 rec_substate 卡 1 -> 键帽「打断/留空」悬挂 66 秒（直到 22:29:09 下一句引导
+ * 的 stop 才解开）。根因在第三方引擎树（不可改）, 设备侧补韧性缺口 = 本看门狗。
+ *
+ * 语义: 每个 tts start 沿布防一次性定时器, 到期仍未收 stop 且窗口内无音频即判泄沿,
+ * 复位子态并同步渲染（幂等沿语义与 KidpalStoryGuideSpeechEdge 一致: 仅在仍处引导播报
+ * 子态时复位, stop 沿已复位则早退不重渲）。看门狗不推断「谁该发 stop」, 只兜底
+ * 「无 stop 的悬挂态」。
+ *
+ * 时长依据（r2 音频感知收紧, 真机反馈 2026-10-22）: 初版 12s 盲等在真机可触发但**打断
+ * 窗口体验差**——孤儿帧没有音频, 孩子白等 12s 才见键帽恢复。r2 改为「音频感知」判据:
+ * 真实句子引擎 TTS 首包实测 ~1-2s 内到达（引擎日志「发送第一段语音 -> 语音生成成功」
+ * ≈1s）, 3s = 1.5x 余量即足以区分「真音频在放」与「孤儿 start 无音频」; 到期回调据此
+ * 二选一——见过音频（g_story_guide_audio_seen == true）不复位、不重渲, 直接撤表返回
+ * （真音频在放, 等它的 stop 沿; stop 丢失属罕见形态, 可接受）, 没见过音频才复位
+ * （日志 audio=none 标记）。多句流每句 start 重布防（先撤旧再建新, 帧间 30ms 级,
+ * 幂等）, 故正常播放期间不会误判。到期复位后的键帽恢复 = 真机观测项（CG-A5 口径）。
+ * ------------------------------------------------------------------------ */
+#define KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS 3000
+static lv_timer_t* g_story_guide_wd_timer = nullptr;
+
+/* 音频感知标志（定义住 application.cc OnIncomingAudio 收包路径; 同款免扩公共头纪律:
+ * 消费方此处 extern 声明, mcp_server.h 零改动）。布防时由本侧清 false 开新窗口。 */
+extern "C" bool g_story_guide_audio_seen;
+
+static void StopStoryGuideWatchdog() {
+    if (g_story_guide_wd_timer != nullptr) {
+        lv_timer_delete(g_story_guide_wd_timer);
+        g_story_guide_wd_timer = nullptr;
+    }
+}
+
+static void StoryGuideWatchdogCb(lv_timer_t* timer) {
+    g_story_guide_wd_timer = nullptr;
+    lv_timer_delete(timer); /* 一次性: 回调自删, 绝不常驻（StoryRecTimerCb 先例） */
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        return; /* 已离开录音态: 子态载体无语义（收尾路径负责）, 不越权复位 */
+    }
+    if (g_story_view.rec_substate != 1) {
+        return; /* 幂等: stop 沿已复位 -> 到期不重渲（与沿桥幂等语义汇合） */
+    }
+    if (g_story_guide_audio_seen) {
+        /* 音频感知（r2）: 窗口内真有 opus 包进过解码队列 = 真句子在放, 不复位不重渲,
+         * 撤表返回等它的 stop 沿（stop 丢失属罕见形态, 不为此误伤正常播放）。 */
+        ESP_LOGI(TAG, "story_guide_speech_watchdog deferred audio=yes");
+        return;
+    }
+    g_story_view.rec_substate = 0;
+    ESP_LOGW(TAG, "story_guide_speech_watchdog substate=0 audio=none");
+    ScheduleStoryRender();
+}
+
+static void ArmStoryGuideWatchdog() {
+    StopStoryGuideWatchdog(); /* 多句流: 先撤旧再布防, 幂等（每句 get 一个新窗口） */
+    g_story_guide_audio_seen = false; /* 新窗口: 清音频感知（r2） */
+    g_story_guide_wd_timer = lv_timer_create(StoryGuideWatchdogCb,
+                                             KSTORY_GUIDE_SPEECH_WD_TIMEOUT_MS,
+                                             nullptr);
+}
+
+/* -------------------------------------------------------------------------- *
  * K3R [R2] 会话收尾消费侧桥（261001-m4-k3-record-session-live-repair, D4b-1）。
  * application.cc Idle 分支消费 story_page.c 纯逻辑缝 kidpal_story_session_end 出参
  * 后经此二桥执行设备半——读 g_story_view.page 供判据（KidpalStoryViewPageState）+
@@ -748,6 +905,9 @@ void KidpalStorySessionEndApply(int list_page) {
         lv_timer_delete(g_story_rec_timer);
         g_story_rec_timer = nullptr;
     }
+    /* 会话收尾一并撤引导播报看门狗（跨会话泄漏防线, 同 D4b 根因形态: 收尾不定时,
+     * 定时器可能在首页重建后仍持有旧会话子态的判决权）。 */
+    StopStoryGuideWatchdog();
     /* 同步渲染节点缓存 + 权威会话页态镜像（令前台回落路径 voice_end 的 [R3]/[R5] 判据
      * 见 LIST 真值; 录音态强屏蔽随之复位——voice_end 重算 chrome 时 page_state != RECORDING
      * -> 强屏蔽位落 0, 声波 chrome 按常规语义恢复）。 */
@@ -755,6 +915,43 @@ void KidpalStorySessionEndApply(int list_page) {
     kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
     ESP_LOGI(TAG, "story_session_end corr_id=kdp-%u page=%d",
              static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), list_page);
+}
+
+/* -------------------------------------------------------------------------- *
+ * [G3] 帧 B「引导播报中」子态沿桥（261019-p3-record-dialogue-guide D4-5, fixer）。
+ * 旧账 escalation 067bd067: 全仓无路径置 rec_substate=1 —— 消费面（story_page_input
+ * RDG-F2 键位分叉 + keybar 帧分叉）在世而置位链缺失, 引导播报期间键帽仍显收尾/丢弃
+ * （BOOT 毁稿分叉敞口）。修法 = 设备侧从**既有 tts 帧派生**（零 wire 新增）: 记录语境
+ * 内引擎抑制 LLM/TTS, kidpal_speak 引导注入是该页态下唯一 TTS 源 —— application.cc
+ * tts start/stop 分支沿调用本桥。桥内门: 仅 RECORDING 页态有子态语义（幂等, 重复沿
+ * 不重渲）; 写 g_story_view.rec_substate 标量后经 ScheduleStoryRender 同步渲染节点
+ * 缓存（键帽分叉消费 = kidpal_render_node_story_rec_substate）+ 落屏。RDG-F2 键位
+ * 分叉 / RDG-F3 整理态吞键零触碰（桥只写标量, 分叉判定仍归 story_page_input 冻结
+ * 决策表）。打断路径（KEY -> INTERRUPT_GUIDE）的子态复位由输入函数就地完成（本桥
+ * 的 tts stop 复位沿与其幂等汇合）。定义面纪律与 KidpalStoryVadEnterRecording 同款
+ * （不进 mcp_server.h 公共头, 消费方 extern 声明）。主线程 Schedule 串行消费现实与
+ * g_story_* 既有约定一致。
+ * ------------------------------------------------------------------------ */
+void KidpalStoryGuideSpeechEdge(int speaking) {
+    if (g_story_view.page != KSTORY_PAGE_RECORDING) {
+        return;  /* 子态载体只在录音态有语义（引导态/列表/整理态不置不复位） */
+    }
+    /* 看门狗沿（真机轮追补 261022, KPLOG006 22:28:03 泄漏 start 帧实证）: 布防/撤防
+     * 先于子态幂等早退——多句流每句 start 都要重布防（30ms 级帧间, 帧间不给新窗口
+     * 则首句窗口到期误判正常句）; stop 沿撤防令正常播完/被打断不留残余定时器。 */
+    if (speaking != 0) {
+        ArmStoryGuideWatchdog();
+    } else {
+        StopStoryGuideWatchdog();
+    }
+    int next = (speaking != 0) ? 1 : 0;
+    if (g_story_view.rec_substate == next) {
+        return;  /* 幂等: 重复沿（tts start 重发 / 连续 sentence 帧）不重渲 */
+    }
+    g_story_view.rec_substate = next;
+    ESP_LOGI(TAG, "story_guide_speech_edge substate=%d",
+             g_story_view.rec_substate);
+    ScheduleStoryRender();
 }
 
 /* 从一段 E1 display 载荷的嵌套 data JSON 里取一个字符串字段 (如 text / action)。
@@ -1246,12 +1443,44 @@ void McpServer::AddCommonTools() {
                                                                    VRT_CTRL_START_RECORDING);
                             ESP_LOGI(TAG, "control start_recording story_consumed=%d page=%d",
                                      consumed, g_story_view.page);
+                            /* [G6] 双入口同一记录语境（261019, AC1）: 触发词入口经
+                             * control/start_recording 收敛——置记录语境标志（与 REC_SESSION
+                             * 入口同态: 回显旁路喂入 / kvr 场景守卫 / 聆听形态切换的消费门;
+                             * 清位 = 会话收尾, 既有）。幂等重入（consumed 幂等返回）不重复置。 */
+                            kidpal_story_session_ctx_set(1);
                             app.StartListening();
                             if (consumed == 1) {
                                 /* 进录音态 -> 首帧渲染 + 起演出 tick 驱动（显示循环侧真实
                                  * 消费 kidpal_story_rec_tick, 录音「正在录」可观察; HWV-A9）。 */
                                 ScheduleStoryRender();
                                 StartStoryRecTimer();
+                            }
+                            break;
+                        }
+                        case 3: { /* start_organizing（261019-p3-record-dialogue-guide
+                                   * [G2]/[G6], q2 = ⓒ）: 三式收尾统一下发 -> 设备切
+                                   * P3 整理过渡演出（KSTORY_PAGE_ORGANIZING, 非交互
+                                   * 过渡态 KEY/BOOT 均不响应; 离态 = story_text 到达
+                                   * 既有渲染路径）。重复幂等由 on_control case 3 承载。 */
+                            int consumed = kidpal_story_on_control(&g_story_view,
+                                                                   VRT_CTRL_START_ORGANIZING);
+                            ESP_LOGI(TAG, "control start_organizing story_consumed=%d page=%d",
+                                     consumed, g_story_view.page);
+                            /* 261021-p3-record-cancel-lifecycle F4（S-F1.4-AC6 清位链
+                             * 复用）: server 驱动收尾（语音收尾/自动收尾）时设备仍在
+                             * Listening——补 settle 事件位投递（与 KSPV2_ACT_STOP_RECORD
+                             * 同款形态, mcp 回调上下文安全）：HandleStopListeningEvent
+                             * 发 listen stop + SetDeviceState(Idle) -> Idle 分支既有清位
+                             * 链接管（[R2] 页态复位 + story ctx 清位 + 提醒队列 raise）,
+                             * show_home 守卫随之放行。幂等: KEY 收尾路径设备已先自行
+                             * Idle, 重复 settle 见 state != Listening 即 no-op 不重发
+                             * listen stop; front 侧收尾已先 cancel 会话（routing 回 chat）
+                             * -> 本 listen stop 零副作用。 */
+                            app.StopListening();
+                            if (consumed == 1) {
+                                /* 进整理过渡态 -> 首帧渲染（state-organizing 帧可见,
+                                 * 翻✅条件③的设备半; 渲染分支 = story_page.c [G5]）。 */
+                                ScheduleStoryRender();
                             }
                             break;
                         }
@@ -1388,6 +1617,18 @@ void McpServer::AddCommonTools() {
                     /* kidpal_story_list_t = 2824B → 堆分配（ssl_receive 4096B 栈纪律，
                      * 见本文件头注）。make_unique<T>() 值初始化 = 旧写法的 `= {}` 清零。 */
                     auto parsed = std::make_unique<kidpal_story_list_t>();
+                    /* architect B-1/B-2（261023 真机轮追补评审）: 盖章驻留谓词只看页态
+                     * 不看定时器（跨任务时序：story_list 可能先于盖章闭包执行, timer
+                     * 判据在该时序失效）——case 级声明覆盖 view_init 块与 gate 块两个
+                     * 作用域。view_init 之后恢复驻留字段（view_init 清 page/
+                     * last_saved_id/stamp_serial——不清回则重复 story_text 回执二次盖章）。 */
+                    bool stamp_hold = (g_story_view.page == KSTORY_PAGE_STAMP);
+                    char hold_saved_id[sizeof(g_story_view.last_saved_id)] = {0};
+                    int hold_stamp_serial = g_story_view.stamp_serial;
+                    if (stamp_hold) {
+                        memcpy(hold_saved_id, g_story_view.last_saved_id,
+                               sizeof(hold_saved_id));
+                    }
                     int items_n = kidpal_story_list_parse(data.c_str(), parsed.get());
                     if (items_n < 0) {
                         /* 降级：story_list data 畸形/缺字段/越界 -> 友好提示, 不盲渲染 */
@@ -1418,6 +1659,12 @@ void McpServer::AddCommonTools() {
                         bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
                         kidpal_story_view_init(&g_story_view, parsed.get());
                         g_story_list = *parsed;
+                        if (stamp_hold) {
+                            g_story_view.page = KSTORY_PAGE_STAMP;
+                            memcpy(g_story_view.last_saved_id, hold_saved_id,
+                                   sizeof(hold_saved_id));
+                            g_story_view.stamp_serial = hold_stamp_serial;
+                        }
                         if (was_delete) {
                             /* 云端重推到达时删除覆盖层仍在前台 -> view_init 已把页态
                              * 重装回 LIST; 覆盖层随之关层（回列表, 不留幽灵弹窗）。 */
@@ -1450,18 +1697,23 @@ void McpServer::AddCommonTools() {
                         int story_voice_front =
                             (kidpal_render_node_front_layer() == KIDPAL_LAYER_VOICE) ? 1 : 0;
                         bool story_restore = mcp_json_get_bool(data, "restore");
-                        if (story_restore ||
+                        /* 261019 fixer R2-F4: 基层缓存同步上提为路由区唯一写点
+                         * （K7-A5 纪律 / SLP-SLA4 计数钉恒 1）——gated 只装缓存与前推
+                         * 渲染分支共用同一条同步，两路都取云端权威最新列表。缺此步前推
+                         * 分支只落 SERVER_PAGE 覆盖层, 基层缓存停留陈旧列表——覆盖层
+                         * 消退/页重进即按陈旧缓存重渲（R2 新故事 3→2 回退的直接来源）。 */
+                        kidpal_render_node_cache_story(&g_story_view, &g_story_list,
+                                                       &g_story_text);
+                        if (story_restore || stamp_hold ||
                             kidpal_story_list_gate(story_voice_front,
                                                    g_story_view.page) != 0) {
-                            /* restore 或记录语境前台 gated: 只装缓存（唯一缓存同步缝,
+                            /* restore 或记录语境前台 gated: 只装缓存（上方唯一缓存同步缝,
                              * 不给恢复性载荷另起第二条缓存路径——K7-A5「唯一缓存写点」
                              * 纪律）、零前台夹钳（不接管前台、不推 SERVER_PAGE——260928
                              * 摘除理由的板端消解路径）。restore 且 P3 在屏（LIST 冷浏览）
                              * -> 经重绘本页单入口仅重绘（自持锁、先缓存后调——.h :277
                              * 在世契约）。 */
-                            kidpal_render_node_cache_story(&g_story_view, &g_story_list,
-                                                           &g_story_text);
-                            if (story_restore && kidpal_render_node_story_on_screen()) {
+                            if (!stamp_hold && story_restore && kidpal_render_node_story_on_screen()) {
                                 kidpal_render_node_refresh_story();
                             }
                             ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d restore=%d",
@@ -1474,7 +1726,16 @@ void McpServer::AddCommonTools() {
                                 kidpal_render_node_begin_page();
                                 kidpal_story_page_render(&view_snapshot, list_snapshot.get(),
                                                          &g_story_text);
+                                /* 261019 fixer R2-F4: 基层缓存已在 gating 之前由路由区
+                                 * 唯一写点同步（上方）, 本前推分支只负责覆盖层渲染——
+                                 * 不再另起第二处缓存调用（K7-A5 / SLP-SLA4 计数钉恒 1）。 */
                                 kidpal_render_node_end_page();
+                                /* CG-A3 成功归档层栈收口（261022-p3-record-chrome-
+                                 * ghost-fix）: 夹钳后回落基层——否则覆盖层仍占逻辑
+                                 * 前台, 归档后首按 BOOT 被吃成 overlay_close
+                                 * （KPLOG005 13:03:20）。通道 = 既有 story_local_front
+                                 * （在役先例同款）, 帧类型负锚零新帧。 */
+                                kidpal_render_node_story_local_front();
                             });
                         }
                     }
@@ -1557,6 +1818,15 @@ void McpServer::AddCommonTools() {
                                     kidpal_story_page_render(&stamp_view, stamp_list.get(),
                                                              stamp_text.get());
                                     kidpal_render_node_end_page();
+                                    /* CG-A3（261022-p3-record-chrome-ghost-fix）: 盖章帧
+                                     * 闭包同款层栈收口（对齐失败路径 4068dc6c 的显式
+                                     * dismiss 纪律）——成功归档 / 盖章演出后覆盖层不得
+                                     * 继续占逻辑前台。通道 = 既有 story_local_front,
+                                     * 帧类型负锚: 零新下行帧。 */
+                                    kidpal_render_node_story_local_front();
+                                    /* 261022 观感直修: 盖章定格驻留 3s（hold_ms 接线,
+                                     * 见 StartStoryStampHoldTimer 注记）-> 回落列表。 */
+                                    StartStoryStampHoldTimer();
                                 });
                             }
                             break;

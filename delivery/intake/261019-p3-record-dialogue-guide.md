@@ -24,7 +24,7 @@ anchors:
   req: "requirements.md §9 v1.65（2026-10-19 档 2 结构性 · 触 UI 定稿、frozen）——S-F2.2 全篇重写（对话式引导记录：默认闭嘴 + 卡壳轻引导 + 素材边界废除一刀切 + 收尾忠实整理 + AC5 自动收尾含被抑制轮 + 按键语义钉）+ NFR-PERF-3 新增（阈值待定）+ §7 开放问题 7 取代注记 + WF-F2-02 框后注记四件 + 连带 §1/§2.1/§2.3/§2.4/F2 intro；设计母版 v6→v7（三帧 p3-recording 修订 / p3-recording-guide / state-organizing，气泡左上演层顶部位式）+ BRIEF v6 + glossary 两条勘误；PNG = docs/ui/V7/ 三帧；human 终拍两轮通过（第一轮打回气泡位式）；reviewer 三轮 PASS；流程留痕见 §9 v1.65 依据列"
   arch: "architecture.md §12 changeId 行 `261019-p3-record-dialogue-guide`（2026-10-19 landed）——§10 决策 25 取代注记（悬空指针同修）+ ADR-013 新增（记录语境对话态 + Package B 引擎侧抑制定形 + `start_organizing` + provider 出口钉沿 §1.2 路径②）+ §5.1.2 front/story.py 行与 §5.2 场景④ 链路重写 + §2.3 / §5.1.1 / §9 to-be② / §5.5.4 / §4 NFR 映射表（补 NFR-PERF-3 行）/ §2.4 原则 3 联动对账；制品 = delivery/review/261019-arch-review-p3-record-dialogue-guide/（FROZEN v1.2 + R1 BLOCK(F1-F4)→v1.1/v1.2 修毕 + R2 GREEN + landing-verdict PASS）"
   contract: "interface-contract.md 三触点 LANDED（CDQ-261019-p3-record-dialogue-guide）：① §1.4 新增 `start_organizing`（网关决定类、引擎 display 流拒转）+ 表后变更记录条；② §1.4 `start_recording` 行 + §四 `kidpal_session_ctx` 条措辞对账（记录语境对话态 + 引擎侧抑制由 front 内部注入等价信号承载；wire 形状零改）；③ §1.4 节标题括注对账。四分类 = ACCOMPANIES_SPEC_CHANGE（reviewer 独立裁定）；同批 ADR-013 随落"
-  imp: ""
+  imp: "TaskPackage 261019-p3-record-dialogue-guide **已收口并合本地 main**（merge-driver 人批链：human-decision 3c71f3b0 → merge commit af4e6145，main = 4928f14d；verifier r13/r14 全绿 + supervisor ESCALATE 人批）。实现历程 = S1-S4 初版 + fixer 四轮（D1 auth / D2 UAF 三崩 / D3 v7 渲染 / D4 幻听守卫与整理接线 + 帧 B 置位链）+ 需求 v1.66 收尾词表；真机 R1-R5 五轮，R5 全绿（引导 spoken=yes、整理「游乐场的一天」、零崩溃）"
 openQ:
   - id: q1-261001-PackageB-吸收
     question: 261001-m4-k3-record-session-live-repair 的 Package B（D3-甲「引擎侧再动抑制 LLM」，冻结待 /arch-change 定形，触面与本批完全重叠：arch §5.2④ / 决策 25 / 契约 :266「引擎不感知本信号」）是否吸收进本批 /arch-change 一次定形？
@@ -66,7 +66,7 @@ openQ:
     question: human 终拍第一轮反馈——帧 A/B 气泡位置错：应与其它态一致放猫咪头顶上方（左演出层顶部），非右栏中部
     ruling: 终拍第一轮单点打回已闭合——uiux-author 改帧 A/B 气泡至左演出层顶部猫头顶上方（left 24/top 28，三帧位式统一）+ 规格表加「气泡位式」行 + BRIEF 同步；期间 uiux-author 全文件 Write 二次覆盖完整母版（R1 回归），主线程重放合并修复（机检复绿 15 画布）+ 重出三帧 PNG + 与 uiux-author 约定母版单写者（其后续只交增量页/补丁说明）。**human 终拍第二轮（2026-10-19）通过**（含帧 C 空键帽 = 非交互语义确认），requirements 翻 frozen v1.65
     status: resolved
-status: in-flight（2026-10-19 合并处置已拍：human 照 261016 前例授权假阴性闸旁路 + 手工本地合并——main 侧漂移 12 commit 含 gov ledger-rehome 结构迁移，rebase 后 ff 合并 = main ad28fd7c；CDQ 行按迁移格式重放 docs/debt/contract/CDQ-261019-p3-record-dialogue-guide.md、ADR-013 随 rename 落 docs/decisions/ADR.md，生成件重建、机检复绿。req/arch/contract 三 anchors 已回填，剩实现面 facePlan 顺序 3 = 五档分档（硬前置：261016-p3-story-body-sd-cache 合并）→ /build-feature）
+status: closed（2026-10-20 结项：四面全闭环——req v1.65/v1.66 frozen、arch ADR-013、contract CDQ-261019、impl 合 main af4e6145；真机 R1-R5 五轮，R5 全绿）
 ---
 
 # spine · P3 记录会话改对话式引导态（261019-p3-record-dialogue-guide）

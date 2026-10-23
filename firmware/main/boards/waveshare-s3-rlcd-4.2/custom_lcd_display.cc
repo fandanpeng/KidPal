@@ -4,6 +4,7 @@
 #include <esp_lcd_panel_io.h>
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_memory_utils.h>
 #include "custom_lcd_display.h"
 #include "lcd_display.h"
 #include "esp_lvgl_port.h"
@@ -126,6 +127,10 @@ height_(height)
     DisplayLen                = transfer >> 3; //(1byte 8ipex)
     DispBuffer                = (uint8_t *) heap_caps_malloc(DisplayLen, MALLOC_CAP_SPIRAM);
     assert(DispBuffer);
+    /* 261023 诊断（architect 评审 §1.4）: 钉镜像缓冲的 DMA 能力事实——S3 上 PSRAM
+     * 不在 DMA 区间, 驱动弹跳拷贝后 DMA 不读本镜像（重影机制排查锚）。 */
+    ESP_LOGI(TAG, "rlcd mirror ptr=%p dma_capable=%d len=%d",
+             DispBuffer, (int)esp_ptr_dma_capable(DispBuffer), DisplayLen);
 	PixelIndexLUT = (uint16_t (*)[300])heap_caps_malloc(transfer * sizeof(uint16_t), MALLOC_CAP_SPIRAM);
 	PixelBitLUT   = (uint8_t (*)[300])heap_caps_malloc(transfer * sizeof(uint8_t), MALLOC_CAP_SPIRAM);
     assert(PixelIndexLUT);
@@ -153,7 +158,13 @@ height_(height)
 	size_t lvgl_buffer_size = LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565) * transfer;
 	uint8_t *lvgl_buffer1 = (uint8_t *) heap_caps_malloc(lvgl_buffer_size, MALLOC_CAP_SPIRAM);
     assert(lvgl_buffer1);
-	lv_display_set_buffers(display_, lvgl_buffer1, NULL, lvgl_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+	/* 261022 观感修（真机轮 human 实证: 录音页滚动回显重影）: PARTIAL -> FULL。
+	 * 根因 = 缓冲本就整帧大小却跑 PARTIAL——一帧按脏区分块多次 flush, 每次 flush
+	 * 写镜像一块就 RLCD_Display 推全屏, 面板反复处于「半新半旧」混合态; 录音页
+	 * 330ms 全页重绘把它放大成肉眼可见的 tearing。FULL 模式 = 一帧一次整帧推送,
+	 * 面板恒一致。代价 = 每次 flush 全帧 SetPixel + SPI 推送（400x300 @40MHz
+	 * ≈ 3ms 级, 330ms 节拍下余量充足）。 */
+	lv_display_set_buffers(display_, lvgl_buffer1, NULL, lvgl_buffer_size, LV_DISPLAY_RENDER_MODE_FULL);
 
     ESP_LOGI(TAG, "RLCD init");
     RLCD_Init();

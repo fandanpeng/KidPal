@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/contract/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 8（待拍板 0 / 待触发 8 / 已接受风险 0）；已结 5（归档索引见下）。
+**摘要**：未结 9（待拍板 0 / 待触发 9 / 已接受风险 0）；已结 6（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（8）
+## 待触发（9）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -25,15 +25,21 @@ _（无）_
 | [CDQ-260924-m4-k1-storytext-seq](CDQ-260924-m4-k1-storytext-seq.md) | SHOULD | story_text 增可选 data.seq（入册流水号） | seq 账本实现归 K1（M4K1-A6）；板端盖章 N 消费 + 易失 stamp_index 退役归 K2（M4K2-A5） |
 | [CDQ-261017-p3-story-body-sd-cache](CDQ-261017-p3-story-body-sd-cache.md) | SHOULD | 新增 kidpal_story_fetch（契约面首个端发起请求-应答环） | ADR-011 已随批落（architecture+契约面同批）；实现面承载包（五档分档） |
 | [CDQ-261019-p3-record-dialogue-guide](CDQ-261019-p3-record-dialogue-guide.md) | SHOULD | 新增 start_organizing 控制动作 + 记录语境对话态措辞对账（interface-contract.md 三触点） | 实现面承载包（五档分档，待 261016-p3-story-body-sd-cache 合并）；ADR-013 已随批落（architecture+契约面同批） |
+| [CDQ-261021-p3-record-cancel-lifecycle](CDQ-261021-p3-record-cancel-lifecycle.md) | SHOULD | 新增 kidpal_story_discard（端→网关私有扩展消息：用户主动丢弃记录会话、素材销毁不入册） | 实现面承载包（② 单包 Full；launch 前置 = 契约面 anchor 回填） |
 
 ## 已接受风险（0）
 
 _（无）_
 
-## 已结（5）
+## 已结（6）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
 | 2026 | 5 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 无结项日期（未归档，见下方薄行） | 1 | — |
+
+| ID | title | 已结日期 | 依据 |
+|---|---|---|---|
+| [CDQ-261022-diag-log-docs-sync-write-scope](CDQ-261022-diag-log-docs-sync-write-scope.md) | 261022-diag-log-content 包 docs-sync 写权事件核销（integrator 写 spec 面被 enforce-scope 拦截，句由主线程合法落盘，零契约漂移） | — | — |

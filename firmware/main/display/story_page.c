@@ -43,7 +43,10 @@ LV_FONT_DECLARE(font_puhui_14_1);
 
 /* 盖章几何冻结值。 */
 #define KSTORY_STAMP_ANGLE_DECI (-80)
-#define KSTORY_STAMP_HOLD_MS    800
+/* 261022 观感修（真机轮 human 实证「一闪而过根本来不及看」）: 800 -> 3000。
+ * 3s = 孩子看清徽章 + N 序号的庆祝驻留；演出半（pose-jump 动画相位）不变，
+ * 只拉长定格。 */
+#define KSTORY_STAMP_HOLD_MS    3000
 
 /* 录音态显示位上界 = 99:59 (5999 秒)；冻结 contract 钳制显示位。 */
 #define KSTORY_REC_MAX_SECONDS 5999
@@ -1024,7 +1027,7 @@ static void ksy_box(lv_obj_t *scr, int x, int y, int w, int h, uint32_t color)
     lv_obj_clear_flag(o, LV_OBJ_FLAG_SCROLLABLE);
 }
 
-static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
+static lv_obj_t *ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t color)
 {
     lv_obj_t *l = lv_label_create(scr);
     lv_label_set_text(l, text);
@@ -1033,6 +1036,61 @@ static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t co
     /* CJK 字体显式接线（seam [K9]: 不赌继承——默认 montserrat_14 纯拉丁, P3 中文
      * 面真机空白; lcd_display.cc 五处先例同款）。 */
     lv_obj_set_style_text_font(l, &font_puhui_14_1, 0);
+    return l;
+}
+
+/* D3 v7 三帧气泡（261019 fixer; 位式权威 = docs/ui/kidpal-ui-design-v7.html P3 规格
+ * 表「气泡位式」行: 左演出层顶部、猫头顶上方 left 24 / top 28, 录音中/引导播报中/
+ * 整理中三帧同）: 程序化圆角框 + 文字（框族 = 正常圆角矩形 10px, v7 框族通则——
+ * 手绘尾巴资产归真机观感轮 GAP, 结构/文案本轮先立）。宽自适应 = 字符数×14 + 28
+ * （UTF-8 按字符计宽, 非字节数; 右缘 12px 安全区截断防御）。 */
+static int ksy_utf8_chars(const char *s)
+{
+    int n = 0;
+    if (s == NULL) {
+        return 0;
+    }
+    while (*s != '\0') {
+        if ((((unsigned char)*s) & 0xC0u) != 0x80u) {
+            n++;
+        }
+        s++;
+    }
+    return n;
+}
+
+static void ksy_bubble(lv_obj_t *scr, const char *text, int x, int y)
+{
+    int w;
+    lv_obj_t *box;
+    lv_obj_t *tx;
+
+    if (text == NULL || text[0] == '\0') {
+        return;
+    }
+    w = ksy_utf8_chars(text) * 14 + 28;
+    if (w > LV_HOR_RES - 12 - x) {
+        w = LV_HOR_RES - 12 - x;
+    }
+    if (w < 40) {
+        return; /* 位式畸形防御 */
+    }
+    box = lv_obj_create(scr);
+    lv_obj_remove_style_all(box);
+    lv_obj_set_size(box, w, 38);
+    lv_obj_set_pos(box, x, y);
+    lv_obj_set_style_radius(box, 10, 0);
+    lv_obj_set_style_bg_color(box, lv_color_hex(KSY_COLOR_BG), 0);
+    lv_obj_set_style_bg_opa(box, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(box, 3, 0);
+    lv_obj_set_style_border_color(box, lv_color_hex(KSY_COLOR_INK), 0);
+    lv_obj_set_style_border_opa(box, LV_OPA_COVER, 0);
+    lv_obj_clear_flag(box, LV_OBJ_FLAG_SCROLLABLE);
+    tx = lv_label_create(box);
+    lv_label_set_text(tx, text);
+    lv_obj_set_pos(tx, 11, 8);
+    lv_obj_set_style_text_color(tx, lv_color_hex(KSY_COLOR_TEXT), 0);
+    lv_obj_set_style_text_font(tx, &font_puhui_14_1, 0);
 }
 
 /*
@@ -1046,45 +1104,92 @@ static void ksy_label(lv_obj_t *scr, const char *text, int x, int y, uint32_t co
  * 页面回既有矢量双圈印章 + 文案 (best-effort 降级, 不崩)。
  */
 #define KSTORY_POSE_MAX 96
-static lv_image_dsc_t s_kstory_pose_dsc;
-static uint32_t      *s_kstory_pose_px = NULL;
-static int            s_kstory_pose_st = 0; /* 0=未试 1=可用 2=不可用 */
+/* D3 v7 重排（261019 fixer）: 泛化为按名装载 + 每资产独立缓存槽（STAMP pose-jump /
+ * 录音中 pose-record + rec_wave / 整理中 pose-think + qmark_trio + ic_wave_40 +
+ * ic_cloud_40_t2 七消费点共用同一 loader, 零互相逐出）。max 入参按资产族给定
+ * （姿态族 96; 声波/图标族 240 容 rec_wave 206x34）。 */
+#define KSTORY_ART_CACHE_SLOTS 7
 
-static const lv_image_dsc_t *kstory_pose_jump_dsc(void)
+typedef struct {
+    const char *name;        /* 已装载资产名（指针同址判命中; 字面静态存储期） */
+    lv_image_dsc_t dsc;
+    uint32_t *px;
+    int st;                  /* 0=未试 1=可用 2=不可用 */
+} kstory_art_cache_t;
+
+static kstory_art_cache_t s_kstory_art_cache[KSTORY_ART_CACHE_SLOTS];
+
+static const lv_image_dsc_t *kstory_art_dsc(const char *asset, int max_w, int max_h)
 {
     kidpal_art_img_t img;
+    kstory_art_cache_t *slot = NULL;
+    int i;
 
-    if (s_kstory_pose_st == 2) {
+    for (i = 0; i < KSTORY_ART_CACHE_SLOTS; i++) {
+        if (s_kstory_art_cache[i].name == asset) {
+            slot = &s_kstory_art_cache[i];
+            break;
+        }
+        if (slot == NULL && s_kstory_art_cache[i].name == NULL) {
+            slot = &s_kstory_art_cache[i]; /* 首个空槽预定（命中继续找） */
+        }
+    }
+    if (slot == NULL) {
+        return NULL; /* 槽耗尽（超出缓存容量即资产数, 防御） */
+    }
+    if (slot->st == 2) {
         return NULL;
     }
-    if (s_kstory_pose_st == 1) {
-        return &s_kstory_pose_dsc;
+    if (slot->st == 1) {
+        return &slot->dsc;
     }
-    if (kidpal_art_load("pose_jump_96.bin", &img) != 0 ||
-        img.w <= 0 || img.h <= 0 || img.w > KSTORY_POSE_MAX || img.h > KSTORY_POSE_MAX) {
-        s_kstory_pose_st = 2;
+    if (kidpal_art_load(asset, &img) != 0 ||
+        img.w <= 0 || img.h <= 0 || img.w > max_w || img.h > max_h) {
+        slot->st = 2;
         return NULL;
     }
-    s_kstory_pose_px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
-    if (s_kstory_pose_px == NULL) {
-        s_kstory_pose_st = 2;
+    slot->px = (uint32_t *)lv_malloc((size_t)img.w * img.h * sizeof(uint32_t));
+    if (slot->px == NULL) {
+        slot->st = 2;
         return NULL;
     }
     for (int y = 0; y < img.h; y++) {
         for (int x = 0; x < img.w; x++) {
             int p = kidpal_art_pixel(&img, x, y);
-            s_kstory_pose_px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
+            slot->px[y * img.w + x] = (p == 1) ? 0xFF000000u : 0x00000000u;
         }
     }
-    memset(&s_kstory_pose_dsc, 0, sizeof(s_kstory_pose_dsc));
-    s_kstory_pose_dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
-    s_kstory_pose_dsc.header.w      = img.w;
-    s_kstory_pose_dsc.header.h      = img.h;
-    s_kstory_pose_dsc.header.stride = (uint32_t)img.w * 4u;
-    s_kstory_pose_dsc.data          = (const uint8_t *)s_kstory_pose_px;
-    s_kstory_pose_dsc.data_size     = (uint32_t)(img.w * img.h * 4);
-    s_kstory_pose_st = 1;
-    return &s_kstory_pose_dsc;
+    memset(&slot->dsc, 0, sizeof(slot->dsc));
+    slot->dsc.header.cf     = LV_COLOR_FORMAT_ARGB8888;
+    slot->dsc.header.w      = img.w;
+    slot->dsc.header.h      = img.h;
+    slot->dsc.header.stride = (uint32_t)img.w * 4u;
+    slot->dsc.data          = (const uint8_t *)slot->px;
+    slot->dsc.data_size     = (uint32_t)(img.w * img.h * 4);
+    slot->name = asset;
+    slot->st = 1;
+    return &slot->dsc;
+}
+
+/* 姿态族入口（96 上限, STAMP/录音/整理三消费点共用）。 */
+static const lv_image_dsc_t *kstory_pose_dsc(const char *asset)
+{
+    return kstory_art_dsc(asset, KSTORY_POSE_MAX, KSTORY_POSE_MAX);
+}
+
+/* D3 v7: 资产位图落屏（loader 合成 ARGB8888 描述符; 资产不可用静默降级不画,
+ * 页面骨架零依赖资产在世——host runner 无 /art 挂载时同形降级）。max_w/max_h 按
+ * 资产族给定（姿态族 96; 图标/声波族 240 容 rec_wave 206x34）。 */
+static void ksy_art_image(lv_obj_t *scr, const char *asset, int max_w, int max_h,
+                          int x, int y)
+{
+    const lv_image_dsc_t *d = kstory_art_dsc(asset, max_w, max_h);
+    if (d == NULL) {
+        return;
+    }
+    lv_obj_t *im = lv_image_create(scr);
+    lv_image_set_src(im, d);
+    lv_obj_set_pos(im, x, y);
 }
 
 int kidpal_story_page_render(const kidpal_story_view_t *v,
@@ -1115,7 +1220,16 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
     ESP_LOGI(KSR_TAG, "STORY_RENDER page=%d vcount=%d lcount=%d rec=%d",
              v->page, v->count, list != NULL ? list->count : -1, v->rec_seconds);
 
+    /* D2 真机轮 R1 根修（2026-10-20, 261019-p3-record-dialogue-guide fixer）:
+     * lv_obj_clean 会销毁渲染节点持有的首页图像控件 s_kidpal_img（rn_render_home_locked
+     * 重建的 400x300 lv_image）, 但节点侧指针不清 -> 静态悬垂。旧 D4b-3 的
+     * lv_obj_is_valid 出帧守卫挡不住**地址复用假阳性**（悬垂地址被后续 label/box
+     * 复用时 is_valid 对新对象判真 -> lv_image_set_src 打在非图像对象上 = 堆腐坏,
+     * 现场 1/3 崩点时序吻合）。指针置空必须发生在 clean 时刻: 经 extern C 缝通知
+     * 渲染节点（ kidpal_render_node.cc 单点置 NULL; host runner 由 host_infra_seam.c
+     * 提供同符号空实现——本文件宿主/设备两侧同源可编）。 */
     lv_obj_clean(scr);
+    kidpal_render_node_notify_screen_cleaned();
     lv_obj_set_style_pad_all(scr, 0, 0);
     ksy_box(scr, 0, 0, LV_HOR_RES, LV_VER_RES, KSY_COLOR_BG);
 
@@ -1328,29 +1442,130 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
             uint32_t elapsed = (uint32_t)(v->rec_seconds < 0 ? 0 : v->rec_seconds) * 1000u;
             int wave = (int)((elapsed / 100u) % 4u);
             int i;
-            /* K3R D2 真机轮 v5 诊断（纯日志, 保留）: 证明录音态分支被走 + REC 指示现状。 */
+            /* K3R D2 真机轮 v5 诊断（纯日志, 保留）: 证明录音态分支被走。 */
             ESP_LOGI(KSR_TAG,
-                     "RECORDING render wave=%d rec_seconds=%d rec_block=(20,52,24,24) steady=1",
-                     wave, v->rec_seconds);
-            /* REC 指示（常亮实心黑块）。K3R D2 真机轮 v5（2026-10-01）:
-             * 旧 `flash = (elapsed/250)%2`, `elapsed = rec_seconds*1000`（rec_seconds 为
-             * **整秒**）-> `(rec_seconds*4)%2 ≡ 0` 恒 off -> 永远画浅灰 `0xDDDDDD`（1bpp
-             * RLCD 面板 = 白 = 不可见）; **黑块那一相从未出现**（真机照片 v4/v5 报 REC
-             * 不可见, 时长可见）。
-             * 选**常亮**（architect 二选一之固相支）: 1bpp 面板上 off 相 = 白（不可见）,
-             * 闪动会周期性令指示消失（照片轮易再报不可见）; 设计稿亦为实心点（● REC）。
-             * 常亮与 rec_seconds 解耦、零时间依赖、**无条件可见**, 最稳。位置 y=52 落
-             * 顶部 chrome 带（top_bar_/status_bar_ 经 lv_layer_top 恒浮）之下安全区,
-             * 与时长(y=48)/声波条(y≥70)零重叠。 */
-            ksy_box(scr, 20, 52, 24, 24, KSY_COLOR_INK);
-            /* 大时长文本（同上避顶部 chrome 带, y 由 18 下移至 48）。 */
+                     "RECORDING render wave=%d rec_seconds=%d", wave, v->rec_seconds);
+            /* D3 v7 帧 A 骨架重排（261019 fixer; 权威 = v7 html p3-recording 帧 +
+             * 规格表, 旧左列 x=16~60 旧布局退役; 261020 观感修两处位式在末两行）:
+             *   左 pose-record 96x96 @(45,87)（资产不可用静默降级）;
+             *   气泡 @(24,28)（文案单源 KSTORY_RECORDING_BUBBLE, 位式通则 24/28——
+             *   旧无气泡 / 帧 B (16,8) 位式退役）;
+             *   「在记」信号一行 @ y=17：12px 闪点 @(200,18) + REC 文案 @(218,17) +
+             *   大时长 @(254,17)（261020 观感修: 旧闪点 @(180,18) / REC @(198,17) /
+             *   大时长分两行 @(180,38) 与气泡右缘 ~192 重叠; 今三者同行整体右移,
+             *   起点 200 = 帧 B 引导气泡右缘 192 + 8px 安全距, 400px 版面上行宽
+             *   200..~300 仍有裕量; 元素集零变化）;
+             *   声波 rec_wave 资产 206x34（设计稿同款折线; 资产不可用退程序化跳动条）:
+             *   261020 观感修从右侧中部 @(180,94) 挪到猫咪正下方左演出区——206px
+             *   资产宽 vs 左区 <180px 有张力, 等比缩绘 212/256（≈0.83, pivot 置左上,
+             *   对象位即落位）: x=8..179（猫中线 x=93 居中）/ y=191..219, 不侵入右
+             *   回显列 x>=180; 兜底跳动条同位式（居中 x=32..154, 中心 y=205）;
+             *   回显右列 @(180,72)（261020 观感修: 旧 @(180,184) 上移吃满上半
+             *   右栏、满行底缘 156 不再被键位条 262 裁切; 明细见下方回显块注释）
+             *   （[G5] 回显常驻 AC2 锚: echo_reset 只许定义处
+             *   调用, 引导播报中/整理过渡态不清空）。 */
+            ksy_art_image(scr, "pose_record_96.bin", KSTORY_POSE_MAX, KSTORY_POSE_MAX, 45, 87);
+            ksy_bubble(scr, KSTORY_RECORDING_BUBBLE, 24, 28);
+            ksy_box(scr, 200, 18, 12, 12, KSY_COLOR_INK);
+            ksy_label(scr, "REC", 218, 17, KSY_COLOR_INK);
             if (kidpal_story_rec_time(v, buf, sizeof(buf)) == 0) {
-                ksy_label(scr, buf, 60, 48, KSY_COLOR_TEXT);
+                ksy_label(scr, buf, 254, 17, KSY_COLOR_TEXT);
             }
-            /* 手绘声波：随 wave 相位档跳动的高度条。 */
-            for (i = 0; i < 6; i++) {
-                int h = 10 + (((wave + i) % 4) * 10);
-                ksy_box(scr, 60 + i * 20, 90 - h / 2, 12, h, KSY_COLOR_INK);
+            {
+                const lv_image_dsc_t *wd = kstory_art_dsc("rec_wave.bin", 240, 40);
+                if (wd != NULL) {
+                    lv_obj_t *wi = lv_image_create(scr);
+                    lv_image_set_src(wi, wd);
+                    /* 261020 观感修: 缩绘锚点改左上（默认 pivot 居中会绕对象中心
+                     * 收拢, 落位需反推负偏移）; 212/256 ≈0.83 落在左演出区内。 */
+                    lv_image_set_pivot(wi, 0, 0);
+                    lv_image_set_scale(wi, 212);
+                    lv_obj_set_pos(wi, 8, 191);
+                } else {
+                    /* 程序化兜底跳动条（同位式语义: 资产缺失时占同一位置——
+                     * 猫正下方居中, 6 条 12px 宽 / 22px 步进, 中心 y=205 =
+                     * 缩绘后声波中线）。 */
+                    for (i = 0; i < 6; i++) {
+                        int h = 10 + (((wave + i) % 4) * 10);
+                        ksy_box(scr, 32 + i * 22, 205 - h / 2, 12, h, KSY_COLOR_INK);
+                    }
+                }
+            }
+            /* 话语回显区（261019 [G5] 回显常驻, AC2「回显区常驻」防回退锚）: 逐句
+             * 经 kidpal_story_echo_line 消费（idx 0 = 最旧），渲染在右区回显列——
+             * 引导播报中子态 / 整理过渡态**不得清空**回显区。
+             * 261020 观感修: 起点从 @(180,184) 上移到 @(180,72)——旧位式把上半
+             * 右栏（REC 行 y17..35 与挪走的声波之间）空置, 且第 4 行 y=250 底缘
+             * 268 被键位条上沿 262 裁切（真机照片实证）。新起点 72 = 帧 B 引导
+             * 气泡 box 底缘 66（@(24,28) 高 38）下方 6px 安全距——气泡右缘 192
+             * 侵入右栏 x>=180 的 12px 横向带, 不能让首行顶到 REC 行下沿 35+9;
+             * 满行（KSTORY_ECHO_MAX_LINES=4）底缘 = 72 + 3*22 + 18 = 156,
+             * 距键位条上沿 262 尚有 106px 安全距。行高 22 / 行数上限 / 追加
+             * 与裁剪语义零变化, 仅整体平移起点。 */
+            {
+                int n = kidpal_story_echo_count();
+                int e;
+                int base_y = 72;
+                for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
+                    const char *line = NULL;
+                    if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
+                        lv_obj_t *el = ksy_label(scr, line, 180, base_y + e * 22,
+                                                 KSY_COLOR_TEXT);
+                        /* 261022 观感修（真机轮 human 实证: 长句溢出右缘裁字）:
+                         * 回显列单行宽钳制 216px（x=180 起至 400 右缘留 4px 安全距,
+                         * puhui_14_1 满宽 ≈15 个中文字）, LV_LABEL_LONG_DOT 像素精确
+                         * 截断加 "..."。截断只在显示对象——累积缓冲 s_story_echo
+                         * 全量不动（整理素材链零影响）。整理态回显列（x=192）同修
+                         * 宽 204。 */
+                        lv_obj_set_width(el, 216);
+                        lv_label_set_long_mode(el, LV_LABEL_LONG_DOT);
+                    }
+                }
+            }
+            if (v->rec_substate == 1) {
+                /* 引导播报中子态渲染（帧 B, 261019 [G5]; D3 v7 位式对齐）: 气泡换
+                 * 引导文案（单源 = kidpal_story_guide_bubble, lcd apply_look 覆写缝
+                 * 同源不双写）画在通则位式 @(24,28)。键帽左「打断」右留空 = 键帽条
+                 * 单源路由（keybar.c kidpal_keybar_story_rec_slots, lcd_display 消费）
+                 * ——本页**不自画键帽**（底栏为顶层 chrome 常驻, 自画落在其下 =
+                 * 死绘制 + 同语义双画法源, SC-A5 纪律; KEY 打断 / BOOT 无操作,
+                 * AC2 键位分叉语义不变）。页态保持 RECORDING（引导播报不跳页）。 */
+                ksy_bubble(scr, kidpal_story_guide_bubble(), 24, 28);
+                ESP_LOGI(KSR_TAG,
+                         "RECORDING render guide substate keycap left=打断 right=(留空) via keybar");
+            }
+            break;
+        }
+        case KSTORY_PAGE_ORGANIZING: {
+            /* 整理过渡态渲染（261019 [G5] 分支在世锚; q2 = ⓒ start_organizing 消费
+             * 落地的可见半）。D3 v7 帧 C 重排（261019 fixer; 权威 = v7 html
+             * state-organizing 帧, 思考态骨架复用——旧「整理中…」(16,40) + 「你刚说」
+             * 左列 (16,78) 纯文字形态退役）:
+             *   气泡「我来整理一下…」@(24,28)（单源 KSTORY_ORGANIZING_BUBBLE）;
+             *   pose-think @(44,96) + 三问号组 qmark_trio 56x56 @(132,88)（设计稿
+             *   24/17/14px 三枚旋转角已烘进资产）+ 波浪线 ic_wave_40 @(48,204) +
+             *   云朵 ic_cloud_40_t2 @(338,28)（均资产不可用静默降级, 骨架零依赖）;
+             *   右区「你刚说」@(192,80) + 刚讲内容（回显环复用——**不清空**, 整理中
+             *   孩子讲过的话不消失, AC2 回显常驻同源）。
+             * 键帽槽留空 = 非交互过渡态（keybar ORGANIZING 行, KEY/BOOT 均不响应,
+             * 输入函数 case 已吞全部手势）。 */
+            int n = kidpal_story_echo_count();
+            int e;
+            ksy_bubble(scr, KSTORY_ORGANIZING_BUBBLE, 24, 28);
+            ksy_art_image(scr, "pose_think_96.bin", KSTORY_POSE_MAX, KSTORY_POSE_MAX, 44, 96);
+            ksy_art_image(scr, "qmark_trio.bin", 240, 240, 132, 88);
+            ksy_art_image(scr, "ic_wave_40.bin", 240, 240, 48, 204);
+            ksy_art_image(scr, "ic_cloud_40_t2.bin", 240, 240, 338, 28);
+            ksy_label(scr, "你刚说", 192, 80, KSY_COLOR_INK);
+            for (e = 0; e < n && e < KSTORY_ECHO_MAX_LINES; e++) {
+                const char *line = NULL;
+                if (kidpal_story_echo_line(e, &line) == 0 && line != NULL) {
+                    lv_obj_t *el = ksy_label(scr, line, 192, 104 + e * 22, KSY_COLOR_TEXT);
+                    /* 261022 观感修: 整理态回显列同款宽钳制（x=192 起宽 204）,
+                     * 见录音态回显块注记。 */
+                    lv_obj_set_width(el, 204);
+                    lv_label_set_long_mode(el, LV_LABEL_LONG_DOT);
+                }
             }
             break;
         }
@@ -1377,7 +1592,7 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 ring = lv_obj_create(scr);
                 lv_obj_remove_style_all(ring);
                 lv_obj_set_size(ring, sz, sz);
-                lv_obj_set_pos(ring, LV_HOR_RES / 2 - sz / 2, 40 + (is_inner ? 16 : 0));
+                lv_obj_set_pos(ring, LV_HOR_RES / 2 - sz / 2, 10 + (is_inner ? 16 : 0));
                 lv_obj_set_style_radius(ring, LV_RADIUS_CIRCLE, 0);
                 lv_obj_set_style_border_width(ring, (is_inner && spec.inner_dashed) ? 2 : 6, 0);
                 lv_obj_set_style_border_color(ring, lv_color_hex(KSY_COLOR_INK), 0);
@@ -1398,21 +1613,27 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
                 if (kidpal_story_stamp_text(v->stamp_serial, txt, sizeof(txt)) == 0) {
                     lv_obj_t *sl = lv_label_create(scr);
                     lv_label_set_text(sl, txt);
-                    lv_obj_set_pos(sl, LV_HOR_RES / 2 - 90, 190);
+                    /* 261023 观感直修（对齐 V5 p3-stamp-frame 设计稿）: 文案水平居中
+                     * （旧 x=110 定值左偏）+ y 158（印章上移后腾出的中部带）。 */
+                    lv_obj_set_pos(sl, (LV_HOR_RES - ksy_utf8_chars(txt) * 14) / 2, 158);
                     lv_obj_set_style_text_color(sl, lv_color_hex(KSY_COLOR_TEXT), 0);
                     lv_obj_set_style_text_font(sl, &font_puhui_14_1, 0);
                 }
             }
-            /* pose-jump 定格位图 (p3-stamp 三件套之一, spec S-F2.4)：经资产层 loader
-             * 合成、右下角确定空白区 (rings 收在 x<270、文案 y=190 之左 -> 不遮不变量)。
-             * 不可用时静默降级, 双圈 + 文案仍在。 */
+            /* pose-jump 定格位图 (p3-stamp 三件套之一, spec S-F2.4)：261023 观感直修
+             * （真机轮 human 实证「猫咪跑到底部横线下面被键帽条裁掉」+ 设计稿自身
+             * 「猫咪挡字」两处一并修）: 旧右下角定位 (296,196..292) 侵入键帽条区
+             * (y>=262)。新形态对齐 V5 设计稿 = 猫咪**居中**坐在文案下方、整体缩放
+             * 200/256≈0.78（96 -> 75px）落在 y 178..253，键帽条上沿 262 之上、
+             * 不与文案（158..176）重叠。不可用时静默降级, 双圈 + 文案仍在。 */
             {
-                const lv_image_dsc_t *pd = kstory_pose_jump_dsc();
+                const lv_image_dsc_t *pd = kstory_pose_dsc("pose_jump_96.bin");
                 if (pd != NULL) {
                     lv_obj_t *pi = lv_image_create(scr);
                     lv_image_set_src(pi, pd);
-                    lv_obj_set_pos(pi, LV_HOR_RES - (int)pd->header.w - 8,
-                                   LV_VER_RES - (int)pd->header.h - 8);
+                    lv_image_set_pivot(pi, 0, 0);
+                    lv_image_set_scale(pi, 200);
+                    lv_obj_set_pos(pi, (LV_HOR_RES - (int)pd->header.w * 200 / 256) / 2, 178);
                 }
             }
             break;
@@ -1420,6 +1641,15 @@ int kidpal_story_page_render(const kidpal_story_view_t *v,
         default:
             break;
     }
+    /* D2 真机轮 R1 根修（现场 1 45115 / 现场 3 68335 对账）: 渲染成功出口把「基层
+     * 内容页 = P3」真相同步给渲染节点（s_local_page = KP_PAGE_STORY, 渲染节点单点
+     * 写）。此前 ScheduleStoryRender 本地导航通道裸调本函数, s_local_page 停留陈旧
+     * HOME -> (a) voice_end [R3] on_story_front 误判 0 走 else 首页重建（现场 1 的
+     * 「录音会话中渲染了首页」）; (b) 首页动画 tick 判据 (s_local_page==HOME &&
+     * s_kidpal_img!=NULL && top==LOCAL_PAGE) 在 VOICE 让位/缺席后全真 -> 悬垂 UAF。
+     * 调用方均已持 lvgl 锁（ScheduleStoryRender 夹钳 / StoryRecTimerCb LVGL 定时器 /
+     * rn_render_kidpal_page_locked）; 失败降级出口（-1）不置——空白屏不谎报 P3。 */
+    kidpal_render_node_story_page_front();
     return 0;
 }
 /* -------------------------------------------------------------------------- *
@@ -1477,6 +1707,7 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
     v->tts_requests = 0;
     v->last_saved_id[0] = '\0';
     v->pending_delete_id[0] = '\0';
+    v->rec_substate = 0; /* [G3] 引导播报中子态复位常规（新视图零残留） */
 
     s_ksy_item_ids_n = 0;
     if (list != NULL) {
@@ -1503,6 +1734,13 @@ int kidpal_story_view_init(kidpal_story_view_t *v, const kidpal_story_list_t *li
  *            BOOT 双=PAGE_TURN / BOOT 长=NONE（页循环 P3 断开, 不离页）
  *   RECORDING: KEY 短=STOP_RECORD / KEY 长=STOP_RECORD（同短按保存, v1.47）/ BOOT
  *            短·双·长=DISCARD_RECORD
+ *            RECORDING+rec_substate=1（引导播报中子态, 261019 [G3] 帧 B 键位分叉——
+ *            本包固件侧最关键的键位分叉: 子态不拦截则引导播报一句期间按 BOOT 即毁稿）:
+ *            KEY 短=INTERRUPT_GUIDE(12) / KEY 长=12（同短按, §2.1 打断停播语义;
+ *            页态保持 RECORDING、子态复位 0、零 cancel/归档副作用）/ BOOT
+ *            短·双·长=NONE（无操作, 绝不落 DISCARD_RECORD 毁稿路径）
+ *   ORGANIZING（整理过渡态, 261019 [G4]）: KEY/BOOT 任意手势=NONE（非交互过渡态,
+ *            整理中 KEY/BOOT 均不响应, AC4/§2.3; 页态保持、零副作用）
  *   STAMP:   全手势=GLOBAL（演出帧页内零语义, 零回归守卫）
  *   BODY_UNAVAILABLE（WF-F2-06 取不回提示, 261016 批 append）: KEY／BOOT 任一手势
  *            （短/双/长）= NONE 并关闭回列表（纯告知、无破坏性动作、绝不 GLOBAL）
@@ -1655,6 +1893,25 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
             return KSPV2_ACT_NONE;
 
         case KSTORY_PAGE_RECORDING:
+            if (v->rec_substate == 1) {
+                /* 引导播报中子态（帧 B, 261019 [G3] 键位分叉——毁稿防线）:
+                 * KEY 短/长按 = 打断引导、继续聆听（子态复位 0, 页态保持 RECORDING,
+                 * 零 cancel/归档副作用——打断不是收尾也不是丢弃）; 消费方 = mcp
+                 * StoryDispatchAct case 12 -> AbortSpeaking + 继续聆听。 */
+                if (key == KEY_ID_KEY &&
+                    (g == KEY_GESTURE_CLICK || g == KEY_GESTURE_LONG_PRESS)) {
+                    v->rec_substate = 0;
+                    return KSPV2_ACT_INTERRUPT_GUIDE;
+                }
+                if (key == KEY_ID_BOOT) {
+                    /* BOOT 任一手势（短/双/长）= 无操作: 页态保持、cancel_count /
+                     * archive_pend 不动——绝不落 DISCARD_RECORD 毁稿路径（引导播报
+                     * 一句期间按 BOOT 即毁稿 = 本包固件侧最关键分叉, AC2「BOOT 无
+                     * 操作」）。子态保持 1（引导播报尚未被打断）。 */
+                    return KSPV2_ACT_NONE;
+                }
+                return KSPV2_ACT_GLOBAL;
+            }
             if (key == KEY_ID_KEY &&
                 (g == KEY_GESTURE_CLICK || g == KEY_GESTURE_LONG_PRESS)) {
                 /* KEY 短按 & 长按同短按 = 停录保存（防长按误触毁稿 v1.47——旧
@@ -1673,6 +1930,13 @@ int kidpal_story_page_input(kidpal_story_view_t *v, key_id_t key, key_gesture_t 
                 return KSPV2_ACT_DISCARD_RECORD;
             }
             return KSPV2_ACT_GLOBAL;
+
+        case KSTORY_PAGE_ORGANIZING:
+            /* 整理过渡态（261019 [G4]）: KEY／BOOT 任意手势 = NONE 不响应——非交互
+             * 过渡态（requirements v1.65 AC4「整理中 KEY/BOOT 均不响应」, §2.3 录音态
+             * 子态按键口径; 误触会打断整理演出或误触毁稿面）。页态保持、零副作用
+             * （绝不 restore/cancel/归档）, 消费即吞手势（绝不 GLOBAL 外泄）。 */
+            return KSPV2_ACT_NONE;
 
         case KSTORY_PAGE_STAMP:
             return KSPV2_ACT_GLOBAL; /* 盖章帧页内零语义（零回归守卫） */
@@ -1698,8 +1962,25 @@ int kidpal_story_on_control(kidpal_story_view_t *v, int ctrl_action)
         }
         v->page = KSTORY_PAGE_RECORDING;
         v->rec_seconds = 0;
+        v->rec_substate = 0; /* [G3] 重入录音态 = 常规聆听子态（引导子态不跨沿残留） */
         v->screen = 0;
         /* 冻结决策 D2: 录完前不预推计数（counter 不变; 取消的故事不该占故事果位）。 */
+        return 1;
+    }
+    if (ctrl_action == 3) { /* VRT_CTRL_START_ORGANIZING（261019 [G2], q2 = ⓒ） */
+        if (v->page == KSTORY_PAGE_ORGANIZING) {
+            /* 重复幂等：网关重试下发不得翻倍副作用、页态保持。 */
+            return 1;
+        }
+        v->page = KSTORY_PAGE_ORGANIZING; /* 整理过渡演出（state-organizing 帧） */
+        /* 261023 观感直修（真机轮 human 实证「没出徽章页」）: 网关只在**即将归档**
+         * 时下发 start_organizing——自动收尾路径（S-F2.2 AC5, 静默超时）也经此帧。
+         * archive_pend 此前只由 KEY 停录路径置位（story_page_input STOP_RECORD），
+         * 自动收尾的 story_text 到达时 archive_pend=0 -> 盖章门
+         * kidpal_story_stamp_should_fire 落 0 -> 走正文阅读分支，徽章从未在自动
+         * 收尾出现过。此处即视为一次归档请求武装（与 KEY 收尾语义对齐）；幂等门
+         * 已在其上，重试不翻倍。 */
+        v->archive_pend++;
         return 1;
     }
     if (ctrl_action == 0 || ctrl_action == 1) { /* END_SESSION / STOP_SPEAKING */

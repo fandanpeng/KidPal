@@ -113,6 +113,26 @@ void Protocol::SendKidpalSessionCtx(const char* source_page) {
     SendText(message);
 }
 
+/* 契约 §四 kidpal_story_discard（TaskPackage 261021-p3-record-cancel-lifecycle;
+ * 逐字仿 SendKidpalStoryDelete 拼串形态）:
+ *   {"session_id":"<sid>","type":"kidpal_story_discard"}
+ * 两字段、单向通知、无应答消息（front 按本连接会话键权威取消、幂等承接）。
+ * 发送时机 = mcp_server DISCARD_RECORD case 内 CloseAudioChannel 之前（同一 TCP
+ * 有序, 网关泵先消费 discard 再处理断连）。
+ * 无接收者形态：活动实例 = 最近构造且未析构的 Protocol（s_kidpal_active_）；
+ * 未就绪 = 静默 no-op（离线降级, 不产生半帧）。 */
+void SendKidpalStoryDiscard()
+{
+    Protocol *p = Protocol::s_kidpal_active_;
+
+    if (p == nullptr) {
+        return; /* 协议未就绪（离线降级）：静默 no-op，不产生半帧 */
+    }
+    std::string message = "{\"session_id\":\"" + p->session_id_ +
+                          "\",\"type\":\"kidpal_story_discard\"}";
+    p->SendText(message);
+}
+
 bool Protocol::IsTimeout() const {
     const int kTimeoutSeconds = 120;
     auto now = std::chrono::steady_clock::now();

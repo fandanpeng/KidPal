@@ -17,9 +17,13 @@
 
 两 workspace 的 AGENTS.md 均由 [manifest.yaml](../manifest.yaml) 登记、`deploy.sh` 铺放（`verify-deploy.sh` 每日核验）。
 
-护栏主阵地 = 每次会话注入的 system prompt（渲染源 `server/deploy/openclaw-system-prompt.vN.md`，
-经 `apply-xiaozhi-overlay.sh` 上 ECS）；两侧 `AGENTS.md` 是**次要承载**，其自声明
-「冲突时以注入 prompt 为准」。
+护栏与静态语义承载（`261022-device-memory-prompt-overhaul` 起反转原口径）：
+
+- **kidpal 侧（设备语音链路）**：静态语义单一事实源 = `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md`
+  （manifest 登记、`deploy.sh` 铺放、`verify-deploy.sh` 每日核验）；每次会话注入的只是动态 context 块
+  （时间 / 日期、课表摘要等，不含纪律），冲突以 `AGENTS.md` 为准。
+- **main 侧（家长 QQ / cron）**：护栏承载 = `server/deploy/openclaw-skills/workspace-main/AGENTS.md` + workspace skills
+  （不经引擎注入）。
 
 ## 同步纪律（顺序别反）
 

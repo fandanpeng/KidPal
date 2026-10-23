@@ -1,0 +1,192 @@
+{
+  "changeId": "261022-p3-record-chrome-ghost-fix",
+  "rigor": "lite",
+  "riskTier": "medium",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "human-verbatim": "KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，跟我在屏幕上看到的状态乱跳是一样的」。逐秒还原 + 三源取证（设备 KPLOG005/kplog_user_test_full、front journalctl、引擎 docker logs）落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷①键帽鬼影闪烁 + ②成功路径鬼覆盖层吃按键。",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/display（lcd_display 键帽裁决 + keybar 纯逻辑单源 + kidpal_voice_states 场景生命周期 + kidpal_render_node 层栈收口）+ firmware/main/mcp_server.cc（收尾桥挂点，如需）+ firmware/main/application.cc（scene 复位挂点，如 1g 预评确认）+ firmware/main/test（host 验收件）",
+  "planRef": "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+  "changeManifest": [
+    "firmware/main/display/lcd_display.cc",
+    "firmware/main/display/keybar.c",
+    "firmware/main/display/keybar.h",
+    "firmware/main/display/kidpal_voice_states.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/application.cc",
+    "firmware/main/test/**"
+  ],
+  "changeManifestNotes": "triage 种子原样（architect reviewed plan）；builder 若需为新验收件做 host runner 登记，实路径 = firmware/main/CMakeLists.txt（同形先例 261022-diag-log-content 扩单），届时按扩单申报纪律登记。",
+  "story": "261022-p3-record-chrome-ghost-fix · P3 记录会话 chrome 鬼影修复——①键帽鬼影闪烁（语音场景键帽残留 + story_sub 过渡窗读 -1 掉通用分支 + 单事件双同步，三因叠加出「说完啦/结束」「不等了/结束」鬼影双连闪，含无语音会话场景）：语音会话收尾复位 keybar scene + 故事会话期 -1 过渡窗取最后已知子态或硬门通用分支；②成功路径鬼覆盖层白吃按键：成功归档路径补显式覆盖层 dismiss（对齐 4068dc6c 失败路径形态；帧类型负锚 = 不得新发明下行帧类型，落点归 1g 预评）。debt TECH-261022-p3-record-session-state-churn 缺陷①②；并联包 = 261022-p3-record-front-polish-fix（front 面，零依赖零文件交集）。",
+  "sourceRefs": [
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
+  ],
+  "acceptance": [
+    "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+    "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+    "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+    "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    {
+      "id": "CG-A5",
+      "kind": "structural",
+      "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/chrome_ghost.acceptance.c"
+  ],
+  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/cg_red_runner ../../chrome_ghost.acceptance.c ../../../display/keybar.c ../../../display/kidpal_voice_states.c runner.c（COMPILE_EXIT 须 0 零 warning）&& cd <repo root> && /tmp/cg_red_runner（结构锚支持 KIDPAL_REPO_ROOT 注入）",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：227 Tests 3 Failures exit 3——与基线锚 0df2c0c3 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 227→232 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——TEST 1 CG-A1（weak 哨兵 kidpal_keybar_scene_get 返回 -99 或 set 未存真值）、TEST 2 CG-A2（frozen seam 未实现 kidpal_keybar_story_transition_slots）、TEST 3 CG-A2（kidpal_keybar_sync_locked 未消费 transition_slots 接线）、TEST 4 CG-A3（story_list 前推渲染闭包 end_page 后无层栈收口）、TEST 5 CG-A4（host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c）。双向可满足性：/mnt/c/tmp/cg_work 合成树（KIDPAL_REPO_ROOT 注入 + 一次性参考实现，不写入工作树）绿树 5 Tests 0 Failures 零 warning；七处定向变异各只打红对应 TEST_CASE（复位值入语音闭集→T1 / 过渡窗产语音残留→T2 / 摘过渡窗接线→T3 / 场景 static 第二真相源回归→T3 / 盖章闭包摘收口→T4 / 摘登记→T5 / 摘会话收尾沿复位→T3）。转绿判据：builder 落地 [CG-C1]/[CG-C2] 新缝 + [CG-C3] 接线 + [CG-C5] 登记（builder FIRST ACTION：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 追加 ../../chrome_ghost.acceptance.c 置于 smoke 之前）后全绿；既有 host 全量套件零新增红。verbatim 详见 firmware/main/test/chrome_ghost.acceptance.c 头注「冻结落盘实跑」段（commit a92706c0）。CG-A5 = live-manual 真机目检，不计入 runner 通过面。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "exitCriteria": [
+    "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+    "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
+    "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "docRefs": [
+    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
+    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
+  ],
+  "planningRefs": [],
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 0df2c0c3（带锚引用三件齐：SHA + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md 基线锚行；2026-10-22 本会话 producer=consumer 同树实测，222→227 = diag-log 五齿新增计入）",
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "CG-A1",
+        "acceptance": "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
+        "mutation": "变异 1：keybar.c kidpal_keybar_scene_reset 复位值 KIDPAL_KEYBAR_SCENE_NONE(-1) → KVST_SCENE_LISTEN(0)（复位值落回语音场景闭集内）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 1（CG-A1）· 复位值出闭集断言（:729）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: 会话收尾沿复位后 scene=0 仍落在语音场景闭集 [0..4] 内——复位值必须出闭集（EQ-3：出闭集 -> 通用分支 overlay 列仲裁落 kidpal_keybar_slots scene 越界 -1 防御 -> 残留键帽绝不再被画出；复位到 0=KVST_SCENE_LISTEN 等于没修）"
+        ],
+        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b64e88b47b738f09cecaa1a02076770858f1df32c8697224192c1e133 与变异前一致；复跑通道 B：COMPILE_EXIT=0 / 5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 1 FAIL，其余 TEST 2/3/4/5 PASS——与冻结矩阵预测（TEST 1 红）逐条一致。"
+      },
+      {
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 2：keybar.c kidpal_keybar_story_transition_slots 非在途 default 分支由回落 return 0 改为产出语音残留键帽字面（*out_left=\"说完啦\"; *out_right=\"结束\"; return 1）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 2（CG-A2）· 过渡窗+非在途回落断言（:891，首值 KSTORY_PAGE_LIST）+ 全域语音残留负扫描（:908）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A2 RED: 过渡窗 + 非在途子态(0) = (rc=1, 左=说完啦)——非在途相位必须回落既有路径（plan 修法②逐字范围: 只接管录音/整理/阅读三在途子态; 该相位残留由 [CG-C1] scene 复位兜底）"
+        ],
+        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b…c1e133 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 2 FAIL，其余 PASS——与冻结矩阵预测（TEST 2 红）一致。首红落在非在途回落循环（KSTORY_PAGE_LIST=0）；语音残留负扫描（:908）为同因二次承载，unity 首败中止未单独触达。"
+      },
+      {
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 3：lcd_display.cc kidpal_keybar_sync_locked 区摘掉过渡窗接线——else if (kidpal_keybar_story_transition_slots(story_sub, trans_last_known, story_rec_sub, &left, &right) == 1) → else if (0)（消费锚从可执行源消失，仅留注释）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A2 结构齿）· sync 区 kidpal_keybar_story_transition_slots( 消费源锚（:1000）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A2 RED: kidpal_keybar_sync_locked 未消费 kidpal_keybar_story_transition_slots(——story 会话期 -1 过渡窗仍直接掉通用分支（KPLOG005 缺陷①因二未接; 纯逻辑缝 [CG-C2] 已冻结, 接线缺位 = 断言不能承载的盲区 GAP-1 半）"
+        ],
+        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6e92c805bbde46a6034fd964bbe5a2a4cb513b442e327618e903a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 结构齿红）一致。变异以注释剥离后无可执行消费锚取证，反向验证扫描器注释剥离有效。"
+      },
+      {
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 7：application.cc HandleStateChangedEvent Idle 分支摘掉会话收尾沿复位——kidpal_keybar_scene_reset(); → (void)0;（kidpal_render_node.cc voice_end 亦无 reset，两处均缺席）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1/CG-A2 结构齿）· 收尾沿 kidpal_keybar_scene_reset( 复位锚（:1036 application.cc 路径 → :1049 voice_end 回退路径）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: 会话收尾沿无 kidpal_keybar_scene_reset(——application.cc HandleStateChangedEvent Idle 分支与 kidpal_render_node.cc voice_end 两处均缺席（[CG-C3]③; g_kidpal_keybar_scene 语音会话结束后永不复位缺陷原样保留, KPLOG005 缺陷①因一未治）"
+        ],
+        "restored": "git checkout -- firmware/main/application.cc；git diff --stat 空；sha256 2794b7a5ea3559c3460c10d150487ab1ded14bc443a1881f58211fd768affc54 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 红）一致。虽按派发归入 CG-A2 组，实际打红断言文本前缀为 CG-A1（收尾沿复位属 [CG-C3]③，TEST 3 同时承载 CG-A1/CG-A2 结构齿）；此处如实记录。"
+      },
+      {
+        "acceptanceId": "CG-A2",
+        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
+        "mutation": "变异 4（附注）：lcd_display.cc 恢复文件级 static 第二真相源——新增可执行源 static int g_kidpal_keybar_scene = -1;（绕过 keybar 单源）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1 负锚 / CG-A2 结构齿同件）· g_kidpal_keybar_scene 可执行源零残留负锚（:1022-1023）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A1 RED: lcd_display.cc 仍存在 1 处 g_kidpal_keybar_scene（可执行源）——设备侧场景 static 未上收 keybar 单源（[CG-C1]; 同窗双写 = 谁生效说不清, 第二真相源红线）"
+        ],
+        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6…3a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "附注变异（派发写作「+4 附注」）。通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS。打红文本前缀为 CG-A1（第二真相源负锚属场景单源改造），与变异 7 同属 TEST 3 的 CG-A1/CG-A2 共用结构齿，如实记录。"
+      },
+      {
+        "acceptanceId": "CG-A3",
+        "acceptance": "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
+        "mutation": "变异 5：mcp_server.cc 盖章帧渲染闭包 app.Schedule([stamp_view, stamp_list, stamp_text]() 区内摘掉层栈收口调用——kidpal_render_node_story_local_front(); → (void)0;（story_list 前推闭包与 ScheduleStoryRender 在役先例未动）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 4（CG-A3）· 盖章帧渲染闭包 end_page 后层栈收口锚（:1149-1153）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A3 RED: 盖章帧渲染闭包 end_page 后无层栈收口——成功归档路径与失败路径（4068dc6c dismiss_front_overlay 先例）不对齐, 覆盖层逻辑前台残留吃按键"
+        ],
+        "restored": "git checkout -- firmware/main/mcp_server.cc；git diff --stat 空；sha256 80421035d64489ebacab8503e9483b77352c7aa0b649732014456ad16da81290 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 4 FAIL，其余 PASS——与冻结矩阵预测（TEST 4 红）一致。story_list 前推闭包收口与 ScheduleStoryRender 在役先例未变异（本轮每变异只改一处），故 TEST 4 首红落在盖章闭包断言。"
+      },
+      {
+        "acceptanceId": "CG-A4",
+        "acceptance": "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
+        "mutation": "变异 6：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 摘除 \"../../chrome_ghost.acceptance.c\" 登记行（回归网静默缩网）",
+        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 5（CG-A4）· 本件登记守（:1184-1188）",
+        "turnedRed": true,
+        "sensitive": true,
+        "result": "turned red",
+        "redVerbatim": [
+          "CG-A4 RED: host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c——本冻结验收件不进 host runner（全部断言不会被执行 = 空过绿）；builder FIRST ACTION（diag_log 261022 先例口径, 登记行不在 acceptance-author 写权内）"
+        ],
+        "restored": "git checkout -- firmware/main/test/host_app/main/CMakeLists.txt；git diff --stat 空；sha256 3cbfbf65a70cb49d01b0420bdabd1391246bf848ed078a9d37bc8c559d683398 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
+        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 5 FAIL，其余 PASS——与冻结矩阵预测（TEST 5 红）一致。TEST 5 走裸读（非注释剥离），登记行摘除后该字面唯一命中消失。"
+      }
+    ]
+  }
+}

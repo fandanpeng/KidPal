@@ -81,6 +81,10 @@ int kidpal_display_control_action(const char *action)
     if (strcmp(action, "start_recording") == 0) {
         return VRT_CTRL_START_RECORDING;
     }
+    /* additive（261019-p3-record-dialogue-guide [G1]）：三式收尾统一下发信号。 */
+    if (strcmp(action, "start_organizing") == 0) {
+        return VRT_CTRL_START_ORGANIZING;
+    }
 
     /* 未知动作 -> 降级 (不执行任何语义)。 */
     return VRT_CTRL_UNKNOWN;

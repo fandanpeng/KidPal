@@ -76,7 +76,13 @@ typedef enum {
      * P3「正文取不回」整屏覆盖层（WF-F2-06, requirements v1.64 S-F2.1 AC7）——
      * 纯告知态：不静默、不黑屏、绝不显示别篇内容；10s 无操作自动消失（静默、不显
      * 倒计时），KEY／BOOT **任一手势**立即关闭回列表。既有值零改（0..4）。 */
-    KSTORY_PAGE_BODY_UNAVAILABLE = 5
+    KSTORY_PAGE_BODY_UNAVAILABLE = 5,
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结数值 = 6）:
+     * 整理过渡态（q2 = ⓒ：start_organizing 下行消费；requirements v1.65 S-F2.2-AC4
+     * 「整理期间以思考态盖住延迟」的页态载体，docs/ui/V7/state-organizing）——
+     * 非交互过渡态：KEY／BOOT 均不响应；离态 = story_text 到达（既有渲染路径）。
+     * seam 权威 = record_dialogue_guide.acceptance.c 文件头 [G2]/[G4]。 */
+    KSTORY_PAGE_ORGANIZING = 6
 } kidpal_story_page_t;
 
 typedef struct {
@@ -98,6 +104,12 @@ typedef struct {
     /* additive 尾部追加（seam [K1]/[K5]）: 待删条目 id 记账（确认删除后、story_list
      * 重推对账冲销前在账; 隐式 ack 重发与对账的锚）。空串 = 无待账。 */
     char pending_delete_id[64];
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结纪律只增不
+     * 改/移; 冻结名 [G3], seam 权威 = record_dialogue_guide.acceptance.c 文件头）:
+     * RECORDING 引导播报中子态（帧 B, AC2）：0 = 常规录音聆听; 1 = 引导播报中——
+     * KEY 短/长按 = 打断引导继续聆听（KSPV2_ACT_INTERRUPT_GUIDE）、BOOT 任一手势 =
+     * 无操作（绝不落 DISCARD_RECORD 毁稿路径）。 */
+    int rec_substate;
 } kidpal_story_view_t;
 
 /* ---- ④ 盖章帧几何 (spec S-F2.4) ---- */
@@ -127,7 +139,12 @@ typedef enum {
     KSPV2_ACT_PAGE_TURN      = 8,  /* READER BOOT 短按（双击同短按）-> 翻屏 wrap */
     KSPV2_ACT_READER_EXIT    = 9,  /* READER KEY 长按 -> 退出阅读回列表 */
     KSPV2_ACT_STOP_RECORD    = 10, /* RECORDING KEY 短按 & 长按同义（保存, v1.47） */
-    KSPV2_ACT_DISCARD_RECORD = 11  /* RECORDING BOOT 任一手势（丢弃退回列表） */
+    KSPV2_ACT_DISCARD_RECORD = 11, /* RECORDING BOOT 任一手势（丢弃退回列表） */
+    /* additive 尾部追加（TaskPackage 261019-p3-record-dialogue-guide; 冻结数值 = 12;
+     * seam [G3]）: RECORDING+rec_substate=1 引导播报中 KEY 短/长按——打断引导播报、
+     * 回常规录音聆听（消费方 = mcp_server StoryDispatchAct -> AbortSpeaking + 继续聆听;
+     * 页态保持 RECORDING、子态复位 0、零 cancel/归档副作用）。 */
+    KSPV2_ACT_INTERRUPT_GUIDE = 12
 } kidpal_story_act_t;
 
 /* ---- ⑥ 空态文案单源（notes 边角③: 列表态空态渲染入口两处——story_page.c 与
@@ -289,8 +306,9 @@ int kidpal_story_list_gate(int voice_front, int page_state);
 
 /* 记录语境标志（builder 侧消费门; 冻结齿不钉标志本体——验收盲区申报③: 置位/
  * 清位时机 = 实现细节, 可观测后果由 guide_bubble 消费链 + recording_enter 决策表
- * + stt 旁路喂入承载）。置位单点 = mcp_server REC_SESSION 消费位; 清位 = 会话收尾
- * （Application Idle 分支）。 */
+ * + stt 旁路喂入承载）。置位 = mcp_server 两收敛入口消费位（REC_SESSION / 控制
+ * case 2 start_recording——261019-p3-record-dialogue-guide AC1「双入口同一记录语境
+ * 对话态」）; 清位 = 会话收尾（Application Idle 分支）。 */
 int kidpal_story_session_ctx_active(void);
 void kidpal_story_session_ctx_set(int active);
 
@@ -388,6 +406,25 @@ int kidpal_story_body_unavailable_idle_step(unsigned long *idle_ms,
  * KSTORY_PAGE_BODY_UNAVAILABLE 时 KEY／BOOT **任一手势**（短按 / 双击 / 长按）一律
  * 关闭回列表（v->page == KSTORY_PAGE_LIST），两键语义一致、无破坏性动作、无 GLOBAL
  * 外泄（纯告知态吞掉手势，绝不漏网误开会话）。 */
+
+/* ---- ⑲ P3 记录会话 v7 重排（261019-p3-record-dialogue-guide fixer, 2026-10-20;
+ * additive 尾部追加。措辞单源 = docs/ui/kidpal-ui-design-v7.html P3 节规格表
+ * 「气泡文案（终稿）」行——P3 三帧气泡文案住本处单源, 渲染面零字面重抄） ---- */
+
+/* 帧 A 录音中（p3-recording）气泡：v7 终稿逐字。开口**前**的记录语境引导气泡
+ * （「需要我帮你记点什么？」）另有单源 = kidpal_story_guide_bubble()（[S2] 冻结缝,
+ * 语音轮 apply_look 覆写缝消费）——两文案两语境, 不互替。 */
+#define KSTORY_RECORDING_BUBBLE "你讲吧，我听着呢"
+/* 帧 C 整理中（state-organizing）气泡：v7 逐字。 */
+#define KSTORY_ORGANIZING_BUBBLE "我来整理一下…"
+
+/* 帧 B 引导播报中键帽（v7 p3-recording-guide R2 裁定: 左「打断」右留空）。**宏间接
+ * 红线注记**: 「打断」同时是语音轮五态 keycap 冻结闭集成员（keybar_three_slot
+ * KKB-E2: keybar.c 零闭集字面重抄, 字面只住 kidpal_voice_states.c）——记录语境帧 B
+ * 键帽与闭集成员同字、不同语境（此处 = 打断引导播报、继续记录; 闭集成员 = 语音轮
+ * 停播）。为守 KKB-E2 树扫负锚, 字面住本处单源、keybar.c 经宏符号引用（与
+ * KSTORY_BODY_UNAVAILABLE_KEYCAP_KEY「知道了」同为闭集同字宏间接先例）。 */
+#define KSTORY_RECORDING_GUIDE_KEYCAP "打断"
 
 #ifdef __cplusplus
 }

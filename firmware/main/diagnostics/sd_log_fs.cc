@@ -33,6 +33,7 @@
 #include <freertos/task.h>
 
 #include "sd_log.h"
+#include "log_semantics.h" /* 261022-diag-log-content [DLG-C4]①: 预格式化时间前缀只读取串 */
 
 #define TAG "SdLog"
 
@@ -219,10 +220,28 @@ extern "C" int KidpalSdLogVprintf(const char *fmt, va_list ap)
     }
     if (s_ring != nullptr) {
         char buf[KIDPAL_SD_LOG_RECORD_MAX];
-        int n = vsnprintf(buf, sizeof(buf), fmt, copy);
+        /* 261022-diag-log-content [DLG-C4]①：落环**之前**拼预格式化墙上时间前缀。
+         * 产出方 = application.cc 1s clock tick（kidpal_log_time_cache_update），钩子
+         * 只取现成串拼接、**不做**时间格式化——R1 ISR 缓解的消费半（钩子可在任意任务 /
+         * 中断上下文被调，localtime_r / snprintf 的重入与时延风险即 R1 本体）。缓存恒非
+         * NULL；未 update 过 = ""（降级无前缀，日志照常可读）。[C4] 其余三锚不动：
+         * 链式转调在先、ring_write 消费语义不变、写盘任务零 ESP_LOG。 */
+        const char *time_prefix = kidpal_log_time_cache();
+        size_t prefix_len = strlen(time_prefix);
+        int n;
+
+        if (prefix_len >= sizeof(buf)) {
+            prefix_len = 0; /* 不可能态守卫：前缀容量 32 << RECORD_MAX 512，防御不越界 */
+        }
+        /* 真机实证修复（261022-diag-log-content 真机轮 DLG-A6①）：预格式化前缀串先拷进
+         * buf[0..prefix_len)——此前只把正文写在 buf+prefix_len、记录总长含前缀，头 prefix_len
+         * 字节是未初始化栈垃圾（真机 KPLOG005 每条记录前 ~22 字节 NUL/指针形态实证）。 */
+        memcpy(buf, time_prefix, prefix_len);
+        n = vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, copy);
 
         if (n > 0) {
-            unsigned len = (unsigned)n;
+            /* n = body 的「应写长度」（可能已截断）；记录体 = 前缀 + body，总长含前缀。 */
+            unsigned len = (unsigned)n + (unsigned)prefix_len;
             if (len >= KIDPAL_SD_LOG_RECORD_MAX) {
                 len = KIDPAL_SD_LOG_RECORD_MAX - 1u;  /* 保 NUL 位, 记录体不超上限 */
             }
@@ -253,14 +272,35 @@ extern "C" void KidpalSdLogAttach(const char *mount_root)
                  s_dir_path, errno);
         return;  /* 建目录失败：整层静默失效, 不 attach（零 fopen） */
     }
-    /* 重启续写：把已在盘的当前文件字节数喂给轮转器，避免单文件越过 512KB 上限。
-     * 记账到界时 rot_account 自行推进到下一个文件号。**先播种再置 attached**，避免
-     * 写盘任务与本函数并发记账造成重复计数。 */
-    if (kidpal_sd_log_file_name((unsigned)kidpal_sd_log_rot_index(s_rot), name,
-                                (unsigned)sizeof(name)) == 0) {
-        snprintf(path, sizeof(path), "%s/%s", s_dir_path, name);
-        if (stat(path, &st) == 0 && st.st_size > 0) {
-            (void)kidpal_sd_log_rot_account(s_rot, (unsigned)st.st_size);
+    /* 重启续写 v2（261020 D4-4）：从**盘面状态**播种轮转器。旧实现只 stat「当前
+     * index」——而轮转记账态在 RAM、每次启动 rot 归 000，跨启动已轮转的盘面
+     * （000 已封口、001 带前次启动的残留）会把当前文件的既有字节整段漏记账：
+     * 续写后记账 512KB 才封口，盘面单文件实际 512KB + 残留（真机 KPLOG001 740KB
+     * 未轮实证 = 001 残留 ~220KB + 本轮记账 512KB）。新法：000 起找第一个不存在
+     * /空/未满的文件号 = 当前文件（此前各号按满额推进轮转器——只用冻结纯逻辑
+     * 既有 API，不新增决策面），当前文件按实际字节数播种记账；32 文件全满则整
+     * wrap 回 000 覆盖最旧。只增不减纪律：已封口文件不清理不改名。 */
+    {
+        unsigned idx;
+
+        for (idx = 0u; idx < KIDPAL_SD_LOG_FILE_COUNT; idx++) {
+            long fsize;
+
+            if (kidpal_sd_log_file_name(idx, name, (unsigned)sizeof(name)) != 0) {
+                break;
+            }
+            snprintf(path, sizeof(path), "%s/%s", s_dir_path, name);
+            if (stat(path, &st) != 0 || st.st_size <= 0) {
+                break;  /* 不存在/空 = 当前文件（记账态已是该号、字节 0） */
+            }
+            fsize = (long)st.st_size;
+            if (fsize < (long)KIDPAL_SD_LOG_FILE_BYTES) {
+                /* 未满文件 = 当前文件：按实际字节播种（记账态在该号、字节=fsize） */
+                (void)kidpal_sd_log_rot_account(s_rot, (unsigned)fsize);
+                break;
+            }
+            /* 已封口（≥512KB）：按满额推进一格，看下一号 */
+            (void)kidpal_sd_log_rot_account(s_rot, KIDPAL_SD_LOG_FILE_BYTES);
         }
     }
     (void)kidpal_sd_log_ring_attach(s_ring);
