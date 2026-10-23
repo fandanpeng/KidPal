@@ -117,3 +117,9 @@
 - **制品**：docs-delta.md（两声明注记：P1 遗留占位观察 + unit 层口径）+ review-packet.md（findings 仅 2 NIT judgement-call，无 BLOCKING/SHOULD）+ verdict.json / verification.json 晋升 + closeout-check --update-index 绿。
 - **TECH-261018 结项（K5-E5）**：status closed + closedBy = 本包 + 结项记 append；debt-render 跑过、归位 `docs/debt/tech/_archive/2026/`。
 - **停等位**：`awaiting-human:live-deploy`——K5-E4 live 段（真机 ≥20 轮零工具调用零编造）挂 human 部署轮；connection.py engine-face 重启 = 设备断连重连（K1 同款）；manifest note 三条生效标记行核验锚。
+
+## 2026-10-23 · P5 supervisor 闸 ESCALATE → 人批 → 合并 DONE（planner）
+
+- **supervisor 机械闸 = ESCALATE（与 K1 同形）**：diff 启发式（all-mock: test-files-no-real-db/event-assertion）把装配/声明面上浮 high，声明的 medium 向上取效 → 人批放行。provenance v2 全过（gate-check exit 0）；board 置 blocked → merge-driver approvalRefUnlock 消解。
+- **人批 → 合并**：human-decision 凭据 `5f792801`（actor=human 一次到位，K1 教训已吸收）；merge-driver 本地合并 **DONE**（quick-check 2 闸 OK；Step 0 治理面收口自动 commit 了在途 pod-events）。board = **merged**（mo51）；INDEX dev 段 P5 = closed（全量重建收敛）。
+- **M5 五包列车进度**：P1 ✓（merged + 部署实测达标）→ **P5 ✓（merged，待部署）** → P2/K2b（mo52）→ P3/K3（mo53）→ P4/K4（mo54）。本地 main 领先 origin/main（P5 合并 + K1 记账数 commit），push 归 human。
