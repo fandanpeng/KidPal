@@ -184,3 +184,10 @@
 - **热修两步**：① 容器内 pip 升级 + 引擎重启（即时解除，14:55 四 marker 复现全绿）；② 耐久化载体 = `server/deploy/engine-patch/edge-tts-731/`（wheel 原样解包、与容器内逐字节同源）+ compose 两条 bind-mount 阴影 site-packages（`edge_tts` + dist-info）+ manifest 16 条 `restart: none` 登记——`docker compose up -d` 重建不回退。回流仓随本批 commit（K1 热修回流先例）。
 - **debt 登记**：`docs/debt/tech/TECH-261023-edge-tts-drm-single-point.md`（deferred——TTS 单点外部依赖余量：无可用性探针 / 备选 TTS 未接通〔box 上现有凭据无可直插路径，选型归 human〕/ carrier 不防下次版本淘汰）。
 - **待办**：① K2-E6 两轮真机复证（TTS 解除后做——第 1 轮同会话记忆 + 第 2 轮跨 WS 断连重连后记忆）；② 热修 commit push 归 human → ECS deploy.sh 对账铺载体（挂载已手工在位，对账轮零设备断连）；③ 本地 main 与 origin 差 = 热修批。
+
+## 2026-10-23 · P2 K2-E6 live 实测达标——P2 全 exitCriteria 闭合（planner）
+
+- **真机轮（human 持板 + transcript 机验）**：事实轮（15:11:05「周六下午你和方可馨一块下楼去玩，这个约定我记住啦」）→ 孩子两轮**跨新 WS 会话**考记忆且两轮念错名字（15:11:32「方可欣是谁？」/ 15:12:24「方可清是谁？」）→ 设备两轮都纠正回「方可馨」并复述事实（同栋楼 + 周六同玩）——**跨 session 07fe22ae → 8ec360aa → face646d 三个 WS 会话记忆全保持**（含设备重连产生的新会话），TTS 全程 `语音生成成功 重试0次`。
+- **OpenClaw 侧机证（node:sqlite 读 agent db）**：`session_windows` 表**恰一条**持久会话窗口，`session_key = agent:kidpal:openai-user:58:e6:c5:72:0c:bc`（device_id = 设备 MAC）——与冻结判定的键形逐字一致、单一窗口承载全部会话；旧行为（每请求 `openai:<randomUUID>`）下不可能出现跨会话保持。
+- **三件机验结论**：① 请求携 `user=<device_id>` ✓（键形在场）；② 零历史重放 ✓（单窗口 + 冻结验收 E1/E2 结构断言承载）；③ 两轮 session 键一致 ✓（跨会话行为 + 单窗口双证）。**K2-E6 = 达标，P2 E1..E6 全闭合、完全收口**。
+- **遗留账**：热修批 `e52e55d1`（edge-tts 载体）+ `aca6c957`（记账）在 `dev/pod-m2` 未进 main——push 归 human，push 后 ECS `deploy.sh` 对账铺载体（消每日 drift timer 的 compose 漂移报，零设备断连）。M5 列车：P1 ✓ P5 ✓ P2 ✓ → 下包 **P3/K3**（mo53）。
