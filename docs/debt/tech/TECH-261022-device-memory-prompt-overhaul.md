@@ -34,3 +34,7 @@ source: ["2026-10-22 讨论稿（工作区外，未入 VCS）：c:/tmp/kidpal-me
 - **不改**：引擎 `Intent` 维持 nointent（OpenClaw 拒收引擎 tools 数组，见 ARQ-260907）；thinking 维持关闭（模型侧延迟、语音 UX）；分回合 thinking 不纳入本批（human 2026-10-22 裁）。
 
 **风险**：riskTier: medium——改动横跨实现面（引擎/部署资产）、生产配置与 prompt 资产，但全部可回滚（配置备份 + prompt 版本化 artifact）；Honcho 自托管数据留 ECS 本机，隐私面可控；主要风险是 prompt 迁移后行为回归，需探针 + 真机双验。
+
+---
+
+**结项注记（2026-10-23，append）——P1 遗留「装配壳 jinja2 单遍渲染占位字面泄漏」观察项结项**：P5 live 实测 transcript 全量 `{{` 零命中、日期类回答全部正确（progress.md 2026-10-23 P5 部署节），定性**外观级、无行为级泄漏**；advisory review S7（delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md）复核本文件无一句依赖这些占位、判「无需为 {{today_date}} 改措辞」；唯一新依赖（课表摘要行）由批 A+B `261023-agents-md-static-semantics-alignment` 的 B1 降级句承载（摘要缺失/截断 → 读文件或诚实说查不到，同时覆盖引擎缺省文本「（本次会话未提供）」）。**结项、不另起批**（human 2026-10-23 指示「其他的先记录到 debt」语境下的裁量为结项记账而非挂账）。
