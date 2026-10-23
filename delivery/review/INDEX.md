@@ -7,10 +7,11 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (11)
+## review (12)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261023-arch-review-memory-wiring-verified-behavior](261023-arch-review-memory-wiring-verified-behavior/) | 2026-10-23 | landed | yes |
 | [261022-arch-review-device-memory-prompt-overhaul](261022-arch-review-device-memory-prompt-overhaul/) | 2026-10-22 | landed | — |
 | [261021-arch-review-p3-record-cancel-lifecycle](261021-arch-review-p3-record-cancel-lifecycle/) | 2026-10-21 | landed | — |
 | [261019-arch-review-p3-record-dialogue-guide](261019-arch-review-p3-record-dialogue-guide/) | 2026-10-19 | landed | — |
