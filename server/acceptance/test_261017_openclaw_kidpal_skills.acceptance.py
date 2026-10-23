@@ -86,6 +86,22 @@ Run protocol（文件名两点须 importlib 模式）:
 RED 基线（冻结时点树，2026-10-18，builder 尚未建目录）：PV-A6 全齿设计态红——
 server/deploy/261017-openclaw-kidpal-skills/ 不存在（声明工件 / apply / rollback
 三件缺失 = 真实缺失行为），红名逐条指向缺口；本件不触碰任何既有绿。
+
+────────────────────────────────────────────────────────────────────────────
+SUPERSEDED-REVIEW 261022-m5-k1-prompt-carrier-migration K1-E5（2026-10-23
+acceptance-author 复核记录，**零断言改动**）：
+
+  承载反转批（v11 静态语义迁 workspace AGENTS.md + 引擎只发动态 context 小块 +
+  kidpal agent 工具面收窄）落地时对本件全部断言做了承载拓扑复核：本件断言面 =
+  261017-openclaw-kidpal-skills 声明工件的离线契约（skills 白名单三点位
+  agents.entries.kidpal.skills + apply/drift/backup/rollback 四态），**不承载 v11
+  静态语义锚、不解析 vN 三面接线指针**（v11 仅出现于头注散文叙事），承载反转
+  零触及 → 无断言需换代。组合共存关系：本包 tools 定点 patch（
+  261022-openclaw-kidpal-tools，agents.entries.kidpal.tools.allow）与本件 skills
+  patch 作用于同一 openclaw.json，二者键位不相交、apply 互不越界（组合态由
+  test_261022_openclaw_kidpal_tools.acceptance.py 的 preserves_other_keys 齿真跑
+  承载）；P3 落 drift_guard 现状锚时须以本包 tools patch 已应用态为准（plan.md
+  跨包事实）。
 """
 
 from __future__ import annotations

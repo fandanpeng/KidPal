@@ -180,6 +180,9 @@ GATEWAY_DIR = SERVER / "gateway"
 FRONT_APP = GATEWAY_DIR / "front" / "front_app.py"
 DEPLOY_DIR = SERVER / "deploy"
 CARRIER = DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER"
+# SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：两常量服务过的
+# provider 三键 / overlay PROMPT_SRC/DST vN 指针断言已随承载反转退役（faces 判法
+# 移交该包 K1-E3 静态面/动态面集合相等不变式），现存留作历史口径参照。
 PROVIDER_YAML = DEPLOY_DIR / "provider.config.yaml"
 OVERLAY_SH = DEPLOY_DIR / "apply-xiaozhi-overlay.sh"
 V7_NAME = "openclaw-system-prompt.v7.md"
@@ -821,33 +824,32 @@ class M4K3PromptV8Acceptance(unittest.TestCase):
     maxDiff = None
 
     def test_a8_prompt_three_faces_version_agnostic(self):
-        """coverage: M4K3-A8 守卫 — carrier 声明面 / provider.config.yaml 三键 /
-        apply-xiaozhi-overlay.sh 渲染面 三面同版且版本文件在世（解析值断言, 无版本
-        字面——bump 后仍绿, 漏翻任一面即红; carrier 沿革保留 v7 条目）。"""
+        """coverage: M4K3-A8 守卫 — 终点版冻结声明与沿革完整（261022 语义换代）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = carrier artifact 行解析当前版 + provider.config.yaml 三键与
+        apply-xiaozhi-overlay.sh PROMPT_SRC/DST 同指该版 + 版本文件在世 + carrier
+        沿革保留 v7 条目（vN 三面接线守卫）；新语义 = 承载反转（v11 = 引擎注入
+        承载的**终点版**，不再 bump；静态语义单一事实源 = workspace AGENTS.md），
+        vN 三面 face-equality 由该包新验收
+        test_261022_m5_k1_prompt_carrier_migration.acceptance.py 的 K1-E3 静态面/
+        动态面集合相等不变式取代。本齿改钉（must-stay-green）：① carrier artifact
+        行仍解析出终点版（声明形被改破 = 红）；② 终点版文件在世非空；③ carrier
+        沿革保留 v7 条目（历史行不删铁律不变）。"""
         version = _current_prompt_version()
         self.assertTrue(
             version is not None,
-            "M4K3-A8 RED: OPENCLAW_SYSTEM_PROMPT_CARRIER artifact 行无法解析出当前"
-            "版本（声明面被改形——版本化管线锚破）。")
+            "M4K3-A8 RED: OPENCLAW_SYSTEM_PROMPT_CARRIER artifact 行无法解析出终点"
+            "版本（声明面被改形——版本化管线锚破；261022-m5-k1 承载反转不删终点版"
+            "声明）。")
         fname = f"openclaw-system-prompt.{version}.md"
-        provider_lines = _read_text(PROVIDER_YAML).splitlines()
-        for key in ("artifact:", "source:", "deploy_target:"):
-            hit = [l for l in provider_lines if key in l and "openclaw-system-prompt." in l]
-            self.assertTrue(
-                any(fname in l for l in hit),
-                f"M4K3-A8 RED: provider.config.yaml {key} 键未指向当前声明版本 "
-                f"{fname} —— 声明面三键同步缺失（E2 动作③; 版本解析自 carrier, "
-                "漏翻必红）。")
-        overlay = _read_text(OVERLAY_SH)
-        for var in ("PROMPT_SRC=", "PROMPT_DST="):
-            hit = [l for l in overlay.splitlines() if l.strip().startswith(var)]
-            self.assertTrue(
-                any(fname in l for l in hit),
-                f"M4K3-A8 RED: apply-xiaozhi-overlay.sh {var} 行未指向 {fname} —— "
-                "渲染面版本行翻转缺失（E2 动作④, plan 预评补的第四件）。")
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：provider 三键
+        # 与 PROMPT_SRC/DST 同指断言退役（face-equality 移交该包 K1-E3）；保留
+        # 终点版文件在世 + carrier 沿革两半。
         self.assertTrue(
             (DEPLOY_DIR / fname).is_file() and _read_text(DEPLOY_DIR / fname).strip(),
-            f"M4K3-A8 RED: {fname} 缺失或为空 —— 版本化文件未落盘（E2 动作①）。")
+            f"M4K3-A8 RED: {fname} 缺失或为空 —— 终点版冻结件被删（历史版本共存可"
+            "diff 铁律；261022-m5-k1 OQ-8：v11 原地冻结，删除 ≠ 迁移）。")
         self.assertIn(
             "openclaw-system-prompt.v7.md",
             _read_text(CARRIER),
@@ -855,39 +857,51 @@ class M4K3PromptV8Acceptance(unittest.TestCase):
             "（历史版本可 diff 铁律; v8 后 v7 行须移入历史版本段保留）。")
 
     def test_a8_current_prompt_dual_trigger_and_boundary(self):
-        """coverage: M4K3-A8 — 当前版本文件故事段：双指令（我要讲故事 + 帮我记下来）
-        + 意图边界负例「帮我记下来明天带跳绳」显式排除例（= 课表录入, notes ⑦ 不得
-        越界误触课表录入意图）+ 影子口径/标题 ≤12 字零偏移继承。"""
-        version = _current_prompt_version()
+        """coverage: M4K3-A8 — 故事段双指令与意图边界（261022 语义换代）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：旧语义 = 当前
+        接线版 vN 文件故事段承载双指令 + 边界负例 + 影子口径 + 标题 ≤12 字；新语义
+        = 静态语义单一事实源 workspace AGENTS.md 承载同组锚（§「故事」节窗口，
+        内容驱动选节判法不变；「帮我记下来明天带跳绳」边界负例与 ≤12 字标题锚须
+        逐条迁入——迁移只许换承载不许丢语义）。现树未迁入 = 设计态红。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：承载面从「当前
+        # 接线版 vN 文件」换为 workspace AGENTS.md（§ 故事节窗口）。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
         self.assertTrue(
-            version is not None,
-            "M4K3-A8 RED(infra): carrier 版本解析失败（前置齿红）。")
-        body = _read_text(DEPLOY_DIR / f"openclaw-system-prompt.{version}.md")
+            agents_path.is_file(),
+            "M4K3-A8 RED(superseded): workspace-kidpal/AGENTS.md 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。")
+        body = _read_text(agents_path)
+        self.assertTrue(body.strip(), "M4K3-A8 RED(superseded): AGENTS.md 为空（前置）。")
         window = _section_window(body, ("故事",), ("story",))
         self.assertIn(
             "我要讲故事", window,
-            "M4K3-A8 RED: 故事段丢失「我要讲故事」—— 既有指令零偏移被破（v8 以 v7 "
-            "为基只增不改）。")
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段丢失「我要讲故事」—— 既有指令"
+            "零偏移被破（迁移逐条承载，261022-m5-k1 K1-E1）。")
         self.assertIn(
             "帮我记下来", window,
-            "M4K3-A8 RED: 故事段无「帮我记下来」第二指令 —— 双指令批未落（S-F2.2 "
-            "双入口触发词入口; deploy 目录现役故事段零命中 = notes ⑦ 缺口未补）。")
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段无「帮我记下来」第二指令 —— "
+            "双指令批未迁入（S-F2.2 双入口触发词；261022-m5-k1 K1-E1）。")
         self.assertIn(
             "明天带跳绳", window,
-            "M4K3-A8 RED: 故事段无「帮我记下来明天带跳绳」边界负例 —— 意图边界措辞"
-            "缺失（notes ⑦: 该句 = 课表录入, 不得判开录; LLM 真判定归 live 目击, "
-            "prompt 文本负例 = offline 可机判的生成端锚）。")
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段无「帮我记下来明天带跳绳」"
+            "边界负例 —— 意图边界措辞未迁入（notes ⑦: 该句 = 课表录入, 不得判开录; "
+            "LLM 真判定归 live 目击, prompt 文本负例 = offline 可机判的生成端锚）。")
         self.assertIn(
             "story_list", window,
-            "M4K3-A8 RED: 故事段丢失 story_list 措辞 —— 影子口径零偏移被破（Q7: "
-            "story 数据 front 机械推送单源, prompt 不教模型产 story 块）。")
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段丢失 story_list 措辞 —— 影子"
+            "口径零偏移被破（Q7: story 数据 front 机械推送单源, prompt 不教模型产 "
+            "story 块）。")
         self.assertTrue(
-            any(w in window for w in ("严禁生成", "不要生成", "禁生成", "不生成")),
-            "M4K3-A8 RED: 故事段无「禁产 story JSON」禁令 —— 影子口径被稀释。")
+            any(w in window for w in ("严禁生成", "不要生成", "禁生成", "不生成",
+                                      "严禁产", "禁产")),
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段无「禁产 story JSON」禁令 —— "
+            "影子口径被稀释。")
         self.assertIn(
             "12 字", window,
-            "M4K3-A8 RED: 故事段丢失标题 ≤12 字锚 —— 归档起标题规则零偏移被破"
-            "（notes ⑧: v7 故事段既有, v8 零偏移继承）。")
+            "M4K3-A8 RED(superseded): AGENTS.md 故事段丢失标题 ≤12 字锚 —— 归档起"
+            "标题规则零偏移被破（notes ⑧: v7 故事段既有, v8 零偏移继承；迁移逐条"
+            "承载）。")
 
     def test_a8_v7_prompt_immutable(self):
         """coverage: M4K3-A8 守卫 — v7 本体零回改（E2「新文件不回改 v7」铁律齿;

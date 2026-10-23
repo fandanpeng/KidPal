@@ -82,10 +82,11 @@ TTS:
     voice: zh-CN-XiaoxiaoNeural
 ASR:
   Qwen3ASRFlash: {api_key: "$DASHSCOPE_API_KEY", model_name: qwen3-asr-flash, type: qwen3_asr_flash}
-# KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）：引擎
+# KidPal 引擎装配壳（261022-m5-k1-prompt-carrier-migration）：引擎
 # PromptManager._load_base_template 读本顶层键（缺省回落镜像内置 agent-base-prompt.txt
-# = 通用小智模板，与 v11 对冲）。值 = data/ bind-mount 内路径，模板源由本脚本下方拷入。
-prompt_template: /opt/xiaozhi-esp32-server/data/kidpal-agent-prompt.txt
+# = 通用小智模板）。值 = data/ bind-mount 内路径，装配壳源由本脚本下方拷入；装配壳只做
+# {{base_prompt}} 包裹，不载静态纪律，且不计第二动态模板件。
+prompt_template: /opt/xiaozhi-esp32-server/data/kidpal-dynamic-context.v1.txt
 # 引擎出错兜底语（KidPal 口径，去「小智」字样）：get_system_error_response 读本顶层键。
 system_error_response: "哎呀，我这边卡了一下，稍等一下再问我一次吧。"
 # 决策 21（arch §6.4）: 引擎不主动断连 — 两道超时 24h 纯兜底 + 告别语关闭。
@@ -98,47 +99,56 @@ EOF
 echo "rendered $OVERLAY"
 ls -la "$OVERLAY"
 
-# OpenClaw brain system prompt (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与 .config.yaml 同目录 .
-# 版本化文件 = live 探针 (VRT-A4/A7 / 包 C1 A8/A9) 的唯一 prompt 源, 保证「验收所测=生产所用」。
-# 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER（本脚本与 provider.config.yaml
-# 只留「当前 = vN」指针，不复述沿革）。历史版本文件一律不改、可 diff。
-#   v11 = openclaw-system-prompt.v11.md (当前渲染源; 261017-prompt-v11-schedule-recall:
-#        课表问答回合识别特征扩列——凡提到课表 / 课程 / 上课 / 上什么课 / 几点上课 /
-#        要带什么，及今天 / 明天 / 后天 / 大后天 / 周X / 星期X / 周几 / 这周 / 下周 /
-#        （某月某）号 + 课 的组合一律判课表问答回合，先读 schedule.md 再作答、读不到
-#        诚实说查不到（TECH-261017 真机「该读未读」根治）; 其余段落零偏移继承 v10)。
+# OpenClaw brain system prompt 冻结终点版存档 (VRT-E4 非孤儿接线): 渲染到 ECS data/ 与
+# .config.yaml 同目录。261022-m5-k1-prompt-carrier-migration 承载反转后 **不再注入 prompt
+# 键**——静态语义迁 workspace AGENTS.md（缓存边界之上），引擎注入面只余有界动态 context
+# 块（见下方 DYNAMIC_CONTEXT_SRC）。本块保留 v11 拷贝，供历史可 diff 与版本无关探针守卫
+# 解析（PROMPT_SRC/PROMPT_DST 结构化指向不变）。
+# 版本演进史唯一全量副本 = OPENCLAW_SYSTEM_PROMPT_CARRIER。
 PROMPT_SRC="$HERE/openclaw-system-prompt.v11.md"
 PROMPT_DST="$DATA_DIR/openclaw-system-prompt.v11.md"
 if [ -f "$PROMPT_SRC" ]; then
   cp "$PROMPT_SRC" "$PROMPT_DST"
-  echo "rendered openclaw-system-prompt -> $PROMPT_DST"
-  # 将全部 prompt 作为顶层 `prompt: |` literal block 注入 .config.yaml (替代 base config.yaml
-  # 第 203 行小智默认台湾腔人设)。prompt 是顶层键 (merge_configs deep-merge 覆盖、connection.py
-  # 以 config["prompt"] 取用)。markdown 含反引号, 不能放进上面未加引号的 <<EOF, 故在此追加。
-  # 注: 只在 .config.yaml 不存在 prompt 键时注入, 避免重复渲染叠加。
-  if ! grep -q '^prompt:' "$OVERLAY" 2>/dev/null; then
-    {
-      printf '\nprompt: |\n'
-      sed 's/^/  /' "$PROMPT_SRC"
-    } >> "$OVERLAY"
-    echo "rendered prompt: literal block -> $OVERLAY"
-  else
-    echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
-  fi
+  echo "rendered openclaw-system-prompt -> $PROMPT_DST (archive; not injected)"
 else
   echo "WARN: wired system prompt not found at $PROMPT_SRC — E4 接线缺失, 请检查 server/deploy/" >&2
 fi
 
-# KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）: data/ 是容器
-# 的 bind-mount，拷入即被引擎 prompt_template 读取（与 .config.yaml 同目录、同一次渲染）。
-# 模板源替换镜像内置通用小智模板；缺源时告警而不静默（孤儿 prompt_template 指向空气）。
-PROMPT_TEMPLATE_SRC="$HERE/kidpal-agent-prompt.txt"
-PROMPT_TEMPLATE_DST="$DATA_DIR/kidpal-agent-prompt.txt"
+# 动态 context 块（261022-m5-k1-prompt-carrier-migration K1-E2/K1-E3）: 每回合注入引擎
+# 顶层 `prompt: |` literal block（替代 base config.yaml 第 203 行小智默认台湾腔人设）。
+# 内容源 = server/deploy/kidpal-agent-prompt.txt——有界（本回合时间 / 日期、课表摘要占位
+# 等回合内事实），零静态纪律（纪律在 workspace AGENTS.md）。prompt 是顶层键（merge_configs
+# deep-merge 覆盖、connection.py 以 config["prompt"] 取用）。markdown 含反引号, 不能放进
+# 上面未加引号的 <<EOF, 故在此追加。注: 只在 .config.yaml 不存在 prompt 键时注入, 避免
+# 重复渲染叠加。
+DYNAMIC_CONTEXT_SRC="$HERE/kidpal-agent-prompt.txt"
+DYNAMIC_CONTEXT_DST="$DATA_DIR/kidpal-agent-prompt.txt"
+if [ -f "$DYNAMIC_CONTEXT_SRC" ]; then
+  cp "$DYNAMIC_CONTEXT_SRC" "$DYNAMIC_CONTEXT_DST"
+  echo "rendered kidpal-dynamic-context -> $DYNAMIC_CONTEXT_DST"
+  if ! grep -q '^prompt:' "$OVERLAY" 2>/dev/null; then
+    {
+      printf '\nprompt: |\n'
+      sed 's/^/  /' "$DYNAMIC_CONTEXT_SRC"
+    } >> "$OVERLAY"
+    echo "rendered dynamic prompt: literal block -> $OVERLAY"
+  else
+    echo "SKIP prompt injection: $OVERLAY already has a 'prompt:' key"
+  fi
+else
+  echo "WARN: dynamic context template not found at $DYNAMIC_CONTEXT_SRC — 引擎注入面缺失 (261022-m5-k1 K1-E2)" >&2
+fi
+
+# KidPal 引擎装配壳（261022-m5-k1-prompt-carrier-migration）：data/ 是容器的 bind-mount，
+# 拷入即被引擎 prompt_template 读取（与 .config.yaml 同目录、同一次渲染）。装配壳只做
+# {{base_prompt}} 包裹，不载静态纪律；缺源时告警而不静默（孤儿 prompt_template 指向空气）。
+PROMPT_TEMPLATE_SRC="$HERE/openclaw-agents/kidpal-dynamic-context.v1.txt"
+PROMPT_TEMPLATE_DST="$DATA_DIR/kidpal-dynamic-context.v1.txt"
 if [ -f "$PROMPT_TEMPLATE_SRC" ]; then
   cp "$PROMPT_TEMPLATE_SRC" "$PROMPT_TEMPLATE_DST"
-  echo "rendered kidpal-agent-prompt -> $PROMPT_TEMPLATE_DST"
+  echo "rendered kidpal-dynamic-context assembly shell -> $PROMPT_TEMPLATE_DST"
 else
-  echo "WARN: KidPal agent prompt template not found at $PROMPT_TEMPLATE_SRC — prompt_template 将指向缺失文件" >&2
+  echo "WARN: KidPal assembly shell not found at $PROMPT_TEMPLATE_SRC — prompt_template 将指向缺失文件" >&2
 fi
 
 # 提醒三档配置 / 排程脚本的铺放已移交 manifest 直管（261013-gov-review-deploy-

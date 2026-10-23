@@ -9,6 +9,17 @@
 |---|---|
 | `workspace-kidpal/AGENTS.md` | `/root/.openclaw/workspace-kidpal/AGENTS.md` |
 
+## 动态 context 承载（每轮注入引擎，缓存边界之下）
+
+| 仓内镜像（本目录） | 角色 / 渲染消费位 |
+|---|---|
+| `kidpal-dynamic-context.v1.txt` | 引擎装配壳（`prompt_template` 指向 data/ 本文件，只做 `{{base_prompt}}` 包裹）；overlay 拷入 ECS `data/` bind-mount |
+
+动态 context 内容源 = `server/deploy/kidpal-agent-prompt.txt`（本包原地改写定形）——由
+`apply-xiaozhi-overlay.sh` 以 2 空格缩进注入引擎 `.config.yaml` 顶层 `prompt:` 键；有界
+（本回合时间 / 日期、课表摘要等回合内事实占位），**不含静态纪律**。静态纪律只进上面的
+`AGENTS.md`。课表机械注入内容归 P5（本目录只建占位面）。
+
 ## workspace-main（261013-gov-review-deploy-single-source-loop 补齐）
 
 | 仓内镜像（`../openclaw-skills/workspace-main/AGENTS.md`） | live 位置（ECS） |

@@ -1,0 +1,11 @@
+<identity>
+{{base_prompt}}
+</identity>
+
+<装配壳指针>
+261022-m5-k1-prompt-carrier-migration：本文件是引擎装配壳（引擎顶层 prompt_template 指向 data/ 本文件）。
+动态 context 内容源 = server/deploy/kidpal-agent-prompt.txt：本回合时间 / 日期、星期、农历、位置、天气与课表摘要占位均由内容源承载，经 apply-xiaozhi-overlay.sh 注入 .config.yaml 的 prompt: 键。
+动态块有界、不含静态纪律；静态语义（回合路由与各域纪律）在 workspace AGENTS.md。
+</装配壳指针>
+
+输出约束：所有回答一律用中文口语输出，面向 8-12 岁孩子，简洁、亲切、直接，不用书面腔或技术口吻。

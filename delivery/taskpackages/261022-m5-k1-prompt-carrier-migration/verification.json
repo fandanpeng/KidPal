@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261022-m5-k1-prompt-carrier-migration",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "28f4ca43-2380-403a-860d-e31b037d16d9",
+  "evidenceRef": "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/test-scope-final.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成：acceptanceTestsFile 2 件 ∪ impactedTests 8 件种子 ∪ detect_changes blast radius〔impacted_total=2，全落 test_prompt_v7_round_routing，已在种子内〕；server/tests unit 零 seam不入单；detect_changes 与 trace_path 均可用，无降级）。acceptance 闸圈定交集 = serverAcceptanceFiles 9，恰合清单 9 件 acceptance。",
+  "finalScopedRun": {
+    "acceptance": "122 passed / 4 deselected / 4 subtests",
+    "unit": "122 passed / 4 deselected / 4 subtests",
+    "fullSuiteReference": "builder 全量 acceptance 268 passed / 4 deselected / 33 subtests；unit 115 passed（圈定差 = 未入影响面 12 件，非缩水）"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261022-m5-k1-prompt-carrier-migration --phase final --round 2 --invocation-id 28f4ca43-2380-403a-860d-e31b037d16d9",
+    "exit": 0,
+    "factOk": true
+  },
+  "scopedRound1": {
+    "invocationId": "aa4e8924-f0eb-4975-8126-4e988fa0932f",
+    "evidenceRef": "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/verifier-evidence/rounds/r1.json",
+    "ok": true
+  },
+  "packageOwnSurface": "green (K1-E1..E6 host 面 exitCriteria 全绿；E7/E8 structural live 项停 awaiting-human:live-deploy)",
+  "structuralPendingHumanDeployRound": ["K1-E7", "K1-E8"],
+  "docsContractSpecDelta": "none (docs/contracts/**、docs/** 零 diff；docs-delta.md 登记两条声明性注记：§5.5.5 命名归属级窄漂移 + v11 声明面刻意保留)",
+  "detectChangesAdvisory": {
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "180732a98a59a037fa09c04d65f083c3d9bfafef",
+    "changedFiles": 33,
+    "seedSymbols": 168,
+    "impactedTotal": 2,
+    "impactedModules": ["server/acceptance"],
+    "note": "Step 9b advisory 记账：改动只影响预期符号（blast radius 全落既有测试方法），无未预期生产符号波及"
+  }
+}

@@ -298,6 +298,11 @@ _PROMPT_FILE_RE = re.compile(r"openclaw-system-prompt\.v\d+\.md")
 def _wired_prompt_faces():
     """三面解析当前被接线的版本化 prompt 文件名（不硬写版本字面，ARQ-260908 纪律）。
 
+    SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：vN 三面接线判法随
+    承载反转退役，face-equality 由该包新验收的静态面/动态面集合相等不变式取代；
+    本解析器现存留作历史口径参照、当前无调用方（M3K3-A1 两个接线齿已 supersede
+    改钉 AGENTS.md 承载面）。
+
     返回 (rendered, declared, carried)：各自为从该面解析出的文件名列表。"""
     render_src = _read_text(PROMPT_RENDER_SH)
     rendered = re.findall(
@@ -531,46 +536,57 @@ class M3K3PromptWiringAcceptance(unittest.TestCase):
     maxDiff = None
 
     def test_a1_prompt_wired_three_faces_version_agnostic(self):
-        """coverage: M3K3-A1（接线守卫 / must-stay-green，版本无关）— 渲染面
-        （apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST）、声明面（provider.config.yaml
-        system_prompt artifact/source/deploy_target）、载体面（OPENCLAW_SYSTEM_PROMPT_
-        CARRIER artifact/渲染面声明行）三面各自解析出**当前真正被接线的那一版**，断言
-        三面一致且该文件落盘非空。两面分叉 = 生产所用与被测所载不是同一块 = 红。"""
-        rendered, declared, carried = _wired_prompt_faces()
+        """coverage: M3K3-A1（接线守卫，261022 语义换代）— 静态语义主承载在场。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = 渲染面（apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST）、声明面
+        （provider.config.yaml system_prompt 三键）、载体面（OPENCLAW_SYSTEM_PROMPT_
+        CARRIER 声明行）三面解析 vN 接线版并断言三面一致且落盘非空（ADR-001 vN
+        形态）；新语义 = 承载反转（v11 静态语义迁 workspace AGENTS.md 为静态语义
+        单一事实源、引擎只发有界动态块），vN 三面 face-equality 由该包新验收
+        test_261022_m5_k1_prompt_carrier_migration.acceptance.py 的 K1-E3 静态面/
+        动态面集合相等不变式取代。本齿改钉（must-stay-green）：AGENTS.md 静态
+        主承载镜像在场非空（测试 id 保留以稳定历史 coverage 引用）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：被测承载面从
+        # 「接线版 vN 文件」换为 workspace AGENTS.md。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
         self.assertTrue(
-            rendered and declared and carried,
-            f"M3K3-A1 RED: 接线面解析失败（rendered={rendered} declared={declared} "
-            f"carried={carried}）——prompt 落盘即孤儿（PROMPT_SRC/PROMPT_DST、"
-            "provider.config.yaml system_prompt 三键、OPENCLAW_SYSTEM_PROMPT_CARRIER "
-            "声明行须指向 openclaw-system-prompt.vN.md）。")
-        self.assertEqual(
-            set(rendered), set(declared),
-            f"M3K3-A1 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
-            "不同版本——「验收所测 = 生产所用」断裂（ADR-001 接线不变式）。")
-        self.assertEqual(
-            set(rendered), set(carried),
-            f"M3K3-A1 RED: 载体面（OPENCLAW_SYSTEM_PROMPT_CARRIER）声明 {sorted(carried)} "
-            f"与渲染/声明两面 {sorted(rendered)} 不一致——carrier 声明未随 bump 同步。")
-        for name in sorted(set(rendered)):
-            path = DEPLOY_DIR / name
-            self.assertTrue(
-                path.is_file(),
-                f"M3K3-A1 RED: 被接线的 {name} 未落盘（孤儿声明）。")
-            self.assertTrue(
-                _read_text(path).strip(),
-                f"M3K3-A1 RED: 被接线的 {name} 是空文件。")
+            agents_path.is_file(),
+            "M3K3-A1 RED(superseded): workspace-kidpal/AGENTS.md 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。")
+        self.assertTrue(
+            _read_text(agents_path).strip(),
+            "M3K3-A1 RED(superseded): workspace-kidpal/AGENTS.md 是空文件——"
+            "静态语义主承载空载（261022-m5-k1 K1-E1）。")
 
     def test_a1_wired_prompt_carries_v6_schedule_anchors(self):
-        """coverage: M3K3-A1（接线守卫锚半，版本无关）— 三面解析出的当前接线版本
-        文件正文须携带本包课表段新语义锚（问答框口径 / 备注读回 / 意图薄载荷 /
-        LLM 不产网格）与 schedule 表行新语义。现树接线 v5 无新锚 = 红（真实缺失）；
-        builder bump v6 并同步三面后转绿；未来 forward-bump 若丢锚同样红（防丢内容）。"""
-        rendered, _declared, _carried = _wired_prompt_faces()
-        self.assertTrue(rendered, "M3K3-A1 RED(infra): 无接线 prompt 版本可解析。")
-        name = sorted(set(rendered))[0]
-        body = _read_text(DEPLOY_DIR / name)
-        _assert_v6_schedule_anchors(self, body, f"接线版 {name}")
-        _assert_schedule_table_row_not_legacy(self, body, f"接线版 {name}")
+        """coverage: M3K3-A1（接线守卫锚半，261022 语义换代）— 课表段语义锚承载。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：旧语义 = 三面
+        解析出的当前接线版 vN 文件正文携带本包课表段新语义锚；新语义 = 静态语义
+        单一事实源 AGENTS.md 承载课表段锚（问答框口径 / 备注读回 / 意图薄载荷 /
+        LLM 不产网格——`_assert_v6_schedule_anchors` 为正文并集窗口、承载形态
+        容忍）；旧 {title,items} schedule 形状负锚同步改为 AGENTS.md 正文级负向
+        （不要求 AGENTS.md 复刻 display 用法表行结构）。现树未迁入 = 设计态红；
+        builder 完成迁移后转绿。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：承载面从「接线版
+        # vN 文件」换为 workspace AGENTS.md。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
+        self.assertTrue(
+            agents_path.is_file(),
+            "M3K3-A1 RED(superseded): workspace-kidpal/AGENTS.md 不在场（前置）。")
+        body = _read_text(agents_path)
+        self.assertTrue(body.strip(), "M3K3-A1 RED(superseded): AGENTS.md 为空（前置）。")
+        _assert_v6_schedule_anchors(self, body, "workspace-kidpal/AGENTS.md")
+        # 旧 {title,items} 形状负锚（正文级，AGENTS.md 不要求表格结构）。
+        legacy_rows = [
+            l for l in body.splitlines()
+            if "schedule" in l.lower() and "title" in l and "items" in l]
+        self.assertEqual(
+            legacy_rows, [],
+            "M3K3-A1 RED(superseded): AGENTS.md 仍描述旧 {title,items} schedule "
+            f"形状（{legacy_rows[:1]!r}）——契约 §1.3② 2026-09-21 起旧形状即废"
+            "（Q5 收紧），LLM 只发薄载荷；迁移不得把旧形状带进静态语义主承载。")
 
 
 # --------------------------------------------------------------------------- #

@@ -36,3 +36,26 @@
 - **LP4 状态翻转**：`decision-coverage.json` `launchPreconditions` LP4 → `verified`（evidence = review.md 门 1 节 + 本节点补正）。
 - **机检**：5 包 `taskpackage-required-check.mjs` 重跑（见同日验证输出）；JSON 语法与 Draft 态豁免字段核对。
 - **status：`ready-for-commit-before-launch`** —— 四件套就绪；LP5 commit-before-launch（专用 base ref，非 main）与逐包 launch 交主线程（human）。本轮不拉子会话、不 launch Pod。
+
+## 2026-10-23 · P1（K1）launch + 冻结相位起跑（主线程 = Pod m2 本体）
+
+- **launch 形态**：human 指示「开始开发第一个包」——本树（`C:/AI/KidPal-pod-m2`，`dev/pod-m2`）即 Pod 本体就地起 loop（m2-char-window / 261010-p3-storylist 先例），不另建树、不派 headless。K1 为 server/deploy 纯云端包，本树环境可用，无固件等价化需求。
+- **launch 面动作**：① 五包 board worktreePath 预填 `C:/AI/KidPal-pod-m2`（`portfolio-reconcile.mjs --set-pod` ×5，status=queued、mergeOrder 50–54 维持）；② K1 启动卡落盘 `delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/launch-card.md`（已知窗口判红豁免 / live 门前停等 `awaiting-human:live-deploy` / 共享冻结面纪律 / medium 合并门预期）。
+- **loop 进度**：acceptance-author 冻结相位已派（红基线实跑回填 + K1-E1..E6 host 面验收冻结 + 三件冻结验收 supersede 换代 + `test_261022_openclaw_kidpal_tools.acceptance.py` + taskpackage.json 回填）。后续 builder → verifier↔fixer → integrator → supervisor 按 full rigor 串行。
+
+## 2026-10-23 · K1 冻结相位收口 + 扩单两项（planner）
+
+- **冻结完成**：红基线终态 = 冻结前既有套件 246 passed 全绿无先存红；冻结后 242 passed / 26 failed（全设计态红：新件 18〔承载迁移 8 + tools 覆写 10〕+ supersede 换代红 8），零 infra 红。新验收两件：`test_261022_m5_k1_prompt_carrier_migration.acceptance.py`（12 齿，K1-E1/E2/E3/E5/E6 + README 指针节齿）+ `test_261022_openclaw_kidpal_tools.acceptance.py`（10 齿，K1-E4 四态契约仿 261017 先例）。K1-E7/E8 live 项零自动断言、docstring 申报。
+- **planner 裁定 A(a)**：supersede 扩面授权——m3k3（2 齿）/ m4k3（2 齿）/ perf-k1（4 齿）承载拓扑守卫与已换代三件同类，K1-E3 落地必转红；选项 (b)「保留 v11 指针线」与 K1-E1 冲突且留死指针，不取。扩面后六件全部 SUPERSEDED-BY 留痕、与承载无关断言零回改、perf 数值断言零放松。m3k3 一齿（`test_a1_wired_prompt_carries_v6_schedule_anchors`）在 planner 点名清单外、与点名齿共用帮手同属承载拓扑断言，acceptance-author 按同授权一并换代，planner 追认。
+- **扩单两项（planner 决定，record 于 taskpackage.json changeManifest）**：① `server/deploy/perf-k1/probe_gate.py`（acceptance-author 申报——resolver 改指 AGENTS.md 是 perf 三齿转绿前置，prompt_sha256 口径不动）；② `server/deploy/README.md`（prompt 指针节散文随承载反转改写）。impactedTests 补 m3k3/m4k3/perf-k1 三件。
+- **taskpackage.json 回填完成（planner 代写，acceptance-author 写权被 scope 层拦属预期防线）**：acceptance 8 条目（E1–E6 + E7/E8 structural）+ acceptanceTestsFile 两件 + redBaselineResult 终态 + 扩单；`taskpackage-required-check.mjs` 零错误零 warning；`brief-inputs.mjs` 生成 input-brief.md（0 warnings / 14 advisories）。
+- **TODO-BUILDER 锚（冻结相位移交，随 builder brief 下发）**：E2 二选一定形推荐「新件取代」（OQ-8 单源）；E2 课表摘要占位措辞建议「课表摘要」；E3 静态承载键键形不钉名（key: value 行且值含 AGENTS.md 路径）；E4 运行时键形假设 `agents.entries.kidpal.tools.allow`（部署轮不符走 tighten-only、不得静默凑合）；渲染注入形态假设 `.config.yaml prompt:` 块 2 空格缩进现行 sed 口径。另：m4k3 换代新增「≤12 字标题」AGENTS.md 迁入要求，builder 迁移时须逐条承载。
+
+## 2026-10-23 · K1 builder 全绿 + verifier 双轮绿 + 进 integrator 收口（planner）
+
+- **builder 实现（未 commit）**：26 设计态红全部转绿——acceptance `268 passed / 4 deselected / 33 subtests`、unit `115 passed`、契约零 diff。逐 K1-E：E1 v11 全量静态语义迁 AGENTS.md（路由五行/回复格式/各域节/硬约束/底线三不变量 + m4k3 换代新增「≤12 字标题」锚；v11 本体零触碰 sha256 仍绿）；E2 定形 **「原地改写」**（判法约束下的唯一自洽解，见下）；E3 三面接线翻转（carrier 静态/动态面声明、provider static_prompt/dynamic_context 键、overlay 改注入动态内容块、manifest 锚集撤「实时事实回合」换「本回合时间/课表摘要」、verify-deploy md5/marker 路径原样、README 指针节改写、perf probe resolver 改指 AGENTS.md）；E4 `261022-openclaw-kidpal-tools/` 四态工作台（apply 幂等 SKIP / drift exit3 / UTC 备份 / rollback，与 261017 skills 组合共存真跑，openclaw.json 零入仓）。
+- **E2 定形裁定（planner 追认「原地改写」）**：冻结判法组合（内容源齿读 `DEPLOY_DIR/<裸名>` × 存在性齿读 `openclaw-agents/` × PV-A4 身份齿要 `{{base_prompt}}`）下唯一自洽解 = 内容源 `kidpal-agent-prompt.txt` + 装配壳 `kidpal-dynamic-context.v1.txt`；验收头注明列该分支合法。推荐「新件取代」形态若要取需扩单根名新件或 tighten-only 调验收路径，不值。
+- **canonical docs 窄漂移（声明性，本包不改 docs）**：arch §5.5.5 把装配壳描述为渲染内容源的动态模板——实现为「内容源 + 装配壳」两件分工。处置：docs-delta.md 登记 + 建议随 P5 小批措辞修正；**P5 注入落点注记已落 `261022-m5-n2a plan.md` 跨包事实节**（真实占位 = `kidpal-agent-prompt.txt` 的 `{{schedule_summary}}`；装配壳无内容占位勿改）。
+- **v11 声明面保留（刻意，非漏改）**：`test_char_meaning_merge` 守卫仍解析 provider 三键/overlay PROMPT_SRC 指 v11——保留为「冻结终点版/data 存档」声明面（不再注入 prompt 键），后续包勿当废弃清理。
+- **verifier 双轮**：scoped r1（invocation `aa4e8924`）`ok:true`，FS-EVIDENCE-2 过；final r2 由 integrator Step 4 携 scope-file 跑（invocation `28f4ca43`，round 2——首个 final 尝试因缺 `--scope-file` 被 verify.mjs fail-closed 举手、未产证据、轮号回收复用）。FS-EVIDENCE-1 过（19 tracked 改动全部在 changeManifest 面）；current/ 投影已字节级刷新；dispatch-stamp ×2 + over-scan friction ×2 落账。
+- **board**：K1 `running`；integrator 转绿后置 `verifier-green`。
