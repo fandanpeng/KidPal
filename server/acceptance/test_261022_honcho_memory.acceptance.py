@@ -24,8 +24,9 @@ before_prompt_build 跨 session 注入生效），但生产 profile 未装插件
 FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / 导入期
 零网络 I/O）
 
-  A) server/deploy/honcho/docker-compose.yml（栈本体声明，A4 红线：本目录内
-     **不得**创建 backfill 子树——`server/deploy/honcho/backfill/**` 归 P4）:
+  A) server/deploy/honcho/docker-compose.yml（栈本体声明，A4 backfill 禁区
+     已于 2026-10-23 锚换代解除（K4 包 261022-m5-k4 创建 backfill 子树），
+     栈本体零 backfill 引用的边界半保留——见文末「锚换代注记」）:
 
        · services 恰 **5** 个（五容器，arch §5.3.2 / E1）。
        · api 容器发布 127.0.0.1:18100（loopback；arch §1.2 / §5.3.3）。
@@ -125,7 +126,8 @@ host/live 分工边界（按 riskTier=high + Honcho DB 在 ECS postgres、host �
   · E1 apply/rollback/healthcheck 在场        → test_k3_e1_apply_rollback_...  → 机制级
   · E1 manifest 登记 + verify-deploy 核验     → test_k3_e1_manifest_... /
                                                  test_k3_e1_verify_deploy_...   → 机制级
-  · E1 A4 backfill 禁区                       → test_k3_e1_no_backfill_...     → 机制级（负锚）
+  · E1 A4 backfill 禁区（锚换代：栈本体零 backfill 引用边界半）
+                                             → test_k3_e1_no_backfill_...     → 机制级（负锚）
   · E3 v12 守则（孩子事实必须记 / 家长隐私不记）→ test_k3_e3_agents_md_...      → 措辞级
     （guard-class: wording——静态语义落盘措辞守卫，钉语义锚集合合理；
     模型真的「记孩子事实 / 拒家长隐私」= live seeded 负向探针集承载）
@@ -161,6 +163,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2] 推导仓根，不依赖调用�
 （`docker compose up`，live-manual）；AGENTS.md 守则 → 模型行为驱动方 =
 真机轮（K3-E7）；本件 host 断言对这两个 seam 均为差集覆盖（差集已显式
 申报并分流到 live 面）。
+
+锚换代注记（2026-10-23，显式治理动作·非静默放宽）：A4 backfill 禁区由包
+  261022-m5-k4-history-corpus-backfill（K4）解除——server/deploy/honcho/backfill/**
+  归 K4 创建，本件原 test_k3_e1_no_backfill_subtree_a4_redline 的「子树禁在 /
+  manifest 零 backfill 条目」半退役，保留「K3 栈本体零 backfill 引用」边界半
+  （栈本体不吞并迁移工具，换代后测试名 test_k3_e1_no_backfill_in_k3_stack_assets）。
+  换代由 K4 acceptance-author 执行（Pod 内 acceptance 唯一写点）、K4 冻结件
+  test_261022_honcho_backfill.acceptance.py 承接 backfill 面断言。
 
 Run protocol（文件名两点须 importlib 模式）:
   cd server && python -m pytest -q --import-mode=importlib -m "not live" acceptance
@@ -504,38 +514,25 @@ class K3HonchoStackAcceptance(unittest.TestCase):
             f"{tag} RED: verify-deploy.sh 丢失 deploy-drift 告警面 —— 既有漂移"
             "报警机制被本包改动回退（must-stay-green）。")
 
-    def test_k3_e1_no_backfill_subtree_a4_redline(self):
-        """coverage: K3-E1 — A4 禁区（launch-card 红线 / 门 1 终裁）：本包不预建
-        server/deploy/honcho/backfill/**（子树归 P4）；honcho 树内零 backfill
-        路径、manifest 零 backfill 登记条目。"""
+    def test_k3_e1_no_backfill_in_k3_stack_assets(self):
+        """coverage: K3-E1 — A4 禁区锚换代（2026-10-23，显式治理动作·非静默
+        放宽，见头注「锚换代注记」）：原「backfill 子树禁在 / manifest 零
+        backfill 条目」半由包 261022-m5-k4-history-corpus-backfill 解除退役
+        （backfill/** 归 K4 创建并由 K4 冻结件
+        test_261022_honcho_backfill.acceptance.py 承接断言），保留边界半——
+        K3 栈本体工件（compose / env / apply / rollback / healthcheck）零
+        backfill 引用：栈本体不吞并迁移工具，P4 资产独立落
+        server/deploy/honcho/backfill/**。"""
         tag = "K3-E1"
         self._require_honcho_dir(tag)
-        self.assertFalse(
-            (HONCHO_DIR / "backfill").exists(),
-            f"{tag} RED: {HONCHO_DIR / 'backfill'} 在世 —— A4 禁区被踩："
-            "server/deploy/honcho/backfill/** 子树归 P4（历史 corpus backfill），"
-            "K3 只建栈本体、不预建不改动 backfill 目录。")
-        intruders = [str(p.relative_to(HONCHO_DIR))
-                     for p in HONCHO_DIR.rglob("*")
-                     if "backfill" in p.relative_to(HONCHO_DIR).as_posix().lower()]
+        k3_assets = [p for p in HONCHO_DIR.iterdir() if p.is_file()]
+        hits = [p.name for p in k3_assets
+                if "backfill" in _read_text(p).lower()]
         self.assertEqual(
-            intruders, [],
-            f"{tag} RED: honcho 树内出现 backfill 命名路径 {intruders} —— A4 "
-            "禁区（P4 子树不得由本包预建）。")
-        try:
-            doc = yaml.safe_load(MANIFEST_YAML.read_text(encoding="utf-8"))
-        except Exception as e:  # noqa: BLE001
-            self.fail(f"{tag} RED: manifest.yaml 解析失败: {e!r}")
-        bad_entries = [
-            f"{e.get('src')} -> {e.get('dst')}"
-            for e in (doc or {}).get("entries", []) or []
-            if isinstance(e, dict)
-            and "backfill" in (str(e.get("src")) + str(e.get("dst"))).lower()
-            and "honcho" in (str(e.get("src")) + str(e.get("dst"))).lower()]
-        self.assertEqual(
-            bad_entries, [],
-            f"{tag} RED: manifest 出现 honcho backfill 登记条目 {bad_entries} —— "
-            "A4 禁区（P4 落地时按 merge 顺序自行串行追加）。")
+            hits, [],
+            f"{tag} RED: K3 栈本体工件出现 backfill 引用 {hits} —— 栈本体不"
+            "吞并迁移工具：backfill 子树归 P4（261022-m5-k4），独立落 "
+            "server/deploy/honcho/backfill/**（A4 锚换代后保留的边界半）。")
 
 
 # --------------------------------------------------------------------------- #

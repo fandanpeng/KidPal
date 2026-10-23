@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261022-m5-k4-history-corpus-backfill",
+  "finalRound": 4,
+  "phase": "final",
+  "invocationId": "4b7f0a2e-9c1d-4e5f-8a3b-2d6c1e0f9a7b",
+  "evidenceRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r4.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/test-scope-final-r4.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成）：本包 acceptanceTestsFile 2 件 ∪ impactedTests 种子（含 verify-deploy.sh 留痕条，非 pytest 件求交落空）∪ 共享 seam 安全余量 2 件（test_261022_memory_isolation 资格门口径对偶 + test_261022_persistent_session transcript_events 源 seam）∪ 单测面 test_backfill_honcho_unit.py 1 件。圈定方式 = 正常圈定：per-Pod 专属图索引 C-AI-KidPal-pod-m2 detect_changes（inbound，base=main，merge_base 0095b1a4）changed_files 13、seed_symbols 74、impacted_total=0——backfill 两工具与验收件零仓内调用方，blast radius 自包含（grep 抽查同结论：唯一消费面 = 冻结验收件 importlib 按路径加载）。主索引 C-AI-KidPal 首查对未 commit diff 无符号产出（新文件未入图），走降级判定后被 per-Pod 索引补验升回正常圈定，两次记录均在 scope 文件头注留痕。留根注记：r4 fact results 元数据未含 scope 路径行（verify.mjs 未透传落 fact），路径以 review-packet §2 与本字段承载。",
+  "finalScopedRun": {
+    "acceptance": "52 passed / 0 failed / 3 deselected（r4 acceptance 闸，scope 圈定口径，serverAcceptanceFiles=4；deselected = live 标记件，预期）",
+    "unit": "68 passed / 0 failed / 3 deselected / 3 subtests（r4 unit 闸，structuralCollected 68）",
+    "fullSuiteReference": "全量口径（scoped round 3，planner 驱动）= 333 passed / 0 failed / 7 deselected / 33 subtests；红基线 = 319 passed / 14 failed（14 红全部为本包新件对未实现 backfill 工具面的设计态红）→ 全绿零回退"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261022-m5-k4-history-corpus-backfill --phase final --round 4 --invocation-id 4b7f0a2e-9c1d-4e5f-8a3b-2d6c1e0f9a7b",
+    "exit": 0,
+    "factOk": true
+  },
+  "priorRounds": [
+    {
+      "round": 1,
+      "phase": "scoped",
+      "invocationId": "94ac986b-1b63-400e-a429-8b58db1fe305",
+      "evidenceRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r1.json",
+      "ok": false,
+      "observedGateExit": 1
+    },
+    {
+      "round": 2,
+      "phase": "scoped",
+      "invocationId": "8a31ad1b-7e52-4132-860a-5c9ee3f32fed",
+      "evidenceRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r2.json",
+      "ok": false,
+      "observedGateExit": 1
+    },
+    {
+      "round": 3,
+      "phase": "scoped",
+      "invocationId": "a6e88268-a500-4723-957d-e6a8c9c27dfd",
+      "evidenceRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/verifier-evidence/rounds/r3.json",
+      "ok": true,
+      "observedGateExit": 0
+    }
+  ],
+  "packageOwnSurface": "green (K4-E1..E5 host 面 exitCriteria 断言绿——照记全量零丢弃解析（未识别行兜底收编 unparsed 披露）/ ADR-016 身份口径（设备 session 键族 + 家庭单 owner peer，零新 peer）/ 幂等指纹重跑零增量 / 标记即键清库回滚 + 零源侧旗标三保留 / 资格门豁免不互串；K4-E6 live structural 项挂 human 部署轮，stop 位 awaiting-human:live-deploy)",
+  "structuralPendingHumanDeployRound": [
+    "K4-E6 live 观测项（human ECS 全量跑 + 计数报告过目 + 抽查画像命中 + 幂等二次跑零增量 + 清库回滚演练一次；REST wire 形状 message metadata 可达性 = live 首验点；真语料格式适配 = live 计数报告对账；observations 异步增量与回滚逐 session 消息量预测 = live 对账）"
+  ],
+  "docsContractSpecDelta": "none (docs/contracts/**、docs/** 零 diff——git 事实承载；docsSyncRequired=false 核实成立：历史照记口径已在 requirements v1.67 S-F5.1 AC5 + 补充规则与 arch §6.7 历史.backfill 行 + 删除语义行 + 风险表 #13 现行段落；docs-delta.md 登记零 diff 声明 + live 轮实测推翻 spec 假设时走 /arch-change 逃生门的声明性注记)",
+  "detectChangesAdvisory": {
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "0095b1a4",
+    "changedFiles": 13,
+    "seedSymbols": 74,
+    "impactedTotal": 0,
+    "impactedModules": [],
+    "note": "Step 9b advisory 记账：改动只影响本包自包含面（backfill 工具 + 验收件 + 部署登记），零仓内调用方受影响——改动只影响预期符号，核对通过。主索引 C-AI-KidPal 首查（committed diff 视角）无符号产出，per-Pod 索引补验升回正常圈定，留痕于 test-scope-final-r4.txt 头注"
+  }
+}

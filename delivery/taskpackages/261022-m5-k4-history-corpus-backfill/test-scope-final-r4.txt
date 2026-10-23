@@ -1,0 +1,22 @@
+# test-scope 清单 · 261022-m5-k4-history-corpus-backfill · final round 4（integrator 范围圈定，2026-10-23）
+# 圈定方式 = 正常圈定（per-Pod 专属图索引 C-AI-KidPal-pod-m2 detect_changes 可用）：
+# changed_files 13 条（含本包 server/acceptance ×2、server/deploy/manifest.yaml、
+# verify-deploy.sh、backfill 子树、taskpackage 投影与制品）、seed_symbols 74、
+# inbound impacted_total=0（backfill 两工具 + 验收件零仓内调用方——blast radius
+# 自包含，与 grep 抽查一致：唯一消费面 = 冻结验收件 importlib 按路径加载）。
+# 主索引 C-AI-KidPal 对未 commit diff 无符号产出（新文件未入图）——首次走降级
+# 判定后由 per-Pod 索引补验升回正常圈定，两次记录均留痕。
+# 范围 = 本包 acceptanceTestsFile ∪ impactedTests 种子 ∪ 共享 seam 相关测试
+# ∪ 安全余量（记忆子系统姊妹件 + OpenClaw transcript 源 seam 件）。
+# 本包 acceptanceTestsFile（K4-E1..E6 host 面）：
+server/acceptance/test_261022_honcho_backfill.acceptance.py
+# K3 锚换代姊妹件（本 Pod 既有改动，A4 禁区解除联动）：
+server/acceptance/test_261022_honcho_memory.acceptance.py
+# 共享 seam 安全余量：插件接线 / 资格门口径件（K4-E5 边界对偶面）：
+server/acceptance/test_261022_memory_isolation.acceptance.py
+# 共享 seam 安全余量：OpenClaw transcript_events 源 seam（backfill 双源之一）：
+server/acceptance/test_261022_persistent_session.acceptance.py
+# 单测面（builder 16 项）：
+server/deploy/honcho/backfill/test_backfill_honcho_unit.py
+# impactedTests 种子（部署核验脚本，非 pytest 件，入单以留痕；求交时自然落空）：
+server/deploy/verify-deploy.sh
