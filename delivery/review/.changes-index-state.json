@@ -31,5 +31,9 @@
   "261019-gov-review-docs-root-drift-cleanup": {
     "date": "2026-10-19",
     "mergedInMain": "yes"
+  },
+  "261023-arch-review-memory-wiring-verified-behavior": {
+    "date": "2026-10-23",
+    "mergedInMain": "yes"
   }
 }
