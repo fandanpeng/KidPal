@@ -15,7 +15,7 @@
 | [261022-m5-k2b-persistent-session](261022-m5-k2b-persistent-session/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
 | [261022-m5-k3-honcho-memory-production](261022-m5-k3-honcho-memory-production/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
 | [261022-m5-k4-history-corpus-backfill](261022-m5-k4-history-corpus-backfill/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md | open | device-memory-overhaul |
-| [261022-m5-n2a-schedule-mechanical-injection](261022-m5-n2a-schedule-mechanical-injection/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4 | open | device-memory-overhaul |
+| [261022-m5-n2a-schedule-mechanical-injection](261022-m5-n2a-schedule-mechanical-injection/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4 | closed | device-memory-overhaul |
 | [261022-p3-record-chrome-ghost-fix](261022-p3-record-chrome-ghost-fix/) | 2026-10-22 | docs/debt/tech/TECH-261022-p3-record-session-state-churn.md | closed | — |
 | [261022-p3-record-front-polish-fix](261022-p3-record-front-polish-fix/) | 2026-10-22 | docs/debt/tech/TECH-261022-p3-record-session-state-churn.md | closed | — |
 | [261021-p3-record-cancel-lifecycle](261021-p3-record-cancel-lifecycle/) | 2026-10-21 | docs/debt/tech/_archive/2026/TECH-261021-story-session-cancel-lifecycle.md | closed | — |

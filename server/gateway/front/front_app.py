@@ -1380,6 +1380,120 @@ def _schedule_school_start() -> "str | None":
     return m.group(1) if m else None
 
 
+# --- 课表机械注入：单源派生 + 会话建立时内部通道注入（261022-m5-n2a K5-E1/E2/E3）------
+# 背景（TECH-261018 第 3 层修复面）：课表回合「该读未读、凭印象编造」是模型服从度
+# 长尾——纯 prompt 纪律把「是否读文件」留给模型裁量，是不可靠层。本包把课表摘要机械
+# 注入每轮动态 context：front 用 gateway/schedule.py 唯一解析器派生 -> 会话建立时经
+# 内部通道送入引擎腿 -> 引擎填充 kidpal-agent-prompt.txt 的 {{schedule_summary}} 占位。
+# 契约 §1.5 单源红线：本侧只调 schedule.py 符号，不复制 MD 解析逻辑；引擎零解析。
+# 帧 token 与 kidpal_speak / kidpal_record_context 同型先例命名。
+SCHEDULE_SUMMARY_FRAME_TYPE = "kidpal_schedule_summary"
+# 有界定稿（本包冻结值）：窗口 = 今日 + 后续 2 日；输出 ≤2KB（UTF-8 encoded 长度）。
+SCHEDULE_SUMMARY_WINDOW_DAYS = 3
+SCHEDULE_SUMMARY_MAX_BYTES = 2048
+# 摘要日期头用星期名（B1 解析器产出的 weekday 是 1..7，周一=1）。
+_WEEKDAY_CN = ("", "周一", "周二", "周三", "周四", "周五", "周六", "周日")
+# 窗口偏移 -> 相对日标签（孩子问「今天 / 明天 / 后天」的事实锚；摘要内已含绝对日期，
+# 相对标签使零工具调用回答不依赖模型自行算星期/推算日期）。
+_DAY_LABELS = ("今天", "明天", "后天")
+
+
+def _fit_summary_to_budget(day_blocks, max_bytes: int) -> str:
+    """把逐日课表摘要块收进字节预算（K5-E2 有界；整日粒度截断）。
+
+    超限时余下日期整块不进块（按窗口边界天然截断，绝不掐半条事实）；仅当首日块
+    自身就超预算时才按整行裁到预算内并追加省略标记（仍不切半行/半字符）。"""
+    kept: list = []
+    used = 0
+    for block in day_blocks:
+        size = len(block.encode("utf-8")) + (1 if kept else 0)  # 换行符也计预算
+        if used + size <= max_bytes:
+            kept.append(block)
+            used += size
+            continue
+        if not kept:
+            kept.append(_clip_block_lines(block, max_bytes))
+        break
+    return "\n".join(kept)
+
+
+def _clip_block_lines(block: str, max_bytes: int) -> str:
+    """单日块按整行裁进预算（保留行恒为原文前缀；裁断处显式省略标记，不静默丢）。"""
+    all_lines = block.splitlines()
+    kept: list = []
+    used = 0
+    for line in all_lines:
+        size = len(line.encode("utf-8")) + (1 if kept else 0)
+        if used + size > max_bytes:
+            break
+        kept.append(line)
+        used += size
+    if len(kept) < len(all_lines):
+        kept.append("…")
+    return "\n".join(kept)
+
+
+def build_schedule_summary(model: dict, today_iso: str) -> str:
+    """派生注入用课表摘要（K5-E1/E2/E3；模块级纯函数，单源 = gateway/schedule.py）。
+
+    - model = gateway.schedule.parse_schedule_md 的 B1 模型（入参即单源产物；本函数
+      不自行解析 MD——零区块名常量、零表格切分）；
+    - 窗口 = today_iso .. today_iso+2（恰 3 个日历日，本包定稿）；
+    - 逐日内容 = 该日全部事项（时刻 / 名称 / 地点逐字，取自 items_for_date）+ 源行
+      备注列逐字（按同星期或同日期 + 同时刻 + 同名从模型行回查，与冻结验收预期侧同
+      口径）+ 该日在校课节次名（在校课的唯一事实来源）；
+    - 有界：UTF-8 字节 ≤ SCHEDULE_SUMMARY_MAX_BYTES（超限整日粒度截断）；
+    - 窗口外 / 过期临时事项天然不进块（items_for_date 只取精确日期；T5 窗口外诚实：
+      超窗日期仍由模型走读文件或诚实说查不到，注入块不作编造来源）；
+    - 签名零意图参数（T5 注入语义①：逐轮在场，不按意图门控）。
+    """
+    if not isinstance(model, dict):
+        return ""
+    try:
+        today = datetime.strptime(today_iso, "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return ""
+    # 备注回查表（items_for_date 输出不携备注——契约 item 形状三键；备注仍属单源模型行）
+    notes_by_weekday: dict = {}
+    for row in model.get("weekly") or []:
+        notes_by_weekday[(row.get("weekday"), row.get("start"), row.get("name"))] = (
+            row.get("note") or "")
+    notes_by_date: dict = {}
+    for row in model.get("onetime") or []:
+        notes_by_date[(row.get("date"), row.get("start"), row.get("name"))] = (
+            row.get("note") or "")
+    # 在校课节次（按 weekday 归并；空白节跳过）
+    periods_by_weekday: dict = {}
+    for row in model.get("school") or []:
+        periods = [p.strip() for p in (row.get("periods") or []) if p and p.strip()]
+        if periods:
+            periods_by_weekday.setdefault(row.get("weekday"), []).extend(periods)
+
+    day_blocks: list = []
+    for offset in range(SCHEDULE_SUMMARY_WINDOW_DAYS):
+        day = today + timedelta(days=offset)
+        day_iso = day.isoformat()
+        wd = day.weekday() + 1
+        lines = [f"{day_iso}（{_WEEKDAY_CN[wd]}，{_DAY_LABELS[offset]}）"]
+        for item in gw_schedule.items_for_date(model, day_iso):
+            note = notes_by_weekday.get((wd, item["time"], item["name"]))
+            if note is None:
+                note = notes_by_date.get((day_iso, item["time"], item["name"]), "")
+            line = f"- {item['time']} {item['name']}"
+            if item["location"]:
+                line += f"（{item['location']}）"
+            if note:
+                line += f"；备注：{note}"
+            lines.append(line)
+        periods = periods_by_weekday.get(wd) or []
+        if periods:
+            lines.append("- 在校课程（按节次）：" + "、".join(periods))
+        if len(lines) == 1:
+            lines.append("- （当日无安排）")
+        day_blocks.append("\n".join(lines))
+    return _fit_summary_to_budget(day_blocks, SCHEDULE_SUMMARY_MAX_BYTES)
+
+
 def _expand_schedule_intent(payload) -> "dict | None":
     """「帮我显示课表」意图薄载荷 -> front 截获展开为新鲜周网格（M3K3-A2 接线。
 
@@ -1453,6 +1567,25 @@ async def _push_schedule_connect(websocket) -> None:
                 websocket)
         except Exception as e:  # noqa: BLE001 — grid 单推失败不连坐建连
             log.warning("schedule_connect_grid_push_err err=%s", type(e).__name__)
+
+
+async def _inject_schedule_summary(upstream) -> int:
+    """会话建立时课表摘要注入（K5-E2 接线；261022-m5-n2a-schedule-mechanical-injection）。
+
+    front 读 schedule.md -> gateway/schedule.py 单源派生（build_schedule_summary）-> 经
+    引擎腿送入内部帧 {"type": "kidpal_schedule_summary", "text": <摘要>}（kidpal_speak /
+    kidpal_record_context 同型；引擎侧 connection.py 认领并填充动态 context 的
+    {{schedule_summary}} 占位）。逐轮在场由「会话建立时注入 + 引擎会话态」承载——本处
+    不按意图门控（T5 注入语义①）。
+
+    无课表文件 / 坏 B1 -> 空摘要照发（引擎填缺席文本；课表问答走读文件或诚实说查不到，
+    不炸建连——_load_schedule_model 已归因并落解析告警件）。返回成功投递帧数（0/1）供
+    K6 记账；单腿失败降级留痕不外抛（调用点 try/except，_push_schedule_connect 同口径）。"""
+    model = _load_schedule_model()
+    today_iso, _tomorrow_iso = _today_tomorrow_iso()
+    text = build_schedule_summary(model, today_iso) if model is not None else ""
+    frame = {"type": SCHEDULE_SUMMARY_FRAME_TYPE, "text": text}
+    return await _send_engine_leg_frames(upstream, [frame])
 
 
 async def _push_schedule_refresh_to_legs(model: dict) -> int:
@@ -1779,6 +1912,15 @@ async def ws_gateway(websocket: WebSocket):
             # 261021 F3⑤）；与 _register_alert_legs 同生命周期（finally 双摘除）。
             _register_session_legs(session_id, websocket, upstream)
             _ensure_alert_loop()
+            # 课表机械注入（261022-m5-n2a K5-E2）：会话建立时把 schedule.py 单源派生
+            # 的课表摘要经引擎腿送入（kidpal_speak / kidpal_record_context 同型内部
+            # 通道），引擎填充动态 context 的 {{schedule_summary}} 占位——「是否读课表」
+            # 从模型裁量变成装配决定。失败不阻断建连（_push_schedule_connect 同位
+            # try/except 先例）。
+            try:
+                await _inject_schedule_summary(upstream)
+            except Exception as e:  # noqa: BLE001 — 注入增强，不因它拒服务
+                log.warning("schedule_summary_inject_err err=%s", type(e).__name__)
             # 课表三触发 ①：WS 建连即推（home upcoming 先 + grid restore 附随后；
             # 触发②每日零点/③录入即时 marker 走轮询 piggyback）。失败不阻断建连
             # （读不见 schedule.md 等 -> 静默跳过，_push_schedule_connect 内两推各自

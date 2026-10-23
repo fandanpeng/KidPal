@@ -72,3 +72,54 @@
 - **收口状态**：board K1 = **merged**（merge order 50）；`delivery/taskpackages/INDEX.md` dev 段 K1 = closed（全量重建收敛；`--upsert` 子命令对本包撞 naming 检查误报，全量重建绕开）；P1→P5/P2→P3→P4 链下一包 = **P5 `261022-m5-n2a-schedule-mechanical-injection`**（mo51，dependsOn K1 已满足）。
 - **停等位：`awaiting-human:live-deploy`**——live 观测项移交 human 部署轮：① K1-E7 复测单轮 prompt_tokens ≤11,000（基线 22,116）+ cache 命中覆盖稳定前缀 + `openclaw` 工具审计 = 4 项、57KB schema 消失；② K1-E8 live 核实 `workspace-kidpal/SOUL.md`/`USER.md` 存在则清空/瘦身、不存在记 moot；③ **AGENTS.md 走 deploy.sh 整批铺放、不得单独铺放**（仓内镜像已反转，单独铺 = 护栏真空）；④ 部署后 verify-deploy.sh 对 AGENTS.md 的 md5 漂移报属预期已知窗口不判红。
 - **移交下一包的实现面事实**：动态内容源 = `kidpal-agent-prompt.txt`（`{{schedule_summary}}` 占位），装配壳 = `openclaw-agents/kidpal-dynamic-context.v1.txt`；v11 在 provider/overlay 的「冻结终点版/data 存档」声明面刻意保留（test_char_meaning_merge 守卫仍在解析）——两注记均已落 P5 plan.md 跨包事实节。
+
+## 2026-10-23 · K1 ECS 部署轮（human 授权主线程执行，两轮收口）
+
+- **部署序**：PR #18/#19/#20 三次 push（K1 实现 + SKILL.md 热修回流 + manifest 补登）；`deploy.sh --first-run` 两轮（预检按 10-14 旧基线拦对账铺放，`--first-run` 跳预检、铺后自检须绿；全量快照 `/opt/kidpal/deploy-backups/20261023-124026`）。**终态 drift_count=0，DEPLOY OK @ 462d0cfe**。
+- **部署实证缺口两个（已修）**：① `kidpal-reminder-semantic/SKILL.md` live 热修未回流（10-21 三条陷阱实证）→ 原样回流仓（88e8bdb3）；② **apply-xiaozhi-overlay.sh 自身不在 manifest**（ECS 停旧版致渲染链走旧布局：装配壳缺失、prompt 块为旧 v11 内容、内容源被旧脚本回写）+ 新脚本 `$HERE` 消费位无输入铺放条目 → manifest 补三条（脚本自身 + 内容源/装配壳输入副本，fabc6e4c；输入行 restart:engine 保证同轮触发渲染与引擎重启）。教训进 pod-retro 语境：K1 离线验收 `$HERE`=repo 布局成立、ECS `$HERE` 布局不成立，渲染脚本的输入面必须在 manifest 成对登记。
+- **openclaw 运行态补丁**：`apply_agent_tools.py` APPLIED（allow=[read,write,exec,web_search]，备份 `openclaw.json.bak-kidpal-tools-20261023T044104`；复跑 SKIP 幂等 ✓）——注意 ECS 默认 python3=3.6 需 `/usr/bin/python3.11`（SKILL.md 热修同款坑）。
+- **K1-E8 执行**：`workspace-kidpal/SOUL.md`(1518B)/`USER.md`(871B) 在场 → 备份 `/opt/kidpal/deploy-backups/20261023-k1-soul-user/` 后瘦身为指针壳（228B/224B）。
+- **live 核验全绿**：engine boot 干净（ASR/组件初始化成功）；设备 12:40:44 重连，`kidpal display-strip patch active` 标记行在场；**`快速初始化组件: prompt成功 <context>`** = 引擎装配壳 + 动态块生效（v11 注入退役）；`.config.yaml` 锚集 本回合时间/课表摘要 命中；`prompt_template` → 装配壳路径；front/openclaw-gateway active；tools allow 四项读回一致。
+- **K1-E7 余项（待语音回合）**：真机语音对话单轮 prompt_tokens ≤11,000 + cache 命中——设备在连但未开嗓，等 human 安排一轮回读数。
+
+## 2026-10-23 · K1-E7 live 实测达标——P1 全 exitCriteria 闭合（planner）
+
+- **观测回合**：human 让设备问「今天西安天气怎么样」（12:44:57，session 5cbd765f）。链路全通：ASR → kidpal agent 调 `web_search`（四项收窄工具真实工作）→ 真实数据播报（晴间多云 9-17℃，有查询支撑、非编造——底线不变量行为级验证）。
+- **token 实测**（openclaw transcript usage）：首轮 input 7,761 / cacheRead 0（新会话冷启动，≤11,000 目标 ✓，基线 22,116 → -65%）；二轮 input 3,949 + cacheRead 7,808 = 11,757（含 web_search 结果 ~3k 回合事实）——**cache hit 66% 覆盖稳定前缀（基线 32%，翻倍达成）**，每轮真成本（未缓存）14,948 → 3,949（**-74%**）。
+- **P1 收口**：K1-E1..E8 全部闭合（E7 实测达标、E8 已执行）。board merged / INDEX closed 不变；部署缺口两修复（SKILL 回流 + manifest 三补登）随 PR #19/#20 在 origin/main。
+- **下一包** = P5 `261022-m5-n2a-schedule-mechanical-injection`（mo51；消费本包动态块 `{{schedule_summary}}` 占位）。
+
+## 2026-10-23 · P5（N2a 课表机械注入）launch + 冻结相位起跑（planner，K1 同会话续跑）
+
+- **launch 面**：human 指示起包；board `running`（mo51）；current/ 投影切 P5；`brief-inputs.mjs` 产单（0 warnings / 11 advisories）；启动卡落盘（基线锚 = K1 后 268 passed；T5 + 契约 §1.5 为架构权威；通道形态若需改 front 侧文件而 changeManifest 未含 → 停报扩单）。
+- **S-F1.3 权威通读**（1e 硬前置）：AC1 共享问答框口径 / AC4 备注参与答复——本包锚 AC1（注入使课表回合零工具调用也答对）；补充规则「备注列参与语音答复」落 K5-E3 受控集的备注断言。
+- **loop 进度**：acceptance-author 冻结相位已派（K5-E1..E6 冻结 + 红基线回填 + 通道形态现状排查——front_app.py 不在 changeManifest，是否需要扩单由排查结论定）。
+
+## 2026-10-23 · P5 冻结收口 + 扩单一项 + builder 起跑（planner）
+
+- **冻结完成**：红基线 = 冻结前 268 全绿无先存红；冻结后 270 passed / 8 failed（全设计态红，成因单一：派生接缝 `build_schedule_summary` 不在世 + 接线面未落）+ 2 must-stay-green；零 error。变异自检在案（窗口越界 / 内容抽空分别新爆 6/7 红）。新验收件 = `test_261022_schedule_injection.acceptance.py`（10 断言，K5-E1..E6）。
+- **冻结契约定形**：派生接缝 = `front_app.py` 模块级纯函数 `build_schedule_summary(model, today_iso)`；内部通道帧 token = `kidpal_schedule_summary`（kidpal_speak 同型先例）；填充接缝 = connection.py 内 `{{schedule_summary}}` 替换、引擎零解析；定稿窗口 = 3 日历日 / ≤2048 字节；**注入内容含学校节次名 + 备注列逐字**（TECH-261018 编造证据恰是学校课与带物）。
+- **扩单一项（planner 决定）**：`server/gateway/front/front_app.py` 入 changeManifest——T5 候选甲通道原点必在 front 侧派生，manifest 内自足落法只剩 connection.py 自解析 MD = T5 已否决 + 违反契约 §1.5。launch-card 预设停等判据命中，扩单后放行 builder。
+- **簿记**：dispatch-stamp ×2（补实测值）+ over-scan ×1；taskpackage.json 回填（acceptance 6 条目 + acceptanceTestsFile + redBaselineResult + 扩单）；brief 重生成（refs 改动）；current/ 投影刷新；required check 零错误。
+- **builder 已派**（例行形态默认档）：8 红转绿目标 = acceptance 278 passed。
+
+## 2026-10-23 · P5 builder 全绿 + verifier scoped 绿 + 进 integrator（planner）
+
+- **builder 实现（未 commit，改动 3 件全在 changeManifest 内）**：`front_app.py` 新增 `build_schedule_summary(model, today_iso)` 纯函数（只调 `items_for_date` 单源符号、学校节次+备注从单源模型行回查、窗口 3 日历日/≤2048 字节整日粒度截断）+ 会话建立时经 `_send_engine_leg_frames` 发 `kidpal_schedule_summary` 帧；`connection.py` 占位填充单收口落 `change_system_prompt`（三时序安全：帧先到/后到/二次到达均正确，缺席填「（本次会话未提供）」不编造）+ 启动标记 `kidpal schedule-summary patch active`；manifest 仅补 note 标记载行。**schedule.py 零改动**；`kidpal-agent-prompt.txt`/装配壳零改动；m3k1/m3k3 冻结件零触碰。
+- **验证**：acceptance **278 passed / 4 deselected / 33 subtests**（逐字达标）、unit 115 passed、契约零 diff。分支/边界由一次性探针覆盖（未持久化——unit 层按 K1 先例以既有套件零新增红承载，integrator docs-delta 诚实申报）。
+- **P1 遗留观察项（builder 遗留②，跨包）**：装配壳 jinja2 单遍渲染下 `{{today_date}}` 等日期/天气占位可能字面进 live prompt（`{{schedule_summary}}` 本包已填不受影响）——K5-E4 live 轮顺带实证，若确认归 P1 收尾小批（候选落点 connection.py `change_system_prompt` 同缝），本包不扩。
+- **verifier**：scoped r1（invocation `86204f35`）`ok:true`、FS-EVIDENCE-2 过；final r2 由 integrator 携 scope-file 跑（invocation `becb85f0`）。FS-EVIDENCE-1 过（3 件改动全在 manifest 面）；dispatch-stamp ×2 + over-scan ×1 落账。
+
+## 2026-10-23 · P5 integrator 收口（未 commit→commit，未合并）
+
+- **final bearing r2 绿**（invocation `becb85f0-afdb-4d4d-a281-a40b99fb0325`，evidence r2.json，fact ok:true，10 闸全绿）：acceptance 圈定跑 160 passed / 5 subtests（scope 清单 10 件恰合）+ unit 220 passed / 5 subtests + firmware 真编译绿；verifier-evidence-check exit 0。scoped r1（`86204f35`）此前已绿。
+- **范围圈定**：detect_changes（C-AI-KidPal-pod-m2，base=main，merge_base fdd643b3，impacted_total=66）+ impactedTests 4 件种子 + 共享 seam 4 件合成 test-scope 清单落盘 `test-scope-final.txt`（正常圈定、无降级）；路径一行已记 review-packet。
+- **制品**：docs-delta.md（两声明注记：P1 遗留占位观察 + unit 层口径）+ review-packet.md（findings 仅 2 NIT judgement-call，无 BLOCKING/SHOULD）+ verdict.json / verification.json 晋升 + closeout-check --update-index 绿。
+- **TECH-261018 结项（K5-E5）**：status closed + closedBy = 本包 + 结项记 append；debt-render 跑过、归位 `docs/debt/tech/_archive/2026/`。
+- **停等位**：`awaiting-human:live-deploy`——K5-E4 live 段（真机 ≥20 轮零工具调用零编造）挂 human 部署轮；connection.py engine-face 重启 = 设备断连重连（K1 同款）；manifest note 三条生效标记行核验锚。
+
+## 2026-10-23 · P5 supervisor 闸 ESCALATE → 人批 → 合并 DONE（planner）
+
+- **supervisor 机械闸 = ESCALATE（与 K1 同形）**：diff 启发式（all-mock: test-files-no-real-db/event-assertion）把装配/声明面上浮 high，声明的 medium 向上取效 → 人批放行。provenance v2 全过（gate-check exit 0）；board 置 blocked → merge-driver approvalRefUnlock 消解。
+- **人批 → 合并**：human-decision 凭据 `5f792801`（actor=human 一次到位，K1 教训已吸收）；merge-driver 本地合并 **DONE**（quick-check 2 闸 OK；Step 0 治理面收口自动 commit 了在途 pod-events）。board = **merged**（mo51）；INDEX dev 段 P5 = closed（全量重建收敛）。
+- **M5 五包列车进度**：P1 ✓（merged + 部署实测达标）→ **P5 ✓（merged，待部署）** → P2/K2b（mo52）→ P3/K3（mo53）→ P4/K4（mo54）。本地 main 领先 origin/main（P5 合并 + K1 记账数 commit），push 归 human。
