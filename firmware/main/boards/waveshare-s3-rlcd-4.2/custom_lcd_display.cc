@@ -4,6 +4,7 @@
 #include <esp_lcd_panel_io.h>
 #include <esp_log.h>
 #include <esp_err.h>
+#include <esp_memory_utils.h>
 #include "custom_lcd_display.h"
 #include "lcd_display.h"
 #include "esp_lvgl_port.h"
@@ -126,6 +127,10 @@ height_(height)
     DisplayLen                = transfer >> 3; //(1byte 8ipex)
     DispBuffer                = (uint8_t *) heap_caps_malloc(DisplayLen, MALLOC_CAP_SPIRAM);
     assert(DispBuffer);
+    /* 261023 诊断（architect 评审 §1.4）: 钉镜像缓冲的 DMA 能力事实——S3 上 PSRAM
+     * 不在 DMA 区间, 驱动弹跳拷贝后 DMA 不读本镜像（重影机制排查锚）。 */
+    ESP_LOGI(TAG, "rlcd mirror ptr=%p dma_capable=%d len=%d",
+             DispBuffer, (int)esp_ptr_dma_capable(DispBuffer), DisplayLen);
 	PixelIndexLUT = (uint16_t (*)[300])heap_caps_malloc(transfer * sizeof(uint16_t), MALLOC_CAP_SPIRAM);
 	PixelBitLUT   = (uint8_t (*)[300])heap_caps_malloc(transfer * sizeof(uint8_t), MALLOC_CAP_SPIRAM);
     assert(PixelIndexLUT);

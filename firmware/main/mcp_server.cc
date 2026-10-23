@@ -139,6 +139,25 @@ void StoryRecTimerCb(lv_timer_t* timer) {
     int flash = 0;
     int wave = 0;
     if (kidpal_story_rec_tick(&g_story_view, elapsed, &flash, &wave) == 0) {
+        /* 261023 观感直修（architect 评审裁定落地）: 渲染节流——面板为反射 LCD，
+         * 10fps 无条件全页重建在回显滚动时产生肉眼可见的新旧文本叠印（真机照片
+         * 实证、FULL 渲染模式排除传输层后定性 = 面板响应窗）。跳拍规则：秒数/
+         * 回显行数/闪点任一变化、或每 3 拍（声波动画降频 3.3fps）才渲染一帧。 */
+        static int s_rec_render_phase = 0;
+        static int s_last_sec = -1;
+        static int s_last_echo = -1;
+        static int s_last_flash = -1;
+        int echo_n = kidpal_story_echo_count();
+        bool content_changed = (g_story_view.rec_seconds != s_last_sec) ||
+                               (echo_n != s_last_echo) ||
+                               (flash != s_last_flash);
+        s_rec_render_phase = (s_rec_render_phase + 1) % 3;
+        if (!content_changed && s_rec_render_phase != 0) {
+            return; /* 跳拍：面板少一次整页重驱 */
+        }
+        s_last_sec = g_story_view.rec_seconds;
+        s_last_echo = echo_n;
+        s_last_flash = flash;
         kidpal_story_page_render(&g_story_view, &g_story_list, &g_story_text);
     }
 }
@@ -168,9 +187,19 @@ void StoryStampHoldCb(lv_timer_t* timer) {
         return; /* 驻留期间页态已被其它沿改变 -> 让位, 绝不代翻 */
     }
     g_story_view.page = KSTORY_PAGE_LIST;
-    ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u page=list",
-             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
-    ScheduleStoryRender();
+    if (kidpal_render_node_story_on_screen() == 1) {
+        /* 在屏：渲染列表（取最新缓存列表）。 */
+        ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u page=list on_screen=1",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+        ScheduleStoryRender();
+    } else {
+        /* architect B-4 离页守卫：用户已 BOOT 翻走 / 语音层前台——只同步渲染节点
+         * 缓存, 不渲染不抢前台。缓存同步不能省：否则 cycle_next 回 P3 时按缓存
+         * page=STAMP 重绘盖章页且定时器已自删 = 卡死盖章页。 */
+        kidpal_render_node_cache_story(&g_story_view, &g_story_list, &g_story_text);
+        ESP_LOGI(TAG, "story_stamp_hold_expire corr_id=kdp-%u on_screen=0 cache_only=1",
+                 static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    }
 }
 
 void StartStoryStampHoldTimer() {
@@ -1616,8 +1645,26 @@ void McpServer::AddCommonTools() {
                     }
                     {
                         bool was_delete = (g_story_view.page == KSTORY_PAGE_DELETE);
+                        /* architect B-1/B-2（261023 真机轮追补评审）: 盖章驻留谓词只看
+                         * 页态不看定时器（跨任务时序：story_list 可能先于盖章闭包执行,
+                         * timer 判据在该时序失效）+ view_init 之后恢复驻留字段
+                         * （view_init 清 page/last_saved_id/stamp_serial——不清回则
+                         * 重复 story_text 回执会二次盖章）。 */
+                        bool stamp_hold = (g_story_view.page == KSTORY_PAGE_STAMP);
+                        char hold_saved_id[sizeof(g_story_view.last_saved_id)] = {0};
+                        int hold_stamp_serial = g_story_view.stamp_serial;
+                        if (stamp_hold) {
+                            memcpy(hold_saved_id, g_story_view.last_saved_id,
+                                   sizeof(hold_saved_id));
+                        }
                         kidpal_story_view_init(&g_story_view, parsed.get());
                         g_story_list = *parsed;
+                        if (stamp_hold) {
+                            g_story_view.page = KSTORY_PAGE_STAMP;
+                            memcpy(g_story_view.last_saved_id, hold_saved_id,
+                                   sizeof(hold_saved_id));
+                            g_story_view.stamp_serial = hold_stamp_serial;
+                        }
                         if (was_delete) {
                             /* 云端重推到达时删除覆盖层仍在前台 -> view_init 已把页态
                              * 重装回 LIST; 覆盖层随之关层（回列表, 不留幽灵弹窗）。 */
@@ -1657,7 +1704,7 @@ void McpServer::AddCommonTools() {
                          * 消退/页重进即按陈旧缓存重渲（R2 新故事 3→2 回退的直接来源）。 */
                         kidpal_render_node_cache_story(&g_story_view, &g_story_list,
                                                        &g_story_text);
-                        if (story_restore ||
+                        if (story_restore || stamp_hold ||
                             kidpal_story_list_gate(story_voice_front,
                                                    g_story_view.page) != 0) {
                             /* restore 或记录语境前台 gated: 只装缓存（上方唯一缓存同步缝,
@@ -1666,7 +1713,7 @@ void McpServer::AddCommonTools() {
                              * 摘除理由的板端消解路径）。restore 且 P3 在屏（LIST 冷浏览）
                              * -> 经重绘本页单入口仅重绘（自持锁、先缓存后调——.h :277
                              * 在世契约）。 */
-                            if (story_restore && kidpal_render_node_story_on_screen()) {
+                            if (!stamp_hold && story_restore && kidpal_render_node_story_on_screen()) {
                                 kidpal_render_node_refresh_story();
                             }
                             ESP_LOGI(TAG, "story_list_gate defer_front page=%d voice_front=%d restore=%d",
