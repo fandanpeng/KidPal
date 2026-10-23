@@ -38,3 +38,7 @@ source: ["2026-10-22 讨论稿（工作区外，未入 VCS）：c:/tmp/kidpal-me
 ---
 
 **结项注记（2026-10-23，append）——P1 遗留「装配壳 jinja2 单遍渲染占位字面泄漏」观察项结项**：P5 live 实测 transcript 全量 `{{` 零命中、日期类回答全部正确（progress.md 2026-10-23 P5 部署节），定性**外观级、无行为级泄漏**；advisory review S7（delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md）复核本文件无一句依赖这些占位、判「无需为 {{today_date}} 改措辞」；唯一新依赖（课表摘要行）由批 A+B `261023-agents-md-static-semantics-alignment` 的 B1 降级句承载（摘要缺失/截断 → 读文件或诚实说查不到，同时覆盖引擎缺省文本「（本次会话未提供）」）。**结项、不另起批**（human 2026-10-23 指示「其他的先记录到 debt」语境下的裁量为结项记账而非挂账）。
+
+---
+
+**勘误 append（2026-10-23，主线程，批 B 261023-honcho-memory-wiring-restoration 收口记账）——证据 7 键形措辞勘误**：① 证据 7 所记 `hooks.allowConversationAccess=true` 为**缩略写法**，真实全路径 = `plugins.entries.openclaw-honcho.hooks.allowConversationAccess`（插件条目内；顶层 `hooks` 键在 OpenClaw 2026.8.1 schema 只有 `internal`，写顶层 = config 校验 exit 78 网关崩循环——2026-10-23 部署轮实测）。② 证据 7 所记 `openclawSessionKey=agent:kidpal:openai-user:device-probe-honcho` 是 **session key（session metadata / OpenClaw 会话键），不是 peer 键**——探针库 peers 只有 `owner` 与 `agent-kidpal`，不存在设备级 peer。③ 接线本体 = 官方 npm 插件 `@honcho-ai/openclaw-honcho@1.7.0`（`openclaw plugins install`），非自研 carrier——K3 自研 carrier 三层失效已弃用（261023-honcho-memory-wiring-restoration）。权威口径 = arch §6.7（261023-arch-review-memory-wiring-verified-behavior 改后版）+ ADR-016。

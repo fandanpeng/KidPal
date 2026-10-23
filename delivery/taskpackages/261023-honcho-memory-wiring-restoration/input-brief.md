@@ -13,7 +13,7 @@
 | `docs/architecture.md` | — | 无锚点（整文件） | — | bare |
 | `docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` | — | 无锚点（整文件） | — | bare |
 | `delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md` | — | 无锚点（整文件） | — | bare |
-| `docs/architecture.md` | `§6.7` | 6.7 记忆写入资格与画像 | 356 | ok |
+| `docs/architecture.md` | `§6.7` | 6.7 记忆写入范围与画像 | 356 | ok（面 C 261023-arch-review-memory-wiring-verified-behavior 落地后锚行刷新，R1-F5 协调注记；行号未变、标题换代） |
 | `server/acceptance/test_261022_memory_isolation.acceptance.py` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）
