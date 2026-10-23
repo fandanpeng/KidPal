@@ -1,0 +1,21 @@
+{
+  "case": "kidpal-agent-tools-allowlist",
+  "change": {
+    "path": "agents.entries.kidpal.tools.allow",
+    "allow": ["read", "write", "exec", "web_search"]
+  },
+  "drift_guard": [
+    {
+      "path": "agents.entries.kidpal.tools",
+      "expect": "unset"
+    }
+  ],
+  "backup": {
+    "dir": "/root/.openclaw",
+    "pattern": "openclaw.json.bak-kidpal-tools-*"
+  },
+  "rollback": {
+    "script": "rollback_agent_tools.py"
+  },
+  "_note": "261022-m5-k1-prompt-carrier-migration K1-E4 声明工件。kidpal agent 工具面收窄为四项（read / write / exec / web_search）——全局 tools.profile=\"coding\" 对设备 agent 意味着 34 工具 57KB schema/轮（TECH-261022 证据 3）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal agent 未设工具覆写（全局 profile 生效）。apply_agent_tools.py 幂等应用、写前时间戳备份；rollback_agent_tools.py 一步还原。与 261017-openclaw-kidpal-skills 的 skills 白名单定点 patch 作用于同一运行态文件，组合共存、互不整文件改写。"
+}

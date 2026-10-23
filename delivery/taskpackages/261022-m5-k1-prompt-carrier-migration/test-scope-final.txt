@@ -1,0 +1,24 @@
+# test-scope-final.txt · 261022-m5-k1-prompt-carrier-migration · final 相位影响面圈定清单
+# 合成时间 2026-10-23 · 合成者 integrator（Step 4 ①）
+# 合成来源：
+#   A. taskpackage acceptanceTestsFile（本包档，2 件）
+#   B. taskpackage impactedTests 种子（8 件，含共享 seam：三面接线守卫 / overlay persist / skills / model-name drift / 语音课表入口 / 录音会话 / perf-k1 / verify-deploy.sh）
+#   C. detect_changes（项目 C-AI-KidPal-pod-m2，base=main，merge_base 180732a9，seed_symbols=168）
+#      blast radius 映射 = impacted_total 2，全部落在 test_prompt_v7_round_routing.acceptance.py
+#      （TestPromptV10RealtimeFacts 两方法）——已含于 B，无新增映射件
+#   D. 共享 seam 补查：server/ 源码零 diff（改动面 = server/deploy/** 声明件 + server/acceptance/**），
+#      server/tests/ 六件 unit 与本包无 import/符号 seam（唯一 grep 命中 test_reminder_units.py:131
+#      ladder_config_carrier 为无关同名词）——unit 面 0 条入清单，final unit 闸交集空 = 诚实绿跳过
+#   E. 安全余量：B 的 8 件种子本身即跨包共享冻结面守卫全集（input-brief ⑤ 两项跨包承接行为所在件），
+#      不再额外扩面；缩圈禁止与全量默认均不适用——本清单即圈定结果，缺项走举手不自动扩
+# 格式：仓根相对路径，一行一个，# 注释（acceptance/unit 两闸 scopeFilter 同款消费）
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py
+server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+server/deploy/verify-deploy.sh

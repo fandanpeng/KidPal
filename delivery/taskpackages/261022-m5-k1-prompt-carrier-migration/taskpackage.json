@@ -29,13 +29,88 @@
     "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3",
     "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T7"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
+  "acceptance": [
+    {
+      "id": "K1-E1",
+      "title": "v11 静态语义迁 workspace-kidpal/AGENTS.md 主承载（路由五行+各域纪律+底线吸收）+ v11 原地冻结零 diff",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e1_agents_md_static_semantics_migration", "test_k1_e1_agents_md_self_declaration_single_source", "test_k1_e1_v11_frozen_zero_diff"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pn_a4_wired_three_faces_consistent_and_carries_v9_discipline", "test_rf_a4_wired_three_faces_consistent_and_carries_realtime_anchors", "test_pv_a3_wired_version_carries_expanded_recognition"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1", "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md", "server/deploy/openclaw-system-prompt.v11.md"]
+    },
+    {
+      "id": "K1-E2",
+      "title": "动态 context 模板单件在场且有界（时间/日期+课表摘要占位、零静态纪律）+ 二选一定形机判（内容源恰一）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e2_dynamic_context_template_present_and_bounded", "test_k1_e2_single_dynamic_template_carrier_wired"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pv_a4_kidpal_template_identity_and_context", "test_pv_a4_kidpal_template_free_of_xiaozhi_residue", "test_pv_a7_manifest_entries_cover_template_and_skills"]},
+        {"file": "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py", "tests": ["test_pv_a5_overlay_renders_template_and_error_response_keys", "test_pv_a5_overlay_copies_template_into_data_dir"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"]
+    },
+    {
+      "id": "K1-E3",
+      "title": "承载三面接线（ADR-001 重定义）：静态面 AGENTS.md+carrier+provider 静态键 / 动态面 .config.yaml prompt+动态模板键，manifest 条目与 marker 锚集同批翻，离线渲染真跑验证",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e3_static_face_declaration_wiring", "test_k1_e3_dynamic_face_declaration_wiring", "test_k1_e3_offline_render_prompt_is_bounded_dynamic_block", "test_k1_e3_marker_anchors_match_rendered_product", "test_k1_e3_deploy_readme_pointer_section_follows_new_carrier"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pv_a3_four_faces_wired_consistent", "test_pv_a3_carrier_history_appends_all_prior_versions", "test_pv_a7_readme_pointer_follows_wired_version"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER", "server/deploy/provider.config.yaml", "server/deploy/apply-xiaozhi-overlay.sh", "server/deploy/manifest.yaml", "server/deploy/verify-deploy.sh", "server/deploy/README.md"]
+    },
+    {
+      "id": "K1-E4",
+      "title": "kidpal agent 工具覆写落盘 261022-openclaw-kidpal-tools/**（allow 四项声明 + apply 幂等 + drift_guard + backup + rollback + openclaw.json 零入仓 + manifest 登记）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py", "tests": ["test_k1_e4_declaration_present_and_schema", "test_k1_e4_allowlist_exactly_four", "test_k1_e4_apply_script_present_and_consumes_declaration", "test_k1_e4_apply_applies_then_idempotent", "test_k1_e4_apply_drift_guard_exit3", "test_k1_e4_apply_timestamped_backup", "test_k1_e4_apply_preserves_other_keys_and_composes_with_skills_patch", "test_k1_e4_rollback_dry_run_and_restore", "test_k1_e4_no_openclaw_json_in_repo_and_no_secret_in_declaration", "test_k1_e4_manifest_registers_the_patch_workbench"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T7"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§2", "server/deploy/261017-openclaw-kidpal-skills/"]
+    },
+    {
+      "id": "K1-E5",
+      "title": "既有冻结验收语义锚升级留痕 supersede（零静默改写机判面，六件）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e5_supersede_traces_present"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["server/acceptance/test_prompt_v7_round_routing.acceptance.py", "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py", "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py", "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py", "server/acceptance/test_m4k3_record_session_live.acceptance.py", "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"]
+    },
+    {
+      "id": "K1-E6",
+      "title": "已知窗口时序纪律：AGENTS.md md5 漂移核验路径在场且未弱化（豁免为 loop 判红纪律、非脚本特例）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e6_agents_md_md5_drift_path_known_window"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3 第 5 条"],
+      "sourceRefs": ["server/deploy/manifest.yaml", "server/deploy/verify-deploy.sh"]
+    },
+    {
+      "id": "K1-E7",
+      "kind": "structural",
+      "note": "live 观测项（非自动断言，两件新验收类 docstring 均申报）：human 部署后复测 prompt_tokens ≤11,000 / cache hit / 工具 4 项 57KB schema 消失；host 转绿后 status=awaiting-human:live-deploy 停门"
+    },
+    {
+      "id": "K1-E8",
+      "kind": "structural",
+      "note": "SOUL/USER live 清理（human 2026-10-22 门 1 终裁 A1）：launch card 人工步骤，随 deploy.sh 铺放批次处理；host 面零断言"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py"
+  ],
   "impactedTests": [
     "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
     "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
     "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
     "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
     "server/deploy/verify-deploy.sh"
   ],
   "requiredLayers": [
@@ -44,7 +119,7 @@
     "live-manual"
   ],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；基线预期 = 既有套件现行绿、新增验收断言设计态红）。",
+  "redBaselineResult": "acceptance-author 冻结相位 2026-10-23 实跑（含 planner 授权扩面 supersede 后终态；cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance）：① 冻结前（既有套件）= 246 passed / 4 deselected / 33 subtests passed，全绿、无先存红；② 冻结后终态 = 242 passed / 26 failed / 4 deselected / 33 subtests passed。26 个红全部为设计态红（实现未动工的真实缺失行为）：test_261022_m5_k1_prompt_carrier_migration 8 个（K1-E1 迁移内容 1 + K1-E2 全部 2 + K1-E3 接线/渲染/README 指针节 5）+ test_261022_openclaw_kidpal_tools 10 个（K1-E4 全部，261022-openclaw-kidpal-tools/ 未建）+ supersede 换代红 8 个（v7 件 PN-A4 / RF-A4 / PV-A3 扩列锚 3 + m3k3 test_a1_wired_prompt_carries_v6_schedule_anchors 1 + m4k3 test_a8_current_prompt_dual_trigger_and_boundary 1 + perf-k1 probe resolution / check-prompt / e1 faces 3——承载面换代为 AGENTS.md、未迁入即红，转绿路径 = builder 完成迁移 + probe_gate.py resolver 改指 AGENTS.md〔perf-k1/ 已扩单〕）。E1 自声明齿 / v11 冻结齿 / E5 六件留痕齿 / E6 机制齿及既有验收其余断言全部现行绿。",
   "exitCriteria": [
     "K1-E1: v11 静态语义逐条迁入 server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（回合路由表 / 各域纪律 / 底线句吸收，含既有底线节与静态语义单一事实源自声明），AGENTS.md 成为静态语义主承载与单一事实源；引擎每轮不再携带静态纪律（v11 历史文件原地冻结、可 diff，零回改）",
     "K1-E2: 动态 context 模板单件在场：新增 server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt；既有 server/deploy/kidpal-agent-prompt.txt 的去留/改写由本包定形（由新件取代或原地改写，二选一），不得两个动态模板件并存；动态块有界（本回合时间/日期 + 课表摘要占位），不含静态纪律",
@@ -104,6 +179,8 @@
     "server/deploy/manifest.yaml",
     "server/deploy/verify-deploy.sh",
     "server/deploy/261022-openclaw-kidpal-tools/**",
+    "server/deploy/perf-k1/probe_gate.py",
+    "server/deploy/README.md",
     "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
     "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
     "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",

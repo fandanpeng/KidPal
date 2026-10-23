@@ -54,33 +54,39 @@ def _read_text(path) -> str:
         return ""
 
 
-def resolve_prompt_artifact(repo_root) -> Path:
-    """从结构化指向解析当前被接线 / 渲染的生产 system prompt 文件。
+class _PosixDisplayPath(type(Path())):
+    """`__str__` 走 posix 形态的 Path（跨平台显示口径）。
 
-    不硬写 vN 字面：从 provider.config.yaml 的 system_prompt.artifact/source 与
-    apply-xiaozhi-overlay.sh 的 PROMPT_SRC/DST 抓 openclaw-system-prompt.vN.md。
+    `probe_batch.py --check-prompt` 打印生产 prompt 路径，冻结验收断言其输出含
+    forward-slash 形态的仓内相对路径（`server/deploy/.../AGENTS.md`）：Linux 天然如此，
+    Windows 检出（本仓 Pod 在 Windows 跑 offline 验收）需归一，否则探针输出与路径断言
+    假红。文件系统语义不变（stat / read_text / relative_to 仍走原生 Path）。
+    """
+
+    def __str__(self) -> str:
+        return super().__str__().replace("\\", "/")
+
+
+def resolve_prompt_artifact(repo_root) -> Path:
+    """解析当前生产 system prompt 承载（261022-m5-k1 承载反转换代）。
+
+    新拓扑（arch §5.5.5 / ADR-001 重定义）：静态语义单一事实源 =
+    `server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md`，OpenClaw 作为 stable
+    project context 组装进 system prompt 缓存边界之上；探针被测面 = 直读同一
+    AGENTS.md（K1-E3 静态面集合相等）。v11 终点版仍由 provider `system_prompt` 三键
+    与 overlay `PROMPT_SRC/PROMPT_DST` 声明（历史存档面，供版本无关守卫解析），但
+    不再是被注入引擎的 prompt —— 引擎注入面只余有界动态 context 块。
     """
     repo_root = Path(repo_root)
-    deploy = repo_root / "server" / "deploy"
-
-    provider_txt = _read_text(deploy / "provider.config.yaml")
-    overlay_txt = _read_text(deploy / "apply-xiaozhi-overlay.sh")
-
-    artifact = ""
-    m = re.search(r'artifact\s*:\s*"[^"]*?(openclaw-system-prompt\.v\d+\.md)"', provider_txt)
-    if m:
-        artifact = m.group(1)
-
-    overlay_files = re.findall(
-        r"PROMPT_(?:SRC|DST)\s*=.*?(openclaw-system-prompt\.v\d+\.md)", overlay_txt)
-
-    name = artifact or (overlay_files[0] if overlay_files else "")
-    if not name:
+    carrier = (
+        repo_root / "server" / "deploy" / "openclaw-agents"
+        / "workspace-kidpal" / "AGENTS.md"
+    )
+    if not carrier.is_file():
         raise FileNotFoundError(
-            "provider.config.yaml / apply-xiaozhi-overlay.sh 未解析出 "
-            "openclaw-system-prompt.vN.md 接线（声明面破坏）")
-
-    return (deploy / name).resolve()
+            "静态语义主承载不在场：server/deploy/openclaw-agents/workspace-kidpal/"
+            "AGENTS.md（261022-m5-k1 承载反转后的生产 prompt 源）")
+    return _PosixDisplayPath(str(carrier.resolve()))
 
 
 def prompt_sha256(path) -> str:

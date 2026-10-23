@@ -94,13 +94,17 @@ entries:
   - {src: server/deploy/kidpal-agent-prompt.txt,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/kidpal-agent-prompt.txt,
      owner: overlay, verify: md5, restart: engine,
-     note: KidPal 极简 prompt 模板（261017-prompt-v11-schedule-recall / PV-A5）——引擎顶层 prompt_template 指向 data/ 本文件；overlay 每次拷入 bind-mount}
+     note: "动态 context 块内容源（261022-m5-k1-prompt-carrier-migration K1-E2/K1-E3；原地改写定形）——overlay 拷入 bind-mount 并以 2 空格缩进注入 .config.yaml 顶层 prompt 键；有界（本回合时间 / 日期、课表摘要等回合内事实占位），零静态纪律"}
+  - {src: server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt,
+     dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/kidpal-dynamic-context.v1.txt,
+     owner: overlay, verify: md5, restart: engine,
+     note: "引擎装配壳（prompt_template 指向 data/ 本文件；261022-m5-k1 只做 base_prompt 包裹，不计第二动态模板件）——动态内容源见 kidpal-agent-prompt.txt"}
   - {dst: /opt/kidpal/xiaozhi-esp32-server/deploy/xiaozhi-docker-data/.config.yaml,
      owner: overlay, verify: marker,
-     anchors: ["实时事实回合", "close_connection_no_voice_time",
+     anchors: ["本回合时间", "课表摘要", "close_connection_no_voice_time",
                "prompt_template", "system_error_response"],
      restart: engine,
-     note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = prompt v11 版本锚（实时事实回合延续段）+ decision-21 引擎超时键 + KidPal 模板/兜底语两键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
+     note: secret 承载渲染件（secrets.env 注入）——禁 md5 禁期望值；锚集 = 动态 context 块锚（本回合时间 / 课表摘要，取代 v11 静态锚「实时事实回合」；261022-m5-k1）+ decision-21 引擎超时键 + KidPal 装配壳/兜底语两键；overlay 渲染须跑 apply-xiaozhi-overlay.sh}
 
   # ── OpenClaw 创作面（运行态不入清单，见文件头纪律）──
   - {src: server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md,
@@ -152,6 +156,22 @@ entries:
      note: 幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 只改 agents.entries.kidpal.skills）}
   - {src: server/deploy/261017-openclaw-kidpal-skills/rollback_agent_skills.py,
      dst: /opt/kidpal/openclaw-patch/261017-openclaw-kidpal-skills/rollback_agent_skills.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 一步回滚（--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）}
+
+  # ── kidpal agent 工具面收窄声明工件（261022-m5-k1-prompt-carrier-migration / K1-E4）──
+  # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 定点 apply/回滚脚本。
+  # 与上方 261017 skills patch 作用于同一运行态文件，均不得整文件改写（组合共存）。
+  - {src: server/deploy/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: kidpal agent tools.allow 收窄声明（恰四项 read/write/exec/web_search + drift_guard + backup + rollback；无 secret）}
+  - {src: server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/apply_agent_tools.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 只改 agents.entries.kidpal.tools.allow）}
+  - {src: server/deploy/261022-openclaw-kidpal-tools/rollback_agent_tools.py,
+     dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/rollback_agent_tools.py,
      owner: deploy.sh, verify: md5, restart: none,
      note: 一步回滚（--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）}
 

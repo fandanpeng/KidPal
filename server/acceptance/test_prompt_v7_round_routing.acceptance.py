@@ -282,6 +282,11 @@ def _assert_schedule_row_anti_narration(testcase, body: str, label: str):
 def _wired_prompt_faces_pn_guard():
     """三面解析当前被接线的版本化 prompt 文件名（版本无关，ARQ-260908 纪律）。
 
+    SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：vN 三面（PROMPT_SRC/
+    DST / provider 三键 / carrier 声明行）接线判法随承载反转退役，face-equality 由
+    该包新验收的静态面/动态面集合相等不变式取代；本解析器现存留作历史口径参照、
+    当前无调用方（PN-A4 / RF-A4 已 supersede 改钉 AGENTS.md 承载面）。
+
     m3k3 冻结件 _wired_prompt_faces 同口径自含副本——跨冻结件 import 会把两份冻结件
     焊死，故复制不引用（解析正则逐字对齐 m3k3 侧，防两套口径漂移）。
     返回 (rendered, declared, carried)。"""
@@ -500,45 +505,29 @@ class TestPromptV9ScheduleAntiNarration(unittest.TestCase):
     # -- PN-A4 三面接线一致 + 接线版承载 v9 纪律锚（版本无关形态） --------------
 
     def test_pn_a4_wired_three_faces_consistent_and_carries_v9_discipline(self):
-        """coverage: PN-A4 — 三面接线一致且接线版承载课表行反叙述纪律。
+        """coverage: PN-A4 — 课表问答回合行反叙述纪律的承载（261022 语义换代）。
 
-        版本无关形态（ARQ-260908 / 本文件头注②同纪律，接线类断言零版本字面）：
-        「接线 = v9」的语义由组合承载——① 三面解析一致（渲染面 apply-xiaozhi-overlay.sh
-        PROMPT_SRC/PROMPT_DST == 声明面 provider.config.yaml 三键 == 载体面
-        OPENCLAW_SYSTEM_PROMPT_CARRIER 声明行，must-stay-green 半）；② 接线版文件
-        落盘非空；③ 接线版正文携带 PN-A2 纪律锚（红→绿半：现树接线 v8 无课表行
-        纪律 = 红；bump v9 + 三面同步后转绿；未来 bump 丢纪律同样红，防丢内容）。
-        ④ v9 世系最小锚抽检（严禁凭印象 / story_list / 问答框）承载「v9 = v8 全量 +
-        课表行扩行」的继承面。"""
-        rendered, declared, carried = _wired_prompt_faces_pn_guard()
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = 三面（渲染 PROMPT_SRC/DST / 声明 provider 三键 / 载体 carrier）
+        解析 vN 接线版并断言接线版正文承载课表行反叙述纪律；新语义 = 承载反转
+        （v11 静态语义迁 workspace AGENTS.md 为静态语义单一事实源，引擎只发有界
+        动态块），本齿改钉：① AGENTS.md 承载课表行反叙述纪律（行级定位判法不变）；
+        ② AGENTS.md 保有世系最小锚（严禁凭印象 / story_list / 问答框）。vN 三面
+        接线一致性由该包新验收 test_261022_m5_k1_prompt_carrier_migration.
+        acceptance.py 的 K1-E3 静态面/动态面集合相等不变式取代（新旧承载拓扑的
+        face-equality 不在同一判法下并存；测试 id 保留以稳定历史 coverage 引用）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：纪律承载面
+        # 从「接线版 vN 文件」换为 workspace AGENTS.md（行级定位判法不变）。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
         self.assertTrue(
-            rendered and declared and carried,
-            f"PN-A4 RED: 接线面解析失败（rendered={rendered} declared={declared} "
-            f"carried={carried}）——prompt 落盘即孤儿（PROMPT_SRC/PROMPT_DST、"
-            "provider.config.yaml system_prompt 三键、OPENCLAW_SYSTEM_PROMPT_CARRIER "
-            "声明行须指向 openclaw-system-prompt.vN.md）。",
-        )
-        self.assertEqual(
-            set(rendered), set(declared),
-            f"PN-A4 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
-            "不同版本——「验收所测 = 生产所用」断裂（ADR-001 接线不变式，bump 三面"
-            "须同批）。",
-        )
-        self.assertEqual(
-            set(rendered), set(carried),
-            f"PN-A4 RED: 载体面（OPENCLAW_SYSTEM_PROMPT_CARRIER）声明 {sorted(carried)} "
-            f"与渲染/声明两面 {sorted(rendered)} 不一致——carrier 声明未随 bump 同批。",
-        )
-        name = sorted(set(rendered))[0]
-        path = DEPLOY_DIR / name
+            agents_path.is_file(),
+            "PN-A4 RED(superseded): workspace-kidpal/AGENTS.md 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。")
+        body = _read_text(agents_path)
         self.assertTrue(
-            path.is_file(), f"PN-A4 RED: 被接线的 {name} 未落盘（孤儿声明）。")
-        body = _read_text(path)
-        self.assertTrue(
-            body.strip(), f"PN-A4 RED: 被接线的 {name} 是空文件。")
-        # 红→绿半：接线版必须已携带课表行反叙述纪律（现接线 v8 无 = 设计态红）。
-        _assert_schedule_row_anti_narration(self, body, f"接线版 {name}")
-        # 世系最小锚抽检（v9 = v8 全量继承；防 bump 丢段）。
+            body.strip(), "PN-A4 RED(superseded): workspace-kidpal/AGENTS.md 为空。")
+        _assert_schedule_row_anti_narration(self, body, "workspace-kidpal/AGENTS.md")
+        # 世系最小锚抽检（迁移只许换承载、不许丢语义；防 AGENTS.md 迁移丢段）。
         for needle, why in (
             ("严禁凭印象", "课表反编造覆盖句（9/25 live 编造事故根治锚）"),
             ("story_list", "禁产 story JSON 锚（2026-09-24 契约门 Q7）"),
@@ -546,9 +535,8 @@ class TestPromptV9ScheduleAntiNarration(unittest.TestCase):
         ):
             self.assertIn(
                 needle, body,
-                f"PN-A4 RED: 接线版 {name} 丢失世系锚「{needle}」——{why}；"
-                "版本化 bump 只许扩行不许丢段（plan.md：v9 = v8 全量 + 课表行扩行）。",
-            )
+                f"PN-A4 RED(superseded): AGENTS.md 丢失世系锚「{needle}」——{why}；"
+                "静态语义迁入只许逐条承载不许丢段（261022-m5-k1 K1-E1）。")
 
 
 # --------------------------------------------------------------------------- #
@@ -604,18 +592,13 @@ def _baseline_paragraph(body: str) -> str:
     return ""
 
 
-def _assert_realtime_row_anchors(testcase, body: str, label: str):
-    """RF-A2 实时事实回合行锚组（内容驱动选行、并集口径不钉措辞）：
+def _assert_realtime_row_anchor_halves(testcase, row: str, label: str):
+    """RF-A2 实时事实回合行锚组半（内容驱动、并集口径不钉措辞）——行文本级：
     ① 先播提示半（不静默干等）；② 真查半；③ 依据×结果双半（不无依据抢答）；
     ④ 降级诚实×引导；⑤ 禁编造（×禁止语义）；⑥ 禁虚称已查；⑦ NFR-SAFE-1 转述边界
-    （儿童化改写 × 不逐字照搬）。"""
-    rows = _routing_rows(body, "实时事实回合")
-    testcase.assertTrue(
-        rows,
-        f"RF-A2 RED({label}): 回合路由面无「实时事实回合」表行——TECH-261012 根治"
-        "（实时事实回合路由扩行）未落地，或回合类型路由表结构被破坏（V7-A1 既有锚面"
-        "回退）。")
-    row = "\n".join(rows)
+    （儿童化改写 × 不逐字照搬）。（261022-m5-k1 supersede 批从
+    _assert_realtime_row_anchors 提取，供承载面换至 AGENTS.md 的 RF-A4 复用；
+    RF-A2 既有行为零变化。）"""
     testcase.assertTrue(
         any(w in row for w in _REALTIME_HINT_ANCHORS),
         f"RF-A2 RED({label}): 实时事实回合行无先播提示锚（我去查/查一下/先播/先说/"
@@ -654,15 +637,46 @@ def _assert_realtime_row_anchors(testcase, body: str, label: str):
         "（NFR-SAFE-1 2026-10-12 增）缺失。")
 
 
-def _assert_dialog_row_generic_antifabrication(testcase, body: str, label: str):
-    """RF-A2 对话行通用反编造锚（v9 逐域枚举漏的通用实时事实域补死）：对话回合行
-    提及实时信息域，且（行内通用反编造条款 或 实时事实回合转路由锚）二者居一。"""
-    rows = _routing_rows(body, "孩子对话回合")
+def _assert_realtime_row_anchors(testcase, body: str, label: str):
+    """RF-A2 实时事实回合行锚组（内容驱动选行、并集口径不钉措辞）——v10/v11
+    版本化文件面的入口（行提取要求「|」表行），半锚组见
+    _assert_realtime_row_anchor_halves。"""
+    rows = _routing_rows(body, "实时事实回合")
     testcase.assertTrue(
         rows,
-        f"RF-A2 RED({label}): 回合路由面无「孩子对话回合」表行——回合类型路由表"
-        "结构被破坏（V7-A1 既有锚面回退）。")
-    row = "\n".join(rows)
+        f"RF-A2 RED({label}): 回合路由面无「实时事实回合」表行——TECH-261012 根治"
+        "（实时事实回合路由扩行）未落地，或回合类型路由表结构被破坏（V7-A1 既有锚面"
+        "回退）。")
+    _assert_realtime_row_anchor_halves(testcase, "\n".join(rows), label)
+
+
+# --------------------------------------------------------------------------- #
+# 261022-m5-k1-prompt-carrier-migration supersede 辅助（承载面 vN 文件 → AGENTS.md）。
+# SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：AGENTS.md 承载形态
+# 不限 markdown 表格（prose / list 皆可），行提取不要求「|」表行；底线节定位改
+# 容「底线」标题（v11 措辞「三条不变的底线」与既有 AGENTS.md「## 底线」皆命中）。
+# --------------------------------------------------------------------------- #
+
+def _k1_rows_any_format(body: str, round_name: str) -> list[str]:
+    """AGENTS.md 面的回合行提取（内容驱动：含回合类型名的行，不要求「|」）。"""
+    window = _section_window(body, ("回合类型",), ("回合",))
+    return [l for l in window.splitlines() if round_name in l]
+
+
+def _k1_baseline_window(body: str) -> str:
+    """底线节窗口（内容驱动：含「底线」的标题行至下一标题；找不到退化全文）。"""
+    lines = body.splitlines()
+    heads = [i for i, l in enumerate(lines) if l.startswith("#")]
+    start = next((i for i in heads if "底线" in lines[i]), None)
+    if start is None:
+        return body
+    end = next((i for i in heads if i > start), len(lines))
+    return "\n".join(lines[start:end])
+
+
+def _assert_dialog_row_anchor_halves(testcase, row: str, label: str):
+    """RF-A2 对话行通用反编造锚半（行文本级；提取自
+    _assert_dialog_row_generic_antifabrication，supersede 批拆分复用）。"""
     testcase.assertIn(
         "实时", row,
         f"RF-A2 RED({label}): 对话回合行未提及实时信息域——v9 逐域枚举反编造漏的"
@@ -672,6 +686,17 @@ def _assert_dialog_row_generic_antifabrication(testcase, body: str, label: str):
         any(w in row for w in _REALTIME_FABRICATION_HALF) or "实时事实回合" in row,
         f"RF-A2 RED({label}): 对话回合行既无通用反编造条款（编造/凭印象/凭空/瞎编任一）"
         "也无实时事实回合转路由锚——对话行的实时信息反编造缺口未闭合。")
+
+
+def _assert_dialog_row_generic_antifabrication(testcase, body: str, label: str):
+    """RF-A2 对话行通用反编造锚（v9 逐域枚举漏的通用实时事实域补死）：对话回合行
+    提及实时信息域，且（行内通用反编造条款 或 实时事实回合转路由锚）二者居一。"""
+    rows = _routing_rows(body, "孩子对话回合")
+    testcase.assertTrue(
+        rows,
+        f"RF-A2 RED({label}): 回合路由面无「孩子对话回合」表行——回合类型路由表"
+        "结构被破坏（V7-A1 既有锚面回退）。")
+    _assert_dialog_row_anchor_halves(testcase, "\n".join(rows), label)
 
 
 def _assert_baseline_third_invariant(testcase, body: str, label: str):
@@ -791,47 +816,58 @@ class TestPromptV10RealtimeFacts(unittest.TestCase):
     # -- RF-A4 三面接线一致 + 接线版承载实时回合锚（版本无关形态） --------------
 
     def test_rf_a4_wired_three_faces_consistent_and_carries_realtime_anchors(self):
-        """coverage: RF-A4 — 三面接线一致且接线版承载 RF-A2 全部锚。
+        """coverage: RF-A4 — 实时事实回合纪律的承载（261022 语义换代）。
 
-        版本无关形态（ARQ-260908 / 本文件头注②同纪律，接线类断言零版本字面）：
-        「接线 = v10」的语义由组合承载——① 三面解析一致（渲染面
-        apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST == 声明面 provider.config.yaml
-        三键 == 载体面 OPENCLAW_SYSTEM_PROMPT_CARRIER 声明行，must-stay-green 半）；
-        ② 接线版文件落盘非空；③ 接线版正文携带 RF-A2 全部锚（红→绿半：现树接线 v9
-        无实时事实回合行 = 设计态红；bump v10 + 三面同批后转绿；未来 bump 丢锚同样
-        红，防丢内容）。④ v10 世系最小锚抽检（严禁凭印象 / story_list / 问答框）
-        承载「v10 = v9 全量 + 实时事实扩行」的继承面。"""
-        rendered, declared, carried = _wired_prompt_faces_pn_guard()
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = 三面解析 vN 接线版并断言接线版正文携带 RF-A2 全部锚；新语义 =
+        承载反转（v11 静态语义迁 workspace AGENTS.md 为静态语义单一事实源），本齿
+        改钉：① AGENTS.md 承载实时事实回合行全部锚（RF-A2 半锚组复用，行提取
+        放宽为含回合类型名的行——AGENTS.md 承载形态不限 markdown 表格）；②
+        AGENTS.md 承载对话行通用反编造锚；③ 底线节第三不变量（底线节定位容
+        「底线」标题）。vN 三面接线一致性由该包新验收
+        test_261022_m5_k1_prompt_carrier_migration.acceptance.py 的 K1-E3 静态面/
+        动态面集合相等不变式取代（测试 id 保留以稳定历史 coverage 引用）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：纪律承载面
+        # 从「接线版 vN 文件」换为 workspace AGENTS.md。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
         self.assertTrue(
-            rendered and declared and carried,
-            f"RF-A4 RED: 接线面解析失败（rendered={rendered} declared={declared} "
-            f"carried={carried}）——prompt 落盘即孤儿（PROMPT_SRC/PROMPT_DST、"
-            "provider.config.yaml system_prompt 三键、OPENCLAW_SYSTEM_PROMPT_CARRIER "
-            "声明行须指向 openclaw-system-prompt.vN.md）。",
-        )
-        self.assertEqual(
-            set(rendered), set(declared),
-            f"RF-A4 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
-            "不同版本——「验收所测 = 生产所用」断裂（ADR-001 接线不变式，bump 三面"
-            "须同批）。",
-        )
-        self.assertEqual(
-            set(rendered), set(carried),
-            f"RF-A4 RED: 载体面（OPENCLAW_SYSTEM_PROMPT_CARRIER）声明 {sorted(carried)} "
-            f"与渲染/声明两面 {sorted(rendered)} 不一致——carrier 声明未随 bump 同批。",
-        )
-        name = sorted(set(rendered))[0]
-        path = DEPLOY_DIR / name
+            agents_path.is_file(),
+            "RF-A4 RED(superseded): workspace-kidpal/AGENTS.md 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。")
+        body = _read_text(agents_path)
         self.assertTrue(
-            path.is_file(), f"RF-A4 RED: 被接线的 {name} 未落盘（孤儿声明）。")
-        body = _read_text(path)
+            body.strip(), "RF-A4 RED(superseded): workspace-kidpal/AGENTS.md 为空。")
+        # 红→绿半：AGENTS.md 必须已承载实时事实回合全部锚（未迁入 = 设计态红）。
+        rows = _k1_rows_any_format(body, "实时事实回合")
         self.assertTrue(
-            body.strip(), f"RF-A4 RED: 被接线的 {name} 是空文件。")
-        # 红→绿半：接线版必须已携带实时事实回合全部锚（现接线 v9 无 = 设计态红）。
-        _assert_realtime_row_anchors(self, body, f"接线版 {name}")
-        _assert_dialog_row_generic_antifabrication(self, body, f"接线版 {name}")
-        _assert_baseline_third_invariant(self, body, f"接线版 {name}")
-        # 世系最小锚抽检（v10 = v9 全量继承；防 bump 丢段）。
+            rows,
+            "RF-A4 RED(superseded): AGENTS.md 无含「实时事实回合」的行——实时事实"
+            "回合纪律未迁入（261022-m5-k1 K1-E1）。")
+        _assert_realtime_row_anchor_halves(
+            self, "\n".join(rows), "workspace-kidpal/AGENTS.md")
+        dialog_rows = _k1_rows_any_format(body, "孩子对话回合")
+        self.assertTrue(
+            dialog_rows,
+            "RF-A4 RED(superseded): AGENTS.md 无含「孩子对话回合」的行——对话回合"
+            "纪律未迁入。")
+        _assert_dialog_row_anchor_halves(
+            self, "\n".join(dialog_rows), "workspace-kidpal/AGENTS.md")
+        para = _k1_baseline_window(body)
+        self.assertTrue(
+            para,
+            "RF-A4 RED(superseded): AGENTS.md 底线节缺失——超越回合分类的底线"
+            "结构被破坏。")
+        self.assertIn(
+            "实时信息", para,
+            "RF-A4 RED(superseded): 底线节无第三不变量（实时信息域未入底线）——"
+            "v11 底线句未吸收（261022-m5-k1 K1-E1）。")
+        self.assertTrue(
+            any(w in para for w in _REALTIME_FABRICATION_HALF),
+            "RF-A4 RED(superseded): 底线节第三不变量无禁编造半。")
+        self.assertTrue(
+            any(w in para for w in _FALSE_CLAIM_ANCHORS) or "已查询" in para,
+            "RF-A4 RED(superseded): 底线节第三不变量无禁虚称已查半。")
+        # 世系最小锚抽检（迁移只许换承载、不许丢语义）。
         for needle, why in (
             ("严禁凭印象", "课表反编造覆盖句（9/25 live 编造事故根治锚）"),
             ("story_list", "禁产 story JSON 锚（2026-09-24 契约门 Q7）"),
@@ -839,9 +875,8 @@ class TestPromptV10RealtimeFacts(unittest.TestCase):
         ):
             self.assertIn(
                 needle, body,
-                f"RF-A4 RED: 接线版 {name} 丢失世系锚「{needle}」——{why}；"
-                "版本化 bump 只许扩行不许丢段（plan.md：v10 = v9 全量 + 实时事实扩行）。",
-            )
+                f"RF-A4 RED(superseded): AGENTS.md 丢失世系锚「{needle}」——{why}；"
+                "静态语义迁入只许逐条承载不许丢段（261022-m5-k1 K1-E1）。")
 
 
 # --------------------------------------------------------------------------- #
@@ -919,6 +954,10 @@ def _pv_parse_version(name: str) -> int:
 
 def _pv_wired_faces_four(testcase):
     """四面结构化解析当前被接线的版本化 prompt 文件名（版本无关，ARQ-260908 纪律）。
+
+    SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：四面 vN 指针接线
+    判法随承载反转退役，face-equality 由该包新验收的静态面/动态面集合相等不变式
+    取代；本解析器现存留作历史口径参照、当前无调用方（PV-A3 / PV-A7 已 supersede）。
 
     渲染面 = apply-xiaozhi-overlay.sh PROMPT_SRC/PROMPT_DST；声明面 =
     provider.config.yaml system_prompt 三键；载体面 = OPENCLAW_SYSTEM_PROMPT_CARRIER
@@ -1146,76 +1185,61 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
     # -- PV-A3 四面接线一致 + 接线版承载扩列锚 + carrier 沿革（版本无关形态） ----
 
     def test_pv_a3_four_faces_wired_consistent(self):
-        """coverage: PV-A3 — 四面接线一致且 manifest prompt 条目齐（deploy 输入
-        副本 + data 渲染副本）。
+        """coverage: PV-A3 — v11 冻结件在场 + carrier 终点版声明（261022 语义换代）。
 
-        版本无关形态（ARQ-260908 纪律，接线类断言零版本字面）：从渲染面 /
-        声明面 / 载体面 / manifest 四面各自解析当前版，断言四面集合相等且该版
-        落盘非空——「验收所测 = 生产所用」；bump 同批翻即绿、漏翻必红。"""
-        rendered, declared, carried, manifested = _pv_wired_faces_four(self)
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = 四面（渲染/声明/载体/manifest）各自解析 vN 指针、断言四面集合
+        相等且该版落盘非空（「验收所测 = 生产所用」的 vN 形态）；新语义 = 承载
+        反转（v11 是引擎注入承载的**终点版**，不再 bump；静态语义单一事实源 =
+        AGENTS.md），四面 vN face-equality 由该包新验收
+        test_261022_m5_k1_prompt_carrier_migration.acceptance.py 的 K1-E3 静态面/
+        动态面集合相等不变式取代；v11 冻结零 diff 的 sha256 钉亦由该包 K1-E1 承载。
+        本齿改钉（must-stay-green）：v11 文件在场非空 + carrier 仍声明 v11 为
+        当前冻结版本化文件（终点版声明不随迁移删除，历史可 diff）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：v11 终点版
+        # 冻结在场（sha256 零 diff 钉在该包 K1-E1；此处只钉在场非空 + carrier 声明）。
+        path = DEPLOY_DIR / PV11_NAME
         self.assertTrue(
-            rendered and declared and carried and manifested,
-            f"PV-A3 RED: 接线面解析失败（rendered={rendered} declared={declared} "
-            f"carried={carried} manifested={manifested}）——prompt 落盘即孤儿"
-            "（PROMPT_SRC/PROMPT_DST、provider.config.yaml system_prompt 三键、"
-            "OPENCLAW_SYSTEM_PROMPT_CARRIER 声明行、manifest.yaml prompt 条目须"
-            "指向 openclaw-system-prompt.vN.md）。",
-        )
-        self.assertEqual(
-            set(rendered), set(declared),
-            f"PV-A3 RED: 渲染面 {sorted(rendered)} 与声明面 {sorted(declared)} 指向"
-            "不同版本——「验收所测 = 生产所用」断裂（ADR-001 接线不变式，bump "
-            "须同批）。",
-        )
-        self.assertEqual(
-            set(rendered), set(carried),
-            f"PV-A3 RED: 载体面（OPENCLAW_SYSTEM_PROMPT_CARRIER）声明 "
-            f"{sorted(carried)} 与渲染/声明两面 {sorted(rendered)} 不一致——"
-            "carrier 声明未随 bump 同批。",
-        )
-        self.assertEqual(
-            set(rendered), set(manifested),
-            f"PV-A3 RED: manifest.yaml prompt 条目 {sorted(manifested)} 与渲染/声明"
-            f"/载体三面 {sorted(rendered)} 不一致——清单仍指旧版，verify-deploy.sh "
-            "会对账失败（261013 单一事实源纪律）。",
-        )
-        name = sorted(set(rendered))[0]
-        path = DEPLOY_DIR / name
+            path.is_file(),
+            f"PV-A3 RED(superseded): {PV11_NAME} 被删除——历史版本共存可 diff 铁律"
+            "被破坏（OQ-8：v11 原地冻结，删除 ≠ 迁移）。")
         self.assertTrue(
-            path.is_file(), f"PV-A3 RED: 被接线的 {name} 未落盘（孤儿声明）。")
+            _read_text(path).strip(),
+            f"PV-A3 RED(superseded): {PV11_NAME} 是空文件。")
+        carrier = _read_text(DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER")
         self.assertTrue(
-            _read_text(path).strip(), f"PV-A3 RED: 被接线的 {name} 是空文件。")
-        # manifest 两条 prompt 条目：deploy 输入副本 + data 渲染副本。
-        entries = _pv_manifest_entries(self)
-        prompt_entries = [
-            e for e in entries
-            if isinstance(e, dict) and any(
-                PV11_PROMPT_FILE_RE.search(str(e.get(f) or "")) for f in ("src", "dst"))]
-        self.assertGreaterEqual(
-            len(prompt_entries), 2,
-            "PV-A3 RED: manifest prompt 条目不足两条——须含 deploy 输入副本与 data "
-            f"渲染副本（实得 {len(prompt_entries)} 条）。")
-        dsts = [str(e.get("dst") or "") for e in prompt_entries]
-        self.assertTrue(
-            any("/xiaozhi-esp32-server/deploy/" in d for d in dsts),
-            f"PV-A3 RED: manifest 无 deploy 输入副本条目（dst 列表 {dsts}）——"
-            "overlay 渲染源的铺放面缺失。")
-        self.assertTrue(
-            any("xiaozhi-docker-data" in d for d in dsts),
-            f"PV-A3 RED: manifest 无 data 渲染副本条目（dst 列表 {dsts}）——"
-            "overlay 渲染产物无核验面（渲染即失对账）。")
+            carrier.strip(),
+            "PV-A3 RED(superseded): OPENCLAW_SYSTEM_PROMPT_CARRIER 不在场——沿革"
+            "唯一全量副本缺失。")
+        self.assertIn(
+            PV11_NAME, carrier,
+            "PV-A3 RED(superseded): carrier 丢失 v11 终点版声明——版本演进史唯一"
+            "全量副本应保留 v11 冻结版声明（261022-m5-k1 承载反转不删历史）。")
 
     def test_pv_a3_carrier_history_appends_all_prior_versions(self):
-        """coverage: PV-A3 — carrier 沿革 append 一行且历史行不删：既存历史版本
-        `.vK.md` 文件（K < 当前接线版）须全部在「历史版本」沿革段被点名。"""
-        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
-        self.assertTrue(rendered, "PV-A3 RED: 无接线 prompt 版本可解析。")
-        current = _pv_parse_version(sorted(set(rendered))[0])
-        self.assertGreater(current, 0, "PV-A3 RED: 接线 prompt 版本号解析失败。")
+        """coverage: PV-A3 — carrier 沿革 append 且历史行不删：既存历史版本
+        `.vK.md` 文件（K < 终点版）须全部在「历史版本」沿革段被点名。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：旧语义 =
+        「当前接线版」从渲染/声明/载体/manifest 四面 vN 指针解析（版本无关 bump
+        守卫）；新语义 = 承载反转后 v11 是**终点版**（不再 bump，新演进走
+        AGENTS.md），「当前版」改为从 carrier 的 `artifact（生成唯一来源）` 声明
+        行解析（M4K3-A8 同判法）——终点版声明仍在 carrier，历史沿革完整性判法
+        不变。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：当前版解析面
+        # 从四面 vN 指针换为 carrier 终点版声明行（承载反转后不再有「接线版」概念）。
         carrier = _read_text(DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER")
         self.assertTrue(
             carrier.strip(),
             "PV-A3 RED: OPENCLAW_SYSTEM_PROMPT_CARRIER 不在场——沿革唯一全量副本缺失。")
+        m = re.search(
+            r"artifact（生成唯一来源）：`?(openclaw-system-prompt\.v\d+\.md)", carrier)
+        self.assertIsNotNone(
+            m,
+            "PV-A3 RED: carrier `artifact（生成唯一来源）` 声明行无法解析出终点版"
+            "（superseded 判法 = 声明行解析；261022-m5-k1 承载反转后 v11 = 终点版）。")
+        current = _pv_parse_version(m.group(1))
+        self.assertGreater(current, 0, "PV-A3 RED: 终点版本号解析失败。")
         history = _pv_carrier_history_region(carrier)
         self.assertTrue(
             history,
@@ -1228,51 +1252,86 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
         self.assertEqual(
             missing, [],
             "PV-A3 RED: carrier 沿革漏记既存历史版本 "
-            f"{missing}——bump 须 append 一行（历史行不删），沿革是版本演进史唯一"
-            "全量副本（260925 起的版本化纪律）。",
+            f"{missing}——沿革是版本演进史唯一全量副本（260925 起的版本化纪律）。",
         )
 
     def test_pv_a3_wired_version_carries_expanded_recognition(self):
-        """coverage: PV-A3 — 接线版正文携带 PV-A1 扩列锚（红→绿半：现接线 v10 无
-        后天/大后天 = 设计态红；bump v11 + 四面同批后转绿；未来 bump 丢锚同样红，
-        防丢内容）。"""
-        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
-        self.assertTrue(rendered, "PV-A3 RED: 无接线 prompt 版本可解析。")
-        name = sorted(set(rendered))[0]
-        body = _read_text(DEPLOY_DIR / name)
-        self.assertTrue(body.strip(), f"PV-A3 RED: 被接线的 {name} 不在场/为空。")
-        self._assert_schedule_row_expansion(body, f"接线版 {name}")
+        """coverage: PV-A3 — 课表问答回合识别特征扩列锚的承载（261022 语义换代）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：旧语义 = 接线版
+        vN 正文携带扩列锚（红→绿半 bump 守卫）；新语义 = 静态语义单一事实源
+        AGENTS.md 承载扩列锚（行级定位判法不变；现树未迁入 = 设计态红）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：承载面从「接线版
+        # vN 文件」换为 workspace AGENTS.md（判法 = _assert_schedule_row_expansion，
+        # 行级定位不变）。
+        agents_path = DEPLOY_DIR / "openclaw-agents" / "workspace-kidpal" / "AGENTS.md"
+        self.assertTrue(
+            agents_path.is_file(),
+            "PV-A3 RED(superseded): workspace-kidpal/AGENTS.md 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。")
+        body = _read_text(agents_path)
+        self.assertTrue(
+            body.strip(), "PV-A3 RED(superseded): workspace-kidpal/AGENTS.md 为空。")
+        self._assert_schedule_row_expansion(body, "workspace-kidpal/AGENTS.md")
 
     # -- PV-A4 KidPal 极简模板（三段位 + 残留禁令） -----------------------------
 
     def _template_body(self) -> str:
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：模板解析面
+        # 从「kidpal-agent-prompt.txt 恒在」换为二选一定形容忍——引擎模板候选 =
+        # kidpal-agent-prompt.txt（原地改写 / 装配壳形态）或
+        # kidpal-dynamic-context.v1.txt（新件取代形态），二者至少一者在场。
         path = DEPLOY_DIR / PV11_TEMPLATE_NAME
+        if not path.is_file():
+            path = DEPLOY_DIR / "openclaw-agents" / "kidpal-dynamic-context.v1.txt"
         self.assertTrue(
             path.is_file(),
-            f"PV-A4 RED: {PV11_TEMPLATE_NAME} 未落盘——通用小智模板与 v11 对冲"
-            "（工具不匹配就直答 / 禁 ``` 段）无替换件（TECH-261017 第二根因）。")
+            f"PV-A4 RED(superseded): {PV11_TEMPLATE_NAME} 与动态模板新件均未落盘——"
+            "引擎模板承载缺失（261022-m5-k1 K1-E2 二选一定形未落）。")
         body = _read_text(path)
         self.assertGreater(len(body.strip()), 0, "PV-A4 RED: 模板文件为空。")
         return body
 
     def test_pv_a4_kidpal_template_identity_and_context(self):
-        """coverage: PV-A4 — 模板含 `<identity>` 位（承接 build_enhanced_prompt 以
-        config["prompt"] 注入的 base_prompt）与 `<context>` 位（日期/星期/农历/
-        设备位置/天气事实注入位——课表「后天星期几」的事实来源必须保留）+
-        中文输出约束一句。"""
-        body = self._template_body()
-        self.assertIn(
-            "<identity>", body,
-            "PV-A4 RED: 模板缺 <identity> 位——v10 入口（config[\"prompt\"] 作 "
-            "base_prompt）无处承接，prompt 与 v11 脱钩。")
-        self.assertIn(
-            "</identity>", body, "PV-A4 RED: 模板 <identity> 位未闭合。")
-        self.assertIn(
-            "{{base_prompt}}", body,
-            "PV-A4 RED: 模板 <identity> 未以 {{base_prompt}} 承接引擎注入的 "
+        """coverage: PV-A4 — 模板 <identity> 位（承接 base_prompt）与 <context>
+        事实注入位（261022 语义换代，装配拆分容忍）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：旧语义 = 全部
+        槽位（<identity>/{{base_prompt}}/<context>/事实组/中文约束）同在
+        kidpal-agent-prompt.txt 单件；新语义 = 动态块与装配壳分工归 P1 定形
+        （arch T3：引擎既有 prompt_template 键与动态块的分工归 P1 实现），本齿
+        改钉：① <identity>/{{base_prompt}} 装配位与 <context> 事实注入位在两个
+        候选件的**并集**上在场（装配可在壳与注入块间拆分）；② 中文输出约束同
+        并集判。全缺 = 红（课表「后天星期几」与实时事实的事实来源必须在位）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：并集判法
+        # （两候选任一承载即可），单件恒在要求撤销。
+        candidates = [DEPLOY_DIR / PV11_TEMPLATE_NAME,
+                      DEPLOY_DIR / "openclaw-agents" / "kidpal-dynamic-context.v1.txt"]
+        bodies = [(p.name, _read_text(p)) for p in candidates]
+        present = [(name, body) for name, body in bodies if body.strip()]
+        self.assertTrue(
+            present,
+            "PV-A4 RED(superseded): kidpal-agent-prompt.txt 与动态模板新件均不在场"
+            "——模板承载缺失（261022-m5-k1 K1-E2）。")
+        union = "\n".join(body for _, body in present)
+        names = [name for name, _ in present]
+        self.assertTrue(
+            any("<identity>" in body for _, body in present),
+            f"PV-A4 RED(superseded): 模板并集（{names}）缺 <identity> 位——v10 入口"
+            "（config[\"prompt\"] 作 base_prompt）无处承接，prompt 与引擎装配脱钩。")
+        self.assertTrue(
+            any("</identity>" in body for _, body in present),
+            "PV-A4 RED(superseded): 模板并集 <identity> 位未闭合。")
+        self.assertTrue(
+            any("{{base_prompt}}" in body for _, body in present),
+            "PV-A4 RED(superseded): 模板并集未以 {{base_prompt}} 承接引擎注入的 "
             "base_prompt（plan.md §B：<identity>{{base_prompt}}</identity>）。")
-        self.assertIn("<context>", body, "PV-A4 RED: 模板缺 <context> 位。")
-        self.assertIn("</context>", body, "PV-A4 RED: 模板 <context> 位未闭合。")
+        self.assertTrue(
+            any("<context>" in body for _, body in present),
+            "PV-A4 RED(superseded): 模板并集缺 <context> 位。")
+        self.assertTrue(
+            any("</context>" in body for _, body in present),
+            "PV-A4 RED(superseded): 模板并集 <context> 位未闭合。")
         # 事实注入位（并集容换写：英文占位名或中文表述任一）。
         fact_groups = {
             "今天日期": ("today_date", "今天日期", "日期"),
@@ -1282,24 +1341,29 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
             "天气": ("天气", "weather"),
         }
         missing = [name for name, anchors in fact_groups.items()
-                   if not any(a in body for a in anchors)]
+                   if not any(a in union for a in anchors)]
         self.assertEqual(
             missing, [],
-            "PV-A4 RED: 模板 <context> 缺事实注入位 "
+            "PV-A4 RED(superseded): 模板并集缺事实注入位 "
             f"{missing}——课表「后天星期几」与实时事实回合的事实来源必须在位"
-            "（plan.md §B：<context> 今天日期、星期、农历、设备位置、天气必须留）。")
+            "（可在装配壳或动态块任一侧承载，261022-m5-k1 K1-E2 分工定形）。")
         self.assertIn(
-            "中文", body,
-            "PV-A4 RED: 模板缺中文输出约束（plan.md §B 三段位之三）。")
+            "中文", union,
+            "PV-A4 RED(superseded): 模板并集缺中文输出约束（plan.md §B 三段位之三）。")
         self.assertTrue(
-            any(w in body for w in ("回答", "输出", "回复", "作答", "说话")),
-            "PV-A4 RED: 模板「中文输出约束」缺输出动词半（回答/输出/回复/作答/"
-            "说话任一）——约束句不成立。")
+            any(w in union for w in ("回答", "输出", "回复", "作答", "说话")),
+            "PV-A4 RED(superseded): 模板并集「中文输出约束」缺输出动词半（回答/"
+            "输出/回复/作答/说话任一）——约束句不成立。")
 
     def test_pv_a4_kidpal_template_free_of_xiaozhi_residue(self):
         """coverage: PV-A4 — 模板不含通用小智模板残留（play_music / hass /
         handle_exit_intent / speaker_recognition / anti_ai_smell / 空 <memory> /
-        禁 ``` 段），且不写 `{{current_time}}`（引擎传字面量，写了会留字面串）。"""
+        禁 ``` 段），且不写 `{{current_time}}`（引擎传字面量，写了会留字面串）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：被检对象从
+        「kidpal-agent-prompt.txt 单件」换为「引擎模板候选在场件」（二选一定形：
+        kidpal-agent-prompt.txt 优先、缺席时 kidpal-dynamic-context.v1.txt）——
+        残留禁令语义零变化，承载面随定形。"""
         body = self._template_body()
         lower = body.lower()
         for token in ("play_music", "handle_exit_intent", "speaker_recognition",
@@ -1333,8 +1397,14 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
     # -- PV-A7 manifest 条目齐 + 静态可解析 + README 指针 -----------------------
 
     def test_pv_a7_manifest_entries_cover_template_and_skills(self):
-        """coverage: PV-A7 — manifest 条目齐：kidpal-agent-prompt.txt 一条 +
-        261017-openclaw-kidpal-skills 声明工件条目一条（prompt v11 两条见 PV-A3）。"""
+        """coverage: PV-A7 — manifest 条目齐：引擎模板候选条目 +
+        261017-openclaw-kidpal-skills 声明工件条目（prompt v11 条目见 PV-A3）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：模板条目判法
+        从「kidpal-agent-prompt.txt 恒一条」换为「两个模板候选（kidpal-agent-
+        prompt.txt / kidpal-dynamic-context.v1.txt）至少一者在 manifest 登记」
+        （二选一定形：新件取代后 kidpal-agent-prompt.txt 条目可撤，内容源模板
+        必须在单一事实源登记）。"""
         entries = _pv_manifest_entries(self)
 
         def _mentions(needle: str) -> list[dict]:
@@ -1344,9 +1414,12 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
                     str(e.get("src") or "") + "\n" + str(e.get("dst") or ""))]
 
         self.assertTrue(
-            _mentions(PV11_TEMPLATE_NAME),
-            f"PV-A7 RED: manifest 缺 {PV11_TEMPLATE_NAME} 条目——KidPal 极简模板"
-            "未入单一事实源（live 铺放/核验无面）。")
+            _mentions(PV11_TEMPLATE_NAME)
+            or _mentions("kidpal-dynamic-context.v1.txt"),
+            f"PV-A7 RED(superseded): manifest 缺引擎模板条目（{PV11_TEMPLATE_NAME} "
+            "与 kidpal-dynamic-context.v1.txt 均未登记）——动态模板件未入单一事实源"
+            "（live 铺放/核验无面；261022-m5-k1 K1-E2 二选一定形）。",
+        )
         self.assertTrue(
             _mentions(PV11_SKILLS_DIRNAME),
             f"PV-A7 RED: manifest 缺 {PV11_SKILLS_DIRNAME} 声明工件条目——skills "
@@ -1380,11 +1453,25 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
             "配置错误）：\n  - " + "\n  - ".join(problems))
 
     def test_pv_a7_readme_pointer_follows_wired_version(self):
-        """coverage: PV-A7 — server/deploy/README.md prompt 指针节刷当前接线版，
-        且不复述沿革（沿革唯一全量副本 = carrier）。"""
-        rendered, _declared, _carried, _manifested = _pv_wired_faces_four(self)
-        self.assertTrue(rendered, "PV-A7 RED: 无接线 prompt 版本可解析（指针目标缺失）。")
-        current = sorted(set(rendered))[0]
+        """coverage: PV-A7 — server/deploy/README.md prompt 指针节不指向过期版本、
+        不复述沿革（261022 语义换代，拓扑容忍）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：旧语义 =
+        指针节跟「四面解析出的当前接线版」；新语义 = 承载反转后 v11 是**终点版**
+        （不再 bump）、「当前接线版」概念退役，本齿改钉：① 「当前/现状」口径的
+        vN 声明不得指旧于终点版（终点版从 carrier `artifact（生成唯一来源）` 声明
+        行解析，M4K3-A8 同判法）；② 指针节须指向当前承载——或保留终点版 v11 声明，
+        或已改写为新不变式（提及 AGENTS.md / 动态承载）；③ 沿革复述禁令不变。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：当前版解析面
+        # 从四面 vN 指针换为 carrier 终点版声明行。
+        carrier = _read_text(DEPLOY_DIR / "OPENCLAW_SYSTEM_PROMPT_CARRIER")
+        m = re.search(
+            r"artifact（生成唯一来源）：`?(openclaw-system-prompt\.v\d+\.md)", carrier)
+        self.assertIsNotNone(
+            m,
+            "PV-A7 RED(superseded): carrier 终点版声明行解析失败（判法 = "
+            "artifact 声明行；261022-m5-k1 承载反转后 v11 = 终点版）。")
+        current = m.group(1)
         readme = _read_text(PV11_README)
         self.assertTrue(readme.strip(), "PV-A7 RED: server/deploy/README.md 不在场。")
         section = _pv_readme_prompt_section(readme)
@@ -1392,10 +1479,6 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
             section,
             "PV-A7 RED: README 无 prompt 指针节（标题含「system prompt」的 `## ` 节"
             "缺失）——指针节是运维面唯一分散入口。")
-        self.assertIn(
-            current, section,
-            f"PV-A7 RED: README prompt 指针节未指向当前接线版 {current}——"
-            "bump 后仍指旧版 = 散文漂移（arch §5.5.5 :360 先例债）。")
         stale = [
             name for name in re.findall(
                 r"(?:当前|现状)[^\n]{0,20}?(openclaw-system-prompt\.v\d+\.md)", section)
@@ -1403,8 +1486,18 @@ class TestPromptV11ScheduleRecall(unittest.TestCase):
         ]
         self.assertEqual(
             stale, [],
-            f"PV-A7 RED: README 指针节仍以「当前/现状」口径写旧版 {stale}——"
-            f"当前接线版为 {current}。")
+            f"PV-A7 RED(superseded): README 指针节仍以「当前/现状」口径写旧版 "
+            f"{stale}——终点版为 {current}（261022-m5-k1 承载反转后不再 bump，"
+            "旧版声明 = 散文漂移）。",
+        )
+        self.assertTrue(
+            current in section
+            or "AGENTS.md" in section
+            or "动态" in section,
+            f"PV-A7 RED(superseded): README 指针节既无终点版 {current} 声明、也无"
+            "新承载口径（AGENTS.md / 动态承载）——指针节与新承载拓扑脱钩"
+            "（261022-m5-k1 K1-E3）。",
+        )
         lineage = [
             line for line in section.splitlines()
             if len(set(re.findall(r"openclaw-system-prompt\.v\d+\.md", line))) >= 2

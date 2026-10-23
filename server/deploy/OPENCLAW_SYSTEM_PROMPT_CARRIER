@@ -7,6 +7,22 @@
 同目录）。**本文件是版本演进史的唯一全量副本**——声明面（provider.config.yaml）、
 渲染面（apply-xiaozhi-overlay.sh）与其它散文一律只留「当前 = vN」指针、不复述沿革。
 
+**承载反转（261022-m5-k1-prompt-carrier-migration，arch §5.5.5 / ADR-001 重定义）**：
+- **静态面（静态语义主承载）**：`server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md`
+  ——静态语义（回合路由 / 各域纪律 / 底线三不变量）的单一事实源与**主承载**，随
+  `deploy.sh` 铺放到 live `/root/.openclaw/workspace-kidpal/AGENTS.md`，由 OpenClaw 作为
+  stable project context 组装（缓存边界之上）。本 carrier 与 `provider.config.yaml` 的
+  `static_prompt` 三键同批声明该静态承载（ADR-001 静态面集合相等）。
+- **动态面（每轮，缓存边界之下）**：`provider.config.yaml` 的 `dynamic_context` 三键声明
+  动态内容源 `server/deploy/kidpal-agent-prompt.txt`，经 `apply-xiaozhi-overlay.sh` 注入
+  引擎 `.config.yaml` 的 `prompt:` 键；装配壳 = `openclaw-agents/kidpal-dynamic-context.v1.txt`
+  （只做 `{{base_prompt}}` 包裹，不计第二动态模板件）。
+- **v11 = 冻结终点版**：以下 artifact 声明行保留 v11 终点版（历史可 diff、版本无关守卫
+  可解析 `PROMPT_SRC` / `system_prompt` 三键）；**不再 bump、不再注入引擎 prompt 键**，
+  overlay 仅把它拷进 ECS `data/` 存档。静态语义后续演进走 `AGENTS.md`，不新开 v12 双件
+  （OQ-8）。
+
+
 - artifact（生成唯一来源）：`openclaw-system-prompt.v11.md`（当前冻结版本化文件，v11）。
   v11 = 在 v10 版之上仅改「课表问答回合」表行的识别特征列（261017-prompt-v11-schedule-
   recall，TECH-261017-schedule-answer-skip-read-hallucination 真机实测「该读未读」：

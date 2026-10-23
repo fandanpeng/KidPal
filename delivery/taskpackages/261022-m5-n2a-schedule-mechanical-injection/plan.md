@@ -28,6 +28,7 @@ mergeOrder: 51
 # 跨包事实与共享冻结面约束（只有 RTE 看全局的部分）
 
 - **动态 context 块由 P1 建立**：本包必须在 P1 模板的占位/装配面内注入，不得另建第二动态块或把静态纪律塞回动态块。若 P1 未合并则不得启动。
+- **〔P1 实现后注记，2026-10-23 planner 落〕注入落点以 P1 定形为准**：动态内容源 = `server/deploy/kidpal-agent-prompt.txt` 的 `{{schedule_summary}}` 占位（P1 定形「原地改写」——该文件即内容源）；`openclaw-agents/kidpal-dynamic-context.v1.txt` 是引擎装配壳（`{{base_prompt}}` 包裹），**无内容占位、不要改它**。注入经 `{{schedule_summary}}` 占位替换实现，改动落内容源文件与/或其渲染链。另：P1 保留 v11 在 provider/overlay 的「冻结终点版/data 存档」声明面（test_char_meaning_merge 守卫仍在解析），本包勿当废弃清理。
 - **`engine-patch/connection.py` 与 P2 共享**：merge order 上 P5（51）先于 P2（52）；P2 rebase 时须保留本包的动态块装配段，本包不得改动 P2 的 payload 历史/user 字段语义。
 - **`schedule.py` 单源只读复用**：`server/gateway/schedule.py` 的 `parse_schedule_md` / `items_for_date` / `group_upcoming` 是唯一解析器；本包不得复制解析逻辑到引擎或 front 其它文件；若必须改 schedule.py，严格最小且不得改变既有输出契约（test_m3k1 / test_m3k3 冻结验收断言）。
 - **会话建立时注入的时序**：front 在会话建立时把摘要经内部通道送入引擎；课表变更 / 跨天最迟下一会话生效，会话内变更不追（记录为边界）。

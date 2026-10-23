@@ -281,8 +281,14 @@ class KidpalTemplateTwoKeyAcceptance(unittest.TestCase):
         cls.decl_src = _read_text(PROVIDER_DECL_YAML)
 
     def test_pv_a5_overlay_renders_template_and_error_response_keys(self):
-        """coverage: PV-A5 — 渲染面 heredoc 含 prompt_template（容器路径指向
-        KidPal 极简模板）与 system_error_response 两键。"""
+        """coverage: PV-A5 — 渲染面 heredoc 含 prompt_template（容器路径指向引擎
+        模板候选之一）与 system_error_response 两键。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：prompt_template
+        容器路径判法从「恒 = .../kidpal-agent-prompt.txt」换为「两个模板候选
+        （kidpal-agent-prompt.txt / kidpal-dynamic-context.v1.txt）之一」（二选一
+        定形：新件取代后 prompt_template 可改指动态模板件；模板零指向 = 引擎回落
+        镜像内置通用小智模板，仍红）。system_error_response 断言零变化。"""
         self.assertTrue(
             OVERLAY_SH.is_file(),
             f"PV-A5 RED: 渲染面不在场 —— 要求 {OVERLAY_SH}。")
@@ -294,11 +300,14 @@ class KidpalTemplateTwoKeyAcceptance(unittest.TestCase):
         self.assertIsNotNone(
             prompt_val,
             "PV-A5 RED: 渲染面 heredoc 缺 prompt_template 键 —— 引擎仍读镜像内置"
-            "通用小智模板（TECH-261017 第二根因），KidPal 极简模板不生效。")
-        self.assertEqual(
-            prompt_val, PV11_TEMPLATE_CONTAINER_PATH,
-            f"PV-A5 RED: prompt_template = {prompt_val!r}，须为容器内 bind-mount "
-            f"路径 {PV11_TEMPLATE_CONTAINER_PATH!r}（plan.md §B）。")
+            "通用小智模板（TECH-261017 第二根因），模板承载不生效。")
+        prompt_base = str(prompt_val).rsplit("/", 1)[-1]
+        self.assertIn(
+            prompt_base, (PV11_TEMPLATE_NAME, "kidpal-dynamic-context.v1.txt"),
+            f"PV-A5 RED(superseded): prompt_template = {prompt_val!r}，容器路径"
+            f"basename {prompt_base!r} 不属引擎模板候选集 "
+            f"({PV11_TEMPLATE_NAME} / kidpal-dynamic-context.v1.txt) —— 261022-m5-k1 "
+            "K1-E2 二选一定形未落或指错文件。")
         error_val = _yaml_scalar(self.heredoc, PV11_ERROR_RESPONSE_KEY)
         self.assertIsNotNone(
             error_val,
@@ -351,15 +360,22 @@ class KidpalTemplateTwoKeyAcceptance(unittest.TestCase):
                 "（TECH-261017 附带项②/去小智残留）。")
 
     def test_pv_a5_overlay_copies_template_into_data_dir(self):
-        """coverage: PV-A5 — 模板源经 overlay 拷入 data/（bind-mount）随之生效。"""
+        """coverage: PV-A5 — 模板源经 overlay 拷入 data/（bind-mount）随之生效。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E2：拷贝对象判法
+        从「kidpal-agent-prompt.txt 单件」换为「两个模板候选至少一者被拷入
+        $DATA_DIR」（二选一定形；零候选拷入 = prompt_template 指向空气，仍红）。"""
         self.assertTrue(self.overlay_src.strip(), f"PV-A5 RED: {OVERLAY_SH} 不在场。")
         hits = _expanded_copy_lines(
             self.overlay_src, PV11_TEMPLATE_NAME, "DATA_DIR")
+        hits_dynamic = _expanded_copy_lines(
+            self.overlay_src, "kidpal-dynamic-context.v1.txt", "DATA_DIR")
         self.assertTrue(
-            hits,
-            "PV-A5 RED: overlay 无把 kidpal-agent-prompt.txt 拷入 $DATA_DIR 的 "
-            "cp/install 行 —— 模板源不上 ECS data/，prompt_template 指向空气"
-            "（孤儿声明）。")
+            hits or hits_dynamic,
+            "PV-A5 RED(superseded): overlay 无把引擎模板候选（kidpal-agent-prompt."
+            "txt / kidpal-dynamic-context.v1.txt）拷入 $DATA_DIR 的 cp/install 行 —— "
+            "模板源不上 ECS data/，prompt_template 指向空气（孤儿声明；"
+            "261022-m5-k1 K1-E2 二选一定形）。")
 
     def test_pv_a5_config_marker_anchors_cover_two_keys(self):
         """coverage: PV-A5 — manifest .config.yaml marker 锚集覆盖 prompt_template /

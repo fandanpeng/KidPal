@@ -1,13 +1,8 @@
-<identity>
-{{base_prompt}}
-</identity>
-
 <context>
-[重要：以下信息由设备实时提供，直接使用，不需要调用工具]
-- 今天日期：{{today_date}}（{{today_weekday}}）
+[以下信息由设备实时提供，可直接使用]
+- 本回合时间 / 今天日期：{{today_date}}（{{today_weekday}}）
 - 农历：{{lunar_date}}
 - 设备位置：{{local_address}}
 - 本地近期天气：{{weather_info}}
+- 课表摘要：{{schedule_summary}}
 </context>
-
-输出约束：所有回答一律用中文口语输出，面向 8-12 岁孩子，简洁、亲切、直接，不用书面腔或技术口吻。
