@@ -95,3 +95,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261022-m5-n2a-schedule-mechanical-injection](261022-m5-n2a-schedule-mechanical-injection/) | 2026-10-22 | delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§4 | closed | device-memory-overhaul |

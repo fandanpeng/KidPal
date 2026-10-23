@@ -27,8 +27,15 @@
     "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5",
     "docs/contracts/interface-contract.md#§1.5"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
+  "acceptance": [
+    {"id": "K5-E1", "title": "注入单源（契约 §1.5 红线）：派生接缝引用 schedule.py 符号、引擎零第二解析器、{{schedule_summary}} 占位填充接缝在引擎部署副本补丁内", "asserts": [{"file": "server/acceptance/test_261022_schedule_injection.acceptance.py", "tests": ["test_k5_e1_derivation_seam_single_source_symbols", "test_k5_e1_engine_face_no_second_parser", "test_k5_e1_placeholder_fill_seam_in_engine_patch"]}], "acceptanceRefs": ["docs/contracts/interface-contract.md#§1.5", "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"], "sourceRefs": ["server/gateway/schedule.py", "server/deploy/engine-patch/connection.py"]},
+    {"id": "K5-E2", "title": "注入语义：逐轮在场（零意图门控）+ 有界（定稿 = 3 日历日 / ≤2048 UTF-8 字节）+ 会话建立时注入（接线源锚，宽松度与 T5 一致）", "asserts": [{"file": "server/acceptance/test_261022_schedule_injection.acceptance.py", "tests": ["test_k5_e2_summary_bounded_3day_2kb", "test_k5_e2_no_intent_gating_seam", "test_k5_e2_session_establishment_injection_wiring"]}], "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"], "sourceRefs": ["server/gateway/front/front_app.py", "server/deploy/engine-patch/connection.py"]},
+    {"id": "K5-E3", "title": "单源反证（核心）：注入产物与 parse_schedule_md / items_for_date 同日派生逐项一致（受控日期集，含学校节次名 + 备注列逐字）+ 窗口外/过期事实零泄漏", "asserts": [{"file": "server/acceptance/test_261022_schedule_injection.acceptance.py", "tests": ["test_k5_e3_same_day_derivation_equivalence", "test_k5_e3_out_of_window_facts_absent"]}], "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"], "sourceRefs": ["server/gateway/schedule.py"]},
+    {"id": "K5-E4", "title": "受控 21 轮（≥20 钉行）课表提问零工具调用也有料可答：答案所需事实全在注入块内 + 负证轮零泄漏；live 段（真机零工具调用零编造）挂 human 部署轮", "asserts": [{"file": "server/acceptance/test_261022_schedule_injection.acceptance.py", "tests": ["test_k5_e4_twenty_round_controlled_qa_facts_in_summary"]}], "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T5"], "sourceRefs": ["docs/debt/tech/TECH-261018-schedule-read-compliance-residual.md"]},
+    {"id": "K5-E5", "kind": "structural", "note": "live-manual / integrator 收口申报：TECH-261018 结项（status: closed + consumed-by）由 integrator 收口路径落，Pod 内不手改账本；test_k5_e5_e6_declarations_exist 只守申报在位"},
+    {"id": "K5-E6", "kind": "structural", "note": "零新增红纪律：本包零改动 test_m3k1_schedule_producer / test_m3k3_voice_schedule_entry 两冻结件（builder/fixer 不得触碰）；既有基线由 redBaselineCommand 守（冻结时点 268 既有全绿零扰动）"}
+  ],
+  "acceptanceTestsFile": ["server/acceptance/test_261022_schedule_injection.acceptance.py"],
   "impactedTests": [
     "server/acceptance/test_261022_schedule_injection.acceptance.py",
     "server/acceptance/test_m3k1_schedule_producer.acceptance.py",
@@ -41,7 +48,7 @@
     "live-manual"
   ],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "拆包 Draft 态未跑红基线——acceptance-author 冻结相位实跑回填（命令见 redBaselineCommand；注入单源反证验收断言按设计态红）。",
+  "redBaselineResult": "acceptance-author 冻结相位 2026-10-23 实跑（本树）：① 冻结前既有套件 = 268 passed / 4 deselected / 33 subtests passed，全绿、无先存红；② 冻结后全量 = 270 passed / 8 failed / 4 deselected / 33 subtests passed，零 error（收集零 error = 冻结即冒烟 + C 类实编判据达成）。8 红全为本件设计态红、成因单一（派生接缝 build_schedule_summary 不在世 + 接线面未落：E1 派生符号齿 / E1 占位填充齿 / E2 有界·无门控·接线齿 / E3 等价·窗口外齿 / E4 受控轮齿）；2 新增绿 = must-stay-green（E1 引擎零解析负向 + E5/E6 申报自检）。转绿路径已推演并模拟验证：行为面断言对符合契约实现全绿，变异自检（窗口越 4 日 / 内容抽空）分别新爆 6 / 7 红，敏感性在案（冻结件头注 RED 基线节）。启动前置：front_app.py 已由 planner 扩单（派生接缝承载面，唯一可实现冻结契约——manifest 内自足落法只剩 connection.py 自解析 MD = T5 已否决、违反契约 §1.5）。",
   "exitCriteria": [
     "K5-E1: 注入源 = server/gateway/schedule.py 单源（parse_schedule_md / items_for_date 派生）；引擎不解析课表 MD、不建第二解析器（契约 §1.5 单源红线）；schedule.py 若需改动严格最小、只读复用为主",
     "K5-E2: 注入语义：逐轮在场（不按意图门控——判断是否课表回合本身是模型裁量）、有界（窗口 = 今日 + 近日，建议 ≤3 日 / ≤2KB，本包定稿）、会话建立时注入（课表变更 / 跨天最迟下一会话生效，会话内不追；记录为边界）",
@@ -83,6 +90,7 @@
   "changeManifest": [
     "server/deploy/engine-patch/connection.py",
     "server/gateway/schedule.py",
+    "server/gateway/front/front_app.py",
     "server/deploy/manifest.yaml",
     "server/deploy/verify-deploy.sh",
     "server/acceptance/test_261022_schedule_injection.acceptance.py"

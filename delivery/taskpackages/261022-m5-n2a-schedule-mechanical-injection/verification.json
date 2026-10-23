@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261022-m5-n2a-schedule-mechanical-injection",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "becb85f0-afdb-4d4d-a281-a40b99fb0325",
+  "evidenceRef": "delivery/taskpackages/261022-m5-n2a-schedule-mechanical-injection/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261022-m5-n2a-schedule-mechanical-injection/test-scope-final.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成：acceptanceTestsFile 1 件 ∪ impactedTests 4 件种子〔verify-deploy.sh 本树零 diff 非 pytest 件，清单头注记〕 ∪ detect_changes blast radius 映射测试 6 件 ∪ 共享 seam 4 件〔{{schedule_summary}} 占位载体 K1 上游 + prompt 载体既有守卫〕）。detect_changes 与 trace_path 均可用（per-Pod 专属图索引 C-AI-KidPal-pod-m2），正常圈定、无降级。acceptance 闸圈定交集 = serverAcceptanceFiles 10，恰合清单 10 件 acceptance。",
+  "finalScopedRun": {
+    "acceptance": "160 passed / 5 subtests（serverAcceptanceFiles=10，scope-file 交集恰合清单 10 件 acceptance）",
+    "unit": "220 passed / 5 subtests（filesWithLiveMark 0/13，structuralCollected 220）",
+    "fullSuiteReference": "builder 全量 acceptance 278 passed / 4 deselected / 33 subtests（收拢前实测）；builder 申报 unit 115 passed 与 final 闸 unit 220 passed 存在计数口径差异，以 final bearing fact（r2.json）为准如实记录；acceptance 圈定差 = 未入影响面 3 件，非缩水"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261022-m5-n2a-schedule-mechanical-injection --phase final --round 2 --invocation-id becb85f0-afdb-4d4d-a281-a40b99fb0325",
+    "exit": 0,
+    "factOk": true
+  },
+  "scopedRound1": {
+    "invocationId": "86204f35-0898-47bc-bf79-85f3c2223028",
+    "evidenceRef": "delivery/taskpackages/261022-m5-n2a-schedule-mechanical-injection/verifier-evidence/rounds/r1.json",
+    "ok": true
+  },
+  "packageOwnSurface": "green (K5-E1..E4 host 面 exitCriteria 断言绿；K5-E5 = TECH-261018 结项已由 integrator 收口落账；K5-E6 零新增红——m3k1/m3k3 冻结件零触碰、圈定跑含两冻结件全绿)",
+  "structuralPendingHumanDeployRound": ["K5-E4 live 段（真机 ≥20 轮零工具调用零编造）"],
+  "docsContractSpecDelta": "none (docs/contracts/**、docs/** 零 diff；docs-delta.md 登记两条声明性注记：P1 遗留日期/天气占位观察 + unit 层既有套件承载口径)",
+  "detectChangesAdvisory": {
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "fdd643b3bfafe443cfac52797301172052d4fb7d",
+    "changedFiles": 15,
+    "seedSymbols": 45,
+    "impactedTotal": 66,
+    "impactedModules": ["server/acceptance", "server/gateway", "server/tests", "firmware/main", "builtins"],
+    "note": "Step 9b advisory 记账：改动只影响预期符号（schedule.py 为 inbound 消费面命中、零改动；firmware/main 2 条为 usage 边噪声、固件零 diff），无未预期生产符号波及"
+  }
+}

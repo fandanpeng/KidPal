@@ -1,0 +1,25 @@
+# test-scope-final · 261022-m5-n2a-schedule-mechanical-injection（integrator Step 4①，2026-10-23）
+# 圈定来源：detect_changes（project C-AI-KidPal-pod-m2，base=main，merge_base fdd643b3）
+#   impacted_total=66，测试面映射（inbound/both 遍历） + TaskPackage impactedTests 4 件种子。
+# 图可用性：per-Pod 专属图索引可用 → 正常圈定（非降级路径）。
+# 变更代码面：server/deploy/engine-patch/connection.py、server/gateway/front/front_app.py
+#   （schedule.py 零改动只读复用；manifest.yaml 部署清单行）。
+#
+# ── 本包 acceptanceTestsFile（K5-E1..E4 断言承载）──
+server/acceptance/test_261022_schedule_injection.acceptance.py
+# ── impactedTests 种子（taskpackage.json；单源反证冻结件）──
+server/acceptance/test_m3k1_schedule_producer.acceptance.py
+server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py
+# （impactedTests 第 4 件 server/deploy/verify-deploy.sh 本树零 diff，非 pytest 件，部署轮以脚本命令位另行执行）
+# ── blast radius 映射测试（detect_changes 影响集：front_app 装配/推送/接线符号、schedule.py 派生符号）──
+server/acceptance/test_schedule_grid_restore.acceptance.py
+server/acceptance/test_tech260928_school_start_wiring.acceptance.py
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/tests/test_schedule_producer_units.py
+server/tests/test_engine_round_close_units.py
+server/tests/test_reminder_units.py
+# ── 共享 seam（{{schedule_summary}} 占位载体 = K1 上游包 + prompt 载体既有守卫）──
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py

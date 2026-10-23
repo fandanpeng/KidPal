@@ -69,7 +69,7 @@ entries:
   - {src: server/deploy/engine-patch/connection.py,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/connection.py,
      owner: deploy.sh, verify: md5, restart: engine,
-     note: bind-mount 覆盖容器 core/，生效标记行 = docker logs 里 'kidpal display-strip patch active'}
+     note: bind-mount 覆盖容器 core/，生效标记行 = docker logs 里 'kidpal display-strip patch active' / 'kidpal stop-truncation/asr-filter patch active' / 'kidpal schedule-summary patch active'（261022-m5-n2a 课表摘要占位填充补丁）}
   - {src: server/deploy/engine-patch/kidpal_display_strip.py,
      dst: /opt/kidpal/xiaozhi-esp32-server/deploy/engine-patch/kidpal_display_strip.py,
      owner: deploy.sh, verify: md5, restart: engine}
