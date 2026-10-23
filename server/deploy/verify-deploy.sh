@@ -9,6 +9,9 @@
 #
 # 三个时机共用本脚本：部署前前置（deploy.sh 调）、部署后自检（deploy.sh 调）、
 # 每日 systemd timer（kidpal-deploy-drift.timer）。
+# 261022-m5-k1-prompt-carrier-migration：渲染件 marker 锚集随 prompt 承载反转同批换
+# （v11 静态内容锚退役、换动态 context 块锚）；本脚本恒 manifest 驱动、对全部条目
+# 一视同仁执行 md5 / marker 两路径核验——不为任何单文件设特例减免。
 # 漂移时：写 /opt/kidpal/alerts/deploy-drift.json（机器可读告警面）+ exit 1。
 #
 # 用法：bash server/deploy/verify-deploy.sh [--alerts-dir DIR] [--no-alerts]

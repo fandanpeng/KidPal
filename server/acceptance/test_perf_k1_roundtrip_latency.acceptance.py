@@ -382,15 +382,33 @@ _PROMPT_FILE_RE = re.compile(r"openclaw-system-prompt\.v\d+\.md")
 
 
 def _wired_prompt_artifact() -> str:
-    """从声明面 provider.config.yaml 解析当前被接线的 prompt 文件名（结构化指向）。"""
+    """从声明面 provider.config.yaml 解析当前被接线的 prompt 文件名（结构化指向）。
+
+    SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：vN 接线解析随承载
+    反转退役（静态语义单一事实源 = workspace AGENTS.md、引擎只发动态块）；本解析器
+    现存留作历史口径参照、当前无调用方（PERF-A1 三个探针齿与 E1 faces 齿已
+    supersede 改钉 AGENTS.md 承载面）。
+    """
     m = re.search(r"artifact\s*:\s*\"[^\"]*?(openclaw-system-prompt\.v\d+\.md)\"",
                   _read_text(PROVIDER_DECL_YAML))
     return m.group(1) if m else ""
 
 
 def _overlay_prompt_files() -> list[str]:
+    # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E3：同上，退役无调用方。
     return re.findall(r"PROMPT_(?:SRC|DST)\s*=.*?(openclaw-system-prompt\.v\d+\.md)",
                       _read_text(OVERLAY_SH))
+
+
+# --------------------------------------------------------------------------- #
+# 261022-m5-k1-prompt-carrier-migration supersede：新拓扑生产 prompt 承载解析。
+# SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：承载反转后
+# 「生产 system prompt」= workspace AGENTS.md（静态语义单一事实源，缓存边界之上）；
+# 探针被测面换代为「探针直读同一 AGENTS.md」（K1-E3 静态面被测面定义）。
+# --------------------------------------------------------------------------- #
+
+K1_STATIC_CARRIER_REL = "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md"
+K1_STATIC_CARRIER_NAME = "AGENTS.md"
 
 
 # --------------------------------------------------------------------------- #
@@ -705,8 +723,15 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
     def test_a1_probe_prompt_resolution_version_agnostic(self):
         """coverage: PERF-A1 — 探针 prompt 解析走结构化指向（渲染面==被测面，D1）（机制级）。
 
-        版本无关（ARQ-260908 纪律）：钉「探针解析出的 prompt == 声明面接线的 prompt」，
-        不硬写 vN 字面——前序包 forward-bump 后字面陈旧会假红。"""
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = resolver 解析 vN 接线（provider system_prompt.artifact / overlay
+        PROMPT_SRC/DST）且与 `_wired_prompt_artifact()` 一致；新语义 = 探针仍可解析
+        **新拓扑**——`resolve_prompt_artifact(repo_root)` 须解析出静态语义单一事实源
+        workspace AGENTS.md（探针被测面 = 探针直读同一 AGENTS.md，K1-E3 静态面
+        定义）；hash 口径断言零变化。**配套产品面更新（扩单申报）**：
+        `server/deploy/perf-k1/probe_gate.py::resolve_prompt_artifact` 的 vN 解析
+        须同批改指 AGENTS.md（perf-k1/ 不在本包 changeManifest，builder 落地时由
+        planner 扩单）。性能数值断言本身零放松。"""
         gate = self._gate()
         resolver = getattr(gate, "resolve_prompt_artifact", None)
         self.assertTrue(
@@ -714,22 +739,24 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             "PERF-A1 RED: probe_gate 缺 resolve_prompt_artifact(repo_root)（冻结契约 API）。",
         )
         resolved = Path(resolver(REPO_ROOT))
-        declared = _wired_prompt_artifact()
-        self.assertTrue(
-            declared,
-            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名"
-            "（声明面破坏）。",
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：解析目标从 vN
+        # 接线版换为 AGENTS.md（新拓扑生产 prompt 承载；resolver 产品面配套更新见
+        # docstring 扩单申报）。
+        self.assertEqual(
+            resolved.name, K1_STATIC_CARRIER_NAME,
+            f"PERF-A1 RED(superseded): 探针解析出的 prompt {resolved.name!r} ≠ 新拓扑"
+            f"生产 prompt 承载 {K1_STATIC_CARRIER_NAME!r} —— resolver 未随承载反转"
+            "换代（261022-m5-k1 K1-E3 静态面被测面 = 探针直读同一 AGENTS.md）。",
         )
         self.assertEqual(
-            resolved.name, declared,
-            f"PERF-A1 RED: 探针解析出的 prompt {resolved.name!r} ≠ 声明面接线 {declared!r} —— "
-            "渲染面 == 被测面（ADR-001 / 评审 D1）被破坏。",
+            resolved.relative_to(REPO_ROOT).as_posix(), K1_STATIC_CARRIER_REL,
+            f"PERF-A1 RED(superseded): 解析路径 {resolved} ≠ {K1_STATIC_CARRIER_REL}。",
         )
         self.assertTrue(
             resolved.is_file() and resolved.stat().st_size > 0,
             f"PERF-A1 RED: 探针解析出的 prompt {resolved} 不在场或为空（孤儿接线）。",
         )
-        # hash 口径 = LF 归一（与生产渲染件一致，证据 §7）。
+        # hash 口径 = LF 归一（与生产渲染件一致，证据 §7）——零变化。
         sha = getattr(gate, "prompt_sha256", None)
         self.assertTrue(callable(sha), "PERF-A1 RED: probe_gate 缺 prompt_sha256(path)。")
         self.assertEqual(
@@ -738,27 +765,31 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         )
 
     def test_a1_probe_messages_include_production_prompt(self):
-        """coverage: PERF-A1 — 探针 messages 必带 system(被接线版逐字) + user(题)（机制级 / D1）。
+        """coverage: PERF-A1 — 探针 messages 必带 system(生产 prompt 逐字) + user(题)
+        （机制级 / D1）。
 
-        裸探针不带生产 prompt 时测的不是生产形态（评审推论甲 / §0.2-9 实证：无 display 块、
-        唤 David）——A1/A2 判定探针必须带仓内被接线 prompt 逐字。260925-prompt-v7-round-routing
-        起改解析声明面得出版本（原硬编 v6 字面 = ARQ-260908-versioned-guard-version-literal-coupling
-        族类，bump 后静默测旧版假绿）。"""
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：system 内容的
+        「生产 prompt」解析源从 vN 接线版换为 workspace AGENTS.md（静态语义单一
+        事实源）；messages 形状与逐字注入断言零变化。"""
         gate = self._gate()
         build = getattr(gate, "build_probe_messages", None)
         self.assertTrue(callable(build), "PERF-A1 RED: probe_gate 缺 build_probe_messages().")
-        declared = _wired_prompt_artifact()
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：生产 prompt 源
+        # 从 _wired_prompt_artifact()（vN）换为 AGENTS.md。
+        prompt_path = REPO_ROOT / K1_STATIC_CARRIER_REL
         self.assertTrue(
-            declared,
-            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
+            prompt_path.is_file(),
+            f"PERF-A1 RED(superseded): {K1_STATIC_CARRIER_REL} 不在场——静态语义"
+            "单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。",
         )
-        prompt = _read_text(DEPLOY_DIR / declared)
+        prompt = _read_text(prompt_path)
+        self.assertTrue(prompt.strip(), "PERF-A1 RED(superseded): AGENTS.md 为空（前置）。")
         msgs = build(prompt, "明天有什么课程?")
         self.assertEqual(len(msgs), 2, "PERF-A1 RED: 探针 messages 不是 [system, user] 两元素。")
         self.assertEqual(msgs[0].get("role"), "system", "PERF-A1 RED: 首元素非 system 角色。")
         self.assertEqual(
             msgs[0].get("content"), prompt,
-            "PERF-A1 RED: system 内容 ≠ 仓内被接线 prompt 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
+            "PERF-A1 RED: system 内容 ≠ 仓内生产 prompt 逐字 —— 探针未注入生产 prompt（D1 缺陷）。",
         )
         self.assertEqual(msgs[1].get("role"), "user", "PERF-A1 RED: 次元素非 user 角色。")
         self.assertEqual(msgs[1].get("content"), "明天有什么课程?", "PERF-A1 RED: user 题面不符。")
@@ -766,10 +797,9 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
     def test_a1_probe_script_check_prompt_runs(self):
         """coverage: PERF-A1 — 探针脚本 --check-prompt 离线可跑且解析出生产 prompt + 归一 hash（源锚代理）。
 
-        hash 断言版本无关（260925-prompt-v7-round-routing 起；原钉 v6 哈希字面 =
-        ARQ-260908-versioned-guard-version-literal-coupling 族类复发实例）——哈希取
-        「探针解析出 == 声明面接线」的那份文件（test_a1_probe_prompt_resolution_version_agnostic
-        已证解析一致性），bump 不再假红。"""
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：期望解析
+        结果从 vN 接线版换为 AGENTS.md（resolver 新拓扑契约同
+        test_a1_probe_prompt_resolution_version_agnostic）；hash 口径断言零变化。"""
         self.assertTrue(
             PROBE_BATCH_MODULE.is_file(),
             f"PERF-A1 RED: 探针执行器不在位 —— 冻结契约要求 {PROBE_BATCH_MODULE}。",
@@ -779,17 +809,14 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
             rc, 0,
             f"PERF-A1 RED: probe_batch --check-prompt rc={rc}（应 0）。stdout={out!r} stderr={err!r}",
         )
-        declared = _wired_prompt_artifact()
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：期望打印的生产
+        # prompt 从 vN 接线版换为 AGENTS.md。
         self.assertIn(
-            declared, out,
-            f"PERF-A1 RED: --check-prompt 未打印解析出的生产 prompt {declared!r}（渲染面==被测面）。",
+            K1_STATIC_CARRIER_REL, out,
+            f"PERF-A1 RED(superseded): --check-prompt 未打印解析出的生产 prompt "
+            f"{K1_STATIC_CARRIER_REL!r}（渲染面==被测面；resolver 须随承载反转换代）。",
         )
-        wired = _wired_prompt_artifact()
-        self.assertTrue(
-            wired,
-            f"PERF-A1 RED: {PROVIDER_DECL_YAML} system_prompt.artifact 解析不到 prompt 文件名。",
-        )
-        expected_sha = _sha256_norm(DEPLOY_DIR / wired)
+        expected_sha = _sha256_norm(REPO_ROOT / K1_STATIC_CARRIER_REL)
         self.assertIn(
             expected_sha, out.lower(),
             "PERF-A1 RED: --check-prompt 未打印生产 prompt 的归一 sha256（hash 断言缺失）。",
@@ -969,18 +996,29 @@ class PerfK1OfflineAcceptance(unittest.TestCase):
         )
 
     def test_e1_prompt_wiring_faces_consistent(self):
-        """coverage: PERF-E1 — prompt 接线面（声明面 + 渲染面）同指一在场文件（机制级 / 版本无关）。"""
-        declared = _wired_prompt_artifact()
-        rendered = _overlay_prompt_files()
-        self.assertTrue(declared, "PERF-E1 RED: provider.config.yaml 未解析出 prompt 文件名。")
-        self.assertTrue(rendered, "PERF-E1 RED: apply-xiaozhi-overlay.sh 未解析出 PROMPT_SRC/DST。")
+        """coverage: PERF-E1 — prompt 接线面同指一在场文件（机制级；261022 语义换代）。
+
+        SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1/K1-E3：
+        旧语义 = 声明面（provider system_prompt.artifact vN）与渲染面（overlay
+        PROMPT_SRC/DST vN）同指一在场文件；新语义 = 承载反转后 vN 指针接线退役、
+        face-equality 由该包新验收 K1-E3 静态面/动态面集合相等不变式取代。本齿
+        改钉（must-stay-green）：新拓扑生产 prompt 承载 AGENTS.md 在场非空 +
+        声明面 provider.config.yaml 有引用 AGENTS.md 的键值行（声明面指向新承载；
+        旧 vN 指针一致性判法退役）。"""
+        # SUPERSEDED-BY 261022-m5-k1-prompt-carrier-migration K1-E1：被测承载面从
+        # vN 指针两面换为 AGENTS.md 静态主承载 + provider 声明面指向。
+        carrier_path = REPO_ROOT / K1_STATIC_CARRIER_REL
         self.assertTrue(
-            set(rendered) <= {declared},
-            f"PERF-E1 RED: 渲染面 {rendered} 与声明面 {declared} 不同指（接线不变式 ADR-001）。",
+            carrier_path.is_file() and _read_text(carrier_path).strip(),
+            f"PERF-E1 RED(superseded): {K1_STATIC_CARRIER_REL} 不在场/为空——静态"
+            "语义单一事实源镜像缺失（261022-m5-k1 承载反转 K1-E1）。",
         )
-        self.assertTrue(
-            (DEPLOY_DIR / declared).is_file(),
-            f"PERF-E1 RED: 接线的 prompt {declared} 不在场（孤儿接线）。",
+        provider_src = _read_text(PROVIDER_DECL_YAML)
+        self.assertTrue(provider_src, f"PERF-E1 RED: {PROVIDER_DECL_YAML} 不在场。")
+        self.assertIsNotNone(
+            re.search(r"(?m)^\s*[A-Za-z_][\w.]*\s*:[^\n]*AGENTS\.md", provider_src),
+            "PERF-E1 RED(superseded): provider.config.yaml 无引用 AGENTS.md 的键值行"
+            "——声明面未随承载反转向新不变式（261022-m5-k1 K1-E3）。",
         )
 
 

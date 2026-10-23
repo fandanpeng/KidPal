@@ -1,192 +1,264 @@
 {
-  "changeId": "261022-p3-record-chrome-ghost-fix",
-  "rigor": "lite",
-  "riskTier": "medium",
-  "sourceType": "regression",
+  "changeId": "261022-m5-k1-prompt-carrier-migration",
+  "rigor": "full",
+  "sourceType": "proposal",
   "origin": {
-    "type": "regression",
-    "human-verbatim": "KPLOG005 真机轮 human 观感原话：「日志里边记录的状态乱跳，跟我在屏幕上看到的状态乱跳是一样的」。逐秒还原 + 三源取证（设备 KPLOG005/kplog_user_test_full、front journalctl、引擎 docker logs）落 debt 条目 TECH-261022-p3-record-session-state-churn；本包 = 缺陷①键帽鬼影闪烁 + ②成功路径鬼覆盖层吃按键。",
-    "upstreamType": "regression",
-    "upstreamRef": "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "upstreamFrozen": "debt 条目已 commit（75daaf32）+ architect /triage-change 比例化 review 裁决（②单包 Lite ×2 并联）+ human 触点①确认；plan.md 即冻结技术输入、只读消费",
-    "workstream": ""
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
+    "workstream": "device-memory-overhaul"
   },
-  "subsystem": "firmware/main/display（lcd_display 键帽裁决 + keybar 纯逻辑单源 + kidpal_voice_states 场景生命周期 + kidpal_render_node 层栈收口）+ firmware/main/mcp_server.cc（收尾桥挂点，如需）+ firmware/main/application.cc（scene 复位挂点，如 1g 预评确认）+ firmware/main/test（host 验收件）",
-  "planRef": "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
-  "changeManifest": [
-    "firmware/main/display/lcd_display.cc",
-    "firmware/main/display/keybar.c",
-    "firmware/main/display/keybar.h",
-    "firmware/main/display/kidpal_voice_states.c",
-    "firmware/main/display/kidpal_render_node.cc",
-    "firmware/main/display/kidpal_render_node.h",
-    "firmware/main/mcp_server.cc",
-    "firmware/main/application.cc",
-    "firmware/main/test/**"
-  ],
-  "changeManifestNotes": "triage 种子原样（architect reviewed plan）；builder 若需为新验收件做 host runner 登记，实路径 = firmware/main/CMakeLists.txt（同形先例 261022-diag-log-content 扩单），届时按扩单申报纪律登记。",
-  "story": "261022-p3-record-chrome-ghost-fix · P3 记录会话 chrome 鬼影修复——①键帽鬼影闪烁（语音场景键帽残留 + story_sub 过渡窗读 -1 掉通用分支 + 单事件双同步，三因叠加出「说完啦/结束」「不等了/结束」鬼影双连闪，含无语音会话场景）：语音会话收尾复位 keybar scene + 故事会话期 -1 过渡窗取最后已知子态或硬门通用分支；②成功路径鬼覆盖层白吃按键：成功归档路径补显式覆盖层 dismiss（对齐 4068dc6c 失败路径形态；帧类型负锚 = 不得新发明下行帧类型，落点归 1g 预评）。debt TECH-261022-p3-record-session-state-churn 缺陷①②；并联包 = 261022-p3-record-front-polish-fix（front 面，零依赖零文件交集）。",
+  "subsystem": "server/deploy（prompt 静态/动态承载反转 + kidpal agent 工具面收窄；OpenClaw workspace AGENTS.md / carrier / provider.config / overlay / manifest / verify-deploy / openclaw.json 声明式 patch）",
+  "story": "无 story 直接命中（重构型）：结构性痛点锚 = delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§2「结构性痛点」+ docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md 证据 2/5——v11 静态语义每轮经 extraSystemPrompt 挂在缓存边界之下，22,116 prompt tokens 中 cache miss 14,948；kidpal agent 34 工具 57KB schema/轮。本包把静态语义反转进 workspace AGENTS.md 稳定前缀，并把工具面收窄为 4 项。S-F5.1 的记忆守则内容归 P3，本包只建立其静态承载位置。",
+  "planRef": "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/plan.md",
   "sourceRefs": [
-    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md",
-    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md"
+    "TECH-261022-device-memory-prompt-overhaul",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§2",
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3",
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/deploy/manifest.yaml"
+  ],
+  "acceptanceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T7"
   ],
   "acceptance": [
-    "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
-    "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
-    "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
-    "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
     {
-      "id": "CG-A5",
+      "id": "K1-E1",
+      "title": "v11 静态语义迁 workspace-kidpal/AGENTS.md 主承载（路由五行+各域纪律+底线吸收）+ v11 原地冻结零 diff",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e1_agents_md_static_semantics_migration", "test_k1_e1_agents_md_self_declaration_single_source", "test_k1_e1_v11_frozen_zero_diff"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pn_a4_wired_three_faces_consistent_and_carries_v9_discipline", "test_rf_a4_wired_three_faces_consistent_and_carries_realtime_anchors", "test_pv_a3_wired_version_carries_expanded_recognition"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1", "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md", "server/deploy/openclaw-system-prompt.v11.md"]
+    },
+    {
+      "id": "K1-E2",
+      "title": "动态 context 模板单件在场且有界（时间/日期+课表摘要占位、零静态纪律）+ 二选一定形机判（内容源恰一）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e2_dynamic_context_template_present_and_bounded", "test_k1_e2_single_dynamic_template_carrier_wired"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pv_a4_kidpal_template_identity_and_context", "test_pv_a4_kidpal_template_free_of_xiaozhi_residue", "test_pv_a7_manifest_entries_cover_template_and_skills"]},
+        {"file": "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py", "tests": ["test_pv_a5_overlay_renders_template_and_error_response_keys", "test_pv_a5_overlay_copies_template_into_data_dir"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"]
+    },
+    {
+      "id": "K1-E3",
+      "title": "承载三面接线（ADR-001 重定义）：静态面 AGENTS.md+carrier+provider 静态键 / 动态面 .config.yaml prompt+动态模板键，manifest 条目与 marker 锚集同批翻，离线渲染真跑验证",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e3_static_face_declaration_wiring", "test_k1_e3_dynamic_face_declaration_wiring", "test_k1_e3_offline_render_prompt_is_bounded_dynamic_block", "test_k1_e3_marker_anchors_match_rendered_product", "test_k1_e3_deploy_readme_pointer_section_follows_new_carrier"]},
+        {"file": "server/acceptance/test_prompt_v7_round_routing.acceptance.py", "tests": ["test_pv_a3_four_faces_wired_consistent", "test_pv_a3_carrier_history_appends_all_prior_versions", "test_pv_a7_readme_pointer_follows_wired_version"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER", "server/deploy/provider.config.yaml", "server/deploy/apply-xiaozhi-overlay.sh", "server/deploy/manifest.yaml", "server/deploy/verify-deploy.sh", "server/deploy/README.md"]
+    },
+    {
+      "id": "K1-E4",
+      "title": "kidpal agent 工具覆写落盘 261022-openclaw-kidpal-tools/**（allow 四项声明 + apply 幂等 + drift_guard + backup + rollback + openclaw.json 零入仓 + manifest 登记）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py", "tests": ["test_k1_e4_declaration_present_and_schema", "test_k1_e4_allowlist_exactly_four", "test_k1_e4_apply_script_present_and_consumes_declaration", "test_k1_e4_apply_applies_then_idempotent", "test_k1_e4_apply_drift_guard_exit3", "test_k1_e4_apply_timestamped_backup", "test_k1_e4_apply_preserves_other_keys_and_composes_with_skills_patch", "test_k1_e4_rollback_dry_run_and_restore", "test_k1_e4_no_openclaw_json_in_repo_and_no_secret_in_declaration", "test_k1_e4_manifest_registers_the_patch_workbench"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T7"],
+      "sourceRefs": ["delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§2", "server/deploy/261017-openclaw-kidpal-skills/"]
+    },
+    {
+      "id": "K1-E5",
+      "title": "既有冻结验收语义锚升级留痕 supersede（零静默改写机判面，六件）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e5_supersede_traces_present"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"],
+      "sourceRefs": ["server/acceptance/test_prompt_v7_round_routing.acceptance.py", "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py", "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py", "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py", "server/acceptance/test_m4k3_record_session_live.acceptance.py", "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py"]
+    },
+    {
+      "id": "K1-E6",
+      "title": "已知窗口时序纪律：AGENTS.md md5 漂移核验路径在场且未弱化（豁免为 loop 判红纪律、非脚本特例）",
+      "asserts": [
+        {"file": "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py", "tests": ["test_k1_e6_agents_md_md5_drift_path_known_window"]}
+      ],
+      "acceptanceRefs": ["delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3 第 5 条"],
+      "sourceRefs": ["server/deploy/manifest.yaml", "server/deploy/verify-deploy.sh"]
+    },
+    {
+      "id": "K1-E7",
       "kind": "structural",
-      "note": "live-manual 真机目检（非自动断言，诚实申报；DLG-A6 先例同款口径，不计入 runner 通过面）：human 持板——① 翻阅读卡与记录会话全程键帽无鬼影双闪（含无语音会话的开卡/翻屏场景）；② 记录会话归档成功后首按 BOOT 即生效（不再被 overlay_close 白吃）；③ 与 diag-log-content 收尾真机轮合并执行省烧板。本 Pod 到真机门前停等 human（status=awaiting-human:real-device），不自行烧录"
+      "note": "live 观测项（非自动断言，两件新验收类 docstring 均申报）：human 部署后复测 prompt_tokens ≤11,000 / cache hit / 工具 4 项 57KB schema 消失；host 转绿后 status=awaiting-human:live-deploy 停门"
+    },
+    {
+      "id": "K1-E8",
+      "kind": "structural",
+      "note": "SOUL/USER live 清理（human 2026-10-22 门 1 终裁 A1）：launch card 人工步骤，随 deploy.sh 铺放批次处理；host 面零断言"
     }
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/chrome_ghost.acceptance.c"
+    "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py"
   ],
-  "redBaselineCommand": "通道 A（host 全量 runner）：MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf ‖ 通道 B（本件冻结即冒烟，独立通道）：cd firmware/main/test/acceptance/red-baseline && gcc -std=c11 -Wall -Wextra -I. -o /tmp/cg_red_runner ../../chrome_ghost.acceptance.c ../../../display/keybar.c ../../../display/kidpal_voice_states.c runner.c（COMPILE_EXIT 须 0 零 warning）&& cd <repo root> && /tmp/cg_red_runner（结构锚支持 KIDPAL_REPO_ROOT 注入）",
-  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-22（本树）。通道 A：227 Tests 3 Failures exit 3——与基线锚 0df2c0c3 完全一致，3 条全为先存 p1_auxbar AB-A1/A2/A4，本包零新增红零扰动（本件登记进 runner 归 builder FIRST ACTION，转绿后 227→232 Tests 仍恰 3 Failures）。通道 B：5 Tests 5 Failures RUN_EXIT=5，全设计态红——TEST 1 CG-A1（weak 哨兵 kidpal_keybar_scene_get 返回 -99 或 set 未存真值）、TEST 2 CG-A2（frozen seam 未实现 kidpal_keybar_story_transition_slots）、TEST 3 CG-A2（kidpal_keybar_sync_locked 未消费 transition_slots 接线）、TEST 4 CG-A3（story_list 前推渲染闭包 end_page 后无层栈收口）、TEST 5 CG-A4（host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c）。双向可满足性：/mnt/c/tmp/cg_work 合成树（KIDPAL_REPO_ROOT 注入 + 一次性参考实现，不写入工作树）绿树 5 Tests 0 Failures 零 warning；七处定向变异各只打红对应 TEST_CASE（复位值入语音闭集→T1 / 过渡窗产语音残留→T2 / 摘过渡窗接线→T3 / 场景 static 第二真相源回归→T3 / 盖章闭包摘收口→T4 / 摘登记→T5 / 摘会话收尾沿复位→T3）。转绿判据：builder 落地 [CG-C1]/[CG-C2] 新缝 + [CG-C3] 接线 + [CG-C5] 登记（builder FIRST ACTION：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 追加 ../../chrome_ghost.acceptance.c 置于 smoke 之前）后全绿；既有 host 全量套件零新增红。verbatim 详见 firmware/main/test/chrome_ghost.acceptance.c 头注「冻结落盘实跑」段（commit a92706c0）。CG-A5 = live-manual 真机目检，不计入 runner 通过面。",
-  "deliveryImpact": "none",
-  "planningImpact": "none",
-  "gateProfile": [
-    "docs-sync",
-    "test-quality",
-    "evidence-integrity",
-    "device-round"
+  "impactedTests": [
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
+    "server/acceptance/test_261001_openclaw_model_name_overlay_drift.acceptance.py",
+    "server/acceptance/test_m3k3_voice_schedule_entry.acceptance.py",
+    "server/acceptance/test_m4k3_record_session_live.acceptance.py",
+    "server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py",
+    "server/deploy/verify-deploy.sh"
   ],
-  "exitCriteria": [
-    "CG-X1: 全部 CG-Ax host 齿转绿（chrome_ghost.acceptance.c 编入 host runner、零 warning），既有 host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
-    "CG-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；既有冻结锚保持——keybar_three_slot / story_page_v2 / key_layer_dispatch 全绿）",
-    "CG-X3: 真机目检由 human 持板执行并留痕（CG-A5 三项观测：无鬼影双闪 / 归档后首按 BOOT 生效 / 与 diag-log-content 收尾轮合并）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
-    "CG-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
-  ],
-  "contractRefs": [
-    "docs/contracts/interface-contract.md"
-  ],
-  "crossEnd": {
-    "counterparts": [],
-    "exempt": "纯板端 chrome 裁决与层栈收口：零 wire 形状改动（不新发明下行帧类型 = 帧类型负锚，复用既有帧与层栈 dismiss 通道；server/** 零 diff——并联包 B 的面）；键帽/覆盖层语义行不引入新数据类。triage architect 逃生门预查 = 干净（NO_CONTRACT_CHANGE）。"
-  },
-  "securityReviewRequired": false,
-  "securityAxes": [],
-  "adrRequired": false,
   "requiredLayers": [
     "unit",
     "acceptance-offline",
-    "firmware-build"
+    "live-manual"
   ],
-  "iterationBudget": 3,
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
+  "redBaselineResult": "acceptance-author 冻结相位 2026-10-23 实跑（含 planner 授权扩面 supersede 后终态；cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance）：① 冻结前（既有套件）= 246 passed / 4 deselected / 33 subtests passed，全绿、无先存红；② 冻结后终态 = 242 passed / 26 failed / 4 deselected / 33 subtests passed。26 个红全部为设计态红（实现未动工的真实缺失行为）：test_261022_m5_k1_prompt_carrier_migration 8 个（K1-E1 迁移内容 1 + K1-E2 全部 2 + K1-E3 接线/渲染/README 指针节 5）+ test_261022_openclaw_kidpal_tools 10 个（K1-E4 全部，261022-openclaw-kidpal-tools/ 未建）+ supersede 换代红 8 个（v7 件 PN-A4 / RF-A4 / PV-A3 扩列锚 3 + m3k3 test_a1_wired_prompt_carries_v6_schedule_anchors 1 + m4k3 test_a8_current_prompt_dual_trigger_and_boundary 1 + perf-k1 probe resolution / check-prompt / e1 faces 3——承载面换代为 AGENTS.md、未迁入即红，转绿路径 = builder 完成迁移 + probe_gate.py resolver 改指 AGENTS.md〔perf-k1/ 已扩单〕）。E1 自声明齿 / v11 冻结齿 / E5 六件留痕齿 / E6 机制齿及既有验收其余断言全部现行绿。",
+  "exitCriteria": [
+    "K1-E1: v11 静态语义逐条迁入 server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md（回合路由表 / 各域纪律 / 底线句吸收，含既有底线节与静态语义单一事实源自声明），AGENTS.md 成为静态语义主承载与单一事实源；引擎每轮不再携带静态纪律（v11 历史文件原地冻结、可 diff，零回改）",
+    "K1-E2: 动态 context 模板单件在场：新增 server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt；既有 server/deploy/kidpal-agent-prompt.txt 的去留/改写由本包定形（由新件取代或原地改写，二选一），不得两个动态模板件并存；动态块有界（本回合时间/日期 + 课表摘要占位），不含静态纪律",
+    "K1-E3: 承载三面（OPENCLAW_SYSTEM_PROMPT_CARRIER / provider.config.yaml 静态承载三键与动态模板三键 / apply-xiaozhi-overlay.sh 渲染面）同批指向新不变式，ADR-001 重定义后的静态面与动态面集合相等；manifest.yaml 条目与 .config.yaml marker 锚集同步更新（撤 v11 专属锚「实时事实回合」、增动态块锚），verify-deploy.sh 三时机语义随改",
+    "K1-E4: kidpal agent 工具覆写落盘 server/deploy/261022-openclaw-kidpal-tools/**（仿 261017-openclaw-kidpal-skills 先例）：allow=[read,write,exec,web_search] 声明 + apply 幂等 + drift_guard + backup + rollback；openclaw.json 整文件不入仓（含 gateway 凭据），只入无 secret 声明",
+    "K1-E5: 既有冻结验收语义锚升级经 acceptance-author 留痕 supersede（test_prompt_v7_round_routing / test_261010_engine_decision21_overlay_persist / test_261017_openclaw_kidpal_skills / 新增 tools 覆写验收断言），零静默改写；server 既有套件零新增红",
+    "K1-E6: 落地时序纪律：AGENTS.md 仓内镜像改动后、live 铺放前 verify-deploy.sh 报 md5 漂移属预期已知窗口，不据此判红；本包内不单独铺放该文件（护栏真空禁令）",
+    {
+      "id": "K1-E7",
+      "kind": "structural",
+      "note": "live 观测项（非自动断言，诚实申报）：human 部署后复测单轮 DeepSeek prompt_tokens ≤11,000（基线 22,116）与 cache hit 覆盖稳定前缀（目标翻倍量级）；工具面 audit 可见工具 = 4 项、57KB schema 消失。本包 host 面转绿后停门等 human，不自行部署"
+    },
+    {
+      "id": "K1-E8",
+      "kind": "structural",
+      "note": "SOUL/USER 清理（human 2026-10-22 门 1 终裁 A1；live 处置项，非自动断言）：live 核实 workspace-kidpal/SOUL.md 与 USER.md（ECS 生产 workspace live 在场，仓内无镜像、不在本包 changeManifest）——存在则清空/瘦身，处置登记为 P1 launch card 人工步骤、随 deploy.sh 铺放批次一并处理；不存在则显式记为 moot。不得据此扩包 changeManifest"
+    }
+  ],
+  "iterationBudget": 2,
   "fixBudget": 3,
-  "docRefs": [
-    "docs/debt/tech/TECH-261022-p3-record-session-state-churn.md",
-    "delivery/taskpackages/261022-p3-record-chrome-ghost-fix/plan.md"
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.6"
   ],
-  "planningRefs": [],
-  "mutationRequired": true,
-  "docsSyncRequired": true,
+  "docRefs": [
+    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
+    "delivery/workstreams/device-memory-overhaul/task_plan.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md",
+    "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/contracts/interface-contract.md",
+    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "架构面 §5.5.5 / 三处承载声明口径 / ADR-001 重定义已由 261022 arch 批 FROZEN v1.1 landing（commit 0411e957）落稿；本包只落实现面与部署资产，docs/** 零 diff。记忆守则内容回填 §6.7 的实测成形句归 P3 收口。",
   "docsOwner": "integrator",
-  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4）@ 基线锚 0df2c0c3（带锚引用三件齐：SHA + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261022-p3-record-chrome-ghost-fix/launch-card.md 基线锚行；2026-10-22 本会话 producer=consumer 同树实测，222→227 = diag-log 五齿新增计入）",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "本包改动面 = 声明件 / 渲染脚本 / 部署清单 / OpenClaw 运行时声明式 patch，多为字面锚与接线一致性；少许可执行脚本（apply/rollback）按 261017 同型先例以幂等/漂移/回滚三态验收覆盖，变异取证 ROI 不成立。",
   "mutationEvidence": {
-    "perAcceptance": [
-      {
-        "acceptanceId": "CG-A1",
-        "acceptance": "CG-A1: keybar 语音场景复位纯逻辑/接线——语音会话收尾沿（会话结束/覆盖层弹出路径）g_kidpal_keybar_scene 复位到非语音场景默认；复位后键帽裁决通用分支不再产出「说完啦/结束」「不等了/结束」残留键帽。设计态红：scene 永不复位（现状实证）",
-        "mutation": "变异 1：keybar.c kidpal_keybar_scene_reset 复位值 KIDPAL_KEYBAR_SCENE_NONE(-1) → KVST_SCENE_LISTEN(0)（复位值落回语音场景闭集内）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 1（CG-A1）· 复位值出闭集断言（:729）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A1 RED: 会话收尾沿复位后 scene=0 仍落在语音场景闭集 [0..4] 内——复位值必须出闭集（EQ-3：出闭集 -> 通用分支 overlay 列仲裁落 kidpal_keybar_slots scene 越界 -1 防御 -> 残留键帽绝不再被画出；复位到 0=KVST_SCENE_LISTEN 等于没修）"
-        ],
-        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b64e88b47b738f09cecaa1a02076770858f1df32c8697224192c1e133 与变异前一致；复跑通道 B：COMPILE_EXIT=0 / 5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 1 FAIL，其余 TEST 2/3/4/5 PASS——与冻结矩阵预测（TEST 1 红）逐条一致。"
-      },
-      {
-        "acceptanceId": "CG-A2",
-        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
-        "mutation": "变异 2：keybar.c kidpal_keybar_story_transition_slots 非在途 default 分支由回落 return 0 改为产出语音残留键帽字面（*out_left=\"说完啦\"; *out_right=\"结束\"; return 1）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 2（CG-A2）· 过渡窗+非在途回落断言（:891，首值 KSTORY_PAGE_LIST）+ 全域语音残留负扫描（:908）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A2 RED: 过渡窗 + 非在途子态(0) = (rc=1, 左=说完啦)——非在途相位必须回落既有路径（plan 修法②逐字范围: 只接管录音/整理/阅读三在途子态; 该相位残留由 [CG-C1] scene 复位兜底）"
-        ],
-        "restored": "git checkout -- firmware/main/display/keybar.c；git diff --stat 空；sha256 d3261f5b…c1e133 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 2 FAIL，其余 PASS——与冻结矩阵预测（TEST 2 红）一致。首红落在非在途回落循环（KSTORY_PAGE_LIST=0）；语音残留负扫描（:908）为同因二次承载，unity 首败中止未单独触达。"
-      },
-      {
-        "acceptanceId": "CG-A2",
-        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
-        "mutation": "变异 3：lcd_display.cc kidpal_keybar_sync_locked 区摘掉过渡窗接线——else if (kidpal_keybar_story_transition_slots(story_sub, trans_last_known, story_rec_sub, &left, &right) == 1) → else if (0)（消费锚从可执行源消失，仅留注释）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A2 结构齿）· sync 区 kidpal_keybar_story_transition_slots( 消费源锚（:1000）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A2 RED: kidpal_keybar_sync_locked 未消费 kidpal_keybar_story_transition_slots(——story 会话期 -1 过渡窗仍直接掉通用分支（KPLOG005 缺陷①因二未接; 纯逻辑缝 [CG-C2] 已冻结, 接线缺位 = 断言不能承载的盲区 GAP-1 半）"
-        ],
-        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6e92c805bbde46a6034fd964bbe5a2a4cb513b442e327618e903a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 结构齿红）一致。变异以注释剥离后无可执行消费锚取证，反向验证扫描器注释剥离有效。"
-      },
-      {
-        "acceptanceId": "CG-A2",
-        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
-        "mutation": "变异 7：application.cc HandleStateChangedEvent Idle 分支摘掉会话收尾沿复位——kidpal_keybar_scene_reset(); → (void)0;（kidpal_render_node.cc voice_end 亦无 reset，两处均缺席）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1/CG-A2 结构齿）· 收尾沿 kidpal_keybar_scene_reset( 复位锚（:1036 application.cc 路径 → :1049 voice_end 回退路径）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A1 RED: 会话收尾沿无 kidpal_keybar_scene_reset(——application.cc HandleStateChangedEvent Idle 分支与 kidpal_render_node.cc voice_end 两处均缺席（[CG-C3]③; g_kidpal_keybar_scene 语音会话结束后永不复位缺陷原样保留, KPLOG005 缺陷①因一未治）"
-        ],
-        "restored": "git checkout -- firmware/main/application.cc；git diff --stat 空；sha256 2794b7a5ea3559c3460c10d150487ab1ded14bc443a1881f58211fd768affc54 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS——与冻结矩阵预测（TEST 3 红）一致。虽按派发归入 CG-A2 组，实际打红断言文本前缀为 CG-A1（收尾沿复位属 [CG-C3]③，TEST 3 同时承载 CG-A1/CG-A2 结构齿）；此处如实记录。"
-      },
-      {
-        "acceptanceId": "CG-A2",
-        "acceptance": "CG-A2: story 会话期键帽裁决过渡窗门控——story_sub 读 -1（缓存未同步过渡窗）且故事会话活跃（录音/整理/阅读子态在途）时，键帽裁决取最后已知 story 子态或硬门通用分支，绝不画语音残留键帽。设计态红：过渡窗掉通用分支（现状实证）",
-        "mutation": "变异 4（附注）：lcd_display.cc 恢复文件级 static 第二真相源——新增可执行源 static int g_kidpal_keybar_scene = -1;（绕过 keybar 单源）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 3（CG-A1 负锚 / CG-A2 结构齿同件）· g_kidpal_keybar_scene 可执行源零残留负锚（:1022-1023）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A1 RED: lcd_display.cc 仍存在 1 处 g_kidpal_keybar_scene（可执行源）——设备侧场景 static 未上收 keybar 单源（[CG-C1]; 同窗双写 = 谁生效说不清, 第二真相源红线）"
-        ],
-        "restored": "git checkout -- firmware/main/display/lcd_display.cc；git diff --stat 空；sha256 d5632ac6…3a1336 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "附注变异（派发写作「+4 附注」）。通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 3 FAIL，其余 PASS。打红文本前缀为 CG-A1（第二真相源负锚属场景单源改造），与变异 7 同属 TEST 3 的 CG-A1/CG-A2 共用结构齿，如实记录。"
-      },
-      {
-        "acceptanceId": "CG-A3",
-        "acceptance": "CG-A3: 成功归档路径层栈收口——故事归档成功、story_list 已渲染后，层栈无残留覆盖层占逻辑前台：BOOT 在列表页路由成列表动作而非 overlay_close（对齐 4068dc6c 失败路径形态；复用既有帧与层栈 dismiss 通道，帧类型负锚 = 不得新发明下行帧类型）。设计态红：成功路径无 dismiss（现状实证 13:03:20 action=4 overlay_close 白吃按键）",
-        "mutation": "变异 5：mcp_server.cc 盖章帧渲染闭包 app.Schedule([stamp_view, stamp_list, stamp_text]() 区内摘掉层栈收口调用——kidpal_render_node_story_local_front(); → (void)0;（story_list 前推闭包与 ScheduleStoryRender 在役先例未动）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 4（CG-A3）· 盖章帧渲染闭包 end_page 后层栈收口锚（:1149-1153）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A3 RED: 盖章帧渲染闭包 end_page 后无层栈收口——成功归档路径与失败路径（4068dc6c dismiss_front_overlay 先例）不对齐, 覆盖层逻辑前台残留吃按键"
-        ],
-        "restored": "git checkout -- firmware/main/mcp_server.cc；git diff --stat 空；sha256 80421035d64489ebacab8503e9483b77352c7aa0b649732014456ad16da81290 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 4 FAIL，其余 PASS——与冻结矩阵预测（TEST 4 红）一致。story_list 前推闭包收口与 ScheduleStoryRender 在役先例未变异（本轮每变异只改一处），故 TEST 4 首红落在盖章闭包断言。"
-      },
-      {
-        "acceptanceId": "CG-A4",
-        "acceptance": "CG-A4: 回归网——keybar_three_slot / story_page_v2 / key_layer_dispatch 三族全绿 + host 全量套件零新增红 vs 基线 227T3F（先存红 = p1_auxbar AB-A1/A2/A4，锚 0df2c0c3）",
-        "mutation": "变异 6：host_app/main/CMakeLists.txt HOST_ACCEPTANCE_SRCS 摘除 \"../../chrome_ghost.acceptance.c\" 登记行（回归网静默缩网）",
-        "affectedTest": "firmware/main/test/chrome_ghost.acceptance.c TEST 5（CG-A4）· 本件登记守（:1184-1188）",
-        "turnedRed": true,
-        "sensitive": true,
-        "result": "turned red",
-        "redVerbatim": [
-          "CG-A4 RED: host_app/main/CMakeLists.txt 未登记 chrome_ghost.acceptance.c——本冻结验收件不进 host runner（全部断言不会被执行 = 空过绿）；builder FIRST ACTION（diag_log 261022 先例口径, 登记行不在 acceptance-author 写权内）"
-        ],
-        "restored": "git checkout -- firmware/main/test/host_app/main/CMakeLists.txt；git diff --stat 空；sha256 3cbfbf65a70cb49d01b0420bdabd1391246bf848ed078a9d37bc8c559d683398 一致；复跑通道 B：5 Tests 0 Failures / RUN_EXIT=0",
-        "note": "通道 B 单变异跑：5 Tests 1 Failures，仅 TEST 5 FAIL，其余 PASS——与冻结矩阵预测（TEST 5 红）一致。TEST 5 走裸读（非注释剥离），登记行摘除后该字面唯一命中消失。"
-      }
-    ]
-  }
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包纯云端部署声明面与引擎 prompt 装配面改动：设备端零感知、不新增或改变任何端→网关消息、帧类型、字段与序列化形态（display E1 / B1 / §三提醒 / §四私有消息帧零触碰），固件零 diff；crossEnd 对端面不存在。"
+  },
+  "changeManifest": [
+    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "server/deploy/openclaw-agents/README.md",
+    "server/deploy/openclaw-agents/kidpal-dynamic-context.v1.txt",
+    "server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER",
+    "server/deploy/provider.config.yaml",
+    "server/deploy/apply-xiaozhi-overlay.sh",
+    "server/deploy/kidpal-agent-prompt.txt",
+    "server/deploy/manifest.yaml",
+    "server/deploy/verify-deploy.sh",
+    "server/deploy/261022-openclaw-kidpal-tools/**",
+    "server/deploy/perf-k1/probe_gate.py",
+    "server/deploy/README.md",
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py",
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/device-memory-overhaul/"
+  ],
+  "riskTier": "medium",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "ai-cost-audit"
+  ],
+  "mergeOrder": 50,
+  "dependsOn": [],
+  "decisionCoverage": [
+    {
+      "decision": "R2 · v11 静态语义迁 workspace-kidpal/AGENTS.md 主承载，引擎只发动态 context 小块",
+      "summary": "静态语义进 OpenClaw stable project context（缓存边界之上）→ 跨回合字节稳定、命中缓存前缀；动态块有界不含纪律。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"
+      ],
+      "landsIn": "exitCriteria:K1-E1"
+    },
+    {
+      "decision": "OQ-8 · 否决 v12 双件；静态语义唯一件 = AGENTS.md，动态模板单件，不新建 prompts/ 平行目录",
+      "summary": "v12 双件会造两处事实源、ADR-001 三面相等退化为三面同指一版 + 影子副本；目录搬家另立纯搬迁批。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3"
+      ],
+      "landsIn": "exitCriteria:K1-E2"
+    },
+    {
+      "decision": "ADR-001 承载不变式重定义：静态面（AGENTS.md + carrier + provider.config 静态三键）与动态面（.config.yaml prompt + 动态模板三键）各自三面集合相等",
+      "summary": "守卫从结构化指向解析当前承载（版本无关）；三面接线与 manifest / marker 锚同批翻，防双源漂移。",
+      "sourceRefs": [
+        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T3",
+        "docs/architecture.md"
+      ],
+      "landsIn": "exitCriteria:K1-E3"
+    },
+    {
+      "decision": "工具面收窄：kidpal agent 可见工具 = read/write/exec/web_search 四项",
+      "summary": "设备 agent 只需 4 项；34 工具 57KB schema/轮属噪音，声明式覆写走 261017 先例（apply/drift/rollback，openclaw.json 不入仓）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§1",
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§2"
+      ],
+      "landsIn": "exitCriteria:K1-E4"
+    },
+    {
+      "decision": "R8 · 课表机械注入位置 = 本包建立的动态 context 块",
+      "summary": "本包只建动态块机制与有界模板；注入内容与单源反证归 P5（消费方）。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ],
+      "landsIn": "package:261022-m5-n2a-schedule-mechanical-injection"
+    },
+    {
+      "decision": "R1 · 持久会话（user 标识 + 只发新回合）不在本包",
+      "summary": "引擎 payload 形状与 OpenClaw 会话键归 P2；本包只保证动态块与静态语义的装配分层。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1"
+      ],
+      "landsIn": "package:261022-m5-k2b-persistent-session"
+    },
+    {
+      "decision": "业务目的 1 · 单轮 prompt_tokens ≤11,000 与 cache 覆盖",
+      "summary": "体积收益是 live 观测项（部署后复测），不进入 host 自动断言；本包以承载拓扑达成结构性前提。",
+      "sourceRefs": [
+        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§1"
+      ],
+      "landsIn": "exitCriteria:K1-E7"
+    }
+  ]
 }
