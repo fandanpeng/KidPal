@@ -191,3 +191,33 @@
 - **OpenClaw 侧机证（node:sqlite 读 agent db）**：`session_windows` 表**恰一条**持久会话窗口，`session_key = agent:kidpal:openai-user:58:e6:c5:72:0c:bc`（device_id = 设备 MAC）——与冻结判定的键形逐字一致、单一窗口承载全部会话；旧行为（每请求 `openai:<randomUUID>`）下不可能出现跨会话保持。
 - **三件机验结论**：① 请求携 `user=<device_id>` ✓（键形在场）；② 零历史重放 ✓（单窗口 + 冻结验收 E1/E2 结构断言承载）；③ 两轮 session 键一致 ✓（跨会话行为 + 单窗口双证）。**K2-E6 = 达标，P2 E1..E6 全闭合、完全收口**。
 - **遗留账**：热修批 `e52e55d1`（edge-tts 载体）+ `aca6c957`（记账）在 `dev/pod-m2` 未进 main——push 归 human，push 后 ECS `deploy.sh` 对账铺载体（消每日 drift timer 的 compose 漂移报，零设备断连）。M5 列车：P1 ✓ P5 ✓ P2 ✓ → 下包 **P3/K3**（mo53）。
+
+## 2026-10-23 · P3（K3 Honcho 记忆生产化）launch + 冻结相位收口（planner，K1/P5/P2 同会话续跑）
+
+- **launch 面**：human 指示起包；board `running`（mo53）；current/ 投影切 K3（stale K2b verdict 移除）；`brief-inputs.mjs` 产单（0 warnings / 14 advisories——NFR-*/TECH-* 裸 token 误报同 P2 先例）；启动卡落盘（纪律红线八条 / A4 backfill 禁区 / openclaw.json 双声明式 patch 顺序 / riskTier=high → ESCALATE 人批为预期路径）。
+- **冻结相位（429 中断 + planner 代收口）**：acceptance-author 派发被 API 429（周配额，reset 10-26）拦腰——**两验收件 1741 行已完整落盘**（test_261022_honcho_memory 696 行 E1/E3/E4 面 + test_261022_memory_isolation 1046 行 E2/E5/E6 面，含头注 FROZEN OFFLINE CONTRACT 与 2 条 live 标记），仅收口回填未做。planner 接手回填：红基线实跑（既有套件剔除新件 = **292 passed / 0 failed / 4 deselected / 33 subtests，P2 后锚逐字命中**）；acceptance 七条目（K3-E1..E7）+ acceptanceTestsFile + redBaselineResult；Step 8b 核出 **AC2 回引缺口**（sourceRefs 声明 S-F5.1-AC2 而 acceptance 各条目零回引——其唯一承载 = K3-E7 live 轮正证）补正；required check 零 error 零 warning；brief 重生成 + 双投影刷新。17 设计态红六源归因：E1 栈面 8 / E6 patch 工作台 7 / E2 / E3 / E4 / E5 各 1；must-stay-green 4 条冻结时点即绿。
+- **acceptance-author dispatch 记账**：terminal-status=interrupted 如实落账（429，非造假完成）。
+
+## 2026-10-23 · K3 builder 一轮全绿 + verifier scoped r2 全绿（planner）
+
+- **builder（opus 档，重头形态）**：17 设计态红全绿——acceptance **313 passed / 0 failed / 6 deselected / 33 subtests**（= 既有 292 零新增红 + 新件 21 条全绿）；unit 115 passed 零新增红。实现：`server/deploy/honcho/` 五件（五容器 compose 全端口显式 127.0.0.1 / honcho.env.example 凭据名字引用 1536 维 / apply-rollback-healthcheck 三脚本）+ `261022-openclaw-honcho-plugin/` 四件（declaration + apply 幂等-drift_guard exit3-时间戳备份 + rollback 同形制 261017/P1 + honcho-plugin.js 资格门 carrier 探针门控 marker）+ manifest 9 条登记 + AGENTS.md v12 单向追加（P1 六锚逐字保留）+ verify-deploy.sh Honcho 核验段（loopback 双核验 + 五容器健康门）。front_app.py 零触碰（E2 must-stay-green 现状即合规——P2 单源构造已封 user 旁路）。插曲自修：manifest note 含 `[` YAML 解析错牵连 9 既有红，改写后全量复跑确认。
+- **口径差修正**：builder 指出 redBaselineResult「转绿目标 296」字面差（冻结时点 passed 计数 vs 红转绿后全量 313）——planner 修正式附算式。
+- **verifier scoped r1**：8 闸 7 PASS + security 红——**taskpackage 拆包 Draft 态缺 securityEvidence 字段**（gateProfile 声明 security 但拆包模板无此字段占位，acceptance-author 回填范围亦未列）；planner 读 security-check.mjs 判据后回填安全证据面文本（loopback / 出网两条记账 / 凭据不入仓 / 资格门 / 删除备份 / 降级五面）即消，非实现缺陷。
+- **verifier scoped r2**（invocation 3374c476）：`ok:true`、factOk true、8 闸全 PASS；verifier-evidence-check 过。board 置 `verifier-green`。
+- **簿记**：builder/acceptance-author dispatch-stamp 落账 + over-scan friction 1 笔（builder 超读申报 5 行，低风险同向消费）。
+
+## 2026-10-23 · K3 integrator 收口（final r3 十闸全绿 + 制品齐 + commit 冻结）
+
+- **范围圈定**：detect_changes impacted_total=56（正常圈定无降级）；scope 清单落 `test-scope-final.txt`（11 测试文件：acceptanceTestsFile 两件 ∪ impactedTests 四件 ∪ 爆炸半径映射 ∪ 共享 seam 三件 ∪ 安全余量两件）。
+- **final bearing round 3**（invocation e59ae7a3）：fact `ok:true`、**10 闸全 PASS**；scope 圈定口径 acceptance 140 passed / 6 deselected；全量口径 313 passed 与转绿目标逐字一致；verifier-evidence-check 过。
+- **制品**：review-packet.md（BLOCKING 无 / SHOULD 无 / NIT×1——verify-deploy.sh honcho 段假设 docker compose v2，ECS 若仅 v1 该段恒判 DRIFT，部署轮顺手核）+ docs-delta.md（声明性注记四条）+ verdict/verification 投影（integrator 首轮漏晋升，advisory 补票轮补齐——补票后 commit amend）。closeout-check exit 0。
+- **commit**：feat(m5-k3) 单 commit 收口 **766c35b4**（amend 后 hash；30 files +3853/−153），本地 dev/pod-m2、不 push、不合并。
+- **簿记**：integrator dispatch-stamp ×2 + pod-retro.md 落盘（closeout advisory Q5 消）。
+
+## 2026-10-23 · K3 supervisor 闸 ESCALATE → 停人类合并门（planner）
+
+- **supervisor 机械闸 = ESCALATE（预期路径，launch-card 钉死）**：riskTier=high（security-axis-declared + adjudicate critical/high）；evidenceComplete、completedRounds 3；provenance v2 经 supervisor-gate-check 全过（exit 0）。verdict 落 `supervisor-verdict.json`；board 置 `blocked`；pod-events 落 agent-escalation（resolution=pending）。
+- **待 human 裁：合并放行**（人批 → pod-events `human-decision` 凭据 → `merge-driver --pod 261022-m5-k3-honcho-memory-production --human-approval-ref <eventId>` 本地合并；人批不豁免 off-main/契约/provenance，闸照拦）。
+- **停等位：`awaiting-human:merge-approval` + `awaiting-human:live-deploy`**——K3-E7 live 观测项（新 WS 新会话跨会话回忆对照 / seeded 负向探针 live 轮零命中 / marker 探针 DB+日志双证 / 2C/4G prep 税与内存读数复测回填 TECH-261022-openclaw-prep-tax-memory-pressure / arch §6.7 抽取策略实测成形〔回填走 /arch-change〕）。**部署轮注意（比 K2b 多两步）**：① `/opt/honcho/.env` 先填真实凭据（模板 honcho.env.example）；② ECS /opt/honcho 已有在跑探针栈——铺放前先 diff 线上 compose 与本仓声明（manifest md5 核验会把差异显式化为 drift，属预期报警路径）；③ verify-deploy.sh honcho 段假设 docker compose v2 在位（NIT）；④ plugin patch apply 须在 P1 已应用态之后顺序跑。
+- **M5 五包列车进度**：P1 ✓ → P5 ✓ → P2 ✓ → **P3/K3 全绿待人批合并（mo53）** → P4/K4（mo54）。
+- **advisory 转交**：loop-retro 触发阈值已到（22 pending + 8 waiting = 30 ≥ 3），发起归主线程（run /loop-retro）。
