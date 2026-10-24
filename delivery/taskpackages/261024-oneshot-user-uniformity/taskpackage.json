@@ -9,7 +9,7 @@
     "workstream": ""
   },
   "subsystem": "server/gateway/front（一次性回合调用链 _openclaw_chat_once / _organize_and_archive / _story_guide_round / _story_finish_session）+ server/gateway/provider.py（payload 单源）+ server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json（声明工件换代）+ server/acceptance（锚换代件）+ server/tests（桩签名同步）",
-  "story": "261024-oneshot-user-uniformity · 一次性回合携 user 统一：front 引导/整理两条一次性 LLM 回合统一携 user=<device_id>（WS 会话上下文 device-id 头），全部落 agent:kidpal:openai-user:<device_id> 设备 session 键族；noisePatterns 补丁键退役（声明 5键→4键）；指令挪 request 级 system 已裁决 = 挪（user 消息 = 纯孩子内容，附 prompt 制品 manifest 登记与空制品回填兜底，见 plan.md ③）；K3-E2 验收锚方向反转显式换代（新形状 {model,messages,stream,user} 且 user=<device_id>）。技术语义权威 = plan.md",
+  "story": "261024-oneshot-user-uniformity · 一次性回合携 user 统一：front 引导/整理两条一次性 LLM 回合统一携 user=<device_id>（WS 会话上下文 device-id 头），全部落 agent:kidpal:openai-user:<device_id> 设备 session 键族；noisePatterns 补丁键退役（声明 5键→4键）；指令挪 system 已被 live 证伪回退 = user 消息恒定「指令+素材」包装（修正案 R2，见 plan.md）；K3-E2 验收锚方向反转显式换代（新形状 {model,messages,stream,user} 且 user=<device_id>）。技术语义权威 = plan.md",
   "planRef": "delivery/taskpackages/261024-oneshot-user-uniformity/plan.md",
   "sourceRefs": [
     "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md",
@@ -59,7 +59,9 @@
   "adrRequired": false,
   "mutationRequired": false,
   "mutationSkipReason": "user 通道承载断言 = payload 键集/user 值行为级真跑（K3-E2 换代件 spy openclaw_stream_request 捕获）+ 声明逐字静态锚 + 降级路径行为断言；改动面为薄装配（user 键透传 + device-id 头提取），分支逻辑由行为断言直接覆盖，变异取证 ROI 不成立（批 B 同款降级声明前置）。",
-  "mutationEvidence": { "perAcceptance": [] },
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
   "crossEnd": {
     "counterparts": [],
     "exempt": "纯 server 云内改动：front→OpenClaw loopback HTTP payload 的 user 键是云端运行态请求字段，非跨端 wire（帧类型/字段类型与承载/回执语义/序列化形态零触）；设备端零感知、固件零 diff、WS device-id 头本就存在（engine websocket_server 既有要求），本包不改任何设备面协议。"
@@ -81,5 +83,5 @@
   ],
   "dependsOn": "批 B（261023-honcho-memory-wiring-restoration）已合 main——插件接线 + 声明工件 + noisePatterns 现状为本包换代基座；live noisePatterns 已由 human 在 ECS 清空（主线程已做），本批只做声明对齐 + manifest/verify 一致性核对",
   "mergeOrder": null,
-  "notes": "起包前置自查（DEV-GOVERNANCE 起包格式期望六条）：① mutation 降级声明已前置（mutationSkipReason）；② 断言格式 = A1-A3 + LOOP-X、验收 ID 无括号；③ 验收 ID 无括号形态；④ 降级声明 = live 面零本包动作（noisePatterns ECS 清空已由 human 主线程完成，退役实证 = 部署轮实读 openclaw.json；指令挪 system 输出质量离线不可证 = 真机 3-5 例抽检兜底；prompt 制品 first-run 部署语义见 plan.md ③）；⑤ 新约定包闸判据自查：本包无新约定，user 通道沿 openclaw_stream_request 既有单源扩展（engine-patch openai.py 同源先例）；⑥ 输入面期望 = input-brief 单份 + 超读申报 + crossEnd 已填（exempt 理由 ≥12 字）。scope-map 核对（1c）：builder/fixer allow 含 server/**、deny 含 **/acceptance/**（验收件归 acceptance-author）；本包全部 target 路径（front 调用链 + provider + 声明 + manifest + 验收件）在各自角色 allow 面内，零新登记。architect 预评（1g，2026-10-24）两修正已采纳：条件传参（八处既有桩零改，unit 桩签名同步从 manifest 撤出）+ prompt 制品部署洞补丁（manifest 登记 + 空制品回填兜底 + first-run 注记）；技术语义权威 = plan.md（技术方案节含预评留痕）。纪律红线：docs/contracts/** 与 arch/requirements 本体只读（spec 过时面归在途批）；插件本体（@honcho-ai/openclaw-honcho dist）与 Honcho 栈只读；openclaw.json 不入仓、声明零 secret；禁 expect:unset 假牙。"
+  "notes": "起包前置自查（DEV-GOVERNANCE 起包格式期望六条）：① mutation 降级声明已前置（mutationSkipReason）；② 断言格式 = A1-A3 + LOOP-X、验收 ID 无括号；③ 验收 ID 无括号形态；④ 降级声明 = live 面零本包动作（noisePatterns ECS 清空已由 human 主线程完成，退役实证 = 部署轮实读 openclaw.json；指令挪 system 输出质量离线不可证 = 真机 3-5 例抽检兜底；prompt 制品 first-run 部署语义见 plan.md ③）；⑤ 新约定包闸判据自查：本包无新约定，user 通道沿 openclaw_stream_request 既有单源扩展（engine-patch openai.py 同源先例）；⑥ 输入面期望 = input-brief 单份 + 超读申报 + crossEnd 已填（exempt 理由 ≥12 字）。scope-map 核对（1c）：builder/fixer allow 含 server/**、deny 含 **/acceptance/**（验收件归 acceptance-author）；本包全部 target 路径（front 调用链 + provider + 声明 + manifest + 验收件）在各自角色 allow 面内，零新登记。architect 预评（1g，2026-10-24）两修正已采纳：条件传参（八处既有桩零改，unit 桩签名同步从 manifest 撤出）+ prompt 制品部署洞补丁（manifest 登记 + 空制品回填兜底 + first-run 注记）；技术语义权威 = plan.md（技术方案节含预评留痕）。纪律红线：docs/contracts/** 与 arch/requirements 本体只读（spec 过时面归在途批）；插件本体（@honcho-ai/openclaw-honcho dist）与 Honcho 栈只读；openclaw.json 不入仓、声明零 secret；禁 expect:unset 假牙。 修正案 R2(2026-10-24 live 证伪回退,human-correction f13a53a8):指令挪 system 裁决被真机实证证伪(OpenClaw openai-http 不跟请求级 system)——user 消息恢复恒定「指令+素材」包装(回填兜底分支坍缩,制品缺失仅 warning),request 级 system 保留并存,携 user=<device_id> 半保留不动(live 实证归属正常);冻结件相关断言由 acceptance-author 换代后 fixer 落补丁,全量绿为准。"
 }

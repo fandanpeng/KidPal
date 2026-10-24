@@ -87,6 +87,24 @@
 - UI design-review：N/A（本包零 UI 面）。
 - 跨面 spine：非在册 spine 包（human-ad-hoc 单面包，workstream=""），退出报告含包收口实态供主线程按需回写。
 
-## 11. 等待 supervisor 裁断
+## 11. R2 修正轮（live 证伪回退 · human-correction f13a53a8）
+
+**live 证伪实证**（2026-10-24 10:10-10:11 真实记录会话）：「指令挪 request 级 system」裁决被证伪——整理/引导两回合模型**不跟** request 级 system 指令（OpenClaw openai-http 路径以 AGENTS.md 载体为主，请求级 system 疑似被替换/忽略）：整理产出聊天腔、产生坏归档件 `stories/2026-10-24-sc4238164`（131 字节，留待重录覆盖或 human 手删——**本包不碰生产数据**）；引导回复聊天腔超长（播报侧截 30 字、全量进记忆库）。这是 §5/§6 所述「回归风险 = 最近指令效应，离线不可证」的实证兑现：host 半绿（payload 断言、声明锚全绿）不能证 LLM 对 system 载体的遵从性。
+
+**回退裁决**：human-correction `f13a53a8`（pod-events 在锚）——按 human 原则「回到验证过的形态」修正 plan.md ③ 裁决：user 消息恢复「指令 + 素材」包装，**恒定包装**（不再区分制品在场与否）；旧「空制品回填兜底」分支随语义坍缩（制品缺失 = 仅 warning，行为无差）。
+
+**R2 修复面**：`server/gateway/front/front_app.py`——`_organize_and_archive` / `_story_guide_round` 恒定包装 + R2 注记 docstring；`_load_prompt_artifact` / `_openclaw_chat_once` docstring 同步。**批 C 携 user 半不动**（live 实证归属 owner/agent-kidpal 完美）：payload {model,messages,stream,user}、条件传参、device-id 原值透传零改动；request 级 system 制品装载保留并存；manifest 两 prompt 条目登记保留。验收换代（`test_261022_memory_isolation.acceptance.py`）：「user 消息 = 纯文」断言改「含指令包装」，④ 回退路径断言同步，换代事由 = live 证伪 + human-correction f13a53a8 显式留痕。
+
+**数字轨迹（R2 冻结后）**：
+| 相位 | acceptance（-m "not live"） | unit |
+|---|---|---|
+| R2 冻结后（设计态红） | **1 failed**（user 消息包装断言红，零 error） | — |
+| fixer 转绿 | **333 passed / 0 failed / 7 deselected / 33 subtests** | **115 passed / 19 deselected** |
+| verifier scoped r3（round 3，inv ed4f3dd0） | 闸绿（lite scoped 闸，evidence = `verifier-evidence/rounds/r3.json`，ok:true） | — |
+| verifier final r4（round 4，inv daf5b887） | 十闸全绿（含 firmware-build 真编译、unit、acceptance），evidence = `verifier-evidence/rounds/r4.json`，ok:true；`current/verdict.json` 投影 = r4 | — |
+
+**未覆盖面申报（R2 注记）**：live 复证（指令包装恒定后整理/引导行为恢复验证过形态）= **下一部署轮 + 真机轮**（离线不可证，与 §4 既有申报同口径）；检索质量残余（引导/整理回复全量进记忆库含聊天腔）与双回合重复入记忆**继续在册**，部署轮看检索（docs-delta §四）。§4 的「真机 3–5 例抽检」条目语义由 R2 更新为**恒定包装形态下整理输出质量**（原「指令挪 system 输出质量」口径随证伪退役）。
+
+## 12. 等待 supervisor 裁断
 
 本 packet 不自行判定合并通过；合并门 = supervisor 复核 + 前置升级闸（`pre-merge-escalation-gate.mjs`）放行后 planner 主线程 merge-driver 本地合并。回滚方式：dev/pod-m2 分支 commit 粒度回滚（`git revert <hash>` 或 reset 至本 commit 前），实现面 5 文件均可独立还原，无 schema/数据迁移面。
