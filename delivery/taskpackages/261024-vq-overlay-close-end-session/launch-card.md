@@ -10,7 +10,7 @@
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch`（常驻分支 `dev/261016-sd-card-mount`，已 reset 到 main `6e8425ff`），树内 tracked 净、host 与 firmware `build/` 热缓存在场、managed_components 在场；专属图索引 `C-AI-KidPal-pod-m1-k1a-key-layer-dispatch` 已按 main 刷新（nodes 20629 / edges 59118，等于 expected）。树池交接卫生已核：host_app sdkconfig 已删并从 defaults 重生、无其它 untracked 残留。
 - **真机门前停等预期**：本包行为半（真断连 / 真静音 / 首页不再收音）host 不可闭环，验收含 human 真机目检六项（plan ⑧-5：播报中 BOOT 短按 / KEY 长按收尾；播报中 KEY 短按仍打断；聆听态零回归；Connecting 可回 Idle；T 秒常驻重建）。planner 跑完代码面断言 + 设备编译闸后在真机门前停（status=`awaiting-human:real-device`，按现有闭集可退 `blocked` + 事件），不自行烧录。
 - **合并门预期**：riskTier=high 触发升档判据与 supervisor 重点核；契约面零触碰，但 `pre-merge-escalation-gate.mjs` 照跑。
-- **会话标识**：本条由主线程 headless 拉起（2026-10-24，启动后回填 PID / 终端标识）。
+- **会话标识**：主线程 headless 拉起（2026-10-24 19:18 点火；npm wrapper PID `24324` / node PID `8644`）。叫停时先核这两个进程确实已死，再处置树与分支。
 
 ## 命令行（worktree = C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch，分支 dev/261016-sd-card-mount）
 
