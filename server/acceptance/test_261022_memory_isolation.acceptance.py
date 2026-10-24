@@ -17,6 +17,19 @@ plugin 插件工作台（声明 / apply / rollback）+ manifest 工作台条目 
     → test_k3_e6_patch_generator_product_four_keys。
 历史 taskpackage 引旧名处原样不动（本映射为准）。
 
+锚换代 R2 修正（261024-oneshot-user-uniformity 修正案 R2 · live 证伪回退 ·
+human-correction f13a53a8，2026-10-24）：live 真机实证（2026-10-24 10:10-10:11
+真实记录会话）证伪上一段「指令挪 request 级 system」——OpenClaw openai-http
+路径不跟请求级 system 指令（AGENTS.md 载体为主，请求级 system 疑似被替换/
+忽略），整理/引导回合产出聊天腔。human 裁决回退到验证过形态：user 消息恢复
+**恒定「指令 + 素材」包装**（整理 = K3_ONESHOT_ORGANIZE_WRAP、引导 =
+K3_ONESHOT_GUIDE_WRAP，**不再区分制品在场与否**——上一段「user 消息 = 孩子
+内容纯文」与「空制品回退 = 回填」两条表述随 R2 修正，旧痕保留如上不抹；空
+制品回退分支坍缩 = 制品缺失仅 warning、user 消息内容两态无差）；request 级
+system 制品装载**保留并存**（host 无感）；**携 user=<device_id> 半保留不动**
+（live 实证归属 owner/agent-kidpal 正常）——本件 payload 键集恰 {model,
+messages, stream, user} 且 user=<device_id> 全套断言零改动。
+
 上游 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/
 memory-wiring-advisory-20261023.md（§1 已验证接线证据 / §6 方案甲 / §7 锚换代
 清单 / §8 shaping / §9 网关安全序）+ 本包 plan.md 冻结语义六条 + human 三项
@@ -65,6 +78,9 @@ integrator docs-delta 逐条对账）：
       设备 session 库（one_shot 判定口径已反转），残余只余 assistant 回复
       单条入库 = 申报、**不判红**（低害：整理产物是孩子自己的故事；指令挪
       system 后 user 消息 = 纯孩子内容，无指令句噪声入 session）。
+      【R2 注记 2026-10-24：「无指令句噪声入 session」一句随恒定包装回退
+      失效——指令句包装随统一 user 通道入设备 session 库 = 回退后接受形态；
+      低害理由余「整理产物是孩子自己的故事」一条。】
   R2. QQ 回合落消息（senderId 独立 peer、owner 画像基本无污染，但消息入库且
       可能经 honcho_search_messages 可搜）——可搜性待部署轮 OQ-3 实测，本包
       只申报不实现挡置。
@@ -89,6 +105,12 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
      纯文（两条 prompt 制品全文作为 request 级 system 装载），_load_prompt_
      artifact 空回退 = user 消息回填现行完整包装形态（最坏退回旧 live 行为）
      + warning 留痕。
+     【R2 修正 2026-10-24（live 证伪 + human-correction f13a53a8），上文旧痕
+     保留】：user 消息**恒定**为「指令 + 素材」包装——整理回合 =
+     K3_ONESHOT_ORGANIZE_WRAP.format(material=...)、引导回合 =
+     K3_ONESHOT_GUIDE_WRAP.format(spoken=...)，制品在场与否无差；制品在场 →
+     messages 恰 [system, user]（request 级 system 保留并存）、制品缺失 →
+     messages 恰 [user] + warning 留痕（回退分支坍缩，仅 warning）。
 
   B) server/deploy/261022-openclaw-honcho-plugin/ 插件工作台（声明 / apply /
      rollback 三件；自研 carrier 已弃用删除）：
@@ -299,8 +321,9 @@ evidence 类断言仓根由 __file__ 显式推导，不依赖调用点 cwd。行
 
 must-stay-green（冻结时点即绿，builder 不得回退）：
   · 换代件内负锚/保留面半（冻结时点即绿）：降级路径断言（device-id 缺席 →
-    payload 缺 user 键）与空制品回退断言（user 消息回填现行完整包装形态）
-    在现行树已绿、换代后须保持；声明零 secret 负锚保；
+    payload 缺 user 键）与空制品回退断言（user 消息回填现行完整包装形态）在
+    现行树已绿、换代后须保持（R2 注记：恒定包装换代后该回退断言即恒定包装
+    本体，行为两态无差）；声明零 secret 负锚保；
     agent:kidpal:openai-user: session 家族字面保留 + 零其它 agent:kidpal:
     形态变体负锚保。
   · 姊妹件零触碰：test_261022_honcho_memory（K3-E1 栈面 + K3_P1_AGENTS_ANCHORS）、
@@ -758,19 +781,27 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
         （261024 换代主锚；行为级，离线真跑）。换代事由 = human 2026-10-24 裁
         R7/OQ-4 隔离口径退役；旧名 test_k3_e2_front_oneshot_payload_no_user
         （断言 payload 恰 {model, messages, stream} 零 user）方向反转、显式
-        换代非静默放宽（旧名映射见本件头注首段与 A 节）。断言四路：
+        换代非静默放宽（旧名映射见本件头注首段与 A 节）。
+        R2 修正（修正案 R2 · live 证伪回退 · human-correction f13a53a8，
+        2026-10-24）：live 证伪「指令挪 request 级 system」——OpenClaw
+        openai-http 不跟请求级 system，回退恒定「指令+素材」包装。断言四路：
         ① 整理收尾链：_story_finish_session 从会话腿 device_ws.headers 提取
           device-id 原值透传 → payload 键集恰 {model, messages, stream, user}
-          且 user=<device_id>；messages 恰 [system, user] 且 user 消息 =
-          material 纯文（指令挪 request 级 system——旧包装句不再尾随 user）；
-        ② 引导链：_story_guide_round 同形状，user 消息 = spoken 纯文；
+          且 user=<device_id>（携 user 半保留不动，零改动）；messages 恰
+          [system, user]（制品在场 → request 级 system 保留并存）且 user 消息
+          = K3_ONESHOT_ORGANIZE_WRAP 恒定包装（R2 回退：旧「material 纯文」
+          断言随 live 证伪换代，旧痕见头注）；
+        ② 引导链：_story_guide_round 同形状，user 消息 = K3_ONESHOT_GUIDE_WRAP
+          恒定包装；
         ③ 降级路径（must-stay-green 保留面）：device-id 缺席 → payload 缺
           user 键（诚实降级，不冒用身份）；
         ④ 空制品回退（must-stay-green 保留面）：_load_prompt_artifact 返 ""
-          → user 消息回填现行完整包装形态（plan.md ③ 形态 2，最坏退回旧
-          live 行为）。
-        ①② 在现行树设计态红（payload 尚无 user 键、user 消息尚带包装句）；
-        ③④ 在现行树与换代后均须绿。"""
+          → messages 恰 [user]、user 消息 = 同一恒定包装（R2：行为与制品在
+          场无差，回退分支坍缩为仅 warning——旧「回填现行完整包装形态」表述
+          随恒定包装语义吸收，断言形态不变）。
+        R2 设计态红基线：①② 仅 user 消息内容断言红（现行树 payload 已携
+        user 键且 user 消息 = 纯文，包装断言待 fixer 换实现）；③④ 现行树即绿
+        且换代后须保持。"""
         tag = "K3-E2"
         mod, err = _load_front_app()
         self.assertIsNotNone(mod, f"{tag} RED: front_app.py 离线不可装载 —— {err}")
@@ -830,11 +861,15 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
                         f"{[m.get('role') for m in p_fin['messages']]}，须恰 "
                         "[system, user]（request 级 system 承载整理制品指令）。")
                     self.assertEqual(
-                        p_fin["messages"][-1]["content"], material,
+                        p_fin["messages"][-1]["content"],
+                        K3_ONESHOT_ORGANIZE_WRAP.format(material=material),
                         f"{tag} RED: 整理回合 user 消息 = "
-                        f"{p_fin['messages'][-1]['content']!r}，须为 material "
-                        "纯文（指令挪 request 级 system——包装句尾随 user 会随 "
-                        "统一 user 通道进设备 session 被 deriver 抽成噪声）。")
+                        f"{p_fin['messages'][-1]['content']!r}，须恒定为"
+                        "「指令+素材」包装 K3_ONESHOT_ORGANIZE_WRAP（R2 回退："
+                        "live 证伪 2026-10-24——OpenClaw openai-http 不跟请求级"
+                        " system 指令，整理产出聊天腔；human-correction f13a53a8"
+                        " 裁回退验证过形态。旧「material 纯文」断言随证伪换代，"
+                        "旧痕见头注）。")
                     # -- ② 引导链：同形状 + spoken 纯文 ----------------------
                     captured.clear()
                     front._register_session_legs(sid_guide, device_ws, engine_ws)
@@ -857,10 +892,13 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
                         f"{tag} RED: 引导一次性回合 payload user = "
                         f"{p_guide.get('user')!r}，须恰 {K3_ONESHOT_DEVICE_ID!r}。")
                     self.assertEqual(
-                        p_guide["messages"][-1]["content"], spoken,
+                        p_guide["messages"][-1]["content"],
+                        K3_ONESHOT_GUIDE_WRAP.format(spoken=spoken),
                         f"{tag} RED: 引导回合 user 消息 = "
-                        f"{p_guide['messages'][-1]['content']!r}，须为 spoken "
-                        "纯文（指令挪 request 级 system）。")
+                        f"{p_guide['messages'][-1]['content']!r}，须恒定为"
+                        "「指令+素材」包装 K3_ONESHOT_GUIDE_WRAP（R2 回退："
+                        "live 证伪 2026-10-24 + human-correction f13a53a8，"
+                        "与整理回合同一恒定包装口径）。")
                     # -- ③ 降级路径：device-id 缺席 → 缺 user 键 -------------
                     captured.clear()
                     front._register_session_legs(sid_degraded, naked_ws, engine_ws)
@@ -903,15 +941,17 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
                         [m.get("role") for m in p_fb["messages"]], ["user"],
                         f"{tag} RED: 空制品回退路径 messages 形状 = "
                         f"{[m.get('role') for m in p_fb['messages']]}，须恰 "
-                        "[user]（制品缺失 = 无 request 级 system，user 消息"
-                        "回填完整包装形态承指令）。")
+                        "[user]（R2：制品缺失 = 无 request 级 system，仅 "
+                        "warning 留痕——回退分支坍缩，user 消息内容与制品在场"
+                        "无差）。")
                     self.assertEqual(
                         p_fb["messages"][-1]["content"],
                         K3_ONESHOT_ORGANIZE_WRAP.format(material=material),
                         f"{tag} RED: 空制品回退路径 user 消息 = "
-                        f"{p_fb['messages'][-1]['content']!r}，须回填现行完整"
-                        "包装形态（plan.md ③ 形态 2：最坏情况退回旧 live 行为，"
-                        "不是无指令）。")
+                        f"{p_fb['messages'][-1]['content']!r}，须为同一恒定"
+                        "包装 K3_ONESHOT_ORGANIZE_WRAP（R2：恒定包装不再区分"
+                        "制品在场与否——旧「回填现行完整包装形态」表述被恒定"
+                        "包装语义吸收，行为与 ① 在场路径无差）。")
             finally:
                 front.STORIES_DIR = old_dir
                 front._story_acc = old_acc
