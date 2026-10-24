@@ -237,3 +237,12 @@
 - **验证**：scoped r5（invocation `baf02b5c`）8 闸绿；**final r6**（invocation `7c3e9a1f`）10 闸全绿、fact `ok:true`（scope 圈定口径：acceptance 52 passed / 3 deselected；unit 78 passed / 3 subtests，单测扩容 68→78 RestWireCase 十项 wire 形状断言）；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `test-scope-final-r6.txt`（per-Pod 索引 detect_changes 正常圈定，impacted_total=0，清单件数与 r4 相同）。
 - **制品**：verdict.json（r6 fact 晋升）+ verification.json（finalScopedRun r6、priorRounds r1..r5）+ review-packet.md §13 wire 修复轮节（未覆盖面申报同步刷新：REST wire 形状从「未定形首验点」改为「host 面已落定，剩 metadata 可达性等四项 live 对账」）。commit 待落（本节随 commit 入册）。
 - **停等位不变**：`awaiting-human:live-deploy`——K4-E6 live structural 项 + 收敛后四项 live 对账（metadata 可达性 / 真语料格式 / observations 异步增量 / 回滚逐 session 量预测）挂 human 部署轮。
+
+## 2026-10-23 · K4 合并收口——human 人批 → merge-driver DONE(planner)
+
+- **人批**：coordinator 转达 human 主会话既定指令「那就正常等吧,改完你再看一下 就走合并」+ 主线程对照审查通过(端点逐字对齐 /opt/honcho/src 含 workspace 作用域 / 请求体形状对 schemas / 全量 acceptance 333 passed 主线程独立实跑 / 语义零回退 + JWT 缺省容忍 USE_AUTH=false 确认)→ 审查通过即合并授权生效。pod-events human-decision 凭据 `3ad7e842`(actor=human,payload.decision="approve-escalated-merge",五要素一次到位)。
+- **合并**：merge-driver **DONE**(approval-ref 核验 OK → escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK,merge token 串行化走完)。merge commit `fe5d524c`(human-approval-ref 在案);Step 5b 簿记落 main(`911cb5dc`)。
+- **收口状态**：board K4 = **merged**(mo54,M5 列车 P1/P5/P2/P3/P4 五包全 merged);INDEX dev 段重建投影;本地 main 领先 origin/main,push 归 human。
+- **停等位：`awaiting-human:live-deploy`**——K4-E6 live 运维项挂 human 部署轮:ECS 全量 backfill + 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查;四项 live 对账点(metadata 可达性 / 真语料格式 / DELETE 202 异步窗差 / conclusions 派生等待窗)。HONCHO_JWT 环境变量按 USE_AUTH 现状决定注入(现 ECS 未设 = false 形态,可不注入,工具容忍缺省)。
+- **M5 五包列车进度**:P1 ✓ → P5 ✓ → P2 ✓ → P3 ✓ → **P4/K4 ✓(merged,待 live 部署)**;真机轮归 P5 收口轮(「王一诺」类旧事抽问)。
+- **advisory 转交**：loop-retro 阈值已到(32 ≥ 3),发起归主线程。

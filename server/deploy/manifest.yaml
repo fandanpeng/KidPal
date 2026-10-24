@@ -64,6 +64,20 @@ entries:
   - {src: server/gateway/story.py,
      dst: /opt/kidpal/front/gateway/story.py,
      owner: deploy.sh, verify: md5, restart: front}
+  # 两枚 request 级 system prompt 制品（front_app 每次回合现读 PROMPTS_DIR，无服务
+  # 重启面——restart: none）。261024 换代：指令挪 system 后 live 指令全在制品里，
+  # 缺位 = _load_prompt_artifact 返 "" -> 空制品回填包装形态兜底（最坏退回旧 live
+  # 行为）；本登记同时偿还 261022 polish 改 guide-round.v1.md 但 manifest 未登记的
+  # 欠账（first-run 语义：新登记条目在 live 缺席时部署前置漂移核验会 REFUSE，该次
+  # 部署须 --first-run 或先手工置入两文件）。
+  - {src: server/gateway/front/prompts/faithful-organize.v1.md,
+     dst: /opt/kidpal/front/front/prompts/faithful-organize.v1.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 整理回合 request 级 system 指令（自包含任务定义/忠实义务/输出格式）；空制品回退 = user 消息回填现行完整包装形态 + warning}
+  - {src: server/gateway/front/prompts/guide-round.v1.md,
+     dst: /opt/kidpal/front/front/prompts/guide-round.v1.md,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 引导回合 request 级 system 指令（≤20 字轻声引导/不代编）；空制品回退 = user 消息回填现行完整包装形态 + warning}
 
   # ── 引擎 overlay 输入面（deploy.sh 铺 → overlay 渲染消费）──
   - {src: server/deploy/engine-patch/connection.py,
@@ -294,13 +308,13 @@ entries:
   # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 安全 apply/回滚脚本。
   # 自研 carrier（honcho-plugin.js）已弃用删除（三层失效：配置形状被 schema 拒收 / 不是
   # OpenClaw 插件 / 调用的端点不存在），接线 = 上游 npm 插件 @honcho-ai/openclaw-honcho@1.7.0
-  # + plugins.entries.openclaw-honcho 5 键（含 config.noisePatterns）。
+  # + plugins.entries.openclaw-honcho 4 键（noisePatterns 已随 261024 换代退役）。
   # 与 261017 skills / 261022 P1 tools 声明工件作用于同一运行态文件，组合共存、
   # 互不整文件改写；drift_guard 现状锚 = P1 已应用态（tools.allow 四项）。
   - {src: server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
      owner: deploy.sh, verify: md5, restart: none,
-     note: Honcho 插件声明（plugins.entries.openclaw-honcho 5 键：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId=kidpal / config.noisePatterns；drift_guard 现状锚 = P1 tools.allow 四项已应用态；零 secret）}
+     note: Honcho 插件声明（plugins.entries.openclaw-honcho 4 键：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId=kidpal；noisePatterns 第 5 键随 261024 换代退役——退役无机械验证面，实证 = 部署轮实读 openclaw.json；drift_guard 现状锚 = P1 tools.allow 四项已应用态；零 secret）}
   - {src: server/deploy/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
      owner: deploy.sh, verify: md5, restart: none,

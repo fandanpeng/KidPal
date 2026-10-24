@@ -6,10 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (87)
+## dev (88)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261024-oneshot-user-uniformity](261024-oneshot-user-uniformity/) | 2026-10-24 | — | closed | — |
 | [261023-agents-md-static-semantics-alignment](261023-agents-md-static-semantics-alignment/) | 2026-10-23 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/agents-md-advisory-20261023.md | closed | — |
 | [261023-honcho-memory-wiring-restoration](261023-honcho-memory-wiring-restoration/) | 2026-10-23 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md | closed | — |
 | [261022-diag-log-content](261022-diag-log-content/) | 2026-10-22 | delivery/taskpackages/261022-diag-log-content/plan.md | closed | — |
