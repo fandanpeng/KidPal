@@ -1,80 +1,124 @@
 {
-  "changeId": "261024-m5-k4b-corpus-parser-v2",
-  "rigor": "lite",
-  "sourceType": "arch-review",
+  "changeId": "261024-vq-overlay-close-end-session",
+  "rigor": "full",
+  "riskTier": "high",
+  "sourceType": "regression",
   "origin": {
-    "type": "arch-review",
-    "human-verbatim": "human 五项裁决(2026-10-24,经 coordinator 转达):D1=解析层「归组+内嵌拆分」(review 修正案1,离线模拟 1652 行→2879 条 user 1580/assistant 1299,无损);D2=transcript 批次一并回滚、不重灌(影子导出主键冲突静默跳过/跨会话混采/不可复现,导出器重建登记 debt);D3=created_at 回填语料文件日期当天 12:00 +08:00;D4=EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 + 重灌后允许少量截断、超阈升级;D5=重灌排低峰窗口。",
-    "upstreamType": "arch-review",
-    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
-    "upstreamFrozen": "advisory 落盘 2026-10-24 + human D1-D5 五项裁决;fixer 未 commit 补丁按 review §1.5 裁定 KEEP 为解析器 v2 基底;plan.md 即冻结技术输入、只读消费",
-    "workstream": "device-memory-overhaul"
+    "type": "regression",
+    "human-verbatim": "「查一下设备端日志，他刚才都返回首页了，结果还在聆听，而其还有语音回复，但是页面还是首页」（2026-10-24 human 原话，逐字）。设备 TF 卡 KPLOG011 段 18:38-18:42 逐秒还原 + KPLOG010 同日 7 次同动作对照；debt 条目 TECH-261024-overlay-close-speaking-no-session-end。",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "upstreamFrozen": "",
+    "workstream": ""
   },
-  "subsystem": "server/deploy/honcho/backfill(corpus 解析器 v2:双层识别+归组+内嵌 turn 拆分+created_at 回填+toolResult 路由+报告扩展;rollback 选择性删除 --source-kind)+ server/deploy/honcho/honcho.env.example(两键同步)",
-  "story": "S-F5.1 · 记住孩子说过的事(AC5 历史照记)——历史补录的归因正确性修复:corpus 语料实为双层前缀+内嵌上下文块,只修 role 治不到主症状(源消息 440/444/445 类把小伴的话嵌在 user 消息体里),deriver 已把 agent 话术抽成孩子事实;本包落 review 修正后的确定性解析层,使重灌后的画像只含真实归因。story 语义权威 = docs/requirements.md v1.67 现文;技术方案权威 = review 修正案 §2.1。",
-  "planRef": "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/plan.md",
+  "subsystem": "firmware/main/application（会话结束入口 + 主循环事件位）+ firmware/main/boards/waveshare-s3-rlcd-4.2（GLOBAL_ACT_OVERLAY_CLOSE 级联收窄）+ firmware/main/test（既有验收断言重钉与结构断言）",
+  "planRef": "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md",
+  "changeManifest": [
+    "firmware/main/application.h",
+    "firmware/main/application.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "changeManifestNotes": "triage architect reviewed plan 原样种子。设备侧仅 waveshare-s3-rlcd-4.2 一块板消费 OVERLAY_CLOSE（全仓 grep 唯一），其余板零触面；ToggleChatState / device_state_machine.cc / 协议层 / contracts 均不改。",
+  "story": "261024-vq-overlay-close-end-session · 播报态关层必须真正结束会话——新增 MAIN_EVENT_END_VOICE_SESSION + Application::EndVoiceSession() 统一结束入口（覆盖 Connecting / Listening / Speaking 三态），板级 GLOBAL_ACT_OVERLAY_CLOSE 改调该入口；播报态显式 ResetDecoder 即时静音 + abort + CloseAudioChannel + Idle + LOW_POWER + local_close_settle(src=overlay_close) + ScheduleResidentRebuild。修复「回首页后麦克风仍开、4 分钟后仍在首页出声问答」；KEY 短按打断语义零改动。技术语义权威 = plan.md。",
   "sourceRefs": [
-    "S-F5.1-AC5",
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
-    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/taskpackage.json",
-    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/review-packet.md"
+    "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md",
+    "docs/requirements.md#§2.3"
   ],
-  "acceptanceRefs": [
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md#§4"
-  ],
-  "acceptance": ["K4B-E1", "K4B-E2", "K4B-E3", "K4B-E4", "K4B-E5", "K4B-E6"],
-  "acceptanceTestsFile": ["server/acceptance/test_261022_honcho_backfill.acceptance.py"],
-  "impactedTests": [
-    "server/deploy/honcho/backfill/test_backfill_honcho_unit.py",
-    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
-  ],
-  "requiredLayers": ["unit", "acceptance-offline", "snapshot-audit"],
-  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "2026-10-24 实跑回填：cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 340 passed / 7 deselected / 33 subtests passed(27.8s)——333 既有全绿零回退 + 本包新增 7 件(K4B 解析器 v2 + Gate A 判据)全绿;单测 64 passed。零 skip——A3 快照审计(c:/tmp/k4-corpus-review/txt 21 文件)本机实际执行,逐值等(1652→1007→2879,user 1580/assistant 1299,wrapper 350)。本包 = 绿基线形态(改动已在工作树,无新增红);快照缺席机器 A3/A4 显式 skipTest 申报(诚实降级)。",
-  "exitCriteria": [
-    "K4B-E1(D1):解析器 v2 落地——逐行双层识别(fixer 补丁 KEEP)+ 续行归组(同文件+同[ref]+同第二层 role 连续行合并,换行保留)+ 内嵌 turn 拆分(user 组按 (?<=\\s)(User|Assistant): )切段,首段沿用外层 role,其后按标记定 role)+ 包装标记 [Chat messages since your last reply - for context] / [Current message - respond to this] 剥离并计数 wrapperMarkersStripped;真语料快照锚定数 = 1007 组 → 2879 条(user 1580 / assistant 1299)、unparsed=0、无损",
-    "K4B-E2(D2 承载):rollback 工具加 --source-kind {session-corpus,openclaw-transcript} 选择性删除,缺省 = 全部(旧行为保持),plan 输出必须列出 matched/skipped 键;transcript 批次回滚不重灌(重灌归 live 轮)",
-    "K4B-E3:报告扩展 additive——perSource[kind] 增 perRole{user,assistant,other}/groups/segments/wrapperMarkersStripped/corpusFiles[{name,sha256,lines}];backfill 顶层增 perRoleTotal;plan/apply 两态都出,顶层键零破坏",
-    "K4B-E4(D3+F4):created_at 回填 = 语料文件名 YYYY-MM-DD 当天 12:00 Asia/Shanghai(= 04:00 UTC)经 MessageCreate.created_at 出网;duck 协议 add_message 增可选 created_at 参数(向后兼容);指纹公式换代 v1:session-corpus:<sha256> over 源文件|首行行号|段序|role|段文本(逐位稳定、跨源命名空间不变);role in {assistant,toolResult,tool} → agent-kidpal",
-    "K4B-E5(D4 部署资产同步):server/deploy/honcho/honcho.env.example 补 EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 与 LLM_DEFAULT_MAX_TOKENS=8000 注释口径(仅仓内模板,ECS .env 写入归 live 轮)",
+  "acceptance": [
+    "OCE-A1: 播报态关层结束会话（结构断言）——HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->CloseAudioChannel() / SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close / ScheduleResidentRebuild()；板级 OVERLAY_CLOSE 切区内零 app.ToggleChatState() 且含 app.EndVoiceSession()。设计态红：入口不存在、板级仍调 ToggleChatState",
+    "OCE-A2: 既有断言重钉——voice_round_ui KVR-A4 tooth 2 改为「OVERLAY_CLOSE 走 EndVoiceSession、SESSION_TOGGLE 仍走 ToggleChatState」；boot_auto_connect RC-A2 tooth 6 计数 4→5（定义 + 四调用点）、RC-B2 sites 增第四项且各恰 1",
+    "OCE-A3: 回归网——key_layer_dispatch / voice_round_ui / boot_auto_connect / record_session_live 四族全绿；host 全量套件零新增红 vs 冻结基线",
     {
-      "id": "K4B-E6",
+      "id": "OCE-A4",
       "kind": "structural",
-      "note": "Gate A host 离线判据(review §4):A1 单测绿;A2 acceptance 绿;A3 真实语料快照审计(快照 = c:/tmp/k4-corpus-review/txt 21 文件只读副本,机器外缺席则显式 skipTest 申报;识别行=非空行 unparsed 0;perRole 与冻结计数逐值等;指纹唯一;无 content 以 [kidpal/sessions/ 开头);A4 拆分正确性抽样(2026-09-30.txt 的 440/444/445 类内容拆成 assistant 段且 content 不含外层前缀)。Gate C/D(B 均为 ECS live 运维,归主线程经 human 授权执行,零 host 断言)"
+      "note": "live-manual 真机目检（非自动断言，诚实申报；不计入 runner 通过面）：① 播报中 BOOT 短按 → Abort speaking → local_close_settle src=overlay_close → Websocket disconnected → speaking -> idle，回原页且 ≥4 分钟无 ASR/无出声；② 播报中 KEY 长按同效；③ 播报中 KEY 短按仍为打断→聆听（不得结束会话）；④ 聆听态 BOOT 短按行为不变；⑤ Connecting 态关层可回 Idle；⑥ T 秒后常驻重建照常。本 Pod 到真机门前停等 human，不自行烧录"
     }
   ],
-  "iterationBudget": 2,
-  "fixBudget": 3,
-  "supervisorBlockBudget": 2,
-  "contractRefs": ["docs/contracts/interface-contract.md#§四"],
-  "docRefs": [
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
-    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/taskpackage.json",
-    "server/deploy/honcho/honcho.env.example"
+  "acceptanceTestsFile": [
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c"
   ],
-  "docsSyncRequired": false,
-  "docsSyncReason": "修复轮零 spec/契约面 diff;解析口径属实现面(冻结件缺口申报兑现),spec 权威不变。",
-  "docsOwner": "integrator",
-  "securityReviewRequired": false,
-  "adrRequired": false,
-  "mutationRequired": false,
-  "mutationSkipReason": "解析器行为升级,验收以冻结断言 + 真实语料快照审计(逐值等)承载,变异取证 ROI 不成立。",
-  "mutationEvidence": { "perAcceptance": [] },
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "2026-10-24 冻结相位实跑（acceptance-author，worktree 根）：build 零 warning 零 error；elf = 237 Tests 7 Failures 0 Ignored。4 条新增红全为设计态红（首红 tooth 与 plan 预判一致）：① OCE-A1 TEST12 tooth1（HandleEndVoiceSessionEvent 定义不存在）；② KVR-A4 重钉 tooth2（板级 OVERLAY_CLOSE 切区零 app.EndVoiceSession()，文件级 ToggleChatState=2 ≥1 先行绿）；③ RC-A2 tooth6（ScheduleResidentRebuild 计数 4≠5）；④ RC-B2 tooth1 第四项函数区切取失败（函数未落）。既有先存红 3 条（p1_auxbar AB-A1/A2/A4 @6e8425ff）逐条复现零漂移。对账：基准 236T3F → 237T7F（+1 TEST_CASE +4 设计态红），OCE-A3 四族除设计态红外全绿、record_session_live 零触碰零红",
+  "exitCriteria": [
+    "OCE-X1: OCE-A1/A2 host 断言转绿（含两处既有断言重钉与一条新增结构断言），零 warning",
+    "OCE-X2: host 全量套件零新增红 vs 冻结基线（OCE-A3 四族全绿）",
+    "OCE-X3: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过）",
+    "OCE-X4: 真机目检由 human 持板执行并留痕（OCE-A4 六项观测）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "OCE-X5: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸完成"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
   "crossEnd": {
     "counterparts": [],
-    "exempt": "host 侧解析器与运维工具纯离线数据面:设备端零感知、固件零 diff;不新增或改变端→网关消息、帧类型、字段与序列化形态。"
+    "exempt": "纯板端会话收尾语义修复：abort / close 均为既有 WS 消息，不新增 wire 语义、不改帧类型与字段类型；server/** 零 diff；设备端无跨端数据类变更。triage architect 逃生门预查 = NO_CONTRACT_CHANGE。"
   },
-  "changeManifest": [
-    "server/deploy/honcho/backfill/**",
-    "server/deploy/honcho/honcho.env.example",
-    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
   ],
-  "deliveryImpact": "milestone-affecting",
-  "planningImpact": "attach-existing",
-  "planningRefs": ["delivery/workstreams/device-memory-overhaul/"],
-  "riskTier": "high",
-  "gateProfile": ["migration", "security"],
-  "mergeOrder": 55,
-  "dependsOn": ["261022-m5-k4-history-corpus-backfill"],
-  "notes": "① 上下文:K4 已 merged,本包 = live 实证归因 bug 的修复轮(新 Lite 包,dev/pod-m2 就地);② fixer 工作树未 commit 补丁 = K4 HOLD 期产物,review §1.5 裁定 KEEP 为基底,本包 builder/fixer 从工作树现状续作;③ Gate A3 快照 = c:/tmp/k4-corpus-review/txt(21 文件,architect 只读副本,非仓内制品——孩子语料不入仓,隐私红线);④ scope-map 已核:builder/fixer allow server/** 覆盖 backfill+env.example,acceptance 文件归 acceptance-author;⑤ live 运维段(Phase 1.5-4)零 host 断言、归主线程经 human 授权,Pod 产出命令单;⑥ transcript 源形状漂移((session_id,seq,event_json,created_at) vs 契约 id/role/content)不在本包修——D2 裁不重灌,导出器重建登记 debt;⑦ 指纹公式换代:旧批次指纹随回滚消失,无撞车面"
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "mutationRequired": true,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包零 canonical spec / contracts 改动：需求 §2.3 已冻结该语义（requirements.md:147），本包是实施偏离修正；docs-delta 如实申报「无 spec 过时面」。",
+  "docRefs": [
+    "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md"
+  ],
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4 结构断言）@ 锚 SHA 6e8425ff（2026-10-24 worktree C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 实测：236 Tests 3 Failures；命令 = WSL `bash firmware/main/test/host_app/espidf_wsl.sh build` + `./firmware/main/test/host_app/build/host_infra_test.elf`；面域 = firmware）；本包验收红基线恒现跑，不引用此锚",
+  "dependsOn": null,
+  "mergeOrder": null,
+  "notes": "起包留痕：① 档位 = ②单包 Full / riskTier high / sourceType regression，architect /triage-change 比例化 review 裁决（nano 被三条独立判据否掉：跨 3 个实现面文件、命中排除清单「触状态机」、两处既有断言必红须重钉），human 触点① 确认；② 四面探测 = 纯实现面，需求锚 §2.3 已冻结、架构/契约/治理零变更；③ 行为半 host 不可闭环（Application/Protocol/AudioService 不进 host 构建），真机目检为诚实验收形态，plan ④ 已申报；④ out-of-scope：覆盖层 BOOT 双击路由为 NONE，与 §2.3「双击=同短按」漂移，另案立包；⑤ 实现约束见 plan ⑥（负锚七条）；⑥ 冻结回填（acceptance-author 回执，2026-10-24）：host_app/main/CMakeLists.txt 无实际 diff——两验收文件均已注册（:69/:168），零新增验收文件，changeManifest 该条目为预置条件触发面、本包不触发；⑦ planner 裁定（advisory 消化）：RC-A2 tooth5「零直调 TryStartAutoConnect」守卫数组按 plan ⑧-2 冻结口径维持三站点不加第四项——新收尾点经 EndVoiceSession helper 路径、不直调 TryStartAutoConnect，守卫面不承载，无 tighten-only 返钉必要。",
+  "mutationEvidence": {
+    "perAcceptance": [
+      {
+        "acceptanceId": "OCE-A1: 播报态关层结束会话（结构断言）——HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->CloseAudioChannel() / SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close / ScheduleResidentRebuild()；板级 OVERLAY_CLOSE 切区内零 app.ToggleChatState() 且含 app.EndVoiceSession()。设计态红：入口不存在、板级仍调 ToggleChatState",
+        "mutation": "红基线 mutant 面 = 统一结束入口不存在（现状树：无 MAIN_EVENT_END_VOICE_SESSION / 无 EndVoiceSession / 无 HandleEndVoiceSessionEvent，板级仍调 ToggleChatState）",
+        "result": "failed as expected：verifier round1 红基线 OCE-A1 TEST12 tooth1 红（:2105）；builder 落地后 round2 全 tooth 绿（:2090 PASS，六件收尾+冻结序+板级零 ToggleChatState）",
+        "evidenceRefs": [
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r1.json",
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r2.json"
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "OCE-A2: 既有断言重钉——voice_round_ui KVR-A4 tooth 2 改为「OVERLAY_CLOSE 走 EndVoiceSession、SESSION_TOGGLE 仍走 ToggleChatState」；boot_auto_connect RC-A2 tooth 6 计数 4→5（定义 + 四调用点）、RC-B2 sites 增第四项且各恰 1",
+        "mutation": "红基线 mutant 面 = 板级级联未收窄（OVERLAY_CLOSE 仍走 ToggleChatState、ScheduleResidentRebuild 计数 4 无第四调用点）",
+        "result": "failed as expected：verifier round1 三处重钉红（KVR-A4 tooth2 :1148 / RC-A2 tooth6 计数 4≠5 :1268 / RC-B2 第四项函数区切取失败 :1436）；builder 落地后 round2 三处全绿（实测计数 5、四 site 各恰 1）",
+        "evidenceRefs": [
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r1.json",
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r2.json"
+        ],
+        "sensitive": true
+      },
+      {
+        "acceptanceId": "OCE-A3: 回归网——key_layer_dispatch / voice_round_ui / boot_auto_connect / record_session_live 四族全绿；host 全量套件零新增红 vs 冻结基线",
+        "mutation": "红基线 mutant 面 = host 全量套件回归网敏感性（任何新增红即偏离冻结基线 236T3F→237T7F）",
+        "result": "failed as expected：verifier round1 全量 7 Failures（先存红 3 + 设计态红 4，回归网精确捕获实现缺失）；builder 落地后 round2 回落 237 Tests 3 Failures（恰先存红，零新增红）",
+        "evidenceRefs": [
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r1.json",
+          "delivery/taskpackages/261024-vq-overlay-close-end-session/verifier-evidence/rounds/r2.json"
+        ],
+        "sensitive": true
+      }
+    ]
+  }
 }

@@ -1096,6 +1096,7 @@ TEST_CASE("语音轮场景映射: 活侧渲染接线——思考页首接+回显
 /* coverage: VQ-A4 -- 打断手感键位衔接：key_route_layer 覆盖层列 KD-A1/A3 语义对齐消费（KEY 单击 SESSION_TOGGLE / 长按+BOOT OVERLAY_CLOSE）+ 板级消费链零回归 */
 /* coverage: VQ-A5 -- 四态骨架闭集零偏移：kidpal_voice_state_look 五成员逐字复核（强符号在世）+ 防御 */
 /* coverage: VQ-A6 -- 4s 安抚冻结边守卫：session_state_machine.cc THINKING->SPEAKING+COMFORT 边在世（NFR-PERF-1 模型承载） */
+/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: 板级 OVERLAY_CLOSE 切区内含 app.EndVoiceSession() 且 app.ToggleChatState() ≥1（SESSION_TOGGLE 仍在世）；verifier round 1 判红锚 = KVR-A4 tooth2 重钉段 */
 TEST_CASE("语音轮场景映射: 打断键位衔接+闭集零偏移+4s安抚冻结边 (VQ-A4/VQ-A5/VQ-A6)",
           "[voice_round_ui][VQ-A4][VQ-A5][VQ-A6][keycap][guard]")
 {
@@ -1126,13 +1127,32 @@ TEST_CASE("语音轮场景映射: 打断键位衔接+闭集零偏移+4s安抚冻
             != (int)GLOBAL_ACT_PAGE_NEXT,
         "KVR-A4 RED: 覆盖层顶层 BOOT 单击仍路由翻页——「BOOT≈翻页」等价假绿复活");
 
-    /* ---- tooth 2 (VQ-A4): 板级消费链零回归——SESSION_TOGGLE 与 OVERLAY_CLOSE 会话
-     * 级联两处 ToggleChatState 消费在世（K1a 落地件, 本包零改动红线）。 */
+    /* ---- tooth 2 (VQ-A4; OCE-A2 重钉, 261024-vq-overlay-close-end-session): 板级
+     * 两入口分工——SESSION_TOGGLE 仍走 ToggleChatState（播报中 KEY 短按 = 打断主轴,
+     * 需求 §2.3 冻结语义, HandleToggleChatEvent 零改动红线）; OVERLAY_CLOSE 会话级联
+     * 改走 EndVoiceSession（关层 = 真正结束会话）。重钉事由: 真机事故 TECH-261024
+     * ——播报态关层只打断未结束会话（回首页后麦克风仍开）, 板级 OVERLAY_CLOSE 会话
+     * 级联收窄为唯一结束入口; 原断言「ToggleChatState >= 2」随级联收窄必红, 改钉
+     * 「文件级 >= 1（SESSION_TOGGLE 仍在世）+ OVERLAY_CLOSE 切区内含 EndVoiceSession」。 */
     n = kvr_count_in_file(KVR_BOARD_CC, "app.ToggleChatState()");
-    TEST_ASSERT_TRUE_MESSAGE(n >= 2,
-        kvr_fm("KVR-A4 RED: 板级 dispatch app.ToggleChatState() 仅 %d 处（期望 >= 2: "
-               "SESSION_TOGGLE + OVERLAY_CLOSE 会话级联）——打断/结束会话的板级消费"
-               "链被破坏", n));
+    TEST_ASSERT_TRUE_MESSAGE(n >= 1,
+        kvr_fm("KVR-A4 RED: 板级 dispatch app.ToggleChatState() 仅 %d 处（期望 >= 1: "
+               "SESSION_TOGGLE 打断主轴仍在世）——两入口分工被破坏"
+               "（OCE-A2, plan ⑧-1）", n));
+    {
+        char *slice = kvr_region_between_ex(KVR_BOARD_CC,
+                                            "case GLOBAL_ACT_OVERLAY_CLOSE:",
+                                            "case GLOBAL_ACT_CHAR_REPLAY:", 0);
+        TEST_ASSERT_NOT_NULL_MESSAGE(slice,
+            "KVR-A4 RED(infra): 板级 OVERLAY_CLOSE 切区切取失败——锚漂移须复核"
+            "（OCE-A2, plan ⑧-1）");
+        TEST_ASSERT_TRUE_MESSAGE(
+            kvr_count_in_slice(slice, "app.EndVoiceSession()") >= 1,
+            "KVR-A4 RED: 板级 OVERLAY_CLOSE 切区零 app.EndVoiceSession()——关层手势未接"
+            "统一会话结束入口, 播报态关层只打断不结束会话（OCE-A2, plan ⑧-1; "
+            "TECH-261024）");
+        free(slice);
+    }
 
     /* ---- tooth 3 (VQ-A4): application.cc 播报中打断路径在世——AbortSpeaking
      * (kAbortReasonNone)（HandleToggleChatEvent speaking 分支; 停播后经 tts stop
@@ -2046,6 +2066,114 @@ TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
     free(region);
 }
 
+/* -------------------------------------------------------------------------- *
+ * TEST 12 — OCE-A1 播报态关层结束会话（261024-vq-overlay-close-end-session;
+ * structural, 单独成节, 既有齿 TEST 1-11 零改动）
+ * 真机事故 TECH-261024（KPLOG011）: 播报态 OVERLAY_CLOSE（BOOT 短按 / KEY 长按）只
+ * 打断停播未结束会话——回首页后麦克风仍开, 4 分钟后仍在首页出声问答。修法 = 新事件位
+ * MAIN_EVENT_END_VOICE_SESSION + Application::EndVoiceSession() 统一结束入口 +
+ * HandleEndVoiceSessionEvent（收尾动作序列 plan ⑦: 静音 -> abort -> 关通道 -> Idle
+ * -> LOW_POWER + settle 日志 + 常驻重建）; 板级 GLOBAL_ACT_OVERLAY_CLOSE 会话级联
+ * 改调该入口（KEY 短按打断语义零改动）。
+ * RED today（设计态红, 义务红形态: HandleEndVoiceSessionEvent 不存在 / 板级仍调
+ * ToggleChatState——与 boot_auto_connect.acceptance.c RC-A2 tooth 6 计数 4≠5、
+ * RC-B2 sites 缺第四项同日冻结）。
+ * 强度申报（源锚代理档, .claude/references/acceptance-evidence.md 口径）:
+ * application.cc / AudioService / Protocol 不进 host 构建, 本齿为源文本结构齿,
+ * 强度档 = 源锚代理（弱于机制级/行为级）——收尾时序（断连/静音/不收音/页面回原页）
+ * 行为 oracle 归真机目检（plan ⑧-5 = OCE-A4, human 持板, 不计入 runner 通过面）;
+ * 行为等价假设（显式化）: 「切区内含 needle ≙ 收尾动作经该 handler 单源执行」——
+ * 依据 = 事件位单处理器 + 主任务上下文同步序列（plan ⑦）; 若 builder 把收尾块拆出
+ * helper（plan ⑥ 负锚禁止）或改经别的入口, 本齿 RED(infra) 返 acceptance-author
+ * 复核, 不得由 builder/fixer 改齿。
+ * ------------------------------------------------------------------------ */
+/* coverage: OCE-A1 -- 播报态关层结束会话（结构）: HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->CloseAudioChannel() / SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close / ScheduleResidentRebuild(), 且静音->abort->关通道三位次序冻结（plan ⑦-4/5/6 同 TCP 先例）; 板级 OVERLAY_CLOSE 切区零 app.ToggleChatState() 且含 app.EndVoiceSession() */
+TEST_CASE("语音轮会话收尾: 播报态关层结束会话 (OCE-A1)",
+          "[voice_round_ui][OCE-A1][structural]")
+{
+    char *region;
+    long i_reset, i_abort, i_close;
+    int n;
+
+    KVR_REQUIRE_ROOT();
+
+    /* ---- tooth 1 (OCE-A1): HandleEndVoiceSessionEvent 函数区可切——统一结束入口
+     * 存在。位置锚 = HandleStopListeningEvent 与 HandleWakeWordDetectedEvent 之间
+     * （plan ②, 既有验收切区锚决定勿挪; 挪位即本齿 RED(infra) 返 acceptance-author）。 */
+    region = kvr_region_between_ex(KVR_APP_CC,
+                                   "void Application::HandleEndVoiceSessionEvent()",
+                                   "void Application::HandleWakeWordDetectedEvent()", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "OCE-A1 RED: application.cc 无 HandleEndVoiceSessionEvent 定义（或未落"
+        "HandleStopListeningEvent 与 HandleWakeWordDetectedEvent 之间）——统一会话"
+        "结束入口未落（TECH-261024 根因现状; plan ②）");
+
+    /* ---- tooth 2 (OCE-A1): 收尾动作序列六件内含（plan ⑦-4/5/6/8/9）。 */
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "audio_service_.ResetDecoder()") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 audio_service_.ResetDecoder()——"
+        "播报态关层缺即时静音（Idle 分支只停音频处理器不清解码队列, 旧播放队列在 Idle "
+        "后继续出声; plan ⑦-4）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "AbortSpeaking(kAbortReasonNone)") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 AbortSpeaking(kAbortReasonNone)"
+        "——abort 帧缺失, 服务端 TTS 不停（plan ⑦-5; 不等 ack, 单向消息）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "protocol_->CloseAudioChannel()") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 protocol_->CloseAudioChannel()"
+        "——本地关分类置位缺失, 断连会走 A 路径排自动重连（plan ⑦-6）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "SetDeviceState(kDeviceStateIdle)") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 SetDeviceState(kDeviceStateIdle)"
+        "——三态未收束回 Idle（plan ⑦-8）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "local_close_settle") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 local_close_settle 收尾日志——"
+        "会话结束落定无诊断锚（plan ⑦-9）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "src=overlay_close") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区 local_close_settle 无 src=overlay_close"
+        "——关层收尾诊断口径未与 toggle_chat/discard_record/wake_invoke 区分"
+        "（plan ⑦-9; 若实现经变量拼 src 字面而非日志字面, 返 acceptance-author 返钉）");
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "ScheduleResidentRebuild()") >= 1,
+        "OCE-A1 RED: HandleEndVoiceSessionEvent 区零 ScheduleResidentRebuild()——会话"
+        "收尾类本地关零常驻重建排程（收尾 T 秒内重建缺席; plan ⑦-9）");
+
+    /* ---- tooth 3 (OCE-A1 派生位次): 静音 -> abort -> 关通道 冻结序——abort 帧先于
+     * 关通道同 TCP 有序发出（SendKidpalStoryDiscard 先例同构）, 即时静音先于 abort
+     * （plan ⑦-4/5/6 同步顺序）。 */
+    i_reset = kvr_index_of(region, "audio_service_.ResetDecoder()");
+    i_abort = kvr_index_of(region, "AbortSpeaking(kAbortReasonNone)");
+    i_close = kvr_index_of(region, "protocol_->CloseAudioChannel()");
+    TEST_ASSERT_TRUE_MESSAGE(
+        i_reset >= 0 && i_abort >= 0 && i_close >= 0 &&
+            i_reset < i_abort && i_abort < i_close,
+        kvr_fm("OCE-A1 RED: 收尾三位次序破（ResetDecoder@%ld, AbortSpeaking@%ld, "
+               "CloseAudioChannel@%ld）——即时静音 -> abort 帧 -> 关通道冻结序"
+               "（plan ⑦-4/5/6）", i_reset, i_abort, i_close));
+    free(region);
+
+    /* ---- tooth 4 (OCE-A1 负向 + 正向): 板级 OVERLAY_CLOSE 切区零 app.ToggleChatState()
+     * （关层手势禁回流打断路径——回流即播报态关层不结束会话复发）且含
+     * app.EndVoiceSession()（统一入口接线）。 */
+    region = kvr_region_between_ex(KVR_BOARD_CC,
+                                   "case GLOBAL_ACT_OVERLAY_CLOSE:",
+                                   "case GLOBAL_ACT_CHAR_REPLAY:", 0);
+    TEST_ASSERT_NOT_NULL_MESSAGE(region,
+        "OCE-A1 RED(infra): 板级 OVERLAY_CLOSE 切区切取失败——锚漂移须复核");
+    n = kvr_count_in_slice(region, "app.ToggleChatState()");
+    TEST_ASSERT_TRUE_MESSAGE(n == 0,
+        kvr_fm("OCE-A1 RED(负向): 板级 OVERLAY_CLOSE 切区 app.ToggleChatState() = %d 处"
+               "（期望 0）——关层手势回流打断路径, 播报态关层不结束会话复发"
+               "（TECH-261024 根因; plan ⑧-3）", n));
+    TEST_ASSERT_TRUE_MESSAGE(
+        kvr_count_in_slice(region, "app.EndVoiceSession()") >= 1,
+        "OCE-A1 RED: 板级 OVERLAY_CLOSE 切区零 app.EndVoiceSession()——关层手势未接"
+        "统一会话结束入口（plan ⑦）");
+    free(region);
+}
+
 /* ---------------------------------------------------------------------------
  * VQ-A8 终跑判读（suite 级判读说明, review-packet 呈 supervisor）:
  *   判据 = 相对有效基线零新增红 + 本包新齿全绿。
@@ -2282,4 +2410,25 @@ TEST_CASE("语音轮入口出口: 补充轮A2 旧通道拆除序 (VR-A10)",
  *               RM: 红基线模型 = 设计态红, builder 接线后转绿, verifier 终验
  *               （acceptance-author, TaskPackage 261014-voice-round-entry-exit-fixes
  *               补充轮 261014-r2 冻结派单）。
+ *   2026-10-24  augment: 261024-vq-overlay-close-end-session（真机事故 TECH-261024
+ *               播报态关层未结束会话; sourceType regression, riskTier high）:
+ *               ① TEST 4 tooth 2 重钉（OCE-A2, plan ⑧-1）——板级 app.ToggleChatState()
+ *               文件级计数 >= 2 改为 >= 1（SESSION_TOGGLE 打断主轴仍在世）+ 新增
+ *               OVERLAY_CLOSE 切区内含 app.EndVoiceSession() 断言; 重钉事由 = 板级
+ *               OVERLAY_CLOSE 会话级联收窄为唯一结束入口, 原断言改后必红;
+ *               ② 新增 TEST 12（OCE-A1, plan ⑧-3）——HandleEndVoiceSessionEvent 切区
+ *               收尾动作序列结构断言（静音/abort/关通道/Idle/settle src=overlay_close/
+ *               常驻重建 + 三位次序冻结）+ 板级 OVERLAY_CLOSE 切区零 ToggleChatState
+ *               负向。既有齿 TEST 1-11 一字未动 = 纯 additive 收紧, 语义零放松。
+ *               强度申报: TEST 12 = 源锚代理档（application.cc 不进 host 构建）,
+ *               真机行为 oracle 归 OCE-A4 真机目检（plan ⑧-5 六项）。
+ *               RM: 红基线模型 = 设计态红（入口不存在 / 板级仍调 ToggleChatState /
+ *               计数 4≠5——boot_auto_connect 同日重钉）, builder 接线后转绿, verifier
+ *               终验（acceptance-author, TaskPackage 261024-vq-overlay-close-end-
+ *               session 冻结派单）。
+ *   2026-10-24  补标记（verifier round 1 acceptance-coverage 闸红, changeId
+ *               261024-vq-overlay-close-end-session）: TEST 4 头注补 OCE-A2 coverage
+ *               标记（既有断言重钉的承载面登记, 判红锚 = KVR-A4 tooth2 重钉段）——
+ *               纯注释行, 零断言语义变更、零测试计数变化（acceptance-author,
+ *               verifier round 1 派单）。
  * --------------------------------------------------------------------------- */
