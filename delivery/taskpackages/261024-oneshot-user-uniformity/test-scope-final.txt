@@ -1,0 +1,16 @@
+# test-scope-final · 261024-oneshot-user-uniformity
+# 合成来源: detect_changes(C-AI-KidPal-pod-m2, base=main, inbound, depth=2) impacted 26 symbols
+#   + TaskPackage impactedTests 种子 ∪ acceptanceTestsFile ∪ 共享 seam 测试 ∪ LOOP-X 安全余量(姊妹冻结件)
+# 图可用性: per-Pod 专属图索引可用, 正常圈定(非降级)
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/tests/test_story_cancel_lifecycle_units.py
+server/tests/test_archive_guard_units.py
+server/acceptance/test_m4k1_story_cloud_link.acceptance.py
+server/acceptance/test_m4k3_record_session_live.acceptance.py
+server/acceptance/test_record_cancel_lifecycle.acceptance.py
+server/acceptance/test_record_dialogue_guide.acceptance.py
+server/acceptance/test_record_front_polish.acceptance.py
+server/acceptance/test_story_fetch.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_261022_honcho_backfill.acceptance.py
+server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py

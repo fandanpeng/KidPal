@@ -6,7 +6,9 @@ runnable anywhere.
 
 Frozen offline contract:
     FEATURE_STREAMING_FORBIDS_MAX_TOKENS = True
-    openclaw_stream_request(messages) -> dict payload that NEVER sets "max_tokens"
+    openclaw_stream_request(messages, user=None) -> dict payload that NEVER sets
+        "max_tokens"; optional user (truthy only) adds the "user" key so OpenClaw
+        derives the per-device session key (agent:kidpal:openai-user:<device_id>)
 
 Hard constraint (contract §四 / 决策18 / V9): the streaming request to OpenClaw MUST
 NOT carry max_tokens —实测触发 agent incomplete-turn 报错. openclaw_stream_request
@@ -94,15 +96,23 @@ def provider_config(family: str) -> dict:
     return {}
 
 
-def openclaw_stream_request(messages) -> dict:
+def openclaw_stream_request(messages, user=None) -> dict:
     """Build the OpenClaw streaming request payload (OpenAI-compatible).
 
     NEVER sets "max_tokens" (contract §四 / V9): that key is known to trigger the
     OpenClaw agent incomplete-turn error. The gateway sends the full message history
     to the loopback OpenClaw brain and lets the agent steer its own output length.
+
+    Optional ``user`` (261024-oneshot-user-uniformity): truthy value only adds the
+    ``"user"`` key — OpenClaw derives its per-device session key
+    (``agent:kidpal:openai-user:<device_id>``) from that request field. 真值判据与
+    engine-patch openai.py 两腿逐字同源：None / 空串 → 键缺席 = 回落旧行为。
     """
-    return {
+    payload = {
         "model": OPENCLAW_MODEL,
         "messages": list(messages or []),
         "stream": True,
     }
+    if user:
+        payload["user"] = user
+    return payload

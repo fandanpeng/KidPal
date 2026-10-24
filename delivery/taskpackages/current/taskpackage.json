@@ -1,155 +1,85 @@
 {
-  "changeId": "261022-m5-k4-history-corpus-backfill",
-  "rigor": "full",
-  "sourceType": "proposal",
+  "changeId": "261024-oneshot-user-uniformity",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
   "origin": {
-    "type": "proposal",
-    "upstreamType": "proposal",
-    "upstreamRef": "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
-    "upstreamFrozen": "sha1:b03fdcbb2150cbfa",
-    "workstream": "device-memory-overhaul"
+    "type": "human-ad-hoc",
+    "human-verbatim": "「一次性回合，你应该给它把 user 也加上，这样才更完整——不然有一些有 user、OpenClaw 那边记忆体把它塞进来，有一些没有，容易漏，很不统一，将来维护都不知道是啥机制。」（2026-10-24 human 原话大意，Pod m2 launch 指令）——即：所有回合统一携 user=<device_id>，全部落同一设备 session 键族；noisePatterns 补丁键退役。方向反转显式换代授权同批：K3-E2「payload 零 user」断言方向反转 = human 裁 R7/OQ-4 隔离口径退役，换代显式留痕、非静默放宽。",
+    "upstreamType": "human-ad-hoc",
+    "workstream": ""
   },
-  "subsystem": "server/deploy/honcho/backfill（历史 session-corpus → Honcho 记忆库迁移：照记全量、幂等重跑、计数报告、清库回滚）",
-  "story": "S-F5.1 · 记住孩子说过的事（AC5 历史照记）——孩子以前聊过的历史内容（含同学姓名）补录进记忆后照常记入，旧内容与新聊天一视同仁；story 语义权威 = docs/requirements.md v1.67 现文，human 2026-10-22 终拍「照记全量（不分回合性质、含第三方姓名）」。",
-  "planRef": "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/plan.md",
+  "subsystem": "server/gateway/front（一次性回合调用链 _openclaw_chat_once / _organize_and_archive / _story_guide_round / _story_finish_session）+ server/gateway/provider.py（payload 单源）+ server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json（声明工件换代）+ server/acceptance（锚换代件）+ server/tests（桩签名同步）",
+  "story": "261024-oneshot-user-uniformity · 一次性回合携 user 统一：front 引导/整理两条一次性 LLM 回合统一携 user=<device_id>（WS 会话上下文 device-id 头），全部落 agent:kidpal:openai-user:<device_id> 设备 session 键族；noisePatterns 补丁键退役（声明 5键→4键）；指令挪 request 级 system 已裁决 = 挪（user 消息 = 纯孩子内容，附 prompt 制品 manifest 登记与空制品回填兜底，见 plan.md ③）；K3-E2 验收锚方向反转显式换代（新形状 {model,messages,stream,user} 且 user=<device_id>）。技术语义权威 = plan.md",
+  "planRef": "delivery/taskpackages/261024-oneshot-user-uniformity/plan.md",
   "sourceRefs": [
-    "S-F5.1-AC5",
-    "TECH-261022-device-memory-prompt-overhaul",
-    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md",
-    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
-    "delivery/workstreams/device-memory-overhaul/task_plan.md",
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
+    "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md",
+    "docs/architecture.md#§6.7",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py",
+    "server/gateway/front/front_app.py",
+    "server/gateway/provider.py",
+    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json"
   ],
-  "acceptanceRefs": [
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4",
-    "docs/requirements.md#§S-F5.1"
+  "acceptance": [
+    "A1",
+    "A2",
+    "A3"
   ],
-  "acceptance": ["K4-E1", "K4-E2", "K4-E3", "K4-E4", "K4-E5", "K4-E6"],
   "acceptanceTestsFile": [
-    "server/acceptance/test_261022_honcho_backfill.acceptance.py",
-    "server/acceptance/test_261022_honcho_memory.acceptance.py"
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
   ],
   "impactedTests": [
-    "server/acceptance/test_261022_honcho_backfill.acceptance.py",
-    "server/deploy/verify-deploy.sh"
+    "server/acceptance/test_261022_memory_isolation.acceptance.py",
+    "server/tests/test_story_cancel_lifecycle_units.py"
   ],
   "requiredLayers": [
     "unit",
-    "acceptance-offline",
-    "live-manual",
-    "real-db"
+    "acceptance-offline"
   ],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "2026-10-23 planner+acceptance-author 实跑回填：cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 319 passed / 14 failed / 7 deselected / 33 subtests passed（27.3s）——14 failed 全部为本包新件 server/acceptance/test_261022_honcho_backfill.acceptance.py 对未实现 backfill 工具面的设计态红；319 passed = 拆包锚 318 全绿零回退 + K4-E6 头注申报自检 1 件（自指测试即时绿，K3-E7 同例）。注意：K3 姊妹件 test_261022_honcho_memory.acceptance.py 做了显式锚换代（test_k3_e1_no_backfill_subtree_a4_redline → test_k3_e1_no_backfill_in_k3_stack_assets，A4 禁区解除使旧断言与本包 changeManifest 直接冲突；「子树禁在」半退役、保留「K3 栈本体工件零 backfill 引用」边界半，头注换代注记留痕）——acceptance-author 显式治理动作，非静默放宽。",
+  "redBaselineResult": "planner 起包前实跑（2026-10-24，本树 dev/pod-m2）：333 passed / 7 deselected / 33 subtests passed in 29.70s（与 launch card 申报一致）。acceptance-author 冻结相位实跑（2026-10-24）：换代后 330 passed / 3 failed（全为本件换代断言设计态红：① payload 尚缺 user 键主锚 ② 声明还是 5 键 ③ patch 产物还是 5 键；零 error）/ 7 deselected / 33 subtests in 30.48s；排除本件 330 passed / 0 failed 零新增红（LOOP-X 半绿基线成立）；compile+收集零 error、零收集错误",
   "exitCriteria": [
-    "K4-E1: 历史 corpus 全量照记：源 = session-corpus 既有语料，不区分回合性质、不过滤第三方姓名（human 2026-10-22 终拍 R6/OQ-3）；补录后旧内容与新聊天在画像侧一视同仁（S-F5.1 AC5）",
-    "K4-E2: 记忆身份按 ADR-016（2026-10-23 面 C，supersedes ADR-014 ②③）现行口径：session 键族设备级（`agent:kidpal:openai-user:<device_id>`）、画像 = 家庭单 owner peer；backfill 灌入的历史 session 归宿 = 既有设备 session 键族、peer 归家庭单 owner；不引入多设备 / 多孩子身份体系；换设备 = 新 session 家族、画像不变（记录为已知后果）",
-    "K4-E3: 幂等可重跑：重复执行零重复 observation / 零语义变更（幂等键或去重判据在 plan.md 定形）；执行前后计数报告（peers / sessions / messages / observations）落盘",
-    "K4-E4: 清库回滚：提供可回滚路径与执行证据；回滚不删 OpenClaw 完整日志、历史补录源语料、设备诊断日志（各按既有接受口径保留）；源语料只读、零改写",
-    "K4-E5: 与 P3 资格门的边界：backfill 属「历史照记」显式豁免（不分回合性质），但新增回合仍走资格门；两条口径在实现与文档中不互串",
-    {
-      "id": "K4-E6",
-      "kind": "structural",
-      "note": "live 运维项（非自动断言）：human 在 ECS 执行 backfill 全量跑 + 计数报告过目 + 抽查画像命中；幂等二次跑零增量；清库回滚演练一次（测试库或快照窗口）。本包 host 面转绿后停门等 human，不自行部署"
-    }
+    "A1: front 一次性回合统一携 user——openclaw_stream_request(messages, user=None) 单源扩展（if user: 真值判据与 engine-patch openai.py 两腿逐字同源，禁 max_tokens 约束保持零出现）；_openclaw_chat_once 增 user 透传；设备身份 = 腿上 device_ws.headers.get(\"device-id\") 原值透传（不 strip 不归一，isinstance str + strip 双保险防御式）；条件传参 kwargs={\"user\": device_id} if device_id else {}（device-id 缺席 → payload 缺 user 键 + 调用缝留痕 = 诚实降级，八处既有桩零改）；指令挪 system 落地：整理 user 消息 = material 纯文、引导 user 消息 = spoken 纯文，两 prompt 制品登记进 server/deploy/manifest.yaml（restart: none / verify: md5），_load_prompt_artifact 空回退 = user 消息回填现行完整包装形态 + warning（最坏退回现行 live 行为）；播报腿集判据与归档内容守卫时序零偏移",
+    "A2: honcho-plugin-declaration.json noisePatterns 键退役——changes[] 与顶层 plugins 块同步（5键→4键逐字锚：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId），_note 换代申报且保留 agent:kidpal:openai-user: 字面、零 agent:kidpal: 其它形态（session 家族锚 + 变体负锚依赖）；apply/rollback 零代码改动；noisePatterns 退役无机械验证面如实申报（禁 expect:unset 假牙），退役实证 = 部署轮实读 openclaw.json；server/deploy/manifest.yaml 两处 5键 note 同步换代 + 两条 prompt 条目登记；声明零 secret 负锚保",
+    "A3: 验收锚换代显式留痕——test_k3_e2_front_oneshot_payload_no_user 改名 test_k3_e2_front_oneshot_payload_carries_device_user 并方向反转为「payload 恰 {model,messages,stream,user} 且 user=<device_id>」+ 降级路径断言（device-id 缺席 → 缺 user 键）+ 空制品回退路径断言（user 消息回填现行包装形态）；test_k3_e6_patch_generator_product_five_keys 改名 ..._four_keys；姊妹锚同步（5键逐字锚→4键、声明结构锚、头注 B1 挡板措辞退役申报、live 证据 one_shot 判定口径反转 + 每条证据增 openclaw_session_key 前缀断言字段）；全部换代在断言 docstring 与头注标「换代事由 = human 2026-10-24 裁 R7/OQ-4 隔离口径退役」，旧名映射留痕、非静默放宽；live 标记件仍 -m \"not live\" 可收集零收集错误",
+    "LOOP-X: 既有其它冻结件零新增红——全量 acceptance（-m \"not live\"）转绿后零 failure（姊妹件 test_261022_honcho_memory / test_261022_honcho_backfill / test_261023_agents_md_static_semantics_alignment 零触碰；test_261022_honcho_backfill 的 K4_GATE_CONFIG_NEEDLES 负锚天然不红；四姊妹验收件桩缝条件传参下无感：test_m4k1_story_cloud_link / test_record_cancel_lifecycle / test_record_dialogue_guide / test_record_front_polish）；server/tests 回归绿（test_story_cancel_lifecycle_units 四族 + test_archive_guard_units AST 结构锚，零改必绿）；closeout 制品齐（docs-delta 显式列举 spec 过时面并挂到在途 /requirement-change & arch 批：arch:364-365 §6.7 第 1/2 行、arch:155 NFR-PRIV-1、arch:360 §5.1.2 记忆写入范围段、requirements:598 S-F5.1 AC5、:601 补充规则、:654 NFR-PRIV-1 边界段 + 部署注记 first-run 语义 + 真机抽检残余清单）+ closeout-check 绿 + supervisor 机械闸完成"
   ],
-  "iterationBudget": 2,
+  "iterationBudget": 3,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "contractRefs": [
-    "docs/contracts/interface-contract.md#§四"
+    "docs/contracts/interface-contract.md"
   ],
   "docRefs": [
-    "delivery/workstreams/device-memory-overhaul/PROPOSAL.md",
-    "delivery/workstreams/device-memory-overhaul/task_plan.md",
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md",
-    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/plan.md",
-    "docs/requirements.md",
     "docs/architecture.md",
-    "docs/contracts/interface-contract.md",
-    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
+    "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "历史照记口径已在 requirements v1.67 S-F5.1 AC5 补充规则与 arch §6.7「历史 backfill」段落稿；本包只落迁移实现与运维脚本，docs/** 零 diff。",
-  "docsOwner": "integrator",
-  "securityReviewRequired": true,
+  "docsSyncReason": "本包零 canonical spec/contracts 改动：spec 过时面（arch §6.7 第 1/2 行 + arch:155 + arch:360 + requirements:598/:601/:654，全清单见 plan.md 残余申报 #4）归入在途 /requirement-change & arch 批（launch 指令明裁不在本批改 arch）；申报义务由 integrator docs-delta 制品显式承载。",
+  "securityReviewRequired": false,
   "adrRequired": false,
   "mutationRequired": false,
-  "mutationSkipReason": "本包 = 数据迁移脚本与运维回滚件；验收以幂等 / 计数 / 回滚三态与 live 演练承载，属数据证据面而非分支逻辑面，变异取证 ROI 不成立。",
-  "securityEvidence": "安全证据面（gateProfile security / migration / real-db 承载）：① 网络面——backfill/rollback 两工具出网仅经 --api 参数指向的 Honcho loopback（127.0.0.1:18100，K3 既有栈体内），零新增出网端点；冻结件 K4-A6 负锚断言（K3 同族记账外端点词表零命中 + DEFAULT_API=127.0.0.1:18100）机检承载；源语料与 transcript db 全程字节不变（K4-A4 源只读断言）。② 凭据面——backfill 树零内联 secret（sk- 长键负锚断言），REST 客户端 stdlib urllib 直连本机 loopback、不携第三方凭据；DASHSCOPE/DEEPSEEK 凭据仍由 K3 栈体 .env 承载、本包不触碰。③ 数据面——照记全量（不滤第三方姓名）= human 2026-10-22 终拍（OQ-3-workstream/R6，孩子主动讲述且家长知情，孩子社交事实是记忆目标），非本包自裁；家长隐私抽取边界仍由 K3 deriver 策略与 NFR-PRIV-1 三层纵深承载，backfill 不新增家长侧数据源。④ 删除面——rollback 恰删携带 kidpalBackfillBatch 标记的 session（「标记即键」，list_backfill_batches() 取回集合即删除集合）、live 无标记数据零触碰（K4-A4 断言）；不删 OpenClaw 完整日志 / 源语料 / 诊断日志（零源旗标断言）；删除语义 = NFR-PRIV-1 运维面手工口径不变。⑤ 身份面——ADR-016 口径：session 键族设备级 + 家庭单 owner peer、零新 peer（K4-A2 断言）；backfill 隔离命名空间 = kidpalBackfillBatch metadata 标记，live 数据永不进指纹集合（K4-A3 断言）。",
-  "mutationEvidence": {
-    "perAcceptance": []
-  },
+  "mutationSkipReason": "user 通道承载断言 = payload 键集/user 值行为级真跑（K3-E2 换代件 spy openclaw_stream_request 捕获）+ 声明逐字静态锚 + 降级路径行为断言；改动面为薄装配（user 键透传 + device-id 头提取），分支逻辑由行为断言直接覆盖，变异取证 ROI 不成立（批 B 同款降级声明前置）。",
+  "mutationEvidence": { "perAcceptance": [] },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "本包纯云端离线数据迁移与运维脚本：设备端零感知、固件零 diff；不新增或改变任何端→网关消息、帧类型、字段与序列化形态，记忆库形状非契约。"
+    "exempt": "纯 server 云内改动：front→OpenClaw loopback HTTP payload 的 user 键是云端运行态请求字段，非跨端 wire（帧类型/字段类型与承载/回执语义/序列化形态零触）；设备端零感知、固件零 diff、WS device-id 头本就存在（engine websocket_server 既有要求），本包不改任何设备面协议。"
   },
   "changeManifest": [
-    "server/deploy/honcho/backfill/**",
+    "server/gateway/front/front_app.py",
+    "server/gateway/provider.py",
+    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json",
     "server/deploy/manifest.yaml",
-    "server/deploy/verify-deploy.sh",
-    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
   ],
-  "deliveryImpact": "milestone-affecting",
-  "planningImpact": "attach-existing",
-  "planningRefs": [
-    "delivery/workstreams/device-memory-overhaul/"
-  ],
-  "riskTier": "high",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTier": "medium",
   "gateProfile": [
-    "migration",
-    "security",
-    "real-db"
+    "test-quality",
+    "evidence-integrity",
+    "security"
   ],
-  "mergeOrder": 54,
-  "dependsOn": [
-    "261022-m5-k3-honcho-memory-production"
-  ],
-  "notes": "① launch-card.md 缺失（pod-events 闭集无对应事件类型，此处留痕不设门）；② sourceRefs 含裸 ID 'TECH-261022-device-memory-prompt-overhaul'（brief-inputs ADV：裸 ID 不在磁盘，全路径版本同列在册，非腐坏）；③ K4-E2 措辞 2026-10-23 planner 按 1f 保鲜权修正对齐 ADR-016（面 C 261023-arch-review-memory-wiring-verified-behavior 改写）：设备级 peer → 设备级 session 键族 + 家庭单 owner peer；decisionCoverage 的 OQ-7 条目保留拆包期历史原文不改，现行口径以 K4-E2 与 ADR-016 为准；④ 与 live 共生：生产库插件在写，backfill 幂等判据须区分「已灌」与「live 新增」（隔离/对账方式冻结契约定形）；⑤ 重建源两件 = session-corpus 源语料（ECS workspace-kidpal/memory/.dreams/session-corpus/）+ OpenClaw 会话存储（kidpal agent sqlite transcript_events，P2 持久会话起），两源关系与边界冻结相位定形；⑥ backfill 执行面归 human（ECS 全量跑/计数报告/回滚演练），Pod 只建工具与离线契约，host 绿后停 awaiting-human:live-deploy；⑦ 验收测试 file（server/acceptance/**）归 acceptance-author 写，builder deny 面恰不含它（scope-map 已核）",
-  "decisionCoverage": [
-    {
-      "decision": "R6 / OQ-3 · backfill 第三方姓名照记（不带 PII 过滤器）",
-      "summary": "human 2026-10-22 裁：孩子社交事实是记忆目标；9-30 语料系孩子主动讲述且家长知情；保留幂等 / 回滚 / 计数报告。",
-      "sourceRefs": [
-        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.1",
-        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2"
-      ],
-      "landsIn": "exitCriteria:K4-E1"
-    },
-    {
-      "decision": "R5 / S-F5.1 AC5 · 历史内容照常记入（旧内容与新聊天一视同仁）",
-      "summary": "历史补录不区分回合性质、全量照记；设备流程回合不入画像的边界自 P3 上线起对新增回合生效，不回溯历史。",
-      "sourceRefs": [
-        "docs/requirements.md",
-        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
-      ],
-      "landsIn": "exitCriteria:K4-E1"
-    },
-    {
-      "decision": "OQ-7 · 设备级 peer 先行（backfill 消费面）",
-      "summary": "回填按设备级 peer 落库；多设备 / 多孩子身份体系不做；换设备 = 新 peer。",
-      "sourceRefs": [
-        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
-        "docs/architecture.md"
-      ],
-      "landsIn": "exitCriteria:K4-E2"
-    },
-    {
-      "decision": "OQ-10 · 记忆库备份 = 不备份靠重建（重建源 = session-corpus 源语料 + OpenClaw 会话存储）",
-      "summary": "backfill 同时是记忆库重建路径；源语料只读、重建可重跑，无需 pg_dump 备份。",
-      "sourceRefs": [
-        "delivery/workstreams/device-memory-overhaul/PROPOSAL.md#§3.2",
-        "delivery/workstreams/device-memory-overhaul/task_plan.md"
-      ],
-      "landsIn": "exitCriteria:K4-E4"
-    },
-    {
-      "decision": "记忆口径分层：历史照记豁免 vs 新增回合资格门",
-      "summary": "backfill 显式豁免不分回合性质；P3 的 user 资格门只对新增回合生效，两条口径不互串。",
-      "sourceRefs": [
-        "delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md#T4"
-      ],
-      "landsIn": "exitCriteria:K4-E5"
-    }
-  ]
+  "dependsOn": "批 B（261023-honcho-memory-wiring-restoration）已合 main——插件接线 + 声明工件 + noisePatterns 现状为本包换代基座；live noisePatterns 已由 human 在 ECS 清空（主线程已做），本批只做声明对齐 + manifest/verify 一致性核对",
+  "mergeOrder": null,
+  "notes": "起包前置自查（DEV-GOVERNANCE 起包格式期望六条）：① mutation 降级声明已前置（mutationSkipReason）；② 断言格式 = A1-A3 + LOOP-X、验收 ID 无括号；③ 验收 ID 无括号形态；④ 降级声明 = live 面零本包动作（noisePatterns ECS 清空已由 human 主线程完成，退役实证 = 部署轮实读 openclaw.json；指令挪 system 输出质量离线不可证 = 真机 3-5 例抽检兜底；prompt 制品 first-run 部署语义见 plan.md ③）；⑤ 新约定包闸判据自查：本包无新约定，user 通道沿 openclaw_stream_request 既有单源扩展（engine-patch openai.py 同源先例）；⑥ 输入面期望 = input-brief 单份 + 超读申报 + crossEnd 已填（exempt 理由 ≥12 字）。scope-map 核对（1c）：builder/fixer allow 含 server/**、deny 含 **/acceptance/**（验收件归 acceptance-author）；本包全部 target 路径（front 调用链 + provider + 声明 + manifest + 验收件）在各自角色 allow 面内，零新登记。architect 预评（1g，2026-10-24）两修正已采纳：条件传参（八处既有桩零改，unit 桩签名同步从 manifest 撤出）+ prompt 制品部署洞补丁（manifest 登记 + 空制品回填兜底 + first-run 注记）；技术语义权威 = plan.md（技术方案节含预评留痕）。纪律红线：docs/contracts/** 与 arch/requirements 本体只读（spec 过时面归在途批）；插件本体（@honcho-ai/openclaw-honcho dist）与 Honcho 栈只读；openclaw.json 不入仓、声明零 secret；禁 expect:unset 假牙。"
 }
