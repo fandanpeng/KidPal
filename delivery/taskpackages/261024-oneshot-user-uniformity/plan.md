@@ -60,3 +60,15 @@ changes[] 与顶层 plugins 块同步删 noisePatterns 条目（5键→4键逐�
 ## 效力声明（architect 预评档原文）
 
 「本预评为 advisory 输入——不豁免任何门、不改验收与 TaskPackage 事实、不构成通过判据。」技术方案本节由 planner 依预评回填定稿；与冻结验收冲突时以验收为准。
+
+## 修正案 R2(live 证伪回退;2026-10-24 human-correction f13a53a8)
+
+**live 实证(2026-10-24 10:10-10:11 真实记录会话)**:「指令挪 system」裁决被证伪——整理/引导回合模型**不跟** request 级 system 指令(OpenClaw openai-http 路径以 AGENTS.md 载体为主,请求级 system 疑似被替换/忽略):整理产出聊天腔、坏归档件 stories/2026-10-24-sc4238164(131 字节,留待重录覆盖或 human 手删,本包不碰生产数据);引导回复聊天腔超长(播报侧截 30 字、全量进记忆库)。
+
+**回退形态(human 原则「回到验证过的形态」;修正 ③ 裁决)**:
+- user 消息恢复「指令 + 素材」包装:整理 = `孩子讲的内容：\n{material}\n\n请按指令把这段话忠实整理成一篇。`;引导 = `孩子到目前为止讲的内容：\n{spoken}\n\n孩子停顿了，请按指令给一句轻声引导。`——**恒定包装,不再区分制品在场与否**;旧「空制品回填兜底」分支随之坍缩(制品缺失 = 仅 warning,行为无差)。
+- request 级 system 制品装载**保留**(两处并存不冲突,host 无感)。
+- **批 C 携 user 半保留不动**(live 实证归属 owner/agent-kidpal 完美):payload {model,messages,stream,user}、条件传参、device-id 原值透传全部不变。
+- 两 prompt 制品 manifest 登记保留(无害,为制品本身到达 live)。
+- 验收换代:冻结件 ①② 的「user 消息 = 纯文」断言改为「含指令包装」;④ 回退路径断言同步;换代事由 = live 证伪 2026-10-24 + human-correction f13a53a8,显式留痕。
+- 申报残余更新:①③ live 证伪相关残余清账(离线盲区已实证、已回退);①(检索质量面:引导/整理回复全量进记忆库含聊天腔)与 ②(双回合重复入记忆)继续在册,部署轮看检索。
