@@ -253,3 +253,10 @@
 - **验证**：scoped r1（invocation `f81ac003`）8 闸绿（lite firmware-build 后置）；**final r2**（invocation `9ceb48f1`）10 闸全绿、fact `ok:true`；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/test-scope-final-r2.txt`（5 文件，与 changeManifest 恰同）。全量口径 340 passed / 7 deselected / 33 subtests 零回退；A3/A4 真语料快照审计（21 文件 sha256 冻结）本机实跑零 skip——冻结锚 1652 行 → 1007 组 → 2879 段（user 1580 / assistant 1299）、wrapper 350、指纹全唯一、unparsed=0，与 review §4 判据逐项一致。
 - **制品**：docs-delta.md（零 diff 声明：`git status docs/` 空，修复轮零 spec/契约面 diff）+ review-packet.md（demo 对账行 Gate A1-A4 逐项 + 未覆盖面申报 + live 运维命令单 + findings 2 NIT）+ verdict.json（r2 fact 晋升投影）+ verification.json（advisory）落包目录。debt 登记一处：`docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` append「transcript 影子导出器重建（D2 裁不重灌）」条（三缺陷 + 重建前置件 + 形状漂移承载）。
 - **停等位**：live 运维段（Phase 1.5-4：Gate B 试灌读回 / Gate C 硬删完成 / Gate D 派生后验）零 host 断言，归主线程经 human 授权（D5 低峰窗口）；命令单在 review-packet §4。合并门后续：supervisor-verdict-gate（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod。
+
+## 2026-10-24 · K4b 合并收口——human 人批 → merge-driver DONE(planner)
+
+- **人批**:human AskUserQuestion 答复「批准合并」(2026-10-24);批准语境含 live 运维段授权主线程按 architect 命令单走、异常即停回报。pod-events human-decision 凭据 `85d4122d`(actor=human,五要素一次到位)。
+- **合并**:merge-driver DONE(escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK)。merge commit `ea89f427`(human-approval-ref 在案);Step 5b 簿记落 main(`79777341`);board=merged(mergeOrder 55)。
+- **live 运维段(Phase 1.5-4)**:命令单 = `delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/review-packet.md` §4 末;Gate B/C/D 判据按 review §4;D2 裁两批次均回滚、transcript 不重灌(debt:TECH-261022 影子导出器重建条)。
+- **advisory 转交**:loop-retro 阈值已到(34 ≥ 3),发起归主线程。
