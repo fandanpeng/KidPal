@@ -1,0 +1,14 @@
+# scope-list · 261024-vq-overlay-close-end-session（verify.mjs final 相位机器消费形态）
+# 源 = delivery/taskpackages/261024-vq-overlay-close-end-session/scope-file.md §2（integrator 2026-10-24 圈定，
+# detect_changes 实测 impacted_total=5 零出界）。转写事由：unit-run-check/acceptance-run-check 的
+# readScopeList 只认纯路径行清单，叙事 md 全部行无法解析（r4 fail-closed 判红）；本文件为其 1:1 路径投影，
+# 转写人 = planner（消费接口自备），叙事对照仍以 scope-file.md 为准。
+# 面 = OCE-A3 回归网四族 + OCE-A1/A2 承载验收文件 + detect_changes 实测受影响实现面 + 安全余量（host 全量）。
+firmware/main/test/voice_round_ui.acceptance.c
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/application.cc
+firmware/main/application.h
+firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc
+firmware/main/main.cc
