@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 24 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 25 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -35,3 +35,4 @@
 | [TECH-261019-impl-prose-ledger-path-drift](TECH-261019-impl-prose-ledger-path-drift.md) | 实现面与历史快照 10 处散文仍引 docs/ADR.md、ARCH-REVIEW-QUEUE.md 等已迁/已删路径 | 2026-10-19 | 主线程一次性散文改指 chore commit（human 明示跳过 dev-loop，2026-10-19；豁免面 5 件永不动，见正文） |
 | [TECH-261021-story-session-cancel-lifecycle](TECH-261021-story-session-cancel-lifecycle.md) | P3 记录会话取消/收尾生命周期两侧不对称——丢弃不通知 server（在途引导回合照播 ③ / 丢弃内容仍被自动总结收录 ⑤）+ server 收尾不清设备 ctx（列表页长按困死 ④），三症状同根 | 2026-10-21 | delivery/taskpackages/261021-p3-record-cancel-lifecycle/ |
 | [TECH-261018-schedule-read-compliance-residual](TECH-261018-schedule-read-compliance-residual.md) | prompt v11 后仍观察到真机漏读——受控 loopback 15/15 都读文件，但设备连续两笔里有一笔零工具调用、直接编造周一课表（含不存在的英语/美术与带物）；属模型服从度长尾，机械注入课表内容为候选根治 | 2026-10-23 | 261022-m5-n2a-schedule-mechanical-injection（consumed-by：本包落地即满足本条目第 3 层机械注入修复，K5-E5 结项申报由 integrator 收口路径落） |
+| [TECH-261024-overlay-close-speaking-no-session-end](TECH-261024-overlay-close-speaking-no-session-end.md) | 播报态关层不结束会话——overlay_close 复用 ToggleChatState 只打断停播，回首页后麦克风仍开并继续语音问答（KPLOG011 真机实证） | 2026-10-24 | 261024-vq-overlay-close-end-session |

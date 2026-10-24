@@ -2,13 +2,13 @@
 id: TECH-261024-overlay-close-speaking-no-session-end
 title: 播报态关层不结束会话——overlay_close 复用 ToggleChatState 只打断停播，回首页后麦克风仍开并继续语音问答（KPLOG011 真机实证）
 domain: tech
-status: blocker
+status: closed
 severity: MAJOR
 owner: dev-loop（固件 application.cc 会话收尾面 + waveshare-s3-rlcd-4.2 板级路由消费）
 trigger: 已拍板——2026-10-24 human 报障 + /triage-change 比例化 review 判 ②单包 Full（riskTier high），即刻起包 261024-vq-overlay-close-end-session
 opened: 2026-10-24
-closed: ""
-closedBy: ""
+closed: 2026-10-24
+closedBy: 261024-vq-overlay-close-end-session
 paths: ["firmware/main/application.cc", "firmware/main/application.h", "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc", "firmware/main/test/voice_round_ui.acceptance.c", "firmware/main/test/boot_auto_connect.acceptance.c"]
 source: 2026-10-24 18:38-18:42 真机事故（设备 TF 卡 KPLOG011 段拉取判读 + KPLOG010 段同日 7 次同动作对照）
 handoff: 包 261024-vq-overlay-close-end-session（②单包 Full / riskTier high）；reviewed plan = delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md
@@ -38,3 +38,7 @@ handoff: 包 261024-vq-overlay-close-end-session（②单包 Full / riskTier hig
 **修法方向（architect reviewed）**：新增事件位 `MAIN_EVENT_END_VOICE_SESSION` + `Application::EndVoiceSession()` 统一结束入口，覆盖 Connecting / Listening / Speaking 三态；板级 OVERLAY_CLOSE 改调该入口。播报态收尾须显式 `ResetDecoder()` 即时静音（Idle 分支不重置解码队列），再 abort、关通道、回 Idle。详见 reviewed plan。
 
 **残余观察（另案，不纳入本包）**：路由表覆盖层列 / 查字窗列 / 基层列的 BOOT 双击均返回 `GLOBAL_ACT_NONE`，与 requirements §2.3「BOOT 双击 = 同短按」不一致，属路由面漂移；修好后 BOOT 双击会自然汇入同一个 `EndVoiceSession()` 入口。
+
+---
+
+**闭账留痕（2026-10-24）**：包 `261024-vq-overlay-close-end-session`（②单包 Full / riskTier high / sourceType regression）已 merge 本地 main（`d5515ce0`，human-approval-ref `5355ab69`）。代码面：scoped r3 + final r5 全闸绿，host 237 Tests 3 Failures（3 条全为先存 p1_auxbar 红，零新增红），固件真编译通过；真机目检：播报中 BOOT 短按（22:00:04）与 KEY 长按（22:05:59）均走 `Abort speaking → Websocket disconnected → speaking -> idle → local_close_settle src=overlay_close`，播报中 KEY 短按仍仅打断，聆听态 BOOT 行为不变，20:58:40 关闭后 61 分钟零 ASR/零出声，常驻重建 5–6 秒。**未覆盖申报**：Connecting 态关层（需弱网复现）经 human 2026-10-24 明示跳过，真机未验；该分支代码已实现、host 结构断言覆盖调用位，运行时行为待将来真机轮补验。
