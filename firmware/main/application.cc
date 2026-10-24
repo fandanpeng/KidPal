@@ -332,7 +332,8 @@ void Application::Run() {
         MAIN_EVENT_START_LISTENING |
         MAIN_EVENT_STOP_LISTENING |
         MAIN_EVENT_ACTIVATION_DONE |
-        MAIN_EVENT_STATE_CHANGED;
+        MAIN_EVENT_STATE_CHANGED |
+        MAIN_EVENT_END_VOICE_SESSION;
 
     while (true) {
         auto bits = xEventGroupWaitBits(event_group_, ALL_EVENTS, pdTRUE, pdFALSE, portMAX_DELAY);
@@ -360,6 +361,13 @@ void Application::Run() {
 
         if (bits & MAIN_EVENT_TOGGLE_CHAT) {
             HandleToggleChatEvent();
+        }
+
+        /* 261024-vq-overlay-close-end-session（TECH-261024 修复）: 关层结束会话分支
+         * 位次冻结——在 SCHEDULE 之前（关层手势的 dismiss 同轮落定回原页, 先于
+         * voice_end 收尾; 详见 HandleEndVoiceSessionEvent 定义处时序自证）。 */
+        if (bits & MAIN_EVENT_END_VOICE_SESSION) {
+            HandleEndVoiceSessionEvent();
         }
 
         if (bits & MAIN_EVENT_START_LISTENING) {
@@ -940,6 +948,14 @@ void Application::ToggleChatState() {
     xEventGroupSetBits(event_group_, MAIN_EVENT_TOGGLE_CHAT);
 }
 
+/* 261024-vq-overlay-close-end-session: 覆盖层关层手势的统一会话结束入口（事件位,
+ * 线程安全——板级按键回调不在主任务上下文; 实际收尾在
+ * HandleEndVoiceSessionEvent 内单源执行）。与 ToggleChatState 是两个语义入口: 后者
+ * 播报态 = 打断 -> 聆听（需求 §2.3 冻结）, 本入口 = 三态一律结束会话回 Idle。 */
+void Application::EndVoiceSession() {
+    xEventGroupSetBits(event_group_, MAIN_EVENT_END_VOICE_SESSION);
+}
+
 void Application::StartListening() {
     xEventGroupSetBits(event_group_, MAIN_EVENT_START_LISTENING);
 }
@@ -1078,7 +1094,7 @@ void Application::HandleStartListeningEvent() {
 
 void Application::HandleStopListeningEvent() {
     auto state = GetDeviceState();
-    
+
     if (state == kDeviceStateAudioTesting) {
         audio_service_.EnableAudioTesting(false);
         SetDeviceState(kDeviceStateWifiConfiguring);
@@ -1089,6 +1105,55 @@ void Application::HandleStopListeningEvent() {
         }
         SetDeviceState(kDeviceStateIdle);
     }
+}
+
+/* 261024-vq-overlay-close-end-session（TECH-261024 真机事故修复）: 覆盖层关层手势的
+ * 统一会话结束处理器——三态（Connecting / Listening / Speaking）一律真正断会话,
+ * 不是只打断停播。动作序列（plan ⑦, 主任务上下文同步序）:
+ *   ① protocol_ 判空 / ② auto_connect_in_flight_ 守卫（避免与后台 AutoConnect 抢
+ *   websocket_）→ ③ 三态门 → ④ 仅 Speaking: ResetDecoder 即时静音（Idle 分支只停
+ *   音频处理器、不清解码/播放队列, 旧队列会在 Idle 后继续出声, 必须显式补）→
+ *   ⑤ 仅 Speaking: AbortSpeaking（abort 帧先发、与关通道同 TCP 有序, 沿用
+ *   SendKidpalStoryDiscard 先例）→ ⑥ CloseAudioChannel（本地关分类置位,
+ *   OnDisconnected 消费标记后不排自动重连、不异步再改 Idle）→ ⑦ 不等 abort ack
+ *   （单向消息、协议无 ack 语义; 断连本身即服务端会话终止信号）→ ⑧ Idle →
+ *   ⑨ LOW_POWER + local_close_settle(src=overlay_close) + 常驻重建 →
+ *   ⑩ 不发 SendStopListening（那是录音收尾归档语义）。
+ *
+ * 时序自证（关层落定先于 voice_end）: 本分支在主循环 MAIN_EVENT_SCHEDULE 之前跑 →
+ * 置 Idle 只置 STATE_CHANGED 位 → 同轮 SCHEDULE 先执行 dismiss_front_overlay
+ * （VOICE 出栈, 回原页落定）→ 下一轮 STATE_CHANGED 才跑 Idle 分支, voice_end 见
+ * VOICE 已不在栈上而零副作用。竞态自愈: 若服务端 tts stop 帧晚于本处理器到达, 其
+ * 出口判据 GetDeviceState() == Speaking 已为假 → no-op, 不会把状态推回 Listening。 */
+void Application::HandleEndVoiceSessionEvent() {
+    if (!protocol_) {
+        return;
+    }
+    if (auto_connect_in_flight_) {
+        ESP_LOGI(TAG, "AutoConnect in-flight, ignore end voice session");
+        return;
+    }
+
+    auto state = GetDeviceState();
+    if (state != kDeviceStateConnecting && state != kDeviceStateListening &&
+        state != kDeviceStateSpeaking) {
+        return;
+    }
+
+    if (state == kDeviceStateSpeaking) {
+        /* 即时静音: Idle 分支只 EnableVoiceProcessing(false)（停处理器不清队列）,
+         * 旧播放队列不清会继续出声——这是「打断→聆听」路径靠 EnableVoiceProcessing
+         * (true) 内 ResetDecoder 顺带覆盖、而结束会话没有的隐性坑（plan ⑦-4）。 */
+        audio_service_.ResetDecoder();
+        AbortSpeaking(kAbortReasonNone);
+    }
+
+    protocol_->CloseAudioChannel();
+    SetDeviceState(kDeviceStateIdle);
+    Board::GetInstance().SetPowerSaveLevel(PowerSaveLevel::LOW_POWER);
+    ESP_LOGI(TAG, "local_close_settle corr_id=kdp-%u src=overlay_close state=idle",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ScheduleResidentRebuild();
 }
 
 void Application::HandleWakeWordDetectedEvent() {
