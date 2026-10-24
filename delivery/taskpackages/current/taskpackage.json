@@ -1,87 +1,80 @@
 {
-  "changeId": "261024-oneshot-user-uniformity",
+  "changeId": "261024-m5-k4b-corpus-parser-v2",
   "rigor": "lite",
-  "sourceType": "human-ad-hoc",
+  "sourceType": "arch-review",
   "origin": {
-    "type": "human-ad-hoc",
-    "human-verbatim": "「一次性回合，你应该给它把 user 也加上，这样才更完整——不然有一些有 user、OpenClaw 那边记忆体把它塞进来，有一些没有，容易漏，很不统一，将来维护都不知道是啥机制。」（2026-10-24 human 原话大意，Pod m2 launch 指令）——即：所有回合统一携 user=<device_id>，全部落同一设备 session 键族；noisePatterns 补丁键退役。方向反转显式换代授权同批：K3-E2「payload 零 user」断言方向反转 = human 裁 R7/OQ-4 隔离口径退役，换代显式留痕、非静默放宽。",
-    "upstreamType": "human-ad-hoc",
-    "workstream": ""
+    "type": "arch-review",
+    "human-verbatim": "human 五项裁决(2026-10-24,经 coordinator 转达):D1=解析层「归组+内嵌拆分」(review 修正案1,离线模拟 1652 行→2879 条 user 1580/assistant 1299,无损);D2=transcript 批次一并回滚、不重灌(影子导出主键冲突静默跳过/跨会话混采/不可复现,导出器重建登记 debt);D3=created_at 回填语料文件日期当天 12:00 +08:00;D4=EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 + 重灌后允许少量截断、超阈升级;D5=重灌排低峰窗口。",
+    "upstreamType": "arch-review",
+    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
+    "upstreamFrozen": "advisory 落盘 2026-10-24 + human D1-D5 五项裁决;fixer 未 commit 补丁按 review §1.5 裁定 KEEP 为解析器 v2 基底;plan.md 即冻结技术输入、只读消费",
+    "workstream": "device-memory-overhaul"
   },
-  "subsystem": "server/gateway/front（一次性回合调用链 _openclaw_chat_once / _organize_and_archive / _story_guide_round / _story_finish_session）+ server/gateway/provider.py（payload 单源）+ server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json（声明工件换代）+ server/acceptance（锚换代件）+ server/tests（桩签名同步）",
-  "story": "261024-oneshot-user-uniformity · 一次性回合携 user 统一：front 引导/整理两条一次性 LLM 回合统一携 user=<device_id>（WS 会话上下文 device-id 头），全部落 agent:kidpal:openai-user:<device_id> 设备 session 键族；noisePatterns 补丁键退役（声明 5键→4键）；指令挪 system 已被 live 证伪回退 = user 消息恒定「指令+素材」包装（修正案 R2，见 plan.md）；K3-E2 验收锚方向反转显式换代（新形状 {model,messages,stream,user} 且 user=<device_id>）。技术语义权威 = plan.md",
-  "planRef": "delivery/taskpackages/261024-oneshot-user-uniformity/plan.md",
+  "subsystem": "server/deploy/honcho/backfill(corpus 解析器 v2:双层识别+归组+内嵌 turn 拆分+created_at 回填+toolResult 路由+报告扩展;rollback 选择性删除 --source-kind)+ server/deploy/honcho/honcho.env.example(两键同步)",
+  "story": "S-F5.1 · 记住孩子说过的事(AC5 历史照记)——历史补录的归因正确性修复:corpus 语料实为双层前缀+内嵌上下文块,只修 role 治不到主症状(源消息 440/444/445 类把小伴的话嵌在 user 消息体里),deriver 已把 agent 话术抽成孩子事实;本包落 review 修正后的确定性解析层,使重灌后的画像只含真实归因。story 语义权威 = docs/requirements.md v1.67 现文;技术方案权威 = review 修正案 §2.1。",
+  "planRef": "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/plan.md",
   "sourceRefs": [
-    "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md",
-    "docs/architecture.md#§6.7",
-    "server/acceptance/test_261022_memory_isolation.acceptance.py",
-    "server/gateway/front/front_app.py",
-    "server/gateway/provider.py",
-    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json"
+    "S-F5.1-AC5",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
+    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/taskpackage.json",
+    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/review-packet.md"
   ],
-  "acceptance": [
-    "A1",
-    "A2",
-    "A3"
+  "acceptanceRefs": [
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md#§4"
   ],
-  "acceptanceTestsFile": [
-    "server/acceptance/test_261022_memory_isolation.acceptance.py"
-  ],
+  "acceptance": ["K4B-E1", "K4B-E2", "K4B-E3", "K4B-E4", "K4B-E5", "K4B-E6"],
+  "acceptanceTestsFile": ["server/acceptance/test_261022_honcho_backfill.acceptance.py"],
   "impactedTests": [
-    "server/acceptance/test_261022_memory_isolation.acceptance.py",
-    "server/tests/test_story_cancel_lifecycle_units.py"
+    "server/deploy/honcho/backfill/test_backfill_honcho_unit.py",
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
   ],
-  "requiredLayers": [
-    "unit",
-    "acceptance-offline"
-  ],
+  "requiredLayers": ["unit", "acceptance-offline", "snapshot-audit"],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "planner 起包前实跑（2026-10-24，本树 dev/pod-m2）：333 passed / 7 deselected / 33 subtests passed in 29.70s（与 launch card 申报一致）。acceptance-author 冻结相位实跑（2026-10-24）：换代后 330 passed / 3 failed（全为本件换代断言设计态红：① payload 尚缺 user 键主锚 ② 声明还是 5 键 ③ patch 产物还是 5 键；零 error）/ 7 deselected / 33 subtests in 30.48s；排除本件 330 passed / 0 failed 零新增红（LOOP-X 半绿基线成立）；compile+收集零 error、零收集错误",
+  "redBaselineResult": "2026-10-24 实跑回填：cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 340 passed / 7 deselected / 33 subtests passed(27.8s)——333 既有全绿零回退 + 本包新增 7 件(K4B 解析器 v2 + Gate A 判据)全绿;单测 64 passed。零 skip——A3 快照审计(c:/tmp/k4-corpus-review/txt 21 文件)本机实际执行,逐值等(1652→1007→2879,user 1580/assistant 1299,wrapper 350)。本包 = 绿基线形态(改动已在工作树,无新增红);快照缺席机器 A3/A4 显式 skipTest 申报(诚实降级)。",
   "exitCriteria": [
-    "A1: front 一次性回合统一携 user——openclaw_stream_request(messages, user=None) 单源扩展（if user: 真值判据与 engine-patch openai.py 两腿逐字同源，禁 max_tokens 约束保持零出现）；_openclaw_chat_once 增 user 透传；设备身份 = 腿上 device_ws.headers.get(\"device-id\") 原值透传（不 strip 不归一，isinstance str + strip 双保险防御式）；条件传参 kwargs={\"user\": device_id} if device_id else {}（device-id 缺席 → payload 缺 user 键 + 调用缝留痕 = 诚实降级，八处既有桩零改）；指令挪 system 落地：整理 user 消息 = material 纯文、引导 user 消息 = spoken 纯文，两 prompt 制品登记进 server/deploy/manifest.yaml（restart: none / verify: md5），_load_prompt_artifact 空回退 = user 消息回填现行完整包装形态 + warning（最坏退回现行 live 行为）；播报腿集判据与归档内容守卫时序零偏移",
-    "A2: honcho-plugin-declaration.json noisePatterns 键退役——changes[] 与顶层 plugins 块同步（5键→4键逐字锚：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId），_note 换代申报且保留 agent:kidpal:openai-user: 字面、零 agent:kidpal: 其它形态（session 家族锚 + 变体负锚依赖）；apply/rollback 零代码改动；noisePatterns 退役无机械验证面如实申报（禁 expect:unset 假牙），退役实证 = 部署轮实读 openclaw.json；server/deploy/manifest.yaml 两处 5键 note 同步换代 + 两条 prompt 条目登记；声明零 secret 负锚保",
-    "A3: 验收锚换代显式留痕——test_k3_e2_front_oneshot_payload_no_user 改名 test_k3_e2_front_oneshot_payload_carries_device_user 并方向反转为「payload 恰 {model,messages,stream,user} 且 user=<device_id>」+ 降级路径断言（device-id 缺席 → 缺 user 键）+ 空制品回退路径断言（user 消息回填现行包装形态）；test_k3_e6_patch_generator_product_five_keys 改名 ..._four_keys；姊妹锚同步（5键逐字锚→4键、声明结构锚、头注 B1 挡板措辞退役申报、live 证据 one_shot 判定口径反转 + 每条证据增 openclaw_session_key 前缀断言字段）；全部换代在断言 docstring 与头注标「换代事由 = human 2026-10-24 裁 R7/OQ-4 隔离口径退役」，旧名映射留痕、非静默放宽；live 标记件仍 -m \"not live\" 可收集零收集错误",
-    "LOOP-X: 既有其它冻结件零新增红——全量 acceptance（-m \"not live\"）转绿后零 failure（姊妹件 test_261022_honcho_memory / test_261022_honcho_backfill / test_261023_agents_md_static_semantics_alignment 零触碰；test_261022_honcho_backfill 的 K4_GATE_CONFIG_NEEDLES 负锚天然不红；四姊妹验收件桩缝条件传参下无感：test_m4k1_story_cloud_link / test_record_cancel_lifecycle / test_record_dialogue_guide / test_record_front_polish）；server/tests 回归绿（test_story_cancel_lifecycle_units 四族 + test_archive_guard_units AST 结构锚，零改必绿）；closeout 制品齐（docs-delta 显式列举 spec 过时面并挂到在途 /requirement-change & arch 批：arch:364-365 §6.7 第 1/2 行、arch:155 NFR-PRIV-1、arch:360 §5.1.2 记忆写入范围段、requirements:598 S-F5.1 AC5、:601 补充规则、:654 NFR-PRIV-1 边界段 + 部署注记 first-run 语义 + 真机抽检残余清单）+ closeout-check 绿 + supervisor 机械闸完成"
+    "K4B-E1(D1):解析器 v2 落地——逐行双层识别(fixer 补丁 KEEP)+ 续行归组(同文件+同[ref]+同第二层 role 连续行合并,换行保留)+ 内嵌 turn 拆分(user 组按 (?<=\\s)(User|Assistant): )切段,首段沿用外层 role,其后按标记定 role)+ 包装标记 [Chat messages since your last reply - for context] / [Current message - respond to this] 剥离并计数 wrapperMarkersStripped;真语料快照锚定数 = 1007 组 → 2879 条(user 1580 / assistant 1299)、unparsed=0、无损",
+    "K4B-E2(D2 承载):rollback 工具加 --source-kind {session-corpus,openclaw-transcript} 选择性删除,缺省 = 全部(旧行为保持),plan 输出必须列出 matched/skipped 键;transcript 批次回滚不重灌(重灌归 live 轮)",
+    "K4B-E3:报告扩展 additive——perSource[kind] 增 perRole{user,assistant,other}/groups/segments/wrapperMarkersStripped/corpusFiles[{name,sha256,lines}];backfill 顶层增 perRoleTotal;plan/apply 两态都出,顶层键零破坏",
+    "K4B-E4(D3+F4):created_at 回填 = 语料文件名 YYYY-MM-DD 当天 12:00 Asia/Shanghai(= 04:00 UTC)经 MessageCreate.created_at 出网;duck 协议 add_message 增可选 created_at 参数(向后兼容);指纹公式换代 v1:session-corpus:<sha256> over 源文件|首行行号|段序|role|段文本(逐位稳定、跨源命名空间不变);role in {assistant,toolResult,tool} → agent-kidpal",
+    "K4B-E5(D4 部署资产同步):server/deploy/honcho/honcho.env.example 补 EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 与 LLM_DEFAULT_MAX_TOKENS=8000 注释口径(仅仓内模板,ECS .env 写入归 live 轮)",
+    {
+      "id": "K4B-E6",
+      "kind": "structural",
+      "note": "Gate A host 离线判据(review §4):A1 单测绿;A2 acceptance 绿;A3 真实语料快照审计(快照 = c:/tmp/k4-corpus-review/txt 21 文件只读副本,机器外缺席则显式 skipTest 申报;识别行=非空行 unparsed 0;perRole 与冻结计数逐值等;指纹唯一;无 content 以 [kidpal/sessions/ 开头);A4 拆分正确性抽样(2026-09-30.txt 的 440/444/445 类内容拆成 assistant 段且 content 不含外层前缀)。Gate C/D(B 均为 ECS live 运维,归主线程经 human 授权执行,零 host 断言)"
+    }
   ],
-  "iterationBudget": 3,
+  "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
-  "contractRefs": [
-    "docs/contracts/interface-contract.md"
-  ],
+  "contractRefs": ["docs/contracts/interface-contract.md#§四"],
   "docRefs": [
-    "docs/architecture.md",
-    "delivery/taskpackages/261023-honcho-memory-wiring-restoration/plan.md"
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md",
+    "delivery/taskpackages/261022-m5-k4-history-corpus-backfill/taskpackage.json",
+    "server/deploy/honcho/honcho.env.example"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "本包零 canonical spec/contracts 改动：spec 过时面（arch §6.7 第 1/2 行 + arch:155 + arch:360 + requirements:598/:601/:654，全清单见 plan.md 残余申报 #4）归入在途 /requirement-change & arch 批（launch 指令明裁不在本批改 arch）；申报义务由 integrator docs-delta 制品显式承载。",
+  "docsSyncReason": "修复轮零 spec/契约面 diff;解析口径属实现面(冻结件缺口申报兑现),spec 权威不变。",
+  "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
   "mutationRequired": false,
-  "mutationSkipReason": "user 通道承载断言 = payload 键集/user 值行为级真跑（K3-E2 换代件 spy openclaw_stream_request 捕获）+ 声明逐字静态锚 + 降级路径行为断言；改动面为薄装配（user 键透传 + device-id 头提取），分支逻辑由行为断言直接覆盖，变异取证 ROI 不成立（批 B 同款降级声明前置）。",
-  "mutationEvidence": {
-    "perAcceptance": []
-  },
+  "mutationSkipReason": "解析器行为升级,验收以冻结断言 + 真实语料快照审计(逐值等)承载,变异取证 ROI 不成立。",
+  "mutationEvidence": { "perAcceptance": [] },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "纯 server 云内改动：front→OpenClaw loopback HTTP payload 的 user 键是云端运行态请求字段，非跨端 wire（帧类型/字段类型与承载/回执语义/序列化形态零触）；设备端零感知、固件零 diff、WS device-id 头本就存在（engine websocket_server 既有要求），本包不改任何设备面协议。"
+    "exempt": "host 侧解析器与运维工具纯离线数据面:设备端零感知、固件零 diff;不新增或改变端→网关消息、帧类型、字段与序列化形态。"
   },
   "changeManifest": [
-    "server/gateway/front/front_app.py",
-    "server/gateway/provider.py",
-    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json",
-    "server/deploy/manifest.yaml",
-    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+    "server/deploy/honcho/backfill/**",
+    "server/deploy/honcho/honcho.env.example",
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py"
   ],
-  "deliveryImpact": "none",
-  "planningImpact": "none",
-  "riskTier": "medium",
-  "gateProfile": [
-    "test-quality",
-    "evidence-integrity",
-    "security"
-  ],
-  "dependsOn": "批 B（261023-honcho-memory-wiring-restoration）已合 main——插件接线 + 声明工件 + noisePatterns 现状为本包换代基座；live noisePatterns 已由 human 在 ECS 清空（主线程已做），本批只做声明对齐 + manifest/verify 一致性核对",
-  "mergeOrder": null,
-  "notes": "起包前置自查（DEV-GOVERNANCE 起包格式期望六条）：① mutation 降级声明已前置（mutationSkipReason）；② 断言格式 = A1-A3 + LOOP-X、验收 ID 无括号；③ 验收 ID 无括号形态；④ 降级声明 = live 面零本包动作（noisePatterns ECS 清空已由 human 主线程完成，退役实证 = 部署轮实读 openclaw.json；指令挪 system 输出质量离线不可证 = 真机 3-5 例抽检兜底；prompt 制品 first-run 部署语义见 plan.md ③）；⑤ 新约定包闸判据自查：本包无新约定，user 通道沿 openclaw_stream_request 既有单源扩展（engine-patch openai.py 同源先例）；⑥ 输入面期望 = input-brief 单份 + 超读申报 + crossEnd 已填（exempt 理由 ≥12 字）。scope-map 核对（1c）：builder/fixer allow 含 server/**、deny 含 **/acceptance/**（验收件归 acceptance-author）；本包全部 target 路径（front 调用链 + provider + 声明 + manifest + 验收件）在各自角色 allow 面内，零新登记。architect 预评（1g，2026-10-24）两修正已采纳：条件传参（八处既有桩零改，unit 桩签名同步从 manifest 撤出）+ prompt 制品部署洞补丁（manifest 登记 + 空制品回填兜底 + first-run 注记）；技术语义权威 = plan.md（技术方案节含预评留痕）。纪律红线：docs/contracts/** 与 arch/requirements 本体只读（spec 过时面归在途批）；插件本体（@honcho-ai/openclaw-honcho dist）与 Honcho 栈只读；openclaw.json 不入仓、声明零 secret；禁 expect:unset 假牙。 修正案 R2(2026-10-24 live 证伪回退,human-correction f13a53a8):指令挪 system 裁决被真机实证证伪(OpenClaw openai-http 不跟请求级 system)——user 消息恢复恒定「指令+素材」包装(回填兜底分支坍缩,制品缺失仅 warning),request 级 system 保留并存,携 user=<device_id> 半保留不动(live 实证归属正常);冻结件相关断言由 acceptance-author 换代后 fixer 落补丁,全量绿为准。"
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": ["delivery/workstreams/device-memory-overhaul/"],
+  "riskTier": "high",
+  "gateProfile": ["migration", "security"],
+  "mergeOrder": 55,
+  "dependsOn": ["261022-m5-k4-history-corpus-backfill"],
+  "notes": "① 上下文:K4 已 merged,本包 = live 实证归因 bug 的修复轮(新 Lite 包,dev/pod-m2 就地);② fixer 工作树未 commit 补丁 = K4 HOLD 期产物,review §1.5 裁定 KEEP 为基底,本包 builder/fixer 从工作树现状续作;③ Gate A3 快照 = c:/tmp/k4-corpus-review/txt(21 文件,architect 只读副本,非仓内制品——孩子语料不入仓,隐私红线);④ scope-map 已核:builder/fixer allow server/** 覆盖 backfill+env.example,acceptance 文件归 acceptance-author;⑤ live 运维段(Phase 1.5-4)零 host 断言、归主线程经 human 授权,Pod 产出命令单;⑥ transcript 源形状漂移((session_id,seq,event_json,created_at) vs 契约 id/role/content)不在本包修——D2 裁不重灌,导出器重建登记 debt;⑦ 指纹公式换代:旧批次指纹随回滚消失,无撞车面"
 }

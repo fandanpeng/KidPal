@@ -246,3 +246,10 @@
 - **停等位：`awaiting-human:live-deploy`**——K4-E6 live 运维项挂 human 部署轮:ECS 全量 backfill + 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查;四项 live 对账点(metadata 可达性 / 真语料格式 / DELETE 202 异步窗差 / conclusions 派生等待窗)。HONCHO_JWT 环境变量按 USE_AUTH 现状决定注入(现 ECS 未设 = false 形态,可不注入,工具容忍缺省)。
 - **M5 五包列车进度**:P1 ✓ → P5 ✓ → P2 ✓ → P3 ✓ → **P4/K4 ✓(merged,待 live 部署)**;真机轮归 P5 收口轮(「王一诺」类旧事抽问)。
 - **advisory 转交**：loop-retro 阈值已到(32 ≥ 3),发起归主线程。
+
+## 2026-10-24 · K4b corpus 解析器 v2 收口——final r2 全绿 + commit 冻结（integrator）
+
+- **包**：`261024-m5-k4b-corpus-parser-v2`（Lite / riskTier=high，mergeOrder 55，dependsOn K4 已满足）——K4 live 实证归因 bug 的修复轮：解析器 v2（逐行双层识别 + 续行归组 + 内嵌 turn 拆分 + created_at 回填 04:00 UTC 口径 + toolResult 路由 + 报告 additive 扩展）+ rollback `--source-kind` 选择性删除 + honcho.env.example 两键（K4B-E1..E6；技术方案权威 = k4-attribution-fix-review-20261024 §2.1，human D1-D5 五项裁决）。K4 HOLD 期 fixer 未 commit 补丁按 review §1.5 裁 KEEP 为基底，一并入本 commit。
+- **验证**：scoped r1（invocation `f81ac003`）8 闸绿（lite firmware-build 后置）；**final r2**（invocation `9ceb48f1`）10 闸全绿、fact `ok:true`；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/test-scope-final-r2.txt`（5 文件，与 changeManifest 恰同）。全量口径 340 passed / 7 deselected / 33 subtests 零回退；A3/A4 真语料快照审计（21 文件 sha256 冻结）本机实跑零 skip——冻结锚 1652 行 → 1007 组 → 2879 段（user 1580 / assistant 1299）、wrapper 350、指纹全唯一、unparsed=0，与 review §4 判据逐项一致。
+- **制品**：docs-delta.md（零 diff 声明：`git status docs/` 空，修复轮零 spec/契约面 diff）+ review-packet.md（demo 对账行 Gate A1-A4 逐项 + 未覆盖面申报 + live 运维命令单 + findings 2 NIT）+ verdict.json（r2 fact 晋升投影）+ verification.json（advisory）落包目录。debt 登记一处：`docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` append「transcript 影子导出器重建（D2 裁不重灌）」条（三缺陷 + 重建前置件 + 形状漂移承载）。
+- **停等位**：live 运维段（Phase 1.5-4：Gate B 试灌读回 / Gate C 硬删完成 / Gate D 派生后验）零 host 断言，归主线程经 human 授权（D5 低峰窗口）；命令单在 review-packet §4。合并门后续：supervisor-verdict-gate（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod。
