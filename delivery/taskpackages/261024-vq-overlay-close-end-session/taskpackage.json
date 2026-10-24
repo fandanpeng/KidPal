@@ -1,0 +1,89 @@
+{
+  "changeId": "261024-vq-overlay-close-end-session",
+  "rigor": "full",
+  "riskTier": "high",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "human-verbatim": "「查一下设备端日志，他刚才都返回首页了，结果还在聆听，而其还有语音回复，但是页面还是首页」（2026-10-24 human 原话，逐字）。设备 TF 卡 KPLOG011 段 18:38-18:42 逐秒还原 + KPLOG010 同日 7 次同动作对照；debt 条目 TECH-261024-overlay-close-speaking-no-session-end。",
+    "upstreamType": "regression",
+    "upstreamRef": "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "upstreamFrozen": "",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/application（会话结束入口 + 主循环事件位）+ firmware/main/boards/waveshare-s3-rlcd-4.2（GLOBAL_ACT_OVERLAY_CLOSE 级联收窄）+ firmware/main/test（既有验收断言重钉与结构断言）",
+  "planRef": "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md",
+  "changeManifest": [
+    "firmware/main/application.h",
+    "firmware/main/application.cc",
+    "firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc",
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "changeManifestNotes": "triage architect reviewed plan 原样种子。设备侧仅 waveshare-s3-rlcd-4.2 一块板消费 OVERLAY_CLOSE（全仓 grep 唯一），其余板零触面；ToggleChatState / device_state_machine.cc / 协议层 / contracts 均不改。",
+  "story": "261024-vq-overlay-close-end-session · 播报态关层必须真正结束会话——新增 MAIN_EVENT_END_VOICE_SESSION + Application::EndVoiceSession() 统一结束入口（覆盖 Connecting / Listening / Speaking 三态），板级 GLOBAL_ACT_OVERLAY_CLOSE 改调该入口；播报态显式 ResetDecoder 即时静音 + abort + CloseAudioChannel + Idle + LOW_POWER + local_close_settle(src=overlay_close) + ScheduleResidentRebuild。修复「回首页后麦克风仍开、4 分钟后仍在首页出声问答」；KEY 短按打断语义零改动。技术语义权威 = plan.md。",
+  "sourceRefs": [
+    "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md",
+    "docs/requirements.md#§2.3"
+  ],
+  "acceptance": [
+    "OCE-A1: 播报态关层结束会话（结构断言）——HandleEndVoiceSessionEvent 切区内含 audio_service_.ResetDecoder() / AbortSpeaking(kAbortReasonNone) / protocol_->CloseAudioChannel() / SetDeviceState(kDeviceStateIdle) / local_close_settle src=overlay_close / ScheduleResidentRebuild()；板级 OVERLAY_CLOSE 切区内零 app.ToggleChatState() 且含 app.EndVoiceSession()。设计态红：入口不存在、板级仍调 ToggleChatState",
+    "OCE-A2: 既有断言重钉——voice_round_ui KVR-A4 tooth 2 改为「OVERLAY_CLOSE 走 EndVoiceSession、SESSION_TOGGLE 仍走 ToggleChatState」；boot_auto_connect RC-A2 tooth 6 计数 4→5（定义 + 四调用点）、RC-B2 sites 增第四项且各恰 1",
+    "OCE-A3: 回归网——key_layer_dispatch / voice_round_ui / boot_auto_connect / record_session_live 四族全绿；host 全量套件零新增红 vs 冻结基线",
+    {
+      "id": "OCE-A4",
+      "kind": "structural",
+      "note": "live-manual 真机目检（非自动断言，诚实申报；不计入 runner 通过面）：① 播报中 BOOT 短按 → Abort speaking → local_close_settle src=overlay_close → Websocket disconnected → speaking -> idle，回原页且 ≥4 分钟无 ASR/无出声；② 播报中 KEY 长按同效；③ 播报中 KEY 短按仍为打断→聆听（不得结束会话）；④ 聆听态 BOOT 短按行为不变；⑤ Connecting 态关层可回 Idle；⑥ T 秒后常驻重建照常。本 Pod 到真机门前停等 human，不自行烧录"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/voice_round_ui.acceptance.c",
+    "firmware/main/test/boot_auto_connect.acceptance.c"
+  ],
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
+  "redBaselineCommand": "MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "待 acceptance-author 冻结相位实跑（本包为 /triage-change 落盘，主线程未代跑红基线）；冻结后须如实记录既有套件先存红清单与锚",
+  "exitCriteria": [
+    "OCE-X1: OCE-A1/A2 host 断言转绿（含两处既有断言重钉与一条新增结构断言），零 warning",
+    "OCE-X2: host 全量套件零新增红 vs 冻结基线（OCE-A3 四族全绿）",
+    "OCE-X3: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过）",
+    "OCE-X4: 真机目检由 human 持板执行并留痕（OCE-A4 六项观测）；planner 到真机门前停等（awaiting-human:real-device），不自行烧录",
+    "OCE-X5: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸完成"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端会话收尾语义修复：abort / close 均为既有 WS 消息，不新增 wire 语义、不改帧类型与字段类型；server/** 零 diff；设备端无跨端数据类变更。triage architect 逃生门预查 = NO_CONTRACT_CHANGE。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "mutationRequired": true,
+  "docsSyncRequired": false,
+  "docsSyncReason": "本包零 canonical spec / contracts 改动：需求 §2.3 已冻结该语义（requirements.md:147），本包是实施偏离修正；docs-delta 如实申报「无 spec 过时面」。",
+  "docRefs": [
+    "docs/debt/tech/TECH-261024-overlay-close-speaking-no-session-end.md",
+    "delivery/taskpackages/261024-vq-overlay-close-end-session/plan.md"
+  ],
+  "dependsOn": null,
+  "mergeOrder": null,
+  "notes": "起包留痕：① 档位 = ②单包 Full / riskTier high / sourceType regression，architect /triage-change 比例化 review 裁决（nano 被三条独立判据否掉：跨 3 个实现面文件、命中排除清单「触状态机」、两处既有断言必红须重钉），human 触点① 确认；② 四面探测 = 纯实现面，需求锚 §2.3 已冻结、架构/契约/治理零变更；③ 行为半 host 不可闭环（Application/Protocol/AudioService 不进 host 构建），真机目检为诚实验收形态，plan ④ 已申报；④ out-of-scope：覆盖层 BOOT 双击路由为 NONE，与 §2.3「双击=同短按」漂移，另案立包；⑤ 实现约束见 plan ⑥（负锚七条）。"
+}

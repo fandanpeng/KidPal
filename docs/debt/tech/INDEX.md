@@ -7,13 +7,14 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 33（待拍板 1 / 待触发 26 / 已接受风险 6）；已结 24（归档索引见下）。
+**摘要**：未结 34（待拍板 2 / 待触发 26 / 已接受风险 6）；已结 24（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
+| [TECH-261024-overlay-close-speaking-no-session-end](TECH-261024-overlay-close-speaking-no-session-end.md) | MAJOR | 播报态关层不结束会话——overlay_close 复用 ToggleChatState 只打断停播，回首页后麦克风仍开并继续语音问答（KPLOG011 真机实证） | 已拍板——2026-10-24 human 报障 + /triage-change 比例化 review 判 ②单包 Full（riskTier high），即刻起包 261024-vq-overlay-close-end-session |
 
 ## 待触发（26）
 
