@@ -3,6 +3,12 @@
 """backfill_honcho.py — 历史 corpus → Honcho 记忆库照记全量迁移 runner。
 
 TaskPackage: 261022-m5-k4-history-corpus-backfill（M5 列车 P4/K4）。
+解析器 v2（2026-10-24，review 修正案）+ created_at 回填 + toolResult 路由：
+TaskPackage 261024-m5-k4b-corpus-parser-v2（K4 归因 bug 修复轮，rigor=lite），
+技术方案权威 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/
+k4-attribution-fix-review-20261024.md §1.5（双层识别补丁裁定 KEEP）+ §2.1
+（解析器 v2 逐条）+ human D1-D5 五项裁决。v2 = 双层识别（KEEP 基底）+ 续行
+归组 + 内嵌 turn 拆分 + created_at 回填 + toolResult 路由 + additive 报告扩展。
 上游: docs/requirements.md S-F5.1-AC5 + docs/architecture.md §6.7 +
 workstream PROPOSAL §3.1 R6 / §3.2 OQ-3 + arch review PROPOSAL T4 +
 ADR-016 + OQ-10 + NFR-SEC-2 ⑤ + NFR-PRIV-1。
@@ -28,8 +34,11 @@ ADR-016 + OQ-10 + NFR-SEC-2 ⑤ + NFR-PRIV-1。
 
 幂等与 live 共生（K4-E3 · notes ④ 判据）:
   · 每条灌入消息 metadata 携带 kidpalBackfillFingerprint =
-    v1:<source-kind>:<sha256hex>；指纹 = 源锚身份（源件 + 行/事件序 +
-    内容），同源重跑确定不变；重复内容消息不互吞（同源内零碰撞）。
+    v1:<source-kind>:<sha256hex>；指纹 = 源锚身份（源件 + 行/事件序 + 内容），
+    同源重跑确定不变；重复内容消息不互吞（同源内零碰撞）。corpus 指纹公式
+    v2 换代（review §2.1 ⑤）：锚 = 源文件 | 首行行号 | 段序 | role | 段文本
+    （段级身份——归组/拆分后每段独立锚定）；transcript 指纹公式不动；旧批次
+    旧指纹随 session 回滚删除自然消失，与新公式零撞车面。
   · 自建 session metadata 携带 kidpalBackfillBatch，值 = 该 session 自身
     键（「标记即键」形态——值形态契约自由；回滚 runner 经
     list_backfill_batches 取回的集合即恰被标记 session 的键集合，无需
@@ -40,11 +49,40 @@ ADR-016 + OQ-10 + NFR-SEC-2 ⑤ + NFR-PRIV-1。
     已灌、永不被本工具写入、永不被回滚触碰。
 
 源（只读零改写；plan/apply 全程字节不变，K4-E4）:
-  · --corpus-dir  session-corpus 源语料目录：逐非空行一条消息，行格式
-    `[<role>] <content>`（任何方括号角色前缀皆识别透传，含旧设备流程
-    回合行——照记不滤）；未识别行（无前缀残行）兜底收编为一条消息
-    （role=user、内容=整行）并在计数报告 backfill.unparsed 披露——
-    照记全量、零丢弃。
+  · --corpus-dir  session-corpus 源语料目录。解析器 v2（2026-10-24 review
+    修正案 §2.1，human D1 拍板「归组+内嵌拆分」）按四层还原真实回合序列，
+    全程无损、零丢弃：
+      1. 逐行双层识别（fixer 补丁 KEEP 基底）：行格式两种形态——
+         - 单层旧格式 `[<role>] <content>`：任何方括号角色前缀皆识别透传，
+           含旧设备流程回合行（如 `[front] ...`）——照记不滤、逐行一条、
+           不参与归组与拆分（冻结 K4 最小格式行为逐字保持）；
+         - 双层机器格式 `[<会话源引用>] <Role>: <content>`：第一层方括号是
+           会话源引用（剥掉，不进 role 也不进 content），角色取第二层
+           `User:` / `Assistant:` 前缀（恰一单词 token + 冒号，大小写不敏感；
+           归一键 = 小写，确保 assistant 回合路由到 agent peer）。理论上的
+           多层源引用按循环剥除。content 自带的 `词:` 或另一角色名不会被
+           误判为角色前缀（保守：只认 user/assistant 两 token）。
+      2. 续行归组（仅双层行）：同文件 + 同首层 `[<ref>]` + 同第二层 role 的
+         连续行合并为一条逻辑消息（换行保留），首行行号作锚——修复 F2 续行
+         碎片化（display JSON / 笔画路径不再被拆成多条独立消息）。
+      3. 内嵌 turn 拆分（仅双层组）：逻辑消息体按 `(?<=\\s)(User|Assistant): `
+         切段；首段沿用外层 role，其后各段按标记定 role。包装标记
+         `[Chat messages since your last reply - for context]` /
+         `[Current message - respond to this]` 作为协议标签计数进
+         wrapperMarkersStripped（review §2.1 ③ 保留变体「不剥、只计数」：
+         真语料 243 个组首段恰为包装标记载体——若剥离，这些段变空、冻结
+         锚定数 2879 不可达且产生空消息；故标记保留在段文本中、只计数，
+         内容零丢弃，段计数与冻结锚逐值等——对账基准 =
+         review 实读探针 k4-scripts/split_probe2.py 的 1007→2879 模拟）
+         ——修复 F1 主症状（user 消息上下文块里嵌的小伴话术改归 assistant
+         段）。assistant 组实读零标记；若出现标记按同规则处理并如实计数，
+         不得丢内容。
+      4. created_at 回填（human D3）：文件名 `YYYY-MM-DD.txt` → 该日 12:00
+         Asia/Shanghai = 04:00 UTC（ISO 8601 带 +00:00 后缀）经
+         MessageCreate.created_at 出网；非日期文件名 → created_at=None 走
+         服务端写入时刻缺省——修复 F3 时间线被盖成写入日。
+    未识别行（无前缀残行）兜底收编为一条消息（role=user、内容=整行）并在
+    计数报告 backfill.unparsed 披露——照记全量、零丢弃。
   · --openclaw-db  OpenClaw kidpal agent sqlite：表 transcript_events，
     至少列 id / role / content（列超集容忍；缺表缺列 = 红，exit 1）。
     只读使用（全部语句为 SELECT，零写语句）。
@@ -66,7 +104,10 @@ exit 码: 0 = 成功（含 plan 干跑）；1 = 运行/数据错误（源不在�
 两态都落盘；顶层键 mode + peers/sessions/messages/observations 四计数器
 before/after + backfill.ingested/skipped/unparsed/perSource；apply 态
 after = 写后快照，plan 态 after = 预测（messages.after = before + ingested；
-observations 的 deriver 异步增量在 live 轮对账——K4-E6）。
+observations 的 deriver 异步增量在 live 轮对账——K4-E6）。解析器 v2 报告
+扩展（K4B-E3，additive、顶层键零破坏）：perSource[kind] 增 perRole
+{user, assistant, other} / groups / segments / wrapperMarkersStripped /
+corpusFiles[{name, sha256, lines}]；backfill 顶层增 perRoleTotal。
 
 执行面: human 在 ECS 全量跑（K4-E6 live structural 项 = ECS 全量跑 +
 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查；挂
@@ -98,14 +139,16 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
+import inspect
 import json
 import os
+import re
 import sqlite3
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 DEFAULT_API = "http://127.0.0.1:18100"
@@ -117,6 +160,22 @@ DEFAULT_PEER = "owner"
 # assistant 角色消息在 Honcho 侧的 peer 归宿（ADR-016：DB peers = owner /
 # agent-kidpal 两员）；其余角色一律归目标 owner peer。
 AGENT_PEER = "agent-kidpal"
+# 路由 agent peer 的角色集（review §2.1 ⑦ / F4：toolResult 及未来 tool* 一并
+# 归 agent——课表文件正文类 toolResult 归 owner 会派生「owner has a 课表」类
+# 伪事实）。比较经 role 小写归一。
+_AGENT_ROUTE_ROLES = frozenset({"assistant", "toolresult", "tool"})
+# 双层组内嵌上下文块的协议包装标记（review §2.1 ③ / F1）——计数进
+# wrapperMarkersStripped（保留变体「不剥、只计数」，见 _strip_wrapper_markers
+# 注：剥离会使 243 个包装标载体段变空、冻结锚定数 2879 不可达）；协议标签，
+# 非孩子/小伴话语。
+_WRAPPER_MARKERS = (
+    "[Chat messages since your last reply - for context]",
+    "[Current message - respond to this]",
+)
+# 内嵌 turn 切段标记（review §2.1 ③）：前置空白 + User/Assistant token + 冒号
+# 空格。(?<=\s) 保段首 token 不误拆（content 自带 `词:` / 行首 `User:` 首段
+# 沿用外层 role），capture 组供切段后定 role。
+_TURN_MARK_RE = re.compile(r"(?<=\s)(User|Assistant): ")
 # wire 层 session 名编码前缀（wire_session_name / canonical_session_name）——
 # canonical 键含 ':' 不合 Honcho 资源名 pattern，出网名 = 前缀 + base64url。
 WIRE_NAME_PREFIX = "kidpal-bf-"
@@ -164,11 +223,67 @@ def utc_batch_tag() -> str:
 # --------------------------------------------------------------------------- #
 
 
-def split_corpus_line(line: str) -> tuple[str, str, bool]:
-    """`[<role>] <content>` → (role, content, recognized)。
+# 双层机器格式第二层只认这两个机器角色 token（大小写不敏感）——比
+# 「任意 `Word:`」更保守，避免把 content 自带的 `词:` 误判成角色前缀而
+# 破坏单层旧格式逐字兼容（2026-10-24 解析归因修复）。
+_SECOND_LAYER_ROLES = frozenset({"user", "assistant"})
 
-    任何方括号角色前缀皆识别透传（含旧设备流程回合行——照记不滤）；
+
+def _without_leading_bracket_layers(text: str) -> str:
+    """剥去行首任意层 `[...]` 源引用层（连同尾随单空格），返回剩余。
+
+    循环剥除处理理论上的多层源引用；遇到 `[]`/未闭合方括号即停手。
+    """
+    while text.startswith("["):
+        end = text.find("]")
+        if end <= 1:
+            break
+        text = text[end + 1:]
+        if text.startswith(" "):
+            text = text[1:]
+    return text
+
+
+def _second_layer_role(text: str) -> tuple[str, str] | None:
+    """`User:` / `Assistant:` 前缀（恰一单词 token + 冒号，大小写不敏感）。
+
+    命中 → (小写角色, 冒号后内容去一个可选空格)；否则 None（保守不剥）。
+    只认冒号前的整 token ∈ {user, assistant}，content 内的 `词:` 不误判。
+    """
+    colon = text.find(":")
+    if colon <= 0:
+        return None
+    head = text[:colon]
+    if head.lower() not in _SECOND_LAYER_ROLES:
+        return None
+    content = text[colon + 1:]
+    if content.startswith(" "):
+        content = content[1:]
+    return head.lower(), content
+
+
+def split_corpus_line(line: str) -> tuple[str, str, bool]:
+    """`[<role>] <content>` 或 `[<源引用>] <Role>: <content>` → (role, content, recognized)。
+
+    解析器 v2 的逐行识别基底（fixer 补丁 KEEP，review §1.5）：归组与拆分
+    见 parse_corpus_dir / _classify_corpus_line。单层旧格式 `[<role>]
+    <content>`：逐字保持既有行为（任何方括号角色前缀透传，含旧设备流程
+    回合行——照记不滤）。双层机器格式 `[<会话源引用>] User:/Assistant:
+    <content>`：第一层方括号是源引用（剥掉，不进 role 也不进 content），
+    角色取第二层 `User:`/`Assistant:` 前缀（大小写不敏感，归一键 = 小写
+    ——确保 assistant 回合路由到 agent peer，修复 live 实证的归因错）。
     未识别行返回 (user, 整行, False)——兜底收编，不静默丢弃。
+    """
+    _ref, role, content, recognized, _double = _classify_corpus_line(line)
+    return role, content, recognized
+
+
+def _classify_corpus_line(line: str) -> tuple[str | None, str, str, bool, bool]:
+    """逐行分类 → (ref, role, content, recognized, double_layer)。
+
+    ref = 双层行首层方括号内容（归组键的组成部分；单层/未识别行 = None）；
+    double_layer = 是否双层机器格式（归组与内嵌拆分只对双层行启用——单层
+    旧格式逐行一条、逐字保持冻结 K4 行为）。
     """
     if line.startswith("["):
         end = line.find("]")
@@ -176,37 +291,138 @@ def split_corpus_line(line: str) -> tuple[str, str, bool]:
             rest = line[end + 1:]
             if rest.startswith(" "):
                 rest = rest[1:]
-            role = line[1:end].strip()
-            return (role or "user"), rest, True
-    return "user", line, False
+            ref = line[1:end]
+            # 双层：剥去首层及后续方括号源引用层后，剩余以 User:/Assistant:
+            # token 起 → 角色取第二层（首层方括号即源引用）。
+            second = _second_layer_role(_without_leading_bracket_layers(rest))
+            if second is not None:
+                return ref, second[0], second[1], True, True
+            # 单层旧格式（含 `[user] 内容: 冒号` / `[front] ...`）逐字保持。
+            return None, (ref.strip() or "user"), rest, True, False
+    return None, "user", line, False, False
 
 
-def parse_corpus_dir(corpus_dir: Path) -> tuple[list[dict], int]:
-    """session-corpus 源语料 → 计划消息列表。
+def _strip_wrapper_markers(text: str) -> tuple[str, int]:
+    """协议包装标记计数（review §2.1 ③ 保留变体「不剥、只计数」）。
 
-    逐非空行一条消息；未识别行兜底收编并计数（零丢弃）；只读——不写
-    不改不删源。返回 (messages, unparsed_count)，每条 message 含
-    role / content / fingerprint / unparsed 四键。
+    返回 (原文原样, 标记出现次数)——标记保留在文本中不剥离（真语料 243 个
+    组首段恰为包装标记载体：剥离会使段变空、冻结锚定数 2879 不可达且产生
+    空消息；对账基准 = review 探针 split_probe2.py 保留变体）；计数进
+    wrapperMarkersStripped 报告键（键名为冻结面，语义 = 协议标签出现数）。
+    """
+    count = 0
+    for marker in _WRAPPER_MARKERS:
+        count += text.count(marker)
+    return text, count
+
+
+def _split_embedded_turns(body: str, outer_role: str) -> list[tuple[str, str]]:
+    """逻辑消息体按内嵌 turn 标记切段（review §2.1 ③）→ [(role, 段文本)]。
+
+    首段沿用外层 role；其后各段按 `(?<=\\s)(User|Assistant): ` 标记定 role
+    （小写归一）。切段标记本身（token + `: `）是协议成分，不入段文本；
+    用户组恒启用，assistant 组实读零标记、若出现按同规则处理并如实分段
+    （不得丢内容）。段文本内的 `词:` 等非 User/Assistant token 不误拆。
+    """
+    parts = _TURN_MARK_RE.split(body)
+    segments = [(outer_role, parts[0])]
+    for marker, seg in zip(parts[1::2], parts[2::2]):
+        segments.append((marker.lower(), seg))
+    return segments
+
+
+def corpus_created_at(file_stem: str) -> str | None:
+    """语料文件名 `YYYY-MM-DD` → created_at 回填值（human D3 口径）。
+
+    该日 12:00 Asia/Shanghai = 04:00 UTC，ISO 8601 带 +00:00 后缀
+    （如 2026-09-30T04:00:00+00:00，单测钉死）；非日期文件名（含非法日期
+    如 2026-13-99）→ None，走服务端写入时刻缺省。
+    """
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", file_stem or ""):
+        return None
+    try:
+        day = datetime.strptime(file_stem, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+    local_noon = datetime(day.year, day.month, day.day, 12, 0,
+                          tzinfo=timezone(timedelta(hours=8)))
+    return local_noon.astimezone(timezone.utc).isoformat()
+
+
+def parse_corpus_dir(corpus_dir: Path) -> tuple[list[dict], int, dict]:
+    """session-corpus 源语料 → 计划消息列表（解析器 v2）。
+
+    四层还原（头注「源」节）：逐行双层识别 → 续行归组（同文件 + 同首层
+    `[<ref>]` + 同第二层 role 的连续行合并，换行保留，首行行号作锚；空行
+    不隔断组——组键连续性只看非空行序列）→ 内嵌 turn 拆分 + 包装标记计数
+    （仅双层组；标记保留变体，见 _strip_wrapper_markers）→ created_at 回填。
+    单层旧格式与未识别行逐行一条、不归组不拆分（冻结 K4 最小格式行为逐字
+    保持）。只读——不写不改不删源。
+    返回 (messages, unparsed_count, stats)：每条 message 含 role / content /
+    fingerprint / unparsed / created_at / segment_index 六键；stats 含
+    groups（逻辑组数）/ wrapperMarkersStripped（包装标记剥离计数）/
+    corpusFiles（逐文件 {name, sha256, lines}——lines = 非空行数，只读
+    计算，快照审计对账面）。
     """
     messages: list[dict] = []
     unparsed = 0
+    stats: dict = {"groups": 0, "wrapperMarkersStripped": 0, "corpusFiles": []}
     for path in sorted(p for p in corpus_dir.rglob("*") if p.is_file()):
         rel = path.relative_to(corpus_dir).as_posix()
         text = path.read_text(encoding="utf-8", errors="replace")
-        for line_no, raw in enumerate(text.splitlines(), start=1):
-            line = raw.strip()
-            if not line:
+        raw_lines = text.splitlines()
+        nonempty = [(no, raw.strip()) for no, raw in
+                    enumerate(raw_lines, start=1) if raw.strip()]
+        stats["corpusFiles"].append({
+            "name": rel,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "lines": len(nonempty),
+        })
+        created_at = corpus_created_at(path.stem)
+        # 续行归组：同 (ref, role) 的连续双层行合并；单层/未识别行自成一组。
+        groups: list[dict] = []
+        for line_no, line in nonempty:
+            ref, role, content, recognized, double = _classify_corpus_line(line)
+            prev = groups[-1] if groups else None
+            if (double and prev is not None and prev["double"]
+                    and prev["ref"] == ref and prev["role"] == role):
+                prev["contents"].append(content)  # 换行保留，锚 = 首行行号
                 continue
-            role, content, recognized = split_corpus_line(line)
-            if not recognized:
-                unparsed += 1
-            messages.append({
-                "role": role,
-                "content": content,
-                "fingerprint": fingerprint("session-corpus", rel, str(line_no), line),
-                "unparsed": not recognized,
+            groups.append({
+                "ref": ref, "role": role, "anchor": line_no,
+                "contents": [content], "recognized": recognized,
+                "double": double,
             })
-    return messages, unparsed
+        for group in groups:
+            stats["groups"] += 1
+            if not group["recognized"]:
+                unparsed += 1
+            body = "\n".join(group["contents"])
+            if group["double"]:
+                body, stripped = _strip_wrapper_markers(body)
+                stats["wrapperMarkersStripped"] += stripped
+                segments = _split_embedded_turns(body, group["role"])
+            else:
+                segments = [(group["role"], body)]
+            seg_index = 0
+            for seg_role, seg_text in segments:
+                seg_text = seg_text.strip()
+                if not seg_text:
+                    continue  # 纯标记/空段（真语料实读零空段；不计内容丢失）
+                messages.append({
+                    "role": seg_role,
+                    "content": seg_text,
+                    # 指纹公式 v2（review §2.1 ⑤）：段级锚 = 源文件 | 首行
+                    # 行号 | 段序 | role | 段文本——逐位稳定、重复内容不互吞。
+                    "fingerprint": fingerprint(
+                        "session-corpus", rel, str(group["anchor"]),
+                        str(seg_index), seg_role, seg_text),
+                    "unparsed": not group["recognized"],
+                    "created_at": created_at,
+                    "segment_index": seg_index,
+                })
+                seg_index += 1
+    return messages, unparsed, stats
 
 
 def parse_transcript_db(db_path: Path) -> list[dict]:
@@ -236,23 +452,41 @@ def parse_transcript_db(db_path: Path) -> list[dict]:
                     "openclaw-transcript", db_path.name, str(event_id),
                     role_text, content_text),
                 "unparsed": False,
+                "created_at": None,  # transcript 源零回填（D2 裁不重灌）
+                "segment_index": 0,
             })
     finally:
         con.close()
     return messages
 
 
-def plan_sources(args: argparse.Namespace) -> dict[str, list[dict]]:
-    """双源解析（两源至少其一已在用法校验保证）；返回按 source-kind 分组。"""
+def plan_sources(args: argparse.Namespace) -> tuple[dict[str, list[dict]], dict]:
+    """双源解析（两源至少其一已在用法校验保证）。
+
+    返回 (plan, parse_stats)：plan 按 source-kind 分组为消息列表；
+    parse_stats[kind] = 解析级统计（groups / wrapperMarkersStripped /
+    corpusFiles——segments 与 perRole 由消息列表派生，报告扩展 K4B-E3）。
+    """
     plan: dict[str, list[dict]] = {}
+    parse_stats: dict[str, dict] = {}
     if args.corpus_dir:
         corpus_dir = Path(args.corpus_dir)
         if not corpus_dir.is_dir():
             raise BackfillError(f"--corpus-dir 不在世或非目录: {corpus_dir}")
-        plan["session-corpus"], _ = parse_corpus_dir(corpus_dir)
+        msgs, _unparsed, stats = parse_corpus_dir(corpus_dir)
+        plan["session-corpus"] = msgs
+        parse_stats["session-corpus"] = stats
     if args.openclaw_db:
-        plan["openclaw-transcript"] = parse_transcript_db(Path(args.openclaw_db))
-    return plan
+        msgs = parse_transcript_db(Path(args.openclaw_db))
+        plan["openclaw-transcript"] = msgs
+        # transcript 源逐事件一条逻辑消息：零归组、零拆分、零包装标记、
+        # 零语料文件清单（corpusFiles 恒空表——additive 键形状统一）。
+        parse_stats["openclaw-transcript"] = {
+            "groups": len(msgs),
+            "wrapperMarkersStripped": 0,
+            "corpusFiles": [],
+        }
+    return plan, parse_stats
 
 
 # --------------------------------------------------------------------------- #
@@ -434,15 +668,26 @@ class HonchoRestClient:
         # create 返回既有 session（200/201），无 409 分支。
         self._request("POST", self.EP_SESSIONS.format(ws=self.WS), body=body)
 
-    def add_message(self, session_key, role, content, metadata) -> None:
+    def add_message(self, session_key, role, content, metadata,
+                    created_at=None) -> None:
+        """单条消息写入（鸭型协议；created_at 可选——review §2.1 ④ / human D3）。
+
+        created_at 非 None 时进 MessageCreate.created_at 字段
+        （schemas/api.py:347 实测支持回填）；None = 服务端写入时刻缺省
+        （旧行为，向后兼容）。peer 路由：role ∈ {assistant, toolResult,
+        tool}（小写归一）→ AGENT_PEER；其余 → session 目标 owner peer。
+        """
         session_key = str(session_key)
-        peer = (AGENT_PEER if str(role) == "assistant"
+        peer = (AGENT_PEER if str(role).lower() in _AGENT_ROUTE_ROLES
                 else self._peer_by_key.get(session_key, DEFAULT_PEER))
-        self._add_messages(session_key, [{
+        row = {
             "content": str(content),
             "peer_id": peer,  # MessageCreate.peer_name 的 alias peer_id（api.py:342）
             "metadata": dict(metadata),
-        }])
+        }
+        if created_at is not None:
+            row["created_at"] = str(created_at)
+        self._add_messages(session_key, [row])
 
     def _add_messages(self, session_key: str, rows: list[dict]) -> None:
         """批量写消息（MessageBatchCreate：{"messages":[...]} 上限 100 条/批）。
@@ -478,6 +723,25 @@ def build_client(api: str):
     return HonchoRestClient(api)
 
 
+def client_supports_created_at(add_message) -> bool:
+    """鸭型协议兼容探测：add_message 是否接受 created_at 可选参。
+
+    向后兼容面（review §2.1 ④「验收桩同步」）：真客户端与已同步的新桩
+    支持该参 → runner 传 created_at 出网；未同步的旧四参桩（冻结 K4 验收
+    桩形态 add_message(session_key, role, content, metadata)）不支持 →
+    runner 省略该参、行为与旧版逐位一致（离线 fixture 无 created_at 断言
+    面——回填断言由同步后的验收桩承载）。**kwargs 桩视作支持。
+    """
+    try:
+        params = inspect.signature(add_message).parameters
+    except (TypeError, ValueError):
+        return False
+    if "created_at" in params:
+        return True
+    return any(p.kind is inspect.Parameter.VAR_KEYWORD
+               for p in params.values())
+
+
 # --------------------------------------------------------------------------- #
 # CLI 与主流程
 # --------------------------------------------------------------------------- #
@@ -489,7 +753,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         description="历史 corpus → Honcho 记忆库照记全量迁移"
                     "（plan 干跑缺省，--apply 显式写）")
     parser.add_argument("--corpus-dir", default=None,
-                        help="session-corpus 源语料目录（只读；逐非空行一条消息）")
+                        help="session-corpus 源语料目录（只读；解析器 v2："
+                             "双层识别+续行归组+内嵌拆分+created_at 回填）")
     parser.add_argument("--openclaw-db", default=None,
                         help="OpenClaw kidpal agent sqlite（transcript_events，只读）")
     parser.add_argument("--api", default=DEFAULT_API,
@@ -533,26 +798,48 @@ def run_backfill(args: argparse.Namespace) -> int:
           flush=True)
 
     # 源解析（只读；缺表缺列等数据错在此显式失败，先于任何写入）。
-    plan = plan_sources(args)
+    plan, parse_stats = plan_sources(args)
 
     client = build_client(args.api)
     before = client.snapshot_counts()
     existing_fps = client.list_fingerprints()
+    # 鸭型兼容探测（头注 B 节接缝）：created_at 只对支持的客户端出网
+    # （真客户端/已同步桩支持；未同步旧四参桩省略该参，行为不变）。
+    send_created_at = client_supports_created_at(client.add_message)
+
+    def per_role_counts(msgs: list[dict]) -> dict:
+        counts = {"user": 0, "assistant": 0, "other": 0}
+        for m in msgs:
+            role = str(m["role"])
+            counts[role if role in counts else "other"] += 1
+        return counts
 
     ingested = 0
     skipped = 0
     per_source: dict[str, dict] = {}
+    per_role_total = {"user": 0, "assistant": 0, "other": 0}
     write_sessions: list[tuple[str, list[dict]]] = []
 
     for kind in SOURCE_KINDS:
         msgs = plan.get(kind)
         if msgs is None:
             continue  # 该源未提供（两源至少其一已校验）
+        stats = parse_stats.get(kind, {})
+        per_role = per_role_counts(msgs)
+        for bucket in per_role_total:
+            per_role_total[bucket] += per_role[bucket]
         stat = {
             "planned": len(msgs),
             "ingested": 0,
             "skipped": 0,
             "unparsed": sum(1 for m in msgs if m["unparsed"]),
+            # additive 报告扩展（K4B-E3，review §2.1 ⑥）：顶层键零破坏。
+            "perRole": per_role,
+            "groups": int(stats.get("groups", len(msgs))),
+            "segments": len(msgs),
+            "wrapperMarkersStripped": int(
+                stats.get("wrapperMarkersStripped", 0)),
+            "corpusFiles": list(stats.get("corpusFiles", [])),
         }
         pending: list[dict] = []
         for message in msgs:
@@ -572,9 +859,14 @@ def run_backfill(args: argparse.Namespace) -> int:
         for key, msgs in write_sessions:
             client.create_session(args.peer, key, {SESSION_BATCH_KEY: key})
             for message in msgs:
-                client.add_message(
-                    key, message["role"], message["content"],
-                    {MESSAGE_FP_KEY: message["fingerprint"]})
+                metadata = {MESSAGE_FP_KEY: message["fingerprint"]}
+                if send_created_at:
+                    client.add_message(
+                        key, message["role"], message["content"], metadata,
+                        created_at=message["created_at"])
+                else:
+                    client.add_message(
+                        key, message["role"], message["content"], metadata)
         after = client.snapshot_counts()
     else:
         after = {
@@ -596,6 +888,7 @@ def run_backfill(args: argparse.Namespace) -> int:
             "skipped": skipped,
             "unparsed": sum(s["unparsed"] for s in per_source.values()),
             "perSource": per_source,
+            "perRoleTotal": per_role_total,  # additive（K4B-E3）
             "batch": batch,
             "targetPeer": args.peer,
             "deviceSessionFamily": DEVICE_FAMILY_PREFIX + args.device_id,
