@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 30（待拍板 0 / 待触发 25 / 已接受风险 2）；已结 88（归档索引见下）。
+**摘要**：未结 31（待拍板 0 / 待触发 26 / 已接受风险 2）；已结 88（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（25）
+## 待触发（26）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -42,6 +42,7 @@ _（无）_
 | [ARQ-261019-forward-derived-verification-set](ARQ-261019-forward-derived-verification-set.md) | SHOULD | 验证集白名单/计数承诺应从处方文本正推（而非只枚举现状命中） | 下个含「命中 ≡ 白名单」或计数承诺型验证条目的起草批，architect 撰写约定增补一条 |
 | [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | SHOULD | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | ① opendesign-connect skill 增补「出图不走 OD」先例段（od_* 失联/应用未跑时出图管道 = tools/asset-pipeline/shoot_design.mjs <html> <outdir>，playwright 无头 Edge 逐画布精确截图、400×300 阈值化 1bpp，每批只捡变更帧落 docs/ui/V<n>/）；② uiux-author agent 定义增补同款指引；③ 261019 批实测补充：uiux-author 全文件 Write 曾两次覆盖主线程合并的完整母版（R1 回归），skill 增补「母版/增量页单写者约定」条目 |
 | [ARQ-261019-verbatim-quote-line-level-false-negative](ARQ-261019-verbatim-quote-line-level-false-negative.md) | NIT | landing-fidelity 结构门 verbatim-quote 检查按行级匹配——目标句嵌在长行中部时报 not-found 假阴性（byte 比对证实逐字在场），advisory 语义局限误导核对 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` 的治理批 |
+| [ARQ-261024-new-mechanism-spike-first](ARQ-261024-new-mechanism-spike-first.md) | MAJOR | 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证 | 下一个引入新子系统 / 新外部依赖集成 / 新数据迁移的批，triage 判档与 launch 前必查本条；或下次治理批 |
 
 ## 已接受风险（2）
 
