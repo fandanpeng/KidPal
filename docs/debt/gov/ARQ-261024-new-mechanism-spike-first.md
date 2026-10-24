@@ -36,3 +36,7 @@ source: "K4 记忆回灌三轮返工（2026-10-23/24）执行记录：delivery/r
 - **正向案例留存**：human 坚持「先加日志再测」后,`[honcho-diag]` 一条日志即时定位五层里最贵的一层——「消费端可观测打点」应作为 spike 的标配产物。
 
 **风险**：riskTier: low-medium——改动为治理文面与流程清单（references/templates）,无代码、无数据迁移;主要风险 = spike 要求被形式化空转（跑个假验证就算数）,需在措辞里钉死「spine = 消费端真实观测,非生产者自证」。review profile = **Track B**（三要件①②③全满足:执行测出有实证 / 问题与原则清晰 / 爆炸半径已执行揭示;paths 落 G2 非硬排除）。**形态注记**：若 review 裁定须以机械 gate 落地（G3）,按约定升 full-adversarial + human——本条如实预标,不美化。
+
+---
+
+**勘误与引用 append（2026-10-24，主线程，按 k4-recall-architecture-20261024.md §C 对账）**：① 上文「证据」第 5 条表述需精确化——`session.context` 默认**不限会话**（workspace 级，跨会话本来通）；真正阻断注入的是两层：**(a) 观察者缺位**（backfill 会话成员配置 agent `observe_others=null` → deriver 不扇出 `(agent-kidpal, owner)` 视角结论，backfill 里该类 0 条）+ **(b) 被动窗口 100 条**（`WORKING_REPRESENTATION_MAX_OBSERVATIONS=100` 按 created_at 倒序，9 月事实被更晚结论挤出——**重灌不能修复本症状**，实测同构）。② 「建议改动」落点 (c) 可直接引用分析件 §C 的 **Gate E（E1 成员配置断言 / E2 派生+canary / E3 插件同款 context 请求断言 + 窗口位移模型 / E4 用户可见行为 / E5 通道健康）**。③ 本条 spike-first 原则与「先试灌单文件」的教训叠加：单文件试灌会**假通过**（新结论必在 recent-100 窗口内），spike 验收必须按**全量规模 + 首尾 canary + 用户可见行为**设计。
