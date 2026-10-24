@@ -1,0 +1,4 @@
+server/deploy/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json
+server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py
+server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
