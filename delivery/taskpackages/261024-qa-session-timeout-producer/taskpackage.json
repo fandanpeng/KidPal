@@ -87,6 +87,7 @@
     "docs/debt/tech/TECH-261014-session-end-channels-unwired.md",
     "delivery/taskpackages/261024-qa-session-timeout-producer/plan.md"
   ],
+  "knownRedFloor": "host 套件先存红 3 条（p1_auxbar AB-A1/A2/A4 结构断言）@ 锚 SHA aecded8b（2026-10-24 worktree C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 实测：237 Tests 3 Failures；命令 = WSL `bash firmware/main/test/host_app/espidf_wsl.sh build` + `./firmware/main/test/host_app/build/host_infra_test.elf`；面域 = firmware）；本包验收红基线恒现跑，不引用此锚",
   "dependsOn": [],
   "mergeOrder": null,
   "notes": "起包留痕：① 档位 = ②单包 Full / riskTier high / sourceType regression，architect /triage-change 比例化 review 裁决（nano 不成立：命中排除清单「状态机」+「验收语义净增且既有语义必改」+ 实现面 5 文件超 ≤2 参照），human 触点① 确认；② 范围只做方向①（60s 问答 timer），方向②结束意图保持 deferred 且 debt 条目不关账；③ 四面探测 = 纯实现面，需求 §2.1 已冻结规则、架构/契约/治理零变更；④ timer 形态 = 复用 1s clock tick，零新 timer、主循环节拍零改动；⑤ 收尾复用姊妹包 EndVoiceSession + cause 形参，板级源码零改动；⑥ 验收面必红两处（VQ-E1 / OCE-A1 tooth2）由 acceptance-author 重钉；⑦ 真机六项含记录会话不关与连续说话不被切。"
