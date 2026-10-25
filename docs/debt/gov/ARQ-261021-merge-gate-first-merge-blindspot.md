@@ -2,7 +2,7 @@
 id: ARQ-261021-merge-gate-first-merge-blindspot
 title: 契约凭据闸两处首合并盲区——PROPOSAL 从 main ref 读（首次合并不可满足）+ verdict 锚 first-match 被 FAIL→PASS 轨迹遮蔽
 domain: gov
-status: open
+status: deferred
 severity: SHOULD
 owner: architect
 trigger: 下一次带契约 diff 的 arch 批合并（判据可机判：同型 BLOCK 输出复现即消费）

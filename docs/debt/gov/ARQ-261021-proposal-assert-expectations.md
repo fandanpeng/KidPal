@@ -2,7 +2,7 @@
 id: ARQ-261021-proposal-assert-expectations
 title: PROPOSAL §5 验证集断言预期值须来自起草期实跑输出、禁止推算（本批三处失配实证）
 domain: gov
-status: open
+status: deferred
 severity: SHOULD
 owner: architect
 trigger: 下一批走 /arch-change 或 /gov-change 的 PROPOSAL 起草时消费（判据可机判：§5 预期值是否带实跑留痕）
