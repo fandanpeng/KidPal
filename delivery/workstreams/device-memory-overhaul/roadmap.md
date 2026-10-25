@@ -89,6 +89,14 @@ graph LR
 - **demo 证据形态**：host runner 输出（幂等二次跑零增量 + 计数报告 + 回滚脚本离线契约）+ live 运维（human 在 ECS 全量跑 + 计数报告过目 + 清库回滚演练）+ 收口轮抽问旧事。
 - **达成状态**：pending
 
+### 261025-openclaw-dreaming-disable
+
+- **mergeOrder**：58（dependsOn `261025-kidpal-tools-profile-fix`）
+- **完成后人能看到什么**：小伴不再每天凌晨「做梦」——记忆里不会再多出「owner 说他喜欢紫色」这类没人说过的话，最近 100 条画像窗口里被机器自言自语占掉的那 13% 交还给孩子真实说过的事。改动只是关掉一个布尔开关，随时可一键回滚；关掉后 main 侧的自动巩固（当前零产出）不再发生，手动路径保留。
+- **回指**：非 story 来源（human-ad-hoc 技术/运维包）——语义权威 = `delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md` §4 architect 裁决（方案 A）+ §5 human 四裁决；`docs/debt/tech/TECH-261025-dreaming-capture-pollutes-honcho.md`。
+- **demo 证据形态**：host runner 输出（声明恰一叶键 / gen-patch 单叶 / drift 两态接受与两态拒绝 / 幂等 SKIP / 注入桩编排调用序 / 回滚）+ 部署后 live（`config patch --dry-run` 接受产物 / `openclaw.json` 实落态 / 一个调度周期无新增 `dreaming-narrative-*` 会话 / 真机旧事抽问不劣化）。**清理与 spec 修订不在本包**（human 运维轮 + 面 C）。
+- **达成状态**：pending
+
 ## ④ 非目标与批次归属
 
 - **引擎 Intent 维持 nointent、thinking 维持关闭、分回合 thinking 不纳入本批**（human 2026-10-22 裁；ARQ-260907 根因在案）。
