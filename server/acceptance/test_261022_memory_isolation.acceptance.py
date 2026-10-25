@@ -30,6 +30,41 @@ system 制品装载**保留并存**（host 无感）；**携 user=<device_id> �
 （live 实证归属 owner/agent-kidpal 正常）——本件 payload 键集恰 {model,
 messages, stream, user} 且 user=<device_id> 全套断言零改动。
 
+锚换代（261025-kidpal-tools-profile-fix，**跨包锚显式换代**，2026-10-25）：
+本件 K3-E6 的 honcho 声明 drift 现状锚从「tools.allow 四项」升到「**五项**」，
+与 P1（261022-openclaw-kidpal-tools）的两叶写入面换代同批落地。事由 = live
+实证「tools.allow 加名 ≠ 工具可达」——OpenClaw 过滤链 profile 先行，allow 只能
+在剩余集里挑，P1 因此新增 per-agent tools.profile="full" 并把 allow 定为五项；
+honcho 声明的现状锚若不跟着换代，新机按 manifest 顺序（P1 先、本插件后）跑
+apply 时会被自己的旧四项锚拦死（exit 3），顺序纪律反而断掉。
+显式换代（非静默放宽；旧痕保留不抹）：
+  · 常量 `K3_P1_TOOLS_EXPECT` 四项 → 五项 {read, write, exec, web_search,
+    honcho_search_conclusions}；
+  · 组合态 fixture `_fixture_p1_applied` 的 kidpal tools 块
+    {allow: 四项} → {profile: "full", allow: 五项, deny: []}（= 换代后 P1 已
+    应用态，亦即本件多用例共用的现状锚；改一处须四处核：常量 / fixture /
+    头注 FROZEN CONTRACT §B1 / 相关 docstring）；
+  · `test_k3_e6_apply_drift_guard_exit3` 保留两条既有真漂移变异（改白名单 /
+    键缺席）并**追加第三条**「allow 仍四项 → exit 3」——把「P1 applier 先、本
+    插件 applier 后」的顺序红线钉进机械判。
+live 上本换代不可观测（插件 4 键已在目标态 → 幂等 SKIP 先于 drift），如实
+申报为离线证书；部署轮只需对 live 跑一次 `--gen-patch` 产物的
+`openclaw config patch --dry-run --json`（P1 面，见姊妹件 K1-E4）。
+
+冻结 RED 基线（2026-10-25，builder 尚未动工；本件 `-m "not live"` 实测）：
+本件 6 条设计态红，全部指向「honcho 声明 drift 现状锚仍是旧四项 / manifest
+honcho note 仍是四项字面」这一处未实现的改动 ——
+test_k3_e6_declaration_schema_and_p1_drift_anchor（expect 仍四项）、
+test_k3_e6_apply_drift_guard_exit3（第三条变异 rc=1，旧四项锚把四项态放行）、
+test_k3_e6_apply_safe_orchestration_call_order / test_k3_e6_apply_failure_stops_zero_write /
+test_k3_e6_apply_timestamped_backup（三者 rc=3，声明在 stub 调用前就 STOP）、
+test_k3_e6_manifest_registers_the_workbench（note 仍写四项）。
+本件冻结即绿（本包不得回退）：K3-E2 两条（front payload / 声明锚集）、
+test_k3_e6_apply_idempotent_and_preserves_p1_state、
+test_k3_e6_patch_generator_product_four_keys、
+test_k3_e6_rollback_dry_run_and_restore、
+test_k3_e6_no_openclaw_json_in_repo_and_no_secret。
+
 上游 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/
 memory-wiring-advisory-20261023.md（§1 已验证接线证据 / §6 方案甲 / §7 锚换代
 清单 / §8 shaping / §9 网关安全序）+ 本包 plan.md 冻结语义六条 + human 三项
@@ -139,8 +174,15 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
           负锚）。其余结构同前代：case / changes / drift_guard / backup /
           rollback 五顶层键；drift_guard 必含 P1 已应用态现状锚
           {"path": "agents.entries.kidpal.tools.allow",
-           "expect": ["read","write","exec","web_search"]}（launch-card 红线
-          原样保留：P1 漂移时本包 STOP 拒绝叠加）；backup / rollback 形制
+           "expect": ["read","write","exec","web_search",
+                      "honcho_search_conclusions"]}（**2026-10-25 换代：
+           四项 → 五项**，随 261025-kidpal-tools-profile-fix 的 P1 两叶写入面
+           同批；坑位不变 = launch-card 红线原样保留：P1 漂移时本包 STOP
+           拒绝叠加）。顺序纪律：四项机器上本包 apply 必须 exit 3 —— 逼先跑 P1
+           tools applier，这就是第三条变异锚的用途。**列表顺序敏感**：本件按
+           逐字相等判（`cur != expect`），五项顺序须与 P1 声明 allow 叶值一致
+           【read, write, exec, web_search, honcho_search_conclusions】——顺序
+           反过来即判 drift、上述四条编排用例全红。backup / rollback 形制
           不变（backup.pattern 含 "bak"、config 同目录 glob、无路径分隔符；
           rollback.script = rollback_honcho_plugin.py）。声明零 secret。
 
@@ -264,6 +306,7 @@ host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
   · A1 声明 4 键逐字 / 负锚 / workspaceId / pin / 运行时证据字面 / session 家族
                                      → test_k3_e2_verified_wiring_declaration_anchors → 机制级
   · A1 声明结构 + drift_guard P1 现状锚
+    （五项，2026-10-25 换代自四项）
                                      → test_k3_e6_declaration_schema_and_p1_drift_anchor → 机制级
   · A2 patch 生成器产物恰 4 键       → test_k3_e6_patch_generator_product_four_keys → 行为级（真跑）
   · A2 安全编排 §9 调用序 + 逐调用 hash 零直写协议
@@ -335,9 +378,11 @@ must-stay-green（冻结时点即绿，builder 不得回退）：
     签名无感零改）。本包不改 compose、不改 AGENTS.md。
   · unit 件零改必绿：test_story_cancel_lifecycle_units 四族 +
     test_archive_guard_units AST 结构锚。
-  · K1 冻结件（test_261022_openclaw_kidpal_tools / test_261017_openclaw_kidpal_skills
-    / test_261022_m5_k1_prompt_carrier_migration）零触碰。
-  · drift_guard P1 现状锚逐字保；openclaw.json 零入仓 + 零 secret 负锚保。
+  · K1 冻结件：test_261022_openclaw_kidpal_tools 随 261025-kidpal-tools-profile-fix
+    的 K1-E4 / K1-E4-C 换代（同批，显式留痕）；test_261017_openclaw_kidpal_skills
+    / test_261022_m5_k1_prompt_carrier_migration 零触碰。
+  · drift_guard P1 现状锚 **五项逐字**保（2026-10-25 换代自四项）；openclaw.json
+    零入仓 + 零 secret 负锚保。
 
 Run protocol（文件名两点须 importlib 模式）:
   cd server && python -m pytest -q --import-mode=importlib -m "not live" acceptance
@@ -427,7 +472,15 @@ K3_CARRIER_MARKER = "kidpal honcho memory patch active"
 K3_CARRIER_ENDPOINT = "/v1/openclaw"
 # 结构与形制（保留面）
 K3_P1_TOOLS_PATH = "agents.entries.kidpal.tools.allow"
-K3_P1_TOOLS_EXPECT = ["read", "write", "exec", "web_search"]
+# 2026-10-25 换代（261025-kidpal-tools-profile-fix）：P1 已应用态现状锚
+# 四项 → **五项**（+ honcho_search_conclusions）。四项机器上本包 apply 必须
+# exit 3（顺序纪律：先跑 P1 tools applier）。
+K3_P1_TOOLS_EXPECT = ["read", "write", "exec", "web_search",
+                      "honcho_search_conclusions"]
+K3_P1_TOOLS_PROFILE = "full"
+# 上一代 P1 已应用态（261024 批 P0）：四项 —— 换代后落到这里即「P1 applier
+# 未跑」的顺序违纪态，本包 apply 必须 exit 3（第三条变异）。
+K3_P1_TOOLS_LEGACY_FOUR = ["read", "write", "exec", "web_search"]
 K3_DECL_NAME = "honcho-plugin-declaration.json"
 K3_APPLY_NAME = "apply_honcho_plugin.py"
 K3_ROLLBACK_NAME = "rollback_honcho_plugin.py"
@@ -517,9 +570,12 @@ def _canon_changes(changes) -> list:
 
 
 # --------------------------------------------------------------------------- #
-# fixture（P1 已应用态组合态：K1 tools.allow 四项在位 + 261017 skills 白名单
-# 在场 + 插件键未设 = 本包 drift_guard 现状锚，launch-card 双声明式 patch
-# 顺序红线）
+# fixture（P1 已应用态组合态：2026-10-25 换代 = K1 tools.profile="full" +
+# tools.allow 五项 + deny: [] 在位，即 live 升级态 + 261017 skills 白名单在场
+# + 插件键未设 = 本包 drift_guard 现状锚，launch-card 双声明式 patch 顺序红线。
+# 换代留痕：旧形态 = {allow: 四项}（261024 批 P0 已应用态）；本 fixture 多用例
+# 共用，改制同批须四处核：本函数 / 头注 FROZEN CONTRACT §B1 / 顶部 261025
+# 换代段 / 各测试 docstring）
 # --------------------------------------------------------------------------- #
 
 def _fixture_p1_applied() -> dict:
@@ -533,7 +589,11 @@ def _fixture_p1_applied() -> dict:
                 "kidpal": {
                     "prompt": "kidpal/base",
                     "skills": ["kidpal-schedule-answer", "weather", "tavily"],
-                    "tools": {"allow": ["read", "write", "exec", "web_search"]},
+                    "tools": {
+                        "profile": K3_P1_TOOLS_PROFILE,
+                        "allow": list(K3_P1_TOOLS_EXPECT),
+                        "deny": [],
+                    },
                 },
             },
         },
@@ -1104,14 +1164,16 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
         return decl
 
     def test_k3_e6_declaration_schema_and_p1_drift_anchor(self):
-        """coverage: A1, K3-E6 — 声明工件结构 schema（case/changes/drift_guard/
+        """coverage: K3-E6, A1 — 声明工件结构 schema（case/changes/drift_guard/
         backup/rollback 五顶层键）；changes ≥2 且恰一条 path ==
         plugins.entries.openclaw-honcho.hooks.allowConversationAccess（**插件
         条目内 hooks 全路径**——2026.8.1 顶层 hooks 只有 internal，顶层键被
         strictObject 拒收 = K3 崩因 ①；本断言语境 = 全路径，任何「顶层 hooks
         后缀」读法 = 误读）value true；baseUrl 127.0.0.1:18100 指本机
-        loopback；drift_guard 必含 P1 已应用态现状锚（tools.allow = 契约四项
-        逐字）——launch-card 红线原样保留；backup/rollback 形制不变；apply 脚
+        loopback；drift_guard 必含 P1 已应用态现状锚（tools.allow = 契约五项
+        逐字——2026-10-25 换代：四项 → 五项，随 261025-kidpal-tools-profile-fix
+        的 P1 两叶写入面；坑位与「P1 漂移即 STOP」红线不变）；backup/rollback
+        形制不变；apply 脚
         本在位、引声明工件名、stdlib json、且源码含 OpenClaw 写入口序字面
         （config patch / --dry-run）。"""
         tag = "K3-E6"
@@ -1174,12 +1236,14 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
         self.assertTrue(
             p1_anchor,
             f"{tag} RED: drift_guard 未锚定 {K3_P1_TOOLS_PATH} —— launch-card "
-            "红线：本包 drift_guard 现状锚 = P1 已应用态（tools.allow = 契约四项"
-            "在位），P1 漂移时本包必须 STOP 而非叠加写。")
+            "红线：本包 drift_guard 现状锚 = P1 已应用态（tools.allow = 契约五项"
+            "在位；2026-10-25 换代自四项），P1 漂移时本包必须 STOP 而非叠加写。")
         self.assertEqual(
             p1_anchor[0].get("expect"), K3_P1_TOOLS_EXPECT,
             f"{tag} RED: P1 现状锚 expect = {p1_anchor[0].get('expect')!r}，须恰 "
-            f"{K3_P1_TOOLS_EXPECT}（K1-E4 已应用态逐字）。")
+            f"{K3_P1_TOOLS_EXPECT}（K1-E4 已应用态逐字；2026-10-25 换代：四项 → "
+            "五项，含 honcho_search_conclusions——P1 的 tools.profile=\"full\" "
+            "不在本包坑位：本包只管 tools.allow 现状锚）。")
 
         backup = decl.get("backup")
         self.assertIsInstance(backup, dict, f"{tag} RED: backup 须为 object。")
@@ -1227,9 +1291,11 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
     def test_k3_e6_apply_idempotent_and_preserves_p1_state(self):
         """coverage: A2, K3-E6 —apply 幂等预检（P1 已应用态 fixture + 插件键
         已达标态）：① config 现状已等于全部声明目标 → 打印 SKIP、exit 0（不
-        写、不再备份、不调外部命令）；② P1 组合态零触碰（tools.allow 四项 /
-        261017 skills / gateway.token / main 条目原样）——双声明式 patch 顺序
-        组合（P1 先、本包后）互不覆盖。"""
+        写、不再备份、不调外部命令）；② P1 组合态零触碰（tools.allow 五项 /
+        tools.profile="full" / deny [] / 261017 skills / gateway.token / main
+        条目原样）——双声明式 patch 顺序组合（P1 先、本包后）互不覆盖。
+        2026-10-25 换代：P1 已应用态 = 五项 + profile（旧四项态已随
+        261025-kidpal-tools-profile-fix 升级）。"""
         tag = "K3-E6"
         decl = self._decl(tag)
         changes = decl["changes"]
@@ -1274,9 +1340,12 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                 "K3-E6 RED: 幂等 SKIP 又新建了备份（幂等应不重备份）。")
 
     def test_k3_e6_apply_drift_guard_exit3(self):
-        """coverage: A2, K3-E6 —drift_guard 现状锚（P1 已应用态）不中 → STOP
-        exit 3、零写、零备份、零外部命令：P1 tools.allow 被漂移（改白名单 /
-        键缺席）时本包必须拒绝叠加——双声明式 patch 的顺序纪律机械承载。"""
+        """coverage: A2, K3-E6 —drift_guard 现状锚（P1 已应用态 = 五项）不中 →
+        STOP exit 3、零写、零备份、零外部命令：P1 tools.allow 被漂移（改白名单 /
+        键缺席 / **仍是上一代四项**）时本包必须拒绝叠加——双声明式 patch 的顺序
+        纪律机械承载。第三条变异（2026-10-25 换代新增）：四项态 = P1 applier
+        未跑的机器，本包若放行就等于绕过顺序纪律（manifest 顺序只是提示，机械
+        承载在这里）。"""
         tag = "K3-E6"
         decl = self._decl(tag)
         pattern = decl["backup"]["pattern"]
@@ -1284,7 +1353,10 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                 (lambda s: _json_set(s, K3_P1_TOOLS_PATH, ["bash", "browser"]),
                  "tools.allow 被改成别的白名单"),
                 (lambda s: s["agents"]["entries"]["kidpal"].pop("tools"),
-                 "tools.allow 键缺席（P1 已应用态丢失）")):
+                 "tools.allow 键缺席（P1 已应用态丢失）"),
+                (lambda s: _json_set(s, K3_P1_TOOLS_PATH,
+                                     list(K3_P1_TOOLS_LEGACY_FOUR)),
+                 "tools.allow 仍是上一代四项（P1 tools applier 未跑 = 顺序违纪）")):
             with tempfile.TemporaryDirectory() as td:
                 td = Path(td)
                 cfg = td / "openclaw.json"
@@ -1296,7 +1368,10 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                 self.assertEqual(
                     rc, 3,
                     f"K3-E6 RED: drift-guard 不中（{label}）应 exit 3（实得 "
-                    f"rc={rc}）。stdout={out!r} stderr={err!r}")
+                    f"rc={rc}）。stdout={out!r} stderr={err!r} "
+                    "提示：本用例第三条变异要求 honcho 声明 expect = 五项（2026-10-25 "
+                    "换代自四项）；若 rc 非 3 且日志出现 backup / config patch，说明"
+                    "旧四项锚把四项态放行了（顺序纪律失守）。")
                 after, _ = _load_json_file(cfg)
                 self.assertEqual(
                     after, drifted,
@@ -1463,7 +1538,11 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                     f"停被破）。stdout={run['out']!r}")
                 records = run["records"]
                 self.assertTrue(
-                    records, f"{tag} RED: 失败场景桩零记录（前置）。")
+                    records,
+                    f"{tag} RED: 失败场景桩零记录（前置）—— 若 apply 在注入桩调用前"
+                    "就 STOP（exit 3），通常是 honcho 声明 drift 现状锚仍是旧四项、"
+                    "而 P1 已应用态已是五项：本包须把 expect 换代到五项（2026-10-25，"
+                    "与 261025-kidpal-tools-profile-fix 同批）。")
                 argvs = [r["argv"] for r in records]
 
                 def hits(pred):
@@ -1656,7 +1735,8 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
         **恰 3 条**（声明 / apply / rollback；自研 carrier 条目已删除——负锚：
         零 honcho-plugin.js 登记行），src 在仓内存在、dst 在
         /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/ 消费位
-        （261013 部署单一事实源纪律）。"""
+        （261013 部署单一事实源纪律）；声明条目 note 的 P1 现状锚字面换代
+        （2026-10-25：不得再写「四项」，须出现五项 / 检索工具口径）。"""
         tag = "K3-E6"
         self._require_workbench(tag)
         self.assertTrue(
@@ -1700,6 +1780,23 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                        "/opt/kidpal/openclaw-patch/" + K3_WORKBENCH_TOKEN)]
         self.assertEqual(
             bad_dst, [], f"{tag} RED: 登记条目 dst 越出 openclaw-patch 消费位: {bad_dst}。")
+
+        decl_notes = [str(e.get("note") or "") for e in entries
+                      if str(e.get("src") or "").endswith(K3_DECL_NAME)]
+        self.assertTrue(
+            decl_notes,
+            f"{tag} RED: manifest 无 {K3_DECL_NAME} 条目（前置）—— note 字面"
+            "换代无承载面。")
+        note = "\n".join(decl_notes)
+        self.assertNotIn(
+            "四项", note,
+            f"{tag} RED: manifest 声明条目 note 仍写「四项」—— P1 现状锚陈旧"
+            "字面未换代（2026-10-25 换代：四项 → 五项，与"
+            f"{K3_P1_TOOLS_EXPECT} 同批）。实得 note：{note!r}")
+        self.assertTrue(
+            any(w in note for w in ("五项", "honcho_search_conclusions")),
+            f"{tag} RED: manifest 声明条目 note 无五项 / 检索工具口径 —— P1 "
+            f"现状锚换代未落部署面文案。实得 note：{note!r}")
 
 
 def _load_json_file(path: Path):

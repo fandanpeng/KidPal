@@ -1,15 +1,30 @@
 {
   "case": "kidpal-agent-tools-allowlist",
-  "change": {
-    "path": "agents.entries.kidpal.tools.allow",
-    "allow": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
-  },
+  "changes": [
+    {
+      "path": "agents.entries.kidpal.tools.profile",
+      "value": "full"
+    },
+    {
+      "path": "agents.entries.kidpal.tools.allow",
+      "value": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
+    }
+  ],
   "drift_guard": [
     {
-      "path": "agents.entries.kidpal.tools",
+      "path": "agents.entries.kidpal.tools.deny",
+      "expect_any": ["unset", []]
+    },
+    {
+      "path": "agents.entries.kidpal.tools.profile",
+      "expect_any": ["unset", "full"]
+    },
+    {
+      "path": "agents.entries.kidpal.tools.allow",
       "expect_any": [
         "unset",
-        {"allow": ["read", "write", "exec", "web_search"]}
+        ["read", "write", "exec", "web_search"],
+        ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
       ]
     }
   ],
@@ -20,5 +35,5 @@
   "rollback": {
     "script": "rollback_agent_tools.py"
   },
-  "_note": "261022-m5-k1-prompt-carrier-migration K1-E4 声明工件；2026-10-24 由 261024-memory-recall-tool-enable 换代（K1-E4 显式换代，非静默放宽）。kidpal agent 工具面 = 恰五项（read / write / exec / web_search / honcho_search_conclusions）——前四项承 261022 收窄（全局 tools.profile=\"coding\" 对设备 agent 意味着 34 工具 57KB schema/轮，TECH-261022 证据 3）；第五项 honcho_search_conclusions 用途 = 历史事实检索：被动注入的画像窗口只覆盖最近 100 条结论（9/30 的旧事在窗口外），孩子问起旧事时由「记忆回忆回合」调一次该工具查 owner 自我视角结论（backfill 344 条已在库、实测可命中）。honcho_search_messages 刻意不放行——原始消息面含家长代述与流程性内容，不适配儿童端回合（k4-recall-architecture-20261024 §B 选项 3）。drift_guard 现状锚 = 升级基准：同时接受 ① 新机态（agents.entries.kidpal.tools 键缺席 'unset'）与 ② live 既有态（上一代四项覆写已应用 {allow:[read,write,exec,web_search]}）；目标态五项不进基线集——由 apply 的幂等分支承载（幂等 SKIP 先于 drift-guard），基线集以外（异值 / 六项 / 键在场但非对象）一律 fail-closed 判 drift。apply_agent_tools.py 双形态：直写（幂等 / drift / 写前时间戳备份 / 只改一键）保留，另增 --gen-patch 生成 openclaw config patch 消费文件（配置只经 OpenClaw 自有写入口落盘）；rollback_agent_tools.py 一步还原。与 261017-openclaw-kidpal-skills 的 skills 白名单定点 patch 作用于同一运行态文件，组合共存、互不整文件改写。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明。"
+  "_note": "261022-m5-k1-prompt-carrier-migration K1-E4 声明工件；2026-10-25 由 261025-kidpal-tools-profile-fix 换代（显式换代，非静默放宽；旧单键 change 退役）。写入面 = 恰两个叶键：agents.entries.kidpal.tools.profile = \"full\"（per-agent profile 覆盖全局 tools.profile=\"coding\"）与 agents.entries.kidpal.tools.allow 恰五项（read / write / exec / web_search / honcho_search_conclusions）。根因 = 过滤链 profile 先行，allow 只能在剩余集里挑——加名 ≠ 可达：全局 coding 第一道即滤掉插件工具（group:plugins 不在 coding 内），P0 批只把 honcho_search_conclusions 加进 allow 时插件工具仍不可达（live systemPromptReport.tools.entries 仅 [read, write, apply_patch, exec, web_search]）；per-agent profile=full 覆盖后 honcho_search_conclusions 实测可达（live 已应用并答出 9-30 事实「王一诺」）。第五项 honcho_search_conclusions 用途 = 历史事实检索：被动注入的画像窗口只覆盖最近 100 条结论（9/30 的旧事在窗口外），孩子问起旧事时由「记忆回忆回合」调一次该工具查 owner 自我视角结论（backfill 344 条已在库、实测可命中）；honcho_search_messages 刻意不放行——原始消息面含家长代述与流程性内容，不适配儿童端回合（k4-recall-architecture-20261024 §B 选项 3）。deny 不进写入面：live 升级态 deny: [] 由幂等分支天然覆盖；deny 非空 = 基线集以外 → fail-closed 判 drift。drift_guard = 三条叶路径 AND 的升级基准：① tools.deny 期望 unset 或 []；② tools.profile 期望 unset 或 full——profile 缺席一律接受（= P0 已应用态、apply 补 full；拒绝它等于拒绝自己的升级起点），只有 profile 在场且值 ≠ full（如 coding）才判 drift；③ tools.allow 期望 unset / 上一代四项 / 五项（五项候选与 changes 的 allow 叶值逐字同序）。显式接受集 = ① fresh 全缺席 ② 旧四项 live ③ P0 中间态（allow 五项 + profile 缺席）④ live 升级态（profile full + allow 五项含 deny []）。放宽项显式申报：叶路径下 tools 对象内未知同级键被容忍（旧对象形态「多键即拒」语义消失；deny 由独立叶路径兜住非空红线）；allow 比较是列表顺序敏感相等——顺序不同 = drift（fail-closed，人对着 live 实读核对）。父键在场但非对象（如 tools = \"disabled\"）用 _MALFORMED 哨兵与「键缺席」拆开，一律 fail-closed 判 drift。apply_agent_tools.py 双形态：直写（幂等预检与 drift 联合——两叶达标且基线无漂移才 SKIP，两叶达标但 deny 非空 → exit 3 零写零备份 / 写前时间戳备份 / 只改两叶键）+ --gen-patch 生成 openclaw config patch 消费文件（展平叶键恰两个，零 config 读写）；rollback_agent_tools.py 备份整档还原（语义与键数无关，零改）。与 261017-openclaw-kidpal-skills 的 skills 白名单定点 patch 作用于同一运行态文件，组合共存、互不整文件改写。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明。"
 }
