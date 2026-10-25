@@ -1,6 +1,6 @@
 ---
 name: merge-to-main
-description: "Use when: 把 feature/gov 分支合并到目标分支（main 或同步反向）的本地合并操作——预检 overlap、ff-only 合并、查残余冲突标记、确认落点。触发词: 合并分支, merge 到 main, 同步 main, sync dev, 合分支, merge-to-main。边界: 只做本地合并与验证；不 push、不发 PR、不直推 main/master（对齐 deny-main-push.mjs 与「本地 main 合并由 planner/主线程前置升级闸放行后自动触发、remote push 仍 human」铁律；OQ-3 已裁 (a)）。"
+description: "Use when: 把 feature/gov 分支合并到目标分支（main 或同步反向）的本地合并操作——预检 overlap、ff-only 合并、查残余冲突标记、确认落点；远端发布（push release/* + 开 PR）与回同步走 release-pr.mjs。触发词: 合并分支, merge 到 main, 同步 main, sync dev, 合分支, merge-to-main, 发布, publish, 回同步。边界: 本地合并与验证在本 skill；远程发布 = 主线程跑 release-pr.mjs --publish（只推 release/* 并开 PR），PR 合并与其它 push 仍 human。"
 ---
 
 # Merge to Main：本地合并预检与执行
@@ -21,9 +21,23 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
 5. **查残余冲突标记** — `git diff --check`（对合并结果区间）。终点：无 conflict marker 残留。有残留 = 事故（报告实证：静默残留曾进过 commit），停下交 human。
 6. **确认落点** — `git log --oneline -5`。终点：源分支的 commit 都在目标分支上、顺序符合预期。
 
+7. **发布（远端）** — 在本地 main 合并（前置升级闸放行后由主线程自动落定）之后、于主 worktree（本仓 `C:/AI/KidPal`）分支 `main` 上运行 `node .claude/scripts/release-pr.mjs --publish`。脚本预检：运行位置为主 worktree 且 HEAD 为 `main`；工作树干净（`.codebase-memory/artifact.json`、`.codebase-memory/graph.db.zst` 两件常驻脏豁免）；`gh auth status` 可用；main 与 origin/main 关系可判定（相等 = 无可发布；origin/main 是 main 祖先 = 正常；main 落后或互非祖先 = 拒绝交 human）。发布分支 = 本地 main tip，命名 `release/<YYMMDD>`／`-2`／`-3`…；标题默认 `release(<YYMMDD>): <N> 个 Pod 合并`，可用 `--title` 覆盖。脚本只推 `release/*` 并开 PR，永不合并 PR、永不推 main。重复跑安全：同一 tip 已有 open PR 会打印 URL 直接退出；push 成功但开 PR 失败时，重跑会复用同名同 tip 分支。终点：打印 PR URL；人工核对标题与正文后在 GitHub 网页点合并（仓库仅允许 merge commit，合并后 head 分支由 GitHub 自动删除）。
+8. **回同步（human 合并 PR 之后）** — 主 worktree 追平本地 main：
+
+        node .claude/scripts/release-pr.mjs --sync
+
+   终点：打印新的 main tip，`git log --oneline -3` 首行是 `Merge pull request #<n> ...`。脚本只做本地 `merge --ff-only origin/main`，不 push；分叉即停交 human。gov 回同步（主线程在 gov worktree 执行；OQ3 裁 (a) 时改由 `--sync` 一并完成，见 §4）：
+
+        git -C C:/AI/KidPal-gov checkout HEAD -- .codebase-memory/artifact.json .codebase-memory/graph.db.zst
+        git -C C:/AI/KidPal-gov merge main
+        node .claude/scripts/debt-render.mjs
+        node .claude/scripts/changes-index.mjs --upsert <本批 changeId>   # 逐个
+
+   终点：gov worktree 净树（`.codebase-memory` 两件之外无未提交改动）；`docs/debt/*/INDEX.md` 与 `delivery/review/INDEX.md` 与条目状态一致；提交一条 `chore(sync): main → gov/kidpal 回同步`。`--upsert` 必须跑在落地 commit 之前，否则生成件漏带（既有实例两次）。
+
 ## 约束（must / never，不可省）
 
-- **永不 push**、永不直推 main/master（`deny-main-push.mjs` 钩着这条铁律；入本地 main 由 planner/主线程经前置升级闸放行后自动合并，remote push 仍由 human 经 PR）。
+- **本 skill 永不 push**、永不直推 main/master、永不合并 PR（`deny-main-push.mjs` 钩着推 main/master 面）；入本地 main 由 planner/主线程经前置升级闸放行后自动合并；远程发布 = 主线程跑 `node .claude/scripts/release-pr.mjs --publish`（只推 `release/*` 分支并开 PR），PR 合并由 human 在网页点，其它 remote push 仍 human。
 - 非 ff 分歧不自裁——列出分歧交 human。
 - 合并后发现合错：用 revertable 路径回退（`git revert` 或 human 裁），不 `reset --hard` 丢证据。
 

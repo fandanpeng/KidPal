@@ -11,7 +11,7 @@
 
 治理变更默认走 **Track B 常驻轻路径**——七步闭环（cast 已统一：主线程四面纯编排，不起草变更内容）：
 
-> **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起，261015 批续贯）**：human 只在两个真正判断点出场——① 前端一次性对齐「为什么改（需求）/ 往哪改（方案）/ 改动多大（量级）」= 立项 ack；② 命中例外清单升级拍板。其余（评审/实现/验证/落地核验/合并本地 main）全部 agent + 机械闸自动，例外升级，remote push 仍 human。
+> **前端对齐 + 例外反选（260831-gov-review-auto-merge-local-main 起，261015 批续贯）**：human 只在两个真正判断点出场——① 前端一次性对齐「为什么改（需求）/ 往哪改（方案）/ 改动多大（量级）」= 立项 ack；② 命中例外清单升级拍板。其余（评审/实现/验证/落地核验/合并本地 main）全部 agent + 机械闸自动，例外升级；远程发布 = 主线程跑 `node .claude/scripts/release-pr.mjs --publish`（只推 `release/*` 分支并开 PR），PR 合并与其它 remote push 仍 human。
 
 1. 主线程派 **architect** 起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架 `docs/templates/PROPOSAL.template.md`；输入 = human 原话 / spine sources / 讨论记录，落盘后派发）→ human 立项 ack；
 2. **architect-reviewer** 评审循环至 GREEN（只读 canonical、只写评审记录于 PROPOSAL §7；影响目标效果的打回项升级 human）；
