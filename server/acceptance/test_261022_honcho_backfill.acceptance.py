@@ -235,6 +235,76 @@ REPO_ROOT = Path(__file__).resolve().parents[2] 推导仓根，不依赖调用�
   conclusions 异步派生等待窗）。断言、鸭型协议、coverage 标记零改动
   （上方「缺陷修复注记」同日留痕先例格式）。
 
+锚换代注记（2026-10-24 · TaskPackage 261024-m5-k4b-corpus-parser-v2，K4 归因
+bug 修复轮，rigor=lite；tighten-only + additive，断言判据语义零放宽）：
+
+解析器 v2（review k4-attribution-fix-review-20261024.md §2.1 / human D1-D5
+五项裁决）落地后，本冻结件做下列锚换代；既有 K3/K4 申报段逐字保留（K4-E6
+头注自检测试继续绿），单层旧行为兼容断言逐字保留：
+
+  · fixture 双层化：K4-A1 语料 fixture 增双层格式行（[ref] User:/Assistant:
+    混合、内嵌 Assistant: 上下文块样例、包装标记载体段、小写角色归一、
+    `词:` 不误拆样例）；CORPUS_EXPECTED_MESSAGES 7→12、
+    ALL_EXPECTED_MESSAGES 7+2→14（幂等 / live / plan / counting 各处断言随
+    常量换代，判据语句零改动）。
+  · Gate A host 离线判据入验收（K4B-E6，review §4）：
+      A1 = 单测绿（既有机制——deploy/honcho/backfill/
+        test_backfill_honcho_unit.py，随交付报告记录，本件不重复承载）；
+      A2 = 本件全绿；
+      A3 = 真语料快照审计（test_k4b_gate_a3_...）——快照 =
+        C:/tmp/k4-corpus-review/txt（21 文件只读副本；孩子语料不入仓，
+        断言只消费计数 / 哈希 / 日期与协议标记字面，语料正文零入仓零引用；
+        逐件 sha256 冻结进本件 K4B_SNAPSHOT_FILES）；机器外缺席 = 显式
+        skipTest「快照缺席，审计未跑」申报，不静默跳过；在盘但与冻结表
+        不符 = RED（快照漂移，review F7：审计绑 21 文件 + 逐件 sha256）；
+      A4 = 拆分抽样（test_k4b_gate_a4_...）——2026-09-30.txt：59 行 →
+        35 组（user 17 / assistant 18）→ 128 段（user 69 / assistant 59），
+        内嵌小伴话术拆出 assistant 段且 content 不含外层 `User: `/
+        `Assistant: ` 切段标记（标记被切段消化，实跑全快照 0 残留）；
+        包装标记按 review §2.1 ③ 保留变体保留在段文本内、只计数
+        （wrapperMarkersStripped 全快照冻结值 = 350——真语料 243 个组首段
+        是标记载体，剥离会产生空消息且 2879 冻结数不可达）。
+    Gate C/D（review §4）= ECS live 运维面，零 host 断言，归主线程经 human
+    授权执行（本包 notes ⑤），本件不承载。
+  · 快照审计冻结锚定数（2026-10-24 acceptance-author 实跑 fixer 现态
+    parser 逐值核对）：21 文件 / 1652 非空行 → 1007 组 → 2879 段
+    （user 1580 / assistant 1299 / other 0）、unparsed=0、指纹 2879 全唯一、
+    content 零以 [kidpal/sessions/ 或 User:/Assistant: 起头、
+    wrapperMarkersStripped=350、created_at 全部 = 文件日期 T04:00:00+00:00
+    （human D3 口径：该日 12:00 Asia/Shanghai）。
+  · 新面断言：rollback --source-kind 选择性删除（matched/skipped 逐键、
+    缺省全量旧行为保持）+ 报告扩展 additive 键（perSource[kind] 增
+    perRole/groups/segments/wrapperMarkersStripped/corpusFiles，backfill
+    顶层增 perRoleTotal，冻结顶层键形状不破）+ created_at 回填 04:00 UTC
+    口径与 toolResult/tool → agent-kidpal 出网 wire 形状 + env.example
+    两键（EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 与
+    LLM_DEFAULT_MAX_TOKENS 注释口径）且 K3 既有锚零回退。
+
+K4B 强度申报（契约条目 → 承载断言 → 性质档；接上方强度申报表）：
+
+  · K4B-E1 解析器 v2 fixture 行为（归组换行保留 / 内嵌拆分归因 / 大小写
+    归一 / `词:` 不误拆 / 包装标记载体段保留）→ test_k4b_e1_... → 行为级
+  · K4B-E2 rollback --source-kind 选择性 + 缺省全量旧行为 →
+    test_k4b_e2_... → 行为级
+  · K4B-E3 报告扩展 additive + 顶层键形状不破 → test_k4b_e3_... →
+    机制级 + 行为级
+  · K4B-E4 created_at 回填 04:00 UTC 口径 + toolResult/tool → agent-kidpal
+    出网 wire 形状 → test_k4b_e4_...（wire）+ test_k4b_e1_...（端到端回填）
+    → 行为级 + 机制级
+  · K4B-E5 env.example 两键 + K3 既有锚零回退 → test_k4b_e5_... →
+    机制级（源锚代理）
+  · K4B-E6 Gate A3 快照审计（冻结锚定数逐值等 + 逐件 sha256）→
+    test_k4b_gate_a3_... → 行为级（真语料快照；缺席 skipTest 申报）
+  · K4B-E6 Gate A4 拆分抽样 → test_k4b_gate_a4_... → 行为级
+  · K4B-E6 Gate A1/A2 → 单测件 + 本件（redBaseline / 交付报告记录）→
+    申报面；Gate C/D → live 运维（零 host 断言，申报）
+
+缺口申报换代（2026-10-24，additive 注记）：原 ②「真语料格式适配——host
+fixture 是冻结最小行格式」的行为等价假设，host 侧半由 Gate A3/A4 快照审计
+接管——真语料（冻结快照）逐值解析对账已在 host 面可跑、不再依赖「最小格式
+≈ 真语料」假设；live 轮计数报告过目（K4-E6 ①）保留为 live 侧半（REST 出网
+/ 真栈全量对账）。
+
 Run protocol（文件名两点须 importlib 模式）:
   cd server && python -m pytest -q --import-mode=importlib -m "not live" acceptance
   （standalone: python 本文件）
@@ -246,14 +316,17 @@ import hashlib
 import importlib.util
 import json
 import re
+import shutil
 import sqlite3
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = REPO_ROOT / "server" / "deploy"
 HONCHO_DIR = DEPLOY / "honcho"
+HONCHO_ENV_EXAMPLE = HONCHO_DIR / "honcho.env.example"
 BACKFILL_DIR = HONCHO_DIR / "backfill"
 BACKFILL_PY = BACKFILL_DIR / "backfill_honcho.py"
 ROLLBACK_PY = BACKFILL_DIR / "rollback_honcho_backfill.py"
@@ -290,6 +363,61 @@ K4_SECRET_KEY_RE = re.compile(r"sk-[A-Za-z0-9]{16,}")
 K4_GATE_CONFIG_NEEDLES = ("noisePatterns", "captureSystemRuns")
 # 过滤类旗标负锚（K4-E1：零 PII 过滤器，human 终拍）。
 K4_FILTER_FLAG_RE = re.compile(r"--(redact|mask|anonymize|pii|filter-[a-z-]+)\b")
+
+# --------------------------------------------------------------------------- #
+# K4B 冻结字面（261024-m5-k4b-corpus-parser-v2 · 解析器 v2 / Gate A 快照审计）
+# --------------------------------------------------------------------------- #
+
+# 内嵌上下文块协议包装标记（review §2.1 ③ 保留变体：保留在段文本内、只计数
+# 披露——剥离会使 243 个标记载体段变空、2879 冻结锚定数不可达）。
+K4B_WRAPPER_MARKER_CONTEXT = "[Chat messages since your last reply - for context]"
+K4B_WRAPPER_MARKER_CURRENT = "[Current message - respond to this]"
+
+# 真语料快照（C:/tmp/k4-corpus-review/txt，21 文件只读副本；孩子语料不入仓——
+# 本表只冻结 文件名 → (sha256, 非空行数)，2026-10-24 acceptance-author 实跑
+# fixer 现态 parser 冻结；审计逐件对账锚，review F7）。
+K4B_SNAPSHOT_DIR = Path("C:/tmp/k4-corpus-review/txt")
+K4B_SNAPSHOT_FILES = {
+    "2026-09-24.txt": ("750355125365ec85219109a6a82553e2db649926ed386defa1082043d17ca6eb", 11),
+    "2026-09-25.txt": ("87184bff5e9a8323169bac056f94de261e2fb870c0cd397bf7190a1f3ddc5a82", 62),
+    "2026-09-26.txt": ("ebb6463067ec74330dc857db61b6378cd6dcde9395fbbcb5661c1b8767300071", 93),
+    "2026-09-28.txt": ("26c8a906c2953eda2791c5d61dd5ba1f69e1d61d8ffb2caa88aa68b5d30ec2c5", 54),
+    "2026-09-29.txt": ("0ca9db5a06567781bf59108b0a360a2c4a12913ded6a8b3a0df4de47046cc1a8", 160),
+    "2026-09-30.txt": ("bda46f1bee023eebea02653620876c502c5b52eba7de05f75c435cede59552c0", 59),
+    "2026-10-01.txt": ("04fb31537c7fdbc3d2a8b7ecaf3b4061e76e7b604cf63d3fc7b4ff485c7d2b82", 25),
+    "2026-10-10.txt": ("899eb22134d836599254c276938674b54d3576e7f6da3759e54842d97ac0c601", 17),
+    "2026-10-11.txt": ("495f51233ce3ac2d5028fc2ff412dddd752531f8aa39efb0a3b4c24be040b6cf", 4),
+    "2026-10-12.txt": ("e6663e77a7cd401d6624b60de9d3b742e35f8548a6924872934f1715906bbe24", 72),
+    "2026-10-13.txt": ("f907df6998629621e538bb3fd85961952962f830ca60341d5fc68eea2dad5c69", 570),
+    "2026-10-14.txt": ("dff4162b22d7f08ad36b5c14ad4000eece14d5c56bdf57cd22930f68aaf4408c", 101),
+    "2026-10-15.txt": ("41a5d9979a85e639c11209e10b3456e20658b4497e9ac0913512b1b3fcf151d7", 4),
+    "2026-10-16.txt": ("2c9055f4442c11a1cced6100df9176163f9a763ce366f1d3f36de4df4f3a2111", 4),
+    "2026-10-17.txt": ("a4028b2212b8011d48f176b3cace4ee8b18591e08dc632dae06ab8335ae91c25", 39),
+    "2026-10-18.txt": ("c7475fae2d4ee257bcd6afc18a9848d1d3759bcd3afeae91c9e99d1a8111a8f6", 202),
+    "2026-10-19.txt": ("50672c4072ed7d4d58415798678cfb2d35b66e869b5da372f49c24245589cd8e", 21),
+    "2026-10-20.txt": ("8f479bc1840d3af65f0ab5f7ec689ee39a5e2aa35900457a20332e9480109c43", 22),
+    "2026-10-21.txt": ("724ed08212fb4a2315235100519b9735dcf73566f0c07e8a47fec70810bd64e2", 24),
+    "2026-10-22.txt": ("f64f565683af14e12f24d7b974c0f18d9f9bf1ca5cbc0bd44f5d920c267c4d9f", 50),
+    "2026-10-23.txt": ("5a9377c64e36b825994e18ecd37ea337c477fede20059cc865e50486bc9faed2", 58),
+}
+# 快照冻结锚定数（同上实跑核对；perRole other=0 = 全快照零未识别/零兜底）。
+K4B_SNAPSHOT_TOTAL_LINES = 1652
+K4B_SNAPSHOT_GROUPS = 1007
+K4B_SNAPSHOT_SEGMENTS = 2879
+K4B_SNAPSHOT_PER_ROLE = {"user": 1580, "assistant": 1299, "other": 0}
+K4B_SNAPSHOT_WRAPPER_MARKERS = 350
+
+# 2026-09-30.txt 单文件抽样锚（Gate A4 · review §4；2026-10-24 实跑冻结）。
+K4B_A4_FILE = "2026-09-30.txt"
+K4B_A4_CREATED_AT = "2026-09-30T04:00:00+00:00"
+K4B_A4_LINES = 59
+K4B_A4_GROUPS = 35
+K4B_A4_GROUPS_BY_ROLE = {"user": 17, "assistant": 18}
+K4B_A4_SEGMENTS = 128
+K4B_A4_PER_ROLE = {"user": 69, "assistant": 59, "other": 0}
+K4B_A4_WRAPPER_MARKERS = 20
+K4B_A4_WRAPPER_CONTEXT_SEGMENTS = 16   # 含 [Chat messages ...] 标记的段数
+K4B_A4_WRAPPER_CURRENT_SEGMENTS = 4    # 含 [Current message ...] 标记的段数
 
 
 def _read_text(path: Path) -> str:
@@ -378,6 +506,24 @@ class _StubHoncho:
                 if c[0] in ("create_session", "add_message", "delete_sessions")]
 
 
+class _StubHonchoV2(_StubHoncho):
+    """created_at 可选参同步桩（K4B-E4 · review §2.1 ④「duck add_message 增
+    可选 created_at 参数、验收桩同步补」；additive——冻结四参旧桩
+    _StubHoncho 逐字保留，供 client_supports_created_at 兼容探测两态）。
+
+    消息行形 (role, content, metadata, created_at)——metadata 仍在 index 2，
+    既有 list_fingerprints / snapshot_counts / live 断言兼容。
+    """
+
+    def add_message(self, session_key, role, content, metadata, created_at=None):
+        self.calls.append(("add_message", session_key, role, content,
+                           dict(metadata), created_at))
+        self.sessions.setdefault(
+            session_key, {"peer": "", "metadata": {}, "messages": []})
+        self.sessions[session_key]["messages"].append(
+            (role, content, dict(metadata), created_at))
+
+
 def _live_session_key(device_id: str) -> str:
     return K4_DEVICE_FAMILY_PREFIX + device_id
 
@@ -400,18 +546,47 @@ def _seed_live_session(stub: _StubHoncho, device_id: str) -> None:
 # --------------------------------------------------------------------------- #
 
 CORPUS_FILE_1 = (
+    # ── 单层旧格式（冻结 K4 最小格式行为逐字保持：逐行一条、不归组不拆分；
+    #    2026-10-24 锚换代时逐字保留）──
     "[user] 我最喜欢的颜色是紫色，我的小狗叫豆豆\n"
     "[assistant] 紫色真好看呀，豆豆是什么品种呀\n"
     "[user] 我的同学王一诺说他家有一只猫\n"
     "[assistant] 嗯嗯\n"
     "[front] 孩子到目前为止讲的内容：（旧设备流程回合语料——照记，不滤）\n"
+    # ── 双层机器格式（解析器 v2：[ref] User:/Assistant: 混合 + 续行归组 +
+    #    内嵌 turn 拆分 + 包装标记载体段 + 小写角色归一 + `词:` 不误拆；
+    #    261024-m5-k4b-corpus-parser-v2 锚换代新增）──
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000001#L5] User: "
+    "[Chat messages since your last reply - for context] User: 我要讲故事。 "
+    "Assistant: 好呀，星星要讲什么故事呢？\n"
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000001#L5] User: "
+    "{\"view\":\"text\"} 续行归组第二行\n"
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000001#L5] User: "
+    "归组第三行，同引用同角色连续行\n"
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000001#L6] "
+    "Assistant: 好的，这就帮你记下来\n"
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000001#L6] "
+    "assistant: 小写角色归一为 assistant\n"
+    "[kidpal/sessions/kidpal/040692ee-0000-0000-0000-000000000002#L9] User: "
+    "今天学校秋游去了植物园 提示: 冒号词不误拆\n"
 )
 CORPUS_FILE_2 = (
     "[user] 今天学校运动会我跑了第二名\n"
     "无角色前缀的旧语料残行（兜底收编路径）\n"
 )
-CORPUS_EXPECTED_MESSAGES = 7   # 逐非空行全量收编（含 front 类行 + 兜底残行）
-CORPUS_EXPECTED_UNPARSED = 1   # 无角色前缀残行：兜底收编 + 披露
+# 2026-10-24 锚换代：单层 5 逐行（file1）+ 双层 3 组拆 5 段（file1）+
+# file2 逐行 2 = 12（解析器 v2；单层旧行为兼容断言逐字保留）。
+CORPUS_EXPECTED_MESSAGES = 12
+CORPUS_EXPECTED_UNPARSED = 1   # 无角色前缀残行：兜底收编 + 披露（换代后不变）
+# 双层 fixture 期望（K4B-E1/E3；2026-10-24 实跑 fixer 现态 parser 冻结）。
+K4B_FIXTURE_CORPUS_MESSAGES = 12
+K4B_FIXTURE_CORPUS_PER_ROLE = {"user": 7, "assistant": 4, "other": 1}  # other=[front] 行
+K4B_FIXTURE_CORPUS_GROUPS = 10          # 单层 5+2 逐行组 + 双层 3 组
+K4B_FIXTURE_CORPUS_WRAPPER_MARKERS = 1  # 包装标记载体段（保留、只计数）
+K4B_FIXTURE_FILE1_CREATED_AT = "2026-09-30T04:00:00+00:00"  # 12:00 Asia/Shanghai
+K4B_FIXTURE_FILE2_CREATED_AT = "2026-09-28T04:00:00+00:00"
+K4B_FIXTURE_FILE1_LINES = 11
+K4B_FIXTURE_FILE2_LINES = 2
 TRANSCRIPT_ROWS = (
     (1, "user", "P2 持久会话起的事件一"),
     (2, "assistant", "P2 持久会话起的事件二"),
@@ -1091,6 +1266,581 @@ class K4DeclarationsAndOpsAcceptance(K4BaseCase):
             "deploy-drift", src,
             f"{tag} RED: verify-deploy.sh 丢失 deploy-drift 告警面 —— 既有漂移"
             "报警机制被回退（must-stay-green）。")
+
+
+# --------------------------------------------------------------------------- #
+# K4B · 解析器 v2 / 报告扩展 / rollback 选择性 / created_at / env.example
+# （261024-m5-k4b-corpus-parser-v2；Gate A host 离线面 · K4B-E1..E5）
+# --------------------------------------------------------------------------- #
+
+
+class K4BParserV2Acceptance(K4BaseCase):
+    """解析器 v2 fixture 级行为（K4B-E1 / K4B-E4 端到端半）。"""
+
+    def _corpus_msgs(self, stub):
+        keys = [k for k in stub.sessions if k.endswith(":session-corpus")]
+        self.assertEqual(
+            len(keys), 1, "K4B RED: corpus session 键 ≠ 1。")
+        return stub.sessions[keys[0]]["messages"]
+
+    def test_k4b_e1_double_layer_grouping_split_attribution(self):
+        """coverage: K4B-E1, K4B-E4, S-F5.1-AC5 — 解析器 v2 fixture 行为：
+        双层识别 + 续行归组（同 [ref] 同 role 连续行合并、换行保留）+
+        内嵌 turn 拆分（user 行内嵌 Assistant: 话术 → assistant 段，首段沿
+        外层 role）+ 包装标记载体段保留（只计数）+ 小写角色归一 + `词:` 不
+        误拆 + created_at 回填 04:00 UTC；单层旧行为兼容断言逐字保留。"""
+        tag = "K4B-E1"
+        mod = self._load_module(BACKFILL_PY, "k4_backfill_k4b_e1")
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            corpus = _make_corpus(tmp)
+            db = _make_transcript_db(tmp)
+            stub = _StubHonchoV2()
+            self._patch_client(mod, stub)
+            rc = mod.main([
+                "--corpus-dir", str(corpus), "--openclaw-db", str(db),
+                "--device-id", DEVICE_ID, "--report-out", str(tmp / "r.json"),
+                "--apply"])
+            self.assertEqual(rc, 0, f"{tag} RED: apply exit={rc}。")
+            msgs = self._corpus_msgs(stub)
+            self.assertEqual(
+                len(msgs), K4B_FIXTURE_CORPUS_MESSAGES,
+                f"{tag} RED: corpus 消息数 {len(msgs)} ≠ "
+                f"{K4B_FIXTURE_CORPUS_MESSAGES}（单层 5 逐行 + 双层 3 组拆 5 段"
+                " + file2 逐行 2）—— 解析器 v2 fixture 期望漂移。")
+            # add_message role 为原始角色（[front] 单层行 role=front）；报告
+            # perRole 口径 = 非 user/assistant 一律归 other 桶，按同口径对账。
+            role_counts = Counter(
+                m[0] if m[0] in ("user", "assistant", "other") else "other"
+                for m in msgs)
+            self.assertEqual(
+                {k: role_counts.get(k, 0) for k in K4B_FIXTURE_CORPUS_PER_ROLE},
+                K4B_FIXTURE_CORPUS_PER_ROLE,
+                f"{tag} RED: perRole ≠ {K4B_FIXTURE_CORPUS_PER_ROLE} —— 双层"
+                "归因换代表失守（other 桶 = [front] 单层行，照记不滤）。")
+            rows = {(m[0], m[1]) for m in msgs}
+            # 单层旧行为兼容（逐字保留——逐行一条、不归组不拆分、role 透传）。
+            for role, content in (
+                    ("user", "我最喜欢的颜色是紫色，我的小狗叫豆豆"),
+                    ("assistant", "紫色真好看呀，豆豆是什么品种呀"),
+                    ("user", "我的同学王一诺说他家有一只猫"),
+                    ("assistant", "嗯嗯"),
+                    ("front", "孩子到目前为止讲的内容：（旧设备流程回合语料"
+                              "——照记，不滤）"),
+                    ("user", "今天学校运动会我跑了第二名"),
+                    ("user", "无角色前缀的旧语料残行（兜底收编路径）")):
+                self.assertIn(
+                    (role, content), rows,
+                    f"{tag} RED: 单层旧行为断言失守：({role}, {content[:18]}…)"
+                    " 不在解析结果中 —— 冻结 K4 最小格式行为必须逐字保持"
+                    "（锚换代红线）。")
+            # 包装标记载体段：标记保留在段文本内（review §2.1 ③ 保留变体），
+            # 作为首段独立成段、只计数不剥离。
+            self.assertIn(
+                ("user", K4B_WRAPPER_MARKER_CONTEXT), rows,
+                f"{tag} RED: 包装标记载体段被剥离或未独立成段 —— 保留变体"
+                "（标记留在 content、wrapperMarkersStripped 计数）失守。")
+            # 内嵌 turn 拆分：user 行内嵌的 Assistant: 话术 → assistant 段，
+            # 且同 [ref] 同 role 续行并入该段（换行保留，F1+F2 双修复证据）。
+            self.assertIn(
+                ("assistant",
+                 "好呀，星星要讲什么故事呢？\n{\"view\":\"text\"} 续行归组"
+                 "第二行\n归组第三行，同引用同角色连续行"),
+                rows,
+                f"{tag} RED: 内嵌 Assistant: 话术未拆成 assistant 段或续行"
+                "未按换行保留并入 —— F1 主症状修复（拆分）+ F2（归组）失守。")
+            # 内嵌 User: 标记切段后沿标记定 role（非外层 role）。
+            self.assertIn(("user", "我要讲故事。"), rows,
+                          f"{tag} RED: 内嵌 User: 标记切段失守。")
+            # 小写第二层角色归一为 assistant（与上一组同 [ref] 同 role 连续
+            # ——归组合并、换行保留）。
+            self.assertIn(
+                ("assistant", "好的，这就帮你记下来\n小写角色归一为 assistant"),
+                rows, f"{tag} RED: 小写角色归一 / 归组失守。")
+            # content 自带 `词:` 不被误拆为角色标记（保守只认 user/assistant）。
+            self.assertIn(
+                ("user", "今天学校秋游去了植物园 提示: 冒号词不误拆"), rows,
+                f"{tag} RED: `提示: ` 被误判角色标记 —— 保守 token 判别失守。")
+            # 切段标记被消化：零段 content 含外层 `User: `/`Assistant: ` 标记
+            # （包装标记在 content 内不算前缀违规——保留变体）。
+            leaked = [m for m in msgs
+                      if "User: " in m[1] or "Assistant: " in m[1]]
+            self.assertEqual(
+                leaked, [],
+                f"{tag} RED: {len(leaked)} 段 content 残留 User:/Assistant: "
+                "切段标记 —— 标记应被切段消化（协议成分不入段文本）。")
+            # created_at 回填（human D3）：文件日期 12:00 Asia/Shanghai =
+            # 04:00 UTC，ISO 8601 带 +00:00。
+            self.assertEqual(
+                dict(Counter(m[3] for m in msgs)),
+                {K4B_FIXTURE_FILE1_CREATED_AT: 10,
+                 K4B_FIXTURE_FILE2_CREATED_AT: 2},
+                f"{tag} RED: corpus created_at 分布 ≠ {{file1: 10, file2: 2}}"
+                " —— 回填口径（文件日期 T04:00:00+00:00）失守。")
+            # transcript 源零回填（D2 裁不重灌；created_at=None 走服务端缺省）。
+            tkeys = [k for k in stub.sessions if k.endswith(":openclaw-transcript")]
+            self.assertTrue(tkeys, f"{tag} RED: transcript session 缺失。")
+            self.assertTrue(
+                all(m[3] is None for m in stub.sessions[tkeys[0]]["messages"]),
+                f"{tag} RED: transcript 消息被回填 created_at —— transcript "
+                "源零回填（D2）失守。")
+
+    def test_k4b_e3_report_extension_keys_and_top_level_shape(self):
+        """coverage: K4B-E3 — 报告扩展 additive：perSource[kind] 增
+        perRole/groups/segments/wrapperMarkersStripped/corpusFiles
+        [{name,sha256,lines}]、backfill 顶层增 perRoleTotal；plan/apply 两态
+        都出；冻结顶层键（mode + 四计数器 before/after + backfill.
+        ingested/skipped/unparsed/perSource）形状零破坏。"""
+        tag = "K4B-E3"
+        mod = self._load_module(BACKFILL_PY, "k4_backfill_k4b_e3")
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            corpus = _make_corpus(tmp)
+            db = _make_transcript_db(tmp)
+            for apply_mode in (False, True):
+                stub = _StubHoncho()
+                self._patch_client(mod, stub)
+                argv = ["--corpus-dir", str(corpus), "--openclaw-db", str(db),
+                        "--device-id", DEVICE_ID,
+                        "--report-out", str(tmp / "r.json")]
+                if apply_mode:
+                    argv.append("--apply")
+                self.assertEqual(
+                    mod.main(argv), 0,
+                    f"{tag} RED: {'apply' if apply_mode else 'plan'} 态失败。")
+                rep = json.loads((tmp / "r.json").read_text(encoding="utf-8"))
+                # 冻结顶层键形状（零破坏）。
+                for key in ("mode", "peers", "sessions", "messages",
+                            "observations"):
+                    self.assertIn(key, rep, f"{tag} RED: 顶层键 {key} 缺失。")
+                bf = rep["backfill"]
+                for key in ("ingested", "skipped", "unparsed", "perSource",
+                            "perRoleTotal"):
+                    self.assertIn(
+                        key, bf, f"{tag} RED: backfill.{key} 缺失"
+                        "（perRoleTotal = K4B-E3 additive 顶层键）。")
+                self.assertEqual(
+                    set(bf["perRoleTotal"]), {"user", "assistant", "other"},
+                    f"{tag} RED: perRoleTotal 键形失守。")
+                ps = bf["perSource"]
+                self.assertEqual(
+                    set(ps), set(K4_SOURCE_KINDS),
+                    f"{tag} RED: perSource 源覆盖 ≠ {K4_SOURCE_KINDS}。")
+                for kind, stat in ps.items():
+                    for key in ("planned", "ingested", "skipped", "unparsed",
+                                "perRole", "groups", "segments",
+                                "wrapperMarkersStripped", "corpusFiles"):
+                        self.assertIn(
+                            key, stat,
+                            f"{tag} RED: perSource[{kind}].{key} 缺失"
+                            "（K4B-E3 additive 键，plan/apply 两态都出）。")
+                    self.assertEqual(
+                        set(stat["perRole"]), {"user", "assistant", "other"},
+                        f"{tag} RED: perSource[{kind}].perRole 键形失守。")
+                    for f in stat["corpusFiles"]:
+                        self.assertEqual(
+                            set(f), {"name", "sha256", "lines"},
+                            f"{tag} RED: perSource[{kind}].corpusFiles 条目"
+                            f"键形失守: {sorted(f)}。")
+                # fixture 期望值（K4B-E1 双层化后的解析级统计）。
+                cs = ps["session-corpus"]
+                self.assertEqual(cs["segments"], K4B_FIXTURE_CORPUS_MESSAGES,
+                                 f"{tag} RED: corpus segments 漂移。")
+                self.assertEqual(cs["groups"], K4B_FIXTURE_CORPUS_GROUPS,
+                                 f"{tag} RED: corpus groups 漂移。")
+                self.assertEqual(
+                    cs["wrapperMarkersStripped"],
+                    K4B_FIXTURE_CORPUS_WRAPPER_MARKERS,
+                    f"{tag} RED: corpus wrapperMarkersStripped 漂移。")
+                self.assertEqual(
+                    cs["perRole"], K4B_FIXTURE_CORPUS_PER_ROLE,
+                    f"{tag} RED: corpus perRole 漂移。")
+                by_name = {f["name"]: f for f in cs["corpusFiles"]}
+                self.assertEqual(
+                    set(by_name), {"2026-09-30.txt", "2026-09-28.txt"},
+                    f"{tag} RED: corpusFiles 文件清单漂移。")
+                self.assertEqual(by_name["2026-09-30.txt"]["lines"],
+                                 K4B_FIXTURE_FILE1_LINES)
+                self.assertEqual(by_name["2026-09-28.txt"]["lines"],
+                                 K4B_FIXTURE_FILE2_LINES)
+                for f in by_name.values():
+                    self.assertRegex(f["sha256"], r"^[0-9a-f]{64}$",
+                                     f"{tag} RED: sha256 非小写 64hex。")
+                ts = ps["openclaw-transcript"]
+                self.assertEqual(ts["groups"], 2)
+                self.assertEqual(ts["segments"], 2)
+                self.assertEqual(ts["wrapperMarkersStripped"], 0)
+                self.assertEqual(ts["corpusFiles"], [],
+                                 f"{tag} RED: transcript corpusFiles 非空表"
+                                 "（additive 键形状统一：逐事件一条逻辑消息）。")
+                self.assertEqual(
+                    dict((k, v) for k, v in bf["perRoleTotal"].items()),
+                    {"user": 8, "assistant": 5, "other": 1},
+                    f"{tag} RED: perRoleTotal ≠ {{user:8, assistant:5, "
+                    "other:1}}（corpus 7/4/1 + transcript 1/1/0）。")
+
+    def test_k4b_e2_rollback_source_kind_selective_and_default_all(self):
+        """coverage: K4B-E2 — rollback --source-kind 选择性删除：plan 列出
+        matched/skipped 逐键且零删；apply 恰删该 source-kind 的标记 session、
+        其余 kind 与 live 零触碰；缺省（无旗标）= 全部（旧行为逐字保持）。"""
+        tag = "K4B-E2"
+        rb = self._load_module(ROLLBACK_PY, "k4_rollback_k4b_e2")
+        live_key = _live_session_key(DEVICE_ID)
+        corpus_key = (f"{K4_DEVICE_FAMILY_PREFIX}{DEVICE_ID}"
+                      ":backfill:20261024T000000Z:session-corpus")
+        transcript_key = (f"{K4_DEVICE_FAMILY_PREFIX}{DEVICE_ID}"
+                          ":backfill:20261024T000000Z:openclaw-transcript")
+
+        def seed(stub):
+            _seed_live_session(stub, DEVICE_ID)
+            for key, role in ((corpus_key, "user"), (transcript_key, "user")):
+                stub.sessions[key] = {
+                    "peer": K4_OWNER_PEER,
+                    "metadata": {K4_SESSION_BATCH_KEY: key},
+                    "messages": [(role, f"标记消息 {key[-20:]}", {})],
+                }
+
+        # plan：列出 matched/skipped、零删。
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            stub = _StubHoncho()
+            seed(stub)
+            self._patch_client(rb, stub)
+            rc = rb.main([
+                "--api", K4_DEFAULT_API, "--peer", K4_OWNER_PEER,
+                "--source-kind", "session-corpus",
+                "--report-out", str(tmp / "plan.json")])
+            self.assertEqual(rc, 0, f"{tag} RED: 选择性 plan exit={rc}。")
+            self.assertEqual(
+                [c for c in stub.calls if c[0] == "delete_sessions"], [],
+                f"{tag} RED: plan 预演执行了删除 —— 缺省零删（迁移铁律）。")
+            rep = json.loads((tmp / "plan.json").read_text(encoding="utf-8"))
+            bf = rep["backfill"]
+            for key in ("sourceKind", "matchedSessions", "skippedSessions"):
+                self.assertIn(
+                    key, bf, f"{tag} RED: 回滚报告缺 backfill.{key}"
+                    "（K4B-E2：plan 输出必须列出 matched/skipped 键）。")
+            self.assertEqual(bf["sourceKind"], "session-corpus")
+            self.assertEqual(
+                bf["matchedSessions"], [corpus_key],
+                f"{tag} RED: matched ≠ [corpus 键] —— source-kind 后缀判别"
+                "失守。")
+            self.assertEqual(
+                bf["skippedSessions"], [transcript_key],
+                f"{tag} RED: skipped ≠ [transcript 键] —— 保留面未列出。")
+            # apply：恰删 matched，其余 kind 与 live 零触碰。
+            rc = rb.main([
+                "--api", K4_DEFAULT_API, "--peer", K4_OWNER_PEER,
+                "--source-kind", "session-corpus",
+                "--report-out", str(tmp / "apply.json"), "--apply"])
+            self.assertEqual(rc, 0, f"{tag} RED: 选择性 apply exit={rc}。")
+            self.assertNotIn(corpus_key, stub.sessions,
+                             f"{tag} RED: matched session 未被删。")
+            self.assertIn(transcript_key, stub.sessions,
+                          f"{tag} RED: skipped kind 被误删 —— D2 裁「transcript "
+                          "批次另行处置」的工具半失守。")
+            self.assertIn(live_key, stub.sessions,
+                          f"{tag} RED: live session 被触碰（NFR-PRIV-1）。")
+            self.assertEqual(
+                json.loads((tmp / "apply.json").read_text(encoding="utf-8"))
+                ["backfill"]["deleted"], 1)
+        # 缺省（无 --source-kind）= 全部（旧行为逐字保持）。
+        with tempfile.TemporaryDirectory() as td:
+            stub = _StubHoncho()
+            seed(stub)
+            self._patch_client(rb, stub)
+            rc = rb.main([
+                "--api", K4_DEFAULT_API, "--peer", K4_OWNER_PEER,
+                "--report-out", str(Path(td) / "all.json"), "--apply"])
+            self.assertEqual(rc, 0, f"{tag} RED: 缺省全量 apply exit={rc}。")
+            self.assertEqual(
+                set(stub.sessions), {live_key},
+                f"{tag} RED: 缺省回滚未删全部标记 session —— 旧行为（缺省=全部）"
+                "被选择面收窄破坏（K4B-E2 反向锚）。")
+
+    def test_k4b_e4_created_at_and_toolresult_agent_peer_wire(self):
+        """coverage: K4B-E4 — created_at 04:00 UTC 口径（D3：文件日期当天
+        12:00 Asia/Shanghai）与 toolResult/tool → agent-kidpal 出网 wire 形状
+        （F4：课表文件正文类 toolResult 不再归 owner；MessageCreate.
+        created_at 支持回填、None = 服务端缺省）。"""
+        tag = "K4B-E4"
+        mod = self._load_module(BACKFILL_PY, "k4_backfill_k4b_e4_wire")
+        # 口径函数（机制级）。
+        self.assertEqual(
+            mod.corpus_created_at("2026-09-30"), K4B_A4_CREATED_AT,
+            f"{tag} RED: corpus_created_at ≠ {K4B_A4_CREATED_AT} —— D3 口径"
+            "（该日 12:00 Asia/Shanghai = 04:00 UTC）失守。")
+        self.assertIsNone(
+            mod.corpus_created_at("2026-13-99"),
+            f"{tag} RED: 非法日期未回落 None —— 须走服务端写入时刻缺省。")
+        self.assertIsNone(mod.corpus_created_at("notes"),
+                          f"{tag} RED: 非日期文件名未回落 None。")
+        # 出网 wire 形状（真 HonchoRestClient + _request 记录替身）。
+        client = mod.HonchoRestClient(K4_DEFAULT_API)
+        seen: list = []
+        client._request = (lambda method, path, query=None, body=None:
+                           seen.append((method, path, body)) or None)
+        key = (f"{K4_DEVICE_FAMILY_PREFIX}{DEVICE_ID}"
+               ":backfill:20261024T000000Z:session-corpus")
+        client.create_session(K4_OWNER_PEER, key, {K4_SESSION_BATCH_KEY: key})
+
+        def last_row():
+            return seen[-1][2]["messages"][0]
+
+        client.add_message(key, "user", "u1", {})
+        self.assertEqual(
+            last_row()["peer_id"], K4_OWNER_PEER,
+            f"{tag} RED: user 消息 peer ≠ owner —— 家庭单 owner 归宿失守。")
+        self.assertNotIn(
+            "created_at", last_row(),
+            f"{tag} RED: created_at=None 仍出现在 wire 行 —— None 须省略"
+            "（服务端写入时刻缺省，向后兼容面）。")
+        for role in ("toolResult", "tool", "assistant"):
+            client.add_message(key, role, f"内容-{role}", {})
+            self.assertEqual(
+                last_row()["peer_id"], "agent-kidpal",
+                f"{tag} RED: role={role} 出网 peer ≠ agent-kidpal —— F4 修复"
+                "（toolResult 及未来 tool* 归 agent，课表正文类不再派生"
+                "「owner has a 课表」伪事实）失守。")
+        client.add_message(key, "user", "u2", {},
+                           created_at=K4B_A4_CREATED_AT)
+        self.assertEqual(
+            last_row().get("created_at"), K4B_A4_CREATED_AT,
+            f"{tag} RED: created_at 未进 MessageCreate.created_at wire 行"
+            "（schemas/api.py:347 回填通道）。")
+
+    def test_k4b_e5_env_example_two_keys_k3_anchors_intact(self):
+        """coverage: K4B-E5 — honcho.env.example 补 EMBEDDING_MODEL_CONFIG__
+        MAX_BATCH_SIZE=10 与 LLM_DEFAULT_MAX_TOKENS=8000 注释口径（D4 部署
+        资产同步半）；K3 既有锚零回退（must-stay-green）。"""
+        tag = "K4B-E5"
+        self.assertTrue(
+            HONCHO_ENV_EXAMPLE.is_file(),
+            f"{tag} RED: honcho.env.example 不在世。")
+        text = _read_text(HONCHO_ENV_EXAMPLE)
+        self.assertIn(
+            "EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10", text,
+            f"{tag} RED: 模板缺 EMBEDDING_MODEL_CONFIG__MAX_BATCH_SIZE=10 —— "
+            "DashScope 兼容端点 batch 上限 10（K4 实测 RepresentationSaveError "
+            "成批丢单元；D4 拍板同步入模板）。")
+        self.assertIn(
+            "LLM_DEFAULT_MAX_TOKENS=8000", text,
+            f"{tag} RED: 模板缺 LLM_DEFAULT_MAX_TOKENS=8000 注释口径"
+            "（ECS live 实值未入仓的 debt 在册；模板只留注释口径）。")
+        self.assertIn(
+            "261024-m5-k4b-corpus-parser-v2", text,
+            f"{tag} RED: 模板缺本包 changeId 锚 —— 两键同步的出处留痕。")
+        # K3 既有锚零回退。
+        for anchor in (
+                "HONCHO_API_BASE_URL=http://127.0.0.1:18100",
+                "EMBEDDING_VECTOR_DIMENSIONS=1536",
+                "DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4",
+                "DERIVER_FLUSH_ENABLED=true",
+                "DERIVER_LLM_BASE_URL=https://api.deepseek.com/v1",
+                "DEEPSEEK_API_KEY", "DASHSCOPE_API_KEY", "POSTGRES_DB=honcho"):
+            self.assertIn(
+                anchor, text,
+                f"{tag} RED: K3 既有锚 {anchor!r} 丢失 —— 部署模板既有面"
+                "被本包改动回退（must-stay-green）。")
+
+
+# --------------------------------------------------------------------------- #
+# K4B · Gate A3/A4 真语料快照审计（K4B-E6 · review §4 host 离线面）
+# --------------------------------------------------------------------------- #
+
+
+class K4BSnapshotAuditAcceptance(K4BaseCase):
+    """真语料快照审计（review §4 Gate A3/A4）。
+
+    快照 = C:/tmp/k4-corpus-review/txt（21 文件只读副本；孩子语料不入仓——
+    断言只消费计数 / 哈希 / 日期与协议标记字面，语料正文零入仓零引用）。
+    机器外缺席 = 显式 skipTest 申报「快照缺席，审计未跑」，不静默跳过；
+    在盘但与冻结表（K4B_SNAPSHOT_FILES，逐件 sha256）不符 = RED（快照漂移，
+    review F7：审计绑 21 文件 + 逐件 sha256）。只读审计——parse_corpus_dir
+    对快照零写改（K4-E4 源只读同锚）。
+    """
+
+    def _skip_if_snapshot_absent(self):
+        if not K4B_SNAPSHOT_DIR.is_dir():
+            self.skipTest(
+                "快照缺席，审计未跑 —— 本机无 C:/tmp/k4-corpus-review/txt 只读"
+                "副本（孩子语料不入仓；快照审计为机器相关 host 面，Gate A3/A4 "
+                "在持有快照的机器上执行，live 全量对账归 K4-E6 ①）。")
+        missing = [n for n in K4B_SNAPSHOT_FILES
+                   if not (K4B_SNAPSHOT_DIR / n).is_file()]
+        if missing:
+            self.skipTest(
+                f"快照缺席，审计未跑 —— 冻结 21 件中缺 {len(missing)} 件"
+                f"（如 {missing[:3]}）；快照不完整按缺席申报，不做部分审计。")
+
+    def test_k4b_gate_a3_snapshot_audit_frozen_values(self):
+        """coverage: K4B-E6 Gate A3 — 真语料快照审计：逐件 sha256 与冻结表
+        逐件等；识别行 = 非空行（unparsed 0）；21 文件 / 1652 非空行 →
+        1007 组 → 2879 段（user 1580 / assistant 1299 / other 0）；指纹
+        2879 全唯一；content 零以源引用 / 角色标记起头；
+        wrapperMarkersStripped=350（保留变体只计数）；created_at 全部 =
+        文件日期 T04:00:00+00:00。"""
+        tag = "K4B-E6/GateA3"
+        self._skip_if_snapshot_absent()
+        drifted = [(n, _sha256_file(K4B_SNAPSHOT_DIR / n), sha)
+                   for n, (sha, _lines) in K4B_SNAPSHOT_FILES.items()
+                   if _sha256_file(K4B_SNAPSHOT_DIR / n) != sha]
+        self.assertEqual(
+            drifted, [],
+            f"{tag} RED: 快照漂移（sha256 与冻结表不符）: {drifted[:3]}… —— "
+            "审计绑冻结快照（review F7），漂移即对账基准失效，不得静默放行。")
+        mod = self._load_module(BACKFILL_PY, "k4_backfill_k4b_snapshot")
+        msgs, unparsed, stats = mod.parse_corpus_dir(K4B_SNAPSHOT_DIR)
+        files = {f["name"]: f for f in stats["corpusFiles"]}
+        self.assertEqual(
+            set(files), set(K4B_SNAPSHOT_FILES),
+            f"{tag} RED: 快照文件集 ≠ 冻结 21 件。")
+        for name, (_sha, lines) in K4B_SNAPSHOT_FILES.items():
+            self.assertEqual(
+                files[name]["lines"], lines,
+                f"{tag} RED: {name} 非空行数 {files[name]['lines']} ≠ {lines}。")
+        self.assertEqual(
+            sum(f["lines"] for f in files.values()), K4B_SNAPSHOT_TOTAL_LINES,
+            f"{tag} RED: 非空行总数 ≠ {K4B_SNAPSHOT_TOTAL_LINES}。")
+        self.assertEqual(
+            stats["groups"], K4B_SNAPSHOT_GROUPS,
+            f"{tag} RED: 逻辑组数 {stats['groups']} ≠ {K4B_SNAPSHOT_GROUPS}"
+            "（续行归组锚）。")
+        self.assertEqual(
+            len(msgs), K4B_SNAPSHOT_SEGMENTS,
+            f"{tag} RED: 段数 {len(msgs)} ≠ {K4B_SNAPSHOT_SEGMENTS}（内嵌"
+            "拆分锚；review §1.5 离线模拟 1007 → 2879 无损）。")
+        role_counts = Counter(m["role"] for m in msgs)
+        self.assertEqual(
+            {k: role_counts.get(k, 0) for k in K4B_SNAPSHOT_PER_ROLE},
+            K4B_SNAPSHOT_PER_ROLE,
+            f"{tag} RED: perRole ≠ {K4B_SNAPSHOT_PER_ROLE}（独立 shell 计数"
+            "逐值等——归因换代的最终 host 证据）。")
+        self.assertEqual(
+            unparsed, 0,
+            f"{tag} RED: unparsed ≠ 0 —— 识别行必须 = 非空行（真语料零"
+            "兜底、零静默丢弃）。")
+        fps = [m["fingerprint"] for m in msgs]
+        self.assertEqual(
+            len(set(fps)), len(fps),
+            f"{tag} RED: 指纹 {len(set(fps))}/{len(fps)} 非全唯一 —— 段级"
+            "源锚身份（源文件|首行行号|段序|role|段文本）碰撞。")
+        bad_prefix = [
+            m for m in msgs
+            if m["content"].startswith("[kidpal/sessions/")
+            or m["content"].startswith("User: ")
+            or m["content"].startswith("Assistant: ")]
+        self.assertEqual(
+            bad_prefix, [],
+            f"{tag} RED: {len(bad_prefix)} 段 content 以首层源引用或角色标记"
+            "起头 —— 双层识别失守（K4 归因 bug 复发形态）。")
+        self.assertEqual(
+            stats["wrapperMarkersStripped"], K4B_SNAPSHOT_WRAPPER_MARKERS,
+            f"{tag} RED: wrapperMarkersStripped "
+            f"{stats['wrapperMarkersStripped']} ≠ "
+            f"{K4B_SNAPSHOT_WRAPPER_MARKERS}（保留变体只计数的披露锚）。")
+        ca = Counter(m["created_at"] for m in msgs)
+        self.assertNotIn(
+            None, ca, f"{tag} RED: 存在未回填 created_at 的消息 —— 全快照"
+            "文件名均为日期形态（D3）。")
+        expected_ca = {f"{name[:10]}T04:00:00+00:00"
+                       for name in K4B_SNAPSHOT_FILES}
+        self.assertEqual(
+            set(ca), expected_ca,
+            f"{tag} RED: created_at 值集 ≠ 21 个文件日期 T04:00:00+00:00 —— "
+            "回填口径逐文件失守。")
+
+    def test_k4b_gate_a4_split_sampling_0930_embedded_turns(self):
+        """coverage: K4B-E6 Gate A4 — 拆分正确性抽样（review §4：2026-09-30.txt
+        同时含纯 user 行、内嵌上下文组、story-prompt 组；源消息 440/444/445
+        类内容 = user 行内嵌小伴话术）：user 行内嵌 Assistant: 话术拆出
+        assistant 段；content 不含外层 `User: `/`Assistant: ` 切段标记
+        （包装标记在 content 内不算前缀违规——保留变体）；该文件冻结锚
+        59 行 → 35 组（user 17 / assistant 18）→ 128 段
+        （user 69 / assistant 59）。"""
+        tag = "K4B-E6/GateA4"
+        self._skip_if_snapshot_absent()
+        src = K4B_SNAPSHOT_DIR / K4B_A4_FILE
+        if not src.is_file():
+            self.skipTest(f"快照缺席，审计未跑 —— {K4B_A4_FILE} 不在快照内。")
+        mod = self._load_module(BACKFILL_PY, "k4_backfill_k4b_a4")
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            shutil.copy(src, d / K4B_A4_FILE)
+            msgs, unparsed, stats = mod.parse_corpus_dir(d)
+        self.assertEqual(
+            stats["corpusFiles"][0]["lines"], K4B_A4_LINES,
+            f"{tag} RED: 非空行数 ≠ {K4B_A4_LINES}。")
+        self.assertEqual(
+            stats["groups"], K4B_A4_GROUPS,
+            f"{tag} RED: 组数 {stats['groups']} ≠ {K4B_A4_GROUPS}。")
+        self.assertEqual(
+            len(msgs), K4B_A4_SEGMENTS,
+            f"{tag} RED: 段数 {len(msgs)} ≠ {K4B_A4_SEGMENTS}。")
+        role_counts = Counter(m["role"] for m in msgs)
+        self.assertEqual(
+            {k: role_counts.get(k, 0) for k in K4B_A4_PER_ROLE},
+            K4B_A4_PER_ROLE,
+            f"{tag} RED: perRole ≠ {K4B_A4_PER_ROLE}。")
+        # 组按外层 role 计数（模块冻结分类函数重放；快照文件冻结、逐位稳定）。
+        groups_by_role = Counter()
+        prev_key = None
+        for raw in src.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            ref, role, _content, _rec, double = mod._classify_corpus_line(line)
+            if double:
+                key = (ref, role)
+                if key == prev_key:
+                    continue  # 续行并入当前组
+                groups_by_role[role] += 1
+                prev_key = key
+            else:
+                groups_by_role["single-layer"] += 1
+                prev_key = None
+        self.assertEqual(
+            {k: v for k, v in groups_by_role.items() if k != "single-layer"},
+            K4B_A4_GROUPS_BY_ROLE,
+            f"{tag} RED: 组-by-role ≠ {K4B_A4_GROUPS_BY_ROLE}。")
+        # 主症状修复的结构证据：assistant 段数 > assistant 组数 —— 内嵌
+        # `Assistant: ` 话术被从 user 组拆出（review §1.4 F1：只修 role 治不到
+        # 主症状，源消息 440/444/445 类必须拆段）。
+        self.assertGreater(
+            K4B_A4_PER_ROLE["assistant"], K4B_A4_GROUPS_BY_ROLE["assistant"],
+            f"{tag} RED: assistant 段数未超过 assistant 组数 —— 内嵌拆分未"
+            "发生（F1 主症状会复发的形态）。")
+        # 切段标记被消化：零段 content 残留外层 `User: `/`Assistant: ` 标记
+        # （实跑全快照 0 残留；包装标记保留在 content 内不算前缀违规）。
+        leaked = [m for m in msgs
+                  if "User: " in m["content"] or "Assistant: " in m["content"]]
+        self.assertEqual(
+            leaked, [],
+            f"{tag} RED: {len(leaked)} 段 content 残留 User:/Assistant: 切段"
+            "标记 —— content 不得含外层前缀（标记是协议成分，非孩子/小伴"
+            "话语）。")
+        # 保留变体：包装标记留在段文本内、只计数（不剥离）。
+        in_content = Counter()
+        for m in msgs:
+            if K4B_WRAPPER_MARKER_CONTEXT in m["content"]:
+                in_content["context"] += 1
+            if K4B_WRAPPER_MARKER_CURRENT in m["content"]:
+                in_content["current"] += 1
+        self.assertEqual(
+            in_content["context"], K4B_A4_WRAPPER_CONTEXT_SEGMENTS,
+            f"{tag} RED: 含 [Chat messages…] 标记的段数 ≠ "
+            f"{K4B_A4_WRAPPER_CONTEXT_SEGMENTS}（保留变体：标记须在 content "
+            "内可见，剥离 = 内容丢弃面）。")
+        self.assertEqual(
+            in_content["current"], K4B_A4_WRAPPER_CURRENT_SEGMENTS,
+            f"{tag} RED: 含 [Current message…] 标记的段数 ≠ "
+            f"{K4B_A4_WRAPPER_CURRENT_SEGMENTS}。")
+        self.assertEqual(
+            stats["wrapperMarkersStripped"], K4B_A4_WRAPPER_MARKERS,
+            f"{tag} RED: wrapperMarkersStripped ≠ {K4B_A4_WRAPPER_MARKERS}。")
+        self.assertEqual(
+            {m["created_at"] for m in msgs}, {K4B_A4_CREATED_AT},
+            f"{tag} RED: created_at ≠ {K4B_A4_CREATED_AT}（单文件回填口径）。")
 
 
 if __name__ == "__main__":  # standalone: python 本文件

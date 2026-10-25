@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261024-memory-recall-tool-enable",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "4573a4d9-ef02-4441-9390-155abadb3866",
+  "evidenceRef": "delivery/taskpackages/261024-memory-recall-tool-enable/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261024-memory-recall-tool-enable/test-scope-final-r2.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成）：四行 = 本包 acceptanceTestsFile 一件（server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py）∪ impactedTests 种子去重后三件（test_261022_m5_k1_prompt_carrier_migration / test_261022_honcho_memory / test_261023_agents_md_static_semantics_alignment），与工作树实际 diff 四件逐一对应；changeManifest 五件中 rollback_agent_tools.py 零 diff（语义零换代）故不入 scope。留根注记：r2 fact 的 results 元数据未含 scope 路径行（verify.mjs 未把 --scope-file 透传落 fact），路径以本字段与 review-packet §2 承载。",
+  "finalScopedRun": {
+    "acceptance": "16 passed / 0 failed（r2 acceptance 闸，serverAcceptanceFiles=1，零 live 标记 deselect）",
+    "unit": "16 passed / 0 failed（r2 unit 闸，structuralCollected=16——本包无独立单测文件，结构收集即冻结验收件十六项）",
+    "fullSuiteReference": "全量口径（integrator 独立复跑，2026-10-24）= cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 346 passed / 7 deselected / 33 subtests（28.07s）；冻结时点同命令 = 346 收集 / 339 passed / 7 failed / 7 deselected / 33 subtests（七条设计态红），现七红全转绿、冻结时点已通过的 339 条零回退"
+  },
+  "genPatchProjection": {
+    "command": "python server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py --gen-patch <tmp>/kidpal-tools.patch.json",
+    "exit": 0,
+    "productFlatLeafKeys": {
+      "agents.entries.kidpal.tools.allow": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
+    },
+    "note": "integrator 独立实跑复核；冻结断言 test_k1_e4_gen_patch_product_exactly_target_key_and_zero_config_write 另以 config 字节相等与「config 缺失仍可生成」两态承载零 config 读写"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261024-memory-recall-tool-enable --phase final --round 2 --invocation-id 4573a4d9-ef02-4441-9390-155abadb3866",
+    "exit": 0,
+    "factOk": true
+  },
+  "priorRounds": [
+    {
+      "round": 1,
+      "phase": "scoped",
+      "invocationId": "cf638afa-b0d2-4dff-8896-0bec74bb193b",
+      "evidenceRef": "delivery/taskpackages/261024-memory-recall-tool-enable/verifier-evidence/rounds/r1.json",
+      "ok": true,
+      "observedGateExit": 0,
+      "note": "8 闸（lite 包 firmware-build scoped 相位后置，261015-gov-review-lite-fast-path）"
+    }
+  ],
+  "scopeDetection": {
+    "tool": "codebase-memory detect_changes（advisory 记账，Step 9b）",
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "3ffd095deef01ee19bb6d3e17cb5f4ea5ed6f6d7",
+    "changedFiles": 12,
+    "seedSymbols": 40,
+    "impactedTotal": 2,
+    "impactedModules": {
+      "server/acceptance": 2
+    },
+    "note": "impacted 两条均落在被改动验收件自身的方法内（test_k1_e4_apply_preserves_other_keys_and_composes_with_skills_patch / test_k1_e4_apply_timestamped_backup），production 代码零调用方——爆炸半径自包含，与 test-scope 清单四件一致。changedFiles 12 = dev/pod-m2 相对 main 的既有债务/审查 commit（k4 召回分析件、ARQ/TECH 账本、workstream progress）+ 本包工作树六件；per-Pod 索引正常圈定、无降级。"
+  },
+  "docsSync": {
+    "docsSyncRequired": false,
+    "verified": "git status --porcelain docs/ 与 firmware/ 均为空；integrator 核实零 diff，零 diff 声明与触发位落 docs-delta.md"
+  },
+  "provenance": {
+    "closeoutArtifacts": [
+      "delivery/taskpackages/261024-memory-recall-tool-enable/docs-delta.md",
+      "delivery/taskpackages/261024-memory-recall-tool-enable/review-packet.md",
+      "delivery/taskpackages/261024-memory-recall-tool-enable/test-scope-final-r2.txt",
+      "delivery/taskpackages/261024-memory-recall-tool-enable/verdict.json",
+      "delivery/taskpackages/261024-memory-recall-tool-enable/verification.json"
+    ],
+    "workstream": "delivery/workstreams/device-memory-overhaul/progress.md（append 本包收口节）",
+    "liveDeploy": "awaiting-human:live-deploy——live 四项（dry-run 接受 gen-patch 产物 / openclaw.json 四项态实升级 / 真机「王一诺是谁」答 9/30 事实 / 日志工具调用）归 human 部署轮，命令单 = review-packet §5；Pod 不自行上 ECS",
+    "crossPackageStaleBaseline": "261022-openclaw-honcho-plugin 声明 drift_guard 仍锚四项（被 test_261022_memory_isolation.acceptance.py:430 逐字钉死）+ manifest.yaml 251/313/317 与 apply_honcho_plugin.py 头注「四项」字面——不在本包 changeManifest，建议 follow-up Lite 包换代（review-packet §4 第 5、6 条）",
+    "rollback": "rollback_agent_tools.py 零 diff（按 backup 文件整文件还原，语义与项数无关）；patch 形态需人工补时间戳备份方可用其默认入口（命令单第 3 步）"
+  }
+}
