@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 31（待拍板 0 / 待触发 26 / 已接受风险 2）；已结 88（归档索引见下）。
+**摘要**：未结 38（待拍板 0 / 待触发 36 / 已接受风险 2）；已结 88（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（26）
+## 待触发（36）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -42,7 +42,17 @@ _（无）_
 | [ARQ-261019-forward-derived-verification-set](ARQ-261019-forward-derived-verification-set.md) | SHOULD | 验证集白名单/计数承诺应从处方文本正推（而非只枚举现状命中） | 下个含「命中 ≡ 白名单」或计数承诺型验证条目的起草批，architect 撰写约定增补一条 |
 | [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | SHOULD | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | ① opendesign-connect skill 增补「出图不走 OD」先例段（od_* 失联/应用未跑时出图管道 = tools/asset-pipeline/shoot_design.mjs <html> <outdir>，playwright 无头 Edge 逐画布精确截图、400×300 阈值化 1bpp，每批只捡变更帧落 docs/ui/V<n>/）；② uiux-author agent 定义增补同款指引；③ 261019 批实测补充：uiux-author 全文件 Write 曾两次覆盖主线程合并的完整母版（R1 回归），skill 增补「母版/增量页单写者约定」条目 |
 | [ARQ-261019-verbatim-quote-line-level-false-negative](ARQ-261019-verbatim-quote-line-level-false-negative.md) | NIT | landing-fidelity 结构门 verbatim-quote 检查按行级匹配——目标句嵌在长行中部时报 not-found 假阴性（byte 比对证实逐字在场），advisory 语义局限误导核对 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` 的治理批 |
+| [ARQ-261021-landing-summary-template](ARQ-261021-landing-summary-template.md) | SHOULD | landing-summary 结构硬项（packet-id 行 + manifest 围栏）无模板承载，仅活在门脚本与先例文件里 | 下一批 Track B landing（判据可机判：landing-fidelity-check 首跑是否因 summary 格式 FAIL） |
+| [ARQ-261021-merge-gate-first-merge-blindspot](ARQ-261021-merge-gate-first-merge-blindspot.md) | SHOULD | 契约凭据闸两处首合并盲区——PROPOSAL 从 main ref 读（首次合并不可满足）+ verdict 锚 first-match 被 FAIL→PASS 轨迹遮蔽 | 下一次带契约 diff 的 arch 批合并（判据可机判：同型 BLOCK 输出复现即消费） |
+| [ARQ-261021-proposal-assert-expectations](ARQ-261021-proposal-assert-expectations.md) | SHOULD | PROPOSAL §5 验证集断言预期值须来自起草期实跑输出、禁止推算（本批三处失配实证） | 下一批走 /arch-change 或 /gov-change 的 PROPOSAL 起草时消费（判据可机判：§5 预期值是否带实跑留痕） |
 | [ARQ-261024-new-mechanism-spike-first](ARQ-261024-new-mechanism-spike-first.md) | MAJOR | 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证 | 下一个引入新子系统 / 新外部依赖集成 / 新数据迁移的批，triage 判档与 launch 前必查本条；或下次治理批 |
+| [ARQ-261025-adjacent-frozen-anchor-sweep](ARQ-261025-adjacent-frozen-anchor-sweep.md) | SHOULD | intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚 | 下一治理批（动 `task-intake-and-slicing.md` / `planner.md` / `dev-loop.md` 的分面时并批）；或下一个触既有冻结件同一实现点的包 |
+| [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
+| [ARQ-261025-debt-archive-ref-atomic](ARQ-261025-debt-archive-ref-atomic.md) | SHOULD | debt 结项归档归位与引用更新不同批——docRefs / sourceRefs 静默陈旧，final 轮 docs-sync 才红 | 下一治理批（动 `debt-render.mjs` / `task-intake-and-slicing.md` / integrator 收口文面时并批）；或再出现一次归档后引用陈旧 |
+| [ARQ-261025-intake-index-retro-scope-hygiene](ARQ-261025-intake-index-retro-scope-hygiene.md) | COULD | intake INDEX 漂移标连续多轮无人消费 + retro 游标把 `current` 指针目录当 waiting 包 | 下一治理批（动 `changes-index.mjs` / `loop-health-report.mjs` 时并批）；或下一轮 retro 仍见漂移标 |
+| [ARQ-261025-interrupted-dispatch-progress-note](ARQ-261025-interrupted-dispatch-progress-note.md) | COULD | 子 agent 被 429 / 配额中断后无回执——恢复靠 git status 考古，进度注记未成约定 | 下一治理批（动 `planner.md` 派发步 / 子 agent brief 模板时并批）；或再出现一次中断恢复 |
+| [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
+| [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
 
 ## 已接受风险（2）
 

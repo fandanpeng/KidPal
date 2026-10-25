@@ -1,82 +1,89 @@
 {
-  "changeId": "261024-memory-recall-tool-enable",
+  "changeId": "261025-kidpal-tools-profile-fix",
   "rigor": "lite",
-  "sourceType": "arch-review",
+  "sourceType": "human-ad-hoc",
   "origin": {
-    "type": "arch-review",
-    "human-verbatim": "human 2026-10-24 四裁决(经 coordinator 转达):①走 P0(放行 honcho_search_conclusions + AGENTS.md 记忆回忆回合纪律);②清毒已完成;③不再重灌;④P1-P2+可靠性债暂不做。",
-    "upstreamType": "arch-review",
-    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md",
-    "upstreamFrozen": "architect 分析件 2026-10-24(§0/§B 选项 3/§E)+ human 四裁决;§B 选项 3 = 本批技术权威",
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/taskpackages/261024-memory-recall-tool-enable/taskpackage.json",
+    "upstreamFrozen": "技术权威 = ECS live 实证（provenance：systemPromptReport.tools.entries 仅 [read,write,apply_patch,exec,web_search]；per-agent agents.entries.kidpal.tools.profile=full 覆盖全局 coding 后 honcho_search_conclusions 可达、答出 9-30 事实）+ human 2026-10-25 指示「tools.profile full 修复落到库里」。无 upstream PROPOSAL。前账 = 261024-memory-recall-tool-enable taskpackage.json notes ⑦ 跨包陈旧基线 follow-up。",
     "workstream": "device-memory-overhaul"
   },
-  "subsystem": "server/deploy/261022-openclaw-kidpal-tools/(tools.allow 四项→五项:增 honcho_search_conclusions;声明 drift_guard 升级基准;apply 增 --gen-patch 走 openclaw config patch 写入口)+ server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md(记忆回忆回合纪律)",
-  "story": "S-F5.1 · 记住孩子说过的事(AC2 跨会话回忆)——历史事实检索可用性:backfill 344 条 owner 自我结论已可检索(实测「王一诺是谁」第一条即 9-30 原句),但模型不查=三重锁(工具 allow 过滤/回合纪律禁工具/无工具时插件不注入指引);本批放行 honcho_search_conclusions 并新增「记忆回忆回合」纪律,使孩子问旧事时先查一次记忆再答。story 语义权威 = docs/requirements.md v1.67 现文;技术权威 = recall 分析件 §B 选项 3。",
-  "planRef": "delivery/taskpackages/261024-memory-recall-tool-enable/plan.md",
+  "subsystem": "server/deploy/261022-openclaw-kidpal-tools/（声明 change→changes 双叶键 tools.profile+tools.allow、drift_guard 升级基准换代、apply --gen-patch 双叶键、rollback 零改申报）+ server/deploy/261022-openclaw-honcho-plugin/（declare drift 现状锚四项→五项 + apply 头注换代）+ server/deploy/manifest.yaml（kidpal-tools 三条 + honcho-plugin 段陈旧字面换代）+ server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py（K1-E4 换代 + K1-E4-C 防回归锚）+ server/acceptance/test_261022_memory_isolation.acceptance.py（K3-E6 锚显式换代）",
+  "story": "S-F5.1 · 记住孩子说过的事（AC2 跨会话回忆）——锚点引用；story 语义权威 = docs/requirements.md 现文，技术描述归本包 plan.md 与 live provenance。",
+  "planRef": "delivery/taskpackages/261025-kidpal-tools-profile-fix/plan.md",
   "sourceRefs": [
     "S-F5.1-AC2",
-    "S-F5.1-AC5",
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md",
-    "delivery/taskpackages/261022-m5-k1-prompt-carrier-migration/taskpackage.json",
-    "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
+    "delivery/taskpackages/261024-memory-recall-tool-enable/taskpackage.json",
+    "delivery/workstreams/device-memory-overhaul/progress.md",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md"
   ],
   "acceptanceRefs": [
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md#§B"
+    "S-F5.1-AC2"
   ],
-  "acceptance": ["K1-E4", "K1-E4-B"],
-  "acceptanceTestsFile": ["server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py"],
+  "acceptance": ["K1-E4", "K1-E4-C", "K3-E6"],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
+  ],
   "impactedTests": [
     "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py",
-    "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py",
     "server/acceptance/test_261022_honcho_memory.acceptance.py",
-    "server/acceptance/test_261023_agents_md_static_semantics_alignment.acceptance.py"
+    "server/acceptance/test_261017_openclaw_kidpal_skills.acceptance.py"
   ],
   "requiredLayers": ["unit", "acceptance-offline", "live-manual"],
   "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance",
-  "redBaselineResult": "2026-10-24 acceptance-author 实跑回填:冻结前同树基线 = 340 passed / 7 deselected / 33 subtests(K4b 合入后);冻结后 = 346 收集 / 339 passed / 7 failed / 7 deselected / 33 subtests——7 failed 全为本包设计态红(allow 仍四项 / 无 drift 升级基准 / 无 --gen-patch / 四项基线升级 exit 3 / 无记忆回忆回合行 / 记忆节无检索澄清),既有 K1/K3/261023/memory_isolation 全绿零回退。",
+  "redBaselineResult": "2026-10-25 acceptance-author 实跑 + planner 独立复跑：冻结前同树基线 = 346 passed / 7 deselected / 33 subtests（353 收集，0 failed）；冻结后 = 21 failed / 332 passed / 7 deselected / 33 subtests（360 收集，+7 = 本批新增 case）。21 条 failed 全为本包设计态红（声明无 changes / 无 profile 叶 / drift 仅单条 object 形态 / apply 无联合幂等 / gen-patch 仅一叶 / manifest 仍「恰四项」/ profile=coding 被裸 SKIP / allow 五+profile 缺席 rc 2 / honcho drift 仍四项 / K3 注入桩前 STOP）——无环境或测试自身错误；两验收件之外 318 条断言冻结前后同为 318 passed 零回退。",
   "exitCriteria": [
-    "K1-E4(换代):kidpal-agent-tools-declaration.json allow 恰五项 {read, write, exec, web_search, honcho_search_conclusions},无重复;(声明 schema/apply/rollback 面同步换代,显式留痕)",
-    {
-      "id": "K1-E4-B",
-      "kind": "structural",
-      "note": "记忆回忆回合纪律与工具可用性:①AGENTS.md 回合路由表新增「记忆回忆回合」行(识别特征:孩子问「记不记得/我以前说过/XX 是谁」类;纪律:先用 honcho_search_conclusions 查一次→查到自然转述(不逐字复述、不带内部流程、家长隐私不回忆、过渡语播种如「我去翻翻我记得的事」)→查不到才说「记不清了」;与孩子对话回合禁工具的关系显式写清=记忆回忆回合为课表问答之外第二个被允许用工具的对话回合);②既有锚零回退:K1 回合路由五行全锚 + K1-E1 + K3_P1_AGENTS_ANCHORS 六串逐字(实物为准:test_261022_honcho_memory.acceptance.py:233-240,派发期「七串」措辞已按实物更正) + 261023 A3 记忆节正锚四串(不需要写任何文件/不调用任何工具/记不清/绝不编造)+ 对象锁定行逐字;③工具可用性 host 面:声明 allow 含 honcho_search_conclusions、gen-patch 产物含该工具、apply/rollback 对该键幂等;live 面(openclaw.json 实应用 + 真机「王一诺是谁」问答+日志工具调用)= human 部署轮,零 host 断言;④drift_guard 升级基准:声明须同时接受 unset(新机)与既有四项覆写态(live 现状),不得以「drift」拒升级;⑤gen-patch 模式:apply_agent_tools.py 增 --gen-patch 产出 openclaw config patch 消费文件(批 B 先例形态,零直写路径保留),live 应用经 patch --dry-run 校验后 --file 落"
-    }
+    "K1-E4（换代）: kidpal-agent-tools-declaration.json 写入面 = 恰两个叶键 —— agents.entries.kidpal.tools.profile=\"full\" + agents.entries.kidpal.tools.allow 恰五项 {read,write,exec,web_search,honcho_search_conclusions}（无重复、不含 honcho_search_messages）; 显式换代留痕。",
+    "K1-E4（drift 升级基准换代）: 接受 ① fresh-machine（profile 缺席 + allow 缺席/旧四项）② live 升级态（profile full + allow 五项）③ P0 中间态（allow 五项 + profile 缺席——apply 补 full）; profile 缺席一律接受，profile 在场且值 ≠ \"full\"（如 \"coding\"）才判 drift; deny 非空 / allow 项数不符 / 父键在场但非对象（_MALFORMED）一律 fail-closed 判 drift（exit 3、零写零备份）。",
+    "K1-E4（apply/gen-patch）: apply 同时落两叶键; 幂等预检与 drift 联合——两叶达标且基线无漂移才 SKIP（零写零备份），两叶达标但 deny 非空 → exit 3（不得裸跑 target==config 绕过 deny 红线）; --gen-patch 产物展平叶键恰两个（tools.profile / tools.allow）且值正确、零 config 读写。",
+    "K1-E4-C（防回归锚）: 独立 case 或显式注释锚写明「tools.allow 加名 ≠ 工具可达——OpenClaw 过滤链 profile 先行，allow 只能在剩余集里挑，profile=full 是 honcho 工具可达的必要条件」; 机械承载三件 = ①声明 changes 含 tools.profile=\"full\"; ②profile 在场且 ≠ \"full\" → exit 3（行为真跑）; ③allow 五项 + profile 缺席 → 可升级（不得拒绝自身升级起点）。",
+    "K3-E6（显式换代）: 261022-openclaw-honcho-plugin 声明 drift_guard 现状锚 expect 四项→五项 + apply_honcho_plugin.py 头注换代（drift_problems 代码零改，方案 A）; memory_isolation 冻结件 K3-E6 锚同步显式留痕换代（K3_P1_TOOLS_EXPECT 常量 + _fixture_p1_applied 组合态同批改 + 头注/docstring 留痕）; test_k3_e6_apply_drift_guard_exit3 保两条真漂移变异（改白名单 / 键缺席）并追加第三条「allow 仍四项 → exit 3」（顺序红线）。",
+    "放宽项显式申报: 叶路径下 tools 对象内未知同级键被容忍（旧「多键即拒」语义消失）与 allow 列表顺序敏感相等，须在声明 _note 与验收件头注留痕; manifest.yaml 四处陈旧字面换代（L251 恰四项 / L255 只改 tools.allow / L313 注释四项 / L317 note 四项）; rollback_agent_tools.py 核验零 diff 申报（备份整档还原与键数无关）。",
+    "全量 offline 验收绿（新增断言红→绿）且既有套件零回退; docs 面零 diff（docsSyncRequired=false 有据）。"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
-  "contractRefs": ["docs/contracts/interface-contract.md#§四"],
+  "contractRefs": ["docs/contracts/interface-contract.md#1.6"],
   "docRefs": [
-    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md",
-    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
+    "docs/requirements.md#S-F5.1",
+    "delivery/taskpackages/261024-memory-recall-tool-enable/taskpackage.json",
+    "delivery/workstreams/device-memory-overhaul/progress.md#2026-10-24 · 记忆回忆回合启用",
+    "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md",
     "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md"
   ],
   "docsSyncRequired": false,
-  "docsSyncReason": "本批 = 声明工件 + AGENTS.md 静态语义 + 验收锚换代;spec/契约面零 diff(检索优先属实现面能力放行,story 语义不变)。",
+  "docsSyncReason": "本批 = 云端部署声明工件 / apply-drift 脚本 / 验收锚换代；spec（requirements/architecture）与契约面零 diff，docs/ 树零改动，无文档面需同步。",
   "docsOwner": "integrator",
   "securityReviewRequired": true,
-  "securityEvidence": "安全面:①零新增出网——honcho_search_conclusions 走插件既有 memory 工具面到本机 loopback Honcho(127.0.0.1:18100)检索,不触外部网络;②工具面放行窄化:只放 honcho_search_conclusions 一个,不放 honcho_search_messages(原始消息面含家长代述/流程内容,advisory §B 选项3 明确);③家长隐私边界不松:记忆节负向锚(家长隐私不记/不回忆)逐字保留,检索结果转述纪律新增「不逐字复述、不带内部流程」;④配置写入口:live 经 openclaw config patch(OpenClaw 自有校验),apply 零直写路径保留备份回滚;⑤零数据迁移/零库写。",
+  "securityEvidence": "安全面:①工具面未净放宽——目标态 profile=full 只解除 profile 级过滤，allow 仍恰五项（与 P0 同集合），honcho_search_messages 明确不放行（原始消息面含家长代述/流程内容）；②零新增出网——honcho_search_conclusions 走本机 loopback Honcho(127.0.0.1:18100)；③drift 面 fail-closed 加固：deny 非空 / allow 项数不符 / 已应用但 profile 非 full / 父键畸形 一律 exit 3 零写，不静默覆盖畸形配置；④零数据迁移/零库写；⑤配置写入口纪律不变：live 只经 openclaw config patch，apply 直写形态保留离线核对与回退路径。",
   "adrRequired": false,
   "mutationRequired": false,
-  "mutationSkipReason": "声明/提示词/验收锚换代:Lite 包,证据以冻结断言 + live 真机轮承载,变异取证 ROI 不成立。",
+  "mutationSkipReason": "声明/配置脚本/验收锚换代的 Lite 包：证据以冻结断言（offline 真跑 apply 四态 + gen-patch 形状）+ live 既有实证承载，变异取证 ROI 不成立。",
   "mutationEvidence": { "perAcceptance": [] },
   "crossEnd": {
     "counterparts": [],
-    "exempt": "云端配置面与工作区静态语义:设备端零感知、固件零 diff;不新增或改变端→网关消息、帧类型、字段与序列化形态。"
+    "exempt": "本包只改云端部署声明/脚本与验收锚：设备端零感知、固件零 diff；不新增或改变端→网关消息、帧类型、字段承载与序列化形态。"
   },
   "changeManifest": [
     "server/deploy/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json",
     "server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py",
     "server/deploy/261022-openclaw-kidpal-tools/rollback_agent_tools.py",
-    "server/deploy/openclaw-agents/workspace-kidpal/AGENTS.md",
-    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py"
+    "server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json",
+    "server/deploy/261022-openclaw-honcho-plugin/apply_honcho_plugin.py",
+    "server/deploy/manifest.yaml",
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py"
   ],
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": ["delivery/workstreams/device-memory-overhaul/"],
   "riskTier": "high",
   "gateProfile": ["security"],
-  "mergeOrder": 56,
-  "dependsOn": ["261022-m5-k4-history-corpus-backfill", "261024-m5-k4b-corpus-parser-v2"],
-  "notes": "① 锚兼容红线(acceptance-author 与 builder 都须知):261023 A3 记忆节正锚含「不调用任何工具」字面——记忆节原句「你不需要写任何文件、也不调用任何工具去记」保留(工具不用于「记」仍真),检索纪律以新回合行 + 一句澄清承载,不得删改该字面;② drift_guard 升级基准是 live 应用能落地的关键(现声明 expect unset,live 已四项覆写,不扩基准则 apply STOP exit 3);③ live 面(openclaw.json 实应用 + 真机「王一诺是谁」)归主线程经 human 授权,Pod 产命令单;④ 清毒/不重灌 = human 裁,本批零数据面动作;⑤ honcho_search_messages 明确不放行(原始消息面风险);⑥ 冻结核对发现(acceptance-author,已在案):K3_P1_AGENTS_ANCHORS 实物六串(派发措辞七串已更正);⑦ 跨包陈旧基线记账(本包不改,留根):261022-openclaw-honcho-plugin 声明 drift_guard.expect 仍锚四项、manifest.yaml:251/313/317 与 apply_honcho_plugin.py:16 注记「四项」字面仍旧——本包落地后属「绿着的陈旧基线」,建议 follow-up Lite 包换代(或显式接受),不在本包 changeManifest 内;⑧ acceptance[] 用 K1-E4(换代)与 K1-E4-B(新结构条目 id)两个 id,coverage marker 同形在冻结件内"
+  "mergeOrder": 57,
+  "dependsOn": ["261024-memory-recall-tool-enable"],
+  "notes": "① 设计决定（architect 1g 预评已确认，落 plan.md 技术方案节 T1-T7）：声明写入面由单键 change{path,allow} 重构为 changes[{path,value}] 双叶键（与姊妹 honcho 声明同族）；drift_guard 用三条叶路径 AND（deny / profile / allow 各一条 expect_any），父键畸形经 _MALFORMED 哨兵 fail-closed（现状 _json_get 把『父键非对象』与『键缺席』混为 _MISSING，须拆）。② profile 缺席必须接受（= P0 已应用态、本包升级起点），只有 profile 在场且 ≠ \"full\" 才 drift——acceptance 与 _note 不得写成拒绝自身升级起点。③ 幂等预检须与 drift 联合（两叶达标且基线无漂移才 SKIP），否则 deny 非空会被裸 SKIP 绕过；与姊妹 honcho 脚本『SKIP 先于 drift』有意不同，头注/验收写清防误修。④ 放宽项显式申报：叶路径下 tools 未知同级键被容忍、allow 顺序敏感相等——声明 _note 与验收头注留痕。⑤ K3-E6 换代义务：改 honcho 声明会打破 memory_isolation 冻结件逐字锚（K3_P1_TOOLS_EXPECT=四项 + _fixture_p1_applied 四项组合态 + 头注 FROZEN CONTRACT §B1）——必须同批显式换代留痕；test_k3_e6_apply_drift_guard_exit3 追加『allow 四项 → exit 3』第三条变异。⑥ rollback_agent_tools.py 预期零 diff（备份整档还原机制与键数无关），仍登记 changeManifest 以承载 manifest 三件齐全断言——核验零改申报。⑦ live 面收窄：部署轮只需 gen-patch 产物对 live 做一次 config patch --dry-run --json 证 schema 接受（核 tools 子树未丢 deny），零写零重启；honcho 锚换代与 kidpal 幂等行为在 live 均不可观测，如实申报为离线证书；『P1 applier 先、honcho applier 后』写进部署轮命令单（manifest 顺序只是提示）。⑧ 红线：不碰 docs/contracts/**、不改 AGENTS.md（本包零 AGENTS.md diff，MemoryRecallRoundAcceptance 应保持全绿作锚兼容旁证）、不动 Honcho 栈/backfill、零数据迁移、不碰 server/gateway/**、不 push/不合并/不碰 ECS。⑨ probe 会话污染（diag-tool-probe*）不在本包内。⑩ 冻结面交接注记（acceptance-author，planner Step 8b 已核）：manifest 四处陈旧字面做成了机械负锚（「恰四项」不得出现 + profile/五项语义锚）；changes 列表顺序（profile 在前）刻意不钉（排版约定非语义，防脆性），allow 顺序敏感已钉（第五项候选须与叶值同序）；K1-E4-B（记忆回忆回合）三条零改动且冻结时点全绿，作锚兼容旁证。"
 }

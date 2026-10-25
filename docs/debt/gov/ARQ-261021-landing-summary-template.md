@@ -2,7 +2,7 @@
 id: ARQ-261021-landing-summary-template
 title: landing-summary 结构硬项（packet-id 行 + manifest 围栏）无模板承载，仅活在门脚本与先例文件里
 domain: gov
-status: open
+status: deferred
 severity: SHOULD
 owner: architect
 trigger: 下一批 Track B landing（判据可机判：landing-fidelity-check 首跑是否因 summary 格式 FAIL）

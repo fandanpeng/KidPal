@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-"""Applier / patch generator for the 261022 kidpal-agent tools allowlist declaration.
+"""Applier / patch generator for the 261022 kidpal-agent tools declaration.
 
 冻结契约（server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py 头注
-FROZEN OFFLINE CONTRACT §2）：**双形态**。
+FROZEN OFFLINE CONTRACT §2）：**双形态**。2026-10-25 由
+261025-kidpal-tools-profile-fix 换代：写入面 = 恰两个叶键
+（agents.entries.kidpal.tools.profile = "full" +
+agents.entries.kidpal.tools.allow 恰五项），旧单键 change 退役。
 
-  形态① 直写应用（语义序 = ①幂等优先 ②drift-guard（不中 → exit 3）③写前时间戳
-  备份 ④应用（只改声明的那一个点分路径键））。幂等 SKIP 先于 drift-guard：目标态
-  命中即 no-op，不经基线判定（升级基准只管「从哪来」，不管「到哪去」）。
+  形态① 直写应用（语义序 = ①幂等预检（与 drift 联合）②drift-guard（不中 →
+  exit 3）③写前时间戳备份 ④应用（只改声明的两个叶键））。
 
-  形态② patch 生成器 `--gen-patch <out>`（261023 批 B apply_honcho_plugin.py 先例）：
-  从声明生成 `openclaw config patch` 消费的 patch 文件（嵌套树形态，stdlib json
-  可解析；展平叶键集恰 = 一个叶键 {change.path: change.allow}）。**不读 config、
-  不写 config、零外部命令、零备份**——config 路径不存在也照常生成。
+  **幂等预检与 drift 联合（本脚本定向收紧，与姊妹 apply_honcho_plugin.py 的
+  「SKIP 先于 drift」有意不同，禁当不一致修掉）**：SKIP 条件 = 现状已等于声明
+  目标（两叶键）**且** drift 基线无漂移。否则 profile=full + allow 五项 +
+  deny 非空 会裸跑 SKIP，绕过「deny 非空判 drift」红线；该态须落 ② → exit 3。
+
+  形态② patch 生成器 `--gen-patch <out>`（261023 批 B apply_honcho_plugin.py
+  先例）：从声明生成 `openclaw config patch` 消费的 patch 文件（嵌套树形态，
+  stdlib json 可解析；展平叶键集恰 = 两个叶键 {tools.profile, tools.allow}）。
+  **不读 config、不写 config、零外部命令、零备份**——config 路径不存在也照常
+  生成。
 
 **网关安全铁律（K3 崩因教训）**：openclaw.json 只经 OpenClaw 自己的写入口写
 （`openclaw config patch --dry-run` 校验后 `--file` 落）；脚本直写会绕过 zod
@@ -25,12 +33,13 @@ CLI:
 kidpal-agent-tools-declaration.json（声明面 == 消费面）。
 
 退出码：0 = 已应用 / 已达标 SKIP / patch 已生成；2 = 缺件（直写形态缺 config、
-两形态缺声明）或非法 JSON；3 = drift-guard 不中 STOP（零写零备份）。
+两形态缺声明 / 声明 changes 缺 path/value）或非法 JSON；3 = drift-guard 不中
+STOP（零写零备份）。
 
 openclaw.json 含 gateway 凭据，整文件不入仓；本脚本只读改写
-agents.entries.kidpal.tools.allow 一个键，其余键（含 gateway / 其它 agent 条目 /
-261017 skills 白名单）原样保留。纯 stdlib（json），不依赖 jq；离线可用
-sys.executable 对临时 fixture 真跑。
+agents.entries.kidpal.tools.{profile,allow} 两个叶键，其余键（含 gateway /
+其它 agent 条目 / 261017 skills 白名单 / tools 对象内 deny 与未知同级键）原样
+保留。纯 stdlib（json），不依赖 jq；离线可用 sys.executable 对临时 fixture 真跑。
 """
 
 from __future__ import annotations
@@ -45,7 +54,8 @@ DEFAULT_CONFIG = "/root/.openclaw/openclaw.json"
 DECL_NAME = "kidpal-agent-tools-declaration.json"
 BACKUP_SUFFIX = ".bak-kidpal-tools-"
 
-_MISSING = object()
+_MISSING = object()    # 键缺席（unset）
+_MALFORMED = object()  # 父键在场但非对象 —— 与「键缺席」严格区分（fail-closed）
 
 
 # --------------------------------------------------------------------------- #
@@ -53,9 +63,15 @@ _MISSING = object()
 # --------------------------------------------------------------------------- #
 
 def _json_get(obj, dotted: str):
+    """点分读。返回叶值 / _MISSING（键缺席）/ _MALFORMED（父键在场但非对象）。
+
+    两个哨兵**不得参与任何 `==` 相等判**——调用方须先按 `is` 判定，否则
+    「父键非对象」会被错当「键缺席」按 unset 放行并静默覆盖畸形配置。"""
     cur = obj
     for part in dotted.split("."):
-        if not isinstance(cur, dict) or part not in cur:
+        if not isinstance(cur, dict):
+            return _MALFORMED
+        if part not in cur:
             return _MISSING
         cur = cur[part]
     return cur
@@ -73,18 +89,25 @@ def _json_set(obj: dict, dotted: str, value) -> None:
     cur[parts[-1]] = value
 
 
-def apply_change(state: dict, change: dict) -> dict:
-    """按 change 声明施加变更，就地改写 state 并返回它（只动 change.path 一个键）。"""
-    _json_set(state, change["path"], list(change["allow"]))
+def _deep_copy(value):
+    """声明 value 深拷贝（apply 不得共享声明对象引用）。"""
+    return json.loads(json.dumps(value, ensure_ascii=False))
+
+
+def apply_changes(state: dict, changes: list) -> dict:
+    """按声明 changes 逐叶施加变更，就地改写 state 并返回它（只动声明的叶键）。"""
+    for change in changes:
+        _json_set(state, change["path"], _deep_copy(change["value"]))
     return state
 
 
-def build_patch_tree(change: dict) -> dict:
-    """声明 change → `openclaw config patch` 消费的嵌套 patch 树。
+def build_patch_tree(changes: list) -> dict:
+    """声明 changes → `openclaw config patch` 消费的嵌套 patch 树。
 
-    展平后的叶键集 = 声明点分键逐字（恰一个叶键，零额外键）。"""
+    展平后的叶键集 = 声明点分键逐字（恰两个叶键，零额外键）。"""
     tree: dict = {}
-    _json_set(tree, change["path"], list(change["allow"]))
+    for change in changes:
+        _json_set(tree, change["path"], _deep_copy(change["value"]))
     return tree
 
 
@@ -93,11 +116,12 @@ def build_patch_tree(change: dict) -> dict:
 # --------------------------------------------------------------------------- #
 
 def _alt_hits(cur, alt) -> bool:
-    """单个基线候选是否命中：'unset' 判键缺席，其余（object / list / 标量）判值
-    相等。键在场但值不等 → 不中（fail-closed，不按缺席放行）。"""
+    """单个基线候选是否命中：'unset' 判**键缺席**（_MALFORMED 不算缺席——父键
+    在场但非对象是真漂移，须 fail-closed），其余（标量 / list）判值相等。
+    键在场但形状 / 值不符 → 不中。"""
     if alt == "unset":
         return cur is _MISSING
-    return cur is not _MISSING and cur == alt
+    return cur is not _MISSING and cur is not _MALFORMED and cur == alt
 
 
 def _describe_alts(alts: list) -> str:
@@ -109,8 +133,8 @@ def drift_problems(config: dict, drift_guard: list) -> list:
 
     每项须恰含 expect 或 expect_any 之一：
       · expect     : 单值候选（"unset" 判键缺席，否则判值相等）。
-      · expect_any : 非空候选列表，任一命中即通过（升级基准：新机态 unset 与
-                     live 既有态覆写并存，二者取一即合法起点）。"""
+      · expect_any : 非空候选列表，任一命中即通过（升级基准：fresh 全缺席 /
+                     旧四项 live / P0 中间态 / live 升级态并存，取一即合法起点）。"""
     problems: list = []
     for i, entry in enumerate(drift_guard):
         if not isinstance(entry, dict):
@@ -139,7 +163,12 @@ def drift_problems(config: dict, drift_guard: list) -> list:
         cur = _json_get(config, path)
         if any(_alt_hits(cur, alt) for alt in alts):
             continue
-        got = "键缺席" if cur is _MISSING else repr(cur)
+        if cur is _MISSING:
+            got = "键缺席"
+        elif cur is _MALFORMED:
+            got = "父键在场但非对象（malformed，非键缺席）"
+        else:
+            got = repr(cur)
         problems.append(
             f"drift_guard[{i}] {path}: 期望 {_describe_alts(alts)}，实得 {got}")
     return problems
@@ -155,6 +184,24 @@ def _force_utf8_stdio() -> None:
             pass
 
 
+def _validate_changes(decl: dict) -> tuple:
+    """声明写入面校验：返回 (changes, None) 或 (None, 错误文案)。
+
+    换代后声明形状 = changes [{path, value}]（逐叶单写）；旧单键 change 退役。"""
+    changes = decl.get("changes")
+    if not isinstance(changes, list) or not changes:
+        return None, ("声明 changes 缺 path/value —— 写入面须为 changes "
+                      "[{path, value}] 双叶键（旧单键 change 已退役）。")
+    for i, change in enumerate(changes):
+        if (not isinstance(change, dict)
+                or not isinstance(change.get("path"), str)
+                or not change["path"].strip()
+                or "value" not in change):
+            return None, (f"声明 changes[{i}] 缺 path/value —— 每条须为 "
+                          "{path, value}（点分叶路径 + 目标值）。")
+    return changes, None
+
+
 # --------------------------------------------------------------------------- #
 # CLI
 # --------------------------------------------------------------------------- #
@@ -162,7 +209,7 @@ def _force_utf8_stdio() -> None:
 def main(argv=None) -> int:
     _force_utf8_stdio()
     ap = argparse.ArgumentParser(
-        description="Applier / patch generator for the kidpal-agent tools allowlist "
+        description="Applier / patch generator for the kidpal-agent tools "
                     "declaration.")
     ap.add_argument("--config", default=DEFAULT_CONFIG,
                     help="openclaw.json 路径（默认 %(default)s；--gen-patch 不读它）")
@@ -187,22 +234,22 @@ def main(argv=None) -> int:
         print("ERR: 声明工件顶层须为 object。", file=sys.stderr)
         return 2
 
-    change = decl.get("change") or {}
-    drift_guard = decl.get("drift_guard") or []
-    if not isinstance(change, dict) or not change.get("path") \
-            or not isinstance(change.get("allow"), list):
-        print("ERR: 声明 change 缺 path/allow —— 无法定位目标键。", file=sys.stderr)
+    changes, verr = _validate_changes(decl)
+    if verr is not None:
+        print(f"ERR: {verr}", file=sys.stderr)
         return 2
+    drift_guard = decl.get("drift_guard") or []
 
     # 形态② patch 生成器（零 config 依赖、零外部命令、零备份）
     if args.gen_patch:
         out = Path(args.gen_patch)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(
-            json.dumps(build_patch_tree(change), ensure_ascii=False, indent=2) + "\n",
+            json.dumps(build_patch_tree(changes), ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8")
         print(f"PATCH: {out}")
-        print(f"  + {change['path']} = {change['allow']}")
+        for change in changes:
+            print(f"  + {change['path']} = {change['value']}")
         print("  live 应用：openclaw config patch --file <patch> --dry-run --json "
               "→ 校验通过后去掉 --dry-run 正式落盘。")
         return 0
@@ -217,14 +264,16 @@ def main(argv=None) -> int:
         print(f"ERR: config 非合法 JSON: {e!r}", file=sys.stderr)
         return 2
 
-    # ① 幂等优先：现状已等于声明目标 → SKIP（不写、不备份、不经 drift-guard）
-    target = apply_change(json.loads(json.dumps(config)), change)
-    if target == config:
-        print("SKIP: already at declared target state (idempotent).")
+    # ① 幂等预检（与 drift 联合）：两叶已达标 **且** drift 基线无漂移 → SKIP
+    #    （不写、不备份；两叶达标但基线有漂移 → 落 ② 判 drift，不得裸 SKIP）
+    target = apply_changes(_deep_copy(config), changes)
+    problems = drift_problems(config, drift_guard)
+    if target == config and not problems:
+        print("SKIP: already at declared target state and drift baseline clean "
+              "(idempotent).")
         return 0
 
     # ② drift-guard：任一不中 → STOP，exit 3，不写、不备份
-    problems = drift_problems(config, drift_guard)
     if problems:
         print("STOP: drift-guard mismatch — refusing to apply "
               "(STOP-on-mismatch; no write).", file=sys.stderr)
@@ -238,12 +287,13 @@ def main(argv=None) -> int:
     backup_path = config_path.parent / (config_path.name + BACKUP_SUFFIX + ts)
     backup_path.write_text(config_path.read_text(encoding="utf-8"), encoding="utf-8")
 
-    # ④ 应用（只改 change.path 一个键）
-    apply_change(config, change)
+    # ④ 应用（只改声明的两个叶键；其余键含 deny / 未知同级键原样保留）
+    apply_changes(config, changes)
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2),
                            encoding="utf-8")
     print(f"APPLIED case={decl.get('case')!r} -> {config_path}")
-    print(f"  allow: {change['allow']}")
+    for change in changes:
+        print(f"  {change['path']} = {change['value']}")
     print(f"  backup: {backup_path}")
     return 0
 
