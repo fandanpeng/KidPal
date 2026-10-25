@@ -66,3 +66,4 @@
 - **`release-pr.mjs` 的 push 在 `deny-main-push.mjs` 视野外**：防线 = push argv 白名单 / G3 写权 / landing 人读 diff。
 - **7 条 ADVISORY 处置**：A1（happy path 未对 `calls.gh` 全体做字面集合相等）与 A4（gh auth 未显式断言 `repo` scope）→ 维护顺手收紧，不进本批；A3（`${merged}` vs `${mergedCount}`）与 A2（幂等闸先于命名）→ 无行动；A5（verbatim 假阴性）→ 见 §4 建议 3；A6（派遣清单仍提本仓不存在的 `cross-surface-check.mjs`）→ 与既有悬空引用同根，留 ARQ；A7（verifier 未在 main worktree 复跑 dry-run，以夹具佐证）→ 主线程已实跑，证据在 landing-summary §2。
 - **存量 14 条 `release/*` 分支不清理**（human 裁 OQ4=(a)）。
+- **首次 dry-run 实测（合并后，2026-10-25）**：`--publish --dry-run` 在主 worktree 跑通全链路（fetch → 关系判定 → 命名 → 计划 push → 计划开 PR），分支名落在 `release/261025-4`（-2/-3 已被历史 PR 用掉）。观察到一处业务瑕疵：gov 批没有 `Merge <id> (merge-driver)` 行，标题会渲染成 `release(261025-4): 0 个 Pod 合并`、正文回退为「未提取到 changeId」。这符合 FROZEN 文本（N=0 允许），但对治理批宜用 `--title` 覆盖；是否给 gov 批补非 Pod 摘要，交下一批裁。
