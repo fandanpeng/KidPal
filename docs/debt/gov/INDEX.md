@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 38（待拍板 0 / 待触发 36 / 已接受风险 2）；已结 88（归档索引见下）。
+**摘要**：未结 39（待拍板 0 / 待触发 37 / 已接受风险 2）；已结 88（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（36）
+## 待触发（37）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -52,6 +52,7 @@ _（无）_
 | [ARQ-261025-intake-index-retro-scope-hygiene](ARQ-261025-intake-index-retro-scope-hygiene.md) | COULD | intake INDEX 漂移标连续多轮无人消费 + retro 游标把 `current` 指针目录当 waiting 包 | 下一治理批（动 `changes-index.mjs` / `loop-health-report.mjs` 时并批）；或下一轮 retro 仍见漂移标 |
 | [ARQ-261025-interrupted-dispatch-progress-note](ARQ-261025-interrupted-dispatch-progress-note.md) | COULD | 子 agent 被 429 / 配额中断后无回执——恢复靠 git status 考古，进度注记未成约定 | 下一治理批（动 `planner.md` 派发步 / 子 agent brief 模板时并批）；或再出现一次中断恢复 |
 | [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
+| [ARQ-261025-verify-set-negative-positive-pairing](ARQ-261025-verify-set-negative-positive-pairing.md) | SHOULD | 验证集负向白名单断言缺正向配对——只写「不允许什么」，不写 happy path 必须恰好发生什么 | 下一治理批（动 `docs/templates/PROPOSAL.template.md` 的 §5 验证集节或 `track-b-judge-brief.md` 的评审透镜时并批） |
 | [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
 
 ## 已接受风险（2）

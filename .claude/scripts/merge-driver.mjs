@@ -68,6 +68,14 @@ function errorExit(msg) {
   process.exit(1);
 }
 
+// ---- T2（261025-gov-review-release-pr-publish）：批末发布 handoff ----
+// 合并与发布是两个阶段：driver 的职责边界是本地合并（不 push），交界处只留一行单向、零网络、
+// 零失败面的提示。driver 内不新增任何 push / 网络 / gh 调用；批次失败语义（per-Pod blocked / 退出码）零改动。
+export function handoffLine(mergedCount) {
+  if (!Number.isFinite(mergedCount) || mergedCount <= 0) return null;
+  return `handoff: 本地 main 已前进 ${mergedCount} 个 Pod——发布：node .claude/scripts/release-pr.mjs --publish（只推 release/* 并开 PR）；PR 合并由 human 在网页点；合并后跑 --sync 追平本地 main`;
+}
+
 function emitRetroStalenessAdvisory(
   projectDir,
   { computeScope = computeRetroScope, warnFn = warn, envThreshold = process.env.DEVLOOP_RETRO_STALE_THRESHOLD } = {},
@@ -1322,6 +1330,16 @@ function runMergeFrictionSelfCheck() {
     }
   }
 
+  // ---- T9（261025-gov-review-release-pr-publish）：批末 handoff 纯函数（行为面断言，不用源码自扫描）----
+  {
+    const h0 = handoffLine(0);
+    const h3 = handoffLine(3);
+    assert('T9a handoffLine(0) 为 null（无合并不提示）', h0 === null, `got=${JSON.stringify(h0)}`);
+    assert('T9b handoffLine(3) 单行且含发布命令与 human 主体',
+      typeof h3 === 'string' && !h3.includes('\n') && h3.includes('release-pr.mjs --publish') && h3.includes('human'),
+      `got=${JSON.stringify(h3)}`);
+  }
+
   const pass = results.filter((r) => r.pass).length;
   const fail = results.length - pass;
   results.forEach((r) => {
@@ -1667,6 +1685,7 @@ function main() {
     const pod = ready.find((p) => p.changeId === changeId);
     if (!pod) errorExit(`pod ${changeId} is not in ready-to-merge state`);
     const ok = processPod(changeId, devloopDir, projectDir, quickChecks);
+    if (ok && !DRY_RUN) log(handoffLine(1));
     process.exit(ok ? 0 : 1);
   }
 
@@ -1680,6 +1699,7 @@ function main() {
     else skipped++;
   }
   log(`SUMMARY: ${merged} merged, ${skipped} skipped/blocked, ${ready.length} total ready`);
+  if (!DRY_RUN && merged > 0) log(handoffLine(merged));
   process.exit(skipped > 0 ? 1 : 0);
 }
 
