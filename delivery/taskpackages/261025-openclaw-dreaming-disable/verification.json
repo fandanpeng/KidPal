@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261025-openclaw-dreaming-disable",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "77ed0122-68e1-47a2-a732-eae6708c90b3",
+  "evidenceRef": "delivery/taskpackages/261025-openclaw-dreaming-disable/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261025-openclaw-dreaming-disable/test-scope-final-r2.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成，10 行）= 本包 acceptanceTestsFile 1 件（test_261025_openclaw_dreaming_disable）∪ manifest 共享 seam 9 件（test_prompt_v7_round_routing / test_261022_memory_isolation / test_261022_openclaw_kidpal_tools / test_261022_honcho_memory / test_261022_m5_k1_prompt_carrier_migration / test_261022_persistent_session / test_261022_honcho_backfill / test_261010_engine_decision21_overlay_persist / test_261013_qq_schedule_write_closure——均在 server/acceptance/ 各自 yaml.safe_load 或字面依赖 server/deploy/manifest.yaml；本包向 manifest 增 3 条 src/dst 登记，YAML 一旦解析破损这批同红，故计入安全余量）。圈定口径已 grep 独立复核：server/acceptance 下命中 safe_load|manifest\\.yaml 的文件恰这 10 件。留根注记：r2 fact 的 results 元数据未含 scope 路径行（verify.mjs 未把 --scope-file 透传落 fact，实测 r2.json 仅 timing=scoped 字段、无 scope 字段），路径以本字段与 review-packet §2 承载。",
+  "finalScopedRun": {
+    "unit": "162 passed / 3 deselected（r2 unit 闸，按 10 件 scope 交集；33.88s）",
+    "acceptance": "162 passed / 3 deselected（r2 acceptance 闸，serverAcceptanceFiles=10、filesWithLiveMark=2/10；33.81s）",
+    "integratorIndependentRerun": "162 passed / 3 deselected（10 件 scope 单独复跑，-m \"not live\"，31.17s）",
+    "packageFileOnly": "17 passed（本包冻结件单独跑，13.82s）",
+    "fullSuiteReference": "全量口径（integrator 独立复跑，2026-10-25）= cd server && PYTHONIOENCODING=utf-8 python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 370 passed / 7 deselected / 33 subtests passed（43.56s）；与 builder 全量实测、planner 独立复跑同值。冻结时同树 = 17 failed / 353 passed / 7 deselected / 33 subtests；冻结前基线 = 353 passed ⇒ 17 条设计态红全转绿、既有 353 条零回退、净增 17 条"
+  },
+  "genPatchProjection": {
+    "command": "python server/deploy/261025-openclaw-dreaming-disable/apply_dreaming_disable.py --gen-patch <tmp>/dd.patch.json",
+    "exit": 0,
+    "productFlatLeafKeys": {
+      "plugins.entries.memory-core.config.dreaming.enabled": false
+    },
+    "leafCount": 1,
+    "note": "integrator 独立实跑复核；冻结断言 test_dd_a2_gen_patch_single_leaf_zero_config_io 另以 config 字节不变与「config 缺失仍可生成」两态承载零 config 读写"
+  },
+  "manifestProjection": {
+    "command": "python -c \"yaml.safe_load(open('server/deploy/manifest.yaml'))\"",
+    "entriesTotal": 77,
+    "entriesForThisPackage": 3,
+    "checks": "src 在仓内 / dst 全部落 /opt/kidpal/openclaw-patch/261025-openclaw-dreaming-disable/ / owner=deploy.sh / verify=md5 / restart=none —— 三项逐条通过",
+    "note": "另有 1 条无 src 键的既有 entry（dst=…/xiaozhi-docker-data/.config.yaml、owner=overlay、verify=marker），为 secret 承载渲染件形态，与本包无关"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261025-openclaw-dreaming-disable --phase final --round 2 --invocation-id 77ed0122-68e1-47a2-a732-eae6708c90b3",
+    "exit": 0,
+    "factOk": true
+  },
+  "priorRounds": [
+    {
+      "round": 1,
+      "phase": "scoped",
+      "invocationId": "ba3ed9f1-b627-4e55-b1e7-fa1fa8c1543a",
+      "evidenceRef": "delivery/taskpackages/261025-openclaw-dreaming-disable/verifier-evidence/rounds/r1.json",
+      "ok": true,
+      "observedGateExit": 0,
+      "note": "8 闸（lite 包 firmware-build scoped 相位后置，261015-gov-review-lite-fast-path；闸自报 executor-skipped 并经 liftNotExecuted 上收为 notExecuted）"
+    }
+  ],
+  "scopeDetection": {
+    "tool": "codebase-memory detect_changes（advisory 记账，Step 9b / Step 4 ① 范围判定消费）",
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "fa60dd2f416811a3babfaa4fe080529a26e1d7de",
+    "changedFiles": 11,
+    "seedSymbols": 88,
+    "impactedTotal": 2,
+    "impactedModules": {
+      "server/tests": 1,
+      "server/acceptance": 1
+    },
+    "note": "impacted 两条 = server/tests/test_story_cancel_lifecycle_units._FrontSandbox.tearDown（hop 1，heuristic 词元边：该方法操作 _openclaw_chat_once，而新增验收件的 stub/docstring 大量出现 openclaw / systemctl 词元；callers=0，无 import/call 边）与新增验收件自身 __file__。production 代码零调用方（本包改动全是 .md/.yaml/.json/CLI 脚本 + 一个新测试文件）。安全余量实测：单独跑 server/tests/test_story_cancel_lifecycle_units.py = 11 passed（0.13s）。差集留根：该 heuristic 边未加入 scope 清单（scope 由 planner 圈定为 10 件），以单独跑补证零回退。changedFiles 11 = 8 个文件 + 本包目录 + 新建 deploy 目录 + 新建验收件（本包工作树；dev/pod-m2 相对 main 无其它未提交实现面）。per-Pod 专属图索引正常圈定、无降级。"
+  },
+  "docsSync": {
+    "docsSyncRequired": false,
+    "verified": "git status --porcelain docs/ 与 docs/contracts/ 与 firmware/ 均为空（final 相位 firmware-build 重生成的 firmware/sdkconfig 已 git checkout 还原）；零 diff 声明 + 部署 face 变更记录（DEPLOY-RUNBOOK.md §9）+ debt 条目不改理由 + spec 面在途归口（面 C / TECH-261025）落 docs-delta.md"
+  },
+  "closeoutCheck": {
+    "tool": ".claude/scripts/closeout-check.mjs",
+    "args": "默认只读形态（未传 --update-index）",
+    "note": "见收口报告事实行；post-cutoff 不产 pod-retro.md 属 planner 收尾相位，Q5 若仅出 warn advisory 可接受"
+  },
+  "provenance": {
+    "closeoutArtifacts": [
+      "delivery/taskpackages/261025-openclaw-dreaming-disable/docs-delta.md",
+      "delivery/taskpackages/261025-openclaw-dreaming-disable/review-packet.md",
+      "delivery/taskpackages/261025-openclaw-dreaming-disable/test-scope-final-r2.txt",
+      "delivery/taskpackages/261025-openclaw-dreaming-disable/verdict.json",
+      "delivery/taskpackages/261025-openclaw-dreaming-disable/verification.json"
+    ],
+    "workstream": "attach-existing → device-memory-overhaul；本包派单边界包含 delivery/workstreams/device-memory-overhaul/{progress.md,roadmap.md}（planner 起包记账）与 delivery/workstreams/INDEX.md（hook 生成件），随本包 commit；workstream 条目的「达成状态 pending → done」与里程碑推进归 planner（合并后）",
+    "liveDeploy": "awaiting-human:live-deploy——live 四项（config patch --dry-run 接受产物 / openclaw.json 实落态与 memory-core 合并语义比对 / 重启后 openclaw health / 一个 0 3 * * * 周期无新增 dreaming-narrative-* 会话）归 human 部署轮，命令单 = review-packet §5；Pod 不自行上 ECS",
+    "mergeGate": "high riskTier ⇒ supervisor 复核后按规则升级 human；后续门序 = supervisor-verdict-gate.mjs（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod（planner 主线程）",
+    "specHandoff": "docs/architecture.md §6.7「系统回合（cron/心跳）由 captureSystemRuns=false 排除」的覆盖不全已由本次诊断实证，修订按 human 2026-10-25 裁决归在途面 C（debt TECH-261025 在册，paths 含 docs/architecture.md 与 docs/decisions/ADR.md）；本包零自改、零写权触发",
+    "gateSideEffect": "final 相位 firmware-build 真编译（工具链可用，100.76s）由 CMake 重生成 firmware/sdkconfig（+5 行 Image Effects Configuration 空块）——闸副作用，commit 前已 git checkout 还原，firmware 面零 diff"
+  }
+}

@@ -279,3 +279,15 @@ rm -f /opt/kidpal/alerts/semantic.json         # 语义产物一并清（缺文�
 # prompt 回退：apply-xiaozhi-overlay.sh 里 PROMPT_SRC 改指目标历史版一行即可（版本清单见
 # OPENCLAW_SYSTEM_PROMPT_CARRIER；历史版本文件零回改、共存可 diff）
 ```
+
+---
+
+## 9. 升级检查清单（OpenClaw 或记忆类插件升级后必跑）
+
+> **OpenClaw 或记忆类插件升级后，跑一次 Honcho 会话家族盘点：`dreaming-narrative-*` /
+> `cron:*` / `heartbeat:*` / `subagent:*` 四家族必须为空（违反 = 采集策略漂移，见
+> docs/debt/tech/TECH-261025-dreaming-capture-pollutes-honcho.md）。** dreaming 子回合
+> 的会话在 Honcho 插件里落入 chat 分支（`isSystemRun` 只认 cron / heartbeat /
+> internal_system 三条），升级若让某家族重新出现，采集侧会把它们当 owner 话语抽成
+> 结论污染画像 —— 先按本清单盘点，再决定是否重跑 261025-openclaw-dreaming-disable
+> 的 apply（`server/deploy/261025-openclaw-dreaming-disable/apply_dreaming_disable.py`）。

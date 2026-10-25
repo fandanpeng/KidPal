@@ -1,0 +1,10 @@
+server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_261022_persistent_session.acceptance.py
+server/acceptance/test_261022_honcho_backfill.acceptance.py
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
