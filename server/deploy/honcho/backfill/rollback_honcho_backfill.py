@@ -3,6 +3,11 @@
 """rollback_honcho_backfill.py — backfill 清库回滚 runner（K4-E4 / OQ-10 / NFR-PRIV-1）。
 
 TaskPackage: 261022-m5-k4-history-corpus-backfill。
+选择性删除扩展（K4B-E2 · 261024-m5-k4b-corpus-parser-v2，review §2.1 ⑧ /
+human D2 承载）：--source-kind {session-corpus, openclaw-transcript} 按
+session 键后缀过滤删除面（batch 值 = session 自身键，末段即 source-kind）；
+缺省 = 全部（旧行为逐字保持）；plan 输出列出 matched/skipped 键——「只回滚
+corpus、transcript 批次保留/另裁」在工具契约下由此成为可表达操作。
 
 职责: 删除范围 = 恰携带 kidpalBackfillBatch 标记的 session（连带其消息与
 派生 observation——cascade 归 Honcho 服务端语义）；无标记数据（live 在用
@@ -75,6 +80,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help=f"Honcho API base（缺省 {DEFAULT_API} loopback）")
     parser.add_argument("--peer", default=DEFAULT_PEER,
                         help=f"目标 peer（缺省 {DEFAULT_PEER}，家庭单 owner；报告注记用）")
+    parser.add_argument("--source-kind", default=None,
+                        choices=backfill_module().SOURCE_KINDS,
+                        help="选择性删除：只删该 source-kind 的标记 session"
+                             "（session 键末段判别）；缺省 = 全部（旧行为）")
     parser.add_argument("--report-out", default=None,
                         help="回滚报告 JSON 落盘路径（缺省打印 stdout）")
     parser.add_argument("--apply", action="store_true",
@@ -99,13 +108,24 @@ def run_rollback(args: argparse.Namespace) -> int:
     marked_keys = sorted(str(key) for key in client.list_backfill_batches())
     mode = "apply" if args.apply else "plan"
 
+    # 选择性删除（K4B-E2）：batch 值 = session 自身键，键末段（最后一个
+    # ':' 之后）即 source-kind——后缀判别，零额外枚举面。缺省全量 = 旧行为。
+    if args.source_kind:
+        matched_keys = [k for k in marked_keys
+                        if k.rsplit(":", 1)[-1] == args.source_kind]
+        skipped_keys = [k for k in marked_keys
+                        if k.rsplit(":", 1)[-1] != args.source_kind]
+    else:
+        matched_keys = list(marked_keys)
+        skipped_keys = []
+
     if mode == "apply":
         # 零标记 = 零删除调用（live 在用数据零触碰的最小作用面）。
-        deleted = int(client.delete_sessions(marked_keys) or 0) \
-            if marked_keys else 0
+        deleted = int(client.delete_sessions(matched_keys) or 0) \
+            if matched_keys else 0
         after = client.snapshot_counts()
     else:
-        deleted = len(marked_keys)
+        deleted = len(matched_keys)
         after = dict(before)
 
     report = {
@@ -118,12 +138,16 @@ def run_rollback(args: argparse.Namespace) -> int:
         "backfill": {
             "deleted": deleted,
             "markedSessions": marked_keys,
+            "sourceKind": args.source_kind,      # additive（K4B-E2）；null = 全量
+            "matchedSessions": matched_keys,     # additive：本次删除面逐键
+            "skippedSessions": skipped_keys,     # additive：保留面逐键（plan 必列）
             "targetPeer": args.peer,
         },
     }
     emit_report(report, args.report_out)
     print(f"[kidpal-backfill-rollback] mode={mode} "
-          f"marked={len(marked_keys)} deleted={deleted}", flush=True)
+          f"marked={len(marked_keys)} matched={len(matched_keys)} "
+          f"skipped={len(skipped_keys)} deleted={deleted}", flush=True)
     return 0
 
 

@@ -222,7 +222,11 @@ def is_generic_story_title(title) -> bool:
 
 
 def _load_prompt_artifact(filename: str) -> str:
-    """读 prompt 制品全文；缺失/不可读返回 ""（回合退化为无 system 指令，不炸 sweep）。"""
+    """读 prompt 制品全文；缺失/不可读返回 ""（回合退化为无 system 指令，不炸 sweep）。
+
+    R2 注记（修正案 R2 · live 证伪回退 · 2026-10-24 human-correction f13a53a8）：
+    制品缺席时 user 消息仍携恒定「指令 + 素材」包装，故本缺口对回合行为无差、
+    只留 warning 供部署轮发现制品未铺。"""
     try:
         return (PROMPTS_DIR / filename).read_text(encoding="utf-8")
     except OSError:
@@ -230,12 +234,17 @@ def _load_prompt_artifact(filename: str) -> str:
         return ""
 
 
-def _openclaw_chat_once(system_text: str, user_text: str, timeout_s: float = 10.0):
+def _openclaw_chat_once(system_text: str, user_text: str, timeout_s: float = 10.0,
+                        user=None):
     """引导/整理回合的 OpenClaw OpenAI 兼容端点一次性调用（R1-F4 provider 出口 (a)：
     loopback 18789，出网沿契约 §1.2 路径②零新增）。
 
-    request 级 system 消息承载制品指令（不走主 agent 共享 prompt）；payload 经
-    openclaw_stream_request 单源构造（禁 max_tokens 硬约束继承）。返回助手文本
+    request 级 system 消息承载制品指令（不走主 agent 共享 prompt；R2 注记：live
+    证伪该路径不被 OpenClaw openai-http 跟随后，指令的可靠载体 = user 消息恒定
+    包装，system 装载保留并存）；payload 经
+    openclaw_stream_request 单源构造（禁 max_tokens 硬约束继承）。`user`（261024
+    换代）透传设备身份：真值才进 payload 的 "user" 键（OpenClaw 据此派生设备
+    session 键族 agent:kidpal:openai-user:<device_id>）。返回助手文本
     （strip 后非空 str）或 None（空返回/异常——EQ-4 离线快失败：连接拒绝级异常直接
     归 None，sweep 不挂起）。urllib 惰性 import（离线装载纪律）。"""
     import urllib.error  # noqa: PLC0415 — lazy import (offline load discipline)
@@ -245,7 +254,7 @@ def _openclaw_chat_once(system_text: str, user_text: str, timeout_s: float = 10.
     if system_text.strip():
         messages.append({"role": "system", "content": system_text})
     messages.append({"role": "user", "content": user_text})
-    payload = gw_provider.openclaw_stream_request(messages)
+    payload = gw_provider.openclaw_stream_request(messages, user=user)
     req = urllib.request.Request(
         gw_provider.OPENCLAW_BASE_URL.rstrip("/") + "/v1/chat/completions",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -292,6 +301,39 @@ def _openclaw_chat_once(system_text: str, user_text: str, timeout_s: float = 10.
     return text or None
 
 
+def _leg_device_id(device_ws) -> "str | None":
+    """会话腿 -> device-id 头原值（261024 换代：一次性回合统一携 user 的身份源）。
+
+    防御式双保险：腿无 headers 属性 / headers 无 .get / 取值非 str 或空白 -> None
+    （Mock 类 truthy 非字符串值会被 json.dumps 炸掉）。starlette Headers 大小写
+    不敏感（.get("device-id") 与生产同源）。**透传原值、不 strip、不归一**——与
+    engine 端 connection.py 原字符串直传同源，避免分叉出第二个 session 键族。"""
+    headers = getattr(device_ws, "headers", None)
+    getter = getattr(headers, "get", None)
+    if not callable(getter):
+        return None
+    try:
+        value = getter("device-id")
+    except Exception:  # noqa: BLE001 — 头读取防御式，不炸回合
+        return None
+    if isinstance(value, str) and value.strip():
+        return value
+    return None
+
+
+def _legs_device_id(legs) -> "str | None":
+    """会话腿集 -> 设备身份（第一条携 device-id 头的腿原值）。
+
+    多腿兜底归属申报残余：映射缺席退 _alert_legs 时取第一条腿——单设备 MVP 成立
+    （决策 22）；多设备将来会错归属，不在本包解。"""
+    for pair in list(legs or []):
+        device_ws = pair[0] if pair else None
+        device_id = _leg_device_id(device_ws)
+        if device_id:
+            return device_id
+    return None
+
+
 async def _send_engine_leg_frames(upstream, frames) -> int:
     """引擎腿逐帧注入（kidpal_speak / kidpal_record_context 等内部指令同型通道）。
 
@@ -332,13 +374,22 @@ async def _speak_to_legs(text: str, legs) -> int:
     return sent
 
 
-def _organize_and_archive(raw, corr_id=None) -> "dict | None":
+def _organize_and_archive(raw, corr_id=None, device_id=None) -> "dict | None":
     """忠实整理回合 + 归档单源（三式收尾共用；S-F2.2-AC4 v1.65 / R1-N4）。
 
     孩子原话素材 -> 去掉**尾随**收尾词（story.py 既有 strip_trailing_finish_words，
     防收尾词进整理输入）-> 整理制品 + 一次性 LLM 回合 -> 标题 = 输出首行 strip 后
     ≤12 字、正文 = 其余行 -> archive_story（既有零改）。标题命中敷衍启发式
     （is_generic_story_title）-> 兜底为正文派生标题（缺陷⑤b）。
+
+    user 消息 = **恒定**「指令 + 素材」包装（修正案 R2 · live 证伪回退 · 2026-10-24
+    human-correction f13a53a8）：live 真机实证 OpenClaw openai-http 路径不跟 request
+    级 system 指令（整理产出聊天腔），故恢复验证过的包装形态。request 级 system 制品
+    装载**保留并存**（两处不冲突，host 无感）；制品缺失（`_load_prompt_artifact` 返
+    ""）-> 仅 warning 留痕、行为与制品在场**无差**（旧「material 纯文 + 空制品回填」
+    分支随 R2 语义吸收坍缩；旧痕见 plan.md ③ 与修正案 R2）。
+    `device_id`（261024）条件传参：真值才向 `_openclaw_chat_once` 传 user=，缺席 =
+    诚实降级（payload 缺 user 键）——既有桩签名零改。
 
     任一失败（空素材 / LLM 不可达或空返回 / 空正文）返回 None = **当轮素材不归档**
     （R1-N4；调用方补固定安抚句），不退回原始转写、不写空故事。
@@ -347,9 +398,19 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
     if not material:
         return None
     prompt = _load_prompt_artifact(_ORGANIZE_PROMPT_FILE)
+    if not prompt.strip():
+        # 修正案 R2（live 证伪回退 · 2026-10-24 human-correction f13a53a8）：制品缺失
+        # = 仅 warning 留痕，user 消息形态与在场路径**无差**（恒定包装承载指令；
+        # 旧「空制品回填兜底」分支随恒定包装语义坍缩，不是无指令）。
+        log.warning("story_organize_prompt_fallback corr_id=%s file=%s "
+                    "reason=artifact_missing", corr_id, _ORGANIZE_PROMPT_FILE)
+    # 恒定「指令 + 素材」包装（R2）：与制品在场与否无关——live 证伪 request 级 system
+    # 不被跟随后，指令唯一可靠载体回落 user 消息（验证过的形态）。
+    user_text = (f"孩子讲的内容：\n{material}\n\n"
+                 "请按指令把这段话忠实整理成一篇。")
+    chat_kwargs = {"user": device_id} if device_id else {}
     reply = _openclaw_chat_once(
-        prompt, f"孩子讲的内容：\n{material}\n\n请按指令把这段话忠实整理成一篇。",
-        timeout_s=_ORGANIZE_LLM_TIMEOUT_S)
+        prompt, user_text, timeout_s=_ORGANIZE_LLM_TIMEOUT_S, **chat_kwargs)
     if not reply:
         log.info("story_organize_round corr_id=%s ok=false reason=llm_unavailable",
                  corr_id)
@@ -376,7 +437,7 @@ def _organize_and_archive(raw, corr_id=None) -> "dict | None":
     return record
 
 
-def _organize_and_archive_offloop(raw, corr_id=None) -> "dict | None":
+def _organize_and_archive_offloop(raw, corr_id=None, device_id=None) -> "dict | None":
     """整理回合同步体的线程化执行壳（261020 D4-1）。
 
     病灶（真机 R3/R4 四轮收尾逐拍实证）：_openclaw_chat_once 是同步 urllib LLM 回合
@@ -387,7 +448,7 @@ def _organize_and_archive_offloop(raw, corr_id=None) -> "dict | None":
     收尾沿下发即冲刷、循环在 LLM 回合期间保持响应。单飞锁还原 seq 账本「front
     单写者」串行语义（同步时代由事件循环天然承载）。"""
     with _ORGANIZE_ARCHIVE_LOCK:
-        return _organize_and_archive(raw, corr_id)
+        return _organize_and_archive(raw, corr_id, device_id=device_id)
 
 
 def _get_story_acc():
@@ -777,12 +838,30 @@ async def _story_guide_round(sid, now_dt) -> None:
         log.info("story_guide_round corr_id=%s skipped=no_session", sid)
         return
     prompt = _load_prompt_artifact(_GUIDE_PROMPT_FILE)
+    if not prompt.strip():
+        # 修正案 R2（live 证伪回退 · 2026-10-24 human-correction f13a53a8）：仅 warning
+        # 留痕，user 消息形态零差（恒定包装承载指令）。
+        log.warning("story_guide_prompt_fallback corr_id=%s file=%s "
+                    "reason=artifact_missing", sid, _GUIDE_PROMPT_FILE)
+    # 恒定「指令 + 素材」包装（R2）：恢复验证过的形态——live 证伪 request 级 system
+    # 不被跟随后，指令唯一可靠载体回落 user 消息（整理回合同口径）。
+    user_text = (f"孩子到目前为止讲的内容：\n{spoken}\n\n"
+                 "孩子停顿了，请按指令给一句轻声引导。")
+    # 261024（一次性回合统一携 user）：LLM 调用前取一次会话腿快照**仅用于身份**
+    # （播报腿集判据零偏移——仍在下行回复后取 _session_legs(sid) or list(_alert_legs)，
+    # 不动在途断连的播报目标语义）。缺席 = 诚实降级（条件传参空 -> 缺 user 键）。
+    device_id = _legs_device_id(_session_legs(sid) or list(_alert_legs))
+    chat_kwargs = {"user": device_id} if device_id else {}
+    if not device_id:
+        log.info("story_guide_round corr_id=%s oneshot_user=absent "
+                 "reason=device_id_missing", sid)
     # 261020 D4-1 同族：引导回合的同步 LLM 调用同样移出事件循环（sweep 路径上一轮
     # 冻结会吃掉下一轮收尾沿的及时性，与整理回合同根因）。
     reply = await asyncio.to_thread(
         _openclaw_chat_once,
         prompt,
-        f"孩子到目前为止讲的内容：\n{spoken}\n\n孩子停顿了，请按指令给一句轻声引导。")
+        user_text,
+        **chat_kwargs)
     if acc.routing(sid) != "accumulate":
         # 在途期间会话已释放（丢弃 / 断连 / 收尾）——产出丢弃是正确行为（F3④）。
         log.info("story_guide_round corr_id=%s dropped=session_released", sid)
@@ -1160,8 +1239,17 @@ async def _story_finish_session(session_id, acc, legs) -> "dict | None":
         await _issue_finish_downlink(session_id, engine_ws, device_ws)
     # 261020 D4-1: 整理回合移出事件循环（同步 urllib LLM 回合 ~2-4s 曾整冻 front，
     # 把收尾沿先行的 start_organizing 压到与 story_text 同拍——过渡页不可见本体）。
+    # 261024（一次性回合统一携 user）：设备身份取自会话腿 device-id 头（原值透传，
+    # 不 strip 不归一）；派生放在归档内容守卫之后、to_thread 之前（离消费点最近，
+    # test_archive_guard_units 的 AST 结构锚零偏移）。缺席 = 诚实降级：条件传参
+    # kwargs 为空 -> payload 缺 user 键 + 调用缝留痕（不冒用身份、不发空串）。
+    device_id = _legs_device_id(legs)
+    organize_kwargs = {"device_id": device_id} if device_id else {}
+    if not device_id:
+        log.info("story_finish corr_id=%s oneshot_user=absent reason=device_id_missing",
+                 session_id)
     record = await asyncio.to_thread(_organize_and_archive_offloop,
-                                     material, session_id)
+                                     material, session_id, **organize_kwargs)
     # 261022 真机轮修订：出语境移到整理回合**完成后**（原在 ② 演出先行时提前解除，
     # 整理期间迟到的幻听 STT 被引擎当普通对话派发 LLM 播报「我没听清」——KPLOG006
     # 23:59:30-36 实证）。整理期间孩子话语走闭嘴回显（会话已 cancel，不进素材）。

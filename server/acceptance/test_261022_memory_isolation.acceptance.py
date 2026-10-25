@@ -5,6 +5,31 @@ rigor=lite；riskTier=medium；subsystem = server/deploy/261022-openclaw-honcho-
 plugin 插件工作台（声明 / apply / rollback）+ manifest 工作台条目 + 验收锚
 换代。栈生产化与 v12 守则见姊妹件 test_261022_honcho_memory.acceptance.py。）
 
+锚换代再承载（261024-oneshot-user-uniformity · human 2026-10-24 裁 R7/OQ-4
+隔离口径退役）：front 引导/整理两条一次性 LLM 回合统一携 user=<device_id>
+（WS 会话腿 device-id 头原值透传），全部落 agent:kidpal:openai-user:<device_id>
+设备 session 键族；noisePatterns 补丁键退役（声明 5键→4键）；指令挪 request
+级 system（user 消息 = 孩子内容纯文；空制品回退 = 回填现行完整包装形态）。
+旧名映射（显式换代、非静默放宽）：
+  test_k3_e2_front_oneshot_payload_no_user
+    → test_k3_e2_front_oneshot_payload_carries_device_user（方向反转）；
+  test_k3_e6_patch_generator_product_five_keys
+    → test_k3_e6_patch_generator_product_four_keys。
+历史 taskpackage 引旧名处原样不动（本映射为准）。
+
+锚换代 R2 修正（261024-oneshot-user-uniformity 修正案 R2 · live 证伪回退 ·
+human-correction f13a53a8，2026-10-24）：live 真机实证（2026-10-24 10:10-10:11
+真实记录会话）证伪上一段「指令挪 request 级 system」——OpenClaw openai-http
+路径不跟请求级 system 指令（AGENTS.md 载体为主，请求级 system 疑似被替换/
+忽略），整理/引导回合产出聊天腔。human 裁决回退到验证过形态：user 消息恢复
+**恒定「指令 + 素材」包装**（整理 = K3_ONESHOT_ORGANIZE_WRAP、引导 =
+K3_ONESHOT_GUIDE_WRAP，**不再区分制品在场与否**——上一段「user 消息 = 孩子
+内容纯文」与「空制品回退 = 回填」两条表述随 R2 修正，旧痕保留如上不抹；空
+制品回退分支坍缩 = 制品缺失仅 warning、user 消息内容两态无差）；request 级
+system 制品装载**保留并存**（host 无感）；**携 user=<device_id> 半保留不动**
+（live 实证归属 owner/agent-kidpal 正常）——本件 payload 键集恰 {model,
+messages, stream, user} 且 user=<device_id> 全套断言零改动。
+
 上游 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/
 memory-wiring-advisory-20261023.md（§1 已验证接线证据 / §6 方案甲 / §7 锚换代
 清单 / §8 shaping / §9 网关安全序）+ 本包 plan.md 冻结语义六条 + human 三项
@@ -28,25 +53,34 @@ memory-wiring-advisory-20261023.md（§1 已验证接线证据 / §6 方案甲 /
   · 上游 npm 插件 @honcho-ai/openclaw-honcho@1.7.0（`openclaw plugins install
     --pin` 安装）+ plugins.entries.openclaw-honcho 配置键——探针实测 4 键
     （enabled / hooks.allowConversationAccess / config.baseUrl /
-    config.workspaceId）+ 本批增补第 5 键 config.noisePatterns。
+    config.workspaceId）。261023 批曾增补第 5 键 config.noisePatterns 作 user
+    消息挡板；261024 批 human 裁 R7/OQ-4 隔离口径退役——该键从声明删除
+    （5键→4键），退役实证 = 部署轮实读 openclaw.json（patch 只能表达 additive
+    目标态、apply 幂等 SKIP 先于 drift-guard，键删除无机械验证面，如实申报）。
   · 验证行为 = **设备级 session + 家庭单 owner 画像**：Honcho session
     metadata `openclawSessionKey = agent:kidpal:openai-user:<device_id>`
     （这是 session key / OpenClaw session key，**不是 peer 键**——DB peers 只
     有 owner / agent-kidpal 两个、无设备级 peer）。本件验收一律按 **session
     key 家族**表述；spec（arch §6.7 / §1.3）"peer" 用词修正归面 C
     /arch-change，不归本包。
-  · 资格门口径（甲案）：上游插件无 user-present-only 资格门（三家都不提供）。
-    cron/心跳由 captureSystemRuns=false（默认）天然挡；front 一次性回合的
-    **user 消息**由 config.noisePatterns=["^孩子(到目前为止)?讲的内容："] 挡
-    在库外（恰配 front 引导/整理两条一次性 prompt 的 user 消息开头）。
+  · 资格门口径（261024 换代后）：上游插件无 user-present-only 资格门（三家都
+    不提供）。cron/心跳由 captureSystemRuns=false（默认）天然挡；front 两条
+    一次性回合统一携 user=<device_id>，与主链路同落设备 session 键族——原
+    甲案「noisePatterns 挡板隔离」随 human 2026-10-24 裁 R7/OQ-4 退役，一次性
+    回合的处置由「隔离」改判「统一归属」（B1 挡板措辞随键一并退役；R1 残余
+    只余 assistant 回复单条入库）。
 
 残余偏差申报（甲案挡不住的两条，如实申报、不静默；spec 口径修正归面 C，
 integrator docs-delta 逐条对账）：
 
   R1. front 整理/引导回合的**读侧画像注入**（before_prompt_build 照常注入）
-      与 assistant 回复单条入库——one_shot 判定只看 DB 增量中 **user 原文零
-      出现**；assistant 回复入库 = 申报残余、**不判红**（低害：引导句不含
-      隐私；整理产物是孩子自己的故事）。
+      与 assistant 回复单条入库——261024 换代后 user 原文随统一 user 通道入
+      设备 session 库（one_shot 判定口径已反转），残余只余 assistant 回复
+      单条入库 = 申报、**不判红**（低害：整理产物是孩子自己的故事；指令挪
+      system 后 user 消息 = 纯孩子内容，无指令句噪声入 session）。
+      【R2 注记 2026-10-24：「无指令句噪声入 session」一句随恒定包装回退
+      失效——指令句包装随统一 user 通道入设备 session 库 = 回退后接受形态；
+      低害理由余「整理产物是孩子自己的故事」一条。】
   R2. QQ 回合落消息（senderId 独立 peer、owner 画像基本无污染，但消息入库且
       可能经 honcho_search_messages 可搜）——可搜性待部署轮 OQ-3 实测，本包
       只申报不实现挡置。
@@ -55,18 +89,34 @@ integrator docs-delta 逐条对账）：
 FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / 导入期
 零网络 I/O）
 
-  A) front 一次性回合 payload 零 user（must-stay-green 回归护栏，语义不变）：
-     _openclaw_chat_once 经 openclaw_stream_request 单源构造 payload，键集恰
-     {model, messages, stream}、零 user 键——front 一次性回合无设备身份，不冒
-     用设备会话身份（该回合 user 消息侧的入库隔离由声明 noisePatterns 承载，
-     见 B1；main 链路恰一条 user message 且 user=device_id 的正证已由 K2
-     冻结件 test_261022_persistent_session 承载，本件不复钉）。
+  A) front 一次性回合统一携 user=<device_id>（261024 换代——方向反转，旧口径
+     「payload 恰 {model, messages, stream} 零 user」退役，旧名
+     test_k3_e2_front_oneshot_payload_no_user →
+     test_k3_e2_front_oneshot_payload_carries_device_user，换代事由见头注首段）：
+     _openclaw_chat_once 增 user 透传，payload 经 openclaw_stream_request(
+     messages, user=None) 单源构造（if user: 真值判据，与 engine-patch
+     openai.py 两腿逐字同源；契约 §四禁 max_tokens 约束不动）；设备身份 = 会话
+     腿 device_ws.headers.get("device-id") 原值透传（不 strip 不归一，isinstance
+     str + strip 双保险防御式；条件传参 kwargs={"user": device_id}
+     if device_id else {}，八处既有桩签名零改）→ payload 键集恰
+     {model, messages, stream, user} 且 user=<device_id>；降级路径 = device-id
+     缺席 → payload 缺 user 键（诚实降级 + 调用缝留痕）；指令挪 request 级
+     system：整理回合 user 消息 = material 纯文、引导回合 user 消息 = spoken
+     纯文（两条 prompt 制品全文作为 request 级 system 装载），_load_prompt_
+     artifact 空回退 = user 消息回填现行完整包装形态（最坏退回旧 live 行为）
+     + warning 留痕。
+     【R2 修正 2026-10-24（live 证伪 + human-correction f13a53a8），上文旧痕
+     保留】：user 消息**恒定**为「指令 + 素材」包装——整理回合 =
+     K3_ONESHOT_ORGANIZE_WRAP.format(material=...)、引导回合 =
+     K3_ONESHOT_GUIDE_WRAP.format(spoken=...)，制品在场与否无差；制品在场 →
+     messages 恰 [system, user]（request 级 system 保留并存）、制品缺失 →
+     messages 恰 [user] + warning 留痕（回退分支坍缩，仅 warning）。
 
   B) server/deploy/261022-openclaw-honcho-plugin/ 插件工作台（声明 / apply /
      rollback 三件；自研 carrier 已弃用删除）：
 
        1) honcho-plugin-declaration.json（**JSON**，stdlib json 解析）——
-          changes **恰 5 条**点分键、全部以 plugins.entries.openclaw-honcho.
+          changes **恰 4 条**点分键、全部以 plugins.entries.openclaw-honcho.
           为全前缀（逐字）：
             · plugins.entries.openclaw-honcho.enabled = true
             · plugins.entries.openclaw-honcho.hooks.allowConversationAccess =
@@ -78,8 +128,13 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
             · plugins.entries.openclaw-honcho.config.workspaceId = "kidpal"
               （**恰 "kidpal"**，非探针的 "kidpal-probe"——human 裁决 ②：
               新库、探针数据不迁）
-            · plugins.entries.openclaw-honcho.config.noisePatterns =
-              ["^孩子(到目前为止)?讲的内容："]（甲案资格门的 user 消息挡板）
+          旧第 5 键 config.noisePatterns 已随 261024 换代从 changes 与顶层
+          plugins 块同步删除（B1 挡板措辞退役申报：甲案资格门 user 消息挡板
+          随 R7/OQ-4 隔离口径退役；声明 _note 换代申报须保留
+          agent:kidpal:openai-user: session 家族字面、不得引入 agent:kidpal:
+          其它形态变体）；退役无机械验证面（apply 幂等 SKIP 先于 drift-guard，
+          patch 不能表达键删除），实证 = 部署轮实读 openclaw.json，禁
+          expect:unset 假牙。
           顶层 hooks.* 与 agents.entries.*.plugins 零出现（schema 拒收键，
           负锚）。其余结构同前代：case / changes / drift_guard / backup /
           rollback 五顶层键；drift_guard 必含 P1 已应用态现状锚
@@ -95,7 +150,7 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
             · 形态① patch 生成器：CLI `--gen-patch <out>`（配合 --decl）从
               声明生成 `openclaw config patch` 消费的 patch 文件；产物可被
               stdlib json 解析（JSON 子集形态；JSON5 超集允许但不得破坏
-              stdlib 解析），展平叶键集**恰 = 声明 5 键逐字**（嵌套树或扁平
+              stdlib 解析），展平叶键集**恰 = 声明 4 键逐字**（嵌套树或扁平
               点分映射两形皆可，展平语义一致）。
             · 形态② 安全应用编排：advisory §9 序——写前时间戳备份 →
               `config patch --file <p> --dry-run --json`（schema:true 必核）
@@ -160,16 +215,20 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
                            "db_message_delta": int,
                            "gateway_log_hit": bool}],
             "one_shot":  [{"round": "guide"|"organize",
+                           "openclaw_session_key": str,
                            "user_text_in_db_delta": bool}]}
          判定 = plugin_runtime 两证全真（loaded 日志行 + inspect Policy 行）；
          main_link ≥1 且逐条 openclaw_session_key 以
          "agent:kidpal:openai-user:" 为前缀（**证①** session metadata）且
          db_message_delta ≥ 1（**证②** DB 消息增量）且 gateway_log_hit ==
          true（**证③** 网关日志行）；one_shot 覆盖 {"guide","organize"} 各
-         ≥1 且逐条 user_text_in_db_delta == false（**甲案判定口径写死**：
-         front 引导/整理各一轮后 DB 增量中 user 原文零出现；assistant 回复
-         入库 = 残余 R1 申报、不判红；read_side 判定随资格门 carrier 作废
-         一并移除——甲案读侧注入即残余 R1 本体，不设必红检查）。
+         ≥1 且逐条 openclaw_session_key 以 "agent:kidpal:openai-user:" 为
+         前缀（261024 换代增字段：一次性回合与主链路同 session 键族——只证
+         「不再挡」不够，要证「全部落同一 session 键族」）且
+         user_text_in_db_delta == true（**换代口径反转**：user 统一携入后
+         user 原文进设备 session 库 = 正证；旧甲案「user 原文零出现」判定随
+         human 2026-10-24 裁 R7/OQ-4 隔离口径退役；assistant 回复入库 = 残余
+         R1 申报、不判红；read_side 判定不设）。
        · seeded 负向探针集文件 schema（不变）：
            {"probes": [{"category": "姓名"|"电话"|"家庭安排", "seed": str,
                         "query": str, "profile_hit": bool, "reply_hit": bool}]}
@@ -187,11 +246,11 @@ FROZEN OFFLINE CONTRACT（builder MUST implement；纯 python / 离线可跑 / �
 ===========================================================================
 host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
 
-  · host 面（本件）= front payload 结构断言（行为级，离线真跑）+ 声明 5 键 /
+  · host 面（本件）= front payload 结构断言（行为级，离线真跑）+ 声明 4 键 /
     负锚 / pin / 运行时证据字面 / 残留静态断言（机制级）+ apply 双形态
     fixture 真跑（patch 生成产物 / 调用序桩真跑 / 失败即停零写 / 幂等 /
     drift-guard / 备份 / 回滚）。
-  · live/部署轮面 = 三证采集（plugin_runtime / main_link / one_shot 甲案）+
+  · live/部署轮面 = 三证采集（plugin_runtime / main_link / one_shot 换代口径）+
     seeded 负向探针集 + 降级实测（停 Honcho 容器）+ OQ-3 实测——由本件
     live 齿（D 节）对结构化证据判定；真实安装 / patch / restart 执行面 =
     human 部署轮（或主线程经 human 授权），Pod 不自行上 ECS，host 面转绿后
@@ -199,13 +258,14 @@ host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
 
 强度申报（契约条目 → 承载断言 → 性质档）：
 
-  · E2 资格门（front 半：一次性回合 payload 零 user）
-                                     → test_k3_e2_front_oneshot_payload_no_user → 行为级
-  · A1 声明 5 键逐字 / 负锚 / workspaceId / pin / 运行时证据字面 / session 家族
+  · E2 user 通道统一（front 半：一次性回合携 user=<device_id> + 降级路径
+    + 空制品回退）
+                                     → test_k3_e2_front_oneshot_payload_carries_device_user → 行为级
+  · A1 声明 4 键逐字 / 负锚 / workspaceId / pin / 运行时证据字面 / session 家族
                                      → test_k3_e2_verified_wiring_declaration_anchors → 机制级
   · A1 声明结构 + drift_guard P1 现状锚
                                      → test_k3_e6_declaration_schema_and_p1_drift_anchor → 机制级
-  · A2 patch 生成器产物恰 5 键       → test_k3_e6_patch_generator_product_five_keys → 行为级（真跑）
+  · A2 patch 生成器产物恰 4 键       → test_k3_e6_patch_generator_product_four_keys → 行为级（真跑）
   · A2 安全编排 §9 调用序 + 逐调用 hash 零直写协议
                                      → test_k3_e6_apply_safe_orchestration_call_order → 行为级（真跑）
   · A2 失败即停 / 失败序零写         → test_k3_e6_apply_failure_stops_zero_write → 行为级（真跑）
@@ -219,7 +279,7 @@ host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
   · A3 carrier 撤净（负锚）+ manifest 恰 3 条
                                      → test_k3_e2_verified_wiring_declaration_anchors（负锚半）
                                        + test_k3_e6_manifest_registers_the_workbench → 机制级
-  · live 三证 / 甲案 one_shot        → test_live_k3_e2_verified_wiring_probes_three_evidence
+  · live 三证 / 换代 one_shot        → test_live_k3_e2_verified_wiring_probes_three_evidence
                                      → 行为级（live 证据判定）
   · E3 seeded 负向探针集 100% 零命中 → test_live_k3_e3_seeded_negative_probe_set_zero_hit
                                      → 行为级（live 证据判定）
@@ -236,10 +296,10 @@ host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
     行为（本机 PATH 无 openclaw，越序外部调用即 crash 暴红）；ECS 实况是否
     真为 P1 已应用态由 apply 时 STOP / SKIP 回执承载（261017 PV-A6 同款缺口）。
   · patch 文件被真实 OpenClaw 消费的 JSON5 细节形状不作冻结——只钉 stdlib
-    json 可解析 + 展平叶键集恰 5 键；真实消费行为 = live 轮
+    json 可解析 + 展平叶键集恰 4 键；真实消费行为 = live 轮
     `config patch --dry-run --json` schema:true 回执。
-  · 插件运行时行为（loaded 日志 / Policy 行 / 消息入库 / noisePatterns 挡
-    user 消息）不可离线实证——静态锚（工作台并集两字面 + 声明键逐字）是
+  · 插件运行时行为（loaded 日志 / Policy 行 / 消息入库 / 一次性回合 user 落
+    session 键族）不可离线实证——静态锚（工作台并集两字面 + 声明键逐字）是
     **源锚代理**，行为本体 = live 三证齿 + 降级实测。行为等价假设显式化：
     工作台并集含两字面 ≈ 部署轮按该两字面采集证据（若实测日志行/Policy 行
     字面不符，属验收判法升级，走 tighten-only 窗口经 planner 调整，不得
@@ -248,22 +308,35 @@ host/live 分工边界（rigor=lite + riskTier=medium，如实申报）：
     风险由「live 证据缺位 = 设计态红」兜住。
 
 fixture 自含性声明：全部 host 断言直读 repo 内制品 + tempfile fixture（P1 已
-应用态组合态与 openclaw 桩脚本均内嵌本文件生成）；零网络 I/O、零外部资产、
-零环境前提（PyYAML 仅 manifest 验收测试 case 用）；桩协议经 --openclaw-bin
-注入，.py 桩经 sys.executable 调起（跨平台）。evidence 类断言仓根由 __file__
-显式推导，不依赖调用点 cwd。行为 seam 驱动方对账：声明 5 键 → OpenClaw 运行
-时插件加载的驱动方 = 部署轮（offline 无驱动方 = 已申报盲区）；探针证据 →
-live 齿判定闭环；停容器降级实测驱动方 = 部署轮；「模型真的记 / 真的拒」驱动
-方 = 真机轮。
+应用态组合态与 openclaw 桩脚本均内嵌本文件生成）；front 一次性回合链 fixture
+自含（内存 StoryAccumulator + 桩腿 device_ws/engine_ws + urlopen SSE 桩 +
+STORIES_DIR 重定向 tempfile——零真实归档落盘、零网络 I/O、零外部设备前提）；
+零网络 I/O、零外部资产、零环境前提（PyYAML 仅 manifest 验收测试 case 用）；
+桩协议经 --openclaw-bin 注入，.py 桩经 sys.executable 调起（跨平台）。
+evidence 类断言仓根由 __file__ 显式推导，不依赖调用点 cwd。行为 seam 驱动方
+对账：声明 4 键 → OpenClaw 运行时插件加载的驱动方 = 部署轮（offline 无驱动方
+= 已申报盲区）；探针证据 → live 齿判定闭环；停容器降级实测驱动方 = 部署轮；
+「模型真的记 / 真的拒」驱动方 = 真机轮；「一次性回合真落设备 session 键族」
+驱动方 = live 轮 one_shot 证据（host 半只证 payload user 键装配）。
 
 must-stay-green（冻结时点即绿，builder 不得回退）：
-  · test_k3_e2_front_oneshot_payload_no_user（front 现状合规 = 回归护栏；
-    若 builder 为接线改动 front payload 装配面，此断言红 = 越权）。
+  · 换代件内负锚/保留面半（冻结时点即绿）：降级路径断言（device-id 缺席 →
+    payload 缺 user 键）与空制品回退断言（user 消息回填现行完整包装形态）在
+    现行树已绿、换代后须保持（R2 注记：恒定包装换代后该回退断言即恒定包装
+    本体，行为两态无差）；声明零 secret 负锚保；
+    agent:kidpal:openai-user: session 家族字面保留 + 零其它 agent:kidpal:
+    形态变体负锚保。
+  · 姊妹件零触碰：test_261022_honcho_memory（K3-E1 栈面 + K3_P1_AGENTS_ANCHORS）、
+    test_261022_honcho_backfill（K4_GATE_CONFIG_NEEDLES 负锚天然不红——
+    backfill 树本就不引用声明工件）、test_261023_agents_md_static_semantics_
+    alignment、四姊妹验收件 test_m4k1_story_cloud_link / test_record_cancel_
+    lifecycle / test_record_dialogue_guide / test_record_front_polish 的桩缝
+    （条件传参 kwargs={"user": device_id} if device_id else {} 下八处既有桩
+    签名无感零改）。本包不改 compose、不改 AGENTS.md。
+  · unit 件零改必绿：test_story_cancel_lifecycle_units 四族 +
+    test_archive_guard_units AST 结构锚。
   · K1 冻结件（test_261022_openclaw_kidpal_tools / test_261017_openclaw_kidpal_skills
     / test_261022_m5_k1_prompt_carrier_migration）零触碰。
-  · 姊妹件 test_261022_honcho_memory（K3-E1 栈面 + K3_P1_AGENTS_ANCHORS）与
-    test_261023_agents_md_static_semantics_alignment 零交叉触碰——本包不改
-    compose、不改 AGENTS.md。
   · drift_guard P1 现状锚逐字保；openclaw.json 零入仓 + 零 secret 负锚保。
 
 Run protocol（文件名两点须 importlib 模式）:
@@ -273,6 +346,8 @@ Run protocol（文件名两点须 importlib 模式）:
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import importlib.util
 import json
 import re
@@ -281,6 +356,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
 from unittest.mock import Mock
@@ -322,8 +398,9 @@ K3_PLUGIN_ENTRY_PREFIX = "plugins.entries.openclaw-honcho."
 K3_HOOKS_FULL_PATH = "plugins.entries.openclaw-honcho.hooks.allowConversationAccess"
 K3_HONCHO_BASE_URL = "http://127.0.0.1:18100"
 K3_HONCHO_BASE_URL_HOST = "127.0.0.1:18100"
-K3_NOISE_PATTERN = "^孩子(到目前为止)?讲的内容："
 K3_WORKSPACE_ID = "kidpal"
+# 261024 换代：旧第 5 键 K3_NOISE_PATTERN / noisePatterns 声明条目删除
+# （human 2026-10-24 裁 R7/OQ-4 隔离口径退役；声明 5键→4键）。
 K3_DECL_CHANGES = [
     {"path": "plugins.entries.openclaw-honcho.enabled", "value": True},
     {"path": K3_HOOKS_FULL_PATH, "value": True},
@@ -331,9 +408,13 @@ K3_DECL_CHANGES = [
      "value": "http://127.0.0.1:18100"},
     {"path": "plugins.entries.openclaw-honcho.config.workspaceId",
      "value": "kidpal"},
-    {"path": "plugins.entries.openclaw-honcho.config.noisePatterns",
-     "value": ["^孩子(到目前为止)?讲的内容："]},
 ]
+# 261024 换代：front 一次性回合统一携 user 的冻结字面（A3 主锚）。
+K3_ONESHOT_DEVICE_ID = "dev-k3-e2-01"
+K3_ONESHOT_ORGANIZE_WRAP = ("孩子讲的内容：\n{material}\n\n"
+                            "请按指令把这段话忠实整理成一篇。")
+K3_ONESHOT_GUIDE_WRAP = ("孩子到目前为止讲的内容：\n{spoken}\n\n"
+                         "孩子停顿了，请按指令给一句轻声引导。")
 # session key 家族（非 peer 键）：session metadata openclawSessionKey 前缀
 K3_SESSION_KEY_PREFIX = "agent:kidpal:openai-user:"
 K3_SESSION_KEY_VARIANT_RE = re.compile(r"agent:kidpal:(?!openai-user:)")
@@ -644,6 +725,48 @@ _SSE_BODY = (b'data: {"choices":[{"delta":{"content":"\xe5\xa5\xbd\xe7\x9a\x84"}
              b"data: [DONE]\n\n")
 
 
+class _LegDeviceWs:
+    """一次性回合会话腿 device_ws 桩：starlette 风格 headers（原样 dict，
+    .get("device-id") 语义与生产一致）。headers=None 模拟无 headers 属性的裸腿
+    （覆盖防御式 getattr 路径）。"""
+    def __init__(self, headers=None):
+        if headers is not None:
+            self.headers = headers
+
+
+class _LegEngineWs:
+    """一次性回合会话腿 engine_ws 桩：记录 send() 注入帧（kidpal_speak 播报 /
+    kidpal_record_context 出语境信号），零网络。"""
+    def __init__(self):
+        self.sent = []
+
+    async def send(self, raw):
+        self.sent.append(raw)
+
+
+@contextlib.contextmanager
+def _captured_oneshot_payloads(front):
+    """一次性回合 payload 捕获缝（行为级离线真跑）：spy
+    gw_provider.openclaw_stream_request（单源真构造不动、只捕获产物）+
+    urlopen 换 SSE 桩（_FakeSseResponse）。yield 捕获列表；with 退出恢复原状。"""
+    captured = []
+    real_build = front.gw_provider.openclaw_stream_request
+
+    def spy_build(*args, **kwargs):
+        captured.append(real_build(*args, **kwargs))
+        return captured[-1]
+
+    import urllib.request as _urlreq  # noqa: PLC0415 — 与被测面同款惰性 import
+    orig_urlopen = _urlreq.urlopen
+    _urlreq.urlopen = lambda *a, **kw: _FakeSseResponse(_SSE_BODY)
+    front.gw_provider.openclaw_stream_request = spy_build
+    try:
+        yield captured
+    finally:
+        front.gw_provider.openclaw_stream_request = real_build
+        _urlreq.urlopen = orig_urlopen
+
+
 # --------------------------------------------------------------------------- #
 # K3-E2 · 已验证接线（front 半 = 行为级；声明半 = 机制级源锚代理）
 # --------------------------------------------------------------------------- #
@@ -653,81 +776,201 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
 
     maxDiff = None
 
-    def test_k3_e2_front_oneshot_payload_no_user(self):
-        """coverage: A4, K3-E2, S-F5.1-AC5 — front 一次性回合 payload 结构断言
-        （行为级，离线真跑；锚换代后语义不变 = must-stay-green 回归护栏）：
-        _openclaw_chat_once 的 payload 经 openclaw_stream_request 单源构造，
-        **不得**携带 user 键（键集恰 {model, messages, stream}）——front
-        引导/整理一次性回合无设备身份，不冒用设备会话身份（arch §6.7 六行表
-        第 1/2 行；该回合 user 消息侧的入库隔离由声明 noisePatterns 锚定正则
-        承载，见头注 B1）。现状已合规 = 回归护栏：builder 若为接线改动
-        payload 装配面，此断言红 = 越权（不动 front 单源）。"""
+    def test_k3_e2_front_oneshot_payload_carries_device_user(self):
+        """coverage: A1, A3, K3-E2 — front 一次性回合统一携 user=<device_id>
+        （261024 换代主锚；行为级，离线真跑）。换代事由 = human 2026-10-24 裁
+        R7/OQ-4 隔离口径退役；旧名 test_k3_e2_front_oneshot_payload_no_user
+        （断言 payload 恰 {model, messages, stream} 零 user）方向反转、显式
+        换代非静默放宽（旧名映射见本件头注首段与 A 节）。
+        R2 修正（修正案 R2 · live 证伪回退 · human-correction f13a53a8，
+        2026-10-24）：live 证伪「指令挪 request 级 system」——OpenClaw
+        openai-http 不跟请求级 system，回退恒定「指令+素材」包装。断言四路：
+        ① 整理收尾链：_story_finish_session 从会话腿 device_ws.headers 提取
+          device-id 原值透传 → payload 键集恰 {model, messages, stream, user}
+          且 user=<device_id>（携 user 半保留不动，零改动）；messages 恰
+          [system, user]（制品在场 → request 级 system 保留并存）且 user 消息
+          = K3_ONESHOT_ORGANIZE_WRAP 恒定包装（R2 回退：旧「material 纯文」
+          断言随 live 证伪换代，旧痕见头注）；
+        ② 引导链：_story_guide_round 同形状，user 消息 = K3_ONESHOT_GUIDE_WRAP
+          恒定包装；
+        ③ 降级路径（must-stay-green 保留面）：device-id 缺席 → payload 缺
+          user 键（诚实降级，不冒用身份）；
+        ④ 空制品回退（must-stay-green 保留面）：_load_prompt_artifact 返 ""
+          → messages 恰 [user]、user 消息 = 同一恒定包装（R2：行为与制品在
+          场无差，回退分支坍缩为仅 warning——旧「回填现行完整包装形态」表述
+          随恒定包装语义吸收，断言形态不变）。
+        R2 设计态红基线：①② 仅 user 消息内容断言红（现行树 payload 已携
+        user 键且 user 消息 = 纯文，包装断言待 fixer 换实现）；③④ 现行树即绿
+        且换代后须保持。"""
         tag = "K3-E2"
         mod, err = _load_front_app()
         self.assertIsNotNone(mod, f"{tag} RED: front_app.py 离线不可装载 —— {err}")
         front = mod
-        captured = []
-        real_build = front.gw_provider.openclaw_stream_request
-
-        def spy_build(messages):
-            payload = real_build(messages)
-            captured.append(payload)
-            return payload
-
-        orig_urlopen = None
-        import urllib.request as _urlreq
-        orig_urlopen = _urlreq.urlopen
-        _urlreq.urlopen = lambda *a, **kw: _FakeSseResponse(_SSE_BODY)
-        saved_build = front.gw_provider.openclaw_stream_request
-        front.gw_provider.openclaw_stream_request = spy_build
-        try:
-            reply = front._openclaw_chat_once(
-                "整理制品指令（request 级 system）",
-                "孩子讲的内容：\n我昨天去了动物园。\n\n请按指令把这段话忠实整理成一篇。",
-                timeout_s=5.0)
-        finally:
-            front.gw_provider.openclaw_stream_request = saved_build
-            _urlreq.urlopen = orig_urlopen
-        self.assertEqual(
-            len(captured), 1,
-            f"{tag} RED: _openclaw_chat_once 未恰一次经 openclaw_stream_request "
-            "构造 payload（单源构造被旁路 = 契约 §四禁 max_tokens 约束失去唯一"
-            "承载点）。")
-        payload = captured[0]
-        self.assertEqual(
-            set(payload), {"model", "messages", "stream"},
-            f"{tag} RED: front 一次性回合 payload 键集 = {sorted(payload)}，须恰 "
-            "{model, messages, stream} —— payload 不得携带 user（front 一次性"
-            "回合无设备身份，arch §6.7 六行表第 1/2 行）或缺 model/stream。")
-        self.assertNotIn(
-            "user", payload,
-            f"{tag} RED: front 一次性回合 payload 携带 user 键 —— user 缺席即无"
-            "设备会话身份（甲案口径：该回合 user 消息由声明 noisePatterns 锚定"
-            "正则挡在库外；payload 携 user = 把一次性回合冒充为设备会话）"
-            " = AC5「设备流程触发的回合不入画像」结构性失守。")
-        self.assertEqual(
-            [m.get("role") for m in payload["messages"]], ["system", "user"],
-            f"{tag} RED: 一次性回合 messages 形状 = "
-            f"{[m.get('role') for m in payload['messages']]}，须恰 [system, user]"
-            "（request 级 system 指令 + 单条本回合输入）。")
-        self.assertEqual(
-            reply, "好的",
-            f"{tag} RED(infra): SSE 解析桩返回不符预期（{reply!r}）—— 测试自身"
-            "缺陷，非被测面。")
+        material = "我昨天去了动物园，看到了大象和猴子。"
+        spoken = "从前有一只小猫"
+        now = datetime(2026, 10, 24, 12, 0, 0, tzinfo=timezone.utc)
+        sid_fin = "sess-k3-e2-finish"
+        sid_guide = "sess-k3-e2-guide"
+        sid_degraded = "sess-k3-e2-degraded"
+        with tempfile.TemporaryDirectory(prefix="k3-e2-oneshot-") as td:
+            old_dir, old_acc = front.STORIES_DIR, front._story_acc
+            front.STORIES_DIR = str(td)
+            front._story_acc = None
+            try:
+                acc = front._get_story_acc()
+                acc.start(sid_fin, now=now)
+                acc.feed(sid_fin, material, now=now)
+                acc.start(sid_guide, now=now)
+                acc.feed(sid_guide, spoken, now=now)
+                acc.start(sid_degraded, now=now)
+                acc.feed(sid_degraded, spoken, now=now)
+                engine_ws = _LegEngineWs()
+                device_ws = _LegDeviceWs({"device-id": K3_ONESHOT_DEVICE_ID})
+                naked_ws = _LegDeviceWs({"other-header": "x"})
+                with _captured_oneshot_payloads(front) as captured:
+                    # -- ① 整理收尾链：device-id 头在会话腿上 ----------------
+                    record = asyncio.run(front._story_finish_session(
+                        sid_fin, acc, [(device_ws, engine_ws)]))
+                    self.assertIsNotNone(
+                        record,
+                        f"{tag} RED(infra): 整理收尾链未归档（{record!r}）—— "
+                        "fixture 缺陷，非被测面（LLM 桩应返回非空文本）。")
+                    self.assertEqual(
+                        len(captured), 1,
+                        f"{tag} RED: 整理收尾链未恰一次经 openclaw_stream_request "
+                        "构造 payload（单源构造被旁路 = 契约 §四禁 max_tokens "
+                        "约束失去唯一承载点）。")
+                    p_fin = captured[-1]
+                    self.assertEqual(
+                        set(p_fin), {"model", "messages", "stream", "user"},
+                        f"{tag} RED: 整理一次性回合 payload 键集 = "
+                        f"{sorted(p_fin)}，须恰 {{model, messages, stream, "
+                        "user}} —— 261024 换代口径：front 一次性回合统一携 "
+                        "user=<device_id>（human 2026-10-24 裁 R7/OQ-4 隔离"
+                        "口径退役；旧断言「恰 3 键零 user」已反转）。")
+                    self.assertEqual(
+                        p_fin.get("user"), K3_ONESHOT_DEVICE_ID,
+                        f"{tag} RED: 整理一次性回合 payload user = "
+                        f"{p_fin.get('user')!r}，须恰会话腿 device-id 头原值 "
+                        f"{K3_ONESHOT_DEVICE_ID!r}（不 strip 不归一——与 engine "
+                        "端原字符串直传同源，避免分叉出第二个 session 键族）。")
+                    self.assertEqual(
+                        [m.get("role") for m in p_fin["messages"]],
+                        ["system", "user"],
+                        f"{tag} RED: 整理一次性回合 messages 形状 = "
+                        f"{[m.get('role') for m in p_fin['messages']]}，须恰 "
+                        "[system, user]（request 级 system 承载整理制品指令）。")
+                    self.assertEqual(
+                        p_fin["messages"][-1]["content"],
+                        K3_ONESHOT_ORGANIZE_WRAP.format(material=material),
+                        f"{tag} RED: 整理回合 user 消息 = "
+                        f"{p_fin['messages'][-1]['content']!r}，须恒定为"
+                        "「指令+素材」包装 K3_ONESHOT_ORGANIZE_WRAP（R2 回退："
+                        "live 证伪 2026-10-24——OpenClaw openai-http 不跟请求级"
+                        " system 指令，整理产出聊天腔；human-correction f13a53a8"
+                        " 裁回退验证过形态。旧「material 纯文」断言随证伪换代，"
+                        "旧痕见头注）。")
+                    # -- ② 引导链：同形状 + spoken 纯文 ----------------------
+                    captured.clear()
+                    front._register_session_legs(sid_guide, device_ws, engine_ws)
+                    try:
+                        asyncio.run(front._story_guide_round(sid_guide, now))
+                    finally:
+                        front._unregister_session_legs(device_ws)
+                    self.assertEqual(
+                        len(captured), 1,
+                        f"{tag} RED: 引导回合未恰一次经 openclaw_stream_request "
+                        "构造 payload。")
+                    p_guide = captured[-1]
+                    self.assertEqual(
+                        set(p_guide), {"model", "messages", "stream", "user"},
+                        f"{tag} RED: 引导一次性回合 payload 键集 = "
+                        f"{sorted(p_guide)}，须恰 {{model, messages, stream, "
+                        "user}}（261024 换代口径，与整理回合同一 user 通道）。")
+                    self.assertEqual(
+                        p_guide.get("user"), K3_ONESHOT_DEVICE_ID,
+                        f"{tag} RED: 引导一次性回合 payload user = "
+                        f"{p_guide.get('user')!r}，须恰 {K3_ONESHOT_DEVICE_ID!r}。")
+                    self.assertEqual(
+                        p_guide["messages"][-1]["content"],
+                        K3_ONESHOT_GUIDE_WRAP.format(spoken=spoken),
+                        f"{tag} RED: 引导回合 user 消息 = "
+                        f"{p_guide['messages'][-1]['content']!r}，须恒定为"
+                        "「指令+素材」包装 K3_ONESHOT_GUIDE_WRAP（R2 回退："
+                        "live 证伪 2026-10-24 + human-correction f13a53a8，"
+                        "与整理回合同一恒定包装口径）。")
+                    # -- ③ 降级路径：device-id 缺席 → 缺 user 键 -------------
+                    captured.clear()
+                    front._register_session_legs(sid_degraded, naked_ws, engine_ws)
+                    try:
+                        asyncio.run(front._story_guide_round(sid_degraded, now))
+                    finally:
+                        front._unregister_session_legs(naked_ws)
+                    self.assertEqual(
+                        len(captured), 1,
+                        f"{tag} RED: 降级路径未恰一次构造 payload。")
+                    p_deg = captured[-1]
+                    self.assertNotIn(
+                        "user", p_deg,
+                        f"{tag} RED: device-id 缺席时 payload 仍携带 user 键 "
+                        f"({p_deg.get('user')!r}) —— 降级口径：device-id 缺席 = "
+                        "诚实降级（条件传参 kwargs={}, 缺 user 键），不得冒用"
+                        "身份或发空串 user。")
+                    self.assertEqual(
+                        set(p_deg), {"model", "messages", "stream"},
+                        f"{tag} RED: 降级路径 payload 键集 = {sorted(p_deg)}，"
+                        "须恰 {model, messages, stream}（无 user 键）。")
+                    # -- ④ 空制品回退：user 消息回填现行包装形态 -------------
+                    captured.clear()
+                    saved_loader = front._load_prompt_artifact
+                    front._load_prompt_artifact = lambda filename: ""
+                    try:
+                        front._organize_and_archive(material, "corr-k3-e2-fb")
+                    finally:
+                        front._load_prompt_artifact = saved_loader
+                    self.assertEqual(
+                        len(captured), 1,
+                        f"{tag} RED: 空制品回退路径未恰一次构造 payload。")
+                    p_fb = captured[-1]
+                    self.assertNotIn(
+                        "user", p_fb,
+                        f"{tag} RED: 空制品回退路径未携 device 身份却带 user 键"
+                        " —— 回退路径直调 _organize_and_archive 无 device_id，"
+                        "payload 不得凭空带 user。")
+                    self.assertEqual(
+                        [m.get("role") for m in p_fb["messages"]], ["user"],
+                        f"{tag} RED: 空制品回退路径 messages 形状 = "
+                        f"{[m.get('role') for m in p_fb['messages']]}，须恰 "
+                        "[user]（R2：制品缺失 = 无 request 级 system，仅 "
+                        "warning 留痕——回退分支坍缩，user 消息内容与制品在场"
+                        "无差）。")
+                    self.assertEqual(
+                        p_fb["messages"][-1]["content"],
+                        K3_ONESHOT_ORGANIZE_WRAP.format(material=material),
+                        f"{tag} RED: 空制品回退路径 user 消息 = "
+                        f"{p_fb['messages'][-1]['content']!r}，须为同一恒定"
+                        "包装 K3_ONESHOT_ORGANIZE_WRAP（R2：恒定包装不再区分"
+                        "制品在场与否——旧「回填现行完整包装形态」表述被恒定"
+                        "包装语义吸收，行为与 ① 在场路径无差）。")
+            finally:
+                front.STORIES_DIR = old_dir
+                front._story_acc = old_acc
 
     def test_k3_e2_verified_wiring_declaration_anchors(self):
-        """coverage: A1, A3, A4, K3-E2 — 已验证接线声明锚集（机制级源锚代理；
+        """coverage: A1, A3, K3-E2 — 已验证接线声明锚集（机制级源锚代理；
         换代自旧 gate_carrier_anchors，自研 carrier 三锚集作废）：声明工件
-        changes 恰 5 键逐字（4 验证键 + noisePatterns）且恰
-        plugins.entries.openclaw-honcho.* 全前缀；顶层 hooks.* 与
-        agents.entries.*.plugins 零出现（schema 拒收键负锚）；workspaceId 恰
-        "kidpal" 非 "kidpal-probe"；插件版本 pin 记录 1.7.0 + 包名；插件运行时
-        证据字面（loaded 日志行 + inspect Policy 行）在工作台并集在场（静态锚
-        = 声明/文档并集；运行时行为 = live 齿）；session key 家族
-        agent:kidpal:openai-user:（设备级 session + 家庭单 owner 画像；工作台
-        内 "agent:kidpal:" 键族唯一形态 = openai-user: 变体，任何变体 = 红）；
-        零自研 carrier 残留（零 honcho-plugin.js 文件 / 零 marker 字面 / 零
-        /v1/openclaw 端点）；零内联 secret。"""
+        changes 恰 4 键逐字（探针验证 4 键；旧第 5 键 noisePatterns 已随
+        261024 换代删除——human 2026-10-24 裁 R7/OQ-4 隔离口径退役，5键→4键
+        显式换代非静默放宽）且恰 plugins.entries.openclaw-honcho.* 全前缀；
+        顶层 hooks.* 与 agents.entries.*.plugins 零出现（schema 拒收键负锚）；
+        workspaceId 恰 "kidpal" 非 "kidpal-probe"；插件版本 pin 记录 1.7.0 +
+        包名；插件运行时证据字面（loaded 日志行 + inspect Policy 行）在工作台
+        并集在场（静态锚 = 声明/文档并集；运行时行为 = live 齿）；session key
+        家族 agent:kidpal:openai-user: 字面保留（261024 换代后 _note 仍须记录；
+        设备级 session + 家庭单 owner 画像；工作台内 "agent:kidpal:" 键族唯一
+        形态 = openai-user: 变体，任何变体 = 红）；零自研 carrier 残留（零
+        honcho-plugin.js 文件 / 零 marker 字面 / 零 /v1/openclaw 端点）；零内联
+        secret。"""
         tag = "K3-E2"
         self.assertTrue(
             WORKBENCH.is_dir(),
@@ -738,7 +981,7 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
         self.assertTrue(texts, f"{tag} RED: 工作台零文件。")
         union = "\n".join(texts.values())
 
-        # -- 声明 5 键逐字（A1） ------------------------------------------------
+        # -- 声明 4 键逐字（A1；261024 换代 5键→4键） --------------------------
         self.assertTrue(
             DECL_PATH.is_file(),
             f"{tag} RED: 声明工件不在位 —— 冻结契约要求 {DECL_PATH}。")
@@ -747,16 +990,18 @@ class K3MemoryIsolationAcceptance(unittest.TestCase):
         changes = decl.get("changes")
         self.assertIsInstance(changes, list, f"{tag} RED: changes 须为 list。")
         self.assertEqual(
-            len(changes), 5,
-            f"{tag} RED: changes 条数 = {len(changes)}，须恰 5（探针验证 4 键 + "
-            "noisePatterns 第 5 键，头注 B1 逐字）。")
+            len(changes), 4,
+            f"{tag} RED: changes 条数 = {len(changes)}，须恰 4（探针验证 4 键；"
+            "noisePatterns 第 5 键已随 261024 换代退役——human 2026-10-24 裁 "
+            "R7/OQ-4 隔离口径退役，头注 B1）。")
         paths = [c.get("path") for c in changes]
         self.assertEqual(
             len(set(paths)), len(paths),
             f"{tag} RED: changes 存在重复 path —— 逐键单写。")
         self.assertEqual(
             _canon_changes(changes), _canon_changes(K3_DECL_CHANGES),
-            f"{tag} RED: changes ≠ 冻结 5 键逐字（头注 B1）。\n实得："
+            f"{tag} RED: changes ≠ 冻结 4 键逐字（头注 B1，261024 换代后口径；"
+            f"noisePatterns 条目不得残留）。\n实得："
             f"{json.dumps(changes, ensure_ascii=False, indent=2)}")
         for p in paths:
             self.assertTrue(
@@ -1101,7 +1346,7 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
         health/NRestarts 核对；逐调用 config-hash 协议 = 「零直写
         openclaw.json」冻结负锚的行为承载（正式 patch 调用及其前全部 hash ==
         变更前、其后全部 == 目标态 → config 只在 OpenClaw 写入口被改写一次）；
-        终态 config == 声明目标态（5 键 + P1/gateway/skills 保留）。"""
+        终态 config == 声明目标态（4 键 + P1/gateway/skills 保留）。"""
         tag = "K3-E6"
         run = self._orchestrate(tag)
         try:
@@ -1301,12 +1546,15 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
         finally:
             shutil.rmtree(run["td"], ignore_errors=True)
 
-    def test_k3_e6_patch_generator_product_five_keys(self):
-        """coverage: A2, K3-E6 —patch 生成器（形态①）：--gen-patch 从声明生成
+    def test_k3_e6_patch_generator_product_four_keys(self):
+        """coverage: A2, K3-E6 — patch 生成器（形态①）：--gen-patch 从声明生成
         `openclaw config patch` 消费的 patch 文件；产物可被 stdlib json 解析
-        （JSON 子集形态），展平叶键集恰 = 声明 5 键逐字（嵌套树或扁平点分映射
+        （JSON 子集形态），展平叶键集恰 = 声明 4 键逐字（嵌套树或扁平点分映射
         两形皆可，展平语义一致）；零额外键（含零顶层 hooks.* / 零
-        agents.entries.*.plugins——由恰 5 键等价承载）。"""
+        agents.entries.*.plugins——由恰 4 键等价承载）。换代事由 = human
+        2026-10-24 裁 R7/OQ-4 隔离口径退役：旧名
+        test_k3_e6_patch_generator_product_five_keys（恰 5 键含 noisePatterns）
+        随声明第 5 键退役一并换代，名字钉死数与断言数一致。"""
         tag = "K3-E6"
         self._require_workbench(tag)
         with tempfile.TemporaryDirectory() as td:
@@ -1335,7 +1583,8 @@ class K3OpenclawPatchAcceptance(unittest.TestCase):
                 for c in K3_DECL_CHANGES)
             self.assertEqual(
                 leaves, want,
-                f"{tag} RED: patch 产物展平叶键集 ≠ 声明 5 键逐字。\n实得："
+                f"{tag} RED: patch 产物展平叶键集 ≠ 声明 4 键逐字（261024 换代；"
+                f"noisePatterns 键不得残留）。\n实得："
                 f"{leaves}")
 
     def test_k3_e6_rollback_dry_run_and_restore(self):
@@ -1475,19 +1724,23 @@ def _write_json_file(path: Path, obj) -> None:
 _LIVE_SCHEMA_NOTE = (
     "三证探针证据 schema = {plugin_runtime: {load_log_hit, inspect_policy_hit}, "
     "main_link: [{openclaw_session_key, db_message_delta, gateway_log_hit}], "
-    "one_shot: [{round, user_text_in_db_delta}]}（甲案判定口径，冻结于本件头注 "
-    "D 节）；seeded 证据 schema = {probes: [{category, seed, query, profile_hit, "
-    "reply_hit}]}；降级证据 schema = {degradation: {honcho_stopped, "
-    "conversation_ok, retry_storm, user_visible_error}}")
+    "one_shot: [{round, openclaw_session_key, user_text_in_db_delta}]}（261024 "
+    "换代判定口径，冻结于本件头注 D 节）；seeded 证据 schema = {probes: "
+    "[{category, seed, query, profile_hit, reply_hit}]}；降级证据 schema = "
+    "{degradation: {honcho_stopped, conversation_ok, retry_storm, "
+    "user_visible_error}}")
 
 
 class K3MemoryProbeLiveAcceptance(unittest.TestCase):
     """live 证据判定齿（三证 schema，换代自 marker 双证）：① session metadata
     openclawSessionKey（前缀 agent:kidpal:openai-user:）+ ② 消息条数（DB 增量）
-    + ③ 网关日志行；one_shot 判定口径写死 = 甲案（front 引导/整理各一轮后 DB
-    增量中 user 原文零出现；assistant 回复入库 = 残余 R1 申报、不判红）+
-    E3 seeded 负向探针集（S-F5.1-AC3 / NFR-PRIV-1 量化口径不变）+ E5 降级实测
-    （停 Honcho 容器 → 对话照常）。
+    + ③ 网关日志行；one_shot 判定口径 = 261024 换代（每条证据增
+    openclaw_session_key 前缀断言——一次性回合与主链路同落设备 session 键族；
+    user_text_in_db_delta == true 正证——user 统一携入后原文进设备 session 库，
+    旧甲案「user 原文零出现」判定随 human 2026-10-24 裁 R7/OQ-4 隔离口径退役；
+    assistant 回复入库 = 残余 R1 申报、不判红）+ E3 seeded 负向探针集
+    （S-F5.1-AC3 / NFR-PRIV-1 量化口径不变）+ E5 降级实测（停 Honcho 容器 →
+    对话照常）。
 
     probe ≠ exercise 注记（DEV-GOVERNANCE 验收测试纪律 §2）：本类只对 live 相位
     **真实产出**的结构化证据施加判定；真实上 ECS 发探针（含 DB/日志三证采集、
@@ -1511,12 +1764,13 @@ class K3MemoryProbeLiveAcceptance(unittest.TestCase):
         return files
 
     def test_live_k3_e2_verified_wiring_probes_three_evidence(self):
-        """coverage: A4, K3-E2 — 已验证接线三证探针：plugin_runtime 两证全真
+        """coverage: A3, K3-E2 — 已验证接线三证探针：plugin_runtime 两证全真
         （loaded 日志行 + inspect Policy 行）+ 主链路正证（携 user 真实聊天回合
         三证：session metadata 前缀 agent:kidpal:openai-user: / DB 消息增量
-        ≥1 / 网关日志行）+ 一次性回合负证（guide 与 organize 各 ≥1，甲案口径：
-        DB 增量中 user 原文零出现；assistant 回复入库 = 残余 R1 申报、不判
-        红）。逐条判定，任一命中形态不符 = live 红。"""
+        ≥1 / 网关日志行）+ 一次性回合正证（guide 与 organize 各 ≥1，261024
+        换代口径：逐条 openclaw_session_key 前缀 agent:kidpal:openai-user: =
+        与主链路同 session 键族，user 原文进设备 session 库；assistant 回复
+        入库 = 残余 R1 申报、不判红）。逐条判定，任一命中形态不符 = live 红。"""
         tag = "K3-E2(live)"
         docs = []
         for p in self._evidence_files(tag):
@@ -1562,21 +1816,31 @@ class K3MemoryProbeLiveAcceptance(unittest.TestCase):
                     "（证③ 网关日志行缺失）—— 三证不全 = live 红。")
             for item in obj.get("one_shot") or []:
                 one_shot_rounds.add(item.get("round"))
-                self.assertIs(
-                    item.get("user_text_in_db_delta"), False,
+                one_shot_key = str(item.get("openclaw_session_key") or "")
+                self.assertTrue(
+                    one_shot_key.startswith(K3_SESSION_KEY_PREFIX),
                     f"{tag} LIVE RED: {p.name} 一次性回合（{item.get('round')}）"
-                    "user_text_in_db_delta = true —— 甲案判定口径：front 引导/"
-                    "整理各一轮后 DB 增量中 **user 原文零出现**（noisePatterns "
-                    "挡板失效）；assistant 回复入库 = 残余 R1 申报、不判红。",
+                    f"openclaw_session_key = {one_shot_key!r} 不以前缀 "
+                    f"{K3_SESSION_KEY_PREFIX!r} 开头 —— 261024 换代口径：一次性"
+                    "回合与主链路同落 agent:kidpal:openai-user:<device_id> 设备 "
+                    "session 键族（只证「不再挡」不够，要证「全部落同一 session "
+                    "键族」）。")
+                self.assertIs(
+                    item.get("user_text_in_db_delta"), True,
+                    f"{tag} LIVE RED: {p.name} 一次性回合（{item.get('round')}）"
+                    "user_text_in_db_delta = false —— 261024 换代口径反转：user "
+                    "统一携入后 user 原文须进设备 session 库（旧甲案「user 原文"
+                    "零出现」判定随 human 2026-10-24 裁 R7/OQ-4 隔离口径退役）；"
+                    "assistant 回复入库 = 残余 R1 申报、不判红。",
                 )
         self.assertGreaterEqual(
             positive, 1,
             f"{tag} LIVE RED: 主链路正证零条 —— 缺携 user 真实聊天回合的三证。")
         self.assertTrue(
             {"guide", "organize"} <= one_shot_rounds,
-            f"{tag} LIVE RED: 一次性回合负证未覆盖 guide 与 organize 两类"
+            f"{tag} LIVE RED: 一次性回合正证未覆盖 guide 与 organize 两类"
             f"（实得 {sorted(r or '' for r in one_shot_rounds)}）—— arch §6.7 "
-            "六行表第 1/2 行各须一次负证探针。")
+            "六行表第 1/2 行各须一次正证探针。")
 
     def test_live_k3_e3_seeded_negative_probe_set_zero_hit(self):
         """coverage: K3-E3, S-F5.1-AC3, NFR-PRIV-1 — seeded 负向探针集：注入

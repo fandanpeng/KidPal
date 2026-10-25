@@ -8,12 +8,14 @@
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
 **摘要**：未结 37（待拍板 0 / 待触发 35 / 已接受风险 2）；已结 88（归档索引见下）。
+**摘要**：未结 31（待拍板 0 / 待触发 26 / 已接受风险 2）；已结 88（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
 ## 待触发（35）
+## 待触发（26）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -52,6 +54,7 @@ _（无）_
 | [ARQ-261025-interrupted-dispatch-progress-note](ARQ-261025-interrupted-dispatch-progress-note.md) | COULD | 子 agent 被 429 / 配额中断后无回执——恢复靠 git status 考古，进度注记未成约定 | 下一治理批（动 `planner.md` 派发步 / 子 agent brief 模板时并批）；或再出现一次中断恢复 |
 | [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
 | [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
+| [ARQ-261024-new-mechanism-spike-first](ARQ-261024-new-mechanism-spike-first.md) | MAJOR | 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证 | 下一个引入新子系统 / 新外部依赖集成 / 新数据迁移的批，triage 判档与 launch 前必查本条；或下次治理批 |
 
 ## 已接受风险（2）
 

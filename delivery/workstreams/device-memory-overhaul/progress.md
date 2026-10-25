@@ -237,3 +237,35 @@
 - **验证**：scoped r5（invocation `baf02b5c`）8 闸绿；**final r6**（invocation `7c3e9a1f`）10 闸全绿、fact `ok:true`（scope 圈定口径：acceptance 52 passed / 3 deselected；unit 78 passed / 3 subtests，单测扩容 68→78 RestWireCase 十项 wire 形状断言）；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `test-scope-final-r6.txt`（per-Pod 索引 detect_changes 正常圈定，impacted_total=0，清单件数与 r4 相同）。
 - **制品**：verdict.json（r6 fact 晋升）+ verification.json（finalScopedRun r6、priorRounds r1..r5）+ review-packet.md §13 wire 修复轮节（未覆盖面申报同步刷新：REST wire 形状从「未定形首验点」改为「host 面已落定，剩 metadata 可达性等四项 live 对账」）。commit 待落（本节随 commit 入册）。
 - **停等位不变**：`awaiting-human:live-deploy`——K4-E6 live structural 项 + 收敛后四项 live 对账（metadata 可达性 / 真语料格式 / observations 异步增量 / 回滚逐 session 量预测）挂 human 部署轮。
+
+## 2026-10-23 · K4 合并收口——human 人批 → merge-driver DONE(planner)
+
+- **人批**：coordinator 转达 human 主会话既定指令「那就正常等吧,改完你再看一下 就走合并」+ 主线程对照审查通过(端点逐字对齐 /opt/honcho/src 含 workspace 作用域 / 请求体形状对 schemas / 全量 acceptance 333 passed 主线程独立实跑 / 语义零回退 + JWT 缺省容忍 USE_AUTH=false 确认)→ 审查通过即合并授权生效。pod-events human-decision 凭据 `3ad7e842`(actor=human,payload.decision="approve-escalated-merge",五要素一次到位)。
+- **合并**：merge-driver **DONE**(approval-ref 核验 OK → escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK,merge token 串行化走完)。merge commit `fe5d524c`(human-approval-ref 在案);Step 5b 簿记落 main(`911cb5dc`)。
+- **收口状态**：board K4 = **merged**(mo54,M5 列车 P1/P5/P2/P3/P4 五包全 merged);INDEX dev 段重建投影;本地 main 领先 origin/main,push 归 human。
+- **停等位：`awaiting-human:live-deploy`**——K4-E6 live 运维项挂 human 部署轮:ECS 全量 backfill + 计数报告过目 + 幂等二次跑零增量 + 清库回滚演练 + 画像抽查;四项 live 对账点(metadata 可达性 / 真语料格式 / DELETE 202 异步窗差 / conclusions 派生等待窗)。HONCHO_JWT 环境变量按 USE_AUTH 现状决定注入(现 ECS 未设 = false 形态,可不注入,工具容忍缺省)。
+- **M5 五包列车进度**:P1 ✓ → P5 ✓ → P2 ✓ → P3 ✓ → **P4/K4 ✓(merged,待 live 部署)**;真机轮归 P5 收口轮(「王一诺」类旧事抽问)。
+- **advisory 转交**：loop-retro 阈值已到(32 ≥ 3),发起归主线程。
+
+## 2026-10-24 · K4b corpus 解析器 v2 收口——final r2 全绿 + commit 冻结（integrator）
+
+- **包**：`261024-m5-k4b-corpus-parser-v2`（Lite / riskTier=high，mergeOrder 55，dependsOn K4 已满足）——K4 live 实证归因 bug 的修复轮：解析器 v2（逐行双层识别 + 续行归组 + 内嵌 turn 拆分 + created_at 回填 04:00 UTC 口径 + toolResult 路由 + 报告 additive 扩展）+ rollback `--source-kind` 选择性删除 + honcho.env.example 两键（K4B-E1..E6；技术方案权威 = k4-attribution-fix-review-20261024 §2.1，human D1-D5 五项裁决）。K4 HOLD 期 fixer 未 commit 补丁按 review §1.5 裁 KEEP 为基底，一并入本 commit。
+- **验证**：scoped r1（invocation `f81ac003`）8 闸绿（lite firmware-build 后置）；**final r2**（invocation `9ceb48f1`）10 闸全绿、fact `ok:true`；verifier-evidence-check exit 0 / factOk true。test-scope 清单落 `delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/test-scope-final-r2.txt`（5 文件，与 changeManifest 恰同）。全量口径 340 passed / 7 deselected / 33 subtests 零回退；A3/A4 真语料快照审计（21 文件 sha256 冻结）本机实跑零 skip——冻结锚 1652 行 → 1007 组 → 2879 段（user 1580 / assistant 1299）、wrapper 350、指纹全唯一、unparsed=0，与 review §4 判据逐项一致。
+- **制品**：docs-delta.md（零 diff 声明：`git status docs/` 空，修复轮零 spec/契约面 diff）+ review-packet.md（demo 对账行 Gate A1-A4 逐项 + 未覆盖面申报 + live 运维命令单 + findings 2 NIT）+ verdict.json（r2 fact 晋升投影）+ verification.json（advisory）落包目录。debt 登记一处：`docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md` append「transcript 影子导出器重建（D2 裁不重灌）」条（三缺陷 + 重建前置件 + 形状漂移承载）。
+- **停等位**：live 运维段（Phase 1.5-4：Gate B 试灌读回 / Gate C 硬删完成 / Gate D 派生后验）零 host 断言，归主线程经 human 授权（D5 低峰窗口）；命令单在 review-packet §4。合并门后续：supervisor-verdict-gate（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod。
+
+## 2026-10-24 · K4b 合并收口——human 人批 → merge-driver DONE(planner)
+
+- **人批**:human AskUserQuestion 答复「批准合并」(2026-10-24);批准语境含 live 运维段授权主线程按 architect 命令单走、异常即停回报。pod-events human-decision 凭据 `85d4122d`(actor=human,五要素一次到位)。
+- **合并**:merge-driver DONE(escalation gate PASS → rebase OK → quick-check 2 闸 OK → merge OK)。merge commit `ea89f427`(human-approval-ref 在案);Step 5b 簿记落 main(`79777341`);board=merged(mergeOrder 55)。
+- **live 运维段(Phase 1.5-4)**:命令单 = `delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/review-packet.md` §4 末;Gate B/C/D 判据按 review §4;D2 裁两批次均回滚、transcript 不重灌(debt:TECH-261022 影子导出器重建条)。
+- **advisory 转交**:loop-retro 阈值已到(34 ≥ 3),发起归主线程。
+
+## 2026-10-24 · 记忆回忆回合启用（261024-memory-recall-tool-enable）收口——final r2 全绿 + commit 冻结（integrator）
+
+- **包**：`261024-memory-recall-tool-enable`（Lite / riskTier=high，mergeOrder 56，dependsOn K4b 已满足，gateProfile security）——human 四裁决之 P0 落地：`tools.allow` 四项→恰五项（放行 `honcho_search_conclusions`，不放 `honcho_search_messages`）+ 声明 drift_guard 扩「升级基准」（同时接受新机 unset 与 live 四项覆写，目标态五项由幂等分支承载）+ apply 双形态（直写语义零回退 + `--gen-patch` 走 `openclaw config patch` 写入口）+ AGENTS.md 新增「记忆回忆回合」行与记忆节检索澄清（记忆节原句「不调用任何工具去记」逐字保留）+ 冻结验收件 K1-E4 显式换代、新增 K1-E4-B 三条。技术权威 = `delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md` §B 选项 3。
+- **验证**：scoped r1（invocation `cf638afa`）8 闸绿（lite firmware-build 后置）；**final r2**（invocation `4573a4d9`）10 闸全绿、fact `ok:true`、`observedGateExit=0`；verifier-evidence-check exit 0 / factOk true（integrator 复跑）。test-scope 清单落 `delivery/taskpackages/261024-memory-recall-tool-enable/test-scope-final-r2.txt`（四文件 = 实际 diff 四件；manifest 第五件 rollback 零 diff 不入 scope）。全量口径 integrator 独立复跑 = **346 passed / 7 deselected / 33 subtests**（冻结时点七条设计态红全转绿、339 既有断言零回退）。
+- **范围圈定**：per-Pod 图索引正常圈定（project `C-AI-KidPal-pod-m2`，base main，merge_base `3ffd095d`）：changed_files 12 / seed_symbols 40 / **impacted_total=2**，两条都在改动验收件自身方法内，production 零调用方。gen-patch 产物独立实跑：展平恰一个叶键、五项含 `honcho_search_conclusions`、零 config 读写。
+- **制品**：`docs-delta.md`（零 diff 声明：`git status docs/` 与 `firmware/` 均空）+ `review-packet.md`（demo 对账行 / 未覆盖面申报 / live 命令单 / findings 4 NIT-FYI / 五轴 / 残余风险）+ `verdict.json`（r2 fact 逐字晋升）+ `verification.json`（advisory 投影）落包目录。closeout-check exit 0。
+- **停等位**：`awaiting-human:live-deploy`——live 四项（patch --dry-run 接受产物 / openclaw.json 四项态实升级 / 真机「王一诺是谁」答 9/30 事实 / 日志 `honcho_search_conclusions` 工具调用）归 human 部署轮，命令单在 review-packet §5；部署轮顺序约束：若还需重跑 `261022-openclaw-honcho-plugin` apply，必须在本包升级之前（其 drift 锚四项，五项态重跑 exit 3 零写）。
+- **跨包陈旧基线（本包不改，留根）**：`261022-openclaw-honcho-plugin` 声明 drift 四项（被 memory_isolation 冻结件逐字钉死）+ `manifest.yaml` 251/313/317 行与 `apply_honcho_plugin.py` 头注「四项」字面——建议 follow-up Lite 包换代。合并门后续：supervisor-verdict-gate（planner 跑）→ pre-merge-escalation-gate → merge-driver --pod。

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261024-m5-k4b-corpus-parser-v2",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "9ceb48f1-c8fe-41f2-89a9-9423be368523",
+  "evidenceRef": "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/test-scope-final-r2.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成，planner 生成）：5 行 = 本包 acceptanceTestsFile 1 件（server/acceptance/test_261022_honcho_backfill.acceptance.py）∪ impactedTests 种子 2 件（单测 + 验收件）∪ server/deploy/honcho/honcho.env.example 1 件 ∪ server/deploy/honcho/backfill/rollback_honcho_backfill.py 1 件——与 changeManifest 5 文件恰同（解析器改动全部自包含、零仓内调用方，K4 已核 impacted_total=0 形态延续）。留根注记：r2 fact results 元数据未含 scope 路径行（verify.mjs 未透传落 fact），路径以 review-packet §2 与本字段承载。",
+  "finalScopedRun": {
+    "acceptance": "22 passed / 0 failed（r2 acceptance 闸，serverAcceptanceFiles=1；A3/A4 快照审计本机在盘实跑、零 skip）",
+    "unit": "86 passed / 0 failed / 3 subtests（r2 unit 闸，structuralCollected 86 = 单测 64 项 + 验收件 22 项桩级收集）",
+    "fullSuiteReference": "全量口径（planner 起包红基线回填实测，2026-10-24）= 340 passed / 0 failed / 7 deselected / 33 subtests（27.8s）——333 既有全绿零回退 + 本包新增 7 件全绿；单测 64 passed；零 skip"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261024-m5-k4b-corpus-parser-v2 --phase final --round 2 --invocation-id 9ceb48f1-c8fe-41f2-89a9-9423be368523",
+    "exit": 0,
+    "factOk": true
+  },
+  "priorRounds": [
+    {
+      "round": 1,
+      "phase": "scoped",
+      "invocationId": "f81ac003-a60e-40f6-8f6b-a87e0687a3f4",
+      "evidenceRef": "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/verifier-evidence/rounds/r1.json",
+      "ok": true,
+      "observedGateExit": 0,
+      "note": "8 闸（lite 包 firmware-build scoped 相位后置，261015-gov-review-lite-fast-path）"
+    }
+  ],
+  "provenance": {
+    "closeoutArtifacts": [
+      "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/docs-delta.md",
+      "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/review-packet.md",
+      "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/test-scope-final-r2.txt",
+      "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/verdict.json",
+      "delivery/taskpackages/261024-m5-k4b-corpus-parser-v2/verification.json"
+    ],
+    "docsSync": "docsSyncRequired=false；integrator 核实零 diff（git status docs/ 空），零 diff 声明落 docs-delta.md",
+    "debtRegistration": "docs/debt/tech/TECH-261022-device-memory-prompt-overhaul.md append「transcript 影子导出器重建（D2 裁不重灌）」条（integrator，2026-10-24）",
+    "upstream": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md + human D1-D5 五项裁决"
+  }
+}

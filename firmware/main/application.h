@@ -31,6 +31,9 @@
 #define MAIN_EVENT_START_LISTENING      (1 << 10)
 #define MAIN_EVENT_STOP_LISTENING       (1 << 11)
 #define MAIN_EVENT_STATE_CHANGED        (1 << 12)
+/* 261024-vq-overlay-close-end-session: 覆盖层关层手势的统一会话结束入口事件位
+ * （TECH-261024 真机事故修复——播报态关层必须真正断会话, 不是只打断停播）。 */
+#define MAIN_EVENT_END_VOICE_SESSION    (1 << 13)
 
 
 enum AecMode {
@@ -90,6 +93,14 @@ public:
      * Sends MAIN_EVENT_TOGGLE_CHAT to be handled in Run()
      */
     void ToggleChatState();
+
+    /**
+     * End the current voice session (event-based, thread-safe)
+     * Sends MAIN_EVENT_END_VOICE_SESSION to be handled in Run()
+     * 261024-vq-overlay-close-end-session: 覆盖层关层手势的统一结束入口——覆盖
+     * Connecting / Listening / Speaking 三态（播报态先即时静音 + abort 帧再关通道）。
+     */
+    void EndVoiceSession();
 
     /**
      * Start listening (event-based, thread-safe)
@@ -162,6 +173,9 @@ private:
     void HandleToggleChatEvent();
     void HandleStartListeningEvent();
     void HandleStopListeningEvent();
+    /* 261024-vq-overlay-close-end-session: 覆盖层关层统一收尾（三态门 + 播报态
+     * ResetDecoder/abort + CloseAudioChannel + Idle + LOW_POWER + 常驻重建）。 */
+    void HandleEndVoiceSessionEvent();
     void HandleNetworkConnectedEvent();
     void HandleNetworkDisconnectedEvent();
     void HandleActivationDoneEvent();

@@ -167,16 +167,20 @@
  *             P1 屏显不变）= deferred 设备轮（RC-A4）。
  *   coverage: RC-A2 分类互斥 -> test 8（分类写点单点 + OnDisconnected 消费先于回调 +
  *             A 区零 ScheduleResidentRebuild + 三会话收尾点零直调缝 + 全文件 helper
- *             恰 4 处）。真机半 = deferred 设备轮（RC-B4/B5 对账）。
+ *             恰 5 处——261024-vq-overlay-close-end-session 重钉 4→5, 定义 + 四调用点;
+ *             第四调用点 HandleEndVoiceSessionEvent 未纳入零直调缝守卫 = 按该包
+ *             plan ⑧-2 冻结口径, planner 可另案收紧）。真机半 = deferred 设备轮
+ *             （RC-B4/B5 对账）。
  *   coverage: RC-A3 复用守卫 -> test 9（B helper 区复用 TryStartAutoConnect + 经
  *             Schedule( 回主循环 + 零 OpenAudioChannel/零退避消费/零 SetDeviceState
  *             + kResidentRebuildDelayS 定义消费下界 + A 区零 OpenAudioChannel）。
  *   coverage: RC-B1 永不休眠 -> test 10（板级文件零休眠接线 needle + 直连 sleep API
  *             零命中 + common 层休眠入口文件在世 canary + CanEnterSleepMode 既有门
  *             在世）。设计态绿（现状结构事实钉死; 变异敏感 = 板级加接线即红）。
- *   coverage: RC-B2 常驻重建 -> test 11（T=5 冻结进首定义片段 + 三会话收尾点各恰
- *             一次 + 各区既有 close token 零偏移锚）。真机半（收尾 T 秒内重建、跨夜
- *             提醒可达）= deferred 设备轮（RC-B4）。
+ *   coverage: RC-B2 常驻重建 -> test 11（T=5 冻结进首定义片段 + 四会话收尾点各恰
+ *             一次——261024-vq-overlay-close-end-session 追加 HandleEndVoiceSession-
+ *             Event 第四项 + 各区既有 close token 零偏移锚）。真机半（收尾 T 秒内
+ *             重建、跨夜提醒可达）= deferred 设备轮（RC-B4）。
  *   coverage: RC-B3 负锚 -> test 12（五路径零重建排程 + 既有 close token 在世）。
  *             实现前 trivially green（负锚在 B 缝在世后才承载）; 变异敏感 = 任一负锚
  *             区新增重建排程即红。
@@ -1179,7 +1183,9 @@ TEST_CASE("断线重连常驻: 服务端断自动重连排程 (RC-A1)",
  * MUST-STAY-GREEN 半：三会话收尾点区 + A 区 + OnDisconnected 区可切（锚在世）。
  * RED today：分类写点计数 0 ≠ 1（标记未落）。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 4 处（定义 + 三调用点, 零泄漏面） */
+/* coverage: RC-A2 -- 服务端断路径与常驻重建路径触发分类互斥：分类写点单点（local_close_pending_ = true 恰 1）+ OnDisconnected 消费先于回调 + A 区零 ScheduleResidentRebuild + 三会话收尾点零直调 TryStartAutoConnect + 全文件 ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点, 第四点 = HandleEndVoiceSessionEvent, 零泄漏面） */
+/* coverage: OCE-A2 -- 既有断言重钉（本文件承载面）: RC-A2 tooth 6 全文件 ScheduleResidentRebuild() 计数 4→5（定义 + 四会话收尾点, 第四点 = HandleEndVoiceSessionEvent）+ RC-B2 sites 数组追加第四项承载；verifier round 1 判红锚 = RC-A2 tooth6 重钉段 */
+/* coverage: OCE-A3 -- 回归网（四族全绿 + host 全量零新增红 vs 冻结基线 236T3F）: 判据锚 = verifier round evidence（host 全量 runner 结果），本标记为覆盖登记、非本文件单断言承载 */
 TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
           "[boot_auto_connect][RC-A2][structural]")
 {
@@ -1255,12 +1261,16 @@ TEST_CASE("断线重连常驻: 本地关分类互斥 (RC-A2)",
         free(region);
     }
 
-    /* tooth 6 (RED today): 全 application.cc ScheduleResidentRebuild() 恰 4 处
-     * （定义 + 三调用点; 泄漏到其它路径 = 分类面破）。 */
+    /* tooth 6 (RED today; OCE-A2 重钉, 261024-vq-overlay-close-end-session):
+     * 全 application.cc ScheduleResidentRebuild() 恰 5 处（定义 + 四调用点;
+     * 泄漏到其它路径 = 分类面破）。重钉事由: 新增第四会话收尾点
+     * HandleEndVoiceSessionEvent（播报态关层结束会话, TECH-261024 修复）也调
+     * helper, 原计数恰 4 改后必红——「定义 + 三调用点」改钉「定义 + 四调用点」。 */
     n = kac_count_in_file(KAC_APP_CC, KAC_B_HELPER_CALL_ND);
-    TEST_ASSERT_TRUE_MESSAGE(n == 4,
-        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（冻结恰 4: "
-               "定义 + 三会话收尾点）——触发点泄漏或缺失", n));
+    TEST_ASSERT_TRUE_MESSAGE(n == 5,
+        kac_fm("RC-A2 RED: application.cc ScheduleResidentRebuild() = %d 处（冻结恰 5: "
+               "定义 + 四会话收尾点, OCE-A2 重钉 261024-vq-overlay-close-end-session）"
+               "——触发点泄漏或缺失", n));
 }
 
 /* -------------------------------------------------------------------------- *
@@ -1381,11 +1391,13 @@ TEST_CASE("断线重连常驻: 永不休眠结构事实 (RC-B1)",
 }
 
 /* -------------------------------------------------------------------------- *
- * TEST 11 — RC-B2 会话收尾常驻重建（T = 5 冻结 + 三调用点恰一次 + 既有语义零偏移）。
+ * TEST 11 — RC-B2 会话收尾常驻重建（T = 5 冻结 + 四调用点恰一次 + 既有语义零偏移;
+ * 第四调用点 HandleEndVoiceSessionEvent 为 261024-vq-overlay-close-end-session 重钉
+ * ——OCE-A2, plan ⑧-2）。
  * MUST-STAY-GREEN 半：三调用点区既有 close token 在世（现状即绿）。
  * RED today：kResidentRebuildDelayS / ScheduleResidentRebuild 全仓零命中。
  * ------------------------------------------------------------------------ */
-/* coverage: RC-B2 -- 会话收尾类本地关 → T 秒内恰一次常驻重建排程：kResidentRebuildDelayS 首定义片段含 5（T 冻结值, 改值须回 planner 重冻结）+ 定义消费下界 + 三会话收尾点（:805/:849/:1189 plan 归类表, builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰 1 + 各区既有 close token 零偏移锚 */
+/* coverage: RC-B2 -- 会话收尾类本地关 → T 秒内恰一次常驻重建排程：kResidentRebuildDelayS 首定义片段含 5（T 冻结值, 改值须回 planner 重冻结）+ 定义消费下界 + 四会话收尾点（:805/:849/:1189 plan 归类表 + HandleEndVoiceSessionEvent 261024-vq-overlay-close-end-session 追加, 各恰 1; builder 复核 :1189 语义后留痕为验收前提）各调 ScheduleResidentRebuild() 恰 1 + 各区既有 close token 零偏移锚 */
 TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
           "[boot_auto_connect][RC-B2][structural]")
 {
@@ -1404,6 +1416,12 @@ TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
         { "void Application::WakeWordInvoke(",
           "bool Application::CanEnterSleepMode()",
           "WakeWordInvoke Listening(:1189)", "CloseAudioChannel()" },
+        /* OCE-A2 追加第四项（261024-vq-overlay-close-end-session）: 播报态关层结束
+         * 会话收尾点（TECH-261024 修复, plan ②）——落 HandleStopListeningEvent 与
+         * HandleWakeWordDetectedEvent 之间（既有验收切区锚决定, 勿挪）。 */
+        { "void Application::HandleEndVoiceSessionEvent()",
+          "void Application::HandleWakeWordDetectedEvent()",
+          "EndVoiceSession(261024)", "protocol_->CloseAudioChannel()" },
     };
     char *region, *def;
     const char *p5;
@@ -1412,8 +1430,9 @@ TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
 
     KAC_REQUIRE_ROOT();
 
-    /* tooth 1 (MUST-STAY-GREEN): 三调用点区既有 close token 在世——既有语义零偏移
-     * （:805 = K3 [S5] 录音态丢弃面, :849 = toggle 收尾, :1189 = 唤醒词收尾）。 */
+    /* tooth 1 (MUST-STAY-GREEN): 四调用点区既有 close token 在世——既有语义零偏移
+     * （:805 = K3 [S5] 录音态丢弃面, :849 = toggle 收尾, :1189 = 唤醒词收尾,
+     * EndVoiceSession = 261024 关层收尾）。 */
     for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
         region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
         TEST_ASSERT_NOT_NULL_MESSAGE(region,
@@ -1442,7 +1461,7 @@ TEST_CASE("断线重连常驻: 常驻重建T值冻结 (RC-B2)",
         kac_fm("RC-B2 RED: kResidentRebuildDelayS 在 application.cc 仅 %d 处（下界 2: "
                "定义 + helper 消费）——T 常量未接重建路径", n));
 
-    /* tooth 4 (RED today): 三调用点各调 ScheduleResidentRebuild() 恰 1 次。 */
+    /* tooth 4 (RED today): 四调用点各调 ScheduleResidentRebuild() 恰 1 次。 */
     for (i = 0; i < sizeof(sites) / sizeof(sites[0]); i++) {
         region = kac_region_between(KAC_APP_CC, sites[i].start, sites[i].end);
         TEST_ASSERT_NOT_NULL_MESSAGE(region,
@@ -1637,4 +1656,36 @@ TEST_CASE("断线重连常驻: 负锚五路径零重建 (RC-B3)",
  *        首定义片段无 5, T 冻结破）。
  *     M12 (RC-B3) Reboot 区加 ScheduleResidentRebuild() 调用 → 期望 TEST 12 红
  *        （Reboot 区 helper 计数 1 ≠ 0; TEST 8 tooth 6 恰 4 破连带 = 泄漏面独立承载）。
+ * --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+ * 重钉留痕（261024-vq-overlay-close-end-session, acceptance-author 2026-10-24;
+ * tighten-only 纯 additive/等值重钉, 语义零放松）:
+ *   真机事故 TECH-261024（播报态关层只打断未结束会话）新增第四会话收尾点
+ *   HandleEndVoiceSessionEvent（播报态关层统一结束入口, plan ②）, 两处既有断言重钉:
+ *     ① RC-A2 tooth 6（OCE-A2, plan ⑧-2）: 全文件 ScheduleResidentRebuild() 恰 4 →
+ *        恰 5（定义 + 四调用点）;
+ *     ② RC-B2 sites 数组追加第四项（OCE-A2, plan ⑧-2）: void Application::
+ *        HandleEndVoiceSessionEvent() → HandleWakeWordDetectedEvent()（下一函数锚,
+ *        位置由 plan ② 既有验收切区锚决定勿挪）, tooth 1/4 对四项各恰 1。
+ *   义务红形态偏移（相对 2026-10-11 RC 批判读口径）:
+ *     - TEST 11 (RC-B2) 今天首红 = tooth 1 RED(infra)（第四项 start needle 零命中,
+ *       函数未落; 既有三项 close token 锚先行绿）; builder 落地后 tooth 1 全绿,
+ *       tooth 2 起仍按原口径;
+ *     - TEST 8 (RC-A2) 今天首红 = tooth 6（计数 4 ≠ 5）; builder 落地后转绿;
+ *     - MUTATION REPLAY MAP M12 注: 「TEST 8 tooth 6 恰 4 破连带」今天读作
+ *       「恰 5 破连带」（Reboot 区加排程 → 计数 6 ≠ 5, 判读不变）。
+ *   范围申报（planner 备读, advisory）: RC-A2 tooth 5 零直调 TryStartAutoConnect
+ *   守卫数组维持三站点未加第四项（按该包 plan ⑧-2 冻结口径; 新收尾点经 helper 调用,
+ *   守卫不承载——若 planner 判定需同守第四点, 走 tighten-only 返钉）。
+ *   2026-10-24  补标记（verifier round 1 acceptance-coverage 闸红, changeId
+ *               261024-vq-overlay-close-end-session）: TEST 8 头注补 OCE-A2 coverage
+ *               标记（RC-A2 tooth6 计数 4→5 + RC-B2 sites 第四项承载面登记）+
+ *               OCE-A3 回归网登记标记——纯注释行, 零断言语义变更、零测试计数变化
+ *               （acceptance-author, verifier round 1 派单）。
+ *   2026-10-24  头注等值修注（changeId 261024-vq-overlay-close-end-session）:
+ *               TEST 8 (RC-A2) 头注 coverage 行存量「ScheduleResidentRebuild() 恰 4 处
+ *               （定义 + 三调用点）」措辞滞后于 tooth 6 重钉断言（恰 5、定义 + 四调用
+ *               点, 第四点 = HandleEndVoiceSessionEvent）——同步修注, 纯注释行、零断言
+ *               逻辑变更、零测试计数变化。
  * --------------------------------------------------------------------------- */

@@ -2,12 +2,15 @@
   "case": "kidpal-agent-tools-allowlist",
   "change": {
     "path": "agents.entries.kidpal.tools.allow",
-    "allow": ["read", "write", "exec", "web_search"]
+    "allow": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
   },
   "drift_guard": [
     {
       "path": "agents.entries.kidpal.tools",
-      "expect": "unset"
+      "expect_any": [
+        "unset",
+        {"allow": ["read", "write", "exec", "web_search"]}
+      ]
     }
   ],
   "backup": {
@@ -17,5 +20,5 @@
   "rollback": {
     "script": "rollback_agent_tools.py"
   },
-  "_note": "261022-m5-k1-prompt-carrier-migration K1-E4 声明工件。kidpal agent 工具面收窄为四项（read / write / exec / web_search）——全局 tools.profile=\"coding\" 对设备 agent 意味着 34 工具 57KB schema/轮（TECH-261022 证据 3）。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明；drift_guard 现状锚 = kidpal agent 未设工具覆写（全局 profile 生效）。apply_agent_tools.py 幂等应用、写前时间戳备份；rollback_agent_tools.py 一步还原。与 261017-openclaw-kidpal-skills 的 skills 白名单定点 patch 作用于同一运行态文件，组合共存、互不整文件改写。"
+  "_note": "261022-m5-k1-prompt-carrier-migration K1-E4 声明工件；2026-10-24 由 261024-memory-recall-tool-enable 换代（K1-E4 显式换代，非静默放宽）。kidpal agent 工具面 = 恰五项（read / write / exec / web_search / honcho_search_conclusions）——前四项承 261022 收窄（全局 tools.profile=\"coding\" 对设备 agent 意味着 34 工具 57KB schema/轮，TECH-261022 证据 3）；第五项 honcho_search_conclusions 用途 = 历史事实检索：被动注入的画像窗口只覆盖最近 100 条结论（9/30 的旧事在窗口外），孩子问起旧事时由「记忆回忆回合」调一次该工具查 owner 自我视角结论（backfill 344 条已在库、实测可命中）。honcho_search_messages 刻意不放行——原始消息面含家长代述与流程性内容，不适配儿童端回合（k4-recall-architecture-20261024 §B 选项 3）。drift_guard 现状锚 = 升级基准：同时接受 ① 新机态（agents.entries.kidpal.tools 键缺席 'unset'）与 ② live 既有态（上一代四项覆写已应用 {allow:[read,write,exec,web_search]}）；目标态五项不进基线集——由 apply 的幂等分支承载（幂等 SKIP 先于 drift-guard），基线集以外（异值 / 六项 / 键在场但非对象）一律 fail-closed 判 drift。apply_agent_tools.py 双形态：直写（幂等 / drift / 写前时间戳备份 / 只改一键）保留，另增 --gen-patch 生成 openclaw config patch 消费文件（配置只经 OpenClaw 自有写入口落盘）；rollback_agent_tools.py 一步还原。与 261017-openclaw-kidpal-skills 的 skills 白名单定点 patch 作用于同一运行态文件，组合共存、互不整文件改写。openclaw.json 含 gateway 凭据、整文件不入仓，只入本无 secret 声明。"
 }
