@@ -1,0 +1,89 @@
+{
+  "changeId": "261025-openclaw-dreaming-disable",
+  "rigor": "lite",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md",
+    "upstreamFrozen": "技术权威 = 诊断件 §4 architect 裁决（方案 A：全局关闭 memory-core dreaming）+ §5 human 2026-10-25 四裁决（采纳 A / 清理归 human 运维轮 / spec 修订并入面 C / 回归防线先记 debt + runbook 钉一行）；证据 = ECS 2026-10-25 实测（做梦会话 5 / 消息 16 / owner 侧结论 17 / 最近 100 条窗口 13 条做梦来源 / 两 workspace 无 MEMORY.md）。无 upstream PROPOSAL。前账依赖 = 261025-kidpal-tools-profile-fix（live tools 面升级态）。",
+    "workstream": "device-memory-overhaul"
+  },
+  "subsystem": "server/deploy/261025-openclaw-dreaming-disable/（新建：声明 changes 恰一叶键 plugins.entries.memory-core.config.dreaming.enabled=false + drift_guard 两态接受/两态 fail-closed + apply 安全编排 + rollback 备份还原+重启面）+ server/deploy/manifest.yaml（三件登记）+ server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md（升级检查清单钉一行）+ server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py（新建冻结件 DD-A1..DD-A5）",
+  "story": "非 story 来源（human-ad-hoc 技术/运维包）：语义权威 = 诊断件 §4 architect 裁决 + §5 human 四裁决；无 requirements story 回指（spec 修订并入在途面 C，本包零 requirements diff）。",
+  "planRef": "delivery/taskpackages/261025-openclaw-dreaming-disable/plan.md",
+  "sourceRefs": [
+    "docs/debt/tech/TECH-261025-dreaming-capture-pollutes-honcho.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md",
+    "delivery/taskpackages/261025-kidpal-tools-profile-fix/taskpackage.json"
+  ],
+  "acceptance": ["DD-A1", "DD-A2", "DD-A3", "DD-A4", "DD-A5"],
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py"
+  ],
+  "impactedTests": [
+    "server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py",
+    "server/acceptance/test_prompt_v7_round_routing.acceptance.py",
+    "server/acceptance/test_261022_memory_isolation.acceptance.py",
+    "server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py",
+    "server/acceptance/test_261022_honcho_memory.acceptance.py",
+    "server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py",
+    "server/acceptance/test_261022_persistent_session.acceptance.py",
+    "server/acceptance/test_261022_honcho_backfill.acceptance.py",
+    "server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py",
+    "server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py"
+  ],
+  "requiredLayers": ["unit", "acceptance-offline", "live-manual"],
+  "redBaselineCommand": "cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance/test_261025_openclaw_dreaming_disable.acceptance.py",
+  "redBaselineResult": "2026-10-25 acceptance-author 冻结时实测（planner 独立复跑冻结前基线同值）：本包新件 `cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance/test_261025_openclaw_dreaming_disable.acceptance.py` = 17 failed / 0 passed / 0 error（17 收集；全部指向本包未实现：声明缺失 / apply 缺失 / rollback 缺失 / manifest 零登记 / runbook 无盘点行 / 零 secret 无承载面，无环境或测试自身错误）。全量 offline 同树 = 17 failed / 353 passed / 7 deselected / 33 subtests passed；冻结前同树基线 = 353 passed / 7 deselected / 33 subtests ⇒ 既有 353 条零回退、新增 17 条全红即设计态红。双向可满足性：acceptance-author 在仓外临时树以参考实现实测 17 passed，另两条反向变异各让对应断言转红（脚手架已删除、不构成 builder 实现约束）。",
+  "exitCriteria": [
+    "DD-A1: 声明 changes 恰一个叶键 plugins.entries.memory-core.config.dreaming.enabled，值恰 false；声明不得引入 memory-core 其它键（负锚）。",
+    "DD-A2: apply --gen-patch 产物可被 stdlib json 解析，展平叶键集恰一个叶键（点分路径与值逐字 = 声明 change）。",
+    "DD-A3: drift-guard 两态接受（dreaming 叶 unset=fresh 机 / false=目标态），两态 fail-closed（dreaming 叶显式 true → drift；261025 工具面回退：allow 四项或 profile 缺席/非 full 或 deny 非空 → drift），拒绝 = exit 3 零写零备份零外部命令。",
+    "DD-A4: 幂等预检——config 已达标（dreaming false + 工具面升级态）→ SKIP exit 0，config 逐字节不变、零备份、零外部命令；SKIP 分支若工具面基线漂移则打印 WARN（exit 0 不变，非静默）。",
+    "DD-A5: 声明不得引入 memory-core 其它键（负锚机械承载：changes 路径集恰一条；drift_guard 对 memory-core 路径只允许 dreaming.enabled 叶）。",
+    "apply 安全编排（注入桩真跑）：首个外部命令 = config patch --dry-run；序链 dry-run → 正式 patch(--file) → config validate → systemctl restart → openclaw health；零 plugins install/inspect/doctor（memory-core 为 bundled）；正式 patch 之前零 config 改写、之后仅经 OpenClaw 写入口单次改写；health 之后附 NRestarts 崩循环核对（K3 exit 78 教训）。",
+    "rollback：备份整档还原 + 重启面（--systemctl-bin 注入桩；非 dry-run 时还原后先 openclaw config validate，通过才 systemctl restart openclaw-gateway，validate 失败则不重启并报错；--dry-run 只打印不写不重启）。",
+    "禁脚本直写 openclaw.json（头注/实现零直写路径）；openclaw.json 整文件零入仓；声明零 secret。",
+    "manifest.yaml 登记声明/apply/rollback 三件（dst 落 /opt/kidpal/openclaw-patch/261025-openclaw-dreaming-disable/，owner deploy.sh / verify md5 / restart none）。",
+    "DEPLOY-RUNBOOK.md 升级检查清单钉一行：dreaming-narrative-* / cron:* / heartbeat:* / subagent:* 家族必须为空，引 debt 条目。",
+    "全量 offline 验收绿（新增断言红→绿）且既有套件零回退；docs/ 树零 diff（docsSyncRequired=false 有据）。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": ["docs/contracts/interface-contract.md"],
+  "docRefs": [
+    "docs/debt/tech/TECH-261025-dreaming-capture-pollutes-honcho.md",
+    "delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md",
+    "delivery/taskpackages/261025-kidpal-tools-profile-fix/taskpackage.json",
+    "server/deploy/manifest.yaml"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "本批 = 云端部署声明工件 / apply-drift-rollback 脚本 / 部署 runbook 一行升级清单 / 新建冻结验收件；docs/ 树（requirements/architecture/contracts/ADR）零改动；spec 修订按 human 裁决归在途面 C。部署 runbook 属 server/deploy 运维面，由 docs-delta 记录。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": true,
+  "securityEvidence": "安全面：①只改一个布尔叶键（dreaming.enabled=false），零新增出网、零权限扩大、零 secret 触碰；②配置写入口纪律 = 只经 openclaw config patch（写前 --dry-run --json 核 checks.schema===true），脚本零直写 openclaw.json（K3 实证直写 → exit 78 崩循环）；③drift-guard fail-closed：dreaming 叶显式 true / 工具面回退（allow 四项、profile 缺席或非 full、deny 非空）一律 exit 3 零写；④幂等 SKIP 零外部命令；⑤写前时间戳备份 + 一步回滚（备份整档还原 + 重启）；⑥openclaw.json 含 gateway 凭据、整文件不入清单不入仓，本包只入无 secret 声明；⑦零数据迁移 / 零库写（清理归 human 运维轮）。",
+  "adrRequired": false,
+  "mutationRequired": false,
+  "mutationSkipReason": "声明 / 配置脚本 / 验收锚的 Lite 包：证据以冻结断言（offline 真跑 gen-patch 单叶 + drift 两态接受两态拒绝 + 幂等 SKIP + 注入桩编排调用序 + 回滚）+ live 既有实证（261025 工具面已部署）承载，变异取证 ROI 不成立。",
+  "mutationEvidence": { "perAcceptance": [] },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包只改云端 OpenClaw 部署声明/脚本与部署 runbook：设备端零感知、固件零 diff；不新增或改变端→网关消息、帧类型、字段承载与序列化形态。"
+  },
+  "changeManifest": [
+    "server/deploy/261025-openclaw-dreaming-disable/**",
+    "server/deploy/manifest.yaml",
+    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md",
+    "server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": ["delivery/workstreams/device-memory-overhaul/"],
+  "riskTier": "high",
+  "gateProfile": ["security"],
+  "mergeOrder": 58,
+  "dependsOn": ["261025-kidpal-tools-profile-fix"],
+  "notes": "① 设计决定（architect 1g 预评回填，见 plan.md 技术方案节）：声明写入面 = changes[{path,value}] 恰一条（与姊妹 honcho/kidpal-tools 同族形态）；drift_guard = 现状锚 AND：dreaming.enabled 叶 expect_any ['unset', false]（fresh 机接受 / 目标态 SKIP / 显式 true → drift，布尔叶加 `cur is False` 严格判防 `0==False`）+ 261025 工具面三叶（deny expect_any ['unset',[]] / profile **精确 'full'（不接受 unset——本包是工具面消费方，接受 unset 即放过回退，fresh 机由 exit 3 指引先跑 261025）** / allow 五项精确，顺序敏感）。drift_problems 实现复制 apply_agent_tools.py（含 _MALFORMED 哨兵 + expect_any），不复制 honcho 版（无 expect_any 且父键非对象误判为键缺席）。② SKIP/drift 先后 = 照 apply_honcho_plugin.py「SKIP 先于 drift」：写目标仅 dreaming 一叶，达标即零外部命令零写；工具面锚是前置基线非写目标。SKIP 分支打印 drift WARN（exit 0 不变）避免静默，DD-A4 内钉子 case。与 kidpal-tools「联合幂等」有意不同（那边 deny 非空是写目标红线）。③ apply 无 plugins install/inspect/doctor（memory-core 为 bundled，源 = 261022 arch review advisory §1.2）；health 之后附 NRestarts 崩循环核对（K3 exit 78 教训）；编排对外部命令唯一出口经 --openclaw-bin 注入桩。④ rollback = 备份整档还原 + 先 openclaw config validate 通过才 systemctl restart openclaw-gateway（--systemctl-bin 注入桩可离线真跑；--dry-run 只打印）；头注显式区分「还原已知合法快照」与「禁脚本直写新目标态绕过 zod」。⑤ 负锚：声明 changes 不得引入 memory-core 其它键（drift_guard 只允许 dreaming.enabled 这一个 memory-core 叶）。⑥ 声明不加顶层 plugins 镜像（唯一消费者读 changes/drift_guard，镜像造第二事实源）。⑦ 部署轮残余风险：config patch 对 plugins.entries.memory-core 的合并语义仓内无取证——若为整对象替换可能挤掉其它 config 键，部署轮须 patch 前后 openclaw config get plugins.entries.memory-core 比对，差异只允许 dreaming.enabled；若 live 实测 dreaming.enabled 为显式 true（非缺省），apply 会 fail-closed exit 3，须人工确认显式态来源后经显式换代纳入接受集，不得静默放宽。⑧ 红线：不碰 docs/contracts/**、不改 AGENTS.md、不动 Honcho 栈/backfill、零数据迁移、不碰 server/gateway/**、不改 docs/architecture.md 与 ADR、不 push/不合并/不碰 ECS。"
+}
