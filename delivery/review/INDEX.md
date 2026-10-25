@@ -11,7 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261025-gov-review-release-pr-publish](261025-gov-review-release-pr-publish/) | 2026-10-25 | landed | — |
+| [261025-gov-review-release-pr-publish](261025-gov-review-release-pr-publish/) | 2026-10-25 | landed | yes |
 | [261023-arch-review-memory-wiring-verified-behavior](261023-arch-review-memory-wiring-verified-behavior/) | 2026-10-23 | landed | yes |
 | [261022-arch-review-device-memory-prompt-overhaul](261022-arch-review-device-memory-prompt-overhaul/) | 2026-10-22 | landed | — |
 | [261021-arch-review-p3-record-cancel-lifecycle](261021-arch-review-p3-record-cancel-lifecycle/) | 2026-10-21 | landed | — |
