@@ -1,0 +1,35 @@
+{
+  "case": "memory-core-dreaming-global-disable",
+  "changes": [
+    {
+      "path": "plugins.entries.memory-core.config.dreaming.enabled",
+      "value": false
+    }
+  ],
+  "drift_guard": [
+    {
+      "path": "plugins.entries.memory-core.config.dreaming.enabled",
+      "expect_any": ["unset", false]
+    },
+    {
+      "path": "agents.entries.kidpal.tools.deny",
+      "expect_any": ["unset", []]
+    },
+    {
+      "path": "agents.entries.kidpal.tools.profile",
+      "expect": "full"
+    },
+    {
+      "path": "agents.entries.kidpal.tools.allow",
+      "expect": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
+    }
+  ],
+  "backup": {
+    "dir": "/root/.openclaw",
+    "pattern": "openclaw.json.bak-kidpal-dreaming-*"
+  },
+  "rollback": {
+    "script": "rollback_dreaming_disable.py"
+  },
+  "_note": "261025-openclaw-dreaming-disable 声明工件：全局关闭 memory-core 插件的 dreaming 后台子回合，写入面 = 恰一个布尔叶键 dreaming.enabled，值为 false。为什么需要全局关闭——memory-core 是 OpenClaw bundled 插件，dreaming 开关没有 per-agent 作用域，无法只对 kidpal 侧关掉；而做梦子回合的 session key（dreaming-narrative-memory-core-v2 前缀）在 Honcho 插件里落入 chat 分支（isSystemRun 只认 cron / heartbeat / internal_system 三条，classifySession 只认 subagent: 与 cron:），故做梦片段被当 owner 话语抽成结论污染画像（ECS 2026-10-25 实测：owner 侧最近 100 条结论窗口里 13 条来自做梦；两 workspace 均无 MEMORY.md = 零永久产出）。重评触发 = 若 main 侧出现「手动 MEMORY.md 维护不可接受」的实际诉求，必须整体重开 dreaming 并重评 kidpal 侧污染（开关无粒度，不得局部开启）。drift_guard = 四条叶路径 AND 的现状锚：dreaming 叶接受 unset（fresh 机）或 false（目标态），显式 true = drift；工具面三叶锚 261025 工具面 live 升级态（deny 空 / profile 恰 full / allow 恰五项且顺序敏感）——profile 不接受 unset，本包是工具面消费方而非生产者，接受缺席即放过工具面回退，fresh 机由 exit 3 报文指引先跑 261025。禁脚本直写 openclaw.json：配置改动只经 openclaw config patch（写前 --dry-run --json 核 checks.schema === true），写前时间戳备份 + 一步回滚。openclaw.json 整文件不入仓（含网关凭据），本声明零 secret。"
+}

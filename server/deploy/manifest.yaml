@@ -248,11 +248,11 @@ entries:
   - {src: server/deploy/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/kidpal-agent-tools-declaration.json,
      owner: deploy.sh, verify: md5, restart: none,
-     note: kidpal agent tools.allow 收窄声明（恰四项 read/write/exec/web_search + drift_guard + backup + rollback；无 secret）}
+     note: kidpal agent tools 两叶写入面声明（tools.profile=full + tools.allow 恰五项 read/write/exec/web_search/honcho_search_conclusions + drift_guard + backup + rollback；无 secret）}
   - {src: server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/apply_agent_tools.py,
      owner: deploy.sh, verify: md5, restart: none,
-     note: 幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 只改 agents.entries.kidpal.tools.allow）}
+     note: "幂等 apply（SKIP exit 0 / drift-guard exit 3 / 写前时间戳备份 / 只改 agents.entries.kidpal.tools.{profile,allow}）"}
   - {src: server/deploy/261022-openclaw-kidpal-tools/rollback_agent_tools.py,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-kidpal-tools/rollback_agent_tools.py,
      owner: deploy.sh, verify: md5, restart: none,
@@ -310,11 +310,11 @@ entries:
   # OpenClaw 插件 / 调用的端点不存在），接线 = 上游 npm 插件 @honcho-ai/openclaw-honcho@1.7.0
   # + plugins.entries.openclaw-honcho 4 键（noisePatterns 已随 261024 换代退役）。
   # 与 261017 skills / 261022 P1 tools 声明工件作用于同一运行态文件，组合共存、
-  # 互不整文件改写；drift_guard 现状锚 = P1 已应用态（tools.allow 四项）。
+  # 互不整文件改写；drift_guard 现状锚 = P1 已应用态（tools.allow 五项）。
   - {src: server/deploy/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/honcho-plugin-declaration.json,
      owner: deploy.sh, verify: md5, restart: none,
-     note: Honcho 插件声明（plugins.entries.openclaw-honcho 4 键：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId=kidpal；noisePatterns 第 5 键随 261024 换代退役——退役无机械验证面，实证 = 部署轮实读 openclaw.json；drift_guard 现状锚 = P1 tools.allow 四项已应用态；零 secret）}
+     note: Honcho 插件声明（plugins.entries.openclaw-honcho 4 键：enabled / hooks.allowConversationAccess / config.baseUrl / config.workspaceId=kidpal；noisePatterns 第 5 键随 261024 换代退役——退役无机械验证面，实证 = 部署轮实读 openclaw.json；drift_guard 现状锚 = P1 tools.allow 五项已应用态；零 secret）}
   - {src: server/deploy/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/apply_honcho_plugin.py,
      owner: deploy.sh, verify: md5, restart: none,
@@ -323,6 +323,24 @@ entries:
      dst: /opt/kidpal/openclaw-patch/261022-openclaw-honcho-plugin/rollback_honcho_plugin.py,
      owner: deploy.sh, verify: md5, restart: none,
      note: 三级回滚序第 ② 级（一步还原时间戳备份；--backup 默认取 config 旁最新声明 pattern 匹配件；--dry-run 只打印）；第 ① 级 plugins disable + restart、第 ③ 级 plugins uninstall 见脚本头注}
+
+  # ── memory-core dreaming 全局关闭声明工件（261025-openclaw-dreaming-disable / DD-A1..A5）──
+  # openclaw.json 含 gateway 凭据、整文件不入仓；只入无 secret 声明 + 安全 apply/回滚脚本。
+  # 写入面 = 恰一个布尔叶键（dreaming.enabled=false）；memory-core 为 bundled 插件，零
+  # plugins install / inspect / doctor；与 261017 skills / 261022 tools / honcho 声明工件
+  # 作用于同一运行态文件，组合共存、互不整文件改写。
+  - {src: server/deploy/261025-openclaw-dreaming-disable/dreaming-disable-declaration.json,
+     dst: /opt/kidpal/openclaw-patch/261025-openclaw-dreaming-disable/dreaming-disable-declaration.json,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "memory-core dreaming 全局关闭声明（changes 恰一个布尔叶键 dreaming.enabled=false + 四条 drift_guard 现状锚 + backup + rollback；零 secret）"}
+  - {src: server/deploy/261025-openclaw-dreaming-disable/apply_dreaming_disable.py,
+     dst: /opt/kidpal/openclaw-patch/261025-openclaw-dreaming-disable/apply_dreaming_disable.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "安全 apply（幂等 SKIP exit 0 且 SKIP 分支工具面漂移打 WARN / drift-guard exit 3 / 写前时间戳备份 / dry-run schema → 正式 config patch → validate → restart → health → NRestarts；零脚本直写 openclaw.json）"}
+  - {src: server/deploy/261025-openclaw-dreaming-disable/rollback_dreaming_disable.py,
+     dst: /opt/kidpal/openclaw-patch/261025-openclaw-dreaming-disable/rollback_dreaming_disable.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "一步回滚（整档还原 apply 前时间戳快照 → config validate 通过才 restart；--backup 默认取最新 pattern 匹配件；--dry-run 只打印）"}
 
   # ── reminder 面（cron 消费位直管，OQ-1(a)——本批修复的路径分裂落点）──
   - {src: server/deploy/openclaw-patch/reminder_schedule_lib.py,

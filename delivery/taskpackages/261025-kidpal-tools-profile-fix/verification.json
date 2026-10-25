@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "1.0",
+  "artifactType": "verification",
+  "authority": "advisory",
+  "producedBy": "integrator (projection of validated verifier-round fact)",
+  "changeId": "261025-kidpal-tools-profile-fix",
+  "finalRound": 2,
+  "phase": "final",
+  "invocationId": "a978bda7-cb8e-4139-b977-48be0a3fc768",
+  "evidenceRef": "delivery/taskpackages/261025-kidpal-tools-profile-fix/verifier-evidence/rounds/r2.json",
+  "factValidated": true,
+  "factOk": true,
+  "observedGateExit": 0,
+  "gatesRun": 10,
+  "gatesPassed": [
+    "taskpackage-required",
+    "change-manifest",
+    "firmware-build",
+    "contract-lint",
+    "acceptance-coverage",
+    "mutation-check",
+    "docs-sync",
+    "security",
+    "unit",
+    "acceptance"
+  ],
+  "gatesFailed": [],
+  "finalScopeFile": "delivery/taskpackages/261025-kidpal-tools-profile-fix/test-scope-final-r2.txt",
+  "finalScopeNote": "final 相位影响面圈定清单（Step 4 ① 合成，10 行）= 本包 acceptanceTestsFile 2 件（test_261022_openclaw_kidpal_tools / test_261022_memory_isolation）∪ impactedTests 种子新增 2 件（test_261022_honcho_memory / test_261017_openclaw_kidpal_skills——同一运行态 openclaw.json 组合面）∪ 共享 seam 6 件（manifest.yaml 被 test_261010_engine_decision21_overlay_persist / test_261013_qq_schedule_write_closure / test_261022_honcho_backfill / test_261022_m5_k1_prompt_carrier_migration / test_261022_persistent_session / test_prompt_v7_round_routing 各自 yaml.safe_load 解析；本包改 manifest 4 行且其中一条 note 因 flow mapping 花括号须整条加引号，YAML 一旦解析破损这 6 件同红，故计入安全余量）。changeManifest 八件中 rollback_agent_tools.py 零 diff（备份整档还原机制与键数无关）故不入 scope。留根注记：r2 fact 的 results 元数据未含 scope 路径行（verify.mjs 未把 --scope-file 透传落 fact，实测 r2.json 无 scope 字段），路径以本字段与 review-packet §2 承载。",
+  "finalScopedRun": {
+    "unit": "155 passed / 3 deselected（r2 unit 闸，按 10 件 scope 交集；18.93s）",
+    "acceptance": "155 passed / 3 deselected（r2 acceptance 闸，serverAcceptanceFiles=10、filesWithLiveMark=2/10；18.23s）",
+    "changedFilesOnly": "35 passed / 3 deselected（两份被改冻结件单独跑，-m \"not live\"）",
+    "fullSuiteReference": "全量口径（integrator 独立复跑，2026-10-25）= cd server && python -m pytest -q --import-mode=importlib -m \"not live\" acceptance = 353 passed / 7 deselected / 33 subtests passed（29.36s）；与 builder 全量实测、planner 独立复跑同值。冻结前同树 = 346 passed / 7 deselected / 33 subtests（353 收集）；冻结后设计态红 = 21 failed / 332 passed / 7 deselected / 33 subtests（360 收集，+7 = 本批新增 case），现 21 红全转绿、冻结前已通过的 346 条零回退"
+  },
+  "genPatchProjection": {
+    "command": "python server/deploy/261022-openclaw-kidpal-tools/apply_agent_tools.py --gen-patch <tmp>/kidpal-tools.patch.json",
+    "exit": 0,
+    "productFlatLeafKeys": {
+      "agents.entries.kidpal.tools.profile": "full",
+      "agents.entries.kidpal.tools.allow": ["read", "write", "exec", "web_search", "honcho_search_conclusions"]
+    },
+    "leafCount": 2,
+    "note": "integrator 独立实跑复核；冻结断言 test_k1_e4_gen_patch_product_exactly_target_leaves_and_zero_config_write 另以 config 字节相等与「config 缺失仍可生成」两态承载零 config 读写"
+  },
+  "verifierEvidenceCheck": {
+    "tool": ".claude/scripts/verifier-evidence-check.mjs",
+    "args": "--change-id 261025-kidpal-tools-profile-fix --phase final --round 2 --invocation-id a978bda7-cb8e-4139-b977-48be0a3fc768",
+    "exit": 0,
+    "factOk": true
+  },
+  "priorRounds": [
+    {
+      "round": 1,
+      "phase": "scoped",
+      "invocationId": "c2dd97d2-a609-45e2-bdaa-6e133c9a53a0",
+      "evidenceRef": "delivery/taskpackages/261025-kidpal-tools-profile-fix/verifier-evidence/rounds/r1.json",
+      "ok": true,
+      "observedGateExit": 0,
+      "note": "8 闸（lite 包 firmware-build scoped 相位后置，261015-gov-review-lite-fast-path；闸自报 executor-skipped 并经 liftNotExecuted 上收为 notExecuted）"
+    }
+  ],
+  "scopeDetection": {
+    "tool": "codebase-memory detect_changes（advisory 记账，Step 9b / Step 4 ① 范围判定消费）",
+    "project": "C-AI-KidPal-pod-m2",
+    "base": "main",
+    "mergeBase": "469ca84c35fa979a8bc256c44a4faa503eced016",
+    "changedFiles": 15,
+    "seedSymbols": 66,
+    "impactedTotal": 4,
+    "impactedModules": {
+      "server/acceptance": 4
+    },
+    "note": "impacted 四条全部落在被改的两份验收件自身的方法内（test_k1_e4_apply_timestamped_backup / K3OpenclawPatchAcceptance._orchestrate / test_k3_e6_apply_safe_orchestration_call_order / test_k3_e6_apply_timestamped_backup），production 代码零调用方（apply / rollback 是 CLI，仅被验收件按路径子进程调用）——爆炸半径自包含，与 test-scope 清单 10 件圈定一致。changedFiles 15 = dev/pod-m2 相对 main 的既有已提交债务/审查 commit（dreaming 污染诊断件、TECH/INDEX 账本、current/ 投影）+ 本包工作树七件 + 本包目录；per-Pod 专属图索引正常圈定、无降级。"
+  },
+  "docsSync": {
+    "docsSyncRequired": false,
+    "verified": "git status --porcelain docs/ 与 firmware/ 均为空；integrator 核实零 diff，零 diff 声明 + 已知残留陈旧行申报（docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md:27 四项字面，append-only 账本不改写）落 docs-delta.md"
+  },
+  "provenance": {
+    "closeoutArtifacts": [
+      "delivery/taskpackages/261025-kidpal-tools-profile-fix/docs-delta.md",
+      "delivery/taskpackages/261025-kidpal-tools-profile-fix/review-packet.md",
+      "delivery/taskpackages/261025-kidpal-tools-profile-fix/test-scope-final-r2.txt",
+      "delivery/taskpackages/261025-kidpal-tools-profile-fix/verdict.json",
+      "delivery/taskpackages/261025-kidpal-tools-profile-fix/verification.json"
+    ],
+    "workstream": "本包按 planner 派单边界不改 delivery/workstreams/device-memory-overhaul/progress.md / delivery/milestones/ / delivery/taskpackages/INDEX.md；deliveryImpact=milestone-affecting 的 workstream 收口节与 INDEX upsert 归 planner 主线程（回执已声明）",
+    "liveDeploy": "awaiting-human:live-deploy——live 三项（gen-patch 两叶产物被 openclaw config patch --dry-run --json 接受 / openclaw.json 实升级态复核 / 真机「王一诺是谁」问答）归 human 部署轮，命令单 = review-packet §5；Pod 不自行上 ECS",
+    "honchoDriftAnchor": "honcho 声明 drift_guard 现状锚四项→五项显式换代（apply_honcho_plugin.py drift_problems 代码零改，方案 A）；live 不可观测（插件 4 键已在目标态 → 幂等 SKIP 先于 drift），如实申报为离线证书；四项机器上本包 apply 仍 exit 3（顺序纪律）",
+    "rollback": "rollback_agent_tools.py 零 diff（备份文件整档还原，语义与键数无关）；零改由 git diff 事实 + landing diff 人读核验承载，行为由冻结件 rollback dry-run / 一步还原真跑覆盖",
+    "docsStaleLine": "docs/debt/tech/TECH-261023-openclaw-tool-face-prompt-only-readonly.md:27（及同文件 :20 历史 live 实况）仍写「四项」——append-only 债账本，本包不改写；换代权威 = honcho-plugin-declaration.json 的 _note + test_261022_memory_isolation.acceptance.py 头注/常量注释",
+    "gateSideEffect": "final 相位 firmware-build 真编译由 CMake 重生成 firmware/sdkconfig（Image Effects Configuration 空块）——闸副作用，commit 前已 git checkout 还原，firmware 面零 diff"
+  }
+}

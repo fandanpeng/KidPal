@@ -13,7 +13,9 @@ FROZEN OFFLINE CONTRACT §B2）：**双形态安全化**，「点分写入器直
     ⓪ 幂等预检：config 只读直判现状已达标 → 打印 SKIP、exit 0（零外部命令、
        零备份、零写）。
     ⓪' drift-guard：逐条核对 drift_guard，任一不中 → 打印 STOP、exit 3（零外部
-       命令、零备份、零写）。现状锚 = P1 已应用态（tools.allow 四项在位）。
+       命令、零备份、零写）。现状锚 = P1 已应用态（tools.allow 五项在位；
+       2026-10-25 随 261025-kidpal-tools-profile-fix 显式换代，drift_problems
+       代码零改）。
     ① 写前时间戳备份：config 同目录、basename + ".bak-kidpal-honcho-" + UTC
        yyyymmddTHHMMSS、内容 = 原始 config；
     ② patch 生成 → `openclaw config patch --file <p> --dry-run --json`，必须
