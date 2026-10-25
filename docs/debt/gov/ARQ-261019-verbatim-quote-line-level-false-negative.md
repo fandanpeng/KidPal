@@ -20,3 +20,5 @@ source: [delivery/review/261019-gov-review-local-memory-extraction/landing-verdi
 **建议改动**：verbatim-quote 检查由行级匹配改子串（indexOf）匹配，或对长行先做句子级切分再匹配（候选，交 review、不自批）。
 
 **风险**：riskTier: low——匹配精度提高属报错减少方向，不放宽任何 RED 判定。review profile: full-adversarial + human（触 G3 门脚本，如实标注）。
+
+**追加证据（2026-10-25，261025-gov-review-release-pr-publish）**：同一形态再次命中两条——`docs/DEV-GOVERNANCE.md:214` 与 `.claude/references/arch-review-protocol.md:58` 的替换句被结构门报 `not-found-verbatim-in-any-target`，实为长段中的子句、句后尚有文字（原句以 `**。` 收尾后仍接「例外升级拍板…」/「升级闸只重算…」）。`delivery/review/261025-gov-review-release-pr-publish/landing-verdict.md` ADVISORY A5 逐字在案；主线程以 node `includes` 实测两串逐字在场。根因定位到 `checkVerbatimQuotes`（`.claude/scripts/landing-fidelity-check.mjs:452-479`）：取 §2 围栏块正文（含块尾换行）后 `norm(content).includes(norm(block))`，尾换行使「子句替换」形态恒假阴性。候选修法：比对前对 `block` 做 `trim()`（或逐行 trim 后 `includes`），补一条「长行 + 子句 + 尾换行应判 found」自检夹具。
