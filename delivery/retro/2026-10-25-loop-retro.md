@@ -160,3 +160,104 @@
 2. **T3/T4 是新的结构性根**：相邻冻结锚与同分支多 Pod 都会把冲突推迟到最贵的相位才暴露，建议紧随 T1/T2 之后的治理批。
 3. **能力纪元分层**：本波模型混用（7 种取值）再次证明跨月比较不可混杂；`261024-gov-review-retro-efficiency-instrumentation` 正在等待立项 ack。
 4. **token coverage 首次 100%**：后续若再出现 unavailable，优先查 transcript 通道与 dispatch-stamp 调用侧旗标。
+
+## 八、效率表两张（2026-10-26 补录 · `retro-efficiency.mjs` 首次接入）
+
+> 本节为机制落地后按 `/loop-retro` 新输出契约（261024-gov-review-retro-efficiency-instrumentation T2）对本轮范围的补录；跑数时点 2026-10-26（本 worktree `gov/kidpal`，landing commit 6af59e93 之后）。口径以脚本为唯一权威，脚本输出原样贴出，本节不复述列定义。
+> **范围对齐说明**：脚本过滤键 = changeId 日期前缀。主表用 `--since 261013 --until 261023` 取得，恰为本轮在册的 261013–261023 各批（其中 `261013-p1-tomorrow-row-sliver-fix` 已于 2026-10-14 轮析出、因同窗口被带入，读表时剔除即可）；`260920-gov-review-dispatch-telemetry-source` 用 `--change-id` 单独取行。两份合计覆盖本轮 covered 全集，以 `.claude/loop-retro/ledger.jsonl` 的 `loop-retro-2026-10-25` 记录（25 个 coveredChangeIds）为准——§0 头注的分批计数与之有一处出入（261013 批实为 2 包、261022 批实为 8 包，`p1-tomorrow` 属上轮），不影响本轮分析结论。
+> 本节只补效率轴，不改 §一–§七任何既有行；游标已在收口时记录，无需重推。
+
+### 主表（--since 261013 --until 261023）
+
+# 效率表（since=261013 · until=261023）
+
+> 口径唯一权威 = `.claude/scripts/retro-efficiency.mjs`。代码/文档按 human 2026-10-26 二分域规则：源码恒代码、Markdown 恒文档、数据/配置与二进制按消费域（治理域→文档、业务域→代码）。token 只求和 `exact`；行数归因不到留空，不写 0；墙钟 = 首末事件差，事件稀疏时低估。
+
+## 一、Pod 表
+
+| changeId | 模型 | 代码行 | 其中测试行 | 文档行 | 文档代码比 | token | agent 分钟 | 墙钟分钟 |
+|---|---|---|---|---|---|---|---|---|
+| 261013-lang-config-thinking-fix | deepseek-v4.1+glm-5.3 | 60,017 | 12,231 | 125,046 | 2.08 | 613,638 (7/7) | 63.0 | 83.8 |
+| 261013-p1-tomorrow-row-sliver-fix | deepseek-flash+deepseek-v4.1+glm-5.3 | 495 | 395 | 2,300 | 4.65 | 1,270,266 (16/16) | 100.5 | 203.9 |
+| 261013-qq-schedule-write-closure |  | 703 | 661 | 1,268 | 1.80 |  | 0.0 |  |
+| 261014-engine-stop-truncation-asr-filter | deepseek-v4.1+glm-5.3 | 1,939 | 1,786 | 4,221 | 2.18 | 907,447 (3/3) | 30.7 | 69.7 |
+| 261014-voice-round-entry-exit-fixes | deepseek-flash |  |  |  |  | 1,072,918 (6/6) | 49.7 | 262.0 |
+| 261015-p1-auxbar-style-fix | deepseek-v4.1+glm-5.3 |  |  |  |  | 648,467 (3/3) | 53.9 | 33.8 |
+| 261015-voice-rightcol-label-overflow | glm-5.3+kimi-k3 |  |  |  |  | 233,432 (3/3) | 22.2 | 85.1 |
+| 261016-p3-story-body-sd-cache | deepseek-flash+deepseek-v4-pro | 3,772 | 1,739 | 2,498 | 0.66 | 1,548,695 (7/7) | 96.3 | 342.2 |
+| 261016-sd-card-mount | deepseek-flash+deepseek-v4-pro+deepseek-v4.1+glm-5.3 | 993 | 834 | 2,212 | 2.23 | 772,178 (6/6) | 54.2 | 436.4 |
+| 261017-prompt-v11-schedule-recall | deepseek-flash | 1,796 | 1,414 | 2,037 | 1.13 | 554,005 (3/3) | 19.6 | 17.0 |
+| 261018-sd-log-persist | deepseek-flash+deepseek-v4.1+glm-5.3 | 2,805 | 2,032 | 3,163 | 1.13 | 1,259,453 (9/9) | 60.8 | 764.2 |
+| 261018-sd-log-usb-read | deepseek-v4.1+glm-5.3 | 2,679 | 1,654 | 1,924 | 0.72 | 1,115,055 (7/7) | 96.8 | 206.1 |
+| 261019-p3-record-dialogue-guide | deepseek-v4.1+glm-5.3 | 5,799 | 4,122 | 4,139 | 0.71 | 2,077,632 (14/14) | 275.1 | 1373.5 |
+| 261020-p3-rec-frame-visual |  | 49 | 0 | 997 | 20.35 |  | 0.0 | 10.8 |
+| 261021-p3-record-cancel-lifecycle | deepseek-v4.1+glm-5.3 | 2,133 | 1,910 | 2,739 | 1.28 | 2,792,077 (8/8) | 66.4 | 967.9 |
+| 261022-diag-log-content |  | 5,084 | 4,041 | 4,665 | 0.92 |  | 0.0 |  |
+| 261022-m5-k1-prompt-carrier-migration | deepseek-v4.1+glm-5.3 | 2,780 | 2,308 | 1,726 | 0.62 | 923,826 (4/4) | 44.7 | 16.8 |
+| 261022-m5-k2b-persistent-session | deepseek-v4.1+glm-5.3 | 1,398 | 1,039 | 1,413 | 1.01 | 787,350 (5/5) | 36.4 | 21.3 |
+| 261022-m5-k3-honcho-memory-production | deepseek-v4.1+glm-5.3+synthetic | 2,517 | 1,741 | 1,650 | 0.66 | 584,705 (4/4) | 45.5 | 14.4 |
+| 261022-m5-k4-history-corpus-backfill | deepseek-v4.1+glm-5.3 | 2,489 | 1,158 | 1,784 | 0.72 | 885,587 (8/8) | 72.1 | 1073.7 |
+| 261022-m5-n2a-schedule-mechanical-injection | deepseek-v4.1+glm-5.3 | 944 | 717 | 1,266 | 1.34 | 1,114,796 (6/6) | 32.4 | 29.0 |
+| 261022-p3-record-chrome-ghost-fix |  | 5,084 | 4,041 | 4,665 | 0.92 |  | 0.0 |  |
+| 261022-p3-record-front-polish-fix |  | 5,084 | 4,041 | 4,665 | 0.92 |  | 0.0 |  |
+| 261023-agents-md-static-semantics-alignment | deepseek-v4.1+glm-5.3 | 350 | 350 | 1,893 | 5.41 | 365,021 (4/4) | 18.7 | 90.3 |
+| 261023-honcho-memory-wiring-restoration | deepseek-v4.1+glm-5.3 | 2,109 | 1,336 | 1,998 | 0.95 | 555,102 (4/4) | 30.2 | 49.7 |
+
+> 文档代码比 = 文档行 ÷ 代码行（代码行 = 实现 + 测试）；代码行为 0 或行数归因不到时留空。`--json` 另给 `testLines` / `ratioDocImpl`（文档行 ÷ 实现行）。行数为空的 Pod 见 `--json.unattributedReason`。
+
+## 二、按 Agent 角色汇总
+
+| 角色 | 派发次数 | exact token | agent 分钟 | token 占比 | 时长占比 | 覆盖（有数据 Pod 数） |
+|---|---|---|---|---|---|---|
+| acceptance-author | 42 | 7,006,660 | 489.7 | 26.0% | 38.6% | token 20 / 时长 20 |
+| planner | — | 6,898,819 | 3398.9（主线程时段，含人等） | 25.6% |  | 16/25 |
+| builder | 30 | 6,457,429 | 360.7 | 23.9% | 28.4% | token 20 / 时长 20 |
+| integrator | 39 | 3,901,856 | 209.8 | 14.5% | 16.5% | token 20 / 时长 20 |
+| fixer | 11 | 2,245,502 | 198.4 | 8.3% | 15.6% | token 7 / 时长 7 |
+| architect | 5 | 470,203 | 10.8 | 1.7% | 0.8% | token 4 / 时长 4 |
+| 脚本驱动（verifier / supervisor） | — | — | — | — | — | 不计入 agent 成本 |
+
+> token 占比分母 = 本表所有有 exact 值的行合计（含 planner，合计 26,980,469）；时长占比分母 = 有 durationMs 的派发行合计（planner 时段与脚本行不并入）。planner 的时间列是「主线程时段 = 墙钟 − Σ派发时长」，**包含人等与串行等待，不是纯工作时长**，不并入时长占比。
+
+## 三、数据缺口
+
+- 行集 25 个 Pod：行数可归因 22、归因不到 3（留空）。
+- token：有 exact 20、无 exact 5。
+- 模型：有记录 20、无记录 5。
+- planner 检查点：可算 16、首末相同 2、首末为负 2、出现相邻倒退 3、检查点不足 0。
+- 域外路径：4 个文件 / 25 行（仅作诊断计数，已按类型规则确定归类）。
+- 畸形事件行：2（已跳过，不影响其余行）。
+
+### 260920 批单列（--change-id 260920-gov-review-dispatch-telemetry-source）
+
+# 效率表（changeId=260920-gov-review-dispatch-telemetry-source）
+
+> 口径唯一权威 = `.claude/scripts/retro-efficiency.mjs`。代码/文档按 human 2026-10-26 二分域规则：源码恒代码、Markdown 恒文档、数据/配置与二进制按消费域（治理域→文档、业务域→代码）。token 只求和 `exact`；行数归因不到留空，不写 0；墙钟 = 首末事件差，事件稀疏时低估。
+
+## 一、Pod 表
+
+| changeId | 模型 | 代码行 | 其中测试行 | 文档行 | 文档代码比 | token | agent 分钟 | 墙钟分钟 |
+|---|---|---|---|---|---|---|---|---|
+| 260920-gov-review-dispatch-telemetry-source | deepseek-flash |  |  |  |  | 82,540 (1/1) | 4.8 |  |
+
+> 文档代码比 = 文档行 ÷ 代码行（代码行 = 实现 + 测试）；代码行为 0 或行数归因不到时留空。`--json` 另给 `testLines` / `ratioDocImpl`（文档行 ÷ 实现行）。行数为空的 Pod 见 `--json.unattributedReason`。
+
+## 二、按 Agent 角色汇总
+
+| 角色 | 派发次数 | exact token | agent 分钟 | token 占比 | 时长占比 | 覆盖（有数据 Pod 数） |
+|---|---|---|---|---|---|---|
+| landing-verifier | 1 | 82,540 | 4.8 | 100.0% | 100.0% | token 1 / 时长 1 |
+| planner | — |  |  |  |  | 0/1 |
+| 脚本驱动（verifier / supervisor） | — | — | — | — | — | 不计入 agent 成本 |
+
+> token 占比分母 = 本表所有有 exact 值的行合计（含 planner，合计 82,540）；时长占比分母 = 有 durationMs 的派发行合计（planner 时段与脚本行不并入）。planner 的时间列是「主线程时段 = 墙钟 − Σ派发时长」，**包含人等与串行等待，不是纯工作时长**，不并入时长占比。
+
+## 三、数据缺口
+
+- 行集 1 个 Pod：行数可归因 0、归因不到 1（留空）。
+- token：有 exact 1、无 exact 0。
+- 模型：有记录 1、无记录 0。
+- planner 检查点：可算 0、首末相同 0、首末为负 0、出现相邻倒退 0、检查点不足 1。
+- 域外路径：0 个文件 / 0 行（仅作诊断计数，已按类型规则确定归类）。
+
+> **数据缺口一句话**：本轮 25 包中 3 包行数归因不到 merge commit（留空非 0）、5 包无 exact token、5 包无模型记录、4 包 planner 检查点不可算（首末相同 2 / 首末为负 2）；`261013-p1-tomorrow-row-sliver-fix` 属上一轮析出范围、随日期窗口带入主表；260920 批仅 1 次 landing-verifier 派发、其角色数据不在主表角色行窗口内。
