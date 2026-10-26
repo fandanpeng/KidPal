@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 88 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 89 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -99,3 +99,4 @@
 | [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 2026-10-15 | — |
 | [ARQ-261016-intake-entry-identity-unstated](ARQ-261016-intake-entry-identity-unstated.md) | /triage-change 的跨面编排入口身份未进最高权威面 AGENTS.md——入口身份只存在于 triage 侧两个文件与 change-intake.md 一句抬头，AGENTS.md「四面入口」节把它收编成并列的「实现面变更」，读者会得出「triage 只是四面并列入口之一」的错误心智模型 | 2026-10-17 | 261016-gov-review-triage-entry-identity |
 | [ARQ-261019-local-memory-extraction-gaps](ARQ-261019-local-memory-extraction-gaps.md) | Claude Code 本机 memory 承载的治理知识未全量提取入仓——261019 复分析 8 条，1 条已被吸收、1 条部分吸收、3 条残留缺口（verdict 状态行义务 / 生成即验证 / OpenClaw sqlite 坑）、1 条取舍未决 | 2026-10-19 | delivery/review/261019-gov-review-local-memory-extraction/landing-verdict.md |
+| [ARQ-261026-efficiency-table-package-tier](ARQ-261026-efficiency-table-package-tier.md) | 效率表缺「包档位/类型」维度——无规模基准则 token/行数不可判读、拆包合适性无从评估 | 2026-10-26 | 261026-gov-review-retro-efficiency-fidelity |

@@ -127,7 +127,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 
 ## 5d. pod-events（post-cutoff 结构化观测 ledger）
 
-`EVENTS_SCHEMA_CUTOFF = '2026-07-25'` 是唯一 cutoff SSOT，定义于 `pod-events-append.mjs`。changeId date-prefix `>= 250725` 的 Pod 使用 `delivery/taskpackages/<changeId>/pod-events.jsonl`，每行 envelope 为 `{schemaVersion:1,eventId,changeId,timestamp,eventType,actor,source,payload}`；eventId 为 UUID，eventType 闭集：`dispatch-completed | agent-escalation | agent-escalation-resolved | human-decision | human-correction | friction`。
+`EVENTS_SCHEMA_CUTOFF = '2026-07-25'` 是唯一 cutoff SSOT，定义于 `pod-events-append.mjs`。changeId date-prefix `>= 250725` 的 Pod 使用 `delivery/taskpackages/<changeId>/pod-events.jsonl`，每行 envelope 为 `{schemaVersion:1,eventId,changeId,timestamp,eventType,actor,source,payload}`；eventId 为 UUID，eventType 闭集：`dispatch-completed | agent-escalation | agent-escalation-resolved | human-decision | human-correction | friction | pod-started | pod-closed`。`pod-started` / `pod-closed` 是 Pod 生命周期观测时点：起包取最早一条、收口取最晚一条；两者都是观测事实、non-bearing，不参与任何门判定。
 
 - `dispatch-completed.tokenUsage` 按**来源分档**（260920-gov-review-dispatch-telemetry-source FROZEN v1.0）：
   - `source: 'transcript'` —— **仓内 token 归因最忠实记录**（模型 API 回传的逐消息 usage，四路齐全），由 `dispatch-stamp.mjs` 按 `--dispatch-id`（= harness agentId）自动派生。**它不是计费真值**——provider 计费可因缓存折扣等与之不同，计费对账不在此范围。
@@ -144,7 +144,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 
 ## 6. retro → architect-owned ARQ
 
-cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)）按 exclusive cursor dispatch 读取：`changeId >= 250725 && pod-events exists` → new-format（pod-events + pod-retro）；否则 `loop-health exists` → legacy format；否则 waiting。一个 Pod 只进一条路径，两类文件并存时 new-format 优先，禁止 double-count。New-format 用 on-demand aggregation 提取 token coverage、escalation 与 friction themes；legacy 保留下文既有读取逻辑。New-format 复盘可另跑 `node .claude/scripts/retro-efficiency.mjs --since <周期起点>` 取四指标 Pod 表与按 Agent 角色汇总表；**口径以脚本为唯一权威**、本节不复述列定义，游标 / 触发条款 / 分流纪律不动。
+cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)）按 exclusive cursor dispatch 读取：`changeId >= 250725 && pod-events exists` → new-format（pod-events + pod-retro）；否则 `loop-health exists` → legacy format；否则 waiting。一个 Pod 只进一条路径，两类文件并存时 new-format 优先，禁止 double-count。New-format 用 on-demand aggregation 提取 token coverage、escalation 与 friction themes；legacy 保留下文既有读取逻辑。New-format 复盘可另跑 `node .claude/scripts/retro-efficiency.mjs --since <周期起点>` 取 Pod 表（含档位列）、按 Agent 角色汇总表、时间拆分表与 fixer 根因小表；**口径以脚本为唯一权威**、本节不复述列定义，游标 / 触发条款 / 分流纪律不动。观察窗数据缺失显示 unknown、不回退到首末事件差。
 
 **兼读 pod-retro + pod-journal（叙事车道层 A）+ 两源偏差仲裁**：retro 跨 Pod 提共性时**兼读** loop-health（综合视图）+ `pod-retro.md`（planner 第一人称摩擦/纠偏主题）+ **`pod-journal.jsonl`（叙事车道层 A，round-outcome / friction 事件；存在时读，advisory 补充读取面）**。当 pod-retro 与 loop-health 对**同一摩擦/纠偏主题矛盾**时，retro **显式列「planner 体感 vs integrator 综合偏差」条目 → 转 architect-owned ARQ candidate，标偏差不采信任一源、不重算单 Pod 健康**（冲突本身是有价值信号）。**new-format 源对（pod-retro vs pod-events）**：new-format Pod 无双源 join 仲裁——pod-events 是机器聚合（escalation / friction / human-correction 的 counts + 主题枚举），pod-retro 是散文主题，二者**结构性不可按主题对撞**。retro 对该类 Pod 改做**覆盖比对**（见 loop-retro.md step 3）：逐主题核对 pod-retro 记的摩擦/纠偏主题是否在 pod-events 有对应 event，显式列『机器聚合 vs 散文主题 覆盖偏差』条目（如 ledger friction=0 而 pod-retro 记 N 主题）→ 转 architect-owned ARQ candidate，标偏差不采信任一源。pod-events 缺失/降级不阻 retro（承 §5d fail-open）。缺 pod-retro 的 Pod 仍读其 loop-health 被分析（不跳过、不标未分析、不补写，仅 advisory）。缺 `pod-journal.jsonl` 同理——仅 advisory 降级、不阻 retro。
 

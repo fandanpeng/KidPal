@@ -29,7 +29,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENTS_SCHEMA_CUTOFF, appendPodEvent } from './pod-events-append.mjs';
+import { EVENTS_SCHEMA_CUTOFF, appendPodEvent, FIXER_ROOT_CAUSES, classifyFixerRootCause } from './pod-events-append.mjs';
 import { CHANGE_ID_PREFIX_RE } from './lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 import { readDispatchTelemetry, readMainThreadUsage } from './lib/transcript-telemetry.mjs'; // T2（260920-gov-review-dispatch-telemetry-source）
 
@@ -39,6 +39,7 @@ function flagVal(name) {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
+
 
 function required(name) {
   const v = flagVal(name);
@@ -363,6 +364,10 @@ function run() {
         );
       }
 
+      const rootCause = classifyFixerRootCause(actor, flagVal('--root-cause'));
+      if (rootCause.rootCauseStatus === 'invalid') {
+        process.stderr.write(`[dispatch-stamp] advisory: --root-cause "${flagVal('--root-cause')}" is not one of ${FIXER_ROOT_CAUSES.join('|')}; recording rootCauseStatus=invalid\n`);
+      }
       const result = appendPodEvent(changeId, {
         eventType: 'dispatch-completed',
         actor,
@@ -388,6 +393,7 @@ function run() {
           // 量化触发器入 ARQ-260913 追注：absent ≥1 → 启动 (b) 闸级强制批 / 累计 30 全 match → settled）。
           contextSource: resolved.source,
           expectCheck,
+          ...rootCause,
         },
       });
       process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs === null ? 'unavailable' : `${durationMs}ms`} -> pod-events.jsonl (tokens: ${tokenUsage.status}/${tokenUsage.source || '-'}, model: ${model || 'unavailable'})\n`);

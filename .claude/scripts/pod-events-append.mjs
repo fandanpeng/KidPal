@@ -33,7 +33,31 @@ const VALID_EVENT_TYPES = new Set([
   'human-decision',
   'human-correction',
   'friction',
+  // T3（261026-gov-review-retro-efficiency-fidelity，FROZEN v0.4）：Pod 生命周期时点。
+  // 起包取最早一条 pod-started、收口取最晚一条 pod-closed；两者都是观测事实、non-bearing。
+  'pod-started',
+  'pod-closed',
 ]);
+
+// T4（261026-gov-review-retro-efficiency-fidelity，FROZEN v0.4）：fixer 触发根因的可选闭集。
+// 单源导出给写侧 dispatch-stamp 与读侧 retro-efficiency self-check 共用；
+// 只在 `--actor fixer` 时记录，其余 actor 传值只记 ignored-non-fixer。
+export const FIXER_ROOT_CAUSES = Object.freeze([
+  'acceptance-gap',
+  'implementation-defect',
+  'environment',
+  'spec-ambiguity',
+  'other',
+]);
+
+export function classifyFixerRootCause(actor, raw) {
+  if (raw === undefined || raw === null || raw === '') return {};
+  if (String(actor) !== 'fixer') return { rootCauseStatus: 'ignored-non-fixer' };
+  if (!FIXER_ROOT_CAUSES.includes(String(raw))) {
+    return { rootCause: null, rootCauseStatus: 'invalid', rootCauseNote: `unrecognized rootCause: ${raw}` };
+  }
+  return { rootCause: String(raw), rootCauseStatus: 'exact' };
+}
 
 /**
  * Validate and append a pod-event to the pod-events.jsonl for the given changeId.

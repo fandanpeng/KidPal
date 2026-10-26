@@ -1066,6 +1066,7 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
       actor: 'merge-driver',
       source: 'merge-driver',
       payload: {
+        mergeSha,
         summary: `merge-driver Step 5b 簿记：main tip ${mergeSha.slice(0, 12)}（${mode || (SINGLE_POD ? 'single' : 'board')} 模式）${HUMAN_APPROVAL_REF ? `；human-approval-ref=${HUMAN_APPROVAL_REF}` : ''}${lastProjectionResolution ? `；${lastProjectionResolution}` : ''}${lastOverlapProbe && lastOverlapProbe.intersectingFiles?.length ? `；并行相交面=${lastOverlapProbe.tier}×${lastOverlapProbe.intersectingFiles.length}件` : ''}`,
       },
     };
@@ -1270,6 +1271,7 @@ function runMergeFrictionSelfCheck() {
       git(t6, ['commit', '-m', 'init']);
       writeFileSync(join(t6, 'decoy.txt'), 'staged residue\n');
       git(t6, ['add', '--', 'decoy.txt']); // 模拟 staged graph 残留
+      const expectedMergeSha = git(t6, ['rev-parse', 'HEAD']).trim(); // 必须在 step5bBookkeeping 前取：该函数自身 commit 簿记并推进 HEAD
       step5bBookkeeping(t6, '260901-t6p', { mode: 'self-check' });
       const events = readFileSync(join(t6, 'delivery', 'taskpackages', '260901-t6p', 'pod-events.jsonl'), 'utf8');
       const lastShow = git(t6, ['show', '--name-only', '--pretty=%s', 'HEAD']);
@@ -1277,6 +1279,11 @@ function runMergeFrictionSelfCheck() {
       assert('T6 簿记落行 + pathspec 不夹带 staged 残留',
         events.includes('"eventType":"merge-completed"') && lastShow.includes('pod-events.jsonl') && !lastShow.includes('decoy.txt') && st.includes('decoy.txt'),
         `events=${events.trim().slice(-80)} show=${JSON.stringify(lastShow)} status=${JSON.stringify(st)}`);
+      const mergeEventLine = events.trim().split('\n').filter((l) => l.includes('"eventType":"merge-completed"')).pop();
+      const mergeEvent = mergeEventLine ? JSON.parse(mergeEventLine) : null;
+      assert('T6 簿记 payload.mergeSha ≡ 调用前 HEAD 且 40 位',
+        !!(mergeEvent && mergeEvent.payload && mergeEvent.payload.mergeSha === expectedMergeSha && expectedMergeSha.length === 40),
+        `mergeSha=${mergeEvent && mergeEvent.payload && mergeEvent.payload.mergeSha} expected=${expectedMergeSha}`);
     } catch (err) {
       assert('T6 夹具异常', false, err.message);
     }

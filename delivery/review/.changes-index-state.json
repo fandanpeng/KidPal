@@ -43,5 +43,13 @@
   "261024-gov-review-retro-efficiency-instrumentation": {
     "date": "2026-10-24",
     "mergedInMain": "yes"
+  },
+  "261025-arch-review-spec-reconciliation-memory-writing-scope": {
+    "date": "2026-10-25",
+    "mergedInMain": "yes"
+  },
+  "261026-gov-review-retro-efficiency-fidelity": {
+    "date": "2026-10-26",
+    "mergedInMain": "yes"
   }
 }
