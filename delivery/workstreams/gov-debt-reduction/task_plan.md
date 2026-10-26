@@ -5,7 +5,7 @@ slug: gov-debt-reduction
 status: active
 opened: 2026-10-26
 closed:
-summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 合并闸簇与 P1.5 final 相位派发契约批均已合 main，下一波 = P2 锚解析门+模板簇
+summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2（锚解析门+模板簇）三波均已合 main，剩余 = P3 搭载挂靠与 P4 簇
 # —— 选填 ——
 owner: main-thread
 area: governance
