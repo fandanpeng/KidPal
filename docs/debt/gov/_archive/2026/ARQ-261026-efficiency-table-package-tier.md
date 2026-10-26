@@ -2,13 +2,13 @@
 id: ARQ-261026-efficiency-table-package-tier
 title: 效率表缺「包档位/类型」维度——无规模基准则 token/行数不可判读、拆包合适性无从评估
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 `.claude/scripts/retro-efficiency.mjs` 或 `/loop-retro` 输出契约的批并并）；或 human 点名立项
 opened: 2026-10-26
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-retro-efficiency-fidelity
 paths: [".claude/scripts/retro-efficiency.mjs", ".claude/commands/loop-retro.md"]
 source: [delivery/retro/2026-10-25-loop-retro.md, delivery/review/261024-gov-review-retro-efficiency-instrumentation/PROPOSAL.md]
 ---
@@ -20,3 +20,5 @@ source: [delivery/retro/2026-10-25-loop-retro.md, delivery/review/261024-gov-rev
 **建议改动**（候选，交 review、不自批）：纯分析侧两处——① `retro-efficiency.mjs` Pod 表加「档位/类型」列，分类规则候选：`rigor` → full / lite / nano；「拆包」= workstream 归属或 `sourceType === 'planning-workstream'`；「governance」= `sourceType` 治理侧值（arch-review / proposal / drift-report）或 id 线索；缺值与无 taskpackage 行（260920 型）留空并在数据缺口节计数，不推测。规则落点、列名与展示顺序（列插在哪一列）交 PROPOSAL 定。② `.claude/commands/loop-retro.md` 步骤 5 输出契约的列清单同步（九列 → 十列）。边界：零新增记录、零 schema 变更、零门语义；不做按档位的自动阈值告警或「正常区间」判定（human 只要看维度，不要判读机器）。
 
 **风险**：riskTier: low-medium——只读脚本一处 + 命令输出契约文面一处，零 schema / 门 / agent 定义 / G1 / 契约面触面；与 261024 批 T1（同脚本、riskTier low-medium 获判官认可）同量级。review profile = Track B 主路径（触 G3 scripts，非瘦制品轻路径；三要件：① 执行测出 ✓（§八补录执行 + human 读表反馈）② 问题清晰、修复方向明确 ✓（分类映射细节留 OQ，不构成方向分叉）③ 爆炸半径已由执行揭示 ✓（脚本 + 命令文面，已在 261024 批落地时勘界））。
+
+**结项（2026-10-26）**：`261026-gov-review-retro-efficiency-fidelity` T2 落地——`retro-efficiency.mjs` 加第十列「档位」（`rigor` 原值 + `·拆包` + governance 路径判据 + 缺值留空），`loop-retro.md` 步骤 5 的列清单同步为十列。落地 commit `748f763b`，合入本地 main `b05d5fac`；landing-verifier `PASS + 4 ADVISORY`。本条目由架构评审 T2 直接消费，按 PROPOSAL 头部「可结项」裁定收口；T1 行数污染新根与 `mergeSha` 历史回填仍留根，不在本条范围。

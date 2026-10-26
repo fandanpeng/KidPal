@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 40（待拍板 0 / 待触发 38 / 已接受风险 2）；已结 88（归档索引见下）。
+**摘要**：未结 39（待拍板 0 / 待触发 37 / 已接受风险 2）；已结 89（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（38）
+## 待触发（37）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -54,7 +54,6 @@ _（无）_
 | [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
 | [ARQ-261025-verify-set-negative-positive-pairing](ARQ-261025-verify-set-negative-positive-pairing.md) | SHOULD | 验证集负向白名单断言缺正向配对——只写「不允许什么」，不写 happy path 必须恰好发生什么 | 下一治理批（动 `docs/templates/PROPOSAL.template.md` 的 §5 验证集节或 `track-b-judge-brief.md` 的评审透镜时并批） |
 | [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
-| [ARQ-261026-efficiency-table-package-tier](ARQ-261026-efficiency-table-package-tier.md) | SHOULD | 效率表缺「包档位/类型」维度——无规模基准则 token/行数不可判读、拆包合适性无从评估 | 下一治理批（动 `.claude/scripts/retro-efficiency.mjs` 或 `/loop-retro` 输出契约的批并并）；或 human 点名立项 |
 
 ## 已接受风险（2）
 
@@ -63,10 +62,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（88）
+## 已结（89）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 88 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 89 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
