@@ -42,7 +42,7 @@ argument-hint: <可选：周期范围或聚焦点，例如 "近 10 个 change" �
    - **实现类**（确定的 `firmware/**` 缺陷 / 测试补强）→ 走正常 dev-loop：单切片直接 `planner`，多切片/多 Pod 交 `portfolio-planner` 拆包。
    - **信息类 / 接受风险** → 记入复盘输出，标 owner + 触发条件，不强行加门（别无脑加管控）。
 5. **输出复盘小结**：top findings、升级主题、每条分流、advisory、waiting 清单、`delivery/intake/INDEX.md` 漂移标核查（T5 复议触发承载点——仍见漂移则升级机械闸另立批）、token coverage（只在有 exact 数据时报告总和，并附 `{dispatchesTotal, dispatchesWithTokenData, dispatchesUnavailable}`）与下一周期关注点。
-   - **效率表两张（原样贴出脚本输出）**：① 九列 Pod 表（`changeId / 模型 / 代码行 / 其中测试行 / 文档行 / 文档代码比 / token / agent 分钟 / 墙钟分钟`）；② 按 Agent 角色汇总表（`角色 / 派发次数 / exact token / agent 分钟 / token 占比 / 时长占比 / 覆盖`）。附一句数据缺口说明（行数归因不到 / 无 exact token / 无模型记录 / planner 检查点不足 / `outsideKnownRoots` 行数）；口径以脚本为唯一权威，不在报告中复述列定义。
+   - **效率表三张（原样贴出脚本输出）**：① 十列 Pod 表（`changeId / 档位 / 模型 / 代码行 / 其中测试行 / 文档行 / 文档代码比 / token / agent 分钟 / 墙钟分钟`；档位取值 `full`/`lite`/`nano` 加 `·拆包` 后缀、`governance`、缺值留空不推测）；② 按 Agent 角色汇总表（`角色 / 派发次数 / exact token / agent 分钟 / token 占比 / 时长占比 / 覆盖`）；③ 时间拆分表（`changeId / 观察窗分钟 / agent 分钟 / 等待分钟 / 数据来源`；观察窗缺失显示 unknown、不显示 0、不倒推）。另附 **fixer 根因分布小表**（`根因 / 派发次数 / token / agent 分钟 / Pod 数`；无数据时打印缺失行数，不补 0）。附一句数据缺口说明（行数归因不到 / 无 exact token / 无模型记录 / planner 检查点不足 / `outsideKnownRoots` 行数 / 档位留空 / 重复盖章剔除量 / 批量合并无主歧义路径）；口径以脚本为唯一权威，不在报告中复述列定义。
    - 对账结果（GC1）：N 条发现与现行 canonical 冲突（记复现、不新立 ARQ），含所核现行锚点。
    - 覆盖比对结果（GC3）：new-format 包 M 个，机器聚合 vs 散文主题覆盖偏差 K 处（含 ledger=0 / retro=N 型），转 ARQ candidate 数。
 6. **收口游标（推进 ledger）**：分析完跑 `node .claude/scripts/loop-health-report.mjs --record-retro loop-retro-YYYY-MM-DD [--note "..."]`，把本轮 `pendingAnalysis` 追加进 `.claude/loop-retro/ledger.jsonl`；下轮 `--pending` 自动排除。若只分析了部分 Pod，用 `--covered a,b,c` 显式列实际分析的 change-id（其余留下轮）。ledger 随 main 版本控制、跨设备一致。

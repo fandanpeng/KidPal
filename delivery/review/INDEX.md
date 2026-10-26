@@ -11,6 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261026-gov-review-retro-efficiency-fidelity](261026-gov-review-retro-efficiency-fidelity/) | 2026-10-26 | landed | — |
 | [261025-arch-review-spec-reconciliation-memory-writing-scope](261025-arch-review-spec-reconciliation-memory-writing-scope/) | 2026-10-25 | landed | yes |
 | [261025-gov-review-release-pr-publish](261025-gov-review-release-pr-publish/) | 2026-10-25 | landed | yes |
 | [261024-gov-review-retro-efficiency-instrumentation](261024-gov-review-retro-efficiency-instrumentation/) | 2026-10-24 | landed | yes |
