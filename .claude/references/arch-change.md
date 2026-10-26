@@ -1,6 +1,6 @@
 # arch-change · 架构+契约面变更流程（review loop）
 
-> 权威面：本文件是架构+契约面变更的流程 SSOT（261015-gov-review-face-loop-unify 立）。入口命令 = `.claude/commands/arch-change.md`；对偶流程 = requirement-change.md（需求面）、gov-change.md（治理面）。统一元结构：**每面 = 起草/审稿对偶 + 纯编排主线程**。
+> 权威面：本文件是架构+契约面变更的流程 SSOT（261015-gov-review-face-loop-unify 立）；其中「Track B 制品义务」节为 `/arch-change` 与 `/gov-change` **两面 lane 共用的制品义务单源**（261026-gov-review-p2-anchor-template-cluster 批立，gov lane 经其流程文件指针消费，不复制）。入口命令 = `.claude/commands/arch-change.md`；对偶流程 = requirement-change.md（需求面）、gov-change.md（治理面）。统一元结构：**每面 = 起草/审稿对偶 + 纯编排主线程**。
 
 ## 立项与收敛度判断
 
