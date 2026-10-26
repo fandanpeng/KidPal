@@ -2,13 +2,13 @@
 id: ARQ-260928-landing-summary-skeleton-template
 title: landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批）
 opened: 2026-09-28
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-p2-anchor-template-cluster
 paths: [docs/templates/]
 source: [260928-gov-review-portfolio-boundary-story-propagation/retro.md §4 建议 1, landing-verdict.md FAIL→PASS 演进记录]
 ---
@@ -20,3 +20,5 @@ source: [260928-gov-review-portfolio-boundary-story-propagation/retro.md §4 建
 **建议改动**（候选，交 review、不自批）：① 新建 `docs/templates/ARCHITECT-LANDING-SUMMARY.template.md`（硬项：manifest 围栏块逐字 == PROPOSAL §2 锚并集、packet-id 行、逐文件落地表骨架、验证集执行记录表、排除清单段、留根移交段）；② 或在 PROPOSAL.template 增一节「summary 制品义务摘要」由起草者复制。两案交 review 辩。
 
 **风险**：riskTier: low——纯模板件，无行为面。改动面 = docs/templates（过程面文档）。owner: architect。
+
+**结项注记（2026-10-26，261026-gov-review-p2-anchor-template-cluster，与 ARQ-261021-landing-summary-template 并条消费）**：前提已过时——`docs/templates/architect-landing-summary.template.md` 260802 已存在（含 packet-id 行 + manifest 块 + 五件组件），本条登记时未查模板面。残余真缺口（face SSOT 无义务句）由 261026 批 T3 落地：`arch-change.md` 新节「Track B 制品义务」+ `gov-change.md` 单源指针；不新建模板（human 2026-10-26 裁，候选①「新建模板」作废）。
