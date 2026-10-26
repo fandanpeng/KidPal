@@ -11,7 +11,7 @@
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
-| 261025-spec-reconciliation-memory-writing-scope | req+arch | intake | 0/2 | 2026-10-25 | — |
+| 261025-spec-reconciliation-memory-writing-scope | req+arch | in-flight | 1/2 | 2026-10-25 | — |
 | 261022-device-memory-prompt-overhaul | req+arch+contract+imp | in-flight | 4/4 | 2026-10-22 | ⚠未闭环 |
 | 261021-p3-record-cancel-lifecycle | — | — | — | 2026-10-21 | ⚠值域外 |
 | 261019-p3-record-dialogue-guide | req+arch+contract+imp | closed | 4/4 | 2026-10-19 | — |
