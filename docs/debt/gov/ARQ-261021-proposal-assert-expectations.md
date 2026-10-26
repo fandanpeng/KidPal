@@ -20,3 +20,5 @@ source: 261021-arch-review-p3-record-cancel-lifecycle retro F1 + landing-summary
 **判据（机判/人判均可）**：新批 PROPOSAL §5 每条 pre/post 断言预期值旁是否有「起草期实跑」输出留痕；无留痕 = 判官可合法打回。
 
 **Why**：验证集是 landing-verifier 与机械闸的对账基准，预期值失真会把正确落地判成夹带（或反之带病过门）；一次实跑成本 ~分钟级，失真代价 = 一轮 FAIL→核因→翻正环。
+
+**追加证据（261024-gov-review-retro-efficiency-instrumentation retro，2026-10-26）**：本批 R8 判官实证同根第二次——分类规则成文写「治理域 JSON / 数据与配置 → 文档」，但原型数字按「`.txt` → 代码」生成，claimed 中位 1.07 在任何变体下都不复现（按成文规则现算 1.29）；判官 BLOCK(F1)，architect 改回「成文规则不动、数字从规则现跑」的同源口径。与原条「§5 断言预期值须来自起草期实跑输出、禁止推算」同根：**不仅 PROPOSAL §5，脚本与表格的实测数字也必须由成文规则现跑，不能由另一套原型代跑**。建议把本条适用范围从 §5 扩到「PROPOSAL 内所有实测数字」；本批按查重纪律追加证据、不新立。证据：`delivery/review/261024-gov-review-retro-efficiency-instrumentation/PROPOSAL.md` §7 R8 + `retro.md` §3 F2。

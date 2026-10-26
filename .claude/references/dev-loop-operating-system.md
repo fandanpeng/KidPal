@@ -133,7 +133,9 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
   - `source: 'transcript'` —— **仓内 token 归因最忠实记录**（模型 API 回传的逐消息 usage，四路齐全），由 `dispatch-stamp.mjs` 按 `--dispatch-id`（= harness agentId）自动派生。**它不是计费真值**——provider 计费可因缓存折扣等与之不同，计费对账不在此范围。
   - `source: 'harness'` —— harness 回传的**单值**（`--token-total`；legacy 面 `--tokens`），口径未文档化、与逐消息账对不上，**降为回退值与交叉核对**（存 `harnessReported`），不再作为唯一权威。
   - 取值优先级：transcript → 旗标 → `unavailable`。命中时 `status` 必须为 `'exact'`（`status` 是既有消费方的唯一分桶键）。
-- `total = input + output`（两者都有时），cache 字段不重复计入；unknown 绝不写 0，harness genuine zero 必须带 `note: harness-reported-zero`。
+- `total = input + output`（两者都有时），cache 字段不重复计入；unknown 绝不写 0，genuine zero 必须带 `note: reported-zero`。
+- `dispatch-completed` payload 必带三键（261024-gov-review-retro-efficiency-instrumentation T3，全部 fail-open）：`model` 恒在场（字符串或 `null`，缺值配 `modelStatus: 'unavailable'` + `modelReason`；transcript 生效模型与 `--model` 不一致记 `modelFlagMismatch`）；`durationMs` 恒在场（非负整数或 `null`，缺值配 `durationStatus: 'unavailable'` + `durationReason`；真实 0 带 `durationNote: 'reported-zero'`）；`tokenUsage` 恒在场（`exact` 必有 `total` 且 `total = input + output`；取不到写 `unavailable` + `reason`）。缺值一律显式 unavailable，不以缺键或 0 冒充。
+- `mainThreadUsage` 检查点语义：同一会话内**单调累计**、每次 dispatch 刷新；写入侧发现本条累计值不高于上一条时记 `cumulativeNote: 'non-increasing'` 并 stderr 告警（fail-open，不阻断派发）。planner 成本按同 Pod 首末检查点做差；首末差 ≤0 视为失效，不得写 0。
 - **降级纪律**：transcript 取不到时按既有路径降级为 `unavailable`，**不得因遥测缺失而阻断或延迟派发**；遥测是记账面，不是门。
 - subagent Red Flag / blocker / out-of-scope / human ruling request 的顺序固定为：detect → best-effort append `agent-escalation` → 立即 stop/escalate。Resolution 另 append `agent-escalation-resolved` 引用原 eventId，不改写旧行。Append 失败仅在 response 暴露 advisory，并在可写时记 pod-retro degraded note；不得延迟实时升级。
 - human decision/correction 由 planner 在收到或检测到 human input 后 append。Verifier rounds、gate outcomes、test results、supervisor verdict 不进入 pod-events，仍以 immutable verifier evidence / supervisor verdict 为权威。
@@ -142,7 +144,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 
 ## 6. retro → architect-owned ARQ
 
-cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)）按 exclusive cursor dispatch 读取：`changeId >= 250725 && pod-events exists` → new-format（pod-events + pod-retro）；否则 `loop-health exists` → legacy format；否则 waiting。一个 Pod 只进一条路径，两类文件并存时 new-format 优先，禁止 double-count。New-format 用 on-demand aggregation 提取 token coverage、escalation 与 friction themes；legacy 保留下文既有读取逻辑。
+cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)）按 exclusive cursor dispatch 读取：`changeId >= 250725 && pod-events exists` → new-format（pod-events + pod-retro）；否则 `loop-health exists` → legacy format；否则 waiting。一个 Pod 只进一条路径，两类文件并存时 new-format 优先，禁止 double-count。New-format 用 on-demand aggregation 提取 token coverage、escalation 与 friction themes；legacy 保留下文既有读取逻辑。New-format 复盘可另跑 `node .claude/scripts/retro-efficiency.mjs --since <周期起点>` 取四指标 Pod 表与按 Agent 角色汇总表；**口径以脚本为唯一权威**、本节不复述列定义，游标 / 触发条款 / 分流纪律不动。
 
 **兼读 pod-retro + pod-journal（叙事车道层 A）+ 两源偏差仲裁**：retro 跨 Pod 提共性时**兼读** loop-health（综合视图）+ `pod-retro.md`（planner 第一人称摩擦/纠偏主题）+ **`pod-journal.jsonl`（叙事车道层 A，round-outcome / friction 事件；存在时读，advisory 补充读取面）**。当 pod-retro 与 loop-health 对**同一摩擦/纠偏主题矛盾**时，retro **显式列「planner 体感 vs integrator 综合偏差」条目 → 转 architect-owned ARQ candidate，标偏差不采信任一源、不重算单 Pod 健康**（冲突本身是有价值信号）。**new-format 源对（pod-retro vs pod-events）**：new-format Pod 无双源 join 仲裁——pod-events 是机器聚合（escalation / friction / human-correction 的 counts + 主题枚举），pod-retro 是散文主题，二者**结构性不可按主题对撞**。retro 对该类 Pod 改做**覆盖比对**（见 loop-retro.md step 3）：逐主题核对 pod-retro 记的摩擦/纠偏主题是否在 pod-events 有对应 event，显式列『机器聚合 vs 散文主题 覆盖偏差』条目（如 ledger friction=0 而 pod-retro 记 N 主题）→ 转 architect-owned ARQ candidate，标偏差不采信任一源。pod-events 缺失/降级不阻 retro（承 §5d fail-open）。缺 pod-retro 的 Pod 仍读其 loop-health 被分析（不跳过、不标未分析、不补写，仅 advisory）。缺 `pod-journal.jsonl` 同理——仅 advisory 降级、不阻 retro。
 
