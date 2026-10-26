@@ -15,7 +15,7 @@ description: Prepare the launch surface for the next batch of kidpal-mvp TaskPac
 2. 每个包：`--check-launch` 机械门绿
 3. 每个包：运行时 worktree（**复用空闲树 ∨ 按需新建**，一树一常驻分支——见步骤 3 换包协议）
 4. 每个包：固件环境等价化（sdkconfig / dependencies.lock / host_app sdkconfig 镜像 + managed_components 共享软链 + bootstrap 跑过；**lite/nano 包新树：后置真机轮前**，见步骤 3b——261015-gov-review-lite-fast-path）
-5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（moderate + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
+5. 每个包：专属图索引 `C-AI-KidPal-pod-<suffix>`（full + persistence）——**launch 面必办，不得降级读文件**（ARQ-260905 规则钉死）
 6. board（`devloop/pods/<changeId>.json`）预填 worktreePath
 7. 启动卡落 `delivery/taskpackages/<changeId>/launch-card.md`
 8. **不代跑 launch、不合并、不 push**——launch 命令交 human 自跑
@@ -101,12 +101,13 @@ cd <worktree> && node .claude/scripts/worktree-bootstrap.mjs --source C:/AI/KidP
 
 ```
 list_projects                                    # 先核无既有同名项目
-index_repository(repo_path=<worktree>, mode=moderate, persistence=true)
+index_repository(repo_path=<worktree>, mode=full, persistence=true)
 ```
 
 - 项目名按路径自动派生；**复用树沿用其既有项目名**（随树复用、自动增量刷新——ARQ-260905 规则按 worktree 粒度，与包无关）。
 - main 已 commit 快照 artifact（`.codebase-memory/graph.db.zst`，b7aa3df 起）→ worktree 索引 = 快照导入 + 增量，分钟级、近零成本。
 - 返回值 `nodes/edges == expected_nodes/expected_edges` 才算建完；`skipped/parse_partial` 按 best-effort 信号如实记录。
+- **不要传 `moderate`**（261026 批 T2）：实测 moderate 比 full 少约 44% 节点（削减几乎全在 Variable 面），且 mode 只在从零解析时生效——对已建项目换 mode 重跑是空转；改档须先 `delete_project` 再按 full 重建。
 
 ### 6. board 预填
 

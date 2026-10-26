@@ -88,7 +88,8 @@
         "firmware/**",
         "server/**",
         "tools/**",
-        "delivery/workstreams/**"
+        "delivery/workstreams/**",
+        "delivery/taskpackages/*/dispatch-progress-*.md"
       ],
       "deny": [
         "**/*.acceptance.c",
@@ -103,7 +104,8 @@
         "firmware/**",
         "server/**",
         "tools/**",
-        "delivery/workstreams/**"
+        "delivery/workstreams/**",
+        "delivery/taskpackages/*/dispatch-progress-*.md"
       ],
       "deny": [
         "**/*.acceptance.c",
@@ -119,7 +121,8 @@
         "firmware/**/*.acceptance.cpp",
         "firmware/**/acceptance/**",
         "server/**/acceptance/**",
-        "tools/**"
+        "tools/**",
+        "delivery/taskpackages/*/dispatch-progress-*.md"
       ],
       "deny": [
         "firmware/**/__tests__/**",

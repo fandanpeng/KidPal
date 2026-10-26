@@ -2,13 +2,13 @@
 id: ARQ-261025-interrupted-dispatch-progress-note
 title: 子 agent 被 429 / 配额中断后无回执——恢复靠 git status 考古，进度注记未成约定
 domain: gov
-status: deferred
+status: closed
 severity: COULD
 owner: architect（派发契约文面）
 trigger: 下一治理批（动 `planner.md` 派发步 / 子 agent brief 模板时并批）；或再出现一次中断恢复
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-final-phase-dispatch-contract
 paths: [".claude/agents/planner.md", ".claude/references/dev-loop.md"]
 source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261019-p3-record-dialogue-guide/pod-retro.md, delivery/taskpackages/261022-m5-k3-honcho-memory-production/pod-retro.md]
 ---
@@ -20,3 +20,7 @@ source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261019-p
 **建议改动**（交 review、不自批）：派发契约加一条轻量约定——子 agent 在长任务中每完成一个可交付段落，往包目录写一行进度注记（或 pod-events `friction` 带 `progress` 字段）；planner 恢复时先读注记再考古。不新增门、不要求子 agent 额外派发，只把「中断前留痕」写成惯例。
 
 **风险**：riskTier: low——纯派发文面与惯例，不进任何闸判据。
+
+---
+
+**结项注记（2026-10-26，closedBy = 261026-gov-review-final-phase-dispatch-contract）**：随 P1.5 批 T3 结项——OQ1 经 human 裁 (a) 窄写权，scope-map 对 acceptance-author / builder / fixer 各加 `delivery/taskpackages/*/dispatch-progress-*.md` 单文件形 allow（deny 零改动）；planner.md 派发书立「进度留痕契约」（自包含快照、Write 覆盖、惯例非门），dev-loop.md 文件地图增 `dispatch-progress-<agent>.md` 行。候选「pod-events friction 带 progress 字段」形态经评审弃用（frictionType 闭集，progress 非摩擦）。

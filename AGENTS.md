@@ -43,7 +43,7 @@
 
 ## CodebaseMemory 使用纪律
 
-本仓自有代码及各参考工程均已建 CodebaseMemory 图索引（moderate 模式）。「trace before edit」用 `search_graph` / `trace_path` / `get_architecture` / `search_code` 等图工具，project 参数填下表项目名全称；查不到再降级 Grep。
+本仓自有代码及各参考工程均已建 CodebaseMemory 图索引（建图统一用 full 模式；2026-09-23 实测 moderate 比 full 少约 44% 节点、削减几乎全在 Variable 面，graph 会被静默削薄而 index_status 仍报 ready；mode 只在从零解析时生效，改档须删条目重建）。「trace before edit」用 `search_graph` / `trace_path` / `get_architecture` / `search_code` 等图工具，project 参数填下表项目名全称；查不到再降级 Grep。
 
 | 范围 | 图索引项目名 | 覆盖内容 | 排除 |
 |------|--------------|----------|------|

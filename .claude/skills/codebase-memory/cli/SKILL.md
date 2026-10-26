@@ -19,6 +19,7 @@ Modes:
 - `full` — all files + similarity/semantic edges
 - `moderate` — filtered files + similarity/semantic
 - `fast` — filtered files, no similarity/semantic
+- **mode 只在从零解析时生效**：对已建项目换 mode 重跑不改变图（2026-09-23 实测 nodes 逐值不变）；改档须先 `delete_project` 再按新 mode 重建。本仓建图一律用 `full`。
 
 Run from the project root. This parses all source files, builds the knowledge graph, and stores it in `~/.cache/codebase-memory-mcp/`.
 
@@ -39,7 +40,9 @@ codebase-memory-mcp cli index_status '{"project":"C-AI-KidPal"}'
 ### delete_project — Remove a project from the index
 
 ```bash
-codebase-memory-mcp cli delete_project '{"project":"C-AI-KidPal"}'
+codebase-memory-mcp cli delete_project '{"project":"<项目名>"}'
+
+删除可再生（重建即恢复），但照抄前先 `list_projects` 核对项目名——别把本仓主索引当占位符删掉。
 ```
 
 ## Configuration
