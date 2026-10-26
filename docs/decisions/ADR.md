@@ -139,3 +139,4 @@
 - **理由**：human 2026-10-23 裁「验证过的优先，不发明新东西」。探针轮端到端验证的是「设备级 session + 家庭单 owner 画像」；资格门从未被任何一轮验证、上游插件亦不提供（advisory §3/§5）。把已验证行为如实记账，优于维持一个永不满足的冻结口径。
 - **备选与放弃原因**：甲+（vendor 上游插件打约 10 行最小补丁保资格门字面）——放弃：本批遵循 human 原则不改已验证物，残余实测不可接受时另立补丁批；修 K3 自研 carrier——放弃：三层失效（配置形状错 / 不是插件 / 调用的 Honcho 端点不存在）。
 - **关联**：arch §1.3·§4·§5.1.2·§5.4·§6.7；ADR-014（本 ADR supersede 其 ②③，①④⑤⑥⑦ 不变）·ADR-015；requirements NFR-PRIV-1 / S-F5.1 AC5（需求面措辞同步另批）；证据 = delivery/review/261022-arch-review-device-memory-prompt-overhaul/memory-wiring-advisory-20261023.md。
+- **2026-10-26 注记（决策②的机制枚举部分失效，决策本体不变）**：`noisePatterns` 已于 2026-10-24 退役（R7/OQ-4：一次性回合统一携 `user=<device_id>`、孩子原话照常参与记忆；live 实读为 `[]`），决策② 所列「front 一次性回合的 user 消息以插件 `noisePatterns` 挡」不再成立；`captureSystemRuns=false` 的覆盖也由 2026-10-25 实测收窄——`memory-core` dreaming 子回合落 chat 分支、不被该键排除，现以「生成器全局关闭」处置。决策② 的**本体**（写入口径 = 已验证接线的实际行为、残余逐行申报于 arch §6.7）不变；现行边界与全部残余的权威 = arch §6.7（`261025-spec-reconciliation-memory-writing-scope`）。
