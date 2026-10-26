@@ -2,13 +2,13 @@
 id: ARQ-261017-merge-gate-scope-unstated
 title: 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect（定闸的适用范围）+ 主线程（文面落点）
 trigger: 下次治理批；或下个动 pre-merge-escalation-gate.mjs / merge-to-main skill 文面 / AGENTS.md 治理路由节任一时并批（与 ARQ-261014 同脚本，可同批）
 opened: 2026-10-17
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md
 paths: [.claude/scripts/pre-merge-escalation-gate.mjs, AGENTS.md]
 gateLayers: [G1, G3]
 hardExclusions: true
@@ -58,3 +58,5 @@ source: [主线程会话 2026-10-17（跨面变更 261016-p3-story-body-sd-cache
 - `docs/debt/gov/ARQ-261014-merge-gate-tooling-hotfix-batch.md`（在册）：**同脚本、不同根**。该条四项为 merge-driver `ReferenceError` / detect-changes CLI 失配 / INDEX 生成件 overlap 判定 / 教育面，均为**工具行为缺陷**；本条为**适用范围未成文**（闸行为本身可说正确，缺的是"哪些合并归它管"这句话）。两条 `paths` 同含本闸脚本，**建议同批评审**（该条 trigger 亦写「下个动 pre-merge-escalation-gate.mjs 的批」）。
 
 **关联**：`261016-p3-story-body-sd-cache`（本条派生自该变更的合并实测；其 spine = `delivery/intake/261016-p3-story-body-sd-cache.md`）；`ARQ-261011-contract-gate-literal-selfquote-false-positive`（ARQ-261014 自述与其同脚本可同批）；AGENTS.md 治理路由 step 7（"跑前置升级闸…自动合并本地 main" 的适用范围出处）。
+
+**结项**：consumed-by: 261026-gov-review-merge-gate-cluster-fix（landing-verdict PASS + 7 ADVISORY，2026-10-26；承接口径 = PROPOSAL §6 结项段）。

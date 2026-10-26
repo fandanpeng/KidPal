@@ -202,11 +202,13 @@ merge-driver 因冲突 abort + blocked 后，合法消解序（全部属 driver 
 | ③ | 相交·有取舍（同 hunk 语义单元相撞） | **architect 消解评审**（建议即地板，不落地） | gate BLOCK `parallel-overlap-tier3`，升级件带相交清单 + 双方 diff；派发失败/超时 → 直接 ④ |
 | ④ | architect 判不了 / 齿红 / 需动语义 | **escalate human** | 升级件带逐文件相交清单 + 双方版本正文 + architect 意见 + 消解选项；人批走既有 `--human-approval-ref` |
 
-**取舍机判判据**：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（git rebase 可自动并；`.vN` 载体不同段 / append 类按此判）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值 / 同锚互斥断言 / 版本字面互斥——后者复用 260908 批 guard-class wiring 判据）；**已登记 §10c 登记表形态的版本化制品 add/add 恒归 ②**（复用 merge-driver 特判并集），未登记形态归 ③（补集不变式 fail-closed）。判不了 = 存疑向严升 ③。
+**取舍机判判据**：**无取舍** = 相交文件双方改动落在不同 hunk / 不同语义段（git rebase 可自动并；`.vN` 载体不同段 / append 类按此判）；**有取舍** = 同 hunk 语义单元相撞（同 key 异值 / 同锚互斥断言 / 版本字面互斥——后者复用 260908 批 guard-class wiring 判据）；**已登记 §10c 登记表形态的版本化制品 add/add 恒归 ②**（复用 merge-driver 特判并集），未登记形态归 ③（补集不变式 fail-closed）。判不了 = 存疑向严升 ③。**派生态与生成件相撞恒归 ②**：current/ 投影（两件，merge-driver 的 PROJECTION_CONFLICT_FILES）与三条 lane 的 INDEX.md（渲染器 changes-index.mjs 全量重建为权威）无论哪侧先并都按机械消解——生成件由 union 免冲突 + 重跑渲染归位、投影由 merge-driver 特判（被合并包赢）；不升级 human 消解评审（261026 批 T5）。
 
 ## 10e. 契约包合并（261015-gov-review-face-loop-unify T19：人合 runbook 退役）
 
 契约变更 = 架构变更的一种：走 `/arch-change` loop（契约包三节——proposedContractDiff / impact / validationPlan——并入该批 PROPOSAL），合并过 `pre-merge-escalation-gate.mjs` **机械凭据闸**（FROZEN PROPOSAL + PASS landing-verdict + manifest 覆盖该契约路径，三件联立、缺一即 BLOCK）——**无人合通道、无人类签字门**（历史人签门已随 261015 批撤销；K7 等人合先例见本节 git 历史；`ARQ-260923-contract-merge-deadpath` 建议①的机械放行口由本批 T15 兑现，该条目已于 2026-09-24 结项归档）。
+
+**闸自身假阴性时的兜底通道（261026 批 T8）**：机械凭据闸是契约批默认且唯一的自动放行路径。若闸自身出缺陷（实例：261017 取件 ref、261021 首匹配锚——三件凭据齐备仍 BLOCK），处置固定四步：① 按实况逐件核对三件凭据（PROPOSAL 状态行 / landing-verdict 行首 verdict 行 / landing-manifest 覆盖全部契约 diff 路径）；② 在 `docs/debt/gov/` 立 ARQ 条目，逐字记 BLOCK 输出与凭据实况；③ 由 human 显式授权；④ 主线程在 main worktree 执行 `git -C <main-worktree> merge --ff-only <source>`，并在 pod-events 记人批事件。开放条件仅限「凭据齐备而闸报缺凭据」的假阴性——凭据真缺、off-main、契约 diff 无同批批证据一律不得走本通道。首合并的机械可达性已由本批 T1/T2 修复兑现；再走兜底即等于承认一次未修完的闸缺陷，须与 ARQ 一并处理。
 
 ## 11. 锚 3 · demo 对账与 roadmap 达成状态（260912-gov-review-portfolio-decomposition-chain T4，FROZEN v1.0）
 

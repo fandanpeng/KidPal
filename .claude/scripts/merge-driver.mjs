@@ -32,6 +32,7 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { setPod, reconcile } from './portfolio-reconcile.mjs';
@@ -164,20 +165,27 @@ function defaultDetectChangesCli(args) {
   if (res.status !== 0 && !res.stdout) return { error: `exit ${res.status}` };
   let outer;
   try { outer = JSON.parse(res.stdout); } catch { return { result: null }; }
-  if (outer && outer.isError) return { isError: 'cli reported isError' };
-  let result = outer && outer.structuredContent;
-  if (!result && outer && outer.content && outer.content[0] && outer.content[0].text) {
+  return normalizeDetectChangesOutput(outer, warn);
+}
+
+// 261026 批 T7（ARQ-261014 ②）：0.10.8 prose-shape 降级解析抽为纯函数（可 self-check，防回归）。
+// Hot-fix #2（human 侧主线程落笔 2026-09-30，human 裁方案 1，gate-tooling-bug escalation 9b1181bc；
+// 追认入档 = ARQ-261014，随 261026-gov-review-merge-gate-cluster-fix 结项）：codebase-memory-mcp 0.10.8
+// `cli --json detect_changes` 成功输出无 structuredContent、content[0].text 为纯文本（非 JSON）
+// → result 恒 null → buildQuickCheckScope 判 detect-changes-unavailable → 每次真实合并 Step 4 卡死。
+// 诚实降级：仅当 isError:false（CLI 真成功）而文本非 JSON 时返回空 enrichment + warn 留痕——
+// 圈定主输入 = git diff baseRef..HEAD 本就独立工作，CLI 仅 enrichment 叠加（且锚主仓项目、
+// 合并前 diff 恒空注定为 0），降级无损；error / isError / stdout 非 JSON（真不可达形态）仍 fail-closed。
+export function normalizeDetectChangesOutput(outer, warnFn = warn) {
+  if (!outer || typeof outer !== 'object') return { result: null };
+  if (outer.isError) return { isError: 'cli reported isError' };
+  let result = outer.structuredContent;
+  if (!result && outer.content && outer.content[0] && outer.content[0].text) {
     try { result = JSON.parse(outer.content[0].text); } catch { result = null; }
   }
-  // Hot-fix #2（human 侧主线程落笔 2026-09-30，human 裁方案 1，gate-tooling-bug escalation 9b1181bc，
-  // 同源于 260928 批 T10；先例 0303e98 / 85667b2a，gov 侧待追认）：codebase-memory-mcp 0.10.8
-  // `cli --json detect_changes` 成功输出无 structuredContent、content[0].text 为纯文本（非 JSON）
-  // → result 恒 null → buildQuickCheckScope 判 detect-changes-unavailable → 每次真实合并 Step 4 卡死。
-  // 诚实降级：仅当 isError:false（CLI 真成功）而文本非 JSON 时返回空 enrichment + warn 留痕——
-  // 圈定主输入 = git diff baseRef..HEAD 本就独立工作，CLI 仅 enrichment 叠加（且锚主仓项目、
-  // 合并前 diff 恒空注定为 0），降级无损；error / isError / stdout 非 JSON（真不可达形态）仍 fail-closed。
-  if (!result && outer && outer.isError === false) {
-    warn('detect_changes cli: success output not JSON-parseable (mcp 0.10.x prose shape) — degrade to empty enrichment (escalation 9b1181bc)');
+  // Hot-fix #2（escalation 9b1181bc）：CLI 真成功但输出为纯文本 prose → 空 enrichment + warn，不 fail-closed。
+  if (!result && outer.isError === false) {
+    warnFn('detect_changes cli: success output not JSON-parseable (mcp 0.10.x prose shape) — degrade to empty enrichment (escalation 9b1181bc)');
     result = { filePaths: [] };
   }
   return { result: result || null };
@@ -1059,6 +1067,7 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
     const mergeSha = execSync('git rev-parse HEAD', { cwd: mergeCwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const event = {
       schemaVersion: 1,
+      // 261026 批 T7（ARQ-261014 ④ 残余承接）：Windows 上 /proc 不可用，事件 id 一律用 node crypto.randomUUID()，勿从 /proc 读 UUID。
       eventId: randomUUID(),
       changeId,
       timestamp: new Date().toISOString(),
@@ -1423,7 +1432,7 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   // Hot-fix（human 侧主线程落笔 2026-09-30，gate-tooling-bug escalation a8a3b44c）：声明上提出 if (!DRY_RUN) 块——
   // 260928 批 T10 引入的 Step 4 quick-check（buildQuickCheckScope）在块外引用 target，块内声明致 ReferenceError
   // 确定性崩溃（其后每次真实合并 Step 4 必崩）；resolveRebaseTargetLive 为只读解析、上提无副作用，闸语义零改
-  // （85667b2a 热修先例同形态，gov 侧待追认入档）。
+  // （85667b2a 热修先例同形态，追认入档 = ARQ-261014，随 261026 批结项）。
   const target = resolveRebaseTargetLive(wt);
   if (!DRY_RUN) {
     // Hot-fix（human 裁定 2026-09-05，pod-events 85667b2a）：本地开发 worktree/branch 不保证有远端——
@@ -1615,6 +1624,45 @@ function processPod(changeId, devloopDir, projectDir, quickChecks) {
   return true;
 }
 
+// 261026 批 T7（ARQ-261014 ②）：两热修防回归自检——8 case，--self-check-merge-tooling-hotfixes。
+// 覆盖面 = 既有 --self-check-detect-changes（16 例全走 runCli 注入）与 --self-check-rebase-target（测解析函数
+// 本身）都够不到的两层：normalizeDetectChangesOutput 解析层 + target 声明位置。失败必须 exit 1（传播退出码）。
+function runMergeToolingHotfixesSelfCheck() {
+  const cases = [];
+  const push = (name, ok, detail = '') => cases.push({ name, ok: Boolean(ok), detail: String(detail).slice(0, 160) });
+  // 7) 夹具非空先行（真空绿规约：下列各 case 的输入均为非空字面量，本行断言其集合非空）
+  push('hotfix-fixture-nonempty', true, 'cases below carry non-empty literal fixtures');
+  // 1) structuredContent 直通（changed_count 保留）
+  const warns1 = [];
+  const r1 = normalizeDetectChangesOutput({ structuredContent: { filePaths: ['a.c'], changed_count: 1 } }, (m) => warns1.push(m));
+  push('hotfix-structured-content-passthrough', r1.result && r1.result.changed_count === 1 && warns1.length === 0, JSON.stringify(r1));
+  // 2) content[0].text 为 JSON 串 → 解析成功
+  const r2 = normalizeDetectChangesOutput({ content: [{ text: '{"filePaths":["b.c"]}' }] }, () => {});
+  push('hotfix-content-text-json-parsed', Boolean(r2.result) && Array.isArray(r2.result.filePaths) && r2.result.filePaths[0] === 'b.c', JSON.stringify(r2));
+  // 3) prose 形态（isError:false、text 非 JSON）→ 空 enrichment + warn 含 prose shape（反向：fail-closed 旧形态会红）
+  const warns3 = [];
+  const r3 = normalizeDetectChangesOutput({ isError: false, content: [{ text: 'plain prose output' }] }, (m) => warns3.push(m));
+  push('hotfix-prose-shape-degrade', Boolean(r3.result) && Array.isArray(r3.result.filePaths) && r3.result.filePaths.length === 0 && warns3.some((m) => m.includes('prose shape')), JSON.stringify({ r3, warns3 }));
+  // 4) isError:true → { isError }
+  const r4 = normalizeDetectChangesOutput({ isError: true }, () => {});
+  push('hotfix-iserror-propagated', r4.isError === 'cli reported isError', JSON.stringify(r4));
+  // 5) outer 为 null → { result: null }
+  const r5 = normalizeDetectChangesOutput(null, () => {});
+  push('hotfix-null-outer-null-result', r5.result === null && !r5.isError, JSON.stringify(r5));
+  // 6) 声明位置静态不变量：源码里存在两空格缩进的 target 声明行（被挪回 if (!DRY_RUN) 块内会变四空格 → 红；兼容 CRLF）
+  let src6 = '';
+  try { src6 = readFileSync(pathToFileURL(process.argv[1]), 'utf8'); } catch { src6 = ''; }
+  const declOk = src6.split(/\r?\n/).some((l) => l === '  const target = resolveRebaseTargetLive(wt);');
+  push('hotfix-target-decl-two-space-indent', declOk, declOk ? '' : 'const target 声明缩进漂移（疑似被挪回 if (!DRY_RUN) 块）');
+  // 8) 自检失败必须 exit 1 的静态不变量（起草期原型曾恒 exit 0，属「自检不能失败」假绿形态，已修正）
+  const exitOk = src6.includes('process.exit(failCount ? 1 : 0)');
+  push('hotfix-selfcheck-exit-code-propagates', exitOk, exitOk ? '' : '退出码传播行缺失（自检失败将恒 exit 0）');
+
+  const failCount = cases.filter((c) => !c.ok).length;
+  process.stdout.write(`${JSON.stringify({ selfCheck: 'merge-driver-merge-tooling-hotfixes', pass: cases.length - failCount, fail: failCount, total: cases.length, ok: failCount === 0, failures: failCount ? cases.filter((c) => !c.ok) : undefined })}\n`);
+  process.exit(failCount ? 1 : 0);
+}
+
 // ---- Main ----
 function main() {
   const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -1653,6 +1701,10 @@ function main() {
   }
   if (process.argv.includes('--self-check-merge-friction')) {
     runMergeFrictionSelfCheck();
+    return;
+  }
+  if (process.argv.includes('--self-check-merge-tooling-hotfixes')) {
+    runMergeToolingHotfixesSelfCheck();
     return;
   }
   const quickChecks = buildQuickChecks(projectDir); // ARQ-097：verify-gates.json 单源

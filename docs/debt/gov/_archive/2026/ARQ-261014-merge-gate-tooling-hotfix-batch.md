@@ -2,13 +2,13 @@
 id: ARQ-261014-merge-gate-tooling-hotfix-batch
 title: 合并闸工具链热修两例未入账留痕 + 生成件（INDEX.md）与手写相撞的渲染器权威口径缺口
 domain: gov
-status: deferred
+status: closed
 severity: COULD
 owner: architect（口径修订）+ dev-loop（脚本核验）
 trigger: 下次治理批 / 下个动 merge-driver.mjs 或 pre-merge-escalation-gate.mjs 的批（与 ARQ-261011 同脚本可同批）
 opened: 2026-10-14
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md
 paths: [".claude/scripts/merge-driver.mjs", ".claude/scripts/pre-merge-escalation-gate.mjs"]
 source: loop-retro-2026-10-14 18 包复盘（`delivery/changes/retro/2026-10-14-loop-retro.md`）
 ---
@@ -18,3 +18,7 @@ source: loop-retro-2026-10-14 18 包复盘（`delivery/changes/retro/2026-10-14-
 **修法候选**（交 review，不自批）：① 闸对生成件（INDEX.md 类渲染器产物）的 overlap 判定改按渲染器权威口径——豁免或提示重跑渲染，而非 BLOCK；② ①② 两热修补 verify 齿防回归；③ ④ 的教育面写进 planner.md 或 launch-prep 文面一句（参数形状 / 相位序列）。**riskTier: low**。
 
 **追加证据（loop-retro-2026-10-25，25 包复盘）**：④ 教育面在 final 相位复现八包——261013-lang-config（scope-file 前置未进派单模板）、261014-engine-stop（final r4 缺 --scope-file；ordinal 语义靠试错）、261018-sd-log-usb-read（final scope-file 依赖低估）、261019-p3-record-dialogue-guide（连续第二轮）、261020-p3-rec-frame-visual（首次撞）、261022-m5-k1（final 轮缺 scope-file）、261022-p3-record-chrome-ghost-fix（final round 必须是 next completed ordinal）、261023-agents-md（沿用上一包 round 号误派）。另有 261014-voice-round 记「补轮重跑前须显式删旧 write-once verdict，报错不自解释」。③ 生成件相撞新时点：261016-sd-card / 261018-sd-log-persist 的 current/ 投影与 delivery/review/INDEX.md 双向 append 零语义冲突仍被 parallel-overlap tier3 拦。建议升 severity/priority；本波每包至少烧半轮到一轮。证据：delivery/retro/2026-10-25-loop-retro.md §二 T1/T11。
+
+**拆出注记（2026-10-26，human 裁）**：④ 中「final 相位派发契约未成文」根（含 scope-file 归属 / round 序数 / required-check 参数形状 / 补轮 verdict 清理）经 human 2026-10-26 裁定自本条拆出独立批，登记为 [ARQ-261026-final-phase-dispatch-contract-unwritten.md](ARQ-261026-final-phase-dispatch-contract-unwritten.md)。此后该根的新增证据追加到新条目、不再追加到本条 ④（防双头记账）；本条 ④ 残余仅承载 Windows UUID 一例，本批（261026-gov-review-merge-gate-cluster-fix）消费范围为 ①②③ 与 ④ 残余。
+
+**结项**：consumed-by: 261026-gov-review-merge-gate-cluster-fix（landing-verdict PASS + 7 ADVISORY，2026-10-26；承接口径 = PROPOSAL §6 结项段）。

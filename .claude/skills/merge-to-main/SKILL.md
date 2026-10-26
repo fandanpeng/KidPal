@@ -11,11 +11,12 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
 
 - 工作树干净（`git status` 无未提交改动；有则先 commit/stash，别带着脏树合并）。**例外（2026-09-09 human 一次性授权直落）**：`.codebase-memory/artifact.json` 与 `graph.db.zst` 常驻脏 = 常态（indexer 自刷新的机器再生面，约定不追交、别硬清），不计入本条清洁度判据；合并冲突已由 `.codebase-memory/.gitattributes` 的 `merge=ours` 免除——看到它们脏不要 stage、不要 stash、不要 checkout 还原。**唯一例外动作**：反向回同步（main → gov/工作分支）时，merge 需要把这两件换入 main 上的新快照，而脏 live 文件会让 merge abort（实测）——先把这两件 `git checkout HEAD -- .codebase-memory/artifact.json .codebase-memory/graph.db.zst` 还原到 HEAD（丢弃的只是 indexer 可再生漂移，零损失），再执行 merge。
 - 合并方向与授权明确：本 skill 只执行**已被批准的**本地合并（supervisor APPROVE / architect GREEN 或 human 批准后的本地合并动作面）；未批准的合并不做。
+- **适用面（261026 批）**：前置升级闸只管 dev / gov 两条 lane 的变更批；变更集全部落在账本类制品（`delivery/intake/`、`docs/debt/gov/`、`docs/debt/tech/`、`docs/debt/requirement/`、`docs/debt/contract/`）时闸报 `NOT_APPLICABLE`，走本 skill 的 human 授权通道即可——不需要人批豁免口，也不要把它读成「闸放行了」。
 
 ## 步骤（每步有可检查终点）
 
 1. **查本地分支** — `git branch -a`。终点：确认源/目标分支都在、拼写无误。本地已有分支就**不做无谓 fetch**（报告实证：无谓网络 fetch 是高频摩擦）。
-2. **预览 overlap** — `git diff --stat <target>...<source>`。终点：列出改动文件；**标记双侧都改的文件**（INDEX 已按 lane 分文件——`delivery/review/INDEX.md` 与 `delivery/taskpackages/INDEX.md` 各自只在自己的 lane 合并流里变；debt 账本 `docs/debt/*/INDEX.md` 已配 `merge=union` + 渲染自愈——合并后重跑 `node .claude/scripts/debt-render.mjs` 即归位，doctor 会报「待重渲染」；旧单文件热点 `docs/ARCH-REVIEW-QUEUE.md` 已撤销〔261019 批〕）——这些是冲突高发点，先看清再动。
+2. **预览 overlap** — `git diff --stat <target>...<source>`。终点：列出改动文件；**标记双侧都改的文件**（INDEX 已按 lane 分文件——`delivery/review/INDEX.md` 与 `delivery/taskpackages/INDEX.md` 各自只在自己的 lane 合并流里变；debt 账本 `docs/debt/*/INDEX.md` 已配 `merge=union` + 渲染自愈——合并后重跑 `node .claude/scripts/debt-render.mjs` 即归位，doctor 会报「待重渲染」；旧单文件热点 `docs/ARCH-REVIEW-QUEUE.md` 已撤销〔261019 批〕；三条 lane INDEX 已配 merge=union——合并后重跑 `node .claude/scripts/changes-index.mjs` 全量重建即归位（幂等））——这些是冲突高发点，先看清再动。
 3. **必要时 pathspec 隔离** — 共享 worktree 场景有 CRLF 噪音时，用 `git add -- <specific-files>` 只暂存意图内的文件。终点：暂存集 == 本次合并意图，无噪音文件。
 4. **ff-only 合并** — `git merge --ff-only <source>`（在目标分支上）。终点：合并成功输出 `Fast-forward`。**非 ff 立即停下**：`git merge --abort`（如已开始），列出分歧 commit 交 human 裁——不自行制造 merge commit。
 5. **查残余冲突标记** — `git diff --check`（对合并结果区间）。终点：无 conflict marker 残留。有残留 = 事故（报告实证：静默残留曾进过 commit），停下交 human。
@@ -32,6 +33,7 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
         git -C C:/AI/KidPal-gov merge main
         node .claude/scripts/debt-render.mjs
         node .claude/scripts/changes-index.mjs --upsert <本批 changeId>   # 逐个
+        node .claude/scripts/changes-index.mjs   # 全量重建（union 合并后行序/计数归位；幂等）
 
    终点：gov worktree 净树（`.codebase-memory` 两件之外无未提交改动）；`docs/debt/*/INDEX.md` 与 `delivery/review/INDEX.md` 与条目状态一致；提交一条 `chore(sync): main → gov/kidpal 回同步`。`--upsert` 必须跑在落地 commit 之前，否则生成件漏带（既有实例两次）。
 
