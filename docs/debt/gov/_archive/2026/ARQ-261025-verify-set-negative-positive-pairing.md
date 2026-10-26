@@ -2,13 +2,13 @@
 id: ARQ-261025-verify-set-negative-positive-pairing
 title: 验证集负向白名单断言缺正向配对——只写「不允许什么」，不写 happy path 必须恰好发生什么
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 `docs/templates/PROPOSAL.template.md` 的 §5 验证集节或 `track-b-judge-brief.md` 的评审透镜时并批）
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-p2-anchor-template-cluster
 paths: ["docs/templates/PROPOSAL.template.md", ".claude/references/track-b-judge-brief.md"]
 source: ["delivery/review/261025-gov-review-release-pr-publish/retro.md", "delivery/review/261025-gov-review-release-pr-publish/PROPOSAL.md", "delivery/review/261025-gov-review-release-pr-publish/landing-verdict.md"]
 ---
@@ -20,3 +20,5 @@ source: ["delivery/review/261025-gov-review-release-pr-publish/retro.md", "deliv
 **建议改动**（交 review、不自批）：在 `docs/templates/PROPOSAL.template.md` 的 §5 验证集节补一条硬规则——「负向断言（不含 / 只允许 / ⊆）必须配一条正向 happy-path 断言（恰一次 / 相邻 flag 对 / 集合相等），否则判官可按真空绿打回」；`track-b-judge-brief.md` 的评审透镜第 6 条「验证集可执行性」加同一配对检查。是否升为【硬项】由下一批裁。
 
 **风险**：low——纯文档/评审简报措辞，不动任何门判据与脚本行为。
+
+**结项注记（2026-10-26，261026-gov-review-p2-anchor-template-cluster）**：261026 批 T5 落两处——`PROPOSAL.template.md` §5 三规则第 3 条 + `track-b-judge-brief.md` 评审透镜第 6 条「配对与实跑抽查」句。「是否升硬项」由本批裁 = **硬项**（取舍 D，理由 = 真空绿反照同族；退路已留：模板【硬项】语义若变同步复核）。

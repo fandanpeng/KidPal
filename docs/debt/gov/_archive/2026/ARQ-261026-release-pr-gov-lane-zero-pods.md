@@ -2,13 +2,13 @@
 id: ARQ-261026-release-pr-gov-lane-zero-pods
 title: release-pr.mjs 的 PR 标题/正文按 dev-lane Pod 合并行提取——gov 治理批发布时落成「0 个 Pod 合并」无信息量门面（261026 PR #40 实测 + human 点名）
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下个动 `.claude/scripts/release-pr.mjs` 的治理批；或下次 gov 批发布被人再次点名时立即升格
 opened: 2026-10-26
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-p2-anchor-template-cluster
 paths: [".claude/scripts/release-pr.mjs"]
 source: [PR https://github.com/fandanpeng/KidPal/pull/40 自动生成 title「release(261026-6): 0 个 Pod 合并」+ body「本批已合并 Pod：（未从 merge-driver 合并行提取到 changeId）」（gh pr view 实测存档于本条目登记当日会话）, human 2026-10-26 反馈原话「commit 写的不对，得写这次改了啥吧」]
 ---
@@ -20,3 +20,5 @@ source: [PR https://github.com/fandanpeng/KidPal/pull/40 自动生成 title「re
 **建议改动**（候选，交 review、不自批）：① 提取逻辑增 gov-lane 分支——`delivery/review/<changeId>/` 在场时标题取 changeId + PROPOSAL 状态行摘要、正文链四件制品并摘 PROPOSAL §0 目标效果；② 或最小版：gov lane 下标题/正文不再写「N 个 Pod」，改写「gov 治理批 <changeId>（制品见 delivery/review/<changeId>/）」。
 
 **风险**：riskTier: low——单脚本文面/提取分支，无行为面；G3 脚本，按 gov-arq 判据如实标 review profile = Track B（G3 触机器面，不走轻路径美化）。
+
+**结项注记（2026-10-26，261026-gov-review-p2-anchor-template-cluster 搭载收口，workstream P3 项）**：261026 批 T7 落地 = human 裁「最小版」——gov lane 标题点名治理批、正文给制品目录指针，不做 PROPOSAL 摘要提取（候选①完整版作废）；「两线皆空诚实标签」分支随批落（取舍 E，超出最小版半句、负向正向配对齐）。自检 7 夹具，26/26。

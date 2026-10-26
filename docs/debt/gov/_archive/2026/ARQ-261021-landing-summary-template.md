@@ -2,13 +2,13 @@
 id: ARQ-261021-landing-summary-template
 title: landing-summary 结构硬项（packet-id 行 + manifest 围栏）无模板承载，仅活在门脚本与先例文件里
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一批 Track B landing（判据可机判：landing-fidelity-check 首跑是否因 summary 格式 FAIL）
 opened: 2026-10-21
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-p2-anchor-template-cluster
 paths: ["delivery/review/261019-arch-review-p3-record-dialogue-guide/architect-landing-summary.md", ".claude/references/arch-change.md"]
 source: 261021-arch-review-p3-record-cancel-lifecycle retro F2 + landing-verdict FAIL 段（retro.md §3 F2 / §4 建议 2）
 ---
@@ -22,3 +22,5 @@ source: 261021-arch-review-p3-record-cancel-lifecycle retro F2 + landing-verdict
 **Why**：结构门 FAIL 属 fail-loud 设计意图，但 FAIL 原因若是「义务未成文」而非「落地失真」，则门在惩罚信息不对称而非保真度——成文即消。
 
 **关联**：261021 retro §6 旁注——intake INDEX 对 spine faceMap 平文字串的投影空值 + ⚠值域外（changes-index.mjs 解析面），同批交 loop-retro 观察面。
+
+**结项注记（2026-10-26，261026-gov-review-p2-anchor-template-cluster，与 ARQ-260928-landing-summary-skeleton-template 并条消费）**：同根事实——模板 260802 已存在、两处指针已在，缺的是 face SSOT 义务句；261026 批 T3 落地（arch-change.md 新节 + gov-change 指针，修法候选②「加两句字面」执行）。机判口径改写（261026 PROPOSAL 留根 5）：模板已存在的前提下再 FAIL 应查「模板指针是否被跳读 / 义务句是否够醒目」，不立新模板；复议触发 = 连续两批 summary 首跑 FAIL。

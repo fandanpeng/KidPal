@@ -55,5 +55,13 @@
   "261026-gov-review-merge-gate-cluster-fix": {
     "date": "2026-10-26",
     "mergedInMain": "yes"
+  },
+  "261026-gov-review-final-phase-dispatch-contract": {
+    "date": "2026-10-26",
+    "mergedInMain": "yes"
+  },
+  "261026-gov-review-p2-anchor-template-cluster": {
+    "date": "2026-10-26",
+    "mergedInMain": "yes"
   }
 }

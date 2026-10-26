@@ -5,12 +5,14 @@ slug: gov-debt-reduction
 status: active
 opened: 2026-10-26
 closed:
-summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 合并闸簇已落，P2 锚解析门+模板簇与 P1.5 final 相位派发契约在途
+summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2（锚解析门+模板簇）三波均已合 main，剩余 = P3 搭载挂靠与 P4 簇
 # —— 选填 ——
 owner: main-thread
 area: governance
 changes:
   - 261026-gov-review-merge-gate-cluster-fix
+  - 261026-gov-review-final-phase-dispatch-contract
+  - 261026-gov-review-p2-anchor-template-cluster
 ---
 
 # task_plan · 治理债清偿（gov-debt-reduction）
@@ -27,19 +29,20 @@ changes:
 - changeId = `261026-gov-review-merge-gate-cluster-fix`；全环闭环（R3 GREEN → PASS+7A → 已合 main → PR #40 已合并）。
 - 详见 `progress.md`。
 
-### P1.5 · final 相位派发契约批（⏳ 下一波首选，MAJOR）
+### P1.5 · final 相位派发契约批（✅ 2026-10-26 已落，MAJOR）
 
 - 主条目：`ARQ-261026-final-phase-dispatch-contract-unwritten`（八包实证每包烧半轮到一轮；修法 = G2 文面几句）。
 - 并批（同面）：`ARQ-260923-codemem-mode-doc-drift`（同动 launch-prep 文面）+ `ARQ-261025-interrupted-dispatch-progress-note`（同动 planner 派发步/brief 模板）。
-- **时点判据：赶在下一个 Pod 批 launch 前落地**，直接省该批 final 相位试错。
+- changeId = `261026-gov-review-final-phase-dispatch-contract`；全环闭环（R2 GREEN → PASS → 已合 main `47888d5b`）。详见 `progress.md`。
 
-### P2 · 锚解析门 + summary 模板簇（⏳ 继 P1.5）
+### P2 · 锚解析门 + summary 模板簇（✅ 2026-10-26 已落）
 
 - `ARQ-261019-anchor-probe-fence-blind`（governance-gate-shared §2 边界探测不跳围栏）+ `ARQ-261019-verbatim-quote-line-level-false-negative`（NIT）。
 - `ARQ-260928-landing-summary-skeleton-template` 与 `ARQ-261021-landing-summary-template` **先并条再消费**（同一件事：summary 缺模板承载；低成本案 = arch-change.md 加两句字面义务）。
 - §5 验证集纪律三条纯文面：`ARQ-261019-forward-derived-verification-set` + `ARQ-261025-verify-set-negative-positive-pairing` + `ARQ-261021-proposal-assert-expectations`。
 - **搭载**：`ARQ-261026-release-pr-gov-lane-zero-pods`（P3 项，本批动 `.claude/scripts/**` 顺手落）。
 - **拆出不动**：`ARQ-260924-landing-gate-dir-anchor-gap` 残余②（目录锚展开，human 2026-10-26 裁独立批——触承重闸判定逻辑，单独评审）。
+- **立项 ack（2026-10-26）**：① summary 义务 = arch-change.md 加两句字面（不立模板，视复发再立）；② 实跑回填纪律扩到 PROPOSAL 全部实测数字；③ release-pr gov-lane 取最小版；④ 六条并批 + 搭载，Track B 主路径。changeId = `261026-gov-review-p2-anchor-template-cluster`。
 
 ### P3 · release-pr gov-lane 门面（搭载项，不独立开批）
 

@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 32（待拍板 0 / 待触发 30 / 已接受风险 2）；已结 98（归档索引见下）。
+**摘要**：未结 25（待拍板 0 / 待触发 23 / 已接受风险 2）；已结 106（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（30）
+## 待触发（23）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -25,28 +25,21 @@ _（无）_
 | [ARQ-260914-portfolio-reconcile-launchpreconditions](ARQ-260914-portfolio-reconcile-launchpreconditions.md) | SHOULD | M-1 机械齿——`portfolio-reconcile.mjs` 读 workstream `decision-coverage.json` 顶层键 `launchPreconditions`（`需修订` spec 落点的 launch 前置清单），当前 `--check-launch` 不读该键、靠 convention + 人读核验 | 下次动 portfolio-reconcile.mjs / launch 检查面的治理批 |
 | [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | SHOULD | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 下一批 launch 前定夺候选① 文面统一（成本低、且是 M2-K3 与后续所有包的共同前置）；候选②③ 的门策略随下次治理批；若本包 K2 收尾相位出现「未跑 supervisor-gate-check 即欲结束」实况，即升 severity 并触发本条立即处理 |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
-| [ARQ-260928-landing-summary-skeleton-template](ARQ-260928-landing-summary-skeleton-template.md) | SHOULD | landing-summary 制品无骨架模板——格式义务（manifest 围栏块 / packet-id 字样）靠会话记忆承载，本批首验即因此 FAIL 一轮 | 下一治理批（动 docs/templates/** 或 PROPOSAL.template 的治理批时并批；或与 ARQ-260914-landing-preflight-anchor-parse 同族可并批） |
 | [ARQ-261001-host-blind-outcome-device-gate](ARQ-261001-host-blind-outcome-device-gate.md) | SHOULD | 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门 | 下一治理批（dev-loop 门 / 纪律文面；或下一个声明「用户可见结果」的包 launch 前） |
 | [ARQ-261014-closeout-obligation-write-authority-vacuum](ARQ-261014-closeout-obligation-write-authority-vacuum.md) | SHOULD | 收口义务清单的写权承载缺位——CDQ 行 / 设计稿母版同步 / spine 回填 / 收口挂法句等义务无登记角色可写，撞 enforce-scope 成跨包常态 | 下次治理批；或下个触 DEV-GOVERNANCE 收口节文面的批 |
 | [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | SHOULD | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 下一次涉及重命名文件 / 脚本 / 模板的治理批起草期 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
 | [ARQ-261017-anchor-check-master-unvalidated](ARQ-261017-anchor-check-master-unvalidated.md) | SHOULD | spec-anchor-check 假定「最高版号设计稿即完整母版」却不校验完整性——任何人产出一份增量 vN 设计稿即静默打断全仓 UI 锚机检（2026-10-17 实测 12 条悬空、涉 10 条 story） | 下一治理批（动 `.claude/scripts/spec-anchor-check.mjs` / 设计母版发布流程 / `uiux-author` 或 write-story 的「母版产出」纪律任一时并批）；或再出现一次「写增量稿静默打断 UI 锚机检」时立即升格 |
-| [ARQ-261019-anchor-probe-fence-blind](ARQ-261019-anchor-probe-fence-blind.md) | SHOULD | parseSection2AnchorLists 的 §2 边界探测不跳围栏——§2 内围栏块含 `^## ` 行会提前截断 §2，其后锚行与 T 条目全消失且报错误导（T3 误报缺锚、T4 条目静默消失不点名） | 下一次动 `.claude/scripts/lib/governance-gate-shared.mjs` 锚解析面的治理批 |
-| [ARQ-261019-forward-derived-verification-set](ARQ-261019-forward-derived-verification-set.md) | SHOULD | 验证集白名单/计数承诺应从处方文本正推（而非只枚举现状命中） | 下个含「命中 ≡ 白名单」或计数承诺型验证条目的起草批，architect 撰写约定增补一条 |
 | [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | SHOULD | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | ① opendesign-connect skill 增补「出图不走 OD」先例段（od_* 失联/应用未跑时出图管道 = tools/asset-pipeline/shoot_design.mjs <html> <outdir>，playwright 无头 Edge 逐画布精确截图、400×300 阈值化 1bpp，每批只捡变更帧落 docs/ui/V<n>/）；② uiux-author agent 定义增补同款指引；③ 261019 批实测补充：uiux-author 全文件 Write 曾两次覆盖主线程合并的完整母版（R1 回归），skill 增补「母版/增量页单写者约定」条目 |
-| [ARQ-261019-verbatim-quote-line-level-false-negative](ARQ-261019-verbatim-quote-line-level-false-negative.md) | NIT | landing-fidelity 结构门 verbatim-quote 检查按行级匹配——目标句嵌在长行中部时报 not-found 假阴性（byte 比对证实逐字在场），advisory 语义局限误导核对 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` 的治理批 |
-| [ARQ-261021-landing-summary-template](ARQ-261021-landing-summary-template.md) | SHOULD | landing-summary 结构硬项（packet-id 行 + manifest 围栏）无模板承载，仅活在门脚本与先例文件里 | 下一批 Track B landing（判据可机判：landing-fidelity-check 首跑是否因 summary 格式 FAIL） |
-| [ARQ-261021-proposal-assert-expectations](ARQ-261021-proposal-assert-expectations.md) | SHOULD | PROPOSAL §5 验证集断言预期值须来自起草期实跑输出、禁止推算（本批三处失配实证） | 下一批走 /arch-change 或 /gov-change 的 PROPOSAL 起草时消费（判据可机判：§5 预期值是否带实跑留痕） |
 | [ARQ-261024-new-mechanism-spike-first](ARQ-261024-new-mechanism-spike-first.md) | MAJOR | 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证 | 下一个引入新子系统 / 新外部依赖集成 / 新数据迁移的批，triage 判档与 launch 前必查本条；或下次治理批 |
 | [ARQ-261025-adjacent-frozen-anchor-sweep](ARQ-261025-adjacent-frozen-anchor-sweep.md) | SHOULD | intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚 | 下一治理批（动 `task-intake-and-slicing.md` / `planner.md` / `dev-loop.md` 的分面时并批）；或下一个触既有冻结件同一实现点的包 |
 | [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
 | [ARQ-261025-debt-archive-ref-atomic](ARQ-261025-debt-archive-ref-atomic.md) | SHOULD | debt 结项归档归位与引用更新不同批——docRefs / sourceRefs 静默陈旧，final 轮 docs-sync 才红 | 下一治理批（动 `debt-render.mjs` / `task-intake-and-slicing.md` / integrator 收口文面时并批）；或再出现一次归档后引用陈旧 |
 | [ARQ-261025-intake-index-retro-scope-hygiene](ARQ-261025-intake-index-retro-scope-hygiene.md) | COULD | intake INDEX 漂移标连续多轮无人消费 + retro 游标把 `current` 指针目录当 waiting 包 | 下一治理批（动 `changes-index.mjs` / `loop-health-report.mjs` 时并批）；或下一轮 retro 仍见漂移标 |
 | [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
-| [ARQ-261025-verify-set-negative-positive-pairing](ARQ-261025-verify-set-negative-positive-pairing.md) | SHOULD | 验证集负向白名单断言缺正向配对——只写「不允许什么」，不写 happy path 必须恰好发生什么 | 下一治理批（动 `docs/templates/PROPOSAL.template.md` 的 §5 验证集节或 `track-b-judge-brief.md` 的评审透镜时并批） |
 | [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
-| [ARQ-261026-release-pr-gov-lane-zero-pods](ARQ-261026-release-pr-gov-lane-zero-pods.md) | SHOULD | release-pr.mjs 的 PR 标题/正文按 dev-lane Pod 合并行提取——gov 治理批发布时落成「0 个 Pod 合并」无信息量门面（261026 PR #40 实测 + human 点名） | 下个动 `.claude/scripts/release-pr.mjs` 的治理批；或下次 gov 批发布被人再次点名时立即升格 |
+| [ARQ-261026-verbatim-extract-backtick-cut](ARQ-261026-verbatim-extract-backtick-cut.md) | NIT | checkVerbatimQuotes 的围栏提取正则把块内容中的 ``` 字面（js 夹具串形态）当块边界——观察列大量伪 missing，噪声稀释 advisory 可信度 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` verbatim-quote 面的治理批 |
 
 ## 已接受风险（2）
 
@@ -55,10 +48,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（98）
+## 已结（106）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 98 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 106 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

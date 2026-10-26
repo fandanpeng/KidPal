@@ -113,6 +113,32 @@ export function extractChangeIds(logText) {
 }
 
 /**
+ * gov lane changeId 提取（261026 批 T7，ARQ-261026-release-pr-gov-lane-zero-pods）：从
+ * `git diff --name-only origin/main..main -- delivery/review/` 输出取治理批目录前缀
+ * （<YYMMDD>-(gov|arch)-review-<slug>），按序去重。gov 批无 merge-driver 合并行，changeId 只能从交付制品路径派生。
+ */
+export function extractGovChangeIds(diffNamesText) {
+  const out = [];
+  const seen = new Set();
+  for (const line of String(diffNamesText || '').split(/\r?\n/)) {
+    const m = /^delivery\/review\/(\d{6}-(?:gov|arch)-review-[A-Za-z0-9._-]+)\//.exec(line.trim());
+    if (m && !seen.has(m[1])) { seen.add(m[1]); out.push(m[1]); }
+  }
+  return out;
+}
+
+/**
+ * PR 标题（261026 批 T7）：dev lane = merge-driver 合并行（>0）→「N 个 Pod 合并」；
+ * gov lane = delivery/review 治理批目录（dev 行为 0）→ 点名治理批；两线皆空 → 诚实报「变更线未识别」，
+ * 不再落「0 个 Pod 合并」空门面（PR #40 实测病灶：gov 批发布时标题对评审者零信息量）。
+ */
+export function derivePrTitle({ ymd, suffix, changeIds, govChangeIds }) {
+  if (changeIds.length) return `release(${ymd}${suffix}): ${changeIds.length} 个 Pod 合并`;
+  if (govChangeIds.length) return `release(${ymd}${suffix}): gov 治理批 ${govChangeIds.join(', ')}`;
+  return `release(${ymd}${suffix}): 变更线未识别（dev 合并行与 gov 交付制品均空）`;
+}
+
+/**
  * push argv 白名单（行为面判据）：push 子命令、显式 refspec、源 token 恒 `main`、
  * 目标 token 恒以 `refs/heads/release/` 起头、不含任何 force/delete/mirror/all 参数。
  * 违反即抛——调用方不得自行拼 argv 绕过本函数。
@@ -165,17 +191,18 @@ export function planPrCreate({ head, title, bodyFile }) {
   return ['pr', 'create', '--base', 'main', '--head', head, '--title', title, '--body-file', bodyFile];
 }
 
-export function buildPrBody({ changeIds, baseSha, tipSha, branch }) {
-  const pods = changeIds.length
-    ? changeIds.map((id) => `- ${id}`)
-    : ['- （未从 merge-driver 合并行提取到 changeId）'];
+export function buildPrBody({ changeIds, govChangeIds = [], baseSha, tipSha, branch }) {
+  const section = changeIds.length
+    ? ['本批已合并 Pod：', ...changeIds.map((id) => `- ${id}`)]
+    : govChangeIds.length
+      ? ['本发布为 gov 治理批：', ...govChangeIds.map((id) => `- gov 治理批 ${id}（制品见 delivery/review/${id}/）`)]
+      : ['本变更线未识别（dev 的 merge-driver 合并行与 gov 交付制品均为空）：请在合并前于 PR 描述补充本批变更说明。'];
   return [
     `发布分支：\`${branch}\``,
     `基线（origin/main）：\`${baseSha}\``,
     `release tip（= 本地 main）：\`${tipSha}\``,
     '',
-    '本批已合并 Pod：',
-    ...pods,
+    ...section,
     '',
     '仓库仅允许 merge commit。human 在网页合并后，请在主 worktree 跑 `node .claude/scripts/release-pr.mjs --sync` 追平本地 main。',
   ].join('\n');
@@ -254,14 +281,15 @@ export function publishFlow(deps, { title = null } = {}) {
     log(`reusing existing remote branch ${picked.name} (tip already equals local main)`);
   }
 
-  // 8. 开 PR（标题默认 release(<YYMMDD>[-n]): <N> 个 Pod 合并）。
+  // 8. 开 PR（261026 批 T7：lane 感知标题/正文——dev lane 记 Pod，gov lane 点名治理批与制品目录）。
   const suffix = picked.name.slice(`release/${deps.today()}`.length);
   const changeIds = extractChangeIds(deps.mergeLog());
-  const prTitle = title || `release(${deps.today()}${suffix}): ${changeIds.length} 个 Pod 合并`;
+  const govChangeIds = extractGovChangeIds(deps.reviewDiffNames ? deps.reviewDiffNames() : '');
+  const prTitle = title || derivePrTitle({ ymd: deps.today(), suffix, changeIds, govChangeIds });
   const created = deps.ghCreatePr({
     head: picked.name,
     title: prTitle,
-    body: buildPrBody({ changeIds, baseSha: originSha, tipSha: mainSha, branch: picked.name }),
+    body: buildPrBody({ changeIds, govChangeIds, baseSha: originSha, tipSha: mainSha, branch: picked.name }),
   });
   if (!created.ok) {
     return {
@@ -391,6 +419,7 @@ export function makeLiveDeps({ dryRun = false, cwd = process.cwd(), now = () => 
     ghAuthStatus: () => runGh(['auth', 'status'], ghRunner),
     today: () => todayYmd(now()),
     mergeLog: () => git(['log', '--first-parent', '--format=%s', 'origin/main..main'], { cwd }).stdout || '',
+    reviewDiffNames: () => git(['diff', '--name-only', 'origin/main..main', '--', 'delivery/review/'], { cwd }).stdout || '',
     push: (argv) => {
       if (dryRun) {
         log(`[dry-run] would run: git ${argv.join(' ')}`);
@@ -444,6 +473,7 @@ function makeFakePublishDeps(overrides = {}) {
     ghAuthStatus: () => ({ ok: true }),
     today: () => '261025',
     mergeLog: () => 'Merge 260101-p1 (merge-driver)\nchore: unrelated\nMerge 260102-p2 (merge-driver)\nMerge 260101-p1 (merge-driver)\n',
+    reviewDiffNames: () => '',
     push: (argv) => {
       calls.push.push(argv);
       return { ok: true };
@@ -639,6 +669,46 @@ export function runSelfCheck() {
     });
     const r = syncFlow(deps); // 默认 fake 关系 = ahead
     check('sync-refused', r.exit === 2 && r.reason === 'ahead' && ffCalls === 0, `exit=${r.exit} reason=${r.reason} ff=${ffCalls}`);
+  }
+  // 20（261026 批 T7）：gov lane changeId 提取
+  {
+    const ids = extractGovChangeIds([
+      'delivery/review/260101-gov-review-x/PROPOSAL.md',
+      'delivery/review/260101-gov-review-x/retro.md',
+      'delivery/review/260102-arch-review-y/PROPOSAL.md',
+      'delivery/review/INDEX.md',
+      'delivery/review/.changes-index-state.json',
+      'delivery/intake/z.md',
+    ].join('\n'));
+    check('extract-gov-changeids', JSON.stringify(ids) === JSON.stringify(['260101-gov-review-x', '260102-arch-review-y']), `ids=${JSON.stringify(ids)}`);
+  }
+  // 21（261026 批 T7）：gov lane 横幅——标题点名治理批、正文给制品指针（正向），且不落「0 个 Pod」空门面（负向配对）
+  {
+    let captured = null;
+    const { deps } = makeFakePublishDeps({
+      mergeLog: () => '',
+      reviewDiffNames: () => 'delivery/review/260101-gov-review-x/PROPOSAL.md\n',
+      ghCreatePr: (payload) => { captured = payload; return { ok: true, url: 'https://example.test/pull/88' }; },
+    });
+    const r = publishFlow(deps);
+    check('gov-lane-title', r.exit === 0 && !!captured && captured.title === 'release(261025): gov 治理批 260101-gov-review-x', `title=${captured && captured.title}`);
+    check('gov-lane-body-pointer', !!captured && captured.body.includes('gov 治理批 260101-gov-review-x（制品见 delivery/review/260101-gov-review-x/）'), 'body missing pointer');
+    check('gov-lane-no-zero-pod', !!captured && !captured.title.includes('个 Pod') && !captured.body.includes('个 Pod') && !captured.body.includes('未从 merge-driver 合并行提取到 changeId'), 'zero-pod facade still present');
+  }
+  // 22：dev lane 正向配对——合并行在场时标题仍记 Pod 数
+  {
+    let captured = null;
+    const { deps } = makeFakePublishDeps({ ghCreatePr: (payload) => { captured = payload; return { ok: true, url: 'u' }; } });
+    publishFlow(deps);
+    check('dev-lane-title', !!captured && captured.title === 'release(261025): 2 个 Pod 合并', `title=${captured && captured.title}`);
+  }
+  // 23：两线皆空——诚实报「变更线未识别」
+  {
+    let captured = null;
+    const { deps } = makeFakePublishDeps({ mergeLog: () => '', reviewDiffNames: () => 'delivery/review/INDEX.md\n', ghCreatePr: (payload) => { captured = payload; return { ok: true, url: 'u' }; } });
+    publishFlow(deps);
+    check('unknown-lane-title', !!captured && captured.title.includes('变更线未识别') && !captured.title.includes('个 Pod'), `title=${captured && captured.title}`);
+    check('unknown-lane-body', !!captured && captured.body.includes('本变更线未识别') && !captured.body.includes('未从 merge-driver 合并行提取到 changeId'), 'body fallback mismatch');
   }
 
   const pass = results.filter((r) => r.pass).length;

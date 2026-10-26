@@ -2,13 +2,13 @@
 id: ARQ-261019-anchor-probe-fence-blind
 title: parseSection2AnchorLists 的 §2 边界探测不跳围栏——§2 内围栏块含 `^## ` 行会提前截断 §2，其后锚行与 T 条目全消失且报错误导（T3 误报缺锚、T4 条目静默消失不点名）
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一次动 `.claude/scripts/lib/governance-gate-shared.mjs` 锚解析面的治理批
 opened: 2026-10-19
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: 261026-gov-review-p2-anchor-template-cluster
 paths: [.claude/scripts/lib/governance-gate-shared.mjs]
 source: [delivery/review/261019-gov-review-local-memory-extraction/PROPOSAL.md（§6 留根 + §5 V1 首跑 RED 实录）]
 ---
@@ -20,3 +20,5 @@ source: [delivery/review/261019-gov-review-local-memory-extraction/PROPOSAL.md�
 **建议改动**：§2 边界探测复用 `fenceLineFlags`（与锚行扫描段同机制），围栏内 `^## ` 行不作节边界；报错侧对「条目在 §2 截断后消失」增显式点名（候选，交 review、不自批）。
 
 **风险**：riskTier: low——边界探测加围栏跳过是判定条件收窄，误改方向只会让少数真边界被多跳一行，既有锚行扫描逻辑不受影响。review profile: full-adversarial + human（触 G3 门脚本，如实标注）。
+
+**结项注记（2026-10-26，261026-gov-review-p2-anchor-template-cluster）**：261026 批 T1 落地收口。同根切片点实测比本条 paths 记录多两处（`landing-fidelity-check.mjs` 的 `section2Body` 与 `checkVerbatimQuotes` §2 切片），三处一并修（PROPOSAL 取舍 B）；「报错侧点名」取「围栏未闭合 fail-loud」替代 orphan-T 启发式（取舍 A，误报面理由见 PROPOSAL §4）。全仓 76 份语料双实现对拍零漂移。verdict：`delivery/review/261026-gov-review-p2-anchor-template-cluster/landing-verdict.md` PASS。

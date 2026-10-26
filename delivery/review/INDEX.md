@@ -11,7 +11,8 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | — |
+| [261026-gov-review-p2-anchor-template-cluster](261026-gov-review-p2-anchor-template-cluster/) | 2026-10-26 | landed | yes |
+| [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-merge-gate-cluster-fix](261026-gov-review-merge-gate-cluster-fix/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-retro-efficiency-fidelity](261026-gov-review-retro-efficiency-fidelity/) | 2026-10-26 | landed | yes |
 | [261025-arch-review-spec-reconciliation-memory-writing-scope](261025-arch-review-spec-reconciliation-memory-writing-scope/) | 2026-10-25 | landed | yes |

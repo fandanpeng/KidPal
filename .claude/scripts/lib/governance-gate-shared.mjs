@@ -368,11 +368,19 @@ export function parseSection2AnchorLists(text) {
   if (start === -1) {
     return { union: [], problems: ['§2 改法节未找到：无法解析目标文件锚清单（结构不合格，fail-loud）'] };
   }
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) {
-    if (/^##\s/.test(lines[i])) { end = i; break; }
-  }
   const flags = fenceLineFlags(lines); // 全文件算一次，再按节域切片（下标与 lines 对齐）
+  // 261026 批 T1（ARQ-261019-anchor-probe-fence-blind）：边界探测与锚行扫描同机制——跳围栏。
+  // 围栏内以「## 」起头的行是原文钉死内容、不是节边界；旧行为在此提前截断 §2，其后 T 条目与锚行静默消失。
+  let end = lines.length;
+  let boundaryFound = false;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (flags[i]) continue;
+    if (/^##\s/.test(lines[i])) { end = i; boundaryFound = true; break; }
+  }
+  // 261026 批 T1：围栏未闭合（fence 定界行为奇数）且找不到非围栏节边界 → §2 扫描域吞至文末，其后条目不可见——fail-loud 点名。
+  if (!boundaryFound && lines.reduce((n, l) => n + (/^\s*```/.test(l) ? 1 : 0), 0) % 2 === 1) {
+    problems.push('围栏未闭合：fence 定界行为奇数且找不到非围栏节边界，§2 扫描域吞至文末、其后 T 条目与锚行不可见（fail-loud）');
+  }
   const entries = [];
   let current = null;
   for (let i = start; i < end; i++) {
@@ -391,7 +399,7 @@ export function parseSection2AnchorLists(text) {
     }
   }
   if (entries.length === 0) {
-    return { union: [], problems: ['§2 无任何 T 条目（### T<n> 标题缺失）：无法对账锚清单（fail-loud）'] };
+    return { union: [], problems: problems.concat(['§2 无任何 T 条目（### T<n> 标题缺失）：无法对账锚清单（fail-loud）']) };
   }
   for (const entry of entries) {
     const anchorLines = entry.lines
@@ -575,6 +583,47 @@ export function runSection2AnchorSelfCheck() {
   const fpRes = parseSection2AnchorLists(fencedPhantom);
   ok(fpRes.problems.length === 0, 'fence-phantom-no-problems');
   ok(JSON.stringify(fpRes.union) === JSON.stringify(['.claude/scripts/real.mjs']), 'fence-phantom-no-swallow');
+  // 261026 批 T1（ARQ-261019-anchor-probe-fence-blind）夹具：判别力 = 反转实现（边界探测不跳围栏）时
+  // T2 锚行被截断出域，union 缺 docs/b.md、本组断言变红。
+  const fenceBoundary = [
+    '## 2. 改法（T1–T2）',
+    '### T1 · 甲',
+    '正文一句。',
+    '目标文件：`docs/a.md`（改）',
+    '',
+    '```md',
+    '## 围栏内原文钉死的节标题（不得作 §2 边界）',
+    '```',
+    '',
+    '### T2 · 乙',
+    '目标文件：`docs/b.md`（改）',
+    '',
+    '## 3. 影响面',
+  ].join('\n');
+  const fenceBoundaryRes = parseSection2AnchorLists(fenceBoundary);
+  ok(fenceBoundaryRes.problems.length === 0, 'fence-boundary-no-problems');
+  ok(JSON.stringify([...fenceBoundaryRes.union].sort()) === JSON.stringify(['docs/a.md', 'docs/b.md']), 'fence-boundary-union-keeps-post-fence-entry');
+  // 反向正控：真节标题（非围栏）仍终止 §2——§3 内的 T9 标题不造条目、其锚行不入并集（防「跳围栏」被扩成「不认边界」）
+  const genuineBoundary = [
+    '## 2. 改法（T1）',
+    '### T1 · 甲',
+    '目标文件：`docs/a.md`（改）',
+    '## 3. 影响面',
+    '### T9 · §3 内的小节标题',
+    '目标文件：`docs/z.md`（改）',
+  ].join('\n');
+  const genuineBoundaryRes = parseSection2AnchorLists(genuineBoundary);
+  ok(genuineBoundaryRes.problems.length === 0 && JSON.stringify(genuineBoundaryRes.union) === JSON.stringify(['docs/a.md']), 'genuine-boundary-still-terminates');
+  // 围栏未闭合 fail-loud 点名（判别力：反转实现无此 problem）
+  const unclosedFence = [
+    '## 2. 改法（T1）',
+    '### T1 · 甲',
+    '目标文件：`docs/a.md`（改）',
+    '```md',
+    '正文……（围栏未闭合）',
+  ].join('\n');
+  const unclosedRes = parseSection2AnchorLists(unclosedFence);
+  ok(unclosedRes.problems.some((x) => x.includes('围栏未闭合')), 'unclosed-fence-fail-loud');
 
   console.log(JSON.stringify({ selfCheck: 'section2Anchors', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);
