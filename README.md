@@ -3,7 +3,7 @@
 > 一个做了 15 年软件交付管理的人，把带工程师团队的方法论原样搬去带一支 AI Agent 团队。
 > 这个仓库装着两层东西：**方法**——一套 AI 原生的多智能体研发治理框架（Graph Engineering）；**证据**——用它从 0 到 1 做出来的真实产品（KidPal，一个小学生的 AI 小伴终端）。
 
-**English abstract**: This repository contains two things. (1) *Graph Engineering* — an AI-native governance framework that makes software governance an explicit graph: a full agile team mapped onto specialized LLM agents as nodes, four closed change loops (requirements / architecture+contracts / governance / implementation) as edges, each running draft → independent review → freeze → landing → independent verification → retrospective, with acceptance tests frozen before work begins, a single-source-of-truth interface contract, adversarial red-team/blue-team review for structural changes, machine-enforced permission boundaries, and risk-graded escalation to a human. (2) *KidPal* — a real product built entirely by that agent team under this governance: an ESP32-S3 companion terminal for an elementary-school kid, backed by a cloud "brain" that parents talk to through QQ. Every change in this repo keeps its full audit trail (proposal, landing summary, independent verdict, retrospective) — see the evidence section below. Documentation is primarily in Chinese.
+**English abstract**: This repository contains two things. (1) *Graph Engineering* — an AI-native governance framework that makes software governance an explicit graph: a full agile team mapped onto specialized LLM agents as nodes, four closed change loops (requirements / architecture+contracts / governance / implementation) as edges, each running draft → independent review → freeze → landing → independent verification → retrospective, with acceptance tests frozen before work begins, a single-source-of-truth interface contract, adversarial red-team/blue-team review for structural changes, machine-enforced permission boundaries, and risk-graded escalation to a human. (2) *KidPal* — a real product built entirely by that agent team under this governance: an ESP32-S3 companion terminal for an elementary-school kid, backed by a cloud "brain" that remembers what the kid shares across sessions and that parents talk to through QQ. Every change in this repo keeps its full audit trail (proposal, landing summary, independent verdict, retrospective) — see the evidence section below. Documentation is primarily in Chinese.
 
 ---
 
@@ -11,7 +11,7 @@
 
 **产品这层**：小孩对终端说话，云端大脑负责思考和记忆，爸爸妈妈在 QQ 上吩咐大脑——不用装任何 App。
 
-![KidPal 业务全景](docs/notes/archify/architecture-kidpal-business-casual-20261019-160714/review-4/visual-check/kidpal-casual.visual-check.2048x1320.light.png)
+![KidPal 业务全景](docs/notes/archify/architecture-kidpal-business-casual-20261026-144948/visual-check/kidpal-casual.visual-check.2048x1320.light.png)
 
 **方法这层**：每个变更从 idea 到合并进 main，要走完一条有门禁、有分工、有复盘的流水线——人在里面只做三个动作：立项、例外拍板、批 PR。
 
@@ -29,9 +29,10 @@
 - **语音问答**——按键或喊一声就能问问题，云端大脑接 DeepSeek 回答；
 - **笔顺演示**——问「勇字怎么写」，屏幕上一笔一画演示（覆盖 9574 个汉字）；
 - **故事整理**——小孩口述故事，云端帮他整理成文字存起来；
+- **越用越懂孩子（记忆）**——孩子聊天时随口说的事（喜欢什么颜色、小狗叫什么、同学是谁），小伴会默默记下；同一句话里追问、隔天新开一句再问，都答得上来；
 - **到点提醒**——妈妈在 QQ 上说一句「明天带水彩笔」，设备到点自己开口提醒。
 
-架构上设备是**哑终端**（只收音/放音/显示/按键，不懂业务），所有数据、逻辑、记忆在云端大脑（OpenClaw），家长通道就是 QQ——录入课表、留提醒，说一句就生效。
+架构上设备是**哑终端**（只收音/放音/显示/按键，不懂业务），所有数据、逻辑、记忆在云端大脑（OpenClaw），家长通道就是 QQ——录入课表、留提醒，说一句就生效。记忆也在云端完成：大脑从对话里自动提炼「孩子世界的事实」形成记忆画像，每轮对话前注入——设备端不用为记忆做任何事，记忆跟着家庭走、不跟着某块板子走。
 
 ## 方法层：Graph Engineering 是什么
 
@@ -75,7 +76,7 @@
 ## 运行边界（先说清楚，免得白兴奋）
 
 - 终端需要一块 **ESP32-S3-RLCD-4.2** 开发板；
-- 云端需要一台 Linux 主机 + 若干外部服务 key（阿里云 ASR、DeepSeek、edge-tts、Tavily），QQ 通道依赖 OpenClaw 部署；
+- 云端需要一台 Linux 主机 + 若干外部服务 key（阿里云 ASR、DeepSeek、edge-tts、Tavily；记忆向量化另用阿里云 DashScope embedding，与 ASR 同账号；记忆画像库 Honcho 自托管，不占外部 key），QQ 通道依赖 OpenClaw 部署；
 - 这是一个人的研究项目，文档全部为中文，持续演进中，接口和流程都可能变；
 - 治理框架与产品代码同仓是刻意为之——框架的证据就在产品的历史里。
 
@@ -83,7 +84,7 @@
 
 - 固件基座：[小智 xiaozhi-esp32](https://github.com/78/xiaozhi-esp32)（MIT），V2.1.0；
 - 云端引擎：[xiaozhi-esp32-server](https://github.com/xinnan-tech/xiaozhi-esp32-server)（MIT，容器化部署 + 本地补丁）；
-- 编排大脑：OpenClaw；汉字笔顺数据：makemeahanzi（Arphic Public License）；
+- 编排大脑：OpenClaw；记忆画像子系统：[Honcho](https://github.com/plastic-labs/honcho)（Plastic Labs，AGPL-3.0，自托管部署）；汉字笔顺数据：makemeahanzi（Arphic Public License）；
 - 语音链路：阿里云 ASR（Qwen3-ASR-Flash）、edge-tts（微软非官方接口）；
 - 治理图与业务图均由本仓内置的 archify 工具链（[tt-a1i/archify](https://github.com/tt-a1i/archify)）生成并过机检。
 
