@@ -27,7 +27,7 @@ diff **全部**同时满足才可走轻：① 仅落在 `.claude/references/**`�
 
 ## Track B 后端
 
-= 现行 Track B 七步（AGENTS.md「治理路由」节），cast 已统一：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环至 GREEN → 主线程标 FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main。
+= 现行 Track B 七步（AGENTS.md「治理路由」节），cast 已统一：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环至 GREEN → 主线程标 FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main。 落地制品义务（landing-summary 结构两件 + 验证集实跑回填）见 `arch-change.md`「Track B 制品义务」节（单源，本文件不复制）。
 
 ## 角色分工
 

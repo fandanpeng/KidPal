@@ -215,11 +215,12 @@ function section2Body(text) {
   const lines = text.split(/\r?\n/);
   const start = lines.findIndex((l) => /^##\s*2[.、]?\s/.test(l));
   if (start < 0) return null;
+  const flags = fenceFlags(lines);
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
+    if (flags[i]) continue; // 261026 批 T1：边界探测跳围栏（与 parseSection2AnchorLists 同机制）
     if (/^##\s/.test(lines[i])) { end = i; break; }
   }
-  const flags = fenceFlags(lines);
   return { body: lines.slice(start + 1, end), offset: start + 1, inFence: flags.slice(start + 1, end) };
 }
 
@@ -340,6 +341,11 @@ function runPreflightSelfCheck() {
   const dirAdv = dirTokenAdvisories(['docs/crq/', '.claude/scripts/a.mjs']);
   check('目录 token advisory·非空且点名', dirAdv.length === 1 && dirAdv[0].includes('docs/crq/'), true);
   check('目录 token advisory·纯文件 token 为空', dirTokenAdvisories(['.claude/scripts/a.mjs']).length, 0);
+  // 261026 批 T1：边界探测跳围栏——围栏内「## 」行不得截断 §2 域，其后加粗锚行仍须报出（绝对行号 9）。
+  // 判别力：反转实现（section2Body 边界不跳围栏）时该行被截断出域、boldCls = 0 变红。
+  const fenceBoundaryBold = ['# 夹具', '## 2. 改法（T1）', '### T1 · 甲', '目标文件：`.claude/scripts/a.mjs`（改）', '```md', '## 围栏内节标题', '```', '### T2 · 乙', '**目标文件**：`docs/b.md`（改）', '## 3. 影响面'].join('\n');
+  const fbb = (preflightFindings(fenceBoundaryBold).findings.find((f) => f.class === 'bold-anchor-line') || {}).lines || [];
+  check('跳围栏·围栏后加粗锚行仍报（绝对行号 9）', fbb[0], 9);
   console.log(JSON.stringify({ selfCheck: 'landing-preflight', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
@@ -452,11 +458,17 @@ function runLintDescriptionsTriggerSelfCheck() {
 function checkVerbatimQuotes(proposalText, projectDir, targetFiles) {
   const checked = [];
   const missing = [];
-  const secStart = proposalText.search(/^##\s*2[.、]/m);
-  if (secStart === -1) return { checked, missing };
-  const secRest = proposalText.slice(secStart);
-  const secEnd = secRest.search(/\n##\s/m);
-  const secText = secEnd === -1 ? secRest : secRest.slice(0, secEnd);
+  // 261026 批 T1：§2 切片跳围栏（围栏内以「## 」起头的行不是节边界；旧行为会提前截断、其后钉死块不被检）
+  const vqLines = proposalText.split(/\r?\n/);
+  const vqStart = vqLines.findIndex((l) => /^##\s*2[.、]/.test(l));
+  if (vqStart === -1) return { checked, missing };
+  const vqFlags = fenceFlags(vqLines);
+  let vqEnd = vqLines.length;
+  for (let i = vqStart + 1; i < vqLines.length; i++) {
+    if (vqFlags[i]) continue;
+    if (/^##\s/.test(vqLines[i])) { vqEnd = i; break; }
+  }
+  const secText = vqLines.slice(vqStart, vqEnd).join('\n');
   const fenceRe = /```[a-zA-Z]*\n([\s\S]*?)```/g;
   let m;
   while ((m = fenceRe.exec(secText)) !== null) {
@@ -471,7 +483,9 @@ function checkVerbatimQuotes(proposalText, projectDir, targetFiles) {
       // T2（260907 批）：双侧行尾归一后比对——仓内 .mjs 工作树全量 CRLF（autocrlf 实况）、PROPOSAL 经 Write 落盘 LF，
       // 逐字节 includes 必假（260906-gov-review-index-status-truth-source 批 2 条 advisory 假失配实证）。
       const norm = (s) => s.replace(/\r\n/g, '\n');
-      if (norm(content).includes(norm(block))) { found = true; break; }
+      // 261026 批 T2（ARQ-261019-verbatim-quote-line-level-false-negative）：围栏块正文恒带块尾换行，
+      // 子句替换形态里目标句常嵌在长行中部、句后仍有接续文——比对前对块 trim()（首尾空白不进判据，正文逐字仍在）。
+      if (norm(content).includes(norm(block).trim())) { found = true; break; }
     }
     checked.push(block);
     if (!found) missing.push({ block: block.trim().slice(0, 120), reason: 'not-found-verbatim-in-any-target' });
@@ -502,6 +516,20 @@ function runVerbatimQuotesSelfCheck() {
   const crlfRes = checkVerbatimQuotes(proposal, crlfTarget, ['target.cjs']);
   check('verbatim-crlf-missing', crlfRes.missing.length, 0);
   check('verbatim-crlf-checked', crlfRes.checked.length, 1);
+  // 261026 批 T2 夹具：子句嵌长行中部 + 块尾换行（判别力：反转实现不 trim 时 missing = 1 变红）
+  const clauseDir = mkdtempSync(join(tmpdir(), 'vq-clause-'));
+  writeFileSync(join(clauseDir, 'long.md'), '前缀甲：**。句后接续文、同一行内。\n', 'utf8');
+  const clauseProposal = ['## 2. 改法', '### T1 · 子句', '```markdown', '前缀甲：**。', '```', '## 3. 影响面'].join('\n');
+  const clauseRes = checkVerbatimQuotes(clauseProposal, clauseDir, ['long.md']);
+  check('verbatim-clause-midline-trailing-newline-missing', clauseRes.missing.length, 0);
+  check('verbatim-clause-checked', clauseRes.checked.length, 1);
+  // 尾换行变体正控：块内容确实不在目标 → 仍报 missing（trim 不放宽判据）
+  const clauseDrift = clauseProposal.split('前缀甲：**。').join('前缀甲：**。改');
+  check('verbatim-clause-drift-still-missing', checkVerbatimQuotes(clauseDrift, clauseDir, ['long.md']).missing.length, 1);
+  // 261026 批 T1 夹具：§2 切片跳围栏——围栏内含「## 」行后，其后钉死块仍须被检（反转实现截断 → checked 1 变红）
+  const boundaryProposal = ['## 2. 改法', '### T1 · 甲', '```md', '## 围栏内节标题', '```', '', '### T2 · 乙', '```js', block, '```', '## 3. 影响面'].join('\n');
+  check('verbatim-fence-boundary-checked', checkVerbatimQuotes(boundaryProposal, fixtureDir, ['target.mjs']).checked.length, 2);
+  rmSync(clauseDir, { recursive: true, force: true });
   rmSync(crlfTarget, { recursive: true, force: true });
   rmSync(fixtureDir, { recursive: true, force: true });
   console.log(JSON.stringify({ selfCheck: 'verbatim-quotes', pass, fail, total: pass + fail, ok: fail === 0 }));

@@ -28,6 +28,21 @@
 
 轻路径批同样建 change 目录（token 同 `gov-review` / `arch-review` 命名槽），含**瘦制品五件**——瘦 PROPOSAL（Status 行 + 改法清单表 + 判档依据节）、§7 评审 GREEN、landing-manifest（数行）、瘦 architect-landing-summary（packet-id + manifest 复述 + claimed 清单，数行——landing-fidelity-check.mjs 结构门硬要求件）、landing-verdict PASS；升级闸 kind=gov 机锚（FROZEN + GREEN + verdict）全数在场、**闸零改动**；retro 豁免（瘦 PROPOSAL 尾节一行记由，复盘并入 cadence loop-retro）。**轻的是文书重量，不是核验重量**——独立核验与过闸纪律对轻批一分不减。
 
+## Track B 制品义务（landing-summary 结构两件 + 验证集实跑回填）
+
+> 本节 = 两面 lane（`/arch-change` 与 `/gov-change`）Track B 落地的**制品义务**单源；落地恒由主线程 packet-bound 执行。轻/主路径同义务——轻批的瘦 summary 不豁免本节两件。
+
+**① landing-summary 结构两件**（`landing-fidelity-check.mjs` 硬失败条目 3 / 7，缺一即核验 FAIL）：
+
+- 引字面 `packet-id` token，且同文引被批 review id（`gov-review-<id>` / `arch-review-<id>`；A9 packet-binding）。
+- 含 `landing-manifest` 围栏块：一行一个 canonical 目标路径，恰 = FROZEN PROPOSAL §2 各 T 目标文件锚清单并集（条件锚按裁断裁剪）。
+
+骨架 = `docs/templates/architect-landing-summary.template.md`（复制勿手写；七步第 4 步与本文件同指针）。两件原只活在门脚本与先例文件里——260928 / 261021 两批 summary 首跑各 FAIL 一轮（ARQ-260928 / ARQ-261021），成文即消。
+
+**② 验证集预期值实跑回填（ARQ-261021-proposal-assert-expectations）**：human 2026-10-26 裁适用范围扩至本 PROPOSAL 内所有实测数字。
+
+§5 每条断言的预期值 = 起草期**实跑输出**回填（命令 + 关键输出 verbatim 留痕），禁止推算；适用范围 = 本 PROPOSAL 内所有实测数字（§5 断言、脚本与表格数字、census 计数一律现算，不得由另一套原型代跑）。落地期实跑若与预期有字节差异，以落地实跑为准覆写 §5 并在 PROPOSAL §7 留痕。
+
 ## 触契约分支
 
 架构变更改变端云数据格式 / shim API / 课表 MD 结构 / display 响应块 → PROPOSAL 改法集必须含**契约包三节**（proposedContractDiff / impact / validationPlan，字段名沿 architect-reviewer 输出格式），契约 diff 与架构改动随批原子落地；纯契约变更（无架构配套）同样以本 loop 为入口。四分类枚举权威 = `.claude/rules/contracts.md`（五值）。**无人类签字门**——契约防线 = Bash 重定向写恒拦 + 实现面 agent 与 dev-loop 会话禁写不变 + architect 起草 / review-moderator 编排写权维持 scope-map 现状（落地恒归主线程 packet-bound）+ 合并机械凭据闸（`pre-merge-escalation-gate.mjs`：契约 diff 须有 FROZEN PROPOSAL + PASS verdict + manifest 覆盖三件联立凭据）。
