@@ -89,6 +89,14 @@ function isGreenVerdict(text) {
   return lastToken === 'GREEN';
 }
 
+// 261026 批 T2（ARQ-261021-merge-gate-first-merge-blindspot）：契约凭据 verdict 锚取终态（后出者胜，与
+// isGreenVerdict / deriveLanded 同语义）——landing-verdict 按 append-only 留 FAIL→PASS 轨迹时不再被首匹配遮蔽。
+function lastVerdictLine(text) {
+  let last = null;
+  for (const line of text.split('\n')) if (VERDICT_STATUS_RE.test(line)) last = line;
+  return last;
+}
+
 function readGovAnchors(dir, changeId) {
   // 261015-gov-review-changes-taxonomy T6 第 6 条：PROPOSAL/verdict 路径拼接随新树改 delivery/review/
   const proposalPath = join(dir, 'delivery', 'review', changeId, 'PROPOSAL.md');
@@ -138,24 +146,33 @@ function hasArchLoopContractEvidence(execFn, source, target, projectDir, deps = 
   const checked = [];
   for (const proposalPath of proposalPaths) {
     const dir = proposalPath.slice(0, proposalPath.lastIndexOf('/'));
+    // 261026 批 T1（ARQ-261017-merge-gate-contract-evidence-ref）：候选 PROPOSAL 由构造必在 source 侧
+    // （proposalPaths 来自 source..target diff）——source 优先、target 兜底（复用/已落批场景）。
     let proposalText = null;
-    try {
-      proposalText = execFn(`git show ${target}:${proposalPath}`);
-    } catch { /* PROPOSAL 不在 target ref → frozen 判 false */ }
+    let refUsed = null;
+    for (const ref of [source, target]) {
+      try { proposalText = execFn(`git show ${ref}:${proposalPath}`); refUsed = ref; break; } catch { /* 下一 ref */ }
+    }
+    if (proposalText === null) { checked.push({ dir, refError: true, frozen: false, verdict: false, covered: false }); continue; }
     const frozen = proposalText ? isFrozen(proposalText) : false;
     const manifest = proposalText ? extractManifestBlock(proposalText) : new Set();
     const covered = contractPaths.every((p) => manifest.has(p));
     const vText = readVerdict(join(projectDir, dir, 'landing-verdict.md'));
-    const vLine = vText ? vText.split('\n').find((l) => VERDICT_STATUS_RE.test(l)) : null;
+    const vLine = vText ? lastVerdictLine(vText) : null;
     const verdict = Boolean(vLine && /\b(PASS|GREEN)\b/i.test(vLine));
-    checked.push({ dir, frozen, verdict, covered });
+    // 261026 批 T2（ARQ-261017 建议 4(c)）：verdict 在场但 VERDICT_STATUS_RE 命中 0 行 → 明细点名 verdictFormatMiss，
+    // 连同生效的 refUsed 一起进「已检查」JSON——判据失败时说清「哪一件的形态不对」，消掉归因误导。
+    const verdictFormatMiss = Boolean(vText) && !vLine;
+    checked.push({ dir, refUsed, frozen, verdict, covered, ...(verdictFormatMiss ? { verdictFormatMiss } : {}) });
     if (frozen && verdict && covered) {
       return { ok: true, reason: `contract-evidence via ${dir}`, contractPaths };
     }
   }
   return {
     ok: false,
-    reason: `contract-evidence: 无候选满足三件联立（FROZEN + PASS verdict + manifest 覆盖）；契约路径 = ${contractPaths.join(', ')}；已检查 = ${checked.length ? JSON.stringify(checked) : '无候选 PROPOSAL（同批无 arch-review 批）'}`,
+    reason: checked.length && checked.every((c) => c.refError)
+      ? `contract-evidence: 候选 PROPOSAL 在 source/target 两 ref 均不可读（疑似取件 ref 或路径错，非“缺凭据”）；契约路径 = ${contractPaths.join(', ')}`
+      : `contract-evidence: 无候选满足三件联立（FROZEN + PASS verdict + manifest 覆盖）；契约路径 = ${contractPaths.join(', ')}；已检查 = ${checked.length ? JSON.stringify(checked) : '无候选 PROPOSAL（同批无 arch-review 批）'}`,
     contractPaths,
   };
 }
@@ -192,9 +209,18 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
   };
   const packetText = readPacketText();
   if (packetText === null) return { present: false, accounted: true, hits: [] };
+  // 261026 批 T4（ARQ-261011-contract-gate-literal-selfquote-false-positive）：判据从「行文本巧合」改锚
+  // 「finding 的结构位」（integrator.md:40 六列表）——只认 Findings 表行 + Kind 列（第 3 单元格，去 * 后）
+  // 前缀为 hard-violation + 行内仍含字面集（保留「契约相关」收缩）。历史行 Kind 写作 `**hard-violation**（原判）`
+  // （261016-p3-story-body-sd-cache:71 实测），故必须前缀匹配而非等值；自述「无 hard-violation」散文行（非表行）自动免疫。
   const hits = packetText
     .split('\n')
-    .filter((l) => l.includes('hard-violation') && CONTRACT_SPEC_LITERALS.some((lit) => l.includes(lit)));
+    .filter((l) => {
+      const t = l.trim();
+      if (!t.startsWith('|')) return false;
+      const kind = String(t.split('|').map((s) => s.trim())[2] || '').replace(/\*/g, '').toLowerCase();
+      return kind.startsWith('hard-violation') && CONTRACT_SPEC_LITERALS.some((lit) => t.includes(lit));
+    });
   if (hits.length === 0) return { present: false, accounted: true, hits: [] };
   // CDQ 核销读点（261019-gov-review-docs-root-ledger-rehome T3）：单文件读 → 目录扫描。
   // 递归列举 docs/debt/contract/（含 _archive/<年>/——已结条目被渲染器归位后仍须可查，否则已结批的
@@ -254,6 +280,19 @@ export function contractFindingsAccounted(dir, changeId, deps = {}) {
  * execFn 可注入（self-check）；探测任何异常 → { probed:false, tier:'tradeoff' }（fail-closed，绝不误放行）。
  */
 export const VERSIONED_ARTIFACT_RE_LOCAL = /\.v[0-9]+\.md$/; // 与 merge-driver 同形，lib 收编留根
+
+// 261026 批 T5（ARQ-261014 ③）：派生态 carve-out——与 merge-driver.mjs:943-946 的 PROJECTION_CONFLICT_FILES
+// 同形两份（lib 收编留根，对齐上方 VERSIONED_ARTIFACT_RE_LOCAL 先例注记）；input-brief.md 刻意不入
+// （driver 不可解，入闸会造「闸放行、driver blocked」错位——PROPOSAL §6 留根 3）。
+export const DERIVED_STATE_CARVE_OUT = new Set([
+  'delivery/taskpackages/current/taskpackage.json',
+  'delivery/taskpackages/current/verdict.json',
+]);
+
+// 261026 批 T3（ARQ-261017-merge-gate-scope-unstated，OQ1 human 裁候选 2）：账本类制品允许集——
+// 从当前账本拓扑正推（.claude/rules/repo-structure.md「docs/debt/」行四域 + intake），
+// 拓扑扩域时随 repo-structure.md 同批更新本常量，不按历史 lane 假设硬编码。
+export const LEDGER_ARTIFACT_PREFIXES = ['delivery/intake/', 'docs/debt/gov/', 'docs/debt/tech/', 'docs/debt/requirement/', 'docs/debt/contract/'];
 
 /**
  * T1（261015-gov-review-changes-taxonomy 齿二）：废止路径结构检查——对合并结果树跑 ls-tree，
@@ -315,7 +354,7 @@ export function parallelOverlapProbe(execFn, source, target) {
       // 依据 = 本行分支逻辑 + ARQ-260917 记录的 k3 修复轮 r15 合并实测「tier3 评审噪音收口」。
       // 再下一行 `VERSIONED_ARTIFACT_RE_LOCAL` 是另一条并列路径（版本化制品 carve-out），非 union 情形所依赖。
       if (!conflictedFiles.length) return 'union-safe'; // 相交但可自动并（不同 hunk git 自并）
-      if (conflictedFiles.every((f) => VERSIONED_ARTIFACT_RE_LOCAL.test(f))) return 'union-safe'; // S1 carve-out：已登记形态 → ②
+      if (conflictedFiles.every((f) => VERSIONED_ARTIFACT_RE_LOCAL.test(f) || DERIVED_STATE_CARVE_OUT.has(f))) return 'union-safe'; // S1 carve-out：已登记形态（版本化制品 / 派生态投影，261026 批 T5 扩）→ ②
       return 'tradeoff';
     })();
     return { probed: true, tier, intersectingFiles, conflictedFiles, addAddFiles };
@@ -331,6 +370,9 @@ export function parallelOverlapProbe(execFn, source, target) {
  */
 export function evaluate(ctx) {
   const reasons = [];
+  // 261026 批 T3（ARQ-261017-merge-gate-scope-unstated）：notApplicable 必须先声明（ESM 严格模式下裸赋值抛
+  // ReferenceError，见 §7 R2-F4）——unknown 档 B 段只赋值、return 只引用。
+  let notApplicable = false;
   const push = (s) => reasons.push(s);
 
   // dev-loop 档人批豁免（T1，260904-gov-review-escalate-merge-approval；OQ2=(a)）：
@@ -413,10 +455,17 @@ export function evaluate(ctx) {
     else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
     else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
   } else {
-    push(`unknown change kind（changeId 既无 delivery/taskpackages 也无 delivery/review）`);
+    // 261026 批 T3（ARQ-261017-merge-gate-scope-unstated，OQ1 裁候选 2）：变更集全部落在账本类制品 →
+    // 本闸不适用（NOT_APPLICABLE），交 merge-to-main skill 的 human 授权通道；否则仍 BLOCK。
+    // 边界刻意保守：允许集外任何路径（固件 / shim / .claude/** / docs/contracts/** / delivery/workstreams/**
+    // / delivery/retro/** / delivery/archive/** / docs/debt/README.md）都使 onlyLedger 不成立 → 仍 BLOCK（V4b retro-only 实测）。
+    const diffPaths = ctx.diffPaths || [];
+    const onlyLedger = diffPaths.length > 0 && diffPaths.every((p) => LEDGER_ARTIFACT_PREFIXES.some((pre) => p.startsWith(pre)));
+    if (onlyLedger) notApplicable = true;
+    else push(`unknown change kind（changeId 既无 delivery/taskpackages 也无 delivery/review）`);
   }
 
-  return { blocked: reasons.length > 0, reasons };
+  return { blocked: reasons.length > 0, reasons, notApplicable };
 }
 
 /** 解 pods 记录路径：主仓优先，linked worktree 回退 git common dir。不在场返回 null。 */
@@ -445,6 +494,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const supervisorVerdict = readSupervisorVerdict(projectDir, changeId);
   const govAnchors = kind === 'gov' ? readGovAnchors(projectDir, changeId) : null;
   const contractsDiff = hasContractsDiff(execFn, source, 'main');
+  const diffPaths = (() => { try { return execFn(`git diff --name-only ${source}..main`).split('\n').map((l) => l.trim()).filter(Boolean); } catch { return []; } })(); // 261026 批 T3：unknown 档 applicability 判据（evaluate 只消费 ctx.diffPaths，缺此组装则 NOT_APPLICABLE 永不触发——§7 R1-F1）
   // T15（261015 批）：契约合并机械凭据——替换原 hasContractGateEvidence: false 硬编码（ARQ-260923 建议①兑现）
   const hasContractGateEvidence = hasArchLoopContractEvidence(execFn, source, 'main', projectDir);
   const podsRecordPath = findPodsRecordPath(projectDir, changeId);
@@ -473,6 +523,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     supervisorVerdict,
     govAnchors,
     contractsDiff,
+    diffPaths, // 261026 批 T3：变更集路径（unknown 档 applicability 判据）
     hasContractGateEvidence, // T15（261015 批）：{ ok, reason, contractPaths }——ok=false 且 contractsDiff → 通用 1 BLOCK；原硬编码 false（恒 BLOCK 人合）已退役
     blocked,
     escalationUnresolved: false, // pod-events 聚合待接入；现 false（升级闸 v1 只覆盖 blocked 态 + 显式判定）
@@ -708,6 +759,106 @@ function selfCheck() {
     cases.push({ name: 'green-anchor-block-not-green', ok: !isGreenVerdict('verdict: BLOCK(F1)'), got: `isGreen=${isGreenVerdict('verdict: BLOCK(F1)')}` });
   }
 
+  // 261026 批 T1（ARQ-261017-merge-gate-contract-evidence-ref）：取件 source 优先——2 条判别夹具
+  {
+    const T1_PROPOSAL = [
+      '# PROPOSAL · t1',
+      '> **状态：FROZEN v1.0 · 2026-10-26 · test**',
+      '```landing-manifest',
+      'docs/contracts/interface-contract.md',
+      '```',
+      '',
+    ].join('\n');
+    const T1_DIFF = ['docs/contracts/interface-contract.md', 'delivery/review/261026-arch-review-t1/PROPOSAL.md'].join('\n');
+    // source-only 可读（target=main 读不到——首合并形态）→ 三件齐备应 ok:true
+    const rSrcOnly = hasArchLoopContractEvidence(
+      (c) => { if (c.startsWith('git diff')) return T1_DIFF; if (c.startsWith('git show src:')) return T1_PROPOSAL; throw new Error('not on main'); },
+      'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' },
+    );
+    cases.push({ name: 'contract-evidence-source-first-pass', ok: rSrcOnly.ok === true, got: rSrcOnly.reason });
+    // 两 ref 均不可读 → ok:false 且 reason 点名「两 ref 均不可读」（归因自检，非「缺凭据」误导）
+    const rUnreadable = hasArchLoopContractEvidence(
+      (c) => { if (c.startsWith('git diff')) return T1_DIFF; throw new Error('missing'); },
+      'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' },
+    );
+    cases.push({ name: 'contract-evidence-ref-unreadable-attributed', ok: rUnreadable.ok === false && rUnreadable.reason.includes('两 ref 均不可读'), got: rUnreadable.reason });
+  }
+
+  // 261026 批 T2（ARQ-261021）：verdict 锚取终态——2 条轨迹夹具
+  {
+    const T2_PROPOSAL = [
+      '# PROPOSAL · t2',
+      '> **状态：FROZEN v1.0 · 2026-10-26 · test**',
+      '```landing-manifest',
+      'docs/contracts/interface-contract.md',
+      '```',
+      '',
+    ].join('\n');
+    const T2_DIFF = ['docs/contracts/interface-contract.md', 'delivery/review/261026-arch-review-t2/PROPOSAL.md'].join('\n');
+    const t2Exec = (c) => (c.startsWith('git diff') ? T2_DIFF : T2_PROPOSAL);
+    const rUp = hasArchLoopContractEvidence(t2Exec, 'src', 'main', 'x', { readVerdict: () => 'verdict: FAIL\nverdict: PASS' });
+    cases.push({ name: 'contract-evidence-verdict-fail-then-pass', ok: rUp.ok === true, got: rUp.reason });
+    const rDown = hasArchLoopContractEvidence(t2Exec, 'src', 'main', 'x', { readVerdict: () => 'verdict: PASS\nverdict: FAIL' });
+    cases.push({ name: 'contract-evidence-verdict-pass-then-fail-block', ok: rDown.ok === false && /联立|verdict/.test(rDown.reason), got: rDown.reason });
+  }
+
+  // 261026 批 T3（OQ1 裁候选 2）：ledger 允许集——6 条判别夹具（四域 + intake 正向、混入固件与 retro 边界反向）
+  {
+    const unknownCtx = (diffPaths) => mkCtx({ kind: 'unknown', diffPaths });
+    const isNa = (r) => !r.blocked && r.notApplicable === true;
+    cases.push({ name: 'ledger-intake-only-not-applicable', ok: isNa(evaluate(unknownCtx(['delivery/intake/261026-cross-face-x.md']))), got: '' });
+    cases.push({ name: 'ledger-requirement-only-not-applicable', ok: isNa(evaluate(unknownCtx(['docs/debt/requirement/REQ-261026-x.md']))), got: '' });
+    cases.push({ name: 'ledger-contract-only-not-applicable', ok: isNa(evaluate(unknownCtx(['docs/debt/contract/CDQ-261026-x.md']))), got: '' });
+    cases.push({
+      name: 'ledger-four-domains-plus-intake-not-applicable',
+      ok: isNa(evaluate(unknownCtx(['delivery/intake/a.md', 'docs/debt/gov/b.md', 'docs/debt/tech/c.md', 'docs/debt/requirement/d.md', 'docs/debt/contract/e.md']))),
+      got: '',
+    });
+    const rMixed = evaluate(unknownCtx(['docs/debt/gov/a.md', 'firmware/main.c']));
+    cases.push({ name: 'ledger-with-firmware-still-blocked', ok: rMixed.blocked && rMixed.notApplicable === false && rMixed.reasons.some((x) => x.includes('unknown change kind')), got: JSON.stringify(rMixed.reasons) });
+    const rRetro = evaluate(unknownCtx(['delivery/retro/2026-10-25-loop-retro.md']));
+    cases.push({ name: 'ledger-retro-only-still-blocked', ok: rRetro.blocked && !rRetro.notApplicable, got: JSON.stringify(rRetro.reasons) });
+  }
+
+  // 261026 批 T4（ARQ-261011）：契约 findings 列位判据——3 条判别夹具
+  {
+    const t4Dep = (packetText) => ({ readText: (p) => (String(p).includes('review-packet.md') ? packetText : null), listFiles: () => [] });
+    const T4_PACKET = [
+      '| Severity | Kind | Area | Finding | Basis | Required action |',
+      '| --- | --- | --- | --- | --- | --- |',
+      '| BLOCKING | hard-violation | firmware | 违反笔顺 JSON 契约 | `docs/contracts/**` 起引 | 修 |',
+      '无 hard-violation finding——如出现将以 `docs/contracts/**` 字面前缀起引 Basis。',
+      '| SHOULD | 核销说明 | contract | 上一轮 finding 已核销 | `docs/contracts/**` 起引 | 已处理 |',
+    ].join('\n');
+    const rT4 = contractFindingsAccounted('.', '261026-fx-t4', t4Dep(T4_PACKET));
+    cases.push({ name: 'contract-findings-table-row-hit', ok: rT4.present === true && rT4.hits.length === 1, got: `hits=${rT4.hits.length}` });
+    const rProse = contractFindingsAccounted('.', '261026-fx-t4b', t4Dep('无 hard-violation finding——如出现将以 `docs/contracts/**` 字面前缀起引 Basis。'));
+    cases.push({ name: 'contract-findings-prose-line-immune', ok: rProse.present === false && rProse.hits.length === 0, got: `hits=${rProse.hits.length}` });
+    const rWriteoff = contractFindingsAccounted('.', '261026-fx-t4c', t4Dep('| SHOULD | 核销说明 | contract | 已核销 | `docs/contracts/**` 起引 | 已处理 |'));
+    cases.push({ name: 'contract-findings-non-hv-kind-immune', ok: rWriteoff.present === false, got: `present=${rWriteoff.present}` });
+  }
+
+  // 261026 批 T5（ARQ-261014 ③）：派生态 carve-out——2 条函数级夹具（直接调 parallelOverlapProbe 注入
+  // execFn，不手注 overlap.tier——手注夹具删 carve-out 后仍全绿，属无判别力假绿，起草期自曝在案）
+  {
+    const PROJ = 'delivery/taskpackages/current/taskpackage.json';
+    const BOTH = [PROJ, 'firmware/main.c']; // 双侧同改两件——混撞件必须 ∈ 双侧改动交集，否则被噪声滤清剔除（夹具首轮实测抓出）
+    const t5Exec = (conflicted) => (c) => {
+      if (c.startsWith('git merge-base')) return 'base';
+      if (c === 'git diff --name-only base feat' || c === 'git diff --name-only base main') return BOTH.join('\n');
+      if (c.startsWith('git merge-tree --write-tree')) {
+        if (conflicted.length) { const err = new Error('conflict'); err.stdout = ['treeoid', ...conflicted].join('\n'); throw err; }
+        return 'treeoid';
+      }
+      if (c.startsWith('git cat-file -e')) throw new Error('absent'); // 双侧新增（merge-base 中不存在）
+      return '';
+    };
+    const rProj = parallelOverlapProbe(t5Exec([PROJ]), 'feat', 'main');
+    cases.push({ name: 'overlap-projection-derived-state-pass', ok: rProj.probed && rProj.tier === 'union-safe', got: JSON.stringify(rProj) });
+    const rMix = parallelOverlapProbe(t5Exec([PROJ, 'firmware/main.c']), 'feat', 'main');
+    cases.push({ name: 'overlap-projection-plus-other-tradeoff', ok: rMix.probed && rMix.tier === 'tradeoff', got: JSON.stringify(rMix) });
+  }
+
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'pre-merge-escalation-gate', pass: cases.length - fail.length, fail: fail.length, total: cases.length, ok: fail.length === 0, failures: fail.length ? fail : undefined })}\n`,
@@ -783,6 +934,14 @@ if (result.blocked) {
   result.reasons.forEach((r) => process.stderr.write(`  - ${r}\n`));
   process.stderr.write('  → 升级 human，不得自动 merge。\n');
   process.exit(1);
+}
+
+// 261026 批 T3（OQ1 裁候选 2）：纯账本制品变更集 → 闸不适用（exit 0——不适用，不是放行），
+// 交 merge-to-main skill 的 human 授权通道；通用检查（契约 diff 凭据 / off-main 等）已在 evaluate 内先行，
+// 到达此分支 = 无例外命中。
+if (result.notApplicable) {
+  process.stdout.write(`[pre-merge-escalation-gate] NOT_APPLICABLE (changeId=${changeId}, kind=${ctx.kind}): 变更集仅含 ledger 类制品（delivery/intake/、docs/debt/gov/、docs/debt/tech/、docs/debt/requirement/、docs/debt/contract/）——本闸只管 dev/gov 两条 lane，此类合并按 merge-to-main skill 走 human 授权通道。\n`);
+  process.exit(0);
 }
 
 const approvalNote = humanApprovalRef ? ` — human-approval verified (eventId=${humanApprovalRef})` : '';

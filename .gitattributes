@@ -28,6 +28,13 @@ delivery/taskpackages/**/pod-events.jsonl merge=union
 docs/debt/*/INDEX.md merge=union
 docs/debt/*/_archive/*/INDEX.md merge=union
 
+# 三条 lane INDEX 生成件双追加（261026-gov-review-merge-gate-cluster-fix T5，ARQ-261014 ③）：
+# delivery/{review,taskpackages,intake}/INDEX.md 由 changes-index.mjs 幂等全量重建，双分支尾追加是结构性
+# 双追加；union 双侧保留 + 合并后重跑渲染即归位（同 docs/debt/*/INDEX.md 先例）。
+delivery/review/INDEX.md merge=union
+delivery/taskpackages/INDEX.md merge=union
+delivery/intake/INDEX.md merge=union
+
 # 钉死 prompt 版本文件 LF 换行（TECH-261013-lf-hash-teeth-vs-windows-crlf-checkout，261013-gov-review-lf-eol-teeth-pin 批）：
 # prompt v6–v9 被四条 raw sha256 冻结齿（sha256(read_bytes()) 口径）钉历史版本零回改，但检出换行属环境态：
 # Windows autocrlf=true 检出即 CRLF，raw 哈希与冻结值（LF 口径）必异，齿恒红（2026-10-13 merge-driver

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 89 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 95 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -99,4 +99,10 @@
 | [ARQ-261015-lite-package-execution-overhead](ARQ-261015-lite-package-execution-overhead.md) | Lite 包执行成本与代码改动量严重不成比例——3 行改动端到端 2h52m，环境/重复/机制开销远超代码，待完整治理方案 | 2026-10-15 | — |
 | [ARQ-261016-intake-entry-identity-unstated](ARQ-261016-intake-entry-identity-unstated.md) | /triage-change 的跨面编排入口身份未进最高权威面 AGENTS.md——入口身份只存在于 triage 侧两个文件与 change-intake.md 一句抬头，AGENTS.md「四面入口」节把它收编成并列的「实现面变更」，读者会得出「triage 只是四面并列入口之一」的错误心智模型 | 2026-10-17 | 261016-gov-review-triage-entry-identity |
 | [ARQ-261019-local-memory-extraction-gaps](ARQ-261019-local-memory-extraction-gaps.md) | Claude Code 本机 memory 承载的治理知识未全量提取入仓——261019 复分析 8 条，1 条已被吸收、1 条部分吸收、3 条残留缺口（verdict 状态行义务 / 生成即验证 / OpenClaw sqlite 坑）、1 条取舍未决 | 2026-10-19 | delivery/review/261019-gov-review-local-memory-extraction/landing-verdict.md |
+| [ARQ-261011-contract-gate-literal-selfquote-false-positive](ARQ-261011-contract-gate-literal-selfquote-false-positive.md) | 前置升级闸 contract-findings 字面扫描在「自述无 finding」行上误中——review-packet 复述闸字面集的合法行被当成 finding 拦合并 | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
+| [ARQ-261014-merge-gate-tooling-hotfix-batch](ARQ-261014-merge-gate-tooling-hotfix-batch.md) | 合并闸工具链热修两例未入账留痕 + 生成件（INDEX.md）与手写相撞的渲染器权威口径缺口 | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
+| [ARQ-261017-merge-gate-contract-evidence-ref](ARQ-261017-merge-gate-contract-evidence-ref.md) | pre-merge-escalation-gate 的契约凭据取件用 `git show target(main):PROPOSAL` 而非 source——结构性不可满足，arch-lane 契约批恒 BLOCK（2026-10-17 实测，261015 T15 新增路径首次真实执行） | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
+| [ARQ-261017-merge-gate-scope-unstated](ARQ-261017-merge-gate-scope-unstated.md) | 合并闸只认 dev/gov 两条 lane——intake/debt 制品合并恒 kind=unknown BLOCK 且无豁免口（--human-approval-ref 对 unknown 直接 FATAL），「哪些合并需过闸」未成文，实际靠主线程当场解释 BLOCK | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
+| [ARQ-261018-enforce-scope-worktree-anchor-offbyone](ARQ-261018-enforce-scope-worktree-anchor-offbyone.md) | enforce-scope 钩子跨树锚定 off-by-one——worktree 的 .git 指向 gitdir 目录（三级深），代码按 gitdir 文件假定用 dirname^3，多剥一层致 commonDir 落到仓根、samePath 恒不等、静默降级 legacy → worktree 内子 agent 写同仓合法路径被误拦 | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
+| [ARQ-261021-merge-gate-first-merge-blindspot](ARQ-261021-merge-gate-first-merge-blindspot.md) | 契约凭据闸两处首合并盲区——PROPOSAL 从 main ref 读（首次合并不可满足）+ verdict 锚 first-match 被 FAIL→PASS 轨迹遮蔽 | 2026-10-26 | delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md |
 | [ARQ-261026-efficiency-table-package-tier](ARQ-261026-efficiency-table-package-tier.md) | 效率表缺「包档位/类型」维度——无规模基准则 token/行数不可判读、拆包合适性无从评估 | 2026-10-26 | 261026-gov-review-retro-efficiency-fidelity |

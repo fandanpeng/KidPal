@@ -2,13 +2,13 @@
 id: ARQ-261021-merge-gate-first-merge-blindspot
 title: 契约凭据闸两处首合并盲区——PROPOSAL 从 main ref 读（首次合并不可满足）+ verdict 锚 first-match 被 FAIL→PASS 轨迹遮蔽
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一次带契约 diff 的 arch 批合并（判据可机判：同型 BLOCK 输出复现即消费）
 opened: 2026-10-21
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md
 paths: [".claude/scripts/pre-merge-escalation-gate.mjs", ".claude/scripts/lib/governance-gate-shared.mjs"]
 source: 261021-arch-review-p3-record-cancel-lifecycle 合并期实测（gate 两次 BLOCK 输出 + 逐行读 gate 源码定位）
 ---
@@ -23,3 +23,5 @@ source: 261021-arch-review-p3-record-cancel-lifecycle 合并期实测（gate 两
 **判据（机判）**：复跑 `node .claude/scripts/pre-merge-escalation-gate.mjs <changeId>`（契约批、landing 完整、首合并）——修复后应 PASS 而非 BLOCK；当前形态恒 BLOCK。
 
 **Why**：261015 批裁「无人签门、合并过机械凭据闸」——若机械凭据对所有首合并契约批不可达，该裁定实际退化为「人批链常态」，治理叙事与机械现实不一致；要么修门兑现裁定，要么改叙事如实承认。
+
+**结项**：consumed-by: 261026-gov-review-merge-gate-cluster-fix（landing-verdict PASS + 7 ADVISORY，2026-10-26；承接口径 = PROPOSAL §6 结项段）。

@@ -140,9 +140,17 @@ function locateGitTree(startPath) {
       }
       const m = /^gitdir:\s*(.+)\s*$/.exec(readFileSync(dotGit, 'utf8'));
       if (m) {
-        const gitdir = resolve(cur, m[1].trim()); // <commonDir>/worktrees/<name>/gitdir
-        // commonDir = gitdir 上三级（…/worktrees/<name>/gitdir → …/worktrees/<name> → …/worktrees → <commonDir>）
-        return { treeRoot: cur, commonDir: dirname(dirname(dirname(gitdir))) };
+        const gitdir = resolve(cur, m[1].trim());
+        // 真实拓扑（git worktree add）：gitdir 指向 <commonDir>/worktrees/<name> **目录**；
+        // 兼容旧拓扑：gitdir 指向该目录内的 gitdir 文件。统一先归到 worktrees/<name>，再上两级 = <commonDir>
+        // （261026 批 T6，ARQ-261018-enforce-scope-worktree-anchor-offbyone：原 dirname^3 按文件拓扑假定多剥一层）。
+        let wt = gitdir;
+        try {
+          if (!statSync(wt).isDirectory()) wt = dirname(wt);
+        } catch {
+          wt = dirname(wt); // 目标不存在时按文件形态回退（等价原语义）
+        }
+        return { treeRoot: cur, commonDir: dirname(dirname(wt)) };
       }
     }
     const parent = dirname(cur);
@@ -265,25 +273,36 @@ function main() {
 function buildFakeRepo() {
   const root = mkdtempSync(join(tmpdir(), 'scope-t5-'));
   const repo = join(root, 'repo'); // 主 checkout（.git 目录）
-  const podx = join(root, 'trees', 'pod-x'); // 在册兄弟树（.git 文件）
+  const podx = join(root, 'trees', 'pod-x'); // 在册兄弟树（真实拓扑：.git → worktrees/<name> 目录）
+  const pody = join(root, 'trees', 'pod-y'); // 在册兄弟树（旧式拓扑：.git → worktrees/<name>/gitdir 文件——兼容臂）
   const outside = join(root, 'outside'); // 非在册路径
   mkdirSync(join(repo, '.git', 'worktrees', 'pod-x'), { recursive: true });
+  mkdirSync(join(repo, '.git', 'worktrees', 'pod-y'), { recursive: true });
   mkdirSync(join(repo, '.claude'), { recursive: true });
   mkdirSync(join(repo, 'firmware'), { recursive: true });
   mkdirSync(join(podx, '.claude'), { recursive: true });
   mkdirSync(join(podx, 'firmware'), { recursive: true });
   mkdirSync(join(podx, 'docs', 'contracts'), { recursive: true });
+  mkdirSync(join(pody, '.claude'), { recursive: true });
+  mkdirSync(join(pody, 'firmware'), { recursive: true });
   mkdirSync(outside, { recursive: true });
-  const gitdirFile = join(repo, '.git', 'worktrees', 'pod-x', 'gitdir');
-  writeFileSync(gitdirFile, `${join(podx, '.git')}\n`, 'utf8');
-  writeFileSync(join(podx, '.git'), `gitdir: ${gitdirFile}\n`, 'utf8');
+  // pod-x = 真实拓扑（git worktree add 实际产物，261026 批 T6）：.git 文件指向 worktrees/<name> **目录**，
+  // 该目录内的 gitdir 文件回指 worktree 的 .git——原夹具按「gitdir 是文件」构造，自检 6 臂全绿却测不到真实拓扑（照镜子病灶）。
+  const gitdirDir = join(repo, '.git', 'worktrees', 'pod-x');
+  writeFileSync(join(gitdirDir, 'gitdir'), `${join(podx, '.git')}\n`, 'utf8');
+  writeFileSync(join(podx, '.git'), `gitdir: ${gitdirDir}\n`, 'utf8');
+  // pod-y = 旧式文件拓扑（兼容臂）：.git 文件指向 worktrees/<name>/gitdir 文件。
+  const podyGitdirFile = join(repo, '.git', 'worktrees', 'pod-y', 'gitdir');
+  writeFileSync(podyGitdirFile, `${join(pody, '.git')}\n`, 'utf8');
+  writeFileSync(join(pody, '.git'), `gitdir: ${podyGitdirFile}\n`, 'utf8');
   const mapShape = {
     universal: { denyCreate: [], allowFiles: [], allowDirs: ['docs/contracts'], bashDenyWrite: ['docs/contracts/**', '.claude/**'] },
     agents: { builder: { allow: ['firmware/**'], deny: [] } },
   };
   writeFileSync(join(repo, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
   writeFileSync(join(podx, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
-  return { root, repo, podx, outside };
+  writeFileSync(join(pody, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
+  return { root, repo, podx, pody, outside };
 }
 
 function selfCheck() {
@@ -300,6 +319,13 @@ function selfCheck() {
     ok('fixture-nonempty', existsSync(join(fx.podx, '.claude', 'scope-map.json'))
       && existsSync(join(fx.repo, '.git', 'worktrees', 'pod-x', 'gitdir'))
       && readFileSync(join(fx.podx, '.git'), 'utf8').includes('gitdir:'));
+    // 261026 批 T6 新增臂：自检自身先断夹具形状——pod-x 必须是真实拓扑（.git → gitdir 目录，其内 gitdir
+    // 文件回指），pod-y 必须是旧式文件拓扑。防夹具再退回「实现照镜子」的无判别力形态。
+    ok('fixture-real-topology', statSync(join(fx.podx, '.git')).isFile()
+      && statSync(join(fx.repo, '.git', 'worktrees', 'pod-x')).isDirectory()
+      && statSync(join(fx.repo, '.git', 'worktrees', 'pod-x', 'gitdir')).isFile()
+      && statSync(join(fx.pody, '.git')).isFile()
+      && readFileSync(join(fx.pody, '.git'), 'utf8').trim().endsWith(join('worktrees', 'pod-y', 'gitdir')));
     // ① 在册兄弟树写工作面放行（builder → 兄弟树 firmware/，按该树 scope-map 的 allow 判）
     const arm1 = run('Write', { file_path: join(fx.podx, 'firmware', 'x.c') }, { agent: 'builder' });
     ok('sibling-worktree-workfile-allowed', arm1.status === 0, `exit=${arm1.status} ${String(arm1.stderr || '').slice(0, 120)}`);
@@ -315,6 +341,10 @@ function selfCheck() {
     // ④ 本树行为不变：builder 写本 checkout 工作面照旧放行
     const arm4 = run('Write', { file_path: join(fx.repo, 'firmware', 'y.c') }, { agent: 'builder' });
     ok('home-tree-behavior-unchanged', arm4.status === 0, `exit=${arm4.status}`);
+    // ⑤（261026 批 T6）旧式文件拓扑兼容臂：builder → pod-y（.git 指向 gitdir 文件）firmware/ 同样放行——
+    // arm1 已随夹具换成真实拓扑（pod-x），本臂补兼容分支的判别覆盖。
+    const arm5 = run('Write', { file_path: join(fx.pody, 'firmware', 'x.c') }, { agent: 'builder' });
+    ok('sibling-legacy-file-topology-allowed', arm5.status === 0, `exit=${arm5.status} ${String(arm5.stderr || '').slice(0, 120)}`);
   } finally {
     rmSync(fx.root, { recursive: true, force: true });
   }

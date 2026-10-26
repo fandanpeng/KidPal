@@ -2,14 +2,14 @@
 id: ARQ-261017-merge-gate-contract-evidence-ref
 title: pre-merge-escalation-gate 的契约凭据取件用 `git show target(main):PROPOSAL` 而非 source——结构性不可满足，arch-lane 契约批恒 BLOCK（2026-10-17 实测，261015 T15 新增路径首次真实执行）
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 hardExclusions: true
 owner: architect
 trigger: 下一治理批（动 `pre-merge-escalation-gate.mjs` / 契约凭据判据 / `/arch-change` landing 流程任一时并批）；或在 agent-lane 契约批再次被同一 BLOCK 挡住时立即升格
 opened: 2026-10-17
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: delivery/review/261026-gov-review-merge-gate-cluster-fix/landing-verdict.md
 paths: [.claude/scripts/pre-merge-escalation-gate.mjs]
 source: [2026-10-17 主线程在 261017-arch-review-p3-story-body-sd-cache 合并前实跑闸的 BLOCK 输出（逐字见证据 2）, delivery/review/261017-arch-review-p3-story-body-sd-cache/（PROPOSAL FROZEN + landing-verdict PASS + architect-landing-summary）, delivery/review/261017-arch-review-p3-story-body-sd-cache/architect-landing-summary.md §3 第 3 条（落地时的预判留痕）]
 ---
@@ -86,3 +86,5 @@ source: [2026-10-17 主线程在 261017-arch-review-p3-story-body-sd-cache 合�
 - **本批的即时处置**：已请 landing-verifier 在其 verdict 文件补一行规范 `verdict: PASS`（不改判定、不改核验结论、不改 ADVISORY），使该凭据对机可读；此为**产出侧修正**，不涉及任何判据放宽。
 
 **证据锚补充**：`delivery/review/261017-arch-review-p3-story-body-sd-cache/landing-verdict.md`（命中 0 行的文件）；三批对照的一次性复跑脚本见本条目追加的实测记录。
+
+**结项**：consumed-by: 261026-gov-review-merge-gate-cluster-fix（landing-verdict PASS + 7 ADVISORY，2026-10-26；承接口径 = PROPOSAL §6 结项段）。
