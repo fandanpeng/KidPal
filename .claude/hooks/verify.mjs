@@ -236,7 +236,7 @@ function runGateChild() {
   // ── final 相位 scope-file fail-closed（260928-gov-review-dev-loop-preassess-manifest-scope T9）──
   // 缺清单/圈定失败 → 红闸举手（不退全量、不静默缩水）；scoped 相位不消费 scope-file。
   if (phase === 'final' && !scopeFile) {
-    process.stderr.write(`[verify.mjs] final 相位缺 --scope-file（红闸举手，260928 批 T9 fail-closed）：范围 = 影响面圈定清单（detect_changes + impactedTests 种子合成，integrator Step 4）；全量回归 = 人工触发位。缺清单/圈定失败 → 升级 human，不默认全量\n`);
+    process.stderr.write(`[verify.mjs] final 相位缺 --scope-file（红闸举手，260928 批 T9 fail-closed）：范围 = 影响面圈定清单（detect_changes + impactedTests 种子合成，integrator Step 4）；全量回归 = 人工触发位。缺清单/圈定失败 → 升级 human，不默认全量。正确序列 = scoped 绿 → integrator 圈定 → final；本次在开跑前退出，未发布 fact、round 序数不消耗\n`);
     process.exit(2);
   }
 
