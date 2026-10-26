@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4b18522a-d188-416d-be97-258a109e3a46",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\AI\\KidPal\\docs\\notes\\archify\\architecture-kidpal-business-casual-20261026-144948\\candidate.json",
+  "output": "C:\\AI\\KidPal\\docs\\notes\\archify\\architecture-kidpal-business-casual-20261026-144948\\kidpal-casual.html",
+  "specification": {
+    "sha256": "7f74fb9d42a147c3877e9e07ebd5a7d3943a747ac05daa9015549f695b7eed24",
+    "bytes": 3364
+  },
+  "artifact": {
+    "sha256": "298d9c8b083906b0ea346465f6429fae203050b5e3311bcf55a12419d8831c2d",
+    "bytes": 774230
+  }
+}
