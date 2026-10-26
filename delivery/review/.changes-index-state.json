@@ -39,5 +39,9 @@
   "261025-gov-review-release-pr-publish": {
     "date": "2026-10-25",
     "mergedInMain": "yes"
+  },
+  "261024-gov-review-retro-efficiency-instrumentation": {
+    "date": "2026-10-24",
+    "mergedInMain": "yes"
   }
 }

@@ -63,6 +63,27 @@ function taskPackageDir() {
   }
 }
 
+// T3\uFF08261024-gov-review-retro-efficiency-instrumentation\uFF09\uFF1A\u4E3B\u7EBF\u7A0B\u7D2F\u8BA1\u68C0\u67E5\u70B9\u7684\u5355\u8C03\u6027\u6821\u9A8C\u3002
+// \u8BFB\u53D6\u672C\u5305\u65E2\u6709 pod-events \u7684\u6700\u540E\u4E00\u6761 mainThreadUsage \u7D2F\u8BA1\u503C\uFF1B\u4E0E\u672C\u6761\u76F8\u540C\u6216\u66F4\u5C0F \u2192 \u544A\u8B66\uFF08fail-open\uFF09\u3002
+function lastMainThreadTotal(changeId) {
+  const p = resolve(projectDir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl');
+  if (!existsSync(p)) return null;
+  let last = null;
+  try {
+    for (const line of readFileSync(p, 'utf8').split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      let e;
+      try { e = JSON.parse(line); } catch { continue; }
+      if (e.eventType !== 'dispatch-completed') continue;
+      const m = e.payload && e.payload.mainThreadUsage;
+      if (m && m.source === 'transcript' && typeof m.total === 'number') last = m.total;
+    }
+  } catch {
+    return null;
+  }
+  return last;
+}
+
 // 260918-gov-review-closeout-chain-friction T2\u2460\uFF08FROZEN 2026-09-19\uFF09\uFF1A\u89E3\u6790\u987B**\u540C\u65F6\u56DE\u62A5\u6765\u6E90**\u2014\u2014
 // \u672C\u51FD\u6570\u6709\u4E24\u6761\u8DEF\u5F84\uFF08\u663E\u5F0F flag / \u8BFB current/ \u6307\u9488\uFF09\uFF0C\u8C03\u7528\u70B9\u8981\u5982\u5B9E\u56DE\u663E\u300C\u672C\u6B21\u5B9E\u9645\u6765\u81EA\u54EA\u6761\u300D\uFF0C
 // \u4E0D\u5F97\u56FA\u5B9A\u5199\u540E\u8005\uFF08R1-F6\uFF09\u3002\u6545\u5185\u90E8\u8FD4\u56DE { changeId, source }\uFF0C\u65E7\u7B7E\u540D\u4FDD\u7559\u4E3A\u8584\u5C01\u88C5\u3002
@@ -131,7 +152,7 @@ function buildTokenUsage() {
       } else if (reportedTotal !== undefined) {
         tu.total = reportedTotal;
       }
-      if (tu.total === 0) tu.note = 'harness-reported-zero';
+      if (tu.total === 0) tu.note = 'reported-zero';
       return tu;
     } else if (tokenStatus === 'unavailable') {
       return { status: 'unavailable', reason: flagVal('--token-reason') || 'harness-did-not-report-token-usage' };
@@ -197,13 +218,28 @@ function run() {
   const dispatchId = required('--dispatch-id');
   const actor = required('--actor');
   const phase = required('--phase');
-  const durationMs = parseInt(required('--duration-ms'), 10);
+  const durationRaw = required('--duration-ms');
+  let durationMs = null;
+  let durationStatus = 'exact';
+  let durationReason;
+  let durationNote;
+  if (durationRaw === 'unavailable') {
+    durationStatus = 'unavailable';
+    durationReason = flagVal('--duration-reason') || 'not-reported';
+  } else {
+    if (!/^\d+$/.test(durationRaw) || !Number.isSafeInteger(Number(durationRaw))) {
+      process.stderr.write('[dispatch-stamp] --duration-ms must be a non-negative safe integer or "unavailable"\n');
+      process.exit(2);
+    }
+    durationMs = Number(durationRaw);
+    if (durationMs === 0) durationNote = 'reported-zero';
+  }
   const toolUses = parseInt(required('--tool-uses'), 10);
   const terminalStatus = required('--terminal-status');
   const ts = new Date().toISOString();
 
-  if (isNaN(durationMs) || isNaN(toolUses)) {
-    process.stderr.write('[dispatch-stamp] duration-ms, tool-uses must be integers\n');
+  if (isNaN(toolUses)) {
+    process.stderr.write('[dispatch-stamp] tool-uses must be an integer\n');
     process.exit(2);
   }
 
@@ -273,15 +309,33 @@ function run() {
           }
         : flagTokenUsage;
 
+      // T3：exact 的 total 必须是 input + output；两者都有时以计算值为准（transcript 路径已如此），
+      // 真实零值必须带 note（与旗标路径同一口径），使「真实零」与「取不到」可区分。
+      if (tokenUsage.status === 'exact') {
+        if (typeof tokenUsage.input === 'number' && typeof tokenUsage.output === 'number') {
+          tokenUsage.total = tokenUsage.input + tokenUsage.output;
+        }
+        if (tokenUsage.total === 0 && !tokenUsage.note) tokenUsage.note = 'reported-zero';
+      }
+
       // harness 单值交叉核对（可选，E2 那类对账的证据基础）。注意该「单值」= `--token-total`
       // （legacy = `--tokens`），**不是四路旗标**（R2-N3）。
       const harnessReported = harnessReportedSingle();
       if (harnessReported !== undefined) tokenUsage.harnessReported = harnessReported;
 
       // 实际生效模型：transcript 优先，`--model` 旗标回退；`modelSource` 标明取自哪条路。
+      // 261024-gov-review-retro-efficiency-instrumentation T3：model 键**恒在场**（字符串或 null），
+      // 缺值不再表现为「键缺失」，而是 modelStatus='unavailable' + modelReason；
+      // transcript 生效模型与 `--model` 旗标不一致时告警并记 modelFlagMismatch（fail-open）。
       const effectiveModel = telemetry.found && telemetry.model ? telemetry.model : null;
       const model = effectiveModel || flagModel;
       const modelSource = effectiveModel ? 'transcript' : (flagModel ? 'flag' : null);
+      const modelStatus = model ? 'exact' : 'unavailable';
+      const modelReason = model ? null : (telemetry.found ? 'transcript-model-missing' : 'transcript-and-flag-missing');
+      const modelFlagMismatch = !!(effectiveModel && flagModel && effectiveModel !== flagModel);
+      if (modelFlagMismatch) {
+        process.stderr.write(`[dispatch-stamp] advisory: transcript model (${effectiveModel}) ≠ --model flag (${flagModel}); recording modelFlagMismatch\n`);
+      }
 
       // 主线程自身消耗（子项 c）：累计检查点语义——retro 取同包首尾两次 stamp 做差即得区间消耗。
       // **仅命中派发 transcript 时带该键**：未命中时连 sessionId 都无从得知（连接键就是 agentId），
@@ -290,6 +344,15 @@ function run() {
       const mainThreadUsage = telemetry.found
         ? mainThreadUsagePayload(telemetry.sessionId, telemetry.projectDirName)
         : null;
+
+      let cumulativeNote = null;
+      if (mainThreadUsage && typeof mainThreadUsage.total === 'number') {
+        const prev = lastMainThreadTotal(changeId);
+        if (prev !== null && mainThreadUsage.total <= prev) {
+          cumulativeNote = 'non-increasing';
+          process.stderr.write(`[dispatch-stamp] advisory: mainThreadUsage.total ${mainThreadUsage.total} is not increasing vs previous ${prev}; recording cumulativeNote\n`);
+        }
+      }
 
       // 连接键未命中且 id 不具 agentId 形态 → advisory（fail-soft，不改 exit code）。
       // 这正是历史上 51 条自造标签（`builder-r1` 类）的可观测化。
@@ -308,19 +371,26 @@ function run() {
           dispatchId,
           phase,
           durationMs,
+          durationStatus,
+          ...(durationReason ? { durationReason } : {}),
+          ...(durationNote ? { durationNote } : {}),
           toolUses,
           terminalStatus,
           tokenUsage,
-          ...(model ? { model } : {}),
+          model,
+          modelStatus,
+          ...(modelReason ? { modelReason } : {}),
           ...(modelSource ? { modelSource } : {}),
+          ...(modelFlagMismatch ? { modelFlagMismatch: true } : {}),
           ...(mainThreadUsage ? { mainThreadUsage } : {}),
+          ...(cumulativeNote ? { cumulativeNote } : {}),
           // T7（260924-gov-review-gate-parse-teeth，OQ-1=(c)）：上下文来源 + expect 校验结果（additive 双键；
           // 量化触发器入 ARQ-260913 追注：absent ≥1 → 启动 (b) 闸级强制批 / 累计 30 全 match → settled）。
           contextSource: resolved.source,
           expectCheck,
         },
       });
-      process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs}ms -> pod-events.jsonl (tokens: ${tokenUsage.status}/${tokenUsage.source || '-'}${model ? `, model: ${model} (${modelSource})` : ''})\n`);
+      process.stderr.write(`[dispatch-stamp] ${dispatchId}: ${actor}/${phase} ${durationMs === null ? 'unavailable' : `${durationMs}ms`} -> pod-events.jsonl (tokens: ${tokenUsage.status}/${tokenUsage.source || '-'}, model: ${model || 'unavailable'})\n`);
     } catch (e) {
       process.stderr.write(`[dispatch-stamp] pod-events append error: ${e.message}\n`);
       process.exit(1);
