@@ -2,13 +2,13 @@
 id: TECH-261025-dreaming-capture-pollutes-honcho
 title: memory-core dreaming 子回合被 honcho 插件当普通对话采集，污染孩子画像（占最近 100 条窗口 13%）——第三方插件采集策略与宿主记忆政策不同源
 domain: tech
-status: deferred
+status: closed
 severity: SHOULD
 owner: dev-loop（配置包）+ 主线程（清理运维轮）+ architect（面 C spec 修订）
 trigger: 261025-kidpal-tools-profile-fix 落库并部署完成后起配置包；数据清理排在其部署轮之后的 human 运维轮
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-26
+closedBy: "consumed-by delivery/intake/261025-spec-reconciliation-memory-writing-scope.md（配置包 + 数据清理 + 升级清单防线已执行完毕；spec 修订由该 spine 承接）"
 paths:
   - server/deploy/261025-openclaw-dreaming-disable/
   - server/deploy/manifest.yaml
@@ -40,3 +40,7 @@ handoff: "配置包 → dev-loop（trigger=261025 工具面批部署完成后起
 - **相邻同类缺口**：`isSystemRun` 对 `subagent:` 前缀同样只参与分类、不参与排除；未来若起探针包，须把 `subagent:*` 一并列入「必须为空」集合。
 
 **风险**：riskTier **medium**——改动为「关一个插件功能开关 + 一次数据清理 + 文档/清单」，无代码逻辑变更、无契约面；主要风险 = ① 关 dreaming 后若上游存在「dreaming 相位顺带刷新索引」的隐藏耦合（预期不存在），用部署轮前后 `memory_search` 对比实证、一键回滚；② 删数不可逆（Honcho 不备份，`docs/architecture.md` §8.1 风险 13），以「先导出 + 精确 provenance + human 过目」三步兜底。review profile = **Track B**（三要件全满足：执行测出有实证 / 问题与修复已收敛无人裁分叉 / 爆炸半径已量化实测；paths 不落 G1/G3/契约面/gate）。owner = dev-loop（配置包）+ 主线程（运维轮）+ architect（面 C）。**形态注记**：若 review 裁定须以机械 gate 或探针脚本落地，按约定升 full-adversarial。
+
+**数据清理完成 append（2026-10-26，主线程 human 运维轮）**：human 2026-10-26 裁「删全部 105 条」。执行记录——① 删前导出全量 105 条到 `c:/tmp/dreaming_docs_export_20261026.json`（owner 17 / agent-kidpal 57 / agent-main 31，逐条人读确认全部为「做梦过程本身」的元描述，无独占真实事实；片段涉及的真实对话在正常会话中均有原句）；② `DELETE 105`（按导出 ID 精确删除）→ 残留 0；③ 删 5 个 `dreaming-narrative-*` 会话（16 条消息，REST DELETE 全 202）→ 消息残留 0、结论残留 0；④ 核验 = 最近 100 条 owner 窗口做梦来源 **0/100**（清理前 13/100）、owner 表示 3399→2417 字符、真事实完好（王一诺 4 条 / 向宏光 1 条 / 含「出卖」原话 7 条）；⑤ 配置侧同轮复核：`dreaming.enabled=false` 持久、昨晚 20:02:52 日志 `removed 1 managed dreaming cron job(s)`、今晨 03:00 窗口 dreaming 日志 0 条、DREAMS.md mtime 停在 2026-10-25 03:01、main 侧 `memory search` 检索正常。**本条目剩余 = 面 C spec 修订**（spine `delivery/intake/261025-spec-reconciliation-memory-writing-scope.md`，human 已明示明日启动）。
+
+**结项 append（2026-10-26，主线程，human 询问后裁定）**：本条四段处置完毕或已有载体——① 配置包 `261025-openclaw-dreaming-disable` 已合 main 并部署（`dreaming.enabled=false` 持久、cron 已移除、03:00 空跑无新增）；② 数据清理已完成（`DELETE 105` + 5 会话，窗口占比 13/100 → 0/100，真事实完好）；③ 升级清单防线已随包落 `server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md` §9；④ **spec 修订未做但有载体**——spine `delivery/intake/261025-spec-reconciliation-memory-writing-scope.md`（human 2026-10-25 明示「建 spine、不启动实现、明天启动」），`consumed-by` 见 frontmatter。**残留风险如实申报**：本条目结项后，debt 账不再为「spec 未改」报警，跟踪只剩 spine 的 intake 投影（`0/2` + status `intake`）；若该 spine 长期不动，需由 loop-retro 或人工盘点发现。相邻风险（`isSystemRun` 对 `subagent:` 前缀同样不排除）已写入正文「建议改动」末条与 OQ-2，随 spine 一并裁。

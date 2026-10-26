@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 34（待拍板 1 / 待触发 27 / 已接受风险 6）；已结 25（归档索引见下）。
+**摘要**：未结 34（待拍板 1 / 待触发 27 / 已接受风险 6）；已结 26（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -45,7 +45,7 @@
 | [TECH-261023-openclaw-tool-face-prompt-only-readonly](TECH-261023-openclaw-tool-face-prompt-only-readonly.md) | SHOULD | kidpal agent「数据目录只读」是 prompt-only 防线——tools.allow 仍含 write/exec，且 workspace 内 kidpal/、stories/ 为 symlink 指向 main workspace 真身，一次 stray write 可改真课表/真故事 | 下个动 OpenClaw 工具面 / 需与 K1-E4 冻结验收同批的包；或出现 stray write 迹象时提前 |
 | [TECH-261023-recording-echo-ghosting](TECH-261023-recording-echo-ghosting.md) | SHOULD | P3 录音回显滚动瞬间的面板响应叠印——传输层/LVGL 层已三重排除，定性为反射屏液晶响应窗物理特性，缓解与产品选项待拍板 | human 对回显显示形态拍板（单行化 / 接受现状 / 驱动实验三选一）；或下个动 P3 录音演出面 / 显示驱动面的包 |
 | [TECH-261023-story-voice-discard-no-text-carrier](TECH-261023-story-voice-discard-no-text-carrier.md) | SHOULD | S-F2.2 AC4「或说『讲错啦』Then 取消」语音丢弃路径零文本检出载体——真实丢弃链 = 取消键/BOOT → kidpal_story_discard 契约帧 → front acc.cancel，记录语境引擎不派发 LLM，「讲错啦」作为语音输入在当前链路无落点 | 下次动 S-F2.2 记录会话需求面 / front 丢弃链 / STT 素材入口过滤的包 |
-| [TECH-261025-dreaming-capture-pollutes-honcho](TECH-261025-dreaming-capture-pollutes-honcho.md) | SHOULD | memory-core dreaming 子回合被 honcho 插件当普通对话采集，污染孩子画像（占最近 100 条窗口 13%）——第三方插件采集策略与宿主记忆政策不同源 | 261025-kidpal-tools-profile-fix 落库并部署完成后起配置包；数据清理排在其部署轮之后的 human 运维轮 |
+| [TECH-261026-oneshot-wrapper-prompt-derived-facts](TECH-261026-oneshot-wrapper-prompt-derived-facts.md) | SHOULD | 设备流程回合的「机器包装指令」随孩子原话一起以 owner 身份入库，被 deriver 抽成「孩子要求整理成文」的过程性结论 | 下一次动记忆管线（抽取策略 / honcho 插件版本升级 / 需求面记忆口径再评）时一并裁；或运营面观察到该族结论再次挤占画像窗口时 |
 
 ## 已接受风险（6）
 
@@ -58,10 +58,10 @@
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（25）
+## 已结（26）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 25 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 26 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
