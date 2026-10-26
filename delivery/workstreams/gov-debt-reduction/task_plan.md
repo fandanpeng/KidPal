@@ -5,12 +5,13 @@ slug: gov-debt-reduction
 status: active
 opened: 2026-10-26
 closed:
-summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 合并闸簇已落，P2 锚解析门+模板簇与 P1.5 final 相位派发契约在途
+summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 合并闸簇与 P1.5 final 相位派发契约批均已合 main，下一波 = P2 锚解析门+模板簇
 # —— 选填 ——
 owner: main-thread
 area: governance
 changes:
   - 261026-gov-review-merge-gate-cluster-fix
+  - 261026-gov-review-final-phase-dispatch-contract
 ---
 
 # task_plan · 治理债清偿（gov-debt-reduction）
@@ -27,11 +28,11 @@ changes:
 - changeId = `261026-gov-review-merge-gate-cluster-fix`；全环闭环（R3 GREEN → PASS+7A → 已合 main → PR #40 已合并）。
 - 详见 `progress.md`。
 
-### P1.5 · final 相位派发契约批（⏳ 下一波首选，MAJOR）
+### P1.5 · final 相位派发契约批（✅ 2026-10-26 已落，MAJOR）
 
 - 主条目：`ARQ-261026-final-phase-dispatch-contract-unwritten`（八包实证每包烧半轮到一轮；修法 = G2 文面几句）。
 - 并批（同面）：`ARQ-260923-codemem-mode-doc-drift`（同动 launch-prep 文面）+ `ARQ-261025-interrupted-dispatch-progress-note`（同动 planner 派发步/brief 模板）。
-- **时点判据：赶在下一个 Pod 批 launch 前落地**，直接省该批 final 相位试错。
+- changeId = `261026-gov-review-final-phase-dispatch-contract`；全环闭环（R2 GREEN → PASS → 已合 main `47888d5b`）。详见 `progress.md`。
 
 ### P2 · 锚解析门 + summary 模板簇（⏳ 继 P1.5）
 
