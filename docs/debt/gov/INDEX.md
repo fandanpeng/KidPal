@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 16（待拍板 0 / 待触发 14 / 已接受风险 2）；已结 116（归档索引见下）。
+**摘要**：未结 16（待拍板 0 / 待触发 14 / 已接受风险 2）；已结 117（归档索引见下）。
 
 ## 待拍板（0）
 
@@ -30,7 +30,7 @@ _（无）_
 | [ARQ-261025-adjacent-frozen-anchor-sweep](ARQ-261025-adjacent-frozen-anchor-sweep.md) | SHOULD | intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚 | 下一治理批（动 `task-intake-and-slicing.md` / `planner.md` / `dev-loop.md` 的分面时并批）；或下一个触既有冻结件同一实现点的包 |
 | [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
 | [ARQ-261025-debt-archive-ref-atomic](ARQ-261025-debt-archive-ref-atomic.md) | SHOULD | debt 结项归档归位与引用更新不同批——docRefs / sourceRefs 静默陈旧，final 轮 docs-sync 才红 | 下一治理批（动 `debt-render.mjs` / `task-intake-and-slicing.md` / integrator 收口文面时并批）；或再出现一次归档后引用陈旧 |
-| [ARQ-261027-draft-sandbox-assembly-scaffolding](ARQ-261027-draft-sandbox-assembly-scaffolding.md) | SHOULD | architect 起草期无 canonical 写权但 PROPOSAL 须承诺「改哪几行、改成什么样」+ §5 验证实跑——每批现写一次性沙盘装配脚手架（行号基线写死 + 仓外副本），结构性别扭待专项讨论 | human 立项专项讨论；或下一个触 `.claude/scripts/**` 落地面的治理批出现第三例脚手架时强制带出 |
+| [ARQ-261027-summary-verify-obligation](ARQ-261027-summary-verify-obligation.md) | NIT | 主线程写 landing-summary 的核验断言无亲测义务——P6.5 批「junction 已不存在」失实句采信 architect 自报入档，被 landing-verifier 实测抓出 | 下个触 landing-summary 模板或主线程落地纪律文面的治理批 |
 
 ## 已接受风险（2）
 
@@ -39,10 +39,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（116）
+## 已结（117）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 116 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 117 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

@@ -7,10 +7,11 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (22)
+## review (23)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | — |
 | [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
 | [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
