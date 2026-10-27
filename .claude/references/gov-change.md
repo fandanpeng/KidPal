@@ -12,6 +12,7 @@
 - **起草 = architect**（主线程派发；输入 = human 原话 / ARQ 条目 / spine sources）：Track B PROPOSAL（改法集）或轻路径瘦 PROPOSAL。
 - **审稿 = architect-reviewer 四查**（**恒定**）：① 意图保真 ② 纪律合规（治理面版：路由表 / 写权边界 / 门语义不被文本漂移改动）③ 撞车复核（与既有 agent 定义 / 流程 SSOT / 门语义冲突）④ 牵连面完整（引用普查、fixtures、消费方）。否回循环至过。
 - **判档 = architect-reviewer**：轻路径 / Track B，**只升不降**。
+- **脚本批拆分纪律（261027 批 T3 立，ARQ-261027）**：`.claude/scripts/**` 净增合计 >~150 行（净增 = `git diff --numstat -- .claude/scripts/` 增行合计减删行合计；新增 / 未跟踪文件先 `git add -N` 再计，或按行数直计），或属 feature 级改动（新增子命令 / 判定重写）→ 该脚本改动**单独成批**；fix 级小改（<~50 行、无判定语义变化）可并批搭车。数值为初值、随复发校准。
 
 ## 轻路径判据（路径即判据）
 

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 116 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 117 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -127,3 +127,4 @@
 | [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 2026-10-27 | 261026-gov-review-p4-pod-board-cluster |
 | [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 2026-10-27 | 261026-gov-review-p4-pod-board-cluster |
 | [ARQ-261026-verbatim-extract-backtick-cut](ARQ-261026-verbatim-extract-backtick-cut.md) | checkVerbatimQuotes 的围栏提取正则把块内容中的 ``` 字面（js 夹具串形态）当块边界——观察列大量伪 missing，噪声稀释 advisory 可信度 | 2026-10-27 | 261027-gov-review-p6-landing-gate-cluster |
+| [ARQ-261027-draft-sandbox-assembly-scaffolding](ARQ-261027-draft-sandbox-assembly-scaffolding.md) | architect 起草期无 canonical 写权但 PROPOSAL 须承诺「改哪几行、改成什么样」+ §5 验证实跑——每批现写一次性沙盘装配脚手架（行号基线写死 + 仓外副本），结构性别扭待专项讨论 | 2026-10-27 | 261027-gov-review-draft-cost-relief |
