@@ -2,13 +2,13 @@
 id: ARQ-261025-shared-branch-pod-isolation
 title: 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect（launch 面口径）+ dev-loop（merge-driver 圈定）
 trigger: 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-27
+closedBy: 261026-gov-review-p4-pod-board-cluster
 paths: [".claude/scripts/merge-driver.mjs", ".claude/references/pod-coordination.md", ".claude/agents/planner.md"]
 source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261018-sd-log-persist/pod-retro.md, delivery/taskpackages/261018-sd-log-usb-read/pod-retro.md, delivery/taskpackages/261022-p3-record-front-polish-fix/pod-retro.md, delivery/taskpackages/261023-honcho-memory-wiring-restoration/pod-retro.md]
 ---
@@ -20,3 +20,5 @@ source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261018-s
 **建议改动**（交 review、不自批）：二选一或并取——① launch 面口径：禁止同一分支同时存在两个活跃 Pod（`pod-coordination.md` §2c 换包协议补一条），或要求每包显式记录自己的 base ref 并在 launch-card 钉死；② merge-driver 支持按提交范围圈定（`--pod` 已有，可评估扩展为 `<base>..<head>` 显式范围），使同分支包可独立过闸链。另建议把「包级 diff 的 base = 包首提交父，不用 main」写成 planner/integrator 的成文动作。
 
 **风险**：riskTier: low——方案①为文面与 launch 检查项；方案②触 merge-driver 执行面但只加可选参数，不改现有默认路径与门判据。
+
+**2026-10-27 · 结项（`261026-gov-review-p4-pod-board-cluster`，部分结项）**：已落 = 方案①（human 立项 ack③ 裁定）——`pod-coordination.md` §2c 增「同一 worktree / 同一常驻分支同一时刻至多一个活跃 Pod」互斥租用禁令（launch 面口径 + launch 检查项，不设锁，与「记录不是锁」既有裁定相容）+「每包 base ref（= 包首提交父）钉死进 launch-card」成文动作（SKILL 启动卡增第七要素：点火时 `git rev-parse HEAD` 的 SHA + 常驻分支名，包级 diff 恒用该 ref 不用 main）。**未闭合面 = 方案②（merge-driver 显式 `<base>..<head>` 范围参数）与 worktree 池化**——human 2026-10-26 已裁另登记独立专项批（workstream gov-debt-reduction 立项 ack③ 在案；PROPOSAL §6 留根 7 互指：池化批若采用不同 base ref 形态，以池化批 SSOT 为准并回收本条）。

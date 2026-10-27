@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 25（待拍板 0 / 待触发 23 / 已接受风险 2）；已结 106（归档索引见下）。
+**摘要**：未结 20（待拍板 0 / 待触发 18 / 已接受风险 2）；已结 111（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（23）
+## 待触发（18）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -22,8 +22,6 @@ _（无）_
 | [ARQ-260913-auto-mode-classifier-legit-workflow](ARQ-260913-auto-mode-classifier-legit-workflow.md) | SHOULD | auto-mode 分类器第三次误伤 dev-loop 合法工作流，每包烧一轮拦截往返 + human 中场出场，已成本模式 | 单开一批（**须双臂一起落**，不得只落口径臂） |
 | [ARQ-260913-current-pointer-implicit-global](ARQ-260913-current-pointer-implicit-global.md) | SHOULD | `delivery/taskpackages/current/` 指针是隐性全局状态：指错包即静默假绿或簿记污染，三包复现；另有指针副本与 canonical 的行尾字节差同族面 | 下次动起包 checklist / dispatch-stamp 解析面的治理批 → **2026-09-24 部分承载**：残余①③+brief 双份投影+调用侧旗标必带文面已由 260924-gov-review-planner-orchestration-align T6 落地；17 解析点常驻报警机械齿 + `--expect-change-id` 闸级强制按该批 OQ-3(a) human 裁定留批 C（门/解析面批）→ **2026-09-25 部分承载（批 C）**：残齿① 回显齿已落（现扫 18 件分类 14 接线 + 2 已有齿 + 2 非解析，新 lib `current-pointer-shared.mjs` 单源）；残余② 转可观测齿（事件 payload `contextSource`/`expectCheck` 双键，OQ-1=(c)）；**闸级强制挂量化触发器**——`expectCheck:'absent'` 出现 ≥1 实例 → 即启动 (b) 闸级强制批；累计 30 次 dispatch 全 `match` → 文面强制 settled、残余②按观察期完结结项（下次动该面治理批按触发器数据承接，本条不结） |
 | [ARQ-260914-landing-preflight-anchor-parse](ARQ-260914-landing-preflight-anchor-parse.md) | SHOULD | PROPOSAL FROZEN 前无 §2 锚清单干跑——锚行形态错（加粗 `**目标文件**：`、注记夹带路径 token、幻影路径）到 landing 核验期才被结构门抓住，PROPOSAL「落地后不可回改」条款被迫走例外追认 | 部分结（2026-09-20）；③ 连带项非机械化半（断言口径 ↔ 保留面对账）有新实例在案（260921 第二实例 + 260924 第三实例「评估时点标注」）、待排期；新子面——锚文内容逐字性（preflight 形态级不覆盖）260924 首实例在案、候选 = PROPOSAL.template 起草期自检第三句；剩余（机械化判据）无排期；**260924 批 B 载体兑现**——逐字性子面再添两实例（R1-F1 转义伪影 near-miss + 核验 F1 插入段漏 1 字符），机械化候选（byte 比对脚本化）+ 围栏承载条款 + 双信号源规约（正读数镜像）+ 幂等断言逐子句时点细则已追注正文尾，待排期 |
-| [ARQ-260914-portfolio-reconcile-launchpreconditions](ARQ-260914-portfolio-reconcile-launchpreconditions.md) | SHOULD | M-1 机械齿——`portfolio-reconcile.mjs` 读 workstream `decision-coverage.json` 顶层键 `launchPreconditions`（`需修订` spec 落点的 launch 前置清单），当前 `--check-launch` 不读该键、靠 convention + 人读核验 | 下次动 portfolio-reconcile.mjs / launch 检查面的治理批 |
-| [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | SHOULD | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 下一批 launch 前定夺候选① 文面统一（成本低、且是 M2-K3 与后续所有包的共同前置）；候选②③ 的门策略随下次治理批；若本包 K2 收尾相位出现「未跑 supervisor-gate-check 即欲结束」实况，即升 severity 并触发本条立即处理 |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | SHOULD | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 下次动 landing-fidelity-check / preflight / governance-gate-shared 解析面的治理批 → **2026-09-25 部分承载（批 C）**：处方①③ 已落（preflight 输出增 `advisories` 目录 token 点名 + PROPOSAL.template manifest 说明行补「一行一个文件路径」纪律句）；**② 维持不预批**——触承重闸判定逻辑（landing 门目录前缀展开），须独立批完整评审；下批该面承接者按此二分 |
 | [ARQ-261001-host-blind-outcome-device-gate](ARQ-261001-host-blind-outcome-device-gate.md) | SHOULD | 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门 | 下一治理批（dev-loop 门 / 纪律文面；或下一个声明「用户可见结果」的包 launch 前） |
 | [ARQ-261014-closeout-obligation-write-authority-vacuum](ARQ-261014-closeout-obligation-write-authority-vacuum.md) | SHOULD | 收口义务清单的写权承载缺位——CDQ 行 / 设计稿母版同步 / spine 回填 / 收口挂法句等义务无登记角色可写，撞 enforce-scope 成跨包常态 | 下次治理批；或下个触 DEV-GOVERNANCE 收口节文面的批 |
@@ -36,9 +34,6 @@ _（无）_
 | [ARQ-261025-adjacent-frozen-anchor-sweep](ARQ-261025-adjacent-frozen-anchor-sweep.md) | SHOULD | intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚 | 下一治理批（动 `task-intake-and-slicing.md` / `planner.md` / `dev-loop.md` 的分面时并批）；或下一个触既有冻结件同一实现点的包 |
 | [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
 | [ARQ-261025-debt-archive-ref-atomic](ARQ-261025-debt-archive-ref-atomic.md) | SHOULD | debt 结项归档归位与引用更新不同批——docRefs / sourceRefs 静默陈旧，final 轮 docs-sync 才红 | 下一治理批（动 `debt-render.mjs` / `task-intake-and-slicing.md` / integrator 收口文面时并批）；或再出现一次归档后引用陈旧 |
-| [ARQ-261025-intake-index-retro-scope-hygiene](ARQ-261025-intake-index-retro-scope-hygiene.md) | COULD | intake INDEX 漂移标连续多轮无人消费 + retro 游标把 `current` 指针目录当 waiting 包 | 下一治理批（动 `changes-index.mjs` / `loop-health-report.mjs` 时并批）；或下一轮 retro 仍见漂移标 |
-| [ARQ-261025-shared-branch-pod-isolation](ARQ-261025-shared-branch-pod-isolation.md) | SHOULD | 同分支 / 同 worktree 多活跃 Pod——包级 diff 的 base 与合并圈定无机械锚，靠 cherry-pick 与手工对齐 | 下一治理批（动 `pod-coordination.md` / `merge-driver.mjs` / launch 面时并批）；或下一次同分支双活跃 Pod |
-| [ARQ-261025-wait-state-closed-set](ARQ-261025-wait-state-closed-set.md) | COULD | board / launch-card 状态闭集缺「等人操作」一等语义——精确停等只能降级 blocked + 事件承载 | 下一治理批（动 `portfolio-reconcile.mjs` / `pod-coordination.md` 状态面时并批）；或下一次真机门 / 合并门停等 |
 | [ARQ-261026-verbatim-extract-backtick-cut](ARQ-261026-verbatim-extract-backtick-cut.md) | NIT | checkVerbatimQuotes 的围栏提取正则把块内容中的 ``` 字面（js 夹具串形态）当块边界——观察列大量伪 missing，噪声稀释 advisory 可信度 | 下一次动 `.claude/scripts/landing-fidelity-check.mjs` verbatim-quote 面的治理批 |
 
 ## 已接受风险（2）
@@ -48,10 +43,10 @@ _（无）_
 | [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
 | [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
 
-## 已结（106）
+## 已结（111）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 106 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 111 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

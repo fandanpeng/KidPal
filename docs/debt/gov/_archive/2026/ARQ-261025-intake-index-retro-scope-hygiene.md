@@ -2,13 +2,13 @@
 id: ARQ-261025-intake-index-retro-scope-hygiene
 title: intake INDEX 漂移标连续多轮无人消费 + retro 游标把 `current` 指针目录当 waiting 包
 domain: gov
-status: deferred
+status: closed
 severity: COULD
 owner: architect（消费口径）+ dev-loop（`changes-index.mjs` / `loop-health-report.mjs`）
 trigger: 下一治理批（动 `changes-index.mjs` / `loop-health-report.mjs` 时并批）；或下一轮 retro 仍见漂移标
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-27
+closedBy: 261026-gov-review-p4-pod-board-cluster
 paths: [".claude/scripts/changes-index.mjs", ".claude/scripts/loop-health-report.mjs"]
 source: [delivery/retro/2026-10-25-loop-retro.md, delivery/intake/INDEX.md]
 ---
@@ -20,3 +20,5 @@ source: [delivery/retro/2026-10-25-loop-retro.md, delivery/intake/INDEX.md]
 **建议改动**（交 review、不自批）：① 给漂移标指定消费动作与 owner（例如每轮 retro 必须逐条判「续期 / 清理 / 升级」，在 retro 报告固定节留痕）；② `loop-health-report.mjs` 在 `computeRetroScope` 源头排除 `current`（指针目录非 changeId）；③ `changes-index.mjs` 对 `status: —` 的 intake 行报出源文件缺口，而不是只显示 ⚠值域外。不新增工程门。
 
 **风险**：riskTier: low——纯投影与游标脚本整理，不改任何闸判据。
+
+**2026-10-27 · 结项（`261026-gov-review-p4-pod-board-cluster`，三项全落）**：① 漂移标消费动作与 owner 成文（`loop-retro.md` 步骤 5：owner = 主线程，每条三裁「续期/清理/升级」+ retro 报告固定节留痕；升级判据从「仍见漂移」改为「同一条目连续两轮被裁续期仍无动作」——原判据在漂移长期存在时恒真）；② `computeRetroScope` 源头排除 `current`（与 `collectDev` 同口径，三消费方单源传导，实测 waiting 8 → 7）；③ `changes-index.mjs` 源文件缺口与值域外分流（`spineOk` / `hasStatus` 双参，缺口型压掉值域外标——261021 spine 实测由「⚠值域外」改报「⚠源文件缺口（frontmatter 未闭合）」）。无新增工程门。留根 = `scanAllChanges`（`--all`）仍扫 current（PROPOSAL §6 留根 4，非游标面）；261021 spine 本体修补归主线程 intake 事务（留根 5）。
