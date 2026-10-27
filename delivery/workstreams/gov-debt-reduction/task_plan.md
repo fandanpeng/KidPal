@@ -113,6 +113,11 @@ changes:
 
 - `ARQ-261014-closeout-obligation-write-authority-vacuum`（收口义务→承载写点映射成文；DEV-GOVERNANCE.md 属治理文档非轻允许集 + 修法可能触 scope-map 写权矩阵 → 恒 Track B）+ `ARQ-261019-opendesign-shoot-script-precedent`（opendesign-connect skill + uiux-author 定义增补；uiux-author.md 是 agents 面 → 恒 Track B）。
 - 复证：两条件目落点均未消化（DEV-GOVERNANCE 现有表格是入口/批准路由表非写点映射；uiux-author.md :34 仍是「OD 失联→出图 pending 挂 human-decision」反向误导；CDQ 行子项已 261019 批闭合、余面未治）。⑤ 起草期须与 P5 落地后的 docs/ui 显式 current 指针纪律咬合，不写第二套口径。
+- changeId = `261027-gov-review-p75-closeout-shoot-cluster`，2026-10-27 architect 起草中（Track B 主路径全件；④ 修法取①+②、scope-map 类候选③列 OQ；⑤ 修法取条目三改进项、须对齐 P5 落地的 docs/ui 现行口径）。
+- 2026-10-27 起草完成（DRAFT v0.1，536 行，T1–T6 共 17 处编辑、manifest 8 件；G3 面 / 契约 / spec / docs/ui 零 diff）。**OQ-1 human 拍 = (a) 维持文面映射、不开机械通道**（scope-map 类候选③不开，先积累「仍须 human 兜」数据）。**插话记账**：工作树发现两条「已接受风险」ARQ 裸删（contract-mech-gate-gap / crossend-consumer-tiers），human 确认有意删 + 裁「已过时/被消化」→ 主线程补正规记账（还原 + 翻 closed + 追注 + 归档 + contracts.md 指针刷新），commit `8c262d4c`。R1 四查进行中。
+- 2026-10-27 R1 = **BLOCK(F1,F2,F3)**（三条 SHOULD 文本级：F1 T6 追注对 ARQ-261019 改进项③表述错位 / F2 单写者约定指示 Edit 但 uiux-author 工具面无 Edit / F3 B10 摘要与实跑不符 17→16+1 歧义）+ 2 NIT；判档 Track B 成立、T1–T6 结构零打回；判官亲核装配复现 / scope-map 零换授 / 消费者普查穷尽（story-author「需出图」通道中立豁免正确）。已转 architect 出 v0.2（566 行，五处修订 + 复跑全绿、结构落点 manifest 零变），R2 聚焦复验中。
+- 2026-10-27 **R2 GREEN**（五处修订全到位、机检复跑逐值相符、判档维持 Track B）→ **FROZEN v0.2** → packet-bound 落地：V1① 复跑装配 8 件 sha 与 B2 逐值同 → 仓内 apply 8/8 一致 → debt-render 归位 ARQ-261019 → cite-check phase=landing 17 checked / 0 missing（ARQ-261019 两块按归档位命中，P5 先例兜底生效）→ G3/契约/spec/docs/ui 零 diff → `_scratch/` 已删。landing-summary 全件落盘，landing-verifier 核验中。
+- 2026-10-27 环后收口（合并前时点）：landing-verifier **PASS + 1 ADVISORY**（A1 = upsert 未跑，落地 commit 前已闭合）→ retro 落盘（F1 工具面盲区条目化 ARQ-261027-draft-toolface-blind；near-miss = 账本裸删差点混进批 commit，拦截 = 全量 status 逐件定性）→ INDEX upsert landed → 落地 commit 待跑，其后升级闸 → 合本地 main → 发布。**ARQ-261019 整条结项归档；ARQ-261014 部分闭合维持 deferred**。闸合并后 P7.5 收口；下一波 = P8（门语义簇 2 条，恒 Track B）。
 
 ### P8 · 门语义簇（2 条，恒 Track B）
 

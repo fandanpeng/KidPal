@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 12（待拍板 0 / 待触发 12 / 已接受风险 0）；已结 123（归档索引见下）。
+**摘要**：未结 12（待拍板 0 / 待触发 12 / 已接受风险 0）；已结 124（归档索引见下）。
 
 ## 待拍板（0）
 
@@ -24,8 +24,8 @@ _（无）_
 | [ARQ-261014-closeout-obligation-write-authority-vacuum](ARQ-261014-closeout-obligation-write-authority-vacuum.md) | SHOULD | 收口义务清单的写权承载缺位——CDQ 行 / 设计稿母版同步 / spine 回填 / 收口挂法句等义务无登记角色可写，撞 enforce-scope 成跨包常态 | 下次治理批；或下个触 DEV-GOVERNANCE 收口节文面的批 |
 | [ARQ-261014-pod-events-booking-telemetry-fidelity](ARQ-261014-pod-events-booking-telemetry-fidelity.md) | SHOULD | pod-events 簿记一致性与遥测保真度——escalation 闭合链缺、actor 归属误落、同决定双记、关联字段失效、模型档位与用量数据失真 | 下次治理批 / 下个动 pod-events schema 约定或 pod-events-aggregate.mjs 的批 |
 | [ARQ-261014-supervisor-escalate-preflight-ignored](ARQ-261014-supervisor-escalate-preflight-ignored.md) | SHOULD | supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包 | 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批 |
-| [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | SHOULD | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | ① opendesign-connect skill 增补「出图不走 OD」先例段（od_* 失联/应用未跑时出图管道 = tools/asset-pipeline/shoot_design.mjs <html> <outdir>，playwright 无头 Edge 逐画布精确截图、400×300 阈值化 1bpp，每批只捡变更帧落 docs/ui/V<n>/）；② uiux-author agent 定义增补同款指引；③ 261019 批实测补充：uiux-author 全文件 Write 曾两次覆盖主线程合并的完整母版（R1 回归），skill 增补「母版/增量页单写者约定」条目 |
 | [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
+| [ARQ-261027-draft-toolface-blind](ARQ-261027-draft-toolface-blind.md) | SHOULD | 起草对 agents 落点的改法时不核执行者 frontmatter 工具面——指涉不存在的工具（如对无 Edit 的 agent 指示「最小 Edit」），判官打回才暴露 | 下一次改 `.claude/agents/**` 正文的治理批起草期（并批消费）；或本条复发一次 |
 | [ARQ-261027-landing-summary-inflight-snapshot](ARQ-261027-landing-summary-inflight-snapshot.md) | NIT | landing-summary 的在途件登记是写盘时点快照、无「实跑时点」口径句——结项等后落动作被 verifier 读成时序差 ADVISORY | 下一治理批 landing-summary 出具时并批消费（architect-landing-summary.template.md 一句增补，文面级） |
 | [ARQ-261027-publish-diverged-shell-reconcile](ARQ-261027-publish-diverged-shell-reconcile.md) | SHOULD | release-pr --publish 每逢上批 PR 合并壳必报 diverged 拦交人裁——壳 SHA 与本地追平提交恒不同、内容差恒零，人裁答案恒同，应自动化或文面免问 | 下次 --publish 报 diverged 时并批消费；或下次动 `release-pr.mjs` 预检逻辑时顺手 |
 | [ARQ-261027-summary-verify-obligation](ARQ-261027-summary-verify-obligation.md) | NIT | 主线程写 landing-summary 的核验断言无亲测义务——P6.5 批「junction 已不存在」失实句采信 architect 自报入档，被 landing-verifier 实测抓出 | 下个触 landing-summary 模板或主线程落地纪律文面的治理批 |
@@ -34,10 +34,10 @@ _（无）_
 
 _（无）_
 
-## 已结（123）
+## 已结（124）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 123 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 124 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 123 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 124 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -126,6 +126,7 @@
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 2026-10-27 | 261027-gov-review-p6-landing-gate-cluster |
 | [ARQ-261014-rename-batch-second-token-census](ARQ-261014-rename-batch-second-token-census.md) | 改名批 census 需覆盖两个 token 族（旧路径 + 旧文件名 stem），本批 R1 打回实证 | 2026-10-27 | 261027-gov-review-p7-devloop-doc-cluster |
 | [ARQ-261017-anchor-check-master-unvalidated](ARQ-261017-anchor-check-master-unvalidated.md) | spec-anchor-check 假定「最高版号设计稿即完整母版」却不校验完整性——任何人产出一份增量 vN 设计稿即静默打断全仓 UI 锚机检（2026-10-17 实测 12 条悬空、涉 10 条 story） | 2026-10-27 | 261027-gov-review-p5-spike-anchor-cluster |
+| [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | 2026-10-27 | 261027-gov-review-p75-closeout-shoot-cluster |
 | [ARQ-261024-new-mechanism-spike-first](ARQ-261024-new-mechanism-spike-first.md) | 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证 | 2026-10-27 | 261027-gov-review-p5-spike-anchor-cluster |
 | [ARQ-261025-adjacent-frozen-anchor-sweep](ARQ-261025-adjacent-frozen-anchor-sweep.md) | intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚 | 2026-10-27 | 261027-gov-review-p7-devloop-doc-cluster |
 | [ARQ-261025-debt-archive-ref-atomic](ARQ-261025-debt-archive-ref-atomic.md) | debt 结项归档归位与引用更新不同批——docRefs / sourceRefs 静默陈旧，final 轮 docs-sync 才红 | 2026-10-27 | 261027-gov-review-p7-devloop-doc-cluster |

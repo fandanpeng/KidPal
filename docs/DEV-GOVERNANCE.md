@@ -51,7 +51,7 @@
 | 架构评审 | `architect-reviewer` | 契约四分类 + review-depth 裁断 |
 | landing 独立核验 | `landing-verifier` | 治理 canonical landing 保真 == frozen PROPOSAL |
 | retro 引导（跨团队） | `/loop-retro` | 周期性跨 Pod 提共性，治理类进 ARQ |
-| 系统级 UI 设计执行 | `uiux-author` | requirement-change 档 2 触 UI 批次按需求修订生成/修订系统级 UI（档 2 流程 4b 生成模式：brief 升版 + 设计 HTML 迭代 + 出图规格单；出图 od_* 归主线程；dev-loop 包内不派——消费走 planner 挂图 + brief-inputs 透传） |
+| 系统级 UI 设计执行 | `uiux-author` | requirement-change 档 2 触 UI 批次按需求修订生成/修订系统级 UI（档 2 流程 4b 生成模式：brief 升版 + 设计 HTML 迭代 + 出图规格单；出图归主线程（`shoot_design.mjs` 管道）；dev-loop 包内不派——消费走 planner 挂图 + brief-inputs 透传） |
 | 最终负责人 | human | 立项 ack、例外升级拍板、高影响拍板、治理批准 |
 
 一个 Pod = 一个 git worktree 里的一支敏捷小队：多 Pod 并行开发、**串行合并**（merge token + 进门前 rebase 到当前 main），谁都不并行直落 main（机制见 [pod-coordination.md](../.claude/references/pod-coordination.md)）。
@@ -221,9 +221,25 @@ flowchart TD
 | 执行状态 | `delivery/workstreams/<workstream>`、`delivery/taskpackages/<id>/`、`delivery/milestones/`、Pod board/token | 服务正在进行的拆包与调度；不是政策或审批替身 |
 | 审计证据与队列 | `delivery/review/**`、`delivery/taskpackages/**`、frozen proposal / charter / findings / decision packet / verdict；ARQ 管 spec/governance soundness 未结，CDQ 管 Tier-1 契约 shape/接线 | 记录“为何、谁、按何判据”；冻结后不得静默重写 |
 
+**收口义务 → 承载写点映射（261027-gov-review-p75-closeout-shoot-cluster · 承载 ARQ-261014）**
+
+**这张表回答「收口期该落的制品由谁写」。** 与 §7「入口速查」分工：§7 管「从哪个入口改、谁批准」，本表管「收口落盘时写点在哪」；同一义务两表都出现时，批准看 §7、写点看本表，两表不得互相扩写。边界：本表只收**收口期落盘、且 §7 未给具体写点**的义务——ADR 条目、`delivery/review/**` 记账等已由 §7 载明的义务不并入；§7 末行的「ARQ / CDQ｜按来源流程记账」只指入口与账本归属，具体写点由本表第一行补全。
+
+| 收口义务 | 承载写点 | 依据 / 边界 |
+|---|---|---|
+| 账本条目登记（`docs/debt/<域>/`，原 CDQ 行） | **主线程**（登记动作）；包内收口可落 = integrator（`docs/debt/**` 写槽）、review 收口可落 = adjudicator（同写槽） | 261019 批 CDQ 已并入 `docs/debt/contract/`，写权真空闭合；planner / architect 无该写槽 |
+| 设计稿母版内容级同步（`docs/ui/kidpal-ui-design-vN.html`） | **主线程**（Pod 外的真主线程会话）；需求面 loop 档 2 在场时由 uiux-author 增量修订 | Pod cast 缺省不含 uiux-author，且 Pod 主会话受持会话 agent 的 per-agent 写权约束——「主线程通道代落」在 Pod 内不成立；母版升版与声明面纪律见 `docs/ui/UI-DESIGN-VERSIONS.md` |
+| 出图（400×300 PNG 画布帧） | **主线程** | 管道 = `node tools/asset-pipeline/shoot_design.mjs <母版绝对路径> <输出目录>`，不经 Open Design；用法见 `.claude/skills/opendesign-connect/SKILL.md`「出图管道」节 |
+| spine 回填（`delivery/intake/<changeId>.md` 的 `anchors` / `status`） | **主线程** | 无任何 agent 的 scope-map allow 覆盖 `delivery/intake/**` |
+| spec 挂法句（`docs/requirements.md` / `docs/architecture.md` 的同步句） | **architect**（各自面 loop 内）；dev 包检出 spec 漂移 → 交 architect、零自改 | `ARQ-260929-docs-sync-spec-handoff` 已结裁定：integrator 对两份 spec 文件零写权 |
+| 经验记录（`docs/notes/**`） | **主线程**（Pod 外） | 无 agent allow 覆盖 `docs/notes/**`；Pod 主会话 = planner agent，`deny docs/**` |
+| taskpackage 元数据回填 | **planner** | acceptance-author 写槽不含 taskpackage；派发书不要求其回写，交付内容由 planner 预指派代落（planner「派发书三条硬约定」②） |
+
+**为什么成文**：这类义务原先每包收口期现场即兴找写点，找不齐就升级 human 裁「主线程直落」，同型复发四包（2026-10-14 loop-retro T4）、三包（2026-10-25 T10）。写点在这里一次钉死；planner 的 finalize 核对（`.claude/agents/planner.md` Step 8c）按本表执行。**本表是文面映射，不构成任何 scope-map 换授**——写权矩阵以 `.claude/scope-map.json` 为准，二者不一致时以 scope-map 为真、并按治理变更修本表。
+
 ## 7. 入口速查
 
-本表是 §1–§6 的索引，不是规则本身。
+本表是 §1–§6 的索引，不是规则本身。**写点 / 写权类问题不在本表**——收口期该由谁落盘见 §6「收口义务 → 承载写点映射」，本表只答「从哪个入口改、谁批准」，两表不得互相扩写。
 
 | 我想改... | 入口 | 批准 |
 |---|---|---|
