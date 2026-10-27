@@ -116,6 +116,24 @@ Claude Code 的**子 agent 不能再派生子 agent**。因此编排者必须是
 5. **证据优先**：完成状态只认 verifier/integrator 证据，不认 agent 的解释。stdout 保持短摘要，长日志落文件。
 6. **文档与 closeout 归档**：integrator 在合并门前同步 canonical docs 并晋升标准 `delivery/taskpackages/<id>` 制品，防止 shipped behavior 与 spec/AGENTS/HANDOVER 以及交付证据漂移。
 
+### 新机制批 spike 相位（spike-first · ARQ-261024，261027 批立）
+
+> 原则原话（human 2026-10-24）：「其实应该是得先做一轮小验证，然后再做开发，再做数据的回灌」。来源 = K4 记忆回灌三轮返工：引入「记忆画像 + 历史回灌」这一新机制时，消费端（召回注入）验证完全缺位，五层问题各吃一轮返工、一层比一层晚发现（证据链与逐层代价见 `docs/debt/gov/ARQ-261024-new-mechanism-spike-first.md`）。
+
+**触发**：首次引入架构中的新子系统 / 新外部依赖集成 / 新数据迁移。判档落点见 `change-triage.md`「新机制批判定」节；planner intake 复查见 `planner.md` Step 1i。
+
+**spike 定义（钉死三条，防形式化空转）**：spike = 在**真实链路**上、用最小数据量、从生产端跑到**消费端**各一次的可执行验证。判定 spine 三条：
+
+1. **消费端真实观测，非生产者自证**——验收只看最终消费方看到了什么（用户可见行为 / 消费端读回内容 / diag 打点）。写入成功、读回成功、统计口径正确，都不能替代消费端观测。K4 实证：数据（归属 / 日期 / 内容）全对，仍因放错召回视野而全量返工。
+2. **按全量规模设计、按最小数据执行**——最小数据 ≠ 最小规模：单文件 / 单条试灌会**假通过**（K4 实证：新结论必落在被动窗口内，单文件试灌掩盖窗口挤出症状）。spike 必须按全量规模设计观测位（窗口 / 分页 / 位序 / 容量），并用**首尾 canary**（最早与最新各一条可检索标记）确认两端都可达。
+3. **消费端可观测打点是标配产物**——产物不是「跑过了」的结论，而是让下一次观测能发生的打点与记录（K4 实证：human 坚持「先加日志再测」后，一条 diag 日志即时定位五层里最贵的一层）。
+
+**数据迁移类 spike 的四问**（三层 Gate 只验生产者侧的对偶补位；具体断言形态可复刻 `delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-recall-architecture-20261024.md` §C 的 Gate E：E1 成员与观察视角配置断言 / E2 派生 + canary / E3 消费端同款请求 + 窗口位移模型 / E4 用户可见行为 / E5 通道健康）：① 消费端**谁看得到**这份数据（成员与观察视角配置）；② 数据在消费端的**检索位序 / 窗口**里是否还活着（旧数据会不会被更晚的内容挤出）；③ 消费端**读到的内容**是不是这一份（canary）；④ **用户可见行为**是否随之改变。
+
+**产物与落点**：spike 实证记录落 `delivery/taskpackages/<spike-change-id>/spike-evidence.md`（形态见「变更制品」表）。spike 包照常走自己的验收与合并门——**不因是小验证而豁免任何闸**；正式实现 / 数据迁移包的 intake 引用它（`planner.md` Step 1i）。
+
+**不做什么**：spike 不替代正式验收、不替代全量回归、不构成对消费端行为的最终验收。它只回答一个问题：这条端到端链路今天是否真的通。
+
 ### 变更制品（Change Artifact）
 
 每个正式变更有两个持久目录，按职责分工、不互拷（gov-review-taskpkg-lifecycle, FROZEN 2026-07-25）：
@@ -134,6 +152,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 - `review-packet.md`：change size、verification evidence、findings、five-axis review、residual risk、**未覆盖面申报**（260920-gov-review-bearing-strength-align T3）。**nano 包制品注记（261016-gov-review-nano-tier FROZEN v1.1 立）**：`rigor: nano` 包的 review-packet.md 增「白盒复核」节（= nano 验收权威落痕位——planner Step 10c 派 architect 对意图定义逐条核 actual diff + PASS/偏差结论 + detect_changes 收口半径记录）；nano 的豁免/保留清单指针 = task-intake-and-slicing.md「nano 档字段级定义」节与 planner.md Step 3n，此处不复制字段表。
 - `input-brief.md`（T6，260908-gov-review-input-surface-frontload；261015-gov-review-lite-fast-path T4 双份并单份）：`scripts/brief-inputs.mjs` 生成的**派生**封闭输入清单（acceptance-author + builder 单份共用，§①c 主要消费方 = builder），Git-tracked（本目录本就 tracked）。**不晋升到 `delivery/taskpackages/`**（与 post-cutoff `taskpackage.json` 同构：二者都是活执行态，晋升等于把一份带行号的短命快照复制成归档件，反与下文快照语义冲突）。**生成时点 = Pod 内 planner Step 7**（派 acceptance-author 之前一次产单份，260928-gov-review-portfolio-boundary-story-propagation T9 归还 Pod 内——翻转 260921 批 T5 的拆包侧生成裁定；此时 Step 1d `crossEnd` 与 refs 已 finalize，快照离消费最近）；refs 有改动才重跑（`--regenerated-because` 留痕）。Step 8 核在场、Step 9 只引用。**证据属性** = 交付侧超读申报（清单外阅读 + 原因）与 wire 节 WARN 复核的锚点。**快照语义（与 §2 表同文，不得只读一半）**：文件内行号 = 生成时点解析结果、带 `generated-at` 时间戳，**非长期事实源**——消费时 symbol 已移位就重跑脚本取新行号，不得照旧行号通读整文件；重跑覆盖事由由脚本写 `regenerated-because` 行落制品自身，不另开记账面。非权威：契约 / spec / 代码各仍是其自身 SSOT，本文件只出指针与节标题、不抽正文。
 - `dispatch-progress-<agent>.md`（261026 批 T3）：子 agent 的中断恢复进度快照——自包含、Write 覆盖（不载 tokens/gates/rounds/verdict；机器权威在 verifier-evidence / pod-events）。**生产者** = acceptance-author / builder / fixer / integrator（每完成一个可交付段落落一份）；**消费者** = planner（恢复时先读、再 `git status` 考古）。写权 = scope-map 三角色窄 allow（`delivery/taskpackages/*/dispatch-progress-*.md`），包目录 Bash 重定向恒拦。惯例非门：缺注记不判红。
+- `spike-evidence.md`（261027 批 T1，ARQ-261024）：新机制批 spike 相位的消费端实证记录——打点 / 日志片段 + 观测结论 + 首尾 canary 结果（spike 定义与验收锚见「新机制批 spike 相位」节）。**惯例非门**：不入 closeout 必交清单、不进任何闸；消费者 = 正式实现包的 intake（`planner.md` Step 1i）与 review-packet 的未覆盖面申报（写清「本批依赖的端到端链路已验证到什么程度」）。
 - `pod-events.jsonl`（post-cutoff）：执行 ledger 的唯一 retro/dispatch 结构化事件面；observational、non-bearing，不进入 verifier/supervisor/merge authority。
 - `pod-retro.md`（post-cutoff）：唯一人读 retrospective，只记 root cause、friction/escalation/human-correction themes、unresolved concerns 与 improvement routing；不复述 tokens/gates/rounds/verdict/test results。
 - `loop-metrics.json` / `pod-journal.jsonl`：post-cutoff 退役、不提交；pre-cutoff 保留原生产、晋升与读取兼容。

@@ -2,13 +2,13 @@
 id: ARQ-261024-new-mechanism-spike-first
 title: 新机制（首次引入架构的新子系统/外部依赖集成/数据迁移）缺少「端到端最小验证 spike 先行」强制环节——K4 记忆回灌五层问题、三轮返工实证
 domain: gov
-status: deferred
+status: closed
 severity: MAJOR
 owner: architect（方案与落点）+ 主线程（Track B 起草）
 trigger: 下一个引入新子系统 / 新外部依赖集成 / 新数据迁移的批，triage 判档与 launch 前必查本条；或下次治理批
 opened: 2026-10-24
-closed: ""
-closedBy: ""
+closed: 2026-10-27
+closedBy: 261027-gov-review-p5-spike-anchor-cluster
 paths:
   - .claude/references/change-triage.md
   - .claude/references/dev-loop.md
@@ -40,3 +40,5 @@ source: "K4 记忆回灌三轮返工（2026-10-23/24）执行记录：delivery/r
 ---
 
 **勘误与引用 append（2026-10-24，主线程，按 k4-recall-architecture-20261024.md §C 对账）**：① 上文「证据」第 5 条表述需精确化——`session.context` 默认**不限会话**（workspace 级，跨会话本来通）；真正阻断注入的是两层：**(a) 观察者缺位**（backfill 会话成员配置 agent `observe_others=null` → deriver 不扇出 `(agent-kidpal, owner)` 视角结论，backfill 里该类 0 条）+ **(b) 被动窗口 100 条**（`WORKING_REPRESENTATION_MAX_OBSERVATIONS=100` 按 created_at 倒序，9 月事实被更晚结论挤出——**重灌不能修复本症状**，实测同构）。② 「建议改动」落点 (c) 可直接引用分析件 §C 的 **Gate E（E1 成员配置断言 / E2 派生+canary / E3 插件同款 context 请求断言 + 窗口位移模型 / E4 用户可见行为 / E5 通道健康）**。③ 本条 spike-first 原则与「先试灌单文件」的教训叠加：单文件试灌会**假通过**（新结论必在 recent-100 窗口内），spike 验收必须按**全量规模 + 首尾 canary + 用户可见行为**设计。
+
+**2026-10-27 · 结项（`261027-gov-review-p5-spike-anchor-cluster`，T1）**：原则落三处文面 + 一处模板硬项——① `change-triage.md` §2 增「新机制批判定（spike-first 前置问）」：命中判定的变更必须在判档 rationale 写 spike 前置一句、切片序把 spike 包放到正式实现与数据迁移之前；② `dev-loop.md` 增「新机制批 spike 相位」节：spike 定义钉死三条（**消费端真实观测、非生产者自证** / **按全量规模设计、按最小数据执行** + 首尾 canary / **消费端可观测打点为标配产物**），数据迁移类给出四问并引用 Gate E（E1–E5）作断言形态先例，勘误①的「观察者缺位 + 被动窗口」与勘误③的「单文件试灌假通过」均写入正文；③ `planner.md` 增 Step 1i：正式实现 / 数据迁移包 intake 必须引用已闭合 spike 包的 `spike-evidence.md`，spike 未闭合或只到生产者侧一律停；④ `PROPOSAL.template.md` §2 增「新机制 spike 申报」硬项（三选一 + 缺席即判官 BLOCK）。**未落机械 gate**（本批路线 = 文面纪律，判定见本批 PROPOSAL §4 OQ1）；本条原条目三条 paths 之外另落 `planner.md`——无 intake 消费方的纪律等于没有执行面（理由见 PROPOSAL §2 T1）。留根：spike 规则暂无机械强制，观察期后再裁。

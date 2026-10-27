@@ -37,6 +37,8 @@ const VALID_EVENT_TYPES = new Set([
   // 起包取最早一条 pod-started、收口取最晚一条 pod-closed；两者都是观测事实、non-bearing。
   'pod-started',
   'pod-closed',
+  // 261026 批 T1（ARQ-260918 低分叉子集·候选②）：设置在场性自检的申报事实——观测、non-bearing、不参与任何门判定。
+  'settings-presence',
 ]);
 
 // T4（261026-gov-review-retro-efficiency-fidelity，FROZEN v0.4）：fixer 触发根因的可选闭集。

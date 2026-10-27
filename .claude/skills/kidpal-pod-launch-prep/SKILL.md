@@ -64,6 +64,7 @@ python -m pytest -q --import-mode=importlib -m "not live" "<repo 绝对路径>/s
 换包协议四条（260915-gov-review-worktree-pool-reuse；语义 SSOT = pod-coordination「worktree 池复用」节）：
 
 - **空闲判读**：树上有会话在跑即占用（一个目录一个会话，并行同树在操作层不可达）；board 的 worktreePath 是**记录不是锁**（merge-driver 定位用），不设独占校验门（human 2026-09-15 裁定）。
+- **互斥租用检查（261026 批 · 语义 SSOT = pod-coordination §2c）**：点火前扫 `devloop/pods/*.json`——目标树路径或目标常驻分支上已有活跃 Pod（`queued` / `running` / `verifier-green` / `ready-to-merge` / `merging` / `awaiting-human*`）→ 停，换空闲树或等该包收口（同分支双活跃 Pod = 包级 diff 背别人改动的根因）。
 - **一树一常驻分支**：每棵树一个常驻分支（命名自由，如 `dev/pool-1`；git 禁同分支两树，多树天然分流）。包与包之间不换不删——上一包 **merged** → 直接续跑（merge-driver 的 rebase 步已把常驻分支 rebase 到 main，树内治理面即为最新）；上一包 **abandoned** → 先 main→base 同步（显式前置一步），再 `git reset --hard <同步后的专用 base 分支>` 复位清半成品——复位目标**非 main**（main..base 含未 launch 包的拆包制品，字面复位 main 会抹掉它们、下一包 intake 即 fail-closed）。
 - **交接卫生**：换包前 tracked 改动须净、untracked 清理，**白名单保留 `build/` 与 `managed_components` 软链**（保住热编译与组件缓存——host build 热缓存随树，换包增量编译）；`firmware/main/test/host_app/sdkconfig` 属 gitignored 再生面、不随树保留——换包交接时**删除之**，强制下次构建从 tracked `sdkconfig.defaults` 重生成（消 TECH-261014 陈旧假红类；新树无此险，冷构建从 defaults 重生成即正确）。
 - **按需扩容**：建新树决策归 human（评估并行收益 vs 一棵树的 host 冷编译成本）。新建时：
@@ -119,11 +120,12 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 
 ### 7. 启动卡（260915-gov-review-worktree-pool-reuse T1⑤：prompt 收缩）
 
-写 `delivery/taskpackages/<changeId>/launch-card.md`（**Git-tracked**，随 commit-before-launch 进基准 ref——Pod 建树即天然拿到。落点迁移见 260921-gov-review-launch-pipeline T2）——**数行启动卡，六要素**：
+写 `delivery/taskpackages/<changeId>/launch-card.md`（**Git-tracked**，随 commit-before-launch 进基准 ref——Pod 建树即天然拿到。落点迁移见 260921-gov-review-launch-pipeline T2）——**数行启动卡，七要素**：
 
 ```
 跑 <changeId>（<workstream>，mergeOrder <N>）。
 基线锚：<workstream progress.md 带 SHA 行>——各面域判停结论（可引用 / 须重跑，按步骤 2 差异判停）。
+本包 base ref：<点火时目标树 git rev-parse HEAD 的 SHA>（= 包首提交父；常驻分支 <分支名>）——包级 diff（终验 scope 圈定 / detect_changes / 白盒复核 / 合并范围）恒用此 ref，不用 main。
 上一包留根：<delivery/taskpackages/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省；261015 批 T3 起 defer > required——lite/nano 包 scoped 相位 defer 短路优先于本行，final 相位恒跑）。
 会话标识：<pid / 终端标识 / 启动时刻>（点火后由 launch 执行者回填——叫停时核「进程确实已死」用，见 pod-coordination「叫停协议」节）。
@@ -131,6 +133,10 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 命令行（两形态并列，标注适用条件）：
 ① 人在场交互式：claude --settings .claude/dev-loop.settings.json --agent planner
 ② 无人值守 headless：claude -p --dangerously-skip-permissions --settings .claude/dev-loop.settings.json --agent planner（另加 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0）
+非 CLI 形态（VS Code 扩展会话 / IDE 内会话）降级面（261026 批 · ARQ-260918 候选①后半）：
+  该形态不能传 --settings / --agent ⇒ 不加载 dev-loop.settings.json：Stop 的 supervisor-gate-check 门、PostToolUse 的 portfolio-sync 自动 reconcile、permissions.ask 的 git merge/rebase 三件按缺席处理，per-agent allow/deny 对主线程恒不生效（enforce-scope.mjs:9）。
+  实测前置未验（两批未测「扩展会话能否传 --settings/--agent」）——在实测前，扩展形态起步须在 pod-events 记 settings-presence（declaredForm=extension-session），并在收尾相位手工跑 supervisor-gate-check.mjs、board 手跑 reconcile。
+  若日后实测可传参：本行改写为「扩展形态按 ①② 同法传参」并撤降级申报（升级分支句，见 PROPOSAL OQ1）。
 ```
 
 - 身份探测 / 包事实 / 环境事实 / 教训全文**不再搬运**：planner 凭 changeId 裸起步自探测四处（taskpackage / upstreamRef / pods json / 本包启动卡——planner.md Step 1）；包事实在 taskpackage.json + plan.md + decision-coverage；环境事实的耐久家 = skills（kidpal-idf-env / kidpal-serial-monitor / kidpal-ecs-gateway / kidpal-live-smoke-debug）；基线家 = progress.md 带锚行；教训家 = 上一包 pod-retro.md；input-brief 与 C 侧 cwd 敏感判读等既有指针由 planner/verifier 自身定义与 260909 批制品承载。

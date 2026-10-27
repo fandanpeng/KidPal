@@ -2,13 +2,13 @@
 id: ARQ-261017-anchor-check-master-unvalidated
 title: spec-anchor-check 假定「最高版号设计稿即完整母版」却不校验完整性——任何人产出一份增量 vN 设计稿即静默打断全仓 UI 锚机检（2026-10-17 实测 12 条悬空、涉 10 条 story）
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 `.claude/scripts/spec-anchor-check.mjs` / 设计母版发布流程 / `uiux-author` 或 write-story 的「母版产出」纪律任一时并批）；或再出现一次「写增量稿静默打断 UI 锚机检」时立即升格
 opened: 2026-10-17
-closed: ""
-closedBy: ""
+closed: 2026-10-27
+closedBy: 261027-gov-review-p5-spike-anchor-cluster
 paths: [.claude/scripts/spec-anchor-check.mjs]
 source: [2026-10-17 主线程在 261016-p3-story-body-sd-cache 需求面流程内实测复现（before/after 对照，见正文证据 2/3）, delivery/intake/261016-p3-story-body-sd-cache.md（该批 spine；事件发生时序与处置留痕）, .claude/scripts/spec-anchor-check.mjs:36-41（currentDesignFile 逐字）]
 ---
@@ -61,3 +61,5 @@ source: [2026-10-17 主线程在 261016-p3-story-body-sd-cache 需求面流程�
 **风险**：riskTier: low——纯机检脚本判据 + 纪律文面，零行为面、零契约面、单批可收。但**触 G3**（`.claude/scripts/**` 属治理机器面），故按 gov-arq 判据 **review profile = full-adversarial + human**，不得美化快路径；硬排除六项逐项：不触 `docs/contracts/**`、无 agent frontmatter、非 architect.md self-def、非 review-loop agent 定义、**非新增/改动门**（本项改的是既有脚本的判据，不新增 gate）、无 spec-contract drift。
 
 **路由**：归 `/gov-change` loop；paths 含 `.claude/scripts/**` = **机器面**，按 AGENTS.md「治理面变更」节**恒 Track B**（gov-change 侧轻路径不适用）。**关联**：与 `docs/debt/tech/ARQ-260918-spec-face-3page-reconcile.md`（同**工具不同根**——该条治 spec 叙述与实现漂移、仅引用本脚本作验证手段；本条治脚本判据自身的覆盖面缺口）建议同批评审时互查咬合。由跨面变更 `261016-p3-story-body-sd-cache` 实施期实测派生（**该变更自身的暴露项，非外部发现**）。
+
+**2026-10-27 · 结项（`261027-gov-review-p5-spike-anchor-cluster`，T2）**：① 声明面（治本）——新增 `docs/ui/UI-DESIGN-VERSIONS.md`（形态镜像 `server/deploy/OPENCLAW_SYSTEM_PROMPT_CARRIER` 先例：声明面记当前 + 全量沿革，其它文面只留指针）：机读 `current:` 指针对当前母版 + v2–v7 逐版备注（git 考据回填，含 v6 增量件事故现场）+ 现行指针依据记录；初设 `current = kidpal-ui-design-v7.html`（v7 = v6 的严格超集、缺失 0；最近两批消费实证与机检基线同指 v7）。② 机器侧——`spec-anchor-check.mjs` 的「现行设计稿」改由声明面 `current:` 指针决定，原文「目录里版本号最大者」的隐式判据废止；声明缺失 / `current` 行缺失或重复 / 指针指向文不存在或不合母版命名族一律 exit 2（输入缺失档），不静默回退最高版号；存在更高版号而声明未跟随 → stderr 提示、以声明为准。③ 完整性自查保留为兜底——现行稿相对「版本号严格小于它的最大者」比 `data-od-id` 集，前序 ≥10 且缺失比例 ≥50% 即判「疑似增量稿占用母版命名」、exit 2 并指认两版锚数与占比；逃逸旗 `--allow-master-shrink` 只用于有意的整版收缩（阈值按真实演进史标定：v3→v4 实测收缩 9.8% 属合法页撤，病态夹具 83%）。两层叠加：增量件占母版命名的旧病由声明面挡（比对源不跟最高版号走），声明面跟进升版时由完整性自查挡（形质不兼备的升版当场拦）。④ 消费面行为：正向 / `--reverse` 均要求声明面在场（同属输入缺失档；逆视图输出结构不变）；`--diff-ids` 不读声明面、行为不变。⑤ 纪律侧——`uiux-author` Process 第 2 步成文「命名族 = 完整母版 + 升版与声明面同一次落盘」、第 3 步出图落点句成文「单一活图夹 + 升版冻结快照 + 引用一律走声明面 current」（OQ2 丙裁）；`write-story` 锚行规则第 4 条指针改指声明面；`UIUX-DESIGN-BRIEF.md` 头部的设计稿版本声明改指声明面（brief 自身版本号保留——它是「对齐哪版 requirements」的判据载体，两族错位如实记）；`requirement-change` 4b 出图版本指声明面。**无已污染制品需清理**（原条目补充说明仍成立）。**边界**：与 tech 域 `ARQ-260918-spec-face-3page-reconcile`（同工具不同根）不合并——该条治 spec 叙述与实现漂移、仅引用本脚本作验证手段，本条治脚本判据自身缺口；本批 `docs/requirements.md` / `docs/architecture.md` 零 diff。留根：① 截图图夹布局 OQ2 已裁丙（单一活目录 + 冻结快照）——本批只落规则句与声明面语义节，frozen 快照机制本体、活图夹目录整形与 `docs/ui/V5|V6|V7` 存量迁移另立需求面动作，本批不动图夹与 `designRefs` 形态；② `tools/asset-pipeline/verify_art_assets.mjs:14` 仍硬编码 `kidpal-ui-design-v3.html` 绝对路径、`docs/ui/PHASE1-DESIGN-INPUT.md:5` / `:128` 仍称 v4 为最新母版——两处待另行登记。

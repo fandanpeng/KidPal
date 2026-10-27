@@ -57,6 +57,12 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
 3. **交接卫生**：换包前 tracked 改动须净、untracked 清理，白名单保留 `build/` 与 `managed_components` 软链（host build 热缓存随树）。
 4. **按需扩容**：建新树决策归 human（评估并行收益 vs 一棵树的 host 冷编译成本）；每树各自常驻分支。
 
+**互斥租用禁令与每包 base ref 钉死（261026 批 · ARQ-261025-shared-branch-pod-isolation 方案①）**：
+
+- **同一 worktree / 同一常驻分支同一时刻至多一个活跃 Pod**。board 的 worktreePath 是**记录不是锁**（本节第一条，human 2026-09-15 裁）——本禁令是 **launch 面口径 + launch 检查项**，不是门：launch 执行者点火前扫 `$(git rev-parse --git-common-dir)/devloop/pods/*.json`，目标树路径或目标常驻分支上已有活跃条目（`queued` / `running` / `verifier-green` / `ready-to-merge` / `merging` / `awaiting-human*`）→ 停，改换空闲树或等该包收口。理由 = 同分支双活跃 Pod 下包级 diff 取错 base，会把并联包的改动背进本包（261018 两包共用 dev/pod-m2、261022 detect_changes base 取错、261023 同树并行会话留改动，三实证在 ARQ 条目）。
+- **每包 base ref（= 包首提交父）钉死进 launch-card**：点火时在目标树跑 `git rev-parse HEAD`，把该 SHA 与常驻分支名写进启动卡（要素见 `kidpal-pod-launch-prep` skill 步骤 7）。**包级 diff 的 base 恒 = 该 ref，不用 main**——终验 scope 圈定（`detect_changes`）、白盒复核的实际爆炸半径、合并范围三处同污染面共用这一个锚（261022 实证：base=main 圈进并联包全部符号，切包首提交父 `80bc2027` 重跑才对）。互斥租用保证「包首提交的父 = 点火时 HEAD」这一等式成立。
+- **池化另批**：worktree 池（空闲工位注册 / 租用 / 释放）由 human 另登记为独立专项批，本批不设计池；方案②（merge-driver 显式 `<base>..<head>` 范围参数）留给池化批按其形态再定。
+
 与既有机制的相容：ARQ-260905 每 worktree 专属图索引随树复用、自动增量刷新；快照流向不涉 Pod 树、不变；分支亲核语义见 [`integrator.md`](../agents/integrator.md)（常驻分支口径）。
 
 ## 2d. 叫停协议（261015-gov-review-lite-fast-path T6）
@@ -75,9 +81,12 @@ portfolio-planner 交 launch 前（见 [`portfolio-planner.md`](../agents/portfo
 ```text
 queued -> running -> verifier-green -> ready-to-merge -> merging -> merged
                                         \-> blocked / abandoned
+                                        \-> awaiting-human[:<reason>]
 ```
 
 它是持久标记，不是活内存；board 只是聚合视图。
+
+**等人操作停等 = `awaiting-human` / `awaiting-human:<reason>`（261026 批 · ARQ-261025-wait-state-closed-set，OQ2=(b) human 2026-10-27 裁）**：`POD_STATUSES` 扩一个受控族——`awaiting-human` 或 `awaiting-human:<reason>`（reason 取 `[a-z0-9-]+`），board 原样投影、wip 分桶按原值计；pod-events 的 `agent-escalation` 仍承载精确事由（权威面不变）。设值者 = planner / human：**merge-gate 停等（supervisor ESCALATE）= `awaiting-human:merge-gate`**（planner 合并门 ESCALATE 分支设值），真机轮 / 人等裁决等场景按 `<reason>` 自述；**真 BLOCK（supervisor BLOCK / 闸 BLOCK）仍用 `blocked`**——它不是等人，是退回修。放行权不在 status 档位：人批合并仍由 `approvalRefUnlock` 五要素人批事件核验把关（`merge-driver.mjs`，OQ2=(b) 同批扩族），无合法人批事件一律 `kept-blocked`。awaiting-human* 不占 merge token（reconcile 释放 holder，见 §8）。
 
 ## 4. 单写者 + 原子写 + advisory lock
 
@@ -124,6 +133,7 @@ planner（Pod 内单会话）**不轮询、不等待**：
 | supervisor **APPROVE** → merged | `holder=null`（释放，选下一个） |
 | supervisor **BLOCK** | **立即释放 `holder=null`**；Pod 回 fixer，`ready-to-merge`→`blocked`，修好再 `ready-to-merge` 重新排队。**token 不在 fixer 循环期间被占用**（防自锁）。 |
 | supervisor **ESCALATE** | `holder=null` 释放；Pod 挂 `blocked`（等人类），不占 token。人批后重占 token 走 merge-driver 人批路径（`--human-approval-ref`，见 planner.md 合并门段）。 |
+| Pod 挂 `awaiting-human*`（等人操作停等） | `holder=null` 释放，不占 token；人批 / 人操作完成后按场景回 `running` 或 `ready-to-merge` |
 | holder Pod **崩溃/abandon**（`grantedAt` 超 TTL 且 `pods/<id>.json` 未推进 / mtime 陈旧） | reconcile **回收** `holder=null` + 标 `abandoned`，升一条告警。 |
 
 > 防饿死：被 BLOCK 退回 fixer 的 Pod 修好重新 `ready-to-merge` 时**保持原 merge-order 位次**（不排队尾），避免新 Pod 持续插队导致旧 Pod 饿死。TTL 须 > 正常 rebase→integrator→supervisor 合并门时长（避免误判回收）；因 ESCALATE 已立即释放 token，不存在「持 token 等人类慢审」的长窗口。

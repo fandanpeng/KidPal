@@ -4,7 +4,7 @@
   "upstreamFrozen": "",
   "generatedBy": "portfolio-planner",
   "generatedAt": "2026-09-15",
-  "updatedAt": "2026-09-15",
+  "updatedAt": "2026-10-27",
   "_doc": [
     "workstream 级 decisionCoverage：拆包输入 = 里程碑注册表 M1-home-qa nextAction 四块（v1.42 四阶段重切后首次拆包；sourceType=delivery-story，非 proposal，无 upstreamFrozen pin）。",
     "本次拆 5 包：key-layer-dispatch（块①键基建）/ keybar-three-slot（块①键帽条）/ p1-home-battery（块②首页+电量）/ voice-round-ui（块③问答演出）/ reminder-overlay-unify（块④提醒四态统一）。",
@@ -141,11 +141,41 @@
   ],
   "contractBlockedPackages": [],
   "launchPreconditions": [
-    "F-03 commit-before-launch：拆包四件套（delivery/workstreams/m1-home-qa/** + delivery/taskpackages/260915-{key-layer-dispatch,keybar-three-slot,p1-home-battery,voice-round-ui,reminder-overlay-unify}/**）在门 1 GREEN 后 commit 到专用 base ref（非 main，禁 commit-on-main）；worktree 自该 base ref 建出，Pod checkout 天然含拆包产物。",
-    "门 1（拆包 review 门）先行：本四件套齐备后停等——human / 主线程派 architect 做轻量 checklist review（五项 + workType 分流），GREEN + human 过目切法后方可交 launch；裁决 append delivery/workstreams/m1-home-qa/review.md「门 1」节。",
-    "页点数量 deviation 需 human 过目：keybar-three-slot 阶段一按现行 4 页循环渲染页点（spec §2.2 冻结口径 = 3 点，撤 P4 归 M2）——human 不认可则备选 = 提前撤 P4（越阶段，连带查字断供风险）或本包改锚 M2，launch 前必须拍板。",
-    "260915-m1-k4-reminder-overlay-unify 额外前置：260915-m1-k1a-key-layer-dispatch 与 260915-m1-k3-voice-round-ui 均已合并（schedule_reminder_b 钉点新基线 + 分层裁决 + 四态骨架可复用）后才可起 Pod——依据其 taskpackage dependsOn，launch 执行者按 board 依赖序点火。",
-    "跨包冻结面扫描已做（launch 前预警义务）：行为碰撞型 = key-layer-dispatch 必触 schedule_reminder_b.acceptance.c 冻结钉点（已申报走 acceptance-author 留痕修订）；键帽文案 kidpal_voice_states 冻结闭集三包共享、值唯一非互斥；未发现常量互斥型冲突。",
-    "Pod worktree 图索引：launch 面必办项——bootstrap 后跑一次 index_repository(repo_path=<worktree>) 建专属图索引（ARQ-260905-worktree-graph-index-rules）。"
+    {
+      "text": "F-03 commit-before-launch：拆包四件套（delivery/workstreams/m1-home-qa/** + delivery/taskpackages/260915-{key-layer-dispatch,keybar-three-slot,p1-home-battery,voice-round-ui,reminder-overlay-unify}/**）在门 1 GREEN 后 commit 到专用 base ref（非 main，禁 commit-on-main）；worktree 自该 base ref 建出，Pod checkout 天然含拆包产物。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "门 1（拆包 review 门）先行：本四件套齐备后停等——human / 主线程派 architect 做轻量 checklist review（五项 + workType 分流），GREEN + human 过目切法后方可交 launch；裁决 append delivery/workstreams/m1-home-qa/review.md「门 1」节。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "delivery/workstreams/m1-home-qa/review.md:7（GREEN 裁决，2026-09-15）"
+    },
+    {
+      "text": "页点数量 deviation 需 human 过目：keybar-three-slot 阶段一按现行 4 页循环渲染页点（spec §2.2 冻结口径 = 3 点，撤 P4 归 M2）——human 不认可则备选 = 提前撤 P4（越阶段，连带查字断供风险）或本包改锚 M2，launch 前必须拍板。",
+      "scope": "package:260915-m1-k2-keybar-three-slot",
+      "status": "verified",
+      "evidence": "delivery/workstreams/m1-home-qa/progress.md:11（human 2026-09-16 AskUserQuestion 认可）"
+    },
+    {
+      "text": "260915-m1-k4-reminder-overlay-unify 额外前置：260915-m1-k1a-key-layer-dispatch 与 260915-m1-k3-voice-round-ui 均已合并（schedule_reminder_b 钉点新基线 + 分层裁决 + 四态骨架可复用）后才可起 Pod——依据其 taskpackage dependsOn，launch 执行者按 board 依赖序点火。",
+      "scope": "package:260915-m1-k4-reminder-overlay-unify",
+      "status": "verified",
+      "evidence": "delivery/taskpackages/INDEX.md:77/:79（两包 closed）+ 两包目录末提交 d5194c94 已在 main（git branch --contains 实测）"
+    },
+    {
+      "text": "跨包冻结面扫描已做（launch 前预警义务）：行为碰撞型 = key-layer-dispatch 必触 schedule_reminder_b.acceptance.c 冻结钉点（已申报走 acceptance-author 留痕修订）；键帽文案 kidpal_voice_states 冻结闭集三包共享、值唯一非互斥；未发现常量互斥型冲突。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "Pod worktree 图索引：launch 面必办项——bootstrap 后跑一次 index_repository(repo_path=<worktree>) 建专属图索引（ARQ-260905-worktree-graph-index-rules）。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    }
   ]
 }

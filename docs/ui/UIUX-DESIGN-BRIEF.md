@@ -2,7 +2,7 @@
 
 > 给 Open Design 用的界面设计需求文档。
 > 目标：为 ESP32-S3-RLCD-4.2 儿童学习伙伴设计一套界面。
-> **版本：v6**（v5 → v6 随批 `261019-p3-record-dialogue-guide` 对齐 requirements.md v1.65；本批只动 P3 记录会话一个子状态 **WF-F2-02「对话式引导记录」`p3-recording`** 及其两个新增屏上形态——**「引导播报中」`p3-recording-guide`** 与 **「整理中」`state-organizing`（思考态复用）**，其余页/态一律不动。各页细目不复述、改导航表指锚，防双源漂移。需求权威 = [requirements.md](../requirements.md)，冲突以它为准；本轮全部裁定的设计侧索引见 [PHASE1-DESIGN-INPUT.md](PHASE1-DESIGN-INPUT.md)。本批增量渲染见 [kidpal-ui-design-v7.html](kidpal-ui-design-v7.html)，完整母版仍为 [kidpal-ui-design-v6.html](kidpal-ui-design-v6.html)。）
+> **版本：v6**（v5 → v6 随批 `261019-p3-record-dialogue-guide` 对齐 requirements.md v1.65；本批只动 P3 记录会话一个子状态 **WF-F2-02「对话式引导记录」`p3-recording`** 及其两个新增屏上形态——**「引导播报中」`p3-recording-guide`** 与 **「整理中」`state-organizing`（思考态复用）**，其余页/态一律不动。各页细目不复述、改导航表指锚，防双源漂移。需求权威 = [requirements.md](../requirements.md)，冲突以它为准；本轮全部裁定的设计侧索引见 [PHASE1-DESIGN-INPUT.md](PHASE1-DESIGN-INPUT.md)。设计稿版本（现行母版与逐版沿革）以声明面 [UI-DESIGN-VERSIONS.md](UI-DESIGN-VERSIONS.md) 为准，本行不复述——本行「版本：vN」是**本 brief 自身的版本**，与设计稿版号是两个编号族（brief 只在需求批升版、设计 HTML 在自己的版式批也升，两族自 2026-09 起错位：brief v5 ↔ 设计 v6、brief v6 ↔ 设计 v7）。（261027 批：原「增量渲染见 v7、完整母版仍为 v6」的说法在 v7 已并合为 v6 严格超集母版后失真。）
 
 ---
 
