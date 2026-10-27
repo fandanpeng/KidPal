@@ -20,7 +20,7 @@
 > **结构字段硬条款**：landing-manifest 围栏块与 packet-id 行是 PROPOSAL 结构字段：**GREEN 结论前必须在场**（最终期限 FROZEN；围栏块置 Status 头部块下方固定位，一行一个目标路径）；判官随 GREEN 结论核对、缺项打回，主线程标 FROZEN 前再人工复核。
 
 ```landing-manifest
-<一行一个目标路径；恰 = §2 各 T 目标文件锚清单并集（条件锚按裁断裁剪；迁移锚只记迁入路径）；一行一个**文件**路径——目录须展开为成员枚举（landing 门不消费目录锚，目录简写收口期必红）>
+<一行一个目标路径；恰 = §2 各 T 目标文件锚清单并集（条件锚按裁断裁剪；迁移锚只记迁入路径）；一行一个**文件**路径——逐件枚举是正形；目录简写可用但劝阻：landing 门对目录 token 仅按前缀展开兜底（任一下辖文件有改动即视为该行已落，逐件漏落不再被点名），展开是兜底不是许可（261027 批改口径；迁移批先例：260914 批 139 行全枚举）>
 ```
 
 ---
@@ -66,7 +66,7 @@
 
 **其余四段加粗只作视觉分隔、不承载机器语义，故可自由。** 第 1、2 条合起来是「**形态必须与机械门同形**」的具体落地：模板给出的示范形态，就是未来每份 PROPOSAL 会照抄的形态——所以模板里的示范必须与门同形。
 
-**【起草期自检两句】**（260918-gov-review-batch-drafting-friction T2 钉死；260920-gov-review-citation-anchor-residue T3 扩充；260924-gov-review-gate-parse-teeth T9 扩第三句、261019-gov-review-local-memory-extraction T2 扩第四句——名称沿革保留、实为四句）① **FROZEN 标注前跑一次 `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL 路径>`**——只读干跑，报两类**形态**错（加粗锚行 `**目标文件**：`、无锚清单含整行缺失），**并输出 `anchorUnion` 即锚并集成员名单**（对照读法注第 3 条逐 token 核注记有无夹带路径记号；报出的行号是**文件绝对行号**，直接可定位）**与 `advisories` 目录 token 提示**（对照 manifest 说明行），**不参与任何门判定、不进任何闸链**；**并通过 §5 验证集命令实跑**（不实跑的验证集 = 「冻结可判性」停留在纸面，260914 批实测瑕疵），且 §5 每条断言**标注评估时点（pre-commit / post-commit）**——双时点标注的验证集须**逐子句**注明归属时点（批 B A2 实例：幂等类「复跑后 diff 为 0」在 pre-commit 恒假）。② **路径类变更先查 `.claude/references/path-form-family.md` 的形态族谱表**——一仓路径至少有八种文本写法，逐类残留清扫子检模式与三类替换风险注记见该表（260914 批因路径批改付了四轮评审 + 落地四轮修复，其中最隐蔽的一类四轮机检全漏）。③ **承重引文 / 插入文本落盘后 byte 对账**——锚文与承重插入段一律机械提取（`grep -o` / 单行 Read 后复制）+ 落笔前后各一次 byte 比对，禁长输出目视转录；工具负结果（Edit not found / 探针 -1）先用第二信号源交叉再归因（ARQ-260914 追注 (B) 建议原文；批 A R1-F1/F2 + 批 B R1-F1/核验 F1 四实例在册）。④ **长文（中文、>40 行）落地分块追加、写后立即机检自身产物（grep 噪音特征 + 行数核对 + 抽读首尾），不凭 Write 返回成功自信**——260928-gov-review-cross-face-intake-spine retro F3 长文 Write 序列化损坏两连事故钉死（生成即验证）。
+**【起草期自检两句】**（260918-gov-review-batch-drafting-friction T2 钉死；260920-gov-review-citation-anchor-residue T3 扩充；260924-gov-review-gate-parse-teeth T9 扩第三句、261019-gov-review-local-memory-extraction T2 扩第四句——名称沿革保留、实为四句）① **FROZEN 标注前跑一次 `node .claude/scripts/landing-fidelity-check.mjs --preflight <本 PROPOSAL 路径>`**——只读干跑，报两类**形态**错（加粗锚行 `**目标文件**：`、无锚清单含整行缺失），**并输出 `anchorUnion` 即锚并集成员名单**（对照读法注第 3 条逐 token 核注记有无夹带路径记号；报出的行号是**文件绝对行号**，直接可定位）**与 `advisories` 目录 token 提示**（对照 manifest 说明行），**不参与任何门判定、不进任何闸链**；**并通过 §5 验证集命令实跑**（不实跑的验证集 = 「冻结可判性」停留在纸面，260914 批实测瑕疵），且 §5 每条断言**标注评估时点（pre-commit / post-commit）**——双时点标注的验证集须**逐子句**注明归属时点（批 B A2 实例：幂等类「复跑后 diff 为 0」在 pre-commit 恒假）。② **路径类变更先查 `.claude/references/path-form-family.md` 的形态族谱表**——一仓路径至少有八种文本写法，逐类残留清扫子检模式与三类替换风险注记见该表（260914 批因路径批改付了四轮评审 + 落地四轮修复，其中最隐蔽的一类四轮机检全漏）。③ **承重引文 / 插入文本落盘后 byte 对账**——锚文与承重插入段一律机械提取（`grep -o` / 单行 Read 后复制）+ 落笔前后各一次 byte 比对，禁长输出目视转录；工具负结果（Edit not found / 探针 -1）先用第二信号源交叉再归因（ARQ-260914 追注 (B) 建议原文；批 A R1-F1/F2 + 批 B R1-F1/核验 F1 四实例在册）。 **正读数镜像**：工作树形态类断言（CRLF/LF、BOM、尾空白）同样须两个独立信号源一致方可写入正式制品（如 `git ls-files --eol` + CR 字节计数 `tr -dc '\r' | wc -c`），单源读数不得成文——msys（Git Bash）的 `awk` / `sed` 处理 CRLF 记录时会剥 `\r`，用它数裸 LF 会得假读数（批 B F2 实例：单源报裸 LF=75、实况六件纯 CRLF 全程未变；已知工具伪影即此一处、随句承载，不另立文件）。**机判形态**：`node .claude/scripts/landing-fidelity-check.mjs --cite-check <本 PROPOSAL 路径>` 一次跑完 §2 围栏块与行内原文引文（起草期查原文 vs 磁盘现文，FROZEN 后查改后文本 vs 落地文件；261027 批 T1）。④ **长文（中文、>40 行）落地分块追加、写后立即机检自身产物（grep 噪音特征 + 行数核对 + 抽读首尾），不凭 Write 返回成功自信**——260928-gov-review-cross-face-intake-spine retro F3 长文 Write 序列化损坏两连事故钉死（生成即验证）。
 
 ## 3. 影响面 sweep 分类（ARQ-096 义务，UNCLASSIFIED=0）
 

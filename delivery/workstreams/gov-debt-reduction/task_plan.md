@@ -68,7 +68,7 @@ changes:
 
 - ~~12 条「下次动 X 时并批」型 + 已接受风险 2 条 + 2 条明确单开批~~ → **2026-10-27 human 指示「不想再攒」，20 条残留重排为 P5–P9**（见下），仅 4 条保持条件锁。
 
-### P5 · 新机制前置 + 锚母版校验簇（2 条，含全场唯一 MAJOR，建议下一波）
+### P5 · 新机制前置 + 锚母版校验簇（✅ 2026-10-27 已落，2 条 + 搭载 1 条，含全场唯一 MAJOR）
 
 - **立项 ack（2026-10-27 human 已拍：P5 先开，两条并批 Track B 主路径；P5 由 human 在新 session 启动，本 session 只做立项材料与复证）**。
 - **复证记录（2026-10-27 主线程实测）**：
@@ -77,11 +77,20 @@ changes:
 - 建议条目承载的修法方向（详见各条目原文）：261024 = spike-first 原则钉进 triage 判档 / build-feature plan / Gate 链消费端断言（落点候选 a/b/c 三处不互斥，human 原话「先做一轮小验证，然后再做开发，再做数据回灌」）；261017 = `currentDesignFile()` 选出候选后加完整性自查（与前一版 `data-od-id` 数比对）+ 命名族纪律文面（`vN.html` = 完整母版）+ 顺序侧兜底。
 - **立项追加（2026-10-27 human 拍并入 P5）**：UI 设计版本结构整体调整并入本批一起改——现行「最高版号即现行母版」隐式判据换**显式 current 指针 + 逐版备注声明**（镜像 `OPENCLAW_SYSTEM_PROMPT_CARRIER` 声明面先例），锚机检 / 出图 / 截图引用以声明为准；截图布局（逐版文件夹增量、TaskPackage `designRefs` 引用形如 `docs/ui/V5/canvas-p1.png`）一并入范围。T2 扩面重写；R1 四查照跑、findings 作改稿输入，改稿后按轮次纪律复审。
 
-### P6 · landing 门机器面簇（2+1 条，恒 Track B）
+### P6 · landing 门机器面簇（✅ 2026-10-27 已落，2+1 条 + 顺手登记 1 条新 ARQ）
 
-- `ARQ-260914-landing-preflight-anchor-parse` 残余：机械化判据（锚文逐字性 byte 比对脚本化 + 双信号源规约），4 实例在案。
-- `ARQ-261026-verbatim-extract-backtick-cut`（NIT）：围栏提取正则修块内容 ``` 字面误判。
-- `ARQ-260924-landing-gate-dir-anchor-gap` 残余②（目录锚展开）：human 2026-10-27 改裁**并 P6 同批**（P6 仅 2+1 不大），批内作独立 T 全强度评审。
+- `ARQ-260914-landing-preflight-anchor-parse` 残余：**部分结**（byte 比对脚本化 `--cite-check` + 双信号源规约落地；条目维持 deferred，③ 连带项非机械化半留根）。
+- `ARQ-261026-verbatim-extract-backtick-cut`：**结项**。
+- `ARQ-260924-landing-gate-dir-anchor-gap`：**结项**（含 2026-09-25 部分承载的处方①③，残余② 本批补齐）。
+- **复证记录（2026-10-27 主线程实测）**：
+  - 260914 残余：`--cite-check` 不存在（landing-fidelity-check.mjs 无 cite 字面、scripts 下无独立 cite 脚本）= byte 比对脚本化未消化；双信号源规约（追注 §4-4 正读数镜像）在模板/自检句无承载（:69 ③ 只有负结果交叉半边）= 未消化。同条目另三子项已消化：围栏承载条款在 PROPOSAL.template.md:65、评估时点逐子句在 :69①、目录 token advisory 在 landing-fidelity-check.mjs:245-250——P6 范围与残余行精确吻合。
+  - 261026 backtick-cut：提取正则 `/```[a-zA-Z]*\n([\s\S]*?)```/g` 原样在 landing-fidelity-check.mjs:472，无独立成行判定 = 未消化；触发条件「下次动该脚本 verbatim 面」本次满足。
+  - 260924 残余②：:656/:658 仍 `changed.has` 精确成员判定、目录锚不展开 = 未消化；处方①③（advisory :245-250 + 模板纪律句）已在场。
+  - 判档：三条 diff 全触 `.claude/scripts/**` → 恒 Track B；dir-anchor ② 触承重闸判定逻辑、批内独立 T 全强度评审（human 已裁）。
+- **立项 ack（2026-10-27 human 两拍）**：① byte 比对脚本化载体 = 挂 `landing-fidelity-check.mjs --cite-check` 子命令（否独立脚本）；② 目录锚口径 = **仍劝阻、展开作兜底**——advisory 与模板纪律句保留改写为「可用但劝阻、展开是兜底不是许可」，迁移批写作习惯不变。批形态 = 三条一批、Track B 主路径、dir-anchor ② 批内独立 T 全强度评审。changeId = `261027-gov-review-p6-landing-gate-cluster`。
+- 2026-10-27 起草完成（DRAFT v0.1，966 行，preflight 五锚 ok；draft 已 upsert 进 delivery/review/INDEX.md）。R1 四查 BLOCK(F1–F4)：F1 BLOCKING（V6 断言字面与改后 frontmatter 形态不符）、F2/F3 SHOULD（装配副本行数陈旧 1121→1129 / census 三话术短语缺豁免面）、F4 NIT（留根 3 与 T1⑦ 口径差）；改法方向零打回、无升级 human、判档 Track B 主路径成立。已转 architect 一轮改稿，改稿后 R2 聚焦修订到位性。
+- 2026-10-27 v0.2（1008 行）修订全到位 → **R2 GREEN**（仅余 N1 位置括注 NIT、不拦绿，已转 architect 一行收口）；判档 Track B 主路径、无升级 human。凭「立项 ack + GREEN」主线程标 FROZEN，进 packet-bound 落地。
+- 2026-10-27 **全环闭环**：FROZEN v0.2 → 装配落地五件（landing-fidelity-check 1129 行 sha256 对账一致）→ 验证集 V1–V7/V9 全绿（判别夹具 18/18）→ landing-verifier **PASS + 2 ADVISORY**（无升级项）→ 落地 commit `4aaabce2` → V8 升级闸 **PASS**（kind=gov）→ INDEX 翻 landed → retro 落盘。**P6 收口；下一波 = P7（dev-loop 文面纪律簇，6 条，轻路径候选）**。
 
 ### P7 · dev-loop 文面纪律簇（6 条，轻路径候选——只落 references/skills/commands 文面）
 
@@ -110,6 +119,7 @@ changes:
 
 ## 决策记录
 
+- 2026-10-27 human 指示：P6 起草期观察「architect 无 canonical 写权但 PROPOSAL 须逐字节承诺 + §5 实跑，每批现写沙盘装配脚手架」立 debt ARQ → `docs/debt/gov/ARQ-261027-draft-sandbox-assembly-scaffolding.md`（SHOULD，profile = full-adversarial + human，四修法方向候选在条目、方向未收敛待专项讨论；不排入 P5–P9 波次）。
 - 2026-10-27 human 拍板：P5 评审熔断（R1/R2/R3 均 BLOCK，findings 逐轮收敛 3→2→1 行、全文面级）三选一取**换新判官实例再战 1 轮**（R4 只核 F4 单行；仍不绿自动转 Track A 段）。
 - 2026-10-27 human 拍板：P5 批 OQ2 截图图夹布局取**丙（单一活目录 + 冻结快照）**（否 architect 推荐甲）；本批只落规则句与声明面备注，frozen 快照机制与存量 V5/V6/V7 目录整形另立需求面动作。
 - 2026-10-27 human 拍板：UI 设计版本结构整体调整（显式 current 指针 + 逐版备注 + 截图布局）**并入 P5** 一起改（三选一拍「并入」；单独立项 / 只登记暂缓两案否）。

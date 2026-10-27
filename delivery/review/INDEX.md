@@ -7,15 +7,16 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (17)
+## review (22)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
-| [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | — |
-| [261026-gov-review-p4-pod-board-cluster](261026-gov-review-p4-pod-board-cluster/) | 2026-10-26 | landed | yes |
-| [261026-gov-review-p2-anchor-template-cluster](261026-gov-review-p2-anchor-template-cluster/) | 2026-10-26 | landed | yes |
+| [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
+| [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
 | [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-merge-gate-cluster-fix](261026-gov-review-merge-gate-cluster-fix/) | 2026-10-26 | landed | yes |
+| [261026-gov-review-p2-anchor-template-cluster](261026-gov-review-p2-anchor-template-cluster/) | 2026-10-26 | landed | yes |
+| [261026-gov-review-p4-pod-board-cluster](261026-gov-review-p4-pod-board-cluster/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-retro-efficiency-fidelity](261026-gov-review-retro-efficiency-fidelity/) | 2026-10-26 | landed | yes |
 | [261025-arch-review-spec-reconciliation-memory-writing-scope](261025-arch-review-spec-reconciliation-memory-writing-scope/) | 2026-10-25 | landed | yes |
 | [261025-gov-review-release-pr-publish](261025-gov-review-release-pr-publish/) | 2026-10-25 | landed | yes |
