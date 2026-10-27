@@ -35,7 +35,7 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
-import { setPod, reconcile } from './portfolio-reconcile.mjs';
+import { setPod, reconcile, isAwaitingHumanStatus } from './portfolio-reconcile.mjs'; // 261026 批 T4：解锁判据与 reconcile 共用同一受控族单源
 import { computeRetroScope } from './loop-health-report.mjs';
 import { shouldFireAdvisory } from './retro-staleness-check.mjs';
 import { resolveHumanApproval } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源 import，approvalRefUnlock 解锁预核不再 spawn 全闸（N5 已裁选项 2）
@@ -1095,10 +1095,13 @@ function step5bBookkeeping(mergeCwd, changeId, { mode } = {}) {
 //   ② T1-4/A-3（已裁）：worktree 解析失败显式 errorExit，删除 `|| projectDir` 静默回退主仓分支
 //      （回退会让 --source-ref HEAD 在 main 求值 → off-main BLOCK 恒空转）。
 // 核验通过 → setPod(ready-to-merge) + reconcile + 刷新内存 board 视图（R1-F1）；失败 fail-closed 保持 blocked。
+// 261026 批 T4（OQ2=(b) human 2026-10-27 裁：同批打通）：可解锁判据 = blocked ∪ awaiting-human[:<reason>] 族
+// （merge-gate 停等改用新族后，人批 --human-approval-ref 仍走同一条解锁链）；放行权不在 status 档位、在五要素
+// 人批事件核验（runner 内 resolveHumanApproval），族内任一 reason 无合法人批事件一律 kept-blocked。blocked 路径行为零变化。
 // runner/probe 可注入供 self-check（五要素核验本体归 gate/lib 自检管辖，此处测解锁机制）。
 function approvalRefUnlock(projectDir, board, { changeId, humanRef, runner, refreshBoard, reconcileFn = reconcile, warnFn = warn } = {}) {
   const tp = (board.pods || []).find((p) => p.changeId === changeId);
-  if (!tp || tp.status !== 'blocked') return 'not-applicable';
+  if (!tp || !(tp.status === 'blocked' || isAwaitingHumanStatus(tp.status))) return 'not-applicable';
   const runGate = runner || (() => {
     const wt = resolveUnlockWorktree(tp, projectDir);
     if (!wt) errorExit(`${changeId}: approvalRefUnlock 无法解析 Pod worktree（worktreePath 缺失或不存在）——不回退主仓，fail-closed（A-3 已裁）`);
@@ -1118,7 +1121,7 @@ function approvalRefUnlock(projectDir, board, { changeId, humanRef, runner, refr
   reconcileFn(projectDir);
   const refreshed = refreshBoard ? refreshBoard(projectDir) : freshBoard(projectDir).board;
   board.pods = refreshed.pods;
-  warnFn(`${changeId}: approval-ref 解锁 blocked → ready-to-merge (ref=${humanRef})`);
+  warnFn(`${changeId}: approval-ref 解锁 ${tp.status} → ready-to-merge (ref=${humanRef})`);
   return 'unlocked';
 }
 
@@ -1173,6 +1176,22 @@ function runMergeFrictionSelfCheck() {
         `r=${rB} file=${fileB.status}`);
       const rC = approvalRefUnlock(t1, { pods: [{ changeId: '260901-t1r', status: 'ready-to-merge' }] }, { changeId: '260901-t1r', humanRef: 'self-check-event', runner: () => {}, warnFn: () => {} });
       assert('T1c 非 blocked Pod 不适用（行为零变化）', rC === 'not-applicable', `r=${rC}`);
+      // 261026 批 T4（OQ2=(b)）：awaiting-human 族可解锁——放行权在五要素人批事件、不在 status 档位
+      setPod(t1, { changeId: '260901-t1s', status: 'awaiting-human:merge-gate' });
+      const rD = approvalRefUnlock(t1, { pods: [{ changeId: '260901-t1s', status: 'awaiting-human:merge-gate' }] }, {
+        changeId: '260901-t1s', humanRef: 'self-check-event', runner: () => {}, reconcileFn: () => ({}),
+        refreshBoard: () => ({ pods: [{ changeId: '260901-t1s', status: 'ready-to-merge' }] }), warnFn: () => {},
+      });
+      const fileD = JSON.parse(readFileSync(join(t1, '.git', 'devloop', 'pods', '260901-t1s.json'), 'utf8'));
+      assert('T1d awaiting-human:merge-gate + 有效 ref → 解锁（merge-gate 停等改用新族后不卡死）', rD === 'unlocked' && fileD.status === 'ready-to-merge', `r=${rD} file=${fileD.status}`);
+      setPod(t1, { changeId: '260901-t1t', status: 'awaiting-human:real-device' });
+      const rE = approvalRefUnlock(t1, { pods: [{ changeId: '260901-t1t', status: 'awaiting-human:real-device' }] }, {
+        changeId: '260901-t1t', humanRef: 'self-check-event',
+        runner: () => { throw Object.assign(new Error('gate block'), { stderr: '五要素不符' }); },
+        reconcileFn: () => ({}), warnFn: () => {},
+      });
+      const fileE = JSON.parse(readFileSync(join(t1, '.git', 'devloop', 'pods', '260901-t1t.json'), 'utf8'));
+      assert('T1e 族内任一档无有效人批 → fail-closed 保持 waiting（语义档不承担放行权）', rE === 'kept-blocked' && fileE.status === 'awaiting-human:real-device', `r=${rE} file=${fileE.status}`);
     } catch (err) {
       assert('T1 夹具异常', false, err.message);
     }

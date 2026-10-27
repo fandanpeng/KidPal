@@ -50,7 +50,19 @@ changes:
 
 ### P4 · Pod / board 面簇（排后，摩擦型非阻断）
 
-- `ARQ-260918-pod-session-settings-identity-unobservable` + `ARQ-261014-portfolio-reconcile-launchpreconditions` + `ARQ-261025-shared-branch-pod-isolation` + `ARQ-261025-wait-state-closed-set` + `ARQ-261025-intake-index-retro-scope-hygiene`。文面/脚本混杂（pod-coordination / portfolio-reconcile / launch 面分属不同评审强度）。
+- `ARQ-260918-pod-session-settings-identity-unobservable` + `ARQ-260914-portfolio-reconcile-launchpreconditions` + `ARQ-261025-shared-branch-pod-isolation` + `ARQ-261025-wait-state-closed-set` + `ARQ-261025-intake-index-retro-scope-hygiene`。文面/脚本混杂（pod-coordination / portfolio-reconcile / launch 面分属不同评审强度）。
+
+### P4 复证记录（2026-10-26 立项期，主线程实测）
+
+- 260918：候选① 前半已落（260921 T3，canonical 命令行两形态在启动卡模板 :131-133）；残余 = ① 后半「VS Code 扩展会话降级面标注」（实测前置 = 扩展会话能否传 `--settings`/`--agent`，两批均未实测）+ 候选② 在场性自检落 pod-events（planner.md 无此步，未落）+ 候选③ 门策略。候选③ 的最低成本形态（planner.md :111-112 supervisor-gate-check 显式步骤）已在场。**本条自带设计分叉**（身份要不要机械自证 / 非 CLI 形态如何表达 canonical），原条目 profile 标 full-adversarial 候选。
+- 260914：读侧已落（260921 T6，portfolio-reconcile.mjs 17 处消费）；残余 = 存量 12 条数据迁移——实测 `m1-home-qa` / `m2-char-window` 两 workstream 的 `launchPreconditions` 均仍为裸 string，两 workstream 仍在册。
+- shared-branch-pod-isolation：落点在场（merge-driver.mjs / pod-coordination.md），未消化。
+- wait-state-closed-set：实测 `POD_STATUSES`（portfolio-reconcile.mjs :36）八值闭集、无 awaiting-human 档，未消化。
+- intake-index-retro-scope-hygiene：实测 `computeRetroScope`（loop-health-report.mjs :177）无 `current` 排除；intake INDEX 漂移标现存 4 处（且 261012 已挂 ⚠滞留10d——漂移在增长，「下轮 retro 仍见漂移」触发条件已成立）。
+- 判档预估：五条中三条落 scripts（portfolio-reconcile / changes-index / loop-health-report）→ 命中轻路径判据③，**整批恒 Track B**（只升不降）。
+- **立项 ack（2026-10-26 human 四拍）**：① 五条一批 Track B 主路径（拆批不降评审强度、只加开销）；② 260918 只取低分叉子集——候选② 在场性自检落 pod-events + ① 后半降级面标注，不新增 gate 不裁机械牙，门策略留观察；③ shared-branch 取方案① 文面（pod-coordination §2c 互斥租用禁令 + 每包 base ref 钉死 + launch 检查项），**worktree 池化（Pod pool：空闲工位注册/租用/释放）由 human 另登记为独立 idea 走后续专项批**，方案② merge-driver 扩参留给池化批按其形态再定；④ 260914 存量 12 条迁移搭本批。
+- changeId = `261026-gov-review-p4-pod-board-cluster`，architect 起草中。
+- 2026-10-27 起草完成（DRAFT v0.1，546 行，preflight 11 锚 ok；draft 已 upsert 进 delivery/review/INDEX.md）。OQ human 前置拍板（2026-10-27）：**OQ1 = (a) 保守标注 + 观察期**（与草案一致）；**OQ2 = (b) 同批打通**——merge-driver approvalRefUnlock（:1101 附近，以 blocked 为键）解锁判据同批扩 awaiting-human:merge-gate，manifest +1，riskTier 重估；wait-state 条目可望整条结项（非部分）。R1 四查进行中，R1 findings + OQ2 修订合并一轮改稿。
 
 ### 不动档（触发挂靠，不排波）
 

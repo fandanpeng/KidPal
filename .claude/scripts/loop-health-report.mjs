@@ -190,6 +190,9 @@ export function computeRetroScope(projectDir = process.env.CLAUDE_PROJECT_DIR ||
   const waitingOnLoopHealth = [];
   const excludedFromTrigger = [];
   for (const id of listChangeDirs(devDir)) {
+    // 261026 批 T5②（ARQ-261025-intake-index-retro-scope-hygiene）：current/ 是活工作面指针目录、不是 changeId，
+    // 不进 retro 游标任何桶（changes-index.mjs collectDev 同口径排除）。
+    if (id === 'current') continue;
     // 源桶排除：excluded Pod 在分桶源头跳过，根本不进 pendingAnalysis/waitingOnLoopHealth
     //   → 3 消费方（closeout-check / retro-staleness-check / merge-driver）单源自动传导，零改动（F4）。
     if (excluded.has(id)) { excludedFromTrigger.push(id); continue; } // human-approved 销账（游标第三态）

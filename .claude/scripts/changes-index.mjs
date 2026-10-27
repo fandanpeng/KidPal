@@ -394,9 +394,14 @@ function anchorsProgress(anchorsField) {
 }
 
 // 漂移检测两规则（T5 第 2 条，检测不拦截）+ 值域外显示标（第 3 条：不静默归一）。
-function intakeDrift({ statusBase, hitCount, filled, lastCommitDate, today }) {
+function intakeDrift({ statusBase, hitCount, filled, lastCommitDate, today, spineOk = true, hasStatus = true }) {
   const marks = [];
-  if (!INTAKE_STATUS_ENUM.test(statusBase) && statusBase !== 'closed' && statusBase) marks.push('⚠值域外');
+  // 261026 批 T5③（ARQ-261025-intake-index-retro-scope-hygiene）：源文件缺口与值域外分开报——
+  // frontmatter 未闭合 / 缺 status 字段时，旧行为只落「⚠值域外」（原文语义是 status 写了域外值），
+  // 掩盖真实病灶（spine 文件损坏）。缺口型先报缺口、不再叠加值域外；已解析且 status 在场的域外值仍走值域外。
+  if (!spineOk) { marks.push('⚠源文件缺口（frontmatter 未闭合）'); return marks; }
+  if (!hasStatus) { marks.push('⚠源文件缺口（缺 status 字段）'); return marks; }
+  if (!INTAKE_STATUS_ENUM.test(statusBase) && statusBase !== 'closed') marks.push('⚠值域外');
   if (hitCount > 0 && filled >= hitCount && statusBase !== 'closed') marks.push('⚠未闭环');
   if (/^awaiting-/.test(statusBase) && lastCommitDate) {
     const d = Math.floor(daysBetweenIso(lastCommitDate, today));
@@ -422,7 +427,7 @@ function collectIntake() {
     const hits = fields ? faceMapHits(fields.faceMap) : [];
     const prog = fields ? anchorsProgress(fields.anchors) : { filled: 0 };
     const last = gitCommitDate(gitLastCommitSha(rel));
-    const drift = intakeDrift({ statusBase, hitCount: hits.length, filled: prog.filled, lastCommitDate: last.slice(0, 10), today });
+    const drift = intakeDrift({ statusBase, hitCount: hits.length, filled: prog.filled, lastCommitDate: last.slice(0, 10), today, spineOk: fields !== null, hasStatus: statusRaw.trim().length > 0 });
     items.push({
       lane: 'intake', changeId,
       faces: hits.join('+') || '—',
@@ -498,7 +503,7 @@ function buildIntakeIndexMd(intake) {
   const out = indexHeader('intake');
   out.push('> 自动生成（changes-index.mjs 幂等重建）。**勿手改**。');
   out.push('> 列：changeId | 触面 | status | anchors回填 | 日期 | 漂移标。intake 状态机（change-intake.md §2.7）：intake→in-flight→awaiting-*→closed。');
-  out.push('> 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）。复议触发 = 下轮 loop-retro 仍见漂移标。');
+  out.push('> 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）；⚠源文件缺口 = spine frontmatter 未闭合 / 缺 status 字段（261026 批：与值域外分开报，缺口型不叠加值域外）。复议触发 = 下轮 loop-retro 仍见漂移标。');
   out.push('');
   out.push(`## intake (${intake.length})`);
   out.push('');
@@ -694,6 +699,10 @@ function selfCheck() {
   t('intake: awaiting-* 未超 7d → 无标', JSON.stringify(intakeDrift({ statusBase: 'awaiting-human:gate', hitCount: 2, filled: 0, lastCommitDate: '2026-10-12', today: '2026-10-16' })), JSON.stringify([]));
   t('intake: 值域外 status（landed）→ ⚠值域外', JSON.stringify(intakeDrift({ statusBase: 'landed', hitCount: 3, filled: 3, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify(['⚠值域外', '⚠未闭环']));
   t('intake: closed 全回填 → 无标', JSON.stringify(intakeDrift({ statusBase: 'closed', hitCount: 3, filled: 3, lastCommitDate: '2026-10-01', today: '2026-10-16' })), JSON.stringify([]));
+  // 261026 批 T5③：源文件缺口与值域外分流（判别力：不传 spineOk/hasStatus 时缺口 fixture 落 ⚠值域外 变红）
+  t('intake: frontmatter 未闭合 → ⚠源文件缺口', JSON.stringify(intakeDrift({ statusBase: '—', hitCount: 0, filled: 0, lastCommitDate: '', today: '2026-10-16', spineOk: false, hasStatus: false })), JSON.stringify(['⚠源文件缺口（frontmatter 未闭合）']));
+  t('intake: 已解析但缺 status → ⚠源文件缺口', JSON.stringify(intakeDrift({ statusBase: '—', hitCount: 2, filled: 0, lastCommitDate: '2026-10-01', today: '2026-10-16', spineOk: true, hasStatus: false })), JSON.stringify(['⚠源文件缺口（缺 status 字段）']));
+  t('intake: 值域外 status → 不误标缺口', JSON.stringify(intakeDrift({ statusBase: 'landed', hitCount: 3, filled: 3, lastCommitDate: '2026-10-01', today: '2026-10-16', spineOk: true, hasStatus: true })), JSON.stringify(['⚠值域外', '⚠未闭环']));
   const pass = cases.filter(c => c.pass).length;
   const ok = pass === cases.length;
   return { selfCheck: 'changes-index', ok, pass, fail: cases.length - pass, total: cases.length, cases: ok ? undefined : cases.filter(c => !c.pass) };

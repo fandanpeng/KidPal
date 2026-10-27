@@ -44,6 +44,15 @@ const POD_STATUSES = new Set([
   'abandoned',
 ]);
 const TERMINAL_OR_RELEASED = new Set(['merged', 'blocked', 'abandoned']);
+// 261026 批 T4（ARQ-261025-wait-state-closed-set）：等人操作停等的受控枚举族 awaiting-human[:<reason>]。
+// 只扩调度态投影面；放行权不在 status 档位，在各自门的人批凭据核验（见 pod-coordination §3）。
+const AWAITING_HUMAN_RE = /^awaiting-human(:[a-z0-9][a-z0-9-]*)?$/;
+export function isAwaitingHumanStatus(status) {
+  return typeof status === 'string' && AWAITING_HUMAN_RE.test(status);
+}
+export function isValidPodStatus(status) {
+  return POD_STATUSES.has(status) || isAwaitingHumanStatus(status);
+}
 
 const TOKEN_TTL_SEC = Number(process.env.DEVLOOP_TOKEN_TTL_SEC || 1800);
 const LOCK_STALE_SEC = Number(process.env.DEVLOOP_LOCK_STALE_SEC || 60);
@@ -120,7 +129,7 @@ function readPods(devloopDir) {
     if (!data || !data.changeId) continue;
     pods.push({
       changeId: String(data.changeId),
-      status: POD_STATUSES.has(data.status) ? data.status : 'queued',
+      status: isValidPodStatus(data.status) ? data.status : 'queued',
       mergeOrder: Number.isFinite(data.mergeOrder) ? data.mergeOrder : Number.MAX_SAFE_INTEGER,
       updatedAt: data.updatedAt || null,
     });
@@ -138,7 +147,7 @@ function writeAtomic(path, text) {
 // 写本 Pod 状态（单写者 = 调用方所在 Pod 会话）；不碰 board。
 export function setPod(projectDir, { changeId, status, mergeOrder, worktreePath } = {}) {
   if (!changeId) throw new Error('setPod: changeId required');
-  if (!POD_STATUSES.has(status)) throw new Error(`setPod: invalid status "${status}"`);
+  if (!isValidPodStatus(status)) throw new Error(`setPod: invalid status "${status}"`);
   const devloopDir = resolveDevloopDir(projectDir);
   if (!devloopDir) return null;
   const podPath = join(devloopDir, 'pods', `${changeId}.json`);
@@ -172,7 +181,7 @@ function computeToken(pods, prevBoard) {
   // 1) 校验/回收当前 holder
   if (token.holder) {
     const h = byId.get(token.holder);
-    if (!h || TERMINAL_OR_RELEASED.has(h.status)) {
+    if (!h || TERMINAL_OR_RELEASED.has(h.status) || isAwaitingHumanStatus(h.status)) {
       token = { holder: null, grantedAt: null }; // merged/blocked/escalate(→blocked) 释放
     } else if (
       token.grantedAt &&
@@ -374,6 +383,14 @@ export function selfCheck() {
     pendingLen: r.launchPreconditions.pending.length,
     legacyCount: r.launchPreconditions.legacyCount,
   }, { pendingLen: 0, legacyCount: 3 });
+
+  // ⑦ 261026 批 T4：等人操作停等族（判别力：去掉 family 判据时后两条"非法"变红；放宽成任意冒号串时同样变红）
+  t('pod-status: awaiting-human 裸值合法', isValidPodStatus('awaiting-human'), true);
+  t('pod-status: awaiting-human:<reason> 合法', isValidPodStatus('awaiting-human:real-device'), true);
+  t('pod-status: reason 大写/空格非法', isValidPodStatus('awaiting-human:Real Device'), false);
+  t('pod-status: 空 reason 非法', isValidPodStatus('awaiting-human:'), false);
+  t('pod-status: 既有八值仍合法', isValidPodStatus('ready-to-merge'), true);
+  t('pod-status: 拼写错误仍非法', isValidPodStatus('blockedd'), false);
 
   const pass = cases.filter((c) => c.pass).length;
   const okAll = pass === cases.length;

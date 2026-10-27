@@ -127,7 +127,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 
 ## 5d. pod-events（post-cutoff 结构化观测 ledger）
 
-`EVENTS_SCHEMA_CUTOFF = '2026-07-25'` 是唯一 cutoff SSOT，定义于 `pod-events-append.mjs`。changeId date-prefix `>= 250725` 的 Pod 使用 `delivery/taskpackages/<changeId>/pod-events.jsonl`，每行 envelope 为 `{schemaVersion:1,eventId,changeId,timestamp,eventType,actor,source,payload}`；eventId 为 UUID，eventType 闭集：`dispatch-completed | agent-escalation | agent-escalation-resolved | human-decision | human-correction | friction | pod-started | pod-closed`。`pod-started` / `pod-closed` 是 Pod 生命周期观测时点：起包取最早一条、收口取最晚一条；两者都是观测事实、non-bearing，不参与任何门判定。
+`EVENTS_SCHEMA_CUTOFF = '2026-07-25'` 是唯一 cutoff SSOT，定义于 `pod-events-append.mjs`。changeId date-prefix `>= 250725` 的 Pod 使用 `delivery/taskpackages/<changeId>/pod-events.jsonl`，每行 envelope 为 `{schemaVersion:1,eventId,changeId,timestamp,eventType,actor,source,payload}`；eventId 为 UUID，eventType 闭集：`dispatch-completed | agent-escalation | agent-escalation-resolved | human-decision | human-correction | friction | pod-started | pod-closed | settings-presence`。`pod-started` / `pod-closed` 是 Pod 生命周期观测时点：起包取最早一条、收口取最晚一条；两者都是观测事实、non-bearing，不参与任何门判定。`settings-presence` 是设置在场性自检的申报事实（payload：`declaredForm` ∈ `cli-interactive|cli-headless|extension-session|unknown`、`basis` ∈ `launch-card|session-observation|none`、`note` 一句）；申报档、non-bearing，不参与任何门判定（ARQ-260918 低分叉子集，261026 批）。
 
 - `dispatch-completed.tokenUsage` 按**来源分档**（260920-gov-review-dispatch-telemetry-source FROZEN v1.0）：
   - `source: 'transcript'` —— **仓内 token 归因最忠实记录**（模型 API 回传的逐消息 usage，四路齐全），由 `dispatch-stamp.mjs` 按 `--dispatch-id`（= harness agentId）自动派生。**它不是计费真值**——provider 计费可因缓存折扣等与之不同，计费对账不在此范围。

@@ -4,7 +4,7 @@
   "upstreamFrozen": "",
   "generatedBy": "portfolio-planner",
   "generatedAt": "2026-09-17",
-  "updatedAt": "2026-09-17",
+  "updatedAt": "2026-10-27",
   "_doc": [
     "workstream 级 decisionCoverage：拆包输入 = 里程碑注册表 M2-char-window nextAction 两块（live 查字链路修复 + 撤 P4/页→窗改造；sourceType=delivery-story，非 proposal，无 upstreamFrozen pin）。",
     "本次拆 3 包：char-link-defect-fix（K1 两缺陷修复）/ retract-p4-three-page（K2 撤 P4 三页循环）/ char-window-overlay（K3 页→窗改造 + F3 真机确认轮 + NFR-PERF-2 复测）。",
@@ -52,11 +52,41 @@
     }
   ],
   "launchPreconditions": [
-    "commit-before-launch（F-03）：三包四件套（delivery/taskpackages/<id>/{taskpackage.json,plan.md}）+ workstream 制品（delivery/workstreams/m2-char-window/**）+ milestones.jsonl planningRefs 挂接，commit 到专用 base ref（非 main，F-05）——milestones.jsonl 与 STATUS.md 重建在 portfolio-planner scope 边界外（enforce-scope 拦截，如实上报），须主线程补执行",
-    "门 1 先行：本拆包四件套齐备后由 human 发起门 1（architect 轻量 checklist review 五项 + workType 分流），GREEN + human 过目切法后方可 launch；裁决耐久记录 append delivery/workstreams/m2-char-window/review.md「门 1」节",
-    "deviation 拍板：无新增 deviation——页点 4→3 为 M1-K2 launch 前拍板 deviation 的既定收回（m1-home-qa progress.md 2026-09-16 在案），无再拍项",
-    "真机硬依赖：M2K3-A7/A8（F3 确认轮 + NFR-PERF-2 复测）与 K1/K2 deferred 真机半全部挂 K3 设备轮，需 human 持板；K3 设备轮前 K1/K2 的 host 半须已 merged",
-    "冻结面修订通道：schedule_reminder_b.acceptance.c（K2）与 key_layer_dispatch.acceptance.c 层表（K3）钉点修订一律走 acceptance-author 留痕；D3 归类 architect 快审确认在 K1 intake 期完成",
-    "图索引：复用树（C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 树池串行先例）则项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 随树增量刷新；新建树则 launch 面必办 index_repository（worktree 专属图索引）"
+    {
+      "text": "commit-before-launch（F-03）：三包四件套（delivery/taskpackages/<id>/{taskpackage.json,plan.md}）+ workstream 制品（delivery/workstreams/m2-char-window/**）+ milestones.jsonl planningRefs 挂接，commit 到专用 base ref（非 main，F-05）——milestones.jsonl 与 STATUS.md 重建在 portfolio-planner scope 边界外（enforce-scope 拦截，如实上报），须主线程补执行",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "门 1 先行：本拆包四件套齐备后由 human 发起门 1（architect 轻量 checklist review 五项 + workType 分流），GREEN + human 过目切法后方可 launch；裁决耐久记录 append delivery/workstreams/m2-char-window/review.md「门 1」节",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "delivery/workstreams/m2-char-window/review.md:7（GREEN 裁决，2026-09-17）"
+    },
+    {
+      "text": "deviation 拍板：无新增 deviation——页点 4→3 为 M1-K2 launch 前拍板 deviation 的既定收回（m1-home-qa progress.md 2026-09-16 在案），无再拍项",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "delivery/workstreams/m1-home-qa/progress.md:11（拍板在案；m2 无再拍项）"
+    },
+    {
+      "text": "真机硬依赖：M2K3-A7/A8（F3 确认轮 + NFR-PERF-2 复测）与 K1/K2 deferred 真机半全部挂 K3 设备轮，需 human 持板；K3 设备轮前 K1/K2 的 host 半须已 merged",
+      "scope": "package:260917-m2-k3-char-window-overlay",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "冻结面修订通道：schedule_reminder_b.acceptance.c（K2）与 key_layer_dispatch.acceptance.c 层表（K3）钉点修订一律走 acceptance-author 留痕；D3 归类 architect 快审确认在 K1 intake 期完成",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "图索引：复用树（C:/AI/KidPal-pod-m1-k1a-key-layer-dispatch 树池串行先例）则项目 C-AI-KidPal-pod-m1-k1a-key-layer-dispatch 随树增量刷新；新建树则 launch 面必办 index_repository（worktree 专属图索引）",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    }
   ]
 }

@@ -11,6 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261026-gov-review-p4-pod-board-cluster](261026-gov-review-p4-pod-board-cluster/) | 2026-10-26 | frozen | — |
 | [261026-gov-review-p2-anchor-template-cluster](261026-gov-review-p2-anchor-template-cluster/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-merge-gate-cluster-fix](261026-gov-review-merge-gate-cluster-fix/) | 2026-10-26 | landed | yes |
