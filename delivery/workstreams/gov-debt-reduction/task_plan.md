@@ -92,6 +92,13 @@ changes:
 - 2026-10-27 v0.2（1008 行）修订全到位 → **R2 GREEN**（仅余 N1 位置括注 NIT、不拦绿，已转 architect 一行收口）；判档 Track B 主路径、无升级 human。凭「立项 ack + GREEN」主线程标 FROZEN，进 packet-bound 落地。
 - 2026-10-27 **全环闭环**：FROZEN v0.2 → 装配落地五件（landing-fidelity-check 1129 行 sha256 对账一致）→ 验证集 V1–V7/V9 全绿（判别夹具 18/18）→ landing-verifier **PASS + 2 ADVISORY**（无升级项）→ 落地 commit `4aaabce2` → V8 升级闸 **PASS**（kind=gov）→ INDEX 翻 landed → retro 落盘。**P6 收口；下一波 = P7（dev-loop 文面纪律簇，6 条，轻路径候选）**。
 
+### P6.5 · 起草成本减负批（ARQ-261027 消费批，2 便宜项 + 拆分纪律）
+
+- **来源**：ARQ-261027 专项讨论（2026-10-27，human 与主线程），方向裁定见条目「方向裁定追注」——否决 dev-loop 路由与写权通道（执法层自改风险），收敛两便宜项 + 一新规则。
+- `ARQ-261027-draft-sandbox-assembly-scaffolding`（SHOULD）：T1 共享锚文装配器（旧串锚定替代行号基线，architect 每批只写编辑清单）+ T2 复跑分档句（PROPOSAL.template §5，治 retro F2 复跑税）+ T3 脚本批拆分纪律句（`.claude/scripts/**` 净增 >~150 行或 feature 级单独成批、fix 级 <~50 行可搭车；落 gov-change.md 起草节 + PROPOSAL.template，初值随复发校准）。
+- **立项 ack（2026-10-27 human）**：「立项吧」。changeId = `261027-gov-review-draft-cost-relief`，Track B（触 `.claude/scripts/**`）。T1 落地后本批起草即自消费试用。
+- 2026-10-27 **全环闭环**：DRAFT v0.1 → R1 BLOCK(F1,F2)+F3（判官构造 junction 穿透仓界、净增公式漏新文件）→ v0.2（realpathDeepest 治本 + git add -N 口径）→ R2 GREEN → FROZEN → 装配器自消费落地四件（sha256 逐值对账）→ landing-verifier **PASS + 3 ADVISORY**（ADVISORY-1 抓出主线程 summary 失实句、更正留痕 + junction 清理）→ 落地 commit → V8 闸 PASS → INDEX landed → retro 落盘。**ARQ-261027 整条结项归位；同量级实现全批成本较 P6 降 ~40%；拆分纪律 150 行初值起用**。P6.5 收口。
+
 ### P7 · dev-loop 文面纪律簇（6 条，轻路径候选——只落 references/skills/commands 文面）
 
 - `ARQ-261025-adjacent-frozen-anchor-sweep`（intake/1g 扫相邻字面锚成文）· `ARQ-261014-rename-batch-second-token-census`（改名双 token 族 census 义务成文）· `ARQ-261025-debt-archive-ref-atomic`（归档与引用同批义务成文）· `ARQ-261014-closeout-obligation-write-authority-vacuum`（收口义务写权承载成文）· `ARQ-261019-opendesign-shoot-script-precedent`（opendesign-connect skill + uiux-author 定义增补）· `ARQ-260908-known-red-count-no-mechanical-source` ③（runner 报告头 acceptance-evidence 文面）。
