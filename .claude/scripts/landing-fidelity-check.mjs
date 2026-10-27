@@ -26,9 +26,18 @@
 // landing 清单来源：读 PROPOSAL.md / architect-landing-summary.md 里的 ```landing-manifest 围栏块
 // （一行一个 canonical 路径，authoring 格式契约见 architect-operating-model §5）。
 // B2 fail-loud：任一侧无该块 → 显式 RED（格式不合格），不再正则兜底。
+//
+// 目录锚兜底（261027 批 T3 · ARQ-260924 残余②，human 2026-10-27 裁「仍劝阻、展开作兜底」）：manifest 里以 /
+// 结尾的目录 token 按前缀展开为成员判定（任一下辖文件有改动即视为该行已落），展开明细进输出 dirAnchorExpansions。
+// 仍劝阻使用——逐件枚举是正形（展开只验「有成员改动」、逐件漏落不再被点名）；纯文件路径行为不变（changed.has 精确判定）。
+//
+// 引文自查子命令（261027 批 T1 · ARQ-260914 残余「锚文逐字性 byte 比对脚本化」）：
+//   node .claude/scripts/landing-fidelity-check.mjs --cite-check <PROPOSAL.md> [--phase draft|landing]
+// 只读自查、不参与主门判定、不进任何闸链：draft（缺省按 Status 自动判）= §2「原文」引文 vs 磁盘现文；
+// landing = §2「改后 / 替换后 / 插入 / 追加」及未标注围栏块 vs 落地文件。exit 0 全命中 / 1 有未命中 / 2 用法或输入缺失。
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { basename, resolve, join } from 'node:path';
+import { basename, relative, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execSync, spawnSync } from 'node:child_process';
 import {
@@ -53,11 +62,19 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 function parseCliArgs(rawArgv) {
   const argv = rawArgv.slice(2);
   const idx = argv.indexOf('--preflight');
-  if (idx >= 0) return { preflight: argv[idx + 1] || null, positional: null, baseRef: null };
-  return { preflight: null, positional: argv[0] || null, baseRef: argv[1] || null };
+  if (idx >= 0) return { preflight: argv[idx + 1] || null, citeCheck: null, phase: null, positional: null, baseRef: null };
+  // 引文自查入口（261027 批 T1 · ARQ-260914）：与 --preflight 同为只读子命令，选项不被位置参数消费。
+  const ci = argv.indexOf('--cite-check');
+  if (ci >= 0) {
+    const pi = argv.indexOf('--phase');
+    return { preflight: null, citeCheck: argv[ci + 1] || null, phase: pi >= 0 ? argv[pi + 1] || null : null, positional: null, baseRef: null };
+  }
+  return { preflight: null, citeCheck: null, phase: null, positional: argv[0] || null, baseRef: argv[1] || null };
 }
 const CLI = parseCliArgs(process.argv);
 const preflightArg = CLI.preflight;
+const citeCheckArg = CLI.citeCheck;
+const citeCheckPhase = CLI.phase;
 const reviewDir = CLI.positional ? resolve(projectDir, CLI.positional) : null;
 // 可选 baseRef：判定「已落地」时相对哪个 ref 看改动。不给则默认工作树 ∪ 最近一次 commit/merge（HEAD~1..HEAD）。
 const baseRef = CLI.baseRef || null;
@@ -241,13 +258,15 @@ function preflightFindings(text) {
   return { bodyFound: !!sec, findings };
 }
 
-// T9①（260924-gov-review-gate-parse-teeth）：目录 token advisory——preflight 接受目录锚、
-// landing 门逐文件精确匹配（changed.has）不消费目录锚（260923 批实录：`docs/crq/` FROZEN 后首跑结构门 RED
-// 两条 → human 追认 + 机械展开 99 行）。本 advisory 把反馈前移回起草期；**不入 findings、不动 ok/exit**。
+// T9①（260924-gov-review-gate-parse-teeth，261027 批 T3 改口径）：目录 token advisory——preflight 接受目录锚；
+// landing 门自 261027 批起对目录 token 按前缀展开兜底（261027 批前 = 逐文件精确匹配 changed.has，260923 批
+// `docs/crq/` FROZEN 后首跑结构门 RED 两条 → human 追认 + 机械展开 99 行即旧口径实录）。human 2026-10-27 裁：
+// 目录锚**可用但劝阻、展开是兜底不是许可**——逐件枚举是正形（展开只验「有成员改动」，逐件漏落不再被点名）。
+// 本 advisory 把口径与迁移批先例回起草期；**不入 findings、不动 ok/exit**。
 function dirTokenAdvisories(union) {
   return [...(union || [])]
     .filter((t) => String(t).endsWith('/'))
-    .map((t) => `锚并集含目录 token「${t}」：landing 门不消费目录锚（逐文件精确匹配 changed.has），manifest 须逐件枚举成员（迁移批先例：260914 批 139 行全枚举）`);
+    .map((t) => `锚并集含目录 token「${t}」：可用但劝阻——manifest 逐件枚举成员是正形；landing 门对目录 token 仅按前缀展开兜底（任一下辖文件有改动即视为该行已落，逐件漏落不再被点名；迁移批先例：260914 批 139 行全枚举）`);
 }
 
 function runPreflight(proposalPath) {
@@ -452,8 +471,68 @@ function runLintDescriptionsTriggerSelfCheck() {
   if (fail > 0) process.exit(1);
 }
 
+// ── 目标文件解析（261027 批 T1 · ARQ-260914）：manifest 路径 → 实际可读路径候选 ──
+// 债务条目归位兜底：已结 debt 条目由 debt-render 移入 docs/debt/<域>/_archive/<年>/（位置 = status 的纯函数），
+// 落地核验时 manifest 旧路径已不存在——按归档位补找一次；找不到仍按原路径返回（后续读失败自然判 missing）。
+function targetCandidates(target, projectDir) {
+  const exact = resolve(projectDir, target);
+  if (existsSync(exact)) return [exact];
+  const m = String(target).match(/^(docs\/debt\/[A-Za-z]+\/)([^/]+)$/);
+  if (!m) return [exact];
+  const archiveRoot = resolve(projectDir, `${m[1]}_archive`);
+  let years = [];
+  try { years = readdirSync(archiveRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { return [exact]; }
+  const hits = years.map((y) => resolve(archiveRoot, y, m[2])).filter((p) => existsSync(p));
+  return hits.length ? hits : [exact];
+}
+
+// ── 引文 ↔ 目标文件逐字对账单源（261027 批 T1）：既有 advisory 与本批 --cite-check 共用同一判据 ──
+// T2（260907 批）：双侧行尾归一后比对——仓内 .mjs 工作树全量 CRLF（autocrlf 实况）、PROPOSAL 经 Write 落盘 LF，
+// 逐字节 includes 必假（260906-gov-review-index-status-truth-source 批 2 条 advisory 假失配实证）。
+// 261026 批 T2（ARQ-261019-verbatim-quote-line-level-false-negative）：围栏块正文恒带块尾换行，
+// 子句替换形态里目标句常嵌在长行中部、句后仍有接续文——比对前对引文 trim()（首尾空白不进判据，正文逐字仍在）。
+// 返回**实际命中的文件**（仓根相对路径，Windows 反斜杠归一为 /）——归档位兜底命中时读者能看见真实落点，未命中 = null。
+function findQuoteInTargets(quote, targetFiles, projectDir) {
+  const norm = (s) => s.replace(/\r\n/g, '\n');
+  const needle = norm(quote).trim();
+  if (!needle) return null;
+  for (const target of targetFiles) {
+    for (const abs of targetCandidates(target, projectDir)) {
+      let content;
+      try { content = readFileSync(abs, 'utf8'); } catch { continue; }
+      if (norm(content).includes(needle)) return relative(projectDir, abs).split('\\').join('/');
+    }
+  }
+  return null;
+}
+
+// ── §2 围栏块提取（261027 批 T2 · ARQ-261026-verbatim-extract-backtick-cut）──
+// 旧实现 /```[a-zA-Z]*\n([\s\S]*?)```/g 把块内容中的 ``` 字面（js 夹具串形态，如 '/^\s*```/.test(l)'）
+// 当块边界提前闭合——块被腰斩、其后散文被误当钉死块（261026 批 landing 观察列 24 条伪 missing 实证）。
+// 新实现 = 逐行状态机：开行 = 行首可选空白 + ``` + 可选 info 串；闭行须**独立成行**（``` 后只允许空白）。
+// 未闭合块不入列（围栏未闭合由 parseSection2AnchorLists fail-loud 点名，本检查不重复判）。
+function extractFencedBlocks(lines) {
+  const blocks = [];
+  let open = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (open) {
+      if (/^\s*```\s*$/.test(line)) {
+        blocks.push({ block: open.content.join('\n'), openLine: open.openLine, closeLine: i, info: open.info });
+        open = null;
+      } else {
+        open.content.push(line);
+      }
+      continue;
+    }
+    const m = line.match(/^\s*```(.*)$/);
+    if (m) open = { info: m[1].trim(), openLine: i, content: [] };
+  }
+  return blocks;
+}
+
 // ── §2 钉死引号块 ↔ 落地文件机械逐字对账（260826-gov-review-g3-infra-convergence T2，advisory-only）──
-// 提取 PROPOSAL §2 各 T 节内围栏代码块（```）正文（作者约定「原文钉死」最可机辨形态），逐块在 landing-manifest
+// 提取 PROPOSAL §2 各 T 节内围栏代码块正文（作者约定「原文钉死」最可机辨形态），逐块在 landing-manifest
 // 目标文件集中做字节级 includes 对账；问题只入观察列、不产 fail（力度 = OQ-2 推荐 (a) advisory 起步）。
 function checkVerbatimQuotes(proposalText, projectDir, targetFiles) {
   const checked = [];
@@ -468,27 +547,11 @@ function checkVerbatimQuotes(proposalText, projectDir, targetFiles) {
     if (vqFlags[i]) continue;
     if (/^##\s/.test(vqLines[i])) { vqEnd = i; break; }
   }
-  const secText = vqLines.slice(vqStart, vqEnd).join('\n');
-  const fenceRe = /```[a-zA-Z]*\n([\s\S]*?)```/g;
-  let m;
-  while ((m = fenceRe.exec(secText)) !== null) {
-    const block = m[1];
+  for (const { block } of extractFencedBlocks(vqLines.slice(vqStart, vqEnd))) {
     if (!block.trim()) continue;
-    let found = false;
-    for (const target of targetFiles) {
-      const abs = resolve(projectDir, target);
-      if (!existsSync(abs)) continue;
-      let content;
-      try { content = readFileSync(abs, 'utf8'); } catch { continue; }
-      // T2（260907 批）：双侧行尾归一后比对——仓内 .mjs 工作树全量 CRLF（autocrlf 实况）、PROPOSAL 经 Write 落盘 LF，
-      // 逐字节 includes 必假（260906-gov-review-index-status-truth-source 批 2 条 advisory 假失配实证）。
-      const norm = (s) => s.replace(/\r\n/g, '\n');
-      // 261026 批 T2（ARQ-261019-verbatim-quote-line-level-false-negative）：围栏块正文恒带块尾换行，
-      // 子句替换形态里目标句常嵌在长行中部、句后仍有接续文——比对前对块 trim()（首尾空白不进判据，正文逐字仍在）。
-      if (norm(content).includes(norm(block).trim())) { found = true; break; }
-    }
+    const hit = findQuoteInTargets(block, targetFiles, projectDir);
     checked.push(block);
-    if (!found) missing.push({ block: block.trim().slice(0, 120), reason: 'not-found-verbatim-in-any-target' });
+    if (!hit) missing.push({ block: block.trim().slice(0, 120), reason: 'not-found-verbatim-in-any-target' });
   }
   return { checked, missing };
 }
@@ -529,6 +592,19 @@ function runVerbatimQuotesSelfCheck() {
   // 261026 批 T1 夹具：§2 切片跳围栏——围栏内含「## 」行后，其后钉死块仍须被检（反转实现截断 → checked 1 变红）
   const boundaryProposal = ['## 2. 改法', '### T1 · 甲', '```md', '## 围栏内节标题', '```', '', '### T2 · 乙', '```js', block, '```', '## 3. 影响面'].join('\n');
   check('verbatim-fence-boundary-checked', checkVerbatimQuotes(boundaryProposal, fixtureDir, ['target.mjs']).checked.length, 2);
+  // 261027 批 T2 夹具（ARQ-261026-verbatim-extract-backtick-cut）：块内容含行内 ``` 字面（js 夹具串形态），
+  // 块须完整提取（未腰斩）、逐字对账仍命中。判别力：反转实现（闭合不要求独立成行）时块被切在首个行内 ``` 处，
+  // checked[0] 变成截断串「const re = /^\s*」→ 本组 block-intact 断言变红（该截断串仍是目标文件子串，missing 不会变红，
+  // 故判别以「块完整」断言为准——这是本条 bug 的真实形态：伪 missing 与错切散文并存，而非命中翻转）。
+  const tickDir = mkdtempSync(join(tmpdir(), 'vq-backtick-'));
+  const tickBlock = "const re = /^\\s*```/.test(l);\nconst arr = ['```md', 'x'];";
+  writeFileSync(join(tickDir, 'f.mjs'), `head\n${tickBlock}\ntail\n`, 'utf8');
+  const tickProposal = ['## 2. 改法', '### T1 · 反引号夹具', '```js', tickBlock, '```', '## 3. 影响面'].join('\n');
+  const tickRes = checkVerbatimQuotes(tickProposal, tickDir, ['f.mjs']);
+  check('verbatim-backtick-in-content-checked', tickRes.checked.length, 1);
+  check('verbatim-backtick-in-content-block-intact', tickRes.checked[0] === tickBlock, true);
+  check('verbatim-backtick-in-content-missing', tickRes.missing.length, 0);
+  rmSync(tickDir, { recursive: true, force: true });
   rmSync(clauseDir, { recursive: true, force: true });
   rmSync(crlfTarget, { recursive: true, force: true });
   rmSync(fixtureDir, { recursive: true, force: true });
@@ -536,9 +612,275 @@ function runVerbatimQuotesSelfCheck() {
   if (fail > 0) process.exit(1);
 }
 
+// ── 引文自查子命令 --cite-check（261027 批 T1 · ARQ-260914 残余「锚文逐字性 byte 比对脚本化」）──
+// 定位：把判官 R1 / 核验官每次现写的 node byte 比对固化为可复用件（载体 = 本脚本子命令，human 2026-10-27 立项 ack ①）。
+// 覆盖形态（v1，判据交评审裁）：
+//   - 围栏块：label 行（围栏开行之上最近的非空行）含「原文」= 原文引文（draft 期须在盘）；含「改后 / 替换后 /
+//     插入 / 追加」= 改后文本（landing 期须在盘）；两族以 label 中**最后出现的 cue** 定性（「…原文…→ 替换后…」
+//     单行混合式按后者走）。两相位各自把「不检」的块列进 notChecked——覆盖态如实申报，不静默略过。
+//   - 行内引文：cue 之后最后一个冒号之后恰一个 code-span 且行尾无其它内容（如 原文（`:13`，逐字节）：`…`）——
+//     draft 期查原文、landing 期查改后族。
+//   - 目标解析走 targetCandidates：债务条目已归位 docs/debt/<域>/_archive/<年>/ 时按归档位补找（260924 批核验
+//     教训：debt-render 归位后 manifest 旧路径失效，旧 advisory 在 P5 批报 3 条归档位预期 miss）。
+// 不覆盖（输出 coverage / notChecked 如实申报）：blockquote 承载的插入段、多 span / 混合散文行内形态。
+// 效力：只读自查，**不参与主门判定、不进任何闸链**；退出码自管（0 全命中 / 1 有未命中 / 2 用法或输入缺失）。
+const CITE_ORIGINAL_CUE_RE = /原文/;
+const CITE_RESULT_CUE_RE = /改后|替换后|插入|追加/;
+
+// label 定性：取最后一个 cue（「替换前原文」只命中原文 → original；「…原文…→ 替换后…」→ result）。
+function classifyCueLabel(label) {
+  const hits = [...String(label).matchAll(/原文|改后|替换后|插入|追加/g)];
+  if (!hits.length) return 'unlabeled';
+  return hits[hits.length - 1][0] === '原文' ? 'original' : 'result';
+}
+
+// 围栏块的 label 行 = 围栏开行之上最近的非空行（索引相对传入的 §2 节域行数组）。
+function labelLineForBlock(lines, openLine) {
+  for (let i = openLine - 1; i >= 0; i--) {
+    if (!lines[i].trim()) continue;
+    return { index: i, text: lines[i].trim() };
+  }
+  return { index: -1, text: '' };
+}
+
+// 行内引文：cue 与候选用 code-span 遮罩后的文本定性（引文正文里的「原文」等字面不参与定性）——
+// 候选 = 行内最后一个 code-span；要求 cue 之后、候选之前出现冒号（排除「原文（`grep -cF` = 1）：」这类
+// 注记 span），且该区间内无第二个 cue 字面（排除「`a` → 替换后：`b`」混合式，交 unverified 不猜）。
+function maskCodeSpans(label) {
+  return String(label).replace(/`[^`\n]+`/g, (m) => ' '.repeat(m.length));
+}
+
+function inlineQuoteAfterCue(label, cueRe) {
+  const masked = maskCodeSpans(label);
+  const cue = cueRe.exec(masked);
+  if (!cue) return null;
+  const spans = [...label.matchAll(/`([^`\n]+)`/g)];
+  if (!spans.length) return null;
+  const last = spans[spans.length - 1];
+  if (last.index <= cue.index + cue[0].length) return null;
+  const between = masked.slice(cue.index + cue[0].length, last.index);
+  if (!/[：:]/.test(between)) return null;
+  if (/原文|改后|替换后|插入|追加/.test(between)) return null;
+  if (!/^[\s，。；、）)】]*$/.test(masked.slice(last.index + last[0].length))) return null;
+  return last[1];
+}
+
+// 从 PROPOSAL 收集本轮时点应检的引文（纯函数，供 --cite-check 与自检共用）。
+// 返回 { quotes, notChecked, unverified }：quotes = 须逐个对账的引文；notChecked = 本相位不检的围栏块（含定性）；
+// unverified = 定性歧义或行内形态无法无歧义提取的线索（不猜、不静默略过）。
+function collectCiteQuotes(text, phase) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^##\s*2[.、]/.test(l));
+  if (start === -1) {
+    return { quotes: [], notChecked: [], unverified: [{ line: 0, cue: '§2 改法节未找到', reason: 'no-section2' }] };
+  }
+  const flags = fenceFlags(lines);
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (flags[i]) continue;
+    if (/^##\s/.test(lines[i])) { end = i; break; }
+  }
+  const secLines = lines.slice(start, end);
+  const quotes = [];
+  const notChecked = [];
+  const unverified = [];
+  const labelIdx = new Set();
+  for (const b of extractFencedBlocks(secLines)) {
+    const label = labelLineForBlock(secLines, b.openLine);
+    if (label.index >= 0) labelIdx.add(label.index);
+    if (!b.block.trim()) continue;
+    const role = classifyCueLabel(label.text);
+    const lineNo = start + b.openLine + 1;
+    const cue = label.text.slice(0, 120);
+    if (phase === 'draft') {
+      if (role === 'original') quotes.push({ role, form: 'fence', line: lineNo, cue, text: b.block });
+      else notChecked.push({ line: lineNo, role, form: 'fence', cue });
+    } else if (role === 'original') {
+      // landing 期：「原文」块落地后应已消失或被替换，不作判据（P5 批 3 条预期 miss 即此形态）。
+      notChecked.push({ line: lineNo, role, form: 'fence', cue });
+    } else {
+      quotes.push({ role: role === 'unlabeled' ? 'result' : role, form: 'fence', line: lineNo, cue, text: b.block });
+    }
+  }
+  // 行内引文：围栏外、且不是某围栏块 label 的行。draft 只查原文；landing 只查改后族。
+  const cueRe = phase === 'draft' ? CITE_ORIGINAL_CUE_RE : CITE_RESULT_CUE_RE;
+  for (let i = 0; i < secLines.length; i++) {
+    if (flags[start + i] || labelIdx.has(i)) continue;
+    const l = secLines[i];
+    if (!cueRe.test(l)) continue;
+    const q = inlineQuoteAfterCue(l, cueRe);
+    if (q) {
+      quotes.push({ role: phase === 'draft' ? 'original' : 'result', form: 'inline', line: start + i + 1, cue: l.trim().slice(0, 120), text: q });
+    } else if (/原文[（(：:]|改后[（(：:]|替换后[（(：:]|插入[（(：:]|追加[（(：:]/.test(l) && l.includes('`')) {
+      unverified.push({ line: start + i + 1, cue: l.trim().slice(0, 120), reason: 'inline-ambiguous' });
+    }
+  }
+  return { quotes, notChecked, unverified };
+}
+
+function runCiteCheck(proposalPath, phaseArg) {
+  const abs = resolve(projectDir, proposalPath);
+  if (!existsSync(abs)) {
+    print({ ok: false, gate: 'landing-cite-check', message: 'PROPOSAL 不存在', proposal: proposalPath });
+    process.exit(2);
+  }
+  const text = readText(abs);
+  const frozen = isFrozen(text);
+  const phase = phaseArg || (frozen ? 'landing' : 'draft');
+  if (phase !== 'draft' && phase !== 'landing') {
+    print({ ok: false, gate: 'landing-cite-check', message: `--phase 仅接受 draft / landing（实得 ${phaseArg}）`, proposal: proposalPath });
+    process.exit(2);
+  }
+  let targets;
+  try {
+    targets = extractTargets(text, { source: 'PROPOSAL.md' });
+  } catch (error) {
+    print({ ok: false, gate: 'landing-cite-check', message: error.message, proposal: proposalPath });
+    process.exit(2);
+  }
+  const { quotes, notChecked, unverified } = collectCiteQuotes(text, phase);
+  const checked = [];
+  const missing = [];
+  for (const q of quotes) {
+    const hit = findQuoteInTargets(q.text, targets, projectDir);
+    checked.push({ role: q.role, form: q.form, line: q.line, cue: q.cue, matched: hit });
+    if (!hit) missing.push({ role: q.role, form: q.form, line: q.line, cue: q.cue, excerpt: q.text.trim().slice(0, 120) });
+  }
+  print({
+    ok: missing.length === 0,
+    gate: 'landing-cite-check',
+    proposal: proposalPath,
+    phase,
+    frozen,
+    targetCount: targets.length,
+    checkedCount: checked.length,
+    checked,
+    missing,
+    notChecked,
+    unverified,
+    coverage: {
+      fenced: true,
+      inline: true,
+      blockquote: false,
+      note: 'blockquote 承载的插入段与多 span / 混合散文行内形态不在 v1 覆盖面（见本批 PROPOSAL §6 留根）。',
+    },
+    note: '只读自查：引文 ↔ 目标文件逐字对账（双侧行尾归一 + trim）；不参与任何门判定、不进任何闸链。',
+  });
+  process.exit(missing.length === 0 ? 0 : 1);
+}
+
+// 引文自查自检（261027 批 T1）：覆盖 CLI 解析、draft / landing 两相位分列、行内形态、label 定性、归档位兜底。
+// 判别力：反转 classifyCueLabel（原文 / 改后混淆）→ 两相位 quotes 角色断言变红；放宽行内判据 → 行内组变红；
+// 去掉归档兜底 → 归档组变红。
+function runCiteCheckSelfCheck() {
+  let pass = 0;
+  let fail = 0;
+  const check = (label, got, want) => {
+    if (got === want) { pass++; } else { fail++; console.error(JSON.stringify({ selfCheck: 'cite-check', label, got, want })); }
+  };
+  const c1 = parseCliArgs(['node', 'x', '--cite-check', 'p.md', '--phase', 'landing']);
+  check('cli·citeCheck 取值', c1.citeCheck, 'p.md');
+  check('cli·phase 取值', c1.phase, 'landing');
+  check('cli·positional 为 null（不误触 reviewDir）', c1.positional, null);
+  check('cli·baseRef 为 null', c1.baseRef, null);
+  check('cli·phase 缺省为 null（按 Status 自动判）', parseCliArgs(['node', 'x', '--cite-check', 'p.md']).phase, null);
+  const dir = mkdtempSync(join(tmpdir(), 'cite-'));
+  const target = 'target.md';
+  writeFileSync(join(dir, target), '首行\n原文甲：逐字在场。\n改后乙：落地在场。\n末行\n', 'utf8');
+  const proposal = [
+    '## 2. 改法（T1）',
+    '### T1 · 甲',
+    '原文（逐字节）：',
+    '```text',
+    '原文甲：逐字在场。',
+    '```',
+    '',
+    '改后（逐字节）：',
+    '```text',
+    '改后乙：落地在场。',
+    '```',
+    '',
+    '目标文件：`target.md`（改）',
+    '## 3. 影响面',
+  ].join('\n');
+  const draftRes = collectCiteQuotes(proposal, 'draft');
+  check('draft·只检原文块', JSON.stringify(draftRes.quotes.map((q) => q.role)), JSON.stringify(['original']));
+  check('draft·改后块进 notChecked', draftRes.notChecked.length, 1);
+  check('draft·原文命中', findQuoteInTargets(draftRes.quotes[0].text, [target], dir), target);
+  const landingRes = collectCiteQuotes(proposal, 'landing');
+  check('landing·只检改后块', JSON.stringify(landingRes.quotes.map((q) => q.role)), JSON.stringify(['result']));
+  check('landing·原文块进 notChecked', landingRes.notChecked.length, 1);
+  check('landing·改后命中', findQuoteInTargets(landingRes.quotes[0].text, [target], dir), target);
+  const drift = proposal.replace('原文甲：逐字在场。', '原文甲：逐字在场！');
+  check('draft·漂移未命中', findQuoteInTargets(collectCiteQuotes(drift, 'draft').quotes[0].text, [target], dir), null);
+  const inlineProposal = ['## 2. 改法（T1）', '### T1 · 乙', '原文（`:13`，逐字节）：`原文甲：逐字在场。`', '目标文件：`target.md`（改）', '## 3. 影响面'].join('\n');
+  const inlineRes = collectCiteQuotes(inlineProposal, 'draft');
+  check('draft·行内原文入检', inlineRes.quotes.length === 1 && inlineRes.quotes[0].form === 'inline', true);
+  check('draft·行内原文命中', findQuoteInTargets(inlineRes.quotes[0].text, [target], dir), target);
+  const inlineMiss = inlineProposal.replace('逐字在场。', '逐字在场?');
+  check('draft·行内漂移未命中', collectCiteQuotes(inlineMiss, 'draft').quotes.length === 1 && findQuoteInTargets(collectCiteQuotes(inlineMiss, 'draft').quotes[0].text, [target], dir) === null, true);
+  const mixed = ['## 2. 改法（T1）', '### T1 · 丙', '原文（逐字）：`甲` → 替换后（逐字）：`乙`', '目标文件：`target.md`（改）', '## 3. 影响面'].join('\n');
+  check('draft·混合行进 unverified（不猜）', collectCiteQuotes(mixed, 'draft').unverified.length, 1);
+  check('label·替换前原文仍判原文', classifyCueLabel('替换前原文（逐字）：'), 'original');
+  check('label·混合行取最后 cue', classifyCueLabel('原文（逐字）：`a` → 替换后（逐字）：`b`'), 'result');
+  check('label·无 cue 判未标注', classifyCueLabel('全文逐字节如下：'), 'unlabeled');
+  // 归档位兜底：目标不在 manifest 旧路径、在 docs/debt/gov/_archive/2026/ —— 命中；非债务路径不回退。
+  mkdirSync(join(dir, 'docs', 'debt', 'gov', '_archive', '2026'), { recursive: true });
+  writeFileSync(join(dir, 'docs', 'debt', 'gov', '_archive', '2026', 'ARQ-x.md'), '归档原文行。\n', 'utf8');
+  check('归档兜底·命中', findQuoteInTargets('归档原文行。', ['docs/debt/gov/ARQ-x.md'], dir), 'docs/debt/gov/_archive/2026/ARQ-x.md');
+  check('归档兜底·非债务路径不回退', findQuoteInTargets('归档原文行。', ['docs/other/ARQ-x.md'], dir), null);
+  rmSync(dir, { recursive: true, force: true });
+  console.log(JSON.stringify({ selfCheck: 'cite-check', pass, fail, total: pass + fail, ok: fail === 0 }));
+  if (fail > 0) process.exit(1);
+}
+
+// 目录锚前缀展开兜底（261027 批 T3 · ARQ-260924 残余②，human 2026-10-27 裁「仍劝阻、展开作兜底」）：
+// manifest 目录 token（以 / 结尾）不再按 changed.has 精确匹配判假 RED——展开为其下成员判定（任一成员有改动
+// 即视为该行已落），展开明细进 dirAnchorExpansions；逐件枚举仍是正形（展开放宽「静默漏落」检测，只作兜底）。
+// 纯文件 token 行为不变（changed.has 精确成员判定，与改前逐字节同）。
+function computeNotLanded(targets, changed) {
+  const notLanded = [];
+  const dirExpansions = [];
+  for (const t of targets) {
+    if (String(t).endsWith('/')) {
+      const matched = [...changed].filter((f) => f.startsWith(t)).length;
+      if (matched === 0) notLanded.push(t);
+      else dirExpansions.push({ token: t, matched });
+      continue;
+    }
+    if (!changed.has(t)) notLanded.push(t);
+  }
+  return { notLanded, dirExpansions };
+}
+
+// 目录锚自检（261027 批 T3）：两向判别——目录锚样例展开后不假 RED（改前形态 = changed.has 精确匹配必判未落）；
+// 纯文件路径行为与改前一致（命中不报 / 未落照报 / 零展开明细）。尾 / 是目录锚唯一形态判据（无 / 走文件 token）。
+function runDirAnchorExpansionSelfCheck() {
+  let pass = 0;
+  let fail = 0;
+  const check = (label, got, want) => {
+    if (got === want) { pass++; } else { fail++; console.error(JSON.stringify({ selfCheck: 'dir-anchor-expansion', label, got, want })); }
+  };
+  const changed = new Set(['docs/crq/a.md', 'docs/crq/sub/b.md', '.claude/scripts/x.mjs']);
+  const dirHit = computeNotLanded(['docs/crq/'], changed);
+  check('目录锚·有成员改动不判未落（改前假 RED 形态）', JSON.stringify(dirHit.notLanded), JSON.stringify([]));
+  check('目录锚·展开明细', JSON.stringify(dirHit.dirExpansions), JSON.stringify([{ token: 'docs/crq/', matched: 2 }]));
+  const dirMiss = computeNotLanded(['docs/none/'], changed);
+  check('目录锚·零成员改动仍判未落', JSON.stringify(dirMiss.notLanded), JSON.stringify(['docs/none/']));
+  check('目录锚·零命中无展开明细', dirMiss.dirExpansions.length, 0);
+  const files = computeNotLanded(['.claude/scripts/x.mjs', 'docs/crq/a.md', '.claude/scripts/y.mjs'], changed);
+  check('纯文件路径·命中不报 / 未落照报（行为不变）', JSON.stringify(files.notLanded), JSON.stringify(['.claude/scripts/y.mjs']));
+  check('纯文件路径·无展开明细', files.dirExpansions.length, 0);
+  const noSlash = computeNotLanded(['docs/crq'], changed);
+  check('尾斜杠唯一判据·无尾 / 按文件 token 处理', JSON.stringify(noSlash.notLanded), JSON.stringify(['docs/crq']));
+  console.log(JSON.stringify({ selfCheck: 'dir-anchor-expansion', pass, fail, total: pass + fail, ok: fail === 0 }));
+  if (fail > 0) process.exit(1);
+}
+
 // 自检接线顺序审查（真空绿规约）：runIsFrozenSelfCheck 为终端式（无条件 process.exit），必须列最后；
-// 其余非终端式自检（含 B7 新增 section2Anchors、T2 新增 verbatim-quotes、260918 批新增 landing-preflight）排在其前，否则永不执行。
-if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runPreflightSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runIsFrozenSelfCheck(); }
+// 其余非终端式自检（含 B7 新增 section2Anchors、T2 新增 verbatim-quotes、260918 批 landing-preflight、
+// 261027 批 cite-check / dir-anchor-expansion）排在其前，否则永不执行。
+if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runPreflightSelfCheck(); runCiteCheckSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runDirAnchorExpansionSelfCheck(); runIsFrozenSelfCheck(); }
 
 // 干跑入口（T2，260918 批）：只读、不对账、不参与任何门判定、不进任何闸链。
 // 置于 --self-check 之后（两者同给时先跑自检并以其退出码为准）。
@@ -548,6 +890,14 @@ if (process.argv.indexOf('--preflight') >= 0) {
     process.exit(1);
   }
   runPreflight(preflightArg);
+}
+// 引文自查入口（261027 批 T1 · ARQ-260914）：只读、不参与主门判定；与 --preflight 同置于主流程之前。
+if (process.argv.indexOf('--cite-check') >= 0) {
+  if (!citeCheckArg) {
+    print({ ok: false, gate: 'landing-cite-check', message: '--cite-check 需要一个 PROPOSAL 路径参数' });
+    process.exit(2);
+  }
+  runCiteCheck(citeCheckArg, citeCheckPhase);
 }
 
 function runGit(cmd) {
@@ -652,10 +1002,13 @@ if (unauthorized.length > 0) {
 // git 改动集（工作树 ∪ 已提交；见 gitChangedFiles）。
 const { files: changed, degraded, reason } = gitChangedFiles(baseRef);
 
-// 5. summary 声称落的 → git 里有改动。
-const claimedNotLanded = [...summaryTargets].filter((t) => !changed.has(t));
+// 5. summary 声称落的 → git 里有改动（目录 token 按前缀展开兜底，261027 批 T3；纯文件路径行为不变）。
+const summaryLanded = computeNotLanded([...summaryTargets], changed);
 // 6. PROPOSAL 清单 → git 里有改动（无静默漏落）。
-const plannedNotLanded = [...proposalTargets].filter((t) => !changed.has(t));
+const proposalLanded = computeNotLanded([...proposalTargets], changed);
+const claimedNotLanded = summaryLanded.notLanded;
+const plannedNotLanded = proposalLanded.notLanded;
+const dirAnchorExpansions = [...new Map([...summaryLanded.dirExpansions, ...proposalLanded.dirExpansions].map((x) => [x.token, x])).values()];
 
 if (!degraded) {
   if (claimedNotLanded.length > 0) {
@@ -672,7 +1025,7 @@ if (errors.length > 0) {
     !baseRef && notLanded
       ? 'worktree / 最近一次 commit 未见这些目标——landing 可能已提交/合并到更早的 commit。用 baseRef=<landing 前的 ref> 重跑以审计已提交的 landing（如 git log 找到 landing 前的 commit）。若 worktree 确有未提交 landing 却仍报此错，才是真漏落。'
       : undefined;
-  fail('governance landing 保真度核验未过', { reviewDir: relDir, errors, gitDegraded: degraded, hint });
+  fail('governance landing 保真度核验未过', { reviewDir: relDir, errors, gitDegraded: degraded, dirAnchorExpansions, hint });
 }
 
 // --- Cross-surface alignment gate (GAR-001) ---
@@ -762,6 +1115,7 @@ print({
   unauthorized: [],
   claimedNotLanded: degraded ? 'skipped-git-degraded' : [],
   plannedNotLanded: degraded ? 'skipped-git-degraded' : [],
+  dirAnchorExpansions,
   gitDegraded: degraded,
   citationAnchorAdvisory,
   lintDescriptionsAdvisory,
