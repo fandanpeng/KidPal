@@ -7,7 +7,7 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (22)
+## review (23)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
