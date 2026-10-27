@@ -107,7 +107,7 @@ changes:
 - **落点约束（立项 ack 附带）**：① 落点收 task-intake-and-slicing.md + dev-loop.md（1g 档定义在 dev-loop.md），避免触 planner.md；③ 落点收 task-intake-and-slicing.md 起包自查、integrator.md 侧句或可省；⑥ 只落 acceptance-evidence.md 文面不触 runner 代码。任一条起草中发现必须触轻路径排除集（commands/agents/hooks/scripts/scope-map/settings/verify-gates/AGENTS/CLAUDE/DEV-GOVERNANCE）→ 该条挪出、只升不降。
 - changeId = `261027-gov-review-p7-devloop-doc-cluster`，architect 起草中。
 - 2026-10-27 起草完成（DRAFT v0.1，341 行；装配副本 / 沙盘 / 验证脚本全在仓外 C:/tmp/p7-work，仓内零杂散；draft 已 upsert 进 delivery/review/INDEX.md）。判档自评 = 轻路径，但 §1 向严声明「四条为文档义务非错字排版、判据②可取暖读法」。R1 四查 **GREEN**（无 BLOCKING/SHOULD、三条 NIT），**判档升 Track B 主路径**（判据②不满足——新增规范性义务文面非措辞级勘误；只升不降，改法集不变不重做，立项 ack 已预授权）。凭「立项 ack + GREEN」标 **FROZEN v0.1**，按 Track B 七步落地。
-- 2026-10-27 落地完成：V1① 复跑装配 afterSha256 与 B2 逐值同 → 仓内 apply（同断言语义，6/6 恰 1 命中）五件 sha256 与 B2 afterSha256 逐值一致 → V2 cite-check phase=landing checked 6 / missing 0 → V3 字面正推全过（新字面 0→1、退役语面 1→0、四哨 1→1）→ V4/V5 排除集零触、diff 恰 = manifest 五件。四条 ARQ 已结项翻转 + 结项追注 append，debt-render 归位 `_archive/2026/` 四件 + INDEX 再生。landing-summary 全件落盘，landing-verifier 核验中。
+- 2026-10-27 **全环闭环**：landing-verifier **PASS + 1 ADVISORY**（A1 = summary 在途件快照时序差，已条目化 ARQ-261027-landing-summary-inflight-snapshot）→ 落地 commit `78a1105d` → V7 升级闸 **PASS (kind=gov)** → ff 合本地 main → 复证后过闸 → **PR #46 已开**（release/261027-4；发布首跑报 diverged——PR #45 壳 `eca8ac14` 在远端、人裁后本地 no-ff 追平 + INDEX 全量重建归位，P6.5 同款处置链二例）。PR #46 合并后待：main worktree `--sync` + gov 回同步 + `--upsert` 翻已合main。**P7 收口；下一波 = P7.5（收口写点映射 + opendesign 出图先例，恒 Track B 两条）**。
 
 ### P7.5 · 收口写点映射 + 出图先例簇（恒 Track B 两条，随 P7 轻路径批后开）
 

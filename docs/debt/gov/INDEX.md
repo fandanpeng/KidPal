@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 13（待拍板 0 / 待触发 11 / 已接受风险 2）；已结 121（归档索引见下）。
+**摘要**：未结 14（待拍板 0 / 待触发 12 / 已接受风险 2）；已结 121（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（11）
+## 待触发（12）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -27,6 +27,7 @@ _（无）_
 | [ARQ-261019-opendesign-shoot-script-precedent](ARQ-261019-opendesign-shoot-script-precedent.md) | SHOULD | 设计稿出图先例修正：出图走仓内 shoot_design.mjs，不依赖 Open Design 应用 | ① opendesign-connect skill 增补「出图不走 OD」先例段（od_* 失联/应用未跑时出图管道 = tools/asset-pipeline/shoot_design.mjs <html> <outdir>，playwright 无头 Edge 逐画布精确截图、400×300 阈值化 1bpp，每批只捡变更帧落 docs/ui/V<n>/）；② uiux-author agent 定义增补同款指引；③ 261019 批实测补充：uiux-author 全文件 Write 曾两次覆盖主线程合并的完整母版（R1 回归），skill 增补「母版/增量页单写者约定」条目 |
 | [ARQ-261025-brief-inputs-anchor-noise](ARQ-261025-brief-inputs-anchor-noise.md) | COULD | brief-inputs 锚点解析噪音——整文件退化为 advisory、裸 token ref 报「文件不在磁盘」，连续四包稀释真告警 | 下一治理批（动 `brief-inputs.mjs` 或起包 advisory 面时并批）；或再出现一次真实 ref 腐坏被噪声掩盖 |
 | [ARQ-261027-landing-summary-inflight-snapshot](ARQ-261027-landing-summary-inflight-snapshot.md) | NIT | landing-summary 的在途件登记是写盘时点快照、无「实跑时点」口径句——结项等后落动作被 verifier 读成时序差 ADVISORY | 下一治理批 landing-summary 出具时并批消费（architect-landing-summary.template.md 一句增补，文面级） |
+| [ARQ-261027-publish-diverged-shell-reconcile](ARQ-261027-publish-diverged-shell-reconcile.md) | SHOULD | release-pr --publish 每逢上批 PR 合并壳必报 diverged 拦交人裁——壳 SHA 与本地追平提交恒不同、内容差恒零，人裁答案恒同，应自动化或文面免问 | 下次 --publish 报 diverged 时并批消费；或下次动 `release-pr.mjs` 预检逻辑时顺手 |
 | [ARQ-261027-summary-verify-obligation](ARQ-261027-summary-verify-obligation.md) | NIT | 主线程写 landing-summary 的核验断言无亲测义务——P6.5 批「junction 已不存在」失实句采信 architect 自报入档，被 landing-verifier 实测抓出 | 下个触 landing-summary 模板或主线程落地纪律文面的治理批 |
 
 ## 已接受风险（2）
