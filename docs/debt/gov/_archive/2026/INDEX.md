@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/_archive/2026/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**2026 年已结 121 条**（薄行：证据正文在条目文件里，点 ID 即达）。
+**2026 年已结 123 条**（薄行：证据正文在条目文件里，点 ID 即达）。
 
 | ID | title | 已结日期 | 依据 |
 |---|---|---|---|
@@ -117,8 +117,10 @@
 | [ARQ-261026-efficiency-table-package-tier](ARQ-261026-efficiency-table-package-tier.md) | 效率表缺「包档位/类型」维度——无规模基准则 token/行数不可判读、拆包合适性无从评估 | 2026-10-26 | 261026-gov-review-retro-efficiency-fidelity |
 | [ARQ-261026-final-phase-dispatch-contract-unwritten](ARQ-261026-final-phase-dispatch-contract-unwritten.md) | final 相位派发契约未成文——谁跑 final / scope-file 谁产 / round 序数怎么算只活在 verify.mjs fail-closed 行为与先例里，八包复现每包烧半轮到一轮 | 2026-10-26 | 261026-gov-review-final-phase-dispatch-contract |
 | [ARQ-261026-release-pr-gov-lane-zero-pods](ARQ-261026-release-pr-gov-lane-zero-pods.md) | release-pr.mjs 的 PR 标题/正文按 dev-lane Pod 合并行提取——gov 治理批发布时落成「0 个 Pod 合并」无信息量门面（261026 PR #40 实测 + human 点名） | 2026-10-26 | 261026-gov-review-p2-anchor-template-cluster |
+| [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 2026-10-27 | human 直接指示（主线程代记，261027 P7.5 会话） |
 | [ARQ-260908-known-red-count-no-mechanical-source](ARQ-260908-known-red-count-no-mechanical-source.md) | 「上游已知红」计数在 launch 面是**手写快照**、无机械来源，且 evidence 类扫描齿的 root 定位**吃调用 cwd**——同一 ELF 两份数字，红基线与 mutation 判读全靠人肉对口径 | 2026-10-27 | 261027-gov-review-p7-devloop-doc-cluster |
 | [ARQ-260908-versioned-guard-repoint-execution](ARQ-260908-versioned-guard-repoint-execution.md) | 重指执行未做——4 件既有冻结件的版本无关重指待逐件 human 授权 | 2026-10-27 | 261027-gov-review-p5-spike-anchor-cluster |
+| [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | 2026-10-27 | human 直接指示（主线程代记，261027 P7.5 会话） |
 | [ARQ-260914-portfolio-reconcile-launchpreconditions](ARQ-260914-portfolio-reconcile-launchpreconditions.md) | M-1 机械齿——`portfolio-reconcile.mjs` 读 workstream `decision-coverage.json` 顶层键 `launchPreconditions`（`需修订` spec 落点的 launch 前置清单），当前 `--check-launch` 不读该键、靠 convention + 人读核验 | 2026-10-27 | 261026-gov-review-p4-pod-board-cluster |
 | [ARQ-260918-pod-session-settings-identity-unobservable](ARQ-260918-pod-session-settings-identity-unobservable.md) | Pod 会话实际加载哪套 settings 无机械可观测面——贴卡起步形态静默丢 `--agent planner` + `dev-loop.settings.json`，Stop 合并门与 board 自动 reconcile 随之缺位 | 2026-10-27 | 261026-gov-review-p4-pod-board-cluster（部分结项） |
 | [ARQ-260924-landing-gate-dir-anchor-gap](ARQ-260924-landing-gate-dir-anchor-gap.md) | landing-fidelity 门的落地探测是逐文件精确匹配、不消费目录锚——而 preflight 锚提取接受目录 token，两门口径不一致；迁移类批次写目录简写必在收口期炸 | 2026-10-27 | 261027-gov-review-p6-landing-gate-cluster |

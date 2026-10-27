@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 14（待拍板 0 / 待触发 12 / 已接受风险 2）；已结 121（归档索引见下）。
+**摘要**：未结 12（待拍板 0 / 待触发 12 / 已接受风险 0）；已结 123（归档索引见下）。
 
 ## 待拍板（0）
 
@@ -30,17 +30,14 @@ _（无）_
 | [ARQ-261027-publish-diverged-shell-reconcile](ARQ-261027-publish-diverged-shell-reconcile.md) | SHOULD | release-pr --publish 每逢上批 PR 合并壳必报 diverged 拦交人裁——壳 SHA 与本地追平提交恒不同、内容差恒零，人裁答案恒同，应自动化或文面免问 | 下次 --publish 报 diverged 时并批消费；或下次动 `release-pr.mjs` 预检逻辑时顺手 |
 | [ARQ-261027-summary-verify-obligation](ARQ-261027-summary-verify-obligation.md) | NIT | 主线程写 landing-summary 的核验断言无亲测义务——P6.5 批「junction 已不存在」失实句采信 architect 自报入档，被 landing-verifier 实测抓出 | 下个触 landing-summary 模板或主线程落地纪律文面的治理批 |
 
-## 已接受风险（2）
+## 已接受风险（0）
 
-| ID | 严重度 | title | 复议触发 |
-|---|---|---|---|
-| [ARQ-260827-contract-mech-gate-gap](ARQ-260827-contract-mech-gate-gap.md) | SHOULD | pass-oracle 第 4 关（spec↔contract 机械门）暂无脚本兜底 | 契约面扩到 ≥2 文件 / 或出现首次 spec↔contract 漂移实例 |
-| [ARQ-260909-crossend-consumer-tiers](ARQ-260909-crossend-consumer-tiers.md) | SHOULD | `crossEnd.counterparts` 的 `{path, symbol}` 只表达**自有实现面**消费方，只读参考树与无源码黑盒两档无处申报（跨端承载覆盖不全） | pilot 首个②③档包 / 与 OQ2 digest 并论 |
+_（无）_
 
-## 已结（121）
+## 已结（123）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 121 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 123 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
