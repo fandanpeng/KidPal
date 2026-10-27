@@ -5,7 +5,7 @@ slug: gov-debt-reduction
 status: active
 opened: 2026-10-26
 closed:
-summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2（锚解析门+模板簇）三波均已合 main，剩余 = P3 搭载挂靠与 P4 簇
+summary: docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2 / P3（搭载） / P4 五波均已合 main；2026-10-27 human 指示残留 20 条重排 P5–P9 继续清偿，仅 4 条保持条件锁
 # —— 选填 ——
 owner: main-thread
 area: governance
@@ -66,8 +66,46 @@ changes:
 
 ### 不动档（触发挂靠，不排波）
 
-- ~12 条「下次动 X 时并批」型（known-red-count ③、versioned-guard-repoint、current-pointer 量化观察期、rename-batch-census、debt-archive-ref-atomic 等）+ 已接受风险 2 条（contract-mech-gate-gap、crossend-consumer-tiers）+ 2 条明确单开批（auto-mode-classifier 双臂批、host-blind-outcome 门）。
-- 观察期在册：current-pointer 的 `expectCheck:'absent'` ≥1 实例触发闸级强制批；anchor-check-master「再犯即升格」。
+- ~~12 条「下次动 X 时并批」型 + 已接受风险 2 条 + 2 条明确单开批~~ → **2026-10-27 human 指示「不想再攒」，20 条残留重排为 P5–P9**（见下），仅 4 条保持条件锁。
+
+### P5 · 新机制前置 + 锚母版校验簇（2 条，含全场唯一 MAJOR，建议下一波）
+
+- **立项 ack（2026-10-27 human 已拍：P5 先开，两条并批 Track B 主路径；P5 由 human 在新 session 启动，本 session 只做立项材料与复证）**。
+- **复证记录（2026-10-27 主线程实测）**：
+  - 261024（spike-first，MAJOR）：三条 paths（`change-triage.md` / `dev-loop.md` / `PROPOSAL.template.md`）全部在场；`change-triage.md` 实测无 spike/消费端相关字面 = 处方未被后续批消化，落点干净。注意条目自带形态分叉预告：若 review 裁定以机械 gate（G3）落地则升 full-adversarial + human——起草时如实标，不预裁。
+  - 261017（anchor-check 母版校验，SHOULD）：`spec-anchor-check.mjs:35-41` `currentDesignFile()` 逐字在场、与条目引用完全一致 = 未被消化；触发条件「再犯即升格」未发生，本次按主动修排批（human 裁）。条目注意点：与 `docs/debt/tech/ARQ-260918-spec-face-3page-reconcile.md` 同工具不同根，起草期互查咬合。
+- 建议条目承载的修法方向（详见各条目原文）：261024 = spike-first 原则钉进 triage 判档 / build-feature plan / Gate 链消费端断言（落点候选 a/b/c 三处不互斥，human 原话「先做一轮小验证，然后再做开发，再做数据回灌」）；261017 = `currentDesignFile()` 选出候选后加完整性自查（与前一版 `data-od-id` 数比对）+ 命名族纪律文面（`vN.html` = 完整母版）+ 顺序侧兜底。
+
+### P6 · landing 门机器面簇（2+1 条，恒 Track B）
+
+- `ARQ-260914-landing-preflight-anchor-parse` 残余：机械化判据（锚文逐字性 byte 比对脚本化 + 双信号源规约），4 实例在案。
+- `ARQ-261026-verbatim-extract-backtick-cut`（NIT）：围栏提取正则修块内容 ``` 字面误判。
+- `ARQ-260924-landing-gate-dir-anchor-gap` 残余②（目录锚展开）：human 2026-10-27 改裁**并 P6 同批**（P6 仅 2+1 不大），批内作独立 T 全强度评审。
+
+### P7 · dev-loop 文面纪律簇（6 条，轻路径候选——只落 references/skills/commands 文面）
+
+- `ARQ-261025-adjacent-frozen-anchor-sweep`（intake/1g 扫相邻字面锚成文）· `ARQ-261014-rename-batch-second-token-census`（改名双 token 族 census 义务成文）· `ARQ-261025-debt-archive-ref-atomic`（归档与引用同批义务成文）· `ARQ-261014-closeout-obligation-write-authority-vacuum`（收口义务写权承载成文）· `ARQ-261019-opendesign-shoot-script-precedent`（opendesign-connect skill + uiux-author 定义增补）· `ARQ-260908-known-red-count-no-mechanical-source` ③（runner 报告头 acceptance-evidence 文面）。
+- 若起草中某条实质触脚本/scope-map → 只升不降，该条挪 P8/P9。
+
+### P8 · 门语义簇（2 条，恒 Track B）
+
+- `ARQ-261014-supervisor-escalate-preflight-ignored`（supervisor/pre-merge 闸消费 launch-card 前置申报）+ `ARQ-261001-host-blind-outcome-device-gate`（human 2026-10-27 改裁**并 P8 同批**，批内独立 T 全强度评审）。
+
+### P9 · 脚本卫生簇（2 条）
+
+- `ARQ-261025-brief-inputs-anchor-noise`（brief-inputs.mjs 锚解析降噪）+ `ARQ-261014-pod-events-booking-telemetry-fidelity`（pod-events schema/aggregate 一致性）。两条不同脚本，可一批两 T 或拆两小批。
+
+### 保持条件锁（4 条，不排波）
+
+- `ARQ-260908-versioned-guard-repoint-execution`：human 2026-10-27 裁**现在授权清掉**。4 件待重指 = ① schedule_p2 P2-A6 wiring 齿 ② VRT live 探针（A4/A7）③ CHR-A8/A9 live 探针 ④ schedule_p2 PROMPT_CARRIER_V2 常量——重指清单原文在 `delivery/archive/changes/arch/260908-gov-review-merge-chain-hardening/PROPOSAL.md` 附录 A.3（append-only 归档，只读）；**逐件授权材料待批内 present 给 human**（A.3 为权威清单，本行只是指针），随 P5 搭载或独立轻批落。
+- `ARQ-260913-auto-mode-classifier-legit-workflow`：双臂批须单开（口径臂 + 机械臂不得拆）。
+- `ARQ-260913-current-pointer-implicit-global`：量化触发器未到（30 match settled / 1 absent 实例即启动）。
+- 已接受风险 2 条（contract-mech-gate-gap / crossend-consumer-tiers）：复议条件未到。
+
+### 不动档（触发挂靠，不排波）
+
+- 保持条件锁的 4 条见上（versioned-guard-repoint / auto-mode-classifier / current-pointer / 已接受风险 2 条）。
+- 2026-10-27 human 指示驱动的重排历史：原不动档 20 条中 16 条已重排入 P5–P9，仅 4 条留条件锁。
 
 ## 决策记录
 
