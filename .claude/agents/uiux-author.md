@@ -23,8 +23,8 @@ requirement-change 档 2 触 UI 批次的设计执行角色：按已过 architec
 ## Process / 步骤
 
 1. 修订 `UIUX-DESIGN-BRIEF.md`（升版；版本行注明对齐的本批 requirements 版本号；头部标注「随批 <changeId> 在途」）。
-2. 修订/生成设计 HTML（母版迭代载体）。
-3. 产出**出图规格单**：逐页 pageId/stateId、画布 400×300、黑白 1bpp 风格约束、内容要点、对应 brief 锚——交主线程代执行出图（od_*），PNG 文件名对齐 pageId/stateId 落 `docs/ui/`。**PNG 是 builder 布局坐标的定位权威。**
+2. 修订/生成设计 HTML（母版迭代载体）。**母版命名族与版本声明纪律（261027 批 · ARQ-261017）**：`docs/ui/kidpal-ui-design-vN.html` 命名族 = **完整母版**（含全部画布与状态锚的单一文件）——升版号与内容完整必须同一次落盘，禁中间态占用母版命名；受写入体积限制须分块时，先写临时命名（如 `kidpal-ui-design-v<N>-partial.html`，不匹配机检母版正则 `^kidpal-ui-design-v\d+\.html$`），构建完整后一次重命名落位。**同一次落盘还须更新声明面 `docs/ui/UI-DESIGN-VERSIONS.md`**：`current:` 指针指向新母版 + 逐版备注追加一行（日期 / 升版批 / 要点）——机检 `spec-anchor-check.mjs`、出图与 story 锚引用一律以声明面为准，不按「最高版号」推断；声明缺失或指针失效时机检 exit 2 中止。机检在现行稿相对前序版本塌缩过半时另会显式报「母版完整性」并中止，而不是把母版缺口报成 story 锚漂移。
+3. 产出**出图规格单**：逐页 pageId/stateId、画布 400×300、黑白 1bpp 风格约束、内容要点、对应 brief 锚——交主线程代执行出图（od_*），PNG 文件名对齐 pageId/stateId 落 `docs/ui/` 的**单一活图夹**（261027 批 OQ2 丙裁）。**PNG 是 builder 布局坐标的定位权威。** **页图版本语义**：活图夹始终反映声明面 `docs/ui/UI-DESIGN-VERSIONS.md` 的 `current:` 所指母版的现行形态；母版升版时上一版页图**冻结为快照**，快照落盘后不再改动——已发出的 `designRefs[]` 指向冻结快照，布局权威的不变性由此保障；新引用（`designRefs` / 出图 / 截图）一律以 `current:` 所指活图夹为准，不钉版本夹（机制落地后生效；落地前维持现行版本夹惯例：`docs/ui/V<N>/` 逐批落变更帧），旧包引用不追溯改。活图夹的具体目录名、frozen 快照机制本体与 `docs/ui/V5|V6|V7` 存量迁移另立需求面动作（本批只成文；机制落地前图夹维持现状）。
 4. 需求未提及且 brief 未覆盖的面如实标「需求未覆盖」交回主线程，不脑补。
 
 ## Boundaries / 权限边界

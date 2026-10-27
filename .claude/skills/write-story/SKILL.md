@@ -45,7 +45,7 @@ Story 是需求面的最小承重单元。它回答「产品是什么」，永�
 1. **粒度**：锚「舞台」——页面画布（`canvas-pX`）与会话状态（`state-*`）；不锚「道具」——图标/字体/组件级资产（`icon-library`/`font-*`/`comp-*`）由设计与实现侧引用，story 不挂。
 2. **共享**：跨 story 的状态链在 requirements.md 共享底座（§2）钉一次，story 引「共享底座」不重复罗列。
 3. **例外**：组件本身是 story 的验收对象时才单锚（如成就盖章 `comp-stamp`）。
-4. **指向**：锚引用指「docs/ui/ 现行设计稿」语义，版本更迭只改本行一处；当前 = [kidpal-ui-design-v3.html](../../docs/ui/kidpal-ui-design-v3.html)。
+4. **指向**：锚引用指「docs/ui/ 现行设计稿」语义，版本更迭不需要改本行；当前稿 = 声明面 [UI-DESIGN-VERSIONS.md](../../docs/ui/UI-DESIGN-VERSIONS.md) 的 `current:` 指针所指的 `kidpal-ui-design-vN.html`（机检 `spec-anchor-check.mjs` 自行解析；261027 批：原写法「版本更迭只改本行一处」实际每次升版必漂——实测曾长期停在 v3 而现行稿已是 v7。声明面是唯一来源，不按最高版号推断；完整母版命名族纪律见 `uiux-author` 定义）。
 5. **设计稿锚稳定规约**：`data-od-id` 是约定不是保证——id 只增不随便改，改名/删除 = 有意识的锚维护动作，改设计稿者负责同步 story 引用；出新版设计稿时跑 `node .claude/scripts/spec-anchor-check.mjs --diff-ids <旧设计稿> <新设计稿>`，被 story 引用而消失的 id 必须显式处置（同步改锚或恢复 id），不许静默断。
 6. **机检**：每个 UI 锚必须解析到现行设计稿真实存在的 `data-od-id`——`node .claude/scripts/spec-anchor-check.mjs`。
 

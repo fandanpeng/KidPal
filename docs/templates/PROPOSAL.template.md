@@ -45,6 +45,7 @@
 
 **【硬项 · 目标文件锚清单】**（原「硬项 2a」）每 T 末尾显式列「目标文件：<仓根相对路径清单>」（该 T 落地时要改/新增的仓内文件，新增/改分注，条件触发的标触发条件）。packet-binding 完整性断言（landing-manifest ≡ 各 T 目标文件并集）依赖本清单：**缺锚清单 = 门 RED 点名缺锚（fail-loud，不假绿）**。只认「路径出现」不含「改/读」语义的提取规则在真实 PROPOSAL 上歧义爆炸（260802-gov-review-track-b-hardening R1-F1 活例实证），故锚清单为义务。承重 landing 指令（箭头替换的目标文本 / 联动指称）必须原文引用钉死并给出替换后完整句，禁止转述（「那行」「上面那句」类两读指称不许）。改法标题一律 `### T<n> · <标题>` 标题形态——机械门 `parseSection2AnchorLists` 只认 `### T<n>`（260906 批 FROZEN 后格式返修实证，粗体段形态不被机辨）；landing-manifest 围栏块一行一个裸路径，不带括注（`extractManifestBlock` 逐字取行）。（两句为 260907-gov-review-arq-governance-batch-2 T8 钉死。）
 
+**【硬项 · 新机制 spike 申报】**（261027-gov-review-p5-spike-anchor-cluster T1 · ARQ-261024）本批若**首次引入架构中的新子系统 / 新外部依赖集成 / 新数据迁移**（判定见 [change-triage.md](../../.claude/references/change-triage.md)「新机制批判定」节），§2 必须写明 spike 相位结论之一：① 已在先导批完成（给 `spike-evidence.md` 路径或先导 changeId）；② 在本批切片序最前（写清消费端验收观测与首尾 canary 设计）；③ 本批不做（给理由与升 human 的裁断出处——不做不默认）。不命中者写一句「本批不引入新机制」即可。**缺席 = 判官 BLOCK 的合法理由。**
 **条目形态（五段固定式，照此书写）**：
 
 ```

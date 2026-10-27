@@ -9,7 +9,7 @@
 | [m3-schedule](m3-schedule/task_plan.md) | active | delivery | portfolio-planner | 2026-09-21 | M3-schedule 里程碑拆包——P2 一周总览网格（S-F1.2）+ 语音问课表问答框口径（S-F1.3）+ 家长录入即时链路（S-F1.5/B4）+ 课表数据接首页「接下来」合流（决策 26 三触发 producer 链路） |
 | [m4-star-notebook](m4-star-notebook/task_plan.md) | active | delivery | main-thread | 2026-09-24 | M4-star-notebook 里程碑拆包——P3 列表（S-F2.1，含删除确认覆盖层）+ 记录会话双入口链路（S-F2.2）+ 星星徽章盖章（S-F2.4）+ 阅读态（S-F2.3）+ F2 改名对账四项；契约三触点（story_list 语义拆分 / story_text seq 承载 / 删除载体新增）合一走契约门、随 K1 同 PR |
 | [device-memory-overhaul](device-memory-overhaul/task_plan.md) | active | systems | main-thread | 2026-10-22 | 设备语音链路「越用越聪明」整体重构——持久会话 + Honcho 记忆画像 + prompt 迁 AGENTS.md + 工具收窄 + 课表机械注入（P1–P5 单 Pod 串行） |
-| [gov-debt-reduction](gov-debt-reduction/task_plan.md) | active | governance | main-thread | 2026-10-26 | docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2（锚解析门+模板簇）三波均已合 main，剩余 = P3 搭载挂靠与 P4 簇 |
+| [gov-debt-reduction](gov-debt-reduction/task_plan.md) | active | governance | main-thread | 2026-10-26 | docs/debt/gov/ 未结条目的分簇清偿计划——按收益/成本比排 P1–P4 四波，P1 / P1.5 / P2 / P3（搭载） / P4 五波均已合 main；2026-10-27 human 指示残留 20 条重排 P5–P9 继续清偿，仅 4 条保持条件锁 |
 
 ## Archived (3)
 

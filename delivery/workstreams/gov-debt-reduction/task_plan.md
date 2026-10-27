@@ -75,6 +75,7 @@ changes:
   - 261024（spike-first，MAJOR）：三条 paths（`change-triage.md` / `dev-loop.md` / `PROPOSAL.template.md`）全部在场；`change-triage.md` 实测无 spike/消费端相关字面 = 处方未被后续批消化，落点干净。注意条目自带形态分叉预告：若 review 裁定以机械 gate（G3）落地则升 full-adversarial + human——起草时如实标，不预裁。
   - 261017（anchor-check 母版校验，SHOULD）：`spec-anchor-check.mjs:35-41` `currentDesignFile()` 逐字在场、与条目引用完全一致 = 未被消化；触发条件「再犯即升格」未发生，本次按主动修排批（human 裁）。条目注意点：与 `docs/debt/tech/ARQ-260918-spec-face-3page-reconcile.md` 同工具不同根，起草期互查咬合。
 - 建议条目承载的修法方向（详见各条目原文）：261024 = spike-first 原则钉进 triage 判档 / build-feature plan / Gate 链消费端断言（落点候选 a/b/c 三处不互斥，human 原话「先做一轮小验证，然后再做开发，再做数据回灌」）；261017 = `currentDesignFile()` 选出候选后加完整性自查（与前一版 `data-od-id` 数比对）+ 命名族纪律文面（`vN.html` = 完整母版）+ 顺序侧兜底。
+- **立项追加（2026-10-27 human 拍并入 P5）**：UI 设计版本结构整体调整并入本批一起改——现行「最高版号即现行母版」隐式判据换**显式 current 指针 + 逐版备注声明**（镜像 `OPENCLAW_SYSTEM_PROMPT_CARRIER` 声明面先例），锚机检 / 出图 / 截图引用以声明为准；截图布局（逐版文件夹增量、TaskPackage `designRefs` 引用形如 `docs/ui/V5/canvas-p1.png`）一并入范围。T2 扩面重写；R1 四查照跑、findings 作改稿输入，改稿后按轮次纪律复审。
 
 ### P6 · landing 门机器面簇（2+1 条，恒 Track B）
 
@@ -109,6 +110,9 @@ changes:
 
 ## 决策记录
 
+- 2026-10-27 human 拍板：P5 评审熔断（R1/R2/R3 均 BLOCK，findings 逐轮收敛 3→2→1 行、全文面级）三选一取**换新判官实例再战 1 轮**（R4 只核 F4 单行；仍不绿自动转 Track A 段）。
+- 2026-10-27 human 拍板：P5 批 OQ2 截图图夹布局取**丙（单一活目录 + 冻结快照）**（否 architect 推荐甲）；本批只落规则句与声明面备注，frozen 快照机制与存量 V5/V6/V7 目录整形另立需求面动作。
+- 2026-10-27 human 拍板：UI 设计版本结构整体调整（显式 current 指针 + 逐版备注 + 截图布局）**并入 P5** 一起改（三选一拍「并入」；单独立项 / 只登记暂缓两案否）。
 - 2026-10-26 human 拍板：261018 搭载 P1；260924② 拆出独立批；OQ1 取「允许集从账本拓扑正推」（候选 2 形态）；OQ2 修门+兜底成文；OQ4 闸内点名。
 - 2026-10-26 human 指示：261014④ 拆出须登记 governance debt 防忘 → ARQ-261026-final-phase-dispatch-contract-unwritten。
 - 2026-10-26 human 反馈：发布 PR 门面「没写改了啥」→ ARQ-261026-release-pr-gov-lane-zero-pods；PR #40 门面已人工重写。

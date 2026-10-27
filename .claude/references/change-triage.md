@@ -29,6 +29,13 @@
 | **⓪ 档 0 nano** | 改动独立 + 爆炸半径小（每将触符号 inbound ≤5）+ 无验收语义净增 · 排除清单零命中（判据见下方「档 0 nano 判据」节） | reviewed plan（= 意图定义五件，frontmatter `rigor: nano`）→ `delivery/taskpackages/<id>/plan.md` → planner 单 Pod，nano |
 | **① 直接修** | 不改 apps 行为 / 人类明确跳过 | 不进 loop（地板） |
 
+### 新机制批判定（spike-first 前置问 · ARQ-261024，261027 批立）
+
+判档前先答一问：**本变更是否首次引入架构中的新子系统、新外部依赖集成或新数据迁移？** 信号举例——接入从未接过的外部服务、引入新的存储 / 消息 / 检索组件、把存量数据灌进从未消费过它的链路、新建一条端到端数据通路。既有依赖的常规新用法、纯内部重构不命中；**存疑向严按命中走**。
+
+- **命中**：判档 rationale 必含「spike 前置」一句——本变更必须先有一个**端到端最小验证 spike**（定义、验收锚与产物落点见 `dev-loop.md`「新机制批 spike 相位」节；原则原话 = human 2026-10-24「其实应该是得先做一轮小验证，然后再做开发，再做数据的回灌」）。spike 独立成包（② 单包，Lite / Full 按触面定；**不判 ⓪ nano**——spike 的意图天然需要新行为验收语义承载，命中 nano 排除清单）。reviewed plan 的切片序把 spike 包写在正式实现与数据迁移之前，并写明其**消费端验收观测**（不是生产者自证）。
+- **未命中**：rationale 写一句「非新机制批」及理由即可，不写长论证。
+- **性质**：本问是判档纪律、非机械 gate（与 §9 同性质 convention-only）。漏答的兜底 = 人类触点① 与 planner intake 复查（`planner.md` Step 1i）。
 **小 feature 与小 bug 合流为同一档（②单包）**：执行形状相同（单 Pod 单 TaskPackage 跑 dev loop），仅以 `sourceType`（feature→`proposal`/`human-ad-hoc`；bug→`regression`/`ci-failure`/`drift-report`；`human-confirmed-plan` 归 artifact-lifecycle origin.type，不预支）与 `plan.md` 内容框架（feature 写"建什么+方案"，bug 写"根因假设+修复+影响面"）区分。
 
 **单向守卫（riskTier 优先于 rigor）—— convention-only（F1 / Q1-A）**：设计意图是单向校验——信号说"这是 Full 级"（security 轴 / 迁移 / 跨包 / core.* / 触契约）而 `rigor:"lite"` → 应强制升 Full。**但本门当前无此机器牙齿**（`taskpackage-required-check.mjs` 只扩了 `isProposalMdPath`，不含 riskTier-overrides-rigor 守卫，记 ARQ 后续 G3）；安全兜底靠**两层人工**：① 人类触点①确认/改判路由；② supervisor 对 riskTier=high 仍升级人类。残余洞需 architect 同时误设 riskTier(low)+rigor(lite) 且人类 rubber-stamp（复合失败）才漏。**诚实标注：这是 convention-only，不是机器保障。** 判断仍归 architect（写进裁决 rationale）。
