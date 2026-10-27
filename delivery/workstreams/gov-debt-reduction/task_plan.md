@@ -44,11 +44,11 @@ changes:
 - **拆出不动**：`ARQ-260924-landing-gate-dir-anchor-gap` 残余②（目录锚展开，human 2026-10-26 裁独立批——触承重闸判定逻辑，单独评审）。
 - **立项 ack（2026-10-26）**：① summary 义务 = arch-change.md 加两句字面（不立模板，视复发再立）；② 实跑回填纪律扩到 PROPOSAL 全部实测数字；③ release-pr gov-lane 取最小版；④ 六条并批 + 搭载，Track B 主路径。changeId = `261026-gov-review-p2-anchor-template-cluster`。
 
-### P3 · release-pr gov-lane 门面（搭载项，不独立开批）
+### P3 · release-pr gov-lane 门面（✅ 2026-10-26 已随 P2 搭载落地结项）
 
-- `ARQ-261026-release-pr-gov-lane-zero-pods`：发布脚本对 gov 批提取不到 changeId，PR 门面落「0 个 Pod 合并」。搭载 P2 或下个动 `.claude/scripts/**` 的批。
+- `ARQ-261026-release-pr-gov-lane-zero-pods`：已随 P2 批落地结项，无独立包。
 
-### P4 · Pod / board 面簇（排后，摩擦型非阻断）
+### P4 · Pod / board 面簇（✅ 2026-10-27 已落）
 
 - `ARQ-260918-pod-session-settings-identity-unobservable` + `ARQ-260914-portfolio-reconcile-launchpreconditions` + `ARQ-261025-shared-branch-pod-isolation` + `ARQ-261025-wait-state-closed-set` + `ARQ-261025-intake-index-retro-scope-hygiene`。文面/脚本混杂（pod-coordination / portfolio-reconcile / launch 面分属不同评审强度）。
 
