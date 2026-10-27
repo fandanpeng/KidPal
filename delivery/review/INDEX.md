@@ -11,6 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261027-gov-review-p7-devloop-doc-cluster](261027-gov-review-p7-devloop-doc-cluster/) | 2026-10-27 | landed | — |
 | [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
