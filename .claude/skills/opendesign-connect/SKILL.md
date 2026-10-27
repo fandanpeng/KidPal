@@ -23,6 +23,16 @@ Open Design 桌面应用的 daemon 端口是**动态**的：应用每次重启�
 4. **改配置** — `~/.claude.json` 里 `open-design` MCP 的 `env.OD_DAEMON_URL` 改为新端口；顶层 `mcpServers` 与 `projects[*].mcpServers` 两段都查。终点：`grep -o "<旧端口>\|<新端口>" ~/.claude.json` 只剩新端口；仓库级 `.mcp.json` 也 grep 一遍确认无残留配置源。
 5. **生效（需 human）** — 已运行的 MCP server 进程持旧 env，改配置不热生效：请用户 `/mcp` 重连 open-design（或重启会话）。终点：`od_list_projects` 返回项目列表 = 绿。
 
+## 出图管道（出图不走 OD；261027-gov-review-p75-closeout-shoot-cluster 成文 · 承载 ARQ-261019）
+
+**出图 = 把设计 HTML 母版渲染成逐画布 PNG 帧，不经过 Open Design。** od_* 失联只挡设计生成，不是出图堵点；出图不必先确认 OD 联通，也不必挂 human-decision。
+
+- **命令**：`node tools/asset-pipeline/shoot_design.mjs <母版 html 绝对路径> <输出目录>`
+- **行为**（以脚本头注为准）：playwright-core 起无头 Edge，逐 `.dev[data-od-id]` 元素精确截图；只截布局恰为 400×300 的整幅画布（自定义小尺寸的 `comp-*` 组件预览自动跳过）；按 `data-od-id` 命名输出 `<id>.png`；灰度 128 阈值化、输出 1bpp 纯黑白（真机观感的唯一真相版）。
+- **输入与落点**：母版与落点一律以声明面 `docs/ui/UI-DESIGN-VERSIONS.md` 为准（`current:` 指针 +「活图夹与冻结快照」节）；版本语义、活图夹目录形态与快照口径均在该声明面，本 skill 不复述、不另立。
+- **只捡变更帧入库**：脚本每跑一次全画布全出，入库只捡本批变更帧（先例：`261016-p3-story-body-sd-cache` 母版 61 个 `data-od-id` 中入库 1 帧 = `docs/ui/V6/`；`261019-p3-record-dialogue-guide` 母版 64 个 `data-od-id`、出图 15 画布、入库 3 帧 = `docs/ui/V7/`），未变帧不进版本控制。
+- **先例**：261019-p3-record-dialogue-guide 批 OD daemon 失联，按本管道全链成功（15 画布出图、三帧入库），出图未因 OD 缺席挂 human-decision。
+
 ## 约束（must / never）
 
 - 永不把**当前/实际** daemon 端口硬编码进仓库内任何文件（含 docs/reference/skill）——端口只存在于用户级 `~/.claude.json` 与本 skill 的排障流程；上文「50274 → 57299」类历史实证引文仅作源锚，不是可复用的端口值。

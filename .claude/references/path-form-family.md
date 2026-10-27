@@ -59,7 +59,23 @@
 3. **验收期**：把第 2 步的**同一条模式**写进 §5 验证集——不得另写一份判据（见第四节教训）。
 4. **遇新形态**：append 进本表第一张表，并配一条清扫子检模式。
 
-## 六、相关
+## 六、第二 token 族：文件名 stem（改名批专用）
+
+> 261027-gov-review-p7-devloop-doc-cluster T2 立（承 `ARQ-261014-rename-batch-second-token-census`）。**分界裁定（261014 批 R2 先例在案）**：旧文件名 stem 的引用属**第二 token 族、非新形态类**——它不 append 进第一节那张形态表；第五节用法第 4 条「遇新形态 append」的义务只对**形态类**生效，不对 token 族生效。
+
+**两个 token 族**：第一节八类管的是「同一段目录 / 路径的文本写法」；改名批（重命名文件 / 脚本 / 模板 / 命令）还有第二个对象——**旧文件名 stem**。261014-gov-review-crq-debt-rename 批 R1 实测：起草期只枚举了目录 token `docs/crq` 的字面量，旧 stem（`crq-render` / `crq-doctor` / `crq-ledger-shared` / `crq-item`）仍散在三种形态里——自指串（`GENERATED_MARKER`、indexHeader 模板、self-check 输出串）、指令面命令行（11 件 file:line 引用）、裸文件名引用。第一节的路径形态模式无一能命中 stem，于是出现「八类全绿而旧名引用全残」，落地即断链。
+
+**起草义务**：凡改名批，census 必须**同时枚举两个 token 族**——① 旧路径 token（按第一节八类逐类清扫）；② 旧文件名 stem token（按本节子检清扫）。两族各配一条可机械执行的子检，两条子检都写进 PROPOSAL §5 验证集；只做第 ① 族不算完成。
+
+**stem 族清扫子检模式**：把旧 stem 的公共前缀与其全部后缀编成交替组，匹配所有出现形态（下例是 261014 批实形，前缀与后缀按当批对象替换）：
+
+`crq-(render|doctor|ledger-shared|item)`
+
+迁移写法 = `<旧 stem 前缀>-(<全部后缀>)`，后缀按长优先排列防前缀互吃（`ledger-shared` 排在 `ledger` 之前）。**清理与验收判据用同一条模式**（同一条模式两次使用，理由见第四节）——命中数须为 0，非 0 即引用面尚未清完，回补而不豁免。
+
+**与形态表的关系**：两族子检都跑完后，第五节用法第 3 步（验收期用同一条模式）照常适用；只有出现**新的文本形态**时才 append 第一节的表，第二 token 族本身不构成那次 append。
+
+## 七、相关
 
 - 起草自检两句 → `docs/templates/PROPOSAL.template.md` §2「【硬项 · 目标文件锚清单】」段末
 - 结构门 / 冻结前干跑 → `.claude/scripts/landing-fidelity-check.mjs`（`--preflight`）

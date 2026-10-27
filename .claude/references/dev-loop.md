@@ -191,7 +191,7 @@ Post-cutoff（changeId date-prefix >= `CHANGE_ID_CUTOFF`）包的 `taskpackage.j
 
 - `securityReviewRequired` / `securityAxes` / `securityEvidence`：启用安全闸并记录证据。
 - `adrRequired`：提示 integrator 把架构/边界/契约取舍归档成 ADR 摘要或 `delivery/taskpackages/<change-id>/`。
-- `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T4）：本包预定改动文件/目录 glob 清单（仓根相对）。**产出** = architect 前置评估（planner Step 1g 档）、planner 回填；**消费** = builder/fixer 文件级改动边界（各自 .md 边界节）+ `change-manifest-check.mjs` 闸对账（timing=scoped）+ `taskpackage-required-check.mjs` 完备性齿；**扩单唯一通道** = architect 评估（builder/fixer → planner 带根因假设回评，扩单 append + 评估依据留痕），禁先改后补。
+- `changeManifest[]`（260928-gov-review-dev-loop-preassess-manifest-scope T4）：本包预定改动文件/目录 glob 清单（仓根相对）。**产出** = architect 前置评估（planner Step 1g 档）、planner 回填；**消费** = builder/fixer 文件级改动边界（各自 .md 边界节）+ `change-manifest-check.mjs` 闸对账（timing=scoped）+ `taskpackage-required-check.mjs` 完备性齿；**扩单唯一通道** = architect 评估（builder/fixer → planner 带根因假设回评，扩单 append + 评估依据留痕），禁先改后补。**起包自查（相邻冻结锚扫查）**：changeManifest 定稿后，起包方须用其目标符号与常量对既有验收测试文件与冻结断言做字面扫查，命中即记相邻冻结锚清单与冲突处置、空也显式记「零命中」；义务、落点与 planner 拆包快照保鲜核验（Step 1f）的分界见 [task-intake-and-slicing.md](task-intake-and-slicing.md)「相邻冻结锚扫查」节（261027 批 T1）。
 
 变更包不是新事实源；`docs/contracts/**` 和 canonical spec（两文件）仍是事实源。它的作用是保留每次 loop 的上下文和证据，避免聊天记录成为唯一记忆。
 

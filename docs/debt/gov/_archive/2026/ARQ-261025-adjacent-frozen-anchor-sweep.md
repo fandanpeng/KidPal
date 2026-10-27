@@ -2,13 +2,13 @@
 id: ARQ-261025-adjacent-frozen-anchor-sweep
 title: intake / 1g 不扫既有冻结件的相邻字面锚——跨包冻结冲突延迟到 builder 首轮才暴露，需 human 窄口径重锚
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（动 `task-intake-and-slicing.md` / `planner.md` / `dev-loop.md` 的分面时并批）；或下一个触既有冻结件同一实现点的包
 opened: 2026-10-25
-closed: ""
-closedBy: ""
+closed: 2026-10-27
+closedBy: 261027-gov-review-p7-devloop-doc-cluster
 paths: [".claude/references/task-intake-and-slicing.md", ".claude/agents/planner.md", ".claude/references/dev-loop.md"]
 source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261018-sd-log-persist/pod-retro.md, delivery/taskpackages/261022-m5-k4-history-corpus-backfill/pod-retro.md, delivery/taskpackages/261016-p3-story-body-sd-cache/pod-retro.md]
 ---
@@ -20,3 +20,5 @@ source: [delivery/retro/2026-10-25-loop-retro.md, delivery/taskpackages/261018-s
 **建议改动**（交 review、不自批）：intake / 1g 增加一条机械可判的扫查动作——用本包 changeManifest 的目标符号/常量在 `**/*.acceptance.*` 与既有冻结件里做字面 grep，命中即把「相邻冻结锚清单 + 冲突处置（沿用 / 重锚 / human 裁）」写进 plan 或 taskpackage notes；扫查结果空也显式记「零命中」。不新增门、不改任何闸判据，只补起包检查项。
 
 **风险**：riskTier: low——纯起包检查项与文面，不触闸判定逻辑。
+
+**结项追注（2026-10-27，261027-gov-review-p7-devloop-doc-cluster T1）**：修法已落地——task-intake-and-slicing.md 新增「相邻冻结锚扫查（起包自查 · changeManifest 定稿后）」节（扫查面 = `**/*.acceptance.*` 与既有冻结断言、命中记清单 + 沿用/重锚/human 裁三档处置、空也显式记「零命中」、与 planner 1f 分界段在场防双头），dev-loop.md changeManifest 条目 append 入口句。R1 GREEN、落地五件 sha256 对账一致。

@@ -127,6 +127,15 @@ For `sourceType=proposal`, `sourceRefs[]` must include the proposal `.md` path(s
 
 > **DP-1 过渡 carve-out**：上述规则仅适用于既有 sourceType=proposal 老包（无 origin 或其 type 非 proposal）。新包（`origin.upstreamType=proposal`）的 proposal→docRefs back-check 由 **`origin.upstreamRef` 接管**——`origin.upstreamRef`（fragment-stripped）**必须** ∈ `docRefs[]`，`sourceRefs` 不再承载 proposal 路径（退本职为代码范围锚点）。详见 [task-intake-and-slicing.md](#origin) `### origin` 节。
 
+### docRefs / sourceRefs 指向 debt 条目时的归档形态（起包自查）
+
+> ARQ-261025-debt-archive-ref-atomic 立（261027-gov-review-p7-devloop-doc-cluster T3）。纯起包自查文面：零新门。
+
+- **归位是渲染器的副作用，人不搬文件**：debt 条目结项后，`debt-render.mjs` 按「位置 = 状态纯函数」把条目从 `docs/debt/<域>/` 自动归位到 `docs/debt/<域>/_archive/<结项年>/`。因此引用 debt 条目的路径有两种合法形态——未结顶层位与归档位，切换时点由状态翻转决定。
+- **起包自查**：本包要结项 debt 条目（或在包内翻转其 `status`）时，`docRefs[]` / `sourceRefs[]` 若指向该条目，须预留 `_archive/<结项年>/` 归位形态——按包内结项时点直接写终态路径，或在条目结项后同批回填；不得留顶层旧路径，否则 `docs-sync` 要到 final 轮才红（三包实证：261013-lang-config-thinking-fix / 261017-prompt-v11-schedule-recall / 261022-p3-record-chrome-ghost-fix）。
+- **锚句即时回填**：`docRefs` 的锚句在 acceptance id 定稿时即回填——起包时先写 plan、acceptance id 后定的形态会留下空锚，同样拖到 verify 红。
+- **不立重定向 stub**：在顶层留 `docs/debt/<域>/<ID>.md` 指向归档位的 stub，会让同一事实有两个落点，与「位置 = 状态纯函数」的归位机制冲突，本批不立。
+
 ### deliveryImpact
 
 Use one of:
@@ -274,6 +283,16 @@ nano 面向「无验收语义净增、意图完全明确」的实现面微改（
 
 - 每个 TaskPackage 拆包时必备 `delivery/taskpackages/<changeId>/plan.md`，`planRef` 指向；**「装配型豁免」全取消**（OQ3=(a)，260913 human 裁——豁免判断权在拆包 agent 自身即利益冲突，PKG-1 误豁免实证在册）。
 - plan.md 骨架（260928 批 T1 收窄）：**背景摘录**（锚点随 workType 分流——整改型锚 PROPOSAL「问题与根因」节、新建型锚「现状与差距」、重构型锚「结构性痛点」；三处节名**逐字一致**）+ 可行性判据 + **跨包事实与共享冻结面约束（含跨切片边角）** + 铁律约束 + demo 证据形态复述（与 roadmap 一致）。**判据一句钉死：跨包事实 / 共享冻结面约束（只有 RTE 看全局才知道的跨切片知识，如「唤醒词路径也过会话发起入口」「发送原语复用 K2 冻结缝」）留拆包侧；单包内实现决策（改法取舍、阶段划分、时序细节、渲染接线、包内边角）不进拆包侧 plan.md**——包内细节设计承载位 = 冻结 acceptance 断言化 + TaskPackage `notes`/`exitCriteria`/`decisionCoverage` 备注 + planner 派发 prompt（260928 批 OQ-1 裁定）；阶段划分 = `planner.md` Pod 标准 loop 重述、不重复成文。**例外（260928-gov-review-dev-loop-preassess-manifest-scope T3）**：plan.md 的「技术方案（planner+architect 预评）」节承载 architect 前置评估（planner Step 1g 档）产出——改法取舍 / 影响面 / 关键接线决策；该节由 planner 在收到 1g 档评估后补写，**须留痕（日期 + architect 档标识）**；包内其余细节承载位判定照旧。
+
+### 相邻冻结锚扫查（起包自查 · changeManifest 定稿后）
+
+> ARQ-261025-adjacent-frozen-anchor-sweep 立（261027-gov-review-p7-devloop-doc-cluster T1）。纯起包检查项：零新门、零闸判据改动。
+
+**做什么**：起包方（planner）在 changeManifest 定稿（architect 前置技术评估 1g 档产出、planner 回填）之后、finalize 之前，用本包 changeManifest 的目标符号与常量（函数名、宏名、文件名、路径字面、数值阈值）对既有冻结件做一次字面扫查。扫查面 = 仓内既有验收测试文件（`**/*.acceptance.*`）与其它已冻结断言文件的并集。命中即把「相邻冻结锚清单 + 冲突处置（沿用 / 重锚 / human 裁）」写进 plan.md 的「跨包事实与共享冻结面约束」节；无 plan.md 的包写进 taskpackage `notes`。**扫查结果为空也要显式记一句「零命中」**——「没写」与「没有」不能混同。
+
+**为什么**：本包要改的实现点若已被别的包钉过同一字面（先例：某包冻结断言钉死 `max_files=5`，后继包要 8），冲突会推迟到 builder 首轮或 verifier 终审才暴露，一次至少烧一轮返工；而改既有冻结断言超出 tighten-only 窗口，还须该包 owner 与 human 窄口径批准重锚。起包期一次字面扫查把暴露时点提到最便宜的位置。扫查只产清单与处置建议，**不预批任何既有冻结件的改动**——改它仍须该包 owner 与 human 逐次授权。
+
+**与 planner「拆包快照保鲜核验」的分界（防双头检查项）**：该步核的是**本包元数据引用的对象是否仍在盘上、仍在跑**（引用存在性，输入 = 本包 refs 与验收文件路径）；本扫查核的是**本包目标符号是否已被别处的冻结件钉过**（跨包字面冲突，输入 = changeManifest 目标符号）。输入不同、结论不同，互补不重叠，不并成一步、也不互代。
 
 ### story 锚点引用与转写
 

@@ -99,10 +99,25 @@ changes:
 - **立项 ack（2026-10-27 human）**：「立项吧」。changeId = `261027-gov-review-draft-cost-relief`，Track B（触 `.claude/scripts/**`）。T1 落地后本批起草即自消费试用。
 - 2026-10-27 **全环闭环**：DRAFT v0.1 → R1 BLOCK(F1,F2)+F3（判官构造 junction 穿透仓界、净增公式漏新文件）→ v0.2（realpathDeepest 治本 + git add -N 口径）→ R2 GREEN → FROZEN → 装配器自消费落地四件（sha256 逐值对账）→ landing-verifier **PASS + 3 ADVISORY**（ADVISORY-1 抓出主线程 summary 失实句、更正留痕 + junction 清理）→ 落地 commit → V8 闸 PASS → INDEX landed → retro 落盘。**ARQ-261027 整条结项归位；同量级实现全批成本较 P6 降 ~40%；拆分纪律 150 行初值起用**。P6.5 收口。
 
-### P7 · dev-loop 文面纪律簇（6 条，轻路径候选——只落 references/skills/commands 文面）
+### P7 · dev-loop 文面纪律簇（轻路径四条）
 
-- `ARQ-261025-adjacent-frozen-anchor-sweep`（intake/1g 扫相邻字面锚成文）· `ARQ-261014-rename-batch-second-token-census`（改名双 token 族 census 义务成文）· `ARQ-261025-debt-archive-ref-atomic`（归档与引用同批义务成文）· `ARQ-261014-closeout-obligation-write-authority-vacuum`（收口义务写权承载成文）· `ARQ-261019-opendesign-shoot-script-precedent`（opendesign-connect skill + uiux-author 定义增补）· `ARQ-260908-known-red-count-no-mechanical-source` ③（runner 报告头 acceptance-evidence 文面）。
-- 若起草中某条实质触脚本/scope-map → 只升不降，该条挪 P8/P9。
+- **立项 ack（2026-10-27 human 两拍）**：① 六条全部立项、修法照各条目建议改法；② 批形态 = **乙**——轻路径收 ①②③⑥ 四条（判档以起草实落点为准、只升不降），恒 Track B 的 ④⑤ 组 **P7.5 小批**随后开（不并 P8——P8 是门语义簇，主题不同）。
+- 本批四条：`ARQ-261025-adjacent-frozen-anchor-sweep`（intake/1g 扫相邻字面锚成文）· `ARQ-261014-rename-batch-second-token-census`（改名双 token 族 census 义务成文）· `ARQ-261025-debt-archive-ref-atomic`（归档与引用同批义务成文）· `ARQ-260908-known-red-count-no-mechanical-source` ③（runner 报告头 acceptance-evidence 文面）。
+- **复证记录（2026-10-27 主线程实测）**：四条处方全部未消化——① 三落点均无字面锚扫查义务文面，最近似邻接物 planner.md 1f「拆包快照保鲜核验」只核引用存在性不做符号级扫查（互补不重叠，起草期须写咬合防双头）；② path-form-family.md 零「token 族/stem」承载、PROPOSAL.template :77 sweep 透镜只管新门/断言 pattern；③ debt-render 归位在场但无 stub（条目倾向①+③ 纯文面不冲突）、task-intake 无结项 debt 归位预留自查句；⑥ ② 已消化（acceptance-evidence.md :45-51 root 注入节）、③ 报告头执行目录现值口径零承载。
+- **落点约束（立项 ack 附带）**：① 落点收 task-intake-and-slicing.md + dev-loop.md（1g 档定义在 dev-loop.md），避免触 planner.md；③ 落点收 task-intake-and-slicing.md 起包自查、integrator.md 侧句或可省；⑥ 只落 acceptance-evidence.md 文面不触 runner 代码。任一条起草中发现必须触轻路径排除集（commands/agents/hooks/scripts/scope-map/settings/verify-gates/AGENTS/CLAUDE/DEV-GOVERNANCE）→ 该条挪出、只升不降。
+- changeId = `261027-gov-review-p7-devloop-doc-cluster`，architect 起草中。
+- 2026-10-27 起草完成（DRAFT v0.1，341 行；装配副本 / 沙盘 / 验证脚本全在仓外 C:/tmp/p7-work，仓内零杂散；draft 已 upsert 进 delivery/review/INDEX.md）。判档自评 = 轻路径，但 §1 向严声明「四条为文档义务非错字排版、判据②可取暖读法」。R1 四查 **GREEN**（无 BLOCKING/SHOULD、三条 NIT），**判档升 Track B 主路径**（判据②不满足——新增规范性义务文面非措辞级勘误；只升不降，改法集不变不重做，立项 ack 已预授权）。凭「立项 ack + GREEN」标 **FROZEN v0.1**，按 Track B 七步落地。
+- 2026-10-27 **全环闭环**：landing-verifier **PASS + 1 ADVISORY**（A1 = summary 在途件快照时序差，已条目化 ARQ-261027-landing-summary-inflight-snapshot）→ 落地 commit `78a1105d` → V7 升级闸 **PASS (kind=gov)** → ff 合本地 main → 复证后过闸 → **PR #46 已开**（release/261027-4；发布首跑报 diverged——PR #45 壳 `eca8ac14` 在远端、人裁后本地 no-ff 追平 + INDEX 全量重建归位，P6.5 同款处置链二例）。PR #46 合并后待：main worktree `--sync` + gov 回同步 + `--upsert` 翻已合main。**P7 收口；下一波 = P7.5（收口写点映射 + opendesign 出图先例，恒 Track B 两条）**。
+
+### P7.5 · 收口写点映射 + 出图先例簇（恒 Track B 两条，随 P7 轻路径批后开）
+
+- `ARQ-261014-closeout-obligation-write-authority-vacuum`（收口义务→承载写点映射成文；DEV-GOVERNANCE.md 属治理文档非轻允许集 + 修法可能触 scope-map 写权矩阵 → 恒 Track B）+ `ARQ-261019-opendesign-shoot-script-precedent`（opendesign-connect skill + uiux-author 定义增补；uiux-author.md 是 agents 面 → 恒 Track B）。
+- 复证：两条件目落点均未消化（DEV-GOVERNANCE 现有表格是入口/批准路由表非写点映射；uiux-author.md :34 仍是「OD 失联→出图 pending 挂 human-decision」反向误导；CDQ 行子项已 261019 批闭合、余面未治）。⑤ 起草期须与 P5 落地后的 docs/ui 显式 current 指针纪律咬合，不写第二套口径。
+- changeId = `261027-gov-review-p75-closeout-shoot-cluster`，2026-10-27 architect 起草中（Track B 主路径全件；④ 修法取①+②、scope-map 类候选③列 OQ；⑤ 修法取条目三改进项、须对齐 P5 落地的 docs/ui 现行口径）。
+- 2026-10-27 起草完成（DRAFT v0.1，536 行，T1–T6 共 17 处编辑、manifest 8 件；G3 面 / 契约 / spec / docs/ui 零 diff）。**OQ-1 human 拍 = (a) 维持文面映射、不开机械通道**（scope-map 类候选③不开，先积累「仍须 human 兜」数据）。**插话记账**：工作树发现两条「已接受风险」ARQ 裸删（contract-mech-gate-gap / crossend-consumer-tiers），human 确认有意删 + 裁「已过时/被消化」→ 主线程补正规记账（还原 + 翻 closed + 追注 + 归档 + contracts.md 指针刷新），commit `8c262d4c`。R1 四查进行中。
+- 2026-10-27 R1 = **BLOCK(F1,F2,F3)**（三条 SHOULD 文本级：F1 T6 追注对 ARQ-261019 改进项③表述错位 / F2 单写者约定指示 Edit 但 uiux-author 工具面无 Edit / F3 B10 摘要与实跑不符 17→16+1 歧义）+ 2 NIT；判档 Track B 成立、T1–T6 结构零打回；判官亲核装配复现 / scope-map 零换授 / 消费者普查穷尽（story-author「需出图」通道中立豁免正确）。已转 architect 出 v0.2（566 行，五处修订 + 复跑全绿、结构落点 manifest 零变），R2 聚焦复验中。
+- 2026-10-27 **R2 GREEN**（五处修订全到位、机检复跑逐值相符、判档维持 Track B）→ **FROZEN v0.2** → packet-bound 落地：V1① 复跑装配 8 件 sha 与 B2 逐值同 → 仓内 apply 8/8 一致 → debt-render 归位 ARQ-261019 → cite-check phase=landing 17 checked / 0 missing（ARQ-261019 两块按归档位命中，P5 先例兜底生效）→ G3/契约/spec/docs/ui 零 diff → `_scratch/` 已删。landing-summary 全件落盘，landing-verifier 核验中。
+- 2026-10-27 环后收口（合并前时点）：landing-verifier **PASS + 1 ADVISORY**（A1 = upsert 未跑，落地 commit 前已闭合）→ retro 落盘（F1 工具面盲区条目化 ARQ-261027-draft-toolface-blind；near-miss = 账本裸删差点混进批 commit，拦截 = 全量 status 逐件定性）→ INDEX upsert landed → 落地 commit 待跑，其后升级闸 → 合本地 main → 发布。**ARQ-261019 整条结项归档；ARQ-261014 部分闭合维持 deferred**。闸合并后 P7.5 收口；下一波 = P8（门语义簇 2 条，恒 Track B）。
 
 ### P8 · 门语义簇（2 条，恒 Track B）
 
