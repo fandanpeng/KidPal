@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 34（待拍板 1 / 待触发 27 / 已接受风险 6）；已结 26（归档索引见下）。
+**摘要**：未结 35（待拍板 1 / 待触发 28 / 已接受风险 6）；已结 26（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
 
-## 待触发（27）
+## 待触发（28）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -46,6 +46,7 @@
 | [TECH-261023-recording-echo-ghosting](TECH-261023-recording-echo-ghosting.md) | SHOULD | P3 录音回显滚动瞬间的面板响应叠印——传输层/LVGL 层已三重排除，定性为反射屏液晶响应窗物理特性，缓解与产品选项待拍板 | human 对回显显示形态拍板（单行化 / 接受现状 / 驱动实验三选一）；或下个动 P3 录音演出面 / 显示驱动面的包 |
 | [TECH-261023-story-voice-discard-no-text-carrier](TECH-261023-story-voice-discard-no-text-carrier.md) | SHOULD | S-F2.2 AC4「或说『讲错啦』Then 取消」语音丢弃路径零文本检出载体——真实丢弃链 = 取消键/BOOT → kidpal_story_discard 契约帧 → front acc.cancel，记录语境引擎不派发 LLM，「讲错啦」作为语音输入在当前链路无落点 | 下次动 S-F2.2 记录会话需求面 / front 丢弃链 / STT 素材入口过滤的包 |
 | [TECH-261026-oneshot-wrapper-prompt-derived-facts](TECH-261026-oneshot-wrapper-prompt-derived-facts.md) | SHOULD | 设备流程回合的「机器包装指令」随孩子原话一起以 owner 身份入库，被 deriver 抽成「孩子要求整理成文」的过程性结论 | 下一次动记忆管线（抽取策略 / honcho 插件版本升级 / 需求面记忆口径再评）时一并裁；或运营面观察到该族结论再次挤占画像窗口时 |
+| [TECH-261028-p3-reader-key-falls-to-session-toggle](TECH-261028-p3-reader-key-falls-to-session-toggle.md) | MAJOR | P3 阅读态 KEY 短按落全局 SESSION_TOGGLE 开语音会话（违反 S-F2.3 AC2「不响应」），阅读态键帽槽同因缺位显示 (null) | 下个动 P3 阅读态 / 板级按键路由 / 键帽裁决面的包；或 human 指定单独立包（/triage-change 起） |
 
 ## 已接受风险（6）
 
