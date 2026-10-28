@@ -1182,7 +1182,15 @@ extern "C" void kidpal_render_node_cache_story(const kidpal_story_view_t *v,
                                                 const kidpal_story_list_t *l,
                                                 const kidpal_story_text_t *t)
 {
-    if (v != NULL) { memcpy(&s_story_view, v, sizeof(s_story_view)); }
+    if (v != NULL) {
+        memcpy(&s_story_view, v, sizeof(s_story_view));
+        /* RSL2-A1 [I1]（261028-p3-record-session-mirror-desync-fix, M1）: 镜像恒等
+         * 权威视图页态——镜像写入边与真实状态边同源（g_story_view.page 每次变更终经
+         * cache_story 落节点缓存, 镜像随缓存装载单点派生, 不再独立漂移）。既有显式桥
+         * kidpal_render_node_story_session_page() 与 mcp_server.cc 两处投递保留为幂等
+         * 冗余（冻结 seam [R5] 文字不动）。 */
+        s_story_session_page = v->page;
+    }
     if (l != NULL) {
         memcpy(&s_story_list, l, sizeof(s_story_list));
         /* seam [SL3]: 列表数据装载 = 送达标志置位（空态两态分叉判据载体——

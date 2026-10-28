@@ -1,0 +1,144 @@
+{
+  "changeId": "261028-p3-record-session-mirror-desync-fix",
+  "rigor": "full",
+  "riskTier": "high",
+  "sourceType": "regression",
+  "origin": {
+    "type": "regression",
+    "human-verbatim": "human 2026-10-27 原话：「查一下现在在 story list 页面卡住了，长按key 也不回首页」。设备停在 P3 故事列表，长按 KEY 只打日志不换页，只能重启恢复。",
+    "upstreamType": "regression",
+    "upstreamRef": "delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md",
+    "upstreamFrozen": "triage 2026-10-27 真机 KPLOG 取证 + architect 比例化 review 裁决（②单包 Full / riskTier high / 非新机制批）+ human 触点① 2026-10-28 三项确认（档位 Full+high / 修法 M1+M2+M3 / 被拒会话静默放弃）；plan.md = 冻结技术输入，planner 只读消费",
+    "workstream": ""
+  },
+  "subsystem": "firmware/main/display/kidpal_render_node.cc（镜像单点派生 + show_home 守卫链）+ firmware/main/application.cc（Idle 收尾沿同步 + HandleStartListeningEvent 早退清位）+ firmware/main/mcp_server.cc（收尾同步桥）+ firmware/main/test（host 验收件 + runner 登记）",
+  "planRef": "delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md",
+  "changeManifest": [
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/application.cc",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/record_session_lifecycle.acceptance.c",
+    "firmware/main/test/host_app/main/CMakeLists.txt"
+  ],
+  "changeManifestNotes": "triage architect reviewed plan 原样。M1 落 kidpal_render_node_cache_story()（镜像跟随权威视图页态）；M2 落 application.cc Idle 分支插行 + extern + mcp_server.cc 新桥 KidpalStorySessionEndSync()（仅此一符）；M3 落 HandleStartListeningEvent() 三处早退边缘清位。新验收件归 acceptance-author；host runner 登记行归 builder FIRST ACTION（登记语句不在 acceptance-author 写权内）。严禁扩到 plan「不做清单」列出的面。",
+  "story": "261028-p3-record-session-mirror-desync-fix · P3 记录会话镜像与 ctx 双滞后修复。缺陷：渲染节点镜像 s_story_session_page 只在 VAD enter 与 SessionEndApply 两处写入，而按键驱动的收尾路径（停录保存 / 丢弃）在输入函数里先把 v->page 改回 LIST，导致 Idle 沿 kidpal_story_session_end 返回 0、SessionEndApply 不执行、镜像恒停 RECORDING；叠加 KSPV2_ACT_REC_SESSION 与 control/start_recording 两个 ctx 置位入口「先置 1 再调 void 的 StartListening」，被 auto_connect_in_flight_ 守卫拒绝后无 Idle 沿可清位。两者叠满 rn_record_session_live_locked() 恒 1，show_home 永久 no-op（长按 KEY 回不了首页，须重启）。修法 = 重建两条不变量：I1 镜像恒等于权威视图页态（cache_story 单点派生 + Idle 收尾沿确定性同步，防 voice_end 用陈旧镜像把页态复活）；I2 ctx 生命周期 = 聆听会话真的起来了（StartListening 三处早退边缘回滚清位）。",
+  "sourceRefs": [
+    "delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md",
+    "delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/launch-card.md"
+  ],
+  "acceptance": [
+    "RSL2-A1: 镜像跟随权威视图页态（M1）——kidpal_render_node_cache_story() 内出现镜像写入（s_story_session_page = v->page 或等价 setter 调用）；负锚：镜像赋值不得散落在 cache_story 与 setter 定义之外。设计态红：镜像只有 VAD enter / SessionEndApply 两处写入，按键收尾路径后端不让它复位",
+    "RSL2-A2: Idle 收尾沿次序（M2）——application.cc Idle 分支窗口内，kidpal_story_session_end( 之后、kidpal_render_node_voice_end( 之前出现 KidpalStorySessionEndSync(；且不得调 cache_story（s_story_data_received 被置 1 会破坏 AC6 冷启动空态）。设计态红：收尾沿无镜像同步，voice_end 用陈旧镜像把 LIST 复活成 RECORDING",
+    "RSL2-A3: ctx 生命周期跟随真实聆听（M3）——HandleStartListeningEvent 的 WifiConfiguring / !protocol_ / auto_connect_in_flight_ 三处早退分支内含 kidpal_story_session_ctx_set(0)，覆盖 REC_SESSION 与 control/start_recording 两个置位入口。设计态红：置位后无清位沿，被拒即永久置脏",
+    "RSL2-A4: 回归网——record_session_repair / record_dialogue_guide / record_session_live / story_page_v2 / chrome_ghost / key_layer_dispatch / record_dialogue_v7_fix 全族保持绿；kidpal_story_session_end 对 LIST/READER/DELETE/STAMP 仍返 0、仅 RECORDING 返 1（RSR-A3 canary 复跑）；host 全量套件零新增红 vs 基线锚（237T3F @ aecded8b）",
+    {
+      "id": "RSL2-A5",
+      "kind": "structural",
+      "note": "live-manual 真机轮（非自动断言，诚实申报，不计入 runner 通过面）：本修法的运行时半 host 不可达（application.cc / kidpal_render_node.cc / mcp_server.cc 不进 host 构建），真机轮是唯一运行时证据。T1 复现路径（VAD 进录音 → BOOT 丢弃 → auto-connect 期按 KEY 被拒 → KEY 长按必须回首页，日志无 show_home suppressed 且 sview/ssess 不再分叉）；T2 保存路径（KEY 停录 → 归档/盖章 → KEY 长按回首页正常）；T3 整理收尾（start_organizing → 盖章 → 列表后长按回首页可用）；T4 负回归（普通语音轮不进故事录音态；录音期服务端 home 推送仍被抑制）；T5 连续两轮记录会话不假 live、丢弃后不锁死。按键口径 = KEY 长按（BOOT 长按在基层是空分支，录音态才是丢弃）。本 Pod 到真机门前停等 human"
+    }
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/record_session_lifecycle.acceptance.c"
+  ],
+  "redBaselineCommand": "通道 B（本件冻结即冒烟，独立通道）：`wsl -d Ubuntu-24.04 -- bash firmware/main/test/acceptance/red-baseline/rsl2_red_wrapper.sh`（COMPILE_EXIT 须 0、零 warning）‖ 通道 A（host 全量 runner）：`MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && MSYS_NO_PATHCONV=1 wsl -d Ubuntu-24.04 -- firmware/main/test/host_app/build/host_infra_test.elf`",
+  "redBaselineResult": "acceptance-author 冻结实跑 2026-10-28（本树）。通道 B：COMPILE_EXIT=0（-Wall -Wextra 零 warning），**5 Tests 5 Failures**（RUN_EXIT=5），全设计态红——TEST 1 RSL2-A1（cache_story 体内无镜像写入 = M1 未落）、TEST 2 RSL2-A2（Idle 分支无 KidpalStorySessionEndSync( = M2 未落）、TEST 3 RSL2-A3（WifiConfiguring 早退分支未清记录语境标志 = M3 未落）、TEST 4 RSL2-A4（独立通道未链接 display/story_page.c，canary 落 weak 哨兵 -99 = 通道形态红，单列为 GAP-4，非故事缺失）、TEST 5 RSL2-A4（本件未登记进 host runner = builder FIRST ACTION）。通道 A：`git diff --quiet aecded8b HEAD -- firmware/` exit 0 → 引用锚 237 Tests / 3 Failures（3 红全为 p1_auxbar AB-A1/A2/A4 先存红，与本包正交；本件登记前不进 runner，运行面零扰动）。双向可满足性：/tmp 合成树一次性参考实现 + 登记 → 绿树 5 Tests 0 Failures；六处定向变异各自只打红对应 TEST_CASE（断言非空过）。",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "gateProfile": [
+    "docs-sync",
+    "test-quality",
+    "evidence-integrity",
+    "device-round"
+  ],
+  "exitCriteria": [
+    "RSL2-X1: 全部 RSL2-Ax host 齿转绿（record_session_lifecycle.acceptance.c 编入 host runner、零 warning），测试件所覆盖的八族既有验收/单元件保持绿",
+    "RSL2-X2: 设备编译闸绿（VERIFY_FW_BUILD_REQUIRED=1，firmware-build 真编译通过；本包触 application.cc / kidpal_render_node.cc / mcp_server.cc 三个设备 TU，host 构建不覆盖，编译闸不可降级）",
+    "RSL2-X3: 真机轮 RSL2-A5 T1-T5 由 human 持板执行并留痕；planner 到真机门前停等（blocked + pod-events 事件承载），不自行烧录",
+    "RSL2-X4: closeout 三件齐（taskpackage / docs-delta / review-packet）+ closeout-check --update-index 绿 + supervisor 机械闸判定完成"
+  ],
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "纯板端会话生命周期实现修正：零 wire 形状改动（无新帧类型、无字段类型/承载/回执语义/序列化形态变化），server/** 零 diff；不引入新数据类。triage architect 逃生门预查 = 干净（不触 docs/contracts/**，不改 requirements/architecture）。"
+  },
+  "securityReviewRequired": false,
+  "securityAxes": [],
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build"
+  ],
+  "iterationBudget": 3,
+  "fixBudget": 3,
+  "docRefs": [
+    "delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md"
+  ],
+  "planningRefs": [],
+  "mutationRequired": true,
+  "docsSyncRequired": true,
+  "docsOwner": "integrator",
+  "knownRedFloor": "firmware host 面：237 Tests / 3 Failures @ 基线锚 aecded8b（带锚引用三件齐——SHA aecded8b + WSL host runner 命令 + 落盘锚 delivery/taskpackages/261024-qa-session-timeout-producer/launch-card.md 基线锚行；差异判停 2026-10-28 本树实测 `git diff --quiet aecded8b HEAD -- firmware/` exit 0 → 引用不重跑）。3 红全为 p1_auxbar AB-A1/A2/A4 先存红，基线本身消解另立批。server 面：370 passed / 7 deselected / 33 subtests / 0 failed @ 6ea7769b（2026-10-28 本树实测，producer=consumer 同树；命令 = python -m pytest -q --import-mode=importlib -m \"not live\" C:/AI/KidPal-pod-m2/server/acceptance；因 aecded8b..HEAD server 面有 diff 故重跑，未引用旧锚）。本包验收红基线（acceptance-author 新冻结断言）恒现跑。",
+  "mutationEvidence": {
+    "note": "本表六处变异由 acceptance-author 在 **/tmp 合成树**（KIDPAL_REPO_ROOT 注入的一次性参考实现，不写入工作树、不触碰真实改动面）经 `firmware/main/test/acceptance/red-baseline/rsl2_sat_harness.py` 逐条实跑，用于证明断言非空过（双向可满足性）。与「在工作树上做变异再还原」的形态有意不同：本包三条修法 TU 尚不存在可变异的目标代码（M1/M2/M3 未落地），合成树是唯一可行的可满足性证法。逐条 verbatim 输出见该 harness 的运行记录；本表不复制未经记录的原文。",
+    "perAcceptance": [
+      {
+        "acceptanceId": "RSL2-A1",
+        "acceptance": "RSL2-A1: 镜像跟随权威视图页态（M1）——kidpal_render_node_cache_story() 内出现镜像写入（s_story_session_page = v->page 或等价 setter 调用）；负锚：镜像赋值不得散落在 cache_story 与 setter 定义之外。设计态红：镜像只有 VAD enter / SessionEndApply 两处写入，按键收尾路径后端不让它复位",
+        "mutation": "变异 1：摘掉 M1（cache_story 体内不写镜像）",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 1（RSL2-A1 正向锚）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，仅打红 TEST 1，其余 PASS。"
+      },
+      {
+        "acceptanceId": "RSL2-A1",
+        "acceptance": "RSL2-A1: 镜像跟随权威视图页态（M1）——kidpal_render_node_cache_story() 内出现镜像写入（s_story_session_page = v->page 或等价 setter 调用）；负锚：镜像赋值不得散落在 cache_story 与 setter 定义之外。设计态红：镜像只有 VAD enter / SessionEndApply 两处写入，按键收尾路径后端不让它复位",
+        "mutation": "变异 2：镜像赋值散落到第三处（cache_story 与 setter 定义体之外）",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 1（RSL2-A1 负锚：赋值形态恒 2 处）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，负锚单独可杀。"
+      },
+      {
+        "acceptanceId": "RSL2-A2",
+        "acceptance": "RSL2-A2: Idle 收尾沿次序（M2）——application.cc Idle 分支窗口内，kidpal_story_session_end( 之后、kidpal_render_node_voice_end( 之前出现 KidpalStorySessionEndSync(；且不得调 cache_story（s_story_data_received 被置 1 会破坏 AC6 冷启动空态）。设计态红：收尾沿无镜像同步，voice_end 用陈旧镜像把 LIST 复活成 RECORDING",
+        "mutation": "变异 3：KidpalStorySessionEndSync( 插到 kidpal_render_node_voice_end( 之后（次序倒置）",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 2（RSL2-A2 五符号序锚）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，次序锚单独可杀。"
+      },
+      {
+        "acceptanceId": "RSL2-A2",
+        "acceptance": "RSL2-A2: Idle 收尾沿次序（M2）——application.cc Idle 分支窗口内，kidpal_story_session_end( 之后、kidpal_render_node_voice_end( 之前出现 KidpalStorySessionEndSync(；且不得调 cache_story（s_story_data_received 被置 1 会破坏 AC6 冷启动空态）。设计态红：收尾沿无镜像同步，voice_end 用陈旧镜像把 LIST 复活成 RECORDING",
+        "mutation": "变异 4：Sync 体内调用 cache_story（破 AC6 冷启动空态）",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 2（RSL2-A2 体内 cache_story 零命中负锚）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，负锚单独可杀。"
+      },
+      {
+        "acceptanceId": "RSL2-A3",
+        "acceptance": "RSL2-A3: ctx 生命周期跟随真实聆听（M3）——HandleStartListeningEvent 的 WifiConfiguring / !protocol_ / auto_connect_in_flight_ 三处早退分支内含 kidpal_story_session_ctx_set(0)，覆盖 REC_SESSION 与 control/start_recording 两个置位入口。设计态红：置位后无清位沿，被拒即永久置脏",
+        "mutation": "变异 5：摘掉 auto_connect_in_flight_ 早退分支的 ctx 清位",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 3（RSL2-A3 三早退分支切片）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，逐支切片可杀。"
+      },
+      {
+        "acceptanceId": "RSL2-A4",
+        "acceptance": "RSL2-A4: 回归网——record_session_repair / record_dialogue_guide / record_session_live / story_page_v2 / chrome_ghost / key_layer_dispatch / record_dialogue_v7_fix 全族保持绿；kidpal_story_session_end 对 LIST/READER/DELETE/STAMP 仍返 0、仅 RECORDING 返 1（RSR-A3 canary 复跑）；host 全量套件零新增红 vs 基线锚（237T3F @ aecded8b）",
+        "mutation": "变异 6：摘掉 host_app/main/CMakeLists.txt 的登记行（回归网静默缩网）",
+        "affectedTest": "record_session_lifecycle.acceptance.c TEST 5（RSL2-A4 登记守）",
+        "turnedRed": true,
+        "result": "turned red",
+        "note": "合成树，登记守可杀。"
+      }
+    ]
+  },
+  "notes": "① 非新机制批：不引入新子系统 / 新外部依赖 / 数据迁移，只是给两个既有缓存载体补写入纪律 + 一个状态沿的次序修正（triage architect 判档已记 rationale）。② scope-map 核对：builder/fixer allow 含 firmware/**（application.cc / kidpal_render_node.cc / mcp_server.cc / host_app CMakeLists 均覆盖），deny 仅 *.acceptance.c 等——新验收件归 acceptance-author，登记行归 builder FIRST ACTION，无路径冲突。③ 收口写点核对（Step 8c）：设计稿母版 / 出图 / spine 回填 / spec 挂法句 / 账本条目 / docs-notes 记录均不命中 → none；taskpackage 元数据由 integrator closeout 承载。④ 上一包留根：delivery/taskpackages/261022-p3-record-chrome-ghost-fix/pod-retro.md（同树上一批，已 merge）——intake 逐条评估，其中「M2 插行不得插在 kidpal_keybar_scene_reset 与其判据之间」已写入 plan 验收要点。⑤ riskTier high ⇒ supervisor 合并门预期升级 human（非缺陷）。⑥ Step 1g 前置技术预评：以 triage architect 2026-10-27 比例化 review 为同源产物（同角色、同 plan、已产出修法落点 M1/M2/M3 + changeManifest + 验收种子），不重复派发；留痕 = plan.md 本包 §修法 与本节 ⑥。⑦ Step 8b 验收方向核：sourceRefs 未命中 requirements story（regression 来源，行为权威 = plan.md），故 AC 回引号集对账不适用；已核断言方向不弱于 plan 的五条冻结齿映射（RSL2-A1..A5），无多引/少引。⑧ finalize：acceptanceTestsFile / redBaselineCommand / redBaselineResult / mutationEvidence 已回填；红基线 = acceptance-author 2026-10-28 本树实跑（通道 B 5T5F 全设计态红 + 通道 A 差异判停引用锚）。"
+}

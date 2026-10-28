@@ -233,6 +233,39 @@ static void keya_log_gesture(key_id_t key, key_gesture_t g)
              static_cast<int>(g), kidpal_log_gesture_name(static_cast<int>(g)));
 }
 
+/* 按键可观测性补丁（2026-10-28 真机诊断；human 指示「直接补」，流程跳过已如实留痕）:
+ * 事实缺口 = 短按在日志里完全不可见——key_gesture_parser 只在**抬起**且 hold >=
+ * click_max_ms 时发射手势（key_gesture_parser.cc feed 抬起分支），且
+ * key_gesture_parser_poll() 设备侧零调用、pending click 永不冲刷；iot_button 手势
+ * 回调实际命中哪一个也没有记录。结果「按了一下但没按够长按阈值」与「根本没按」在
+ * 日志上完全同形，判读时会把一次短按误读成无事件。本补丁**只加日志、零行为改动**:
+ *   ① key_edge     = 按下/抬起边沿 + 实测 hold_ms（每键一槽，仅事件期写）；
+ *   ② key_dispatch = iot_button 实际命中的手势（click/long/double）+ hold_ms +
+ *                    overlay 归一值——排查「长按被派发成短按」时这是唯一权威记录。 */
+static uint32_t s_boot_down_ms = 0;
+static uint32_t s_key_down_ms = 0;
+
+static void keya_log_edge(key_id_t key, const char* edge, uint32_t hold_ms)
+{
+    char corr_id[24];
+    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ESP_LOGI(TAG, "key_edge corr_id=%s key=%d(%s) edge=%s hold_ms=%u", corr_id,
+             static_cast<int>(key), kidpal_log_key_name(static_cast<int>(key)), edge,
+             static_cast<unsigned>(hold_ms));
+}
+
+static void keya_log_dispatch(key_id_t key, const char* gesture, uint32_t hold_ms,
+                              int overlay)
+{
+    char corr_id[24];
+    snprintf(corr_id, sizeof(corr_id), "kdp-%u",
+             static_cast<unsigned>(esp_log_timestamp() & 0xFFFFFFu));
+    ESP_LOGI(TAG, "key_dispatch corr_id=%s key=%d(%s) gesture=%s hold_ms=%u overlay=%d",
+             corr_id, static_cast<int>(key), kidpal_log_key_name(static_cast<int>(key)),
+             gesture, static_cast<unsigned>(hold_ms), overlay);
+}
+
 class CustomBoard : public WifiBoard {
 private:
     i2c_master_bus_handle_t i2c_bus_;
@@ -673,17 +706,23 @@ private:
              * 按下即归零查字窗 5 分钟驻留计时（按下边沿覆盖全部手势——单击/长按/双击皆是
              * 按下的超集，故两个键的 OnPressDown 即「任意按键」的完整入口）。 */
             kidpal_render_node_char_window_key_hit();
+            s_boot_down_ms = keya_now_ms();
+            keya_log_edge(KEY_ID_BOOT, "down", 0);
             (void)key_gesture_parser_feed(&boot_gesture_, KEY_ID_BOOT, keya_now_ms(), 1);
         });
         boot_button_.OnPressUp([this]() {
+            keya_log_edge(KEY_ID_BOOT, "up", keya_now_ms() - s_boot_down_ms);
             key_gesture_t g = key_gesture_parser_feed(&boot_gesture_, KEY_ID_BOOT, keya_now_ms(), 0);
             keya_log_gesture(KEY_ID_BOOT, g);
         });
         key_button_.OnPressDown([this]() {
             kidpal_render_node_char_window_key_hit(); /* 任意键（KEY）按下 -> 驻留计时重计 */
+            s_key_down_ms = keya_now_ms();
+            keya_log_edge(KEY_ID_KEY, "down", 0);
             (void)key_gesture_parser_feed(&key_gesture_, KEY_ID_KEY, keya_now_ms(), 1);
         });
         key_button_.OnPressUp([this]() {
+            keya_log_edge(KEY_ID_KEY, "up", keya_now_ms() - s_key_down_ms);
             key_gesture_t g = key_gesture_parser_feed(&key_gesture_, KEY_ID_KEY, keya_now_ms(), 0);
             keya_log_gesture(KEY_ID_KEY, g);
         });
@@ -702,6 +741,7 @@ private:
                 return;
             }
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_BOOT, "click", keya_now_ms() - s_boot_down_ms, overlay);
             /* P3 星星记录本页内手势族前置分流（260924-m4-k2; 删除覆盖层吞全手势 +
              * 基层 P3 页内特例; LIST 态 BOOT 单击 = 挂起 300ms 消歧光标下移, 绝不
              * 落全局翻页——「列表态无按键翻页出口」v1.29 口径）。 */
@@ -719,6 +759,7 @@ private:
          * 对非 P3 页返回 GLOBAL 未被消费）。 */
         boot_button_.OnLongPress([this]() {
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_BOOT, "long", keya_now_ms() - s_boot_down_ms, overlay);
             if (keya_story_page_wants(overlay) &&
                 McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_LONG_PRESS)) {
                 return;
@@ -730,6 +771,7 @@ private:
          * 页仍无语义）。 */
         boot_button_.OnDoubleClick([this]() {
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_BOOT, "double", keya_now_ms() - s_boot_down_ms, overlay);
             if (keya_story_page_wants(overlay) &&
                 McpServer::GetInstance().HandleStoryKey(KEY_ID_BOOT, KEY_GESTURE_DOUBLE_CLICK)) {
                 return;
@@ -741,6 +783,7 @@ private:
          * 覆盖层/基层均 SESSION_TOGGLE，会话主轴零回归）。 */
         key_button_.OnClick([this]() {
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_KEY, "click", keya_now_ms() - s_key_down_ms, overlay);
             /* P3 星星记录本页内手势族前置分流（260924-m4-k2; LIST 态 KEY 单击 =
              * 记录语境会话语义位 REC_SESSION 挂起消歧, K3 接线消费——绝不落全局
              * SESSION_TOGGLE）。 */
@@ -758,6 +801,7 @@ private:
          * KEY 双击 = 进阅读态 OPEN_READER——「KEY 双击看」实现侧首次接线）。 */
         key_button_.OnDoubleClick([this]() {
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_KEY, "double", keya_now_ms() - s_key_down_ms, overlay);
             if (keya_story_page_wants(overlay) &&
                 McpServer::GetInstance().HandleStoryKey(KEY_ID_KEY, KEY_GESTURE_DOUBLE_CLICK)) {
                 return;
@@ -772,6 +816,7 @@ private:
          * GLOBAL 交全局（列表 = P3 顶层一层到家）/ READER 态 = 退出阅读回列表）。 */
         key_button_.OnLongPress([this]() {
             int overlay = keya_front_route_top();
+            keya_log_dispatch(KEY_ID_KEY, "long", keya_now_ms() - s_key_down_ms, overlay);
             if (keya_story_page_wants(overlay) &&
                 McpServer::GetInstance().HandleStoryKey(KEY_ID_KEY, KEY_GESTURE_LONG_PRESS)) {
                 return;

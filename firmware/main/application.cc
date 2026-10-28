@@ -34,6 +34,9 @@ void KidpalStoryVadEnterRecording();  /* 视图动作桥, 定义住 mcp_server.c
  * 判据 + 复位录音页态并停录音演出定时器。 */
 int  KidpalStoryViewPageState();
 void KidpalStorySessionEndApply(int list_page);
+/* RSL2-A2 [I1]（261028-p3-record-session-mirror-desync-fix, M2）: 收尾沿镜像 := 权威视图
+ * 页态的确定性同步桥（定义住 mcp_server.cc, 同款免扩公共头纪律）。 */
+void KidpalStorySessionEndSync();
 /* [G3] 帧 B 子态沿桥（261020 D4-5, fixer; 定义住 mcp_server.cc, 同款免扩公共头纪律）:
  * 引导播报中子态从设备侧既有 tts 帧派生（记录语境内引擎抑制 LLM/TTS, kidpal_speak
  * 引导注入 = 唯一 TTS 源, 零 wire 新增）——tts start 沿置 rec_substate=1、tts stop 沿
@@ -1045,11 +1048,16 @@ void Application::HandleStartListeningEvent() {
     } else if (state == kDeviceStateWifiConfiguring) {
         audio_service_.EnableAudioTesting(true);
         SetDeviceState(kDeviceStateAudioTesting);
+        /* RSL2-A3 [I2]（261028-p3-record-session-mirror-desync-fix, M3）: 聆听没真起来 ->
+         * 清记录语境标志（否则置位后本分支 return, ctx 永久停 1）。 */
+        kidpal_story_session_ctx_set(0);
         return;
     }
 
     if (!protocol_) {
         ESP_LOGE(TAG, "Protocol not initialized");
+        /* RSL2-A3 [I2]（M3）: !protocol_ 早退 -> 清记录语境标志（被拒 REC_SESSION 不留 ctx）。 */
+        kidpal_story_session_ctx_set(0);
         return;
     }
 
@@ -1057,6 +1065,9 @@ void Application::HandleStartListeningEvent() {
     // 行为语义零改动）。
     if (auto_connect_in_flight_) {
         ESP_LOGI(TAG, "AutoConnect in-flight, ignore manual start listening");
+        /* RSL2-A3 [I2]（M3）: auto-connect 期被拒 -> 清记录语境标志（KPLOG 2026-10-27
+         * 21:34:45 卡死直接根因: 置位后本分支 return, ctx 永久停 1, 长按 KEY 回不了首页）。 */
+        kidpal_story_session_ctx_set(0);
         return;
     }
 
@@ -1246,6 +1257,13 @@ void Application::HandleStateChangedEvent() {
                     KidpalStorySessionEndApply(story_end_page);
                 }
             }
+            /* RSL2-A2 [I1]（261028-p3-record-session-mirror-desync-fix, M2）: 收尾沿镜像
+             * := 权威视图页态（确定性同步）。主循环 STATE_CHANGED 先于 SCHEDULE, 收尾当轮
+             * 节点缓存可能仍是旧值——显式同步保证随后 voice_end 的 [R5] 页态解析取真值,
+             * 杜绝「story_page_input 先改页再返码」路径上把丢弃后的 LIST 复活成 RECORDING。
+             * 次序承重: 必须在 [R2] 收尾块之后、keybar_scene_reset/voice_end 之前, 且不得
+             * 插进 keybar_scene_reset 与其判据之间（chrome_ghost CG-A1 既有锚同区互守）。 */
+            KidpalStorySessionEndSync();
             /* 261022-p3-record-chrome-ghost-fix（CG-A1）: 语音会话收尾沿**先**复位键帽
              * 场景态（keybar 场景单源 kidpal_keybar_scene_reset）——回「非语音场景默认」
              * （出闭集）。修复前该态永不复位, 下一轮故事子态缓存未同步的过渡窗会被通用
