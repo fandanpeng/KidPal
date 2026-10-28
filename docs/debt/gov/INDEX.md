@@ -7,13 +7,13 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/gov/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 12（待拍板 0 / 待触发 12 / 已接受风险 0）；已结 124（归档索引见下）。
+**摘要**：未结 14（待拍板 0 / 待触发 14 / 已接受风险 0）；已结 124（归档索引见下）。
 
 ## 待拍板（0）
 
 _（无）_
 
-## 待触发（12）
+## 待触发（14）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -29,6 +29,8 @@ _（无）_
 | [ARQ-261027-landing-summary-inflight-snapshot](ARQ-261027-landing-summary-inflight-snapshot.md) | NIT | landing-summary 的在途件登记是写盘时点快照、无「实跑时点」口径句——结项等后落动作被 verifier 读成时序差 ADVISORY | 下一治理批 landing-summary 出具时并批消费（architect-landing-summary.template.md 一句增补，文面级） |
 | [ARQ-261027-publish-diverged-shell-reconcile](ARQ-261027-publish-diverged-shell-reconcile.md) | SHOULD | release-pr --publish 每逢上批 PR 合并壳必报 diverged 拦交人裁——壳 SHA 与本地追平提交恒不同、内容差恒零，人裁答案恒同，应自动化或文面免问 | 下次 --publish 报 diverged 时并批消费；或下次动 `release-pr.mjs` 预检逻辑时顺手 |
 | [ARQ-261027-summary-verify-obligation](ARQ-261027-summary-verify-obligation.md) | NIT | 主线程写 landing-summary 的核验断言无亲测义务——P6.5 批「junction 已不存在」失实句采信 architect 自报入档，被 landing-verifier 实测抓出 | 下个触 landing-summary 模板或主线程落地纪律文面的治理批 |
+| [ARQ-261028-contractrefs-zero-change-friction](ARQ-261028-contractrefs-zero-change-friction.md) | COULD | 零契约改动包被迫列一个不改的契约过 contractRefs 非空闸——「零写注记串」惯例文面在场但起草者面断链，字段名误导读者以为碰过契约面 | 下一治理批并批消费（/gov-change，可与 ARQ-261028-mutation-evidence-authoring-pointer 同批——同族断链同修法形态）；或复发一次 |
+| [ARQ-261028-mutation-evidence-authoring-pointer](ARQ-261028-mutation-evidence-authoring-pointer.md) | SHOULD | mutationEvidence 须 acceptance 原文逐字的口径文面在场（taskpackage-authoring.md §5）但实际起草者面零指针——pod-m2 填短 id 撞闸假红、白烧一轮 | 下一治理批并批消费（/gov-change）；或同类假红再复发一次 |
 
 ## 已接受风险（0）
 
