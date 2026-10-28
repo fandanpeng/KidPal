@@ -1,0 +1,180 @@
+{
+  "changeId": "261028-m6-k1-font-assets-runtime-loading",
+  "title": "字体资产与运行时装载 spike——16px/20px 全量 CJK .bin、assets/cbin 通路、host 同源与 14px 降级",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "upstreamFrozen": "sha1:af2e3627a8a2f254",
+    "workstream": "261028-font-typography-scaleup"
+  },
+  "subsystem": "firmware 字体资产产线 + assets 分区/cbin 运行时装载 + host 同源字体 seam",
+  "story": "PROPOSAL.md#§1 目的 5、6 + ADR-017（资产与运行时底座切片，无单一 story 直接命中）；下游 story 消费归 P1/P2/P3。",
+  "planRef": "delivery/taskpackages/261028-m6-k1-font-assets-runtime-loading/plan.md",
+  "sourceRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ1",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P0",
+    "docs/decisions/ADR.md#ADR-017",
+    "docs/debt/tech/_archive/2026/ARQ-260831-small-cjk-1bpp-readability.md",
+    "tools/asset-pipeline/fonts/gen_fonts.sh",
+    "firmware/main/assets.cc",
+    "firmware/main/display/lvgl_display/lvgl_font.cc"
+  ],
+  "acceptanceRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7",
+    "docs/decisions/ADR.md#ADR-017"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "FAR-E1: gen_fonts.sh 同产线扩产 16px 正文与 20px 阅读标题两枚全量 CJK 1bpp .bin；20px 不做静态子集，16px/20px 精确字节数与 assets 余量实测以 append-only 注记回填 ADR-017，不把估算冒充实测。",
+    "FAR-E2: 两枚 .bin 打入 assets 分区并由 Assets::GetAssetData + LvglCBinFont/cbin 运行时装载；统一 kidpal_font 句柄可供页面消费，缺 assets、缺文件或装载失败均回退编译内 font_puhui_14_1 且不黑屏；host 与设备读取同一枚 .bin，host 不再以另一套字体数据冒充真机字形。",
+    "FAR-E3: 以消费端观测完成 spike：真机探针页看屏照片与串口日志证明 16px/20px 字形来自运行时资产，另做缺 assets 降级开机；不得只以生成脚本或生产者自证收口。九档实验页与 font_test_* 维持编入，仅复用探针，不退役。",
+    "FAR-E4: 新增/受影响验收经 acceptance-author 冻结并具红基线与变异证据；凡修订既有冻结件只做收紧型留痕 supersede，记录旧断言、新断言、授权与 REVISION LOG，注释不算证据，撤改法或弱化断言必红；host 全量零新增红、device build 绿。",
+    "FAR-E5: PROPOSAL §6 三项旧工作树改动已独立收编，本包不得混入；架构 §5.5.3 与 ADR-017 已落，本包 docs-sync 仅追加实测尺寸/证据注记，不改 F-5/F-6/F-7 决策，不触 docs/contracts/**。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md",
+    "delivery/taskpackages/261028-m6-k1-font-assets-runtime-loading/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/decisions/ADR.md",
+    "docs/contracts/interface-contract.md",
+    "docs/debt/tech/_archive/2026/ARQ-260831-small-cjk-1bpp-readability.md",
+    "firmware/main/test/HOST_TEST_CONVENTIONS.md"
+  ],
+  "docsSyncRequired": true,
+  "docsSyncReason": "ADR-017 已预留 P0 实产复测回填位；本包只追加 16px/20px 精确尺寸与真机证据注记，架构 §5.5.3 无需再改。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "本包只改板端/host 字体资产与本地装载通路，零端云消息、字段、线格式和 server diff，无跨端对端实现面。"
+  },
+  "changeManifest": [
+    "tools/asset-pipeline/fonts/gen_fonts.sh",
+    "firmware/main/assets/fonts_root/**",
+    "firmware/scripts/build_default_assets.py",
+    "firmware/main/CMakeLists.txt",
+    "firmware/main/assets.cc",
+    "firmware/main/assets.h",
+    "firmware/main/display/lvgl_display/lvgl_font.cc",
+    "firmware/main/display/lvgl_display/lvgl_font.h",
+    "firmware/main/display/kidpal_font.cc",
+    "firmware/main/display/kidpal_font.h",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/display/kidpal_render_node.h",
+    "firmware/main/display/font_size_test_page.cc",
+    "firmware/main/test/host_app/main/CMakeLists.txt",
+    "firmware/main/test/host_app/main/host_infra_seam.c",
+    "firmware/main/test/font_assets_runtime.acceptance.c",
+    "docs/decisions/ADR.md"
+  ],
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "docs-sync",
+    "device-round"
+  ],
+  "mergeOrder": 60,
+  "dependsOn": [],
+  "decisionCoverage": [
+    {
+      "decision": "F-5 · assets .bin + cbin 运行时装载 + 编译内 14px 兜底",
+      "summary": "新字体不编入固件；资产缺失或装载失败必须可开机、不黑屏。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "landsIn": "exitCriteria:FAR-E2"
+    },
+    {
+      "decision": "F-6 / OQ1 · 20px 标题全量 CJK，缺字回退 16px，不做静态子集",
+      "summary": "资产生产侧必须产全量 20px；标题消费侧回退由 P3 复证。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "landsIn": "exitCriteria:FAR-E1"
+    },
+    {
+      "decision": "F-7 · host 与设备共用同一枚 .bin",
+      "summary": "host 编入 cbin 装载面并读取设备同文件，收掉字体数据双源。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7"],
+      "landsIn": "exitCriteria:FAR-E2"
+    },
+    {
+      "decision": "OQ3 · 九档实验页与测试字体维持编入",
+      "summary": "探针可复用，本批不退役实验页或测试字体。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3"],
+      "landsIn": "exitCriteria:FAR-E3"
+    },
+    {
+      "decision": "业务目的 6 · 架构表述与实现对齐及精确尺寸回填",
+      "summary": "架构换代已 landed；P0 只补实测尺寸和证据，不重写已冻结路线。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的6"],
+      "landsIn": "exitCriteria:FAR-E5"
+    },
+    {
+      "decision": "F-1 · 首页 16px 消费",
+      "summary": "运行时底座在本包建立，首页排版与重基线归 P1。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-1 · 课表 16px 消费",
+      "summary": "运行时底座在本包建立，课表排版、容量与标记归 P2。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "F-1/F-4 · 故事列表与阅读排版消费",
+      "summary": "运行时底座在本包建立，故事两态排版及终端真机轮归 P3。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "kidpal_font 运行时句柄与 14px 降级不变式",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k1-font-assets-runtime-loading",
+      "note": "P0 唯一定义资产句柄、20px 缺字回退 16px 与缺资产回退 14px 的语义；P1/P2/P3 只消费，不各自另造加载或降级分支。"
+    },
+    {
+      "topic": "P0/P1 共享 kidpal_render_node 与 host 字体 seam 串行",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k2a-p1-home-16px",
+      "note": "P0 先建立运行时通路，P1 后切首页消费；两包不得并行改 kidpal_render_node.cc/host_infra_seam.c，P1 在 P0 合并后的冻结面上重基线。"
+    }
+  ],
+  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。"
+}

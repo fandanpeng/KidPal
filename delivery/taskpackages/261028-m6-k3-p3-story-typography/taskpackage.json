@@ -1,0 +1,231 @@
+{
+  "changeId": "261028-m6-k3-p3-story-typography",
+  "title": "故事列表/阅读排版与 M6 真机收口——16px 正文、20px 居中省略标题、自然行 3",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "upstreamFrozen": "sha1:af2e3627a8a2f254",
+    "workstream": "261028-font-typography-scaleup"
+  },
+  "subsystem": "firmware/main/display 故事列表/阅读渲染 + mcp_server 阅读分页消费 + M6 四页真机收口",
+  "story": "S-F2.1 · 看「星星记录本」列表（AC1 标题省略）+ S-F2.3 · 回看记录（AC1、AC2 与补充规则 16px/20px 排版）。",
+  "planRef": "delivery/taskpackages/261028-m6-k3-p3-story-typography/plan.md",
+  "sourceRefs": [
+    "S-F2.1-AC1",
+    "S-F2.3-AC1",
+    "S-F2.3-AC2",
+    "docs/requirements.md#S-F2.3-补充规则",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P3",
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/story_page_v2.acceptance.c"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F2.1",
+    "docs/requirements.md#S-F2.3",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "P3T-E1: 故事列表切 P0 的 16px 运行时字体；长标题尾部省略且不压日期列，日期完整可见，列表分屏、计数、边框选中与空态语义不变。",
+    "P3T-E2: 阅读正文 16px、每屏自然行 4→3，长自然行折行不越屏；标题 20px 水平居中、单行、超宽尾部省略且不压正文，20px 缺字回退 16px；story_page_v2 的 13.5px/1.72 与 font_puhui_14_1 旧锚由 acceptance-author 收紧型留痕重基线。",
+    "P3T-E3: mcp_server.cc 两个 KSTORY_READER_LINES_PER_SCREEN 消费点随 4→3 同步并回归，页态/输入/云端载荷形状不变；host 全量零新增红、device build 绿。所有既有冻结件修订均记录旧断言、新断言、授权与 REVISION LOG，注释不算证据，撤改法或弱化断言必红。",
+    "P3T-E4: 以 docs/ui/V8/canvas-p3.png 与 p3-reader.png 完成 design review；P0/P1/P2 已 merged 后占终端真机轮，一次目击四页新字号、课表 pitch/容量/下划线、长标题与超限截断、阅读翻页手感及缺 assets 14px 降级开机，human 终判后才宣布 M6 收口。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3③",
+    "docs/contracts/interface-contract.md#§1.3④"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md",
+    "delivery/taskpackages/261028-m6-k3-p3-story-typography/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/decisions/ADR.md",
+    "docs/contracts/interface-contract.md",
+    "docs/ui/kidpal-ui-design-v8.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V8/canvas-p3.png",
+    "docs/ui/V8/p3-reader.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "S-F2.1/S-F2.3 排版与 V8 已随 requirements v1.69 冻结，架构/ADR 已落地；本包只追实现与真机证据。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/story.py",
+        "symbol": "list_stories"
+      },
+      {
+        "path": "server/gateway/front/front_app.py",
+        "symbol": "_relay_display_blocks_to_device"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/display/story_page.c",
+    "firmware/main/display/story_page.h",
+    "firmware/main/mcp_server.cc",
+    "firmware/main/test/story_page_v2.acceptance.c",
+    "firmware/main/test/story_typography.acceptance.c"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/story_page_v2.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "[K9] font_puhui_14_1/14px 与 13.5px/1.72 旧锚需留痕 supersede；输入表、计数、分屏和云端形状断言不撤。"
+    },
+    {
+      "path": "firmware/main/test/record_session_lifecycle.acceptance.c",
+      "kind": "regression",
+      "note": "mcp_server 同文件改动后回归记录会话与故事页态，本包不碰会话生命周期。"
+    },
+    {
+      "path": "firmware/main/test/record_dialogue_guide.acceptance.c",
+      "kind": "regression",
+      "note": "P3 录音/整理态沿用 V7，本批不改其字号与交互。"
+    },
+    {
+      "path": "firmware/main/test/acceptance/archive/happy_flow_capture.test.c",
+      "kind": "archive-reference",
+      "note": "归档件只作旧调用参考，零修改、零重锚。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V8/canvas-p3.png",
+      "docs/ui/V8/p3-reader.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v8.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "canvas-p3",
+      "p3-reader"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "device-round"
+  ],
+  "mergeOrder": 63,
+  "dependsOn": [
+    "261028-m6-k1-font-assets-runtime-loading",
+    "261028-m6-k2a-p1-home-16px",
+    "261028-m6-k2b-p2-schedule-16px"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "F-1 · 故事列表/阅读正文 16px，阅读标题 20px",
+      "summary": "故事两态消费 P0 字号句柄，录音/盖章/查字等未变更面不跟随放大。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "exitCriteria:P3T-E2"
+    },
+    {
+      "decision": "业务目的 4 · 列表长标题省略且不压日期列",
+      "summary": "列表标题超宽尾部省略，日期完整可见。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的4"],
+      "landsIn": "exitCriteria:P3T-E1"
+    },
+    {
+      "decision": "F-4 · 阅读正文自然行 4→3，翻页手感真机终判",
+      "summary": "自然行数随字号收敛，长行折行不得越屏，疏密与翻页成本由真机轮定夺。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4"],
+      "landsIn": "exitCriteria:P3T-E2"
+    },
+    {
+      "decision": "F-6 · 20px 全量 CJK 标题缺字回退 16px",
+      "summary": "全量资产由 P0 生产，本包在真实标题消费点验证回退与单行居中省略。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "landsIn": "exitCriteria:P3T-E2"
+    },
+    {
+      "decision": "OQ2 · 母版 v8 只重出四页之故事两帧",
+      "summary": "只消费 V8 列表与阅读帧，录音/盖章等沿用既有版本。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"],
+      "landsIn": "exitCriteria:P3T-E4"
+    },
+    {
+      "decision": "§5 · workstream 真机收口标准",
+      "summary": "P4 不独立成包；四页并集、缺资产降级、长标题/超限与翻页手感统一归本包终端轮。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"],
+      "landsIn": "exitCriteria:P3T-E4"
+    },
+    {
+      "decision": "F-5/F-7 · 运行时资产与 host 同源底座",
+      "summary": "资产与统一句柄归 P0，本包只消费。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "F-2/F-9 · 首页排版与临时事件下划线",
+      "summary": "首页实现归 P1，本包终端轮只复证，不抢占其文件面。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-3/F-8/F-9 · 课表版式、容量与下划线",
+      "summary": "课表实现归 P2，本包终端轮只复证，不抢占其文件面。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "kidpal_font 运行时句柄与标题缺字回退",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P0 定义统一句柄和 20px→16px/缺资产→14px 语义；P3 在列表/阅读真实消费点验证，不另造字体加载分支。"
+    },
+    {
+      "topic": "M6 四页真机收口轮（原可选 P4 并入）",
+      "owner": "261028-m6-k3-p3-story-typography",
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P0 探针证据与 P2 pitch 轮作为输入，P1 真机半并入；P3 必须等 P0/P1/P2 merged 后一次完成四页并集与 human 终判。"
+    }
+  ],
+  "notes": "workType 主型 = new-capability，整改半 = 列表标题省略与旧排版冻结锚重基线。riskTier 依 workstream sign-off 归一为 high（底稿 medium-high 非合法枚举），rigor 恒 full。影响面机械辅证：图索引 trace kidpal_story_reader_slice 仅见 story_page 与 archive 两 caller，未解析 mcp_server 两个消费点；已以 Grep 交叉补录 :691/:1885，差集已解释。相邻冻结锚非零：story_page_v2 [K9] font_puhui_14_1、13.5px/1.72 与 KSTORY_READER_LINES_PER_SCREEN=4；处置 = acceptance-author 收紧型重基线，archive happy_flow 零改。P4 并入本包故 dependsOn 增加 P1/P2，这是相对 §4 预判的调度细化，不改变 spike-first 或 F-5/F-6/F-7。"
+}
