@@ -83,5 +83,9 @@
   "261027-gov-review-p7-devloop-doc-cluster": {
     "date": "2026-10-27",
     "mergedInMain": "yes"
+  },
+  "261028-gov-review-p8-gate-semantics-cluster": {
+    "date": "2026-10-28",
+    "mergedInMain": "yes"
   }
 }
