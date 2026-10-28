@@ -11,11 +11,12 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261028-gov-review-p8-gate-semantics-cluster](261028-gov-review-p8-gate-semantics-cluster/) | 2026-10-28 | landed | — |
 | [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
-| [261027-gov-review-p7-devloop-doc-cluster](261027-gov-review-p7-devloop-doc-cluster/) | 2026-10-27 | landed | — |
-| [261027-gov-review-p75-closeout-shoot-cluster](261027-gov-review-p75-closeout-shoot-cluster/) | 2026-10-27 | landed | — |
+| [261027-gov-review-p7-devloop-doc-cluster](261027-gov-review-p7-devloop-doc-cluster/) | 2026-10-27 | landed | yes |
+| [261027-gov-review-p75-closeout-shoot-cluster](261027-gov-review-p75-closeout-shoot-cluster/) | 2026-10-27 | landed | yes |
 | [261026-gov-review-final-phase-dispatch-contract](261026-gov-review-final-phase-dispatch-contract/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-merge-gate-cluster-fix](261026-gov-review-merge-gate-cluster-fix/) | 2026-10-26 | landed | yes |
 | [261026-gov-review-p2-anchor-template-cluster](261026-gov-review-p2-anchor-template-cluster/) | 2026-10-26 | landed | yes |

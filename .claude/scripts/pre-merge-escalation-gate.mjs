@@ -21,6 +21,8 @@
 //     7. 合并结果树含废止路径残件（波段一 delivery/changes/dev；波段二随 T6 第 6 条扩为整伞
 //        delivery/changes——dev lane 已由 261014 批撤销、伞已解散；scope-map 齿一拦 agent 会话写入，
 //        本齿拦 git merge 通道带入旧布局分支）→ BLOCK，指引归位真家（映射见 delivery/archive/README.md）
+//     8. 用户可见且 host 不可编结果面缺真机目击证据（261028 P8；deviceOutcome.required=true）→ BLOCK；
+//        approve-escalated-merge 不豁免本子判据，证据最小要件含 human-visual / serial-capture / KPLOG 三形态之一
 //
 // 用法：
 //   node .claude/scripts/pre-merge-escalation-gate.mjs <changeId> [--source-ref <ref>] [--project-dir <dir>]
@@ -33,6 +35,8 @@ import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
+import { readGateDeclaration } from '../hooks/supervisor-verdict-gate.mjs';
 import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
@@ -363,6 +367,157 @@ export function parallelOverlapProbe(execFn, source, target) {
   }
 }
 
+
+// ---- 用户可见且 host 不可编结果面的设备轮硬门（261028 P8；supervisor 合并门的 merge 期子判据）----
+function parseDeviceEvidenceText(text) {
+  const prefix = 'device-round-evidence（JSON）：';
+  const lines = String(text || '').split(/\r?\n/).filter((l) => l.startsWith(prefix));
+  if (lines.length !== 1) return { evidence: null, error: 'device-round-evidence JSON 行数=' + lines.length + '（应为 1）' };
+  try {
+    const evidence = JSON.parse(lines[0].slice(prefix.length));
+    if (!evidence || evidence.schemaVersion !== 1) return { evidence: null, error: 'device-round-evidence schemaVersion 应为 1' };
+    return { evidence, error: null };
+  } catch (error) {
+    return { evidence: null, error: 'device-round-evidence JSON 不可解析：' + error.message };
+  }
+}
+
+function acceptanceDeviceMarkers(taskPackage, dir) {
+  const acceptanceRefs = new Set();
+  const hostUncompilablePaths = new Set();
+  for (const ref of Array.isArray(taskPackage?.acceptanceTestsFile) ? taskPackage.acceptanceTestsFile : []) {
+    const p = resolve(dir, ref);
+    if (!existsSync(p)) continue;
+    for (const line of readFileSync(p, 'utf8').split(/\r?\n/)) {
+      let m = line.match(/device-outcome:\s*([A-Za-z0-9][A-Za-z0-9_-]*)/);
+      if (m) acceptanceRefs.add(m[1]);
+      m = line.match(/host-uncompilable-path:\s*(firmware\/[A-Za-z0-9_./-]+)/);
+      if (m) hostUncompilablePaths.add(m[1]);
+    }
+  }
+  return { acceptanceRefs: [...acceptanceRefs], hostUncompilablePaths: [...hostUncompilablePaths] };
+}
+
+export function assessDeviceOutcome(input, deps = {}) {
+  const reasons = [];
+  const advisories = [];
+  const declaration = input.declaration || null;
+  const declared = declaration?.deviceOutcome || null;
+  const markers = input.markers || { acceptanceRefs: [], hostUncompilablePaths: [] };
+  const hostExclusions = new Set(input.hostExclusions || []);
+  const hostPrefixes = Array.isArray(input.hostUncompilablePrefixes) ? input.hostUncompilablePrefixes : [];
+  const isHostExcluded = (p) => hostExclusions.has(p) || hostPrefixes.some((prefix) => p.startsWith(prefix));
+  const touched = (input.sourceDiffPaths || []).filter(isHostExcluded);
+  const markerRefs = new Set(markers.acceptanceRefs || []);
+  const declaredVisible = declared?.userVisible === true;
+  const requiredRefs = [...new Set([...(declaredVisible && Array.isArray(declared.acceptanceRefs) ? declared.acceptanceRefs : []), ...markerRefs])].sort();
+  const declaredPaths = [...new Set([...(declaredVisible && Array.isArray(declared.hostUncompilablePaths) ? declared.hostUncompilablePaths : []), ...(markers.hostUncompilablePaths || [])])].sort();
+  const hasAcceptanceDeclaration = markerRefs.size > 0 || (markers.hostUncompilablePaths || []).length > 0;
+
+  if (touched.length > 0 && !declared && !hasAcceptanceDeclaration) {
+    reasons.push('device-outcome-declaration-missing：实际 diff 触 host 不可编路径 ' + touched.join(', ') + '，launch-card 与 acceptance 均无设备结果申报');
+  }
+  if (declared?.userVisible === false && hasAcceptanceDeclaration) {
+    reasons.push('device-outcome-declaration-conflict：launch-card 申报非用户可见，但 acceptance 含 device-outcome/host-uncompilable-path 标记');
+  }
+  const required = declaredVisible || hasAcceptanceDeclaration || reasons.some((r) => r.startsWith('device-outcome-declaration-missing'));
+  if (!required) {
+    const reason = String(declared?.reason || '').trim();
+    if (touched.length > 0 && (reason.length < 12 || reason.startsWith('<') || reason === 'none')) {
+      reasons.push('device-outcome-nonvisible-reason-missing：触 host 不可编路径但非用户可见的理由未填、为占位符或不足 12 字');
+    }
+    return { probed: true, required: reasons.length > 0, ok: reasons.length === 0, reasons, advisories, touchedHostPaths: touched, requiredAcceptanceRefs: [] };
+  }
+
+  if (requiredRefs.length === 0) reasons.push('device-outcome-acceptance-refs-empty：用户可见设备结果必须列 acceptanceRefs');
+  if (declaredPaths.length === 0) reasons.push('device-outcome-host-paths-empty：用户可见设备结果必须列 hostUncompilablePaths');
+  const unknownPaths = declaredPaths.filter((p) => !isHostExcluded(p));
+  if (unknownPaths.length) reasons.push('device-outcome-host-path-unregistered：' + unknownPaths.join(', ') + ' 不在 verify-gates.deviceOutcomeGate.hostUncompilablePaths 登记集');
+  const coveredDiffPaths = declaredPaths.filter((p) => (input.sourceDiffPaths || []).includes(p));
+  if (declaredPaths.length > 0 && coveredDiffPaths.length === 0) reasons.push('device-outcome-path-not-in-diff：申报的 host 不可编路径未出现在本次合并 diff');
+
+  const evidence = input.evidence;
+  const verifyBinary = deps.verifyBinary || (() => false);
+  const verifyExcerpt = deps.verifyExcerpt || (() => false);
+  if (!evidence) {
+    reasons.push('device-round-evidence-missing：合并前必须有 device-round-evidence.md 的结构化真机目击记录');
+  } else {
+    if (evidence.changeId !== input.changeId) reasons.push('device-round-evidence-changeId-mismatch');
+    if (evidence.sourceCommit !== input.source) reasons.push('device-round-evidence-source-commit-mismatch：目击固件来源 commit 必须等于本次合并 HEAD');
+    if (typeof evidence.binaryRef !== 'string' || !/^[0-9a-f]{64}$/.test(String(evidence.binarySha256 || '')) || !verifyBinary(evidence.binaryRef, evidence.binarySha256)) {
+      reasons.push('device-round-evidence-binary-mismatch：binaryRef 不存在或 SHA-256 不符');
+    }
+    const observations = Array.isArray(evidence.observations) ? evidence.observations : [];
+    const passedRefs = new Set();
+    for (const obs of observations) {
+      if (!obs || obs.result !== 'PASS' || typeof obs.acceptanceRef !== 'string') continue;
+      if (obs.method === 'human-visual') {
+        if (obs.observer === 'human' && typeof obs.observedAt === 'string' && obs.observedAt && typeof obs.note === 'string' && obs.note.trim().length >= 12) passedRefs.add(obs.acceptanceRef);
+      } else if (obs.method === 'serial-capture' || obs.method === 'kplog') {
+        const log = obs.log || {};
+        const excerptOk = typeof log.excerptRef === 'string' && /^[0-9a-f]{64}$/.test(String(log.excerptSha256 || '')) && verifyExcerpt(log.excerptRef, log.excerptSha256);
+        const kplogOk = obs.method !== 'kplog' || (/^KPLOG(?:0[0-2][0-9]|03[01])$/.test(String(log.segment || '')) && typeof log.window === 'string' && log.window.trim().length >= 8);
+        if (excerptOk && kplogOk) passedRefs.add(obs.acceptanceRef);
+      }
+    }
+    for (const ref of requiredRefs) if (!passedRefs.has(ref)) reasons.push('device-round-observation-missing-or-invalid：' + ref + ' 缺 PASS 目击，或证据最小要件不完整');
+  }
+  return {
+    probed: true,
+    required: true,
+    ok: reasons.length === 0,
+    reasons,
+    advisories,
+    touchedHostPaths: touched,
+    declaredHostPaths: declaredPaths,
+    coveredDiffPaths,
+    requiredAcceptanceRefs: requiredRefs,
+    evidenceRef: evidence ? 'delivery/taskpackages/' + input.changeId + '/device-round-evidence.md' : null,
+  };
+}
+
+function collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) {
+  try {
+    const config = JSON.parse(readFileSync(resolve(projectDir, '.claude/verify-gates.json'), 'utf8')).deviceOutcomeGate || {};
+    const tpPath = resolve(projectDir, 'delivery/taskpackages', changeId, 'taskpackage.json');
+    const taskPackage = existsSync(tpPath) ? JSON.parse(readFileSync(tpPath, 'utf8')) : {};
+    const declaration = readGateDeclaration(projectDir, changeId).declaration;
+    const markers = acceptanceDeviceMarkers(taskPackage, projectDir);
+    const evidencePath = resolve(projectDir, 'delivery/taskpackages', changeId, 'device-round-evidence.md');
+    const parsed = existsSync(evidencePath) ? parseDeviceEvidenceText(readFileSync(evidencePath, 'utf8')) : { evidence: null, error: null };
+    const hashFile = (ref) => {
+      if (typeof ref !== 'string' || ref.includes('..') || ref.startsWith('/')) return false;
+      const p = resolve(projectDir, ref);
+      return existsSync(p) ? createHash('sha256').update(readFileSync(p)).digest('hex') : null;
+    };
+    const result = assessDeviceOutcome({
+      declaration,
+      markers,
+      hostExclusions: Array.isArray(config.hostUncompilablePaths) ? config.hostUncompilablePaths : [],
+      hostUncompilablePrefixes: Array.isArray(config.hostUncompilablePrefixes) ? config.hostUncompilablePrefixes : [],
+      sourceDiffPaths,
+      evidence: parsed.evidence,
+      source,
+      changeId,
+    }, {
+      verifyBinary: (ref, sha) => hashFile(ref) === sha,
+      verifyExcerpt: (ref, sha) => {
+        const prefix = 'delivery/taskpackages/' + changeId + '/device-evidence/';
+        return typeof ref === 'string' && ref.startsWith(prefix) && hashFile(ref) === sha;
+      },
+    });
+    if (parsed.error) {
+      result.required = true;
+      result.ok = false;
+      result.reasons.push(parsed.error);
+    }
+    return result;
+  } catch (error) {
+    return { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：' + error.message], advisories: [] };
+  }
+}
+
+
 /**
  * 主判：给定可注入上下文，产 { blocked, reasons[] }。
  * ctx = { execFn, changeId, source, kind: 'devloop'|'gov'|'unknown',
@@ -427,6 +582,16 @@ export function evaluate(ctx) {
   if (approval && !approval.ok) push(`human-approval 核验失败：${approval.reason}`);
 
   if (ctx.kind === 'devloop') {
+    // 设备轮硬门（261028 P8）：approve-escalated-merge 只豁免 riskTier/verdict/blocked，不豁免真机结果证据。
+    if (!ctx.deviceOutcome || ctx.deviceOutcome.probed !== true) {
+      const detail = Array.isArray(ctx.deviceOutcome?.reasons) && ctx.deviceOutcome.reasons.length
+        ? ctx.deviceOutcome.reasons.join('；')
+        : '设备结果面探测失败（无详细原因）';
+      const prefix = 'device-outcome-probe-fail-closed：';
+      push((detail.startsWith(prefix) ? detail : prefix + detail) + '——升级人工核，不得自动 merge');
+    } else if (ctx.deviceOutcome.required && !ctx.deviceOutcome.ok) {
+      for (const reason of ctx.deviceOutcome.reasons) push(reason);
+    }
     // T1/T2（260908 批）：并行相交面分级路由——tradeoff（③ 级）BLOCK 交 architect 消解评审；
     // no-overlap / union-safe 不升人（② 级走 runbook 并集 + 双方齿复跑；探测失败已 fail-closed 归 tradeoff）。
     if (ctx.overlap?.tier === 'tradeoff') {
@@ -514,6 +679,10 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const overlap = parallelOverlapProbe(execFn, source, 'main');
   // T1（261015-gov-review-changes-taxonomy 齿二）：废止路径结构检查（两档通用；target = main）
   const retiredProbe = retiredPathProbe(execFn, source, 'main');
+  const sourceDiffPaths = kind === 'devloop'
+    ? (() => { try { return execFn('git diff --name-only main...' + source).split('\n').map((l) => l.trim()).filter(Boolean); } catch { return []; } })()
+    : [];
+  const deviceOutcome = kind === 'devloop' ? collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) : null;
 
   return {
     changeId,
@@ -531,6 +700,7 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     contractFindings, // T5（260908 批）：契约类 hard-violation 台账核验结果
     overlap, // T1（260908 批）：并行相交面探测结果（分级路由见 pod-coordination §10d）
     retiredProbe, // T1（261015-gov-review-changes-taxonomy 齿二）：合并结果树废止路径探测结果
+    deviceOutcome, // 261028 P8：设备轮硬门结果；人批豁免不消费、不覆盖
   };
 }
 
@@ -559,6 +729,7 @@ function selfCheck() {
     contractFindings: { present: false, accounted: true, hits: [] }, // T5：默认不在场 → 放行
     overlap: { probed: true, tier: 'no-overlap', intersectingFiles: [], conflictedFiles: [], addAddFiles: [] }, // T1：默认零相交 → 放行
     retiredProbe: { probed: true, tree: 'x', paths: [] }, // 齿二（261015 批）：默认结果树干净 → 放行
+    deviceOutcome: { probed: true, required: false, ok: true, reasons: [], advisories: [] },
     ...over,
   });
 
@@ -859,6 +1030,72 @@ function selfCheck() {
     cases.push({ name: 'overlap-projection-plus-other-tradeoff', ok: rMix.probed && rMix.tier === 'tradeoff', got: JSON.stringify(rMix) });
   }
 
+  // 261028 P8：设备门三证据形态 + 缺证/错 commit/缺覆盖/新轴防漏升正反夹具。
+  expect('device-required-missing-evidence-block', { deviceOutcome: { probed: true, required: true, ok: false, reasons: ['device-round-evidence-missing'] } }, true, 'device-round-evidence-missing');
+  expect('device-probe-error-detail-surfaced', { deviceOutcome: { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：fixture boom'] } }, true, 'fixture boom');
+  {
+    const r = evaluate(mkCtx({ deviceOutcome: { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：fixture boom'] } }));
+    const text = r.reasons.join('\n');
+    cases.push({ name: 'device-probe-prefix-not-duplicated', ok: text.split('device-outcome-probe-fail-closed：').length - 1 === 1, got: text });
+  }
+  expect('device-human-approval-does-not-waive', { supervisorVerdict: escVerdict, humanApproval: { ok: true, reason: 'human-approval verified' }, deviceOutcome: { probed: true, required: true, ok: false, reasons: ['device-round-evidence-missing'] } }, true, 'device-round-evidence-missing');
+  cases.push({ name: 'device-not-required-pass', ok: !evaluate(mkCtx({ deviceOutcome: { probed: true, required: false, ok: true, reasons: [] } })).blocked, got: '' });
+  const baseDeviceInput = {
+    declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] } },
+    markers: { acceptanceRefs: [], hostUncompilablePaths: [] },
+    hostExclusions: ['firmware/main/display/lcd_display.cc'],
+    sourceDiffPaths: ['firmware/main/display/lcd_display.cc'],
+    source: 'a'.repeat(40),
+    changeId: '261028-device-fixture',
+  };
+  const baseEvidence = {
+    schemaVersion: 1,
+    changeId: baseDeviceInput.changeId,
+    sourceCommit: baseDeviceInput.source,
+    binaryRef: 'firmware/build/xiaozhi.bin',
+    binarySha256: 'b'.repeat(64),
+    observations: [],
+  };
+  const deviceDeps = { verifyBinary: () => true, verifyExcerpt: () => true };
+  const observationFor = (method) => method === 'human-visual'
+    ? { acceptanceRef: 'RSR-A6', result: 'PASS', method, observer: 'human', observedAt: '2026-10-28T10:00:00+08:00', note: 'human 持板确认录音态键帽与主标题均正确' }
+    : { acceptanceRef: 'RSR-A6', result: 'PASS', method, log: { segment: method === 'kplog' ? 'KPLOG006' : undefined, window: method === 'kplog' ? '2026-10-28 10:00:00–10:00:05' : undefined, excerptRef: 'delivery/taskpackages/261028-device-fixture/device-evidence/rsr-a6.txt', excerptSha256: 'c'.repeat(64) } };
+  for (const method of ['human-visual', 'serial-capture', 'kplog']) {
+    const r = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [observationFor(method)] } }, deviceDeps);
+    cases.push({ name: 'device-evidence-' + method + '-pass', ok: r.required && r.ok, got: JSON.stringify(r.reasons) });
+  }
+  const badKplog = { ...observationFor('kplog'), log: { ...observationFor('kplog').log, segment: '', window: '' } };
+  const badKplogResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [badKplog] } }, deviceDeps);
+  cases.push({ name: 'device-kplog-segment-and-window-required', ok: !badKplogResult.ok && badKplogResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(badKplogResult.reasons) });
+  const outOfRangeKplog = { ...observationFor('kplog'), log: { ...observationFor('kplog').log, segment: 'KPLOG032' } };
+  const outOfRangeResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [outOfRangeKplog] } }, deviceDeps);
+  cases.push({ name: 'device-kplog-032-out-of-rotation-block', ok: !outOfRangeResult.ok && outOfRangeResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(outOfRangeResult.reasons) });
+  const badExcerptResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, { ...deviceDeps, verifyExcerpt: () => false });
+  cases.push({ name: 'device-kplog-excerpt-hash-mismatch-block', ok: !badExcerptResult.ok && badExcerptResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(badExcerptResult.reasons) });
+  const wrongCommit = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, sourceCommit: 'd'.repeat(40), observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-wrong-commit-block', ok: !wrongCommit.ok && wrongCommit.reasons.some((r) => r.includes('source-commit-mismatch')), got: JSON.stringify(wrongCommit.reasons) });
+  const missingCoverage = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6', 'RSR-A7'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] } }, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-missing-acceptance-coverage-block', ok: !missingCoverage.ok && missingCoverage.reasons.some((r) => r.includes('RSR-A7')), got: JSON.stringify(missingCoverage.reasons) });
+  const noDeclaration = assessDeviceOutcome({ ...baseDeviceInput, declaration: null, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-host-diff-without-declaration-block', ok: noDeclaration.required && !noDeclaration.ok && noDeclaration.reasons.some((r) => r.includes('declaration-missing')), got: JSON.stringify(noDeclaration.reasons) });
+  const nonVisible = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '仅设备内部诊断日志接线，不改变任何用户可见结果' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-nonvisible-with-reason-pass', ok: !nonVisible.required && nonVisible.ok, got: JSON.stringify(nonVisible.reasons) });
+  const defaultNone = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: 'none' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-default-none-touched-host-fail-closed', ok: !defaultNone.ok && defaultNone.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(defaultNone.reasons) });
+  const defaultNoneEval = evaluate(mkCtx({ deviceOutcome: defaultNone }));
+  cases.push({ name: 'device-default-none-evaluate-block', ok: defaultNoneEval.blocked && defaultNoneEval.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(defaultNoneEval) });
+  const placeholderReason = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '<无用户可见结果面时填理由；无设备面可写 none>' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-placeholder-reason-touched-host-fail-closed', ok: !placeholderReason.ok && placeholderReason.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(placeholderReason.reasons) });
+  const placeholderEval = evaluate(mkCtx({ deviceOutcome: placeholderReason }));
+  cases.push({ name: 'device-placeholder-reason-evaluate-block', ok: placeholderEval.blocked && placeholderEval.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(placeholderEval) });
+  const boardPath = 'firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc';
+  const boardOutcome = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: [boardPath] } }, sourceDiffPaths: [boardPath], hostUncompilablePrefixes: ['firmware/main/boards/'], evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-board-wiring-prefix-covered', ok: boardOutcome.required && boardOutcome.ok, got: JSON.stringify(boardOutcome.reasons) });
+  const acceptanceOverrides = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '错误申辩：实际 acceptance 已声明用户可见结果' } }, markers: { acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] }, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-acceptance-marker-overrides-false-declaration', ok: acceptanceOverrides.required && !acceptanceOverrides.ok && acceptanceOverrides.reasons.some((r) => r.includes('declaration-conflict')), got: JSON.stringify(acceptanceOverrides.reasons) });
+  const unknownHostPath = assessDeviceOutcome({ ...baseDeviceInput, hostExclusions: [], evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-unregistered-host-path-fail-closed', ok: !unknownHostPath.ok && unknownHostPath.reasons.some((r) => r.includes('host-path-unregistered')), got: JSON.stringify(unknownHostPath.reasons) });
+
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'pre-merge-escalation-gate', pass: cases.length - fail.length, fail: fail.length, total: cases.length, ok: fail.length === 0, failures: fail.length ? fail : undefined })}\n`,
@@ -923,7 +1160,7 @@ const result = evaluate(ctx);
 // T3（260908 批 ladder）：探测面制品落盘——PASS 与 BLOCK 两态都落（升级件内容面消费），失败 advisory 不改退出码
 if (probeOutPath) {
   try {
-    writeFileSync(probeOutPath, JSON.stringify({ changeId, kind: ctx.kind, source: ctx.source, overlap: ctx.overlap }, null, 2), 'utf8');
+    writeFileSync(probeOutPath, JSON.stringify({ changeId, kind: ctx.kind, source: ctx.source, overlap: ctx.overlap, deviceOutcome: ctx.deviceOutcome }, null, 2), 'utf8');
   } catch (err) {
     process.stderr.write(`[pre-merge-escalation-gate] WARN: --probe-out 落盘失败（advisory）：${err.message}\n`);
   }

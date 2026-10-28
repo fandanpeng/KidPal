@@ -277,6 +277,109 @@ function isAllMock(paths, content) {
   return { hit: true, reason: 'all-mock:test-files-no-real-db/event-assertion(dev-loop:106-111)' };
 }
 
+// ---- launch-card 申报与已人批同型先例（261028 P8；只折抵逐轴白名单）----
+const OFFSETTABLE_AXES = new Set(['all-mock', 'generated-noise']);
+
+function axisForReason(reason) {
+  const s = String(reason || '');
+  if (s.startsWith('all-mock:')) return 'all-mock';
+  if (s.startsWith('critical-path:firmware/sdkconfig')) return 'generated-noise';
+  if (s.startsWith('security-axis-')) return 'security';
+  if (s.startsWith('core.*:')) return 'core';
+  if (s.startsWith('critical-')) return 'critical';
+  return 'other';
+}
+
+function parseGateDeclarationText(text) {
+  const prefix = '验证形态申报（JSON）：';
+  const lines = String(text || '').split(/\r?\n/).filter((l) => l.startsWith(prefix));
+  if (lines.length !== 1) return { declaration: null, advisories: [`launch-card 验证形态申报行数=${lines.length}（应为 1；缺失/重复均不消费）`] };
+  try {
+    const declaration = JSON.parse(lines[0].slice(prefix.length));
+    if (!declaration || declaration.schemaVersion !== 1 || typeof declaration !== 'object') throw new Error('schemaVersion 应为 1');
+    return { declaration, advisories: [] };
+  } catch (error) {
+    return { declaration: null, advisories: [`launch-card 验证形态申报 JSON 不可解析（不消费）：${error.message}`] };
+  }
+}
+
+function readGateDeclaration(dir, changeId) {
+  const p = resolve(dir, 'delivery/taskpackages', changeId, 'launch-card.md');
+  if (!existsSync(p)) return { declaration: null, advisories: ['launch-card.md 缺失（不消费申报）'] };
+  return parseGateDeclarationText(readFileSync(p, 'utf8'));
+}
+
+function eventApprovedPrecedents(event) {
+  if (event?.schemaVersion !== 1 || event?.eventType !== 'human-decision' || event?.actor !== 'human') return [];
+  if (event?.payload?.decision !== 'approve-escalated-merge' || typeof event?.payload?.approvedVia !== 'string' || !event.payload.approvedVia.trim()) return [];
+  if (!Array.isArray(event?.payload?.gatePrecedents)) return [];
+  return event.payload.gatePrecedents.flatMap((p) => {
+    if (!p || !OFFSETTABLE_AXES.has(p.axis) || typeof p.pattern !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(p.pattern)) return [];
+    return [{ changeId: event.changeId, eventId: event.eventId, approvedVia: event.payload.approvedVia, axis: p.axis, pattern: p.pattern, sourceRef: `delivery/taskpackages/${event.changeId}/pod-events.jsonl` }];
+  });
+}
+
+function readApprovedPrecedents(dir) {
+  const precedents = [];
+  const advisories = [];
+  const registryPath = resolve(dir, '.claude/supervisor-precedents.json');
+  if (existsSync(registryPath)) {
+    try {
+      const registry = JSON.parse(readFileSync(registryPath, 'utf8'));
+      for (const seed of Array.isArray(registry.precedents) ? registry.precedents : []) {
+        if (!seed || !OFFSETTABLE_AXES.has(seed.axis) || typeof seed.pattern !== 'string' || typeof seed.sourceRef !== 'string') {
+          advisories.push('历史种子先例存在 malformed 条目（跳过，不折抵）');
+          continue;
+        }
+        const eventPath = resolve(dir, seed.sourceRef);
+        if (!existsSync(eventPath)) { advisories.push(`历史种子先例 sourceRef 缺失（跳过）：${seed.changeId}`); continue; }
+        const hit = readFileSync(eventPath, 'utf8').split(/\r?\n/).flatMap((line) => {
+          try { const e = JSON.parse(line); return e?.eventId === seed.eventId ? [e] : []; } catch { return []; }
+        })[0];
+        if (!hit || hit.eventType !== 'human-decision' || hit.actor !== 'human' || hit.changeId !== seed.changeId || hit.payload?.decision !== 'approve-escalated-merge') {
+          advisories.push(`历史种子先例人批事件核验失败（跳过）：${seed.changeId}`);
+          continue;
+        }
+        precedents.push({ changeId: seed.changeId, eventId: seed.eventId, approvedVia: String(seed.approvedVia || 'historical human-decision verified'), axis: seed.axis, pattern: seed.pattern, sourceRef: seed.sourceRef });
+      }
+    } catch (error) {
+      advisories.push(`历史种子先例库不可读（全部不折抵）：${error.message}`);
+    }
+  }
+  const root = resolve(dir, 'delivery/taskpackages');
+  if (existsSync(root)) {
+    for (const entry of readdirSync(root)) {
+      const eventsPath = resolve(root, entry, 'pod-events.jsonl');
+      if (!existsSync(eventsPath)) continue;
+      for (const line of readFileSync(eventsPath, 'utf8').split(/\r?\n/)) {
+        if (!line.trim()) continue;
+        try { precedents.push(...eventApprovedPrecedents(JSON.parse(line))); }
+        catch { /* malformed 行不产生先例；既有 pod-events fail-open 口径不变 */ }
+      }
+    }
+  }
+  const unique = [...new Map(precedents.map((p) => [`${p.changeId}|${p.eventId}|${p.axis}|${p.pattern}`, p])).values()];
+  return { precedents: unique, advisories };
+}
+
+function matchDeclaredPrecedent(declaration, axis, precedents) {
+  if (!OFFSETTABLE_AXES.has(axis)) return null;
+  const claim = declaration?.precedents?.[axis];
+  if (!claim || typeof claim.pattern !== 'string' || typeof claim.changeId !== 'string') return null;
+  return (Array.isArray(precedents) ? precedents : []).find((p) => p.axis === axis && p.pattern === claim.pattern && p.changeId === claim.changeId) || null;
+}
+
+function isEmptySdkconfigRegeneration(perFile) {
+  if (!(perFile instanceof Map) || !perFile.has('firmware/sdkconfig')) return false;
+  const added = String(perFile.get('firmware/sdkconfig') || '').split(/\r?\n/)
+    .filter((l) => /^\+(?!\+\+)/.test(l))
+    .map((l) => l.slice(1));
+  const removed = String(perFile.get('firmware/sdkconfig') || '').split(/\r?\n/).some((l) => /^-(?!--)/.test(l));
+  // 只认 idf.py 再生的空节头：至少三行新增、全部为空行或注释、含 end of 节尾；任何配置赋值/删除都非噪音。
+  return !removed && added.length >= 3 && added.every((l) => /^\s*(?:#.*)?$/.test(l)) && added.some((l) => /^\s*#\s*end of\s+/i.test(l));
+}
+
+
 function classifyHigh(paths, content, tp, perFile) {
   const reasons = [];
   const core = isCoreStar(paths); if (core.hit) reasons.push(core.reason);
@@ -289,21 +392,55 @@ function classifyHigh(paths, content, tp, perFile) {
 // riskTier 从 git diff 机械重派生为权威源（FIX-1，不信 planner 自填 taskpackage.riskTier，守 P-2 作者≠判官）。
 // 向严单调（FIX-5）：git 失败 / criterion 异常 → ambiguous=true、tier=high（绝不吞成 low）。
 function deriveDiffTier(paths, content, tp, opts = {}) {
+  const advisories = [];
+  const precedentHits = [];
   try {
     if (opts.gitFailed) {
       // git 失败不得沿用 G3「不 block」放行派生（supervisor-gate-check:106-110）→ 不能派生 → 向严（FIX-5）
-      return { tier: 'high', ambiguous: true, reasons: ['git-failed:cannot-derive-riskTier→toward-strict(high/ESCALATE),FIX-5'] };
+      return { tier: 'high', ambiguous: true, reasons: ['git-failed:cannot-derive-riskTier→toward-strict(high/ESCALATE),FIX-5'], advisories, precedentHits };
     }
     if (!Array.isArray(paths)) throw new Error('diff paths must be an array');
-    const crit = classifyCritical(paths, content, opts.perFile);
-    if (crit.hit) return { tier: 'critical', ambiguous: false, reasons: crit.reasons };
-    const high = classifyHigh(paths, content, tp || {}, opts.perFile);
-    if (high.hit) return { tier: 'high', ambiguous: false, reasons: high.reasons };
+    let effectivePaths = paths;
+    if (paths.includes('firmware/sdkconfig') && isEmptySdkconfigRegeneration(opts.perFile)) {
+      const hit = matchDeclaredPrecedent(opts.declaration, 'generated-noise', opts.precedents);
+      if (hit) {
+        effectivePaths = paths.filter((p) => p !== 'firmware/sdkconfig');
+        precedentHits.push({ axis: 'generated-noise', changeId: hit.changeId, eventId: hit.eventId, pattern: hit.pattern });
+        advisories.push(`generated-noise 先例折抵：${hit.changeId}/${hit.eventId}（仅 firmware/sdkconfig 空节；其它轴照算）`);
+      }
+    }
+    const crit = classifyCritical(effectivePaths, content, opts.perFile);
+    if (crit.hit) {
+      const hints = crit.reasons.flatMap((reason) => {
+        const axis = axisForReason(reason);
+        if (axis === 'generated-noise' && !isEmptySdkconfigRegeneration(opts.perFile)) return [];
+        const hit = matchDeclaredPrecedent(opts.declaration, axis, opts.precedents);
+        return hit ? [`同款先例 changeId=${hit.changeId}（在册，eventId=${hit.eventId}），human 可凭先例快批；不折抵新轴`] : [];
+      });
+      return { tier: 'critical', ambiguous: false, reasons: crit.reasons, advisories: [...advisories, ...hints], precedentHits };
+    }
+    const high = classifyHigh(effectivePaths, content, tp || {}, opts.perFile);
+    if (high.hit) {
+      const remaining = [];
+      for (const reason of high.reasons) {
+        const axis = axisForReason(reason);
+        const hit = matchDeclaredPrecedent(opts.declaration, axis, opts.precedents);
+        if (axis === 'all-mock' && hit) {
+          precedentHits.push({ axis, changeId: hit.changeId, eventId: hit.eventId, pattern: hit.pattern });
+          advisories.push(`all-mock 先例折抵：${hit.changeId}/${hit.eventId}（只折抵 all-mock，新轴不折抵）`);
+        } else {
+          remaining.push(reason);
+          if (hit) advisories.push(`同款先例 changeId=${hit.changeId}（在册），human 可凭先例快批；${axis} 轴不自动折抵`);
+        }
+      }
+      if (remaining.length > 0) return { tier: 'high', ambiguous: false, reasons: remaining, advisories, precedentHits };
+      return { tier: 'low', ambiguous: false, reasons: ['green-channel:all-high-reasons-offset-by-approved-same-pattern-precedent'], advisories, precedentHits };
+    }
     // 绿色通道（FIX-2/P-1）：单系统 + 真库 + 无安全轴 + diff 无 critical/high 闭集命中 = 确定 low（防过严 ATAM-1）。
-    return { tier: 'low', ambiguous: false, reasons: ['green-channel:no-critical/high-closed-set-hit(dev-loop:244)'] };
+    return { tier: 'low', ambiguous: false, reasons: ['green-channel:no-critical/high-closed-set-hit(dev-loop:244)'], advisories, precedentHits };
   } catch (error) {
     // FIX-5 BLOCKING：criterion 抛异常被 try/catch 吞成默认 low = 绝不允许（fail 向 APPROVE）→ ambiguous 向严。
-    return { tier: 'high', ambiguous: true, reasons: [`criterion-exception:${error.message}→toward-strict(high),FIX-5`] };
+    return { tier: 'high', ambiguous: true, reasons: [`criterion-exception:${error.message}→toward-strict(high),FIX-5`], advisories, precedentHits };
   }
 }
 
@@ -394,7 +531,12 @@ function consumeFinalBearingFact(dir, changeId) {
 // critical/high → ESCALATE（优先级先于证据完整，不被短路）；low/med ∧ 证据完整 → APPROVE（恢复 auto-merge）；
 // 证据不完整 ∨ 门红 → BLOCK；连续 ≥2 completed round 仍 BLOCK → 熔断 ESCALATE（FIX-12，向严）。
 function decide({ diff, tp, declaredTier, evidenceComplete, completedRounds }) {
-  const derivation = deriveDiffTier(diff.paths, diff.content, tp || {}, { gitFailed: !!diff.gitFailed, perFile: diff.perFile });
+  const derivation = deriveDiffTier(diff.paths, diff.content, tp || {}, {
+    gitFailed: !!diff.gitFailed,
+    perFile: diff.perFile,
+    declaration: diff.declaration,
+    precedents: diff.precedents,
+  });
   const eff = effectiveTier(derivation.tier, declaredTier);
   const riskTier = eff.tier;
   const reasons = [...derivation.reasons];
@@ -426,7 +568,11 @@ function decide({ diff, tp, declaredTier, evidenceComplete, completedRounds }) {
       effectiveTier: riskTier,
       ambiguous: derivation.ambiguous,
       diffReasons: derivation.reasons,
+      advisories: derivation.advisories || [],
+      precedentHits: derivation.precedentHits || [],
     },
+    advisories: derivation.advisories || [],
+    precedentHits: derivation.precedentHits || [],
   };
 }
 
@@ -538,9 +684,11 @@ function main() {
 
   // riskTier 从 git diff 机械重派生（FIX-1）。git 失败 → gitFailed → deriveDiffTier 向严（FIX-5）。
   const git = collectGitDiff(projectDir);
+  const declarationInfo = readGateDeclaration(projectDir, changeId);
+  const precedentInfo = readApprovedPrecedents(projectDir);
   const diff = git.ok
-    ? { paths: git.paths, content: git.content, perFile: git.perFile, gitFailed: false }
-    : { paths: [], content: '', perFile: null, gitFailed: true };
+    ? { paths: git.paths, content: git.content, perFile: git.perFile, gitFailed: false, declaration: declarationInfo.declaration, precedents: precedentInfo.precedents }
+    : { paths: [], content: '', perFile: null, gitFailed: true, declaration: declarationInfo.declaration, precedents: precedentInfo.precedents };
 
   // 证据完整度（FIX-4 单源 fail-loud + FIX-5 缺失→BLOCK）。consumeFinalBearingFact 对 invalid fact fail-loud exit 2。
   const bearing = consumeFinalBearingFact(projectDir, changeId);
@@ -551,6 +699,8 @@ function main() {
   const completedRounds = bearing.count || countCompletedRounds(resolve(projectDir, 'delivery/taskpackages', changeId, 'verifier-evidence', 'rounds'));
 
   const decision = decide({ diff, tp, declaredTier, evidenceComplete, completedRounds });
+  decision.advisories = [...declarationInfo.advisories, ...precedentInfo.advisories, ...(decision.advisories || [])];
+  decision.riskTierDerivation.advisories = decision.advisories;
   const provenance = buildProvenance({ changeId, decision, bearing, closeoutArtifacts, verifyLogs, completedRounds, originType });
   const verdictObj = {
     verdict: decision.verdict,
@@ -572,6 +722,8 @@ function main() {
     verdict: decision.verdict,
     riskTier: decision.riskTier,
     reasons: decision.reasons,
+    advisories: decision.advisories,
+    precedentHits: decision.precedentHits,
     evidenceComplete,
     completedRounds,
     verdictRef: `delivery/taskpackages/${changeId}/supervisor-verdict.json`,
@@ -757,6 +909,42 @@ function selfCheck() {
     { perFile: new Map([['delivery/taskpackages/x/input-brief.md', '+brief prose']]) },
   ).tier === 'low', 'fp-path-input-brief-single-name-not-hit');
 
+  // 261028 P8：申报 + 同型人批先例的正反两臂；新轴永不折抵，噪音只认空节。
+  const precedent = { changeId: '261010-prompt-v9-schedule-anti-narration', eventId: 'e02f05e3-e0f5-46b9-ba79-2b4027b8e090', axis: 'all-mock', pattern: 'content-anchor-live-observation' };
+  const declaration = { schemaVersion: 1, precedents: { 'all-mock': { pattern: precedent.pattern, changeId: precedent.changeId } } };
+  const allMockPaths = ['firmware/main/a.test.c'];
+  ok(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).tier === 'low', 'precedent-all-mock-offset-positive');
+  ok(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).precedentHits.length === 1, 'precedent-all-mock-advisory-recorded');
+  ok(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { precedents: [precedent] }).tier === 'high', 'precedent-no-declaration-still-high');
+  ok(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { declaration, precedents: [] }).tier === 'high', 'precedent-not-approved-still-high');
+  ok(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { declaration: { schemaVersion: 1, precedents: { 'all-mock': { pattern: 'different-pattern', changeId: precedent.changeId } } }, precedents: [precedent] }).tier === 'high', 'precedent-pattern-mismatch-still-high');
+  ok(deriveDiffTier(allMockPaths, 'auth login; expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).tier === 'high', 'precedent-new-security-axis-never-offset');
+  ok(deriveDiffTier(['firmware/boards/x.c', ...allMockPaths], 'expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).tier === 'high', 'precedent-new-core-axis-never-offset');
+  ok(deriveDiffTier(['docs/contracts/x.md', ...allMockPaths], 'expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).tier === 'critical', 'precedent-critical-never-offset');
+  ok(effectiveTier(deriveDiffTier(allMockPaths, 'expect(x).toBe(1)', {}, { declaration, precedents: [precedent] }).tier, 'high').tier === 'high', 'precedent-cannot-lower-declared-high');
+  const noiseSection = ['diff --git a/firmware/sdkconfig b/firmware/sdkconfig', '+#', '+# Image Effects Configuration', '+#', '+# end of Image Effects Configuration', '+#'].join('\n');
+  const noiseMap = new Map([['firmware/sdkconfig', noiseSection]]);
+  const noisePrecedent = { changeId: '261015-voice-rightcol-label-overflow', eventId: 'noise-event', axis: 'generated-noise', pattern: 'idf-empty-section' };
+  const noiseDeclaration = { schemaVersion: 1, precedents: { 'generated-noise': { pattern: 'idf-empty-section', changeId: noisePrecedent.changeId } } };
+  ok(isEmptySdkconfigRegeneration(noiseMap) === true, 'noise-empty-section-predicate-positive');
+  ok(deriveDiffTier(['firmware/sdkconfig'], '', {}, { perFile: noiseMap, declaration: noiseDeclaration, precedents: [noisePrecedent] }).tier === 'low', 'noise-approved-empty-section-offset-positive');
+  ok(deriveDiffTier(['firmware/sdkconfig'], '', {}, { perFile: noiseMap, declaration: noiseDeclaration, precedents: [] }).tier === 'critical', 'noise-without-precedent-still-critical');
+  const substantiveMap = new Map([['firmware/sdkconfig', '+# Image Effects Configuration\n+# end of Image Effects Configuration\n+CONFIG_NEW_FEATURE=y']]);
+  ok(isEmptySdkconfigRegeneration(substantiveMap) === false, 'noise-real-config-line-not-noise');
+  const substantiveOutcome = deriveDiffTier(['firmware/sdkconfig'], '', {}, { perFile: substantiveMap, declaration: noiseDeclaration, precedents: [noisePrecedent] });
+  ok(substantiveOutcome.tier === 'critical', 'noise-real-config-still-critical');
+  ok(!substantiveOutcome.advisories.some((s) => s.includes('同款先例')), 'noise-real-config-no-misleading-precedent-hint');
+  const removedMap = new Map([['firmware/sdkconfig', '-# Image Effects Configuration\n-# end of Image Effects Configuration\n+#']]);
+  ok(isEmptySdkconfigRegeneration(removedMap) === false, 'noise-deletion-not-noise');
+  const parsed = parseGateDeclarationText('验证形态申报（JSON）：' + JSON.stringify(declaration));
+  ok(parsed.declaration?.precedents?.['all-mock']?.changeId === precedent.changeId, 'launch-declaration-parse-positive');
+  ok(parseGateDeclarationText('').declaration === null, 'launch-declaration-missing-not-consumed');
+  ok(parseGateDeclarationText('验证形态申报（JSON）：{bad').declaration === null, 'launch-declaration-malformed-not-consumed');
+  const approvedEvent = { schemaVersion: 1, eventId: 'e1', changeId: 'x', eventType: 'human-decision', actor: 'human', payload: { decision: 'approve-escalated-merge', approvedVia: 'AskUserQuestion', gatePrecedents: [{ axis: 'all-mock', pattern: 'p' }] } };
+  ok(eventApprovedPrecedents(approvedEvent).length === 1, 'human-precedent-schema-positive');
+  ok(eventApprovedPrecedents({ ...approvedEvent, payload: { decision: 'approve-escalated-merge' } }).length === 0, 'approval-without-explicit-precedent-tag-not-library');
+  ok(eventApprovedPrecedents({ ...approvedEvent, payload: { ...approvedEvent.payload, gatePrecedents: [{ axis: 'security', pattern: 'p' }] } }).length === 0, 'new-axis-tag-not-offsettable');
+
   console.log(JSON.stringify({ selfCheck: 'supervisor-verdict-gate', pass, fail: failCount, total: pass + failCount, ok: failCount === 0 }));
   if (failCount > 0) process.exit(1);
 }
@@ -777,6 +965,11 @@ export {
   collectGitDiff,
   countCompletedRounds,
   decide,
+  readGateDeclaration,
+  readApprovedPrecedents,
+  parseGateDeclarationText,
+  matchDeclaredPrecedent,
+  isEmptySdkconfigRegeneration,
 };
 
 // isMain() 守卫承重：本闸被 supervisor-gate-check.mjs import 复用纯函数时（FIX-6 第二方重算），import 不得触发本闸

@@ -45,4 +45,10 @@ description: Retrieve and read the KidPal device's on-board diagnostic logs (KPL
 
 KPLOG005（memcpy 修复前固件写的段）里记录头带 22 字节栈垃圾（二进制乱码行）——`44793227` 已修；修复后固件写的段不再有。判读老段时跳过乱码行即可。
 
+## 作为设备轮合并证据
+
+KPLOG 可以独立作为真机目击佐证，不必另写「人工在场目检」。在包内 `device-round-evidence.md` 的 observation 写 `method: "kplog"`，并同时给：① `KPLOG000..031` 段号；② 覆盖观察行为的墙上时间窗（未同步时标 `BOOT+ms` 窗口）；③ 包内 `device-evidence/` 的最小脱敏语义摘录路径；④ 该摘录的 SHA-256。摘录必须能判别所声明的 acceptanceRef（如 PAGE_SWITCH / state_reject / key_route_dispatch / StateMachine 转移），只拉 tail 而不指到具体行为不算证据。
+
+**隐私与保留**：完整 KPLOG 可含儿童语音转写，原文件留仓外；公开仓只提交完成判定所需的最小语义行，不提交整段对话原文。原始件在结论复核期不得随当轮收尾即删。
+
 Related: [[kidpal-flash-device]] [[kidpal-serial-monitor]] [[kidpal-ecs-gateway]] [[kidpal-live-smoke-debug]]

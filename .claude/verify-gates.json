@@ -36,6 +36,21 @@
     "    （分钟级 + fail-open），由 verifier scoped 相位承担（rigor=lite/nano 包后置 final 相位——",
     "    261015-gov-review-lite-fast-path T3）；types 闸缺口照旧（ARQ-260827-contract-mech-gate-gap 邻域）。"
   ],
+  "deviceOutcomeGate": {
+    "_doc": "前置升级闸的设备轮子判据配置，不是 verify.mjs 新增闸。consumer=.claude/scripts/pre-merge-escalation-gate.mjs。hostUncompilablePaths/Prefixes 是首批已登记排除表、非理论完备集；申报未登记路径或路径不在合并 diff 均 fail-closed。",
+    "evidenceRef": "device-round-evidence.md",
+    "hostUncompilablePaths": [
+      "firmware/main/application.cc",
+      "firmware/main/mcp_server.cc",
+      "firmware/main/display/lcd_display.cc",
+      "firmware/main/display/kidpal_render_node.cc",
+      "firmware/main/diagnostics/sd_log_fs.cc",
+      "firmware/main/diagnostics/log_cmd_port.cc"
+    ],
+    "hostUncompilablePrefixes": [
+      "firmware/main/boards/"
+    ]
+  },
   "gates": [
     {
       "id": "taskpackage-required",

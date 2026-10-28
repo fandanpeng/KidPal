@@ -2,14 +2,14 @@
 id: ARQ-261014-supervisor-escalate-preflight-ignored
 title: supervisor/pre-merge 机械闸不消费 launch-card 前置申报与同款先例——all-mock 类 known-pattern 升级多连发，human 逐次人批同型包
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect（闸判据修订）+ dev-loop（脚本落地）
 trigger: 下次治理批 / 下个动 supervisor-verdict-gate.mjs 或 pre-merge-escalation-gate.mjs 的批
 opened: 2026-10-14
-closed: ""
-closedBy: ""
-paths: [".claude/scripts/supervisor-verdict-gate.mjs", ".claude/scripts/pre-merge-escalation-gate.mjs"]
+closed: 2026-10-28
+closedBy: 261028-gov-review-p8-gate-semantics-cluster
+paths: [".claude/hooks/supervisor-verdict-gate.mjs", ".claude/scripts/pre-merge-escalation-gate.mjs"]
 source: loop-retro-2026-10-14 18 包复盘（`delivery/changes/retro/2026-10-14-loop-retro.md`）
 ---
 
@@ -20,3 +20,5 @@ source: loop-retro-2026-10-14 18 包复盘（`delivery/changes/retro/2026-10-14-
 **修法候选**（交 review，不自批）：① 闸消费 launch-card ⑦ 申报字段 + 在册先例（changeId 引用），命中已人批同型即降级为 advisory 留痕、不再阻断；② human 批准语义结构化（approvedVia + 同型 pattern 标签）累积先例库，供 ① 消费；③ 最小成本解：不动闸判据，只在 ESCALATE 报错输出里带一句「同款先例 changeId=…（在册），human 可凭先例快批」。倾向 ①+②，③ 兜底。**riskTier: low**（判据降噪面，须逐轴白名单防新轴漏升；不改契约面、不涉 spec）。
 
 **追加证据（loop-retro-2026-10-25，25 包复盘）**：① 261023-agents-md-static-semantics-alignment——all-mock 启发式把 prompt 文本对齐包判 high 并 ESCALATE，retro 称「结构上内生于该包型」，human 再次逐次人批；② 261015-voice-rightcol-label-overflow——G6 riskTier 重算把 firmware/sdkconfig 的 idf.py 再生噪音（空节 +5 行、零行为、不属 changeManifest）判 critical 并 ESCALATE，剥离噪音 commit 后 APPROVE。两类共性未变：闸不消费 launch-card 前置申报，也不区分「行为面真变」与「生成/投影面噪音」。建议修法补一条「噪音路径白名单 / 申报消费」子项。证据：delivery/retro/2026-10-25-loop-retro.md §二 T11。
+
+**2026-10-28 · 结项（`261028-gov-review-p8-gate-semantics-cluster`）**：按 human 立项选定 ①+②+③ 落地——launch-card 增机器可读验证形态申报；supervisor 与 G6 同参消费申报及已人批同型先例，all-mock 命中降级为 advisory 留痕，ESCALATE 仍带先例快批提示；新先例经 human-decision 的 approvedVia + gatePrecedents 累积。折抵红线逐轴白名单：只 all-mock / generated-noise，security/core/critical/新轴零折抵，declared riskTier 只升不降。generated-noise 只认 firmware/sdkconfig 纯空节且同样需申报+先例，真实配置行仍 critical。frontmatter 的 supervisor 路径由 scripts 修正为 hooks，消除条目登记时漂移。

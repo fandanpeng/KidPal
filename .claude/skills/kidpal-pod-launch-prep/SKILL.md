@@ -128,6 +128,7 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
 本包 base ref：<点火时目标树 git rev-parse HEAD 的 SHA>（= 包首提交父；常驻分支 <分支名>）——包级 diff（终验 scope 圈定 / detect_changes / 白盒复核 / 合并范围）恒用此 ref，不用 main。
 上一包留根：<delivery/taskpackages/<上一包changeId>/pod-retro.md>，intake 逐条评估（构成 blockingDecision → fail-closed 上报）。
 固件严格模式默认开：VERIFY_FW_BUILD_REQUIRED=1（无关闭留痕即开，260909 T3/T5 OQ1=(b)——firmware-build 闸读进程环境变量，未设即降级，此声明行随卡走不得省；261015 批 T3 起 defer > required——lite/nano 包 scoped 相位 defer 短路优先于本行，final 相位恒跑）。
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":false,"acceptanceRefs":[],"hostUncompilablePaths":[],"reason":"none"}}
 会话标识：<pid / 终端标识 / 启动时刻>（点火后由 launch 执行者回填——叫停时核「进程确实已死」用，见 pod-coordination「叫停协议」节）。
 （lite/nano 包新树加一行）真机轮预检：烧录前补齐固件环境等价化（步骤 4 配方），或退主 checkout 构建烧录。
 命令行（两形态并列，标注适用条件）：
@@ -139,6 +140,7 @@ node .claude/scripts/portfolio-reconcile.mjs --set-pod <changeId> --status queue
   若日后实测可传参：本行改写为「扩展形态按 ①② 同法传参」并撤降级申报（升级分支句，见 PROPOSAL OQ1）。
 ```
 
+- **验证形态申报是机器消费行，不是散文提示**：上例「验证形态申报（JSON）：」前缀后必须恰有一个单行 JSON 对象。`precedents` 只登记本包确有的同型验证形态：键只允许 `all-mock` / `generated-noise`，值形如 `{"pattern":"content-anchor-live-observation","changeId":"261010-prompt-v9-schedule-anti-narration"}`；pattern 与 changeId 必须指向已人批同型先例，申报本身不产生降级。`deviceOutcome` 用于设备轮：`userVisible=true` 时 `acceptanceRefs` 与 `hostUncompilablePaths` 均须非空；false 而实际 diff 触已登记 host 不可编路径时，`reason` 至少 12 字说明为何不是用户可见结果；未填（none）或保留尖括号占位符均视同未申报。启动卡缺行不阻 launch；但 supervisor 不消费缺失申报，前置升级闸对触 host 不可编路径而缺申报的包 fail-closed。
 - 身份探测 / 包事实 / 环境事实 / 教训全文**不再搬运**：planner 凭 changeId 裸起步自探测四处（taskpackage / upstreamRef / pods json / 本包启动卡——planner.md Step 1）；包事实在 taskpackage.json + plan.md + decision-coverage；环境事实的耐久家 = skills（kidpal-idf-env / kidpal-serial-monitor / kidpal-ecs-gateway / kidpal-live-smoke-debug）；基线家 = progress.md 带锚行；教训家 = 上一包 pod-retro.md；input-brief 与 C 侧 cwd 敏感判读等既有指针由 planner/verifier 自身定义与 260909 批制品承载。
 - launch 侧动作收敛为三件：board worktreePath 重指（步骤 6）+ 基线差异判停（步骤 2）+ 写启动卡。
 - **存量卡位置注记（260921-gov-review-launch-pipeline T2）**：落点迁移前的启动卡留在 git common dir 的 `.git/devloop/launch/prompt-<changeId>.txt`（**历史制品，不回改、不迁移**）。按新路径找不到旧卡时，**不等同于"拆包产物缺失"**——先去该目录查。

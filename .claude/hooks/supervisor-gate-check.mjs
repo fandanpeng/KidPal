@@ -32,7 +32,7 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 // FIX-6 第二方重算复用机械闸的 riskTier 派生纯函数（单一机械源，dev-loop:244 投影；防 canonical↔hook 漂移 RC-7②）。
 // import 不触发本目录 supervisor-verdict-gate.mjs 的 main()（其 isMain() 守卫，对偶 verifier-evidence-check:526）。
-import { deriveDiffTier, collectGitDiff } from './supervisor-verdict-gate.mjs';
+import { deriveDiffTier, collectGitDiff, readGateDeclaration, readApprovedPrecedents } from './supervisor-verdict-gate.mjs';
 import { CHANGE_ID_PREFIX_RE } from '../scripts/lib/changeid-shared.mjs'; // T1 单源收敛（260906-gov-review-arq-governance-batch）
 import { echoResolution, CURRENT_TASKPACKAGE_REL } from '../scripts/lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
 
@@ -759,7 +759,13 @@ function main(projectDir = defaultProjectDir) {
       // FIX-5：派生用 git 失败不得沿用 G3「不 block」放行（:106-110），须向严 ESCALATE-stays-human。
       block('G6 recompute: git diff unavailable; cannot re-derive riskTier from immutable input → toward-strict (ESCALATE-stays-human).');
     }
-    const reDerived = deriveDiffTier(reGit.paths, reGit.content, {}, { perFile: reGit.perFile });
+    const declarationInfo = readGateDeclaration(projectDir, changeId);
+    const precedentInfo = readApprovedPrecedents(projectDir);
+    const reDerived = deriveDiffTier(reGit.paths, reGit.content, {}, {
+      perFile: reGit.perFile,
+      declaration: declarationInfo.declaration,
+      precedents: precedentInfo.precedents,
+    });
     if ((reDerived.tier === 'critical' || reDerived.tier === 'high') && value === 'APPROVE') {
       block(
         `G6 recompute mismatch: immutable git diff re-derives riskTier=${reDerived.tier} (${reDerived.reasons.join('; ')}) ` +
