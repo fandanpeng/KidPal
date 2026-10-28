@@ -306,6 +306,14 @@ set(HOST_ACCEPTANCE_SRCS
     # host smoke acceptance 之前。
     "../../chrome_ghost.test.c"
 
+    # 包 261028-p3-record-session-mirror-desync-fix（P3 记录会话镜像与 ctx 双滞后修复：
+    # 故事列表页卡死、长按 KEY 回不了首页）冻结验收。被测实现三 TU（kidpal_render_node.cc /
+    # application.cc / mcp_server.cc）均不进 host 构建——RSL2-A1/A2/A3 结构源锚 tree-scan
+    # 承载；RSL2-A4 canary 行为齿强符号源 = display/story_page.c（已在册，host runner
+    # strong symbol 通道）。**必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行,
+    # 包 0 boundary 齿注册序守卫；本文件 TEST 5 校验此序——登记行缺失即红）。
+    "../../record_session_lifecycle.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )

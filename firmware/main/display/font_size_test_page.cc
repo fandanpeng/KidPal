@@ -36,9 +36,11 @@ void font_size_test_page_show(void)
     static const int sizes[] = { 10, 12, 14, 16, 18, 20, 24, 28, 32 };
     const int n = (int)(sizeof(sizes) / sizeof(sizes[0]));
 
-    /* 顶层整屏白底容器：浮在正常 UI（状态栏/聊天层）之上，不被后续绘制覆盖 */
+    /* 顶层整屏白底容器：浮在正常 UI（状态栏/聊天层）之上，不被后续绘制覆盖。
+     * **禁 lv_obj_clean(lv_layer_top())**（2026-10-28 真机 panic 实证）：语音页容器
+     * g_kidpal_voice_page（lcd_display.cc）等 chrome 常驻 layer_top，clean 会销毁
+     * 它们，启动后 chrome 同步路径摸悬挂指针 → LoadProhibited 循环。直接叠画即可。 */
     lv_obj_t *layer = lv_layer_top();
-    lv_obj_clean(layer);
     lv_obj_set_size(layer, LV_HOR_RES, LV_VER_RES);
     lv_obj_set_style_bg_color(layer, lv_color_make(0xff, 0xff, 0xff), 0);
     lv_obj_set_style_bg_opa(layer, LV_OPA_COVER, 0);

@@ -8,7 +8,7 @@
 
 ## 机读声明（全文恰一行 `current:`，行首匹配；勿改格式）
 
-current: kidpal-ui-design-v7.html
+current: kidpal-ui-design-v8.html
 
 ## 逐版备注（append-only；新版本追加在末尾）
 
@@ -21,6 +21,7 @@ current: kidpal-ui-design-v7.html
 | v5 | 2026-09-22 → 2026-10-12 | commits `ec0804bd`…`101629e4`（ui-v5 系列 + `261011-p1-home-v5-rework`；要点四项自 `31d364d5`（2026-09-23）起） | 60 个 id，id 集与 v4 完全一致——纯版式重构（四态骨架归一 / 聆听态重排 / 提醒态右区收敛 / 首页明天组时间打头） |
 | v6 | 2026-10-17 | commit `e6253317`，批 `261016-p3-story-body-sd-cache`（requirements v1.64） | 61 个 id（+1 = `p3-body-unavailable`，WF-F2-06 正文取不回提示覆盖层）。**本版曾出事故**：增量件（3 个 id）先占用 v6 命名 → 全仓 12 条 story 锚假红（涉 10 条 story），重建为完整母版后复绿——即 ARQ-261017 的立案现场 |
 | v7 | 2026-10-19（2026-10-21 后补账） | commits `356a9e25` + `05cf4910`，批 `261019-p3-record-dialogue-guide`（requirements v1.65） | 64 个 id（+3 = `p3-recording-guide` / `p3-recording-guide-spec` / `state-organizing`），且为 v6 的**严格超集**（缺失 0）。按本批 intake R1 裁定由主线程「合并完整 v7 母版（v6 基底 + 三帧）」；15 画布全帧出图、三帧入库 `docs/ui/V7/` |
+| v8 | 2026-10-28 | 批 `261028-font-typography-scaleup`（requirements updating v1.69，档 2 触 UI） | 64 个 id，与 v7 集合**完全一致**（缺失 0、新增 0）——纯版式/标记形态修订（P1/P2/P3 列表/P3 阅读四页：正文 16px、阅读标题 20px 居中省略、课表 pitch 19 + 带 78/78/69、※ 前缀全设备退役改课名下划线、列表标题超宽省略）；brief v6→v7 同批。变更帧 4 张入 `docs/ui/V8/`（canvas-p1 / canvas-p2 / canvas-p3 / p3-reader，规格单 = brief §8）；**产物标「随批 261028-font-typography-scaleup 在途」**，frozen 判据 = requirements §9 版本行在位 + brief 版本行对齐注记（已在位） |
 
 ## 现行指针的依据记录（一次性，append-only）
 
