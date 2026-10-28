@@ -1,19 +1,18 @@
-# input-brief · 261025-openclaw-dreaming-disable
+# input-brief · 261028-p3-record-session-mirror-desync-fix
 
 > **非权威派生物**（脚本生成，Git-tracked）：本文件是**本次派发消费期的封闭输入清单快照**，不是事实源——契约 / spec / 代码各自仍是其自身 SSOT。改本文件无意义，改 refs 后重跑脚本。
 > **行号快照语义**：下文行号 = 生成时点解析结果，**非长期事实源**；消费时若 symbol 已移位，重跑 `brief-inputs.mjs` 取新行号，不得照旧行号通读整文件。
-> generated-at: 2026-10-25T11:22:41.697Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
-> 来源 TaskPackage: `delivery/taskpackages/261025-openclaw-dreaming-disable/taskpackage.json` · subsystem: server/deploy/261025-openclaw-dreaming-disable/（新建：声明 changes 恰一叶键 plugins.entries.memory-core.config.dreaming.enabled=false + drift_guard 两态接受/两态 fail-closed + apply 安全编排 + rollback 备份还原+重启面）+ server/deploy/manifest.yaml（三件登记）+ server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md（升级检查清单钉一行）+ server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py（新建冻结件 DD-A1..DD-A5） · rigor: lite
+> generated-at: 2026-10-27T23:25:37.496Z · 生成器: .claude/scripts/brief-inputs.mjs · 消费方: acceptance-author + builder（单份共用）
+> 来源 TaskPackage: `delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/taskpackage.json` · subsystem: firmware/main/display/kidpal_render_node.cc（镜像单点派生 + show_home 守卫链）+ firmware/main/application.cc（Idle 收尾沿同步 + HandleStartListeningEvent 早退清位）+ firmware/main/mcp_server.cc（收尾同步桥）+ firmware/main/test（host 验收件 + runner 登记） · rigor: full
+> **改动指令源 = plan.md**：`delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md`（bug 类包——本 brief ①b 为指针形态，真实改动指令在此）。
 
 ## ① 契约 / spec 锚点节（定位到节，**不抽正文**——正文仍在 SSOT，读它）
 
 | 路径 | 锚点 | 节标题 | 节首行 | 状态 |
 |---|---|---|---|---|
 | `docs/contracts/interface-contract.md` | — | 无锚点（整文件） | — | bare |
-| `docs/debt/tech/TECH-261025-dreaming-capture-pollutes-honcho.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md` | — | 无锚点（整文件） | — | bare |
-| `delivery/taskpackages/261025-kidpal-tools-profile-fix/taskpackage.json` | — | 无锚点（整文件） | — | bare |
-| `server/deploy/manifest.yaml` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md` | — | 无锚点（整文件） | — | bare |
+| `delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/launch-card.md` | — | 无锚点（整文件） | — | bare |
 
 ## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）
 
@@ -23,13 +22,17 @@
 
 本包声明 **exempt**（不适用跨端对端阅读）：
 
-> 本包只改云端 OpenClaw 部署声明/脚本与部署 runbook：设备端零感知、固件零 diff；不新增或改变端→网关消息、帧类型、字段承载与序列化形态。
+> 纯板端会话生命周期实现修正：零 wire 形状改动（无新帧类型、无字段类型/承载/回执语义/序列化形态变化），server/** 零 diff；不引入新数据类。triage architect 逃生门预查 = 干净（不触 docs/contracts/**，不改 requirements/architecture）。
 
 豁免理由留痕，integrator / loop-retro 可事后复核；如复核认定实有对端面，回灌 counterparts 条目并重跑本脚本。
 
 ## ③ 先例（同 subsystem 已 merged 包，封顶 3 个，按 changeId 日期前缀倒序）
 
-（无同 subsystem 的已 merged 先例包）
+| 先例包 | 冻结验收文件 |
+|---|---|
+| 261022-diag-log-content | `firmware/main/test/diag_log.acceptance.c` |
+
+封顶即上限：**不得再自行扩先例阅读面**（治「把先例读了个遍」长尾）。确需更多先例 → 写进超读申报段。
 
 ## ④ 清单外阅读申报（超读是常态动作，不申报才是问题）
 

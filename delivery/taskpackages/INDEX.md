@@ -104,3 +104,4 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261028-p3-record-session-mirror-desync-fix](261028-p3-record-session-mirror-desync-fix/) | 2026-10-28 | delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md | closed | — |

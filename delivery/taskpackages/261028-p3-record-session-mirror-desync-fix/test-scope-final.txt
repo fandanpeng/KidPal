@@ -1,0 +1,47 @@
+# test-scope-final · 261028-p3-record-session-mirror-desync-fix
+# 范围 = 影响面圈定清单（integrator Step 4）：本包 acceptanceTestsFile 种子
+#   ∪ detect_changes blast radius 映射测试（base=75df5d32，project=C-AI-KidPal-pod-m2）
+#   ∪ RSL2-A4 回归网家族 ∪ 共享 seam（host 全量 runner 编译面）安全余量。
+# 圈定方式 = 正常圈定（per-Pod 图索引可用，detect_changes 实跑成功，未降级）。
+# ── 种子（本包 acceptanceTestsFile + mutationEvidence.affectedTest）──
+firmware/main/test/record_session_lifecycle.acceptance.c
+# ── detect_changes blast radius 映射测试（hop 1-3 内的 test 面文件）──
+firmware/main/test/acceptance/red-baseline/pcn_a11_oracle_check.py
+firmware/main/test/acceptance/red-baseline/rsl2_sat_harness.py
+server/acceptance/archive/test_g_relay_fix.acceptance.py
+server/acceptance/test_char_meaning_merge.acceptance.py
+server/acceptance/test_perf_k1_roundtrip_latency.acceptance.py
+# ── RSL2-A4 回归网家族（冻结验收文本点名）──
+firmware/main/test/chrome_ghost.acceptance.c
+firmware/main/test/chrome_ghost.test.c
+firmware/main/test/key_layer_dispatch.acceptance.c
+firmware/main/test/record_dialogue_guide.acceptance.c
+firmware/main/test/record_dialogue_v7_fix.test.c
+firmware/main/test/record_session_live.acceptance.c
+firmware/main/test/record_session_repair.acceptance.c
+firmware/main/test/record_session_repair.test.c
+firmware/main/test/story_page_v2.acceptance.c
+firmware/main/test/story_page_v2.test.c
+# ── 共享 seam 安全余量：host 全量 runner 将 firmware/main/test/*.c 平铺同编译，
+#    本包验收件登记进同一 runner，以下其余 host 测试件随 runner 整体进出。──
+firmware/main/test/boot_auto_connect.acceptance.c
+firmware/main/test/char_stroke.acceptance.c
+firmware/main/test/char_window.test.c
+firmware/main/test/char_window_overlay.acceptance.c
+firmware/main/test/diag_log.acceptance.c
+firmware/main/test/host_infra_smoke.acceptance.c
+firmware/main/test/keybar_three_slot.acceptance.c
+firmware/main/test/log_cmd.acceptance.c
+firmware/main/test/p1_auxbar_style.acceptance.c
+firmware/main/test/p1_cjk_name.acceptance.c
+firmware/main/test/p1_home_battery.acceptance.c
+firmware/main/test/reminder_overlay_unify.acceptance.c
+firmware/main/test/retract_p4_three_page.acceptance.c
+firmware/main/test/schedule_grid.acceptance.c
+firmware/main/test/schedule_grid_restore.acceptance.c
+firmware/main/test/sd_card_mount.acceptance.c
+firmware/main/test/sd_log.acceptance.c
+firmware/main/test/story_cache.acceptance.c
+firmware/main/test/time_sync.acceptance.c
+firmware/main/test/voice_rightcol_label.acceptance.c
+firmware/main/test/voice_round_ui.acceptance.c
