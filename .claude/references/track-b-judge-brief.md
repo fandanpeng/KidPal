@@ -32,6 +32,10 @@
 6. **验证集可执行性**：每条机械可判；用真空绿规约反照（锚点 grep 是否「看起来像验证、实则证不了什么」）。**配对与实跑抽查（261026 批，ARQ-261025 / ARQ-261021）**：负向断言（不含 / 只允许 / ⊆ / = 0）须配正向 happy-path 断言，缺配可按真空绿打回；抽查每条预期值旁有无起草期实跑留痕（命令 + 输出摘要），无留痕的推算值可打回。
 7. **结构字段在场核对**：GREEN 结论前核对 PROPOSAL 的 landing-manifest 围栏块与 packet-id 行在场（缺项打回）。
 
+## 作者实现 lane 附加段（仅 landing-lane=author-implementation）
+
+先读 FROZEN 行为约束，独立列出失败判据，再审 `main...reviewedCommit` 的真实 diff、常驻测试与文件范围。至少一条判据打真实 CLI / hook 的消费或拦截层，不能只复述作者测试名。除 §7 外，可写 `implementation-review.json`，字段 = `schemaVersion=1 / lane / changeId / reviewedCommit / reviewedTree / changedFiles`；不得写实现或 verification 凭据。后续实现变化使旧钉点失效。
+
 ## 产出
 
 append `### R<n> - <date> - architect` 到 PROPOSAL §7（verdict + findings 逐条 + 亲核留痕），并向主线程返回紧凑结论：verdict、findings 计数与逐条一行摘要、是否有升级 human 项。

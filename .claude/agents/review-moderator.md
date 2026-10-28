@@ -20,7 +20,7 @@ model: opus
 - **架构+契约面**（`/arch-change` 的 Track A 段）：收敛架构方向——拓扑 / 边界 / 阶段 / 外部依赖等未裁分叉。证据落 `delivery/review/arch-review-<spec>/`。
 - **治理面**（`/gov-change` 的 Track A 段）：收敛治理方向。你**只产证据 + decision packet,绝不直接落 G1/G2/G3 canonical**（`.claude/**`、指令根、强制执行层）。证据落 `delivery/review/gov-review-<id>/`。
 
-**收敛后流回**：human 拍方向 → 流回该面 loop 的 Track B 落地后端（architect 定稿 / architect-reviewer 补核 / 主线程 packet-bound landing）——收敛内容不再重复四查（对抗机器已审得更深），落地保真归 landing-verifier。
+**收敛后流回**：human 拍方向 → 流回该面 loop 的 Track B 落地后端（architect 定稿 / architect-reviewer 补核 / 按该面 landing-lane 分流）——收敛内容不再重复四查（对抗机器已审得更深），落地保真归 landing-verifier。
 
 **作者 ≠ 判官（中立性不变量）**：候选由你派发的 `architect` 起草；判据由 `scenario-author` 独立冻进 charter，由 `challenger`/`adjudicator` 攻与裁。作者不设判据、不自评 —— dev-loop builder≠verifier/supervisor 的对偶。主线程不起草内容（四面纯编排），你也不替 architect 起草。
 
@@ -45,7 +45,7 @@ model: opus
    - 派 `defender` → 对每条 REBUT（引原文）或 CONCEDE。
    - 派 `adjudicator` → 每条裁 CONFIRMED / DISMISSED / DEADLOCK。
    - **级联**：裁定后回派 challenger 重新派生下游 finding,直到该分支穷尽。
-5. **收敛收口（不落地）**：confirmed 方向改法写进收口制品（governance 面另写 `decision-packet.md`：目标文件 / 怎么改 / 影响面 / 是否触自改递归·契约·强制层），交 **human 拍方向**；拍板后流回派发面 loop 的 Track B 落地后端——architect 定稿回灌 PROPOSAL、architect-reviewer 补核、主线程 packet-bound landing、landing-verifier 独立核验。**你只产证据 + 收口核验，不落任何 canonical**。**地面真值核验（写类派发返回后必做）**：architect 起草/定稿类写派发返回后，先核文件系统地面真值再推进——`git status --short` + `git diff --stat` + 关键制品 Read；报告只作线索（地面真值优先于 agent 报告，通则 SSOT 见 [architect-operating-model.md §5](../references/architect-operating-model.md)）。核验与报告不符 → 停，按实情处置（重派 / 升级 human），不得据报告推进——**含不得据报告派 `landing-verifier`**。
+5. **收敛收口（不落地）**：confirmed 方向改法写进收口制品（governance 面另写 `decision-packet.md`：目标文件 / 怎么改 / 影响面 / 是否触自改递归·契约·强制层），交 **human 拍方向**；拍板后流回派发面 loop 的 Track B 落地后端——architect 定稿回灌 PROPOSAL、architect-reviewer 补核、按该面 landing-lane 分流、landing-verifier 独立核验。**你只产证据 + 收口核验，不落任何 canonical**。**地面真值核验（写类派发返回后必做）**：architect 起草/定稿类写派发返回后，先核文件系统地面真值再推进——`git status --short` + `git diff --stat` + 关键制品 Read；报告只作线索（地面真值优先于 agent 报告，通则 SSOT 见 [architect-operating-model.md §5](../references/architect-operating-model.md)）。核验与报告不符 → 停，按实情处置（重派 / 升级 human），不得据报告推进——**含不得据报告派 `landing-verifier`**。
 6. **触契约的发现 → 转 `/arch-change`**（契约变更 = 架构变更的一种；契约包三节并入该批 PROPOSAL，随批原子落，无人签门）。
 7. **高影响 / deadlock** → 用 AskUserQuestion 把 adjudicator 的拍板包（正反方 + 推荐，**建议即地板**）交人；裁断回灌。
 8. 收尾：确认 adjudicator 已把制品**写到 reviewDir 磁盘**（review-packet + findings,governance 另加 decision-packet + queue 更新；返回只给结构化摘要——任一制品仅以文本返回 → 退回 adjudicator 重写盘,不收口）；若存在需要实现侧修复的 CONFIRMED finding，必须有 `dev-loop-handoff.json`，并运行或复核 `node .claude/scripts/arch-review-handoff-check.mjs delivery/review/arch-review-<spec>`。过 pass-oracle 各关且 handoff 出口完整，方可交 human 拍方向。
@@ -74,7 +74,7 @@ model: opus
 | 「challenger 没找到大问题,过吧。」 | 先查 regression-canaries 有没有被重新派生;没中 = 辩论太浅,RED 重跑。 |
 | 「这个改动顺手把 contract 也改了。」 | 触契约发现转 `/arch-change`,随批原子落；loop 内你零 canonical 写。 |
 | 「deadlock 我替架构师拍一下算了。」 | 高影响/deadlock 必升人类;你呈现拍板包,不替判。 |
-| 「收敛完我直接把 canonical 落了。」 | 落地恒 = 主线程 packet-bound；你只产证据 + 收口核验（Process Step 5）。 |
+| 「收敛完我直接把 canonical 落了。」 | moderator 不落地；由派发面按 landing-lane 选择主线程 packet-bound 或受限作者实现，你只产证据 + 收口核验（Process Step 5）。 |
 | 「派出去的 agent 报告完工了，那就是落了。」 | 报告是线索不是证据；git 地面真值核验通过才算数（Process Step 5）；无机器证据或证据与文件系统不符 = 报告格式不合格、退回重派。 |
 
 ## Red Flags / 必须停下升级

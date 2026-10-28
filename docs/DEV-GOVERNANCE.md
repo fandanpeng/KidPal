@@ -47,7 +47,7 @@
 | 集成 / 发布 | `integrator` / merge executor（planner 主线程）| docs-sync + 全量 e2e + closeout；合并走本地可回滚路径（`--no-ff`）|
 | 合并把关（release gate） | `supervisor` | 证据可信 + 风险分级放行；高危升级 human |
 | 设计评审会 | `scenario-author` / `challenger` / `defender` / `adjudicator` / `review-moderator` | 冻判据 → 红队挑战 → 答辩 → 裁决；主持编排 |
-| 首席架构师 | `architect` | 起草 spec / 治理候选；开发治理 owner |
+| 首席架构师 | `architect` | 起草 spec / 治理候选；开发治理 owner；受限 author-implementation 批可直接实现 scripts/hooks |
 | 架构评审 | `architect-reviewer` | 契约四分类 + review-depth 裁断 |
 | landing 独立核验 | `landing-verifier` | 治理 canonical landing 保真 == frozen PROPOSAL |
 | retro 引导（跨团队） | `/loop-retro` | 周期性跨 Pod 提共性，治理类进 ARQ |
@@ -134,7 +134,7 @@ flowchart TD
     SRC{"来源"} -->|"human 直接提出"| D1
     SRC -->|"retro 制度产出<br/>(pod-retro + /loop-retro → ARQ)"| D1
     D1["① 主线程派 architect 起草 PROPOSAL<br/>→ human 立项 ack"] --> REV["② architect-reviewer 评审循环至 GREEN<br/>(R1–R3 同判官;3轮未绿→human 三选一;<br/>触 docs/contracts/** 发现 → 转 /arch-change)"]
-    REV --> SEQ["③ 落地序列:<br/>标 FROZEN → packet-bound landing<br/>→ landing-verifier 核验 → retro(趁热)<br/>→ 主线程自动 merge → upsert"]
+    REV --> SEQ["③ 落地序列:<br/>标 FROZEN → 按 landing-lane 分流<br/>→ landing-verifier 核验 → retro(趁热)<br/>→ 主线程自动 merge → upsert"]
     SEQ --> SYNC["④ 同步联动全部投影处"]
     D1 -.->|"命中升级判据:<br/>跨系统结构性/方向未收敛/声明红队"| TA["Track A 段<br/>(对抗收敛 → human 拍方向<br/>→ 流回 Track B 落地)"]
 ```
@@ -144,7 +144,7 @@ flowchart TD
 - **怎么做**（步骤编号为外部引用锚点，勿重排；默认 = Track B 常驻轻路径七步闭环，展开 SSOT = [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」节；面 loop 入口 = [gov-change.md](../.claude/commands/gov-change.md)）：
   1. 主线程派 **architect** 在 `delivery/review/<change>/` 起草 `PROPOSAL.md`（输入 = human 原话 / ARQ 条目 / spine sources，落盘后派发——主线程不起草内容；标注轨道自评 + 理由；大改不在 proposal 里直接改 canonical；提案目录命名 = governance-lane `<YYMMDD>-gov-review-<slug>`（spec-lane `<YYMMDD>-arch-review-<slug>`），目录名必须命中 `.claude/scope-map.json` review-agent 写槽 token，否则评审 / 核验期制品写入被 `enforce-scope.mjs` 机械拦截——见 [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」节命名条款）→ **human 立项 ack**。
   2. **architect-reviewer 评审循环**（只读 canonical、只写评审记录于 PROPOSAL §7；R1–R3 同判官 resume）至 GREEN；评审中发现触 `docs/contracts/**` → 转 `/arch-change`（契约变更 = 架构变更的一种）；影响目标效果的打回项升级 human；**3 轮未 GREEN → human 三选一**（转 Track A 段 / 撤回·缩圈 / 换新判官实例再战 1 轮——仍不绿自动转 Track A 段）。（命中升级判据时：**所属面 loop 的 Track A 段**对抗收敛，human 拍方向后流回本步落地；review **不落 canonical**。）
-  3. **落地序列**（状态不可合并：立项 ack ≠ FROZEN ≠ landing 授权）：主线程凭「立项 ack + GREEN」标 **FROZEN**（授权记 Status 行）→ 主线程 packet-bound canonical landing（**G1/G2/G3 全落**，landing-manifest 绑定；**landing 恒 = 主线程**——architect 恒起草、architect-reviewer 恒审稿、两者永不 landing）→ `landing-verifier` 独立核验 → verdict 绿 → 主线程补写 **retro**（闭环件，模板 `docs/templates/retro.template.md`；landing-verifier 绿后趁热写、先于合并，不含合并锚——落点由 `delivery/review/INDEX.md` `mergedInMain` 机械现推）→ **主线程前置升级闸放行后自动合并本地 main（可回滚）** → 主线程在 draft / FROZEN / landed 三转移点各跑一次 `node .claude/scripts/changes-index.mjs --upsert <id>`，把本批单行状态即时钉进 `delivery/review/INDEX.md`（只动一行、幂等；INDEX 已按 lane 拆分，dev 段在 `delivery/taskpackages/INDEX.md` 由 closeout-check 刷行；landed 转移点在合并后跑，`mergedInMain` 由 `git branch --contains` 现推）。改 durable policy 记 **ADR**。（**轻路径**：文档面措辞级批 = 瘦制品五件过闸，retro 豁免——见 [gov-change.md](../.claude/references/gov-change.md)「轻路径落地通道」。）
+  3. **落地序列**（状态不可合并：立项 ack ≠ FROZEN ≠ landing 授权）：主线程凭「立项 ack + GREEN」标 **FROZEN**（授权记 Status 行）→ 按 `landing-lane` 落地（缺省主线程 packet-bound canonical landing〔G1/G2/G3 全落，landing-manifest 绑定〕；符合 gov-change 条件的纯 scripts/hooks 由 architect 在当前 gov worktree 非 main 分支实现提交，reviewer 审真实 diff、verifier 验同一 commit/tree）→ `landing-verifier` 独立核验 → verdict 绿 → 主线程补写 **retro**（闭环件，模板 `docs/templates/retro.template.md`；landing-verifier 绿后趁热写、先于合并，不含合并锚——落点由 `delivery/review/INDEX.md` `mergedInMain` 机械现推）→ **主线程前置升级闸放行后自动合并本地 main（可回滚）** → 主线程在 draft / FROZEN / landed 三转移点各跑一次 `node .claude/scripts/changes-index.mjs --upsert <id>`，把本批单行状态即时钉进 `delivery/review/INDEX.md`（只动一行、幂等；INDEX 已按 lane 拆分，dev 段在 `delivery/taskpackages/INDEX.md` 由 closeout-check 刷行；landed 转移点在合并后跑，`mergedInMain` 由 `git branch --contains` 现推）。改 durable policy 记 **ADR**。（**轻路径**：文档面措辞级批 = 瘦制品五件过闸，retro 豁免——见 [gov-change.md](../.claude/references/gov-change.md)「轻路径落地通道」。）
   4. **同步联动**：`dev-loop.md`、治理文档、`AGENTS.md` / `CLAUDE.md`、agent 定义、rules/references、scope-map/hooks/scripts——**改源时同批同步本文件内的全部投影处**。
 - **阈值**：文档面措辞 / typo → 轻路径（瘦制品过闸）；改行为 / 门力度 / 角色边界 / agent 定义 / 强制执行层 → 全套 Track B。
 - **详见**：[architect-operating-model.md](../.claude/references/architect-operating-model.md) · [gov-change.md](../.claude/commands/gov-change.md)。
@@ -207,11 +207,11 @@ flowchart TD
 **硬条款**：
 
 1. **AGENTS.md ≡ CLAUDE.md**：同类常驻指令根，同 owner / writer / approver，不得一个可写一个不可写。
-2. **agent 定义只归 architect 起草**：`.claude/agents/**` 的职责 / 边界 / 工具 / write scope 变更只能 architect 起草（**landing 恒 = 主线程 packet-bound**）+ human 审核批准；builder / fixer / planner / reviewer 类 agent 不得自改或代改。
+2. **agent 定义只归 architect 起草**：`.claude/agents/**` 的职责 / 边界 / 工具 / write scope 变更只能 architect 起草（缺省由主线程 packet-bound 落地）+ human 审核批准；builder / fixer / planner / reviewer 类 agent 不得自改或代改。
 3. **自改递归**：修改自身定义、权限边界、工具、write scope，或影响自身权限的强制执行层文件 → 必须升级为 human-approved governance change；不得自批，不得仅凭同一 agent 的判断落地。现行权限下主要约束 architect；未来任何被授予 `.claude/agents/**` 或强制层写权限的 agent 自动受同一约束。
 4. **第五阀（review-loop 自指）**：改 review-loop agent（review-moderator / scenario-author / challenger / defender / adjudicator / architect-reviewer）自身定义时，其任何 re-review 必须在新改动 canonical landing 生效前跑、或由不加载被改 description 的独立会话 / harness 跑。此阀与 `architect.md` 的 D-C glob 硬排除不同：review-loop agent 仍在改写面内，靠本阀 + human 门兜底。
 
-**landing 通道（常态规则，2026-08-02 起）**：canonical landing 恒 = **主线程 packet-bound**（G1/G2/G3，landing-manifest 绑定 + `landing-verifier` 独立核验）；**architect 恒为判官 / 起草，永不 landing**（approved-landing mode 已于 2026-08-02 退役——`delivery/review/260802-gov-review-track-b-permanentize/PROPOSAL.md`）；human 把关点 = **立项 ack（前端对齐：需求/方向/量级）+ 例外反选（前置升级闸）；本地合并自动，远程发布 = 主线程跑 `node .claude/scripts/release-pr.mjs --publish`（只推 `release/*` 分支并开 PR），PR 合并与其它 remote 同步仍 human**。例外升级拍板的升级件必含并行相交面内容（分级路由：①零相交机械放行 / ②无取舍并集+双方齿复跑 / ③architect 消解评审 / ④human——见 `pod-coordination.md` §10d；human 批的是**消解方案**而非放行仪式，260908-gov-review-escalation-conflict-ladder 判据换轴）。机械兜底 = scope-map `architect` deny carve-out（保留常驻）。Track A 触发时落地通道亦同（不因轨道而变）。详见 [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」。
+**landing 通道（双 lane，按面选择）**：缺省 = **主线程 packet-bound**（G1/G2/G3，landing-manifest 绑定 + `landing-verifier` 独立核验）。符合 gov-change 条件的纯 scripts/hooks 可走 `author-implementation`：architect 在当前 gov worktree 非 main 分支实现提交，reviewer 审真实 diff，verifier 验同一 commit/tree；混合面、契约、spec、G1、settings、agent 定义、scope-map、verify-gates 恒旧通道。human 把关点 = **立项 ack + 例外反选**；本地合并自动，远程发布 = 主线程跑 `node .claude/scripts/release-pr.mjs --publish`，PR 合并与其它 remote 同步仍 human。Track A 收敛后按同一路径边界选择后端。详见 [arch-review-protocol.md](../.claude/references/arch-review-protocol.md)「双轨路由」。
 
 **三类制品**（不替代 authority）：
 

@@ -50,7 +50,7 @@ lane 定了之后，**轻重判档归 architect-reviewer**（面 loop 评审循�
 1. 主线程派 **architect** 起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架见 `docs/templates/PROPOSAL.template.md`；输入 = human 原话 / spine sources / 讨论记录，落盘后派发——主线程不起草内容）→ human **立项 ack**；
 2. **architect-reviewer 评审循环**（只读 canonical、只写评审记录于 PROPOSAL §7；结论二分：GREEN / 打回；影响目标效果的打回项升级 human）至 GREEN；
 3. 主线程凭「立项 ack + GREEN」**标 FROZEN**（FROZEN = 内容冻结；授权记 Status 行）；
-4. 主线程 **packet-bound 落地**（G1/G2/G3 全落，landing-manifest 绑定，落地后不可回改 PROPOSAL）+ 写 `architect-landing-summary.md`（**骨架见 `docs/templates/architect-landing-summary.template.md`，复制勿手写**——缺 landing-manifest 围栏块即结构门 / landing-verifier 合法打回；unit-gate F4 + 批 A 两实例已在册，同根 ARQ-260924-landing-summary-template-pointer-gap）；
+4. FROZEN 后按 `landing-lane` 分流：缺省主线程 **packet-bound 落地**（G1/G2/G3 全落，landing-manifest 绑定，落地后不可回改 PROPOSAL）；符合 `gov-change.md` 条件的纯 scripts/hooks 由 architect 在当前 gov worktree 非 main 分支实现提交，reviewer 审真实 diff、verifier 验同一 commit/tree；随后写 `architect-landing-summary.md`（**骨架见 `docs/templates/architect-landing-summary.template.md`，复制勿手写**——缺 landing-manifest 围栏块即结构门 / landing-verifier 合法打回；unit-gate F4 + 批 A 两实例已在册，同根 ARQ-260924-landing-summary-template-pointer-gap）；
 5. 主线程派 **landing-verifier** 独立核验（逐文件 diff + `landing-fidelity-check.mjs`）→ 绿；
 6. 主线程补写 **retro report**（骨架见 `docs/templates/retro.template.md`）于提案目录——landing-verifier 绿后**趁热**写、先于合并完成，retro 不含合并锚（合并落点由 `delivery/review/INDEX.md` `mergedInMain` 列经 `changes-index.mjs` 机械现推承担）；
 7. 主线程跑前置升级闸（`pre-merge-escalation-gate.mjs`，含 off-main 校验），放行 → 自动合并本地 main：治理批恒 `git merge --ff-only`（与 `git reflog main` 2026-09-08 起近期实务、`.claude/skills/merge-to-main` 步骤 4 一致；更早 3 例 gov 双亲合并 `8bd4a84`/`8c1cba3`/`33d8009` 系按本条旧文本执行，正是 260909-gov-review-gate-truthfulness T7 的收口对象；main 无独有 commit 时 ff-only 才成立，有分歧即停交 human），回滚口径 = `git revert` 逐 commit 或 human 裁；`--no-ff` 双亲合并仅用于 merge-driver 的 dev Pod 通道（该通道产物是 Pod 分支，需保留双亲以证合入事实）。remote push 仍 human（唯一机器例外 = 主线程跑 `node .claude/scripts/release-pr.mjs --publish`，只推 `release/*` 分支并开 PR；PR 合并与其它 push 仍 human；主线程在 human 网页合并 PR 后跑 `node .claude/scripts/release-pr.mjs --sync` 追平本地 main）；升级闸拦 → 升级人。
@@ -65,7 +65,7 @@ lane 定了之后，**轻重判档归 architect-reviewer**（面 loop 评审循�
 
 **机械面枚举的锚点纪律**：canonical 文档（protocol / reference / agent def）以枚举方式描述机械面（闸清单 / 脚本清单 / agent 名册 / 写面）时，必须指向对应注册表锚点（`.claude/verify-gates.json` / `.claude/scripts/` 目录 / `.claude/agents/` 目录 / `.claude/scope-map.json`），不得硬编码手维护名册；注册表变更的批次须同批核对指向它的 prose 锚点是否仍实（判官评审义务项）。
 
-**landing 通道（常态规则，非暂停）**：落地通道 = **主线程 packet-bound landing（landing-manifest 绑定 + landing-verifier 核验）** 一条。「主线程」= 真无 agent_type 的人类主会话；architect 恒纯判官 / 起草、**永不 landing**（其 approved-landing mode 已于 2026-08-02 退役）；review-moderator（Track A 编排）只产证据 + 定稿核验、**不 land governance canonical**（spec profile 低影响设计层落地边界不变）。Track A 触发时落地通道亦同（human 批准 + 定稿核验过后，由主线程执行落地腿并派 landing-verifier）。
+**landing 通道（双 lane，按面选择）**：缺省 = **主线程 packet-bound landing**（landing-manifest 绑定 + landing-verifier 核验）。符合 `gov-change.md` 条件的纯 scripts/hooks 可走 author-implementation：architect 在当前 gov worktree 非 main 分支实现提交，reviewer 审真实 diff，verifier 验同一 commit/tree；混合面、契约、spec、G1、settings、agent 定义、scope-map、verify-gates 恒旧通道。「主线程」= 真无 agent_type 的人类主会话；review-moderator 只产证据 + 定稿核验，不 land governance canonical。Track A 收敛后按同一路径边界选择后端。
 
 **直接 Track A（绕过 Track B）判据**——命中任一即走 full-adversarial：
 
@@ -180,12 +180,12 @@ governance profile **不复制** spec↔contract 机械门(那是 spec profile �
 
 > **Track A 段适用**（默认 = 面内 Track B，见「双轨路由」节）。
 
-governance profile 在 human 批准 decision-packet **之后**、主线程 packet-bound canonical landing **之前**，必须走定稿阶段。补的就是一个真实缺口：confirmed 改法若只留在 `decision-packet.md` / `findings.md`，不回灌 PROPOSAL，则 PROPOSAL 起草后即「孤儿」——停在初稿、可能与批定设计矛盾，而 canonical landing 又绑定 decision-packet，于是**没有任何一步核验「落地的 == 批定的」**（gov-review-proposal-consolidation-gate 修复）。
+governance profile 在 human 批准 decision-packet **之后**、按 landing-lane 执行 canonical landing **之前**，必须走定稿阶段。补的就是一个真实缺口：confirmed 改法若只留在 `decision-packet.md` / `findings.md`，不回灌 PROPOSAL，则 PROPOSAL 起草后即「孤儿」——停在初稿、可能与批定设计矛盾，而 canonical landing 又绑定 decision-packet，于是**没有任何一步核验「落地的 == 批定的」**（gov-review-proposal-consolidation-gate 修复）。
 
 1. **定稿（consolidate，architect）**：把所有 CONFIRMED 改法（来自 `decision-packet.md` / `findings.md`）+ human 裁决**回灌进 `PROPOSAL.md`**，标 `FROZEN / APPROVED`，并加一段「Review 定稿记录」（review 摘要 + finding/改法映射 + 裁决）。PROPOSAL 成为**单一权威设计**；`decision-packet.md` 退化为「本次 delta 记录」。定稿必产 ```landing-manifest 围栏块（恰 canonical 目标路径集，一行一条）作为回灌的机械组成部分（非可选）——两结构门 fail-loud 消费此块，缺块即格式不合格 RED（authoring 格式契约 SSOT 见 architect-operating-model §5）。architect 只机械回灌**已批**改动，**不夹带新设计、不自冻**（作者≠判官）。
 2. **冻结（freeze，human）**：human 盖 FROZEN（版本/sha）。architect 不能自冻——作者≠判官，起草/定稿归 architect，判官是 human。
 3. **核验（verify，review-moderator 收口 + 机械门）**：moderator（**非作者**，保 author≠judge）核对 frozen PROPOSAL ↔ decision-packet ↔ findings ↔ human 裁决一致——**无漏改法、无新引入矛盾、canonical 目标逐一匹配**；并跑 `node .claude/scripts/proposal-consolidation-check.mjs delivery/review/gov-review-<id>`（机器兜底：PROPOSAL 已冻结 + 有定稿段 + decision-packet 每条 canonical 目标都在 frozen PROPOSAL 出现）。脚本是**结构一致性**门，不证语义正确——语义正确是 moderator 人读核验的事，两层互补。核验 RED → 退回 architect 定稿，**不放行 landing**。
-4. **landing（主线程）**：核验过后由主线程（无 agent_type 会话）packet-bound canonical landing，`architect-landing-summary.md` 引被批 packet-id + frozen PROPOSAL 版本（A9 packet-binding）。
+4. **landing（按 lane 分流）**：核验过后按 `landing-lane` 执行 canonical landing——缺省由主线程 packet-bound，符合 gov-change 条件的纯 scripts/hooks 可由 architect 作者实现提交；`architect-landing-summary.md` 引被批 packet-id + frozen PROPOSAL 版本（A9 packet-binding）。
 5. **landing 保真核验（landing-verifier，独立于落地者）**：landing 后由主线程派 `landing-verifier`（治理 loop 的 verifier 对偶，补 builder≠verifier 缺槽）**独立核验「实际落的 == frozen PROPOSAL」**：跑 `node .claude/scripts/landing-fidelity-check.mjs delivery/review/gov-review-<id>`（结构门：未冻结 / 无 packet-binding / scope creep / claimed·planned-but-not-landed 硬失败）+ 逐文件人读 diff 核对改法 == PROPOSAL/decision-packet（语义保真，脚本不判），写 `landing-verdict.md`。**verdict 绿才交 human merge，RED 退回主线程修 landing**。landing-verifier 只读 codebase、只写自己 verdict——改了被验文件就塌独立性。补的缺口：此前 landing 只靠 architect 自写 landing-summary「供人类 merge 门 spot-check」，无独立核验（gov-review-landing-fidelity-gate 修复）。
 
-> 这一段是 governance profile 专属（spec profile 的候选直接是 `docs/` 里的 spec，confirmed 改法直接落进 spec，无「孤儿 PROPOSAL」问题）。定稿核验过后 landing 恒 = 主线程 packet-bound（见「双轨路由」节；architect 的 approved-landing mode 已于 2026-08-02 退役）。
+> 这一段是 governance profile 专属（spec profile 的候选直接是 `docs/` 里的 spec，confirmed 改法直接落进 spec，无「孤儿 PROPOSAL」问题）。定稿核验过后按「双轨路由」节的 landing-lane 分流；缺省主线程 packet-bound，受限作者实现仅适用于 gov-change 的纯 scripts/hooks 批。

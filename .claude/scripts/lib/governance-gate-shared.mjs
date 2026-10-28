@@ -96,6 +96,52 @@ export function isFrozen(proposalText) {
   return /\bFROZEN\b/i.test(statusLine);
 }
 
+// 双 landing lane 与作者实现凭据（261028-gov-review-author-implementation-lane）。
+// 缺省恒为 packet-bound；新 lane 的凭据由 reviewer / verifier 分别写入，作者不得代写。
+export const LANDING_LANES = Object.freeze({
+  PACKET_BOUND: 'packet-bound',
+  AUTHOR_IMPLEMENTATION: 'author-implementation',
+});
+
+export function parseLandingLane(text) {
+  const values = [];
+  for (const line of String(text || '').split(/\r?\n/).slice(0, 40)) {
+    const match = line.match(/^[>\s]*\*{0,2}landing-lane\*{0,2}\s*[:：]\s*`?([A-Za-z-]+)`?/i);
+    if (match) values.push(match[1]);
+  }
+  if (values.length === 0) return LANDING_LANES.PACKET_BOUND;
+  if (new Set(values).size !== 1 || !Object.values(LANDING_LANES).includes(values[0])) {
+    const err = new Error(`landing-lane 重复冲突或值出闭集：${values.join(', ')}`);
+    err.code = 'INVALID_LANDING_LANE';
+    throw err;
+  }
+  return values[0];
+}
+
+export function isEvidenceTailPath(path, changeId) {
+  const normalized = String(path || '').replace(/\\/g, '/');
+  return normalized === 'delivery/review/INDEX.md'
+    || normalized === 'delivery/review/.changes-index-state.json'
+    || normalized.startsWith(`delivery/review/${changeId}/`);
+}
+
+export function readImplementationEvidence(projectDir, changeId, kind, expectedLane = LANDING_LANES.AUTHOR_IMPLEMENTATION) {
+  if (kind !== 'review' && kind !== 'verification') throw new Error(`未知实现凭据类型：${kind}`);
+  const file = join(projectDir, 'delivery', 'review', changeId, `implementation-${kind}.json`);
+  const fail = (reason) => ({ ok: false, reason, path: file, evidence: null });
+  if (!existsSync(file)) return fail(`implementation-${kind}.json 不在场`);
+  let evidence;
+  try { evidence = JSON.parse(readFileSync(file, 'utf8')); }
+  catch (error) { return fail(`implementation-${kind}.json 不可解析：${error.message}`); }
+  const sha = (v) => typeof v === 'string' && /^[0-9a-f]{40}$/.test(v);
+  if (evidence?.schemaVersion !== 1) return fail('schemaVersion 必须为 1');
+  if (evidence.lane !== expectedLane || evidence.changeId !== changeId) return fail('lane/changeId 不符');
+  if (!sha(evidence.reviewedCommit) || !sha(evidence.reviewedTree)) return fail('reviewedCommit/reviewedTree 必须为 40 位小写 SHA');
+  if (kind === 'verification' && (!sha(evidence.verifiedCommit) || !sha(evidence.verifiedTree))) return fail('verifiedCommit/verifiedTree 必须为 40 位小写 SHA');
+  if (!Array.isArray(evidence.changedFiles) || evidence.changedFiles.some((p) => typeof p !== 'string' || !p || p.includes('..') || p.startsWith('/'))) return fail('changedFiles 必须为仓根相对路径数组');
+  return { ok: true, reason: null, path: file, evidence };
+}
+
 // B4：proposal 路径谓词单源（260731-gov-review-artifact-lifecycle-origin-teeth Phase 2 T4/CF-07，FROZEN 2026-08-01）。
 // taskpackage-required-check.mjs / devloop-artifact-check.mjs 原各持一份 normalizeSourceRef + isProposalMdPath（真双拷贝）；
 // closeout-check.mjs 原无拷贝（T2 就地改会造第三份）→ 三脚本具名导入单源（ARQ-097 模式，与 isFrozen 同文件）。

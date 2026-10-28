@@ -10,7 +10,7 @@ description: "Use when: 把 feature/gov 分支合并到目标分支（main 或�
 ## 前置
 
 - 工作树干净（`git status` 无未提交改动；有则先 commit/stash，别带着脏树合并）。**例外（2026-09-09 human 一次性授权直落）**：`.codebase-memory/artifact.json` 与 `graph.db.zst` 常驻脏 = 常态（indexer 自刷新的机器再生面，约定不追交、别硬清），不计入本条清洁度判据；合并冲突已由 `.codebase-memory/.gitattributes` 的 `merge=ours` 免除——看到它们脏不要 stage、不要 stash、不要 checkout 还原。**唯一例外动作**：反向回同步（main → gov/工作分支）时，merge 需要把这两件换入 main 上的新快照，而脏 live 文件会让 merge abort（实测）——先把这两件 `git checkout HEAD -- .codebase-memory/artifact.json .codebase-memory/graph.db.zst` 还原到 HEAD（丢弃的只是 indexer 可再生漂移，零损失），再执行 merge。
-- 合并方向与授权明确：本 skill 只执行**已被批准的**本地合并（supervisor APPROVE / architect GREEN 或 human 批准后的本地合并动作面）；未批准的合并不做。
+- 合并方向与授权明确：本 skill 只执行**已被批准的**本地合并（supervisor APPROVE / architect GREEN 或 human 批准后的本地合并动作面）；未批准的合并不做。`author-implementation` gov 批另须前置升级闸完成同树与证据尾重算；verified commit 之后只允许该批 review 目录、review INDEX 与状态缓存三件证据尾，任何实现尾随改动、rebase 或回同步都须重新审验。
 - **适用面（261026 批）**：前置升级闸只管 dev / gov 两条 lane 的变更批；变更集全部落在账本类制品（`delivery/intake/`、`docs/debt/gov/`、`docs/debt/tech/`、`docs/debt/requirement/`、`docs/debt/contract/`）时闸报 `NOT_APPLICABLE`，走本 skill 的 human 授权通道即可——不需要人批豁免口，也不要把它读成「闸放行了」。
 
 ## 步骤（每步有可检查终点）

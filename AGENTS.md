@@ -16,7 +16,7 @@
 1. 主线程派 **architect** 起草 PROPOSAL（业务语言 + 初步技术方案 + human 取舍点标注，骨架 `docs/templates/PROPOSAL.template.md`；输入 = human 原话 / spine sources / 讨论记录，落盘后派发）→ human 立项 ack；
 2. **architect-reviewer** 评审循环至 GREEN（只读 canonical、只写评审记录于 PROPOSAL §7；影响目标效果的打回项升级 human）；
 3. 主线程凭「立项 ack + GREEN」标 FROZEN；
-4. 主线程 packet-bound 落地（landing-manifest 绑定）+ 写 landing summary；
+4. FROZEN 后按 `landing-lane` 分流：缺省由主线程 packet-bound 落地并写 landing summary；符合条件的纯 scripts/hooks 作者通道由 architect 实现并提交，reviewer 审真实 diff、verifier 验同一 commit/tree；
 5. 主线程派 landing-verifier 独立核验——结构门 `landing-fidelity-check.mjs` + 逐文件人读 diff 核对实际落地 == frozen PROPOSAL 的 landing 清单 → 绿 → commit 分支；
 6. 补写 retro report 闭环（骨架 `docs/templates/retro.template.md`）——趁热写、先于合并；
 7. 主线程跑前置升级闸（含 off-main 校验），放行 → 自动合并本地 main（可回滚）；升级闸拦 → 升级人。**适用面**：本闸管 dev（`delivery/taskpackages/<changeId>`）与 gov（`delivery/review/<changeId>`）两条 lane；变更集**全部**落在账本类制品（`delivery/intake/`、`docs/debt/gov/`、`docs/debt/tech/`、`docs/debt/requirement/`、`docs/debt/contract/`）时闸报 `NOT_APPLICABLE`（exit 0——不适用，不是放行），此类合并按 merge-to-main skill 的 human 授权通道执行；其余无法归 lane 的变更集仍 BLOCK 交人。制品 4 件：PROPOSAL + landing-summary + landing-verdict + retro。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 单行钉进 `delivery/review/INDEX.md`（INDEX 已按 lane 分文件：review 段在 `delivery/review/INDEX.md`、intake 段在 `delivery/intake/INDEX.md`、dev 段在 `delivery/taskpackages/INDEX.md`，各 lane 只写自己的 INDEX）。**轻路径**（文档面措辞级批）= 瘦制品五件过闸（瘦 PROPOSAL + §7 GREEN + landing-manifest + 瘦 landing-summary + landing-verdict；retro 豁免），判据见各面 SSOT。
@@ -30,7 +30,7 @@
 **实现面变更**：单面实现变更走 `/triage-change` 五档分流 → `/build-feature`（dev loop 不变；五档分流是 `/triage-change` 对实现面的收尾动作，不等于它只属实现面）。
 **跨面 intake**：触面 ≥2 的跨面 idea 的编排入口 = `/triage-change`——它把需求 / 架构+契约 / 治理 / 实现四面合在一次陈述里做探测、落 spine，再按 facePlan 派发（需求 / 架构+契约 / 治理三面由它派发到各自 loop，实现面五档分流由它收尾；轻面本会话内联、重面 headless 拉起下游编排会话）；程序 SSOT `.claude/references/change-intake.md`（260928-gov-review-cross-face-intake-spine 立）——统一 intake ≠ 统一门，各面门照旧各归各裁；spine 免冻，anchors 记录各面自己的冻结态。CLAUDE.md 经 `@AGENTS.md` 导入传导，不另改。
 
-**landing 通道（常态规则）**：恒 = 主线程 packet-bound 一条；architect 恒起草、architect-reviewer 恒审稿、两者永不 landing。
+**landing 通道（双 lane，按面选择）**：初始缺省 = 主线程 packet-bound；P9 达到 INDEX `landed + 已合main=yes` 且 retro 无未闭合 BLOCK 后，纯 scripts/hooks 的 `/gov-change` 批默认 `author-implementation`，human 立项仍可改选旧通道。该通道由 architect 在当前 gov worktree 非 main 分支实现并提交，architect-reviewer 审真实 diff，landing-verifier 对同一 commit/tree 独立验证；契约、spec、G1、settings、agent 定义、scope-map 与任何混合面仍走旧通道。首个 hooks 批仍全强度评审并单独记录；两条通道都不改 author≠judge、合并闸和 human 立项 ack。
 **不动**：契约面防线（Bash 重定向写恒拦 + 实现面 agent 与 dev-loop 会话契约禁写 + 合并机械凭据闸 `pre-merge-escalation-gate.mjs`）、landing-verifier 独立核验、机械强制层（scope-map / hooks）。
 
 ## Hard Rules

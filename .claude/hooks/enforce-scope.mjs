@@ -163,6 +163,33 @@ function samePath(a, b) {
   return resolve(a).replace(/[\\/]+$/, '').toLowerCase() === resolve(b).replace(/[\\/]+$/, '').toLowerCase();
 }
 
+// architect 的 scripts/hooks 作者写权只在「当前 gov worktree 的非 main 分支」生效。
+// 纯 fs 读取 HEAD；main/master、detached、HEAD 不可读、跨树重锚均 fail-closed。
+function architectNonMainViolation(absPath, homeProjectDir) {
+  const home = locateGitTree(homeProjectDir);
+  const target = locateGitTree(absPath);
+  if (!home || !target || !samePath(home.treeRoot, target.treeRoot)) {
+    return 'scope(architect): scripts/hooks 作者实现只允许当前 gov worktree，禁止跨树或不可识别树写入。';
+  }
+  const dotGit = join(target.treeRoot, '.git');
+  let headPath = join(dotGit, 'HEAD');
+  try {
+    if (statSync(dotGit).isFile()) {
+      const match = /^gitdir:\s*(.+)\s*$/.exec(readFileSync(dotGit, 'utf8'));
+      if (!match) return 'scope(architect): .git 指向不可解析（fail-closed）。';
+      const gitdir = resolve(target.treeRoot, match[1].trim());
+      headPath = join(statSync(gitdir).isDirectory() ? gitdir : dirname(gitdir), 'HEAD');
+    }
+    const head = readFileSync(headPath, 'utf8').trim();
+    const match = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
+    if (!match) return 'scope(architect): 当前为 detached HEAD，作者实现只允许非 main 命名分支（fail-closed）。';
+    if (match[1] === 'main' || match[1] === 'master') return 'scope(architect): 禁止在 main/master 分支实现 scripts/hooks。';
+    return null;
+  } catch {
+    return 'scope(architect): 当前树 HEAD 不可读，作者写权 fail-closed。';
+  }
+}
+
 // 返回 { mode: 'legacy' }（本树 / 非本仓路径——行为不变）| { mode: 'anchor', treeRoot, map }（在册兄弟树重锚）
 // | { mode: 'fail-closed', reason }（目标树 scope-map 缺失/不可读——拦截并点名）。
 function anchorForTarget(absPath, homeProjectDir) {
@@ -201,12 +228,26 @@ function main() {
     process.exit(0); // 没有 scope-map 就不干预
   }
 
-  // ── Bash 分支：只守 universal.bashDenyWrite 结构红线（契约冻结 / 强制层自改）。
-  //    不套 per-agent allow/deny —— verifier(deny[**]) 本职要跑 Bash 测试、builder 的
-  //    build/install 会写 allow 外的产物目录，故 Bash 只拦「任何 agent 都不该用 shell
-  //    重定向写」的少数结构面；程序内部 fs 写入不受此限（命令串里看不到路径）。
+  // ── Bash 分支：universal.bashDenyWrite + architect 专用直接 git add/commit 分支检查。
+  //    其它 agent 的 Bash 仍只守 universal 结构红线；程序内部 fs 写入不是完整沙箱。
   if (input?.tool_name === 'Bash') {
     const cmd = input?.tool_input?.command || '';
+    const agentKey = String(input.agent_type || '').toLowerCase();
+    if (agentKey === 'architect') {
+      for (const tgt of extractBashWriteTargets(cmd)) {
+        const relT = relative(projectDir, resolve(input.cwd || projectDir, tgt)).split(sep).join('/');
+        if (/^delivery\/review\/.*\/implementation-(?:review|verification)\.json$/.test(relT)) {
+          block(`scope(architect): 禁止作者用 Bash 写独立评审/验证凭据 ${relT}。`);
+        }
+      }
+      if (/(?:^|[\s;|&])git\s+(?:(?:-C|--git-dir|--work-tree)\s+\S+\s+)*(?:add|commit)\b/.test(cmd)) {
+        if (/(?:^|[\s;|&])git\s+(?:-C|--git-dir|--work-tree)\s+/.test(cmd)) {
+          block('scope(architect): 禁止用 git -C/--git-dir/--work-tree 跨树 add/commit；只能在当前 gov worktree 非 main 分支操作。');
+        }
+        const violation = architectNonMainViolation(projectDir, projectDir);
+        if (violation) block(violation);
+      }
+    }
     for (const tgt of extractBashWriteTargets(cmd)) {
       const absT = resolve(input.cwd || projectDir, tgt);
       const anchor = anchorForTarget(absT, projectDir);
@@ -257,6 +298,11 @@ function main() {
   }
   if (!policy) process.exit(0); // 未登记的 agent：本钩子不强加任何约束
 
+  if (agentKey === 'architect' && /^\.claude\/(?:scripts|hooks)\//.test(rel)) {
+    const violation = architectNonMainViolation(abs, projectDir);
+    if (violation) block(violation);
+  }
+
   if (matchesAny(rel, policy.deny)) {
     block(`scope: agent "${agent}" 不可写 ${rel}（被 .claude/scope-map.json 的 deny 命中）。`);
   }
@@ -280,6 +326,9 @@ function buildFakeRepo() {
   mkdirSync(join(repo, '.git', 'worktrees', 'pod-y'), { recursive: true });
   mkdirSync(join(repo, '.claude'), { recursive: true });
   mkdirSync(join(repo, 'firmware'), { recursive: true });
+  mkdirSync(join(repo, '.claude', 'scripts'), { recursive: true });
+  mkdirSync(join(repo, 'delivery', 'review', 'x'), { recursive: true });
+  mkdirSync(join(podx, '.claude', 'scripts'), { recursive: true });
   mkdirSync(join(podx, '.claude'), { recursive: true });
   mkdirSync(join(podx, 'firmware'), { recursive: true });
   mkdirSync(join(podx, 'docs', 'contracts'), { recursive: true });
@@ -291,13 +340,21 @@ function buildFakeRepo() {
   const gitdirDir = join(repo, '.git', 'worktrees', 'pod-x');
   writeFileSync(join(gitdirDir, 'gitdir'), `${join(podx, '.git')}\n`, 'utf8');
   writeFileSync(join(podx, '.git'), `gitdir: ${gitdirDir}\n`, 'utf8');
+  writeFileSync(join(repo, '.git', 'HEAD'), 'ref: refs/heads/main\n', 'utf8');
+  writeFileSync(join(gitdirDir, 'HEAD'), 'ref: refs/heads/gov/kidpal\n', 'utf8');
   // pod-y = 旧式文件拓扑（兼容臂）：.git 文件指向 worktrees/<name>/gitdir 文件。
   const podyGitdirFile = join(repo, '.git', 'worktrees', 'pod-y', 'gitdir');
   writeFileSync(podyGitdirFile, `${join(pody, '.git')}\n`, 'utf8');
   writeFileSync(join(pody, '.git'), `gitdir: ${podyGitdirFile}\n`, 'utf8');
   const mapShape = {
     universal: { denyCreate: [], allowFiles: [], allowDirs: ['docs/contracts'], bashDenyWrite: ['docs/contracts/**', '.claude/**'] },
-    agents: { builder: { allow: ['firmware/**'], deny: [] } },
+    agents: {
+      builder: { allow: ['firmware/**'], deny: [] },
+      architect: {
+        allow: ['firmware/**', '.claude/scripts/**', '.claude/hooks/**'],
+        deny: ['delivery/review/**/implementation-review.json', 'delivery/review/**/implementation-verification.json'],
+      },
+    },
   };
   writeFileSync(join(repo, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
   writeFileSync(join(podx, '.claude', 'scope-map.json'), JSON.stringify(mapShape), 'utf8');
@@ -312,7 +369,7 @@ function selfCheck() {
   try {
     const run = (toolName, toolInput, extra = {}) => spawnSync(process.execPath, [scriptPath], {
       input: JSON.stringify({ tool_name: toolName, tool_input: toolInput, agent_type: extra.agent, cwd: extra.cwd || fx.repo }),
-      env: { ...process.env, CLAUDE_PROJECT_DIR: fx.repo },
+      env: { ...process.env, CLAUDE_PROJECT_DIR: extra.projectDir || extra.cwd || fx.repo },
       encoding: 'utf8', timeout: 30000,
     });
     // 夹具非空先行（真空绿规约）
@@ -345,6 +402,32 @@ function selfCheck() {
     // arm1 已随夹具换成真实拓扑（pod-x），本臂补兼容分支的判别覆盖。
     const arm5 = run('Write', { file_path: join(fx.pody, 'firmware', 'x.c') }, { agent: 'builder' });
     ok('sibling-legacy-file-topology-allowed', arm5.status === 0, `exit=${arm5.status} ${String(arm5.stderr || '').slice(0, 120)}`);
+
+    // 261028 作者实现 lane：main/detached/跨树 fail-closed，当前 gov 非 main 放行；直接 git 与凭据同检。
+    const mainWrite = run('Write', { file_path: join(fx.repo, '.claude', 'scripts', 'x.mjs') }, { agent: 'architect' });
+    ok('architect-main-script-blocked', mainWrite.status === 2, `exit=${mainWrite.status}`);
+    const crossWrite = run('Write', { file_path: join(fx.podx, '.claude', 'scripts', 'x.mjs') }, { agent: 'architect' });
+    ok('architect-cross-tree-script-blocked', crossWrite.status === 2, `exit=${crossWrite.status}`);
+    const govWrite = run('Write', { file_path: join(fx.podx, '.claude', 'scripts', 'x.mjs') }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-gov-script-allowed', govWrite.status === 0, `exit=${govWrite.status} ${String(govWrite.stderr || '').slice(0, 120)}`);
+    const govFirmware = run('Write', { file_path: join(fx.podx, 'firmware', 'architect-note.c') }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-non-script-legacy-allowed', govFirmware.status === 0, `exit=${govFirmware.status}`);
+    writeFileSync(join(fx.repo, '.git', 'HEAD'), `${'a'.repeat(40)}\n`, 'utf8');
+    const detachedWrite = run('Write', { file_path: join(fx.repo, '.claude', 'scripts', 'x.mjs') }, { agent: 'architect' });
+    ok('architect-detached-script-blocked', detachedWrite.status === 2, `exit=${detachedWrite.status}`);
+    writeFileSync(join(fx.repo, '.git', 'HEAD'), 'ref: refs/heads/main\n', 'utf8');
+    const mainAdd = run('Bash', { command: 'git add .claude/scripts/x.mjs' }, { agent: 'architect' });
+    ok('architect-main-git-add-blocked', mainAdd.status === 2, `exit=${mainAdd.status}`);
+    const govAdd = run('Bash', { command: 'git add .claude/scripts/x.mjs' }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-gov-git-add-allowed', govAdd.status === 0, `exit=${govAdd.status}`);
+    const crossAdd = run('Bash', { command: `git -C "${fx.podx}" add .claude/scripts/x.mjs` }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-cross-tree-git-add-blocked', crossAdd.status === 2, `exit=${crossAdd.status}`);
+    const govCommit = run('Bash', { command: 'git commit -m test' }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-gov-git-commit-allowed', govCommit.status === 0, `exit=${govCommit.status}`);
+    const reviewCredential = run('Write', { file_path: join(fx.podx, 'delivery', 'review', 'x', 'implementation-review.json') }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-review-credential-blocked', reviewCredential.status === 2, `exit=${reviewCredential.status}`);
+    const verificationCredential = run('Bash', { command: 'echo x > delivery/review/x/implementation-verification.json' }, { agent: 'architect', cwd: fx.podx });
+    ok('architect-verification-credential-bash-blocked', verificationCredential.status === 2, `exit=${verificationCredential.status}`);
   } finally {
     rmSync(fx.root, { recursive: true, force: true });
   }

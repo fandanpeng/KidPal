@@ -28,13 +28,13 @@ diff **全部**同时满足才可走轻：① 仅落在 `.claude/references/**`�
 
 ## Track B 后端
 
-= 现行 Track B 七步（AGENTS.md「治理路由」节），cast 已统一：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环至 GREEN → 主线程标 FROZEN → packet-bound landing → landing-verifier → retro → 升级闸 → 合并本地 main。 落地制品义务（landing-summary 结构两件 + 验证集实跑回填）见 `arch-change.md`「Track B 制品义务」节（单源，本文件不复制）。
+= Track B 七步的公共前端不变；FROZEN 后按 `landing-lane` 分流。P9 默认翻转前缺省 `packet-bound`；P9 达到 INDEX `landed + 已合main=yes` 且 retro 无未闭合 BLOCK 后，纯 scripts/hooks 批缺省 `author-implementation`，human 立项仍可改选旧通道。前两项机读，retro 项由主线程人读、属 convention-only；主线程须在新批 PROPOSAL 的 `landing-lane` 行旁落 `default-trigger-evidence`，记录 P9 changeId、INDEX 实值、retro 路径、人读结论与日期。作者通道由 architect 在当前 gov worktree 非 main 分支实现并提交，reviewer 审真实 diff，landing-verifier 验同一 commit/tree，再经 retro、升级闸与本地 main 合并。契约、spec、G1、settings、agent 定义、scope-map、verify-gates 与混合面恒走旧通道。落地制品义务见 `arch-change.md`「Track B 制品义务」节（单源，本文件不复制）；作者通道新增的 commit/tree 凭据以本文件为唯一流程 SSOT。
 
 ## 角色分工
 
 | 角色 | 职责 | 禁止 |
 |---|---|---|
 | 主线程 | 派发 + packet-bound landing + 状态翻转 + 记账（四面纯编排） | 不起草变更内容；不改 reviewer 判决 |
-| architect | 起草（PROPOSAL / 瘦 PROPOSAL） | 不落 canonical；不自评；自改递归须 human |
+| architect | 起草；受限 author-implementation 批实现 scripts/hooks 并提交 | 其余 canonical 不落；不自评、不扩 manifest、不写独立凭据、不合并 main；自改递归须 human |
 | architect-reviewer | 四查 + 判档 + Track A 段升级判定 + Track B 评审循环 | 不落 canonical；与 architect 不得互兼 |
 | human | 立项裁意图/确认 ARQ 修法 + 例外升级 | — |

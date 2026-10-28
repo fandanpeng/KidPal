@@ -18,7 +18,7 @@
 // 若又前进，须再发一次（否则两侧仍可能互非祖先，merge-driver 会判 diverged）。
 //
 // 注意：本脚本内部的 push 在 `.claude/hooks/deny-main-push.mjs` 视野之外（钩子只看 Bash 命令串）。
-// 防线 = 本脚本的 push argv 白名单 + `.claude/scripts/**` 属 G3（agent 不可写）+ landing 人读 diff。
+// 防线 = 本脚本的 push argv 白名单 + scripts 作者写权限定 gov author-implementation 通道 + landing 人读 diff；发布防线不变。
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';

@@ -9,7 +9,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 
 本 skill 是**单条、按需**的条目起草器，与 `/loop-retro`（跨 Pod 周期性批量 retro）互补、字段 convention 完全一致；它不是批量 retro，也不是新 idea 入口。登记进账本是**主线程职责**（human-approved 2026-07-28），本 skill 由主线程执行即落该职责。
 
-> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环 → human 裁 OQ → FROZEN → packet-bound landing → landing-verifier → retro。命中升级判据（跨系统结构性 / 方向未收敛 / 声明红队）的升所属面 loop Track A 段。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
+> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环 → human 裁 OQ → FROZEN → 按 gov-change 的 landing-lane 分流（P9 触发后纯 scripts/hooks 默认 author-implementation，human 仍可改选 packet-bound）→ landing-verifier → retro。命中升级判据（跨系统结构性 / 方向未收敛 / 声明红队）的升所属面 loop Track A 段。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
 
 <HARD-GATE>
 没有**至少一条可识别的执行记录**（provenance）前，不起草条目——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的改进项」，停：是新 idea 就交面 loop（`/arch-change` / `/gov-change`），或先去补执行证据再回来。产物只有账本里的**一个条目文件**（或对既有条目的证据注记）；其余边界见「约束」节。

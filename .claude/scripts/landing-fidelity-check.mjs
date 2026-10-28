@@ -39,7 +39,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { basename, relative, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execSync, spawnSync } from 'node:child_process';
+import { execSync, spawnSync, execFileSync } from 'node:child_process';
 import {
   CANONICAL_TEST,
   compareAnchorSets,
@@ -51,6 +51,10 @@ import {
   runIsFrozenSelfCheck,
   runResolveOriginSelfCheck,
   runSection2AnchorSelfCheck,
+  LANDING_LANES,
+  parseLandingLane,
+  isEvidenceTailPath,
+  readImplementationEvidence,
 } from './lib/governance-gate-shared.mjs';
 // isFrozen / TARGET_PATTERNS / extractTargets / CANONICAL_TEST 单源：./lib/governance-gate-shared.mjs（ARQ-097）。
 
@@ -366,6 +370,38 @@ function runPreflightSelfCheck() {
   const fbb = (preflightFindings(fenceBoundaryBold).findings.find((f) => f.class === 'bold-anchor-line') || {}).lines || [];
   check('跳围栏·围栏后加粗锚行仍报（绝对行号 9）', fbb[0], 9);
   console.log(JSON.stringify({ selfCheck: 'landing-preflight', pass, fail, total: pass + fail, ok: fail === 0 }));
+  if (fail > 0) process.exit(1);
+}
+
+function runAuthorLaneStructureSelfCheck() {
+  let pass = 0;
+  let fail = 0;
+  const check = (label, cond) => { if (cond) pass++; else { fail++; console.error(`FAIL [${label}]`); } };
+  check('lane-default-packet-bound', parseLandingLane('> **状态：FROZEN v1.0**') === LANDING_LANES.PACKET_BOUND);
+  check('lane-author-explicit', parseLandingLane('> **landing-lane**：`author-implementation`') === LANDING_LANES.AUTHOR_IMPLEMENTATION);
+  let unknownBlocked = false;
+  try { parseLandingLane('> **landing-lane**：`mystery`'); } catch (e) { unknownBlocked = e.code === 'INVALID_LANDING_LANE'; }
+  check('lane-unknown-fail-loud', unknownBlocked);
+  let conflictBlocked = false;
+  try { parseLandingLane('> **landing-lane**：`packet-bound`\n> **landing-lane**：`author-implementation`'); } catch (e) { conflictBlocked = e.code === 'INVALID_LANDING_LANE'; }
+  check('lane-conflict-fail-loud', conflictBlocked);
+  check('evidence-tail-review-dir', isEvidenceTailPath('delivery/review/x/landing-verdict.md', 'x'));
+  check('evidence-tail-index-state', isEvidenceTailPath('delivery/review/.changes-index-state.json', 'x'));
+  check('evidence-tail-other-batch-blocked', !isEvidenceTailPath('delivery/review/y/landing-verdict.md', 'x'));
+  check('evidence-tail-script-blocked', !isEvidenceTailPath('.claude/scripts/x.mjs', 'x'));
+  const dir = mkdtempSync(join(tmpdir(), 'author-lane-structure-'));
+  try {
+    const id = 'x';
+    mkdirSync(join(dir, 'delivery', 'review', id), { recursive: true });
+    const sha = 'a'.repeat(40);
+    writeFileSync(join(dir, 'delivery', 'review', id, 'implementation-review.json'), JSON.stringify({ schemaVersion: 1, lane: 'author-implementation', changeId: id, reviewedCommit: sha, reviewedTree: sha, changedFiles: ['.claude/scripts/x.mjs'] }));
+    check('evidence-valid-read', readImplementationEvidence(dir, id, 'review').ok);
+    writeFileSync(join(dir, 'delivery', 'review', id, 'implementation-verification.json'), '{bad');
+    check('evidence-malformed-fail-loud', !readImplementationEvidence(dir, id, 'verification').ok);
+    writeFileSync(join(dir, 'delivery', 'review', id, 'implementation-verification.json'), JSON.stringify({ schemaVersion: 1, lane: 'author-implementation', changeId: id, reviewedCommit: sha, reviewedTree: sha, verifiedCommit: 'bad', verifiedTree: sha, changedFiles: [] }));
+    check('evidence-bad-sha-fail-loud', !readImplementationEvidence(dir, id, 'verification').ok);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  console.log(JSON.stringify({ selfCheck: 'author-lane-structure', pass, fail, total: pass + fail, ok: fail === 0 }));
   if (fail > 0) process.exit(1);
 }
 
@@ -880,7 +916,7 @@ function runDirAnchorExpansionSelfCheck() {
 // 自检接线顺序审查（真空绿规约）：runIsFrozenSelfCheck 为终端式（无条件 process.exit），必须列最后；
 // 其余非终端式自检（含 B7 新增 section2Anchors、T2 新增 verbatim-quotes、260918 批 landing-preflight、
 // 261027 批 cite-check / dir-anchor-expansion）排在其前，否则永不执行。
-if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runPreflightSelfCheck(); runCiteCheckSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runDirAnchorExpansionSelfCheck(); runIsFrozenSelfCheck(); }
+if (process.argv.includes('--self-check')) { runExtractTargetsSelfCheck(); runSection2AnchorSelfCheck(); runResolveOriginSelfCheck(); runComputeFrozenPinSelfCheck(); runCitationAnchorsSelfCheck(); runPreflightSelfCheck(); runAuthorLaneStructureSelfCheck(); runCiteCheckSelfCheck(); runLintDescriptionsTriggerSelfCheck(); runVerbatimQuotesSelfCheck(); runDirAnchorExpansionSelfCheck(); runIsFrozenSelfCheck(); }
 
 // 干跑入口（T2，260918 批）：只读、不对账、不参与任何门判定、不进任何闸链。
 // 置于 --self-check 之后（两者同给时先跑自检并以其退出码为准）。
@@ -997,6 +1033,57 @@ try {
 const unauthorized = [...summaryTargets].filter((t) => !proposalTargets.has(t));
 if (unauthorized.length > 0) {
   errors.push(`landing-summary 声称落了 PROPOSAL 未授权的文件（scope creep）：${unauthorized.join(', ')}`);
+}
+
+// 作者实现 lane：不查未来文本，直接核 reviewer 钉点、Git tree、manifest 与工作树漂移。
+let landingLane = LANDING_LANES.PACKET_BOUND;
+try { landingLane = parseLandingLane(proposalText); } catch (error) { errors.push(error.message); }
+if (landingLane === LANDING_LANES.AUTHOR_IMPLEMENTATION) {
+  const changeId = basename(reviewDir);
+  if ([...proposalTargets].some((p) => !/^\.claude\/(?:scripts|hooks)\//.test(p))) {
+    errors.push('author-implementation manifest 必须全部位于 .claude/scripts/** 或 .claude/hooks/**');
+  }
+  const review = readImplementationEvidence(projectDir, changeId, 'review');
+  if (!review.ok) errors.push(review.reason);
+  else {
+    const pin = review.evidence;
+    let actualTree = null;
+    try { actualTree = execFileSync('git', ['rev-parse', `${pin.reviewedCommit}^{tree}`], { cwd: projectDir, encoding: 'utf8', stdio: 'pipe' }).trim(); } catch { /* fail-closed below */ }
+    if (!actualTree || actualTree !== pin.reviewedTree) errors.push('reviewedTree 与 reviewedCommit 的 Git tree 不符或 commit 不存在');
+    const diff = runGit(`git diff --name-only main...${pin.reviewedCommit}`);
+    if (diff === null) errors.push('main...reviewedCommit 重算失败（fail-closed）');
+    else {
+      const actual = new Set(diff.split(/\r?\n/).map((x) => x.trim()).filter(Boolean).filter((p) => !isEvidenceTailPath(p, changeId)));
+      const expected = new Set(proposalTargets);
+      const same = actual.size === expected.size && [...actual].every((p) => expected.has(p));
+      if (!same) errors.push(`main...reviewedCommit 非证据改动 != manifest：${[...actual].sort().join(', ')}`);
+    }
+    if (!summaryText.includes(pin.reviewedCommit) || !summaryText.includes(pin.reviewedTree)) errors.push('summary 未复述 reviewedCommit/reviewedTree（交叉对账失败）');
+  }
+  const status = runGit('git status --porcelain -uall');
+  if (status === null) errors.push('工作树实现漂移探测失败（fail-closed）');
+  else {
+    const drift = status.split(/\r?\n/).filter(Boolean).map((line) => line.slice(3).replace(/^"|"$/g, '').split(' -> ').pop())
+      .filter((p) => /^\.claude\/(?:scripts|hooks)\//.test(p));
+    if (drift.length) errors.push(`工作树含未提交 scripts/hooks 实现漂移：${drift.join(', ')}`);
+  }
+  if (errors.length) fail('author-implementation landing 保真度核验未过', { reviewDir: relDir, lane: landingLane, errors });
+  const citation = checkCitationAnchors(proposalText, projectDir);
+  print({
+    ok: true,
+    gate: 'landing-fidelity',
+    reviewDir: relDir,
+    lane: landingLane,
+    frozen: true,
+    packetBinding: true,
+    proposalTargets: [...proposalTargets],
+    summaryTargets: [...summaryTargets],
+    reviewedCommit: review.evidence.reviewedCommit,
+    reviewedTree: review.evidence.reviewedTree,
+    citationAnchorAdvisory: { checked: citation.checked.length, problems: citation.problems, prefixSource: citation.prefixSource },
+    verbatimQuoteAdvisory: { applicable: false, reason: 'author-implementation 不消费未来文本逐字块' },
+  });
+  process.exit(0);
 }
 
 // git 改动集（工作树 ∪ 已提交；见 gitChangedFiles）。

@@ -31,13 +31,14 @@
 //
 // 退出码：0 放行 / 1 命中（BLOCK）/ 2 用法错。
 
-import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { execFileSync, execSync, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync, readdirSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { readGateDeclaration } from '../hooks/supervisor-verdict-gate.mjs';
-import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源
+import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock, LANDING_LANES, parseLandingLane, isEvidenceTailPath, readImplementationEvidence } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源；双 lane / 同树凭据为 261028 批单源
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
@@ -116,7 +117,54 @@ function readGovAnchors(dir, changeId) {
   // RE 须容忍 token 前后的反引号（批① §7 的 `**Verdict：\`GREEN\`**` 形态为真实判官输出）。
   const green = isGreenVerdict(text);
   const landingVerdict = existsSync(landingVerdictPath);
-  return { frozen, green, landingVerdict };
+  let lane = LANDING_LANES.PACKET_BOUND;
+  let laneError = null;
+  try { lane = parseLandingLane(text); } catch (error) { laneError = error.message; }
+  return { frozen, green, landingVerdict, lane, laneError };
+}
+
+// 作者实现 lane：合并时从 Git 重算，不信任 summary 或作者自报。
+function collectAuthorImplementationGate(dir, changeId, source) {
+  const reasons = [];
+  const review = readImplementationEvidence(dir, changeId, 'review');
+  const verification = readImplementationEvidence(dir, changeId, 'verification');
+  if (!review.ok) reasons.push(review.reason);
+  if (!verification.ok) reasons.push(verification.reason);
+  if (reasons.length) return { probed: true, ok: false, reasons };
+  const r = review.evidence;
+  const v = verification.evidence;
+  const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
+  const proposalText = readFileSync(join(dir, 'delivery', 'review', changeId, 'PROPOSAL.md'), 'utf8');
+  const manifest = new Set(extractManifestBlock(proposalText));
+  if (manifest.size === 0 || [...manifest].some((p) => !/^\.claude\/(?:scripts|hooks)\//.test(p))) {
+    reasons.push('author-implementation manifest 必须非空且全部位于 .claude/scripts/** 或 .claude/hooks/**');
+  }
+  if (v.verifiedCommit !== r.reviewedCommit || v.verifiedTree !== r.reviewedTree) reasons.push('verifiedCommit/verifiedTree 与 reviewer 钉点不一致');
+  let actualTree = null;
+  try { actualTree = execFileSync('git', ['rev-parse', `${r.reviewedCommit}^{tree}`], { encoding: 'utf8', stdio: 'pipe' }).trim(); } catch { /* fail-closed below */ }
+  if (!actualTree || actualTree !== r.reviewedTree) reasons.push('reviewedTree 与 reviewedCommit 的 Git tree 不符或 commit 不存在');
+  try { execFn(`git merge-base --is-ancestor ${r.reviewedCommit} ${source}`); }
+  catch { reasons.push('reviewedCommit 不是待合并 source 的祖先（旧 SHA / rebase 后未重审）'); }
+  const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+  const changed = (range) => {
+    try {
+      return new Set(execFn(`git diff --name-only ${range}`).split(/\r?\n/).map((x) => x.trim()).filter(Boolean));
+    } catch { return null; }
+  };
+  const reviewedChanged = changed(`main...${r.reviewedCommit}`);
+  const sourceChanged = changed(`main...${source}`);
+  const tailChanged = changed(`${r.reviewedCommit}..${source}`);
+  if (!reviewedChanged || !sourceChanged || !tailChanged) reasons.push('Git 合并范围重算失败（fail-closed）');
+  else {
+    const reviewedImpl = new Set([...reviewedChanged].filter((p) => !isEvidenceTailPath(p, changeId)));
+    const sourceImpl = new Set([...sourceChanged].filter((p) => !isEvidenceTailPath(p, changeId)));
+    if (!sameSet(reviewedImpl, manifest)) reasons.push(`main...reviewedCommit 非证据改动 != manifest：${[...reviewedImpl].sort().join(', ')}`);
+    if (!sameSet(sourceImpl, manifest)) reasons.push(`main...source 非证据改动 != manifest：${[...sourceImpl].sort().join(', ')}`);
+    if (!sameSet(new Set(r.changedFiles), manifest)) reasons.push('implementation-review.changedFiles 与 manifest 不符');
+    const badTail = [...tailChanged].filter((p) => !isEvidenceTailPath(p, changeId));
+    if (badTail.length) reasons.push(`reviewedCommit..source 含非证据尾改动：${badTail.sort().join(', ')}`);
+  }
+  return { probed: true, ok: reasons.length === 0, reasons, reviewedCommit: r.reviewedCommit, reviewedTree: r.reviewedTree };
 }
 
 /** 枚举 contracts diff：--name-only <source>..<target>，命中 contracts/** 返回 true。 */
@@ -619,6 +667,12 @@ export function evaluate(ctx) {
     else if (!a.frozen) push('Track B：PROPOSAL Status 未标 FROZEN');
     else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
     else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
+    if (a?.laneError) push(`Track B：${a.laneError}`);
+    if (a?.lane === LANDING_LANES.AUTHOR_IMPLEMENTATION) {
+      if (ctx.humanApproval) push('author-implementation gov lane 不开放 human-approval 豁免');
+      if (!ctx.authorImplementationGate?.probed) push('author-implementation：同树实现凭据探测失败（fail-closed）');
+      else for (const reason of ctx.authorImplementationGate.reasons) push(`author-implementation：${reason}`);
+    }
   } else {
     // 261026 批 T3（ARQ-261017-merge-gate-scope-unstated，OQ1 裁候选 2）：变更集全部落在账本类制品 →
     // 本闸不适用（NOT_APPLICABLE），交 merge-to-main skill 的 human 授权通道；否则仍 BLOCK。
@@ -683,6 +737,9 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     ? (() => { try { return execFn('git diff --name-only main...' + source).split('\n').map((l) => l.trim()).filter(Boolean); } catch { return []; } })()
     : [];
   const deviceOutcome = kind === 'devloop' ? collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) : null;
+  const authorImplementationGate = kind === 'gov' && govAnchors?.lane === LANDING_LANES.AUTHOR_IMPLEMENTATION && source
+    ? collectAuthorImplementationGate(projectDir, changeId, source)
+    : null;
 
   return {
     changeId,
@@ -701,10 +758,95 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     overlap, // T1（260908 批）：并行相交面探测结果（分级路由见 pod-coordination §10d）
     retiredProbe, // T1（261015-gov-review-changes-taxonomy 齿二）：合并结果树废止路径探测结果
     deviceOutcome, // 261028 P8：设备轮硬门结果；人批豁免不消费、不覆盖
+    authorImplementationGate, // 261028 批：作者实现 lane 的同树与证据尾重算
   };
 }
 
 // ---- self-check（真空绿规约：断言输入非空 + 逐 case 预期）----
+function runAuthorLaneLiveSelfCheck(cases) {
+  const root = mkdtempSync(join(tmpdir(), 'author-lane-live-'));
+  const changeId = '261028-author-lane-fixture';
+  const scriptPath = fileURLToPath(import.meta.url);
+  const landingPath = resolve(scriptPath, '..', 'landing-fidelity-check.mjs');
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' }).trim();
+  const write = (rel, text) => {
+    const p = join(root, rel);
+    mkdirSync(resolve(p, '..'), { recursive: true });
+    writeFileSync(p, text, 'utf8');
+  };
+  const run = (script, args) => spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    encoding: 'utf8',
+    timeout: 30000,
+  });
+  try {
+    git('init', '-b', 'main');
+    git('config', 'user.email', 'fixture@example.invalid');
+    git('config', 'user.name', 'Fixture');
+    const manifest = '.claude/scripts/x.mjs';
+    const proposal = `> **状态：FROZEN v1.0**\n> **landing-lane**：\`author-implementation\`\n\n\`\`\`landing-manifest\n${manifest}\n\`\`\`\n\n## 2. 改法\n### T1 · fixture\n目标文件：\`${manifest}\`（改）\n\n## 7. 评审记录\nverdict: GREEN\n`;
+    const summary = `packet-id：gov-review-${changeId}\n\n\`\`\`landing-manifest\n${manifest}\n\`\`\`\n`;
+    write(manifest, 'old\n');
+    write(`delivery/review/${changeId}/PROPOSAL.md`, proposal);
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, summary);
+    git('add', '.');
+    git('commit', '-m', 'base');
+    git('checkout', '-b', 'gov/fixture');
+    write(manifest, 'new\n');
+    git('add', '.');
+    git('commit', '-m', 'implementation');
+    const reviewedCommit = git('rev-parse', 'HEAD');
+    const reviewedTree = git('rev-parse', 'HEAD^{tree}');
+    const evidence = {
+      schemaVersion: 1,
+      lane: 'author-implementation',
+      changeId,
+      reviewedCommit,
+      reviewedTree,
+      changedFiles: [manifest],
+    };
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: reviewedTree }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'evidence');
+    const happy = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-cli-happy-pass', ok: happy.status === 0, got: `${happy.status} ${happy.stdout} ${happy.stderr}` });
+    const landingHappy = run(landingPath, [`delivery/review/${changeId}`, 'main']);
+    cases.push({ name: 'author-lane-landing-cli-happy-pass', ok: landingHappy.status === 0, got: `${landingHappy.status} ${landingHappy.stdout} ${landingHappy.stderr}` });
+
+    write(manifest, 'newer-without-review\n');
+    git('add', '.');
+    git('commit', '-m', 'stale implementation');
+    const stale = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-stale-sha-block', ok: stale.status === 1 && stale.stderr.includes('非证据尾'), got: `${stale.status} ${stale.stderr}` });
+    git('reset', '--hard', reviewedCommit);
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: reviewedTree }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    write('.claude/scripts/extra.mjs', 'extra\n');
+    git('add', '.');
+    git('commit', '-m', 'out of manifest');
+    const extra = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-out-of-manifest-block', ok: extra.status === 1 && extra.stderr.includes('manifest'), got: `${extra.status} ${extra.stderr}` });
+
+    git('reset', '--hard', reviewedCommit);
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: '0'.repeat(40) }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'bad tree evidence');
+    const badTree = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-wrong-tree-block', ok: badTree.status === 1 && badTree.stderr.includes('reviewer 钉点'), got: `${badTree.status} ${badTree.stderr}` });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 function selfCheck() {
   const cases = [];
   const mkCtx = (over) => ({
@@ -1095,6 +1237,13 @@ function selfCheck() {
   cases.push({ name: 'device-acceptance-marker-overrides-false-declaration', ok: acceptanceOverrides.required && !acceptanceOverrides.ok && acceptanceOverrides.reasons.some((r) => r.includes('declaration-conflict')), got: JSON.stringify(acceptanceOverrides.reasons) });
   const unknownHostPath = assessDeviceOutcome({ ...baseDeviceInput, hostExclusions: [], evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
   cases.push({ name: 'device-unregistered-host-path-fail-closed', ok: !unknownHostPath.ok && unknownHostPath.reasons.some((r) => r.includes('host-path-unregistered')), got: JSON.stringify(unknownHostPath.reasons) });
+
+  // 261028 作者实现 lane：evaluate 消费层正反判别 + 真 Git 仓双 CLI 夹具。
+  const govAuthor = { kind: 'gov', govAnchors: { frozen: true, green: true, landingVerdict: true, lane: LANDING_LANES.AUTHOR_IMPLEMENTATION } };
+  cases.push({ name: 'author-lane-evaluate-clean-pass', ok: !evaluate(mkCtx({ ...govAuthor, authorImplementationGate: { probed: true, reasons: [] } })).blocked, got: '' });
+  expect('author-lane-evaluate-stale-block', { ...govAuthor, authorImplementationGate: { probed: true, reasons: ['reviewedCommit 不是待合并 source 的祖先'] } }, true, 'reviewedCommit');
+  expect('author-lane-evaluate-missing-probe-block', { ...govAuthor, authorImplementationGate: null }, true, '探测失败');
+  runAuthorLaneLiveSelfCheck(cases);
 
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(

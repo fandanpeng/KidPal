@@ -14,6 +14,8 @@
 > **承载 ARQ**：`<ARQ-id>`（根/批次关系写清；不关的根写留根指针）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。Track A 触发时改标 Track A + 命中判据。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（<T 编号范围>）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
+> **landing-lane**：`<packet-bound | author-implementation>`（缺省 `packet-bound`；纯 scripts/hooks 且满足 gov-change 触发条件时才可选作者通道，混合面恒旧通道）。
+> **default-trigger-evidence**（默认作者通道批必填）：P9 changeId、INDEX 的 landed/已合main 实值、P9 retro 路径、主线程人读无未闭合 BLOCK 的结论与核对日期；retro 项为 convention-only。
 > **riskTier**：<low | low-medium | medium>（一句话证成：闸向严/行为保持/触点面）。
 > **review profile**：<G2 | G3 | G2+G3>（触面枚举；G1/契约面必须为零或显式升级）。
 >
@@ -32,6 +34,8 @@
 ## 2. 问题、根因与改法（T1…Tn）
 
 每 T 一节，五段固定式：先写「问题」与「证据」，再写「根因」，再写「改什么 + 怎么改 + 为什么这样改（对哪个根因）」。扩承重闸优先、克制新立脚本。
+
+`packet-bound` 保持承重原文/改后逐字块与 cite-check；`author-implementation` 只冻目标、manifest、行为约束、正反测试与明确不做事项，不冻未来代码，不使用 make-edits/build-proposal 或装配副本。作者测试不是唯一判据：reviewer 独立给风险判据，verifier 独立做消费层/黑盒验证。
 
 **【硬项 · 起草期实证义务】**（原「硬项 1a」，随原「问题与根因」节并入本节；标签去数字）本节的断言纪律：
 
@@ -84,7 +88,7 @@
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
-每条机械可判：命令 + 预期。自检/重放类遵守真空绿规约（重放先断言输入非空；自检验证输出含新增自检名 + 调用顺序审查；环境红先立基线）。**装配**：§5 实跑副本一律用共享锚文装配器 `node .claude/scripts/assemble-edits.mjs <编辑清单.json> <仓外输出根>` 装配（261027 批 T1，ARQ-261027）——旧串锚定、逐条断言恰命中 1 次（0 次 / 多次即中止，全部命中后才写盘）、行尾原样不归一、输出根强制在仓外；清单 = §2 编辑的 JSON 形态（file / oldStr / newStr / label），不再每批现写一次性脚手架。
+每条机械可判：命令 + 预期。自检/重放类遵守真空绿规约（重放先断言输入非空；自检验证输出含新增自检名 + 调用顺序审查；环境红先立基线）。**装配（仅 `packet-bound` lane）**：§5 实跑副本一律用共享锚文装配器 `node .claude/scripts/assemble-edits.mjs <编辑清单.json> <仓外输出根>` 装配（261027 批 T1，ARQ-261027）——旧串锚定、逐条断言恰命中 1 次（0 次 / 多次即中止，全部命中后才写盘）、行尾原样不归一、输出根强制在仓外；清单 = §2 编辑的 JSON 形态（file / oldStr / newStr / label），旧 lane 不再每批现写一次性脚手架。`author-implementation` lane 不装配未来代码，验证命令直接在已提交且待审的实现 tree 上实跑。
 
 **复跑分档**：改稿轮（评审 findings 修订后）与落地确认轮按影响面窄化复跑——只复跑被改 T 的验证项，并在修订记录里列明复跑范围；**全量复跑义务保留在两个时点**：FROZEN 标注前、落地后核验前，两处不得窄化（261027 批 T2 立，ARQ-261027 复跑税）。
 

@@ -30,7 +30,7 @@
 
 ## Track B 制品义务（landing-summary 结构两件 + 验证集实跑回填）
 
-> 本节 = 两面 lane（`/arch-change` 与 `/gov-change`）Track B 落地的**制品义务**单源；落地恒由主线程 packet-bound 执行。轻/主路径同义务——轻批的瘦 summary 不豁免本节两件。
+> 本节 = 两面 lane（`/arch-change` 与 `/gov-change`）Track B 落地的**制品义务**单源；本面恒由主线程 packet-bound 执行，gov 的受限作者通道见 `gov-change.md`。轻/主路径同义务——轻批的瘦 summary 不豁免本节两件。
 
 **① landing-summary 结构两件**（`landing-fidelity-check.mjs` 硬失败条目 3 / 7，缺一即核验 FAIL）：
 
