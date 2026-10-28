@@ -7,7 +7,7 @@
 > 列：changeId | 日期 | 状态 | 已合main。review 状态机：draft→frozen→landed(终态)。
 > 2026-10-15 前历史批见 delivery/archive/changes/arch/INDEX.md（261015-gov-review-changes-taxonomy T6 第 4 条归档指针）。
 
-## review (25)
+## review (26)
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
@@ -15,6 +15,7 @@
 | [261029-gov-review-gov-loop-simplification](261029-gov-review-gov-loop-simplification/) | 2026-10-29 | landed | yes |
 | [261028-gov-review-author-implementation-lane](261028-gov-review-author-implementation-lane/) | 2026-10-28 | landed | yes |
 | [261028-gov-review-p8-gate-semantics-cluster](261028-gov-review-p8-gate-semantics-cluster/) | 2026-10-28 | landed | yes |
+| [261028-arch-review-font-typography-scaleup](261028-arch-review-font-typography-scaleup/) | 2026-10-28 | landed | — |
 | [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p5-spike-anchor-cluster](261027-gov-review-p5-spike-anchor-cluster/) | 2026-10-27 | landed | yes |
 | [261027-gov-review-p6-landing-gate-cluster](261027-gov-review-p6-landing-gate-cluster/) | 2026-10-27 | landed | — |
