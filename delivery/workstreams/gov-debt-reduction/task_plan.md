@@ -134,6 +134,13 @@ changes:
 - 2026-10-28 **R3 GREEN，评审循环收敛（R1 BLOCK(F1) → R2 BLOCK(F1′) → R3 GREEN），未触发熔断**。判官三重实证闭合 F1′（结构性不变量 `probed ∧ ok=false ⟹ required=true` 三条 return 路径全验 + evaluate 五案直调 + 判别力升层核实 mutation exit 1）；F5 NIT（OQ-3 注记轮次措辞易误读）已冻结前顺手修一行。判档维持 Track B 主路径 / riskTier high / G2+G3。**主线程凭「立项 ack + R3 GREEN」标 FROZEN v0.3**（状态行照抄形态、preflight 复跑 15 锚零 findings、INDEX 翻 frozen）。**human 指示：landing 暂停，待通知**——packet-bound 落地 / landing-verifier / 升级闸 / 合并全部未动。
 - 2026-10-28 **landing + 全环闭环（human「landing吧」）**：V1–V9 全绿（全新装配 42/42 sha 与冻结基线逐字同；仓内 apply 15 件 sha256 全对账；真仓种子反查 3/3；cite-check landing 相位 43 checked 零缺失；lint/route/debt-render（两 ARQ 自动归位 `_archive/2026/`）/debt-doctor RED 零命中）→ landing-summary + retro 落盘 → landing-verifier **PASS + 5 ADVISORY**（15 件逐文件人读 diff 零漏改无私货；一次疑似偏差经逐字节比对证实为核验官误读）→ 落地 commit `c3c9546c` → main 已前进（dev/pod-m2 列车 `357bc5fc`）→ `.codebase-memory` 定点还原 + gov 回同步 merge（零冲突）→ 生成件自洽 → V10 升级闸 **PASS (kind=gov)** → ff 合本地 main `429808bf` → `--upsert` 翻 landed + mergedInMain=yes。**P8 收口；ARQ-261014 / ARQ-261001 两条整条结项归档**。retro §4 建议登记两条 ARQ（ARQ-281028-mutation-fixture-consumer-layer / ARQ-281028-assembler-import-closure-and-root-param）。下一波 = P9（脚本卫生簇 2 条：brief-inputs 锚解析降噪 + pod-events schema/aggregate 一致性）。
 
+### P8.5 · author-implementation enabling 批（✅ 2026-10-28 已合 main）
+
+- changeId = `261028-gov-review-author-implementation-lane`。P8 成本复盘后 human 拍板：纯 scripts/hooks 治理批允许 architect 在 gov worktree 非 main 分支实现并提交，reviewer 审真实 diff，landing-verifier 对同一 commit/tree 独立验证；混合面、契约、spec、G1、settings、agent 定义、scope-map 等继续 packet-bound。
+- R5 后 human 进一步指示主线程直接实施，本批按 packet-bound 记录，未执行临时写权三态链；26 件 manifest 直接落地。R6 真实 diff 评审 GREEN，landing-verifier PASS + 4 ADVISORY，升级闸 PASS，落地 commit `ae038d0b` 已 ff 合本地 main。
+- 机械面：scope-map 最小开放 scripts/hooks + 两份独立凭据 deny；enforce-scope 同树非 main / 直接 git 检查；landing-fidelity 与 pre-merge 重算 reviewed/verified commit/tree、manifest 与三件证据尾。常驻自检含真实 Git 仓双 CLI 夹具。
+- **P9 是首个 scripts 新通道试点**；P9 landed + 已合main + retro 无未闭合 BLOCK 后，纯 scripts/hooks 批默认 author-implementation，human 立项仍可改选旧通道。首个 hooks 实证另行全强度记录。F15 Bash 非完整沙箱三形绕过留根，后续专项收紧。
+
 ### P9 · 脚本卫生簇（2 条）
 
 - `ARQ-261025-brief-inputs-anchor-noise`（brief-inputs.mjs 锚解析降噪）+ `ARQ-261014-pod-events-booking-telemetry-fidelity`（pod-events schema/aggregate 一致性）。两条不同脚本，可一批两 T 或拆两小批。
