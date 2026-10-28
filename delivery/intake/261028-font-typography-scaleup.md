@@ -25,7 +25,7 @@ facePlan:
   - 顺序3 实现面：本门收尾 = ③ 拆包——human 盖 FROZEN（触点②）后 portfolio-planner 拆包（P0 spike → P1 首页/P2 课表/P3 故事，launch 前置 = anchors.req + anchors.arch 回填 + P0 完成）；各包 /build-feature 跑 dev loop
 anchors:
   req: "requirements.md §9 版本行 v1.69（2026-10-28 frozen，human 终拍「ok，那没问题了」）——S-F2.3 排版句 16px/20px 居中省略 + 分屏行为口径 / S-F1.2 容量 4/4/3 + 临时标记课名下划线 / S-F2.1 标题省略 / NFR-READ-1 下限不变注记 / 档 0 勘误两处随批；UI 产物 frozen 态 = 母版 v8（current: 已翻）+ brief v7 + V8 四帧（UI-ready 判据 = §9 v1.69 行 + brief 对齐注记均在位）；流程留痕 = §9 v1.69 行依据列（author 两轮 + architect 全 ✅ + reviewer 五查 R1 闭合 + 终拍）"
-  arch: （空，待 /arch-change 批 changeId 回填）
+  arch: "architecture.md §12 changeId 行 `261028-font-typography-scaleup`（2026-10-28 landed）——§5.5.3 字体管线换代（16px/20px 两族 + assets .bin + cbin 运行时装载 + 编译内 14px 兜底）+ §5.5.2 字体预算注记 + §3.1/§4/§8.1 三处勘误闭账 + ADR-017（docs/decisions/ADR.md）；制品 = delivery/review/261028-arch-review-font-typography-scaleup/（PROPOSAL FROZEN v1.0 + R1 GREEN 主路径 + landing-summary + landing-verdict PASS + retro）；契约面零动作（NO_CONTRACT_CHANGE）"
   contract: "N/A——契约面零触点（architect 取证：interface-contract.md 关键字零命中）"
   imp: （空，待 workstream FROZEN + 拆包后回填 taskpackage id）
 openQ:
