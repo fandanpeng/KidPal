@@ -6,10 +6,11 @@
 > 自动生成（changes-index.mjs 幂等重建 / closeout-check 增量刷行 / 状态转移时全量重建收敛）。**勿手改**。
 > 列：changeId | 日期 | origin.ref | 状态 | workstream。dev 状态：closed = closeoutRequiredFiles 全在场（lib 单源）。
 
-## dev (94)
+## dev (95)
 
 | changeId | 日期 | origin.ref | 状态 | workstream |
 |---|---|---|---|---|
+| [261028-p3-record-session-mirror-desync-fix](261028-p3-record-session-mirror-desync-fix/) | 2026-10-28 | delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md | closed | — |
 | [261025-kidpal-tools-profile-fix](261025-kidpal-tools-profile-fix/) | 2026-10-25 | delivery/taskpackages/261024-memory-recall-tool-enable/taskpackage.json | closed | device-memory-overhaul |
 | [261025-openclaw-dreaming-disable](261025-openclaw-dreaming-disable/) | 2026-10-25 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/dreaming-capture-noise-20261025.md | closed | device-memory-overhaul |
 | [261024-m5-k4b-corpus-parser-v2](261024-m5-k4b-corpus-parser-v2/) | 2026-10-24 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/k4-attribution-fix-review-20261024.md | closed | device-memory-overhaul |
@@ -104,4 +105,3 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
-| [261028-p3-record-session-mirror-desync-fix](261028-p3-record-session-mirror-desync-fix/) | 2026-10-28 | delivery/taskpackages/261028-p3-record-session-mirror-desync-fix/plan.md | closed | — |
