@@ -95,6 +95,11 @@ set(SOURCES "audio/audio_codec.cc"
             # lv_layer_top 由板装配层触发)。不进入 host 构建 (host_app CMakeLists 不含本文件，
             # 与 char_page.cc 同理)。
             "display/kidpal_render_node.cc"
+            # 统一 kidpal_font 句柄 seam 强定义（TaskPackage 261028-m6-k1，[K1]-[K4]）：
+            # 设备装载面 = cbin_font_create + Assets::GetAssetData reader（裁定 2；设备
+            # 编译走 device 分支，host 走 CONFIG_IDF_TARGET_LINUX 宽度感知解码器分支）。
+            # main 目录非 GLOB，必须显式登记（persist 包教训：登记是缺口高发位）。
+            "display/kidpal_font.cc"
             # NFR-READ-1 字号真机对照实验页（human 指示一次性实验构建，不入产线）：
             # 9 档 1bpp NotoSansSC 字号 C 数组字体 (lv_font_conv 产线同源参数) + 顶层对照页。
             "display/font_size_test_page.cc"
@@ -403,6 +408,11 @@ elseif(CONFIG_BOARD_TYPE_WAVESHARE_S3_RLCD_4_2)
     set(BOARD_TYPE "waveshare-s3-rlcd-4.2")
     set(BUILTIN_TEXT_FONT font_puhui_basic_30_4)
     set(BUILTIN_ICON_FONT font_awesome_30_4)
+    # 字体运行时资产打包（TaskPackage 261028-m6-k1，FAR-E2）：fonts_root 经 extra_files
+    # 链打入 assets 分区——含 16px 正文 font_body_16.bin / 20px 标题 font_title_20.bin
+    # 两枚 cbin（gen_fonts.sh 78 fork --format cbin 产出）。设备开机经 kidpal_font
+    # 从 Assets::GetAssetData 取同枚 .bin 装载。
+    set(DEFAULT_ASSETS_EXTRA_FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts_root")
 elseif(CONFIG_BOARD_TYPE_WAVESHARE_S3_TOUCH_LCD_3_49)
     set(BOARD_TYPE "waveshare-s3-touch-lcd-3.49")
     set(LVGL_TEXT_FONT font_puhui_basic_30_4)

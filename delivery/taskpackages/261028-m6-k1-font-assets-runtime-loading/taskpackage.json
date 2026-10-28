@@ -32,10 +32,21 @@
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7",
     "docs/decisions/ADR.md#ADR-017"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "FAS-A1: 产线扩产与资产落盘——gen_fonts.sh 扩产面（--size 16/--size 20 在世、--bpp 1 ≥2、输出面 fonts_root）+ 设备 CMakeLists 接 fonts_root（构建清单档）；fonts_root 两枚冻结名 .bin 真实落盘（产物面）。设计态红：size16/size20 键=0、device_cmakelists_fonts_root=0、两枚 .bin 不存在",
+    "FAS-A2: 两枚新 bin 真 cbin 装载 + 1bpp + 尺寸档 + 全量覆盖——.bin 真字节经 cbin_font_create 装载非 NULL、bpp==1 PLAIN、line_height 档（16px∈[20..25]/20px∈[26..36] 且 title 严格大于 body）、cmap 覆盖下界（body ≥6000/title ≥3000 静态子集判别面）、GB2312 二级 canary + 常用字 4 码点。设计态红：两枚 .bin 未产、装载面未接",
+    "FAS-A3: 统一句柄 mount 正常态——[K3] mount(fonts_root 直读 reader) 返回 0；body()/title() 真资产句柄 ≠&font_puhui_14_1、尺寸档正确、glyph 可查、同源路径自证。设计态红：[K1]-[K4] seam 弱哨兵未实现",
+    "FAS-A4: 缺资产回退 14px 不黑屏——全缺 mount 返回 0（降级=合法完成态）、双句柄恒等 &font_puhui_14_1 恒非 NULL、from_cbin(NULL,0) 与短缓冲回退 14px；深腐蚀数据崩溃域不做 host 钉点（强证据归真机缺 assets 降级开机轮 FAR-E3）。设计态红：seam 未实现",
+    "FAS-A5: 20px 缺字回退 16px——自然探针缺口码点经 fallback 派发命中且盒度量 == body 同码点；机制级 title()->fallback == body()。设计态红：seam 未实现",
+    "FAS-A6: host 同源 + 设备接线结构半——kidpal_font.{h,cc} 存在且引用冻结名/GetAssetData/LvglCBinFont 或 cbin_font_create/font_puhui_14_1（构建清单档）；host SRCS 编入 cbin_font.c + 本验收件。设计态红：kidpal_font.{h,cc} 不存在",
+    "FAS-A7: 不变量 canary——OQ3 九档 font_test_10..32 逐档存在+编入设备构建、font_size_test_page.cc 存在+编入、host_srcs_puhui14、render_node_puhui14（构建清单档恒绿 canary）+ 清单面自检",
+    "FAS-A8: 相邻冻结锚 canary——p1_cjk_name.acceptance.c 在世 + [S1] 签名面 + render_node kidpal_p1_font_glyph 强符号；KSG_COURSE_CAP 84 / KSG_FONT_MIN_PX 14 / KSTORY_LIST_ROWS_PER_SCREEN 4 / KSTORY_READER_LINES_PER_SCREEN 4 零触（构建清单档恒绿 canary）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/font_assets_runtime.acceptance.c"
+  ],
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "PENDING builder step-0 现跑（human 2026-10-28 裁定：acceptance-author 被 enforce-scope 机械门拦于 host_app/main/CMakeLists.txt 接线，接线补丁逐字落 `acceptance-wiring-patch.md` 交 builder step-0 落线后立刻现跑红基线、逐字回报，确认 == 设计态红后才准动实现）。设计态红预期（冻结件 Run protocol 逐字备档）：242+8=250 Tests；存量红 = p1_auxbar AB-A1/A2/A4 三条；新增设计态红 = FAS-A1/A2/A3/A4/A5/A6；FAS-A7/A8 恒绿；除上述外零其它新增红，任何 infra 红（清单缺失/键不在/负向探针）= 接线缺陷不冒充设计态红",
   "exitCriteria": [
     "FAR-E1: gen_fonts.sh 同产线扩产 16px 正文与 20px 阅读标题两枚全量 CJK 1bpp .bin；20px 不做静态子集，16px/20px 精确字节数与 assets 余量实测以 append-only 注记回填 ADR-017，不把估算冒充实测。",
     "FAR-E2: 两枚 .bin 打入 assets 分区并由 Assets::GetAssetData + LvglCBinFont/cbin 运行时装载；统一 kidpal_font 句柄可供页面消费，缺 assets、缺文件或装载失败均回退编译内 font_puhui_14_1 且不黑屏；host 与设备读取同一枚 .bin，host 不再以另一套字体数据冒充真机字形。",
@@ -73,7 +84,73 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "FAS-A1",
+        "acceptance": "FAS-A1: 产线扩产与资产落盘——gen_fonts.sh 扩产面（--size 16/--size 20 在世、--bpp 1 ≥2、输出面 fonts_root）+ 设备 CMakeLists 接 fonts_root（构建清单档）；fonts_root 两枚冻结名 .bin 真实落盘（产物面）。设计态红：size16/size20 键=0、device_cmakelists_fonts_root=0、两枚 .bin 不存在",
+        "mutation": "变异：gen_fonts.sh `--size 16`→`--size 99`",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 1（FAS-A1 清单事实）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A1 FAIL（250 Tests / 4 Failures），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A2",
+        "acceptance": "FAS-A2: 两枚新 bin 真 cbin 装载 + 1bpp + 尺寸档 + 全量覆盖——.bin 真字节经 cbin_font_create 装载非 NULL、bpp==1 PLAIN、line_height 档（16px∈[20..25]/20px∈[26..36] 且 title 严格大于 body）、cmap 覆盖下界（body ≥6000/title ≥3000 静态子集判别面）、GB2312 二级 canary + 常用字 4 码点。设计态红：两枚 .bin 未产、装载面未接",
+        "mutation": "变异：font_body_16.bin byte0→0x01（破 raw cbin 形态：首 8 字节槽非零）",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 2（FAS-A2 形态正检）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A2 FAIL（250/4），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A3",
+        "acceptance": "FAS-A3: 统一句柄 mount 正常态——[K3] mount(fonts_root 直读 reader) 返回 0；body()/title() 真资产句柄 ≠&font_puhui_14_1、尺寸档正确、glyph 可查、同源路径自证。设计态红：[K1]-[K4] seam 弱哨兵未实现",
+        "mutation": "变异：mount 跳过 body 读取（body 落 14px）",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 3（FAS-A3 句柄断言）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A3 FAIL（FAS-A5 外溢连带，250/5），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A4",
+        "acceptance": "FAS-A4: 缺资产回退 14px 不黑屏——全缺 mount 返回 0（降级=合法完成态）、双句柄恒等 &font_puhui_14_1 恒非 NULL、from_cbin(NULL,0) 与短缓冲回退 14px；深腐蚀数据崩溃域不做 host 钉点（强证据归真机缺 assets 降级开机轮 FAR-E3）。设计态红：seam 未实现",
+        "mutation": "变异：from_cbin NULL/短缓冲守卫改返回 NULL",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 4（FAS-A4 兜底断言）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A4 FAIL（250/4），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A5",
+        "acceptance": "FAS-A5: 20px 缺字回退 16px——自然探针缺口码点经 fallback 派发命中且盒度量 == body 同码点；机制级 title()->fallback == body()。设计态红：seam 未实现",
+        "mutation": "变异：删 `title->fallback = body` 挂接",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 5（FAS-A5 fallback 断言）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A5 FAIL（250/4），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A6",
+        "acceptance": "FAS-A6: host 同源 + 设备接线结构半——kidpal_font.{h,cc} 存在且引用冻结名/GetAssetData/LvglCBinFont 或 cbin_font_create/font_puhui_14_1（构建清单档）；host SRCS 编入 cbin_font.c + 本验收件。设计态红：kidpal_font.{h,cc} 不存在",
+        "mutation": "变异：kidpal_font.cc 冻结名改回宏引用（无字面）",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 6（FAS-A6 清单事实）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A6 FAIL（250/4），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A7",
+        "acceptance": "FAS-A7: 不变量 canary——OQ3 九档 font_test_10..32 逐档存在+编入设备构建、font_size_test_page.cc 存在+编入、host_srcs_puhui14、render_node_puhui14（构建清单档恒绿 canary）+ 清单面自检",
+        "mutation": "变异：设备 SOURCES 删 `display/font_test_16.c`",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 7（FAS-A7 清单事实）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A7 FAIL（250/4），还原后复绿"
+      },
+      {
+        "acceptanceId": "FAS-A8",
+        "acceptance": "FAS-A8: 相邻冻结锚 canary——p1_cjk_name.acceptance.c 在世 + [S1] 签名面 + render_node kidpal_p1_font_glyph 强符号；KSG_COURSE_CAP 84 / KSG_FONT_MIN_PX 14 / KSTORY_LIST_ROWS_PER_SCREEN 4 / KSTORY_READER_LINES_PER_SCREEN 4 零触（构建清单档恒绿 canary）",
+        "mutation": "变异：kidpal_render_node.cc 全量 `kidpal_p1_font_glyph`→`kidpal_p1_glyph_MUT`（3 处）",
+        "affectedTest": "font_assets_runtime.acceptance.c TEST 8（FAS-A8 清单事实；p1_cjk_name[S1] canary 外溢连带红）",
+        "turnedRed": true,
+        "result": "turned red：FAS-A8 FAIL（250/5），还原后复绿"
+      }
+    ],
+    "note": "证据来源 = builder 变异轮（2026-10-28，每条变异 build→run→还原，FINAL 干净跑 250/3 FAS 全绿）；外溢红（A3→A5、A8→p1_cjk_name[S1]）为可接受连带——目标 FAS 确实转红即满足敏感判据。"
   },
   "crossEnd": {
     "counterparts": [],
@@ -176,5 +253,5 @@
       "note": "P0 先建立运行时通路，P1 后切首页消费；两包不得并行改 kidpal_render_node.cc/host_infra_seam.c，P1 在 P0 合并后的冻结面上重基线。"
     }
   ],
-  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。"
+  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。〔裁定留痕 2026-10-28〕① 验收测试运行时禁扫源码树、禁影子树镜像拷贝 = human 对本包的定向裁定（首例，非仓库通用规则变化；既有树扫形态冻结件如 p1_cjk_name 不在本包范围）——结构面断言改为 FAS-MANIFEST 机制：host CMakeLists configure 期采集结构事实写构建产物 fas_structure_manifest.txt，冻结验收件运行时只读该构建产物，被扫源文件全登记 CMAKE_CONFIGURE_DEPENDS 保新鲜度。② host_app/main/CMakeLists.txt 接线（acceptance-author 被 enforce-scope 拦）= human 裁定 builder step-0 逐字落线（补丁文本 = acceptance-wiring-patch.md），落线后立刻现跑红基线并逐字回报，确认 == 设计态红才准动实现。③〔step-0 阻塞裁定 2026-10-28〕builder step-0 挖出冻结验收两处结构性矛盾并停手：矛盾 A = 标准 lv_font_conv 1.5.2 `--format bin` 产通用 bin，cbin 格式只存在于 78 的 lv_font_conv fork——gen_fonts.sh 现产线不可达 FAR-E2 的 cbin 装载；矛盾 B = cbin_font_create 是 32-bit lv_font_t 内存镜像直读（dsc@24），64-bit aarch64 host（dsc@40）必崩，而冻结件 TEST 2 直调 cbin_font_create，任何 builder 实现都无法使其转绿。human 双裁：provenance = 换 78 fork（--format cbin，版本钉死登记）；host 半 = acceptance-author 预基线修正（红基线未成立，非 supersede）——host 侧去直调、改走 kidpal_font 编译期 host 分支的宽度感知解码器（同一枚 .bin、F-7 同源意图不变），设备面仍 cbin_font_create、解码等价性归真机轮；F-5 核心语义（mount/降级/缺字回退）保住 host 行为级覆盖；裁定留痕 = 本 notes + retro，不重开 /arch-change。"
 }

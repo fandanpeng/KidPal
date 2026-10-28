@@ -314,6 +314,18 @@ set(HOST_ACCEPTANCE_SRCS
     # 包 0 boundary 齿注册序守卫；本文件 TEST 5 校验此序——登记行缺失即红）。
     "../../record_session_lifecycle.acceptance.c"
 
+    # 包 261028-m6-k1-font-assets-runtime-loading（字体资产产线 + assets/cbin 运行时
+    # 装载 + host 同源字体 seam；P0 spike）冻结验收。cbin_font.c **不进 host 构建**
+    # （预基线修正裁定 2：32-bit 假设装载器在 64-bit host 直调必崩，dsc 槽 @24 vs
+    # @40；host 装载半 = kidpal_font 编译期宽度感知解码器，设备面 cbin_font_create
+    # 仅设备构建）；seam [K1]-[K4] 弱哨兵强符号源 = display/kidpal_font.cc（BUILDER
+    # DUTY 4)，builder 接线）。相对 host_app/main 为 ../../。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
+    # seam [K1]-[K4] 强符号源（覆盖本验收件 weak 哨兵；host 编译期走宽度感知解码器
+    # 分支，CONFIG_IDF_TARGET_LINUX）——BUILDER DUTY 4)/5) builder 接线。
+    "../../../display/kidpal_font.cc"
+    "../../font_assets_runtime.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -343,3 +355,176 @@ idf_component_register(
 # 注释内的 `/*` 报警, 属注释体文字、非嵌套注释语法错。冻结件不可改, 仅把
 # -Wcomment 降为非错误 (仍显示), 语义零影响。
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation -Wno-error=comment)
+
+# ============================================================================
+# FAS 结构清单（261028-m6-k1-font-assets-runtime-loading 配套；acceptance-author
+# 落线 2026-10-28，勿摘）。human 定向裁定（2026-10-28，planner 留痕）：验收测试
+# 运行时禁扫源码树、禁影子树镜像拷贝——结构面断言的事实采集移到本块 configure 期
+# （file(READ)/EXISTS + string(FIND)），写成构建产物 fas_structure_manifest.txt
+# （key=<0|1> 逐行）；冻结验收件 font_assets_runtime.acceptance.c 在测试运行时
+# 只读该构建产物，不读任何源文件。被扫源文件全部登记 CMAKE_CONFIGURE_DEPENDS
+# ——改任一被扫文件即触发 re-configure 重采集。键语义见冻结件头注 FAS-MANIFEST
+# 节。本块只读被扫文件、只写 build/ 内清单，不改任何源文件。
+# ============================================================================
+set(FAS_FIRMWARE_MAIN "${CMAKE_CURRENT_SOURCE_DIR}/../../..")      # firmware/main
+set(FAS_REPO "${CMAKE_CURRENT_SOURCE_DIR}/../../../../..")         # 仓库根
+set(FAS_GEN_FONTS   "${FAS_REPO}/tools/asset-pipeline/fonts/gen_fonts.sh")
+set(FAS_DEV_CMAKE   "${FAS_FIRMWARE_MAIN}/CMakeLists.txt")
+set(FAS_DISPLAY     "${FAS_FIRMWARE_MAIN}/display")
+set(FAS_KIDPAL_FONT_H  "${FAS_DISPLAY}/kidpal_font.h")
+set(FAS_KIDPAL_FONT_CC "${FAS_DISPLAY}/kidpal_font.cc")
+set(FAS_SIZE_PAGE   "${FAS_DISPLAY}/font_size_test_page.cc")
+set(FAS_RENDER_NODE "${FAS_DISPLAY}/kidpal_render_node.cc")
+set(FAS_SCHEDULE_H  "${FAS_DISPLAY}/schedule_page.h")
+set(FAS_STORY_H     "${FAS_DISPLAY}/story_page.h")
+set(FAS_P1CJK       "${CMAKE_CURRENT_SOURCE_DIR}/../../p1_cjk_name.acceptance.c")
+
+function(fas_fact_exists VAR PATH)
+    if(EXISTS "${PATH}")
+        set(${VAR} 1 PARENT_SCOPE)
+    else()
+        set(${VAR} 0 PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(fas_fact_contains VAR PATH NEEDLE)
+    set(${VAR} 0 PARENT_SCOPE)
+    if(EXISTS "${PATH}")
+        file(READ "${PATH}" _fas_buf)
+        string(FIND "${_fas_buf}" "${NEEDLE}" _fas_pos)
+        if(_fas_pos GREATER -1)
+            set(${VAR} 1 PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
+set(FAS_GEN_EXISTS 0)
+set(FAS_GEN_SIZE16 0)
+set(FAS_GEN_SIZE20 0)
+set(FAS_GEN_BPP1_GE2 0)
+set(FAS_GEN_FONTS_ROOT 0)
+set(FAS_GEN_FORMAT_CBIN 0)
+if(EXISTS "${FAS_GEN_FONTS}")
+    set(FAS_GEN_EXISTS 1)
+    file(READ "${FAS_GEN_FONTS}" _fas_gen)
+    string(FIND "${_fas_gen}" "--size 16" _fas_p)
+    if(_fas_p GREATER -1)
+        set(FAS_GEN_SIZE16 1)
+    endif()
+    string(FIND "${_fas_gen}" "--size 20" _fas_p)
+    if(_fas_p GREATER -1)
+        set(FAS_GEN_SIZE20 1)
+    endif()
+    string(REGEX MATCHALL "--bpp 1" _fas_m "${_fas_gen}")
+    list(LENGTH _fas_m _fas_n)
+    if(_fas_n GREATER_EQUAL 2)
+        set(FAS_GEN_BPP1_GE2 1)
+    endif()
+    string(FIND "${_fas_gen}" "fonts_root" _fas_p)
+    if(_fas_p GREATER -1)
+        set(FAS_GEN_FONTS_ROOT 1)
+    endif()
+    string(FIND "${_fas_gen}" "--format cbin" _fas_p)
+    if(_fas_p GREATER -1)
+        set(FAS_GEN_FORMAT_CBIN 1)
+    endif()
+endif()
+
+fas_fact_contains(FAS_DEV_CMAKE_FONTS_ROOT "${FAS_DEV_CMAKE}" "fonts_root")
+fas_fact_exists(FAS_KIDPAL_FONT_H  "${FAS_KIDPAL_FONT_H}")
+# builder 接线修（2026-10-28）：原 v1 块用同名 VAR/PATH 参数
+# `fas_fact_exists(FAS_KIDPAL_FONT_CC "${FAS_KIDPAL_FONT_CC}")`，函数把 VAR 置 1
+# PARENT_SCOPE 会**覆盖路径变量本身**，导致随后 kidpal_font.cc 内容事实全部读到路径
+# "1" 而恒 0（FAS-A6 tooth1 假红）。改独立结果变量，保留路径变量给 contains 用。
+fas_fact_exists(FAS_KIDPAL_FONT_CC_EXISTS "${FAS_KIDPAL_FONT_CC}")
+fas_fact_contains(FAS_KF_CC_BODY16     "${FAS_KIDPAL_FONT_CC}" "font_body_16.bin")
+fas_fact_contains(FAS_KF_CC_TITLE20    "${FAS_KIDPAL_FONT_CC}" "font_title_20.bin")
+fas_fact_contains(FAS_KF_CC_GETASSET   "${FAS_KIDPAL_FONT_CC}" "GetAssetData")
+fas_fact_contains(FAS_KF_CC_LVGLCBIN   "${FAS_KIDPAL_FONT_CC}" "LvglCBinFont")
+fas_fact_contains(FAS_KF_CC_CBINCREATE "${FAS_KIDPAL_FONT_CC}" "cbin_font_create")
+fas_fact_contains(FAS_KF_CC_FALLBACK14 "${FAS_KIDPAL_FONT_CC}" "font_puhui_14_1")
+if(FAS_KF_CC_LVGLCBIN GREATER 0 OR FAS_KF_CC_CBINCREATE GREATER 0)
+    set(FAS_KF_CC_CBIN_LOADER 1)
+else()
+    set(FAS_KF_CC_CBIN_LOADER 0)
+endif()
+
+# host SRCS 编入事实（本文件自检——HOST_ACCEPTANCE_SRCS 定义在本文件上部）。
+string(JOIN ";" FAS_SRCS_JOINED "${HOST_ACCEPTANCE_SRCS}")
+set(FAS_SRCS_NO_CBIN_FONT 1)
+set(FAS_SRCS_ACCEPTANCE 0)
+set(FAS_SRCS_PUHUI14 0)
+string(FIND "${FAS_SRCS_JOINED}" "cbin_font.c" _fas_p)
+if(_fas_p GREATER -1)
+    set(FAS_SRCS_NO_CBIN_FONT 0)
+endif()
+string(FIND "${FAS_SRCS_JOINED}" "font_assets_runtime.acceptance.c" _fas_p)
+if(_fas_p GREATER -1)
+    set(FAS_SRCS_ACCEPTANCE 1)
+endif()
+string(FIND "${FAS_SRCS_JOINED}" "font_puhui_14_1.c" _fas_p)
+if(_fas_p GREATER -1)
+    set(FAS_SRCS_PUHUI14 1)
+endif()
+
+foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
+    fas_fact_exists(FAS_FT_${_sz}_E "${FAS_DISPLAY}/font_test_${_sz}.c")
+    fas_fact_contains(FAS_FT_${_sz}_C "${FAS_DEV_CMAKE}" "font_test_${_sz}.c")
+endforeach()
+
+fas_fact_exists(FAS_SIZE_PAGE_E "${FAS_SIZE_PAGE}")
+fas_fact_contains(FAS_SIZE_PAGE_C "${FAS_DEV_CMAKE}" "font_size_test_page.cc")
+fas_fact_contains(FAS_RN_PUHUI14 "${FAS_RENDER_NODE}" "font_puhui_14_1")
+fas_fact_contains(FAS_RN_P1_GLYPH "${FAS_RENDER_NODE}" "kidpal_p1_font_glyph")
+fas_fact_exists(FAS_P1CJK_EXISTS "${FAS_P1CJK}")
+fas_fact_contains(FAS_P1CJK_S1 "${FAS_P1CJK}" "int kidpal_p1_font_glyph(uint32_t codepoint")
+fas_fact_contains(FAS_KSG_CAP "${FAS_SCHEDULE_H}" "#define KSG_COURSE_CAP 84")
+fas_fact_contains(FAS_KSG_MINPX "${FAS_SCHEDULE_H}" "#define KSG_FONT_MIN_PX 14")
+fas_fact_contains(FAS_KSTORY_ROWS "${FAS_STORY_H}" "#define KSTORY_LIST_ROWS_PER_SCREEN 4")
+fas_fact_contains(FAS_KSTORY_LINES "${FAS_STORY_H}" "#define KSTORY_READER_LINES_PER_SCREEN 4")
+
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${FAS_GEN_FONTS}" "${FAS_DEV_CMAKE}" "${FAS_KIDPAL_FONT_H}" "${FAS_KIDPAL_FONT_CC}"
+    "${FAS_SIZE_PAGE}" "${FAS_RENDER_NODE}" "${FAS_SCHEDULE_H}" "${FAS_STORY_H}" "${FAS_P1CJK}")
+foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
+        CMAKE_CONFIGURE_DEPENDS "${FAS_DISPLAY}/font_test_${_sz}.c")
+endforeach()
+
+set(FAS_OUT "fas_manifest_version=1")
+string(APPEND FAS_OUT "\ngen_fonts_sh_exists=${FAS_GEN_EXISTS}")
+string(APPEND FAS_OUT "\ngen_fonts_sh_size16=${FAS_GEN_SIZE16}")
+string(APPEND FAS_OUT "\ngen_fonts_sh_size20=${FAS_GEN_SIZE20}")
+string(APPEND FAS_OUT "\ngen_fonts_sh_bpp1_ge2=${FAS_GEN_BPP1_GE2}")
+string(APPEND FAS_OUT "\ngen_fonts_sh_format_cbin=${FAS_GEN_FORMAT_CBIN}")
+string(APPEND FAS_OUT "\ngen_fonts_sh_fonts_root_out=${FAS_GEN_FONTS_ROOT}")
+string(APPEND FAS_OUT "\ndevice_cmakelists_fonts_root=${FAS_DEV_CMAKE_FONTS_ROOT}")
+string(APPEND FAS_OUT "\nkidpal_font_h_exists=${FAS_KIDPAL_FONT_H}")
+string(APPEND FAS_OUT "\nkidpal_font_cc_exists=${FAS_KIDPAL_FONT_CC_EXISTS}")
+string(APPEND FAS_OUT "\nkidpal_font_cc_names_frozen=")
+if(FAS_KF_CC_BODY16 GREATER 0 AND FAS_KF_CC_TITLE20 GREATER 0)
+    string(APPEND FAS_OUT "1")
+else()
+    string(APPEND FAS_OUT "0")
+endif()
+string(APPEND FAS_OUT "\nkidpal_font_cc_getassetdata=${FAS_KF_CC_GETASSET}")
+string(APPEND FAS_OUT "\nkidpal_font_cc_cbin_loader=${FAS_KF_CC_CBIN_LOADER}")
+string(APPEND FAS_OUT "\nkidpal_font_cc_fallback14=${FAS_KF_CC_FALLBACK14}")
+string(APPEND FAS_OUT "\nhost_srcs_no_cbin_font=${FAS_SRCS_NO_CBIN_FONT}")
+string(APPEND FAS_OUT "\nhost_srcs_acceptance=${FAS_SRCS_ACCEPTANCE}")
+string(APPEND FAS_OUT "\nhost_srcs_puhui14=${FAS_SRCS_PUHUI14}")
+foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
+    string(APPEND FAS_OUT "\nfont_test_${_sz}_exists=${FAS_FT_${_sz}_E}")
+    string(APPEND FAS_OUT "\nfont_test_${_sz}_in_cmake=${FAS_FT_${_sz}_C}")
+endforeach()
+string(APPEND FAS_OUT "\nsize_test_page_exists=${FAS_SIZE_PAGE_E}")
+string(APPEND FAS_OUT "\nsize_test_page_in_cmake=${FAS_SIZE_PAGE_C}")
+string(APPEND FAS_OUT "\nrender_node_puhui14=${FAS_RN_PUHUI14}")
+string(APPEND FAS_OUT "\nrender_node_p1_glyph=${FAS_RN_P1_GLYPH}")
+string(APPEND FAS_OUT "\np1cjk_acceptance_exists=${FAS_P1CJK_EXISTS}")
+string(APPEND FAS_OUT "\np1cjk_s1_signature=${FAS_P1CJK_S1}")
+string(APPEND FAS_OUT "\nschedule_ksg_course_cap=${FAS_KSG_CAP}")
+string(APPEND FAS_OUT "\nschedule_ksg_font_min_px=${FAS_KSG_MINPX}")
+string(APPEND FAS_OUT "\nstory_list_rows4=${FAS_KSTORY_ROWS}")
+string(APPEND FAS_OUT "\nstory_reader_lines4=${FAS_KSTORY_LINES}")
+file(WRITE "${CMAKE_BINARY_DIR}/fas_structure_manifest.txt" "${FAS_OUT}\n")

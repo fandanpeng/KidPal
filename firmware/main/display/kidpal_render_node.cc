@@ -46,6 +46,7 @@
 #include "char_page.h"
 #include "char_window.h"   /* M2K3-A3 驱动半 seam [9]: kidpal_char_window_idle_step / 5min 上限 */
 #include "kidpal_layer.h"
+#include "kidpal_font.h"   /* 统一 kidpal_font 句柄 seam（261028-m6-k1，[K4] 消费口） */
 #include "diagnostics/log_semantics.h" /* 261022-diag-log-content: PAGE_SWITCH 页名/触发名 */
 
 #include <esp_log.h>
@@ -1299,4 +1300,18 @@ static int rn_record_session_live_locked(void)
     int page = s_story_session_page;
     return (kidpal_story_session_ctx_active() == 1 &&
             (page == KSTORY_PAGE_RECORDING || page == KSTORY_PAGE_ORGANIZING)) ? 1 : 0;
+}
+
+/* -------------------------------------------------------------------------
+ * 统一 kidpal_font 句柄暴露（TaskPackage 261028-m6-k1，P0 spike）：只透传统一句柄 seam
+ * （kidpal_font.cc），零排版副作用、不改变 home/schedule/story 现有字体选择行为。P1/P2/P3
+ * 后续经 kidpal_font_body()/title() 消费切换。恒非 NULL（缺资产回退编译内 14px）。 */
+extern "C" const lv_font_t *kidpal_render_node_body_font(void)
+{
+    return kidpal_font_body();
+}
+
+extern "C" const lv_font_t *kidpal_render_node_title_font(void)
+{
+    return kidpal_font_title();
 }
