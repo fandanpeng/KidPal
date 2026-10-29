@@ -340,3 +340,54 @@ verdict: GREEN
 按 FROZEN §9 的实施归属，主线程完成 `.claude/agents/architect.md`、`architect-reviewer.md`、`landing-verifier.md`、`review-moderator.md`、`AGENTS.md` 与 `docs/DEV-GOVERNANCE.md` 的治理面投影：治理面采用轻设计、作者实施、真实 diff 审和条件加强，架构+契约面及旧批规则保留。scope-map 的 reviewer 窄写槽和 architect 普通文件写槽按 human 授权与设计预开放，未开放指令根、自身定义或独立验证凭据。
 
 主线程复跑结果：`route-regression-check --self-check` 104 ok / 0 fail；`lint-descriptions` 扫描 16、flagged 0；`enforce-scope --self-check` 全绿；前置升级闸 117/117、changes-index 57/57；`git diff --check` 无格式错误。以上为保护面实施证据，不替代 reviewer 的最终真实 diff 评审与第二独立核验。
+
+### 实现评审 - 2026-10-29 - architect-reviewer
+
+> 评审范围：main...HEAD（亲算 HEAD = a1bf745c2d76c0fc752f66f1005a213fe439c431、tree = d9683e38404ecb476a498714b90c1762d7f394e1）两件 commit——architect 实现 3966948f（14 文件）+ main-thread 保护面 a1bf745c（10 文件）。聚焦真实实现，不重做全量设计审。独立失败判据先列后审：① scope 子集 ② 机读锚与后出 verdict 判别 ③ 旧批回归 ④ 契约不豁免 ⑤ events 非门 ⑥ 跨面零误改 ⑦ 写权与 human 边界一致 ⑧ 真实 CLI 消费层。
+
+verdict: BLOCK(F1)
+
+**F1（SHOULD · 治理面 3 轮熔断在两份 canonical 间出现分歧：AGENTS.md:24 未限定 vs arch-review-protocol.md:79 明文豁免治理面）**
+
+证据（verbatim）：
+
+- AGENTS.md:24：「评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回缩圈 / 换新判官实例再战 1 轮）。」——该句在升级判据段内无限定语，字面适用于治理面评审循环。
+- arch-review-protocol.md:79：「**架构+契约面 Track B 内熔断升级（不变）**：architect-reviewer 评审循环 **3 轮未 GREEN** → 升级 human 三选一……治理面不设机械轮数升级：同一实质分歧无法由事实或判别测试消解时，reviewer 记录争议并选择新鲜实例、第二核验、Track A 或 human 裁定。」
+- docs/DEV-GOVERNANCE.md 本批修订已删除原有「3 轮未 GREEN → human 三选一」两处表述（mermaid REV 节与 §4 治理变更步 2），对治理面轮数熔断保持沉默。
+- FROZEN 设计（§3 步 3、§6）未钉治理面轮数熔断的取舍——此语义变化未在设计中收口，实施后两份 canonical 各执一侧。这正是本批自己的核心纪律（路由表 / 门语义不被文本漂移改动）所辖：治理面评审 3 轮未 GREEN 时，主线程按 AGENTS.md 必须升级 human，按路由 SSOT 则 reviewer 可自主选择新鲜实例 / 第二核验 / Track A / human 裁定——派发行为不可两读。
+
+建议修法（二选一、一句即可）：a) AGENTS.md:24 给熔断句加「架构+契约面」限定，同段补治理面争议路径一句；或 b) arch-review-protocol.md:79 恢复治理面熔断。取舍依 human「少设机械升级」意图由主线程裁；a 的 AGENTS.md 句属主线程保护面 lane，b 落在本批 scope（arch-review-protocol | architect | ordinary）内。
+
+**逐项核验（全部通过）**
+
+- **scope 子集（判据①）**：`git diff --name-only main...HEAD` 亲算 23 文件，逐一比对 §9 轻量 manifest 全部命中（routing.json 与 .changes-index-state.json 未改属「路径可最终未改」）；PROPOSAL.md / events.jsonl / INDEX.md 为 isEvidenceTailPath 证据尾豁免。
+- **机读锚与判别力（判据②）**：亲读 lib 单源 parseDirectImplementationProposal 与闸 collectDirectImplementationGate 的真实 diff——标记恰一、verdict 后出者胜、最后两钉点须成对否则 fail-closed、40 位小写 SHA、目录条目须以 `/` 结尾按段前缀匹配（`foo/bar/` 与 `foo/barley` 判别夹具在案，R2 NIT① 已闭）。
+- **旧批回归（判据③）**：无标记记录 direct=false 走旧分支（`legacy-gov-still-requires-landing-verdict` 夹具在案）；旧 author-implementation lane 代码零删改；闸 self-check 117/117 亲跑通过。
+- **契约不豁免（判据④）**：hasArchLoopContractEvidence 对 direct 记录显式 continue 并留 `directImplementation: true` 检查痕迹；夹具 `contract-evidence-direct-flow-cannot-self-certify` 在案——R2 NIT② 已闭。
+- **events 非门（判据⑤）**：lib 注释明示 events 不在解析输入面；闸与 INDEX 的 direct live 夹具均写入坏行 events 且判定不变；changes-index backfill 对 direct 批不写 landed 缓存（`...(isDirect ? {} : { landed })` 亲读）。
+- **跨面零误改（判据⑥）**：diff 文件清单无 docs/contracts/**、无 dev-loop 文件、无 arch-change.md（零改动预期兑现）；arch-review-protocol.md 逐 hunk 复核为治理面段或「架构+契约面（不变）」重标。
+- **写权与边界（判据⑦）**：scope-map 亲读 diff 仅两 hunk——architect 增 glossary / templates / route-fixtures 三 allow，reviewer 窄写槽（allow 两类批 PROPOSAL.md 与 implementation-review.json、deny 仅 implementation-verification.json），与 human 授权逐字一致；architect.md 保留「不得合并 main」与发布禁令、「不得改 reviewer 段」；landing-verifier 降为条件核验但 routing 必留信号保留。
+- **真实 CLI（判据⑧）**：亲跑 `node .claude/scripts/pre-merge-escalation-gate.mjs 261029-gov-review-gov-loop-simplification --source-ref HEAD` → BLOCK、exit 1，点名「最后一组 reviewedCommit/reviewedTree 不在场」——direct 分支正确识别本批、跳过 landing-verdict 要求、缺钉点 fail-closed，消费层判别力实证（无最终钉点时 BLOCK 正是预期）。
+- **机检**：闸 self-check 117/117、changes-index self-check 57/57、route-regression-check --self-check 104 ok / 0 fail（routing.json 未改而 description 必留信号保留，亲跑证实）、lint-descriptions flagged 0——作者报告数字全部复现。
+- **FROZEN 与 INDEX**：Status 行「> **状态：FROZEN v0.2」命中闸 FROZEN 机锚形态；INDEX 该批行状态 frozen、已合main 为「—」，未虚跳 landed。
+
+**结论**：无 BLOCKING 缺陷，实现与 FROZEN 意图一致、机检全绿、真实 CLI 判别正确；唯一 SHOULD（F1 canonical 分歧）未结前不写 GREEN 钉点、不写 implementation-review.json。修复后复审只核该句与新增 diff（预期零或仅该句），不重审其余。
+
+**升级 human 项**：无——F1 取舍为主线程按 human 意图一句话收敛，非方向级。
+
+### 最终实现评审 - 2026-10-29 - architect-reviewer
+
+> 聚焦复审（R3-F1 修订到位性）：亲算新 HEAD = 1f795134b4113ad68b7b27015cd5d1d337d0513d、tree = 7e750421b5068069d364401e9395703b88a7b176；`git diff --name-only a1bf745c..HEAD` = 仅 `AGENTS.md` 一文件，单 commit（1f795134「fix(gov): 对齐治理面条件加强升级语义」），单句修订。AGENTS.md 在 §9 清单内（main-thread | protected），实施归属正确。
+
+verdict: GREEN
+
+**F1 闭合（到位）**：AGENTS.md 升级判据段现文（verbatim）：「架构+契约面评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回缩圈 / 换新判官实例再战 1 轮）；治理面不设机械轮数升级，评审争议按条件加强处理，方向未收敛才进 Track A。」——与 arch-review-protocol.md:79「治理面不设机械轮数升级」逐义一致，两份 canonical 不再各执一侧；同段「治理面双向判档不等于方向升级」保留，与条件加强语义自洽。修订引入的新矛盾扫描：无（新 diff 仅此一行，未触其他段落）。scope 复核：main...HEAD 非证据 diff 仍 20 文件 ⊆ 轻量 manifest，无出界。
+
+**最终钉点**（Git 实算值，最后一组为准；后续任何实现变化使本钉点失效）：
+
+reviewedCommit: 1f795134b4113ad68b7b27015cd5d1d337d0513d
+reviewedTree: 7e750421b5068069d364401e9395703b88a7b176
+
+**第二独立核验凭据**：本批条件加强所需 `implementation-review.json` 已随本评审写入（schemaVersion=1、lane=direct-implementation、changedFiles = main...reviewedCommit 实际非证据 20 文件），供 landing-verifier 对同一 commit/tree 独立复核；写后亲跑真实闸（结果见下）。
+
+**升级 human 项**：无。

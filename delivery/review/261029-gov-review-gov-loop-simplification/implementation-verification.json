@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "lane": "direct-implementation",
+  "changeId": "261029-gov-review-gov-loop-simplification",
+  "reviewedCommit": "1f795134b4113ad68b7b27015cd5d1d337d0513d",
+  "reviewedTree": "7e750421b5068069d364401e9395703b88a7b176",
+  "verifiedCommit": "1f795134b4113ad68b7b27015cd5d1d337d0513d",
+  "verifiedTree": "7e750421b5068069d364401e9395703b88a7b176",
+  "changedFiles": [
+    ".claude/agents/architect-reviewer.md",
+    ".claude/agents/architect.md",
+    ".claude/agents/landing-verifier.md",
+    ".claude/agents/review-moderator.md",
+    ".claude/commands/gov-change.md",
+    ".claude/references/arch-review-protocol.md",
+    ".claude/references/architect-operating-model.md",
+    ".claude/references/gov-change.md",
+    ".claude/references/track-b-judge-brief.md",
+    ".claude/rules/repo-structure.md",
+    ".claude/scope-map.json",
+    ".claude/scripts/changes-index.mjs",
+    ".claude/scripts/lib/governance-gate-shared.mjs",
+    ".claude/scripts/pre-merge-escalation-gate.mjs",
+    ".claude/skills/gov-arq/SKILL.md",
+    ".claude/skills/merge-to-main/SKILL.md",
+    "AGENTS.md",
+    "docs/DEV-GOVERNANCE.md",
+    "docs/glossary.md",
+    "docs/templates/PROPOSAL.template.md"
+  ]
+}
