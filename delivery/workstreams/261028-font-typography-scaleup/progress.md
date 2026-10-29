@@ -41,3 +41,9 @@
 - 待办：缺 assets 降级开机测试（FAR-E3 第二观测，可选）；P0+P1 合并门（human 已看核心效果）。
 
 - **human 裁定（2026-10-29）**：豁免缺 assets 降级真机观测（FAR-E3 第二子项记豁免非通过）——理由 = 14px 常显真机正常 + host 半 FAS-A4 已验回退逻辑 + 设备触发场景低概率（全量烧录恒带 assets、OTA 不动 assets 分区）。
+
+## 2026-10-29 · P0+P1 合并入本地 main（人类合并门批准，随批）
+
+- P0：merge-driver --pod（human-approval-ref=158948be）→ rebase → quick-check 2 闸绿 → merge OK → 本地 main @ 4912575c（簿记 de865411）。
+- P1：**随批并入**——P0 merge 的 rebase 已把共享分支上 P1 全部改动带入 main；前置闸对 P1 off-main 判 BLOCK（原 SHA 经 rebase 不复存在、无独立分支可合），按「就地记录不改写历史」处置：P1 pod-events merge-completed 事件 + board merged，不重复 merge。human 裁定「P0+P1 一起合并」已兑现。
+- 远程发布（release-pr --publish + PR 合并）仍待 human；PR 合并后跑 --sync 追平。
