@@ -129,3 +129,23 @@ docs/debt/gov/ARQ-261014-pod-events-booking-telemetry-fidelity.md | main-thread 
 常规流程，无条件加强。逐项依据：landing-verifier——核心落点清单（前置升级闸/共享闸库/merge-driver/deny-main-push/enforce-scope/INDEX landed 推导）全不涉，改动面 advisory/读侧可回滚；新鲜 reviewer——无评审争议；完整普查——消费方聚焦检索已圈住（见牵连面）。注记：本批为首个 scripts author-implementation 试点，通道属新但评审义务不变，试点风险显现在实现评审面（diff ⊆ manifest、自检判别力），届时按 SSOT 第 5 步从严核，不预设加强。
 
 verdict: GREEN
+
+## 9. 实施记录（architect · 2026-10-29，append-only）
+
+实现 commit：`9534d71f8c587976f54767696a037a7b0d3f1e0d`（8 件：四件实现文件、两件主线程已落盘的 manifest 补记账文件，以及本批 PROPOSAL / events.jsonl）。
+
+- `brief-inputs.mjs`：advisory 改为 `{ level, kind, message, ref }`；在 story 特判之后、查盘之前加入 symbolic 分类，Markdown 整文件引用降 info，真实 missing / anchor-not-found 保持 warning；终端改为一行分类计数汇总，brief 末尾保留逐条明细。S1 点名的 uiux、②③档越界、story 未定位三处自检均改用结构化字段并保留原负向断言；N1 采用末段 `\.[A-Za-z0-9_]+$` 扩展名启发式，点分 token 与带扩展名裸文件名各有判别夹具。
+- `pod-events-aggregate.mjs`：复用 append 脚本导出的事件类型闭集；`agent-escalation-resolved` / `human-decision` 以完整 eventId 或唯一短前缀闭合，兼容存量 `resolves`；新增 fail-open `schemaWarnings` 与 12 项内存自检。**N2 语义注记**：`escalations.resolved` 已由「resolution 事件条数」改为「至少一条有效闭合引用的 distinct escalation 数」，跨周期 retro 数字不可按旧口径直接比较。
+- `pod-events-append.mjs`：仅导出既有 `VALID_EVENT_TYPES`，未增删事件类型；`planner.md` 仅补 human actor 与完整 `refEventId` 写侧约定。N3 按裁定不触 operating-system.md。manifest 已补两件主线程记账路径，本 agent 未改其内容。
+
+自测结果：
+
+1. `node .claude/scripts/brief-inputs.mjs --self-check`：49/49 passed，SELF-CHECK GREEN。
+2. `node .claude/scripts/pod-events-aggregate.mjs --self-check`：12/12 passed，SELF-CHECK GREEN；三件脚本 `node --check` 均通过。
+3. 真实包 `260928-char-window-key-triggered-play`：预期短前缀闭合，实际 `total=1 / resolved=1 / unresolved=[]`，`schemaWarningsTotal=0`。
+4. 真实包 `261011-p1-home-v5-rework`：预期两条散文提级不误闭合，实际 `total=3 / resolved=1 / unresolved=2`；空 friction payload 仍在 `malformedFrictions`，旧 `merge-completed` 产生一条可定位 `unknown-event-type` 告警，`ok:true`、退出码 0。
+5. 真实包 brief dry-run：stderr 只有一行 ADV 汇总（info=4 / warning=2），不再逐条刷屏。
+6. 临时副本反转验证：关闭 symbolic 分类后对应 brief 夹具如预期变红；移除 legacy `resolves` 映射后闭合夹具如预期变红。临时件均已删除，未改仓内历史事件。
+7. `lint-descriptions.mjs` 无 flagged；`route-regression-check.mjs --self-check` 为 104 ok / 0 fail。
+
+偏差：无 manifest 外出作者改动；`.codebase-memory/` 两件与既有 INDEX 工作树改动未 stage、未提交。
