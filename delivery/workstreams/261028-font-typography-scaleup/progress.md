@@ -32,3 +32,10 @@
 - **P1 收口态**：verify 8 闸全绿（253/3 仅存量 auxbar）；commit 550f8d21（实现五文件 + 治理制品）；supervisor-verdict ESCALATE（riskTier critical——P1 包 diff 范围含 8239aee7 的 sdkconfig.defaults critical-path 扫描命中）；pod-retro / review-packet / docs-delta / test-scope 落盘；回滚锚 = 08cc46c4。
 - **合并门状态（human 后置裁定在案）**：P0（verifier-green @ 77c7debd 收尾）+ P1（verifier-green @ 550f8d21）均不合并——统一真机轮（P0 探针页 + P1 首页 16px + 缺 assets 降级）human 过目后一起合并。
 - **真机轮前置 blocker**：ARQ-261029 上游 ※ 写入侧任务待派单（server/front/OpenClaw 侧，wire 不变）；无它下划线观测无样本。
+
+## 2026-10-29 · 真机统一轮（P0+P1）——核心观测通过
+
+- 烧录：全量（xiaozhi.bin 0x324C20 + generated_assets.bin 3,732,975B @0x800000），hash 校验过，NVS 未动。
+- 启动：SD 卡日志时间戳单调推进、状态机到 idle、`kidpal_rn: render home 400x300 render_rc=0`（P1 渲染路径真机无崩）；assets 分区 checksum 315ms 通过。
+- **human 看屏确认：「字体对了」**——首页 16px 正文真机字形来自运行时资产（P0 FAR-E3 核心消费端证据 + P1 P1H-E1 真机半首证）。下划线项休眠（ARQ-261029 上游未落，预期内）。
+- 待办：缺 assets 降级开机测试（FAR-E3 第二观测，可选）；P0+P1 合并门（human 已看核心效果）。
