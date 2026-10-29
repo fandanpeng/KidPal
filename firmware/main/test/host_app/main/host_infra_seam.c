@@ -22,6 +22,7 @@
 #include <sys/time.h>
 #include "lvgl.h"
 #include "kidpal_p1_font.h"
+#include "kidpal_font.h"   /* P0 [K4] 统一句柄 seam（[S7] kidpal_p1_font_face 消费 kidpal_font_body） */
 
 /* Must match the acceptance file's HOST_INFRA_FRAME_W/H and color. */
 #define SEAM_FRAME_W 400
@@ -340,22 +341,33 @@ static int p1_glyph_core(const lv_font_t *font, uint32_t codepoint,
     return 0;
 }
 
-/* [S1] host 强符号 := 固定 host 子集字体调共享核心（模块语义零改——host 字体面
- * 恒 lv_font_source_han_sans_sc_14_cjk，[S1] 语义与旧实现逐字节等价）。 */
+/* [S7] 字面源缝 host 强定义（P1，[F1]）：取 P0 统一句柄 16px body。 */
+const lv_font_t *kidpal_p1_font_face(void)
+{
+    return kidpal_font_body(); /* P0 [K4]（16px body / 缺资产 14px 兜底） */
+}
+
+/* [S1] host 强符号 := [S7] 取字面（kidpal_font_body 16px）+ NULL 回落 host 14px
+ * 子集（缺 assets 降级；PCN TEST5 canary 不破——lv_font_source_han_sans_sc_14_cjk
+ * 引用在世）。[S1] 签名/字形语义零改（共享核心 p1_glyph_core 不变）。 */
 int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
 {
+    const lv_font_t *face = kidpal_p1_font_face();
+    if (face == NULL) {
 #if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-    LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
-    return p1_glyph_core(&lv_font_source_han_sans_sc_14_cjk, codepoint, out);
+        LV_FONT_DECLARE(lv_font_source_han_sans_sc_14_cjk);
+        face = &lv_font_source_han_sans_sc_14_cjk;
 #else
-    if (out != NULL) {
-        out->w = 0;
-        out->h = 0;
-        out->advance = 0;
-        out->bits = NULL;
-    }
-    return -1;
+        if (out != NULL) {
+            out->w = 0;
+            out->h = 0;
+            out->advance = 0;
+            out->bits = NULL;
+        }
+        return -1;
 #endif
+    }
+    return p1_glyph_core(face, codepoint, out);
 }
 
 /* [S6] 追加 seam 强符号（第三追加轮 A11）：按字体取字形，与 [S1] 共享同一解码+阈值

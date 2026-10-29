@@ -24,3 +24,11 @@
 - 单向守卫：触契约不成立（已取证），high 信号齐备（跨包/冻结验收面/设备专有编译烧写面/UI 布局）——不给 lite。
 
 sign-off：architect 2026-10-28（同会话 return，零写入）
+
+## 门 1 · 拆包 checklist review（2026-10-28）
+
+- reviewer = architect（门 1 轻量 checklist，六项全 PASS、零打回，GREEN）。
+- 切法 = 四包：P0 `261028-m6-k1-font-assets-runtime-loading`（spike，full/high）→ P1 `261028-m6-k2a-p1-home-16px`（full/high）+ P2 `261028-m6-k2b-p2-schedule-16px`（full/high，可并行 WIP=2）→ P3 `261028-m6-k3-p3-story-typography`（full/high，终端真机轮，dependsOn P0/P1/P2）；P4 并入 P3。
+- 对 task_plan 底稿的三处细化均判「合理细化」：P4 并入（PROPOSAL §5 本就允许）+ P1/P2 dependsOn 防提前终判；riskTier medium-high→high（枚举合法化，向严归一）；F-9 跨包承接（首页半归 P1 / 课表半归 P2，spine q5 口径）。
+- 机检：devloop-artifact-check 四包全绿；render-roadmap --self-check 绿；taskpackage-required-check 仅 Draft 预期四项待 Pod 内 acceptance-author 补齐。
+- 状态：**human 过目通过（2026-10-28，原话「切法通过，P0 我单独 session 启动」）** → commit 专用 base ref → P0 由 human 另起 session 走 `/build-feature 261028-m6-k1-font-assets-runtime-loading`（launch 面预备 = kidpal-pod-launch-prep skill）。

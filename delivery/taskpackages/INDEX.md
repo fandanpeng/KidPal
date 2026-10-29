@@ -105,3 +105,5 @@
 | [260829-smoke-e2e](260829-smoke-e2e/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-story-p3](260829-story-p3/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
 | [260829-voice-roundtrip](260829-voice-roundtrip/) | 2026-08-29 | .planning/kidpal-mvp/PROPOSAL.md | closed | kidpal-mvp |
+| [261028-m6-k1-font-assets-runtime-loading](261028-m6-k1-font-assets-runtime-loading/) | 2026-10-28 | delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md | closed | 261028-font-typography-scaleup |
+| [261028-m6-k2a-p1-home-16px](261028-m6-k2a-p1-home-16px/) | 2026-10-28 | delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md | closed | 261028-font-typography-scaleup |
