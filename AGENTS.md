@@ -21,7 +21,7 @@
 6. 主线程在设计、设计评审、实现提交、实现评审等节点实时追加本批 `events.jsonl`，摩擦、建议和实际 usage 当场记。普通治理批不再强制事后 retro；架构+契约面 retro 义务不变。
 7. 主线程跑前置升级闸（含 off-main 校验），放行后自动合并本地 main；闸拦则升级人。**适用面**：本闸管 dev（`delivery/taskpackages/<changeId>`）与 gov（`delivery/review/<changeId>`）两条 lane；变更集全部落在账本类制品时报 `NOT_APPLICABLE`（exit 0，不是放行），此类合并按 merge-to-main skill 的 human 授权通道执行；其余无法归 lane 的变更集仍 BLOCK 交人。状态转移时跑 `node .claude/scripts/changes-index.mjs --upsert <id>` 更新对应 INDEX；`landed` 与 `mergedInMain` 由脚本现推。
 
-**升级判据（命中 → 所属面 Track A 段，对抗收敛后流回该面实施）**：方向未收敛、存在根本方案分叉，或 human / architect 声明红队；触及承重机器不自动升级。评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回缩圈 / 换新判官实例再战 1 轮）。治理面双向判档不等于方向升级；存疑时可先加强，事实澄清后允许 reviewer 降回常规，human 明确指定的加强只能由 human 解除。
+**升级判据（命中 → 所属面 Track A 段，对抗收敛后流回该面实施）**：方向未收敛、存在根本方案分叉，或 human / architect 声明红队；触及承重机器不自动升级。架构+契约面评审 3 轮未 GREEN → human 三选一（转 Track A / 撤回缩圈 / 换新判官实例再战 1 轮）；治理面不设机械轮数升级，评审争议按条件加强处理，方向未收敛才进 Track A。治理面双向判档不等于方向升级；存疑时可先加强，事实澄清后允许 reviewer 降回常规，human 明确指定的加强只能由 human 解除。
 
 **四面入口（每面一个 loop，互为对偶；`/triage-change` 兼跨面编排入口）**：
 **需求面变更**：走 `/requirement-change` loop（260928-gov-review-requirement-loop 立；流程 SSOT `.claude/references/requirement-change.md`，story-author 盘上 updating 起草 + requirement-reviewer 审稿 + 档 2 architect 必派〔免派例外见 SSOT〕；260928-gov-review-requirement-face 立三档判据与定稿载体）。
