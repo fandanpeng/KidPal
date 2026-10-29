@@ -15,3 +15,8 @@
 
 - **收口态**：verify 第 4 轮 8 闸全绿（250 Tests / 3 Failures 仅存量 p1_auxbar 族，零新增红；设备 build 绿 xiaozhi.bin 0x324950 / assets 余 4,655,633B）；Review Packet + docs-delta + test-scope 清单落盘 `delivery/taskpackages/261028-m6-k1-font-assets-runtime-loading/`；ADR-017 实测注记 append-only 回填（376,568B / 306,860B / line_height 23·28）。改动 commit 于 dev/pod-m2（feature 分支，未 push），base ref 9f8b2170 可整包回滚。
 - **待主线程**：supervisor 合并门（supervisor-verdict-gate）→ human 升级闸 → merge-driver；M6 milestones 行 state 翻账（planning→in_delivery）建议随合并执行；P0 真机轮（FAR-E3）收口前 P1/P2/P3 保持不 launch。
+
+## 2026-10-29 · P0（m6-k1）合并门后置裁定 + P1 接棒
+
+- **human 裁定（pod-events human-merge-gate-deferred）**：P0 不单独合并——P1（261028-m6-k2a-p1-home-16px）开发完成后真机看效果，P0+P1 一起合并；FAR-E3 真机轮随统一轮执行（P0 探针页 + P1 首页消费 16px 同轮观测）；P1 在 P0 已 commit 冻结面（dev/pod-m2 @ 789c0244）上开发，串行边成立。P0 board = verifier-green。
+- **P0 收尾态**：verify 第 4 轮 8 闸全绿；commit 789c0244（24 files）；supervisor-verdict ESCALATE（riskTier=high 申报升级）；pod-retro / review-packet / docs-delta / test-scope 落盘；回滚锚 = 9f8b2170。
