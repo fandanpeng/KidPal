@@ -32,7 +32,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync
 import { resolve, join, basename } from 'node:path';
 import { execSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { resolveOriginRef, isFrozen, closeoutRequiredFiles, VERDICT_STATUS_RE, VERDICT_HEADING_RE } from './lib/governance-gate-shared.mjs';
+import { resolveOriginRef, isFrozen, closeoutRequiredFiles, VERDICT_STATUS_RE, VERDICT_HEADING_RE, parseDirectImplementationProposal, directImplementationSelfCheckCases } from './lib/governance-gate-shared.mjs';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -200,6 +200,14 @@ function collectDev() {
 // VERDICT_STATUS_RE / VERDICT_HEADING_RE 已迁 lib 单源（260920-gov-review-verdict-anchor-align T2——
 // 升级闸 readGovAnchors 的 green 锚共用同一判据，防双源分叉；import 在上）。
 function deriveLanded(dir, cached) {
+  // direct-implementation 从批记录现推，优先于且永不写入旧 landed immutable 缓存；events 不参与。
+  const proposalPath = join(dir, 'PROPOSAL.md');
+  if (existsSync(proposalPath)) {
+    try {
+      const direct = parseDirectImplementationProposal(readText(proposalPath));
+      if (direct.direct) return direct.landed;
+    } catch { /* fail-closed below */ }
+  }
   if ((cached && cached.landed === true) || LANDED_ADJUDICATION[basename(dir)] === true) return true; // ① 人工 adjudication 钉死
   const vp = join(dir, 'landing-verdict.md');
   if (!existsSync(vp)) return false;
@@ -595,9 +603,15 @@ function backfill() {
     const merged = dirMergedInMain(`delivery/review/${name}`);
     const landed = deriveLanded(join(root, name), cache[name]);
     if (landed) landedCount++;
+    const directProposal = join(root, name, 'PROPOSAL.md');
+    const isDirect = existsSync(directProposal) && parseDirectImplementationProposal(readText(directProposal)).direct;
     // T3（260920-gov-review-verdict-anchor-align，R1-F7 采纳）：merged === ''（git 不可用）时保旧值，
     // 防「已钉的 yes 被空答复抹掉」。
-    cache[name] = { date, mergedInMain: merged === '' ? (cache[name] ? cache[name].mergedInMain : '') : merged, landed };
+    cache[name] = {
+      date,
+      mergedInMain: merged === '' ? (cache[name] ? cache[name].mergedInMain : '') : merged,
+      ...(isDirect ? {} : { landed }),
+    };
     computed++;
   }
   saveStateCache(cache);
@@ -647,6 +661,28 @@ function selfCheck() {
   if (f6) { t('landed: JSON 行锚 "verdict": "GREEN" → true', deriveLanded(f6, {}), true); rmFix(f6); }
   const f7 = mkFix('g', ['## 7. Verdict', '', '**RED** — 未通过']);
   if (f7) { t('landed: 编号标题 + 加粗散文 RED → false', deriveLanded(f7, {}), false); rmFix(f7); }
+  for (const c of directImplementationSelfCheckCases()) t(`shared: ${c.name}`, c.ok, true);
+  const fd = mkFix('direct', []);
+  if (fd) {
+    const directProposal = [
+      '> **状态：FROZEN v0.2**',
+      '> **gov-flow**: direct-implementation',
+      '```landing-manifest',
+      '.claude/scripts/x.mjs | architect | ordinary',
+      '.claude/scripts/unused.mjs | architect | ordinary',
+      '```',
+      'verdict: GREEN',
+      `reviewedCommit: ${'a'.repeat(40)}`,
+      `reviewedTree: ${'b'.repeat(40)}`,
+    ].join('\n');
+    writeFileSync(join(fd, 'PROPOSAL.md'), directProposal);
+    t('direct landed: 批记录 GREEN + 钉点 → true（无 landing-verdict）', deriveLanded(fd, {}), true);
+    writeFileSync(join(fd, 'events.jsonl'), '{bad json\n');
+    t('direct landed: events 坏行不参与', deriveLanded(fd, {}), true);
+    writeFileSync(join(fd, 'PROPOSAL.md'), `${directProposal}\nverdict: BLOCK(F1)\n`);
+    t('direct landed: 后出 BLOCK → false，旧 cache 不钉死', deriveLanded(fd, { landed: true }), false);
+    rmFix(fd);
+  }
   // dev 收口谓词（260906-gov-review-index-status-truth-source T2/T4；显式夹具非空输入，防真空绿）
   const mkDevFix = (id, files) => {
     const d = resolve(osTmp, 'changes-index-selfcheck-dev-' + id);

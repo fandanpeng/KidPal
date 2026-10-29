@@ -1,4 +1,4 @@
-# track-b-judge-brief · Track B 判官简报模板（canonical · 260802-gov-review-track-b-hardening T3 落地）
+# track-b-judge-brief · 架构+契约面 Track B / 旧批判官简报（治理面 direct 模式见末节）
 
 > **头注（harness 降级标准声明，每环免登记）**：Kimi CLI 无 typed architect agent——判官由**零上下文 coder 子 agent** 承担，纪律全靠本简报 + 事后 diff 核（子 agent 机械上可写全仓，约束是行为性的）。
 > 用法：主线程每环复制本简报为判官派遣 prompt，填 `<尖括号>` 位（change-id / 评审对象 / 证据基线 / 轮次特有焦点），其余原样。
@@ -30,11 +30,13 @@
 4. **硬项可执行性**：模板/规约类改法的措辞是否机械可判（判官能客观判定满足/违反，而非口号）。
 5. **边界与分类**：riskTier / profile 是否成立；是否零 G1/零契约或该升级；OQ 是否把该 human 裁的给全。
 6. **验证集可执行性**：每条机械可判；用真空绿规约反照（锚点 grep 是否「看起来像验证、实则证不了什么」）。**配对与实跑抽查（261026 批，ARQ-261025 / ARQ-261021）**：负向断言（不含 / 只允许 / ⊆ / = 0）须配正向 happy-path 断言，缺配可按真空绿打回；抽查每条预期值旁有无起草期实跑留痕（命令 + 输出摘要），无留痕的推算值可打回。
-7. **结构字段在场核对**：GREEN 结论前核对 PROPOSAL 的 landing-manifest 围栏块与 packet-id 行在场（缺项打回）。
+7. **结构字段在场核对（仅架构+契约面 / 旧批）**：GREEN 结论前核对旧 PROPOSAL 的 landing-manifest 围栏块与 packet-id 行在场。direct-implementation 改核轻量 scope 与 gov-flow 标记，不要求 packet-id。
 
-## 作者实现 lane 附加段（仅 landing-lane=author-implementation）
+## 治理面 direct-implementation 模式
 
-先读 FROZEN 行为约束，独立列出失败判据，再审 `main...reviewedCommit` 的真实 diff、常驻测试与文件范围。至少一条判据打真实 CLI / hook 的消费或拦截层，不能只复述作者测试名。除 §7 外，可写 `implementation-review.json`，字段 = `schemaVersion=1 / lane / changeId / reviewedCommit / reviewedTree / changedFiles`；不得写实现或 verification 凭据。后续实现变化使旧钉点失效。
+设计审时按 `gov-change.md` 判「常规 + 条件加强」，可升可降并写事实依据；轻量 manifest 是预计 scope，不做旧恰集或逐字节对账。实现审先读 FROZEN 意图与验收，再审 `main...reviewedCommit` 的真实 diff、消费方和判别测试，至少一条判据针对真实 CLI / hook 或实际文档消费方。
+
+全记录 verdict 后出者胜。最后实现评审以行首 `reviewedCommit:` / `reviewedTree:` 各写 40 位小写 SHA；缺件、后出 BLOCK 或任何后续实现变化均不得放行。reviewer 直接 append PROPOSAL，主线程不转录；常规批不写 implementation-review.json，条件加强时才使用独立凭据。
 
 ## 产出
 

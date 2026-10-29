@@ -28,7 +28,7 @@ paths:
 | `delivery/milestones/` | 主线程 | 里程碑注册表：`milestones.jsonl`（单一事实源，state 由人/integrator 维护）+ 脚本再生 `STATUS.md` + `delivery-workspace.json` 绑定元数据 | 手改派生件 STATUS.md（改状态去改 milestones.jsonl 再重跑脚本） |
 | `delivery/workstreams/` | 人 · 主线程 planner · dev-loop | workstream 级长周期工作记忆（为什么/发现/进展），准入判据与生命周期治理见 [delivery/workstreams/README.md](../../delivery/workstreams/README.md)；活跃在顶层、完结归 `_archive/<年>/` | 违反准入判据建目录（半年后接手的 agent 靠 diff + taskpackage + commit 能继续的不配建） |
 | `delivery/taskpackages/` | dev-loop | dev-loop 包的全程唯一家：生前 plan / briefs / verify 证据 + 身后 review-packet / supervisor-verdict / pod-retro / docs-delta 等收尾制品（含 `current/` 活工作面），一包一目录读齐 | Bash 重定向写（scope-map bashDenyWrite 红线） |
-| `delivery/review/**` | review-loop | 架构 review 证据：PROPOSAL / landing-summary / verdict / retro | 当契约 SSOT 用 |
+| `delivery/review/**` | review-loop | 架构/治理批记录：PROPOSAL、实时 events.jsonl 与条件加强证据；旧批保留 landing-summary / verdict / retro | 当契约 SSOT 用；手改 events 历史行 |
 | `delivery/intake/**` | 主线程（跨面 intake 落盘） | spine 制品：`delivery/intake/<changeId>.md`（触面 ≥2 的变更入口记录；程序 SSOT = `.claude/references/change-intake.md`）+ `<changeId>.design.md` companion 设计稿（T4 需要判据见 change-intake.md） | 当各面门制品的家（各面制品落各自既有家，spine 只记 anchors）；手改各面 anchors 以外的历史字段 |
 | `delivery/retro/**` | 主线程（loop-retro cadence） | cadence retro 制品归档（loop-retro 产出） | 当 live 工作区用；当各面门制品用 |
 | `delivery/archive/**` | 治理（主线程） | 已解散布局的历史整树归档（旧 `changes/` 伞，261015-gov-review-changes-taxonomy T6 归档；路标 = `delivery/archive/README.md` 旧→新映射） | 归档内任何改写（append-only 纪律；历史批重启 = 新立 changeId 引旧批） |
@@ -40,10 +40,10 @@ paths:
 **三层语义模型**：
 
 - **诉求层**（发现的问题与在途变更路由）= `docs/debt/`（发现的问题·暂缓账，一条目一文件 + 状态机）+ `delivery/intake/`（在途变更路由账，spine 一变更一文件）。
-- **证据层**（变更走完后的批证据）= `delivery/review/`（需求 / 架构+契约 / 治理三面 loop 的批证据：PROPOSAL / 评审记录 / landing-summary / verdict / retro）+ `delivery/taskpackages/`（dev-loop 包全程唯一家）+ `docs/requirements.md` §9（需求面定稿与评审留痕，设计如此，锚 `requirement-change.md` :47）。
+- **证据层**（变更走完后的批证据）= `delivery/review/`（需求 / 架构+契约 / 治理三面 loop 的批证据：PROPOSAL 与评审记录；治理面另有实时 events.jsonl，landing-summary / verdict / retro 仅旧批或条件场景）+ `delivery/taskpackages/`（dev-loop 包全程唯一家）+ `docs/requirements.md` §9（需求面定稿与评审留痕，设计如此，锚 `requirement-change.md` :47）。
 - **复盘层**（周期性收敛与长周期记忆）= `delivery/retro/`（cadence retro 制品）+ `delivery/workstreams/`（跨包长周期工作记忆）。
 
-**触发源判据条文（成文，防回摆）**：「触发源（主动发起 / 发现的问题）= 元数据，不作目录轴」——spine `sources`（human 原话 + refs）、TaskPackage `sourceType` + `sourceRefs`、debt 条目 frontmatter（域 + severity + trigger）各自承载触发源。**理由**：进 loop 后制品同构（主动与发现的批走同一套 Track B 七步、产同一套制品），且主动/被动边界天然模糊（一个发现的 bug 常牵出主动改进），按目录分轴必制造双头记账与搬家成本（dev lane 撤销 + 261015 批 T1 残件即代价实证）。
+**触发源判据条文（成文，防回摆）**：「触发源（主动发起 / 发现的问题）= 元数据，不作目录轴」——spine `sources`（human 原话 + refs）、TaskPackage `sourceType` + `sourceRefs`、debt 条目 frontmatter（域 + severity + trigger）各自承载触发源。**理由**：进 loop 后制品同构（主动与发现的批走同一面流程、留各自必要证据），且主动/被动边界天然模糊（一个发现的 bug 常牵出主动改进），按目录分轴必制造双头记账与搬家成本（dev lane 撤销 + 261015 批 T1 残件即代价实证）。
 
 **idea 记录链纵向地图**（一个 idea 从冒头到结项的记录在哪）：
 
@@ -80,6 +80,6 @@ paths:
 
 ## 工作产物去哪
 
-- 治理 / 架构 / 契约面变更过程产物 → `delivery/review/<change-id>/`（PROPOSAL + landing-summary + verdict + retro 四件；轻路径批 = 瘦制品五件）。入口 = `/arch-change`（架构+契约面）、`/gov-change`（治理面）。
+- 治理 / 架构 / 契约面变更过程产物 → `delivery/review/<change-id>/`。治理面常规 = 轻 PROPOSAL + 实时 events.jsonl + 真实实现/评审证据；架构+契约面与旧批仍用 landing-summary / verdict / retro 等既有制品。入口 = `/arch-change`（架构+契约面）、`/gov-change`（治理面）。
 - dev-loop 过程产物 → `delivery/taskpackages/<change-id>/`（包全程唯一家：生前 plan / briefs / verify 证据与身后收尾制品同目录，一包一目录读齐；晋升环节已由 261014-gov-review-dev-lane-merge-taskpackages 撤销）。
 - 模拟器/管线的构建产物 → 不进仓（`.gitignore` 已覆盖 `tools/**/node_modules/`、模拟器 Output）。

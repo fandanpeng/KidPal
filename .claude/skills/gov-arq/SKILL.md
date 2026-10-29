@@ -1,15 +1,15 @@
 ---
 name: gov-arq
-description: "Use when: 把一个已执行测出的治理改进项（bug 或优化建议）写成快路径就绪的 debt 条目，让 architect-reviewer 能凭条目机判轻/主判档与 Track A 段升级（判据可机判、事实齐全）。触发词: 登记ARQ, gov ARQ, 这个gov bug记一下, register ARQ, fast-path ARQ。边界: 只做执行测出的改进项登记（按域落条目，含技术面与改需求请求）；新 idea 交 /arch-change，cadence 共性批量交 /loop-retro。"
+description: "Use when: 把一个已执行测出的治理改进项（bug 或优化建议）写成快路径就绪的 debt 条目，让 architect-reviewer 能凭条目判常规 direct-implementation 或条件加强。触发词: 登记ARQ, gov ARQ, 这个gov bug记一下, register ARQ, fast-path ARQ。边界: 只做执行测出的改进项登记（按域落条目，含技术面与改需求请求）；新 idea 交 /arch-change，cadence 共性批量交 /loop-retro。"
 ---
 
 # Gov ARQ：把执行测出的改进项写成快路径就绪的 debt 条目
 
-把一个**已执行测出的改进项**（bug 或优化建议）写成一份信息齐全的**条目文件**，按域登记进 debt 账本 `docs/debt/<域>/<ID>.md`。「快路径就绪」= 条目预先携带可机判事实（`paths[]` 供机推 G 层与硬排除、三要件写在正文），让 `architect-reviewer` 不必重新推上下文就能裁 review depth——够格就走轻/主判档（判据见 references/gov-change.md），不够格就**如实**标 `full-adversarial + human`，绝不美化。
+把一个**已执行测出的改进项**（bug 或优化建议）写成一份信息齐全的**条目文件**，按域登记进 debt 账本 `docs/debt/<域>/<ID>.md`。条目预先携带执行证据、影响面和候选修法，让 architect-reviewer 能判常规 direct-implementation 或条件加强；事实不足就写实，不美化。
 
 本 skill 是**单条、按需**的条目起草器，与 `/loop-retro`（跨 Pod 周期性批量 retro）互补、字段 convention 完全一致；它不是批量 retro，也不是新 idea 入口。登记进账本是**主线程职责**（human-approved 2026-07-28），本 skill 由主线程执行即落该职责。
 
-> **路由注**：本 skill 的下游 = **Track B 默认路由**（`AGENTS.md`「治理路由」节 + `.claude/references/arch-review-protocol.md`「双轨路由」节）：主线程派 architect 起草 PROPOSAL → human 立项 ack → architect-reviewer 评审循环 → human 裁 OQ → FROZEN → 按 gov-change 的 landing-lane 分流（P9 触发后纯 scripts/hooks 默认 author-implementation，human 仍可改选 packet-bound）→ landing-verifier → retro。命中升级判据（跨系统结构性 / 方向未收敛 / 声明红队）的升所属面 loop Track A 段。步骤 3 的三要件与机检硬排除判断**照常写进条目**（信息完整，Track A 触发时即用）。处理侧配套：PROPOSAL 起草用 `docs/templates/PROPOSAL.template.md`，landing-summary 用 `docs/templates/architect-landing-summary.template.md`，判官/核验官简报 `.claude/references/track-b-{judge,verifier}-brief.md`。
+> **路由注**：本 skill 的下游 = `/gov-change` 常规 direct-implementation：既定 ARQ 波次只作一句启动确认，architect 轻设计与轻量 scope → reviewer 设计审并双向判档 → architect 直接实施 → reviewer 真实 diff 审 → 机械检查与合并。只有方向未收敛或声明红队才进 Track A；第二独立核验、详细普查、独立 retro 等按真实风险启用。主线程实时写 events.jsonl，普通批不补事后 retro。
 
 <HARD-GATE>
 没有**至少一条可识别的执行记录**（provenance）前，不起草条目——那是 Track B 的客观载体，非作者声称。拿不出执行记录 → 这不是「执行测出的改进项」，停：是新 idea 就交面 loop（`/arch-change` / `/gov-change`），或先去补执行证据再回来。产物只有账本里的**一个条目文件**（或对既有条目的证据注记）；其余边界见「约束」节。
@@ -30,18 +30,18 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
    - `requirement`（改需求的**请求**与裁定状态；裁定人 = human，落地 = `docs/requirements.md` §9 记账）。
    **终点**：域已定，且 ID 前缀与域一致（`ARQ-` / `TECH-` / `REQ-`；**祖辈前缀 `ARQ-` 落任何域都放行**，只出告警计数）。
 
-3. **判 Track B 三要件**（`arch-review-protocol.md` Track B 段）——逐条 yes/no：
+3. **记录收敛与爆炸半径三要件**——逐条 yes/no：
    - ① 执行测出（有上一步 provenance 承载）？
    - ② 问题清晰、修复明确（**无真设计分叉**）？
    - ③ 爆炸半径已被执行揭示（不是推测）？
-   **终点**：三条全 yes → `review profile = Track B（不论 G 几）`。任一 no → **不是轻/主可机判形态**，标 `Track A 段 + human`；skill 仍可起草，但 profile 必须写实，不得回标 Track B。
+   **终点**：三条全 yes → 建议常规 direct-implementation。任一 no → 如实写明缺口；只有真设计分叉或方向未收敛才建议 Track A，信息不足由 reviewer 选择详细普查等条件加强。
 
 4. **填 `paths[]` 与机检硬排除事实**（即便走 Track B 也写清，供 architect-reviewer 判）：
    - **列出要改的确切仓根相对路径** → 写进 frontmatter 的 `paths[]`。**G 层与硬排除结论由 `node .claude/scripts/debt-doctor.mjs` 从路径机推**——不再手写六个布尔（这是旧形态 6 495 字符格子的主要体积来源）。
    - 若要自报 G 层（可选字段 `gateLayers`），**必须与机推一致**，不一致 doctor 报红。
    - 手感对照（机推规则见 `.claude/scripts/debt-ledger-shared.mjs` 的 `GATE_LAYER_RULES`）：`.claude/{agents,commands,references,rules,skills}/` = G2；`.claude/{scope-map.json,hooks/,scripts/,*.settings.json}` = G3；`AGENTS.md`/`CLAUDE.md`/`README.md`/`docs/DEV-GOVERNANCE.md` = G1；`delivery/{changes,taskpackages,workstreams}/` = G4。
-   - **便宜验证计划**：例如复跑 `route-regression-check.mjs` / `lint-descriptions.mjs` / `landing-fidelity-check.mjs`。
-   **终点**：`paths[]` 已列全 + 验证计划点名 + 触 G1/G3/契约面/gate/self-def/mixed 者 profile 已标 full。
+   - **便宜验证计划**：例如复跑 `route-regression-check.mjs` / `lint-descriptions.mjs` / 相关脚本 `--self-check`。
+   **终点**：`paths[]` 已列全 + 验证计划点名 + 触 G1/G3/契约面/gate/self-def/mixed 的事实已写明；这些是 reviewer 的风险输入，不自动决定档级。
 
 5. **查重（登记前纪律）** — `grep -l "<根因关键词>" docs/debt/*/*.md` 找同根项。
    - 有同根已登项 → **在既有条目正文尾部追加证据注记，不新立**（引本次 provenance）。
@@ -63,7 +63,7 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 
 - [ ] provenance：≥1 条可点开的执行记录（非作者声称）。
 - [ ] 域已定且 ID 前缀与域一致（祖辈 `ARQ-` 例外，见步骤 2）。
-- [ ] Track B 三要件逐条标注；任一 no 则 profile 已是 `full-adversarial+human`，未回标 Track B。
+- [ ] 三要件逐条标注；信息缺口如实写，未把路径本身当升档理由。
 - [ ] `paths[]` 已列全（G 层与硬排除由 doctor 机推，非手写）。
 - [ ] 便宜验证计划点名。
 - [ ] frontmatter 必填齐全；正文四段齐全；review profile 写实。
@@ -73,18 +73,18 @@ description: "Use when: 把一个已执行测出的治理改进项（bug 或优�
 ## 约束（must / never，不可省）
 
 - **MUST**：每条改进项带至少一条可识别 provenance——Track B 资格的客观载体。
-- **MUST**：review profile 写实。三要件任一不满足、或触 G1/G3/契约面/gate/self-def/mixed，就标 `full-adversarial + human`，绝不美化成快路径。
+- **MUST**：review profile 写实。三要件用于说明收敛度和已知爆炸半径；方向未收敛才标 Track A，其余缺口交给 reviewer 双向判档，不因 G1/G3 路径自动标 full。
 - **MUST**：查重在前；同根在既有条目追加证据注记，不新立。
 - **MUST**：写完跑 `debt-render.mjs`（否则 生成的 INDEX 与账本不一致，doctor 会报 `index-stale`）。
 - **NEVER**：不自批、不开 TaskPackage、不改任何 canonical（`.claude/{agents,commands,references,rules,skills}/**`、`docs/contracts/**`、docs 蓝图与指令根）——本 skill 只写条目文件与既有条目注记。
-- **NEVER**：不把「新增/改工程门」当快路径塞——新增或修改任何 gate 本身就是 lightweight 机检硬排除，须标 full（或按 Track B 写明 G3 + 该 gate 事实交判）。
+- **NEVER**：不把「新增/改工程门」自动等同于 Track A；条目须写清判定语义变化，由 reviewer 判是否需第二核验、完整普查或对抗收敛。
 - **NEVER**：不手改三份 `INDEX.md`（生成件）；不在 `docs/debt/` 下建条目以外的文件（说明的单一源在 lib / template / index 头部）。
 
 ## 交接下游（terminal state）
 
 本 skill 的 terminal state = 「条目写进 `docs/debt/<域>/` + 渲染已跑」（边界即「约束」节 NEVER，不重复）。按 review profile 交下游：
 
-- **已登记条目（默认）** → 走 **Track B 默认路由**（主线程起草 PROPOSAL 走起，见文首路由注）。
+- **已登记条目（默认）** → 走 `/gov-change`：主线程一句确认本波启动，再按 direct-implementation 常规链推进（见文首路由注）。
 - **命中升级判据（跨系统结构性变更 / 方向未收敛）或声明红队** → 升所属面 loop 的 **Track A 段**。
 - **provenance 不足 / 其实是新设计 idea** → 不登记，交面 loop（**`/arch-change` / `/gov-change`**）。
 - **是跨 Pod 周期性共性、应批量 retro** → 交 **`/loop-retro`**（其 triage 第 4 步同样产出 ARQ candidate，字段一致）。

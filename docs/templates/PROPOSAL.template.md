@@ -1,4 +1,51 @@
-# PROPOSAL.template · Track B 提案模板（canonical · 260802-gov-review-track-b-hardening T1 落地，OQ2=(b) 选址 docs/templates/）
+# PROPOSAL.template · 治理面 direct-implementation 轻量批记录
+
+> 用法：治理面常规批只复制本段到 `## 评审与实施记录`。后半部保留给架构+契约面 Track B / 旧批，不得把旧制品义务带回常规治理批。
+
+# PROPOSAL · <change-id>
+
+> **状态：<DRAFT | FROZEN vX.Y>**
+> **gov-flow**: direct-implementation
+> **范围：<本批做什么、不做什么>**
+> **设计依据：<human 原话 / ARQ / spine sources>**
+
+## 1. 目标与非目标
+
+写清要解决的问题、预期效果和明确不扩的边界。
+
+## 2. 关键方案
+
+只写意图、边界、关键接线和验收标准，不写旧串/新串或逐字节未来文本。
+
+## 3. 条件加强
+
+reviewer 填常规流程是否足够；每项加强写事实依据。风险消失可降回常规，human 明确指定的加强只能由 human 解除。
+
+## 4. 轻量 scope
+
+路径可最终未改；实际非证据 diff 必须是预计集子集。每行 = `路径 | architect/main-thread | ordinary/protected | 可选理由`，目录以 `/` 结尾。
+
+```landing-manifest
+<仓根相对路径> | <architect/main-thread> | <ordinary/protected> | <一句理由>
+```
+
+## 5. 验证计划
+
+列聚焦命令与可判别预期：至少一个正向 happy path 和一个会使实现变红的反向输入；脚本优先扩展现有 self-check / 临时 Git 仓夹具。
+
+## 评审与实施记录
+
+由 reviewer 自写设计审；architect 追加实际改动、测试命令与结果；reviewer 再自写真实 diff 审。全记录 verdict 后出者胜，最后实现评审追加：
+
+    verdict: GREEN
+    reviewedCommit: <40 位小写 SHA>
+    reviewedTree: <40 位小写 SHA>
+
+主线程另在同目录实时写 `events.jsonl`，usage 只用 `{agent, wallMs, tokens, toolUses}`（各值可 null）；事件不进闸或 INDEX。常规批不写 architect-landing-summary、landing-verdict、implementation-review.json 或事后 retro。
+
+---
+
+# PROPOSAL.template · 架构+契约面 Track B / 旧批模板（canonical · 260802-gov-review-track-b-hardening T1 落地，OQ2=(b) 选址 docs/templates/）
 
 > 用法：复制本件为 `delivery/review/<change-id>/PROPOSAL.md`，替换 `<尖括号>` 占位；**带【硬项】的小节是义务不是建议**——缺失即判官 BLOCK 的合法理由。
 > **先起名**：目录名必须命中 `.claude/scope-map.json` review-agent 写槽 token——governance-lane = `<YYMMDD>-gov-review-<slug>`、spec-lane = `<YYMMDD>-arch-review-<slug>`；缺 token 时判官/核验官制品写入被 enforce-scope 拦截，起草期 `changes-index.mjs --upsert <id>` 亦点名（见 protocol「双轨路由」节命名条款）。
