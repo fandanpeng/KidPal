@@ -39,3 +39,5 @@
 - 启动：SD 卡日志时间戳单调推进、状态机到 idle、`kidpal_rn: render home 400x300 render_rc=0`（P1 渲染路径真机无崩）；assets 分区 checksum 315ms 通过。
 - **human 看屏确认：「字体对了」**——首页 16px 正文真机字形来自运行时资产（P0 FAR-E3 核心消费端证据 + P1 P1H-E1 真机半首证）。下划线项休眠（ARQ-261029 上游未落，预期内）。
 - 待办：缺 assets 降级开机测试（FAR-E3 第二观测，可选）；P0+P1 合并门（human 已看核心效果）。
+
+- **human 裁定（2026-10-29）**：豁免缺 assets 降级真机观测（FAR-E3 第二子项记豁免非通过）——理由 = 14px 常显真机正常 + host 半 FAS-A4 已验回退逻辑 + 设备触发场景低概率（全量烧录恒带 assets、OTA 不动 assets 分区）。
