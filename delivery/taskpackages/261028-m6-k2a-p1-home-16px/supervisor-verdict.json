@@ -1,0 +1,103 @@
+{
+  "verdict": "ESCALATE",
+  "riskTier": "critical",
+  "decidedBy": "supervisor-verdict-gate.mjs (mechanical, script fs-write)",
+  "producedBy": "supervisor-verdict-gate.mjs",
+  "ts": "2026-10-29T13:17:36.569Z",
+  "changeId": "261028-m6-k2a-p1-home-16px",
+  "originType": "proposal",
+  "adjudication": {
+    "verdict": "ESCALATE",
+    "riskTier": "critical",
+    "reasons": [
+      "critical-path:firmware/main/test/host_app/sdkconfig.defaults",
+      "adjudicate:critical/high→ESCALATE(priority-before-evidence)"
+    ],
+    "riskTierDerivation": {
+      "diffTier": "critical",
+      "declaredTier": "high",
+      "effectiveTier": "critical",
+      "ambiguous": false,
+      "diffReasons": [
+        "critical-path:firmware/main/test/host_app/sdkconfig.defaults"
+      ]
+    },
+    "circuitBreakerCompletedRounds": 0,
+    "evidenceComplete": false
+  },
+  "provenance": {
+    "provenanceVersion": "2.0",
+    "mechanicalSupervisorGate": {
+      "ran": true,
+      "producedBy": "supervisor-verdict-gate.mjs",
+      "riskTierDerivation": {
+        "diffTier": "critical",
+        "declaredTier": "high",
+        "effectiveTier": "critical",
+        "ambiguous": false,
+        "diffReasons": [
+          "critical-path:firmware/main/test/host_app/sdkconfig.defaults"
+        ]
+      },
+      "evidenceCompleteness": {
+        "bearingFactRef": null,
+        "bearingFactOk": false,
+        "completedRounds": 0,
+        "closeoutArtifactsChecked": [
+          "delivery/taskpackages/261028-m6-k2a-p1-home-16px/docs-delta.md",
+          "delivery/taskpackages/261028-m6-k2a-p1-home-16px/review-packet.md"
+        ],
+        "verifyLogsPresent": true,
+        "originType": "proposal"
+      }
+    },
+    "verifyLogRefs": [
+      ".claude/verify-logs/1791866549756-firmware-build.log",
+      ".claude/verify-logs/1791905549989-acceptance-coverage.log",
+      ".claude/verify-logs/1791906761009-mutation-check.log",
+      ".claude/verify-logs/1791908121061-docs-sync.log",
+      ".claude/verify-logs/1792038647115-mutation-check.log",
+      ".claude/verify-logs/1792038905575-mutation-check.log",
+      ".claude/verify-logs/1792039858007-unit.log",
+      ".claude/verify-logs/1792039858691-acceptance.log",
+      ".claude/verify-logs/1792231696881-security.log",
+      ".claude/verify-logs/1792234264108-docs-sync.log",
+      ".claude/verify-logs/1792288810152-docs-sync.log",
+      ".claude/verify-logs/1792424558613-acceptance-coverage.log",
+      ".claude/verify-logs/1792424625871-mutation-check.log",
+      ".claude/verify-logs/1792424706378-docs-sync.log",
+      ".claude/verify-logs/1792424781431-security.log",
+      ".claude/verify-logs/1792506572223-taskpackage-required.log",
+      ".claude/verify-logs/1792506601139-mutation-check.log",
+      ".claude/verify-logs/1792506609447-mutation-check.log",
+      ".claude/verify-logs/1792506620073-mutation-check.log",
+      ".claude/verify-logs/1792592173345-mutation-check.log",
+      ".claude/verify-logs/1792592945798-security.log",
+      ".claude/verify-logs/1792639024349-mutation-check.log",
+      ".claude/verify-logs/1792639035808-mutation-check.log",
+      ".claude/verify-logs/1792640261117-docs-sync.log",
+      ".claude/verify-logs/1792640830922-docs-sync.log",
+      ".claude/verify-logs/1792641159922-unit.log",
+      ".claude/verify-logs/1792641160118-acceptance.log",
+      ".claude/verify-logs/1792641198071-unit.log",
+      ".claude/verify-logs/1792641198270-acceptance.log",
+      ".claude/verify-logs/1792662202571-taskpackage-required.log",
+      ".claude/verify-logs/1792662260614-mutation-check.log",
+      ".claude/verify-logs/1792663196294-docs-sync.log",
+      ".claude/verify-logs/1792675231418-acceptance-coverage.log",
+      ".claude/verify-logs/1792675257305-mutation-check.log",
+      ".claude/verify-logs/1792746957475-security.log",
+      ".claude/verify-logs/1792768191223-acceptance-coverage.log",
+      ".claude/verify-logs/1792768258494-security.log",
+      ".claude/verify-logs/1793145197858-mutation-check.log",
+      ".claude/verify-logs/1793198153621-taskpackage-required.log",
+      ".claude/verify-logs/1793198195543-mutation-check.log",
+      ".claude/verify-logs/1793198278160-mutation-check.log"
+    ],
+    "verifierEvidenceRefs": [],
+    "closeoutArtifactsChecked": [
+      "delivery/taskpackages/261028-m6-k2a-p1-home-16px/docs-delta.md",
+      "delivery/taskpackages/261028-m6-k2a-p1-home-16px/review-packet.md"
+    ]
+  }
+}

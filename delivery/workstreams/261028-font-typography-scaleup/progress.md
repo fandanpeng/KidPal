@@ -26,3 +26,9 @@
 - P1 验收：p1_home_16px.acceptance.c 新冻结（P16-A1..A3）+ p1_home_battery / p1_cjk_name 收紧型 supersede（REVISION LOG 在件）；FAS-A8 反向评估零触；红基线通道① 250/4（存量 3 + P0-chain 在册红）、通道②语法实编绿；接线增量 acceptance-wiring-patch.md 落盘待 builder step-0。
 - **升级①（blocker·P0 链缺陷）**：78 fork cbin writer 恒产 LARGE=1 glyph dsc 布局，host/device 两侧按 LARGE=0 解读 → 字形度量垃圾；P0 冻结件假绿（只钉返回码）；修复方向待 architect 裁（详见 P1 taskpackage notes①）。
 - **升级②（F-9 上游缺口）**：现网 producer 不写 ※ 前缀进 name，[U1] 真机永不触发风险；路由待 human 裁（上游写入侧任务 / wire 契约变更 / 需求重裁）。
+
+## 2026-10-29 · P1 收口 + 双包待统一真机轮
+
+- **P1 收口态**：verify 8 闸全绿（253/3 仅存量 auxbar）；commit 550f8d21（实现五文件 + 治理制品）；supervisor-verdict ESCALATE（riskTier critical——P1 包 diff 范围含 8239aee7 的 sdkconfig.defaults critical-path 扫描命中）；pod-retro / review-packet / docs-delta / test-scope 落盘；回滚锚 = 08cc46c4。
+- **合并门状态（human 后置裁定在案）**：P0（verifier-green @ 77c7debd 收尾）+ P1（verifier-green @ 550f8d21）均不合并——统一真机轮（P0 探针页 + P1 首页 16px + 缺 assets 降级）human 过目后一起合并。
+- **真机轮前置 blocker**：ARQ-261029 上游 ※ 写入侧任务待派单（server/front/OpenClaw 侧，wire 不变）；无它下划线观测无样本。
