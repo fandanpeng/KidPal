@@ -7,7 +7,7 @@
 ## 完工比例
 
 - **已验收**：0%（0 / 6 里程碑 accepted 及以后）
-- **在途预计**：26.7%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **在途预计**：33.3%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -45,5 +45,5 @@
 
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
-| 阶段六·字体体系升级（正文 16px / 标题 20px / assets 运行时装载） | `planning` | green | workstream 261028-font-typography-scaleup 拆包 P0–P3（P0 font-assets-runtime-loading spike 阻塞 P1 p1-home-16px / P2 p2-schedule-16px / P3 p3-story-typography；P0→P1 另有 kidpal_render_node.cc 串行边）。上游已齐：requirements v1.69 frozen（字号体系 + 容量口径 + 下划线标记）+ 架构面 landed（§5.5.3 换代 + ADR-017，delivery/review/261028-arch-review-font-typography-scaleup/）+ workstream PROPOSAL FROZEN v1.0（F-1..F-9）+ 本地 main 已并（357bc5fc）。下一步 = 拆包四件套（portfolio-planner）→ 门 1 → human 过目切法 → P0 依序 launch | [ref](../docs/requirements.md) |
+| 阶段六·字体体系升级（正文 16px / 标题 20px / assets 运行时装载） | `in_delivery` | green | workstream 261028-font-typography-scaleup P0+P1 已 merged 本地 main（2026-10-29，human 合并门随批批准：P0 字体资产运行时装载 + host LARGE 修复轮，P1 首页 16px + 临时下划线；真机轮核心观测通过=看屏确认 16px 运行时字形正确；缺 assets 降级真机观测 human 裁定豁免）。剩：P2 p2-schedule-16px / P3 p3-story-typography 未 launch（P3=终端收口轮，P3 launch 前 P1 已 merged ✓）；ARQ-261029 上游 ※ 写入侧任务待派单（临时事件下划线真机样本前置，blocker）；远程发布（release-pr --publish + PR 合并）待 human。 | [ref](../docs/requirements.md) |
 
