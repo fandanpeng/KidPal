@@ -382,21 +382,22 @@ static int p1_glyph_render_core(const lv_font_t *font, uint32_t codepoint,
     return 0;
 }
 
+/* [S7] 字面源缝设备强定义（P1，[F1]）：经 P0 透传口取统一句柄 16px body。 */
+extern "C" const lv_font_t *kidpal_p1_font_face(void)
+{
+    return kidpal_render_node_body_font(); /* P0 [K4] 透传（16px body / 缺资产 14px） */
+}
+
 extern "C" int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out)
 {
-#if LV_FONT_SOURCE_HAN_SANS_SC_14_CJK
-    return p1_glyph_render_core(&lv_font_source_han_sans_sc_14_cjk, codepoint, out);
-#elif defined(ESP_PLATFORM)
-    return p1_glyph_render_core(&font_puhui_14_1, codepoint, out);
-#else
-    if (out != nullptr) {
-        out->w = 0;
-        out->h = 0;
-        out->advance = 0;
-        out->bits = nullptr;
+    /* [S1] 字面源切 [S7]（16px body 句柄，[F1]）；NULL 回落编译内 font_puhui_14_1
+     * （缺 assets 降级 / F-1 边界；FAS-A7 render_node_puhui14 canary 不破——符号引用
+     * 在世）。[S1] 签名/字形语义零改（共享核心 p1_glyph_render_core 不变）。 */
+    const lv_font_t *face = kidpal_p1_font_face();
+    if (face == nullptr) {
+        face = &font_puhui_14_1;
     }
-    return -1;
-#endif
+    return p1_glyph_render_core(face, codepoint, out);
 }
 
 /* -------------------------------------------------------------------------

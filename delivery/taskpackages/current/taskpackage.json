@@ -1,6 +1,6 @@
 {
-  "changeId": "261028-m6-k1-font-assets-runtime-loading",
-  "title": "字体资产与运行时装载 spike——16px/20px 全量 CJK .bin、assets/cbin 通路、host 同源与 14px 降级",
+  "changeId": "261028-m6-k2a-p1-home-16px",
+  "title": "首页 P1 日程卡 16px——line_h 22 容量不变、运行时字体消费与临时事件下划线",
   "rigor": "full",
   "sourceType": "proposal",
   "origin": {
@@ -10,69 +10,63 @@
     "upstreamFrozen": "sha1:af2e3627a8a2f254",
     "workstream": "261028-font-typography-scaleup"
   },
-  "subsystem": "firmware 字体资产产线 + assets 分区/cbin 运行时装载 + host 同源字体 seam",
-  "story": "PROPOSAL.md#§1 目的 5、6 + ADR-017（资产与运行时底座切片，无单一 story 直接命中）；下游 story 消费归 P1/P2/P3。",
-  "planRef": "delivery/taskpackages/261028-m6-k1-font-assets-runtime-loading/plan.md",
+  "subsystem": "firmware/main/display 首页 P1 帧渲染与设备/host 字体消费 seam",
+  "story": "S-F1.1 · 常显首页看「接下来干嘛」（AC1、AC2）+ WF-F1-01 临时事件下划线口径。",
+  "planRef": "delivery/taskpackages/261028-m6-k2a-p1-home-16px/plan.md",
   "sourceRefs": [
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ1",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3",
-    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P0",
-    "docs/decisions/ADR.md#ADR-017",
-    "docs/debt/tech/_archive/2026/ARQ-260831-small-cjk-1bpp-readability.md",
-    "tools/asset-pipeline/fonts/gen_fonts.sh",
-    "firmware/main/assets.cc",
-    "firmware/main/display/lvgl_display/lvgl_font.cc"
+    "S-F1.1-AC1",
+    "S-F1.1-AC2",
+    "docs/requirements.md#WF-F1-01",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P1",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/kidpal_render_node.cc",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c"
   ],
   "acceptanceRefs": [
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6",
-    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7",
-    "docs/decisions/ADR.md#ADR-017"
+    "docs/requirements.md#S-F1.1",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"
   ],
   "acceptance": [
-    "FAS-A1: 产线扩产与资产落盘——gen_fonts.sh 扩产面（--size 16/--size 20 在世、--bpp 1 ≥2、输出面 fonts_root）+ 设备 CMakeLists 接 fonts_root（构建清单档）；fonts_root 两枚冻结名 .bin 真实落盘（产物面）。设计态红：size16/size20 键=0、device_cmakelists_fonts_root=0、两枚 .bin 不存在",
-    "FAS-A2: 两枚新 bin 真 cbin 装载 + 1bpp + 尺寸档 + 全量覆盖——.bin 真字节经 cbin_font_create 装载非 NULL、bpp==1 PLAIN、line_height 档（16px∈[20..25]/20px∈[26..36] 且 title 严格大于 body）、cmap 覆盖下界（body ≥6000/title ≥3000 静态子集判别面）、GB2312 二级 canary + 常用字 4 码点。设计态红：两枚 .bin 未产、装载面未接",
-    "FAS-A3: 统一句柄 mount 正常态——[K3] mount(fonts_root 直读 reader) 返回 0；body()/title() 真资产句柄 ≠&font_puhui_14_1、尺寸档正确、glyph 可查、同源路径自证。设计态红：[K1]-[K4] seam 弱哨兵未实现",
-    "FAS-A4: 缺资产回退 14px 不黑屏——全缺 mount 返回 0（降级=合法完成态）、双句柄恒等 &font_puhui_14_1 恒非 NULL、from_cbin(NULL,0) 与短缓冲回退 14px；深腐蚀数据崩溃域不做 host 钉点（强证据归真机缺 assets 降级开机轮 FAR-E3）。设计态红：seam 未实现",
-    "FAS-A5: 20px 缺字回退 16px——自然探针缺口码点经 fallback 派发命中且盒度量 == body 同码点；机制级 title()->fallback == body()。设计态红：seam 未实现",
-    "FAS-A6: host 同源 + 设备接线结构半——kidpal_font.{h,cc} 存在且引用冻结名/GetAssetData/LvglCBinFont 或 cbin_font_create/font_puhui_14_1（构建清单档）；host SRCS 编入 cbin_font.c + 本验收件。设计态红：kidpal_font.{h,cc} 不存在",
-    "FAS-A7: 不变量 canary——OQ3 九档 font_test_10..32 逐档存在+编入设备构建、font_size_test_page.cc 存在+编入、host_srcs_puhui14、render_node_puhui14（构建清单档恒绿 canary）+ 清单面自检",
-    "FAS-A8: 相邻冻结锚 canary——p1_cjk_name.acceptance.c 在世 + [S1] 签名面 + render_node kidpal_p1_font_glyph 强符号；KSG_COURSE_CAP 84 / KSG_FONT_MIN_PX 14 / KSTORY_LIST_ROWS_PER_SCREEN 4 / KSTORY_READER_LINES_PER_SCREEN 4 零触（构建清单档恒绿 canary）"
+    "P16-A1: [S1] 字面切 16px body 句柄——mount fonts_root 后 body() 真资产句柄（非 14px、16 档 [20..25]）；P0 链完整性 gate（cbin glyph 度量合理性）；判别力负控（puhui14 vs body16 可判别）；[S1](cp) == [S6](kidpal_font_body(), cp) 逐字节；机制钉 kidpal_p1_font_face() 非 NULL 且 == body()；mount(missing reader) 复位 14px 兜底防跨文件状态泄漏。设计态红：[S1] 未切 / [S7] weak NULL",
+    "P16-A2: 行容量不变 + F-9 临时下划线——preview 三行带各墨 ≥130（16px 行容量零损失，line_h=22 不变式）；卡底之下负断言带零墨（containment）；temp 帧 vs fixed 帧 diff>0 且全落 item0 行带（下划线在世）；diff 行全部 > fixed 帧名墨最大行（※ 字形退役不画不占笔进）；diff 离散行数==2 且各行 diff ∈ [12..60]（2px 随名宽）；fixed 帧带内剩余行零墨（固定日程不画线）。设计态红：下划线未实现",
+    "P16-A3: 结构半 FAS 清单七键——host_srcs_p1_home_16px / p1_kidpalfont_h_s7_decl / p1_rn_s1_face_seam / p1_hostseam_s1_face_seam / p1_home_text_yoff16 / p1_home_c_marker_const / p1_home_p1_h_no_temp_field（负向：home_p1.h 不扩 flags 临时标记字段）。设计态红：五结构键=0（yoff4 在世 / 0x203B 零命中 / face 三落点缺）"
   ],
   "acceptanceTestsFile": [
-    "firmware/main/test/font_assets_runtime.acceptance.c"
+    "firmware/main/test/p1_home_16px.acceptance.c"
   ],
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
-  "redBaselineResult": "PENDING builder step-0 现跑（human 2026-10-28 裁定：acceptance-author 被 enforce-scope 机械门拦于 host_app/main/CMakeLists.txt 接线，接线补丁逐字落 `acceptance-wiring-patch.md` 交 builder step-0 落线后立刻现跑红基线、逐字回报，确认 == 设计态红后才准动实现）。设计态红预期（冻结件 Run protocol 逐字备档）：242+8=250 Tests；存量红 = p1_auxbar AB-A1/A2/A4 三条；新增设计态红 = FAS-A1/A2/A3/A4/A5/A6；FAS-A7/A8 恒绿；除上述外零其它新增红，任何 infra 红（清单缺失/键不在/负向探针）= 接线缺陷不冒充设计态红",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-10-29，通道① 250/4=P0 修复后基线：auxbar×3 存量 + P0-chain 在册红 PCN-A11，ELF_EXIT=0 零段错误）+ builder step-0 接线后通道③现跑：253 Tests / 7 Failures = 设计态红（存量 AB-A1/A2/A4 + PCN-A11 设计态 [S1] 14px≠body16 + P16-A1/A2/A3 设计态齿，首红 tooth 全为预期设计态非 infra/P0-chain；MUST-STAY-GREEN 键位零红：TEST1 tooth0/0b/1/4、TEST2 tooth1/2/6、P16-A3 负向键=1、FAS 全绿）；绿跑 253/3 仅存量（P16 全绿 + PCN-A11 转绿）",
   "exitCriteria": [
-    "FAR-E1: gen_fonts.sh 同产线扩产 16px 正文与 20px 阅读标题两枚全量 CJK 1bpp .bin；20px 不做静态子集，16px/20px 精确字节数与 assets 余量实测以 append-only 注记回填 ADR-017，不把估算冒充实测。",
-    "FAR-E2: 两枚 .bin 打入 assets 分区并由 Assets::GetAssetData + LvglCBinFont/cbin 运行时装载；统一 kidpal_font 句柄可供页面消费，缺 assets、缺文件或装载失败均回退编译内 font_puhui_14_1 且不黑屏；host 与设备读取同一枚 .bin，host 不再以另一套字体数据冒充真机字形。",
-    "FAR-E3: 以消费端观测完成 spike：真机探针页看屏照片与串口日志证明 16px/20px 字形来自运行时资产，另做缺 assets 降级开机；不得只以生成脚本或生产者自证收口。九档实验页与 font_test_* 维持编入，仅复用探针，不退役。",
-    "FAR-E4: 新增/受影响验收经 acceptance-author 冻结并具红基线与变异证据；凡修订既有冻结件只做收紧型留痕 supersede，记录旧断言、新断言、授权与 REVISION LOG，注释不算证据，撤改法或弱化断言必红；host 全量零新增红、device build 绿。",
-    "FAR-E5: PROPOSAL §6 三项旧工作树改动已独立收编，本包不得混入；架构 §5.5.3 与 ADR-017 已落，本包 docs-sync 仅追加实测尺寸/证据注记，不改 F-5/F-6/F-7 决策，不触 docs/contracts/**。"
+    "P1H-E1: 首页「接下来/明天」正文切换 P0 的 16px 运行时字体；line_h=22 与现有行容量、分组/三态空态语义不变，只按 V8 重基线 text_yoff 与像素锚，真机不丢行、不越卡、不压辅助条。",
+    "P1H-E2: F-9 首页半同步落地：临时事件名的 ※ 前缀退役，改事件名下 2px 下划线；name 的 wire/seam 形状与云端 producer 不变，不把临时标记扩成新字段，固定日程不画线。",
+    "P1H-E3: p1_home_battery 与 p1_cjk_name 的 14px、字形 seam 和行带断言由 acceptance-author 收紧型留痕重基线，记录旧断言、新断言、授权与 REVISION LOG；注释不算证据，撤改法或弱化断言必红；host 全量零新增红、device build 绿。",
+    "P1H-E4: 以 docs/ui/V8/canvas-p1.png 为布局权威完成 design review；首页真机观感与缺 assets 降级复证并入 P3 workstream 收口轮，本包不另占真机轮，也不得以 host 字形替代真机终判。"
   ],
   "iterationBudget": 2,
   "fixBudget": 3,
   "supervisorBlockBudget": 2,
   "contractRefs": [
-    "docs/contracts/interface-contract.md"
+    "docs/contracts/interface-contract.md#§1.3⑥"
   ],
   "docRefs": [
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
     "delivery/workstreams/261028-font-typography-scaleup/task_plan.md",
-    "delivery/taskpackages/261028-m6-k1-font-assets-runtime-loading/plan.md",
+    "delivery/taskpackages/261028-m6-k2a-p1-home-16px/plan.md",
     "docs/requirements.md",
     "docs/architecture.md",
     "docs/decisions/ADR.md",
     "docs/contracts/interface-contract.md",
-    "docs/debt/tech/_archive/2026/ARQ-260831-small-cjk-1bpp-readability.md",
-    "firmware/main/test/HOST_TEST_CONVENTIONS.md"
+    "docs/ui/kidpal-ui-design-v8.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V8/canvas-p1.png"
   ],
-  "docsSyncRequired": true,
-  "docsSyncReason": "ADR-017 已预留 P0 实产复测回填位；本包只追加 16px/20px 精确尺寸与真机证据注记，架构 §5.5.3 无需再改。",
+  "docsSyncRequired": false,
+  "docsSyncReason": "requirements v1.69、V8/brief v7、架构 §5.5.3 与 ADR-017 已冻结/落地；本包只追实现，无 canonical docs diff。",
   "docsOwner": "integrator",
   "securityReviewRequired": false,
   "adrRequired": false,
@@ -86,96 +80,101 @@
   "mutationEvidence": {
     "perAcceptance": [
       {
-        "acceptanceId": "FAS-A1",
-        "acceptance": "FAS-A1: 产线扩产与资产落盘——gen_fonts.sh 扩产面（--size 16/--size 20 在世、--bpp 1 ≥2、输出面 fonts_root）+ 设备 CMakeLists 接 fonts_root（构建清单档）；fonts_root 两枚冻结名 .bin 真实落盘（产物面）。设计态红：size16/size20 键=0、device_cmakelists_fonts_root=0、两枚 .bin 不存在",
-        "mutation": "变异：gen_fonts.sh `--size 16`→`--size 99`",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 1（FAS-A1 清单事实）",
+        "acceptanceId": "P16-A1",
+        "acceptance": "P16-A1: [S1] 字面切 16px body 句柄——mount fonts_root 后 body() 真资产句柄（非 14px、16 档 [20..25]）；P0 链完整性 gate（cbin glyph 度量合理性）；判别力负控（puhui14 vs body16 可判别）；[S1](cp) == [S6](kidpal_font_body(), cp) 逐字节；机制钉 kidpal_p1_font_face() 非 NULL 且 == body()；mount(missing reader) 复位 14px 兜底防跨文件状态泄漏。设计态红：[S1] 未切 / [S7] weak NULL",
+        "mutation": "host kidpal_p1_font_glyph 不取 face（face=NULL→回落 source_han 14px）",
+        "affectedTest": "p1_home_16px.acceptance.c TEST 1 tooth2",
         "turnedRed": true,
-        "result": "turned red：FAS-A1 FAIL（250 Tests / 4 Failures），还原后复绿"
+        "result": "turned red：P16-A1 FAIL（253/5；P1CJK-A11 外溢连带，同钉 [S1]==body）"
       },
       {
-        "acceptanceId": "FAS-A2",
-        "acceptance": "FAS-A2: 两枚新 bin 真 cbin 装载 + 1bpp + 尺寸档 + 全量覆盖——.bin 真字节经 cbin_font_create 装载非 NULL、bpp==1 PLAIN、line_height 档（16px∈[20..25]/20px∈[26..36] 且 title 严格大于 body）、cmap 覆盖下界（body ≥6000/title ≥3000 静态子集判别面）、GB2312 二级 canary + 常用字 4 码点。设计态红：两枚 .bin 未产、装载面未接",
-        "mutation": "变异：font_body_16.bin byte0→0x01（破 raw cbin 形态：首 8 字节槽非零）",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 2（FAS-A2 形态正检）",
+        "acceptanceId": "P16-A2",
+        "acceptance": "P16-A2: 行容量不变 + F-9 临时下划线——preview 三行带各墨 ≥130（16px 行容量零损失，line_h=22 不变式）；卡底之下负断言带零墨（containment）；temp 帧 vs fixed 帧 diff>0 且全落 item0 行带（下划线在世）；diff 行全部 > fixed 帧名墨最大行（※ 字形退役不画不占笔进）；diff 离散行数==2 且各行 diff ∈ [12..60]（2px 随名宽）；fixed 帧带内剩余行零墨（固定日程不画线）。设计态红：下划线未实现",
+        "mutation": "摘除下划线（temp 走 plain blit）",
+        "affectedTest": "p1_home_16px.acceptance.c TEST 2 tooth3",
         "turnedRed": true,
-        "result": "turned red：FAS-A2 FAIL（250/4），还原后复绿"
+        "result": "turned red：P16-A2 FAIL（253/4，diff 为零）"
       },
       {
-        "acceptanceId": "FAS-A3",
-        "acceptance": "FAS-A3: 统一句柄 mount 正常态——[K3] mount(fonts_root 直读 reader) 返回 0；body()/title() 真资产句柄 ≠&font_puhui_14_1、尺寸档正确、glyph 可查、同源路径自证。设计态红：[K1]-[K4] seam 弱哨兵未实现",
-        "mutation": "变异：mount 跳过 body 读取（body 落 14px）",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 3（FAS-A3 句柄断言）",
+        "acceptanceId": "P16-A2",
+        "acceptance": "P16-A2: 行容量不变 + F-9 临时下划线——preview 三行带各墨 ≥130（16px 行容量零损失，line_h=22 不变式）；卡底之下负断言带零墨（containment）；temp 帧 vs fixed 帧 diff>0 且全落 item0 行带（下划线在世）；diff 行全部 > fixed 帧名墨最大行（※ 字形退役不画不占笔进）；diff 离散行数==2 且各行 diff ∈ [12..60]（2px 随名宽）；fixed 帧带内剩余行零墨（固定日程不画线）。设计态红：下划线未实现",
+        "mutation": "画回 ※（不剥离标记→※ 占笔进）",
+        "affectedTest": "p1_home_16px.acceptance.c TEST 2 tooth4",
         "turnedRed": true,
-        "result": "turned red：FAS-A3 FAIL（FAS-A5 外溢连带，250/5），还原后复绿"
+        "result": "turned red：P16-A2 FAIL（253/4，diff 进文字行）"
       },
       {
-        "acceptanceId": "FAS-A4",
-        "acceptance": "FAS-A4: 缺资产回退 14px 不黑屏——全缺 mount 返回 0（降级=合法完成态）、双句柄恒等 &font_puhui_14_1 恒非 NULL、from_cbin(NULL,0) 与短缓冲回退 14px；深腐蚀数据崩溃域不做 host 钉点（强证据归真机缺 assets 降级开机轮 FAR-E3）。设计态红：seam 未实现",
-        "mutation": "变异：from_cbin NULL/短缓冲守卫改返回 NULL",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 4（FAS-A4 兜底断言）",
+        "acceptanceId": "P16-A2",
+        "acceptance": "P16-A2: 行容量不变 + F-9 临时下划线——preview 三行带各墨 ≥130（16px 行容量零损失，line_h=22 不变式）；卡底之下负断言带零墨（containment）；temp 帧 vs fixed 帧 diff>0 且全落 item0 行带（下划线在世）；diff 行全部 > fixed 帧名墨最大行（※ 字形退役不画不占笔进）；diff 离散行数==2 且各行 diff ∈ [12..60]（2px 随名宽）；fixed 帧带内剩余行零墨（固定日程不画线）。设计态红：下划线未实现",
+        "mutation": "下划线 2px→3px",
+        "affectedTest": "p1_home_16px.acceptance.c TEST 2 tooth5",
         "turnedRed": true,
-        "result": "turned red：FAS-A4 FAIL（250/4），还原后复绿"
+        "result": "turned red：P16-A2 FAIL（253/4，离散 diff 行数 != 2）"
       },
       {
-        "acceptanceId": "FAS-A5",
-        "acceptance": "FAS-A5: 20px 缺字回退 16px——自然探针缺口码点经 fallback 派发命中且盒度量 == body 同码点；机制级 title()->fallback == body()。设计态红：seam 未实现",
-        "mutation": "变异：删 `title->fallback = body` 挂接",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 5（FAS-A5 fallback 断言）",
+        "acceptanceId": "P16-A3",
+        "acceptance": "P16-A3: 结构半 FAS 清单七键——host_srcs_p1_home_16px / p1_kidpalfont_h_s7_decl / p1_rn_s1_face_seam / p1_hostseam_s1_face_seam / p1_home_text_yoff16 / p1_home_c_marker_const / p1_home_p1_h_no_temp_field（负向：home_p1.h 不扩 flags 临时标记字段）。设计态红：五结构键=0（yoff4 在世 / 0x203B 零命中 / face 三落点缺）",
+        "mutation": "text_yoff 3→4（[M] 键回退）",
+        "affectedTest": "p1_home_16px.acceptance.c TEST 3 结构键 p1_home_text_yoff16",
         "turnedRed": true,
-        "result": "turned red：FAS-A5 FAIL（250/4），还原后复绿"
-      },
-      {
-        "acceptanceId": "FAS-A6",
-        "acceptance": "FAS-A6: host 同源 + 设备接线结构半——kidpal_font.{h,cc} 存在且引用冻结名/GetAssetData/LvglCBinFont 或 cbin_font_create/font_puhui_14_1（构建清单档）；host SRCS 编入 cbin_font.c + 本验收件。设计态红：kidpal_font.{h,cc} 不存在",
-        "mutation": "变异：kidpal_font.cc 冻结名改回宏引用（无字面）",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 6（FAS-A6 清单事实）",
-        "turnedRed": true,
-        "result": "turned red：FAS-A6 FAIL（250/4），还原后复绿"
-      },
-      {
-        "acceptanceId": "FAS-A7",
-        "acceptance": "FAS-A7: 不变量 canary——OQ3 九档 font_test_10..32 逐档存在+编入设备构建、font_size_test_page.cc 存在+编入、host_srcs_puhui14、render_node_puhui14（构建清单档恒绿 canary）+ 清单面自检",
-        "mutation": "变异：设备 SOURCES 删 `display/font_test_16.c`",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 7（FAS-A7 清单事实）",
-        "turnedRed": true,
-        "result": "turned red：FAS-A7 FAIL（250/4），还原后复绿"
-      },
-      {
-        "acceptanceId": "FAS-A8",
-        "acceptance": "FAS-A8: 相邻冻结锚 canary——p1_cjk_name.acceptance.c 在世 + [S1] 签名面 + render_node kidpal_p1_font_glyph 强符号；KSG_COURSE_CAP 84 / KSG_FONT_MIN_PX 14 / KSTORY_LIST_ROWS_PER_SCREEN 4 / KSTORY_READER_LINES_PER_SCREEN 4 零触（构建清单档恒绿 canary）",
-        "mutation": "变异：kidpal_render_node.cc 全量 `kidpal_p1_font_glyph`→`kidpal_p1_glyph_MUT`（3 处）",
-        "affectedTest": "font_assets_runtime.acceptance.c TEST 8（FAS-A8 清单事实；p1_cjk_name[S1] canary 外溢连带红）",
-        "turnedRed": true,
-        "result": "turned red：FAS-A8 FAIL（250/5），还原后复绿"
+        "result": "turned red：P16-A3 FAIL（253/4，结构事实）"
       }
     ],
-    "note": "证据来源 = builder 变异轮（2026-10-28，每条变异 build→run→还原，FINAL 干净跑 250/3 FAS 全绿）；外溢红（A3→A5、A8→p1_cjk_name[S1]）为可接受连带——目标 FAS 确实转红即满足敏感判据。"
+    "note": "证据来源 = builder 变异轮（2026-10-29，每条变异→build→run→还原，FINAL 干净跑 253/3）；M1 连带 P1CJK-A11 红为可达断言外溢，目标 P16-A1 确红即满足。"
   },
   "crossEnd": {
-    "counterparts": [],
-    "exempt": "本包只改板端/host 字体资产与本地装载通路，零端云消息、字段、线格式和 server diff，无跨端对端实现面。"
+    "counterparts": [
+      {
+        "path": "server/gateway/schedule.py",
+        "symbol": "home_upcoming_payload"
+      }
+    ],
+    "exempt": ""
   },
   "changeManifest": [
-    "tools/asset-pipeline/fonts/gen_fonts.sh",
-    "firmware/main/assets/fonts_root/**",
-    "firmware/scripts/build_default_assets.py",
-    "firmware/main/CMakeLists.txt",
-    "firmware/main/assets.cc",
-    "firmware/main/assets.h",
-    "firmware/main/display/lvgl_display/lvgl_font.cc",
-    "firmware/main/display/lvgl_display/lvgl_font.h",
-    "firmware/main/display/kidpal_font.cc",
-    "firmware/main/display/kidpal_font.h",
+    "firmware/main/display/home_p1.c",
+    "firmware/main/display/home_p1.h",
     "firmware/main/display/kidpal_render_node.cc",
     "firmware/main/display/kidpal_render_node.h",
-    "firmware/main/display/font_size_test_page.cc",
-    "firmware/main/test/host_app/main/CMakeLists.txt",
-    "firmware/main/test/host_app/main/host_infra_seam.c",
-    "firmware/main/test/font_assets_runtime.acceptance.c",
-    "docs/decisions/ADR.md",
-    "firmware/main/test/host_app/sdkconfig.defaults"
+    "firmware/main/display/kidpal_p1_font.h",
+    "firmware/main/test/p1_home_battery.acceptance.c",
+    "firmware/main/test/p1_cjk_name.acceptance.c",
+    "firmware/main/test/p1_home_16px.acceptance.c"
   ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/p1_home_battery.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "14px 行墨与行带断言需收紧型留痕重基线；line_h=22、三态和容量语义不撤。"
+    },
+    {
+      "path": "firmware/main/test/p1_cjk_name.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "[S1] font_puhui_14_1/host seam 与 14px 字面是相邻冻结锚；须经 acceptance-author supersede，builder 不得直改。"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "regression",
+      "note": "home_upcoming wire/seam 与 preview 三态回归，本包不改 producer 形状。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V8/canvas-p1.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v8.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "canvas-p1"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
   "planningRefs": [
@@ -184,91 +183,81 @@
   "riskTier": "high",
   "gateProfile": [
     "evidence-integrity",
-    "test-quality",
-    "docs-sync",
-    "device-round"
+    "test-quality"
   ],
-  "mergeOrder": 60,
-  "dependsOn": [],
+  "mergeOrder": 61,
+  "dependsOn": [
+    "261028-m6-k1-font-assets-runtime-loading"
+  ],
   "decisionCoverage": [
     {
-      "decision": "F-5 · assets .bin + cbin 运行时装载 + 编译内 14px 兜底",
-      "summary": "新字体不编入固件；资产缺失或装载失败必须可开机、不黑屏。",
+      "decision": "F-1 · 首页正文 14px→16px，辅助条维持 14px",
+      "summary": "只切首页日程正文到 P0 的 16px 句柄，不把辅助条或全局 chrome 一并放大。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
+      "landsIn": "exitCriteria:P1H-E1"
+    },
+    {
+      "decision": "F-2 · 首页 line_h=22 不动、只调 text_yoff、容量零损失",
+      "summary": "行距与容量是保留不变式，重基线不得借字号变化撤掉。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"
+      ],
+      "landsIn": "exitCriteria:P1H-E1"
+    },
+    {
+      "decision": "F-9 / spine q5 · 全设备临时标记下划线之首页半",
+      "summary": "首页临时事件与 P2 课表统一符号语言；只改本地呈现，wire 不变。",
+      "sourceRefs": [
+        "delivery/intake/261028-font-typography-scaleup.md#openQ-q5"
+      ],
+      "landsIn": "exitCriteria:P1H-E2"
+    },
+    {
+      "decision": "OQ2 · 母版 v8 只重出四页之首页帧",
+      "summary": "本包只消费 V8 canvas-p1，不重出未变更页面。",
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"
+      ],
+      "landsIn": "exitCriteria:P1H-E4"
+    },
+    {
+      "decision": "F-5/F-7 · 运行时资产与 host 同源底座",
+      "summary": "资产生成、cbin 通路和 host 同源由 P0 先行交付，本包不重复实现。",
       "sourceRefs": [
         "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"
       ],
-      "landsIn": "exitCriteria:FAR-E2"
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
     },
     {
-      "decision": "F-6 / OQ1 · 20px 标题全量 CJK，缺字回退 16px，不做静态子集",
-      "summary": "资产生产侧必须产全量 20px；标题消费侧回退由 P3 复证。",
+      "decision": "§5 · 首页真机观感与降级终判",
+      "summary": "首页真机半并入 P3 终端收口轮，不在本包单独宣布 workstream 完成。",
       "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"
-      ],
-      "landsIn": "exitCriteria:FAR-E1"
-    },
-    {
-      "decision": "F-7 · host 与设备共用同一枚 .bin",
-      "summary": "host 编入 cbin 装载面并读取设备同文件，收掉字体数据双源。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7"
-      ],
-      "landsIn": "exitCriteria:FAR-E2"
-    },
-    {
-      "decision": "OQ3 · 九档实验页与测试字体维持编入",
-      "summary": "探针可复用，本批不退役实验页或测试字体。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3"
-      ],
-      "landsIn": "exitCriteria:FAR-E3"
-    },
-    {
-      "decision": "业务目的 6 · 架构表述与实现对齐及精确尺寸回填",
-      "summary": "架构换代已 landed；P0 只补实测尺寸和证据，不重写已冻结路线。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的6"
-      ],
-      "landsIn": "exitCriteria:FAR-E5"
-    },
-    {
-      "decision": "F-1 · 首页 16px 消费",
-      "summary": "运行时底座在本包建立，首页排版与重基线归 P1。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
-      ],
-      "landsIn": "package:261028-m6-k2a-p1-home-16px"
-    },
-    {
-      "decision": "F-1 · 课表 16px 消费",
-      "summary": "运行时底座在本包建立，课表排版、容量与标记归 P2。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
-      ],
-      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
-    },
-    {
-      "decision": "F-1/F-4 · 故事列表与阅读排版消费",
-      "summary": "运行时底座在本包建立，故事两态排版及终端真机轮归 P3。",
-      "sourceRefs": [
-        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"
       ],
       "landsIn": "package:261028-m6-k3-p3-story-typography"
     }
   ],
   "crossPackageBehaviors": [
     {
-      "topic": "kidpal_font 运行时句柄与 14px 降级不变式",
-      "owner": "261028-m6-k1-font-assets-runtime-loading",
-      "carriedBy": "261028-m6-k1-font-assets-runtime-loading",
-      "note": "P0 唯一定义资产句柄、20px 缺字回退 16px 与缺资产回退 14px 的语义；P1/P2/P3 只消费，不各自另造加载或降级分支。"
-    },
-    {
       "topic": "P0/P1 共享 kidpal_render_node 与 host 字体 seam 串行",
       "owner": "261028-m6-k1-font-assets-runtime-loading",
       "carriedBy": "261028-m6-k2a-p1-home-16px",
-      "note": "P0 先建立运行时通路，P1 后切首页消费；两包不得并行改 kidpal_render_node.cc/host_infra_seam.c，P1 在 P0 合并后的冻结面上重基线。"
+      "note": "P0 先合并，P1 再切首页字体消费；P1 不得与 P0 并行改共享 seam。"
+    },
+    {
+      "topic": "全设备临时标记下划线（首页半）",
+      "owner": "261028-m6-k2a-p1-home-16px",
+      "carriedBy": "261028-m6-k2a-p1-home-16px",
+      "note": "P1 负责 WF-F1-01 首页事件名，P2 负责 S-F1.2 课名；两侧都保持现有 wire 输入，不各自发明临时标记字段。"
+    },
+    {
+      "topic": "M6 四页真机收口轮",
+      "owner": "261028-m6-k3-p3-story-typography",
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P1 的真机观感与缺 assets 首页降级复证归 P3；P3 launch/收口前 P1 必须 merged。"
     }
   ],
-  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。〔裁定留痕 2026-10-28〕① 验收测试运行时禁扫源码树、禁影子树镜像拷贝 = human 对本包的定向裁定（首例，非仓库通用规则变化；既有树扫形态冻结件如 p1_cjk_name 不在本包范围）——结构面断言改为 FAS-MANIFEST 机制：host CMakeLists configure 期采集结构事实写构建产物 fas_structure_manifest.txt，冻结验收件运行时只读该构建产物，被扫源文件全登记 CMAKE_CONFIGURE_DEPENDS 保新鲜度。② host_app/main/CMakeLists.txt 接线（acceptance-author 被 enforce-scope 拦）= human 裁定 builder step-0 逐字落线（补丁文本 = acceptance-wiring-patch.md），落线后立刻现跑红基线并逐字回报，确认 == 设计态红才准动实现。③〔step-0 阻塞裁定 2026-10-28〕builder step-0 挖出冻结验收两处结构性矛盾并停手：矛盾 A = 标准 lv_font_conv 1.5.2 `--format bin` 产通用 bin，cbin 格式只存在于 78 的 lv_font_conv fork——gen_fonts.sh 现产线不可达 FAR-E2 的 cbin 装载；矛盾 B = cbin_font_create 是 32-bit lv_font_t 内存镜像直读（dsc@24），64-bit aarch64 host（dsc@40）必崩，而冻结件 TEST 2 直调 cbin_font_create，任何 builder 实现都无法使其转绿。human 双裁：provenance = 换 78 fork（--format cbin，版本钉死登记）；host 半 = acceptance-author 预基线修正（红基线未成立，非 supersede）——host 侧去直调、改走 kidpal_font 编译期 host 分支的宽度感知解码器（同一枚 .bin、F-7 同源意图不变），设备面仍 cbin_font_create、解码等价性归真机轮；F-5 核心语义（mount/降级/缺字回退）保住 host 行为级覆盖；裁定留痕 = 本 notes + retro，不重开 /arch-change。④〔合并门后置裁定 2026-10-29〕supervisor 机械闸 ESCALATE（riskTier=high）后 human 裁定：P0 不单独合并——P1（k2a）开发完成后真机看效果，P0+P1 一起合并；FAR-E3 真机轮随该统一轮执行（P0 证据 = 探针页 + P1 首页消费 16px 同轮观测）；P1 在 P0 已 commit 冻结面（dev/pod-m2 @ 789c0244）上开发，串行边成立；留痕 = pod-events human-merge-gate-deferred 事件。〔P0-chain fixer 轮授权 2026-10-29〕acceptance-author 冻结轮实测 + architect advisory（子 agent 回报留痕）：缺陷实况修正为 host 单侧错配——设备 sdkconfig.defaults:57 CONFIG_LV_FONT_FMT_TXT_LARGE=y（P0 时点在案），host_app sdkconfig:665 not set，而 78 fork cbin writer 恒产 LARGE=1 16 字节 glyph dsc 布局 → host 解读错位度量垃圾（'8' box=71x0 adv=0）。裁法 = 仅 host 开 LARGE（sdkconfig.defaults 一行 + 完整重编 host；font_puhui_14_1 指定初始化器自动重排无需重产；vendored font_puhui_common_30_4 走设备 LARGE=1 生态零波及）；(b) 改 writer 与设备生态逆行、(c) 双口径转换拒绝。manifest 扩单（上列 sdkconfig.defaults）；P0 FAS-A2 additive 齿 1b/2b 已由 acceptance-author 落（tighten-only + REVISION LOG）；P1 自诊断红（P16 tooth 0b / PCN tooth 5）文字已按「host 单侧错配已证实 / 设备待真机」更正。P0 既有绿证据与 retro 不改写——假绿根因与修复证据以本轮追加。"
+  "notes": "workType 主型 = new-capability，整改半 = 临时标记口径与旧冻结断言重基线。riskTier 依 workstream sign-off 归一为 high（底稿 medium-high 非合法枚举），rigor 恒 full。影响面机械辅证：图索引确认 kidpal_home_p1_render_frame、kidpal_p1_font_glyph 双强符号与 host seam；图 inbound 未覆盖设备 mcp 路由，Grep/冻结头补录 kidpal_render_node 与 schedule_grid 回归面。相邻冻结锚非零：p1_cjk_name [S1] 的 font_puhui_14_1/14px 与 p1_home_battery 行带墨断言；处置 = acceptance-author 收紧型 supersede，line_h=22 与 preview 三态不重锚。〔升级项留痕 2026-10-29·acceptance-author 冻结轮〕①P0 链缺陷（blocker）：78 fork cbin writer 恒产 LV_FONT_FMT_TXT_LARGE=1 16 字节 glyph dsc 布局，host/device 两侧均按 LARGE=0 解读 → 字形度量垃圾（探针 '8' box=71x0 / '中' box=0x1）；P0 冻结件只钉返回码未钉度量合理性（假绿），P0 真机轮后置故未暴露；16px/20px 资产两半不可正确消费，P1 builder 动工前须先修（修复方向 architect 裁：全局开 LARGE 反伤 font_puhui_14_1 / 产线改产 LARGE=0（fork writer 面）/ host 解码器自解 LARGE=1 不解设备半）；本包 tooth 0b + PCN TEST 10 tooth 5 已钉自诊断红（P16 RED(P0-chain) / PCN RED(P0-chain)），P0 修复后转绿。②F-9 上游缺口：现网 producer 不往 name 写 ※ 前缀（临时性 flags bit0 在服务端、home 载荷剥 flags；v1.68 线框从未落地设备）；[U1] 钉「name 首字符 0x203B = 临时」为 firmware 消费半唯一零 wire 通道，上游写入侧（front/OpenClaw）须按约定落 ※ 前缀否则真机永不触发——producer 侧改动违反本包零 producer diff，升级 planner/human 裁路由（上游补写侧任务 or wire 改契约走 /arch-change or 需求面重裁）。③FAS-A8 反向评估结论 = P0 冻结件零修订（needle 在世、回落分支设计保绿）。④红基线：通道① 250 Tests / 4 Failures（p1_auxbar×3 存量 + P0-chain 在册红 PCN-A11），ELF_EXIT=0 零段错误；通道②语法实编 COMPILE_OK_EXIT_0；通道③（接线后 253 Tests 全量判读）待 builder step-0。⑤接线增量落盘 acceptance-wiring-patch.md 交 builder step-0（P0 先例延续）。"
 }

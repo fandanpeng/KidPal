@@ -35,6 +35,17 @@ typedef struct {
  */
 int kidpal_p1_font_glyph(uint32_t codepoint, kidpal_p1_glyph_t *out);
 
+/*
+ * [S7] 字面源缝（TaskPackage 261028-m6-k2a-p1-home-16px，P1 新增 / [F1]）：
+ * 返回 P0 统一句柄 seam [K4] 的 16px 正文档句柄 kidpal_font_body()——设备经
+ * kidpal_render_node_body_font() 透传、host 经 kidpal_font_body()，同源同值。
+ * 恒不崩；返回 NULL = 未实现/降级（[S1] 消费方回落到既有 14px 字面）。
+ * 前向声明 struct _lv_font_t（lv_font_t 同型）以免把 LVGL 头拉进本纯声明头
+ * ——home_p1.c 等零 LVGL 依赖消费方 include 本头不受影响。
+ */
+struct _lv_font_t;
+const struct _lv_font_t *kidpal_p1_font_face(void);
+
 #ifdef __cplusplus
 }
 #endif
