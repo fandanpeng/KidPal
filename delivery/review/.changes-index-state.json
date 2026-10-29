@@ -95,5 +95,9 @@
   "261029-gov-review-gov-loop-simplification": {
     "date": "2026-10-29",
     "mergedInMain": "yes"
+  },
+  "261029-gov-review-p9-script-hygiene-cluster": {
+    "date": "2026-10-29",
+    "mergedInMain": "yes"
   }
 }

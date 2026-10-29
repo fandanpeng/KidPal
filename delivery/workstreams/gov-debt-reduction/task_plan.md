@@ -147,7 +147,8 @@ changes:
 - **复证记录（2026-10-29 主线程实测，两落点均未消化）**：brief-inputs.mjs :220 裸 token ref 仍走「文件不在磁盘」分支、:224-225 整文件 advisory 逐条刷屏、:588-593 自检夹具与旧行为绑定；pod-events-aggregate.mjs :219-220 仅按 agent-escalation-resolved + refEventId 闭合，human-decision 自动闭合 / resolves 兼容映射 / 枚举与 payload 校验零承载。
 - **立项 ack（2026-10-29 human 两拍）**：① 批形态 = **一批两 T**；② pod-events 修法范围 = 核心 ①（human-decision 引用自动闭合 escalation）+ ②（actor 归属与关联字段 schema 收敛，refEventId 单一写法、resolves 兼容映射）+ 追加校验（事件类型枚举告警 + payload 必填校验，fail-open）；③④（MODEL-TIER 对账 / mainThreadUsage 排查）**另登记后排**（涉 cc-switch 代理改写等外部因素，排查型不进本卫生批）。brief-inputs 三条建议改法照条目全取。
 - **本批 = 首个 scripts author-implementation 新通道试点**（P8.5 立）；按 261029-gov-review-gov-loop-simplification 后的 direct-implementation 流程走（轻 PROPOSAL + manifest → 设计审 → architect 直接实施提交真实 commit → 真实 diff 审 → 升级闸 → 合并）。
-- changeId = `261029-gov-review-p9-script-hygiene-cluster`，architect 起草中。
+- changeId = `261029-gov-review-p9-script-hygiene-cluster`。
+- 2026-10-29 **全环闭环（新通道首例）**：DRAFT（104 行，manifest 4 件全 architect | ordinary）→ R1 设计审 **GREEN**（常规流程、无条件加强；1 SHOULD + 3 NIT 转实施义务）→ **FROZEN v0.1** → architect 直接实施提交 `9534d71f`（4 实现件 + 2 记账件 + 批记录 2 件；自检 49/49 + 12/12；真实包 260928 短前缀闭合 / 261011 散文提级保持 unresolved 负例；仓外反转验证有效）→ R2 真实 diff 审 **GREEN**（scope 8 件 ⊆ manifest、含两行记账件范围修正回审；消费方零破）→ 钉点 `fed74d1c`/tree `60dbe01f` → 升级闸 **PASS (kind=gov)** → ff 合本地 main `37308a4c`。**ARQ-261025 整条结项；ARQ-261014 范围内 ①② + 追加校验结项，③④ 排队（追注在条目）**。新通道试点观察：全程零 packet-bound 制品（无 landing-summary / verdict / retro / implementation-review.json），批记账两件因闸 scope 核验须入 manifest 是唯一流程摩擦点（main-thread 记账件需 architect manifest 预留）。
 
 ### 保持条件锁（4 条，不排波）
 
