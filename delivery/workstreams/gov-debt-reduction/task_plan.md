@@ -144,6 +144,10 @@ changes:
 ### P9 · 脚本卫生簇（2 条）
 
 - `ARQ-261025-brief-inputs-anchor-noise`（brief-inputs.mjs 锚解析降噪）+ `ARQ-261014-pod-events-booking-telemetry-fidelity`（pod-events schema/aggregate 一致性）。两条不同脚本，可一批两 T 或拆两小批。
+- **复证记录（2026-10-29 主线程实测，两落点均未消化）**：brief-inputs.mjs :220 裸 token ref 仍走「文件不在磁盘」分支、:224-225 整文件 advisory 逐条刷屏、:588-593 自检夹具与旧行为绑定；pod-events-aggregate.mjs :219-220 仅按 agent-escalation-resolved + refEventId 闭合，human-decision 自动闭合 / resolves 兼容映射 / 枚举与 payload 校验零承载。
+- **立项 ack（2026-10-29 human 两拍）**：① 批形态 = **一批两 T**；② pod-events 修法范围 = 核心 ①（human-decision 引用自动闭合 escalation）+ ②（actor 归属与关联字段 schema 收敛，refEventId 单一写法、resolves 兼容映射）+ 追加校验（事件类型枚举告警 + payload 必填校验，fail-open）；③④（MODEL-TIER 对账 / mainThreadUsage 排查）**另登记后排**（涉 cc-switch 代理改写等外部因素，排查型不进本卫生批）。brief-inputs 三条建议改法照条目全取。
+- **本批 = 首个 scripts author-implementation 新通道试点**（P8.5 立）；按 261029-gov-review-gov-loop-simplification 后的 direct-implementation 流程走（轻 PROPOSAL + manifest → 设计审 → architect 直接实施提交真实 commit → 真实 diff 审 → 升级闸 → 合并）。
+- changeId = `261029-gov-review-p9-script-hygiene-cluster`，architect 起草中。
 
 ### 保持条件锁（4 条，不排波）
 
