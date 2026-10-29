@@ -149,3 +149,48 @@ verdict: GREEN
 7. `lint-descriptions.mjs` 无 flagged；`route-regression-check.mjs --self-check` 为 104 ok / 0 fail。
 
 偏差：无 manifest 外出作者改动；`.codebase-memory/` 两件与既有 INDEX 工作树改动未 stage、未提交。
+
+## 10. 实现评审记录（architect-reviewer · 2026-10-29，append-only）
+
+### 范围核对
+
+`git diff --name-only main...9534d71f` = 8 件：非证据 6 件逐一对照 manifest 六行（brief-inputs.mjs / pod-events-aggregate.mjs / pod-events-append.mjs / planner.md / task_plan.md / ARQ-261014 追注），件件在册、无 manifest 外文件；PROPOSAL 与 events.jsonl 为批证据件。其后 `fed74d1c` 仅追加本批 PROPOSAL（+20 行）与 events.jsonl（+1 行）两件证据，无实现面变化。manifest 补两行主线程记账件的修正本身已回审：task_plan.md 追加的复证 / 立项 ack / 通道说明四行与 ARQ-261014 的「范围裁定追注」内容与 §8 设计审所引 human 两拍一致，归属标 main-thread、保护标 ordinary 如实——修正成立。
+
+### 逐项核验（R1 义务 + 冻结方案）
+
+- **S1（三处自检适配）**：亲核 diff——uiux 悬空 ref 断言改用 `kind === 'uiux-missing-ref'` + message 包含 + ①c 节段内负向排除 + 明细保留断言（brief-inputs.mjs:684-686）；②③档越界改 `kind === 'counterpart-out-of-scope'` + message 包含 + fail-loud 负向臂保留（:700-701）；story 未定位改 `kind === 'story-not-found'` + message 包含 + errors 为空断言保留（:810-812）。三处均保留原负向 / 定位判别力，未因结构化削弱。
+- **N1（symbolic 谓词 + 判别夹具）**：`isSymbolicRef` = 无 `\/#` 分隔符且末段不匹配 `\.[A-Za-z0-9_]+$`（brief-inputs.mjs:78-81），机器可判；夹具四件——`NFR-PRIV-1` + `ESP32-S3-RLCD-4.2-Demo`（点分 token 不误判）→ symbolic、`definitely-missing-P9.md` → 路径 missing、`firmware/main/mcp_server.cc` → bare-non-markdown warning、显式锚未定位 → anchor-not-found warning（:636-651）。反转抽验见下。
+- **N2（resolved 语义注记）**：已在实施记录（§9 pod-events-aggregate 条目）明写「由 resolution 事件条数改为至少一条有效闭合引用的 distinct escalation 数，跨周期 retro 数字不可按旧口径直接比较」。
+- **N3**：`dev-loop-operating-system.md` 不在 diff 文件清单，未触碰。
+- **T1 §3.1/§3.2**：symbolic 分类插在 story 特判后、查盘前（:238-241）；Markdown 整文件降 info（:252-254）、非 Markdown 裸路径保持 warning（:255-257）；真实 missing / 锚未定位保持 warning（:244/:269-271）；终端只打一行汇总（:855），brief 末尾⑥节保留逐条 level/kind/ref/message（:596-604）；JSON `advisories` 计数不变（:870）。
+- **T2 §4.1-4.3**：闭合来源 = `agent-escalation-resolved` + `human-decision`，`resolves` 作弃用别名，完整 eventId / 唯一短前缀均闭合，无匹配 / 非 escalation / 前缀不唯一只告警不闭合（pod-events-aggregate.mjs:259-281，reason 三值 no-match / not-an-escalation / ambiguous-prefix）；`resolved` = distinct Set 计数（:299）；缺引用告警只对 resolved 事件、human-decision 无引用不告警（:90-94）；`VALID_EVENT_TYPES` 从 append 导出复用（:17 + append :29），未知类型计入 eventsTotal 不进专项聚合，payload 必须非 null 非数组对象，空 `pod-closed` 合法、空 friction 仍归 `malformedFrictions`（:70-97）；`schemaWarnings` 带 eventId/eventType/code/message + stderr 诊断（:433-435）；`ok:true`、exit 0、CLI 既有参数不变。planner.md 约定块一条，钉 actor=human、完整 refEventId、不再写 resolves、不反推历史，覆盖实时记账与人批路径。
+
+### 自测亲跑
+
+1. `brief-inputs.mjs --self-check`：49/49 passed，SELF-CHECK GREEN（exit 0）。
+2. `pod-events-aggregate.mjs --self-check`：12/12 passed，SELF-CHECK GREEN（exit 0）。
+3. 三件脚本 `node --check` 全通过。
+4. 真实包 `260928-char-window-key-triggered-play`：`total=1 / resolved=1 / unresolved=[]`，`schemaWarningsTotal=0`——与验收 4 前半一致。
+5. 真实包 `261011-p1-home-v5-rework`：`total=3 / resolved=1 / unresolved=[fe6c3f46, 930257e5]`——两条散文提级保持未闭合，与验收 4 后半一致；`malformedFrictions=1`、旧 `merge-completed` 产生一条可定位 `unknown-event-type` 告警、`ok:true`、exit 0——与验收 5 一致。
+6. 真实包 brief dry-run（261011）：stderr 仅一行 `ADV summary — info=2 warning=4 kinds=missing-ref=4, whole-document=2`，markdown 含「⑥ 非阻断 advisory 明细」且逐条带 ref——终端降噪不丢明细。
+
+### 判别力反转抽验（仓外副本 C:/tmp/p9rev，未触仓内文件，验后已删）
+
+- 反转①：`isSymbolicRef` 恒 false 后自检变红——`① 裸符号与点分 token → symbolic，不落 missing` FAIL（48/49，SELF-CHECK RED），证明该夹具确实咬住分类逻辑。
+- 反转②：移除存量 `resolves` 回退映射后自检变红——闭合相关三条 FAIL（9/12，SELF-CHECK RED），证明 legacy 兼容路径与 distinct resolved 计数断言有判别力。
+
+### 消费方抽查
+
+- brief stderr ADV 行 / JSON 计数：全 `.claude` 面检索无任何 hook / 门 / 脚本解析 `brief-inputs: ADV` 行或该 JSON 的 advisories 计数；input-brief 消费方仍为 acceptance-author / builder 人读封闭输入面，新增⑥节不破封闭语义。
+- `escalations.resolved`：无机械消费方（retro-efficiency.mjs 不读 escalations），语义修正形状兼容；loop-retro 为人读消费，N2 注记已防跨周期误读。
+- `VALID_EVENT_TYPES` 导出：唯一新消费方 = 聚合器 import；append 的 CLI 导入护栏在（:134-136），import 无副作用；`journal-append.mjs` 同名闭集属 pod-journal 另一账本，不涉。
+- blocking 面：verify.mjs、前置升级闸、merge 链路均不消费本批三脚本的输出；diff 未触任何 blocking 判据文件。
+
+### 判档与 verdict
+
+维持常规流程，无条件加强——试点风险显现在实现评审面已核毕（diff ⊆ manifest、自检判别力、消费方不破），无评审争议、无核心合并 / 权限自改，不触发 landing-verifier 第二核验。实施记录与真实 diff 一致，无虚报。
+
+verdict: GREEN
+
+reviewedCommit: fed74d1c99f292daba807407abe8f9518f07e645
+reviewedTree: 60dbe01fc1d3899c4193a2eca2507f5c87c1536f
