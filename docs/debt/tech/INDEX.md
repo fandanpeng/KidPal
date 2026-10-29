@@ -7,13 +7,14 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 34（待拍板 1 / 待触发 28 / 已接受风险 5）；已结 27（归档索引见下）。
+**摘要**：未结 35（待拍板 2 / 待触发 28 / 已接受风险 5）；已结 27（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
+| [ARQ-261029-home-temp-marker-producer](ARQ-261029-home-temp-marker-producer.md) | MAJOR | F-9 首页临时事件下划线——上游写入侧从不往 name 落 ※ 前缀，[U1] 机制真机永不触发 | P1 包（261028-m6-k2a-p1-home-16px）acceptance-author 冻结轮跨端核对（2026-10-29） |
 
 ## 待触发（28）
 

@@ -20,3 +20,9 @@
 
 - **human 裁定（pod-events human-merge-gate-deferred）**：P0 不单独合并——P1（261028-m6-k2a-p1-home-16px）开发完成后真机看效果，P0+P1 一起合并；FAR-E3 真机轮随统一轮执行（P0 探针页 + P1 首页消费 16px 同轮观测）；P1 在 P0 已 commit 冻结面（dev/pod-m2 @ 789c0244）上开发，串行边成立。P0 board = verifier-green。
 - **P0 收尾态**：verify 第 4 轮 8 闸全绿；commit 789c0244（24 files）；supervisor-verdict ESCALATE（riskTier=high 申报升级）；pod-retro / review-packet / docs-delta / test-scope 落盘；回滚锚 = 9f8b2170。
+
+## 2026-10-29 · P1 验收冻结轮 + 两升级项
+
+- P1 验收：p1_home_16px.acceptance.c 新冻结（P16-A1..A3）+ p1_home_battery / p1_cjk_name 收紧型 supersede（REVISION LOG 在件）；FAS-A8 反向评估零触；红基线通道① 250/4（存量 3 + P0-chain 在册红）、通道②语法实编绿；接线增量 acceptance-wiring-patch.md 落盘待 builder step-0。
+- **升级①（blocker·P0 链缺陷）**：78 fork cbin writer 恒产 LARGE=1 glyph dsc 布局，host/device 两侧按 LARGE=0 解读 → 字形度量垃圾；P0 冻结件假绿（只钉返回码）；修复方向待 architect 裁（详见 P1 taskpackage notes①）。
+- **升级②（F-9 上游缺口）**：现网 producer 不写 ※ 前缀进 name，[U1] 真机永不触发风险；路由待 human 裁（上游写入侧任务 / wire 契约变更 / 需求重裁）。

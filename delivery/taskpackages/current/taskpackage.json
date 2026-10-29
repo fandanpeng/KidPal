@@ -173,7 +173,8 @@
     "firmware/main/test/host_app/main/CMakeLists.txt",
     "firmware/main/test/host_app/main/host_infra_seam.c",
     "firmware/main/test/font_assets_runtime.acceptance.c",
-    "docs/decisions/ADR.md"
+    "docs/decisions/ADR.md",
+    "firmware/main/test/host_app/sdkconfig.defaults"
   ],
   "deliveryImpact": "milestone-affecting",
   "planningImpact": "attach-existing",
@@ -193,49 +194,65 @@
     {
       "decision": "F-5 · assets .bin + cbin 运行时装载 + 编译内 14px 兜底",
       "summary": "新字体不编入固件；资产缺失或装载失败必须可开机、不黑屏。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"
+      ],
       "landsIn": "exitCriteria:FAR-E2"
     },
     {
       "decision": "F-6 / OQ1 · 20px 标题全量 CJK，缺字回退 16px，不做静态子集",
       "summary": "资产生产侧必须产全量 20px；标题消费侧回退由 P3 复证。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"
+      ],
       "landsIn": "exitCriteria:FAR-E1"
     },
     {
       "decision": "F-7 · host 与设备共用同一枚 .bin",
       "summary": "host 编入 cbin 装载面并读取设备同文件，收掉字体数据双源。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7"
+      ],
       "landsIn": "exitCriteria:FAR-E2"
     },
     {
       "decision": "OQ3 · 九档实验页与测试字体维持编入",
       "summary": "探针可复用，本批不退役实验页或测试字体。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3"
+      ],
       "landsIn": "exitCriteria:FAR-E3"
     },
     {
       "decision": "业务目的 6 · 架构表述与实现对齐及精确尺寸回填",
       "summary": "架构换代已 landed；P0 只补实测尺寸和证据，不重写已冻结路线。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的6"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§1-目的6"
+      ],
       "landsIn": "exitCriteria:FAR-E5"
     },
     {
       "decision": "F-1 · 首页 16px 消费",
       "summary": "运行时底座在本包建立，首页排版与重基线归 P1。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
       "landsIn": "package:261028-m6-k2a-p1-home-16px"
     },
     {
       "decision": "F-1 · 课表 16px 消费",
       "summary": "运行时底座在本包建立，课表排版、容量与标记归 P2。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
       "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
     },
     {
       "decision": "F-1/F-4 · 故事列表与阅读排版消费",
       "summary": "运行时底座在本包建立，故事两态排版及终端真机轮归 P3。",
-      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "sourceRefs": [
+        "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"
+      ],
       "landsIn": "package:261028-m6-k3-p3-story-typography"
     }
   ],
@@ -253,5 +270,5 @@
       "note": "P0 先建立运行时通路，P1 后切首页消费；两包不得并行改 kidpal_render_node.cc/host_infra_seam.c，P1 在 P0 合并后的冻结面上重基线。"
     }
   ],
-  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。〔裁定留痕 2026-10-28〕① 验收测试运行时禁扫源码树、禁影子树镜像拷贝 = human 对本包的定向裁定（首例，非仓库通用规则变化；既有树扫形态冻结件如 p1_cjk_name 不在本包范围）——结构面断言改为 FAS-MANIFEST 机制：host CMakeLists configure 期采集结构事实写构建产物 fas_structure_manifest.txt，冻结验收件运行时只读该构建产物，被扫源文件全登记 CMAKE_CONFIGURE_DEPENDS 保新鲜度。② host_app/main/CMakeLists.txt 接线（acceptance-author 被 enforce-scope 拦）= human 裁定 builder step-0 逐字落线（补丁文本 = acceptance-wiring-patch.md），落线后立刻现跑红基线并逐字回报，确认 == 设计态红才准动实现。③〔step-0 阻塞裁定 2026-10-28〕builder step-0 挖出冻结验收两处结构性矛盾并停手：矛盾 A = 标准 lv_font_conv 1.5.2 `--format bin` 产通用 bin，cbin 格式只存在于 78 的 lv_font_conv fork——gen_fonts.sh 现产线不可达 FAR-E2 的 cbin 装载；矛盾 B = cbin_font_create 是 32-bit lv_font_t 内存镜像直读（dsc@24），64-bit aarch64 host（dsc@40）必崩，而冻结件 TEST 2 直调 cbin_font_create，任何 builder 实现都无法使其转绿。human 双裁：provenance = 换 78 fork（--format cbin，版本钉死登记）；host 半 = acceptance-author 预基线修正（红基线未成立，非 supersede）——host 侧去直调、改走 kidpal_font 编译期 host 分支的宽度感知解码器（同一枚 .bin、F-7 同源意图不变），设备面仍 cbin_font_create、解码等价性归真机轮；F-5 核心语义（mount/降级/缺字回退）保住 host 行为级覆盖；裁定留痕 = 本 notes + retro，不重开 /arch-change。④〔合并门后置裁定 2026-10-29〕supervisor 机械闸 ESCALATE（riskTier=high）后 human 裁定：P0 不单独合并——P1（k2a）开发完成后真机看效果，P0+P1 一起合并；FAR-E3 真机轮随该统一轮执行（P0 证据 = 探针页 + P1 首页消费 16px 同轮观测）；P1 在 P0 已 commit 冻结面（dev/pod-m2 @ 789c0244）上开发，串行边成立；留痕 = pod-events human-merge-gate-deferred 事件。"
+  "notes": "spike-first 是硬边界：P0 未以消费端真机证据收口前，P1/P2/P3 不得 launch。影响面机械辅证：图索引 C-AI-KidPal-pod-m2 确认 LvglCBinFont、Assets::GetAssetData、home/schedule/story 渲染符号与 host seam 在册；Assets::GetAssetData inbound=6，字体生产消费需新增而非追述旧三枚已接线。相邻冻结锚：p1_cjk_name 钉 font_puhui_14_1/host seam，P0 不得全局替换 14px 或预批 P1 supersede；schedule/story 常量本包零触。PROPOSAL §6 三项旧改动当前不在工作树，launch prep 仍须复核，不混入本包。〔裁定留痕 2026-10-28〕① 验收测试运行时禁扫源码树、禁影子树镜像拷贝 = human 对本包的定向裁定（首例，非仓库通用规则变化；既有树扫形态冻结件如 p1_cjk_name 不在本包范围）——结构面断言改为 FAS-MANIFEST 机制：host CMakeLists configure 期采集结构事实写构建产物 fas_structure_manifest.txt，冻结验收件运行时只读该构建产物，被扫源文件全登记 CMAKE_CONFIGURE_DEPENDS 保新鲜度。② host_app/main/CMakeLists.txt 接线（acceptance-author 被 enforce-scope 拦）= human 裁定 builder step-0 逐字落线（补丁文本 = acceptance-wiring-patch.md），落线后立刻现跑红基线并逐字回报，确认 == 设计态红才准动实现。③〔step-0 阻塞裁定 2026-10-28〕builder step-0 挖出冻结验收两处结构性矛盾并停手：矛盾 A = 标准 lv_font_conv 1.5.2 `--format bin` 产通用 bin，cbin 格式只存在于 78 的 lv_font_conv fork——gen_fonts.sh 现产线不可达 FAR-E2 的 cbin 装载；矛盾 B = cbin_font_create 是 32-bit lv_font_t 内存镜像直读（dsc@24），64-bit aarch64 host（dsc@40）必崩，而冻结件 TEST 2 直调 cbin_font_create，任何 builder 实现都无法使其转绿。human 双裁：provenance = 换 78 fork（--format cbin，版本钉死登记）；host 半 = acceptance-author 预基线修正（红基线未成立，非 supersede）——host 侧去直调、改走 kidpal_font 编译期 host 分支的宽度感知解码器（同一枚 .bin、F-7 同源意图不变），设备面仍 cbin_font_create、解码等价性归真机轮；F-5 核心语义（mount/降级/缺字回退）保住 host 行为级覆盖；裁定留痕 = 本 notes + retro，不重开 /arch-change。④〔合并门后置裁定 2026-10-29〕supervisor 机械闸 ESCALATE（riskTier=high）后 human 裁定：P0 不单独合并——P1（k2a）开发完成后真机看效果，P0+P1 一起合并；FAR-E3 真机轮随该统一轮执行（P0 证据 = 探针页 + P1 首页消费 16px 同轮观测）；P1 在 P0 已 commit 冻结面（dev/pod-m2 @ 789c0244）上开发，串行边成立；留痕 = pod-events human-merge-gate-deferred 事件。〔P0-chain fixer 轮授权 2026-10-29〕acceptance-author 冻结轮实测 + architect advisory（子 agent 回报留痕）：缺陷实况修正为 host 单侧错配——设备 sdkconfig.defaults:57 CONFIG_LV_FONT_FMT_TXT_LARGE=y（P0 时点在案），host_app sdkconfig:665 not set，而 78 fork cbin writer 恒产 LARGE=1 16 字节 glyph dsc 布局 → host 解读错位度量垃圾（'8' box=71x0 adv=0）。裁法 = 仅 host 开 LARGE（sdkconfig.defaults 一行 + 完整重编 host；font_puhui_14_1 指定初始化器自动重排无需重产；vendored font_puhui_common_30_4 走设备 LARGE=1 生态零波及）；(b) 改 writer 与设备生态逆行、(c) 双口径转换拒绝。manifest 扩单（上列 sdkconfig.defaults）；P0 FAS-A2 additive 齿 1b/2b 已由 acceptance-author 落（tighten-only + REVISION LOG）；P1 自诊断红（P16 tooth 0b / PCN tooth 5）文字已按「host 单侧错配已证实 / 设备待真机」更正。P0 既有绿证据与 retro 不改写——假绿根因与修复证据以本轮追加。"
 }

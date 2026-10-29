@@ -80,6 +80,30 @@
  * ---------------------------------------------------------------------------
  *
  * ===========================================================================
+ * REVISION LOG (acceptance-author only; tighten-only discipline):
+ *   2026-10-28  initial freeze + 预基线修正（见上「预基线修正」段, human 双裁）。
+ *   2026-10-29  P0-chain 修复批 additive（planner 派发; 授权 = 本轮 P0-chain 修复
+ *               批 + architect advisory 2026-10-29; tighten-only, FAS-A1..A8 既有
+ *               语义零改）: TEST 2 新增 tooth 1b/2b——fas_assert_glyph_sane 字形
+ *               度量合理性断言（'8'/0x38、'中'/0x4E2D、body 另加 '猬'/0x732C;
+ *               box ∈ [4..64]、adv ∈ [1..64] px, 公共 dsc 已像素尺度化）, 封堵
+ *               「dsc 返回 true 即绿」假绿面。根因 = 78 fork cbin writer
+ *               （lv_table_glyf.js toCBin）恒产 LV_FONT_FMT_TXT_LARGE=1 16 字节
+ *               glyph dsc 布局 vs host 构建 LARGE=0（host_app sdkconfig :665 not
+ *               set）→ 误读垃圾（冻结时点 scratch 探针实测 '8' box=71x0 / '中'
+ *               box=0x1, line_height=23 正常; device sdkconfig.defaults:57
+ *               LARGE=y 在案 = host 单侧错配, 设备真机消费验证归 FAR-E3）。
+ *               修复归属 = P0 fixer 轮（仅 host 开 CONFIG_LV_FONT_FMT_TXT_LARGE;
+ *               font_puhui_14_1 指定初始化器自动重排无需重产; A11 独立参考解码器
+ *               按字段名取值不受布局步长影响, tooth 1-4 原样绿——architect
+ *               advisory 结论）。预期红判读: 修复前现跑 tooth 1b 首断言即红
+ *               （红名 FAS-A2 RED(P0-chain): ... box=71x0 ...）, tooth 2b 同 CASE
+ *               被 abort 屏蔽解析性必红; 修复后两 tooth 转绿。红基线留痕 =
+ *               261028-m6-k2a-p1-home-16px acceptance-author 交付报告 §C（250
+ *               Tests / 4 Failures 实测, 红名逐字在案）。
+ * ---------------------------------------------------------------------------
+ *
+ * ===========================================================================
  * Seam contract pinned by this file（builder implements；强定义 =
  * firmware/main/display/kidpal_font.{h,cc}——changeManifest 在册。本文件 weak
  * 哨兵在实现接线进 host runner 后被强定义覆盖，多重 weak 合法（p1_cjk_name
@@ -155,6 +179,11 @@
  *        20px∈[26..36]；builder 若换源 TTF 致越档 = fixture 对齐协商（走 planner），
  *        不静默放宽。覆盖下界依据（cmap 覆盖码点总和，LVGL 9 无 glyph_cnt 字段）：GB2312 一级 3755 字，现役 30px 静态子集
  *        标题（~100 字）远低于 3000——「不做静态子集」的源无关判别面。
+ *        **2026-10-29 P0-chain 修复批 additive（REVISION LOG 同日条）**：TEST 2
+ *        tooth 1b/2b 字形度量合理性断言（fas_assert_glyph_sane——'8'/'中'/'猬'
+ *        canary box/adv 合理域 [4..64]/[1..64]）封堵「dsc 返回 true 即绿」的假绿
+ *        面（冻结时点缺陷在世实测：垃圾度量互等曾使既有齿假绿）；授权 = 本轮
+ *        P0-chain 修复批，tighten-only、FAS-A1..A8 既有语义零改。
  *   FAS-A3（FAR-E2/F-7 统一句柄 mount 正常态）
  *     -> TEST 3 承载：行为级（fonts_root 直读 reader 注入 -> body/title 真资产句柄、
  *        非 14px、尺寸档正确、glyph 可查）。
@@ -241,6 +270,18 @@
  *      事实 0 含 format_cbin/no_cbin_font 负向键 + 资产未产 + seam 未实现 = 解析性
  *      红，weak 哨兵在世）；TEST 7/8 = canary 恒绿（现状即真，证明清单面在世）。
  *      builder 落 BUILDER DUTY 后 TEST 1-6 转绿；TEST 7/8 恒绿。
+ *      2026-10-29 P0-chain 追记（acceptance-author 红基线现跑留痕; 250 Tests /
+ *      4 Failures 实测）: 本包交付态全绿（TEST 1-8 落地后基线 = 250/3 auxbar 存量）。
+ *      **新增在册红（升级项, 非 P0 fixer 轮前可修面）**: TEST 2 tooth 1b/2b =
+ *      FAS-A2 RED(P0-chain)——78 fork cbin writer 恒产 LV_FONT_FMT_TXT_LARGE=1
+ *      16 字节 glyph dsc 布局 vs host 构建 LARGE=0（host_app sdkconfig :665 not
+ *      set; 设备 sdkconfig.defaults:57 LARGE=y 在案 = host 单侧错配, architect
+ *      advisory 2026-10-29）→ 字形度量垃圾（scratch 探针实测 '8' box=71x0 /
+ *      '中' box=0x1, line_height=23 正常）。修复 = 仅 host 开
+ *      CONFIG_LV_FONT_FMT_TXT_LARGE（host_app/sdkconfig.defaults + 完整重编；
+ *      font_puhui_14_1 指定初始化器自动重排无需重产；A11 独立参考解码器按字段
+ *      名取值不受布局步长影响, tooth 1-4 原样绿）——归属 P0 fixer 轮。修复后
+ *      tooth 1b/2b 转绿。
  * --------------------------------------------------------------------------- */
 
 #include <unity.h>
@@ -632,6 +673,45 @@ static const uint32_t fas_cjk_common[] = {
     0x94A2u, /* 钢 */ 0x7434u, /* 琴 */ 0x8BFEu, /* 课 */ 0x4E2Du, /* 中 */
 };
 
+/* 2026-10-29 P0-chain 修复批 additive（REVISION LOG 同日条；授权 = 本轮 P0-chain
+ * 修复批，architect advisory 裁定 host 单侧 LARGE 错配归属 P0 fixer 轮）：
+ * 字形度量合理性区间——cbin 装载后 glyph dsc 必须给出非垃圾盒度量（16px/20px
+ * CJK box 4..64、ASCII 数字/冒号 box 4..64、adv 1..64 px；缺 assets 装载的
+ * 编译内 14px 字体同域）。冻结时点缺陷在世实测红值：'8' box=71x0 adv=0（71>64）、
+ * '中' box=0x1（0<4）——LARGE=1 16 字节 glyph dsc 表被 host LARGE=0 构建按 8 字节
+ * 误读的错位读数；修复（host 开 CONFIG_LV_FONT_FMT_TXT_LARGE）后转绿。 */
+#define FAS_GLYPH_BOX_MIN 4
+#define FAS_GLYPH_BOX_MAX 64
+#define FAS_GLYPH_ADV_MIN 1
+#define FAS_GLYPH_ADV_MAX 64
+
+static void fas_assert_glyph_sane(const lv_font_t *font, uint32_t cp,
+                                  const char *what)
+{
+    lv_font_glyph_dsc_t g;
+    int ok = lv_font_get_glyph_dsc(font, &g, cp, 0);
+
+    TEST_ASSERT_TRUE_MESSAGE(ok,
+        fas_fm("FAS-A2 RED(P0-chain): %s 码点 U+%04X glyph dsc 查询失败——cbin "
+               "glyph dsc 表不可读（host LV_FONT_FMT_TXT_LARGE=0 vs 78 fork cbin "
+               "writer 恒产 LARGE=1 16 字节布局错配; 修复批归属 P0 fixer 轮）",
+               what, cp));
+    TEST_ASSERT_TRUE_MESSAGE(g.box_w >= FAS_GLYPH_BOX_MIN &&
+                                 g.box_w <= FAS_GLYPH_BOX_MAX &&
+                                 g.box_h >= FAS_GLYPH_BOX_MIN &&
+                                 g.box_h <= FAS_GLYPH_BOX_MAX &&
+                                 g.adv_w >= FAS_GLYPH_ADV_MIN &&
+                                 g.adv_w <= FAS_GLYPH_ADV_MAX,
+        fas_fm("FAS-A2 RED(P0-chain): %s 码点 U+%04X 字形度量垃圾（box=%dx%d "
+               "adv=%d 越出合理域 [%d..%d]/[%d..%d]）——glyph dsc 布局与消费侧 "
+               "LVGL LV_FONT_FMT_TXT_LARGE 构建旗不匹配（host 错配已证实: host "
+               "sdkconfig not set vs 78 fork writer 恒产 LARGE=1; 设备 "
+               "sdkconfig.defaults:57 LARGE=y 在案、真机消费验证归 FAR-E3）。"
+               "修复批归属 P0 fixer 轮，非本包设计态", what, cp, (int)g.box_w,
+               (int)g.box_h, (int)g.adv_w, FAS_GLYPH_BOX_MIN, FAS_GLYPH_BOX_MAX,
+               FAS_GLYPH_ADV_MIN, FAS_GLYPH_ADV_MAX));
+}
+
 static void fas_assert_full_font(const lv_font_t *font, int lh_min, int lh_max,
                                  uint32_t cov_min, const char *what)
 {
@@ -714,6 +794,9 @@ TEST_CASE("font assets: 产线扩产与资产落盘 (FAS-A1)",
  *            常用字。
  *   tooth 2: font_title_20.bin 同构（20 档 + cmap 覆盖 >= 3000）。
  *   tooth 3: 尺寸判别——title.line_height > body.line_height（20px 严格大于 16px）。
+ *   tooth 1b/2b (2026-10-29 P0-chain 修复批 additive): 字形度量合理性——'8'/'中'
+ *            （+'猬'）glyph dsc box/adv 落合理域（fas_assert_glyph_sane）；缺陷
+ *            在世 = 红（P0-chain 红名），host 开 LARGE 修复后转绿（fixer 轮收口）。
  *   预基线修正留痕：原 tooth 0（旧 font_body.bin 经 cbin_font_create 装载作线束
  *            自证）删除——legacy bin = 旧 SPIFFS 通用格式非 cbin（首 4 字节
  *            0x30+'head'），不能当 cbin 基座；且任意非 cbin 字节进解码器属崩溃
@@ -747,6 +830,15 @@ TEST_CASE("font assets: 两枚新bin真cbin装载+1bpp+尺寸档+全量覆盖 (F
                    FAS_ASSET_BODY_16, fas_cjk_canary[i]));
     }
 
+    /* tooth 1b (2026-10-29 P0-chain 修复批 additive, REVISION LOG 同日条): 字形
+     * 度量合理性——cbin glyph dsc 布局与消费侧 LV_FONT_FMT_TXT_LARGE 构建旗
+     * 匹配性（ASCII '8' = 冻结时点实测垃圾读数首个码点 box=71x0 / CJK '中'
+     * box=0x1 / GB2312 二级 '猬'）。缺陷在世 = 红（红名 P16 同源指认 P0-chain），
+     * host 开 LARGE 修复后转绿（fixer 轮收口）。 */
+    fas_assert_glyph_sane(body, 0x0038u /* '8' */, FAS_ASSET_BODY_16);
+    fas_assert_glyph_sane(body, 0x4E2Du /* 中 */, FAS_ASSET_BODY_16);
+    fas_assert_glyph_sane(body, 0x732Cu /* 猬 */, FAS_ASSET_BODY_16);
+
     /* tooth 2: 20px 阅读标题真装载 + 全量覆盖。 */
     snprintf(rel, sizeof(rel), "%s/" FAS_ASSET_TITLE_20, FAS_FONTS_ROOT);
     TEST_ASSERT_TRUE_MESSAGE(fas_exists(rel),
@@ -754,6 +846,9 @@ TEST_CASE("font assets: 两枚新bin真cbin装载+1bpp+尺寸档+全量覆盖 (F
     title = fas_load_cbin_file(rel);
     fas_assert_full_font(title, FAS_LH20_MIN, FAS_LH20_MAX,
                          FAS_COV_TITLE20_MIN, FAS_ASSET_TITLE_20);
+    /* tooth 2b (additive 同 tooth 1b): title20 同款度量合理性。 */
+    fas_assert_glyph_sane(title, 0x0038u /* '8' */, FAS_ASSET_TITLE_20);
+    fas_assert_glyph_sane(title, 0x4E2Du /* 中 */, FAS_ASSET_TITLE_20);
 
     /* tooth 3: 尺寸判别（标定假设源无关的严格序）。 */
     TEST_ASSERT_TRUE_MESSAGE(title->line_height > body->line_height,
