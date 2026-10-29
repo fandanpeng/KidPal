@@ -163,8 +163,11 @@
         "docs/requirements.md",
         "docs/architecture.md",
         "docs/contracts/**",
+        "docs/glossary.md",
+        "docs/templates/**",
         "delivery/review/*arch-review-*/**",
         "delivery/review/*gov-review-*/**",
+        ".claude/route-fixtures/**",
         ".claude/agents/**",
         ".claude/commands/**",
         ".claude/references/**",
@@ -256,11 +259,13 @@
     },
     "architect-reviewer": {
       "allow": [
-        "delivery/review/*arch-review-*/**",
-        "delivery/review/*gov-review-*/**"
+        "delivery/review/*arch-review-*/PROPOSAL.md",
+        "delivery/review/*gov-review-*/PROPOSAL.md",
+        "delivery/review/*arch-review-*/implementation-review.json",
+        "delivery/review/*gov-review-*/implementation-review.json"
       ],
       "deny": [
-        "**"
+        "delivery/review/**/implementation-verification.json"
       ]
     },
     "uiux-author": {

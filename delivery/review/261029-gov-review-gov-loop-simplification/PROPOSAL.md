@@ -334,3 +334,9 @@ verdict: GREEN
 - 三个改动脚本 `node --check` 全部通过；`git diff --check` 无格式错误（仅既有 Windows CRLF 提示）。
 
 范围偏差：无。保护面、scope-map、INDEX/state、events.jsonl 与 `.codebase-memory/**` 均未由作者修改或纳入实现提交。真实本批 CLI 在实现 commit 后先作评审前预演；最终 GREEN 预演仍须 reviewer 钉点及 main-thread 保护面齐备后复跑。
+
+### 保护面实施与复核 - 2026-10-29 - main-thread
+
+按 FROZEN §9 的实施归属，主线程完成 `.claude/agents/architect.md`、`architect-reviewer.md`、`landing-verifier.md`、`review-moderator.md`、`AGENTS.md` 与 `docs/DEV-GOVERNANCE.md` 的治理面投影：治理面采用轻设计、作者实施、真实 diff 审和条件加强，架构+契约面及旧批规则保留。scope-map 的 reviewer 窄写槽和 architect 普通文件写槽按 human 授权与设计预开放，未开放指令根、自身定义或独立验证凭据。
+
+主线程复跑结果：`route-regression-check --self-check` 104 ok / 0 fail；`lint-descriptions` 扫描 16、flagged 0；`enforce-scope --self-check` 全绿；前置升级闸 117/117、changes-index 57/57；`git diff --check` 无格式错误。以上为保护面实施证据，不替代 reviewer 的最终真实 diff 评审与第二独立核验。

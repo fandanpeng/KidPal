@@ -11,6 +11,7 @@
 
 | changeId | 日期 | 状态 | 已合main |
 |---|---|---|---|
+| [261029-gov-review-gov-loop-simplification](261029-gov-review-gov-loop-simplification/) | 2026-10-29 | frozen | — |
 | [261028-gov-review-author-implementation-lane](261028-gov-review-author-implementation-lane/) | 2026-10-28 | landed | yes |
 | [261028-gov-review-p8-gate-semantics-cluster](261028-gov-review-p8-gate-semantics-cluster/) | 2026-10-28 | landed | yes |
 | [261027-gov-review-draft-cost-relief](261027-gov-review-draft-cost-relief/) | 2026-10-27 | landed | yes |
