@@ -180,6 +180,16 @@ REVISION LOG
     - 理由：旧 live 门以 handoff 交班文档冒充证据、且仅 token 命中即绿，丧失判别力（零真实
       执行也过）。收紧后 live-evidence.md 缺位 / 非逐段执行证据 → 设计态红。仅改这两条 live
       测试与 REVISION LOG，host 25 条零改动、未改实现。
+  · R3（2026-10-31，planner 授权收紧型更正，据 integrator 实测「证据无占位词 → 测试自身
+    AttributeError 崩」为据）：
+    - 旧形态：`_require()` 用 `self.assertIsNone(ph, f"… {ph.group(0)!r} …")`——assertIsNone
+      的消息实参在调用前即被求值，`ph is None`（无占位词的正常态）时 `ph.group(0)` 抛
+      `AttributeError: 'NoneType' object has no attribute 'group'`，表现为 `2 failed` 但根因
+      是**测试自身崩溃**而非内容断言。
+    - 新形态：改 `if ph: self.fail(f"… {ph.group(0)!r} …")`（惰性求值，仅真命中才取 group）；
+      全件同型 `assertIsNone/assertIsNotNone(x, f"…{x.group()}…")` 已复查——仅此一处存在该
+      求值缺陷（另两处 x 为 `bad`/`bad2` 且消息未引用 group，无此问题）。
+    - 理由：断言消息不得在被测条件为「通过态」时抛异常，否则绿态被判成崩溃红。
 """
 
 from __future__ import annotations
@@ -1023,10 +1033,10 @@ class CronTriggerGatingLiveAcceptance(unittest.TestCase):
         body = _read_text(LIVE_EVIDENCE)
         self.assertTrue(body.strip(), f"{tag} live RED: {LIVE_EVIDENCE} 为空。")
         ph = _LIVE_PLACEHOLDER_RE.search(body)
-        self.assertIsNone(
-            ph,
-            f"{tag} live RED: live-evidence.md 含计划性占位措辞 {ph.group(0)!r} —— 不得以 "
-            "handoff 的计划/交班措辞冒充真实执行证据。")
+        if ph:
+            self.fail(
+                f"{tag} live RED: live-evidence.md 含计划性占位措辞 {ph.group(0)!r} —— "
+                "不得以 handoff 的计划/交班措辞冒充真实执行证据。")
         handoff = LIVE_DIR / "live-handoff.md"
         if handoff.is_file():
             self.assertNotEqual(
