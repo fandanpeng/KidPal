@@ -285,8 +285,10 @@ openclaw cron list   # 期望新增一条 kidpal-schedule-health（agent 型 mai
 cd /opt/kidpal/deploy-clone && git pull && bash server/deploy/deploy.sh
 # ② 预演：只打印将执行的 openclaw cron edit 命令
 /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py apply --dry-run
-# ③ 真加 trigger（两条 job；--trigger-script 内联薄壳文本，once=false）
+# ③ 真加 trigger（两条 job；--trigger-script 传盘上薄壳文件路径，CLI 自己读取并内联，once=false）
 /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py apply
+#    排障：若报 ENOENT 且路径像 JS 源码开头（open '// KidPal …'），即参数被当成路径打开——
+#    说明用的是旧版 cron_triggers.py（把文件内容当参数传），重铺 /opt/kidpal/openclaw-patch/cron_triggers.py 后重跑。
 # ④ 核验：内联文本 == 盘上文件、once 非 true
 /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py status
 openclaw cron show kidpal-reminder-semantic --json | grep -E '"trigger"|"once"'
