@@ -52,6 +52,14 @@
  *       host 强符号 = host_infra_seam.c：lv_font_source_han_sans_sc_14_cjk 子集同款
  *       方案 B 改造（官方解码 + A8 + 阈值 128）。阈值语义等价性（本文件期望零偏移的
  *       依据）：A8@128 ≡ A4@8 ≡ A2@2 ≡ A1@1（全部 = 50% 覆盖阈值），逐齿期望不变。
+ *       ── 2026-10-29 P1 16px 重基线注记（TaskPackage 261028-m6-k2a-p1-home-16px;
+ *       授权链见文件尾 REVISION LOG 同日条）── [S1] **签名/字形语义零改**（1bpp
+ *       行主序 MSB 先行、stride=(w+7)/8、盒上限、有效期），但**字面源升级**：两强
+ *       符号的字形获取改「[S7] kidpal_p1_font_face()（P0 统一句柄 16px body）取字面
+ *       + NULL 回落本节既有 14px 字面」（设备回落 font_puhui_14_1 / 宿主回落
+ *       source_han 子集——回落分支保留 = 缺 assets 仍走 P0 的 14px 降级 + P0 FAS-A7
+ *       render_node_puhui14 canary 不破）。[S7] 契约全文 = 新冻结件
+ *       p1_home_16px.acceptance.c 头注 [F1] 节（本包 acceptance-author 唯一写点）。
  *
  *   [S2] home_p1.c 内（主轮已落，本轮重钉落位）：UTF-8 解码（纯逻辑）+ 文字行逐字形
  *        blit（复用既有钉区 clip / 固定起笔纪律）。**行内时间 = [S1] seam ASCII 字形**
@@ -1702,6 +1710,10 @@ TEST_CASE("P1CJK bounds: 满载不越卡区+换行行为 (P1CJK-A10)",
 
 #include "lvgl.h"
 
+/* 2026-10-29 P1 16px 重基线（REVISION LOG 同日条）：tooth 5 对比基准句柄来自 P0
+ * 统一句柄 seam [K4]（kidpal_font.cc 强定义在 host runner 在世）。 */
+#include "../display/kidpal_font.h"
+
 /* [S6] 追加 seam weak 哨兵（强定义 = host_infra_seam.c; 多重 weak 合法, [S1] 先例）。
  * out 参数类型与 kidpal_p1_glyph_t ABI 逐字段一致（同 [S1] 的 pcn_glyph_t 先例）。 */
 __attribute__((weak)) int kidpal_p1_font_glyph_for_font(const lv_font_t *font,
@@ -1734,6 +1746,15 @@ static const uint32_t pcn_a11_dev_cps[] = {
  * 在场码点取材, 防样本缺场假红）。 */
 static const uint32_t pcn_a11_host_cps[] = {
     0x0038u, /* '8' */ 0x0057u, /* 'W' */ 0x003Au, /* ':' */ 0x6CF3u, /* 泳 */
+    0x6625u, /* 春 */ 0x4F53u, /* 体 */ 0x80B2u, /* 育 */ 0x7A0Bu, /* 程 */
+};
+
+/* tooth 5（[S1]×[S6] 同构, 2026-10-29 重基线）探针集 = host 子集 ∩ puhui14 兜底面
+ * （泳 不在 puhui14——退掉）：七码点在旧 source_han 字面（未切态）、puhui14 兜底
+ * 态、16px 全量资产态三个字面下全部在场——本齿设计态红 = 度量不一致（判别器），
+ * 绝不以「码点缺场」偶然红冒充（RED baseline 判读口径 2026-10-29 条）。 */
+static const uint32_t pcn_a11_t5_cps[] = {
+    0x0038u, /* '8' */ 0x0057u, /* 'W' */ 0x003Au, /* ':' */
     0x6625u, /* 春 */ 0x4F53u, /* 体 */ 0x80B2u, /* 育 */ 0x7A0Bu, /* 程 */
 };
 
@@ -2021,22 +2042,43 @@ TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A
                    cp, mmx, mmy, ref.w, ref.h));
     }
 
-    /* ---- tooth 5 ([S1]×[S6] 同构一致性): 共享核心义务的行为承载 ---- */
-    for (i = 0; i < sizeof(pcn_a11_host_cps) / sizeof(pcn_a11_host_cps[0]); i++) {
-        uint32_t cp = pcn_a11_host_cps[i];
+    /* ---- tooth 5 ([S1]×[S6] 同构一致性): 共享核心义务的行为承载 ----
+     * 2026-10-29 P1 16px 重基线（TaskPackage 261028-m6-k2a-p1-home-16px, 授权链
+     * 见文件尾 REVISION LOG 同日条）: [S1] 字面源随 [F1]/[S7]（新冻结件
+     * p1_home_16px.acceptance.c 头注）切 P0 统一句柄 kidpal_font_body()（16px
+     * 资产 / 缺 assets 回落 font_puhui_14_1——句柄语义, 非本文件旧 host_font 字面）。
+     * 本齿对比基准同步改 kidpal_font_body()——[S1] 与 [S6] 消费同一枚 lv_font_t 的
+     * 共享核心义务判别面保持, 且 mount 态无关（两入口同取 body()）。探针集改
+     * pcn_a11_t5_cps（七码点 = host 子集 ∩ puhui14 兜底面 ∩ 16px 全量面三字面态
+     * 全在场——「泳」不在 puhui14 兜底面故退出; 本齿设计态红 = 度量不一致判别器,
+     * 不以码点缺场偶然红冒充）。旧 host_font 对比
+     * （[S1] 未切时 [S1]=source_han 14px vs [S6](body16)）= 设计态红。 */
+    for (i = 0; i < sizeof(pcn_a11_t5_cps) / sizeof(pcn_a11_t5_cps[0]); i++) {
+        uint32_t cp = pcn_a11_t5_cps[i];
+        const lv_font_t *face5 = kidpal_font_body();
         int stride, rc, b, total, mm = -1;
 
+        TEST_ASSERT_TRUE_MESSAGE(face5 != NULL,
+            "PCN RED(infra): kidpal_font_body() == NULL——P0 [K4] 消费口缺场（非本包"
+            "设计态）");
         rc = kidpal_p1_font_glyph(cp, &g); /* [S1] host 入口 */
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            pcn_fm("PCN-A11 RED(infra): [S1] 对 host 子集 U+%04X 不可用 rc=%d——host "
-                   "seam 强符号面漂移（83 齿基线态被破）", cp, rc));
+            pcn_fm("PCN-A11 RED: [S1] 对 U+%04X 不可用 rc=%d——[S1] 字面未切 16px "
+                   "body 句柄（2026-10-29 重基线设计态红: 旧 source_han 字面缺该"
+                   "码点）或行流字形获取断裂", cp, rc));
         stride = (g.w + 7) / 8;
         memcpy(seam_snap, g.bits, (size_t)(g.h * stride));
         /* [S1] 与 [S6] 可能共享同一静态输出缓冲（有效期到下一次调用）——已先快照
          * [S1] 输出, 再调 [S6] 并快照其输出, 然后逐字节对比。 */
-        rc = kidpal_p1_font_glyph_for_font(host_font, cp, &ref);
+        rc = kidpal_p1_font_glyph_for_font(face5, cp, &ref);
         TEST_ASSERT_TRUE_MESSAGE(rc == 0,
-            pcn_fm("PCN-A11 RED(infra): [S6] tooth 5 对 U+%04X 不可用 rc=%d", cp, rc));
+            pcn_fm("PCN RED(P0-chain): [S6](body 句柄) 对 U+%04X 不可用 rc=%d——"
+                   "16px cbin 资产消费链缺陷（**host 单侧错配已证实**: host "
+                   "LV_FONT_FMT_TXT_LARGE=0 vs 78 fork cbin glyph dsc 恒产 "
+                   "LARGE=1 16 字节布局; 设备 sdkconfig.defaults:57 LARGE=y 在案、"
+                   "真机消费验证归 FAR-E3; 证据链见 p1_home_16px.acceptance.c "
+                   "tooth 0b 与 REVISION LOG 2026-10-29 条; 修复归属 P0 fixer 轮, "
+                   "非本包设计态）", cp, rc));
         memcpy(ref_bits, ref.bits,
                (size_t)(ref.h * ((ref.w + 7) / 8)));
         TEST_ASSERT_TRUE_MESSAGE(g.w == ref.w && g.h == ref.h &&
@@ -2280,4 +2322,55 @@ TEST_CASE("P1CJK devfont: 设备字体×设备同款解码路径 oracle (P1CJK-A
  *               零触碰面: [S1]-[S5] 既有渲染语义、扫描基础设施、TEST 2/3/4/6/7/9/10 既有
  *               齿断言（row1 族常量零改）; CMakeLists 零改（本文件已注册在册）; 被测面本
  *               文件不触（实现归 builder）。
+ *   ── 2026-10-29 冻结件修订（TaskPackage 261028-m6-k2a-p1-home-16px; 授权链 =
+ *   「本包 exitCriteria P1H-E3 + crossPackageBehaviors 串行条款（P0/P1 共享
+ *   kidpal_render_node 与 host 字体 seam）」; 收紧型留痕 supersede, acceptance-author
+ *   唯一写点）──
+ *               根因 = F-1 首页正文 14px→16px（P1 包在 P0 冻结面上切 [S1] 字形
+ *               消费面）: [S1] 两强符号的字面源升级为 [S7] kidpal_p1_font_face()
+ *               （P0 统一句柄 16px body, 缺 assets 回落 14px 兜底）——本文件 [S1]
+ *               契约面「14px 字面（font_puhui_14_1 / source_han 子集）」随之过时。
+ *               ① [S1] 头注补 2026-10-29 重基线注记：签名/字形语义（1bpp 行主序
+ *               MSB、stride、盒上限、有效期、弱默认不可用）**零改**，仅字面源
+ *               升级 + NULL 回落分支（回落分支保留 = FAS-A7 render_node_puhui14
+ *               canary 不破 + 缺 assets 降级语义保留）。FAS-A8 p1cjk_s1_signature
+ *               needle（"int kidpal_p1_font_glyph(uint32_t codepoint"）在世不受
+ *               影响（签名零改）。
+ *               ② TEST 10 tooth 5 重基线（[S1]×[S6] 同构一致性判别面）: 对比基准
+ *               从 host_font（source_han 14px 字面）改 kidpal_font_body()——mount
+ *               态无关（两入口同取 body()）; 探针集 pcn_a11_host_cps →
+ *               pcn_a11_t5_cps（七码点 = host 子集 ∩ puhui14 兜底面 ∩ 16px 全量
+ *               面三字面态全在场——「泳」不在 puhui14 兜底面故退出; 本齿设计态红 =
+ *               度量不一致判别器, 不以码点缺场偶然红冒充）。
+ *               判别力保全论证: 共享核心义务的本体 = [S1] 与 [S6] 同字体同解码
+ *               路径逐字节一致——基准换 body 句柄后该本体判别不变; [S1] 未切
+ *               16px 的变异（回落字面误用 source_han）对 [S6](body16) 必红（tooth 1
+ *               负控已证 14/16 度量可判别）。新增 kidpal_font.h include（lvgl 门控
+ *               段内, host runner 通道可达; 通道③ stub 通道本就编译出 A11 段——
+ *               A11 实编通道 = host runner 构建, 口径不变）。
+ *               ③ 本文件其余齿在 16px 面下的零偏移推演: 墨量下界齿（≥8/12/20/30）
+ *               16px 墨更多仍绿; 行带矩形（ROW1/ROW2/ROW3/MINGZAO 等）16px 文字盒
+ *               带顶+3..+18（text_yoff 3）仍整行落带; A10 换行几何 'W' advance
+ *               ≥8px 在 16px 仍成立; ※ 标记语义本文件零涉（首页 F-9 归新冻结件
+ *               p1_home_16px.acceptance.c [U1]）。TEST 6 tooth 3（render node 含
+ *               kidpal_p1_font_glyph + font_puhui_14_1）随回落分支保留仍绿。
+ *               ④ 红基线（2026-10-29 冻结时点, acceptance-author 现跑; 命令 =
+ *               Run protocol 1)+2), 逐字结果见本包 review 交付）: 设计态义务红 =
+ *               TEST 10 tooth 5。**冻结时点实跑红名** = PCN RED(P0-chain): [S6]
+ *               (body 句柄) 对 U+0038 不可用 rc=-1——[S1] 未切（本包设计态）之前
+ *               先被 **P0 cbin 资产链缺陷**拦下（**host 单侧错配已证实**（2026-10-29
+ *               architect advisory 文字更正）: 78 fork cbin glyph dsc 恒产 LARGE=1
+ *               16 字节布局 vs host LVGL 构建 LARGE=0（host_app sdkconfig :665 not
+ *               set）→ 字形度量垃圾 → [S6] box_w==0 守卫拒收; 设备
+ *               sdkconfig.defaults:57 LARGE=y 在案（P0 时点已如此）、真机消费
+ *               验证归 FAR-E3; 证据链与 scratch 探针实测值见 p1_home_16px.
+ *               acceptance.c tooth 0b 注与 REVISION LOG 2026-10-29 条）。修复
+ *               归属 = P0 fixer 轮（仅 host 开 LARGE——font_puhui_14_1 指定初始
+ *               化器自动重排无需重产; A11 独立参考解码器按字段名取值不受布局
+ *               步长影响, tooth 1-4 原样绿——architect 结论）, 不由 P1 代偿。
+ *               P0 链修复后本齿红形态回归设计态（[S1] source_han 14px vs body16
+ *               度量不一致）, builder 落 [S1] 切换后转绿。MUST-STAY-GREEN at
+ *               baseline: TEST 10 tooth 0a/
+ *               0b/0c/1/2/3/4（[S6] 直查面零偏移）+ 本文件其余 TEST 1-9（16px 未
+ *               切时现状渲染全绿）。推导表之外变红: 无。
  * --------------------------------------------------------------------------- */

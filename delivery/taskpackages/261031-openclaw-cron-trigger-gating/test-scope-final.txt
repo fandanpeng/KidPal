@@ -1,0 +1,35 @@
+# test-scope-final · 261031-openclaw-cron-trigger-gating
+# 范围 = 影响面圈定清单（integrator Step 4）：本包 acceptanceTestsFile 种子
+#   ∪ detect_changes blast radius 映射测试（base=93b92a6b，project=C-AI-KidPal-pod-m2，depth=2，impacted_total=2）
+#   ∪ 共享 seam 相关测试（manifest.yaml / verify-deploy.sh 静态锚消费方；reminder_schedule_lib 是判定器 A 的声明输入④）
+#   ∪ 安全余量（同门 openclaw trigger/verify 先例包 261025-openclaw-dreaming-disable 的部署面静态锚）。
+# 圈定方式 = 正常圈定（per-Pod 专属图索引 C-AI-KidPal-pod-m2 可用，detect_changes 实跑成功、未降级）。
+# 语义铁律：本清单是「影响面圈定」而非全量；全量回归 = 人工触发位，不在本相位。
+# ── 种子 A：本包 acceptanceTestsFile ──
+server/acceptance/test_261031_openclaw_cron_trigger_gating.acceptance.py
+# ── 种子 B：detect_changes blast radius 映射测试（仅 two new unit modules 被命中，无 inbound 生产调用方）──
+server/tests/test_semantic_gate_units.py
+server/tests/test_schedule_health_gate_units.py
+# ── 共享 seam：reminder_schedule_lib.py 是判定器 A 的声明输入④（mtime 落后判定）──
+server/tests/test_reminder_units.py
+# ── 共享 seam：manifest.yaml / verify-deploy.sh 静态锚消费方（本包向二者新增条目，防他包静态锚回归）──
+server/acceptance/test_261010_engine_decision21_overlay_persist.acceptance.py
+server/acceptance/test_261013_qq_schedule_write_closure.acceptance.py
+server/acceptance/test_261022_honcho_backfill.acceptance.py
+server/acceptance/test_261022_honcho_memory.acceptance.py
+server/acceptance/test_261022_m5_k1_prompt_carrier_migration.acceptance.py
+server/acceptance/test_261022_memory_isolation.acceptance.py
+server/acceptance/test_261022_openclaw_kidpal_tools.acceptance.py
+server/acceptance/test_261022_persistent_session.acceptance.py
+server/acceptance/test_261025_openclaw_dreaming_disable.acceptance.py
+server/acceptance/test_prompt_v7_round_routing.acceptance.py
+# ── 最终验收命令与逐字末行（2026-10-31 本树实测，CLAUDE_PROJECT_DIR=C:/AI/KidPal-pod-m2）──
+# [acceptance] node .claude/scripts/acceptance-run-check.mjs --phase=final --scope-file=delivery/taskpackages/261031-openclaw-cron-trigger-gating/test-scope-final.txt
+#   → phase=oracle-pass: serverAcceptanceFiles=11 / firmwareAcceptanceFiles=0；phase=executor-run: structuralCollected=187 / liveDeselected=5 / filesWithLiveMark=3/11
+#   → 逐字末行: 187 passed, 5 deselected in 31.72s   (EXIT=0)
+# [unit] node .claude/scripts/unit-run-check.mjs --phase=final --scope-file=delivery/taskpackages/261031-openclaw-cron-trigger-gating/test-scope-final.txt
+#   → phase=executor-run: structuralCollected=248 / liveDeselected=5 / filesWithLiveMark=3/14
+#   → 逐字末行: 248 passed, 5 deselected, 5 subtests passed in 32.41s   (EXIT=0)
+# 注: unit 闸的 server 面 test_*.py 收集同时覆盖 acceptance 目录，故 248 = 本清单 3 件单测 + 10 件 scoped acceptance 件的并集；范围仍限于本清单，非全量。
+# [change-manifest] node .claude/scripts/change-manifest-check.mjs delivery/taskpackages/261031-openclaw-cron-trigger-gating/taskpackage.json
+#   → ok:true（对账面改动全部在 changeManifest 内）。工作树对账面零改动；已提交 diff 手工核对：git diff --name-only 93b92a6b..HEAD -- firmware server = 14 件，全部落在 changeManifest 的 9 条 glob 内，firmware 零 diff。

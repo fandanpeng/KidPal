@@ -1,0 +1,218 @@
+{
+  "changeId": "261028-m6-k2b-p2-schedule-16px",
+  "title": "课表网格 16px——pitch 19、带高 78/78/69、容量 4/4/3 与课名下划线",
+  "rigor": "full",
+  "sourceType": "proposal",
+  "origin": {
+    "type": "proposal",
+    "upstreamType": "proposal",
+    "upstreamRef": "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "upstreamFrozen": "sha1:af2e3627a8a2f254",
+    "workstream": "261028-font-typography-scaleup"
+  },
+  "subsystem": "firmware/main/display 课表周网格渲染与冻结验收镜像",
+  "story": "S-F1.2 · 课表页看「一周总览」（AC1、AC3、AC4）+ 补充规则容量 4/4/3 与超限静默截断口径。",
+  "planRef": "delivery/taskpackages/261028-m6-k2b-p2-schedule-16px/plan.md",
+  "sourceRefs": [
+    "S-F1.2-AC1",
+    "S-F1.2-AC3",
+    "S-F1.2-AC4",
+    "docs/requirements.md#S-F1.2-补充规则",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ4",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md#P2",
+    "firmware/main/display/schedule_page.c",
+    "firmware/main/display/schedule_page.h",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/schedule_grid_restore.acceptance.c"
+  ],
+  "acceptanceRefs": [
+    "docs/requirements.md#S-F1.2",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8",
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"
+  ],
+  "acceptance": [],
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "",
+  "redBaselineResult": "",
+  "exitCriteria": [
+    "P2S-E1: 课名切 P0 的 16px 运行时字体，格内 pitch=19、槽位带高=78/78/69；表头带、KSG_GRID_BOTTOM=254、今天列外框加粗与网格零越带不变，真机不叠行。",
+    "P2S-E2: 按槽位可画上限=上午 4/下午 4/晚上 3，KSG_COURSE_CAP=84 与云端全量下发不变；超限维持静默截断、不滚动、不新增提示，缓存/解析 cap 不得被误缩成渲染上限。",
+    "P2S-E3: flags bit0 的 wire 语义不变，课表临时课由 ※ 前缀改课名下 2px 下划线，※ 字形探测/程序化兜底退役，★ 星标不变；无标记格在 16px 下可见 2 字。schedule_grid 冻结头与 schedule_grid_restore 镜像由 acceptance-author 同步留痕修订，旧断言、新断言、授权与 REVISION LOG 齐全，撤改法必红。",
+    "P2S-E4: host 全量零新增红、device build 绿；冻结验收只做收紧型 supersede，不删除容量、越带、星标或 restore 负断言，注释不算证据。",
+    "P2S-E5: 以 docs/ui/V8/canvas-p2.png 完成 design review，并占一轮真机配额看 pitch 19 紧凑观感、4/4/3 容量、下划线/星标与长课截断；结果供 P3 workstream 终端收口复证。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md#§1.3②"
+  ],
+  "docRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+    "delivery/workstreams/261028-font-typography-scaleup/task_plan.md",
+    "delivery/taskpackages/261028-m6-k2b-p2-schedule-16px/plan.md",
+    "docs/requirements.md",
+    "docs/architecture.md",
+    "docs/decisions/ADR.md",
+    "docs/contracts/interface-contract.md",
+    "docs/ui/kidpal-ui-design-v8.html",
+    "docs/ui/UIUX-DESIGN-BRIEF.md",
+    "docs/ui/V8/canvas-p2.png"
+  ],
+  "docsSyncRequired": false,
+  "docsSyncReason": "容量、下划线和 V8 已随 requirements v1.69 冻结，架构/契约零新增改动；本包只追实现与验收镜像。",
+  "docsOwner": "integrator",
+  "securityReviewRequired": false,
+  "adrRequired": false,
+  "requiredLayers": [
+    "unit",
+    "acceptance-offline",
+    "firmware-build",
+    "live-manual"
+  ],
+  "mutationRequired": true,
+  "mutationEvidence": {
+    "perAcceptance": []
+  },
+  "crossEnd": {
+    "counterparts": [
+      {
+        "path": "server/gateway/schedule.py",
+        "symbol": "week_grid_payload"
+      }
+    ],
+    "exempt": ""
+  },
+  "changeManifest": [
+    "firmware/main/display/schedule_page.c",
+    "firmware/main/display/schedule_page.h",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/schedule_grid_restore.acceptance.c",
+    "firmware/main/test/schedule_grid_16px.acceptance.c"
+  ],
+  "impactedTestsSeed": [
+    {
+      "path": "firmware/main/test/schedule_grid.acceptance.c",
+      "kind": "frozen-rebaseline",
+      "note": "冻结头钉旧槽位带与 ※ 真帧；F-3/F-9 要求经 acceptance-author 留痕 supersede，KSG_COURSE_CAP=84 和 restore/越带负锚保留。"
+    },
+    {
+      "path": "firmware/main/test/schedule_grid_restore.acceptance.c",
+      "kind": "mirror-rebaseline",
+      "note": "restore wire、前台语义不变；只同步共享版式/标记镜像，不重写 restore 行为。"
+    },
+    {
+      "path": "server/acceptance/test_schedule_p2.acceptance.py",
+      "kind": "regression",
+      "note": "云端仍全量下发，flags bit0/bit1 与 B1 契约不变；server 零 diff。"
+    }
+  ],
+  "uiux": {
+    "uiuxRequired": true,
+    "uiuxLevel": 2,
+    "designRefs": [
+      "docs/ui/V8/canvas-p2.png"
+    ],
+    "sharedUiRefs": [
+      "docs/ui/kidpal-ui-design-v8.html",
+      "docs/ui/UIUX-DESIGN-BRIEF.md"
+    ],
+    "uiAcceptanceRefs": [
+      "canvas-p2"
+    ],
+    "designReviewRequired": true,
+    "designReviewEvidenceRequired": true,
+    "repoVisualArtifactRequired": false
+  },
+  "deliveryImpact": "milestone-affecting",
+  "planningImpact": "attach-existing",
+  "planningRefs": [
+    "delivery/workstreams/261028-font-typography-scaleup/"
+  ],
+  "riskTier": "high",
+  "gateProfile": [
+    "evidence-integrity",
+    "test-quality",
+    "device-round"
+  ],
+  "mergeOrder": 62,
+  "dependsOn": [
+    "261028-m6-k1-font-assets-runtime-loading"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "F-1 · 课表正文 16px",
+      "summary": "只切课名到 P0 的 16px 句柄，键帽条等 14px 域不动。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "exitCriteria:P2S-E1"
+    },
+    {
+      "decision": "F-3 · pitch 19 + 带高 78/78/69 + 容量 4/4/3 + 可见 2 字",
+      "summary": "版式与渲染容量按 human 已拍数值落地，网格底界与交互不变。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"],
+      "landsIn": "exitCriteria:P2S-E1"
+    },
+    {
+      "decision": "F-8 · KSG_COURSE_CAP=84 不动，只改按槽位可画上限",
+      "summary": "云端数据与板端缓存仍容纳全量，截断只发生在渲染层。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8"],
+      "landsIn": "exitCriteria:P2S-E2"
+    },
+    {
+      "decision": "F-9 · 课表一次性课程 ※→课名下划线，★ 不动",
+      "summary": "flags bit0 继续表示临时课，只替换板端标记形态并退役旧兜底。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"],
+      "landsIn": "exitCriteria:P2S-E3"
+    },
+    {
+      "decision": "OQ4 · 超限维持静默截断，不新增提示",
+      "summary": "晚上第 4 门及同类超限不滚动、不弹提示。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ4"],
+      "landsIn": "exitCriteria:P2S-E2"
+    },
+    {
+      "decision": "OQ2 · 母版 v8 只重出四页之课表帧",
+      "summary": "消费 V8 canvas-p2 并做真机观感终判。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"],
+      "landsIn": "exitCriteria:P2S-E5"
+    },
+    {
+      "decision": "F-5/F-7 · 运行时资产与 host 同源底座",
+      "summary": "资产与统一句柄归 P0，本包只消费。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "§5 · workstream 四页终端收口",
+      "summary": "P2 自有真机轮供证据，最终四页并集终判归 P3。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "kidpal_font 运行时句柄与 14px 降级不变式",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k2b-p2-schedule-16px",
+      "note": "P2 消费 P0 的 16px 句柄和统一降级，不在 schedule_page 内另造资产加载。"
+    },
+    {
+      "topic": "全设备临时标记下划线（课表半）",
+      "owner": "261028-m6-k2b-p2-schedule-16px",
+      "carriedBy": "261028-m6-k2b-p2-schedule-16px",
+      "note": "P2 负责 S-F1.2 课名，P1 负责 WF-F1-01 首页事件名；flags bit0/wire 不变，★ 保留。"
+    },
+    {
+      "topic": "M6 四页真机收口轮",
+      "owner": "261028-m6-k3-p3-story-typography",
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P2 自有 pitch/容量真机轮先行，P3 终端轮复证四页并集；P3 前 P2 必须 merged。"
+    }
+  ],
+  "notes": "workType 主型 = new-capability，整改半 = ※ 旧实现与冻结头重基线。影响面机械辅证：图索引确认 kidpal_schedule_grid_render/ksg_text_font 与 KSG_* 常量；trace_path 对该 C 函数 inbound=0 属图解析缺口，已用 Grep 补录 mcp_server 两个缓存/渲染消费面与 schedule_grid_restore 镜像，差集无未解释项。共享常量扫描：KSG_COURSE_CAP=84 与 KSG_GRID_BOTTOM=254 不动，KSG_ROW_PITCH 16→19 和旧槽位带/※ 是已批准重锚；无跨包互斥值。restore 只同步镜像，不改 wire/前台语义。"
+}

@@ -356,6 +356,32 @@ entries:
      owner: deploy.sh, verify: md5, restart: front,
      note: "school_start 配置的真实消费位（front_app.py parents[2]/deploy 派生）——2026-10-13 前该位缺文件、静默回退 None"}
 
+  # ── cron trigger 判定器 + 薄壳（261031-openclaw-cron-trigger-gating）──
+  # 两条 15m agentTurn cron 改「变更驱动」：每轮先跑无模型纯只读 python 判定器，内容未变
+  # → fire:false 不起 agent 回合（零 token）；变化才跑原 payload。薄壳 JS 内联进 job
+  # trigger.script（verify-deploy.sh 与盘上文件逐字比对）；写入口只许 openclaw CLI
+  # （cron_triggers.py apply/clear，不直写 openclaw.json）。
+  - {src: server/deploy/openclaw-patch/reminder_semantic_gate.py,
+     dst: /opt/kidpal/openclaw-patch/reminder_semantic_gate.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 判定器 A（semantic.json 新鲜度门：四输入 schedule/skill/parser/lib + 60s 竞态余量）}
+  - {src: server/deploy/openclaw-patch/schedule_health_gate.py,
+     dst: /opt/kidpal/openclaw-patch/schedule_health_gate.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 判定器 B（解析健康巡检门：ack 去重 + 冷却窗反刷屏；state 只承载 lastFire）}
+  - {src: server/deploy/openclaw-patch/triggers/reminder-semantic.trigger.js,
+     dst: /opt/kidpal/openclaw-patch/triggers/reminder-semantic.trigger.js,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: "薄壳 A（exec 调判定器 A，透传 {fire,message,state}；内联进 kidpal-reminder-semantic job trigger.script）"}
+  - {src: server/deploy/openclaw-patch/triggers/schedule-health.trigger.js,
+     dst: /opt/kidpal/openclaw-patch/triggers/schedule-health.trigger.js,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 薄壳 B（exec 调判定器 B；内联进 kidpal-schedule-health job trigger.script）}
+  - {src: server/deploy/openclaw-patch/cron_triggers.py,
+     dst: /opt/kidpal/openclaw-patch/cron_triggers.py,
+     owner: deploy.sh, verify: md5, restart: none,
+     note: 幂等 apply/clear/status（经 openclaw cron edit --trigger-script / --clear-trigger；--dry-run；不直写 openclaw.json）}
+
   # ── 漂移 timer（ecs-bootstrap.md 一次性安装；此后 deploy.sh 铺）──
   - {src: server/deploy/kidpal-deploy-drift.service,
      dst: /etc/systemd/system/kidpal-deploy-drift.service,
@@ -365,13 +391,18 @@ entries:
      dst: /etc/systemd/system/kidpal-deploy-drift.timer,
      owner: deploy.sh, verify: md5, restart: none}
 
-# ── openclaw cron 作业（verify-only：命令串/归属核验，铺放走 openclaw CLI 不在本批面）──
+# ── openclaw cron 作业（verify-only：命令串/归属/trigger 核验，铺放走 openclaw CLI 不在本批面）──
+# trigger 核验（261031）：凡登记 expect_trigger_file 的 job，verify-deploy.sh 会比对
+# job.trigger.script 与盘上文件（行尾归一后逐字）、守卫 trigger.once 不得为 true、
+# 并守卫全局 cron.triggers.enabled 不得为 false。
 cron_jobs:
   - name: kidpal-reminder-plan
     expect_argv: "KIDPAL_SERVER_DIR=/opt/kidpal/front KIDPAL_SCHEDULE_MD=/root/.openclaw/workspace/kidpal/schedule.md KIDPAL_ALERTS_DIR=/opt/kidpal/alerts KIDPAL_SEMANTIC_JSON=/opt/kidpal/alerts/semantic.json /opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/reminder_schedule_lib.py"
   - name: kidpal-reminder-semantic
     expect_agent: main
     expect_schedule: "every 15m"
+    expect_trigger_file: server/deploy/openclaw-patch/triggers/reminder-semantic.trigger.js
   - name: kidpal-schedule-health
     expect_agent: main
     expect_schedule: "every 15m"
+    expect_trigger_file: server/deploy/openclaw-patch/triggers/schedule-health.trigger.js

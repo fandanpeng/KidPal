@@ -13,6 +13,14 @@
 #include <esp_timer.h>
 #include <cbin_font.h>
 
+/* 统一 kidpal_font 句柄 seam（TaskPackage 261028-m6-k1，FAR-E2）：assets 分区就绪 +
+ * LVGL 就绪后（Apply 成功出口）挂载两枚 cbin 字体，供页面经 kidpal_font_body/title 消费。
+ * mount_from_assets 定义在 display/kidpal_font.cc（设备分支：Assets::GetAssetData
+ * reader + cbin_font_create）。缺 assets / Apply 早退时此缝不被调用 → kidpal_font 保持
+ * 静态初始 14px 兜底，不黑屏（F-5 降级语义）。 */
+#include "kidpal_font.h"
+extern "C" void kidpal_font_mount_from_assets(void);
+
 
 #define TAG "Assets"
 
@@ -379,6 +387,11 @@ bool Assets::Apply() {
 #endif
 
     cJSON_Delete(root);
+
+    /* 字体运行时装载（FAR-E2）：assets 分区与 LVGL 均已就绪，挂载 16px 正文 / 20px 标题
+     * 两枚 cbin；缺文件或装载失败由 kidpal_font 内部回退编译内 14px（不黑屏）。 */
+    kidpal_font_mount_from_assets();
+
     return true;
 }
 

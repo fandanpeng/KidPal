@@ -19,6 +19,7 @@
 
 #include "schedule_page.h"
 #include "story_page.h"
+#include "kidpal_font.h"  /* lv_font_t 声明 + 统一 kidpal_font 句柄 seam（261028-m6-k1） */
 
 #ifdef __cplusplus
 extern "C" {
@@ -345,6 +346,17 @@ int kidpal_render_node_story_page_is_local(void);
  * 无锁整数读，可跨任务调用。
  */
 int kidpal_render_node_story_rec_substate(void);
+
+/*
+ * 统一 kidpal_font 句柄暴露（TaskPackage 261028-m6-k1-font-assets-runtime-loading，
+ * [K4] 唯一消费口）：页面 P1/P2/P3 经此取 16px 正文 / 20px 阅读标题字体句柄。
+ * 本包（P0 spike）只建运行时通路，**不改任何页面现有排版/字体选择行为**——消费切换
+ * 归 P1/P2/P3 各自包。恒非 NULL：缺资产/装载失败时两者回退编译内 font_puhui_14_1
+ * （不黑屏，F-5）；20px 缺字经 fallback 链回退 16px（F-6，由 kidpal_font 内部挂载）。
+ * 设备侧在 Assets::Apply 成功后已自动 mount（见 assets.cc / kidpal_font_mount_from_assets）。
+ */
+const lv_font_t *kidpal_render_node_body_font(void);
+const lv_font_t *kidpal_render_node_title_font(void);
 
 #ifdef __cplusplus
 }

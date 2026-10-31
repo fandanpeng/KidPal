@@ -6,8 +6,8 @@
 
 ## 完工比例
 
-- **已验收**：0%（0 / 5 里程碑 accepted 及以后）
-- **在途预计**：32%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
+- **已验收**：0%（0 / 6 里程碑 accepted 及以后）
+- **在途预计**：33.3%（按 state 阶段加权：planning 0 · in_delivery .4 · qa .7 · ready .9 · accepted 1）
 
 ## 里程碑基线
 
@@ -40,4 +40,10 @@
 | 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
 |---|---|---|---|---|
 | 阶段五·小伴的记忆（持久会话 + Honcho 画像 + prompt 迁 AGENTS.md + 课表机械注入） | `planning` | green | workstream device-memory-overhaul 拆包 P1–P5（P1 prompt 迁移与上下文装配 / P2 持久会话 / P3 Honcho 生产化+守则 v12 / P4 历史 backfill / P5 课表机械注入；单 Pod 串行 merge order P1→P2→P3→P4、P5 插 P1 后）。上游已齐：requirements v1.67 frozen（F5 + NFR-SEC-2 ⑤ + NFR-PRIV-1）+ 架构面 FROZEN v1.1 landing（PROPOSAL delivery/review/261022-arch-review-device-memory-prompt-overhaul/）+ 契约 §四:283 定案改写随批原子落 + 契约四分类闭合。下一步 = 拆包四件套（portfolio-planner 停等中）→ 门 1 → human 过目切法 → 逐包 launch。待 human 裁：OQ-10 记忆库备份已裁「不备份靠重建」（2026-10-22，重建源 = session-corpus 源语料 + OpenClaw 会话存储） | [ref](../docs/requirements.md) |
+
+### M6
+
+| 里程碑 | 状态 | 健康 | 下一步 | 验收依据 |
+|---|---|---|---|---|
+| 阶段六·字体体系升级（正文 16px / 标题 20px / assets 运行时装载） | `in_delivery` | green | workstream 261028-font-typography-scaleup P0+P1 已 merged 本地 main（2026-10-29，human 合并门随批批准：P0 字体资产运行时装载 + host LARGE 修复轮，P1 首页 16px + 临时下划线；真机轮核心观测通过=看屏确认 16px 运行时字形正确；缺 assets 降级真机观测 human 裁定豁免）。剩：P2 p2-schedule-16px / P3 p3-story-typography 未 launch（P3=终端收口轮，P3 launch 前 P1 已 merged ✓）；ARQ-261029 上游 ※ 写入侧任务待派单（临时事件下划线真机样本前置，blocker）；远程发布（release-pr --publish + PR 合并）待 human。 | [ref](../docs/requirements.md) |
 

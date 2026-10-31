@@ -10,6 +10,22 @@ description: "提醒 cron 语义回合（KidPal）：读 kidpal/schedule.md 备�
 消费方 = 确定性脚本 `reminder_schedule_lib.py`（每 15 分钟跑的 `kidpal-reminder-plan` 用它把
 提醒排得更细：带物拆分、文案 override）。收到任务消息后**直接执行本流程**，不需要向谁确认。
 
+## 本回合由 cron trigger 变更驱动唤起（261031 起）
+
+本 job 带一个无模型的静默 trigger（`reminder-semantic.trigger.js` → `reminder_semantic_gate.py`）：
+每 15 分钟先跑判定器，**内容没变时 `fire:false` 不起本回合**（零 token），只有输入变化才把
+本回合并到队列并附触发原因 message。
+
+- **触发原因是提示，不是事实**：message 只说明「哪个输入变了」，你仍必须按**当前实际文件
+  状态**重判全部流程——不要照抄 message 里的推断，也不要因为收到触发就跳过第 1 步的读盘。
+- **semantic.json 新鲜度合同**：落盘的 `semantic.json` 必须**新于**它的四个输入——
+  `kidpal/schedule.md`、本 skill（SKILL.md）、`gateway/schedule.py`、`reminder_schedule_lib.py`；
+  另须满足 **60s 竞态余量**（semantic mtime 比 schedule mtime 新出 60 秒以上）——否则下一轮
+  判定器会认为产物过期并再次 fire（多跑一轮只花 token，不会漏跑）。判定器看的是 **mtime**，
+  所以「内容相同就跳过写」会让你每周期被判定为落后；本回合按全量重写语义产物是正确姿势。
+- 无课表（`schedule.md` 缺失）时判定器恒 `fire:false`，本回合不会被唤起；若手动执行，按
+  「失败与边界」不写文件、保留上次产物即可。
+
 ## 步骤
 
 1. **读 `kidpal/schedule.md`**（main workspace 相对路径即真身；脚本 env `KIDPAL_SCHEDULE_MD`

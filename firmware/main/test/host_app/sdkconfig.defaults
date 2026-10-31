@@ -33,6 +33,17 @@ CONFIG_LV_USE_CLIB_SPRINTF=y
 # Note: changing this requires deleting the generated sdkconfig to re-apply defaults.
 CONFIG_LV_FONT_SOURCE_HAN_SANS_SC_14_CJK=y
 
+# LVGL massive-font glyph dsc layout: MUST match the cbin writer that produced the
+# device font assets. The 78 fork cbin writer always emits LV_FONT_FMT_TXT_LARGE=1
+# 16-byte glyph descriptors; the device build already sets this (firmware/sdkconfig.
+# defaults:57 LARGE=y). Without it here, the host build reads those 16-byte glyph dscs
+# as 8-byte (LARGE=0) -> garbage box/advance metrics ('8' box=71x0 adv=0, '中' box=0x1)
+# and the runtime-loaded .bin glyphs become unusable on host, diverging from device.
+# Enabling LARGE also reorders font_puhui_14_1's designated initializers automatically
+# (no re-generation needed); vendored device cbin assets already follow LARGE=1 so this
+# is a keep-in-sync flag with zero device impact.
+CONFIG_LV_FONT_FMT_TXT_LARGE=y
+
 # Skip LVGL demos/examples and widgets we do not exercise, to keep the host build lean.
 CONFIG_LV_BUILD_EXAMPLES=n
 CONFIG_LV_BUILD_DEMOS=n

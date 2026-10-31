@@ -1,0 +1,238 @@
+{
+  "workstream": "261028-font-typography-scaleup",
+  "source": "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md",
+  "upstreamFrozen": "sha1:af2e3627a8a2f254",
+  "archUpstream": "docs/architecture.md §12 changeId 行 + docs/decisions/ADR.md#ADR-017（2026-10-28 landed）",
+  "generatedBy": "portfolio-planner",
+  "generatedAt": "2026-10-28",
+  "updatedAt": "2026-10-28",
+  "_doc": [
+    "拆包输入复核：M6-font-typography 已登记 milestones.jsonl（state=planning），task_plan.md phases P0-P3 在场，PROPOSAL FROZEN v1.0 模板硬项齐备；上轮两项 fail-closed 前置已由主线程 commit 42b2229c 补齐。需求 v1.69 与架构 anchors 均已冻结。",
+    "切法：P0 font-assets-runtime-loading spike → P1 首页/P2 课表（P0 后可并行，WIP limit=2）→ P3 故事排版 + M6 终端真机轮。mergeOrder=60/61/62/63；P0→P1 另有 kidpal_render_node.cc/host seam 串行边。原可选 P4 并入 P3，因此 P3 dependsOn 增加 P1/P2，保证四页未齐不提前终判；F-5/F-6/F-7 与 spike-first 不变。",
+    "风险字段归一：task_plan 底稿 P1/P3 的 medium-high 不是合法 riskTier 枚举；依 review.md workstream high、冻结验收面与真机设备 seam 向严统一为 high。四包 rigor 均为 full，无 lite。",
+    "story 引用机查：S-F1.1/S-F1.2/S-F2.1/S-F2.3 均不在 requirements.md §8 已砍清单，可行性均非 🔴；引用 AC 号集分别为 P1 AC1/AC2、P2 AC1/AC3/AC4、P3 S-F2.1 AC1 + S-F2.3 AC1/AC2。F-9 按 spine q5 扩为全设备临时标记下划线：首页半归 P1、课表半归 P2，wire/producer 不变。",
+    "影响面机械辅证：图项目 C-AI-KidPal-pod-m2（root 20842 nodes/60189 edges）核实 LvglCBinFont、Assets::GetAssetData、home_p1/kidpal_p1_font_glyph、schedule_page/KSG_*、story_page/reader_slice 与 host seam。Assets::GetAssetData inbound=6；kidpal_story_reader_slice 图仅见 story_page/archive 两 caller，mcp_server.cc 两个 KSTORY_READER_LINES_PER_SCREEN 消费点由 Grep 补录；kidpal_schedule_grid_render 图 inbound=0 属 C 调用解析缺口，mcp 缓存/渲染与 schedule_grid_restore 镜像由 Grep 补录。枚举与机械结果差集均已解释，无漏扫项。",
+    "跨包共享常量/冻结面交叉扫描：① 常量互斥型未发现——line_h=22、KSG_COURSE_CAP=84、KSG_GRID_BOTTOM=254 均为唯一保留值；KSG_ROW_PITCH 16→19、槽位带与 KSTORY_READER_LINES_PER_SCREEN 4→3 是同一 FROZEN PROPOSAL 批准的重锚，不存在包间互斥。② 行为碰撞型四处已登记：p1_cjk_name/p1_home_battery 的 14px 与行带锚（P1 留痕重基线）、schedule_grid 的旧带/※ 真帧 + restore 镜像（P2 留痕重基线）、story_page_v2 的 font_puhui_14_1/13.5px/1.72 + mcp 两个行数消费点（P3 留痕重基线）、P0/P1 共享 render_node/host seam（串行）。所有 supersede 只由 Pod 内 acceptance-author 执行，本拆包不预批。",
+    "acceptance 唯一写点 = Pod 内 acceptance-author：四个 taskpackage 拆包期 acceptance=[]、acceptanceTestsFile=[]、redBaseline 为空；本文件与包级 decisionCoverage 只映射承载包/exitCriteria/跨包指针，不代写验收断言。",
+    "真机配额：P0 探针与缺 assets 降级一轮、P2 pitch/容量一轮、P3 故事与 M6 四页终端一轮；P1 不独立占轮。原 P4 不独立成包，P3 终端轮承担 PROPOSAL §5 全项。",
+    "OQ5 是需求面流程裁定，requirements v1.69 + 母版 v8 + brief v7 + V8 四帧已在上游兑现；实现侧只消费，不再重复执行需求批。"
+  ],
+  "decisionCoverage": [
+    {
+      "decision": "F-1-home · 首页正文 16px，辅助条等 14px 域不动",
+      "summary": "首页日程卡升 16px，键帽条/辅助条等非目标字号不变。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-1-schedule · 课表课名 16px",
+      "summary": "课表正文升 16px，其他 chrome 不跟随放大。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "F-1-story · 故事列表/阅读正文 16px、阅读标题 20px",
+      "summary": "故事两态按新字号档重排，未变更页态保持原设计。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-1"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    },
+    {
+      "decision": "F-2 · 首页 line_h=22 不动，只调 text_yoff，容量零损失",
+      "summary": "首页行距与现有条目容量是保留不变式。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-2"],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-3 · 课表容量 4/4/3 + 带高 78/78/69 + pitch 19 + 可见 2 字",
+      "summary": "按 human 已拍数值重排网格并保留截断降级。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-3"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "F-4 · 阅读正文自然行 4→3，翻页手感真机验",
+      "summary": "故事阅读自然行数收敛，疏密与翻页成本由终端真机轮终判。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-4"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    },
+    {
+      "decision": "F-5 · assets 分区 .bin + cbin 运行时装载 + 编译内 14px 兜底",
+      "summary": "P0 spike 建立唯一资产通路；否决编入固件，缺资产不黑屏。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-5"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "F-6 · 20px 标题全量 CJK，缺字回退 16px，不做静态子集",
+      "summary": "P0 产全量资产，P3 在标题消费点验证回退。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "F-6-consumer · 20px 标题回退的真实消费验证",
+      "summary": "阅读标题居中、单行、省略及 16px 回退由 P3 验收。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-6"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    },
+    {
+      "decision": "F-7 · host 与设备共用同一枚 .bin",
+      "summary": "P0 收掉 host 字体数据双源，spike 内验证。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-7"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "F-8 · KSG_COURSE_CAP=84 不动，只改按槽位可画上限 4/4/3",
+      "summary": "缓存/云端全量不变，截断只限渲染层。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "F-9-home / spine q5 · 首页临时事件 ※→事件名下划线",
+      "summary": "全设备符号统一之首页半，wire/seam 不变。",
+      "sourceRefs": ["delivery/intake/261028-font-typography-scaleup.md#openQ-q5"],
+      "landsIn": "package:261028-m6-k2a-p1-home-16px"
+    },
+    {
+      "decision": "F-9-schedule · 课表一次性课程 ※→课名下划线，★ 不动",
+      "summary": "flags bit0 不变，旧字形探测/兜底退役。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "OQ1 · 20px 字体形态 = 全量 CJK + 16px 回退",
+      "summary": "human 触点①裁定由 P0 资产生产承接。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ1"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "OQ2 · 母版 v8 只重出四页，不全量重出",
+      "summary": "P1/P2/P3 各消费自己的 V8 帧，P3 终端轮做四页并集 design/真机终判。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ2"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    },
+    {
+      "decision": "OQ3 · 九档实验页与测试字体维持编入",
+      "summary": "P0 只复用探针，不退役实验页/测试字体。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ3"],
+      "landsIn": "package:261028-m6-k1-font-assets-runtime-loading"
+    },
+    {
+      "decision": "OQ4 · 容量超限维持静默截断，不新增提示",
+      "summary": "P2 不滚动、不新增交互提示。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ4"],
+      "landsIn": "package:261028-m6-k2b-p2-schedule-16px"
+    },
+    {
+      "decision": "OQ5 · 需求面档 2 + 触 UI",
+      "summary": "requirements v1.69、母版 v8、brief v7 与 V8 四帧已在上游需求批兑现。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.2-OQ5"],
+      "landsIn": "dropped",
+      "reason": "上游需求档 2 已冻结并交付全部 UI 产物，实现包只消费，不重复执行需求面动作。"
+    },
+    {
+      "decision": "§3.3 非目标 · 14px 保留域/不重排分区/不做子集或 OTA/容量不上网线/实验页不退役",
+      "summary": "各包铁律共同守持；任何越界须停并升级，不作为本批实现项。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.3"],
+      "landsIn": "dropped",
+      "reason": "这些是防 scope creep 的非目标而非待实现能力；保持现状即兑现，违反即回本批逃生门。"
+    },
+    {
+      "decision": "§5 · workstream 真机收口标准",
+      "summary": "原可选 P4 并入 P3；四页新字号、课表 pitch/容量、长标题/超限、缺 assets 降级与翻页手感一次终判。",
+      "sourceRefs": ["delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§5"],
+      "landsIn": "package:261028-m6-k3-p3-story-typography"
+    }
+  ],
+  "crossPackageBehaviors": [
+    {
+      "topic": "kidpal_font 运行时句柄与统一降级（20px→16px、缺资产→14px）",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k1-font-assets-runtime-loading",
+      "note": "P0 唯一定义语义；P1/P2/P3 只消费，不在页面内另造加载或回退分支。"
+    },
+    {
+      "topic": "P0/P1 共享 kidpal_render_node.cc 与 host 字体 seam 串行",
+      "owner": "261028-m6-k1-font-assets-runtime-loading",
+      "carriedBy": "261028-m6-k2a-p1-home-16px",
+      "note": "P0 先合并，P1 后切首页消费；共享文件不交两个 Pod 并行。"
+    },
+    {
+      "topic": "全设备临时标记下划线（首页/课表两半）",
+      "owner": "261028-m6-k2b-p2-schedule-16px",
+      "carriedBy": "261028-m6-k2a-p1-home-16px",
+      "note": "课表语义 owner=P2；首页承接=P1。两侧只改本地呈现，home name 与 schedule flags bit0 的 wire 形状不变，★ 保留。"
+    },
+    {
+      "topic": "M6 四页真机收口轮（原可选 P4 并入 P3）",
+      "owner": "261028-m6-k3-p3-story-typography",
+      "carriedBy": "261028-m6-k3-p3-story-typography",
+      "note": "P0 探针和 P2 pitch 轮作为输入，P1 真机半并入；P3 等 P0/P1/P2 merged 后一次完成四页并集、缺 assets 降级与 human 终判。"
+    }
+  ],
+  "launchPreconditions": [
+    {
+      "text": "LP1 上游需求冻结：requirements §9 v1.69 行在位，S-F1.1/S-F1.2/S-F2.1/S-F2.3 新字号、容量、下划线与标题省略语义已 frozen；适用于全部四包。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/requirements.md 头部 v1.69 + §9 v1.69 行（2026-10-28 frozen，human 终拍）；spine anchors.req 已回填"
+    },
+    {
+      "text": "LP2 上游架构冻结：docs/architecture.md §12 的 261028-font-typography-scaleup 行、§5.5.3 字体管线与 ADR-017 在位；F-5/F-6/F-7 不再待裁。",
+      "scope": "workstream",
+      "status": "verified",
+      "evidence": "docs/architecture.md §12 changeId 行 + docs/decisions/ADR.md#ADR-017；delivery/review/261028-arch-review-font-typography-scaleup/ landing-verdict PASS；spine anchors.arch 已回填"
+    },
+    {
+      "text": "LP3 P0 无上游功能包依赖，可在 LP1/LP2/LP4/LP5 满足后直接 launch；PROPOSAL §6 三项旧改动不得混入，当前工作树已无这三项未提交改动。",
+      "scope": "package:261028-m6-k1-font-assets-runtime-loading",
+      "status": "verified",
+      "evidence": "P0 dependsOn=[]；2026-10-28 git status 仅见 INDEX 派生面改动，font_size_test_page/custom_lcd_display/sdkconfig 留根三项不在；独立收编先例 commit 6a360ecf"
+    },
+    {
+      "text": "LP4 门 1 GREEN + human 过目切法：architect 轻量 checklist 五项与 workType 分流全过，裁决 append review.md「门 1」节；未绿不得 commit-before-launch。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP5 commit-before-launch：roadmap + 四包 taskpackage/plan + 本 decision-coverage commit 到专用 base ref（非 main），Pod worktree 自该 ref 建出；board 不入 commit。",
+      "scope": "workstream",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP6 P1 等 P0 merged 后方可 launch，并遵守 P0→P1 的 kidpal_render_node.cc/host seam blocking edge；不得与 P0 并行。",
+      "scope": "package:261028-m6-k2a-p1-home-16px",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP7 P1 UI-ready：V8 canvas-p1 在盘，requirements §9 v1.69 与 brief v7 对齐注记在位。",
+      "scope": "package:261028-m6-k2a-p1-home-16px",
+      "status": "verified",
+      "evidence": "docs/ui/V8/canvas-p1.png + docs/ui/UI-DESIGN-VERSIONS.md current=v8 + docs/ui/UIUX-DESIGN-BRIEF.md v7/§8 + requirements §9 v1.69"
+    },
+    {
+      "text": "LP8 P2 等 P0 merged 后方可 launch；P2 可与 P1 并行，但 merge-driver 仍按 mergeOrder 串行。",
+      "scope": "package:261028-m6-k2b-p2-schedule-16px",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP9 P2 UI-ready：V8 canvas-p2 在盘，requirements §9 v1.69 与 brief v7 对齐注记在位。",
+      "scope": "package:261028-m6-k2b-p2-schedule-16px",
+      "status": "verified",
+      "evidence": "docs/ui/V8/canvas-p2.png + docs/ui/UI-DESIGN-VERSIONS.md current=v8 + docs/ui/UIUX-DESIGN-BRIEF.md v7/§8 + requirements §9 v1.69"
+    },
+    {
+      "text": "LP10 P3 等 P0/P1/P2 全部 merged 后方可 launch；原 P4 已并入 P3，三包未齐不得进行 M6 四页终端真机终判。",
+      "scope": "package:261028-m6-k3-p3-story-typography",
+      "status": "unverified",
+      "evidence": ""
+    },
+    {
+      "text": "LP11 P3 UI-ready：V8 canvas-p3 与 p3-reader 两帧在盘，requirements §9 v1.69 与 brief v7 对齐注记在位。",
+      "scope": "package:261028-m6-k3-p3-story-typography",
+      "status": "verified",
+      "evidence": "docs/ui/V8/canvas-p3.png + docs/ui/V8/p3-reader.png + docs/ui/UI-DESIGN-VERSIONS.md current=v8 + docs/ui/UIUX-DESIGN-BRIEF.md v7/§8 + requirements §9 v1.69"
+    }
+  ]
+}

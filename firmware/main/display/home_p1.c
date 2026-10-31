@@ -846,6 +846,177 @@ static int p1_blit_flow(const char *text, int x0, int y0, int line_h,
     return lines;
 }
 
+/* [U1] 临时事件标记 ※（U+203B，UTF-8 E2 80 BB）——首页半（F-9）：name 首字符 = 临时
+ * 事件。不扩 wire 字段（home_p1.h 零 flags；契约 §1.3⑥ {time,name} 零偏移）。渲染
+ * 语义 = ※ 字形退役（不画、不占笔进）+ 名部分照常逐字形 blit + 名墨底缘下方相邻行
+ * 起 2px 横线（宽 = 名部分 x 墨盒跨度含端点）。固定日程零变化（不画线）。 */
+#define HP1_TEMP_MARKER_CP 0x203Bu /* '※' U+203B（检测用 UTF-8 字节 E2 80 BB） */
+
+/* 名首是否为 ※；是则 *out_name 指向剥离标记后的名首（跳过 3 字节 UTF-8 序列），返回 1。 */
+static int p1_strip_temp_marker(const char *name, const char **out_name)
+{
+    const unsigned char *p = (const unsigned char *)name;
+    if (p[0] == 0xE2u && p[1] == 0x80u && p[2] == 0xBBu) {
+        *out_name = name + 3;
+        return 1;
+    }
+    *out_name = name;
+    return 0;
+}
+
+/* [U1] 行流 blit（temp 名带下划线）：与 p1_blit_flow 行流语义逐字同构，另记录「名
+ * 部分」（line 中字节位移 >= name_pos 的字形）的墨盒左/右/底，随后在底缘下方相邻行
+ * 起画 2px 横线（x = 名墨左..右含端点；色 = 行墨色；clip 进盒与帧缓冲）。名与固定名
+ * 在行流上完全同形（※ 已剥离、不占笔进），唯一差 = 该横线。 */
+static int p1_blit_flow_marked(const char *text, int name_pos, int x0, int y0, int line_h,
+                               int cx0, int cy0, int cx1, int cy1)
+{
+    size_t len;
+    size_t pos;
+    int cur_x, cur_y, lines;
+    int name_left = -1, name_right = -1, name_bottom = -1;
+
+    if (text == NULL || line_h <= 0) {
+        return 1;
+    }
+    len = strlen(text);
+    pos = 0;
+    cur_x = x0;
+    cur_y = y0;
+    lines = 1;
+
+    while (pos < len) {
+        unsigned char b = (unsigned char)text[pos];
+        uint32_t cp;
+        int seq, i, is_name;
+
+        if (b < 0x80u) {
+            cp = b;
+            seq = 1;
+        } else {
+            seq = p1_utf8_seq_bytes(b);
+            if (seq < 2 || pos + (size_t)seq > len) {
+                break;
+            }
+            cp = (uint32_t)(b & (uint32_t)(seq == 2 ? 0x1Fu : seq == 3 ? 0x0Fu : 0x07u));
+            for (i = 1; i < seq; i++) {
+                unsigned char c = (unsigned char)text[pos + (size_t)i];
+                if ((c & 0xC0u) != 0x80u) {
+                    cp = 0;
+                    break;
+                }
+                cp = (cp << 6) | (uint32_t)(c & 0x3Fu);
+            }
+            if (cp == 0) {
+                break;
+            }
+        }
+        is_name = ((int)pos >= name_pos);
+        pos += (size_t)seq;
+        {
+            kidpal_p1_glyph_t g;
+            int stride;
+            int line_x;
+            int sy, sx;
+
+            if (kidpal_p1_font_glyph(cp, &g) != 0 || g.bits == NULL) {
+                continue;
+            }
+            if (g.w <= 0 || g.h <= 0 || g.w > 64 || g.h > 64) {
+                continue;
+            }
+            line_x = cur_x;
+            if (cur_x != x0 && (cur_x + g.advance) > cx1) {
+                cur_y += line_h;
+                lines++;
+                line_x = x0;
+                cur_x = x0;
+            }
+            stride = (g.w + 7) / 8;
+            for (sy = 0; sy < g.h; sy++) {
+                int py = cur_y + sy;
+                if (py < cy0 || py > cy1 || py < 0 || py >= P1_FB_H) {
+                    continue;
+                }
+                for (sx = 0; sx < g.w; sx++) {
+                    int px = line_x + sx;
+                    int bit;
+                    if (px < cx0 || px > cx1 || px < 0 || px >= P1_FB_W) {
+                        continue;
+                    }
+                    bit = (g.bits[(size_t)sy * (size_t)stride + (size_t)(sx >> 3)]
+                           >> (7 - (sx & 7))) & 1u;
+                    if (bit) {
+                        s_p1_fb[py * P1_FB_W + px] = P1_COLOR_INK;
+                        if (is_name) {
+                            if (name_left < 0 || px < name_left) {
+                                name_left = px;
+                            }
+                            if (px > name_right) {
+                                name_right = px;
+                            }
+                            if (py > name_bottom) {
+                                name_bottom = py;
+                            }
+                        }
+                    }
+                }
+            }
+            cur_x = line_x + g.advance;
+        }
+    }
+    /* [U1] 名墨底缘下方相邻行起 2px 横线（宽 = 名墨 x 跨度含端点）。 */
+    if (name_left >= 0 && name_right >= name_left && name_bottom >= 0) {
+        int t;
+        for (t = 0; t < 2; t++) {
+            int yy = name_bottom + 1 + t;
+            int xx;
+            if (yy < cy0 || yy > cy1 || yy < 0 || yy >= P1_FB_H) {
+                continue;
+            }
+            for (xx = name_left; xx <= name_right; xx++) {
+                if (xx < cx0 || xx > cx1 || xx < 0 || xx >= P1_FB_W) {
+                    continue;
+                }
+                s_p1_fb[yy * P1_FB_W + xx] = P1_COLOR_INK;
+            }
+        }
+    }
+    return lines;
+}
+
+/* [U1]/[G1] 日程项行绘制：time + ' ' + name（※ 标记剥离）。固定日程走 p1_blit_flow
+ * （原逐字节行为不变）；临时日程走 p1_blit_flow_marked（名下 2px 下划线）。 */
+static int p1_draw_item_line(const hp1_item_t *it, int x0, int y0, int line_h,
+                             int cx0, int cy0, int cx1, int cy1)
+{
+    char line[48];
+    const char *nm;
+    const char *s;
+    int temp, name_pos, n = 0;
+
+    if (it == NULL) {
+        return 1;
+    }
+    temp = p1_strip_temp_marker(it->name, &nm);
+    if (!temp) {
+        p1_join_time_name(it, line, (int)sizeof(line));
+        return p1_blit_flow(line, x0, y0, line_h, cx0, cy0, cx1, cy1);
+    }
+    for (s = it->time; *s != '\0' && n < 47; s++) {
+        line[n++] = *s;
+    }
+    if (n < 47) {
+        line[n++] = ' ';
+    }
+    name_pos = n;
+    for (s = nm; *s != '\0' && n < 47; s++) {
+        line[n++] = *s;
+    }
+    line[n] = '\0';
+    return p1_blit_flow_marked(line, name_pos, x0, y0, line_h, cx0, cy0, cx1, cy1);
+}
+
 /* 整数字【缩放】渲染（正负都吃，用于温度 -5..60 与湿度 0..100）。 */
 static int p1_blit_int_scaled(int value, int x0, int y0, int pitch,
                               int dw, int dh, int cx0, int cy0, int cx1, int cy1)
@@ -1193,14 +1364,13 @@ static void p1_draw_card(void)
 {
     const int line_h = 22;      /* 行带 pitch（2026-10-13 补充轮 28→22）：今天行带
                                  * 68-89/90-111/...；明天项行带 155-176/177-198/... */
-    const int text_yoff = 4;    /* 14px 字形在行带内的垂直对齐偏移（2026-10-13 补充轮 6→4） */
+    const int text_yoff = 3;    /* 16px 字形在 22px 行带内垂直居中（F-2/[G1] 重基线：旧 14px yoff=4；(22-16)/2=3） */
     const int cx0 = 152, cy0 = 42, cx1 = 392, cy1 = 242; /* 卡区 clip */
     const int pv_cy1 = 242;     /* 明天区底界 clip（对齐卡区底界 cy1；旧 PREVIEW_NEG 退役面约束随本包退役） */
     int fy_today = 68;          /* 今天区行流光标 */
     int ty;                     /* 明天区锚点（虚线 ty+8 / 帽标 ty+13 / 项行 ty+43） */
     int fy_pv;
     int rows, used, i;
-    char line[48];
     const hp1_item_t *it;
     int pv_count = kidpal_home_p1_schedule_preview_count();
 
@@ -1222,9 +1392,8 @@ static void p1_draw_card(void)
     if (s_has_day && s_count > 0) {
         it = kidpal_home_p1_schedule_item(0);
         if (it != NULL) {
-            p1_join_time_name(it, line, (int)sizeof(line));
-            used = p1_blit_flow(line, cx0, fy_today + text_yoff, line_h,
-                                cx0, cy0, cx1, cy1);
+            used = p1_draw_item_line(it, cx0, fy_today + text_yoff, line_h,
+                                     cx0, cy0, cx1, cy1);
             fy_today += used * line_h;
         }
         /* 后续事项行 ROW2..（逐项 时间+名, 行流下排）。整行容纳守卫：行带底越卡底
@@ -1237,9 +1406,8 @@ static void p1_draw_card(void)
             if (it == NULL) {
                 break;
             }
-            p1_join_time_name(it, line, (int)sizeof(line));
-            used = p1_blit_flow(line, cx0, fy_today + text_yoff, line_h,
-                                cx0, cy0, cx1, cy1);
+            used = p1_draw_item_line(it, cx0, fy_today + text_yoff, line_h,
+                                     cx0, cy0, cx1, cy1);
             fy_today += used * line_h;
         }
     } else if (s_has_day) {
@@ -1282,9 +1450,8 @@ static void p1_draw_card(void)
                 if (it == NULL) {
                     break;
                 }
-                p1_join_time_name(it, line, (int)sizeof(line));
-                used = p1_blit_flow(line, cx0, fy_pv + text_yoff, line_h,
-                                    cx0, cy0, cx1, pv_cy1);
+                used = p1_draw_item_line(it, cx0, fy_pv + text_yoff, line_h,
+                                         cx0, cy0, cx1, pv_cy1);
                 fy_pv += used * line_h;
             }
         } else if (pv_count == 0) {

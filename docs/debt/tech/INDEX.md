@@ -7,15 +7,16 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 34（待拍板 1 / 待触发 28 / 已接受风险 5）；已结 27（归档索引见下）。
+**摘要**：未结 37（待拍板 2 / 待触发 30 / 已接受风险 5）；已结 27（归档索引见下）。
 
-## 待拍板（1）
+## 待拍板（2）
 
 | ID | 严重度 | title | 处理时机 |
 |---|---|---|---|
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
+| [ARQ-261029-home-temp-marker-producer](ARQ-261029-home-temp-marker-producer.md) | MAJOR | F-9 首页临时事件下划线——上游写入侧从不往 name 落 ※ 前缀，[U1] 机制真机永不触发 | P1 包（261028-m6-k2a-p1-home-16px）acceptance-author 冻结轮跨端核对（2026-10-29） |
 
-## 待触发（28）
+## 待触发（30）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -47,6 +48,8 @@
 | [TECH-261023-story-voice-discard-no-text-carrier](TECH-261023-story-voice-discard-no-text-carrier.md) | SHOULD | S-F2.2 AC4「或说『讲错啦』Then 取消」语音丢弃路径零文本检出载体——真实丢弃链 = 取消键/BOOT → kidpal_story_discard 契约帧 → front acc.cancel，记录语境引擎不派发 LLM，「讲错啦」作为语音输入在当前链路无落点 | 下次动 S-F2.2 记录会话需求面 / front 丢弃链 / STT 素材入口过滤的包 |
 | [TECH-261026-oneshot-wrapper-prompt-derived-facts](TECH-261026-oneshot-wrapper-prompt-derived-facts.md) | SHOULD | 设备流程回合的「机器包装指令」随孩子原话一起以 owner 身份入库，被 deriver 抽成「孩子要求整理成文」的过程性结论 | 下一次动记忆管线（抽取策略 / honcho 插件版本升级 / 需求面记忆口径再评）时一并裁；或运营面观察到该族结论再次挤占画像窗口时 |
 | [TECH-261028-p3-reader-key-falls-to-session-toggle](TECH-261028-p3-reader-key-falls-to-session-toggle.md) | MAJOR | P3 阅读态 KEY 短按落全局 SESSION_TOGGLE 开语音会话（违反 S-F2.3 AC2「不响应」），阅读态键帽槽同因缺位显示 (null) | 下个动 P3 阅读态 / 板级按键路由 / 键帽裁决面的包；或 human 指定单独立包（/triage-change 起） |
+| [TECH-261030-qqbot-ask-user-block](TECH-261030-qqbot-ask-user-block.md) | MAJOR | QQ 渠道 `ask_user` 提问送不出去——run 卡死 900 秒、后续消息全排队，家长侧只看到「不回」 | QQ 侧再现「发了没回」；或升级 openclaw-qqbot / OpenClaw 主体时 |
+| [TECH-261030-schedule-answer-skill-period-stale](TECH-261030-schedule-answer-skill-period-stale.md) | SHOULD | `kidpal-schedule-answer` skill 仍写「表列第1节…第6节」，live `schedule.md` 已有第7节——设备课表问答会漏掉周一/二/四的兴趣课（足球） | 下个动 OpenClaw skill / 课表部署面的批；或设备课表问答再现「漏第7节 / 漏足球」 |
 
 ## 已接受风险（5）
 
