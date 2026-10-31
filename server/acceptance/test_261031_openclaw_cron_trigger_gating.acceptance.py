@@ -155,6 +155,17 @@ Run protocol（文件名两点须 importlib 模式）:
   · 全量 server/acceptance 对照上游基线（370 passed / 7 deselected / 33 subtests
     passed @ 93b92a6b）：**25 failed / 370 passed / 9 deselected / 33 subtests passed**
     —— 370 passed 恰等于基线零回退，25 条失败**全部**落在本件（CRG-A6 证据）。
+
+REVISION LOG
+  · R1（2026-10-31，planner 授权收紧型更正，据 builder 实测报告）：
+    - 旧形态：CronTriggerGatingAcceptance._norm 用 `str(p).replace("\\","/").lstrip("./")`；
+      `_norm(entry.get("dst"))` 与未归一化的 `/opt/kidpal/...` 直接比较。
+    - 新形态：`_norm` 只剥字面前缀 `"./"`（`s[2:] if s.startswith("./") else s`），保留
+      前导 `/`；归一化后与 `/opt/kidpal/...` 可比。
+    - 理由：`.lstrip("./")` 是**字符集**语义（剥任意前导 '.'/'/'），会把 ECS 绝对路径的
+      前导 '/' 一并剥掉（实测 `'/opt/x'.lstrip('./') == 'opt/x'`），任何合法 manifest dst
+      恒不满足；`startswith("./")` 才是**字面前缀**语义。仅此一处更正，未放宽其它断言、
+      未改实现。
 """
 
 from __future__ import annotations
@@ -787,7 +798,10 @@ class CronTriggerGatingAcceptance(unittest.TestCase):
 
     @staticmethod
     def _norm(p) -> str:
-        return str(p or "").replace("\\", "/").lstrip("./")
+        # 只剥字面前缀 "./"，保留前导 "/"：`.lstrip("./")` 是字符集语义，会把 ECS 绝对
+        # 路径的前导 "/" 一并剥掉（'/opt/x' -> 'opt/x'），令合法 manifest dst 恒不满足。
+        s = str(p or "").replace("\\", "/")
+        return s[2:] if s.startswith("./") else s
 
     def test_crg_a5_manifest_trigger_entries_and_cron_jobs(self):
         """coverage: CRG-A5 — manifest: 4 条 md5 登记（2 判定器 + 2 薄壳 JS）；两条 cron_jobs

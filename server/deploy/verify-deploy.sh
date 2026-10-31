@@ -48,6 +48,7 @@ done
 "$PY" - "$MANIFEST" "$ALERTS_DIR" "$NO_ALERTS" <<'PYEOF'
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -128,6 +129,67 @@ for job in manifest.get("cron_jobs", []):
         every_min = live_sched.get("everyMs", 0) // 60000
         if live_sched.get("kind") == "every" and every_min != 15:
             drift("cron", name, f"调度漂移: live=every {every_min}min 期望={job['expect_schedule']}")
+    # ── trigger 核验（261031-openclaw-cron-trigger-gating）──
+    # ① expect_trigger_file：job.trigger.script 与盘上文件行尾归一后逐字相等
+    #    （抓「盘上变了但 job 内联没更新」）；② once 不得为 true（变更驱动须周期复判）；
+    # ③ 全局 cron.triggers.enabled 不得为 false（带 trigger 的 job 会每轮 status=error）。
+    trigger = payload.get("trigger")
+    if isinstance(trigger, dict) and trigger.get("once") is True:
+        drift("cron", name, "trigger.once=true —— 必须 false（变更驱动需每周期复判）")
+    if "expect_trigger_file" in job:
+        rel = job["expect_trigger_file"]
+        src_path = repo / rel
+        if not isinstance(trigger, dict) or not str(trigger.get("script") or "").strip():
+            drift("cron", name, "缺 trigger.script（manifest 已登记 expect_trigger_file）")
+        elif not src_path.is_file():
+            drift("config", name, f"仓内 trigger 源缺失: {rel}")
+        else:
+            want = src_path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n") \
+                .decode("utf-8", "replace").strip()
+            got = str(trigger.get("script")).replace("\r\n", "\n").replace("\r", "\n").strip()
+            if want != got:
+                drift("cron", name,
+                      f"内联 trigger 文本与仓内 {rel} 不一致（重跑 cron_triggers.py apply）")
+
+# 全局 trigger 开关守卫：只在能确证 false 时报警（不可读 → 不判漂移，L1 live 观测兜底）。
+def _trigger_global_enabled():
+    try:
+        p = subprocess.run(
+            ["openclaw", "config", "get", "cron.triggers.enabled", "--json"],
+            capture_output=True, text=True, timeout=60)
+    except Exception:  # noqa: BLE001
+        p = None
+    if p is not None and p.returncode == 0:
+        txt = (p.stdout or "").strip()
+        if txt.lower() in ("true", "false"):
+            return txt.lower() == "true"
+        try:
+            val = json.loads(txt)
+            if isinstance(val, dict):
+                val = val.get("value", val.get("cron.triggers.enabled"))
+            if isinstance(val, bool):
+                return val
+        except ValueError:
+            pass
+    for cand in (os.environ.get("OPENCLAW_HOME"), "/root/.openclaw"):
+        if not cand:
+            continue
+        cfg = Path(cand) / "openclaw.json"
+        if not cfg.is_file():
+            continue
+        try:
+            doc = json.loads(cfg.read_text(encoding="utf-8", errors="replace"))
+            val = doc.get("cron", {}).get("triggers", {}).get("enabled")
+            if isinstance(val, bool):
+                return val
+        except Exception:  # noqa: BLE001
+            pass
+    return None
+
+if _trigger_global_enabled() is False:
+    drift("config", "cron.triggers.enabled",
+          "全局 trigger 开关为 false —— 带 trigger 的 job 每轮 status=error（功能停摆）")
+
 
 report = {
     "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

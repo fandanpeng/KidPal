@@ -26,7 +26,7 @@
     "CRG-A3: 判定器 B 真值表——四分支（无告警件 + 无 ack → false；无告警件 + 有 ack → true 恢复动作；不新鲜 → true 恢复动作；新鲜且同指纹 → false；新鲜且新指纹 → true）+ 指纹逐字等于 error|detail + checked_at 两种 ISO 形态 + 坏 checked_at 退 mtime + 冷却窗抑制",
     "CRG-A4: 判定器 B 输出形态——fire:true 的 message 自包含（含指纹与 detail、指明 skill 分支）、state 仅含反刷屏字段、异常 exit≠0",
     "CRG-A5: 部署面静态锚——manifest.yaml 含两条 expect_trigger_file 与四条 md5 条目；verify-deploy.sh 含 trigger 内联文本比对、once 非 true 守卫、cron.triggers.enabled 守卫；DEPLOY-RUNBOOK 含 §8.3d 与 --clear-trigger 回滚；两份 SKILL.md 含 trigger 变更驱动段；薄壳 JS 引用正确判定器路径且返回 json({fire...})",
-    "CRG-A6: 回归不红——server/tests 全绿（含既有 reminder 单测），server/acceptance 无新增红（基线 370 passed @ 93b92a6b）"
+    {"id": "CRG-A6", "suiteGate": true}
   ],
   "exitCriteria": [
     "CRG-E1: 两条 cron 保持 every 15m / agent main / session isolated / payload message 逐字不变，只新增 trigger 字段；`--clear-trigger` 一步回滚可回到当前无条件形态。",
@@ -79,6 +79,7 @@
     "exempt": "生产侧判定器与 cron 触发器的消费端是 OpenClaw 运行时（第三方黑盒、仓内无源码），无法以 {path,symbol} 表达对端；消费端观测落在 live 相位 L1-L7 证据。"
   },
   "mutationRequired": false,
+  "mutationSkipReason": "本包为两个无状态纯只读判定器 + 部署面文本锚，无状态机、无迁移、无并发路径；本仓未接 Python 变异工具（mutmut / cosmic-ray 均不在仓），且冻结验收 25 条已逐条钉住每个谓词的两侧边界（60s 命中/61s 不命中、mtime 等值、stale 两侧、冷却窗内/外、指纹相同/不同），判别力由边界断言承担。",
   "mergeOrder": null,
   "dependsOn": [],
   "notes": "human 2026-10-31 裁定：不做 spike、按 ② Lite 实现，显式覆盖 change-triage §2 单向守卫；ECS 写操作归主线程/human，planner 到 live 相位停并交 live-handoff.md。"
