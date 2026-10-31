@@ -3,8 +3,10 @@
 
 写入口只许 openclaw CLI（`openclaw cron edit --trigger-script` / `--clear-trigger`）；
 本脚本**不直写 openclaw.json**（不 open 写模式、不 write_text 任何配置件）。trigger
-内容来源 = 仓内部署后的 `/opt/kidpal/openclaw-patch/triggers/*.trigger.js`，逐字读入
-后交给 CLI —— 与 `verify-deploy.sh` 的内联文本比对共用同一份源。
+来源 = 仓内部署后的 `/opt/kidpal/openclaw-patch/triggers/*.trigger.js`；`apply` 把
+**盘上文件路径**交给 `--trigger-script`，由 CLI 自己读取并内联进 job（2026-10-31 ECS
+实测：`--trigger-script` 收的是路径，内联文本会被当成路径打开而 ENOENT）。`status`
+仍逐字读入同一份文件与 live 内联文本比对 —— 与 `verify-deploy.sh` 共用同一份源。
 
 用法：
   python3 cron_triggers.py status                  # 逐 job 比对 live trigger 与盘上文件
@@ -63,9 +65,15 @@ def _inline_script(payload):
     return ""
 
 
+def _abbrev(arg, head=28, tail=28):
+    """超长参数保留首尾（打印路径形态时尾部的文件名不会被截掉）。"""
+    if len(arg) <= head + tail + 1:
+        return arg
+    return arg[:head] + "…" + arg[-tail:]
+
+
 def _run(cmd, dry_run):
-    display = " ".join(
-        (c if len(c) <= 40 else c[:40] + "…") for c in cmd)
+    display = " ".join(_abbrev(c) for c in cmd)
     print(("[dry-run] " if dry_run else "+ ") + display)
     if dry_run:
         return 0
@@ -123,9 +131,9 @@ def cmd_apply(args):
         if not src.is_file():
             sys.stderr.write("本地 trigger 文件缺失：%s\n" % src)
             return 2
-        script = _read_trigger(str(src))
+        # --trigger-script 收的是文件路径（CLI 自己读取并内联进 job），不是脚本文本。
         rc |= _run(
-            ["openclaw", "cron", "edit", name, "--trigger-script", script],
+            ["openclaw", "cron", "edit", name, "--trigger-script", str(src)],
             args.dry_run,
         )
     return 0 if rc == 0 else 1
@@ -152,6 +160,10 @@ def build_parser():
                        help="只打印将执行的命令，不真正调用 openclaw")
 
     p_status = sub.add_parser("status", help="比对 live trigger 与盘上文件")
+    # --job 与 apply/clear 对齐：status 缺它会让 _targets() 读 args.job 时 AttributeError
+    # （2026-10-31 ECS 实测：`status` 直接崩在 Namespace 无 job 属性）。
+    p_status.add_argument("--job", choices=sorted(JOBS), default=None,
+                          help="只比对单个 job（缺省 = 两个都比对）")
     p_status.set_defaults(func=cmd_status)
 
     p_apply = sub.add_parser("apply", help="幂等加/更新 trigger（--trigger-script）")
