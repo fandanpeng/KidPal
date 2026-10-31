@@ -16,3 +16,5 @@
   - 非 CLI 形态（VS Code 扩展 / IDE 内会话）降级面：已按 extension-session 记账，起步在 pod-events 记 `settings-presence`。
 - **ECS live 相位归属**：本包 live 验收（`openclaw cron edit --trigger-script`、L1–L7、回滚演练）**归主线程/human 执行**；planner 到点即停，把命令清单 + 判据 + 预期输出写 `live-handoff.md` 交回，不改 live gateway。
 - **判档记录**：`rigor: lite` / `riskTier: high`；human 2026-10-31 明确「不做 spike，直接按 Lite 实现」，显式覆盖 change-triage §2 单向守卫，裁决见 plan.md frontmatter `humanDecision`。
+
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{}}

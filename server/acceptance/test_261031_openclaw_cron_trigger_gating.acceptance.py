@@ -166,6 +166,20 @@ REVISION LOG
       前导 '/' 一并剥掉（实测 `'/opt/x'.lstrip('./') == 'opt/x'`），任何合法 manifest dst
       恒不满足；`startswith("./")` 才是**字面前缀**语义。仅此一处更正，未放宽其它断言、
       未改实现。
+  · R2（2026-10-31，planner 授权收紧型更正，据 integrator 实测 `RUN_LIVE=1 -m live`
+    在零真实 ECS 证据下 `2 passed` 为据）：
+    - 旧形态：两条 live 测试共用 `_evidence_text()`，缺 `live-evidence.md` 时**回退读**
+      `live-handoff.md`；断言仅做全局 token 命中（L1..L7 / aggregated|text / --clear-trigger）。
+      而 handoff 正文本身即含这些 token（交班清单），故零真实证据也恒绿。
+    - 新形态：live 证据来源**只认** `delivery/taskpackages/261031-openclaw-cron-trigger-gating/
+      live-evidence.md`（删除 handoff 回退分支）；并施加结构判定——文件存在且非空；含
+      L1..L7 七个分段标题（`## Ln …`）且**每段**含一条实际执行命令 + 退出码/结果行；含
+      `aggregated`/`text` 实形记录；L6 含 `--clear-trigger` + `cron show` 且含「无 trigger」
+      核验行；反冒充——不得含 handoff 计划措辞（待执行/待主线程/待回填/交班清单…）、不得与
+      live-handoff.md 同文。
+    - 理由：旧 live 门以 handoff 交班文档冒充证据、且仅 token 命中即绿，丧失判别力（零真实
+      执行也过）。收紧后 live-evidence.md 缺位 / 非逐段执行证据 → 设计态红。仅改这两条 live
+      测试与 REVISION LOG，host 25 条零改动、未改实现。
 """
 
 from __future__ import annotations
@@ -953,9 +967,45 @@ class CronTriggerGatingAcceptance(unittest.TestCase):
 # =========================================================================== #
 # LIVE —— L1..L7 证据读（@pytest.mark.live，不 auto-run；probe ≠ exercise）
 # 真实 ECS 执行（openclaw cron edit --trigger-script / L1-L7 / 回滚演练）归主线程/human，
-# 本类只对 live 相位**真实产出**的证据文件施加判定。证据缺位 = 设计态红（不 auto-run，
-# ARQ-260901-g3；conftest 机械 skip）。
+# 本类**只认** live 相位真实产出证据 `live-evidence.md`（handoff 交班清单不作证据），并逐段
+# 施加「命令 + 退出码/结果行」结构判定。证据缺位 = 设计态红（不 auto-run，ARQ-260901-g3；
+# conftest 机械 skip）。
 # =========================================================================== #
+
+LIVE_EVIDENCE = LIVE_DIR / "live-evidence.md"
+LIVE_SECTIONS = ("L1", "L2", "L3", "L4", "L5", "L6", "L7")
+
+# 每段须含「实际执行过的命令」与「退出码/结果行」——把 live 门从「读到 token 即绿」收紧为
+# 「逐段落真实执行证据」。
+_LIVE_COMMAND_RE = re.compile(
+    r"(?im)^\s*[>$#]?\s*"
+    r"(?:openclaw|bash|python3?|systemctl|curl|ls|cat|jq|journalctl|grep|git|"
+    r"touch|stat|date|sed|awk|cmp|diff|deploy\.sh)\b")
+_LIVE_RESULT_RE = re.compile(
+    r"(?i)(?:退出码|exit(?:\s*code)?|returncode|\brc\b|status)\s*[:=]?\s*-?\d"
+    r"|\$\?|→|=>|输出|结果|result|output")
+_LIVE_SECTION_RE = re.compile(r"(?m)^#{1,6}\s*(L[1-7])\b")
+# 计划/交班措辞（handoff 的特征词）：真实执行证据不应出现。
+_LIVE_PLACEHOLDER_RE = re.compile(
+    r"待执行|待主线程|待回填|待真机|待 live|尚未执行|交班清单|不是证据|TODO|TBD", re.I)
+# 「cron show 无 trigger」的回滚核验证据行。
+_LIVE_NO_TRIGGER_RE = re.compile(
+    r"(?i)无\s*trigger|no\s+trigger"
+    r"|trigger[^\n]{0,24}(?:absent|none|null|无|缺失|不存|没有)"
+    r"|trigger\s*[:=]\s*(?:null|none|absent)")
+
+
+def _live_split_sections(body: str) -> dict:
+    """按 markdown 标题 '## L1 …' 切段；每段正文 = 标题后至下一 L 标题前。缺段 → 空串。"""
+    found = list(_LIVE_SECTION_RE.finditer(body))
+    sections = {name: "" for name in LIVE_SECTIONS}
+    for i, m in enumerate(found):
+        name = m.group(1)
+        start = m.end()
+        end = found[i + 1].start() if i + 1 < len(found) else len(body)
+        sections[name] = sections.get(name, "") + body[start:end]
+    return sections
+
 
 class CronTriggerGatingLiveAcceptance(unittest.TestCase):
 
@@ -964,43 +1014,72 @@ class CronTriggerGatingLiveAcceptance(unittest.TestCase):
     if _HAS_PYTEST:
         pytestmark = pytest.mark.live
 
-    def _evidence_text(self) -> str:
-        for name in ("live-evidence.md", "live-handoff.md"):
-            p = LIVE_DIR / name
-            if p.is_file():
-                return _read_text(p)
-        return ""
-
     def _require(self, tag: str) -> str:
-        body = self._evidence_text()
         self.assertTrue(
-            body.strip(),
-            f"{tag} live RED: 未见 live 证据（{LIVE_DIR} 下 live-evidence.md / live-handoff.md）"
-            "—— L1-L7 归主线程/human ECS 轮，证据须先落盘。")
+            LIVE_EVIDENCE.is_file(),
+            f"{tag} live RED: 未见 live 证据文件 {LIVE_EVIDENCE} —— live 门只认此文件；"
+            "live-handoff.md 是交班清单、非证据，不得充当 live 证据。真实 ECS 执行归"
+            "主线程/human，产出须落 live-evidence.md 后方可核。")
+        body = _read_text(LIVE_EVIDENCE)
+        self.assertTrue(body.strip(), f"{tag} live RED: {LIVE_EVIDENCE} 为空。")
+        ph = _LIVE_PLACEHOLDER_RE.search(body)
+        self.assertIsNone(
+            ph,
+            f"{tag} live RED: live-evidence.md 含计划性占位措辞 {ph.group(0)!r} —— 不得以 "
+            "handoff 的计划/交班措辞冒充真实执行证据。")
+        handoff = LIVE_DIR / "live-handoff.md"
+        if handoff.is_file():
+            self.assertNotEqual(
+                body.strip(), _read_text(handoff).strip(),
+                f"{tag} live RED: live-evidence.md 与 live-handoff.md 同文 —— 证据须是真实"
+                "执行产出，不得复制交班清单。")
         return body
 
     def test_live_evidence_covers_l1_l7(self):
-        """coverage: CRG-A5/CRG-E4 — live 证据覆盖 L1..L7 全段。"""
+        """coverage: CRG-A5/CRG-E4 — live-evidence.md 含 L1..L7 七个分段标题，且每段含
+        实际执行过的命令 + 退出码/结果行（逐段落执行证据，非 token 命中即绿）。"""
         tag = "CRG-LIVE"
         body = self._require(tag)
-        missing = [l for l in ("L1", "L2", "L3", "L4", "L5", "L6", "L7") if l not in body]
+        secs = _live_split_sections(body)
+        missing = [l for l in LIVE_SECTIONS if not secs.get(l, "").strip()]
         self.assertEqual(
             missing, [],
-            f"{tag} live RED: live 证据缺段 {missing}（L1-L7 七事实须逐段落证据）。")
+            f"{tag} live RED: 缺分段标题/正文 {missing} —— live 证据须以 markdown 标题 "
+            "'## L1 …' … '## L7 …' 起段并各带正文。")
+        bad = []
+        for l in LIVE_SECTIONS:
+            s = secs[l]
+            if not _LIVE_COMMAND_RE.search(s):
+                bad.append((l, "缺实际执行命令行"))
+            elif not _LIVE_RESULT_RE.search(s):
+                bad.append((l, "缺退出码/结果行"))
+        self.assertEqual(
+            bad, [],
+            f"{tag} live RED: 分段缺执行证据 {bad} —— 每段须含一条实际执行过的命令与其"
+            "退出码/结果行（命令如 openclaw/bash/python3/…；结果如 'exit 0' / 'rc=0' / "
+            "'退出码 0' / '→ …'）。")
 
     def test_live_evidence_records_exec_shape_and_rollback(self):
-        """coverage: CRG-E4 — L2 记录 exec 返回字段实形（aggregated / text）；L6 回滚演练含
-        --clear-trigger。"""
+        """coverage: CRG-E4 — 含 exec 返回字段实形（aggregated / text）；L6 回滚演练含
+        --clear-trigger 且 cron show 无 trigger 的证据行。"""
         tag = "CRG-LIVE"
         body = self._require(tag)
         low = body.lower()
         self.assertTrue(
             ("aggregated" in low) or ("text" in low),
-            f"{tag} live RED: L2 未记录 exec 返回字段实形（aggregated vs text）—— "
-            "未跑 spike 的四条未知项须在此收口。")
+            f"{tag} live RED: 未记录 exec 返回字段实形（aggregated vs text）—— 未跑 spike "
+            "的四条未知项须在 live 证据收口。")
+        l6 = _live_split_sections(body).get("L6", "")
         self.assertIn(
-            "--clear-trigger", body,
+            "--clear-trigger", l6,
             f"{tag} live RED: L6 回滚演练证据缺 --clear-trigger。")
+        self.assertIn(
+            "cron show", l6,
+            f"{tag} live RED: L6 回滚演练缺 cron show 回滚核验证据。")
+        self.assertIsNotNone(
+            _LIVE_NO_TRIGGER_RE.search(l6),
+            f"{tag} live RED: L6 缺「cron show 无 trigger」的核验证据行（回滚后 job 应无 "
+            "trigger 键）。")
 
 
 if __name__ == "__main__":  # standalone: python 本文件
