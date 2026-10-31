@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "_doc": [
+    "历史种子先例只引用已存在的 human-decision 事件，不改写历史 pod-events。",
+    "新先例不双写到本文件；由对应包 pod-events.jsonl 的 human-decision.payload.gatePrecedents 累积。",
+    "自动折抵只认 axis=all-mock 或 generated-noise，且必须同时匹配 changeId、axis、pattern 与 launch-card 申报。",
+    "security、core、critical 与任何未登记轴永不自动折抵；先例命中信息只可作 human 快批提示。"
+  ],
+  "precedents": [
+    {
+      "changeId": "261010-prompt-v9-schedule-anti-narration",
+      "eventId": "e02f05e3-e0f5-46b9-ba79-2b4027b8e090",
+      "approvedVia": "AskUserQuestion(VS Code interactive)",
+      "axis": "all-mock",
+      "pattern": "content-anchor-live-observation",
+      "sourceRef": "delivery/taskpackages/261010-prompt-v9-schedule-anti-narration/pod-events.jsonl"
+    },
+    {
+      "changeId": "261012-kidpal-realtime-facts",
+      "eventId": "9d4c1f68-2e5b-4a07-8b93-6f1a3d0c5e84",
+      "approvedVia": "AskUserQuestion interactive",
+      "axis": "all-mock",
+      "pattern": "content-anchor-live-observation",
+      "sourceRef": "delivery/taskpackages/261012-kidpal-realtime-facts/pod-events.jsonl"
+    },
+    {
+      "changeId": "261023-agents-md-static-semantics-alignment",
+      "eventId": "1c6076b2-1292-42c4-9b8f-0ba93bd3ac5c",
+      "approvedVia": "main-session AskUserQuestion",
+      "axis": "all-mock",
+      "pattern": "prompt-static-semantics",
+      "sourceRef": "delivery/taskpackages/261023-agents-md-static-semantics-alignment/pod-events.jsonl"
+    }
+  ]
+}

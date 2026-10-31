@@ -7,7 +7,7 @@
 > **勿手改本文件**——改了会在下次渲染被覆盖；若确已手改或 union 合并后未重渲染，`debt-doctor.mjs` 会报「待重渲染」。
 > 引用本文件必须带目录（`docs/debt/tech/INDEX.md`）——仓内有多份同名 `INDEX.md`。
 
-**摘要**：未结 34（待拍板 1 / 待触发 27 / 已接受风险 6）；已结 26（归档索引见下）。
+**摘要**：未结 34（待拍板 1 / 待触发 28 / 已接受风险 5）；已结 27（归档索引见下）。
 
 ## 待拍板（1）
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | [TECH-261022-p3-record-session-state-churn](TECH-261022-p3-record-session-state-churn.md) | MAJOR | P3 记录会话状态演出族缺陷——键帽鬼影闪烁 / 成功路径鬼覆盖层吃按键 / 引导垄断与「说完了」竞态 / 记录语境幻听入素材 / 列表排序与敷衍标题（KPLOG005 真机轮实证） | 已拍板即批处理——human 2026-10-22：登记后紧接走 /triage-change 分流起包（建议拆两包：固件键帽+覆盖层族一包；front 引导节奏+素材过滤+排序标题一包） |
 
-## 待触发（27）
+## 待触发（28）
 
 | ID | 严重度 | title | 等什么触发 |
 |---|---|---|---|
@@ -46,22 +46,22 @@
 | [TECH-261023-recording-echo-ghosting](TECH-261023-recording-echo-ghosting.md) | SHOULD | P3 录音回显滚动瞬间的面板响应叠印——传输层/LVGL 层已三重排除，定性为反射屏液晶响应窗物理特性，缓解与产品选项待拍板 | human 对回显显示形态拍板（单行化 / 接受现状 / 驱动实验三选一）；或下个动 P3 录音演出面 / 显示驱动面的包 |
 | [TECH-261023-story-voice-discard-no-text-carrier](TECH-261023-story-voice-discard-no-text-carrier.md) | SHOULD | S-F2.2 AC4「或说『讲错啦』Then 取消」语音丢弃路径零文本检出载体——真实丢弃链 = 取消键/BOOT → kidpal_story_discard 契约帧 → front acc.cancel，记录语境引擎不派发 LLM，「讲错啦」作为语音输入在当前链路无落点 | 下次动 S-F2.2 记录会话需求面 / front 丢弃链 / STT 素材入口过滤的包 |
 | [TECH-261026-oneshot-wrapper-prompt-derived-facts](TECH-261026-oneshot-wrapper-prompt-derived-facts.md) | SHOULD | 设备流程回合的「机器包装指令」随孩子原话一起以 owner 身份入库，被 deriver 抽成「孩子要求整理成文」的过程性结论 | 下一次动记忆管线（抽取策略 / honcho 插件版本升级 / 需求面记忆口径再评）时一并裁；或运营面观察到该族结论再次挤占画像窗口时 |
+| [TECH-261028-p3-reader-key-falls-to-session-toggle](TECH-261028-p3-reader-key-falls-to-session-toggle.md) | MAJOR | P3 阅读态 KEY 短按落全局 SESSION_TOGGLE 开语音会话（违反 S-F2.3 AC2「不响应」），阅读态键帽槽同因缺位显示 (null) | 下个动 P3 阅读态 / 板级按键路由 / 键帽裁决面的包；或 human 指定单独立包（/triage-change 起） |
 
-## 已接受风险（6）
+## 已接受风险（5）
 
 | ID | 严重度 | title | 复议触发 |
 |---|---|---|---|
 | [ARQ-260831-i1-indexed-asset-on-device](ARQ-260831-i1-indexed-asset-on-device.md) | SHOULD | I1 索引格式在真机 LVGL 9.3 + SPIFFS 文件源路径下的可用性未验证 | 真机联调期（TP-B B8 已核：未超预算、不触发 I1） |
 | [ARQ-260831-simulator-lvgl-version-drift](ARQ-260831-simulator-lvgl-version-drift.md) | SHOULD | 模拟器↔固件 LVGL 版本错位是常驻风险（本次 9.5→9.3 已对齐，构建期校验待自动化） | 固件 LVGL 组件锁变更 / 下次 simulator 相关 dev-loop 包立项（补构建期版本校验） |
 | [ARQ-260831-simulator-truecolor-vs-1bpp](ARQ-260831-simulator-truecolor-vs-1bpp.md) | COULD | 模拟器（真彩灰度）与真机（1bpp 阈值化）的显色差异是第二类失真 | simulator 相关 dev-loop 包立项 / 真机字体子集化任务 |
-| [ARQ-260831-small-cjk-1bpp-readability](ARQ-260831-small-cjk-1bpp-readability.md) | SHOULD | 16px 以下 CJK 文字在 1bpp 真机的可读性下限未实测，直接锁死 V3 设计稿字号下限 | 真机字体子集化任务 / V3 设计稿字号定稿前 |
 | [ARQ-260902-cert-lifecycle-deadlock](ARQ-260902-cert-lifecycle-deadlock.md) | SHOULD | 自签长期证书到期死局（S5）：OTA 未建前证书到期全部设备 wss 瘫痪+逐台重烧（监控面，human 2026-09-04 accept-as-risk 记账；决策闭环记录另见 §2 已结索引） | OTA 应答端点建立（spec §6.3 留二期）对账 / 或证书剩余有效期 <5 年 |
 | [TECH-260928-school-merge-inprogress](TECH-260928-school-merge-inprogress.md) | SHOULD | 合并「上学」项在校时段进行中语义未实现（无下一事项时 end=None 走 start-only 被过滤） | 决策 26「在校时段计为 upcoming」口径重裁 / 需求面对「纯在校日白天首页显示」重提时复议 |
 
-## 已结（26）
+## 已结（27）
 
 > 已结条目文件由渲染器自动归位 `_archive/<结项年>/`（**人不搬文件**；重开自动搬回）。薄行索引按年在归档目录，主 INDEX 只留指针——这是「翻不到未结」旧病灶的根治。
 
 | 归档年 | 条数 | 索引 |
 |---|---|---|
-| 2026 | 26 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |
+| 2026 | 27 | [_archive/2026/INDEX.md](_archive/2026/INDEX.md) |

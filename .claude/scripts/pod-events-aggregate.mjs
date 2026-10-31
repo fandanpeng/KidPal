@@ -9,12 +9,14 @@
 // Usage:
 //   node .claude/scripts/pod-events-aggregate.mjs --change-id <id>
 //   node .claude/scripts/pod-events-aggregate.mjs  (uses current TaskPackage)
+//   node .claude/scripts/pod-events-aggregate.mjs --self-check
 //
 // Output: JSON to stdout
 
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { echoResolution, resolveCurrentTaskPackage } from './lib/current-pointer-shared.mjs'; // T6 回显齿（260924-gov-review-gate-parse-teeth）
+import { VALID_EVENT_TYPES } from './pod-events-append.mjs';
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 
@@ -26,7 +28,7 @@ function flagVal(name) {
 function resolveChangeId() {
   const explicit = flagVal('--change-id');
   if (explicit) {
-    echoResolution('pod-events-aggregate', explicit, '--change-id \u65D7\u6807');
+    echoResolution('pod-events-aggregate', explicit, '--change-id 旗标');
     return explicit;
   }
 
@@ -52,6 +54,46 @@ function readEventsFile(eventsPath) {
   }
 
   return { events, malformedLines };
+}
+
+function isPayloadObject(payload) {
+  return payload !== null && typeof payload === 'object' && !Array.isArray(payload);
+}
+
+function schemaWarning(warnings, event, code, message) {
+  warnings.push({
+    eventId: event && typeof event === 'object' ? (event.eventId || event.id || null) : null,
+    eventType: event && typeof event === 'object' ? (event.eventType || null) : null,
+    code,
+    message,
+  });
+}
+
+function validateEvents(events) {
+  const validEvents = [];
+  const schemaWarnings = [];
+  for (const event of events) {
+    const envelopeObject = event !== null && typeof event === 'object' && !Array.isArray(event);
+    const eventType = envelopeObject ? event.eventType : null;
+    if (!envelopeObject || !VALID_EVENT_TYPES.has(eventType)) {
+      schemaWarning(schemaWarnings, event, 'unknown-event-type', `事件类型不在闭集内：${String(eventType ?? '(missing)')}；计入 eventsTotal，不进入专项聚合`);
+    }
+    if (!envelopeObject || !isPayloadObject(event.payload)) {
+      schemaWarning(schemaWarnings, event, 'invalid-payload', 'payload 必须是非 null、非数组的对象；本事件不进入专项聚合');
+      continue;
+    }
+    if (!VALID_EVENT_TYPES.has(eventType)) continue;
+    validEvents.push(event);
+    if ((eventType === 'human-decision' || eventType === 'human-correction') && event.actor !== 'human') {
+      schemaWarning(schemaWarnings, event, 'invalid-human-actor', `${eventType} 的 actor 必须为 human，实际为 ${String(event.actor ?? '(missing)')}`);
+    }
+    if (eventType === 'agent-escalation-resolved'
+      && !(typeof event.payload.refEventId === 'string' && event.payload.refEventId.trim())
+      && !(typeof event.payload.resolves === 'string' && event.payload.resolves.trim())) {
+      schemaWarning(schemaWarnings, event, 'missing-closure-ref', 'agent-escalation-resolved 缺少 payload.refEventId（存量 resolves 别名亦可）');
+    }
+  }
+  return { validEvents, schemaWarnings };
 }
 
 function aggregateTokens(events) {
@@ -214,10 +256,27 @@ function aggregateMainThread(events) {
   };
 }
 
-function aggregateEscalations(events) {
+function aggregateEscalations(events, schemaWarnings) {
   const escalations = events.filter(e => e.eventType === 'agent-escalation');
-  const resolutions = events.filter(e => e.eventType === 'agent-escalation-resolved');
-  const resolvedIds = new Set(resolutions.map(r => r.payload && r.payload.refEventId));
+  const closures = events.filter(e => e.eventType === 'agent-escalation-resolved' || e.eventType === 'human-decision');
+  const resolvedIds = new Set();
+
+  for (const closure of closures) {
+    const ref = typeof closure.payload.refEventId === 'string' && closure.payload.refEventId.trim()
+      ? closure.payload.refEventId.trim()
+      : (typeof closure.payload.resolves === 'string' && closure.payload.resolves.trim() ? closure.payload.resolves.trim() : null);
+    // 无引用 human-decision 是普通决定；缺关联告警只针对 resolved 事件，由 validateEvents 负责。
+    if (!ref) continue;
+    const matches = escalations.filter(e => typeof e.eventId === 'string' && e.eventId.startsWith(ref));
+    if (matches.length === 1) {
+      resolvedIds.add(matches[0].eventId);
+      continue;
+    }
+    const anyEventMatches = events.filter(e => typeof e.eventId === 'string' && e.eventId.startsWith(ref));
+    const reason = matches.length > 1 ? 'ambiguous-prefix'
+      : (anyEventMatches.length > 0 ? 'not-an-escalation' : 'no-match');
+    schemaWarning(schemaWarnings, closure, 'invalid-closure-ref', `闭合引用 ${ref} 无效（${reason}）；不闭合任何 escalation`);
+  }
 
   const byCategory = {};
   const unresolved = [];
@@ -237,7 +296,7 @@ function aggregateEscalations(events) {
 
   return {
     total: escalations.length,
-    resolved: resolutions.length,
+    resolved: resolvedIds.size,
     unresolved,
     byCategory,
   };
@@ -275,6 +334,91 @@ function aggregateFriction(events) {
   };
 }
 
+function aggregateEvents(events, changeId, malformedLines = 0) {
+  const { validEvents, schemaWarnings } = validateEvents(events);
+  return {
+    ok: true,
+    changeId,
+    eventsTotal: events.length,
+    malformedLines,
+    tokens: aggregateTokens(validEvents),
+    actors: aggregateActors(validEvents), // T7 新列（只增键，既有消费方不破）
+    models: aggregateModels(validEvents), // T5 新列（只增键；bySource 兼作 transcript 通道失效观察点）
+    mainThread: aggregateMainThread(validEvents), // T5 新列（只增键；子项 c 的累计检查点序列）
+    escalations: aggregateEscalations(validEvents, schemaWarnings),
+    friction: aggregateFriction(validEvents),
+    schemaWarningsTotal: schemaWarnings.length,
+    schemaWarnings,
+  };
+}
+
+function selfCheck() {
+  const checks = [];
+  const ok = (name, pass, detail = '') => checks.push({ name, pass, detail });
+  const esc = (eventId) => ({ eventId, eventType: 'agent-escalation', actor: 'planner', payload: { category: 'other', summary: eventId } });
+  const events = [
+    esc('11111111-1111-1111-1111-111111111111'),
+    esc('22222222-2222-2222-2222-222222222222'),
+    esc('33333333-3333-3333-3333-333333333333'),
+    esc('44444444-4444-4444-4444-444444444444'),
+    { eventId: 'r1', eventType: 'agent-escalation-resolved', actor: 'planner', payload: { refEventId: '11111111-1111-1111-1111-111111111111' } },
+    { eventId: 'h1', eventType: 'human-decision', actor: 'human', payload: { refEventId: '22222222-2222-2222-2222-222222222222', decision: 'close' } },
+    { eventId: 'r3', eventType: 'agent-escalation-resolved', actor: 'planner', payload: { resolves: '33333333' } },
+    { eventId: 'r1-duplicate', eventType: 'agent-escalation-resolved', actor: 'planner', payload: { refEventId: '11111111' } },
+    { eventId: 'h-plain', eventType: 'human-decision', actor: 'human', payload: { decision: 'ordinary decision' } },
+    { eventId: 'u1', eventType: 'future-event', actor: 'planner', payload: { tokenUsage: { status: 'exact', total: 999 } } },
+    { eventId: 'p1', eventType: 'dispatch-completed', actor: 'builder', payload: null },
+    { eventId: 'h-bad-actor', eventType: 'human-correction', actor: 'planner', payload: { summary: 'wrong owner' } },
+    { eventId: 'r-missing', eventType: 'agent-escalation-resolved', actor: 'planner', payload: {} },
+    { eventId: 'r-invalid', eventType: 'agent-escalation-resolved', actor: 'planner', payload: { refEventId: 'does-not-exist' } },
+    { eventId: 'f-empty', eventType: 'friction', actor: 'planner', payload: {} },
+    { eventId: 'pod-empty-ok', eventType: 'pod-closed', actor: 'planner', payload: {} },
+  ];
+  const result = aggregateEvents(events, 'self-check');
+  const codes = result.schemaWarnings.map(w => w.code);
+  ok('夹具非空且 fail-open', result.ok === true && result.eventsTotal === events.length && result.escalations.total === 4);
+  ok('canonical / human / legacy 短前缀均闭合', result.escalations.resolved === 3
+    && result.escalations.unresolved.length === 1
+    && result.escalations.unresolved[0].eventId.startsWith('44444444'));
+  ok('重复闭合不虚增 distinct resolved', result.escalations.resolved === 3
+    && events.filter(e => e.eventType === 'agent-escalation-resolved' && (e.payload.refEventId || e.payload.resolves)).length === 4);
+  ok('普通 human-decision 不误闭合也不报缺引用', result.escalations.resolved === 3
+    && !result.schemaWarnings.some(w => w.eventId === 'h-plain'));
+  ok('未知类型计总数但不进专项聚合', codes.includes('unknown-event-type')
+    && result.tokens.dispatchesTotal === 0 && result.tokens.tokenTotals.total === 0);
+  ok('无效 payload 告警且不阻断', codes.includes('invalid-payload') && result.ok === true);
+  ok('错误 human actor 有定位告警', result.schemaWarnings.some(w => w.eventId === 'h-bad-actor' && w.code === 'invalid-human-actor'));
+  ok('缺失与无效闭合引用均告警', codes.includes('missing-closure-ref') && codes.includes('invalid-closure-ref'));
+  ok('空 pod-closed payload 合法、空 friction 仍入 malformed', !result.schemaWarnings.some(w => w.eventId === 'pod-empty-ok')
+    && result.friction.malformedFrictions.some(f => f.eventId === 'f-empty'));
+  ok('schemaWarnings 计数与明细一致', result.schemaWarningsTotal === result.schemaWarnings.length && result.schemaWarningsTotal >= 5);
+
+  const ambiguous = aggregateEvents([
+    esc('abcdef01-0000-0000-0000-000000000000'), esc('abcdef02-0000-0000-0000-000000000000'),
+    { eventId: 'r-ambiguous', eventType: 'human-decision', actor: 'human', payload: { refEventId: 'abcdef' } },
+  ], 'self-check-ambiguous');
+  ok('短前缀不唯一只告警不闭合', ambiguous.escalations.resolved === 0 && ambiguous.escalations.unresolved.length === 2
+    && ambiguous.schemaWarnings.some(w => w.code === 'invalid-closure-ref' && w.message.includes('ambiguous-prefix')));
+
+  const nonEscalation = aggregateEvents([
+    esc('eeeeeeee-0000-0000-0000-000000000000'),
+    { eventId: 'decision-target', eventType: 'human-decision', actor: 'human', payload: {} },
+    { eventId: 'r-non-esc', eventType: 'agent-escalation-resolved', actor: 'planner', payload: { refEventId: 'decision-target' } },
+  ], 'self-check-non-escalation');
+  ok('引用非 escalation 不误闭合', nonEscalation.escalations.resolved === 0
+    && nonEscalation.schemaWarnings.some(w => w.code === 'invalid-closure-ref' && w.message.includes('not-an-escalation')));
+
+  const failed = checks.filter(c => !c.pass);
+  for (const c of checks) console.log(`${c.pass ? 'PASS' : 'FAIL'}  ${c.name}${c.detail ? `  [${c.detail}]` : ''}`);
+  console.log(`\npod-events-aggregate --self-check: ${checks.length - failed.length}/${checks.length} passed`);
+  if (failed.length > 0) {
+    console.error('SELF-CHECK RED');
+    process.exit(1);
+  }
+  console.log('SELF-CHECK GREEN');
+  process.exit(0);
+}
+
 function run() {
   const changeId = resolveChangeId();
   if (!changeId) {
@@ -285,22 +429,14 @@ function run() {
 
   const eventsPath = resolve(projectDir, 'delivery', 'taskpackages', changeId, 'pod-events.jsonl');
   const { events, malformedLines } = readEventsFile(eventsPath);
-
-  const result = {
-    ok: true,
-    changeId,
-    eventsTotal: events.length,
-    malformedLines,
-    tokens: aggregateTokens(events),
-    actors: aggregateActors(events), // T7 新列（只增键，既有消费方不破）
-    models: aggregateModels(events), // T5 新列（只增键；bySource 兼作 transcript 通道失效观察点）
-    mainThread: aggregateMainThread(events), // T5 新列（只增键；子项 c 的累计检查点序列）
-    escalations: aggregateEscalations(events),
-    friction: aggregateFriction(events),
-  };
+  const result = aggregateEvents(events, changeId, malformedLines);
+  for (const warning of result.schemaWarnings) {
+    process.stderr.write(`[pod-events-aggregate] schema-warning ${warning.code} eventId=${warning.eventId || '(none)'} eventType=${warning.eventType || '(none)'}: ${warning.message}\n`);
+  }
 
   console.log(JSON.stringify(result, null, 2));
   process.exit(0);
 }
 
-run();
+if (process.argv.includes('--self-check')) selfCheck();
+else run();

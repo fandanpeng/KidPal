@@ -7,10 +7,11 @@
 > 列：changeId | 触面 | status | anchors回填 | 日期 | 漂移标。intake 状态机（change-intake.md §2.7）：intake→in-flight→awaiting-*→closed。
 > 漂移标（T5，检测不拦截）：⚠未闭环 = anchors 命中面全回填但 status ≠ closed；⚠滞留Nd = awaiting-* 滞留超 7 天；⚠值域外 = status 出值域（原样显示、不归一）；⚠源文件缺口 = spine frontmatter 未闭合 / 缺 status 字段（261026 批：与值域外分开报，缺口型不叠加值域外）。复议触发 = 下轮 loop-retro 仍见漂移标。
 
-## intake (15)
+## intake (16)
 
 | changeId | 触面 | status | anchors回填 | 日期 | 漂移标 |
 |---|---|---|---|---|---|
+| 261028-font-typography-scaleup | req+arch+imp | in-flight | 4/3 | 2026-10-28 | ⚠未闭环 |
 | 261025-spec-reconciliation-memory-writing-scope | req+arch | closed | 2/2 | 2026-10-25 | — |
 | 261022-device-memory-prompt-overhaul | req+arch+contract+imp | in-flight | 4/4 | 2026-10-22 | ⚠未闭环 |
 | 261021-p3-record-cancel-lifecycle | — | — | — | 2026-10-21 | ⚠源文件缺口（frontmatter 未闭合） |
@@ -18,7 +19,7 @@
 | 261018-sd-log-persist | arch+imp | closed | 4/2 | 2026-10-18 | — |
 | 261017-prompt-v11-schedule-recall | arch+imp | closed | 4/2 | 2026-10-17 | — |
 | 261016-p3-story-body-sd-cache | req+arch+contract+imp | closed | 4/4 | 2026-10-16 | — |
-| 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 ⚠滞留11d |
+| 261014-single-tier-bringlist-home | req+arch+contract+imp | awaiting-human:立项-ack | 4/4 | 2026-10-14 | ⚠未闭环 ⚠滞留12d |
 | 261013-gov-review-lf-eol-teeth-pin | imp+gov | closed | 2/2 | 2026-10-13 | — |
 | 261012-kidpal-realtime-facts | req+arch+contract+imp | in-flight | 4/4 | 2026-10-12 | ⚠未闭环 |
 | 261011-p1-home-v5-rework | contract+imp | closed | 4/2 | 2026-10-11 | — |

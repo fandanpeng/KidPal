@@ -11,6 +11,8 @@
 
 packet-id：<FROZEN PROPOSAL §2 改法集（T 编号范围）+ §5 验证集> · 评审轮次 <R1…Rn，GREEN 轮注明> · change-id <gov-review-…>
 
+`author-implementation` lane 另附：`implementation-review.json` / `implementation-verification.json` 指针，以及 reviewedCommit/tree、verifiedCommit/tree 人读复述。权威顺序 = review JSON 钉评审、verification JSON 钉验证、summary 只汇总；不得以 summary 自报替代两份独立凭据。旧 lane 不需要这两件。
+
 ## 1. 落地点 ↔ 改法对应
 
 | 改法（FROZEN §2） | 落地文件 | 结果 |

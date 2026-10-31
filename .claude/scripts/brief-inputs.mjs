@@ -58,6 +58,28 @@ function nonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
+function advisory(level, kind, message, ref = null) {
+  return { level, kind, message, ref };
+}
+
+export function formatAdvisorySummary(advisories) {
+  const levels = { info: 0, warning: 0 };
+  const kinds = {};
+  for (const a of advisories) {
+    levels[a.level] = (levels[a.level] || 0) + 1;
+    kinds[a.kind] = (kinds[a.kind] || 0) + 1;
+  }
+  const kindText = Object.entries(kinds).sort(([a], [b]) => a.localeCompare(b)).map(([k, n]) => `${k}=${n}`).join(', ');
+  return `brief-inputs: ADV summary — info=${levels.info} warning=${levels.warning} kinds=${kindText || 'none'}`;
+}
+
+// 裸符号只在「无路径分隔符、无锚、无文件扩展名」时成立；点分 token 的扩展名判断限定在末段，
+// 因而 ESP32-S3-RLCD-4.2-Demo 这类版本/名称 token 不会被误判成路径。
+function isSymbolicRef(ref) {
+  const s = String(ref).trim();
+  return !/[\\/#]/.test(s) && !/\.[A-Za-z0-9_]+$/.test(s);
+}
+
 // 锚点拆分：'docs/contracts/interface-contract.md#§1.5' → { path, anchor }；裸路径 → anchor = null
 function splitRef(ref) {
   const s = String(ref).trim();
@@ -130,7 +152,7 @@ function renderStoryRoad(storyRefs, advisories, opts = {}) {
       L.push('');
       L.push('> ⚠ 未在 `docs/requirements.md` 定位到该 story 节（story id 可能写错或该节已迁移）——如实呈现、不猜；起包期核对 sourceRefs。');
       L.push('');
-      advisories.push(`story ref 未定位到节：${base}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`);
+      advisories.push(advisory('warning', 'story-not-found', `story ref 未定位到节：${base}（docs/requirements.md 无 \`${base} ·\` 标题节——核对 sourceRefs 拼写或该节是否已迁移）`, base));
       continue;
     }
     L.push(`### ${base} · 源 = \`docs/requirements.md\` 节首行 :${sec.line}${tagLine}`);
@@ -213,16 +235,25 @@ function locateSection(relPath, anchor) {
 function renderAnchorSections(refs, advisories) {
   const rows = [];
   for (const r of refs) {
+    if (isSymbolicRef(r.ref)) {
+      rows.push({ status: 'symbolic', ref: r.ref, path: r.path, anchor: null, title: '非路径 ref，跳过锚点解析' });
+      advisories.push(advisory('info', 'symbolic-ref', `非路径符号引用，跳过磁盘与锚点解析：${r.ref}`, r.ref));
+      continue;
+    }
     if (!existsSync(resolve(projectDir, r.path))) {
       rows.push({ status: 'missing', ref: r.ref, path: r.path, anchor: r.anchor, title: '（文件不存在）' });
       // T5（260924-gov-review-gate-parse-teeth）：missing 态补 advisory——与 bare 态同通道，
       // 引用腐坏（验收文件/冻结件/文档已迁移或归档）在 brief 生成期即报警，不再只在行内可见。
-      advisories.push(`ref 指向的文件不在磁盘上：${r.ref}（引用腐坏——验收文件/冻结件/文档可能已迁移或归档，起包期核对 intake 四问）`);
+      advisories.push(advisory('warning', 'missing-ref', `ref 指向的文件不在磁盘上：${r.ref}（引用腐坏——验收文件/冻结件/文档可能已迁移或归档，起包期核对 intake 四问）`, r.ref));
       continue;
     }
     if (!r.anchor) {
       rows.push({ status: 'bare', ref: r.ref, path: r.path, anchor: null, title: '无锚点（整文件）' });
-      advisories.push(`ref 无锚点，清单退化为整文件引用：${r.ref}（建议起包期补 #锚点 以封闭阅读面）`);
+      if (/\.md$/i.test(r.path)) {
+        advisories.push(advisory('info', 'whole-document', `Markdown 整文件引用（不自动猜章节）：${r.ref}`, r.ref));
+      } else {
+        advisories.push(advisory('warning', 'bare-non-markdown', `ref 无锚点，清单退化为整文件引用：${r.ref}（非 Markdown 路径不适用文档豁免，起包期核对引用形态）`, r.ref));
+      }
       continue;
     }
     const sec = locateSection(r.path, r.anchor);
@@ -234,6 +265,9 @@ function renderAnchorSections(refs, advisories) {
       title: sec ? sec.title : '（未定位到标题节）',
       secLine: sec ? sec.line : null,
     });
+    if (!sec) {
+      advisories.push(advisory('warning', 'anchor-not-found', `ref 的显式锚点未定位到标题节：${r.ref}（起包期核对锚点或目标文档是否已变更）`, r.ref));
+    }
   }
   return rows;
 }
@@ -288,7 +322,7 @@ function renderCounterparts(tp, errors) {
     }
     // 本批覆盖档 = 自有实现面消费方（firmware/** ∨ server/**）；②③档留 ARQ（PROPOSAL §6）
     if (!(path.startsWith('firmware/') || path.startsWith('server/'))) {
-      advisoriesGlobal.push(`counterparts[${i}] 指向本批未覆盖档（只读参考树 / 黑盒无源码消费方见 §6 留根）：${path} — 本批只承载自有实现面，请改填 exempt 或留待该 ARQ 收编`);
+      advisoriesGlobal.push(advisory('warning', 'counterpart-out-of-scope', `counterparts[${i}] 指向本批未覆盖档（只读参考树 / 黑盒无源码消费方见 §6 留根）：${path} — 本批只承载自有实现面，请改填 exempt 或留待该 ARQ 收编`, path));
       continue;
     }
     const r = resolveSymbolRange(path, symbol);
@@ -479,7 +513,7 @@ function renderBrief(tp, opts = {}) {
   // 主要消费方，acceptance-author 直读 TaskPackage uiux block 的既有口径不变）——refs 入清单即入视野
   const uiuxRefs = collectUiuxRefs(tp, repoRoot);
   for (const d of uiuxRefs.filter((r) => !r.present)) {
-    advisories.push(`uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`);
+    advisories.push(advisory('warning', 'uiux-missing-ref', `uiux 设计 ref 指向的文件不在盘上：${d.path}（引用腐坏——核对 uiux block 或设计母版是否已迁移）`, d.path));
   }
   L.push(`## ①c · UI 设计 refs（uiux block 透传 · 页级 PNG = 布局坐标定位权威 · 本节主要消费方 = builder）`);
   L.push('');
@@ -559,6 +593,16 @@ function renderBrief(tp, opts = {}) {
 
   // 全局 ADV（②③档越界提示等）并入返回值，调用方只见一个 advisories 数组（防双清单漂移）
   const allAdvisories = advisories.concat(advisoriesGlobal.splice(0));
+  L.push('## ⑥ 非阻断 advisory 明细（终端只打汇总；此处保留定位）');
+  L.push('');
+  if (allAdvisories.length === 0) {
+    L.push('`none`');
+  } else {
+    for (const a of allAdvisories) {
+      L.push(`- **${a.level} · ${a.kind}**${a.ref ? ` · ref=\`${a.ref}\`` : ''}：${a.message}`);
+    }
+  }
+  L.push('');
   return { markdown: L.join('\n') + '\n', errors, advisories: allAdvisories, warnings: warn ? [warn] : [] };
 }
 
@@ -585,12 +629,32 @@ function selfCheck() {
   ok('① 锚点节形状', /\|\s*路径\s*\|\s*锚点\s*\|\s*节标题\s*\|\s*节首行\s*\|\s*状态\s*\|/.test(a.markdown)
       && a.markdown.includes(CONTRACT_WIRE_FILE), 'table header + contract path');
   ok('① 不抽正文', !/```(py|c|cpp|json)/.test(a.markdown), 'no fenced source bodies');
-  ok('① 裸路径标「无锚点（整文件）」', a.markdown.includes('无锚点（整文件）')
-      && a.advisories.some((s) => s.includes('无锚点')), 'DEV-GOVERNANCE.md bare ref → bare marker + advisory (R1/F12)');
+  ok('① 整文件 Markdown 标 bare 且降 info', a.markdown.includes('无锚点（整文件）')
+      && a.advisories.some((s) => s.kind === 'whole-document' && s.level === 'info'), 'Markdown bare ref → bare marker + info advisory');
   // T5（260924-gov-review-gate-parse-teeth）判别：缺失文件 → missing 行 + advisory（反转实现必须变红）。
   const miss = renderBrief({ ...fixtureTp, docRefs: [...fixtureTp.docRefs, 'docs/nonexistent-brief-inputs-probe.md#§9'] });
   ok('① 缺失文件 → missing 行 + advisory（T5）', miss.markdown.includes('（文件不存在）')
-      && miss.advisories.some((s) => s.includes('不在磁盘上')), 'missing ref → missing row + advisory');
+      && miss.advisories.some((s) => s.kind === 'missing-ref' && s.level === 'warning' && s.message.includes('不在磁盘上')), 'missing ref → missing row + warning advisory');
+  const symbolic = renderBrief({ ...fixtureTp, docRefs: ['NFR-PRIV-1', 'ESP32-S3-RLCD-4.2-Demo'], sourceRefs: [], contractRefs: [] });
+  ok('① 裸符号与点分 token → symbolic，不落 missing', (symbolic.markdown.match(/\| symbolic \|/g) || []).length === 2
+      && symbolic.advisories.filter((s) => s.kind === 'symbolic-ref').length === 2
+      && !symbolic.advisories.some((s) => s.kind === 'missing-ref'), 'NFR-PRIV-1 + ESP32-S3-RLCD-4.2-Demo discriminate extension heuristic');
+  const extensionPath = renderBrief({ ...fixtureTp, docRefs: ['definitely-missing-P9.md'], sourceRefs: [], contractRefs: [] });
+  ok('① 带扩展名裸文件名仍按路径处理', extensionPath.markdown.includes('| missing |')
+      && extensionPath.advisories.some((s) => s.kind === 'missing-ref')
+      && !extensionPath.advisories.some((s) => s.kind === 'symbolic-ref'), 'README.md-shaped refs are not symbolic');
+  const nonMarkdown = renderBrief({ ...fixtureTp, docRefs: ['firmware/main/mcp_server.cc'], sourceRefs: [], contractRefs: [] });
+  ok('① 非 Markdown 裸路径不适用整文件文档豁免', nonMarkdown.markdown.includes('| bare |')
+      && nonMarkdown.advisories.some((s) => s.kind === 'bare-non-markdown' && s.level === 'warning'), 'non-Markdown bare ref stays warning');
+  const anchorMiss = renderBrief({ ...fixtureTp, docRefs: ['docs/DEV-GOVERNANCE.md#§不存在的P9探针'], sourceRefs: [], contractRefs: [] });
+  ok('① 显式锚未定位仍 warning', anchorMiss.markdown.includes('| not-found |')
+      && anchorMiss.advisories.some((s) => s.kind === 'anchor-not-found' && s.level === 'warning'), 'real anchor rot stays visible');
+  const summary = formatAdvisorySummary(miss.advisories);
+  ok('① 终端汇总单行且计数/分类在场', !summary.includes('\n') && summary.includes('info=') && summary.includes('warning=')
+      && summary.includes('missing-ref=1'), 'one-line summary');
+  ok('① brief 末尾保留 advisory 明细与 ref', miss.markdown.includes('## ⑥ 非阻断 advisory 明细')
+      && miss.markdown.includes('docs/nonexistent-brief-inputs-probe.md#§9')
+      && miss.markdown.indexOf('## ⑥ 非阻断 advisory 明细') > miss.markdown.indexOf('## ⑤ 跨包承接面'), 'terminal reduction does not lose detail');
   ok('② 对端面节在场（空骨架分支）', a.markdown.includes('## ② 跨端对端面')
       && a.markdown.includes('finalize 态闸将红点名'), 'skeleton branch text');
   ok('③ 先例封顶 ≤3', (() => {
@@ -617,8 +681,9 @@ function selfCheck() {
       'single-file ①c notes builder as main consumer');
   ok('uiux-refs 缺席 → none 结论（不脑补）', renderBrief(fixtureTp).markdown.includes('`none` —— uiux block 不在场'), 'absent arm renders none');
   const uDangle = renderBrief({ ...fixtureTp, uiux: { uiuxRequired: true, uiuxLevel: 2, designRefs: ['docs/ui/no-such-page-probe.png'], sharedUiRefs: [] } });
-  ok('uiux-refs 悬空 ref → advisory（在位才列）', uDangle.advisories.some((s) => s.includes('uiux 设计 ref 指向的文件不在盘上'))
-      && !uDangle.markdown.includes('docs/ui/no-such-page-probe.png'), 'dangling ref excluded + advisory');
+  ok('uiux-refs 悬空 ref → advisory（在位才列）', uDangle.advisories.some((s) => s.kind === 'uiux-missing-ref' && s.message.includes('uiux 设计 ref 指向的文件不在盘上'))
+      && !uDangle.markdown.split('## ①c · UI 设计 refs')[1].split('## ② 跨端对端面')[0].includes('docs/ui/no-such-page-probe.png')
+      && uDangle.markdown.includes('ref=`docs/ui/no-such-page-probe.png`'), 'dangling ref excluded from ①c + structured advisory + detail retained');
   ok('uiux-refs 夹具非空（设计 ref 指向的母版在盘）', existsSync(resolve(projectDir, 'docs/ui/UIUX-DESIGN-BRIEF.md')), 'fixture ref targets real file');
 
   // fail-loud 路径（§8-B1）
@@ -632,7 +697,7 @@ function selfCheck() {
       'resolved range rendered');
   const offTp = { ...fixtureTp, crossEnd: { counterparts: [{ path: 'ESP32-S3-RLCD-4.2-Demo/x.cc', symbol: 'Y' }] } };
   const off = renderBrief(offTp);
-  ok('②③档越界提示（ADV 真发出、不静默不硬红）', off.advisories.some((s) => s.includes('未覆盖档'))
+  ok('②③档越界提示（ADV 真发出、不静默不硬红）', off.advisories.some((s) => s.kind === 'counterpart-out-of-scope' && s.message.includes('未覆盖档'))
       && !off.errors.some((e) => e.kind === 'counterpart-unresolved'),
       'landing-verifier 复核指出原臂含恒真合取（>=0）系 vacuous，改正为必验 ADV 实发');
 
@@ -743,7 +808,7 @@ function selfCheck() {
       && story.markdown.includes('语义权威仍在 requirements 现文'), 'AC tag + authority note');
   const storyMiss = renderBrief({ ...fixtureTp, sourceRefs: [...fixtureTp.sourceRefs, 'S-F9.9'] });
   ok('①b not-found → advisory、不阻断（brief 仍产出）', storyMiss.markdown.includes('## ①b · story 语义权威')
-      && storyMiss.advisories.some((s) => s.includes('story ref 未定位到节'))
+      && storyMiss.advisories.some((s) => s.kind === 'story-not-found' && s.message.includes('story ref 未定位到节'))
       && storyMiss.errors.length === 0, 'advisory channel, no exit-1 class error');
   // T4（261015-gov-review-lite-fast-path）：基 id 去重 + bug 类降级 + proposal 照录不变 + 单份头部
   ok('①b 基 id 去重（同基两引用只贴一次、AC 标签并列）', (() => {
@@ -787,8 +852,7 @@ function main() {
   const { markdown, errors, advisories, warnings } = renderBrief(tp, { regeneratedBecause: args.regeneratedBecause });
 
   for (const w of warnings) console.error(`brief-inputs: WARN(advisory) — ${w}`);
-  for (const adv of advisories) console.error(`brief-inputs: ADV — ${adv}`);
-  for (const adv of advisoriesGlobal) console.error(`brief-inputs: ADV — ${adv}`);
+  if (advisories.length > 0) console.error(formatAdvisorySummary(advisories));
 
   if (errors.length > 0) {
     // fail-loud：不产出带空锚的 brief，避免子 agent 按「清单已封闭」误信

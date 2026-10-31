@@ -163,13 +163,18 @@
         "docs/requirements.md",
         "docs/architecture.md",
         "docs/contracts/**",
+        "docs/glossary.md",
+        "docs/templates/**",
         "delivery/review/*arch-review-*/**",
         "delivery/review/*gov-review-*/**",
+        ".claude/route-fixtures/**",
         ".claude/agents/**",
         ".claude/commands/**",
         ".claude/references/**",
         ".claude/rules/**",
-        ".claude/skills/**"
+        ".claude/skills/**",
+        ".claude/scripts/**",
+        ".claude/hooks/**"
       ],
       "deny": [
         "ESP32-S3-RLCD-4.2-Demo/**",
@@ -183,12 +188,12 @@
         ".claude/agents/landing-verifier.md",
         ".claude/scope-map.json",
         ".claude/*.settings.json",
-        ".claude/hooks/**",
-        ".claude/scripts/**",
         ".claude/settings.json",
         "AGENTS.md",
         "CLAUDE.md",
-        "docs/DEV-GOVERNANCE.md"
+        "docs/DEV-GOVERNANCE.md",
+        "delivery/review/**/implementation-review.json",
+        "delivery/review/**/implementation-verification.json"
       ]
     },
     "review-moderator": {
@@ -254,11 +259,13 @@
     },
     "architect-reviewer": {
       "allow": [
-        "delivery/review/*arch-review-*/**",
-        "delivery/review/*gov-review-*/**"
+        "delivery/review/*arch-review-*/PROPOSAL.md",
+        "delivery/review/*gov-review-*/PROPOSAL.md",
+        "delivery/review/*arch-review-*/implementation-review.json",
+        "delivery/review/*gov-review-*/implementation-review.json"
       ],
       "deny": [
-        "**"
+        "delivery/review/**/implementation-verification.json"
       ]
     },
     "uiux-author": {

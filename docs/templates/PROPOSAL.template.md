@@ -1,4 +1,51 @@
-# PROPOSAL.template · Track B 提案模板（canonical · 260802-gov-review-track-b-hardening T1 落地，OQ2=(b) 选址 docs/templates/）
+# PROPOSAL.template · 治理面 direct-implementation 轻量批记录
+
+> 用法：治理面常规批只复制本段到 `## 评审与实施记录`。后半部保留给架构+契约面 Track B / 旧批，不得把旧制品义务带回常规治理批。
+
+# PROPOSAL · <change-id>
+
+> **状态：<DRAFT | FROZEN vX.Y>**
+> **gov-flow**: direct-implementation
+> **范围：<本批做什么、不做什么>**
+> **设计依据：<human 原话 / ARQ / spine sources>**
+
+## 1. 目标与非目标
+
+写清要解决的问题、预期效果和明确不扩的边界。
+
+## 2. 关键方案
+
+只写意图、边界、关键接线和验收标准，不写旧串/新串或逐字节未来文本。
+
+## 3. 条件加强
+
+reviewer 填常规流程是否足够；每项加强写事实依据。风险消失可降回常规，human 明确指定的加强只能由 human 解除。
+
+## 4. 轻量 scope
+
+路径可最终未改；实际非证据 diff 必须是预计集子集。每行 = `路径 | architect/main-thread | ordinary/protected | 可选理由`，目录以 `/` 结尾。
+
+```landing-manifest
+<仓根相对路径> | <architect/main-thread> | <ordinary/protected> | <一句理由>
+```
+
+## 5. 验证计划
+
+列聚焦命令与可判别预期：至少一个正向 happy path 和一个会使实现变红的反向输入；脚本优先扩展现有 self-check / 临时 Git 仓夹具。
+
+## 评审与实施记录
+
+由 reviewer 自写设计审；architect 追加实际改动、测试命令与结果；reviewer 再自写真实 diff 审。全记录 verdict 后出者胜，最后实现评审追加：
+
+    verdict: GREEN
+    reviewedCommit: <40 位小写 SHA>
+    reviewedTree: <40 位小写 SHA>
+
+主线程另在同目录实时写 `events.jsonl`，usage 只用 `{agent, wallMs, tokens, toolUses}`（各值可 null）；事件不进闸或 INDEX。常规批不写 architect-landing-summary、landing-verdict、implementation-review.json 或事后 retro。
+
+---
+
+# PROPOSAL.template · 架构+契约面 Track B / 旧批模板（canonical · 260802-gov-review-track-b-hardening T1 落地，OQ2=(b) 选址 docs/templates/）
 
 > 用法：复制本件为 `delivery/review/<change-id>/PROPOSAL.md`，替换 `<尖括号>` 占位；**带【硬项】的小节是义务不是建议**——缺失即判官 BLOCK 的合法理由。
 > **先起名**：目录名必须命中 `.claude/scope-map.json` review-agent 写槽 token——governance-lane = `<YYMMDD>-gov-review-<slug>`、spec-lane = `<YYMMDD>-arch-review-<slug>`；缺 token 时判官/核验官制品写入被 enforce-scope 拦截，起草期 `changes-index.mjs --upsert <id>` 亦点名（见 protocol「双轨路由」节命名条款）。
@@ -14,6 +61,8 @@
 > **承载 ARQ**：`<ARQ-id>`（根/批次关系写清；不关的根写留根指针）。
 > **review 轨**：Track B 常驻轻路径（默认路由；SSOT：`.claude/references/arch-review-protocol.md`「双轨路由」节；`AGENTS.md`「治理路由」节）。Track A 触发时改标 Track A + 命中判据。
 > **packet-binding（FROZEN 生效）**：packet-id = 本 `PROPOSAL.md` §2 改法集（<T 编号范围>）+ §5 验证集。packet = FROZEN PROPOSAL + landing-manifest + architect-landing-summary。
+> **landing-lane**：`<packet-bound | author-implementation>`（缺省 `packet-bound`；纯 scripts/hooks 且满足 gov-change 触发条件时才可选作者通道，混合面恒旧通道）。
+> **default-trigger-evidence**（默认作者通道批必填）：P9 changeId、INDEX 的 landed/已合main 实值、P9 retro 路径、主线程人读无未闭合 BLOCK 的结论与核对日期；retro 项为 convention-only。
 > **riskTier**：<low | low-medium | medium>（一句话证成：闸向严/行为保持/触点面）。
 > **review profile**：<G2 | G3 | G2+G3>（触面枚举；G1/契约面必须为零或显式升级）。
 >
@@ -32,6 +81,8 @@
 ## 2. 问题、根因与改法（T1…Tn）
 
 每 T 一节，五段固定式：先写「问题」与「证据」，再写「根因」，再写「改什么 + 怎么改 + 为什么这样改（对哪个根因）」。扩承重闸优先、克制新立脚本。
+
+`packet-bound` 保持承重原文/改后逐字块与 cite-check；`author-implementation` 只冻目标、manifest、行为约束、正反测试与明确不做事项，不冻未来代码，不使用 make-edits/build-proposal 或装配副本。作者测试不是唯一判据：reviewer 独立给风险判据，verifier 独立做消费层/黑盒验证。
 
 **【硬项 · 起草期实证义务】**（原「硬项 1a」，随原「问题与根因」节并入本节；标签去数字）本节的断言纪律：
 
@@ -84,7 +135,7 @@
 
 ## 5. 验证集（landing 前机械前置 + landing 后核验）
 
-每条机械可判：命令 + 预期。自检/重放类遵守真空绿规约（重放先断言输入非空；自检验证输出含新增自检名 + 调用顺序审查；环境红先立基线）。**装配**：§5 实跑副本一律用共享锚文装配器 `node .claude/scripts/assemble-edits.mjs <编辑清单.json> <仓外输出根>` 装配（261027 批 T1，ARQ-261027）——旧串锚定、逐条断言恰命中 1 次（0 次 / 多次即中止，全部命中后才写盘）、行尾原样不归一、输出根强制在仓外；清单 = §2 编辑的 JSON 形态（file / oldStr / newStr / label），不再每批现写一次性脚手架。
+每条机械可判：命令 + 预期。自检/重放类遵守真空绿规约（重放先断言输入非空；自检验证输出含新增自检名 + 调用顺序审查；环境红先立基线）。**装配（仅 `packet-bound` lane）**：§5 实跑副本一律用共享锚文装配器 `node .claude/scripts/assemble-edits.mjs <编辑清单.json> <仓外输出根>` 装配（261027 批 T1，ARQ-261027）——旧串锚定、逐条断言恰命中 1 次（0 次 / 多次即中止，全部命中后才写盘）、行尾原样不归一、输出根强制在仓外；清单 = §2 编辑的 JSON 形态（file / oldStr / newStr / label），旧 lane 不再每批现写一次性脚手架。`author-implementation` lane 不装配未来代码，验证命令直接在已提交且待审的实现 tree 上实跑。
 
 **复跑分档**：改稿轮（评审 findings 修订后）与落地确认轮按影响面窄化复跑——只复跑被改 T 的验证项，并在修订记录里列明复跑范围；**全量复跑义务保留在两个时点**：FROZEN 标注前、落地后核验前，两处不得窄化（261027 批 T2 立，ARQ-261027 复跑税）。
 

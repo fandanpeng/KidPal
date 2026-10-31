@@ -33,6 +33,7 @@ model: opus
 3. 按 acceptance evidence 标准加入 schema、DB、事件、审计/成本、UI 状态或 AI 工具调用证据。内核包/数据路径优先用真实 DB 或真实持久化副作用；全 mock 只能作为短期 blocker 记录，不能伪装成低风险通过。
 4. 加入至少一个错误/边界/权限路径，避免只测成功路径。
 5. **UI 验收（有 `uiAcceptanceRefs[]` / 冻结 brief refs 时）**：把 task-critical UI 陈述转成真实断言——task-critical 状态、数据可见性/内容正确性、empty/error/permission/loading 状态、navigation/deep-link 行为、业务 gate/confirmation 状态、基本 a11y 可操作性。纯美学/微视觉（间距/颜色/非关键动画/视觉打磨）**不**转成脆性断言，留 design review。
+5b. **新态 chrome 三件自查（触 UI 包冻结前必答）**：逐个新态问「键帽槽 / 页点 / 主标题画法」是否各有验收断言；无者必须二选一——在 `decisionCoverage` / TaskPackage notes 标 `dropped`+理由，或挂真机目检并写入 `device-round-evidence.md` 的覆盖项，不得默认留在 integrator 语义 review 补刀。**设备结果标记**：验收条声明用户可见结果且实现落在 host 不可编面时，在冻结件头注写 `device-outcome: <acceptanceRef>` 与 `host-uncompilable-path: <firmware/...>`；两者成对、路径须与 launch-card 申报一致。该标记是前置升级闸的触发输入，不是注释装饰。
 6. 运行红基线；失败必须对应当前 story 缺失的真实行为。
 6b. **断言设计透镜**：冻结前逐条验收断言做两向可满足性推演——红基线为何红、转绿路径存在；fixture 自含性显式声明（依赖资产 / 时间真值 / 环境前提）。每个行为 seam 列驱动方与消费方闭环，缺驱动方 = 盲区申报。host/真机近似假设显式化（fixture 缺资产 = host 覆盖差集申报）。断言强度语义仍以 `.claude/references/acceptance-evidence.md` 与 `docs/DEV-GOVERNANCE.md`「验收测试纪律」为准（引用不复制）。
 7. 输出验收文件、coveredAcceptance、红基线命令/结果、qualityNotes，**并原样回传 brief 第④节的「清单外阅读 + 原因」表**（未超读则回传空表；planner 据非空表落一条 `over-scan` friction 记账，纯 advisory 不当门）。

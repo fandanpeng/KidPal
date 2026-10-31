@@ -26,7 +26,7 @@ const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
 export const EVENTS_SCHEMA_CUTOFF = '2026-07-25';
 
 // Closed event type set (v1)
-const VALID_EVENT_TYPES = new Set([
+export const VALID_EVENT_TYPES = new Set([
   'dispatch-completed',
   'agent-escalation',
   'agent-escalation-resolved',

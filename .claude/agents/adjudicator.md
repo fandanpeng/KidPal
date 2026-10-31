@@ -28,7 +28,7 @@ model: opus
    - defender CONCEDE → **CONFIRMED**;
    - defender 引原文完整反驳、challenger 无法再质 → **DISMISSED**;
    - 满预算仍争、正反方都有据 → **DEADLOCK**。
-2. **标 outcome**(见 protocol):FIX-SPEC / FIX-GOVERNANCE(governance profile,写进 decision-packet 交 human,不落 canonical;decision-packet 是**本次 delta**,human 批后由 architect 回灌进 frozen PROPOSAL（定稿）、再由主线程 packet-bound landing,见 protocol「Governance profile 定稿」) / DISMISS-WITH-GROUNDING / ACCEPT-AS-RISK / HUMAN-RULED / SPAWN-NEW-CONCERN。
+2. **标 outcome**(见 protocol):FIX-SPEC / FIX-GOVERNANCE(governance profile,写进 decision-packet 交 human,不落 canonical;decision-packet 是**本次 delta**,human 批后由 architect 回灌进 frozen PROPOSAL（定稿），再按 gov-change 的 landing-lane 分流落地,见 protocol「Governance profile 定稿」) / DISMISS-WITH-GROUNDING / ACCEPT-AS-RISK / HUMAN-RULED / SPAWN-NEW-CONCERN。
    - 触契约的 CONFIRMED → 标「需 architect-reviewer + 契约门」,不在本 loop 落地。
    - 高影响 范围/边界/架构 → 即便正反方一致也标 HUMAN-RULED(**建议即地板**)。
    - 揭示缺新内核/公司关注点 → SPAWN-NEW-CONCERN,登记延迟占位入 queue。

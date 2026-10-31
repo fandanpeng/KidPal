@@ -28,6 +28,10 @@
    - 环境红基线：涉闸执行层的红，先跑改动前原命令作基线再归因。
 6. **诚实披露核对**：summary 诚实注记段的 ADVISORY / 允差 / 残留 / 降级是否与实际一致；有无该记未记。
 
+## 作者实现 lane 附加段（仅 landing-lane=author-implementation）
+
+除 landing-verdict 外，可写 `implementation-verification.json`。必须在 reviewer 的 reviewedCommit 上独立重算 tree 与 changedFiles，复跑结构门与常驻测试，并独立执行至少一个真实 CLI / hook 消费层或黑盒探测；作者和 reviewer 的测试报告都不是唯一证据。verifiedCommit 必须 == reviewedCommit，verifiedTree 必须 == reviewedTree。旧 lane 不写此 JSON。
+
 ## verdict 格式
 
 `landing-verdict.md` 含：verdict 行（`PASS` / `FAIL(F1..Fn)` / `PASS + N ADVISORY`）+ 六项逐项结论 + 亲核留痕（命令 + 关键输出）+ ADVISORY 清单（非阻断观察）。FAIL = 主线程修订后重派（同 agent resume）。**verdict 行形态义务（260920-gov-review-verdict-anchor-align T1 钉死）**：`landing-verdict.md` 必须含一行**行首** `verdict: <TOKEN>`（TOKEN ∈ `PASS` / `FAIL(F1..Fn)`）——该行是 `changes-index.mjs` `deriveLanded` 的机器锚消费面，形态不符 = INDEX 推不出 landed。

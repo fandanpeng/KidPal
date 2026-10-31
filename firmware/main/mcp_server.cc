@@ -917,6 +917,17 @@ void KidpalStorySessionEndApply(int list_page) {
              static_cast<unsigned>(lv_tick_get() & 0xFFFFFFu), list_page);
 }
 
+/* RSL2-A2 [I1]（261028-p3-record-session-mirror-desync-fix, M2）: 收尾沿镜像 := 权威
+ * 视图页态的确定性同步桥。application.cc Idle 分支在 [R2] 收尾块之后、keybar_scene_reset/
+ * voice_end 之前调用（主循环 STATE_CHANGED 先于 SCHEDULE, 当轮节点缓存可能仍是旧值——
+ * 显式同步保证 voice_end 的 [R5] 页态解析取真值, 杜绝「丢弃后的 LIST 复活成 RECORDING」）。
+ * 硬约束: **不调** kidpal_render_node_cache_story（它会把 s_story_data_received 置 1,
+ * 破坏 AC6 冷启动空态判据）。不进 mcp_server.h 公共头（消费方 extern 声明, 与
+ * KidpalStorySessionEndApply 同款纪律）。 */
+void KidpalStorySessionEndSync() {
+    kidpal_render_node_story_session_page(g_story_view.page);
+}
+
 /* -------------------------------------------------------------------------- *
  * [G3] 帧 B「引导播报中」子态沿桥（261019-p3-record-dialogue-guide D4-5, fixer）。
  * 旧账 escalation 067bd067: 全仓无路径置 rec_substate=1 —— 消费面（story_page_input

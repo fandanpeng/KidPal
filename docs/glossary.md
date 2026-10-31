@@ -36,8 +36,9 @@
 
 ## 治理与验收（一句话版）
 
-- **Track A / Track B**：变更评审两轨——A = 方向收敛红队（所属面 loop 的 Track A 段，入口 `/arch-change` / `/gov-change`；只看收敛度）；B = 常驻 Track B 七步闭环（轻路径 = 文档面瘦制品过闸）。
-- **PROPOSAL / landing / landing-verifier / retro**：Track B 七步闭环的四件制品。
+- **Track A / Track B**：Track A = 方向收敛红队（所属面 loop 的 Track A 段，只看收敛度）；Track B = 架构+契约面既有七步闭环与轻路径，不指治理面常规后端。
+- **direct-implementation**：治理面常规流程——轻设计与轻量 scope → reviewer 设计审并双向判档 → architect 直接实施 → reviewer 真实 diff 审 → 机械检查与合并；普通批不强制旧 landing 制品。
+- **PROPOSAL / events.jsonl**：治理面可追加批记录与主线程实时事件流；landing-summary / landing-verdict / retro 仅旧批或条件场景，landing-verifier 为条件加强核验者。
 - **debt 账本**：未结决策项账本（`docs/debt/`，260923-gov-review-arq-ssot-restructure 起，原名 `crq`、261014-gov-review-crq-debt-rename 批改名）——四域 `gov/` `tech/` `requirement/` `contract/`，一条目一文件（frontmatter 机读状态 + append-only 正文），每域 `INDEX.md` 为生成件；已结条目自动归位 `_archive/<结项年>/`。
 - **ARQ**：治理机制域条目 ID 前缀（`ARQ-<YYMMDD>-<slug>`，落 `docs/debt/gov/`；原义 ARCH-REVIEW-QUEUE 单文件队列，已重构为 debt 账本，`docs/ARCH-REVIEW-QUEUE.md` 指路 stub 已于 261019 批删除）。**TECH-** / **REQ-** = 技术域 / 需求变更请求域的条目前缀（契约决策账已独立成 contract 域，见 CDQ 行）。
 - **CDQ**：契约决策账（家 = `docs/debt/contract/` 域，一条目一文件，ID 前缀 `CDQ-`；原 `docs/CONTRACT-DECISION-QUEUE.md` 单文件队列 261019 批并入并删除。契约类条目在 tech 域以 `cdq:` 指针挂接不变，**门与批准状态以 contract 域条目为唯一权威**）。

@@ -21,6 +21,8 @@
 //     7. 合并结果树含废止路径残件（波段一 delivery/changes/dev；波段二随 T6 第 6 条扩为整伞
 //        delivery/changes——dev lane 已由 261014 批撤销、伞已解散；scope-map 齿一拦 agent 会话写入，
 //        本齿拦 git merge 通道带入旧布局分支）→ BLOCK，指引归位真家（映射见 delivery/archive/README.md）
+//     8. 用户可见且 host 不可编结果面缺真机目击证据（261028 P8；deviceOutcome.required=true）→ BLOCK；
+//        approve-escalated-merge 不豁免本子判据，证据最小要件含 human-visual / serial-capture / KPLOG 三形态之一
 //
 // 用法：
 //   node .claude/scripts/pre-merge-escalation-gate.mjs <changeId> [--source-ref <ref>] [--project-dir <dir>]
@@ -29,11 +31,14 @@
 //
 // 退出码：0 放行 / 1 命中（BLOCK）/ 2 用法错。
 
-import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { execFileSync, execSync, spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync, readdirSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { readGateDeclaration } from '../hooks/supervisor-verdict-gate.mjs';
+import { resolveHumanApproval, VERDICT_STATUS_RE, isFrozen, extractManifestBlock, LANDING_LANES, parseLandingLane, isEvidenceTailPath, readImplementationEvidence, parseDirectImplementationProposal, isDirectImplementationPathInScope, directImplementationSelfCheckCases } from './lib/governance-gate-shared.mjs'; // T6（260908 批）：五要素核验单源迁 lib，此处具名导入（函数体与 gate 原实现逐字一致 + deps.decision 参数化）；VERDICT_STATUS_RE 为 T2（260920 批）迁入的 verdict 行判据单源；isFrozen / extractManifestBlock 为 T15（261015 批）契约凭据解析单源；双 lane / 同树凭据为 261028 批单源；direct-implementation 轻量凭据为 261029 批单源
 
 const projectDirOf = () => resolve(process.env.CLAUDE_PROJECT_DIR || process.cwd());
 
@@ -112,7 +117,90 @@ function readGovAnchors(dir, changeId) {
   // RE 须容忍 token 前后的反引号（批① §7 的 `**Verdict：\`GREEN\`**` 形态为真实判官输出）。
   const green = isGreenVerdict(text);
   const landingVerdict = existsSync(landingVerdictPath);
-  return { frozen, green, landingVerdict };
+  const direct = parseDirectImplementationProposal(text);
+  let lane = LANDING_LANES.PACKET_BOUND;
+  let laneError = null;
+  try { lane = parseLandingLane(text); } catch (error) { laneError = error.message; }
+  return { frozen, green, landingVerdict, direct, lane, laneError };
+}
+
+// 作者实现 lane：合并时从 Git 重算，不信任 summary 或作者自报。
+function collectAuthorImplementationGate(dir, changeId, source) {
+  const reasons = [];
+  const review = readImplementationEvidence(dir, changeId, 'review');
+  const verification = readImplementationEvidence(dir, changeId, 'verification');
+  if (!review.ok) reasons.push(review.reason);
+  if (!verification.ok) reasons.push(verification.reason);
+  if (reasons.length) return { probed: true, ok: false, reasons };
+  const r = review.evidence;
+  const v = verification.evidence;
+  const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
+  const proposalText = readFileSync(join(dir, 'delivery', 'review', changeId, 'PROPOSAL.md'), 'utf8');
+  const manifest = new Set(extractManifestBlock(proposalText));
+  if (manifest.size === 0 || [...manifest].some((p) => !/^\.claude\/(?:scripts|hooks)\//.test(p))) {
+    reasons.push('author-implementation manifest 必须非空且全部位于 .claude/scripts/** 或 .claude/hooks/**');
+  }
+  if (v.verifiedCommit !== r.reviewedCommit || v.verifiedTree !== r.reviewedTree) reasons.push('verifiedCommit/verifiedTree 与 reviewer 钉点不一致');
+  let actualTree = null;
+  try { actualTree = execFileSync('git', ['rev-parse', `${r.reviewedCommit}^{tree}`], { encoding: 'utf8', stdio: 'pipe' }).trim(); } catch { /* fail-closed below */ }
+  if (!actualTree || actualTree !== r.reviewedTree) reasons.push('reviewedTree 与 reviewedCommit 的 Git tree 不符或 commit 不存在');
+  try { execFn(`git merge-base --is-ancestor ${r.reviewedCommit} ${source}`); }
+  catch { reasons.push('reviewedCommit 不是待合并 source 的祖先（旧 SHA / rebase 后未重审）'); }
+  const sameSet = (a, b) => a.size === b.size && [...a].every((x) => b.has(x));
+  const changed = (range) => {
+    try {
+      return new Set(execFn(`git diff --name-only ${range}`).split(/\r?\n/).map((x) => x.trim()).filter(Boolean));
+    } catch { return null; }
+  };
+  const reviewedChanged = changed(`main...${r.reviewedCommit}`);
+  const sourceChanged = changed(`main...${source}`);
+  const tailChanged = changed(`${r.reviewedCommit}..${source}`);
+  if (!reviewedChanged || !sourceChanged || !tailChanged) reasons.push('Git 合并范围重算失败（fail-closed）');
+  else {
+    const reviewedImpl = new Set([...reviewedChanged].filter((p) => !isEvidenceTailPath(p, changeId)));
+    const sourceImpl = new Set([...sourceChanged].filter((p) => !isEvidenceTailPath(p, changeId)));
+    if (!sameSet(reviewedImpl, manifest)) reasons.push(`main...reviewedCommit 非证据改动 != manifest：${[...reviewedImpl].sort().join(', ')}`);
+    if (!sameSet(sourceImpl, manifest)) reasons.push(`main...source 非证据改动 != manifest：${[...sourceImpl].sort().join(', ')}`);
+    if (!sameSet(new Set(r.changedFiles), manifest)) reasons.push('implementation-review.changedFiles 与 manifest 不符');
+    const badTail = [...tailChanged].filter((p) => !isEvidenceTailPath(p, changeId));
+    if (badTail.length) reasons.push(`reviewedCommit..source 含非证据尾改动：${badTail.sort().join(', ')}`);
+  }
+  return { probed: true, ok: reasons.length === 0, reasons, reviewedCommit: r.reviewedCommit, reviewedTree: r.reviewedTree };
+}
+
+// direct-implementation：轻量 scope 只做实际非证据 diff ⊆ 预计集，不恢复旧恰集/逐字节语义。
+function collectDirectImplementationGate(dir, changeId, source) {
+  const reasons = [];
+  const proposalText = readFileSync(join(dir, 'delivery', 'review', changeId, 'PROPOSAL.md'), 'utf8');
+  const parsed = parseDirectImplementationProposal(proposalText);
+  if (!parsed.direct) return { probed: false, ok: false, reasons: ['gov-flow 标记不在场'] };
+  if (parsed.verdict !== 'GREEN') reasons.push(`最后 verdict=${parsed.verdict || '缺失'}（应为 GREEN，后出者胜）`);
+  if (!parsed.reviewedCommit || !parsed.reviewedTree) reasons.push('最后一组 reviewedCommit/reviewedTree 不在场');
+  reasons.push(...parsed.errors);
+  const execFn = (c) => execSync(c, { encoding: 'utf8', stdio: 'pipe' });
+  if (parsed.reviewedCommit && parsed.reviewedTree) {
+    let actualTree = null;
+    try { actualTree = execFileSync('git', ['rev-parse', `${parsed.reviewedCommit}^{tree}`], { encoding: 'utf8', stdio: 'pipe' }).trim(); } catch { /* fail-closed below */ }
+    if (!actualTree || actualTree !== parsed.reviewedTree) reasons.push('reviewedTree 与 reviewedCommit 的 Git tree 不符或 commit 不存在');
+    try { execFn(`git merge-base --is-ancestor ${parsed.reviewedCommit} ${source}`); }
+    catch { reasons.push('reviewedCommit 不是待合并 source 的祖先（旧 SHA / rebase 后未重审）'); }
+  }
+  const changed = (range) => {
+    try {
+      return new Set(execFn(`git diff --name-only ${range}`).split(/\r?\n/).map((x) => x.trim()).filter(Boolean));
+    } catch { return null; }
+  };
+  const reviewedChanged = parsed.reviewedCommit ? changed(`main...${parsed.reviewedCommit}`) : null;
+  const tailChanged = parsed.reviewedCommit ? changed(`${parsed.reviewedCommit}..${source}`) : null;
+  if (!reviewedChanged || !tailChanged) reasons.push('Git 合并范围重算失败（fail-closed）');
+  else {
+    const reviewedImpl = [...reviewedChanged].filter((p) => !isEvidenceTailPath(p, changeId));
+    const outOfScope = reviewedImpl.filter((p) => !isDirectImplementationPathInScope(p, parsed.scope));
+    if (outOfScope.length) reasons.push(`实际非证据 diff 出轻量 manifest：${outOfScope.sort().join(', ')}`);
+    const badTail = [...tailChanged].filter((p) => !isEvidenceTailPath(p, changeId));
+    if (badTail.length) reasons.push(`reviewedCommit..source 含非证据尾改动：${badTail.sort().join(', ')}`);
+  }
+  return { probed: true, ok: reasons.length === 0, reasons, reviewedCommit: parsed.reviewedCommit, reviewedTree: parsed.reviewedTree };
 }
 
 /** 枚举 contracts diff：--name-only <source>..<target>，命中 contracts/** 返回 true。 */
@@ -154,6 +242,11 @@ function hasArchLoopContractEvidence(execFn, source, target, projectDir, deps = 
       try { proposalText = execFn(`git show ${ref}:${proposalPath}`); refUsed = ref; break; } catch { /* 下一 ref */ }
     }
     if (proposalText === null) { checked.push({ dir, refError: true, frozen: false, verdict: false, covered: false }); continue; }
+    // direct-implementation 的轻量 scope 不是契约 manifest；新流程批不得消费本契约放行判定。
+    if (parseDirectImplementationProposal(proposalText).direct) {
+      checked.push({ dir, refUsed, directImplementation: true, frozen: false, verdict: false, covered: false });
+      continue;
+    }
     const frozen = proposalText ? isFrozen(proposalText) : false;
     const manifest = proposalText ? extractManifestBlock(proposalText) : new Set();
     const covered = contractPaths.every((p) => manifest.has(p));
@@ -363,6 +456,157 @@ export function parallelOverlapProbe(execFn, source, target) {
   }
 }
 
+
+// ---- 用户可见且 host 不可编结果面的设备轮硬门（261028 P8；supervisor 合并门的 merge 期子判据）----
+function parseDeviceEvidenceText(text) {
+  const prefix = 'device-round-evidence（JSON）：';
+  const lines = String(text || '').split(/\r?\n/).filter((l) => l.startsWith(prefix));
+  if (lines.length !== 1) return { evidence: null, error: 'device-round-evidence JSON 行数=' + lines.length + '（应为 1）' };
+  try {
+    const evidence = JSON.parse(lines[0].slice(prefix.length));
+    if (!evidence || evidence.schemaVersion !== 1) return { evidence: null, error: 'device-round-evidence schemaVersion 应为 1' };
+    return { evidence, error: null };
+  } catch (error) {
+    return { evidence: null, error: 'device-round-evidence JSON 不可解析：' + error.message };
+  }
+}
+
+function acceptanceDeviceMarkers(taskPackage, dir) {
+  const acceptanceRefs = new Set();
+  const hostUncompilablePaths = new Set();
+  for (const ref of Array.isArray(taskPackage?.acceptanceTestsFile) ? taskPackage.acceptanceTestsFile : []) {
+    const p = resolve(dir, ref);
+    if (!existsSync(p)) continue;
+    for (const line of readFileSync(p, 'utf8').split(/\r?\n/)) {
+      let m = line.match(/device-outcome:\s*([A-Za-z0-9][A-Za-z0-9_-]*)/);
+      if (m) acceptanceRefs.add(m[1]);
+      m = line.match(/host-uncompilable-path:\s*(firmware\/[A-Za-z0-9_./-]+)/);
+      if (m) hostUncompilablePaths.add(m[1]);
+    }
+  }
+  return { acceptanceRefs: [...acceptanceRefs], hostUncompilablePaths: [...hostUncompilablePaths] };
+}
+
+export function assessDeviceOutcome(input, deps = {}) {
+  const reasons = [];
+  const advisories = [];
+  const declaration = input.declaration || null;
+  const declared = declaration?.deviceOutcome || null;
+  const markers = input.markers || { acceptanceRefs: [], hostUncompilablePaths: [] };
+  const hostExclusions = new Set(input.hostExclusions || []);
+  const hostPrefixes = Array.isArray(input.hostUncompilablePrefixes) ? input.hostUncompilablePrefixes : [];
+  const isHostExcluded = (p) => hostExclusions.has(p) || hostPrefixes.some((prefix) => p.startsWith(prefix));
+  const touched = (input.sourceDiffPaths || []).filter(isHostExcluded);
+  const markerRefs = new Set(markers.acceptanceRefs || []);
+  const declaredVisible = declared?.userVisible === true;
+  const requiredRefs = [...new Set([...(declaredVisible && Array.isArray(declared.acceptanceRefs) ? declared.acceptanceRefs : []), ...markerRefs])].sort();
+  const declaredPaths = [...new Set([...(declaredVisible && Array.isArray(declared.hostUncompilablePaths) ? declared.hostUncompilablePaths : []), ...(markers.hostUncompilablePaths || [])])].sort();
+  const hasAcceptanceDeclaration = markerRefs.size > 0 || (markers.hostUncompilablePaths || []).length > 0;
+
+  if (touched.length > 0 && !declared && !hasAcceptanceDeclaration) {
+    reasons.push('device-outcome-declaration-missing：实际 diff 触 host 不可编路径 ' + touched.join(', ') + '，launch-card 与 acceptance 均无设备结果申报');
+  }
+  if (declared?.userVisible === false && hasAcceptanceDeclaration) {
+    reasons.push('device-outcome-declaration-conflict：launch-card 申报非用户可见，但 acceptance 含 device-outcome/host-uncompilable-path 标记');
+  }
+  const required = declaredVisible || hasAcceptanceDeclaration || reasons.some((r) => r.startsWith('device-outcome-declaration-missing'));
+  if (!required) {
+    const reason = String(declared?.reason || '').trim();
+    if (touched.length > 0 && (reason.length < 12 || reason.startsWith('<') || reason === 'none')) {
+      reasons.push('device-outcome-nonvisible-reason-missing：触 host 不可编路径但非用户可见的理由未填、为占位符或不足 12 字');
+    }
+    return { probed: true, required: reasons.length > 0, ok: reasons.length === 0, reasons, advisories, touchedHostPaths: touched, requiredAcceptanceRefs: [] };
+  }
+
+  if (requiredRefs.length === 0) reasons.push('device-outcome-acceptance-refs-empty：用户可见设备结果必须列 acceptanceRefs');
+  if (declaredPaths.length === 0) reasons.push('device-outcome-host-paths-empty：用户可见设备结果必须列 hostUncompilablePaths');
+  const unknownPaths = declaredPaths.filter((p) => !isHostExcluded(p));
+  if (unknownPaths.length) reasons.push('device-outcome-host-path-unregistered：' + unknownPaths.join(', ') + ' 不在 verify-gates.deviceOutcomeGate.hostUncompilablePaths 登记集');
+  const coveredDiffPaths = declaredPaths.filter((p) => (input.sourceDiffPaths || []).includes(p));
+  if (declaredPaths.length > 0 && coveredDiffPaths.length === 0) reasons.push('device-outcome-path-not-in-diff：申报的 host 不可编路径未出现在本次合并 diff');
+
+  const evidence = input.evidence;
+  const verifyBinary = deps.verifyBinary || (() => false);
+  const verifyExcerpt = deps.verifyExcerpt || (() => false);
+  if (!evidence) {
+    reasons.push('device-round-evidence-missing：合并前必须有 device-round-evidence.md 的结构化真机目击记录');
+  } else {
+    if (evidence.changeId !== input.changeId) reasons.push('device-round-evidence-changeId-mismatch');
+    if (evidence.sourceCommit !== input.source) reasons.push('device-round-evidence-source-commit-mismatch：目击固件来源 commit 必须等于本次合并 HEAD');
+    if (typeof evidence.binaryRef !== 'string' || !/^[0-9a-f]{64}$/.test(String(evidence.binarySha256 || '')) || !verifyBinary(evidence.binaryRef, evidence.binarySha256)) {
+      reasons.push('device-round-evidence-binary-mismatch：binaryRef 不存在或 SHA-256 不符');
+    }
+    const observations = Array.isArray(evidence.observations) ? evidence.observations : [];
+    const passedRefs = new Set();
+    for (const obs of observations) {
+      if (!obs || obs.result !== 'PASS' || typeof obs.acceptanceRef !== 'string') continue;
+      if (obs.method === 'human-visual') {
+        if (obs.observer === 'human' && typeof obs.observedAt === 'string' && obs.observedAt && typeof obs.note === 'string' && obs.note.trim().length >= 12) passedRefs.add(obs.acceptanceRef);
+      } else if (obs.method === 'serial-capture' || obs.method === 'kplog') {
+        const log = obs.log || {};
+        const excerptOk = typeof log.excerptRef === 'string' && /^[0-9a-f]{64}$/.test(String(log.excerptSha256 || '')) && verifyExcerpt(log.excerptRef, log.excerptSha256);
+        const kplogOk = obs.method !== 'kplog' || (/^KPLOG(?:0[0-2][0-9]|03[01])$/.test(String(log.segment || '')) && typeof log.window === 'string' && log.window.trim().length >= 8);
+        if (excerptOk && kplogOk) passedRefs.add(obs.acceptanceRef);
+      }
+    }
+    for (const ref of requiredRefs) if (!passedRefs.has(ref)) reasons.push('device-round-observation-missing-or-invalid：' + ref + ' 缺 PASS 目击，或证据最小要件不完整');
+  }
+  return {
+    probed: true,
+    required: true,
+    ok: reasons.length === 0,
+    reasons,
+    advisories,
+    touchedHostPaths: touched,
+    declaredHostPaths: declaredPaths,
+    coveredDiffPaths,
+    requiredAcceptanceRefs: requiredRefs,
+    evidenceRef: evidence ? 'delivery/taskpackages/' + input.changeId + '/device-round-evidence.md' : null,
+  };
+}
+
+function collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) {
+  try {
+    const config = JSON.parse(readFileSync(resolve(projectDir, '.claude/verify-gates.json'), 'utf8')).deviceOutcomeGate || {};
+    const tpPath = resolve(projectDir, 'delivery/taskpackages', changeId, 'taskpackage.json');
+    const taskPackage = existsSync(tpPath) ? JSON.parse(readFileSync(tpPath, 'utf8')) : {};
+    const declaration = readGateDeclaration(projectDir, changeId).declaration;
+    const markers = acceptanceDeviceMarkers(taskPackage, projectDir);
+    const evidencePath = resolve(projectDir, 'delivery/taskpackages', changeId, 'device-round-evidence.md');
+    const parsed = existsSync(evidencePath) ? parseDeviceEvidenceText(readFileSync(evidencePath, 'utf8')) : { evidence: null, error: null };
+    const hashFile = (ref) => {
+      if (typeof ref !== 'string' || ref.includes('..') || ref.startsWith('/')) return false;
+      const p = resolve(projectDir, ref);
+      return existsSync(p) ? createHash('sha256').update(readFileSync(p)).digest('hex') : null;
+    };
+    const result = assessDeviceOutcome({
+      declaration,
+      markers,
+      hostExclusions: Array.isArray(config.hostUncompilablePaths) ? config.hostUncompilablePaths : [],
+      hostUncompilablePrefixes: Array.isArray(config.hostUncompilablePrefixes) ? config.hostUncompilablePrefixes : [],
+      sourceDiffPaths,
+      evidence: parsed.evidence,
+      source,
+      changeId,
+    }, {
+      verifyBinary: (ref, sha) => hashFile(ref) === sha,
+      verifyExcerpt: (ref, sha) => {
+        const prefix = 'delivery/taskpackages/' + changeId + '/device-evidence/';
+        return typeof ref === 'string' && ref.startsWith(prefix) && hashFile(ref) === sha;
+      },
+    });
+    if (parsed.error) {
+      result.required = true;
+      result.ok = false;
+      result.reasons.push(parsed.error);
+    }
+    return result;
+  } catch (error) {
+    return { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：' + error.message], advisories: [] };
+  }
+}
+
+
 /**
  * 主判：给定可注入上下文，产 { blocked, reasons[] }。
  * ctx = { execFn, changeId, source, kind: 'devloop'|'gov'|'unknown',
@@ -427,6 +671,16 @@ export function evaluate(ctx) {
   if (approval && !approval.ok) push(`human-approval 核验失败：${approval.reason}`);
 
   if (ctx.kind === 'devloop') {
+    // 设备轮硬门（261028 P8）：approve-escalated-merge 只豁免 riskTier/verdict/blocked，不豁免真机结果证据。
+    if (!ctx.deviceOutcome || ctx.deviceOutcome.probed !== true) {
+      const detail = Array.isArray(ctx.deviceOutcome?.reasons) && ctx.deviceOutcome.reasons.length
+        ? ctx.deviceOutcome.reasons.join('；')
+        : '设备结果面探测失败（无详细原因）';
+      const prefix = 'device-outcome-probe-fail-closed：';
+      push((detail.startsWith(prefix) ? detail : prefix + detail) + '——升级人工核，不得自动 merge');
+    } else if (ctx.deviceOutcome.required && !ctx.deviceOutcome.ok) {
+      for (const reason of ctx.deviceOutcome.reasons) push(reason);
+    }
     // T1/T2（260908 批）：并行相交面分级路由——tradeoff（③ 级）BLOCK 交 architect 消解评审；
     // no-overlap / union-safe 不升人（② 级走 runbook 并集 + 双方齿复跑；探测失败已 fail-closed 归 tradeoff）。
     if (ctx.overlap?.tier === 'tradeoff') {
@@ -448,12 +702,24 @@ export function evaluate(ctx) {
       push(`supervisor verdict=${ctx.supervisorVerdict?.verdict}（非 APPROVE）`);
     }
   } else if (ctx.kind === 'gov') {
-    // Track B 档 6：architect GREEN 机锚
+    // Track B 档 6：architect GREEN 机锚；direct-implementation 用同份批记录的轻量钉点。
     const a = ctx.govAnchors;
     if (!a) push('Track B：PROPOSAL 不在（无法验 architect GREEN 机锚）');
     else if (!a.frozen) push('Track B：PROPOSAL Status 未标 FROZEN');
-    else if (!a.green) push('Track B：§7 无 architect GREEN verdict');
-    else if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
+    else if (!a.green) push('Track B：最后 verdict 非 GREEN');
+    else if (a.direct?.direct) {
+      // 新流程标记不豁免上方通用契约凭据判定，也不得消费 hasArchLoopContractEvidence 放行。
+      if (!ctx.directImplementationGate?.probed) push('direct-implementation：轻量凭据探测失败（fail-closed）');
+      else for (const reason of ctx.directImplementationGate.reasons) push(`direct-implementation：${reason}`);
+    } else {
+      if (!a.landingVerdict) push('Track B：landing-verdict 不在产');
+      if (a?.laneError) push(`Track B：${a.laneError}`);
+      if (a?.lane === LANDING_LANES.AUTHOR_IMPLEMENTATION) {
+        if (ctx.humanApproval) push('author-implementation gov lane 不开放 human-approval 豁免');
+        if (!ctx.authorImplementationGate?.probed) push('author-implementation：同树实现凭据探测失败（fail-closed）');
+        else for (const reason of ctx.authorImplementationGate.reasons) push(`author-implementation：${reason}`);
+      }
+    }
   } else {
     // 261026 批 T3（ARQ-261017-merge-gate-scope-unstated，OQ1 裁候选 2）：变更集全部落在账本类制品 →
     // 本闸不适用（NOT_APPLICABLE），交 merge-to-main skill 的 human 授权通道；否则仍 BLOCK。
@@ -514,6 +780,16 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
   const overlap = parallelOverlapProbe(execFn, source, 'main');
   // T1（261015-gov-review-changes-taxonomy 齿二）：废止路径结构检查（两档通用；target = main）
   const retiredProbe = retiredPathProbe(execFn, source, 'main');
+  const sourceDiffPaths = kind === 'devloop'
+    ? (() => { try { return execFn('git diff --name-only main...' + source).split('\n').map((l) => l.trim()).filter(Boolean); } catch { return []; } })()
+    : [];
+  const deviceOutcome = kind === 'devloop' ? collectDeviceOutcome(projectDir, changeId, source, sourceDiffPaths) : null;
+  const authorImplementationGate = kind === 'gov' && govAnchors?.lane === LANDING_LANES.AUTHOR_IMPLEMENTATION && source
+    ? collectAuthorImplementationGate(projectDir, changeId, source)
+    : null;
+  const directImplementationGate = kind === 'gov' && govAnchors?.direct?.direct && source
+    ? collectDirectImplementationGate(projectDir, changeId, source)
+    : null;
 
   return {
     changeId,
@@ -531,10 +807,198 @@ function buildCtx(projectDir, changeId, sourceRef, humanApprovalRef = null) {
     contractFindings, // T5（260908 批）：契约类 hard-violation 台账核验结果
     overlap, // T1（260908 批）：并行相交面探测结果（分级路由见 pod-coordination §10d）
     retiredProbe, // T1（261015-gov-review-changes-taxonomy 齿二）：合并结果树废止路径探测结果
+    deviceOutcome, // 261028 P8：设备轮硬门结果；人批豁免不消费、不覆盖
+    authorImplementationGate, // 261028 批：作者实现 lane 的同树与证据尾重算
+    directImplementationGate, // 261029 批：轻量批记录钉点、scope 子集与证据尾重算
   };
 }
 
 // ---- self-check（真空绿规约：断言输入非空 + 逐 case 预期）----
+function runAuthorLaneLiveSelfCheck(cases) {
+  const root = mkdtempSync(join(tmpdir(), 'author-lane-live-'));
+  const changeId = '261028-author-lane-fixture';
+  const scriptPath = fileURLToPath(import.meta.url);
+  const landingPath = resolve(scriptPath, '..', 'landing-fidelity-check.mjs');
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' }).trim();
+  const write = (rel, text) => {
+    const p = join(root, rel);
+    mkdirSync(resolve(p, '..'), { recursive: true });
+    writeFileSync(p, text, 'utf8');
+  };
+  const run = (script, args) => spawnSync(process.execPath, [script, ...args], {
+    cwd: root,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    encoding: 'utf8',
+    timeout: 30000,
+  });
+  try {
+    git('init', '-b', 'main');
+    git('config', 'user.email', 'fixture@example.invalid');
+    git('config', 'user.name', 'Fixture');
+    const manifest = '.claude/scripts/x.mjs';
+    const proposal = `> **状态：FROZEN v1.0**\n> **landing-lane**：\`author-implementation\`\n\n\`\`\`landing-manifest\n${manifest}\n\`\`\`\n\n## 2. 改法\n### T1 · fixture\n目标文件：\`${manifest}\`（改）\n\n## 7. 评审记录\nverdict: GREEN\n`;
+    const summary = `packet-id：gov-review-${changeId}\n\n\`\`\`landing-manifest\n${manifest}\n\`\`\`\n`;
+    write(manifest, 'old\n');
+    write(`delivery/review/${changeId}/PROPOSAL.md`, proposal);
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, summary);
+    git('add', '.');
+    git('commit', '-m', 'base');
+    git('checkout', '-b', 'gov/fixture');
+    write(manifest, 'new\n');
+    git('add', '.');
+    git('commit', '-m', 'implementation');
+    const reviewedCommit = git('rev-parse', 'HEAD');
+    const reviewedTree = git('rev-parse', 'HEAD^{tree}');
+    const evidence = {
+      schemaVersion: 1,
+      lane: 'author-implementation',
+      changeId,
+      reviewedCommit,
+      reviewedTree,
+      changedFiles: [manifest],
+    };
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: reviewedTree }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'evidence');
+    const happy = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-cli-happy-pass', ok: happy.status === 0, got: `${happy.status} ${happy.stdout} ${happy.stderr}` });
+    const landingHappy = run(landingPath, [`delivery/review/${changeId}`, 'main']);
+    cases.push({ name: 'author-lane-landing-cli-happy-pass', ok: landingHappy.status === 0, got: `${landingHappy.status} ${landingHappy.stdout} ${landingHappy.stderr}` });
+
+    write(manifest, 'newer-without-review\n');
+    git('add', '.');
+    git('commit', '-m', 'stale implementation');
+    const stale = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-stale-sha-block', ok: stale.status === 1 && stale.stderr.includes('非证据尾'), got: `${stale.status} ${stale.stderr}` });
+    git('reset', '--hard', reviewedCommit);
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: reviewedTree }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    write('.claude/scripts/extra.mjs', 'extra\n');
+    git('add', '.');
+    git('commit', '-m', 'out of manifest');
+    const extra = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-out-of-manifest-block', ok: extra.status === 1 && extra.stderr.includes('manifest'), got: `${extra.status} ${extra.stderr}` });
+
+    git('reset', '--hard', reviewedCommit);
+    write(`delivery/review/${changeId}/implementation-review.json`, JSON.stringify(evidence));
+    write(`delivery/review/${changeId}/implementation-verification.json`, JSON.stringify({ ...evidence, verifiedCommit: reviewedCommit, verifiedTree: '0'.repeat(40) }));
+    write(`delivery/review/${changeId}/landing-verdict.md`, 'verdict: PASS\n');
+    write(`delivery/review/${changeId}/architect-landing-summary.md`, `${summary}\n${reviewedCommit}\n${reviewedTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'bad tree evidence');
+    const badTree = run(scriptPath, [changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'author-lane-live-wrong-tree-block', ok: badTree.status === 1 && badTree.stderr.includes('reviewer 钉点'), got: `${badTree.status} ${badTree.stderr}` });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function runDirectLaneLiveSelfCheck(cases) {
+  const root = mkdtempSync(join(tmpdir(), 'direct-lane-live-'));
+  const changeId = '261029-direct-lane-fixture';
+  const scriptPath = fileURLToPath(import.meta.url);
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' }).trim();
+  const write = (rel, text) => {
+    const p = join(root, rel);
+    mkdirSync(resolve(p, '..'), { recursive: true });
+    writeFileSync(p, text, 'utf8');
+  };
+  const run = (args) => spawnSync(process.execPath, [scriptPath, ...args], {
+    cwd: root,
+    env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+    encoding: 'utf8',
+    timeout: 30000,
+  });
+  const proposalPath = `delivery/review/${changeId}/PROPOSAL.md`;
+  const baseProposal = [
+    '> **状态：FROZEN v0.2**',
+    '> **gov-flow**: direct-implementation',
+    '```landing-manifest',
+    '.claude/scripts/x.mjs | architect | ordinary',
+    '.claude/scripts/unused.mjs | architect | ordinary',
+    'foo/bar/ | architect | ordinary',
+    '```',
+    'verdict: GREEN',
+    '',
+  ].join('\n');
+  try {
+    git('init', '-b', 'main');
+    git('config', 'user.email', 'fixture@example.invalid');
+    git('config', 'user.name', 'Fixture');
+    write('.claude/scripts/x.mjs', 'old\n');
+    write(proposalPath, baseProposal);
+    git('add', '.');
+    git('commit', '-m', 'base');
+    git('checkout', '-b', 'gov/fixture');
+    write('.claude/scripts/x.mjs', 'new\n');
+    git('add', '.');
+    git('commit', '-m', 'implementation');
+    const reviewedCommit = git('rev-parse', 'HEAD');
+    const reviewedTree = git('rev-parse', 'HEAD^{tree}');
+    write(proposalPath, `${baseProposal}verdict: GREEN\nreviewedCommit: ${reviewedCommit}\nreviewedTree: ${reviewedTree}\n`);
+    // events 故意含坏行：它在证据尾豁免内，且绝不进入闸或 INDEX 判定。
+    write(`delivery/review/${changeId}/events.jsonl`, '{bad json\n');
+    git('add', '.');
+    git('commit', '-m', 'review evidence');
+    const evidenceCommit = git('rev-parse', 'HEAD');
+    const happy = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-cli-subset-no-legacy-artifacts-pass', ok: happy.status === 0, got: `${happy.status} ${happy.stdout} ${happy.stderr}` });
+
+    write('.claude/scripts/x.mjs', 'newer-without-review\n');
+    git('add', '.');
+    git('commit', '-m', 'stale implementation');
+    const stale = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-stale-implementation-block', ok: stale.status === 1 && stale.stderr.includes('非证据尾'), got: `${stale.status} ${stale.stdout} ${stale.stderr}` });
+
+    git('reset', '--hard', reviewedCommit);
+    write(proposalPath, `${baseProposal}verdict: GREEN\nreviewedCommit: ${reviewedCommit}\nreviewedTree: ${reviewedTree}\nverdict: BLOCK(F1)\n`);
+    git('add', '.');
+    git('commit', '-m', 'later block');
+    const blocked = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-later-block-wins', ok: blocked.status === 1 && blocked.stderr.includes('最后 verdict 非 GREEN'), got: `${blocked.status} ${blocked.stdout} ${blocked.stderr}` });
+
+    git('reset', '--hard', evidenceCommit);
+    write(proposalPath, `${baseProposal}verdict: GREEN\nreviewedCommit: ${reviewedCommit}\nreviewedTree: ${'0'.repeat(40)}\n`);
+    git('add', '.');
+    git('commit', '-m', 'wrong tree evidence');
+    const wrongTree = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-wrong-tree-block', ok: wrongTree.status === 1 && wrongTree.stderr.includes('Git tree 不符'), got: `${wrongTree.status} ${wrongTree.stdout} ${wrongTree.stderr}` });
+
+    git('reset', '--hard', evidenceCommit);
+    write('.claude/scripts/extra.mjs', 'outside scope\n');
+    git('add', '.');
+    git('commit', '-m', 'out of scope implementation');
+    const outsideCommit = git('rev-parse', 'HEAD');
+    const outsideTree = git('rev-parse', 'HEAD^{tree}');
+    write(proposalPath, `${baseProposal}verdict: GREEN\nreviewedCommit: ${outsideCommit}\nreviewedTree: ${outsideTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'out of scope review');
+    const outside = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-out-of-scope-reviewed-diff-block', ok: outside.status === 1 && outside.stderr.includes('出轻量 manifest'), got: `${outside.status} ${outside.stdout} ${outside.stderr}` });
+
+    git('checkout', '-b', 'side', 'main');
+    write('side.txt', 'not an ancestor\n');
+    git('add', '.');
+    git('commit', '-m', 'side commit');
+    const sideCommit = git('rev-parse', 'HEAD');
+    const sideTree = git('rev-parse', 'HEAD^{tree}');
+    git('checkout', 'gov/fixture');
+    git('reset', '--hard', evidenceCommit);
+    write(proposalPath, `${baseProposal}verdict: GREEN\nreviewedCommit: ${sideCommit}\nreviewedTree: ${sideTree}\n`);
+    git('add', '.');
+    git('commit', '-m', 'non ancestor review');
+    const nonAncestor = run([changeId, '--source-ref', 'HEAD', '--project-dir', root]);
+    cases.push({ name: 'direct-lane-live-non-ancestor-pin-block', ok: nonAncestor.status === 1 && nonAncestor.stderr.includes('不是待合并 source 的祖先'), got: `${nonAncestor.status} ${nonAncestor.stdout} ${nonAncestor.stderr}` });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 function selfCheck() {
   const cases = [];
   const mkCtx = (over) => ({
@@ -559,6 +1023,7 @@ function selfCheck() {
     contractFindings: { present: false, accounted: true, hits: [] }, // T5：默认不在场 → 放行
     overlap: { probed: true, tier: 'no-overlap', intersectingFiles: [], conflictedFiles: [], addAddFiles: [] }, // T1：默认零相交 → 放行
     retiredProbe: { probed: true, tree: 'x', paths: [] }, // 齿二（261015 批）：默认结果树干净 → 放行
+    deviceOutcome: { probed: true, required: false, ok: true, reasons: [], advisories: [] },
     ...over,
   });
 
@@ -614,6 +1079,13 @@ function selfCheck() {
       { readVerdict: () => 'verdict: PASS' },
     );
     cases.push({ name: 'contract-evidence-fn-manifest-not-covering-block', ok: r4.ok === false && /manifest|联立/.test(r4.reason), got: r4.reason });
+    const directProposal = FIX_PROPOSAL
+      .replace('```landing-manifest\ndocs/contracts/interface-contract.md', '> **gov-flow**: direct-implementation\n```landing-manifest\ndocs/contracts/interface-contract.md | architect | protected');
+    const rDirect = hasArchLoopContractEvidence(
+      (c) => (c.startsWith('git diff') ? FIX_DIFF : c.startsWith('git show') ? directProposal : ''),
+      'src', 'main', 'x', { readVerdict: () => 'verdict: PASS' },
+    );
+    cases.push({ name: 'contract-evidence-direct-flow-cannot-self-certify', ok: rDirect.ok === false && rDirect.reason.includes('directImplementation'), got: rDirect.reason });
   }
   // 通用 3 blocked
   expect('blocked-block', { blocked: true }, true, 'blocked');
@@ -631,6 +1103,13 @@ function selfCheck() {
   });
   // gov 档 6：FROZEN 缺
   expect('gov-not-frozen-block', { kind: 'gov', supervisorVerdict: null, govAnchors: { frozen: false, green: true, landingVerdict: true } }, true, 'FROZEN');
+  // direct-implementation：无 landing-verdict 也可过，但轻量探测失败必须红；旧批缺 verdict 仍红。
+  const govDirect = { kind: 'gov', supervisorVerdict: null, govAnchors: { frozen: true, green: true, landingVerdict: false, direct: { direct: true } } };
+  cases.push({ name: 'direct-gov-clean-pass', ok: !evaluate(mkCtx({ ...govDirect, directImplementationGate: { probed: true, reasons: [] } })).blocked, got: '' });
+  expect('direct-gov-probe-failure-block', { ...govDirect, directImplementationGate: { probed: true, reasons: ['实际非证据 diff 出轻量 manifest'] } }, true, '出轻量 manifest');
+  expect('direct-gov-missing-probe-block', { ...govDirect, directImplementationGate: null }, true, '探测失败');
+  expect('legacy-gov-still-requires-landing-verdict', { kind: 'gov', supervisorVerdict: null, govAnchors: { frozen: true, green: true, landingVerdict: false, direct: { direct: false } } }, true, 'landing-verdict');
+  cases.push(...directImplementationSelfCheckCases());
   // unknown kind
   expect('unknown-kind-block', { kind: 'unknown', supervisorVerdict: null }, true, 'unknown');
 
@@ -859,6 +1338,80 @@ function selfCheck() {
     cases.push({ name: 'overlap-projection-plus-other-tradeoff', ok: rMix.probed && rMix.tier === 'tradeoff', got: JSON.stringify(rMix) });
   }
 
+  // 261028 P8：设备门三证据形态 + 缺证/错 commit/缺覆盖/新轴防漏升正反夹具。
+  expect('device-required-missing-evidence-block', { deviceOutcome: { probed: true, required: true, ok: false, reasons: ['device-round-evidence-missing'] } }, true, 'device-round-evidence-missing');
+  expect('device-probe-error-detail-surfaced', { deviceOutcome: { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：fixture boom'] } }, true, 'fixture boom');
+  {
+    const r = evaluate(mkCtx({ deviceOutcome: { probed: false, required: true, ok: false, reasons: ['device-outcome-probe-fail-closed：fixture boom'] } }));
+    const text = r.reasons.join('\n');
+    cases.push({ name: 'device-probe-prefix-not-duplicated', ok: text.split('device-outcome-probe-fail-closed：').length - 1 === 1, got: text });
+  }
+  expect('device-human-approval-does-not-waive', { supervisorVerdict: escVerdict, humanApproval: { ok: true, reason: 'human-approval verified' }, deviceOutcome: { probed: true, required: true, ok: false, reasons: ['device-round-evidence-missing'] } }, true, 'device-round-evidence-missing');
+  cases.push({ name: 'device-not-required-pass', ok: !evaluate(mkCtx({ deviceOutcome: { probed: true, required: false, ok: true, reasons: [] } })).blocked, got: '' });
+  const baseDeviceInput = {
+    declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] } },
+    markers: { acceptanceRefs: [], hostUncompilablePaths: [] },
+    hostExclusions: ['firmware/main/display/lcd_display.cc'],
+    sourceDiffPaths: ['firmware/main/display/lcd_display.cc'],
+    source: 'a'.repeat(40),
+    changeId: '261028-device-fixture',
+  };
+  const baseEvidence = {
+    schemaVersion: 1,
+    changeId: baseDeviceInput.changeId,
+    sourceCommit: baseDeviceInput.source,
+    binaryRef: 'firmware/build/xiaozhi.bin',
+    binarySha256: 'b'.repeat(64),
+    observations: [],
+  };
+  const deviceDeps = { verifyBinary: () => true, verifyExcerpt: () => true };
+  const observationFor = (method) => method === 'human-visual'
+    ? { acceptanceRef: 'RSR-A6', result: 'PASS', method, observer: 'human', observedAt: '2026-10-28T10:00:00+08:00', note: 'human 持板确认录音态键帽与主标题均正确' }
+    : { acceptanceRef: 'RSR-A6', result: 'PASS', method, log: { segment: method === 'kplog' ? 'KPLOG006' : undefined, window: method === 'kplog' ? '2026-10-28 10:00:00–10:00:05' : undefined, excerptRef: 'delivery/taskpackages/261028-device-fixture/device-evidence/rsr-a6.txt', excerptSha256: 'c'.repeat(64) } };
+  for (const method of ['human-visual', 'serial-capture', 'kplog']) {
+    const r = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [observationFor(method)] } }, deviceDeps);
+    cases.push({ name: 'device-evidence-' + method + '-pass', ok: r.required && r.ok, got: JSON.stringify(r.reasons) });
+  }
+  const badKplog = { ...observationFor('kplog'), log: { ...observationFor('kplog').log, segment: '', window: '' } };
+  const badKplogResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [badKplog] } }, deviceDeps);
+  cases.push({ name: 'device-kplog-segment-and-window-required', ok: !badKplogResult.ok && badKplogResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(badKplogResult.reasons) });
+  const outOfRangeKplog = { ...observationFor('kplog'), log: { ...observationFor('kplog').log, segment: 'KPLOG032' } };
+  const outOfRangeResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [outOfRangeKplog] } }, deviceDeps);
+  cases.push({ name: 'device-kplog-032-out-of-rotation-block', ok: !outOfRangeResult.ok && outOfRangeResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(outOfRangeResult.reasons) });
+  const badExcerptResult = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, { ...deviceDeps, verifyExcerpt: () => false });
+  cases.push({ name: 'device-kplog-excerpt-hash-mismatch-block', ok: !badExcerptResult.ok && badExcerptResult.reasons.some((r) => r.includes('RSR-A6')), got: JSON.stringify(badExcerptResult.reasons) });
+  const wrongCommit = assessDeviceOutcome({ ...baseDeviceInput, evidence: { ...baseEvidence, sourceCommit: 'd'.repeat(40), observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-wrong-commit-block', ok: !wrongCommit.ok && wrongCommit.reasons.some((r) => r.includes('source-commit-mismatch')), got: JSON.stringify(wrongCommit.reasons) });
+  const missingCoverage = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6', 'RSR-A7'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] } }, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-missing-acceptance-coverage-block', ok: !missingCoverage.ok && missingCoverage.reasons.some((r) => r.includes('RSR-A7')), got: JSON.stringify(missingCoverage.reasons) });
+  const noDeclaration = assessDeviceOutcome({ ...baseDeviceInput, declaration: null, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-host-diff-without-declaration-block', ok: noDeclaration.required && !noDeclaration.ok && noDeclaration.reasons.some((r) => r.includes('declaration-missing')), got: JSON.stringify(noDeclaration.reasons) });
+  const nonVisible = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '仅设备内部诊断日志接线，不改变任何用户可见结果' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-nonvisible-with-reason-pass', ok: !nonVisible.required && nonVisible.ok, got: JSON.stringify(nonVisible.reasons) });
+  const defaultNone = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: 'none' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-default-none-touched-host-fail-closed', ok: !defaultNone.ok && defaultNone.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(defaultNone.reasons) });
+  const defaultNoneEval = evaluate(mkCtx({ deviceOutcome: defaultNone }));
+  cases.push({ name: 'device-default-none-evaluate-block', ok: defaultNoneEval.blocked && defaultNoneEval.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(defaultNoneEval) });
+  const placeholderReason = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '<无用户可见结果面时填理由；无设备面可写 none>' } }, evidence: null }, deviceDeps);
+  cases.push({ name: 'device-placeholder-reason-touched-host-fail-closed', ok: !placeholderReason.ok && placeholderReason.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(placeholderReason.reasons) });
+  const placeholderEval = evaluate(mkCtx({ deviceOutcome: placeholderReason }));
+  cases.push({ name: 'device-placeholder-reason-evaluate-block', ok: placeholderEval.blocked && placeholderEval.reasons.some((r) => r.includes('nonvisible-reason-missing')), got: JSON.stringify(placeholderEval) });
+  const boardPath = 'firmware/main/boards/waveshare-s3-rlcd-4.2/waveshare-s3-rlcd-4.2.cc';
+  const boardOutcome = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: true, acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: [boardPath] } }, sourceDiffPaths: [boardPath], hostUncompilablePrefixes: ['firmware/main/boards/'], evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-board-wiring-prefix-covered', ok: boardOutcome.required && boardOutcome.ok, got: JSON.stringify(boardOutcome.reasons) });
+  const acceptanceOverrides = assessDeviceOutcome({ ...baseDeviceInput, declaration: { schemaVersion: 1, deviceOutcome: { userVisible: false, reason: '错误申辩：实际 acceptance 已声明用户可见结果' } }, markers: { acceptanceRefs: ['RSR-A6'], hostUncompilablePaths: ['firmware/main/display/lcd_display.cc'] }, evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-acceptance-marker-overrides-false-declaration', ok: acceptanceOverrides.required && !acceptanceOverrides.ok && acceptanceOverrides.reasons.some((r) => r.includes('declaration-conflict')), got: JSON.stringify(acceptanceOverrides.reasons) });
+  const unknownHostPath = assessDeviceOutcome({ ...baseDeviceInput, hostExclusions: [], evidence: { ...baseEvidence, observations: [observationFor('kplog')] } }, deviceDeps);
+  cases.push({ name: 'device-unregistered-host-path-fail-closed', ok: !unknownHostPath.ok && unknownHostPath.reasons.some((r) => r.includes('host-path-unregistered')), got: JSON.stringify(unknownHostPath.reasons) });
+
+  // 261028 作者实现 lane：evaluate 消费层正反判别 + 真 Git 仓双 CLI 夹具。
+  const govAuthor = { kind: 'gov', govAnchors: { frozen: true, green: true, landingVerdict: true, lane: LANDING_LANES.AUTHOR_IMPLEMENTATION } };
+  cases.push({ name: 'author-lane-evaluate-clean-pass', ok: !evaluate(mkCtx({ ...govAuthor, authorImplementationGate: { probed: true, reasons: [] } })).blocked, got: '' });
+  expect('author-lane-evaluate-stale-block', { ...govAuthor, authorImplementationGate: { probed: true, reasons: ['reviewedCommit 不是待合并 source 的祖先'] } }, true, 'reviewedCommit');
+  expect('author-lane-evaluate-missing-probe-block', { ...govAuthor, authorImplementationGate: null }, true, '探测失败');
+  runAuthorLaneLiveSelfCheck(cases);
+  runDirectLaneLiveSelfCheck(cases);
+
   const fail = cases.filter((c) => !c.ok);
   process.stdout.write(
     `${JSON.stringify({ selfCheck: 'pre-merge-escalation-gate', pass: cases.length - fail.length, fail: fail.length, total: cases.length, ok: fail.length === 0, failures: fail.length ? fail : undefined })}\n`,
@@ -923,7 +1476,7 @@ const result = evaluate(ctx);
 // T3（260908 批 ladder）：探测面制品落盘——PASS 与 BLOCK 两态都落（升级件内容面消费），失败 advisory 不改退出码
 if (probeOutPath) {
   try {
-    writeFileSync(probeOutPath, JSON.stringify({ changeId, kind: ctx.kind, source: ctx.source, overlap: ctx.overlap }, null, 2), 'utf8');
+    writeFileSync(probeOutPath, JSON.stringify({ changeId, kind: ctx.kind, source: ctx.source, overlap: ctx.overlap, deviceOutcome: ctx.deviceOutcome }, null, 2), 'utf8');
   } catch (err) {
     process.stderr.write(`[pre-merge-escalation-gate] WARN: --probe-out 落盘失败（advisory）：${err.message}\n`);
   }

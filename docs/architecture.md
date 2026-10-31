@@ -118,7 +118,7 @@
 - **儿童数据出网**：五条路径（音频→阿里云 / 转写→DeepSeek / 回复→edge-tts / 实时事实查询→Tavily 联网搜索 / 记忆画像管线→deriver 复用 DeepSeek + embedding→DashScope）human 已记账接受（NFR-SEC-2；第④条 v1.62 增、第⑤条 v1.67 增）；
 - **离线边界**：断网仅本地时间/温湿度/电量，不缓存任何事项（story 正文只读镜像为窄例外，NFR-OFF-1 注记）；
 - **内容安全**：答案口语化、简洁不啰嗦、适合 8–12 岁（生成端 system prompt 约束 + 失效截断兜底，NFR-SAFE-1；不设硬性句数上限——human 2026-09-25 裁）；
-- **1bpp CJK 可读性**：16px 以下真机可读性下限未实测（NFR-READ-1，ARQ-260831-small-cjk-1bpp-readability）。
+- **1bpp CJK 可读性**：14px 真机可读性下限已于 2026-09-15 九档对照实测定案，并于 2026-10-28 复测；本批正文 / 列表上调 16px、阅读标题 20px，键帽条 / 辅助条 / 查字窗维持 14px（NFR-READ-1，ARQ-260831-small-cjk-1bpp-readability 已结项）。
 
 ### 3.2 硬约束
 
@@ -155,7 +155,7 @@
 | NFR-PRIV-1 记忆边界与保留 | 记忆写入范围（类级规则：平台内部系统回合不入画像；设备流程回合与孩子真实聊天统一归属、按内容参与记忆；家长侧回合列在边界外——机制实况与残余见 §6.7 残余申报）+ 抽取三层纵深（来源门 / 抽取策略 / 注入过滤）+ 自托管不出网 + 删除 = 运维手工 | §6.7 / §5.1.2 记忆子系统 / §5.4 记忆行 |
 | NFR-OFF-1 离线边界 | 设备不缓存事项/课表 + 介质禁令（白名单制）+ 断网仅本地时间/温湿度/电量 +RAM 渲染缓冲不禁（掉电即失，§6.2 澄清；story 正文只读镜像窄例外，§6.2） | §6.2 / §5.4 |
 | NFR-SAFE-1 内容安全 | system prompt 简洁不啰嗦纪律（回合路由表承载，不设硬性句数上限；现行版本以 §5.5.5 现状指针为准）+ front 兜底文案与 V32 截断（超限按有处理的失败模式） | §5.1 front 组件 / §5.5.5 prompt 版本化 |
-| NFR-READ-1 1bpp CJK 下限 | 字体子集管线（`lv_font_conv` → SPIFFS `.bin`）+ 待实测（单独烧版对照） | §5.5.3 字体管线 |
+| NFR-READ-1 1bpp CJK 下限 | `lv_font_conv` 生成 assets 分区 `.bin`，经 cbin 运行时装载；14px 下限已由九档真机对照实测，编译内 14px 字体兜底 | §5.5.3 字体管线 |
 
 ---
 
@@ -294,11 +294,15 @@
 
 #### 5.5.2 资产管线（预栅格化 1bpp）
 
-设计稿 HTML 内嵌 SVG 为唯一母版 → 脚本抽取 symbol → 栅格化 → **RGB565 `.bin`**（I1 索引仅留真机 bin-decoder 优化项，可回收 16 倍空间）→ SPIFFS art 分区；模拟器同批资产双端渲染。管线三坑已修：透明 SVG 先 flatten(#ffffff) 再阈值化；libvips 不解析多层 `<use href>`；`<text>` 依赖运行环境字体（真机须以实际字体子集重烘）。⚠️ 预算口径 = 策略笔记实测于 art 切分前（47 资产 599,698B + P2–P4 估算 ≈3.85MB vs assets 8MB、余量 54.1%）；现分区为 art 512KB（KAP1 美术）+ assets 8MB 双分区（§5.5.6），47 项资产的实际落位与 P4 笔顺字盘（~3.1MB）装载目标须在 Phase 1 资产装载时复核。PSRAM 预算：LVGL draw buffer 240KB + RLCD 帧缓冲 15KB + 两张 LUT 360KB；ThorVG sdkconfig 默认关——预栅格化是复杂图形唯一低成本路径。详见 [notes/ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。
+设计稿 HTML 内嵌 SVG 为唯一母版 → 脚本抽取 symbol → 栅格化 → **RGB565 `.bin`**（I1 索引仅留真机 bin-decoder 优化项，可回收 16 倍空间）→ SPIFFS art 分区；模拟器同批资产双端渲染。管线三坑已修：透明 SVG 先 flatten(#ffffff) 再阈值化；libvips 不解析多层 `<use href>`；`<text>` 依赖运行环境字体（真机须以实际字体子集重烘）。⚠️ 预算口径 = 策略笔记实测于 art 切分前（47 资产 599,698B + P2–P4 估算 ≈3.85MB vs assets 8MB、余量 54.1%）；现分区为 art 512KB（KAP1 美术）+ assets 8MB 双分区（§5.5.6），47 项资产的实际落位与 P4 笔顺字盘（~3.1MB）装载目标须在 Phase 1 资产装载时复核。PSRAM 预算：LVGL draw buffer 240KB + RLCD 帧缓冲 15KB + 两张 LUT 360KB；ThorVG sdkconfig 默认关——预栅格化是复杂图形唯一低成本路径。详见 [notes/ui-implementation-strategy.md](notes/ui-implementation-strategy.md)。**字体预算注记（`261028-font-typography-scaleup`，2026-10-28）**：本批新增 16px 正文与 20px 阅读标题两枚全量 CJK `.bin` 计入 assets 8MB 分区预算，不占 ota_0 / ota_1；assets 起草期实测余量 5,597,745B（约 5.34MiB，见 ADR-017），两枚新字体的实际尺寸由 P0 资产生成后复测，分区表不因本批重排。
 
 #### 5.5.3 字体管线
 
-模拟器 FreeType 快速迭代 / 真机 `lv_font_conv` 生成 PuHui 子集 `.bin`（font_body/font_num_baloo/font_title_zcool 三族，SPIFFS 加载）；大号数字与图案化文字首选 imgfont 或预渲染位图（原生标签行距/基线对齐是高频痛点）；16px 以下 CJK 1bpp 真机可读性未实测（NFR-READ-1，单独烧版对照）。
+模拟器 FreeType 仅用于设计期快速迭代，不作为真机 1bpp 字形等价证据；host 验收与真机共用同一枚字体 `.bin`（host 编入 `cbin_font.c` 读同一文件，同源接线归 P0）。真机字体经 `lv_font_conv` 产出 `.bin` 并打入 **assets 8MB 分区**，运行时由 `Assets::GetAssetData` 取数据、经 `LvglCBinFont` / `cbin_font_create` 装载；缺资产或装载失败时回退编译内 `font_puhui_14_1`（14px），保证不黑屏。
+
+资产字族在既有 `font_body.bin`（14px 正文）、`font_title_zcool.bin`（30px 标题静态子集）、`font_num_baloo.bin`（44px 数字）三枚之外，新增 **16px 正文全量 CJK** 与 **20px 阅读标题全量 CJK** 两枚；本批只接通新增两枚的生产消费，不把旧三枚追述为已完成运行时接线。正文与列表采用 16px，阅读标题采用 20px，标题缺字回退 16px；键帽条 / 辅助条 / 查字窗仍用 14px，九档实验页与测试字体维持编入、不退役。大号数字与图案化文字首选 imgfont 或预渲染位图（原生标签行距 / 基线对齐是高频痛点）。
+
+NFR-READ-1 的 14px 下限已由 2026-09-15 九档真机对照实测定案，并于 2026-10-28 复测，不再挂「未实测」；字号、行数与页面容量的需求阈值归 requirements.md，本节只承载字体生产、落位、装载与降级机制。
 
 #### 5.5.4 UI 演出与现状
 
@@ -433,7 +437,7 @@
 | 8 | 逐笔念笔名试点期笔名错误率未成批核验（requirements v1.55 恢复；「勇」单字零错误 = 唯一实测点，笔名由 LLM 自由生成、无权威数据源兜底） | LLM 猜错笔名 = 教学事故（孩子照错的学） | 试点期扩常用字样本人工核错误率；不达标 → 回退纯引导语或接权威笔名数据源 + D3 契约扩展 `stroke_names`（走契约门） | human（试跑采样）+ dev-loop（数据源方案） |
 | 8 | OpenClaw live 恒 `Intent:nointent` 拒收 tools 数组，根因未查 | 引擎工具调用面退化 | ARQ-260907-openclaw-tools-rejection-rootcause | architect+dev-loop |
 | 9 | 对话历史跨 UI 会话累积（决策 21 连带） | 上下文污染 or feature，未定 | human 拍板；结构级备选（方案二：接入网关对设备常驻连接、引擎按会话起停）留 Phase 1。**已闭账（2026-10-22，`261022-device-memory-prompt-overhaul`）**：定性 = feature（跨会话连续性 + 记忆画像的底座），决策本体 = ADR-015；上下文污染的重放双源风险由「引擎只发新回合 + 持久会话单一权威」结构性消除；残余 = 历史增长 / 压缩成本（见风险 14）。决策 21 所列结构级备选（方案二：网关设备腿常驻、引擎腿按会话起停）随 ADR-015 承载定案失效。 | human |
-| 10 | 16px 以下 CJK 1bpp 可读性未实测 | 字号下限悬置 | 单独烧版对照（ARQ-260831-small-cjk-1bpp-readability） | 真机字体任务 |
+| 10 | 1bpp CJK 字号下限实测（原「16px 以下未实测」） | **已闭账**：14px 下限已实测定案，不再悬置 | 2026-09-15 九档真机对照 + 2026-10-28 复测在案；NFR-READ-1 的 14px 下限语义不变，ARQ-260831-small-cjk-1bpp-readability 已按 `261028-font-typography-scaleup` consumed-by 结项 | 已闭（原 owner 真机字体任务） |
 | 13 | 记忆子系统单点（Honcho 五容器与 ECS 同机；画像 / 消息库在本机 postgres） | 故障 = 无记忆（对话不阻塞）；数据损坏 = 画像需自消息库 / backfill 重建；删除 = 运维手工 | 降级语义 §6.7；备份 / 恢复形态 = 不备份、靠消息库 / backfill 语料重建（human 2026-10-22 裁 OQ-10；重建源 = session-corpus 源语料 + OpenClaw 会话存储；重评触发 = 重建不可接受 / 家长提出恢复诉求）；数据不出网（NFR-PRIV-1） | 运维面 |
 | 14 | 持久会话历史增长与 auto-compaction 成本 / 质量（ADR-015 连带） | 长会话 token 成本；压缩后早期细节可能丢失（长期事实另存于记忆画像，兜底） | P2 上线后观测；压缩默认 safeguard（参考实现 `docs/concepts/compaction.md`）；必要时调 `keepRecentTokens` | dev-loop 运维面（观察项） |
 | 11 | shim 退役遗留：ECS 停服 + 8080 安全组未清 | 攻击面残留（探针已证不可达） | teardown 证据待补 | dev-loop |
@@ -508,6 +512,7 @@
 
 | changeId | 日期 | 改动面 | 依据 |
 |---|---|---|---|
+| 261028-font-typography-scaleup | 2026-10-28 | §3.1 / §4 NFR-READ-1 映射 / §5.5.2 字体资产预算注记 / §5.5.3 字体管线换代（16px 正文 + 20px 标题、assets `.bin` + cbin 运行时装载 + 编译内 14px 兜底）/ §8.1 风险 10 闭账 / §12 本行 | delivery/review/261028-arch-review-font-typography-scaleup/PROPOSAL.md（需求面 v1.69 frozen 为语义输入、逐字不回改；契约面零动作；ADR-017 同批落） |
 | 261025-spec-reconciliation-memory-writing-scope | 2026-10-26 | §4（NFR-PRIV-1 映射行：两把配置键口径 → 类级规则 + 内容归属）/ §5.1.2（front 行一次性回合携 `user` 落设备 session 键族；记忆子系统行指针核后不动）/ §6.7 改写（逐行枚举 → 类级规则 + 现行机制与界限 + 七行实例表 + 残余与未闭合申报八条 + 记忆身份补一次性回合归属 + 画像边界来源门换代） | delivery/review/261025-arch-review-spec-reconciliation-memory-writing-scope/PROPOSAL.md（需求面 v1.68 为语义输入、不回改；契约面零动作；依据 = requirements v1.68 + spine + TECH-261026 + 261025 部署包与 docs-delta + architect 2026-10-26 核实） |
 | 261023-arch-review-memory-wiring-verified-behavior | 2026-10-23 | §1.3（记忆身份体系实测口径：设备级 session + 家庭单 owner 画像）/ §4（NFR-PRIV-1 映射行口径）/ §5.1.2（front 行括注、记忆子系统行）/ §5.4（记忆·会话消息行）/ §6.7 改写（逐回合判据 → 记忆写入范围 + 六行实况表 + 残余申报 + 记忆身份） | delivery/review/261023-arch-review-memory-wiring-verified-behavior/PROPOSAL.md（依据：human 2026-10-23 方案甲裁决 + 261022 批 advisory memory-wiring-advisory-20261023 §1/§5/§6；K3 冻结验收与生产接线换代归批 B） |
 | 261022-device-memory-prompt-overhaul | 2026-10-22 | §1.1 / §1.2（+Honcho 自托管栈、+DashScope embedding、DeepSeek deriver 同域注记）/ §1.3（记忆身份体系范围声明）/ §2.2 总图（持久会话 + 记忆侧车）/ §3.1·§4（出网四条→五条、+NFR-PRIV-1 对策行）/ §5.1.2（+记忆子系统行；OpenClaw 本体行 / front 行 / 引擎补丁行）/ §5.1.3 / §5.2 场景②（动态 context 装配 + 课表摘要）/ §5.3.2（+Honcho 行）/ §5.3.3（Honcho 端口核验）/ §5.4（+记忆两行、对话历史两行）/ §5.5.5 整节重写（静态 / 动态承载 + ADR-001 重定义）/ §6.7 新增（记忆写入资格与画像）/ §8.1（风险 9 闭账、+13/14）/ §8.2（会话定案取代注记）/ §10 决策 19 ⑤、决策 21 取代注记 | delivery/review/261022-arch-review-device-memory-prompt-overhaul/PROPOSAL.md（契约面同批原子落：§四「会话连续性承载」定案改写 + §1.6 承载对账注记；ADR-014/015 + glossary 词条同批落） |

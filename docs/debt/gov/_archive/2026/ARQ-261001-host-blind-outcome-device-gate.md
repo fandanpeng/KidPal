@@ -2,11 +2,13 @@
 id: ARQ-261001-host-blind-outcome-device-gate
 title: 「用户可见、host 不可编」的结果面缺可机判门——建议把设备轮窗口从 deferred 升为阻断合并的硬门
 domain: gov
-status: deferred
+status: closed
 severity: SHOULD
 owner: architect
 trigger: 下一治理批（dev-loop 门 / 纪律文面；或下一个声明「用户可见结果」的包 launch 前）
 opened: 2026-10-01
+closed: 2026-10-28
+closedBy: 261028-gov-review-p8-gate-semantics-cluster
 paths: [.claude/hooks/verify.mjs, .claude/verify-gates.json, .claude/scripts/pre-merge-escalation-gate.mjs, .claude/references/dev-loop-operating-system.md]
 source: [delivery/changes/dev/261001-m4-k3-record-session-live-repair/review-packet.md, delivery/taskpackages/261001-m4-k3-record-session-live-repair/verifier-evidence/rounds/r4.json, delivery/taskpackages/261001-m4-k3-record-session-live-repair/pod-events.jsonl, delivery/changes/dev/261001-m4-k3-record-session-live-repair/pod-retro.md]
 ---
@@ -31,3 +33,5 @@ source: [delivery/changes/dev/261001-m4-k3-record-session-live-repair/review-pac
 **追加证据（loop-retro-2026-10-14，18 包复盘——常态链与责任位增量，原条目判据不变）**：① **defer-merge-pending-live-round 已成 high tier 常态收口链三连**：261001-m4-k3 `ef280e1a` / 261001-m4-k3-story-archive-order `39386ee6` / 261010-device-reconnect `f499501b` 均为「supervisor ESCALATE → 真机复验 → approve-escalated-merge」同型——真机轮实质是事实上的阻断合并硬门，流程条文未承认；② **烧录/部署责任位缺位实录**：260b1f48 human 真机初测发现问题，根因竟是「三包零烧录零部署」，human 指示「立马执行烧录和部署」——谁烧录、谁部署、何时，launch/finalize 面无条文；③ **红利实证**：261012-topbar `dd77c762` TB-A4 真机轮四项逐项记录中白捡既有缺陷归因（立 TECH-261013-p3-reader-entry-no-text-silent-noop）；④ **同族第三波独立再判**：261010-device-reconnect retro 独立得出同一结论（host 结构齿全绿 ≠ 行为全对，断链藏在态跃迁里；fixer 四关点补钉无 host 测试承载，靠真机轮 RC-A4/B4/B5/B6 兜底）——与本条目 source 的 261001 D2 实证互为独立复证；⑤ 伴生建议两条随本条处置：诊断日志保留债成文钉住（261001 纯日志诊断轮一次定死 D2，复用价值实证）、builder 模板补「行为面观察」申报节（261010 builder 主动上交 [S7] 运行时断链是本波最值钱交付质量）。证据：`delivery/changes/retro/2026-10-14-loop-retro.md`。
 
 **追加证据（loop-retro-2026-10-25，25 包复盘）**：261016-p3-story-body-sd-cache——覆盖层底栏键帽槽文案（说话·双击看/下移）、页点未隐藏、story_page 自画键帽被不透明底条遮挡（死绘制），三项全部不在冻结齿里，靠 integrator 五轴语义 review 抓住 BLOCKING 后 tighten-only 补齿。retro 判词：「行为对了不等于界面对了；『可见面』是一类独立的验收轴，靠人工语义 review 补刀不可复制」。同族正向：261016-sd-card-mount 的诚实豁免形态（代码面静态断言，明确不冒充真机观察）；261020-p3-rec-frame-visual 的真机目检追加修订。建议本条修法增一条 acceptance 侧动作：触 UI 的包验收冻结时显式问「新态 chrome 三件（键帽槽/页点/主标题画法）各有齿吗」，无齿须二选一申报 dropped 或挂真机目检。证据：delivery/retro/2026-10-25-loop-retro.md §二 T12。
+
+**2026-10-28 · 结项（`261028-gov-review-p8-gate-semantics-cluster`）**：按 human 选定「①硬门+配套全套」落地——用户可见且 host 不可编结果面由前置升级闸在 merge 期强制消费 device-round-evidence，approve-escalated-merge 不豁免；defer-merge-pending-live-round 常态链在 operating-system §7 成文。证据三形态均可：人工在场目检 / 串口 capture / KPLOG 拉取；KPLOG 必须含段号、时间窗与包内脱敏摘录+SHA-256，落实 human「我们现在有日志，日志可以作为佐证」。chrome 三件自查、诊断日志保留、builder 行为面观察申报同批落。候选②结果决策抽 host 可测缝保留为 dev-loop 个案做法，不属本批。

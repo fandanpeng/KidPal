@@ -138,7 +138,7 @@ inputs: delivery/milestones milestone / delivery/workstreams workstream / arch-r
 - `mainThreadUsage` 检查点语义：同一会话内**单调累计**、每次 dispatch 刷新；写入侧发现本条累计值不高于上一条时记 `cumulativeNote: 'non-increasing'` 并 stderr 告警（fail-open，不阻断派发）。planner 成本按同 Pod 首末检查点做差；首末差 ≤0 视为失效，不得写 0。
 - **降级纪律**：transcript 取不到时按既有路径降级为 `unavailable`，**不得因遥测缺失而阻断或延迟派发**；遥测是记账面，不是门。
 - subagent Red Flag / blocker / out-of-scope / human ruling request 的顺序固定为：detect → best-effort append `agent-escalation` → 立即 stop/escalate。Resolution 另 append `agent-escalation-resolved` 引用原 eventId，不改写旧行。Append 失败仅在 response 暴露 advisory，并在可写时记 pod-retro degraded note；不得延迟实时升级。
-- human decision/correction 由 planner 在收到或检测到 human input 后 append。Verifier rounds、gate outcomes、test results、supervisor verdict 不进入 pod-events，仍以 immutable verifier evidence / supervisor verdict 为权威。
+- human decision/correction 由 planner 在收到或检测到 human input 后 append。**当 human 明确批准把一次 ESCALATE 处置登记为可复用同型先例时**，该 `human-decision` 的 payload 除既有五要素外还须带 `approvedVia`（非空字符串，记录真实批准通道）与 `gatePrecedents:[{axis,pattern}]`；axis 只许 `all-mock` / `generated-noise`，pattern 是稳定短横串。planner 不得仅凭一次 approve-escalated-merge 自行补标签——「批准本次合并」与「同意成为后续先例」是两个语义，后者必须有人明确授权。Verifier rounds、gate outcomes、test results、supervisor verdict 不进入 pod-events，仍以 immutable verifier evidence / supervisor verdict 为权威。
 - pod-events observational、non-bearing、fail-open：malformed 行诊断后跳过，缺失不阻 verifier、supervisor 或 merge。聚合 token 时只求和 `status=exact`，并始终报告 `{dispatchesTotal, dispatchesWithTokenData, dispatchesUnavailable}`。
 - **backfill 约定（gov-review-devloop-closeout-hardening §3.2 / Q4，convention-only）**：晚 append（非实时）的事件须标 `source=<actor>-backfill` + `payload.approx` 载估时（可选 `payload.backfillReason`）。**backfill 事件的 ledger 时间戳 ≠ 事件真实发生时间**——retro 消费时按 `payload.approx` 读时序，不信 ledger 时间戳。是否给 `pod-events-aggregate.mjs` 加 backfill 比例机器校验 = convention-only（fail-open 冲突；aggregate 全归 `unknown` 桶本身已是机器信号，不另加门）。
 
@@ -165,6 +165,8 @@ cadence review（[`.claude/commands/loop-retro.md`](../commands/loop-retro.md)�
 - **拆包交接可见性（commit-before-launch + launch 前置门，pod-coordination §2b）**：portfolio-planner 拆包产物（tracked 耐久制品 `delivery/workstreams/<ws>/**` + `delivery/taskpackages/<changeId>/**`，**不含 board**）须先 commit 到专用 base ref 再 launch；launch 前 `git cat-file -e` 校验基准 ref 含 check 集（taskpackage+PROPOSAL blocking / decision-coverage warn），缺失拒绝 launch（对偶 planner.md Step 1 intake 权威消费 + fail-closed）。
 - **耐久证据**入版本控制：post-cutoff 为 pod-events / pod-retro / taskpackage / review 制品；legacy 兼容 session-digest / loop-health / loop-metrics / pod-journal。落 `delivery/taskpackages/<change-id>/` 与 `delivery/taskpackages/<change-id>/`，随 Pod worktree 合并进 main。
 - **并行开发、串行合并**：N 个 Pod 并行开发、各自闭环（含 integrator+supervisor）。supervisor APPROVE 后标 ready-to-merge。merge-driver.mjs（planner 自动触发，单 Pod --pod）按 mergeOrder 逐个：拿 token → rebase 到当前 main → quick-check → merge → 释放 token。supervisor 在 Pod 内把关（APPROVE/BLOCK/ESCALATE），merge-driver 执行机械合并（本地 --no-ff 可回滚）。谁都不能并行直落 main。
+- **设备轮是 supervisor 合并门的 merge 期子判据，不是第七个工程门**：凡验收声明用户可见结果且实现落在 host 不可编面，合并前必须有包内 `device-round-evidence.md`；前置升级闸机械消费，human 的 approve-escalated-merge 只处理 riskTier / verdict / blocked，不豁免此证据。`defer-merge-pending-live-round` 是既有常态收口链的正式名称：supervisor ESCALATE → 冻结分支不合并 → 烧录 / 部署并跑真机轮 → 结果落包制品 → 再裁 approve-escalated-merge；它不是「先合并、后补看」的许可。
+- **诊断日志保留债成文**：用于定位或证明设备结果的 KPLOG / 串口日志不得随当轮收尾即删；完整原始件可留仓外，包内必须保留最小脱敏语义段、段号 / 时间窗与 SHA-256，使 review-packet 的结论可复核。含儿童语音转写的完整日志不入公开仓。
 
 ## 相关
 

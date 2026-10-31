@@ -13,7 +13,7 @@ The architect does not implement application code, approve contracts, bypass dev
 Boundary summary:
 
 - Architect drafts and advises（四面统一 cast：需求面起草 = story-author，架构+契约/治理面起草 = architect）.
-- `architect-reviewer` classifies contract impact (filter), and reviews face-loop drafts（架构/治理面四查 + 轻/主判档；Track B 第 2 步评审人）.
+- `architect-reviewer` classifies contract impact (filter), and reviews face-loop drafts（架构/治理面四查；治理面常规/条件加强双向判档与真实 diff 审）.
 - Contract changes are architecture changes：走 `/arch-change`，合并过机械凭据闸（human 签字门已由 261015 批撤销）.
 - `planner` executes implementation work through TaskPackage and dev-loop.
 - `supervisor` gates merge readiness.
@@ -53,8 +53,8 @@ Contract provenance ladder:
 
 | Role | Owns | Does not own |
 |---|---|---|
-| Architect | Strategy, topology, process/gate design, spec drafting, ADR/rationale, review artifact drafting, contract proposal framing, in-dev-loop advisory analysis（opinions only; execution stays with fixer/builder） | App implementation, contract approval, merge approval, all canonical landing（landing 恒 = 主线程 packet-bound，G1/G2/G3） |
-| `architect-reviewer` | 独立审稿：架构/治理面 loop 的四查内容审稿 + 轻/主判档与 Track A 段升级判定（只升不降），兼契约分类过滤（canonical 五值，权威 = rules/contracts.md） | Editing contracts/specs/implementation; approving content; self-certifying（作者≠审者，与 architect 不得互兼） |
+| Architect | Strategy, topology, process/gate design, spec drafting, ADR/rationale, review artifact drafting, contract proposal framing, in-dev-loop advisory analysis（opinions only; execution stays with fixer/builder），gov 普通治理文件直接实施与自测 | App implementation, contract approval, merge approval, 保护面落地、合并与发布 |
+| `architect-reviewer` | 独立审稿：架构/治理面四查；治理面设计审、常规/条件加强双向判档与真实 diff 审，兼契约分类过滤（canonical 五值，权威 = rules/contracts.md） | Editing contracts/specs/implementation; approving content; self-certifying（作者≠审者，与 architect 不得互兼） |
 | `review-moderator` | Full adversarial spec review orchestration | Contract approval; implementation |
 | `planner` | Dev-loop implementation orchestration and TaskPackage slicing | Spec soundness review; contract approval |
 | `supervisor` | Merge gate review | Authoring or repairing implementation |
@@ -67,12 +67,12 @@ Important platform rule: `architect-reviewer` is not planner-only. It is main-th
 - **不碰事实源**（纯实现面 / docs 行为变更）→ 进 `/triage-change` 分流门（兼跨面编排入口）：architect 做比例化 review、返回五档裁决（③拆包 / ②单包Full / ②单包Lite / ⓪档 0 nano / ①直接修），程序见 [change-triage.md](change-triage.md)。`/triage-change` 是 **Part-2 工程门 / bootstrap 临时信任门**，非业务门；跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 - **逃生门（reviewer-first）**：`/triage-change` review 中发现疑似触事实源 → 先派 `architect-reviewer` 四分类 → `CONTRACT_CHANGE_REQUIRED` / `SPEC_CONTRACT_DRIFT` / `ACCOMPANIES_SPEC_CHANGE` 转 `/arch-change`（契约变更 = 架构变更的一种；无人签门，合并过机械凭据闸）。
 
-**Discussion → Draft Authorship（261015 批统一 cast：起草归 architect，主线程四面纯编排）**：人 + 主 Agent 在主线程讨论出的方案要结晶成变更内容（PROPOSAL / spec 候选）时，**由主线程派 architect 起草**——主线程四面纯编排（派发 / 落地 / 状态翻转 / 记账），不起草变更内容；architect 是架构面与治理面变更的起草者。
+**Discussion → Draft Authorship（261015 批统一 cast：起草归 architect，主线程四面纯编排）**：人 + 主 Agent 在主线程讨论出的方案要结晶成变更内容（PROPOSAL / spec 候选）时，**由主线程派 architect 起草**——主线程四面纯编排（派发 / 保护面处理 / 状态翻转 / 记账），不起草变更内容；architect 是架构面与治理面变更的起草者。
 
 - **输入契约**：派发起草前，讨论上下文**落盘**（spine `sources` human 原话 / 讨论记录文件 / plan 记录）；architect 收到裸 prompt（无可读耐久上下文）→ 停下反问派遣方 / human，不凭空起草。
 - **落点 = `delivery/review/` 下的 draft / 候选（G4 证据，非 canonical）**；主线程不写 canonical spec 设计面与 PROPOSAL 内容。
 - **Track A 段**：对抗机器内 architect 作起草 subagent（经 review-moderator 编排）——「输入是一句瘦 plan、上下文已落盘、需从中立位置产候选」的场景。
-- **canonical 候选起草归 architect、落地恒归主线程**：两面 loop 内 spec lane 由 architect 把候选写入 `docs/requirements.md` + `docs/architecture.md`（写入 ≠ 冻结），governance lane 由 architect 维护 `PROPOSAL.md` 定稿，packet-bound landing 归主线程。
+- **canonical 候选起草归 architect、落地按面分流**：spec lane 由 architect 把候选写入 `docs/requirements.md` + `docs/architecture.md`（写入 ≠ 冻结）；治理面常规批由 architect 轻设计后直接实施普通治理文件并提交，reviewer 自写设计审与真实 diff 审，保护面归主线程；架构+契约面仍按既有 packet-bound 后端。
 - **author≠judge 不破**：判官独立于作者——Track B 第 2 步评审循环 = architect-reviewer，Track A 段 = scenario-author / challenger / adjudicator；作者身份不进 charter、不自评。
 - **convention-only 分层兜底（261015 批更新）**：主线程 canonical 禁写是 **convention-only**（主线程不受 per-agent enforce-scope 限，universal 段只拦 docs/ 顶层白名单新建 + 影子 docs/contracts/、不拦写既有 spec 文件内容），兜底**分层**：(a) 经面 loop 的变更 → architect 起草 + architect-reviewer 四查接缺陷；(b) 绕过 loop 直写既有 spec 文件（`docs/requirements.md` / `docs/architecture.md`）内容 → 无机器拦且无 review 兜底，仅靠规则文本 convention + human 在 landing/merge 门 spot-check（诚实标注的 convention 残余面）。**不为此造 enforce-scope/hook**（那会触 G3 + 第七门，违 §9 AI-native 启发）。**主线程不起草变更内容是本节纪律声明（起草职责已移交 architect）**。
 
@@ -101,11 +101,11 @@ Only a human or `planner` main thread creates `delivery/workstreams/<workstream>
 
 ## 5. Architecture Review Operating Model
 
-Full adversarial review (Track A 段) routes through the face loops, not directly to architect. `/arch-change`（架构+契约面）与 `/gov-change`（治理面）各为唯一入口：立项时判收敛度——方向不清进 **Track A 段**（对抗机器：architect 起草候选 → scenario-author 冻 charter → challenger/defender → adjudicator 裁定 → human 拍方向，收敛后流回 Track B 落地后端）；方向清晰直接 architect 起草 + architect-reviewer 四查 + 轻/主判档。跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
+Full adversarial review (Track A 段) routes through the face loops, not directly to architect. `/arch-change`（架构+契约面）与 `/gov-change`（治理面）各为唯一入口：立项时判收敛度——方向不清进 **Track A 段**（对抗机器：architect 起草候选 → scenario-author 冻 charter → challenger/defender → adjudicator 裁定 → human 拍方向）；治理面方向清晰走轻设计、设计审、作者实施与真实 diff 审，架构+契约面走既有四查与轻/主判档。跨面编排（触面 ≥2）归 triage 统一 intake（change-intake.md spine）。
 
 Role boundaries in adversarial review:
 
-- Architect drafts and maintains spec candidates (`docs/requirements.md` + `docs/architecture.md`) and prepares review background, but does not declare a spec frozen. In a face loop, the main thread **dispatches architect as the drafter** to produce the candidate (spec draft, or a governance `PROPOSAL.md` under `delivery/review/gov-review-<id>/`; in Track A 段 the dispatch goes via `review-moderator`); architect drafts only and never lands governance canonical, never writes the frozen charter, never self-approves, and self-modification recursion still requires a human.（Track B 第 2 步评审循环的评审人 = architect-reviewer，作者≠审者；主线程不起草内容，见 §3「Discussion → Draft Authorship」。）
+- Architect drafts and maintains spec candidates (`docs/requirements.md` + `docs/architecture.md`) and prepares review background, but does not declare a spec frozen. In a face loop, the main thread **dispatches architect as the drafter** to produce the candidate (spec draft, or a governance `PROPOSAL.md` under `delivery/review/gov-review-<id>/`; in Track A 段 the dispatch goes via `review-moderator`). 治理面常规批中 architect 直接实施普通治理文件并提交，reviewer 独立审设计与真实 diff；保护面仍归主线程，自改递归须 human。架构+契约面不因此改 lane。（作者≠审者；主线程不起草内容，见 §3「Discussion → Draft Authorship」。）
 - **Author != judge (neutrality invariant)**: architect authors the candidate; `scenario-author` independently freezes the charter (the judging criteria); `challenger` / `adjudicator` attack and rule. This mirrors dev-loop builder != verifier != supervisor. `review-moderator` orchestrates but does not judge.
 - `review-moderator` owns the formal adversarial review and the freeze / approval verdict.
 - `scenario-author` owns the frozen charter; architect only supplies charter input.
@@ -114,9 +114,11 @@ Role boundaries in adversarial review:
 
 Adversarial review runs two profiles that share one loop (intake+draft -> charter -> challenger/defender -> adjudicator -> pass-oracle):
 
-- **Track A 段（原两 profile 的对抗机器合一，入口随面）**：架构+契约面的方向收敛审走 `/arch-change` 的 Track A 段，治理面的走 `/gov-change` 的 Track A 段——同一套对抗机器（intake+draft → charter → challenger/defender → adjudicator → pass-oracle），机器 SSOT = arch-review-protocol.md；产出收敛方向交 human 拍，后流回 Track B 落地后端。
+- **Track A 段（原两 profile 的对抗机器合一，入口随面）**：架构+契约面的方向收敛审走 `/arch-change` 的 Track A 段，治理面的走 `/gov-change` 的 Track A 段——同一套对抗机器（intake+draft → charter → challenger/defender → adjudicator → pass-oracle），机器 SSOT = arch-review-protocol.md；产出收敛方向交 human 拍。治理面随后流回 direct-implementation 常规实施，架构+契约面流回 Track B 后端。
 
-判档（261015 批取代 review-depth / lightweight 机制）：两面 loop 内由 architect-reviewer 按各面流程 SSOT 的可机判清单判轻/主路径与 Track A 段升级（**只升不降**；架构面判据 = 措辞 vs 语义，治理面 = 文档 vs 机器·路径即判据；清单见 references/arch-change.md / gov-change.md）。旧 lightweight-architect-review 快道（LIGHTWEIGHT_OK / ESCALATE_FULL_REVIEW / HUMAN_REQUIRED / CONTRACT_GATE_REQUIRED 四裁断 + moderator 复判）随批退役。 **Landing 恒 = 主线程 packet-bound（G1/G2/G3，常态规则 2026-08-02；architect approved-landing mode 同日退役）**：architect 恒纯判官 / 起草、永不 landing；主线程落地后在 `architect-landing-summary.md`（制品名保留）引被批 packet-id（A9 packet-binding），交 landing-verifier 独立核验 + human merge 门 spot-check。 Landing-report evidence obligation: a landing-class dispatch report (`architect-landing-summary.md` on success, a `landing-blocked-report.md` on block) must (1) embed machine-verifiable evidence — verbatim `git diff --stat` plus the output of every gate actually run; a report carrying no such evidence is malformed; (2) on block, quote the block message verbatim plus zero-change evidence (`git status --short` / `git diff --stat`) and must NOT run post-landing guards (running them on a non-landing fabricates a "post-landing verified" appearance); (3) never report a landing that did not happen (honest-reporting corollary of ground truth over agent reports, below). Authoring 格式契约（B2 fail-loud 的成文对偶，gov-review-gate-input-format-contract F-4）：frozen PROPOSAL 必含 ```landing-manifest 围栏块（恰 canonical 目标路径集，一行一条）；architect-landing-summary 同含其块；packet-id token + 被批 review id 字面出现（A9）。两结构门（landing-fidelity-check / proposal-consolidation-check）fail-loud 消费此契约——缺块 = 格式不合格 RED，非正则兜底；契约 SSOT 在本节，门脚本引此不复述。 （旧 LIGHTWEIGHT_OK 子道已随 261015 批退役——轻路径改由两面 loop 的瘦制品过闸承载。）
+判档与 landing（261029 治理面简化）：治理面由 architect-reviewer 判「常规 direct-implementation + 条件加强」，可升可降；architect 轻设计后直接实施普通治理文件，自测并提交，reviewer 自写设计审与真实 diff 审，轻量 manifest 只做实际非证据 diff ⊆ 预计 scope。常规批不再要求 packet-bound、逐字节 manifest、landing-summary/verdict 或事后 retro；第二独立核验、详细普查、新鲜 reviewer、独立 retro 与主线程代落地按真实风险启用。架构+契约面仍按 `arch-change.md` 的轻/主判档与 Track B 后端，**只升不降**，不随治理面降档。
+
+架构+契约面及旧批 landing-report evidence obligation 保持不变：landing-class dispatch report（`architect-landing-summary.md` / `landing-blocked-report.md`）须带机器可验证据、block 原文与零改动证据，不得虚报 landing。Authoring 格式契约（B2 fail-loud）也继续服务这些批次：frozen PROPOSAL 必含 ```landing-manifest 围栏块，landing-summary 同含其块，packet-id token + 被批 review id 字面出现；`landing-fidelity-check` / `proposal-consolidation-check` 消费此契约。direct-implementation 的轻量 scope 虽沿用围栏名，但由共享新谓词做子集判定，不消费这套旧恰集语义。
 
 Review sequence:
 

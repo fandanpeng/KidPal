@@ -96,6 +96,167 @@ export function isFrozen(proposalText) {
   return /\bFROZEN\b/i.test(statusLine);
 }
 
+// 双 landing lane 与作者实现凭据（261028-gov-review-author-implementation-lane）。
+// 缺省恒为 packet-bound；新 lane 的凭据由 reviewer / verifier 分别写入，作者不得代写。
+export const LANDING_LANES = Object.freeze({
+  PACKET_BOUND: 'packet-bound',
+  AUTHOR_IMPLEMENTATION: 'author-implementation',
+});
+
+export function parseLandingLane(text) {
+  const values = [];
+  for (const line of String(text || '').split(/\r?\n/).slice(0, 40)) {
+    const match = line.match(/^[>\s]*\*{0,2}landing-lane\*{0,2}\s*[:：]\s*`?([A-Za-z-]+)`?/i);
+    if (match) values.push(match[1]);
+  }
+  if (values.length === 0) return LANDING_LANES.PACKET_BOUND;
+  if (new Set(values).size !== 1 || !Object.values(LANDING_LANES).includes(values[0])) {
+    const err = new Error(`landing-lane 重复冲突或值出闭集：${values.join(', ')}`);
+    err.code = 'INVALID_LANDING_LANE';
+    throw err;
+  }
+  return values[0];
+}
+
+export function isEvidenceTailPath(path, changeId) {
+  const normalized = String(path || '').replace(/\\/g, '/');
+  return normalized === 'delivery/review/INDEX.md'
+    || normalized === 'delivery/review/.changes-index-state.json'
+    || normalized.startsWith(`delivery/review/${changeId}/`);
+}
+
+export function readImplementationEvidence(projectDir, changeId, kind, expectedLane = LANDING_LANES.AUTHOR_IMPLEMENTATION) {
+  if (kind !== 'review' && kind !== 'verification') throw new Error(`未知实现凭据类型：${kind}`);
+  const file = join(projectDir, 'delivery', 'review', changeId, `implementation-${kind}.json`);
+  const fail = (reason) => ({ ok: false, reason, path: file, evidence: null });
+  if (!existsSync(file)) return fail(`implementation-${kind}.json 不在场`);
+  let evidence;
+  try { evidence = JSON.parse(readFileSync(file, 'utf8')); }
+  catch (error) { return fail(`implementation-${kind}.json 不可解析：${error.message}`); }
+  const sha = (v) => typeof v === 'string' && /^[0-9a-f]{40}$/.test(v);
+  if (evidence?.schemaVersion !== 1) return fail('schemaVersion 必须为 1');
+  if (evidence.lane !== expectedLane || evidence.changeId !== changeId) return fail('lane/changeId 不符');
+  if (!sha(evidence.reviewedCommit) || !sha(evidence.reviewedTree)) return fail('reviewedCommit/reviewedTree 必须为 40 位小写 SHA');
+  if (kind === 'verification' && (!sha(evidence.verifiedCommit) || !sha(evidence.verifiedTree))) return fail('verifiedCommit/verifiedTree 必须为 40 位小写 SHA');
+  if (!Array.isArray(evidence.changedFiles) || evidence.changedFiles.some((p) => typeof p !== 'string' || !p || p.includes('..') || p.startsWith('/'))) return fail('changedFiles 必须为仓根相对路径数组');
+  return { ok: true, reason: null, path: file, evidence };
+}
+
+// direct-implementation：轻量批记录的唯一机读解析面。闸与 INDEX 共用；
+// events.jsonl 刻意不在输入面，既不拦合并，也不参与 landed 推导。
+export const DIRECT_IMPLEMENTATION_FLOW = 'direct-implementation';
+const DIRECT_FLOW_RE = /^>\s*\*\*gov-flow\*\*:\s*direct-implementation\s*$/;
+const REVIEWED_PIN_RE = /^\s*>?\s*(reviewedCommit|reviewedTree)\s*:\s*(\S+)\s*$/;
+const SHA40_RE = /^[0-9a-f]{40}$/;
+
+export function isDirectImplementationProposal(text) {
+  return String(text || '').split(/\r?\n/).filter((line) => DIRECT_FLOW_RE.test(line)).length === 1;
+}
+
+export function parseDirectImplementationProposal(text) {
+  const lines = String(text || '').split(/\r?\n/);
+  const flowCount = lines.filter((line) => DIRECT_FLOW_RE.test(line)).length;
+  const direct = flowCount > 0;
+  const errors = [];
+  if (flowCount > 1) errors.push(`gov-flow 标记重复：${flowCount} 条（应恰一条）`);
+
+  // 与旧闸相同，全记录 verdict 后出者胜；后写 BLOCK 不能被早先 GREEN 覆盖。
+  let verdict = null;
+  for (const line of lines) {
+    const match = VERDICT_STATUS_RE.exec(line);
+    if (match) verdict = match[1].toUpperCase();
+  }
+
+  // 最后两个钉点字段必须一成对；奇数、同类重复或缺件都 fail-closed，绝不回退早钉点。
+  const pins = [];
+  lines.forEach((line, index) => {
+    const match = REVIEWED_PIN_RE.exec(line);
+    if (match) pins.push({ key: match[1], value: match[2], index });
+  });
+  let reviewedCommit = null;
+  let reviewedTree = null;
+  if (pins.length === 1 || pins.length % 2 !== 0) {
+    errors.push('最后一组 reviewedCommit/reviewedTree 缺件（不得回退更早钉点）');
+  } else if (pins.length > 0) {
+    const last = pins.slice(-2);
+    if (new Set(last.map((pin) => pin.key)).size !== 2) {
+      errors.push('最后一组 reviewedCommit/reviewedTree 未构成一对');
+    }
+    for (const pin of last) {
+      if (!SHA40_RE.test(pin.value)) errors.push(`${pin.key} 必须为 40 位小写 SHA`);
+      if (pin.key === 'reviewedCommit') reviewedCommit = pin.value;
+      else reviewedTree = pin.value;
+    }
+  }
+
+  const scope = [];
+  for (const raw of extractManifestBlock(text)) {
+    const columns = raw.split('|').map((column) => column.trim());
+    const [path, owner, protection] = columns;
+    if (!path || path.startsWith('/') || path.includes('\\') || path.split('/').includes('..')) {
+      errors.push(`轻量 manifest 路径非法：${raw}`);
+      continue;
+    }
+    if (!['architect', 'main-thread'].includes(owner) || !['ordinary', 'protected'].includes(protection)) {
+      errors.push(`轻量 manifest 归属/保护标记非法：${raw}`);
+      continue;
+    }
+    scope.push({ path, owner, protection });
+  }
+  if (direct && scope.length === 0) errors.push('direct-implementation 缺非空轻量 landing-manifest');
+
+  const landed = direct
+    && errors.length === 0
+    && isFrozen(text)
+    && verdict === 'GREEN'
+    && SHA40_RE.test(reviewedCommit || '')
+    && SHA40_RE.test(reviewedTree || '');
+  return { direct, flowCount, verdict, reviewedCommit, reviewedTree, scope, errors, landed };
+}
+
+// 文件条目精确匹配；目录条目必须以 / 结尾，按路径段前缀匹配，foo/bar/ 不误中 foo/barley。
+export function isDirectImplementationPathInScope(path, scope) {
+  const normalized = String(path || '').replace(/\\/g, '/');
+  return scope.some((entry) => entry.path.endsWith('/')
+    ? normalized.startsWith(entry.path)
+    : normalized === entry.path);
+}
+
+export function directImplementationSelfCheckCases() {
+  const shaA = 'a'.repeat(40);
+  const shaB = 'b'.repeat(40);
+  const proposal = [
+    '> **状态：FROZEN v0.2**',
+    '> **gov-flow**: direct-implementation',
+    '```landing-manifest',
+    '.claude/scripts/x.mjs | architect | ordinary',
+    'foo/bar/ | architect | ordinary',
+    '```',
+    'verdict: GREEN',
+    `reviewedCommit: ${shaA}`,
+    `reviewedTree: ${shaB}`,
+  ].join('\n');
+  const cases = [];
+  const check = (name, ok, got) => cases.push({ name, ok, got });
+  const valid = parseDirectImplementationProposal(proposal);
+  check('direct-valid-landed', valid.direct && valid.landed && valid.errors.length === 0, JSON.stringify(valid));
+  check('direct-true-subset-and-unused-scope-allowed', isDirectImplementationPathInScope('.claude/scripts/x.mjs', valid.scope), 'exact file');
+  check('direct-out-of-scope-blocked', !isDirectImplementationPathInScope('.claude/scripts/extra.mjs', valid.scope), 'extra file');
+  check('direct-directory-segment-match', isDirectImplementationPathInScope('foo/bar/baz.mjs', valid.scope), 'foo/bar/baz.mjs');
+  check('direct-directory-no-barley-match', !isDirectImplementationPathInScope('foo/barley/x.mjs', valid.scope), 'foo/barley/x.mjs');
+  const laterBlock = parseDirectImplementationProposal(`${proposal}\nverdict: BLOCK(F1)`);
+  check('direct-last-verdict-block-wins', !laterBlock.landed && laterBlock.verdict === 'BLOCK', laterBlock.verdict);
+  const incomplete = parseDirectImplementationProposal(`${proposal}\nreviewedCommit: ${shaA}`);
+  check('direct-incomplete-last-pin-fail-closed', !incomplete.landed && incomplete.errors.some((error) => error.includes('缺件')), JSON.stringify(incomplete.errors));
+  const invalid = parseDirectImplementationProposal(proposal.replace(shaB, 'Z'.repeat(40)));
+  check('direct-invalid-sha-fail-closed', !invalid.landed && invalid.errors.some((error) => error.includes('40 位小写')), JSON.stringify(invalid.errors));
+  const duplicate = parseDirectImplementationProposal(`${proposal}\n> **gov-flow**: direct-implementation`);
+  check('direct-duplicate-flow-fail-closed', !duplicate.landed && duplicate.errors.some((error) => error.includes('重复')), JSON.stringify(duplicate.errors));
+  const legacy = parseDirectImplementationProposal('> **状态：FROZEN v1.0**\nverdict: GREEN');
+  check('direct-legacy-unmarked-not-direct', !legacy.direct && !legacy.landed, JSON.stringify(legacy));
+  return cases;
+}
+
 // B4：proposal 路径谓词单源（260731-gov-review-artifact-lifecycle-origin-teeth Phase 2 T4/CF-07，FROZEN 2026-08-01）。
 // taskpackage-required-check.mjs / devloop-artifact-check.mjs 原各持一份 normalizeSourceRef + isProposalMdPath（真双拷贝）；
 // closeout-check.mjs 原无拷贝（T2 就地改会造第三份）→ 三脚本具名导入单源（ARQ-097 模式，与 isFrozen 同文件）。
