@@ -11,6 +11,18 @@ description: "课表解析失败告警巡检回合 (KidPal)：读 /opt/kidpal/al
 （cron 每 15 分钟唤起 main agent）就是把这份告警**转告给家长**的那半边。收到任务即执行本流程，
 不需要向谁确认。
 
+## trigger 判定层 vs skill 行为权威（261031 起）
+
+本 job 带一个无模型的静默 trigger（`schedule-health.trigger.js` → `schedule_health_gate.py`）。
+**分工明确、不可互相顶替**：
+
+- **trigger = 是否要跑的判定层**：每 15 分钟先跑纯只读判定器，无告警件 / 同一坏指纹已告知 /
+  冷却窗内 → `fire:false`，本回合不唤起（零 token）；新坏指纹 / 需要恢复动作 → `fire:true`。
+- **本 skill = 四分支行为与 ack 单写者的行为权威**：真正的告知、去重落盘、恢复清理一律由本
+  回合按下面「四分支判定」执行。trigger 的 `state.lastFire` 只是**反刷屏保险丝与观测快照**，
+  **不是去重权威**——去重权威永远是 `schedule-parse-health.json`（本 skill 单写）。
+- 触发 message 里的指纹/分支提示只作参考；仍须按**当前实际告警件与 ack 状态件**重判。
+
 ## 检测面与状态件
 
 - **告警件（front 写，每分钟覆写）**：`/opt/kidpal/alerts/schedule-parse-error.json`，字段

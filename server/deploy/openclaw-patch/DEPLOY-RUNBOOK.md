@@ -192,6 +192,9 @@ openclaw cron list   # 期望新增一条，state.lastRunStatus=ok
 > 本任务补 agent 生产侧：agent 型 cron 每 15 分钟唤起 main agent 一次，按
 > `workspace-main/kidpal-reminder-semantic` skill 产语义产物；脚本侧零改动（消费链路
 > `load_semantic`/`bring_items`/title-speech 覆盖本就完整）。
+>
+> **261031 起：注册后按 §8.3d 给本 job 加 trigger（变更驱动静默门）**——不加则保持今天
+> 每 15 分钟无条件跑（功能正确但空转烧 token）。
 
 ```bash
 openclaw cron add \
@@ -219,6 +222,8 @@ openclaw cron list   # 期望两条 kidpal-reminder-*：plan（command 型 isola
 > 的解析失败时经 QQ 主动告知家长坏 token 与正确格式；ack 去重靠 skill 自有的
 > `/opt/kidpal/alerts/schedule-parse-health.json` 状态件（front 每分钟覆写告警件、不碰该状态件）。
 > skill 文本 = `server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md`。
+>
+> **261031 起：注册后按 §8.3d 给本 job 加 trigger（判定层）**。
 
 ```bash
 openclaw cron add \
@@ -244,6 +249,78 @@ openclaw cron list   # 期望新增一条 kidpal-schedule-health（agent 型 mai
 2. **路由配置** = human post-deploy 动作，指向 260924 ops-record 的 accounts 映射位（家长 openid =
    accounts.dad 的 allowFrom 唯一项；mom 仍 `enabled:false` 占位）。**配好路由才谈得上家长能收到**
    ——本节只给动作位、不承诺「配好即达」。
+
+### 8.3d 给两条 agent cron 加 trigger（变更驱动静默门，261031-openclaw-cron-trigger-gating）
+
+> 背景：2026-10-31 实测当日 00:00–16:00 共 20.75M token / 719 次调用，全部来自
+> `kidpal-reminder-semantic`（65 次）与 `kidpal-schedule-health`（64 次）两个 15m agentTurn
+> cron；根因是**输入没变还在重算**（schedule.md 自 2026-10-13 起未变、告警件多数时间不在场）。
+> 本段把它们改成**变更驱动**：每轮先跑无模型、纯只读的 python 判定器，`fire:false` 时不起
+> agent 回合（零 token），输入变化才跑原 payload。频率（15m）、agent（main）、session 目标、
+> payload message 全部不变——只加 `trigger` 字段。
+
+**两件套**（trigger 脚本是 code-mode JavaScript，不是 shell）：
+
+| 件 | 仓内源 | ECS 落点 | 作用 |
+|---|---|---|---|
+| 判定器 A | `openclaw-patch/reminder_semantic_gate.py` | `/opt/kidpal/openclaw-patch/` | semantic.json 新鲜度门（schedule/skill/parser/lib 四输入 + 60s 竞态余量） |
+| 判定器 B | `openclaw-patch/schedule_health_gate.py` | `/opt/kidpal/openclaw-patch/` | 解析健康巡检门（ack 去重 + 冷却窗反刷屏） |
+| 薄壳 A | `openclaw-patch/triggers/reminder-semantic.trigger.js` | `/opt/kidpal/openclaw-patch/triggers/` | exec 调判定器 A，透传判决 |
+| 薄壳 B | `openclaw-patch/triggers/schedule-health.trigger.js` | 同上 | exec 调判定器 B，透传判决 |
+| apply/clear 工具 | `openclaw-patch/cron_triggers.py` | `/opt/kidpal/openclaw-patch/` | 幂等 apply/clear/status（经 `openclaw cron edit`，不直写 openclaw.json） |
+
+**所有权表**（门只读、payload 单写，不互相顶替）：
+
+| 件 | 单写者 | 读方 | 语义 |
+|---|---|---|---|
+| `/opt/kidpal/alerts/semantic.json` | main agent（payload，原子写） | `reminder_schedule_lib.py` | 不变 |
+| `/opt/kidpal/alerts/schedule-parse-health.json`（ack） | main agent（payload） | 判定器 B（只读）+ 人 | 去重权威不变 |
+| `/opt/kidpal/alerts/schedule-parse-error.json` | front（每分钟覆写） | 判定器 B（只读）+ agent | 不变 |
+| `trigger.state` | 平台（job 自身） | 判定器（只读快照） | **仅反刷屏与观测**，丢了不影响正确性 |
+
+**铺放 + 加 trigger（幂等）**：
+
+```bash
+# ① 先走常规部署铺放判定器与薄壳（manifest 已登记，deploy.sh 自动落位）
+cd /opt/kidpal/deploy-clone && git pull && bash server/deploy/deploy.sh
+# ② 预演：只打印将执行的 openclaw cron edit 命令
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py apply --dry-run
+# ③ 真加 trigger（两条 job；--trigger-script 内联薄壳文本，once=false）
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py apply
+# ④ 核验：内联文本 == 盘上文件、once 非 true
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py status
+openclaw cron show kidpal-reminder-semantic --json | grep -E '"trigger"|"once"'
+openclaw cron show kidpal-schedule-health --json | grep -E '"trigger"|"once"'
+# ⑤ 全局开关：cron.triggers.enabled 必须非 false
+openclaw config get cron.triggers.enabled
+# ⑥ 部署漂移机检（含 trigger 内联文本比对 / once 守卫 / triggers.enabled 守卫）
+bash server/deploy/verify-deploy.sh
+```
+
+**观测（L1-L7 证据口径，真实执行归主线程/human）**：
+
+```bash
+openclaw cron list                                  # 两条 job 频率仍 every 15m / agent main
+openclaw cron runs kidpal-reminder-semantic | head  # 静默期无新增 run = 门生效
+openclaw cron runs kidpal-schedule-health | head
+# 触发演练（L3）：改课表 mtime → 下周期应出现 1 次 run，再下周期不再 fire
+touch /root/.openclaw/workspace/kidpal/schedule.md
+# L2 关键未知项：记录 exec 返回字段实形（aggregated vs text）——薄壳容错取
+# res.aggregated ?? res.text；若实测皆空，按实际字段修正薄壳并重跑 apply。
+```
+
+**回滚（一步，回到今天的无条件形态）**：
+
+```bash
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py clear
+# 等价手工命令：
+# openclaw cron edit kidpal-reminder-semantic --clear-trigger
+# openclaw cron edit kidpal-schedule-health --clear-trigger
+openclaw cron show kidpal-reminder-semantic --json | grep -c '"trigger"'   # 期望 0
+openclaw cron runs kidpal-reminder-semantic | head   # 下周期无条件出现 run
+```
+
+仓内文件无需回滚（未被消费即无害）；manifest 条目留待后续批清理。
 
 ### 8.4 前端投递侧（同机 uvicorn，无需额外进程）
 
@@ -272,8 +349,12 @@ cd server && RUN_LIVE=1 python -m pytest -q --import-mode=importlib \
 ### 8.6 回滚
 
 ```bash
+# 261031 起先撤 trigger（一步回到无条件 15m；payload / 频率零改动）——见 §8.3d
+/opt/kidpal/venv/bin/python3 /opt/kidpal/openclaw-patch/cron_triggers.py clear
+#  等价手工：openclaw cron edit <name> --clear-trigger
 openclaw cron remove --name kidpal-reminder-plan
 openclaw cron remove --name kidpal-reminder-semantic   # 8.3b 语义回合（如已注册）
+openclaw cron remove --name kidpal-schedule-health     # 8.3c 健康巡检（如已注册）
 rm -f /opt/kidpal/alerts/pending.json          # 投递侧下一分钟自然读空（缺文件安静）
 rm -f /opt/kidpal/alerts/semantic.json         # 语义产物一并清（缺文件 = 脚本机械兜底）
 # prompt 回退：apply-xiaozhi-overlay.sh 里 PROMPT_SRC 改指目标历史版一行即可（版本清单见
@@ -291,3 +372,11 @@ rm -f /opt/kidpal/alerts/semantic.json         # 语义产物一并清（缺文�
 > internal_system 三条），升级若让某家族重新出现，采集侧会把它们当 owner 话语抽成
 > 结论污染画像 —— 先按本清单盘点，再决定是否重跑 261025-openclaw-dreaming-disable
 > 的 apply（`server/deploy/261025-openclaw-dreaming-disable/apply_dreaming_disable.py`）。
+
+**trigger 核对（261031-openclaw-cron-trigger-gating）**：升级后必须复查两条带 trigger 的
+agent cron —— `openclaw cron show kidpal-reminder-semantic --json` 与
+`openclaw cron show kidpal-schedule-health --json` 仍含 `trigger.script`、`once` 非 true；
+`openclaw config get cron.triggers.enabled` 非 false；薄壳内联文本仍与盘上
+`/opt/kidpal/openclaw-patch/triggers/*.trigger.js` 一致（`cron_triggers.py status` 全 OK）。
+升级若迁移/改变 trigger 结构，先 `cron_triggers.py clear` 回无条件形态止血，再按新版 CLI
+重评估（照 `verify-deploy.sh` 的 DRIFT 输出定位）。
