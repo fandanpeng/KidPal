@@ -1,0 +1,83 @@
+{
+  "changeId": "261031-openclaw-cron-trigger-gating",
+  "title": "OpenClaw 两个 15 分钟 agentTurn cron 改变更驱动——cron trigger 静默门 + 仓内 python 判定器",
+  "rigor": "lite",
+  "riskTier": "high",
+  "sourceType": "human-ad-hoc",
+  "origin": {
+    "type": "human-ad-hoc",
+    "time": "2026-10-31",
+    "upstreamType": "human-ad-hoc",
+    "upstreamRef": "human 2026-10-31 现场观察「每小时约 1M token 而设备未使用」→ 主线程 ECS 实测归因（两个 15m agentTurn cron 空转 20.75M/天）→ human 裁定「改成变更驱动，triage 执行」→ 于 /triage-change 触点① 裁定「② Lite，跳过 spike」",
+    "upstreamFrozen": "",
+    "workstream": null
+  },
+  "subsystem": "OpenClaw cron 调度面（提醒语义回合 + 课表解析健康巡检）",
+  "story": "无直接 story 命中：本包只改提醒生产侧的调度成本模型，不改变任何产品语义（三档时刻、提醒内容、家长告知行为均不变）；相关架构锚 = docs/architecture.md §5.2 场景⑤ 与 §5.4 alerts 交接目录。",
+  "planRef": "delivery/taskpackages/261031-openclaw-cron-trigger-gating/plan.md",
+  "deliveryImpact": "none",
+  "planningImpact": "none",
+  "riskTierRationale": "命中 change-triage high 判据：scheduler 行为 + 通知面（QQ 转告）+ ack 去重状态语义 + AI 成本审计；门判错的失败形态是静默停摆。human 2026-10-31 明确按 Lite 路由并覆盖 riskTier⇒full 单向守卫。",
+  "gateProfile": ["test-quality", "docs-sync"],
+  "testHost": "host pytest（server/tests 单测真值表 + server/acceptance 静态锚）；ECS live 相位 L1-L7 由主线程执行，planner 停等交 live-handoff.md",
+  "acceptance": [
+    "CRG-A1: 判定器 A 真值表——semantic.json 缺失/非法 JSON/落后 schedule(含 60s 余量)/落后 skill/落后 parser/落后 reminder_schedule_lib 命中 fire:true；四者全新鲜且 schedule 在场时 fire:false；schedule.md 缺失时 fire:false 且不报错",
+    "CRG-A2: 判定器 A 输出形态——stdout 严格单行 JSON、fire 为 bool、message 自包含（含触发原因）、内部异常 exit≠0 且不输出半截 JSON",
+    "CRG-A3: 判定器 B 真值表——四分支（无告警件 + 无 ack → false；无告警件 + 有 ack → true 恢复动作；不新鲜 → true 恢复动作；新鲜且同指纹 → false；新鲜且新指纹 → true）+ 指纹逐字等于 error|detail + checked_at 两种 ISO 形态 + 坏 checked_at 退 mtime + 冷却窗抑制",
+    "CRG-A4: 判定器 B 输出形态——fire:true 的 message 自包含（含指纹与 detail、指明 skill 分支）、state 仅含反刷屏字段、异常 exit≠0",
+    "CRG-A5: 部署面静态锚——manifest.yaml 含两条 expect_trigger_file 与四条 md5 条目；verify-deploy.sh 含 trigger 内联文本比对、once 非 true 守卫、cron.triggers.enabled 守卫；DEPLOY-RUNBOOK 含 §8.3d 与 --clear-trigger 回滚；两份 SKILL.md 含 trigger 变更驱动段；薄壳 JS 引用正确判定器路径且返回 json({fire...})",
+    "CRG-A6: 回归不红——server/tests 全绿（含既有 reminder 单测），server/acceptance 无新增红（基线 370 passed @ 93b92a6b）"
+  ],
+  "exitCriteria": [
+    "CRG-E1: 两条 cron 保持 every 15m / agent main / session isolated / payload message 逐字不变，只新增 trigger 字段；`--clear-trigger` 一步回滚可回到当前无条件形态。",
+    "CRG-E2: 内容未变时（schedule.md、skill、parser、lib 四输入全新鲜）两 job 每轮零模型调用；内容变化后最迟一个周期内 semantic.json 刷新；健康巡检新坏指纹必告知、同指纹不重复打扰。",
+    "CRG-E3: 判定器为纯只读脚本、输出契约固定、可 host 单测；host 单测真值表与静态锚全绿，既有 server 套件零新增红。",
+    "CRG-E4: live 验收 L1-L7 由主线程执行并回灌证据；未跑 spike 的四条未知项（exec 审批/返回字段/state 持久化/会话分类）在 L2/L5 收口，任一不符即回退 --clear-trigger 并回 planner 重判。",
+    "CRG-E5: 部署面文档同批更新（runbook §8.3d、skills README、manifest 注释），回滚命令与观测命令可照抄执行。"
+  ],
+  "iterationBudget": 2,
+  "fixBudget": 3,
+  "supervisorBlockBudget": 2,
+  "contractRefs": [
+    "docs/contracts/interface-contract.md"
+  ],
+  "docRefs": [
+    "delivery/taskpackages/261031-openclaw-cron-trigger-gating/plan.md",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-reminder-semantic/SKILL.md",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/SKILL.md",
+    "server/deploy/openclaw-patch/DEPLOY-RUNBOOK.md",
+    "server/deploy/openclaw-skills/README.md"
+  ],
+  "planningRefs": [],
+  "sourceRefs": [
+    "delivery/taskpackages/261031-openclaw-cron-trigger-gating/plan.md",
+    "delivery/taskpackages/261031-openclaw-cron-trigger-gating/launch-card.md",
+    "docs/architecture.md#5.2-场景⑤",
+    "docs/architecture.md#5.4-数据视图"
+  ],
+  "docsSyncRequired": true,
+  "docsSyncReason": "部署面文档同批：DEPLOY-RUNBOOK §8.3d / §8.6 回滚 / §9 升级清单、openclaw-skills README 两条目注记、manifest 段注释。",
+  "docsOwner": "integrator",
+  "acceptanceTestsFile": [],
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" \"C:/AI/KidPal-pod-m2/server/acceptance\"",
+  "redBaselineResult": "PENDING：acceptance-author 冻结验收件后现跑红基线，逐字回填（上游基线 = 370 passed / 7 deselected / 33 subtests passed / 0 failed @ 93b92a6b）",
+  "changeManifest": [
+    "server/deploy/openclaw-patch/**",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-reminder-semantic/**",
+    "server/deploy/openclaw-skills/workspace-main/kidpal-schedule-health/**",
+    "server/deploy/openclaw-skills/README.md",
+    "server/deploy/manifest.yaml",
+    "server/deploy/verify-deploy.sh",
+    "server/tests/**",
+    "server/acceptance/**",
+    "delivery/taskpackages/261031-openclaw-cron-trigger-gating/**"
+  ],
+  "crossEnd": {
+    "counterparts": [],
+    "exempt": "生产侧判定器与 cron 触发器的消费端是 OpenClaw 运行时（第三方黑盒、仓内无源码），无法以 {path,symbol} 表达对端；消费端观测落在 live 相位 L1-L7 证据。"
+  },
+  "mutationRequired": false,
+  "mergeOrder": null,
+  "dependsOn": [],
+  "notes": "human 2026-10-31 裁定：不做 spike、按 ② Lite 实现，显式覆盖 change-triage §2 单向守卫；ECS 写操作归主线程/human，planner 到 live 相位停并交 live-handoff.md。"
+}
