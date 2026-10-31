@@ -58,9 +58,11 @@
   "docsSyncRequired": true,
   "docsSyncReason": "部署面文档同批：DEPLOY-RUNBOOK §8.3d / §8.6 回滚 / §9 升级清单、openclaw-skills README 两条目注记、manifest 段注释。",
   "docsOwner": "integrator",
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" \"C:/AI/KidPal-pod-m2/server/acceptance\"",
-  "redBaselineResult": "PENDING：acceptance-author 冻结验收件后现跑红基线，逐字回填（上游基线 = 370 passed / 7 deselected / 33 subtests passed / 0 failed @ 93b92a6b）",
+  "acceptanceTestsFile": [
+    "server/acceptance/test_261031_openclaw_cron_trigger_gating.acceptance.py"
+  ],
+  "redBaselineCommand": "python -m pytest -q --import-mode=importlib -m \"not live\" \"C:/AI/KidPal-pod-m2/server/acceptance/test_261031_openclaw_cron_trigger_gating.acceptance.py\"",
+  "redBaselineResult": "25 failed / 0 passed / 2 deselected（2026-10-31 本树实测 @ 93b92a6b + prep 提交）；25 条全为设计态红——reminder_semantic_gate.py / schedule_health_gate.py / cron_triggers.py / 两个 *.trigger.js 不在位，manifest / verify-deploy / runbook / SKILL 缺 trigger 锚；无 TypeError/AttributeError/环境错误冒充。全量对照 = 25 failed, 370 passed, 9 deselected, 33 subtests passed（上游基线 370 passed / 0 failed，零回退）。",
   "changeManifest": [
     "server/deploy/openclaw-patch/**",
     "server/deploy/openclaw-skills/workspace-main/kidpal-reminder-semantic/**",
