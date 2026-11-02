@@ -861,3 +861,26 @@ TEST_CASE("课表网格冷启动恢复: 注册+canary (K7-E2)",
  *        解析不等）; 或摘 server grid_restore_payload → TEST 4 tooth 4 红。
  *     M5 (K7-E2) 摘 HOST_ACCEPTANCE_SRCS 注册行 → 期望 TEST 5 红（tooth 4）。
  * --------------------------------------------------------------------------- */
+
+/*
+ * REVISION LOG (acceptance-author only; tighten-only discipline):
+ *   2026-11-02  镜像同步留痕（acceptance-author, TaskPackage 261028-m6-k2b-p2-
+ *               schedule-16px; P2S-E3 镜像修订义务 + impactedTestsSeed[1]
+ *               mirror-rebaseline）。共享版式/标记锚逐项核查结论——本文件**零
+ *               diff 义务、行为零改**：
+ *               ① 版式锚：本文件全文不钉槽位行带 / 表头带 / pitch（TEST 1-3 结构
+ *                  齿扫 mcp_server.cc / kidpal_render_node.cc 接线面，TEST 4 行为齿
+ *                  只钉解析保真）——schedule_grid.acceptance.c 的 F-3 槽位带重基线
+ *                  （74/74/77 → 78/78/69）对本文件无锚可同步。
+ *               ② 标记锚：本文件不钉 ※ / 下划线 / ★ 任一标记形态（TEST 4 三个
+ *                  wire 载荷 flags 均 0，与标记渲染无关）；F-9 ※ 退役对本文件无
+ *                  锚可同步。
+ *               ③ 共享常量：KSG_NAME_CAP=48 / KSG_COURSE_CAP=84 镜像值不变
+ *                  （F-8：缓存/解析 cap 不得缩成渲染上限——KSR 系行为齿判读面
+ *                  零偏移）。
+ *               ④ restore wire / 前台语义：flags bit0 wire 语义不变（ARQ-261029
+ *               口径：producer 不写 ※ 进 name，bit0 才是临时课真信号）→ 行为齿
+ *               TEST 4 的解析保真断言零改；restore 分支 / on-screen 谓词 / 计数
+ *               基线（begin_page 恒 5 / SetChatMessage 恒 1）零触碰。
+ *               本批红基线：本文件零新增红（TEST 1-5 全部维持既有绿态）。
+ * --------------------------------------------------------------------------- */

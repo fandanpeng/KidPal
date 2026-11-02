@@ -35,10 +35,21 @@
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-8",
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"
   ],
-  "acceptance": [],
-  "acceptanceTestsFile": [],
-  "redBaselineCommand": "",
-  "redBaselineResult": "",
+  "acceptance": [
+    "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [15..18]（16px 合理域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..14] 且严格小于 16px 态——14px/16px 经渲染路径确可判别）+ mount(missing reader) 复位防跨文件泄漏。设计态红：[F2] 未切（现状 14px 字面墨高 ~13）",
+    "SG16-A2: pitch 19 精确锚——同名双课（语文×2）同格堆叠 span 差 == 19（同名夹具消除两行字形墨高差，delta 恰等于 KSG_ROW_PITCH）。设计态红：pitch 16",
+    "SG16-A3: 槽位带 78/78/69——空网格新分隔线 y=107/185 全行墨 + 旧位置 y=103/177 全行白负锚（带移非加线）+ 表头 y=29 与网格底线 y=254 零偏移 + (day,slot) 格归属 diff 全落新带 + y>=255 网格外带零墨（越带负锚继承）。设计态红：分隔线在旧位/格归属旧带",
+    "SG16-A4: 容量 4/4/3 + 静默截断 + CAP=84——slot0/slot1 第 4 门真画（diff>0 落带）、第 5 门帧等价（diff==0 全帧 = 不滚动不提示不画第 5 行）；slot2 第 3 门真画、第 4 门帧等价；加门 diff containment 全落本格带；84 条全量载荷解析 == 84（F-8 缓存/解析 cap 不误缩）。截断态渲染返回值不钉（[F2-C] 申报，builder 保持返回 n 或改实画数皆不红）。设计态红：slot2 第 4 门被画（上限未收 3）",
+    "SG16-A5: 临时课下划线 + ※ 退役 + ★ 不变 + 可见 2 字——temp/fixed/star/叠加四帧 diff 定位：diff 首行 > 名墨最大行（※ 前缀不占笔进不侵文字行）、离散 diff 行数 == 2、各行 diff ∈ [12..60]（2px 随名宽）、diff 全落格带、fixed 帧名墨之下零墨（固定不画线）、star 可见/两标记可区分/flags=3 叠加、无标记格 2 字墨宽 >= 28、flags=0 确定性；一律锚 flags bit0 不锚 name 前缀（ARQ-261029）。设计态红：下划线未实现（现状画 ※）",
+    "SG16-A6: 结构半 FAS 清单扩键——host_srcs_schedule_grid_16px / sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）/ sched_c_pitch_macro / sched_c_pitch_not16（负向）/ sched_c_no_temp_cp（负向 0x203B+U+203B）/ sched_c_no_temp_fallback（负向 ksg_marker_temp_proc）/ sched_c_star_kept（0x2605）/ sched_h_band_anchors（y[30..107]+y[186..254]）+ 复用键 schedule_ksg_course_cap / schedule_ksg_font_min_px。设计态红：五结构键=0（旧字面在世/新字面缺位）"
+  ],
+  "acceptanceTestsFile": [
+    "firmware/main/test/schedule_grid_16px.acceptance.c",
+    "firmware/main/test/schedule_grid.acceptance.c",
+    "firmware/main/test/schedule_grid_restore.acceptance.c"
+  ],
+  "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）：通道① host runner（build 过 + host_infra_test.elf，ELF 零段错误）= 253 Tests / 6 Failures / 0 Ignored。红名单逐条（判读按名单不按总数——P1 retro F4）：①存量族 3 条 = p1_auxbar AB-A1（p1_draw_aux_batt 未取 ic_batt_15 消费点）/ AB-A2（ic_thermo_12 落位越出图标半区）/ AB-A4（ic_wifi_14 消费点缺席）——launch-card 基线锚在册、与本包无关；②收紧型 supersede 设计态红 3 条 = schedule_grid.acceptance.c TEST 8（M3K2-A1 render: course-diff pixels fall outside their (day,slot) cell bands——槽位带 74/74/77→78/78/69 重锚）/ TEST 9（M3K2-A1/NFR-READ-1 render: stacked second course line pitch < 19——pitch 16→19 收紧）/ TEST 11（M3K2-A3 render: flags bit0 (临时课) produced no visible in-cell ink diff——slot2 带移连带），builder 落 F-3/F-9 后三者转绿。其余 247 全绿（解析矩阵 / A2 注入缝 / A5 upcoming 族 / A6 回归靶 / 今天列 TEST 10 / restore 五 TEST 零偏移维持绿）。通道② C 类冻结验收实编（DEV-GOVERNANCE §4）：schedule_grid_16px.acceptance.c 以完整 host 工具链旗标集 -fsyntax-only 实编 rc=0 零 error 零 warning（过程见该文件头注 Run protocol——裸 -I managed_components 集合在本树不可解析 lv_conf_kconfig.h esp_attr.h，取 compile_commands.json p1_home_16px 条目命令换源落地）。通道③（新冻结件执行红，builder step-0 落 acceptance-wiring-patch.md 后现跑）期望 = Tests 253+5=258，义务红 = TEST 1 tooth1（[F2] 未切）+ tooth3（pitch 16）、TEST 2 tooth2/3/4（分隔线旧位/格归属旧带）、TEST 3 tooth5 后半（slot2 上限未收 3）、TEST 4 tooth3/4/5/8（下划线未实现）、TEST 5 结构红五键；MUST-STAY-GREEN = 其余全部（TEST 1 tooth0/2/4、TEST 2 tooth1/5、TEST 3 tooth1-4/6 与 tooth5 前半、TEST 4 tooth2/6/7/9、TEST 5 接线键+复用键+负向探针）；零段错误、零 infra 红（infra 红 = 接线或底座缺陷，停下回报）——逐 tooth 判读以 schedule_grid_16px.acceptance.c 文件尾「RED baseline 判读口径」段为准",
   "exitCriteria": [
     "P2S-E1: 课名切 P0 的 16px 运行时字体，格内 pitch=19、槽位带高=78/78/69；表头带、KSG_GRID_BOTTOM=254、今天列外框加粗与网格零越带不变，真机不叠行。",
     "P2S-E2: 按槽位可画上限=上午 4/下午 4/晚上 3，KSG_COURSE_CAP=84 与云端全量下发不变；超限维持静默截断、不滚动、不新增提示，缓存/解析 cap 不得被误缩成渲染上限。",
