@@ -125,9 +125,9 @@
         "acceptanceId": "SG16-A4",
         "acceptance": "SG16-A4: 容量 4/4/3（slot2 上限收 3）——第 3 门真画 / 第 4 门帧等价静默截断",
         "mutation": "M3 ksg_slot_caps {4,4,3} → {4,4,4}（slot2 上限回旧值）",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 tooth5 后半",
-        "turnedRed": false,
-        "result": "MASKED（未被判别）：与基线同为 258/7，无新增红——TEST 3 在冻结件缺陷齿 1035/1036（第五门帧等价误比 f_a vs f_b）先中断，tooth5 后半永不执行；容量行为由代码面 ksg_slot_caps 承载并经 builder 诊断副本（见 note）验证通过"
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 slot2 第 4 门帧等价齿",
+        "turnedRed": true,
+        "result": "修订后复测 turned red：258 Tests / 4 Failures（基线 3 存量 + 1 新增）——schedule_grid_16px.acceptance.c:1091「晚上第 4 门课改变了帧——slot2 上限未收到 3（现状上限 4 = 设计态红; F-3/OQ4: 第 4 门静默截断, 不滚动不提示）」；还原后回 258/3。（首测 MASKED：当时冻结件缺陷齿 1035/1036 先中断，修订轮修掉后重测转正）"
       },
       {
         "acceptanceId": "SG16-A5",
@@ -140,10 +140,10 @@
       {
         "acceptanceId": "SG16-A5",
         "acceptance": "SG16-A5: 下划线 2px 高度（2px 随名宽, 各行 diff ∈ [12..60]）",
-        "mutation": "M6 下划线 2px → 3px",
-        "affectedTest": "schedule_grid_16px.acceptance.c TEST 4 tooth4（离散 diff 行数 == 2）",
-        "turnedRed": false,
-        "result": "MASKED（未被判别）：与基线同为 258/7，无新增红——TEST 4 在冻结件缺陷齿 1150（min_row > m，m 被 y=254 网格底线污染成 254）先中断，tooth4 永不执行；2px 几何由 ksg_draw_temp_underline 的 uy1 = uy0 + 1 承载，并在 builder 诊断副本中验证通过（见 note）"
+        "mutation": "M6 下划线 2px → 3px（uy1 = uy0 + 1 改 +2）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 4 tooth4 离散 diff 行数 == 2",
+        "turnedRed": true,
+        "result": "修订后复测 turned red：258 Tests / 4 Failures（基线 3 存量 + 1 新增）——schedule_grid_16px.acceptance.c:1185「下划线离散 diff 行数 3 != 2——画线高度非 2px」；还原后回 258/3。（首测 MASKED：当时冻结件缺陷齿 1150 先中断，修订轮修掉后重测转正）"
       },
       {
         "acceptanceId": "SG16-A6",

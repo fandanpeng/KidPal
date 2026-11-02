@@ -668,7 +668,7 @@ static const int ksg_slot_ys[3][2] = { { 30, 107 }, { 108, 185 }, { 186, 254 } }
 /* 渲染层按槽位可画上限（F-3/OQ4/P2S-E2：上午 4 / 下午 4 / 晚上 3）。超限静默
  * 截断（不滚动、不画超限行、不新增提示）——缓存/解析 cap 仍是 KSG_COURSE_CAP=84，
  * 本表只约束"每一格画几门"，绝不参与解析或缓存容量（F-8 铁律）。 */
-static const int ksg_slot_caps[3] = { 4, 4, 4 };
+static const int ksg_slot_caps[3] = { 4, 4, 3 };
 
 /* CJK 文本字体 = P0 统一句柄 [K4]：挂载过 assets 时为 16px body；缺 assets 时
  * kidpal_font.cc [K2]/[K3] 内部落 font_puhui_14_1 14px 兜底（恒非 NULL——此处
