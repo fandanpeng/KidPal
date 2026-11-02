@@ -57,3 +57,10 @@
 - **firmware host 面基线锚（重测产物）**：**253 Tests / 3 Failures / 0 Ignored** @ SHA `6ce77123`（2026-11-02 本树实测；命令 = WSL `wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build` + `wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf`；3 红全为 p1_auxbar AB-A1/A2/A4 存量族，与 P0 锚 `589e0127`（242/3）、P1 收口（253/3）红名单零变化）。差异判停：P1 锚 `789c0244` 对 `firmware/` 有 diff（P0+P1 合并）→ 强制重测，本行为 P2 起合法引用锚。落盘锚 = 本行。
 - **server 面基线锚（重测产物）**：**395 passed / 9 deselected / 33 subtests passed / 0 failed** @ SHA `6ce77123`（2026-11-02 实测；命令 = `python -m pytest -q --import-mode=importlib -m "not live" C:/AI/KidPal-pod-m2/server/acceptance`）。差异判停：旧锚 `6ea7769b` 对 `server/` 有 diff（261031 批）→ 强制重测，本行为 P2 起合法引用锚。落盘锚 = 本行。
 - **遗留 human 项**：ARQ-261029 上游 ※ 写入侧待派单（P2 真机轮下划线观测样本依赖，观测受限不记失败）；远程发布（release-pr --publish）仍待 human。
+
+## 2026-11-02 · P2（m6-k2b）真机轮（P2S-E5）——发现截断 → 现场裁定修订 → 复看通过
+
+- **第一轮看屏**：pitch 19 紧凑观感成立、16px 字形正确、4/4 容量成立；发现**上午带第 4 行墨底被带底线截 1-2px**（周一「科学」、周二「体育」等）。planner 诊断：行 y = band_top+2+r*19，第 4 行墨底 = 89+(23-5)-14+1+13 恰压 y=107，零余量。下划线/★/长课观测受限（当周课表无样本；ARQ-261029 上游写入侧在册）。
+- **human 现场裁定（原话逐字）**：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，如果是放不下的原因，我们可以把晚上保留两行就行了」→ 版式 78/78/69→88/88/49、容量 4/4/3→4/4/2；acceptance-author 冻结件真机轮条修订（授权 = human 原话）+ builder 常量同步；verify scoped 8 闸绿 + final bearing r2 全绿（r2.json）；supervisor verdict 换新 ESCALATE、gate-check 绿。commit 10f13a60。
+- **第二轮看屏（复烧 0x20000 后）**：human 裁「可以了」——上午第 4 行完整、晚上带正常显示现有 2 门、其余回归面无异常。**P2S-E5 真机轮 PASS**。
+- **需求面**：容量 4/4/2 同步起草中（story-author，v1.70），requirement-reviewer 审稿后随合并批落。
