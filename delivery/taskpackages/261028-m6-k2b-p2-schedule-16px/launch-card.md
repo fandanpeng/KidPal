@@ -10,7 +10,9 @@
 - **上一包留根**：`delivery/taskpackages/261028-m6-k2a-p1-home-16px/pod-retro.md`（同树同列车上一包 P1，已 merged）。intake 逐条评估，构成 blockingDecision → fail-closed 上报。中间隔的 `261031-openclaw-cron-trigger-gating`（已 merged）无 pod-retro.md、与本列车无文件交集，不作留根来源。
 - **依赖与并行边**：P0（16px 统一句柄 + 统一降级）与 P1（`kidpal_render_node.cc` 首页消费）均已 merged 本地 main——本包只消费 P0 句柄，不在 `schedule_page` 内另写资产加载（crossPackageBehaviors 第 1 条）。P3 无文件交集，但本包 merged 前 P3 不得收口（crossPackageBehaviors 第 3 条）。
 - **固件严格模式默认开**：`VERIFY_FW_BUILD_REQUIRED=1`（无关闭留痕即开）。本包触 `schedule_page.c`（设备专有 TU），firmware-build 相位必须真跑。
-- **验证形态申报（JSON）**：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":false,"acceptanceRefs":[],"hostUncompilablePaths":[],"reason":"none"}}
+- **验证形态申报**（机器消费行，闸按顶格前缀解析）：
+
+验证形态申报（JSON）：{"schemaVersion":1,"precedents":{},"deviceOutcome":{"userVisible":false,"acceptanceRefs":[],"hostUncompilablePaths":[],"reason":"none"}}
 - **ARQ-261029 注记（真机轮预期管理）**：上游 ※ 写入侧任务仍待派单——P2 下划线消费 `flags bit0`（wire 语义不变），若真机轮当周课表无临时课样本，下划线观测按「观测受限」记录、不记失败（P1 统一轮下划线休眠同先例）；※ 字形探测/程序化兜底退役照常执行（E3）。
 - **环境事实**：复用池树 `C:/AI/KidPal-pod-m2`（常驻分支 `dev/pod-m2`，已 ff 到 main `6ce77123`）；树内固件环境在位（managed_components 软链原生 python 验真、host build 热缓存、sdkconfig 已按交接卫生重生）；专属图索引 `C-AI-KidPal-pod-m2` 在册（随树复用，自动增量）。交接卫生 2026-11-02 实测：tracked 净、零 untracked。
 - **会话标识**：本会话 = VS Code 扩展会话，changeId 直启（无 `--settings` / `--agent`，**settings-presence = extension-session**）——dev-loop.settings.json 三件按缺席处理（Stop supervisor-gate-check / PostToolUse portfolio-sync / permissions.ask git merge/rebase）；收尾相位手工跑 `supervisor-gate-check.mjs` 与 `portfolio-reconcile.mjs`；起步在 pod-events 记 settings-presence。
