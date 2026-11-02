@@ -333,6 +333,15 @@ set(HOST_ACCEPTANCE_SRCS
     # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
     "../../p1_home_16px.acceptance.c"
 
+    # 包 261028-m6-k2b-p2-schedule-16px（课表网格 16px：课名直连 P0 [K4]
+    # kidpal_font_body + pitch 19 + 槽位带 78/78/69 + 容量 4/4/3 静默截断 + 临时课
+    # 课名下 2px 下划线/※ 退役/★ 不变——F-1/F-3/F-8/F-9 课表半）冻结验收。行为齿
+    # 强符号源 = display/schedule_page.c（已在册，本包同文件改造）；零新 seam 头
+    # 文件（schedule_page.c 为 LVGL-ful TU，直接消费 [K4]——seam 形态决策见冻结件
+    # 头注 [F2]）。
+    # **必须置于 host smoke acceptance 之前**（smoke 末位 = 最先执行）。
+    "../../schedule_grid_16px.acceptance.c"
+
     # host_infra_smoke (包 0 守卫) LAST — 见本文件头注释。
     "../../host_infra_smoke.acceptance.c"
 )
@@ -389,6 +398,7 @@ set(FAS_HOME_P1_C   "${FAS_DISPLAY}/home_p1.c")
 set(FAS_HOME_P1_H   "${FAS_DISPLAY}/home_p1.h")
 set(FAS_P1FONT_H    "${FAS_DISPLAY}/kidpal_p1_font.h")
 set(FAS_HOST_SEAM   "${CMAKE_CURRENT_SOURCE_DIR}/host_infra_seam.c")
+set(FAS_SCHEDULE_C  "${FAS_DISPLAY}/schedule_page.c")
 
 function(fas_fact_exists VAR PATH)
     if(EXISTS "${PATH}")
@@ -482,6 +492,11 @@ string(FIND "${FAS_SRCS_JOINED}" "p1_home_16px.acceptance.c" _fas_p)
 if(_fas_p GREATER -1)
     set(FAS_SRCS_P1_HOME_16PX 1)
 endif()
+set(FAS_SRCS_SCHED_GRID_16PX 0)
+string(FIND "${FAS_SRCS_JOINED}" "schedule_grid_16px.acceptance.c" _fas_p)
+if(_fas_p GREATER -1)
+    set(FAS_SRCS_SCHED_GRID_16PX 1)
+endif()
 
 foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
     fas_fact_exists(FAS_FT_${_sz}_E "${FAS_DISPLAY}/font_test_${_sz}.c")
@@ -510,10 +525,42 @@ else()
     set(FAS_P16_H_NO_TEMP 0)
 endif()
 
+fas_fact_contains(FAS_SCHED_FONT_SEAM  "${FAS_SCHEDULE_C}" "kidpal_font_body")
+fas_fact_contains(FAS_SCHED_PITCH_M    "${FAS_SCHEDULE_C}" "#define KSG_ROW_PITCH")
+fas_fact_contains(FAS_SCHED_PITCH16_A  "${FAS_SCHEDULE_C}" "KSG_ROW_PITCH  16")
+fas_fact_contains(FAS_SCHED_PITCH16_B  "${FAS_SCHEDULE_C}" "KSG_ROW_PITCH 16")
+fas_fact_contains(FAS_SCHED_TEMP_CP_A  "${FAS_SCHEDULE_C}" "0x203B")
+fas_fact_contains(FAS_SCHED_TEMP_CP_B  "${FAS_SCHEDULE_C}" "U+203B")
+fas_fact_contains(FAS_SCHED_TEMP_FB    "${FAS_SCHEDULE_C}" "ksg_marker_temp_proc")
+fas_fact_contains(FAS_SCHED_STAR       "${FAS_SCHEDULE_C}" "0x2605")
+fas_fact_contains(FAS_SCHED_H_BAND_A   "${FAS_SCHEDULE_H}" "y[30..107]")
+fas_fact_contains(FAS_SCHED_H_BAND_B   "${FAS_SCHEDULE_H}" "y[186..254]")
+if(FAS_SCHED_PITCH16_A EQUAL 0 AND FAS_SCHED_PITCH16_B EQUAL 0)
+    set(FAS_SCHED_PITCH_NOT16 1)
+else()
+    set(FAS_SCHED_PITCH_NOT16 0)
+endif()
+if(FAS_SCHED_TEMP_CP_A EQUAL 0 AND FAS_SCHED_TEMP_CP_B EQUAL 0)
+    set(FAS_SCHED_NO_TEMP_CP 1)
+else()
+    set(FAS_SCHED_NO_TEMP_CP 0)
+endif()
+if(FAS_SCHED_TEMP_FB EQUAL 0)
+    set(FAS_SCHED_NO_TEMP_FB 1)
+else()
+    set(FAS_SCHED_NO_TEMP_FB 0)
+endif()
+if(FAS_SCHED_H_BAND_A GREATER 0 AND FAS_SCHED_H_BAND_B GREATER 0)
+    set(FAS_SCHED_H_BANDS 1)
+else()
+    set(FAS_SCHED_H_BANDS 0)
+endif()
+
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${FAS_GEN_FONTS}" "${FAS_DEV_CMAKE}" "${FAS_KIDPAL_FONT_H}" "${FAS_KIDPAL_FONT_CC}"
     "${FAS_SIZE_PAGE}" "${FAS_RENDER_NODE}" "${FAS_SCHEDULE_H}" "${FAS_STORY_H}" "${FAS_P1CJK}"
-    "${FAS_HOME_P1_C}" "${FAS_HOME_P1_H}" "${FAS_P1FONT_H}" "${FAS_HOST_SEAM}")
+    "${FAS_HOME_P1_C}" "${FAS_HOME_P1_H}" "${FAS_P1FONT_H}" "${FAS_HOST_SEAM}"
+    "${FAS_SCHEDULE_C}")
 foreach(_sz IN ITEMS 10 12 14 16 18 20 24 28 32)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         CMAKE_CONFIGURE_DEPENDS "${FAS_DISPLAY}/font_test_${_sz}.c")
@@ -562,4 +609,12 @@ string(APPEND FAS_OUT "\np1_hostseam_s1_face_seam=${FAS_SEAM_S7}")
 string(APPEND FAS_OUT "\np1_home_text_yoff16=${FAS_HOME_YOFF16}")
 string(APPEND FAS_OUT "\np1_home_c_marker_const=${FAS_HOME_MARKER}")
 string(APPEND FAS_OUT "\np1_home_p1_h_no_temp_field=${FAS_P16_H_NO_TEMP}")
+string(APPEND FAS_OUT "\nhost_srcs_schedule_grid_16px=${FAS_SRCS_SCHED_GRID_16PX}")
+string(APPEND FAS_OUT "\nsched_c_font_seam=${FAS_SCHED_FONT_SEAM}")
+string(APPEND FAS_OUT "\nsched_c_pitch_macro=${FAS_SCHED_PITCH_M}")
+string(APPEND FAS_OUT "\nsched_c_pitch_not16=${FAS_SCHED_PITCH_NOT16}")
+string(APPEND FAS_OUT "\nsched_c_no_temp_cp=${FAS_SCHED_NO_TEMP_CP}")
+string(APPEND FAS_OUT "\nsched_c_no_temp_fallback=${FAS_SCHED_NO_TEMP_FB}")
+string(APPEND FAS_OUT "\nsched_c_star_kept=${FAS_SCHED_STAR}")
+string(APPEND FAS_OUT "\nsched_h_band_anchors=${FAS_SCHED_H_BANDS}")
 file(WRITE "${CMAKE_BINARY_DIR}/fas_structure_manifest.txt" "${FAS_OUT}\n")

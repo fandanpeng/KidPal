@@ -128,7 +128,7 @@
  *
  *   SG16-A1（P2S-E1/F-1 课名切 16px 运行时句柄）
  *     -> TEST 1 承载：行为级（mount fonts_root 后经真实渲染路径量课程名墨高落
- *        16px 合理域 [15..18]）+ 判别力负控（缺 assets 态同一夹具墨高 [10..14]、
+ *        16px 证据域 [13..16]，修订轮以实测重基线）+ 判别力负控（缺 assets 态同一夹具墨高 [10..13]、
  *        两态严格可判——防「返回码即绿」假绿，retro F1 教训）+ 机制级（FAS 键
  *        sched_c_font_seam = schedule_page.c 直连 [K4] 字面）。弱于契约处显式
  *        声明：墨高窗依据 = 16px CJK 盒 16px 档的合理域，非逐字形像素终判
@@ -308,12 +308,16 @@ static const int sgx_slot_ys[3][2] = { { 30, 107 }, { 108, 185 }, { 186, 254 } }
 /* 按槽位可画上限（F-3/OQ4；渲染层截断，缓存/解析 cap 84 不动）。 */
 static const int sgx_slot_caps[3] = { 4, 4, 3 };
 
-/* 16px 度量合理域（SG16-A1；依据 = 16px CJK 盒 16px 档 ink 15..16 为主、
- * 14px 兜底 puhui14 ink 12..13 为主——窗留 ± 余量，两态不交叠）。 */
-#define SGX_INK16_MIN 15
-#define SGX_INK16_MAX 18
+/* 16px 度量合理域（SG16-A1；2026-11-02 修订轮以证据重基线：builder 实测 16px
+ * 资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13——CJK 墨高
+ * 实际 14, 冻结时点预判窗 [15..18] 下界越证据域；P1 同资产同值。修订窗 = 16px
+ * 态 [13..16] / 14px 兜底态 [10..13]——两窗在 13 处搭接, tooth 1 窗口对旧 14px
+ * 字面不再独立红, 基线判别力由 tooth 2 严格不等式（h16 > h14, 同夹具同渲染路径
+ * 两 mount 态）承载）。 */
+#define SGX_INK16_MIN 13
+#define SGX_INK16_MAX 16
 #define SGX_INK14_MIN 10
-#define SGX_INK14_MAX 14
+#define SGX_INK14_MAX 13
 
 /* 下划线判读窗（[F2-M]；随名宽——2 字 16px 名 ≈ 32px）。 */
 #define SGX_UL_MIN_PX 12
@@ -637,14 +641,17 @@ static void sgx_ink_span(const int32_t *f, int x0, int y0, int x1, int y1,
     *out_dark = dark;
 }
 
-/* 带内（快照帧）最大墨行（自上而下扫，最后含墨行；无墨返回 y0-1）。 */
+/* 带内（快照帧）最大墨行（自上而下扫，最后含墨行）。x/y 双向内缩 2px：槽位带
+ * 上下缘横线与带左缘日列竖线（x0 处, 贯穿全带高）皆家具不入样——max_row 只量
+ * 课名/标记墨（2026-11-02 修订轮缺陷 5+7：旧实现 y 向不缩命中年 254 网格底线、
+ * x 向不缩命中 x0 竖线 → m 恒为带底, 「标记在名墨之下」与 y>=255 零墨互斥）。 */
 static int sgx_max_ink_row(const int32_t *f, int x0, int y0, int x1, int y1)
 {
     int x, y;
-    int max_row = y0 - 1;
+    int max_row = y0 + 1;
 
-    for (y = y0; y <= y1; y++) {
-        for (x = x0; x <= x1; x++) {
+    for (y = y0 + 2; y <= y1 - 2; y++) {
+        for (x = x0 + 2; x <= x1 - 2; x++) {
             if (f[y * SGX_FB_W + x] != (int32_t)SGX_WHITE) {
                 max_row = y;
                 break;
@@ -654,26 +661,32 @@ static int sgx_max_ink_row(const int32_t *f, int x0, int y0, int x1, int y1)
     return max_row;
 }
 
-/* 带内文字区（行 y0..max_row）墨列跨度（min_x/out_max_x；max_row 由调用方先证有墨）。 */
+/* 带内文字区（行 y0..max_row）墨列跨度。x 向内缩 2px：日列带左缘竖线（带界
+ * 家具，贯穿全带高）不入样；min/max 取扫描域**全局**极值（2026-11-02 修订轮
+ * 缺陷 5+7：旧实现 min_x 为「首枚墨像素」（最高墨行的首墨——两字形不等高时
+ * 只有较高字形入 min）、max_x 为「末次赋值」，都非全局极值）。max_row 由调用
+ * 方先证有墨（应传 sgx_max_ink_row 的内缩域结果）。 */
 static int sgx_text_col_span(const int32_t *f, int x0, int y0, int x1, int max_row,
                              int *out_min_x, int *out_max_x)
 {
     int x, y;
-    int min_x = -1, max_x = -1;
+    int min_x = x1 + 1, max_x = -1;
 
     for (y = y0; y <= max_row; y++) {
-        for (x = x0; x <= x1; x++) {
+        for (x = x0 + 2; x <= x1 - 2; x++) {
             if (f[y * SGX_FB_W + x] != (int32_t)SGX_WHITE) {
-                if (min_x < 0) {
+                if (x < min_x) {
                     min_x = x;
                 }
-                max_x = x;
+                if (x > max_x) {
+                    max_x = x;
+                }
             }
         }
     }
-    *out_min_x = min_x;
+    *out_min_x = (min_x <= x1) ? min_x : -1;
     *out_max_x = max_x;
-    return (min_x >= 0) ? (max_x - min_x + 1) : 0;
+    return (max_x >= 0) ? (max_x - min_x + 1) : 0;
 }
 
 /* 帧内整行 y（x 0..397）是否全墨（分隔线行）/ 全白（旧行位置负锚）。 */
@@ -689,11 +702,18 @@ static int sgx_row_all_dark(const int32_t *f, int y)
     return 1;
 }
 
-static int sgx_row_all_white(const int32_t *f, int y)
+/* 旧行位置负锚：除网格竖线家具列（x=0/397 边缘与 40+51k 日列线，全部贯穿
+ * y 0..254）之外全白——旧分隔线行必然残留竖线墨，「全行白」逻辑上不可满足
+ * （2026-11-02 修订轮缺陷 2）。 */
+static int sgx_row_white_outside_vlines(const int32_t *f, int y)
 {
     int x;
-    for (x = 0; x <= 397; x++) {
-        int32_t p = f[y * SGX_FB_W + x];
+    for (x = 1; x <= 396; x++) {
+        int32_t p;
+        if (x >= 40 && x <= 346 && ((x - 40) % 51) == 0) {
+            continue; /* 日列竖线家具列 */
+        }
+        p = f[y * SGX_FB_W + x];
         if (p >= 0 && p != (int32_t)SGX_WHITE) {
             return 0;
         }
@@ -779,9 +799,10 @@ static int sgx_fill_slot(kidpal_schedule_course_t *cs, int day, int slot, int co
  *   tooth 0 (infra gate, must-stay-green): mount fonts_root -> body() 真资产句柄
  *            （非 14px、16 档 [20..25]）+ '课' glyph dsc 盒度量合理 [12..18]^2
  *            （P0 资产链自诊断, P1 tooth 0b 同款）。
- *   tooth 1 (行为级, RED 设计态): mount 态渲染「课程」单课——名墨高 ∈ [15..18]
- *            （16px 合理域；现状 14px 字面 → 红。retro F1：钉度量不只钉返回码）。
- *   tooth 2 (判别负控): 全缺 mount 态同一夹具名墨高 ∈ [10..14] 且 < tooth 1 实测
+ *   tooth 1 (行为级): mount 态渲染「课程」单课——名墨高 ∈ [13..16]（16px 证据域;
+ *            修订轮以实测重基线——14px 旧字面域与 13 搭接, 本窗对旧实现不再独立红,
+ *            基线判别力由 tooth 2 严格不等式承载。retro F1：钉度量不只钉返回码）。
+ *   tooth 2 (判别负控, RED 设计态): 全缺 mount 态同一夹具名墨高 ∈ [10..13] 且 < tooth 1 实测
  *            （14px/16px 经真实渲染路径确可判别——两态不可判 = infra 红自诊断）。
  *   tooth 3 (行为级, RED 设计态): 同名双课（语文×2）同格堆叠 span 差 == 19
  *            （同名夹具下 delta 恰等于 pitch——精确锚，KSG_ROW_PITCH 必须 = 19）。
@@ -789,7 +810,8 @@ static int sgx_fill_slot(kidpal_schedule_course_t *cs, int day, int slot, int co
  *   RED（设计态）: tooth 1（ksg_text_font 仍 14px 字面）+ tooth 3（pitch 仍 16）；
  *            tooth 0/2(半)/4 现状即绿或随 tooth 1 转绿。
  * ========================================================================== */
-/* coverage: SG16-A1/SG16-A2 -- 16px 句柄消费：名墨高 16px 合理域 [15..18] + 14px 兜底判别负控 + P0 资产 gate + pitch 19 精确锚（同名双课 span 差）+ mount 态复位 */
+/* coverage: SG16-A1 -- 16px 句柄消费：名墨高 16px 证据域 [13..16]（修订轮重基线）+ 14px 兜底判别负控（严格不等式）+ P0 资产 gate + mount 态复位 */
+/* covers: SG16-A2 -- pitch 19 精确锚（同名双课 span 差 == 19, KSG_ROW_PITCH 必须 = 19） */
 TEST_CASE("schedule grid 16px: 16px句柄消费度量与pitch19锚 (SG16-A1/A2)",
           "[schedule_grid_16px][SG16-A1][SG16-A2][behavior]")
 {
@@ -833,7 +855,8 @@ TEST_CASE("schedule grid 16px: 16px句柄消费度量与pitch19锚 (SG16-A1/A2)"
     h16 = max_a - min_a + 1;
     TEST_ASSERT_TRUE_MESSAGE(h16 >= SGX_INK16_MIN && h16 <= SGX_INK16_MAX,
         sgx_fm("SGX-A1 RED: 课名墨高 %d 越出 16px 合理域 [%d..%d]——课表正文未切 P0 "
-               "16px 句柄（[F2] 未实现, 设计态红; 现状 = 14px 字面墨高 ~13）或 16px "
+               "16px 句柄（[F2] 未实现或 16px 字形度量异常——14px 旧字面域与窗口搭接, "
+               "判别力由 tooth 2 承载）或 16px "
                "字形度量异常（须附实测证据重基线, 不静默放宽）",
                h16, SGX_INK16_MIN, SGX_INK16_MAX));
 
@@ -917,12 +940,12 @@ TEST_CASE("schedule grid 16px: 槽位带78/78/69与格归属 (SG16-A3)",
         "SGX-A3 RED: 新 slot1 分隔线 y=185 非全行墨——槽位带未按 78/78/69 重基线"
         "（现状线在 y=177 = 设计态红）");
 
-    /* tooth 3: 旧位置负锚（带移而非加线）。 */
-    TEST_ASSERT_TRUE_MESSAGE(sgx_row_all_white(sgx_f_a, 103),
-        "SGX-A3 RED: 旧分隔线位置 y=103 仍有墨——旧带未退役（F-3 带移要求线随带走, "
-        "新旧并存 = 版式失真）");
-    TEST_ASSERT_TRUE_MESSAGE(sgx_row_all_white(sgx_f_a, 177),
-        "SGX-A3 RED: 旧分隔线位置 y=177 仍有墨——旧带未退役（同上）");
+    /* tooth 3: 旧位置负锚（带移而非加线；竖线家具列容忍——修订轮缺陷 2）。 */
+    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 103),
+        "SGX-A3 RED: 旧分隔线位置 y=103 仍有非竖线墨——旧带未退役（F-3 带移要求线"
+        "随带走, 新旧并存 = 版式失真）");
+    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 177),
+        "SGX-A3 RED: 旧分隔线位置 y=177 仍有非竖线墨——旧带未退役（同上）");
 
     /* tooth 4: (day,slot) 格归属（新带）——slot1 两门课异日帧 diff 全落两格带并集。 */
     sgx_render_strict(sgx_course(&cs[0], 2, 1, "语文", 0), 1, -1, sgx_f_a);
@@ -1019,71 +1042,77 @@ TEST_CASE("schedule grid 16px: 槽位容量4/4/3与静默截断 (SG16-A4)",
                "渲染上限或解析面回归（F-8: 缓存/解析 cap 定容 84 不动, 云端仍全量"
                "下发, 截断只发生在渲染层）", n));
 
-    /* slot0（上限 4）：must-stay-green 两齿。 */
+    /* slot0（上限 = sgx_slot_caps[0]=4）：must-stay-green 两齿。 */
     sgx_day_band(0, &x0, &x1);
-    sgx_fill_slot(cs, 0, 0, 3);
-    sgx_render_strict(cs, 3, -1, sgx_f_a);
-    sgx_fill_slot(cs, 0, 0, 4);
-    sgx_render_strict(cs, 4, -1, sgx_f_b);
+    sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0] - 1);
+    sgx_render_strict(cs, sgx_slot_caps[0] - 1, -1, sgx_f_a);
+    sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0]);
+    sgx_render_strict(cs, sgx_slot_caps[0], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0,
         "SGX-A4 RED: 上午第 4 门课未引入任何墨——容量 4 未兑现（不画 = 错误截断）");
     TEST_ASSERT_TRUE_MESSAGE(in_band == total,
         "SGX-A4 RED: 上午第 4 门 diff 落在 slot0 带外——格内溢出未走截断降级");
-    sgx_fill_slot(cs, 0, 0, 5);
-    sgx_render_loose(cs, 5, -1, sgx_f_c);
-    sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
+    sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0] + 1);
+    sgx_render_loose(cs, sgx_slot_caps[0] + 1, -1, sgx_f_c);
+    /* 帧对 = (超限帧 f_c, 满容量帧 f_b)——修订轮缺陷 3 修正（旧实现误比 f_a vs
+     * f_b, 与紧邻 total>0 同一帧对直接矛盾、逻辑上不可满足）。 */
+    sgx_diff_stats(sgx_f_c, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total == 0,
         "SGX-A4 RED: 上午第 5 门课改变了帧——超限未静默截断（滚动/提示/溢出第 5 行"
         "皆破坏帧等价; OQ4: 不滚动、不新增提示）");
 
-    /* slot1（上限 4）：同 slot0 两齿。 */
-    sgx_fill_slot(cs, 1, 1, 3);
-    sgx_render_strict(cs, 3, -1, sgx_f_a);
-    sgx_fill_slot(cs, 1, 1, 4);
-    sgx_render_strict(cs, 4, -1, sgx_f_b);
+    /* slot1（上限 = sgx_slot_caps[1]=4）：同 slot0 两齿。 */
+    sgx_fill_slot(cs, 1, 1, sgx_slot_caps[1] - 1);
+    sgx_render_strict(cs, sgx_slot_caps[1] - 1, -1, sgx_f_a);
+    sgx_fill_slot(cs, 1, 1, sgx_slot_caps[1]);
+    sgx_render_strict(cs, sgx_slot_caps[1], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0,
         "SGX-A4 RED: 下午第 4 门课未引入任何墨——容量 4 未兑现");
-    sgx_fill_slot(cs, 1, 1, 5);
-    sgx_render_loose(cs, 5, -1, sgx_f_c);
-    sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
+    sgx_fill_slot(cs, 1, 1, sgx_slot_caps[1] + 1);
+    sgx_render_loose(cs, sgx_slot_caps[1] + 1, -1, sgx_f_c);
+    sgx_diff_stats(sgx_f_c, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total == 0,
         "SGX-A4 RED: 下午第 5 门课改变了帧——超限未静默截断");
 
-    /* slot2（上限 3）：RED 设计态核心（现状上限 4 → 第 4 门被画）。 */
-    sgx_fill_slot(cs, 2, 2, 2);
-    sgx_render_strict(cs, 2, -1, sgx_f_a);
-    sgx_fill_slot(cs, 2, 2, 3);
-    sgx_render_strict(cs, 3, -1, sgx_f_b);
+    /* slot2（上限 = sgx_slot_caps[2]=3）：RED 设计态核心（现状上限 4 → 第 4 门
+     * 被画）。 */
+    sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2] - 1);
+    sgx_render_strict(cs, sgx_slot_caps[2] - 1, -1, sgx_f_a);
+    sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2]);
+    sgx_render_strict(cs, sgx_slot_caps[2], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0,
         "SGX-A4 RED: 晚上第 3 门课未引入任何墨——容量 3 未兑现");
-    sgx_fill_slot(cs, 2, 2, 4);
-    sgx_render_loose(cs, 4, -1, sgx_f_c);
-    sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
+    sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2] + 1);
+    sgx_render_loose(cs, sgx_slot_caps[2] + 1, -1, sgx_f_c);
+    sgx_diff_stats(sgx_f_c, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total == 0,
         "SGX-A4 RED: 晚上第 4 门课改变了帧——slot2 上限未收到 3（现状上限 4 = 设计"
         "态红; F-3/OQ4: 第 4 门静默截断, 不滚动不提示）");
 
     /* tooth 6: containment——slot0 第 4 门 / slot2 第 3 门 diff 全落本格带。 */
     sgx_day_band(0, &x0, &x1);
-    sgx_fill_slot(cs, 0, 0, 3);
-    sgx_render_strict(cs, 3, -1, sgx_f_a);
-    sgx_fill_slot(cs, 0, 0, 4);
-    sgx_render_strict(cs, 4, -1, sgx_f_b);
+    sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0] - 1);
+    sgx_render_strict(cs, sgx_slot_caps[0] - 1, -1, sgx_f_a);
+    sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0]);
+    sgx_render_strict(cs, sgx_slot_caps[0], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, x0, sgx_slot_ys[0][0], x1, sgx_slot_ys[0][1],
                    &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
         "SGX-A4 RED: 上午第 4 门 diff 落在 (day0,slot0) 格带外——截断降级不走溢出");
-    sgx_fill_slot(cs, 2, 2, 2);
-    sgx_render_strict(cs, 2, -1, sgx_f_a);
-    sgx_fill_slot(cs, 2, 2, 3);
-    sgx_render_strict(cs, 3, -1, sgx_f_b);
+    /* slot2 半用 day2 课程（fill_slot(cs,2,2,…)）——x 带必须取 day2
+     * （修订轮缺陷 4 修正：旧实现沿用 day0 带判 day2 课程, 恒不可满足）。 */
+    sgx_day_band(2, &x0, &x1);
+    sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2] - 1);
+    sgx_render_strict(cs, sgx_slot_caps[2] - 1, -1, sgx_f_a);
+    sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2]);
+    sgx_render_strict(cs, sgx_slot_caps[2], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, x0, sgx_slot_ys[2][0], x1, sgx_slot_ys[2][1],
                    &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
-        "SGX-A4 RED: 晚上第 3 门 diff 落在 (day0,slot2) 格带外——截断降级不走溢出");
+        "SGX-A4 RED: 晚上第 3 门 diff 落在 (day2,slot2) 格带外——截断降级不走溢出");
 }
 
 /* ========================================================================== *
@@ -1191,12 +1220,14 @@ TEST_CASE("schedule grid 16px: 临时课下划线与星标 (SG16-A5)",
         "SGX-A5 RED: flags=3 帧相对 star 帧无带内增量——下划线与 ★ 叠加缺失或星标"
         "被吞（位掩码叠加渲染）");
 
-    /* tooth 9: 固定课不画线 + 确定性。 */
+    /* tooth 9: 固定课不画线 + 确定性。（扫描域 x/y 双向内缩 2px 与
+     * sgx_max_ink_row/sgx_text_col_span 一致——修订轮缺陷 6：旧实现扫到带底
+     * y=254 网格底线与带左缘 x=193 日列竖线, 与家具恒矛盾。） */
     {
         int clean = 1;
-        for (y = m + 1; y <= y1; y++) {
+        for (y = m + 1; y <= y1 - 2; y++) {
             int xx;
-            for (xx = x0; xx <= x1; xx++) {
+            for (xx = x0 + 2; xx <= x1 - 2; xx++) {
                 if (sgx_f_a[y * SGX_FB_W + xx] != (int32_t)SGX_WHITE) {
                     clean = 0;
                 }
@@ -1318,7 +1349,43 @@ TEST_CASE("schedule grid 16px: 结构半-FAS清单扩键 (SG16-A6)",
  *               自定」的偏差已向 planner 申报）。fixture 字形集（语文/数学/口语/
  *               舞蹈/编程/课程/课）全部取自既有冻结件已核验字形（host source_han
  *               子集 ∩ puhui14 兜底面 ∩ 16px 全量面三态在场, p1_home_16px
- *               探针集同源纪律）。16px 墨高窗 [15..18] 与 14px 窗 [10..14] 为
+ *               探针集同源纪律）。16px 墨高窗冻结时点为 [15..18]/[10..14], 修订轮
  *               盒度量合理域判读（非逐字形像素终判）——若 builder 实测越窗且
  *               字形度量正常, 按 tighten-only 窗口以证据重基线, 不静默放宽。
+ *   2026-11-02  修订轮（acceptance-author; builder step-0 实现落地后现跑 258 Tests /
+ *               7 Failures, 暴露本冻结件 6 处逻辑上不可满足缺陷——builder 以不入库
+ *               诊断副本定位; 本轮 = 缺陷修正 + 1 处以证据重基线窗口, 零负锚削弱）:
+ *               ① SG16-A1 度量窗以证据重基线（initial freeze 条预授权）:
+ *                  [15..18]/[10..14] → [13..16]/[10..13]——builder 实测 16px 资产
+ *                  line_height=23/base_line=5、「课」box 15x14、「口」box 12x13,
+ *                  CJK 墨高实际 14（P1 同资产同值）。两窗在 13 搭接 → tooth 1 窗口
+ *                  对旧 14px 字面不再独立红, 基线判别力由 tooth 2 严格不等式承载。
+ *               ② TEST 2 tooth 3 旧位置负锚修正：y=103/177「全行白」→「除竖线家具
+ *                  列外全白」（sgx_row_white_outside_vlines）——7 条日列竖线贯穿
+ *                  y 0..254, 旧分隔线行必然残留竖线墨（原断言逻辑上不可满足）。
+ *                  负锚强度不减：非竖线墨仍一票否决。
+ *               ③ TEST 3 三处截断帧等价帧对修正：diff(超限帧 f_c, 满容量帧 f_b)
+ *                  ——旧实现误比 f_a vs f_b, 与紧邻 total>0 断言同一帧对直接矛盾,
+ *                  逻辑上不可满足。
+ *               ④ TEST 3 tooth 6 slot2 containment x 带修正：day2 课程（fill_slot
+ *                  (cs,2,2,…)）用 day2 带——旧实现沿用 day0 带, 恒不可满足。
+ *               ⑤ helper 家族（缺陷 5+6 + 实跑追加的 min 极值半, builder 诊断后
+ *                  本轮以帧证据补全）: sgx_max_ink_row x/y 双向内缩 2px——旧实现
+ *                  命中带底 y=254 网格底线与带左缘 x0 竖线 → m 恒为带底 252,
+ *                  「标记在名墨之下」与 y>=255 零墨互斥; sgx_text_col_span x 内缩
+ *                  2px + min/max 改扫描域**全局**极值——旧实现 min_x = 首枚墨像素、
+ *                  max_x = 末次赋值, 两字形不等高（口 12x13 vs 语 14x14）时只有
+ *                  较高字形入 min, 实测 span 13 vs 帧证据真实墨宽 30; TEST 4
+ *                  tooth 9 扫描域同步双向内缩。
+ *               ⑥ 附带：sgx_slot_caps 改由 TEST 3 消费（上限值全部由常量表派生）,
+ *                  builder 为此加的 -Wno-error=unused-const-variable 编译豁免不再
+ *                  需要, 可摘除。
+ *               修订后现跑（2026-11-02, 通道① host runner）: **258 Tests /
+ *               3 Failures / 0 Ignored** = 仅存量 p1_auxbar AB-A1/A2/A4（launch-card
+ *               基线锚在册）——SG16-A1..A6 全绿, 既有 247 齿零偏移, 零段错误。
+ *   2026-11-02  coverage 标记拆分（机检格式, acceptance-coverage-check.mjs 的
+ *               hasCoverageMarker 要求标记后紧跟单一断言 ID——TEST 1 合并标记
+ *               「coverage: SG16-A1/SG16-A2」拆为 coverage: SG16-A1 + covers:
+ *               SG16-A2 两条; 纯注释改动, 断言语义零改动, 现跑通道①复核 258/3
+ *               维持）。
  * --------------------------------------------------------------------------- */

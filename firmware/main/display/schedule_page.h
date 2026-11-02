@@ -26,7 +26,7 @@ extern "C" {
 
 /* ---- 网格契约常量（== 冻结验收 schedule_grid.acceptance.c 文件头，不得偏移） ---- */
 #define KSG_NAME_CAP   48  /* 课程名 UTF-8 字节容量（safe-truncate, 恒 NUL 结尾） */
-#define KSG_FLAG_TEMP  0x1 /* bit0 ※ 临时安排（B1 一次性安排区块） */
+#define KSG_FLAG_TEMP  0x1 /* bit0 临时课（课名下 2px 下划线标记, B1 一次性安排区块） */
 #define KSG_FLAG_STAR  0x2 /* bit1 星标呼应（group_upcoming 当前「接下来」项） */
 #define KSG_COURSE_CAP 84  /* 周网格缓存容量 = 7 天 × 3 格 × 每格 4 门（定容冻结值） */
 #define KSG_GRID_BOTTOM 254 /* 网格可用区下缘（2026-09-26 真机对齐轮 251→254：设计 canvas-p2
@@ -59,11 +59,12 @@ int kidpal_schedule_grid_parse(const char *data_json,
  * 画 7 列（周一..周日）× 3 行（上午/下午/晚上）整屏网格 + 行首槽位标签列，页内无
  * 标题无提示行（v1.20 已删，操作提示归全局键帽条）。版式区钉（== 冻结验收文件头）：
  * 网格可用区 y[0..KSG_GRID_BOTTOM]；y>=255（底条顶 262 之上外带）严格零墨；表头带 y[0..29]；
- * 槽位行带 slot0 y[30..103] / slot1 y[104..177] / slot2 y[178..251]；标签列
+ * 槽位行带 slot0 y[30..107] / slot1 y[108..185] / slot2 y[186..254]（带高 78/78/69）；标签列
  * x[0..39]；day 列带 x[40+51*d .. 90+51*d]。(day,slot) 格内多课逐门竖排，课程名行
- * pitch >= KSG_FONT_MIN_PX；不做格内滚动，格内溢出走截断降级。
+ * pitch = KSG_ROW_PITCH (19)；按槽位可画上限 上午 4 / 下午 4 / 晚上 3，超限静默截断、
+ * 不做格内滚动（缓存/解析 cap 仍是 KSG_COURSE_CAP=84, 截断只在渲染层）。
  * today_col ∈ 0..6 → 该 day 列带整列高亮、墨不越带；越域（含 -1 = 未注入星期）→
- * 无任何列高亮（不画假「今天」）。flags bit0/bit1 → ※/星标与课程名同格可见。
+ * 无任何列高亮（不画假「今天」）。flags bit0 → 临时课（课名下 2px 下划线）；bit1 → ★ 星标。
  * 返回 n（n=0 画空网格骨架）；非法参数（n<0、n>0 且 courses==NULL）-> -1；绝不崩溃。 */
 int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
                                 int today_col);

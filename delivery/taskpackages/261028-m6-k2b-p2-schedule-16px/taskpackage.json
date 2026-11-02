@@ -36,7 +36,7 @@
     "delivery/workstreams/261028-font-typography-scaleup/PROPOSAL.md#§3.1-F-9"
   ],
   "acceptance": [
-    "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [15..18]（16px 合理域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..14] 且严格小于 16px 态——14px/16px 经渲染路径确可判别）+ mount(missing reader) 复位防跨文件泄漏。设计态红：[F2] 未切（现状 14px 字面墨高 ~13）",
+    "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [13..16]（16px 证据域；修订轮以 builder 实测重基线：资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13，CJK 墨高实际 14，P1 同资产同值；冻结时点预判窗 [15..18] 下界越证据域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..13] 且严格小于 16px 态——两窗在 13 搭接，基线判别力由严格不等式承载）+ mount(missing reader) 复位防跨文件泄漏。修订轮实测：16px 态墨高 14，兜底态 < 14（严格不等式通过）",
     "SG16-A2: pitch 19 精确锚——同名双课（语文×2）同格堆叠 span 差 == 19（同名夹具消除两行字形墨高差，delta 恰等于 KSG_ROW_PITCH）。设计态红：pitch 16",
     "SG16-A3: 槽位带 78/78/69——空网格新分隔线 y=107/185 全行墨 + 旧位置 y=103/177 全行白负锚（带移非加线）+ 表头 y=29 与网格底线 y=254 零偏移 + (day,slot) 格归属 diff 全落新带 + y>=255 网格外带零墨（越带负锚继承）。设计态红：分隔线在旧位/格归属旧带",
     "SG16-A4: 容量 4/4/3 + 静默截断 + CAP=84——slot0/slot1 第 4 门真画（diff>0 落带）、第 5 门帧等价（diff==0 全帧 = 不滚动不提示不画第 5 行）；slot2 第 3 门真画、第 4 门帧等价；加门 diff containment 全落本格带；84 条全量载荷解析 == 84（F-8 缓存/解析 cap 不误缩）。截断态渲染返回值不钉（[F2-C] 申报，builder 保持返回 n 或改实画数皆不红）。设计态红：slot2 第 4 门被画（上限未收 3）",
@@ -49,7 +49,7 @@
     "firmware/main/test/schedule_grid_restore.acceptance.c"
   ],
   "redBaselineCommand": "wsl -d Ubuntu-24.04 -- bash firmware/main/test/host_app/espidf_wsl.sh build && wsl -d Ubuntu-24.04 -- ./firmware/main/test/host_app/build/host_infra_test.elf",
-  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）：通道① host runner（build 过 + host_infra_test.elf，ELF 零段错误）= 253 Tests / 6 Failures / 0 Ignored。红名单逐条（判读按名单不按总数——P1 retro F4）：①存量族 3 条 = p1_auxbar AB-A1（p1_draw_aux_batt 未取 ic_batt_15 消费点）/ AB-A2（ic_thermo_12 落位越出图标半区）/ AB-A4（ic_wifi_14 消费点缺席）——launch-card 基线锚在册、与本包无关；②收紧型 supersede 设计态红 3 条 = schedule_grid.acceptance.c TEST 8（M3K2-A1 render: course-diff pixels fall outside their (day,slot) cell bands——槽位带 74/74/77→78/78/69 重锚）/ TEST 9（M3K2-A1/NFR-READ-1 render: stacked second course line pitch < 19——pitch 16→19 收紧）/ TEST 11（M3K2-A3 render: flags bit0 (临时课) produced no visible in-cell ink diff——slot2 带移连带），builder 落 F-3/F-9 后三者转绿。其余 247 全绿（解析矩阵 / A2 注入缝 / A5 upcoming 族 / A6 回归靶 / 今天列 TEST 10 / restore 五 TEST 零偏移维持绿）。通道② C 类冻结验收实编（DEV-GOVERNANCE §4）：schedule_grid_16px.acceptance.c 以完整 host 工具链旗标集 -fsyntax-only 实编 rc=0 零 error 零 warning（过程见该文件头注 Run protocol——裸 -I managed_components 集合在本树不可解析 lv_conf_kconfig.h esp_attr.h，取 compile_commands.json p1_home_16px 条目命令换源落地）。通道③（新冻结件执行红，builder step-0 落 acceptance-wiring-patch.md 后现跑）期望 = Tests 253+5=258，义务红 = TEST 1 tooth1（[F2] 未切）+ tooth3（pitch 16）、TEST 2 tooth2/3/4（分隔线旧位/格归属旧带）、TEST 3 tooth5 后半（slot2 上限未收 3）、TEST 4 tooth3/4/5/8（下划线未实现）、TEST 5 结构红五键；MUST-STAY-GREEN = 其余全部（TEST 1 tooth0/2/4、TEST 2 tooth1/5、TEST 3 tooth1-4/6 与 tooth5 前半、TEST 4 tooth2/6/7/9、TEST 5 接线键+复用键+负向探针）；零段错误、零 infra 红（infra 红 = 接线或底座缺陷，停下回报）——逐 tooth 判读以 schedule_grid_16px.acceptance.c 文件尾「RED baseline 判读口径」段为准",
+  "redBaselineResult": "acceptance-author 冻结实跑（2026-11-02）：通道① host runner（build 过 + host_infra_test.elf，ELF 零段错误）= 253 Tests / 6 Failures / 0 Ignored。红名单逐条（判读按名单不按总数——P1 retro F4）：①存量族 3 条 = p1_auxbar AB-A1（p1_draw_aux_batt 未取 ic_batt_15 消费点）/ AB-A2（ic_thermo_12 落位越出图标半区）/ AB-A4（ic_wifi_14 消费点缺席）——launch-card 基线锚在册、与本包无关；②收紧型 supersede 设计态红 3 条 = schedule_grid.acceptance.c TEST 8（M3K2-A1 render: course-diff pixels fall outside their (day,slot) cell bands——槽位带 74/74/77→78/78/69 重锚）/ TEST 9（M3K2-A1/NFR-READ-1 render: stacked second course line pitch < 19——pitch 16→19 收紧）/ TEST 11（M3K2-A3 render: flags bit0 (临时课) produced no visible in-cell ink diff——slot2 带移连带），builder 落 F-3/F-9 后三者转绿。其余 247 全绿（解析矩阵 / A2 注入缝 / A5 upcoming 族 / A6 回归靶 / 今天列 TEST 10 / restore 五 TEST 零偏移维持绿）。通道② C 类冻结验收实编（DEV-GOVERNANCE §4）：schedule_grid_16px.acceptance.c 以完整 host 工具链旗标集 -fsyntax-only 实编 rc=0 零 error 零 warning（过程见该文件头注 Run protocol）。通道③（接线落线后）= builder step-0 现跑 258 Tests / 7 Failures 与义务红名单吻合后，暴露冻结件 6 处逻辑上不可满足缺陷（builder 不入库诊断副本定位）→ acceptance-author 收紧型修订轮（2026-11-02，REVISION LOG 留痕于冻结件文件尾）：①A1 度量窗以证据重基线 [13..16]/[10..13]（16px 资产实测墨高 14——资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13）；②旧位负锚改「除竖线家具列外全白」（日列竖线贯穿 y 0..254，原全行白不可满足）；③TEST 3 三处截断帧对修正（超限帧 f_c vs 满容量帧 f_b）；④tooth 6 slot2 containment x 带改 day2；⑤helper 家族双向内缩 + min/max 全局极值（sgx_max_ink_row 命中带底/x0 竖线、sgx_text_col_span min_x=首枚墨像素——「口」「语」不等高时只有较高字形入 min，实测 span 13 vs 帧证据 30）；⑥sgx_slot_caps 改 TEST 3 消费、-Wno-error=unused-const-variable 豁免可摘除。零负锚削弱（越带零墨/CAP=84/星标三齿/restore 镜像原样）。修订后通道①现跑 = 258 Tests / 3 Failures / 0 Ignored = 仅存量 p1_auxbar AB-A1/A2/A4，SG16-A1..A6 全绿、既有 247 齿零偏移、零段错误",
   "exitCriteria": [
     "P2S-E1: 课名切 P0 的 16px 运行时字体，格内 pitch=19、槽位带高=78/78/69；表头带、KSG_GRID_BOTTOM=254、今天列外框加粗与网格零越带不变，真机不叠行。",
     "P2S-E2: 按槽位可画上限=上午 4/下午 4/晚上 3，KSG_COURSE_CAP=84 与云端全量下发不变；超限维持静默截断、不滚动、不新增提示，缓存/解析 cap 不得被误缩成渲染上限。",
@@ -88,7 +88,89 @@
   ],
   "mutationRequired": true,
   "mutationEvidence": {
-    "perAcceptance": []
+    "perAcceptance": [
+      {
+        "acceptanceId": "SG16-A1",
+        "acceptance": "SG16-A1: 16px 句柄消费度量合理域——mount fonts_root 后经真实渲染路径量课程名墨高 ∈ [13..16]（16px 证据域；修订轮以 builder 实测重基线：资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13，CJK 墨高实际 14，P1 同资产同值；冻结时点预判窗 [15..18] 下界越证据域）+ P0 资产 gate（body() 非 14px、line_height [20..25]、「课」glyph 盒 [12..18]^2）+ 判别力负控（全缺 mount 态同一夹具墨高 [10..13] 且严格小于 16px 态——两窗在 13 搭接，基线判别力由严格不等式承载）+ mount(missing reader) 复位防跨文件泄漏。修订轮实测：16px 态墨高 14，兜底态 < 14（严格不等式通过）",
+        "mutation": "M9 ksg_text_font 消费点由 kidpal_font_body() 换成 kidpal_font_title()（[K4] body 消费点摘除）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_font_seam + schedule_grid.acceptance.c TEST 9",
+        "turnedRed": true,
+        "result": "turned red：SG16-A6（532 结构键 sched_c_font_seam=0）+ schedule_grid TEST 9（1703）红。A1 行为齿（834）在冻结件内为常红——实测 16px body 字形墨高 14px（课 box 15x14 / 口 12x13, line_height 23, base_line 5），越出冻结窗 [15..18]（frozen-test defect#1，见 note）"
+      },
+      {
+        "acceptanceId": "SG16-A2",
+        "acceptance": "SG16-A2: pitch 19 精确锚——同名双课（语文×2）同格堆叠 span 差 == 19（同名夹具消除两行字形墨高差，delta 恰等于 KSG_ROW_PITCH）。设计态红：pitch 16",
+        "mutation": "M1 KSG_ROW_PITCH 19 → 16（pitch 回退旧值）",
+        "affectedTest": "schedule_grid.acceptance.c TEST 9（pitch 19 锚）+ schedule_grid_16px.acceptance.c TEST 5 sched_c_pitch_not16",
+        "turnedRed": true,
+        "result": "turned red：258/9（基线 258/7 +2）——schedule_grid TEST 9（1703）与 SG16-A6（532，sched_c_pitch_not16=0）双红；还原后回 258/7"
+      },
+      {
+        "acceptanceId": "SG16-A3",
+        "acceptance": "SG16-A3: 槽位带 78/78/69——空网格新分隔线 y=107/185 全行墨 + 旧位置 y=103/177 全行白负锚（带移非加线）+ 表头 y=29 与网格底线 y=254 零偏移 + (day,slot) 格归属 diff 全落新带 + y>=255 网格外带零墨（越带负锚继承）。设计态红：分隔线在旧位/格归属旧带",
+        "mutation": "M2 ksg_slot_ys 回退旧带 {30,103}{104,177}{178,254}（带移回退）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 2 tooth2（新分隔线 y=107 全行墨）+ schedule_grid.acceptance.c TEST 11",
+        "turnedRed": true,
+        "result": "turned red：258/9（+2）——SG16-A3 首条失败前移到 913（新 slot0 分隔线 y=107 非全行墨，先于冻结件缺陷齿 921）+ schedule_grid TEST 11（1814）连带；还原后回 258/7"
+      },
+      {
+        "acceptanceId": "SG16-A4",
+        "acceptance": "SG16-A4: 容量 4/4/3 + 静默截断 + CAP=84——slot0/slot1 第 4 门真画（diff>0 落带）、第 5 门帧等价（diff==0 全帧 = 不滚动不提示不画第 5 行）；slot2 第 3 门真画、第 4 门帧等价；加门 diff containment 全落本格带；84 条全量载荷解析 == 84（F-8 缓存/解析 cap 不误缩）。截断态渲染返回值不钉（[F2-C] 申报，builder 保持返回 n 或改实画数皆不红）。设计态红：slot2 第 4 门被画（上限未收 3）",
+        "mutation": "M4 解析入口把 cap 误缩为 48（渲染上限冒充解析/缓存 cap, F-8 违例）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 tooth1（84 条全量载荷解析）",
+        "turnedRed": true,
+        "result": "turned red：258/7 但失败点前移到 1017（84 条全量载荷解析 = -1）——证明 tooth1 判别力；还原后回 1036（冻结件缺陷齿）"
+      },
+      {
+        "acceptanceId": "SG16-A4",
+        "acceptance": "SG16-A4: 容量 4/4/3（slot2 上限收 3）——第 3 门真画 / 第 4 门帧等价静默截断",
+        "mutation": "M3 ksg_slot_caps {4,4,3} → {4,4,4}（slot2 上限回旧值）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 3 tooth5 后半",
+        "turnedRed": false,
+        "result": "MASKED（未被判别）：与基线同为 258/7，无新增红——TEST 3 在冻结件缺陷齿 1035/1036（第五门帧等价误比 f_a vs f_b）先中断，tooth5 后半永不执行；容量行为由代码面 ksg_slot_caps 承载并经 builder 诊断副本（见 note）验证通过"
+      },
+      {
+        "acceptanceId": "SG16-A5",
+        "acceptance": "SG16-A5: 临时课下划线 + ※ 退役 + ★ 不变 + 可见 2 字——temp/fixed/star/叠加四帧 diff 定位：diff 首行 > 名墨最大行（※ 前缀不占笔进不侵文字行）、离散 diff 行数 == 2、各行 diff ∈ [12..60]（2px 随名宽）、diff 全落格带、fixed 帧名墨之下零墨（固定不画线）、star 可见/两标记可区分/flags=3 叠加、无标记格 2 字墨宽 >= 28、flags=0 确定性；一律锚 flags bit0 不锚 name 前缀（ARQ-261029）。设计态红：下划线未实现（现状画 ※）",
+        "mutation": "M5 下划线摘除（bit0 不再画线）",
+        "affectedTest": "schedule_grid.acceptance.c TEST 11（bit0 可见帧差）+ schedule_grid_16px.acceptance.c TEST 4 tooth3 前半（diff>0）",
+        "turnedRed": true,
+        "result": "turned red：258/8（+1）——schedule_grid TEST 11（1807：flags bit0 produced no visible in-cell ink diff）红，且 SG16-A5 失败点前移到 1147（临时课帧与固定课帧 diff 为零）；还原后回 258/7"
+      },
+      {
+        "acceptanceId": "SG16-A5",
+        "acceptance": "SG16-A5: 下划线 2px 高度（2px 随名宽, 各行 diff ∈ [12..60]）",
+        "mutation": "M6 下划线 2px → 3px",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 4 tooth4（离散 diff 行数 == 2）",
+        "turnedRed": false,
+        "result": "MASKED（未被判别）：与基线同为 258/7，无新增红——TEST 4 在冻结件缺陷齿 1150（min_row > m，m 被 y=254 网格底线污染成 254）先中断，tooth4 永不执行；2px 几何由 ksg_draw_temp_underline 的 uy1 = uy0 + 1 承载，并在 builder 诊断副本中验证通过（见 note）"
+      },
+      {
+        "acceptanceId": "SG16-A6",
+        "acceptance": "SG16-A6: 结构半 FAS 清单扩键——host_srcs_schedule_grid_16px / sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）/ sched_c_pitch_macro / sched_c_pitch_not16（负向）/ sched_c_no_temp_cp（负向 0x203B+U+203B）/ sched_c_no_temp_fallback（负向 ksg_marker_temp_proc）/ sched_c_star_kept（0x2605）/ sched_h_band_anchors（y[30..107]+y[186..254]）+ 复用键 schedule_ksg_course_cap / schedule_ksg_font_min_px。设计态红：五结构键=0（旧字面在世/新字面缺位）",
+        "mutation": "M7 画回 ※（0x203B / U+203B 码点字面与 ksg_marker_temp_proc 回写）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_no_temp_cp / sched_c_no_temp_fallback",
+        "turnedRed": true,
+        "result": "turned red：258/8（+1）——SG16-A6（532）红（※ 码点/程序化兜底两个负向键 = 0）；还原后回 258/7"
+      },
+      {
+        "acceptanceId": "SG16-A6",
+        "acceptance": "SG16-A6: 结构键（★ 保留 0x2605 / [K4] body 直连 / 头注带锚）",
+        "mutation": "M8 星标行为摘除（保留 0x2605 字面使 A6 键仍绿）",
+        "affectedTest": "schedule_grid.acceptance.c TEST 11（★ 可见）",
+        "turnedRed": true,
+        "result": "turned red：258/8（+1）——schedule_grid TEST 11（1814：flags bit1 无可见带内 diff）红；SG16-A6 保持绿（字面键未被变异，证明两档并列互证）；还原后回 258/7"
+      },
+      {
+        "acceptanceId": "SG16-A6",
+        "acceptance": "SG16-A6: sched_c_font_seam（schedule_page.c 直连 kidpal_font_body）与 sched_h_band_anchors（头注 y[30..107]/y[186..254]）",
+        "mutation": "M9 同上（body 消费点换成 title）+ 头注带锚未变（对照：仅 body 字面消失）",
+        "affectedTest": "schedule_grid_16px.acceptance.c TEST 5 sched_c_font_seam",
+        "turnedRed": true,
+        "result": "turned red：sched_c_font_seam=0（532）+ schedule_grid TEST 9（1703）连带红"
+      }
+    ],
+    "note": "证据来源 = builder 变异轮（2026-11-02，每条变异→build→run→还原；FINAL 干净跑 258/7 = 存量 p1_auxbar AB-A1/A2/A4 三条 + 冻结件缺陷四条，见下）。变异不保留被测符号原字面为子串（KR-A3）。【FROZEN TEST DEFECTS（builder 实测，需 acceptance-author 收紧型修订，非实现缺陷）】① schedule_grid_16px.acceptance.c:834 TEST 1 tooth1 墨高窗 [15..18] 与 16px 资产实测不符——运行时 kidpal_font_body() 的 CJK 字形盒实测 课=15x14 / 口=12x13（line_height 23, base_line 5），渲染墨高恒 14；文件自身 REVISION LOG 已授权「以证据重基线窗口」；② :921/:924 TEST 2 tooth3 要求 y=103/177 全行白，但 7 条日列竖线（x=0/40..346/397）贯穿 y=0..254，旧分隔线位置必然残留竖线墨——需改为「除竖线列外全白」或等价判读；③ :1035/:1050/:1065 TEST 3 三处截断帧等价断言误比 sgx_f_a vs sgx_f_b（应为 sgx_f_c vs sgx_f_b），与紧邻的 total>0 断言同一帧对直接矛盾（逻辑不可满足）；④ :1083 TEST 3 tooth6 slot2 半用 day0 的 x 带判 day2 课程落带（courses 填在 day2），containment 必假；⑤ :1135/:1150 TEST 4 tooth3 m = sgx_max_ink_row 覆盖 slot2 带 y1=254，命中 y=254 网格底线（TEST 2 tooth1 要求其全行墨）→ m=254，而 min_row > 254 与 tooth5 containment（≤254）/TEST 2 tooth5（y>=255 零墨）互斥；同族 sgx_text_col_span 只在末行含最右墨时正确（现仅靠底线行空过），sgx_max_ink_row 亦需 x 内缩避开 x0 竖线。【验证】为证明实现满足冻结件意图，builder 用一份不入库的诊断副本（host_app/main/_sgx_oracle_tmp.c，跑完即删、git status 已确认干净）仅修上述五处缺陷（另把 A1 窗下界按证据放至 13），结果 = 263 Tests / 7 Failures（仅三条存量 auxbar + 冻结件四文件本体），SG16-A1..A6 全部转绿；冻结三件零改动（git status 仅 display/schedule_page.c、display/schedule_page.h、host_app/main/CMakeLists.txt）。"
   },
   "crossEnd": {
     "counterparts": [
