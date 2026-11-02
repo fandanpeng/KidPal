@@ -1,21 +1,26 @@
 /*
  * Frozen acceptance tests — TaskPackage 261028-m6-k2b-p2-schedule-16px (subsystem:
  * firmware/main/display 课表周网格 16px 版式与临时标记形态; M6 列车 P2, 课表网格
- * 16px——pitch 19、带高 78/78/69、容量 4/4/3 与课名下划线 · mergeOrder 62 ·
+ * 16px——pitch 19、带高 88/88/49（F-3 原定 78/78/69, 2026-11-02 真机轮 human
+ * 裁定修订）、容量 4/4/2（F-3 原定 4/4/3, 同批修订）与课名下划线 · mergeOrder 62 ·
  * rigor=full / riskTier=high · sourceType=proposal, dependsOn
  * 261028-m6-k1-font-assets-runtime-loading（P0 已 merged）+ 261028-m6-k2a-p1-home-16px
  * （P1 已 merged，mergeOrder 串行）。
  *
- * Story: S-F1.2 · 课表页看「一周总览」（AC1、AC3、AC4）+ 补充规则容量 4/4/3 与超限
+ * Story: S-F1.2 · 课表页看「一周总览」（AC1、AC3、AC4）+ 补充规则格内容量（F-3
+ * 原定 4/4/3, 真机轮修订 4/4/2）与超限
  * 静默截断口径（requirements v1.69）。决策面 = PROPOSAL §3.1 F-1（课表正文 16px、
- * 键帽条等 14px 域不动）/ F-3（pitch 19 + 带高 78/78/69 + 容量 4/4/3 + 无标记格
+ * 键帽条等 14px 域不动）/ F-3（pitch 19 + 带高/容量——原定 78/78/69 + 4/4/3,
+ * 2026-11-02 真机轮 human 裁定修订为 88/88/49 + 4/4/2（REVISION LOG 真机轮条）+
+ * 无标记格
  * 可见 2 字）/ F-8（KSG_COURSE_CAP=84 不动，只改按槽位可画上限）/ F-9（一次性课程
  * ※ 前缀改课名下划线 2px 程序化画线，※ 字形探测/兜底退役；★ 星标不动）+ §3.2
  * OQ4（超限维持静默截断，不新增提示）/ OQ2（母版 v8 只重出四页之课表帧）。
  * 授权链 = TaskPackage 261028-m6-k2b-p2-schedule-16px（exitCriteria P2S-E1/E2/E3）
  * + requirements v1.69 版本行 + brief v7 对齐注记（均在位）。
  * 本件与 schedule_grid.acceptance.c 的分工：本件钉 16px 新形态细节（度量合理域 /
- * pitch 精确值 / 带高 / 容量 4/4/3 / 下划线几何 / ※ 退役），schedule_grid.acceptance.c
+ * pitch 精确值 / 带高 / 容量（真机轮修订后 88/88/49 + 4/4/2）/ 下划线几何 /
+ * ※ 退役），schedule_grid.acceptance.c
  * 经收紧型 supersede（REVISION LOG 2026-11-02 条）钉回归不变式（解析矩阵 / 越带
  * 负锚 / 星标 / 今天列 / 胶水结构）。两件断言互不弱化、互不重复钉死同一像素。
  *
@@ -26,8 +31,8 @@
  *     - 16px 句柄消费的行为级证据：mount fonts_root 后经真实渲染路径量课程名墨
  *       高（16px 度量合理域）+ 判别力负控（同一夹具 14px 兜底态可判别）——
  *       retro F1 教训落实：钉度量合理域，不只钉返回码。
- *     - pitch 19 精确锚（同名双课 span 差 == 19）、槽位带 78/78/69（分隔线行
- *       位置 + 旧位置负锚）、容量 4/4/3 与静默截断（帧等价）、下划线几何
+ *     - pitch 19 精确锚（同名双课 span 差 == 19）、槽位带 88/88/49（分隔线行
+ *       位置 + 历史旧位负锚）、容量 4/4/2 与静默截断（帧等价）、下划线几何
  *       （帧 diff 定位：2px 随名宽、名墨之下）、★ 保留、※ 退役负锚。
  *     - 结构半走 FAS-MANIFEST 构建清单机制（P0/P1 同款——human 2026-10-28 定向
  *       裁定运行时禁扫源码树；本件结构面断言在既有 FAS 清单块上扩键，键集见
@@ -36,7 +41,7 @@
  *     - 设备侧 cbin 装载等价性归 P0 机制 + FAR-E3 真机轮（P1 裁定 2 口径不变）；
  *       schedule_page.c 为 host/设备两侧同源 TU，消费面行为经 host 帧真测承载。
  *   [真机轮专属]（P2S-E5 / PROPOSAL §5，本文件零 host 齿、不伪装）:
- *     - pitch 19 紧凑观感、4/4/3 真实课表观感、下划线/★ 真机可读性、长课截断
+ *     - pitch 19 紧凑观感、4/4/2 真实课表观感、下划线/★ 真机可读性、长课截断
  *       表现——本包自有真机轮（P2S-E5），结果供 P3 终端收口轮复证。
  *
  * ===========================================================================
@@ -57,11 +62,12 @@
  *     行为证据 = TEST 1 度量齿（经真实渲染路径量墨高，mount 态 → 16px 合理域；
  *       缺 assets 态 → 14px 合理域，两态可判别）。
  *
- *   [F2-L] 版式重基线（F-3/P2S-E1）:
+ *   [F2-L] 版式重基线（F-3/P2S-E1; 真机轮修订 88/88/49）:
  *     - KSG_ROW_PITCH 16 → 19（schedule_page.c；KSG_FONT_MIN_PX=14 保留不动，
  *       NFR-READ-1 下限语义不变——19 >= 14，FAS 键 schedule_ksg_font_min_px 不破）。
- *     - ksg_slot_ys {30,103}{104,177}{178,254} → {30,107}{108,185}{186,254}
- *       （带高 74/74/77 → 78/78/69；slot2 下缘贴 KSG_GRID_BOTTOM=254 不变）。
+ *     - ksg_slot_ys {30,103}{104,177}{178,254} → {30,117}{118,205}{206,254}
+ *       （带高 74/74/77 → 78/78/69 → 真机轮 88/88/49；slot2 下缘贴
+ *       KSG_GRID_BOTTOM=254 不变）。
  *     - 表头带 y[0..29]、标签列 x[0..39]、day 列带宽 51、KSG_GRID_BOTTOM=254、
  *       今天列整列外框加粗、y>=255 网格外带严格零墨——全部零偏移（回归不变式
  *       由 schedule_grid.acceptance.c 继续钉）。
@@ -107,8 +113,10 @@
  *         sched_c_no_temp_fallback      schedule_page.c **不**含 "ksg_marker_temp_proc"
  *                                       （负向——程序化 ※ 兜底退役）
  *         sched_c_star_kept             schedule_page.c 含 "0x2605"（★ 保留）
- *         sched_h_band_anchors          schedule_page.h 含 "y[30..107]" 且含
- *                                       "y[186..254]"（头注版式区钉新带字面）
+ *         sched_h_band_anchors          schedule_page.h 含 "y[30..117]" 且含
+ *                                       "y[206..254]"（头注版式区钉新带字面;
+ *                                       真机轮修订同步——CMakeLists 判读 needle
+ *                                       须同批换字面, 见 acceptance-wiring-patch）
  *       复用既有键（零 CMake 增量，本件只读）：schedule_ksg_course_cap
  *       （F-8：#define KSG_COURSE_CAP 84 在世）、schedule_ksg_font_min_px
  *       （NFR-READ-1 14px 下限在世）。
@@ -138,15 +146,15 @@
  *     -> TEST 1 tooth 3 承载：行为级（同名双课 span 差 == 19 精确锚；同名夹具
  *        消除两行字形墨高差，delta 恰等于 pitch）。schedule_grid.acceptance.c
  *        收紧件钉下限 >= 19（异名夹具防漂移），两件互证不互斥。
- *   SG16-A3（P2S-E1/F-3 带高 78/78/69 + 零偏移面）
+ *   SG16-A3（P2S-E1/F-3 带高——真机轮修订后 88/88/49 + 零偏移面）
  *     -> TEST 2 承载：行为级（空网格分隔线行位置 107/185 全行墨 + 旧位置
  *        103/177 全行白负锚 = 带移而非加线；(day,slot) 格归属 diff 落新带；
  *        y>=255 零墨）。机制级 = FAS 键 sched_c_pitch_not16 + sched_h_band_
  *        anchors。弱于契约处：带高由分隔线位置 + 表头/底界锚间接钉（78 =
  *        108-30、69 = 255-186），不逐像素钉带内家具。
- *   SG16-A4（P2S-E2/F-8/OQ4 容量 4/4/3 + 静默截断 + CAP=84）
+ *   SG16-A4（P2S-E2/F-8/OQ4 容量——真机轮修订后 4/4/2 + 静默截断 + CAP=84）
  *     -> TEST 3 承载：行为级（slot0/slot1 第 4 门画、第 5 门帧等价截断；slot2
- *        第 3 门画、第 4 门帧等价截断——帧等价同时承载「不滚动、不新增提示、
+ *        第 2 门画、第 3 门帧等价截断（真机轮 4/4/2）——帧等价同时承载「不滚动、不新增提示、
  *        不画超限行」三否定语义；diff containment = 截断不走溢出）+ 行为级
  *        （84 条全量载荷解析 == 84 = 缓存/解析 cap 不被误缩）。机制级 = FAS 键
  *        schedule_ksg_course_cap 复用。弱于契约处：截断态返回值不钉（[F2-C]
@@ -167,8 +175,8 @@
  *
  * ---------------------------------------------------------------------------
  * Coverage map（exitCriteria -> test）:
- *   coverage: P2S-E1（16px 句柄 + pitch 19 + 带高 78/78/69 + 零偏移面）-> TEST 1（SG16-A1/A2）+ TEST 2（SG16-A3）+ TEST 5 机制键
- *   coverage: P2S-E2（容量 4/4/3 + 静默截断 + CAP=84 + 云端全量不变）-> TEST 3（SG16-A4）+ TEST 5 机制键
+ *   coverage: P2S-E1（16px 句柄 + pitch 19 + 带高——真机轮修订后 88/88/49 + 零偏移面）-> TEST 1（SG16-A1/A2）+ TEST 2（SG16-A3）+ TEST 5 机制键
+ *   coverage: P2S-E2（容量——真机轮修订后 4/4/2 + 静默截断 + CAP=84 + 云端全量不变）-> TEST 3（SG16-A4）+ TEST 5 机制键
  *   coverage: P2S-E3（下划线 + ※ 退役 + ★ 不变 + 可见 2 字 + wire 不变）-> TEST 4（SG16-A5）+ TEST 5 结构键 + schedule_grid.acceptance.c 收紧件（flags 保真/星标/越带）
  *   coverage: P2S-E5（真机轮）-> 零 host 齿（头注三分申报挂账，不阻塞 host 半）
  *
@@ -179,17 +187,17 @@
  *      a. #include "kidpal_font.h"；ksg_text_font() 改返回 kidpal_font_body()
  *         （[F2]；删除 LV_FONT_SOURCE_HAN_SANS_SC_14_CJK / ESP_PLATFORM 字面
  *         直连分支——兜底由 kidpal_font.cc [K2]/[K3] 承载，勿新增 NULL 回落）。
- *      b. KSG_ROW_PITCH 16 → 19（[F2-L]）；ksg_slot_ys → {30,107}{108,185}{186,254}
+ *      b. KSG_ROW_PITCH 16 → 19（[F2-L]）；ksg_slot_ys → {30,117}{118,205}{206,254}
  *         （行标签垂直居中偏移随带高自行重算——观感面不钉）。
- *      c. 渲染层按槽位可画上限 4/4/3（[F2-C]；KSG_COURSE_CAP=84 与解析/缓存
+ *      c. 渲染层按槽位可画上限 4/4/2（真机轮修订; [F2-C]；KSG_COURSE_CAP=84 与解析/缓存
  *         零触碰——cap 误缩即红）。
  *      d. [F2-M]：删除 0x203B / ksg_marker_temp_proc / bit0 的 ksg_draw_marker
  *         路径；flags bit0 → 课名下 2px 下划线（程序化画线：名墨右缘 x 跨度、
  *         名墨底缘下方相邻行起 2px、clip 格带；名不扣前缀宽——与 P1 [U1] 首页
  *         半同口径）；★ bit1 路径零偏移（0x2605 / star 兜底保留）。
  *   2) firmware/main/display/schedule_page.h：头注版式区钉同步——槽位行带行改
- *      「slot0 y[30..107] / slot1 y[108..185] / slot2 y[186..254]」（FAS 键
- *      sched_h_band_anchors 判读字面 = "y[30..107]" 与 "y[186..254]"）；flags
+ *      「slot0 y[30..117] / slot1 y[118..205] / slot2 y[206..254]」（FAS 键
+ *      sched_h_band_anchors 判读字面 = "y[30..117]" 与 "y[206..254]"）；flags
  *      bit0 注记改「临时课（课名下 2px 下划线）」；pitch 注记改 19。
  *   3) host 接线：firmware/main/test/host_app/main/CMakeLists.txt 的
  *      HOST_ACCEPTANCE_SRCS 注册 "../../schedule_grid_16px.acceptance.c"
@@ -301,12 +309,16 @@ __attribute__((weak)) int kidpal_schedule_grid_render(const kidpal_schedule_cour
 #define SGX_PITCH_PX   19  /* F-3：16px 下格内课程名行 pitch（原 16 收紧重基线） */
 #define SGX_COURSE_CAP 84  /* F-8：缓存/解析 cap 定容冻结值不动（7 天 × 3 格 × 每格 4 门） */
 
-/* 槽位行带 {y0, y1}（表头带 y[0..29] 不变）：带高 78/78/69，slot2 下缘贴
- * KSG_GRID_BOTTOM=254。 */
-static const int sgx_slot_ys[3][2] = { { 30, 107 }, { 108, 185 }, { 186, 254 } };
+/* 槽位行带 {y0, y1}（表头带 y[0..29] 不变）：带高 88/88/49，slot2 下缘贴
+ * KSG_GRID_BOTTOM=254。（2026-11-02 真机轮修订：原 F-3 定值 78/78/69 下 slot0
+ * 第 4 行墨底恰压带底线 y=107 零余量、真机末行截 1-2px——human 裁定带高改
+ * 88/88/49 给末行让余量；授权链 = 真机轮 human 原话 + P2S-E5, REVISION LOG
+ * 真机轮修订条。） */
+static const int sgx_slot_ys[3][2] = { { 30, 117 }, { 118, 205 }, { 206, 254 } };
 
-/* 按槽位可画上限（F-3/OQ4；渲染层截断，缓存/解析 cap 84 不动）。 */
-static const int sgx_slot_caps[3] = { 4, 4, 3 };
+/* 按槽位可画上限（F-3/OQ4 定容 4/4/3；2026-11-02 真机轮 human 裁定修订为
+ * 4/4/2——「晚上保留两行」；渲染层截断，缓存/解析 cap 84 不动）。 */
+static const int sgx_slot_caps[3] = { 4, 4, 2 };
 
 /* 16px 度量合理域（SG16-A1；2026-11-02 修订轮以证据重基线：builder 实测 16px
  * 资产 line_height=23/base_line=5、「课」box 15x14、「口」box 12x13——CJK 墨高
@@ -901,19 +913,20 @@ TEST_CASE("schedule grid 16px: 16px句柄消费度量与pitch19锚 (SG16-A1/A2)"
 }
 
 /* ========================================================================== *
- * TEST 2 — SG16-A3：槽位带 78/78/69 重基线（分隔线行位置 + 旧位置负锚 + 格归属）
+ * TEST 2 — SG16-A3：槽位带 88/88/49 重基线（分隔线行位置 + 旧位置负锚 + 格归属；
+ * 2026-11-02 真机轮 human 裁定修订：原 F-3 定值 78/78/69 下 slot0 末行墨底恰压
+ * 带底线零余量、真机截 1-2px → 带高 88/88/49 给末行让余量）
  *   tooth 1 (must-stay-green): 空网格表头底线 y=29 全行墨 + 网格底线 y=254 全行墨
  *            （表头带与 KSG_GRID_BOTTOM 零偏移）。
- *   tooth 2 (RED 设计态): 新分隔线 y=107 / y=185 全行墨（F-3 带移）。
- *   tooth 3 (RED 设计态): 旧分隔线位置 y=103 / y=177 全行白（负锚——带移不是加线;
- *            现状线在旧位 → 红）。
+ *   tooth 2 (RED 设计态): 新分隔线 y=117 / y=205 全行墨（带移）。
+ *   tooth 3 (RED 设计态): 历史旧分隔线位置 y=103 / y=107 / y=177 / y=185 除竖线
+ *            家具列外全白（负锚——带移不是加线; 现状线在旧位 → 红）。
  *   tooth 4 (RED 设计态): (day,slot) 格归属——slot1 两门课帧 diff 全落新带
- *            （schedule_grid.acceptance.c TEST 8 重锚件镜像; 现状旧带渲染墨
- *            y106 起落新带 108 外 → 红）。
+ *            （schedule_grid.acceptance.c TEST 8 重锚件镜像）。
  *   tooth 5 (must-stay-green): y>=255 网格外带严格零墨（越带负锚, 越域继承）。
  * ========================================================================== */
-/* coverage: SG16-A3 -- 槽位带 78/78/69：新分隔线行 107/185 全行墨 + 旧位置 103/177 全行白负锚 + 表头 29 / 底界 254 零偏移 + (day,slot) 格归属落新带 + y>=255 零墨 */
-TEST_CASE("schedule grid 16px: 槽位带78/78/69与格归属 (SG16-A3)",
+/* coverage: SG16-A3 -- 槽位带 88/88/49（真机轮修订）：新分隔线行 117/205 全行墨 + 历史旧位置 103/107/177/185 除竖线外全白负锚 + 表头 29 / 底界 254 零偏移 + (day,slot) 格归属落新带 + y>=255 零墨 */
+TEST_CASE("schedule grid 16px: 槽位带88/88/49与格归属 (SG16-A3)",
           "[schedule_grid_16px][SG16-A3][behavior]")
 {
     kidpal_schedule_course_t cs[2];
@@ -932,20 +945,23 @@ TEST_CASE("schedule grid 16px: 槽位带78/78/69与格归属 (SG16-A3)",
     TEST_ASSERT_TRUE_MESSAGE(sgx_row_all_dark(sgx_f_a, SGX_GRID_BOTTOM),
         "SGX-A3 RED: 网格底线 y=254 非全行墨——KSG_GRID_BOTTOM 被改动（零偏移面回归）");
 
-    /* tooth 2: 新分隔线行（F-3 带移）。 */
+    /* tooth 2: 新分隔线行（真机轮带移）。 */
     TEST_ASSERT_TRUE_MESSAGE(sgx_row_all_dark(sgx_f_a, sgx_slot_ys[0][1]),
-        "SGX-A3 RED: 新 slot0 分隔线 y=107 非全行墨——槽位带未按 78/78/69 重基线"
-        "（现状线在 y=103 = 设计态红）");
+        "SGX-A3 RED: 新 slot0 分隔线 y=117 非全行墨——槽位带未按 88/88/49 重基线");
     TEST_ASSERT_TRUE_MESSAGE(sgx_row_all_dark(sgx_f_a, sgx_slot_ys[1][1]),
-        "SGX-A3 RED: 新 slot1 分隔线 y=185 非全行墨——槽位带未按 78/78/69 重基线"
-        "（现状线在 y=177 = 设计态红）");
+        "SGX-A3 RED: 新 slot1 分隔线 y=205 非全行墨——槽位带未按 88/88/49 重基线");
 
-    /* tooth 3: 旧位置负锚（带移而非加线；竖线家具列容忍——修订轮缺陷 2）。 */
-    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 103),
-        "SGX-A3 RED: 旧分隔线位置 y=103 仍有非竖线墨——旧带未退役（F-3 带移要求线"
-        "随带走, 新旧并存 = 版式失真）");
-    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 177),
-        "SGX-A3 RED: 旧分隔线位置 y=177 仍有非竖线墨——旧带未退役（同上）");
+    /* tooth 3: 历史旧位置负锚（带移而非加线；竖线家具列容忍——修订轮缺陷 2）。
+     * 103/177 = F-3 前原位；107/185 = 78/78/69 位（真机轮 88/88/49 前身）——
+     * 两代旧位都必须随带走、不得残留。 */
+    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 103) &&
+                                 sgx_row_white_outside_vlines(sgx_f_a, 107),
+        "SGX-A3 RED: slot0 历史旧分隔线位置（y=103 / y=107）仍有非竖线墨——旧带未"
+        "退役（带移要求线随带走, 新旧并存 = 版式失真）");
+    TEST_ASSERT_TRUE_MESSAGE(sgx_row_white_outside_vlines(sgx_f_a, 177) &&
+                                 sgx_row_white_outside_vlines(sgx_f_a, 185),
+        "SGX-A3 RED: slot1 历史旧分隔线位置（y=177 / y=185）仍有非竖线墨——旧带未"
+        "退役（同上）");
 
     /* tooth 4: (day,slot) 格归属（新带）——slot1 两门课异日帧 diff 全落两格带并集。 */
     sgx_render_strict(sgx_course(&cs[0], 2, 1, "语文", 0), 1, -1, sgx_f_a);
@@ -964,7 +980,7 @@ TEST_CASE("schedule grid 16px: 槽位带78/78/69与格归属 (SG16-A3)",
         yb = y1;
         sgx_diff_stats(sgx_f_a, sgx_f_b, xa, ya, xb, yb, &full_total, &in2);
         TEST_ASSERT_TRUE_MESSAGE(in_band + in2 == full_total,
-            "SGX-A3 RED: 课程 diff 像素落在新槽位带/日列带之外——格归属未随 78/78/69 "
+            "SGX-A3 RED: 课程 diff 像素落在新槽位带/日列带之外——格归属未随 88/88/49 "
             "重基线（现状旧带 y104 起 = 设计态红）");
     }
 
@@ -988,20 +1004,20 @@ TEST_CASE("schedule grid 16px: 槽位带78/78/69与格归属 (SG16-A3)",
 }
 
 /* ========================================================================== *
- * TEST 3 — SG16-A4：容量 4/4/3 + 静默截断 + CAP=84 与云端全量不变
+ * TEST 3 — SG16-A4：容量 4/4/2（真机轮修订）+ 静默截断 + CAP=84 与云端全量不变
  *   tooth 1 (must-stay-green, F-8): 84 条全量载荷（7 天 × 3 槽 × 4 门）解析
  *            == 84——缓存/解析 cap 不得被误缩成渲染上限。
  *   tooth 2 (must-stay-green): slot0 第 3→4 门 diff > 0 且落带（第 4 门真画）。
  *   tooth 3 (must-stay-green): slot0 第 4→5 门 diff == 0 全帧（静默截断：不画
  *            第 5 行、不滚动、不新增提示——任何溢出形态都会破坏帧等价）。
  *   tooth 4 (must-stay-green): slot1 同 tooth 2/3（上限 4）。
- *   tooth 5 (RED 设计态): slot2 第 2→3 门 diff > 0（第 3 门真画）+ 第 3→4 门
- *            diff == 0（上限 3；现状上限 4 → 第 4 门被画 → 红）。
+ *   tooth 5 (RED 设计态): slot2 第 1→2 门 diff > 0（第 2 门真画）+ 第 2→3 门
+ *            diff == 0（上限 2——真机轮 human 裁定 4/4/2）。
  *   tooth 6 (must-stay-green): 加门 diff containment——slot0 第 4 门 / slot2
- *            第 3 门 diff 全落本槽带（截断降级不走溢出）。
+ *            第 2 门 diff 全落本槽带（截断降级不走溢出）。
  * ========================================================================== */
-/* coverage: SG16-A4 -- 容量 4/4/3：slot0/1 第 4 门画第 5 门帧等价 + slot2 第 3 门画第 4 门帧等价（静默截断不滚动不提示）+ diff containment + 84 条全量解析（F-8 缓存/解析 cap 不误缩） */
-TEST_CASE("schedule grid 16px: 槽位容量4/4/3与静默截断 (SG16-A4)",
+/* coverage: SG16-A4 -- 容量 4/4/2（真机轮修订）：slot0/1 第 4 门画第 5 门帧等价 + slot2 第 2 门画第 3 门帧等价（静默截断不滚动不提示）+ diff containment + 84 条全量解析（F-8 缓存/解析 cap 不误缩） */
+TEST_CASE("schedule grid 16px: 槽位容量4/4/2与静默截断 (SG16-A4)",
           "[schedule_grid_16px][SG16-A4][behavior]")
 {
     kidpal_schedule_course_t cs[5];
@@ -1076,23 +1092,23 @@ TEST_CASE("schedule grid 16px: 槽位容量4/4/3与静默截断 (SG16-A4)",
     TEST_ASSERT_TRUE_MESSAGE(total == 0,
         "SGX-A4 RED: 下午第 5 门课改变了帧——超限未静默截断");
 
-    /* slot2（上限 = sgx_slot_caps[2]=3）：RED 设计态核心（现状上限 4 → 第 4 门
-     * 被画）。 */
+    /* slot2（上限 = sgx_slot_caps[2]=2，2026-11-02 真机轮 human 裁定 4/4/2——
+     * 「晚上保留两行」）：第 2 门真画 + 第 3 门帧等价。 */
     sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2] - 1);
     sgx_render_strict(cs, sgx_slot_caps[2] - 1, -1, sgx_f_a);
     sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2]);
     sgx_render_strict(cs, sgx_slot_caps[2], -1, sgx_f_b);
     sgx_diff_stats(sgx_f_a, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0,
-        "SGX-A4 RED: 晚上第 3 门课未引入任何墨——容量 3 未兑现");
+        "SGX-A4 RED: 晚上第 2 门课未引入任何墨——容量 2 未兑现（真机轮裁定 4/4/2）");
     sgx_fill_slot(cs, 2, 2, sgx_slot_caps[2] + 1);
     sgx_render_loose(cs, sgx_slot_caps[2] + 1, -1, sgx_f_c);
     sgx_diff_stats(sgx_f_c, sgx_f_b, 0, 0, SGX_FB_W - 1, SGX_FB_H - 1, &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total == 0,
-        "SGX-A4 RED: 晚上第 4 门课改变了帧——slot2 上限未收到 3（现状上限 4 = 设计"
-        "态红; F-3/OQ4: 第 4 门静默截断, 不滚动不提示）");
+        "SGX-A4 RED: 晚上第 3 门课改变了帧——slot2 上限未收到 2（真机轮 human 裁定"
+        "4/4/2; OQ4 口径不变: 超限静默截断, 不滚动不提示）");
 
-    /* tooth 6: containment——slot0 第 4 门 / slot2 第 3 门 diff 全落本格带。 */
+    /* tooth 6: containment——slot0 第 4 门 / slot2 第 2 门 diff 全落本格带。 */
     sgx_day_band(0, &x0, &x1);
     sgx_fill_slot(cs, 0, 0, sgx_slot_caps[0] - 1);
     sgx_render_strict(cs, sgx_slot_caps[0] - 1, -1, sgx_f_a);
@@ -1112,7 +1128,7 @@ TEST_CASE("schedule grid 16px: 槽位容量4/4/3与静默截断 (SG16-A4)",
     sgx_diff_stats(sgx_f_a, sgx_f_b, x0, sgx_slot_ys[2][0], x1, sgx_slot_ys[2][1],
                    &total, &in_band);
     TEST_ASSERT_TRUE_MESSAGE(total > 0 && in_band == total,
-        "SGX-A4 RED: 晚上第 3 门 diff 落在 (day2,slot2) 格带外——截断降级不走溢出");
+        "SGX-A4 RED: 晚上第 2 门 diff 落在 (day2,slot2) 格带外——截断降级不走溢出");
 }
 
 /* ========================================================================== *
@@ -1289,8 +1305,8 @@ TEST_CASE("schedule grid 16px: 结构半-FAS清单扩键 (SG16-A6)",
                      "schedule_page.c 丢失 0x2605——★ 星标被连带拆除（F-9 星标不动"
                      "铁律破）");
     sgx_require_fact(sgx_mfact("sched_h_band_anchors"), "sched_h_band_anchors",
-                     "schedule_page.h 头注版式区钉未随 78/78/69 重基线（缺 "
-                     "y[30..107] / y[186..254] 字面, [F2-L], BUILDER DUTY 2)）");
+                     "schedule_page.h 头注版式区钉未随 88/88/49 重基线（缺 "
+                     "y[30..117] / y[206..254] 字面, [F2-L], BUILDER DUTY 2)）");
 
     /* tooth 2: 复用键（F-8 / NFR-READ-1, must-stay-green）。 */
     sgx_require_fact(sgx_mfact("schedule_ksg_course_cap"), "schedule_ksg_course_cap",
@@ -1335,7 +1351,7 @@ TEST_CASE("schedule grid 16px: 结构半-FAS清单扩键 (SG16-A6)",
  *     - 除上述义务红与 p1_auxbar AB-A1/A2/A4 存量外零其它新增红；任何 infra 红
  *       （清单键缺/探针失灵/mount 失败/字形缺场）= 接线或底座缺陷，不冒充设计
  *       态红——停下回报。**零段错误**。
- *   真机半（P2S-E5）: pitch 19 紧凑观感 / 4/4/3 容量观感 / 下划线 ★ 可读性 /
+ *   真机半（P2S-E5）: pitch 19 紧凑观感 / 4/4/2 容量观感 / 下划线 ★ 可读性 /
  *     长课截断——本包自有真机轮, 供 P3 终端轮复证; 本文件零 host 齿不伪装。
  * --------------------------------------------------------------------------- */
 /* REVISION LOG (acceptance-author only; tighten-only discipline):
@@ -1388,4 +1404,25 @@ TEST_CASE("schedule grid 16px: 结构半-FAS清单扩键 (SG16-A6)",
  *               「coverage: SG16-A1/SG16-A2」拆为 coverage: SG16-A1 + covers:
  *               SG16-A2 两条; 纯注释改动, 断言语义零改动, 现跑通道①复核 258/3
  *               维持）。
+ *   2026-11-02  真机轮修订（acceptance-author; 授权链 = P2S-E5 真机轮 human 原话
+ *               逐字：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，
+ *               如果是放不下的原因，我们可以把晚上保留两行就行了」+ P2S-E5; planner
+ *               诊断 = 78/78/69 下 slot0 第 4 行 y=89 墨底恰压带底线 y=107 零余量,
+ *               真机照片实锤末行截 1-2px）:
+ *               ① 槽位带 78/78/69 → 88/88/49（slot0 {30,117} / slot1 {118,205} /
+ *                  slot2 {206,254}）——SG16-A3 分隔线新位 y=117/205 + 历史旧位负锚
+ *                  扩展（y=103/177 = F-3 前原位、y=107/185 = 78/78/69 位, 两代旧位
+ *                  均除竖线家具列外全白）; KSG_GRID_BOTTOM=254、表头 0..29、pitch 19
+ *                  零偏移。
+ *               ② 容量 4/4/3 → 4/4/2（「晚上保留两行」）——SG16-A4 slot2 上限改 2:
+ *                  第 2 门真画、第 3 门帧等价（静默截断三否定语义一体）; slot0/1
+ *                  第 4 门真画/第 5 门帧等价与 CAP=84 解析齿零改（OQ4 静默口径
+ *                  不变）。requirements v1.69 的 4/4/3 行回填归主线程
+ *                  /requirement-change 后置补账, 本修订引用 human 原话为授权。
+ *               ③ 头注/FAS 键判读字面同步：sched_h_band_anchors = "y[30..117]" +
+ *                  "y[206..254]"——**CMakeLists 判读 needle 须同批换字面（builder
+ *                  面, 现仍 y[30..107]/y[186..254] 旧字面）**, 未换前 TEST 5 该键
+ *                  红为接线缺陷非设计态。
+ *               零负锚削弱核对：越带 y>=255 零墨 / CAP=84 / ★ 可见可区分叠加 /
+ *               restore 镜像——全部原样。
  * --------------------------------------------------------------------------- */

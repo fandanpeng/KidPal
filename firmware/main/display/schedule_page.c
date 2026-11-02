@@ -660,15 +660,17 @@ int kidpal_schedule_grid_parse(const char *data_json,
 #define KSG_FB_H       300
 #define KSG_ROW_PITCH  19 /* 16px 版式格内课程名行 pitch（F-3/P2S-E1；>= KSG_FONT_MIN_PX(14) 下限） */
 
-/* 表头带 y[0..29]; 槽位行带 slot0 y[30..107] / slot1 y[108..185] / slot2 y[186..254]
- * （带高 78/78/69；F-3/P2S-E1 16px 版式重基线, 冻结验收文件头版式区钉, 勿偏移）;
+/* 表头带 y[0..29]; 槽位行带 slot0 y[30..117] / slot1 y[118..205] / slot2 y[206..254]
+ * （带高 88/88/49；2026-11-02 真机轮 human 看屏裁决版式修订：原 30..107/108..185/
+ * 186..254 下 slot0 第 4 行墨底压带底线被截，带下移；冻结验收文件头版式区钉同步）;
  * slot2 下缘贴 KSG_GRID_BOTTOM=254; y>=255 网格外带零墨。 */
-static const int ksg_slot_ys[3][2] = { { 30, 107 }, { 108, 185 }, { 186, 254 } };
+static const int ksg_slot_ys[3][2] = { { 30, 117 }, { 118, 205 }, { 206, 254 } };
 
-/* 渲染层按槽位可画上限（F-3/OQ4/P2S-E2：上午 4 / 下午 4 / 晚上 3）。超限静默
- * 截断（不滚动、不画超限行、不新增提示）——缓存/解析 cap 仍是 KSG_COURSE_CAP=84，
- * 本表只约束"每一格画几门"，绝不参与解析或缓存容量（F-8 铁律）。 */
-static const int ksg_slot_caps[3] = { 4, 4, 3 };
+/* 渲染层按槽位可画上限（2026-11-02 真机轮 human 裁决：上午 4 / 下午 4 / 晚上 2；
+ * 新带高下 slot2 第 3 行墨底越 KSG_GRID_BOTTOM）。超限静默截断（不滚动、不画
+ * 超限行、不新增提示）——缓存/解析 cap 仍是 KSG_COURSE_CAP=84，本表只约束
+ * "每一格画几门"，绝不参与解析或缓存容量（F-8 铁律）。 */
+static const int ksg_slot_caps[3] = { 4, 4, 2 };
 
 /* CJK 文本字体 = P0 统一句柄 [K4]：挂载过 assets 时为 16px body；缺 assets 时
  * kidpal_font.cc [K2]/[K3] 内部落 font_puhui_14_1 14px 兜底（恒非 NULL——此处
@@ -935,7 +937,7 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
         for (int d = 0; d < 7; d++) {
             (void)ksg_label(scr, days[d], 40 + 51 * d + 4, 6);
         }
-        /* 行标签垂直居中（带高 78/78/69；行高随 16px 句柄实测, 观感面不钉）。 */
+        /* 行标签垂直居中（带高 88/88/49；行高随 16px 句柄实测, 观感面不钉）。 */
         for (int s = 0; s < 3; s++) {
             int band_h = ksg_slot_ys[s][1] - ksg_slot_ys[s][0] + 1;
             int off = (band_h - line_h) / 2;
@@ -963,7 +965,7 @@ int kidpal_schedule_grid_render(const kidpal_schedule_course_t *courses, int n,
     }
 
     /* 课程逐门竖排：同 (day,slot) 格内自上而下堆叠（同格多条目保持 producer
-     * 下发序）; 行 pitch KSG_ROW_PITCH（16px 版式）= 19; 每格按槽位上限 4/4/3
+     * 下发序）; 行 pitch KSG_ROW_PITCH（16px 版式）= 19; 每格按槽位上限 4/4/2
      * 静默截断（超限不画、不滚动、不提示, F-3/OQ4）。 */
     for (int i = 0; i < n; i++) {
         int d = courses[i].day;
