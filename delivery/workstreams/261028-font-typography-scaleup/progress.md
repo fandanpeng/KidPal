@@ -64,3 +64,9 @@
 - **human 现场裁定（原话逐字）**：「上午显示4行 最后一行，还是有一点被截断了，你可以看照片，如果是放不下的原因，我们可以把晚上保留两行就行了」→ 版式 78/78/69→88/88/49、容量 4/4/3→4/4/2；acceptance-author 冻结件真机轮条修订（授权 = human 原话）+ builder 常量同步；verify scoped 8 闸绿 + final bearing r2 全绿（r2.json）；supervisor verdict 换新 ESCALATE、gate-check 绿。commit 10f13a60。
 - **第二轮看屏（复烧 0x20000 后）**：human 裁「可以了」——上午第 4 行完整、晚上带正常显示现有 2 门、其余回归面无异常。**P2S-E5 真机轮 PASS**。
 - **需求面**：容量 4/4/2 同步起草中（story-author，v1.70），requirement-reviewer 审稿后随合并批落。
+
+## 2026-11-02 · P2（m6-k2b）合并入本地 main（human 合并门批准，随批需求同步 v1.70）
+
+- P2：merge-driver --pod（human-approval-ref=2f611c92）→ rebase → quick-check 2 闸绿 → merge OK → 本地 main @ 335af886（簿记 4ee8f796）。需求同步 v1.70（容量 4/4/2 + 带高 88/88/49）随批 frozen（93dc1df5，story-author + requirement-reviewer 四查 PASS）。
+- 真机轮 P2S-E5 两轮收口：第一轮发现上午第 4 行墨底截断 → human 现场裁定（88/88/49 + 4/4/2）→ 修订轮全绿复烧 → 第二轮 human 裁「可以了」。
+- **列车状态**：P0/P1/P2 均 merged；剩 P3（261028-m6-k3-p3-story-typography，mergeOrder 63）待 launch——P3 收口轮兼 workstream 四页并集终端收口（P3 前 P2 必须 merged ✓）。遗留：ARQ-261029 上游 ※ 写入侧待派单；远程发布（release-pr --publish）待 human。
